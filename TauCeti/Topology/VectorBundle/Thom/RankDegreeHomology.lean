@@ -267,51 +267,27 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver
     TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply, hg.map_eq c x (hW x.property),
     map_smul, Subtype.coe_eta, singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator]
 
-/-- The fibre classes over two points of `W` joined by a path in `W`, inside the base set of the
-chosen trivialization at `c` and along which `ε c` is constant, agree. -/
-private theorem fiberClassOver_eq_of_joinedIn (hg : IsLocalFiberGenerator K F E g ε) (c : B)
-    {W : Set B} {x y : W}
-    (h : JoinedIn {z : W | (z : B) ∈ (trivializationAt F E c).baseSet ∧ ε c z = ε c x} x y) :
-    fiberClassOver g W x = fiberClassOver g W y := by
-  set T := (trivializationAt F E c).baseSet
-  have hW : W ∩ T ⊆ T := inter_subset_right
-  let x' : ↥(W ∩ T) := ⟨x, x.property, h.source_mem.1⟩
-  let y' : ↥(W ∩ T) := ⟨y, y.property, h.target_mem.1⟩
-  -- The two points are joined in `W ∩ T`, so their classes in `H₀` agree.
-  have hj : Joined x' y' :=
-    h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ T ∧ ε c z = ε c x} ↦
-      (⟨z.val.val, z.val.property, z.property.1⟩ : ↥(W ∩ T))) (by fun_prop)
-  have hxy : fiberClassOver g (W ∩ T) x' = fiberClassOver g (W ∩ T) y' := by
-    apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
-      ((trivializationAt F E c).thomPairOverIso ℝ hW).hom (ModuleCat.of K K)
-        (finrank ℝ F))).1 inferInstance
-    rw [singularHomologyMap_thomPairOverIso_fiberClassOver hg c hW,
-      singularHomologyMap_thomPairOverIso_fiberClassOver hg c hW,
-      singularHomology₀Section_eq_of_joined _ hj]
-    exact congrArg (fun u : Kˣ ↦ (u : K) • _) h.target_mem.2.symm
-  have := congrArg (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left)
-    (ModuleCat.of K K) (finrank ℝ F)) hxy
-  rwa [singularHomologyMap_thomPairOverMap_fiberClassOver,
-    singularHomologyMap_thomPairOverMap_fiberClassOver] at this
-
-/-- **The fibre classes are constant along paths.** -/
+/-- **The fibre classes are constant along paths**: near each point `b` they are read through the
+chosen trivialization at `b` as multiples of the classes of the points by the locally constant unit
+`ε b`. -/
 private theorem fiberClassOver_eq_of_path (hg : IsLocalFiberGenerator K F E g ε) {W : Set B}
     {x y : W} (γ : Path x y) : fiberClassOver g W x = fiberClassOver g W y := by
-  have : LocallyPathConnectedSpace unitInterval :=
-    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine γ.eq_of_eventually_eq fun t ↦ ?_
-  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
-  have hc : ((γ t : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet :=
-    mem_baseSet_trivializationAt F E _
-  have hO : {s : unitInterval | ((γ s : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet ∧
-      ε (γ t) (γ s) = ε (γ t) (γ t)} ∈ 𝓝 t :=
-    (hγ.tendsto t).eventually (Filter.Eventually.and
-      ((trivializationAt F E (γ t : B)).open_baseSet.mem_nhds hc) (hg.eventually_eq _ _ hc))
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  refine (fiberClassOver_eq_of_joinedIn hg (γ t : B)
-    ((hs.map γ.continuous.continuousOn).mono ?_)).symm
-  rintro _ ⟨u, hu, rfl⟩
-  exact hu
+  refine eq_of_path_of_mono (fun h ↦ TopPair.singularHomologyMap (thomPairOverMap F E h)
+      (ModuleCat.of K K) (finrank ℝ F)) (fiberClassOver g)
+    (singularHomologyMap_thomPairOverMap_fiberClassOver)
+    (fun b ↦ {z | z ∈ (trivializationAt F E b).baseSet ∧ ε b z = ε b b})
+    (fun b ↦ Filter.Eventually.and ((trivializationAt F E b).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F E b))
+      (hg.eventually_eq _ _ (mem_baseSet_trivializationAt F E b)))
+    (fun b W ↦ ?_) γ
+  have hW : W ∩ {z | z ∈ (trivializationAt F E b).baseSet ∧ ε b z = ε b b} ⊆
+      (trivializationAt F E b).baseSet := fun _ hz ↦ hz.2.1
+  refine ⟨TopPair.singularHomologyMap ((trivializationAt F E b).thomPairOverIso ℝ hW).hom
+      (ModuleCat.of K K) (finrank ℝ F) ≫
+    (prodThomPairSingularHomologyIso (ModuleCat.of K K) _ F 0 (finrank ℝ F)).hom, ε b b,
+    inferInstance, fun x ↦ ?_⟩
+  rw [ConcreteCategory.comp_apply, singularHomologyMap_thomPairOverIso_fiberClassOver hg b hW,
+    map_smul, Iso.inv_hom_id_apply, x.property.2.2]
 
 /-- The map `H₀(W; K) ⟶ Hᵣ(E|_W, E₀|_W; K)` sending the class of a point to the fibre class over
 it. -/

@@ -14,7 +14,6 @@ import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.AlgebraicTopology.Singular.MayerVietoris.FiniteUnion
 import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
-import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 import TauCeti.Topology.VectorBundle.Thom.Class
 
@@ -453,41 +452,17 @@ private theorem restr_fiberClass {W W' : Set B} (h : W ⊆ W') {x : B} (hxW : x 
     restr F E R hι h (finrank ℝ F) (fiberClass F E R hι ω hxW) = fiberClass F E R hι ω (h hxW) :=
   restr_fiberClassAux hι ω _ _ h hxW
 
-/-- The fibre classes over two points of `W` joined by a path in `W` inside the base set of the
-chosen trivialization at `c` agree. -/
-private theorem fiberClass_eq_of_joinedIn (c : B) {W : Set B} {x y : W}
-    (h : JoinedIn {z : W | (z : B) ∈ (trivializationAt F E c).baseSet} x y) :
-    fiberClass F E R hι ω x.property = fiberClass F E R hι ω y.property := by
-  set T := (trivializationAt F E c).baseSet
-  have hW : W ∩ T ⊆ T := inter_subset_right
-  -- The two points are joined in `W ∩ T`, so their classes in `H₀` agree.
-  have hj : Joined (⟨x, x.property, h.source_mem⟩ : ↥(W ∩ T)) ⟨y, y.property, h.target_mem⟩ :=
-    h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ T} ↦
-      (⟨z.val.val, z.val.property, z.property⟩ : ↥(W ∩ T))) (by fun_prop)
-  have hxy : fiberClass F E R hι ω (x := x) (W := W ∩ T) (Set.mem_inter x.property h.source_mem) =
-      fiberClass F E R hι ω (x := y) (W := W ∩ T) (Set.mem_inter y.property h.target_mem) := by
-    apply (ModuleCat.mono_iff_injective (localIso (R := R) hι ω c hW).hom).1 inferInstance
-    rw [localIso_hom_fiberClass, localIso_hom_fiberClass,
-      singularHomology₀Section_eq_of_joined _ hj]
-  have := congrArg (restr F E R hι (inter_subset_left : W ∩ T ⊆ W) (finrank ℝ F)) hxy
-  rwa [restr_fiberClass, restr_fiberClass] at this
-
-/-- **The fibre classes are constant along paths.** -/
+/-- **The fibre classes are constant along paths**: near each point `b` they are read through the
+chosen trivialization at `b` as the classes of the points. -/
 private theorem fiberClass_eq_of_path {W : Set B} {x y : W} (γ : Path x y) :
-    fiberClass F E R hι ω x.property = fiberClass F E R hι ω y.property := by
-  have : LocallyPathConnectedSpace unitInterval :=
-    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
-  refine γ.eq_of_eventually_eq (f := fun z : W ↦ fiberClass F E R hι ω z.property) fun t ↦ ?_
-  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
-  have hc : ((γ t : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet :=
-    FiberBundle.mem_baseSet_trivializationAt' _
-  have hO : {s : unitInterval | ((γ s : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet} ∈ 𝓝 t :=
-    (hγ.tendsto t).eventually ((trivializationAt F E (γ t : B)).open_baseSet.mem_nhds hc)
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  refine (fiberClass_eq_of_joinedIn hι ω (γ t : B)
-    ((hs.map γ.continuous.continuousOn).mono ?_)).symm
-  rintro _ ⟨u, hu, rfl⟩
-  exact hu
+    fiberClass F E R hι ω x.property = fiberClass F E R hι ω y.property :=
+  eq_of_path_of_mono (fun h ↦ restr F E R hι h (finrank ℝ F))
+    (fun _ x ↦ fiberClass F E R hι ω x.property) (fun h x ↦ restr_fiberClass hι ω h x.property)
+    (fun b ↦ (trivializationAt F E b).baseSet)
+    (fun b ↦ (trivializationAt F E b).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' b))
+    (fun b _ ↦ ⟨(localIso hι ω b inter_subset_right).hom, 1, inferInstance, fun x ↦ by
+      rw [localIso_hom_fiberClass, one_smul]⟩) γ
 
 variable (F E R) in
 /-- The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))` sending the class of a point to the fibre class
@@ -536,14 +511,6 @@ private theorem isIso_toThomPairOver_of_subset (c : B) {W : Set B}
 
 /-! ### The Mayer–Vietoris step -/
 
-omit [FiniteDimensional ℝ F] in
-private theorem restr_comp_restr {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') (n : ℕ) :
-    restr F E R hι h n ≫ restr F E R hι h' n = restr F E R hι (h.trans h') n :=
-  (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (LocalCoefficientSystem.subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap
-        _ _ _ _ _ _ _ _))
-
 variable (F E R) in
 /-- The map between the relative twisted homology of two pairs of subsets of the total space, for
 inclusions of the subsets. -/
@@ -575,6 +542,12 @@ private theorem rmap_self {A₁ C₁ : Set (TotalSpace F E)} (h₁ : C₁ ⊆ A�
   (congrArg (HomologicalComplex.homologyMap · n)
     (LocalCoefficientSystem.subsetPairTwistedChainComplexMap_self _ _)).trans
       (HomologicalComplex.homologyMap_id _ _)
+
+omit [FiniteDimensional ℝ F] in
+/-- Restrictions compose: `restr` is `rmap` for the pairs `(π⁻¹ W, π⁻¹ W ∩ E₀)`. -/
+private theorem restr_comp_restr {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') (n : ℕ) :
+    restr F E R hι h n ≫ restr F E R hι h' n = restr F E R hι (h.trans h') n :=
+  rmap_comp_rmap hι _ _ _ _ _ _ _ n
 
 variable (F E R) in
 /-- Equal pairs of subsets have isomorphic relative twisted homology. -/

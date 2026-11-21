@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.AlgebraicTopology.Singular.Basic
+import TauCeti.Topology.Connected.PathConnected
 
 /-!
 # Maps out of `H₀` over finite unions of open sets
@@ -18,6 +20,11 @@ maps commuting with the restrictions. If `ψ W` is an isomorphism for every `W` 
 "good" sets closed under passing to subsets, `M ∅` vanishes, and the second map of the
 Mayer–Vietoris sequence is onto whenever `U` is good, then `ψ` is an isomorphism over every finite
 union of good open sets (`TauCeti.isIso_biUnion_of_mayerVietoris`).
+
+The maps `ψ W` send the class of a point to a class over it, and are well defined because such
+classes, compatible with the restrictions, are constant along paths as soon as they are read near
+each point as a common multiple of the classes of the points
+(`TauCeti.eq_of_path_of_mono`).
 
 This is the induction over finite unions of trivializing open sets in the computation of the
 homology of the Thom pair of a vector bundle in the rank degree, both with constant coefficients
@@ -31,6 +38,8 @@ vanishing of that homology below the rank.
 
 * `TauCeti.isIso_biUnion_of_mayerVietoris`: `ψ` is an isomorphism over a finite union of good open
   sets.
+* `TauCeti.eq_of_path_of_mono`: classes compatible with the restrictions which are locally
+  multiples of the classes of the points are constant along paths.
 
 ## References
 
@@ -40,7 +49,7 @@ vanishing of that homology below the rank.
 
 public section
 
-open CategoryTheory Limits Set AlgebraicTopology
+open CategoryTheory Limits Set AlgebraicTopology Topology
 
 universe w
 
@@ -175,5 +184,44 @@ theorem isIso_biUnion_of_mayerVietoris
       isOpen_iUnion fun i ↦ isOpen_iUnion fun hi ↦ hWo i (Finset.mem_insert_of_mem hi)
     have := hepi hU hV (hWG a ha)
     exact isIso_union_of_mayerVietoris res ψ hψ hres (hexact hU hV)
+
+/-- **Classes compatible with the restrictions are constant along paths.** Let `c W x ∈ M W` be
+classes over the points `x` of the sets `W`, carried to each other by the restrictions. Suppose
+that each point `b` has a neighbourhood `N b` such that, for every `W`, some monomorphism
+`M (W ∩ N b) ⟶ H₀(W ∩ N b; R)` sends the classes over the points of `W ∩ N b` to a common multiple
+of the classes of the points. Then the classes over two points of `W` joined by a path in `W`
+agree. -/
+theorem eq_of_path_of_mono (c : ∀ W : Set B, W → M W)
+    (hc : ∀ {W W' : Set B} (h : W ⊆ W') (x : W), res h (c W x) = c W' (inclusion h x))
+    (N : B → Set B) (hN : ∀ b, N b ∈ 𝓝 b)
+    (hloc : ∀ (b : B) (W : Set B), ∃ (φ : M (W ∩ N b) ⟶
+        ((singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
+          (TopCat.of ↥(W ∩ N b))) (u : R), Mono φ ∧ ∀ x : ↥(W ∩ N b),
+        φ (c _ x) = u • singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of ↥(W ∩ N b)) x 1)
+    {W : Set B} {x y : W} (γ : Path x y) : c W x = c W y := by
+  -- Two points of `W` joined by a path in `N b` are joined in `W ∩ N b`, where the classes are
+  -- read through the monomorphism as multiples of the classes of the points.
+  have hj (b : B) {x y : W} (h : JoinedIn {z : W | (z : B) ∈ N b} x y) : c W x = c W y := by
+    obtain ⟨φ, u, hφ, hφc⟩ := hloc b W
+    let x' : ↥(W ∩ N b) := ⟨x, x.property, h.source_mem⟩
+    let y' : ↥(W ∩ N b) := ⟨y, y.property, h.target_mem⟩
+    have hj : Joined x' y' :=
+      h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ N b} ↦
+        (⟨z.val.val, z.val.property, z.property⟩ : ↥(W ∩ N b))) (by fun_prop)
+    have hxy : c _ x' = c _ y' := by
+      apply (ModuleCat.mono_iff_injective φ).1 hφ
+      rw [hφc, hφc, singularHomology₀Section_eq_of_joined _ hj]
+    have := congrArg (res (inter_subset_left : W ∩ N b ⊆ W)) hxy
+    rwa [hc, hc] at this
+  have : LocallyPathConnectedSpace unitInterval :=
+    Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
+  refine γ.eq_of_eventually_eq (f := c W) fun t ↦ ?_
+  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
+  have hO : {s : unitInterval | ((γ s : W) : B) ∈ N (γ t)} ∈ 𝓝 t :=
+    (hγ.tendsto t).eventually (hN _)
+  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
+  refine (hj (γ t : B) ((hs.map γ.continuous.continuousOn).mono ?_)).symm
+  rintro _ ⟨u, hu, rfl⟩
+  exact hu
 
 end TauCeti
