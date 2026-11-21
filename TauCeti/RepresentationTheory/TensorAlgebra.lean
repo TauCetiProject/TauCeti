@@ -56,6 +56,11 @@ noncomputable def tensorAlgebra : Representation R G (TensorAlgebra R M) where
 theorem tensorAlgebra_apply (g : G) (p : TensorAlgebra R M) :
     ρ.tensorAlgebra g p = TensorAlgebra.lift R ((TensorAlgebra.ι R).comp (ρ g)) p := (rfl)
 
+/-- The induced action on a degree-one tensor generator is the original action of `ρ`. -/
+theorem tensorAlgebra_ι (g : G) (m : M) :
+    ρ.tensorAlgebra g (TensorAlgebra.ι R m) = TensorAlgebra.ι R (ρ g m) := by
+  rw [tensorAlgebra_apply, TensorAlgebra.lift_ι_apply, LinearMap.comp_apply]
+
 /-- Pulling back a representation commutes with extending it to the tensor algebra. -/
 theorem tensorAlgebra_comp_apply {G' : Type*} [Monoid G'] (f : G' →* G) (g : G') :
     Representation.tensorAlgebra (ρ.comp f) g = ρ.tensorAlgebra (f g) := by

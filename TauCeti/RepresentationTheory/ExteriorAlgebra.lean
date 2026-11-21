@@ -46,6 +46,11 @@ def exteriorAlgebra : Representation R G (ExteriorAlgebra R M) where
 theorem exteriorAlgebra_apply (g : G) (p : ExteriorAlgebra R M) :
     ρ.exteriorAlgebra g p = ExteriorAlgebra.map (ρ g) p := (rfl)
 
+/-- The induced action on a degree-one exterior generator is the original action of `ρ`. -/
+theorem exteriorAlgebra_ι (g : G) (m : M) :
+    ρ.exteriorAlgebra g (ExteriorAlgebra.ι R m) = ExteriorAlgebra.ι R (ρ g m) := by
+  rw [exteriorAlgebra_apply, ExteriorAlgebra.map_apply_ι]
+
 /-- Pulling back a representation commutes with extending it to the exterior algebra. -/
 theorem exteriorAlgebra_comp_apply {G' : Type*} [Monoid G'] (f : G' →* G) (g : G') :
     Representation.exteriorAlgebra (ρ.comp f) g = ρ.exteriorAlgebra (f g) := by
