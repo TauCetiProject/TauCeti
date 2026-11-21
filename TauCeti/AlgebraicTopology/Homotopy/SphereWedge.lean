@@ -199,21 +199,21 @@ private def sphereWedgePairToSkeletonPair :
   TopPair.ofHom
     (TopCat.ofHom ⟨fun y ↦ ⟨y, (skeletonLT_sphereWedge_eq_univ ι n).symm ▸ mem_univ y⟩,
       continuous_id.subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun y ↦ ⟨y.1, (skeletonLT_sphereWedge_eq_singleton ι n).symm ▸ y.2⟩,
-      continuous_subtype_val.subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun y ↦ ⟨y.val, (skeletonLT_sphereWedge_eq_singleton ι n).symm ▸ y.property⟩,
+      continuous_subtypeVal.subtype_mk _⟩)
     (by ext; rfl)
 
 private lemma sphereWedgePairToSkeletonPair_fst_apply (y : sphereWedge ι (n + 2)) :
-    (TopPair.Hom.fst (sphereWedgePairToSkeletonPair ι n) y).1 = y :=
+    (TopPair.Hom.fst (sphereWedgePairToSkeletonPair ι n) y).val = y :=
   (rfl)
 
 private lemma isIso_sphereWedgePairToSkeletonPair :
     IsIso (sphereWedgePairToSkeletonPair ι n) := by
   have : IsIso (TopPair.Hom.fst (sphereWedgePairToSkeletonPair ι n)) :=
-    ⟨TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩, by ext; rfl, by ext; rfl⟩
+    ⟨TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩, by ext; rfl, by ext; rfl⟩
   refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ?_
-  have hy : y.1 ∈ ({sphereWedgeBase ι (n + 2)} : Set _) :=
-    skeletonLT_sphereWedge_eq_singleton ι n ▸ y.2
+  have hy : y.val ∈ ({sphereWedgeBase ι (n + 2)} : Set _) :=
+    skeletonLT_sphereWedge_eq_singleton ι n ▸ y.property
   exact ⟨⟨sphereWedgeBase ι (n + 2), rfl⟩, Subtype.ext (mem_singleton_iff.1 hy).symm⟩
 
 private instance isIso_singularHomologyMap_sphereWedgePairToSkeletonPair (k : ℕ) :
@@ -305,6 +305,11 @@ section Lift
 /-! ### Maps out of a wedge of spheres -/
 
 variable {ι n} {Z : TopCat.{0}} {z : Z}
+
+/-- A wedge of `(n + 1)`-spheres is path connected. -/
+instance : PathConnectedSpace (sphereWedge ι (n + 1)) :=
+  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (sphereWedgeBase ι (n + 1))).2
+    (subsingleton_homotopyGroup_sphereWedge ι n (Nat.zero_le n))
 
 /-- **The map out of a wedge of spheres with prescribed spheres.** For generalized loops
 `γ i : Ω^ (Fin n) Z z`, the map `⋁ᵢ Sⁿ ⟶ Z` sending the base point to `z` and the `i`-th sphere

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Smoothness of parametric primitives
@@ -22,6 +24,10 @@ The proof rescales the variable interval `[a₀, b]` to the fixed interval `[0, 
 `∫ t in a₀..b, f x t = (b - a₀) • ∫ u in 0..1, f x (a₀ + (b - a₀) u)`,
 
 and applies Mathlib's `ContDiff.parametric_intervalIntegral` to the integral over `[0, 1]`.
+
+Without a parameter one derivative is gained: the primitive `b ↦ ∫ t in a₀..b, f t` of a `C^n`
+function `f : ℝ → E` is `C^{n+1}` (`intervalIntegral.contDiff_primitive_of_contDiff`), by the
+fundamental theorem of calculus.
 -/
 
 public section
@@ -49,5 +55,14 @@ theorem contDiff_parametric_primitive_of_contDiff {f : H → ℝ → E} {n : ℕ
     (f := fun q : (H × ℝ) × ℝ ↦ f q.1.1 (a₀ + (q.1.2 - a₀) * q.2))
     (hf.comp (contDiff_fst.fst.prodMk
       (contDiff_const.add ((contDiff_fst.snd.sub contDiff_const).mul contDiff_snd))))
+
+/-- **Smoothness of a primitive.** If `f : ℝ → E` is `C^n`, then its primitive
+`b ↦ ∫ t in a₀..b, f t` is `C^{n+1}`. -/
+theorem contDiff_primitive_of_contDiff [CompleteSpace E] {f : ℝ → E} {n : ℕ∞}
+    (hf : ContDiff ℝ n f) (a₀ : ℝ) : ContDiff ℝ (n + 1) fun b ↦ ∫ t in a₀..b, f t := by
+  have hd : deriv (fun b ↦ ∫ t in a₀..b, f t) = f :=
+    funext (hf.continuous.deriv_integral f a₀)
+  exact contDiff_succ_iff_deriv.2
+    ⟨differentiable_integral_of_continuous hf.continuous, by simp, by rwa [hd]⟩
 
 end intervalIntegral

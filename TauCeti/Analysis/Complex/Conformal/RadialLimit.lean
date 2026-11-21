@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Area
 public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Algebra.Order.ToIntervalMod
 import TauCeti.Analysis.Complex.Conformal.LengthArea
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.DominatedIncrement
 
 /-!
@@ -72,8 +73,7 @@ theorem edist_comp_circleMap_le_lintegral_Ioc (hUo : IsOpen U) (hf : Differentia
     (c : ℂ) (θ : ℝ) {a b : ℝ} (hab : a ≤ b) (hmemU : ∀ r ∈ Icc a b, circleMap c r θ ∈ U) :
     edist (f (circleMap c a θ)) (f (circleMap c b θ)) ≤
       ∫⁻ r in Ioc a b, ‖deriv f (circleMap c r θ)‖ₑ := by
-  have hray : ∀ r, HasDerivAt (fun r : ℝ => circleMap c r θ) (exp (θ * I)) r := fun r => by
-    simpa [circleMap] using ((hasDerivAt_id r).ofReal_comp.mul_const (exp (θ * I))).const_add c
+  have hray (r : ℝ) := hasDerivAt_circleMap_radius c r θ
   -- the ray has constant velocity `exp (θ * I)`, of norm `1`, so it is `C¹`
   have hrayC : ContDiff ℝ 1 (fun r : ℝ => circleMap c r θ) := by
     refine contDiff_one_iff_deriv.2 ⟨fun r => (hray r).differentiableAt, ?_⟩

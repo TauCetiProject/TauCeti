@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -66,14 +67,16 @@ The regularity theorem on `H^r` then gives `φ (χ T) = φ T ∈ H^(s + M)` for 
 
 * `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id`: on `H^r` the
   quantization of the symbol of a differential operator with compactly supported smooth scalar
-  coefficients is that differential operator on tempered distributions.
+  coefficients is that differential operator on tempered distributions, the compactly supported
+  case of `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`.
 * `TauCeti.differentialSymbol_filter_smul_id`,
   `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff`: for scalar coefficients,
   the top-order differential symbol is `i ^ M` times the principal symbol
   `TauCeti.constCoeffPrincipalSymbol` of the operator with frozen coefficients, so the classical
   symbol is elliptic exactly when that principal symbol vanishes at no `ξ ≠ 0` at every position.
 * `Distribution.IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: interior elliptic
-  regularity.
+  regularity, and `Distribution.isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff`,
+  its combination with the mapping property.
 * `Distribution.sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero`,
   `Distribution.sobolevSingularSupport_laplacianCLM`: elliptic operators shift the `H^s` singular
   support by their order.
@@ -113,42 +116,9 @@ theorem toDistr_quantizeSobolev_ofDifferentialSymbol_smul_id (m : ℕ) (s : Fins
         (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeSobolev
       (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
         fun i hi ↦ (hβc i hi).smul_right) r u).toDistr =
-      ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) := by
-  set a := (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-    (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol
-  have hgr (i : ι) (hi : i ∈ s) : (β i).HasTemperateGrowth :=
-    (hβc i hi).hasTemperateGrowth (hβ i hi)
-  -- On a Schwartz function `w` both sides are the tempered distribution of the Schwartz function
-  -- `∑ i ∈ s, βᵢ ∂^{vᵢ} w`.
-  have key : BesselPotentialSpace.toDistrCLM _ V _ 2 ∘L a.quantizeSobolev
-      (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-        fun i hi ↦ (hβc i hi).smul_right) r =
-      (∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r 2 := by
-    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun w ↦ ?_
-    have hrhs : ((∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r 2) (SchwartzMap.toBesselPotentialSpaceCLM r 2 w) =
-        SchwartzMap.toTemperedDistributionCLM _ V volume
-          (∑ i ∈ s, SchwartzMap.smulLeftCLM V (β i) (∂^{v i} w)) := by
-      simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-        SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
-        iteratedLineDerivOpCLM_apply,
-        TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-        TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-    rw [hrhs, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply]
-    ext φ
-    rw [Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
-      SchwartzMap.toTemperedDistributionCLM_apply_apply volume]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    simp only [a, coefficient_toSymbol_ofDifferentialSymbol,
-      quantizeSchwartzValue_differentialSymbol, sum_apply]
-    congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
-    simp
-  simpa using congrArg (fun L ↦ L u) key
+      ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) :=
+  toDistr_quantizeSobolev_ofDifferentialSymbol m s v hk
+    (fun i hi ↦ (hβc i hi).hasTemperateGrowth (hβ i hi)) _ r u
 
 end Sobolev
 
@@ -295,12 +265,14 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove (hg : ∀ i, ContDi
     (ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m
       (fun i x ↦ β i x • ContinuousLinearMap.id ℂ ℂ) (fun i hi ↦ (hβ i hi).smul contDiff_const)
       hk fun i hi ↦ (hβc i hi).smul_right)
-    (φ := φS) (hφS ▸ φ.hasCompactSupport) (by
+    (φ := φS) (by
     rw [hφS]
     filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
     simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
       hby, β, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one])
-    (s := s + M) (u := hr.toBesselPotentialSpace) (by rw [hu]; simpa using hPψ)
+    (Function.HasTemperateGrowth.const 1) (.of_forall fun _ ↦ rfl) (s := s + M)
+    (u := hr.toBesselPotentialSpace)
+    (by rw [TemperedDistribution.smulLeftCLM_const, one_smul, hu]; simpa using hPψ)
   rwa [BesselPotentialSpace.toDistr_smulLeftCLM, hφS, hr.toBesselPotentialSpace_toDistr,
     smulLeftCLM_cutoffTempered T hχφ] at hreg
 
@@ -353,6 +325,18 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
     (isOpen_ball.mem_nhdsSet.2 hφs)] with y hy hyb
   exact ⟨by simp [ψ', hy], hbx y (ball_subset_closedBall hyb)⟩
 
+/-- **Elliptic operators shift local Sobolev regularity by exactly their order.** If
+`P = ∑ i ∈ t, c i g i ∂^(m i)`, with smooth real coefficients `g i` and orders `k i ≤ M`, is
+elliptic at `x`, then `P T` is `H^s` near `x` exactly when `T` is `H^(s + M)` near `x`. -/
+theorem isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff
+    (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M) {T : 𝓓'(Ω, ℂ)}
+    {x : CoordinateSpace n} {s : ℝ}
+    (hσ : ∀ ξ, ξ ≠ 0 → constCoeffPrincipalSymbol t (fun i ↦ c i * g i x) m M ξ ≠ 0) :
+    (∑ i ∈ t, c i • Distribution.smulLeftCLM (hg i) (∂^{m i} T)).IsLocallySobolevAt s x ↔
+      T.IsLocallySobolevAt (s + M) x :=
+  ⟨.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk hσ, fun h ↦ by
+    simpa using h.sum_smul_smulLeftCLM_iteratedLineDerivOp t c hg m hk⟩
+
 /-- **Elliptic differential operators shift the `H^s` singular support by their order.** If
 `P = ∑ i ∈ t, c i g i ∂^(m i)`, with smooth real coefficients `g i` and orders `k i ≤ M`, is
 elliptic at every point of `Ω`, then `T` is `H^(s + M)` exactly where `P T` is `H^s`. -/
@@ -363,11 +347,10 @@ theorem sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_foral
     (T : 𝓓'(Ω, ℂ)) :
     (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevSingularSupport s =
       T.sobolevSingularSupport (s + M) := by
-  refine subset_antisymm (by simpa using
-    sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset (s + M) t c hg m hk T)
-    fun x hx ↦ mem_sobolevSingularSupport_iff.2 ⟨(mem_sobolevSingularSupport_iff.1 hx).1,
-      fun hP ↦ (mem_sobolevSingularSupport_iff.1 hx).2
-        (hP.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (hσ x hP.mem))⟩
+  ext x
+  simp only [mem_sobolevSingularSupport_iff, and_congr_right_iff]
+  exact fun hx ↦ not_congr (isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff hg hk
+    (hσ x hx))
 
 /-- **Elliptic regularity for the Laplacian.** `T` is `H^(s + 2)` exactly where `Δ T` is `H^s`. -/
 @[simp]
@@ -378,7 +361,7 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   have h := sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s
     Finset.univ (fun _ ↦ 1) (g := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) (k := fun _ ↦ 2)
     (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun _ _ ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, Fin.tail] using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   simp only [ofReal_one, one_mul]
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'

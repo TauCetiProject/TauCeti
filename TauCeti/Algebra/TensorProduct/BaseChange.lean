@@ -10,6 +10,7 @@ module
 -- `Mathlib.LinearAlgebra.TensorProduct.Opposite` carries the algebra structures on `Aᵐᵒᵖ` and
 -- `(L ⊗[K] A)ᵐᵒᵖ` in the type of `baseChangeOpAlgEquiv`, and the compiler needs
 -- `Algebra.TensorProduct.opAlgEquiv`, used in its body, to be public.
+public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.LinearAlgebra.TensorProduct.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
 -- `Tower` supplies the underlying linear scalar-extension equivalences.
@@ -28,6 +29,10 @@ with passing to the opposite algebra, and composes in stages:
   distributing scalar extension over a tensor product.
 * `AlgHom.liftEquiv_toLinearMap`: the algebra map out of a scalar extension attached to `f` is
   the scalar extension `LinearMap.liftBaseChange` of `f`, as a linear map.
+* `AlgHom.toLinearMap_tensorProduct_map_id`, `AlgHom.coe_tensorProduct_map_id`:
+  `Algebra.TensorProduct.map (AlgHom.id S R') f` agrees, as an `S`-linear map (and as a function),
+  with `f.toLinearMap.baseChange R'`, for any intermediate commutative semiring `S` between `R`
+  and `R'`.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.mulBaseChange`: the map
@@ -49,6 +54,10 @@ with passing to the opposite algebra, and composes in stages:
   automorphisms act on a scalar extension through its scalar factor, by algebra automorphisms.
 * `TauCeti.ScalarAut.baseChangeMap_smul`: scalar extension of an algebra map is equivariant for
   scalar automorphisms.
+* `TauCeti.Algebra.TensorProduct.baseChangeSemilinearAction`: the semilinear ring-automorphism
+  action `γ • (b ⊗ d) = (γ • b) ⊗ d` of a group acting on `B` by `A`-algebra automorphisms,
+  agreeing pointwise with `TensorProduct.leftHasSMul`
+  (`TensorProduct.baseChangeSemilinearAction_eq_smul`).
 
 ## Implementation notes
 
@@ -56,7 +65,7 @@ All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul`
 `_symm_tmul` simp lemmas describe their action in both directions. For tensor-product base change,
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv` identifies the underlying
 Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
-fourfold tensor interchange and with scalar extension in stages.
+the second-factor inclusion, with fourfold tensor interchange and with scalar extension in stages.
 
 Mathlib's `Algebra.TensorProduct.cancelBaseChange` supplies the tower comparison for a commutative
 algebra being extended. The tower comparisons here also support noncommutative algebras, including
@@ -102,6 +111,30 @@ theorem _root_.AlgHom.liftEquiv_toLinearMap {R S A B : Type*} [CommSemiring R] [
     [IsScalarTower R S B] (f : A →ₐ[R] B) :
     (AlgHom.liftEquiv R S A B f).toLinearMap = f.toLinearMap.liftBaseChange S :=
   rfl
+
+/-- Extending an `R`-algebra map `f : A →ₐ[R] B` along `R'` via `Algebra.TensorProduct.map`
+with `AlgHom.id S R'` agrees, as an `S`-linear map, with restricting scalars of
+`f.toLinearMap.baseChange R'`. Unlike `AlgHom.lTensor_toLinearMap_apply`, this allows any
+intermediate commutative semiring `S` between `R` and `R'`. -/
+theorem _root_.AlgHom.toLinearMap_tensorProduct_map_id {R S R' A B : Type*}
+    [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring R'] [Algebra R R']
+    [Algebra S R'] [IsScalarTower R S R'] [Semiring A] [Algebra R A] [Semiring B]
+    [Algebra R B] (f : A →ₐ[R] B) :
+    (Algebra.TensorProduct.map (AlgHom.id S R') f).toLinearMap =
+      (f.toLinearMap.baseChange R').restrictScalars S := by
+  apply LinearMap.restrictScalars_injective R
+  ext r' a
+  simp
+
+/-- Extending an `R`-algebra map `f : A →ₐ[R] B` along `R'` via `Algebra.TensorProduct.map`
+with `AlgHom.id S R'` agrees as a function with `f.toLinearMap.baseChange R'`. -/
+theorem _root_.AlgHom.coe_tensorProduct_map_id {R S R' A B : Type*}
+    [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring R'] [Algebra R R']
+    [Algebra S R'] [IsScalarTower R S R'] [Semiring A] [Algebra R A] [Semiring B]
+    [Algebra R B] (f : A →ₐ[R] B) :
+    ⇑(Algebra.TensorProduct.map (AlgHom.id S R') f) = ⇑(f.toLinearMap.baseChange R') := by
+  simpa only [AlgHom.coe_toLinearMap, LinearMap.coe_restrictScalars] using
+    congrArg DFunLike.coe (f.toLinearMap_tensorProduct_map_id (S := S) (R' := R'))
 
 namespace Algebra.TensorProduct
 
@@ -149,6 +182,16 @@ of scalar extension over a tensor product. -/
 theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Distributing base change over `⊗` carries the second-factor inclusion of the base-changed
+factors to the base change of the second-factor inclusion. -/
+theorem baseChangeTensorAlgEquiv_symm_comp_includeRight :
+    (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+        (Algebra.TensorProduct.includeRight (R := L) (A := L ⊗[K] A) (B := L ⊗[K] B)) =
+      Algebra.TensorProduct.map (AlgHom.id L L) Algebra.TensorProduct.includeRight := by
+  refine Algebra.TensorProduct.ext' fun l b ↦ ?_
+  rw [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.one_def]
+  simp
 
 end Algebra.TensorProduct
 
@@ -260,6 +303,14 @@ def baseChangeTowerAlgEquiv : M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A :=
   (AlgEquiv.ofLinearEquiv (_root_.TensorProduct.AlgebraTensorModule.cancelBaseChange K L M M A).symm
     (by simp [Algebra.TensorProduct.one_def])
     (LinearMap.map_mul_of_map_mul_tmul fun _ _ _ _ ↦ by simp)).symm
+
+/-- The linear equivalence underlying the scalar-extension tower comparison is tensor
+cancellation. -/
+@[simp]
+theorem baseChangeTowerAlgEquiv_toLinearEquiv :
+    (baseChangeTowerAlgEquiv K L A M).toLinearEquiv =
+      _root_.TensorProduct.AlgebraTensorModule.cancelBaseChange K L M M A :=
+  (rfl)
 
 /-- The tower comparison moves the intermediate scalar onto the top scalar factor. -/
 @[simp]
@@ -402,6 +453,49 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
     ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_comp, AlgHom.id_comp, AlgHom.comp_id]
 
 end ScalarAut
+
+namespace Algebra.TensorProduct
+
+section SemilinearAction
+
+variable (A B D Γ : Type*) [CommSemiring A] [Semiring D] [Algebra A D]
+  [Group Γ]
+
+/-- The canonical semilinear action of `Γ` on `B ⊗[A] D` through the left tensor factor
+(`γ • (b ⊗ₜ d) = (γ • b) ⊗ₜ d`). -/
+noncomputable def baseChangeSemilinearAction [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] : Γ →* RingAut (B ⊗[A] D) :=
+  (MulSemiringAction.toRingAut (B ≃ₐ[A] B) (B ⊗[A] D)).comp (MulSemiringAction.toAlgAut Γ A B)
+
+/-- `baseChangeSemilinearAction` acts on pure tensors via the left tensor factor. -/
+@[simp]
+theorem baseChangeSemilinearAction_tmul [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] (γ : Γ) (b : B) (d : D) :
+    baseChangeSemilinearAction A B D Γ γ (b ⊗ₜ[A] d) = (γ • b) ⊗ₜ[A] d :=
+  (rfl)
+
+/-- `baseChangeSemilinearAction` is semilinear with respect to `MulSemiringAction.toAlgAut Γ A B`.
+-/
+theorem baseChangeSemilinearAction_algebraMap [CommSemiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] (γ : Γ) (b : B) :
+    baseChangeSemilinearAction A B D Γ γ (algebraMap B (B ⊗[A] D) b) =
+      algebraMap B (B ⊗[A] D) (MulSemiringAction.toAlgAut Γ A B γ b) := by
+  simp [Algebra.TensorProduct.algebraMap_apply]
+
+/-- `baseChangeSemilinearAction` agrees pointwise with Mathlib's left-factor `Γ`-action
+`TensorProduct.leftHasSMul`. It lives in Mathlib's root `TensorProduct` namespace, since it is
+stated about an element of the Mathlib type `B ⊗[A] D`. -/
+theorem _root_.TensorProduct.baseChangeSemilinearAction_eq_smul [Semiring B] [Algebra A B]
+    [MulSemiringAction Γ B] [SMulCommClass Γ A B] [SMulCommClass A Γ B]
+    (γ : Γ) (z : B ⊗[A] D) :
+    baseChangeSemilinearAction A B D Γ γ z = γ • z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul b d => rw [baseChangeSemilinearAction_tmul, TensorProduct.smul_tmul']
+  | add x y hx hy => simp [hx, hy, smul_add]
+
+end SemilinearAction
+
+end Algebra.TensorProduct
 
 end TauCeti
 
