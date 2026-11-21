@@ -47,6 +47,10 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
 
 ## Main results
 
+* `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.mono`: the weak formulation restricts to
+  smaller open sets.
+* `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_interior`: away
+  from the real axis it is the distributional equation of `TauCeti.HasWeakConjWirtingerDerivOn`.
 * `TauCeti.MemLpLoc.starSchwarzReflection` and `TauCeti.locallyIntegrableOn_starSchwarzReflection`:
   local `Lᵖ` bounds and local integrability up to the boundary pass to the reflection on the
   doubled domain.
@@ -101,11 +105,8 @@ variable {F : Type*} [NormedAddCommGroup F] {Ω : Opens ℂ}
 
 /-! ### Measure-theoretic preliminaries -/
 
-private theorem isClosed_im_nonneg : IsClosed {z : ℂ | 0 ≤ z.im} :=
-  isClosed_le continuous_const Complex.continuous_im
-
 private theorem measurableSet_im_nonneg : MeasurableSet {z : ℂ | 0 ≤ z.im} :=
-  isClosed_im_nonneg.measurableSet
+  (isClosed_setOfPred_le_im 0).measurableSet
 
 section LocallyIntegrable
 
@@ -130,11 +131,12 @@ theorem MemLpLoc.ite_conj {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) 
   refine MemLp.add ?_ ?_
   · rw [memLp_indicator_iff_restrict measurableSet_im_nonneg.nullMeasurableSet,
       Measure.restrict_restrict measurableSet_im_nonneg]
-    exact memLpLoc_iff.1 hf _ (fun z hz ↦ ⟨hKΩ hz.2, hz.1⟩) (hK.inter_left isClosed_im_nonneg)
+    exact memLpLoc_iff.1 hf _ (fun z hz ↦ ⟨hKΩ hz.2, hz.1⟩)
+      (hK.inter_left (isClosed_setOfPred_le_im 0))
   · rw [memLp_indicator_iff_restrict hL.nullMeasurableSet, Measure.restrict_restrict hL]
     let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
     have hK' : IsCompact K' :=
-      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
+      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right (isClosed_setOfPred_le_im 0)
     have hK'Ω : K' ⊆ Ω ∩ {z | 0 ≤ z.im} := fun z hz ↦
       ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
     have h2 := (memLpLoc_iff.1 hf _ hK'Ω hK').comp_measurePreserving
@@ -165,7 +167,7 @@ theorem locallyIntegrableOn_starSchwarzReflection
     LocallyIntegrableOn (starSchwarzReflection f) Ω := by
   have hf' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) f :=
     (memLpLoc_one_iff_locallyIntegrableOn
-      (Ω.isOpen.isLocallyClosed.inter isClosed_im_nonneg.isLocallyClosed)).2 hf
+      (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0)).2 hf
   exact (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).1
     (hf'.starSchwarzReflection hΩ)
 
@@ -278,8 +280,8 @@ private theorem halfPairing_add (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω 
   have hsum (v : ℂ) (z : ℂ) : lineDeriv ℝ ((ψ₁ + ψ₂ : 𝓓(Ω, ℝ)) : ℂ → ℝ) z v =
       lineDeriv ℝ (ψ₁ : ℂ → ℝ) z v + lineDeriv ℝ (ψ₂ : ℂ → ℝ) z v := by
     rw [hd, hd ψ₁, hd ψ₂, map_add, add_apply]
-  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
-  have hη := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
+  have hη := h.2.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
   simp only [halfPairing, hsum, add_smul, add_apply]
   rw [integral_add (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₁ 1)
       (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₂ 1),
@@ -302,8 +304,8 @@ half-plane pairing of `ψ`. -/
 private theorem realPart_smul_halfPairing (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
     (ψ : 𝓓(Ω, ℝ)) (c : ℂ) (hc : ∀ x : ℝ, ψ (x : ℂ) * c.im = 0) :
     ℜ (c • halfPairing ξ η ψ) = 0 := by
-  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
-  have _ := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
+  have _ := h.2.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
   have key := h.2.2.2 (smulTest ψ c) fun x ↦ by simpa [smulTest_apply] using hc x
   have h1 : ∫ z in {z : ℂ | 0 ≤ z.im},
       (lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z 1 + I * lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z I) •
@@ -351,6 +353,52 @@ private theorem halfPairing_eq_zero (h : HasWeakConjWirtingerDerivRealBoundaryOn
   rw [realPart_I_smul, neg_eq_zero] at hi
   rw [← realPart_add_I_smul_imaginaryPart (halfPairing ξ η ψ), hr, hi]
   simp
+
+/-- **Restriction.** A solution of `\bar∂ξ = η` on `Ω ∩ {0 ≤ im}` with real boundary values is
+one on `Ω' ∩ {0 ≤ im}` for every smaller open set `Ω'`. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.mono {Ω' : Opens ℂ}
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ' : Ω' ≤ Ω) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω' ξ η := by
+  obtain ⟨hF, hξ, hη, hw⟩ := h
+  have hsub : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    inter_subset_inter_left _ hΩ'
+  refine ⟨hF, hξ.mono_set hsub, hη.mono_set hsub, fun χ hχ ↦ ?_⟩
+  have hc : ((TestFunction.monoCLM ℝ χ : 𝓓(Ω, ℂ)) : ℂ → ℂ) = χ := by
+    simp [TestFunction.monoCLM_apply, hΩ']
+  simpa only [hc] using hw (TestFunction.monoCLM ℝ χ) (by simpa only [hc] using hχ)
+
+/-- **The equation away from the axis.** A solution of `\bar∂ξ = η` on `Ω ∩ {0 ≤ im}` with real
+boundary values solves the distributional equation on the open upper part `Ω ∩ {0 < im}`, the
+interior of `Ω ∩ {0 ≤ im}`: its test functions vanish near the real axis, where the boundary
+condition is not seen. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_interior
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) :
+    HasWeakConjWirtingerDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) ξ η := by
+  have hint : interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) = (Ω : Set ℂ) ∩ {z | 0 < z.im} :=
+    interior_inter_setOf_im_nonneg Ω.isOpen
+  have hle : Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ≤ Ω := fun z hz ↦
+    (interior_subset hz).1
+  refine hasWeakConjWirtingerDerivOn_iff.2 ⟨h.1, h.2.1.mono_set interior_subset,
+    h.2.2.1.mono_set interior_subset, fun φ ↦ ?_⟩
+  have hψ : ((TestFunction.monoCLM ℝ φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) = φ := by
+    simp [TestFunction.monoCLM_apply, hle]
+  -- `φ` vanishes off the open upper part, in particular on the real axis.
+  have hφ (z : ℂ) (hz : z ∉ {z : ℂ | 0 < z.im}) : z ∉ tsupport (φ : ℂ → ℝ) := fun hs ↦ by
+    have := φ.tsupport_subset hs
+    rw [Opens.coe_interior, hint] at this
+    exact hz this.2
+  have h0 := halfPairing_eq_zero h (TestFunction.monoCLM ℝ φ) fun x ↦ by
+    rw [hψ]
+    exact image_eq_zero_of_notMem_tsupport (hφ x (by simp))
+  have hH (f : ℂ → F) (hf : ∀ z, z ∉ tsupport (φ : ℂ → ℝ) → f z = 0) :
+      ∫ z in {z : ℂ | 0 ≤ z.im}, f z = ∫ z, f z :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦
+      hf z (hφ z fun h' ↦ hz (ofPred_subset_ofPred.2 (fun _ ↦ le_of_lt) h'))
+  simp only [halfPairing, hψ] at h0
+  rw [hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],
+    hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],
+    hH _ fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz]] at h0
+  rw [eq_neg_of_add_eq_zero_left h0, neg_smul]
 
 variable [ContinuousStar F]
 

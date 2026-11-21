@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 
 /-!
@@ -37,6 +38,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   of `φ`.
 * `TestFunction.coe_iterate_lineDerivOp_one`: repeated derivatives on the real line agree with
   the iterates of the ordinary derivative.
+* `TestFunction.im_lineDerivOp_ofReal_apply_ofReal`: in the plane, a derivative along a real
+  direction of a complex test function real on the real axis is real there.
 * `TestFunction.lineDeriv_eq_fderiv`: the classical directional derivative of a test function is
   its Fréchet derivative in that direction.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
@@ -122,6 +125,22 @@ theorem coe_iterate_lineDerivOp_one {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (n : ℕ
   | succ n ih =>
     rw [Function.iterate_succ_apply', Function.iterate_succ_apply']
     exact (funext (lineDerivOp_one_apply_eq_deriv _)).trans (congrArg deriv ih)
+
+/-- In the plane, the derivative along a real direction of a complex test function real on the
+real axis is real on the real axis. -/
+theorem im_lineDerivOp_ofReal_apply_ofReal {Ω : Opens ℂ} (φ : 𝓓(Ω, ℂ))
+    (hφ : ∀ x : ℝ, (φ (x : ℂ)).im = 0) (v x : ℝ) :
+    ((∂_{(v : ℂ)} φ : 𝓓(Ω, ℂ)) (x : ℂ)).im = 0 := by
+  rw [lineDerivOp_apply_eq_fderiv]
+  have hd : HasFDerivAt (φ : ℂ → ℂ) (fderiv ℝ (φ : ℂ → ℂ) x) x :=
+    (φ.contDiff.differentiable (by simp) x).hasFDerivAt
+  have hγ : HasDerivAt (fun t : ℝ ↦ ((x + t * v : ℝ) : ℂ)) v 0 := by
+    simpa using (((hasDerivAt_id (0 : ℝ)).mul_const v).const_add x).ofReal_comp
+  have him := Complex.imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
+    (hd.comp_hasDerivAt_of_eq (0 : ℝ) hγ (by simp))
+  have h0 := him.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun t ↦ by simpa using hφ (x + t * v)))
+  simpa using h0
 
 /-- The underlying function of a directional derivative of a test function is its classical
 directional derivative. -/
