@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
 import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
@@ -48,9 +48,9 @@ specialization to planar grids via the Schwartz–Zippel lemma
   for resultants of bivariate polynomials.
 * `Polynomial.rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero`: the Sylvester-row
   bound on fiber root multiplicities over any integral domain.
-* `Squarefree.resultant_deriv_ne_zero`, `Squarefree.rootMultiplicity_map_evalRingHom_le`,
-  `Irreducible.rootMultiplicity_map_evalRingHom_le`: nonvanishing of `Q.resultant Q.derivative`
-  and the resulting fiber multiplicity bound in characteristic zero.
+* `Squarefree.rootMultiplicity_map_evalRingHom_le`,
+  `Irreducible.rootMultiplicity_map_evalRingHom_le`: fiber multiplicity bounds in characteristic
+  zero.
 * `Polynomial.card_mul_le_of_pow_dvd_map_evalRingHom`: bivariate multiplicity bound along
   fibers with injective base coordinates.
 * `Polynomial.eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube`: vanishing criterion on
@@ -75,17 +75,23 @@ degrees at most `df` and `dg`, then `f.resultant g m n` has degree at most `m * 
 theorem natDegree_resultant_le {R : Type*} [CommRing R] (f g : R[X][X]) (m n df dg : ℕ)
     (hf : ∀ i, (f.coeff i).natDegree ≤ df) (hg : ∀ i, (g.coeff i).natDegree ≤ dg) :
     (f.resultant g m n).natDegree ≤ m * dg + n * df := by
-  let e : Fin (m + n) → ℕ := Fin.addCases (fun _ ↦ dg) (fun _ ↦ df)
+  let e : Fin (m + n) → ℕ := fun j ↦ if (j : ℕ) < m then dg else df
   have hcol (i j : Fin (m + n)) : (sylvester f g m n i j).natDegree ≤ e j := by
-    induction j using Fin.addCases with
-    | left j₁ =>
-      simp only [sylvester, Matrix.of_apply, Fin.addCases_left, e]
+    by_cases hj : (j : ℕ) < m
+    · rw [sylvester_apply_of_lt _ _ i j hj]
+      simp only [e, hj, ↓reduceIte]
       split_ifs <;> [exact hg _; simp]
-    | right j₁ =>
-      simp only [sylvester, Matrix.of_apply, Fin.addCases_right, e]
+    · rw [sylvester_apply_of_le _ _ i j (Nat.le_of_not_lt hj)]
+      simp only [e, hj, ↓reduceIte]
       split_ifs <;> [exact hf _; simp]
   refine (Matrix.natDegree_det_le_of_natDegree_le (sylvester f g m n) e hcol).trans ?_
-  simp [e, Fin.sum_univ_add]
+  have hsum : ∑ j : Fin (m + n), e j = m * dg + n * df := by
+    rw [Fin.sum_univ_add]
+    have hleft : ∑ j : Fin m, e (Fin.castAdd n j) = m * dg := by simp [e]
+    have hright : ∑ j : Fin n, e (Fin.natAdd m j) = n * df := by
+      simp [e, Nat.not_lt.mpr (Nat.le_add_right m _)]
+    rw [hleft, hright]
+  exact hsum.le
 
 /-- The resultant of `Q : R[X][X]` and its outer derivative has degree at most
 `2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
@@ -154,13 +160,15 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
       X - C β ∣ sylvester P P.derivative d (d - 1) i j := by
     rcases Finset.mem_image.mp hi with ⟨i₀, -, rfl⟩
     have hi₀ : (i₀ : ℕ) < m - 1 := i₀.isLt
-    induction j using Fin.addCases with
-    | left j₁ =>
-      simp only [sylvester, Matrix.of_apply, Fin.addCases_left, Fin.val_castLE]
-      split_ifs <;> [exact hdvd_P' (by omega); exact dvd_zero _]
-    | right j₁ =>
-      simp only [sylvester, Matrix.of_apply, Fin.addCases_right, Fin.val_castLE]
-      split_ifs <;> [exact hdvd_P (by omega); exact dvd_zero _]
+    by_cases hj : (j : ℕ) < d
+    · rw [sylvester_apply_of_lt _ _ _ j hj]
+      split_ifs
+      · exact hdvd_P' (by simp only [Fin.val_castLE] at *; omega)
+      · exact dvd_zero _
+    · rw [sylvester_apply_of_le _ _ _ j (Nat.le_of_not_lt hj)]
+      split_ifs
+      · exact hdvd_P (by simp only [Fin.val_castLE] at *; omega)
+      · exact dvd_zero _
   have hdvd_res : (X - C β) ^ (m - 1) ∣ Q.resultant Q.derivative d (d - 1) := by
     rw [← resultant_taylor_deriv Q (C α), resultant, ← hs_card]
     have hprod : (X - C β) ^ s.card =
@@ -174,20 +182,6 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
       · exact one_dvd _
   have hle := (le_rootMultiplicity_iff hres).mpr hdvd_res
   omega
-
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
-derivative. -/
-theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) :
-    p.resultant p.derivative ≠ 0 := by
-  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hdeg
-  · rw [eq_C_of_natDegree_eq_zero h0]
-    simp [resultant]
-  · rw [resultant, natDegree_derivative, ← resultant,
-      resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
-    exact mul_ne_zero
-      (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
-      hp.discr_ne_zero
 
 /-- **Resultant multiplicity bound for squarefree bivariate polynomials.** Over a GCD domain `R`
 of characteristic zero, if `Q : R[X][X]` is squarefree, then
@@ -243,6 +237,17 @@ private theorem cappedFiberMult_mul_le {K : Type*} [Field K] (α β : K) (N : �
   simp only [hA, hB, hAB, ↓reduceIte, rootMultiplicity_mul hAB]
   omega
 
+/-- Sum of root multiplicities of a polynomial over an indexed finite set with injective evaluation
+points is at most its degree. -/
+private theorem sum_rootMultiplicity_comp_le_natDegree {K ι : Type*} [Field K] {p : K[X]}
+    (Z : Finset ι) {β : ι → K} (hβ : Function.Injective β) :
+    ∑ i ∈ Z, p.rootMultiplicity (β i) ≤ p.natDegree := by
+  classical
+  calc ∑ i ∈ Z, p.rootMultiplicity (β i)
+      = ∑ b ∈ Z.image β, p.rootMultiplicity b :=
+        (Finset.sum_image (f := fun b ↦ p.rootMultiplicity b) fun _ _ _ _ h ↦ hβ h).symm
+    _ ≤ p.natDegree := p.sum_rootMultiplicity_le_natDegree (Z.image β)
+
 /-- The bivariate multiplicity bound on a single irreducible factor `Q : K[X][X]`. -/
 private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [CharZero K]
     [DecidableEq K] [Fintype ι] {α β : ι → K} (hβ : Function.Injective β) {N : ℕ}
@@ -266,24 +271,21 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
       calc Z.card = ∑ i ∈ Z, 1 := by simp
         _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
             Nat.succ_le_of_lt ((rootMultiplicity_pos hq0).mpr (Finset.mem_filter.mp hi).2)
-        _ = ∑ b ∈ Z.image β, q.rootMultiplicity b :=
-            (Finset.sum_image (f := fun b ↦ q.rootMultiplicity b) fun _ _ _ _ h ↦ hβ h).symm
-        _ ≤ q.natDegree := q.sum_rootMultiplicity_le_natDegree (Z.image β)
+        _ ≤ q.natDegree := sum_rootMultiplicity_comp_le_natDegree Z hβ
     simp_rw [hterm]
     rw [Finset.sum_ite, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.sum_const,
       Finset.sum_const_zero, add_zero, smul_eq_mul, natDegree_C, hswap, zero_add, mul_zero,
       zero_mul, add_zero, mul_comm]
     exact Nat.mul_le_mul_left N hZ
   · let Z := Finset.univ.filter fun i : ι ↦ (Q.map (evalRingHom (β i))).eval (α i) = 0
+    have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
     have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 := by
-      have hne : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
       have hnroot : ¬ (Q.map (evalRingHom (β i))).IsRoot (α i) := by
         simpa [Z, IsRoot.def] using hi
-      simp [cappedFiberMult, hne, rootMultiplicity_eq_zero hnroot]
+      simp [cappedFiberMult, hne i, rootMultiplicity_eq_zero hnroot]
     have hin (i : ι) : cappedFiberMult (α i) (β i) N Q ≤
         1 + (Q.resultant Q.derivative).rootMultiplicity (β i) := by
-      have hne : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
-      simp only [cappedFiberMult, hne, ↓reduceIte]
+      simp only [cappedFiberMult, hne i, ↓reduceIte]
       exact (min_le_right _ _).trans (hQ.rootMultiplicity_map_evalRingHom_le (α i) (β i))
     calc ∑ i : ι, cappedFiberMult (α i) (β i) N Q
         = ∑ i ∈ Z, cappedFiberMult (α i) (β i) N Q :=
@@ -294,10 +296,7 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
           rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             (Q.resultant Q.derivative).natDegree :=
-          add_le_add (hzero Q hQ.ne_zero)
-            (by rw [← Finset.sum_image (f := fun b ↦ (Q.resultant Q.derivative).rootMultiplicity b)
-                  fun _ _ _ _ h ↦ hβ h]
-                exact (Q.resultant Q.derivative).sum_rootMultiplicity_le_natDegree (Z.image β))
+          add_le_add (hzero Q hQ.ne_zero) (sum_rootMultiplicity_comp_le_natDegree Z hβ)
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
           Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _
@@ -354,58 +353,6 @@ theorem card_mul_le_of_pow_dvd_map_evalRingHom {K ι : Type*} [Field K] [CharZer
           rw [hdeg_z, hdeg_y]
           nlinarith
 
-/-- Schwartz–Zippel zero-count bound for `aevalAeval L₂ L₁ H` over `S × S`. -/
-private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
-    {S : Finset K} (hS0 : 0 < S.card) {L₁ L₂ : MvPolynomial (Fin 2) K}
-    (hL₁ : L₁.totalDegree ≤ 1) (hL₂ : L₂.totalDegree ≤ 1)
-    (hinj_hom : Function.Injective (aevalAeval L₂ L₁ : K[X][X] →ₐ[K] MvPolynomial (Fin 2) K))
-    {H : K[X][X]} (hH : H ≠ 0) :
-    #{p : ↥S × ↥S |
-        (H.map (evalRingHom (MvPolynomial.eval ![p.1.val, p.2.val] L₂))).eval
-          (MvPolynomial.eval ![p.1.val, p.2.val] L₁) = 0} ≤
-      S.card * (H.natDegree + (Bivariate.swap H).natDegree) := by
-  set P : MvPolynomial (Fin 2) K := aevalAeval L₂ L₁ H
-  have hP0 : P ≠ 0 := fun h ↦ hH (hinj_hom (h.trans (map_zero _).symm))
-  let emb : ↥S × ↥S → Fin 2 → K := fun p ↦ ![p.1.val, p.2.val]
-  have hemb_inj : Function.Injective emb := fun p q h ↦
-    Prod.ext (Subtype.ext (congrFun h 0)) (Subtype.ext (congrFun h 1))
-  have hsub : (Finset.univ.filter fun p : ↥S × ↥S ↦
-        (H.map (evalRingHom (MvPolynomial.eval (emb p) L₂))).eval
-          (MvPolynomial.eval (emb p) L₁) = 0).image emb ⊆
-      (Fintype.piFinset fun _ : Fin 2 ↦ S).filter fun f ↦ MvPolynomial.eval f P = 0 := by
-    intro f hf
-    rcases Finset.mem_image.mp hf with ⟨p, hp, rfl⟩
-    rw [Finset.mem_filter] at hp ⊢
-    refine ⟨Fintype.mem_piFinset.mpr fun i ↦ by
-      fin_cases i <;> simp [emb, p.1.property, p.2.property], ?_⟩
-    rw [eval_aevalAeval, ← map_evalRingHom_eval]
-    exact hp.2
-  have hsz := MvPolynomial.schwartz_zippel_totalDegree hP0 S
-  have hcard_le : #{f ∈ Fintype.piFinset fun _ : Fin 2 ↦ S | MvPolynomial.eval f P = 0} ≤
-      S.card * P.totalDegree := by
-    have hS_pos : (0 : NNRat) < S.card := mod_cast hS0
-    have hmul := mul_le_mul_of_nonneg_right hsz (pow_pos hS_pos 2).le
-    have hrhs : (P.totalDegree : NNRat) / S.card * (S.card : NNRat) ^ 2 =
-        S.card * P.totalDegree := by
-      rw [sq, ← mul_assoc, div_mul_cancel₀ _ hS_pos.ne', mul_comm]
-    rw [div_mul_cancel₀ _ (pow_ne_zero 2 hS_pos.ne'), hrhs] at hmul
-    exact_mod_cast hmul
-  calc #{p : ↥S × ↥S |
-          (H.map (evalRingHom (MvPolynomial.eval (emb p) L₂))).eval
-            (MvPolynomial.eval (emb p) L₁) = 0}
-      = ((Finset.univ.filter fun p : ↥S × ↥S ↦
-          (H.map (evalRingHom (MvPolynomial.eval (emb p) L₂))).eval
-            (MvPolynomial.eval (emb p) L₁) = 0).image emb).card :=
-        (Finset.card_image_of_injective _ hemb_inj).symm
-    _ ≤ #{f ∈ Fintype.piFinset fun _ : Fin 2 ↦ S | MvPolynomial.eval f P = 0} :=
-        Finset.card_le_card hsub
-    _ ≤ S.card * P.totalDegree := hcard_le
-    _ ≤ S.card * (H.natDegree + (Bivariate.swap H).natDegree) := by
-        refine Nat.mul_le_mul_left _ ((totalDegree_aevalAeval_le L₂ L₁ H).trans ?_)
-        have h1 := Nat.mul_le_mul_left (Bivariate.swap H).natDegree hL₂
-        have h2 := Nat.mul_le_mul_left H.natDegree hL₁
-        omega
-
 /-- **Planar grid vanishing criterion.** Let `S` be a finite subset of a characteristic-zero field
 `K`, and let `L₁, L₂ : MvPolynomial (Fin 2) K` have total degree at most `1` such that substitution
 `aevalAeval L₂ L₁ : K[X][X] →ₐ[K] MvPolynomial (Fin 2) K` is injective and `L₂` takes distinct
@@ -428,9 +375,6 @@ theorem eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube {K : Type*} [Field K]
     F = 0 := by
   classical
   by_contra hF
-  have hS0 : 0 < S.card := by
-    by_contra h0
-    simp [Nat.eq_zero_of_not_pos h0] at hdeg
   let α : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.val, p.2.val] L₁
   let β : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.val, p.2.val] L₂
   have hβ : Function.Injective β := fun p q hpq ↦ by
@@ -440,7 +384,7 @@ theorem eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube {K : Type*} [Field K]
   have hzero (H : K[X][X]) (hH : H ≠ 0) :
       #{p : ↥S × ↥S | (H.map (evalRingHom (β p))).eval (α p) = 0} ≤
         S.card * (H.natDegree + (Bivariate.swap H).natDegree) :=
-    card_grid_eval_eq_zero_le hS0 hL₁ hL₂ hinj_hom hH
+    card_grid_eval_eq_zero_le hL₁ hL₂ hinj_hom hH
   have hbound := card_mul_le_of_pow_dvd_map_evalRingHom hβ hzero hF
     (fun p ↦ hmult p.1.val p.1.property p.2.val p.2.property)
   have hcard : Fintype.card (↥S × ↥S) * S.card = S.card ^ 3 := by

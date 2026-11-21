@@ -794,6 +794,20 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
   · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
 
+/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
+derivative. -/
+theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
+    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) :
+    p.resultant p.derivative ≠ 0 := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hdeg
+  · rw [eq_C_of_natDegree_eq_zero h0]
+    simp [resultant]
+  · rw [resultant, natDegree_derivative, ← resultant,
+      resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
+    exact mul_ne_zero
+      (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
+      hp.discr_ne_zero
+
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/
 theorem separable_map_zmod_iff_not_dvd_discr (f : ℤ[X]) (p : ℕ) [Fact p.Prime]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
-public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
@@ -42,8 +41,6 @@ applies to sums in any additive commutative monoid, including coefficient sums f
 
 ## Main results
 
-* `Commute.add_pow_eq_pow_add_sum_add_pow`: splitting the binomial expansion `(a + b) ^ n`
-  for `0 < n` into its endpoint powers `b ^ n`, `a ^ n` and the interior sum over `1 ≤ i ≤ n - 1`.
 * `Nat.sum_antidiagonal_choose_add_mul_choose_add`: the upper-index Vandermonde convolution.
 * `Nat.sum_antidiagonal_snd_add_choose`: summing `(r + m).choose (k + m)` over the second
   coordinate of the antidiagonal of `N` gives `(N + (m + 1)).choose (k + (m + 1))`.
@@ -63,23 +60,6 @@ applies to sums in any additive commutative monoid, including coefficient sums f
 public section
 
 open Finset
-
-namespace Commute
-
-/-- Split the binomial expansion `(a + b) ^ n` of commuting elements for `0 < n` into its
-endpoint terms `b ^ n`, `a ^ n` and the interior sum over `1 ≤ i ≤ n - 1`. -/
-theorem add_pow_eq_pow_add_sum_add_pow {R : Type*} [Semiring R] {a b : R} (h : Commute a b)
-    {n : ℕ} (hn : 0 < n) :
-    (a + b) ^ n = b ^ n + (∑ i ∈ Finset.range (n - 1),
-      a ^ (i + 1) * b ^ (n - (i + 1)) * (n.choose (i + 1) : R)) + a ^ n := by
-  rw [h.add_pow n, Finset.sum_range_succ, Nat.sub_self, pow_zero, mul_one,
-    Nat.choose_self, Nat.cast_one, mul_one]
-  congr 1
-  conv_lhs => rw [(Nat.sub_add_cancel hn).symm]
-  rw [Finset.sum_range_succ']
-  simp [Nat.sub_add_cancel hn, add_comm]
-
-end Commute
 
 namespace Finset
 

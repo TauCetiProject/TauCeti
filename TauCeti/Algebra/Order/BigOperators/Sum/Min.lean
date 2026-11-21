@@ -150,7 +150,8 @@ theorem le_two_mul_sum_range_min {R : Type*} [Ring R] [PartialOrder R] [IsOrdere
     · rw [sum_congr rfl fun s hs ↦ by
           rw [min_eq_right (Nat.le_of_lt ((mem_range.mp hs).trans hSk))],
         mul_comm 2 (∑ s ∈ range S, (s : ℤ)), sum_range_natCast_mul_two]
-      nlinarith [sq_nonneg ((k : ℤ) - S), show (S : ℤ) ≤ k by exact_mod_cast hSk.le]
+      have hSkZ : (S : ℤ) ≤ k := by exact_mod_cast hSk.le
+      nlinarith [sq_nonneg ((k : ℤ) - S), hSkZ]
   set d : ℕ := (2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) -
     (2 * (S : ℤ) * k - (k : ℤ) ^ 2 - k)).toNat
   have hd : 2 * ∑ s ∈ range S, ((min k s : ℕ) : ℤ) =
@@ -170,7 +171,8 @@ theorem le_two_mul_sum_range_min_div {K : Type*} [Field K] [LinearOrder K]
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · simp only [Nat.cast_zero, div_zero, zero_sub, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
       zero_pow, sub_zero, Nat.div_zero, Nat.zero_min, sum_const_zero, mul_zero]
-    linarith [show (0 : K) ≤ 2 * R * S by positivity]
+    have hRS : (0 : K) ≤ 2 * R * S := by positivity
+    linarith
   have hpK : (0 : K) < p := by exact_mod_cast hp
   have hr_term (r : ℕ) (hr : r ∈ range R) :
       2 * (S : K) * r / p - 2 * S - (R : K) ^ 2 / p ^ 2 - (R : K) / p ≤
@@ -183,13 +185,16 @@ theorem le_two_mul_sum_range_min_div {K : Type*} [Field K] [LinearOrder K]
       exact_mod_cast (by rw [add_mul, one_mul]; exact (Nat.lt_div_mul_add hp).le : r ≤ (k + 1) * p)
     have hksq : (k : K) ^ 2 ≤ (R : K) ^ 2 / p ^ 2 := by rw [← div_pow]; gcongr
     have h2Sk : 2 * (S : K) * r / p - 2 * S ≤ 2 * (S : K) * k := by
-      have := mul_le_mul_of_nonneg_left hk_ge (by positivity : (0 : K) ≤ 2 * S)
-      linarith [show 2 * (S : K) * ((r : K) / p - 1) = 2 * (S : K) * r / p - 2 * S by ring]
+      have hmul := mul_le_mul_of_nonneg_left hk_ge (by positivity : (0 : K) ≤ 2 * S)
+      have hnorm : 2 * (S : K) * ((r : K) / p - 1) = 2 * (S : K) * r / p - 2 * S := by ring
+      linarith
     linarith [le_two_mul_sum_range_min (R := K) S k]
   have hsum_r : ∑ r ∈ range R, (2 * (S : K) * r / p) = (S : K) * ((R : K) * (R - 1)) / p := by
-    rw [show ∑ r ∈ range R, (2 * (S : K) * r / p) = (2 * (S : K) / p) * ∑ r ∈ range R, (r : K) by
-      rw [mul_sum]; exact sum_congr rfl fun r _ ↦ by ring, sum_range_natCast]
-    ring
+    calc ∑ r ∈ range R, (2 * (S : K) * r / p)
+        = ∑ r ∈ range R, (2 * (S : K) / p) * (r : K) :=
+          sum_congr rfl fun r _ ↦ by ring
+      _ = (2 * (S : K) / p) * ∑ r ∈ range R, (r : K) := (mul_sum ..).symm
+      _ = (S : K) * ((R : K) * (R - 1)) / p := by rw [sum_range_natCast]; ring
   rw [mul_sum]
   calc (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2
       = (S : K) * ((R : K) * (R - 1)) / p - (R : K) * (2 * S) -

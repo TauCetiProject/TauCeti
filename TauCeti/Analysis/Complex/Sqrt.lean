@@ -110,4 +110,13 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
 
+/-- The norm of the principal square root is the real square root of the norm. -/
+@[simp]
+theorem norm_sqrt (z : ℂ) : ‖sqrt z‖ = Real.sqrt ‖z‖ := by
+  rw [← Real.sqrt_sq (norm_nonneg _), ← norm_pow, sq_sqrt]
+
+/-- The norm of the principal square root of an integer `d` is `Real.sqrt d.natAbs`. -/
+theorem norm_sqrt_intCast (d : ℤ) : ‖sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
+  rw [norm_sqrt, Complex.norm_intCast, Nat.cast_natAbs, Int.cast_abs]
+
 end Complex

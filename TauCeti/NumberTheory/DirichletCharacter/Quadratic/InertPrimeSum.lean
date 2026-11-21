@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant
 
@@ -57,6 +58,18 @@ namespace InertPrimeSum
 
 /-! ### Parameter arithmetic and assembling the Mertens bound -/
 
+/-- Power identities for `X = q ^ C`, `N = q ^ (2 * (C / 3))`, and `u = q ^ (C / 3)` when
+`3 ∣ C`. -/
+private theorem grid_pow_identities (q : ℕ) {C : ℕ} (hC3 : 3 ∣ C) :
+    q ^ C = (q ^ (C / 3)) ^ 3 ∧
+      q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 ∧
+      (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by
+  have hC_div : C / 3 * 3 = C := Nat.div_mul_cancel hC3
+  have hX : q ^ C = (q ^ (C / 3)) ^ 3 := by rw [← pow_mul, hC_div]
+  have hN : q ^ (2 * (C / 3)) = (q ^ (C / 3)) ^ 2 := by rw [mul_comm 2 (C / 3), pow_mul]
+  have hN3 : (q ^ (2 * (C / 3))) ^ 3 = (q ^ C) ^ 2 := by rw [hN, hX]; ring
+  exact ⟨hX, hN, hN3⟩
+
 /-- Parameter arithmetic for `X = q ^ C`, `S = X / C`, `N = q ^ (2 * (C / 3))` when `6 ≤ C` and
 `3 ∣ C`. -/
 private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
@@ -66,30 +79,27 @@ private theorem grid_deg_lt_cube {q C : ℕ} (hq3 : 3 ≤ q) (hC6 : 6 ≤ C) (hC
     0 < X ∧ 0 < S ∧ 0 < N ∧
       N * ((X - 1) + (S - 1)) + 2 * (X - 1) * (S - 1) < N ^ 3 := by
   intro X S N
-  obtain ⟨m, rfl⟩ := hC3
-  have hm : 2 ≤ m := by omega
-  have hm_div : 3 * m / 3 = m := by omega
-  set u := q ^ m
+  have hm : 2 ≤ C / 3 := by omega
+  set u := q ^ (C / 3)
   have hu9 : 9 ≤ u :=
     (by norm_num : 9 ≤ 3 ^ 2).trans ((Nat.pow_le_pow_right (by omega) hm).trans
-      (Nat.pow_le_pow_left hq3 m))
-  have hX_eq : X = u ^ 3 := by dsimp [X, u]; rw [mul_comm 3 m, pow_mul]
-  have hN_eq : N = u ^ 2 := by dsimp [N, u]; rw [hm_div, mul_comm 2 m, pow_mul]
-  have hN3_eq : N ^ 3 = X ^ 2 := by rw [hN_eq, hX_eq]; ring
+      (Nat.pow_le_pow_left hq3 (C / 3)))
+  obtain ⟨(hX_eq : X = u ^ 3), (hN_eq : N = u ^ 2), (hN3_eq : N ^ 3 = X ^ 2)⟩ :=
+    grid_pow_identities q hC3
   have h9N : 9 * N ≤ X := by rw [hN_eq, hX_eq]; nlinarith
-  have hX_gt_C : 3 * m < X :=
-    (Nat.lt_two_pow_self (n := 3 * m)).trans_le (Nat.pow_le_pow_left (by omega) (3 * m))
+  have hX_gt_C : C < X :=
+    (Nat.lt_two_pow_self (n := C)).trans_le (Nat.pow_le_pow_left (by omega) C)
   have hS_pos : 0 < S := Nat.div_pos hX_gt_C.le (by omega)
   have h6S : 6 * S ≤ X := by
-    have : S ≤ X / 6 := Nat.div_le_div_left hC6 (by omega)
+    have hS_le : S ≤ X / 6 := Nat.div_le_div_left hC6 (by omega)
     omega
   refine ⟨by positivity, hS_pos, by positivity, ?_⟩
   have hX_pos : 1 ≤ X := by omega
   have hN_pos : 1 ≤ N := by rw [hN_eq]; nlinarith
   rw [hN3_eq]
-  have hlt1 : N * ((X - 1) + (S - 1)) < 2 * N * X := by
-    have hXS : (X - 1) + (S - 1) < 2 * X := by omega
-    nlinarith
+  change N * (X - 1 + (S - 1)) + 2 * (X - 1) * (S - 1) < X ^ 2
+  have hXS : (X - 1) + (S - 1) < 2 * X := by omega
+  have hlt1 : N * ((X - 1) + (S - 1)) < 2 * N * X := by nlinarith
   have hle2 : 2 * (X - 1) * (S - 1) ≤ 2 * X * S :=
     Nat.mul_le_mul (Nat.mul_le_mul_left 2 (Nat.sub_le X 1)) (Nat.sub_le S 1)
   nlinarith
@@ -99,8 +109,7 @@ private theorem sum_exp_mul_log_le_log {d : ℤ} {C X D : ℕ} {e : ℕ → ℕ}
     let P := (Nat.primesLE X).filter fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1
     ∑ p ∈ P, (e p : ℝ) * Real.log p ≤ Real.log (D : ℝ) := by
   intro P
-  have hprod_dvd : (∏ p ∈ P, p ^ e p) ∣ D := by
-    rw [← Int.ofNat_dvd, Nat.cast_prod]
+  have hprod_dvd : (∏ p ∈ P, (p : ℤ) ^ e p) ∣ (D : ℤ) := by
     refine Finset.prod_dvd_of_coprime (fun p hp p' hp' hne ↦ ?_) (fun p hp ↦ ?_)
     · have hp_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2
       have hp'_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp').1).2
@@ -109,17 +118,9 @@ private theorem sum_exp_mul_log_le_log {d : ℤ} {C X D : ℕ} {e : ℕ → ℕ}
     · obtain ⟨hpX, h2C, hjac⟩ := Finset.mem_filter.mp hp
       have hp_pr := (Nat.mem_primesLE.mp hpX).2
       exact Int.ofNat_dvd.mpr (hD_dvd p hp_pr (hp_pr.odd_of_ne_two (by omega)) hjac)
-  have hprod_pos_N : 0 < ∏ p ∈ P, p ^ e p :=
-    Finset.prod_pos fun p hp ↦ pow_pos (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2.pos _
-  have hle_R : (∏ p ∈ P, (p : ℝ) ^ e p) ≤ (D : ℝ) := by
-    exact_mod_cast Nat.le_of_dvd hD_pos hprod_dvd
-  have hprod_pos : 0 < ∏ p ∈ P, (p : ℝ) ^ e p := by
-    exact_mod_cast hprod_pos_N
-  have hlog := Real.log_le_log hprod_pos hle_R
-  rw [Real.log_prod (fun p hp ↦ pow_ne_zero _
-    (by exact_mod_cast (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2.ne_zero))] at hlog
-  refine le_trans (le_of_eq (Finset.sum_congr rfl fun p _ ↦ ?_)) hlog
-  rw [Real.log_pow]
+  have hle := Int.sum_mul_log_le_log_abs e (Int.natCast_ne_zero.mpr hD_pos.ne') hprod_dvd
+  have hD_real_pos : (0 : ℝ) < D := by exact_mod_cast hD_pos
+  rwa [Int.cast_natCast, abs_of_pos hD_real_pos] at hle
 
 private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq3 : 3 ≤ q)
     (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
@@ -132,14 +133,12 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         Real.log ((q : ℝ) ^ C) + 15) := by
   intro X S N
   obtain ⟨-, -, hN_pos, -⟩ := grid_deg_lt_cube hq3 hC6 hC3
-  obtain ⟨m, hm⟩ := hC3
-  have hm_div : C / 3 = m := by omega
-  set u := q ^ m
-  have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow m q (by omega)
-  have hX_u : (X : ℝ) = (u : ℝ) ^ 3 := by
-    exact_mod_cast (show X = u ^ 3 by dsimp [X, u]; rw [hm, mul_comm 3 m, pow_mul])
-  have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by
-    exact_mod_cast (show N = u ^ 2 by dsimp [N, u]; rw [hm_div, mul_comm 2 m, pow_mul])
+  obtain ⟨hX_eq, hN_eq, hN3_eq⟩ := grid_pow_identities q hC3
+  set u := q ^ (C / 3)
+  have hu1 : (1 : ℝ) ≤ u := by exact_mod_cast Nat.one_le_pow (C / 3) q (by omega)
+  have hX_u : (X : ℝ) = (u : ℝ) ^ 3 := by exact_mod_cast hX_eq
+  have hN_u : (N : ℝ) = (u : ℝ) ^ 2 := by exact_mod_cast hN_eq
+  have hN3_X2 : (N : ℝ) ^ 3 = (X : ℝ) ^ 2 := by exact_mod_cast hN3_eq
   have hlogu : Real.log u ≤ u :=
     (Real.log_le_sub_one_of_pos (by positivity)).trans (by linarith)
   have hlog2 : Real.log 2 ≤ 1 :=
@@ -152,9 +151,11 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
       calc (u : ℝ) ^ 2 * Real.log u
           ≤ (u : ℝ) ^ 2 * u := mul_le_mul_of_nonneg_left hlogu (by positivity)
         _ = (u : ℝ) ^ 3 := by ring
-    nlinarith [show (u : ℝ) ≤ (u : ℝ) ^ 3 by nlinarith, show (1 : ℝ) ≤ (u : ℝ) ^ 3 by nlinarith]
+    have hu_le : (u : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
+    have _ : (1 : ℝ) ≤ (u : ℝ) ^ 3 := by nlinarith
+    nlinarith
   have hlog_dq : Real.log (2 * N * Real.sqrt d.natAbs) ≤ Real.log (2 * N * Real.sqrt q) := by
-    have : (0 : ℝ) < Real.sqrt d.natAbs :=
+    have _ : (0 : ℝ) < Real.sqrt d.natAbs :=
       Real.sqrt_pos.mpr (by exact_mod_cast Int.natAbs_pos.mpr hd0)
     exact Real.log_le_log (by positivity)
       (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast hdq)) (by positivity))
@@ -162,10 +163,13 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
       Real.log 2 + (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) := by
     have hq_pos : (0 : ℝ) < q := by positivity
     have hC_ne : (C : ℝ) ≠ 0 := by positivity
-    have hlogN : Real.log N = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
-      rw [show (N : ℝ) = (q : ℝ) ^ (2 * m) by exact_mod_cast (by simp [N, hm_div]),
-        Real.log_pow, Real.log_pow, hm]
-      push_cast; ring
+    have hlogN : Real.log (N : ℝ) = 2 / 3 * Real.log ((q : ℝ) ^ C) := by
+      have hpow : Real.log ((N : ℝ) ^ 3) = Real.log ((X : ℝ) ^ 2) := congrArg Real.log hN3_X2
+      rw [Real.log_pow, Real.log_pow] at hpow
+      push_cast at hpow
+      have hX_cast : (X : ℝ) = (q : ℝ) ^ C := by dsimp [X]; exact Nat.cast_pow q C
+      rw [← hX_cast]
+      linarith
     have hlogsq : Real.log (Real.sqrt q) = 1 / (2 * (C : ℝ)) * Real.log ((q : ℝ) ^ C) := by
       rw [Real.log_sqrt hq_pos.le, Real.log_pow]
       field_simp
@@ -175,12 +179,14 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
   have hSC : (S : ℝ) ≤ (X : ℝ) / C :=
     (le_div_iff₀ (by positivity)).mpr (by exact_mod_cast Nat.div_mul_le_self X C)
   have hXS_sum : (X : ℝ) + S ≤ (1 + 1 / (C : ℝ)) * X := by
-    linarith [show (X : ℝ) / C = 1 / (C : ℝ) * X by ring]
+    have hdiv : (X : ℝ) / C = 1 / (C : ℝ) * X := by ring
+    linarith
   have hlog2Nq_nn : 0 ≤ Real.log (2 * N * Real.sqrt q) := by
     have hsq1 : (1 : ℝ) ≤ Real.sqrt q := by
       rw [← Real.sqrt_one]
       exact Real.sqrt_le_sqrt (by exact_mod_cast (by omega : 1 ≤ q))
-    exact Real.log_nonneg (by nlinarith [show (1 : ℝ) ≤ N by exact_mod_cast hN_pos])
+    have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hN_pos
+    exact Real.log_nonneg (by nlinarith)
   calc (X : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log X) +
           (X : ℝ) * S * (X + S) * Real.log (2 * N * Real.sqrt d.natAbs)
       ≤ (X : ℝ) * S * (13 * X) +
@@ -200,7 +206,8 @@ private theorem log_det_bound_explicit {d : ℤ} (hd0 : d ≠ 0) {q C : ℕ} (hq
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         have h1C : 1 / (C : ℝ) ≤ 1 :=
           div_le_one_of_le₀ (by exact_mod_cast (by omega : 1 ≤ C)) (by positivity)
-        nlinarith [show 0 ≤ 1 + 1 / (C : ℝ) by positivity]
+        have h1C_nn : 0 ≤ 1 + 1 / (C : ℝ) := by positivity
+        nlinarith
 
 private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
     (hP : ∀ p ∈ P, p ∈ Nat.primesLE X ∧ 2 * C < p) (hS_pos : 0 < S) (hC_pos : 0 < C)
@@ -223,12 +230,10 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
       (by exact_mod_cast hp_pr.one_le)
   have htail_sq : ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2 ≤ Real.log 4 / C := by
     calc ∑ p ∈ P, Real.log p / (p : ℝ) ^ 2
-        ≤ ∑ p ∈ (Nat.primesLE ⌊(X : ℝ)⌋₊).filter (fun p : ℕ ↦ (2 * (C : ℝ)) < p),
-            Real.log p / (p : ℝ) ^ 2 := by
-          refine Finset.sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) (fun _ _ _ ↦ by positivity)
-          rw [Nat.floor_natCast, Finset.mem_filter]
-          exact ⟨(hP p hp).1, by exact_mod_cast (hP p hp).2⟩
-      _ ≤ 2 * Real.log 4 / (2 * (C : ℝ)) := sum_primesLE_log_div_sq_le (by positivity)
+        ≤ 2 * Real.log 4 / (2 * (C : ℝ)) :=
+          sum_log_div_sq_le_of_prime (by positivity)
+            (fun p hp ↦ (Nat.mem_primesLE.mp (hP p hp).1).2)
+            (fun p hp ↦ by exact_mod_cast (hP p hp).2.le)
       _ = Real.log 4 / C := by field_simp
   have hX_le_2SC : (X : ℝ) ≤ 2 * S * C := by
     have hdiv : X < (S + 1) * C := by
@@ -263,6 +268,39 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
           field_simp
   linarith
 
+private theorem sum_fin_prod_min_rev (p X S : ℕ) :
+    (∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) =
+      ∑ r ∈ Finset.range X, ∑ s ∈ Finset.range S, ((min (r / p) s : ℕ) : ℝ) := by
+  rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := X)]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  rw [← Equiv.sum_comp Fin.revPerm
+      (fun s : Fin S ↦ ((min (r.val / p) (S - 1 - s.val) : ℕ) : ℝ)),
+    ← Fin.sum_univ_eq_sum_range (n := S)]
+  exact Finset.sum_congr rfl fun s _ ↦ by
+    congr 2; simp only [Fin.revPerm_apply, Fin.val_rev]; omega
+
+private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime) (hSX : S ≤ X) :
+    (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
+        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
+      (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+        Real.log p := by
+  have hlog_nn : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp.one_le)
+  have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
+  have hp_pos : (0 : ℝ) < p := by exact_mod_cast hp.pos
+  have hXS_div : (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p := by rw [sq]; gcongr
+  have h2div : 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p := by ring
+  have hexp :
+      (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
+        2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
+    rw [sum_fin_prod_min_rev]
+    linarith [Finset.le_two_mul_sum_range_min_div (K := ℝ) p X S, hXS_div, h2div]
+  calc (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
+        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2)
+      = ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
+          Real.log p := by ring
+    _ ≤ (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
+          Real.log p := mul_le_mul_of_nonneg_right hexp hlog_nn
+
 end InertPrimeSum
 
 /-- **Explicit Mertens bound for primes inert in `ℚ(√d)`.** For any squarefree integer `d ≠ 1`,
@@ -278,7 +316,6 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
   open InertPrimeSum in
   set X := q ^ C
   set S := X / C
-  set N := q ^ (2 * (C / 3))
   obtain ⟨_, hS_pos, -, hdeg⟩ := grid_deg_lt_cube hq3 hC6 hC3
   obtain ⟨D, hD_pos, hD_log, hD_dvd⟩ :=
     exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one hd hd1 hdeg
@@ -299,30 +336,8 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
           Real.log p := by
     rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum,
       ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-    refine Finset.sum_le_sum fun p hp ↦ ?_
-    have hp_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2
-    have hlog_nn : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp_pr.one_le)
-    have hsum_eq : (∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) =
-        ∑ r ∈ Finset.range X, ∑ s ∈ Finset.range S, ((min (r / p) s : ℕ) : ℝ) := by
-      rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := X)]
-      refine Finset.sum_congr rfl fun r _ ↦ ?_
-      rw [← Equiv.sum_comp Fin.revPerm
-          (fun s : Fin S ↦ ((min (r.val / p) (S - 1 - s.val) : ℕ) : ℝ)),
-        ← Fin.sum_univ_eq_sum_range (n := S)]
-      exact Finset.sum_congr rfl fun s _ ↦ by
-        congr 2; simp only [Fin.revPerm_apply, Fin.val_rev]; omega
-    have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
-    have hexp := mul_le_mul_of_nonneg_right (show
-        (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
-          2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) by
-      rw [hsum_eq]
-      linarith [Finset.le_two_mul_sum_range_min_div (K := ℝ) p X S,
-        show (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p by rw [sq]; gcongr,
-        show 2 * (X : ℝ) ^ 2 / p = (X : ℝ) ^ 2 / p + (X : ℝ) ^ 2 / p by ring]) hlog_nn
-    linarith [show ((X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2) *
-        Real.log p =
-      (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
-        2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) by ring]
+    exact Finset.sum_le_sum fun p hp ↦
+      le_two_mul_sum_fin_prod_min_mul_log (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2 hSX
   have hrhs_le : Real.log (D : ℝ) ≤
       (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
         Real.log ((q : ℝ) ^ C) + 15) :=
