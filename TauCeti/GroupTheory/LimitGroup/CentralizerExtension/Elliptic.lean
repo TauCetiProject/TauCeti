@@ -18,8 +18,10 @@ Bass–Serre tree of the amalgam). This file computes the centralizers of the el
 
 1. an element `g ∈ G` that is not conjugate in `G` into `C` has the same centralizer in `E` as in
    `G`, for every group `G`;
-2. if `C` is abelian and malnormal in `G` (as it is for `u ≠ 1` in a CSA group), the centralizer
-   in `E` of every nonidentity element of the factor `C × ℤⁿ` is that whole factor.
+2. if `C` is malnormal in `G`, the centralizer in `E` of a nonidentity element of the factor
+   `C × ℤⁿ` whose first coordinate is central in `C` is that whole factor. When `C` is moreover
+   abelian (as it is for `u ≠ 1` in a CSA group), this applies to every nonidentity element of
+   the factor.
 
 Every nonidentity elliptic element is conjugate to an element of one of these two kinds, and
 centralizers of conjugate elements are conjugate. The remaining elements of `E` are hyperbolic.
@@ -33,7 +35,7 @@ element `b` is still `⟨b⟩`.
 * `TauCeti.LimitGroup.CentralizerExt.centralizer_of_eq_map`: the centralizer of an element of `G`
   not conjugate into `C_G(u)`.
 * `TauCeti.LimitGroup.CentralizerExt.centralizer_ofProd_eq_range_ofProd`: the centralizer of a
-  nonidentity element of the factor `C_G(u) × ℤⁿ`.
+  nonidentity element of the factor `C_G(u) × ℤⁿ` with central first coordinate.
 * `TauCeti.LimitGroup.CentralizerExt.centralizer_t_eq_closure_insert`,
   `TauCeti.LimitGroup.CentralizerExt.centralizer_of_of_eq_zpowers`: the two cases in an extension
   of the centralizer of a basis element of a free group.
@@ -63,16 +65,18 @@ theorem centralizer_of_eq_map {g : G} (hg : ∀ k : G, k * g * k⁻¹ ∉ centra
     fun k hk => hg k (by simpa only [centralizerExtMap_false, range_subtype] using hk)
 
 /-- **Centralizers of elements of the factor `C_G(u) × ℤⁿ`.** If the centralizer `C_G(u)` of `u`
-is abelian and malnormal in `G`, then the centralizer in `G(u, ℤⁿ)` of a nonidentity element of
-the factor `C_G(u) × ℤⁿ` is that factor. -/
-theorem centralizer_ofProd_eq_range_ofProd (hC : IsMulCommutative (centralizer {u}))
-    (hT : TauCeti.IsTISubgroup (centralizer {u}))
-    {p : centralizer {u} × (Fin n → Multiplicative ℤ)} (hp : p ≠ 1) :
+is malnormal in `G`, then the centralizer in `G(u, ℤⁿ)` of a nonidentity element `p` of the factor
+`C_G(u) × ℤⁿ` whose first coordinate is central in `C_G(u)` is that factor. -/
+theorem centralizer_ofProd_eq_range_ofProd (hT : TauCeti.IsTISubgroup (centralizer {u}))
+    {p : centralizer {u} × (Fin n → Multiplicative ℤ)} (hp₁ : p.1 ∈ center (centralizer {u}))
+    (hp : p ≠ 1) :
     centralizer {(ofProd p : CentralizerExt u n)} =
       (ofProd : _ →* CentralizerExt u n).range := by
-  -- The factor `C_G(u) × ℤⁿ` is abelian, so it centralizes `p`; and `C_G(u)` is malnormal in `G`.
-  have hA : centralizer {p} = ⊤ := eq_top_iff.2 fun q _ => mem_centralizer_singleton_iff.2
-    (Prod.ext (isMulCommutative_iff.1 hC q.1 p.1) (mul_comm q.2 p.2))
+  -- `p` is central in the factor `C_G(u) × ℤⁿ`, and `C_G(u)` is malnormal in `G`.
+  have hA : centralizer {p} = ⊤ := by
+    rw [centralizer_eq_top_iff_subset, Set.singleton_subset_iff, Subgroup.center_prod,
+      CommGroup.center_eq_top]
+    exact ⟨hp₁, mem_top _⟩
   rw [ofProd_def, Monoid.PushoutI.centralizer_of_eq_map_of_isTISubgroup
     (centralizerExtMap_injective u n) (i := true) ?_ hp, hA, ← MonoidHom.range_eq_map]
   rintro (_ | _) h
@@ -89,12 +93,10 @@ of `u`. For a basis element `a` and `n = 1` it is the subgroup `⟨a, t⟩` of
 `⟨F, t | [a, t] = 1⟩`, free abelian of rank two (`centralizerEquivOfNotIsProperPower`). -/
 theorem centralizer_t_eq_closure_insert (hu : ¬IsProperPower u) (i : Fin n) :
     centralizer {(t i : CentralizerExt u n)} = closure (insert (of u) (Set.range t)) := by
-  have hu1 : u ≠ 1 := fun h => hu (h ▸ IsProperPower.one)
   have hp : ((1, Pi.mulSingle i (.ofAdd 1)) : centralizer {u} × (Fin n → Multiplicative ℤ)) ≠ 1 :=
     fun h => by simpa using congrArg (fun p => p.2 i) h
   rw [← ofProd_mulSingle, centralizer_ofProd_eq_range_ofProd
-    (IsFreeGroup.isCSA.centralizer_isMulCommutative hu1)
-    (IsFreeGroup.isCSA.centralizer_isTISubgroup u) hp,
+    (IsFreeGroup.isCSA.centralizer_isTISubgroup u) (one_mem _) hp,
     ← centralizer_of_eq_range_ofProd fun _ =>
       IsFreeGroup.isCSA.mem_centralizer_of_conj_mem_centralizer,
     centralizer_of_eq_closure_insert hu]
