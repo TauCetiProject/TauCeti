@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import TauCeti.Algebra.Module.Projective.Complement
 public import TauCeti.Algebra.Module.Submodule.Finite
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
-public import TauCeti.RingTheory.Flat.Reduced
+public import TauCeti.RingTheory.Flat.Reduced.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FiberDimension
 
 /-!
@@ -33,8 +32,8 @@ For two direct summands `E₁` and `E₂` of a finite projective module `E` this
 `κ(p) ⊗ E₁` and `κ(p) ⊗ E₂` inside `κ(p) ⊗ E` is locally constant, then `E₁ ⊓ E₂` is a direct
 summand of `E`, its rank at `p` is that dimension, and for every coefficient algebra `A` the
 extension `A ⊗ (E₁ ⊓ E₂)` is the intersection of `A ⊗ E₁` and `A ⊗ E₂`. Over a Jacobson ring, for
-instance an algebra of finite type over a field, it suffices to know the dimension of the
-intersection of the fibres at maximal ideals.
+instance an algebra of finite type over a field, it suffices to know that this dimension agrees
+with a locally constant function at the maximal ideals.
 
 The reduced hypothesis cannot be dropped. Over the dual numbers `k[ε]`, the lines spanned by
 `(1, 0)` and `(1, ε)` in `k[ε]²` are direct summands whose closed fibres meet in a line, but their
@@ -50,14 +49,13 @@ summand.
 * `LinearMap.projective_quotient_range_of_isLocallyConstant`: over a reduced ring, a map from a
   finite module to a finite projective module whose cokernel has locally constant fibre dimension
   has projective cokernel.
-* `Submodule.ker_baseChange_mkQ_prod_mkQ`: the kernel of `A ⊗ E → A ⊗ (E ⧸ E₁ × E ⧸ E₂)` is the
-  intersection of `A ⊗ E₁` and `A ⊗ E₂` inside `A ⊗ E`.
 * `Submodule.isComplemented_inf_of_isLocallyConstant`,
   `Submodule.baseChange_inf_of_isLocallyConstant`, `Submodule.rankAtStalk_inf_of_isLocallyConstant`:
   the intersection of two direct summands whose fibres meet in locally constant dimension is a
   direct summand, commutes with extension of scalars, and has the expected rank.
-* `Submodule.finrank_baseChange_inf_eq_of_isJacobsonRing`: over a Jacobson ring, the dimensions
-  of the intersections of the fibres are determined at maximal ideals.
+* `Submodule.finrank_baseChange_inf_eq_of_isJacobsonRing`: over a Jacobson ring, if the
+  dimensions of the intersections of the fibres at maximal ideals agree with a locally constant
+  function `a`, then they agree with `a` at every prime.
 
 ## References
 
@@ -142,24 +140,6 @@ end LinearMap
 namespace Submodule
 
 open LinearMap (ker range)
-
-section BaseChange
-
-variable {R E : Type*} [CommRing R] [AddCommGroup E] [Module R E] (A : Type*) [Ring A]
-  [Algebra R A] (E₁ E₂ : Submodule R E)
-
-/-- The kernel of the extension of scalars of `E → E ⧸ E₁ × E ⧸ E₂` is the intersection of the
-extensions of `E₁` and `E₂`. -/
-theorem ker_baseChange_mkQ_prod_mkQ :
-    ker ((E₁.mkQ.prod E₂.mkQ).baseChange A) = E₁.baseChange A ⊓ E₂.baseChange A := by
-  have h : (TensorProduct.prodRight R A A (E ⧸ E₁) (E ⧸ E₂)).toLinearMap ∘ₗ
-      (E₁.mkQ.prod E₂.mkQ).baseChange A = (E₁.mkQ.baseChange A).prod (E₂.mkQ.baseChange A) := by
-    ext x <;> simp
-  rw [← LinearEquiv.ker_comp (TensorProduct.prodRight R A A (E ⧸ E₁) (E ⧸ E₂)), h,
-    LinearMap.ker_prod, LinearMap.ker_baseChange_of_surjective A _ E₁.mkQ_surjective,
-    LinearMap.ker_baseChange_of_surjective A _ E₂.mkQ_surjective, ker_mkQ, ker_mkQ]
-
-end BaseChange
 
 variable {R E : Type*} [CommRing R] [AddCommGroup E] [Module R E] [Module.Finite R E]
   [Module.Projective R E] {E₁ E₂ : Submodule R E}
@@ -249,10 +229,10 @@ theorem rankAtStalk_inf_of_isLocallyConstant (h₁ : IsComplemented E₁) (h₂ 
 
 end Reduced
 
-/-- Over a Jacobson ring, for instance an algebra of finite type over a field, the dimensions of
+/-- Over a Jacobson ring, for instance an algebra of finite type over a field, if the dimensions of
 the intersections of the fibres of two direct summands `E₁` and `E₂` of a finite projective module
-are determined at the maximal ideals: if they are given there by a locally constant function `a`,
-then they are given by `a` at every prime. -/
+agree at the maximal ideals with a locally constant function `a`, then they agree with `a` at every
+prime. -/
 theorem finrank_baseChange_inf_eq_of_isJacobsonRing [IsJacobsonRing R] (h₁ : IsComplemented E₁)
     (h₂ : IsComplemented E₂) {a : PrimeSpectrum R → ℕ} (ha : IsLocallyConstant a)
     (h : ∀ m : PrimeSpectrum R, m.asIdeal.IsMaximal → finrank m.asIdeal.ResidueField
