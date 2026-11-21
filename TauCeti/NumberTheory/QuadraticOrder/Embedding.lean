@@ -50,6 +50,21 @@ noncomputable def algEquivOfSqrt (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
   unfold algEquivOfSqrt
   exact AlgEquiv.ofBijective_apply _ _ _
 
+/-- The field identification sends the model generator to the chosen square root. -/
+theorem algEquivOfSqrt_apply_omega (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
+    (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2) :
+    algEquivOfSqrt D δ hδ hK ω = δ := by
+  simp
+
+/-- Algebra homomorphisms out of the presented quadratic field are determined by the image of
+its chosen square root. -/
+theorem algHom_ext_of_sqrt (D : ℤ) [Fact (¬ IsSquare D)] (δ : K)
+    (hδ : δ ^ 2 = (D : K)) (hK : Module.finrank ℚ K = 2)
+    {A : Type*} [Semiring A] [Algebra ℚ A] {φ ψ : K →ₐ[ℚ] A} (h : φ δ = ψ δ) : φ = ψ := by
+  ext x
+  obtain ⟨z, rfl⟩ := (algEquivOfSqrt D δ hδ hK).surjective x
+  simp only [algEquivOfSqrt_apply, map_add, map_smul, map_one, h]
+
 /-- The same canonical order, embedded in a supplied quadratic number field. -/
 noncomputable def numberFieldOrderOfSqrt (D : ℤ)
     (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (δ : K)
