@@ -33,6 +33,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
+* `Complex.div_two_pi_I_smul_nsmul`: `(a / 2πi) • (m • v) = ((m * a) / 2πi) • v`.
+* `Complex.exp_log_add_log_div`: `exp (log z₀ + log (z / z₀)) = z` for nonzero `z₀` and `z`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
   `m`-th root of every `t ≠ 0`.
 -/
@@ -85,6 +87,18 @@ theorem exists_div_two_pi_I_smul_eq_add_zsmul {E : Type*} [AddCommGroup E] [Modu
   refine ⟨k, ?_⟩
   have h2 : (2 * π * I : ℂ) ≠ 0 := two_pi_I_ne_zero
   rw [hk, ← Int.cast_smul_eq_zsmul ℂ, ← add_smul, add_div, mul_div_cancel_right₀ _ h2]
+
+/-- Moving a natural-number multiple `m • v` into the numerator of `(a / 2πi) • (m • v)`. -/
+theorem div_two_pi_I_smul_nsmul {E : Type*} [AddCommGroup E] [Module ℂ E]
+    (a : ℂ) (m : ℕ) (v : E) :
+    (a / (2 * π * I)) • (m • v) = ((m : ℂ) * a / (2 * π * I)) • v := by
+  rw [← Nat.cast_smul_eq_nsmul ℂ, smul_smul, mul_comm (a / _), ← mul_div_assoc]
+
+/-- The centered branch `z ↦ log z₀ + log (z / z₀)` satisfies `exp (log z₀ + log (z / z₀)) = z`
+for all nonzero `z₀` and `z`. -/
+theorem exp_log_add_log_div {z₀ z : ℂ} (hz₀ : z₀ ≠ 0) (hz : z ≠ 0) :
+    exp (log z₀ + log (z / z₀)) = z := by
+  rw [exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
 
 /-- A branch of the `m`-th root near `z₀ ^ m`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
 `m`-th root of every `t ≠ 0`. -/
