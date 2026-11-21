@@ -65,7 +65,7 @@ All four equivalences are opaque: their bodies are not `@[expose]`d. The `_tmul`
 `_symm_tmul` simp lemmas describe their action in both directions. For tensor-product base change,
 `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv` identifies the underlying
 Mathlib linear equivalence. Equalities of algebra-map composites record compatibility with
-fourfold tensor interchange and with scalar extension in stages.
+the second-factor inclusion, with fourfold tensor interchange and with scalar extension in stages.
 
 Mathlib's `Algebra.TensorProduct.cancelBaseChange` supplies the tower comparison for a commutative
 algebra being extended. The tower comparisons here also support noncommutative algebras, including
@@ -182,6 +182,16 @@ of scalar extension over a tensor product. -/
 theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Distributing base change over `⊗` carries the second-factor inclusion of the base-changed
+factors to the base change of the second-factor inclusion. -/
+theorem baseChangeTensorAlgEquiv_symm_comp_includeRight :
+    (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+        (Algebra.TensorProduct.includeRight (R := L) (A := L ⊗[K] A) (B := L ⊗[K] B)) =
+      Algebra.TensorProduct.map (AlgHom.id L L) Algebra.TensorProduct.includeRight := by
+  refine Algebra.TensorProduct.ext' fun l b ↦ ?_
+  rw [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.one_def]
+  simp
 
 end Algebra.TensorProduct
 
