@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Nilpotent.Basic
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs

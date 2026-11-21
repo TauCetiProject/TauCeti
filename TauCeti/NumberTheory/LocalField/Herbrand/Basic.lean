@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Topology.Order.IntermediateValue
+public import TauCeti.RingTheory.LocalRing.Herbrand
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
@@ -107,7 +105,7 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
 public section
 noncomputable section
 
-open MeasureTheory Set intervalIntegral
+open MeasureTheory Set intervalIntegral ValuativeRel
 
 namespace TauCeti.LocalFieldsRamification
 
@@ -116,141 +114,6 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L]
 
-/-! ### The integrand and its primitive on the real line -/
-
-/-- The integrand `1 / [G_0 : G_t] = #G_t / #G_0` of the Herbrand function. -/
-private def herbrandDensity (t : ℝ) : ℝ :=
-  Nat.card (lowerRamificationGroupReal K L t) / Nat.card (lowerRamificationGroup K L 0)
-
-private theorem natCard_lowerRamificationGroup_pos (i : ℤ) :
-    0 < Nat.card (lowerRamificationGroup K L i) :=
-  Nat.card_pos
-
-private theorem herbrandDensity_antitone : Antitone (herbrandDensity K L) := fun s t hst ↦ by
-  unfold herbrandDensity
-  gcongr
-  exact Subgroup.card_le_of_le (lowerRamificationGroupReal_antitone K L hst)
-
-private theorem intervalIntegrable_herbrandDensity (a b : ℝ) :
-    IntervalIntegrable (herbrandDensity K L) volume a b :=
-  (herbrandDensity_antitone K L).intervalIntegrable
-
-private theorem inv_le_herbrandDensity (t : ℝ) :
-    (Nat.card (lowerRamificationGroup K L 0) : ℝ)⁻¹ ≤ herbrandDensity K L t := by
-  rw [herbrandDensity, div_eq_mul_inv]
-  refine le_mul_of_one_le_left (by positivity) ?_
-  rw [lowerRamificationGroupReal_def]
-  exact_mod_cast natCard_lowerRamificationGroup_pos K L _
-
-/-- The Herbrand function on the whole real line, as the primitive of `herbrandDensity`; only its
-values on `[-1, ∞)` are meaningful, and only those are exported through `herbrandOrderIso`. -/
-private def herbrandReal (u : ℝ) : ℝ :=
-  ∫ t in (0 : ℝ)..u, herbrandDensity K L t
-
-private theorem herbrandReal_def (u : ℝ) :
-    herbrandReal K L u = ∫ t in (0 : ℝ)..u,
-      (Nat.card (lowerRamificationGroupReal K L t) : ℝ) / Nat.card (lowerRamificationGroup K L 0) :=
-  rfl
-
-private theorem herbrandReal_zero : herbrandReal K L 0 = 0 :=
-  integral_same
-
-private theorem herbrandReal_sub (a b : ℝ) :
-    herbrandReal K L b - herbrandReal K L a = ∫ t in a..b, herbrandDensity K L t :=
-  integral_interval_sub_left (intervalIntegrable_herbrandDensity K L 0 b)
-    (intervalIntegrable_herbrandDensity K L 0 a)
-
-/-- On an interval `[a, b]` over which the lower ramification filtration is constantly `H`, that
-is `G_t = H` for every `a < t ≤ b`, the Herbrand function is affine of slope `#H / #G_0`. -/
-private theorem herbrandReal_sub_of_forall_eq {a b : ℝ} (hab : a ≤ b) {H : Subgroup (L ≃ₐ[K] L)}
-    (h : ∀ t : ℝ, a < t → t ≤ b → lowerRamificationGroupReal K L t = H) :
-    herbrandReal K L b - herbrandReal K L a =
-      (b - a) * (Nat.card H / Nat.card (lowerRamificationGroup K L 0)) := by
-  rw [herbrandReal_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun t ht ↦ ?_)
-  rw [uIoc_of_le hab] at ht
-  rw [herbrandDensity, h t ht.1 ht.2]
-
-/-- On an interval `[a, b] ⊆ [i - 1, i]` the Herbrand function is affine of slope
-`#G_i / #G_0`. -/
-private theorem herbrandReal_sub_of_le {i : ℤ} {a b : ℝ} (ha : (i : ℝ) - 1 ≤ a) (hab : a ≤ b)
-    (hb : b ≤ i) :
-    herbrandReal K L b - herbrandReal K L a =
-      (b - a) * (Nat.card (lowerRamificationGroup K L i) /
-        Nat.card (lowerRamificationGroup K L 0)) :=
-  herbrandReal_sub_of_forall_eq K L hab fun _ ht₁ ht₂ ↦
-    lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K L (ha.trans_lt ht₁) (ht₂.trans hb)
-
-private theorem div_sub_le_herbrandReal_sub {a b : ℝ} (hab : a ≤ b) :
-    (b - a) / Nat.card (lowerRamificationGroup K L 0) ≤
-      herbrandReal K L b - herbrandReal K L a := by
-  rw [herbrandReal_sub, div_eq_mul_inv, ← smul_eq_mul, ← intervalIntegral.integral_const]
-  exact integral_mono_on hab intervalIntegrable_const (intervalIntegrable_herbrandDensity K L a b)
-    fun t _ ↦ inv_le_herbrandDensity K L t
-
-private theorem herbrandReal_sub_le_mul {a b : ℝ} (hab : a ≤ b) :
-    herbrandReal K L b - herbrandReal K L a ≤ (b - a) * herbrandDensity K L a := by
-  rw [herbrandReal_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
-  exact integral_mono_on hab (intervalIntegrable_herbrandDensity K L a b) intervalIntegrable_const
-    fun t ht ↦ herbrandDensity_antitone K L ht.1
-
-private theorem mul_le_herbrandReal_sub {a b : ℝ} (hab : a ≤ b) :
-    (b - a) * herbrandDensity K L b ≤ herbrandReal K L b - herbrandReal K L a := by
-  rw [herbrandReal_sub, ← smul_eq_mul, ← intervalIntegral.integral_const]
-  exact integral_mono_on hab intervalIntegrable_const (intervalIntegrable_herbrandDensity K L a b)
-    fun t ht ↦ herbrandDensity_antitone K L ht.2
-
-private theorem herbrandReal_strictMono : StrictMono (herbrandReal K L) := fun a b hab ↦ by
-  have h := div_sub_le_herbrandReal_sub K L hab.le
-  have : 0 < (b - a) / Nat.card (lowerRamificationGroup K L 0) := by
-    have := natCard_lowerRamificationGroup_pos K L 0
-    have : 0 < b - a := sub_pos.2 hab
-    positivity
-  linarith
-
-private theorem herbrandReal_continuous : Continuous (herbrandReal K L) :=
-  continuous_primitive (intervalIntegrable_herbrandDensity K L) 0
-
-private theorem herbrandReal_of_le_zero {u : ℝ} (h₁ : -1 ≤ u) (h₀ : u ≤ 0) :
-    herbrandReal K L u = u := by
-  have h := herbrandReal_sub_of_le K L (i := 0) (by simpa using h₁) h₀ (by simp)
-  have h0 : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
-    exact_mod_cast (natCard_lowerRamificationGroup_pos K L 0).ne'
-  rw [div_self h0, herbrandReal_zero] at h
-  linarith
-
-private theorem neg_one_le_herbrandReal {u : ℝ} (hu : -1 ≤ u) : -1 ≤ herbrandReal K L u := by
-  rw [← herbrandReal_of_le_zero K L le_rfl (by norm_num)]
-  exact (herbrandReal_strictMono K L).monotone hu
-
-private theorem exists_herbrandReal_eq {y : ℝ} (hy : -1 ≤ y) :
-    ∃ u, -1 ≤ u ∧ herbrandReal K L u = y := by
-  set g : ℝ := (Nat.card (lowerRamificationGroup K L 0) : ℝ)
-  have hg : 1 ≤ g := Nat.one_le_cast.2 (natCard_lowerRamificationGroup_pos K L 0)
-  set b := -1 + (y + 1) * g
-  have hb : -1 ≤ b := by nlinarith
-  have hφb : y ≤ herbrandReal K L b := by
-    have h := div_sub_le_herbrandReal_sub K L hb
-    have hb_sub : b - -1 = (y + 1) * g := by
-      dsimp [b]
-      ring
-    rw [herbrandReal_of_le_zero K L le_rfl (by norm_num),
-      hb_sub, mul_div_cancel_right₀ _ (by positivity)] at h
-    linarith
-  obtain ⟨u, hu, rfl⟩ := intermediate_value_Icc hb (herbrandReal_continuous K L).continuousOn
-    ⟨(herbrandReal_of_le_zero K L le_rfl (by norm_num)).trans_le hy, hφb⟩
-  exact ⟨u, hu.1, rfl⟩
-
-/-- The Herbrand function as a self-map of `[-1, ∞)`. -/
-private def herbrandFun (u : RamificationIndexDomain) : RamificationIndexDomain :=
-  ⟨herbrandReal K L u, mem_Ici.2 (neg_one_le_herbrandReal K L u.property)⟩
-
-private theorem herbrandFun_strictMono : StrictMono (herbrandFun K L) :=
-  fun _ _ h ↦ Subtype.mk_lt_mk.2 (herbrandReal_strictMono K L h)
-
-private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) := fun y ↦ by
-  obtain ⟨u, hu, h⟩ := exists_herbrandReal_eq K L y.property
-  exact ⟨⟨u, hu⟩, Subtype.ext h⟩
 
 /-! ### The Herbrand function and its inverse -/
 
@@ -259,10 +122,13 @@ of local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inv
 `ψ_{L/K}`. The integral formula is `coe_herbrand`. The construction does not use `IsGalois`;
 the hypothesis restricts the Herbrand function to the Galois case, where it is meaningful. -/
 def herbrandOrderIso [_hGal : IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
-  StrictMono.orderIsoOfSurjective (herbrandFun K L) (herbrandFun_strictMono K L)
-    (herbrandFun_surjective K L)
+  TauCeti.IsLocalRing.herbrandOrderIso (L ≃ₐ[K] L) 𝒪[L]
 
 variable [IsGalois K L]
+
+/-- `herbrandOrderIso` agrees with `TauCeti.IsLocalRing.herbrandOrderIso` on `𝒪[L]`. -/
+theorem herbrandOrderIso_eq_isLocalRingHerbrandOrderIso :
+    herbrandOrderIso K L = TauCeti.IsLocalRing.herbrandOrderIso (L ≃ₐ[K] L) 𝒪[L] := (rfl)
 
 /-- The **Herbrand function** `φ_{L/K}`, the forward map of `herbrandOrderIso K L`. -/
 def herbrand (u : RamificationIndexDomain) : RamificationIndexDomain :=
@@ -282,6 +148,15 @@ theorem herbrandOrderIso_symm_apply (v : RamificationIndexDomain) :
     (herbrandOrderIso K L).symm v = inverseHerbrand K L v :=
   (rfl)
 
+/-- `herbrand` agrees with `TauCeti.IsLocalRing.herbrandFun` on `𝒪[L]`. -/
+theorem coe_herbrand_eq_herbrandFun (u : RamificationIndexDomain) :
+    (herbrand K L u : ℝ) = TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u :=
+  TauCeti.IsLocalRing.coe_herbrandOrderIso_apply (L ≃ₐ[K] L) 𝒪[L] u
+/-- `inverseHerbrand` agrees with `TauCeti.IsLocalRing.inverseHerbrandFun` on `𝒪[L]`. -/
+theorem coe_inverseHerbrand_eq_inverseHerbrandFun (v : RamificationIndexDomain) :
+    (inverseHerbrand K L v : ℝ) = TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v :=
+  TauCeti.IsLocalRing.coe_herbrandOrderIso_symm_apply (L ≃ₐ[K] L) 𝒪[L] v
+
 /-- The integral formula for the Herbrand function:
 `φ_{L/K}(u) = ∫_0^u #G_t / #G_0 dt`. For `t > -1` the group `G_t` is a subgroup of `G_0` and
 `#G_t / #G_0 = 1 / [G_0 : G_t]`, so this holds almost everywhere on the interval of integration. -/
@@ -289,12 +164,9 @@ theorem coe_herbrand (u : RamificationIndexDomain) :
     (herbrand K L u : ℝ) = ∫ t in (0 : ℝ)..u,
       (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
         Nat.card (lowerRamificationGroup K L 0) := by
-  rw [← herbrandOrderIso_apply, herbrandOrderIso, StrictMono.coe_orderIsoOfSurjective]
-  exact herbrandReal_def K L u
-
-private theorem coe_herbrand_eq_herbrandReal (u : RamificationIndexDomain) :
-    (herbrand K L u : ℝ) = herbrandReal K L u :=
-  (coe_herbrand K L u).trans (herbrandReal_def K L u).symm
+  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.herbrandFun_def (L ≃ₐ[K] L) 𝒪[L] u
 
 /-- The Herbrand function undoes its inverse: `φ(ψ(v)) = v`. -/
 @[simp]
@@ -331,21 +203,15 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
     (hvw : v < w) :
     ((herbrand K L w : ℝ) - herbrand K L v) / ((w : ℝ) - v) ≤
       ((herbrand K L v : ℝ) - herbrand K L u) / ((v : ℝ) - u) := by
-  have huv' : (u : ℝ) < v := huv
-  have hvw' : (v : ℝ) < w := hvw
-  simp only [coe_herbrand_eq_herbrandReal]
-  calc (herbrandReal K L w - herbrandReal K L v) / ((w : ℝ) - v)
-      ≤ herbrandDensity K L v :=
-        (div_le_iff₀' (sub_pos.2 hvw')).2 (herbrandReal_sub_le_mul K L hvw'.le)
-    _ ≤ (herbrandReal K L v - herbrandReal K L u) / ((v : ℝ) - u) :=
-        (le_div_iff₀' (sub_pos.2 huv')).2 (mul_le_herbrandReal_sub K L huv'.le)
+  simp_rw [coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.herbrandFun_slope_anti_adjacent (L ≃ₐ[K] L) 𝒪[L] huv hvw
 
 /-- The Herbrand function is the identity on `[-1, 0]`. -/
 @[simp]
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
-  Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.property
-      hu))
+  Subtype.ext <| (coe_herbrand_eq_herbrandFun K L u).trans <|
+    TauCeti.IsLocalRing.herbrandFun_eq_self_of_neg_one_le_of_nonpos (L ≃ₐ[K] L) 𝒪[L] u.property hu
 
 /-- On an interval `[a, b]` over which the lower ramification filtration is constant, that is
 `G_t = G_b` for every `a < t ≤ b`, the Herbrand function is affine of slope `#G_b / #G_0`:
@@ -356,8 +222,9 @@ theorem coe_herbrand_sub_coe_herbrand_of_forall_eq {a b : RamificationIndexDomai
     (herbrand K L b : ℝ) - herbrand K L a =
       ((b : ℝ) - a) * (Nat.card (lowerRamificationGroupReal K L b) /
         Nat.card (lowerRamificationGroup K L 0)) := by
-  rw [coe_herbrand_eq_herbrandReal, coe_herbrand_eq_herbrandReal]
-  exact herbrandReal_sub_of_forall_eq K L (Subtype.coe_le_coe.2 hab) h
+  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroup_def] at h ⊢
+  exact TauCeti.IsLocalRing.herbrandFun_sub_of_forall_eq (L ≃ₐ[K] L) 𝒪[L] hab h
 
 /-- The Herbrand function is the identity as long as the lower ramification filtration is
 constant from `0` through `u`. For `u ≤ 0` the hypothesis is vacuous and the conclusion is
@@ -401,28 +268,6 @@ theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomai
     (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
   exact congrArg Subtype.val hu_eq
 
-omit [IsGalois K L] in
-private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
-    herbrandReal K L u =
-      (∑ i ∈ Finset.Icc 1 n, (Nat.card (lowerRamificationGroup K L i) : ℝ) +
-        (u - n) * Nat.card (lowerRamificationGroup K L (n + 1 : ℕ))) /
-        Nat.card (lowerRamificationGroup K L 0) := by
-  have hstep := herbrandReal_sub_of_le K L (i := (n + 1 : ℕ)) (by push_cast; linarith) h₁
-    (by push_cast; linarith)
-  induction n generalizing u with
-  | zero =>
-    rw [Nat.cast_zero, herbrandReal_zero] at hstep
-    rw [Finset.Icc_eq_empty (by norm_num), Finset.sum_empty]
-    linear_combination hstep
-  | succ m ih =>
-    have hm := ih (u := (m + 1 : ℕ)) (by push_cast; linarith) (by push_cast; linarith)
-      (herbrandReal_sub_of_le K L (i := (m + 1 : ℕ)) (by push_cast; linarith)
-        (by push_cast; linarith) (by push_cast; linarith))
-    rw [Finset.sum_Icc_succ_top (by omega)]
-    rw [hm] at hstep
-    push_cast at hstep ⊢
-    linear_combination hstep
-
 /-- The **finite-sum formula** for the Herbrand function: for `m : ℕ` and `m ≤ u ≤ m + 1`,
 `φ(u) = (#G_1 + ⋯ + #G_m + (u - m) #G_{m+1}) / #G_0`. -/
 theorem coe_herbrand_of_mem_Icc (m : ℕ) {u : RamificationIndexDomain} (h₁ : (m : ℝ) ≤ u)
@@ -430,15 +275,17 @@ theorem coe_herbrand_of_mem_Icc (m : ℕ) {u : RamificationIndexDomain} (h₁ : 
     (herbrand K L u : ℝ) =
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (lowerRamificationGroup K L i) : ℝ) +
         (u - m) * Nat.card (lowerRamificationGroup K L (m + 1 : ℕ))) /
-        Nat.card (lowerRamificationGroup K L 0) :=
-  (coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_mem_Icc K L m h₁ h₂)
+        Nat.card (lowerRamificationGroup K L 0) := by
+  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.herbrandFun_of_natCast_le_of_le_add_one (L ≃ₐ[K] L) 𝒪[L] m h₁ h₂
 
 /-- The Herbrand function at a natural number `m`: `φ(m) = (#G_1 + ⋯ + #G_m) / #G_0`. -/
 theorem coe_herbrand_of_coe_eq_natCast (m : ℕ) {u : RamificationIndexDomain} (hu : (u : ℝ) = m) :
     (herbrand K L u : ℝ) =
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (lowerRamificationGroup K L i) : ℝ)) /
         Nat.card (lowerRamificationGroup K L 0) := by
-  rw [coe_herbrand_of_mem_Icc K L m hu.ge (by linarith), hu, sub_self, zero_mul, add_zero]
+  simp_rw [coe_herbrand_eq_herbrandFun, hu, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.herbrandFun_natCast (L ≃ₐ[K] L) 𝒪[L] m
 
 /-! ### The upper numbering -/
 
@@ -450,6 +297,13 @@ def upperRamificationGroup (v : RamificationIndexDomain) : Subgroup (L ≃ₐ[K]
 theorem upperRamificationGroup_def (v : RamificationIndexDomain) :
     upperRamificationGroup K L v = lowerRamificationGroupReal K L (inverseHerbrand K L v) :=
   (rfl)
+
+/-- `upperRamificationGroup` agrees with `TauCeti.IsLocalRing.upperRamificationGroup` on `𝒪[L]`. -/
+theorem upperRamificationGroup_eq_isLocalRingUpperRamificationGroup (v : RamificationIndexDomain) :
+    upperRamificationGroup K L v =
+      TauCeti.IsLocalRing.upperRamificationGroup (L ≃ₐ[K] L) 𝒪[L] v := by
+  rw [upperRamificationGroup_def, lowerRamificationGroupReal_eq_ramificationGroupReal,
+    coe_inverseHerbrand_eq_inverseHerbrandFun, TauCeti.IsLocalRing.upperRamificationGroup_def]
 
 variable {K L} in
 /-- Membership in the upper ramification groups: `σ ∈ G^v ↔ σ ∈ G_{ψ(v)}`. -/
@@ -488,48 +342,6 @@ The Herbrand function may take non-integral values at integers, but its inverse 
 `i ≤ m + 1`.
 This section packages these values as `psiNat K L : ℕ → ℕ`. -/
 
-private theorem inverseHerbrand_natCast_nonneg (n : ℕ) :
-    (0 : ℝ) ≤ inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ := by
-  have hle : (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
-      ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ :=
-    Subtype.mk_le_mk.2 (Nat.cast_le.2 n.zero_le)
-  have h := (inverseHerbrand_strictMono K L).monotone hle
-  rw [inverseHerbrand_of_coe_le_zero K L (by simp)] at h
-  simpa using Subtype.coe_le_coe.2 h
-
-/-- The inverse Herbrand value at a natural number equals its natural floor. -/
-private theorem inverseHerbrand_natCast_eq_floor (n : ℕ) :
-    (inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ : ℝ) =
-      ⌊(inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊ := by
-  set u : ℝ := (inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ : ℝ)
-  set m := ⌊u⌋₊
-  have hu : 0 ≤ u := inverseHerbrand_natCast_nonneg K L n
-  have hm₁ : (m : ℝ) ≤ u := Nat.floor_le hu
-  have hm₂ : u < m + 1 := Nat.lt_floor_add_one u
-  -- The finite-sum formula at `u = ψ(n)`, with `φ(u) = n` and denominators cleared.
-  have hφ := coe_herbrand_of_mem_Icc K L m hm₁ hm₂.le
-  rw [herbrand_inverseHerbrand, Subtype.coe_mk,
-    eq_div_iff (by exact_mod_cast Nat.card_pos.ne')] at hφ
-  set g : ℤ → ℕ := fun i ↦ Nat.card (lowerRamificationGroup K L i)
-  -- `hφ` restated through the abbreviation `g`.
-  -- `#G_{m+1}` divides `n #G_0 - (#G_1 + ⋯ + #G_m)`.
-  have hdvd : ∀ i : ℤ, i ≤ (m + 1 : ℕ) → g (m + 1 : ℕ) ∣ g i := fun i hi ↦
-    Subgroup.card_dvd_of_le (lowerRamificationGroup_antitone K L hi)
-  have h₁ : g (m + 1 : ℕ) ∣ n * g 0 := dvd_mul_of_dvd_right (hdvd 0 (by omega)) _
-  have h₂ : g (m + 1 : ℕ) ∣ ∑ i ∈ Finset.Icc 1 m, g i := Finset.dvd_sum fun i hi ↦
-    hdvd i (by have := (Finset.mem_Icc.1 hi).2; omega)
-  obtain ⟨c, hc⟩ := (Int.natCast_dvd_natCast.2 h₁).sub (Int.natCast_dvd_natCast.2 h₂)
-  have hcR : (n : ℝ) * g 0 - ∑ i ∈ Finset.Icc 1 m, (g i : ℝ) = g (m + 1 : ℕ) * c := by
-    exact_mod_cast hc
-  -- Hence `u - m` is an integer `c` with `0 ≤ c < 1`.
-  have hcu : u - m = c := mul_right_cancel₀ (by exact_mod_cast Nat.card_pos.ne') <|
-    (by rw [← hcR]; linarith : (u - m) * g (m + 1 : ℕ) = g (m + 1 : ℕ) * c).trans (mul_comm _ _)
-  have hc0 : 0 ≤ c := by exact_mod_cast (hcu ▸ sub_nonneg.2 hm₁ : (0 : ℝ) ≤ c)
-  have hc1 : c < 1 := by exact_mod_cast (hcu ▸ by linarith : (c : ℝ) < 1)
-  have hc_zero : c = 0 := by omega
-  rw [hc_zero, Int.cast_zero, sub_eq_zero] at hcu
-  exact hcu
-
 /-- The **integral inverse Herbrand function** `ψℕ_{L/K} : ℕ → ℕ`: the value `ψ_{L/K}(n)` of the
 inverse Herbrand function at a natural number `n`, which is itself a natural number
 (`coe_psiNat`). These are the unit depths at which the norm of `L/K` is compared with the unit
@@ -537,47 +349,28 @@ filtration of `K`. -/
 def psiNat (n : ℕ) : ℕ :=
   ⌊(inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊
 
+/-- `psiNat` agrees with `TauCeti.IsLocalRing.psiNat` on `𝒪[L]`. -/
+theorem psiNat_eq_isLocalRingPsiNat (n : ℕ) :
+    psiNat K L n = TauCeti.IsLocalRing.psiNat (L ≃ₐ[K] L) 𝒪[L] n := by
+  rw [psiNat, coe_inverseHerbrand_eq_inverseHerbrandFun, TauCeti.IsLocalRing.psiNat_def]
+
 /-- The integral inverse Herbrand function computes the inverse Herbrand function:
 `ψℕ_{L/K}(n) = ψ_{L/K}(n)`. -/
 @[simp]
 theorem coe_psiNat (n : ℕ) :
     (psiNat K L n : ℝ) =
       (inverseHerbrand K L
-        ⟨(n : ℝ), le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)⟩ : ℝ) :=
-  (inverseHerbrand_natCast_eq_floor K L n).symm
+        ⟨(n : ℝ), le_trans (by norm_num : (-1 : ℝ) ≤ 0) (Nat.cast_nonneg n)⟩ : ℝ) := by
+  rw [psiNat_eq_isLocalRingPsiNat, coe_inverseHerbrand_eq_inverseHerbrandFun]
+  exact TauCeti.IsLocalRing.coe_psiNat (L ≃ₐ[K] L) 𝒪[L] n
 
 /-- `ψℕ_{L/K}(n) = m` exactly when `#G_1 + ⋯ + #G_m = n · #G_0`, that is when `φ_{L/K}(m) = n`. -/
 theorem psiNat_eq_iff {n m : ℕ} :
     psiNat K L n = m ↔
       ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
         n * Nat.card (lowerRamificationGroup K L 0) := by
-  have h0 : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
-    exact_mod_cast Nat.card_pos.ne'
-  have hinv : psiNat K L n = m ↔
-      inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
-        ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ := by
-    rw [← Nat.cast_inj (R := ℝ), coe_psiNat]
-    constructor
-    · intro h
-      exact Subtype.ext h
-    · intro h
-      exact congrArg (fun x : RamificationIndexDomain ↦ (x : ℝ)) h
-  have hφ : inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
-        ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ ↔
-      herbrand K L ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ =
-        ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ := by
-    rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_eq, herbrandOrderIso_apply, eq_comm]
-  calc
-    psiNat K L n = m ↔
-        inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ =
-          ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ := hinv
-    _ ↔ herbrand K L ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ =
-          ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ := hφ
-    _ ↔ ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
-          n * Nat.card (lowerRamificationGroup K L 0) := by
-      rw [Subtype.ext_iff, coe_herbrand_of_coe_eq_natCast K L m rfl,
-        Subtype.coe_mk, div_eq_iff h0]
-      norm_cast
+  simp_rw [psiNat_eq_isLocalRingPsiNat, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.psiNat_eq_iff (L ≃ₐ[K] L) 𝒪[L]
 
 /-- `ψℕ_{L/K}(0) = 0`. -/
 @[simp]
@@ -585,13 +378,9 @@ theorem psiNat_zero : psiNat K L 0 = 0 :=
   (psiNat_eq_iff K L).2 (by simp)
 
 /-- The integral inverse Herbrand function is strictly increasing. -/
-theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
-  have hlt : (⟨(a : ℝ), Nat.cast_mem_ramificationIndexDomain a⟩ : RamificationIndexDomain) <
-      ⟨(b : ℝ), Nat.cast_mem_ramificationIndexDomain b⟩ :=
-    Subtype.mk_lt_mk.2 (by exact_mod_cast h)
-  have := inverseHerbrand_strictMono K L hlt
-  exact_mod_cast (coe_psiNat K L a).trans_lt
-    ((Subtype.coe_lt_coe.2 this).trans_eq (coe_psiNat K L b).symm)
+theorem psiNat_strictMono : StrictMono (psiNat K L) := fun _ _ h ↦ by
+  simp_rw [psiNat_eq_isLocalRingPsiNat]
+  exact TauCeti.IsLocalRing.psiNat_strictMono (L ≃ₐ[K] L) 𝒪[L] h
 
 /-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
@@ -605,46 +394,18 @@ unshifted ones. -/
 theorem psiNat_le_iff_le_floor_herbrand {n i : ℕ} :
     psiNat K L n ≤ i ↔
       n ≤ ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
-  have h0 : (0 : ℝ) ≤ herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ := by
-    have hle : (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
-        ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ :=
-      Subtype.mk_le_mk.2 (Nat.cast_le.2 i.zero_le)
-    have h := (herbrand_strictMono K L).monotone hle
-    rw [herbrand_of_coe_le_zero K L (by simp)] at h
-    simpa using Subtype.coe_le_coe.2 h
-  have h := (herbrandOrderIso K L).symm_apply_le (y := ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
-    (x := ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩)
-  rw [herbrandOrderIso_apply, herbrandOrderIso_symm_apply, ← Subtype.coe_le_coe,
-    ← Subtype.coe_le_coe] at h
-  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat]
-  exact h
+  rw [psiNat_eq_isLocalRingPsiNat, coe_herbrand_eq_herbrandFun,
+    Nat.le_floor_iff ((TauCeti.IsLocalRing.herbrandFun_nonneg_iff (L ≃ₐ[K] L) 𝒪[L]).2
+      (Nat.cast_nonneg i))]
+  exact TauCeti.IsLocalRing.psiNat_le_iff (L ≃ₐ[K] L) 𝒪[L]
 
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
 @[simp]
 theorem psiNat_eq_self_iff {v : ℕ} :
     psiNat K L v = v ↔ lowerRamificationGroup K L v = lowerRamificationGroup K L 0 := by
-  have hle : ∀ i : ℕ, lowerRamificationGroup K L i ≤ lowerRamificationGroup K L 0 := fun i ↦
-    lowerRamificationGroup_antitone K L (Int.natCast_nonneg i)
-  rw [psiNat_eq_iff]
-  constructor
-  · intro h
-    rcases v with _ | k
-    · simp
-    -- `#G_1 + ⋯ + #G_k ≤ k #G_0`, so `#G_{k+1} ≥ #G_0`.
-    have hk := Finset.sum_le_card_nsmul (Finset.Icc 1 k)
-      (fun i : ℕ ↦ Nat.card (lowerRamificationGroup K L i)) _
-      fun i _ ↦ Subgroup.card_le_of_le (hle i)
-    rw [Finset.sum_Icc_succ_top (by omega)] at h
-    simp only [Nat.card_Icc, Nat.add_sub_cancel, smul_eq_mul] at hk
-    exact Subgroup.eq_of_le_of_card_ge (hle _) (by rw [add_mul, one_mul] at h; omega)
-  · intro hv
-    calc ∑ i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L i)
-        = ∑ _i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L 0) := by
-          refine Finset.sum_congr rfl fun i hi ↦ ?_
-          have hi : (i : ℤ) ≤ v := by have := (Finset.mem_Icc.1 hi).2; omega
-          rw [le_antisymm (hle i) (hv.symm.le.trans (lowerRamificationGroup_antitone K L hi))]
-      _ = v * Nat.card (lowerRamificationGroup K L 0) := by simp
+  simp_rw [psiNat_eq_isLocalRingPsiNat, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.psiNat_eq_self_iff (L ≃ₐ[K] L) 𝒪[L]
 
 /-- If the lower filtration is constant through `t` and trivial after `t`, that is `G_t = G_0`
 and `G_{t+1} = 1`, then `ψℕ_{L/K}(v) = t + #G_0 · (v - t)` for every `v ≥ t`. For a totally

@@ -30,6 +30,8 @@ These statements identify the breaks used by the norm filtration and Hasse–Arf
 public section
 noncomputable section
 
+open ValuativeRel
+
 namespace TauCeti.LocalFieldsRamification
 
 variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -48,6 +50,13 @@ theorem upperJump_iff (u : RamificationIndexDomain) :
     UpperJump K L u ↔ ∀ v : RamificationIndexDomain, u < v →
       upperRamificationGroup K L v < upperRamificationGroup K L u := Iff.rfl
 
+/-- `UpperJump` agrees with `TauCeti.IsLocalRing.UpperJump` on `𝒪[L]`. -/
+theorem upperJump_iff_isLocalRingUpperJump (u : RamificationIndexDomain) :
+    UpperJump K L u ↔ TauCeti.IsLocalRing.UpperJump (L ≃ₐ[K] L) 𝒪[L] u := by
+  rw [upperJump_iff, TauCeti.IsLocalRing.upperJump_iff]
+  simp_rw [upperRamificationGroup_eq_isLocalRingUpperRamificationGroup]
+  exact ⟨fun hu v huv ↦ hu ⟨v, u.property.trans huv.le⟩ huv, fun hu v huv ↦ hu v huv⟩
+
 /-- An upper break requires a nontrivial Galois group. -/
 theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u) :
     Nontrivial (L ≃ₐ[K] L) := by
@@ -62,28 +71,16 @@ theorem UpperJump.nontrivial {u : RamificationIndexDomain} (hu : UpperJump K L u
 @[simp]
 theorem upperJump_herbrand_iff (u : RamificationIndexDomain) :
     UpperJump K L (herbrand K L u) ↔ LowerJump K L u := by
-  constructor
-  · intro h
-    apply (lowerJump_iff K L u).mpr
-    intro v huv
-    have h' := (upperJump_iff K L _).mp h (herbrand K L v)
-      ((herbrand_strictMono K L) huv)
-    simpa only [upperRamificationGroup_herbrand] using h'
-  · intro h
-    apply (upperJump_iff K L _).mpr
-    intro v huv
-    have h' : u < inverseHerbrand K L v := by
-      have hv := (inverseHerbrand_strictMono K L) huv
-      rwa [inverseHerbrand_herbrand] at hv
-    simpa only [upperRamificationGroup_def, inverseHerbrand_herbrand] using
-      (lowerJump_iff K L u).mp h (inverseHerbrand K L v) h'
+  rw [upperJump_iff_isLocalRingUpperJump, lowerJump_iff_isLocalRingLowerJump,
+    coe_herbrand_eq_herbrandFun, TauCeti.IsLocalRing.upperJump_herbrandFun_iff]
 
 /-- The inverse Herbrand function takes upper breaks precisely to lower breaks. -/
 @[simp]
 theorem lowerJump_inverseHerbrand_iff (u : RamificationIndexDomain) :
     LowerJump K L (inverseHerbrand K L u) ↔ UpperJump K L u := by
-  simpa only [herbrand_inverseHerbrand] using
-    (upperJump_herbrand_iff K L (inverseHerbrand K L u)).symm
+  rw [lowerJump_iff_isLocalRingLowerJump, upperJump_iff_isLocalRingUpperJump,
+    coe_inverseHerbrand_eq_inverseHerbrandFun,
+    TauCeti.IsLocalRing.lowerJump_inverseHerbrandFun_iff]
 
 /-- In prime degree, an upper break at a natural number `t` has `G_t = Gal(L/K)`: the group
 `G^t = G_{ψ(t)}` strictly contains every later upper group, so it is nontrivial, hence the whole
