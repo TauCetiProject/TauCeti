@@ -105,7 +105,7 @@ example (ϖ x : (pair p).plus) :
     (⟨untilt.sharp p (pair p) _ ϖ, untilt.sharp_mem_untiltPlus ϖ⟩ :
         untiltPlus p (pair p) (Ideal.span {(p : WittVector p (pair p).plus)})) ∣
       ⟨untilt.sharp p (pair p) _ x, untilt.sharp_mem_untiltPlus x⟩ ↔ ϖ ∣ x := by
-  simpa [← untilt.sharp_apply] using untilt.sharp_dvd_algebraMap_iff WittVector.isPrimitive_p
+  simpa [untilt.algebraMap_apply] using untilt.sharp_dvd_algebraMap_iff WittVector.isPrimitive_p
     (ϖ := ϖ) (by simp) (WittVector.teichmuller p x)
 
 -- Compatibility: the untilt along the primitive ideal `(p)` is a perfectoid Tate ring.

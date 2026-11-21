@@ -790,8 +790,8 @@ theorem isPerfectoidTateRing (hξ : ξ.IsPrimitive) :
   -- `A⁺` is open and bounded, and Frobenius `A⁺ ⧸ (♯ϖ) → A⁺ ⧸ (♯ϖ ^ p)` is bijective, since it
   -- is Frobenius `R⁺ ⧸ (ϖ) → R⁺ ⧸ (ϖ ^ p)` under `quotientSharpEquiv`
   set π : untiltPlus p P (Ideal.span {ξ}) := ⟨sharp p P _ ϖ, sharp_mem_untiltPlus ϖ⟩
-  have hπp : π ^ p = ⟨sharp p P _ (ϖ ^ p), sharp_mem_untiltPlus _⟩ :=
-    Subtype.ext (by simp [π])
+  have hπp : π ^ p = ⟨sharp p P _ ↑(ϖ ^ p), sharp_mem_untiltPlus (ϖ ^ p)⟩ :=
+    Subtype.ext (by simp only [π, SubmonoidClass.coe_pow, map_pow])
   have hdvd (a : 𝕎 P.plus) : π ^ p ∣ ⟨algebraMap (𝕎 P.plus) _ a, algebraMap_mem_untiltPlus _ a⟩ ↔
       ϖ ^ p ∣ a.coeff 0 := by
     rw [hπp, sharp_dvd_algebraMap_iff hξ hϖξ]
@@ -820,7 +820,7 @@ theorem isPerfectoidTateRing (hξ : ξ.IsPrimitive) :
       Subtype.ext (by
         simp only [AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow]
         rw [← map_pow, ← SubmonoidClass.coe_pow, frobeniusEquiv_symm_pow_p, sharp_apply,
-          map_sub])
+          ← algebraMap_apply, map_sub])
     rw [hsub, hdvd, ← WittVector.constantCoeff_apply, map_sub, WittVector.constantCoeff_apply,
       WittVector.constantCoeff_apply, WittVector.teichmuller_coeff_zero, sub_self]
     exact dvd_zero _
