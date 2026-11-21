@@ -115,7 +115,7 @@ theorem isUnit_addOrderOf {A : Type*} [AddCommGroup A] {S : Submonoid ℤ}
   obtain ⟨s, hs⟩ := @h a
   rw [Submonoid.smul_def] at hs
   have hdvd : (addOrderOf a : ℤ) ∣ s := addOrderOf_dvd_iff_zsmul_eq_zero.2 hs
-  simpa using isUnit_of_dvd_unit (map_dvd (Int.castRingHom k) hdvd) (hS s s.2)
+  simpa using isUnit_of_dvd_unit (map_dvd (Int.castRingHom k) hdvd) (hS s s.property)
 
 end Module.IsTorsion'
 

@@ -39,6 +39,10 @@ the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with 
 then `a ⟪u, B⁻¹ u⟫ ≤ 1`. This bound underlies the trace inequality `Tr (A log A) ≤ Tr (A log B)`
 for `0 ≤ A ≤ B`.
 
+A unit eigenvector of a simple eigenvalue is a unimodular multiple of the matching column of `U`,
+so the quadratic form of any matrix `C` at it is a diagonal entry of `Uᴴ C U`. This identifies the
+first variation of a simple eigenvalue.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -63,7 +67,11 @@ for `0 ≤ A ≤ B`.
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
 * `Matrix.PosSemidef.eigenvalues_mul_sum_inv_mul_le_one` — if `0 ≤ A ≤ B`, a unit eigenvector `u`
-  of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`.
+  of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`;
+* `Matrix.IsHermitian.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary` — `Uᴴ B U` is the
+  diagonal matrix of eigenvalues;
+* `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
+  eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`.
 
 ## References
 
@@ -144,7 +152,7 @@ the eigenvalues. -/
 theorem det_one_sub_smul (c : 𝕜) :
     (1 - c • B).det = ∏ j, (1 - c * (hB.eigenvalues j : 𝕜)) := by
   rw [hB.one_sub_smul_eq_conjStarAlgAut_diagonal c, conjStarAlgAut_apply, det_mul, det_mul,
-    mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.2, det_one,
+    mul_right_comm, ← det_mul, mul_star_self_of_mem hB.eigenvectorUnitary.property, det_one,
     one_mul, det_diagonal]
 
 /-- The trace of a natural power of a Hermitian matrix is the sum of the corresponding
@@ -152,9 +160,65 @@ powers of its eigenvalues. -/
 theorem trace_pow_eq_sum_eigenvalues_pow (k : ℕ) :
     (B ^ k).trace = ∑ j, (hB.eigenvalues j : 𝕜) ^ k := by
   conv_lhs => rw [hB.spectral_theorem, ← map_pow]
-  rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.2,
+  rw [conjStarAlgAut_apply, trace_mul_cycle, star_mul_self_of_mem hB.eigenvectorUnitary.property,
     one_mul, diagonal_pow, trace_diagonal]
   simp
+
+end Matrix.IsHermitian
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {B : Matrix ι ι 𝕜}
+  (hB : B.IsHermitian)
+include hB
+
+/-- Unitary diagonalization of a Hermitian matrix as a matrix product: `Uᴴ B U` is the diagonal
+matrix of the eigenvalues of `B`, where `U = hB.eigenvectorUnitary`. -/
+theorem star_eigenvectorUnitary_mul_mul_eigenvectorUnitary :
+    star (hB.eigenvectorUnitary : Matrix ι ι 𝕜) * B * (hB.eigenvectorUnitary : Matrix ι ι 𝕜) =
+      diagonal (RCLike.ofReal ∘ hB.eigenvalues) := by
+  simpa [Unitary.conjStarAlgAut_star_apply] using hB.conjStarAlgAut_star_eigenvectorUnitary
+
+/-- A unit eigenvector `u` of a simple eigenvalue `λ k₀` of a Hermitian matrix `B` is a unimodular
+multiple of the `k₀`-th column of `U = hB.eigenvectorUnitary`, so `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for
+every matrix `C`. -/
+theorem star_dotProduct_mulVec_eq_of_simple {k₀ : ι}
+    (hk₀ : ∀ k ≠ k₀, hB.eigenvalues k ≠ hB.eigenvalues k₀) {u : ι → 𝕜}
+    (hu : B *ᵥ u = (hB.eigenvalues k₀ : 𝕜) • u) (hu1 : star u ⬝ᵥ u = 1) (C : Matrix ι ι 𝕜) :
+    star u ⬝ᵥ (C *ᵥ u) =
+      (star (hB.eigenvectorUnitary : Matrix ι ι 𝕜) * C * hB.eigenvectorUnitary) k₀ k₀ := by
+  set U : Matrix ι ι 𝕜 := (hB.eigenvectorUnitary : Matrix ι ι 𝕜)
+  set d := hB.eigenvalues
+  have hU : star U * U = 1 := Unitary.star_mul_self_of_mem hB.eigenvectorUnitary.property
+  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hB.eigenvectorUnitary.property
+  -- Coordinates of `u` in the eigenbasis vanish off `k₀`.
+  set w := star U *ᵥ u
+  have huw : u = U *ᵥ w := by rw [mulVec_mulVec, hU', one_mulVec]
+  have hDw : diagonal (RCLike.ofReal ∘ d) *ᵥ w = (d k₀ : 𝕜) • w := by
+    rw [← hB.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary, ← mulVec_mulVec, ← mulVec_mulVec,
+      ← huw, hu, mulVec_smul]
+  have hw : w = Pi.single k₀ (w k₀) := by
+    ext k
+    obtain rfl | hk := eq_or_ne k k₀
+    · simp
+    have h := congrFun hDw k
+    simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at h
+    have h' : ((d k : 𝕜) - d k₀) * w k = 0 := by rw [sub_mul, h, sub_self]
+    rw [Pi.single_eq_of_ne hk]
+    exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk₀ k hk))
+  have hconj (D : Matrix ι ι 𝕜) : star u ⬝ᵥ (D *ᵥ u) = star w ⬝ᵥ ((star U * D * U) *ᵥ w) := by
+    rw [huw, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, star_eq_conjTranspose,
+      Matrix.mul_assoc]
+  have hsingle (D : Matrix ι ι 𝕜) (a : 𝕜) :
+      star (Pi.single k₀ a) ⬝ᵥ (D *ᵥ Pi.single k₀ a) = star a * a * D k₀ k₀ := by
+    rw [← Pi.single_star, single_dotProduct]
+    simp only [mulVec, dotProduct_single]
+    ring
+  have h1 : star (w k₀) * w k₀ = 1 := by
+    have h := hconj 1
+    rw [Matrix.mul_one, hU, hw, hsingle, one_mulVec, hu1] at h
+    simpa using h.symm
+  rw [hconj, hw, hsingle, h1, one_mul]
 
 end Matrix.IsHermitian
 

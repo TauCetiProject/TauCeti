@@ -199,7 +199,7 @@ theorem inv_mul_basisModification_mem_pLowerCentralSeries
       ⟨QuotientGroup.mk' _, QuotientGroup.continuous_mk⟩ :=
     hom_ext fun i ↦ by
       rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, basisModification_of]
-      exact QuotientGroup.mk_mul_of_mem _ (w i).2
+      exact QuotientGroup.mk_mul_of_mem _ (w i).property
   have hg : ((basisModification w g : freeProP p X) :
       freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) m) = g :=
     DFunLike.congr_fun h g
@@ -246,7 +246,7 @@ theorem basisModificationEquiv_symm_mem_pLowerCentralSeries (hm : 1 ≤ m)
 theorem gradedMk_basisModificationEquiv_symm (hm : 1 ≤ m)
     (w : X → pLowerCentralSeries p (freeProP p X) m) (r : pLowerCentralSeries p (freeProP p X) 1) :
     gradedMk p (freeProP p X) 1 ⟨(basisModificationEquiv hm w).symm r,
-        basisModificationEquiv_symm_mem_pLowerCentralSeries hm w r.2⟩ =
+        basisModificationEquiv_symm_mem_pLowerCentralSeries hm w r.property⟩ =
       gradedMk p (freeProP p X) 1 r := by
   rw [gradedMk_eq_gradedMk_iff]
   refine QuotientGroup.eq.2 ?_
@@ -254,7 +254,7 @@ theorem gradedMk_basisModificationEquiv_symm (hm : 1 ≤ m)
       pLowerCentralSeries p (freeProP p X) 2 :=
     pLowerCentralSeries_antitone (by omega) (inv_mul_apply_mem_pLowerCentralSeries
       (basisModification w).toMonoidHom (basisModification w).continuous
-      (inv_mul_basisModification_mem_pLowerCentralSeries w) r.2)
+      (inv_mul_basisModification_mem_pLowerCentralSeries w) r.property)
   have h' : ((basisModificationEquiv hm w).symm r)⁻¹ * r =
       (basisModificationEquiv hm w).symm ((r : freeProP p X)⁻¹ * basisModification w r) := by
     rw [map_mul, map_inv, ← basisModificationEquiv_apply hm w,
@@ -367,9 +367,9 @@ noncomputable def basisModificationDelta (hm : 1 ≤ m) :
           (gradedMkZero p (freeProP p X) (of i))) ∘ₗ
       LinearMap.proj i)
     fun ij ↦ (gradedBracketLinear p (freeProP p X) m 0).flip
-        (gradedMkZero p (freeProP p X) (of ij.1.2)) ∘ₗ LinearMap.proj ij.1.1 -
+        (gradedMkZero p (freeProP p X) (of ij.val.2)) ∘ₗ LinearMap.proj ij.val.1 -
       (gradedBracketLinear p (freeProP p X) m 0).flip
-        (gradedMkZero p (freeProP p X) (of ij.1.1)) ∘ₗ LinearMap.proj ij.1.2
+        (gradedMkZero p (freeProP p X) (of ij.val.1)) ∘ₗ LinearMap.proj ij.val.2
 
 /-- **The value of `δ` on a `p`-power basis vector**:
 `δ_{π ξ_i}(v) = π v_i + (p choose 2) • [v_i, ξ_i]`. -/
@@ -387,9 +387,10 @@ theorem basisModificationDelta_degreeOneBasis_inl (hm : 1 ≤ m) (i : X)
 theorem basisModificationDelta_degreeOneBasis_inr (hm : 1 ≤ m)
     (ij : {ij : X × X // ij.1 < ij.2}) (v : X → gradedPiece p (freeProP p X) m) :
     basisModificationDelta p X hm (degreeOneBasis p X (Sum.inr ij)) v =
-      gradedBracket p (freeProP p X) m 0 (v ij.1.1) (gradedMkZero p (freeProP p X) (of ij.1.2)) -
-        gradedBracket p (freeProP p X) m 0 (v ij.1.2)
-          (gradedMkZero p (freeProP p X) (of ij.1.1)) := by
+      gradedBracket p (freeProP p X) m 0 (v ij.val.1) (gradedMkZero p (freeProP p X)
+          (of ij.val.2)) -
+        gradedBracket p (freeProP p X) m 0 (v ij.val.2)
+          (gradedMkZero p (freeProP p X) (of ij.val.1)) := by
   rw [basisModificationDelta, Module.Basis.constr_basis]
   simp
 
@@ -406,10 +407,10 @@ theorem basisModificationDelta_apply [Fintype X] (hm : 1 ≤ m) (ρ : gradedPiec
             p.choose 2 • gradedBracket p (freeProP p X) m 0 (v i)
               (gradedMkZero p (freeProP p X) (of i))) +
         ∑ ij : {ij : X × X // ij.1 < ij.2}, (degreeOneBasis p X).repr ρ (Sum.inr ij) •
-          (gradedBracket p (freeProP p X) m 0 (v ij.1.1)
-              (gradedMkZero p (freeProP p X) (of ij.1.2)) -
-            gradedBracket p (freeProP p X) m 0 (v ij.1.2)
-              (gradedMkZero p (freeProP p X) (of ij.1.1))) := by
+          (gradedBracket p (freeProP p X) m 0 (v ij.val.1)
+              (gradedMkZero p (freeProP p X) (of ij.val.2)) -
+            gradedBracket p (freeProP p X) m 0 (v ij.val.2)
+              (gradedMkZero p (freeProP p X) (of ij.val.1))) := by
   conv_lhs => rw [← (degreeOneBasis p X).sum_repr ρ]
   simp only [Fintype.sum_sum_type, map_add, LinearMap.add_apply, map_sum, LinearMap.sum_apply,
     map_smul, LinearMap.smul_apply, basisModificationDelta_degreeOneBasis_inl,
@@ -452,7 +453,7 @@ theorem gradedMk_inv_mul_basisModification (hm : 1 ≤ m)
     gradedMk p (freeProP p X) (m + 1) ⟨(r : freeProP p X)⁻¹ * basisModification w r,
         inv_mul_apply_mem_pLowerCentralSeries (basisModification w).toMonoidHom
           (basisModification w).continuous
-          (inv_mul_basisModification_mem_pLowerCentralSeries w) r.2⟩ =
+          (inv_mul_basisModification_mem_pLowerCentralSeries w) r.property⟩ =
       basisModificationDelta p X hm (gradedMk p (freeProP p X) 1 r)
         fun i ↦ gradedMk p (freeProP p X) m (w i) := by
   have h := gradedDeviation_basisModification hm w (gradedMk p (freeProP p X) 1 r)
@@ -484,8 +485,8 @@ noncomputable def degreeOneDeriv (i : X) :
     gradedPiece p (freeProP p X) 1 →ₗ[ZMod p] gradedPiece p (freeProP p X) 0 :=
   (degreeOneBasis p X).constr (ZMod p) <| Sum.elim
     (fun j ↦ if j = i then p.choose 2 • gradedMkZero p (freeProP p X) (of i) else 0)
-    fun jk ↦ (if jk.1.1 = i then gradedMkZero p (freeProP p X) (of jk.1.2) else 0) -
-      if jk.1.2 = i then gradedMkZero p (freeProP p X) (of jk.1.1) else 0
+    fun jk ↦ (if jk.val.1 = i then gradedMkZero p (freeProP p X) (of jk.val.2) else 0) -
+      if jk.val.2 = i then gradedMkZero p (freeProP p X) (of jk.val.1) else 0
 
 /-- `∂_i` on the `p`-power basis vectors: `∂_i (π ξ_i) = (p choose 2) • ξ_i` and `∂_i (π ξ_j) = 0`
 for `j ≠ i`. -/
@@ -498,8 +499,8 @@ theorem degreeOneDeriv_degreeOneBasis_inl (i j : X) :
 `0` otherwise, for `j < k`. -/
 theorem degreeOneDeriv_degreeOneBasis_inr (i : X) (jk : {ij : X × X // ij.1 < ij.2}) :
     degreeOneDeriv p X i (degreeOneBasis p X (Sum.inr jk)) =
-      (if jk.1.1 = i then gradedMkZero p (freeProP p X) (of jk.1.2) else 0) -
-        if jk.1.2 = i then gradedMkZero p (freeProP p X) (of jk.1.1) else 0 := by
+      (if jk.val.1 = i then gradedMkZero p (freeProP p X) (of jk.val.2) else 0) -
+        if jk.val.2 = i then gradedMkZero p (freeProP p X) (of jk.val.1) else 0 := by
   rw [degreeOneDeriv, Module.Basis.constr_basis, Sum.elim_inr]
 
 /-- `∂_i (π ξ_i) = (p choose 2) • ξ_i`. -/
@@ -611,9 +612,11 @@ theorem basisModificationDelta_eq_gradedPow_add_sum [Fintype X] (hm : 1 ≤ m)
       simp only [reduceCtorEq, ite_false, zero_smul, Finset.sum_const_zero, gradedPow_zero,
         zero_add, degreeOneDeriv_degreeOneBasis_inr, map_sub, Finset.sum_sub_distrib]
       congr 1
-      · rw [Finset.sum_eq_single jk.1.1 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+      · rw [Finset.sum_eq_single jk.val.1 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij),
+          map_zero])
           (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
-      · rw [Finset.sum_eq_single jk.1.2 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij), map_zero])
+      · rw [Finset.sum_eq_single jk.val.2 (fun i _ hij ↦ by rw [ite_eq_right (Ne.symm hij),
+          map_zero])
           (fun h ↦ (h (Finset.mem_univ _)).elim), ite_eq_left rfl]
   have h := LinearMap.congr_fun key ρ
   simpa only [LinearMap.flip_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sum_apply,

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 import Mathlib.Analysis.Asymptotics.Completion
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
@@ -18,12 +19,14 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Strip
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.OmegaLimit
@@ -45,6 +48,9 @@ its norm has finite integral over the half-cylinder `(a, ∞) × [0, 1]`, then:
 
 Together these give a periodic solution and a sequence `s_n → ∞` along which the loops converge
 to it uniformly (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top`).
+The second statement holds as well for any sequence of `C¹`, `1`-periodic loops `γ_n` in `K`, not
+necessarily the loops of one map, whose defects `γ_n' - X(t, γ_n)` tend to `0` in `L²`
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_deriv_sub`).
 The same results apply on a half-cylinder `s < a` through the reflected map `(s, t) ↦ u(-s, t)`,
 which has the same loops and the same squared defect integral
 (`TauCeti.setLIntegral_norm_sq_sliceDefect_comp_neg_fst`).
@@ -78,6 +84,18 @@ isolated from each other in the uniform distance, it is therefore a single solut
 loops converge uniformly to `x` as `s → ∞`
 (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). This is how nondegeneracy of the
 periodic orbits turns the accumulation along a sequence into convergence along the whole end.
+
+The same compactness gives estimates that are uniform in the loops and in the length of the
+cylinder, as needed along the necks of a breaking sequence of Floer cylinders:
+
+* every `C¹` periodic loop in `K` with small enough defect is uniformly close to a periodic
+  solution in `K` (`TauCeti.exists_pos_forall_exists_periodic_hasDerivAt_dist_lt`);
+* if the periodic solutions in `K` are isolated, they are uniformly separated: two of them that are
+  uniformly close coincide (`TauCeti.exists_pos_forall_eq_of_forall_dist_lt`);
+* hence, for loops with derivative bounded by `C`, if the squared defect integrates to less than a
+  constant `δ` over a strip `(a, b) × [0, 1]`, then all loops at `s ∈ [a + η, b - η]` are uniformly
+  close to one single periodic solution, with `δ` and the margin `η` independent of the map and of
+  `b - a` (`TauCeti.exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt`).
 
 ## References
 
@@ -150,6 +168,12 @@ theorem hasDerivAt_slice_add_sliceDefect (hu : DifferentiableOn ℝ u (Ioi a ×�
   rw [sliceDefect_def, add_sub_cancel]
   have hmem : (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hs, mem_univ t⟩
   exact hasDerivAt_slice_right (hu.differentiableAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds hmem))
+
+/-- Where `u` is differentiable, the defect is the derivative of the loop `t ↦ u(s, t)` minus the
+vector field along it. -/
+theorem sliceDefect_eq_deriv_sub {s t : ℝ} (hu : DifferentiableAt ℝ u (s, t)) :
+    sliceDefect X u (s, t) = deriv (fun t ↦ u (s, t)) t - X t (u (s, t)) := by
+  rw [sliceDefect_def, (hasDerivAt_slice_right hu).deriv]
 
 /-- **The loops solve the integral equation up to the defect.** Along the loop at `s > a` of a
 `C¹` map, `u(s, t₂) - u(s, t₁) = ∫_{t₁}^{t₂} X(t, u(s, t)) dt + ∫_{t₁}^{t₂} (∂_t u - X(t, u))`
@@ -352,45 +376,53 @@ end Modulus
 
 section Limit
 
-/-- **The integral equation passes to the limit.** Let `X` be continuous and let `u` be `C¹` on
-the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a` converge
-pointwise to `x` and the `L²` norms of their defects tend to `0`, then
+/-- **The integral equation passes to the limit.** Let `X` be continuous and let the maps `u i` be
+`C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops of `u i` at
+`s_i > a` converge pointwise to `x` and the `L²` norms of their defects tend to `0`, then
 `x(t) - x(0) = ∫₀ᵗ X(τ, x(τ)) dτ` for `t ∈ [0, 1]`, after applying a continuous linear map `L` into
 a Banach space. When `V` is complete, `L` can be the identity; in general, take the embedding of `V`
 into its completion. -/
 private theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map {W : Type*}
-    [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace W] (L : V →L[ℝ] W)
-    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) {K : Set V} (hK : IsCompact K)
-    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X)) {ι : Type*}
-    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
-    (hφ : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) l (𝓝 0))
-    {x : ℝ → V} (hx : ∀ t, Tendsto (fun i ↦ u (φ i, t)) l (𝓝 (x t))) {t : ℝ}
+    [NormedAddCommGroup W] [NormedSpace ℝ W] [CompleteSpace W] (L : V →L[ℝ] W) {ι : Type*}
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {u : ι → ℝ × ℝ → V}
+    (hu : ∀ i, ContDiffOn ℝ 1 (u i) (Ioi a ×ˢ univ)) {K : Set V} (hK : IsCompact K)
+    (huK : ∀ i, ∀ s, a < s → ∀ t, u i (s, t) ∈ K) (hX : Continuous (uncurry X))
+    {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
+    (hφ : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X (u i) (φ i, t)‖ ^ 2) l (𝓝 0))
+    {x : ℝ → V} (hx : ∀ t, Tendsto (fun i ↦ u i (φ i, t)) l (𝓝 (x t))) {t : ℝ}
     (ht : t ∈ Icc (0 : ℝ) 1) :
     L (x t) - L (x 0) = ∫ τ in (0 : ℝ)..t, L (X τ (x τ)) := by
-  have hloop : ∀ i, Continuous fun τ ↦ u (φ i, τ) := fun i ↦
-    continuous_slice_of_continuousOn hu.continuousOn (hφa i)
+  have hloop : ∀ i, Continuous fun τ ↦ u i (φ i, τ) := fun i ↦
+    continuous_slice_of_continuousOn (hu i).continuousOn (hφa i)
   -- Along the sequence, `u(s, t) - u(s, 0) = ∫₀ᵗ X(τ, u(s, τ)) dτ + ∫₀ᵗ (defect)`.
-  have hsplit : ∀ i, L (u (φ i, t)) - L (u (φ i, 0)) =
-      (∫ τ in (0 : ℝ)..t, L (X τ (u (φ i, τ)))) + ∫ τ in (0 : ℝ)..t, L (sliceDefect X u (φ i, τ)) :=
-    fun i ↦ sub_eq_integral_add_integral_sliceDefect_map L hu hX (hφa i) 0 t
+  have hsplit : ∀ i, L (u i (φ i, t)) - L (u i (φ i, 0)) =
+      (∫ τ in (0 : ℝ)..t, L (X τ (u i (φ i, τ)))) +
+        ∫ τ in (0 : ℝ)..t, L (sliceDefect X (u i) (φ i, τ)) :=
+    fun i ↦ sub_eq_integral_add_integral_sliceDefect_map L (hu i) hX (hφa i) 0 t
   -- The first integral converges by dominated convergence.
-  have hA : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, L (X τ (u (φ i, τ)))) l
+  have hA : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, L (X τ (u i (φ i, τ)))) l
       (𝓝 (∫ τ in (0 : ℝ)..t, L (X τ (x τ)))) :=
-    tendsto_intervalIntegral_comp_of_tendsto (Φ := L ∘ uncurry X) (y := fun i τ ↦ u (φ i, τ))
-      (L.continuous.comp hX) hK (fun i ↦ (hloop i).continuousOn) (fun i τ _ ↦ huK _ (hφa i) τ)
-      fun τ _ ↦ hx τ
+    tendsto_intervalIntegral_comp_of_tendsto (Φ := L ∘ uncurry X) (y := fun i τ ↦ u i (φ i, τ))
+      (L.continuous.comp hX) hK (fun i ↦ (hloop i).continuousOn)
+      (fun i τ _ ↦ huK i _ (hφa i) τ) fun τ _ ↦ hx τ
   -- The second integral tends to `0` by the Cauchy–Schwarz inequality.
-  have hD : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, L (sliceDefect X u (φ i, τ))) l (𝓝 0) := by
-    have h := (tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq hu hX hφa hφ le_rfl
-      ht.1 ht.2).const_mul ‖L‖
-    rw [mul_zero] at h
-    refine squeeze_zero_norm (fun i ↦ ?_) h
-    rw [← intervalIntegral.integral_const_mul]
-    exact intervalIntegral.norm_integral_le_of_norm_le ht.1
-      (Eventually.of_forall fun τ _ ↦ L.le_opNorm _)
-      ((continuous_const.mul (continuous_sliceDefect_slice hu hX (hφa i)).norm).intervalIntegrable
-        _ _)
-  have hL : Tendsto (fun i ↦ L (u (φ i, t)) - L (u (φ i, 0))) l (𝓝 (L (x t) - L (x 0))) :=
+  have hD : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, L (sliceDefect X (u i) (φ i, τ))) l (𝓝 0) := by
+    have hsq : Tendsto (fun i ↦
+        ‖L‖ * √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X (u i) (φ i, τ)‖ ^ 2)) l (𝓝 0) := by
+      simpa using ((Real.continuous_sqrt.tendsto 0).comp hφ).const_mul ‖L‖
+    refine squeeze_zero_norm (fun i ↦ ?_) hsq
+    calc ‖∫ τ in (0 : ℝ)..t, L (sliceDefect X (u i) (φ i, τ))‖
+        ≤ ∫ τ in (0 : ℝ)..t, ‖L‖ * ‖sliceDefect X (u i) (φ i, τ)‖ :=
+          intervalIntegral.norm_integral_le_of_norm_le ht.1
+            (Eventually.of_forall fun τ _ ↦ L.le_opNorm _)
+            ((continuous_const.mul
+              (continuous_sliceDefect_slice (hu i) hX (hφa i)).norm).intervalIntegrable _ _)
+      _ ≤ ‖L‖ * √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X (u i) (φ i, τ)‖ ^ 2) := by
+          rw [intervalIntegral.integral_const_mul]
+          exact mul_le_mul_of_nonneg_left
+            (integral_norm_sliceDefect_le_sqrt (hu i) hX (hφa i) le_rfl ht.1 ht.2) (norm_nonneg _)
+  have hL : Tendsto (fun i ↦ L (u i (φ i, t)) - L (u i (φ i, 0))) l
+      (𝓝 (L (x t) - L (x 0))) :=
     ((L.continuous.tendsto _).comp (hx t)).sub ((L.continuous.tendsto _).comp (hx 0))
   simp_rw [hsplit] at hL
   simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
@@ -408,7 +440,73 @@ theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect [CompleteSpace V
     (ht : t ∈ Icc (0 : ℝ) 1) :
     x t - x 0 = ∫ τ in (0 : ℝ)..t, X τ (x τ) := by
   simpa using sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map
-    (ContinuousLinearMap.id ℝ V) hu hK huK hX hφa hφ hx ht
+    (ContinuousLinearMap.id ℝ V) (u := fun _ ↦ u) (fun _ ↦ hu) hK (fun _ ↦ huK) hX hφa hφ hx ht
+
+/-- **Loops with small defect converge to periodic orbits**, for loops of a sequence of maps. Let
+`X` be a continuous, `1`-periodic time-dependent vector field and let the maps `u n` be `C¹` on the
+half-cylinder `s > a`, with `1`-periodic loops `t ↦ u n (s, t)` in a compact set `K`. If `s_n > a`
+and the `L²` norm of the defect `∂_t u n - X(t, u n)` over the loop of `u n` at `s_n` tends to `0`,
+then a subsequence of these loops converges uniformly to a `1`-periodic solution `x` of
+`x' = X(t, x)`. -/
+private theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_seq
+    {u : ℕ → ℝ × ℝ → V} (hu : ∀ n, ContDiffOn ℝ 1 (u n) (Ioi a ×ˢ univ))
+    (hper : ∀ n, ∀ s, a < s → Periodic (fun t ↦ u n (s, t)) 1)
+    {K : Set V} (hK : IsCompact K) (huK : ∀ n, ∀ s, a < s → ∀ t, u n (s, t) ∈ K)
+    (hX : Continuous (uncurry X)) (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    {φ : ℕ → ℝ} (hφa : ∀ n, a < φ n)
+    (hφ : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X (u n) (φ n, t)‖ ^ 2) atTop (𝓝 0)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
+      TendstoUniformly (fun n t ↦ u (ψ n) (φ (ψ n), t)) x atTop := by
+  -- A bound for `X` on `[0, 1] × K`.
+  obtain ⟨B, hB⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hX.continuousOn
+  -- Pass to the tail of the sequence on which the squared defect integral is at most `1`.
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hφ.eventually (gt_mem_nhds zero_lt_one))
+  set y : ℕ → ℝ → V := fun n t ↦ u (N + n) (φ (N + n), t)
+  -- The loops share the modulus of continuity `h ↦ B h + √h` on `[0, 1]`.
+  have hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
+      dist (y n t₂) (y n t₁) ≤ B * (t₂ - t₁) + √(t₂ - t₁) := by
+    intro n t₁ ht₁ t₂ ht₂ ht
+    have hs := hφa (N + n)
+    rw [dist_eq_norm]
+    refine (norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect (hu _) hX hs ht
+      fun t htI ↦ hB (t, _) ⟨⟨ht₁.1.trans htI.1, htI.2.trans ht₂.2⟩, huK _ _ hs t⟩).trans ?_
+    have hle : ∫ t in t₁..t₂, ‖sliceDefect X (u (N + n)) (φ (N + n), t)‖ ^ 2 ≤ 1 :=
+      (intervalIntegral.integral_mono_interval ht₁.1 ht ht₂.2
+        (Eventually.of_forall fun t ↦ sq_nonneg _)
+        ((continuous_norm_sliceDefect_sq (hu _) hX hs).intervalIntegrable _ _)).trans
+        (hN _ (Nat.le_add_right N n)).le
+    exact add_le_add le_rfl (mul_le_of_le_one_right (Real.sqrt_nonneg _)
+      (Real.sqrt_le_one.mpr hle))
+  have hρ : Tendsto (fun h : ℝ ↦ B * h + √h) (𝓝 0) (𝓝 0) := by
+    have hb : Continuous fun h : ℝ ↦ B * h + √h :=
+      (continuous_const.mul continuous_id).add Real.continuous_sqrt
+    simpa using hb.tendsto 0
+  obtain ⟨ψ', hψ', x, hxper, hxcont, hux'⟩ :=
+    exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
+      (fun n ↦ continuous_slice_of_continuousOn (hu _).continuousOn (hφa (N + n)))
+      (fun n ↦ hper _ _ (hφa (N + n))) (fun n ↦ huK _ _ (hφa (N + n))) hρ hmod
+  set ψ : ℕ → ℕ := fun n ↦ N + ψ' n
+  have hψ : StrictMono ψ := fun m n h ↦ Nat.add_lt_add_left (hψ' h) N
+  have hux : TendstoUniformly (fun n t ↦ u (ψ n) (φ (ψ n), t)) x atTop := hux'
+  have hpt : ∀ t, Tendsto (fun n ↦ u (ψ n) (φ (ψ n), t)) atTop (𝓝 (x t)) := hux.tendsto_at
+  have hdef : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X (u (ψ n)) (φ (ψ n), t)‖ ^ 2)
+      atTop (𝓝 0) :=
+    hφ.comp (tendsto_atTop_mono (fun n ↦ Nat.le_add_left _ N) hψ'.tendsto_atTop)
+  -- In the completion `ι : V → V̂`, the limit solves the integral equation on `[0, 1]`, hence
+  -- `(ι ∘ x)' = ι (X(t, x))` by periodicity; as `ι` is isometric, `x' = X(t, x)`.
+  set ι : V →L[ℝ] UniformSpace.Completion V := UniformSpace.Completion.toComplL
+  have hint : ∀ t ∈ Icc (0 : ℝ) 1, ι (x t) - ι (x 0) = ∫ τ in (0 : ℝ)..t, ι (X τ (x τ)) :=
+    fun t ht ↦ sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map ι
+      (u := fun n ↦ u (ψ n)) (fun n ↦ hu _) hK (fun n ↦ huK _) hX (fun n ↦ hφa (ψ n)) hdef hpt
+      ht
+  refine ⟨ψ, hψ, x, hxper, fun t ↦ ?_, hux⟩
+  have h := hasDerivAt_of_periodic_of_sub_eq_integral (x := fun τ ↦ ι (x τ))
+    (Y := fun τ ↦ ι (X τ (x τ))) one_pos (hxper.comp ι)
+    (ι.continuous.comp (hX.comp (continuous_id.prodMk hxcont)))
+    (fun t ↦ by simp only [hxper t, hXper (x t) t]) hint t
+  rw [hasDerivAt_iff_isLittleO] at h ⊢
+  rw [← Asymptotics.isLittleO_completion_left]
+  simpa [ι, UniformSpace.Completion.coe_sub] using h
 
 /-- **Loops with small defect converge to periodic orbits.** Let `X` be a continuous,
 `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with
@@ -422,57 +520,34 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral
     {φ : ℕ → ℝ} (hφa : ∀ n, a < φ n)
     (hφ : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) atTop (𝓝 0)) :
     ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
-      TendstoUniformly (fun n t ↦ u (φ (ψ n), t)) x atTop := by
-  -- A bound for `X` on `[0, 1] × K`.
-  obtain ⟨B, hB⟩ := (isCompact_Icc.prod hK).exists_bound_of_continuousOn hX.continuousOn
-  have hBu : ∀ s, a < s → ∀ t ∈ Icc (0 : ℝ) 1, ‖X t (u (s, t))‖ ≤ B := fun s hs t ht ↦
-    hB (t, u (s, t)) ⟨ht, huK s hs t⟩
-  -- Pass to the tail of the sequence on which the squared defect integral is at most `1`.
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hφ.eventually (gt_mem_nhds zero_lt_one))
-  set y : ℕ → ℝ → V := fun n t ↦ u (φ (N + n), t)
-  -- The loops share the modulus of continuity `h ↦ B h + √h` on `[0, 1]`.
-  have hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
-      dist (y n t₂) (y n t₁) ≤ B * (t₂ - t₁) + √(t₂ - t₁) := by
-    intro n t₁ ht₁ t₂ ht₂ ht
-    have hs := hφa (N + n)
-    rw [dist_eq_norm]
-    refine (norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect hu hX hs ht
-      fun t htI ↦ hBu _ hs t ⟨ht₁.1.trans htI.1, htI.2.trans ht₂.2⟩).trans ?_
-    have hle : ∫ t in t₁..t₂, ‖sliceDefect X u (φ (N + n), t)‖ ^ 2 ≤ 1 :=
-      (intervalIntegral.integral_mono_interval ht₁.1 ht ht₂.2
-        (Eventually.of_forall fun t ↦ sq_nonneg _)
-        ((continuous_norm_sliceDefect_sq hu hX hs).intervalIntegrable _ _)).trans
-        (hN _ (Nat.le_add_right N n)).le
-    exact add_le_add le_rfl (mul_le_of_le_one_right (Real.sqrt_nonneg _)
-      (Real.sqrt_le_one.mpr hle))
-  have hρ : Tendsto (fun h : ℝ ↦ B * h + √h) (𝓝 0) (𝓝 0) := by
-    have hb : Continuous fun h : ℝ ↦ B * h + √h :=
-      (continuous_const.mul continuous_id).add Real.continuous_sqrt
-    simpa using hb.tendsto 0
-  obtain ⟨ψ', hψ', x, hxper, hxcont, hux'⟩ :=
-    exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
-      (fun n ↦ continuous_slice_of_continuousOn hu.continuousOn (hφa (N + n)))
-      (fun n ↦ hper _ (hφa (N + n))) (fun n ↦ huK _ (hφa (N + n))) hρ hmod
-  set ψ : ℕ → ℕ := fun n ↦ N + ψ' n
-  have hψ : StrictMono ψ := fun m n h ↦ Nat.add_lt_add_left (hψ' h) N
-  have hux : TendstoUniformly (fun n t ↦ u (φ (ψ n), t)) x atTop := hux'
-  have hpt : ∀ t, Tendsto (fun n ↦ u (φ (ψ n), t)) atTop (𝓝 (x t)) := hux.tendsto_at
-  have hdef : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ (ψ n), t)‖ ^ 2) atTop
-      (𝓝 0) := hφ.comp (tendsto_atTop_mono (fun n ↦ Nat.le_add_left _ N) hψ'.tendsto_atTop)
-  -- In the completion `ι : V → V̂`, the limit solves the integral equation on `[0, 1]`, hence
-  -- `(ι ∘ x)' = ι (X(t, x))` by periodicity; as `ι` is isometric, `x' = X(t, x)`.
-  set ι : V →L[ℝ] UniformSpace.Completion V := UniformSpace.Completion.toComplL
-  have hint : ∀ t ∈ Icc (0 : ℝ) 1, ι (x t) - ι (x 0) = ∫ τ in (0 : ℝ)..t, ι (X τ (x τ)) :=
-    fun t ht ↦ sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect_map ι hu hK huK hX
-      (fun n ↦ hφa (ψ n)) hdef hpt ht
-  refine ⟨ψ, hψ, x, hxper, fun t ↦ ?_, hux⟩
-  have h := hasDerivAt_of_periodic_of_sub_eq_integral (x := fun τ ↦ ι (x τ))
-    (Y := fun τ ↦ ι (X τ (x τ))) one_pos (hxper.comp ι)
-    (ι.continuous.comp (hX.comp (continuous_id.prodMk hxcont)))
-    (fun t ↦ by simp only [hxper t, hXper (x t) t]) hint t
-  rw [hasDerivAt_iff_isLittleO] at h ⊢
-  rw [← Asymptotics.isLittleO_completion_left]
-  simpa [ι, UniformSpace.Completion.coe_sub] using h
+      TendstoUniformly (fun n t ↦ u (φ (ψ n), t)) x atTop :=
+  exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_seq (u := fun _ ↦ u)
+    (fun _ ↦ hu) (fun _ ↦ hper) hK (fun _ ↦ huK) hX hXper hφa hφ
+
+/-- **Loops with small defect converge to periodic orbits**, for a sequence of loops. Let `X` be
+a continuous, `1`-periodic time-dependent vector field, and let `γ n` be `C¹`, `1`-periodic loops
+in a compact set `K`. If the `L²` norm of the defect `γ n' - X(t, γ n)` over `[0, 1]` tends to
+`0`, then a subsequence of the loops converges uniformly to a `1`-periodic solution `x` of
+`x' = X(t, x)` with values in `K`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_deriv_sub
+    {γ : ℕ → ℝ → V} (hγ : ∀ n, ContDiff ℝ 1 (γ n)) (hper : ∀ n, Periodic (γ n) 1)
+    {K : Set V} (hK : IsCompact K) (hγK : ∀ n t, γ n t ∈ K)
+    (hX : Continuous (uncurry X)) (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hγX : Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖deriv (γ n) t - X t (γ n t)‖ ^ 2) atTop (𝓝 0)) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
+      (∀ t, x t ∈ K) ∧ TendstoUniformly (fun n ↦ γ (ψ n)) x atTop := by
+  -- The loops are those of the maps `(s, t) ↦ γ n t`, which do not depend on `s`.
+  have hdef (n : ℕ) (s t : ℝ) :
+      sliceDefect X (fun w ↦ γ n w.2) (s, t) = deriv (γ n) t - X t (γ n t) :=
+    sliceDefect_eq_deriv_sub
+      (((hγ n).differentiable one_ne_zero t).comp (s, t) differentiableAt_snd)
+  obtain ⟨ψ, hψ, x, hxper, hx, hux⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_seq (a := 0)
+      (u := fun n w ↦ γ n w.2) (fun n ↦ ((hγ n).comp contDiff_snd).contDiffOn)
+      (fun n _ _ ↦ hper n) hK (fun n _ _ t ↦ hγK n t) hX hXper (φ := fun _ ↦ 1)
+      (fun _ ↦ one_pos) (by simpa only [hdef] using hγX)
+  exact ⟨ψ, hψ, x, hxper, hx, fun t ↦ hK.isClosed.mem_of_tendsto (hux.tendsto_at t)
+    (Eventually.of_forall fun n ↦ hγK _ t), hux⟩
 
 /-- **Loops with square-integrable defect accumulate at periodic orbits.** Let `X` be a
 continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder
@@ -503,6 +578,56 @@ section Convergence
 
 variable {K : Set V} {C : ℝ}
 
+/-- On the strip `(a, b) × ℝ` where `u` is `C¹`, the loop at `s ∈ (a, b)` is `C¹` and its defect is
+the defect of `u`. -/
+private theorem contDiff_slice_and_sliceDefect_eq {b : ℝ} (hu : ContDiffOn ℝ 1 u (Ioo a b ×ˢ univ))
+    {s : ℝ} (hs : s ∈ Ioo a b) :
+    ContDiff ℝ 1 (fun t ↦ u (s, t)) ∧
+      ∀ t, sliceDefect X u (s, t) = deriv (fun t ↦ u (s, t)) t - X t (u (s, t)) :=
+  ⟨hu.comp_contDiff (contDiff_const.prodMk contDiff_id) fun t ↦ ⟨hs, mem_univ t⟩,
+    fun t ↦ sliceDefect_eq_deriv_sub ((hu.differentiableOn one_ne_zero).differentiableAt
+      ((isOpen_Ioo.prod isOpen_univ).mem_nhds ⟨hs, mem_univ t⟩))⟩
+
+/-- If the squared defect of a map, `C¹` on the strip `(a, b) × ℝ`, integrates to less than `h δ`
+over a rectangle `[s, s + h] × [0, 1]` inside the strip, then some loop at a time `σ ∈ [s, s + h]`
+has squared defect integral below `δ`. -/
+private theorem exists_mem_Icc_integral_norm_sq_sliceDefect_lt_of_setLIntegral_lt {b : ℝ}
+    (hu : ContDiffOn ℝ 1 u (Ioo a b ×ˢ univ)) (hX : Continuous (uncurry X)) {s h δ : ℝ}
+    (hh : 0 < h) (hs : Icc s (s + h) ⊆ Ioo a b)
+    (hE : ∫⁻ z in Icc s (s + h) ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) <
+      ENNReal.ofReal (h * δ)) :
+    ∃ σ ∈ Icc s (s + h), ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ, t)‖ ^ 2 < δ := by
+  by_contra! hge
+  refine hE.not_ge ?_
+  set f : ℝ × ℝ → ℝ≥0∞ := fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)
+  -- Along each loop of the rectangle the squared defect is continuous, so its lower integral is
+  -- its integral.
+  have hcont (σ : ℝ) (hσ : σ ∈ Ioo a b) : Continuous fun t ↦ ‖sliceDefect X u (σ, t)‖ ^ 2 := by
+    obtain ⟨hγ, hdef⟩ := contDiff_slice_and_sliceDefect_eq (X := X) hu hσ
+    simp_rw [hdef]
+    exact ((hγ.continuous_deriv le_rfl).sub
+      (hX.comp (continuous_id.prodMk hγ.continuous))).norm.pow 2
+  have hmeas : AEMeasurable f (volume.restrict (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1)) := by
+    refine (ENNReal.continuous_ofReal.comp_continuousOn ?_).aemeasurable
+      (measurableSet_Icc.prod measurableSet_Icc)
+    have hd : ContinuousOn (sliceDefect X u) (Ioo a b ×ˢ univ) :=
+      ((hu.continuousOn_fderiv_of_isOpen (isOpen_Ioo.prod isOpen_univ) le_rfl).clm_apply
+        continuousOn_const).sub <| hX.comp_continuousOn (continuousOn_snd.prodMk hu.continuousOn)
+    exact ((hd.norm.pow 2).mono (prod_mono hs (subset_univ _)))
+  rw [Measure.volume_eq_prod, setLIntegral_prod f (by rwa [← Measure.volume_eq_prod])]
+  calc ENNReal.ofReal (h * δ) = ∫⁻ _ in Icc s (s + h), ENNReal.ofReal δ := by
+        rw [setLIntegral_const, Real.volume_Icc, add_sub_cancel_left, ENNReal.ofReal_mul hh.le,
+          mul_comm]
+    _ ≤ ∫⁻ σ in Icc s (s + h), ∫⁻ t in Icc (0 : ℝ) 1, f (σ, t) := by
+        refine setLIntegral_mono' measurableSet_Icc fun σ hσ ↦ ?_
+        have heq : ∫⁻ t in Icc (0 : ℝ) 1, f (σ, t) =
+            ENNReal.ofReal (∫ t in (0 : ℝ)..1, ‖sliceDefect X u (σ, t)‖ ^ 2) := by
+          rw [intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc,
+            ofReal_integral_eq_lintegral_ofReal ((hcont σ (hs hσ)).integrableOn_Icc)
+              (Eventually.of_forall fun t ↦ sq_nonneg _)]
+        rw [heq]
+        exact ENNReal.ofReal_le_ofReal (hge σ hσ)
+
 /-- **A loop with small defect near every late time.** If the squared defect has finite integral
 over `(a, ∞) × [0, 1]`, then for every `ε > 0` and every large enough `s`, some loop at a time
 `σ ∈ [s, s + ε]` has squared defect integral less than `ε`. -/
@@ -521,21 +646,9 @@ theorem eventually_exists_mem_Icc_integral_norm_sq_sliceDefect_lt
     exact ⟨⟨has.trans_le hz₁.1, hz₂⟩, hRs.trans (hz₁.1.trans (le_abs_self _))⟩
   filter_upwards [eventually_gt_atTop a,
     htail.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (mul_pos hε hε)))] with s has hs
-  by_contra! h
-  refine hs.not_ge ?_
-  have hsub : Icc s (s + ε) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
-    prod_mono (fun σ hσ ↦ has.trans_le hσ.1) (subset_univ _)
-  have hmeas : AEMeasurable f (volume.restrict (Icc s (s + ε) ×ˢ Icc (0 : ℝ) 1)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn
-      (((continuousOn_sliceDefect hu hX).norm.pow 2).mono hsub)).aemeasurable
-      (measurableSet_Icc.prod measurableSet_Icc)
-  rw [Measure.volume_eq_prod, setLIntegral_prod f (by rwa [← Measure.volume_eq_prod])]
-  calc ENNReal.ofReal (ε * ε) = ∫⁻ _ in Icc s (s + ε), ENNReal.ofReal ε := by
-        rw [setLIntegral_const, Real.volume_Icc, add_sub_cancel_left, ENNReal.ofReal_mul hε.le]
-    _ ≤ ∫⁻ σ in Icc s (s + ε), ∫⁻ t in Icc (0 : ℝ) 1, f (σ, t) := by
-        refine setLIntegral_mono' measurableSet_Icc fun σ hσ ↦ ?_
-        rw [setLIntegral_ofReal_norm_sq_sliceDefect hu hX (has.trans_le hσ.1)]
-        exact ENNReal.ofReal_le_ofReal (h σ hσ)
+  exact exists_mem_Icc_integral_norm_sq_sliceDefect_lt_of_setLIntegral_lt (b := s + ε + 1)
+    (hu.mono (prod_mono Ioo_subset_Ioi_self le_rfl)) hX hε
+    (fun σ hσ ↦ ⟨has.trans_le hσ.1, by linarith [hσ.2]⟩) hs
 
 /-- Near a cluster point `y` of the loops in the topology of uniform convergence there are loops
 with arbitrarily small defect: some loops converge uniformly to `y` while their squared defect
@@ -707,5 +820,190 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
   exact ⟨UniformFun.toFun x, hxO.1, hxO.2.1, UniformFun.tendsto_iff_tendstoUniformly.1 hx⟩
 
 end Convergence
+
+section Neck
+
+variable {K : Set V}
+
+/-- **Loops with small defect are close to periodic solutions.** Let `X` be a continuous,
+`1`-periodic time-dependent vector field and `K` a compact set. For every `ε > 0` there is `δ > 0`
+such that every `C¹`, `1`-periodic loop `γ` in `K` whose defect `γ' - X(t, γ)` has squared `L²` norm
+below `δ` over `[0, 1]` is uniformly within `ε` of a `1`-periodic solution of `x' = X(t, x)` with
+values in `K`. -/
+theorem exists_pos_forall_exists_periodic_hasDerivAt_dist_lt (hK : IsCompact K)
+    (hX : Continuous (uncurry X)) (hXper : ∀ v, Periodic (fun t ↦ X t v) 1) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ δ > 0, ∀ γ : ℝ → V, ContDiff ℝ 1 γ → Periodic γ 1 → (∀ t, γ t ∈ K) →
+      ∫ t in (0 : ℝ)..1, ‖deriv γ t - X t (γ t)‖ ^ 2 < δ →
+      ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧ (∀ t, x t ∈ K) ∧
+        ∀ t, dist (γ t) (x t) < ε := by
+  by_contra! h
+  -- Loops with squared defect integrals below `1 / (n + 1)`, each uniformly `ε`-far from every
+  -- periodic solution in `K`, have a subsequence converging to such a solution.
+  choose γ hγ hper hγK hγX hfar using fun n : ℕ ↦ h (1 / (n + 1)) Nat.one_div_pos_of_nat
+  obtain ⟨ψ, -, x, hxper, hx, hxK, hux⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_deriv_sub hγ hper hK hγK hX
+      hXper (squeeze_zero (fun n ↦ intervalIntegral.integral_nonneg zero_le_one
+        fun t _ ↦ sq_nonneg _) (fun n ↦ (hγX n).le) tendsto_one_div_add_atTop_nhds_zero_nat)
+  obtain ⟨n, hn⟩ := (Metric.tendstoUniformly_iff.1 hux ε hε).exists
+  obtain ⟨t, ht⟩ := hfar (ψ n) x hxper hx hxK
+  exact ht.not_gt (by rw [dist_comm]; exact hn t)
+
+/-- **Isolated periodic solutions are uniformly separated.** Let `X` be a continuous, `1`-periodic
+time-dependent vector field and `K` a compact set. If the `1`-periodic solutions of `x' = X(t, x)`
+in `K` are isolated, each having a uniform neighbourhood containing no other, then there is
+`ε > 0` such that two of them that are uniformly within `ε` of each other coincide. -/
+theorem exists_pos_forall_eq_of_forall_dist_lt (hK : IsCompact K) (hX : Continuous (uncurry X))
+    (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hiso : ∀ x : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
+        (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x) :
+    ∃ ε > 0, ∀ x y : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) →
+      (∀ t, x t ∈ K) → Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) → (∀ t, y t ∈ K) →
+      (∀ t, dist (x t) (y t) < ε) → x = y := by
+  by_contra! h
+  choose x y hxper hx hxK hyper hy hyK hxy hne using
+    fun n : ℕ ↦ h (1 / (n + 1)) Nat.one_div_pos_of_nat
+  -- Periodic solutions are `C¹` loops with vanishing defect, so a subsequence of the `x n`
+  -- converges uniformly to a periodic solution `z` in `K`.
+  have hderiv (n : ℕ) : deriv (x n) = fun t ↦ X t (x n t) := funext fun t ↦ (hx n t).deriv
+  have hC1 (n : ℕ) : ContDiff ℝ 1 (x n) := by
+    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx n t).differentiableAt, ?_⟩
+    rw [hderiv]
+    exact hX.comp (continuous_id.prodMk
+      (continuous_iff_continuousAt.2 fun t ↦ (hx n t).continuousAt))
+  obtain ⟨ψ, hψ, z, hzper, hz, hzK, hxz⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_tendsto_integral_deriv_sub hC1 hxper hK hxK hX
+      hXper (by simp [hderiv])
+  obtain ⟨ε, hε, hzε⟩ := hiso z hzper hz hzK
+  -- Eventually both `x (ψ n)` and `y (ψ n)` lie in the uniform `ε`-neighbourhood of `z`.
+  obtain ⟨n, hxn, hn⟩ := ((Metric.tendstoUniformly_iff.1 hxz (ε / 2) (half_pos hε)).and
+    (hψ.tendsto_atTop.eventually ((tendsto_one_div_add_atTop_nhds_zero_nat).eventually
+      (gt_mem_nhds (half_pos hε))))).exists
+  have hxzn : x (ψ n) = z := hzε _ (hxper _) (hx _) (hxK _) fun t ↦ by
+    rw [dist_comm]; exact (hxn t).trans (half_lt_self hε)
+  have hyzn : y (ψ n) = z := hzε _ (hyper _) (hy _) (hyK _) fun t ↦
+    calc dist (y (ψ n) t) (z t) ≤ dist (x (ψ n) t) (y (ψ n) t) + dist (z t) (x (ψ n) t) := by
+          rw [dist_comm (x (ψ n) t)]; exact dist_triangle_right _ _ _
+      _ < ε / 2 + ε / 2 := add_lt_add ((hxy _ t).trans hn) (hxn t)
+      _ = ε := add_halves ε
+  exact hne _ (hxzn.trans hyzn.symm)
+
+/-- Let every `C¹`, `1`-periodic loop in `K` with squared defect integral below `δ` be within
+`e / 2` of a periodic solution in `K`. Let `u` be `C¹` on a strip `(a, b) × ℝ`, with derivative
+bounded by `C ≥ 0` and `1`-periodic loops in `K`, and let `[s, s + h]` lie in `(a, b)`, where
+`C h ≤ e / 2`. If the squared defect integrates to less than `h δ` over `(a, b) × [0, 1]`, then
+the loop at `s` is within `e` of a periodic solution in `K`. -/
+private theorem exists_periodic_hasDerivAt_forall_dist_lt_of_Icc_subset {b C δ e h s : ℝ}
+    (hclose : ∀ γ : ℝ → V, ContDiff ℝ 1 γ → Periodic γ 1 → (∀ t, γ t ∈ K) →
+      ∫ t in (0 : ℝ)..1, ‖deriv γ t - X t (γ t)‖ ^ 2 < δ →
+      ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧ (∀ t, x t ∈ K) ∧
+        ∀ t, dist (γ t) (x t) < e / 2)
+    (hX : Continuous (uncurry X)) (hC₀ : 0 ≤ C) (hh : 0 < h) (hCh : C * h ≤ e / 2)
+    (hu : ContDiffOn ℝ 1 u (Ioo a b ×ˢ univ)) (hper : ∀ s ∈ Ioo a b, Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s ∈ Ioo a b, ∀ t, u (s, t) ∈ K) (hC : ∀ z ∈ Ioo a b ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    (hs : Icc s (s + h) ⊆ Ioo a b)
+    (hE : ∫⁻ z in Ioo a b ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) <
+      ENNReal.ofReal (h * δ)) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧ (∀ t, x t ∈ K) ∧
+      ∀ t, dist (u (s, t)) (x t) < e := by
+  -- Some loop at most `h` later has small defect, so it is within `e / 2` of a solution.
+  obtain ⟨σ, hσ, hσδ⟩ := exists_mem_Icc_integral_norm_sq_sliceDefect_lt_of_setLIntegral_lt hu hX
+    hh hs ((lintegral_mono_set (prod_mono hs le_rfl)).trans_lt hE)
+  obtain ⟨hγ, hdef⟩ := contDiff_slice_and_sliceDefect_eq (X := X) hu (hs hσ)
+  obtain ⟨x, hxper, hx, hxK, hxd⟩ := hclose _ hγ (hper σ (hs hσ)) (huK σ (hs hσ))
+    (by simpa only [hdef] using hσδ)
+  refine ⟨x, hxper, hx, hxK, fun t ↦ ?_⟩
+  have hsσ : |s - σ| ≤ h := by
+    rw [abs_sub_comm, abs_of_nonneg (by linarith [hσ.1])]
+    linarith [hσ.2]
+  calc dist (u (s, t)) (x t) ≤ dist (u (s, t)) (u (σ, t)) + dist (u (σ, t)) (x t) :=
+        dist_triangle _ _ _
+    _ < e / 2 + e / 2 := add_lt_add_of_le_of_lt ((dist_le_mul_abs_sub_of_norm_fderiv_le
+        (hu.differentiableOn one_ne_zero) hC
+        (hs ⟨le_rfl, by linarith⟩) (hs hσ) t).trans ((mul_le_mul_of_nonneg_left hsσ hC₀).trans
+          hCh)) (hxd t)
+    _ = e := add_halves e
+
+/-- **A long cylinder with small defect stays near a single periodic solution.** Let `X` be a
+continuous, `1`-periodic time-dependent vector field and `K` a compact set in which the
+`1`-periodic solutions of `x' = X(t, x)` are isolated, each having a uniform neighbourhood
+containing no other. For every bound `C` and every `ε > 0` there are `δ > 0` and a margin `η > 0`
+with the following property, uniformly in the length of the strip. Let `u` be `C¹` on a strip
+`(a, b) × ℝ` with `a + η ≤ b - η`, with derivative bounded by `C` and `1`-periodic loops
+`t ↦ u(s, t)` in `K`. If the squared defect `‖∂_t u - X(t, u)‖²` integrates to less than `δ` over
+`(a, b) × [0, 1]`, then there is a single `1`-periodic solution `x` in `K` such that every loop at
+`s ∈ [a + η, b - η]` is uniformly within `ε` of `x`.
+
+Each loop with small defect is close to some periodic solution
+(`TauCeti.exists_pos_forall_exists_periodic_hasDerivAt_dist_lt`); the loops vary continuously
+in `s`, and distinct periodic solutions are uniformly separated
+(`TauCeti.exists_pos_forall_eq_of_forall_dist_lt`), so by connectedness of `[a + η, b - η]` the
+solution does not change along the strip. -/
+theorem exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt (hK : IsCompact K)
+    (hX : Continuous (uncurry X)) (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hiso : ∀ x : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
+        (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x)
+    (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∃ η > 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃a b : ℝ⦄, a + η ≤ b - η →
+      ContDiffOn ℝ 1 u (Ioo a b ×ˢ univ) → (∀ s ∈ Ioo a b, Periodic (fun t ↦ u (s, t)) 1) →
+      (∀ s ∈ Ioo a b, ∀ t, u (s, t) ∈ K) → (∀ z ∈ Ioo a b ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C) →
+      ∫⁻ z in Ioo a b ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) <
+        ENNReal.ofReal δ →
+      ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧ (∀ t, x t ∈ K) ∧
+        ∀ s ∈ Icc (a + η) (b - η), ∀ t, dist (u (s, t)) (x t) < ε := by
+  obtain ⟨ε₀, hε₀, hsep⟩ := exists_pos_forall_eq_of_forall_dist_lt hK hX hXper hiso
+  -- Work at the scale `e ≤ ε` with `3 e ≤ ε₀`, and with a margin `η` such that `C η < e / 2`.
+  set e := min ε (ε₀ / 3)
+  have he : 0 < e := lt_min hε (by positivity)
+  obtain ⟨δ₁, hδ₁, hclose⟩ :=
+    exists_pos_forall_exists_periodic_hasDerivAt_dist_lt hK hX hXper (half_pos he)
+  set C' := max C 0
+  have hC' : 0 ≤ C' := le_max_right _ _
+  set η := e / (2 * (C' + 1))
+  have hη : 0 < η := by positivity
+  have hCη : C' * η < e / 2 := by
+    rw [show C' * η = e / 2 * (C' / (C' + 1)) by simp only [η]; field_simp]
+    exact mul_lt_of_lt_one_right (half_pos he) ((div_lt_one (by positivity)).2 (lt_add_one C'))
+  refine ⟨η / 2 * δ₁, by positivity, η, hη, fun u a b hab hu hper huK hC hE ↦ ?_⟩
+  have hC'u : ∀ z ∈ Ioo a b ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C' := fun z hz ↦
+    (hC z hz).trans (le_max_left _ _)
+  have hIsub : Icc (a + η) (b - η) ⊆ Ioo a b := fun s hs ↦
+    ⟨by linarith [hs.1], by linarith [hs.2]⟩
+  -- Every loop of the window is within `e` of a periodic solution.
+  have hnear (s : ℝ) (hs : s ∈ Icc (a + η) (b - η)) :=
+    exists_periodic_hasDerivAt_forall_dist_lt_of_Icc_subset hclose hX hC' (half_pos hη)
+      (by nlinarith) hu hper huK hC'u
+      (fun σ hσ ↦ ⟨by linarith [hs.1, hσ.1], by linarith [hs.2, hσ.2]⟩) hE
+  -- Periodic solutions within `e` of loops at times at most `η` apart are within `5 e / 2` of each
+  -- other, hence coincide.
+  have hsame : ∀ s ∈ Icc (a + η) (b - η), ∀ s' ∈ Icc (a + η) (b - η), |s - s'| ≤ η →
+      ∀ x x' : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      Periodic x' 1 → (∀ t, HasDerivAt x' (X t (x' t)) t) → (∀ t, x' t ∈ K) →
+      (∀ t, dist (u (s, t)) (x t) < e) → (∀ t, dist (u (s', t)) (x' t) < e) → x = x' := by
+    intro s hs s' hs' hss' x x' hxper hx hxK hx'per hx' hx'K hxd hx'd
+    refine hsep x x' hxper hx hxK hx'per hx' hx'K fun t ↦ ?_
+    calc dist (x t) (x' t) ≤ dist (x t) (u (s, t)) + dist (u (s, t)) (u (s', t)) +
+          dist (u (s', t)) (x' t) := dist_triangle4 _ _ _ _
+      _ < e + e / 2 + e := by
+          gcongr
+          · rw [dist_comm]; exact hxd t
+          · exact (dist_le_mul_abs_sub_of_norm_fderiv_le (hu.differentiableOn one_ne_zero) hC'u
+              (hIsub hs) (hIsub hs') t).trans_lt
+              ((mul_le_mul_of_nonneg_left hss' hC').trans_lt hCη)
+          · exact hx'd t
+      _ ≤ ε₀ := by linarith [min_le_right ε (ε₀ / 3)]
+  -- The solution near the first loop of the window is near every loop of it.
+  obtain ⟨x, hxper, hx, hxK, hxd⟩ := hnear (a + η) ⟨le_rfl, hab⟩
+  refine ⟨x, hxper, hx, hxK, fun s hs t ↦ ?_⟩
+  refine (forall_dist_lt_of_forall_exists_dist_lt
+    (P := fun y ↦ Periodic y 1 ∧ (∀ t, HasDerivAt y (X t (y t)) t) ∧ ∀ t, y t ∈ K) hη
+    (fun s hs ↦ ?_) (fun s hs s' hs' hss' y y' hy hy' ↦ hsame s hs s' hs' hss' y y' hy.1 hy.2.1
+      hy.2.2 hy'.1 hy'.2.1 hy'.2.2) ⟨hxper, hx, hxK⟩ hxd s hs t).trans_le (min_le_left _ _)
+  obtain ⟨y, hyper, hy, hyK, hyd⟩ := hnear s hs
+  exact ⟨y, ⟨hyper, hy, hyK⟩, hyd⟩
+
+end Neck
 
 end TauCeti

@@ -88,9 +88,10 @@ theorem IdealSheafData.le_ker_of_forall_exists {X Z : Scheme.{u}} (I : Z.IdealSh
   refine le_ofIdeals_iff.2 fun V x hx ↦ RingHom.mem_ker.2 <| X.IsSheaf.section_ext fun p hp ↦ ?_
   -- near `p`, refine `V` to an affine open `V' ⊆ V ∩ U` of `Z` containing `f p`
   obtain ⟨U, W, e, hpW, hU⟩ := h p
-  obtain ⟨V', hV', hpV', hV'le⟩ := exists_isAffineOpen_mem_and_subset (x := f p) (U := V.1 ⊓ U.1)
+  obtain ⟨V', hV', hpV', hV'le⟩ := exists_isAffineOpen_mem_and_subset (x := f p) (U
+      := V.val ⊓ U.val)
     (TopologicalSpace.Opens.mem_inf.2 ⟨f.mem_preimage.1 hp, f.mem_preimage.1 (e hpW)⟩)
-  have hle : V' ≤ V.1 ⊓ U.1 := SetLike.coe_subset_coe.1 hV'le
+  have hle : V' ≤ V.val ⊓ U.val := SetLike.coe_subset_coe.1 hV'le
   have hV'V : (⟨V', hV'⟩ : Z.affineOpens) ≤ V := (le_inf_iff.1 hle).1
   have hV'U : (⟨V', hV'⟩ : Z.affineOpens) ≤ U := (le_inf_iff.1 hle).2
   refine ⟨W ⊓ f ⁻¹ᵁ V', inf_le_right.trans (f.preimage_mono hV'V), ⟨hpW, f.mem_preimage.2 hpV'⟩, ?_⟩
@@ -102,12 +103,12 @@ theorem IdealSheafData.le_ker_of_forall_exists {X Z : Scheme.{u}} (I : Z.IdealSh
 /-- An ideal sheaf `I` lies in the kernel of `f : X ⟶ Z` if and only if its sections over every
 affine open `U` of `Z` die under `f.appLE U V e` for every affine open `V ⊆ f⁻¹ U` of `X`. -/
 theorem IdealSheafData.le_ker_iff {X Z : Scheme.{u}} (I : Z.IdealSheafData) (f : X ⟶ Z) :
-    I ≤ f.ker ↔ ∀ (U : Z.affineOpens) (V : X.affineOpens) (e : V.1 ≤ f ⁻¹ᵁ U.1),
+    I ≤ f.ker ↔ ∀ (U : Z.affineOpens) (V : X.affineOpens) (e : V.val ≤ f ⁻¹ᵁ U.val),
       I.ideal U ≤ RingHom.ker (f.appLE U V e).hom := by
   refine ⟨fun h U V e ↦ I.ideal_le_ker_appLE h U e, fun h ↦ I.le_ker_of_forall_exists f fun p ↦ ?_⟩
   obtain ⟨⟨V, U, hVU⟩, hpV⟩ := TopologicalSpace.Opens.mem_iSup.1
     (f.iSup_affineOpens_le_preimage_eq_top.ge (TopologicalSpace.Opens.mem_top p))
-  exact ⟨U, V.1, hVU, hpV, h U V hVU⟩
+  exact ⟨U, V.val, hVU, hpV, h U V hVU⟩
 
 /-- Ideal sheaves with equal pullbacks to every member of an open cover are equal. -/
 theorem IdealSheafData.ext_of_comap_openCover
@@ -127,11 +128,11 @@ theorem Hom.le_ker_iff_of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y)
 into an affine open of `Y`. This allows comparisons local on both sides of `f`. -/
 theorem IdealSheafData.ext_of_comap_fromSpec_over
     {Y : Scheme.{u}} {I J : X.IdealSheafData} (f : X ⟶ Y)
-    (h : ∀ (U : Y.affineOpens) (V : X.affineOpens), V.1 ≤ f ⁻¹ᵁ U.1 →
-      I.comap V.2.fromSpec = J.comap V.2.fromSpec) : I = J := by
+    (h : ∀ (U : Y.affineOpens) (V : X.affineOpens), V.val ≤ f ⁻¹ᵁ U.val →
+      I.comap V.property.fromSpec = J.comap V.property.fromSpec) : I = J := by
   exact ext_of_comap_openCover (Scheme.AffineOpenCover.ofIsOpenCover _
-    f.iSup_affineOpens_le_preimage_eq_top fun V ↦ V.1.2).openCover
-    fun V ↦ V.2.elim fun U hVU ↦ h U V.1 hVU
+    f.iSup_affineOpens_le_preimage_eq_top fun V ↦ V.val.property).openCover
+    fun V ↦ V.property.elim fun U hVU ↦ h U V.val hVU
 
 /-- Two ideal sheaves on `X` are equal if the same morphisms into `X` factor through their closed
 subschemes. -/
