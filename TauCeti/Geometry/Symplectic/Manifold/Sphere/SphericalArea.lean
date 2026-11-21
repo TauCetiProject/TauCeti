@@ -13,7 +13,6 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -627,11 +626,6 @@ private theorem bijective_toSphere_discLoop : Function.Bijective (GenLoop.toSphe
 
 /-! ### A generator of `π₂(S²)` and its area -/
 
-/-- The two-sphere is simply connected, in the form of the hypothesis of the Hurewicz theorem. -/
-private theorem subsingleton_homotopyGroup_of_lt (k : ℕ) (hk : k < 0 + 2) :
-    Subsingleton (HomotopyGroup (Fin k) S² (sphereNorthPole 2)) :=
-  subsingleton_homotopyGroup_sphere_of_lt (n := 2) finrank_euclideanSpace_fin (by simpa using hk) _
-
 /-- The class of `discLoop`, a generator of `π₂(S²)`. -/
 private def discClass : HomotopyGroup (Fin 2) S² (sphereNorthPole 2) := ⟦discLoop⟧
 
@@ -639,8 +633,9 @@ private def discClass : HomotopyGroup (Fin 2) S² (sphereNorthPole 2) := ⟦disc
 private theorem bijective_zmultiplesHom_discClass :
     Function.Bijective (zmultiplesHom (Additive (π_ 2 S² (sphereNorthPole 2)))
       (Additive.ofMul discClass)) :=
-  (isIso_hurewicz_iff_bijective_zmultiplesHom (n := 0) subsingleton_homotopyGroup_of_lt
-    discLoop).1 (GenLoop.isIso_hurewicz_of_bijective_toSphere _ bijective_toSphere_discLoop)
+  (isIso_hurewicz_iff_bijective_zmultiplesHom (n := 0)
+    (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) discLoop).1
+    (GenLoop.isIso_hurewicz_of_bijective_toSphere _ bijective_toSphere_discLoop)
 
 private theorem exists_eq_zsmul_discClass (a : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)) :
     ∃ k : ℤ, a = (k • Additive.ofMul discClass).toMul := by
@@ -711,7 +706,7 @@ theorem abs_sphereIntegral_sphereAreaForm_sphereGenLoop :
     |sphereIntegral sphereAreaForm.val (sphereNorthPole 2) ⟦sphereGenLoop 2⟧| = 4 * π := by
   -- Both classes generate `π₂(S²)` freely, so each is `±1` times the other.
   have hg := (isIso_hurewicz_iff_bijective_zmultiplesHom (n := 0)
-    subsingleton_homotopyGroup_of_lt (sphereGenLoop 2)).1 inferInstance
+    (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) (sphereGenLoop 2)).1 inferInstance
   obtain ⟨k, hk⟩ := bijective_zmultiplesHom_discClass.2
     (Additive.ofMul (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)))
   obtain ⟨m, hm⟩ := hg.2 (Additive.ofMul discClass)
@@ -736,7 +731,7 @@ def sphereAreaHom :
       ℝ :=
   (sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm
     mextDeriv_sphereAreaForm).comp
-    (hurewiczAddEquiv (n := 0) subsingleton_homotopyGroup_of_lt).symm.toAddMonoidHom
+    (hurewiczAddEquiv (n := 0) (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _)).symm.toAddMonoidHom
 
 /-- The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes at the north
 pole, where it is defined. -/
@@ -745,7 +740,8 @@ private theorem sphereAreaHom_hurewiczIntHom_sphereNorthPole
     sphereAreaHom (hurewiczIntHom S² (sphereNorthPole 2) 1 a) =
       sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
         a := by
-  rw [← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0) subsingleton_homotopyGroup_of_lt,
+  rw [← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
+      (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _),
     sphereAreaHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply]
 
 /-- **The area homomorphism of the two-sphere is the sphere integral on Hurewicz classes**, at
@@ -768,7 +764,8 @@ theorem abs_sphereAreaHom_hurewicz_sphereGenLoop :
   have h : (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom 1 =
       hurewiczIntHom S² (sphereNorthPole 2) 1
         (Additive.ofMul (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2))) :=
-    (hurewiczAddEquiv_ofMul_mk (n := 0) subsingleton_homotopyGroup_of_lt _).symm.trans
+    (hurewiczAddEquiv_ofMul_mk (n := 0)
+      (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) _).symm.trans
       (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ _)
   rw [h, sphereAreaHom_hurewiczIntHom_sphereNorthPole, sphereIntegralHom_apply]
   exact abs_sphereIntegral_sphereAreaForm_sphereGenLoop
