@@ -201,7 +201,7 @@ theorem exists_comp_primitiveRootsMap_iff_forall_isPrimitiveRoot (hn : IsUnit (n
         IsPrimitiveRoot (Ideal.Quotient.mk p ((pointsMulEquiv n (toConv x) : Aˣ) : A)) n := by
   rw [exists_comp_primitiveRootsMap_iff, isRoot_cyclotomic_iff_forall_isPrimitiveRoot hn,
     and_iff_right_iff_imp]
-  exact fun _ ↦ (mem_rootsOfUnity' n _).mp (pointsMulEquiv n (toConv x)).2
+  exact fun _ ↦ (mem_rootsOfUnity' n _).mp (pointsMulEquiv n (toConv x)).property
 
 end Points
 

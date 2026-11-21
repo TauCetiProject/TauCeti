@@ -93,6 +93,10 @@ theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓
   simp [complexPairing_apply]
 
 @[simp]
+theorem complexPairing_zero (φ : 𝓓^{n}(Ω, ℂ)) : (0 : 𝓓'^{n}(Ω, ℂ)).complexPairing φ = 0 := by
+  simp [complexPairing_apply]
+
+@[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
     (T + S).complexPairing φ = T.complexPairing φ + S.complexPairing φ := by
   simp only [complexPairing_apply]
@@ -105,6 +109,13 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp only [complexPairing_apply]
   simp
   ring
+
+/-- For a fixed complex test function `φ`, the pairing `T ↦ T φ` is continuous in the
+distribution `T`. -/
+theorem continuous_complexPairing_apply (φ : 𝓓^{n}(Ω, ℂ)) :
+    Continuous fun T : 𝓓'^{n}(Ω, ℂ) ↦ T.complexPairing φ := by
+  simp only [complexPairing_apply]
+  fun_prop
 
 /-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
 the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
@@ -189,8 +200,6 @@ theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
     mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
   ext φ
   simp [mapCLM_apply]
-
-variable [FiniteDimensional ℝ E]
 
 /-- The complex-linear extension of `T` depends only on the germ of the test function along the
 support of `T`. -/

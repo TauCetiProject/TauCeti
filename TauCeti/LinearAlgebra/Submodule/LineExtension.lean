@@ -62,7 +62,7 @@ lemma nonempty_lineExtension [FiniteDimensional 𝕜 F] {W : Submodule 𝕜 F} (
   refine ⟨⟨W ⊔ 𝕜 ∙ v, ((f v)⁻¹ • f).comp (W ⊔ 𝕜 ∙ v).subtype, ⟨v, hvW'⟩, ?_, le_sup_left,
     fun x ↦ ⟨fun hφx ↦ ?_, fun hx ↦ ?_⟩, ?_⟩⟩
   · simp [inv_mul_cancel₀ hfv]
-  · obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 x.2
+  · obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1 x.property
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
     have ha : a = 0 := by simpa [← hyz, hfW y hy, hfv] using hφx
     simpa [← hyz, ha] using hy

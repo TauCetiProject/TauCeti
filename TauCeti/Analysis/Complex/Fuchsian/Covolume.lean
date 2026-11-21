@@ -83,7 +83,7 @@ theorem countable_compl_freeLocus [Countable Γ] : ((freeLocus Γ ℍ : Set ℍ)
       Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hz hw
         (Ne.symm hwz)
   · obtain ⟨g, hg1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp (by simpa using hz)
-    exact mem_iUnion₂.mpr ⟨g, fun h ↦ hg1 (Subtype.ext h), g.2⟩
+    exact mem_iUnion₂.mpr ⟨g, fun h ↦ hg1 (Subtype.ext h), g.property⟩
 
 /-- For a countable subgroup of `PSL(2, ℝ)`, the points of `ℍ` with nontrivial stabilizer form a
 null set. -/
@@ -177,7 +177,7 @@ theorem card_mul_volume_ball_le_covolume [DiscreteTopology Γ] {ι : Type*} (s :
   rw [mem_smul_set_iff_inv_smul_mem, Subgroup.smul_def, Metric.mem_ball] at hz₁
   push_cast at hz₁
   -- translating back by `k`, the ball about `y i` meets the `k`-translate of that about `y j`
-  exact hk (Subtype.ext (h k k.2 j hj i hi z
+  exact hk (Subtype.ext (h k k.property j hj i hi z
     (by rwa [← dist_smul (k : PSL(2, ℝ))⁻¹, inv_smul_smul]) hz₂).1)
 
 /-- **Cofiniteness and finite index**: a subgroup `Δ` of a discrete subgroup `Γ ≤ PSL(2, ℝ)`
