@@ -48,15 +48,17 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.inv_sqrt_mul_inv_sqrt` — the inverse square root squares to the inverse;
 * `Matrix.PosSemidef.norm_sq_toEuclideanLin_inv_sqrt` — the squared length of `(CFC.sqrt S)⁻¹ x`
-  is the quadratic form of `S⁻¹` at `x`;
+  is the quadratic form of `S⁻¹` at `x` (in these two results `⁻¹` is Lean's totalized matrix
+  inverse, which is `0` on a singular matrix; for singular `S` the square root is singular too,
+  and both identities reduce to `0 = 0`);
 * `Matrix.PosSemidef.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul` — for
   positive-semidefinite `S`, the pencil determinants of the sandwich and of `Θ * S` agree;
 * `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt` and
   `Matrix.PosSemidef.trace_sqrt_mul_mul_sqrt_mul_self` — for positive-semidefinite `S`, the traces
   of the sandwich and of its square are those of `Θ * S` and `Θ * S * Θ * S`;
 * `Matrix.PosDef.isUnit_det_sqrt` — the square root of a positive-definite matrix is invertible;
-* `Matrix.PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt` — over the reals, the inverse square root
-  whitens `S`: `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1`;
+* `Matrix.PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt` — the inverse square root whitens `S`:
+  `(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`;
 * `Matrix.PosDef.inv_sub_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_iff` — the scale form
   `S⁻¹ - X` of the pencil and its positive-definiteness;
 * `Matrix.PosDef.inv_sub_smul_eq_conjugate` and `Matrix.PosDef.posDef_inv_sub_smul_iff` — the same
@@ -129,13 +131,16 @@ theorem inner_toEuclideanCLM_sqrt_toEuclideanLin [DecidableEq ι] (S Θ : Matrix
     inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
 
 /-- For positive-semidefinite `S`, the inverse of the square root squares to the inverse of
-`S`. -/
+`S`. Here `⁻¹` is Lean's totalized matrix inverse, which is `0` on a singular matrix; for singular
+`S` both sides are `0`. -/
+@[simp]
 theorem PosSemidef.inv_sqrt_mul_inv_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜} (hS : S.PosSemidef) :
     (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by
   rw [← Matrix.mul_inv_rev, CFC.sqrt_mul_sqrt_self S hS.nonneg]
 
 /-- For positive-semidefinite `S`, the squared length of `(CFC.sqrt S)⁻¹ x` is the quadratic form
-of `S⁻¹` at `x`. -/
+of `S⁻¹` at `x`. Here `⁻¹` is Lean's totalized matrix inverse, which is `0` on a singular matrix;
+for singular `S` both sides are `0`. -/
 theorem PosSemidef.norm_sq_toEuclideanLin_inv_sqrt [DecidableEq ι] {S : Matrix ι ι 𝕜}
     (hS : S.PosSemidef) (x : EuclideanSpace 𝕜 ι) :
     (‖(CFC.sqrt S)⁻¹.toEuclideanLin x‖ : 𝕜) ^ 2 = ⟪x, S⁻¹.toEuclideanLin x⟫_𝕜 := by
@@ -214,18 +219,15 @@ theorem PosDef.posDef_inv_sub_iff (hS : S.PosDef) (X : Matrix ι ι 𝕜) :
   nth_rewrite 1 [← hstar]
   exact Matrix.IsUnit.posDef_star_left_conjugate_iff hunit
 
-/-- For a real positive-definite `S`, the inverse square root whitens `S`:
-`(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᵀ = 1`. -/
-theorem PosDef.inv_sqrt_mul_mul_transpose_inv_sqrt {T : Matrix ι ι ℝ} (hT : T.PosDef) :
-    (CFC.sqrt T)⁻¹ * T * ((CFC.sqrt T)⁻¹)ᵀ = 1 := by
-  have hu := hT.isUnit_det_sqrt
-  calc (CFC.sqrt T)⁻¹ * T * ((CFC.sqrt T)⁻¹)ᵀ
-      _ = (CFC.sqrt T)⁻¹ * (CFC.sqrt T * (CFC.sqrt T)ᵀ) * ((CFC.sqrt T)⁻¹)ᵀ := by
-        rw [hT.posSemidef.sqrt_mul_transpose_sqrt]
-      _ = (CFC.sqrt T)ᵀ * ((CFC.sqrt T)⁻¹)ᵀ := by
-        rw [← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hu, Matrix.one_mul]
-      _ = ((CFC.sqrt T)⁻¹ * CFC.sqrt T)ᵀ := (Matrix.transpose_mul _ _).symm
-      _ = 1 := by rw [Matrix.nonsing_inv_mul _ hu, Matrix.transpose_one]
+/-- For positive-definite `S`, the inverse square root whitens `S`:
+`(CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1`. Over the reals the conjugate transpose is the
+transpose (`Matrix.conjTranspose_eq_transpose_of_trivial`). -/
+@[simp]
+theorem PosDef.inv_sqrt_mul_mul_conjTranspose_inv_sqrt (hS : S.PosDef) :
+    (CFC.sqrt S)⁻¹ * S * ((CFC.sqrt S)⁻¹)ᴴ = 1 := by
+  rw [(Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.inv.eq, hS.posSemidef.inv_sqrt,
+    Matrix.nonsing_inv_eq_ringInverse, ← CFC.conjSqrt_apply,
+    CFC.conjSqrt_ringInverse_self S hS.isStrictlyPositive]
 
 /-- The scale form of the pencil, for a scaled perturbation: `S⁻¹ - c • Θ` is the congruence of
 `1 - c • (CFC.sqrt S * Θ * CFC.sqrt S)` by `(CFC.sqrt S)⁻¹`. -/
