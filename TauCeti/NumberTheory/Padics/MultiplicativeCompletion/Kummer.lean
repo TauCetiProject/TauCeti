@@ -25,7 +25,7 @@ The source is the `p`-adic completion `A(K) = lim_m Kˣ/(Kˣ)^(p^m)` of the mult
 the product of the cohomology groups. The **limit Kummer map** `TauCeti.padicKummerMap` is the
 Kummer class map in every coordinate; it is injective and surjective because every finite-level
 Kummer map is, and the two transition maps correspond. No finiteness of the power-class groups is
-assumed, and the target is the completion of `Kˣ`, not the algebraic tensor product
+assumed, and the source is the completion of `Kˣ`, not the algebraic tensor product
 `Kˣ ⊗ ℤ_p`.
 
 For `p` prime, both sides are `ℤ_p`-modules: on `A(K)` this is
@@ -44,6 +44,8 @@ cohomology of `ℤ_p(1) = lim_m μ_{p^m}` to the inverse limit of the finite-lev
   by the power map on roots of unity.
 * `TauCeti.kummerH1Limit`: the inverse limit `lim_m H¹(G_K, μ_{p^m})`, with its intrinsic
   `ℤ_p`-module structure `TauCeti.kummerH1LimitPadicModule` for `p` prime.
+* `TauCeti.kummerH1LimitLift`: the homomorphism into `lim_m H¹(G_K, μ_{p^m})` induced by a
+  family of homomorphisms compatible with the transition maps.
 * `TauCeti.padicKummerMap`: the limit Kummer map `A(K) → lim_m H¹(G_K, μ_{p^m})`.
 * `TauCeti.padicKummerEquiv`: the limit Kummer map as a `ℤ_p`-linear isomorphism.
 
@@ -108,6 +110,24 @@ theorem mem_kummerH1Limit_iff (y : ∀ m : ℕ, H1 (AbsoluteGaloisGroup K) (Kumm
 theorem kummerH1Limit_ext {y z : kummerH1Limit p K} (h : ∀ m, y.val m = z.val m) : y = z :=
   Subtype.ext (funext h)
 
+/-- **The universal property of the inverse limit.** A family of homomorphisms into
+`H¹(G_K, μ_{p^m})` compatible with the transition maps `TauCeti.kummerH1Transition` induces a
+homomorphism into `lim_m H¹(G_K, μ_{p^m})`. -/
+def kummerH1LimitLift {A : Type*} [AddZeroClass A]
+    (f : ∀ m : ℕ, A →+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m)))
+    (hf : ∀ m x, kummerH1Transition p K m (f (m + 1) x) = f m x) :
+    A →+ kummerH1Limit p K :=
+  AddMonoidHom.codRestrict (AddMonoidHom.pi f) _ fun x ↦
+    (mem_kummerH1Limit_iff p K _).2 fun m ↦ hf m x
+
+/-- The induced homomorphism is computed by the given homomorphism at every level. -/
+@[simp]
+theorem kummerH1LimitLift_apply {A : Type*} [AddZeroClass A]
+    (f : ∀ m : ℕ, A →+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m)))
+    (hf : ∀ m x, kummerH1Transition p K m (f (m + 1) x) = f m x) (x : A) (m : ℕ) :
+    (kummerH1LimitLift p K f hf x).val m = f m x := by
+  simp [kummerH1LimitLift]
+
 variable {p K}
 
 /-- The transition map sends the Kummer class of a unit at level `m + 1` to its Kummer class at
@@ -121,29 +141,20 @@ theorem kummerH1Transition_kummerMap (hp : IsUnit (p : K)) (m : ℕ) (a : Kˣ) :
 
 /-! ### The limit Kummer map -/
 
-/-- The Kummer class map at level `p^m` on the coordinate `Kˣ ⧸ (Kˣ)^(p^m)` of `A(K)`, whose
-denominator is spelled as the range of the power map rather than as `TauCeti.powerSubgroup`. -/
+/-- The Kummer isomorphism `TauCeti.kummerIso` at level `p^m` on the coordinate
+`Kˣ ⧸ (Kˣ)^(p^m)` of `A(K)`, whose denominator is spelled as the range of the power map rather
+than as `TauCeti.powerSubgroup`. -/
 private def kummerCoord (hp : IsUnit (p : K)) (m : ℕ) :
-    (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) →*
+    (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) ≃*
       Multiplicative (H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m))) :=
-  (kummerClassMap K (p ^ m) (Nat.cast_pow (α := K) p m ▸ hp.pow m)).comp
-    (QuotientGroup.quotientMulEquivOfEq
-      (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m)).symm).toMonoidHom
+  (QuotientGroup.quotientMulEquivOfEq
+      (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m)).symm).trans
+    (kummerIso K (p ^ m) (Nat.cast_pow (α := K) p m ▸ hp.pow m))
 
 private theorem kummerCoord_mk (hp : IsUnit (p : K)) (m : ℕ) (a : Kˣ) :
     kummerCoord hp m (a : Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) =
       kummerMap K (p ^ m) (Nat.cast_pow (α := K) p m ▸ hp.pow m) a := by
-  rw [kummerCoord, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    QuotientGroup.quotientMulEquivOfEq_mk, kummerClassMap_mk]
-
-private theorem kummerCoord_injective (hp : IsUnit (p : K)) (m : ℕ) :
-    Function.Injective (kummerCoord hp m) :=
-  (kummerClassMap_injective K (p ^ m) _).comp (MulEquiv.injective _)
-
-private theorem kummerCoord_surjective (hp : IsUnit (p : K)) (m : ℕ) :
-    Function.Surjective (kummerCoord hp m) := fun y ↦ by
-  obtain ⟨a, rfl⟩ := kummerMap_surjective (Nat.cast_pow (α := K) p m ▸ hp.pow m) y
-  exact ⟨a, kummerCoord_mk hp m a⟩
+  rw [kummerCoord, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk, kummerIso_mk]
 
 /-- The Kummer class maps commute with the transition maps of the two inverse systems. -/
 private theorem kummerH1Transition_kummerCoord (hp : IsUnit (p : K)) (m : ℕ)
@@ -200,25 +211,25 @@ theorem padicKummerMap_padicCompletionUnitsOf (hp : IsUnit (p : K)) (a : Kˣ) (m
   padicKummerMap_apply_of_eq hp (by
     rw [toMul_ofMul, padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply])
 
-/-- **The limit Kummer map is injective**, since every finite-level Kummer class map is
-(`TauCeti.kummerClassMap_injective`). -/
+/-- **The limit Kummer map is injective.** -/
 theorem padicKummerMap_injective (hp : IsUnit (p : K)) :
-    Function.Injective (padicKummerMap p K hp) := fun _ _ h ↦
-  Additive.toMul.injective (Subtype.ext (funext fun m ↦ kummerCoord_injective hp m
-    (Multiplicative.toAdd.injective (congrArg (fun z ↦ z.val m) h))))
+    Function.Injective (padicKummerMap p K hp) := fun x y h ↦ by
+  refine Additive.toMul.injective (Subtype.ext (funext fun m ↦ ?_))
+  have hm := congrArg (fun z ↦ z.val m) h
+  rw [padicKummerMap_apply, padicKummerMap_apply] at hm
+  exact (kummerCoord hp m).injective (Multiplicative.toAdd.injective hm)
 
-/-- **The limit Kummer map is surjective.** A compatible family of classes in
-`H¹(G_K, μ_{p^m})` has a family of preimages under the Kummer isomorphisms
-(`TauCeti.kummerIso`), which is compatible because the Kummer class maps commute with the
-transition maps and are injective. -/
+/-- **The limit Kummer map is surjective.** -/
 theorem padicKummerMap_surjective (hp : IsUnit (p : K)) :
     Function.Surjective (padicKummerMap p K hp) := by
   intro y
-  choose x hx using fun m ↦ kummerCoord_surjective hp m (Multiplicative.ofAdd (y.val m))
+  -- Take preimages of the coordinates under the Kummer isomorphisms; they form a compatible
+  -- family because the Kummer isomorphisms commute with the transition maps and are injective.
+  choose x hx using fun m ↦ (kummerCoord hp m).surjective (Multiplicative.ofAdd (y.val m))
   have hcompat : x ∈ padicCompletionUnits p K := by
     rw [mem_padicCompletionUnits_iff]
     intro m
-    refine kummerCoord_injective hp m (Multiplicative.toAdd.injective ?_)
+    refine (kummerCoord hp m).injective (Multiplicative.toAdd.injective ?_)
     rw [← kummerH1Transition_kummerCoord hp m, hx, hx, toAdd_ofAdd, toAdd_ofAdd]
     exact (mem_kummerH1Limit_iff p K y.val).1 y.property m
   refine ⟨Additive.ofMul ⟨x, hcompat⟩, ?_⟩
@@ -276,6 +287,7 @@ instance kummerH1LimitPadicModule : Module ℤ_[p] (kummerH1Limit p K) where
     simp
   smul_add a y z := by
     ext m
+    simp only [kummerH1Limit_smul_apply, AddSubgroup.coe_add, Pi.add_apply]
     exact nsmul_add _ _ _
   add_smul a b y := by
     ext m
@@ -290,8 +302,7 @@ instance kummerH1LimitPadicModule : Module ℤ_[p] (kummerH1Limit p K) where
 
 variable {p K}
 
-/-- **The limit Kummer map is `ℤ_p`-linear**: a `p`-adic integer acts at level `m` through its
-residue modulo `p^m` on both sides, and the Kummer class map is a homomorphism. -/
+/-- **The limit Kummer map is `ℤ_p`-linear.** -/
 theorem padicKummerMap_smul (hp : IsUnit (p : K)) (a : ℤ_[p])
     (x : Additive (padicCompletionUnits p K)) :
     padicKummerMap p K hp (a • x) = a • padicKummerMap p K hp x := by
