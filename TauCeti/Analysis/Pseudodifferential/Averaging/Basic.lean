@@ -204,6 +204,24 @@ theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : ℕ) :
     funext fun y ↦ (coefficient_transport _ _ _ _ y).symm
   simp only [Function.comp_apply, hfun]
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [MeasurableSpace G]
+  [OpensMeasurableSpace G] in
+/-- If all the operators `ρ(g)` have norm at most `c`, then the frequency maps `ρ(g)ᵀ` shrink
+norms by at most the factor `c`: `‖ξ‖ ≤ c ‖ρ(g)ᵀ ξ‖`, since `(ρ(g)ᵀ)⁻¹ = ρ(g⁻¹)ᵀ` has the norm
+of `ρ(g⁻¹)`. -/
+theorem norm_le_mul_norm_adjointEquiv {c : ℝ}
+    (hc : ∀ g, ‖(ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c) (g : G)
+    (ξ : CoordinateSpace n) : ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ :=
+  calc ‖ξ‖ = ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+        ((ρ g).adjointEquiv ξ)‖ := by
+        rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+    _ ≤ ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ *
+        ‖(ρ g).adjointEquiv ξ‖ := ContinuousLinearMap.le_opNorm _ _
+    _ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
+        gcongr
+        rw [ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.norm_adjointEquiv]
+        simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using hc g⁻¹
+
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- **Uniform estimates for transported symbols.** If `a` satisfies the estimates of order `m`
@@ -231,16 +249,8 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
   -- adjoint of `ρ(g⁻¹)`; all three have norm at most `c`.
   have hsymm : ‖((ρ g).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c := by
     simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using hρc g⁻¹
-  have hinv (ξ : CoordinateSpace n) : ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
-    calc ‖ξ‖ = ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-          ((ρ g).adjointEquiv ξ)‖ := by
-          rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
-      _ ≤ ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ *
-          ‖(ρ g).adjointEquiv ξ‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
-          gcongr
-          rwa [ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.norm_adjointEquiv]
-  have hM := hB _ _ hsymm ((ContinuousLinearEquiv.norm_adjointEquiv _).trans_le (hρc g)) hinv
+  have hM := hB _ _ hsymm ((ContinuousLinearEquiv.norm_adjointEquiv _).trans_le (hρc g))
+    (norm_le_mul_norm_adjointEquiv hρc g)
     x (fun α' β' η ↦ hC α' β' _ hx η) ξ
   rw [coefficient_transport_eq_comp, ContinuousLinearMap.mixedDeriv_comp_left _
     (a.contDiff_coefficient.comp (ContinuousLinearMap.contDiff _))]

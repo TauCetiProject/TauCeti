@@ -98,6 +98,17 @@ theorem coefficient_transport (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃
         (e.symm : V →L[ℂ] V) :=
   ContinuousLinearMap.ext fun v ↦ by simp [transport]
 
+@[simp]
+theorem transport_add (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W)
+    (a b : HomogeneousSymbol E E V W m) :
+    transport A e f (a + b) = transport A e f a + transport A e f b :=
+  HomogeneousSymbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
+
+@[simp]
+theorem transport_smul (A : E ≃L[ℝ] E) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W) (c : ℂ)
+    (a : HomogeneousSymbol E E V W m) : transport A e f (c • a) = c • transport A e f a :=
+  HomogeneousSymbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp)
+
 /-- Transport along the identity leaves a homogeneous symbol unchanged. -/
 @[simp]
 theorem transport_one (a : HomogeneousSymbol E E V W m) : transport 1 1 1 a = a := by
@@ -191,6 +202,19 @@ theorem coefficient_average (a : HomogeneousSymbol E E V W m) (p : E × E) :
         ((σ g).symm : V →L[ℂ] V) ∂μ := by
   simp only [average, coefficient_integral, coefficient_transport]
 
+/-- Averaging is additive. -/
+theorem average_add (a b : HomogeneousSymbol E E V W m) :
+    average μ hρ hσ hτ (a + b) = average μ hρ hσ hτ a + average μ hρ hσ hτ b := by
+  simp only [average, transport_add]
+  exact HomogeneousSymbol.integral_add μ _ (continuousOn_iteratedFDeriv_transport hρ hσ hτ a) _
+    (continuousOn_iteratedFDeriv_transport hρ hσ hτ b)
+
+/-- Averaging commutes with multiplication by complex scalars. -/
+theorem average_smul (c : ℂ) (a : HomogeneousSymbol E E V W m) :
+    average μ hρ hσ hτ (c • a) = c • average μ hρ hσ hτ a := by
+  simp only [average, transport_smul]
+  exact HomogeneousSymbol.integral_smul μ _ (continuousOn_iteratedFDeriv_transport hρ hσ hτ a) c
+
 /-- **The average is invariant.** For a left-invariant measure, transporting the average of a
 homogeneous symbol along the action of any `h ∈ G` gives the average back. -/
 theorem transport_average [MeasurableMul G] [μ.IsMulLeftInvariant]
@@ -224,6 +248,13 @@ theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ
     average μ hρ hσ hτ a = a := by
   simp only [average, ha]
   exact integral_const_of_probability μ a
+
+/-- **Averaging is idempotent** for a left-invariant probability measure. -/
+@[simp]
+theorem average_average [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace (V →L[ℂ] W)]
+    [IsProbabilityMeasure μ] (a : HomogeneousSymbol E E V W m) :
+    average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
+  average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
 
 end Average
 
@@ -281,6 +312,18 @@ theorem principal_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) 
     (transport A e f a).principal = a.principal.transport A e f :=
   HomogeneousSymbol.ext (funext fun p ↦ by simp)
 
+@[simp]
+theorem transport_add (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
+    (f : W ≃L[ℂ] W) (a b : ClassicalSymbol n V W m) :
+    transport A e f (a + b) = transport A e f a + transport A e f b :=
+  ext (by simp)
+
+@[simp]
+theorem transport_smul (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
+    (f : W ≃L[ℂ] W) (c : ℂ) (a : ClassicalSymbol n V W m) :
+    transport A e f (c • a) = c • transport A e f a :=
+  ext (by simp)
+
 /-- Transport along the identity leaves a classical symbol unchanged. -/
 @[simp]
 theorem transport_one (a : ClassicalSymbol n V W m) : transport 1 1 1 a = a :=
@@ -304,22 +347,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
   (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W))
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-include hρ in
-/-- On the compact group the frequency maps `ρ(g)ᵀ` shrink norms by a bounded factor:
-`‖ξ‖ ≤ c ‖ρ(g)ᵀ ξ‖` with `c` independent of `g`. -/
-private theorem exists_norm_le_mul_norm_adjointEquiv :
-    ∃ c : ℝ, 1 ≤ c ∧ ∀ g ξ, ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
-  obtain ⟨c₀, hc₀⟩ := isCompact_univ.exists_bound_of_continuousOn
-    hρ.continuous_symm_of_monoidHom.continuousOn
-  refine ⟨max 1 c₀, le_max_left _ _, fun g ξ ↦ ?_⟩
-  -- `ξ = (ρ(g)ᵀ)⁻¹ (ρ(g)ᵀ ξ)`, and `(ρ(g)ᵀ)⁻¹ = (ρ(g)⁻¹)ᵀ` has the norm of `ρ(g)⁻¹`.
-  have h := ((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm
-    ((ρ g).adjointEquiv ξ)
-  rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply,
-    ContinuousLinearEquiv.adjointEquiv_symm, ContinuousLinearEquiv.norm_adjointEquiv] at h
-  exact h.trans (by gcongr; exact (hc₀ g (mem_univ g)).trans (le_max_right _ _))
-
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- **Transporting the cutoff.** The transported cut-off term `χ(ρ(g)ᵀ ξ) (g • h)(x, ξ)` and the
 cut-off transported term `χ(ξ) (g • h)(x, ξ)` of a homogeneous symbol `h` differ by symbols that
@@ -333,7 +360,12 @@ private theorem exists_bound_transport_cutoffSymbol_sub {m' : ℝ}
       ‖mixedDeriv α β (Symbol.transport (ρ g) (σ g) (τ g) (HomogeneousSymbol.cutoffSymbol χ h) -
         HomogeneousSymbol.cutoffSymbol χ (h.transport (ρ g) (σ g) (τ g))).coefficient x ξ‖ ≤
           C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
-  obtain ⟨c, hc, hinv⟩ := exists_norm_le_mul_norm_adjointEquiv hρ
+  -- On the compact group `‖ρ(g)‖ ≤ c` uniformly, so `‖ξ‖ ≤ c ‖ρ(g)ᵀ ξ‖`.
+  obtain ⟨c₀, hc₀⟩ := isCompact_univ.exists_bound_of_continuousOn hρ.continuousOn
+  set c := max 1 c₀
+  have hc : 1 ≤ c := le_max_left _ _
+  have hinv := Symbol.norm_le_mul_norm_adjointEquiv (c := c) fun g ↦
+    (hc₀ g (mem_univ g)).trans (le_max_right _ _)
   -- Both cutoffs are `1` once `‖ξ‖ > 2c`, so the difference vanishes there.
   refine Symbol.exists_bound_of_continuous_jets_of_eq_zero _ (fun k ↦ ?_) (2 * c)
     (fun g x ξ hξ ↦ ?_) m' hK α β
@@ -455,6 +487,13 @@ theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ
   ext (by
     rw [toSymbol_average]
     exact Symbol.average_eq_self μ hρ hσ hτ fun g ↦ by rw [← toSymbol_transport, ha g])
+
+/-- **Averaging is idempotent** for a left-invariant probability measure. -/
+@[simp]
+theorem average_average [MeasurableMul G] [μ.IsMulLeftInvariant] [CompleteSpace (V →L[ℂ] W)]
+    [IsProbabilityMeasure μ] (a : ClassicalSymbol n V W m) :
+    average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
+  average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
 
 /-- **Averaging keeps an invariant principal symbol.** For a probability measure, if the
 principal symbol of `a` is invariant under the action of every `g ∈ G`, the average of `a` has

@@ -607,6 +607,26 @@ theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
     (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
 
+@[simp]
+protected theorem map_zero (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) :
+    (0 : HomogeneousSymbol X E V W m).map Φ = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_add (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a b : HomogeneousSymbol X E V W m) : (a + b).map Φ = a.map Φ + b.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_neg (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a : HomogeneousSymbol X E V W m) : (-a).map Φ = -a.map Φ := by
+  ext1; funext p; simp
+
+@[simp]
+protected theorem map_sub (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a b : HomogeneousSymbol X E V W m) : (a - b).map Φ = a.map Φ - b.map Φ := by
+  ext1; funext p; simp
+
 end Map
 
 /-! ### Spatial and frequency derivatives -/

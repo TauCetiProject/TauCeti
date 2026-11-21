@@ -528,6 +528,28 @@ theorem coefficient_integral (p : X × E) :
     (integral μ a hjets).coefficient p = ∫ y, (a y).coefficient p ∂μ :=
   (rfl)
 
+/-- Integration preserves addition of compact families of homogeneous symbols. -/
+theorem integral_add (b : Y → HomogeneousSymbol X E V W m)
+    (hb : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (b p.1).coefficient p.2) (univ ×ˢ {p | p.2 ≠ 0}))
+    {hab : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (a p.1 + b p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ a y + b y) hab = integral μ a hjets + integral μ b hb := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_add, Pi.add_apply]
+  exact MeasureTheory.integral_add (integrable_coefficient_family μ a hjets p)
+    (integrable_coefficient_family μ b hb p)
+
+/-- Integration of homogeneous symbols commutes with multiplication by a fixed complex scalar. -/
+theorem integral_smul (c : ℂ)
+    {hcs : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (c • a p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ c • a y) hcs = c • integral μ a hjets := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_smul, Pi.smul_apply, MeasureTheory.integral_smul]
+
 /-- A probability average fixes a constant family of homogeneous symbols. -/
 @[simp]
 theorem integral_const_of_probability [IsProbabilityMeasure μ] [CompleteSpace (V →L[ℂ] W)]
