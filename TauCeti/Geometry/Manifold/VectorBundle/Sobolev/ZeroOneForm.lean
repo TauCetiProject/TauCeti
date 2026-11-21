@@ -435,13 +435,15 @@ private theorem mem_image_of_mem_image_tangentHom {i : Fin A.n} {y : ℂ}
   A.mem_image.2 ((A.tangentHom 𝓘(ℝ, ℂ)).mem_image.1 hy)
 
 omit [FiniteDimensional ℝ F] in
-private theorem sectionChartData_coord_zeroOnePart [∀ x, ContinuousSMul ℂ (V x)]
+private theorem sectionChartData_coord_zeroOnePart
     (i : Fin (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.n)
     (θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) {y : ℂ}
     (hy : y ∈ (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.coord i
         (fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) y =
       complexAntilinearPartL ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.coord i θ y) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   rw [(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData_coord_of_mem _ hy,
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData_coord_of_mem _ hy]
   exact A.coord_tangentHom_zeroOnePart i θ y
@@ -562,7 +564,6 @@ theorem zeroOnePartSobolevL_eq_zero_iff {w : SobolevSection (A.tangentHom 𝓘(�
           Complex.I • (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i w y v :=
   SectionChartData.antilinearPartSobolevL_eq_zero_iff _ _
 
-variable [∀ x, ContinuousSMul ℂ (V x)] in
 /-- **Lifting the pointwise projection.** If the chart data of `w` in chart `i` are the readings of
 a one-form `θ`, the chart data of its `(0,1)`-projection in chart `i` are the readings of the
 `(0,1)`-part of `θ`. -/
@@ -572,9 +573,11 @@ theorem chartValueL_zeroOnePartSobolevL_ae_coord
     (hw : (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i w
       =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i)]
         (A.tangentHom 𝓘(ℝ, ℂ)).coord i θ) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.chartValueL μ p k i (zeroOnePartSobolevL A μ p k w)
       =ᵐ[μ.restrict ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.image i)]
         (A.tangentHom 𝓘(ℝ, ℂ)).coord i fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   have hcoord := (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData_coord_ae_eq μ i
   exact (SectionChartData.chartValueL_antilinearPartSobolevL_ae_coord _ _
     (hw.trans (hcoord θ).symm)).trans (hcoord _)

@@ -96,14 +96,16 @@ local instance instVectorBundleRealBorderedZeroOneForm : VectorBundle ℝ F V :=
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
 
 omit [FiniteDimensional ℝ F] in
-private theorem halfSectionChartData_coord_zeroOnePart [∀ x, ContinuousSMul ℂ (V x)]
+private theorem halfSectionChartData_coord_zeroOnePart
     (i : Fin (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.n)
     (θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x) {z : ℂ}
     (hz : z ∈ (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.image i) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.coord i
         (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x)) z =
       complexAntilinearPartL
         ((A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.coord i θ z) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   rw [(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_coord_of_mem _ hz,
     (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_coord_of_mem _ hz]
   exact A.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ z
@@ -261,7 +263,6 @@ theorem borderedZeroOnePartSobolevL_eq_zero_iff
         rw [(A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData_image i,
           A.halfImage_tangentHom i]
 
-variable [∀ x, ContinuousSMul ℂ (V x)] in
 /-- **Lifting the pointwise projection.** If the chart data of `w` in chart `i` equal the
 coordinates `halfCoord` of a one-form `θ`, the chart data of its `(0,1)`-projection in chart `i`
 equal the coordinates of the `(0,1)`-part of `θ`. -/
@@ -271,11 +272,13 @@ theorem chartValueL_borderedZeroOnePartSobolevL_ae_halfCoord
     (hw : (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL volume p k i w
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
         (A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom closedUpperHalfPlaneModel).halfSectionChartData.chartValueL volume p k i
         (borderedZeroOnePartSobolevL A p k w)
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
         (A.tangentHom closedUpperHalfPlaneModel).halfCoord i
           fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   filter_upwards [chartValueL_borderedZeroOnePartSobolevL_ae w i, hw] with z h₁ h₂
   exact h₁.trans ((congrArg complexAntilinearPartL h₂).trans
     (A.halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ z).symm)

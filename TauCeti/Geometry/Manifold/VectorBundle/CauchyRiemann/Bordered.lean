@@ -67,27 +67,30 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
   [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
   (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
 
-variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] in
 /-- The `(0,1)`-part of a one-form on a Riemann surface with boundary is read in a chart on
 `ClosedUpperHalfPlane` as `ContinuousLinearMap.complexAntilinearPartL` of its reading. -/
 theorem coord_tangentHom_ofBorderedHolomorphic_zeroOnePart (i : Fin A.n)
     (θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x) (y : ClosedUpperHalfPlane) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom closedUpperHalfPlaneModel).coord i
         (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x)) y =
       complexAntilinearPartL ((A.tangentHom closedUpperHalfPlaneModel).coord i θ y) :=
   A.coord_tangentHom_zeroOnePart_of_inTangentCoordinates (ofBorderedHolomorphic M) i
     (fun _ hx ↦ inTangentCoordinates_ofBorderedHolomorphic hx) θ y
 
-variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] in
 /-- The `(0,1)`-part of a one-form on a Riemann surface with boundary is read in `ℂ` as
 `ContinuousLinearMap.complexAntilinearPartL` of its reading `halfCoord`, including on the real
 axis. -/
 theorem halfCoord_tangentHom_ofBorderedHolomorphic_zeroOnePart (i : Fin A.n)
     (θ : ∀ x, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] V x) (z : ℂ) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom closedUpperHalfPlaneModel).halfCoord i
         (fun x ↦ (ofBorderedHolomorphic M).zeroOnePart (θ x)) z =
-      complexAntilinearPartL ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ z) :=
-  ((A.tangentHom closedUpperHalfPlaneModel).halfCoord_def i _ z).trans <|
+      complexAntilinearPartL ((A.tangentHom closedUpperHalfPlaneModel).halfCoord i θ z) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  exact ((A.tangentHom closedUpperHalfPlaneModel).halfCoord_def i _ z).trans <|
     (A.coord_tangentHom_ofBorderedHolomorphic_zeroOnePart i θ
       (closedUpperHalfPlaneModel.symm z)).trans <|
         congrArg complexAntilinearPartL

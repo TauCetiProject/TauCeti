@@ -285,7 +285,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℂ
   [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
   (A : FiniteBundleAtlas H M F V) (j : SmoothAlmostComplexStructure I M)
 
-variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] in
 /-- When an almost complex structure `j` reads as multiplication by `i` in the tangent coordinates
 on the whole source of chart `i`, the `(0,1)`-part of a one-form is read in chart `i` as the complex
 antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading. -/
@@ -294,8 +294,10 @@ theorem coord_tangentHom_zeroOnePart_of_inTangentCoordinates (i : Fin A.n)
       inTangentCoordinates I I id id (fun x ↦ j.toEndomorphism x) (A.center i) x =
         Complex.I • ContinuousLinearMap.id ℝ E)
     (θ : ∀ x, TangentSpace I x →L[ℝ] V x) (y : H) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom I).coord i (fun x ↦ j.zeroOnePart (θ x)) y =
       complexAntilinearPartL ((A.tangentHom I).coord i θ y) := by
+  have := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   rw [coord_tangentHom, coord_tangentHom]
   by_cases hx : (A.chart i).symm y ∈ (chartAt H (A.center i)).source
   · exact inCoordinates_zeroOnePart _ (hj _ hx) _
@@ -334,11 +336,12 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
   (A : FiniteBundleAtlas E M F V)
 
-variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+variable [IsScalarTower ℝ ℂ F] [∀ x, IsScalarTower ℝ ℂ (V x)] in
 /-- The `(0,1)`-part of a one-form on a complex manifold is read in a chart as the complex
 antilinear part `ContinuousLinearMap.complexAntilinearPartL` of its reading. -/
 theorem coord_tangentHom_zeroOnePart (i : Fin A.n)
     (θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (y : E) :
+    letI := fun x ↦ (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
     (A.tangentHom 𝓘(ℝ, E)).coord i (fun x ↦ (ofComplexManifold E M).zeroOnePart (θ x)) y =
       complexAntilinearPartL ((A.tangentHom 𝓘(ℝ, E)).coord i θ y) :=
   A.coord_tangentHom_zeroOnePart_of_inTangentCoordinates (ofComplexManifold E M) i
