@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import Mathlib.Algebra.Lie.Cochain
 
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
@@ -105,7 +106,9 @@ has the **Heisenberg cocycle** `c(Z, Z') = ω(τ Z, τ Z')`
 * `TauCeti.SmoothTwoForm.momentCocycle σ a μ x`: the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` at `x`,
   a `2`-cochain of `𝔤` with trivial coefficients.
 * `TauCeti.SymplecticForm.linearMomentMap ω`: the moment map `μ_A(x) = ½ ω(A x, x)` of the linear
-  action of `sp(V, ω)`.
+  action of `sp(V, ω)`. Its components are quadratic forms with polarization `ω(A x, y)`
+  (`TauCeti.SymplecticForm.linearMomentMap_add`), so the moment equation holds along every line
+  without any topology on `V` (`TauCeti.SymplecticForm.hasDerivAt_linearMomentMap_add_smul`).
 * `TauCeti.SymplecticForm.translationMomentMap ω τ`: the moment map `μ_Z(x) = ω(τ Z, x)` of a
   translation action.
 
@@ -333,6 +336,23 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
     h.differential x = (a.eval x).dualMap ∘ₗ (σ.bilinFormAt x).flip := by
   ext v Z
   simp [h.differential_apply_eq_eval₂]
+
+/-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
+homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
+@[simp]
+theorem differential_comp_apply {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) (v : TangentSpace I x) :
+    (h.comp f).differential x v = (h.differential x v).comp (f : 𝔥 →ₗ[ℝ] 𝔤) :=
+  (rfl)
+
+/-- The level tangent space `ker dμ_x` of a moment map lies in that of its restriction along a Lie
+algebra homomorphism. -/
+theorem ker_differential_le_ker_differential_comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) :
+    LinearMap.ker (h.differential x) ≤ LinearMap.ker ((h.comp f).differential x) := by
+  intro v hv
+  rw [LinearMap.mem_ker] at hv ⊢
+  rw [h.differential_comp_apply, hv, LinearMap.zero_comp]
 
 /-- The kernel of the differential of a moment map at `x` is the `σ`-orthogonal of the orbit
 tangent space: `ker dμ_x = (𝔤 · x)^σ`. -/
@@ -633,6 +653,35 @@ def linearMomentMap (x : V) : Module.Dual ℝ (skewAdjointLieSubalgebra ω.toBil
 theorem linearMomentMap_apply (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
     ω.linearMomentMap x A = ω ((A : Module.End ℝ V) x) x / 2 :=
   (rfl)
+
+/-- **Polarization of the linear moment map.** Each component `μ_A` is a quadratic form with
+polarization `ω(A x, y)`: `μ_A(x + y) = μ_A(x) + ω(A x, y) + μ_A(y)`, since skew-adjointness of `A`
+and skew-symmetry of `ω` give `ω(A y, x) = ω(A x, y)`. -/
+theorem linearMomentMap_add (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (x + y) A =
+      ω.linearMomentMap x A + ω ((A : Module.End ℝ V) x) y + ω.linearMomentMap y A := by
+  have hskew : ω.toBilinForm ((A : Module.End ℝ V) y) x =
+      ω.toBilinForm ((A : Module.End ℝ V) x) y :=
+    (skewAdjointLieSubalgebra.apply_left A y x).trans (ω.neg_eq y _)
+  simp only [linearMomentMap_apply, map_add, LinearMap.add_apply, hskew]
+  ring
+
+/-- Each component of the linear moment map is homogeneous of degree two. -/
+theorem linearMomentMap_smul (c : ℝ) (x : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    ω.linearMomentMap (c • x) A = c ^ 2 * ω.linearMomentMap x A := by
+  simp only [linearMomentMap_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  ring
+
+/-- **The moment equation along lines.** The derivative of `μ_A` at `x` in the direction `y` is
+`ω(A x, y)`. No topology on `V` is needed: along the line `t ↦ x + t y` the component `μ_A` is the
+quadratic polynomial `μ_A(x) + t ω(A x, y) + t² μ_A(y)`. -/
+theorem hasDerivAt_linearMomentMap_add_smul (x y : V) (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    HasDerivAt (fun t : ℝ ↦ ω.linearMomentMap (x + t • y) A) (ω ((A : Module.End ℝ V) x) y) 0 := by
+  have h := (((hasDerivAt_id (0 : ℝ)).mul_const (ω ((A : Module.End ℝ V) x) y)).const_add
+    (ω.linearMomentMap x A)).add (((hasDerivAt_id (0 : ℝ)).pow 2).mul_const (ω.linearMomentMap y A))
+  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ ?_)).congr_deriv (by simp)
+  rw [linearMomentMap_add, linearMomentMap_smul]
+  simp only [Pi.add_apply, Pi.pow_apply, id_eq, map_smul, smul_eq_mul]
 
 variable {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] (τ : 𝔤 →ₗ[ℝ] V)
 

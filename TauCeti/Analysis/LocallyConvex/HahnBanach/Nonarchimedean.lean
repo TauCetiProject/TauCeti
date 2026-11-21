@@ -125,7 +125,7 @@ theorem exists_extension_norm_le_of_isNonarchimedean {U : Submodule K V} (f : U 
     have hcd : DirectedOn (· ≤ ·) c := hchain.directedOn
     refine ⟨LinearPMap.sSup c hcd, ?_, fun _ ↦ LinearPMap.le_sSup hcd⟩
     intro x
-    obtain ⟨q, hqc, hxq⟩ := (LinearPMap.mem_domain_sSup_iff ⟨y, hy⟩ hcd).1 x.2
+    obtain ⟨q, hqc, hxq⟩ := (LinearPMap.mem_domain_sSup_iff ⟨y, hy⟩ hcd).1 x.property
     have heq : LinearPMap.sSup c hcd x = q ⟨x, hxq⟩ :=
       LinearPMap.sSup_apply hcd hqc ⟨x, hxq⟩
     rw [heq]
@@ -189,7 +189,7 @@ theorem exists_strongDual_eq_zero_apply_eq_one_norm_le_of_isNonarchimedean (U : 
     simp only [LinearPMap.mk_apply, LinearMap.zero_apply, RingHom.id_apply, smul_eq_mul, mul_one,
       zero_add, FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def]
     by_cases ha : a = 0
-    · simpa [ha] using mul_nonneg rInv.2 (apply_nonneg q u)
+    · simpa [ha] using mul_nonneg rInv.property (apply_nonneg q u)
     · have hmem : -(a⁻¹ • u) ∈ U := U.neg_mem (U.smul_mem a⁻¹ hu)
       have hle : r * ‖a‖ ≤ q (u + a • v) := by
         calc r * ‖a‖ ≤ q (-(a⁻¹ • u) - v) * ‖a‖ :=

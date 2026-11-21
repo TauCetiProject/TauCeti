@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -114,7 +114,7 @@ private theorem analyticOnNhd_integral_eulerIntegrand {b c : ℂ} (hb : 0 < b.re
   let φ : ℝ → ℂ := fun t => ((projIcc 0 1 zero_le_one t : ℝ) : ℂ)
   let K : Set ℂ := ofReal '' Icc (0 : ℝ) 1
   have hφ : Continuous φ := continuous_ofReal.comp
-    (continuous_subtype_val.comp continuous_projIcc)
+    (continuous_subtypeVal.comp continuous_projIcc)
   have hφK (t : ℝ) : φ t ∈ K :=
     ⟨_, (projIcc 0 1 zero_le_one t).property, rfl⟩
   have hkernel : ∀ y ∈ K, AnalyticAt ℂ

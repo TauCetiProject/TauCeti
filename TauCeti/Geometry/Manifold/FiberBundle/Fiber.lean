@@ -95,7 +95,7 @@ theorem range_mfderiv_coe_fiber (hn : 1 ≤ n) (b : B) :
     letI := fiberChartedSpace F P IB IF hn b
     ∀ z : {x : T // π₀ x = b},
       (mfderiv K (IB.prod IF) Subtype.val z).range =
-        (mfderiv (IB.prod IF) IB π₀ z.1).ker :=
+        (mfderiv (IB.prod IF) IB π₀ z.val).ker :=
   range_mfderiv_coe_regularFiber hn (contMDiff_proj n F P IB IF)
     BoundarylessManifold.isInteriorPoint (isRegularValue_proj F P IB IF b)
 

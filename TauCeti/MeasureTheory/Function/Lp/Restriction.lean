@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Exponent
 
@@ -45,6 +46,12 @@ finite-measure sets.
   integral of the norm is at most the `Lᵖ` norm.
 * `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
   on a measurable subset.
+* `MeasureTheory.Lp.toReal_eLpNorm_restrict_mono`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` on
+  subsets of `Ω` is monotone in the subset.
+* `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
+  form a closed set.
+* `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
+  exactly when the class vanishes almost everywhere on that set.
 -/
 
 public section
@@ -201,5 +208,33 @@ theorem MemLp.coeFn_toLp_indicator_restrict {E F : Type*} [MeasurableSpace E]
     hf.toLp (s.indicator f) =ᵐ[μ.restrict W] f := by
   filter_upwards [ae_restrict_of_ae hf.coeFn_toLp, ae_restrict_mem hW] with x h₁ h₂
   rw [h₁, Set.indicator_of_mem (hWs h₂)]
+
+/-- On nested sets `s ⊆ t ⊆ Ω`, the `Lᵖ` seminorm on `s` of an element of `Lᵖ(Ω)` is at most its
+seminorm on `t`; both are finite, so the inequality holds for their real values. -/
+theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+    {μ : Measure α} {p : ENNReal} {Ω : Set α} (g : Lp F p (μ.restrict Ω)) {s t : Set α}
+    (hst : s ⊆ t) (htΩ : t ⊆ Ω) :
+    (eLpNorm g p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
+  ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
+    (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+
+/-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set: convergence in
+`Lᵖ` implies almost everywhere convergence of a subsequence. -/
+theorem Lp.isClosed_setOf_ae_notMem_imp_eq_zero {α F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup F] {p : ENNReal} [Fact (1 ≤ p)] (s : Set α) :
+    IsClosed {f : Lp F p μ | ∀ᵐ x ∂μ, x ∉ s → f x = 0} := by
+  refine IsSeqClosed.isClosed fun g h hgs hg ↦ ?_
+  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
+  filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
+  exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
+
+/-- The restriction of an `Lᵖ` class to a set `s` vanishes exactly when the class vanishes almost
+everywhere on `s`. -/
+theorem LpToLpRestrictCLM_eq_zero_iff {E F 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup F]
+    [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {μ : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
+    (s : Set E) (f : Lp F p μ) :
+    LpToLpRestrictCLM E F 𝕜 μ p s f = 0 ↔ f =ᵐ[μ.restrict s] 0 :=
+  Lp.eq_zero_iff_ae_eq_zero.trans
+    ⟨(LpToLpRestrictCLM_coeFn 𝕜 s f).symm.trans, (LpToLpRestrictCLM_coeFn 𝕜 s f).trans⟩
 
 end MeasureTheory

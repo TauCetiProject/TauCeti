@@ -69,38 +69,39 @@ variable {ι K : Type*} [Fintype ι] [Field K] [LinearOrder K] [IsStrictOrderedR
 /-- The projector map is continuous for the quotient topology on projective space. -/
 theorem continuous_projector : Continuous (projector : ℙ K (ι → K) → Matrix ι ι K) := by
   rw [continuous_iff]
-  have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.1 :=
+  have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.val :=
     funext fun x ↦ by simp
   simp only [hcomp, rankOneProjector_def]
-  exact ((continuous_subtype_val.dotProduct continuous_subtype_val).inv₀ fun x ↦
-    dotProduct_self_eq_zero.not.mpr x.2).smul
-    (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val)
+  exact ((continuous_subtypeVal.dotProduct continuous_subtypeVal).inv₀ fun x ↦
+    dotProduct_self_eq_zero.not.mpr x.property).smul
+    (continuous_subtypeVal.matrix_vecMulVec continuous_subtypeVal)
 
 /-- Over a Hausdorff topological ordered field with continuous inversion, the projector map is a
 closed embedding, hence a homeomorphism from projective space onto the projector locus
 `TauCeti.projectorLocus ι K`. -/
 theorem isClosedEmbedding_projector [T2Space K] :
     IsClosedEmbedding (projector : ℙ K (ι → K) → Matrix ι ι K) := by
-  let g : range (projector : ℙ K (ι → K) → Matrix ι ι K) → ℙ K (ι → K) := fun A ↦ A.2.choose
-  have hpg (A : range (projector : ℙ K (ι → K) → Matrix ι ι K)) : projector (g A) = A.1 :=
-    A.2.choose_spec
+  let g : range (projector : ℙ K (ι → K) → Matrix ι ι K) → ℙ K (ι → K) := fun A ↦ A.property.choose
+  have hpg (A : range (projector : ℙ K (ι → K) → Matrix ι ι K)) : projector (g A) = A.val :=
+    A.property.choose_spec
   have hg_left : g ∘ rangeFactorization projector = id :=
     funext fun p ↦ projector_injective (hpg ⟨projector p, mem_range_self p⟩)
   have hg_cont : Continuous g := continuous_iff_continuousAt.2 fun A ↦ by
     obtain ⟨r, hr⟩ := exists_mem_affineOpen (g A)
-    have hArr : A.1 r r ≠ 0 := hpg A ▸ (projector_apply_self_pos_iff.2 hr).ne'
-    let U : Set (range (projector : ℙ K (ι → K) → Matrix ι ι K)) := {B | B.1 r r ≠ 0}
-    have hU_open : IsOpen U := isOpen_ne.preimage (continuous_subtype_val.matrix_elem r r)
+    have hArr : A.val r r ≠ 0 := hpg A ▸ (projector_apply_self_pos_iff.2 hr).ne'
+    let U : Set (range (projector : ℙ K (ι → K) → Matrix ι ι K)) := {B | B.val r r ≠ 0}
+    have hU_open : IsOpen U := isOpen_ne.preimage (continuous_subtypeVal.matrix_elem r r)
     have hU_cont : ContinuousOn g U := by
       rw [continuousOn_iff_continuous_domRestrict]
-      let row : U → {v : ι → K // v ≠ 0} := fun B ↦ ⟨B.1.1 r, fun h0 ↦ B.2 (congr_fun h0 r)⟩
+      let row : U → {v : ι → K // v ≠ 0} := fun B ↦ ⟨B.val.val r, fun h0 ↦ B.property
+          (congr_fun h0 r)⟩
       have hrow_cont : Continuous row := (continuous_pi fun j ↦
-        (continuous_subtype_val.comp continuous_subtype_val).matrix_elem r j).subtype_mk _
+        (continuous_subtypeVal.comp continuous_subtypeVal).matrix_elem r j).subtype_mk _
       refine (isQuotientMap_mk'.continuous.comp hrow_cont).congr fun B ↦ ?_
-      have hB : projector (g B.1) = B.1.1 := hpg B.1
-      have hBrr : projector (g B.1) r r ≠ 0 := hB.symm ▸ B.2
+      have hB : projector (g B.val) = B.val.val := hpg B.val
+      have hBrr : projector (g B.val) r r ≠ 0 := hB.symm ▸ B.property
       simpa only [Function.comp_apply, row, mk'_eq_mk, domRestrict_apply, ← hB] using
-        mk_projector_row (g B.1) hBrr fun h0 ↦ hBrr (congr_fun h0 r)
+        mk_projector_row (g B.val) hBrr fun h0 ↦ hBrr (congr_fun h0 r)
     exact hU_cont.continuousAt (hU_open.mem_nhds hArr)
   have hind : IsInducing (projector : ℙ K (ι → K) → Matrix ι ι K) :=
     IsInducing.subtypeVal.comp <| IsInducing.of_comp (f := rangeFactorization projector) (g := g)

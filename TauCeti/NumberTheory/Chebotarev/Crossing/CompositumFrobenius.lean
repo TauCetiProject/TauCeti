@@ -83,19 +83,19 @@ theorem mem_frobeniusPrimeSet_mk_iff_restrictNormal_autToPow {𝔭 : HeightOneSp
         (hζ.autToPow K φ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
     intro φ h
     obtain ⟨Q, hφ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk h
-    have : Q.1.LiesOver 𝔭.asIdeal := Q.2.2
+    have : Q.val.LiesOver 𝔭.asIdeal := Q.property.2
     have hL := frobeniusPrimeSet_subset_map_restrictNormalHom (M := L) _ h
     rw [ConjClasses.map_mk, AlgEquiv.restrictNormalHom, MonoidHom.mk'_apply] at hL
-    exact ⟨hL, hφ.autToPow_eq_absNorm hζ 𝔭 hm Q.1⟩
+    exact ⟨hL, hφ.autToPow_eq_absNorm hζ 𝔭 hm Q.val⟩
   refine ⟨forward ρ, fun ⟨hL, hτ⟩ ↦ ?_⟩
   -- Take a Frobenius `φ` at a prime above `𝔭`; its two coordinates are those of `ρ` up to
   -- conjugating the first, and a lift of the conjugator conjugates `φ` to `ρ`.
   let Q : 𝔭.asIdeal.primesOver (𝓞 M) := Classical.choice inferInstance
-  have : Q.1.IsPrime := Q.2.1
-  have : Q.1.LiesOver 𝔭.asIdeal := Q.2.2
-  obtain ⟨φ, hφ⟩ := exists_isArithFrobAt K Q.1
-    (Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q.1)
-  have hφM := mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.1 hφ
+  have : Q.val.IsPrime := Q.property.1
+  have : Q.val.LiesOver 𝔭.asIdeal := Q.property.2
+  obtain ⟨φ, hφ⟩ := exists_isArithFrobAt K Q.val
+    (Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q.val)
+  have hφM := mem_frobeniusPrimeSet_mk_of_isArithFrobAt hur Q.val hφ
   obtain ⟨hφL, hφτ⟩ := forward φ hφM
   have hclass : ConjClasses.mk (φ.restrictNormal L) = ConjClasses.mk (ρ.restrictNormal L) := by
     by_contra hne

@@ -88,7 +88,7 @@ variable {r m : ℕ}
 
 /-- The relation defining jets is equality of finite jets of the representatives. -/
 private theorem rel_iff {x : E} {s t : {s : E → F // ContDiffAt 𝕜 ∞ s x}} :
-    (SameJetAt.setoid 𝕜 F r x).comap Subtype.val s t ↔ SameJetAt 𝕜 r x s.1 t.1 := by
+    (SameJetAt.setoid 𝕜 F r x).comap Subtype.val s t ↔ SameJetAt 𝕜 r x s.val t.val := by
   rw [Setoid.comap_rel, SameJetAt.setoid_apply]
 
 /-- The jet of order `r` of a section smooth near `x`. -/
@@ -106,7 +106,7 @@ theorem mk_eq_mk_iff {x : E} {s t : E → F} (hs : ContDiffAt 𝕜 ∞ s x)
 @[elab_as_elim]
 theorem ind {x : E} {motive : JetAt 𝕜 F r x → Prop}
     (h : ∀ s (hs : ContDiffAt 𝕜 ∞ s x), motive (mk s hs)) (j : JetAt 𝕜 F r x) : motive j :=
-  Quotient.ind (fun s ↦ h s.1 s.2) j
+  Quotient.ind (fun s ↦ h s.val s.property) j
 
 /-- Every jet has a representative section, as an existence statement. -/
 theorem mk_surjective {x : E} (j : JetAt 𝕜 F r x) :
@@ -125,7 +125,8 @@ def lift {α : Sort*} {x : E} (f : ∀ s : E → F, ContDiffAt 𝕜 ∞ s x → 
     (hf : ∀ (s t : E → F) (hs : ContDiffAt 𝕜 ∞ s x) (ht : ContDiffAt 𝕜 ∞ t x),
       SameJetAt 𝕜 r x s t → f s hs = f t ht) :
     JetAt 𝕜 F r x → α :=
-  Quotient.lift (fun s ↦ f s.1 s.2) fun s t h ↦ hf s.1 t.1 s.2 t.2 (rel_iff.1 h)
+  Quotient.lift (fun s ↦ f s.val s.property) fun s t h ↦ hf s.val t.val s.property t.property
+      (rel_iff.1 h)
 
 @[simp]
 theorem lift_mk {α : Sort*} {x : E} (f : ∀ s : E → F, ContDiffAt 𝕜 ∞ s x → α)
@@ -137,7 +138,7 @@ theorem lift_mk {α : Sort*} {x : E} (f : ∀ s : E → F, ContDiffAt 𝕜 ∞ s
 
 /-- The derivative tuple `(s x, Ds(x), …, Dʳs(x))` of a jet in the selected chart. -/
 def coordinates {x : E} : JetAt 𝕜 F r x → (i : Fin (r + 1)) → E [×i]→L[𝕜] F :=
-  Quotient.lift (fun s ↦ fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i s.1 x)
+  Quotient.lift (fun s ↦ fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i s.val x)
     fun _ _ h ↦ funext fun i ↦ (rel_iff.mp h).iteratedFDeriv_eq (Nat.lt_succ_iff.mp i.isLt)
 
 @[simp]
@@ -240,7 +241,7 @@ theorem zeroEquiv_symm_apply {x : E} (v : F) :
 /-- Jets of order one are the first jets of `TauCeti.FirstJetAt`, which have an explicit
 first-order transformation law. -/
 def firstJetAtEquiv (x : E) : JetAt 𝕜 F 1 x ≃ FirstJetAt 𝕜 F x where
-  toFun := Quotient.lift (fun s ↦ FirstJetAt.mk s.1 s.2) fun _ _ h ↦
+  toFun := Quotient.lift (fun s ↦ FirstJetAt.mk s.val s.property) fun _ _ h ↦
     (FirstJetAt.mk_eq_mk_iff _ _).2 (sameJetAt_one_iff.1 (rel_iff.1 h))
   invFun j := mk (FirstJetAt.exists_section j).choose
     (FirstJetAt.exists_section j).choose_spec.choose.contDiffAt
@@ -294,10 +295,10 @@ theorem coordinates_firstJetAtEquiv_symm_one {x : E} (j : FirstJetAt 𝕜 F x) :
 
 /-- A chosen representative of a jet, used to transform jets. -/
 private def rep {x : E} (j : JetAt 𝕜 F r x) : E → F :=
-  (Quotient.out j).1
+  (Quotient.out j).val
 
 private theorem contDiffAt_rep {x : E} (j : JetAt 𝕜 F r x) : ContDiffAt 𝕜 ∞ (rep j) x :=
-  (Quotient.out j).2
+  (Quotient.out j).property
 
 private theorem mk_rep {x : E} (j : JetAt 𝕜 F r x) : mk (rep j) (contDiffAt_rep j) = j :=
   Quotient.out_eq j
@@ -468,24 +469,24 @@ theorem coordinates_mk_finiteJetPolynomial [CharZero 𝕜] {x : E}
   exact iteratedFDeriv_finiteJetPolynomial_self r A x i (hA i)
 
 /-- Over `ℝ` or `ℂ`, the coordinates identify the jets in a chart with the tuples of symmetric
-multilinear maps, the fibre coordinates of the jet bundle. The inverse sends a tuple to the jet
-of its Taylor polynomial. -/
+multilinear maps (`TauCeti.symmetricJets`), the fibre coordinates of the jet bundle. The inverse
+sends a tuple to the jet of its Taylor polynomial. -/
 def coordinatesEquiv [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E) :
-    JetAt 𝕜 F r x ≃ {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v} :=
+    JetAt 𝕜 F r x ≃ symmetricJets 𝕜 E F r :=
   letI : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  { toFun j := ⟨coordinates j, coordinates_comp_perm j⟩
-    invFun A := mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt
+  { toFun j := ⟨coordinates j, mem_symmetricJets.2 (coordinates_comp_perm j)⟩
+    invFun A := mk (finiteJetPolynomial r A.val x) (contDiff_finiteJetPolynomial r A.val
+        x).contDiffAt
     left_inv j := coordinates_injective
       (coordinates_mk_finiteJetPolynomial _ (coordinates_comp_perm j))
-    right_inv A := Subtype.ext (coordinates_mk_finiteJetPolynomial A.1 A.2) }
+    right_inv A :=
+      Subtype.ext (coordinates_mk_finiteJetPolynomial A.val (mem_symmetricJets.1 A.property)) }
 
 @[simp]
 theorem coordinatesEquiv_symm_apply [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
+    (A : symmetricJets 𝕜 E F r) :
     (coordinatesEquiv r x).symm A =
-      mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt :=
+      mk (finiteJetPolynomial r A.val x) (contDiff_finiteJetPolynomial r A.val x).contDiffAt :=
   (rfl)
 
 @[simp]
@@ -502,15 +503,13 @@ theorem mk_finiteJetPolynomial_coordinates [IsRCLikeNormedField 𝕜] {x : E}
   (coordinatesEquiv r x).left_inv j
 
 theorem coordinates_coordinatesEquiv_symm [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
-    coordinates ((coordinatesEquiv r x).symm A) = A.1 :=
+    (A : symmetricJets 𝕜 E F r) :
+    coordinates ((coordinatesEquiv r x).symm A) = A.val :=
   congrArg Subtype.val ((coordinatesEquiv r x).apply_symm_apply A)
 
 theorem value_coordinatesEquiv_symm [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
-    value ((coordinatesEquiv r x).symm A) = A.1 0 0 := by
+    (A : symmetricJets 𝕜 E F r) :
+    value ((coordinatesEquiv r x).symm A) = A.val 0 0 := by
   rw [value, coordinates_coordinatesEquiv_symm]
 
 /-- Over `ℝ` or `ℂ`, every jet is the jet of a globally smooth section whose graph stays near `x`

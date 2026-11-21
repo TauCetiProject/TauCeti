@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.Data.ZMod.IntUnitsPower
+public import TauCeti.Algebra.CharP.Invertible
 
 /-!
 # Graded supercommutativity
@@ -20,7 +22,8 @@ In a (possibly nonunital, nonassociative) ring `A` equipped with a family of hom
   has Koszul sign `(-1 : ℤˣ) ^ p = 1` (in particular, degree `0`) commutes with every element of
   `A`.
 * Without requiring a decomposition, every homogeneous element whose degree `p` has Koszul sign
-  `(-1 : ℤˣ) ^ p = -1` (in particular, degree `1`) satisfies `a * a = -(a * a)`.
+  `(-1 : ℤˣ) ^ p = -1` (in particular, degree `1`) satisfies `a * a = -(a * a)`. When `2` is
+  invertible in the scalars, such an element squares to zero.
 
 ## Main results
 
@@ -32,6 +35,8 @@ In a (possibly nonunital, nonassociative) ring `A` equipped with a family of hom
   `(-1 : ℤˣ) ^ p = -1` satisfies `a * a = -(a * a)`.
 * `TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one`: every element of degree `1`
   satisfies `a * a = -(a * a)`.
+* `TauCeti.mul_self_eq_zero_of_negOnePow_odd`: when `2` is invertible, an element whose square is
+  fixed by the Koszul sign of an odd degree squares to zero.
 -/
 
 public section
@@ -56,7 +61,7 @@ theorem commute_of_mul_eq_uzpow_smul_mul [DecidableEq ι] [AddSubmonoidClass σ 
     {p : ι} {a : A} (ha : a ∈ ℬ p) (hp : (-1 : ℤˣ) ^ p = 1) (b : A) : Commute a b := by
   induction b using Decomposition.inductionOn ℬ with
   | zero => simp [Commute, SemiconjBy]
-  | @homogeneous q b => simpa [Commute, SemiconjBy, uzpow_mul, hp] using hcomm ha b.2
+  | @homogeneous q b => simpa [Commute, SemiconjBy, uzpow_mul, hp] using hcomm ha b.property
   | add x y hx hy => simp only [Commute, SemiconjBy, mul_add, add_mul, hx.eq, hy.eq]
 
 /-- In an internally graded ring with Koszul signs, every element of degree `0` commutes with the
@@ -84,5 +89,14 @@ theorem mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one {ℬ : ι → σ}
   mul_self_eq_neg_of_mul_eq_uzpow_smul_mul hcomm ha (uzpow_one (-1))
 
 end SignedComm
+
+/-- If `2` is invertible in the scalars, an element `a` with `a * a = (-1) ^ (n * n) • (a * a)`
+for an odd `n` squares to zero: in a graded-commutative algebra, every element of odd degree
+squares to zero. -/
+theorem mul_self_eq_zero_of_negOnePow_odd {K B : Type*} [Semiring K] [Invertible (2 : K)]
+    [NonUnitalNonAssocRing B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
+    (ha : a * a = (n * n).negOnePow • (a * a)) : a * a = 0 :=
+  eq_zero_of_eq_neg_of_invertible_two (R := K) <| by
+    rwa [Int.negOnePow_mul_self, Int.negOnePow_odd _ hn, Units.neg_smul, one_smul] at ha
 
 end TauCeti

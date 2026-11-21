@@ -73,7 +73,7 @@ theorem _root_.Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_s
   let F := Submodule.span ℝ (L : Set E)
   let L' : Submodule ℤ F := ZLattice.comap ℝ L F.subtype
   have : DiscreteTopology L' :=
-    ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
+    ZLattice.comap_discreteTopology ℝ L continuous_subtypeVal Subtype.val_injective
   -- `ZLattice.comap` is the pullback of `L` along the subtype map, viewed `ℤ`-linearly.
   have hL' : L' = L.comap (F.restrictScalars ℤ).subtype := rfl
   have e : L' ≃ₗ[ℤ] L := hL' ▸
@@ -93,9 +93,9 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
   let e := Submodule.comapSubtypeEquivOfLe hLF
   -- After coercing to E, both directions are subtype projections.
   have he : Continuous e := by
-    exact (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    exact (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   have he' : Continuous e.symm := by
-    exact (continuous_subtype_val.subtype_mk _).subtype_mk _
+    exact (continuous_subtypeVal.subtype_mk _).subtype_mk _
   have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
   -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
   have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage

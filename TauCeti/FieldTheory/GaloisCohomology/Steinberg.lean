@@ -81,7 +81,8 @@ theorem explicitRes1_kummerMap_eq_zero (hn : IsUnit (n : K)) {L : Type v} [Field
   refine Subtype.ext (funext fun g => ?_)
   rw [cocyclesMap1_apply, AddMonoidHom.id_apply]
   refine Additive.toMul.injective (Subtype.ext ?_)
-  simpa using mul_inv_eq_one.2 (Units.ext ((mem_fixingSubgroup_iff _).1 g.2 _ ⟨(β : L), rfl⟩))
+  simpa using mul_inv_eq_one.2 (Units.ext ((mem_fixingSubgroup_iff _).1 g.property _ ⟨(β : L),
+      rfl⟩))
 
 section Cup
 

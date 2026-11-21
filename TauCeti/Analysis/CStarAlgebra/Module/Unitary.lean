@@ -108,6 +108,17 @@ theorem isometry_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
     Isometry V :=
   AddMonoidHomClass.isometry_of_norm V (norm_map_of_adjoint_comp_self_eq_id hV)
 
+/-- An adjointable isometry `V` (`V* ∘ V = id_E`) bundled as a complex-linear isometry
+`E →ₗᵢ[ℂ] F`. -/
+def toLinearIsometryOfAdjointCompSelfEqId {V : AdjointableMap A E F}
+    (hV : V.adjoint.comp V = .id A E) : E →ₗᵢ[ℂ] F where
+  toLinearMap := V.toContinuousLinearMap.toLinearMap
+  norm_map' := norm_map_of_adjoint_comp_self_eq_id hV
+
+@[simp] theorem toLinearIsometryOfAdjointCompSelfEqId_apply {V : AdjointableMap A E F}
+    (hV : V.adjoint.comp V = .id A E) (x : E) :
+    toLinearIsometryOfAdjointCompSelfEqId hV x = V x := (rfl)
+
 /-- If `V* ∘ V = id_E`, then `V ∘ V*` is an adjointable star projection on `F` (whose range is
 `Set.range V`; see `range_self_comp_adjoint_of_adjoint_comp_self_eq_id`). -/
 theorem isStarProjection_self_comp_adjoint_of_adjoint_comp_self_eq_id {V : AdjointableMap A E F}
@@ -580,7 +591,7 @@ def equivSubtypeAdjointableMap :
     CStarModuleUnitary A E F ≃
       {T : AdjointableMap A E F // T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F} where
   toFun U := ⟨U.toAdjointableMap, by simp⟩
-  invFun T := ofAdjointableMap T.1 T.2.1 T.2.2
+  invFun T := ofAdjointableMap T.val T.property.1 T.property.2
   left_inv _ := ext fun _ ↦ rfl
   right_inv _ := Subtype.ext (AdjointableMap.ext fun _ ↦ rfl)
 
@@ -591,7 +602,7 @@ theorem coe_equivSubtypeAdjointableMap (U : CStarModuleUnitary A E F) :
 @[simp]
 theorem equivSubtypeAdjointableMap_symm_apply
     (T : {T : AdjointableMap A E F // T.adjoint.comp T = .id A E ∧ T.comp T.adjoint = .id A F}) :
-    equivSubtypeAdjointableMap.symm T = ofAdjointableMap T.1 T.2.1 T.2.2 := (rfl)
+    equivSubtypeAdjointableMap.symm T = ofAdjointableMap T.val T.property.1 T.property.2 := (rfl)
 
 /-! #### Group structure on endomorphism unitaries and comparison with `unitary` -/
 section End

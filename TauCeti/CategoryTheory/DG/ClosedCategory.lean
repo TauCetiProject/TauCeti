@@ -128,16 +128,16 @@ noncomputable def dgClosedHomEquiv
     (X ⟶ Y) ≃ dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y) where
   toFun f := ⟨dgClosedHom R f, dgClosedHom_mem_dgCycles R f⟩
-  invFun f := dgClosedHomOf (C := C) R f.1 f.2
+  invFun f := dgClosedHomOf (C := C) R f.val f.property
   left_inv f := dgClosedHomOf_dgClosedHom R f
-  right_inv f := Subtype.ext (dgClosedHom_dgClosedHomOf R f.1 f.2)
+  right_inv f := Subtype.ext (dgClosedHom_dgClosedHomOf R f.val f.property)
 
 /-- The equivalence from underlying morphisms to cycles evaluates by taking the degree-zero
 component. -/
 @[simp]
 theorem dgClosedHomEquiv_apply_coe
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C} (f : X ⟶ Y) :
-    (dgClosedHomEquiv R X Y f).1 = dgClosedHom R f :=
+    (dgClosedHomEquiv R X Y f).val = dgClosedHom R f :=
   (rfl)
 
 /-- The inverse equivalence constructs the underlying morphism represented by a cocycle. -/
@@ -146,7 +146,7 @@ theorem dgClosedHomEquiv_symm_apply
     {X Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C}
     (f : dgCycles R (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) X)
       (ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) Y)) :
-    (dgClosedHomEquiv R X Y).symm f = dgClosedHomOf R f.1 f.2 :=
+    (dgClosedHomEquiv R X Y).symm f = dgClosedHomOf R f.val f.property :=
   (rfl)
 
 /-- The identity at an object of Mathlib's underlying category has the DG identity as its
