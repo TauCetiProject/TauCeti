@@ -98,38 +98,33 @@ namespace Orientable
 
 variable (g₁ m₁ g₂ m₂ : ℕ) (h₁ : g₁ ≠ 0 ∨ m₁ ≠ 0) (h₂ : g₂ ≠ 0 ∨ m₂ ≠ 0)
 
+include h₁ h₂ in
+/-- Neither piece is a disc, so that the maps `gluingMaps` amalgamated by `equivPushoutI`, onto the
+boundary subgroups of the last peripheral elements of the two pieces, are injective. -/
+theorem gluingMaps_injective (b : Bool) : Function.Injective (gluingMaps g₁ m₁ g₂ m₂ b) := by
+  cases b
+  · rw [gluingMaps_false]
+    exact zpowersHom_peripheral_injective (h₁.imp_right fun _ ↦ by omega) _
+  · rw [gluingMaps_true]
+    exact zpowersHom_inv_peripheral_injective (h₂.imp_right fun _ ↦ by omega) _
+
 /-- The segment of groups of a separating curve on the orientable surface of genus `g₁ + g₂` with
 `m₁ + m₂` boundary components: vertex groups `S⁺(g₁, m₁ + 1)` at `false` and `S⁺(g₂, m₂ + 1)` at
-`true`, edge group `ℤ`, and boundary maps `n ↦ q₁ ^ n` and `n ↦ q₂ ^ (-n)` onto the boundary
-subgroups of the last peripheral elements `q₁` and `q₂` of the two pieces. Neither piece is a disc,
-so that both maps are injective. -/
+`true`, edge group `ℤ`, and boundary maps `gluingMaps`, `n ↦ q₁ ^ n` and `n ↦ q₂ ^ (-n)`, onto the
+boundary subgroups of the last peripheral elements `q₁` and `q₂` of the two pieces. Neither piece
+is a disc, so that both maps are injective. -/
 abbrev separatingSegment : GraphOfGroups.{0, 0, 0, 0} SerreGraph.segment :=
-  segment (zpowersHom _ (peripheral g₁ (m₁ + 1) (Fin.last m₁)))
-    (zpowersHom _ (peripheral g₂ (m₂ + 1) (Fin.last m₂))⁻¹)
-    (zpowersHom_peripheral_injective (h₁.imp_right fun _ ↦ by omega) _)
-    (zpowersHom_inv_peripheral_injective (h₂.imp_right fun _ ↦ by omega) _)
-
-/-- The boundary maps `segmentMaps` of `separatingSegment` are the maps `gluingMaps` amalgamated
-by `equivPushoutI`. -/
-private theorem segmentMaps_eq_gluingMaps :
-    segmentMaps (zpowersHom _ (peripheral g₁ (m₁ + 1) (Fin.last m₁)))
-        (zpowersHom _ (peripheral g₂ (m₂ + 1) (Fin.last m₂))⁻¹)
-        (zpowersHom_peripheral_injective (h₁.imp_right fun _ ↦ by omega) _)
-        (zpowersHom_inv_peripheral_injective (h₂.imp_right fun _ ↦ by omega) _) =
-      gluingMaps g₁ m₁ g₂ m₂ := by
-  funext b
-  cases b
-  · exact (segmentMaps_false ..).trans (gluingMaps_false ..).symm
-  · exact (segmentMaps_true ..).trans (gluingMaps_true ..).symm
+  segment (gluingMaps g₁ m₁ g₂ m₂ false) (gluingMaps g₁ m₁ g₂ m₂ true)
+    (gluingMaps_injective g₁ m₁ g₂ m₂ h₁ h₂ false) (gluingMaps_injective g₁ m₁ g₂ m₂ h₁ h₂ true)
 
 variable {T : Set SerreGraph.segment.E}
 
-/-- `TauCeti.GraphOfGroups.π₁Tree.equivPushoutI` for `separatingSegment`, transported along
-`segmentMaps_eq_gluingMaps` to the amalgam of `equivPushoutI`. -/
+/-- `TauCeti.GraphOfGroups.π₁Tree.equivPushoutI` for `separatingSegment`, followed by
+`TauCeti.GraphOfGroups.segmentPushoutIEquiv` to the amalgam of `equivPushoutI`. -/
 private noncomputable def π₁TreeEquivPushoutI (hT : T.Nonempty) :
     π₁Tree (separatingSegment g₁ m₁ g₂ m₂ h₁ h₂) T ≃* Monoid.PushoutI (gluingMaps g₁ m₁ g₂ m₂) :=
   (π₁Tree.equivPushoutI _ _ _ _ hT).trans
-    (MulEquiv.cast (M := Monoid.PushoutI) (segmentMaps_eq_gluingMaps g₁ m₁ g₂ m₂ h₁ h₂))
+    (segmentPushoutIEquiv (gluingMaps g₁ m₁ g₂ m₂) (gluingMaps_injective g₁ m₁ g₂ m₂ h₁ h₂))
 
 /-- `π₁TreeEquivPushoutI` is the identity on the vertex groups. -/
 @[simp]
@@ -137,12 +132,12 @@ private theorem π₁TreeEquivPushoutI_symm_of (hT : T.Nonempty) (b : Bool)
     (x : GluingFactor g₁ m₁ g₂ m₂ b) :
     (π₁TreeEquivPushoutI g₁ m₁ g₂ m₂ h₁ h₂ hT).symm (Monoid.PushoutI.of b x) =
       π₁Tree.of T b x := by
-  have h := segmentMaps_eq_gluingMaps g₁ m₁ g₂ m₂ h₁ h₂
-  refine (MulEquiv.symm_apply_eq _).2 (Eq.symm ?_)
-  -- The two amalgams agree only up to unfolding `segment`, so `rw` cannot work on this goal (it
-  -- is not type-correct at the transparency `rw` uses); the steps are composed as terms.
-  exact (congrArg (MulEquiv.cast (M := Monoid.PushoutI) h) (π₁Tree.equivPushoutI_of hT b x)).trans
-    ((cast_eq_iff_heq ..).2 (congr_arg_heq (fun φ ↦ Monoid.PushoutI.of (φ := φ) b x) h))
+  rw [π₁TreeEquivPushoutI, MulEquiv.symm_trans_apply, segmentPushoutIEquiv_symm_of]
+  cases b
+  · rw [segmentVertexEquiv_symm_false_apply]
+    exact π₁Tree.equivPushoutI_symm_of hT false x
+  · rw [segmentVertexEquiv_symm_true_apply]
+    exact π₁Tree.equivPushoutI_symm_of hT true x
 
 /-- **Cutting along a separating curve, as a graph of groups.** The orientable surface group
 `S⁺(g₁ + g₂, m₁ + m₂)` is the fundamental group of the segment of groups `separatingSegment`,

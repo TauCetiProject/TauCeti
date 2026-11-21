@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.PushoutI.Reduced
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Centralizers of elements of a factor of an amalgamated product

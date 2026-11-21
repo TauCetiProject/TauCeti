@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Centralizer
-public import TauCeti.GroupTheory.PushoutI.Centralizer
+public import TauCeti.GroupTheory.PushoutI.Centralizer.Basic
 
 /-!
 # Centralizers of elliptic elements of an extension of a centralizer

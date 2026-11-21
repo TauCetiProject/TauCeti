@@ -30,6 +30,7 @@ hypotheses they are.
 
 ## Main results
 
+* `Monoid.PushoutI.map_comp_map_eq_id`: factorwise left inverses induce a left inverse.
 * `Monoid.PushoutI.map_injective`: the injectivity criterion.
 
 ## References
@@ -100,6 +101,17 @@ theorem map_comp {G'' : ι → Type*} {H'' : Type*} [∀ i, Monoid (G'' i)] [Mon
       rw [MonoidHom.comp_assoc, hfk, ← MonoidHom.comp_assoc, hfk', MonoidHom.comp_assoc]) =
       (map f' k' hfk').comp (map f k hfk) :=
   hom_ext (fun i => by ext; simp) (by ext; simp)
+
+/-- Homomorphisms of amalgamated products induced by factorwise left inverse homomorphisms, with
+left inverse homomorphisms of the amalgamated monoids, are left inverse. -/
+theorem map_comp_map_eq_id {g : ∀ i, G' i →* G i} {k' : H' →* H}
+    (hgk : ∀ i, (g i).comp (φ' i) = (φ i).comp k') (hgf : ∀ i, LeftInverse (g i) (f i))
+    (hk : LeftInverse k' k) : (map g k' hgk).comp (map f k hfk) = .id (PushoutI φ) := by
+  have hgf' : (fun i => (g i).comp (f i)) = fun i => .id (G i) :=
+    funext fun i => MonoidHom.ext (hgf i)
+  have hk' : k'.comp k = .id H := MonoidHom.ext hk
+  rw [← map_comp]
+  simp only [hgf', hk', map_id]
 
 end Monoid
 
