@@ -39,9 +39,8 @@ algebraic closure properties.
   Borel σ-algebra, boundedness in probability is equivalent to tightness of the sequence of laws
   `fun n ↦ μ.map (X n)`.
 * `TauCeti.tendstoInMeasure_smul_zero_of_isBoundedInProbability`,
-  `TauCeti.tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero`,
-  `TauCeti.tendstoInMeasure_mul_zero_of_isBoundedInProbability` — the stochastic order algebra
-  identities `O_P(1) · o_P(1) = o_P(1)` and `o_P(1) · O_P(1) = o_P(1)`.
+  `TauCeti.tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero` — the stochastic order algebra
+  identities `O_P(1) • o_P(1) = o_P(1)` and `o_P(1) • O_P(1) = o_P(1)`.
 
 ## References
 
@@ -315,7 +314,7 @@ end Tightness
 
 section StochasticOrder
 
-variable {Ω 𝕜 E R : Type*} [MeasurableSpace Ω]
+variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω]
 
 private theorem tendstoInMeasure_zero_of_norm_le_mul
     {E₁ E₂ E₃ : Type*} [SeminormedAddGroup E₁] [SeminormedAddGroup E₂]
@@ -372,16 +371,6 @@ theorem tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero
     TendstoInMeasure μ (fun n ω ↦ U n ω • V n ω) atTop (fun _ ↦ 0) :=
   tendstoInMeasure_zero_of_norm_le_mul hV hU fun n ω ↦
     (norm_smul_le (U n ω) (V n ω)).trans_eq (mul_comm _ _)
-
-/-- **Stochastic order algebra `O_P(1) · o_P(1) = o_P(1)`.** The product of a sequence bounded in
-probability and a sequence tending to `0` in measure tends to `0` in measure, in any seminormed
-ring under a finite measure. -/
-theorem tendstoInMeasure_mul_zero_of_isBoundedInProbability
-    [NonUnitalSeminormedRing R] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {U V : ℕ → Ω → R} (hU : IsBoundedInProbability μ U)
-    (hV : TendstoInMeasure μ V atTop (fun _ ↦ 0)) :
-    TendstoInMeasure μ (fun n ω ↦ U n ω * V n ω) atTop (fun _ ↦ 0) :=
-  tendstoInMeasure_smul_zero_of_isBoundedInProbability hU hV
 
 end StochasticOrder
 

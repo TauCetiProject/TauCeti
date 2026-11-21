@@ -448,10 +448,8 @@ theorem tendsto_iff_forall_lipschitz_integral_tendsto
       ENNReal.ofReal_toReal (measure_ne_top _ _)] at hle
   have hopen := limsup_measure_closed_le_iff_liminf_measure_open_ge.mp hclosed
   refine tendsto_of_forall_isOpen_le_liminf fun U hU ↦ ENNReal.coe_le_coe.1 ?_
-  have aux : ENNReal.ofNNReal (L.liminf fun i ↦ μs i U) =
-      L.liminf (ENNReal.ofNNReal ∘ fun i ↦ μs i U) :=
-    Monotone.map_liminf_of_continuousAt ENNReal.coe_mono (μs · U) (by fun_prop)
-      (isBoundedUnder_of ⟨1, fun _ ↦ apply_le_one _ _⟩).isCoboundedUnder_ge ⟨0, by simp⟩
-  simpa only [aux, Function.comp_def, ennreal_coeFn_eq_coeFn_toMeasure] using hopen U hU
+  simpa only [ENNReal.ofNNReal_liminf
+    (isBoundedUnder_of ⟨1, fun _ ↦ apply_le_one _ _⟩).isCoboundedUnder_ge,
+    ennreal_coeFn_eq_coeFn_toMeasure] using hopen U hU
 
 end MeasureTheory.ProbabilityMeasure

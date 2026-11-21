@@ -174,24 +174,20 @@ private theorem abs_integral_map_sub_le_of_lipschitz
     {L : NNReal} (hL : 0 < L) (hF_lip : LipschitzWith L F) {δ : ℝ} (hδ : 0 < δ) :
     |∫ x, F x ∂(μ''.map Y) - ∫ x, F x ∂(μ''.map X)| ≤
       (L : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} := by
-  have hF_meas : Measurable F := hF_lip.continuous.measurable
+  let F' : BoundedContinuousFunction E ℝ := ⟨⟨F, hF_lip.continuous⟩, M, hF_bd⟩
+  have hF_meas : Measurable F := F'.continuous.measurable
   have hFY_meas : AEStronglyMeasurable (fun ω ↦ F (Y ω)) μ'' :=
     (hF_meas.comp_aemeasurable hY).aestronglyMeasurable
   have hFX_meas : AEStronglyMeasurable (fun ω ↦ F (X ω)) μ'' :=
     (hF_meas.comp_aemeasurable hX).aestronglyMeasurable
-  have hne : Nonempty Ω'' := nonempty_of_isProbabilityMeasure μ''
-  let x₀ : E := X hne.some
-  have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd x₀ x₀)
-  have h_int (W : Ω'' → E) (hW : AEStronglyMeasurable (fun ω ↦ F (W ω)) μ'') :
-      Integrable (fun ω ↦ F (W ω)) μ'' := by
-    refine Integrable.of_bound hW (‖F x₀‖ + M) (ae_of_all _ fun ω ↦ ?_)
-    have h1 := hF_bd (W ω) x₀
-    rw [Real.dist_eq] at h1
-    linarith [abs_sub_abs_le_abs_sub (F (W ω)) (F x₀), Real.norm_eq_abs (F (W ω)),
-      Real.norm_eq_abs (F x₀)]
-  have h_int_Y := h_int Y hFY_meas
-  have h_int_X := h_int X hFX_meas
-  have h_int_sub : Integrable (fun ω ↦ ‖F (Y ω) - F (X ω)‖) μ'' := (h_int_Y.sub h_int_X).norm
+  have ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ''
+  have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd (X ω₀) (X ω₀))
+  have := Measure.isFiniteMeasure_map μ'' Y
+  have := Measure.isFiniteMeasure_map μ'' X
+  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ'' :=
+    (F'.integrable (μ''.map Y)).comp_aemeasurable hY
+  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ'' :=
+    (F'.integrable (μ''.map X)).comp_aemeasurable hX
   let S : Set Ω'' := {ω | (L : ℝ) * δ < ‖F (Y ω) - F (X ω)‖}
   have hS : NullMeasurableSet S μ'' :=
     nullMeasurableSet_lt aemeasurable_const (hFY_meas.sub hFX_meas).norm.aemeasurable
@@ -205,18 +201,16 @@ private theorem abs_integral_map_sub_le_of_lipschitz
     integral_map hX hF_meas.stronglyMeasurable.aestronglyMeasurable,
     ← integral_sub h_int_Y h_int_X, ← Real.norm_eq_abs]
   calc ‖∫ ω, F (Y ω) - F (X ω) ∂μ''‖
-      ≤ ∫ ω, ‖F (Y ω) - F (X ω)‖ ∂μ'' := norm_integral_le_integral_norm _
-    _ = ∫ ω in S, ‖F (Y ω) - F (X ω)‖ ∂μ'' + ∫ ω in Sᶜ, ‖F (Y ω) - F (X ω)‖ ∂μ'' :=
-        (integral_add_compl₀ hS h_int_sub).symm
-    _ ≤ ∫ _ in S, M ∂μ'' + ∫ _ in Sᶜ, (L : ℝ) * δ ∂μ'' := by
-        gcongr ?_ + ?_
-        · refine setIntegral_mono h_int_sub.integrableOn integrableOn_const fun ω ↦ ?_
-          simpa only [Real.norm_eq_abs, ← Real.dist_eq] using hF_bd (Y ω) (X ω)
-        · refine setIntegral_mono_on₀ h_int_sub.integrableOn integrableOn_const hS.compl
-            fun ω hω ↦ not_lt.1 hω
-    _ = M * μ''.real S + (L : ℝ) * δ * μ''.real Sᶜ := by
-        simp only [setIntegral_const, smul_eq_mul]
-        ring
+      = ‖∫ ω in S, F (Y ω) - F (X ω) ∂μ'' + ∫ ω in Sᶜ, F (Y ω) - F (X ω) ∂μ''‖ :=
+        congrArg norm (integral_add_compl₀ (f := fun ω ↦ F (Y ω) - F (X ω))
+          hS (h_int_Y.sub h_int_X)).symm
+    _ ≤ ‖∫ ω in S, F (Y ω) - F (X ω) ∂μ''‖ + ‖∫ ω in Sᶜ, F (Y ω) - F (X ω) ∂μ''‖ :=
+        norm_add_le _ _
+    _ ≤ M * μ''.real S + (L : ℝ) * δ * μ''.real Sᶜ :=
+        add_le_add
+          (norm_setIntegral_le_of_norm_le_const (measure_lt_top _ _) fun ω _ ↦ by
+            simpa only [Real.norm_eq_abs, ← Real.dist_eq] using hF_bd (Y ω) (X ω))
+          (norm_setIntegral_le_of_norm_le_const (measure_lt_top _ _) fun ω hω ↦ not_lt.1 hω)
     _ ≤ M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} + (L : ℝ) * δ * 1 :=
         add_le_add (mul_le_mul_of_nonneg_left (measureReal_mono hS_sub) hM_nonneg)
           (mul_le_mul_of_nonneg_left measureReal_le_one (by positivity))

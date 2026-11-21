@@ -22,10 +22,9 @@ under `μ`, and every `X i` pushes `μ` forward to `P`.
 
 This file provides the basic API for `TauCeti.IsIndependentIdenticallyDistributed`: projections to
 measurability, mutual and pairwise independence, identical distribution, `MeasurePreserving`,
-`HasLaw`, composition with measurable statistics, restriction along injective index maps, joint
-product laws on finite and arbitrary index types, canonical coordinate witnesses on `Measure.pi`
-and `Measure.infinitePi`, and the strong and weak laws of large numbers for Banach-space-valued
-integrable statistics.
+`HasLaw`, composition with measurable statistics, restriction along injective index maps, canonical
+coordinate witnesses on `Measure.pi` and `Measure.infinitePi`, and the strong and weak laws of
+large numbers for Banach-space-valued integrable statistics.
 
 ## Main definitions
 
@@ -37,9 +36,6 @@ integrable statistics.
 * `TauCeti.isIndependentIdenticallyDistributed_iff` — definitional characterization.
 * `TauCeti.IsIndependentIdenticallyDistributed.comp` — measurable statistics of an i.i.d. family
   are i.i.d.
-* `TauCeti.IsIndependentIdenticallyDistributed.map_fun_eq_pi` and
-  `TauCeti.IsIndependentIdenticallyDistributed.map_fin_eq_pi` — joint distribution of a finite
-  block is `Measure.pi`.
 * `TauCeti.isIndependentIdenticallyDistributed_eval_pi` and
   `TauCeti.isIndependentIdenticallyDistributed_eval_infinitePi` — coordinate projections on
   product spaces are i.i.d.
@@ -153,29 +149,6 @@ theorem IsIndependentIdenticallyDistributed.precomp
     (h : IsIndependentIdenticallyDistributed μ X P) {g : κ → ι} (hg : Function.Injective g) :
     IsIndependentIdenticallyDistributed μ (fun k ↦ X (g k)) P :=
   ⟨fun k ↦ h.measurable (g k), h.iIndepFun.precomp hg, fun k ↦ h.map_eq (g k)⟩
-
-/-- The joint law of a finitely indexed i.i.d. family is the finite product measure `Measure.pi`. -/
-theorem IsIndependentIdenticallyDistributed.map_fun_eq_pi [Fintype ι]
-    (h : IsIndependentIdenticallyDistributed μ X P) :
-    μ.map (fun ω i ↦ X i ω) = Measure.pi (fun _ : ι ↦ P) := by
-  have := h.isProbabilityMeasure
-  rw [h.iIndepFun.map_fun_eq_pi_map h.aemeasurable]
-  exact congrArg Measure.pi (funext h.map_eq)
-
-/-- The joint law of an arbitrarily indexed i.i.d. family is the product measure
-`Measure.infinitePi`. -/
-theorem IsIndependentIdenticallyDistributed.map_fun_eq_infinitePi
-    (h : IsIndependentIdenticallyDistributed μ X P) :
-    μ.map (fun ω i ↦ X i ω) = Measure.infinitePi (fun _ : ι ↦ P) := by
-  rw [h.iIndepFun.map_fun_eq_infinitePi_map h.measurable]
-  exact congrArg Measure.infinitePi (funext h.map_eq)
-
-/-- For an `ℕ`-indexed i.i.d. sequence `X`, the joint law of the initial block
-`(X 0, …, X (n - 1))` is the `n`-fold product measure `Measure.pi (fun _ : Fin n ↦ P)`. -/
-theorem IsIndependentIdenticallyDistributed.map_fin_eq_pi {X : ℕ → Ω → E}
-    (h : IsIndependentIdenticallyDistributed μ X P) (n : ℕ) :
-    μ.map (fun ω (i : Fin n) ↦ X i ω) = Measure.pi (fun _ : Fin n ↦ P) :=
-  (h.precomp Fin.val_injective).map_fun_eq_pi
 
 /-- The coordinate projections on a finite product `Measure.pi (fun _ : ι ↦ P)` of a probability
 measure `P` form an i.i.d. family with law `P`. -/

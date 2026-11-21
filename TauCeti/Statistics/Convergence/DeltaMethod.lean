@@ -84,47 +84,37 @@ theorem tendstoInMeasure_delta_method_remainder
       (fun n ω ↦ a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ)))
       atTop (fun _ ↦ 0) := by
   have hT := tendstoInMeasure_const_of_isBoundedInProbability_smul_sub ha hbd
-  rw [tendstoInMeasure_iff_measureReal_norm]
-  intro ε hε
-  rw [Metric.tendsto_nhds]
-  intro η hη
-  obtain ⟨C, hC, hbd_ev⟩ := isBoundedInProbability_iff.1 hbd (η / 2) (half_pos hη)
-  set c : ℝ := ε / (2 * C)
-  have hc : 0 < c := by positivity
+  let r : E → ℝ := fun x ↦ ‖g x - g θ - D (x - θ)‖ / ‖x - θ‖
+  have hr_cont : ContinuousAt r θ := by
+    rw [Metric.continuousAt_iff]
+    intro ε hε
+    obtain ⟨δ, hδ, hlip⟩ :=
+      Metric.eventually_nhds_iff.1 (Asymptotics.isLittleO_iff.1 hd.isLittleO (half_pos hε))
+    refine ⟨δ, hδ, fun {x} hx ↦ ?_⟩
+    have hrθ : r θ = 0 := by simp [r]
+    rw [hrθ, Real.dist_eq, sub_zero, abs_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _))]
+    by_cases h0 : ‖x - θ‖ = 0
+    · simp [h0, hε]
+    · have hpos : 0 < ‖x - θ‖ := lt_of_le_of_ne (norm_nonneg _) (Ne.symm h0)
+      exact ((div_le_iff₀ hpos).2 (hlip hx)).trans_lt (half_lt_self hε)
+  have hr_lim : TendstoInMeasure μ (fun n ω ↦ r (T n ω)) atTop (fun _ ↦ 0) := by
+    simpa [r] using hT.continuousAt_const_comp hr_cont
+  have hprod := tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero hr_lim hbd
   obtain ⟨δ, hδ, hlip⟩ :=
-    Metric.eventually_nhds_iff.1 (Asymptotics.isLittleO_iff.1 hd.isLittleO hc)
-  have hT_ev := Metric.tendsto_nhds.1
-    (tendstoInMeasure_iff_measureReal_dist.1 hT δ hδ) (η / 2) (half_pos hη)
-  filter_upwards [hbd_ev, hT_ev, ha.eventually_gt_atTop 0] with n hn_bd hn_T hn_a
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at hn_T ⊢
-  have hsub : {ω | ε ≤ ‖a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ)) - 0‖} ⊆
-      {ω | C < ‖a n • (T n ω - θ)‖} ∪ {ω | δ ≤ dist (T n ω) θ} := by
-    intro ω hω
-    by_contra hmem
-    rw [Set.mem_union, not_or] at hmem
-    have h1 : a n * ‖T n ω - θ‖ ≤ C := by
-      have hle : ‖a n • (T n ω - θ)‖ ≤ C := not_lt.1 hmem.1
-      rwa [norm_smul, Real.norm_of_nonneg hn_a.le] at hle
-    have h2 : ‖g (T n ω) - g θ - D (T n ω - θ)‖ ≤ c * ‖T n ω - θ‖ :=
-      hlip (not_le.1 hmem.2)
-    have hrem_norm : ‖a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ))‖ < ε := by
-      rw [map_smul, ← smul_sub, norm_smul, Real.norm_of_nonneg hn_a.le]
-      calc a n * ‖g (T n ω) - g θ - D (T n ω - θ)‖
-          ≤ a n * (c * ‖T n ω - θ‖) := mul_le_mul_of_nonneg_left h2 hn_a.le
-        _ = c * (a n * ‖T n ω - θ‖) := by ring
-        _ ≤ c * C := mul_le_mul_of_nonneg_left h1 hc.le
-        _ = ε / 2 := by dsimp [c]; field_simp
-        _ < ε := half_lt_self hε
-    have hge : ε ≤ ‖a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ))‖ := by
-      simpa only [sub_zero] using Set.mem_ofPred_eq.mp hω
-    linarith
-  calc μ.real {ω | ε ≤ ‖a n • (g (T n ω) - g θ) - D (a n • (T n ω - θ)) - 0‖}
-      ≤ μ.real ({ω | C < ‖a n • (T n ω - θ)‖} ∪ {ω | δ ≤ dist (T n ω) θ}) :=
-          measureReal_mono hsub
-    _ ≤ μ.real {ω | C < ‖a n • (T n ω - θ)‖} + μ.real {ω | δ ≤ dist (T n ω) θ} :=
-          measureReal_union_le _ _
-    _ < η / 2 + η / 2 := add_lt_add_of_le_of_lt hn_bd hn_T
-    _ = η := add_halves η
+    Metric.eventually_nhds_iff.1 (Asymptotics.isLittleO_iff.1 hd.isLittleO zero_lt_one)
+  refine hprod.zero_of_norm_le_on (A := fun n ↦ {ω | dist (T n ω) θ < δ}) ?_ ?_
+  · simpa only [Set.compl_ofPred, not_lt] using tendstoInMeasure_iff_dist.1 hT δ hδ
+  · filter_upwards [ha.eventually_ge_atTop 0] with n hn ω hω
+    rw [map_smul, ← smul_sub, norm_smul, Real.norm_of_nonneg hn,
+      norm_smul, norm_smul, Real.norm_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _)),
+      Real.norm_of_nonneg hn]
+    by_cases h0 : ‖T n ω - θ‖ = 0
+    · have hzero : ‖g (T n ω) - g θ - D (T n ω - θ)‖ ≤ 0 := by
+        simpa [h0] using hlip (Set.mem_ofPred_eq.mp hω)
+      have hzero' : ‖g (T n ω) - g θ - D (T n ω - θ)‖ = 0 := le_antisymm hzero (norm_nonneg _)
+      rw [hzero', h0, mul_zero]
+      norm_num
+    · exact le_of_eq (by field_simp)
 
 /-- **General-rate delta method.** If `aₙ • (Tₙ - θ) → Z` in distribution for a diverging sequence
 `aₙ → ∞` and `g : E → F` is Fréchet differentiable at `θ` with derivative `D`, with each `g ∘ Tₙ`
