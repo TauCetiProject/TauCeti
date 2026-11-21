@@ -552,6 +552,14 @@ theorem iteratedFDeriv_spatialTrace (f : ParabolicCkHolderSpace k α E F hab) (t
     iteratedFDeriv ℝ m (f.spatialTrace t) x = mixedDerivL 0 m f (slabMk x t) := by
   rw [coe_spatialTrace, mixedDerivL_zero_slabMk f hm]
 
+/-- The top spatial Hölder field of the trace at `x` agrees with the top purely spatial
+parabolic Hölder field at `(x, t)`. -/
+theorem iteratedFDerivHolder_spatialTrace (f : ParabolicCkHolderSpace k α E F hab)
+    (t : Icc a b) (x : E) :
+    (f.spatialTrace t).iteratedFDerivHolder x = mixedDerivHolderL 0 k f (slabMk x t) := by
+  rw [CkHolderSpace.iteratedFDerivHolder_apply, iteratedFDeriv_spatialTrace f t le_rfl,
+    mixedDerivHolderL_apply f (by simp)]
+
 /-- Spatial restriction is a contraction for the sum-norm spatial space, uniformly in time. -/
 theorem norm_spatialTrace_le (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
     ‖f.spatialTrace t‖ ≤ ‖f‖ := by
@@ -605,7 +613,7 @@ def spatialTraceL (t : Icc a b) :
         simp [CkHolderSpace.coe_smul] }
     1 (fun f ↦ by simpa using f.norm_spatialTrace_le t)
 
-@[simp]
+@[simp low]
 theorem spatialTraceL_apply (t : Icc a b) (f : ParabolicCkHolderSpace k α E F hab) :
     spatialTraceL t f = f.spatialTrace t := (rfl)
 
@@ -614,6 +622,18 @@ theorem spatialTraceL_apply (t : Icc a b) (f : ParabolicCkHolderSpace k α E F h
 theorem spatialTrace_add (f g : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
     (f + g).spatialTrace t = f.spatialTrace t + g.spatialTrace t :=
   (spatialTraceL t).map_add f g
+
+/-- Spatial restriction preserves negation. -/
+@[simp]
+theorem spatialTrace_neg (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    (-f).spatialTrace t = -f.spatialTrace t :=
+  (spatialTraceL t).map_neg f
+
+/-- Spatial restriction preserves subtraction. -/
+@[simp]
+theorem spatialTrace_sub (f g : ParabolicCkHolderSpace k α E F hab) (t : Icc a b) :
+    (f - g).spatialTrace t = f.spatialTrace t - g.spatialTrace t :=
+  (spatialTraceL t).map_sub f g
 
 /-- Spatial restriction preserves scalar multiplication. -/
 @[simp]
