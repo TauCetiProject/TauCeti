@@ -77,7 +77,9 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   `k₂` frequency directions is bounded by the mixed derivatives with `k₁` position and `k₂`
   frequency derivatives.
 * `TauCeti.mixedDeriv_comp_prodMap`: the chain rule for mixed derivatives of `a ∘ (P × Q)` with
-  linear maps `P` and `Q`.
+  linear maps `P` and `Q`, also between spaces of different dimensions, and
+  `TauCeti.exists_bound_mixedDeriv_comp_prodMap`: the resulting symbol-type estimates with the
+  weight `⟨Q ξ⟩`, with one constant for all `P` and `Q` of bounded norm.
 * `TauCeti.exists_bound_mixedDeriv_comp_snd`: symbol-type estimates for a position-independent
   function from estimates of the Fréchet derivatives of its profile.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
@@ -698,12 +700,13 @@ theorem norm_iteratedFDeriv_append_le {a : CoordinateSpace n × CoordinateSpace 
   gcongr
   exact N.norm_le_sum_single.trans_eq (by simp only [hterm])
 
-/-- **Chain rule for mixed derivatives.** For linear maps `P` and `Q` and a `C^(|α| + |β|)`
-function `a`, the mixed derivative `∂_x^α ∂_ξ^β` of `a ∘ (P × Q)` is the Fréchet derivative of `a`
-at `(P x, Q ξ)`, evaluated on the images `(P e_{α i}, 0)` and `(0, Q e_{β i})` of the directions. -/
-theorem mixedDeriv_comp_prodMap {a : CoordinateSpace n × CoordinateSpace n → A}
-    (P Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) {α β : List (Fin n)}
-    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) :
+/-- **Chain rule for mixed derivatives.** For linear maps `P` and `Q` from `ℝᴺ` to `ℝⁿ` and a
+`C^(|α| + |β|)` function `a` on `ℝⁿ × ℝⁿ`, the mixed derivative `∂_x^α ∂_ξ^β` of `a ∘ (P × Q)` is
+the Fréchet derivative of `a` at `(P x, Q ξ)`, evaluated on the images `(P e_{α i}, 0)` and
+`(0, Q e_{β i})` of the directions. -/
+theorem mixedDeriv_comp_prodMap {N : ℕ} {a : CoordinateSpace n × CoordinateSpace n → A}
+    (P Q : CoordinateSpace N →L[ℝ] CoordinateSpace n) {α β : List (Fin N)}
+    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace N) :
     mixedDeriv α β (a ∘ P.prodMap Q) x ξ =
       iteratedFDeriv ℝ (α.length + β.length) a (P x, Q ξ)
         (Fin.append (fun i => (P (EuclideanSpace.single (α.get i) 1), 0))
@@ -715,6 +718,45 @@ theorem mixedDeriv_comp_prodMap {a : CoordinateSpace n × CoordinateSpace n → 
   congr 1
   funext j
   refine Fin.addCases (fun i => ?_) (fun i => ?_) j <;> simp
+
+/-- **Symbol-type estimates under linear maps.** Let `0 ≤ c`. For linear maps `P` and `Q` from
+`ℝᴺ` to `ℝⁿ` with `‖P‖ ≤ c` and `‖Q‖ ≤ c`, estimates
+`‖∂_y^{α'} ∂_η^{β'} a(P x, η)‖ ≤ C α' β' ⟨η⟩ ^ (m - |β'|)` at the position `P x` give
+`‖∂_x^α ∂_ξ^β (a ∘ (P × Q))(x, ξ)‖ ≤ B ⟨Q ξ⟩ ^ (m - |β|)`, with `B` depending only on `c`, the
+words and the constants `C`. The weight is that of `Q ξ`; when `Q` is invertible it is comparable
+to that of `ξ`. -/
+theorem exists_bound_mixedDeriv_comp_prodMap {N : ℕ} {a : CoordinateSpace n × CoordinateSpace n → A}
+    {α β : List (Fin N)} (ha : ContDiff ℝ (α.length + β.length) a) {c : ℝ} (hc : 0 ≤ c)
+    (C : List (Fin n) → List (Fin n) → ℝ) (m : ℝ) :
+    ∃ B, 0 ≤ B ∧ ∀ P Q : CoordinateSpace N →L[ℝ] CoordinateSpace n, ‖P‖ ≤ c → ‖Q‖ ≤ c →
+      ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' a (P x) η‖ ≤
+        C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
+      ‖mixedDeriv α β (a ∘ P.prodMap Q) x ξ‖ ≤ B * (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
+    max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
+      (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
+  have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
+  refine ⟨c ^ α.length * c ^ β.length * D, by positivity, fun P Q hP hQ x hC ξ => ?_⟩
+  -- Each direction `L eⱼ` of the chain rule has norm at most `‖L‖ ≤ c`.
+  have hprod (L : CoordinateSpace N →L[ℝ] CoordinateSpace n) (hL : ‖L‖ ≤ c)
+      (γ : List (Fin N)) : ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ c ^ γ.length := by
+    calc ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ ∏ _i : Fin γ.length, c :=
+          Finset.prod_le_prod₀ (fun _ _ => norm_nonneg _) fun i _ =>
+            (L.le_opNorm _).trans (by simpa using hL)
+      _ = c ^ γ.length := by simp
+  have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
+      ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
+        (List.ofFn fun i => r (Fin.natAdd α.length i)) a (P x) (Q ξ)‖ ≤
+        D * (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun r _ => (hC _ _ _).trans ?_
+    rw [List.length_ofFn]
+    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+  rw [mixedDeriv_comp_prodMap P Q ha]
+  refine (norm_iteratedFDeriv_append_le ha _ _ _ _).trans ?_
+  rw [mul_assoc _ D]
+  gcongr
+  exacts [hprod P hP α, hprod Q hQ β]
 
 /-- A position-independent function has no position derivatives. -/
 theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])
