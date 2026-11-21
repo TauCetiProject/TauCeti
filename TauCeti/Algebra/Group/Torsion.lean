@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Group.Monoid
 public import Mathlib.Algebra.Group.Defs
 import Mathlib.Algebra.Group.Torsion
 import Mathlib.Algebra.Group.Conj
-import Mathlib.Tactic.Group
 
 /-!
 # Commuting with nonzero powers in groups with unique roots
@@ -27,19 +26,11 @@ variable {G : Type*} [Group G] [HasUniqueRoots G] {x y : G}
 exactly when it commutes with `x`. -/
 @[simp]
 theorem zpow_left_iff {n : ℤ} (hn : n ≠ 0) : Commute (x ^ n) y ↔ Commute x y := by
-  constructor
-  · intro h
-    have hconj : y⁻¹ * x * y = x := by
-      apply zpow_left_injective hn
-      calc
-        (y⁻¹ * x * y) ^ n = y⁻¹ * x ^ n * y := by
-          simpa only [inv_inv] using (conj_zpow (a := y⁻¹) (b := x) (i := n))
-        _ = x ^ n := h.symm.inv_mul_cancel
-    exact calc
-      x * y = y * (y⁻¹ * x * y) := by group
-      _ = y * x := by rw [hconj]
-  · intro h
-    exact h.zpow_left n
+  refine ⟨fun h ↦ ?_, fun h ↦ h.zpow_left n⟩
+  -- Conjugation by `y` fixes `x ^ n`, hence also its unique `n`-th root `x`.
+  have hconj : y * x * y⁻¹ = x :=
+    zpow_left_injective hn <| conj_zpow.trans h.symm.mul_inv_cancel
+  exact (commute_iff_eq x y).2 (mul_inv_eq_iff_eq_mul.1 hconj).symm
 
 /-- In a group with unique roots, an element commutes with a nonzero integer power of `x`
 exactly when it commutes with `x`. -/
@@ -51,14 +42,14 @@ theorem zpow_right_iff {n : ℤ} (hn : n ≠ 0) : Commute y (x ^ n) ↔ Commute 
 exactly when it commutes with `x`. -/
 @[simp]
 theorem pow_left_iff {n : ℕ} (hn : n ≠ 0) : Commute (x ^ n) y ↔ Commute x y := by
-  have hn' : (n : ℤ) ≠ 0 := by exact_mod_cast hn
-  simpa only [zpow_natCast] using (zpow_left_iff (x := x) (y := y) hn')
+  rw [← zpow_natCast]
+  exact zpow_left_iff (mod_cast hn)
 
 /-- In a group with unique roots, an element commutes with a nonzero natural power of `x`
 exactly when it commutes with `x`. -/
 @[simp]
 theorem pow_right_iff {n : ℕ} (hn : n ≠ 0) : Commute y (x ^ n) ↔ Commute y x := by
-  have hn' : (n : ℤ) ≠ 0 := by exact_mod_cast hn
-  simpa only [zpow_natCast] using (zpow_right_iff (x := x) (y := y) hn')
+  rw [← zpow_natCast]
+  exact zpow_right_iff (mod_cast hn)
 
 end Commute
