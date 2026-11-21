@@ -291,14 +291,17 @@ def orderedSimplicialChainComplexHomotopyOfCarrier :
     (fun n ↦ orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n))
     (by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
-        orderedSimplicialChainComplexHomOfLinear_f, orderedSimplicialChainComplex_d,
+        orderedSimplicialChainComplexHomOfLinear_f,
+        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
         orderedSimplicialChainComplexHomOfLinearMap_sub,
         orderedSimplicialChainComplexHomOfLinearMap_comp,
         boundary_comp_carrierHomotopy_zero hcone hφ hψ hε])
     fun n ↦ by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
-        orderedSimplicialChainComplexHomOfLinear_f, orderedSimplicialChainComplex_d,
-        orderedSimplicialChainComplex_d, orderedSimplicialChainComplexHomOfLinearMap_sub,
+        orderedSimplicialChainComplexHomOfLinear_f,
+        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
+        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
+        orderedSimplicialChainComplexHomOfLinearMap_sub,
         orderedSimplicialChainComplexHomOfLinearMap_comp,
         orderedSimplicialChainComplexHomOfLinearMap_comp,
         orderedSimplicialChainComplexHomOfLinearMap_add]
@@ -307,6 +310,7 @@ def orderedSimplicialChainComplexHomotopyOfCarrier :
           (add_comm _ _))
 
 /-- The components of the chain homotopy of a cone carrier are the homotopy operator. -/
+@[simp]
 theorem orderedSimplicialChainComplexHomotopyOfCarrier_hom (n : ℕ) :
     (orderedSimplicialChainComplexHomotopyOfCarrier hφd hψd hcone hinsert hmono hφ hψ hε).hom n
       (n + 1) = orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n) := by

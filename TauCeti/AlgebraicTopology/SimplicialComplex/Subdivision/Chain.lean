@@ -291,7 +291,8 @@ theorem subdivisionChainMap_f (n : ℕ) :
     (subdivisionChainMap R hb hL).f n =
       eqToHom (orderedSimplicialChainComplex_X R n) ≫
         ModuleCat.ofHom (subdivision R b n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
-  orderedSimplicialChainComplexHomOfLinear_f R _ _ n
+  (orderedSimplicialChainComplexHomOfLinear_f R _ _ n).trans
+    (orderedSimplicialChainComplexHomOfLinearMap_def R _)
 
 /-- A simplicial map sending the barycenter of every face to a vertex of that face is a left
 inverse of the subdivision chain map. -/
@@ -362,15 +363,9 @@ private theorem subdivisionCarrier_cone
     (s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)))
     (hs : s ∈ orderedBarycentricSubdivision K) (hP : subdivisionCarrier K τ s) :
     (∀ w ∈ s, w ≤ subdivisionCarrierVertex K τ) ∧
-      insert (subdivisionCarrierVertex K τ) s ∈ orderedBarycentricSubdivision K := by
-  refine ⟨fun w hw ↦ le_of_subdivisionFace_subset K (hP w hw), ?_⟩
-  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
-  refine ⟨Finset.insert_nonempty _ _, fun p hp q hq ↦ ?_⟩
-  rcases Finset.mem_insert.mp hp with rfl | hp <;> rcases Finset.mem_insert.mp hq with rfl | hq
-  · exact Or.inl subset_rfl
-  · exact Or.inr (hP q hq)
-  · exact Or.inl (hP p hp)
-  · exact hs.2 p hp q hq
+      insert (subdivisionCarrierVertex K τ) s ∈ orderedBarycentricSubdivision K :=
+  ⟨fun w hw ↦ le_of_subdivisionFace_subset K (hP w hw),
+    insert_mem_orderedBarycentricSubdivision K hs hP⟩
 
 omit [LinearOrder α] in
 /-- The carrier of `τ` is closed under adjoining the largest vertex of `τ`. -/

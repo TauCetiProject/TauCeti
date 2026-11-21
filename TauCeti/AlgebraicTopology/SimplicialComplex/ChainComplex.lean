@@ -274,11 +274,27 @@ variable {κ : Type u} [LinearOrder κ] {L : _root_.AbstractSimplicialComplex κ
 
 /-- The morphism from the object in degree `n` of the ordered chain complex of `K` to the object
 in degree `m` of that of `L` given by a linear map of ordered chains. -/
-abbrev orderedSimplicialChainComplexHomOfLinearMap {n m : ℕ}
+def orderedSimplicialChainComplexHomOfLinearMap {n m : ℕ}
     (f : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
     (orderedSimplicialChainComplex K R).X n ⟶ (orderedSimplicialChainComplex L R).X m :=
   eqToHom (orderedSimplicialChainComplex_X R n) ≫ ModuleCat.ofHom f ≫
     eqToHom (orderedSimplicialChainComplex_X R m).symm
+
+/-- The morphism given by a linear map of ordered chains is that linear map, conjugated by the
+identifications of the objects with the free modules on cells. -/
+theorem orderedSimplicialChainComplexHomOfLinearMap_def {n m : ℕ}
+    (f : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R m) :
+    orderedSimplicialChainComplexHomOfLinearMap R f =
+      eqToHom (orderedSimplicialChainComplex_X R n) ≫ ModuleCat.ofHom f ≫
+        eqToHom (orderedSimplicialChainComplex_X R m).symm :=
+  (rfl)
+
+/-- The differential of the ordered simplicial chain complex is the morphism given by the
+alternating simplicial boundary. -/
+theorem orderedSimplicialChainComplex_d_eq_homOfLinearMap (n : ℕ) :
+    (orderedSimplicialChainComplex K R).d (n + 1) n =
+      orderedSimplicialChainComplexHomOfLinearMap R (OrderedSimplicialChain.boundary R n) := by
+  rw [orderedSimplicialChainComplex_d, orderedSimplicialChainComplexHomOfLinearMap_def]
 
 /-- Composing the morphisms given by linear maps of ordered chains gives the morphism given by
 the composed linear map. -/
@@ -289,7 +305,7 @@ theorem orderedSimplicialChainComplexHomOfLinearMap_comp {μ : Type u} [LinearOr
     orderedSimplicialChainComplexHomOfLinearMap R f ≫
         orderedSimplicialChainComplexHomOfLinearMap R g =
       orderedSimplicialChainComplexHomOfLinearMap R (g ∘ₗ f) := by
-  simp [orderedSimplicialChainComplexHomOfLinearMap, ModuleCat.ofHom_comp]
+  simp [orderedSimplicialChainComplexHomOfLinearMap_def, ModuleCat.ofHom_comp]
 
 /-- The difference of the morphisms given by linear maps of ordered chains is the morphism given
 by their difference. -/
@@ -300,8 +316,9 @@ theorem orderedSimplicialChainComplexHomOfLinearMap_sub {n m : ℕ}
       orderedSimplicialChainComplexHomOfLinearMap R (f - g) := by
   have h : ModuleCat.ofHom (f - g) = ModuleCat.ofHom f - ModuleCat.ofHom g :=
     ModuleCat.hom_ext (by simp)
-  rw [orderedSimplicialChainComplexHomOfLinearMap, orderedSimplicialChainComplexHomOfLinearMap,
-    orderedSimplicialChainComplexHomOfLinearMap, h, Preadditive.sub_comp, Preadditive.comp_sub]
+  rw [orderedSimplicialChainComplexHomOfLinearMap_def,
+    orderedSimplicialChainComplexHomOfLinearMap_def,
+    orderedSimplicialChainComplexHomOfLinearMap_def, h, Preadditive.sub_comp, Preadditive.comp_sub]
 
 /-- The sum of the morphisms given by linear maps of ordered chains is the morphism given by
 their sum. -/
@@ -310,8 +327,9 @@ theorem orderedSimplicialChainComplexHomOfLinearMap_add {n m : ℕ}
     orderedSimplicialChainComplexHomOfLinearMap R f +
         orderedSimplicialChainComplexHomOfLinearMap R g =
       orderedSimplicialChainComplexHomOfLinearMap R (f + g) := by
-  rw [orderedSimplicialChainComplexHomOfLinearMap, orderedSimplicialChainComplexHomOfLinearMap,
-    orderedSimplicialChainComplexHomOfLinearMap, ModuleCat.ofHom_add, Preadditive.add_comp,
+  rw [orderedSimplicialChainComplexHomOfLinearMap_def,
+    orderedSimplicialChainComplexHomOfLinearMap_def,
+    orderedSimplicialChainComplexHomOfLinearMap_def, ModuleCat.ofHom_add, Preadditive.add_comp,
     Preadditive.comp_add]
 
 /-- The morphism of ordered simplicial chain complexes given in each degree by a linear map of
@@ -324,7 +342,7 @@ def orderedSimplicialChainComplexHomOfLinear
   f n := orderedSimplicialChainComplexHomOfLinearMap R (φ n)
   comm' i j hij := by
     subst i
-    simp only [orderedSimplicialChainComplexHomOfLinearMap, orderedSimplicialChainComplex_d,
+    simp only [orderedSimplicialChainComplexHomOfLinearMap_def, orderedSimplicialChainComplex_d,
       Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
     congr 1
     simp only [← Category.assoc]
@@ -338,8 +356,7 @@ theorem orderedSimplicialChainComplexHomOfLinear_f
     (h : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ φ (n + 1) =
       φ n ∘ₗ OrderedSimplicialChain.boundary R n) (n : ℕ) :
     (orderedSimplicialChainComplexHomOfLinear R φ h).f n =
-      eqToHom (orderedSimplicialChainComplex_X R n) ≫
-        ModuleCat.ofHom (φ n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
+      orderedSimplicialChainComplexHomOfLinearMap R (φ n) :=
   (rfl)
 
 /-- The identity linear maps of chains give the identity morphism. -/
@@ -349,7 +366,7 @@ theorem orderedSimplicialChainComplexHomOfLinear_id
       LinearMap.id ∘ₗ OrderedSimplicialChain.boundary (K := K) R n) :
     orderedSimplicialChainComplexHomOfLinear R (fun _ ↦ LinearMap.id) h = 𝟙 _ := by
   ext n : 1
-  simp
+  simp [orderedSimplicialChainComplexHomOfLinearMap_def]
 
 /-- Composing morphisms built from linear maps of chains gives the morphism built from the
 composed linear maps. -/
@@ -367,7 +384,7 @@ theorem orderedSimplicialChainComplexHomOfLinear_comp {μ : Type u} [LinearOrder
         rw [← LinearMap.comp_assoc, hψ, LinearMap.comp_assoc, hφ, LinearMap.comp_assoc] := by
   ext n : 1
   simp only [HomologicalComplex.comp_f, orderedSimplicialChainComplexHomOfLinear_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ModuleCat.ofHom_comp]
+    orderedSimplicialChainComplexHomOfLinearMap_comp]
 
 end Hom
 

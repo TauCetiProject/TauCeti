@@ -351,24 +351,33 @@ theorem strictMono_subdivisionBarycenter : StrictMono (subdivisionBarycenter K) 
     (Subtype.ext (by simpa using congrArg (subdivisionFace K) h'))
 
 omit [LinearOrder α] in
+/-- A vertex of the barycentric subdivision can be adjoined to every face of the subdivision
+whose vertices are all faces of it. -/
+theorem insert_mem_orderedBarycentricSubdivision
+    {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))}
+    (hs : s ∈ orderedBarycentricSubdivision K) {p}
+    (hp : ∀ w ∈ s, subdivisionFace K w ⊆ subdivisionFace K p) :
+    insert p s ∈ orderedBarycentricSubdivision K := by
+  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
+  refine ⟨Finset.insert_nonempty _ _, fun q hq r hr ↦ ?_⟩
+  rcases Finset.mem_insert.mp hq with rfl | hqs <;> rcases Finset.mem_insert.mp hr with rfl | hrs
+  · exact Or.inl subset_rfl
+  · exact Or.inr (hp r hrs)
+  · exact Or.inl (hp q hqs)
+  · exact hs.2 q hqs r hrs
+
+omit [LinearOrder α] in
 /-- A barycenter can be adjoined to every face of the barycentric subdivision spanned by
 barycenters of proper subfaces. -/
 theorem insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision
     ⦃s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))⦄
     (hs : s ∈ orderedBarycentricSubdivision K) (ρ : TauCeti.SetLike.Face K)
     (hρ : ∀ w ∈ s, ∃ τ < ρ, subdivisionBarycenter K τ = w) :
-    insert (subdivisionBarycenter K ρ) s ∈ orderedBarycentricSubdivision K := by
-  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
-  have hle : ∀ w ∈ s, subdivisionFace K w ⊆ ρ.val := fun w hw ↦ by
+    insert (subdivisionBarycenter K ρ) s ∈ orderedBarycentricSubdivision K :=
+  insert_mem_orderedBarycentricSubdivision K hs fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ := hρ w hw
-    rw [subdivisionFace_subdivisionBarycenter]
+    rw [subdivisionFace_subdivisionBarycenter, subdivisionFace_subdivisionBarycenter]
     exact SetLike.face_le_iff.mp hτ.le
-  refine ⟨Finset.insert_nonempty _ _, fun p hp q hq ↦ ?_⟩
-  rcases Finset.mem_insert.mp hp with rfl | hp <;> rcases Finset.mem_insert.mp hq with rfl | hq
-  · exact Or.inl subset_rfl
-  · exact Or.inr (hle q hq)
-  · exact Or.inl (hle p hp)
-  · exact hs.2 p hp q hq
 
 /-- The **last-vertex map** of the barycentric subdivision: the simplicial map sending a face of
 `K`, a vertex of the subdivision, to its largest vertex. -/
