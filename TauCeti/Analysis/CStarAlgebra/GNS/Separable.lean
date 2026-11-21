@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
-import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
+import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.Representation.Ampliation
 import TauCeti.Analysis.CStarAlgebra.State.Series
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Lp
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Faithful representations of separable C⋆-algebras on separable Hilbert space and `ℓ²`
@@ -71,15 +72,6 @@ universe u
 
 namespace TauCeti
 
-private theorem eq_zero_of_faithful_apply_star_mul_self {A : Type*} [NonUnitalCStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] {ψ : A →P[ℂ] ℂ}
-    (hψ : ∀ a : A, 0 ≤ a → a ≠ 0 → 0 < ψ a) {a : A} (ha : ψ (star a * a) = 0) : a = 0 := by
-  by_contra ha0
-  exact (hψ _ (star_mul_self_nonneg a) (star_mul_self_eq_zero.not.2 ha0)).ne' ha
-
-private theorem nontrivial_lp_nat : Nontrivial (lp (fun _ : ℕ => ℂ) 2) :=
-  ⟨lp.single 2 0 1, 0, fun h => by simpa using congr($h 0)⟩
-
 /-- Every separable complex C⋆-algebra `A : Type u` (possibly nonunital and possibly zero) admits
 an injective nondegenerate `⋆`-representation on a separable complete complex Hilbert space in
 `Type u`. -/
@@ -100,7 +92,8 @@ theorem exists_injective_nondegenerate_representation_separable (A : Type u)
     let f : A →ₚ[ℂ] ℂ := ψ.toPositiveLinearMap
     exact ⟨f.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
       f.gnsNonUnitalStarAlgHom,
-      f.gnsNonUnitalStarAlgHom_injective fun _ => eq_zero_of_faithful_apply_star_mul_self hfaith,
+      f.gnsNonUnitalStarAlgHom_injective fun _ =>
+        ψ.eq_zero_of_faithful_apply_star_mul_self hfaith,
       f.isNondegenerate_gnsNonUnitalStarAlgHom⟩
 
 /-- Every nontrivial separable unital complex C⋆-algebra `A : Type u` admits an injective unital
@@ -122,7 +115,8 @@ theorem exists_injective_starAlgHom_unit_cyclic_separable (A : Type u)
     exact h.symm
   exact ⟨f.GNS, inferInstance, inferInstance, inferInstance, inferInstance,
     f.gnsStarAlgHom, f.gnsVector,
-    f.gnsNonUnitalStarAlgHom_injective fun _ => eq_zero_of_faithful_apply_star_mul_self hfaith,
+    f.gnsNonUnitalStarAlgHom_injective fun _ =>
+      ψ.eq_zero_of_faithful_apply_star_mul_self hfaith,
     f.norm_gnsVector hf1, f.denseRange_gnsStarAlgHom_gnsVector⟩
 
 /-- Every separable unital complex C⋆-algebra `A : Type u` (possibly zero) admits an injective
@@ -159,9 +153,10 @@ theorem exists_injective_nondegenerate_representation_lp (A : Type*)
     obtain ⟨a, ha0⟩ := exists_ne (0 : A)
     refine ⟨f.toGNS a, 0, ?_⟩
     rw [ne_eq, f.toGNS_eq_zero_iff]
-    exact fun h => ha0 (eq_zero_of_faithful_apply_star_mul_self hfaith h)
+    exact fun h => ha0 (ψ.eq_zero_of_faithful_apply_star_mul_self hfaith h)
   have hinj : Function.Injective f.gnsNonUnitalStarAlgHom :=
-    f.gnsNonUnitalStarAlgHom_injective fun _ => eq_zero_of_faithful_apply_star_mul_self hfaith
+    f.gnsNonUnitalStarAlgHom_injective fun _ =>
+      ψ.eq_zero_of_faithful_apply_star_mul_self hfaith
   let ρ := f.gnsNonUnitalStarAlgHom.ampliation ℕ
   have hρ_inj : Function.Injective ρ := (f.gnsNonUnitalStarAlgHom.ampliation_injective_iff ℕ).2 hinj
   have hρ_nondeg : ρ.IsNondegenerate := f.isNondegenerate_gnsNonUnitalStarAlgHom.ampliation ℕ
@@ -194,7 +189,6 @@ theorem not_exists_nondegenerate_representation_lp_of_subsingleton (A : Type*)
     [NonUnitalCStarAlgebra A] [Subsingleton A] :
     ¬ ∃ π : A →⋆ₙₐ[ℂ] (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2),
       π.IsNondegenerate := by
-  have := nontrivial_lp_nat
   rintro ⟨π, hπ⟩
   exact π.not_isNondegenerate_of_subsingleton hπ
 
@@ -202,7 +196,6 @@ theorem not_exists_nondegenerate_representation_lp_of_subsingleton (A : Type*)
 theorem isEmpty_starAlgHom_lp_of_subsingleton (A : Type*)
     [Semiring A] [Algebra ℂ A] [Star A] [Subsingleton A] :
     IsEmpty (A →⋆ₐ[ℂ] (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2)) := by
-  have := nontrivial_lp_nat
   refine ⟨fun π => ?_⟩
   have : Subsingleton (lp (fun _ : ℕ => ℂ) 2 →L[ℂ] lp (fun _ : ℕ => ℂ) 2) :=
     π.toRingHom.codomain_trivial

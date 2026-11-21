@@ -42,7 +42,9 @@ dense subsets are dense.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`).
+(`lp.tendsto_apply_of_tendsto_apply_single`). The single-coordinate embedding `lp.single p i` is
+injective at every exponent (`lp.single_injective`), so `lp E p` is nontrivial whenever at least
+one summand is (`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`).
 -/
 
 public section
@@ -285,6 +287,40 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
   exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
 
 end Density
+
+end lp
+
+namespace lp
+
+section Nontrivial
+
+variable {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞}
+
+/-- The single-coordinate embedding `lp.single p i` is injective at every exponent. -/
+theorem single_injective [DecidableEq ι] (p : ℝ≥0∞) (i : ι) :
+    Function.Injective (lp.single (E := E) p i) :=
+  fun _ _ hab => by simpa only [lp.single_apply_self] using congr($hab i)
+
+/-- `lp E p` is nontrivial whenever at least one summand `E i` is nontrivial. -/
+theorem nontrivial_at (i : ι) [Nontrivial (E i)] : Nontrivial (lp E p) := by
+  classical
+  exact (single_injective p i).nontrivial
+
+/-- `lp E p` is nontrivial if and only if at least one summand `E i` is nontrivial. -/
+theorem nontrivial_iff : Nontrivial (lp E p) ↔ ∃ i, Nontrivial (E i) := by
+  refine ⟨fun ⟨x, y, hxy⟩ => ?_, fun ⟨i, _⟩ => nontrivial_at i⟩
+  by_contra! h
+  exact hxy (lp.ext (funext fun i => (h i).elim (x i) (y i)))
+
+/-- `lp E p` is nontrivial when `ι` is inhabited and `E default` is nontrivial. -/
+instance instNontrivial [Inhabited ι] [Nontrivial (E default)] : Nontrivial (lp E p) :=
+  nontrivial_at default
+
+/-- `lp E p` is nontrivial when `ι` is nonempty and every summand `E i` is nontrivial. -/
+instance instNontrivialOfNonempty [Nonempty ι] [∀ i, Nontrivial (E i)] : Nontrivial (lp E p) :=
+  ‹Nonempty ι›.elim fun i => nontrivial_at i
+
+end Nontrivial
 
 end lp
 
