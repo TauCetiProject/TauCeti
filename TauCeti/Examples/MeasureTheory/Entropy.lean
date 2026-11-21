@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.MeasureTheory.Integral.Entropy.Product
+import TauCeti.InformationTheory.KullbackLeibler.Convex
 
 /-!
 # Regression examples for functional entropy
@@ -15,6 +16,7 @@ assumption. Product subadditivity applies to zero total mass and needs no margin
 for finite factors.
 -/
 
+open scoped ENNReal
 open MeasureTheory MeasureTheory.Measure
 
 example {α : Type*} [MeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ] (c : ℝ) :
@@ -24,6 +26,11 @@ example {α : Type*} [MeasurableSpace α] (μ : Measure α) [IsProbabilityMeasur
 example {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     (a : α) (g : α → ℝ) : entropy (dirac a) g = 0 := by
   simp
+
+example {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    (a : α) (c : ℝ≥0∞) (g : α → ℝ) :
+    entropy (c • dirac a) g = -(c.toReal * g a) * Real.log c.toReal := by
+  simp [entropy_smul_measure]
 
 example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] (g : α × β → ℝ) :

@@ -42,10 +42,12 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
-* `MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero` transfers zeros of a nonnegative
-  function's marginal to the function itself, almost everywhere on the product.
-* `MeasureTheory.Measure.integrable_mul_marginal_weight` derives integrability of a weighted
-  product function from integrability of its weighted marginal.
+* `MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero` transfers zeros of an a.e. nonnegative,
+  a.e.-strongly measurable function's marginal to the function itself, assuming a.e. integrable
+  sections.
+* `MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul` derives integrability
+  of an a.e. nonnegative, a.e.-strongly measurable function times an a.e.-measurable second-factor
+  weight from integrability of its weighted marginal, assuming a.e. integrable sections.
 * `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
   truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
   to pass from bilinear to retarded estimates.
@@ -255,26 +257,27 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
-/-- A nonnegative integrable function vanishes almost everywhere where its second marginal
-vanishes. -/
+/-- An a.e. nonnegative function with a.e. integrable sections vanishes almost everywhere where
+its second marginal vanishes. -/
 theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] {g : α × β → ℝ}
-    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : Integrable g (μ.prod ν)) :
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
+    (hsections : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y)) μ) :
     ∀ᵐ p ∂μ.prod ν, (∫ x, g (x, p.2) ∂μ) = 0 → g p = 0 := by
   let b : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
   let bad : Set (β × α) := {p | b p.1 = 0 ∧ g (p.2, p.1) ≠ 0}
   have hbmeas : AEMeasurable (fun p : β × α ↦ b p.1) (ν.prod μ) :=
-    hg.integral_prod_right.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving
+    hg.prod_swap.integral_prod_right'.aemeasurable.comp_quasiMeasurePreserving
       quasiMeasurePreserving_fst
   have hgmeas : AEMeasurable (fun p : β × α ↦ g (p.2, p.1)) (ν.prod μ) :=
-    hg.swap.aestronglyMeasurable.aemeasurable
+    hg.prod_swap.aemeasurable
   have hbad : NullMeasurableSet bad (ν.prod μ) :=
     (nullMeasurableSet_eq_fun hbmeas aemeasurable_const).inter
       (nullMeasurableSet_eq_fun hgmeas aemeasurable_const).compl
   have hswap : ∀ᵐ p ∂ν.prod μ, 0 ≤ g (p.2, p.1) :=
     measurePreserving_swap.quasiMeasurePreserving.ae hnonneg
-  have hsections : ∀ᵐ y ∂ν, μ (Prod.mk y ⁻¹' bad) = 0 := by
-    filter_upwards [ae_ae_of_ae_prod hswap, hg.prod_left_ae] with y hy hyi
+  have hnull_sections : ∀ᵐ y ∂ν, μ (Prod.mk y ⁻¹' bad) = 0 := by
+    filter_upwards [ae_ae_of_ae_prod hswap, hsections] with y hy hyi
     by_cases hz : b y = 0
     · have hzero := (integral_eq_zero_iff_of_nonneg_ae hy hyi).mp hz
       apply measure_eq_zero_iff_ae_notMem.2
@@ -283,7 +286,7 @@ theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measur
     · simp [bad, hz]
   have hbad_zero : (ν.prod μ) bad = 0 := by
     rw [Measure.prod_apply₀ hbad]
-    exact lintegral_eq_zero_of_ae_eq_zero hsections
+    exact lintegral_eq_zero_of_ae_eq_zero hnull_sections
   have hforward := measurePreserving_swap.quasiMeasurePreserving.ae
     (measure_eq_zero_iff_ae_notMem.1 hbad_zero)
   filter_upwards [hforward] with p hp
@@ -291,21 +294,24 @@ theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero (μ : Measur
   by_contra hn
   exact hp ⟨hz, hn⟩
 
-/-- A nonnegative integrable product function remains integrable when multiplied by an
-a.e.-measurable weight on the second factor, provided the weighted second marginal is integrable. -/
-theorem _root_.MeasureTheory.Measure.integrable_mul_marginal_weight (μ : Measure α) (ν : Measure β)
+/-- An a.e. nonnegative product function with a.e. integrable sections becomes integrable when
+multiplied by an a.e.-measurable second-factor weight if its weighted second marginal is
+integrable. -/
+theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul
+    (μ : Measure α) (ν : Measure β)
     [SFinite μ] [SFinite ν] {g : α × β → ℝ} {w : β → ℝ}
-    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : Integrable g (μ.prod ν))
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
+    (hsections : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y)) μ)
     (hw : AEMeasurable w ν)
     (hmarg : Integrable (fun y ↦ (∫ x, g (x, y) ∂μ) * w y) ν) :
     Integrable (fun p ↦ g p * w p.2) (μ.prod ν) := by
   let b : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
   have hmeas : AEStronglyMeasurable (fun p ↦ g p * w p.2) (μ.prod ν) :=
-    hg.aestronglyMeasurable.mul
+    hg.mul
       (hw.aestronglyMeasurable.comp_quasiMeasurePreserving quasiMeasurePreserving_snd)
   apply (integrable_prod_iff' hmeas).2
   constructor
-  · filter_upwards [hg.prod_left_ae] with y hy
+  · filter_upwards [hsections] with y hy
     exact hy.mul_const _
   · have hswap : ∀ᵐ p ∂ν.prod μ, 0 ≤ g (p.2, p.1) :=
       measurePreserving_swap.quasiMeasurePreserving.ae hnonneg

@@ -18,6 +18,7 @@ Defines the entropy `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)`.
 
 public section
 
+open scoped ENNReal
 open Set
 
 namespace MeasureTheory.Measure
@@ -69,6 +70,19 @@ theorem entropy_const_of_isProbabilityMeasure {α : Type*} [MeasurableSpace α]
 theorem entropy_dirac {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     (a : α) (g : α → ℝ) : entropy (dirac a) g = 0 := by
   simp [entropy_def]
+
+/-- Scaling a measure scales entropy and adds the correction for its new total mass. -/
+theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    (c : ℝ≥0∞) (g : α → ℝ) :
+    entropy (c • μ) g =
+      c.toReal * entropy μ g - (c.toReal * (∫ x, g x ∂μ)) * Real.log c.toReal := by
+  simp only [entropy_def, integral_smul_measure, smul_eq_mul]
+  by_cases hc : c.toReal = 0
+  · simp [hc]
+  by_cases hg : (∫ x, g x ∂μ) = 0
+  · simp [hg]
+  rw [Real.log_mul hc hg]
+  ring
 
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
 function, when the function and its `x log x` transform are integrable. -/
