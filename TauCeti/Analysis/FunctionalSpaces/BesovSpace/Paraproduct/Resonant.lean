@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Ball
 import TauCeti.Analysis.Normed.Lp.Holder

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
 import TauCeti.Analysis.Normed.Lp.Holder
-import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.MeasureTheory.Function.Holder
 
 /-!

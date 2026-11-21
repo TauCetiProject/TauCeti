@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Resonant
-import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -31,7 +31,7 @@ that `φ.rOut < 2^N φ.rIn`, `S_M u · S_M v` is the sum of the truncations of t
 * `T_u v` lies in `B^{α+β}_{r,q₂}` since `α < 0`
   (`TauCeti.BesovSpace.exists_hasSum_lowPass_smul_block_and_norm_le_of_neg`);
 * `T_v u` lies in `B^α_{r,q₁}` since `v` is an `L^{p₂}` function for `β > 0`
-  (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos` and
+  (`TauCeti.BesovSpace.toLpCLM` and
   `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq`);
 * `R(u, v)` lies in `B^{α+β}_{r,q₂}` since `α + β > 0`
   (`TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`);
@@ -194,8 +194,7 @@ private theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le (hα : α < 0) (
   have hK' : (1 - 2 ^ (α - (α + β)))⁻¹ = K := by rw [sub_add_cancel_left]
   refine ⟨K * C₁ + C₂ * K + K * C₃, by positivity, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ u v ↦ ?_⟩
   obtain ⟨w₁, hw₁, hw₁n⟩ := h₁ (r := r) u v
-  obtain ⟨g, hg, hgn⟩ := exists_toDistr_eq_and_norm_le_of_pos hβ v
-  obtain ⟨w₂, hw₂, hw₂n⟩ := h₂ (r := r) u v hg
+  obtain ⟨w₂, hw₂, hw₂n⟩ := h₂ (r := r) u v (coe_toLpCLM hβ v).symm
   obtain ⟨w₃, hw₃, hw₃n⟩ := h₃ (r := r) u v
   set ι := inclusionOfLT F φ r q₂ q₁ hlt
   refine ⟨ι w₁ + w₂ + ι w₃, ?_, ?_⟩
@@ -211,7 +210,8 @@ private theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le (hα : α < 0) (
           gcongr
           · exact (norm_inclusionOfLT_le hlt w₁).trans_eq (by rw [hK'])  |>.trans
               (mul_le_mul_of_nonneg_left hw₁n hK)
-          · exact hw₂n.trans (by gcongr)
+          · exact hw₂n.trans <|
+              mul_le_mul_of_nonneg_left (norm_toLpCLM_apply_le hβ v) (by positivity)
           · exact (norm_inclusionOfLT_le hlt w₃).trans_eq (by rw [hK'])  |>.trans
               (mul_le_mul_of_nonneg_left hw₃n hK)
       _ = (K * C₁ + C₂ * K + K * C₃) * ‖u‖ * ‖v‖ := by ring
