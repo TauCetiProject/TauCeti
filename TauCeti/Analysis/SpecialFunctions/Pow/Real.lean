@@ -89,6 +89,9 @@ A common nonnegative factor comes out of a product of two real powers whose expo
 of `x`, `y`, `a` and `b`. For nonnegative bases and weights this is the homogeneity of the
 two-point weighted geometric mean, and it is how a common factor is pulled out of the bound
 `A ^ (1 - θ) B ^ θ` produced by an interpolation argument.
+The powers `N ^ β₀` and `N ^ β₁` of a nonnegative base in such a bound recombine as
+`(N ^ β₀) ^ a (N ^ β₁) ^ b = N ^ (β₀ a + β₁ b)` when that exponent is nonzero, typically `N` itself
+when the boundary exponents interpolate to `1`.
 
 A bound `s ^ p u ≤ M` with `s, u ≥ 0` splits as `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for every
 `θ ≥ 0`. This trades part of a power of a cutoff for a power of its maximum.
@@ -140,6 +143,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: `(t x) ^ a (t y) ^ b = t x ^ a y ^ b` for `0 ≤ t`
   and `a + b = 1`, for all real `x`, `y`, `a` and `b`.
+* `Real.rpow_rpow_mul_rpow_rpow_of_add_eq`: `(x ^ y) ^ a (x ^ z) ^ b = x ^ w` for `0 ≤ x` and
+  `y a + z b = w ≠ 0`.
 * `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
   `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_mul_mul_le_rpow_mul_rpow`: `s ^ p u ≤ M` gives `s ^ (p θ) u ≤ M ^ θ u ^ (1 - θ)` for
@@ -391,6 +396,13 @@ theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (ha
     (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
   simp only [mul_rpow_of_nonneg_left ht]
   rw [mul_mul_mul_comm, ← rpow_of_add_eq ht one_ne_zero hab, rpow_one]
+
+/-- Two real powers of a nonnegative base, each raised to a further real power, combine into one
+power: `(x ^ y) ^ a (x ^ z) ^ b = x ^ w` for `0 ≤ x` and `y a + z b = w ≠ 0`. -/
+theorem rpow_rpow_mul_rpow_rpow_of_add_eq {x y z a b w : ℝ} (hx : 0 ≤ x) (hw : w ≠ 0)
+    (h : y * a + z * b = w) : (x ^ y) ^ a * (x ^ z) ^ b = x ^ w := by
+  simp only [← rpow_mul hx]
+  exact (rpow_of_add_eq hx hw h).symm
 
 /-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
 every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/

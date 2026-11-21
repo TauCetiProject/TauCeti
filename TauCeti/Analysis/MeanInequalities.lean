@@ -286,11 +286,9 @@ theorem tsum_sum_Ico_mul_le (L : ℕ) (a b : ℕ → ℝ≥0∞) :
         rw [one_div]
         gcongr
     _ = 2 * L * ((∑' j, a j ^ 2) ^ (2⁻¹ : ℝ) * (∑' k, b k ^ 2) ^ (2⁻¹ : ℝ)) := by
-        -- The two square roots of `2 * L` combine to `(2 * L) ^ (2⁻¹ + 2⁻¹) = 2 * L`.
-        have h2 : (0 : ℝ) ≤ 2⁻¹ := by norm_num
-        simp only [mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ h2]
-        rw [mul_mul_mul_comm, ← rpow_add_of_nonneg _ _ h2 h2]
-        norm_num
+        -- The two square roots of `2 * L` multiply to `((2 * L) ^ 2⁻¹) ^ 2 = 2 * L`.
+        simp only [mul_rpow_of_nonneg (2 * L : ℝ≥0∞) _ (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
+        rw [mul_mul_mul_comm, ← sq, ← rpow_two, rpow_inv_rpow two_ne_zero]
 
 end ENNReal
 
