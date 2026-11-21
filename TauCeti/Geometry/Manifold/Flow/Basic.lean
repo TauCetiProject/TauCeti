@@ -51,9 +51,12 @@ compact set.
   derivative of a trajectory is the field.
 * `TauCeti.mfderiv_flowOf_apply_self`: the differential of the time-`t` map carries the field to
   itself.
-* `TauCeti.flowOf_add`: the domain-aware group law.
+* `TauCeti.flowOf_add`: the domain-aware group law, and `TauCeti.mem_flowDomain_flowOf_iff`, the
+  times of the flow through a point of a trajectory.
 * `TauCeti.mfderiv_flowOf_add_apply`: the differential of the composition of two local flow maps.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
+* `TauCeti.flowOf_ne_flowOf_of_lt`: a closed orbit of least period is not revisited within a
+  period.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
 ## References
@@ -400,14 +403,24 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
 
 omit [CompleteSpace E] in
+/-- The times of the flow through a point of a trajectory are those of the trajectory shifted: if
+time `s` is defined at `x`, then time `t` is defined at `flowOf v s x` exactly when time `s + t`
+is defined at `x`. -/
+theorem mem_flowDomain_flowOf_iff [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {x : M}
+    (hs : (s, x) ∈ flowDomain v) :
+    (t, flowOf v s x) ∈ flowDomain v ↔ (s + t, x) ∈ flowDomain v := by
+  rw [mem_flowDomain, flowOf_apply,
+    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp hs),
+    ← mem_flowDomain]
+
+omit [CompleteSpace E] in
 /-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
 `-t` is defined at `flowOf v t x`. -/
 theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) : (-t, flowOf v t x) ∈ flowDomain v := by
-  rw [mem_flowDomain, flowOf_apply,
-    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
-    add_neg_cancel, ← mem_flowDomain]
+  rw [mem_flowDomain_flowOf_iff hv ht, add_neg_cancel]
   exact mem_flowDomain_zero_of_mem ht
 
 omit [CompleteSpace E] in
@@ -440,13 +453,34 @@ theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSp
     (ht : (t, x) ∈ flowDomain v) (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) :
     (s, flowOf v t x) ∈ flowDomain v ∧ flowOf v s (flowOf v t x) = flowOf v t x := by
   obtain ⟨hst, heq⟩ := flowOf_add hv hs (hx.symm ▸ ht)
-  have hs' : (s, flowOf v t x) ∈ flowDomain v := by
-    rw [mem_flowDomain, flowOf_apply,
-      mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht), add_comm,
-      ← mem_flowDomain]
-    exact hst
+  have hs' : (s, flowOf v t x) ∈ flowDomain v :=
+    (mem_flowDomain_flowOf_iff hv ht).2 (by rwa [add_comm])
   refine ⟨hs', ?_⟩
   rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
+
+omit [CompleteSpace E] in
+/-- **A closed orbit of least period is not revisited within a period.** If `x` returns to itself
+at time `T₀` and at no time strictly between `0` and `T₀`, then for `0 < s < t ≤ T₀` the points of
+its trajectory at the times `s` and `t` are distinct. -/
+theorem flowOf_ne_flowOf_of_lt [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {T₀ s t : ℝ} {x : M}
+    (hP : (T₀, x) ∈ flowDomain v) (hx : flowOf v T₀ x = x)
+    (hmin : ∀ r ∈ Ioo 0 T₀, flowOf v r x ≠ x) (hs : 0 < s) (hst : s < t) (ht : t ≤ T₀) :
+    flowOf v s x ≠ flowOf v t x := by
+  intro h
+  have hdom : ∀ r ∈ Icc 0 T₀, (r, x) ∈ flowDomain v := fun r hr ↦
+    uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc hr)
+  have hs' : s ∈ Icc 0 T₀ := ⟨hs.le, (hst.trans_le ht).le⟩
+  have ht' : t ∈ Icc 0 T₀ := ⟨hs.le.trans hst.le, ht⟩
+  have hr : s + (T₀ - t) ∈ Ioo 0 T₀ := ⟨by linarith, by linarith⟩
+  -- Flowing on for the time `T₀ - t` carries the point at time `t` to `x`, and the point at time
+  -- `s` to the point at time `s + (T₀ - t)`, strictly between `0` and `T₀`.
+  have h₁ := flowOf_add hv (hdom t ht')
+    ((mem_flowDomain_flowOf_iff hv (hdom t ht')).2 (by rwa [add_sub_cancel]))
+  have h₂ := flowOf_add hv (hdom s hs')
+    ((mem_flowDomain_flowOf_iff hv (hdom s hs')).2 (hdom _ ⟨hr.1.le, hr.2.le⟩))
+  rw [add_sub_cancel, hx] at h₁
+  exact hmin _ hr (by rw [← h₂.2, h, h₁.2])
 
 /-- **The flow preserves its generating field.** If time `t` is defined at `x`, the derivative of
 the time-`t` map of the flow carries `v x` to `v (flowOf v t x)`. -/
