@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -41,6 +42,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
+  `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
+  bounded on a compact set by one constant, uniformly for `p` in a compact set.
 * `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_isCompact`: one nonnegative constant bounds the
   derivatives of order at most `n` of finitely many `C^n` maps on a compact set.
 * `HasCompactSupport.exists_bound_iteratedFDeriv_of_contDiff`: the derivatives of order at most `n`
@@ -66,6 +70,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   where `f` is only controlled near the support of `g`.
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
+* `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
+  most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -327,6 +333,18 @@ theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
   rw [iteratedFDeriv_comp_const_smul c (hf.of_le (by exact_mod_cast hp)), norm_smul, norm_pow]
   exact mul_le_mul (pow_le_pow_right₀ hc hp) (hC p hp _) (norm_nonneg _) (by positivity)
 
+/-- The order-`k` derivative of `y ↦ f y • v` at `x`, for a scalar-valued `f` that is `C^k` at `x`
+and a fixed vector `v`, is at most that of `f` times `‖v‖`. -/
+theorem ContDiffAt.norm_iteratedFDeriv_smul_const_le {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] {f : E → A} {k : ℕ}
+    {x : E} (hf : ContDiffAt 𝕜 k f x) (v : F) :
+    ‖iteratedFDeriv 𝕜 k (fun y ↦ f y • v) x‖ ≤ ‖iteratedFDeriv 𝕜 k f x‖ * ‖v‖ := by
+  rw [iteratedFDeriv_smul_const_apply hf, mul_comm]
+  refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans ?_
+  gcongr
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun z ↦ ?_
+  simpa [mul_comm] using norm_smul_le z v
+
 open Asymptotics in
 /-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if the
 derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n`
@@ -471,3 +489,21 @@ theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'
   rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
 
 end TauCeti
+
+/-- Let `f p` be maps depending on a parameter `p`, jointly `C^n` in `(p, x)` on an open set `W`
+containing `C ×ˢ K` for compact sets `C` and `K`. For `p ∈ C` the partial map `f p` is `C^n` at
+every point of `K`, and its derivatives there of order at most `n` are bounded by a single
+nonnegative constant, uniformly in `p`. -/
+theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace 𝕜 P] {f : P → E → F} {W : Set (P × E)} {C : Set P}
+    {K : Set E} {n : ℕ} (hf : ContDiffOn 𝕜 n (Function.uncurry f) W) (hW : IsOpen W)
+    (hC : IsCompact C) (hK : IsCompact K) (hCKW : C ×ˢ K ⊆ W) :
+    ∃ A, 0 ≤ A ∧ ∀ p ∈ C, ∀ x ∈ K, ContDiffAt 𝕜 n (f p) x ∧
+      ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i (f p) x‖ ≤ A := by
+  obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_bound_iteratedFDeriv_of_isOpen hW (hC.prod hK) hCKW
+  refine ⟨A, hA0, fun p hp x hx ↦ ?_⟩
+  have hpx : (p, x) ∈ C ×ˢ K := ⟨hp, hx⟩
+  have hfpx : ContDiffAt 𝕜 n (Function.uncurry f) (p, x) :=
+    hf.contDiffAt (hW.mem_nhds (hCKW hpx))
+  exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
+    (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩

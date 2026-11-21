@@ -15,6 +15,7 @@ public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -54,6 +55,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   integer multiple of `2π / n`.
 * `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
   rational.
+* `Circle.denseRange_zpow_of_not_isOfFinOrder`: the integer powers of a point of infinite order are
+  dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
@@ -200,6 +203,25 @@ theorem isOfFinOrder_exp_two_pi_mul_iff {x : ℝ} :
     have hd : (q.den : ℝ) ≠ 0 := Nat.cast_ne_zero.2 q.den_ne_zero
     rw [Rat.cast_def]
     field_simp
+
+/-- **Irrational rotations have dense orbits.** The integer powers of a point of the circle of
+infinite order are dense in the circle. -/
+theorem denseRange_zpow_of_not_isOfFinOrder {c : Circle} (hc : ¬IsOfFinOrder c) :
+    DenseRange (c ^ · : ℤ → Circle) := by
+  set x := Complex.arg c / (2 * Real.pi)
+  have hcx : exp (2 * Real.pi * x) = c := by
+    rw [mul_div_cancel₀ _ (by positivity : 2 * Real.pi ≠ 0), exp_arg]
+  have hx : Irrational x := by
+    by_contra h
+    exact hc (hcx ▸ isOfFinOrder_exp_two_pi_mul_iff.2 h)
+  have hd : DenseRange (· • (x : AddCircle (1 : ℝ)) : ℤ → AddCircle (1 : ℝ)) :=
+    AddCircle.denseRange_zsmul_coe_iff.2 (by simpa using hx)
+  have hsurj : Function.Surjective (AddCircle.toCircle : AddCircle (1 : ℝ) → Circle) := by
+    simpa only [← funext (AddCircle.homeomorphCircle_apply one_ne_zero)] using
+      (AddCircle.homeomorphCircle (one_ne_zero (α := ℝ))).surjective
+  convert hsurj.denseRange.comp hd AddCircle.continuous_toCircle using 1
+  funext k
+  simp [AddCircle.toCircle_zsmul, AddCircle.toCircle_apply_mk, hcx]
 
 /-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
 theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by

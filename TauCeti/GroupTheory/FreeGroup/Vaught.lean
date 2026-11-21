@@ -7,8 +7,8 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import TauCeti.GroupTheory.MalcevEquation
-import Mathlib.GroupTheory.FreeGroup.Reduce
 import TauCeti.GroupTheory.FreeGroup.Abelianization
+import TauCeti.GroupTheory.FreeGroup.Commuting
 
 /-!
 # Free groups satisfy Vaught's condition
@@ -23,11 +23,11 @@ abelianization of `F` has unique roots (`IsFreeGroup.instHasUniqueRootsAbelianiz
 torsion-free and every homomorphism from `F` to the dihedral group of order `8` sends `x`, `y`
 and `z` to pairwise commuting elements
 (`TauCeti.pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one`), and hence has
-commutative image. If `F` had a free basis with two distinct elements, sending them to
-the rotation `r 1` and the reflection `sr 0`, which do not commute, would give a homomorphism with
-noncommutative image. So `F` has a free basis with at most one element and is commutative. For
-arbitrary `x`, `y` and `z` in a free group, the subgroup they generate is free by the
-Nielsen–Schreier theorem.
+commutative image. Since the rotation `r 1` and the reflection `sr 0` do not commute, `F` is
+then commutative (`IsFreeGroup.isMulCommutative_of_forall_isMulCommutative_range`): otherwise a
+free basis with two distinct elements could be sent to them, giving a homomorphism with
+noncommutative image. For arbitrary `x`, `y` and `z` in a free group, the subgroup they generate is
+free by the Nielsen–Schreier theorem.
 
 ## Main results
 
@@ -52,22 +52,12 @@ variable {G : Type*} [Group G] [IsFreeGroup G]
 commutative. -/
 private theorem isMulCommutative_of_sq_mul_sq_mul_sq_eq_one {x y z : G} (hG : closure {x, y, z} = ⊤)
     (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) : IsMulCommutative G := by
-  classical
-  rcases subsingleton_or_nontrivial (Generators G) with hι | ⟨u, v, huv⟩
-  · have := FreeGroup.isMulCommutative_iff_subsingleton.2 hι
-    exact (toFreeGroup G).symm.surjective.isMulCommutative
-  let π : G →* DihedralGroup 4 :=
-    lift fun i => if i = u then DihedralGroup.r 1 else if i = v then DihedralGroup.sr 0 else 1
-  have hπ : IsMulCommutative π.range := by
-    rw [MonoidHom.range_eq_map, ← hG, MonoidHom.map_closure, Set.image_insert_eq,
-      Set.image_insert_eq, Set.image_singleton]
-    exact isMulCommutative_closure
-      (pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one h π)
-  have huv' :=
-    isMulCommutative_iff.1 hπ ⟨_, π.mem_range.2 ⟨of u, rfl⟩⟩ ⟨_, π.mem_range.2 ⟨of v, rfl⟩⟩
-  have hne : DihedralGroup.r (1 : ZMod 4) * DihedralGroup.sr 0 ≠
-      DihedralGroup.sr 0 * DihedralGroup.r 1 := by decide
-  exact absurd (by simpa [π, lift_of, huv.symm] using congrArg Subtype.val huv') hne
+  refine isMulCommutative_of_forall_isMulCommutative_range (x := DihedralGroup.r (1 : ZMod 4))
+    (y := DihedralGroup.sr 0) (fun hc => absurd hc.eq (by decide)) fun π => ?_
+  rw [MonoidHom.range_eq_map, ← hG, MonoidHom.map_closure, Set.image_insert_eq,
+    Set.image_insert_eq, Set.image_singleton]
+  exact isMulCommutative_closure
+    (pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one h π)
 
 /-- **Lyndon's theorem**: every free group satisfies Vaught's condition. If
 `x ^ 2 * y ^ 2 * z ^ 2 = 1` in a free group, then `x`, `y` and `z` commute pairwise. -/
