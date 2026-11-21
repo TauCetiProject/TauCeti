@@ -13,14 +13,18 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # Uniform positivity of continuous functions
 
-The continuous real-valued functions bounded below by a positive constant form a convex set.
-On a compact domain this set is open for the uniform topology. These facts apply, for example,
-to separating positive continuous functions in the proof of Pietsch domination.
+The continuous functions into a linearly ordered semiring `𝕜` that are bounded below by a positive
+constant form a convex set. On a compact domain, where a pointwise positive continuous function
+attains a positive minimum, this set is open for the compact-open topology (the uniform topology
+when `𝕜 = ℝ`); openness needs only a linear order on `𝕜` whose intervals `Set.Iic a` are closed.
+These facts apply, for example, to separating positive continuous functions in the proof of
+Pietsch domination.
 
-A linear functional on `C(X, ℝ)` that is bounded above on the uniformly positive functions is
-nonpositive on them, since they form a cone, and hence nonpositive on every nonnegative function:
-adding a small positive constant to a nonnegative function makes it uniformly positive. This is the
-positivity of the functional produced by separating the uniformly positive functions from a cone.
+A linear functional on `C(X, 𝕜)`, for a linearly ordered field `𝕜`, that is bounded above on the
+uniformly positive functions is nonpositive on them, since they form a cone, and hence nonpositive
+on every nonnegative function: adding a small positive constant to a nonnegative function makes it
+uniformly positive. This is the positivity of the functional produced by separating the uniformly
+positive functions from a cone.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
 uniform positive distance from every point outside its range.
@@ -42,12 +46,15 @@ public section
 
 open Metric
 
+variable {X : Type*} [TopologicalSpace X]
+
 namespace ContinuousMap
 
-/-- The continuous real functions uniformly bounded below by a positive constant form a
-convex set. -/
-theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
-    Convex ℝ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
+/-- The continuous functions into a linearly ordered semiring that are uniformly bounded below by
+a positive constant form a convex set. -/
+theorem convex_uniformlyPositive {𝕜 : Type*} [Semiring 𝕜] [LinearOrder 𝕜] [IsOrderedRing 𝕜]
+    [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜] :
+    Convex 𝕜 {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
   rintro h₁ ⟨δ₁, hδ₁, h₁δ⟩ h₂ ⟨δ₂, hδ₂, h₂δ⟩ a b ha hb hab
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun f ↦ ?_⟩
   have e₁ := (min_le_left δ₁ δ₂).trans (h₁δ f)
@@ -57,21 +64,25 @@ theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
     min δ₁ δ₂ = a * min δ₁ δ₂ + b * min δ₁ δ₂ := by rw [← add_mul, hab, one_mul]
     _ ≤ a * h₁ f + b * h₂ f := by gcongr
 
-/-- Uniform positivity is open in the uniform topology on continuous functions
-on a compact space. -/
-theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace X] :
-    IsOpen {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
-  refine Metric.isOpen_iff.2 ?_
-  rintro h ⟨δ, hδ, hhδ⟩
-  refine ⟨δ / 2, half_pos hδ, fun h' hh' ↦ ⟨δ / 2, half_pos hδ, fun f ↦ ?_⟩⟩
-  have := (ContinuousMap.dist_apply_le_dist (f := h') (g := h) f).trans (mem_ball.1 hh').le
-  rw [Real.dist_eq] at this
-  linarith [hhδ f, (abs_le.1 this).1]
+/-- On a compact space, the continuous functions into a linear order that are uniformly bounded
+below by a positive constant form an open set for the compact-open topology. For real-valued
+functions this is the uniform topology. -/
+theorem isOpen_uniformlyPositive {𝕜 : Type*} [Zero 𝕜] [LinearOrder 𝕜] [TopologicalSpace 𝕜]
+    [ClosedIicTopology 𝕜] [CompactSpace X] :
+    IsOpen {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
+  refine isOpen_iff_mem_nhds.2 fun h ⟨δ, hδ, hhδ⟩ ↦ Filter.mem_of_superset
+    ((isOpen_setOfPred_mapsTo isCompact_univ isOpen_Ioi).mem_nhds
+      fun x _ ↦ hδ.trans_le (hhδ x)) fun g hg ↦ ?_
+  -- A pointwise positive `g` attains a positive minimum on the compact space `X`.
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨δ, hδ, isEmptyElim⟩
+  · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty g.continuous.continuousOn
+    exact ⟨g x₀, hg (Set.mem_univ x₀), fun x ↦ hx₀ (Set.mem_univ x)⟩
 
 /-- A continuous map from a compact space into a metric space stays at a uniform positive distance
 from every point outside its range. -/
-theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
-    [MetricSpace Y] (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
+theorem exists_pos_le_dist_of_notMem_range {Y : Type*} [CompactSpace X] [MetricSpace Y]
+    (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ dist (f x) y := by
   rcases isEmpty_or_nonempty X with hX | hX
   · exact ⟨1, zero_lt_one, isEmptyElim⟩
@@ -81,8 +92,8 @@ theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [C
 
 /-- A continuous map from a compact space into a normed additive group has `‖f x - y‖` uniformly
 bounded below by a positive constant whenever `y ∉ Set.range f`. -/
-theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X] [CompactSpace X]
-    [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
+theorem exists_pos_le_norm_sub_of_notMem_range {E : Type*} [CompactSpace X] [NormedAddCommGroup E]
+    (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
 
@@ -101,28 +112,26 @@ theorem norm_evalCLM {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
     ‖evalCLM 𝕜 (M := E) x‖ = 1 := by
   refine le_antisymm (norm_evalCLM_le_one x) ?_
   obtain ⟨v, hv⟩ := exists_norm_ne_zero E
-  have hv0 : 0 < ‖v‖ := hv.symm.lt_of_le (norm_nonneg v)
-  have hc : ‖ContinuousMap.const K v‖ ≤ ‖v‖ :=
-    (ContinuousMap.norm_le _ hv0.le).2 fun _ ↦ le_rfl
-  have hle := (evalCLM 𝕜 (M := E) x).le_opNorm (ContinuousMap.const K v)
-  rw [evalCLM_apply, const_apply] at hle
-  have hmul : 1 * ‖v‖ ≤ ‖evalCLM 𝕜 (M := E) x‖ * ‖v‖ := by
-    simpa only [one_mul] using hle.trans (mul_le_mul_of_nonneg_left hc (norm_nonneg _))
-  exact le_of_mul_le_mul_right hmul hv0
+  -- The constant function `v` has the same norm as `v`, and evaluates to `v` at `x`.
+  have hc : ‖const K v‖ = ‖v‖ :=
+    ((norm_le _ (norm_nonneg v)).2 fun _ ↦ le_rfl).antisymm ((const K v).norm_coe_le_norm x)
+  simpa only [evalCLM_apply, const_apply, hc, div_self hv] using
+    (evalCLM 𝕜 (M := E) x).ratio_le_opNorm (const K v)
 
 end ContinuousMap
 
 namespace LinearMap
 
-/-- A linear functional on `C(X, ℝ)` that is bounded above on the functions bounded below by a
-positive constant is nonpositive on the nonnegative functions. -/
-theorem apply_nonpos_of_forall_uniformlyPositive_lt {X : Type*} [TopologicalSpace X]
-    (L : C(X, ℝ) →ₗ[ℝ] ℝ) {u : ℝ}
-    (hL : ∀ h ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, ℝ)} (hh : 0 ≤ h) :
+/-- A linear functional on `C(X, 𝕜)`, for a linearly ordered field `𝕜`, that is bounded above on
+the functions bounded below by a positive constant is nonpositive on the nonnegative functions. -/
+theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
+    (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
+    (hL : ∀ h ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, 𝕜)} (hh : 0 ≤ h) :
     L h ≤ 0 := by
   -- The uniformly positive functions form a cone, so `L` is nonpositive on them: if `L g > 0`,
   -- then `t • g` with `t = |u| / L g + 1` is uniformly positive and `L (t • g) = |u| + L g > u`.
-  have hL' (g : C(X, ℝ)) (hg : g ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
+  have hL' (g : C(X, 𝕜)) (hg : g ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
     obtain ⟨δ, hδ, hgδ⟩ := hg
     by_contra! hpos
     have ht : 0 < |u| / L g + 1 := by
