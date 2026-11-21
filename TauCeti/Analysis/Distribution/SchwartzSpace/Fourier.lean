@@ -394,8 +394,8 @@ theorem fourier_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGroup D
     𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
       compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕 u) := by
   ext ξ
-  rw [fourier_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply]
-  rfl
+  rw [fourier_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply,
+    Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The inverse Fourier transform commutes with composition by a linear isometry equivalence:
 `𝓕⁻ (u ∘ A) = (𝓕⁻ u) ∘ A`. -/
@@ -405,8 +405,8 @@ theorem fourierInv_compCLMOfContinuousLinearEquiv {D : Type*} [NormedAddCommGrou
     𝓕⁻ (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) =
       compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv (𝓕⁻ u) := by
   ext ξ
-  rw [fourierInv_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply]
-  rfl
+  rw [fourierInv_compCLMOfContinuousLinearEquiv_apply, compCLMOfContinuousLinearEquiv_apply,
+    Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
