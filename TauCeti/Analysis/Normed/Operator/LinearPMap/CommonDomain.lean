@@ -95,8 +95,11 @@ theorem apply_mem_domain_domainOperator (x : D) : ι x ∈ (domainOperator ι A 
 /-- `domainOperator ι A hι` sends `ι x` to `A x`. -/
 theorem domainOperator_apply {y : (domainOperator ι A hι).domain} {x : D} (hx : ι x = y) :
     domainOperator ι A hι y = A x := by
-  obtain ⟨y, hy⟩ := y
-  obtain rfl : ι x = y := hx
+  have hy : y = LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι x :=
+    Subtype.ext (hx.symm.trans (LinearEquiv.ofInjective_apply _ x).symm)
+  -- This lemma is where the definition of `domainOperator` is deliberately unfolded: its value at
+  -- `ofInjective ι hι x` is `A ((ofInjective ι hι).symm (ofInjective ι hι x))`.
+  rw [hy]
   exact congrArg A ((LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).symm_apply_apply x)
 
 /-- `domainOperator ι A hι` sends `ι x` to `A x`. -/
@@ -209,7 +212,7 @@ theorem bijective_smul_sub_domainOperator_iff :
     (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).toEquiv
   rw [← e.bijective_comp]
   refine iff_of_eq (congrArg Bijective (funext fun x ↦ ?_))
-  exact smul_sub_domainOperator_apply rfl
+  exact smul_sub_domainOperator_apply (LinearEquiv.ofInjective_apply (h := hι) _ x).symm
 
 /-- At a resolvent point `c` of `domainOperator ι A hι`, the shift `c • ι - A : D → H` is
 bijective. -/
