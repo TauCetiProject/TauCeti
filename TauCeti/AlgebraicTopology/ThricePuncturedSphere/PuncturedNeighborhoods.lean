@@ -95,15 +95,15 @@ theorem mem_puncturedDiscOneHalf {z : ℂ} :
 
 /-- The standard punctured neighborhood of `0` is open. -/
 theorem isOpen_puncturedNeighborhoodZero : IsOpen puncturedNeighborhoodZero :=
-  isOpen_lt continuous_subtype_val.norm continuous_const
+  isOpen_lt continuous_subtypeVal.norm continuous_const
 
 /-- The standard punctured neighborhood of `1` is open. -/
 theorem isOpen_puncturedNeighborhoodOne : IsOpen puncturedNeighborhoodOne :=
-  isOpen_lt (continuous_subtype_val.sub continuous_const).norm continuous_const
+  isOpen_lt (continuous_subtypeVal.sub continuous_const).norm continuous_const
 
 /-- The standard punctured neighborhood of `∞` is open. -/
 theorem isOpen_puncturedNeighborhoodInf : IsOpen puncturedNeighborhoodInf :=
-  isOpen_lt continuous_const continuous_subtype_val.norm
+  isOpen_lt continuous_const continuous_subtypeVal.norm
 
 /-! ### Disjointness -/
 

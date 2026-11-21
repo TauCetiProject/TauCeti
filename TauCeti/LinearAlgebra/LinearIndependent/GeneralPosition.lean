@@ -145,22 +145,22 @@ all-ones vector are linearly independent.  The index `none` labels the all-ones 
 `some j` labels the `j`th coordinate vector. -/
 theorem linearIndependent_one_option_piSingle_ne (k : Fin n) :
     LinearIndependent K (fun o : Option {j : Fin n // j ≠ k} ↦
-      o.casesOn' (fun _ ↦ (1 : K)) (fun j ↦ Pi.single j.1 (1 : K))) := by
+      o.casesOn' (fun _ ↦ (1 : K)) (fun j ↦ Pi.single j.val (1 : K))) := by
   rw [linearIndependent_option']
   constructor
   · have h := (Pi.basisFun K (Fin n)).linearIndependent.comp
-      (fun j : {j : Fin n // j ≠ k} ↦ j.1) Subtype.val_injective
+      (fun j : {j : Fin n // j ≠ k} ↦ j.val) Subtype.val_injective
     convert h using 1
     ext j i
     simp
   · intro hmem
     have hspan : Submodule.span K
         (Set.range fun j : {j : Fin n // j ≠ k} ↦
-          (Pi.single j.1 (1 : K) : Fin n → K)) ≤
+          (Pi.single j.val (1 : K) : Fin n → K)) ≤
         LinearMap.ker (LinearMap.proj k) := by
       rw [Submodule.span_le]
       rintro _ ⟨j, rfl⟩
-      simp [LinearMap.mem_ker, j.2]
+      simp [LinearMap.mem_ker, j.property]
     have hone := hspan hmem
     simp [LinearMap.mem_ker] at hone
 

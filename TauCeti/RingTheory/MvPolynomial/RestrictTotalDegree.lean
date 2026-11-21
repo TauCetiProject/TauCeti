@@ -126,10 +126,10 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 /-- A monomial basis vector of the bounded-degree polynomials is the corresponding monomial. -/
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
-    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.1 1 := by
+    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
   classical
   have h : basisRestrictTotalDegree σ R m s =
-      ⟨monomial s.1 1, monomial_mem_restrictTotalDegree s.2 1⟩ := by
+      ⟨monomial s.val 1, monomial_mem_restrictTotalDegree s.property 1⟩ := by
     refine (basisRestrictTotalDegree σ R m).repr.injective (Finsupp.ext fun t ↦ ?_)
     simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
   rw [h]
@@ -214,7 +214,7 @@ theorem boundedCoefficientEquiv_inclusion_comp_eq_extendByZero [Finite σ]
     simp
   · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
       Function.comp_apply, Submodule.coe_inclusion]
-    · exact h0 _ (v j).2 s hs
+    · exact h0 _ (v j).property s hs
     · rintro ⟨⟨j', s', hs''⟩, he⟩
       exact hs (by cases he; exact hs'')
 

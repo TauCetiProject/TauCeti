@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.ZariskisMainTheorem
 
 /-!
-# A global form of Zariski's main theorem
+# Consequences of Zariski's main theorem
 
 Mathlib's algebraic Zariski main theorem
 (`Algebra.QuasiFiniteAt.exists_fg_and_exists_notMem_and_awayMap_bijective`) is local: at a prime
@@ -20,7 +20,14 @@ about quasi-finite algebras to finite ones: a single module-finite subalgebra `A
 many elements `r ∈ A'` generating the unit ideal of `A`, such that every element of `A` is moved
 into `A'` by a large enough power of each `r`.
 
+The quotient criterion below checks quasi-finiteness at a prime using a quasi-finite quotient
+by an ideal contained in the extension of the contracted prime. It is deduced from Mathlib's
+`Algebra.QuasiFiniteAt.of_weaklyQuasiFiniteAt`, which derives `Algebra.QuasiFiniteAt R q` for a
+finite type `R`-algebra from quasi-finiteness at `q` modulo the extension of `q.under R`.
+
 ## Main results
+
+* `Algebra.QuasiFiniteAt.of_quasiFinite_quotient`: quasi-finiteness from a quasi-finite quotient.
 
 * `Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top`: the global form of Zariski's main
   theorem for a quasi-finite algebra of finite type.
@@ -58,7 +65,7 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ hne
     exact hr ⟨M, hM.isPrime⟩ (hle (Ideal.subset_span ⟨_, rfl⟩))
   obtain ⟨s, hs, hspan⟩ := (Ideal.span_eq_top_iff_finite _).mp hspan
-  choose P hP using fun x : s ↦ hs x.2
+  choose P hP using fun x : s ↦ hs x.property
   replace hP (x : s) : (r (P x) : A) = x := hP x
   -- Merge the finitely many module-finite subalgebras.
   choose t ht using fun x : s ↦ hB (P x)
@@ -68,7 +75,7 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
     have : y ∈ Submodule.span R (t x : Set A) := by rwa [ht x]
     exact Algebra.span_le_adjoin R _ (Submodule.span_mono (Set.subset_iUnion _ x) this)
   have hsA' : (s : Set A) ⊆ A' := fun y hy ↦ by
-    simpa [hP ⟨y, hy⟩] using hle _ (r (P ⟨y, hy⟩)).2
+    simpa [hP ⟨y, hy⟩] using hle _ (r (P ⟨y, hy⟩)).property
   refine ⟨A', s, fg_adjoin_of_finite (Set.finite_iUnion fun x ↦ (t x).finite_toSet) ?_, hsA',
     hspan, fun y hy z ↦ ?_⟩
   · simp only [Set.mem_iUnion]
@@ -81,6 +88,22 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
   have hb' : (b : A) = y ^ m * z := by simpa [hP ⟨y, hy⟩] using hb
   refine eventually_atTop.mpr ⟨m, fun n hn ↦ ?_⟩
   rw [← Nat.sub_add_cancel hn, pow_add, mul_assoc, ← hb']
-  exact A'.mul_mem (A'.pow_mem (hsA' hy) _) (hle _ b.2)
+  exact A'.mul_mem (A'.pow_mem (hsA' hy) _) (hle _ b.property)
 
 end Algebra.QuasiFinite
+
+namespace Algebra.QuasiFiniteAt
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- A finite type algebra is quasi-finite at a prime `q` if its quotient by an ideal
+contained in the extension of `q.under R` is quasi-finite over the base. -/
+theorem of_quasiFinite_quotient [Algebra.FiniteType R A] (q : Ideal A) [q.IsPrime]
+    (I : Ideal A) [Algebra.QuasiFinite R (A ⧸ I)]
+    (hI : I ≤ (q.under R).map (algebraMap R A)) : Algebra.QuasiFiniteAt R q := by
+  have : Algebra.QuasiFinite R (A ⧸ (q.under R).map (algebraMap R A)) :=
+    .of_surjective_algHom (Ideal.Quotient.factorₐ R hI) (Ideal.Quotient.factor_surjective hI)
+  have : Algebra.WeaklyQuasiFiniteAt R q := inferInstance
+  exact .of_weaklyQuasiFiniteAt q
+
+end Algebra.QuasiFiniteAt

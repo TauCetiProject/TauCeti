@@ -58,10 +58,8 @@ non-isomorphic.
 * `Representation.intrinsicMultiplicity_of_isIrreducible`: an irreducible representation has
   multiplicity `1` at its own class and `0` at every other, and in particular
   `TauCeti.intrinsicMultiplicity_irreducibleRepresentation`: `m_{Zⱼ}(i) = δᵢⱼ`.
-* `Representation.nonempty_regrouping` and
-  `Representation.nonempty_equiv_directSum_irreducibleRepresentation`: **the regrouping**. A
-  finite-dimensional `ρ` is, as a `k[G]`-module and as a `Representation`, the direct sum of
-  `m_ρ(i)` copies of each `Zᵢ`.
+* `Representation.nonempty_regrouping`: **the regrouping**. A finite-dimensional `ρ` is, as a
+  `k[G]`-module, the direct sum of `m_ρ(i)` copies of each `Zᵢ`.
 * `Representation.nonempty_equiv_iff_intrinsicMultiplicity_eq`: two finite-dimensional
   representations are equivalent exactly when their intrinsic multiplicities agree.
 * `Representation.finrank_eq_sum_intrinsicMultiplicity_mul_characterDegree`: the dimension of
@@ -160,11 +158,8 @@ theorem intrinsicMultiplicity_prod [FiniteDimensional k V] {W : Type w'} [AddCom
       ρ.intrinsicMultiplicity i + σ.intrinsicMultiplicity i := by
   rw [intrinsicMultiplicity_def, intrinsicMultiplicity_def, intrinsicMultiplicity_def,
     ← finrank_prod]
-  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`, computed on the `k[G]`-modules.
-  exact (IntertwiningMap.equivLinearMapAsModule _ _ ≪≫ₗ
-    LinearEquiv.homCongrRight k (prodAsModuleEquiv ρ σ) ≪≫ₗ (LinearMap.prodEquiv k).symm ≪≫ₗ
-    (IntertwiningMap.equivLinearMapAsModule _ _).symm.prodCongr
-      (IntertwiningMap.equivLinearMapAsModule _ _).symm).finrank_eq
+  -- `Hom(Zᵢ, ρ × σ)` is `Hom(Zᵢ, ρ) × Hom(Zᵢ, σ)`.
+  exact IntertwiningMap.prodEquiv.symm.finrank_eq
 
 /-- **The intrinsic multiplicities are additive on finite direct sums**
 (`Representation.directSum`) of finite-dimensional representations: an intertwining map into the
@@ -248,18 +243,6 @@ theorem nonempty_equiv_iff_intrinsicMultiplicity_eq [FiniteDimensional k V] {W :
   obtain ⟨eσ⟩ := σ.nonempty_regrouping
   rw [h] at eρ
   exact TauCeti.Representation.nonempty_equiv_iff.mpr ⟨eρ ≪≫ₗ eσ.symm⟩
-
-/-- **Direct-sum decomposition into irreducible models.** Every finite-dimensional representation
-`ρ` (with carrier in any universe) is equivalent to the direct sum of `m_ρ(i)` copies of
-`irreducibleRepresentation k i`. -/
-theorem nonempty_equiv_directSum_irreducibleRepresentation [FiniteDimensional k V] :
-    Nonempty (ρ.Equiv
-      (directSum fun s : Σ i : Fin (Nat.card (ConjClasses G)), Fin (ρ.intrinsicMultiplicity i) ↦
-        irreducibleRepresentation k s.1)) := by
-  rw [nonempty_equiv_iff_intrinsicMultiplicity_eq]
-  ext j
-  rw [intrinsicMultiplicity_directSum, Fintype.sum_sigma]
-  simp
 
 /-- **The dimension formula**: a finite-dimensional representation has dimension
 `∑ᵢ m_ρ(i) · deg Zᵢ`. -/

@@ -35,12 +35,12 @@ def stdRep (H : Subgroup SU2) : Representation ℂ H (Fin 2 → ℂ) :=
 
 @[simp]
 theorem stdRep_apply (H : Subgroup SU2) (h : H) :
-    stdRep H h = Matrix.mulVecLin (h.1 : Matrix (Fin 2) (Fin 2) ℂ) := by
+    stdRep H h = Matrix.mulVecLin (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
   rw [stdRep, MonoidHom.comp_apply, MonoidHom.comp_apply, Subgroup.coe_subtype,
     TauCeti.stdRep_apply, coe_toGL]
 
 theorem stdRep_apply_apply (H : Subgroup SU2) (h : H) (v : Fin 2 → ℂ) :
-    stdRep H h v = (h.1 : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
+    stdRep H h v = (h.val : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v := by
   rw [stdRep_apply, Matrix.mulVecLin_apply]
 
 theorem stdRep_injective (H : Subgroup SU2) : Function.Injective (stdRep H) :=
@@ -48,11 +48,11 @@ theorem stdRep_injective (H : Subgroup SU2) : Function.Injective (stdRep H) :=
 
 theorem det_stdRep (H : Subgroup SU2) (h : H) : LinearMap.det (stdRep H h) = 1 := by
   rw [stdRep_apply, ← Matrix.toLin'_apply', LinearMap.det_toLin']
-  exact (Matrix.mem_specialUnitaryGroup_iff.mp h.1.2).2
+  exact (Matrix.mem_specialUnitaryGroup_iff.mp h.val.property).right
 
 @[simp]
 theorem char_stdRep (H : Subgroup SU2) (h : H) :
-    (stdRep H).character h = Matrix.trace (h.1 : Matrix (Fin 2) (Fin 2) ℂ) := by
+    (stdRep H).character h = Matrix.trace (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
   rw [stdRep, _root_.Representation.character, MonoidHom.comp_apply, MonoidHom.comp_apply,
     Subgroup.coe_subtype, ← _root_.Representation.character, TauCeti.char_stdRep, coe_toGL]
 
@@ -69,7 +69,7 @@ theorem det_ρ_stdFDRep (H : Subgroup SU2) (h : H) : LinearMap.det ((stdFDRep H)
   rw [FDRep.of_ρ' (stdRep H)]; exact det_stdRep H h
 
 theorem character_stdFDRep (H : Subgroup SU2) (h : H) :
-    (stdFDRep H).character h = Matrix.trace (h.1 : Matrix (Fin 2) (Fin 2) ℂ) := by
+    (stdFDRep H).character h = Matrix.trace (h.val : Matrix (Fin 2) (Fin 2) ℂ) := by
   rw [FDRep.character_of (stdRep H), char_stdRep]
 
 end TauCeti.SU2

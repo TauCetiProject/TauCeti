@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import TauCeti.LinearAlgebra.Determinant.FiniteOrder
 import TauCeti.RepresentationTheory.CharacterTable.Degree
+import TauCeti.RepresentationTheory.CharacterTable.Regrouping
 import TauCeti.RepresentationTheory.Intertwining.DirectSum
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
 import TauCeti.RepresentationTheory.Irreducible
@@ -103,7 +104,7 @@ private theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : 
   simpa [z] using (smul_eq_zero.mp hzero).resolve_left
     (mul_ne_zero (sub_ne_zero.mpr hc₁.symm) (sub_ne_zero.mpr hc₂.symm))
 
-private theorem exists_central_annihilator_of_not_simple [Finite G] [Nontrivial G]
+private theorem exists_central_annihilator_of_not_simple [Nontrivial G]
     [NeZero (Nat.card G : k)] {V : FDRep k G} (hdim : Module.finrank k V = 2)
     (hfaithful : Function.Injective V.ρ) (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1)
     (hV : ¬ Simple V) :

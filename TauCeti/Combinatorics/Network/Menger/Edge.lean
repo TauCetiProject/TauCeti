@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Network.Decomposition
 public import TauCeti.Combinatorics.Network.SetFlow
+import TauCeti.Combinatorics.Network.PathTrimming
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -21,16 +22,17 @@ of `F`.
 
 This file proves the local edge form of Menger's theorem for directed networks with finitely many
 vertices and arrows: the largest number of arrow-disjoint `s`–`t` paths equals the least number of
-arrows separating `t` from `s`. Weak duality, that every arrow-disjoint family of `s`–`t` walks has
-at most as many members as every separating set of arrows, needs no finiteness at all: each member
-traverses an arrow of the separating set, and different members traverse different arrows.
+arrows separating `t` from `s`. Weak duality, that every finite arrow-disjoint family of `s`–`t`
+walks has at most as many members as every finite separating set of arrows, needs no finiteness of
+the vertex or arrow types: each member traverses an arrow of the separating set, and different
+members traverse different arrows.
 
 It also proves the set-to-set form for disjoint vertex sets `A` and `B`. An *`A`–`B` path* runs from
 a vertex of `A` to a vertex of `B` and has no other vertex in `A` or `B`; arrow-disjoint `A`–`B`
 paths may share their endpoints. A set of arrows *separates* `B` from `A` when after deleting it no
 vertex of `B` is reachable from a vertex of `A`. The largest number of arrow-disjoint `A`–`B` paths
-equals the least number of arrows separating `B` from `A`; weak duality again needs neither
-finiteness nor disjointness.
+equals the least number of arrows separating `B` from `A`; weak duality for finite families and
+finite separating sets again needs no finiteness of the vertex or arrow types.
 
 Attainment is reduced to the max-flow/min-cut theorem over `ℤ` with capacity one on every arrow,
 between the vertex sets `A` and `B` (`TauCeti.SetFlow.exists_val_eq_arrowSum`). A maximum flow has
@@ -39,20 +41,21 @@ the value of a cut `S`, which is the number of arrows leaving `S`; those arrows 
 add up to the value. Every arrow carries at most one unit, so every path has weight one and no two
 paths share an arrow (`TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`). Each path is
 finally trimmed to an `A`–`B` path, which traverses only arrows of the original path
-(`TauCeti.ArrowWalk.exists_isPath_interior_notMem`). The `s`–`t` theorem is the case of the
-singleton terminal sets `A = {s}` and `B = {t}`.
+(`TauCeti.ArrowWalk.trimToSets`). The `s`–`t` theorem is the case of the singleton terminal sets
+`A = {s}` and `B = {t}`.
 
 ## Main results
 
 * `TauCeti.natCard_sub_one_le_card_of_completeCut`: a finite set of arrows containing every
   arrow across a nontrivial complete directed cut has at least one fewer member than the number
   of vertices.
-* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, an arrow-disjoint family of
-  `s`–`t` walks has at most as many members as any set of arrows separating `t` from `s`.
+* `TauCeti.card_le_card_of_not_reachableWithout`: **weak duality**, a finite arrow-disjoint family
+  of `s`–`t` walks has at most as many members as any finite set of arrows separating `t` from
+  `s`.
 * `TauCeti.SetFlow.exists_paths_card_eq_val`: an integer `A`–`B` flow carrying at most one unit on
   every arrow carries as many arrow-disjoint paths from `A` to `B` as its value.
-* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for arrow-disjoint walks from
-  `A` to `B` and sets of arrows separating `B` from `A`.
+* `TauCeti.card_le_card_of_forall_not_reachableWithout`: weak duality for finite arrow-disjoint
+  families of walks from `A` to `B` and finite sets of arrows separating `B` from `A`.
 * `TauCeti.exists_paths_setArrowSeparator_card_eq`: **Menger's theorem** for arrow-disjoint
   directed paths between disjoint vertex sets, in witness form.
 * `TauCeti.forall_exists_reachableWithout_iff_exists_paths`: its predicate form.
@@ -176,17 +179,19 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     · exact f.excessAt_nonpos _ hA
     · exact (f.conserve _ hA hB).le
   let P (i : Fin D.paths.length) := D.paths[(i : ℕ)].walk
-  have htrim (i : Fin D.paths.length) :
-      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
-        ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq, -, hsub, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) (P i)
-        (hsource _ (List.getElem_mem _)).1 (htarget _ (List.getElem_mem _))
-    exact ⟨a, ha, b, hb, q, hq, hsub, by simpa using hint⟩
-  choose a ha b hb P' hP' hsub hint using htrim
-  refine ⟨D.paths.length, a, b, P', ?_, ha, hb, hP', hint,
-    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) (hsub i he),
-    fun i j hij e hei hej ↦ D.pairwise_disjoint_arrows hf hij (hsub i hei) (hsub j hej)⟩
+  have hA (i : Fin D.paths.length) : D.paths[(i : ℕ)].source ∈ (A : Set V) :=
+    (hsource _ (List.getElem_mem i.isLt)).1
+  have hB (i : Fin D.paths.length) : D.paths[(i : ℕ)].target ∈ (B : Set V) :=
+    htarget _ (List.getElem_mem i.isLt)
+  refine ⟨D.paths.length, fun i ↦ (P i).trimToSetsSource (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget (hA i) (hB i), fun i ↦ (P i).trimToSets (hA i) (hB i), ?_,
+    fun i ↦ (P i).trimToSetsSource_mem (hA i) (hB i),
+    fun i ↦ (P i).trimToSetsTarget_mem (hA i) (hB i),
+    fun i ↦ (D.isPath_walk _ (List.getElem_mem i.isLt)).trimToSets _ _,
+    fun i _ hv ↦ (P i).notMem_and_notMem_of_mem_vertices_trimToSets (hA i) (hB i) hv,
+    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _)
+      ((P i).arrows_trimToSets_subset (hA i) (hB i) he),
+    ArrowWalk.pairwise_disjoint_arrows_trimToSets (D.pairwise_disjoint_arrows hf) hA hB⟩
   -- The value is the total weight of the paths ending in `B`, each of weight one.
   have hval := WeightedWalk.sum_excessAt_sum_map_assignment D.paths B
   rw [← D.pathAssignment_def, List.filter_eq_self.2 fun p hp ↦ decide_eq_true (htarget p hp),
