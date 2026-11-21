@@ -742,7 +742,9 @@ theorem tendstoUniformly_euclideanCauchySolutionBUC (hα₀ : 0 < α) (hα₁ : 
   (tendstoUniformly_euclideanCauchySolutionBUC_of_uniformEquicontinuous hT hα₀ hα₁ a b c ha f
     (fun _ : Unit ↦ w)
     (uniformEquicontinuous_unique.2 ((mem_uniformContinuousSubmodule _).1 w.property))
-    fun _ x ↦ by simpa using (w : EuclideanSpace ℝ ι →ᵇ ℝ).norm_coe_le_norm x).comp
+    (M := ‖(w : EuclideanSpace ℝ ι →ᵇ ℝ)‖)
+    fun _ x ↦ (Real.norm_eq_abs _).symm.trans_le
+      ((w : EuclideanSpace ℝ ι →ᵇ ℝ).norm_coe_le_norm x)).comp
     fun x ↦ ((), x)
 
 end Modulus
