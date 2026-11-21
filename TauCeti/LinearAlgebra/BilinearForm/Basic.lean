@@ -279,6 +279,34 @@ theorem IsRefl.apply_eq_zero_of_mem_ker {R₁ M₁ : Type*} [CommSemiring R₁] 
 
 end LinearMap
 
+namespace LinearMap.BilinMap
+
+variable {R M N : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- **The polarization cocycle identity.** For a bilinear map `B` with `2` invertible, the half of
+its skew part and its quadratic diagonal satisfy the coboundary relation
+`(ω x y)/2 + q(x+y) = B x y + q x + q y`, where `ω = B - Bᵀ` and `q x = B x x / 2`. This is what
+lets the integral extension of `B` be replaced by the half-alternating one.
+
+This identity is proved by applying the polarization identity for the associated quadratic map
+`B.toQuadraticMap`; the diagonal terms cancel and the cross terms collect into `(2 • B x y)/2`. -/
+theorem polarization_cocycle (B : LinearMap.BilinMap R M N) [Invertible (2 : R)] (x y : M) :
+    (⅟(2 : R) • (B - B.flip)) x y + ⅟(2 : R) • B (x + y) (x + y)
+      = B x y + ⅟(2 : R) • B x x + ⅟(2 : R) • B y y := by
+  have hstep : (⅟(2 : R) • (B - B.flip)) x y = ⅟(2 : R) • (B x y - B y x) := by
+    simp [LinearMap.sub_apply, LinearMap.smul_apply, smul_sub]
+  have hdiag : B (x + y) (x + y) = B x x + B x y + B y x + B y y := by
+    simp [map_add]
+    abel
+  have hinner : B x y - B y x + (B x x + B x y + B y x + B y y)
+      = (2 : R) • B x y + B x x + B y y := by
+    rw [two_smul]
+    abel
+  rw [hstep, hdiag, ← smul_add, hinner, smul_add, smul_add, smul_smul, invOf_mul_self, one_smul]
+
+end LinearMap.BilinMap
+
 namespace LinearMap.BilinForm
 
 variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H} {v t x : H}
