@@ -63,6 +63,9 @@ type `M ⊗[A] MvPowerSeries (Fin k) A →ₗ[A] MvPowerSeries (Fin k) M`.
   is surjective** for an `M` presented by a surjection `Aᵐ ↠ M` that is continuous at `0` and
   pushes the neighbourhoods of `0` forward. Only the presentation is used — no noetherian
   hypothesis and no property of its kernel, both of which belong to injectivity.
+* `restrictedMvPowerSeriesBaseChange_surjective_of_finite`: the same surjectivity for any finite
+  `A`-module endowed with its module topology, assuming only that `nhds (0 : A)` is countably
+  generated (no noetherian or completeness hypothesis).
 
 * `restrictedMvPowerSeriesBaseChange_injective_of_presentation`: **the comparison map is
   injective** for an `M` presented by `Aⁿ →[u] Aᵐ →[p] M → 0` whose first map is strict onto its
@@ -426,6 +429,21 @@ theorem restrictedMvPowerSeriesBaseChange_surjective_of_presentation {m : ℕ} {
   obtain ⟨z, hz⟩ := (restrictedMvPowerSeriesBaseChange_fin_bijective (k := k) (n := m)).2 x
   exact ⟨TensorProduct.map p LinearMap.id z, by
     rw [← restrictedMvPowerSeriesSubmoduleMap_baseChange p hp z, hz, hx]⟩
+
+/-- **Surjectivity of `M ⊗[A] A⟨T₁, …, Tₖ⟩ → M⟨T₁, …, Tₖ⟩` without noetherianity**
+(Kedlaya–Liu II, Corollary 2.4.9(c), surjectivity half). Over any nonarchimedean commutative ring
+`A` with countably generated neighbourhoods of `0`, the restricted power-series comparison map is
+surjective for every finitely generated `A`-module `M` endowed with its module topology. -/
+theorem restrictedMvPowerSeriesBaseChange_surjective_of_finite [(nhds (0 : A)).IsCountablyGenerated]
+    {M : Type*} [AddCommGroup M] [Module A M] [Module.Finite A M] [TopologicalSpace M]
+    [ContinuousAdd M] [IsModuleTopology A M] :
+    Function.Surjective (restrictedMvPowerSeriesBaseChange :
+      TensorProduct A M (restrictedMvPowerSeriesSubring k A) →
+        restrictedMvPowerSeriesSubmodule k A M) := by
+  obtain ⟨m, p, hsurj⟩ := Module.Finite.exists_fin' A M
+  exact restrictedMvPowerSeriesBaseChange_surjective_of_presentation p
+    (IsModuleTopology.continuous_of_linearMap p).continuousAt hsurj
+    (map_zero p ▸ (IsModuleTopology.isOpenMap_of_surjective hsurj).nhds_le 0)
 
 /-- **Remark 8.29's comparison map is injective for a finitely generated module.** Given a
 presentation `Aⁿ →[u] Aᵐ →[p] M → 0` whose first map is strict onto its image, the comparison map
