@@ -53,6 +53,12 @@ open _root_.Complex (equivRealProdCLM volume_preserving_equiv_real_prod I)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- Mathlib's measurable equivalence `ℂ ≃ᵐ ℝ × ℝ`, along which `volume` is preserved, is the map
+`equivRealProdCLM`. -/
+private theorem measurableEquivRealProd_apply_eq (w : ℂ) :
+    Complex.measurableEquivRealProd w = equivRealProdCLM w := by
+  rw [Complex.measurableEquivRealProd_apply, Complex.equivRealProdCLM_apply]
+
 /-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
 `ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
 `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
@@ -73,8 +79,8 @@ private theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq {η : ℂ → 
       fun p ↦ ‖η (equivRealProdCLM.symm p)‖ ^ 2,
     ← volume_preserving_equiv_real_prod.integral_comp'
       fun p ↦ ‖fderiv ℝ η (equivRealProdCLM.symm p) I‖ ^ 2] at hpoinc
-  simpa only [Complex.measurableEquivRealProd, Homeomorph.toMeasurableEquiv_coe,
-    ContinuousLinearEquiv.coe_toHomeomorph, ContinuousLinearEquiv.symm_apply_apply] using hpoinc
+  simpa only [measurableEquivRealProd_apply_eq, ContinuousLinearEquiv.symm_apply_apply]
+    using hpoinc
 
 /-- **The Poincaré inequality at infinity on `ℂ`.** A compactly supported `C¹` map `f` of `ℂ`
 vanishing on the disc `‖w‖ < R` has `∫ ‖f z⁻¹‖² ≤ (4 / R)² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`. -/
@@ -121,8 +127,7 @@ theorem integral_inv_sq_mul_norm_sq_le {χ : ℝ × ℝ → V} {R : ℝ} (hR : 0
       fun p ↦ ((p.1 ^ 2 + p.2 ^ 2) ^ 2)⁻¹ * ‖χ p‖ ^ 2,
     ← volume_preserving_equiv_real_prod.integral_comp'
       fun p ↦ ‖fderiv ℝ χ p (1, 0)‖ ^ 2 + ‖fderiv ℝ χ p (0, 1)‖ ^ 2]
-  simp only [Complex.measurableEquivRealProd, Homeomorph.toMeasurableEquiv_coe,
-    ContinuousLinearEquiv.coe_toHomeomorph, hsq, hfw, ← stdComplexLineReal_eq,
+  simp only [measurableEquivRealProd_apply_eq, hsq, hfw, ← stdComplexLineReal_eq,
     ← stdComplexLineImag_eq, ← fderiv_comp_equivRealProdCLM_one, ← fderiv_comp_equivRealProdCLM_I]
   have hinv := integral_inv_sq_norm_sq_smul_eq fun w ↦ ‖f w‖ ^ 2
   simp only [smul_eq_mul] at hinv
