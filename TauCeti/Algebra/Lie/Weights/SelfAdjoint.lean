@@ -36,7 +36,8 @@ direct sum of its weight spaces.
 
 ## Main results
 
-* `TauCeti.apply_eq_zero_of_mem_weightSpace`: weight spaces for distinct weights are orthogonal.
+* `TauCeti.apply_eq_zero_of_mem_weightSpace_of_isSelfAdjoint`: weight spaces for distinct weights
+  are orthogonal.
 * `TauCeti.commute_toEnd_of_isSelfAdjoint`: the operators of the action commute.
 * `TauCeti.genWeightSpace_eq_weightSpace_of_isSelfAdjoint`: for an anisotropic form and nilpotent
   `L`, the generalized weight spaces are the honest weight spaces.
@@ -64,7 +65,7 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup
 
 /-- **Weight spaces are orthogonal.** If every operator of a Lie module is self-adjoint for a
 bilinear form `g`, then `g` vanishes between the weight spaces of distinct weights. -/
-theorem apply_eq_zero_of_mem_weightSpace [NoZeroDivisors R]
+theorem apply_eq_zero_of_mem_weightSpace_of_isSelfAdjoint [NoZeroDivisors R]
     (hT : ∀ x : L, g.IsSelfAdjoint (toEnd R L M x)) {χ ψ : L → R} (hχψ : χ ≠ ψ) {m n : M}
     (hm : m ∈ weightSpace M χ) (hn : n ∈ weightSpace M ψ) : g m n = 0 := by
   obtain ⟨x, hx⟩ := Function.ne_iff.mp hχψ
@@ -109,7 +110,8 @@ Lie module is self-adjoint for a positive definite bilinear form, then the modul
 its weight spaces. -/
 theorem iSup_weightSpace_eq_top_of_isSelfAdjoint (hpos : ∀ m, m ≠ 0 → 0 < g m m)
     (hT : ∀ x : L, g.IsSelfAdjoint (toEnd ℝ L M x)) : ⨆ χ : L → ℝ, weightSpace M χ = ⊤ := by
-  have hsep : g.SeparatingLeft := fun m hm ↦ by_contra fun h ↦ (hpos m h).ne' (hm m)
+  have hsep : g.SeparatingLeft :=
+    LinearMap.BilinForm.separatingLeft_of_anisotropic (QuadraticMap.PosDef.anisotropic hpos)
   have h := iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top (toEnd ℝ L M)
     (fun x y _ ↦ commute_toEnd_of_isSelfAdjoint hsep hT x y)
     fun x ↦ (hT x).iSup_eigenspace_eq_top hpos
@@ -123,7 +125,7 @@ definite bilinear form, then the module is triangularizable. -/
 theorem isTriangularizable_of_isSelfAdjoint (hpos : ∀ m, m ≠ 0 → 0 < g m m)
     (hT : ∀ x : L, g.IsSelfAdjoint (toEnd ℝ L M x)) : IsTriangularizable ℝ L M where
   maxGenEigenspace_eq_top x := by
-    have hg (m : M) (hm : g m m = 0) : m = 0 := by_contra fun h ↦ (hpos m h).ne' hm
+    have hg : g.toQuadraticMap.Anisotropic := QuadraticMap.PosDef.anisotropic hpos
     simpa only [(hT x).maxGenEigenspace_eq_eigenspace hg] using
       (hT x).iSup_eigenspace_eq_top hpos
 
@@ -135,7 +137,7 @@ theorem isInternal_weightSpace_of_isSelfAdjoint [LieRing.IsNilpotent L]
     (hpos : ∀ m, m ≠ 0 → 0 < g m m) (hT : ∀ x : L, g.IsSelfAdjoint (toEnd ℝ L M x)) :
     DirectSum.IsInternal fun χ : Weight ℝ L M ↦ (weightSpace M (χ : L → ℝ)).toSubmodule := by
   have := isTriangularizable_of_isSelfAdjoint hpos hT
-  have hg (m : M) (hm : g m m = 0) : m = 0 := by_contra fun h ↦ (hpos m h).ne' hm
+  have hg : g.toQuadraticMap.Anisotropic := QuadraticMap.PosDef.anisotropic hpos
   simpa only [genWeightSpace_eq_weightSpace_of_isSelfAdjoint hg hT] using
     isInternal_genWeightSpace ℝ L M
 

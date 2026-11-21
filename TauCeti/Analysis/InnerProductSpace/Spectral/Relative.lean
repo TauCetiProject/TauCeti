@@ -30,10 +30,11 @@ semidefinite, and by Sylvester's law of inertia the dimension of the negative sp
 the negative index of inertia of `q`, whatever positive definite `g` is used. When `q` is
 nondegenerate the negative and positive spectral subspaces are complementary.
 
-Applied to the form `(v, w) ↦ g (f v) w`, this is the spectral theorem for an endomorphism `f`
-self-adjoint for a positive definite form `g`: its eigenspaces span `V`. This is how operators
-such as `ad X`, for `X` in the `-1`-eigenspace of a Cartan involution, are diagonalized without
-choosing an inner product space structure.
+Applied to the symmetrization `s = g + g.flip` and the form `(v, w) ↦ s (f v) w`, this gives the
+spectral theorem for an endomorphism `f` self-adjoint for a positive definite, not necessarily
+symmetric, form `g`: its eigenspaces span `V`. This is how operators such as `ad X`, for `X` in
+the `-1`-eigenspace of a Cartan involution, are diagonalized without choosing an inner product
+space structure.
 
 ## Main declarations
 
@@ -304,7 +305,8 @@ theorem iSup_eigenspace_eq_top (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hf : g.IsS
     simpa [s] using add_pos (hpos v hv) (hpos v hv)
   have hfs (v w : V) : s (f v) w = s v (f w) := by
     simp [s, hf v w, hf w v]
-  have hsep : s.SeparatingLeft := fun v hv ↦ by_contra fun h ↦ (hspos v h).ne' (hv v)
+  have hsep : s.SeparatingLeft :=
+    separatingLeft_of_anisotropic (QuadraticMap.PosDef.anisotropic hspos)
   have hq : (s.compLeft f).IsSymm := ⟨fun v w ↦ by
     simp only [LinearMap.BilinForm.compLeft_apply, hfs, hs.eq v]⟩
   simpa [relativeSpectralSubspace_def, relativeEigenspace_compLeft hsep] using

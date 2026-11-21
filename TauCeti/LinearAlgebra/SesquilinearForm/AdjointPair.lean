@@ -363,13 +363,13 @@ namespace IsSelfAdjoint
 
 /-- **Generalized eigenvectors of a self-adjoint endomorphism are eigenvectors.** For an
 endomorphism `f` self-adjoint for an anisotropic bilinear map `B` (`B v v = 0` only for `v = 0`),
-the maximal generalized `μ`-eigenspace of `f` is its `μ`-eigenspace: if `(f - μ)² v = 0` then
-`B ((f - μ) v) ((f - μ) v) = B v ((f - μ)² v) = 0`, so `(f - μ) v = 0`. -/
+the maximal generalized `μ`-eigenspace of `f` is its `μ`-eigenspace. -/
 theorem maxGenEigenspace_eq_eigenspace (hB : ∀ v, B v v = 0 → v = 0) (hf : B.IsSelfAdjoint f)
     (μ : R) : f.maxGenEigenspace μ = f.eigenspace μ := by
   set A := f - μ • 1
   have hA : IsAdjointPair B B ⇑A ⇑A := IsAdjointPair.sub_smul_one hf μ
-  -- Every vector killed by a power of `A` is killed by `A`, by induction on the exponent.
+  -- Every vector killed by a power of `A` is killed by `A`, by induction on the exponent: if
+  -- `A² v = 0` then `B (A v) (A v) = B v (A² v) = 0`, so `A v = 0`.
   have key (k : ℕ) : ∀ v, (A ^ (k + 1)) v = 0 → A v = 0 := by
     induction k with
     | zero => simp
