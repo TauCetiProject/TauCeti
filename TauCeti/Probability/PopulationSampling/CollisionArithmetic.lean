@@ -12,13 +12,13 @@ import Mathlib.Tactic.NormNum
 /-!
 # Strict improvement of the finite sampling collision bound
 
-For a population of size `n` and a sample of size `m` with `m ≤ n` and `n > 0`, write
-`p = n.descFactorial m / n ^ m` for the probability of no collision and
-`t = m.descFactorial 2 / n.descFactorial 2` for the probability that a sample without
-replacement hits two specified distinct indices. Identifying those two population values
-improves the collision error `1 - p` by `t * min p (1 - p)`.
+For a population of size `n` and a sample of size `m ≤ n`, write
+`p = n.descFactorial m / n ^ m` for the probability of drawing distinct indices with replacement.
+If also `2 ≤ n`, then `t = m.descFactorial 2 / n.descFactorial 2` is the probability that a
+sample without replacement hits two specified distinct indices. Identifying the values at those
+indices gives the one-pair excess formula `1 - p - t * min p (1 - p)`.
 
-This file characterizes exactly when that improvement is positive: `2 ≤ m ≤ n`.
+This file characterizes exactly when the correction `t * min p (1 - p)` is positive: `2 ≤ m ≤ n`.
 This is the arithmetic input for excluding repeated-value populations from attaining the
 collision bound in the feasible, nontrivial sample regime. All arithmetic is in `ℝ`, with the usual
 zero-denominator convention, so the characterization includes empty populations and samples.
@@ -28,14 +28,15 @@ public section
 
 namespace TauCeti.Probability
 
-/-- The correction for a population with one repeated pair is positive exactly for feasible
-samples of at least two entries. Thus the one-pair error is strictly smaller than the collision
-error precisely in this regime. -/
+/-- With `p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2` in `ℝ`,
+the correction `t * min p (1 - p)` is positive exactly when `2 ≤ m` and `m ≤ n`. Equivalently,
+`1 - p - t * min p (1 - p)` is strictly less than `1 - p` exactly in that regime. -/
 theorem descFactorial_div_mul_min_pos_iff (m n : ℕ) :
-    let p : ℝ := n.descFactorial m / (n : ℝ) ^ m
-    let t : ℝ := m.descFactorial 2 / n.descFactorial 2
-    0 < t * min p (1 - p) ↔ 2 ≤ m ∧ m ≤ n := by
-  intro p t
+    0 < (m.descFactorial 2 : ℝ) / n.descFactorial 2 *
+      min ((n.descFactorial m : ℝ) / (n : ℝ) ^ m)
+        (1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m) ↔ 2 ≤ m ∧ m ≤ n := by
+  set p : ℝ := n.descFactorial m / (n : ℝ) ^ m
+  set t : ℝ := m.descFactorial 2 / n.descFactorial 2
   constructor
   · intro h
     have hm : 2 ≤ m := by
