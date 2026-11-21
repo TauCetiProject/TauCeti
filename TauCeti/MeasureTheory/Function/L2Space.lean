@@ -35,7 +35,9 @@ continuous linear maps out of L². On a compact space with a finite measure, the
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
+in the other order for an L² function given by an almost-everywhere representative
+(`MeasureTheory.L2.toLp_inner_of_ae_eq`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -248,6 +250,15 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
+
+/-- The L² inner product of the class of a square-integrable function `g` with an L² function `f`
+that is almost everywhere equal to `w` is the integral of `⟪g x, w x⟫`. -/
+theorem L2.toLp_inner_of_ae_eq {g : α → E} (hg : MemLp g 2 μ) {f : Lp E 2 μ} {w : α → E}
+    (hfw : f =ᵐ[μ] w) : ⟪hg.toLp g, f⟫_𝕜 = ∫ x, ⟪g x, w x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp, hfw] with x hx hx'
+  rw [hx, hx']
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
