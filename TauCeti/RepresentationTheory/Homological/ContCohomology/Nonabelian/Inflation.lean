@@ -30,7 +30,9 @@ For `G` compact and `A` discrete this gives the reduction of `H¹(G, A)` to fini
 every class is inflated from `G ⧸ U` for an open normal subgroup `U`, and `G ⧸ U` is finite.
 Together with the injectivity of inflation, `H¹(G, A)` is the union of the injective images of
 the sets `H¹(G ⧸ U, Aᵁ)`. For a profinite Galois group this is the reduction of continuous Galois
-cohomology to the cohomology of finite Galois extensions.
+cohomology to the cohomology of finite Galois extensions. The transition maps between the finite
+levels and the resulting colimit statement are in
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Nonabelian/FiniteQuotient.lean`.
 
 The key construction is `TauCeti.NonabelianH1.Cocycle.descend`: a cocycle trivial on `N` is
 constant on the cosets of `N`, takes values in `Aᴺ`, and so descends to a cocycle of `G ⧸ N`.
@@ -43,7 +45,8 @@ constant on the cosets of `N`, takes values in `Aᴺ`, and so descends to a cocy
 
 ## Main results
 
-* `TauCeti.NonabelianH1.infl_injective`: inflation is injective.
+* `TauCeti.NonabelianH1.infl_injective`: inflation is injective; in particular it reflects the
+  base point (`TauCeti.NonabelianH1.infl_eq_one_iff`).
 * `TauCeti.NonabelianH1.res_eq_one_iff`: a class restricts to the base point exactly when it is
   inflated.
 * `TauCeti.NonabelianH1.exists_mem_range_infl`: for `G` compact and `A` discrete, every class is
@@ -139,6 +142,14 @@ theorem map_descend (hf : ∀ n ∈ N, f n = 1) :
       (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul N) = f :=
   ext fun g ↦ by simp
 
+variable {N} in
+/-- Two cocycles of `G ⧸ N` with values in `Aᴺ` are equal when their values, as elements of `A`,
+agree at the class of every `g : G`. -/
+theorem ext_quotientMk {d d' : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)}
+    (h : ∀ g : G, (d g : A) = d' g) : d = d' :=
+  ext fun q ↦ by
+    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (h g)
+
 end Cocycle
 
 /-- The class of a cocycle trivial on `N` is the inflation of the class of its descent. -/
@@ -166,6 +177,12 @@ theorem infl_injective : Function.Injective (infl (A := A) N) := by
   refine mk_eq_mk_iff.mpr ⟨⟨a, haN⟩, fun q ↦ ?_⟩
   induction q using QuotientGroup.induction_on with | H g =>
   exact Subtype.ext (by simpa using ha g)
+
+/-- A class is inflated to the base point exactly when it is the base point. -/
+@[simp]
+theorem infl_eq_one_iff {c : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)} :
+    infl N c = 1 ↔ c = 1 :=
+  (infl_injective N).eq_iff' (infl_one N)
 
 /-- The restriction to `N` of an inflated class is the base point. -/
 @[simp]
