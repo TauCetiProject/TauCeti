@@ -41,8 +41,8 @@ symplectic toric manifold.
 * **The moment map.** Under this homeomorphism the reduced moment map of the residual torus is
   `[v] ↦ (a |v_(some k)|² / ∑ o, |v_o|²)_k`, the diagonal of `a` times the orthogonal projector
   onto the line `[v]`, with the entry of the homogeneous coordinate `none` dropped
-  (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_simplexHomeomorph_symm_mk`). Its image is the
-  simplex `Δ_a` (`TauCeti.Toric.DelzantQuotient.range_reducedMomentMap`).
+  (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_simplexHomeomorph_symm_mk_apply`). Its image
+  is the simplex `Δ_a` (`TauCeti.Toric.DelzantQuotient.range_reducedMomentMap`).
 
 The convention is the one of `TauCeti.Toric.DelzantQuotient`: the torus acts by
 `z_o ↦ e^(-iθ_o) z_o` and the moment map is `⟨μ(z), t⟩ = ∑ o, t_o (|z_o|² / 2 + c_o)`.
@@ -55,8 +55,8 @@ The convention is the one of `TauCeti.Toric.DelzantQuotient`: the torus acts by
   circle.
 * `TauCeti.Toric.DelzantQuotient.simplexHomeomorph`: the Delzant quotient of `Δ_a` is homeomorphic
   to `ℂPⁿ`, by `[z] ↦ [z]`.
-* `TauCeti.Toric.DelzantQuotient.reducedMomentMap_simplexHomeomorph_symm_mk`: the moment map of
-  `ℂPⁿ` is `[v] ↦ (a |v_(some k)|² / ∑ o, |v_o|²)_k`.
+* `TauCeti.Toric.DelzantQuotient.reducedMomentMap_simplexHomeomorph_symm_mk_apply`: the moment map
+  of `ℂPⁿ` is `[v] ↦ (a |v_(some k)|² / ∑ o, |v_o|²)_k`.
 
 ## References
 
@@ -292,8 +292,8 @@ theorem simplexHomeomorph_mk (ha : 0 < a)
 torus sends the line `[v]` of `ℂ^(Option κ)` to the covector with coordinates
 `a |v_(some k)|² / ∑ o, |v_o|²`, the diagonal entries of `a` times the orthogonal projector onto
 `[v]`, with the entry of the coordinate `none` dropped. -/
-theorem reducedMomentMap_simplexHomeomorph_symm_mk (ha : 0 < a) {v : Option κ → ℂ} (hv : v ≠ 0)
-    (k : κ) :
+theorem reducedMomentMap_simplexHomeomorph_symm_mk_apply (ha : 0 < a) {v : Option κ → ℂ}
+    (hv : v ≠ 0) (k : κ) :
     reducedMomentMap (i := (Int.castAddHom ℝ).compLeft κ) (u := simplexNormal κ)
         (c := simplexSupport a) surjective_linearCombination_simplexNormal
         ((simplexHomeomorph ha).symm (Projectivization.mk ℂ v hv)) (Pi.single k 1 : κ → ℝ) =
