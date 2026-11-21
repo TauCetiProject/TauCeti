@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Basic
 
 /-!
@@ -17,8 +18,8 @@ preserves total monomial degree. Consequently the specified north-east chain map
 `(0, 0)`, with each coefficient variable in bidegree `(-2, -1)`.
 
 Chain-level bigrading preservation holds over any commutative ring. In characteristic two,
-the Alexander comparison descends to the specified bijective semilinear map on unblocked
-homology. An odd component count is required only to use integer Alexander degrees.
+the bigrading and the Alexander grading descend to the specified bijective semilinear map on
+unblocked homology. An odd component count is required only to use integer Alexander degrees.
 
 ## References
 
@@ -98,5 +99,16 @@ theorem stabilizeXSuccHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a
     G.val.stabilizeXSuccChainMap_mem_ker s R w.property⟩,
     G.stabilizeXSuccChainMap_mem_alexanderChainMinusPiece s R hw, ?_⟩
   exact (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass _ _ _).symm
+
+/-- The specified north-east stabilization comparison preserves the `O`-Maslov--Alexander
+bigrading on `GH⁻`. -/
+theorem stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
+    {y : (G.stabilizeXSucc s).val.unblockedHomology R}
+    (hy : y ∈ (G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g) :
+    G.val.stabilizeXSuccHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g := by
+  obtain ⟨z, hz, rfl⟩ := ((G.stabilizeXSucc s).mem_bigradedUnblockedHomologyPiece_iff R).mp hy
+  rw [GridDiagram.stabilizeXSuccHomologyMap_unblockedHomologyClass]
+  exact G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
+    (G.stabilizeXSuccChainMap_mem_bigradedChainMinusPiece s R hz)
 
 end TauCeti.OddComponentGridDiagram
