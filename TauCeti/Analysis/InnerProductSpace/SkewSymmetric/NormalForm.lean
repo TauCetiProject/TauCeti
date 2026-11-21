@@ -267,19 +267,19 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {r : ℕ} 
 the `q k` and `p k`; at `some k`, the plane `span(q k, p k)`. For an orthonormal family
 `Sum.elim q p` they form an orthogonal internal direct sum (`TauCeti.isInternal_planeDecomposition`,
 `TauCeti.pairwise_isOrtho_planeDecomposition`). -/
-@[expose] noncomputable def planeDecomposition (q p : Fin r → E) (o : Option (Fin r)) :
+noncomputable def planeDecomposition (q p : Fin r → E) (o : Option (Fin r)) :
     Submodule ℝ E :=
   o.elim (Submodule.span ℝ (Set.range (Sum.elim q p)))ᗮ fun k ↦ Submodule.span ℝ {q k, p k}
 
 @[simp]
 theorem planeDecomposition_none (q p : Fin r → E) :
     planeDecomposition q p none = (Submodule.span ℝ (Set.range (Sum.elim q p)))ᗮ :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem planeDecomposition_some (q p : Fin r → E) (k : Fin r) :
     planeDecomposition q p (some k) = Submodule.span ℝ {q k, p k} :=
-  rfl
+  (rfl)
 
 private theorem span_pair_le_span_range (k : Fin r) :
     Submodule.span ℝ {q k, p k} ≤ Submodule.span ℝ (Set.range (Sum.elim q p)) :=
