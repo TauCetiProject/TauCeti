@@ -106,9 +106,9 @@ private lemma lintegral_exp_mul_integral_chiMeasure_le {g : sphere (0 : E) 1 →
   have hΦ : Measurable fun x : E ↦ (sphereDirection e x, ‖x‖) :=
     (measurable_sphereDirection e).prodMk measurable_norm
   -- Polar coordinates turn the Gaussian integral into an iterated sphere-radius integral.
-  rw [show (fun x : E ↦ ENNReal.ofReal (exp (t * (‖x‖ * g (sphereDirection e x))))) =
-      fun x ↦ H (sphereDirection e x, ‖x‖) from rfl, ← lintegral_map hH hΦ,
-    stdGaussian_map_sphereDirection_prod_norm e, lintegral_prod _ hH.aemeasurable]
+  -- The Gaussian integrand is `H` composed with `x ↦ (sphereDirection e x, ‖x‖)`.
+  refine le_of_le_of_eq ?_ (lintegral_map (f := H) hH hΦ)
+  rw [stdGaussian_map_sphereDirection_prod_norm e, lintegral_prod _ hH.aemeasurable]
   refine lintegral_mono fun u ↦ ?_
   have hint : Integrable (fun r ↦ exp (t * (r * g u))) (chiMeasure d 1) := by
     refine (integrable_exp_mul_id_chiMeasure d 1 (t * g u)).congr (.of_forall fun r ↦ ?_)

@@ -116,6 +116,14 @@ private lemma exp_mul_sub_le_integral (hf : ContDiff ℝ 1 f) (t : ℝ) (p : E �
 
 end Jensen
 
+/-- The tail exponent `-ε² / (2σ)` for the variance proxy `σ = π² v / 4` is
+`-2 ε² / (π² v)`. -/
+private lemma exponent_pi_sq_div_four_proxy (ε : ℝ) (v : ℝ≥0) :
+    -ε ^ 2 / (2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ)) = -2 * ε ^ 2 / (π ^ 2 * v) := by
+  rw [show 2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ) = π ^ 2 * v / 2 by
+    push_cast [NNReal.coe_real_pi]; ring, div_div_eq_mul_div]
+  ring
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.IsGaussian
@@ -254,11 +262,7 @@ a centred Gaussian measure `μ` at almost every point, then for `ε ≥ 0`,
 theorem measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le (hμ : μ[id] = 0)
     (hf : ContDiff ℝ 1 f) (hv : ∀ᵐ x ∂μ, Var[fderiv ℝ f x; μ] ≤ v) {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {x | ε ≤ |f x - ∫ y, f y ∂μ|} ≤ 2 * exp (-2 * ε ^ 2 / (π ^ 2 * v)) := by
-  have hc : -ε ^ 2 / (2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ)) = -2 * ε ^ 2 / (π ^ 2 * v) := by
-    rw [show 2 * ((NNReal.pi ^ 2 / 4 * v : ℝ≥0) : ℝ) = π ^ 2 * v / 2 by
-      push_cast [NNReal.coe_real_pi]; ring, div_div_eq_mul_div]
-    ring
-  simpa only [hc] using
+  simpa only [TauCeti.Probability.exponent_pi_sq_div_four_proxy] using
     (hasSubgaussianMGF_sub_integral_of_variance_fderiv_le hμ hf hv).measureReal_le_abs_le hε
 
 end Gaussian
@@ -324,11 +328,7 @@ theorem measureReal_stdGaussian_setOf_le_abs_sub_integral_le (hf : LipschitzWith
     (hε : 0 ≤ ε) :
     (stdGaussian E).real {x | ε ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
       2 * exp (-2 * ε ^ 2 / (π ^ 2 * K ^ 2)) := by
-  have hc : -ε ^ 2 / (2 * ((NNReal.pi ^ 2 / 4 * K ^ 2 : ℝ≥0) : ℝ)) =
-      -2 * ε ^ 2 / (π ^ 2 * K ^ 2) := by
-    rw [show 2 * ((NNReal.pi ^ 2 / 4 * K ^ 2 : ℝ≥0) : ℝ) = π ^ 2 * K ^ 2 / 2 by
-      push_cast [NNReal.coe_real_pi]; ring, div_div_eq_mul_div]
-    ring
-  simpa only [hc] using hf.hasSubgaussianMGF_stdGaussian_sub_integral.measureReal_le_abs_le hε
+  simpa only [TauCeti.Probability.exponent_pi_sq_div_four_proxy, NNReal.coe_pow] using
+    hf.hasSubgaussianMGF_stdGaussian_sub_integral.measureReal_le_abs_le hε
 
 end LipschitzWith
