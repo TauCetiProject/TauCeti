@@ -55,34 +55,6 @@ namespace TauCeti.Probability
 variable {ι κ α : Type*} [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
   [MeasurableSpace α]
 
-/-- The collision error `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is the `ENNReal.ofReal` of its
-real counterpart. -/
-private theorem one_sub_descFactorial_div_pow_eq_ofReal (m n : ℕ) :
-    1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m =
-      ENNReal.ofReal (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  have hle : (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m ≤ 1 :=
-    ENNReal.div_le_of_le_mul (by rw [one_mul]; exact_mod_cast Nat.descFactorial_le_pow n m)
-  rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one]
-  congr 1
-  rw [← ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.one_ne_top hle)]
-  simp
-
-/-- The one-pair error `1 - p - t * min p (1 - p)` is nonnegative when the sample is no larger
-than the population. -/
-private theorem onePairError_nonneg {m n : ℕ} (hmn : m ≤ n) :
-    0 ≤ 1 - n.descFactorial m / (n : ℝ) ^ m -
-      m.descFactorial 2 / n.descFactorial 2 *
-        min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  set p : ℝ := n.descFactorial m / (n : ℝ) ^ m
-  set t : ℝ := m.descFactorial 2 / n.descFactorial 2
-  have hp0 : 0 ≤ p := by positivity
-  have hp1 : p ≤ 1 :=
-    div_le_one_of_le₀ (mod_cast Nat.descFactorial_le_pow n m) (by positivity)
-  have ht1 : t ≤ 1 :=
-    div_le_one_of_le₀ (mod_cast Nat.descFactorial_le 2 hmn) (by positivity)
-  have hmin : 0 ≤ min p (1 - p) := le_min hp0 (sub_nonneg.2 hp1)
-  nlinarith [min_le_right p (1 - p)]
-
 /-- **Pointwise errors.** For a sample no larger than the population, sampling a deterministic
 population `x` without and with replacement differ on each event, in either direction, by at most
 `1 - p - t * min p (1 - p)` if `x` lies in a set `S` of non-injective populations, and by at most
@@ -121,11 +93,10 @@ private theorem dirac_le_add_tieError (e : ι ↪ κ) {S : Set (κ → α)}
       sampleWithReplacement_le_sampleWithoutReplacement_add_exact_collision A⟩
 
 omit [MeasurableSpace κ] [MeasurableSingletonClass κ] in
-/-- **Averaging the pointwise errors.** For a sample no larger than the population, the
-`ρ`-average of the pointwise errors of `dirac_le_add_tieError` is
-`1 - p - t * min p (1 - p) * ρ(S)`. -/
-private theorem lintegral_tieError (hmn : Fintype.card ι ≤ Fintype.card κ)
-    (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] {S : Set (κ → α)} (hS : MeasurableSet S) :
+/-- **Averaging the pointwise errors.** The `ρ`-average of the pointwise errors of
+`dirac_le_add_tieError` is `1 - p - t * min p (1 - p) * ρ(S)`. -/
+private theorem lintegral_tieError (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ]
+    {S : Set (κ → α)} (hS : MeasurableSet S) :
     let p : ℝ := (Fintype.card κ).descFactorial (Fintype.card ι) /
       (Fintype.card κ : ℝ) ^ Fintype.card ι
     let t : ℝ := (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2
@@ -133,9 +104,9 @@ private theorem lintegral_tieError (hmn : Fintype.card ι ≤ Fintype.card κ)
         Sᶜ.indicator (fun _ => ENNReal.ofReal (1 - p))) x ∂ρ =
       ENNReal.ofReal (1 - p - t * min p (1 - p) * (ρ S).toReal) := by
   intro p t
-  have hp1 : p ≤ 1 :=
-    div_le_one_of_le₀ (mod_cast Nat.descFactorial_le_pow _ _) (by positivity)
-  have he : 0 ≤ 1 - p - t * min p (1 - p) := onePairError_nonneg hmn
+  have hp1 : p ≤ 1 := descFactorial_div_pow_le_one _ _
+  have he : 0 ≤ 1 - p - t * min p (1 - p) :=
+    one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _
   set s := (ρ S).toReal
   have hs0 : 0 ≤ s := ENNReal.toReal_nonneg
   have hs1 : s ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using prob_le_one)
@@ -165,7 +136,7 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add_ties
          1 - p - t * min p (1 - p) * (ρ S).toReal) := by
   rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
   · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-    rw [← lintegral_tieError hmn ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
+    rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
     refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
     simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
       (dirac_le_add_tieError e hSx x B).1
@@ -187,7 +158,7 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add_ties
          1 - p - t * min p (1 - p) * (ρ S).toReal) := by
   rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
   · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-    rw [← lintegral_tieError hmn ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
+    rw [← lintegral_tieError (ι := ι) ρ hS, sampleWithoutReplacement_def, sampleWithReplacement_def]
     refine samplePopulation_le_add_lintegral (fun B _ => ae_of_all _ fun x => ?_) A
     simpa only [sampleWithoutReplacement_def, sampleWithReplacement_def] using
       (dirac_le_add_tieError e hSx x B).2
