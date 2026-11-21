@@ -11,8 +11,8 @@ import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.Tactic.FinCases
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.Algebra.Module.GradedModule.Idempotent
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # The equivariant coefficient ring of `gl(N)` foams and integral graded freeness
@@ -197,15 +197,7 @@ theorem esymmAlgEquiv_symm_mem_grading_iff {σ : Type*} [Fintype σ] {N : ℕ}
     (hn : Fintype.card σ = N) (p : MvPolynomial.symmetricSubalgebra σ ℤ) (m : ℕ) :
     (MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p ∈ grading N (2 * (m : ℤ)) ↔
       (p : MvPolynomial σ ℤ).IsHomogeneous m := by
-  rw [mem_grading_two_mul_iff]
-  refine ⟨fun hq ↦ ?_, MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm hn⟩
-  have hp_eq : MvPolynomial.aeval
-      (fun i : Fin N ↦ MvPolynomial.esymm σ ℤ ((i : ℕ) + 1))
-      ((MvPolynomial.esymmAlgEquiv σ ℤ hn).symm p) = (p : MvPolynomial σ ℤ) := by
-    rw [← MvPolynomial.esymmAlgHom_apply, ← MvPolynomial.esymmAlgEquiv_apply σ ℤ hn,
-      AlgEquiv.apply_symm_apply]
-  rw [← hp_eq]
-  exact hq.aeval fun i ↦ MvPolynomial.isHomogeneous_esymm ((i : ℕ) + 1)
+  rw [mem_grading_two_mul_iff, MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm_iff]
 
 /-- Any degree-zero idempotent on a finite shifted free module `I → EquivariantRing N` splits
 homogeneously through some `Fin n → EquivariantRing N` via maps `ι` and `π` satisfying
@@ -223,10 +215,10 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
       (∀ (q : ℤ) (u : Fin n → EquivariantRing N),
         (∀ i, u i ∈ grading N (q - d i)) → ∀ j, ι u j ∈ grading N (q - s j)) ∧
       (∀ (q : ℤ) (v : I → EquivariantRing N),
-        (∀ j, v j ∈ grading N (q - s j)) → ∀ i, π v i ∈ grading N (q - d i)) := by
-  simp only [grading_def] at hhom ⊢
-  exact exists_weightedHomogeneous_splitting_of_idempotent
-    (weight_pos N) s p hp hhom
+        (∀ j, v j ∈ grading N (q - s j)) → ∀ i, π v i ∈ grading N (q - d i)) :=
+  exists_homogeneous_splitting_of_idempotent_of_connected
+    (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
+    (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hp hhom
 
 /-- Any two finite homogeneous bases of the range of a degree-zero endomorphism on
 `I → EquivariantRing N` (`[Finite I]`) have the same multiset of basis shifts. -/
@@ -240,25 +232,10 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent (N : ℕ) {I : Typ
     (hb₁ : ∀ i j, (b₁ i).val j ∈ grading N (d₁ i - s j))
     (b₂ : Module.Basis (Fin n₂) (EquivariantRing N) (LinearMap.range p)) (d₂ : Fin n₂ → ℤ)
     (hb₂ : ∀ i j, (b₂ i).val j ∈ grading N (d₂ i - s j)) :
-    Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val := by
-  simp only [grading_def] at hhom hb₁ hb₂
-  exact multiset_map_eq_of_weightedHomogeneous_basis_range_idempotent
-    (weight_pos N) s p hhom b₁ d₁ hb₁ b₂ d₂ hb₂
-
-/-- Any finite homogeneous basis of the range of a rank-one homogeneous projection
-`p v = v i₀ • w` (`w i₀ = 1`, `∀ j, w j ∈ grading N (s i₀ - s j)`) on `I → EquivariantRing N` has
-degree multiset `{s i₀}`. -/
-theorem multiset_map_eq_singleton_of_homogeneous_basis_range
-    (N : ℕ) {I : Type*} [Finite I] (s : I → ℤ)
-    {p : (I → EquivariantRing N) →ₗ[EquivariantRing N] (I → EquivariantRing N)}
-    (i₀ : I) {w : I → EquivariantRing N}
-    (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) (hw : ∀ j, w j ∈ grading N (s i₀ - s j))
-    {n : ℕ} (b : Module.Basis (Fin n) (EquivariantRing N) (LinearMap.range p))
-    (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ grading N (d i - s j)) :
-    Multiset.map d Finset.univ.val = {s i₀} :=
-  TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
-    (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
-    (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s i₀ hp hw₀ hw b d hb
+    Multiset.map d₁ Finset.univ.val = Multiset.map d₂ Finset.univ.val :=
+  TauCeti.multiset_map_eq_of_homogeneous_basis_range_idempotent
+    (𝒜 := grading N) (fun _ hm ↦ grading_eq_bot_of_lt_zero N hm)
+    (fun _ ha ↦ grading_zero_eq_range N ▸ ha) s p hhom b₁ d₁ hb₁ b₂ d₂ hb₂
 
 end EquivariantRing
 
@@ -277,10 +254,11 @@ theorem exists_homogeneous_basis_range_idempotent (N m : ℕ) (s : Fin m → ℤ
     ∃ (n : ℕ)
       (b : Module.Basis (Fin n) (EquivariantRing N) (LinearMap.range p))
       (d : Fin n → ℤ),
-      ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) := by
-  simp only [EquivariantRing.grading_def] at hhom ⊢
-  exact exists_weightedHomogeneous_basis_range_idempotent
-    (EquivariantRing.weight_pos N) s p hp hhom
+      ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) :=
+  exists_homogeneous_basis_range_idempotent_of_connected
+    (𝒜 := EquivariantRing.grading N)
+    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
+    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha) s p hp hhom
 
 section ConcreteVerifications
 
@@ -293,7 +271,12 @@ private theorem exists_homogeneous_basis_zero_rank (N m : ℕ) (s : Fin m → �
       ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) := by
   obtain ⟨n, b, d, hb⟩ := exists_homogeneous_basis_range_idempotent N m s 0 (by ext; simp)
     (fun _ _ _ _ ↦ Submodule.zero_mem _)
-  obtain rfl : n = 0 := b.eq_zero_of_range_zero
+  have : Subsingleton (LinearMap.range
+      (0 : (Fin m → EquivariantRing N) →ₗ[EquivariantRing N] (Fin m → EquivariantRing N))) := by
+    rw [LinearMap.range_zero]
+    infer_instance
+  have : IsEmpty (Fin n) := (linearIndependent_subsingleton_iff _).mp b.linearIndependent
+  obtain rfl : n = 0 := by simpa only [Fintype.card_fin] using Fintype.card_eq_zero (α := Fin n)
   exact ⟨b, d, hb⟩
 
 -- Identity on a single summand of shift 3: every homogeneous basis has degree multiset {3}.
@@ -310,8 +293,10 @@ private theorem id_shift_three_degree (N : ℕ) :
     simpa using EquivariantRing.C_mem_grading_zero N 1
   obtain ⟨n, b, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 1 (fun _ ↦ 3) LinearMap.id
     (LinearMap.comp_id _) (fun _ _ hv j ↦ hv j)
-  refine ⟨n, b, d, hb, EquivariantRing.multiset_map_eq_singleton_of_homogeneous_basis_range
-    N (fun _ ↦ 3) 0 (w := fun _ ↦ 1) (fun v ↦ funext fun j ↦ ?_) rfl hw b d hb⟩
+  refine ⟨n, b, d, hb, TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
+    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
+    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
+    (fun _ ↦ 3) 0 (w := fun _ ↦ 1) (fun v ↦ funext fun j ↦ ?_) rfl hw b d hb⟩
   rw [Fin.eq_zero j]
   simp
 
@@ -338,8 +323,10 @@ private theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent N 2 ![a, b] p
     (idempotent_of_apply_eq_smul 0 (fun _ ↦ rfl) rfl)
     (homogeneous_of_apply_eq_smul ![a, b] 0 (fun _ ↦ rfl) hw)
-  exact ⟨n, basis, d, hb, EquivariantRing.multiset_map_eq_singleton_of_homogeneous_basis_range
-    N ![a, b] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
+  exact ⟨n, basis, d, hb, TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
+    (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero N hm)
+    (fun _ ha ↦ EquivariantRing.grading_zero_eq_range N ▸ ha)
+    ![a, b] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 -- Off-diagonal projection p(x, y) = (x, e₁ x) on shifts ![2, 0] for N + 1 ≥ 1: idempotent of
 -- degree 0 whose image has degree multiset {2}, exercising the shift sign 2 - 0 = 2.
@@ -368,8 +355,10 @@ private theorem e1_offDiag_degree (N : ℕ) :
   obtain ⟨n, basis, d, hb⟩ := exists_homogeneous_basis_range_idempotent (N + 1) 2 ![2, 0] p hp
     (homogeneous_of_apply_eq_smul ![2, 0] 0 (fun _ ↦ rfl) hw)
   exact ⟨hp, n, basis, d, hb,
-    EquivariantRing.multiset_map_eq_singleton_of_homogeneous_basis_range
-      (N + 1) ![2, 0] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
+    TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range
+      (fun _ hm ↦ EquivariantRing.grading_eq_bot_of_lt_zero (N + 1) hm)
+      (fun _ ha ↦ EquivariantRing.grading_zero_eq_range (N + 1) ▸ ha)
+      ![2, 0] 0 (fun _ ↦ rfl) rfl hw basis d hb⟩
 
 end ConcreteVerifications
 

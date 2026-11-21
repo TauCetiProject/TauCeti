@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import Mathlib.LinearAlgebra.Projection
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Head
 import TauCeti.Algebra.Category.GradedModuleCat.Retract
 
 /-!
@@ -30,9 +32,8 @@ concrete module-level consequences from `TauCeti.Algebra.Category.GradedModuleCa
 2. Over any nontrivial commutative base ring `k`, the multiset of degrees `d` of a finite
    homogeneous `A`-basis of `LinearMap.range p` is uniquely determined
    (`TauCeti.multiset_map_eq_of_homogeneous_basis_range_idempotent`).
-3. In particular, the zero idempotent has only the empty basis, and any rank-one homogeneous
-   projection `p v = v i₀ • w` (`w i₀ = 1`, `∀ j, w j ∈ 𝒜 (s i₀ - s j)`) has unique basis degree
-   multiset `{s i₀}`.
+3. In particular, any rank-one homogeneous projection `p v = v i₀ • w` (`w i₀ = 1`,
+   `∀ j, w j ∈ 𝒜 (s i₀ - s j)`) has unique basis degree multiset `{s i₀}`.
 
 ## Main results
 
@@ -42,9 +43,8 @@ concrete module-level consequences from `TauCeti.Algebra.Category.GradedModuleCa
   `LinearMap.range p` over a PID.
 * `TauCeti.multiset_map_eq_of_homogeneous_basis_range_idempotent`: uniqueness of the multiset of
   basis shifts of `LinearMap.range p`.
-* `Module.Basis.eq_zero_of_range_zero`,
-  `TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range`:
-  rank and degree-multiset formulas for the zero idempotent and rank-one homogeneous projections.
+* `TauCeti.multiset_map_eq_singleton_of_homogeneous_basis_range`:
+  degree-multiset formula for rank-one homogeneous projections.
 
 ## References
 
@@ -114,39 +114,21 @@ private noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (
     Retract (rangeObjOfPiEnd s p hhom) (GradedModuleCat.free 𝒜 s) :=
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
   let p' := freeEndOfPiEnd s p hhom
-  have hp' : ∀ x, p'.hom (p'.hom x) = p'.hom x := fun x ↦ by
+  have hp' : IsIdempotentElem p'.hom := LinearMap.ext fun x ↦ by
     dsimp [p', freeEndOfPiEnd, GradedModuleCat.ofHom]
-    rw [LinearEquiv.apply_symm_apply]
+    rw [mul_apply_eq_comp]
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
     exact congrArg eF.symm (LinearMap.congr_fun hp (eF x))
   { i := GradedModuleCat.ofHom (LinearMap.range p'.hom).subtype
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         rw [add_zero]
         exact (InternalGrading.mem_submodule_piece _ _ _).mp hx)
-    r := GradedModuleCat.ofHom (LinearMap.codRestrict (LinearMap.range p'.hom) p'.hom
-        (LinearMap.mem_range_self p'.hom))
+    r := GradedModuleCat.ofHom p'.hom.rangeRestrict
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         rw [add_zero]
         exact (InternalGrading.mem_submodule_piece _ _ _).mpr (GradedModuleCat.map_mem p' hx))
-    retract := GradedModuleCat.hom_ext <| LinearMap.ext fun z ↦ Subtype.ext <| by
-      obtain ⟨x, hx⟩ := z.2
-      exact (congrArg p'.hom hx.symm).trans ((hp' x).trans hx) }
-
-private theorem apply_retractRangeOfPiIdempotent_i_r_symm {I : Type uI} [Fintype I] (s : I → ℤ)
-    (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
-    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
-    (v : I → A) :
-    DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
-      ((retractRangeOfPiIdempotent s p hp hhom).i.hom
-        ((retractRangeOfPiIdempotent s p hp hhom).r.hom
-          ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v))) = p v := by
-  have h : (retractRangeOfPiIdempotent s p hp hhom).i.hom
-      ((retractRangeOfPiIdempotent s p hp hhom).r.hom
-        ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v)) =
-      (freeEndOfPiEnd s p hhom).hom
-        ((DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)).symm v) := rfl
-  rw [h]
-  dsimp [freeEndOfPiEnd, GradedModuleCat.ofHom]
-  rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+    retract := GradedModuleCat.hom_ext <| LinearMap.ext fun z ↦
+      Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.2) }
 
 /-- **Homogeneous splitting of a degree-zero idempotent on a finite shifted free module `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, any degree-zero idempotent
@@ -197,8 +179,11 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
   · refine LinearMap.ext fun v ↦ ?_
     have h1 : Φ.hom.hom (Φ.inv.hom (rR.r.hom (eF.symm v))) = rR.r.hom (eF.symm v) :=
       LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom Φ.inv_hom_id) _
-    simp only [ι, π, LinearMap.comp_apply, LinearEquiv.coe_coe, eD.symm_apply_apply, h1]
-    exact apply_retractRangeOfPiIdempotent_i_r_symm s p hp hhom v
+    have h2 : rR.i.hom (rR.r.hom (eF.symm v)) = (freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
+      LinearMap.congr_fun (LinearMap.subtype_comp_rangeRestrict _) _
+    simp only [ι, π, LinearMap.comp_apply, LinearEquiv.coe_coe, eD.symm_apply_apply, h1, h2]
+    dsimp [freeEndOfPiEnd, GradedModuleCat.ofHom]
+    rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
   · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp
       (GradedModuleCat.map_mem rR.i (GradedModuleCat.map_mem Φ.hom ((heD_symm q u).mpr hu)))
   · exact fun q v hv ↦ (heD_symm q (π v)).mp <| by
@@ -284,14 +269,6 @@ theorem multiset_map_eq_of_homogeneous_basis_range_idempotent
       (congrArg Finset.val (Finset.map_univ_equiv (Equiv.ulift (α := Fin _))))
   rwa [huniv d₁, huniv d₂] at hU
 
-omit [CommRing k] [Algebra k A] [GradedAlgebra 𝒜] in
-/-- Any `A`-linear endomorphism `p : (I → A) →ₗ[A] (I → A)` of the form `p v = v i₀ • w` with
-`w i₀ = 1` is idempotent. -/
-theorem idempotent_of_apply_eq_smul {I : Type uI} {p : (I → A) →ₗ[A] (I → A)} (i₀ : I)
-    {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) : p.comp p = p := by
-  ext v j
-  simp [hp, hw₀]
-
 /-- If `p v = v i₀ • w` and `∀ j, w j ∈ 𝒜 (s i₀ - s j)`, then `p` is homogeneous of degree zero on
 the shifted module `I → A` with shifts `s`. -/
 theorem homogeneous_of_apply_eq_smul {I : Type uI} (s : I → ℤ) {p : (I → A) →ₗ[A] (I → A)}
@@ -343,18 +320,3 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
 end ConnectedRing
 
 end TauCeti
-
-namespace Module.Basis
-
-/-- Over a nontrivial semiring `A`, every `Fin n`-indexed basis of the range of the zero
-endomorphism on `I → A` has `n = 0`. -/
-theorem eq_zero_of_range_zero {A : Type*} [Semiring A] [Nontrivial A] {I : Type*} {n : ℕ}
-    (b : Module.Basis (Fin n) A (LinearMap.range (0 : (I → A) →ₗ[A] (I → A)))) :
-    n = 0 := by
-  by_contra hn
-  have hsub : Subsingleton (LinearMap.range (0 : (I → A) →ₗ[A] (I → A))) := by
-    rw [LinearMap.range_zero]
-    infer_instance
-  exact b.ne_zero ⟨0, Nat.pos_of_ne_zero hn⟩ (Subsingleton.elim _ _)
-
-end Module.Basis

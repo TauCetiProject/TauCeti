@@ -220,23 +220,29 @@ theorem hom_regularShiftHomEquiv_symm_apply (M : GradedModuleCat.{uA} 𝒜) (n :
 
 /-! ### Presentations -/
 
+/-- Under `finsuppLequivDFinsupp`, `freeLift x` is
+`Finsupp.linearCombination A (fun i => (x i : M))`. -/
+private theorem hom_freeLift_comp_finsuppLequivDFinsupp [DecidableEq I]
+    [∀ m : A, Decidable (m ≠ 0)] {M : GradedModuleCat.{max uA uI} 𝒜}
+    (x : ∀ i, M.grading.piece (d i)) :
+    (freeLift x).hom.comp (finsuppLequivDFinsupp A).toLinearMap =
+      Finsupp.linearCombination A (fun i => (x i : M)) := by
+  apply Finsupp.lhom_ext
+  intro i a
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe,
+    finsuppLequivDFinsupp_apply_apply, Function.comp_apply,
+    Finsupp.toDFinsupp_single, Finsupp.linearCombination_single,
+    DirectSum.single_eq_lof A]
+  exact freeLift_lof x i a
+
 /-- A graded free map is surjective exactly when its homogeneous basis images generate. -/
 theorem freeLift_surjective_iff {M : GradedModuleCat.{max uA uI} 𝒜}
     (x : ∀ i, M.grading.piece (d i)) :
     Function.Surjective (freeLift x).hom ↔
       Submodule.span A (Set.range fun i => (x i : M)) = ⊤ := by
   classical
-  have hcomp : (freeLift x).hom.comp (finsuppLequivDFinsupp A).toLinearMap =
-      Finsupp.linearCombination A (fun i => (x i : M)) := by
-    apply Finsupp.lhom_ext
-    intro i a
-    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe,
-      finsuppLequivDFinsupp_apply_apply, Function.comp_apply,
-      Finsupp.toDFinsupp_single, Finsupp.linearCombination_single,
-      DirectSum.single_eq_lof A]
-    exact freeLift_lof x i a
-  rw [← LinearMap.range_eq_top, ← (finsuppLequivDFinsupp A).range_comp, hcomp,
-    Finsupp.range_linearCombination]
+  rw [← LinearMap.range_eq_top, ← (finsuppLequivDFinsupp A).range_comp,
+    hom_freeLift_comp_finsuppLequivDFinsupp x, Finsupp.range_linearCombination]
 
 /-- Every graded module admits a projective presentation by a graded free module. -/
 instance enoughProjectives : EnoughProjectives (GradedModuleCat.{max uA v} 𝒜) where
@@ -321,20 +327,11 @@ def isoGradedFree {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI}
     (b : Module.Basis I A M) (hb : ∀ i, b i ∈ M.grading.piece (d i)) : free 𝒜 d ≅ M := by
   classical
   let x : ∀ i, M.grading.piece (d i) := fun i ↦ ⟨b i, hb i⟩
-  have hcomp : ∀ v : I →₀ A,
-      (freeLift x).hom (finsuppLequivDFinsupp A v) = b.repr.symm v := by
-    intro v
-    induction v using Finsupp.induction_linear with
-    | zero => rw [map_zero, map_zero, map_zero]
-    | add u w hu hw => rw [map_add, map_add, map_add, hu, hw]
-    | single i a =>
-      simp only [finsuppLequivDFinsupp_apply_apply, Finsupp.toDFinsupp_single,
-        DirectSum.single_eq_lof A, Module.Basis.repr_symm_apply, Finsupp.linearCombination_single]
-      exact freeLift_lof x i a
+  have hfun : ((freeLift x).hom ∘ ⇑(finsuppLequivDFinsupp A)) = ⇑b.repr.symm := funext fun v ↦
+    (LinearMap.congr_fun (hom_freeLift_comp_finsuppLequivDFinsupp x) v).trans
+      (b.repr_symm_apply v).symm
   have hbij : Function.Bijective (freeLift x).hom := by
-    rw [← (finsuppLequivDFinsupp A).bijective.of_comp_iff]
-    have hfun : ((freeLift x).hom ∘ ⇑(finsuppLequivDFinsupp A)) = ⇑b.repr.symm := funext hcomp
-    rw [hfun]
+    rw [← (finsuppLequivDFinsupp A).bijective.of_comp_iff, hfun]
     exact b.repr.symm.bijective
   have : IsIso (freeLift x) := (isIso_iff_bijective (freeLift x)).mpr hbij
   exact asIso (freeLift x)

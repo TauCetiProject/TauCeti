@@ -68,6 +68,8 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.idempotent_of_apply_eq_smul`: a rank-one coordinate-evaluation map `v ↦ v i₀ • w`
+  with `w i₀ = 1` is idempotent.
 -/
 
 /-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
@@ -431,5 +433,12 @@ public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by simpa [hai, hbi, hij] using h1⟩
+
+/-- Any `A`-linear endomorphism `p : (I → A) →ₗ[A] (I → A)` of the form `p v = v i₀ • w` with
+`w i₀ = 1` is idempotent. -/
+public theorem idempotent_of_apply_eq_smul {A I : Type*} [Semiring A] {p : (I → A) →ₗ[A] (I → A)}
+    (i₀ : I) {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) : p.comp p = p := by
+  ext v j
+  simp [hp, hw₀]
 
 end TauCeti

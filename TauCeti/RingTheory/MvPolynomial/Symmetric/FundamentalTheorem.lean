@@ -57,6 +57,9 @@ symmetric functions `e₁(p), …, eₙ(p)` of every family `p : Fin n → K`.
 * `MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`: the expression of a degree-`m`
   homogeneous symmetric polynomial in `e₁, …, eₙ` is weighted homogeneous of weight `m` for weights
   `i ↦ i + 1`.
+* `MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm_iff`: a symmetric polynomial is
+  homogeneous of degree `m` iff its expression in `e₁, …, eₙ` is weighted homogeneous of weight
+  `m` for weights `i ↦ i + 1`.
 -/
 
 public section
@@ -131,6 +134,12 @@ theorem map_esymmAlgEquiv_symm {σ R S : Type*} [Fintype σ] [CommRing R] [CommR
         exact congrFun (congrArg₂ eval₂ (RingHom.ext fun _ ↦ by simp) rfl) _
     _ = map f p := congrArg (map f) hR
 
+private theorem aeval_esymm_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [CommRing R] {n : ℕ}
+    (hn : Fintype.card σ = n) (p : symmetricSubalgebra σ R) :
+    aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1)) ((esymmAlgEquiv σ R hn).symm p) =
+      (p : MvPolynomial σ R) := by
+  rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
+
 /-- If `p ∈ symmetricSubalgebra σ R` is homogeneous of degree `m`, then its unique expression in the
 elementary symmetric polynomials `e₁, …, eₙ` (`n = Fintype.card σ`) is weighted homogeneous of
 weight `m` for the weights `i ↦ i + 1`. -/
@@ -141,9 +150,17 @@ theorem isWeightedHomogeneous_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [Co
   refine isWeightedHomogeneous_of_isHomogeneous_aeval
     (fun i : Fin n ↦ isHomogeneous_esymm (σ := σ) (R := R) ((i : ℕ) + 1))
     (algebraicIndependent_iff_injective_aeval.mp (algebraicIndependent_esymm R hn.ge)) ?_
-  have happly : aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
-      ((esymmAlgEquiv σ R hn).symm p) = (p : MvPolynomial σ R) := by
-    rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
-  rwa [happly]
+  rwa [aeval_esymm_esymmAlgEquiv_symm]
+
+/-- A symmetric polynomial `p ∈ symmetricSubalgebra σ R` has expression in the elementary symmetric
+polynomials `e₁, …, eₙ` (`n = Fintype.card σ`) weighted homogeneous of weight `m` for the weights
+`i ↦ i + 1` if and only if `p` is homogeneous of degree `m`. -/
+theorem isWeightedHomogeneous_esymmAlgEquiv_symm_iff {σ R : Type*} [Fintype σ] [CommRing R]
+    {n : ℕ} (hn : Fintype.card σ = n) (p : symmetricSubalgebra σ R) (m : ℕ) :
+    ((esymmAlgEquiv σ R hn).symm p).IsWeightedHomogeneous (fun i : Fin n ↦ (i : ℕ) + 1) m ↔
+      (p : MvPolynomial σ R).IsHomogeneous m := by
+  refine ⟨fun hq ↦ ?_, isWeightedHomogeneous_esymmAlgEquiv_symm hn⟩
+  rw [← aeval_esymm_esymmAlgEquiv_symm hn p]
+  exact hq.aeval fun i ↦ isHomogeneous_esymm ((i : ℕ) + 1)
 
 end MvPolynomial

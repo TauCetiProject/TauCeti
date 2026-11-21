@@ -69,6 +69,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
+* `Finsupp.weight_nonneg`, `Finsupp.weight_eq_zero_iff_of_pos`: nonnegativity and zero-weight
+  characterization of `Finsupp.weight` for ordered additive monoid weights.
 -/
 
 public section
@@ -309,5 +311,26 @@ theorem finite_weightedStrip (B N : ℕ) :
   · simp
   · exact (finite_of_nat_weight_lt ![1, B] (Fin.forall_fin_two.2 ⟨one_ne_zero, hB.ne'⟩) N).subset
       fun _ h ↦ h.2
+
+section OrderedAddMonoid
+
+variable {σ M : Type*} [AddCommMonoid M] [PartialOrder M] [IsOrderedAddMonoid M]
+
+/-- If every variable weight is nonnegative, every exponent vector `d : σ →₀ ℕ` has nonnegative
+weight. -/
+theorem weight_nonneg (d : σ →₀ ℕ) {w : σ → M} (hw : ∀ i, 0 ≤ w i) : 0 ≤ weight w d := by
+  rw [weight_apply, Finsupp.sum]
+  exact Finset.sum_nonneg fun i _ ↦ nsmul_nonneg (hw i) (d i)
+
+/-- If every variable has strictly positive weight in an ordered additive commutative monoid, then
+an exponent vector `d : σ →₀ ℕ` has weight zero if and only if `d = 0`. -/
+theorem weight_eq_zero_iff_of_pos (d : σ →₀ ℕ) {w : σ → M} (hw : ∀ i, 0 < w i) :
+    weight w d = 0 ↔ d = 0 := by
+  refine ⟨fun hd ↦ ?_, fun h ↦ by simp [h]⟩
+  ext i
+  by_contra hi
+  exact not_lt_of_ge (le_weight_of_ne_zero (fun s ↦ (hw s).le) hi) (hd ▸ hw i)
+
+end OrderedAddMonoid
 
 end Finsupp

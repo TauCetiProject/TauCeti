@@ -363,9 +363,11 @@ theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
 /-- The inclusion of the kernel of an epimorphism of graded modules followed by that epimorphism
 is a short exact sequence. -/
 theorem shortExact_kernelι [Epi f] :
-    (ShortComplex.mk (kernelι f) f (kernelι_comp f)).ShortExact where
-  exact := exact_iff.mpr (LinearMap.exact_subtype_ker_map f.hom)
-  mono_f := (mono_iff_injective _).mpr Subtype.val_injective
+    (ShortComplex.mk (kernelι f) f (kernelι_comp f)).ShortExact :=
+  have ⟨exact, mono_f⟩ :=
+    (ShortComplex.mk (kernelι f) f (kernelι_comp f)).exact_and_mono_f_iff_f_is_kernel.mpr
+      ⟨kernelIsLimit f⟩
+  { exact, mono_f }
 
 /-- A monomorphism of graded modules followed by the projection onto its cokernel is a short
 exact sequence. -/
