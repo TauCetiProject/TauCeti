@@ -33,8 +33,7 @@ No stabilization modulus is supplied or assumed computable.
   for sets of natural numbers.
 * `TauCeti.ArithmeticalHierarchy.isDelta_two_iff_exists_converges`,
   `TauCeti.ArithmeticalHierarchy.isDelta_two_empty_iff_exists_converges`,
-  `TauCeti.ArithmeticalHierarchy.isDelta_two_iff_exists_eventually`,
-  `TauCeti.ArithmeticalHierarchy.isDelta_two_empty_iff_exists_eventually`: `Δ⁰₂` Limit Lemma for
+  `TauCeti.ArithmeticalHierarchy.isDelta_two_iff_exists_eventually`: `Δ⁰₂` Limit Lemma for
   predicates on primitive-codable types.
 
 ## References
@@ -101,14 +100,5 @@ theorem isDelta_two_iff_exists_eventually {Z : Set ℕ} {α : Type*} [Primcodabl
       converges_iff_eventually.2 fun x => (heq x).mono fun s hs =>
         Bool.eq_iff_iff.2 (hs.trans decide_eq_true_iff.symm),
       fun _ => decide_eq_true_iff⟩⟩
-
-/-- **The Limit Lemma, `Δ⁰₂` eventual-equivalence form, unrelativized.** A predicate on a
-primitive-codable type is `Δ⁰₂` if and only if it is the eventually stable limit of a uniformly
-computable sequence of Boolean guesses. -/
-theorem isDelta_two_empty_iff_exists_eventually {α : Type*} [Primcodable α] {p : α → Prop} :
-    IsDelta ∅ 2 p ↔
-      ∃ f : ℕ → α → Bool, Computable₂ f ∧
-        ∀ x, ∀ᶠ s in atTop, f s x = true ↔ p x := by
-  simp [isDelta_two_iff_exists_eventually]
 
 end TauCeti.ArithmeticalHierarchy
