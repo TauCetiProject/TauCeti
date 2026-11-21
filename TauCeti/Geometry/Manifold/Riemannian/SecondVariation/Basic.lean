@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 import TauCeti.Analysis.Calculus.ParametricFDeriv
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VariationField
