@@ -14,13 +14,16 @@ import TauCeti.Algebra.Group.Subgroup.ZPowers
 # Conjugating the base group by the stable letter of an HNN extension
 
 Let `HNNExtension G A B φ` be the HNN extension of `G` along an isomorphism `φ : A ≃* B` of
-subgroups, with stable letter `t`, so that `t * a * t⁻¹ = φ a` for `a ∈ A`. Britton's lemma
-(`HNNExtension.ReducedWord.toList_eq_nil_of_mem_of_range`) shows that these are the only elements
-of `G` that `t` conjugates back into `G`: `t * g * t⁻¹` lies in `G` exactly when `g ∈ A`, and
-`t⁻¹ * g * t` lies in `G` exactly when `g ∈ B`. Consequently `g ∈ G` commutes with `t` exactly when
-`g ∈ A` and `φ g = g`; for the HNN extension along the identity of `A`, exactly when `g ∈ A`.
-Since `G` and `t` generate the HNN extension, `g` is central in it exactly when it is moreover
-central in `G`.
+subgroups, with stable letter `t`, so that `t * a * t⁻¹ = φ a` for `a ∈ A`. For `u = ±1` write
+`toSubgroup A B u` for the associated subgroup of `t ^ u`, which is `A` for `u = 1` and `B` for
+`u = -1`; then `x ↦ t ^ (-u) * x * t ^ u` maps `toSubgroup A B (-u)` onto `toSubgroup A B u`.
+Britton's lemma (Mathlib's `HNNExtension.ReducedWord.map_fst_eq_and_of_prod_eq`) shows that a
+reduced word starting with the letter `t ^ u` conjugates an element `c` of `G` back into `G` only
+if its head conjugates `c` into `toSubgroup A B (-u)`. In particular `t * g * t⁻¹` lies in `G`
+exactly when `g ∈ A`, and `t⁻¹ * g * t` lies in `G` exactly when `g ∈ B`. Consequently `g ∈ G`
+commutes with `t` exactly when `g ∈ A` and `φ g = g`; for the HNN extension along the identity of
+`A`, exactly when `g ∈ A`. Since `G` and `t` generate the HNN extension, `g` is central in it
+exactly when it is moreover central in `G`.
 
 This controls commutation transitivity in an HNN extension along the identity of `A`. If `c ∈ A`
 is nontrivial then `t` commutes with `c`, so if commutation is transitive through `c` then every
@@ -40,6 +43,13 @@ given element a product of a conjugate of `c` and a conjugate of `c'`, for any n
 
 ## Main results
 
+* `HNNExtension.exists_reducedWord_head_eq_prod_mul`: multiplying the product of a nonempty reduced
+  word on the right by an element of `G` gives the product of a reduced word with the same head.
+* `HNNExtension.head_inv_mul_mul_head_mem_toSubgroup`: a reduced word starting with `t ^ u`
+  conjugates `c ∈ G` back into `G` only if its head conjugates `c` into the associated subgroup of
+  `t ^ (-u)`.
+* `HNNExtension.exists_t_zpow_conj_eq_of`: `t ^ u` conjugates the associated subgroup of
+  `t ^ (-u)` into that of `t ^ u`.
 * `HNNExtension.t_mul_of_mul_inv_t_mem_range_iff`: `t * g * t⁻¹ ∈ G ↔ g ∈ A`.
 * `HNNExtension.inv_t_mul_of_mul_t_mem_range_iff`: `t⁻¹ * g * t ∈ G ↔ g ∈ B`.
 * `HNNExtension.commute_of_t_iff`: `g` commutes with `t` iff `g ∈ A` and `φ g = g`.
@@ -78,37 +88,63 @@ namespace HNNExtension
 
 variable {G : Type*} [Group G] {A B : Subgroup G} {φ : A ≃* B}
 
+/-- Multiplying the product of a reduced word with at least one letter on the right by an element
+of the base group gives the product of a reduced word with the same head. -/
+theorem exists_reducedWord_head_eq_prod_mul (w : NormalWord.ReducedWord G A B)
+    (hw : w.toList ≠ []) (c : G) : ∃ w' : NormalWord.ReducedWord G A B,
+      w'.head = w.head ∧ w'.prod φ = w.prod φ * of c := by
+  obtain ⟨L, p, hL⟩ := (List.eq_nil_or_concat w.toList).resolve_left hw
+  have hchain := w.chain
+  rw [hL, List.concat_eq_append, List.isChain_append] at hchain
+  refine ⟨⟨w.head, L ++ [(p.1, p.2 * c)], List.isChain_append.2
+    ⟨hchain.1, List.isChain_singleton _, fun a ha b hb => ?_⟩⟩, rfl, ?_⟩
+  · obtain rfl : b = (p.1, p.2 * c) := by simpa using hb.symm
+    exact hchain.2.2 a ha p (by simp)
+  · simp [NormalWord.ReducedWord.prod, hL, mul_assoc]
+
+/-- If a reduced word starts with the letter `t ^ u`, its product conjugates an element `c` of the
+base group back into the base group only if its head conjugates `c` into the associated subgroup
+of `t ^ (-u)`. -/
+theorem head_inv_mul_mul_head_mem_toSubgroup {w : NormalWord.ReducedWord G A B} {u : ℤˣ} {g : G}
+    {L : List (ℤˣ × G)} (hw : w.toList = (u, g) :: L) {c : G}
+    (hc : (w.prod φ)⁻¹ * of c * w.prod φ ∈ (of : G →* HNNExtension G A B φ).range) :
+    w.head⁻¹ * c * w.head ∈ toSubgroup A B (-u) := by
+  obtain ⟨c', hc'⟩ := hc
+  obtain ⟨w', hw'h, hw'⟩ := exists_reducedWord_head_eq_prod_mul (φ := φ) w (by simp [hw]) c'
+  have h := (ReducedWord.map_fst_eq_and_of_prod_eq φ (w₁ := { w with head := c * w.head })
+    (w₂ := w') ?_).2 u (by simp [hw])
+  · simpa [hw'h, mul_assoc] using inv_mem h
+  · rw [hw', hc']
+    simp only [NormalWord.ReducedWord.prod, map_mul]
+    group
+
+/-- Conjugating by `t ^ u` carries the associated subgroup of `t ^ (-u)` into the associated
+subgroup of `t ^ u`. -/
+theorem exists_t_zpow_conj_eq_of (u : ℤˣ) {x : G} (hx : x ∈ toSubgroup A B (-u)) :
+    ∃ y ∈ toSubgroup A B u,
+      (t : HNNExtension G A B φ) ^ (-(u : ℤ)) * of x * t ^ (u : ℤ) = of y := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · exact ⟨φ.symm ⟨x, hx⟩, (φ.symm ⟨x, hx⟩).property, by simp [equiv_symm_eq_conj]⟩
+  · have hx' : x ∈ A := by simpa using hx
+    exact ⟨φ ⟨x, hx'⟩, (φ ⟨x, hx'⟩).property, by simp [equiv_eq_conj]⟩
+
 /-- The stable letter conjugates `g` into the base group exactly when `g ∈ A`. -/
 theorem t_mul_of_mul_inv_t_mem_range_iff {g : G} :
     t * of g * t⁻¹ ∈ (of : G →* HNNExtension G A B φ).range ↔ g ∈ A := by
-  refine ⟨fun h => ?_, fun hg => ⟨φ ⟨g, hg⟩, ?_⟩⟩
-  · by_contra hg
-    -- The word `t * g * t⁻¹` is reduced, so Britton's lemma rules out its lying in `G`.
-    let w : NormalWord.ReducedWord G A B :=
-      { head := 1
-        toList := [(1, g), (-1, 1)]
-        chain := by simp [hg] }
-    have hw : w.prod φ = t * of g * t⁻¹ := by
-      simp [w, NormalWord.ReducedWord.prod, mul_assoc]
-    have := ReducedWord.toList_eq_nil_of_mem_of_range φ w (hw ▸ h)
-    simp [w] at this
-  · exact equiv_eq_conj (φ := φ) ⟨g, hg⟩
+  refine ⟨fun h => ?_, fun hg => ⟨φ ⟨g, hg⟩, equiv_eq_conj (φ := φ) ⟨g, hg⟩⟩⟩
+  -- `t⁻¹` is the product of the reduced word with head `1` and the single letter `t ^ (-1)`.
+  simpa using head_inv_mul_mul_head_mem_toSubgroup (c := g)
+    (w := ⟨1, [(-1, 1)], List.isChain_singleton _⟩) rfl
+    (by simpa [NormalWord.ReducedWord.prod] using h)
 
 /-- The inverse of the stable letter conjugates `g` into the base group exactly when `g ∈ B`. -/
 theorem inv_t_mul_of_mul_t_mem_range_iff {g : G} :
     t⁻¹ * of g * t ∈ (of : G →* HNNExtension G A B φ).range ↔ g ∈ B := by
-  refine ⟨fun h => ?_, fun hg => ⟨φ.symm ⟨g, hg⟩, ?_⟩⟩
-  · by_contra hg
-    -- The word `t⁻¹ * g * t` is reduced, so Britton's lemma rules out its lying in `G`.
-    let w : NormalWord.ReducedWord G A B :=
-      { head := 1
-        toList := [(-1, g), (1, 1)]
-        chain := by simp [hg] }
-    have hw : w.prod φ = t⁻¹ * of g * t := by
-      simp [w, NormalWord.ReducedWord.prod, mul_assoc]
-    have := ReducedWord.toList_eq_nil_of_mem_of_range φ w (hw ▸ h)
-    simp [w] at this
-  · exact equiv_symm_eq_conj (φ := φ) ⟨g, hg⟩
+  refine ⟨fun h => ?_, fun hg => ⟨φ.symm ⟨g, hg⟩, equiv_symm_eq_conj (φ := φ) ⟨g, hg⟩⟩⟩
+  -- `t` is the product of the reduced word with head `1` and the single letter `t ^ 1`.
+  simpa using head_inv_mul_mul_head_mem_toSubgroup (c := g)
+    (w := ⟨1, [(1, 1)], List.isChain_singleton _⟩) rfl
+    (by simpa [NormalWord.ReducedWord.prod] using h)
 
 /-- An element of the base group commutes with the stable letter exactly when it lies in `A`
 and is fixed by `φ`. -/

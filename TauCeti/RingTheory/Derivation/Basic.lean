@@ -30,6 +30,10 @@ An element whose derivative is a unit is squarefree, since a square factor `x * 
 `x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
 unit, without factoring it.
 
+A derivation over any scalars `S` which vanishes on the image of `R` is `R`-linear
+(`Derivation.ofMapAlgebraMap`). An `R`-algebra isomorphism `e : A ≃ₐ[R] B` transports a derivation
+`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.conjAlgEquiv`).
+
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
@@ -41,6 +45,8 @@ unit, without factoring it.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
+* `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
+* `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
 * `Derivation.hochschildCoeff`: recursive coefficients in the triangular expansion of `(a • D)^[n]`.
 * `Derivation.iterate_smul_eq_sum_hochschildCoeff`: triangular expansion of `(f a • E)^[n]`.
 -/
@@ -226,5 +232,46 @@ theorem iterate_smul_eq_sum_hochschildCoeff {B : Type*} [CommSemiring B] [Algebr
     rw [hochschildCoeff, map_add, add_mul]
 
 end Rescale
+
+section OfMapAlgebraMap
+
+variable {S R A M : Type*} [CommSemiring S] [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+  [Algebra S A] [Algebra R A] [Module A M] [Module S M] [Module R M] [IsScalarTower R A M]
+
+/-- A derivation over `S` that vanishes on the image of `R` is `R`-linear. -/
+def ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
+    Derivation R A M where
+  toFun := D
+  map_add' := D.map_add
+  map_smul' r a := by
+    rw [RingHom.id_apply, Algebra.smul_def, D.leibniz, hD, smul_zero, add_zero, algebraMap_smul]
+  map_one_eq_zero' := D.map_one_eq_zero
+  leibniz' := D.leibniz
+
+@[simp]
+theorem coe_ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
+    ⇑(D.ofMapAlgebraMap hD) = D :=
+  (rfl)
+
+end OfMapAlgebraMap
+
+section ConjAlgEquiv
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
+  [Algebra R B]
+
+/-- A derivation of `A` transported along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`: the
+derivation `e ∘ D ∘ e⁻¹` of `B`. -/
+def conjAlgEquiv (D : Derivation R A A) (e : A ≃ₐ[R] B) : Derivation R B B where
+  toLinearMap := (e.toLinearMap : A →ₗ[R] B) ∘ₗ D.toLinearMap ∘ₗ (e.symm.toLinearMap : B →ₗ[R] A)
+  map_one_eq_zero' := by simp
+  leibniz' x y := by simp [D.leibniz, smul_eq_mul]
+
+@[simp]
+theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
+    D.conjAlgEquiv e x = e (D (e.symm x)) :=
+  (rfl)
+
+end ConjAlgEquiv
 
 end Derivation

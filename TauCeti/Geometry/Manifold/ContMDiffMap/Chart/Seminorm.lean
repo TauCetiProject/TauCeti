@@ -147,6 +147,15 @@ theorem chartCkSeminorm_le_of_le (x : M)
   refine (chartCkSeminorm_le_iff x K k _ f (apply_nonneg _ _)).mpr fun m hm z hz ↦ ?_
   exact (chartCkSeminorm_le_iff x K l hl f (apply_nonneg _ _)).mp le_rfl m (hm.trans hkl) z hz
 
+/-- The compact chart `C^k` seminorm bounds every derivative seminorm of order at most `k`. -/
+theorem chartDerivativeSeminorm_le_chartCkSeminorm (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) {m k : ℕ} (hm : m ≤ n) (hk : k ≤ n)
+    (hmk : m ≤ k) :
+    chartDerivativeSeminorm (F := F) x K m hm ≤ chartCkSeminorm x K k hk := by
+  intro f
+  exact (chartDerivativeSeminorm_le_iff x K m hm f (apply_nonneg _ _)).mpr fun z hz ↦
+    (chartCkSeminorm_le_iff x K k hk f (apply_nonneg _ _)).mp le_rfl m hmk z hz
+
 /-- The compact chart `C^k` seminorm on the empty coordinate set is zero. -/
 @[simp]
 theorem chartCkSeminorm_bot (x : M) (k : ℕ) (hk : k ≤ n) :
