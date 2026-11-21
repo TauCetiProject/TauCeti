@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Continuity of squared norms from L² to L¹
@@ -29,10 +30,20 @@ variable {α E ι : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
 
 /-- The L¹ distance between squared norms is controlled by the L² distance times the sum
 of the L² norms. -/
-theorem eLpNorm_norm_sq_sub_le (hf : AEStronglyMeasurable f μ)
-    (hg : AEStronglyMeasurable g μ) :
+theorem eLpNorm_norm_sq_sub_le :
     eLpNorm (fun x ↦ ‖f x‖ ^ 2 - ‖g x‖ ^ 2) 1 μ ≤
       eLpNorm (f - g) 2 μ * (eLpNorm f 2 μ + eLpNorm g 2 μ) := by
+  by_cases hfg : eLpNorm (f - g) 2 μ = 0
+  · have heq := (eLpNorm_eq_zero_iff (by norm_num : (2 : ℝ≥0∞) ≠ 0)).1 hfg
+    rw [eLpNorm_eq_zero_of_ae_zero (p := 1) (f := fun x ↦ ‖f x‖ ^ 2 - ‖g x‖ ^ 2) ?_]
+    · exact zero_le
+    filter_upwards [heq] with x hx
+    simp only [Pi.sub_apply, Pi.zero_apply, sub_eq_zero] at hx ⊢
+    rw [hx]
+  by_cases! hf : ¬ AEStronglyMeasurable f μ
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top hfg]
+  by_cases! hg : ¬ AEStronglyMeasurable g μ
+  · simp [eLpNorm_of_not_aestronglyMeasurable hg, ENNReal.mul_top hfg]
   have hpoint (x : α) : ‖‖f x‖ ^ 2 - ‖g x‖ ^ 2‖ ≤
       ‖‖f x - g x‖ * (‖f x‖ + ‖g x‖)‖ := by
     rw [Real.norm_of_nonneg (mul_nonneg (norm_nonneg _)
@@ -60,20 +71,20 @@ theorem eLpNorm_norm_sq_sub_le (hf : AEStronglyMeasurable f μ)
 /-- L² convergence implies L¹ convergence of squared pointwise norms, for any measure
 and any normed additive commutative group of values. -/
 theorem tendsto_eLpNorm_norm_sq_sub {F : ι → α → E} {l : Filter ι}
-    (hf : MemLp f 2 μ) (hF : ∀ i, MemLp (F i) 2 μ)
-    (hlim : Tendsto (fun i ↦ eLpNorm (F i - f) 2 μ) l (𝓝 0)) :
+    (hf : MemLp f 2 μ) (hlim : Tendsto (fun i ↦ eLpNorm (F i - f) 2 μ) l (𝓝 0)) :
     Tendsto (fun i ↦ eLpNorm (fun x ↦ ‖F i x‖ ^ 2 - ‖f x‖ ^ 2) 1 μ) l (𝓝 0) := by
-  have hLp : Tendsto (fun i ↦ (hF i).toLp (F i)) l (𝓝 (hf.toLp f)) := by
-    rw [tendsto_iff_edist_tendsto_0]
-    simpa only [Lp.edist_toLp_toLp] using hlim
-  have hn : Tendsto (fun i ↦ eLpNorm (F i) 2 μ) l (𝓝 (eLpNorm f 2 μ)) := by
-    simpa only [Lp.eNorm_toLp] using hLp.eNorm
+  have hn : Tendsto (fun i ↦ eLpNorm (F i - f) 2 μ + eLpNorm f 2 μ + eLpNorm f 2 μ)
+      l (𝓝 (eLpNorm f 2 μ + eLpNorm f 2 μ)) := by
+    simpa only [zero_add] using (hlim.add_const (eLpNorm f 2 μ)).add_const (eLpNorm f 2 μ)
   have hb := ENNReal.Tendsto.mul hlim
     (Or.inr (ENNReal.add_ne_top.mpr ⟨hf.eLpNorm_ne_top, hf.eLpNorm_ne_top⟩))
-    (hn.add_const (eLpNorm f 2 μ)) (Or.inr (by simp))
+    hn (Or.inr (by simp))
   simp only [zero_mul] at hb
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hb
-    (.of_forall fun _ ↦ zero_le) (.of_forall fun i ↦
-      eLpNorm_norm_sq_sub_le (hF i).aestronglyMeasurable hf.aestronglyMeasurable)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hb
+    (.of_forall fun _ ↦ zero_le) (.of_forall fun i ↦ eLpNorm_norm_sq_sub_le.trans ?_)
+  have hFi : eLpNorm (F i) 2 μ ≤ eLpNorm (F i - f) 2 μ + eLpNorm f 2 μ := by
+    simpa only [sub_add_cancel] using
+      (eLpNorm_add_le (f := F i - f) (g := f) (μ := μ) (by norm_num : (1 : ℝ≥0∞) ≤ 2))
+  gcongr
 
 end MeasureTheory
