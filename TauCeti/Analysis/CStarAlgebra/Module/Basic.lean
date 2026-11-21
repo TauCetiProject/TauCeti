@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.Module.Defs
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
@@ -32,6 +30,9 @@ Riesz theorem.
 
 ## Main declarations
 
+* `CStarModule.inner_zero_left'`, `CStarModule.inner_zero_right'`, `CStarModule.inner_neg_left'`,
+  `CStarModule.inner_neg_right'`: zero and negation inner-product identities without
+  `[StarModule ℂ A]`.
 * `CStarModule.inner_map_polarization`, `CStarModule.inner_polarization`: polarization identities
   expressing `⟪S x, T y⟫_A` and `⟪x, y⟫_A` through diagonal inner products.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
@@ -90,6 +91,51 @@ lemma unop_inner_op_smul_right (a : A) (x y : E) :
 
 end Right
 
+section NoStarModule
+
+variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Left zero inner product `⟪0, y⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_left`). -/
+@[simp]
+theorem inner_zero_left' {y : E} : inner A (0 : E) y = 0 := by
+  simpa using inner_add_left (A := A) (x := (0 : E)) (y := 0) (z := y)
+
+/-- Right zero inner product `⟪x, 0⟫_A = 0`, without requiring `[StarModule ℂ A]` (compare
+Mathlib's `CStarModule.inner_zero_right`). -/
+@[simp]
+theorem inner_zero_right' {x : E} : inner A x (0 : E) = 0 := by
+  simpa using inner_add_right (A := A) (x := x) (y := (0 : E)) (z := 0)
+
+/-- Left negation inner product `⟪-x, y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_left`). -/
+@[simp]
+theorem inner_neg_left' {x y : E} : inner A (-x) y = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_left, neg_add_cancel, inner_zero_left']
+
+/-- Right negation inner product `⟪x, -y⟫_A = -⟪x, y⟫_A`, without requiring `[StarModule ℂ A]`
+(compare Mathlib's `CStarModule.inner_neg_right`). -/
+@[simp]
+theorem inner_neg_right' {x y : E} : inner A x (-y) = -inner A x y :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← inner_add_right, neg_add_cancel, inner_zero_right']
+
+/-- Vectors are determined by their inner products against all vectors in the first slot. -/
+theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
+  apply sub_eq_zero.mp
+  apply (inner_self (A := A)).mp
+  rw [sub_eq_add_neg, inner_add_right, inner_neg_right', h, add_neg_cancel]
+
+/-- Vectors are determined by their inner products against all vectors in the second slot. -/
+theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
+  apply ext_inner_left (A := A)
+  intro z
+  simpa using congrArg star (h z)
+
+end NoStarModule
+
 variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
@@ -114,18 +160,6 @@ lemma inner_polarization (x y : E) :
       I • inner A (x + I • y) (x + I • y) + I • inner A (x - I • y) (x - I • y)) :=
   inner_map_polarization (LinearMap.id : E →ₗ[ℂ] E) (LinearMap.id : E →ₗ[ℂ] E) x y
 
-/-- Vectors are determined by their inner products against all vectors in the first slot. -/
-theorem ext_inner_left {x y : E} (h : ∀ z, inner A z x = inner A z y) : x = y := by
-  apply sub_eq_zero.mp
-  apply (inner_self (A := A)).mp
-  simp [inner_sub_right, h]
-
-/-- Vectors are determined by their inner products against all vectors in the second slot. -/
-theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y := by
-  apply ext_inner_left (A := A)
-  intro z
-  simpa using congrArg star (h z)
-
 /-- Complex-linear endomorphisms of a C⋆-module are determined by their diagonal inner products
 `⟪x, T x⟫_A`. -/
 theorem eq_of_forall_inner_map_self {M : Type*} [FunLike M E E] [LinearMapClass M ℂ E E]
@@ -146,6 +180,7 @@ theorem inner_map_map_iff_forall_inner_map_map_self {F M : Type*} [AddCommGroup 
     rw [inner_map_polarization (A := A) U U x y, inner_polarization (A := A) x y]
     simp only [h]⟩
 
+omit [StarModule ℂ A] in
 /-- Any plain function from a C⋆-module into a type with an `A`-valued inner product that preserves
 the `A`-valued inner product is injective. -/
 theorem injective_of_inner_map_map {F : Type*} [Inner A F] {f : E → F}
@@ -199,42 +234,29 @@ theorem isGreatest_norm_inner (x : E) :
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
-      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  rw [inner_op_smul_left, inner_op_smul_right, star_mul, hs', ← hs]
-  noncomm_ring
+      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The inner product of `a x - x` with itself is `(a |x| - |x|) (a |x| - |x|)⋆`, where
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_sub_self (a : A) (x : E) :
     inner A (a • x - x) (a • x - x) =
       (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) *
-        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  simp only [inner_sub_left, inner_sub_right, inner_op_smul_left, inner_op_smul_right, star_sub,
-    star_mul, hs', ← hs]
-  noncomm_ring
+        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x` is the norm of `a |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
-protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_smul, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x - x` is the norm of `a |x| - |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 theorem norm_smul_sub_self (a : A) (x : E) :
-    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_sub_self, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
-protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ := by
-  rw [CStarModule.norm_smul]
-  refine (norm_mul_le _ _).trans_eq ?_
-  rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
+protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
 
 end Norm
 

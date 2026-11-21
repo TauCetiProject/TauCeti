@@ -430,7 +430,7 @@ variable {D D' : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimens
   [NormedAddCommGroup D'] [NormedSpace ℝ D'] {O : Opens D} {O' : Opens D'}
   {V : Opens (E × D)} {V' : Opens (E' × D')} {Ψ : D → D'} {S : 𝓓'(Ω, ℂ)} {T : 𝓓'(O, ℂ)}
 
-omit [NormedSpace ℝ E'] [NormedSpace ℝ D'] in
+omit [NormedSpace ℝ E'] [NormedSpace ℝ D'] [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- If `Φ` is proper on the support of `S` and `Ψ` on the support of `T`, then `Φ × Ψ` is proper on
 the support of `S ⊗ T`. -/
 theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
@@ -455,7 +455,7 @@ theorem IsProperOnSupport.tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) 
   exact ⟨⟨⟨⟨hpΩO.1, hpST.1⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩,
     ⟨⟨hpΩO.2, hpST.2⟩, ⟨Prod.map Φ Ψ p, hpK, rfl⟩⟩⟩, hpK⟩
 
-variable [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ O}
+variable {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ O}
 
 /-- **The pushforward of a tensor product** along a product map is the tensor product of the
 pushforwards: `(Φ × Ψ)_* (S ⊗ T) = Φ_* S ⊗ Ψ_* T`. -/
@@ -482,7 +482,7 @@ theorem pushforward_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (
   simp only [mem_preimage, mem_ofPred_eq] at hq₁ hq₂
   simp [prodSMulCLM_apply, hq₁, hq₂]
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- The first projection is proper on the support of `S ⊗ T` when `T` has compact support. -/
 theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
     (hT : IsCompact (dsupport T)) (hTO : dsupport T ⊆ O) :
@@ -496,7 +496,6 @@ theorem isProperOnSupport_fst_tensorProduct (hV : (V : Set (E × D)) = (Ω : Set
   have hpST := dsupport_tensorProduct_subset S T hV.subset hp
   exact ⟨⟨⟨hpK, hpST.1⟩, hpST.2⟩, hpK⟩
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ D'] in
 /-- **Integration over the fibres of the first projection.** If `T` has compact support, pushing
 `S ⊗ T` forward along the first projection gives `S` times the total mass `⟨T, 1⟩` of `T`
 (`Distribution.augmentation`). -/

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.VonNeumannAlgebra.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 
 /-!
 # Concrete von Neumann algebras as C⋆-algebras
@@ -17,7 +19,8 @@ This allows the abstract continuous functional calculus and positive-functional 
 be applied directly to concrete algebras, including those acting on the zero Hilbert space.
 
 The instances use Mathlib's generic subobject constructions, in particular
-`StarSubalgebra.cstarAlgebra`. The underlying star subalgebra has the same instances;
+`StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
+`Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
 no new norm, completion, or algebra carrier is introduced. We also provide the canonical
 star algebra isomorphism `VonNeumannAlgebra.equivOfEq` between equal von Neumann algebras.
 -/
@@ -62,5 +65,14 @@ theorem coe_equivOfEq_apply {M N : VonNeumannAlgebra H} (h : M = N) (x : M) :
 theorem equivOfEq_symm {M N : VonNeumannAlgebra H} (h : M = N) :
     (equivOfEq h).symm = equivOfEq h.symm := by
   rfl
+
+/-- The order on a von Neumann algebra inherited from the Loewner order on operators makes it a
+star-ordered ring, so that positive functionals on it are those of the C⋆-algebra `M`. This
+specializes `Subtype.starOrderedRing`, whose instance search over the operators on a concrete
+Hilbert space, such as a GNS space, otherwise rebuilds their continuous functional calculus and
+fails. -/
+instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
+    StarOrderedRing M.toStarSubalgebra :=
+  Subtype.starOrderedRing _
 
 end VonNeumannAlgebra

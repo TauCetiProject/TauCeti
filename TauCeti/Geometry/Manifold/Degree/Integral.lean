@@ -13,10 +13,10 @@ import TauCeti.Geometry.Manifold.RegularValue.Fibre
 /-!
 # The integral formula for the degree near a regular value
 
-Let `f : M → N` be a proper `C¹` map from a Hausdorff boundaryless manifold to a manifold modelled
-on the same space, with orientations `o` of `M` and `o'` of `N`, and let `y` be a regular
-value of `f`; every continuous map from a compact space to a Hausdorff space is proper. The fibre
-over `y` is finite and `f` is a local diffeomorphism at each of its points.
+Let `f : M → N` be a proper `C¹` map from a Hausdorff boundaryless manifold to a manifold of the
+same dimension, with orientations `o` of `M` and `o'` of `N`, and let `y` be a regular value of `f`;
+every continuous map from a compact space to a Hausdorff space is proper. The fibre over `y` is
+finite and `f` is a local diffeomorphism at each of its points.
 Near `y`, the preimage of a small neighbourhood `V` of `y` is therefore a finite disjoint union of
 open sheets, each carried diffeomorphically onto its image by `f`, and on each sheet `f` either
 preserves or reverses orientation, according to its orientation sign at the point of the fibre. This
@@ -60,10 +60,12 @@ open scoped Manifold Topology
 
 namespace TauCeti
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
 
 open Manifold.Orientation
@@ -89,7 +91,7 @@ private theorem exists_stack_of_records [T2Space M] [BoundarylessManifold I M]
   -- orientation sign is constant.
   have key (x : s) : ∃ e : OpenPartialHomeomorph M N, (x : M) ∈ e.source ∧ EqOn f e e.source ∧
       e.source ⊆ U x ∧ ∀ z ∈ e.source, orientationSign o o' f z = orientationSign o o' f x := by
-    obtain ⟨D, hD⟩ := (isRegularPoint_iff_isInvertible_mfderiv rfl).mp
+    obtain ⟨D, hD⟩ := (isRegularPoint_iff_isInvertible_mfderiv (o.card_eq.symm.trans o'.card_eq)).mp
       (hy.isRegularPoint ((hs x).mp x.property))
     have hld : IsLocalDiffeomorphAt I J 1 f x := isLocalDiffeomorphAt_of_mfderiv_eq
       hf.contMDiffOn isOpen_univ (mem_univ _) BoundarylessManifold.isInteriorPoint le_rfl hD
@@ -126,11 +128,11 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
     (hx : IsRegularPoint I J f x)
     (hsgn : ∀ z ∈ e.source, orientationSign o o' f z = orientationSign o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
-    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
+    (hφt : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
     (hψ0 : ∀ z ∉ e.source, ψ z = 0) (hψφ : ∀ z ∈ e.source, ψ z = mpullback I J f φ z) :
     IntegrableTopForm ψ ∧
       integralTopForm o ψ = orientationSign o o' f x * integralTopForm o' φ := by
-  set K := _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ
+  set K := _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ
   -- `ψ` vanishes off the source and `f^*φ` vanishes off `f ⁻¹' K`, so the support of `ψ` lies in
   -- `e.symm '' K`. That set is compact, hence closed since `M` is Hausdorff, and lies in the
   -- source.
@@ -145,7 +147,8 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
     exact ⟨f z, hfz, by rw [hfe hzs, e.left_inv hzs]⟩
   have hmd : ∀ z ∈ e.source, MDifferentiableAt I J f z :=
     fun z _ ↦ hf.mdifferentiable one_ne_zero z
-  refine ⟨e.integrableTopForm_of_eq_mpullback hfe hmd rfl hφ hφt hψs hψφ, ?_⟩
+  refine ⟨e.integrableTopForm_of_eq_mpullback hfe hmd (o.card_eq.symm.trans o'.card_eq) hφ hφt hψs
+    hψφ, ?_⟩
   -- Change variables according to the orientation sign on the sheet.
   rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o') hx with h | h
   · rw [h, Int.cast_one, one_mul]
@@ -156,7 +159,7 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
       (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
 
 /-- **The integral formula for the degree near a regular value.** Let `f : M → N` be a proper `C¹`
-map from a Hausdorff boundaryless manifold to a manifold modelled on the same space,
+map from a Hausdorff boundaryless manifold to a manifold of the same dimension,
 with orientations `o` and `o'`, and let `y` be a regular value of `f`. Then `y` has a neighbourhood
 `V` such that every integrable top form `φ` on `N` supported in `V` satisfies
 `∫_M f^*φ = deg_y(f) · ∫_N φ`, where `deg_y(f)` is the signed count of the fibre over `y`. -/
@@ -165,18 +168,18 @@ theorem exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul [T
     (o' : Manifold.Orientation J N (Fin k)) {f : M → N} (hf : ContMDiff I J 1 f)
     (hfp : IsProperMap f) {y : N} (hy : IsRegularValue I J f y) :
     ∃ V ∈ 𝓝 y, ∀ φ : RoughForm J N ℝ k, IntegrableTopForm φ →
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ V →
+      _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ V →
         integralTopForm o (mpullback I J f φ) =
           degreeAtRegularValue o o' f y * integralTopForm o' φ := by
   classical
   -- Split `f^*φ` into its parts on the sheets of the stack of records over `y`, change variables
   -- on each sheet according to the orientation sign there, and sum.
-  set s := (hy.finite_preimage_of_isProperMap rfl hfp).toFinset
+  set s := (hy.finite_preimage_of_isProperMap (o.card_eq.symm.trans o'.card_eq) hfp).toFinset
   have hs (x : M) : x ∈ s ↔ f x = y := by simp [s]
   obtain ⟨e, -, hfe, hsgn, hdisj, V, hV, hVt, hVs⟩ :=
     exists_stack_of_records o o' hf hfp hy s hs
   refine ⟨V, hV, fun φ hφ hφV ↦ ?_⟩
-  set K := _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ
+  set K := _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ
   -- The part of `f^*φ` on the sheet over `x`.
   let ψ (x : s) : RoughForm I M ℝ k := fun z ↦
     (e x).source.indicator (fun _ ↦ (1 : ℝ)) z • mpullback I J f φ z

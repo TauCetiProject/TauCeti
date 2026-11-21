@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Constructions
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Lifting
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -40,6 +38,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
 * `TauCeti.MooreReplacement.endpointLiftingFunction p`: the transitive lifting function of `p'`.
 * `TauCeti.MooreReplacement.Fiber p b`: the fibre `F'` of `p'` over `b`, with its right action of
   `MooreLoopSpace B b`.
+* `TauCeti.MooreReplacement.Fiber.homeomorphEndpointFiber p b`: `F'` is the fibre of `p'` over
+  `b`.
 * `TauCeti.MooreReplacement.Fiber.map h hh`: the equivariant map of fibres induced by a map `h`
   over `B`.
 * `TauCeti.MooreLiftingFunction.transport`: transport `F' → F` along a lifting function.
@@ -202,6 +202,11 @@ theorem path_incl {p : C(E, B)} (e : E) : (incl p e).path = .refl (p e) := by
 theorem endpoint_incl {p : C(E, B)} (e : E) : endpoint p (incl p e) = p e := by
   simp
 
+/-- The inclusion `E → E'` is a map over `B`. -/
+@[simp]
+theorem endpoint_comp_incl (p : C(E, B)) : (endpoint p).comp (incl p) = p :=
+  ContinuousMap.ext endpoint_incl
+
 /-- The projection `E' → E`, `(e, γ) ↦ e`. -/
 def proj (p : C(E, B)) : C(MooreReplacement p, E) :=
   ⟨point, continuous_point⟩
@@ -296,6 +301,22 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 
 @[simp]
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
+  (rfl)
+
+/-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
+underlying pair. -/
+def homeomorphEndpointFiber (p : C(E, B)) (b : B) : Fiber p b ≃ₜ {x // endpoint p x = b} :=
+  (Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
+    rw [endpoint_apply, Homeomorph.refl_apply, id_eq]
+
+@[simp]
+theorem coe_homeomorphEndpointFiber_apply (p : C(E, B)) (b : B) (x : Fiber p b) :
+    (homeomorphEndpointFiber p b x : MooreReplacement p) = x.val :=
+  (rfl)
+
+@[simp]
+theorem val_homeomorphEndpointFiber_symm_apply (p : C(E, B)) (b : B)
+    (x : {x // endpoint p x = b}) : ((homeomorphEndpointFiber p b).symm x).val = x :=
   (rfl)
 
 /-- The right action of a Moore loop `ω` at `b` on the fibre: `(e, γ) · ω = (e, γ · ω)`. -/
@@ -574,6 +595,16 @@ theorem map_comp (h : C(E, E')) (h' : C(E', E'')) (hh : p'.comp h = p) (hh' : p'
     map (b := b) (h'.comp h) (by rw [← ContinuousMap.comp_assoc, hh', hh]) =
       (map h' hh').comp (map h hh) :=
   ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
+
+/-- Transport along the lifting function of the endpoint map, after the map of fibres induced by
+the inclusion `E → E'`, is the identity of the underlying pairs: `(e, γ) ↦ (e, const · γ) = (e, γ)`.
+So the fibre `F'` of `p` is identified with the fibre over `b` of its replacement `p'`. -/
+theorem coe_transport_map_incl (x : Fiber p b) :
+    ((endpointLiftingFunction p).transport b (map (incl p) (endpoint_comp_incl p) x) :
+      MooreReplacement p) = x.val := by
+  rw [MooreLiftingFunction.coe_transport, endpointLiftingFunction_lift, MoorePath.target_def]
+  refine MooreReplacement.ext (by simp) ?_
+  simp [MoorePath.truncate_length, MoorePath.refl_trans]
 
 end MooreReplacement.Fiber
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.SingularCartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.AffineSubgraph
 
 /-!
@@ -33,6 +34,10 @@ recognised here.
 
 * `SimpleGraph.Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso`: **the
   recognition theorem**.
+* `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_iso`: its
+  semidefinite form, where the weight is replaced by the condition that `2I - A` is positive
+  semidefinite and singular
+  (`SimpleGraph.Preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero`).
 
 ## References
 
@@ -89,5 +94,18 @@ theorem Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso
       have hpos (v : V) : ((t.marks (e v)).toNat : ℤ) = t.marks (e v) :=
         Int.toNat_of_nonneg (AffineDynkinType.marks_pos _).le
       exact (Nat.cast_inj (R := ℤ)).1 (by push_cast [hpos]; exact hsum)
+
+variable (R : Type*) [Field R] [LinearOrder R] [IsStrictOrderedRing R] [StarRing R]
+  [TrivialStar R]
+
+/-- **The semidefinite form of the recognition theorem.** For a connected finite simple graph,
+`2I - A` over a linearly ordered field is positive semidefinite and singular exactly when the
+graph is isomorphic to the graph of a unique valid affine simply-laced diagram other than `Ã₁`. -/
+theorem Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_iso
+    [DecidableEq V] (hG : G.Connected) :
+    (G.graphCartanMatrix R).PosSemidef ∧ (G.graphCartanMatrix R).det = 0 ↔
+      ∃! t : AffineDynkinType, t.Valid ∧ t.IsGraphical ∧ Nonempty (G ≃g t.graph) := by
+  rw [← hG.preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero R]
+  exact hG.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso
 
 end SimpleGraph

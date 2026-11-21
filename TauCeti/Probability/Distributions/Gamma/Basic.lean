@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Moments.Determinacy
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the gamma distribution
@@ -87,10 +88,10 @@ The cumulative distribution function is computed in
 
 public section
 
-namespace TauCeti.Probability
-
 open MeasureTheory ProbabilityTheory Real Set
 open scoped MeasureTheory Topology
+
+namespace TauCeti.Probability
 
 variable {a r : ℝ}
 
@@ -152,7 +153,7 @@ and rate exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) {g : ℝ → E} :
     Integrable g (gammaMeasure a r) ↔ Integrable fun x ↦ gammaPDFReal a r x • g x := by
   rw [gammaMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
     (ae_of_all _ (gammaPDFReal_nonneg ha hr))
 
@@ -178,7 +179,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (g : ℝ → E) :
     ∫ x, g x ∂gammaMeasure a r = ∫ x, gammaPDFReal a r x • g x := by
   rw [gammaMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
     (ae_of_all _ (gammaPDFReal_nonneg ha hr)) g
 

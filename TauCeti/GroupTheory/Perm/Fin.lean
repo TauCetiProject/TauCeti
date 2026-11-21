@@ -28,6 +28,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
+* `Fin.swap_apply_lt_swap_apply`: an adjacent transposition `(a a+1)` of `Fin n` keeps every
+  strict pair in order except `a < a + 1` itself.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
@@ -74,6 +76,14 @@ the rotation `i ↦ i + 1` modulo `n`. -/
 theorem formPerm_sort_univ (n : ℕ) :
     (Finset.univ : Finset (Fin n)).sort.formPerm = finRotate n := by
   rw [sort_univ, List.formPerm_finRange]
+
+/-- An adjacent transposition `(a b)`, with `b = a + 1`, preserves the strict order of every pair
+of elements of `Fin n` other than the pair `a < b` itself. -/
+theorem swap_apply_lt_swap_apply {n : ℕ} {a b i j : Fin n} (hab : (a : ℕ) + 1 = b) (hij : i < j)
+    (hne : ¬(i = a ∧ j = b)) : Equiv.swap a b i < Equiv.swap a b j := by
+  simp only [Equiv.swap_apply_def]
+  simp only [Fin.lt_def, Fin.ext_iff] at hij hne ⊢
+  split_ifs <;> simp_all <;> omega
 
 end Fin
 

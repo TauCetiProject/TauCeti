@@ -48,6 +48,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 * `MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one`: the common-exponent characterization
   of finite order for monoid homomorphisms.
+* `MonoidHom.pow_natCard_eq_one`, and its additive counterpart: raising a homomorphism from a
+  group into a commutative monoid to `Nat.card G` yields the trivial homomorphism.
 
 * `IsOfFinOrder.dvd_orderOf_pow_iff`, and its additive counterpart: divisibility of the order of
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
@@ -87,6 +89,16 @@ theorem MonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
     IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, MonoidHom.pow_apply,
     MonoidHom.one_apply]
+
+/-- Raising a homomorphism from a group into a commutative monoid to `Nat.card G` yields the
+trivial homomorphism. -/
+@[to_additive
+/-- Multiplying a homomorphism from an additive group into a commutative additive monoid by
+`Nat.card G` yields the zero homomorphism. -/]
+theorem MonoidHom.pow_natCard_eq_one {G M : Type*} [Group G] [CommMonoid M] (f : G →* M) :
+    f ^ Nat.card G = 1 := by
+  ext g
+  rw [MonoidHom.pow_apply, MonoidHom.one_apply, ← map_pow, pow_card_eq_one', map_one]
 
 namespace IsOfFinOrder
 

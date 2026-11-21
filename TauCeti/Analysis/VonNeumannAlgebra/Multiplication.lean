@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Count
 public import TauCeti.Analysis.VonNeumannAlgebra.Conj
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel
 

@@ -218,9 +218,9 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
   have h₁ : integral μ ν 1 = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
+  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (integral μ ν) (fun ψ => ?_)
     (Lp.norm_norm_smul_one_sub_le_of_nonneg hφ)
-  rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
+  rw [h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in

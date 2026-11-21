@@ -10,14 +10,20 @@ public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.Units.Defs
 
 /-!
-# Centralizers, equivalences, and conjugation by units
+# Centralizers, equivalences, conjugation by units, and images of commutative magmas
 
-Multiplicative equivalences commute with taking centralizers of subsets
-(`MulEquivClass.centralizer_image`). Moreover, if conjugation by the inverse of a unit `u` maps a
-set `S` of a monoid into itself, then conjugation by `u` maps the centralizer of `S` into itself.
-Applying either fact twice shows that double commutants are transported by multiplicative
-equivalences and preserved by units whose conjugations preserve the generating set in both
-directions, which is how spatial unitary equivalences act on von Neumann algebras.
+Basic membership and transport lemmas for `Set.centralizer`:
+
+* `MulEquivClass.centralizer_image`: multiplicative equivalences commute with taking centralizers
+  of subsets.
+* `Set.conj_mem_centralizer`: if conjugation by the inverse of a unit `u` maps a set `S` of a
+  monoid into itself, then conjugation by `u` maps the centralizer of `S` into itself. Applying
+  either fact twice shows that a double commutant is transported by multiplicative equivalences and
+  preserved by units whose conjugations preserve the generating set in both directions, which is
+  how spatial unitary equivalences act on von Neumann algebras.
+* `Set.apply_mem_centralizer_range` (and its additive counterpart
+  `Set.apply_mem_addCentralizer_range`): every value of a multiplicative homomorphism from a
+  commutative magma lies in the centralizer of its range.
 -/
 
 public section
@@ -40,6 +46,8 @@ end MulEquivClass
 
 namespace Set
 
+section Monoid
+
 variable {M : Type*} [Monoid M] {S : Set M}
 
 /-- Conjugation by a unit `u` maps the centralizer of `S` into itself when conjugation by `u⁻¹`
@@ -53,5 +61,19 @@ theorem conj_mem_centralizer (u : Mˣ) (hS : ∀ s ∈ S, ↑u⁻¹ * s * ↑u �
     _ = ↑u * (x * (↑u⁻¹ * s * ↑u)) * ↑u⁻¹ := by rw [h]
     _ = ↑u * x * ↑u⁻¹ * s := by
         simp only [mul_assoc, Units.mul_inv, mul_one]
+
+end Monoid
+
+/-- Every value of a multiplicative homomorphism from a commutative magma lies in the centralizer
+of its range. -/
+@[to_additive (attr := simp) apply_mem_addCentralizer_range
+  /-- Every value of an additive homomorphism from a commutative additive magma lies in the
+  additive centralizer of its range. -/]
+theorem apply_mem_centralizer_range {F M N : Type*} [Mul M] [IsMulCommutative M] [Mul N]
+    [FunLike F M N] [MulHomClass F M N] (f : F) (x : M) :
+    f x ∈ Set.centralizer (Set.range f) := by
+  rw [mem_centralizer_iff]
+  rintro _ ⟨y, rfl⟩
+  rw [← map_mul, mul_comm' y x, map_mul]
 
 end Set
