@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Tactic.Module
 
@@ -31,6 +32,11 @@ on an interval `J`, open or closed, is `P t = exp (∫ₛᵗ g) • P s` for all
 `exp (-∫ₛᵘ g)`. For a constant coefficient `c`, a function with `v' = c • v` at every time
 `τ ≤ a` (with a two-sided derivative at `a`) is `v τ = exp (c (τ - a)) • v a` for `τ ≤ a`
 (`TauCeti.eq_exp_smul_of_hasDerivAt_smul_of_le`).
+
+Two holomorphic functions on a preconnected open set `U ⊆ ℂ` that satisfy the same equation
+`y' = p y` on a dense subset of `U`, the second without zeros on `U`, are proportional on `U`
+(`TauCeti.exists_eq_const_mul_of_hasDerivAt_mul`): their quotient is holomorphic with derivative
+vanishing on a dense subset, hence everywhere by continuity. The first may vanish.
 -/
 
 public section
@@ -158,5 +164,26 @@ theorem eq_exp_smul_of_hasDerivAt_smul_of_le {v : ℝ → V} {c a : ℝ}
   have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul ordConnected_Iic continuousOn_const
     (fun σ hσ ↦ (hv σ hσ).hasDerivWithinAt) (s := a) (mem_Iic.2 le_rfl) (mem_Iic.2 hτ)
   rwa [intervalIntegral.integral_const, smul_eq_mul, mul_comm] at h
+
+/-- Two holomorphic functions `u`, `v` on a preconnected open set `U ⊆ ℂ` that satisfy the same
+first-order linear equation `y' = p y` at the points of `U ∩ S` for a dense set `S`, with `v`
+nowhere zero on `U`, are proportional on `U`: `u = C v` for a constant `C`. -/
+theorem exists_eq_const_mul_of_hasDerivAt_mul {U S : Set ℂ} (hU : IsOpen U)
+    (hUc : IsPreconnected U) (hS : Dense S) {p u v : ℂ → ℂ} (hu : DifferentiableOn ℂ u U)
+    (hv : DifferentiableOn ℂ v U) (hv₀ : ∀ z ∈ U, v z ≠ 0)
+    (hu' : ∀ z ∈ U ∩ S, HasDerivAt u (p z * u z) z)
+    (hv' : ∀ z ∈ U ∩ S, HasDerivAt v (p z * v z) z) :
+    ∃ C : ℂ, ∀ z ∈ U, u z = C * v z := by
+  have hR : DifferentiableOn ℂ (fun z ↦ u z / v z) U := hu.div hv hv₀
+  -- On `U ∩ S` the quotient has derivative `(p u v - u p v) / v ^ 2 = 0`.
+  have hd (z : ℂ) (hz : z ∈ U ∩ S) : deriv (fun z ↦ u z / v z) z = 0 :=
+    (((hu' z hz).div (hv' z hz) (hv₀ z hz.1)).congr_deriv (by ring)).deriv
+  -- The derivative of the quotient is continuous on `U`, and `U ∩ S` is dense in `U`.
+  have hd' (z : ℂ) (hz : z ∈ U) : deriv (fun z ↦ u z / v z) z = 0 := by
+    have := mem_closure_iff_nhdsWithin_neBot.mp (hS.open_subset_closure_inter hU hz)
+    exact tendsto_nhds_unique (((hR.deriv hU).continuousOn z hz).mono inter_subset_left)
+      (tendsto_const_nhds.congr' (eventually_nhdsWithin_of_forall fun w hw ↦ (hd w hw).symm))
+  obtain ⟨C, hC⟩ := hU.exists_is_const_of_deriv_eq_zero hUc hR hd'
+  exact ⟨C, fun z hz ↦ by rw [← hC z hz, div_mul_cancel₀ _ (hv₀ z hz)]⟩
 
 end TauCeti
