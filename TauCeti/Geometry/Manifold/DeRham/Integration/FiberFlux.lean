@@ -20,7 +20,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
-# The pairing of a closed current with a taming form over a compact surface
+# The pairing of a closed current with a taming form over a compact connected surface
 
 Let `M` be a compact connected oriented surface, thought of as an embedded pseudoholomorphic
 curve `C`, and let `M × ℂ` be a tubular neighbourhood of it with trivial normal line, oriented as

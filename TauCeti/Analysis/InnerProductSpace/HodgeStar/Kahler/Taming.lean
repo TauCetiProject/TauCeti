@@ -27,7 +27,7 @@ In Taubes's analysis of Seiberg–Witten solutions near a pseudoholomorphic curv
 the dilated curvature current with a taming form `Ω = K π^*ω_C + dλ` is a topological quantity,
 `K m area(C)` for a current of transverse flux `m`. Its product-chart form is
 `TauCeti.integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`, and its global form over a
-compact surface with trivial normal line is
+σ-compact preconnected surface with trivial normal line is
 `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ`. Applying the theorems
 below to a current also requires identifying `ξ` with its two-vector density, so that
 `∫ ⟪Ω, ξ⟫` equals the wedge pairing `∫ T ∧ Ω`; that identification is not done here either.
