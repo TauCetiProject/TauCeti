@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Square
 public import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
@@ -48,8 +49,16 @@ points of `S` (`Finsupp.signReversal`,
 in the same Morse charts differ in this way (`TauCeti.MorseOrientation.exists_reverse_eq`), so
 the boundaries they define are isomorphic.
 
-That the integral boundary squares to zero, which needs the orientations of the compactified
-spaces of index-two trajectories, is not proved here; the mod-two statement is
+Under the Morse–Smale condition, the coefficient of `r` in `∂ (∂ p)` is the sum, over the broken
+index-two trajectories from `p` to `r` (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySet`),
+of the products of the signs of their two components
+(`TauCeti.IsAdaptedPseudoGradient.morseTrajectorySign`). So the boundary squares to zero exactly
+when these signed counts vanish
+(`IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff`, in the namespace
+`TauCeti.IsAdaptedPseudoGradient`).
+This is the algebraic half of `∂² = 0` over `ℤ`. The geometric half, that the two ends of each
+component of the compactified space of index-two trajectories carry opposite signs, needs the
+orientations of these spaces and is not proved here; the mod-two statement is
 `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_comp_morseBoundary`.
 
 ## Main definitions
@@ -62,6 +71,8 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
   from `p` to `q`, or `0` unless `ind p = ind q + 1`.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary`: the Morse boundary with coefficients in a
   ring `R`.
+* `TauCeti.IsAdaptedPseudoGradient.morseTrajectorySign`: the sign of the trajectory from `p` to `q`
+  through a point, or `0` unless `ind p = ind q + 1`.
 
 ## Main results
 
@@ -77,6 +88,9 @@ spaces of index-two trajectories, is not proved here; the mod-two statement is
   differ by a reversal.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`: reversing orientations conjugates
   the boundary by `Finsupp.signReversal`.
+* `IsMorseSmale.signedMorseBoundary_signedMorseBoundary_single_apply` and
+  `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff`, in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`: `∂ ∘ ∂` counts broken trajectories with signs.
 
 ## References
 
@@ -345,6 +359,121 @@ theorem IsMorseSmale.signedMorseBoundary_eq_morseBoundary (h : hX.IsMorseSmale) 
       h.intCast_signedMorseBoundaryCoeff hf]
 
 end Boundary
+
+/-! ### The square of the boundary -/
+
+section Square
+
+variable (hX 𝔬) in
+/-- The **sign of the trajectory** from the critical point `p` to the critical point `q` through
+the point `y`, for the orientation data `𝔬`: `TauCeti.IsAdaptedPseudoGradient.trajectorySign` when
+`ind p = ind q + 1`, and `0` otherwise. -/
+noncomputable def morseTrajectorySign (p q : criticalPoints 𝓘(ℝ, E) f) (y : M) : ℤ :=
+  if hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
+    hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq y
+  else 0
+
+/-- For critical points of consecutive index, the sign is the trajectory sign. -/
+theorem morseTrajectorySign_of_morseIndex_eq_add_one {p q : criticalPoints 𝓘(ℝ, E) f} {y : M}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    hX.morseTrajectorySign 𝔬 p q y =
+      hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p) (𝔬.orientation q) hpq y :=
+  dite_eq_left hpq
+
+/-- The sign vanishes between critical points whose indices do not differ by one. -/
+@[simp]
+theorem morseTrajectorySign_of_morseIndex_ne_add_one {p q : criticalPoints 𝓘(ℝ, E) f} {y : M}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p ≠ manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    hX.morseTrajectorySign 𝔬 p q y = 0 :=
+  dite_eq_right hpq
+
+/-- The boundary coefficient is the sum of the signs of the trajectories from `p` to `q`, read on
+the middle level. -/
+theorem signedMorseBoundaryCoeff_eq_finsum (p q : criticalPoints 𝓘(ℝ, E) f) :
+    hX.signedMorseBoundaryCoeff 𝔬 p q =
+      ∑ᶠ y ∈ hX.morseTrajectorySlice p q, hX.morseTrajectorySign 𝔬 p q y := by
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · simp only [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def,
+      morseTrajectorySign_of_morseIndex_eq_add_one hpq]
+  · simp [hpq]
+
+namespace IsMorseSmale
+
+variable (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {R : Type*} [Ring R]
+include h
+
+/-- **`∂ ∘ ∂` counts broken trajectories with signs.** Under the Morse–Smale condition, the
+coefficient of `r` in the boundary of the boundary of a critical point `p` is the sum, over the
+broken index-two trajectories `(q, z₁, z₂)` from `p` to `r`, of the product of the signs of the
+trajectory from `p` to `q` through `z₁` and of the trajectory from `q` to `r` through `z₂`. -/
+theorem signedMorseBoundary_signedMorseBoundary_single_apply (p r : criticalPoints 𝓘(ℝ, E) f) :
+    hX.signedMorseBoundary 𝔬 hf R (hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p 1)) r =
+      ((∑ᶠ x ∈ hX.morseBrokenTrajectorySet p r,
+        hX.morseTrajectorySign 𝔬 p x.1 x.2.1 * hX.morseTrajectorySign 𝔬 x.1 r x.2.2 : ℤ) : R) := by
+  classical
+  have := hf.finite_criticalPoints.to_subtype
+  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)
+  have hfin := h.finite_morseBrokenTrajectorySet hf p r
+  -- Sort the broken trajectories by their intermediate critical point `q`.
+  rw [signedMorseBoundary_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    finsum_mem_eq_finite_toFinset_sum _ hfin, ← Finset.sum_fiberwise hfin.toFinset Prod.fst,
+    Int.cast_sum]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [signedMorseBoundary_single_apply, one_mul, ← Int.cast_mul]
+  congr 1
+  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
+      manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1
+  · -- The fiber over `q` is a copy of the pairs of trajectories through `q`.
+    have h₁ := h.finite_morseTrajectorySlice hf hind.1
+    have h₂ := h.finite_morseTrajectorySlice hf hind.2
+    have hfib : hfin.toFinset.filter (fun x ↦ x.1 = q) =
+        (h₁.toFinset ×ˢ h₂.toFinset).map ⟨Prod.mk q, Prod.mk_right_injective q⟩ := by
+      ext ⟨q', z₁, z₂⟩
+      simp only [Finset.mem_filter, Finite.mem_toFinset, mem_morseBrokenTrajectorySet,
+        Finset.mem_map, Finset.mem_product, Function.Embedding.coeFn_mk, Prod.mk.injEq]
+      constructor
+      · rintro ⟨⟨-, -, hz₁, hz₂⟩, rfl⟩
+        exact ⟨(z₁, z₂), ⟨hz₁, hz₂⟩, rfl, rfl⟩
+      · rintro ⟨⟨w₁, w₂⟩, ⟨hw₁, hw₂⟩, rfl, hw⟩
+        obtain ⟨rfl, rfl⟩ := Prod.mk.injEq _ _ _ _ ▸ hw
+        exact ⟨⟨hind.1, hind.2, hw₁, hw₂⟩, rfl⟩
+    rw [hfib, Finset.sum_map, Finset.sum_product, signedMorseBoundaryCoeff_eq_finsum,
+      signedMorseBoundaryCoeff_eq_finsum, finsum_mem_eq_finite_toFinset_sum _ h₁,
+      finsum_mem_eq_finite_toFinset_sum _ h₂, Finset.sum_mul_sum]
+    rfl
+  · -- Otherwise there are no broken trajectories through `q`, and one of the counts vanishes.
+    have hempty : hfin.toFinset.filter (fun x ↦ x.1 = q) = ∅ := by
+      refine Finset.filter_false_of_mem fun x hx hxq ↦ hind ?_
+      rw [Finite.mem_toFinset, mem_morseBrokenTrajectorySet] at hx
+      exact hxq ▸ ⟨hx.1, hx.2.1⟩
+    rw [hempty, Finset.sum_empty]
+    rcases not_and_or.mp hind with hpq | hqr
+    · simp [hpq]
+    · simp [hqr]
+
+/-- **`∂² = 0` reduces to counting broken trajectories with signs.** Under the Morse–Smale
+condition, the Morse boundary with coefficients in `R` squares to zero exactly when, between any
+two critical points, the broken index-two trajectories counted with the products of the signs of
+their components sum to zero in `R`. -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_iff :
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 ↔
+      ∀ p r : criticalPoints 𝓘(ℝ, E) f,
+        ((∑ᶠ x ∈ hX.morseBrokenTrajectorySet p r,
+          hX.morseTrajectorySign 𝔬 p x.1 x.2.1 * hX.morseTrajectorySign 𝔬 x.1 r x.2.2 : ℤ) :
+            R) = 0 := by
+  simp_rw [← h.signedMorseBoundary_signedMorseBoundary_single_apply hf]
+  constructor
+  · intro h0 p r
+    simpa using DFunLike.congr_fun (LinearMap.congr_fun h0 (Finsupp.single p 1)) r
+  · intro h0
+    refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun r ↦ ?_
+    -- The boundary of `a • p` is `a` times the boundary of `p`.
+    rw [LinearMap.comp_apply, ← Finsupp.smul_single_one, map_smul, map_smul]
+    simp [h0]
+
+end IsMorseSmale
+
+end Square
 
 omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] in
 /-- **Orientation data exist.** For an adapted pseudo-gradient, every critical point has a Morse
