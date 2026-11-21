@@ -518,13 +518,13 @@ theorem _root_.ContMDiffMap.homologyPeriodHom_circleLogDeriv (u : C^∞⟮I, M; 
 /-- **Closed real forms with periods in `2πℤ` are real logarithmic derivatives.** A smooth closed
 real `1`-form whose integrals over singular `1`-cycles lie in `2πℤ` is `circleLogDeriv u` for a
 smooth map `u : M → U(1)`. -/
-theorem exists_circleLogDeriv_eq {φ : SmoothForm I M ℝ 1} (hclosed : mextDeriv φ.1 = 0)
-    (hper : ∀ c, ∃ n : ℤ, homologyPeriodHom φ.1 c = n * (2 * π)) :
+theorem exists_circleLogDeriv_eq {φ : SmoothForm I M ℝ 1} (hclosed : mextDeriv φ.val = 0)
+    (hper : ∀ c, ∃ n : ℤ, homologyPeriodHom φ.val c = n * (2 * π)) :
     ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = φ := by
   -- `i φ` is a closed imaginary form with periods in `2πiℤ`, hence `dlog u` for some `u`.
   let L : ℝ →L[ℝ] ℂ := Complex.I • Complex.ofRealCLM
-  have hφ₁ : IsSmoothForm I 1 φ.1 := φ.isSmoothForm.of_le (by simp)
-  obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq (φ := RoughForm.mapCoeff L φ.1)
+  have hφ₁ : IsSmoothForm I 1 φ.val := φ.isSmoothForm.of_le (by simp)
+  obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq (φ := RoughForm.mapCoeff L φ.val)
     (φ.isSmoothForm.mapCoeff L)
     (by rw [mextDeriv_mapCoeff L hφ₁, hclosed, RoughForm.mapCoeff_zero])
     (fun x v ↦ by simp [L])
@@ -564,9 +564,9 @@ Rham class of a closed `1`-form lies in `2π H¹(M; ℤ)` exactly when the form 
 logarithmic derivative of a smooth circle-valued map. -/
 theorem mk_mem_circlePeriodLattice_iff {a : closedForms I M 1} :
     mk I 1 a ∈ circlePeriodLattice I M ↔
-      ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.1 := by
+      ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.val := by
   rw [mem_circlePeriodLattice_iff, homologyPeriod_mk]
-  refine ⟨fun h ↦ exists_circleLogDeriv_eq ((mem_closedForms I a.1).mp a.2) h,
+  refine ⟨fun h ↦ exists_circleLogDeriv_eq ((mem_closedForms I a.val).mp a.property) h,
     fun ⟨u, hu⟩ z ↦ ⟨_, hu ▸ u.homologyPeriodHom_circleLogDeriv z⟩⟩
 
 end deRhamCohomology

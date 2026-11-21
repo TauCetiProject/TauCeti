@@ -56,7 +56,7 @@ variable (I M) in
 /-- The real logarithmic derivatives of the smooth circle-valued maps, as a subgroup of the
 closed `1`-forms: the gauge orbit of the trivial connection. -/
 def circleLogDerivSubgroup : AddSubgroup (closedForms I M 1) where
-  carrier := {a | ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.1}
+  carrier := {a | ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.val}
   add_mem' {a b} := by
     rintro ⟨u, hu⟩ ⟨v, hv⟩
     exact ⟨u * v, by rw [ContMDiffMap.circleLogDeriv_mul, hu, hv, Submodule.coe_add]⟩
@@ -67,7 +67,7 @@ def circleLogDerivSubgroup : AddSubgroup (closedForms I M 1) where
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 theorem mem_circleLogDerivSubgroup_iff {a : closedForms I M 1} :
-    a ∈ circleLogDerivSubgroup I M ↔ ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.1 :=
+    a ∈ circleLogDerivSubgroup I M ↔ ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.val :=
   Iff.rfl
 
 /-- **The real logarithmic derivatives are the closed forms with periods in `2πℤ`.** A closed
@@ -82,7 +82,7 @@ theorem mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice {a : closedFor
 circle bundle are related by a gauge transformation exactly when their de Rham classes differ by
 an element of `2π H¹(M; ℤ)`. -/
 theorem exists_circleGaugeAction_eq_iff {a b : closedForms I M 1} :
-    (∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.1 = b.1) ↔
+    (∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.val = b.val) ↔
       deRhamCohomology.mk I 1 a - deRhamCohomology.mk I 1 b ∈
         deRhamCohomology.circlePeriodLattice I M := by
   rw [← map_sub, ← mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice,
@@ -96,7 +96,7 @@ them. -/
 theorem circleLogDerivSubgroup_mk_eq_mk_iff {a b : closedForms I M 1} :
     (QuotientAddGroup.mk a : closedForms I M 1 ⧸ circleLogDerivSubgroup I M) =
         QuotientAddGroup.mk b ↔
-      ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.1 = b.1 := by
+      ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.val = b.val := by
   have hab : -a + b = -(a - b) := by abel
   rw [QuotientAddGroup.eq, hab, AddSubgroup.neg_mem_iff,
     mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice, exists_circleGaugeAction_eq_iff,

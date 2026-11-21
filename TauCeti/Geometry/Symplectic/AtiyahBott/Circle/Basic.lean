@@ -114,7 +114,7 @@ theorem _root_.ContMDiffMap.circleGaugeGenerator_def (ξ : C^∞⟮I, M; ℝ⟯)
 @[simp]
 theorem _root_.ContMDiffMap.circleGaugeGenerator_apply (ξ : C^∞⟮I, M; ℝ⟯) (x : M)
     (v : Fin 1 → TangentSpace I x) :
-    ξ.circleGaugeGenerator.1 x v = -mvfderiv I ξ x (v 0) := by
+    ξ.circleGaugeGenerator.val x v = -mvfderiv I ξ x (v 0) := by
   simp [ξ.circleGaugeGenerator_def, mextDerivₗ_apply, mextDeriv_ofFunction]
 
 /-- **The exponential formula for the gauge action.** The one-parameter group
@@ -144,7 +144,7 @@ variable [FiniteDimensional ℝ E] [CompactSpace M] [BoundarylessManifold I M] [
 omit [BoundarylessManifold I M] [T2Space M] in
 /-- Integration of smooth `2`-forms over the closed surface is additive. -/
 private theorem integralTopForm_add_two (φ ψ : SmoothForm I M ℝ 2) :
-    integralTopForm o (φ + ψ).1 = integralTopForm o φ.1 + integralTopForm o ψ.1 :=
+    integralTopForm o (φ + ψ).val = integralTopForm o φ.val + integralTopForm o ψ.val :=
   integralTopForm_add_of_compactSpace o (φ.isSmoothForm.of_le (by simp))
     (ψ.isSmoothForm.of_le (by simp))
 
@@ -153,7 +153,7 @@ of the space of connections of the trivial circle bundle over the closed oriente
 with `u(1) = iℝ` identified with `ℝ` by its invariant inner product. It does not depend on the
 base connection. -/
 def atiyahBottForm : LinearMap.BilinForm ℝ (SmoothForm I M ℝ 1) :=
-  LinearMap.mk₂ ℝ (fun a b ↦ integralTopForm o (SmoothForm.wedge a b).1)
+  LinearMap.mk₂ ℝ (fun a b ↦ integralTopForm o (SmoothForm.wedge a b).val)
     (fun a a' b ↦ by rw [map_add, LinearMap.add_apply, integralTopForm_add_two])
     (fun c a b ↦ by
       rw [map_smul, LinearMap.smul_apply, Submodule.coe_smul, integralTopForm_smul, smul_eq_mul])
@@ -162,14 +162,14 @@ def atiyahBottForm : LinearMap.BilinForm ℝ (SmoothForm I M ℝ 1) :=
 
 omit [BoundarylessManifold I M] [T2Space M] in
 theorem atiyahBottForm_apply (a b : SmoothForm I M ℝ 1) :
-    atiyahBottForm o a b = integralTopForm o (RoughForm.wedge a.1 b.1) := by
+    atiyahBottForm o a b = integralTopForm o (RoughForm.wedge a.val b.val) := by
   rw [atiyahBottForm, LinearMap.mk₂_apply, SmoothForm.coe_wedge]
 
 omit [BoundarylessManifold I M] [T2Space M] in
 /-- The Atiyah–Bott form is antisymmetric. -/
 theorem atiyahBottForm_swap (a b : SmoothForm I M ℝ 1) :
     atiyahBottForm o b a = -atiyahBottForm o a b := by
-  have h : (SmoothForm.wedge b a).1 = -(SmoothForm.wedge a b).1 :=
+  have h : (SmoothForm.wedge b a).val = -(SmoothForm.wedge a b).val :=
     funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
       rw [SmoothForm.wedge_comm, Fin.cast_refl, Function.comp_id]
       simp
@@ -225,7 +225,7 @@ theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
 an element `ξ` of the Lie algebra `C^∞(M, ℝ)` of the gauge group. It is linear in `a` because the
 trivial connection `d` is taken as the origin of the space of connections. -/
 def atiyahBottMoment : SmoothForm I M ℝ 1 →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun a ξ ↦ integralTopForm o (SmoothForm.funSMulₗ ξ (mextDerivₗ I 1 a)).1)
+  LinearMap.mk₂ ℝ (fun a ξ ↦ integralTopForm o (SmoothForm.funSMulₗ ξ (mextDerivₗ I 1 a)).val)
     (fun a a' ξ ↦ by rw [map_add, map_add, integralTopForm_add_two])
     (fun c a ξ ↦ by
       rw [map_smul, map_smul, Submodule.coe_smul, integralTopForm_smul, smul_eq_mul])
@@ -243,7 +243,7 @@ def atiyahBottMoment : SmoothForm I M ℝ 1 →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ →
 omit [BoundarylessManifold I M] [T2Space M] in
 theorem atiyahBottMoment_apply (a : SmoothForm I M ℝ 1) (ξ : C^∞⟮I, M; ℝ⟯) :
     atiyahBottMoment o a ξ =
-      integralTopForm o (fun x ↦ ξ x • mextDeriv a.1 x : RoughForm I M ℝ 2) := by
+      integralTopForm o (fun x ↦ ξ x • mextDeriv a.val x : RoughForm I M ℝ 2) := by
   rw [atiyahBottMoment, LinearMap.mk₂_apply, SmoothForm.coe_funSMulₗ, mextDerivₗ_apply]
 
 /-- **Integration by parts on the closed surface**: `∫_M ξ db = -∫_M dξ ∧ b`, that is
@@ -261,7 +261,7 @@ theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : Smo
   have hcast : (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
       (show 0 + 1 + 1 = 1 + 1 by omega)
       (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b) : RoughForm I M ℝ 2) =
-        (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b).1 :=
+        (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b).val :=
     funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
       rw [SmoothForm.cast_apply, Fin.cast_refl, Function.comp_id]
   rw [hcast] at hS
@@ -301,18 +301,18 @@ theorem atiyahBottMoment_eq_zero_iff {a : SmoothForm I M ℝ 1} :
     -- `s = ⋆F` for a Riemannian metric: then `⟨μ(a), s⟩ = ∫_M F ∧ s ≠ 0`.
     set F := mextDerivₗ I 1 a
     obtain ⟨s, hFs⟩ := exists_integralTopForm_wedge_ne_zero o (show 2 + 0 = 2 from rfl) hne
-    have hs : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun x ↦ s.1 x 0 := by
+    have hs : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun x ↦ s.val x 0 := by
       rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
       exact s.isSmoothForm
     refine hFs ?_
-    have hξ := (atiyahBottMoment_apply o a ⟨fun x ↦ s.1 x 0, hs⟩).symm.trans
+    have hξ := (atiyahBottMoment_apply o a ⟨fun x ↦ s.val x 0, hs⟩).symm.trans
       ((LinearMap.congr_fun h _).trans (LinearMap.zero_apply _))
     rw [← hξ]
     congr 1
     funext x
     ext v
     rw [SmoothForm.cast_apply, SmoothForm.coe_wedge]
-    conv_lhs => rw [RoughForm.eq_ofFunction s.1, RoughForm.wedge_ofFunction]
+    conv_lhs => rw [RoughForm.eq_ofFunction s.val, RoughForm.wedge_ofFunction]
     simp [F, mextDerivₗ_apply]
   · ext ξ
     rw [atiyahBottMoment_apply, ← mextDerivₗ_apply, h, LinearMap.zero_apply]

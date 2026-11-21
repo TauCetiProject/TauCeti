@@ -441,13 +441,13 @@ theorem _root_.ContMDiffMap.coe_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle
 
 theorem _root_.ContMDiffMap.circleLogDeriv_apply (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (x : M)
     (v : Fin 1 → TangentSpace I x) :
-    u.circleLogDeriv.1 x v = (mlogDeriv I (fun y ↦ (u y : ℂ)) x v).im := by
+    u.circleLogDeriv.val x v = (mlogDeriv I (fun y ↦ (u y : ℂ)) x v).im := by
   rw [u.coe_circleLogDeriv, RoughForm.mapCoeff_apply, Complex.imCLM_apply]
 
 /-- `dlog u` is `i` times the real logarithmic derivative of the circle-valued map `u`. -/
 theorem _root_.ContMDiffMap.mlogDeriv_coe_apply_eq_circleLogDeriv_mul_I
     (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (x : M) (v : Fin 1 → TangentSpace I x) :
-    mlogDeriv I (fun y ↦ (u y : ℂ)) x v = u.circleLogDeriv.1 x v * Complex.I := by
+    mlogDeriv I (fun y ↦ (u y : ℂ)) x v = u.circleLogDeriv.val x v * Complex.I := by
   have hre := re_mlogDeriv_apply_eq_zero ((u.contMDiff_coe_circle x).mdifferentiableAt (by simp))
     (Eventually.of_forall fun y ↦ Circle.norm_coe (u y)) v
   conv_lhs => rw [← Complex.re_add_im (mlogDeriv I (fun y ↦ (u y : ℂ)) x v)]
@@ -477,7 +477,7 @@ theorem _root_.ContMDiffMap.circleLogDeriv_inv (u : C^∞⟮I, M; 𝓡 1, Circle
 
 /-- The real logarithmic derivative of a smooth circle-valued map is closed. -/
 theorem _root_.ContMDiffMap.mextDeriv_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
-    mextDeriv u.circleLogDeriv.1 = 0 := by
+    mextDeriv u.circleLogDeriv.val = 0 := by
   rw [← mextDerivₗ_apply, ContMDiffMap.circleLogDeriv, SmoothForm.mextDerivₗ_mapCoeff,
     SmoothForm.coe_mapCoeff, mextDerivₗ_apply, u.mextDeriv_mlogDeriv_coe, RoughForm.mapCoeff_zero]
 
