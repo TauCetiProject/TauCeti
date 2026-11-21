@@ -13,8 +13,9 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 import TauCeti.Topology.Homotopy.Cube.Radius
@@ -51,13 +52,10 @@ planar Lebesgue measure forward along `a / 2` (`TauCeti.map_volume_half_sq_add_s
 is `-2π (B(1) - B(0)) = -4π`. Precomposed with `z ↦ 2 z - 1` it gives a generalized loop of the
 unit square, of area `-4π`.
 
-Its class generates `π₂(S²)`. Composing `Φ` with the radial homeomorphism that takes the square
-`max(|p₁|, |p₂|) ≤ 1` onto the closed unit disc (`ContinuousLinearEquiv.unitBallHomeomorph`) gives
-a generalized loop identifying only points of the boundary of the cube, which therefore has a
-generating Hurewicz class (`GenLoop.isIso_hurewicz_of_bijective_toSphere`). The straight-line
-homotopy between the two maps keeps the boundary of the cube at the north pole. By the Hurewicz
-theorem every class of `π₂(S²)` is an integer multiple of this one, and its area is the
-corresponding multiple of `-4π`.
+Its class generates `π₂(S²)`. The loop covers the complement of the north pole once, since `Φ` is
+injective on the open disc, so it has a generating Hurewicz class
+(`GenLoop.isIso_hurewicz_of_bijOn_toSphere`). By the Hurewicz theorem every class of `π₂(S²)` is an
+integer multiple of this one, and its area is the corresponding multiple of `-4π`.
 
 ## Main definitions
 
@@ -453,7 +451,7 @@ private theorem rectangleIntegral_collapseSphere :
     integral_deriv_heightProfile_radSq]
   ring
 
-/-! ### From the square to the disc -/
+/-! ### The generalized loop -/
 
 private theorem norm_sq_le_radSq (p : ℝ × ℝ) : ‖p‖ ^ 2 ≤ radSq p := by
   rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, radSq]
@@ -462,41 +460,6 @@ private theorem norm_sq_le_radSq (p : ℝ × ℝ) : ‖p‖ ^ 2 ≤ radSq p := b
     nlinarith [sq_nonneg p.1]
   · rw [max_eq_left h, sq_abs]
     nlinarith [sq_nonneg p.2]
-
-private theorem radSq_smul (c : ℝ) (p : ℝ × ℝ) : radSq (c • p) = c ^ 2 * radSq p := by
-  simp only [radSq, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
-  ring
-
-/-- The identity of `ℝ × ℝ`, from the sup norm to the Euclidean norm. -/
-private def euclideanPlane : (ℝ × ℝ) ≃L[ℝ] WithLp 2 (ℝ × ℝ) :=
-  (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ ℝ).symm
-
-/-- The radial homeomorphism of the plane taking the square `‖p‖ ≤ 1` of the sup norm onto the
-closed unit disc. -/
-private def squareToDisc : ℝ × ℝ ≃ₜ ℝ × ℝ :=
-  euclideanPlane.unitBallHomeomorph.trans euclideanPlane.symm.toHomeomorph
-
-private theorem radSq_squareToDisc (p : ℝ × ℝ) :
-    radSq (squareToDisc p) = ‖euclideanPlane.unitBallHomeomorph p‖ ^ 2 := by
-  rw [WithLp.prod_norm_sq_eq_of_L2]
-  simp only [radSq, squareToDisc, euclideanPlane, ContinuousLinearEquiv.symm_symm,
-    Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
-    WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_fst, WithLp.ofLp_snd, norm_eq_abs, sq_abs]
-
-private theorem one_le_radSq_squareToDisc_iff {p : ℝ × ℝ} :
-    1 ≤ radSq (squareToDisc p) ↔ 1 ≤ ‖p‖ := by
-  rw [radSq_squareToDisc, one_le_sq_iff_one_le_abs, abs_norm, ← not_lt, ← not_lt,
-    ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff]
-
-/-- `squareToDisc` rescales each point of the plane by a nonnegative factor. -/
-private theorem exists_squareToDisc_eq_smul (p : ℝ × ℝ) :
-    ∃ c : ℝ, 0 ≤ c ∧ squareToDisc p = c • p := by
-  rw [squareToDisc, Homeomorph.trans_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
-    gaugeRescale_def, ContinuousLinearEquiv.coe_toHomeomorph, map_smul,
-    ContinuousLinearEquiv.symm_apply_apply]
-  exact ⟨_, div_nonneg (gauge_nonneg _) (gauge_nonneg _), rfl⟩
-
-/-! ### The two generalized loops -/
 
 /-- A point of the cube `I²` as a point of the square `[-1, 1]²`, through the affine homeomorphism
 `TauCeti.cubeHomeomorphClosedBall` onto the closed unit ball of the sup norm. -/
@@ -511,22 +474,10 @@ private theorem cubeSquare_eq_squareCoord (y : Fin 2 → I) :
     cubeSquare y = squareCoord ((y 0 : ℝ), (y 1 : ℝ)) := by
   simp [cubeSquare, squareCoord]
 
-/-- `ContinuousLinearEquiv.finTwoArrow` preserves the sup norm. -/
-private theorem norm_finTwoArrow (v : Fin 2 → ℝ) :
-    ‖ContinuousLinearEquiv.finTwoArrow ℝ ℝ v‖ = ‖v‖ := by
-  simp only [ContinuousLinearEquiv.finTwoArrow_apply, Prod.norm_def]
-  refine le_antisymm (max_le (norm_le_pi_norm v 0) (norm_le_pi_norm v 1))
-    ((pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_)
-  fin_cases i
-  exacts [le_max_left _ _, le_max_right _ _]
-
-private theorem norm_cubeSquare_le (y : Fin 2 → I) : ‖cubeSquare y‖ ≤ 1 := by
-  rw [cubeSquare, norm_finTwoArrow, ← mem_closedBall_zero_iff]
-  exact (cubeHomeomorphClosedBall (Fin 2) y).property
-
 private theorem norm_cubeSquare_eq_one_iff {y : Fin 2 → I} :
     ‖cubeSquare y‖ = 1 ↔ y ∈ Cube.boundary (Fin 2) := by
-  rw [cubeSquare, norm_finTwoArrow, norm_cubeHomeomorphClosedBall_eq_one_iff]
+  rw [cubeSquare, ContinuousLinearEquiv.norm_finTwoArrow ℝ,
+    norm_cubeHomeomorphClosedBall_eq_one_iff]
 
 private theorem cubeSquare_injective : Function.Injective cubeSquare :=
   (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).injective.comp
@@ -541,104 +492,62 @@ private def collapseLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
 private theorem collapseLoop_apply (y : Fin 2 → I) : collapseLoop y = collapse (cubeSquare y) :=
   (rfl)
 
-/-- The generalized loop `y ↦ Φ(squareToDisc (2 y - 1))`, which identifies only points of the
-boundary of the cube. -/
-private def discLoop : Ω^ (Fin 2) S² (sphereNorthPole 2) :=
-  ⟨⟨fun y ↦ collapse (squareToDisc (cubeSquare y)),
-      continuous_collapse.comp (squareToDisc.continuous.comp continuous_cubeSquare)⟩,
-    fun _ hy ↦ collapse_eq_sphereNorthPole_iff.2
-      (one_le_radSq_squareToDisc_iff.2 (norm_cubeSquare_eq_one_iff.2 hy).ge)⟩
-
-private theorem discLoop_apply (y : Fin 2 → I) :
-    discLoop y = collapse (squareToDisc (cubeSquare y)) :=
-  (rfl)
-
-/-- The straight-line homotopy from the plane map to its composite with `squareToDisc` keeps the
-boundary of the cube at the north pole. -/
-private theorem homotopic_collapseLoop_discLoop : GenLoop.Homotopic collapseLoop discLoop := by
-  refine ⟨{
-    toFun := fun q ↦ collapse (((1 : ℝ) - q.1) • cubeSquare q.2 +
-      (q.1 : ℝ) • squareToDisc (cubeSquare q.2))
-    continuous_toFun := by
-      have hP : Continuous fun q : I × (Fin 2 → I) ↦ cubeSquare q.2 :=
-        continuous_cubeSquare.comp continuous_snd
-      exact continuous_collapse.comp
-        (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul hP).add
-          ((continuous_subtypeVal.comp continuous_fst).smul (squareToDisc.continuous.comp hP)))
-    map_zero_left := fun y ↦ by simp [collapseLoop_apply]
-    map_one_left := fun y ↦ by simp [discLoop_apply]
-    prop' := fun t y hy ↦ ?_ }⟩
-  simp only [ContinuousMap.coe_mk]
-  rw [collapseLoop.property y hy, collapse_eq_sphereNorthPole_iff]
-  -- On the boundary `‖P‖ = 1`, and `squareToDisc P = c • P` lies on the unit circle with
-  -- `0 ≤ c ≤ 1`, so the segment from `P` to it stays outside the open disc.
-  set P := cubeSquare y
-  have hP : ‖P‖ = 1 := norm_cubeSquare_eq_one_iff.2 hy
-  have hrP : 1 ≤ radSq P := by nlinarith [norm_sq_le_radSq P]
-  obtain ⟨c, hc0, hc⟩ := exists_squareToDisc_eq_smul P
-  have hcP : c ^ 2 * radSq P = 1 := by
-    rw [← radSq_smul, ← hc, radSq_squareToDisc,
-      euclideanPlane.norm_unitBallHomeomorph_eq_one_iff.2 hP, one_pow]
-  have hc1 : c ≤ 1 := by nlinarith
-  have hk : c ≤ 1 - t + t * c := by nlinarith [t.property.1, t.property.2]
-  rw [hc, smul_smul, ← add_smul, radSq_smul]
-  calc 1 = c ^ 2 * radSq P := hcP.symm
-    _ ≤ (1 - t + t * c) ^ 2 * radSq P := by gcongr
-
-private theorem bijective_toSphere_discLoop : Function.Bijective (GenLoop.toSphere discLoop) := by
-  refine ⟨(GenLoop.injective_toSphere_iff _).2 fun y z hyz ↦ ?_,
-    (GenLoop.surjective_toSphere_iff _).2 fun s ↦ ?_⟩
-  · -- Points sent to the north pole lie on the boundary; elsewhere `collapse` and `squareToDisc`
-    -- are injective.
-    rw [discLoop_apply, discLoop_apply] at hyz
-    by_cases hN : collapse (squareToDisc (cubeSquare y)) = sphereNorthPole 2
-    · have hN' := hyz ▸ hN
-      rw [collapse_eq_sphereNorthPole_iff, one_le_radSq_squareToDisc_iff] at hN hN'
-      exact Or.inr ⟨norm_cubeSquare_eq_one_iff.1 ((norm_cubeSquare_le y).antisymm hN),
-        norm_cubeSquare_eq_one_iff.1 ((norm_cubeSquare_le z).antisymm hN')⟩
-    · have hN' : ¬ collapse (squareToDisc (cubeSquare z)) = sphereNorthPole 2 := hyz ▸ hN
-      rw [collapse_eq_sphereNorthPole_iff, not_le] at hN hN'
-      exact Or.inl (cubeSquare_injective (squareToDisc.injective (collapse_injOn hN hN' hyz)))
-  · by_cases hs : s = sphereNorthPole 2
-    · exact ⟨0, hs ▸ discLoop.property 0 ⟨0, Or.inl rfl⟩⟩
-    obtain ⟨q, hq, rfl⟩ := exists_collapse_eq hs
-    obtain ⟨p, rfl⟩ := squareToDisc.surjective q
-    have hp1 : ‖p‖ ≤ 1 := not_lt.1 fun h ↦ hq.not_ge (one_le_radSq_squareToDisc_iff.2 h.le)
-    have hp : (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm p ∈ Metric.closedBall 0 1 := by
-      rwa [mem_closedBall_zero_iff, ← norm_finTwoArrow, ContinuousLinearEquiv.apply_symm_apply]
-    refine ⟨(cubeHomeomorphClosedBall (Fin 2)).symm ⟨_, hp⟩, ?_⟩
-    rw [discLoop_apply, cubeSquare, Homeomorph.apply_symm_apply,
-      ContinuousLinearEquiv.apply_symm_apply]
+/-- `collapseLoop` covers the complement of the north pole once: off the boundary of the cube it is
+injective, and every other point of `S²` is the image of a point of the open disc. -/
+private theorem bijOn_toSphere_collapseLoop :
+    BijOn (GenLoop.toSphere collapseLoop) (GenLoop.toSphere collapseLoop ⁻¹' {sphereNorthPole 2}ᶜ)
+      {sphereNorthPole 2}ᶜ := by
+  refine ⟨fun _ h ↦ h, fun s hs s' hs' h ↦ ?_, fun s hs ↦ ?_⟩
+  · obtain ⟨y, rfl⟩ := cubeToSphere_surjective _ s
+    obtain ⟨z, rfl⟩ := cubeToSphere_surjective _ s'
+    simp only [mem_preimage, mem_compl_singleton_iff, GenLoop.toSphere_cubeToSphere,
+      collapseLoop_apply] at hs hs' h
+    rw [Ne, collapse_eq_sphereNorthPole_iff, not_le] at hs hs'
+    rw [cubeSquare_injective (collapse_injOn hs hs' h)]
+  · obtain ⟨p, hp, rfl⟩ := exists_collapse_eq hs
+    have hp1 : (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm p ∈ Metric.closedBall 0 1 := by
+      rw [mem_closedBall_zero_iff, ← ContinuousLinearEquiv.norm_finTwoArrow ℝ,
+        ContinuousLinearEquiv.apply_symm_apply]
+      nlinarith [norm_sq_le_radSq p, norm_nonneg p]
+    have hy : collapseLoop ((cubeHomeomorphClosedBall (Fin 2)).symm ⟨_, hp1⟩) = collapse p := by
+      rw [collapseLoop_apply, cubeSquare, Homeomorph.apply_symm_apply,
+        ContinuousLinearEquiv.apply_symm_apply]
+    refine ⟨cubeToSphere _ ((cubeHomeomorphClosedBall (Fin 2)).symm ⟨_, hp1⟩), ?_, ?_⟩
+    · rwa [mem_preimage, GenLoop.toSphere_cubeToSphere, hy]
+    · rw [GenLoop.toSphere_cubeToSphere, hy]
 
 /-! ### A generator of `π₂(S²)` and its area -/
 
-/-- The class of `discLoop`, a generator of `π₂(S²)`. -/
-private def discClass : HomotopyGroup (Fin 2) S² (sphereNorthPole 2) := ⟦discLoop⟧
+/-- The class of `collapseLoop`, a generator of `π₂(S²)`. -/
+private def collapseClass : HomotopyGroup (Fin 2) S² (sphereNorthPole 2) := ⟦collapseLoop⟧
 
-/-- Every class of `π₂(S²)` is a unique integer multiple of `discClass`. -/
-private theorem bijective_zmultiplesHom_discClass :
+/-- Every class of `π₂(S²)` is a unique integer multiple of `collapseClass`. -/
+private theorem bijective_zmultiplesHom_collapseClass :
     Function.Bijective (zmultiplesHom (Additive (π_ 2 S² (sphereNorthPole 2)))
-      (Additive.ofMul discClass)) :=
+      (Additive.ofMul collapseClass)) :=
   (isIso_hurewicz_iff_bijective_zmultiplesHom (n := 0)
-    (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) discLoop).1
-    (GenLoop.isIso_hurewicz_of_bijective_toSphere _ bijective_toSphere_discLoop)
+    (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) collapseLoop).1
+    (GenLoop.isIso_hurewicz_of_bijOn_toSphere (n := 0) finrank_euclideanSpace_fin collapseLoop
+      isOpen_compl_singleton
+      ⟨collapse 0, fun h ↦ (collapse_eq_sphereNorthPole_iff.1 h).not_gt (by simp [radSq])⟩
+      bijOn_toSphere_collapseLoop)
 
-private theorem exists_eq_zsmul_discClass (a : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)) :
-    ∃ k : ℤ, a = (k • Additive.ofMul discClass).toMul := by
-  obtain ⟨k, hk⟩ := bijective_zmultiplesHom_discClass.2 (Additive.ofMul a)
+private theorem exists_eq_zsmul_collapseClass (a : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)) :
+    ∃ k : ℤ, a = (k • Additive.ofMul collapseClass).toMul := by
+  obtain ⟨k, hk⟩ := bijective_zmultiplesHom_collapseClass.2 (Additive.ofMul a)
   exact ⟨k, by rw [← zmultiplesHom_apply, hk, toMul_ofMul]⟩
 
-private theorem sphereIntegral_zsmul_discClass (k : ℤ) :
-    sphereIntegral sphereAreaForm.val (sphereNorthPole 2) (k • Additive.ofMul discClass).toMul =
+private theorem sphereIntegral_zsmul_collapseClass (k : ℤ) :
+    sphereIntegral sphereAreaForm.val (sphereNorthPole 2) (k • Additive.ofMul collapseClass).toMul =
       -4 * π * k := by
-  have h1 : sphereIntegral sphereAreaForm.val (sphereNorthPole 2) discClass = -4 * π := by
-    rw [discClass, ← Quotient.sound homotopic_collapseLoop_discLoop,
+  have h1 : sphereIntegral sphereAreaForm.val (sphereNorthPole 2) collapseClass = -4 * π := by
+    rw [collapseClass,
       sphereIntegral_mk_of_contMDiff isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm
         contMDiff_collapseSphere
         (fun y ↦ by rw [collapseLoop_apply, cubeSquare_eq_squareCoord, collapseSphere]),
       rectangleIntegral_collapseSphere]
   have h := (sphereIntegralHom (sphereNorthPole 2) isSmoothForm_sphereAreaForm
-    mextDeriv_sphereAreaForm).map_zsmul k (Additive.ofMul discClass)
+    mextDeriv_sphereAreaForm).map_zsmul k (Additive.ofMul collapseClass)
   rw [sphereIntegralHom_apply isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm,
     sphereIntegralHom_apply isSmoothForm_sphereAreaForm mextDeriv_sphereAreaForm,
     toMul_ofMul, h1] at h
@@ -661,9 +570,9 @@ theorem sphereIntegral_sphereAreaForm_injective (x : S²) :
     Function.Injective (sphereIntegral sphereAreaForm.val x) := by
   rw [sphereIntegral_sphereAreaForm_eq_comp]
   refine Function.Injective.comp (fun a b hab ↦ ?_) (Equiv.injective _)
-  obtain ⟨k, rfl⟩ := exists_eq_zsmul_discClass a
-  obtain ⟨m, rfl⟩ := exists_eq_zsmul_discClass b
-  rw [sphereIntegral_zsmul_discClass, sphereIntegral_zsmul_discClass] at hab
+  obtain ⟨k, rfl⟩ := exists_eq_zsmul_collapseClass a
+  obtain ⟨m, rfl⟩ := exists_eq_zsmul_collapseClass b
+  rw [sphereIntegral_zsmul_collapseClass, sphereIntegral_zsmul_collapseClass] at hab
   have hkm : k = m := by exact_mod_cast mul_left_cancel₀ (by positivity : -4 * π ≠ 0) hab
   rw [hkm]
 
@@ -676,14 +585,14 @@ theorem range_sphereIntegral_sphereAreaForm (x : S²) :
   simp only [Set.mem_range, SetLike.mem_coe, AddSubgroup.mem_zmultiples_iff]
   constructor
   · rintro ⟨a, rfl⟩
-    obtain ⟨k, rfl⟩ := exists_eq_zsmul_discClass a
+    obtain ⟨k, rfl⟩ := exists_eq_zsmul_collapseClass a
     refine ⟨-k, ?_⟩
-    rw [sphereIntegral_zsmul_discClass, zsmul_eq_mul]
+    rw [sphereIntegral_zsmul_collapseClass, zsmul_eq_mul]
     push_cast
     ring
   · rintro ⟨m, rfl⟩
-    refine ⟨((-m) • Additive.ofMul discClass).toMul, ?_⟩
-    rw [sphereIntegral_zsmul_discClass, zsmul_eq_mul]
+    refine ⟨((-m) • Additive.ofMul collapseClass).toMul, ?_⟩
+    rw [sphereIntegral_zsmul_collapseClass, zsmul_eq_mul]
     push_cast
     ring
 
@@ -694,17 +603,17 @@ theorem abs_sphereIntegral_sphereAreaForm_sphereGenLoop :
   -- Both classes generate `π₂(S²)` freely, so each is `±1` times the other.
   have hg := (isIso_hurewicz_iff_bijective_zmultiplesHom (n := 0)
     (fun _ ↦ subsingleton_homotopyGroup_of_lt_two _) (sphereGenLoop 2)).1 inferInstance
-  obtain ⟨k, hk⟩ := bijective_zmultiplesHom_discClass.2
+  obtain ⟨k, hk⟩ := bijective_zmultiplesHom_collapseClass.2
     (Additive.ofMul (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)))
-  obtain ⟨m, hm⟩ := hg.2 (Additive.ofMul discClass)
+  obtain ⟨m, hm⟩ := hg.2 (Additive.ofMul collapseClass)
   simp only [zmultiplesHom_apply] at hk hm
   have hkm : k * m = 1 := by
-    apply bijective_zmultiplesHom_discClass.1
+    apply bijective_zmultiplesHom_collapseClass.1
     simp only [zmultiplesHom_apply]
     rw [mul_comm, mul_smul, hk, hm, one_smul]
   have hS : sphereIntegral sphereAreaForm.val (sphereNorthPole 2)
       (⟦sphereGenLoop 2⟧ : HomotopyGroup (Fin 2) S² (sphereNorthPole 2)) = -4 * π * k := by
-    rw [← sphereIntegral_zsmul_discClass, hk]
+    rw [← sphereIntegral_zsmul_collapseClass, hk]
     exact congrArg (sphereIntegral sphereAreaForm.val (sphereNorthPole 2)) (toMul_ofMul _).symm
   rw [hS, abs_mul, abs_mul, abs_neg, abs_of_pos Real.pi_pos]
   rcases Int.eq_one_or_neg_one_of_mul_eq_one hkm with rfl | rfl <;> norm_num
