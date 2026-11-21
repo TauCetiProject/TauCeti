@@ -17,25 +17,26 @@ import Mathlib.LinearAlgebra.Matrix.Charpoly.LinearMap
 
 Let `B` be an `R`-algebra, not necessarily commutative, and `M` an `R`-submodule of `B`. The
 *multiplier ring* `B₀ = {b ∈ B | b M ⊆ M}` of the underlying additive subgroup of `M`
-(`AddSubgroup.multiplierRing`) is the subring of left multipliers of `M`. If `M` is finitely
-generated and contains `1`, every element of `B₀` is integral over `R`
-(`Submodule.isIntegral_of_mem_multiplierRing`).
+(`AddSubgroup.multiplierRing`) is the subring of left multipliers of `M`. It contains the image
+of `R`, so the structure map of `B` corestricts to a ring map `R → B₀`. For an ideal `I` of `R`,
+the `R`-submodule `I • M` of `B` lies in `B₀` only under a hypothesis such as `I • (M * M) ≤ M`
+(see `Submodule.smul_subset_multiplierRing`). If `M` is finitely generated and contains `1`, every
+element of `B₀` is integral over `R` (`Submodule.isIntegral_of_mem_multiplierRing`).
 
-The rest of the file assumes that `B` is commutative. It compares the `R`-submodule `I • M` of
-`B` coming from an ideal `I` of `R` with the extension of `I` to `B₀` along the structure map
-`R → B₀`. The submodule `I • M` lies in `B₀` only under a hypothesis such as
-`I • (M * M) ≤ M` (see `Submodule.smul_subset_multiplierRing`). These comparisons are how a
-lattice in a finite algebra over a Huber ring yields a pair of definition.
+The last part of the file assumes that `B` is commutative. It compares `I • M` with the extension
+of `I` to `B₀` along the structure map `R → B₀`. These comparisons are how a lattice in a finite
+algebra over a Huber ring yields a pair of definition.
 
 ## Main results
 
 * `Submodule.toMultiplierRing`: the structure map `R → B₀`.
 * `Submodule.smul_subset_multiplierRing`: if `I` carries `M * M` into `M`, then `I • M ⊆ B₀`.
-* `Submodule.coe_map_pow_subset`: if `1 ∈ M`, the powers of the extension `J = I B₀` satisfy
-  `Jⁿ ⊆ Iⁿ • M`.
-* `Submodule.smul_subset_coe_map_pow`: if `Iʲ • M ⊆ B₀`, then `I^(n + j) • M ⊆ Jⁿ`.
 * `Submodule.isIntegral_of_mem_multiplierRing`: if `M` is finitely generated and contains `1`,
-  every element of `B₀` is integral over `R`. Here `B` need not be commutative.
+  every element of `B₀` is integral over `R`.
+* `Submodule.coe_map_pow_subset`: if `B` is commutative and `1 ∈ M`, the powers of the extension
+  `J = I B₀` satisfy `Jⁿ ⊆ Iⁿ • M`.
+* `Submodule.smul_subset_coe_map_pow`: if `B` is commutative and `Iʲ • M ⊆ B₀`, then
+  `I^(n + j) • M ⊆ Jⁿ`.
 -/
 
 public section
@@ -46,14 +47,15 @@ namespace Submodule
 
 variable {R : Type*} [CommRing R]
 
-section CommRing
+section Ring
 
-variable {B : Type*} [CommRing B] [Algebra R B]
+variable {B : Type*} [Ring B] [Algebra R B]
 
 /-- The image of `R` lies in the multiplier ring of an `R`-submodule. -/
 theorem algebraMap_mem_multiplierRing (M : Submodule R B) (a : R) :
     algebraMap R B a ∈ M.toAddSubgroup.multiplierRing := by
   refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
+  rw [Submodule.mem_toAddSubgroup] at hm ⊢
   rw [← Algebra.smul_def]
   exact M.smul_mem a hm
 
@@ -62,6 +64,7 @@ theorem smul_subset_multiplierRing {M : Submodule R B} {I : Ideal R} (h : I • 
     ((I • M : Submodule R B) : Set B) ⊆ M.toAddSubgroup.multiplierRing := fun x hx ↦ by
   refine Submodule.smul_induction_on hx (fun t ht n hn ↦ ?_) fun x y hx hy ↦ ?_
   · refine AddSubgroup.mem_multiplierRing.mpr fun m hm ↦ ?_
+    rw [Submodule.mem_toAddSubgroup] at hm ⊢
     rw [smul_mul_assoc]
     exact h (Submodule.smul_mem_smul ht (Submodule.mul_mem_mul hn hm))
   · exact M.toAddSubgroup.multiplierRing.add_mem hx hy
@@ -75,6 +78,37 @@ noncomputable def toMultiplierRing (M : Submodule R B) : R →+* M.toAddSubgroup
 theorem coe_toMultiplierRing (M : Submodule R B) (a : R) :
     (M.toMultiplierRing a : B) = a • (1 : B) := by
   rw [toMultiplierRing, RingHom.codRestrict_apply, Algebra.smul_def, mul_one]
+
+/-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
+is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
+`b M ⊆ M` is integral over `R`. The algebra `B` need not be commutative. By Cayley–Hamilton, left
+multiplication by `b` on `M` satisfies a monic polynomial, and evaluating at `1` shows that `b`
+satisfies it too. -/
+theorem isIntegral_of_mem_multiplierRing {M : Submodule R B} (hM : M.FG) (h1 : (1 : B) ∈ M)
+    {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) : IsIntegral R b := by
+  have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
+  have hbM (m : B) (hm : m ∈ M) : LinearMap.mulLeft R b m ∈ M := by
+    rw [LinearMap.mulLeft_apply, ← M.mem_toAddSubgroup]
+    exact AddSubgroup.mem_multiplierRing.mp hb m (M.mem_toAddSubgroup.mpr hm)
+  let f : Module.End R M := (LinearMap.mulLeft R b).restrict hbM
+  have hpow (n : ℕ) (v : M) : ((f ^ n) v : B) = b ^ n * v := by
+    rw [Module.End.pow_restrict n hbM, LinearMap.coe_restrict_apply, LinearMap.pow_mulLeft,
+      LinearMap.mulLeft_apply]
+  obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
+  refine ⟨p, hp, ?_⟩
+  -- evaluating a polynomial in `f` at `1 ∈ M` is evaluating it at `b`
+  have heval (q : Polynomial R) : ((Polynomial.aeval f q) ⟨1, h1⟩ : B) =
+      Polynomial.aeval b q := by
+    induction q using Polynomial.induction_on' with
+    | add p q hp hq => simp only [map_add, LinearMap.add_apply, Submodule.coe_add, hp, hq]
+    | monomial n a => simp [Polynomial.aeval_monomial, hpow, Algebra.smul_def]
+  rw [← Polynomial.aeval_def, ← heval, hpf, LinearMap.zero_apply, Submodule.coe_zero]
+
+end Ring
+
+section CommRing
+
+variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The powers of the extension `J = I B₀` of an ideal `I` of `R` to the multiplier ring lie in
 `Iⁿ • M` when `1 ∈ M`. -/
@@ -116,30 +150,5 @@ theorem smul_subset_coe_map_pow {M : Submodule R B} {I : Ideal R} {j : ℕ}
     exact ⟨x + y, Ideal.add_mem _ hx hy, rfl⟩
 
 end CommRing
-
-/-- **The multiplier ring of a finitely generated submodule containing `1` is integral.** If `M`
-is a finitely generated `R`-submodule of an `R`-algebra `B` with `1 ∈ M`, every `b ∈ B` with
-`b M ⊆ M` is integral over `R`. The algebra `B` need not be commutative. By Cayley–Hamilton, left
-multiplication by `b` on `M` satisfies a monic polynomial, and evaluating at `1` shows that `b`
-satisfies it too. -/
-theorem isIntegral_of_mem_multiplierRing {B : Type*} [Ring B] [Algebra R B] {M : Submodule R B}
-    (hM : M.FG) (h1 : (1 : B) ∈ M) {b : B} (hb : b ∈ M.toAddSubgroup.multiplierRing) :
-    IsIntegral R b := by
-  have : Module.Finite R M := Module.Finite.iff_fg.mpr hM
-  have hbM (m : B) (hm : m ∈ M) : LinearMap.mulLeft R b m ∈ M :=
-    AddSubgroup.mem_multiplierRing.mp hb m hm
-  let f : Module.End R M := (LinearMap.mulLeft R b).restrict hbM
-  have hpow (n : ℕ) (v : M) : ((f ^ n) v : B) = b ^ n * v := by
-    rw [Module.End.pow_restrict n hbM, LinearMap.coe_restrict_apply, LinearMap.pow_mulLeft,
-      LinearMap.mulLeft_apply]
-  obtain ⟨p, hp, hpf⟩ := LinearMap.exists_monic_and_aeval_eq_zero R f
-  refine ⟨p, hp, ?_⟩
-  -- evaluating a polynomial in `f` at `1 ∈ M` is evaluating it at `b`
-  have heval (q : Polynomial R) : ((Polynomial.aeval f q) ⟨1, h1⟩ : B) =
-      Polynomial.aeval b q := by
-    induction q using Polynomial.induction_on' with
-    | add p q hp hq => simp only [map_add, LinearMap.add_apply, Submodule.coe_add, hp, hq]
-    | monomial n a => simp [Polynomial.aeval_monomial, hpow, Algebra.smul_def]
-  rw [← Polynomial.aeval_def, ← heval, hpf, LinearMap.zero_apply, Submodule.coe_zero]
 
 end Submodule

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Denominator
-public import TauCeti.RingTheory.Polynomial.IsIntegral
+public import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
+
+import Mathlib.RingTheory.Polynomial.RationalRoot
 
 /-!
 # Integrality of points on a Weierstrass curve over a unique factorization domain
