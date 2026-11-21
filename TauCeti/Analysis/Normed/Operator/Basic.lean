@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
+import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Basic facts about bounded operators
@@ -118,7 +118,7 @@ On a finite product `ι → R`, a nonzero continuous linear map is nonzero at so
 (`ContinuousLinearMap.exists_apply_single_ne_zero`), and bounds at the coordinate vectors bound
 every value (`ContinuousLinearMap.norm_apply_le_card_mul_norm`). Replacing one coordinate by a
 functional with nonzero coefficient there is injective over a ring without zero divisors
-(`ContinuousLinearMap.pi_update_injective`) and a continuous linear equivalence over a complete
+(`ContinuousLinearMap.pi_update_injective`) and a continuous linear equivalence over a topological
 field (`ContinuousLinearMap.exists_pi_update_equiv`). The coordinate arguments are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -650,14 +650,40 @@ theorem pi_update_injective [Ring R] [NoZeroDivisors R] [TopologicalSpace R]
 
 /-- Replacing one coordinate by a functional with a nonzero coefficient at that coordinate
 is a continuous linear equivalence. -/
-theorem exists_pi_update_equiv [Finite ι] [CompleteSpace 𝕜] (α : (ι → 𝕜) →L[𝕜] 𝕜) (i : ι)
-    (hα : α (Pi.single i 1) ≠ 0) :
-    ∃ e : (ι → 𝕜) ≃L[𝕜] (ι → 𝕜),
-      (e : (ι → 𝕜) →L[𝕜] (ι → 𝕜)) = pi fun m : ι ↦ if m = i then α else proj m := by
-  refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
-  ext v : 1
-  simp only [ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearEquiv.coe_ofInjectiveEndo, coe_coe]
+theorem exists_pi_update_equiv {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
+    (α : (ι → K) →L[K] K) (i : ι) (hα : α (Pi.single i 1) ≠ 0) :
+    ∃ e : (ι → K) ≃L[K] (ι → K),
+      (e : (ι → K) →L[K] (ι → K)) = pi fun m : ι ↦ if m = i then α else proj m := by
+  set c := α (Pi.single i 1)
+  set f : (ι → K) →L[K] (ι → K) := pi fun m : ι ↦ if m = i then α else proj m
+  -- The inverse keeps the coordinates `m ≠ i` and solves `α v = w i` for the coordinate `i`.
+  let g : (ι → K) →L[K] (ι → K) :=
+    pi fun m : ι ↦ if m = i then proj i + c⁻¹ • (proj i - α) else proj m
+  -- Both maps change only the coordinate `i`, by a multiple of `Pi.single i 1`.
+  have hf (v : ι → K) : f v = v + (α v - v i) • Pi.single i 1 := by
+    ext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp [f, pi_apply]
+    · simp [f, pi_apply, hm]
+  have hg (w : ι → K) : g w = w + (c⁻¹ * (w i - α w)) • Pi.single i 1 := by
+    ext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp [g, pi_apply]
+    · simp [g, pi_apply, hm]
+  have hgf (v : ι → K) : g (f v) = v := by
+    rw [hg, hf, add_assoc, ← add_smul, add_eq_left, smul_eq_zero]
+    left
+    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul]
+    field_simp
+    ring
+  have hfg (w : ι → K) : f (g w) = w := by
+    rw [hf, hg, add_assoc, ← add_smul, add_eq_left, smul_eq_zero]
+    left
+    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul]
+    field_simp
+    ring
+  exact ⟨.ofContinuousLinearMap f g (ext hfg) (ext hgf),
+    ContinuousLinearEquiv.toContinuousLinearMap_ofContinuousLinearMap ..⟩
 
 end Coordinates
 
