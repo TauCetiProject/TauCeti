@@ -153,22 +153,45 @@ theorem toWord_dropTrivial (P : AtomicForm G X) : P.dropTrivial.toWord = P.toWor
     · rw [List.filter_cons_of_pos (by simpa using hp)]
       simp only [List.map_cons, List.prod_cons, ih]
 
+/-- A variable outside `P.vars` does not occur in the commutator product of `P`. -/
+theorem comms_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.comms.map fun p =>
+        ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2) : GX G X)⁻¹⁆).prod ∈
+      GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨p, hp, rfl⟩
+  have h₁ : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_flatMap.2 ⟨p, hp, by simp⟩))))
+  have h₂ : (inr (FreeGroup.of p.2) : GX G X) ∈ GX.avoiding x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_flatMap.2 ⟨p, hp, by simp⟩))))
+  rw [commutatorElement_def, inv_inv, inv_inv]
+  exact mul_mem (mul_mem (mul_mem (inv_mem h₁) (inv_mem h₂)) h₁) h₂
+
+/-- A variable outside `P.vars` does not occur in the square product of `P`. -/
+theorem squares_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.squares.map fun s => (inr (FreeGroup.of s) : GX G X) ^ 2).prod ∈ GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨s, hs, rfl⟩
+  exact pow_mem (GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_right _ hs)))) 2
+
+/-- A variable outside `P.vars` does not occur in the conjugate product of `P`. -/
+theorem conjs_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.conjs.map fun p => (inr (FreeGroup.of p.1) : GX G X)⁻¹ * inl p.2 *
+      inr (FreeGroup.of p.1)).prod ∈ GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨p, hp, rfl⟩
+  have h : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding (G := G) x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_right _ (List.mem_map.2 ⟨p, hp, rfl⟩)))
+  exact mul_mem (mul_mem (inv_mem h) (GX.inl_mem_avoiding _ _)) h
+
 /-- A variable which is not a variable of a word in atomic form does not occur in it. -/
 theorem toWord_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
-    P.toWord ∈ GX.avoiding x := by
-  have hv : ∀ y ∈ P.vars, (inr (FreeGroup.of y) : GX G X) ∈ GX.avoiding x := fun y hy =>
-    GX.inr_of_mem_avoiding (by rintro rfl; exact hx hy)
-  simp only [vars_def, List.mem_append, List.mem_flatMap, List.mem_map] at hv
-  refine mul_mem (mul_mem (mul_mem (list_prod_mem ?_) (list_prod_mem ?_))
-    (list_prod_mem ?_)) (GX.inl_mem_avoiding _ _) <;> simp only [List.mem_map] <;>
-    rintro _ ⟨p, hp, rfl⟩
-  · have h₁ := hv p.1 (.inl (.inl ⟨p, hp, by simp⟩))
-    have h₂ := hv p.2 (.inl (.inl ⟨p, hp, by simp⟩))
-    rw [commutatorElement_def, inv_inv, inv_inv]
-    exact mul_mem (mul_mem (mul_mem (inv_mem h₁) (inv_mem h₂)) h₁) h₂
-  · exact pow_mem (hv p (.inl (.inr hp))) 2
-  · have h := hv p.1 (.inr ⟨p, hp, rfl⟩)
-    exact mul_mem (mul_mem (inv_mem h) (GX.inl_mem_avoiding _ _)) h
+    P.toWord ∈ GX.avoiding x :=
+  mul_mem (mul_mem (mul_mem (comms_prod_mem_avoiding hx) (squares_prod_mem_avoiding hx))
+    (conjs_prod_mem_avoiding hx)) (GX.inl_mem_avoiding _ _)
 
 private theorem apply_toWord_eq_conj (P : AtomicForm G X) (hc : P.const = 1)
     {f : MulAut (GX G X)} {t : GX G X} (hf : ∀ g, f (inl g) = inl g)
@@ -213,19 +236,22 @@ theorem exists_mem_elementaryAut_apply_toWord_eq_conj [DecidableEq X] (P : Atomi
     simp [hfv y (List.mem_toFinset.2 (List.mem_append_left _ hy)), hyZ]
   · simp [hfv z (List.mem_toFinset.2 (List.mem_append_right _ hz)), hz]
 
-private theorem exists_mem_elementaryAut_apply_toWord_append_singleton (C : List (X × X))
-    (x y s : X) (S : List X) (Z : List (X × G)) (d : G)
+private theorem exists_mem_elementaryAut_apply_toWord_append_singleton [DecidableEq X]
+    (C : List (X × X)) (x y s : X) (S : List X) (Z : List (X × G)) (d : G)
     (h : (⟨C ++ [(x, y)], s :: S, Z, d⟩ : AtomicForm G X).vars.Nodup) :
-    ∃ f ∈ GX.elementaryAut G X, f (⟨C ++ [(x, y)], s :: S, Z, d⟩ : AtomicForm G X).toWord =
-      (⟨C, x :: y :: s :: S, Z, d⟩ : AtomicForm G X).toWord := by
-  classical
+    ∃ f ∈ GX.elementaryAut G X,
+      f (⟨C ++ [(x, y)], s :: S, Z, d⟩ : AtomicForm G X).toWord =
+        (⟨C, x :: y :: s :: S, Z, d⟩ : AtomicForm G X).toWord ∧
+      ∀ a, (∀ v ∈ (⟨C ++ [(x, y)], s :: S, Z, d⟩ : AtomicForm G X).vars, a ∈ GX.avoiding v) →
+        f a = a := by
   simp only [vars_def, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
     List.append_assoc, List.cons_append, List.nil_append, List.nodup_middle, List.nodup_cons,
     List.mem_append, List.mem_cons, not_or] at h
   obtain ⟨⟨hxC, hxy, hxs, hxS, hxZ⟩, ⟨hyC, hys, hyS, hyZ⟩, ⟨hsC, hsS, hsZ⟩, -⟩ := h
   obtain ⟨f, hf, hfe, hfw⟩ :=
     GX.exists_mem_elementaryAut_apply_commutator_mul_sq (G := G) hxy hxs hys
-  refine ⟨f, hf, ?_⟩
+  refine ⟨f, hf, ?_, fun a ha => hfw a ⟨⟨ha x (by simp [vars_def]), ha y (by simp [vars_def])⟩,
+    ha s (by simp [vars_def])⟩⟩
   -- the rule fixes the commutators before `[x, y]` and the atoms after `s²`
   have hav : ∀ Q : AtomicForm G X, x ∉ Q.vars → y ∉ Q.vars → s ∉ Q.vars →
       Q.toWord ∈ GX.avoiding x ⊓ GX.avoiding y ⊓ GX.avoiding s := fun Q hx hy hs =>
@@ -246,6 +272,29 @@ private theorem exists_mem_elementaryAut_apply_toWord_append_singleton (C : List
     hfw _ (hav _ (by simp [vars_def, hxS, hxZ]) (by simp [vars_def, hyS, hyZ])
       (by simp [vars_def, hsS, hsZ]))]
 
+private theorem exists_mem_elementaryAut_apply_toWord_eq_squares_fixing [DecidableEq X]
+    (P : AtomicForm G X) (hP : P.vars.Nodup) (hs : P.squares ≠ []) :
+    ∃ f ∈ GX.elementaryAut G X,
+      f P.toWord =
+        (⟨[], P.comms.flatMap (fun p => [p.1, p.2]) ++ P.squares, P.conjs, P.const⟩ :
+          AtomicForm G X).toWord ∧
+      ∀ a, (∀ v ∈ P.vars, a ∈ GX.avoiding v) → f a = a := by
+  obtain ⟨C, S, Z, d⟩ := P
+  dsimp only at hs ⊢
+  induction C using List.reverseRecOn generalizing S with
+  | nil => exact ⟨1, one_mem _, by simp, fun _ _ => rfl⟩
+  | append_singleton C p ih =>
+    obtain ⟨x, y⟩ := p
+    obtain ⟨s, S, rfl⟩ := List.exists_cons_of_ne_nil hs
+    obtain ⟨f, hf, hfe, hffix⟩ :=
+      exists_mem_elementaryAut_apply_toWord_append_singleton C x y s S Z d hP
+    obtain ⟨g, hg, hge, hgfix⟩ :=
+      ih (x :: y :: s :: S) (by simpa [vars_def] using hP) (List.cons_ne_nil _ _)
+    refine ⟨g * f, mul_mem hg hf, ?_, fun a ha => ?_⟩
+    · rw [MulAut.mul_apply, hfe, hge]
+      simp
+    · rw [MulAut.mul_apply, hffix a ha, hgfix a fun v hv => ha v (by simpa [vars_def] using hv)]
+
 /-- In the presence of a square, an elementary automorphism turns every commutator `[x, y]` of a
 word in atomic form in pairwise distinct variables into the two squares `x² y²`. -/
 theorem exists_mem_elementaryAut_apply_toWord_eq_squares (P : AtomicForm G X) (hP : P.vars.Nodup)
@@ -253,30 +302,21 @@ theorem exists_mem_elementaryAut_apply_toWord_eq_squares (P : AtomicForm G X) (h
       (⟨[], P.comms.flatMap (fun p => [p.1, p.2]) ++ P.squares, P.conjs, P.const⟩ :
         AtomicForm G X).toWord := by
   classical
-  obtain ⟨C, S, Z, d⟩ := P
-  dsimp only at hs ⊢
-  induction C using List.reverseRecOn generalizing S with
-  | nil => exact ⟨1, one_mem _, by simp⟩
-  | append_singleton C p ih =>
-    obtain ⟨x, y⟩ := p
-    obtain ⟨s, S, rfl⟩ := List.exists_cons_of_ne_nil hs
-    obtain ⟨f, hf, hfe⟩ := exists_mem_elementaryAut_apply_toWord_append_singleton C x y s S Z d hP
-    obtain ⟨g, hg, hge⟩ :=
-      ih (x :: y :: s :: S) (by simpa [vars_def] using hP) (List.cons_ne_nil _ _)
-    refine ⟨g * f, mul_mem hg hf, ?_⟩
-    rw [MulAut.mul_apply, hfe, hge]
-    simp
+  obtain ⟨f, hf, hfe, _⟩ := exists_mem_elementaryAut_apply_toWord_eq_squares_fixing P hP hs
+  exact ⟨f, hf, hfe⟩
 
-/-- A word `W` in atomic form in pairwise distinct variables, without constant, whose last atom is
-the conjugate `z⁻¹ c z`: for some elementary automorphism `f`, the conjugate `z * f W * z⁻¹` is the
-word in which this atom is replaced by the constant `c`. -/
-theorem exists_mem_elementaryAut_conj_toWord_concat (C : List (X × X)) (S : List X)
-    (Z : List (X × G)) (z : X) (c : G)
+private theorem exists_mem_elementaryAut_conj_toWord_concat_fixing [DecidableEq X]
+    (C : List (X × X)) (S : List X) (Z : List (X × G)) (z : X) (c : G)
     (h : (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).vars.Nodup) :
     ∃ f ∈ GX.elementaryAut G X,
       inr (FreeGroup.of z) * f (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).toWord *
-        (inr (FreeGroup.of z))⁻¹ = (⟨C, S, Z, c⟩ : AtomicForm G X).toWord := by
-  classical
+        (inr (FreeGroup.of z))⁻¹ = (⟨C, S, Z, c⟩ : AtomicForm G X).toWord ∧
+      ∀ a, (∀ v ∈ (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).vars, a ∈ GX.avoiding v) →
+        f a = a := by
+  have hsub : (⟨C, S, Z, 1⟩ : AtomicForm G X).vars.Sublist
+      (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).vars := by
+    simp only [vars_def, List.map_append]
+    exact (List.sublist_append_left _ _).append_left _
   replace h : ((⟨C, S, Z, 1⟩ : AtomicForm G X).vars ++ [z]).Nodup := by simpa [vars_def] using h
   have hzy : ∀ y ∈ (⟨C, S, Z, 1⟩ : AtomicForm G X).vars,
       (inr (FreeGroup.of z) : GX G X) ∈ GX.avoiding y := fun y hy =>
@@ -288,10 +328,23 @@ theorem exists_mem_elementaryAut_conj_toWord_concat (C : List (X × X)) (S : Lis
       (⟨C, S, Z, 1⟩ : AtomicForm G X).toWord *
         ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z)) := by
     simp [toWord_def, mul_assoc]
-  refine ⟨f, hf, ?_⟩
+  refine ⟨f, hf, ?_, fun a ha => hfw a fun v hv => ha v (hsub.subset hv)⟩
   rw [e, map_mul, hfP, hfw _ fun y hy =>
     mul_mem (mul_mem (inv_mem (hzy y hy)) (GX.inl_mem_avoiding _ _)) (hzy y hy)]
   simp [toWord_def, mul_assoc]
+
+/-- A word `W` in atomic form in pairwise distinct variables, without constant, whose last atom is
+the conjugate `z⁻¹ c z`: for some elementary automorphism `f`, the conjugate `z * f W * z⁻¹` is the
+word in which this atom is replaced by the constant `c`. -/
+theorem exists_mem_elementaryAut_conj_toWord_concat (C : List (X × X)) (S : List X)
+    (Z : List (X × G)) (z : X) (c : G)
+    (h : (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).vars.Nodup) :
+    ∃ f ∈ GX.elementaryAut G X,
+      inr (FreeGroup.of z) * f (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).toWord *
+        (inr (FreeGroup.of z))⁻¹ = (⟨C, S, Z, c⟩ : AtomicForm G X).toWord := by
+  classical
+  obtain ⟨f, hf, hfe, _⟩ := exists_mem_elementaryAut_conj_toWord_concat_fixing C S Z z c h
+  exact ⟨f, hf, hfe⟩
 
 /-! ### Atomic forms that are standard quadratic words -/
 
@@ -400,52 +453,71 @@ private theorem coeff_or_standard (Q : AtomicForm G X) (hQ : Q.vars.Nodup)
   · obtain ⟨S, hS, hSv⟩ := exists_standard_toWord_eq Q hQ hcs hc hd h
     exact .inr ⟨S, hS.symm, hSv.le⟩
 
-private theorem exists_standardForm_of_ne_one (P : AtomicForm G X) (hP : P.vars.Nodup)
-    (hcs : P.comms = [] ∨ P.squares = []) (hc : ∀ p ∈ P.conjs, p.2 ≠ 1) :
-    ∃ f ∈ GX.elementaryAut G X, ∃ u : GX G X, (∃ c : G, u * f P.toWord * u⁻¹ = inl c) ∨
-      ∃ S : Standard G X, u * f P.toWord * u⁻¹ = S.toWord ∧ S.vars ⊆ {x | x ∈ P.vars} := by
+private theorem exists_standardForm_of_ne_one [DecidableEq X] (P : AtomicForm G X)
+    (hP : P.vars.Nodup) (hcs : P.comms = [] ∨ P.squares = []) (hc : ∀ p ∈ P.conjs, p.2 ≠ 1) :
+    ∃ f ∈ GX.elementaryAut G X, ∃ u : GX G X,
+      (∀ a, (∀ v ∈ P.vars, a ∈ GX.avoiding v) → f a = a) ∧
+      ((∃ c : G, u * f P.toWord * u⁻¹ = inl c) ∨
+        ∃ S : Standard G X, u * f P.toWord * u⁻¹ = S.toWord ∧ S.vars ⊆ {x | x ∈ P.vars}) := by
   obtain ⟨C, S, Z, d⟩ := P
   by_cases h : d = 1 ∧ Z ≠ []
   · -- no constant and a last conjugate `z⁻¹ c z`: conjugating by `z` makes `c` the constant
     obtain ⟨rfl, hZ⟩ := h
     obtain ⟨Z, ⟨z, c⟩, rfl⟩ : ∃ Z' p, Z = Z' ++ [p] :=
       ⟨_, _, (List.dropLast_append_getLast hZ).symm⟩
-    obtain ⟨f, hf, hfe⟩ := exists_mem_elementaryAut_conj_toWord_concat C S Z z c hP
+    obtain ⟨f, hf, hfe, hffix⟩ := exists_mem_elementaryAut_conj_toWord_concat_fixing C S Z z c hP
     have hQ : (⟨C, S, Z, c⟩ : AtomicForm G X).vars.Sublist
         (⟨C, S, Z ++ [(z, c)], 1⟩ : AtomicForm G X).vars := by
       rw [vars_def, vars_def, List.map_append]
       exact (List.sublist_append_left _ _).append_left _
-    refine ⟨f, hf, inr (FreeGroup.of z), ?_⟩
+    refine ⟨f, hf, inr (FreeGroup.of z), hffix, ?_⟩
     rw [hfe]
     exact (coeff_or_standard _ (hP.sublist hQ) hcs (fun p hp => hc p (by simp [hp]))
       fun h => absurd h (hc (z, c) (by simp))).imp_right
         fun ⟨T, hT, hTv⟩ => ⟨T, hT, hTv.trans fun x hx => hQ.subset hx⟩
   · -- otherwise the word is already a coefficient or a standard word
-    refine ⟨1, one_mem _, 1, ?_⟩
+    refine ⟨1, one_mem _, 1, fun _ _ => rfl, ?_⟩
     simpa using coeff_or_standard _ hP hcs hc fun hd => not_not.1 (not_and.1 h hd)
 
-private theorem exists_comms_eq_nil_or_squares_eq_nil (P : AtomicForm G X) (hP : P.vars.Nodup) :
+private theorem exists_comms_eq_nil_or_squares_eq_nil [DecidableEq X] (P : AtomicForm G X)
+    (hP : P.vars.Nodup) :
     ∃ f ∈ GX.elementaryAut G X, ∃ Q : AtomicForm G X, f P.toWord = Q.toWord ∧ Q.vars = P.vars ∧
-      Q.conjs = P.conjs ∧ (Q.comms = [] ∨ Q.squares = []) := by
+      Q.conjs = P.conjs ∧ (Q.comms = [] ∨ Q.squares = []) ∧
+      ∀ a, (∀ v ∈ P.vars, a ∈ GX.avoiding v) → f a = a := by
   rcases eq_or_ne P.squares [] with hs | hs
-  · exact ⟨1, one_mem _, P, rfl, rfl, rfl, .inr hs⟩
-  · obtain ⟨f, hf, hfe⟩ := exists_mem_elementaryAut_apply_toWord_eq_squares P hP hs
-    exact ⟨f, hf, _, hfe, by simp [vars_def], rfl, .inl rfl⟩
+  · exact ⟨1, one_mem _, P, rfl, rfl, rfl, .inr hs, fun _ _ => rfl⟩
+  · obtain ⟨f, hf, hfe, hffix⟩ := exists_mem_elementaryAut_apply_toWord_eq_squares_fixing P hP hs
+    exact ⟨f, hf, _, hfe, by simp [vars_def], rfl, .inl rfl, hffix⟩
+
+/-- A word in atomic form in pairwise distinct variables is carried by an elementary automorphism
+fixing every word avoiding `P.vars` and a conjugation to a coefficient or to a standard quadratic
+word in some of its variables. -/
+theorem exists_standardForm_fixing [DecidableEq X] (P : AtomicForm G X) (hP : P.vars.Nodup) :
+    ∃ f ∈ GX.elementaryAut G X, ∃ u : GX G X,
+      (∀ a, (∀ v ∈ P.vars, a ∈ GX.avoiding v) → f a = a) ∧
+      ((∃ c : G, u * f P.toWord * u⁻¹ = inl c) ∨
+        ∃ S : Standard G X, u * f P.toWord * u⁻¹ = S.toWord ∧ S.vars ⊆ {x | x ∈ P.vars}) := by
+  -- delete the conjugates of `1`, then turn the commutators into squares if there is a square
+  have hP' := hP.sublist P.vars_dropTrivial_sublist
+  obtain ⟨f₁, hf₁, Q, hQ, hQv, hQc, hcs, hf₁fix⟩ := exists_comms_eq_nil_or_squares_eq_nil _ hP'
+  obtain ⟨f₂, hf₂, u, hf₂fix, h⟩ := exists_standardForm_of_ne_one Q (hQv ▸ hP') hcs
+    fun p hp => (mem_conjs_dropTrivial.1 (hQc ▸ hp)).2
+  refine ⟨f₂ * f₁, mul_mem hf₂ hf₁, u, fun a ha => ?_, ?_⟩
+  · have ha' : ∀ v ∈ P.dropTrivial.vars, a ∈ GX.avoiding v :=
+      fun v hv => ha v (P.vars_dropTrivial_sublist.subset hv)
+    rw [MulAut.mul_apply, hf₁fix a ha', hf₂fix a fun v hv => ha' v (hQv ▸ hv)]
+  · rw [MulAut.mul_apply, ← toWord_dropTrivial, hQ]
+    exact h.imp_right fun ⟨S, hS, hSv⟩ =>
+      ⟨S, hS, hSv.trans fun x hx => P.vars_dropTrivial_sublist.subset (hQv ▸ hx)⟩
 
 /-- A word in atomic form in pairwise distinct variables is carried by an elementary automorphism
 and a conjugation to a coefficient or to a standard quadratic word in some of its variables. -/
 theorem exists_standardForm (P : AtomicForm G X) (hP : P.vars.Nodup) :
     ∃ f ∈ GX.elementaryAut G X, ∃ u : GX G X, (∃ c : G, u * f P.toWord * u⁻¹ = inl c) ∨
       ∃ S : Standard G X, u * f P.toWord * u⁻¹ = S.toWord ∧ S.vars ⊆ {x | x ∈ P.vars} := by
-  -- delete the conjugates of `1`, then turn the commutators into squares if there is a square
-  have hP' := hP.sublist P.vars_dropTrivial_sublist
-  obtain ⟨f₁, hf₁, Q, hQ, hQv, hQc, hcs⟩ := exists_comms_eq_nil_or_squares_eq_nil _ hP'
-  obtain ⟨f₂, hf₂, u, h⟩ := exists_standardForm_of_ne_one Q (hQv ▸ hP') hcs
-    fun p hp => (mem_conjs_dropTrivial.1 (hQc ▸ hp)).2
-  refine ⟨f₂ * f₁, mul_mem hf₂ hf₁, u, ?_⟩
-  rw [MulAut.mul_apply, ← toWord_dropTrivial, hQ]
-  exact h.imp_right fun ⟨S, hS, hSv⟩ =>
-    ⟨S, hS, hSv.trans fun x hx => P.vars_dropTrivial_sublist.subset (hQv ▸ hx)⟩
+  classical
+  obtain ⟨f, hf, u, _, h⟩ := exists_standardForm_fixing P hP
+  exact ⟨f, hf, u, h⟩
 
 /-! ### Examples -/
 
