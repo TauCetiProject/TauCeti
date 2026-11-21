@@ -78,8 +78,9 @@ derivative in `x` of the `r`-th iterated derivative within `[a, b]` in `t`
 * `TauCeti.ParabolicCkHolderSpace.norm_eq`,
   `TauCeti.ParabolicCkHolderSpace.timeEHolderNorm_mixedDerivL_le` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeSliceL_le_norm_mixedDerivL_add_timeEHolderNorm`: the
-  norm as a sum of field norms and the two-sided comparison of the time-slice norms with the
-  temporal `(1 + α) / 2`-seminorms.
+  norm as a sum of field norms, over the `TauCeti.parabolicDerivPairs k`, at most `(k + 1)²` pairs
+  (`TauCeti.card_parabolicDerivPairs_le`), and the two-sided comparison of the time-slice norms
+  with the temporal `(1 + α) / 2`-seminorms.
 
 ## References
 
@@ -171,6 +172,15 @@ theorem parabolicDerivPairs_two : parabolicDerivPairs 2 = {(0, 0), (0, 1), (0, 2
   ext ⟨r, m⟩
   simp only [mem_parabolicDerivPairs, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
   omega
+
+/-- At most `(k + 1)²` pairs `(r, m)` have parabolic order `2 r + m ≤ k`. -/
+theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 := by
+  refine (Finset.card_le_card (t := Finset.range (k + 1) ×ˢ Finset.range (k + 1))
+    fun q hq ↦ ?_).trans ?_
+  · have := mem_parabolicDerivPairs.1 hq
+    simp only [Finset.mem_product, Finset.mem_range]
+    omega
+  · rw [Finset.card_product, Finset.card_range, sq]
 
 variable (k α E F) in
 /-- Bounded parabolic Hölder maps of order `k` on a nondegenerate closed time slab
