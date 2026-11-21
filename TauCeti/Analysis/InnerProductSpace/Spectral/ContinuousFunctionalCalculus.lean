@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 import Mathlib.Analysis.InnerProductSpace.Positive
@@ -47,6 +48,10 @@ with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClos
   orthogonal projection onto its range.
 * `IsSelfAdjoint.cfc_indicator_eq_starProjection_ker`: the spectral projection for a set meeting the
   spectrum only at `0` is the projection onto the kernel.
+* `ContinuousLinearMap.re_inner_apply_self_nonneg_of_mem_range_cfc_indicator` and
+  `ContinuousLinearMap.re_inner_apply_self_neg_of_mem_range_cfc_indicator`: the quadratic form
+  `x ↦ re ⟪S x, x⟫` of an operator is nonnegative on its spectral subspace for a set of
+  nonnegative numbers, and negative definite on that for a set of negative numbers.
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
   `IsPreconnected.rank_range_cfc_indicator_eq`: the rank of the spectral projection is locally
   constant, and constant along paths; `IsPreconnected.finrank_range_cfc_indicator_eq` is the
@@ -98,7 +103,7 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
   set P := cfc f T
   -- `T P = 0`, since `x f(x) = 0` on the spectrum.
   have hTP : T * P = 0 := by
-    calc T * P = cfc (fun x ↦ x * f x) T := by rw [cfc_mul (fun x ↦ x) f T, cfc_id' ℝ T]
+    calc T * P = cfc (fun x ↦ x * f x) T := (TauCeti.cfc_id_mul f T hf).symm
       _ = cfc (0 : ℝ → ℝ) T := cfc_congr fun x hx ↦ by
           by_cases hxΩ : x ∈ Ω
           · rw [mem_singleton_iff.1 (hΩ ⟨hx, hxΩ⟩), zero_mul, Pi.zero_apply]
@@ -126,7 +131,7 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
           by_cases hx0 : x = 0
           · simp [hx0, f, h0]
           · exact (div_mul_cancel₀ _ hx0).symm
-      _ = cfc g T * T := by rw [cfc_mul g (fun x ↦ x) T, cfc_id' ℝ T]
+      _ = cfc g T * T := TauCeti.cfc_mul_id g T hg
   -- Hence the range of `P` is the kernel of `T`.
   have hrange : P.range = T.ker := by
     refine le_antisymm ?_ fun v hv ↦ ⟨v, ?_⟩
@@ -136,6 +141,110 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
       have h : v - P v = 0 := by simpa [hTv] using congr($hsub v)
       exact (sub_eq_zero.1 h).symm
   exact (T.cfc_indicator_eq_starProjection_range Ω).trans (Submodule.starProjection_inj.2 hrange)
+
+/-! ### The quadratic form of an operator on its spectral subspaces -/
+
+namespace ContinuousLinearMap
+
+variable (S : H →L[𝕜] H) {Ω : Set ℝ} {x : H}
+
+/-- The spectral projection `E` of `S` for `Ω`, applied twice, is `E`. -/
+@[simp]
+theorem cfc_indicator_cfc_indicator_apply (Ω : Set ℝ) (y : H) :
+    cfc (Ω.indicator (1 : ℝ → ℝ)) S (cfc (Ω.indicator (1 : ℝ → ℝ)) S y) =
+      cfc (Ω.indicator (1 : ℝ → ℝ)) S y := by
+  simpa using congr($((TauCeti.isStarProjection_cfc_indicator S Ω).isIdempotentElem.eq) y)
+
+/-- **The form of a self-adjoint operator on a nonnegative spectral subspace.** On the range of
+the spectral projection `cfc (Ω.indicator 1) S` of an operator `S` for a set `Ω` of nonnegative
+numbers, the quadratic form `x ↦ re ⟪S x, x⟫` is nonnegative. (When `S` is not self-adjoint, or
+the indicator is not continuous on its spectrum, the projection is `0`.) -/
+theorem re_inner_apply_self_nonneg_of_mem_range_cfc_indicator (hΩ : Ω ⊆ Ici 0)
+    (hx : x ∈ (cfc (Ω.indicator (1 : ℝ → ℝ)) S).range) : 0 ≤ RCLike.re ⟪S x, x⟫_𝕜 := by
+  by_cases h : IsSelfAdjoint S ∧ ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ S)
+  swap
+  · rw [cfc_apply_of_not_and S h] at hx
+    obtain ⟨y, rfl⟩ := hx
+    simp
+  obtain ⟨hS, hf⟩ := h
+  -- `S E = R²` for the spectral projection `E` and `R = cfc (√ ⬝ 1_Ω) S`.
+  set r : ℝ → ℝ := Ω.indicator Real.sqrt
+  have hr : ContinuousOn r (spectrum ℝ S) :=
+    hf.continuousOn_indicator_of_continuousOn_indicator_one fun _ _ ↦
+      Real.continuous_sqrt.continuousWithinAt
+  have hSE : S * cfc (Ω.indicator (1 : ℝ → ℝ)) S = cfc r S * cfc r S := by
+    calc S * cfc (Ω.indicator (1 : ℝ → ℝ)) S
+        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := (TauCeti.cfc_id_mul _ S hf hS).symm
+      _ = cfc (fun y ↦ r y * r y) S := cfc_congr fun y _ ↦ by
+          by_cases hy : y ∈ Ω
+          · simp [r, hy, Real.mul_self_sqrt (hΩ hy)]
+          · simp [r, hy]
+      _ = cfc r S * cfc r S := cfc_mul r r S hr hr
+  obtain ⟨y, hy⟩ := hx
+  rw [ContinuousLinearMap.coe_coe] at hy
+  subst hy
+  set E := cfc (Ω.indicator (1 : ℝ → ℝ)) S
+  have hR := (cfc_predicate r S : IsSelfAdjoint (cfc r S)).isSymmetric
+  calc (0 : ℝ) ≤ RCLike.re ⟪cfc r S (E y), cfc r S (E y)⟫_𝕜 := inner_self_nonneg
+    _ = RCLike.re ⟪(S * E) (E y), E y⟫_𝕜 := by
+      rw [hSE, mul_def, ContinuousLinearMap.comp_apply]
+      exact congrArg _ (hR _ _).symm
+    _ = _ := by rw [mul_def, ContinuousLinearMap.comp_apply, cfc_indicator_cfc_indicator_apply]
+
+/-- **The form of a self-adjoint operator on a negative spectral subspace.** On the range of the
+spectral projection `cfc (Ω.indicator 1) S` of an operator `S` for a set `Ω` of negative numbers,
+the quadratic form `x ↦ re ⟪S x, x⟫` is negative definite. -/
+theorem re_inner_apply_self_neg_of_mem_range_cfc_indicator (hΩ : Ω ⊆ Iio 0)
+    (hx : x ∈ (cfc (Ω.indicator (1 : ℝ → ℝ)) S).range) (hx0 : x ≠ 0) :
+    RCLike.re ⟪S x, x⟫_𝕜 < 0 := by
+  by_cases h : IsSelfAdjoint S ∧ ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ S)
+  swap
+  · rw [cfc_apply_of_not_and S h] at hx
+    obtain ⟨y, rfl⟩ := hx
+    exact absurd (by simp) hx0
+  obtain ⟨hS, hf⟩ := h
+  -- `S E = -R²` for the spectral projection `E` and `R = cfc (√(-·) ⬝ 1_Ω) S`, and `E = R' R` for
+  -- `R' = cfc ((√(-·))⁻¹ ⬝ 1_Ω) S`; both functions are continuous on the spectrum, since near a
+  -- spectral value the spectrum lies either in `Ω`, where `√(-·)` does not vanish, or outside it.
+  set r : ℝ → ℝ := Ω.indicator fun y ↦ √(-y)
+  set k : ℝ → ℝ := Ω.indicator fun y ↦ (√(-y))⁻¹
+  have hr : ContinuousOn r (spectrum ℝ S) :=
+    hf.continuousOn_indicator_of_continuousOn_indicator_one fun _ _ ↦
+      (continuous_neg.sqrt).continuousWithinAt
+  have hk : ContinuousOn k (spectrum ℝ S) :=
+    hf.continuousOn_indicator_of_continuousOn_indicator_one fun y hy ↦
+      ((continuous_neg.sqrt.continuousAt).inv₀
+        (Real.sqrt_pos.2 (neg_pos.2 (hΩ hy.1))).ne').continuousWithinAt
+  have hSE : S * cfc (Ω.indicator (1 : ℝ → ℝ)) S = -(cfc r S * cfc r S) := by
+    calc S * cfc (Ω.indicator (1 : ℝ → ℝ)) S
+        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := (TauCeti.cfc_id_mul _ S hf hS).symm
+      _ = cfc (fun y ↦ -(r y * r y)) S := cfc_congr fun y _ ↦ by
+          by_cases hy : y ∈ Ω
+          · simp [r, hy, Real.mul_self_sqrt (neg_nonneg.2 (hΩ hy).le)]
+          · simp [r, hy]
+      _ = -(cfc r S * cfc r S) := by rw [cfc_neg _ S, cfc_mul r r S hr hr]
+  have hEk : cfc (Ω.indicator (1 : ℝ → ℝ)) S = cfc k S * cfc r S := by
+    rw [← cfc_mul k r S hk hr]
+    refine cfc_congr fun y _ ↦ ?_
+    by_cases hy : y ∈ Ω
+    · simp [k, r, hy, inv_mul_cancel₀ (Real.sqrt_pos.2 (neg_pos.2 (hΩ hy))).ne']
+    · simp [k, r, hy]
+  obtain ⟨y, hy⟩ := hx
+  rw [ContinuousLinearMap.coe_coe] at hy
+  subst hy
+  set E := cfc (Ω.indicator (1 : ℝ → ℝ)) S
+  have hrx : cfc r S (E y) ≠ 0 := fun h ↦ hx0 <| by
+    rw [← cfc_indicator_cfc_indicator_apply, congr($hEk (E y)), mul_def,
+      ContinuousLinearMap.comp_apply, h, map_zero]
+  have hR := (cfc_predicate r S : IsSelfAdjoint (cfc r S)).isSymmetric
+  calc RCLike.re ⟪S (E y), E y⟫_𝕜 = RCLike.re ⟪(S * E) (E y), E y⟫_𝕜 := by
+        rw [mul_def, ContinuousLinearMap.comp_apply, cfc_indicator_cfc_indicator_apply]
+    _ = -RCLike.re ⟪cfc r S (E y), cfc r S (E y)⟫_𝕜 := by
+        rw [hSE, neg_apply, mul_def, ContinuousLinearMap.comp_apply, inner_neg_left, map_neg]
+        exact congrArg (fun z ↦ -RCLike.re z) (hR _ _)
+    _ < 0 := neg_neg_iff_pos.2 (re_inner_self_pos.2 hrx)
+
+end ContinuousLinearMap
 
 end Projection
 
@@ -184,8 +293,9 @@ theorem IsPreconnected.rank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace
     intro z
     have hz : Tendsto (fun w : s ↦ A w) (𝓝 z) (𝓝[{S | IsSelfAdjoint S}] (A z)) :=
       tendsto_nhdsWithin_iff.2 ⟨(continuousOn_iff_continuous_domRestrict.1 hA).tendsto z,
-        Eventually.of_forall fun w ↦ hsa w w.2⟩
-    exact hz.eventually ((hsa z z.2).eventually_rank_range_cfc_indicator_eq (hΩ z z.2))
+        Eventually.of_forall fun w ↦ hsa w w.property⟩
+    exact hz.eventually ((hsa z z.property).eventually_rank_range_cfc_indicator_eq
+        (hΩ z z.property))
   exact hg.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- The finite rank of the spectral projection for a set `Ω` is constant along a continuous path of

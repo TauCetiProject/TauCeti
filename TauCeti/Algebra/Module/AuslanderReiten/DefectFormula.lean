@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
+public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.Algebra.Module.Injective.Hom
 public import TauCeti.LinearAlgebra.Exact
 
@@ -37,12 +38,23 @@ As `E` is injective, `D` turns this kernel into the cokernel of `D H(φ)`
 No finiteness of `k` or `A`, and no minimality of the presentation, is needed. The snake lemma is
 Mathlib's `SnakeLemma.δ'`, in its module form.
 
+The formula is natural in the exact sequence. A morphism `(a₁, a₂, a₃)` of exact sequences induces
+`δ^*(X) → δ'^*(X)` (postcomposition with `a₃`) and `δ'_*(Y) → δ_*(Y)` (precomposition with `a₁`),
+and the defect formula carries the dual of the first to the second. Each step of the proof is
+natural: the snake map, because a lift for `δ` composed with `a₂` and `a₁` is a lift for `δ'`, and
+`D H(N) ≅ Hom_A(N, D Tr X)`, by `LinearMap.auslanderReitenHomCokernelDualEquiv_map`.
+
 ## Main definitions
 
 * `LinearMap.contravariantDefect` and `LinearMap.covariantDefect`: the two defects.
 * `Function.Exact.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect`: **Auslander's defect formula**
   `D δ^*(X) ≅ δ_*(D Tr X)`.
+* `LinearMap.contravariantDefectMap` and `LinearMap.covariantDefectMap`: the maps of defects
+  induced by a morphism of exact sequences, functorial in it (`_id`, `_comp`).
+* `Function.Exact.contravariantDefectEquivKer_mk`: the snake map on representatives.
+* `Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality`: naturality of the
+  defect formula in the exact sequence.
 
 ## References
 
@@ -80,6 +92,96 @@ abbrev covariantDefect (φ : M₁ →ₗ[A] M₂) (Y : Type*) [AddCommGroup Y] [
   (M₁ →ₗ[A] Y) ⧸ range (φ.lcomp k Y)
 
 end Defects
+
+section DefectMaps
+
+variable (k : Type*) {A : Type*} [CommRing k] [Ring A] [Algebra k A]
+  {M₁ M₂ M₃ M₁' M₂' M₃' : Type*} [AddCommGroup M₁] [Module A M₁] [AddCommGroup M₂] [Module A M₂]
+  [AddCommGroup M₃] [Module A M₃] [AddCommGroup M₁'] [Module A M₁'] [AddCommGroup M₂']
+  [Module A M₂'] [AddCommGroup M₃'] [Module A M₃']
+
+section Contravariant
+
+variable [Module k M₂] [IsScalarTower k A M₂] [Module k M₃] [IsScalarTower k A M₃]
+  [Module k M₂'] [IsScalarTower k A M₂'] [Module k M₃'] [IsScalarTower k A M₃']
+
+/-- The map `δ^*(X) → δ'^*(X)` of contravariant defects induced by a commutative square
+`a₃ ∘ ψ = ψ' ∘ a₂`: postcomposition with `a₃`. -/
+noncomputable def contravariantDefectMap {ψ : M₂ →ₗ[A] M₃} {ψ' : M₂' →ₗ[A] M₃'}
+    {a₂ : M₂ →ₗ[A] M₂'} {a₃ : M₃ →ₗ[A] M₃'} (h : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂)
+    (X : Type*) [AddCommGroup X] [Module A X] :
+    contravariantDefect k ψ X →ₗ[k] contravariantDefect k ψ' X :=
+  Submodule.mapQ _ _ (a₃.compRight k) (by
+    rintro _ ⟨g, rfl⟩
+    exact ⟨a₂ ∘ₗ g, LinearMap.ext fun x ↦ by simpa using (LinearMap.congr_fun h (g x)).symm⟩)
+
+@[simp]
+theorem contravariantDefectMap_mk {ψ : M₂ →ₗ[A] M₃} {ψ' : M₂' →ₗ[A] M₃'}
+    {a₂ : M₂ →ₗ[A] M₂'} {a₃ : M₃ →ₗ[A] M₃'} (h : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂)
+    {X : Type*} [AddCommGroup X] [Module A X] (g : X →ₗ[A] M₃) :
+    contravariantDefectMap k h X (Submodule.Quotient.mk g) = Submodule.Quotient.mk (a₃ ∘ₗ g) := by
+  simp [contravariantDefectMap]
+
+@[simp]
+theorem contravariantDefectMap_id {ψ : M₂ →ₗ[A] M₃} (h : LinearMap.id ∘ₗ ψ = ψ ∘ₗ LinearMap.id)
+    (X : Type*) [AddCommGroup X] [Module A X] :
+    contravariantDefectMap k h X = LinearMap.id := by
+  ext g
+  simp
+
+variable {M₂'' M₃'' : Type*} [AddCommGroup M₂''] [Module A M₂''] [Module k M₂'']
+  [IsScalarTower k A M₂''] [AddCommGroup M₃''] [Module A M₃''] [Module k M₃'']
+  [IsScalarTower k A M₃''] in
+/-- The maps of contravariant defects compose along composed squares. -/
+theorem contravariantDefectMap_comp {ψ : M₂ →ₗ[A] M₃} {ψ' : M₂' →ₗ[A] M₃'}
+    {ψ'' : M₂'' →ₗ[A] M₃''} {a₂ : M₂ →ₗ[A] M₂'} {a₃ : M₃ →ₗ[A] M₃'} {b₂ : M₂' →ₗ[A] M₂''}
+    {b₃ : M₃' →ₗ[A] M₃''} (h : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (h' : b₃ ∘ₗ ψ' = ψ'' ∘ₗ b₂)
+    (h'' : (b₃ ∘ₗ a₃) ∘ₗ ψ = ψ'' ∘ₗ (b₂ ∘ₗ a₂)) (X : Type*) [AddCommGroup X] [Module A X] :
+    contravariantDefectMap k h'' X =
+      contravariantDefectMap k h' X ∘ₗ contravariantDefectMap k h X := by
+  ext g
+  simp [LinearMap.comp_assoc]
+
+end Contravariant
+
+/-- The map `δ'_*(Y) → δ_*(Y)` of covariant defects induced by a commutative square
+`a₂ ∘ φ = φ' ∘ a₁`: precomposition with `a₁`. -/
+noncomputable def covariantDefectMap {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A] M₂'}
+    {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'} (h : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    (Y : Type*) [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y] :
+    covariantDefect k φ' Y →ₗ[k] covariantDefect k φ Y :=
+  Submodule.mapQ _ _ (a₁.lcomp k Y) (by
+    rintro _ ⟨g, rfl⟩
+    exact ⟨g ∘ₗ a₂, LinearMap.ext fun x ↦ by simpa using congrArg g (LinearMap.congr_fun h x)⟩)
+
+@[simp]
+theorem covariantDefectMap_mk {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A] M₂'}
+    {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'} (h : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    {Y : Type*} [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y]
+    (u : M₁' →ₗ[A] Y) :
+    covariantDefectMap k h Y (Submodule.Quotient.mk u) = Submodule.Quotient.mk (u ∘ₗ a₁) := by
+  simp [covariantDefectMap, lcomp_apply']
+
+@[simp]
+theorem covariantDefectMap_id {φ : M₁ →ₗ[A] M₂} (h : LinearMap.id ∘ₗ φ = φ ∘ₗ LinearMap.id)
+    (Y : Type*) [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y] :
+    covariantDefectMap k h Y = LinearMap.id := by
+  ext u
+  simp
+
+variable {M₁'' M₂'' : Type*} [AddCommGroup M₁''] [Module A M₁''] [AddCommGroup M₂'']
+  [Module A M₂''] in
+/-- The maps of covariant defects compose, in the reverse order, along composed squares. -/
+theorem covariantDefectMap_comp {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A] M₂'} {φ'' : M₁'' →ₗ[A] M₂''}
+    {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'} {b₁ : M₁' →ₗ[A] M₁''} {b₂ : M₂' →ₗ[A] M₂''}
+    (h : a₂ ∘ₗ φ = φ' ∘ₗ a₁) (h' : b₂ ∘ₗ φ' = φ'' ∘ₗ b₁)
+    (h'' : (b₂ ∘ₗ a₂) ∘ₗ φ = φ'' ∘ₗ (b₁ ∘ₗ a₁))
+    (Y : Type*) [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y] :
+    covariantDefectMap k h'' Y = covariantDefectMap k h Y ∘ₗ covariantDefectMap k h' Y := by
+  ext u
+  simp [LinearMap.comp_assoc]
+
+end DefectMaps
 
 end LinearMap
 
@@ -122,6 +224,50 @@ noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P�
   Submodule.quotEquivOfEq _ _ h₁.linearMap_ker_eq.symm ≪≫ₗ δ.quotKerEquivRange ≪≫ₗ
     LinearEquiv.ofEq _ _ h₂.linearMap_ker_eq.symm
 
+variable {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X} {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃}
+
+/-- **The snake map on representatives.** If `y : P₀ → M₂` lifts `g ∘ p` along `ψ` and
+`z : P₁ → M₁` lifts `y ∘ f` along `φ`, then `δ^*(X) ≅ ker H(φ)` sends the class of `g` to the
+class of `z`. -/
+theorem contravariantDefectEquivKer_mk (hfp : Exact f p) (hp : Surjective p) (hφ : Injective φ)
+    (hψ : Surjective ψ) (hφψ : Exact φ ψ) (g : X →ₗ[A] M₃) (y : P₀ →ₗ[A] M₂)
+    (hy : ψ ∘ₗ y = g ∘ₗ p) (z : P₁ →ₗ[A] M₁) (hz : φ ∘ₗ z = y ∘ₗ f) :
+    (contravariantDefectEquivKer (k := k) hfp hp hφ hψ hφψ (Submodule.Quotient.mk g) :
+      (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) = Submodule.Quotient.mk z := by
+  simp only [contravariantDefectEquivKer, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk]
+  exact SnakeLemma.δ'_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ g y
+    (by rw [compRight_apply, lcomp_apply']; exact hy) z
+    (by rw [compRight_apply, lcomp_apply']; exact hz)
+
+variable {M₁' M₂' M₃' : Type*}
+  [AddCommGroup M₁'] [Module A M₁'] [Module k M₁'] [IsScalarTower k A M₁']
+  [AddCommGroup M₂'] [Module A M₂'] [Module k M₂'] [IsScalarTower k A M₂']
+  [AddCommGroup M₃'] [Module A M₃'] [Module k M₃'] [IsScalarTower k A M₃']
+  {φ' : M₁' →ₗ[A] M₂'} {ψ' : M₂' →ₗ[A] M₃'} {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'}
+  {a₃ : M₃ →ₗ[A] M₃'}
+
+/-- **Naturality of the snake lemma for the defect.** A morphism `(a₁, a₂, a₃)` of exact sequences
+`0 → M₁ → M₂ → M₃ → 0` carries `δ^*(X) ≅ ker H(φ)` to `δ'^*(X) ≅ ker H(φ')`: postcomposition
+with `a₃` on the left corresponds to `H(a₁)` on the right. -/
+theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjective p)
+    (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ) (hφ' : Injective φ')
+    (hψ' : Surjective ψ') (hφψ' : Exact φ' ψ') (h₁ : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    (h₂ : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (x : contravariantDefect k ψ X) :
+    (contravariantDefectEquivKer hfp hp hφ' hψ' hφψ' (contravariantDefectMap k h₂ X x) :
+      (P₁ →ₗ[A] M₁') ⧸ range (f.lcomp k M₁')) =
+      homCokernelMap k f a₁ (contravariantDefectEquivKer hfp hp hφ hψ hφψ x) := by
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p) hψ
+  obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁ hφ (y ∘ₗ f)).mp (by
+    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc,
+      hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
+  rw [compRight_apply] at hz
+  rw [contravariantDefectMap_mk, contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ g y hy z hz,
+    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y)
+      (comp_comp_eq_comp_comp_of_comp_eq h₂ hy) (a₁ ∘ₗ z)
+      (comp_comp_eq_comp_comp_of_comp_eq h₁ hz), homCokernelMap_mk]
+
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
 
@@ -146,6 +292,46 @@ noncomputable def dualContravariantDefectEquivCovariantDefect {f : P₁ →ₗ[A
         · rintro ⟨v, rfl⟩
           obtain ⟨u, rfl⟩ := (auslanderReitenHomCokernelDualEquiv f).surjective v
           exact ⟨_, ⟨u, rfl⟩, auslanderReitenHomCokernelDualEquiv_map f φ u⟩)
+
+/-- **Naturality of Auslander's defect formula** in the exact sequence. For a morphism
+`(a₁, a₂, a₃)` from `0 → M₁ → M₂ → M₃ → 0` to `0 → M₁' → M₂' → M₃' → 0`, the isomorphisms
+`D δ^*(X) ≅ δ_*(D Tr X)` and `D δ'^*(X) ≅ δ'_*(D Tr X)` commute with the dual of postcomposition
+by `a₃` and with precomposition by `a₁`. -/
+theorem dualContravariantDefectEquivCovariantDefect_naturality (hfp : Exact f p)
+    (hp : Surjective p) (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ)
+    (hφ' : Injective φ') (hψ' : Surjective ψ') (hφψ' : Exact φ' ψ') (h₁ : a₂ ∘ₗ φ = φ' ∘ₗ a₁)
+    (h₂ : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (χ : contravariantDefect k ψ' X →ₗ[k] E) :
+    dualContravariantDefectEquivCovariantDefect hfp hp hφ hψ hφψ
+        (χ ∘ₗ contravariantDefectMap k h₂ X) =
+      covariantDefectMap k h₁ _
+        (dualContravariantDefectEquivCovariantDefect hfp hp hφ' hψ' hφψ' χ) := by
+  simp only [dualContravariantDefectEquivCovariantDefect, LinearEquiv.trans_apply]
+  set κ := contravariantDefectEquivKer (k := k) hfp hp hφ hψ hφψ
+  set κ' := contravariantDefectEquivKer (k := k) hfp hp hφ' hψ' hφψ'
+  -- Represent the class attached to `χ` by a functional `v` on `H(M₁')`.
+  obtain ⟨v, hv⟩ := Submodule.Quotient.mk_surjective _
+    ((cokernelEquivDualKer (S := k) (homCokernelMap k f φ')).symm (χ ∘ₗ κ'.symm.toLinearMap))
+  have hv' (u) : v ((u : ker (homCokernelMap k f φ')) : _) = χ (κ'.symm u) := by
+    simpa using LinearMap.congr_fun
+      (congrArg (cokernelEquivDualKer (S := k) (homCokernelMap k f φ')) hv) u
+  -- Then `v ∘ H(a₁)` represents the class attached to `χ ∘ a₃`.
+  have hw : (cokernelEquivDualKer (S := k) (homCokernelMap k f φ)).symm
+      ((χ ∘ₗ contravariantDefectMap k h₂ X) ∘ₗ κ.symm.toLinearMap) =
+        Submodule.Quotient.mk (v ∘ₗ homCokernelMap k f a₁) := by
+    rw [LinearEquiv.symm_apply_eq, cokernelEquivDualKer_mk]
+    ext u
+    obtain ⟨x, rfl⟩ := κ.surjective u
+    have hx := contravariantDefectEquivKer_naturality hfp hp hφ hψ hφψ hφ' hψ' hφψ' h₁ h₂ x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
+      Submodule.subtype_apply]
+    rw [← hx, hv', LinearEquiv.symm_apply_apply]
+  have e₁ : κ.arrowCongr (LinearEquiv.refl k E) (χ ∘ₗ contravariantDefectMap k h₂ X) =
+      (χ ∘ₗ contravariantDefectMap k h₂ X) ∘ₗ κ.symm.toLinearMap := by
+    ext; simp
+  have e₂ : κ'.arrowCongr (LinearEquiv.refl k E) χ = χ ∘ₗ κ'.symm.toLinearMap := by
+    ext; simp
+  rw [e₁, e₂, hw, ← hv]
+  simp [Submodule.Quotient.equiv_apply]
 
 end Defect
 

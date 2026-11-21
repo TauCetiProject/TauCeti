@@ -179,8 +179,8 @@ theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
         (i : ℕ) = n - 3 ∧ n - 3 < j ∨ (j : ℕ) = n - 3 ∧ n - 3 < i := by
   rw [DynkinType.cartanMatrix_D, diagramGraph_adj]
   simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
-  have := i.2
-  have := j.2
+  have := i.isLt
+  have := j.isLt
   split_ifs <;> simp <;> omega
 
 /-- Below rank three the `Dₙ` diagram has no edges. -/

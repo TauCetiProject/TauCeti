@@ -103,7 +103,7 @@ private theorem continuous_cutoff_smul_comp_normalize (χ : FrequencyCutoff E) {
 private theorem exists_timeChange : ∃ σ : ℝ → ℝ, Continuous σ ∧ (∀ t, σ t ∈ Icc (0 : ℝ) 1) ∧
     (∀ t < 1 / 3, σ t = 0) ∧ ∀ t, 2 / 3 < t → σ t = 1 :=
   ⟨fun t ↦ projIcc (0 : ℝ) 1 zero_le_one (3 * t - 1),
-    continuous_subtype_val.comp (continuous_projIcc.comp (by fun_prop)), fun _ ↦ Subtype.prop _,
+    continuous_subtypeVal.comp (continuous_projIcc.comp (by fun_prop)), fun _ ↦ Subtype.prop _,
     fun t ht ↦ by simp [projIcc_of_le_left _ (show 3 * t - 1 ≤ 0 by linarith)],
     fun t ht ↦ by simp [projIcc_of_right_le _ (show 1 ≤ 3 * t - 1 by linarith)]⟩
 

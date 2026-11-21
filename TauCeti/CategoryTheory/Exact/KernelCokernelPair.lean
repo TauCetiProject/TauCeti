@@ -143,13 +143,13 @@ variable {A : C}
 /-- The factorization through the kernel `S.f` of a morphism into `S.X₂` killed by `S.g`. -/
 noncomputable def lift (h : IsKernelCokernelPair S) (k : A ⟶ S.X₂) (hk : k ≫ S.g = 0) :
     A ⟶ S.X₁ :=
-  (KernelFork.IsLimit.lift' h.fIsKernel k hk).1
+  (KernelFork.IsLimit.lift' h.fIsKernel k hk).val
 
 /-- The kernel factorization `lift` satisfies `lift ≫ S.f = k`. -/
 @[reassoc (attr := simp)]
 theorem lift_f (h : IsKernelCokernelPair S) (k : A ⟶ S.X₂) (hk : k ≫ S.g = 0) :
     h.lift k hk ≫ S.f = k :=
-  (KernelFork.IsLimit.lift' h.fIsKernel k hk).2
+  (KernelFork.IsLimit.lift' h.fIsKernel k hk).property
 
 /-- `IsKernelCokernelPair.lift` is the unique factorization through `S.f`. -/
 theorem eq_lift (h : IsKernelCokernelPair S) (k : A ⟶ S.X₂) (hk : k ≫ S.g = 0) (l : A ⟶ S.X₁)
@@ -160,13 +160,13 @@ theorem eq_lift (h : IsKernelCokernelPair S) (k : A ⟶ S.X₂) (hk : k ≫ S.g 
 /-- The factorization through the cokernel `S.g` of a morphism out of `S.X₂` killed by `S.f`. -/
 noncomputable def desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k = 0) :
     S.X₃ ⟶ A :=
-  (CokernelCofork.IsColimit.desc' h.gIsCokernel k hk).1
+  (CokernelCofork.IsColimit.desc' h.gIsCokernel k hk).val
 
 /-- The cokernel factorization `desc` satisfies `S.g ≫ desc = k`. -/
 @[reassoc (attr := simp)]
 theorem g_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k = 0) :
     S.g ≫ h.desc k hk = k :=
-  (CokernelCofork.IsColimit.desc' h.gIsCokernel k hk).2
+  (CokernelCofork.IsColimit.desc' h.gIsCokernel k hk).property
 
 /-- `IsKernelCokernelPair.desc` is the unique factorization through `S.g`. -/
 theorem eq_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k = 0) (l : S.X₃ ⟶ A)

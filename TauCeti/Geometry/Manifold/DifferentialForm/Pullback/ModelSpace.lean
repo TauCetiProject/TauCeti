@@ -84,7 +84,7 @@ smooth on `U` as a flat form. -/
 theorem contDiffOn_mpullback (η : SmoothForm I M F k) (hU : IsOpen U)
     (hφ : ContMDiffOn 𝓘(ℝ, E') I ∞ φ U) :
     ContDiffOn ℝ (E := E') (F := E' [⋀^Fin k]→L[ℝ] F) ∞
-      (TauCeti.mpullback 𝓘(ℝ, E') I φ η.1) U := fun y hy ↦
+      (TauCeti.mpullback 𝓘(ℝ, E') I φ η.val) U := fun y hy ↦
   RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
     ((η.contMDiff (φ y)).mpullback_form ((hφ y hy).contMDiffAt (hU.mem_nhds hy))
       (by simp)).contMDiffWithinAt
@@ -93,7 +93,7 @@ theorem contDiffOn_mpullback (η : SmoothForm I M F k) (hU : IsOpen U)
 form, at every point where the map is `C²`. -/
 theorem IsClosed.extDeriv_mpullback_eq_zero {η : SmoothForm I M F k} (hη : η.IsClosed) {y : E'}
     (hφ : ContMDiffAt 𝓘(ℝ, E') I 2 φ y) :
-    extDeriv (TauCeti.mpullback 𝓘(ℝ, E') I φ η.1 : E' → E' [⋀^Fin k]→L[ℝ] F) y = 0 := by
+    extDeriv (TauCeti.mpullback 𝓘(ℝ, E') I φ η.val : E' → E' [⋀^Fin k]→L[ℝ] F) y = 0 := by
   -- `d (φ^* η) = φ^* dη = 0` at `y`, by naturality of the exterior derivative.
   rw [← mextDeriv_eq_extDeriv, ← mpullback_mextDeriv_at hφ ((η.contMDiff (φ y)).of_le (by simp)),
     (isClosed_def η).1 hη, TauCeti.mpullback_zero]

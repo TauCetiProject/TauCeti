@@ -50,7 +50,9 @@ the points of imaginary part less than one.
   together with complex differentiability of the map and of its inverse in the interior.
 * `TauCeti.borderedHolomorphicGroupoid_le_contDiffGroupoid`: members are smooth, so a charted
   space with this groupoid is a smooth manifold
-  (`TauCeti.isManifold_of_hasGroupoid_borderedHolomorphicGroupoid`).
+  (`TauCeti.isManifold_of_hasGroupoid_borderedHolomorphicGroupoid`), and every bordered holomorphic
+  chart lies in the `C^n` maximal atlas for `n ≤ ∞`
+  (`TauCeti.borderedHolomorphicGroupoid_maximalAtlas_subset`).
 * `TauCeti.ofSet_mem_borderedHolomorphicGroupoid` and
   `TauCeti.closedUnderRestriction_borderedHolomorphicGroupoid`: the groupoid contains the
   restrictions of the identity to open sets, so it is closed under restriction and open subsets
@@ -161,6 +163,15 @@ def borderedHolomorphicGroupoid : StructureGroupoid ClosedUpperHalfPlane :=
 theorem borderedHolomorphicGroupoid_le_contDiffGroupoid :
     borderedHolomorphicGroupoid ≤ contDiffGroupoid ∞ closedUpperHalfPlaneModel :=
   inf_le_left
+
+/-- Every bordered holomorphic chart belongs to the `C^n` maximal atlas of
+`closedUpperHalfPlaneModel` for any `n ≤ ∞`. -/
+theorem borderedHolomorphicGroupoid_maximalAtlas_subset {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] {n : ℕ∞ω} (hn : n ≤ ∞) :
+    borderedHolomorphicGroupoid.maximalAtlas M ⊆
+      IsManifold.maximalAtlas closedUpperHalfPlaneModel n M :=
+  StructureGroupoid.maximalAtlas_mono
+    (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans (contDiffGroupoid_le hn))
 
 /-- An open partial homeomorphism of the closed upper half-plane belongs to the bordered
 holomorphic groupoid exactly when it is smooth up to the boundary and both it and its inverse are

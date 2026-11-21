@@ -274,21 +274,21 @@ theorem IsVirtualDiagonal.exists_isApproximateDiagonal
     | .inl _ => inferInstance
     | .inr _ => inferInstance
   let S : ∀ i, CompletedProjectiveTensor 𝕜 A A →L[𝕜] Z i
-    | .inl a => mulLeft 𝕜 A a.1 - mulRight 𝕜 A a.1
-    | .inr a => ContinuousLinearMap.mul 𝕜 A a.1 ∘L mul' 𝕜 A
+    | .inl a => mulLeft 𝕜 A a.val - mulRight 𝕜 A a.val
+    | .inr a => ContinuousLinearMap.mul 𝕜 A a.val ∘L mul' 𝕜 A
   let z : ∀ i, Z i
     | .inl _ => 0
-    | .inr a => a.1
-  have hS_inl (a : s) : S (.inl a) = mulLeft 𝕜 A a.1 - mulRight 𝕜 A a.1 := rfl
-  have hS_inr (a : s) : S (.inr a) = ContinuousLinearMap.mul 𝕜 A a.1 ∘L mul' 𝕜 A := rfl
+    | .inr a => a.val
+  have hS_inl (a : s) : S (.inl a) = mulLeft 𝕜 A a.val - mulRight 𝕜 A a.val := rfl
+  have hS_inr (a : s) : S (.inr a) = ContinuousLinearMap.mul 𝕜 A a.val ∘L mul' 𝕜 A := rfl
   have hz_inl (a : s) : z (.inl a) = 0 := rfl
-  have hz_inr (a : s) : z (.inr a) = a.1 := rfl
+  have hz_inr (a : s) : z (.inr a) = a.val := rfl
   have hz : ∀ i (f : StrongDual 𝕜 (Z i)), M (f.comp (S i)) = f (z i) := by
     rintro (a | a) f
     · rw [hS_inl a, hz_inl a, comp_sub, map_sub, hM.apply_comp_mulLeft_eq_mulRight, sub_self,
         map_zero]
     · rw [hS_inr a, hz_inr a]
-      exact hM.apply_comp_mul_comp_mul' a.1 f
+      exact hM.apply_comp_mul_comp_mul' a.val f
   obtain ⟨m, hm, happrox⟩ := M.exists_norm_le_and_forall_norm_sub_lt S z hz le_rfl hε
   refine ⟨m, hm, fun a ha ↦ ?_⟩
   have h₁ := happrox (.inl ⟨a, ha⟩)

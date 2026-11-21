@@ -93,7 +93,7 @@ noncomputable def unitaryEquivSpecialLinearOfAlgEquiv {c₁ c₂ c₃ : R}
     { toFun := fun q ↦
         ⟨e q, (Matrix.adjugate_mul_self_eq_one_iff_det_eq_one (e q)).mp <| by
           rw [← map_star_eq_adjugate_of_algEquiv_matrix e, ← map_mul]
-          simpa only [map_one] using congrArg e (Unitary.mem_iff.mp q.2).1⟩
+          simpa only [map_one] using congrArg e (Unitary.mem_iff.mp q.property).1⟩
       map_one' := by
         apply Subtype.ext
         exact map_one e

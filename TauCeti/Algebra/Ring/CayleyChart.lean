@@ -240,12 +240,12 @@ variable (j) in
 roots `J` of `-1` with `j + J` invertible, with inverse `cayleyCoord j`. -/
 def cayleyEquiv (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     {η : A // η * j = -(j * η) ∧ IsUnit (1 + η)} ≃ {J : A // J * J = -1 ∧ IsUnit (j + J)} where
-  toFun η := ⟨cayleyParam j η, cayleyParam_mul_self hj η.2.2,
-    isUnit_add_cayleyParam h2 hj η.2.1 η.2.2⟩
-  invFun J := ⟨cayleyCoord j J, cayleyCoord_mul_eq_neg_mul hj J.2.1,
-    isUnit_one_add_cayleyCoord h2 hj J.2.2⟩
-  left_inv η := Subtype.ext (cayleyCoord_cayleyParam h2 hj η.2.1 η.2.2)
-  right_inv J := Subtype.ext (cayleyParam_cayleyCoord h2 hj J.2.1 J.2.2)
+  toFun η := ⟨cayleyParam j η, cayleyParam_mul_self hj η.property.2,
+    isUnit_add_cayleyParam h2 hj η.property.1 η.property.2⟩
+  invFun J := ⟨cayleyCoord j J, cayleyCoord_mul_eq_neg_mul hj J.property.1,
+    isUnit_one_add_cayleyCoord h2 hj J.property.2⟩
+  left_inv η := Subtype.ext (cayleyCoord_cayleyParam h2 hj η.property.1 η.property.2)
+  right_inv J := Subtype.ext (cayleyParam_cayleyCoord h2 hj J.property.1 J.property.2)
 
 /-- The underlying map of `cayleyEquiv` is `cayleyParam`. -/
 @[simp]

@@ -41,7 +41,7 @@ domain is spanned by the lattice vectors of `approxModule S₀ L c Q` in that bo
 the approximation body for the convex-body successive-minima API. -/
 theorem exists_convexBody_approxSpan {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
     ∃ B : ConvexBody (ι → mixedSpace K),
       (B : Set (ι → mixedSpace K)) = approxBody L c Q ∧
@@ -63,8 +63,8 @@ open scoped Classical in
 minima over `K` at most one, including minima equal to one. -/
 theorem finrank_approxSpan {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
     finrank K (approxSpan S₀ L c Q) =
       (Finset.univ.filter fun l : Fin (Fintype.card ι) ↦
@@ -82,8 +82,8 @@ open scoped Classical in
 `r` vectors, where `r` is the rank of the domain. -/
 theorem approxSpan_eq_span_image {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q)
     {x : Fin (Fintype.card ι) → ι → K} (hx : LinearIndependent K x)
     (hxΛ : ∀ l, x l ∈ approxModule S₀ L c Q)

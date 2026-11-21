@@ -311,7 +311,7 @@ def mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C *
     IsRestrictedFamily.addSubgroup E c →ₗ[R] IsRestrictedFamily.addSubgroup F c :=
   LinearMap.codRestrict (IsRestrictedFamily.submodule R F c)
     ((LinearMap.compLeft φ (σ →₀ ℕ)).comp (IsRestrictedFamily.submodule R E c).subtype)
-    fun a ↦ a.2.map φ hφ
+    fun a ↦ a.property.map φ hφ
 
 @[simp]
 theorem coe_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
@@ -347,7 +347,7 @@ variable (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖
 /-- A restricted family is killed by the induced map exactly when each coefficient is killed. -/
 @[simp]
 theorem mapLinearMap_eq_zero_iff (a : IsRestrictedFamily.addSubgroup E c) :
-    mapLinearMap φ hφ a = 0 ↔ ∀ t, φ (a.1 t) = 0 := by
+    mapLinearMap φ hφ a = 0 ↔ ∀ t, φ (a.val t) = 0 := by
   constructor
   · intro h t
     simpa only [coe_mapLinearMap, Function.comp_apply, AddSubgroup.coe_zero, Pi.zero_apply]
@@ -362,12 +362,12 @@ The polyradius can be arbitrary and the lift need not be linear. -/
 theorem exists_mapLinearMap_eq_and_norm_coeff_le {L : ℝ}
     (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖)
     (b : IsRestrictedFamily.addSubgroup F c) :
-    ∃ a, mapLinearMap φ hφ a = b ∧ ∀ t, ‖a.1 t‖ ≤ L * ‖b.1 t‖ := by
+    ∃ a, mapLinearMap φ hφ a = b ∧ ∀ t, ‖a.val t‖ ≤ L * ‖b.val t‖ := by
   choose f hf hnorm using hlift
-  refine ⟨⟨f ∘ b.1, mem_addSubgroup.mpr ((mem_addSubgroup.mp b.2).map f hnorm)⟩,
+  refine ⟨⟨f ∘ b.val, mem_addSubgroup.mpr ((mem_addSubgroup.mp b.property).map f hnorm)⟩,
     ?_, fun t ↦ hnorm _⟩
   apply ext
-  simpa only [coe_mapLinearMap, Function.comp_apply] using fun t ↦ hf (b.1 t)
+  simpa only [coe_mapLinearMap, Function.comp_apply] using fun t ↦ hf (b.val t)
 
 /-- Bounded lifts, rather than algebraic surjectivity alone, guarantee surjectivity on
 restricted families. -/
@@ -440,7 +440,7 @@ variable [IsUltrametricDist R]
 noncomputable instance : SMul (IsRestricted.subring (R := R) c)
     (IsRestrictedFamily.addSubgroup E c) where
   smul f a := ⟨MvPowerSeries.convSMul (f : MvPowerSeries σ R) a,
-    mem_addSubgroup.mpr (IsRestrictedFamily.convSMul f.2 (mem_addSubgroup.mp a.2))⟩
+    mem_addSubgroup.mpr (IsRestrictedFamily.convSMul f.property (mem_addSubgroup.mp a.property))⟩
 
 @[simp]
 theorem coe_isRestrictedSubring_smul (f : IsRestricted.subring (R := R) c)
@@ -465,13 +465,13 @@ noncomputable def subringLinearEquiv :
     IsRestricted.subring (R := R) c ≃ₗ[IsRestricted.subring (R := R) c]
       IsRestrictedFamily.addSubgroup R c where
   toFun f := ⟨fun t ↦ MvPowerSeries.coeff t (f : MvPowerSeries σ R),
-    (isRestrictedFamily_coeff_iff _).mpr f.2⟩
+    (isRestrictedFamily_coeff_iff _).mpr f.property⟩
   -- `MvPowerSeries σ R` is by definition `(σ →₀ ℕ) → R`, so a family is a series as is;
   -- `MvPowerSeries.coeff_apply` identifies its coefficients with the family's values.
   invFun a :=
     let g : MvPowerSeries σ R := (a : (σ →₀ ℕ) → R)
     ⟨g, (isRestrictedFamily_coeff_iff g).mp <| by
-      simpa only [_root_.MvPowerSeries.coeff_apply] using mem_addSubgroup.mp a.2⟩
+      simpa only [_root_.MvPowerSeries.coeff_apply] using mem_addSubgroup.mp a.property⟩
   map_add' _ _ := rfl
   map_smul' f g := ext fun t ↦ congrFun (convSMul_coeff (f : MvPowerSeries σ R) g).symm t
   left_inv f := Subtype.ext <| MvPowerSeries.ext fun t ↦ _root_.MvPowerSeries.coeff_apply _ t

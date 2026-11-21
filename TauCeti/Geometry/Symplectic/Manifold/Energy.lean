@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Pointwise and integrated energy for curves into almost complex manifolds
@@ -71,6 +73,13 @@ $J$-holomorphic curves.
   energy--area identity for the manifold derivative of a pseudoholomorphic curve.
 * `IsPseudoholomorphicWithinAt.mfderivWithin_stdComplexLineEnergyDensity_eq_two_mul_twoForm`:
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
+* `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
+  of a curve satisfying the Cauchy--Riemann equation is nonnegative.
+* `TauCeti.SmoothTwoForm.Tames.exists_pos_eval₂_mfderiv`: under tameness, a nonconstant
+  differentiable curve satisfying the Cauchy--Riemann equation has positive symplectic area
+  density somewhere.
+* `TauCeti.SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the symplectic area density
+  of a `C¹` curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
   identity on manifolds, and
   `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add`: its
@@ -313,6 +322,50 @@ end IsPseudoholomorphicWithinAt
 namespace SmoothTwoForm
 
 variable {form : SmoothTwoForm I M} {J : SmoothAlmostComplexStructure I M} {x : M}
+
+/-- Under tameness, the symplectic area density `ω(∂ₛu, ∂ₜu)` of a curve `u` satisfying the
+Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` at `z` is nonnegative. No differentiability is assumed:
+the equation is stated for `mfderiv`, which is zero where `u` is not differentiable. -/
+lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hCR : mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)) :
+    0 ≤ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  have h := htame.stdComplexLineEnergyDensity_nonneg (u z)
+    (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap
+  rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq hCR)
+    |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
+  exact (mul_nonneg_iff_of_pos_left two_pos).1 h
+
+/-- Under tameness, a nonconstant differentiable curve `u` satisfying the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` has positive symplectic area density `ω(∂ₛu, ∂ₜu)` somewhere. -/
+theorem Tames.exists_pos_eval₂_mfderiv (htame : form.Tames J) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable (modelWithCornersSelf ℝ (ℝ × ℝ)) I u)
+    (hCR : ∀ z, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal))
+    (hnc : ∃ z w, u z ≠ u w) :
+    ∃ z, 0 < SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  by_contra! h
+  -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
+  have hzero : ∀ w, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u w = 0 := fun w ↦ by
+    refine (htame.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
+    rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq (hCR w))
+      |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
+    exact mul_eq_zero_of_right 2 (le_antisymm (h w) (htame.eval₂_mfderiv_nonneg (hCR w)))
+  obtain ⟨z, w, hzw⟩ := hnc
+  exact hzw (hu.apply_eq_of_mfderiv_eq_zero hzero z w)
+
+/-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
+theorem continuous_eval₂_mfderiv (form : SmoothTwoForm I M) {u : ℝ × ℝ → M}
+    (hu : ContMDiff (modelWithCornersSelf ℝ (ℝ × ℝ)) I 1 u) :
+    Continuous fun z ↦ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) :=
+  ((form.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+    simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- **Wirtinger identity on manifolds.** For an invariant pair `(form, J)`, the standard energy
 density minus twice the symplectic area density is the Cauchy--Riemann defect square:

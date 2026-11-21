@@ -164,7 +164,7 @@ theorem prod_pow_partialCorrelationGram_ae_eq_sum_prod_pi_betaMeasure
     (fun z ↦ ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij) =ᵐ[
       Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)]
       fun z ↦ ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.1 *
+        ∏ ij, z ij ^ mulTransposeExpansionPower c ij.val *
           (1 - z ij ^ 2) ^
             partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c) ij := by
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
@@ -179,8 +179,8 @@ theorem integral_prod_pow_partialCorrelationGram_pi_betaMeasure
     ∫ z, ∏ ij, partialCorrelationGram z ij.1 ij.2 ^ n ij
       ∂(Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (a ij + partialCorrelationCholeskyMonomialResidualPower
                 (mulTransposeExpansionPower c) ij) /
             beta (1 / 2) (a ij)
@@ -242,8 +242,8 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (lkjPartialCorrelationShape p η ij +
                 partialCorrelationCholeskyMonomialResidualPower
                   (mulTransposeExpansionPower c) ij) /
@@ -257,7 +257,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (p : ℕ) {η : ℝ} (hη : 0 < �
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ij, (R : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij ∂(lkjMeasure p η) =
         ∫ R, f R ∂((lkjMeasure p η).map Subtype.val) := by
-          rw [integral_map measurable_subtype_coe.aemeasurable hf.aestronglyMeasurable]
+          rw [integral_map measurable_subtypeVal.aemeasurable hf.aestronglyMeasurable]
     _ = ∫ z, f (partialCorrelationGram z) ∂(Measure.pi fun ij : strictLowerTriangle p ↦
           (betaMeasure (lkjPartialCorrelationShape p η ij)
             (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)) := by
@@ -327,7 +327,7 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd {p : ℕ} (η : �
       (Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance
     let g : Matrix (Fin p) (Fin p) ℝ → ℝ := fun M ↦ ∏ q, M q.1 q.2 ^ n q
     have hg : Continuous g := by fun_prop
-    rw [← integral_map (f := g) measurable_subtype_coe.aemeasurable hg.aestronglyMeasurable,
+    rw [← integral_map (f := g) measurable_subtypeVal.aemeasurable hg.aestronglyMeasurable,
       map_coe_lkjMeasure hη]
     exact integral_prod_pow_apply_map_partialCorrelationGram_pi_eq_zero_of_odd _ hi
 
@@ -421,8 +421,8 @@ theorem integral_prod_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) 
     (hη : 0 < η) (n : Fin p × Fin p → ℕ) :
     ∫ ω, (∏ ij, (X ω : Matrix (Fin p) (Fin p) ℝ) ij.1 ij.2 ^ n ij) ∂P =
       ∑ c : mulTransposeExpansionChoice n,
-        ∏ ij, if Even (mulTransposeExpansionPower c ij.1) then
-          beta (((mulTransposeExpansionPower c ij.1 : ℝ) + 1) / 2)
+        ∏ ij, if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
               (lkjPartialCorrelationShape p η ij +
                 partialCorrelationCholeskyMonomialResidualPower
                   (mulTransposeExpansionPower c) ij) /

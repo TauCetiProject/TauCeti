@@ -141,7 +141,7 @@ theorem mem_unitaryTorus_iff {g : unitaryGroup n ℂ} :
   refine ⟨fun ⟨z, hz⟩ => hz ▸ isDiag_diagonal _, fun hg => ?_⟩
   -- The diagonal entries of a diagonal unitary matrix are unitary, so lie on the circle.
   have hunit :=
-    Pi.mem_unitary_iff.mp <| diagonal_mem_unitary.mp (hg.diagonal_diag.symm ▸ g.2)
+    Pi.mem_unitary_iff.mp <| diagonal_mem_unitary.mp (hg.diagonal_diag.symm ▸ g.property)
   refine ⟨fun i => ⟨(g : Matrix n n ℂ) i i,
     mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (hunit i))⟩, Subtype.ext ?_⟩
   exact hg.diagonal_diag
