@@ -257,7 +257,7 @@ theorem mem_cyclicTotalCochains_iff {m : ℕ}
 @[simp]
 theorem coe_cyclicTotalCochains_apply_of_lt {m q : ℕ} (x : cyclicTotalCochains R A M m)
     (hq : m < q) : (x : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M) q = 0 :=
-  mem_cyclicTotalCochains_iff.1 x.2 q hq
+  mem_cyclicTotalCochains_iff.1 x.property q hq
 
 /-- A cochain placed in row `k ≤ m` is a total cochain of degree `m`. -/
 theorem single_mem_cyclicTotalCochains {m k : ℕ} (hk : k ≤ m)
@@ -296,14 +296,14 @@ variable (R A M) in
 /-- The inclusion of cyclic `m`-cochains into column zero of the total complex. -/
 def cyclicCochainsToTotal (m : ℕ) : cyclicCochains R A M m →ₗ[R] cyclicTotalCochains R A M m :=
   LinearMap.codRestrict _ ((LinearMap.single R _ m).comp (cyclicCochains R A M m).subtype)
-    fun φ ↦ single_mem_cyclicTotalCochains le_rfl φ.1
+    fun φ ↦ single_mem_cyclicTotalCochains le_rfl φ.val
 
 /-- A cyclic cochain is included as the family concentrated in row `m`, column zero. -/
 @[simp]
 theorem coe_cyclicCochainsToTotal_apply {m : ℕ} (φ : cyclicCochains R A M m) :
     (cyclicCochainsToTotal R A M m φ : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1)
         ↦ A) M) =
-      Pi.single m φ.1 :=
+      Pi.single m φ.val :=
   (rfl)
 
 variable (R A M) in
@@ -389,22 +389,22 @@ def cyclicTotalDifferential (m : ℕ) :
   (cyclicTotalDifferentialAux R A M m).restrict fun _ ↦ cyclicTotalDifferentialAux_mem
 
 private theorem coe_cyclicTotalDifferential {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    (cyclicTotalDifferential R A M m x).1 = cyclicTotalDifferentialAux R A M m x.1 :=
+    (cyclicTotalDifferential R A M m x).val = cyclicTotalDifferentialAux R A M m x.val :=
   (rfl)
 
 /-- In row zero, the total differential is the horizontal differential out of column `m`. -/
 @[simp]
 theorem cyclicTotalDifferential_apply_zero {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    (cyclicTotalDifferential R A M m x).1 0 = cyclicBicomplexHorizontal R A M m 0 (x.1 0) :=
+    (cyclicTotalDifferential R A M m x).val 0 = cyclicBicomplexHorizontal R A M m 0 (x.val 0) :=
   (rfl)
 
 /-- In row `q + 1`, the total differential adds the vertical differential of the component in
 row `q`, in column `m - q`, to the horizontal differential of the component in row `q + 1`. -/
 @[simp]
 theorem cyclicTotalDifferential_apply_succ {m : ℕ} (x : cyclicTotalCochains R A M m) (q : ℕ) :
-    (cyclicTotalDifferential R A M m x).1 (q + 1) =
-      cyclicBicomplexVertical R A M (m - q) q (x.1 q) +
-        cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x.1 (q + 1)) :=
+    (cyclicTotalDifferential R A M m x).val (q + 1) =
+      cyclicBicomplexVertical R A M (m - q) q (x.val q) +
+        cyclicBicomplexHorizontal R A M (m - (q + 1)) (q + 1) (x.val (q + 1)) :=
   (rfl)
 
 /-- The total differential of a cochain `φ` in column zero of row `m` has the components
@@ -427,10 +427,10 @@ cyclic cochain `φ` is `(1 - λ) φ = 0` in column one plus `b φ` in column zer
 theorem cyclicTotalDifferential_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCochains R A M m) :
     cyclicTotalDifferential R A M m (cyclicCochainsToTotal R A M m φ) =
       cyclicCochainsToTotal R A M (m + 1) (cyclicHochschildCoboundary R A M m φ) := by
-  obtain ⟨hcyc, hb⟩ := cyclicTotalDifferentialAux_single_self m φ.1
-  have hφ : (1 - cyclicOperator R A M m) φ.1 = 0 := by
+  obtain ⟨hcyc, hb⟩ := cyclicTotalDifferentialAux_single_self m φ.val
+  have hφ : (1 - cyclicOperator R A M m) φ.val = 0 := by
     rw [← LinearMap.mem_ker, ker_one_sub_cyclicOperator]
-    exact φ.2
+    exact φ.property
   apply Subtype.ext
   rw [coe_cyclicTotalDifferential, coe_cyclicCochainsToTotal_apply, coe_cyclicCochainsToTotal_apply,
     coe_cyclicHochschildCoboundary_apply,
@@ -438,7 +438,7 @@ theorem cyclicTotalDifferential_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCoch
       (cyclicTotalDifferentialAux_mem (single_mem_cyclicTotalCochains le_rfl _))
       fun q hq ↦ ?_, hb]
   rcases Nat.lt_succ_iff_lt_or_eq.1 hq with hq | rfl
-  · exact cyclicTotalDifferentialAux_single_apply_of_lt m hq φ.1
+  · exact cyclicTotalDifferentialAux_single_apply_of_lt m hq φ.val
   · rw [hcyc, hφ]
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
@@ -505,7 +505,7 @@ private theorem cyclicTotalDifferentialAux_cyclicTotalDifferentialAux {m : ℕ}
 theorem cyclicTotalDifferential_cyclicTotalDifferential {m : ℕ}
     (x : cyclicTotalCochains R A M m) :
     cyclicTotalDifferential R A M (m + 1) (cyclicTotalDifferential R A M m x) = 0 :=
-  Subtype.ext (cyclicTotalDifferentialAux_cyclicTotalDifferentialAux x.2)
+  Subtype.ext (cyclicTotalDifferentialAux_cyclicTotalDifferentialAux x.property)
 
 variable (R A M) in
 /-- The total differential squares to zero, as a composite of linear maps. -/
@@ -666,10 +666,10 @@ variable {R A M} in
 private theorem exists_cyclicCochainsToTotal_eq_of_zero (x : cyclicTotalCochains R A M 0)
     (hx : cyclicTotalDifferential R A M 0 x = 0) :
     ∃ φ, cyclicCochainsToTotal R A M 0 φ = x := by
-  have hx0 := eq_single_of_forall_lt x.2 fun q hq ↦ absurd hq (Nat.not_lt_zero q)
-  have h := (cyclicTotalDifferentialAux_single_self 0 (x.1 0)).1
+  have hx0 := eq_single_of_forall_lt x.property fun q hq ↦ absurd hq (Nat.not_lt_zero q)
+  have h := (cyclicTotalDifferentialAux_single_self 0 (x.val 0)).1
   rw [← hx0, ← coe_cyclicTotalDifferential, hx, Submodule.coe_zero, Pi.zero_apply] at h
-  refine ⟨⟨x.1 0, ?_⟩, Subtype.ext ?_⟩
+  refine ⟨⟨x.val 0, ?_⟩, Subtype.ext ?_⟩
   · rw [← ker_one_sub_cyclicOperator]
     exact h.symm
   · rw [coe_cyclicCochainsToTotal_apply]
@@ -682,9 +682,9 @@ private theorem exists_cyclicCochainsToTotal_add_cyclicTotalDifferential_eq {m :
     (hR : ∀ q ≤ m, IsUnit ((q : R) + 1)) (x : cyclicTotalCochains R A M (m + 1))
     (hx : cyclicTotalDifferential R A M (m + 1) x = 0) :
     ∃ φ y, cyclicCochainsToTotal R A M (m + 1) φ + cyclicTotalDifferential R A M m y = x := by
-  have hx' : cyclicTotalDifferentialAux R A M (m + 1) x.1 = 0 := by
+  have hx' : cyclicTotalDifferentialAux R A M (m + 1) x.val = 0 := by
     rw [← coe_cyclicTotalDifferential, hx, Submodule.coe_zero]
-  obtain ⟨y, hy, w, hw⟩ := exists_eq_single_add_cyclicTotalDifferentialAux hR x.2
+  obtain ⟨y, hy, w, hw⟩ := exists_eq_single_add_cyclicTotalDifferentialAux hR x.property
     fun q _ ↦ by rw [hx', Pi.zero_apply]
   have h := (cyclicTotalDifferentialAux_single_self (m + 1) w).1
   rw [eq_sub_of_add_eq hw.symm, map_sub, hx',
@@ -706,7 +706,7 @@ private theorem exists_cyclicHochschildCoboundary_eq {m : ℕ}
   have hy' := congrArg Subtype.val hy
   rw [coe_cyclicTotalDifferential, coe_cyclicCochainsToTotal_apply] at hy'
   obtain ⟨ψ, hψ, hbψ⟩ :=
-    exists_hochschildCoboundary_eq_of_cyclicTotalDifferentialAux_eq_single hR y.2 hy'
+    exists_hochschildCoboundary_eq_of_cyclicTotalDifferentialAux_eq_single hR y.property hy'
   exact ⟨⟨ψ, hψ⟩, Subtype.ext (by rw [coe_cyclicHochschildCoboundary_apply, hbψ])⟩
 
 /-- The components of the cochain map into the total complex are injective. -/
@@ -865,7 +865,7 @@ variable {R A M}
 underlying total cochain is that cocycle. -/
 theorem cyclicTotalHomologyMk_eq_homologyπ {n : ℕ}
     (x : LinearMap.ker (cyclicTotalDifferential R A M n)) (z : (cyclicTotalComplex R A M).cycles n)
-    (hz : (cyclicTotalComplexXIso R A M n).hom ((cyclicTotalComplex R A M).iCycles n z) = x.1) :
+    (hz : (cyclicTotalComplexXIso R A M n).hom ((cyclicTotalComplex R A M).iCycles n z) = x.val) :
     cyclicTotalHomologyMk R A M n x = (cyclicTotalComplex R A M).homologyπ n z :=
   (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ _ _ _
     (mem_ker_cyclicTotalDifferential_iff R A M) x z hz
@@ -886,14 +886,14 @@ theorem cyclicTotalHomologyMk_zero_eq_zero_iff
       _ _ _ _ CochainComplex.prev_nat_zero, (cyclicTotalComplex R A M).shape 0 0 (by simp)]
   simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
   refine ⟨fun ⟨_, h⟩ ↦ Subtype.ext ?_, fun h ↦ ⟨0, by simp [h]⟩⟩
-  exact ((cyclicTotalComplexXIso R A M 0).inv_hom_id_apply x.1).symm.trans
+  exact ((cyclicTotalComplexXIso R A M 0).inv_hom_id_apply x.val).symm.trans
     (by rw [← h, map_zero])
 
 /-- A total cocycle of degree `n + 1` has zero class exactly when it is a total coboundary. -/
 @[simp]
 theorem cyclicTotalHomologyMk_succ_eq_zero_iff {n : ℕ}
     (x : LinearMap.ker (cyclicTotalDifferential R A M (n + 1))) :
-    cyclicTotalHomologyMk R A M (n + 1) x = 0 ↔ ∃ w, cyclicTotalDifferential R A M n w = x.1 := by
+    cyclicTotalHomologyMk R A M (n + 1) x = 0 ↔ ∃ w, cyclicTotalDifferential R A M n w = x.val := by
   rw [cyclicTotalHomologyMk,
     (cyclicTotalComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff_exists
       _ _ _ _ (CochainComplex.prev_nat_succ n)]
@@ -906,12 +906,12 @@ theorem cyclicTotalHomologyMk_succ_eq_zero_iff {n : ℕ}
 
 /-- A cyclic cocycle, included into column zero, is a total cocycle. -/
 theorem cyclicCochainsToTotal_mem_ker {m : ℕ} (φ : cyclicCocycles R A M m) :
-    cyclicCochainsToTotal R A M m φ.1 ∈ LinearMap.ker (cyclicTotalDifferential R A M m) := by
+    cyclicCochainsToTotal R A M m φ.val ∈ LinearMap.ker (cyclicTotalDifferential R A M m) := by
   rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicCochainsToTotal]
   convert map_zero (cyclicCochainsToTotal R A M (m + 1))
   exact Subtype.ext (by
     rw [coe_cyclicHochschildCoboundary_apply]
-    exact (mem_cyclicCocycles_iff R A M).1 φ.2)
+    exact (mem_cyclicCocycles_iff R A M).1 φ.property)
 
 end Classes
 
@@ -928,8 +928,8 @@ theorem homologyMap_cyclicCochainComplexToTotal_mk {m : ℕ} (φ : cyclicCocycle
         (cyclicCohomology.mk R A M m φ) =
       cyclicTotalHomologyMk R A M m ⟨_, cyclicCochainsToTotal_mem_ker φ⟩ := by
   rw [cyclicCohomology.mk_eq_homologyπ R A M φ ((cyclicCochainComplex R A M).moduleCatCyclesMk
-      ((cyclicCochainComplexXIso R A M m).inv φ.1) (m + 1) (CochainComplex.next ℕ m)
-      ((mem_cyclicCocycles_iff_complex R A M m φ.1).1 φ.2)) (by simp),
+      ((cyclicCochainComplexXIso R A M m).inv φ.val) (m + 1) (CochainComplex.next ℕ m)
+      ((mem_cyclicCocycles_iff_complex R A M m φ.val).1 φ.property)) (by simp),
     HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
   exact (cyclicTotalHomologyMk_eq_homologyπ _ _
     (by simp [cyclicCochainComplexToTotal_f_apply])).symm
@@ -952,7 +952,7 @@ def cyclicTotalCochainsMapRows (m : ℕ) :
     mem_cyclicTotalCochains_iff.2 fun q hq ↦ by simp [mem_cyclicTotalCochains_iff.1 hx q hq]
 /-- Row `q` of `cyclicTotalCochainsMapRows g m x` is `g q (x.1 q)`. -/
 @[simp] theorem coe_cyclicTotalCochainsMapRows_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
-    (q : ℕ) : (cyclicTotalCochainsMapRows g m x).1 q = g q (x.1 q) := (rfl)
+    (q : ℕ) : (cyclicTotalCochainsMapRows g m x).val q = g q (x.val q) := (rfl)
 end Additive
 
 section Differential
@@ -1011,7 +1011,8 @@ def cyclicTotalHomologyMapRows (m : ℕ) :
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
     cyclicTotalHomologyMapRows g hh hv m (cyclicTotalHomologyMk R A M m x) =
       cyclicTotalHomologyMk R B N m
-        ⟨cyclicTotalCochainsMapRows g m x.1, cyclicTotalCochainsMapRows_mem_ker g hh hv x.2⟩ :=
+        ⟨cyclicTotalCochainsMapRows g m x.val, cyclicTotalCochainsMapRows_mem_ker g hh hv
+            x.property⟩ :=
   LinearMap.equivOfSurjective_apply _ _
 end Homology
 end MapRows

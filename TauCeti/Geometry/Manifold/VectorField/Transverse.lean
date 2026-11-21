@@ -19,11 +19,9 @@ to `ι`: it does not lie in the range of the differential `dι_s`. When `ι` is 
 hypersurface, so that this range has codimension one, this is transversality of `Z` to the
 hypersurface in the usual sense: `Z (ι s)` and the tangent space of the hypersurface at `s` span
 the tangent space of `M` at `ι s`. A transverse vector field does not vanish along `ι`
-(`TauCeti.IsTransverseAlong.ne_zero`). Where `dι_s` is injective, `Z (ι s)` and the tangent space
-of `ι` at `s` are independent: `a • Z (ι s) + dι_s w = 0` forces `a = 0` and `w = 0`
-(`TauCeti.smul_add_mfderiv_eq_zero_iff`). If moreover `S` has one dimension less than `M`, a
-function vanishing on the image of `ι` near `s` whose derivative along `Z` vanishes at `ι s` has
-zero differential there (`TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`).
+(`TauCeti.IsTransverseAlong.ne_zero`). If moreover `S` has one dimension less than `M`, a function
+vanishing on the image of `ι` near `s` whose derivative along `Z` vanishes at `ι s` has zero
+differential there (`TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`).
 
 For a regular level `f⁻¹(c)` of a scalar function, with its preferred atlas
 `TauCeti.regularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
@@ -47,8 +45,6 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main results
 
-* `TauCeti.smul_add_mfderiv_eq_zero_iff`: at a point of transversality where `dι_s` is injective,
-  `a • Z (ι s) + dι_s w = 0` only for `a = 0` and `w = 0`.
 * `TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`: on a transverse slice of codimension one,
   a function vanishing on the slice and killed by `Z` has zero differential.
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
@@ -91,28 +87,33 @@ theorem IsTransverseAlong.ne_zero {Z : (x : M) → TangentSpace I x} {ι : S →
     (h : IsTransverseAlong J Z ι) (s : S) : Z (ι s) ≠ 0 :=
   fun h0 ↦ h s (h0 ▸ Submodule.zero_mem _)
 
-/-- **Transversality at a point.** If `ι` has injective differential at `s` and `Z (ι s)` is not in
-its range, then `a • Z (ι s) + dι_s w` vanishes only for `a = 0` and `w = 0`: the line through
-`Z (ι s)` and the tangent space of `ι` at `s` are independent. -/
-theorem smul_add_mfderiv_eq_zero_iff {Z : (x : M) → TangentSpace I x} {ι : S → M} {s : S}
-    (himm : Function.Injective (mfderiv J I ι s)) (htr : Z (ι s) ∉ (mfderiv J I ι s).range)
-    {a : ℝ} {w : TangentSpace J s} :
-    a • Z (ι s) + mfderiv J I ι s w = 0 ↔ a = 0 ∧ w = 0 := by
-  refine ⟨fun h0 ↦ ?_, fun ⟨ha, hw⟩ ↦ by simp [ha, hw]⟩
-  obtain rfl : a = 0 := by
-    by_contra ha
-    -- Otherwise `Z (ι s) = dι_s (-a⁻¹ • w)` would lie in the range of `dι_s`.
-    refine htr (LinearMap.mem_range.2 ⟨-a⁻¹ • w, ?_⟩)
-    simp [eq_neg_of_add_eq_zero_right h0, smul_smul, ha]
-  rw [zero_smul, zero_add, ← map_zero (mfderiv J I ι s)] at h0
-  exact ⟨rfl, himm h0⟩
+/-- If `Z` is transverse along `ι` and the differential `dι_s` is injective, then
+`(a, w) ↦ a Z (ι s) + dι_s w` is injective. This is the differential of a flow-out at time zero. -/
+theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} {ι : S → M}
+    (h : IsTransverseAlong J Z ι) {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
+    Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 := by
+  rintro ⟨a, w⟩ ⟨b, u⟩ hv
+  -- `w` and `u` are tangent vectors at `s`, that is vectors of the model space `E'`.
+  set d : TangentSpace J s := w - u
+  have h0 : (a - b) • Z (ι s) + mfderiv J I ι s d = 0 := by
+    have hd : mfderiv J I ι s d = mfderiv J I ι s w - mfderiv J I ι s u := map_sub _ _ _
+    simp only at hv
+    rw [sub_smul, hd, ← sub_eq_zero.2 hv]
+    abel
+  obtain hab : a - b = 0 := by
+    by_contra hab
+    refine h s (LinearMap.mem_range.2 ⟨-(a - b)⁻¹ • d, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
+    rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ hab,
+      neg_smul, one_smul, neg_neg]
+  rw [hab, zero_smul, zero_add, ← map_zero (mfderiv J I ι s)] at h0
+  exact Prod.ext (sub_eq_zero.1 hab) (sub_eq_zero.1 (himm h0))
 
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than the
 finite-dimensional `M`. If a function `h`, differentiable at `ι s`, vanishes on the slice near `s`
 and its derivative along `Z` vanishes at `ι s`, then its differential at `ι s` is zero. -/
 theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero [FiniteDimensional ℝ E]
-    (hdim : finrank ℝ E = finrank ℝ E' + 1) {Z : (x : M) → TangentSpace I x} {ι : S → M}
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) {Z : (x : M) → TangentSpace I x} {ι : S → M}
     {h : M → ℝ} {s : S}
     (hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)) (hιs : MDifferentiableAt J I ι s)
     (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (himm : Function.Injective (mfderiv J I ι s))
@@ -129,7 +130,7 @@ theorem mvfderiv_eq_zero_of_comp_eventuallyEq_zero [FiniteDimensional ℝ E]
   have htop : LinearMap.range L ⊔ ℝ ∙ Z (ι s) = ⊤ := by
     refine Submodule.eq_top_of_finrank_eq ?_
     rw [Submodule.finrank_sup_span_singleton htr, LinearMap.finrank_range_of_inj himm]
-    exact hdim.symm
+    exact hdim
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hv : v ∈ LinearMap.range L ⊔ ℝ ∙ Z (ι s) := htop ▸ Submodule.mem_top
   obtain ⟨_, ⟨w, rfl⟩, _, hz, rfl⟩ := Submodule.mem_sup.1 hv

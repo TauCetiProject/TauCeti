@@ -24,13 +24,14 @@ This file develops the elementary theory of integral models.
 
 * `Γ` acts on `Λ` by restriction (`TauCeti.GaloisLattice.IntegralModel.toContinuousRep`), jointly
   continuously for the subspace topology.
-* Scalar extension recovers the given representation: for a domain `O` with fraction field `E`
-  and `Λ` free, `E ⊗[O] Λ ≅ V` equivariantly through the rationalization equivalence
-  `Submodule.rationalizationEquiv` (`TauCeti.GaloisLattice.IntegralModel.genericFiberIso`). This
-  is stated for `Λ` with its `O`-module topology; over the valuation ring of a field with a
-  valuative topology, such as a nonarchimedean local field, the subspace topology on a lattice is
-  its module topology (`Submodule.IsFullLattice.isModuleTopology`), and the valuation ring of a
-  nonarchimedean local field is a discrete valuation ring, so every lattice there is free.
+* Scalar extension recovers the given representation: for a commutative ring `O`, an
+  `O`-algebra `E` that is a field, and `Λ` free, `E ⊗[O] Λ ≅ V` equivariantly through the
+  rationalization equivalence `Submodule.rationalizationEquiv`
+  (`TauCeti.GaloisLattice.IntegralModel.genericFiberIso`). This is stated for `Λ` with its
+  `O`-module topology; over the valuation ring of a field with a valuative topology, such as a
+  nonarchimedean local field, the subspace topology on a lattice is its module topology
+  (`Submodule.IsFullLattice.isModuleTopology`), and the valuation ring of a nonarchimedean local
+  field is a discrete valuation ring, so every lattice there is free.
 * The units of `E` act on integral models by homothety, and integral models are ordered by
   inclusion. When `E` is a field and the fraction field of `O` they have sums, and when moreover
   `O` is a principal ideal domain they have intersections.
@@ -102,13 +103,13 @@ and the action is jointly continuous for the subspace topology on `Λ`. -/
 def toContinuousRep (Λ : IntegralModel O ρ) : ContinuousRep Γ O Λ.lattice where
   toRepresentation :=
     { toFun g :=
-        { toFun x := ⟨ρ g x, Λ.stable g x x.2⟩
+        { toFun x := ⟨ρ g x, Λ.stable g x x.property⟩
           map_add' x y := Subtype.ext (map_add (ρ g) (x : V) y)
           map_smul' a x := Subtype.ext ((ρ g).map_smul_of_tower a (x : V)) }
       map_one' := by ext; simp
       map_mul' g h := by ext; simp }
   continuous_action := (ρ.continuous_action.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 /-- The inclusion of an integral model intertwines its action with the action on `V`. -/
 @[simp]
@@ -186,19 +187,20 @@ end Sup
 
 section Inf
 
-variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O] [IsDomain O]
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
   [IsPrincipalIdealRing O] {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
   {ρ : ContinuousRep Γ E V}
 
 namespace IntegralModel
 
-/-- The intersection `Λ ∩ Λ'` of two integral models over a principal ideal domain with fraction
+/-- The intersection `Λ ∩ Λ'` of two integral models over a principal ideal ring with fraction
 field `E`. -/
 instance : Min (IntegralModel O ρ) where
   min Λ Λ' :=
     { lattice := Λ.lattice ⊓ Λ'.lattice
       isFullLattice :=
+        have := IsDomain.of_faithfulSMul O E
         have := Module.Finite.of_isFullLattice (A := E) Λ.lattice
         inferInstance
       stable g x hx := ⟨Λ.stable g x hx.1, Λ'.stable g x hx.2⟩ }
@@ -216,8 +218,8 @@ end Inf
 
 section GenericFiber
 
-variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O] [IsDomain O]
-  [TopologicalSpace O] {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
+  [TopologicalSpace O] {E : Type*} [Field E] [Algebra O E]
   [TopologicalSpace E] [IsTopologicalSemiring E] [ContinuousSMul O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
   [IsModuleTopology E V] {ρ : ContinuousRep Γ E V}
@@ -227,20 +229,18 @@ namespace IntegralModel
 variable (Λ : IntegralModel O ρ) [Module.Free O Λ.lattice] [IsModuleTopology O Λ.lattice]
   [TopologicalSpace (E ⊗[O] Λ.lattice)] [IsModuleTopology E (E ⊗[O] Λ.lattice)]
 
-/-- **The generic fibre of an integral model.** Extending scalars from `O` to its fraction field
+/-- **The generic fibre of an integral model.** Extending scalars from `O` to the field
 `E` recovers the representation: `E ⊗[O] Λ ≅ V`, sending `a ⊗ x` to `a • x`. -/
 noncomputable def genericFiberIso : ContinuousRep.Iso (Λ.toContinuousRep.baseChange E) ρ :=
   .ofEquiv (.mk (rationalizationEquiv (K := E) Λ.lattice) fun g ↦ by
     ext x
     simp)
 
-omit [IsDomain O] [IsFractionRing O E] in
 @[simp]
 theorem genericFiberIso_tmul (a : E) (x : Λ.lattice) :
     Λ.genericFiberIso (a ⊗ₜ x) = a • (x : V) := by
   simp [genericFiberIso]
 
-omit [IsDomain O] [IsFractionRing O E] in
 @[simp]
 theorem genericFiberIso_symm_coe (x : Λ.lattice) :
     Λ.genericFiberIso.symm (x : V) = 1 ⊗ₜ x :=

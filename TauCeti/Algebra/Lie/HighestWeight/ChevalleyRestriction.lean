@@ -166,11 +166,11 @@ invariants `S(H)^W`. -/
 noncomputable def lieChevalleyRestrictionIso : lieInvariants K L L ≃ₐ[K] linearInvariants H :=
   AlgEquiv.ofBijective
     (((lieCartanRestriction H).comp (lieInvariants K L L).val).codRestrict (linearInvariants H)
-      fun p ↦ lieCartanRestriction_mem_linearInvariants p.2)
-    ⟨fun p q hpq ↦ Subtype.ext <| lieCartanRestriction_injOn_lieInvariants H p.2 q.2
+      fun p ↦ lieCartanRestriction_mem_linearInvariants p.property)
+    ⟨fun p q hpq ↦ Subtype.ext <| lieCartanRestriction_injOn_lieInvariants H p.property q.property
         (congrArg Subtype.val hpq),
       fun q ↦ by
-        obtain ⟨p, hp, hpq⟩ := (map_lieInvariants_lieCartanRestriction H).ge q.2
+        obtain ⟨p, hp, hpq⟩ := (map_lieInvariants_lieCartanRestriction H).ge q.property
         exact ⟨⟨p, hp⟩, Subtype.ext hpq⟩⟩
 
 /-- The Chevalley isomorphism is restriction to `H`. -/
@@ -196,8 +196,8 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
   rw [coe_lieChevalleyRestrictionIso_apply]
   refine ⟨fun hq ↦ ?_, lieCartanRestriction_mem_homogeneousSubmodule H⟩
   obtain ⟨p', ⟨hp', hp'm⟩, hpq⟩ := linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants
-    H m ⟨lieCartanRestriction_mem_linearInvariants p.2, hq⟩
-  rwa [← lieCartanRestriction_injOn_lieInvariants H hp' p.2 hpq]
+    H m ⟨lieCartanRestriction_mem_linearInvariants p.property, hq⟩
+  rwa [← lieCartanRestriction_injOn_lieInvariants H hp' p.property hpq]
 
 end Surjective
 

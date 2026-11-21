@@ -65,11 +65,11 @@ theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
 private def normFiberSubtypeEquiv {n : ℕ} (hn : n ≠ 0) :
     {I : (Ideal (𝓞 K))⁰ // Ideal.absNorm (I : Ideal (𝓞 K)) = n} ≃
       {I : Ideal (𝓞 K) // Ideal.absNorm I = n} where
-  toFun I := ⟨I.1, I.2⟩
+  toFun I := ⟨I.val, I.property⟩
   invFun I :=
-    ⟨⟨I.1, by
+    ⟨⟨I.val, by
       rw [← Ideal.absNorm_ne_zero_iff_mem_nonZeroDivisors]
-      exact fun hzero ↦ hn (I.2.symm.trans hzero)⟩, I.2⟩
+      exact fun hzero ↦ hn (I.property.symm.trans hzero)⟩, I.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -130,17 +130,17 @@ private theorem rat_normFiber_subsingleton (n : ℕ) :
   constructor
   intro I J
   apply Subtype.ext
-  have hmap : I.1.map Rat.ringOfIntegersEquiv = J.1.map Rat.ringOfIntegersEquiv := by
-    rw [← Int.ideal_span_absNorm_eq_self (I.1.map Rat.ringOfIntegersEquiv),
-      ← Int.ideal_span_absNorm_eq_self (J.1.map Rat.ringOfIntegersEquiv),
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.1,
-      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.1, I.2, J.2]
+  have hmap : I.val.map Rat.ringOfIntegersEquiv = J.val.map Rat.ringOfIntegersEquiv := by
+    rw [← Int.ideal_span_absNorm_eq_self (I.val.map Rat.ringOfIntegersEquiv),
+      ← Int.ideal_span_absNorm_eq_self (J.val.map Rat.ringOfIntegersEquiv),
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv I.val,
+      Ideal.absNorm_map_of_ringEquiv Rat.ringOfIntegersEquiv J.val, I.property, J.property]
   calc
-    I.1 = Ideal.comap Rat.ringOfIntegersEquiv (I.1.map Rat.ringOfIntegersEquiv) :=
+    I.val = Ideal.comap Rat.ringOfIntegersEquiv (I.val.map Rat.ringOfIntegersEquiv) :=
       (Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective).symm
-    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.1.map Rat.ringOfIntegersEquiv) :=
+    _ = Ideal.comap Rat.ringOfIntegersEquiv (J.val.map Rat.ringOfIntegersEquiv) :=
       congrArg (Ideal.comap Rat.ringOfIntegersEquiv) hmap
-    _ = J.1 := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
+    _ = J.val := Ideal.comap_map_of_bijective _ Rat.ringOfIntegersEquiv.bijective
 
 private theorem rat_normFiber_nonempty (n : ℕ) :
     Nonempty {I : Ideal (𝓞 ℚ) // Ideal.absNorm I = n} := by

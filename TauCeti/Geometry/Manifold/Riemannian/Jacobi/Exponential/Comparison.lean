@@ -246,7 +246,8 @@ theorem isNormalDomain_ball_of_sectionalCurvature_le
   subset_expDomain := hsub
   injOn := hinj
   isLocalDiffeomorphOn w := isLocalDiffeomorphAt_riemannianExp_of_sectionalCurvature_le
-    (hsub w.2) (hK w.1 w.2) fun hκ ↦ (mem_ball_zero_iff.mp w.2).trans_le (hbound hκ)
+    (hsub w.property) (hK w.val w.property) fun hκ ↦ (mem_ball_zero_iff.mp w.property).trans_le
+        (hbound hκ)
 
 /-! ### Exponential Jacobian comparison -/
 
@@ -277,8 +278,8 @@ theorem curvatureSine_pow_le_normDet_mfderiv_riemannianExp
       (curvatureSine_mul_sq_one_pos (norm_nonneg v) hbound).le fun w ↦ ?_
     simp only [LinearMap.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
       ← Submodule.norm_coe]
-    exact curvatureSine_mul_norm_le_norm_mfderiv_riemannianExp hv hK hbound w.1
-      (Submodule.mem_orthogonal_singleton_iff_inner_left.mp w.2)
+    exact curvatureSine_mul_norm_le_norm_mfderiv_riemannianExp hv hK hbound w.val
+      (Submodule.mem_orthogonal_singleton_iff_inner_left.mp w.property)
 
 /-- **Exponential Jacobian comparison**, quotient form for `v ≠ 0`:
 `(curvatureSine κ ‖v‖ / ‖v‖) ^ (finrank ℝ E - 1) ≤ (d(exp_p)_v).normDet`. -/

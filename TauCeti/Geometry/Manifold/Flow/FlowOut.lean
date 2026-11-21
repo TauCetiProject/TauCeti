@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Transverse
-import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # The flow-out of a transverse hypersurface
@@ -106,7 +105,9 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   rcases isEmpty_or_nonempty S with hS | ⟨⟨s₀⟩⟩
   · exact fun p ↦ isEmptyElim p.2
   -- The tangent space of `S` embeds in that of `M`, so it is finite-dimensional.
-  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv (himm s₀)
+  have : FiniteDimensional ℝ E' := by
+    have : FiniteDimensional ℝ (TangentSpace I (ι s₀)) := inferInstanceAs (FiniteDimensional ℝ E)
+    exact FiniteDimensional.of_injective (mfderiv J I ι s₀).toLinearMap (himm s₀)
   refine isLocalDiffeomorph_of_mfderiv_eq hΦ hn' fun p ↦ ?_
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
@@ -122,10 +123,12 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     have hL := mfderiv_globalFlow_comp_apply hc (hv.of_le hn') p
       (hι.mdifferentiableAt hn0) a w
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
-    obtain ⟨rfl, rfl⟩ :=
-      (smul_add_mfderiv_eq_zero_iff (himm p.2) (isTransverseAlong_iff.1 htr p.2)).1
-        (hψinj (hL.symm.trans (hx.trans (map_zero _).symm)))
-    rfl
+    have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
+      hψinj (hL.symm.trans (hx.trans (map_zero _).symm))
+    refine htr.injective_smul_add (himm p.2) (h0.trans ?_)
+    -- The zero tangent vector at `p` is the zero of `ℝ × E'`.
+    change 0 = (0 : ℝ) • v (ι p.2) + mfderiv J I ι p.2 0
+    rw [zero_smul, map_zero, add_zero]
   -- Source and target have the same dimension, so the differential is invertible.
   have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) p) =
       finrank ℝ (TangentSpace I (ψ p.1 (ι p.2))) := by
