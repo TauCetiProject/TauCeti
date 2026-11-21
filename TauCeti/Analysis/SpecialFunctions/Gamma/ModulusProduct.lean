@@ -9,6 +9,7 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The modulus of `Γ` on vertical lines
@@ -25,7 +26,7 @@ monotonicity of `|Γ(x + iy)| / Γ(x)` in `x > 0`, and the values of `|Γ|²` on
   `∏_{k ≥ 0} (1 + y²/(x + k)²) = Γ(x)² / |Γ(x + iy)|²` (DLMF 5.8.3).
 * `TauCeti.norm_Gamma_add_mul_I_le`: `|Γ(x + iy)| ≤ Γ(x)/Γ(x′) · |Γ(x′ + iy)|` for
   `0 < x ≤ x′`.
-* `TauCeti.norm_Gamma_mul_I_sq`: `|Γ(iy)|² = π / (y sinh(πy))` (DLMF 5.4.3).
+* `Real.norm_Gamma_mul_I_sq`: `|Γ(iy)|² = π / (y sinh(πy))` (DLMF 5.4.3).
 * `TauCeti.norm_Gamma_one_add_mul_I_sq`: `|Γ(1 + iy)|² = πy / sinh(πy)` for `y ≠ 0`.
 * `TauCeti.hasProd_one_add_sq_div_succ_sq`: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for
   `y ≠ 0`.
@@ -53,15 +54,6 @@ noncomputable section
 namespace TauCeti
 
 open Complex
-
-/-- For real `x` that is not a nonpositive integer, `x + iy` is not a nonpositive integer. -/
-theorem ofReal_add_mul_I_ne_neg_natCast {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ)) (y : ℝ) (k : ℕ) :
-    (x : ℂ) + y * I ≠ -k := by
-  intro h
-  have hre := congrArg Complex.re h
-  simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-    add_zero, neg_re, natCast_re] at hre
-  exact hx k hre
 
 /-- The partial products of DLMF 5.8.3 are the squared moduli of quotients of Gauss sequences:
 `|GammaSeq x n / GammaSeq (x + iy) n|² = ∏_{k ≤ n} (1 + y²/(x + k)²)` for `n > 0`. -/
@@ -154,8 +146,8 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
 
 /-- **DLMF 5.4.3.** `|Γ(iy)|² = π / (y sinh(πy))` for real `y`. At `y = 0` both sides are `0`,
 since `Γ(0) = 0` and division by zero is `0`. -/
-theorem norm_Gamma_mul_I_sq (y : ℝ) :
-    ‖Gamma (y * I)‖ ^ 2 = π / (y * Real.sinh (π * y)) := by
+theorem _root_.Real.norm_Gamma_mul_I_sq (y : ℝ) :
+    ‖Complex.Gamma (y * I)‖ ^ 2 = π / (y * Real.sinh (π * y)) := by
   rcases eq_or_ne y 0 with rfl | hy
   · simp
   have hy' : (y : ℂ) ≠ 0 := by exact_mod_cast hy
@@ -187,7 +179,7 @@ theorem norm_Gamma_one_add_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
     ‖Gamma (1 + y * I)‖ ^ 2 = π * y / Real.sinh (π * y) := by
   have hy' : (y : ℂ) ≠ 0 := by exact_mod_cast hy
   rw [add_comm, Gamma_add_one _ (mul_ne_zero hy' I_ne_zero), norm_mul, mul_pow,
-    norm_Gamma_mul_I_sq y, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
+    Real.norm_Gamma_mul_I_sq y, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
   field_simp
 
 /-- The case `x = 1` of DLMF 5.8.3: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for real `y ≠ 0`,

@@ -62,6 +62,9 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+If a real `x` is not a nonpositive integer, neither is `x + iy` for any real `y`
+(`TauCeti.ofReal_add_mul_I_ne_neg_natCast`): the real part of `x + iy` is `x`.
 -/
 
 public section
@@ -259,6 +262,16 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
+
+/-- For real `x` that is not a nonpositive integer, `x + iy` is not a nonpositive integer. -/
+theorem ofReal_add_mul_I_ne_neg_natCast {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ)) (y : ℝ) (k : ℕ) :
+    (x : ℂ) + y * Complex.I ≠ -k := by
+  intro h
+  have hre := congrArg Complex.re h
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, mul_zero,
+    Complex.ofReal_im, Complex.I_im, mul_one, sub_self, add_zero, Complex.neg_re,
+    Complex.natCast_re] at hre
+  exact hx k hre
 
 end TauCeti
 
