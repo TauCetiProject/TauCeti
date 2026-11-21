@@ -443,11 +443,10 @@ theorem coe_substAlgEquiv (φ : FormalCoordinate K) :
 theorem substAlgEquiv_homothety_single (u : Kˣ) (n : ℤ) (c : K) :
     substAlgEquiv (FormalCoordinate.homothety u) (single n c) =
       single n ((u : K) ^ n * c) := by
-  ext k
   rw [coe_substAlgEquiv]
   simp only [FormalCoordinate.toPowerSeries_homothety, PowerSeries.smul_eq_C_mul]
-  rw [coeff_substAlgHom_C_mul_X u.ne_zero]
-  by_cases hk : k = n <;> simp [hk]
+  rw [← rescale_toAlgHom u, AlgEquiv.coe_toAlgHom, rescale_single,
+    Units.val_zpow_eq_zpow_val]
 
 /-- A two-variable power series `f ∈ R⟦X₀, X₁⟧` over a commutative ring `R` whose substitution
 along `(X, T X)` in `R⸨T⸩⟦X⟧` (with `T = HahnSeries.single 1 1`) vanishes is zero. -/
