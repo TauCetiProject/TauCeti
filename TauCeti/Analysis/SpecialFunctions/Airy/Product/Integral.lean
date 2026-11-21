@@ -122,18 +122,18 @@ private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0
     (z : ℂ) :
     ‖(t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ)‖ =
       t ^ ((n : ℝ) - 1 / 2) * Real.exp (z.re * t - 1 / 12 * t ^ (3 : ℝ)) := by
-  have hre : (z * (t : ℂ) - (t : ℂ) ^ 3 / 12).re = z.re * t - 1 / 12 * t ^ (3 : ℝ) := by
-    have hcube : ((t : ℂ) ^ 3 / 12).re = 1 / 12 * t ^ (3 : ℝ) := by
-      have ht3 : (t : ℂ) ^ 3 / 12 = ((t ^ 3 / 12 : ℝ) : ℂ) := by push_cast; ring
-      rw [ht3, ofReal_re, Real.rpow_ofNat]
-      ring
-    rw [sub_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero, hcube]
-  rw [norm_mul, norm_mul, norm_pow, Complex.norm_of_nonneg ht.le, Complex.norm_exp, hre,
-    Complex.norm_cpow_eq_rpow_re_of_pos ht, ← Real.rpow_natCast t n, mul_right_comm,
-    ← Real.rpow_add ht]
-  congr 2
-  norm_num
-  ring
+  have h := norm_cpow_mul_cexp_mul_sub_mul_cpow 3 (1 / 12) ((n : ℂ) - 1 / 2) z ht
+  have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
+  have h3 : ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) := by norm_num
+  have hpow : (t : ℂ) ^ ((n : ℂ) - 1 / 2) = (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) := by
+    rw [sub_eq_add_neg, cpow_add _ _ ht0, cpow_natCast, neg_div]
+  have hre : ((n : ℂ) - 1 / 2).re = (n : ℝ) - 1 / 2 := by
+    rw [sub_re, natCast_re]
+    norm_num
+  have hb : (1 / 12 : ℂ).re = 1 / 12 := by norm_num
+  rw [hpow, h3, cpow_natCast, show (1 / 12 : ℂ) * (t : ℂ) ^ 3 = (t : ℂ) ^ 3 / 12 by ring,
+    hre, hb] at h
+  simpa [mul_assoc, mul_left_comm, mul_comm] using h
 
 /-- For every complex `z` and natural number `n`, the `n`-th moment integrand
 `t ↦ tⁿ exp(z t − t³ / 12) t^{−1/2}` is Bochner integrable on `(0, ∞)`. -/

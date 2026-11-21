@@ -134,8 +134,10 @@ private theorem re_neg_mul_sq_sub_mul (b z : ℂ) (u : ℝ) :
 theorem norm_cpow_mul_cexp_neg_mul_sq_sub_mul (b s z : ℂ) {u : ℝ} (hu : 0 < u) :
     ‖(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ =
       u ^ s.re * rexp (-b.re * u ^ 2 - z.re * u) := by
-  rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos hu, Complex.norm_exp,
-    re_neg_mul_sq_sub_mul]
+  have h := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 b s (-z) hu
+  have h2 : ((2 : ℝ) : ℂ) = ((2 : ℕ) : ℂ) := by norm_num
+  rw [h2, Complex.cpow_natCast, Real.rpow_two] at h
+  simpa [sub_eq_add_neg, add_comm, neg_mul] using h
 
 /-- For `0 < b.re` and `0 < s.re`, the complex Gaussian–Laplace integrand
 `u ↦ (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is integrable on `(0, ∞)` for every

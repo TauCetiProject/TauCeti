@@ -29,6 +29,8 @@ At `p = 3`, `b = 1 / 12`, and `s = -1 / 2`, this is the cubic-exponential Laplac
 
 ## Main results
 
+* `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_cpow`: pointwise norm formula on `(0, ∞)` for
+  `(t : ℂ) ^ s * exp (z * t - b * t ^ p)`.
 * `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: complex integrability of
   `t ↦ t ^ s * exp (z * t - b * t ^ p)` on `(0, ∞)` for `1 < p`, `0 < b.re`, `-1 < s.re`.
 * `TauCeti.integral_cpow_mul_cexp_neg_mul_cpow_Ioi`: complex-exponent and complex-rate
@@ -46,6 +48,16 @@ open scoped Nat
 
 namespace TauCeti
 
+/-- For `0 < t`, any `p : ℝ`, and any `b s z : ℂ`, the norm of
+`(t : ℂ) ^ s * cexp (z * t - b * (t : ℂ) ^ (p : ℂ))` is
+`t ^ s.re * rexp (z.re * t - b.re * t ^ p)`. -/
+theorem norm_cpow_mul_cexp_mul_sub_mul_cpow (p : ℝ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ s * cexp (z * t - b * (t : ℂ) ^ (p : ℂ))‖ =
+      t ^ s.re * rexp (z.re * t - b.re * t ^ p) := by
+  rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.norm_exp,
+    ← Complex.ofReal_cpow ht.le]
+  simp
+
 /-- For `1 < p`, `0 < b.re`, and `-1 < s.re`, the complex integrand
 `t ↦ t ^ s * exp (z * t - b * t ^ p)` is integrable on `(0, ∞)` for every `z : ℂ`. -/
 theorem integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p) {b s : ℂ}
@@ -54,9 +66,7 @@ theorem integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p) {
   have hmaj := integrableOn_rpow_mul_exp_mul_sub_mul_rpow hp hs hb z.re
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.norm_exp,
-    ← Complex.ofReal_cpow ht.le]
-  simp
+  rw [norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht]
 
 /-- For `0 < p`, `0 < b.re`, and `-1 < s.re`,
 `∫ t in Ioi 0, (t : ℂ) ^ s * exp (-b * (t : ℂ) ^ (p : ℂ)) =
@@ -76,8 +86,7 @@ theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : �
             ((1 / p) * x ^ (1 / p - 1)) •
               (((x ^ (1 / p) : ℝ) : ℂ) ^ s *
                 cexp (-b * ((x ^ (1 / p) : ℝ) : ℂ) ^ (p : ℂ))) := by
-          rw [← integral_comp_rpow_Ioi _ (one_div_ne_zero hp.ne'),
-            abs_of_pos (one_div_pos.mpr hp)]
+          rw [← integral_comp_rpow_Ioi_of_pos (one_div_pos.mpr hp)]
     _ = ∫ x in Ioi (0 : ℝ),
           (1 / (p : ℂ)) * ((x : ℂ) ^ ((s + 1) / p - 1) * cexp (-(b * x))) := by
           refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) => ?_
@@ -135,9 +144,10 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
       (fun n => Measurable.aestronglyMeasurable (by fun_prop))
       (fun n => ?_) ?_ ?_ ?_
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-      simp only [F, bound, norm_mul, norm_div, norm_pow, Complex.norm_natCast,
-        Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.norm_exp, ← Complex.ofReal_cpow ht.le]
-      simp
+      have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow p b (s + n) 0 ht
+      simp only [zero_mul, zero_sub, zero_re, add_re, natCast_re, ← neg_mul] at hnorm
+      dsimp only [F, bound]
+      rw [norm_mul, norm_div, norm_pow, Complex.norm_natCast, hnorm]
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
       exact (hbound_sum t ht).summable
     · refine (integrableOn_rpow_mul_exp_mul_sub_mul_rpow hp hs hb ‖z‖).congr_fun
