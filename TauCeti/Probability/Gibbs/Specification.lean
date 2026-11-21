@@ -99,6 +99,12 @@ instance (Λ : Finset I) : IsMarkovKernel (γ.kernel Λ) :=
 theorem measurable_kernel (Λ : Finset I) : Measurable (γ.kernel Λ) :=
   (γ.kernel Λ).measurable.mono (X.exterior_le Λ) le_rfl
 
+/-- The mass `γ_Λ (C | ω)` of a measurable set is a measurable function of `ω` for the full
+σ-algebra. -/
+theorem measurable_kernel_apply (Λ : Finset I) {C : Set X} (hC : MeasurableSet C) :
+    Measurable fun ω => γ.kernel Λ ω C :=
+  ((γ.kernel Λ).measurable_coe hC).mono (X.exterior_le Λ) le_rfl
+
 /-- Properness of the kernels of a specification. -/
 theorem kernel_apply_inter (Λ : Finset I) {C B : Set X} (hC : MeasurableSet C)
     (hB : MeasurableSet[X.exterior Λ] B) (ω : X) :
@@ -178,12 +184,13 @@ theorem isGibbs_iff_ae_eq_condExp [IsFiniteMeasure μ] :
   have hint (Λ : Finset I) {C : Set X} (hC : MeasurableSet C) :
       Integrable (fun ω => (γ.kernel Λ ω).real C) μ :=
     (integrable_const (1 : ℝ)).mono'
-      ((hκ Λ hC).mono (X.exterior_le Λ) le_rfl).aestronglyMeasurable <| ae_of_all _ fun _ => by
-        rw [Real.norm_of_nonneg measureReal_nonneg]
-        exact measureReal_le_one
-  have hreal (Λ : Finset I) {C : Set X} (hC : MeasurableSet C) (B : Set X) :
-      ∫ ω in B, (γ.kernel Λ ω).real C ∂μ = (∫⁻ ω in B, γ.kernel Λ ω C ∂μ).toReal :=
-    integral_toReal (((γ.kernel Λ).measurable_coe hC).mono (X.exterior_le Λ) le_rfl).aemeasurable
+      (γ.measurable_kernel_apply Λ hC).ennreal_toReal.aestronglyMeasurable <|
+        ae_of_all _ fun _ => by
+          rw [Real.norm_of_nonneg measureReal_nonneg]
+          exact measureReal_le_one
+  have hreal (Λ : Finset I) {C : Set X} (hC : MeasurableSet C) (ν : Measure X) :
+      ∫ ω, (γ.kernel Λ ω).real C ∂ν = (∫⁻ ω, γ.kernel Λ ω C ∂ν).toReal :=
+    integral_toReal (γ.measurable_kernel_apply Λ hC).aemeasurable
       (ae_of_all _ fun _ => measure_lt_top _ _)
   refine ⟨fun hμ Λ C hC => ?_, fun h Λ => ?_⟩
   · refine ae_eq_condExp_of_forall_setIntegral_eq (X.exterior_le Λ)
@@ -194,17 +201,19 @@ theorem isGibbs_iff_ae_eq_condExp [IsFiniteMeasure μ] :
   · ext C hC
     rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable]
     refine (ENNReal.toReal_eq_toReal_iff' ?_ (measure_ne_top μ C)).1 ?_
-    · refine ne_top_of_le_ne_top (measure_ne_top μ univ) ?_
-      calc ∫⁻ ω, γ.kernel Λ ω C ∂μ ≤ ∫⁻ _, 1 ∂μ := lintegral_mono fun _ => prob_le_one
-        _ = μ univ := lintegral_one
-    · rw [← setLIntegral_univ, ← hreal Λ hC, setIntegral_univ, integral_congr_ae (h Λ C hC),
-        integral_condExp (X.exterior_le Λ), integral_indicator_one hC, measureReal_def]
+    · exact ne_top_of_le_ne_top (measure_ne_top μ univ)
+        ((lintegral_mono fun _ => prob_le_one).trans_eq lintegral_one)
+    · calc (∫⁻ ω, γ.kernel Λ ω C ∂μ).toReal = ∫ ω, (γ.kernel Λ ω).real C ∂μ :=
+          (hreal Λ hC μ).symm
+        _ = ∫ ω, (μ[C.indicator 1 | X.exterior Λ]) ω ∂μ := integral_congr_ae (h Λ C hC)
+        _ = ∫ ω, C.indicator 1 ω ∂μ := integral_condExp (X.exterior_le Λ)
+        _ = (μ C).toReal := by simp [integral_indicator_one hC, measureReal_def]
 
 /-- A sum of Gibbs measures is Gibbs. -/
-theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) := fun Λ => by
-  ext C hC
-  rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable, lintegral_add_measure,
-    hμ.lintegral_kernel Λ hC, hν.lintegral_kernel Λ hC, add_apply]
+theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) := by
+  rw [isGibbs_iff_invariant] at hμ hν ⊢
+  intro Λ
+  rw [Kernel.Invariant, Measure.comp_add, hμ Λ, hν Λ]
 
 /-- A multiple of a Gibbs measure is Gibbs. -/
 theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) := fun Λ => by
@@ -224,8 +233,8 @@ theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
     rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) (hf Λ),
       lintegral_indicator_one hC]
   rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable,
-    lintegral_withDensity_eq_lintegral_mul _ hfm
-      (((γ.kernel Λ).measurable_coe hC).mono (X.exterior_le Λ) le_rfl), withDensity_apply _ hC]
+    lintegral_withDensity_eq_lintegral_mul _ hfm (γ.measurable_kernel_apply Λ hC),
+    withDensity_apply _ hC]
   simp only [Pi.mul_apply, hprop]
   rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ Λ,
     ← lintegral_indicator hC]

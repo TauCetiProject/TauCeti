@@ -62,6 +62,24 @@ instance : SetLike (Subshift Γ I S) (I → S) where
 theorem mem_carrier {X : Subshift Γ I S} {ω : I → S} : ω ∈ X.carrier ↔ ω ∈ X :=
   Iff.rfl
 
+@[simp]
+theorem mem_mk {s : Set (I → S)} {hs : IsClosed s}
+    {h : ∀ (g : Γ) {ω : I → S}, ω ∈ s → (fun i => ω (g⁻¹ • i)) ∈ s} {ω : I → S} :
+    ω ∈ (⟨s, hs, h⟩ : Subshift Γ I S) ↔ ω ∈ s :=
+  Iff.rfl
+
+@[simp]
+theorem coe_mk {s : Set (I → S)} {hs : IsClosed s}
+    {h : ∀ (g : Γ) {ω : I → S}, ω ∈ s → (fun i => ω (g⁻¹ • i)) ∈ s} :
+    ((⟨s, hs, h⟩ : Subshift Γ I S) : Set (I → S)) = s :=
+  rfl
+
+/-- A subshift is invariant under the action: the field `Subshift.smul_mem`, stated for membership
+in the subshift. -/
+theorem smul_mem' (X : Subshift Γ I S) (g : Γ) {ω : I → S} (h : ω ∈ X) :
+    (fun i => ω (g⁻¹ • i)) ∈ X :=
+  X.smul_mem g h
+
 @[ext]
 theorem ext {X Y : Subshift Γ I S} (h : ∀ ω, ω ∈ X ↔ ω ∈ Y) : X = Y :=
   SetLike.ext h
@@ -87,10 +105,13 @@ theorem coe_top : ((⊤ : Subshift Γ I S) : Set (I → S)) = univ :=
 variable (X : Subshift Γ I S)
 
 /-- `Γ` acts on a subshift by `(g • ω) i = ω (g⁻¹ • i)`. -/
-instance : MulAction Γ X where
-  smul g ω := ⟨fun i => ω.val (g⁻¹ • i), X.smul_mem g ω.property⟩
-  one_smul ω := Subtype.ext <| funext fun i => congrArg ω.val (by rw [inv_one, one_smul])
-  mul_smul g h ω := Subtype.ext <| funext fun i => congrArg ω.val (by rw [mul_inv_rev, mul_smul])
+instance : SMul Γ X where
+  smul g ω := ⟨fun i => ω.val (g⁻¹ • i), X.smul_mem' g ω.property⟩
+
+/-- The action of `Γ` on a subshift is the restriction of Mathlib's `arrowAction`. -/
+instance : MulAction Γ X :=
+  letI := arrowAction (G := Γ) (A := I) (B := S)
+  Subtype.val_injective.mulAction Subtype.val fun _ _ => rfl
 
 variable {X}
 
