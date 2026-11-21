@@ -110,8 +110,8 @@ variable (𝕜 I p μ) in
 with compact support, hence `p`-integrable for a measure that is finite on compact sets. -/
 def ofCompactlySupported :
     ContMDiffSection.compactlySupported I F n E →+ LpSection 𝕜 F E p μ where
-  toFun s := mk (s : ∀ x, E x) s.1.contMDiff.continuous.aestronglyMeasurableSection
-    (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.2)
+  toFun s := mk (s : ∀ x, E x) s.val.contMDiff.continuous.aestronglyMeasurableSection
+    (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.property)
   map_zero' := by
     rw [← mk_zero]
     exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ by
@@ -123,7 +123,7 @@ def ofCompactlySupported :
 
 /-- The class of a compactly supported `C^n` section is represented by the section. -/
 theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F n E) :
-    ∀ᵐ x ∂μ, ofCompactlySupported 𝕜 I p μ s x = s.1 x :=
+    ∀ᵐ x ∂μ, ofCompactlySupported 𝕜 I p μ s x = s.val x :=
   coeFn_mk _ _
 
 /-- `ofCompactlySupported` is compatible with multiplication by real scalars. -/
@@ -138,7 +138,7 @@ theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ
 
 /-- The kernel of `ofCompactlySupported` consists of the sections vanishing almost everywhere. -/
 theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupported I F n E} :
-    ofCompactlySupported 𝕜 I p μ s = 0 ↔ ∀ᵐ x ∂μ, s.1 x = 0 := by
+    ofCompactlySupported 𝕜 I p μ s = 0 ↔ ∀ᵐ x ∂μ, s.val x = 0 := by
   rw [ext_iff]
   constructor <;> intro h <;>
     filter_upwards [h, coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) s,
