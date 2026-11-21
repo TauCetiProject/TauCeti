@@ -14,7 +14,8 @@ import Mathlib.Analysis.Normed.Group.Bounded
 # The planar Poisson integral: harmonicity and boundary values
 
 The Poisson average of integrable real boundary data is harmonic in the disk. For continuous
-boundary data, it converges to the prescribed value as the interior point approaches the boundary.
+boundary data, it converges to the prescribed value as the interior point approaches the boundary,
+and uniformly on the circle under radial dilations.
 Together these facts solve the planar Dirichlet problem on a disk.
 
 The Poisson integral is the real part of Mathlib's analytic Herglotz–Riesz integral.
@@ -28,6 +29,7 @@ noncomputable section
 namespace TauCeti
 
 open Complex Filter InnerProductSpace Metric MeasureTheory Real
+open scoped Topology
 
 /-- The Poisson average of real boundary data on the circle of radius `R` centered at `c`.
 For integrable data it is harmonic at points off the circle. -/
@@ -250,6 +252,54 @@ theorem tendsto_planarPoissonIntegral {g : ℂ → ℝ} {c z : ℂ} {R : ℝ}
       simp only [smul_eq_mul, circleAverage_poissonKernel hw, mul_one] at hmass
       rw [circleAverage_fun_add (by fun_prop) (by fun_prop), circleAverage_const, hmass]
     _ < eps := by linarith
+
+/-- Radial dilations `ζ ↦ planarPoissonIntegral g c R (c + r • (ζ - c))` of the planar Poisson
+integral of continuous boundary data on a circle of nonzero radius converge uniformly on
+`sphere c |R|` to `g` as `r → 1⁻`. -/
+theorem tendstoUniformlyOn_planarPoissonIntegral_smul {g : ℂ → ℝ} {c : ℂ} {R : ℝ} (hR : R ≠ 0)
+    (hg : ContinuousOn g (sphere c |R|)) :
+    TendstoUniformlyOn (fun (r : ℝ) (ζ : ℂ) ↦ planarPoissonIntegral g c R (c + r • (ζ - c)))
+      g (𝓝[<] 1) (sphere c |R|) := by
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  have hloc : ∀ z : sphere c |R|, ∃ δ > 0,
+      (∀ w ∈ ball c |R|, dist w z.val < δ →
+        dist (planarPoissonIntegral g c R w) (g z.val) < ε / 2) ∧
+      (∀ ζ ∈ sphere c |R|, dist ζ z.val < δ → dist (g ζ) (g z.val) < ε / 2) := fun ⟨z, hz⟩ ↦ by
+    obtain ⟨δ₁, hδ₁, hp'⟩ := Metric.tendsto_nhdsWithin_nhds.1
+      (tendsto_planarPoissonIntegral hg hz) (ε / 2) (half_pos hε)
+    obtain ⟨δ₂, hδ₂, hc'⟩ := Metric.continuousWithinAt_iff.1 (hg z hz) (ε / 2) (half_pos hε)
+    exact ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂,
+      fun w hw hd ↦ hp' hw (hd.trans_le (min_le_left _ _)),
+      fun ζ hζ hd ↦ hc' hζ (hd.trans_le (min_le_right _ _))⟩
+  choose δ hδ hp hc using hloc
+  obtain ⟨s, hs⟩ := (isCompact_sphere c |R|).elim_nhds_subcover'
+    (fun z hz ↦ ball z (δ ⟨z, hz⟩ / 2)) (fun z hz ↦ ball_mem_nhds z (half_pos (hδ ⟨z, hz⟩)))
+  have hsne : s.Nonempty := Finset.ne_empty_iff_nonempty.1 fun he ↦ by
+    simpa [he] using hs (by simp : c + |R| ∈ sphere c |R|)
+  set η := s.inf' hsne fun z ↦ δ z / 2
+  have hRpos : 0 < |R| := abs_pos.2 hR
+  have hη : 0 < η := (Finset.lt_inf'_iff hsne).2 fun z _ ↦ half_pos (hδ z)
+  filter_upwards [Ioo_mem_nhdsLT (max_lt zero_lt_one (sub_lt_self 1 (div_pos hη hRpos)))]
+    with r hr ζ hζ
+  obtain ⟨z, hzs, hζz⟩ := Set.mem_iUnion₂.1 (hs hζ)
+  have hr₀ : 0 < r := (le_max_left 0 _).trans_lt hr.1
+  have hnorm : ‖ζ - c‖ = |R| := mem_sphere_iff_norm.1 hζ
+  have hw_ball : c + r • (ζ - c) ∈ ball c |R| := by
+    rw [mem_ball_iff_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hr₀.le, hnorm]
+    nlinarith [hr.2]
+  have hw_dist : dist (c + r • (ζ - c)) z.val < δ z := by
+    have hsub : c + r • (ζ - c) - ζ = -((1 - r) • (ζ - c)) := by rw [sub_smul, one_smul]; abel
+    have hd₁ : dist (c + r • (ζ - c)) ζ = (1 - r) * |R| := by
+      rw [dist_eq_norm, hsub, norm_neg, norm_smul,
+        Real.norm_of_nonneg (sub_nonneg.2 hr.2.le), hnorm]
+    have hd₂ : (1 - r) * |R| < η :=
+      (lt_div_iff₀ hRpos).1 (by linarith [(le_max_right 0 _).trans_lt hr.1])
+    linarith [dist_triangle (c + r • (ζ - c)) ζ z.val, mem_ball.1 hζz,
+      Finset.inf'_le (fun z : sphere c |R| ↦ δ z / 2) hzs]
+  linarith [hp z _ hw_ball hw_dist,
+    hc z ζ hζ ((mem_ball.1 hζz).trans (half_lt_self (hδ z))),
+    dist_triangle_right (g ζ) (planarPoissonIntegral g c R (c + r • (ζ - c))) (g z.val)]
 
 end TauCeti
 

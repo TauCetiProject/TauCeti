@@ -18,7 +18,10 @@ evaluations of a vector family with the vector family's `Lᵖ` norm. For constan
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
 of multiples of one vector, and the invariance of the norm under reindexing. For `p ≥ 1`, a
 linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has norm at most
-`‖s‖ * ∑ i, ‖v i‖`.
+`‖s‖ * ∑ i, ‖v i‖`. For `0 < p < ∞`, `‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal`
+(`PiLp.norm_rpow_eq_sum`), and for `0 < p ≤ ∞`, weighted coordinate bounds
+`‖x i‖ ≤ B * w i ^ (p⁻¹).toReal` give `‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal`
+(`PiLp.norm_le_mul_sum_rpow_inv`).
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
@@ -102,6 +105,28 @@ theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (
     ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
   rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
     one_div_mul_cancel hp.ne', Real.rpow_one]
+
+/-- If `p ≠ 0`, `0 ≤ B`, and nonnegative weights `w : ι → ℝ` satisfy
+`‖x i‖ ≤ B * w i ^ (p⁻¹).toReal` for every coordinate `i`, then
+`‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal`. Covers `0 < p < ∞` and `p = ∞` uniformly. -/
+theorem norm_le_mul_sum_rpow_inv [∀ i, SeminormedAddGroup (E i)]
+    (hp : p ≠ 0) {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) {B : ℝ} (hB : 0 ≤ B)
+    {x : PiLp p E} (hx : ∀ i, ‖x i‖ ≤ B * w i ^ (p⁻¹).toReal) :
+    ‖x‖ ≤ B * (∑ i, w i) ^ (p⁻¹).toReal := by
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · simpa [norm_eq_ciSup] using Real.iSup_le (by simpa using hx) hB
+  have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp hptop
+  have hsum : ∑ i, ‖x i‖ ^ p.toReal ≤ B ^ p.toReal * ∑ i, w i := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_le_sum fun i _ ↦
+      (Real.rpow_le_rpow (norm_nonneg _) (hx i) hp_pos.le).trans_eq ?_
+    rw [ENNReal.toReal_inv, Real.mul_rpow hB (Real.rpow_nonneg (hw i) _),
+      ← Real.rpow_mul (hw i), inv_mul_cancel₀ hp_pos.ne', Real.rpow_one]
+  rw [norm_eq_sum hp_pos, ENNReal.toReal_inv, one_div]
+  exact (Real.rpow_le_rpow (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _)
+    hsum (inv_nonneg.2 hp_pos.le)).trans_eq <| by
+      rw [Real.mul_rpow (Real.rpow_nonneg hB _) (Finset.sum_nonneg fun i _ ↦ hw i),
+        ← Real.rpow_mul hB, mul_inv_cancel₀ hp_pos.ne', Real.rpow_one]
 
 variable [∀ i, SeminormedAddCommGroup (E i)]
 

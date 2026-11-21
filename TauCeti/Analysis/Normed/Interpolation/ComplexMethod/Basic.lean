@@ -1223,6 +1223,16 @@ theorem toSum_map (u : C.ComplexMethodSpace θ) :
   obtain ⟨g, rfl⟩ := mk_surjective u
   rw [map_mk, toSum_mk, toSum_mk, stripEval_stripTracesMap]
 
+/-- If `toSum u` decomposes as `x₀ + x₁` in `C.SumSpace`, then `map θ T₀ T₁ h u` decomposes as
+`T₀ x₀ + T₁ x₁` in `D.SumSpace`. -/
+theorem toSum_map_of_eq_add {u : C.ComplexMethodSpace θ} {x₀ : X₀} {x₁ : X₁}
+    (hx : C.fstToSum x₀ + C.sndToSum x₁ = toSum u) :
+    toSum (map θ T₀ T₁ h u) = D.fstToSum (T₀ x₀) + D.sndToSum (T₁ x₁) :=
+  (toSum_map T₀ T₁ h u).trans <|
+    (congrArg (C.sumLift (D.fstToSum.comp T₀) (D.sndToSum.comp T₁) h) hx.symm).trans <|
+      (map_add _ _ _).trans <|
+        congr_arg₂ (· + ·) (C.sumLift_fstToSum _ _ h x₀) (C.sumLift_sndToSum _ _ h x₁)
+
 @[simp] theorem toFst_map (u : C.ComplexMethodSpace 0) : toFst (map 0 T₀ T₁ h u) = T₀ (toFst u) :=
   toFst_analyticFamilyMap (IsBoundedAnalyticFamily.const T₀ T₁ h) u
 @[simp] theorem toSnd_map (u : C.ComplexMethodSpace 1) : toSnd (map 1 T₀ T₁ h u) = T₁ (toSnd u) :=
