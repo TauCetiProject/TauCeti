@@ -123,6 +123,17 @@ theorem rootSpace_sub_eq_bot_of_base (b : (rootSystem H).Base) {i j : ↥b.suppo
   simp only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and]
   exact fun hc ↦ hχ0 hc
 
+/-- Root vectors for distinct simple roots `αᵢ` and `-αⱼ` commute, since `αᵢ - αⱼ` is not a root. -/
+theorem lie_eq_zero_of_mem_rootSpace_of_base (b : (rootSystem H).Base) {i j : ↥b.support}
+    (hij : i ≠ j) {x y : L} (hx : x ∈ rootSpace H (⇑((i : H.root) : Weight K H L)))
+    (hy : y ∈ rootSpace H (-⇑((j : H.root) : Weight K H L))) :
+    ⁅x, y⁆ = 0 := by
+  have hmem : ⁅x, y⁆ ∈ rootSpace H
+      (⇑((i : H.root) : Weight K H L) - ⇑((j : H.root) : Weight K H L)) := by
+    rw [sub_eq_add_neg]
+    exact mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H L _ _ hx hy
+  simpa [rootSpace_sub_eq_bot_of_base b hij] using hmem
+
 /-- The corresponding entry of the Cartan matrix of the base is the pairing of two simple roots. -/
 theorem cartanMatrix_eq_apply_coroot (b : (rootSystem H).Base) (i j : ↥b.support) :
     ((b.cartanMatrix j i : ℤ) : K) =
@@ -143,12 +154,7 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
     IsSerreSystem K b.cartanMatrixᵀ (fun i ↦ (((rootSystem H).coroot i : H) : L)) e f where
   lie_H_H i j := LieSubalgebra.lie_eq_zero_of_mem (Subtype.prop _) (Subtype.prop _)
   lie_E_F_self i := (hsl2 i).lie_e_f
-  lie_E_F_of_ne i j hij := by
-    have hmem : ⁅e i, f j⁆ ∈ rootSpace H
-        (⇑((i : H.root) : Weight K H L) - ⇑((j : H.root) : Weight K H L)) := by
-      rw [sub_eq_add_neg]
-      exact mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H L _ _ (he i) (hf j)
-    simpa [rootSpace_sub_eq_bot_of_base b hij] using hmem
+  lie_E_F_of_ne i j hij := lie_eq_zero_of_mem_rootSpace_of_base b hij (he i) (hf j)
   lie_H_E i j := by
     rw [Matrix.transpose_apply, ← LieSubalgebra.coe_bracket_of_module,
       lie_eq_smul_of_mem_rootSpace (he j), ← Int.cast_smul_eq_zsmul K,
