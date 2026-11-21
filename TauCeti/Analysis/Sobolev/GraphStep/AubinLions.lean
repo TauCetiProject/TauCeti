@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import Mathlib.Order.SuccPred.IntervalSucc
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -116,16 +117,9 @@ private theorem pieceIoo_subset_Ioo (hab : a ≤ b) {N : ℕ} {k : ℕ} (hk : k 
       (node_self ((Nat.zero_le k).trans_lt hk).ne')
 
 private theorem pairwise_disjoint_piece (hab : a ≤ b) (N : ℕ) :
-    Pairwise (Function.onFun Disjoint fun k : Fin N ↦ piece a b N k) := by
-  -- Pieces with smaller index end before those with larger index start.
-  have key : ∀ j k : Fin N, j < k → Disjoint (piece a b N j) (piece a b N k) := fun j k hjk ↦
-    Set.disjoint_left.2 fun t ht ht' ↦ by
-      have := node_le_node hab N (Nat.succ_le_of_lt hjk)
-      exact absurd (ht.2.trans_le this) (not_lt.2 ht'.1)
-  intro j k hjk
-  rcases lt_or_gt_of_ne hjk with h | h
-  · exact key j k h
-  · exact (key k j h).symm
+    Pairwise (Function.onFun Disjoint fun k : Fin N ↦ piece a b N k) :=
+  (Monotone.pairwise_disjoint_on_Ico_succ fun _ _ h ↦ node_le_node hab N h).comp_of_injective
+    Fin.val_injective
 
 private theorem iUnion_piece (hab : a < b) {N : ℕ} (hN : 0 < N) :
     ⋃ k : Fin N, piece a b N k = Ico a b := by
