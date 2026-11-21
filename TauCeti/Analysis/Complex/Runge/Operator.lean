@@ -13,7 +13,7 @@ import TauCeti.Analysis.Complex.Pompeiu.Discretization
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 
 /-!
-# The finite-rank Runge approximation operator
+# The Runge approximation operator
 
 A **Runge compact pair** `TauCeti.IsRungeCompactPair Ω K` consists of an open set `Ω ⊆ ℂ` and a
 compact subset `K ⊆ Ω` that is filled in `Ω` (`TauCeti.IsFilledIn K Ω`, meaning no connected
@@ -28,7 +28,8 @@ functions `g j` — all independent of `f` and of the target complex normed spac
 
 for every `U`-holomorphic function `f : ℂ → W` and every upper bound `B ≥ 0` of `‖f‖` on `L`
 (`TauCeti.exists_finite_rank_runge_operator`). Choosing `ζ j`, `w j`, and `g j` independently of
-`f` makes `f ↦ ∑ j, (w j * g j) • f (ζ j)` a finite-rank linear evaluation operator, so applying it
+`f` makes `f ↦ ∑ j, (w j * g j) • f (ζ j)` a linear operator using finitely many evaluations that
+factors through `Fin N → W` (and has finite rank when `W` is finite-dimensional), so applying it
 fiberwise preserves continuous, smooth, or holomorphic dependence on external parameters in
 addition to yielding uniform Runge approximation for normed-space-valued functions
 (`TauCeti.Analysis.Complex.Runge.Approximation`).
@@ -38,7 +39,8 @@ addition to yielding uniform Runge approximation for normed-space-valued functio
 * `TauCeti.IsRungeCompactPair`: predicate asserting `IsOpen Ω`, `IsCompact K`, `K ⊆ Ω`, and
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
 * `TauCeti.exists_finite_rank_runge_operator`: existence of the compact neighbourhood `L ⊆ U ∩ Ω`
-  and `f`-independent finite-rank evaluation approximants with operator norm bound `ε * B` for
+  and `f`-independent linear approximants using finitely many evaluations and factoring through
+  `Fin N → W` (of finite rank when `W` is finite-dimensional), with operator norm bound `ε * B` for
   arbitrary complex normed targets.
 
 ## References
@@ -104,12 +106,13 @@ theorem isRungeCompactPair_empty_left {K : Set ℂ} :
   ⟨fun h => subset_empty_iff.mp h.subset,
     fun h => h ▸ isRungeCompactPair_empty_right.mpr isOpen_empty⟩
 
-/-- **Finite-rank Runge operator.** For a Runge compact pair `(Ω, K)` and an open neighbourhood
-`U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside `U ∩ Ω` such that for every
-`ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights `w j`, and `Ω`-holomorphic
-functions `g j` (independent of `f` and the complex normed target `W`) approximating every
-`U`-holomorphic function `f : ℂ → W` on `K` within `ε * B` for any upper bound `B ≥ 0` of `‖f‖`
-on `L`. -/
+/-- **Runge approximation operator using finitely many evaluations.** For a Runge compact pair
+`(Ω, K)` and an open neighbourhood `U ⊇ K`, there exists a compact neighbourhood `L` of `K` inside
+`U ∩ Ω` such that for every `ε > 0` there are finitely many nodes `ζ j ∈ interior L`, weights
+`w j`, and `Ω`-holomorphic functions `g j` (independent of `f` and the complex normed target `W`)
+approximating every `U`-holomorphic function `f : ℂ → W` on `K` within `ε * B` for any upper
+bound `B ≥ 0` of `‖f‖` on `L`. The resulting approximant `f ↦ ∑ j, (w j * g j) • f (ζ j)` factors
+through `Fin N → W`, and has finite rank when `W` is finite-dimensional. -/
 theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
     (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U) (hKU : K ⊆ U) :
     ∃ L : Set ℂ, IsCompact L ∧ K ⊆ interior L ∧ L ⊆ U ∩ Ω ∧

@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Global solutions of the inhomogeneous Cauchy–Riemann equation on open subsets of `ℂ`
@@ -164,15 +164,9 @@ theorem exists_contDiffOn_differentiableOn_sub [CompleteSpace W] {ι : Type*} {U
     have := congrArg (· 1) hkl.conjWirtingerDeriv_eq_zero
     simp only [conjWirtingerDeriv_sub (hgd k hk) (hgd l hl)] at this
     simpa [sub_eq_zero] using this
-  -- Glue `\bar∂ (g k)` across the cover via `Set.iUnionLift` and extend by zero outside `⋃ k, Ω k`.
-  let θ_sub : (⋃ k, Ω k : Set ℂ) → W :=
-    Set.iUnionLift Ω (fun k z ↦ conjWirtingerDeriv (g k) (z : ℂ) 1) hagree _ Subset.rfl
-  let θ : ℂ → W := Subtype.val.extend θ_sub 0
-  have hθ (k : ι) {z : ℂ} (hz : z ∈ Ω k) : θ z = conjWirtingerDeriv (g k) z 1 := by
-    have hzU : z ∈ ⋃ j, Ω j := mem_iUnion.2 ⟨k, hz⟩
-    dsimp only [θ]
-    rw [Subtype.val_injective.extend_apply θ_sub 0 ⟨z, hzU⟩]
-    exact Set.iUnionLift_of_mem ⟨z, hzU⟩ hz
+  -- Glue `\bar∂ (g k)` across the cover and extend by zero outside `⋃ k, Ω k`.
+  obtain ⟨θ, hθ, -⟩ :=
+    Function.exists_eqOn_of_agree (U := Ω) (f := fun k z ↦ conjWirtingerDeriv (g k) z 1) hagree 0
   have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ U := by
     refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hcov hz)

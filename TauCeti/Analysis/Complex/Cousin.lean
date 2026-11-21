@@ -12,6 +12,7 @@ import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Algebra.Group.Basic
 import TauCeti.Analysis.Complex.Wirtinger.OpenSet
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Logic.Function.Extend
 
 /-!
 # The additive Cousin problem on open subsets of `ℂ`
@@ -114,11 +115,8 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
       exact contMDiffAt_subtype_iff.2 (contMDiffAt_iff_contDiffAt.2 hck)
     exact (contMDiffAt_iff_contDiffAt.1 (hΩ.extend_subtypeVal 0)).contDiffWithinAt
   -- Holomorphic pairwise differences allow global Dolbeault gluing on `Ω = ⋃ i, U i`.
-  have hg_diff (k l : ι) : DifferentiableOn ℂ (g k - g l) (U k ∩ U l) := fun z hz ↦
-    (((hc k l).differentiableAt (((hU k).inter (hU l)).mem_nhds hz)).congr_of_eventuallyEq
-      (by
-        filter_upwards [((hU k).inter (hU l)).mem_nhds hz] with w hw
-        exact hg_sub hw)).differentiableWithinAt
+  have hg_diff (k l : ι) : DifferentiableOn ℂ (g k - g l) (U k ∩ U l) :=
+    (hc k l).congr fun _ hz ↦ hg_sub hz
   obtain ⟨f, -, hfg⟩ :=
     exists_contDiffOn_differentiableOn_sub (isOpen_iUnion hU) hU hg_smooth hg_diff Subset.rfl
   refine ⟨fun i ↦ g i - f, fun i ↦ ?_, fun i j z hz ↦ ?_⟩
@@ -142,23 +140,9 @@ theorem exists_differentiableOn_iUnion_sub_eq {U : ι → Set ℂ} (hU : ∀ i, 
         b₁ i z - b₂ i z - (b₁ j z - b₂ j z) = (b₁ i z - b₁ j z) - (b₂ i z - b₂ j z) := by
       abel
     exact eq_of_sub_eq_zero (by rw [hrew, hsub, sub_self])
-  let h_sub : (⋃ i, U i : Set ℂ) → W :=
-    Set.iUnionLift U (fun i z ↦ b₁ i z - b₂ i z) hagree _ Subset.rfl
-  let h : ℂ → W := Subtype.val.extend h_sub 0
-  have heq (i : ι) {z : ℂ} (hz : z ∈ U i) : b₁ i z - b₂ i z = h z := by
-    have hzU : z ∈ ⋃ k, U k := mem_iUnion.2 ⟨i, hz⟩
-    dsimp only [h]
-    rw [Subtype.val_injective.extend_apply h_sub 0 ⟨z, hzU⟩]
-    dsimp only [h_sub]
-    exact (Set.iUnionLift_of_mem (f := fun i (z : U i) ↦ b₁ i z - b₂ i z) ⟨z, hzU⟩ hz).symm
-  refine ⟨h, fun z hz ↦ ?_, fun i z hz ↦ heq i hz⟩
-  obtain ⟨i, hzi⟩ := mem_iUnion.1 hz
-  have hloc : h =ᶠ[𝓝 z] fun w ↦ b₁ i w - b₂ i w := by
-    filter_upwards [(hU i).mem_nhds hzi] with w hw
-    exact (heq i hw).symm
-  have hd : DifferentiableAt ℂ (fun w ↦ b₁ i w - b₂ i w) z :=
-    ((hb₁ i).differentiableAt ((hU i).mem_nhds hzi)).sub
-      ((hb₂ i).differentiableAt ((hU i).mem_nhds hzi))
-  exact (hd.congr_of_eventuallyEq hloc).differentiableWithinAt
+  obtain ⟨h, heq, -⟩ :=
+    Function.exists_eqOn_of_agree (U := U) (f := fun i z ↦ b₁ i z - b₂ i z) hagree 0
+  refine ⟨h, (differentiableOn_iUnion_iff_of_isOpen hU).2 fun i ↦ ?_, fun i z hz ↦ (heq i hz).symm⟩
+  exact ((hb₁ i).sub (hb₂ i)).congr fun z hz ↦ heq i hz
 
 end TauCeti

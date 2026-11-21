@@ -13,9 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.Separation.Regular
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
-import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Normed.Module.FilledIn
 

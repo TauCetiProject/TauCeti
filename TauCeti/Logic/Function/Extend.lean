@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.Int.Init
 public import Mathlib.Data.Set.Inclusion
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Order.SetNotation
 public import Mathlib.Tactic.Coe
+import Mathlib.Data.Set.UnionLift
 
 /-!
 # Extending functions along injections
@@ -22,7 +24,9 @@ the same integer function as extending the original function.
 
 A function `g` on a subset `t` extends to the whole type along `Subtype.val`, for instance by
 zero. Restricting `g` to a smaller subset `s` before extending does not change the extension at
-the points which lie in `s` as soon as they lie in `t`.
+the points which lie in `s` as soon as they lie in `t`. A family of compatible functions on a cover
+glues via `Set.iUnionLift` and extends along `Subtype.val` to a single ambient function agreeing
+with each member on its domain (`Function.exists_eqOn_of_agree`).
 
 ## Main results
 
@@ -36,6 +40,8 @@ the points which lie in `s` as soon as they lie in `t`.
   vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
+* `Function.exists_eqOn_of_agree`: a family of functions agreeing on pairwise overlaps glues and
+  extends to an ambient function equal to a prescribed fallback outside the union.
 -/
 
 public section
@@ -146,5 +152,19 @@ theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β}
     · rw [extend_apply' _ _ _ hx,
         extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
   · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
+
+/-- Given a family of functions `f i : α → β` on sets `U i : Set α` that agree on pairwise
+overlaps `U i ∩ U j`, and a default value `d : β`, there is a single ambient function `g : α → β`
+that agrees with `f i` on each `U i` and takes value `d` outside `⋃ i, U i`. -/
+theorem exists_eqOn_of_agree {ι α β : Type*} {U : ι → Set α} {f : ι → α → β}
+    (hagree : ∀ i j, ∀ z ∈ U i, z ∈ U j → f i z = f j z) (d : β) :
+    ∃ g : α → β, (∀ i, Set.EqOn g (f i) (U i)) ∧ ∀ z ∉ ⋃ i, U i, g z = d := by
+  let g_sub : (⋃ i, U i : Set α) → β :=
+    Set.iUnionLift U (fun i z ↦ f i z) hagree _ Set.Subset.rfl
+  refine ⟨Subtype.val.extend g_sub fun _ ↦ d, fun i z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · have hzU : z ∈ ⋃ j, U j := Set.mem_iUnion.2 ⟨i, hz⟩
+    rw [Subtype.val_injective.extend_apply g_sub (fun _ ↦ d) ⟨z, hzU⟩]
+    exact Set.iUnionLift_of_mem ⟨z, hzU⟩ hz
+  · exact extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hz (hy ▸ y.property)
 
 end Function

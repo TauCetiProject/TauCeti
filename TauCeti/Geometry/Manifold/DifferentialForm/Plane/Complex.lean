@@ -5,25 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
-# Real and complex coordinate one-forms on `ℂ` and their pullback
+# Real and complex coordinate one-forms on `ℂ`
 
 The real coordinate forms `dx = d(Re)` (`TauCeti.SmoothForm.complexDx`) and `dy = d(Im)`
 (`TauCeti.SmoothForm.complexDy`) and the complex coordinate forms `dz = d(id)`
 (`TauCeti.SmoothForm.complexDz`) and `dbar z = d(conj)` (`TauCeti.SmoothForm.complexDzBar`) on
 the real manifold `ℂ` use the existing `SmoothForm` carrier, with real tangent spaces. All four
 are constant (hence closed) one-forms realized as exterior derivatives of the corresponding
-coordinate functions, and their wedge products satisfy `dz ∧ dbar z = -2i dx ∧ dy`. On any open
-subset `U : TopologicalSpace.Opens ℂ`, their pullbacks along `Subtype.val : U → ℂ` are likewise
-closed and equal to the exterior derivatives of the restricted coordinate functions.
+coordinate functions, and their wedge products satisfy `dz ∧ dbar z = -2i dx ∧ dy`.
 
 Pullback of `dz` by a real-differentiable map has the usual Wirtinger coefficients:
 `f⁎dz = f_z dz + f_barz dbar z`.
@@ -42,7 +38,7 @@ outside its chart domain.
 
 public noncomputable section
 
-open Complex Set TopologicalSpace
+open Complex Set
 open scoped Manifold ContDiff ComplexConjugate Topology
 
 namespace TauCeti
@@ -130,24 +126,17 @@ theorem complexDy_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) 
     complexDy.val z v = (NormedSpace.fromTangentSpace z (v 0)).im := by
   simp [complexDy]
 
-private theorem const_ofSubsingleton_eq_mextDeriv {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (L : ℂ →L[ℝ] F) :
-    (const (ContinuousAlternatingMap.ofSubsingleton ℝ ℂ F (0 : Fin 1) L)).val =
-      mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) L) := by
-  ext z v
-  simp [mextDeriv_ofFunction, mvfderiv_eq_fderiv, ContinuousLinearMap.fderiv]
-
 /-- On `ℂ`, `dx` is the exterior derivative of the real-part coordinate function. -/
 theorem complexDx_eq_mextDeriv :
     complexDx.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) Complex.re) := by
-  rw [complexDx, const_ofSubsingleton_eq_mextDeriv]
-  rfl
+  have hfun : (Complex.reCLM : ℂ → ℝ) = Complex.re := funext Complex.reCLM_apply
+  rw [← hfun, complexDx, const_toRoughForm, mextDeriv_ofFunction_continuousLinearMap]
 
 /-- On `ℂ`, `dy` is the exterior derivative of the imaginary-part coordinate function. -/
 theorem complexDy_eq_mextDeriv :
     complexDy.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) Complex.im) := by
-  rw [complexDy, const_ofSubsingleton_eq_mextDeriv]
-  rfl
+  have hfun : (Complex.imCLM : ℂ → ℝ) = Complex.im := funext Complex.imCLM_apply
+  rw [← hfun, complexDy, const_toRoughForm, mextDeriv_ofFunction_continuousLinearMap]
 
 /-- On `ℂ`, `dz` is the exterior derivative of the identity coordinate function. -/
 theorem complexDz_eq_mextDeriv :
@@ -157,14 +146,16 @@ theorem complexDz_eq_mextDeriv :
         (ContinuousLinearMap.id ℝ ℂ))).val := by
     ext z v
     simp
-  rw [hdz, const_ofSubsingleton_eq_mextDeriv]
-  rfl
+  have hfun : (ContinuousLinearMap.id ℝ ℂ : ℂ → ℂ) = id :=
+    funext fun z : ℂ ↦ ContinuousLinearMap.id_apply z
+  rw [hdz, ← hfun, const_toRoughForm, mextDeriv_ofFunction_continuousLinearMap]
 
 /-- On `ℂ`, `dbar z` is the exterior derivative of complex conjugation. -/
 theorem complexDzBar_eq_mextDeriv :
     complexDzBar.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) (starRingEnd ℂ : ℂ → ℂ)) := by
-  rw [complexDzBar, const_ofSubsingleton_eq_mextDeriv]
-  rfl
+  have hfun : ((Complex.conjCLE : ℂ →L[ℝ] ℂ) : ℂ → ℂ) = (starRingEnd ℂ : ℂ → ℂ) :=
+    funext Complex.conjCLE_apply
+  rw [← hfun, complexDzBar, const_toRoughForm, mextDeriv_ofFunction_continuousLinearMap]
 
 /-- The real coordinate one-form `dx` on `ℂ` is closed. -/
 @[simp]
@@ -311,81 +302,5 @@ theorem differentiableOn_iff_forall_exists_mpullback_complexDz_eq_smul
   · intro h z hz
     exact ((differentiableAt_iff_exists_mpullback_complexDz_eq_smul
       (hf.differentiableAt (hs.mem_nhds hz))).mpr (h z hz)).differentiableWithinAt
-
-/-! ### Coordinate one-forms pulled back to an open subset `U ⊆ ℂ` -/
-
-section OpenCoords
-
-variable (U : Opens ℂ)
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dx` is `d(Re ∘ ι)`. -/
-theorem mpullback_subtype_val_complexDx_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val =
-      mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ (z : ℂ).re) := by
-  rw [SmoothForm.complexDx_eq_mextDeriv]
-  exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
-    ((contMDiff_iff_contDiff.2 (Complex.reCLM.contDiff (n := 1))).mdifferentiable one_ne_zero)
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dy` is `d(Im ∘ ι)`. -/
-theorem mpullback_subtype_val_complexDy_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.val =
-      mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ (z : ℂ).im) := by
-  rw [SmoothForm.complexDy_eq_mextDeriv]
-  exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
-    ((contMDiff_iff_contDiff.2 (Complex.imCLM.contDiff (n := 1))).mdifferentiable one_ne_zero)
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dz` is `d ι`. -/
-theorem mpullback_subtype_val_complexDz_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val =
-      mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)) := by
-  rw [SmoothForm.complexDz_eq_mextDeriv]
-  exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtypeVal.mdifferentiable one_ne_zero) mdifferentiable_id
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dbar z` is `d(conj ∘ ι)`. -/
-theorem mpullback_subtype_val_complexDzBar_eq_mextDeriv :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val =
-      mextDeriv (RoughForm.ofFunction 𝓘(ℝ, ℂ) fun z : U ↦ conj (z : ℂ)) := by
-  rw [SmoothForm.complexDzBar_eq_mextDeriv]
-  exact mpullback_mextDeriv_ofFunction
-    (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
-    ((contMDiff_iff_contDiff.2
-      ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff (n := 1))).mdifferentiable one_ne_zero)
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dx` is closed. -/
-@[simp]
-theorem mextDeriv_mpullback_subtype_val_complexDx :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDx.val) =
-      0 :=
-  (SmoothForm.complexDx.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDx contMDiff_subtypeVal
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dy` is closed. -/
-@[simp]
-theorem mextDeriv_mpullback_subtype_val_complexDy :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDy.val) =
-      0 :=
-  (SmoothForm.complexDy.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDy contMDiff_subtypeVal
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dz` is closed. -/
-@[simp]
-theorem mextDeriv_mpullback_subtype_val_complexDz :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDz.val) =
-      0 :=
-  (SmoothForm.complexDz.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDz contMDiff_subtypeVal
-
-/-- On an open subset `U ⊆ ℂ`, the pullback of `dbar z` is closed. -/
-@[simp]
-theorem mextDeriv_mpullback_subtype_val_complexDzBar :
-    mextDeriv (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) SmoothForm.complexDzBar.val) =
-      0 :=
-  (SmoothForm.complexDzBar.isSmoothForm.of_le (by simp)).mextDeriv_mpullback_eq_zero
-    SmoothForm.mextDeriv_complexDzBar contMDiff_subtypeVal
-
-end OpenCoords
 
 end TauCeti

@@ -66,6 +66,16 @@ theorem inChartAt_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : Roug
   ext w
   simp only [inChartAt_apply, wedgeWith_apply, pairedWedge_apply]
 
+/-- The coordinate expression of a paired wedge is differentiable within a subset `s` at `z`
+whenever the coordinate expressions of both factors are. -/
+theorem differentiableWithinAt_inChartAt_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    {φ : RoughForm I M F₁ k} {ψ : RoughForm I M F₂ l} {x₀ : M} {s : Set E} {z : E}
+    (hφ : DifferentiableWithinAt ℝ (φ.inChartAt x₀) s z)
+    (hψ : DifferentiableWithinAt ℝ (ψ.inChartAt x₀) s z) :
+    DifferentiableWithinAt ℝ ((φ.wedgeWith μ ψ).inChartAt x₀) s z :=
+  ((differentiableWithinAt_const _).pairedWedge hφ hψ).congr
+    (fun w _ ↦ inChartAt_wedgeWith μ φ ψ x₀ w) (inChartAt_wedgeWith μ φ ψ x₀ z)
+
 end RoughForm
 
 variable [IsManifold I 1 M]
