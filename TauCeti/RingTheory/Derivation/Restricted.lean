@@ -378,6 +378,10 @@ theorem pPow_add (D E : Derivation R A A) (p : ℕ) [Fact p.Prime] [CharP A p] :
 algebra with `p`-map `D ↦ D.pPow p`. -/
 instance instRestrictedLieAlgebra (p : ℕ) [Fact p.Prime] [CharP A p] :
     TauCeti.RestrictedLieAlgebra R (Derivation R A A) p where
+  prime := Fact.out
+  p_nsmul_eq_zero D := by
+    ext a
+    simp [nsmul_eq_mul, CharP.cast_eq_zero]
   pMap D := D.pPow p
   pMap_smul c D := D.pPow_const_smul p c
   ad_pMap D := D.ad_pPow p
@@ -489,9 +493,8 @@ example :
 -- Witness 4: over mixed-characteristic base ring `ℤ`, `RestrictedLieHom.ad` expresses the
 -- adjoint representation of `Derivation ℤ (ZMod p)[X] (ZMod p)[X]`.
 example (p : ℕ) [Fact p.Prime] (D : Derivation ℤ (ZMod p)[X] (ZMod p)[X]) :
-    (TauCeti.RestrictedLieHom.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) p
-        (fun E => by ext a; simp [nsmul_eq_mul, CharP.cast_eq_zero])) D =
+    TauCeti.RestrictedLieHom.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) p D =
       LieAlgebra.ad ℤ (Derivation ℤ (ZMod p)[X] (ZMod p)[X]) D :=
-  TauCeti.RestrictedLieHom.ad_apply _ _ _ _ D
+  TauCeti.RestrictedLieHom.ad_apply _ _ _ D
 
 end Examples

@@ -17,8 +17,11 @@ import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 /-!
 # Restricted Lie algebras
 
-A *restricted Lie algebra* (or *`p`-Lie algebra*, Jacobson 1941) over a commutative ring `R` is a
-Lie algebra `L` over `R` equipped with a `p`-map `pMap : L → L` (`x ↦ x^[p]`) satisfying:
+A *restricted Lie algebra* (or *`p`-Lie algebra*, Jacobson 1941; Katz 1970, §5.0) over a
+commutative ring `R` is a Lie algebra `L` over `R` of prime characteristic `p` (`p.Prime` and
+pointwise `p`-torsion `∀ x : L, p • x = 0`, which holds automatically when `CharP R p`, while also
+accommodating mixed-characteristic base rings `R` acting on `p`-torsion Lie algebras) equipped
+with a `p`-map `pMap : L → L` (`x ↦ x^[p]`) satisfying:
 
 1. `p`-homogeneity: `pMap (c • x) = c ^ p • pMap x` for `c : R`, `x : L`;
 2. adjoint compatibility: `LieAlgebra.ad R L (pMap x) = LieAlgebra.ad R L x ^ p`;
@@ -35,8 +38,8 @@ restricted structure, lattice bounds, and images (`RestrictedLieHom.range`), and
 ideals (`RestrictedLieIdeal`) including kernels (`RestrictedLieHom.ker`). We construct the standard
 examples: associative algebras of prime characteristic `p` (`ofAssociative`), endomorphism algebras
 `Module.End R M` when `p` annihilates `M` pointwise (`ofModuleEnd`, including trivial
-modules `M`), abelian Lie algebras with the zero `p`-map (`ofAbelianZero`), and the adjoint
-morphisms `RestrictedLieHom.ad` and `RestrictedLieHom.adOfAssociative`.
+modules `M`), `p`-torsion abelian Lie algebras with the zero `p`-map (`ofAbelianZero`), and the
+adjoint morphisms `RestrictedLieHom.ad` and `RestrictedLieHom.adOfAssociative`.
 
 ## Main definitions
 
@@ -48,10 +51,10 @@ morphisms `RestrictedLieHom.ad` and `RestrictedLieHom.adOfAssociative`.
   on an associative algebra of prime characteristic `p`.
 * `TauCeti.RestrictedLieAlgebra.ofModuleEnd`: the restricted Lie algebra structure `f ↦ f ^ p` on
   `Module.End R M` when `p` annihilates `M` pointwise.
-* `TauCeti.RestrictedLieAlgebra.ofAbelianZero`: the zero `p`-map on an abelian Lie algebra
-  (`p ≠ 0`).
+* `TauCeti.RestrictedLieAlgebra.ofAbelianZero`: the zero `p`-map on a `p`-torsion abelian Lie
+  algebra for prime `p`.
 * `TauCeti.RestrictedLieHom.ad`: `LieAlgebra.ad R L` as a restricted morphism for any restricted
-  Lie algebra annihilated pointwise by `p`.
+  Lie algebra.
 * `TauCeti.RestrictedLieHom.adOfAssociative`: `LieAlgebra.ad R A` as a restricted morphism for an
   associative algebra of characteristic `p`.
 
@@ -68,11 +71,16 @@ public section
 
 namespace TauCeti
 
-/-- A restricted Lie algebra (or `p`-Lie algebra, Jacobson 1941) over a commutative ring `R`: a Lie
-algebra `L` equipped with a `p`-map `pMap : L → L` that is `p`-homogeneous, compatible with the
-adjoint action, and satisfies Jacobson's additivity formula with `jacobsonLie R p`. -/
+/-- A restricted Lie algebra (or `p`-Lie algebra, Jacobson 1941; Katz 1970, §5.0) over a
+commutative ring `R`: a Lie algebra `L` of prime characteristic `p` (`p.Prime` and
+`∀ x : L, p • x = 0`) equipped with a `p`-map `pMap : L → L` that is `p`-homogeneous, compatible
+with the adjoint action, and satisfies Jacobson's additivity formula with `jacobsonLie R p`. -/
 @[ext]
 class RestrictedLieAlgebra (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ) where
+  /-- The characteristic `p` is prime. -/
+  prime : p.Prime
+  /-- Every element of `L` is annihilated by `p`. -/
+  p_nsmul_eq_zero (x : L) : p • x = 0
   /-- The `p`-map `x ↦ x^[p]`. -/
   pMap : L → L
   /-- `p`-homogeneity: `pMap (c • x) = c ^ p • pMap x`. -/
@@ -94,7 +102,7 @@ theorem lie_pMap (x y : L) :
   have h := congrArg (fun f : Module.End R L => f y) (ad_pMap (R := R) (p := p) x)
   simpa only [LieAlgebra.ad_apply] using h
 
-/-- `pMap 0 = 0` for every `p : ℕ` (including `p = 0`). -/
+/-- `pMap 0 = 0`. -/
 @[simp]
 theorem pMap_zero : pMap (R := R) (p := p) (0 : L) = 0 := by
   have h := pMap_add (R := R) (p := p) (0 : L) (0 : L)
@@ -116,32 +124,31 @@ theorem pMap_neg_of_even (hp : Even p) (x : L) :
     pMap (R := R) (p := p) (-x) = pMap (R := R) (p := p) x := by
   rw [pMap_neg, hp.neg_one_pow, one_smul]
 
-/-- On commuting elements `x, y` (with `p ≠ 0`), `pMap` is additive. -/
-theorem pMap_add_of_lie_eq_zero (hp : p ≠ 0) {x y : L} (h : ⁅x, y⁆ = 0) :
+/-- On commuting elements `x, y`, `pMap` is additive. -/
+theorem pMap_add_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) :
     pMap (R := R) (p := p) (x + y) = pMap (R := R) (p := p) x + pMap (R := R) (p := p) y := by
-  rw [pMap_add, lift_jacobsonLie_eq_zero_of_lie_eq_zero hp h, add_zero]
+  rw [pMap_add,
+    lift_jacobsonLie_eq_zero_of_lie_eq_zero (prime (R := R) (L := L) (p := p)).ne_zero h, add_zero]
 
-/-- On commuting elements `x, y` (with `p ≠ 0`),
-`pMap (x - y) = pMap x + (-1 : R) ^ p • pMap y`. -/
-theorem pMap_sub_of_lie_eq_zero (hp : p ≠ 0) {x y : L} (h : ⁅x, y⁆ = 0) :
+/-- On commuting elements `x, y`, `pMap (x - y) = pMap x + (-1 : R) ^ p • pMap y`. -/
+theorem pMap_sub_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) :
     pMap (R := R) (p := p) (x - y) =
       pMap (R := R) (p := p) x + (-1 : R) ^ p • pMap (R := R) (p := p) y := by
-  rw [sub_eq_add_neg, pMap_add_of_lie_eq_zero hp (by rw [lie_neg, h, neg_zero]), pMap_neg]
+  rw [sub_eq_add_neg, pMap_add_of_lie_eq_zero (by rw [lie_neg, h, neg_zero]), pMap_neg]
 
-/-- In an abelian restricted Lie algebra (`p ≠ 0`), `pMap` is additive. -/
-theorem pMap_add_of_isLieAbelian [IsLieAbelian L] (hp : p ≠ 0) (x y : L) :
+/-- In an abelian restricted Lie algebra, `pMap` is additive. -/
+theorem pMap_add_of_isLieAbelian [IsLieAbelian L] (x y : L) :
     pMap (R := R) (p := p) (x + y) = pMap (R := R) (p := p) x + pMap (R := R) (p := p) y :=
-  pMap_add_of_lie_eq_zero hp (trivial_lie_zero L L x y)
+  pMap_add_of_lie_eq_zero (trivial_lie_zero L L x y)
 
-/-- In an abelian restricted Lie algebra (`p ≠ 0`), `pMap` commutes with finite sums. -/
-theorem pMap_sum_of_isLieAbelian [IsLieAbelian L] (hp : p ≠ 0) {ι : Type*} (s : Finset ι)
-    (f : ι → L) :
+/-- In an abelian restricted Lie algebra, `pMap` commutes with finite sums. -/
+theorem pMap_sum_of_isLieAbelian [IsLieAbelian L] {ι : Type*} (s : Finset ι) (f : ι → L) :
     pMap (R := R) (p := p) (∑ i ∈ s, f i) = ∑ i ∈ s, pMap (R := R) (p := p) (f i) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
   | insert a s ha ih =>
-    rw [Finset.sum_insert ha, pMap_add_of_isLieAbelian hp, ih, Finset.sum_insert ha]
+    rw [Finset.sum_insert ha, pMap_add_of_isLieAbelian, ih, Finset.sum_insert ha]
 
 end RestrictedLieAlgebra
 
@@ -385,6 +392,8 @@ private def toLieHomIncl (S : RestrictedLieSubalgebra R p L) : S →ₗ⁅R⁆ L
 restricted Lie algebra. -/
 instance instRestrictedLieAlgebra (S : RestrictedLieSubalgebra R p L) :
     RestrictedLieAlgebra R S p where
+  prime := RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)
+  p_nsmul_eq_zero x := Subtype.ext (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p) (x : L))
   pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), S.pMap_mem x.property⟩
   pMap_smul c x := by
     apply Subtype.ext
@@ -604,6 +613,8 @@ private def toLieHomIncl (I : RestrictedLieIdeal R p L) : I →ₗ⁅R⁆ L wher
 
 instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R p L) :
     RestrictedLieAlgebra R I p where
+  prime := RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)
+  p_nsmul_eq_zero x := Subtype.ext (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p) (x : L))
   pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.property⟩
   pMap_smul c x := by
     apply Subtype.ext
@@ -678,8 +689,7 @@ theorem mem_inf {I J : RestrictedLieIdeal R p L} {x : L} :
 
 end RestrictedLieIdeal
 
-/-- The kernel of a restricted Lie algebra morphism, as a restricted Lie ideal (valid for all
-`p : ℕ` because `pMap 0 = 0`). -/
+/-- The kernel of a restricted Lie algebra morphism, as a restricted Lie ideal. -/
 def RestrictedLieHom.ker {R : Type*} {p : ℕ} {L L' : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [RestrictedLieAlgebra R L p] [LieRing L'] [LieAlgebra R L']
     [RestrictedLieAlgebra R L' p] (f : RestrictedLieHom R p L L') :
@@ -700,24 +710,32 @@ end Ideal
 
 section ExamplesDefs
 
-/-- The trivial (zero) restricted Lie algebra structure on an abelian Lie algebra (`p ≠ 0`). -/
+/-- The trivial (zero) restricted Lie algebra structure on a `p`-torsion abelian Lie algebra for
+prime `p`. -/
 @[instance_reducible]
 def RestrictedLieAlgebra.ofAbelianZero (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
-    [IsLieAbelian L] (p : ℕ) (hp : p ≠ 0) : RestrictedLieAlgebra R L p where
+    [IsLieAbelian L] (p : ℕ) [Fact p.Prime] (hL : ∀ x : L, p • x = 0) :
+    RestrictedLieAlgebra R L p where
+  prime := Fact.out
+  p_nsmul_eq_zero := hL
   pMap _ := 0
   pMap_smul _ _ := (smul_zero _).symm
   ad_pMap x := by
     have h0 : LieAlgebra.ad R L x = 0 := by
       ext y
       exact trivial_lie_zero L L x y
-    rw [map_zero, h0, zero_pow hp]
+    rw [map_zero, h0, zero_pow (Fact.out : p.Prime).ne_zero]
   pMap_add x y := by
-    rw [add_zero, lift_jacobsonLie_eq_zero_of_lie_eq_zero hp (trivial_lie_zero L L x y), add_zero]
+    rw [add_zero,
+      lift_jacobsonLie_eq_zero_of_lie_eq_zero (Fact.out : p.Prime).ne_zero
+        (trivial_lie_zero L L x y),
+      add_zero]
 
 @[simp]
 theorem RestrictedLieAlgebra.ofAbelianZero_pMap (R L : Type*) [CommRing R] [LieRing L]
-    [LieAlgebra R L] [IsLieAbelian L] (p : ℕ) (hp : p ≠ 0) (x : L) :
-    (ofAbelianZero R L p hp).pMap x = 0 :=
+    [LieAlgebra R L] [IsLieAbelian L] (p : ℕ) [Fact p.Prime] (hL : ∀ x : L, p • x = 0)
+    (x : L) :
+    (ofAbelianZero R L p hL).pMap x = 0 :=
   (rfl)
 
 section Associative
@@ -730,6 +748,8 @@ characteristic `p`. Defined as a `def` rather than a global `instance` because
 @[instance_reducible]
 def RestrictedLieAlgebra.ofAssociative (R A : Type*) [CommRing R] [Ring A] [Algebra R A]
     (p : ℕ) [Fact p.Prime] [CharP A p] : RestrictedLieAlgebra R A p where
+  prime := Fact.out
+  p_nsmul_eq_zero a := by rw [nsmul_eq_mul, CharP.cast_eq_zero A p, zero_mul]
   pMap a := a ^ p
   pMap_smul c a := smul_pow c a p
   ad_pMap a := by
@@ -762,6 +782,10 @@ mixed-characteristic base rings `R`. -/
 def RestrictedLieAlgebra.ofModuleEnd (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
     (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) :
     RestrictedLieAlgebra R (Module.End R M) p where
+  prime := Fact.out
+  p_nsmul_eq_zero f := by
+    ext m
+    exact hM (f m)
   pMap f := f ^ p
   pMap_smul c f := smul_pow c f p
   ad_pMap f := by
@@ -789,20 +813,24 @@ theorem RestrictedLieAlgebra.ofModuleEnd_eq_ofAssociative (R M : Type*) [CommRin
   RestrictedLieAlgebra.ext rfl
 
 /-- The adjoint representation `LieAlgebra.ad R L : L →ₗ⁅R⁆ Module.End R L` of a restricted Lie
-algebra annihilated pointwise by `p` (`∀ x : L, p • x = 0`), as a morphism of restricted Lie
-algebras into `ofModuleEnd R L p hL`. -/
+algebra, as a morphism of restricted Lie algebras into `ofModuleEnd`. -/
 def RestrictedLieHom.ad (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ)
-    [Fact p.Prime] [RestrictedLieAlgebra R L p] (hL : ∀ x : L, p • x = 0) :
+    [RestrictedLieAlgebra R L p] :
     @RestrictedLieHom R p L (Module.End R L) _ _ _ _ _ _
-      (RestrictedLieAlgebra.ofModuleEnd R L p hL) :=
+      (@RestrictedLieAlgebra.ofModuleEnd R L _ _ _ p
+        ⟨RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)⟩
+        (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p))) :=
   @RestrictedLieHom.mk R p L (Module.End R L) _ _ _ _ _ _
-    (RestrictedLieAlgebra.ofModuleEnd R L p hL) (LieAlgebra.ad R L)
+    (@RestrictedLieAlgebra.ofModuleEnd R L _ _ _ p
+      ⟨RestrictedLieAlgebra.prime (R := R) (L := L) (p := p)⟩
+      (RestrictedLieAlgebra.p_nsmul_eq_zero (R := R) (p := p)))
+    (LieAlgebra.ad R L)
     (fun x => RestrictedLieAlgebra.ad_pMap (R := R) (p := p) x)
 
 @[simp]
 theorem RestrictedLieHom.ad_apply (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] (p : ℕ)
-    [Fact p.Prime] [RestrictedLieAlgebra R L p] (hL : ∀ x : L, p • x = 0) (x : L) :
-    ad R L p hL x = LieAlgebra.ad R L x :=
+    [RestrictedLieAlgebra R L p] (x : L) :
+    ad R L p x = LieAlgebra.ad R L x :=
   (rfl)
 
 /-- The adjoint representation `LieAlgebra.ad R A : A →ₗ⁅R⁆ Module.End R A` of an associative
@@ -846,8 +874,7 @@ example (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] (p : ℕ) [Fact p.
       (TauCeti.RestrictedLieAlgebra.ofAssociative R A p).pMap a +
         (TauCeti.RestrictedLieAlgebra.ofAssociative R A p).pMap b := by
   let _ := TauCeti.RestrictedLieAlgebra.ofAssociative R A p
-  have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
-  exact TauCeti.RestrictedLieAlgebra.pMap_add_of_lie_eq_zero hp
+  exact TauCeti.RestrictedLieAlgebra.pMap_add_of_lie_eq_zero
     (by rw [Ring.lie_def, mul_comm, sub_self])
 
 -- Witness: on `M_2(ZMod p)` for an odd prime `p`, `pMap a = a ^ p` is not additive.
@@ -886,7 +913,8 @@ example (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
 -- (they differ at `1 : R`).
 example (R : Type*) [CommRing R] [Nontrivial R] (p : ℕ) [Fact p.Prime] [CharP R p] :
     let _ : IsLieAbelian R := ⟨fun x y => by rw [Ring.lie_def, mul_comm, sub_self]⟩
-    TauCeti.RestrictedLieAlgebra.ofAbelianZero R R p (Fact.out : p.Prime).ne_zero ≠
+    TauCeti.RestrictedLieAlgebra.ofAbelianZero R R p
+        (fun x => by rw [nsmul_eq_mul, CharP.cast_eq_zero R p, zero_mul]) ≠
       TauCeti.RestrictedLieAlgebra.ofAssociative R R p := by
   intro _ h
   have h1 := congrArg (fun inst => inst.pMap (1 : R)) h
