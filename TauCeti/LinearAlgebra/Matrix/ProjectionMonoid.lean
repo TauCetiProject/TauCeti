@@ -25,7 +25,6 @@ general: for the bounded operators on an infinite-dimensional separable Hilbert 
 
 ## Main definitions
 
-* `TauCeti.MatrixProjection R`: a star projection in `Matrix (Fin n) (Fin n) R` for some `n`.
 * `TauCeti.ProjectionMonoid R`: the commutative monoid `V(R)` of matrix projections over `R`
   modulo Murray–von Neumann equivalence.
 * `TauCeti.ProjectionMonoid.mk p hp`: the class in `V(R)` of a projection `p : Matrix m m R`
@@ -69,7 +68,7 @@ variable (R : Type*) [NonUnitalSemiring R] [StarRing R]
 /-- A **matrix projection** over `R`: a star projection in the square matrix algebra
 `Matrix (Fin n) (Fin n) R` of some finite size `n`. These represent the elements of the projection
 monoid `TauCeti.ProjectionMonoid R`. -/
-structure MatrixProjection where
+private structure MatrixProjection where
   /-- The size of the matrix. -/
   size : ℕ
   /-- The underlying square matrix. -/
@@ -78,7 +77,7 @@ structure MatrixProjection where
   isStarProjection : IsStarProjection matrix
 
 /-- Murray–von Neumann equivalence, as a setoid on matrix projections of all sizes. -/
-instance MatrixProjection.setoid : Setoid (MatrixProjection R) where
+private instance MatrixProjection.setoid : Setoid (MatrixProjection R) where
   r p q := IsMurrayVonNeumannEquivalent p.matrix q.matrix
   iseqv := ⟨fun p ↦ .refl p.isStarProjection, .symm, .trans⟩
 
