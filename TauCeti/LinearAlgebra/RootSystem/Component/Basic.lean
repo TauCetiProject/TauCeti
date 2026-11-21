@@ -51,6 +51,7 @@ root system is irreducible exactly when its graph is connected.
   different component spaces are orthogonal under every invariant form.
 * `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`: an
   equivalence carries component spaces to component spaces, and likewise for coroots.
+* `RootPairing.Equiv.componentEquiv_pow`: automorphisms permute the components by a group action.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
   the graph.
 
@@ -429,6 +430,37 @@ theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
   · rintro ⟨i, hi, rfl⟩
     exact ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr hi,
       by simpa using Hom.coroot_coweightMap_apply P Q (e.indexEquiv i) e.toHom⟩
+
+/-- An equivalence of root pairings carries the component space of `C` into that of the
+corresponding component. -/
+theorem Equiv.weightMap_mem_componentSpace (e : P.Equiv Q) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) :
+    e.toHom.weightMap x ∈ Q.componentSpace (e.componentEquiv C) := by
+  rw [← e.map_componentSpace C]
+  exact Submodule.mem_map_of_mem hx
+
+/-- The identity automorphism fixes every component. -/
+@[simp]
+theorem Equiv.componentEquiv_one : (1 : P.Aut).componentEquiv = 1 :=
+  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ componentEquiv_componentOf 1 i
+
+/-- The permutation of the components induced by a product of automorphisms is the product of the
+induced permutations. Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites its left-hand
+side. -/
+theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
+    (σ * τ).componentEquiv = σ.componentEquiv * τ.componentEquiv :=
+  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ by
+    rw [Equiv.Perm.mul_apply, componentEquiv_componentOf, componentEquiv_componentOf,
+      componentEquiv_componentOf, ← indexHom_apply, map_mul, Equiv.Perm.mul_apply, indexHom_apply,
+      indexHom_apply]
+
+/-- **Automorphisms permute the irreducible components by a group action.** -/
+@[simp]
+theorem Equiv.componentEquiv_pow (σ : P.Aut) (n : ℕ) :
+    (σ ^ n).componentEquiv = σ.componentEquiv ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, componentEquiv_mul, ih, pow_succ]
 
 end Equiv
 

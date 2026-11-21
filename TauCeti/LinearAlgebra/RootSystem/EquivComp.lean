@@ -24,7 +24,8 @@ with the actions of the automorphism groups on weight vectors and on root indice
 The statements are about two or three root pairings with unrelated index sets, weight spaces and
 coweight spaces; nothing here needs any finiteness, reducedness or crystallographic hypothesis.
 Laws about a single pairing are already available from the `Group (RootPairing.Equiv P P)`
-instance, so they are not restated here.
+instance, so they are not restated here; only their translation into the weight maps and index
+permutations of products and powers of automorphisms is recorded.
 
 ## Main definitions
 
@@ -52,6 +53,9 @@ instance, so they are not restated here.
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
   functorial.
+* `RootPairing.Equiv.indexEquiv_pow` and `RootPairing.Equiv.weightMap_pow`: the index
+  permutation and the weight map of a power of an automorphism are the powers of those of the
+  automorphism.
 * `RootPairing.Hom.weightMap_comp_of_indexEquiv`,
   `RootPairing.Hom.indexEquiv_apply_of_weightMap_comp`,
   `RootPairing.Equiv.weightEquiv_comp_weightMap_of_indexEquiv`, and
@@ -243,6 +247,31 @@ theorem indexEquiv_apply_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut
     ((LinearMap.ext e.weightEquiv_apply : e.weightEquiv.toLinearMap = e.toHom.weightMap) ▸ hw) j
 
 end Intertwine
+
+section Pow
+
+/-- The index permutation of a power of an automorphism is the power of its index permutation. -/
+@[simp]
+theorem indexEquiv_pow (σ : Aut P) (n : ℕ) : (σ ^ n).indexEquiv = σ.indexEquiv ^ n := by
+  rw [← indexHom_apply, map_pow, indexHom_apply]
+
+/-- The weight map of a product of automorphisms is the composite of their weight maps.
+
+Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites its left-hand side. -/
+theorem weightMap_mul_apply (σ τ : Aut P) (x : M) :
+    (σ * τ).toHom.weightMap x = σ.toHom.weightMap (τ.toHom.weightMap x) := by
+  rw [← weightEquiv_apply, ← weightHom_apply, map_mul, mul_apply_eq_comp, weightHom_apply,
+    weightHom_apply, weightEquiv_apply, weightEquiv_apply]
+
+/-- The weight map of a power of an automorphism is the power of its weight map. -/
+@[simp]
+theorem weightMap_pow (σ : Aut P) (n : ℕ) : (σ ^ n).toHom.weightMap = σ.toHom.weightMap ^ n := by
+  have h : ⇑σ.weightEquiv = σ.toHom.weightMap := funext σ.weightEquiv_apply
+  ext x
+  rw [← weightEquiv_apply, ← weightHom_apply, map_pow, pow_apply_eq_iterate, pow_apply_eq_iterate,
+    weightHom_apply, h]
+
+end Pow
 
 end RootPairing.Equiv
 
