@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Kaehler.Basic
+import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Derivations dual to a basis of Kähler differentials
@@ -24,6 +25,11 @@ differentials `b i = ds_i`, the `∂_i` are the partial derivatives in the coord
 `∂_i s_j = δ_ij`, they commute pairwise, and every derivation `D` of `A` is the finite
 combination `D = ∑ i, D (s i) • ∂_i` when the coordinates are finite in number.
 
+Conversely, elements `x₁, …, x_d ∈ A` and derivations `δ₁, …, δ_d` with `δᵢ xⱼ = δᵢⱼ` split the
+differentials, even when `Ω[A⁄R]` is not free: the `dxⱼ` are linearly independent and
+`Ω[A⁄R] = (⊕ⱼ A·dxⱼ) ⊕ ⋂ᵢ ker δᵢ`, where `δᵢ` is read as the `A`-linear form `Ω[A⁄R] → A` it
+induces; the projection onto the first summand is `ω ↦ ∑ⱼ δⱼ(ω) dxⱼ`.
+
 ## Main declarations
 
 * `Derivation.ext_of_span_kaehlerD_eq_top`: derivations agreeing on a family whose differentials
@@ -33,6 +39,10 @@ combination `D = ∑ i, D (s i) • ∂_i` when the coordinates are finite in nu
   differentials commute.
 * `Module.Basis.sum_dualDerivation_smul`, `Module.Basis.sum_smul_dualDerivation`: a derivation
   is the combination of the dual derivations with coefficients its values on the coordinates.
+* `KaehlerDifferential.linearIndependent_D_of_derivation_apply_eq_ite`: the differentials of
+  elements admitting dual derivations are linearly independent.
+* `KaehlerDifferential.isCompl_span_D_iInf_ker_liftKaehlerDifferential`: dual elements and
+  derivations split `Ω[A⁄R]` as `(⊕ⱼ A·dxⱼ) ⊕ ⋂ᵢ ker δᵢ`.
 
 ## References
 
@@ -128,3 +138,42 @@ theorem sum_smul_dualDerivation [Fintype ι] (hs : ∀ i, KaehlerDifferential.D 
   simp [← sum_dualDerivation_smul hs D a, mul_comm]
 
 end Module.Basis
+
+namespace KaehlerDifferential
+
+open Function Submodule
+
+variable {ι : Type*} [DecidableEq ι] {x : ι → A} {δ : ι → Derivation R A A}
+
+/-- If the derivations `δᵢ` are dual to the elements `xⱼ`, then the differentials `dxⱼ` are linearly
+independent in `Ω[A⁄R]`. -/
+theorem linearIndependent_D_of_derivation_apply_eq_ite
+    (hδ : ∀ i j, δ i (x j) = if i = j then 1 else 0) :
+    LinearIndependent A fun j ↦ D R A (x j) :=
+  .of_comp (LinearMap.pi fun i ↦ (δ i).liftKaehlerDifferential) <| by
+    convert Pi.linearIndependent_single_one ι A with j
+    ext i
+    simp [hδ, Pi.single_apply]
+
+/-- For derivations `δ` dual to `x`, the coordinate map `Ω[A⁄R] → (ι → A)`, `ω ↦ (δᵢ ω)ᵢ`, is a
+left inverse of the linear combination map `c ↦ ∑ⱼ cⱼ dxⱼ`. -/
+private theorem pi_liftKaehlerDifferential_comp_linearCombination [Fintype ι]
+    (hδ : ∀ i j, δ i (x j) = if i = j then 1 else 0) :
+    LinearMap.pi (fun i ↦ (δ i).liftKaehlerDifferential) ∘ₗ
+      Fintype.linearCombination A (fun j ↦ D R A (x j)) = LinearMap.id := by
+  refine LinearMap.pi_ext' fun j ↦ LinearMap.ext_ring (funext fun i ↦ ?_)
+  simp [Fintype.linearCombination_apply_single, hδ, Pi.single_apply]
+
+/-- **Splitting of the differentials by dual derivations.** If the derivations `δᵢ` are dual to
+the elements `xⱼ`, then `Ω[A⁄R]` is the internal direct sum of the span of the `dxⱼ` and of the
+common kernel of the linear forms `Ω[A⁄R] → A` induced by the `δᵢ`. -/
+theorem isCompl_span_D_iInf_ker_liftKaehlerDifferential [Finite ι]
+    (hδ : ∀ i j, δ i (x j) = if i = j then 1 else 0) :
+    IsCompl (span A (Set.range fun j ↦ D R A (x j)))
+      (⨅ i, LinearMap.ker (δ i).liftKaehlerDifferential) := by
+  have := Fintype.ofFinite ι
+  have h := (LinearMap.bijective_comp_iff.1 (by
+    rw [pi_liftKaehlerDifferential_comp_linearCombination hδ]; exact bijective_id)).2.1
+  rwa [Fintype.range_linearCombination, LinearMap.ker_pi] at h
+
+end KaehlerDifferential
