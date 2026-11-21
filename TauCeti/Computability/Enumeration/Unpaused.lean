@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Enumeration.Serialization
+public import TauCeti.Computability.RecursiveIn
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -160,6 +161,19 @@ theorem stageLimit_unpausedStage {A : ℕ → Finset α} (hA : Monotone A)
   simp only [mem_stageLimit]
   exact ⟨fun ⟨n, hn⟩ => ⟨cardClock A hA hInf n, hn⟩,
     fun ⟨s, hs⟩ => ⟨(A s).card, by rwa [unpausedStage_card]⟩⟩
+
+/-- The binary code of the fresh entries is computable in any oracles that compute the stage
+codes. -/
+theorem computableIn_equivBitIndices_symm_fresh {ι : Type*} [Primcodable ι] {O : Set (ℕ →. ℕ)}
+    {A : ι → ℕ → Finset ℕ}
+    (hA : ComputableIn₂ O fun i s => Finset.equivBitIndices.symm (A i s)) :
+    ComputableIn₂ O fun i s => Finset.equivBitIndices.symm (fresh (A i) s) := by
+  have hnext := hA.comp (ComputableIn.fst.pair (ComputableIn.succ.comp ComputableIn.snd))
+  refine (Primrec.nat_ldiff.computableIn.comp (hnext.pair hA)).of_eq fun ⟨i, s⟩ => ?_
+  simp only [Part.some_inj, Nat.succ_eq_add_one]
+  apply Finset.equivBitIndices.injective
+  -- The primitive-recursive operation and the decoder lemma use the same bitwise difference.
+  exact (Finset.equivBitIndices_ldiff _ _).trans (by simp [fresh_eq_sdiff])
 
 /-- A family of cardinality tests is computable relative to the stage codes. -/
 private theorem computableIn_cardTest {ι : Type*} [Primcodable ι] {O : Set (ℕ →. ℕ)}
