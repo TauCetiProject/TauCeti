@@ -40,6 +40,8 @@ of the regraded complex is the homology of `K` in degree `n - k`.
   embeddings `k ↦ n - k` between the complex shapes `up ℤ` and `down ℤ`.
 * `ChainComplex.regradeEquivalence`: the equivalence of categories
   `ChainComplex C ℤ ≌ CochainComplex C ℤ` given by `C^k = K_(n-k)` and `d_C = d_K`.
+* `ChainComplex.regradeIsoOfEq`: the regradings by two equal integers `n = n'` are isomorphic,
+  through the identifications `K_(n-k) = K_(n'-k)`.
 * `ChainComplex.regradeHomologyIso`: the homology of the regraded complex in degree `k` is the
   homology of `K` in degree `n - k`, naturally in `K` (`regradeHomologyIso_hom_naturality`), and
   compatibly with the cycles and opcycles of both complexes.
@@ -156,6 +158,41 @@ noncomputable def regradeEquivalence : ChainComplex C ℤ ≌ CochainComplex C �
   (rfl)
 
 variable {C}
+
+/-- For `n = n'`, the regradings of `K` by `n` and by `n'` are isomorphic, through the
+identifications `K_(n-k) = K_(n'-k)`. The two regradings are not definitionally equal when `n` and
+`n'` are only propositionally equal, as for `(n₁ + n₂) + n₃` and `n₁ + (n₂ + n₃)`. -/
+noncomputable def regradeIsoOfEq {n n' : ℤ} (h : n = n') (K : ChainComplex C ℤ) :
+    K.restriction (embeddingUpIntDownIntSub n) ≅ K.restriction (embeddingUpIntDownIntSub n') :=
+  Hom.isoOfComponents (fun k ↦ K.XIsoOfEq (show n - k = n' - k by rw [h]))
+    (fun _ _ _ ↦ (K.XIsoOfEq_hom_comp_d _ _).trans (K.d_comp_XIsoOfEq_hom _ _).symm)
+
+/-- In degree `k`, `regradeIsoOfEq` is the identification `K_(n-k) = K_(n'-k)`. -/
+@[simp] theorem regradeIsoOfEq_hom_f {n n' : ℤ} (h : n = n') (K : ChainComplex C ℤ) (k : ℤ) :
+    (regradeIsoOfEq h K).hom.f k = (K.XIsoOfEq (show n - k = n' - k by rw [h])).hom :=
+  (rfl)
+
+/-- In degree `k`, the inverse of `regradeIsoOfEq` is the identification `K_(n'-k) = K_(n-k)`. -/
+@[simp] theorem regradeIsoOfEq_inv_f {n n' : ℤ} (h : n = n') (K : ChainComplex C ℤ) (k : ℤ) :
+    (regradeIsoOfEq h K).inv.f k = (K.XIsoOfEq (show n - k = n' - k by rw [h])).inv :=
+  (rfl)
+
+/-- Regrading along `n = n` is the identity. -/
+@[simp] theorem regradeIsoOfEq_refl (K : ChainComplex C ℤ) :
+    regradeIsoOfEq (rfl : n = n) K = Iso.refl _ := by
+  ext k
+  simp only [regradeIsoOfEq_hom_f, XIsoOfEq_rfl, Iso.refl_hom, id_f]
+  -- The regraded object `(K.restriction _).X k` is `K.X (n - k)` by definition of the restriction.
+  rfl
+
+/-- `regradeIsoOfEq` is natural in the chain complex. -/
+@[reassoc]
+theorem regradeIsoOfEq_hom_naturality {n n' : ℤ} (h : n = n') {K L : ChainComplex C ℤ}
+    (φ : K ⟶ L) :
+    restrictionMap φ (embeddingUpIntDownIntSub n) ≫ (regradeIsoOfEq h L).hom =
+      (regradeIsoOfEq h K).hom ≫ restrictionMap φ (embeddingUpIntDownIntSub n') := by
+  ext k
+  exact XIsoOfEq_hom_naturality φ (show n - k = n' - k by rw [h])
 
 instance (K : ChainComplex C ℤ) (k : ℤ) [K.HasHomology (n - k)] :
     (K.restriction (embeddingUpIntDownIntSub n)).HasHomology k :=
