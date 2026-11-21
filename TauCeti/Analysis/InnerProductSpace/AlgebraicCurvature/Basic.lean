@@ -65,8 +65,7 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.pullbackAlgebraicCurvature` and
-  `TauCeti.FourTensor.algebraicCurvatureSubmoduleCongr`: functorial pullback and equivalence on
+* `TauCeti.FourTensor.pullbackAlgebraicCurvature`: functorial continuous linear pullback on
   submodules of algebraic curvature tensors.
 * `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
   `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
@@ -378,38 +377,13 @@ theorem pullbackAlgebraicCurvature_injective (f : W →L[ℝ] V) (hf : DenseRang
         ContinuousMultilinearMap.compContinuousLinearMap_apply] using
         congr($(congrArg Subtype.val hrq) m)
 
-/-- A continuous linear equivalence `e : V ≃L[ℝ] W` induces a continuous linear equivalence on
-submodules of algebraic curvature tensors by pulling back along `e.symm`. -/
-def algebraicCurvatureSubmoduleCongr (e : V ≃L[ℝ] W) :
-    algebraicCurvatureSubmodule V ≃L[ℝ] algebraicCurvatureSubmodule W :=
-  ContinuousLinearEquiv.ofContinuousLinearMap
-    (pullbackAlgebraicCurvature (e.symm : W →L[ℝ] V)) (pullbackAlgebraicCurvature (e : V →L[ℝ] W))
-    (by rw [← pullbackAlgebraicCurvature_comp]; ext; simp)
-    (by rw [← pullbackAlgebraicCurvature_comp]; ext; simp)
-
-/-- Applying `algebraicCurvatureSubmoduleCongr e` pulls back along `e.symm`. -/
-@[simp]
-theorem coe_algebraicCurvatureSubmoduleCongr_apply (e : V ≃L[ℝ] W)
-    (r : algebraicCurvatureSubmodule V) :
-    (algebraicCurvatureSubmoduleCongr e r : FourTensor W) =
-      r.val.compContinuousLinearMap fun _ ↦ (e.symm : W →L[ℝ] V) := (rfl)
-
-/-- The inverse of `algebraicCurvatureSubmoduleCongr e` is
-`algebraicCurvatureSubmoduleCongr e.symm`. -/
-@[simp]
-theorem algebraicCurvatureSubmoduleCongr_symm (e : V ≃L[ℝ] W) :
-    (algebraicCurvatureSubmoduleCongr e).symm = algebraicCurvatureSubmoduleCongr e.symm := by
-  ext; simp [algebraicCurvatureSubmoduleCongr]
-
 /-- Pullback of algebraic curvature tensors along `e : W ≃ₗᵢ[ℝ] V` as a `LinearIsometryEquiv`. -/
 def algebraicCurvatureLinearIsometryEquiv (e : W ≃ₗᵢ[ℝ] V) :
     algebraicCurvatureSubmodule V ≃ₗᵢ[ℝ] algebraicCurvatureSubmodule W where
-  toFun r := ⟨r.val.compContinuousLinearMap fun _ ↦ (e : W →L[ℝ] V),
-    compContinuousLinearMap_mem_algebraicCurvatureSubmodule r.property (e : W →L[ℝ] V)⟩
-  map_add' _ _ := by ext; rfl
-  map_smul' _ _ := by ext; rfl
-  invFun q := ⟨q.val.compContinuousLinearMap fun _ ↦ (e.symm : V →L[ℝ] W),
-    compContinuousLinearMap_mem_algebraicCurvatureSubmodule q.property (e.symm : V →L[ℝ] W)⟩
+  toFun := pullbackAlgebraicCurvature (e : W →L[ℝ] V)
+  map_add' := map_add _
+  map_smul' := map_smul _
+  invFun := pullbackAlgebraicCurvature (e.symm : V →L[ℝ] W)
   left_inv _ := by ext; simp
   right_inv _ := by ext; simp
   norm_map' r := r.val.norm_compContinuous_linearIsometryEquiv fun _ ↦ e
