@@ -138,16 +138,17 @@ theorem surjOn {N : Type*} [AddCommGroup N] [Module R N] {G : ℕ → Submodule 
   intro y hy
   -- Correct `y` one filtration step at a time: `x n` satisfies `y - f (x n) ∈ G n`.
   let x : (n : ℕ) → {x : M // y - f x ∈ G n} := fun n ↦ Nat.rec ⟨0, by simpa using hy⟩
-    (fun n xn ↦ ⟨xn.1 + (h n _ xn.2).choose, by
+    (fun n xn ↦ ⟨xn.val + (h n _ xn.property).choose, by
       rw [map_add, ← sub_sub]
-      exact (h n _ xn.2).choose_spec.2⟩) n
-  have hx (n : ℕ) : (x (n + 1)).1 - (x n).1 = (h n _ (x n).2).choose := add_sub_cancel_left _ _
-  obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (x n).1) fun n ↦ by
+      exact (h n _ xn.property).choose_spec.2⟩) n
+  have hx (n : ℕ) : (x (n + 1)).val - (x n).val = (h n _ (x n).property).choose
+      := add_sub_cancel_left _ _
+  obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (x n).val) fun n ↦ by
     rw [hx]
-    exact (h n _ (x n).2).choose_spec.1
+    exact (h n _ (x n).property).choose_spec.1
   refine ⟨L, by simpa [x] using hL 0, (sub_eq_zero.1 (hG _ fun n ↦ ?_)).symm⟩
-  rw [← sub_sub_sub_cancel_right y (f L) (f (x n).1), ← map_sub]
-  exact sub_mem (x n).2 (hf n ⟨_, hL n, rfl⟩)
+  rw [← sub_sub_sub_cancel_right y (f L) (f (x n).val), ← map_sub]
+  exact sub_mem (x n).property (hf n ⟨_, hL n, rfl⟩)
 
 end IsCompleteFiltration
 

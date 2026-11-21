@@ -32,6 +32,9 @@ need not be unitriangular, and blocks may have arbitrary multiplicities. The res
 down-closed set of block indices, including the empty set, before specializing to all initial
 segments. In particular, it applies to weight-space blocks of arbitrary dimensions.
 
+A matrix on a finite index type is indecomposable exactly when its transpose is, because reversing
+a chain of nonzero entries of one gives a chain of nonzero entries of the other.
+
 ## Main results
 
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
@@ -51,6 +54,7 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
   is unchanged by invertible triangular outer factors.
 * `Matrix.forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff`: preservation of the test on
   every leading block.
+* `Matrix.isIndecomposable_transpose`: a matrix is indecomposable exactly when its transpose is.
 
 ## References
 
@@ -124,6 +128,20 @@ public theorem _root_.IsUnit.det_map_toSquareBlockProp {m R S : Type*} [Fintype 
   rw [map_toSquareBlockProp, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
   exact h.map f
 
+/-! ### Indecomposability -/
+
+/-- A matrix on a finite index type is indecomposable exactly when its transpose is. -/
+@[simp]
+public theorem isIndecomposable_transpose {m R : Type*} [Finite m] [Zero R] {M : Matrix m m R} :
+    Mᵀ.IsIndecomposable ↔ M.IsIndecomposable := by
+  simp_rw [isIndecomposable_iff_reflTransGen, transpose_apply]
+  exact ⟨fun h i j ↦ (h j i).swap, fun h i j ↦ (h j i).swap⟩
+
+/-- The transpose of an indecomposable matrix on a finite index type is indecomposable. -/
+public protected theorem IsIndecomposable.transpose {m R : Type*} [Finite m] [Zero R]
+    {M : Matrix m m R} (hM : M.IsIndecomposable) : Mᵀ.IsIndecomposable :=
+  isIndecomposable_transpose.2 hM
+
 /-! ### Leading blocks -/
 
 section LeadingBlocks
@@ -141,7 +159,7 @@ public theorem BlockTriangular.toSquareBlockProp_mul_of_toDual [NonUnitalNonAsso
   simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => A i k * B k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => A i k * B k j) fun k => ?_, add_zero]
-  have hik : b i < b k := lt_of_not_ge fun h => k.2 (hp h i.2)
+  have hik : b i < b k := lt_of_not_ge fun h => k.property (hp h i.property)
   rw [hA (toDual_lt_toDual.mpr hik), zero_mul]
 
 /-- **Leading blocks of a product with a block upper triangular right factor.** If `A` is block
@@ -155,7 +173,7 @@ public theorem BlockTriangular.toSquareBlockProp_mul [NonUnitalNonAssocSemiring 
   simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
-  rw [hA (lt_of_not_ge fun h => k.2 (hp h j.2)), mul_zero]
+  rw [hA (lt_of_not_ge fun h => k.property (hp h j.property)), mul_zero]
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/
@@ -166,7 +184,7 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   · simp
   obtain ⟨k, hk⟩ := Finite.exists_max fun j : {j // b j < b i} => b j
   rw [equiv_block_det M (q := fun j => b j ≤ b k) fun j =>
-    ⟨fun hj => hj.trans_lt k.2, fun hj => hk ⟨j, hj⟩⟩]
+    ⟨fun hj => hj.trans_lt k.property, fun hj => hk ⟨j, hj⟩⟩]
   exact hM k
 
 variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]

@@ -47,10 +47,10 @@ theorem trace_restrict_add_trace_restrict_eq_trace_add_trace_restrict_inf
     intro x
     constructor
     · intro hx
-      refine ⟨⟨x.1, x.1.2, ?_⟩, ?_⟩
+      refine ⟨⟨x.1, x.1.property, ?_⟩, ?_⟩
       · have h : (x.1 : V) = -(x.2 : V) := eq_neg_of_add_eq_zero_left hx
         rw [h]
-        exact B.neg_mem x.2.2
+        exact B.neg_mem x.2.property
       · apply Prod.ext
         · rfl
         · exact Subtype.ext (neg_eq_of_add_eq_zero_right hx)

@@ -158,7 +158,7 @@ theorem hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompacts μ]
   set G : Ω → E := fun x => (lam.rnDeriv ν x).toReal • polarDensity μ Ω u x with hG
   set g : E → E := Function.extend (↑) G 0
   have hg (x : Ω) : g x = G x := Subtype.val_injective.extend_apply G 0 x
-  have hgm : Measurable g := (MeasurableEmbedding.subtype_coe hΩ).measurable_extend
+  have hgm : Measurable g := (MeasurableEmbedding.subtypeVal hΩ).measurable_extend
     ((Measure.measurable_rnDeriv _ _).ennreal_toReal.smul measurable_polarDensity)
     measurable_const
   -- `∫_K ‖g‖ dμ ≤ |Du|(K) < ∞` for compact `K ⊆ Ω`.

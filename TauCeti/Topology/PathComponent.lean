@@ -28,7 +28,8 @@ gives local path connectedness of the subspace.
 * `Homeomorph.joined_iff` and `Homeomorph.zerothHomotopyCongr`: a homeomorphism preserves and
   reflects being joined by a path, so it induces a bijection of path components.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
-  `TauCeti.PathComponentBasepoints.choose` giving one.
+  `TauCeti.PathComponentBasepoints.choose` giving one. Each chosen basepoint is joined to the
+  points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
 -/
 
 public section
@@ -44,12 +45,12 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 homotopic in the path component. -/
 theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
     {a b : pathComponent x₀} {γ δ : Path a b}
-    (h : (γ.map continuous_subtype_val).Homotopic
-      (δ.map continuous_subtype_val)) :
+    (h : (γ.map continuous_subtypeVal).Homotopic
+      (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hγmem : ∀ t, (γ.map continuous_subtype_val) t ∈ pathComponent x₀ := fun t =>
-    (γ t).2
+  have hγmem : ∀ t, (γ.map continuous_subtypeVal) t ∈ pathComponent x₀ := fun t =>
+    (γ t).property
   have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
     Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)
@@ -132,5 +133,17 @@ noncomputable def PathComponentBasepoints.choose (X : Type*) [TopologicalSpace X
 
 instance (X : Type*) [TopologicalSpace X] : Nonempty (PathComponentBasepoints X) :=
   ⟨PathComponentBasepoints.choose X⟩
+
+/-- The chosen basepoint of the path component of `x` is joined to `x`. -/
+theorem PathComponentBasepoints.joined_point_mk (β : PathComponentBasepoints X) (x : X) :
+    Joined (β.point (ZerothHomotopy.mk x)) x :=
+  Quotient.exact (β.mk_point (ZerothHomotopy.mk x))
+
+/-- A continuous map `f` sends the chosen basepoint of the path component of `y` into the path
+component of `f y`. -/
+theorem PathComponentBasepoints.mk_apply_point_mk {Y : Type*} [TopologicalSpace Y]
+    (β : PathComponentBasepoints Y) {f : Y → X} (hf : Continuous f) (y : Y) :
+    ZerothHomotopy.mk (f (β.point (ZerothHomotopy.mk y))) = ZerothHomotopy.mk (f y) :=
+  Quotient.sound ((β.joined_point_mk y).map hf)
 
 end TauCeti

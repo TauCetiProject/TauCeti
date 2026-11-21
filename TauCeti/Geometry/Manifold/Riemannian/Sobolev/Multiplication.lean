@@ -179,13 +179,13 @@ theorem mulLeft_mul (u₁ u₂ : C^∞⟮I, M; ℝ⟯) :
 multiplication by `u⁻¹`. -/
 def mulLeftEquiv (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) : SobolevH1 I M ≃L[ℝ] SobolevH1 I M :=
   let uInv : C^∞⟮I, M; ℝ⟯ := ⟨fun x ↦ (u x)⁻¹, u.contMDiff.inv₀ hu⟩
-  ContinuousLinearEquiv.equivOfInverse (mulLeft u) (mulLeft uInv)
-    (fun w ↦ by
-      have hmul : uInv * u = 1 := ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
-    (fun w ↦ by
+  ContinuousLinearEquiv.ofContinuousLinearMap (mulLeft u) (mulLeft uInv)
+    (ContinuousLinearMap.ext fun w ↦ by
       have hmul : u * uInv = 1 := ContMDiffMap.ext fun x ↦ mul_inv_cancel₀ (hu x)
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
+      simp [← mulLeft_mul, hmul])
+    (ContinuousLinearMap.ext fun w ↦ by
+      have hmul : uInv * u = 1 := ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)
+      simp [← mulLeft_mul, hmul])
 
 @[simp]
 theorem mulLeftEquiv_apply (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) (w : SobolevH1 I M) :
@@ -372,17 +372,19 @@ def congrRescale
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
     SobolevH1 I (WithMetric (g.rescale f hf hf_pos)) ≃L[ℝ] SobolevH1 I (WithMetric g) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear g (g.rescale f hf hf_pos)))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_le g hf hf_pos))
     (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear (g.rescale f hf hf_pos) g))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le g hf hf_pos))
-    (fun w ↦ by
-      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
+    (ContinuousLinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
       rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
-    (fun w ↦ by
-      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
+    (ContinuousLinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
       rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
 
@@ -448,7 +450,7 @@ theorem toLp_congrRescale_ae_eq
   have hι : Measurable ι :=
     (WithMetric.continuous_toWithMetric.comp WithMetric.continuous_ofWithMetric).measurable
   obtain ⟨C, hC, hmap⟩ := exists_map_riemannianVolume_le_smul_rescale g hf hf_pos
-  let L := Lp.compOfMapLeSmul (E := ℝ) (p := 2) ℝ hι hC hmap
+  let L := Lp.compOfMapLeSmul (E := ℝ) (p := 2) ℝ hι.aemeasurable hC hmap
   have heq : toLp (congrRescale g hf hf_pos w) = L (toLp w) := by
     refine induction_on w (isClosed_eq (toLp.continuous.comp (congrRescale g hf hf_pos).continuous)
       (L.continuous.comp toLp.continuous)) fun u ↦ ?_
@@ -457,13 +459,13 @@ theorem toLp_congrRescale_ae_eq
     filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I (WithMetric g))
         ((u.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap :
           C^∞⟮I, WithMetric g; ℝ⟯) : C(WithMetric g, ℝ)),
-      Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι hC hmap
+      Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι.aemeasurable hC hmap
         (ContinuousMap.toLp 2 (riemannianVolume I (WithMetric ĝ)) ℝ (u : C(WithMetric ĝ, ℝ))),
-      (QuasiMeasurePreserving.of_map_le_smul hι hmap).ae_eq_comp
+      (QuasiMeasurePreserving.of_map_le_smul hι.aemeasurable hmap).ae_eq_comp
         (ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I (WithMetric ĝ))
           (u : C(WithMetric ĝ, ℝ)))] with x h1 h2 h3
     rw [h1, h2, h3]; simp [ι]
-  exact heq ▸ Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι hC hmap (toLp w)
+  exact heq ▸ Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι.aemeasurable hC hmap (toLp w)
 
 end Rescale
 

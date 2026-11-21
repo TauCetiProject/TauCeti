@@ -28,10 +28,13 @@ Clifford scalar-trace and tensor-metric comparisons yields basis-free metric ide
   `2 ^ (-dim V / 2) * tr(A† B)` on `End_ℂ S` pulls back along `ρ.cliffordFormsEquivEnd` to
   `(ExteriorAlgebra.gramForm V).sesqComplexification`.
 * `AlgEquiv.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange`: on
-  complexified homogeneous `k`-forms this recovers `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`.
+  complexified homogeneous `k`-forms this recovers `(innerₗ (⋀[ℝ]^k V)).sesqComplexification`,
+  and `AlgEquiv.trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange_mul_eq_zero_of_ne`:
+  distinct degrees are Hilbert–Schmidt orthogonal.
 * `AlgEquiv.tensorDualMetric_cliffordFormsEquivTensor`,
   `AlgEquiv.tensorDualMetric_cliffordFormsEquivTensor_subtype_baseChange`, and
-  `AlgEquiv.sesqComplexification_gramForm_cliffordFormsEquivTensor_symm`: the ordinary spinor
+  `AlgEquiv.sesqComplexification_gramForm_cliffordFormsEquivTensor_symm`, and
+  `AlgEquiv.sesqComplexification_gramForm_cliffordFormsEquivTensor_symm_tmul`: the ordinary spinor
   tensor metric `InnerProductSpace.tensorDualMetric ℂ S S` on `S ⊗[ℂ] Dual ℂ S` equals
   `2 ^ (dim V / 2)` times the complexified exterior Gram metric (and `2 ^ (dim V / 2)` times the
   complexified `k`-form inner product on each homogeneous degree).
@@ -93,6 +96,16 @@ theorem inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange {
   rw [ρ.inv_two_pow_mul_trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
     ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange]
 
+/-- **Distinct exterior degrees are Hilbert–Schmidt orthogonal** under
+`ρ.cliffordFormsEquivEnd`. -/
+theorem trace_adjoint_cliffordFormsEquivEnd_subtype_baseChange_mul_eq_zero_of_ne
+    {k l : ℕ} (hkl : k ≠ l) (x : ℂ ⊗[ℝ] ⋀[ℝ]^k V) (y : ℂ ⊗[ℝ] ⋀[ℝ]^l V) :
+    LinearMap.trace ℂ S
+        ((ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x)).adjoint *
+          ρ.cliffordFormsEquivEnd ((⋀[ℝ]^l V).subtype.baseChange ℂ y)) = 0 := by
+  rw [ρ.trace_adjoint_cliffordFormsEquivEnd_mul hQ hρ,
+    ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange_eq_zero hkl x y, mul_zero]
+
 /-- **Spinor tensor metric comparison**: under `ρ.cliffordFormsEquivTensor`, the ordinary tensor
 metric `tensorDualMetric ℂ S S` on `S ⊗[ℂ] Dual ℂ S` is `2 ^ (dim V / 2)` times
 `(ExteriorAlgebra.gramForm V).sesqComplexification`. -/
@@ -130,5 +143,16 @@ theorem sesqComplexification_gramForm_cliffordFormsEquivTensor_symm
     (ρ.cliffordFormsEquivTensor.symm u) (ρ.cliffordFormsEquivTensor.symm v)
   rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply] at h
   rw [h, inv_mul_cancel_left₀ (pow_ne_zero _ two_ne_zero)]
+
+/-- **The inverse spinor tensor metric comparison on pure tensors**: the complexified exterior
+Gram pairing of the forms of `s₁ ⊗ₜ φ₁` and `s₂ ⊗ₜ φ₂` is `2 ^ (-dim V / 2)` times
+`⟪s₁, s₂⟫ * dualMetric ℂ S φ₁ φ₂`. -/
+theorem sesqComplexification_gramForm_cliffordFormsEquivTensor_symm_tmul
+    (s₁ s₂ : S) (φ₁ φ₂ : Dual ℂ S) :
+    LinearMap.BilinForm.sesqComplexification (ExteriorAlgebra.gramForm V)
+        (ρ.cliffordFormsEquivTensor.symm (s₁ ⊗ₜ φ₁))
+        (ρ.cliffordFormsEquivTensor.symm (s₂ ⊗ₜ φ₂)) =
+      (2 ^ (finrank ℝ V / 2) : ℂ)⁻¹ * (inner ℂ s₁ s₂ * dualMetric ℂ S φ₁ φ₂) := by
+  rw [ρ.sesqComplexification_gramForm_cliffordFormsEquivTensor_symm hQ hρ, tensorDualMetric_tmul]
 
 end AlgEquiv

@@ -63,7 +63,7 @@ def boundary (l : OrientationLift (𝓡∂ (n + 1)) M (Fin (n + 1))) :
     compatible := ?_ }
   · intro α
     exact (l.locallyConstant_sign (α : M)).comp_continuous
-      ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _)
+      ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _)
   · intro α β x hα hβ
     have hα' : (x : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) (α : M)).source := by
       simpa only [boundaryChartedSpace_chartAt_source, mem_preimage] using hα
