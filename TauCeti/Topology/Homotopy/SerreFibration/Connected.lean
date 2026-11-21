@@ -26,9 +26,11 @@ points at which to evaluate homotopy groups.
 Dually, over an `n`-connected base the fibre is `n`-connected in the total space: if `π_k(B, b)` is
 trivial for every `k ≤ n` (for `k = 0` this says that `B` is path-connected), then the inclusion
 of the fibre `p⁻¹(b) → E` is an `n`-connected map
-(`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In the opposite range, where the
-base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are
-trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
+(`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In particular, over a weakly
+contractible base the fibre inclusion is a weak homotopy equivalence
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`). In the opposite range,
+where the base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and
+`π_{k+2}(B, b)` are trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
 (`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
 
 ## Implementation notes
@@ -53,6 +55,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   weak homotopy equivalence exactly when its fibres are nonempty and weakly contractible.
 * `TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`: over an `n`-connected base, the
   inclusion of a fibre is `n`-connected.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`: over a weakly
+  contractible base, the fibre inclusion is a weak homotopy equivalence.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
   groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
 
@@ -272,5 +276,13 @@ theorem bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations (hp : serreFib
   rw [Subsingleton.elim a ⟦GenLoop.const⟧, fibrationBoundary_const, HomotopyGroup.mk_const_eq_one]
 
 end FiberInclusion
+
+/-- **The fibre of a Serre fibration over a weakly contractible base is weakly homotopy equivalent
+to the total space.** If `π_k(B, b)` is trivial for every `k : ℕ`, then the inclusion
+`p⁻¹(b) → E` is a weak homotopy equivalence. -/
+theorem isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {b : B}
+    (hB : ∀ k, Subsingleton (π_ k B b)) : (p.fiberι b).hom.IsWeakHomotopyEquivalence :=
+  ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
+    isNConnected_fiberι_of_mem_serreFibrations hp fun k _ ↦ hB k
 
 end TauCeti.TopCat

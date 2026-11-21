@@ -110,7 +110,8 @@ isomorphisms on singular homology with coefficients in any module. -/
 theorem isIso_singularHomologyMap_pullbackFiberι [ContractibleSpace K]
     (g : K ⟶ B) {k : K} {b : B} (h : g k = b) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map (p.pullbackFiberι g h)) :=
-  (isWeakHomotopyEquivalence_pullbackFiberι hp g h).isIso_singularHomologyMap M n
+  (isWeakHomotopyEquivalence_pullbackFiberι hp g h fun _ ↦ inferInstance).isIso_singularHomologyMap
+    M n
 
 /-- **Transport on homology over a contractible parameter space.** For a Serre fibration `p`, a map
 `g : K ⟶ B` from a contractible space and points `k₀, k₁` of `K` over `b₀, b₁`, the map
