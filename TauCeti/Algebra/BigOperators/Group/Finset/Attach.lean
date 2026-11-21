@@ -31,7 +31,7 @@ the sum over `s.attach`, for a summand depending on the membership proof. -/]
 theorem prod_attach_insert {s : Finset ι} {a : ι} (ha : a ∉ s)
     (f : {x // x ∈ insert a s} → M) :
     ∏ x ∈ (insert a s).attach, f x = f ⟨a, mem_insert_self a s⟩ *
-      ∏ x ∈ s.attach, f ⟨x.1, mem_insert_of_mem x.2⟩ := by
+      ∏ x ∈ s.attach, f ⟨x.val, mem_insert_of_mem x.property⟩ := by
   rw [attach_insert, prod_insert (by simpa using ha), prod_image]
   intro x _ y _ h
   exact Subtype.ext (by simpa using congrArg Subtype.val h)
@@ -44,7 +44,7 @@ proof. -/]
 theorem prod_attach_eq_of_eq_insert {s t : Finset ι} {q : ι} (hq : q ∉ t) (hs : s = insert q t)
     (f : {x // x ∈ s} → M) :
     ∏ x ∈ s.attach, f x = f ⟨q, hs ▸ mem_insert_self q t⟩ *
-      ∏ x ∈ t.attach, f ⟨x.1, hs ▸ mem_insert_of_mem x.2⟩ := by
+      ∏ x ∈ t.attach, f ⟨x.val, hs ▸ mem_insert_of_mem x.property⟩ := by
   subst hs
   exact prod_attach_insert hq f
 

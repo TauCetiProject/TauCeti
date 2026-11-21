@@ -272,14 +272,14 @@ noncomputable def nestedDiscPoint : closedPolydisc 1 K :=
 
 /-- The underlying point in `Spv K⟨T⟩` is defined by the valuation of the discs. -/
 theorem nestedDiscPoint_val :
-    (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).1 =
+    (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).val =
       ofValuation (nestedDiscValuation a ha c hc₀ hc₁ hac hcc) :=
   (rfl)
 
 /-- The point compares two series by the valuation of the discs. -/
 @[simp]
 theorem nestedDiscPoint_vle_iff (f g : 𝒯 K) :
-    (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).1.toValuativeRel.vle f g ↔
+    (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).val.toValuativeRel.vle f g ↔
       nestedDiscValuation a ha c hc₀ hc₁ hac hcc f ≤ nestedDiscValuation a ha c hc₀ hc₁ hac hcc g :=
   by rw [nestedDiscPoint_val, vle_ofValuation]
 
@@ -288,8 +288,8 @@ theorem nestedDiscPoint_vle_iff (f g : 𝒯 K) :
 theorem nestedDiscPoint_mem_closedSubdisc_iff (b d : K) :
     nestedDiscPoint a ha c hc₀ hc₁ hac hcc ∈ closedSubdisc b d ↔
       ⨅ n, max ‖c n‖ ‖a n - b‖ ≤ ‖d‖ ∧ d ≠ 0 := by
-  rw [mem_closedSubdisc, nestedDiscPoint_vle_iff, nestedDiscPoint_vle_iff, map_zero, le_zero_iff,
-    nestedDiscValuation_weightedC, nnNorm_eq_zero, ← NNReal.coe_le_coe,
+  rw [mem_closedSubdisc, nestedDiscPoint_vle_iff, nestedDiscPoint_vle_iff, map_zero,
+    nonpos_iff_eq_zero, nestedDiscValuation_weightedC, nnNorm_eq_zero, ← NNReal.coe_le_coe,
     coe_nestedDiscValuation_weightedX_sub_weightedC, coe_nnNorm]
 
 /-- **The point lies in every disc `D(aₙ, |cₙ|)` of the sequence.** -/
@@ -458,7 +458,7 @@ theorem exists_forall_ne_classicalPoint_discPoint_discPointAbove_discPointBelow 
 `D(aₙ, |cₙ|)` avoids `a`, then `η(T - aₙ) ≤ ‖cₙ‖ < ‖aₙ - a‖ = η(T - a)`. -/
 theorem not_exists_forall_nestedDiscPoint_vle (hempty : ∀ b : K, ∃ n, ‖c n‖ < ‖b - a n‖) :
     ¬ ∃ a₀ : K, ∀ b : K,
-      (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).1.toValuativeRel.vle (T - C a₀) (T - C b) := by
+      (nestedDiscPoint a ha c hc₀ hc₁ hac hcc).val.toValuativeRel.vle (T - C a₀) (T - C b) := by
   rintro ⟨a₀, hmin⟩
   obtain ⟨n, hn⟩ := hempty a₀
   have hmem := nestedDiscPoint_mem_closedSubdisc a ha c hc₀ hc₁ hac hcc n

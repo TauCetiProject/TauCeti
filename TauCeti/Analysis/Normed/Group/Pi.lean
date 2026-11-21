@@ -8,16 +8,23 @@ module
 public import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
-# Norms on a finite product
+# The norm on a finite product
 
-The norm on a finite product of seminormed groups is the maximum of the coordinate norms, so for
-every positive exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the
-coordinate norms (`Pi.norm_pow_le_sum_norm_pow`), and replacing a coordinate of a point of the
-closed ball of radius `R` about `0` by an element of norm at most `R` stays in that ball
-(`Pi.norm_update_le`).
+The norm on a nonempty finite product of seminormed groups is the maximum of the coordinate norms,
+so it is attained at some coordinate (`Pi.exists_norm_apply_eq_norm`). Hence for every positive
+exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the coordinate norms
+(`Pi.norm_pow_le_sum_norm_pow`). Replacing a coordinate of a point of the closed ball of radius `R`
+about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_le`).
 -/
 
 public section
+
+/-- The norm on a nonempty finite product of seminormed groups is attained at some coordinate. -/
+theorem Pi.exists_norm_apply_eq_norm {ι : Type*} [Fintype ι] [Nonempty ι] {E : ι → Type*}
+    [∀ i, SeminormedAddGroup (E i)] (f : ∀ i, E i) : ∃ i, ‖f i‖ = ‖f‖ := by
+  obtain ⟨i, -, hi⟩ :=
+    Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖f i‖₊
+  exact ⟨i, by rw [Pi.norm_def, hi, coe_nnNorm]⟩
 
 /-- The `n`-th power of the norm on a finite product is at most the sum of the `n`-th powers of
 the coordinate norms, for every positive exponent `n`. -/
@@ -26,10 +33,8 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
     ‖f‖ ^ n ≤ ∑ i, ‖f i‖ ^ n := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · simp [Subsingleton.elim f 0, hn]
-  obtain ⟨i, -, hi⟩ :=
-    Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖f i‖₊
-  have hf : ‖f‖ = ‖f i‖ := by rw [← coe_nnNorm, Pi.nnNorm_def, hi, coe_nnNorm]
-  rw [hf]
+  obtain ⟨i, hi⟩ := Pi.exists_norm_apply_eq_norm f
+  rw [← hi]
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
 

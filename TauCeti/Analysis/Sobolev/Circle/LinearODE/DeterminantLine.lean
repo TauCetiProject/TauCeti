@@ -125,7 +125,7 @@ private theorem exists_toContinuousMap_eq (w : twistedContDiff E T 1) :
           ofContinuousMap T (twistedContinuousOneEquiv E T ⟨_, deriv_mem_twistedContinuous w⟩) :=
   exists_toContinuousMap_eq_and_derivative_eq T _ _ fun x ↦ by
     simp only [twistedContinuousOneEquiv_apply, Submodule.coe_inclusion]
-    exact ((mem_twistedContDiff.1 w.2).1.differentiable one_ne_zero x).hasDerivAt
+    exact ((mem_twistedContDiff.1 w.property).1.differentiable one_ne_zero x).hasDerivAt
 
 variable (E) in
 /-- A `C¹` periodic map, as an element of `H¹(E)`. -/
@@ -233,7 +233,7 @@ def kerLoopOperatorEquiv :
 @[simp]
 theorem coe_kerLoopOperatorEquiv_apply
     (a : ker (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E)) :
-    (kerLoopOperatorEquiv T S a : E) = toContinuousMap T (by norm_num) a.1 0 := by
+    (kerLoopOperatorEquiv T S a : E) = toContinuousMap T (by norm_num) a.val 0 := by
   obtain ⟨b, rfl⟩ := (LinearMap.kerEquivOfRegular (toH0_comp_twistedLinearOperator T S)
     (toH1_injective T) (toH0_injective T) (mem_range_toH1 T S)).surjective a
   have h0 (f : twistedContinuous E T 1) : twistedContinuousOneEquiv E T f 0 = (f : ℝ → E) 0 := by
@@ -245,13 +245,13 @@ whose continuous representative is the solution `t ↦ Ψ(t) x` of `w' = S w`. -
 @[simp]
 theorem toContinuousMap_kerLoopOperatorEquiv_symm_apply
     (x : ker (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E))) (t : ℝ) :
-    toContinuousMap T (by norm_num) ((kerLoopOperatorEquiv T S).symm x).1 t =
+    toContinuousMap T (by norm_num) ((kerLoopOperatorEquiv T S).symm x).val t =
       dysonSeriesLeft (fun t : ℝ ↦ S t) t x := by
   set a := (kerLoopOperatorEquiv T S).symm x
-  have h0 : toContinuousMap T (by norm_num) a.1 0 = x := by
+  have h0 : toContinuousMap T (by norm_num) a.val 0 = x := by
     rw [← coe_kerLoopOperatorEquiv_apply, LinearEquiv.apply_symm_apply]
   rw [eq_dysonSeriesLeft_apply (AddCircle.continuous_comp_coe S)
-    ((loopOperator_eq_zero_iff T S a.1).1 a.2) t]
+    ((loopOperator_eq_zero_iff T S a.val).1 a.property) t]
   exact congrArg _ h0
 
 /-- **The cokernel of `L_S` is the cokernel of `1 - Ψ(T)`.** The endpoint map

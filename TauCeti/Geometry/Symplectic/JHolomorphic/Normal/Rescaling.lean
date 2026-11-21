@@ -61,6 +61,10 @@ tubular map defined on a disk bundle. This file proves:
   `δ_a^* J` through Hadamard's lemma as a field depending smoothly on `(a, z, W)` jointly,
   including `a = 0`, where its value is `J_N`. These statements take `N` complete, so that the
   average in Hadamard's lemma is a Bochner integral;
+* the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
+  (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
+  zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
+  section (`TauCeti.tendstoUniformlyOn_fst_comp_normalDilation_comp_inl`);
 * `J_N(z, W)` squares to `-1` when `J` squares to `-1` near `(z, 0)` and `J(z, 0)` preserves
   `E × {0}`
   (`TauCeti.normalLinearization_apply_normalLinearization_apply`); `J_N` is `Cᵐ` near `(z, W)`
@@ -303,6 +307,38 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
     rw [Prod.snd_add, hsplit (J' (v.1, 0))] at h
     rw [hadd, Prod.snd_add, ← hsplit (J x (0, v.2)), ← hA, ← add_assoc, h]
     simp [hJx]
+
+/-! ### The base block of the normal dilation -/
+
+/-- The base block of the normal dilation of `J` at `p` is the base block of `J` at the dilated
+point `(p.1, a p.2)`: the dilation only rescales the normal directions. -/
+theorem fst_comp_normalDilation_comp_inl (J : E × N → E × N →L[ℝ] E × N) (a : ℝ) (p : E × N) :
+    ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L ContinuousLinearMap.inl ℝ E N =
+      ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L ContinuousLinearMap.inl ℝ E N := by
+  ext v
+  simp
+
+/-- **The base blocks of the normal dilations converge to that of the zero section.** If `J` is
+continuous along the zero section over a compact set `K`, the base blocks of `δ_a^* J` converge to
+the base block of `J` on the zero section, uniformly on `K`, as `a → 0`. -/
+theorem tendstoUniformlyOn_fst_comp_normalDilation_comp_inl {J : E × N → E × N →L[ℝ] E × N}
+    {K : Set (E × N)} (hK : IsCompact K) (hJ : ∀ p ∈ K, ContinuousAt J (p.1, 0)) :
+    TendstoUniformlyOn
+      (fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L
+        ContinuousLinearMap.inl ℝ E N)
+      (fun p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, 0) ∘L ContinuousLinearMap.inl ℝ E N)
+      (𝓝 0) K := by
+  simp only [fst_comp_normalDilation_comp_inl]
+  have h := hK.tendstoUniformlyOn_of_continuousAt (q := (0 : ℝ))
+    (Φ := fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L
+      ContinuousLinearMap.inl ℝ E N) fun p hp ↦ by
+    have hd : ContinuousAt (fun q : ℝ × (E × N) ↦ (q.2.1, q.1 • q.2.2)) (0, p) :=
+      (continuous_snd.fst.prodMk (continuous_fst.smul continuous_snd.snd)).continuousAt
+    have hJd : ContinuousAt (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (0, p) := by
+      refine ContinuousAt.comp (g := J) ?_ hd
+      simpa using hJ p hp
+    exact continuousAt_const.clm_comp (hJd.clm_comp continuousAt_const)
+  simpa using h
 
 /-! ### Regularity -/
 

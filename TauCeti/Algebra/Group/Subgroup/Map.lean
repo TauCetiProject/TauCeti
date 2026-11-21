@@ -38,11 +38,11 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   distinguishes it from Mathlib's `QuotientGroup.congr`.
 * `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`: a homomorphism `ψ : G →* H` meeting every
   coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`.
+* `TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection
+  whose kernel lies in the subgroup.
 
 ## Main results
 
-* `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
-  kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
 * `Subgroup.map_inf_comap`, `AddSubgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is
@@ -58,6 +58,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.comap_map_conj`: the preimage of a conjugate subgroup is the conjugate of the
   preimage.
+* `Subgroup.normal_subgroupOf_map_range`, `AddSubgroup.normal_addSubgroupOf_map_range`: the image
+  of a normal subgroup is normal in the range of the homomorphism.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
@@ -199,7 +201,7 @@ homomorphism itself instead. -/
 @[simp]
 theorem _root_.MonoidHom.coe_subgroupCongr_apply {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) (f : A →* B) (x : A') :
-    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.2⟩ := by
+    (f.subgroupCongr hA hB x : H) = f ⟨x, hA ▸ x.property⟩ := by
   simp only [MonoidHom.subgroupCongr, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     MulEquiv.subgroupCongr_symm_apply]
   exact congrArg (fun y ↦ (f y : H)) (Subtype.ext (MulEquiv.subgroupCongr_apply hA x))
@@ -318,7 +320,7 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
 /-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
 @[to_additive /-- The image of `H ⊓ f⁻¹(K)` under an additive homomorphism `f` is the part of `K`
 inside `f(H)`. -/]
-theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+theorem _root_.Subgroup.map_inf_comap {N : Type*} [Group N]
     (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
     (H ⊓ K.comap f).map f = H.map f ⊓ K := by
   apply SetLike.coe_injective
@@ -379,7 +381,7 @@ The map `κ` only witnesses `g⁻¹ v g ∈ U` for each `v ∈ V`; it need not b
 continuous. -/
 theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
     (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
-  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
+  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).property, by simp [hκ, mul_assoc]⟩
 
 /-- The preimage under a homomorphism `f` of the conjugate of `R` by `f g` is the conjugate by `g`
 of the preimage of `R`. -/
@@ -389,6 +391,16 @@ theorem _root_.Subgroup.comap_map_conj (R : Subgroup H) (f : G →* H) (g : G) :
   ext x
   rw [Subgroup.mem_comap, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, Subgroup.mem_comap,
     MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+
+/-- The image of a normal subgroup is normal in the range of the homomorphism: the range is the
+image of the whole group, which normalizes the image. -/
+@[to_additive /-- The image of a normal additive subgroup is normal in the range of the additive
+homomorphism: the range is the image of the whole group, which normalizes the image. -/]
+instance _root_.Subgroup.normal_subgroupOf_map_range (N : Subgroup G) [N.Normal] (f : G →* H) :
+    ((N.map f).subgroupOf f.range).Normal :=
+  Subgroup.normal_subgroupOf_of_le_normalizer <| by
+    rw [MonoidHom.range_eq_map, ← Subgroup.normalizer_eq_top (H := N)]
+    exact Subgroup.le_normalizer_map f
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

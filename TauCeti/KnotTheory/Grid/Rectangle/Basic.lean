@@ -437,7 +437,8 @@ rectangles on a concrete grid. -/
 instance : Fintype (GridRectangleBetween x y) :=
   Fintype.ofEquiv {p : Fin n × Fin n // p.1 ≠ p.2 ∧ y p.1 = x p.2 ∧ y p.2 = x p.1 ∧
       ∀ c, c ≠ p.1 → c ≠ p.2 → y c = x c}
-    { toFun p := ⟨p.1.1, p.1.2, p.2.1, p.2.2.1, p.2.2.2.1, p.2.2.2.2⟩
+    { toFun p := ⟨p.val.1, p.val.2, p.property.1, p.property.2.1, p.property.2.2.1,
+        p.property.2.2.2⟩
       invFun R := ⟨(R.left, R.right), R.left_ne_right, R.map_left, R.map_right, R.map_of_ne⟩
       left_inv _ := rfl
       right_inv _ := rfl }

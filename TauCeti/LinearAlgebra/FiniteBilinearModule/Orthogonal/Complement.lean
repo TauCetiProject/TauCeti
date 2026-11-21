@@ -88,7 +88,7 @@ theorem pairingRestrict_ker (H : AddSubgroup A) :
   ext x
   rw [AddMonoidHom.mem_ker, A.mem_orthogonalComplement_iff]
   exact ⟨fun hx y hy ↦ DFunLike.congr_fun hx ⟨y, hy⟩,
-    fun hx ↦ CharacterModule.ext H fun (y : H) ↦ hx y y.2⟩
+    fun hx ↦ CharacterModule.ext H fun (y : H) ↦ hx y y.property⟩
 
 /-- In a nondegenerate finite bilinear module, every character of a subgroup is pairing with an
 element of the ambient module. -/

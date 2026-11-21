@@ -81,7 +81,7 @@ private theorem prodDecompose_comp_coeLinearMap :
   apply LinearMap.ext
   intro x
   simp only [LinearMap.comp_apply, DirectSum.coeLinearMap_lof, LinearMap.id_apply]
-  exact prodDecompose_of_mem G H p x.1.1 x.1.2 x.2.1 x.2.2
+  exact prodDecompose_of_mem G H p x.val.1 x.val.2 x.property.1 x.property.2
 
 /-- The componentwise internal grading on a product of modules. -/
 noncomputable def prod : InternalGrading R (M × N) ι := by

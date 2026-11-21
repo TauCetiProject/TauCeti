@@ -51,6 +51,7 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
   of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_of_lt_finrank`: the same under `2 < Module.finrank ℝ E`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
 * `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`: nonemptiness of a space homotopy equivalent
@@ -313,7 +314,7 @@ private theorem exists_nodeInterp_close {x y : sphere (0 : E) 1} (γ : Path x y)
       nodeInterp N node 0 = ((x : sphere (0 : E) 1) : E) ∧
       nodeInterp N node 1 = ((y : sphere (0 : E) 1) : E) := by
   have hγcont : Continuous fun t : I => ((γ t : sphere (0 : E) 1) : E) :=
-    continuous_subtype_val.comp γ.continuous
+    continuous_subtypeVal.comp γ.continuous
   -- Choose a subdivision so fine that the path moves by less than `1` across each step.
   obtain ⟨δ, hδ, hδ'⟩ := Metric.uniformContinuous_iff.mp
     (CompactSpace.uniformContinuous_of_continuous hγcont) 1 one_pos
@@ -347,7 +348,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
     ∃ γ' : Path x y, γ.Homotopic γ' ∧
       ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (nodeInterp N node t) := by
   have hγnorm : ∀ t, ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := fun t =>
-    mem_sphere_zero_iff_norm.mp (γ t).2
+    mem_sphere_zero_iff_norm.mp (γ t).property
   have hLne : ∀ t : I, nodeInterp N node t ≠ 0 := by
     intro t ht
     have hlt := hLclose t
@@ -356,7 +357,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
   -- The comparison path.
   have hcontL : Continuous (nodeInterp N node) := continuous_nodeInterp N node
   let Lsphere := normalizeToSphere (nodeInterp N node) hcontL hLne
-  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.2
+  have hx1 : ‖((x : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp x.property
   let γ' : Path x y :=
     { toFun := Lsphere
       continuous_toFun := Lsphere.continuous
@@ -364,7 +365,7 @@ private theorem exists_homotopic_normalize_nodeInterp {x y : sphere (0 : E) 1} (
         rw [coe_normalizeToSphere_apply, hL0, normalize_eq_self_of_norm_eq_one hx1])
       target' := Subtype.ext (by
         rw [coe_normalizeToSphere_apply, hL1,
-          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.2)]) }
+          normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp y.property)]) }
   -- The straight-line homotopy between the path and the comparison path misses the origin.
   have hGne : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) + (z.1 : ℝ) • nodeInterp N node z.2
@@ -458,6 +459,12 @@ two-sphere. -/
 instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
   simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+
+/-- Every sphere of nonnegative radius in a real normed space of finite rank greater than two is
+simply connected. -/
+theorem simplyConnectedSpace_sphere_of_lt_finrank (h : 2 < Module.finrank ℝ E) (c : E) {r : ℝ}
+    (hr : 0 ≤ r) : SimplyConnectedSpace (sphere c r) :=
+  simplyConnectedSpace_sphere (by exact_mod_cast Module.lt_rank_of_lt_finrank h) c hr
 
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :

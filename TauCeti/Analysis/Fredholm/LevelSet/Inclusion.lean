@@ -62,23 +62,23 @@ theorem injective_mfderiv_coe_levelSet (z : ↥{x | f x = c}) :
   let _ := levelSetChartedSpace hf hFred hsurj hindex
   rw [(hasMFDerivAt_coe_levelSet hf hFred hsurj hindex z).mfderiv]
   exact Subtype.val_injective.comp (ContinuousLinearEquiv.injective _ :
-    Function.Injective ((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-        (hindex z.1 z.2))).symm)
+    Function.Injective ((D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+        (hindex z.val z.property))).symm)
 
 /-- **The tangent space of a regular level set is the kernel of the derivative.** The range of
 the differential at `z` of the inclusion of a regular level set is `ker (D z)`. -/
 theorem range_mfderiv_coe_levelSet (z : ↥{x | f x = c}) :
     letI := levelSetChartedSpace hf hFred hsurj hindex
     (mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) (Subtype.val : ↥{x | f x = c} → E) z).range =
-      (D z.1).ker := by
+      (D z.val).ker := by
   let _ := levelSetChartedSpace hf hFred hsurj hindex
-  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-      (hindex z.1 z.2))
+  set K := (D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+      (hindex z.val z.property))
   rw [(hasMFDerivAt_coe_levelSet hf hFred hsurj hindex z).mfderiv]
-  exact (LinearMap.range_comp_of_range_eq_top (D z.1).ker.subtype
-    K.symm.toLinearEquiv.range).trans (D z.1).ker.range_subtype
+  exact (LinearMap.range_comp_of_range_eq_top (D z.val).ker.subtype
+    K.symm.toLinearEquiv.range).trans (D z.val).ker.range_subtype
 
 /-- **Maps into a regular level set.** A `C^m` map into `E` with values in the level set is a
 `C^m` map into the level set. -/
@@ -95,20 +95,20 @@ theorem _root_.ContMDiff.codRestrict_levelSet {E' H M : Type*} [NormedAddCommGro
   rw [contMDiffAt_iff_target]
   refine ⟨(hg.continuous.subtype_mk _).continuousAt, ?_⟩
   set z : ↥{x | f x = c} := ⟨g x, hgc x⟩
-  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
-      (hindex z.1 z.2))
-  set P := Classical.choose (hFred z.1 z.2).closedComplemented_ker
+  set K := (D z.val).kerModelEquiv (hFred z.val z.property).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.val) (hsurj z.val z.property)).2
+      (hindex z.val z.property))
+  set P := Classical.choose (hFred z.val z.property).closedComplemented_ker
   -- Read in the chart at `z`, the map is `y ↦ K (P (g y - g x))`.
   have hchart : (extChartAt 𝓘(𝕜, Fin n → 𝕜) z ∘ fun y ↦ (⟨g y, hgc y⟩ : ↥{x | f x = c})) =
-      fun y ↦ ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P) (g y - g x) := by
+      fun y ↦ ((K : ↥(D z.val).ker →L[𝕜] Fin n → 𝕜).comp P) (g y - g x) := by
     funext y
     rw [Function.comp_apply, extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply,
       id_eq, levelSetChartedSpace_chartAt, levelSetChartAt_apply, levelSetChart_apply]
     rfl
   rw [hchart]
-  have hA : ContDiff 𝕜 m fun v : E ↦ ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P) (v - g x) :=
-    ((K : ↥(D z.1).ker →L[𝕜] Fin n → 𝕜).comp P).contDiff.comp (contDiff_id.sub contDiff_const)
+  have hA : ContDiff 𝕜 m fun v : E ↦ ((K : ↥(D z.val).ker →L[𝕜] Fin n → 𝕜).comp P) (v - g x) :=
+    ((K : ↥(D z.val).ker →L[𝕜] Fin n → 𝕜).comp P).contDiff.comp (contDiff_id.sub contDiff_const)
   exact ((contMDiff_iff_contDiff.2 hA).comp hg).contMDiffAt
 
 end TauCeti

@@ -38,6 +38,8 @@ formal multilinear series with the same coefficient norms. Through this comparis
   `f` is restricted at every `r` with `|r| < radius f` and at no `r` with `radius f < |r|`.
 * `PowerSeries.le_radius_of_bound`: bounded weighted coefficient norms at `r` give
   `r ≤ radius f`.
+* `PowerSeries.inv_le_radius_of_norm_coeff_le_mul_pow`: a geometric bound `‖aₙ‖ ≤ B * Cⁿ` gives
+  `C⁻¹ ≤ radius f` (with `0⁻¹ = ∞`).
 * `PowerSeries.radius_eq_top_iff`: the radius is infinite exactly for entire series; in
   particular `PowerSeries.radius_coe`: polynomials have infinite radius.
 * `PowerSeries.radius_pos_iff`: the radius is positive exactly when the series is restricted at
@@ -103,6 +105,30 @@ theorem le_radius_of_bound (C : ℝ) {r : ℝ≥0} (h : ∀ n, ‖coeff n f‖ *
   have hf : f.IsRestricted s := PowerSeries.HasGaussNorm.isRestricted_of_abs_lt
     ⟨C, by rintro _ ⟨n, rfl⟩; exact h n⟩ (by simpa using hs)
   simpa using le_radius_of_isRestricted hf
+
+/-- If the coefficient norms satisfy `‖coeff n f‖ ≤ B * (C : ℝ) ^ n` for all `n`, then the radius
+of `f` is at least `C⁻¹` (with `0⁻¹ = ∞`). -/
+theorem inv_le_radius_of_norm_coeff_le_mul_pow {B : ℝ} {C : ℝ≥0}
+    (h : ∀ n, ‖coeff n f‖ ≤ B * (C : ℝ) ^ n) :
+    (C : ℝ≥0∞)⁻¹ ≤ f.radius := by
+  rcases eq_or_ne C 0 with rfl | hC
+  · rw [ENNReal.coe_zero, ENNReal.inv_zero, top_le_iff]
+    refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ le_radius_of_bound B fun n ↦ ?_
+    cases n with
+    | zero => simpa using h 0
+    | succ n =>
+      have hB : 0 ≤ B := by simpa using (norm_nonneg (coeff 0 f)).trans (h 0)
+      have h0 : ‖coeff (n + 1) f‖ = 0 := le_antisymm (by simpa using h (n + 1)) (norm_nonneg _)
+      simpa [h0] using hB
+  · rw [← ENNReal.coe_inv hC]
+    refine le_radius_of_bound B fun n ↦ ?_
+    calc ‖coeff n f‖ * ((C⁻¹ : ℝ≥0) : ℝ) ^ n
+        ≤ B * (C : ℝ) ^ n * (C : ℝ)⁻¹ ^ n := by
+          rw [NNReal.coe_inv]
+          gcongr
+          exact h n
+      _ = B * ((C : ℝ) * (C : ℝ)⁻¹) ^ n := by rw [mul_assoc, ← mul_pow]
+      _ = B := by rw [mul_inv_cancel₀ (NNReal.coe_ne_zero.mpr hC), one_pow, mul_one]
 
 /-- The radius is infinite exactly when the series is entire. -/
 @[simp]

@@ -35,7 +35,9 @@ for every finite rank `r = finrank ℝ F ≥ 0` whenever `B` admits a finite tri
 1. **Basic properties**: `TauCeti.thomMap` is `K`-bilinear, sends `1 ∈ H⁰(B; K)` to `u`
    (`TauCeti.thomMap_one`), is natural (`TauCeti.thomMap_naturality`, `TauCeti.thomMap_pullback`),
    is `H^*(B; K)`-linear (`TauCeti.thomMap_singularCup`), and restricts on fibres to cupping with
-   the fibre restriction of `u` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`).
+   the fibre restriction of `u` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`). For a
+   real vector bundle, the Euler class map `TauCeti.eulerClass` sends `Φ_u(a)` to the cup product
+   `a ⌣ e(u)` of `a` with the Euler class of `u` (`TauCeti.eulerClass_thomMap`).
 2. **Local and finite-union isomorphisms**: an `ℝ`-linear trivialization identifies `(E|_W, E₀|_W)`
    with `(W × F, W × (F ∖ {0}))` (`Bundle.Trivialization.thomPairOverIso`), reducing
    `Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair` (and its global-Thom-class
@@ -57,6 +59,7 @@ for every finite rank `r = finrank ℝ F ≥ 0` whenever `B` admits a finite tri
 * `TauCeti.thomMap_naturality`, `TauCeti.thomMap_pullback`: naturality.
 * `TauCeti.thomMap_singularCup`: linearity over the cohomology of the base.
 * `TauCeti.singularCohomologyMap_fiberThomPairMap_thomMap`: the restriction to a fibre.
+* `TauCeti.eulerClass_thomMap`: the Euler class map sends `Φ_u(a)` to `a ⌣ e(u)`.
 * `Bundle.Trivialization.bijective_pullbackCupRestrict_thomPair`,
   `TauCeti.IsThomClass.bijective_pullbackCupRestrict_of_subset_baseSet`,
   `TauCeti.bijective_pullbackCupRestrict_thomPair_biUnion`: local and finite-union bijectivity.
@@ -205,6 +208,32 @@ theorem bijective_pullbackCupRestrict_thomPairProj_iff (W : Set B) {n p m : ℕ}
   rw [TopCat.pullbackCupRestrict_apply, thomPairOverProj_def]
   rfl
 
+section EulerClass
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {K : Type w} [CommRing K] {M : ModuleCat.{w} K}
+
+/-- **The Euler class map on the image of the Thom map**: for `u ∈ Hⁿ(E, E₀; K)` and
+`a ∈ Hᵖ(B; M)`, the Euler class of `π^*a ⌣ u` is `a ⌣ e(u)`, the cup product of `a` with the Euler
+class of `u`. -/
+theorem eulerClass_thomMap {n p m : ℕ} (h : p + n = m)
+    (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
+    eulerClass (ModuleCat.of K K) K M F E m (thomMap F E M n p m h u a) =
+      (TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom p n m h a
+        (eulerClass (ModuleCat.of K K) K (ModuleCat.of K K) F E n u) := by
+  rw [eulerClass_def, eulerClass_def, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    thomMap_apply, TopPair.singularCohomologyπ_singularCup, ← TopCat.singularCup_naturality,
+    ← ConcreteCategory.comp_apply,
+    singularCohomologyMap_thomPairProj_comp_singularCohomologyMap_zeroSectionHom,
+    ConcreteCategory.id_apply]
+  -- The two sides differ only in writing the chain coefficients `K` as `𝟙_ (ModuleCat K)`.
+  rfl
+
+end EulerClass
+
 end TauCeti
 
 namespace Bundle.Trivialization
@@ -241,19 +270,19 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
   refine bijective_pullbackCup_prodThomPair M u_prod (fun b ↦ ?_) h
   have hu_prod : TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) u_prod =
       TopPair.singularCohomologyMap
-        (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv (finrank ℝ F)
-        (TopPair.singularCohomologyMap (fiberThomPairMap F E b.1) (finrank ℝ F) u) := by
+        (e.continuousLinearEquivAt ℝ b.val (hW b.property)).complZeroPairIso.inv (finrank ℝ F)
+        (TopPair.singularCohomologyMap (fiberThomPairMap F E b.val) (finrank ℝ F) u) := by
     dsimp only [u_prod, u_W, φ]
     rw [← TopPair.singularCohomologyMap_comp_apply,
       e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
       TopPair.singularCohomologyMap_comp_apply,
-      ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.2),
+      ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.property),
       fiberThomPairOverMap_comp_restrictPreimagePairMap]
   rw [hu_prod]
   exact ((((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
     (finrank ℝ F)).mapIso
-      (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.symm.op).toLinearEquiv
-    ).span_singleton_apply_eq_top_iff).2 (hu b.1 b.2)
+      (e.continuousLinearEquivAt ℝ b.val (hW b.property)).complZeroPairIso.symm.op).toLinearEquiv
+    ).span_singleton_apply_eq_top_iff).2 (hu b.val b.property)
 
 end Bundle.Trivialization
 

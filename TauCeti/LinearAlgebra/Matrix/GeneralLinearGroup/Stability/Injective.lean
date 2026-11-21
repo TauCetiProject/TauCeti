@@ -179,18 +179,18 @@ private theorem exists_elementarySubgroup_inv_mulVec_eq_single {R m : Type*} [Ri
       _ = (a ᵥ* (e₁ : Matrix m m R)) ⬝ᵥ ((↑e₁⁻¹ : Matrix m m R) *ᵥ b) := by rw [← hae₁, hb₁_def]
       _ = 1 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hab]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
-  let e₂ : GL m R := φ.reindexGL R (upperVec fun i ↦ b₁ i.1)
+  let e₂ : GL m R := φ.reindexGL R (upperVec fun i ↦ b₁ i.val)
   refine ⟨e₁ * e₂, mul_mem he₁ ((φ.reindexGL_mem_elementarySubgroup_iff).mpr
     (upperBlockGL_mem_elementarySubgroup _)), ?_⟩
   rw [_root_.mul_inv_rev, Units.val_mul, ← mulVec_mulVec, ← hb₁_def]
   ext k; obtain ⟨p, rfl⟩ := φ.surjective k
-  have he₂_inv : e₂⁻¹ = φ.reindexGL R (upperVec (-(fun i : {i : m // i ≠ i₀} ↦ b₁ i.1))) := by
+  have he₂_inv : e₂⁻¹ = φ.reindexGL R (upperVec (-(fun i : {i : m // i ≠ i₀} ↦ b₁ i.val))) := by
     rw [← map_inv, upperVec_inv]
   rw [he₂_inv]
   simp only [Equiv.coe_reindexGL, submatrix_apply, mulVec, dotProduct]
   rw [← φ.sum_comp]; simp only [φ.symm_apply_apply]
   rcases p with i | ⟨⟩
-  · simp [φ, Fintype.sum_sum_type, Matrix.one_apply, hb₁0, i.2]
+  · simp [φ, Fintype.sum_sum_type, Matrix.one_apply, hb₁0, i.property]
   · simp [φ, Fintype.sum_sum_type, hb₁0]
 
 /-- **Left rank-one unipotent lemma:** if `a ⬝ᵥ b = 1` and `x ⬝ᵥ b = 0`, then for any `r : R` the
@@ -210,7 +210,7 @@ private theorem oneSubVecMulVecGL_mem_elementarySubgroup_of_dotProduct_eq_one {R
       _ = (x ᵥ* (e : Matrix m m R)) ⬝ᵥ ((↑e⁻¹ : Matrix m m R) *ᵥ b) := by rw [← heb, hx'_def]
       _ = 0 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hxb]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
-  let L := lowerVec (R := R) (m := {i : m // i ≠ i₀}) (fun j ↦ -r * x' j.1)
+  let L := lowerVec (R := R) (m := {i : m // i ≠ i₀}) (fun j ↦ -r * x' j.val)
   have hconj : e⁻¹ * g * e = φ.reindexGL R L := by
     refine Units.ext ?_
     have hmulr : (↑e⁻¹ : Matrix m m R) *ᵥ (fun i ↦ b i * r) =
@@ -225,9 +225,9 @@ private theorem oneSubVecMulVecGL_mem_elementarySubgroup_of_dotProduct_eq_one {R
     ext p q; obtain ⟨p, rfl⟩ := φ.surjective p; obtain ⟨q, rfl⟩ := φ.surjective q
     simp only [Equiv.coe_reindexGL, submatrix_apply, φ.symm_apply_apply]
     rcases p with i | ⟨⟩ <;> rcases q with j | ⟨⟩
-    · simp [φ, L, vecMulVec_apply, Pi.single_apply, Matrix.one_apply, Subtype.ext_iff, i.2]
-    · simp [φ, L, vecMulVec_apply, Pi.single_apply, i.2]
-    · simp [φ, L, vecMulVec_apply, j.2.symm]
+    · simp [φ, L, vecMulVec_apply, Pi.single_apply, Matrix.one_apply, Subtype.ext_iff, i.property]
+    · simp [φ, L, vecMulVec_apply, Pi.single_apply, i.property]
+    · simp [φ, L, vecMulVec_apply, j.property.symm]
     · simp [φ, L, vecMulVec_apply, hx'0]
   have hg : g = e * (e⁻¹ * g * e) * e⁻¹ := by group
   rw [hg, hconj]
@@ -463,15 +463,15 @@ private theorem vasersteinPsi_mul_lowerVec_of_dotProduct_eq_zero {s : ℕ}
 private theorem vecMul_reindexGL_subtypeNeSumPUnit_lowerVec (i₀ : m)
     (c : {i : m // i ≠ i₀} → R) (v : m → R) :
     (∀ i : {i : m // i ≠ i₀},
-      (v ᵥ* ((Equiv.subtypeNeSumPUnit.{0} i₀).reindexGL R (lowerVec c) : Matrix m m R)) i.1 =
-        v i.1 + v i₀ * c i) ∧
+      (v ᵥ* ((Equiv.subtypeNeSumPUnit.{0} i₀).reindexGL R (lowerVec c) : Matrix m m R)) i.val =
+        v i.val + v i₀ * c i) ∧
       (v ᵥ* ((Equiv.subtypeNeSumPUnit.{0} i₀).reindexGL R (lowerVec c) : Matrix m m R)) i₀ =
         v i₀ := by
   set φ := Equiv.subtypeNeSumPUnit.{0} i₀
   constructor
   · intro i; simp only [Equiv.coe_reindexGL, submatrix_apply, vecMul, dotProduct]
     rw [← φ.sum_comp]; simp only [φ.symm_apply_apply]
-    simp [φ, Fintype.sum_sum_type, Matrix.one_apply, i.2]
+    simp [φ, Fintype.sum_sum_type, Matrix.one_apply, i.property]
   · simp only [Equiv.coe_reindexGL, submatrix_apply, vecMul, dotProduct]
     rw [← φ.sum_comp]; simp only [φ.symm_apply_apply]
     simp [φ, Fintype.sum_sum_type]
@@ -479,20 +479,20 @@ private theorem vecMul_reindexGL_subtypeNeSumPUnit_lowerVec (i₀ : m)
 private theorem dotProduct_clearedPivot_eq_one (A : GL (m ⊕ Unit) R) (i₀ : m) (x : m → R)
     (c b' : {i : m // i ≠ i₀} → R)
     (hb' : (fun i : {i : m // i ≠ i₀} ↦
-      botRow (A * lowerVec x) i.1 + botRow (A * lowerVec x) i₀ * c i) ⬝ᵥ b' = 1) :
+      botRow (A * lowerVec x) i.val + botRow (A * lowerVec x) i₀ * c i) ⬝ᵥ b' = 1) :
     let e₂ := (Equiv.subtypeNeSumPUnit.{0} i₀).reindexGL R (lowerVec c)
     let z : m → R := fun k ↦ if k = i₀ then 0 else (x ᵥ* (e₂ : Matrix m m R)) k
     botRow (A * blockOne e₂ * lowerVec z) ⬝ᵥ (fun k ↦ if hk : k = i₀ then 0 else b' ⟨k, hk⟩) =
       1 := by
   intro e₂ z
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
-  have hAz_i : ∀ i : {i : m // i ≠ i₀}, botRow (A * blockOne e₂ * lowerVec z) i.1 =
-      botRow (A * lowerVec x) i.1 + botRow (A * lowerVec x) i₀ * c i := by
+  have hAz_i : ∀ i : {i : m // i ≠ i₀}, botRow (A * blockOne e₂ * lowerVec z) i.val =
+      botRow (A * lowerVec x) i.val + botRow (A * lowerVec x) i₀ * c i := by
     intro i
-    have hzi : z i.1 = (x ᵥ* (e₂ : Matrix m m R)) i.1 := by simp [z, i.2]
+    have hzi : z i.val = (x ᵥ* (e₂ : Matrix m m R)) i.val := by simp [z, i.property]
     rw [botRow_mul_lowerVec, botRow_mul_lowerVec, botEntry_mul_blockOne]
     dsimp only
-    rw [hzi, congrFun (botRow_mul_blockOne A e₂) i.1,
+    rw [hzi, congrFun (botRow_mul_blockOne A e₂) i.val,
       (vecMul_reindexGL_subtypeNeSumPUnit_lowerVec i₀ c _).1 i,
       (vecMul_reindexGL_subtypeNeSumPUnit_lowerVec i₀ c x).1 i]
     simp only [mul_add, add_mul, mul_assoc]; abel
@@ -505,7 +505,7 @@ private theorem dotProduct_clearedPivot_eq_one (A : GL (m ⊕ Unit) R) (i₀ : m
           Equiv.optionEquivSumPUnit_symm_inr, Equiv.optionSubtypeNe_some,
           Equiv.optionSubtypeNe_none, ↓reduceDIte, mul_zero, Fintype.univ_punit,
           Finset.sum_singleton, add_zero, dotProduct]
-        exact Fintype.sum_congr _ _ fun i ↦ by simp [i.2, hAz_i i]
+        exact Fintype.sum_congr _ _ fun i ↦ by simp [i.property, hAz_i i]
     _ = 1 := hb'
 
 /-- Right-invariance under `lowerVec` when the bottom-left row of `A` is `Pi.single i₀ 1`. -/
@@ -622,7 +622,7 @@ private theorem upperVec_single_mul_lowerVec_of_eq_zero (p₀ : m) (r : R) {c : 
       upperVec (Pi.single p₀ r) * lowerVec c =
         lowerVec c * blockOne e₀ * upperVec (Pi.single p₀ r) := by
   let φ := Equiv.subtypeNeSumPUnit.{0} p₀
-  let e₀ : GL m R := φ.reindexGL R (lowerVec (fun j : {j : m // j ≠ p₀} ↦ r * c j.1))
+  let e₀ : GL m R := φ.reindexGL R (lowerVec (fun j : {j : m // j ≠ p₀} ↦ r * c j.val))
   refine ⟨e₀, (φ.reindexGL_mem_elementarySubgroup_iff).mpr (lowerBlockGL_mem_elementarySubgroup _),
     Units.ext ?_⟩
   set Y : Matrix m Unit R := Matrix.of fun i _ ↦ (Pi.single p₀ r : m → R) i
@@ -632,9 +632,9 @@ private theorem upperVec_single_mul_lowerVec_of_eq_zero (p₀ : m) (r : R) {c : 
     ext p q; obtain ⟨p, rfl⟩ := φ.surjective p; obtain ⟨q, rfl⟩ := φ.surjective q
     simp only [e₀, Equiv.coe_reindexGL, submatrix_apply, φ.symm_apply_apply]
     rcases p with i | ⟨⟩ <;> rcases q with j | ⟨⟩
-    · simp [φ, Y, C, Matrix.mul_apply, Matrix.one_apply, Subtype.ext_iff, i.2]
-    · simp [φ, Y, C, Matrix.mul_apply, i.2]
-    · simp [φ, Y, C, Matrix.mul_apply, j.2.symm]
+    · simp [φ, Y, C, Matrix.mul_apply, Matrix.one_apply, Subtype.ext_iff, i.property]
+    · simp [φ, Y, C, Matrix.mul_apply, i.property]
+    · simp [φ, Y, C, Matrix.mul_apply, j.property.symm]
     · simp [φ, Y, C, Matrix.mul_apply, hc0]
   have hCe₀ : C * (e₀ : Matrix m m R) = C := by
     rw [he₀_mat, Matrix.mul_add, Matrix.mul_one, ← Matrix.mul_assoc, hCY, Matrix.zero_mul, add_zero]
