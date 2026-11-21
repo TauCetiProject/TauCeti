@@ -45,8 +45,6 @@ with `h_{m-i}((x, y), ξ) = g(x, y) • a_{m-i}(κ x, M(x, y) ξ)`.
 
 ## Main declarations
 
-* `TauCeti.HomogeneousSymbol.compAmplitude`: the homogeneous amplitude
-  `g(x, y) • h(κ x, M(x, y) ξ)` of a homogeneous symbol `h`.
 * `TauCeti.ClassicalSymbol.leftSymbolCompAmplitude`: the left symbol of the amplitude
   `g(x, y) • a(κ x, M(x, y) ξ)` of a classical symbol `a`, as a classical symbol, with principal
   symbol `g(x, x) • σ(a)(κ x, M(x, x) ξ)`.
@@ -75,58 +73,9 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
   {M : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n}
   {g : CoordinateSpace n × CoordinateSpace n → ℝ}
 
-/-! ### Homogeneous symbols in moving frequency coordinates -/
+/-! ### Cut-off homogeneous symbols in moving frequency coordinates -/
 
 namespace HomogeneousSymbol
-
-/-- The function `((x, y), ξ) ↦ g(x, y) • h(κ x, M(x, y) ξ)` is smooth at the nonzero frequencies
-when `M` is invertible on the support of `g`: near a point of the support, `M(x, y) ξ ≠ 0`, and
-elsewhere it vanishes nearby. -/
-private theorem contDiffOn_compAmplitude
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (hκ : ContDiff ℝ ∞ κ)
-    (hM : ContDiff ℝ ∞ M) (hg : ContDiff ℝ ∞ g) (hgM : ∀ w ∈ tsupport g, IsUnit (M w)) :
-    ContDiffOn ℝ ∞ (fun p : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-      g p.1 • h.coefficient (κ p.1.1, M p.1 p.2)) {p | p.2 ≠ 0} := by
-  intro p hp
-  refine ContDiffAt.contDiffWithinAt ?_
-  by_cases hpg : p.1 ∈ tsupport g
-  · have hne : M p.1 p.2 ≠ 0 :=
-      (map_ne_zero_iff _ (ContinuousLinearMap.isUnit_iff_bijective.1 (hgM _ hpg)).1).2 hp
-    have hin : ContDiff ℝ ∞ fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-        (κ q.1.1, M q.1 q.2) :=
-      (hκ.comp (contDiff_fst.comp contDiff_fst)).prodMk
-        ((hM.comp contDiff_fst).clm_apply contDiff_snd)
-    exact (hg.comp contDiff_fst).contDiffAt.smul
-      ((h.contDiffAt_coefficient (p := (κ p.1.1, M p.1 p.2)) hne).comp p hin.contDiffAt)
-  · have hev : (fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-        g q.1 • h.coefficient (κ q.1.1, M q.1 q.2)) =ᶠ[nhds p] fun _ ↦ 0 := by
-      filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds
-        ((isClosed_tsupport g).isOpen_compl.mem_nhds hpg)] with q hq
-      rw [image_eq_zero_of_notMem_tsupport hq, zero_smul]
-    exact contDiffAt_const.congr_of_eventuallyEq hev
-
-/-- The homogeneous amplitude `((x, y), ξ) ↦ g(x, y) • h(κ x, M(x, y) ξ)` of degree `m` of a
-homogeneous symbol `h` of degree `m`, for a smooth family `M(x, y)` of linear maps that are
-invertible on the support of the smooth weight `g`. It is the homogeneous counterpart of the
-amplitude `TauCeti.Symbol.compAmplitude` describing changes of coordinates. -/
-def compAmplitude (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
-    (hκ : ContDiff ℝ ∞ κ) (hM : ContDiff ℝ ∞ M) (hg : ContDiff ℝ ∞ g)
-    (hgM : ∀ w ∈ tsupport g, IsUnit (M w)) :
-    HomogeneousSymbol (CoordinateSpace n × CoordinateSpace n) (CoordinateSpace n) V W m :=
-  mk' (fun p ↦ g p.1 • h.coefficient (κ p.1.1, M p.1 p.2))
-    (contDiffOn_compAmplitude h hκ hM hg hgM) fun x ξ _ t ht ↦ by
-      simp only [map_smul, h.homogeneous _ _ _ ht, smul_comm (g x)]
-
-@[simp]
-theorem coefficient_compAmplitude
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (hκ : ContDiff ℝ ∞ κ)
-    (hM : ContDiff ℝ ∞ M) (hg : ContDiff ℝ ∞ g) (hgM : ∀ w ∈ tsupport g, IsUnit (M w))
-    (p : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n) :
-    (h.compAmplitude hκ hM hg hgM).coefficient p = g p.1 • h.coefficient (κ p.1.1, M p.1 p.2) := by
-  obtain ⟨w, ξ⟩ := p
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · simp
-  · exact coefficient_mk'_of_ne_zero _ _ _ hξ
 
 /-- At large frequencies, the amplitude `g(x, y) • χ(M(x, y) ξ) h(κ x, M(x, y) ξ)` of the cut-off
 term of a homogeneous symbol `h` is the homogeneous amplitude `g(x, y) • h(κ x, M(x, y) ξ)`: on
@@ -294,14 +243,8 @@ theorem exists_quantizeSchwartzValue_comp_eq (a : ClassicalSymbol n V W m)
   · rw [toSymbol_leftSymbolCompAmplitude]
     exact hop a.toSymbol haK u v huv x
   rw [coefficient_principal_leftSymbolCompAmplitude]
-  by_cases hx : κ x ∈ K
-  · obtain ⟨hgx, hMx⟩ := hdiag x hx
-    by_cases hψx : ψ x = 0
-    · simp [hgx, hψx]
-    · rw [hgx, hMx hψx]
-  · rw [a.coefficient_principal_eq_zero_of_forall_coefficient_eq_zero (haK _ hx),
-      a.coefficient_principal_eq_zero_of_forall_coefficient_eq_zero (haK _ hx), smul_zero,
-      smul_zero]
+  exact hdiag a.principal.coefficient
+    (fun z hz ↦ a.coefficient_principal_eq_zero_of_forall_coefficient_eq_zero (haK z hz)) x ξ
 
 end ClassicalSymbol
 

@@ -102,6 +102,9 @@ homogeneous symbols of degrees `m - j`.
 * `TauCeti.ClassicalSymbol.termsEquiv`: the classical symbols of order `m` modulo the smoothing
   ones (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`) are linearly equivalent to the sequences
   of their homogeneous terms.
+* `TauCeti.ClassicalSymbol.ofIsAsymptoticSum`: an asymptotic sum of classical symbols of orders
+  `m - k` is classical; `TauCeti.ClassicalSymbol.exists_remainder_of_isAsymptoticSum` bounds its
+  remainders.
 
 ## References
 
@@ -982,7 +985,7 @@ variable (c : (k : ℕ) → ClassicalSymbol n V W (m - k)) {b : Symbol n V W m}
 the homogeneous terms `∑_{k ≤ j} (cₖ)_{j-k}`, `j < N`, has order `m - N`: it is the remainder of
 the asymptotic sum after `N` terms, plus the remainder after `N - k` homogeneous terms of each
 `cₖ`, `k < N`. -/
-private theorem exists_remainder_of_isAsymptoticSum
+theorem exists_remainder_of_isAsymptoticSum
     (hb : (Symbol.inclusion (by simp) b : Symbol n V W (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum
       fun k ↦ (c k).toSymbol)
     (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :

@@ -557,7 +557,9 @@ linear maps and a smooth compactly supported weight `g(x, y)`, with `M` invertib
 `Op(a) v (κ x) = Op(b) u (x)` for the left symbol `b` of the amplitude
 `c(x, y, ξ) = g(x, y) • a(κ x, M(x, y) ξ)` (`TauCeti.Symbol.compAmplitude`).
 
-On the diagonal over `κ⁻¹ K`, `g(x, x) = ψ(x)` and, where `ψ(x) ≠ 0`, `M(x, x) = (Dκ(x)*)⁻¹`. The
+On the diagonal, the amplitude of any function `f` vanishing at positions outside `K` is the
+pullback of `f` by the cotangent map, `g(x, x) • f(κ x, M(x, x) ξ) = ψ(x) • f(κ x, (Dκ(x)*)⁻¹ ξ)`,
+since `g(x, x) = ψ(x)` over `κ⁻¹ K` and `M(x, x) = (Dκ(x)*)⁻¹` there where `ψ(x) ≠ 0`. The
 data `M` and `g` do not depend on `a`, so the transported operators of all the symbols vanishing
 outside `K` are left quantizations of amplitudes of the same form. -/
 theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (CoordinateSpace n)}
@@ -568,8 +570,9 @@ theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (Coor
     ∃ (M : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n)
       (hM : ContDiff ℝ ∞ M) (g : CoordinateSpace n × CoordinateSpace n → ℝ) (hg : ContDiff ℝ ∞ g)
       (hgc : HasCompactSupport g) (hgM : ∀ w ∈ tsupport g, IsUnit (M w)),
-      (∀ x, κ x ∈ K → g (x, x) = ψ x ∧
-        (ψ x ≠ 0 → M (x, x) = ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x)))) ∧
+      (∀ f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W,
+        (∀ z ∉ K, ∀ η, f (z, η) = 0) → ∀ x ξ, g (x, x) • f (κ x, M (x, x) ξ) =
+          ψ x • f (κ x, ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x)) ξ)) ∧
       ∀ {m : ℝ} (a : Symbol n V W m), (∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0) →
         ∀ u v : 𝓢(CoordinateSpace n, V), (∀ y, v (κ y) = ψ y • u y) → ∀ x,
           quantizeSchwartzValue a.coefficient v (κ x) =
@@ -616,20 +619,25 @@ theorem exists_forall_quantizeSchwartzValue_comp_eq_compAmplitude {K : Set (Coor
   have hgc : HasCompactSupport g := hS.of_isClosed_subset (isClosed_tsupport _) hgS
   have hgM : ∀ w ∈ tsupport g, IsUnit (M w) := fun w hw ↦ hMu w (hgS hw)
   have hΦx : ∀ x, Φ (x, x) = fderiv ℝ κ x := fun x ↦ by rw [hΦdef]; exact hadamardFactor_self κ x
-  refine ⟨M, hM, g, hg, hgc, hgM, fun x hx ↦ ?_, fun {m} a haK u v huv x ↦ ?_⟩
-  · -- The diagonal: `M(x, x) = (Dκ(x)⁻¹)*` and `|det Dκ(x)| |det M(x, x)| = 1`.
+  refine ⟨M, hM, g, hg, hgc, hgM, fun f hf x ξ ↦ ?_, fun {m} a haK u v huv x ↦ ?_⟩
+  · -- The diagonal: both sides vanish unless `κ x ∈ K` and `ψ x ≠ 0`, and then
+    -- `M(x, x) = (Dκ(x)⁻¹)*` and `|det Dκ(x)| |det M(x, x)| = 1`.
+    by_cases hx : κ x ∈ K
+    swap
+    · simp [hf _ hx]
     by_cases hψx : ψ x = 0
     · simp [hgdef, hψx]
     have hxS : (x, x) ∈ tsupport φ ×ˢ tsupport ψ :=
       ⟨subset_tsupport _ (Function.mem_support.2 (by rw [hφ1' x hx]; exact one_ne_zero)),
         subset_tsupport _ hψx⟩
     have hu : IsUnit (fderiv ℝ κ x) := hΦx x ▸ hSΦ _ hxS
-    refine ⟨?_, fun _ ↦ by rw [hMS _ hxS, hΦx]⟩
-    rw [hgdef]
-    simp only
-    rw [hMS _ hxS, hΦx, hφ1' x hx, ← abs_mul,
-      ContinuousLinearMap.det_mul_det_adjoint_ringInverse hu]
-    simp
+    have hgx : g (x, x) = ψ x := by
+      rw [hgdef]
+      simp only
+      rw [hMS _ hxS, hΦx, hφ1' x hx, ← abs_mul,
+        ContinuousLinearMap.det_mul_det_adjoint_ringInverse hu]
+      simp
+    rw [hgx, hMS _ hxS, hΦx]
   · set c := a.compAmplitude hκ hM hg hgc hgM with hc_def
     have hc : c.HasProperInputSupport := a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM
     rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
@@ -732,12 +740,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
   refine ⟨a.compAmplitude hκ hM hg hgc hgM, a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM,
     fun x ξ ↦ ?_, hop a haK⟩
   rw [Amplitude.coefficient_diagonal, coefficient_compAmplitude]
-  by_cases hx : κ x ∈ K
-  · obtain ⟨hgx, hMx⟩ := hdiag x hx
-    by_cases hψx : ψ x = 0
-    · simp [hgx, hψx]
-    · rw [hgx, hMx hψx]
-  · simp [haK _ hx]
+  exact hdiag a.coefficient haK x ξ
 
 /-- **Changes of coordinates, the leading term.** Under the hypotheses of
 `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`, the transported operator
