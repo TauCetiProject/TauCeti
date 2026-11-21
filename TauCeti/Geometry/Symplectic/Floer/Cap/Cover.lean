@@ -58,8 +58,10 @@ The kernel is normal, and for path-connected `X` its quotient is `Γ`, so the ca
 around `Λ` (`TauCeti.Floer.capCoverDeckEquiv_capCoverPeriodHom_apply_mk`). Every fibre is therefore
 a torsor under `Γ`: acting on any point `e` of the cover identifies `Γ` with the fibre through `e`
 (`TauCeti.Floer.capCoverFiberEquiv`), so any two points of one fibre differ by a unique class of
-`Γ` (`TauCeti.Floer.existsUnique_capCoverDeckEquiv_apply_eq`). This is the action of `Γ` by
-recapping, on the caps of all contractible loops at once.
+`Γ` (`TauCeti.Floer.existsUnique_capCoverDeckEquiv_apply_eq`). This is meant to be the action of
+`Γ` by recapping, on the caps of all contractible loops at once, but the identification of the
+fibre over a contractible loop `γ` with the cap classes `TauCeti.Floer.SphericalCapClass ω c γ`,
+and hence of the deck action with recapping, is not constructed here.
 
 ## Main definitions
 
@@ -248,7 +250,9 @@ abbrev CapCover : Type :=
   SubgroupQuotient (constContractibleLoop x) (capCoverSubgroup ω c x)
 
 /-- The projection of the cap cover to the contractible free loops, the end point of a path of
-loops. -/
+loops. It is `subgroupQuotientProj` by definition (`TauCeti.Floer.capCoverProj_def`), and the
+continuity, surjectivity, covering, lifting and deck group results below are those of
+`subgroupQuotientProj`, read through this definitional equality. -/
 def capCoverProj : CapCover ω c x → contractibleLoops X :=
   subgroupQuotientProj _ _
 
@@ -282,14 +286,16 @@ theorem capCoverProj_basepoint :
     capCoverProj ω c x (CapCover.basepoint ω c x) = constContractibleLoop x :=
   subgroupQuotientProj_basepoint _ _
 
-theorem continuous_capCoverProj : Continuous (capCoverProj ω c x) :=
-  continuous_subgroupQuotientProj _ _
+theorem continuous_capCoverProj : Continuous (capCoverProj ω c x) := by
+  rw [capCoverProj_def]
+  exact continuous_subgroupQuotientProj _ _
 
 /-- Every contractible free loop of a path-connected space has a cap: the projection of the cap
 cover is onto. -/
 theorem capCoverProj_surjective [PathConnectedSpace X] :
-    Function.Surjective (capCoverProj ω c x) :=
-  subgroupQuotientProj_surjective _ _
+    Function.Surjective (capCoverProj ω c x) := by
+  rw [capCoverProj_def]
+  exact subgroupQuotientProj_surjective _ _
 
 variable [LocallyPathConnectedSpace (contractibleLoops X)]
   [SemilocallySimplyConnectedSpace (contractibleLoops X)]
@@ -297,8 +303,9 @@ variable [LocallyPathConnectedSpace (contractibleLoops X)]
 /-- **The cap cover is a covering space** of the contractible free loops, as soon as these are
 locally path-connected and semilocally simply connected, for instance for a locally equiconnected
 space `X` such as a compact smooth manifold. -/
-theorem isCoveringMap_capCoverProj : IsCoveringMap (capCoverProj ω c x) :=
-  isCoveringMap_subgroupQuotientProj _ _
+theorem isCoveringMap_capCoverProj : IsCoveringMap (capCoverProj ω c x) := by
+  rw [capCoverProj_def]
+  exact isCoveringMap_subgroupQuotientProj _ _
 
 /-- **A loop of contractible free loops lifts to a loop of the cap cover**, at its base point,
 exactly when the torus it sweeps out has zero area and zero first Chern number: the subgroup of
@@ -326,6 +333,20 @@ def capCoverDeckEquiv :
   (QuotientGroup.quotientKerEquivOfSurjective _ (capCoverPeriodHom_surjective ω c x)).symm.trans
     (deckSubgroupQuotientProjEquivOfNormal _ _)
 
+/-- The deck transformation of the period class of a loop `g` of contractible free loops is the
+deck transformation of the class of `g` in the quotient of `π₁(𝓛₀X)` by
+`TauCeti.Floer.capCoverSubgroup`. -/
+theorem coe_capCoverDeckEquiv_capCoverPeriodHom
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x)) :
+    (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g) : CapCover ω c x ≃ₜ CapCover ω c x) =
+      (deckSubgroupQuotientProjEquivOfNormal (constContractibleLoop x) (capCoverSubgroup ω c x)
+        (QuotientGroup.mk g)).val := by
+  have hg : (QuotientGroup.quotientKerEquivOfSurjective _ (capCoverPeriodHom_surjective ω c x)).symm
+      (capCoverPeriodHom ω c x g) = QuotientGroup.mk g :=
+    (MulEquiv.symm_apply_eq _).2 rfl
+  -- `capCoverDeckEquiv` is this composite, through `capCoverProj_def`.
+  exact congrArg (fun γ ↦ (deckSubgroupQuotientProjEquivOfNormal _ _ γ).val) hg
+
 /-- The period class of a loop `g` of contractible free loops acts on the cap cover by transporting
 caps around `g`: it sends the class of a path `e` of loops to the class of `g • e`. -/
 @[simp]
@@ -334,15 +355,7 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_apply_mk
     (e : UniversalCover (constContractibleLoop x)) :
     (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g) : CapCover ω c x ≃ₜ CapCover ω c x)
         (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
-  have hg : (QuotientGroup.quotientKerEquivOfSurjective _ (capCoverPeriodHom_surjective ω c x)).symm
-      (capCoverPeriodHom ω c x g) = QuotientGroup.mk g :=
-    (MulEquiv.symm_apply_eq _).2 rfl
-  have h := deckSubgroupQuotientProjEquivOfNormal_mk_apply (constContractibleLoop x)
-    (capCoverSubgroup ω c x) g e
-  rw [← hg] at h
-  -- `capCoverProj` is `subgroupQuotientProj` by definition, so the two deck groups are the same
-  -- subgroup and `h` is the goal once `capCoverDeckEquiv` is unfolded to its defining composite.
-  exact h
+  simp [coe_capCoverDeckEquiv_capCoverPeriodHom]
 
 /-- The inverse of the deck transformation of the period class of a loop `g` of contractible free
 loops sends the class of a path `e` of loops to the class of `g⁻¹ • e`. -/
@@ -352,17 +365,12 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_symm_apply_mk
     (e : UniversalCover (constContractibleLoop x)) :
     (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g) : CapCover ω c x ≃ₜ CapCover ω c x).symm
         (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
-  have hg : (QuotientGroup.quotientKerEquivOfSurjective _ (capCoverPeriodHom_surjective ω c x)).symm
-      (capCoverPeriodHom ω c x g) = QuotientGroup.mk g :=
-    (MulEquiv.symm_apply_eq _).2 rfl
-  have h := deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply (constContractibleLoop x)
-    (capCoverSubgroup ω c x) g e
-  rw [← hg] at h
-  exact h
+  simp [coe_capCoverDeckEquiv_capCoverPeriodHom]
 
 /-- **The cap cover is a regular cover**: its deck group acts transitively on every fibre. -/
-theorem isRegular_capCoverProj : Deck.IsRegular (capCoverProj ω c x) :=
-  (isRegular_subgroupQuotientProj_iff_normal _ _).2 inferInstance
+theorem isRegular_capCoverProj : Deck.IsRegular (capCoverProj ω c x) := by
+  rw [capCoverProj_def]
+  exact (isRegular_subgroupQuotientProj_iff_normal _ _).2 inferInstance
 
 /-- **The fibres of the cap cover are torsors under the period group**: acting on a point `e` of the
 cap cover identifies `Γ` with the fibre through `e`, a class `γ` going to the image of `e` under the
