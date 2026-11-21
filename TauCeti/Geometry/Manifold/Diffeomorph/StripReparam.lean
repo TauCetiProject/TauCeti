@@ -407,11 +407,32 @@ theorem stripReparam_apply (p : I × (M × M)) :
       TauCeti.stripReparam U (ρ p.1) F (F.symm p.2) :=
   (rfl)
 
+/-- The inverse of the underlying diffeomorphism composes `F` with the reparametrization of
+`F.symm`. -/
+@[simp]
+theorem toDiffeomorph_stripReparam_symm_apply (p : I × (M × M)) :
+    (stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).toDiffeomorph.symm p =
+      (p.1, F (TauCeti.stripReparam U (ρ p.1) F.symm p.2)) :=
+  (rfl)
+
+/-- The inverse diffeotopy composes `F` with the reparametrization of `F.symm`. -/
+theorem symm_stripReparam_apply (p : I × (M × M)) :
+    (stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).symm p =
+      F (TauCeti.stripReparam U (ρ p.1) F.symm p.2) := by
+  rw [symm_apply, toDiffeomorph_stripReparam_symm_apply]
+
 /-- The diffeotopy at time `t` composed with `F` is the reparametrization of `F` by `ρ t`; in
 particular it connects `F`, at time `0`, to its reparametrization by `ρ 1`. -/
 theorem timeSlice_stripReparam_apply (t : I) (x : M × M) :
     (stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).timeSlice t (F x) =
       TauCeti.stripReparam U (ρ t) F x := by
   rw [timeSlice_apply, stripReparam_apply, F.symm_apply_apply]
+
+/-- The inverse of the diffeotopy at time `t` is `F` composed with the reparametrization of
+`F.symm` by `ρ t`. -/
+theorem timeSlice_stripReparam_symm_apply (t : I) (x : M × M) :
+    ((stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).timeSlice t).symm x =
+      F (TauCeti.stripReparam U (ρ t) F.symm x) := by
+  rw [symm_timeSlice_apply, symm_stripReparam_apply]
 
 end TauCeti.Diffeotopy
