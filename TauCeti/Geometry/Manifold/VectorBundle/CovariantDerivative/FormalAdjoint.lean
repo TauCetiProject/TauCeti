@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Pairing
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
