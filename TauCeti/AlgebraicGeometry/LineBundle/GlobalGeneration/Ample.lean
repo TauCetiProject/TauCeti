@@ -58,7 +58,8 @@ generated for all sufficiently large `n`. Tensoring a surjection `𝒪_X^J ⟶ F
   finite global generation of `F ⊗ L^{⊗n}` when `X` is covered by finitely many affine `X_{sᵢ}`.
 * `AlgebraicGeometry.Scheme.Modules.exists_epi_free_tensorPow_of_isAmple`: Serre's global
   generation theorem for an ample line bundle on a quasi-separated scheme.
-* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_epi_free_tensor`: dualizing an
+* `AlgebraicGeometry.Scheme.Modules.biproductConstIsoTensorFree` and
+  `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_epi_free_tensor`: dualizing an
   epimorphism `𝒪_X^J ⟶ F ⊗ M` into an epimorphism `⨁_J M' ⟶ F`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_isGloballyGenerated_tensorProduct_tensorPow`
   and `exists_isGloballyGenerated_tensorPow`: high ample twists of any line bundle (and high
@@ -83,11 +84,6 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
-/-- The underlying sheaf of an `InvertibleSheaf X` is invertible. -/
-instance InvertibleSheaf.isInvertible_obj (L : InvertibleSheaf X) :
-    SheafOfModules.isInvertible X L.obj :=
-  L.property
-
 /-- The underlying sheaf of `InvertibleSheaf.tensorPow L n` is isomorphic to the monoidal tensor
 power `TauCeti.tensorPow L.obj n`. -/
 def InvertibleSheaf.tensorPowObjIso (L : InvertibleSheaf X) :
@@ -107,11 +103,6 @@ instance isInvertible_tensorPow (L : X.Modules) [SheafOfModules.isInvertible X L
   (SheafOfModules.isInvertible X).prop_of_iso
     (InvertibleSheaf.tensorPowObjIso ⟨L, inferInstance⟩ n)
     (InvertibleSheaf.tensorPow ⟨L, inferInstance⟩ n).property
-
-/-- An invertible `𝒪_X`-module is finitely presented. -/
-lemma isFinitePresentation_of_isInvertible (M : X.Modules) [hM : SheafOfModules.isInvertible X M] :
-    M.IsFinitePresentation :=
-  @TauCeti.SheafOfModules.IsInvertible.isFinitePresentation _ _ _ X.ringCatSheaf _ _ M hM
 
 /-- The line-bundle class of the monoidal tensor power `TauCeti.tensorPow L.obj n` is
 `(LineBundleClass.mk L) ^ n`. -/
@@ -384,7 +375,9 @@ theorem exists_epi_free_tensorPow_of_iSup_nonvanishingLocus [CompactSpace X]
     exists_map_eq_tmulRight_tensorPowSection_of_le F (U p.1).leTop (s p.1) p.2.1
       ((Finset.le_sup (f := k) (Finset.mem_univ p)).trans hn) (g p) (hg p)
   choose g' hg' using hstep
-  have : (tensorPow L n).IsFinitePresentation := isFinitePresentation_of_isInvertible _
+  have : (tensorPow L n).IsFinitePresentation :=
+    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
+      (M := tensorPow L n) (hM := isInvertible_tensorPow L n)
   have : (tensorPow L n).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
   let eJ : ULift.{u} (Fin (Fintype.card (Σ i : ι, T i))) ≃ Σ i : ι, T i :=
     Equiv.ulift.trans (Fintype.equivFin (Σ i : ι, T i)).symm
@@ -449,23 +442,17 @@ private theorem exists_common_power_nonvanishing_cover (L : InvertibleSheaf X)
 private theorem exists_tensorPow_mul_add_iso (L : InvertibleSheaf X) {D q r n : ℕ}
     (h : D * q + r = n) :
     Nonempty (tensorPow L.obj r ⊗ tensorPow (tensorPow L.obj D) q ≅ tensorPow L.obj n) := by
-  let Lr : InvertibleSheaf X := ⟨tensorPow L.obj r, inferInstance⟩
-  let LDq : InvertibleSheaf X := ⟨tensorPow (tensorPow L.obj D) q, inferInstance⟩
-  have hinvProd : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (Lr.obj ⊗ LDq.obj) :=
-    (TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X).prop_of_iso
-      (InvertibleSheaf.tensorProductObjIso Lr LDq) (InvertibleSheaf.tensorProduct Lr LDq).property
-  have hmk : LineBundleClass.mk ⟨Lr.obj ⊗ LDq.obj, hinvProd⟩ =
-      LineBundleClass.mk ⟨tensorPow L.obj n, inferInstance⟩ := by
-    have hmul : LineBundleClass.mk ⟨Lr.obj ⊗ LDq.obj, hinvProd⟩ =
-        LineBundleClass.mk Lr * LineBundleClass.mk LDq :=
-      (LineBundleClass.mk_eq_mk_iff.mpr
-        ⟨(InvertibleSheaf.tensorProductObjIso Lr LDq).symm⟩).trans
-        (LineBundleClass.mk_tensorProduct Lr LDq)
-    rw [hmul, LineBundleClass.mk_tensorPow_obj L r,
-      LineBundleClass.mk_tensorPow_obj ⟨tensorPow L.obj D, inferInstance⟩ q,
-      LineBundleClass.mk_tensorPow_obj L D, LineBundleClass.mk_tensorPow_obj L n,
-      ← pow_mul, ← pow_add, add_comm, h]
-  exact LineBundleClass.mk_eq_mk_iff.mp hmk
+  obtain ⟨e1⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L D q
+  obtain ⟨e2⟩ := InvertibleSheaf.nonempty_tensorPow_add_iso L r (D * q)
+  have hnr : r + D * q = n := (add_comm r (D * q)).trans h
+  exact ⟨whiskerLeftIso (tensorPow L.obj r)
+      ((tensorPowMapIso (InvertibleSheaf.tensorPowObjIso L D) q).symm ≪≫
+        (InvertibleSheaf.tensorPowObjIso (L.tensorPow D) q).symm ≪≫ e1) ≪≫
+    tensorIso (InvertibleSheaf.tensorPowObjIso L r).symm (Iso.refl _) ≪≫
+    (InvertibleSheaf.tensorProductObjIso (L.tensorPow r) (L.tensorPow (D * q))).symm ≪≫
+    e2.symm ≪≫
+    eqToIso (congrArg (fun k ↦ (L.tensorPow k).obj) hnr) ≪≫
+    InvertibleSheaf.tensorPowObjIso L n⟩
 
 /-- **Serre's global generation theorem** (Hartshorne, Theorem II.5.17; Stacks Project, Tag 01Q3).
 Let `X` be a quasi-separated scheme and `L` an ample line bundle on `X`. For every quasi-coherent
@@ -485,7 +472,9 @@ theorem exists_epi_free_tensorPow_of_isAmple [QuasiSeparatedSpace X]
       ∃ (J : Type u) (_ : Finite J)
         (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free J)
           ((F ⊗ tensorPow L.obj r.1) ⊗ tensorPow (tensorPow L.obj D) q)), Epi π := by
-    have : (tensorPow L.obj r.1).IsFinitePresentation := isFinitePresentation_of_isInvertible _
+    have : (tensorPow L.obj r.1).IsFinitePresentation :=
+      TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
+        (M := tensorPow L.obj r.1) (hM := isInvertible_tensorPow L.obj r.1)
     have : (tensorPow L.obj r.1).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
     have : (tensorPow L.obj r.1).IsFiniteType := isFiniteType_of_isFinitePresentation _
     exact exists_epi_free_tensorPow_of_iSup_nonvanishingLocus t haff hcov (F ⊗ tensorPow L.obj r.1)
@@ -503,6 +492,19 @@ theorem exists_epi_free_tensorPow_of_isAmple [QuasiSeparatedSpace X]
 
 /-! ### Corollaries: surjections from biproducts and global generation of line bundles -/
 
+/-- A finite biproduct of copies of `M` is isomorphic to `M ⊗ 𝒪_X^J`. -/
+def biproductConstIsoTensorFree (M : X.Modules) (J : Type u) [Finite J]
+    [HasBiproduct fun _ : J ↦ M] :
+    (⨁ fun _ : J ↦ M) ≅ M ⊗ SheafOfModules.free J := by
+  letI : Fintype J := Fintype.ofFinite J
+  have : HasBiproduct (C := X.Modules) fun _ : J ↦ 𝟙_ X.Modules :=
+    HasBiproduct.of_hasCoproduct _
+  exact biproduct.isoCoproduct (fun _ : J ↦ M) ≪≫
+    Sigma.mapIso (fun _ ↦ (ρ_ M).symm) ≪≫
+    (PreservesCoproduct.iso (tensorLeft M) (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
+    whiskerLeftIso M ((biproduct.isoCoproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
+      TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) J)
+
 /-- Dualizing a surjection onto a twisted sheaf: if `π : 𝒪_X^J ⟶ F ⊗ M` is an epimorphism for a
 finite index type `J` and `e : M ⊗ M' ≅ 𝒪_X` exhibits `M'` as an inverse of `M`, then `F` admits
 an epimorphism from the finite biproduct `⨁_{j ∈ J} M'`. -/
@@ -511,18 +513,11 @@ theorem exists_epi_biproduct_of_epi_free_tensor {F M M' : X.Modules}
     (π : Quiver.Hom (V := X.Modules) (SheafOfModules.free J) (F ⊗ M)) [Epi π]
     (e : M ⊗ M' ≅ 𝟙_ X.Modules) :
     ∃ π' : (⨁ fun _ : J ↦ M') ⟶ F, Epi π' := by
-  cases nonempty_fintype J
-  have : HasBiproduct (C := X.Modules) fun _ : J ↦ 𝟙_ X.Modules :=
-    HasBiproduct.of_hasCoproduct _
   -- Tensor `π` on the left with `M'`; `tensorLeft M'` is a left adjoint so it preserves
-  -- epimorphisms and coproducts.
+  -- epimorphisms.
   have : Epi (M' ◁ π) := (tensorLeft M').map_epi π
   let efree : (⨁ fun _ : J ↦ M') ≅ M' ⊗ SheafOfModules.free J :=
-    biproduct.isoCoproduct (fun _ : J ↦ M') ≪≫
-      Sigma.mapIso (fun _ ↦ (ρ_ M').symm) ≪≫
-      (PreservesCoproduct.iso (tensorLeft M') (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
-      whiskerLeftIso M' ((biproduct.isoCoproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
-        TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) J)
+    biproductConstIsoTensorFree M' J
   let etgt : M' ⊗ (F ⊗ M) ≅ F :=
     β_ M' (F ⊗ M) ≪≫ α_ F M M' ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
   have : Epi ((M' ◁ π) ≫ etgt.hom) := epi_comp (M' ◁ π) etgt.hom
@@ -542,7 +537,8 @@ On a quasi-separated scheme, if `L` is ample and `K` is any invertible sheaf, th
 theorem exists_isGloballyGenerated_tensorProduct_tensorPow [QuasiSeparatedSpace X]
     (L : InvertibleSheaf X) (hL : (LineBundleClass.mk L).IsAmple) (K : InvertibleSheaf X) :
     ∃ n₀ : ℕ, ∀ n ≥ n₀, (K.tensorProduct (L.tensorPow n)).IsGloballyGenerated := by
-  have : K.obj.IsFinitePresentation := isFinitePresentation_of_isInvertible K.obj
+  have : K.obj.IsFinitePresentation :=
+    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := K.obj)
   have : K.obj.IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_of_isFinitePresentation K.obj
   have : K.obj.IsFiniteType :=

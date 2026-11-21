@@ -225,7 +225,8 @@ theorem exists_isZero_higherDirectImage_tensor_pullback_twistingSheaf {R M : Typ
   obtain ⟨m₀, hm₀⟩ := i.exists_subsingleton_cohomology_tensor_pullback_twistingSheaf F
   refine ⟨m₀, fun m hm q hq ↦ ?_⟩
   let Om := Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) m
-  have : Om.IsFinitePresentation := isFinitePresentation_of_isInvertible Om
+  have : Om.IsFinitePresentation :=
+    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := Om)
   have : Om.IsQuasicoherent := isQuasicoherent_of_isFinitePresentation Om
   have : ((Scheme.Modules.pullback i).obj Om).IsQuasicoherent :=
     Scheme.Modules.isQuasicoherent_pullback i Om
