@@ -641,11 +641,9 @@ theorem disjoint_range_doubleTorusCircle :
 /-- The analytic and topological annulus doubles use the same native quotient after identifying
     the gluing sets. -/
 private def schottkyDoubleHomeomorphDoubleAlong :
-    SchottkyDouble (closedAnnulus r₁ r₂) ≃ₜ DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂) := by
-  -- The seam equality is propositional: transport the quotient type and topology together.
-  unfold SchottkyDouble
-  rw [compl_borderedInterior]
-  exact Homeomorph.refl _
+    SchottkyDouble (closedAnnulus r₁ r₂) ≃ₜ DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂) :=
+  DoubleAlong.congr (Homeomorph.refl _) (by
+    rw [Homeomorph.refl_apply, Set.image_id, compl_borderedInterior])
 
 /-- The analytic annulus double has finite CW type by the native topological double comparison. -/
 instance instFiniteCWTypeSchottkyDouble :
