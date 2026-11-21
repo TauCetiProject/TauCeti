@@ -30,17 +30,15 @@ infinite-dimensional
   (`TauCeti.interior_toWeakSpace_eq_empty_of_isBounded`);
 * any continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range into a normed space is
   discontinuous for the weak topology on `V` and the norm topology on `F` at every point
-  (`ContinuousLinearMap.not_continuousAt_toWeakSpace_symm`,
-  `ContinuousLinearMap.not_continuous_toWeakSpace_symm`);
+  (`ContinuousLinearMap.not_continuousAt_toWeakSpace_symm`, complementing global discontinuity in
+  `TauCeti.Analysis.Normed.Module.WeakSpace.Sphere`);
 * over `ℝ` or `ℂ`, for any continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range,
   any center `y : F`, and any `r : ℝ`, the weak closure of `J ⁻¹' Metric.sphere y r` is
-  `J ⁻¹' Metric.closedBall y r` (`ContinuousLinearMap.closure_toWeakSpace_preimage_sphere`, and
+  `J ⁻¹' Metric.closedBall y r` (`ContinuousLinearMap.closure_toWeakSpace_preimage_sphere`,
+  `ContinuousLinearMap.closure_toWeakSpace_setOf_norm_eq` for `{u | ‖J u‖ = r}`, and
   `TauCeti.closure_toWeakSpace_sphere` for `J = id`), so `J ⁻¹' Metric.sphere y r` is not weakly
   closed whenever `J ⁻¹' Metric.ball y r` is nonempty
-  (`ContinuousLinearMap.not_isClosed_toWeakSpace_preimage_sphere`). In particular, `{u | ‖J u‖ = r}`
-  contains `0` in its weak closure for `0 ≤ r`
-  (`ContinuousLinearMap.zero_mem_closure_toWeakSpace_setOf_norm_eq`) and is never weakly closed for
-  `0 < r` (`ContinuousLinearMap.not_isClosed_toWeakSpace_setOf_norm_eq`).
+  (`ContinuousLinearMap.not_isClosed_toWeakSpace_preimage_sphere`).
 
 This shows that weak-to-norm continuity of a compact operator on bounded sets cannot hold globally
 for any operator of infinite rank, and that norm sphere constraints are not weakly closed even when
@@ -151,13 +149,6 @@ theorem not_continuousAt_toWeakSpace_symm (J : V →L[𝕜] F)
     exact h
   exact ((div_lt_iff₀ hJv).1 hc_norm).not_ge hlt.le
 
-/-- A continuous linear map with infinite-dimensional range from a topological vector space into a
-normed space is never globally continuous from the weak topology to the norm topology. -/
-theorem not_continuous_toWeakSpace_symm (J : V →L[𝕜] F)
-    (hJ : ¬ FiniteDimensional 𝕜 (LinearMap.range J.toLinearMap)) :
-    ¬ Continuous (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) :=
-  fun hc ↦ J.not_continuousAt_toWeakSpace_symm hJ 0 hc.continuousAt
-
 end GlobalDiscontinuity
 
 section WeakClosureSphere
@@ -245,25 +236,6 @@ theorem closure_toWeakSpace_setOf_norm_eq (J : V →L[𝕜] F)
     simp
   rw [hsphere, hball]
   exact J.closure_toWeakSpace_preimage_sphere hJ 0 r
-
-/-- For a continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range into a normed space
-over `ℝ` or `ℂ`, `0` belongs to the weak closure of `{u : V | ‖J u‖ = r}` for every `0 ≤ r`. -/
-theorem zero_mem_closure_toWeakSpace_setOf_norm_eq (J : V →L[𝕜] F)
-    (hJ : ¬ FiniteDimensional 𝕜 (LinearMap.range J.toLinearMap)) {r : ℝ} (hr : 0 ≤ r) :
-    (0 : WeakSpace 𝕜 V) ∈ closure (toWeakSpace 𝕜 V '' {u : V | ‖J u‖ = r}) := by
-  rw [J.closure_toWeakSpace_setOf_norm_eq hJ r]
-  exact ⟨0, by simpa only [mem_ofPred_eq, map_zero, norm_zero] using hr, map_zero _⟩
-
-/-- For `0 < r` and a continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range into a
-normed space over `ℝ` or `ℂ`, `{u : V | ‖J u‖ = r}` is not weakly closed. -/
-theorem not_isClosed_toWeakSpace_setOf_norm_eq (J : V →L[𝕜] F)
-    (hJ : ¬ FiniteDimensional 𝕜 (LinearMap.range J.toLinearMap)) {r : ℝ} (hr : 0 < r) :
-    ¬ IsClosed (toWeakSpace 𝕜 V '' {u : V | ‖J u‖ = r}) := by
-  have hsphere : {u : V | ‖J u‖ = r} = J ⁻¹' sphere (0 : F) r := by
-    ext u
-    simp
-  rw [hsphere]
-  exact J.not_isClosed_toWeakSpace_preimage_sphere hJ ⟨0, by simpa using hr⟩
 
 end WeakClosureSphere
 

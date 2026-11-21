@@ -359,6 +359,12 @@ theorem invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
   push_cast
   rfl
 
+open scoped ComplexOrder in
+/-- Every entry of `lp.invNatSucc 𝕜` is nonnegative in the `RCLike` order. -/
+theorem invNatSucc_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+    0 ≤ invNatSucc 𝕜 n :=
+  ofAntitone_apply_nonneg 𝕜 TauCeti.antitone_inv_natCast_add_one n
+
 /-- The norm of the `n`-th coordinate of `lp.invNatSucc 𝕜` is `((n : ℝ) + 1)⁻¹`. -/
 theorem norm_invNatSucc_apply (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
     ‖invNatSucc 𝕜 n‖ = ((n : ℝ) + 1)⁻¹ := by

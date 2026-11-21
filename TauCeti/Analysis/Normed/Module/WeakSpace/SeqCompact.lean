@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Topology.MetricSpace.PiNat
 import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.Sequences
+import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
 
 /-!
 # Weakly compact sets are weakly sequentially compact
@@ -108,17 +109,15 @@ theorem isSeqCompact_toWeakSpace_of_isCompact {K : Set E}
   intro u hu
   choose v hvK hv using hu
   -- The closed span `Y` of the sequence is norm separable and weakly closed.
-  set Y : Set E := closure (Submodule.span 𝕜 (range v)) with hY
-  have hYsep : IsSeparable Y := (countable_range v).isSeparable.span.closure
-  have hYclosed : IsClosed (toWeakSpace 𝕜 E '' Y) := by
-    -- The weak and norm closures of a convex set agree; convexity is over `ℝ`.
-    let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-    have : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
-    have hconv : Convex ℝ (Submodule.span 𝕜 (range v) : Set E) :=
-      ((Submodule.span 𝕜 (range v)).restrictScalars ℝ).convex
-    rw [hY, hconv.toWeakSpace_closure 𝕜]
-    exact isClosed_closure
-  have hvY (n : ℕ) : v n ∈ Y := subset_closure (Submodule.subset_span (mem_range_self n))
+  let Ys : Submodule 𝕜 E := (Submodule.span 𝕜 (range v)).topologicalClosure
+  let Y : Set E := (Ys : Set E)
+  have hYsep : IsSeparable Y := by
+    simpa only [Y, Ys, Submodule.topologicalClosure_coe] using
+      (countable_range v).isSeparable.span.closure
+  have hYclosed : IsClosed (toWeakSpace 𝕜 E '' Y) :=
+    Ys.isClosed_toWeakSpace (Submodule.span 𝕜 (range v)).isClosed_topologicalClosure
+  have hvY (n : ℕ) : v n ∈ Y :=
+    (Submodule.span 𝕜 (range v)).le_topologicalClosure (Submodule.subset_span (mem_range_self n))
   -- The sequence lies in `K ∩ Y`, which is weakly compact and norm separable, hence weakly
   -- compact metrizable and so weakly sequentially compact.
   have hKY : IsCompact (toWeakSpace 𝕜 E '' (K ∩ Y)) := by

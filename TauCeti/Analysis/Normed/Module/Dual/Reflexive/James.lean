@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.Helly
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Topology.Algebra.Module.WeakSpace
 import Mathlib.Topology.UniformSpace.Equicontinuity
@@ -147,13 +148,7 @@ theorem not_tendsto_subseq_toWeakSpace_of_dual_triangular
   have hequi : Equicontinuous (fun n z ↦ f n z) :=
     ((NormedSpace.equicontinuous_tfae f).out 6 2).mp hf
   have hclosed : IsClosed (M : Set E) := hequi.isClosed_setOfPred_tendsto continuous_const
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
-  have hweak : IsClosed (toWeakSpace 𝕜 E '' (M : Set E)) := by
-    apply isClosed_of_closure_subset
-    have hconv : Convex ℝ (M : Set E) := by
-      simpa only [Submodule.coe_restrictScalars] using (M.restrictScalars ℝ).convex
-    rw [← hconv.toWeakSpace_closure 𝕜, hclosed.closure_eq]
+  have hweak : IsClosed (toWeakSpace 𝕜 E '' (M : Set E)) := M.isClosed_toWeakSpace hclosed
   have hx (j : ℕ) : x j ∈ M := by
     exact tendsto_const_nhds.congr'
       (eventually_atTop.2 ⟨j + 1, fun n hn ↦ (hzero n j (by omega)).symm⟩)

@@ -48,8 +48,8 @@ This bounded-set weak-to-norm continuity yields:
   (`IsCompactOperator.le_of_tendsto_add_comp_of_tendsto_toWeakSpace`), because weakly convergent
   sequences are norm-bounded (`Filter.Tendsto.isBounded_range_of_toWeakSpace`).
 
-The restriction to bounded sets cannot be dropped: in an infinite-dimensional space an injective
-linear map into a normed space is never continuous from the weak topology to the norm topology
+The restriction to bounded sets cannot be dropped: a linear map with infinite-dimensional range
+into a normed space is never continuous from the weak topology to the norm topology
 (`TauCeti.not_continuous_comp_toWeakSpace_symm` in
 `TauCeti.Analysis.Normed.Module.WeakSpace.Sphere`). For the concrete `ℓ^p` counterexample showing
 that an infinite-rank compact operator is not globally weak-to-norm continuous and its level spheres
@@ -88,6 +88,14 @@ open Bornology Filter Function Metric NormedSpace Set Topology
 
 namespace IsCompactOperator
 
+private theorem image_toWeakSpace_inter_preimage {𝕜 V F : Type*} [CommSemiring 𝕜]
+    [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
+    [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V] (J : V → F) (S : Set V) (C : Set F) :
+    toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C) =
+      toWeakSpace 𝕜 V '' S ∩
+        (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C := by
+  simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, preimage_inter, preimage_preimage]
+
 section TopologicalVectorSpace
 
 variable {𝕜 V F : Type*} [NontriviallyNormedField 𝕜]
@@ -111,31 +119,35 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isVonNBounded (hJ : IsCompactOperator 
   simpa only [Function.comp_def, hmap] using
     ((WeakSpace.map J).continuous.tendsto (toWeakSpace 𝕜 V a)).comp h
 
-/-- A compact operator is continuous from the weak topology to the original topology on every
-von Neumann bounded set. -/
-theorem continuousOn_comp_toWeakSpace_symm_of_isVonNBounded (hJ : IsCompactOperator J)
-    {B : Set V} (hB : IsVonNBounded 𝕜 B) :
-    ContinuousOn (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' B) := by
-  rintro _ ⟨u, -, rfl⟩
+/-- A compact operator `J : V →L[𝕜] F` is continuous within the weak image of any von Neumann
+bounded set `B ⊆ V` at every point `w : WeakSpace 𝕜 V`. -/
+theorem continuousWithinAt_toWeakSpace_symm_of_isVonNBounded (hJ : IsCompactOperator J)
+    {B : Set V} (hB : IsVonNBounded 𝕜 B) (w : WeakSpace 𝕜 V) :
+    ContinuousWithinAt (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
+      (toWeakSpace 𝕜 V '' B) w := by
   refine hJ.tendsto_of_tendsto_toWeakSpace_of_isVonNBounded hB ?_ ?_
-  · filter_upwards [self_mem_nhdsWithin] with w hw
-    obtain ⟨v, hv, rfl⟩ := hw
+  · filter_upwards [self_mem_nhdsWithin] with z hz
+    obtain ⟨v, hv, rfl⟩ := hz
     simpa only [LinearEquiv.symm_apply_apply] using hv
   · have hid : (fun z : WeakSpace 𝕜 V ↦ toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm z)) = id :=
       funext (toWeakSpace 𝕜 V).apply_symm_apply
     rw [hid, LinearEquiv.apply_symm_apply]
     exact tendsto_id.mono_left nhdsWithin_le_nhds
 
+/-- A compact operator is continuous from the weak topology to the original topology on every
+von Neumann bounded set. -/
+theorem continuousOn_comp_toWeakSpace_symm_of_isVonNBounded (hJ : IsCompactOperator J)
+    {B : Set V} (hB : IsVonNBounded 𝕜 B) :
+    ContinuousOn (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' B) :=
+  fun w _ ↦ hJ.continuousWithinAt_toWeakSpace_symm_of_isVonNBounded hB w
+
 /-- On a von Neumann bounded weakly closed set `B`, the preimage of a closed set under a compact
 operator is weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isVonNBounded (hJ : IsCompactOperator J)
     {B : Set V} (hB : IsVonNBounded 𝕜 B) (hBc : IsClosed (toWeakSpace 𝕜 V '' B)) {C : Set F}
     (hC : IsClosed C) : IsClosed (toWeakSpace 𝕜 V '' (B ∩ J ⁻¹' C)) := by
-  have heq : toWeakSpace 𝕜 V '' (B ∩ J ⁻¹' C) =
-      toWeakSpace 𝕜 V '' B ∩ (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C := by
-    simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, preimage_inter, preimage_preimage]
-  rw [heq]
+  rw [image_toWeakSpace_inter_preimage]
   exact (hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded hB).preimage_isClosed_of_isClosed
     hBc hC
 
@@ -157,34 +169,14 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isBounded (hJ : IsCompactOperator J) {
   hJ.tendsto_of_tendsto_toWeakSpace_of_isVonNBounded
     (by rwa [NormedSpace.isVonNBounded_iff]) hu h
 
-/-- A compact operator `J : V →L[𝕜] F` is continuous within any subset `T ⊆ WeakSpace 𝕜 V` whose
-preimage in `V` is norm-bounded, at every point `w : WeakSpace 𝕜 V`. -/
-theorem continuousWithinAt_toWeakSpace_symm_of_isBounded_preimage (hJ : IsCompactOperator J)
-    {T : Set (WeakSpace 𝕜 V)} (hT : IsBounded ((toWeakSpace 𝕜 V) ⁻¹' T)) (w : WeakSpace 𝕜 V) :
-    ContinuousWithinAt (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) T w := by
-  refine hJ.tendsto_of_tendsto_toWeakSpace_of_isBounded hT ?_ ?_
-  · filter_upwards [self_mem_nhdsWithin] with z hz
-    simpa only [mem_preimage, LinearEquiv.apply_symm_apply] using hz
-  · have hid : (fun z : WeakSpace 𝕜 V ↦ toWeakSpace 𝕜 V ((toWeakSpace 𝕜 V).symm z)) = id :=
-      funext (toWeakSpace 𝕜 V).apply_symm_apply
-    rw [hid, LinearEquiv.apply_symm_apply]
-    exact tendsto_id.mono_left nhdsWithin_le_nhds
-
-/-- A compact operator `J : V →L[𝕜] F` is weak-to-norm continuous on any subset of `WeakSpace 𝕜 V`
-whose preimage in `V` is norm-bounded. -/
-theorem continuousOn_toWeakSpace_symm_of_isBounded_preimage (hJ : IsCompactOperator J)
-    {T : Set (WeakSpace 𝕜 V)} (hT : IsBounded ((toWeakSpace 𝕜 V) ⁻¹' T)) :
-    ContinuousOn (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) T :=
-  fun w _ ↦ hJ.continuousWithinAt_toWeakSpace_symm_of_isBounded_preimage hT w
-
 /-- A compact operator `J : V →L[𝕜] F` is continuous within the weak image of any norm-bounded set
 `B ⊆ V` at every point `w : WeakSpace 𝕜 V`. -/
 theorem continuousWithinAt_toWeakSpace_symm (hJ : IsCompactOperator J) {B : Set V}
     (hB : IsBounded B) (w : WeakSpace 𝕜 V) :
     ContinuousWithinAt (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
       (toWeakSpace 𝕜 V '' B) w :=
-  hJ.continuousWithinAt_toWeakSpace_symm_of_isBounded_preimage
-    (by simpa only [preimage_image_eq _ (toWeakSpace 𝕜 V).injective] using hB) w
+  hJ.continuousWithinAt_toWeakSpace_symm_of_isVonNBounded
+    (by rwa [NormedSpace.isVonNBounded_iff]) w
 
 /-- **Weak-to-norm continuity of compact operators on bounded sets.** A compact operator is
 continuous from the weak topology to the original topology on every bounded set. -/
@@ -252,16 +244,7 @@ theorem isCompact_toWeakSpace_inter_preimage_of_isCompact (hJ : IsCompactOperato
       fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) :=
     continuousOn_iff_continuous_domRestrict.1
       (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd)
-  have heq : toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C) =
-      Subtype.val '' (((toWeakSpace 𝕜 V '' S).domRestrict
-        fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) ⁻¹' C) := by
-    ext w
-    constructor
-    · rintro ⟨u, ⟨huS, huC⟩, rfl⟩
-      exact ⟨⟨toWeakSpace 𝕜 V u, mem_image_of_mem _ huS⟩, by simpa using huC, rfl⟩
-    · rintro ⟨⟨_, ⟨u, huS, rfl⟩⟩, huC, rfl⟩
-      exact ⟨u, ⟨huS, by simpa using huC⟩, rfl⟩
-  rw [heq]
+  rw [image_toWeakSpace_inter_preimage, ← Subtype.image_preimage_val]
   exact (hC.preimage hcont).isCompact.image continuous_subtypeVal
 
 /-- In a reflexive seminormed space over a proper nontrivially normed field, if `S ⊆ V` is
@@ -286,39 +269,17 @@ variable {𝕜 V F : Type*} [RCLike 𝕜]
   [TopologicalSpace F] [AddCommMonoid F] [Module 𝕜 F] [ContinuousConstSMul 𝕜 F]
   [T2Space (WeakSpace 𝕜 F)] {J : V →L[𝕜] F}
 
-/-- Intersecting the preimage of a closed set `C ⊆ F` under a compact operator `J` with any closed
-norm ball in `V` yields a weakly closed set. -/
-theorem isClosed_toWeakSpace_closedBall_inter_preimage (hJ : IsCompactOperator J) (x : V) (r : ℝ)
-    {C : Set F} (hC : IsClosed C) :
-    IsClosed (toWeakSpace 𝕜 V '' (closedBall x r ∩ J ⁻¹' C)) :=
-  hJ.isClosed_toWeakSpace_inter_preimage_of_isBounded isBounded_closedBall
-    (TauCeti.isClosed_toWeakSpace_closedBall x r) hC
-
 /-- If `S ⊆ V` is weakly closed, `J : V →L[𝕜] F` is compact, and `C ⊆ F` is closed, then
 intersecting `S ∩ J ⁻¹' C` with any closed norm ball in `V` yields a weakly closed set. -/
 theorem isClosed_toWeakSpace_inter_preimage_inter_closedBall (hJ : IsCompactOperator J) {S : Set V}
     (hS : IsClosed (toWeakSpace 𝕜 V '' S)) {C : Set F} (hC : IsClosed C) (x : V) (r : ℝ) :
     IsClosed (toWeakSpace 𝕜 V '' ((S ∩ J ⁻¹' C) ∩ closedBall x r)) := by
-  have heq : (S ∩ J ⁻¹' C) ∩ closedBall x r = (S ∩ closedBall x r) ∩ J ⁻¹' C := by
-    ext u
-    exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ ↦ ⟨⟨h1, h3⟩, h2⟩, fun ⟨⟨h1, h3⟩, h2⟩ ↦ ⟨⟨h1, h2⟩, h3⟩⟩
-  rw [heq]
+  rw [Set.inter_right_comm]
   have hSR : IsClosed (toWeakSpace 𝕜 V '' (S ∩ closedBall x r)) := by
     rw [image_inter (toWeakSpace 𝕜 V).injective]
     exact hS.inter (TauCeti.isClosed_toWeakSpace_closedBall x r)
   exact hJ.isClosed_toWeakSpace_inter_preimage_of_isBounded
     (isBounded_closedBall.subset inter_subset_right) hSR hC
-
-/-- In a reflexive seminormed space over `ℝ` or `ℂ`, intersecting the preimage of a closed set
-`C ⊆ F` under a compact operator `J` with any closed norm ball in `V` yields a weakly compact set.
--/
-theorem isCompact_toWeakSpace_closedBall_inter_preimage
-    (hV : Surjective (inclusionInDoubleDual 𝕜 V)) (hJ : IsCompactOperator J) (x : V) (r : ℝ)
-    {C : Set F} (hC : IsClosed C) :
-    IsCompact (toWeakSpace 𝕜 V '' (closedBall x r ∩ J ⁻¹' C)) := by
-  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
-  exact hJ.isCompact_toWeakSpace_inter_preimage hV isBounded_closedBall
-    (TauCeti.isClosed_toWeakSpace_closedBall x r) hC
 
 /-- Over `ℝ` or `ℂ`, a compact operator `J : V →L[𝕜] F` sends every weakly convergent sequence in
 `V` to a convergent sequence in `F`. -/

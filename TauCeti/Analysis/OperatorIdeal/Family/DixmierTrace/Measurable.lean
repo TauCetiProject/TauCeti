@@ -309,9 +309,8 @@ theorem kyFanGauge_harmonicDiagonalCLM (k : ℕ) :
   simp [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
 
 /-- The harmonic diagonal operator is positive on `ℓ²(ℕ, ℂ)`. -/
-theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive := by
-  rw [harmonicDiagonalCLM, lp.invNatSucc_eq_ofAntitone]
-  exact lp.isPositive_diagonalCLM_ofAntitone _
+theorem isPositive_harmonicDiagonalCLM : harmonicDiagonalCLM.IsPositive :=
+  (lp.isPositive_diagonalCLM_iff _).2 (lp.invNatSucc_apply_nonneg ℂ)
 
 /-- The logarithmic Ky Fan means of `TauCeti.harmonicDiagonalCLM` converge to `1`. -/
 theorem tendsto_kyFanLogMean_harmonicDiagonalCLM :
@@ -355,9 +354,7 @@ theorem exists_monotone_tendsto_isLUB_complexDixmierTrace_eq_zero_ne :
       (∀ ω : GeneralizedLimit, complexDixmierTrace ω T = 1) := by
   -- Witnessed by `harmonicDiagonalCLM` and its finite-rank coordinate truncations.
   open ComplexOrder in
-  have hd_nonneg : ∀ j, 0 ≤ lp.invNatSucc ℂ j := by
-    rw [lp.invNatSucc_eq_ofAntitone]
-    exact lp.ofAntitone_apply_nonneg ℂ _
+  have hd_nonneg : ∀ j, 0 ≤ lp.invNatSucc ℂ j := lp.invNatSucc_apply_nonneg ℂ
   exact ⟨fun n ↦ lp.diagonalTruncation (p := 2) (lp.invNatSucc ℂ) (Finset.range n),
     harmonicDiagonalCLM, harmonicDiagonalCLM_mem_logarithmic, isPositive_harmonicDiagonalCLM,
     isDixmierMeasurable_harmonicDiagonalCLM,
