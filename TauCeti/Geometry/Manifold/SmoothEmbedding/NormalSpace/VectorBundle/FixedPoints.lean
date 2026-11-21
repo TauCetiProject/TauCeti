@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.GroupAction.FixedTangentSubspace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Map
-import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # The isotropy representation on the normal bundle of a submanifold of fixed points
@@ -36,6 +35,8 @@ submanifold of fixed points by smooth vector bundle automorphisms covering the i
 
 * `TauCeti.SmoothEmbedding.tangentRange_le_fixedTangentSubspace`: the tangent vectors of a
   submanifold of fixed points are fixed.
+* `TauCeti.SmoothEmbedding.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints`: the
+  tangent representation at a point of the submanifold preserves its tangent space.
 * `TauCeti.SmoothEmbedding.fixedNormalRepresentation_eq_normalMap`: the normal representation is
   the normal map of the square `(k • ·) ∘ f = f`.
 * `TauCeti.SmoothEmbedding.contMDiff_fixedNormalRepresentation`: it acts on the normal bundle by
@@ -84,6 +85,18 @@ theorem tangentRange_le_fixedTangentSubspace (x : M) (hn : n ≠ 0)
   fun _ hw ↦ mem_fixedTangentSubspace.2 fun k _ ↦
     f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd k) hn hw
 
+include hf in
+/-- The tangent representation of `K` at a point `f x` of a submanifold of fixed points preserves
+the tangent space of the submanifold. -/
+theorem tangentRange_le_comap_tangentRepresentationOfMemFixedPoints (x : M) (hn : n ≠ 0)
+    (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) (k : K) :
+    f.tangentRange x hn ≤ (f.tangentRange x hn).comap
+      (tangentRepresentationOfMemFixedPoints (mem_fixedPoints.2 fun g ↦ hf g x) hd k) :=
+  fun w hw ↦ by
+    rw [Submodule.mem_comap, tangentRepresentationOfMemFixedPoints_apply,
+      f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd k) hn hw]
+    exact hw
+
 /-- The **isotropy representation on the normal space** of a submanifold of fixed points: `k`
 acts on the class of a tangent vector `w` at `f x` as the class of `d(k •)_(f x) w`. It is the
 quotient of the tangent representation of `K` at the fixed point `f x` by the tangent space of the
@@ -92,10 +105,7 @@ def fixedNormalRepresentation (x : M) (hn : n ≠ 0)
     (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) :
     Representation ℝ K (f.NormalSpace x hn) :=
   (tangentRepresentationOfMemFixedPoints (mem_fixedPoints.2 fun k ↦ hf k x) hd).quotient
-    (f.tangentRange x hn) fun k w hw ↦ by
-      rw [Submodule.mem_comap, tangentRepresentationOfMemFixedPoints_apply,
-        f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd k) hn hw]
-      exact hw
+    (f.tangentRange x hn) (f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd)
 
 /-- The normal representation acts on the class of `w` as the class of `d(k •)_(f x) w`. -/
 @[simp]
@@ -120,8 +130,7 @@ theorem fixedNormalRepresentation_eq_normalMap
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn ν
   simp only [fixedNormalRepresentation_normalClass, ContinuousLinearMap.coe_coe,
     normalMap_normalClass]
-  -- `tangentSpaceCast` identifies `T_(k • f x) N` with `T_(f x) N`, two copies of the model space.
-  rfl
+  exact congrArg (f.normalClass x hn) (eq_of_heq (heq_tangentSpaceCast (hf k x) _)).symm
 
 /-- The action of `k` on the normal bundle, the bundle map induced by the square
 `(k • ·) ∘ f = f ∘ id`, acts on each fibre by the normal representation. -/

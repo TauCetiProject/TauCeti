@@ -43,7 +43,7 @@ isometries, whose tangent spaces are exactly the fixed tangent subspaces
 So on each normal fibre of a fixed component `M^K_d`, `K` acts by linear symplectic maps of the
 normal symplectic form (`TauCeti.SmoothEmbedding.symplecticNormalForm_fixedNormalRepresentation`)
 without nonzero fixed vectors
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_invariants_fixedNormalRepresentation_eq_bot`); the
+(`IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinrank_eq_bot`); the
 smoothness of the normal symplectic form in the base point is not proved here. For a torus
 action this is the input to the decomposition of the normal spaces of the fixed components
 into nonzero weights. The hypothesis that the submanifold is symplectic cannot be dropped: the
@@ -59,8 +59,9 @@ is not.
   representation preserves the normal symplectic form.
 * `TauCeti.SmoothEmbedding.invariants_fixedNormalRepresentation_eq_bot`: it has no nonzero fixed
   vector when the submanifold contains every fixed tangent direction.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_invariants_fixedNormalRepresentation_eq_bot`: this
-  applies to the parts `M^K_d` of the fixed set of a group of symplectic isometries.
+* `IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinrank_eq_bot` (in
+  `TauCeti.SmoothTwoForm`): this applies to the parts `M^K_d` of the fixed set of a group of
+  symplectic isometries.
 
 ## References
 
@@ -110,18 +111,9 @@ theorem symplecticNormalRepresentative_fixedNormalRepresentation
   refine (f.symplecticNormalRepresentative_eq_iff h x hn _ _).2 ⟨?_, ?_⟩
   · -- `d(k •)` fixes the tangent space and preserves `σ_(f x)`, so it preserves the complement.
     simpa using SymplecticForm.apply_mem_orthogonal
-      (ρ := tangentRepresentationOfMemFixedPoints (mem_fixedPoints.2 fun g ↦ hf g x) hd)
-      (fun g u v ↦ by
-        have hsymp := hσ.symplecticFormAt_tangentRepresentation (fun g _ ↦ hσK g)
-          (fun g _ ↦ hd g) ⟨g, hf g x⟩ u v
-        rw [tangentRepresentation_apply] at hsymp
-        rw [tangentRepresentationOfMemFixedPoints_apply,
-          tangentRepresentationOfMemFixedPoints_apply]
-        exact hsymp)
-      (fun g v hv ↦ by
-        rw [tangentRepresentationOfMemFixedPoints_apply,
-          f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd g) hn hv]
-        exact hv)
+      (hσ.symplecticFormAt_tangentRepresentationOfMemFixedPoints hσK
+        (mem_fixedPoints.2 fun g ↦ hf g x) hd)
+      (fun g _ hv ↦ f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd g hv)
       k (f.symplecticNormalRepresentative_mem_orthogonal h x hn ν)
   · rw [← fixedNormalRepresentation_normalClass, normalClass_symplecticNormalRepresentative]
 
@@ -136,13 +128,14 @@ theorem symplecticNormalForm_fixedNormalRepresentation
     f.symplecticNormalForm h x hn (f.fixedNormalRepresentation hf x hn hd k ν)
         (f.fixedNormalRepresentation hf x hn hd k μ) =
       f.symplecticNormalForm h x hn ν μ := by
-  have hsymp := hσ.symplecticFormAt_tangentRepresentation (fun g _ ↦ hσK g)
-    (fun g _ ↦ hd g) ⟨k, hf k x⟩ (f.symplecticNormalRepresentative h x hn ν)
+  have hsymp := hσ.symplecticFormAt_tangentRepresentationOfMemFixedPoints hσK
+    (mem_fixedPoints.2 fun g ↦ hf g x) hd k (f.symplecticNormalRepresentative h x hn ν)
     (f.symplecticNormalRepresentative h x hn μ)
-  rw [tangentRepresentation_apply] at hsymp
+  rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply,
+    tangentRepresentationOfMemFixedPoints_apply, tangentRepresentationOfMemFixedPoints_apply]
+    at hsymp
   simp only [symplecticNormalForm_apply,
     f.symplecticNormalRepresentative_fixedNormalRepresentation hf hσK h]
-  simp only [IsNondegenerate.symplecticFormAt_apply] at hsymp
   exact hsymp
 
 include hσK in
@@ -178,35 +171,33 @@ namespace TauCeti.SmoothTwoForm
 open MulAction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
-  [IsContMDiffRiemannianBundle 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   {K : Type*} [Group K] [MulAction K M] [ContMDiffConstSMul 𝓘(ℝ, E) ∞ K M]
   {σ : SmoothTwoForm 𝓘(ℝ, E) M}
 
-/-- **The normal representations along the fixed locus of a group of symplectic isometries.** For
-a group acting by isometries preserving a nondegenerate two-form `σ` and a subspace `L` of the
-model of dimension `d`, the part `M^K_d` of the fixed set is a symplectic submanifold modelled on
-`L` whose normal representation at every point has no nonzero fixed vector. -/
-theorem IsNondegenerate.exists_invariants_fixedNormalRepresentation_eq_bot
-    (hK : ∀ (k : K) (x : M) (u w : TangentSpace 𝓘(ℝ, E) x),
-      inner ℝ (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (k • ·) x u) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (k • ·) x w) =
-        inner ℝ u w)
+/-- **The normal representations along the fixed locus of a group of symplectomorphisms.** For
+a group acting by maps preserving a nondegenerate two-form `σ`, let the part `M^K_d` of the fixed
+set carry a manifold structure modelled on a subspace `L` of the model, for which the inclusion is
+a symplectic submanifold embedding whose tangent image contains the fixed tangent subspace at
+every point. This is the structure that
+`IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank` provides for a
+group of symplectic isometries. Then the normal representation at every point of `M^K_d` has no
+nonzero fixed vector. -/
+theorem IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinrank_eq_bot
     (hσK : ∀ k : K, SmoothForm.mpullback (fun y : M ↦ k • y) (contMDiff_const_smul k) σ = σ)
-    (hσ : σ.IsNondegenerate) {d : ℕ} {L : Submodule ℝ E} (hL : Module.finrank ℝ L = d) :
-    ∃ C : ChartedSpace L (fixedPointsOfFinrank 𝓘(ℝ, E) K M d), letI := C
-      ∃ (_ : IsManifold 𝓘(ℝ, L) ∞ (fixedPointsOfFinrank 𝓘(ℝ, E) K M d))
-        (hemb : hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L)
-          (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M)),
-        ∀ y, ((SmoothEmbedding.ofIsSmoothEmbedding (I := 𝓘(ℝ, L)) (J := 𝓘(ℝ, E)) (n := ∞) _
-          hemb.isSmoothEmbedding).fixedNormalRepresentation
-          (fun (k : K) y ↦ by simpa using fixedPointsOfFinrank_subset_fixedPoints d y.property k) y
-          (by simp) fun k ↦ ContMDiffConstSMul.mdifferentiable_const_smul (n := ∞) (by simp) k _
-          ).invariants = ⊥ := by
-  obtain ⟨C, hman, hemb, hrange⟩ :=
-    hσ.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank hK hσK hL
-  let := C
-  refine ⟨C, hman, hemb, fun y ↦ ?_⟩
+    (hσ : σ.IsNondegenerate) {d : ℕ} {L : Submodule ℝ E}
+    [ChartedSpace L (fixedPointsOfFinrank 𝓘(ℝ, E) K M d)]
+    (hemb : hσ.IsSymplecticSubmanifoldEmbedding 𝓘(ℝ, L)
+      (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M))
+    (hrange : ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E) K M d,
+      fixedTangentSubspace 𝓘(ℝ, E) K (y : M) ≤
+        LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) Subtype.val y).toLinearMap)
+    (y : fixedPointsOfFinrank 𝓘(ℝ, E) K M d) :
+    ((SmoothEmbedding.ofIsSmoothEmbedding (I := 𝓘(ℝ, L)) (J := 𝓘(ℝ, E)) (n := ∞) _
+      hemb.isSmoothEmbedding).fixedNormalRepresentation
+      (fun (k : K) y ↦ by simpa using fixedPointsOfFinrank_subset_fixedPoints d y.property k) y
+      (by simp) fun k ↦ ContMDiffConstSMul.mdifferentiable_const_smul (n := ∞) (by simp) k _
+      ).invariants = ⊥ := by
   refine SmoothEmbedding.invariants_fixedNormalRepresentation_eq_bot (hσ := hσ) _ _ hσK ?_ y _ _ ?_
   · simpa using hemb.hasSymplecticTangentImages
   · -- Replace the bundled embedding by its underlying inclusion, on which `hrange` is stated.
@@ -215,6 +206,6 @@ theorem IsNondegenerate.exists_invariants_fixedNormalRepresentation_eq_bot
       (n := ∞) _ hemb.isSmoothEmbedding) = G
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding] at hG
     subst hG
-    exact (hrange y).ge
+    exact hrange y
 
 end TauCeti.SmoothTwoForm
