@@ -210,7 +210,8 @@ def smoothPairInMap {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo
     (SSet.Subcomplex.lift
       (SSet.Subcomplex.ι _ ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) (by
         rintro n _ ⟨σ, rfl⟩
-        exact smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage W W' hφ hW n σ.2))
+        exact smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage W W' hφ hW n
+          σ.property))
     (smoothSingularSubcomplexMap φ hφ)
     ((cancel_mono (smoothSingularSubcomplex J Y).ι).1 (by
       -- The codomain of `(smoothPairIn J Y W').hom` is `(smoothPairIn J Y W').right`, which is the
