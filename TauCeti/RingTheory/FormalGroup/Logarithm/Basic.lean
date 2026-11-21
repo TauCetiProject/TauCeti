@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.RingTheory.PowerSeries.Derivative
+import TauCeti.RingTheory.PowerSeries.Primitive
 import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
@@ -334,19 +335,18 @@ variable [Algebra ℚ R]
 the power series with zero constant coefficient whose derivative is the invariant differential
 (Silverman IV.5). -/
 noncomputable def log : PowerSeries R :=
-  PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • PowerSeries.coeff (n - 1) F.invariantDifferential
+  PowerSeries.primitive F.invariantDifferential
 
 /-- The coefficients of the logarithm: `log_F(T) = ∑_{n ≥ 1} (pₙ₋₁ / n) Tⁿ` for
 `P(T) = ∑ₙ pₙ Tⁿ`. At `n = 0` the formula reads `0`, since `0⁻¹ = 0` in `ℚ`. -/
 theorem coeff_log (n : ℕ) :
     PowerSeries.coeff n F.log = (n : ℚ)⁻¹ • PowerSeries.coeff (n - 1) F.invariantDifferential :=
-  PowerSeries.coeff_mk _ _
+  PowerSeries.coeff_primitive _ n
 
 /-- The logarithm has no constant term. -/
 @[simp]
-theorem constantCoeff_log : PowerSeries.constantCoeff F.log = 0 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_log]
-  simp
+theorem constantCoeff_log : PowerSeries.constantCoeff F.log = 0 :=
+  PowerSeries.constantCoeff_primitive _
 
 /-- The logarithm has linear coefficient `1`: `log_F(T) = T + ⋯`. -/
 @[simp]
@@ -355,14 +355,8 @@ theorem coeff_one_log : PowerSeries.coeff 1 F.log = 1 := by
 
 /-- The derivative of the logarithm is the invariant differential. -/
 @[simp]
-theorem derivative_log : PowerSeries.derivative F.log = F.invariantDifferential := by
-  ext n
-  -- the factor `n + 1` of `coeff_derivative` is the rational scalar cancelling the `(n + 1)⁻¹` of
-  -- `coeff_log`
-  have hn (x : R) : x * (n + 1) = ((n + 1 : ℕ) : ℚ) • x := by
-    rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_comm, Nat.cast_succ]
-  rw [PowerSeries.coeff_derivative, coeff_log, hn, smul_smul]
-  simp [mul_inv_cancel₀ (Nat.cast_add_one_ne_zero (R := ℚ) n)]
+theorem derivative_log : PowerSeries.derivative F.log = F.invariantDifferential :=
+  PowerSeries.derivative_primitive _
 
 omit [Algebra ℚ R] in
 /-- Every logarithm coefficient becomes integral after multiplication by its degree. -/
