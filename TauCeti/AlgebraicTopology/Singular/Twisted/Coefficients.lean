@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
@@ -95,6 +96,20 @@ lemma twistedHomologyCoefficientMap_neg {L K : LocalCoefficientSystem.{u, v, max
   (congrArg (HomologicalComplex.homologyMap · k)
     ((twistedChainComplexFunctor.{u, v, w} R X).map_neg (f := η))).trans
       (HomologicalComplex.homologyMap_neg _ k)
+
+/-- The map on relative twisted homology induced by the negative of a morphism of local systems is
+the negative of the induced map. -/
+@[simp]
+lemma _root_.TopPair.twistedHomologyCoefficientMap_neg (P : TopPair.{v})
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (η : L ⟶ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap (-η) k = -P.twistedHomologyCoefficientMap η k := by
+  have h : P.twistedChainComplexCoefficientMap (-η) = -P.twistedChainComplexCoefficientMap η := by
+    refine (cancel_epi (P.twistedChainComplexπ L)).1 ?_
+    rw [TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Preadditive.comp_neg,
+      TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, ← Preadditive.neg_comp]
+    exact congrArg (· ≫ _) ((twistedChainComplexFunctor.{u, v, w} R P.fst).map_neg (f := η))
+  exact (congrArg (HomologicalComplex.homologyMap · k) h).trans
+    (HomologicalComplex.homologyMap_neg _ k)
 
 /-- The map on twisted homology induced by a difference of morphisms of local systems is the
 difference of the induced maps. -/

@@ -108,7 +108,7 @@ variable (K : Type w) [CommRing K] (F : Type w) [NormedAddCommGroup F] [NormedSp
   [FiniteDimensional ℝ F]
 
 /-- The generator of `Hᵣ(F, F ∖ {0}; K)` corresponding to the class of the point in `H₀(pt; K)`. -/
-private def complZeroPairGenerator :
+def complZeroPairGenerator :
     ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K)
       (finrank ℝ F) : ModuleCat.{w} K) :=
   TopPair.singularHomologyMap (complZeroPairIsoProdThomPair F).inv (ModuleCat.of K K) (finrank ℝ F)
@@ -128,7 +128,7 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator_
 
 /-- The fibre inclusion over a point `x` of `W` carries the generator to the class of `x` under
 `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
-private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
+theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator
     {W : Type w} [TopologicalSpace W] (x : W) :
     TopPair.singularHomologyMap (prodThomPairFiberMap F x) (ModuleCat.of K K) (finrank ℝ F)
         (complZeroPairGenerator K F) =
