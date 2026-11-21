@@ -175,6 +175,14 @@ theorem componentCount_eq_orbitCount : G.componentCount = orbitCount G.component
 /-- The components of a grid diagram, indexed by the orbits of its component permutation. -/
 abbrev Components := Quotient (Equiv.Perm.SameCycle.setoid G.componentPerm)
 
+/-- Equality of components is decided by the cycle structure of the component permutation. -/
+instance : DecidableEq G.Components :=
+  @Quotient.decidableEq _ _ fun a b => inferInstanceAs (Decidable (G.componentPerm.SameCycle a b))
+
+/-- A grid diagram has finitely many components. -/
+instance : Fintype G.Components :=
+  @Quotient.fintype _ _ _ fun a b => inferInstanceAs (Decidable (G.componentPerm.SameCycle a b))
+
 /-- The link component containing the `O`-marking in a column. -/
 def componentOfColumn (c : Fin n) : G.Components := Quotient.mk _ c
 
@@ -196,6 +204,11 @@ theorem componentOfColumn_out (q : G.Components) : G.componentOfColumn q.out = q
 /-- The cardinality of the component index type is the component count of the diagram. -/
 theorem natCard_components : Nat.card G.Components = G.componentCount := by
   rw [componentCount_eq_orbitCount, orbitCount_def]
+
+/-- The number of components of a grid diagram is its component count. -/
+@[simp]
+theorem card_components : Fintype.card G.Components = G.componentCount := by
+  rw [← Nat.card_eq_fintype_card, natCard_components]
 
 /-- A grid diagram represents a knot when its component permutation has exactly one cycle. -/
 def IsKnot : Prop :=
