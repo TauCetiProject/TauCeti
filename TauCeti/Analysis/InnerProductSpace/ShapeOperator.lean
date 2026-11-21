@@ -245,8 +245,7 @@ theorem ker_fderiv_fderiv_norm_sq_sub_add_smul_comp (hi : ContDiffAt ℝ 2 i x)
         (fderiv ℝ (fderiv ℝ fun y ↦ ‖i y - (i x + t • ν)‖ ^ 2) x : V →ₗ[ℝ] V →L[ℝ] ℝ) =
       eigenspace (shapeOperator i x ν) t⁻¹ := by
   rw [ker_fderiv_fderiv_norm_sq_sub_comp hi h (by simpa using Submodule.smul_mem _ (-t) hν),
-    add_sub_cancel_left, shapeOperator_smul,
-    ← eigenspace_smul _ (.of_ne_zero ht) t⁻¹, mul_inv_cancel₀ ht]
+    add_sub_cancel_left, shapeOperator_smul, eigenspace_smul_eq_div _ ht, one_div]
 
 /-- The base point is not a focal point: squared distance from `i x` has nondegenerate Hessian
 at `x` along an immersion. -/

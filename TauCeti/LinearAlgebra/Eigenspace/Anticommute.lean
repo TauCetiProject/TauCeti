@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # Eigenspaces of anticommuting endomorphisms
@@ -54,9 +55,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 eigenvalue. -/
 @[simp]
 theorem genEigenspace_neg (f : End R M) (μ : R) (k : ℕ∞) :
-    (-f).genEigenspace μ k = f.genEigenspace (-μ) k :=
-  le_antisymm (by simpa using genEigenspace_le_smul (-f) μ (-1) k)
-    (by simpa using genEigenspace_le_smul f (-μ) (-1) k)
+    (-f).genEigenspace μ k = f.genEigenspace (-μ) k := by
+  simpa using genEigenspace_smul f (isUnit_one.neg.isSMulRegular M) (-μ) k
 
 variable {f : End R M}
 
