@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # Topology on Clifford Spin groups
@@ -54,6 +54,9 @@ topologized special orthogonal group.
   map to the corresponding Spin groups.
 * `CliffordAlgebra.instIsTopologicalGroupSpinGroup` equips `spinGroup Q` with a topological
   group structure for its canonical subtype topology.
+* `CliffordAlgebra.continuous_spinGroupToEven` proves continuity of the even part of a Spin
+  element, and `CliffordAlgebra.continuous_spinGroup_of_coe_eq` that of a map of Spin groups whose
+  Clifford values are a linear function of the even part.
 * `CliffordAlgebra.continuous_spinVectorAction` proves joint continuity of the Spin action when
   `2` is invertible, the vector space has its module topology, and Clifford multiplication is
   continuous.
@@ -188,6 +191,22 @@ instance instIsTopologicalGroupSpinGroup (Q : QuadraticForm R V)
     IsTopologicalGroup (spinGroup Q) where
   continuous_mul := continuous_mul
   continuous_inv := continuous_induced_rng.mpr continuous_subtypeVal.star
+
+/-- The even part `spinGroupToEven Q` of a Spin element depends continuously on it, for the subtype
+topologies. -/
+@[fun_prop]
+theorem continuous_spinGroupToEven (Q : QuadraticForm R V) : Continuous (spinGroupToEven Q) :=
+  continuous_induced_rng.mpr
+    (continuous_subtypeVal.congr fun x ↦ (coe_spinGroupToEven_apply Q x).symm)
+
+/-- A map of Spin groups is continuous if its Clifford values are obtained from the even part by a
+linear map of the even subalgebra. -/
+theorem continuous_spinGroup_of_coe_eq {W : Type*} [AddCommGroup W] [Module R W]
+    {Q : QuadraticForm R V} {P : QuadraticForm R W} {f : spinGroup Q → spinGroup P}
+    (φ : even Q →ₗ[R] CliffordAlgebra P)
+    (h : ∀ x, (f x : CliffordAlgebra P) = φ (spinGroupToEven Q x)) : Continuous f :=
+  continuous_induced_rng.mpr (((continuous_even_linearMap φ).comp
+    (continuous_spinGroupToEven Q)).congr fun x ↦ (h x).symm)
 
 /-- The Spin action is jointly continuous in the Spin element and the vector. -/
 @[fun_prop]
