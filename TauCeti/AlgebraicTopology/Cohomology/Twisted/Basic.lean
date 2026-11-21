@@ -177,6 +177,12 @@ lemma twistedCohomologyCoefficientIso_inv (e : L ≅ K) (n : ℕ) :
   rw [twistedCohomologyCoefficientIso, Functor.mapIso_inv, twistedCochainComplexCoefficientIso_inv,
     HomologicalComplex.homologyFunctor_map]
 
+/-- An isomorphism of local coefficient systems induces an isomorphism on twisted cohomology. -/
+instance isIso_twistedCohomologyCoefficientMap (η : L ⟶ K) [IsIso η] (n : ℕ) :
+    IsIso (twistedCohomologyCoefficientMap k M η n) := by
+  rw [← asIso_hom η, ← twistedCohomologyCoefficientIso_hom]
+  infer_instance
+
 end Coefficients
 
 section Homotopy
@@ -247,6 +253,15 @@ lemma twistedCochainComplexMap_f_apply (n : ℕ) (g : (L.twistedCochainComplex k
 abbrev twistedCohomologyMap (n : ℕ) :
     L.twistedCohomology k M n ⟶ ((pullback f.hom).obj L).twistedCohomology k M n :=
   HomologicalComplex.homologyMap (twistedCochainComplexMap k M f L) n
+
+/-- Equal continuous maps induce the same map on twisted cohomology, after the canonical
+identification of their pullback coefficient systems. -/
+lemma twistedCohomologyMap_congr {g : X ⟶ Y} (h : f = g) (n : ℕ) :
+    twistedCohomologyMap k M f L n =
+      twistedCohomologyMap k M g L n ≫ twistedCohomologyCoefficientMap k M
+        (eqToIso (congrArg (fun φ : X ⟶ Y ↦ (pullback φ.hom).obj L) h)).hom n := by
+  subst h
+  simp
 
 end Map
 

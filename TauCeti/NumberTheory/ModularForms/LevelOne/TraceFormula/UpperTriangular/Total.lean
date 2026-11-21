@@ -107,7 +107,7 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
     ∑ A : ↥(FixedDetMatrices.reps (n : ℤ)),
         LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
           (periodAction hw
-            (single (mk A.1) ((popaZagierElement ℚ n).coeff (mk A.1)))) =
+            (single (mk A.val) ((popaZagierElement ℚ n).coeff (mk A.val)))) =
       ∑ p ∈ n.divisorsAntidiagonal,
         (if p.1 < p.2 then ((p.2 - p.1 : ℕ) : ℚ)
           else if p.1 = p.2 then 1 / 6 else 0) *
@@ -117,46 +117,46 @@ theorem sum_trace_popaZagierElement_single_upperTriangularRep (n w : ℕ) (hn : 
   let e := FixedDetMatrices.repsEquiv hnZ
   let contribution (A : ↥(FixedDetMatrices.reps (n : ℤ))) : ℚ :=
     LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
-      (periodAction hw (single (mk A.1) ((popaZagierElement ℚ n).coeff (mk A.1))))
+      (periodAction hw (single (mk A.val) ((popaZagierElement ℚ n).coeff (mk A.val))))
   calc
     ∑ A : ↥(FixedDetMatrices.reps (n : ℤ)), contribution A =
-        ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.1.2, contribution (e.symm x) :=
+        ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.val.2, contribution (e.symm x) :=
       Fintype.sum_equiv e contribution (fun x ↦ contribution (e.symm x)) fun A ↦ by simp [e]
-    _ = ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.1.2,
-        PopaZagier.upperTriangularCoeff x.1.1.1 (x.2 : ℕ) x.1.1.2 *
-          (Polynomial.dickson 2 (n : ℚ) w).eval ((x.1.1.1 + x.1.1.2 : ℕ) : ℚ) := by
+    _ = ∑ x : Σ p : ↥n.divisorsAntidiagonal, Fin p.val.2,
+        PopaZagier.upperTriangularCoeff x.1.val.1 (x.2 : ℕ) x.1.val.2 *
+          (Polynomial.dickson 2 (n : ℚ) w).eval ((x.1.val.1 + x.1.val.2 : ℕ) : ℚ) := by
       apply Fintype.sum_congr
       intro x
       dsimp only [contribution]
-      obtain ⟨hc, ha, -, -⟩ := (e.symm x).2
-      rw [trace_popaZagierElement_single_upperTriangular w hw (e.symm x).1 hc ha]
-      have hmatrix : (e.symm x).1.1 =
-          !![(x.1.1.1 : ℤ), (x.2 : ℕ); 0, (n : ℤ).sign * x.1.1.2] := by
+      obtain ⟨hc, ha, -, -⟩ := (e.symm x).property
+      rw [trace_popaZagierElement_single_upperTriangular w hw (e.symm x).val hc ha]
+      have hmatrix : (e.symm x).val.val =
+          !![(x.1.val.1 : ℤ), (x.2 : ℕ); 0, (n : ℤ).sign * x.1.val.2] := by
         simpa only [e] using FixedDetMatrices.coe_repsEquiv_symm_apply hnZ x
       have hsign : (n : ℤ).sign = 1 := Int.sign_eq_one_of_pos (by exact_mod_cast hn)
       rw [hmatrix, hsign]
       simp
     _ = ∑ p : ↥n.divisorsAntidiagonal,
-        (if p.1.1 < p.1.2 then ((p.1.2 - p.1.1 : ℕ) : ℚ)
-          else if p.1.1 = p.1.2 then 1 / 6 else 0) *
-            (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) := by
-      rw [Fintype.sum_sigma' (fun (p : ↥n.divisorsAntidiagonal) (b : Fin p.1.2) ↦
-        PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
-          (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ))]
+        (if p.val.1 < p.val.2 then ((p.val.2 - p.val.1 : ℕ) : ℚ)
+          else if p.val.1 = p.val.2 then 1 / 6 else 0) *
+            (Polynomial.dickson 2 (n : ℚ) w).eval ((p.val.1 + p.val.2 : ℕ) : ℚ) := by
+      rw [Fintype.sum_sigma' (fun (p : ↥n.divisorsAntidiagonal) (b : Fin p.val.2) ↦
+        PopaZagier.upperTriangularCoeff p.val.1 b p.val.2 *
+          (Polynomial.dickson 2 (n : ℚ) w).eval ((p.val.1 + p.val.2 : ℕ) : ℚ))]
       apply Fintype.sum_congr
       intro p
-      have ha : 0 < p.1.1 :=
-        Nat.pos_of_ne_zero (Nat.left_ne_zero_of_mem_divisorsAntidiagonal p.2)
+      have ha : 0 < p.val.1 :=
+        Nat.pos_of_ne_zero (Nat.left_ne_zero_of_mem_divisorsAntidiagonal p.property)
       calc
-        ∑ b : Fin p.1.2, PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
-            (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) =
-            ∑ b ∈ Finset.range p.1.2, PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
-              (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ) :=
+        ∑ b : Fin p.val.2, PopaZagier.upperTriangularCoeff p.val.1 b p.val.2 *
+            (Polynomial.dickson 2 (n : ℚ) w).eval ((p.val.1 + p.val.2 : ℕ) : ℚ) =
+            ∑ b ∈ Finset.range p.val.2, PopaZagier.upperTriangularCoeff p.val.1 b p.val.2 *
+              (Polynomial.dickson 2 (n : ℚ) w).eval ((p.val.1 + p.val.2 : ℕ) : ℚ) :=
           by simpa using Fin.sum_univ_eq_sum_range (fun b : ℕ ↦
-            PopaZagier.upperTriangularCoeff p.1.1 b p.1.2 *
-              (Polynomial.dickson 2 (n : ℚ) w).eval ((p.1.1 + p.1.2 : ℕ) : ℚ)) p.1.2
+            PopaZagier.upperTriangularCoeff p.val.1 b p.val.2 *
+              (Polynomial.dickson 2 (n : ℚ) w).eval ((p.val.1 + p.val.2 : ℕ) : ℚ)) p.val.2
         _ = _ := by
-          rw [← Finset.sum_mul, PopaZagier.sum_upperTriangularCoeff p.1.1 p.1.2 ha]
+          rw [← Finset.sum_mul, PopaZagier.sum_upperTriangularCoeff p.val.1 p.val.2 ha]
     _ = _ := by
       simpa using n.divisorsAntidiagonal.sum_coe_sort (fun p ↦
         (if p.1 < p.2 then ((p.2 - p.1 : ℕ) : ℚ)

@@ -66,7 +66,8 @@ theorem not_isUnit_one_sub_weightedX [T0Space A] [Nontrivial A] (i : Fin k) :
     rw [hu] at this
     simpa using this
   -- The coefficients of `g` tend to `0`, so along the monomials `Xᵢⁿ` the constant `1` does.
-  have hlim := (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp g.2)).comp
+  have hlim := (isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp
+      g.property)).comp
     ((Finsupp.single_injective i).tendsto_cofinite)
   simp only [Function.comp_def,
     MvPowerSeries.coeff_single_eq_one_of_one_sub_X_mul_eq_one hg] at hlim

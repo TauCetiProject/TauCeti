@@ -216,7 +216,8 @@ theorem natCard_referenceSubgroup_four_one :
 theorem natCard_referenceSubgroup_four_two :
     Nat.card (referenceSubgroup 4 ⟨2, by simp⟩) = 8 := by
   simp only [referenceSubgroup_four_two, closure_finRotate_four_swap_eq_centralizer,
-    Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_centralizer_singleton_iff]
+    Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_centralizer_singleton_iff,
+    commute_iff_eq]
   decide
 
 /-- The reference subgroup of `4T4` has order `12`. -/
@@ -265,7 +266,8 @@ theorem referenceSubgroup_four_one_le_referenceSubgroup_four_two :
     closure_finRotate_four_swap_eq_centralizer, Subgroup.map_le_iff_le_comap]
   intro g hg
   rw [← SetLike.mem_coe, alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)] at hg
-  simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff]
+  simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff,
+    commute_iff_eq]
   rcases hg with hg | hg
   · simp [Set.mem_singleton_iff.1 hg]
   · obtain ⟨m, hm⟩ := cycleType_eq_two_two_iff_exists_symmetricGroupFourMatching.1 hg

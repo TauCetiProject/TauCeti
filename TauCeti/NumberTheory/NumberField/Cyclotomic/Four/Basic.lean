@@ -187,7 +187,8 @@ theorem isEmpty_realInfinitePlace_four (K : Type*) [Field K] [CharZero K]
   have := IsCyclotomicExtension.numberField {4} ℚ K
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   exact ⟨fun w ↦ InfinitePlace.not_isReal_iff_isComplex.mpr
-    ((GaussianRationals.isTotallyComplex hζ.minpoly_toInteger_eq_X_sq_add_one).isComplex w.1) w.2⟩
+    ((GaussianRationals.isTotallyComplex hζ.minpoly_toInteger_eq_X_sq_add_one).isComplex w.val)
+    w.property⟩
 
 /-- A fourth cyclotomic field has a unique infinite place, since `[K : ℚ] = 2` and `r₁ = 0`. -/
 theorem subsingleton_infinitePlace_four (K : Type*) [Field K] [CharZero K]

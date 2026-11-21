@@ -110,7 +110,7 @@ theorem quotientPointsHom_weightLeviPointsIso_inv_app_apply (w : Fin N → ℤ)
     (g : Cocharacter.levi (CommAlgCat.of R A) (weightCocharacter (R := R) w)) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A)
-        ((weightLeviPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.1 := by
+        ((weightLeviPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.val := by
   unfold weightLeviPointsIso
   convert
     (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply

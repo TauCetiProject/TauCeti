@@ -117,8 +117,8 @@ private theorem two_add_toInteger_ne_zero_of_four {F : Type*} [Field F] [NumberF
 
 private theorem unitaryWeight_angularGrossencharacter_apply_sq {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] (k : ℤ) (I : Ideal (𝓞 F)) :
-    ((angularGrossencharacter F k).unitaryWeight.1 I) ^ 2 =
-      (angularGrossencharacter F (2 * k)).unitaryWeight.1 I := by
+    ((angularGrossencharacter F k).unitaryWeight.val I) ^ 2 =
+      (angularGrossencharacter F (2 * k)).unitaryWeight.val I := by
   have hp := congrArg Subtype.val (unitaryWeight_angularGrossencharacter_add F k k)
   rw [UnitaryIdealWeight.val_mul, ← two_mul] at hp
   simpa only [MultiplicativeIdealWeight.mul_apply, sq] using (DFunLike.congr_fun hp I).symm
@@ -129,16 +129,16 @@ private theorem unitaryWeight_angularGrossencharacter_apply_sq {F : Type*} [Fiel
 selects. -/
 theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
+    (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
         (((3 : ℂ) + 4 * Complex.I) / 5) ^ (2 * k) ∨
-      (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
+      (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
         (((3 : ℂ) + 4 * Complex.I) / 5) ^ (-(2 * k)) := by
   let w : {w : InfinitePlace F // w.IsComplex} :=
     ⟨Classical.arbitrary (InfinitePlace F),
       (IsCyclotomicExtension.Rat.isTotallyComplex (n := 4) F (by norm_num)).isComplex _⟩
   rw [unitaryWeight_angularGrossencharacter_span_singleton k w
     (two_add_toInteger_ne_zero_of_four hζ)]
-  set τ := w.1.embedding
+  set τ := w.val.embedding
   have h2I : (2 + Complex.I) / (2 - Complex.I) = ((3 : ℂ) + 4 * Complex.I) / 5 := by
     have hne : (2 : ℂ) - Complex.I ≠ 0 := fun h ↦ by simpa using congrArg Complex.im h
     rw [div_eq_div_iff hne (by norm_num)]
@@ -172,7 +172,7 @@ value at `(2 + hζ.toInteger)`. -/
 theorem im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4)
     {k : ℤ} (hk : k ≠ 0) :
-    ((angularGrossencharacter F k).unitaryWeight.1
+    ((angularGrossencharacter F k).unitaryWeight.val
       (Ideal.span {(2 : 𝓞 F) + hζ.toInteger})).im ≠ 0 := by
   rcases unitaryWeight_angularGrossencharacter_two_add_toInteger hζ k with h | h <;> rw [h]
   · exact im_three_add_four_I_div_five_zpow_ne_zero (mul_ne_zero two_ne_zero hk)
@@ -183,7 +183,7 @@ theorem im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero {F : 
 `∏ τ, τ(2 + ζ) ^ n_τ`. -/
 theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
+    (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
       (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
   set α : 𝓞 F := (2 : 𝓞 F) + hζ.toInteger
   have hαF : (algebraMap (𝓞 F) F α) ≠ 0 :=
@@ -202,12 +202,13 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
 theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_prod {F : Type*} [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4)
     {k : ℤ} (hk : k ≠ 0) :
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) ≠
+    (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) ≠
       ∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ := by
   intro heq
   have hinv := unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod hζ k
   set wval :=
-    (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) with hwval
+    (angularGrossencharacter F k).unitaryWeight.val
+      (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) with hwval
   have hw0 : wval ≠ 0 := fun h0 ↦
     im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero hζ hk
       (by simpa [hwval] using congrArg Complex.im h0)
@@ -228,7 +229,7 @@ theorem angularGrossencharacter_not_isNormTwist
     (F : Type*) [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F] {k : ℤ} (hk : k ≠ 0)
     (u : ℝ) :
     ¬ TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood
-      (angularGrossencharacter F k).unitaryWeight.1 u := by
+      (angularGrossencharacter F k).unitaryWeight.val u := by
   intro htwist
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ F
   let w : {w : InfinitePlace F // w.IsComplex} :=
@@ -249,8 +250,8 @@ theorem angularGrossencharacter_not_isNormTwist
     Ideal.isPrimeTo_empty.mpr (Ideal.absNorm_eq_zero_iff.not.mp (by omega))
   have hβprime : Ideal.IsPrimeTo (Ideal.span {β}) ∅ :=
     Ideal.isPrimeTo_empty.mpr (Ideal.absNorm_eq_zero_iff.not.mp (by omega))
-  have heqαβ : (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α}) =
-      (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {β}) := by
+  have heqαβ : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α}) =
+      (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {β}) := by
     rw [DFunLike.congr_fun hnormTwist (Ideal.span {α}),
       DFunLike.congr_fun hnormTwist (Ideal.span {β}),
       MultiplicativeIdealWeight.normTwist_apply, MultiplicativeIdealWeight.normTwist_apply,
@@ -259,13 +260,13 @@ theorem angularGrossencharacter_not_isNormTwist
     simp [hαprime, hβprime]
   have hmul5 : α * β = (5 : 𝓞 F) := by
     simp only [α, β]; linear_combination -hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hval5 : (angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {(5 : 𝓞 F)}) = 1 := by
+  have hval5 : (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(5 : 𝓞 F)}) = 1 := by
     rw [unitaryWeight_angularGrossencharacter_span_singleton k w (by norm_num),
       RingOfIntegers.coe_eq_algebraMap, map_ofNat, map_ofNat, map_ofNat, div_self (by norm_num),
       one_zpow]
-  have hsq1 : ((angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α})) ^ 2 = 1 := by
+  have hsq1 : ((angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α})) ^ 2 = 1 := by
     rw [sq, ← hval5, ← hmul5, ← Ideal.span_singleton_mul_span_singleton, map_mul, heqαβ]
-  have him2 : (((angularGrossencharacter F k).unitaryWeight.1 (Ideal.span {α})) ^ 2).im ≠ 0 := by
+  have him2 : (((angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α})) ^ 2).im ≠ 0 := by
     rw [unitaryWeight_angularGrossencharacter_apply_sq]
     exact im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero hζ
       (mul_ne_zero two_ne_zero hk)
