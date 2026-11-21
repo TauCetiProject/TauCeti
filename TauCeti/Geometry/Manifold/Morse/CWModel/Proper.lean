@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 import Mathlib.Order.SuccPred.IntervalSucc
 import TauCeti.Geometry.Manifold.Morse.Deformation.Cofibration
 import TauCeti.Geometry.Manifold.Morse.Exhaustion
+import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 import TauCeti.Logic.Equiv.Sum
 import TauCeti.Topology.CWComplex.Classical.Finite
 import TauCeti.Topology.CWComplex.Classical.SequentialColimit
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # The CW model of a proper Morse function
@@ -71,11 +74,18 @@ or of a homotopy, lies in a single stage.
 * `TauCeti.IsMorse.exists_finite_cwComplex_homotopyEquiv_of_isProperMap` and
   `TauCeti.IsMorse.finiteCWType_of_isProperMap`: when `f` has finitely many critical points, the
   CW model is finite and the manifold has finite CW type.
+* `TauCeti.IsMorse.cwType`, `TauCeti.CWType.of_isManifold`, and
+  `TauCeti.CWType.of_isManifold_of_isProperMap`: a manifold carrying a proper bounded-below Morse
+  function, any sigma-compact finite-dimensional smooth boundaryless Hausdorff manifold, or any
+  smooth boundaryless Hausdorff manifold admitting a proper map to a weakly locally compact
+  sigma-compact space has CW type.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Theorem 3.5 and its proof.
+  Theorem 3.5, its proof, and §6, Corollary 6.7.
+* J. Milnor, *On spaces having the homotopy type of a CW-complex*, Transactions of the American
+  Mathematical Society 90 (1959), 272–280, Corollary 1.
 -/
 
 public section
@@ -307,17 +317,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
     rw [hH]
     exact congrArg (fun y ↦ ((S k).h y : M)) (hemb.toHomeomorph_symm_apply z)
 
-/-- **The sublevel-compatible CW exhaustion of a proper Morse function** (Milnor, *Morse Theory*,
-Theorem 3.5 and its proof). Let `f` be a proper, bounded-below Morse function on a boundaryless
-manifold `M`. Then there exist a strictly increasing sequence of regular values `a : ℕ → ℝ` tending
-to `+∞` with `a 0 < f x` everywhere, a Hausdorff CW complex `X`, an increasing sequence of finite
-CW subcomplexes `W : ℕ → Subcomplex (univ : Set X)` exhausting `X` from `W 0 = ∅`, a homotopy
-equivalence `h : X ≃ₕ M`, and stage homotopy equivalences `hW k : W k ≃ₕ {f ≤ a k}` restricted from
-`h` whose global homotopy inverse `h.symm` carries `{f ≤ a k}` into `W k`. Moreover, the `m`-cells
-of `X` (and of each `W k`) correspond to the critical points of `f` of index `m` (in `{f ≤ a k}`).
--/
-theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
-    (hbdd : BddBelow (range f)) :
+/-- Finite-dimensional core of `TauCeti.IsMorse.exists_cwComplex_subcomplex_homotopyEquiv`. -/
+private theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_finiteDimensional
+    (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
     ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
       (_ : CWComplex (univ : Set X)) (W : ℕ → Subcomplex (univ : Set X))
       (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | f x ≤ a k}),
@@ -371,6 +373,62 @@ theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp
   · rw [CWComplex.Subcomplex.cell_def]
     exact ⟨(cwComplexOfIsColimitSubcomplexCellEquiv hF hιc hc k m).trans ((S k).cellEquiv m)⟩
 
+omit [FiniteDimensional ℝ E] in
+/-- **The sublevel-compatible CW exhaustion of a proper Morse function** (Milnor, *Morse Theory*,
+Theorem 3.5 and its proof). Let `f` be a proper, bounded-below Morse function on a boundaryless
+manifold `M`. Then there exist a strictly increasing sequence of regular values `a : ℕ → ℝ` tending
+to `+∞` with `a 0 < f x` everywhere, a Hausdorff CW complex `X`, an increasing sequence of finite
+CW subcomplexes `W : ℕ → Subcomplex (univ : Set X)` exhausting `X` from `W 0 = ∅`, a homotopy
+equivalence `h : X ≃ₕ M`, and stage homotopy equivalences `hW k : W k ≃ₕ {f ≤ a k}` restricted from
+`h` whose global homotopy inverse `h.symm` carries `{f ≤ a k}` into `W k`. Moreover, the `m`-cells
+of `X` (and of each `W k`) correspond to the critical points of `f` of index `m` (in `{f ≤ a k}`).
+-/
+theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) :
+    ∃ (a : ℕ → ℝ) (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X)
+      (_ : CWComplex (univ : Set X)) (W : ℕ → Subcomplex (univ : Set X))
+      (h : X ≃ₕ M) (hW : ∀ k, (W k : Set X) ≃ₕ {x | f x ≤ a k}),
+      StrictMono a ∧ Tendsto a atTop atTop ∧ (∀ x, a 0 < f x) ∧
+      (∀ k, IsRegularValue I 𝓘(ℝ) f (a k)) ∧
+      Monotone W ∧ (W 0 : Set X) = ∅ ∧ (⋃ k, (W k : Set X)) = univ ∧
+      (∀ k, RelCWComplex.Finite (W k : Set X)) ∧
+      (∀ k (w : (W k : Set X)), (hW k w : M) = h w) ∧
+      (∀ k, MapsTo h.symm {x | f x ≤ a k} (W k)) ∧
+      (∀ m, Nonempty (cell (univ : Set X) m ≃
+        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m})) ∧
+      ∀ k m, Nonempty (cell (W k : Set X) m ≃
+        ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a k) | manifoldMorseIndex I f x = m}) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · let W : ℕ → Subcomplex (univ : Set PEmpty.{u + 1}) :=
+      fun _ ↦ ⟨∅, fun _ ↦ ∅, isClosed_empty, by simp⟩
+    have hWempty (k m : ℕ) : IsEmpty (cell (W k : Set PEmpty.{u + 1}) m) :=
+      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
+    have (k : ℕ) : IsEmpty {x : M | f x ≤ (k : ℝ)} := ⟨fun x ↦ hM.elim x.val⟩
+    refine ⟨Nat.cast, PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance, W,
+      Homeomorph.empty.toHomotopyEquiv, fun _ ↦ Homeomorph.empty.toHomotopyEquiv,
+      Nat.strictMono_cast, tendsto_natCast_atTop_atTop, isEmptyElim,
+      fun _ ↦ isRegularValue_of_notMem_range fun ⟨x, _⟩ ↦ hM.elim x,
+      monotone_const, rfl, eq_univ_of_forall isEmptyElim,
+      fun k ↦ RelCWComplex.finite_of_finite_cells
+        (have : IsEmpty (Σ n, cell (W k : Set PEmpty.{u + 1}) n) :=
+          ⟨fun ⟨n, j⟩ ↦ (hWempty k n).elim j⟩
+        inferInstance),
+      fun _ x ↦ PEmpty.elim x.val, fun _ x ↦ hM.elim x, fun m ↦ ⟨?_⟩, fun k m ↦ ⟨?_⟩⟩
+    · have : IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m} :=
+        ⟨fun x ↦ hM.elim x.val⟩
+      exact Equiv.equivOfIsEmpty _ _
+    · have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (k : ℝ) |
+          manifoldMorseIndex I f x = m} := ⟨fun x ↦ hM.elim x.val⟩
+      exact Equiv.equivOfIsEmpty _ _
+  · obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
+    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
+    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
+    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
+    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
+      hf.contMDiff.continuous hcomp (hreg n)
+    exact hf.exists_cwComplex_subcomplex_homotopyEquiv_of_finiteDimensional hp hbdd
+
+omit [FiniteDimensional ℝ E] in
 /-- **Index-bounded sublevel-compatible CW exhaustion of a proper Morse function.** If `f` is a
 proper, bounded-below Morse function on a boundaryless manifold `M` whose critical points all have
 Morse index at most `d`, then the sublevel-compatible CW exhaustion of
@@ -418,6 +476,7 @@ private theorem IsMorse.exists_cwComplex_homotopyEquiv_of_finiteDimensional (hf 
     hf.exists_cwComplex_homotopyEquiv_subcomplex_sublevel hp hbdd
   exact ⟨X, _, ‹_›, ‹_›, ⟨H.symm⟩, fun m ↦ ⟨e m⟩⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Index-bounded CW model of a proper Morse function.** If `f` is a proper, bounded-below Morse
 function on a boundaryless manifold `M` whose critical points all have Morse index at most `d`,
 then `M` is homotopy equivalent to a finite-dimensional Hausdorff CW complex `X` whose `m`-cells
@@ -485,5 +544,39 @@ theorem IsMorse.finiteCWType_of_isProperMap (hf : IsMorse I f) (hp : IsProperMap
   obtain ⟨X, _, _, _, _, ⟨e⟩, -⟩ :=
     hf.exists_finite_cwComplex_homotopyEquiv_of_isProperMap hp hbdd hfin
   exact (e.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv).finiteCWType
+
+omit [FiniteDimensional ℝ E] in
+/-- A boundaryless Hausdorff manifold carrying a proper Morse function bounded below has CW type. -/
+theorem IsMorse.cwType (hf : IsMorse I f) (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
+    CWType M := by
+  obtain ⟨X, _, _, _, ⟨h⟩, -⟩ := hf.exists_cwComplex_homotopyEquiv hp hbdd
+  exact h.cwType
+
+variable (M I) in
+include I in
+/-- **Sigma-compact manifolds have CW type** (Milnor, *Morse Theory*, Theorem 3.5, the remark
+following it, and §6, Corollary 6.7; Milnor 1959, Corollary 1). Every sigma-compact boundaryless
+Hausdorff smooth manifold with a finite-dimensional model carries a proper bounded-below Morse
+function (`TauCeti.exists_isMorse_isProperMap_bddBelow`) and is therefore homotopy equivalent to a
+CW complex. -/
+theorem CWType.of_isManifold [SigmaCompactSpace M] : CWType M :=
+  let ⟨_, hgm, hgp, hgbdd⟩ := exists_isMorse_isProperMap_bddBelow (I := I) (M := M)
+  hgm.cwType hgp hgbdd
+
+omit [FiniteDimensional ℝ E] in
+variable (I) in
+include I in
+/-- A boundaryless Hausdorff smooth manifold admitting a proper map to a weakly locally compact
+sigma-compact space has CW type, without a separate finite-dimensionality assumption on the model
+space. -/
+theorem CWType.of_isManifold_of_isProperMap {Y : Type*} [TopologicalSpace Y]
+    [WeaklyLocallyCompactSpace Y] [SigmaCompactSpace Y] {g : M → Y} (hg : IsProperMap g) :
+    CWType M := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact (Homeomorph.empty : M ≃ₜ PEmpty.{u + 1}).cwType
+  have := hg.weaklyLocallyCompactSpace
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+  have := hg.sigmaCompactSpace
+  exact CWType.of_isManifold M I
 
 end TauCeti
