@@ -25,7 +25,10 @@ When `p = 0` in `R` it is an equality.
 Over a field of characteristic `p`, `Ê` has height one exactly when the coefficient of `Tᵖ` in
 `[p]_Ê` is nonzero, hence exactly when the coefficient of `Tᵖ⁻¹` in `P` is nonzero. The first
 coefficients of `P` are `1`, `a₁` and `a₁² + a₂`. In characteristic `2` the criterion is therefore
-`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`.
+`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`. The general-prime
+classification relating formal-group height to ordinarity and supersingularity lives in
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular` and
+`TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Classification`.
 
 ## Main results
 

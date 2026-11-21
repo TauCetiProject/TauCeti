@@ -50,14 +50,11 @@ private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
   let L := u.adicCompletion K
   let O := u.adicCompletionIntegers K
   let i := algebraMap K L
-  let f : W.toAffine.Point →+ (W.map i).toAffine.Point :=
-    AddMonoidHom.mk' (Point.mapAlong i i.injective) (Point.mapAlong_add i i.injective)
-  have hf : Function.Bijective f := ⟨Point.mapAlong_injective i i.injective,
-    Point.mapAlong_surjective i i.injective
-      (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K).2⟩
-  have hf_apply (Q : W.toAffine.Point) : f Q = Point.mapAlong i i.injective Q := (rfl)
+  let f := Point.mapAlongAddEquiv (W := W) i
+    (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K)
+  have hf : Function.Bijective f := f.bijective
   have hx (Q : W.toAffine.Point) : Valued.v (f Q).xCoord = u.valuation K Q.xCoord := by
-    rw [hf_apply, Point.xCoord_mapAlong]
+    rw [Point.mapAlongAddEquiv_apply, Point.xCoord_mapAlong]
     exact u.valuedAdicCompletion_eq_valuation' Q.xCoord
   have hint : IsIntegral O (W.map i) := IsIntegral.baseChange
     ((IsScalarTower.algebraMap_eq 𝒪[K] O L).symm.trans

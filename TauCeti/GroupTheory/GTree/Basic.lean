@@ -527,6 +527,13 @@ variable {T}
     T.IsConvex (g • S) ↔ T.IsConvex S := by
   rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
 
+/-- An element that maps a set of vertices into itself maps the darts induced by the set to darts
+induced by the set. -/
+theorem smul_mem_inducedDarts {g : G} {C : Set T.V} (hinv : ∀ v ∈ C, g • v ∈ C) {e : T.E}
+    (he : e ∈ T.inducedDarts C) : g • e ∈ T.inducedDarts C := by
+  simp only [mem_inducedDarts_iff, src_smul, tgt_smul] at he ⊢
+  exact ⟨hinv _ he.1, hinv _ he.2⟩
+
 end Pointwise
 
 /-! ### Fixed vertices -/

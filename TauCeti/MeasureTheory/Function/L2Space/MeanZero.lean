@@ -20,9 +20,9 @@ import TauCeti.Probability.Moments.Variance
 /-!
 # Mean-zero subspace of `L²`
 
-On a finite measure space `(X, P)`, the closed subspace `L²₀(P)` (`TauCeti.meanZeroL2 P`) consists
-of square-integrable real functions with vanishing integral, defined as the orthogonal complement of
-the constant functions in `Lp ℝ 2 P`.
+On a finite measure space `(X, P)`, the closed subspace `L²₀(P)`
+(`MeasureTheory.Measure.meanZeroL2 P`) consists of square-integrable real functions with vanishing
+integral, defined as the orthogonal complement of the constant functions in `Lp ℝ 2 P`.
 
 `L²₀(P)` complements the one-dimensional subspace of constant functions and is complete, so it
 admits an orthogonal projection. On a finite measure space, the orthogonal projection onto `L²₀(P)`
@@ -32,21 +32,24 @@ bounded continuous mean-zero functions are dense in `L²₀(P)`.
 
 ## Main definitions
 
-* `TauCeti.meanZeroL2`: the closed subspace `L²₀(P)` of mean-zero elements of `Lp ℝ 2 P`.
+* `MeasureTheory.Measure.meanZeroL2`: the closed subspace `L²₀(P)` of mean-zero elements of
+  `Lp ℝ 2 P`.
 
 ## Main results
 
-* `TauCeti.mem_meanZeroL2_iff`: `f ∈ meanZeroL2 P ↔ ∫ x, f x ∂P = 0`.
-* `TauCeti.isClosed_meanZeroL2`, `TauCeti.completeSpace_meanZeroL2`: `L²₀(P)` is closed and
-  complete.
-* `TauCeti.isCompl_span_const_meanZeroL2`: `Lp ℝ 2 P` splits into the constants and `L²₀(P)`.
-* `TauCeti.starProjection_meanZeroL2_eq_sub_const_average`, `TauCeti.starProjection_meanZeroL2`:
-  the orthogonal projection onto `L²₀(P)` subtracts the average (the mean on a probability space).
-* `TauCeti.norm_starProjection_meanZeroL2_sq`: the squared `L²` norm of the projection onto
-  `L²₀(P)` equals the variance on a probability space.
-* `TauCeti.meanZeroL2_subset_closure_bounded`,
-  `TauCeti.meanZeroL2_subset_closure_boundedContinuous`: density of bounded and bounded continuous
-  mean-zero elements in `L²₀(P)`.
+* `MeasureTheory.Measure.mem_meanZeroL2_iff`: `f ∈ P.meanZeroL2 ↔ ∫ x, f x ∂P = 0`.
+* `MeasureTheory.Measure.isClosed_meanZeroL2`, `MeasureTheory.Measure.completeSpace_meanZeroL2`:
+  `L²₀(P)` is closed and complete.
+* `MeasureTheory.Measure.isCompl_span_const_meanZeroL2`: `Lp ℝ 2 P` splits into the constants and
+  `L²₀(P)`.
+* `MeasureTheory.Measure.starProjection_meanZeroL2_eq_sub_const_average`,
+  `MeasureTheory.Measure.starProjection_meanZeroL2`: the orthogonal projection onto `L²₀(P)`
+  subtracts the average (the mean on a probability space).
+* `MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq`: the squared `L²` norm of the
+  projection onto `L²₀(P)` equals the variance on a probability space.
+* `MeasureTheory.Measure.meanZeroL2_subset_closure_bounded`,
+  `MeasureTheory.Measure.meanZeroL2_subset_closure_boundedContinuous`: density of bounded and
+  bounded continuous mean-zero elements in `L²₀(P)`.
 -/
 
 public section
@@ -56,7 +59,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Topology
 open scoped ENNReal NNReal InnerProductSpace BoundedContinuousFunction
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {X : Type*} [MeasurableSpace X]
 
@@ -93,7 +96,7 @@ theorem isCompl_span_const_meanZeroL2 (P : Measure X) [IsFiniteMeasure P] :
 
 /-- For a Dirac measure, every mean-zero element of `L²` vanishes. -/
 @[simp]
-theorem meanZeroL2_dirac (x : X) : meanZeroL2 (Measure.dirac x) = ⊥ := by
+theorem meanZeroL2_dirac (x : X) : meanZeroL2 (dirac x) = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro f hf
   rw [mem_meanZeroL2_iff] at hf
@@ -101,9 +104,9 @@ theorem meanZeroL2_dirac (x : X) : meanZeroL2 (Measure.dirac x) = ⊥ := by
   have hgx : g x = 0 := by
     rw [← integral_dirac' g x hg, ← integral_congr_ae hfg]
     exact hf
-  have hg0 : g =ᵐ[Measure.dirac x] (0 : X → ℝ) :=
+  have hg0 : g =ᵐ[dirac x] (0 : X → ℝ) :=
     (ae_dirac_iff (hg.measurable (measurableSet_singleton 0))).mpr hgx
-  exact Lp.ext (hfg.trans (hg0.trans (Lp.coeFn_zero ℝ 2 (Measure.dirac x)).symm))
+  exact Lp.ext (hfg.trans (hg0.trans (Lp.coeFn_zero ℝ 2 (dirac x)).symm))
 
 /-- On a finite measure space, the orthogonal projection onto `L²₀(P)` subtracts the `P`-average. -/
 theorem starProjection_meanZeroL2_eq_sub_const_average {P : Measure X} [IsFiniteMeasure P]
@@ -176,4 +179,4 @@ theorem meanZeroL2_subset_closure_boundedContinuous (P : Measure X) [IsFiniteMea
   rw [hsub, Pi.sub_apply, hc, Function.const_apply, hg]
   simp only [FunLike.coe_sub, BoundedContinuousFunction.const_apply, Pi.sub_apply]
 
-end TauCeti
+end MeasureTheory.Measure

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Probability.Moments.Chebyshev
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
@@ -278,6 +279,27 @@ namespace MeasureTheory
 
 open Filter Topology
 open scoped ENNReal
+
+/-- Sectionwise convergence in measure almost everywhere implies convergence in measure on a
+product of two finite measures if the distances to the limit are eventually jointly measurable. -/
+theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
+    {α β E ι : Type*} [MeasurableSpace α] [MeasurableSpace β] [EDist E]
+    {μ : Measure α} {ν : Measure β} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    {l : Filter ι} [l.IsCountablyGenerated] {f : ι → α × β → E} {g : α × β → E}
+    (hf : ∀ᶠ i in l, Measurable (fun p ↦ edist (f i p) (g p)))
+    (h : ∀ᵐ x ∂μ, TendstoInMeasure ν (fun n y ↦ f n (x, y)) l (fun y ↦ g (x, y))) :
+    TendstoInMeasure (μ.prod ν) f l g := by
+  intro ε hε
+  let s (n : ι) := {p | ε ≤ edist (f n p) (g p)}
+  have hs : ∀ᶠ i in l, MeasurableSet (s i) :=
+    hf.mono fun _ hi ↦ measurableSet_le measurable_const hi
+  refine Tendsto.congr' (hs.mono fun _ hi ↦ (Measure.prod_apply hi).symm) ?_
+  have hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ν (Prod.mk x ⁻¹' s n)) l (𝓝 0) :=
+    h.mono fun x hx ↦ hx ε hε
+  simpa only [lintegral_zero] using tendsto_lintegral_filter_of_dominated_convergence
+    (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
+    (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
+    (by rw [lintegral_const]; finiteness) hlim
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/

@@ -15,30 +15,32 @@ import TauCeti.MeasureTheory.Function.L2Space
 # Pullback isometry on `L²` and its conditional expectation adjoint
 
 For a measurable map `m : Y → X` and a measure `η` on `Y`, composition with `m` defines an
-isometric linear map `TauCeti.pullbackL2 η m hm : Lp ℝ 2 (η.map m) →L[ℝ] Lp ℝ 2 η`. Its
-Hilbert-space adjoint `TauCeti.condExpOperator η m hm : Lp ℝ 2 η →L[ℝ] Lp ℝ 2 (η.map m)` is a
-surjective contraction that inverts `pullbackL2` on the left, preserves integrals and maps
-`L²₀(η)` onto `L²₀(η.map m)` when `η` is finite, and satisfies
-`pullbackL2 (condExpOperator b) =ᵐ[η] η[b | σ(m)]`.
+isometric linear map `MeasureTheory.Measure.pullbackL2 η m hm : Lp ℝ 2 (η.map m) →L[ℝ] Lp ℝ 2 η`.
+Its Hilbert-space adjoint
+`MeasureTheory.Measure.condExpOperator η m hm : Lp ℝ 2 η →L[ℝ] Lp ℝ 2 (η.map m)` is a surjective
+contraction that inverts `pullbackL2` on the left, preserves integrals and maps `L²₀(η)` onto
+`L²₀(η.map m)` when `η` is finite, and satisfies `pullbackL2 (condExpOperator b) =ᵐ[η] η[b | σ(m)]`.
 
 ## Main definitions
 
-* `TauCeti.pullbackL2`: pullback along a measurable map `m : Y → X` as an `L²` isometry.
-* `TauCeti.condExpOperator`: Hilbert-space adjoint of `pullbackL2` (the conditional expectation
-  operator given `m`).
+* `MeasureTheory.Measure.pullbackL2`: pullback along a measurable map `m : Y → X` as an `L²`
+  isometry.
+* `MeasureTheory.Measure.condExpOperator`: Hilbert-space adjoint of `pullbackL2` (the conditional
+  expectation operator given `m`).
 
 ## Main results
 
-* `TauCeti.isometry_pullbackL2`, `TauCeti.norm_pullbackL2`, `TauCeti.inner_pullbackL2`:
-  `pullbackL2` is an `L²` isometry.
-* `TauCeti.condExpOperator_comp_pullbackL2`, `TauCeti.surjective_condExpOperator`,
-  `TauCeti.norm_condExpOperator_le_one`: `condExpOperator` is a surjective contraction and a left
-  inverse of `pullbackL2`.
-* `TauCeti.integral_condExpOperator`, `TauCeti.integral_pullbackL2`,
-  `TauCeti.map_meanZeroL2_condExpOperator`: both operators preserve integrals on finite measure
-  spaces, and `condExpOperator` maps `L²₀(η)` onto `L²₀(η.map m)`.
-* `TauCeti.pullbackL2_condExpOperator_ae_eq`: composing `condExpOperator` with `m` yields the
-  conditional expectation given `σ(m)` almost everywhere.
+* `MeasureTheory.Measure.isometry_pullbackL2`, `MeasureTheory.Measure.norm_pullbackL2`,
+  `MeasureTheory.Measure.inner_pullbackL2`: `pullbackL2` is an `L²` isometry.
+* `MeasureTheory.Measure.condExpOperator_comp_pullbackL2`,
+  `MeasureTheory.Measure.condExpOperator_surjective`,
+  `MeasureTheory.Measure.norm_condExpOperator_le_one`: `condExpOperator` is a surjective contraction
+  and a left inverse of `pullbackL2`.
+* `MeasureTheory.Measure.integral_condExpOperator`, `MeasureTheory.Measure.integral_pullbackL2`,
+  `MeasureTheory.Measure.map_meanZeroL2_condExpOperator`: both operators preserve integrals on
+  finite measure spaces, and `condExpOperator` maps `L²₀(η)` onto `L²₀(η.map m)`.
+* `MeasureTheory.Measure.pullbackL2_condExpOperator_ae_eq`: composing `condExpOperator` with `m`
+  yields the conditional expectation given `σ(m)` almost everywhere.
 -/
 
 public section
@@ -48,7 +50,7 @@ noncomputable section
 open MeasureTheory Set
 open scoped ENNReal InnerProductSpace
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
 
@@ -138,7 +140,7 @@ theorem condExpOperator_pullbackL2 (η : Measure Y) (m : Y → X) (hm : Measurab
   DFunLike.congr_fun (condExpOperator_comp_pullbackL2 η m hm) g
 
 /-- `condExpOperator` is surjective onto `Lp ℝ 2 (η.map m)`. -/
-theorem surjective_condExpOperator (η : Measure Y) (m : Y → X) (hm : Measurable m) :
+theorem condExpOperator_surjective (η : Measure Y) (m : Y → X) (hm : Measurable m) :
     Function.Surjective (condExpOperator η m hm) :=
   Function.LeftInverse.surjective (condExpOperator_pullbackL2 η m hm)
 
@@ -222,4 +224,4 @@ theorem pullbackL2_condExpOperator_ae_eq (η : Measure Y) [IsFiniteMeasure η] (
     _ = ⟪indicatorConstLp 2 (hm ht) hηt (1 : ℝ), b⟫_ℝ := by rw [hu]
     _ = ∫ y in m ⁻¹' t, b y ∂η := L2.inner_indicatorConstLp_one (hm ht) hηt b
 
-end TauCeti
+end MeasureTheory.Measure

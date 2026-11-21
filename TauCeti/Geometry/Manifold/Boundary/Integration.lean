@@ -93,7 +93,8 @@ theorem isCompact_tsupport_boundaryRestriction
     : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
         (boundaryRestriction φ)) :=
   RoughForm.isCompact_tsupport_mpullback
-    ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional.isClosedEmbedding_subtypeVal.isProperMap)
+    (IsClosed.isClosedEmbedding_subtypeVal
+      ((𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional M)).isProperMap
     hc
 
 /-- Support in an ambient chart restricts to support in its induced boundary chart. -/

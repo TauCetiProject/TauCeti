@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RankOne
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
@@ -22,7 +25,10 @@ operator `rankOneDivNormSq 𝕜 (C u) u` is `𝕜`-linear, agrees with `C` on `u
 at most `‖C‖`. Thus every `Lᵖ` coefficient bound transfers, with the same seminorm bound, to this
 new coefficient. In the complex case this is the solution-dependent absorption of a real-linear
 zeroth-order coefficient used in the vector similarity principle. It does not construct a
-similarity factor or assert regularity of a solution.
+similarity factor or assert regularity of a solution. On a finite-dimensional complex normed
+space, which need not carry an inner product, the operator is read in a Euclidean model, and an
+`Lᵖ` field of real-linear coefficients still agrees along `u` with an `Lᵖ` field of
+complex-linear ones (`MeasureTheory.MemLp.exists_memLp_clm_apply_eq`).
 
 The hypotheses are strong measurability, including in infinite-dimensional spaces. Mere Borel
 measurability is not silently converted into strong measurability without separability hypotheses.
@@ -105,3 +111,29 @@ theorem eLpNorm_rankOneDivNormSq_apply_le
     (Filter.Eventually.of_forall fun t => (C t).norm_rankOneDivNormSq_map_le (x t))
 
 end TauCeti.MeasureTheory
+
+namespace MeasureTheory
+
+variable {V F X : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [MeasurableSpace X] {μ : Measure X}
+  {C : X → V →L[ℝ] F} {ξ : X → V} {p : ℝ≥0∞}
+
+/-- **A complex-linear coefficient along a solution.** On a finite-dimensional complex normed
+space `V`, an `Lᵖ` field `C` of real-linear maps agrees along a strongly measurable `ξ` with an
+`Lᵖ` field `D` of complex-linear maps, `D x (ξ x) = C x (ξ x)`. For a linear isomorphism `e` of
+`V` onto a Euclidean space, `D x` is the normalized rank-one map `w ↦ ‖e ξ‖⁻² ⟪e ξ, e w⟫ C ξ`. -/
+theorem MemLp.exists_memLp_clm_apply_eq (hC : MemLp C p μ) (hξ : AEStronglyMeasurable ξ μ) :
+    ∃ D : X → V →L[ℂ] F, MemLp D p μ ∧ ∀ x, D x (ξ x) = C x (ξ x) := by
+  let e : V ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  let L₁ : (V →L[ℝ] F) →L[ℝ] EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) →L[ℝ] F :=
+    (ContinuousLinearMap.compL ℝ _ V F).flip ((e.symm : _ →L[ℂ] V).restrictScalars ℝ)
+  let L₂ : (EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) →L[ℂ] F) →L[ℂ] V →L[ℂ] F :=
+    (ContinuousLinearMap.compL ℂ V _ F).flip (e : V →L[ℂ] _)
+  refine ⟨fun x ↦ L₂ (rankOneDivNormSq ℂ (L₁ (C x) (e (ξ x))) (e (ξ x))),
+    L₂.comp_memLp' ((L₁.comp_memLp' hC).rankOneDivNormSq_apply
+      (e.continuous.comp_aestronglyMeasurable hξ)), fun x ↦ ?_⟩
+  have h := (L₁ (C x)).rankOneDivNormSq_apply_map (𝕜 := ℂ) (e (ξ x))
+  simpa [L₁, L₂] using h
+
+end MeasureTheory

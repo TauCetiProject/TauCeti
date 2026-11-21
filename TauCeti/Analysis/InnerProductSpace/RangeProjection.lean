@@ -44,7 +44,9 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
   `B B†`.
 * `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
-  (`ContinuousLinearMap.gramLeftInverse_def`), with
+  (`ContinuousLinearMap.gramLeftInverse_def`) of `A` when `A† A` is invertible
+  (`ContinuousLinearMap.gramLeftInverse_comp_self`,
+  `ContinuousLinearMap.gramLeftInverse_apply_apply`), with
   `ContinuousLinearMap.continuousAt_gramLeftInverse` and
   `ContinuousLinearMap.contDiffAt_gramLeftInverse`.
 * `ContinuousLinearMap.gramProjection`: the projection `κ (A† A)⁻¹ A† ι`
@@ -91,9 +93,16 @@ theorem gramLeftInverse_def (A : F →L[𝕜] V) :
   rw [gramLeftInverse]
 
 /-- `(A† A)⁻¹ A†` is a left inverse of `A` when `A† A` is invertible. -/
+@[simp]
 theorem gramLeftInverse_comp_self {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
     gramLeftInverse A ∘L A = 1 := by
   rw [gramLeftInverse, comp_assoc, ← mul_def, Ring.inverse_mul_cancel _ hA]
+
+/-- `(A† A)⁻¹ A†` recovers `v` from `A v` when `A† A` is invertible. -/
+@[simp]
+theorem gramLeftInverse_apply_apply {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) (v : F) :
+    gramLeftInverse A (A v) = v :=
+  congr($(gramLeftInverse_comp_self hA) v)
 
 /-- `A† A (A† A)⁻¹ A† = A†` when `A† A` is invertible: `v - A (A† A)⁻¹ A† v` lies in the kernel
 of `A†`. -/
@@ -119,10 +128,7 @@ theorem contDiffAt_gramLeftInverse
     [NormedSpace ℝ F] [NormedSpace ℝ V]
     {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) {n : WithTop ℕ∞} :
     ContDiffAt ℝ n (gramLeftInverse : (F →L[𝕜] V) → V →L[𝕜] F) A := by
-  have ha : ContDiff ℝ n (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) := by
-    have heq : (adjointRealCLM : (F →L[𝕜] V) →L[ℝ] (V →L[𝕜] F)) =
-        (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) := funext adjointRealCLM_apply
-    exact heq ▸ (adjointRealCLM : (F →L[𝕜] V) →L[ℝ] (V →L[𝕜] F)).contDiff
+  have ha : ContDiff ℝ n (adjoint : (F →L[𝕜] V) → V →L[𝕜] F) := contDiff_id.clm_adjoint
   have hgram : ContDiff ℝ n (fun B : F →L[𝕜] V ↦ adjoint B ∘L B) := by
     simpa using
       (((compL 𝕜 F V F).bilinearRestrictScalars ℝ).contDiff.comp ha).clm_apply contDiff_id

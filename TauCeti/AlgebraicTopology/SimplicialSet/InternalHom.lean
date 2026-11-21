@@ -151,6 +151,12 @@ lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
     ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
     Category.id_comp]
 
+/-- The map corresponding to the image of a vertex `y` under `b : Y ⟶ Fun(X, Z)` is the
+restriction of the uncurried form of `b` to `X ⊗ {y}`. -/
+lemma ihomObj₀Equiv_app {Y : SSet.{u}} (b : Y ⟶ (ihom X).obj Z) (y : Y _⦋0⦌) :
+    ihomObj₀Equiv X Z (b.app _ y) = lift (𝟙 X) (const y) ≫ uncurry b := by
+  rw [ihomObj₀Equiv_apply, uncurry_eq, lift_whiskerLeft_assoc, const_comp]
+
 /-- The vertex of `Fun(X, Z)` corresponding to a map `f : X ⟶ Z` is adjoint to
 `X ⊗ Δ[0] ⟶ X ⟶ Z`. -/
 lemma yonedaEquiv_symm_ihomObj₀Equiv_symm (f : X ⟶ Z) :

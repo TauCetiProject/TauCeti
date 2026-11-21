@@ -53,10 +53,14 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`: rescaling by any `c ≠ 0` changes
   `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor.
+* `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
+  with `c ≥ 1`, `⟨ξ + c • θ⟩ ^ s ≤ 2 ^ (|s| / 2) c ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
+* `TauCeti.one_add_norm_sq_rpow_le_mul_one_add_norm_pow`: `⟨x⟩ ^ a ≤ ⟨x⟩ ^ b (1 + ‖x‖) ^ N` for
+  `a ≤ b + N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
 * `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
@@ -254,6 +258,22 @@ theorem exists_one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSp
           gcongr
           exact (le_max_right _ _).trans (le_max_right _ _)
 
+omit [SeminormedAddGroup E] in
+/-- Peetre's inequality for the shift `ξ + c • θ` by a multiple of `θ` with `c ≥ 1`:
+`(1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤ 2 ^ (|m| / 2) c ^ |m| (1 + ‖ξ‖ ^ 2) ^ (m / 2)
+(1 + ‖θ‖ ^ 2) ^ (|m| / 2)` for every real `m`. -/
+theorem one_add_norm_add_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
+    (hc : 1 ≤ c) (m : ℝ) (ξ θ : E) :
+    (1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤
+      2 ^ (|m| / 2) * c ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+  refine (one_add_norm_add_sq_rpow_le_mul m ξ (c • θ)).trans ?_
+  have := one_add_norm_smul_sq_rpow_le hc |m| θ
+  rw [abs_abs] at this
+  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖c • θ‖ ^ 2) ^ (|m| / 2)
+      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by
+        gcongr
+    _ = _ := by ring
+
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤ 2 ^ s ((1 + ‖x‖ ^ 2) ^ (s / 2) + (1 + ‖y‖ ^ 2) ^ (s / 2))`. -/
@@ -300,6 +320,19 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow_of_le (x : E) {s : ℝ} {N : �
     (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ (1 + ‖x‖) ^ N :=
   (Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)).trans
     (one_add_norm_sq_rpow_le_one_add_norm_pow x N)
+
+/-- Raising the order of the Japanese bracket by at most a natural number `N` costs at most the
+factor `(1 + ‖x‖) ^ N`: `(1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) (1 + ‖x‖) ^ N` for
+`a ≤ b + N`. -/
+theorem one_add_norm_sq_rpow_le_mul_one_add_norm_pow (x : E) {a b : ℝ} {N : ℕ}
+    (h : a ≤ b + N) : (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N :=
+  calc (1 + ‖x‖ ^ 2) ^ (a / 2) ≤ (1 + ‖x‖ ^ 2) ^ ((b + N) / 2) :=
+        Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)
+    _ = (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) := by
+        rw [add_div, Real.rpow_add (by positivity)]
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (b / 2) * (1 + ‖x‖) ^ N := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_one_add_norm_pow x N
 
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,
 `(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r`. -/

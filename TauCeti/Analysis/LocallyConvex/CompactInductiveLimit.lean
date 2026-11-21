@@ -52,7 +52,10 @@ inducing property when continuous
 strong-dual evaluation criterion in `TauCeti.Analysis.LocallyConvex.DoubleDual`.
 Forward continuity of `evalInductive` holds whenever the topology of `L` is at least as fine as the
 final locally convex topology of the maps `ι j`
-(`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`), and in
+(`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`), and also
+whenever every `𝕜`-seminorm on `L` whose composites with all `ι j` are continuous is itself
+continuous
+(`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`); it in
 fact forces the topology of `L` to equal that final locally convex topology
 (`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`). When the
 bonding maps are weakly compact and `evalInductive` is continuous (equivalently, `L` carries the
@@ -85,6 +88,7 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
 * `TauCeti.dualProjectiveLimit.comap_evalInductive_le_nhds_zero`: inverse continuity of
   `evalInductive` at `0`.
 * `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`,
+  `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`,
   `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`: forward
   continuity and final-topology characterization.
 * `TauCeti.dualProjectiveLimit.evalEquiv`: topological linear isomorphism
@@ -106,7 +110,7 @@ public section
 noncomputable section
 
 open ContinuousLinearMap Filter Metric Topology
-open scoped ComplexOrder
+open scoped ComplexOrder NNReal
 
 namespace TauCeti
 
@@ -206,6 +210,11 @@ variable [SeparatingDual 𝕜 L] (hT : ∀ n, (T n).IsWeaklyCompact)
 theorem coe_strongDualEquiv :
     ⇑(strongDualEquiv hT hι hinj hcover hfinal) = precomp ι hι :=
   (rfl)
+
+@[simp]
+theorem strongDualEquiv_symm_precomp (φ : StrongDual 𝕜 L) :
+    (strongDualEquiv hT hι hinj hcover hfinal).symm (precomp ι hι φ) = φ := by
+  rw [← coe_strongDualEquiv hT hι hinj hcover hfinal, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- The functional on `L` corresponding to a compatible family `f` takes the value `f j z` at
 `ι j z`. -/
@@ -334,6 +343,44 @@ theorem continuous_evalInductive_of_le_finalLocallyConvexTopology
     (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) (evalInductive hι hinj hcover)).2 fun n ↦
       (eval T n).continuous.congr fun z ↦ (evalInductive_ι hι hinj hcover n z).symm
   exact continuous_iff_le_induced.2 (hle.trans (continuous_iff_le_induced.1 hcont₀))
+
+/-- **Forward continuity from stagewise-tested seminorms.** If every `𝕜`-seminorm on `L` whose
+composites with all stage maps `ι n` are continuous is itself continuous, then the glued evaluation
+map `evalInductive` is continuous: on a bounded subset `Q` of `dualProjectiveLimit T`, each
+coordinate projection is norm-bounded, so the supremum seminorm over `Q` is bounded on every stage
+`B n` and therefore continuous on `L`. -/
+theorem continuous_evalInductive_of_continuous_comp_seminorm [IsTopologicalAddGroup L]
+    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hsem : ∀ q : Seminorm 𝕜 L, (∀ n, Continuous (q ∘ ι n)) → Continuous q) :
+    Continuous (evalInductive hι hinj hcover) := by
+  refine continuous_of_continuousAt_zero (evalInductive hι hinj hcover).toAddMonoidHom ?_
+  rw [ContinuousAt, map_zero]
+  refine ((ContinuousLinearMap.hasBasis_nhds_zero_of_basis (σ := RingHom.id 𝕜)
+    nhds_basis_ball).tendsto_right_iff).2 fun ⟨Q, ε⟩ ⟨hQ, hε⟩ ↦ ?_
+  set p : Q → Seminorm 𝕜 L := fun f ↦ (normSeminorm 𝕜 𝕜).comp
+    ((applyₗ 𝕜 (RingHom.id 𝕜) f.val).toLinearMap ∘ₗ evalInductive hι hinj hcover)
+  have hstage (n : ℕ) : ∃ C : ℝ≥0, ∀ f : Q, ∀ z : B n, p f (ι n z) ≤ C * ‖z‖ := by
+    obtain ⟨C, hC⟩ := (NormedSpace.isVonNBounded_iff' 𝕜).1 (hQ.image (coord T n))
+    refine ⟨C.toNNReal, fun f z ↦ ?_⟩
+    have hfC : ‖(f.val : ∀ k, StrongDual 𝕜 (B k)) n‖ ≤ C.toNNReal := by
+      have h := hC (coord T n f.val) (Set.mem_image_of_mem (coord T n) f.property)
+      rw [coord_apply] at h
+      exact h.trans (Real.le_coe_toNNReal C)
+    simpa [p] using (le_opNorm _ z).trans (mul_le_mul_of_nonneg_right hfC (norm_nonneg z))
+  have hbdd : BddAbove (Set.range p) := Seminorm.bddAbove_range_iff.2 fun x ↦ by
+    obtain ⟨n, z, rfl⟩ := hcover x
+    obtain ⟨C, hC⟩ := hstage n
+    exact ⟨C * ‖z‖, by rintro _ ⟨f, rfl⟩; exact hC f z⟩
+  have hp : Continuous ⇑(⨆ f, p f : Seminorm 𝕜 L) := hsem (⨆ f, p f) fun n ↦ by
+    obtain ⟨C, hC⟩ := hstage n
+    exact Seminorm.continuous_of_le (p := (⨆ f, p f).comp (ι n).toLinearMap)
+      (q := C • normSeminorm 𝕜 (B n)) (continuous_const.mul continuous_norm) fun z ↦ by
+      rw [Seminorm.comp_apply, Seminorm.coe_iSup_eq hbdd, iSup_apply]
+      simpa [NNReal.smul_def] using Real.iSup_le (fun f ↦ hC f z) (by positivity)
+  filter_upwards [(⨆ f, p f).ball_mem_nhds hp hε] with x hx f hf
+  rw [Seminorm.mem_ball_zero] at hx
+  simpa [p, mem_ball_zero_iff] using (Seminorm.le_def.1 (le_ciSup hbdd ⟨f, hf⟩) x).trans_lt hx
 
 /-- Auxiliary helper identifying `finalLocallyConvexTopology` with the topology induced by
 `evalInductive` on a fresh module `L₀` carrying no prior `TopologicalSpace` instance. -/

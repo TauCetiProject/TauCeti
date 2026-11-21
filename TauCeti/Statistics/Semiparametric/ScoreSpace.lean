@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 /-!
@@ -19,44 +20,50 @@ import TauCeti.Analysis.InnerProductSpace.RangeProjection
 This file develops the Hilbert-space geometry of score functions in `Lp ℝ 2 P` underlying
 semiparametric efficiency theory. The generic `L²` background lives in its measure-theoretic homes:
 `TauCeti.MeasureTheory.Function.L2Space.MeanZero` for the mean-zero subspace `L²₀(P)`
-(`TauCeti.meanZeroL2`) and its projection/density properties, and
+(`MeasureTheory.Measure.meanZeroL2`) and its projection/density properties, and
 `TauCeti.MeasureTheory.Function.ConditionalExpectation.Pullback` for the `L²` pullback isometry
-(`TauCeti.pullbackL2`) and its conditional-expectation adjoint (`TauCeti.condExpOperator`).
+(`MeasureTheory.Measure.pullbackL2`) and its conditional-expectation adjoint
+(`MeasureTheory.Measure.condExpOperator`).
 
-* **Tangent spaces:** `TauCeti.tangentSpace P T` is the closed linear span of a tangent set
-  `T ⊆ Lp ℝ 2 P` as a `ClosedSubmodule`. It satisfies the universal property of the smallest closed
-  submodule containing `T`, sends unions to joins in `ClosedSubmodule`, and reduces to an algebraic
-  orthogonal sum with additive orthogonal projections when the two tangent spaces are orthogonal.
-* **Efficient scores and information matrices:** `TauCeti.efficientScore P N ℓ` is the residual of
-  a score `ℓ` after orthogonal projection onto the nuisance tangent space `tangentSpace P N`.
-  `TauCeti.informationMatrix P ℓ` and `TauCeti.efficientInformationMatrix P N ℓ` are the Gram
-  matrices of the scores and of the efficient scores. Enlarging the nuisance set decreases the
-  efficient information matrix in the Loewner order, yielding the information-loss inequality
-  `I - I_eff ≥ 0`, the adaptation criterion `I_eff = I` iff every score is orthogonal to `N`, and
-  positive definiteness iff the efficient scores are linearly independent.
+* **Tangent spaces:** `MeasureTheory.Measure.tangentSpace P T` is the closed linear span of a
+  tangent set `T ⊆ Lp ℝ 2 P` as a `ClosedSubmodule`. It satisfies the universal property of the
+  smallest closed submodule containing `T`, sends unions to joins in `ClosedSubmodule`, and reduces
+  to an algebraic orthogonal sum with additive orthogonal projections when the two tangent spaces
+  are orthogonal.
+* **Efficient scores and information matrices:** `MeasureTheory.Measure.efficientScore P N ℓ` is the
+  residual of a score `ℓ` after orthogonal projection onto the nuisance tangent space
+  `P.tangentSpace N`. `MeasureTheory.Measure.informationMatrix P ℓ` and
+  `MeasureTheory.Measure.efficientInformationMatrix P N ℓ` are the Gram matrices of the scores and
+  of the efficient scores. Enlarging the nuisance set decreases the efficient information matrix in
+  the Loewner order, yielding the information-loss inequality `I - I_eff ≥ 0`, the adaptation
+  criterion `I_eff = I` iff every score is orthogonal to `N`, and positive definiteness iff the
+  efficient scores are linearly independent.
 * **Score operators:** For a continuous linear score operator `A : H →L[ℝ] Lp ℝ 2 P` with
   invertible Gram operator `A† A`, the tangent space of `Set.range A` equals `A.range`, and the
   orthogonal projection onto it is `A (A† A)⁻¹ A†`.
 
 ## Main definitions
 
-* `TauCeti.tangentSpace`: the closed linear span of a set of scores in `Lp ℝ 2 P`.
-* `TauCeti.efficientScore`: the residual of a score after projection onto a nuisance tangent space.
-* `TauCeti.informationMatrix`, `TauCeti.efficientInformationMatrix`: the Gram matrices of a family
-  of scores and of their efficient scores.
+* `MeasureTheory.Measure.tangentSpace`: the closed linear span of a set of scores in `Lp ℝ 2 P`.
+* `MeasureTheory.Measure.efficientScore`: the residual of a score after projection onto a nuisance
+  tangent space.
+* `MeasureTheory.Measure.informationMatrix`, `MeasureTheory.Measure.efficientInformationMatrix`:
+  the Gram matrices of a family of scores and of their efficient scores.
 
 ## Main results
 
-* `TauCeti.tangentSpace_union`, `TauCeti.toSubmodule_tangentSpace_union_of_isOrtho`,
-  `TauCeti.starProjection_tangentSpace_union_of_isOrtho`: tangent space of a union, orthogonal sum
-  decomposition, and additivity of projections.
-* `TauCeti.posSemidef_efficientInformationMatrix_sub_of_subset`,
-  `TauCeti.posSemidef_informationMatrix_sub_efficientInformationMatrix`,
-  `TauCeti.efficientInformationMatrix_eq_informationMatrix_iff`,
-  `TauCeti.posDef_efficientInformationMatrix_iff`: information-loss inequalities, adaptation
-  criterion, and nonsingularity criterion.
-* `TauCeti.tangentSpace_range_eq_range`, `TauCeti.starProjection_tangentSpace_range_eq`: closed
-  range and projection formula `A (A† A)⁻¹ A†` for a score operator with invertible `A† A`.
+* `MeasureTheory.Measure.tangentSpace_union`,
+  `MeasureTheory.Measure.toSubmodule_tangentSpace_union_of_isOrtho`,
+  `MeasureTheory.Measure.starProjection_tangentSpace_union_of_isOrtho`: tangent space of a union,
+  orthogonal sum decomposition, and additivity of projections.
+* `MeasureTheory.Measure.posSemidef_efficientInformationMatrix_sub_of_subset`,
+  `MeasureTheory.Measure.posSemidef_informationMatrix_sub_efficientInformationMatrix`,
+  `MeasureTheory.Measure.efficientInformationMatrix_eq_informationMatrix_iff`,
+  `MeasureTheory.Measure.posDef_efficientInformationMatrix_iff`: information-loss inequalities,
+  adaptation criterion, and nonsingularity criterion.
+* `MeasureTheory.Measure.tangentSpace_range_eq_range`,
+  `MeasureTheory.Measure.starProjection_tangentSpace_range_eq`: closed range and projection formula
+  `A (A† A)⁻¹ A†` for a score operator with invertible `A† A`.
 
 ## References
 
@@ -71,7 +78,7 @@ noncomputable section
 open MeasureTheory Set
 open scoped InnerProductSpace
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 /-! ### Tangent spaces -/
 
@@ -449,4 +456,4 @@ theorem starProjection_tangentSpace_range_eq {H : Type*} [NormedAddCommGroup H]
 
 end ScoreOperators
 
-end TauCeti
+end MeasureTheory.Measure
