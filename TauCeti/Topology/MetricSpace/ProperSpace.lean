@@ -208,15 +208,15 @@ theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_foral
     (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
   exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
 
+private theorem isBounded_iff_isCompact_closure {γ : Type*} [PseudoMetricSpace γ] [ProperSpace γ]
+    {t : Set γ} : Bornology.IsBounded t ↔ IsCompact (closure t) :=
+  ⟨Bornology.IsBounded.isCompact_closure, fun h => h.isBounded.subset subset_closure⟩
+
 /-- A homeomorphism between proper pseudometric spaces preserves boundedness of sets. -/
 theorem _root_.Homeomorph.isBounded_image_iff {β : Type*} [PseudoMetricSpace β]
     [ProperSpace α] [ProperSpace β] (e : α ≃ₜ β) {s : Set α} :
     Bornology.IsBounded (e '' s) ↔ Bornology.IsBounded s := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · have hc : IsCompact (e.symm '' closure (e '' s)) :=
-      h.isCompact_closure.image e.symm.continuous
-    refine hc.isBounded.subset fun x hx => ⟨e x, subset_closure (mem_image_of_mem e hx), ?_⟩
-    exact e.symm_apply_apply x
-  · exact (h.isCompact_closure.image e.continuous).isBounded.subset (image_mono subset_closure)
+  rw [isBounded_iff_isCompact_closure, isBounded_iff_isCompact_closure,
+    ← e.image_closure, e.isCompact_image]
 
 end TauCeti

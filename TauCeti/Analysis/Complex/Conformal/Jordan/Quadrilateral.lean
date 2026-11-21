@@ -56,18 +56,14 @@ namespace TauCeti
 private def squareBoundary : Set (I × I) :=
   {p | p.1 = 0 ∨ p.1 = 1 ∨ p.2 = 0 ∨ p.2 = 1}
 
-private theorem isClosed_squareBoundary : IsClosed squareBoundary := by
-  have h1 : IsClosed {p : I × I | p.1 = 0} := isClosed_eq continuous_fst continuous_const
-  have h2 : IsClosed {p : I × I | p.1 = 1} := isClosed_eq continuous_fst continuous_const
-  have h3 : IsClosed {p : I × I | p.2 = 0} := isClosed_eq continuous_snd continuous_const
-  have h4 : IsClosed {p : I × I | p.2 = 1} := isClosed_eq continuous_snd continuous_const
-  have heq : squareBoundary =
-      ({p : I × I | p.1 = 0} ∪ {p : I × I | p.1 = 1}) ∪
-        ({p : I × I | p.2 = 0} ∪ {p : I × I | p.2 = 1}) := by
-    ext p
-    simp [squareBoundary, or_assoc]
-  rw [heq]
-  exact (h1.union h2).union (h3.union h4)
+private theorem squareBoundary_eq_preimage_cubeBoundary :
+    squareBoundary = Homeomorph.finTwoArrow.symm ⁻¹' Cube.boundary (Fin 2) := by
+  ext p
+  simp [squareBoundary, Cube.boundary, Fin.exists_fin_two, or_assoc]
+
+private theorem isClosed_squareBoundary : IsClosed squareBoundary :=
+  squareBoundary_eq_preimage_cubeBoundary ▸
+    Cube.isClosed_boundary.preimage Homeomorph.finTwoArrow.symm.continuous
 
 /-- Identification of the unit square `I × I` with the closed unit disc in `ℂ`, carrying the
 boundary of the square onto the unit circle. -/

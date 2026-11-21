@@ -144,9 +144,6 @@ theorem IsJordanCurve.exists_homeomorph_sphere_eq_of_mem (hC : IsJordanCurve C)
   let ψ : sphere (0 : ℂ) 1 ≃ₜ C :=
     (e₀.image (sphere 0 1)).trans (Homeomorph.setCongr he₀S)
   let τ : sphere (0 : ℂ) 1 ≃ₜ sphere (0 : ℂ) 1 := φ.trans ψ.symm
-  have hcomp (S : Set ℂ) : (τ.sphereCone.trans e₀) '' S = e₀ '' (τ.sphereCone '' S) := by
-    rw [image_image]
-    exact image_congr fun z _ => Homeomorph.trans_apply _ _ z
   refine ⟨τ.sphereCone.trans e₀, ?_, ?_, ?_, ?_, ?_⟩
   · simp [he₀0]
   · intro u
@@ -157,13 +154,19 @@ theorem IsJordanCurve.exists_homeomorph_sphere_eq_of_mem (hC : IsJordanCurve C)
       rw [Homeomorph.image_eq_preimage_symm]
       ext z
       simp
-    rw [hcomp, hS, he₀S]
+    -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
+    change (e₀ ∘ τ.sphereCone) '' sphere 0 1 = C
+    rw [image_comp, hS, he₀S]
   · have hB : τ.sphereCone '' ball (0 : ℂ) 1 = ball (0 : ℂ) 1 := by
       rw [Homeomorph.image_eq_preimage_symm]
       ext z
       simp
-    rw [hcomp, hB, he₀B]
-  · rw [hcomp, (τ.bijOn_sphereCone_closedBall 1).image_eq, he₀CB]
+    -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
+    change (e₀ ∘ τ.sphereCone) '' ball 0 1 = filledHull C \ C
+    rw [image_comp, hB, he₀B]
+  · -- Unfold `Homeomorph.trans` to `Function.comp` to rewrite with `Set.image_comp`.
+    change (e₀ ∘ τ.sphereCone) '' closedBall 0 1 = filledHull C
+    rw [image_comp, (τ.bijOn_sphereCone_closedBall 1).image_eq, he₀CB]
 
 /-- **The Schoenflies theorem with prescribed boundary parametrization.** Every homeomorphism
 `φ : sphere (0 : ℂ) 1 ≃ₜ C` onto a Jordan curve `C ⊆ ℂ` extends to a homeomorphism of `ℂ` carrying

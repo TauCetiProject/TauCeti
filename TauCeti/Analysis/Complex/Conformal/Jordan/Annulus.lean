@@ -8,8 +8,7 @@ module
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.FilledHull
 public import TauCeti.Topology.JordanCurve.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.Conformal.Jordan.Quadrilateral
@@ -55,7 +54,7 @@ on the outer boundary `C₁` may be prescribed arbitrarily
 3. **Gluing.** The four-sided Jordan domain theorem
    (`TauCeti.exists_homeomorph_unitInterval_prod_filledHull`) identifies `D⁺` and `D⁻'` with
    `I × I` via maps agreeing identically along the common vertical edges `J₁` and `J₂.symm`.
-   Parametrizing the upper and lower semicircles by `u ↦ Real.arccos u.re / Real.pi` glues the two
+   Parametrizing the upper and lower semicircles by `u ↦ (1 - u.re) / 2` glues the two
    squares into the desired homeomorphism
    `sphere (0 : ℂ) 1 × I ≃ₜ ↥(closedBall 0 1 \ (filledHull C₂ \ C₂))`.
 
@@ -86,174 +85,177 @@ namespace TauCeti
 
 section Semicircles
 
+/-- The affine reparametrization `t ↦ 1 - 2 * t` from `I` onto `[-1, 1]`. -/
+private def semicircleCoord (t : I) : Icc (-1 : ℝ) 1 :=
+  ⟨1 - 2 * (t : ℝ), by linarith [t.property.1, t.property.2],
+    by linarith [t.property.1, t.property.2]⟩
+
+private theorem coe_semicircleCoord (t : I) :
+    (semicircleCoord t : ℝ) = 1 - 2 * (t : ℝ) := rfl
+
+@[fun_prop]
+private theorem continuous_semicircleCoord : Continuous semicircleCoord :=
+  Continuous.subtype_mk (by fun_prop) _
+
+private theorem semicircleCoord_injective : Injective semicircleCoord := fun _ _ h =>
+  Subtype.ext (by
+    have h' := congrArg Subtype.val h
+    simp only [coe_semicircleCoord] at h'
+    linarith)
+
+private theorem semicircleCoord_zero : (semicircleCoord 0 : ℝ) = 1 := by
+  simp [coe_semicircleCoord]
+
+private theorem semicircleCoord_one : (semicircleCoord 1 : ℝ) = -1 := by
+  simp [coe_semicircleCoord]; norm_num
+
+private theorem coe_upperSemicircle_zero :
+    (Circle.upperSemicircle (semicircleCoord 0) : ℂ) = 1 := by
+  apply Complex.ext <;> simp [semicircleCoord_zero]
+
+private theorem coe_upperSemicircle_one :
+    (Circle.upperSemicircle (semicircleCoord 1) : ℂ) = -1 := by
+  apply Complex.ext <;> simp [semicircleCoord_one]
+
 /-- The upper semicircle path from `1` to `-1` in `ℂ`. -/
-private def upperSemicircle : Path (1 : ℂ) (-1 : ℂ) :=
-  ((Circle.path (1 : Circle) (-1)).map Circle.coordinate.continuous).cast
-    (by simp) (by simp)
+private def upperSemicircle : Path (1 : ℂ) (-1 : ℂ) where
+  toFun t := Circle.upperSemicircle (semicircleCoord t)
+  continuous_toFun := continuous_subtypeVal.comp
+    (Circle.continuous_upperSemicircle.comp continuous_semicircleCoord)
+  source' := coe_upperSemicircle_zero
+  target' := coe_upperSemicircle_one
 
 /-- The lower semicircle path from `1` to `-1` in `ℂ`. -/
-private def lowerSemicircle : Path (1 : ℂ) (-1 : ℂ) :=
-  ((Circle.path (-1 : Circle) 1).symm.map Circle.coordinate.continuous).cast
-    (by simp) (by simp)
-
-private theorem coe_upperSemicircle_eq :
-    (upperSemicircle : I → ℂ) = Circle.coordinate ∘ Circle.path (1 : Circle) (-1) := by
-  ext t
-  simp only [upperSemicircle, Path.cast_coe, Path.map_coe, Function.comp_apply]
-
-private theorem coe_lowerSemicircle_eq :
-    (lowerSemicircle : I → ℂ) = Circle.coordinate ∘ (Circle.path (-1 : Circle) 1).symm := by
-  ext t
-  simp only [lowerSemicircle, Path.cast_coe, Path.map_coe, Function.comp_apply]
-
-private theorem coordinate_injective : Injective Circle.coordinate := fun _ _ h =>
-  Circle.coe_injective (by simpa only [Circle.coordinate_apply] using h)
-
-private theorem upperSemicircle_mem_sphere (t : I) : upperSemicircle t ∈ sphere (0 : ℂ) 1 := by
-  simp [upperSemicircle]
-
-private theorem lowerSemicircle_mem_sphere (t : I) : lowerSemicircle t ∈ sphere (0 : ℂ) 1 := by
-  simp [lowerSemicircle]
+private def lowerSemicircle : Path (1 : ℂ) (-1 : ℂ) where
+  toFun t := ((Circle.upperSemicircle (semicircleCoord t))⁻¹ : Circle)
+  continuous_toFun := continuous_subtypeVal.comp
+    (Circle.continuous_upperSemicircle.comp continuous_semicircleCoord).inv
+  source' := by rw [Circle.coe_inv_eq_conj, coe_upperSemicircle_zero, map_one]
+  target' := by rw [Circle.coe_inv_eq_conj, coe_upperSemicircle_one, map_neg, map_one]
 
 private theorem upperSemicircle_apply (t : I) :
-    upperSemicircle t = Complex.exp (↑(Real.pi * (t : ℝ)) * Complex.I) := by
-  have hval1 : (1 : Circle).val = 1 := rfl
-  have hvaln1 : (-1 : Circle).val = -1 := rfl
-  have hdiff : Circle.angleDiff 1 (-1) = Real.pi := by
-    simp [Circle.angleDiff, hvaln1, Real.pi_pos.le]
-  have harg : (t : ℝ) * Real.pi = Real.pi * (t : ℝ) := mul_comm _ _
-  rw [coe_upperSemicircle_eq, Function.comp_apply, Circle.path_apply, Circle.coordinate_apply,
-    Circle.coe_exp, hdiff, hval1, Complex.arg_one, add_zero, Path.segment_apply,
-    AffineMap.lineMap_apply_module, smul_zero, zero_add, smul_eq_mul, harg]
+    upperSemicircle t = Circle.upperSemicircle (semicircleCoord t) := rfl
 
 private theorem lowerSemicircle_apply (t : I) :
-    lowerSemicircle t = Complex.exp (↑(-(Real.pi * (t : ℝ))) * Complex.I) := by
-  have hvaln1 : (-1 : Circle).val = -1 := rfl
-  have hdiff : Circle.angleDiff (-1) 1 = Real.pi := by
-    simp [Circle.angleDiff, hvaln1, not_le.mpr Real.pi_pos]
-    ring
-  have harg : (1 - (1 - (t : ℝ))) * Real.pi + (1 - (t : ℝ)) * (Real.pi + Real.pi) =
-      2 * Real.pi + -(Real.pi * (t : ℝ)) := by ring
-  rw [coe_lowerSemicircle_eq, Function.comp_apply, Path.symm_apply, Function.comp_apply,
-    Circle.path_apply, Circle.coordinate_apply, Circle.coe_exp, hdiff, hvaln1, Complex.arg_neg_one,
-    Path.segment_apply, AffineMap.lineMap_apply_module, unitInterval.coe_symm_eq, smul_eq_mul,
-    smul_eq_mul, harg]
-  push_cast
-  rw [add_mul, Complex.exp_add, Complex.exp_two_pi_mul_I, one_mul]
+    lowerSemicircle t = ((Circle.upperSemicircle (semicircleCoord t))⁻¹ : Circle) := rfl
+
+private theorem upperSemicircle_mem_sphere (t : I) : upperSemicircle t ∈ sphere (0 : ℂ) 1 :=
+  (Circle.upperSemicircle (semicircleCoord t)).property
+
+private theorem lowerSemicircle_mem_sphere (t : I) : lowerSemicircle t ∈ sphere (0 : ℂ) 1 :=
+  ((Circle.upperSemicircle (semicircleCoord t))⁻¹).property
 
 private theorem upperSemicircle_im_nonneg (t : I) : 0 ≤ (upperSemicircle t).im := by
-  rw [upperSemicircle_apply, Complex.exp_ofReal_mul_I_im]
-  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.property.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.property.2)
+  rw [upperSemicircle_apply, Circle.im_upperSemicircle]
+  exact Real.sqrt_nonneg _
 
 private theorem lowerSemicircle_im_nonpos (t : I) : (lowerSemicircle t).im ≤ 0 := by
-  rw [lowerSemicircle_apply, Complex.exp_ofReal_mul_I_im, Real.sin_neg, Left.neg_nonpos_iff]
-  exact Real.sin_nonneg_of_nonneg_of_le_pi (mul_nonneg Real.pi_pos.le t.property.1)
-    (mul_le_of_le_one_right Real.pi_pos.le t.property.2)
+  rw [lowerSemicircle_apply, Circle.coe_inv_eq_conj, Complex.conj_im, Circle.im_upperSemicircle]
+  exact neg_nonpos.mpr (Real.sqrt_nonneg _)
 
-private theorem circle_one_ne_neg_one : (1 : Circle) ≠ -1 := by
-  intro h
-  have : ((1 : Circle) : ℂ) = ((-1 : Circle) : ℂ) := congrArg ((↑) : Circle → ℂ) h
-  norm_num at this
+private theorem upperSemicircle_injective : Injective upperSemicircle :=
+  fun _ _ h => semicircleCoord_injective (Circle.upperSemicircle_injective (Circle.coe_injective h))
 
-private theorem upperSemicircle_injective : Injective upperSemicircle := by
-  rw [coe_upperSemicircle_eq]
-  exact coordinate_injective.comp (Circle.path_injective_of_ne circle_one_ne_neg_one)
-
-private theorem lowerSemicircle_injective : Injective lowerSemicircle := by
-  rw [coe_lowerSemicircle_eq]
-  exact coordinate_injective.comp
-    (Path.injective_symm_iff.mpr (Circle.path_injective_of_ne circle_one_ne_neg_one.symm))
+private theorem lowerSemicircle_injective : Injective lowerSemicircle :=
+  fun _ _ h => semicircleCoord_injective
+    (Circle.upperSemicircle_injective (inv_injective (Circle.coe_injective h)))
 
 private theorem range_upperSemicircle_union_lowerSemicircle :
     range upperSemicircle ∪ range lowerSemicircle = sphere (0 : ℂ) 1 := by
-  rw [coe_upperSemicircle_eq, coe_lowerSemicircle_eq, range_comp, range_comp, Path.symm_range,
-    ← image_union, Circle.range_path_union_range_path circle_one_ne_neg_one, image_univ]
-  ext z
-  simp only [mem_range, Circle.coordinate_apply]
-  exact ⟨fun ⟨w, hw⟩ => hw ▸ mem_sphere_zero_iff_norm.2 w.norm_coe,
-    fun hz => ⟨Circle.homeomorphSphere.symm ⟨z, hz⟩, Circle.coe_homeomorphSphere_symm_apply _⟩⟩
+  refine Subset.antisymm (union_subset (range_subset_iff.mpr upperSemicircle_mem_sphere)
+    (range_subset_iff.mpr lowerSemicircle_mem_sphere)) fun z hz => ?_
+  obtain ⟨x, hx⟩ := Circle.exists_upperSemicircle_eq_or_inv_eq ⟨z, hz⟩
+  let t : I := ⟨(1 - (x : ℝ)) / 2, by linarith [x.property.1, x.property.2],
+    by linarith [x.property.1, x.property.2]⟩
+  have hcoord : semicircleCoord t = x := Subtype.ext (by simp only [t, coe_semicircleCoord]; ring)
+  rcases hx with hx | hx
+  · exact Or.inl ⟨t, by simpa [upperSemicircle_apply, hcoord] using congrArg Subtype.val hx⟩
+  · exact Or.inr ⟨t, by simpa [lowerSemicircle_apply, hcoord] using congrArg Subtype.val hx⟩
 
 private theorem range_upperSemicircle_inter_lowerSemicircle :
     range upperSemicircle ∩ range lowerSemicircle = {1, -1} := by
-  rw [coe_upperSemicircle_eq, coe_lowerSemicircle_eq, range_comp, range_comp, Path.symm_range,
-    ← image_inter coordinate_injective, Circle.range_path_inter_range_path circle_one_ne_neg_one]
-  simp
+  refine Subset.antisymm ?_ ?_
+  · rintro z ⟨⟨s, rfl⟩, ⟨t, hst⟩⟩
+    obtain ⟨_, hsq⟩ := Circle.upperSemicircle_eq_inv_iff.mp (Circle.coe_injective hst.symm)
+    rcases sq_eq_one_iff.mp hsq with hs1 | hs1
+    · have hs : semicircleCoord s = semicircleCoord 0 :=
+        Subtype.ext (hs1.trans semicircleCoord_zero.symm)
+      rw [upperSemicircle_apply, hs, coe_upperSemicircle_zero]
+      exact Or.inl rfl
+    · have hs : semicircleCoord s = semicircleCoord 1 :=
+        Subtype.ext (hs1.trans semicircleCoord_one.symm)
+      rw [upperSemicircle_apply, hs, coe_upperSemicircle_one]
+      exact Or.inr rfl
+  · rintro z (rfl | rfl)
+    · exact ⟨upperSemicircle.source_mem_range, lowerSemicircle.source_mem_range⟩
+    · exact ⟨upperSemicircle.target_mem_range, lowerSemicircle.target_mem_range⟩
 
-/-- The semicircle parameter `Real.arccos u.re / Real.pi ∈ I` on the unit circle. -/
-private def circleAngleParam (u : sphere (0 : ℂ) 1) : I :=
-  ⟨Real.arccos (u : ℂ).re / Real.pi,
-    div_nonneg (Real.arccos_nonneg _) Real.pi_pos.le,
-    (div_le_one Real.pi_pos).mpr (Real.arccos_le_pi _)⟩
+/-- The semicircle parameter `(1 - u.re) / 2 ∈ I` on the unit circle. -/
+private def circleParam (u : sphere (0 : ℂ) 1) : I :=
+  ⟨(1 - (u : ℂ).re) / 2,
+    by have h := Complex.abs_re_le_norm (u : ℂ)
+       rw [mem_sphere_zero_iff_norm.mp u.property, abs_le] at h
+       linarith,
+    by have h := Complex.abs_re_le_norm (u : ℂ)
+       rw [mem_sphere_zero_iff_norm.mp u.property, abs_le] at h
+       linarith⟩
 
-private theorem coe_circleAngleParam (u : sphere (0 : ℂ) 1) :
-    (circleAngleParam u : ℝ) = Real.arccos (u : ℂ).re / Real.pi :=
+private theorem coe_circleParam (u : sphere (0 : ℂ) 1) :
+    (circleParam u : ℝ) = (1 - (u : ℂ).re) / 2 :=
   rfl
 
-private theorem continuous_circleAngleParam : Continuous circleAngleParam := by
-  refine Continuous.subtype_mk ?_ _
-  exact (Real.continuous_arccos.comp
-    (Complex.continuous_re.comp continuous_subtypeVal)).div_const Real.pi
+private theorem semicircleCoord_circleParam (u : sphere (0 : ℂ) 1) :
+    (semicircleCoord (circleParam u) : ℝ) = (u : ℂ).re := by
+  rw [coe_semicircleCoord, coe_circleParam]
+  ring
 
-private theorem circleAngleParam_upperSemicircle (t : I) :
-    circleAngleParam ⟨upperSemicircle t, upperSemicircle_mem_sphere t⟩ = t := by
+private theorem continuous_circleParam : Continuous circleParam :=
+  Continuous.subtype_mk
+    ((continuous_const.sub (Complex.continuous_re.comp continuous_subtypeVal)).div_const 2) _
+
+private theorem circleParam_upperSemicircle (t : I) :
+    circleParam ⟨upperSemicircle t, upperSemicircle_mem_sphere t⟩ = t := by
   apply Subtype.ext
-  rw [coe_circleAngleParam]
-  dsimp only
-  rw [upperSemicircle_apply, Complex.exp_ofReal_mul_I_re,
-    Real.arccos_cos (mul_nonneg Real.pi_pos.le t.property.1)
-      (mul_le_of_le_one_right Real.pi_pos.le t.property.2),
-    mul_div_cancel_left₀ _ Real.pi_ne_zero]
+  simp only [coe_circleParam, upperSemicircle_apply, Circle.re_upperSemicircle,
+    coe_semicircleCoord]
+  ring
 
-private theorem circleAngleParam_lowerSemicircle (t : I) :
-    circleAngleParam ⟨lowerSemicircle t, lowerSemicircle_mem_sphere t⟩ = t := by
+private theorem circleParam_lowerSemicircle (t : I) :
+    circleParam ⟨lowerSemicircle t, lowerSemicircle_mem_sphere t⟩ = t := by
   apply Subtype.ext
-  rw [coe_circleAngleParam]
-  dsimp only
-  rw [lowerSemicircle_apply, Complex.exp_ofReal_mul_I_re, Real.cos_neg,
-    Real.arccos_cos (mul_nonneg Real.pi_pos.le t.property.1)
-      (mul_le_of_le_one_right Real.pi_pos.le t.property.2),
-    mul_div_cancel_left₀ _ Real.pi_ne_zero]
+  simp only [coe_circleParam, lowerSemicircle_apply, Circle.coe_inv_eq_conj, Complex.conj_re,
+    Circle.re_upperSemicircle, coe_semicircleCoord]
+  ring
 
-private theorem upperSemicircle_circleAngleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) :
-    upperSemicircle (circleAngleParam u) = u := by
+private theorem upperSemicircle_circleParam {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) :
+    upperSemicircle (circleParam u) = u := by
   have hsq := Complex.re_sq_add_im_sq_of_mem_sphere u.property
   have himsq : 1 - (u : ℂ).re ^ 2 = (u : ℂ).im ^ 2 := by linarith
-  have hre : |(u : ℂ).re| ≤ 1 := by
-    rw [abs_le]
-    constructor <;> nlinarith [sq_nonneg (u : ℂ).im]
-  have hmul : Real.pi * (circleAngleParam u : ℝ) = Real.arccos (u : ℂ).re := by
-    rw [coe_circleAngleParam, mul_div_cancel₀ _ Real.pi_ne_zero]
   apply Complex.ext
-  · rw [upperSemicircle_apply, hmul, Complex.exp_ofReal_mul_I_re,
-      Real.cos_arccos (abs_le.mp hre).1 (abs_le.mp hre).2]
-  · rw [upperSemicircle_apply, hmul, Complex.exp_ofReal_mul_I_im, Real.sin_arccos, himsq,
+  · rw [upperSemicircle_apply, Circle.re_upperSemicircle, semicircleCoord_circleParam]
+  · rw [upperSemicircle_apply, Circle.im_upperSemicircle, semicircleCoord_circleParam, himsq,
       Real.sqrt_sq hu]
 
-private theorem lowerSemicircle_circleAngleParam {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) :
-    lowerSemicircle (circleAngleParam u) = u := by
+private theorem lowerSemicircle_circleParam {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) :
+    lowerSemicircle (circleParam u) = u := by
   have hsq := Complex.re_sq_add_im_sq_of_mem_sphere u.property
   have himsq : 1 - (u : ℂ).re ^ 2 = (-(u : ℂ).im) ^ 2 := by linarith
-  have hre : |(u : ℂ).re| ≤ 1 := by
-    rw [abs_le]
-    constructor <;> nlinarith [sq_nonneg (u : ℂ).im]
-  have hmul : Real.pi * (circleAngleParam u : ℝ) = Real.arccos (u : ℂ).re := by
-    rw [coe_circleAngleParam, mul_div_cancel₀ _ Real.pi_ne_zero]
   apply Complex.ext
-  · rw [lowerSemicircle_apply, hmul, Complex.exp_ofReal_mul_I_re, Real.cos_neg,
-      Real.cos_arccos (abs_le.mp hre).1 (abs_le.mp hre).2]
-  · rw [lowerSemicircle_apply, hmul, Complex.exp_ofReal_mul_I_im, Real.sin_neg, Real.sin_arccos,
-      himsq, Real.sqrt_sq (neg_nonneg.mpr hu), neg_neg]
+  · rw [lowerSemicircle_apply, Circle.coe_inv_eq_conj, Complex.conj_re,
+      Circle.re_upperSemicircle, semicircleCoord_circleParam]
+  · rw [lowerSemicircle_apply, Circle.coe_inv_eq_conj, Complex.conj_im,
+      Circle.im_upperSemicircle, semicircleCoord_circleParam, himsq,
+      Real.sqrt_sq (neg_nonneg.mpr hu), neg_neg]
 
-private theorem circleAngleParam_eq_zero_of_coe_eq_one {u : sphere (0 : ℂ) 1} (hu : (u : ℂ) = 1) :
-    circleAngleParam u = 0 := by
+private theorem circleParam_eq_zero_of_coe_eq_one {u : sphere (0 : ℂ) 1} (hu : (u : ℂ) = 1) :
+    circleParam u = 0 := by
   apply Subtype.ext
-  simp [coe_circleAngleParam, hu]
+  simp [coe_circleParam, hu]
 
-private theorem circleAngleParam_eq_one_of_coe_eq_neg_one {u : sphere (0 : ℂ) 1}
-    (hu : (u : ℂ) = -1) : circleAngleParam u = 1 := by
+private theorem circleParam_eq_one_of_coe_eq_neg_one {u : sphere (0 : ℂ) 1}
+    (hu : (u : ℂ) = -1) : circleParam u = 1 := by
   apply Subtype.ext
-  simp [coe_circleAngleParam, hu]
+  simp [coe_circleParam, hu]
 
 end Semicircles
 
@@ -270,15 +272,13 @@ private theorem exists_maximal_real_hit {C : Set ℂ} (hC : IsJordanCurve C)
   have hsabs : |s| = 1 := by rcases hs with rfl | rfl <;> norm_num
   let f : ℝ → ℂ := fun r => ((s * r : ℝ) : ℂ)
   have hfc : Continuous f := by fun_prop
+  have hnorm {r : ℝ} (hr : 0 ≤ r) : ‖f r‖ = r := by
+    simp only [f, Complex.norm_real, Real.norm_eq_abs, abs_mul, hsabs, one_mul, abs_of_nonneg hr]
   set S : Set ℝ := {r : ℝ | 0 ≤ r ∧ f r ∈ C}
-  have hSsub : S ⊆ Icc 0 1 := by
-    intro r hr
-    refine ⟨hr.1, ?_⟩
+  have hSlt {r : ℝ} (hr : r ∈ S) : r < 1 := by
     have hlt : ‖f r‖ < 1 := mem_ball_zero_iff.mp (hCb hr.2)
-    have hnorm : ‖f r‖ = r := by
-      simp only [f, Complex.norm_real, Real.norm_eq_abs, abs_mul, hsabs, one_mul,
-        abs_of_nonneg hr.1]
-    linarith
+    linarith [hnorm hr.1]
+  have hSsub : S ⊆ Icc 0 1 := fun _ hr => ⟨hr.1, (hSlt hr).le⟩
   have hSclosed : IsClosed S := isClosed_Ici.inter (hC.isClosed.preimage hfc)
   have hScomp : IsCompact S := isCompact_Icc.of_isClosed_subset hSclosed hSsub
   have hSne : S.Nonempty := by
@@ -297,13 +297,7 @@ private theorem exists_maximal_real_hit {C : Set ℂ} (hC : IsJordanCurve C)
   have htpos : 0 < t := lt_of_le_of_ne htS.1 fun h0t => by
     subst h0t
     exact h0.2 (by simpa [f] using htS.2)
-  have htlt : t < 1 := by
-    have hlt : ‖f t‖ < 1 := mem_ball_zero_iff.mp (hCb htS.2)
-    have hnorm : ‖f t‖ = t := by
-      simp only [f, Complex.norm_real, Real.norm_eq_abs, abs_mul, hsabs, one_mul,
-        abs_of_nonneg htS.1]
-    linarith
-  refine ⟨t, htpos, htlt, htS.2, fun r hr hmem => ?_⟩
+  refine ⟨t, htpos, hSlt htS, htS.2, fun r hr hmem => ?_⟩
   have hle : r ≤ t := htmax ⟨htpos.le.trans hr.le, hmem⟩
   linarith
 
@@ -491,63 +485,63 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
   have hαpC : range αp ⊆ C := hαu ▸ subset_union_left
   have hαmC : range αm ⊆ C := hαu ▸ subset_union_right
   let H : sphere (0 : ℂ) 1 × I → ℂ := fun p =>
-    if 0 ≤ (p.1 : ℂ).im then (Φp (circleAngleParam p.1, p.2) : ℂ)
-    else (Φm (circleAngleParam p.1, p.2) : ℂ)
+    if 0 ≤ (p.1 : ℂ).im then (Φp (circleParam p.1, p.2) : ℂ)
+    else (Φm (circleParam p.1, p.2) : ℂ)
   have hH_agree {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im = 0) (t : I) :
-      (Φp (circleAngleParam u, t) : ℂ) = (Φm (circleAngleParam u, t) : ℂ) := by
+      (Φp (circleParam u, t) : ℂ) = (Φm (circleParam u, t) : ℂ) := by
     rcases (Circle.im_coe_eq_zero_iff (Circle.homeomorphSphere.symm u)).mp (by simpa using hu) with
       h1 | h1
     · have hu1 : (u : ℂ) = 1 := by simpa using congrArg ((↑) : Circle → ℂ) h1
-      rw [circleAngleParam_eq_zero_of_coe_eq_one hu1, hΦp_left, hΦm_left]
+      rw [circleParam_eq_zero_of_coe_eq_one hu1, hΦp_left, hΦm_left]
     · have hu1 : (u : ℂ) = -1 := by simpa using congrArg ((↑) : Circle → ℂ) h1
-      rw [circleAngleParam_eq_one_of_coe_eq_neg_one hu1, hΦp_right, hΦm_right]
+      rw [circleParam_eq_one_of_coe_eq_neg_one hu1, hΦp_right, hΦm_right]
   have hH_upper {u : sphere (0 : ℂ) 1} (hu : 0 ≤ (u : ℂ).im) (t : I) :
-      H (u, t) = (Φp (circleAngleParam u, t) : ℂ) := by
+      H (u, t) = (Φp (circleParam u, t) : ℂ) := by
     simp [H, hu]
   have hH_lower {u : sphere (0 : ℂ) 1} (hu : (u : ℂ).im ≤ 0) (t : I) :
-      H (u, t) = (Φm (circleAngleParam u, t) : ℂ) := by
+      H (u, t) = (Φm (circleParam u, t) : ℂ) := by
     rcases hu.eq_or_lt with h0 | hlt
     · simp [H, h0, hH_agree h0]
     · simp [H, not_le.mpr hlt]
   have hH_cont : Continuous H := by
     have h1 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
-        (Φp (circleAngleParam p.1, p.2) : ℂ) :=
+        (Φp (circleParam p.1, p.2) : ℂ) :=
       continuous_subtypeVal.comp (Φp.continuous.comp
-        ((continuous_circleAngleParam.comp continuous_fst).prodMk continuous_snd))
+        ((continuous_circleParam.comp continuous_fst).prodMk continuous_snd))
     have h2 : Continuous fun p : sphere (0 : ℂ) 1 × I =>
-        (Φm (circleAngleParam p.1, p.2) : ℂ) :=
+        (Φm (circleParam p.1, p.2) : ℂ) :=
       continuous_subtypeVal.comp (Φm.continuous.comp
-        ((continuous_circleAngleParam.comp continuous_fst).prodMk continuous_snd))
+        ((continuous_circleParam.comp continuous_fst).prodMk continuous_snd))
     exact continuous_if_le continuous_const
       (Complex.continuous_im.comp (continuous_subtypeVal.comp continuous_fst))
       h1.continuousOn h2.continuousOn fun p hp => hH_agree hp.symm p.2
   have hH_inj : Injective H := by
     rintro ⟨u₁, t₁⟩ ⟨u₂, t₂⟩ heq
     have hcross {u v : sphere (0 : ℂ) 1} {tu tv : I} (hv : (v : ℂ).im < 0)
-        (h : (Φp (circleAngleParam u, tu) : ℂ) = (Φm (circleAngleParam v, tv) : ℂ)) : False := by
-      have hmem : (Φm (circleAngleParam v, tv) : ℂ) ∈ Ap ∩ Am :=
-        ⟨h ▸ (Φp (circleAngleParam u, tu)).property, (Φm (circleAngleParam v, tv)).property⟩
+        (h : (Φp (circleParam u, tu) : ℂ) = (Φm (circleParam v, tv) : ℂ)) : False := by
+      have hmem : (Φm (circleParam v, tv) : ℂ) ∈ Ap ∩ Am :=
+        ⟨h ▸ (Φp (circleParam u, tu)).property, (Φm (circleParam v, tv)).property⟩
       rw [hA_inter] at hmem
       rcases hmem with ⟨t, ht⟩ | ⟨t, ht⟩
-      · have hΦ : Φm (circleAngleParam v, tv) = Φm (0, t) := Subtype.ext (by rw [hΦm_left, ht])
-        have hs0 : circleAngleParam v = 0 := congrArg Prod.fst (Φm.injective hΦ)
+      · have hΦ : Φm (circleParam v, tv) = Φm (0, t) := Subtype.ext (by rw [hΦm_left, ht])
+        have hs0 : circleParam v = 0 := congrArg Prod.fst (Φm.injective hΦ)
         have hv1 : (v : ℂ) = 1 := by
-          rw [← lowerSemicircle_circleAngleParam hv.le, hs0, lowerSemicircle.source]
+          rw [← lowerSemicircle_circleParam hv.le, hs0, lowerSemicircle.source]
         have : (v : ℂ).im = 0 := by simp [hv1]
         linarith
-      · have hΦ : Φm (circleAngleParam v, tv) = Φm (1, unitInterval.symm t) :=
+      · have hΦ : Φm (circleParam v, tv) = Φm (1, unitInterval.symm t) :=
           Subtype.ext (by rw [hΦm_right, Path.symm_apply, Function.comp_apply,
             unitInterval.symm_symm, ht])
-        have hs1 : circleAngleParam v = 1 := congrArg Prod.fst (Φm.injective hΦ)
+        have hs1 : circleParam v = 1 := congrArg Prod.fst (Φm.injective hΦ)
         have hv1 : (v : ℂ) = -1 := by
-          rw [← lowerSemicircle_circleAngleParam hv.le, hs1, lowerSemicircle.target]
+          rw [← lowerSemicircle_circleParam hv.le, hs1, lowerSemicircle.target]
         have : (v : ℂ).im = 0 := by simp [hv1]
         linarith
     by_cases h1 : 0 ≤ (u₁ : ℂ).im <;> by_cases h2 : 0 ≤ (u₂ : ℂ).im
     · rw [hH_upper h1, hH_upper h2] at heq
       obtain ⟨hu_ang, ht⟩ := Prod.mk.inj (Φp.injective (Subtype.ext heq))
       have hu : u₁ = u₂ := Subtype.ext <| by
-        rw [← upperSemicircle_circleAngleParam h1, ← upperSemicircle_circleAngleParam h2, hu_ang]
+        rw [← upperSemicircle_circleParam h1, ← upperSemicircle_circleParam h2, hu_ang]
       exact Prod.ext hu ht
     · rw [hH_upper h1, hH_lower (not_le.mp h2).le] at heq
       exact (hcross (not_le.mp h2) heq).elim
@@ -556,8 +550,8 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
     · rw [hH_lower (not_le.mp h1).le, hH_lower (not_le.mp h2).le] at heq
       obtain ⟨hu_ang, ht⟩ := Prod.mk.inj (Φm.injective (Subtype.ext heq))
       have hu : u₁ = u₂ := Subtype.ext <| by
-        rw [← lowerSemicircle_circleAngleParam (not_le.mp h1).le,
-          ← lowerSemicircle_circleAngleParam (not_le.mp h2).le, hu_ang]
+        rw [← lowerSemicircle_circleParam (not_le.mp h1).le,
+          ← lowerSemicircle_circleParam (not_le.mp h2).le, hu_ang]
       exact Prod.ext hu ht
   have hH_range : range H = closedBall (0 : ℂ) 1 \ (filledHull C \ C) := by
     rw [← hA_union]
@@ -570,12 +564,12 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
       · obtain ⟨⟨s, t⟩, hst⟩ := Φp.surjective ⟨z, hz⟩
         refine ⟨(⟨upperSemicircle s, upperSemicircle_mem_sphere s⟩, t), ?_⟩
         rw [hH_upper (u := ⟨upperSemicircle s, _⟩) (upperSemicircle_im_nonneg s),
-          circleAngleParam_upperSemicircle]
+          circleParam_upperSemicircle]
         exact congrArg Subtype.val hst
       · obtain ⟨⟨s, t⟩, hst⟩ := Φm.surjective ⟨z, hz⟩
         refine ⟨(⟨lowerSemicircle s, lowerSemicircle_mem_sphere s⟩, t), ?_⟩
         rw [hH_lower (u := ⟨lowerSemicircle s, _⟩) (lowerSemicircle_im_nonpos s),
-          circleAngleParam_lowerSemicircle]
+          circleParam_lowerSemicircle]
         exact congrArg Subtype.val hst
   have hH_emb : IsEmbedding H := (hH_cont.isClosedEmbedding hH_inj).isEmbedding
   let Φ : sphere (0 : ℂ) 1 × I ≃ₜ ↥(closedBall (0 : ℂ) 1 \ (filledHull C \ C)) :=
@@ -585,8 +579,8 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
   · intro u
     rw [hΦ_coe]
     rcases le_total 0 (u : ℂ).im with hu | hu
-    · rw [hH_upper hu, hΦp_top, upperSemicircle_circleAngleParam hu]
-    · rw [hH_lower hu, hΦm_top, lowerSemicircle_circleAngleParam hu]
+    · rw [hH_upper hu, hΦp_top, upperSemicircle_circleParam hu]
+    · rw [hH_lower hu, hΦm_top, lowerSemicircle_circleParam hu]
   · refine Subset.antisymm ?_ ?_
     · rintro _ ⟨⟨u, t⟩, ⟨-, ht⟩, rfl⟩
       rw [mem_singleton_iff] at ht; subst ht
@@ -600,11 +594,11 @@ private theorem glue_upper_lower_squares {C : Set ℂ} {p₁ p₂ : ℂ}
       · refine ⟨(⟨upperSemicircle s, upperSemicircle_mem_sphere s⟩, 1), ⟨trivial, rfl⟩, ?_⟩
         dsimp only
         rw [hΦ_coe, hH_upper (u := ⟨upperSemicircle s, _⟩) (upperSemicircle_im_nonneg s),
-          circleAngleParam_upperSemicircle, hΦp_bot]
+          circleParam_upperSemicircle, hΦp_bot]
       · refine ⟨(⟨lowerSemicircle s, lowerSemicircle_mem_sphere s⟩, 1), ⟨trivial, rfl⟩, ?_⟩
         dsimp only
         rw [hΦ_coe, hH_lower (u := ⟨lowerSemicircle s, _⟩) (lowerSemicircle_im_nonpos s),
-          circleAngleParam_lowerSemicircle, hΦm_bot]
+          circleParam_lowerSemicircle, hΦm_bot]
 
 /-- **Normalized planar annulus theorem.** If `C ⊆ ball (0 : ℂ) 1` is a Jordan curve with
 `0 ∈ filledHull C \ C`, then `closedBall (0 : ℂ) 1 \ (filledHull C \ C)` is homeomorphic to
@@ -665,13 +659,11 @@ private theorem exists_homeomorph_sphere_prod_unitInterval_normalized {C : Set �
         nlinarith
       exact (ht₂max _ hgt (hJ₂_eval t ▸ hzC)).elim
   have hJ₁_cb : range J₁ ⊆ closedBall 0 1 := by
-    rintro z ⟨t, rfl⟩
-    rw [mem_closedBall_zero_iff, hJ₁_eval, Complex.norm_real, Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith [t.property.1, t.property.2]
+    rw [Path.range_segment]
+    exact (convex_closedBall (0 : ℂ) 1).segment_subset (by simp) (ball_subset_closedBall (hCb hp₁C))
   have hJ₂_cb : range J₂ ⊆ closedBall 0 1 := by
-    rintro z ⟨t, rfl⟩
-    rw [mem_closedBall_zero_iff, hJ₂_eval, Complex.norm_real, Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith [t.property.1, t.property.2]
+    rw [Path.range_segment]
+    exact (convex_closedBall (0 : ℂ) 1).segment_subset (ball_subset_closedBall (hCb hp₂C)) (by simp)
   have hJ₁S : range J₁ ∩ sphere 0 1 = {1} := by
     refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨J₁.source_mem_range, by simp⟩)
     rintro z ⟨⟨t, rfl⟩, hzS⟩
