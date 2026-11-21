@@ -53,4 +53,12 @@ theorem isConj_wordProd_of_perm [P.IsRootSystem] [P.IsReduced] {l l' : List b.su
   exact (weylCoxeterSystem P b).isConj_wordProd_of_perm hl
     ((isAcyclic_graph_coxeterMatrixOfBase P b).induce _) h
 
+/-- **The Coxeter elements of a Weyl group have the same order.** For a base of a finite reduced
+crystallographic root system, rearranging a word in the simple reflections with no repeated letter
+does not change the order of the element it spells. -/
+theorem orderOf_wordProd_eq_of_perm [P.IsRootSystem] [P.IsReduced] {l l' : List b.support}
+    (hl : l.Nodup) (h : l.Perm l') : orderOf (wordProd P b l) = orderOf (wordProd P b l') := by
+  obtain ⟨u, hu⟩ := isConj_iff.mp (P.isConj_wordProd_of_perm b hl h)
+  rw [← hu, ← MulAut.conj_apply, MulEquiv.orderOf_eq]
+
 end RootPairing
