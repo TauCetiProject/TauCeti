@@ -57,6 +57,14 @@ intended throughout.
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
   `ContinuousLinearMap.index_restrictScalars`.
+* `FredholmDecomposition.inessentialProj` and `FredholmDecomposition.prodEquiv`: the projection
+  onto the finite-dimensional inessential summand `X₀` along `X₁` and the product coordinate
+  equivalence `(X₁ × X₀) ≃L[𝕜] E`.
+* `ContinuousLinearMap.FredholmPackage.range_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.ker_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.isFredholm_quasiInverse`, and
+  `ContinuousLinearMap.FredholmPackage.index_quasiInverse`: range, kernel, Fredholmness, and
+  negated index of the canonical quasi-inverse of an arbitrary Fredholm package.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -242,7 +250,131 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
 
 end RestrictScalars
 
+section FredholmPackage
+
+/-- The range of the canonical quasi-inverse of a Fredholm package is the essential domain summand
+`pkg.decDom.X₁`. -/
+@[simp]
+theorem FredholmPackage.range_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.range = pkg.decDom.X₁ := by
+  simp [FredholmPackage.quasiInverse, LinearMap.range_comp]
+
+/-- The kernel of the canonical quasi-inverse of a Fredholm package is the inessential codomain
+summand `pkg.decCodom.X₀`. -/
+@[simp]
+theorem FredholmPackage.ker_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.ker = pkg.decCodom.X₀ := by
+  simp [FredholmPackage.quasiInverse, LinearMap.ker_comp]
+
+/-- The canonical quasi-inverse of a Fredholm package has opposite Fredholm index. -/
+@[simp]
+theorem FredholmPackage.index_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.index = -T.index := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
+    pkg.ker_quasiInverse, pkg.range_quasiInverse, pkg.ker_eq, pkg.range_eq,
+    LinearEquiv.finrank_eq
+      (pkg.decDom.X₁.quotientEquivOfIsCompl pkg.decDom.X₀ pkg.decDom.isTopCompl.isCompl),
+    LinearEquiv.finrank_eq
+      (pkg.decCodom.X₁.quotientEquivOfIsCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl.isCompl)]
+  omega
+
+/-- The canonical quasi-inverse of a Fredholm package is itself Fredholm. -/
+theorem FredholmPackage.isFredholm_quasiInverse [ContinuousSub E] [ContinuousSub F]
+    {T : E →L[𝕜] F} (pkg : T.FredholmPackage) [T1Space pkg.decDom.X₀] :
+    pkg.quasiInverse.IsFredholm where
+  isStrictMap := by
+    rw [FredholmPackage.quasiInverse, coe_comp, coe_comp, Submodule.coe_subtypeL,
+      Submodule.coe_subtype, ← Topology.IsEmbedding.subtypeVal.isStrictMap_iff,
+      ContinuousLinearEquiv.coe_coe, ← ContinuousLinearEquiv.coe_toHomeomorph]
+    exact pkg.equiv.symm.toHomeomorph.comp_isStrictMap_iff.mpr
+      (Submodule.isQuotientMap_projectionOntoL pkg.decCodom.isTopCompl).isStrictMap
+  isClosed_range := by
+    rw [pkg.range_quasiInverse]
+    exact pkg.decDom.isTopCompl.isClosed
+  finite_ker := by
+    rw [pkg.ker_quasiInverse]
+    exact pkg.decCodom.finite_X₀
+  finite_coker := by
+    rw [pkg.range_quasiInverse]
+    exact pkg.decDom.cofg_X₁
+  closedComplemented_ker := by
+    rw [pkg.ker_quasiInverse]
+    exact pkg.decCodom.isTopCompl.symm.closedComplemented
+
+end FredholmPackage
+
 end ContinuousLinearMap
+
+namespace FredholmDecomposition
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+
+section ContinuousSub
+
+variable [ContinuousSub E]
+
+/-- Projection onto the finite-dimensional inessential summand `dec.X₀` along the essential
+summand `dec.X₁`. -/
+noncomputable def inessentialProj (dec : FredholmDecomposition 𝕜 E) : E →L[𝕜] dec.X₀ :=
+  dec.X₀.projectionOntoL dec.X₁ dec.isTopCompl.symm
+
+/-- Defining formula for `FredholmDecomposition.inessentialProj`. -/
+theorem inessentialProj_def (dec : FredholmDecomposition 𝕜 E) :
+    dec.inessentialProj = dec.X₀.projectionOntoL dec.X₁ dec.isTopCompl.symm :=
+  (rfl)
+
+/-- `inessentialProj` vanishes on the essential (left) summand `dec.X₁`. -/
+@[simp]
+theorem inessentialProj_apply_left (dec : FredholmDecomposition 𝕜 E) (x : dec.X₁) :
+    dec.inessentialProj (x : E) = 0 :=
+  dec.X₀.projectionOntoL_apply_right dec.isTopCompl.symm x
+
+/-- `inessentialProj` is the identity on the inessential (right) summand `dec.X₀`. -/
+@[simp]
+theorem inessentialProj_apply_right (dec : FredholmDecomposition 𝕜 E) (k : dec.X₀) :
+    dec.inessentialProj (k : E) = k :=
+  dec.X₀.projectionOntoL_apply_left dec.isTopCompl.symm k
+
+/-- Every vector decomposes into its essential and inessential components. -/
+theorem coe_proj_add_coe_inessentialProj (dec : FredholmDecomposition 𝕜 E) (x : E) :
+    (dec.proj x : E) + (dec.inessentialProj x : E) = x := by
+  rw [inessentialProj_def, Submodule.coe_projectionOntoL_apply, Submodule.coe_projectionOntoL_apply]
+  exact Submodule.projectionL_add_projectionL_eq_self dec.isTopCompl x
+
+end ContinuousSub
+
+section IsTopologicalAddGroup
+
+variable [IsTopologicalAddGroup E]
+
+/-- Product coordinate equivalence `(dec.X₁ × dec.X₀) ≃L[𝕜] E` assembling the essential and
+inessential summands. -/
+noncomputable def prodEquiv (dec : FredholmDecomposition 𝕜 E) :
+    (dec.X₁ × dec.X₀) ≃L[𝕜] E :=
+  dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl
+
+/-- Defining formula for `FredholmDecomposition.prodEquiv`. -/
+theorem prodEquiv_def (dec : FredholmDecomposition 𝕜 E) :
+    dec.prodEquiv = dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl :=
+  (rfl)
+
+/-- `prodEquiv` sums the coerced coordinates in `E`. -/
+@[simp]
+theorem prodEquiv_apply (dec : FredholmDecomposition 𝕜 E) (p : dec.X₁ × dec.X₀) :
+    dec.prodEquiv p = (p.1 : E) + (p.2 : E) := by
+  rw [prodEquiv_def, Submodule.prodEquivOfIsTopCompl_apply]
+
+/-- `prodEquiv.symm` pairs the essential and inessential projections. -/
+@[simp]
+theorem prodEquiv_symm_apply (dec : FredholmDecomposition 𝕜 E) (x : E) :
+    dec.prodEquiv.symm x = (dec.proj x, dec.inessentialProj x) := by
+  rw [prodEquiv_def, inessentialProj_def]
+  exact Submodule.prodEquivOfIsTopCompl_symm_apply dec.isTopCompl x
+
+end IsTopologicalAddGroup
+
+end FredholmDecomposition
 
 section CompleteSpace
 
