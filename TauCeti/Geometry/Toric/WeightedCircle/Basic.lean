@@ -258,7 +258,7 @@ theorem isCompact_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) :
 
 /-- The circle acts on the ellipsoid by the weighted rotations. -/
 instance : MulAction Circle (weightedEllipsoid a b ε) where
-  smul u z := ⟨weightedRotation a b u z, weightedRotation_mem_weightedEllipsoid_iff.2 z.2⟩
+  smul u z := ⟨weightedRotation a b u z, weightedRotation_mem_weightedEllipsoid_iff.2 z.property⟩
   one_smul z := Subtype.ext (weightedRotation_one (z : ℂ × ℂ))
   mul_smul u v z := Subtype.ext (weightedRotation_mul u v (z : ℂ × ℂ))
 
@@ -270,7 +270,7 @@ theorem coe_smul_weightedEllipsoid (u : Circle) (z : weightedEllipsoid a b ε) :
 /-- The weighted circle action on the ellipsoid is continuous. -/
 instance : ContinuousSMul Circle (weightedEllipsoid a b ε) :=
   ⟨continuous_induced_rng.2 <| continuous_weightedRotation.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))⟩
 
 /-! ### Exchanging the coordinates -/
 
@@ -305,7 +305,7 @@ def swapOrbitHomeomorph :
 /-- The exchange of coordinates on orbit spaces sends the orbit of `z` to the orbit of `z.swap`. -/
 theorem swapOrbitHomeomorph_mk (z : weightedEllipsoid b a ε) :
     swapOrbitHomeomorph a b ε (Quotient.mk _ z) =
-      Quotient.mk _ ⟨(z : ℂ × ℂ).swap, swap_mem_weightedEllipsoid.2 z.2⟩ :=
+      Quotient.mk _ ⟨(z : ℂ × ℂ).swap, swap_mem_weightedEllipsoid.2 z.property⟩ :=
   (rfl)
 
 /-! ### Stabilizers -/
@@ -365,7 +365,7 @@ theorem finite_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 <
     (z : weightedEllipsoid a b ε) : Finite (MulAction.stabilizer Circle z) := by
   obtain h₁ | h₁ := eq_or_ne (z : ℂ × ℂ).1 0
   · have h₂ : (z : ℂ × ℂ).2 ≠ 0 := fun h₂ ↦ by
-      have hz := mem_weightedEllipsoid.1 z.2
+      have hz := mem_weightedEllipsoid.1 z.property
       simp only [h₁, h₂, norm_zero] at hz
       linarith
     exact Nat.finite_of_card_ne_zero <| by
@@ -539,14 +539,15 @@ theorem exists_pos_mem_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε
 /-- The **weighted Hopf map** `z ↦ [z₁ ^ b : z₂ ^ a]` from the ellipsoid to the complex projective
 line, for `ε > 0`. -/
 def weightedHopf (hε : 0 < ε) (z : weightedEllipsoid a b ε) : ℙ ℂ (Fin 2 → ℂ) :=
-  mk ℂ (weightedHopfVector a b z) (weightedHopfVector_ne_zero hε z.2)
+  mk ℂ (weightedHopfVector a b z) (weightedHopfVector_ne_zero hε z.property)
 
 theorem weightedHopf_def (hε : 0 < ε) (z : weightedEllipsoid a b ε) :
-    weightedHopf hε z = mk ℂ (weightedHopfVector a b z) (weightedHopfVector_ne_zero hε z.2) :=
+    weightedHopf hε z = mk ℂ (weightedHopfVector a b z) (weightedHopfVector_ne_zero hε z.property)
+        :=
   (rfl)
 
 theorem continuous_weightedHopf (hε : 0 < ε) : Continuous (weightedHopf (a := a) (b := b) hε) :=
-  continuous_mk (continuous_weightedHopfVector.comp continuous_subtype_val) _
+  continuous_mk (continuous_weightedHopfVector.comp continuous_subtypeVal) _
 
 /-- The weighted Hopf map is invariant under the weighted circle action. -/
 @[simp]
@@ -562,7 +563,8 @@ theorem weightedHopf_eq_weightedHopf_iff (ha : 0 < a) (hb : 0 < b) (hab : a.Copr
     weightedHopf hε z = weightedHopf hε w ↔ z ∈ MulAction.orbit Circle w := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨c, hc⟩ := (mk_eq_mk_iff' ℂ _ _ _ _).1 h
-    obtain ⟨u, hu⟩ := exists_weightedRotation_eq_of_weightedHopfVector_eq_smul ha hb hab z.2 w.2
+    obtain ⟨u, hu⟩ := exists_weightedRotation_eq_of_weightedHopfVector_eq_smul ha hb hab z.property
+        w.property
       hc.symm
     exact ⟨u, Subtype.ext hu⟩
   · rintro ⟨u, rfl⟩

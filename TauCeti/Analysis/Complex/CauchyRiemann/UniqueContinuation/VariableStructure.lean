@@ -29,7 +29,9 @@ zero structure of holomorphic maps:
 * so does a solution vanishing on a nonempty open subset of `Ω`
   (`TauCeti.eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure`);
 * otherwise its zeros are isolated
-  (`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure`).
+  (`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure`), and each of
+  them has a finite positive order
+  (`TauCeti.exists_isTheta_pow_of_contDiffOn_of_complexStructure`).
 
 For a constant structure `J = i` on a complex space these are the classical statements of
 `TauCeti.Analysis.Complex.CauchyRiemann.Similarity`, which proves Carleman's similarity principle.
@@ -220,6 +222,27 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure (h�
   simpa using setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
     (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
     ⟨z₁, hz₁, by simpa using hξz₁⟩
+
+/-- **Positive orders** for a variable complex structure. On a connected open set `Ω`, let `ξ` be
+a `C¹` solution of `∂ₛξ + J ∂ₜξ + C ξ = 0`, for a `C¹` field `J` of complex structures,
+`J(z)² = -1`, on a finite-dimensional real normed space and a measurable, locally bounded
+real-linear coefficient `C`, that is not identically zero on `Ω`. Then each zero `z₀ ∈ Ω` of `ξ`
+has a finite positive order `m`: `‖ξ z‖` is comparable to `‖z - z₀‖ ^ m` near `z₀`. -/
+theorem exists_isTheta_pow_of_contDiffOn_of_complexStructure (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) (hJ : ContDiffOn ℝ 1 J Ω)
+    (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
+    (hCm : AEStronglyMeasurable C (volume.restrict Ω))
+    (hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M)
+    (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0)
+    (hne : ∃ z ∈ Ω, ξ z ≠ 0) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hξ₀ : ξ z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
+  obtain ⟨z₁, hz₁, hξz₁⟩ := hne
+  obtain ⟨n, T, hfac⟩ :=
+    exists_hasSimilarityFactorizationAt_symm_comp hΩ hJ hJJ hξ hCm hCb heq hz₁
+  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc
+    (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
+    ⟨z₁, hz₁, by simpa using hξz₁⟩ hz₀ (by simp [hξ₀])
+  exact ⟨m, hm, IsTheta.trans ⟨T.symm.isBigO_comp_rev _ _, T.symm.isBigO_comp _ _⟩ hθ⟩
 
 end Real
 

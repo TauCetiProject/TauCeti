@@ -385,7 +385,7 @@ private def toLieHomIncl (S : RestrictedLieSubalgebra R p L) : S →ₗ⁅R⁆ L
 restricted Lie algebra. -/
 instance instRestrictedLieAlgebra (S : RestrictedLieSubalgebra R p L) :
     RestrictedLieAlgebra R S p where
-  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), S.pMap_mem x.2⟩
+  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), S.pMap_mem x.property⟩
   pMap_smul c x := by
     apply Subtype.ext
     exact RestrictedLieAlgebra.pMap_smul c (x : L)
@@ -604,7 +604,7 @@ private def toLieHomIncl (I : RestrictedLieIdeal R p L) : I →ₗ⁅R⁆ L wher
 
 instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R p L) :
     RestrictedLieAlgebra R I p where
-  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.2⟩
+  pMap x := ⟨RestrictedLieAlgebra.pMap (R := R) (p := p) (x : L), I.pMap_mem x.property⟩
   pMap_smul c x := by
     apply Subtype.ext
     exact RestrictedLieAlgebra.pMap_smul c (x : L)

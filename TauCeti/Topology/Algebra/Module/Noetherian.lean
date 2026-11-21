@@ -63,10 +63,10 @@ theorem isNoetherian_of_forall_isClosed [TopologicalSpace M]
   have : ContinuousAdd S := S.toAddSubmonoid.continuousAdd
   -- The members of the chain, seen inside `S`, are closed and cover `S`.
   let C : ℕ → Submodule A S := fun n ↦ (f n).comap S.subtype
-  have hC : ∀ n, IsClosed (C n : Set S) := fun n ↦ (h (f n)).preimage continuous_subtype_val
+  have hC : ∀ n, IsClosed (C n : Set S) := fun n ↦ (h (f n)).preimage continuous_subtypeVal
   have hcover : ⋃ n, (C n : Set S) = Set.univ := by
     refine Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr ?_
-    exact (Submodule.mem_iSup_of_directed f f.monotone.directed_le).mp x.2
+    exact (Submodule.mem_iSup_of_directed f f.monotone.directed_le).mp x.property
   obtain ⟨n, hn⟩ := nonempty_interior_of_iUnion_of_closed hC hcover
   -- That member is open in `S`, hence all of `S`.
   have hS : S ≤ f n :=

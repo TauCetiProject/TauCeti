@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.MatrixBaseChange
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic
 
 /-!
 # The torsion of the coordinate base change of a based complex
@@ -19,11 +19,16 @@ homomorphism into a field. The torsion of the coordinate base change
 along `ψ ∘ φ` (`HomologicalComplex.map_reidemeisterTorsion_matrixBaseChange`). This follows from
 the scalar extension theorem `HomologicalComplex.map_reidemeisterTorsion`, because the matrices of
 the differentials of the coordinate base change are the images of those of `C` by construction.
+The same holds for the torsion of a based two-periodic complex
+(`HomologicalComplex.map_parityTorsion_matrixBaseChange`), by
+`HomologicalComplex.map_parityTorsion`.
 
 ## Main results
 
 * `HomologicalComplex.map_reidemeisterTorsion_matrixBaseChange`: naturality of the torsion of the
   coordinate base change in the field.
+* `HomologicalComplex.map_parityTorsion_matrixBaseChange`: naturality of the torsion of the
+  coordinate base change of a two-periodic complex in the field.
 -/
 
 public section
@@ -32,18 +37,28 @@ open Module
 
 namespace HomologicalComplex
 
-variable {A : Type*} [CommRing A] {C : ChainComplex (ModuleCat A) ℤ} {n : ℤ → ℕ}
-  {c : ∀ i, Basis (Fin (n i)) A (C.X i)} {K L : Type*} [Field K] [Field L] (φ : A →+* K)
-  (ψ : K →+* L)
+variable {A : Type*} [CommRing A] {K L : Type*} [Field K] [Field L] (φ : A →+* K) (ψ : K →+* L)
 
 /-- The torsion of the coordinate base change is natural in the field: a homomorphism of fields
 `ψ : K →+* L` sends the torsion of the base change along `φ` to the torsion of the base change
 along `ψ ∘ φ`. -/
-theorem map_reidemeisterTorsion_matrixBaseChange :
+theorem map_reidemeisterTorsion_matrixBaseChange {C : ChainComplex (ModuleCat A) ℤ} {n : ℤ → ℕ}
+    {c : ∀ i, Basis (Fin (n i)) A (C.X i)} :
     ψ ((C.matrixBaseChange c φ).reidemeisterTorsion (C.matrixBaseChangeBasis c φ)) =
       (C.matrixBaseChange c (ψ.comp φ)).reidemeisterTorsion
         (C.matrixBaseChangeBasis c (ψ.comp φ)) :=
   map_reidemeisterTorsion ψ fun i ↦ by
+    rw [toMatrix_matrixBaseChange_d, toMatrix_matrixBaseChange_d, Matrix.map_map, RingHom.coe_comp]
+
+/-- The torsion of the coordinate base change of a two-periodic complex is natural in the field: a
+homomorphism of fields `ψ : K →+* L` sends the torsion of the base change along `φ` to the torsion
+of the base change along `ψ ∘ φ`. -/
+theorem map_parityTorsion_matrixBaseChange
+    {C : HomologicalComplex (ModuleCat A) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
+    {c : ∀ i, Basis (Fin (n i)) A (C.X i)} :
+    ψ ((C.matrixBaseChange c φ).parityTorsion (C.matrixBaseChangeBasis c φ)) =
+      (C.matrixBaseChange c (ψ.comp φ)).parityTorsion (C.matrixBaseChangeBasis c (ψ.comp φ)) :=
+  map_parityTorsion ψ fun i j ↦ by
     rw [toMatrix_matrixBaseChange_d, toMatrix_matrixBaseChange_d, Matrix.map_map, RingHom.coe_comp]
 
 end HomologicalComplex
