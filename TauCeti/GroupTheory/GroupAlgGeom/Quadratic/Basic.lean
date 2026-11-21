@@ -111,11 +111,14 @@ independently, and the values of each atom are closed under conjugation: standar
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_map_eval_atoms_eq`: separability, values that
   each atom takes at some point are taken by all the atoms at one point.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_eval_eq_of_mem_atoms_of_isConj`: complete
-  spectrum, the values of an atom are closed under conjugation.
+  spectrum, the values of an atom are closed under conjugation. This holds for every word in the
+  variables alone (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inr_eq_of_isConj`) and for every
+  conjugate `z⁻¹ c z` of a coefficient by a variable
+  (`TauCeti.GroupAlgGeom.Quadratic.exists_eval_inv_mul_inl_mul_eq_of_isConj`).
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isDegenerate_iff_of_genus_eq_zero`,
-  `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isDegenerate_of_genus_eq_zero`: a point is
-  degenerate for an equation of genus `0` exactly when a coefficient `cⱼ` is mapped to `1`, so
-  never when the coefficients embed.
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isDegenerate_of_genus_eq_zero_of_injective`: a
+  point is degenerate for an equation of genus `0` exactly when a coefficient `cⱼ` is mapped to
+  `1`, so never when the coefficients embed.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
   `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
@@ -437,6 +440,30 @@ theorem occurrences_inv_mul_inl_mul_self {a : G} (ha : a ≠ 1) (z : X) :
   simp [occurrences_eq_countVar_reducedWord, reducedWord_inv_mul_inl_mul ha]
 
 end CyclicReduction
+
+/-! ### Values of atoms up to conjugation -/
+
+section Spectrum
+
+variable {ι : G →* H}
+
+/-- The values in `H` of a word in the variables alone are closed under conjugation. -/
+theorem exists_eval_inr_eq_of_isConj {u : FreeGroup X} (v : X → H) {a : H}
+    (ha : IsConj (eval ι v (inr u)) a) : ∃ w : X → H, eval ι w (inr u) = a := by
+  obtain ⟨t, rfl⟩ := isConj_iff.1 ha
+  -- Conjugate the value of every variable by `t`.
+  exact ⟨_, by simpa using (hom_eval (ι := ι) (v := v) (MulAut.conj t) (inr u)).symm⟩
+
+/-- The values in `H` of the conjugate `z⁻¹ c z` of a coefficient by a variable are closed under
+conjugation. -/
+theorem exists_eval_inv_mul_inl_mul_eq_of_isConj {z : X} {c : G} (v : X → H) {a : H}
+    (ha : IsConj (eval ι v ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z))) a) :
+    ∃ w : X → H, eval ι w ((inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z)) = a := by
+  obtain ⟨t, rfl⟩ := isConj_iff.1 ha
+  -- Multiply the value of every variable on the right by `t⁻¹`.
+  exact ⟨fun u => v u * t⁻¹, by simp [mul_assoc]⟩
+
+end Spectrum
 
 /-! ### Standard quadratic equations -/
 
@@ -805,6 +832,9 @@ theorem two_le_atomicRank_of_four_le_kappa (h : 4 ≤ S.kappa) : 2 ≤ S.atomicR
 
 /-- The value of `r₁ ⋯ r_k d` at a point is the product of the values of the atoms `rᵢ` and of the
 constant `d` (which is `1` for the types without coefficients). -/
+-- Low priority: the closed forms of the four types of equation (`eval_toWord_orientable` and its
+-- analogues in `Quadratic/Surface.lean`) and of restrictions are tried first.
+@[simp low]
 theorem eval_toWord (S : Standard G X) (ι : G →* H) (v : X → H) :
     eval ι v S.toWord = (S.atoms.map (eval ι v)).prod * ι S.constant := by
   simp [toWord_def, map_list_prod]
@@ -898,12 +928,8 @@ private theorem exists_inr_eq_or_exists_conj_eq_of_mem_atoms :
 conjugation. -/
 theorem exists_eval_eq_of_mem_atoms_of_isConj {r : GX G X} (hr : r ∈ S.atoms) (v : X → H) {a : H}
     (ha : IsConj (eval ι v r) a) : ∃ w : X → H, eval ι w r = a := by
-  obtain ⟨t, rfl⟩ := isConj_iff.1 ha
-  -- Conjugate every variable by `t` in a word in the variables; multiply `z` on the right by
-  -- `t⁻¹` in `z⁻¹ c z`.
-  obtain ⟨w, rfl⟩ | ⟨z, c, rfl⟩ := exists_inr_eq_or_exists_conj_eq_of_mem_atoms r hr
-  · exact ⟨_, by simpa using (hom_eval (ι := ι) (v := v) (MulAut.conj t) (inr w)).symm⟩
-  · exact ⟨fun u => v u * t⁻¹, by simp [mul_assoc]⟩
+  obtain ⟨u, rfl⟩ | ⟨z, c, rfl⟩ := exists_inr_eq_or_exists_conj_eq_of_mem_atoms r hr
+  exacts [exists_eval_inr_eq_of_isConj v ha, exists_eval_inv_mul_inl_mul_eq_of_isConj v ha]
 
 end Atoms
 
@@ -1032,8 +1058,8 @@ theorem isDegenerate_iff_of_genus_eq_zero (hg : S.genus = 0) :
 
 /-- When the coefficients embed into `H`, a standard quadratic equation of genus `0` has no
 degenerate point, since its atoms are conjugates of the nontrivial coefficients `cⱼ`. -/
-theorem not_isDegenerate_of_genus_eq_zero (hg : S.genus = 0) (hι : Function.Injective ι) :
-    ¬S.IsDegenerate ι v := by
+theorem not_isDegenerate_of_genus_eq_zero_of_injective (hg : S.genus = 0)
+    (hι : Function.Injective ι) : ¬S.IsDegenerate ι v := by
   rw [isDegenerate_iff_of_genus_eq_zero hg]
   rintro ⟨c, hc, h⟩
   exact ne_one_of_mem_coeffs (List.mem_of_mem_tail hc) ((map_eq_one_iff ι hι).1 h)
@@ -1074,8 +1100,7 @@ variable {n : ℕ} {x y : Fin n → X}
 theorem mem_V_orientable_of_commute (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective)
     {v : X → H} (hv : ∀ i, Commute (v (x i)) (v (y i))) :
     v ∈ V ι {(orientable n hn x y inj).toWord} := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_one,
-    mul_one, map_list_prod, atoms_orientable]
+  rw [mem_V_toWord_iff, constant_orientable, map_one, mul_one]
   exact List.prod_eq_one <| by
     simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hv]
 
@@ -1102,14 +1127,12 @@ its two atoms are inverse to each other. -/
 theorem isCommutative_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x y : Fin 2 → X}
     (inj : (Sum.elim x y).Injective) (hv : v ∈ V ι {(orientable 2 two_pos x y inj).toWord}) :
     (orientable 2 two_pos x y inj).IsCommutative ι v := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_mul,
-    map_one, mul_one, atoms_orientable, List.ofFn_succ, List.ofFn_zero, List.prod_cons,
-    List.prod_nil] at hv
+  rw [mem_V_toWord_iff, constant_orientable, map_one, mul_one] at hv
   rw [isCommutative_iff]
   simp only [atoms_orientable, List.ofFn_succ, List.ofFn_zero, List.map_cons, List.map_nil,
-    List.isChain_cons_cons, List.isChain_singleton, and_true]
-  rw [mul_eq_one_iff_eq_inv] at hv
-  rw [hv]
+    List.prod_cons, List.prod_nil, mul_one, List.isChain_cons_cons, List.isChain_singleton,
+    and_true] at hv ⊢
+  rw [mul_eq_one_iff_eq_inv.1 hv]
   exact (Commute.refl _).inv_left
 
 /-- The genus-two equation `[x₁, y₁][x₂, y₂] = 1` has no solution in general position. -/
@@ -1219,10 +1242,10 @@ theorem isGeneralPosition_genusThree :
     v ∈ V (.id _) {S.toWord} ∧ S.IsGeneralPosition (.id _) v := by
   intro S v
   refine ⟨?_, ?_⟩
-  · simp only [S, v, mem_V, Set.mem_singleton_iff, forall_eq, Standard.toWord_def,
-      Standard.atoms_orientable, Standard.constant_orientable, List.ofFn_succ, List.ofFn_zero,
-      List.prod_cons, List.prod_nil, _root_.map_mul, _root_.map_one, map_commutatorElement,
-      _root_.map_inv, eval_inr, FreeGroup.lift_apply_of, mul_one]
+  · simp only [S, v, Standard.mem_V_toWord_iff, Standard.atoms_orientable,
+      Standard.constant_orientable, List.ofFn_succ, List.ofFn_zero, List.map_cons, List.map_nil,
+      List.prod_cons, List.prod_nil, _root_.map_one, map_commutatorElement, _root_.map_inv,
+      eval_inr, FreeGroup.lift_apply_of, mul_one]
     decide
   · simp only [S, v, Standard.isGeneralPosition_iff, Standard.atoms_orientable, List.ofFn_succ,
       List.ofFn_zero, List.map_cons, List.map_nil, List.isChain_cons_cons, List.isChain_singleton,
@@ -1242,10 +1265,10 @@ theorem isGeneralPosition_conjugates :
       1 ∈ V (.id _) {S.toWord} ∧ S.IsGeneralPosition (.id _) 1 := by
   intro S
   refine ⟨by simp [S], by simp [S], by simp [S], by simp [S], ?_, ?_⟩
-  · simp only [S, mem_V, Set.mem_singleton_iff, forall_eq, Standard.toWord_def,
-      Standard.atoms_orientableCoeff, Standard.constant_orientableCoeff, List.ofFn_succ,
-      List.ofFn_zero, List.nil_append, List.prod_cons, List.prod_nil, _root_.map_mul,
-      _root_.map_inv, eval_inr, eval_inl, mul_one]
+  · simp only [S, Standard.mem_V_toWord_iff, Standard.atoms_orientableCoeff,
+      Standard.constant_orientableCoeff, List.ofFn_succ, List.ofFn_zero, List.nil_append,
+      List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, _root_.map_mul, _root_.map_inv,
+      eval_inr, eval_inl, mul_one]
     decide
   · simp only [S, Standard.isGeneralPosition_iff, Standard.atoms_orientableCoeff, List.ofFn_succ,
       List.ofFn_zero, List.nil_append, List.map_cons, List.map_nil, List.isChain_cons_cons,

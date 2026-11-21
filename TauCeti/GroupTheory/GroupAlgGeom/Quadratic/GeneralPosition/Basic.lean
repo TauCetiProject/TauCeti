@@ -14,12 +14,13 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 A solution of a standard quadratic equation `r₁ ⋯ r_k d = 1` is in general position when the
 values of no two consecutive atoms commute (`Standard.IsGeneralPosition`).
 
-Standard quadratic equations are *separable* (`Standard.exists_map_eval_atoms_eq`) and their atoms
-have *complete spectrum* (`Standard.exists_eval_eq_of_mem_atoms_of_isConj`) ([VAR-I], §2). So over
-a CSA group a nondegenerate non-commutative solution can be conjugated, atom by atom, into a
-solution in general position ([VAR-I], Proposition 3). When the coefficients embed into the CSA
-group and the equation has genus `0`, no point is degenerate
-(`Standard.not_isDegenerate_of_genus_eq_zero`), so this applies to all non-commutative solutions
+Over a CSA group, a standard quadratic equation that has a solution which is neither degenerate
+nor commutative also has a solution in general position. This is [VAR-I], Proposition 3, which is
+stated for separable equations whose atoms have complete spectrum; standard quadratic equations
+are separable (`Standard.exists_map_eval_atoms_eq`) and their atoms have complete spectrum
+(`Standard.exists_eval_eq_of_mem_atoms_of_isConj`) ([VAR-I], §2). When the coefficients embed
+into the CSA group and the equation has genus `0`, no point is degenerate
+(`Standard.not_isDegenerate_of_genus_eq_zero_of_injective`), so a non-commutative solution suffices
 ([VAR-I], Proposition 5).
 
 ## Main results
@@ -27,7 +28,8 @@ group and the equation has genus `0`, no point is degenerate
 In the namespace `TauCeti.GroupAlgGeom.Quadratic`:
 
 * `Standard.exists_mem_V_isGeneralPosition_of_not_isDegenerate_of_not_isCommutative`: over a CSA
-  group, a nondegenerate non-commutative solution gives a solution in general position.
+  group, a standard quadratic equation with a nondegenerate non-commutative solution has a solution
+  in general position.
 
 ## References
 
@@ -44,17 +46,18 @@ namespace TauCeti.GroupAlgGeom.Quadratic.Standard
 
 variable {G H X : Type*} [Group G] [Group H]
 
-/-- **[VAR-I], Proposition 3, for standard quadratic equations.** Over a CSA group, a standard
-quadratic equation with a nondegenerate non-commutative solution has a solution in general
-position. The coefficients may be mapped into `H` by any homomorphism `ι`. Where [VAR-I] conjugates
-by large powers, the values of the atoms are conjugated into general position, keeping their
-product, by `Group.IsCSA.exists_conj_isChain_not_commute`. -/
+/-- **[VAR-I], Proposition 3, for standard quadratic equations.** Over a CSA group `H`, a standard
+quadratic equation with a solution that is neither degenerate nor commutative has a solution in
+general position. The coefficients may be mapped into `H` by any homomorphism `ι`. The analogous
+statement for lists of elements of `H`, in place of the values of the atoms, is
+`Group.IsCSA.exists_conj_isChain_not_commute`. -/
 theorem exists_mem_V_isGeneralPosition_of_not_isDegenerate_of_not_isCommutative
     (hH : Group.IsCSA H) {S : Standard G X} {ι : G →* H} {v : X → H} (hv : v ∈ V ι {S.toWord})
     (hd : ¬S.IsDegenerate ι v) (hc : ¬S.IsCommutative ι v) :
     ∃ w ∈ V ι {S.toWord}, S.IsGeneralPosition ι w := by
-  -- Conjugate the values of the atoms, entry by entry and keeping their product, into general
-  -- position, and realise the new values at one point.
+  -- [VAR-I] conjugates by large powers. Here `Group.IsCSA.exists_conj_isChain_not_commute`
+  -- conjugates the values of the atoms, entry by entry and keeping their product, into general
+  -- position; complete spectrum and separability realise the new values at one point.
   obtain ⟨l, hl, hprod, hgp⟩ := hH.exists_conj_isChain_not_commute
     (l := S.atoms.map (eval ι v)) (by simpa [isDegenerate_iff] using hd)
     ((isCommutative_iff S ι v).not.1 hc)
