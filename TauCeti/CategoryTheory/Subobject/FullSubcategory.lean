@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.CategoryTheory.Subobject.Basic
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Subobjects in a full subcategory closed under subobjects
@@ -59,10 +60,6 @@ open Subobject
 universe v u
 
 variable {C : Type u} [Category.{v} C] (P : ObjectProperty C)
-
-/-- A morphism of the full subcategory is a monomorphism as soon as it is one in `C`. -/
-instance mono_homMk {X Y : P.FullSubcategory} (f : X.obj ⟶ Y.obj) [Mono f] : Mono (homMk f) :=
-  P.ι.mono_of_mono_map ‹_›
 
 variable [P.ι.PreservesMonomorphisms]
 
