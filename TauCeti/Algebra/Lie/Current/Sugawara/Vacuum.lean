@@ -258,18 +258,17 @@ theorem sugawaraVacuum_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Mo
 `vacuumDegreeOperator`, at every level and central value. -/
 theorem sugawaraVacuum_mem_eigenspace_vacuumDegreeOperator :
     sugawaraVacuum Φ hΦ hΦs a ∈ (vacuumDegreeOperator Φ hΦ hΦs a).eigenspace 2 := by
-  have hh : 0 ≤ (-HahnSeries.single 1 1 : K⸨X⸩).orderTop := by
-    rw [HahnSeries.orderTop_neg]
-    exact HahnSeries.zero_le_orderTop_single zero_le_one 1
-  have hact (x : L) :
-      (vectorFieldEnvelopingDerivation Φ hΦ hΦs a (-HahnSeries.single 1 1) : Module.End K UK)
-          ι[x, -1] = ι[x, -1] := by
-    simp [vectorFieldEnvelopingDerivation_envelopingι, vectorFieldDerivation_neg,
-      TensorProduct.neg_tmul]
   rw [sugawaraVacuum_eq_sum (Module.finBasis K L)]
   refine Submodule.sum_mem _ fun i _ ↦ ?_
-  rw [Module.End.mem_eigenspace_iff, vacuumDegreeOperator_def hh, vacuumVectorField_smul_vacuum,
-    derivationLieAlgebra.leibniz, hact, hact, ← two_smul K (_ * _), smul_assoc]
+  have h1 := ncoeff_currentField_apply_mem_eigenspace_vacuumDegreeOperator
+    (killingDualBasis (Module.finBasis K L) i) (-1)
+    (vacuum_mem_eigenspace_vacuumDegreeOperator (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a))
+  have h2 := ncoeff_currentField_apply_mem_eigenspace_vacuumDegreeOperator
+    (Module.finBasis K L i) (-1) h1
+  simp only [ncoeff_currentField, envelopingAction_apply, ← mul_smul, Int.cast_neg,
+    Int.cast_one] at h2
+  convert h2 using 2
+  norm_num
 
 /-- **Action of a nonnegative current mode on `S₋₂ |0⟩`**: if `w` is Killing-dual to `Φ(z, ·)` and
 `0 ≤ k`, then `z_k (S₋₂ |0⟩) = k (z - 2 a w)_{k-2} |0⟩`. -/
@@ -495,19 +494,16 @@ theorem center_completedEnveloping_ne_bot [NeZero (2 : K)] [Nontrivial L]
   intro hbot
   exact sugawaraMode_neg_two_notMem_bot (hbot ▸ sugawaraMode_mem_center h (-2))
 
-/-- **Away from characteristic two and the critical level, `S₋₂` does not lie in the completed
-center `Z(Û)`** when `L` is nontrivial. -/
-theorem sugawaraMode_neg_two_notMem_center [NeZero (2 : K)] [Nontrivial L] {c : K}
+/-- **Away from the critical level, `S₋₂` does not lie in the completed center `Z(Û)`** when `L`
+is nontrivial. -/
+theorem sugawaraMode_neg_two_notMem_center [Nontrivial L] {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) :
     sugawaraMode Φ hΦ hΦs a (-2) ∉ Subalgebra.center K Û := by
   intro hz
-  have hd := vectorFieldCompletedEnvelopingDerivation_single_one_eq_zero_of_mem_center h hc hz
-  rw [vectorFieldCompletedEnvelopingDerivation_single_one_sugawaraMode,
-    ← Int.cast_smul_eq_zsmul K, smul_eq_zero] at hd
-  have h20 : ((-2 : ℤ) : K) ≠ 0 := by
-    rw [Int.cast_neg, Int.cast_ofNat, neg_ne_zero]
-    exact NeZero.ne (2 : K)
-  exact sugawaraMode_neg_two_ne_zero (hd.resolve_left h20)
+  refine not_forall_envelopingι_smul_sugawaraVacuum_eq_zero (hΦ := hΦ) (hΦs := hΦs) h hc
+    fun u hu ↦ ?_
+  rw [sugawaraVacuum_def, ← limSmul_smul_of_mem_center hV hz, envelopingι_smul_vacuum hu,
+    ModuleTower.limSmul_zero]
 
 end SugawaraVacuum
 

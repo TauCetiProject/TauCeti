@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
-public import TauCeti.Algebra.Lie.Killing.DualCoxeterNumber
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
@@ -36,23 +35,18 @@ which is `(m ^ 3 - m) / 6`. Summing over Killing-dual bases kills the bracket te
 
 over every field `K`, at every level including the critical level `1 - 2 a c = 0` and `a = 0`.
 
-Away from the critical level, dividing `Sₘ` by `1 - 2 a c` defines the **Segal--Sugawara Virasoro
-modes** `Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`), which satisfy
+Away from the critical level, the **Segal--Sugawara Virasoro modes**
+`Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy
 `[Lₘ, z_k] = -k z_{m+k}` over any field and, when `2` and `3` are invertible in `K`, the Virasoro
 commutation relations
 
 `[Lₘ, Lₙ] = (m - n) L_{m+n} + δ_{m+n, 0} ((m ^ 3 - m) / 12) c_{Vir}`
 
 with central charge `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L`
-(`TauCeti.CurrentAlgebra.sugawaraCentralCharge`). For a simple Lie algebra in characteristic zero,
-normalising `κ₀` by `κ_L = 2 h^∨ κ₀` at the affine level `Φ = -(k • κ₀)` and `a = 1` gives
-`Lₘ = (2 (k + h^∨))⁻¹ ∑ᵢ :eᵢ e^i:_m` in any `κ₀`-dual basis and the Sugawara central charge
-`k · dim L / (k + h^∨)`.
+(`TauCeti.CurrentAlgebra.sugawaraCentralCharge`).
 
 ## Main definitions
 
-* `TauCeti.CurrentAlgebra.sugawaraVirasoro`: the normalised Segal--Sugawara Virasoro modes
-  `Lₘ = (1 - 2 a c)⁻¹ Sₘ`.
 * `TauCeti.CurrentAlgebra.sugawaraCentralCharge`: the Sugawara central charge
   `-(2 a c) / (1 - 2 a c) · dim L`.
 
@@ -64,9 +58,6 @@ normalising `κ₀` by `κ_L = 2 h^∨ κ₀` at the affine level `Φ = -(k • 
   commutator `[Sₘ, Sₙ]` over an arbitrary field.
 * `TauCeti.CurrentAlgebra.sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul`: the Virasoro commutation
   relations of `Lₘ`.
-* `TauCeti.CurrentAlgebra.sugawaraVirasoro_eq_sum_dualBasis_of_dualCoxeterNumber`,
-  `TauCeti.CurrentAlgebra.sugawaraCentralCharge_of_dualCoxeterNumber`: the `κ₀`-dual-basis formula
-  and central charge `k · dim L / (k + h^∨)` in terms of the dual Coxeter number.
 
 ## References
 
@@ -176,15 +167,7 @@ private theorem combined_normalOrderedSummand_eq (c : K) (x y : L) (m n l : ℤ)
         ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) else 0) -
       (1 - 2 * a * c) • toC (if l ∈ Finset.Ico m 0 then
         ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) else 0) := by
-  have hcut : normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y =
-      normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y +
-        (if l ∈ Finset.Ico 0 m then
-          ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l] else 0) -
-        (if l ∈ Finset.Ico m 0 then
-          ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l] else 0) := by
-    simp only [normalOrderedSummand_apply, Finset.mem_Ico]
-    split_ifs <;> first | omega | abel
-  rw [hcut, map_sub, map_add, smul_sub, smul_add]
+  rw [normalOrderedSummand_eq_add_sub m (m + n) l x y, map_sub, map_add, smul_sub, smul_add]
   have hite (s : Finset ℤ) :
       ((1 - 2 * a * c) * -((l - m : ℤ) : K)) • toC (if l ∈ s then
         ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l] else 0) =
@@ -201,16 +184,6 @@ private theorem summable_smul_completedEnveloping {f : ℤ → CompletedEnvelopi
     (hf : Summable f) (r : ℤ → K) : Summable fun l ↦ r l • f l := by
   simpa only [algebraMap_smul] using
     (orderQuotientTower Φ hΦ hΦs a).summable_smul hf fun l ↦ algebraMap K UK (r l)
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem hasSum_ite_mem_completedEnveloping (s : Finset ℤ) (g : ℤ → UK) (r : K) :
-    HasSum (fun l : ℤ ↦ r • toC (if l ∈ s then g l else 0))
-      (r • toC (∑ l ∈ s, g l)) := by
-  have hs : HasSum (fun l : ℤ ↦ toC (if l ∈ s then g l else 0))
-      (∑ l ∈ s, toC (if l ∈ s then g l else 0)) :=
-    hasSum_sum_of_ne_finset_zero fun l hl ↦ by simp [hl]
-  rw [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at hs
-  exact hs.const_smul r
 
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
 over any field `K`. -/
@@ -243,8 +216,8 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
   have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
       (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
-    (hasSum_ite_mem_completedEnveloping (Finset.Ico 0 m) g (1 - 2 * a * c))).sub
-    (hasSum_ite_mem_completedEnveloping (Finset.Ico m 0) g (1 - 2 * a * c))
+    ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
+    ((hasSum_toCompletedEnveloping_ite_mem (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
     sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul, map_sub, map_smul, smul_sub, smul_smul,
     AlgHom.commutes]
@@ -307,15 +280,7 @@ end Commutator
 section Virasoro
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
-  (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
 
-/-- **The normalised Segal--Sugawara Virasoro modes** `Lₘ = (1 - 2 a c)⁻¹ Sₘ` in `Û`, attached to
-`Φ = c • κ_L` away from the critical level `1 - 2 a c = 0`. -/
-def sugawaraVirasoro (c : K) (m : ℤ) : CompletedEnveloping Φ hΦ hΦs a :=
-  (1 - 2 * a * c)⁻¹ • sugawaraMode Φ hΦ hΦs a m
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 variable (K L) in
 /-- **The Sugawara central charge** `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L` of the Virasoro
 algebra generated by `sugawaraVirasoro` for `Φ = c • κ_L` at central value `a`. For the affine
@@ -324,19 +289,14 @@ level form `κ = -Φ` with `κ = k κ₀` and `κ_L = 2 h^∨ κ₀` at `a = 1`,
 def sugawaraCentralCharge (a c : K) : K :=
   -(2 * a * c) / (1 - 2 * a * c) * (Module.finrank K L : K)
 
-variable {Φ hΦ hΦs a}
-
-/-- The normalised Segal--Sugawara Virasoro mode `Lₘ` is `(1 - 2 a c)⁻¹ • Sₘ`. -/
-theorem sugawaraVirasoro_def (c : K) (m : ℤ) :
-    sugawaraVirasoro Φ hΦ hΦs a c m = (1 - 2 * a * c)⁻¹ • sugawaraMode Φ hΦ hΦs a m :=
-  (rfl)
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 variable (K L) in
 /-- The Sugawara central charge is `-(2 a c) / (1 - 2 a c) · dim L`. -/
 theorem sugawaraCentralCharge_def (a c : K) :
     sugawaraCentralCharge K L a c = -(2 * a * c) / (1 - 2 * a * c) * (Module.finrank K L : K) :=
   (rfl)
+
+variable [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
+  {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
 
 local notation "ιK[" x ", " m "]" =>
   toCompletedEnveloping Φ hΦ hΦs a
@@ -348,7 +308,7 @@ theorem sugawaraVirasoro_mul_toCompletedEnveloping_sub_mul {c : K}
     (h : Φ = c • killingForm K L) (hc : 1 - 2 * a * c ≠ 0) (z : L) (m k : ℤ) :
     sugawaraVirasoro Φ hΦ hΦs a c m * ιK[z, k] - ιK[z, k] * sugawaraVirasoro Φ hΦ hΦs a c m =
       (-(k : K)) • ιK[z, m + k] := by
-  rw [sugawaraVirasoro, smul_mul_assoc, mul_smul_comm, ← smul_sub, ← neg_sub (ιK[z, k] * _),
+  rw [sugawaraVirasoro_def, smul_mul_assoc, mul_smul_comm, ← smul_sub, ← neg_sub (ιK[z, k] * _),
     toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
     smul_neg, smul_smul, ← neg_smul]
   congr 1
@@ -380,9 +340,9 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
     have hZK := congrArg (Int.cast : ℤ → K) hZ
     push_cast at hZK
     exact hZK
-  rw [sugawaraVirasoro, sugawaraVirasoro, sugawaraVirasoro, smul_mul_smul_comm, smul_mul_smul_comm,
-    ← smul_sub, sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h, smul_sub,
-    smul_smul, smul_smul]
+  rw [sugawaraVirasoro_def, sugawaraVirasoro_def, sugawaraVirasoro_def, smul_mul_smul_comm,
+    smul_mul_smul_comm, ← smul_sub, sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
+    smul_sub, smul_smul, smul_smul]
   have hlin : (1 - 2 * a * c)⁻¹ * (1 - 2 * a * c)⁻¹ * ((1 - 2 * a * c) * (m - n : K)) =
       (m - n : K) * (1 - 2 * a * c)⁻¹ := by
     field_simp
@@ -404,101 +364,6 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
       ring
     · simp
   rw [hlin, sub_eq_add_neg, ← neg_smul, hcent]
-
-/-- **The completed level comparison preserves the normalised Segal--Sugawara Virasoro modes.** If
-`Ψ = k • Φ`, then `Lₘ` at central value `1` for `Ψ = (k * c) • κ_L` maps to `Lₘ` at central value
-`k` for `Φ = c • κ_L`. -/
-@[simp]
-theorem levelCompletedEnvelopingEquiv_sugawaraVirasoro {Ψ : LinearMap.BilinForm K L}
-    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
-    {k : K} (h : Ψ = k • Φ) (c : K) (m : ℤ) :
-    levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h (sugawaraVirasoro Ψ hΨ hΨs 1 (k * c) m) =
-      sugawaraVirasoro Φ hΦ hΦs k c m := by
-  simp only [sugawaraVirasoro, map_smul, levelCompletedEnvelopingEquiv_sugawaraMode,
-    one_mul, mul_assoc]
-
-/-! ### Normalised invariant forms and the dual Coxeter number -/
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-/-- **For a form `κ₀` with `κ_L = (2 d) • κ₀`, the affine level `Φ = -(k • κ₀)` at `a = 1` is
-`(-k / (2 d)) • κ_L`.** -/
-theorem eq_neg_div_two_mul_smul_killingForm [NeZero (2 : K)] {κ₀ : LinearMap.BilinForm K L}
-    {d : K} (hd : d ≠ 0) (hκ₀ : killingForm K L = (2 * d) • κ₀) (k : K)
-    (hΦk : Φ = -(k • κ₀)) :
-    Φ = (-k / (2 * d)) • killingForm K L := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  ext x y
-  simp only [hΦk, hκ₀, LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul]
-  field_simp
-
-/-- **Noncriticality in the affine normalisation**: `1 - 2 · 1 · (-k / (2 d)) ≠ 0` if and only if
-`k + d ≠ 0`. -/
-theorem one_sub_two_mul_neg_div_two_mul_ne_zero_iff [NeZero (2 : K)] {d : K} (hd : d ≠ 0)
-    (k : K) :
-    1 - 2 * (1 : K) * (-k / (2 * d)) ≠ 0 ↔ k + d ≠ 0 := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  have heq : 1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
-    field_simp
-    ring
-  rw [heq, div_ne_zero_iff]
-  exact and_iff_left hd
-
-/-- **The `κ₀`-dual-basis formula for the Segal--Sugawara Virasoro modes.** If
-`κ_L = (2 d) • κ₀`, then at `a = 1` and `c = -k / (2 d)`,
-
-`Lₘ = (2 (k + d))⁻¹ • ∑ᵢ :bᵢ b^i:_m`
-
-for every basis `b` of `L` and its `κ₀`-dual basis `b^i`. -/
-theorem sugawaraVirasoro_eq_sum_dualBasis [NeZero (2 : K)] {κ₀ : LinearMap.BilinForm K L}
-    (hκ₀nd : κ₀.Nondegenerate) {d : K} (hd : d ≠ 0) (hκ₀ : killingForm K L = (2 * d) • κ₀)
-    (k : K) {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (m : ℤ) :
-    sugawaraVirasoro Φ hΦ hΦs 1 (-k / (2 * d)) m =
-      (2 * (k + d))⁻¹ • ∑ i, normalOrderedMode Φ hΦ hΦs 1 m (b i) (κ₀.dualBasis hκ₀nd b i) := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  rw [sugawaraVirasoro, sugawaraMode_eq_inv_smul_sum_dualBasis hκ₀nd (mul_ne_zero h2 hd) hκ₀ b m,
-    smul_smul]
-  congr 1
-  field_simp
-  ring
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-/-- **The Sugawara central charge in the `κ₀`-normalisation** is `k · dim L / (k + d)`. -/
-theorem sugawaraCentralCharge_neg_div_two_mul [NeZero (2 : K)] {d : K} (hd : d ≠ 0) (k : K) :
-    sugawaraCentralCharge K L 1 (-k / (2 * d)) = k * (Module.finrank K L : K) / (k + d) := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  have hnum : -(2 * (1 : K) * (-k / (2 * d))) = k / d := by
-    field_simp
-  have hden : 1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
-    field_simp
-    ring
-  rw [sugawaraCentralCharge, hnum, hden, div_div_div_cancel_right₀ hd, div_mul_eq_mul_div]
-
-section Simple
-
-variable [CharZero K] [LieAlgebra.IsSimple K L] {H : LieSubalgebra K L}
-  [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
-  (bp : (LieAlgebra.IsKilling.rootSystem H).Base)
-
-/-- **For a simple Lie algebra in characteristic zero, the Segal--Sugawara Virasoro modes in any
-`κ₀`-dual basis are `(2 (k + h^∨))⁻¹ • ∑ᵢ :bᵢ b^i:_m`**, where `h^∨` is the dual Coxeter number
-and `κ_L = 2 h^∨ κ₀`. -/
-theorem sugawaraVirasoro_eq_sum_dualBasis_of_dualCoxeterNumber {κ₀ : LinearMap.BilinForm K L}
-    (hκ₀nd : κ₀.Nondegenerate)
-    (hκ₀ : killingForm K L = (2 * (bp.dualCoxeterNumber : K)) • κ₀) (k : K)
-    {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (m : ℤ) :
-    sugawaraVirasoro Φ hΦ hΦs 1 (-k / (2 * (bp.dualCoxeterNumber : K))) m =
-      (2 * (k + (bp.dualCoxeterNumber : K)))⁻¹ •
-        ∑ i, normalOrderedMode Φ hΦ hΦs 1 m (b i) (κ₀.dualBasis hκ₀nd b i) :=
-  sugawaraVirasoro_eq_sum_dualBasis hκ₀nd bp.cast_dualCoxeterNumber_ne_zero hκ₀ k b m
-
-/-- **For a simple Lie algebra in characteristic zero, the Sugawara central charge at level `k` is
-`k · dim L / (k + h^∨)`**, where `h^∨` is the dual Coxeter number. -/
-theorem sugawaraCentralCharge_of_dualCoxeterNumber (k : K) :
-    sugawaraCentralCharge K L 1 (-k / (2 * (bp.dualCoxeterNumber : K))) =
-      k * (Module.finrank K L : K) / (k + (bp.dualCoxeterNumber : K)) :=
-  sugawaraCentralCharge_neg_div_two_mul bp.cast_dualCoxeterNumber_ne_zero k
-
-end Simple
 
 end Virasoro
 

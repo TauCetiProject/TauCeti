@@ -55,6 +55,8 @@ Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the form
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.sugawaraMode`: the Segal--Sugawara modes `Sₙ = ∑ᵢ :xᵢ yᵢ:_n`.
+* `TauCeti.CurrentAlgebra.sugawaraVirasoro`: the normalised Segal--Sugawara Virasoro modes
+  `Lₘ = (1 - 2 a c)⁻¹ Sₘ`.
 
 ## Main results
 
@@ -69,7 +71,8 @@ Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the form
   finite-window formulas for the coordinates and smooth-module action of `Sₙ`.
 * `TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`: expansion of `Sₙ` along the dual
   basis of a rescaled invariant form.
-* `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`: compatibility with the
+* `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`,
+  `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraVirasoro`: compatibility with the
   completed level comparison, including at level zero.
 
 ## References
@@ -250,6 +253,17 @@ theorem sugawaraMode_eq_inv_smul_sum_dualBasis {B : LinearMap.BilinForm K L}
     ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hd)).mpr hB) h,
     b.dualBasis_smul_apply B hB d hd i, map_smul]
 
+/-- **The normalised Segal--Sugawara Virasoro modes** `Lₘ = (1 - 2 a c)⁻¹ Sₘ` in `Û`, attached to
+`Φ = c • κ_L` away from the critical level `1 - 2 a c = 0`. -/
+def sugawaraVirasoro (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+    (a c : K) (m : ℤ) : CompletedEnveloping Φ hΦ hΦs a :=
+  (1 - 2 * a * c)⁻¹ • sugawaraMode Φ hΦ hΦs a m
+
+/-- The normalised Segal--Sugawara Virasoro mode `Lₘ` is `(1 - 2 a c)⁻¹ • Sₘ`. -/
+theorem sugawaraVirasoro_def (c : K) (m : ℤ) :
+    sugawaraVirasoro Φ hΦ hΦs a c m = (1 - 2 * a * c)⁻¹ • sugawaraMode Φ hΦ hΦs a m :=
+  (rfl)
+
 end FixedForm
 
 /-- **The completed level comparison preserves the Segal--Sugawara modes.** If `Ψ = k • Φ`, the
@@ -263,6 +277,18 @@ theorem levelCompletedEnvelopingEquiv_sugawaraMode {Φ Ψ : LinearMap.BilinForm 
       sugawaraMode Φ hΦ hΦs k n := by
   rw [sugawaraMode_eq_sum (Module.finBasis K L), sugawaraMode_eq_sum (Module.finBasis K L), map_sum]
   simp only [levelCompletedEnvelopingEquiv_normalOrderedMode]
+
+/-- **The completed level comparison preserves the normalised Segal--Sugawara Virasoro modes.** If
+`Ψ = k • Φ`, then `Lₘ` at central value `1` for `Ψ = (k * c) • κ_L` maps to `Lₘ` at central value
+`k` for `Φ = c • κ_L`. -/
+@[simp]
+theorem levelCompletedEnvelopingEquiv_sugawaraVirasoro {Φ Ψ : LinearMap.BilinForm K L}
+    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
+    {k : K} (h : Ψ = k • Φ) (c : K) (m : ℤ) :
+    levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h (sugawaraVirasoro Ψ hΨ hΨs 1 (k * c) m) =
+      sugawaraVirasoro Φ hΦ hΦs k c m := by
+  simp only [sugawaraVirasoro, map_smul, levelCompletedEnvelopingEquiv_sugawaraMode,
+    one_mul, mul_assoc]
 
 end Basic
 

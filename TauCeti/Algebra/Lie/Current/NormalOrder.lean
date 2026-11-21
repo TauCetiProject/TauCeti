@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Current.CompletedDerivation
-public import TauCeti.Algebra.Lie.Current.Completion
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
@@ -78,7 +77,10 @@ ordered summand of `:x y:_n` by `n`, so by continuity it sends `:x y:_n` to `n �
 * `TauCeti.CurrentAlgebra.limπ_normalOrderedMode`: its coordinates are finite sums.
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
-* `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
+* `TauCeti.CurrentAlgebra.normalOrderedSummand_eq_add_sub`,
+  `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
+* `TauCeti.CurrentAlgebra.hasSum_toCompletedEnveloping_ite_mem`: summation in `Û` of finitely
+  supported families from `U`.
 * `TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`: the commutator of
   a current with a normally ordered mode.
 * `TauCeti.CurrentAlgebra.vectorFieldCompletedEnvelopingDerivation_single_one_normalOrderedMode`:
@@ -250,13 +252,24 @@ theorem limSmul_normalOrderedMode {M : ModuleCat UK}
 
 /-- The summands at the cut `p` differ from those at the cut `0` by the commutator
 `[xₘ, y_{n-m}]` when `0 ≤ m < p`, and by its negative when `p ≤ m < 0`. -/
-private theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
+theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
     normalOrderedSummand Φ hΦ hΦs a p n m x y =
       normalOrderedSummand Φ hΦ hΦs a 0 n m x y +
         (if m ∈ Finset.Ico 0 p then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) -
         (if m ∈ Finset.Ico p 0 then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) := by
   simp only [normalOrderedSummand_apply, Finset.mem_Ico]
   split_ifs <;> first | omega | abel
+
+/-- A family supported in a finite set `s` and given there by `toCompletedEnveloping (f m)`
+sums in `Û` to `toCompletedEnveloping (∑ m ∈ s, f m)`. -/
+theorem hasSum_toCompletedEnveloping_ite_mem {ι : Type*} [DecidableEq ι] (s : Finset ι)
+    (f : ι → UK) :
+    HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
+  have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
+      (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
+    hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
+  rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
 
 /-- **Moving the cut of the normal ordering.** If the summands of `:x y:_n` are ordered at the cut
 `p` instead of `0`, putting `xₘ` on the left exactly when `m < p`, the series still converges in
@@ -268,17 +281,10 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
       normalOrderedMode Φ hΦ hΦs a n x y + toCompletedEnveloping Φ hΦ hΦs a
         (∑ m ∈ Finset.Ico 0 p, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) -
           ∑ m ∈ Finset.Ico p 0, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
-  -- A family supported in a finite set `s` and given there by `f` sums to the finite sum of `f`.
-  have hs (s : Finset ℤ) (f : ℤ → UK) :
-      HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-        (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
-    have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-        (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
-      hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
-    rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
   refine HasSum.tsum_eq ?_
   simp only [normalOrderedSummand_eq_add_sub p n, map_add, map_sub, ← add_sub_assoc]
-  exact ((hasSum_normalOrderedMode n x y).add (hs _ _)).sub (hs _ _)
+  exact ((hasSum_normalOrderedMode n x y).add
+    (hasSum_toCompletedEnveloping_ite_mem _ _)).sub (hasSum_toCompletedEnveloping_ite_mem _ _)
 
 end NormalOrder
 

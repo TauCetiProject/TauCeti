@@ -52,8 +52,6 @@ than to `K`.
 * `TauCeti.CurrentAlgebra.liftOfCurrents`: the universal property in terms of currents.
 * `TauCeti.CurrentAlgebra.envelopingAction`: the action of the currents on a module over
   `U(ĝ) / (ι K - a)`.
-* `TauCeti.CurrentAlgebra.negativeSingle`: the `m`-th negative mode embedding `L →ₗ[R] t⁻¹ L[t⁻¹]`
-  for `m < 0`.
 * `TauCeti.CurrentAlgebra.negativeEnvelopingHom`: the map `U(t⁻¹ L[t⁻¹]) → U(ĝ) / (ι K - a)`
   induced by the negative currents.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv`: the level comparison isomorphism.
@@ -227,37 +225,9 @@ end Action
 
 section Negative
 
-variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
 
 local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
-
-/-- **The `m`-th negative mode embedding** `x ↦ (tᵐ ⊗ x, 0)` into the Lie subalgebra of negative
-currents `t⁻¹ L[t⁻¹]`, for `m < 0`. -/
-def negativeSingle {m : ℤ} (hm : m < 0) : L →ₗ[R] negativeLieSubalgebra Φ hΦ hΦs where
-  toFun x := ⟨ofProd c (HahnSeries.single m (1 : R) ⊗ₜ[R] x, 0),
-    ofProd_mem_negativeLieSubalgebra.2 ⟨single_tmul_mem_truncSubmodule R L hm 1 x, rfl⟩⟩
-  map_add' x y := Subtype.ext (by simp [TensorProduct.tmul_add, ← of_add])
-  map_smul' r x := Subtype.ext (by simp [TensorProduct.tmul_smul, ← of_smul])
-
-variable {Φ hΦ hΦs} in
-/-- Coercion of `negativeSingle Φ hΦ hΦs hm x` to the residue central extension. -/
-@[simp]
-theorem coe_negativeSingle_apply {m : ℤ} (hm : m < 0) (x : L) :
-    (negativeSingle Φ hΦ hΦs hm x : ofTwoCocycle c) =
-      ofProd c (HahnSeries.single m (1 : R) ⊗ₜ[R] x, 0) :=
-  (rfl)
-
-variable {Φ hΦ hΦs} in
-/-- The `m`-th negative mode embedding is injective over every commutative ring. -/
-theorem negativeSingle_injective {m : ℤ} (hm : m < 0) :
-    Function.Injective (negativeSingle Φ hΦ hΦs hm) := fun x y h ↦ by
-  have hc := congrArg (fun z : negativeLieSubalgebra Φ hΦ hΦs ↦
-    coeff R L m (ofTwoCocycle.proj c (z : ofTwoCocycle c))) h
-  simpa only [coe_negativeSingle_apply, ofTwoCocycle.proj_apply, Equiv.symm_apply_apply,
-    coeff_tmul, HahnSeries.coeff_single_same, one_smul] using hc
-
-variable (a : R)
-
 local notation "UK" => CentralQuotient R (centralElement c) a
 
 /-- The algebra map `U(t⁻¹ L[t⁻¹]) → U(ĝ) / (ι K - a)` induced by the inclusion of the negative

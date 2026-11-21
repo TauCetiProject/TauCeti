@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.CompletedDerivation
-public import TauCeti.Algebra.Lie.Current.Sugawara.Virasoro
+public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import TauCeti.Algebra.Lie.Derivation.Continuous
 
@@ -137,7 +136,7 @@ theorem innerDerivation_sugawaraMode_of_eq_smul_killingForm {c : K}
       (1 - 2 * a * c) •
         vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (-HahnSeries.single (m + 1) 1) := by
   refine derivationLieAlgebra_ext_single Φ hΦ hΦs a
-    (continuous_innerDerivation K (sugawaraMode Φ hΦ hΦs a m))
+    (mem_continuousDerivationLieAlgebra.mp (innerDerivation_mem_continuousDerivationLieAlgebra K _))
     (derivationLieAlgebra.continuous_smul (1 - 2 * a * c)
       (continuous_vectorFieldCompletedEnvelopingDerivation ..)) fun k z ↦ ?_
   rw [coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def, ← neg_sub,

@@ -200,28 +200,17 @@ theorem derivationLieAlgebra_ext_single {D E : derivationLieAlgebra R Û}
         rw [map_add, map_add, hx, hy]
       zero_mem' := by simp
       algebraMap_mem' r := by simp }
-  have hpoly (p : LieAlgebra.loopAlgebra R ℤ L) :
-      i (envelopingι c a (ofLoop R L p)) ∈ S := by
-    obtain ⟨v, rfl⟩ := (LieAlgebra.LoopAlgebra.toFinsupp R ℤ L).symm.surjective p
-    induction v using Finsupp.induction_linear with
-    | zero => simp
-    | add v w hv hw => simpa only [map_add] using S.add_mem hv hw
-    | single m x =>
-      rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single, ofLoop_tmul,
-        LaurentPolynomial.toLaurentSeries_single]
-      exact h m x
   have hcur (u : currentAlgebra R L) : i (envelopingι c a u) ∈ S :=
-    (isClosed_eq hD hE).mem_of_tendsto
-      (tendsto_toCompletedEnveloping_envelopingι_ofLoop_trunc Φ hΦ hΦs a u)
-      (Filter.Eventually.of_forall fun N ↦ hpoly _)
-  have hU : (⊤ : Subalgebra R U) ≤ S.comap i := by
-    rw [← LieAlgebra.ofTwoCocycle.adjoin_range_envelopingι c a, Algebra.adjoin_le_iff]
-    rintro _ ⟨u, rfl⟩
-    exact hcur u
-  refine derivationLieAlgebra.ext fun x ↦ ?_
-  induction x using (denseRange_toCompletedEnveloping Φ hΦ hΦs a).induction_on with
-  | hp => exact isClosed_eq hD hE
-  | ih b => exact hU Algebra.mem_top
+    toCompletedEnveloping_envelopingι_mem_of_isClosed Φ hΦ hΦs a S.toSubmodule (isClosed_eq hD hE)
+      h u
+  have hadj : Set.EqOn (D : Module.End R Û) (E : Module.End R Û)
+      (Algebra.adjoin R (Set.range (i ∘ envelopingι c a)) : Set Û) :=
+    Algebra.adjoin_le (Set.range_subset_iff.2 hcur)
+  have hcl : Set.EqOn (D : Module.End R Û) (E : Module.End R Û) Set.univ := by
+    simpa only [← Subalgebra.topologicalClosure_coe,
+      topologicalClosure_adjoin_range_envelopingι Φ hΦ hΦs a, Algebra.coe_top] using
+      hadj.closure hD hE
+  exact derivationLieAlgebra.ext fun x ↦ hcl (Set.mem_univ x)
 
 /-- The completed vector field of `-h` is the negative of the completed vector field of `h`. -/
 @[simp]

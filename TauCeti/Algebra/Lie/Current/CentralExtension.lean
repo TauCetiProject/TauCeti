@@ -35,8 +35,9 @@ basic maps between such extensions, both instances of the morphisms of central e
 
 It also identifies the negative currents `t⁻¹ L[t⁻¹]`, the elements `(u, 0)` with `u` a
 polynomial current of negative order, as a Lie subalgebra of the extension
-(`TauCeti.CurrentAlgebra.negativeLieSubalgebra`): the residue cocycle vanishes on them. Over a
-field the vacuum module is free of rank one over its enveloping algebra
+(`TauCeti.CurrentAlgebra.negativeLieSubalgebra`), together with the negative mode embeddings
+`x ↦ (tᵐ ⊗ x, 0)` (`TauCeti.CurrentAlgebra.negativeSingle`): the residue cocycle vanishes on them.
+Over a field the vacuum module is free of rank one over its enveloping algebra
 (`TauCeti.CurrentAlgebra.vacuumPBWEquiv`).
 
 The isomorphism `levelEquiv` for a unit `u` does not identify the representations on which the
@@ -57,7 +58,7 @@ public section
 
 noncomputable section
 
-open scoped LaurentSeries
+open scoped LaurentSeries TensorProduct
 open LieAlgebra LieModule.Cohomology
 open LieAlgebra.ofTwoCocycle (centralElement)
 
@@ -236,6 +237,30 @@ negative order and `z = 0`. -/
 theorem ofProd_mem_negativeLieSubalgebra {u : C} {z : Z} :
     ofProd c (u, z) ∈ negativeLieSubalgebra Φ hΦ hΦs ↔ u ∈ truncSubmodule R L 0 ∧ z = 0 := by
   rw [mem_negativeLieSubalgebra, Equiv.symm_apply_apply]
+
+variable (Φ hΦ hΦs) in
+/-- **The `m`-th negative mode embedding** `x ↦ (tᵐ ⊗ x, 0)` into the Lie subalgebra of negative
+currents `t⁻¹ L[t⁻¹]`, for `m < 0`. -/
+def negativeSingle {m : ℤ} (hm : m < 0) : L →ₗ[R] negativeLieSubalgebra Φ hΦ hΦs where
+  toFun x := ⟨ofProd c (HahnSeries.single m (1 : R) ⊗ₜ[R] x, 0),
+    ofProd_mem_negativeLieSubalgebra.2 ⟨single_tmul_mem_truncSubmodule R L hm 1 x, rfl⟩⟩
+  map_add' x y := Subtype.ext (by simp [TensorProduct.tmul_add, ← of_add])
+  map_smul' r x := Subtype.ext (by simp [TensorProduct.tmul_smul, ← of_smul])
+
+/-- Coercion of `negativeSingle Φ hΦ hΦs hm x` to the residue central extension. -/
+@[simp]
+theorem coe_negativeSingle_apply {m : ℤ} (hm : m < 0) (x : L) :
+    (negativeSingle Φ hΦ hΦs hm x : ofTwoCocycle c) =
+      ofProd c (HahnSeries.single m (1 : R) ⊗ₜ[R] x, 0) :=
+  (rfl)
+
+/-- The `m`-th negative mode embedding is injective over every commutative ring. -/
+theorem negativeSingle_injective {m : ℤ} (hm : m < 0) :
+    Function.Injective (negativeSingle Φ hΦ hΦs hm) := fun x y h ↦ by
+  have hc := congrArg (fun z : negativeLieSubalgebra Φ hΦ hΦs ↦
+    coeff R L m (ofTwoCocycle.proj c (z : ofTwoCocycle c))) h
+  simpa only [coe_negativeSingle_apply, ofTwoCocycle.proj_apply, Equiv.symm_apply_apply,
+    coeff_tmul, HahnSeries.coeff_single_same, one_smul] using hc
 
 end Negative
 

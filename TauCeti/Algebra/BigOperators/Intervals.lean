@@ -206,22 +206,33 @@ theorem two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub (k : ℤ) :
 `k (k - 1) (2 k - 1)` for every `k : ℤ`. -/
 theorem six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq (k : ℤ) :
     6 * (∑ j ∈ Ico 0 k, j ^ 2 - ∑ j ∈ Ico k 0, j ^ 2) = k * (k - 1) * (2 * k - 1) := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ i ih =>
-    have hi : (0 : ℤ) ≤ i := by positivity
-    rw [← insert_Ico_right_eq_Ico_add_one hi, sum_insert (by simp),
-      Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ i + 1)]
-    rw [Ico_eq_empty_of_le hi] at ih
-    simp only [sum_empty, sub_zero] at ih ⊢
-    linear_combination ih
-  | pred i ih =>
-    have hi : -(i : ℤ) ≤ 0 := by omega
-    rw [← insert_Ico_left_eq_Ico_sub_one hi, sum_insert (by simp),
-      Ico_eq_empty_of_le (by omega : -(i : ℤ) - 1 ≤ 0)]
-    rw [Ico_eq_empty_of_le hi] at ih
-    simp only [sum_empty, zero_sub] at ih ⊢
-    linear_combination ih
+  rcases le_or_gt 0 k with hk | hk
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
+    rw [Ico_eq_empty_of_le hk, sum_empty, sub_zero]
+    have hsum : ∑ j ∈ Ico (0 : ℤ) (n : ℤ), j ^ 2 = ∑ r ∈ range n, (r : ℤ) ^ 2 :=
+      sum_nbij' (fun j ↦ j.toNat) (fun r ↦ (r : ℤ))
+        (fun j hj ↦ by simp only [mem_Ico] at hj; simp only [mem_range]; omega)
+        (fun r hr ↦ by simp only [mem_range] at hr; simp only [mem_Ico]; omega)
+        (fun j hj ↦ by simp only [mem_Ico] at hj; omega)
+        (fun r _ ↦ Int.toNat_natCast r)
+        (fun j hj ↦ by simp only [mem_Ico] at hj; rw [Int.toNat_of_nonneg hj.1])
+    rw [hsum, mul_comm (6 : ℤ), sum_range_natCast_sq_mul_six n]
+  · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ -k)
+    have hkn : k = -(n : ℤ) := by omega
+    rw [hkn, Ico_eq_empty_of_le (by omega : -(n : ℤ) ≤ 0), sum_empty, zero_sub, mul_neg]
+    have hsum : ∑ j ∈ Ico (-(n : ℤ)) 0, j ^ 2 =
+        ∑ r ∈ range n, ((r : ℤ) ^ 2 + 2 * (r : ℤ) + 1) := by
+      refine sum_nbij' (fun j ↦ (-j - 1).toNat) (fun r ↦ -(r : ℤ) - 1)
+        (fun j hj ↦ by simp only [mem_Ico] at hj; simp only [mem_range]; omega)
+        (fun r hr ↦ by simp only [mem_range] at hr; simp only [mem_Ico]; omega)
+        (fun j hj ↦ by simp only [mem_Ico] at hj; omega)
+        (fun r _ ↦ by simp only [neg_sub, sub_neg_eq_add]; omega)
+        fun j hj ↦ by simp only [mem_Ico] at hj; rw [Int.toNat_of_nonneg (by omega)]; ring
+    rw [hsum, sum_add_distrib, sum_add_distrib, sum_const, card_range, nsmul_eq_mul, mul_one,
+      ← mul_sum]
+    have hsq := sum_range_natCast_sq_mul_six (R := ℤ) n
+    have hlin := sum_range_natCast_mul_two (R := ℤ) n
+    linear_combination -hsq - 6 * hlin
 
 /-- Counted with sign, the products `j (k - j)` for integers between `0` and `k` sum to
 `(k ^ 3 - k) / 6`: six times `∑_{0 ≤ j < k} j * (k - j) - ∑_{k ≤ j < 0} j * (k - j)` is
