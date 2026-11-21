@@ -30,11 +30,17 @@ tree have a unique *median* `m`, the vertex lying between any two of them, and t
 from `a` to `b` are those crossed from `a` to `m` or from `m` to `b`: on a triangle whose corners
 go to `a`, `b` and `c`, each dart crossed from `a` to `m` is crossed along both sides at `a`.
 
+A convex set contains every vertex between two of its vertices. Reduced paths from a vertex `v`
+outside a convex set `C` into `C` all start with the same dart, so a vertex `m` of `C` nearest to
+`v` is a *gate*: it lies between `v` and every vertex of `C` (in the same component).
+
 In an acyclic graph the darts crossed from `a` to `b` and the vertices between them are those of
-a reduced path from `a` to `b`, when there is one, since it is a shortest path. The vertices
-between `a` and `b` then form a convex set, and for a third vertex `c` in the same component, a
-vertex of this set nearest to `c` lies between any two of `a`, `b` and `c`: a reduced path from `c`
-to it continues to `a` and to `b` without backtracking. This median is unique because a vertex
+a reduced path from `a` to `b`, when there is one, since it is a shortest path. A set of vertices
+is then convex exactly when it contains the vertices between any two of its vertices. So the
+vertices between `a` and `b` form a convex set, and the image of a convex set whose vertices are
+joined by paths, under a map sending each dart to a dart or to a vertex, is convex.
+For a third vertex `c` in the same component, a vertex between `a` and `b` nearest to `c` is a
+gate, so it lies between any two of `a`, `b` and `c`. This median is unique because a vertex
 between `a` and `b` is determined by its distance from `a`, and for a median `m` the three
 equations of betweenness force `2 dist a m = dist a b + dist a c - dist b c`.
 
@@ -48,6 +54,8 @@ equations of betweenness force `2 dist a m = dist a b + dist a c - dist b c`.
 * `TauCeti.SerreGraph.isBetween_iff_exists_length_eq_dist`,
   `TauCeti.SerreGraph.crosses_iff_exists_length_eq_dist`: the vertices between `a` and `b` and
   the darts crossed from `a` to `b` are those of the shortest paths from `a` to `b`.
+* `TauCeti.SerreGraph.IsConvex.isBetween_of_forall_dist_le`: a vertex of a convex set nearest to
+  `v` lies between `v` and every vertex of the set.
 * `TauCeti.SerreGraph.IsAcyclic.crosses_iff_mem_darts`: in an acyclic graph, the darts crossed
   from `a` to `b` are the darts of a reduced path `p` from `a` to `b`.
 * `TauCeti.SerreGraph.IsAcyclic.natCard_crosses`: in an acyclic graph, `dist a b` darts are
@@ -57,6 +65,11 @@ equations of betweenness force `2 dist a m = dist a b + dist a c - dist b c`.
 * `TauCeti.SerreGraph.IsAcyclic.crosses_iff_crosses_or_crosses`: in an acyclic graph, the darts
   crossed from `a` to `b` are those crossed from `a` to `m` or from `m` to `b`, for `m` between
   `a` and `b`.
+* `TauCeti.SerreGraph.IsAcyclic.isConvex_iff_forall_isBetween`: in an acyclic graph, the convex
+  sets are the sets containing the vertices between any two of their vertices.
+* `TauCeti.SerreGraph.IsAcyclic.isConvex_image`: in an acyclic graph, the image of a convex set
+  whose vertices are joined by paths, under a map sending each dart to a dart or to a vertex, is
+  convex.
 * `TauCeti.SerreGraph.IsAcyclic.existsUnique_isBetween`: in an acyclic graph, three vertices joined
   by paths have a unique median.
 
@@ -89,7 +102,7 @@ def Crosses (a b : Γ.V) (e : Γ.E) : Prop :=
   Γ.IsBetween a (Γ.src e) b ∧ Γ.IsBetween a (Γ.tgt e) b ∧
     Γ.dist a (Γ.tgt e) = Γ.dist a (Γ.src e) + 1
 
-variable {Γ} {a b c m x : Γ.V} {e : Γ.E}
+variable {Γ} {a b c m v x : Γ.V} {e : Γ.E}
 
 /-- Unfold betweenness. -/
 theorem isBetween_iff : Γ.IsBetween a x b ↔
@@ -139,6 +152,14 @@ theorem isBetween_self (a : Γ.V) : Γ.IsBetween a a a := isBetween_left ⟨.nil
   have := hx.dist_add_dist
   rw [dist_self, Nat.add_eq_zero_iff] at this
   exact ((dist_eq_zero_iff hx.nonempty_path_left).mp this.1).symm
+
+/-- A vertex between two vertices at distance at most one is one of them. -/
+theorem IsBetween.eq_or_eq_of_dist_le_one (hx : Γ.IsBetween a x b) (hab : Γ.dist a b ≤ 1) :
+    x = a ∨ x = b := by
+  have := hx.dist_add_dist
+  rcases Nat.eq_zero_or_pos (Γ.dist a x) with h0 | h0
+  · exact .inl ((dist_eq_zero_iff hx.nonempty_path_left).mp h0).symm
+  · exact .inr ((dist_eq_zero_iff hx.nonempty_path_right).mp (by lia))
 
 /-- If `m` lies between `a` and `b`, then every vertex between `m` and `b` lies between `a` and
 `b`. -/
@@ -275,6 +296,73 @@ theorem exists_crosses_of_isBetween (hx : Γ.IsBetween a x b) (hxb : x ≠ b) :
   exact ⟨f.val, Path.crosses_of_length_eq_dist
     (by rw [Quiver.Path.length_comp, hp, hq, hx.dist_add_dist]) (by simp), f.property.1⟩
 
+/-- A convex set contains every vertex between two of its vertices. -/
+theorem IsConvex.mem_of_isBetween {C : Set Γ.V} (hC : Γ.IsConvex C) (ha : a ∈ C) (hb : b ∈ C)
+    (hx : Γ.IsBetween a x b) : x ∈ C := by
+  -- Unless `x = b`, the vertex `x` is the source of a dart of a shortest, hence reduced, path.
+  rcases eq_or_ne x b with rfl | hxb
+  · exact hb
+  obtain ⟨e, he, rfl⟩ := exists_crosses_of_isBetween hx hxb
+  obtain ⟨p, hp, hep⟩ := crosses_iff_exists_length_eq_dist.mp he
+  exact hC.src_mem ha hb (Path.isReduced_of_length_le_dist hp.le) hep
+
+/-- Two reduced paths from a vertex outside a convex set `C` to vertices of `C` start with the same
+dart. -/
+theorem IsConvex.head?_darts_eq {C : Set Γ.V} (hC : Γ.IsConvex C) (hv : v ∉ C) (hm : m ∈ C)
+    (hx : x ∈ C) {p : Γ.Path v m} {q : Γ.Path v x} (hp : Path.IsReduced Γ p)
+    (hq : Path.IsReduced Γ q) : (Path.darts Γ p).head? = (Path.darts Γ q).head? := by
+  -- Otherwise the reverse of `p` followed by `q` is a reduced path from `m` to `x`, and its dart
+  -- following `v` starts outside `C`.
+  by_contra hne
+  obtain ⟨e, he⟩ : ∃ e, (Path.darts Γ q).head? = some e := by
+    cases hq' : Path.darts Γ q with
+    | nil => exact absurd ((Path.eq_of_darts_eq_nil Γ q hq') ▸ hx) hv
+    | cons e _ => exact ⟨e, rfl⟩
+  refine hv (Path.src_eq_of_mem_head?_darts Γ q (Option.mem_def.mpr he) ▸ hC.src_mem hm hx
+    ((Path.isReduced_comp_iff Γ p.reverse q).mpr ⟨(Path.isReduced_reverse Γ p).mpr hp, hq, ?_⟩)
+    (e := e) (by simp [List.mem_of_mem_head? (Option.mem_def.mpr he)]))
+  intro e₀ he₀ f hf hfe
+  simp only [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, Option.mem_def,
+    Option.map_eq_some_iff] at he₀
+  obtain ⟨d, hd, rfl⟩ := he₀
+  rw [Γ.rev_rev] at hfe
+  exact hne (by rw [hd, ← hfe, Option.mem_def.mp hf])
+
+/-- A vertex `m` of a convex set `C` nearest to a vertex `v` lies between `v` and every vertex of
+`C` joined to `m`, provided `v` is joined to `m`. -/
+theorem IsConvex.isBetween_of_forall_dist_le {C : Set Γ.V} (hC : Γ.IsConvex C) (hm : m ∈ C)
+    (hmin : ∀ b ∈ C, Γ.dist v m ≤ Γ.dist v b) (hx : x ∈ C) (hvm : Nonempty (Γ.Path v m))
+    (hmx : Nonempty (Γ.Path m x)) : Γ.IsBetween v m x := by
+  -- Induction on `dist v m`: shortest paths from `v ∉ C` to `m` and to `x` start with the same
+  -- dart, and `m` is also a vertex of `C` nearest to its target.
+  induction hd : Γ.dist v m generalizing v with
+  | zero =>
+    obtain rfl := (dist_eq_zero_iff hvm).mp hd
+    exact isBetween_left hmx
+  | succ n ih =>
+    have hvx : Nonempty (Γ.Path v x) := hvm.elim fun p => hmx.elim fun r => ⟨p.comp r⟩
+    have hvC : v ∉ C := fun hv => by simpa [hd] using hmin v hv
+    obtain ⟨q, hq⟩ := exists_length_eq_dist hvm
+    obtain ⟨s, hs⟩ := exists_length_eq_dist hvx
+    have hqs := hC.head?_darts_eq hvC hm hx (Path.isReduced_of_length_le_dist hq.le)
+      (Path.isReduced_of_length_le_dist hs.le)
+    have hs0 : Γ.dist v x ≠ 0 := fun h0 => hvC ((dist_eq_zero_iff hvx).mp h0 ▸ hx)
+    obtain ⟨v₁, d, q₁, -, rfl⟩ := q.eq_toPath_comp_of_length_eq_succ (hq.trans hd)
+    obtain ⟨w₁, d', s₁, -, rfl⟩ :=
+      s.eq_toPath_comp_of_length_eq_succ (n := Γ.dist v x - 1) (by lia)
+    obtain rfl : v₁ = w₁ := by
+      simpa [d.property.2, d'.property.2] using congrArg (Option.map Γ.tgt) hqs
+    have h₁ := length_eq_dist_of_comp_right hq
+    have h₂ := length_eq_dist_of_comp_right hs
+    have hd₁ : Γ.dist v v₁ ≤ 1 := by simpa using dist_le_length d.toPath
+    simp only [Quiver.Path.length_comp, Quiver.Path.length_toPath] at hq hs h₁ h₂
+    have hb := ih (v := v₁) (fun b hb => by
+      have hvb := hmin b hb
+      obtain ⟨t⟩ := nonempty_path_of_dist_ne_zero (by lia : Γ.dist v b ≠ 0)
+      have := dist_triangle ⟨d.toPath⟩ ⟨d.toPath.reverse.comp t⟩
+      lia) ⟨q₁⟩ (by lia)
+    exact ⟨hvm, hmx, by have := hb.dist_add_dist; lia⟩
+
 /-! ### Acyclic graphs -/
 
 /-- In an acyclic graph, the vertices between `a` and `b` are the vertices of a reduced path `p`
@@ -374,6 +462,55 @@ theorem IsAcyclic.isConvex_setOf_isBetween (h : Γ.IsAcyclic) (a b : Γ.V) :
   simp only [Set.mem_ofPred_eq, h.isBetween_iff_mem_vertices (Path.isReduced_reduce Γ p)] at hu hv ⊢
   exact isConvex_iff.mp (h.isConvex_setOf_mem_vertices _) u hu v hv
 
+/-- In an acyclic graph, a set of vertices is convex exactly when it contains every vertex between
+two of its vertices. -/
+theorem IsAcyclic.isConvex_iff_forall_isBetween (h : Γ.IsAcyclic) {C : Set Γ.V} :
+    Γ.IsConvex C ↔ ∀ a ∈ C, ∀ b ∈ C, ∀ x, Γ.IsBetween a x b → x ∈ C :=
+  ⟨fun hC _ ha _ hb _ hx => hC.mem_of_isBetween ha hb hx, fun hC => isConvex_iff.mpr
+    fun a ha b hb p hp _ he => hC a ha b hb _
+      ((h.isBetween_iff_mem_vertices hp).mpr (Path.src_mem_vertices_of_mem_darts Γ p he))⟩
+
+private theorem mem_image_of_isBetween {Δ : SerreGraph} (hΔ : Δ.IsAcyclic) {C : Set Γ.V}
+    (hC : Γ.IsConvex C) (hpath : ∀ y ∈ C, ∀ y' ∈ C, Nonempty (Γ.Path y y')) {φ : Γ.V → Δ.V}
+    (hφ : ∀ e : Γ.E, Γ.src e ∈ C → Γ.tgt e ∈ C → φ (Γ.src e) = φ (Γ.tgt e) ∨
+      ∃ e' : Δ.E, Δ.src e' = φ (Γ.src e) ∧ Δ.tgt e' = φ (Γ.tgt e)) {y y' : Γ.V}
+    (hy : y ∈ C) (hy' : y' ∈ C) {u : Δ.V} (hu : Δ.IsBetween (φ y) u (φ y')) : u ∈ φ '' C := by
+  -- Induction on `dist y y'`: step from `y` to the next vertex `z` of a shortest path to `y'`,
+  -- whose image is `φ y` or a neighbour of it.
+  induction hd : Γ.dist y y' generalizing y u with
+  | zero =>
+    obtain rfl := (dist_eq_zero_iff (hpath y hy y' hy')).mp hd
+    exact ⟨y, hy, (isBetween_self_iff.mp hu).symm⟩
+  | succ n ih =>
+    obtain ⟨e, he, rfl⟩ := exists_crosses_of_isBetween
+      (isBetween_left (hpath y hy y' hy')) fun h => by simp [h] at hd
+    have hz := hC.mem_of_isBetween hy hy' he.isBetween_tgt
+    have hd' : Γ.dist (Γ.tgt e) y' = n := by
+      have := he.isBetween_tgt.dist_add_dist
+      have := he.dist_tgt
+      simp only [dist_self] at *
+      lia
+    obtain ⟨hpath, hle⟩ : Nonempty (Δ.Path (φ (Γ.src e)) (φ (Γ.tgt e))) ∧
+        Δ.dist (φ (Γ.src e)) (φ (Γ.tgt e)) ≤ 1 := by
+      rcases hφ e hy hz with h' | ⟨e', hs, ht⟩
+      · exact ⟨⟨h' ▸ .nil⟩, by simp [h']⟩
+      · exact ⟨⟨hs ▸ ht ▸ (Δ.dart e').toPath⟩, hs ▸ ht ▸ Δ.dist_src_tgt_le_one e'⟩
+    rcases hΔ.isBetween_or_isBetween hu hpath with hu' | hu'
+    · rcases hu'.eq_or_eq_of_dist_le_one hle with rfl | rfl
+      exacts [⟨_, hy, rfl⟩, ⟨_, hz, rfl⟩]
+    · exact ih hz hu' hd'
+
+/-- Let `C` be a convex set of vertices any two of which are joined by a path. The image of `C`
+under a map of vertices to an acyclic graph `Δ` is convex, when the map sends the two ends of
+every dart joining vertices of `C` to one vertex or to the two ends of a dart of `Δ`. -/
+theorem IsAcyclic.isConvex_image {Δ : SerreGraph} (hΔ : Δ.IsAcyclic) {C : Set Γ.V}
+    (hC : Γ.IsConvex C) (hpath : ∀ y ∈ C, ∀ y' ∈ C, Nonempty (Γ.Path y y')) {φ : Γ.V → Δ.V}
+    (hφ : ∀ e : Γ.E, Γ.src e ∈ C → Γ.tgt e ∈ C → φ (Γ.src e) = φ (Γ.tgt e) ∨
+      ∃ e' : Δ.E, Δ.src e' = φ (Γ.src e) ∧ Δ.tgt e' = φ (Γ.tgt e)) : Δ.IsConvex (φ '' C) := by
+  rw [hΔ.isConvex_iff_forall_isBetween]
+  rintro _ ⟨y, hy, rfl⟩ _ ⟨y', hy', rfl⟩ u hu
+  exact mem_image_of_isBetween hΔ hC hpath hφ hy hy' hu
+
 /-- In an acyclic graph, a vertex between `a` and `b` is determined by its distance from `a`. -/
 theorem IsAcyclic.eq_of_isBetween_of_dist_eq (h : Γ.IsAcyclic) {y : Γ.V}
     (hx : Γ.IsBetween a x b) (hy : Γ.IsBetween a y b) (hxy : Γ.dist a x = Γ.dist a y) : x = y := by
@@ -388,20 +525,16 @@ between any two of them. -/
 theorem IsAcyclic.existsUnique_isBetween (h : Γ.IsAcyclic) (hab : Nonempty (Γ.Path a b))
     (hac : Nonempty (Γ.Path a c)) :
     ∃! m : Γ.V, Γ.IsBetween a m b ∧ Γ.IsBetween b m c ∧ Γ.IsBetween a m c := by
-  -- A vertex `m` between `a` and `b` nearest to `c` is a median: the reduced path from `c` to `m`
-  -- meets the convex set of vertices between `a` and `b` only at its end, so it continues without
-  -- backtracking to `a` and to `b`.
+  -- A vertex `m` between `a` and `b` nearest to `c` is a median: it lies between `c` and every
+  -- vertex of the convex set of vertices between `a` and `b`.
   obtain ⟨m, hm : Γ.IsBetween a m b, hmin⟩ :=
     exists_forall_dist_le (C := {x | Γ.IsBetween a x b}) ⟨a, isBetween_left hab⟩ c
   obtain ⟨p⟩ := hac
   obtain ⟨q⟩ := hm.nonempty_path_left
-  have hq := Path.isReduced_reduce Γ (p.reverse.comp q)
   have key (x : Γ.V) (hx : Γ.IsBetween a x b) : Γ.IsBetween x m c := by
     obtain ⟨r⟩ := hx.nonempty_path_left
-    refine ((h.isBetween_iff_mem_vertices ((h.isConvex_setOf_isBetween a b).isReduced_comp hm hx hq
-      (fun e he => h.src_notMem_of_forall_dist_le hmin hq (List.mem_of_mem_getLast? he))
-      (Path.isReduced_reduce Γ (q.reverse.comp r)))).mpr ?_).symm
-    simp [Quiver.Path.start_mem_vertices]
+    exact ((h.isConvex_setOf_isBetween a b).isBetween_of_forall_dist_le hm hmin hx
+      ⟨p.reverse.comp q⟩ ⟨q.reverse.comp r⟩).symm
   have hma := key a (isBetween_left hab)
   have hmb := key b (isBetween_right hab)
   refine ⟨m, ⟨hm, hmb, hma⟩, fun m' ⟨hab', hbc', hac'⟩ => h.eq_of_isBetween_of_dist_eq hab' hm ?_⟩
