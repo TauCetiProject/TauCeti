@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
 
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 import TauCeti.CategoryTheory.ObjectProperty.Homology
 import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
