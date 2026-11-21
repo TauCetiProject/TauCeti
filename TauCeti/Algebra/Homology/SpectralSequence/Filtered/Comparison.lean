@@ -26,6 +26,8 @@ spectral sequences is an isomorphism from the first page on. This holds for all 
 
 ## Main results
 
+* `CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page`: for
+  finite filtrations, an isomorphism on some page gives an isomorphism on the abutments.
 * `CochainComplex.isIso_homologyMap_app_top_of_isIso_abutment`: an isomorphism on the abutments
   gives an isomorphism in cohomology.
 * `CochainComplex.isIso_homologyMap_of_isIso_spectralSequence_page`: the comparison theorem.
@@ -71,6 +73,28 @@ lemma isIso_homologyMap_app_top_of_isIso_abutment {F : ℤ → Subobject K} {hF 
   exact IsIso.of_isIso_comp_right _ (HomologicalComplex.homologyMap
     (cokernel.π ((filtrationFunctor G hG).map (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) n)
 
+/-- **The comparison theorem for filtered complexes, on the abutments.** Let `α` be a morphism
+between the functors of finite increasing filtrations `F` of `K` and `G` of `L` (`F_a = G_a = ⊥`
+and `F_b = G_b = ⊤`). If the induced morphism of spectral sequences is an isomorphism on every
+object of some page `r ≥ 2`, then the induced morphism of spectral objects is an isomorphism on the
+abutment `H^n(⊥ ≤ ⊤)`. -/
+theorem isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page
+    (F : ℤ → Subobject K) (hF : Monotone F) (G : ℤ → Subobject L) (hG : Monotone G)
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) {a b : ℤ}
+    (hFa : F a = ⊥) (hGa : G a = ⊥) (hFb : F b = ⊤) (hGb : G b = ⊤) (r : ℤ) (hr : 2 ≤ r)
+    (h : ∀ pq, IsIso (((spectralSequenceMap coreE₂Cohomological
+      (spectralObjectMap α)).hom r hr).f pq)) (n : ℤ) :
+    IsIso (((spectralObjectMap α).hom n).app (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤)))) :=
+  isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) n
+    (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
+      ((F i).isZero_homology_of_eq_bot (le_bot_iff.mp (hFa ▸ hF hi)) m))
+    (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m
+      ((G i).isZero_homology_of_eq_bot (le_bot_iff.mp (hGa ▸ hG hi)) m))
+    (fun m i _ _ hi => isZero_spectralObject_H_top F hF i m
+      ((F i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hFb ▸ hF hi)) m))
+    (fun m i _ _ hi => isZero_spectralObject_H_top G hG i m
+      ((G i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
+
 /-- **The comparison theorem for filtered complexes.** Let `α` be a morphism between the
 functors of finite increasing filtrations `F` of `K` and `G` of `L` (`F_a = G_a = ⊥` and
 `F_b = G_b = ⊤`). If the induced morphism of spectral sequences is an isomorphism on every object
@@ -83,15 +107,8 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page (F : ℤ → Subobject 
       (spectralObjectMap α)).hom r hr).f pq)) (n : ℤ) :
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) :=
   isIso_homologyMap_app_top_of_isIso_abutment α n <|
-    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) n
-    (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
-      ((F i).isZero_homology_of_eq_bot (le_bot_iff.mp (hFa ▸ hF hi)) m))
-    (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m
-      ((G i).isZero_homology_of_eq_bot (le_bot_iff.mp (hGa ▸ hG hi)) m))
-    (fun m i _ _ hi => isZero_spectralObject_H_top F hF i m
-      ((F i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hFb ▸ hF hi)) m))
-    (fun m i _ _ hi => isZero_spectralObject_H_top G hG i m
-      ((G i).isZero_homology_cokernel_of_eq_top (top_le_iff.mp (hGb ▸ hG hi)) m)) r hr h
+    isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page F hF G hG α hFa hGa
+      hFb hGb r hr h n
 
 /-- **The comparison theorem for quasi-isomorphisms of filtrations.** A morphism `α` between the
 functors of increasing filtrations `F` of `K` and `G` of `L` which is a quasi-isomorphism

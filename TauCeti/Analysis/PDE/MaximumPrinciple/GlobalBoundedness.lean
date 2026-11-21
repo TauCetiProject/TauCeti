@@ -428,7 +428,7 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
     positivity
   refine ⟨K, hK, fun {Omega} hOmega v hv => ?_⟩
   have hsob := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-    ENNReal.ofNat_ne_top hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
+    hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
     (by rwa [finrank_euclideanSpace]) hv
   rw [finrank_euclideanSpace] at hsob
   refine hsob.trans_eq ?_

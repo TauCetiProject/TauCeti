@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.DeFinetti.Barycenter
-public import TauCeti.Probability.Recurrent.Excursion
+public import TauCeti.Probability.Process.Excursion.Reconstruction
 public import TauCeti.Probability.Exchangeability.Recurrence.Excursion
 -- Non-public: the mixture form of a path law is used only inside proofs.
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 
 /-!
-# A recurrent Markov exchangeable process is a mixture of processes with i.i.d. excursions
+# Markov exchangeable processes as mixtures of processes with i.i.d. excursions
 
-`Recurrence.Reconstruction` establishes that the path law of a recurrent process is the image of
-its excursion law under concatenation.  This file supplies the other half: for a **Markov
-exchangeable** process the excursion process is exchangeable, hence conditionally i.i.d., so that
-excursion law is a mixture.  Combining the two gives the representation
+`TauCeti.Probability.Process.Excursion.Reconstruction` establishes that the path law of a process
+started at `a₀` and returning to `a₀` infinitely often is the image of its excursion law under
+concatenation.  This file supplies the other half: for a **Markov exchangeable** process the
+excursion process is exchangeable, hence conditionally i.i.d., so that excursion law is a mixture.
+Combining the two gives the representation
 
 ```text
 pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀)
@@ -31,19 +32,21 @@ law is carried on laws of words that almost surely avoid `a₀`
 conjunct), so the concatenated path really has the drawn words as its excursions.
 
 This is Diaconis and Freedman's decomposition step for Markov exchangeability: it exhibits a
-recurrent Markov exchangeable process as a mixture of **regenerative** processes. What it does not
-yet say is that the random excursion law is the excursion law of a Markov chain, which is the
-remaining input of the Diaconis–Freedman representation
-`TauCeti.Probability.MixedMarkovChain`.
+Markov exchangeable process that returns to its initial state infinitely often as a mixture of
+**regenerative** processes. What it does not yet say is that the random excursion law is the
+excursion law of a Markov chain, which is the remaining input of the Diaconis–Freedman
+representation `TauCeti.Probability.MixedMarkovChain`.
 
 ## Main results
 
 * `TauCeti.Probability.MarkovExchangeable.conditionallyIID_excursionProcess`: de Finetti applied to
-  the excursion process of a recurrent Markov exchangeable process.
+  the excursion process of a Markov exchangeable process that returns to its initial state
+  infinitely often.
 * `TauCeti.Probability.ConditionallyIIDWith.ae_measure_setOf_mem_eq_zero_of_excursionProcess`: a
   directing measure of an excursion process almost surely charges no word through the base state.
-* `TauCeti.Probability.MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter`: **a recurrent
-  Markov exchangeable process is a mixture of processes with i.i.d. excursions.**
+* `TauCeti.Probability.MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter`: **a Markov
+  exchangeable process that returns to its initial state infinitely often is a mixture of processes
+  with i.i.d. excursions.**
 
 ## References
 
@@ -69,17 +72,19 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-! ## De Finetti for the excursions -/
 
-/-- **De Finetti for the excursions of a recurrent Markov exchangeable process.** The excursions
-away from the initial state are conditionally i.i.d. finite words.
+/-- **De Finetti for the excursions of a Markov exchangeable process**, when the process starts at
+`a₀` and returns to `a₀` infinitely often. The excursions away from `a₀` are conditionally i.i.d.
+finite words.
 
 The value space needs no hypothesis: over a countable state space the finite words form a countable
 discrete space, which is standard Borel and nonempty. -/
 theorem MarkovExchangeable.conditionallyIID_excursionProcess [IsFiniteMeasure μ]
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
+    (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
+    (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     ConditionallyIID μ (excursionProcess X a₀) :=
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
-  conditionallyIID_of_exchangeable (h.exchangeable_excursionProcess hrec h0)
+  conditionallyIID_of_exchangeable (h.exchangeable_excursionProcess hret h0)
     (aemeasurable_excursionProcess h.aemeasurable a₀ (measurableSet_singleton a₀))
 
 /-- **A directing measure of an excursion process charges no word through the base state.** An
@@ -121,23 +126,25 @@ theorem ConditionallyIIDWith.ae_measure_setOf_mem_eq_zero_of_excursionProcess
 
 /-! ## The representation -/
 
-/-- **A recurrent Markov exchangeable process is a mixture of processes with i.i.d. excursions.**
-Its path law is obtained by drawing an excursion law `P` from a mixing law `π`, drawing excursions
-i.i.d. from `P`, and concatenating them. The mixing law is carried on laws that almost surely avoid
-the base state, so the concatenated path has the drawn words as its excursions.
+/-- **A Markov exchangeable process that returns to its initial state infinitely often is a mixture
+of processes with i.i.d. excursions.** Its path law is obtained by drawing an excursion law `P`
+from a mixing law `π`, drawing excursions i.i.d. from `P`, and concatenating them. The mixing law
+is carried on laws that almost surely avoid the base state, so the concatenated path has the drawn
+words as its excursions.
 
 This is the decomposition step of the Diaconis–Freedman representation. Identifying the random
 excursion law with the excursion law of a Markov chain, which upgrades this to
 `TauCeti.Probability.MixedMarkovChain`, is a separate statement. -/
 theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabilityMeasure μ]
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
+    (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
+    (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) :
     ∃ π : Measure (ProbabilityMeasure (List α)), IsProbabilityMeasure π ∧
       (∀ᵐ P : ProbabilityMeasure (List α) ∂π,
         (P : Measure (List α)) {l : List α | a₀ ∈ l} = 0) ∧
       pathLaw μ X = (Measure.deFinettiBarycenter π).map (pathOfExcursions a₀) := by
   let _ : Countable α := h.countable
   have : MeasurableSingletonClass α := h.measurableSingletonClass
-  obtain ⟨ν, hν⟩ := (h.conditionallyIID_excursionProcess hrec h0).exists_directing
+  obtain ⟨ν, hν⟩ := (h.conditionallyIID_excursionProcess hret h0).exists_directing
   have hmix := mixedIIDWith_of_conditionallyIIDWith hν
   have hν_meas : Measurable ν := hmix.measurable_mixingRepresentative
   have hSmeas : MeasurableSet {l : List α | a₀ ∈ l} := MeasurableSet.of_discrete
@@ -146,7 +153,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
       hν.ae_measure_setOf_mem_eq_zero_of_excursionProcess
     exact ((Measure.measurable_coe hSmeas).comp measurable_subtypeVal)
       (measurableSet_singleton (0 : ENNReal))
-  · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) h0,
+  · rw [pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) hret h0,
       pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, Measure.deFinettiBarycenter_def]
 
 end Probability

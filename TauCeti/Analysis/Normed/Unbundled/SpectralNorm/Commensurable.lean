@@ -43,6 +43,7 @@ theorem isCommensurable_of_isAlgebraic {ϖ : PseudoUniformizer K} (hϖ : ϖ.IsCo
     (ϖ' : PseudoUniformizer L) : ϖ'.IsCommensurable :=
   isCommensurable_of_forall_exists_norm_eq_pow hϖ ϖ' fun y _ ↦
     ⟨_, minpoly.natDegree_pos (Algebra.IsIntegral.isIntegral y), _,
-      (NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero K y).symm⟩
+      (NormedAlgebra.norm_pow_natDegree_minpoly_eq_norm_coeff_zero K
+        (Algebra.IsAlgebraic.isAlgebraic y)).symm⟩
 
 end TauCeti.NormedRing.PseudoUniformizer
