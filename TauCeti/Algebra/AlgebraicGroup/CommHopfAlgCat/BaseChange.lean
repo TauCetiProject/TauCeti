@@ -242,6 +242,18 @@ lemma baseChangeTowerIso_hom_one_tmul (H : _root_.CommHopfAlgCat.{v} k) (x : E â
       Algebra.TensorProduct.map (IsScalarTower.toAlgHom k E K) (AlgHom.id k H) x :=
   _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k E H K x
 
+/-- The underlying bialgebra homomorphism of the inverse tower comparison is the inverse
+bialgebra tower comparison. -/
+lemma baseChangeTowerIso_inv_hom (H : _root_.CommHopfAlgCat.{v} k) :
+    (baseChangeTowerIso (E := E) k K H).inv.hom =
+      (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k E H K).symm.toBialgHom := by
+  ext x
+  induction x using _root_.TensorProduct.inductionOn with
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | tmul s h =>
+    rw [baseChangeTowerIso_inv_apply, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_coe,
+      TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul]
+
 end Tower
 
 variable (A : CommAlgCat.{x} K)

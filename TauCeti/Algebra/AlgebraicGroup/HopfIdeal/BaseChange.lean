@@ -1010,24 +1010,6 @@ private theorem one_tmul_mem_baseChangeHopfIdeal_iff_of_algEquiv
     AddHom.coe_mk, map_one, LinearEquiv.coe_coe, TensorProduct.lid_tmul, one_smul] at h0
   exact (_root_.CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mp h0
 
-/-- On a scalar-extended element, the inverse tower comparison for a `k`-algebra equivalence
-`e : K₁ ≃ₐ[k] K₂` inserts `1` on the left. -/
-private theorem baseChangeTowerBialgEquiv_symm_map_eq_one_tmul
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂]
-    [Algebra k K₁] [Algebra k K₂] [Algebra K₁ K₂] [IsScalarTower k K₁ K₂]
-    (e : K₁ ≃ₐ[k] K₂) (he : ∀ s : K₁, algebraMap K₁ K₂ s = e s) (x : K₁ ⊗[k] H) :
-    (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm
-        (TensorProduct.map e.toLinearMap LinearMap.id x) =
-      (1 : K₂) ⊗ₜ[K₁] x := by
-  apply EquivLike.injective
-    (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂)
-  rw [BialgEquiv.apply_symm_apply, TensorProduct.baseChangeTowerBialgEquiv_one_tmul]
-  induction x with
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | tmul s h =>
-    simp only [TensorProduct.map_tmul, AlgEquiv.toLinearMap_apply, LinearMap.id_apply,
-      Algebra.TensorProduct.map_tmul, IsScalarTower.coe_toAlgHom', AlgHom.id_apply, he s]
-
 /-- Transport a Hopf ideal of `K₁ ⊗[k] H` to `K₂ ⊗[k] H` along a `k`-algebra equivalence
 `e : K₁ ≃ₐ[k] K₂`.
 
@@ -1057,7 +1039,8 @@ theorem mem_mapBaseChangeHopfIdeal_map_iff
     IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
   refine (HopfIdeal.mem_comapOfSurjective (I := baseChangeHopfIdeal (K := K₂) I)).trans ?_
   rw [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_coe,
-    baseChangeTowerBialgEquiv_symm_map_eq_one_tmul e (fun _ ↦ rfl) x]
+    TensorProduct.baseChangeTowerBialgEquiv_symm_map_eq_one_tmul k K₁ H K₂ e.toLinearMap
+      (fun _ ↦ rfl) x]
   exact one_tmul_mem_baseChangeHopfIdeal_iff_of_algEquiv e (fun _ ↦ rfl) I x
 
 /-- Membership in `mapBaseChangeHopfIdeal e I` is tested by applying `e.symm ⊗ id`. -/
@@ -1089,13 +1072,8 @@ theorem mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso
       (baseChangeTowerIso (E := K₁) k K₂ H).inv.hom
           (TensorProduct.map e.toLinearMap LinearMap.id x) =
         (1 : K₂) ⊗ₜ[K₁] x := by
-    apply (ConcreteCategory.bijective_of_isIso (baseChangeTowerIso (E := K₁) k K₂ H).hom).1
-    rw [_root_.CommHopfAlgCat.hom_inv_apply, baseChangeTowerIso_hom_one_tmul]
-    induction x with
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | tmul s h =>
-      simp only [TensorProduct.map_tmul, AlgEquiv.toLinearMap_apply, LinearMap.id_apply,
-        Algebra.TensorProduct.map_tmul, IsScalarTower.coe_toAlgHom', AlgHom.id_apply, he s]
+    rw [baseChangeTowerIso_inv_hom, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_coe]
+    exact TensorProduct.baseChangeTowerBialgEquiv_symm_map_eq_one_tmul k K₁ H K₂ e.toLinearMap he x
   conv_rhs => rw [← TensorProduct.map_apply_symm_left e.toLinearEquiv y, hinv]
   exact (one_tmul_mem_baseChangeHopfIdeal_iff_of_algEquiv e he I _).symm
 
