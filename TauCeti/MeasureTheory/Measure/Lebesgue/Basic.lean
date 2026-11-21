@@ -33,7 +33,7 @@ their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal Interval
+open scoped ENNReal NNReal Interval symmDiff
 
 namespace NNReal
 
@@ -73,6 +73,33 @@ theorem volume_eball_sdiff_le (s u : Set ℝ) :
     · rw [measure_sdiff (Metric.eball_subset_eball (ENNReal.div_le_div_right h 2))
         Metric.isOpen_eball.measurableSet.nullMeasurableSet (by rwa [hlength]), hlength, hlength]
       exact le_measure_sdiff
+
+/-- The symmetric difference of centered real `eball`s of lengths `ENNReal.ofReal a` and
+`ENNReal.ofReal b` has Lebesgue measure at most `ENNReal.ofReal |a - b|`. -/
+theorem volume_eball_ofReal_symmDiff_le (a b : ℝ) :
+    volume (Metric.eball (0 : ℝ) (ENNReal.ofReal a / 2) ∆
+        Metric.eball (0 : ℝ) (ENNReal.ofReal b / 2)) ≤ ENNReal.ofReal |a - b| := by
+  have hvol (r : ℝ) : volume (Metric.eball (0 : ℝ) (ENNReal.ofReal r / 2)) = ENNReal.ofReal r := by
+    rw [Real.volume_eball, ENNReal.mul_div_cancel (by norm_num) (by norm_num)]
+  have hofmax (r : ℝ) : ENNReal.ofReal r = ENNReal.ofReal (max r 0) := by
+    rcases le_or_gt r 0 with hr | hr
+    · rw [max_eq_right hr, ENNReal.ofReal_of_nonpos hr, ENNReal.ofReal_zero]
+    · rw [max_eq_left hr.le]
+  have hle {x y : ℝ} (hx : 0 ≤ x) (hxy : x ≤ y) :
+      volume (Metric.eball (0 : ℝ) (ENNReal.ofReal x / 2) ∆
+          Metric.eball (0 : ℝ) (ENNReal.ofReal y / 2)) ≤ ENNReal.ofReal |x - y| := by
+    have hsub : Metric.eball (0 : ℝ) (ENNReal.ofReal x / 2) ⊆
+        Metric.eball (0 : ℝ) (ENNReal.ofReal y / 2) :=
+      Metric.eball_subset_eball (ENNReal.div_le_div_right (ENNReal.ofReal_le_ofReal hxy) 2)
+    rw [symmDiff_def, Set.sdiff_eq_empty.2 hsub, empty_union,
+      measure_sdiff hsub Metric.isOpen_eball.measurableSet.nullMeasurableSet
+        (by rw [hvol]; exact ENNReal.ofReal_ne_top),
+      hvol, hvol, ← ENNReal.ofReal_sub _ hx, abs_of_nonpos (sub_nonpos.2 hxy), neg_sub]
+  rw [hofmax a, hofmax b]
+  refine (le_total (max a 0) (max b 0) |>.elim (hle (le_max_right _ _)) fun hba ↦ ?_).trans
+    (ENNReal.ofReal_le_ofReal (abs_max_sub_max_le_abs a b 0))
+  rw [symmDiff_comm, abs_sub_comm]
+  exact hle (le_max_right _ _) hba
 
 /-- A permutation of the coordinates combined with sign changes, `x ↦ fun i => c i * x (e i)`
 with `|c i| = 1`, preserves Lebesgue measure on `ι → ℝ`. -/

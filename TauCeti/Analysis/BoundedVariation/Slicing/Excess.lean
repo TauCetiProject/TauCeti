@@ -10,12 +10,10 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Convolution
 public import TauCeti.Analysis.BoundedVariation.Slicing.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
-import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.BoundedVariation.Real
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
@@ -41,7 +39,7 @@ is null-measurable, so both bounds apply to it by taking
 When `s` has finite perimeter, testing the localized joint slicing inequality against mollified
 regularized gradient vector fields for a radial smooth bump `ρ` on `(ℝ ∙ e)ᗮ` and applying
 Cauchy–Schwarz yields the mollified slicing excess bound
-(`TauCeti.mul_integral_sqrt_normed_convolution_add_two_mul_sq_le`): writing
+(`MeasureTheory.NullMeasurableSet.mul_integral_sqrt_normed_convolution_add_two_mul_sq_le`): writing
 `d = ρ ⋆ (2 · 1_D)`, `w = ρ ⋆ v` (where `v(y) = |s_y|`), `a = ρ ⋆ 1_A`, and `M = 2 |D| + |Dv|`,
 
 `M ∫ √(d² + ‖Dw‖²) + 2 (∫ a √d)² ≤ M P(s)`.
@@ -141,106 +139,18 @@ theorem two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSectio
     hs hfin e he hA hbad (fun _ ↦ 1)
   simpa using h.trans (by simpa using lintegral_perimeter_lineSection_le hs hfin e he)
 
+end TauCeti
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
 section MollifiedExcess
 
 noncomputable section
-
-private theorem integral_mul_normed_convolution_eq_of_bdd {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    (ρ : ContDiffBump (0 : H)) {f h : H → ℝ} (hf : Integrable f volume)
-    (hh : AEStronglyMeasurable h volume) {C : ℝ} (hC : ∀ x, ‖h x‖ ≤ C) :
-    ∫ y, f y * (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] h) y =
-      ∫ x, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] f) x * h x := by
-  set κ : H → ℝ := ρ.normed volume
-  have hprod : Integrable (fun p : H × H ↦ f p.1 * (κ p.2 * h (p.1 - p.2))) (volume.prod volume) :=
-    ((hf.mul_prod ρ.integrable_normed).bdd_mul
-      (hh.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub_of_right_invariant volume volume))
-      (.of_forall fun p ↦ hC (p.1 - p.2))).congr
-      (.of_forall fun p ↦ by dsimp only [Function.comp_apply, κ]; ring)
-  have hprod' : Integrable (fun p : H × H ↦ (κ p.1 * f (p.2 - p.1)) * h p.2) (volume.prod volume) :=
-    ((by simpa only [lsmul_apply, smul_eq_mul] using
-      ρ.integrable_normed.convolution_integrand (lsmul ℝ ℝ) hf :
-        Integrable (fun p : H × H ↦ κ p.2 * f (p.1 - p.2)) (volume.prod volume)).swap).mul_bdd
-      hh.comp_snd (.of_forall fun p ↦ hC p.2)
-  calc ∫ y, f y * (κ ⋆[lsmul ℝ ℝ, volume] h) y
-      = ∫ y, ∫ t, f y * (κ t * h (y - t)) := integral_congr_ae (.of_forall fun _ ↦ by
-          simp only [convolution_lsmul, smul_eq_mul, ← integral_const_mul])
-    _ = ∫ t, ∫ y, f y * (κ t * h (y - t)) := integral_integral_swap hprod
-    _ = ∫ t, ∫ x, f (x + t) * (κ t * h x) := integral_congr_ae (.of_forall fun t ↦ by
-          dsimp only
-          rw [← integral_add_right_eq_self (fun x ↦ f x * (κ t * h (x - t))) t]
-          exact integral_congr_ae (.of_forall fun _ ↦ by simp only [add_sub_cancel_right]))
-    _ = ∫ t, ∫ x, (κ t * f (x - t)) * h x := by
-          rw [← integral_neg_eq_self (fun t ↦ ∫ x, f (x + t) * (κ t * h x))]
-          refine integral_congr_ae (.of_forall fun t ↦ integral_congr_ae (.of_forall fun x ↦ ?_))
-          dsimp only
-          rw [show κ (-t) = κ t from ρ.normed_neg t, ← sub_eq_add_neg]; ring
-    _ = ∫ x, ∫ t, (κ t * f (x - t)) * h x := integral_integral_swap hprod'
-    _ = ∫ x, (κ ⋆[lsmul ℝ ℝ, volume] f) x * h x := integral_congr_ae (.of_forall fun _ ↦ by
-          dsimp only; simp only [convolution_lsmul, smul_eq_mul, ← integral_mul_const])
-
-private theorem divergenceCLM_mollify {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    (φ₀ : 𝓓(⊤, H)) (ρ : ContDiffBump (0 : H))
-    (h : closedBall (0 : H) ρ.rOut + tsupport φ₀ ⊆ ((⊤ : Opens H) : Set H)) (x : H) :
-    divergenceCLM (TestFunction.mollify φ₀ volume ρ h) x =
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] (divergenceCLM φ₀ : H → ℝ)) x := by
-  let b := stdOrthonormalBasis ℝ H
-  have hφ₀_diff : ContDiff ℝ 1 (φ₀ : H → H) := φ₀.contDiff.of_le (by simp)
-  have hκ_loc : LocallyIntegrable (ρ.normed volume) volume := ρ.continuous_normed.locallyIntegrable
-  have hcont (i) : Continuous (fun y : H ↦ fderiv ℝ (φ₀ : H → H) y (b i)) :=
-    (hφ₀_diff.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hstep (i) :
-      ⟪b i, fderiv ℝ (TestFunction.mollify φ₀ volume ρ h : H → H) x (b i)⟫_ℝ =
-        (ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
-          fun y ↦ ⟪b i, fderiv ℝ (φ₀ : H → H) y (b i)⟫_ℝ) x := by
-    rw [TestFunction.coe_mollify,
-      φ₀.hasCompactSupport.fderiv_convolution_right_apply (lsmul ℝ ℝ) hκ_loc hφ₀_diff x (b i)]
-    have hex := ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ)
-      hκ_loc (hcont i) x
-    simpa only [innerSL_apply_apply] using ((innerSL ℝ (b i)).convolution_lsmul_comp_comm hex).symm
-  have hterm (i) : Integrable (fun t : H ↦
-      ρ.normed volume t * ⟪b i, fderiv ℝ (φ₀ : H → H) (x - t) (b i)⟫_ℝ) volume := by
-    simpa only [lsmul_apply, smul_eq_mul, Function.comp_apply, innerSL_apply_apply] using
-      (ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ) hκ_loc
-        ((innerSL ℝ (b i)).continuous.comp (hcont i)) x).integrable
-  rw [divergenceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
-  simp_rw [ContinuousLinearMap.coe_coe, hstep, convolution_def, lsmul_apply, smul_eq_mul]
-  rw [← integral_finsetSum _ fun i _ ↦ hterm i]
-  refine integral_congr_ae (.of_forall fun _ ↦ ?_)
-  dsimp only
-  rw [← Finset.mul_sum, divergenceCLM_apply, LinearMap.trace_eq_sum_inner _ b]
-  simp only [ContinuousLinearMap.coe_coe]
-
-private theorem normed_convolution_le_sqrt_one_sub_sq {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
-    (ρ : ContDiffBump (0 : H)) {h : H → ℝ} {φ₀ : H → H} (hh : Continuous h)
-    (hφ₀ : Continuous φ₀) (hle : ∀ z, h z ^ 2 + ‖φ₀ z‖ ^ 2 ≤ 1) (y : H) :
-    (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] h) y ≤
-      √(1 - ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] φ₀) y‖ ^ 2) := by
-  let F : H → WithLp 2 (ℝ × H) := fun z ↦ WithLp.toLp 2 (h z, φ₀ z)
-  have hF1 (z : H) : ‖F z‖ ≤ 1 := by
-    have hsq : ‖F z‖ ^ 2 ≤ 1 ^ 2 := by rw [WithLp.prod_norm_sq_eq_of_L2]; simpa [F] using hle z
-    nlinarith [norm_nonneg (F z)]
-  have hconv1 : ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] F) y‖ ≤ 1 :=
-    ρ.norm_normed_convolution_le hF1 y
-  have hex : ConvolutionExistsAt (ρ.normed volume) F y (lsmul ℝ ℝ) volume :=
-    ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ)
-      ρ.continuous_normed.locallyIntegrable
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ H).symm.continuous.comp (hh.prodMk hφ₀)) y
-  let E2 := (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ H).toContinuousLinearMap
-  have h1 : ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] F) y).fst =
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] h) y := by
-    simpa [E2, F] using
-      (((ContinuousLinearMap.fst ℝ ℝ H).comp E2).convolution_lsmul_comp_comm hex).symm
-  have h2 : ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] F) y).snd =
-      (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] φ₀) y := by
-    simpa [E2, F] using
-      (((ContinuousLinearMap.snd ℝ ℝ H).comp E2).convolution_lsmul_comp_comm hex).symm
-  have hnorm := WithLp.prod_norm_sq_eq_of_L2 ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] F) y)
-  rw [h1, h2, Real.norm_eq_abs, sq_abs] at hnorm
-  exact Real.le_sqrt_of_sq_le
-    (by nlinarith [norm_nonneg ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] F) y)])
 
 /-- **Mollified slicing excess inequality.** Let `s` be a Lebesgue-measurable set of finite volume
 and finite perimeter, `e` a unit vector with orthogonal hyperplane `H = (ℝ ∙ e)ᗮ`, `A ⊆ H` a
@@ -282,8 +192,6 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
   let w : H → ℝ := κ ⋆[lsmul ℝ ℝ, volume] v
   let a : H → ℝ := κ ⋆[lsmul ℝ ℝ, volume] A.indicator (fun _ ↦ (1 : ℝ))
   let M : ℝ := 2 * volume.real D + (totalVariationOn volume ⊤ v).toReal
-  change M * (∫ y : H, √(d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2)) + 2 * (∫ y : H, a y * √(d y)) ^ 2 ≤
-    M * (perimeter volume ⊤ s).toReal
   have hD : NullMeasurableSet D volume :=
     nullMeasurableSet_lt aemeasurable_const (aemeasurable_volume_lineSection e he hs)
   have hDA_le := two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection
@@ -333,26 +241,10 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
   have hw1 : ContDiff ℝ 1 w := hw_smooth.of_le (by simp)
   have hgradW_cont : Continuous (fun y : H ↦ ‖fderiv ℝ w y‖) :=
     (hw1.continuous_fderiv one_ne_zero).norm
-  have hgradW_int : Integrable (fun y : H ↦ ‖fderiv ℝ w y‖) volume := by
-    refine ⟨hgradW_cont.aestronglyMeasurable, ?_⟩
-    rw [HasFiniteIntegral,
-      show (fun y : H ↦ ‖‖fderiv ℝ w y‖‖ₑ) = fun y : H ↦ ‖fderiv ℝ w y‖ₑ from
-        funext fun _ ↦ by rw [Real.eNorm_of_nonneg (opNorm_nonneg _), ofReal_norm],
-      show ∫⁻ y : H, ‖fderiv ℝ w y‖ₑ = totalVariationOn volume ⊤ w by
-        rw [hw1.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
-          Opens.coe_top, Measure.restrict_univ]]
-    exact (ρ.totalVariationOn_normed_convolution_le
-      (hv_int.locallyIntegrable.locallyIntegrableOn _) fun _ _ ↦ subset_univ _).trans_lt
-      hv_tv_fin.lt_top
-  have hgradW_int_le : ∫ y : H, ‖fderiv ℝ w y‖ ≤ (totalVariationOn volume ⊤ v).toReal := by
-    have h1 : ENNReal.ofReal (∫ y : H, ‖fderiv ℝ w y‖) = totalVariationOn volume ⊤ w := by
-      rw [ofReal_integral_eq_lintegral_ofReal hgradW_int (.of_forall fun _ ↦ opNorm_nonneg _),
-        hw1.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
-        Opens.coe_top, Measure.restrict_univ]
-      exact lintegral_congr fun y ↦ ofReal_norm (fderiv ℝ w y)
-    exact (ENNReal.ofReal_le_iff_le_toReal hv_tv_fin).1 <| h1.symm ▸
-      ρ.totalVariationOn_normed_convolution_le (hv_int.locallyIntegrable.locallyIntegrableOn _)
-        fun _ _ ↦ subset_univ _
+  have hgradW_int : Integrable (fun y : H ↦ ‖fderiv ℝ w y‖) volume :=
+    ρ.integrable_norm_fderiv_normed_convolution hv_int.locallyIntegrable hv_tv_fin
+  have hgradW_int_le : ∫ y : H, ‖fderiv ℝ w y‖ ≤ (totalVariationOn volume ⊤ v).toReal :=
+    ρ.integral_norm_fderiv_normed_convolution_le hv_int.locallyIntegrable hv_tv_fin
   have hdiv_bound {x y δ : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hδ : 0 < δ) :
       (x ^ 2 + y ^ 2) / √(x ^ 2 + y ^ 2 + δ ^ 2) ≤ x + y := by
     have h1 : (x ^ 2 + y ^ 2) / √(x ^ 2 + y ^ 2 + δ ^ 2) ≤ √(x ^ 2 + y ^ 2) := by
@@ -391,6 +283,8 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
       let φ₀ : 𝓓(⊤, H) := ⟨φ₀_fun,
         ((η.contDiff.mul (hg_smooth.inv fun y ↦ (hg_pos y).ne')).neg).smul hgradW_smooth,
         (η.hasCompactSupport.mul_right.neg).smul_right, subset_univ _⟩
+      have hφ₀_apply (y : H) : φ₀ y = (-(η y * (g y)⁻¹)) • gradW y := by
+        simp only [φ₀, φ₀_fun, TestFunction.coe_mk]
       let φ : 𝓓(⊤, H) := TestFunction.mollify φ₀ volume ρ (subset_univ _)
       let ψ : H → ℝ := κ ⋆[lsmul ℝ ℝ, volume] ψ₀
       let α : H → ℝ := κ ⋆[lsmul ℝ ℝ, volume] (fun y ↦ d y / g y)
@@ -404,8 +298,7 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
         exact (mul_le_mul η.le_one (hdg_mem y).2 (hdg_mem y).1 zero_le_one).trans_eq (one_mul 1)
       have hsq_α (y : H) : (d y / g y) ^ 2 + ‖φ₀ y‖ ^ 2 ≤ 1 := by
         have hnorm : ‖φ₀ y‖ = η y * ‖fderiv ℝ w y‖ / g y := by
-          change ‖(-(η y * (g y)⁻¹)) • gradW y‖ = _
-          rw [norm_smul, norm_neg,
+          rw [hφ₀_apply, norm_smul, norm_neg,
             Real.norm_of_nonneg (mul_nonneg η.nonneg (inv_nonneg.2 (hg_pos y).le)), hgradW_norm,
             div_eq_mul_inv]
           ring
@@ -425,12 +318,12 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
           nlinarith [hsq_α z, sq_nonneg (d z / g z), norm_nonneg (φ₀ z)]) y
       have hpair_D : ∫ y : H, D.indicator (fun _ ↦ (2 : ℝ)) y * ψ y =
           ∫ y : H, η y * d y ^ 2 / g y := by
-        rw [integral_mul_normed_convolution_eq_of_bdd ρ hD_ind_int hψ₀_cont.aestronglyMeasurable
+        rw [ρ.integral_mul_normed_convolution_eq_of_bdd hD_ind_int hψ₀_cont.aestronglyMeasurable
           (C := 1) fun y ↦ by rw [Real.norm_of_nonneg (hψ₀_mem y).1]; exact (hψ₀_mem y).2]
         exact integral_congr_ae (.of_forall fun y ↦ by dsimp [ψ₀]; ring)
       have hpair_A : ∫ y : H, A.indicator (fun _ ↦ (1 : ℝ)) y * α y =
           ∫ y : H, a y * (d y / g y) :=
-        integral_mul_normed_convolution_eq_of_bdd ρ hA_ind_int hdg_cont.aestronglyMeasurable
+        ρ.integral_mul_normed_convolution_eq_of_bdd hA_ind_int hdg_cont.aestronglyMeasurable
           (C := 1) fun y ↦ by rw [Real.norm_of_nonneg (hdg_mem y).1]; exact (hdg_mem y).2
       have hpair_div : ∫ y : H, divergenceCLM φ y * v y =
           ∫ y : H, η y * ‖fderiv ℝ w y‖ ^ 2 / g y := by
@@ -438,8 +331,9 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
           (divergenceCLM φ₀).hasCompactSupport
         have h1 : ∫ y : H, divergenceCLM φ y * v y =
             ∫ y : H, v y * (κ ⋆[lsmul ℝ ℝ, volume] (divergenceCLM φ₀ : H → ℝ)) y :=
-          integral_congr_ae (.of_forall fun y ↦ by dsimp only; rw [mul_comm, divergenceCLM_mollify])
-        rw [h1, integral_mul_normed_convolution_eq_of_bdd ρ hv_int
+          integral_congr_ae (.of_forall fun y ↦ by
+            dsimp only; rw [mul_comm, divergenceCLM_mollify])
+        rw [h1, ρ.integral_mul_normed_convolution_eq_of_bdd hv_int
           (divergenceCLM φ₀).continuous.aestronglyMeasurable hC,
           integral_congr_ae (.of_forall fun y ↦ by rw [mul_comm, ← smul_eq_mul]),
           ((hw_smooth.of_le (by simp)).contDiffOn.hasWeakFDerivOn_fderiv
@@ -447,9 +341,10 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
           ← integral_neg]
         refine integral_congr_ae (.of_forall fun y ↦ ?_)
         dsimp only
-        rw [(InnerProductSpace.toDual_symm_apply (y := fderiv ℝ w y) (x := φ₀ y)).symm]
-        change -⟪gradW y, (-(η y * (g y)⁻¹)) • gradW y⟫_ℝ = _
-        rw [inner_smul_right, real_inner_self_eq_norm_sq, hgradW_norm, div_eq_mul_inv]
+        rw [(InnerProductSpace.toDual_symm_apply (y := fderiv ℝ w y) (x := φ₀ y)).symm, hφ₀_apply]
+        dsimp only [gradW]
+        rw [inner_smul_right, real_inner_self_eq_norm_sq, LinearIsometryEquiv.norm_map,
+          div_eq_mul_inv]
         ring
       have hterm_le {S : Set H} (hS : NullMeasurableSet S volume) {c : ℝ} (hc : 0 ≤ c)
           (hS_int : Integrable (S.indicator (fun _ ↦ c)) volume) {h₀ : H → ℝ} (hh₀ : Continuous h₀)
@@ -470,7 +365,7 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
         · rw [indicator_of_mem hy, indicator_of_mem hy, ENNReal.ofReal_mul hc,
             TestFunction.mollify_apply]
           exact mul_le_mul_right (ENNReal.ofReal_le_ofReal
-            (normed_convolution_le_sqrt_one_sub_sq ρ hh₀ φ₀.continuous hsq y)) _
+            (ρ.normed_convolution_le_sqrt_one_sub_sq hh₀ φ₀.continuous hsq y)) _
         · simp [hy]
       have htermD : ENNReal.ofReal (∫ y : H, D.indicator (fun _ ↦ (2 : ℝ)) y * ψ y) ≤
           2 * ∫⁻ y in D, ENNReal.ofReal √(1 - ‖φ y‖ ^ 2) := by
@@ -529,7 +424,7 @@ theorem mul_integral_sqrt_normed_convolution_add_two_mul_sq_le
         have hball : y ∈ closedBall (0 : H) (ηseq m).rIn := by
           rw [mem_closedBall_zero_iff]
           have h1 : ‖y‖ ≤ (m : ℝ) := (Nat.le_ceil ‖y‖).trans (Nat.cast_le.2 hm)
-          change ‖y‖ ≤ (m : ℝ) + 1; linarith
+          dsimp only [ηseq]; linarith
         rw [(ηseq m).one_of_mem_closedBall hball, one_mul]
     have hfull : (∫ y : H, (d y ^ 2 + ‖fderiv ℝ w y‖ ^ 2) / g y) +
         2 * (∫ y : H, a y * (d y / g y)) ≤ (perimeter volume ⊤ s).toReal :=
@@ -617,4 +512,4 @@ end
 
 end MollifiedExcess
 
-end TauCeti
+end MeasureTheory.NullMeasurableSet

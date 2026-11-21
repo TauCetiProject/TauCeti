@@ -42,6 +42,10 @@ use an additive Haar measure, against which the normalized bumps have integral o
 * `ContDiffBump.totalVariationOn_normed_convolution_le`: mollification by a normalized bump of outer
   radius `r` does not increase variation from `Ω` to any open set whose closed `r`-neighbourhood
   lies in `Ω`.
+* `ContDiffBump.integrable_norm_fderiv_normed_convolution` and
+  `ContDiffBump.integral_norm_fderiv_normed_convolution_le`: for a locally integrable function of
+  finite whole-space variation, the derivative norm of a mollification is integrable with integral
+  at most `(totalVariationOn μ ⊤ u).toReal`.
 * `TauCeti.exists_mollifier_seq_of_isCompact_closure`: local smooth approximation with an
   eventual variation bound on an open set whose closure is a compact subset of the domain.
 * `TauCeti.tendsto_totalVariationOn_normed_convolution`: on the whole space, the variations of
@@ -119,6 +123,51 @@ theorem _root_.ContDiffBump.totalVariationOn_normed_convolution_le (φ : ContDif
       rw [φ.tsupport_normed_eq, mem_closedBall_zero_iff] at ht
       simpa [dist_eq_norm] using ht
 
+/-- For a locally integrable function `u`, the `L¹` norm of the gradient of a normalized-bump
+mollification `φ ⋆ u` equals the total variation of that mollification on the whole space. -/
+theorem _root_.ContDiffBump.lintegral_enorm_fderiv_normed_convolution_eq
+    (φ : ContDiffBump (0 : E)) (hu : LocallyIntegrable u μ) :
+    ∫⁻ x, ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ =
+      totalVariationOn μ ⊤ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) := by
+  have hsmooth : ContDiff ℝ 1 (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) :=
+    φ.hasCompactSupport_normed.contDiff_convolution_left _ (φ.contDiff_normed (n := 1)) hu
+  rw [hsmooth.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
+    Opens.coe_top, Measure.restrict_univ]
+
+/-- If `u` is locally integrable with finite total variation on the whole space, then the norm
+of the derivative of any normalized-bump mollification `φ ⋆ u` is integrable. -/
+theorem _root_.ContDiffBump.integrable_norm_fderiv_normed_convolution
+    (φ : ContDiffBump (0 : E)) (hu : LocallyIntegrable u μ)
+    (hfin : totalVariationOn μ ⊤ u ≠ ∞) :
+    Integrable (fun x ↦ ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖) μ := by
+  have hsmooth : ContDiff ℝ 1 (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) :=
+    φ.hasCompactSupport_normed.contDiff_convolution_left _ (φ.contDiff_normed (n := 1)) hu
+  refine ⟨(hsmooth.continuous_fderiv one_ne_zero).norm.aestronglyMeasurable, ?_⟩
+  rw [HasFiniteIntegral,
+    show (fun x ↦ ‖‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖‖ₑ) =
+        fun x ↦ ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ from
+      funext fun _ ↦ eNorm_norm _,
+    φ.lintegral_enorm_fderiv_normed_convolution_eq hu]
+  exact (φ.totalVariationOn_normed_convolution_le (hu.locallyIntegrableOn _)
+    fun _ _ ↦ subset_univ _).trans_lt hfin.lt_top
+
+/-- For a locally integrable function `u` of finite total variation on the whole space, the
+integral of the derivative norm of a normalized-bump mollification `φ ⋆ u` is at most
+`(totalVariationOn μ ⊤ u).toReal`. -/
+theorem _root_.ContDiffBump.integral_norm_fderiv_normed_convolution_le
+    (φ : ContDiffBump (0 : E)) (hu : LocallyIntegrable u μ)
+    (hfin : totalVariationOn μ ⊤ u ≠ ∞) :
+    ∫ x, ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ ∂μ ≤ (totalVariationOn μ ⊤ u).toReal := by
+  have h1 : ENNReal.ofReal (∫ x, ‖fderiv ℝ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ ∂μ) =
+      totalVariationOn μ ⊤ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] u) := by
+    rw [ofReal_integral_eq_lintegral_ofReal (φ.integrable_norm_fderiv_normed_convolution hu hfin)
+        (.of_forall fun _ ↦ opNorm_nonneg _),
+      ← φ.lintegral_enorm_fderiv_normed_convolution_eq hu]
+    exact lintegral_congr fun _ ↦ ofReal_norm _
+  exact (ENNReal.ofReal_le_iff_le_toReal hfin).1 <| h1.symm ▸
+    φ.totalVariationOn_normed_convolution_le (hu.locallyIntegrableOn _)
+      fun _ _ ↦ subset_univ _
+
 /-- On an open set with compact closure inside `Ω`, a locally integrable function admits
 `C¹` approximations converging in `L¹` on each compact subset of that closure, with variation
 eventually bounded by its variation on `Ω`. The construction localizes the function to a compact
@@ -189,12 +238,8 @@ theorem tendsto_lintegral_enorm_fderiv_normed_convolution {ι : Type*} {l : Filt
     {φ : ι → ContDiffBump (0 : E)} (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0))
     (hu : LocallyIntegrable u μ) :
     Tendsto (fun i => ∫⁻ x, ‖fderiv ℝ ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] u) x‖ₑ ∂μ) l
-      (𝓝 (totalVariationOn μ ⊤ u)) := by
-  refine (tendsto_totalVariationOn_normed_convolution hφ hu).congr fun i => ?_
-  have hsmooth : ContDiff ℝ 1 ((φ i).normed μ ⋆[lsmul ℝ ℝ, μ] u) :=
-    (φ i).hasCompactSupport_normed.contDiff_convolution_left _
-      ((φ i).contDiff_normed (n := 1)) hu
-  rw [hsmooth.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
-    Opens.coe_top, Measure.restrict_univ]
+      (𝓝 (totalVariationOn μ ⊤ u)) :=
+  (tendsto_totalVariationOn_normed_convolution hφ hu).congr fun i =>
+    ((φ i).lintegral_enorm_fderiv_normed_convolution_eq hu).symm
 
 end TauCeti

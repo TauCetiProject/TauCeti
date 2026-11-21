@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
@@ -98,6 +99,45 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
   rw [coe_mollify]
   exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
+
+/-- Divergence commutes with mollification of test vector fields. -/
+theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E)) (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
+    (x : E) :
+    divergenceCLM (mollify φ μ ρ h) x =
+      (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (divergenceCLM φ : E → ℝ)) x := by
+  let b := Module.finBasis ℝ E
+  have hφ_diff : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
+  have hκ_loc : LocallyIntegrable (ρ.normed μ) μ := ρ.continuous_normed.locallyIntegrable
+  have hcont (i) : Continuous (fun y : E ↦ fderiv ℝ (φ : E → E) y (b i)) :=
+    (hφ_diff.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hstep (i) :
+      b.repr (fderiv ℝ (mollify φ μ ρ h : E → E) x (b i)) i =
+        (ρ.normed μ ⋆[lsmul ℝ ℝ, μ]
+          fun y ↦ b.repr (fderiv ℝ (φ : E → E) y (b i)) i) x := by
+    rw [coe_mollify,
+      φ.hasCompactSupport.fderiv_convolution_right_apply (lsmul ℝ ℝ) hκ_loc hφ_diff x (b i)]
+    have hex := ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ)
+      hκ_loc (hcont i) x
+    have hcoord := ((b.coord i).toContinuousLinearMap.convolution_lsmul_comp_comm hex).symm
+    simpa only [LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply] using hcoord
+  have hterm (i) : Integrable (fun t : E ↦
+      ρ.normed μ t * b.repr (fderiv ℝ (φ : E → E) (x - t) (b i)) i) μ := by
+    simpa only [lsmul_apply, smul_eq_mul, Function.comp_apply,
+      LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply] using
+      (ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ) hκ_loc
+        ((b.coord i).toContinuousLinearMap.continuous.comp (hcont i)) x).integrable
+  have htrace (ψ : 𝓓(Ω, E)) (y : E) :
+      divergenceCLM ψ y = ∑ i, b.repr (fderiv ℝ (ψ : E → E) y (b i)) i := by
+    rw [divergenceCLM_apply, LinearMap.trace_eq_matrix_trace ℝ b, Matrix.trace]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [LinearMap.toMatrix_apply]
+  rw [htrace (mollify φ μ ρ h) x]
+  simp_rw [hstep, convolution_def, lsmul_apply, smul_eq_mul]
+  rw [← integral_finsetSum _ fun i _ ↦ hterm i]
+  refine integral_congr_ae (.of_forall fun _ ↦ ?_)
+  dsimp only
+  rw [← Finset.mul_sum, ← htrace φ _]
 
 variable [CompleteSpace F]
 

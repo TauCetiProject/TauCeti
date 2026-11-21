@@ -56,9 +56,9 @@ perimeter (`TauCeti.perimeter_steinerSymmetrization_le`). Applying the sharp iso
 inequality (`NullMeasurableSet.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow`)
 to `S_e s` squeezes `P(S_e s)^n = P(s)^n`, hence `P(S_e s) = P(s)`. By equality in Steiner's
 perimeter inequality
-(`TauCeti.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq`), almost every
-line section of `s` along `e` agrees a.e. with an interval. Since this holds in every unit
-direction, the interval-section rigidity theorem
+(`NullMeasurableSet.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq`),
+almost every line section of `s` along `e` agrees a.e. with an interval. Since this holds in every
+unit direction, the interval-section rigidity theorem
 (`NullMeasurableSet.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected`)
 yields an open ball of positive radius agreeing a.e. with `s`.
 
@@ -161,7 +161,7 @@ theorem perimeter_pow_eq_iff_exists_ae_eq_ball
           simpa only [hSvol] using
             hSm.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
               (hSvol.symm ▸ hμs) (hSvol.symm ▸ hs0)
-      exact ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq hs hμs hP e he
+      exact hs.ae_exists_ordConnected_lineSection_of_perimeter_steinerSymmetrization_eq hμs hP e he
         ((ENNReal.pow_right_strictMono hn).injective hSpow)
     exact (hs.perimeter_pow_eq_iff_exists_ae_eq_ball_of_ae_lineSection_ordConnected
       hn (pos_iff_ne_zero.2 hs0) hμs hsections).1 heq

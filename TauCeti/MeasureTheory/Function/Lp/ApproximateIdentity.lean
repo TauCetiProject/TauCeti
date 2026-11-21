@@ -9,9 +9,13 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Average
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -70,6 +74,10 @@ the set where convergence is measured.
   from `Lᵖ` integrability on a positive thickening.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
+* `TauCeti.tendsto_integral_abs_normed_convolution_sub`: real-valued `L¹` convergence of
+  mollifications.
+* `TauCeti.tendsto_integral_mul_sqrt_normed_convolution`: convergence of
+  `∫ (φ i ⋆ 1_A) √(φ i ⋆ (2 · 1_D))` to `√2 * mu.real A` when `A ⊆ᵐ D`.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
 * `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
@@ -319,6 +327,112 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
     ((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf
   simp_rw [eLpNorm_one_eq_lintegral_eNorm (hi _).aestronglyMeasurable] at h
   exact h
+
+/-- **Mollification converges in real `L¹`.** For an integrable function `f : E → ℝ` and
+normalized smooth bumps `phi i` centred at zero whose outer radii tend to zero,
+`∫ |phi i ⋆ f - f| → 0`. -/
+theorem tendsto_integral_abs_normed_convolution_sub {I : Type*} {l : Filter I}
+    {phi : I → ContDiffBump (0 : E)} (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0))
+    {f : E → ℝ} (hf : Integrable f mu) :
+    Tendsto (fun i ↦ ∫ x, |((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x| ∂mu) l (nhds 0) := by
+  have h1 := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (tendsto_lintegral_enorm_normed_convolution_sub hphi hf)
+  rw [ENNReal.toReal_zero] at h1
+  refine h1.congr fun i ↦ ?_
+  have hdiff : Integrable (fun x : E ↦
+      |((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x|) mu :=
+    (((phi i).integrable_normed.integrable_convolution (lsmul ℝ ℝ) hf).sub hf).abs
+  have hof := ofReal_integral_eq_lintegral_ofReal hdiff (.of_forall fun _ ↦ abs_nonneg _)
+  simp_rw [← Real.eNorm_eq_ofReal_abs] at hof
+  rw [Function.comp_apply, ← hof, ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ abs_nonneg _)]
+
+/-- For shrinking normalized bumps `phi i` and finite-measure null-measurable sets `A, D` with
+`A ⊆ᵐ D`, the mollifications `a i = phi i ⋆ 1_A` and `d i = phi i ⋆ (2 · 1_D)` satisfy
+`∫ a i √(d i) → √2 * mu.real A`. -/
+theorem tendsto_integral_mul_sqrt_normed_convolution {I : Type*} {l : Filter I}
+    {phi : I → ContDiffBump (0 : E)} (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0))
+    {A D : Set E} (hA : NullMeasurableSet A mu) (hD : NullMeasurableSet D mu)
+    (hAfin : mu A ≠ ∞) (hDfin : mu D ≠ ∞) (hAD : ∀ᵐ x ∂mu, x ∈ A → x ∈ D) :
+    Tendsto (fun i ↦ ∫ x,
+        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] A.indicator (fun _ ↦ (1 : ℝ))) x *
+          √(((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] D.indicator (fun _ ↦ (2 : ℝ))) x) ∂mu)
+      l (nhds (√2 * mu.real A)) := by
+  let fA : E → ℝ := A.indicator (fun _ ↦ 1)
+  let fD : E → ℝ := D.indicator (fun _ ↦ 2)
+  let a : I → E → ℝ := fun i ↦ (phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fA
+  let d : I → E → ℝ := fun i ↦ (phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fD
+  have hA_int : Integrable fA mu := (integrableOn_const hAfin).integrable_indicator₀ hA
+  have hD_int : Integrable fD mu := (integrableOn_const hDfin).integrable_indicator₀ hD
+  have ha_int (i) : Integrable (a i) mu :=
+    (phi i).integrable_normed.integrable_convolution _ hA_int
+  have hd_int (i) : Integrable (d i) mu :=
+    (phi i).integrable_normed.integrable_convolution _ hD_int
+  have hd_mem (i : I) (x : E) : d i x ∈ Icc (0 : ℝ) 2 :=
+    (phi i).normed_convolution_mem_Icc hD_int.locallyIntegrable
+      (fun z ↦ by by_cases hz : z ∈ D <;> simp [fD, hz]) x
+  have htarget : ∫ x, fA x * √(fD x) ∂mu = √2 * mu.real A := by
+    rw [integral_congr_ae (hAD.mono fun x hx ↦ by by_cases hxA : x ∈ A <;> simp [fA, fD, hxA, hx] :
+        (fun x : E ↦ fA x * √(fD x)) =ᵐ[mu] A.indicator (fun _ ↦ √2)),
+      integral_indicator₀ hA, setIntegral_const, smul_eq_mul, mul_comm]
+  have hbound : Tendsto (fun i ↦ √2 * (∫ x, |a i x - fA x| ∂mu) +
+      √(mu.real A * ∫ x, |d i x - fD x| ∂mu)) l (nhds 0) := by
+    have h1 := (tendsto_integral_abs_normed_convolution_sub hphi hA_int).const_mul √2
+    have h2 := (Real.continuous_sqrt.tendsto 0).comp
+      (by simpa only [mul_zero] using
+        (tendsto_integral_abs_normed_convolution_sub hphi hD_int).const_mul (mu.real A))
+    simpa only [Function.comp_def, mul_zero, Real.sqrt_zero, add_zero] using h1.add h2
+  have hM1 : MemLp fA 2 mu := by
+    rw [memLp_two_iff_integrable_sq hA_int.aestronglyMeasurable]
+    exact hA_int.congr (.of_forall fun x ↦ by by_cases hx : x ∈ A <;> simp [fA, hx])
+  have hint2 : Integrable (fun x ↦ fA x * √(fD x)) mu :=
+    hA_int.mul_bdd (c := √2)
+      (Real.continuous_sqrt.comp_aestronglyMeasurable hD_int.aestronglyMeasurable)
+      (.of_forall fun x ↦ by
+        rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+        exact Real.sqrt_le_sqrt (by by_cases hx : x ∈ D <;> simp [fD, hx]))
+  rw [← htarget, Metric.tendsto_nhds]
+  intro r hr
+  filter_upwards [hbound.eventually (gt_mem_nhds hr)] with i hi
+  rw [Real.dist_eq]
+  have hint1 : Integrable (fun x ↦ a i x * √(d i x)) mu :=
+    (ha_int i).mul_bdd (c := √2)
+      (Real.continuous_sqrt.comp_aestronglyMeasurable (hd_int i).aestronglyMeasurable)
+      (.of_forall fun x ↦ by
+        rw [Real.norm_of_nonneg (Real.sqrt_nonneg _)]; exact Real.sqrt_le_sqrt (hd_mem i x).2)
+  have hM2 : MemLp (fun x ↦ √|d i x - fD x|) 2 mu :=
+    (memLp_two_iff_integrable_sq
+      (Real.continuous_sqrt.comp_aestronglyMeasurable
+        ((hd_int i).sub hD_int).abs.aestronglyMeasurable)).2
+      (((hd_int i).sub hD_int).abs.congr (.of_forall fun _ ↦ (Real.sq_sqrt (abs_nonneg _)).symm))
+  have hcs_sqrt : ∫ x, fA x * √|d i x - fD x| ∂mu ≤
+      √(mu.real A * ∫ x, |d i x - fD x| ∂mu) := by
+    have hcs := sq_integral_mul_le_integral_sq_mul_integral_sq hM1 hM2
+    rw [show ∫ x, fA x ^ 2 ∂mu = mu.real A by
+        rw [show (fun x : E ↦ fA x ^ 2) = fA from funext fun x ↦ by by_cases hx : x ∈ A <;>
+            simp [fA, hx], integral_indicator₀ hA, setIntegral_const, smul_eq_mul, mul_one],
+      show ∫ x, √|d i x - fD x| ^ 2 ∂mu = ∫ x, |d i x - fD x| ∂mu from
+        integral_congr_ae (.of_forall fun _ ↦ Real.sq_sqrt (abs_nonneg _))] at hcs
+    exact Real.le_sqrt_of_sq_le hcs
+  have hterm1 : Integrable (fun x ↦ √2 * |a i x - fA x|) mu :=
+    ((ha_int i).sub hA_int).abs.const_mul √2
+  have hterm2 : Integrable (fun x ↦ fA x * √|d i x - fD x|) mu := hM1.integrable_mul hM2
+  refine lt_of_le_of_lt ?_ hi
+  rw [← integral_sub hint1 hint2]
+  calc |∫ x, (a i x * √(d i x) - fA x * √(fD x)) ∂mu|
+      ≤ ∫ x, |a i x * √(d i x) - fA x * √(fD x)| ∂mu := abs_integral_le_integral_abs
+    _ ≤ ∫ x, (√2 * |a i x - fA x| + fA x * √|d i x - fD x|) ∂mu :=
+        integral_mono (hint1.sub hint2).abs (hterm1.add hterm2) fun x ↦ by
+          rw [show a i x * √(d i x) - fA x * √(fD x) =
+              (a i x - fA x) * √(d i x) + fA x * (√(d i x) - √(fD x)) by ring]
+          refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
+          · rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _), mul_comm]
+            exact mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt (hd_mem i x).2) (abs_nonneg _)
+          · have hA0 : 0 ≤ fA x := by by_cases hx : x ∈ A <;> simp [fA, hx]
+            rw [abs_mul, abs_of_nonneg hA0]
+            exact mul_le_mul_of_nonneg_left (Real.abs_sqrt_sub_sqrt_le _ _) hA0
+    _ = √2 * (∫ x, |a i x - fA x| ∂mu) + ∫ x, fA x * √|d i x - fD x| ∂mu := by
+        rw [integral_add hterm1 hterm2, integral_const_mul]
+    _ ≤ _ := add_le_add le_rfl hcs_sqrt
 
 /-- Mollifications converge in `Lᵖ(s)`, for `1 ≤ p < ∞`, if the function belongs to `Lᵖ`
 on a fixed positive thickening of `s`. Neither compactness of `s` nor global local
