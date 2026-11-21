@@ -42,14 +42,14 @@ regularity theory for weak solutions of the adjoint equation.
   (`TauCeti.CylinderSobolev.isCompactOperator_restrictValue_comp_subtypeL`), the remainder is small
   in operator norm, and compact operators form a closed set.
 * **The parametrix.** Choose smooth cutoffs `γneg + γpos = 1` in `s`, with `γneg` vanishing for
-  `s ≥ 1` and `γpos` for `s ≤ 0`, and cutoffs `βneg`, `βpos` equal to one on their supports. For
-  `Q = βneg Dneg⁻¹ γneg + βpos Dpos⁻¹ γpos`, the remainders `D Q - 1` and `Q D - 1` are sums of
-  zeroth-order operators composed with bounded ones. Each zeroth-order operator is the error of
-  commuting `D` with a cutoff `β`: since `D` and a model `D'` with coefficient field `M'` have
-  equal principal parts, `D (β ξ) = β D' ξ + β (M - M') (ξ, 0, 0) + β' M' (0, ξ, 0)`. Its
-  coefficient tends to zero as `|s| → ∞`, because `M - Mneg` does at `-∞`, `M - Mpos` does at
-  `+∞`, `β'` vanishes far out, and each cutoff vanishes at the end opposite to its model. So both
-  remainders are compact.
+  `s ≥ 1` and `γpos` for `s ≤ 0`, and cutoffs `βneg`, `βpos` equal to one on the supports of
+  `γneg`, `γpos`. For `Q = βneg Dneg⁻¹ γneg + βpos Dpos⁻¹ γpos`, the remainders `D Q - 1` and
+  `Q D - 1` are sums of zeroth-order operators composed with bounded ones. Each zeroth-order
+  operator is the error of commuting `D` with a cutoff `β`: since `D` and a model `D'` with
+  coefficient field `M'` have equal principal parts,
+  `D (β ξ) = β D' ξ + β (M - M') (ξ, 0, 0) + β' M' (0, ξ, 0)`. Its coefficient tends to zero as
+  `|s| → ∞`, because `M - Mneg` does at `-∞`, `M - Mpos` does at `+∞`, `β'` vanishes far out, and
+  each cutoff vanishes at the end opposite to its model. So both remainders are compact.
 
 ## Main results
 
@@ -223,7 +223,8 @@ private theorem exists_isCompactOperator_norm_jetOperator_comp_subtypeL_sub_le
 /-- **Zeroth-order operators with coefficients vanishing at infinity are compact on `W^{1,2}`.**
 If the coefficient field `G` acts on values only, `G z (0, a, b) = 0`, and tends to zero as
 `|s| → ∞`, in the sense that for every `ε > 0` there is `R` with `‖G z‖ ≤ ε` for `|s| > R`, then
-`x ↦ G x` is a compact operator from `H1 V` to `L²`. -/
+the operator `ξ ↦ (z ↦ G z (ξ z))`, that is `(jetOperator G).comp (H1 V).subtypeL`, is compact
+from `H1 V` to `L²`. -/
 theorem isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero [FiniteDimensional ℝ V]
     [CompleteSpace W]
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
