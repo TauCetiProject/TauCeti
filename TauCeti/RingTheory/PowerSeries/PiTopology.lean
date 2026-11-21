@@ -7,14 +7,15 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
 # Power series in the coefficientwise topology
 
 Mathlib's `PowerSeries.WithPiTopology` equips `S⟦X⟧` with the topology of coefficientwise
-convergence (activated via `open scoped PowerSeries.WithPiTopology`). This file provides two
-tools needed to work with `S⟦X⟧` as a topological module and topological ring in that topology:
+convergence (activated via `open scoped PowerSeries.WithPiTopology`). This file provides tools
+for working with `S⟦X⟧` as a topological module and topological ring in that topology:
 
 * `PowerSeries.WithPiTopology.continuousLinearEquivPi`: for any scalar semiring `R` acting linearly
   on `S`, `PowerSeries.coeff` and `PowerSeries.mk` identify `S⟦X⟧` with `ℕ → S` as a topological
@@ -23,6 +24,8 @@ tools needed to work with `S⟦X⟧` as a topological module and topological rin
 * `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: if all but finitely many factors agree
   with `1` modulo each power `X ^ (n + 1)`, their infinite product converges coefficientwise and
   each degree-`n` coefficient is computed from the corresponding finite cutoff.
+* `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
+  coefficientwise topology on `R⟦X⟧` coincides with the `(X)`-adic topology.
 -/
 
 public section
@@ -31,7 +34,7 @@ open Finset
 
 namespace PowerSeries.WithPiTopology
 
-open scoped PowerSeries.WithPiTopology
+open scoped PowerSeries.WithPiTopology Topology
 
 section Semiring
 
@@ -78,6 +81,34 @@ theorem hasProd_of_X_pow_dvd_sub_one {g : ι → R⟦X⟧} (F : ℕ → Finset �
   refine fun n ↦ tendsto_atTop_of_eventually_const (i₀ := F n) fun s hs ↦ ?_
   rw [coeff_mk]
   exact coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one hs fun i hi ↦ hF n i (mem_sdiff.1 hi).2
+
+/-- **The coefficientwise topology over a discrete ring is `(X)`-adic.** -/
+theorem isAdic_span_X [DiscreteTopology R] :
+    IsAdic (Ideal.span {(X : R⟦X⟧)}) := by
+  rw [isAdic_iff]
+  refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
+  · have hset : ((Ideal.span {(X : R⟦X⟧)} ^ n : Ideal R⟦X⟧) : Set R⟦X⟧) =
+        ⋂ d ∈ Finset.range n, (coeff (R := R) d) ⁻¹' {0} := by
+      ext f
+      simp only [SetLike.mem_coe, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
+        X_pow_dvd_iff, Set.mem_iInter, Finset.mem_range, Set.mem_preimage, Set.mem_singleton_iff]
+    rw [hset]
+    exact isOpen_biInter_finset fun d _ ↦
+      (isOpen_discrete _).preimage (continuous_coeff R d)
+  · let f : ℕ → Set R⟦X⟧ := fun n ↦ ((Ideal.span {(X : R⟦X⟧)} ^ n : Ideal R⟦X⟧) : Set R⟦X⟧)
+    have hf_anti : Antitone f := fun _ _ h ↦ Ideal.pow_le_pow_right h
+    have hle : (⨅ n, Filter.principal (f n)) ≤ 𝓝 (0 : R⟦X⟧) := by
+      rw [← Filter.tendsto_id', tendsto_iff_coeff_tendsto]
+      intro d
+      rw [map_zero, nhds_discrete, Filter.tendsto_pure]
+      refine Filter.mem_iInf_of_mem (d + 1) (Filter.mem_principal.mpr fun g hg ↦ ?_)
+      rw [SetLike.mem_coe, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
+        X_pow_dvd_iff] at hg
+      exact hg d (Nat.lt_succ_self d)
+    have hdir : Directed (· ≥ ·) (fun n ↦ Filter.principal (f n)) := fun i j ↦
+      ⟨max i j, Filter.principal_mono.mpr (hf_anti (le_max_left _ _)),
+        Filter.principal_mono.mpr (hf_anti (le_max_right _ _))⟩
+    simpa only [Filter.mem_principal] using (Filter.mem_iInf_of_directed hdir s).mp (hle hs)
 
 end CommRing
 

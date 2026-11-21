@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
 import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # The principal symbol of a differential operator on smooth functions
@@ -64,16 +65,23 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 * `TauCeti.mk_algebraMap_smoothCommutatorSymbol`: comparison with the cotangent symbol of the
   vanishing ideal.
 * `TauCeti.smoothPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of degree `m`.
+* `TauCeti.smoothPrincipalSymbol_eq_apply_one`: an operator `D` of order zero has principal symbol
+  `(D 1)(x)`.
 * `TauCeti.smoothPrincipalSymbol_comp`: principal symbols multiply under composition.
 * `TauCeti.smoothPrincipalSymbol_derivation_mvfderiv`: a derivation `δ` has principal symbol
   `df_x ↦ (δ f)(x)`.
 * `TauCeti.smoothPrincipalSymbol_vectorFieldDerivation`, `TauCeti.smoothPrincipalSymbol_derivation`:
   differentiation along a vector field `X` has principal symbol `ξ ↦ ξ(X_x)`.
+* `TauCeti.smoothPrincipalSymbol_lineDerivation`: on a finite-dimensional space `E`, the
+  directional derivative `∂_w` has principal symbol `ξ ↦ ξ(w)`.
 * `TauCeti.smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
   `TauCeti.smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order at
   most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal symbols.
 * `TauCeti.forall_smoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
   order at most `m + 1` has vanishing commutator symbol at every point exactly when it has order at
+  most `m`.
+* `TauCeti.forall_smoothPrincipalSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
+  order at most `m + 1` has vanishing principal symbol at every point exactly when it has order at
   most `m`.
 * `TauCeti.smoothCommutatorSymbol_conjDifferentialOperators`,
   `TauCeti.smoothPrincipalSymbol_conjDifferentialOperators`: naturality under diffeomorphisms.
@@ -294,6 +302,34 @@ theorem smoothPrincipalSymbol_smul (hx : I.IsInteriorPoint x) {m : ℕ} (c : ℝ
   simp only [smoothPrincipalSymbol_def, map_smul, smul_apply, smul_eq_mul]
   ring
 
+/-- The principal symbol is additive over finite sums of operators. -/
+@[simp]
+theorem smoothPrincipalSymbol_sum (hx : I.IsInteriorPoint x) {m : ℕ} {κ : Type*}
+    (s : Finset κ) (D : κ → differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx (∑ j ∈ s, D j) ξ = ∑ j ∈ s, smoothPrincipalSymbol I hx (D j) ξ := by
+  simp [smoothPrincipalSymbol_def, Finset.mul_sum]
+
+/-- The principal symbol only depends on the underlying operator and on the order `m` through
+its value: the same operator, as an element of `differentialOperators` at equal orders, has the
+same principal symbol. -/
+theorem smoothPrincipalSymbol_congr (hx : I.IsInteriorPoint x) {m m' : ℕ} (h : m = m')
+    {D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
+    {D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m'}
+    (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) = D') (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D ξ = smoothPrincipalSymbol I hx D' ξ := by
+  subst h
+  rw [Subtype.ext hD]
+
+/-- An operator `D` of order zero is multiplication by `D 1`, and its principal symbol at `x` is
+the constant `(D 1)(x)`. -/
+theorem smoothPrincipalSymbol_eq_apply_one (hx : I.IsInteriorPoint x)
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 0)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D ξ = (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) 1 x := by
+  obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
+  simp [smoothPrincipalSymbol_mvfderiv]
+
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
 theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
     (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) (c : ℝ)
@@ -315,6 +351,24 @@ theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInt
     smoothPrincipalSymbol I hx D ξ = 0 := by
   simp [smoothPrincipalSymbol_def,
     smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators hx D hD]
+
+/-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing principal symbol
+at every point if and only if it has order at most `m`. -/
+theorem forall_smoothPrincipalSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1)) :
+    (∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ),
+      smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D ξ = 0) ↔
+      (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
+  refine ⟨fun h ↦ (forall_smoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦ ?_,
+    fun hD x ↦ smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD⟩
+  -- The commutator symbol is symmetric and vanishes on the diagonal, so it vanishes by
+  -- polarization.
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero
+    (smoothCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint D) fun ξ ↦ ?_
+  have hξ := h x ξ
+  rw [smoothPrincipalSymbol_def, mul_eq_zero, inv_eq_zero] at hξ
+  exact hξ.resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
@@ -416,5 +470,13 @@ theorem smoothPrincipalSymbol_derivation [BoundarylessManifold I M]
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ :=
     ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
   rw [smoothPrincipalSymbol_derivation_mvfderiv, Derivation.mvfderiv_vectorField]
+
+/-- The directional derivative `∂_w` along a vector `w` has principal symbol `ξ ↦ ξ(w)`. -/
+theorem smoothPrincipalSymbol_lineDerivation (w x : E) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+      ⟨lineDerivation ℝ w, (lineDerivation ℝ w).mem_differentialOperators_one⟩ ξ = ξ w := by
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  rw [smoothPrincipalSymbol_derivation_mvfderiv, lineDerivation_apply_apply]
+  exact (mvfderiv_eq_fderiv_apply f x w).symm
 
 end TauCeti

@@ -148,7 +148,7 @@ def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     FiberHomotopyEquiv p (endpoint p) where
   toFun := incl p
   invFun := homotopyInverse hp
-  comp_toFun := ContinuousMap.ext fun e ↦ by simp
+  comp_toFun := endpoint_comp_incl p
   comp_invFun := ContinuousMap.ext fun x ↦ by simp
   left_inv := ⟨(leftHomotopy hp).symm⟩
   right_inv := ⟨(rightHomotopy hp).symm⟩
@@ -167,26 +167,23 @@ theorem fiberHomotopyEquiv_invFun {p : C(E, B)} (hp : IsHurewiczFibration.{max u
 Moore-path replacement, by `f ↦ (f, const)`. -/
 def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B) :
     HomotopyEquiv {e // p e = b} (Fiber p b) :=
-  ((fiberHomotopyEquiv hp).fiber b).trans
-    ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
-      rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
+  ((fiberHomotopyEquiv hp).fiber b).trans (Fiber.homeomorphEndpointFiber p b).symm.toHomotopyEquiv
 
 @[simp]
 theorem val_fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (b : B) (f : {e // p e = b}) : (fiberHomotopyEquivFiber hp b f).val = incl p f := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_apply _ b f).trans (by rw [fiberHomotopyEquiv_toFun])
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv,
+    Fiber.val_homeomorphEndpointFiber_symm_apply, FiberHomotopyEquiv.coe_fiber_apply,
+    fiberHomotopyEquiv_toFun]
 
 @[simp]
 theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
     (hp : IsHurewiczFibration.{max u v} p) (b : B) (x : Fiber p b) :
     ((fiberHomotopyEquivFiber hp b).symm x : E) = homotopyInverse hp x.val := by
-  rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
-  erw [HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply, ← Homeomorph.symm_toHomotopyEquiv,
-    Homeomorph.coe_toHomotopyEquiv]
-  exact (FiberHomotopyEquiv.coe_fiber_symm_apply _ b _).trans
-    (by rw [fiberHomotopyEquiv_invFun]; rfl)
+  rw [fiberHomotopyEquivFiber, HomotopyEquiv.symm_trans, HomotopyEquiv.trans_apply,
+    ← Homeomorph.symm_toHomotopyEquiv, Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv,
+    FiberHomotopyEquiv.coe_fiber_symm_apply, fiberHomotopyEquiv_invFun,
+    Fiber.coe_homeomorphEndpointFiber_apply]
 
 /-! ### The endpoint evaluation -/
 

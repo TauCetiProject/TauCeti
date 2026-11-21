@@ -163,6 +163,15 @@ theorem nextCollisionEquiv_apply (x : ℝ × Ioo (-1 : ℝ) 1) :
       (χ.nextParam x.1 x.2, ⟨χ.nextTangential x.1 x.2, χ.nextTangential_mem_Ioo x.2.property⟩) := by
   rfl
 
+/-- The next-collision map is injective on the strip `ℝ × (-1, 1)`. -/
+theorem injOn_nextCollision : InjOn χ.nextCollision (univ ×ˢ Ioo (-1 : ℝ) 1) := by
+  rintro ⟨s, v⟩ ⟨-, hv⟩ ⟨s', v'⟩ ⟨-, hv'⟩ h
+  simp only [nextCollision_apply, Prod.mk.injEq] at h
+  have := χ.nextCollisionEquiv.injective (a₁ := (s, ⟨v, hv⟩)) (a₂ := (s', ⟨v', hv'⟩)) (by
+    simp only [nextCollisionEquiv_apply]
+    exact Prod.ext h.1 (Subtype.ext h.2))
+  simpa using this
+
 /-- The inverse of the next-collision map `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` and
 `τ(s, v) = (s + L, v)`. -/
 @[simp]

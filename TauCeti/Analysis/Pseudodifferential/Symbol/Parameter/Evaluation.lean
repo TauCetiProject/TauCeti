@@ -68,14 +68,6 @@ variable {Λ : TopologicalSpace.Opens ℂ} {V W U : Type*} [NormedAddCommGroup V
 
 /-! ### Slices at a fixed spectral parameter -/
 
-/-- The coefficient of a parameter-dependent symbol is smooth at every point whose spectral
-parameter lies in `Λ`. -/
-theorem contDiffAt_coefficient (a : ParameterSymbol n Λ V W m)
-    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
-    ContDiffAt ℝ ∞ a.coefficient p :=
-  (a.contDiffOn_coefficient p ⟨mem_univ _, hp⟩).contDiffAt
-    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)
-
 /-- At a spectral parameter outside `Λ` the coefficient vanishes in the position and the
 frequency. -/
 theorem coefficient_slice_of_notMem (a : ParameterSymbol n Λ V W m) {z : ℂ} (hz : z ∉ Λ) :

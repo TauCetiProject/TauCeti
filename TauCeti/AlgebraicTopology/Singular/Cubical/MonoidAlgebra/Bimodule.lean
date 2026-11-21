@@ -437,7 +437,7 @@ theorem cubicalChainModuleLinearMap_smul_map [Monoid G'] [TopologicalSpace G'] [
 theorem cubicalChainModuleLinearMap_smul [MulAction G Y'] [ContinuousSMul G Y'] (f : C(Y, Y'))
     (hf : ∀ (g : G) (y : Y), f (g • y) = g • f y) (a : normalizedCubicalChainAlgebra G R)
     (x : cubicalChainModule Y H R) :
-    cubicalChainModuleLinearMap (G' := H) R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
+    cubicalChainModuleLinearMap (G' := H') R f (a • x) = a • cubicalChainModuleLinearMap R f x := by
   rw [cubicalChainModuleLinearMap_smul_map f (ContinuousMap.id G) hf, cubicalChainSumMap_id,
     LinearMap.id_apply]
 
