@@ -70,6 +70,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative along the first factor.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
+* `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
+  variables has derivative `(s, t) ↦ s • a - t • b`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
@@ -189,6 +191,17 @@ theorem _root_.HasDerivAt.hasFDerivAt_comp_snd {x : 𝕜 → G} {x' : G} {z : E 
     (hx : HasDerivAt x x' z.2) :
     HasFDerivAt (fun p : E × 𝕜 ↦ x p.2) ((ContinuousLinearMap.snd 𝕜 E 𝕜).smulRight x') z := by
   refine (hx.hasFDerivAt.comp z (hasFDerivAt_snd (p := z))).congr_fderiv ?_
+  ext <;> simp
+
+/-- The map `p ↦ u₁ p.1 - u₂ p.2` of two scalar variables, where `u₁` and `u₂` have derivatives
+`a` at `z` and `b` at `w`, has derivative `(s, t) ↦ s • a - t • b` at `(z, w)`. -/
+theorem _root_.HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd {u₁ u₂ : 𝕜 → G} {a b : G} {z w : 𝕜}
+    (h₁ : HasDerivAt u₁ a z) (h₂ : HasDerivAt u₂ b w) :
+    HasFDerivAt (fun p : 𝕜 × 𝕜 ↦ u₁ p.1 - u₂ p.2)
+      ((ContinuousLinearMap.fst 𝕜 𝕜 𝕜).smulRight a - (ContinuousLinearMap.snd 𝕜 𝕜 𝕜).smulRight b)
+      (z, w) := by
+  refine ((h₁.hasFDerivAt.comp (z, w) (hasFDerivAt_fst (p := (z, w)))).sub
+    (h₂.hasFDerivAt.comp (z, w) (hasFDerivAt_snd (p := (z, w))))).congr_fderiv ?_
   ext <;> simp
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of

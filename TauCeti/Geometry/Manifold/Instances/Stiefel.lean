@@ -323,11 +323,11 @@ theorem _root_.ContMDiff.codRestrict_stiefel [FiniteDimensional ℝ E] {E' H M :
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
 def stiefelProj (i : Fin k) (v : stiefel E k) : Metric.sphere (0 : E) 1 :=
-  ⟨v.1 i, mem_sphere_zero_iff_norm.2 (norm_eq_one_of_mem_stiefel v.2 i)⟩
+  ⟨v.val i, mem_sphere_zero_iff_norm.2 (norm_eq_one_of_mem_stiefel v.property i)⟩
 
 variable {E k} in
 @[simp]
-theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.1 i :=
+theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.val i :=
   (rfl)
 
 variable {E k} in
@@ -335,7 +335,7 @@ variable {E k} in
 space. -/
 @[fun_prop]
 theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
-  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtypeVal)
 
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one
@@ -376,13 +376,13 @@ theorem finrank_stiefelTwoModel {n : ℕ} [Fact (finrank ℝ E = n + 1 + 1)] :
 /-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
 two-frames. -/
 def stiefelTwoReflection (w : stiefel E 2) : stiefel E 2 :=
-  ⟨![w.1 0, -w.1 1], by
-    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
+  ⟨![w.val 0, -w.val 1], by
+    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.property
     exact mem_stiefel_two_iff.2 ⟨by simpa using hu, by simpa using hv, by simpa using huv⟩⟩
 
 @[simp]
 theorem coe_stiefelTwoReflection (w : stiefel E 2) :
-    (stiefelTwoReflection w : Fin 2 → E) = ![w.1 0, -w.1 1] :=
+    (stiefelTwoReflection w : Fin 2 → E) = ![w.val 0, -w.val 1] :=
   (rfl)
 
 /-- The frame reflection is an involution. -/
@@ -400,8 +400,8 @@ theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} 
       ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, E) r
         fun w : stiefel E 2 ↦ L w :=
     L.contMDiff.comp (contMDiff_coe_stiefel E 2)
-  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.1 0, -w.1 1])
-    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).2
+  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.val 0, -w.val 1])
+    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).property
   fin_cases i
   · exact h (ContinuousLinearMap.proj 0)
   · exact h (-ContinuousLinearMap.proj 1)

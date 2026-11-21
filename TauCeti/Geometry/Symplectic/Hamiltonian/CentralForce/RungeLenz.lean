@@ -48,7 +48,7 @@ theorem dense_setOf_rungeLenz_ne_zero {m κ : ℝ} (hm : m ≠ 0) (hκ : κ ≠ 
   have h := inner_rungeLenz_snd m κ (x : V × V)
   rw [hA, inner_zero_left] at h
   exact (mul_ne_zero (neg_ne_zero.2 (div_ne_zero (mul_ne_zero hm hκ)
-    (norm_ne_zero_iff.2 (mem_puncturedPhaseSpace.1 x.2)))) hx) h.symm
+    (norm_ne_zero_iff.2 (mem_puncturedPhaseSpace.1 x.property)))) hx) h.symm
 
 variable (b : OrthonormalBasis (Fin 2) ℝ V)
 
@@ -171,6 +171,6 @@ theorem dense_setOf_exists_linearIndependent_fderiv_kepler {m κ : ℝ}
       fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ) (x : V × V)]} :=
   (dense_setOf_rungeLenz_ne_zero hm hκ).mono fun x hA ↦
     exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero b hm
-      (mem_puncturedPhaseSpace.1 x.2) hA
+      (mem_puncturedPhaseSpace.1 x.property) hA
 
 end TauCeti

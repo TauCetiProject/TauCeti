@@ -218,7 +218,7 @@ theorem map_op_eq_zero_of_length_le {G : ℕᵒᵖ ⥤ ModuleCat.{v} A}
       G.map (homOfLE (by omega : j - m ≤ j)).op := by
     induction m with
     -- `(Functor.ofSequence g).obj m` is `G.obj (op (j - m))` by definition.
-    | zero => simp; rfl
+    | zero => simp
     | succ m ih =>
       have hmj : m < j := by omega
       rw [← homOfLE_comp (Nat.zero_le m) (Nat.le_succ m), Functor.map_comp, ih (by omega),

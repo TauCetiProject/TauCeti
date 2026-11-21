@@ -53,7 +53,7 @@ theorem iIndepFun.hasLaw_sum_gammaMeasure {s : Finset ι} (hindep : iIndepFun X 
   have _ : Nonempty s := hs.to_subtype
   -- Reindex by `s`, so that every member of the family carries a gamma law.
   have hsub : iIndepFun (fun i : s ↦ X i) P := hindep.precomp Subtype.val_injective
-  have hsublaw : ∀ i : s, HasLaw (X i) (gammaMeasure (a i) r) P := fun i ↦ hlaw i i.2
+  have hsublaw : ∀ i : s, HasLaw (X i) (gammaMeasure (a i) r) P := fun i ↦ hlaw i i.property
   have key : ∀ t : Finset s, t.Nonempty →
       HasLaw (∑ i ∈ t, X (i : ι)) (gammaMeasure (∑ i ∈ t, a (i : ι)) r) P := by
     intro t
@@ -61,10 +61,10 @@ theorem iIndepFun.hasLaw_sum_gammaMeasure {s : Finset ι} (hindep : iIndepFun X 
     | empty => simp
     | insert i t hi ih =>
         intro _
-        have hai : 0 < a (i : ι) := ha i i.2
+        have hai : 0 < a (i : ι) := ha i i.property
         rcases t.eq_empty_or_nonempty with rfl | ht
         · simpa using hsublaw i
-        · have htpos : 0 < ∑ j ∈ t, a (j : ι) := Finset.sum_pos (fun j _ ↦ ha j j.2) ht
+        · have htpos : 0 < ∑ j ∈ t, a (j : ι) := Finset.sum_pos (fun j _ ↦ ha j j.property) ht
           let _ := isProbabilityMeasure_gammaMeasure hai hr
           let _ := isProbabilityMeasure_gammaMeasure htpos hr
           have hadd := (hsub.indepFun_finsetSum_of_notMem₀

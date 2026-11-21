@@ -126,7 +126,7 @@ noncomputable def minimalCosetRepEquiv (μ : YoungDiagram) :
         (permCoxeterSystem μ.card).IsMinimalCosetRep
           (youngParabolicSet (shapePartition μ)) d} where
   toFun t := ⟨YoungTableau.rowYoungConjugator t.toTableau, t.isMinimalCosetRep_rowYoungConjugator⟩
-  invFun d := ofIsMinimalCosetRep d.2
+  invFun d := ofIsMinimalCosetRep d.property
   left_inv t := by
     refine ext fun c => ?_
     rw [← toTableau_apply, toTableau_ofIsMinimalCosetRep,
@@ -146,7 +146,7 @@ theorem minimalCosetRepEquiv_symm_apply
     (d : {d : Equiv.Perm (Fin μ.card) //
       (permCoxeterSystem μ.card).IsMinimalCosetRep
         (youngParabolicSet (shapePartition μ)) d}) :
-    (minimalCosetRepEquiv μ).symm d = ofIsMinimalCosetRep d.2 :=
+    (minimalCosetRepEquiv μ).symm d = ofIsMinimalCosetRep d.property :=
   (rfl)
 
 /-- `minimalCosetRepEquiv` sends the row-superstandard tableau to `1`. -/

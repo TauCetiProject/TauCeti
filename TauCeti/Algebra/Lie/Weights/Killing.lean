@@ -50,12 +50,12 @@ theorem root_add_zsmul_mem_range_iff {α β : H.root}
     simpa only [rootSystem_root_apply] using hlin
   constructor
   · rintro ⟨c, hc⟩
-    have hc' : (c.1 : H → K) = n • ((α : Weight K H L) : H → K) + (β : Weight K H L) := by
+    have hc' : (c.val : H → K) = n • ((α : Weight K H L) : H → K) + (β : Weight K H L) := by
       ext z
       simpa only [rootSystem_root_apply, Weight.toLinear_apply,
         LinearMap.add_apply, LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply,
         smul_eq_mul, add_comm] using DFunLike.congr_fun hc z
-    simpa only [hc'] using c.1.genWeightSpace_ne_bot
+    simpa only [hc'] using c.val.genWeightSpace_ne_bot
   · intro h
     let c : Weight K H L :=
       ⟨n • ((α : Weight K H L) : H → K) + (β : Weight K H L), h⟩

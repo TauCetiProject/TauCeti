@@ -241,7 +241,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : upperTriangularGroup (Fin n) 
     CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (n := n) (A := A)).symm g) =
-      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm g.1 := by
+      (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm g.val := by
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
   rw [GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe,
     MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]

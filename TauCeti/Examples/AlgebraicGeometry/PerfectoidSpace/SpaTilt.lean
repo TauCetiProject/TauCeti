@@ -58,18 +58,19 @@ private noncomputable def padicComplexNormPoint : spa (Pair.powerBounded ℂ_[p]
 
 -- On `ℂ_p`, `spaTilt` compares `f, g : ℂ_p♭` by `‖f♯‖ ≤ ‖g♯‖`.
 example (x : spa (Pair.powerBounded ℂ_[p]).plus) (f g : uniformTilt p ℂ_[p]) :
-    (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x).1.toValuativeRel.vle f g ↔
+    (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x).val.toValuativeRel.vle f g ↔
       ‖uniformTilt.coeff p ℂ_[p] 0 f‖ ≤ ‖uniformTilt.coeff p ℂ_[p] 0 g‖ := by
-  rw [spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa ((Pair.powerBounded_plus (A := ℂ_[p])) ▸ x.2)]
+  rw [spaTilt_vle_iff, vle_iff_norm_le_of_mem_spa ((Pair.powerBounded_plus (A
+      := ℂ_[p])) ▸ x.property)]
 
 -- Uniqueness: `spaTilt` of the norm point equals any point comparing elements of `ℂ_p♭` by `‖·♯‖`.
 example (y : spa ((Pair.powerBounded ℂ_[p]).tilt (p := p)).plus)
-    (hy : ∀ f g, y.1.toValuativeRel.vle f g ↔
+    (hy : ∀ f g, y.val.toValuativeRel.vle f g ↔
       ‖uniformTilt.coeff p ℂ_[p] 0 f‖ ≤ ‖uniformTilt.coeff p ℂ_[p] 0 g‖) :
     spaTilt (p := p) (Pair.powerBounded ℂ_[p]) (padicComplexNormPoint p) = y :=
   spaTilt_eq_of_vle_iff (Pair.powerBounded ℂ_[p]) fun f g ↦
     (hy f g).trans (vle_iff_norm_le_of_mem_spa
-      ((Pair.powerBounded_plus (A := ℂ_[p])) ▸ (padicComplexNormPoint p).2) _ _).symm
+      ((Pair.powerBounded_plus (A := ℂ_[p])) ▸ (padicComplexNormPoint p).property) _ _).symm
 
 -- Preimage of a rational subset `R(1 / ϖ♭)` on `ℂ_p` puts the compatible-root parameter `ϖ`
 -- in the denominator.
@@ -132,11 +133,11 @@ example (x : spa (Pair.powerBounded ℂ_[p]).plus) :
     let e : uniformTilt p (ℂ_[p] × ℂ_[p]) :=
       uniformTilt.mk (fun _ ↦ (1, 0)) (fun _ ↦ by simp [(Fact.out : p.Prime).ne_zero])
     e ∉ (((fstPair p).tilt (p := p)).spaComap
-        (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x)).1.supp ∧
+        (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x)).val.supp ∧
       e ∈ (((sndPair p).tilt (p := p)).spaComap
-        (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x)).1.supp := by
+        (spaTilt (p := p) (Pair.powerBounded ℂ_[p]) x)).val.supp := by
   intro e
-  let := x.1.toValuativeRel
+  let := x.val.toValuativeRel
   simp [fstPair, sndPair, e]
 
 end Product
@@ -157,8 +158,8 @@ example (P : Pair B) (x : spa P.plus) (y : spa (P.tilt (p := p)).plus) (b : B) :
     spaTilt (p := p) P = (Pair.tiltPairHomOfCharP (p := p) P).spaComap ∧
       (Pair.tiltPairHomOfCharPSymm (p := p) P).spaComap (spaTilt (p := p) P x) = x ∧
       spaTilt (p := p) P ((Pair.tiltPairHomOfCharPSymm (p := p) P).spaComap y) = y ∧
-      ((uniformTilt.equivOfCharP p B).symm b ∈ (spaTilt (p := p) P x).1.supp ↔
-        b ∈ x.1.supp) := by
+      ((uniformTilt.equivOfCharP p B).symm b ∈ (spaTilt (p := p) P x).val.supp ↔
+        b ∈ x.val.supp) := by
   refine ⟨spaTilt_eq_spaComap_tiltPairHomOfCharP P, by simp, by simp, ?_⟩
   rw [mem_supp_spaTilt_iff, ← uniformTilt.equivOfCharP_apply, RingEquiv.apply_symm_apply]
 

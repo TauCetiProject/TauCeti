@@ -90,7 +90,7 @@ private noncomputable def divD (n : ℤ) : M.decalageAddSubgroup p n →+ M.X (n
   ((AddMonoidHom.ofInjective (f := DistribSMul.toAddMonoidHom (M.X (n + 1)) p)
     (hM (n + 1))).symm : _ →+ M.X (n + 1)).comp
       (((M.d n (n + 1)).hom.comp (M.decalageAddSubgroup p n).subtype).codRestrict _
-        fun x ↦ AddSubgroup.mem_comap.1 x.2)
+        fun x ↦ AddSubgroup.mem_comap.1 x.property)
 
 private lemma smul_divD (n : ℤ) (x : M.decalageAddSubgroup p n) :
     p • divD hM n x = (M.d n (n + 1)).hom x :=
@@ -166,11 +166,11 @@ private noncomputable def normalizedDecalageMapF (φ : M ⟶ N) (n : ℤ) :
     (M.normalizedDecalage p hM).X n ⟶ (N.normalizedDecalage p hN).X n :=
   AddCommGrpCat.ofHom
     (((φ.f n).hom.comp (M.decalageAddSubgroup p n).subtype).codRestrict _
-      fun x ↦ map_mem_decalageAddSubgroup φ x.2)
+      fun x ↦ map_mem_decalageAddSubgroup φ x.property)
 
 private lemma normalizedDecalageMapF_apply (φ : M ⟶ N) (n : ℤ)
     (x : (M.normalizedDecalage p hM).X n) :
-    Subtype.val ((normalizedDecalageMapF hM hN φ n).hom x) = (φ.f n).hom x.1 :=
+    Subtype.val ((normalizedDecalageMapF hM hN φ n).hom x) = (φ.f n).hom x.val :=
   rfl
 
 /-- The cochain map `E_p(M) ⟶ E_p(N)` induced by a cochain map `M ⟶ N`: it is `φ` on

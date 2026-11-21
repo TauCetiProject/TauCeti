@@ -161,7 +161,7 @@ the additive maps out of `G` which turn `σ` into multiplication by `T`. -/
 noncomputable def liftEquiv :
     {f : G →+ N // ∀ x, f (σ x) = (T 1 : LaurentPolynomial ℤ) • f x} ≃
       (LaurentAEval σ →ₗ[LaurentPolynomial ℤ] N) where
-  toFun f := lift f.1 f.2
+  toFun f := lift f.val f.property
   invFun g := ⟨g.toAddMonoidHom.comp (of σ).toAddMonoidHom, fun x => by
     simpa using map_smul g (T 1 : LaurentPolynomial ℤ) (of σ x)⟩
   left_inv f := Subtype.ext <| AddMonoidHom.ext fun x => by simp
@@ -169,7 +169,7 @@ noncomputable def liftEquiv :
 
 @[simp]
 lemma liftEquiv_apply (f : {f : G →+ N // ∀ x, f (σ x) = (T 1 : LaurentPolynomial ℤ) • f x}) :
-    liftEquiv σ N f = lift f.1 f.2 :=
+    liftEquiv σ N f = lift f.val f.property :=
   (rfl)
 
 @[simp]

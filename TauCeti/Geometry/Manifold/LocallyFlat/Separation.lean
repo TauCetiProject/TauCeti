@@ -112,16 +112,16 @@ theorem exists_isPreconnected_isBicollar [LocallyConnectedSpace N] (h : IsLocall
   obtain ⟨ε, hε, hεv⟩ := Metric.mem_nhds_iff.1 hv
   -- The new domain: the component of `x` in the interior of `u`, read as a subset of `N`.
   set W : Set N := (↑) '' interior u
-  have hW : IsOpen W := hU.isOpenMap_subtype_val _ isOpen_interior
+  have hW : IsOpen W := hU.isOpenMap_subtypeVal _ isOpen_interior
   have hxW : x ∈ W := ⟨⟨x, hxU⟩, mem_interior_iff_mem_nhds.2 hu, rfl⟩
   set V : Set N := connectedComponentIn W x
   have hV : IsOpen V := hW.connectedComponentIn
   have hVW : V ⊆ W := connectedComponentIn_subset _ _
   have hVU : V ⊆ U := fun y hy => by
     obtain ⟨z, -, rfl⟩ := hVW hy
-    exact z.2
+    exact z.property
   have hVu : ∀ y : V, inclusion hVU y ∈ u := fun y => by
-    obtain ⟨z, hz, hzy⟩ := hVW y.2
+    obtain ⟨z, hz, hzy⟩ := hVW y.property
     obtain rfl : z = inclusion hVU y := Subtype.ext hzy
     exact interior_subset hz
   -- The new depth coordinate: `ℝ` reparametrized as `(-ε, ε)`.
@@ -132,7 +132,7 @@ theorem exists_isPreconnected_isBicollar [LocallyConnectedSpace N] (h : IsLocall
     exact ρ.map_source (by simp [ρ])
   have hb' : IsBicollar (f ∘ ((↑) : V → N)) (b ∘ Prod.map (inclusion hVU) ρ) :=
     ⟨hb.isOpenEmbedding.comp ((IsOpenEmbedding.inclusion hVU
-      (hV.preimage continuous_subtype_val)).prodMap hρ), fun y => by
+      (hV.preimage continuous_subtypeVal)).prodMap hρ), fun y => by
         simp [ρ, hb.apply_zero]⟩
   refine ⟨V, hV, mem_connectedComponentIn hxW, isPreconnected_connectedComponentIn, _, hb', ?_⟩
   -- The new bicollar maps into `O`, which meets the image of `f` only in `f(U)`, and there the old

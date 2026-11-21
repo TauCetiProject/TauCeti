@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Extension.Presentation.Basic
+public import TauCeti.Algebra.Algebra.Hom
 
 /-!
 # Algebra homomorphisms out of a presented algebra
@@ -26,6 +27,9 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 ## Main results
 
 * `Algebra.Presentation.lift_val`: `P.lift x hx` sends the `i`-th generator to `x i`.
+* `Algebra.Presentation.range_points_coordinates`: over a base `k`, the coefficient restrictions
+  and generator values of the `k`-algebra homomorphisms out of `S` are exactly the solutions of
+  the relations of `P`, with the coefficient homomorphism out of `R` varying.
 * `MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul`: base change of the kernel of a surjection
   `R[ι] → S` is the kernel of the corresponding map `B[ι] → B ⊗[R] S`.
 * `Algebra.Presentation.ker_baseChange_eq_map`: the kernel of the base change of a presentation is
@@ -80,6 +84,53 @@ noncomputable def lift (x : ι → T) (hx : ∀ r, aeval x (P.relation r) = 0) :
 theorem lift_val (x : ι → T) (hx : ∀ r, aeval x (P.relation r) = 0) (i : ι) :
     P.lift x hx (P.val i) = x i := by
   rw [lift, ← aeval_X (R := R) P.val i, AlgHom.liftOfSurjective_apply, aeval_X]
+
+section Points
+
+variable {k : Type*} [CommSemiring k] [Algebra k R] [Algebra k S] [IsScalarTower k R S]
+
+/-- Evaluating a polynomial at the coefficient restriction and generator values of a point
+agrees with applying the point to its evaluation in the presented algebra. -/
+theorem aevalTower_comp_toAlgHom_val {E : Type*} [CommSemiring E] [Algebra k E]
+    (x : S →ₐ[k] E) (p : MvPolynomial ι R) :
+    aevalTower (x.comp (IsScalarTower.toAlgHom k R S)) (fun i ↦ x (P.val i)) p =
+      x (aeval P.val p) := by
+  -- The underlying ring hom of `aevalTower` is `eval₂Hom`; its coefficient map here is
+  -- `x.toRingHom.comp (algebraMap R S)`, by the definitions of `AlgHom.comp` and `toAlgHom`.
+  exact (MvPolynomial.map_aeval P.val x.toRingHom p).symm
+
+variable {E : Type*} [CommRing E] [Algebra k E]
+
+/-- The coordinate image of a presented algebra is the solution set of its defining relations,
+with the coefficient point varying over points of the base algebra. -/
+theorem range_points_coordinates :
+    Set.range (fun x : S →ₐ[k] E ↦
+      (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i))) =
+      {z : (R →ₐ[k] E) × (ι → E) | ∀ j, aevalTower z.1 z.2 (P.relation j) = 0} := by
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩ j
+    rw [P.aevalTower_comp_toAlgHom_val]
+    simp
+  · intro hz
+    let f := (aeval (R := R) P.val).restrictScalars k
+    have hker : RingHom.ker f ≤ RingHom.ker (aevalTower z.1 z.2) := by
+      have hfker : RingHom.ker f = P.ker := by
+        rw [P.ker_eq_ker_aeval_val]
+        exact congrArg RingHom.ker (AlgHom.coe_restrictScalars k (aeval P.val))
+      rw [hfker, ← P.span_range_relation_eq_ker]
+      exact Ideal.span_le.2 (by rintro _ ⟨j, rfl⟩; exact hz j)
+    have hmem : aevalTower z.1 z.2 ∈
+        Set.range (fun x : S →ₐ[k] E ↦ x.comp f) := by
+      rw [AlgHom.range_comp_right_of_surjective f P.aeval_val_surjective]
+      exact hker
+    obtain ⟨x, hx⟩ := hmem
+    refine ⟨x, Prod.ext ?_ (funext fun i ↦ ?_)⟩
+    · ext r
+      simpa [f] using congrArg (fun g : MvPolynomial ι R →ₐ[k] E ↦ g (C r)) hx
+    · simpa [f] using congrArg (fun g : MvPolynomial ι R →ₐ[k] E ↦ g (X i)) hx
+
+end Points
 
 section BaseChange
 

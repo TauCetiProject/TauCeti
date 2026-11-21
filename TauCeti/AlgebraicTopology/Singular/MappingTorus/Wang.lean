@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.CyclicCover
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # The Wang sequence of a mapping torus
@@ -125,21 +126,21 @@ at height zero. -/
 def cylinderHomologyIso (n : ℕ) :
     (((singularChainComplexFunctor A).obj R).obj (TopCat.of (F × ℝ))).homology n ≅
       (((singularChainComplexFunctor A).obj R).obj (TopCat.of F)).homology n :=
-  (cylinderHomotopyEquiv F).singularHomologyIso R n
+  (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.singularHomologyIso R n
 
 variable (F) in
 /-- The forward map of `cylinderHomologyIso` is induced by projection onto the fibre. -/
 lemma cylinderHomologyIso_hom (n : ℕ) :
     (cylinderHomologyIso F R n).hom = homologyMap (((singularChainComplexFunctor A).obj R).map
-      (TopCat.ofHom (cylinderHomotopyEquiv F).toFun)) n :=
-  (cylinderHomotopyEquiv F).singularHomologyIso_hom R n
+      (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.toFun)) n :=
+  (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.singularHomologyIso_hom R n
 
 variable (F) in
 /-- The inverse map of `cylinderHomologyIso` is induced by inclusion at height zero. -/
 lemma cylinderHomologyIso_inv (n : ℕ) :
     (cylinderHomologyIso F R n).inv = homologyMap (((singularChainComplexFunctor A).obj R).map
-      (TopCat.ofHom (cylinderHomotopyEquiv F).invFun)) n :=
-  (cylinderHomotopyEquiv F).singularHomologyIso_inv R n
+      (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.invFun)) n :=
+  (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.singularHomologyIso_inv R n
 
 /-- On homology, the deck transformation of the cylinder corresponds to the monodromy under the
 projection `F × ℝ → F`. -/
@@ -185,7 +186,7 @@ projection `F × ℝ → F`. -/
 lemma wangδ_def (n : ℕ) :
     wangδ φ R n = (cyclicCoverShortComplex_shortExact φ R).δ (n + 1) n (by simp) ≫
       homologyMap (((singularChainComplexFunctor A).obj R).map
-        (TopCat.ofHom (cylinderHomotopyEquiv F).toFun)) n := by
+        (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection F ℝ).symm.toFun)) n := by
   rw [wangδ, cylinderHomologyIso_hom]
 
 /-- The composite `Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ Hₙ(F)` of the Wang connecting morphism and `𝟙 - φ_*`

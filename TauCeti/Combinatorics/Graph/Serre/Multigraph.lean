@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Iso
 
 /-!
@@ -23,8 +23,10 @@ lie in distinct connected components and the component count `Graph.componentCou
 multigraph of the empty graph is not connected and has no component, and that of two isolated
 vertices has two.
 
-The directed paths remain necessary for the fundamental group of a graph: the two darts of a
-loop represent inverse generators, even though they give the same one-edge undirected walk.
+Forgetting directions turns the reverse of a path into the reverse walk
+(`SerreGraph.Path.toWalk_reverse`). The directed paths remain necessary for the fundamental group
+of a graph: the two darts of a loop represent inverse generators, even though they give the same
+one-edge undirected walk (`SerreGraph.Path.toWalk_reverse_toPath_of_loop`).
 
 A set `O` of darts is itself a multigraph on all the vertices, `SerreGraph.endpointGraph`: its
 edges are the darts of `O`, each joining its source to its target, so loops and parallel darts
@@ -182,9 +184,9 @@ def toGraph : Graph Γ.V Γ.Edge where
 
 /-- A Serre dart links its endpoints in the underlying multigraph. -/
 theorem toGraph_isLink_edge {u v : Γ.V} (e : Quiver.Hom u v) :
-    Γ.toGraph.IsLink (Γ.edge e.1) u v := by
+    Γ.toGraph.IsLink (Γ.edge e.val) u v := by
   rw [toGraph_isLink, edgeEnds_edge]
-  exact congrArg₂ (fun x y => s(x, y)) e.2.1 e.2.2
+  exact congrArg₂ (fun x y => s(x, y)) e.property.1 e.property.2
 
 /-- Forget the directions of a Serre path, retaining its edge orbits. -/
 def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
@@ -213,6 +215,26 @@ def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
     Path.toWalk Γ e.toPath = (Γ.toGraph_isLink_edge e).toWalk := by
   simp [Quiver.Hom.toPath]
 
+/-- Forgetting directions turns the reverse of a path into the reverse walk. -/
+@[simp] theorem Path.toWalk_reverse {u v : Γ.V} (p : Γ.Path u v) :
+    Path.toWalk Γ p.reverse = (Path.toWalk Γ p).reverse := by
+  induction p with
+  | nil => simp [Quiver.Path.reverse]
+  | cons p e ih =>
+    rw [Quiver.Path.reverse, Path.toWalk_comp, ih, Path.toWalk_toPath, Path.toWalk_cons,
+      Graph.Walk.reverse_append, Graph.IsLink.reverse_toWalk]
+    -- The reverse dart lies on the same undirected edge as the dart.
+    congr 1
+    rw [Graph.IsLink.toWalk_eq_cons, Graph.IsLink.toWalk_eq_cons]
+    congr 1
+    rw [reverse_val, edge_rev]
+
+/-- A loop and its reverse forget to the same walk: the two darts of a loop lie on one
+undirected edge, and the one-edge walk along a loop is its own reverse. -/
+theorem Path.toWalk_reverse_toPath_of_loop {v : Γ.V} (e : Quiver.Hom v v) :
+    Path.toWalk Γ e.toPath.reverse = Path.toWalk Γ e.toPath := by
+  rw [Path.toWalk_reverse, Path.toWalk_toPath, Graph.IsLink.reverse_toWalk]
+
 /-- Forgetting directions preserves the length of a path. -/
 @[simp] theorem Path.length_toWalk {u v : Γ.V} (p : Γ.Path u v) :
     (p.toWalk Γ).length = p.length := by
@@ -223,13 +245,13 @@ def Path.toWalk {u v : Γ.V} (p : Γ.Path u v) : Γ.toGraph.Walk u v := by
 /-- The final dart of a path contributes its undirected edge to the walk. -/
 theorem Path.edges_toWalk_cons {u v w : Γ.V} (p : Γ.Path u v)
     (e : Quiver.Hom v w) :
-    (Path.toWalk Γ (p.cons e)).edges = (Path.toWalk Γ p).edges ++ [Γ.edge e.1] := by
+    (Path.toWalk Γ (p.cons e)).edges = (Path.toWalk Γ p).edges ++ [Γ.edge e.val] := by
   simp [Graph.IsLink.edges_toWalk]
 
 /-- A link in the underlying multigraph can be oriented as a Serre arrow. -/
 theorem exists_hom_of_toGraph_isLink {u v : Γ.V} {q : Γ.Edge}
     (h : Γ.toGraph.IsLink q u v) :
-    ∃ e : Quiver.Hom u v, Γ.edge e.1 = q := by
+    ∃ e : Quiver.Hom u v, Γ.edge e.val = q := by
   obtain ⟨d, rfl⟩ := Γ.edge_surjective q
   rw [toGraph_isLink, edgeEnds_edge, Sym2.eq_iff] at h
   rcases h with ⟨hu, hv⟩ | ⟨hu, hv⟩
@@ -247,7 +269,7 @@ them. -/
   constructor
   · rintro ⟨q, hq⟩
     obtain ⟨e, -⟩ := Γ.exists_hom_of_toGraph_isLink hq
-    exact ⟨e.1, e.2⟩
+    exact ⟨e.val, e.property⟩
   · rintro ⟨e, rfl, rfl⟩
     exact ⟨Γ.edge e, by simp⟩
 
@@ -428,7 +450,8 @@ private theorem IsOrientation.bijective_edge_endpointGraph (hO : Γ.IsOrientatio
     Function.Bijective fun e : (Γ.endpointGraph O).edgeSet ↦
       (⟨Γ.edge e, by simp⟩ : Γ.toGraph.edgeSet) := by
   refine ⟨fun e e' h ↦ ?_, fun q ↦ ?_⟩
-  · have := hO.bijective_edge.1 (a₁ := ⟨e, by simpa using e.2⟩) (a₂ := ⟨e', by simpa using e'.2⟩)
+  · have := hO.bijective_edge.1 (a₁ := ⟨e, by simpa using e.property⟩)
+      (a₂ := ⟨e', by simpa using e'.property⟩)
       (congrArg Subtype.val h)
     exact Subtype.ext (congrArg Subtype.val this)
   · obtain ⟨⟨e, he⟩, hq⟩ := hO.bijective_edge.2 q
@@ -627,19 +650,19 @@ private theorem liftOrbit_apply (q : Γ.Edge) : liftOrbit φ q = φ.edgeEquiv �
 
 private theorem exists_liftDart (e : Γ.E) :
     ∃ f : Quiver.Hom (liftV φ (Γ.src e)) (liftV φ (Γ.tgt e)),
-      Δ.edge f.1 = liftOrbit φ (Γ.edge e) := by
+      Δ.edge f.val = liftOrbit φ (Γ.edge e) := by
   rw [liftV_apply, liftV_apply, liftOrbit_apply]
   exact Δ.exists_hom_of_toGraph_isLink <|
     (φ.map_isLink_iff ⟨Γ.edge e, by simp⟩ ⟨Γ.src e, by simp⟩ ⟨Γ.tgt e, by simp⟩).2 (by simp)
 
 /-- A dart above the image of the orbit of a dart, joining the images of its ends. -/
-private noncomputable def liftDart (e : Γ.E) : Δ.E := (exists_liftDart φ e).choose.1
+private noncomputable def liftDart (e : Γ.E) : Δ.E := (exists_liftDart φ e).choose.val
 
 private theorem src_liftDart (e : Γ.E) : Δ.src (liftDart φ e) = liftV φ (Γ.src e) :=
-  (exists_liftDart φ e).choose.2.1
+  (exists_liftDart φ e).choose.property.1
 
 private theorem tgt_liftDart (e : Γ.E) : Δ.tgt (liftDart φ e) = liftV φ (Γ.tgt e) :=
-  (exists_liftDart φ e).choose.2.2
+  (exists_liftDart φ e).choose.property.2
 
 private theorem edge_liftDart (e : Γ.E) : Δ.edge (liftDart φ e) = liftOrbit φ (Γ.edge e) :=
   (exists_liftDart φ e).choose_spec

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.Sobolev.Poincare.W1p0
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
@@ -170,8 +171,7 @@ private theorem measureReal_lt_value_le_of_norm_gradient_truncation_sq_le {P K �
           rw [hx, max_eq_left (by linarith [hδx]), max_eq_left (by linarith [hδx]),
             Real.norm_eq_abs, sq_abs]
           ring
-      _ ≤ _ := setIntegral_le_integral
-          ((memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable _)).1 (Lp.memLp _))
+      _ ≤ _ := setIntegral_le_integral (Lp.integrable_sq_norm _)
           (Eventually.of_forall fun _ ↦ sq_nonneg _)
   have hP : ‖W1p.value φ‖ ^ 2 ≤ P ^ 2 * ‖W1p.gradient φ‖ ^ 2 := by
     rw [← mul_pow]
@@ -327,9 +327,6 @@ private theorem norm_gradient_truncation_sq_le
   set S := {x | 0 < W1p.value (u - v) x ∧ W1p.value (u - v) x ≤ ε}
   have hlam := (hA 0).pos
   have hS : MeasurableSet S := measurableSet_truncationSet (u - v) ε
-  have hsq (f : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict Omega)) :
-      Integrable (fun x ↦ ‖f x‖ ^ 2) (mu.restrict Omega) :=
-    (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable f)).1 (Lp.memLp f)
   -- Freezing the coefficient at `z` gives a uniformly elliptic matrix field.
   have hint (z : W1p mu Omega 2)
       (hz : AEStronglyMeasurable (fun x ↦ A x (W1p.value z x)) (mu.restrict Omega)) :
@@ -345,12 +342,14 @@ private theorem norm_gradient_truncation_sq_le
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral] at huv
   have hind : Integrable (S.indicator fun x ↦ lam / 2 * ‖W1p.gradient (u - v) x‖ ^ 2 -
       (L * ε) ^ 2 / (2 * lam) * ‖W1p.gradient v x‖ ^ 2) (mu.restrict Omega) :=
-    (((hsq _).const_mul _).sub ((hsq _).const_mul _)).indicator hS
+    (((Lp.integrable_sq_norm _).const_mul _).sub
+      ((Lp.integrable_sq_norm _).const_mul _)).indicator hS
   have hmono := integral_mono_ae hind ((hint u hAu).sub (hint v hAv))
     (ae_indicator_le_matrixBilinearForm_sub hA hlip u v hε)
   simp only [Pi.sub_apply] at hmono
   rw [integral_sub (hint u hAu) (hint v hAv), integral_indicator hS,
-    integral_sub ((hsq _).const_mul _).integrableOn ((hsq _).const_mul _).integrableOn,
+    integral_sub ((Lp.integrable_sq_norm _).const_mul _).integrableOn
+      ((Lp.integrable_sq_norm _).const_mul _).integrableOn,
     integral_const_mul, integral_const_mul] at hmono
   -- The squared norm of `∇φ_ε = 1_S ∇w` is `∫_S ‖∇w‖²`.
   have hnorm : ‖W1p.gradient (truncation hε (u - v))‖ ^ 2 =
@@ -396,8 +395,7 @@ theorem value_le_of_energyFormH1_quasilinear_le {P : ℝ}
           energyFormH1 (fun x ↦ A x (W1p.value v x)) 0 0 v w) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
   have hw := value_nonpos_of_norm_gradient_truncation_sq_le (K := L / lam) hpoincare hboundary
-    ((memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable (W1p.gradient v))).1
-      (Lp.memLp _)) fun ε hε ↦ by
+    (Lp.integrable_sq_norm (W1p.gradient v)) fun ε hε ↦ by
     have := norm_gradient_truncation_sq_le hA hlip hAu hAv hε.le
       (huv ⟨_, truncation_mem_w1p0Submodule hε.le hboundary⟩
         (value_truncation_nonneg_ae hε.le (u - v)))
