@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
+import TauCeti.NumberTheory.SumPrimePow
 
 /-!
 # Chebyshev functions in a residue class
@@ -29,12 +30,13 @@ all residue classes), the file proves the two facts that let exponential sums ov
 evaluated class by class:
 
 * the decomposition `∑_{n ≤ x} Λ(n) f(n) = ∑_a ψ(x; q, a) f(a)` for any weight `f` on `ZMod q`;
-* the bound `∑_{a not a unit} ψ(x; q, a) ≤ ω(q) log x`, since a prime power `pᵏ` is not coprime
-  to `q` exactly when `p ∣ q`, and `ψ(x; p, 0) = ⌊log_p x⌋ log p ≤ log x` for a prime `p`.
+* the bound `∑_{a not a unit} ψ(x; q, a) ≤ ω(q) log x` for `x ≥ 1`, since a prime power `pᵏ` is
+  not coprime to `q` exactly when `p ∣ q`, and `ψ(x; p, 0) = ⌊log_p x⌋ log p ≤ log x` for a prime
+  `p` and `x ≥ 1`.
 
 Together they reduce `∑_{n ≤ x} Λ(n) f(n)` to the reduced classes with an error at most
-`ω(q) log x` when `|f| ≤ 1`, which is how the major arcs of the circle method pass from the
-exponential sum `∑_{n ≤ x} Λ(n) e(an/q)` to `ψ(x; q, b)` for units `b`.
+`ω(q) log x` for `x ≥ 1` when `|f| ≤ 1`, which is how the major arcs of the circle method pass
+from the exponential sum `∑_{n ≤ x} Λ(n) e(an/q)` to `ψ(x; q, b)` for units `b`.
 
 ## Main definitions
 
@@ -48,9 +50,10 @@ exponential sum `∑_{n ≤ x} Λ(n) e(an/q)` to `ψ(x; q, b)` for units `b`.
 * `Chebyshev.psiAP_zero_of_prime`, `Chebyshev.thetaAP_zero_of_prime`,
   `Chebyshev.primeCountAP_zero_of_prime`: the zero class modulo a prime `p`.
 * `Chebyshev.sum_psiAP_not_isUnit_le_card_mul_log`: the non-reduced classes carry at most
-  `ω(q) log x`.
+  `ω(q) log x` for `x ≥ 1`.
 * `Chebyshev.norm_sum_vonMangoldt_smul_sub_sum_psiAP_smul_le`: restricting the decomposition to
-  the reduced classes costs at most `ω(q) log x` for a weight bounded by `1`.
+  the reduced classes costs at most `ω(q) log x` for `x ≥ 1` and a weight bounded by `1`.
+* `Nat.Prime.filter_dvd_primesLE`: the only prime `r ≤ n` divisible by a prime `p` is `p`.
 
 ## References
 
@@ -62,6 +65,18 @@ public section
 
 open Finset ArithmeticFunction
 open scoped Chebyshev Nat.Prime
+
+/-- The only prime `r ≤ n` divisible by a prime `p` is `p` itself, present when `p ≤ n`. -/
+theorem Nat.Prime.filter_dvd_primesLE {p : ℕ} (hp : p.Prime) (n : ℕ) :
+    {r ∈ Nat.primesLE n | p ∣ r} = if p ≤ n then {p} else ∅ := by
+  ext r
+  simp only [mem_filter, Nat.mem_primesLE]
+  split_ifs with h
+  · simp only [mem_singleton]
+    exact ⟨fun ⟨⟨_, hr⟩, hpr⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr).symm,
+      by rintro rfl; exact ⟨⟨h, hp⟩, dvd_rfl⟩⟩
+  · simp only [notMem_empty, iff_false, not_and]
+    exact fun ⟨hrn, hr⟩ hpr ↦ h <| ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr) ▸ hrn
 
 namespace Chebyshev
 
@@ -198,52 +213,37 @@ theorem sum_primeCountAP [NeZero q] (x : ℝ) : ∑ a : ZMod q, primeCountAP q a
 
 /-! ### The zero class modulo a prime -/
 
-/-- Modulo a prime `p`, the only prime in the zero class is `p` itself. -/
-private theorem filter_primesLE_natCast_eq_zero {p : ℕ} (hp : p.Prime) (n : ℕ) :
-    {r ∈ Nat.primesLE n | ((r : ℕ) : ZMod p) = 0} = if p ≤ n then {p} else ∅ := by
-  ext r
-  simp only [mem_filter, Nat.mem_primesLE, ZMod.natCast_eq_zero_iff]
-  split_ifs with h
-  · simp only [mem_singleton]
-    exact ⟨fun ⟨⟨_, hr⟩, hpr⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr).symm,
-      by rintro rfl; exact ⟨⟨h, hp⟩, dvd_rfl⟩⟩
-  · simp only [notMem_empty, iff_false, not_and]
-    exact fun ⟨hrn, hr⟩ hpr ↦ h <| ((Nat.prime_dvd_prime_iff_eq hp hr).1 hpr) ▸ hrn
-
 /-- Modulo a prime `p`, the zero class contains the single prime `p`:
 `θ(x; p, 0) = log p` for `x ≥ p` and `0` otherwise. -/
 theorem thetaAP_zero_of_prime {p : ℕ} (hp : p.Prime) (x : ℝ) :
     thetaAP p 0 x = if (p : ℝ) ≤ x then Real.log p else 0 := by
-  rw [thetaAP, filter_primesLE_natCast_eq_zero hp]
+  simp_rw [thetaAP, ZMod.natCast_eq_zero_iff, hp.filter_dvd_primesLE]
   by_cases h : (p : ℝ) ≤ x <;> simp [h, Nat.le_floor_iff' hp.ne_zero]
 
 /-- Modulo a prime `p`, the zero class contains the single prime `p`:
 `π(x; p, 0) = 1` for `x ≥ p` and `0` otherwise. -/
 theorem primeCountAP_zero_of_prime {p : ℕ} (hp : p.Prime) (x : ℝ) :
     primeCountAP p 0 x = if (p : ℝ) ≤ x then 1 else 0 := by
-  rw [primeCountAP, filter_primesLE_natCast_eq_zero hp]
+  simp_rw [primeCountAP, ZMod.natCast_eq_zero_iff, hp.filter_dvd_primesLE]
   by_cases h : (p : ℝ) ≤ x <;> simp [h, Nat.le_floor_iff' hp.ne_zero]
 
 /-- Modulo a prime `p`, the zero class of `ψ` consists of the powers `pᵏ ≤ x` with `k ≥ 1`:
-`ψ(x; p, 0) = ⌊log_p x⌋ log p`, with `Nat.log p ⌊x⌋₊` the number of these powers. -/
+`ψ(x; p, 0) = ⌊log_p x⌋ log p` for `x ≥ 1`, with `Nat.log p ⌊x⌋₊` the number of these powers
+(and `0` for `x < 1`). -/
 theorem psiAP_zero_of_prime {p : ℕ} (hp : p.Prime) (x : ℝ) :
     psiAP p 0 x = p.log ⌊x⌋₊ * Real.log p := by
-  set N := ⌊x⌋₊
-  have hsub : (Icc 1 (p.log N)).image (p ^ ·) ⊆ {n ∈ Ioc 0 N | ((n : ℕ) : ZMod p) = 0} := by
-    simp only [subset_iff, mem_image, mem_Icc, mem_filter, mem_Ioc, ZMod.natCast_eq_zero_iff]
-    rintro _ ⟨k, ⟨hk1, hk⟩, rfl⟩
-    have hN : N ≠ 0 := fun h ↦ by simp [h] at hk; lia
-    exact ⟨⟨pow_pos hp.pos k, Nat.pow_le_of_le_log hN hk⟩, dvd_pow_self p (by lia)⟩
-  rw [psiAP, ← sum_subset hsub fun n hn hn' ↦ ?_, sum_image fun _ _ _ _ h ↦
-    Nat.pow_right_injective hp.two_le h]
-  · rw [sum_congr rfl fun k hk ↦ by
-      rw [vonMangoldt_apply_pow (by simp at hk; lia), vonMangoldt_apply_prime hp]]
+  rw [psiAP, sum_filter, ← Icc_add_one_left_eq_Ioc, zero_add,
+    Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log fun n hn ↦ by simp [vonMangoldt_eq_zero_iff.2 hn],
+    sum_eq_single p (fun r hr hrp ↦ sum_eq_zero fun k _ ↦ ?_) fun hp' ↦ ?_]
+  · calc _ = ∑ _ ∈ Icc 1 (p.log ⌊x⌋₊), Real.log p := sum_congr rfl fun k hk ↦ by
+          have hk : k ≠ 0 := by simp at hk; lia
+          simp [vonMangoldt_apply_pow hk, vonMangoldt_apply_prime hp, hk]
+      _ = _ := by simp
+  · rw [ite_eq_right_iff, ZMod.natCast_eq_zero_iff]
+    exact fun h ↦ absurd ((Nat.prime_dvd_prime_iff_eq hp (Nat.prime_of_mem_primesLE hr)).1
+      (hp.dvd_of_dvd_pow h)).symm hrp
+  · rw [Nat.log_of_lt (not_le.1 fun h ↦ hp' (Nat.mem_primesLE.2 ⟨h, hp⟩))]
     simp
-  · simp only [mem_filter, mem_Ioc, ZMod.natCast_eq_zero_iff] at hn
-    rw [vonMangoldt_eq_zero_iff, isPrimePow_nat_iff]
-    rintro ⟨r, k, hr, hk, rfl⟩
-    obtain rfl := (Nat.prime_dvd_prime_iff_eq hp hr).1 (hp.dvd_of_dvd_pow hn.2)
-    exact hn' <| mem_image.2 ⟨k, mem_Icc.2 ⟨hk, Nat.le_log_of_pow_le hp.one_lt hn.1.2⟩, rfl⟩
 
 /-- The zero class modulo a prime carries at most a logarithm: `ψ(x; p, 0) ≤ log x` for
 `x ≥ 1`. -/
@@ -291,7 +291,8 @@ theorem sum_psiAP_not_isUnit_le_card_mul_log [NeZero q] (hx : 1 ≤ x) :
   exact sum_le_sum fun p hp ↦ psiAP_zero_le_log (Nat.prime_of_mem_primeFactors hp) hx
 
 /-- Restricting the residue-class decomposition `∑_{n ≤ x} Λ(n) • f(n) = ∑_a ψ(x; q, a) • f(a)` to
-the reduced classes costs at most `ω(q) log x` when `‖f(a)‖ ≤ 1` on the non-reduced classes. -/
+the reduced classes costs at most `ω(q) log x` for `x ≥ 1` when `‖f(a)‖ ≤ 1` on the non-reduced
+classes. -/
 theorem norm_sum_vonMangoldt_smul_sub_sum_psiAP_smul_le [NeZero q] {E : Type*}
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {f : ZMod q → E}
     (hf : ∀ a, ¬IsUnit a → ‖f a‖ ≤ 1) (hx : 1 ≤ x) :
