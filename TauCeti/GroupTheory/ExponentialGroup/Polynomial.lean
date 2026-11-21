@@ -39,12 +39,12 @@ generated.
   the `t`-th power is closed under every exponent.
 * `MonoidHom.map_pow_of_map_pow_X`: a homomorphism of `ℤ[t]`-groups that commutes with the
   `t`-th power commutes with every exponent.
-* `TauCeti.ExponentialGroup.Completion.existsUnique_monoidHom_map_pow_X`: the universal property
+* `TauCeti.ExponentialGroup.Completion.existsUnique_lift_map_pow_X`: the universal property
   of the `ℤ[t]`-completion in terms of the `t`-th power.
 * `TauCeti.ExponentialGroup.Completion.of_pow_ne_one_of_ne_zero`: in the `ℤ[t]`-completion, the
   powers `g ^ p`, `p ≠ 0`, of an element `g` of infinite order of `G` are nontrivial.
-* `TauCeti.ExponentialGroup.Completion.not_fg_closure_range_pow`: the powers `g ^ (t ^ k)` of an
-  element of infinite order of `G` generate a subgroup of the `ℤ[t]`-completion that is not
+* `TauCeti.ExponentialGroup.Completion.not_fg_closure_range_pow_X_pow`: the powers `g ^ (t ^ k)`
+  of an element of infinite order of `G` generate a subgroup of the `ℤ[t]`-completion that is not
   finitely generated.
 
 ## Implementation notes
@@ -258,7 +258,7 @@ variable {G : Type*} [Group G]
 `T : H → H` that commutes with conjugation and is multiplicative on commuting elements, every
 homomorphism `φ : G →* H` extends uniquely to a homomorphism `ψ` from the `ℤ[t]`-completion of `G`
 with `ψ (x ^ t) = T (ψ x)`. -/
-theorem existsUnique_monoidHom_map_pow_X {H : Type*} [Group H] {T : H → H}
+theorem existsUnique_lift_map_pow_X {H : Type*} [Group H] {T : H → H}
     (hconj : ∀ g h : H, T (g * h * g⁻¹) = g * T h * g⁻¹)
     (hmul : ∀ g h : H, Commute g h → T (g * h) = T g * T h) (φ : G →* H) :
     ∃! ψ : Completion ℤ[X] G →* H,
@@ -283,7 +283,7 @@ theorem of_pow_ne_one_of_ne_zero {g : G} (hg : ¬IsOfFinOrder g) {p : ℤ[X]} (h
 
 /-- The polynomial powers `g ^ (t ^ k)` of an element of infinite order of `G` generate a subgroup
 of the `ℤ[t]`-completion of `G` that is not finitely generated. -/
-theorem not_fg_closure_range_pow {g : G} (hg : ¬IsOfFinOrder g) : ¬(Subgroup.closure
+theorem not_fg_closure_range_pow_X_pow {g : G} (hg : ¬IsOfFinOrder g) : ¬(Subgroup.closure
     (Set.range fun k : ℕ => (of g : Completion ℤ[X] G) ^ (X ^ k : ℤ[X]))).FG := by
   set x : Completion ℤ[X] G := of g
   -- the powers of `x` with exponents of degree at most `N`
