@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
-import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Smooth bundles of continuous alternating maps
@@ -236,16 +235,15 @@ variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
 the same base map `b` preserves `C^n` regularity within `s` at `x`. Only the analytic order `ω`
 carries the arity-factorial condition. -/
 theorem ContMDiffWithinAt.continuousAlternatingMap_comp_clm
-    (hα : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s x)
+    (hα : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s x)
     (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x)
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h; first | exact NeZero.ne _ | cases h) :
-    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y) ((α y).compContinuousLinearMap (A y))) s x := by
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
+      ((α y).compContinuousLinearMap (A y))) s x := by
   let _ : NormedAddCommGroup ((F₂ [⋀^ι]→L[𝕜] F₃) →L[𝕜] F₁ [⋀^ι]→L[𝕜] F₃) := inferInstance
   let _ : NormedSpace 𝕜 ((F₂ [⋀^ι]→L[𝕜] F₃) →L[𝕜] F₁ [⋀^ι]→L[𝕜] F₃) := inferInstance
   rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hα ⊢
@@ -269,46 +267,43 @@ theorem ContMDiffWithinAt.continuousAlternatingMap_comp_clm
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section at
 `x` is `C^n` at `x`. -/
 theorem ContMDiffAt.continuousAlternatingMap_comp_clm
-    (hα : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) x)
+    (hα : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) x)
     (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) x)
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h; first | exact NeZero.ne _ | cases h) :
-    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y) ((α y).compContinuousLinearMap (A y))) x :=
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
+      ((α y).compContinuousLinearMap (A y))) x :=
   ContMDiffWithinAt.continuousAlternatingMap_comp_clm hα hA hn
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section on
 `s` is `C^n` on `s`. -/
 theorem ContMDiffOn.continuousAlternatingMap_comp_clm
-    (hα : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s)
+    (hα : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s)
     (hA : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s)
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h; first | exact NeZero.ne _ | cases h) :
-    ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y) ((α y).compContinuousLinearMap (A y))) s :=
+    ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
+      ((α y).compContinuousLinearMap (A y))) s :=
   fun y hy ↦ (hα y hy).continuousAlternatingMap_comp_clm (hA y hy) hn
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section is
 `C^n`. -/
 theorem ContMDiff.continuousAlternatingMap_comp_clm
-    (hα : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₂ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)))
+    (hα : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)))
     (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)))
     (hn : n = ω → ((Fintype.card ι).factorial : 𝕜) ≠ 0 := by
       intro h; first | exact NeZero.ne _ | cases h) :
-    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' (F₁ [⋀^ι]→L[𝕜] F₃)
-        (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y) ((α y).compContinuousLinearMap (A y))) :=
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
+      (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
+      ((α y).compContinuousLinearMap (A y))) :=
   fun y ↦ (hα y).continuousAlternatingMap_comp_clm (hA y) hn
 
 end AlternatingPullback

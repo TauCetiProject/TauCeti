@@ -951,7 +951,7 @@ theorem MulAction.orbitRelQuotientRec_apply_mk (s : ∀ q : MulAction.orbitRel.Q
 
 /-- Applying a fibrewise operation over the orbit space to an invariant pulled-back section yields
 an invariant pulled-back section of the target family. -/
-theorem MulAction.apply_heq_of_heq {W : MulAction.orbitRel.Quotient G X → Sort*}
+theorem MulAction.apply_smul_heq {W : MulAction.orbitRel.Quotient G X → Sort*}
     (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → W q)
     (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (g : G) (x : X) :
     F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) ≍
@@ -967,17 +967,17 @@ theorem MulAction.apply_orbitRelQuotientRec {W : MulAction.orbitRel.Quotient G X
     (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) :
     F q (MulAction.orbitRelQuotientRec t ht q) =
       MulAction.orbitRelQuotientRec (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x))
-        (MulAction.apply_heq_of_heq F ht) q := by
+        (MulAction.apply_smul_heq F ht) q := by
   induction q using Quotient.inductionOn; rfl
 
 /-- Applying a fibrewise map into a fixed codomain `Z` to an invariant pulled-back section yields a
 `G`-invariant map into `Z`. -/
-theorem MulAction.apply_eq_of_heq {Z : Type*}
+theorem MulAction.apply_smul_eq {Z : Type*}
     (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → Z)
     (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (g : G) (x : X) :
     F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) =
       F (Quotient.mk (MulAction.orbitRel G X) x) (t x) :=
-  eq_of_heq (MulAction.apply_heq_of_heq (W := fun _ ↦ Z) F ht g x)
+  eq_of_heq (MulAction.apply_smul_heq (W := fun _ ↦ Z) F ht g x)
 
 /-- Evaluating a fibrewise map into a fixed codomain `Z` on a descended section agrees with the
 non-dependent descent `orbitRelQuotientLift` of the upstairs composite. -/
@@ -986,12 +986,12 @@ theorem MulAction.apply_orbitRelQuotientRec_eq_orbitRelQuotientLift {Z : Type*}
     (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) :
     F q (MulAction.orbitRelQuotientRec t ht q) =
       MulAction.orbitRelQuotientLift (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x))
-        (MulAction.apply_eq_of_heq F ht) q := by
+        (MulAction.apply_smul_eq F ht) q := by
   induction q using Quotient.inductionOn; rfl
 
 /-- Applying a binary fibrewise operation over the orbit space to two invariant pulled-back
 sections yields an invariant pulled-back section. -/
-theorem MulAction.apply₂_heq_of_heq {V₁ V₂ V₃ : MulAction.orbitRel.Quotient G X → Sort*}
+theorem MulAction.apply₂_smul_heq {V₁ V₂ V₃ : MulAction.orbitRel.Quotient G X → Sort*}
     (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → V₃ q)
     {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
     {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
@@ -1015,12 +1015,12 @@ theorem MulAction.apply₂_orbitRelQuotientRec {V₁ V₂ V₃ : MulAction.orbit
     B q (MulAction.orbitRelQuotientRec t₁ ht₁ q) (MulAction.orbitRelQuotientRec t₂ ht₂ q) =
       MulAction.orbitRelQuotientRec
         (fun x ↦ B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x) (t₂ x))
-        (MulAction.apply₂_heq_of_heq B ht₁ ht₂) q := by
+        (MulAction.apply₂_smul_heq B ht₁ ht₂) q := by
   induction q using Quotient.inductionOn; rfl
 
 /-- Applying a binary fibrewise pairing into a fixed codomain `Z` to two invariant pulled-back
 sections yields a `G`-invariant map into `Z`. -/
-theorem MulAction.apply₂_eq_of_heq {V₁ V₂ : MulAction.orbitRel.Quotient G X → Sort*} {Z : Type*}
+theorem MulAction.apply₂_smul_eq {V₁ V₂ : MulAction.orbitRel.Quotient G X → Sort*} {Z : Type*}
     (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → Z)
     {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
     {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
@@ -1028,7 +1028,7 @@ theorem MulAction.apply₂_eq_of_heq {V₁ V₂ : MulAction.orbitRel.Quotient G 
     (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (g : G) (x : X) :
     B (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t₁ (g • x)) (t₂ (g • x)) =
       B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x) (t₂ x) :=
-  eq_of_heq (MulAction.apply₂_heq_of_heq (V₃ := fun _ ↦ Z) B ht₁ ht₂ g x)
+  eq_of_heq (MulAction.apply₂_smul_heq (V₃ := fun _ ↦ Z) B ht₁ ht₂ g x)
 
 /-- Evaluating a binary fibrewise pairing into a fixed codomain `Z` on two descended sections
 agrees with the non-dependent descent `orbitRelQuotientLift` of the upstairs pairing. -/
@@ -1042,7 +1042,7 @@ theorem MulAction.apply₂_orbitRelQuotientRec_eq_orbitRelQuotientLift
     B q (MulAction.orbitRelQuotientRec t₁ ht₁ q) (MulAction.orbitRelQuotientRec t₂ ht₂ q) =
       MulAction.orbitRelQuotientLift
         (fun x ↦ B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x) (t₂ x))
-        (MulAction.apply₂_eq_of_heq B ht₁ ht₂) q := by
+        (MulAction.apply₂_smul_eq B ht₁ ht₂) q := by
   induction q using Quotient.inductionOn; rfl
 
 end Rec
@@ -1174,7 +1174,7 @@ theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ
 
 /-- If a family `t'` over the pulled-back fibre family `q ↦ V (orbitRelQuotientMap φ q)` agrees
 heterogeneously with `x ↦ t (φ x)` for an `H`-invariant family `t`, then `t'` is `G`-invariant. -/
-theorem heq_of_comp_orbitRelQuotientMap {V : MulAction.orbitRel.Quotient H Y → Sort*}
+theorem smul_heq_of_comp_orbitRelQuotientMap {V : MulAction.orbitRel.Quotient H Y → Sort*}
     (φ : X →ₑ[σ] Y) {t : ∀ y : Y, V (Quotient.mk (MulAction.orbitRel H Y) y)}
     (ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y)
     {t' : ∀ x : X, V (orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x))}
@@ -1194,7 +1194,7 @@ theorem orbitRelQuotientRec_orbitRelQuotientMap_apply
     (ht' : ∀ x : X, t' x ≍ t (φ x)) (q : MulAction.orbitRel.Quotient G X) :
     MulAction.orbitRelQuotientRec t ht (orbitRelQuotientMap φ q) =
       MulAction.orbitRelQuotientRec (V := fun q ↦ V (orbitRelQuotientMap φ q))
-        t' (heq_of_comp_orbitRelQuotientMap φ ht ht') q := by
+        t' (smul_heq_of_comp_orbitRelQuotientMap φ ht ht') q := by
   induction q using Quotient.inductionOn with | h x =>
   rw [MulAction.orbitRelQuotientRec_mk]
   exact eq_of_heq <| (congr_arg_heq (MulAction.orbitRelQuotientRec t ht)

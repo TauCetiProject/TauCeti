@@ -42,9 +42,9 @@ discontinuous group of biholomorphisms are the invariant holomorphic sections of
 * `TauCeti.contMDiffAt_pullback_section_iff_orbitRelQuotientRec`,
   `TauCeti.contMDiff_pullback_section_iff_orbitRelQuotientRec`: the same, with the invariant
   section read as a section of the pullback bundle along the orbit projection.
-* `MulActionHom.orbitRelQuotientRec_pullbackOrbitSection`,
-  `TauCeti.contMDiff_section_pullbackOrbitSection_iff`: section descent commutes with pullback
-  along an equivariant map and preserves `C^m` regularity when the equivariant map is `C^m`.
+* `TauCeti.contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff`,
+  `ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec`: section descent along an
+  equivariant `C^m` map preserves `C^m` regularity.
 
 ## References
 
@@ -131,86 +131,19 @@ theorem contMDiff_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q
       (σ := MulAction.orbitRelQuotientRec t ht)).symm
   simp only [ContinuousMap.coe_mk, MulAction.orbitRelQuotientRec_mk]
 
-end TauCeti
-
-/-! ### Compatibility of section descent with equivariant pullback -/
-
-namespace MulActionHom
-
-open Bundle TauCeti
-
-section PullbackSection
-
-variable {G' M' G M : Type*} [Group G'] [MulAction G' M'] [Group G] [MulAction G M]
-  {σ : G' → G} (ψ : M' →ₑ[σ] M)
-  {V : MulAction.orbitRel.Quotient G M → Type*}
-
-/-- Pullback of an upstairs family `t : ∀ x : M, V ⟦x⟧` along a `σ`-equivariant map
-`ψ : M' →ₑ[σ] M`, viewed as an upstairs family on `M'` for the pulled-back bundle
-`ψ.orbitRelQuotientMap *ᵖ V` over `M' ⧸ G'`. -/
-def pullbackOrbitSection (t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)) (x' : M') :
-    (ψ.orbitRelQuotientMap *ᵖ V) (Quotient.mk (MulAction.orbitRel G' M') x') :=
-  cast (congrArg V (ψ.orbitRelQuotientMap_mk x').symm) (t (ψ x'))
-
-@[simp]
-theorem pullbackOrbitSection_heq
-    (t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)) (x' : M') :
-    ψ.pullbackOrbitSection t x' ≍ t (ψ x') :=
-  cast_heq _ _
-
-/-- If `t` is `G`-invariant, its equivariant pullback `ψ.pullbackOrbitSection t` is
-`G'`-invariant. -/
-theorem pullbackOrbitSection_smul_heq
-    {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
-    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (g' : G') (x' : M') :
-    ψ.pullbackOrbitSection t (g' • x') ≍ ψ.pullbackOrbitSection t x' :=
-  ψ.heq_of_comp_orbitRelQuotientMap ht (ψ.pullbackOrbitSection_heq t) g' x'
-
-/-- **Section descent commutes with equivariant pullback.** Descending `ψ.pullbackOrbitSection t`
-to `M' ⧸ G'` produces the pullback along `ψ.orbitRelQuotientMap` of the descended section on
-`M ⧸ G`. -/
-theorem orbitRelQuotientRec_pullbackOrbitSection
-    {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
-    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x)
-    (q' : MulAction.orbitRel.Quotient G' M') :
-    MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
-        (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q' =
-      MulAction.orbitRelQuotientRec t ht (ψ.orbitRelQuotientMap q') :=
-  (ψ.orbitRelQuotientRec_orbitRelQuotientMap_apply ht (ψ.pullbackOrbitSection_heq t) q').symm
-
-/-- Lifting `ψ.pullbackOrbitSection t x'` from the total space of `ψ.orbitRelQuotientMap *ᵖ V` to
-`TotalSpace F V` recovers `(⟦ψ x'⟧, t (ψ x'))`. -/
-@[simp]
-theorem lift_pullbackOrbitSection (F : Type*)
-    (t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)) (x' : M') :
-    Pullback.lift ψ.orbitRelQuotientMap
-        (TotalSpace.mk' F (E := ψ.orbitRelQuotientMap *ᵖ V)
-          (Quotient.mk (MulAction.orbitRel G' M') x') (ψ.pullbackOrbitSection t x')) =
-      TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x')) :=
-  TotalSpace.mk_cast (ψ.orbitRelQuotientMap_mk x').symm (t (ψ x'))
-
-end PullbackSection
-
-end MulActionHom
-
-namespace TauCeti
-
 section EquivariantPullback
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E' E : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H' H : Type*} [TopologicalSpace H'] [TopologicalSpace H]
+  {E' E : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H' H : Type*} [TopologicalSpace H'] [TopologicalSpace H]
   {I' : ModelWithCorners 𝕜 E' H'} {I : ModelWithCorners 𝕜 E H}
   {G' M' G M : Type*} [Group G'] [MulAction G' M'] [TopologicalSpace M'] [ChartedSpace H' M']
-  [Group G] [MulAction G M] [TopologicalSpace M] [ChartedSpace H M]
-  {m n : ℕ∞ω}
+  [Group G] [MulAction G M] [TopologicalSpace M] [ChartedSpace H M] {m n : ℕ∞ω}
   [ProperlyDiscontinuousSMul G' M'] [ContinuousConstSMul G' M'] [IsCancelSMul G' M'] [T2Space M']
   [LocallyCompactSpace M'] [IsManifold I' n M'] [ContMDiffConstSMul I' n G' M']
   [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M] [T2Space M]
   [LocallyCompactSpace M] [IsManifold I n M] [ContMDiffConstSMul I n G M]
-  {σ : G' → G} {ψ : M' →ₑ[σ] M}
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {σ : G' → G} {ψ : M' →ₑ[σ] M} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : MulAction.orbitRel.Quotient G M → Type*} [∀ q, Nonempty (V q)]
   [∀ q, TopologicalSpace (V q)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
   {t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x)}
@@ -218,15 +151,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- Along a `C^m` equivariant map `ψ : M' →ₑ[σ] M` (`m ≤ n`), the `G'`-descent of
 `ψ.pullbackOrbitSection t` is a `C^m` section of the pulled-back bundle over `M' ⧸ G'` if and only
 if the composite `x' ↦ (⟦ψ x'⟧, t (ψ x'))` into `TotalSpace F V` is `C^m`. -/
-theorem contMDiff_section_pullbackOrbitSection_iff {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x}
-    (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
-    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m
-        (fun q' ↦ TotalSpace.mk' F
-          (E := ⇑(⟨ψ.orbitRelQuotientMap,
-            (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-            C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
-          (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
-            (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) ↔
+theorem contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff
+    {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x} (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
+    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
+        (E := ⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
+          C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
+        (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
+          (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) ↔
       ContMDiff I' (I.prod 𝓘(𝕜, F)) m
         (fun x' ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x'))) := by
   let f : C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M) :=
@@ -244,14 +175,13 @@ theorem _root_.ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec
     (ht_smooth : ContMDiff I (I.prod 𝓘(𝕜, F)) m
       (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))
     (hψ : ContMDiff I' I m ψ) (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (hm : m ≤ n) :
-    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m
-      (fun q' ↦ TotalSpace.mk' F
-        (E := ⇑(⟨ψ.orbitRelQuotientMap,
-          (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-          C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
-        (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
-          (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) :=
-  (contMDiff_section_pullbackOrbitSection_iff (ht := ht) hm hψ).2 (ht_smooth.comp hψ)
+    ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
+      (E := ⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
+        C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
+      (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
+        (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) :=
+  (contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff (ht := ht) hm hψ).2
+    (ht_smooth.comp hψ)
 
 end EquivariantPullback
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.Algebra.GroupAction.Quotient
 
 /-!
 # Fibres and linear charts of pullback bundles
@@ -21,7 +22,9 @@ linear trivialization also induces the original fibre equivalence at the image p
 (`Bundle.Trivialization.linearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by two
 different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
+(`ContinuousLinearMap.inCoordinates_pullback_of_mem`), and descending the equivariant pullback of an
+invariant linear family intertwines with `Pullback.lift`
+(`TauCeti.lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`).
 -/
 
 public section
@@ -158,3 +161,38 @@ theorem inCoordinates_pullback_of_mem (f : K) (g : L) (x₀ x : X)
   rfl
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+section OrbitPullback
+
+variable {G M G' M' 𝕜 F₁ F₂ : Type*} [Group G] [MulAction G M] [Group G'] [MulAction G' M']
+  [Semiring 𝕜] {V W : MulAction.orbitRel.Quotient G M → Type*}
+  [∀ q, AddCommMonoid (V q)] [∀ q, Module 𝕜 (V q)] [∀ q, TopologicalSpace (V q)]
+  [∀ q, AddCommMonoid (W q)] [∀ q, Module 𝕜 (W q)] [∀ q, TopologicalSpace (W q)]
+  {σ : G' → G} (ψ : M' →ₑ[σ] M)
+  {φ : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x) →L[𝕜]
+    W (Quotient.mk (MulAction.orbitRel G M) x)}
+  (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x)
+
+/-- On total spaces, the `G'`-descent of the equivariant pullback of `φ` intertwines with the
+`G`-descent of `φ` along `Pullback.lift ψ.orbitRelQuotientMap`. -/
+theorem lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec
+    (p : TotalSpace F₁ (ψ.orbitRelQuotientMap *ᵖ V)) :
+    Pullback.lift ψ.orbitRelQuotientMap
+        (TotalSpace.mk' F₂ (E := ψ.orbitRelQuotientMap *ᵖ W) p.proj
+          (MulAction.orbitRelQuotientRec
+            (V := fun q' ↦ (ψ.orbitRelQuotientMap *ᵖ V) q' →L[𝕜] (ψ.orbitRelQuotientMap *ᵖ W) q')
+            (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
+            (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd)) =
+      TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj)
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ
+          (ψ.orbitRelQuotientMap p.proj) p.snd) :=
+  congrArg
+    (fun T : V (ψ.orbitRelQuotientMap p.proj) →L[𝕜] W (ψ.orbitRelQuotientMap p.proj) ↦
+      TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj) (T p.snd))
+    (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
+
+end OrbitPullback
+
+end TauCeti

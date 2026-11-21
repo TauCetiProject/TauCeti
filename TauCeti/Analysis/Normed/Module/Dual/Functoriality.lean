@@ -6,15 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Functoriality of the continuous dual
 
 Precomposition by a continuous linear map acts contravariantly on continuous duals. This file
-records the identity and composition laws for modules with arbitrary topologies. For normed
-spaces, it proves that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, packages
-this operation as a linear isometry between operator spaces, and proves the naturality of the
-canonical map into the bidual.
+records the identity and composition laws for modules with arbitrary topologies, and proves that
+over a complete nontrivially normed field, a continuous linear map between finite-dimensional
+Hausdorff topological vector spaces is bijective if and only if its transpose is
+(`ContinuousLinearMap.bijective_precomp_iff_of_finiteDimensional`). For normed spaces, it proves
+that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, packages this operation as a
+linear isometry between operator spaces, and proves the naturality of the canonical map into the
+bidual.
 
 For normed spaces over `ℝ` or `ℂ`, the adjoint of `T : E →L[𝕜] F`, with its arguments exchanged,
 is the composition of `T` with Mathlib's canonical bidual isometry
@@ -153,5 +159,32 @@ theorem toWeakDual_precomp_precomp_inclusionInDoubleDualWeak (T : E →L[𝕜] F
   simp [NormedSpace.inclusionInDoubleDualWeak_apply]
 
 end Bidual
+
+section FiniteDimensional
+
+variable [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+
+/-- Over a complete nontrivially normed field, a continuous linear map between finite-dimensional
+Hausdorff topological vector spaces is bijective if and only if its transpose `precomp 𝕜 T` on
+continuous duals is bijective. -/
+theorem bijective_precomp_iff_of_finiteDimensional (T : E →L[𝕜] F) :
+    Function.Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ↔
+      Function.Bijective T := by
+  let dE : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  let dF : Module.Dual 𝕜 F ≃ₗ[𝕜] StrongDual 𝕜 F := LinearMap.toContinuousLinearMap
+  have hT : (dE.symm : StrongDual 𝕜 E → Module.Dual 𝕜 E) ∘
+      (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) ∘ dF =
+      (T : E →ₗ[𝕜] F).dualMap := by
+    ext α v; rfl
+  have h1 : Function.Bijective (T : E →ₗ[𝕜] F).dualMap ↔
+      Function.Bijective (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) := by
+    rw [← hT, EquivLike.comp_bijective, EquivLike.bijective_comp]
+  exact h1.symm.trans LinearMap.dualMap_bijective_iff
+
+end FiniteDimensional
 
 end ContinuousLinearMap
