@@ -95,14 +95,14 @@ for a group with no such generating set the empty infimum makes the rank `0`, an
 below assumes what it needs. -/
 noncomputable def topologicalGeneratorRank : Cardinal.{u} :=
   ⨅ s : {s : Set G // ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤},
-    #(s.1 : Set G)
+    #(s.val : Set G)
 
 /-- The defining equation of the topological generator rank: the body of
 `TauCeti.topologicalGeneratorRank` is not exposed, so unfolding it goes through this lemma. -/
 theorem topologicalGeneratorRank_def :
     topologicalGeneratorRank G =
       ⨅ s : {s : Set G // ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤},
-        #(s.1 : Set G) := by
+        #(s.val : Set G) := by
   rw [topologicalGeneratorRank]
 
 /-- The **natural-number topological generator rank** of a topologically finitely generated
@@ -150,9 +150,9 @@ theorem lift_topologicalGeneratorRank_congr (e : G ≃ₜ* H) :
     Cardinal.lift.{v} (topologicalGeneratorRank G)
       = Cardinal.lift.{u} (topologicalGeneratorRank H) := by
   have hrange : Set.range (fun s : {s : Set G // ConvergesToOne s ∧
-        (Subgroup.closure s).topologicalClosure = ⊤} ↦ Cardinal.lift.{v} #(s.1 : Set G))
+        (Subgroup.closure s).topologicalClosure = ⊤} ↦ Cardinal.lift.{v} #(s.val : Set G))
       = Set.range (fun t : {t : Set H // ConvergesToOne t ∧
-        (Subgroup.closure t).topologicalClosure = ⊤} ↦ Cardinal.lift.{u} #(t.1 : Set H)) := by
+        (Subgroup.closure t).topologicalClosure = ⊤} ↦ Cardinal.lift.{u} #(t.val : Set H)) := by
     refine Set.Subset.antisymm ?_ ?_
     · rintro _ ⟨⟨s, hs, hgen⟩, rfl⟩
       refine ⟨⟨(e.toMulEquiv.toMonoidHom : G →* H) '' s,
@@ -198,8 +198,8 @@ theorem exists_convergesToOne_mk_eq_topologicalGeneratorRank [CompactSpace G]
     let ⟨s, hs, hgen⟩ := exists_convergesToOne_topologicallyGenerates (G := G)
     ⟨⟨s, hs, hgen⟩⟩
   obtain ⟨s, hs⟩ := ciInf_mem fun s : {s : Set G // ConvergesToOne s ∧
-    (Subgroup.closure s).topologicalClosure = ⊤} ↦ #(s.1 : Set G)
-  refine ⟨s.1, s.2.1, s.2.2, ?_⟩
+    (Subgroup.closure s).topologicalClosure = ⊤} ↦ #(s.val : Set G)
+  refine ⟨s.val, s.property.1, s.property.2, ?_⟩
   rw [topologicalGeneratorRank_def]
   exact hs
 

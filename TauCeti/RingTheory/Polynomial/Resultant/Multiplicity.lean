@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.GaussLemma
+import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -89,10 +90,10 @@ private theorem comp_X_add_C_mem_degreeLT {p : R[X]} {k : ℕ} (c : R) (hp : p �
 /-- Translation `p ↦ p.comp (X + C c)` as an `R`-linear equivalence on `degreeLT R k`. -/
 private noncomputable def translateDegreeLT (c : R) (k : ℕ) :
     degreeLT R k ≃ₗ[R] degreeLT R k where
-  toFun p := ⟨p.1.comp (X + C c), comp_X_add_C_mem_degreeLT c p.2⟩
+  toFun p := ⟨p.val.comp (X + C c), comp_X_add_C_mem_degreeLT c p.property⟩
   map_add' p q := by ext1; simp [add_comp]
   map_smul' r p := by ext1; simp [smul_eq_C_mul, mul_comp]
-  invFun p := ⟨p.1.comp (X + C (-c)), comp_X_add_C_mem_degreeLT (-c) p.2⟩
+  invFun p := ⟨p.val.comp (X + C (-c)), comp_X_add_C_mem_degreeLT (-c) p.property⟩
   left_inv p := by ext1; simp [comp_assoc]
   right_inv p := by ext1; simp [comp_assoc]
 
@@ -241,12 +242,12 @@ private theorem pow_dvd_det_of_forall_lt_dvd {S : Type*} [CommRing S] {k r : ℕ
   let s : Finset (Fin k) := Finset.univ.filter fun i : Fin k ↦ (i : ℕ) < r
   have hcard : s.card = r := by
     have heq : s = (Finset.range r).attach.map
-        ⟨fun x ↦ ⟨x.1, (Finset.mem_range.mp x.2).trans_le hr⟩,
+        ⟨fun x ↦ ⟨x.val, (Finset.mem_range.mp x.property).trans_le hr⟩,
           fun x y h ↦ Subtype.ext (by simpa using congrArg Fin.val h)⟩ := by
       ext i
       simp only [s, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
         Finset.mem_attach, true_and]
-      exact ⟨fun hi ↦ ⟨⟨i.1, Finset.mem_range.mpr hi⟩, rfl⟩,
+      exact ⟨fun hi ↦ ⟨⟨i.val, Finset.mem_range.mpr hi⟩, rfl⟩,
         fun ⟨⟨x, hx⟩, h⟩ ↦ h ▸ Finset.mem_range.mp hx⟩
     rw [heq, Finset.card_map, Finset.card_attach, Finset.card_range]
   have hprod : ∏ i : Fin k, M i (σ i) = (∏ i ∈ s, M i (σ i)) * ∏ i ∈ sᶜ, M i (σ i) := by
@@ -416,29 +417,12 @@ private theorem map_evalRingHom_ne_zero_of_isPrimitive {F : K[X][X]} (hF : F.IsP
 
 /-- The sum of root multiplicities of a nonzero polynomial over an injective family of points is at
 most its degree. -/
-private theorem sum_rootMultiplicity_le_natDegree {ι : Type*} [Fintype ι] {f : ι → K}
+private theorem sum_rootMultiplicity_comp_le_natDegree {ι : Type*} [Fintype ι] {f : ι → K}
     (hf : Function.Injective f) {p : K[X]} :
     ∑ i : ι, p.rootMultiplicity (f i) ≤ p.natDegree := by
   classical
-  calc ∑ i : ι, p.rootMultiplicity (f i)
-      = ∑ a ∈ Finset.univ.image f, p.rootMultiplicity a := by
-        rw [Finset.sum_image fun _ _ _ _ h ↦ hf h]
-    _ = ∑ a ∈ Finset.univ.image f, p.roots.count a := by
-        simp [count_roots]
-    _ ≤ p.roots.card := by
-        rw [← Multiset.toFinset_sum_count_eq p.roots]
-        have hsub : (Finset.univ.image f).filter (· ∈ p.roots.toFinset) ⊆ p.roots.toFinset :=
-          fun _ hx ↦ (Finset.mem_filter.mp hx).2
-        calc ∑ a ∈ Finset.univ.image f, p.roots.count a
-            = ∑ a ∈ (Finset.univ.image f).filter (· ∈ p.roots.toFinset), p.roots.count a := by
-              rw [Finset.sum_filter]
-              refine Finset.sum_congr rfl fun a _ ↦ ?_
-              split_ifs with h
-              · rfl
-              · exact Multiset.count_eq_zero.mpr (Multiset.mem_toFinset.not.mp h)
-          _ ≤ ∑ a ∈ p.roots.toFinset, p.roots.count a :=
-              Finset.sum_le_sum_of_subset hsub
-    _ ≤ p.natDegree := p.card_roots'
+  rw [← Finset.sum_image (f := p.rootMultiplicity) fun _ _ _ _ h ↦ hf h]
+  exact p.sum_rootMultiplicity_le_natDegree _
 
 /-- Over a field of characteristic zero, the discriminant resultant `Res_z(F, ∂_z F)` of an
 irreducible polynomial `F : K[X][X]` of positive `z`-degree is nonzero. -/
@@ -514,7 +498,7 @@ private theorem sum_rootMultiplicity_le_of_irreducible [CharZero K] [DecidableEq
           ∑ i : ι, R.rootMultiplicity (P i).2 := by
         rw [Finset.sum_add_distrib, Finset.sum_boole, Nat.cast_id]
     _ ≤ N * (F.natDegree + paramNatDegree F) + R.natDegree :=
-        Nat.add_le_add (hSZ F hF.ne_zero) (sum_rootMultiplicity_le_natDegree hP_snd)
+        Nat.add_le_add (hSZ F hF.ne_zero) (sum_rootMultiplicity_comp_le_natDegree hP_snd)
     _ ≤ N * F.natDegree + N * paramNatDegree F + 2 * F.natDegree * paramNatDegree F := by
         rw [Nat.mul_add]
         exact Nat.add_le_add_left hRdeg _
@@ -681,7 +665,7 @@ theorem mul_card_le_of_forall_iterate_derivative_eval_eq_zero [CharZero K] [Deci
           (rootMultiplicity_pos hc0).mpr (Finset.mem_filter.mp hi).2
       _ ≤ ∑ i : ι, c.rootMultiplicity (P i).2 :=
           Finset.sum_le_univ_sum_of_nonneg fun _ ↦ Nat.zero_le _
-      _ ≤ c.natDegree := sum_rootMultiplicity_le_natDegree hP_snd
+      _ ≤ c.natDegree := sum_rootMultiplicity_comp_le_natDegree hP_snd
   have hGood : N * sGood.card ≤
       ∑ i : ι, (G.map (evalRingHom (P i).2)).rootMultiplicity (P i).1 := by
     calc N * sGood.card = ∑ _i ∈ sGood, N := by simp [mul_comm]

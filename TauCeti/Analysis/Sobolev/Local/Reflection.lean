@@ -300,7 +300,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       have hz' : z.im ≤ 0 := not_lt.1 (show ¬ (0 : ℝ) < z.im from hz)
       refine ⟨imCutoff_eq_zero ?_, ?_⟩
       · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
-      · simp [hD, Real.smoothTransition.deriv_of_neg (imCutoff_arg_neg (n := n) hz')]
+      · simp [hD, Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
         (f := fun z => (imCutoff n z * fderiv ℝ χ z v + D n z) • g z)
         fun z hz => by simp [hzero z hz],
@@ -350,8 +350,8 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       swap
       · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
       by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
-      · simpa [hD, Real.smoothTransition.deriv_of_one_lt
-          (by linarith : 1 < ((n : ℝ) + 1) * z.im - 1)]
+      · simpa [hD, Real.smoothTransition.deriv_of_one_le
+          (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
           using hb0
       push Not at h2
       rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
@@ -368,7 +368,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
         _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
     · have hz : 0 < z.im := hz
       exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-        simp [hD, Real.smoothTransition.deriv_of_one_lt hn]
+        simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
   have hlim := h1.add h2
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg
@@ -607,8 +607,8 @@ reflection of the tangential derivative, and the normal component is the reflect
 derivative with the weights `d j * higherReflectionNode j`. Below the axis it is the chain-rule
 expression `TauCeti.planarReflectionFDeriv_of_neg`. -/
 def planarReflectionFDeriv (d : Fin k → ℝ) (Dg : ℂ → ℂ →L[ℝ] F) (z : ℂ) : ℂ →L[ℝ] F :=
-  ContinuousLinearMap.smulRightL ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
-    ContinuousLinearMap.smulRightL ℝ ℂ F imCLM
+  ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM
       (planarReflection (fun j => d j * higherReflectionNode j) (fun w => Dg w I) z)
 
 @[simp]
@@ -697,8 +697,8 @@ theorem MemWkpLoc.planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens �
     have h2 := ih (d := fun j => d j * higherReflectionNode j)
       (fun i hi => by simpa [mul_assoc, pow_succ'] using hd (i + 1) (by omega))
       (hDgm.clm_comp (ContinuousLinearMap.apply ℝ F I))
-    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F reCLM)).add
-      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F imCLM))
+    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM)).add
+      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM))
     convert h using 1
     funext z
     simp [planarReflectionFDeriv]
@@ -759,7 +759,7 @@ theorem MemWkpLoc.exists_opens_memWkpLoc_planarReflection [CompleteSpace F] {p :
     (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
     ∃ V : Opens ℂ, (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V ∧ (V : Set ℂ) ⊆ Ω ∧
       MemWkpLoc p V k (TauCeti.planarReflection (higherReflectionCoeff k) u) := by
-  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.2
+  choose r hr0 hrΩ using fun x : {x : ℝ // (x : ℂ) ∈ Ω} => Metric.isOpen_iff.1 Ω.isOpen _ x.property
   let H : Opens ℂ := ⟨{z | 0 < z.im}, isOpen_lt continuous_const continuous_im⟩
   let O : Option {x : ℝ // (x : ℂ) ∈ Ω} → Opens ℂ := fun i =>
     i.elim (Ω ⊓ H) fun x => ⟨Metric.ball (x : ℂ) (r x), Metric.isOpen_ball⟩
@@ -798,12 +798,9 @@ theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0
     (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
     MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D := by
   obtain ⟨-, D', hD', hD'p⟩ := memWkpLoc_succ_iff.1 hu
-  have hset : ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
-      (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
-    rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
-    exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
   exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
-    (by rw [Measure.restrict_congr_set hset]; exact hD'.ae_eq hD)
+    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
+        exact hD'.ae_eq hD)
 
 /-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
 class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a

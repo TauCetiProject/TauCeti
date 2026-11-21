@@ -185,7 +185,7 @@ private lemma matrix_comp_matrix [HasFiniteBiproducts C] (E O : Finset ℤ)
   by_cases hnk : n = k
   · subst hnk
     rw [biproduct.ι_π_self, Finset.sum_coe_sort O fun m => evenOddSquareEntry H n n m]
-    exact sum_evenOddSquareEntry_self H n O (hEO n n.2)
+    exact sum_evenOddSquareEntry_self H n O (hEO n n.property)
   · rw [biproduct.ι_π_ne _ hnk]
     exact Finset.sum_eq_zero fun m _ =>
       evenOddSquareEntry_eq_zero_of_ne H (fun h => hnk (Subtype.ext h)) m

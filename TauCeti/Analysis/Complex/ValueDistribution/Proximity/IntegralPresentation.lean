@@ -64,8 +64,8 @@ private noncomputable def localCartanKernel (f : ℂ → ℂ) (R α β : ℝ) : 
 private lemma integrableOn_localCartanKernel_left (f : ℂ → ℂ) (R β : ℝ) :
     IntegrableOn (localCartanKernel f R · β) (Ioc 0 (2 * π)) := by
   apply (intervalIntegrable_iff_integrableOn_Ioc_of_le two_pi_pos.le).1
-  simpa [localCartanKernel, norm_sub_rev, CircleIntegrable] using
-    circleIntegrable_log_norm_sub_const 1
+  have h : CircleIntegrable (fun z ↦ Real.log ‖z - f (circleMap 0 R β)‖) 0 1 := by fun_prop
+  simpa [localCartanKernel, norm_sub_rev, CircleIntegrable] using h
 
 private lemma measurable_localCartanKernel (hf : MeromorphicOn f (sphere 0 |R|)) :
     Measurable (fun p : ℝ × ℝ ↦ localCartanKernel f R p.1 p.2) := by

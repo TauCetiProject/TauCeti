@@ -27,6 +27,9 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
+  projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
+  finite.
 * `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
   nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
@@ -42,6 +45,8 @@ and so separate points.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
+* `Module.Dual.span_range_comp_eq_top_of_injective`: pulling a spanning family of forms back along
+  an injective linear map still spans the dual.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
@@ -49,6 +54,8 @@ and so separate points.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
   maps linearly onto its endomorphism algebra.
+* `LinearMap.finrank_range_flip`: a pairing `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂` reflexive and
+  its transpose `B.flip` have the same rank.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
@@ -84,6 +91,28 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section CommSemiring
+
+variable (R ι : Type*) [CommSemiring R]
+
+/-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
+theorem linearIndependent_proj :
+    LinearIndependent R (fun i : ι ↦ (LinearMap.proj i : Dual R (ι → R))) := by
+  classical
+  refine linearIndependent_iff'ₛ.mpr fun s l₁ l₂ h j hj ↦ ?_
+  simpa [hj, Pi.single_apply] using LinearMap.congr_fun h (Pi.single j (1 : R))
+
+/-- The coordinate projections on `ι → R` span the dual space when `ι` is finite. -/
+theorem span_range_proj_eq_top [Finite ι] :
+    Submodule.span R (Set.range fun i : ι ↦ (LinearMap.proj i : Dual R (ι → R))) = ⊤ := by
+  classical
+  have h : ⇑(Pi.basisFun R ι).dualBasis = fun i ↦ (LinearMap.proj i : Dual R (ι → R)) := by
+    ext i x
+    simp
+  exact h ▸ (Pi.basisFun R ι).dualBasis.span_eq
+
+end CommSemiring
 
 section OrderedCommRing
 
@@ -147,7 +176,7 @@ theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V
     (c := Function.update (fun i ↦ -(f (X i) / f (X j))) j 0) (Function.update_self _ _ _)).2 hX
   convert h.comp Subtype.val Subtype.val_injective using 1
   ext i
-  simp [Function.update_of_ne i.2, sub_eq_add_neg]
+  simp [Function.update_of_ne i.property, sub_eq_add_neg]
 
 /-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
 `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with
@@ -219,6 +248,15 @@ theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
   simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
     h, mul_comm, sub_self]
 
+/-- Pulling a spanning family of forms back along an injective linear map still spans the dual. -/
+theorem span_range_comp_eq_top_of_injective {W : Type*} [AddCommGroup W] [Module K W]
+    {L : ι → Dual K V} (hL : Submodule.span K (Set.range L) = ⊤) {f : W →ₗ[K] V}
+    (hf : Function.Injective f) :
+    Submodule.span K (Set.range fun i ↦ (L i).comp f) = ⊤ := by
+  simp_rw [← LinearMap.dualMap_apply', Set.range_comp', ← Submodule.map_span, hL,
+    Submodule.map_top, LinearMap.range_eq_top]
+  exact LinearMap.dualMap_surjective_of_injective hf
+
 end Field
 
 end Module.Dual
@@ -282,6 +320,24 @@ theorem of_surjective_end {K E S F : Type*} [Field K] [AddCommMonoid E] [Module 
   .of_finite_end K S
 
 end Module.Finite
+
+namespace LinearMap
+
+variable {K V₁ V₂ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
+  [Module K V₂] [Module.IsReflexive K V₂]
+
+/-- **A pairing and its transpose have the same rank**: for `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂`
+reflexive, the transposed pairing `B.flip : V₂ →ₗ[K] Module.Dual K V₁` is `B.dualMap` composed
+with the evaluation isomorphism of `V₂`, so its rank is that of `B`
+(`LinearMap.finrank_range_dualMap_eq_finrank_range`). -/
+theorem finrank_range_flip (B : V₁ →ₗ[K] V₂ →ₗ[K] K) :
+    Module.finrank K (range B.flip) = Module.finrank K (range B) := by
+  -- `B.flip` is definitionally `B.dualMap ∘ₗ evalEquiv`, as in Mathlib's
+  -- `LinearMap.dualAnnihilator_ker_eq_range_flip`
+  change Module.finrank K (range (B.dualMap ∘ₗ (Module.evalEquiv K V₂).toLinearMap)) = _
+  rw [range_comp_of_range_eq_top _ (LinearEquiv.range _), finrank_range_dualMap_eq_finrank_range]
+
+end LinearMap
 
 namespace LinearIndependent
 

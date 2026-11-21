@@ -41,7 +41,11 @@ A morphism out of zeroth homology is determined by its values on the classes of 
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
-class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
+class (`TauCeti.singularHomology₀Section_eq_of_joined`), and with coefficients in a module the
+converse holds on every nonzero coefficient
+(`TauCeti.singularHomology₀Section_apply_eq_iff`). Multiplying the class of each point by a
+unit that is constant along paths is an automorphism (`TauCeti.singularHomology₀UnitsSmul`,
+`TauCeti.isIso_singularHomology₀UnitsSmul`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
@@ -189,6 +193,53 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
     singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
   simp [singularHomology₀Desc]
 
+/-- The endomorphism of zeroth singular homology multiplying the class of each point `x` by a unit
+`u x` which is constant along paths. It is an automorphism
+(`TauCeti.isIso_singularHomology₀UnitsSmul`). -/
+def singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C] {X : TopCat.{w}}
+    (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
+    ((singularHomologyFunctor C 0).obj R).obj X ⟶ ((singularHomologyFunctor C 0).obj R).obj X :=
+  singularHomology₀Desc R (fun x ↦ (u x : K) • singularHomology₀Section R x)
+    fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩]
+
+/-- The morphism `TauCeti.singularHomology₀UnitsSmul R u hu` multiplies the class of the point `x`
+by `u x`. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C]
+    {X : TopCat.{w}} (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) (x : X) :
+    singularHomology₀Section R x ≫ singularHomology₀UnitsSmul R u hu =
+      (u x : K) • singularHomology₀Section R x :=
+  singularHomology₀Section_singularHomology₀Desc R _ _ x
+
+/-- Multiplying the class of each point `x` by a unit `u x` which is constant along paths is an
+automorphism of zeroth singular homology. -/
+instance isIso_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C] {X : TopCat.{w}}
+    (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
+    IsIso (singularHomology₀UnitsSmul R u hu) :=
+  -- The inverse multiplies the class of `x` by `(u x)⁻¹`.
+  ⟨singularHomology₀UnitsSmul R (fun x ↦ (u x)⁻¹) fun x y γ ↦ by rw [hu γ],
+    singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul],
+    singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul]⟩
+
+/-- With coefficients in a module, the classes of two points in zeroth singular homology agree
+on a nonzero coefficient `r` exactly when the points are joined by a path. -/
+theorem singularHomology₀Section_apply_eq_iff {k : Type v} [Ring k] {M : ModuleCat.{w} k}
+    {X : TopCat.{w}} {x y : X} {r : M} (hr : r ≠ 0) :
+    (singularHomology₀Section M x).hom r = (singularHomology₀Section M y).hom r ↔ Joined x y := by
+  classical
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [singularHomology₀Section_eq_of_joined M h]⟩
+  by_contra hxy
+  -- The morphism out of zeroth homology which is the identity on the classes of the points of
+  -- the path component of `x` and zero on the others separates `[x] r` from `[y] r`.
+  let v : X → (M ⟶ M) := fun z ↦ if Joined x z then 𝟙 M else 0
+  have hv : ∀ ⦃z z' : X⦄, Path z z' → v z = v z' := fun z z' γ ↦ by
+    simp only [v, show Joined x z ↔ Joined x z' from ⟨(·.trans ⟨γ⟩), (·.trans ⟨γ.symm⟩)⟩]
+  have hd := congrArg (singularHomology₀Desc M v hv).hom h
+  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    singularHomology₀Section_singularHomology₀Desc,
+    singularHomology₀Section_singularHomology₀Desc] at hd
+  exact hr (by simpa [v, hxy, Joined.refl] using hd)
+
 variable [HasKernels C]
 
 /-- Reduced singular homology: the augmentation kernel in degree zero and ordinary singular
@@ -310,6 +361,15 @@ lemma isZero_singularHomologyFunctor_zero_of_isEmpty (X : TopCat.{w}) [IsEmpty X
     ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
     (X.singularHomology₀Iso R)
+
+omit [HasKernels C] in
+/-- The singular homology of the empty space vanishes in every degree. -/
+lemma isZero_singularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
+    IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
+  cases n with
+  | zero => exact isZero_singularHomologyFunctor_zero_of_isEmpty R X
+  | succ n =>
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (n + 1) R X n.succ_ne_zero
 
 /-- The reduced singular homology of the empty space vanishes in every degree. -/
 lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :

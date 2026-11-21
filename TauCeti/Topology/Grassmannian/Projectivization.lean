@@ -34,7 +34,7 @@ variable {𝕜 : Type*} [Field 𝕜] {N M : ℕ}
 
 private theorem equivSubmodule_mk_frame (v : finiteFullRankFrame 𝕜 1 N) :
     Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)
-      (Projectivization.mk 𝕜 (v.1 0) (v.2.ne_zero 0)) = frameSpan v := by
+      (Projectivization.mk 𝕜 (v.val 0) (v.property.ne_zero 0)) = frameSpan v := by
   apply Subtype.ext
   simp only [Projectivization.coe_equivSubmodule, Projectivization.submodule_mk,
     coe_frameSpan, Set.range_unique, Fin.default_eq_zero]
@@ -56,9 +56,9 @@ noncomputable def projectivizationHomeomorph (𝕜 : Type*) [Field 𝕜] [Topolo
   continuous_invFun := by
     apply isQuotientMap_frameSpan.continuous_iff.2
     have hc := Projectivization.continuous_mk (K := 𝕜)
-      ((continuous_apply 0).comp (continuous_subtype_val (p :=
+      ((continuous_apply 0).comp (continuous_subtypeVal (p :=
         fun v : Fin 1 → Fin N → 𝕜 ↦ LinearIndependent 𝕜 v)))
-      (fun v ↦ v.2.ne_zero 0)
+      (fun v ↦ v.property.ne_zero 0)
     exact hc.congr fun v ↦
       ((Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)).symm_apply_eq.2
         (equivSubmodule_mk_frame v).symm).symm
@@ -66,19 +66,19 @@ noncomputable def projectivizationHomeomorph (𝕜 : Type*) [Field 𝕜] [Topolo
 /-- The comparison retains the actual line as a submodule of the coordinate space. -/
 @[simp]
 theorem coe_projectivizationHomeomorph (p : ℙ 𝕜 (Fin N → 𝕜)) :
-    (projectivizationHomeomorph 𝕜 N p).1 = p.submodule :=
+    (projectivizationHomeomorph 𝕜 N p).val = p.submodule :=
   Projectivization.coe_equivSubmodule 𝕜 p
 
 /-- The inverse comparison also retains the underlying line. -/
 @[simp]
 theorem submodule_projectivizationHomeomorph_symm (V : finiteGrassmannian 𝕜 1 N) :
-    ((projectivizationHomeomorph 𝕜 N).symm V).submodule = V.1 :=
+    ((projectivizationHomeomorph 𝕜 N).symm V).submodule = V.val :=
   congrArg Subtype.val ((projectivizationHomeomorph 𝕜 N).apply_symm_apply V)
 
 /-- The projective point of a one-vector frame corresponds to its span. -/
 @[simp]
 theorem projectivizationHomeomorph_mk_frame (v : finiteFullRankFrame 𝕜 1 N) :
-    projectivizationHomeomorph 𝕜 N (Projectivization.mk 𝕜 (v.1 0) (v.2.ne_zero 0)) =
+    projectivizationHomeomorph 𝕜 N (Projectivization.mk 𝕜 (v.val 0) (v.property.ne_zero 0)) =
       frameSpan v :=
   equivSubmodule_mk_frame v
 
