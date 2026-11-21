@@ -87,6 +87,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
 * `Polynomial.newtonSlopes_X_pow_sub_C` and `Polynomial.newtonSlopes_X_sub_C`: for `c` of finite
   valuation, `X ^ n - C c` has `n` finite slopes all equal to `-v c / n`, and in particular
   `X - C α` has the single finite slope `-v α`.
+* `Polynomial.newtonSlopes_one_sub_C_mul_X`: for `c` of finite valuation, `1 - C c * X` has the
+  single finite slope `v c`.
 * `PowerSeries.finite_finiteEdges_newtonPolygon_iff`: for a power series with
   admissible coefficient heights under a valuation that takes `⊤` only at `0`, the Newton polygon
   has finitely many finite unit edges if and only if the series is a polynomial.
@@ -598,6 +600,17 @@ theorem newtonSlopes_X_pow_sub_C (n : ℕ) {c : R} (hc : v c ≠ ⊤) :
 theorem newtonSlopes_X_sub_C {α : R} (hα : v α ≠ ⊤) :
     (X - C α).newtonSlopes v = {-(v α).untop₀} := by
   simpa using newtonSlopes_X_pow_sub_C v 1 hα
+
+/-- The polynomial `1 - C c * X`, whose coefficient `c` has finite valuation, has the single
+finite slope `v c`; over a field its root `c⁻¹` has valuation `-v c`. -/
+theorem newtonSlopes_one_sub_C_mul_X {c : R} (hc : v c ≠ ⊤) :
+    (1 - C c * X).newtonSlopes v = {(v c).untop₀} := by
+  have h₁ : (1 - X : R[X]).newtonSlopes v = {0} := by
+    have h := newtonSlopes_C_mul (X - C 1) v (c := -1) (by simp)
+    rw [newtonSlopes_X_sub_C v (by simp)] at h
+    simpa [sub_eq_neg_add, mul_add, add_comm] using h
+  have h := newtonSlopes_comp_C_mul_X (1 - X) v hc
+  rwa [sub_comp, one_comp, X_comp, h₁, Multiset.map_singleton, zero_add] at h
 
 end Polynomial
 
