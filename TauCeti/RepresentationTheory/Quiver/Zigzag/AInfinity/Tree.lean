@@ -30,8 +30,7 @@ implication of Liu and Wang's Theorem 1.1).
 * `SimpleGraph.IsTree.exists_not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra`: over every
   nontrivial commutative ring, a finite non-Dynkin tree has `HH^{n, 2 - n} ≠ 0` for some
   `n ∈ {4, 6, 8, 12}`.
-* `SimpleGraph.IsTree.exists_not_isFormal_zigzagLoopAInfinityAlgebra_single`,
-  `SimpleGraph.IsTree.exists_not_isFormal_zigzagLoopAInfinityAlgebra`,
+* `SimpleGraph.IsTree.exists_not_isFormal_zigzagLoopAInfinityAlgebra`,
   `SimpleGraph.IsTree.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra` (and their
   `_of_not_isUnit_two` companions): over every nontrivial `ℚ`-algebra or when `(2 : k)` is not a
   unit, some single-walk loop deformation in arity `4`, `6`, `8` or `12` is not formal and the
@@ -109,25 +108,25 @@ private theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_affineE [Nontr
   classical
   have := Fintype.ofFinite V
   rcases hG.isContained_affineDynkinType_of_not_exists_dynkinType_iso hD with
-    ⟨m, hm, ⟨f⟩⟩ | h | h | h
-  · obtain ⟨w, hw, hnf⟩ :=
-      exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD (k := k) (hns := hns)
-        hm f
-    exact ⟨4, inferInstance, by simp, w, hw, hnf⟩
-  · obtain ⟨f⟩ := h
+    ⟨m, hm, ⟨f⟩⟩ | hE6' | hE7' | hE8'
+  · exact ⟨4, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineDWalk hm t),
+      fun i ↦ congrArg f (affineDWalk_fst_eq_snd hm i),
+      not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk hm f⟩
+  · obtain ⟨f⟩ := hE6'
     exact ⟨6, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE6Walk t),
       fun i ↦ congrArg f (affineE6Walk_fst_eq_snd i), hE6 f⟩
-  · obtain ⟨f⟩ := h
+  · obtain ⟨f⟩ := hE7'
     exact ⟨8, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE7Walk t),
       fun i ↦ congrArg f (affineE7Walk_fst_eq_snd i), hE7 f⟩
-  · obtain ⟨f⟩ := h
+  · obtain ⟨f⟩ := hE8'
     exact ⟨12, inferInstance, by simp, fun t ↦ f.toHom.mapDart (affineE8Walk t),
       fun i ↦ congrArg f (affineE8Walk_fst_eq_snd i), hE8 f⟩
 
 /-- **A non-Dynkin tree admits a non-formal single-walk loop deformation in arity `4`, `6`, `8` or
-`12`**, over every nontrivial `ℚ`-algebra. -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_single [Nontrivial k] [Algebra ℚ k]
-    (hG : G.IsTree)
+`12`** over every nontrivial `ℚ`-algebra: if a finite tree `G` is not isomorphic to the diagram of
+any valid Dynkin type, then for some `n ∈ {4, 6, 8, 12}` there is a closed walk of length `n` whose
+single-walk loop deformation of the strict zigzag algebra of `G` is not formal. -/
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra [Nontrivial k] [Algebra ℚ k] (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
       ∃ (w : Fin n → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
@@ -139,10 +138,10 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_single [Nontrivial k] [Al
     not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk
 
 /-- **A non-Dynkin tree admits a non-formal single-walk loop deformation in arity `4`, `6`, `8` or
-`12`**, over every commutative ring in which `(2 : k)` is not a unit (in particular in
+`12`** over every commutative ring in which `(2 : k)` is not a unit (in particular in
 characteristic `2` and over `ℤ`). -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_single_of_not_isUnit_two
-    (h2 : ¬IsUnit (2 : k)) (hG : G.IsTree)
+theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (h2 : ¬IsUnit (2 : k))
+    (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
       ∃ (w : Fin n → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
@@ -153,32 +152,6 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_single_of_not_isUnit_two
     (not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2)
     (not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2)
     (not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2)
-
-/-- **A non-Dynkin tree admits a non-formal loop deformation in arity `4`, `6`, `8` or `12`** over
-every nontrivial `ℚ`-algebra: if a finite tree `G` is not isomorphic to the diagram of any valid
-Dynkin type, then for some `n ∈ {4, 6, 8, 12}` there is a loop deformation of the strict zigzag
-algebra of `G` in arity `n` which is not formal. -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra [Nontrivial k] [Algebra ℚ k] (hG : G.IsTree)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
-      ∃ (c : (Fin n → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-        ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
-  obtain ⟨n, hn, hmem, _, _, hnf⟩ :=
-    hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_single (k := k) (hns := hns) hD
-  exact ⟨n, hn, hmem, _, _, hnf⟩
-
-/-- **A non-Dynkin tree admits a non-formal loop deformation in arity `4`, `6`, `8` or `12`** over
-every commutative ring in which `(2 : k)` is not a unit (in particular in characteristic `2` and
-over `ℤ`). -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two (h2 : ¬IsUnit (2 : k))
-    (hG : G.IsTree)
-    (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
-    ∃ (n : ℕ) (_ : NeZero n), n ∈ ({4, 6, 8, 12} : Finset ℕ) ∧
-      ∃ (c : (Fin n → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
-        ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
-  obtain ⟨n, hn, hmem, _, _, hnf⟩ :=
-    hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_single_of_not_isUnit_two (hns := hns) h2 hD
-  exact ⟨n, hn, hmem, _, _, hnf⟩
 
 /-- **The strict zigzag algebra of a non-Dynkin tree is not intrinsically formal** over every
 nontrivial `ℚ`-algebra (in particular over every field of characteristic zero). -/
@@ -211,11 +184,12 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal [Nontrivial k] [Algebra
   obtain ⟨t, ht, -, h⟩ :=
     hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
   have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
-  obtain ⟨_, _, _, c, hc, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
+  obtain ⟨_, _, _, w, hw, hnf⟩ := hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra
     (k := k) (hns := hG.connected.preconnected.exists_adj_of_nontrivial) hD
-  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected c hc).not.mpr hnf⟩
+  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected (Finsupp.single w (1 : k))
+      (fst_eq_snd_of_mem_support_single hw 1),
+    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected _ _,
+    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected _ _).not.mpr hnf⟩
 
 /-- **Every finite non-Dynkin tree admits a non-formal minimal strictly unital `A∞` deformation** of
 its public zigzag algebra `zigzagAlgebra k G` whenever `(2 : k)` is not a unit (for instance in
@@ -229,12 +203,13 @@ theorem exists_isZigzagAInfinityDeformation_not_isFormal_of_not_isUnit_two (h2 :
   obtain ⟨t, ht, -, h⟩ :=
     hG.connected.exists_isContained_affineDynkinType_of_not_exists_dynkinType_iso hD
   have : Nontrivial V := t.nontrivial_of_graph_isContained ht h
-  obtain ⟨_, _, _, c, hc, hnf⟩ :=
+  obtain ⟨_, _, _, w, hw, hnf⟩ :=
     hG.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_not_isUnit_two
       (hns := hG.connected.preconnected.exists_adj_of_nontrivial) h2 hD
-  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected c hc,
-    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected c hc).not.mpr hnf⟩
+  exact ⟨zigzagAlgebraLoopAInfinityAlgebra hG.connected (Finsupp.single w (1 : k))
+      (fst_eq_snd_of_mem_support_single hw 1),
+    isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra hG.connected _ _,
+    (isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff hG.connected _ _).not.mpr hnf⟩
 
 /-- **The public zigzag algebra of a finite non-Dynkin tree is not intrinsically formal**, over any
 nontrivial `ℚ`-algebra (in particular over any field of characteristic zero). This proves the

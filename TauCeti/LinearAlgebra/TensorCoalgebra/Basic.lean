@@ -273,10 +273,10 @@ is the initial block of `x` of length `d`. -/
 theorem subword_shift_right_eq {n : ℕ} (x : Fin n → M) (d : Fin n) :
     subword R (fun i : Fin n ↦ x (i + d)) (n - d) d = subword R x 0 d :=
   subword_congr R _ x (by omega) (by omega) fun j hj ↦ congrArg x <| Fin.ext <| by
+    have hsum : n - (d : ℕ) + j + d = j + n := by omega
     rw [Fin.val_add]
     dsimp only
-    rw [show (n - d + j) + d = j + n by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega), Nat.zero_add]
+    rw [hsum, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega), Nat.zero_add]
 
 /-- Deconcatenating a block cuts it at each of its nontrivial internal positions. -/
 theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :

@@ -23,7 +23,7 @@ without isolated vertices containing a copy of `Dₙ` (`n ≥ 4`), not necessari
    (`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`).
 2. Over every nontrivial commutative ring, there exists a closed walk of length four in `G` whose
    single-walk loop deformation is not formal
-   (`TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD` and
+   (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk` and
    `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D`), and hence the strict
    and public zigzag algebras of `G` are not intrinsically formal
    (`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D` and
@@ -33,14 +33,19 @@ Specializing to `G = Dₙ` gives the same conclusions for the affine `Dₙ` zigz
 all `n ≥ 4`. Explicit quartic deformations of the affine `D₄` zigzag algebra are constructed in
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
+## Main definitions
+
+* `TauCeti.affineDWalk`: the four-dart backtrack walk `1 → 0 → 1 → (n - 1) → 1` at node `1` of
+  the affine `Dₙ` diagram (`n ≥ 4`).
+
 ## Main results
 
 * `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`: if `G`
   contains a copy of an affine `Dₙ` diagram (`n ≥ 4`), then `HH^{4, -2}(Z, Z)` is nonzero over
   every nontrivial commutative ring.
-* `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD`: along any copy of
-  an affine `Dₙ` diagram (`n ≥ 4`) in `G`, there exists a closed walk of length four whose
-  single-walk loop deformation is not formal over every nontrivial commutative ring.
+* `TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk`: along any copy of an affine `Dₙ`
+  diagram (`n ≥ 4`) in `G`, the single-walk loop deformation of `affineDWalk` is not formal over
+  every nontrivial commutative ring.
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D`,
   `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_D` and
   `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_D`: over every nontrivial
@@ -74,7 +79,7 @@ local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
 
 /-- The four-dart backtrack walk `1 → 0 → 1 → (n - 1) → 1` at node `1` of the affine `Dₙ` diagram
 (`n ≥ 4`), in product order. -/
-private def affineDWalk {n : ℕ} (hn : 4 ≤ n) : Fin 4 → (AffineDynkinType.D n).graph.Dart :=
+def affineDWalk {n : ℕ} (hn : 4 ≤ n) : Fin 4 → (AffineDynkinType.D n).graph.Dart :=
   have hnodes := AffineDynkinType.nodes_D n
   let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
   let a : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
@@ -86,8 +91,23 @@ private def affineDWalk {n : ℕ} (hn : 4 ≤ n) : Fin 4 → (AffineDynkinType.D
     (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
   ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩]
 
+/-- Unfolding `affineDWalk` as the four-dart backtrack walk `1 → 0 → 1 → (n - 1) → 1` at node
+`1`. -/
+theorem affineDWalk_def {n : ℕ} (hn : 4 ≤ n) :
+    affineDWalk hn =
+      ![⟨(⟨n - 1, by simp⟩, ⟨1, by simp; omega⟩),
+          ((AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)).symm⟩,
+        ⟨(⟨1, by simp; omega⟩, ⟨n - 1, by simp⟩),
+          (AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)⟩,
+        ⟨(⟨0, by simp⟩, ⟨1, by simp; omega⟩),
+          ((AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)).symm⟩,
+        ⟨(⟨1, by simp; omega⟩, ⟨0, by simp⟩),
+          (AffineDynkinType.graph_D_adj hn).2 (by dsimp; omega)⟩] := by
+  funext i
+  fin_cases i <;> rfl
+
 /-- Consecutive darts of `affineDWalk` are cyclically composable in product order. -/
-private theorem affineDWalk_fst_eq_snd {n : ℕ} (hn : 4 ≤ n) (i : Fin 4) :
+theorem affineDWalk_fst_eq_snd {n : ℕ} (hn : 4 ≤ n) (i : Fin 4) :
     (affineDWalk hn i).fst = (affineDWalk hn (i + 1)).snd := by
   fin_cases i <;> rfl
 
@@ -116,20 +136,20 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContaine
   exact one_ne_zero
 
 /-- **A non-formal quartic loop deformation along a copy of an affine `Dₙ` diagram**, over every
-nontrivial commutative ring: given a copy of `Dₙ` (`n ≥ 4`) in `G`, there exists a closed walk of
-length four in `G` whose single-walk loop deformation is a minimal, strictly unital `A∞` structure
-on the zigzag algebra of `G` which is not formal. -/
-theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD [Nontrivial k] {n : ℕ}
+nontrivial commutative ring: given a copy of `Dₙ` (`n ≥ 4`) in `G`, the single-walk loop
+deformation supported on the image of `affineDWalk` is a minimal, strictly unital `A∞` structure on
+the zigzag algebra of `G` which is not formal. -/
+theorem not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk [Nontrivial k] {n : ℕ}
     (hn : 4 ≤ n) (f : (AffineDynkinType.D n).graph.Copy G) :
-    ∃ (w : Fin 4 → G.Dart) (hw : ∀ i, (w i).fst = (w (i + 1)).snd),
-      ¬(zigzagLoopAInfinityAlgebra hns (Finsupp.single w (1 : k))
-        (fst_eq_snd_of_mem_support_single hw (1 : k))).IsFormal :=
-  ⟨fun t ↦ f.toHom.mapDart (affineDWalk hn t), fun i ↦ congrArg f (affineDWalk_fst_eq_snd hn i),
-    not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace f
-      (AffineDynkinType.isBipartite_graph_D hn)
-      (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
-      (sum_affineDMatrix_mul_affineDMatrix k hn) (affineDWalk_fst_eq_snd hn)
-      (by rw [trace_affineDMatrix_affineDWalk]; exact isUnit_one)⟩
+    ¬(zigzagLoopAInfinityAlgebra hns
+      (Finsupp.single (fun t ↦ f.toHom.mapDart (affineDWalk hn t)) (1 : k))
+      (fst_eq_snd_of_mem_support_single
+        (fun i ↦ congrArg f (affineDWalk_fst_eq_snd hn i)) (1 : k))).IsFormal :=
+  not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace f
+    (AffineDynkinType.isBipartite_graph_D hn)
+    (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
+    (sum_affineDMatrix_mul_affineDMatrix k hn) (affineDWalk_fst_eq_snd hn)
+    (by rw [trace_affineDMatrix_affineDWalk]; exact isUnit_one)
 
 /-- **Graphs containing an affine `Dₙ` admit a non-formal quartic loop deformation**, over every
 nontrivial commutative ring: if `G` has no isolated vertex and contains a copy of the affine diagram
@@ -142,9 +162,7 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_D
     ∃ (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd),
       ¬(zigzagLoopAInfinityAlgebra hns c hc).IsFormal := by
   obtain ⟨f⟩ := hG
-  obtain ⟨_, _, hnf⟩ :=
-    exists_not_isFormal_zigzagLoopAInfinityAlgebra_four_of_copy_affineD (k := k) (hns := hns) hn f
-  exact ⟨_, _, hnf⟩
+  exact ⟨_, _, not_isFormal_zigzagLoopAInfinityAlgebra_affineDWalk hn f⟩
 
 /-- **The strict zigzag algebra of a graph containing an affine `Dₙ` is not intrinsically formal**
 for `n ≥ 4`, over every nontrivial commutative ring. -/

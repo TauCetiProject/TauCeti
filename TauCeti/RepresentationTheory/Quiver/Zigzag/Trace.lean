@@ -287,6 +287,15 @@ instance zigzagTracePairing_isPerfPair : (zigzagTracePairing k G hns).IsPerfPair
 
 /-! ### Trace on elements with vanishing vertex-idempotent coordinates -/
 
+/-- Pairing an element against a basis vector reads off the coordinate at the dual index. -/
+private theorem zigzagTracePairing_apply_zigzagBasis
+    (x : nonisolatedZigzagQuotient k G) (b : ZigzagBasisIndex G) :
+    zigzagTracePairing k G hns x (zigzagBasis k G hns b) =
+      (zigzagBasis k G hns).coord (zigzagDualIndex G b) x := by
+  rw [zigzagBasis_apply, Module.Basis.coord_apply,
+    ← zigzagTracePairing_apply_zigzagBasisFun_zigzagDualIndex,
+    zigzagDualIndex_zigzagDualIndex]
+
 /-- On elements `u, v` whose vertex-idempotent coordinates vanish in `zigzagBasis k G hns`, the
 Frobenius trace of `u * v` is the sum over all darts `d` of the `d`-coordinate of `u` times the
 `d.symm`-coordinate of `v`. In particular this applies to elements of path length one. -/
@@ -302,23 +311,13 @@ theorem zigzagTrace_mul_eq_sum_dart [Fintype G.Dart]
   rw [← zigzagTracePairing_apply]
   conv_lhs => rw [← (zigzagBasis k G hns).sum_repr v]
   rw [map_sum, Fintype.sum_sum_type, Fintype.sum_sum_type]
-  have hleft : ∑ i : V, zigzagTracePairing k G hns u
-      ((zigzagBasis k G hns).repr v (.inl i) • (zigzagBasis k G hns) (.inl i)) = 0 :=
-    Finset.sum_eq_zero fun i _ ↦ by
-      rw [← Module.Basis.coord_apply, hv i, zero_smul, map_zero]
-  have hright : ∑ i : V, zigzagTracePairing k G hns u
-      ((zigzagBasis k G hns).repr v (.inr (.inr i)) • (zigzagBasis k G hns) (.inr (.inr i))) = 0 :=
-    Finset.sum_eq_zero fun i _ ↦ by
-      rw [map_smul, zigzagBasis_apply, ← zigzagDualIndex_inl,
-        zigzagTracePairing_apply_zigzagBasisFun_zigzagDualIndex, ← Module.Basis.coord_apply,
-        ← Module.Basis.coord_apply, hu i, smul_zero]
-  rw [hleft, hright, zero_add, add_zero,
-    ← Equiv.sum_comp (Function.Involutive.toPerm (SimpleGraph.Dart.symm (G := G))
-      SimpleGraph.Dart.symm_involutive)]
+  simp only [map_smul, zigzagTracePairing_apply_zigzagBasis, zigzagDualIndex_inl,
+    zigzagDualIndex_inr_inl, zigzagDualIndex_inr_inr, smul_eq_mul, ← Module.Basis.coord_apply,
+    hu, hv, zero_mul, mul_zero, Finset.sum_const_zero, zero_add, add_zero]
+  rw [← Equiv.sum_comp (Function.Involutive.toPerm (SimpleGraph.Dart.symm (G := G))
+    SimpleGraph.Dart.symm_involutive)]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [Function.Involutive.coe_toPerm, map_smul, zigzagBasis_apply, ← zigzagDualIndex_inr_inl,
-    zigzagTracePairing_apply_zigzagBasisFun_zigzagDualIndex, ← Module.Basis.coord_apply,
-    ← Module.Basis.coord_apply, smul_eq_mul, mul_comm]
+  simp only [Function.Involutive.coe_toPerm, SimpleGraph.Dart.symm_symm, mul_comm]
 
 /-- **The Frobenius trace of the square of an element with vanishing vertex-idempotent coordinates
 is even.** Reversing darts is a fixed-point-free involution on `G.Dart` pairing the `d` and

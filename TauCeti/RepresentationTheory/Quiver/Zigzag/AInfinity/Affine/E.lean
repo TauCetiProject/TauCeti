@@ -72,21 +72,21 @@ octahedral and icosahedral groups.
   `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E6`,
   `TauCeti.not_isIntrinsicallyFormal_affineE6`,
   `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6` and
-  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE6` (and `_of_not_isUnit_two` companions for
-  the strict zigzag algebra): non-formal arity-six loop deformations and non-intrinsic formality for
-  affine `E₆`.
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE6` (with `_of_not_isUnit_two` companions
+  for both the strict and public zigzag algebras): non-formal arity-six loop deformations and
+  non-intrinsic formality for affine `E₆`.
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E7`,
   `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E7`,
   `TauCeti.not_isIntrinsicallyFormal_affineE7`,
   `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7` and
-  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE7` (with `_of_not_isUnit_two` companions):
-  the same for affine `E₇` in arity eight.
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE7` (with `_of_not_isUnit_two` companions
+  for both the strict and public zigzag algebras): the same for affine `E₇` in arity eight.
 * `TauCeti.exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_isContained_E8`,
   `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_isContained_E8`,
   `TauCeti.not_isIntrinsicallyFormal_affineE8`,
   `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8` and
-  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE8` (with `_of_not_isUnit_two` companions):
-  the same for affine `E₈` in arity twelve.
+  `TauCeti.not_isZigzagAlgebraIntrinsicallyFormal_affineE8` (with `_of_not_isUnit_two` companions
+  for both the strict and public zigzag algebras): the same for affine `E₈` in arity twelve.
 
 ## References
 
@@ -244,6 +244,24 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE6 [Nontrivial k] [Algebra 
   not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6
     (AffineDynkinType.graph_connected (by decide)) .rfl
 
+/-- **Connected graphs containing a copy of affine `E₆` are not intrinsically formal** whenever
+`(2 : k)` is not a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6_of_not_isUnit_two
+    (h2 : ¬IsUnit (2 : k)) (hconn : G.Connected) (hG : AffineDynkinType.E6.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E6 hG
+  obtain ⟨f⟩ := hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE6Walk_of_not_isUnit_two h2 f)
+
+/-- **The public affine `E₆` zigzag algebra is not intrinsically formal** whenever `(2 : k)` is not
+a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE6_of_not_isUnit_two (h2 : ¬IsUnit (2 : k)) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E6.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E6_of_not_isUnit_two h2
+    (AffineDynkinType.graph_connected (by decide)) .rfl
+
 /-! ### Affine `E₇` -/
 
 /-- **The closed walk of length eight on the affine `E₇` diagram**: the backtracks through the nodes
@@ -383,6 +401,24 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7 [Nontrivial k] 
 theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE7 [Nontrivial k] [Algebra ℚ k] :
     ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E7.graph :=
   not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7
+    (AffineDynkinType.graph_connected (by decide)) .rfl
+
+/-- **Connected graphs containing a copy of affine `E₇` are not intrinsically formal** whenever
+`(2 : k)` is not a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7_of_not_isUnit_two
+    (h2 : ¬IsUnit (2 : k)) (hconn : G.Connected) (hG : AffineDynkinType.E7.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E7 hG
+  obtain ⟨f⟩ := hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE7Walk_of_not_isUnit_two h2 f)
+
+/-- **The public affine `E₇` zigzag algebra is not intrinsically formal** whenever `(2 : k)` is not
+a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE7_of_not_isUnit_two (h2 : ¬IsUnit (2 : k)) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E7.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E7_of_not_isUnit_two h2
     (AffineDynkinType.graph_connected (by decide)) .rfl
 
 /-! ### Affine `E₈` -/
@@ -533,6 +569,24 @@ theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8 [Nontrivial k] 
 theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE8 [Nontrivial k] [Algebra ℚ k] :
     ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E8.graph :=
   not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8
+    (AffineDynkinType.graph_connected (by decide)) .rfl
+
+/-- **Connected graphs containing a copy of affine `E₈` are not intrinsically formal** whenever
+`(2 : k)` is not a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8_of_not_isUnit_two
+    (h2 : ¬IsUnit (2 : k)) (hconn : G.Connected) (hG : AffineDynkinType.E8.graph.IsContained G) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k G := by
+  have : Nontrivial V :=
+    AffineDynkinType.nontrivial_of_graph_isContained AffineDynkinType.valid_E8 hG
+  obtain ⟨f⟩ := hG
+  exact not_isZigzagAlgebraIntrinsicallyFormal_of_not_isFormal_zigzagLoopAInfinityAlgebra hconn
+    (not_isFormal_zigzagLoopAInfinityAlgebra_affineE8Walk_of_not_isUnit_two h2 f)
+
+/-- **The public affine `E₈` zigzag algebra is not intrinsically formal** whenever `(2 : k)` is not
+a unit. -/
+theorem not_isZigzagAlgebraIntrinsicallyFormal_affineE8_of_not_isUnit_two (h2 : ¬IsUnit (2 : k)) :
+    ¬IsZigzagAlgebraIntrinsicallyFormal k AffineDynkinType.E8.graph :=
+  not_isZigzagAlgebraIntrinsicallyFormal_of_isContained_E8_of_not_isUnit_two h2
     (AffineDynkinType.graph_connected (by decide)) .rfl
 
 end TauCeti

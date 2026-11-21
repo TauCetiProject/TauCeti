@@ -152,23 +152,24 @@ private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W →
       Matrix.single (f d.snd) (f d.fst) 1 ⊗ₖ β d.fst d.snd := by
   simp [dartMatrix, d.adj]
 
-/-- Extending a bipartition of `H` by `1` outside a copy `f : H.Copy G` produces a vertex sign `ε`
-making `Y ↦ tr((diagonal ε ⊗ₖ 1) * Y)` anticyclic on the block matrices of `f.extendByZero β`, and
-evaluating to `ε (f (w 0).snd) * tr(β (w 0) ⋯ β (w (n + 1)))` on the single walk `f.mapDart ∘ w`. -/
+/-- Extending a bipartition of `H` by `1` outside a copy `f : H.Copy G` produces a linear functional
+anticyclic on the block matrices of `f.extendByZero β`, evaluating to
+`±tr(β (w 0) ⋯ β (w (n + 1)))` on the single walk `f.mapDart ∘ w`. -/
 private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
     (f : H.Copy G) (hH : H.IsBipartite)
     (β : W → W → Matrix m m k) {n : ℕ} {w : Fin (n + 2) → H.Dart}
     (hw : ∀ i, (w i).fst = (w (i + 1)).snd) :
-    ∃ ε : V → k,
+    ∃ F : Matrix (V × m) (V × m) k →ₗ[k] k,
       (∀ (e : G.Dart) (Y : Matrix (V × m) (V × m) k),
-        trace ((diagonal ε ⊗ₖ 1) * (Y * dartMatrix (f.extendByZero β) e)) =
-          -trace ((diagonal ε ⊗ₖ 1) * (dartMatrix (f.extendByZero β) e * Y))) ∧
-      (ε (f (w 0).snd) = 1 ∨ ε (f (w 0).snd) = -1) ∧
-      (∑ w' : Fin (n + 2) → G.Dart,
-          trace ((diagonal ε ⊗ₖ 1) *
-            (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod) *
+        F (Y * dartMatrix (f.extendByZero β) e) = -F (dartMatrix (f.extendByZero β) e * Y)) ∧
+      ((∑ w' : Fin (n + 2) → G.Dart,
+          F (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod *
             Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
-        ε (f (w 0).snd) * trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod := by
+        trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod ∨
+      (∑ w' : Fin (n + 2) → G.Dart,
+          F (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod *
+            Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
+        -trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod) := by
   classical
   obtain ⟨C⟩ := hH
   let s : W → k := fun x ↦ if C x = 0 then 1 else -1
@@ -176,11 +177,14 @@ private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
     have hC := C.valid h
     have h01 : ∀ a b : Fin 2, a ≠ b → a = 0 ∨ b = 0 := by decide
     rcases h01 _ _ hC with h0 | h0
-    · simp [s, h0, show C y ≠ 0 from h0 ▸ hC.symm]
-    · simp [s, h0, show C x ≠ 0 from h0 ▸ hC]
+    · have hCy : C y ≠ 0 := h0 ▸ hC.symm
+      simp [s, h0, hCy]
+    · have hCx : C x ≠ 0 := h0 ▸ hC
+      simp [s, h0, hCx]
   let ε : V → k := Function.extend f s 1
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
-  refine ⟨ε, fun e Y ↦ trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y, ?_, ?_⟩
+  refine ⟨traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1),
+    fun e Y ↦ trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y, ?_⟩
   · by_cases h₁ : d.fst ∈ Set.range f
     swap
     · exact absurd (f.extendByZero_eq_zero_of_notMem_range_left β h₁ _) hd
@@ -194,16 +198,24 @@ private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj]
     split_ifs at hd with hxy
     · exact hs x y hxy
     · exact absurd rfl hd
-  · rw [hεf]
+  · have hsum : (∑ w' : Fin (n + 2) → G.Dart,
+        (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1))
+            (List.ofFn fun t ↦ dartMatrix (f.extendByZero β) (w' t)).prod *
+          Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
+        ε (f (w 0).snd) * trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod := by
+      rw [Finset.sum_eq_single (fun t ↦ f.toHom.mapDart (w t)) (fun w' _ hw' ↦ by
+        rw [Finsupp.single_eq_of_ne hw', mul_zero]) (by simp), Finsupp.single_eq_same, mul_one]
+      simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply,
+        dartMatrix_extendByZero_mapDart]
+      rw [list_prod_ofFn_single_kronecker (fun t ↦ f (w t).snd) (fun t ↦ f (w t).fst)
+        (fun t ↦ β (w t).fst (w t).snd) fun i ↦ by rw [hw i.castSucc, Fin.coeSucc_eq_succ]]
+      have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by rw [hw, Fin.last_add_one]
+      simp [hlast, ← mul_kronecker_mul, trace_kronecker]
+    rw [hsum, hεf]
     simp only [s]
-    split_ifs <;> simp
-  · rw [Finset.sum_eq_single (fun t ↦ f.toHom.mapDart (w t)) (fun w' _ hw' ↦ by
-      rw [Finsupp.single_eq_of_ne hw', mul_zero]) (by simp), Finsupp.single_eq_same, mul_one]
-    simp only [dartMatrix_extendByZero_mapDart]
-    rw [list_prod_ofFn_single_kronecker (fun t ↦ f (w t).snd) (fun t ↦ f (w t).fst)
-      (fun t ↦ β (w t).fst (w t).snd) fun i ↦ by rw [hw i.castSucc, Fin.coeSucc_eq_succ]]
-    have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by rw [hw, Fin.last_add_one]
-    simp [hlast, ← mul_kronecker_mul, trace_kronecker]
+    split_ifs
+    · exact Or.inl (one_mul _)
+    · exact Or.inr (neg_one_mul _)
 
 end Blocks
 
@@ -212,6 +224,16 @@ end Blocks
 variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j} [DecidableEq m]
 
 local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
+
+omit [DecidableRel H.Adj] [Finite V] [Fintype W] in
+/-- Casting an integer matrix product along `Int.castRingHom k` preserves trace `1`. -/
+private theorem trace_list_ofFn_mapMatrix_intCast {l : ℕ} (β : W → W → Matrix m m ℤ)
+    (w : Fin l → H.Dart) (htr : trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod = 1) :
+    trace (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)).prod = 1 := by
+  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
+      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
+    (List.map_ofFn ..).symm
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
 
 /-- **Higher Hochschild classes of a zigzag algebra from a matrix representation of a bipartite
 subgraph.** Let `f` be a copy of a bipartite graph `H` in `G`, not necessarily induced, and let
@@ -237,13 +259,14 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             ⟨n + 2, by omega⟩ := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨ε, hanti, hs, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
+  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
     hn (dartMatrix (f.extendByZero β))
     (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) hanti _ _ ?_
-  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, heval]
-  rcases hs with h | h <;> simpa only [h, one_mul, neg_one_mul, neg_ne_zero] using htr
+    F hanti _ _ ?_
+  rcases heval with h | h <;> rw [h]
+  · exact htr
+  · exact neg_ne_zero.mpr htr
 
 omit [DecidableRel H.Adj] in
 /-- **Higher Hochschild classes from an integer matrix representation of a bipartite
@@ -270,10 +293,7 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero f
       hH (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
       (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hn hw ?_
-  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
-      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
-    (List.map_ofFn ..).symm
-  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
+  rw [trace_list_ofFn_mapMatrix_intCast β w htr]
   exact one_ne_zero
 
 /-- **Non-formal higher loop deformations from a matrix representation over a `ℚ`-algebra.** Over a
@@ -317,13 +337,14 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨ε, hanti, hs, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
+  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
   refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_of_not_even hr
     (dartMatrix (f.extendByZero β))
     (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) hanti _ _ ?_
-  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, heval]
-  rcases hs with h | h <;> simpa only [h, one_mul, neg_one_mul, even_neg] using htr
+    F hanti _ _ ?_
+  rcases heval with h | h <;> rw [h]
+  · exact htr
+  · rwa [even_neg]
 
 omit [DecidableRel H.Adj] in
 /-- **Even-arity non-formality from an integer matrix representation when `2` is not a unit.** -/
@@ -338,10 +359,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_of_trace_eq_one_of_not_isUnit_tw
   refine not_isFormal_zigzagLoopAInfinityAlgebra_of_not_even_trace f hH
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hr hw ?_
-  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
-      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
-    (List.map_ofFn ..).symm
-  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
+  rw [trace_list_ofFn_mapMatrix_intCast β w htr]
   exact fun he ↦ h2 (isUnit_of_dvd_one he.two_dvd)
 
 /-- **Quartic non-formality from a matrix representation, over any nontrivial commutative ring.** A
@@ -357,13 +375,14 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace [Nontrivial
       (fst_eq_snd_of_mem_support_single (fun i ↦ congrArg f (hw i)) (1 : k))).IsFormal := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨ε, hanti, hs, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
+  obtain ⟨F, hanti, heval⟩ := exists_bipartite_sign_dartMatrix f hH β hw
   refine not_isFormal_zigzagLoopAInfinityAlgebra_of_anticyclic_four
     (dartMatrix (f.extendByZero β))
     (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
-    (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) hanti _ _ ?_
-  simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, heval]
-  rcases hs with h | h <;> simpa only [h, one_mul, neg_one_mul, IsUnit.neg_iff] using htr
+    F hanti _ _ ?_
+  rcases heval with h | h <;> rw [h]
+  · exact htr
+  · exact htr.neg
 
 omit [DecidableRel H.Adj] in
 /-- **Quartic non-formality from an integer matrix representation, over any nontrivial commutative
@@ -379,10 +398,7 @@ theorem not_isFormal_zigzagLoopAInfinityAlgebra_four_of_trace_eq_one [Nontrivial
   refine not_isFormal_zigzagLoopAInfinityAlgebra_four_of_isUnit_trace f hH
     (fun x y ↦ (Int.castRingHom k).mapMatrix (β x y))
     (sum_mapMatrix_intCast_mul_mapMatrix_intCast k β h₀ hβ) hw ?_
-  have hmap : (List.ofFn fun t ↦ (Int.castRingHom k).mapMatrix (β (w t).fst (w t).snd)) =
-      (List.ofFn fun t ↦ β (w t).fst (w t).snd).map (Int.castRingHom k).mapMatrix :=
-    (List.map_ofFn ..).symm
-  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
+  rw [trace_list_ofFn_mapMatrix_intCast β w htr]
   exact isUnit_one
 
 /-- A detected loop gives a nonzero higher Hochschild class. -/
