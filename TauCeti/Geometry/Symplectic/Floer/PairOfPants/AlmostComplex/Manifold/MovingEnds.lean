@@ -300,14 +300,16 @@ sphere with the input ends of centers `0` and `1` and scales `1` and `-1`, with 
 the two inputs, and with its output structure. -/
 theorem puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex
     (J : Puncture → ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ q t, σ.Tames (J q t))
-    (hsep : Pairwise fun i j => ‖(![1, -1] : Fin 2 → ℂ) i‖ * Real.exp (-(2 * π)) / 2 +
-      ‖(![1, -1] : Fin 2 → ℂ) j‖ * Real.exp (-(2 * π)) / 2 ≤
-        ‖(![0, 1] : Fin 2 → ℂ) i - (![0, 1] : Fin 2 → ℂ) j‖)
-    (hout : ∀ i, ‖(![0, 1] : Fin 2 → ℂ) i‖ + ‖(![1, -1] : Fin 2 → ℂ) i‖ * Real.exp (-(2 * π)) / 2 ≤
-      2 * Real.exp (2 * π))
     (w : ThricePuncturedSphere) :
     h₀.puncturedSphereAlmostComplex ![J zero, J one] (fun i => by fin_cases i <;> exact hJ _)
-        (J inf) (hJ inf) ![0, 1] ![1, -1] hsep hout w =
+        (J inf) (hJ inf) ![0, 1] ![1, -1]
+        (by
+          intro i j hij
+          fin_cases i <;> fin_cases j <;> simp at hij ⊢ <;>
+            linarith [exp_neg_two_pi_lt_one, pi_pos])
+        (fun i => by
+          fin_cases i <;> simp <;>
+            nlinarith [exp_neg_two_pi_lt_one, Real.one_le_exp (by positivity : 0 ≤ 2 * π)]) w =
       h₀.pairOfPantsAlmostComplex J hJ w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_puncturedSphereAlmostComplex,
@@ -362,16 +364,6 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex
     (hrq : r ≠ q) (hr : r ≠ inf) {L : ℝ} (hL : 0 ≤ L)
     (hJa : ∀ p t, σ.Tames (update Ja inf (fun _ => J₀) p t))
     (hJb : ∀ p t, σ.Tames (update Jb q (fun _ => J₀) p t))
-    (hsep : Pairwise fun i j =>
-      ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ *
-          Real.exp (-(2 * π)) / 2 +
-        ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) j‖ *
-          Real.exp (-(2 * π)) / 2 ≤
-        ‖(![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i -
-          (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) j‖)
-    (hout : ∀ i, ‖(![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i‖ +
-      ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ *
-        Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π))
     {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
     h₀.plumbedAlmostComplex h₀ (update Ja inf fun _ => J₀) (update Jb q fun _ => J₀) hJa hJb q L
         w hw =
@@ -382,7 +374,9 @@ theorem plumbedAlmostComplex_update_base_eq_puncturedSphereAlmostComplex
             by simpa [update_of_ne hrq] using hJb r t])
         (Jb inf) (fun t => by simpa [update_of_ne hq.symm] using hJb inf t)
         ![q.endCenter, q.plumbingMap L 1, r.endCenter]
-        ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] hsep hout w :=
+        ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale]
+        (Floer.pairwise_mul_exp_add_le_norm_plumbingMap_sub hq hrq hr hL)
+        (Floer.norm_plumbingMap_add_mul_exp_le hq hrq hr hL) w :=
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ hq hrq hr hL hJa hJb hw,
       almostComplexStructureAt_puncturedSphereAlmostComplex]
