@@ -17,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The Laplace distribution
@@ -299,7 +300,7 @@ theorem integrable_laplaceMeasure_iff (μ b : ℝ) {g : ℝ → E} :
     Integrable g (laplaceMeasure μ b) ↔
       Integrable fun y ↦ laplacePDFReal μ b y • g y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact integrable_withDensity_ofReal_iff (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_laplacePDFReal μ b).aemeasurable
     (ae_of_all _ (laplacePDFReal_nonneg μ b))
 
 /-- **Integral transfer.** An integral against a Laplace measure is the density-weighted Lebesgue
@@ -307,7 +308,7 @@ integral. This holds at every scale, the zero measure included. -/
 theorem integral_laplaceMeasure_eq (μ b : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂laplaceMeasure μ b = ∫ y, laplacePDFReal μ b y • g y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact integral_withDensity_ofReal (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_laplacePDFReal μ b).aemeasurable
     (ae_of_all _ (laplacePDFReal_nonneg μ b)) g
 
 end Transfer
@@ -337,8 +338,8 @@ theorem rnDeriv_laplaceMeasure (μ b : ℝ) :
 private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs
-    (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b))
+    hs.nullMeasurableSet (measurable_laplacePDFReal μ b).aemeasurable
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :
