@@ -395,6 +395,13 @@ theorem laurentExponent_apply (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
     laurentExponent hker hc γ = -chernEquivInt hker hc γ :=
   (rfl)
 
+/-- **A generator with positive first Chern number has Laurent exponent `-1`**: the Laurent
+variable is the monomial of its negative. -/
+theorem laurentExponent_eq_neg_one_of_zmultiples_eq_top (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+    {γ : PeriodGroup ω c} (hγ : AddSubgroup.zmultiples γ = ⊤) (h : 0 < chern ω c γ) :
+    laurentExponent hker hc γ = -1 := by
+  rw [laurentExponent_apply, chernEquivInt_eq_one_of_zmultiples_eq_top hker hc hγ h]
+
 /-- The class of the Laurent monomial of exponent `k` has Chern number `-k N`,
 where `N` is the positive minimal Chern number. -/
 @[simp]

@@ -57,6 +57,11 @@ position of the cyclically next block, when that block is nonempty
 (`Fin.finRotate_finSigmaFinEquiv_of_eq`). The list of values of a function on `Fin (∑ i, m i)`
 is the concatenation of the lists of its values on the blocks (`List.ofFn_sum`), as `List.ofFn_mul`
 says for blocks of equal length.
+For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the word
+`TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times, in increasing order
+(`TauCeti.card_filter_multiIndexWord_eq`); a product over its letters is the monomial
+`∏ᵢ gᵢ ^ αᵢ` (`TauCeti.prod_multiIndexWord`), and a sum over its letters is `∑ᵢ αᵢ • gᵢ`
+(`TauCeti.sum_multiIndexWord`).
 -/
 
 public section
@@ -346,6 +351,36 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
     ∑ i : Fin n, z ⟨i.castSucc, Fin.castSucc_ne_last i⟩ = ∑ j, z j := by
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
+
+/-- The word in the indices `Fin n` listing each index `i` exactly `αᵢ` times, in increasing
+order. Evaluating an iterated derivative on the directions of this word computes the monomial
+`∂^α` in directional derivatives. -/
+def multiIndexWord {n : ℕ} (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
+  (finSigmaFinEquiv.symm j).1
+
+/-- The letter of `TauCeti.multiIndexWord α` at a position in the block of `i` is `i`. -/
+@[simp]
+theorem multiIndexWord_finSigmaFinEquiv {n : ℕ} (α : Fin n → ℕ) (p : (i : Fin n) × Fin (α i)) :
+    multiIndexWord α (finSigmaFinEquiv p) = p.1 := by
+  simp [multiIndexWord]
+
+open Finset in
+/-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
+@[simp]
+theorem card_filter_multiIndexWord_eq {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
+    #{j | multiIndexWord α j = i} = α i := by
+  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
+    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp,
+    Fintype.sum_sigma]
+  simp [apply_ite]
+
+/-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
+@[to_additive (attr := simp) /-- A sum over the letters of `TauCeti.multiIndexWord α` is
+`∑ᵢ αᵢ • gᵢ`. -/]
+theorem prod_multiIndexWord {n : ℕ} {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
+    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
+  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp]
+  simp [Fintype.prod_sigma]
 
 end TauCeti
 
