@@ -25,6 +25,12 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   `(a² + b² + c² + d²) / e²`.
 * `Quaternion.normSq_mk_div_two`: the norm of `(a + b i + c j + d k) / 2` is
   `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
+* `Quaternion.sq_eq_two_mul_re_smul_sub_normSq` and `Quaternion.sq_eq_two_mul_re_smul_sub_one`:
+  the quadratic identity `q² = (2 * q.re) • q - (normSq q) • 1` and its specialization for unit
+  quaternions.
+* `Quaternion.pow_three_eq_of_sq_eq`, `Quaternion.pow_six_eq_one_of_sq_eq`, and
+  `Quaternion.pow_eight_eq_one_of_sq_eq`: power identities for quaternions satisfying
+  `q² = r • q - 1`.
 -/
 
 public section
@@ -66,5 +72,53 @@ theorem normSq_mk_div_two {K : Type*} [Field K] (a b c d : K) :
     normSq (⟨a / 2, b / 2, c / 2, d / 2⟩ : ℍ[K]) = (a ^ 2 + b ^ 2 + c ^ 2 + d ^ 2) / 4 := by
   rw [normSq_mk_div]
   norm_num
+
+/-- Every quaternion `q` satisfies the quadratic identity `q² = (2 * q.re) • q - (normSq q) • 1`. -/
+theorem sq_eq_two_mul_re_smul_sub_normSq (q : ℍ[R]) :
+    q ^ 2 = (2 * q.re) • q - (normSq q : R) • 1 := by
+  have h1 : q * (q + star q) = (2 * q.re) • q := by
+    rw [self_add_star', mul_coe_eq_smul]
+  rw [mul_add, self_mul_star, ← sq, ← one_mul (↑(normSq q) : ℍ[R]), mul_coe_eq_smul] at h1
+  exact eq_sub_of_add_eq h1
+
+/-- Every unit quaternion `q` satisfies the quadratic identity `q² = (2 * q.re) • q - 1`. -/
+theorem sq_eq_two_mul_re_smul_sub_one {q : ℍ[R]} (hq : normSq q = 1) :
+    q ^ 2 = (2 * q.re) • q - 1 := by
+  rw [sq_eq_two_mul_re_smul_sub_normSq, hq, one_smul]
+
+/-- Cubic identity for a quaternion satisfying `q ^ 2 = r • q - 1`. -/
+theorem pow_three_eq_of_sq_eq {q : ℍ[R]} {r : R} (hq : q ^ 2 = r • q - 1) :
+    q ^ 3 = (r ^ 2 - 1) • q - r • 1 := by
+  calc q ^ 3 = q ^ 2 * q := pow_succ q 2
+    _ = (r • q - 1) * q := by rw [hq]
+    _ = r • q ^ 2 - q := by rw [sub_mul, one_mul, smul_mul_assoc, sq]
+    _ = r • (r • q - 1) - q := by rw [hq]
+    _ = (r ^ 2 - 1) • q - r • 1 := by
+        rw [smul_sub, smul_smul, ← sq, sub_smul, one_smul]
+        abel
+
+/-- A quaternion satisfying `q ^ 2 = r • q - 1` with `r ^ 2 = 1` has `q ^ 6 = 1`. -/
+theorem pow_six_eq_one_of_sq_eq {q : ℍ[R]} {r : R}
+    (hq : q ^ 2 = r • q - 1) (hr : r ^ 2 = 1) : q ^ 6 = 1 := by
+  have h3 : q ^ 3 = -(r • 1) := by
+    rw [pow_three_eq_of_sq_eq hq, hr, sub_self, zero_smul, zero_sub]
+  calc q ^ 6 = (q ^ 3) ^ 2 := by rw [← pow_mul]
+    _ = (-(r • (1 : ℍ[R]))) ^ 2 := by rw [h3]
+    _ = (r ^ 2) • (1 : ℍ[R]) := by rw [neg_sq, sq, smul_mul_smul_comm, mul_one, ← sq]
+    _ = 1 := by rw [hr, one_smul]
+
+/-- A quaternion satisfying `q ^ 2 = r • q - 1` with `r ^ 2 = 2` has `q ^ 8 = 1`. -/
+theorem pow_eight_eq_one_of_sq_eq {q : ℍ[R]} {r : R}
+    (hq : q ^ 2 = r • q - 1) (hr : r ^ 2 = 2) : q ^ 8 = 1 := by
+  have h3 : q ^ 3 = q - r • 1 := by
+    rw [pow_three_eq_of_sq_eq hq, hr, show (2 : R) - 1 = 1 by ring, one_smul]
+  have h4 : q ^ 4 = -1 := by
+    calc q ^ 4 = q ^ 3 * q := pow_succ q 3
+      _ = (q - r • 1) * q := by rw [h3]
+      _ = q ^ 2 - r • q := by rw [sub_mul, smul_mul_assoc, one_mul, sq]
+      _ = -1 := by rw [hq]; abel
+  calc q ^ 8 = (q ^ 4) ^ 2 := by rw [← pow_mul]
+    _ = (-1 : ℍ[R]) ^ 2 := by rw [h4]
+    _ = 1 := neg_one_sq
 
 end Quaternion
