@@ -338,11 +338,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_cohomology_X₃ (hS : S.S
     (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) [Module.Finite R (Cohomology S.X₂ n₀)]
     [_root_.IsNoetherian R (Cohomology S.X₁ n₁)] :
     Module.Finite R (Cohomology S.X₃ n₀) := by
-  have hex : Function.Exact (cohomologyMapBaseLinear R X S.g n₀)
-      (cohomologyδBaseLinear R X hS n₀ n₁ h) := by
-    simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
-      exact_cohomologyMap_cohomologyδ hS n₀ n₁ h
-  exact hex.moduleFinite
+  subst h
+  exact (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R X hS n₀).moduleFinite
 
 end Base
 

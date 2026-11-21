@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.FiniteSet
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
@@ -108,15 +107,11 @@ theorem IsProjectiveOver.exists_isClosedImmersion_pi [X.IsProjectiveOver R] :
   have hg : Function.Surjective g := by
     refine SymmetricAlgebra.gradedLift_surjective R _ ?_
     -- The generators of the lift are the images `ι (q x)` of the generators of `Sym_R M`.
-    have : (fun x ↦ ((ι₁ ∘ₗ q) x : SymmetricAlgebra R M)) = SymmetricAlgebra.ι R M ∘ q := rfl
+    have : (fun x ↦ ((ι₁ ∘ₗ q) x : SymmetricAlgebra R M)) = SymmetricAlgebra.ι R M ∘ q :=
+      funext fun _ ↦ by simp [ι₁]
     rw [this, hq.range_comp, SymmetricAlgebra.adjoin_range_ι]
   have hirr := HomogeneousIdeal.irrelevant_le_map_of_surjective g hg
   have := Proj.isClosedImmersion_map g hirr hg
-  have : (Proj.map g hirr).IsOver (Spec (.of R)) := ⟨by
-    simpa only [TauCeti.SymmetricAlgebra.over_eq_projToSpec,
-      TauCeti.SymmetricAlgebra.projToSpec_def, Proj.toSpecCoeff_def] using
-      Proj.map_toSpecCoeff _ g hirr
-        (SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap R _ _)⟩
   exact ⟨n, f ≫ Proj.map g hirr, inferInstance, inferInstance⟩
 
 /-- **A projective scheme is proper**: a scheme projective over `R` is proper over `R`. -/
