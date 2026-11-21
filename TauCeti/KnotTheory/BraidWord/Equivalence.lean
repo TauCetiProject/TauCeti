@@ -39,7 +39,7 @@ namespace WordEquiv
 
 /-- Braid-word equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence (WordEquiv (n := n)) :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 /-- Braid-word equivalence is reflexive. -/
 @[refl]

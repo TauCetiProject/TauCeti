@@ -172,7 +172,7 @@ private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × �
   let K : Set ℂ := (fun y : ℝ => (σ : ℂ) + y * I) '' Icc (-(n : ℝ)) n
   have hγ : Continuous γ :=
     continuous_const.add ((continuous_ofReal.comp
-      (continuous_subtype_val.comp continuous_projIcc)).mul continuous_const)
+      (continuous_subtypeVal.comp continuous_projIcc)).mul continuous_const)
   have hkernel : ∀ t ∈ K, AnalyticAt ℂ
       (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
         mellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)

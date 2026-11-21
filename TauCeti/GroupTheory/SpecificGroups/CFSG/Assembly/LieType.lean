@@ -182,7 +182,7 @@ end Branches
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
 and field-order exponent. -/
 theorem steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius
-    (d : ValidLieTypeIndex) (h : ¬ d.1.UsesHalfFrobenius) (i : Fin d.rank)
+    (d : ValidLieTypeIndex) (h : ¬ d.val.UsesHalfFrobenius) (i : Fin d.rank)
     (u : Multiplicative d.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup ((GraphTwistedIndex.diagramPerm ⟨d, h⟩) i)
@@ -201,7 +201,7 @@ theorem steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius
 /-- On the Suzuki, Ree and Tits indices the assembled map exchanges root lengths and raises
 the parameter to the odd half-Frobenius exponent. -/
 theorem steinberg_simpleRootSubgroup_of_usesHalfFrobenius
-    (d : ValidLieTypeIndex) (h : d.1.UsesHalfFrobenius) (i : Fin d.rank)
+    (d : ValidLieTypeIndex) (h : d.val.UsesHalfFrobenius) (i : Fin d.rank)
     (u : Multiplicative d.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup ((SuzukiReeIndex.lengthPerm ⟨d, h⟩) i)
@@ -222,7 +222,7 @@ theorem steinberg_simpleRootSubgroup_of_usesHalfFrobenius
 /-- On a half-Frobenius family, the assembled Steinberg map squares to the indexed
 field-order Frobenius. -/
 theorem steinberg_steinberg_of_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (h : d.1.UsesHalfFrobenius) (g : d.AmbientGroup) :
+    (h : d.val.UsesHalfFrobenius) (g : d.AmbientGroup) :
     d.steinberg (d.steinberg g) = d.frobenius g := by
   obtain ⟨d, hv⟩ := d
   cases d
@@ -237,7 +237,7 @@ theorem steinberg_steinberg_of_usesHalfFrobenius (d : ValidLieTypeIndex)
 is that iterate of the indexed field-order Frobenius. The twist order is `1` on the nine untwisted
 families, `2` on `²Aₙ`, `²Dₙ` and `²E₆`, and `3` on `³D₄`. -/
 theorem iterate_steinberg_twistOrder_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (h : ¬ d.1.UsesHalfFrobenius) :
+    (h : ¬ d.val.UsesHalfFrobenius) :
     (⇑d.steinberg)^[GraphTwistedIndex.twistOrder ⟨d, h⟩] =
       (⇑d.frobenius)^[GraphTwistedIndex.twistOrder ⟨d, h⟩] := by
   obtain ⟨d, hv⟩ := d
@@ -260,7 +260,7 @@ abbrev Group (d : ValidLieTypeIndex) : Type := FixedPointCandidate d.steinberg
 /-- On the thirteen ordinary or graph-twisted families, the assembled candidate is the
 existing graph-twisted assembly's candidate. -/
 theorem Group_eq_of_not_usesHalfFrobenius (d : ValidLieTypeIndex)
-    (h : ¬ d.1.UsesHalfFrobenius) : d.Group = GraphTwistedIndex.Group ⟨d, h⟩ := by
+    (h : ¬ d.val.UsesHalfFrobenius) : d.Group = GraphTwistedIndex.Group ⟨d, h⟩ := by
   obtain ⟨d, hv⟩ := d
   cases d
   all_goals first

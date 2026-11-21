@@ -6,46 +6,57 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
-public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 
 /-!
 # Norm bounds for Pochhammer polynomials
 
-This module records elementary norm estimates for ascending Pochhammer polynomial evaluations
-`(ascPochhammer R n).eval w` in seminormed rings with `‖1‖ = 1`, independent of the Gamma function.
+This file complements `Mathlib.Analysis.SpecialFunctions.Pochhammer` with norm bounds for the
+evaluated ascending Pochhammer polynomial `(ascPochhammer R n).eval x = x (x + 1) ⋯ (x + n - 1)`
+in a seminormed ring satisfying `‖(1 : R)‖ = 1`.
 
 ## Main results
 
-* `TauCeti.norm_ascPochhammer_eval_le_factorial`: `‖(w)ₙ‖ ≤ (M + n)!` whenever `‖w‖ ≤ M`.
+* `TauCeti.norm_ascPochhammer_eval_le_of_norm_le`: if `‖x‖ ≤ r`, then
+  `‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval r`.
+* `TauCeti.norm_ascPochhammer_eval_le`:
+  `‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval ‖x‖`.
+* `TauCeti.norm_ascPochhammer_eval_le_ascFactorial`: if `‖x‖ ≤ M` for `M : ℕ`, then
+  `‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n`.
 -/
 
 public section
 
-open scoped Nat
-
 namespace TauCeti
 
-/-- The ascending Pochhammer polynomial evaluation `(w)ₙ` satisfies `‖(w)ₙ‖ ≤ (M + n)!` whenever
-`‖w‖ ≤ M` in a seminormed ring with `‖1‖ = 1`. -/
-theorem norm_ascPochhammer_eval_le_factorial {R : Type*} [SeminormedRing R] [NormOneClass R]
-    {w : R} {M : ℕ} (hw : ‖w‖ ≤ M) (n : ℕ) :
-    ‖(ascPochhammer R n).eval w‖ ≤ ((M + n)! : ℝ) := by
+/-- If `‖x‖ ≤ r` in a seminormed ring with `‖1‖ = 1`, then the evaluated ascending Pochhammer
+polynomial `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` has norm at most `(r)ₙ`. -/
+theorem norm_ascPochhammer_eval_le_of_norm_le {R : Type*} [SeminormedRing R] [NormOneClass R]
+    (n : ℕ) {x : R} {r : ℝ} (hx : ‖x‖ ≤ r) :
+    ‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval r := by
   induction n with
-  | zero => simp [Nat.one_le_iff_ne_zero, Nat.factorial_ne_zero]
+  | zero => simp
   | succ n ih =>
-    have hwn : ‖w + n‖ ≤ (M + n + 1 : ℝ) :=
-      (norm_add_le w n).trans <| by
-        have hn : ‖(n : R)‖ ≤ n := by simpa using Nat.norm_cast_le (α := R) n
-        linarith
-    rw [ascPochhammer_succ_eval]
-    refine (norm_mul_le _ _).trans ?_
-    refine (mul_le_mul ih hwn (norm_nonneg _) (by positivity)).trans_eq ?_
-    rw [← add_assoc, Nat.factorial_succ]
-    push_cast
-    ring
+    rw [ascPochhammer_succ_eval, ascPochhammer_succ_eval]
+    exact (norm_mul_le _ _).trans <|
+      mul_le_mul ih
+        ((norm_add_le x (n : R)).trans
+          (add_le_add hx (by simpa using Nat.norm_cast_le (α := R) n)))
+        (norm_nonneg _) ((norm_nonneg _).trans ih)
+
+/-- In a seminormed ring with `‖1‖ = 1`, the norm of the evaluated ascending Pochhammer
+polynomial `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` is bounded by `(‖x‖)ₙ`. -/
+theorem norm_ascPochhammer_eval_le {R : Type*} [SeminormedRing R] [NormOneClass R]
+    (n : ℕ) (x : R) :
+    ‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval ‖x‖ :=
+  norm_ascPochhammer_eval_le_of_norm_le n le_rfl
+
+/-- If `‖x‖ ≤ M` for a natural number `M` in a seminormed ring with `‖1‖ = 1`, then the evaluated
+ascending Pochhammer polynomial `(x)ₙ` has norm at most the rising factorial `M.ascFactorial n`. -/
+theorem norm_ascPochhammer_eval_le_ascFactorial {R : Type*} [SeminormedRing R] [NormOneClass R]
+    (n : ℕ) {x : R} {M : ℕ} (hx : ‖x‖ ≤ M) :
+    ‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n :=
+  (norm_ascPochhammer_eval_le_of_norm_le n hx).trans_eq
+    (ascPochhammer_nat_eq_natCast_ascFactorial ℝ M n)
 
 end TauCeti

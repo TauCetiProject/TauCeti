@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Mellin–Barnes continuation of Euler's integral and the Gauss hypergeometric function
@@ -35,8 +35,8 @@ integral of `(1 + x t)^{-a}` (`Complex.integral_cpow_neg_mul_Gamma_mul_Gamma_sub
 integral on `(0, 1)`. Combining joint holomorphy of `mellinBarnesIntegral`
 (`Complex.analyticOnNhd_mellinBarnesIntegral`), `eulerIntegral`
 (`Complex.analyticOnNhd_eulerIntegral`), and `regularizedGaussHGFun`
-(`Complex.analyticOnNhd_regularizedGaussHGFun`) with the slit-plane identity theorem
-(`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`), `Complex.eulerIntegral_eq_regularizedGaussHGFun`,
+(`Complex.analyticAt_uncurry_regularizedGaussHGFun`) with the slit-plane identity theorem
+(`AnalyticOnNhd.eqOn_slitPlane_of_ofReal_pos_eq`), `Complex.regularizedGaussHGFun_eq_eulerIntegral`,
 and identity continuation on `{w : ℂ | ∀ k : ℕ, w ≠ -k}`
 (`Complex.isConnected_setOf_forall_ne_neg_natCast`) extends the representation to general
 parameters.
@@ -137,7 +137,7 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
           (Gamma (-((σ : ℂ) + y * I)) * Gamma (a + ((σ : ℂ) + y * I)))) := by
     dsimp [mellinBarnesFubiniKernel]
     rw [add_sub_right_comm,
-      cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne'), ofReal_mul, mul_cpow_ofReal_nonneg hx.le ht.1.le]
+      cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne'), ofReal_mul, ofReal_mul_cpow hx.le]
     ring
   simp_rw [hpoint, integral_const_mul]
   rw [← integral_neg_eq_self]
@@ -202,7 +202,7 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral {a b c : ℂ} {
 private theorem analyticAt_regularizedGaussHGFun_comp {f : ℂ → ℂ × ℂ × ℂ × ℂ}
     (hf : Differentiable ℂ f) {w : ℂ} (hz : ‖(f w).2.2.2‖ < 1) :
     AnalyticAt ℂ (fun x => regularizedGaussHGFun (f x).1 (f x).2.1 (f x).2.2.1 (f x).2.2.2) w :=
-  (analyticOnNhd_regularizedGaussHGFun (f w) hz).comp_of_eq (hf.analyticAt w) rfl
+  (analyticAt_uncurry_regularizedGaussHGFun hz).comp_of_eq (hf.analyticAt w) rfl
 
 private theorem analyticAt_mellinBarnesIntegral_comp {f : ℂ → ℂ × ℂ × ℂ × ℂ}
     (hf : Differentiable ℂ f) {w : ℂ} (ha : ∀ k : ℕ, (f w).1 ≠ -k)
@@ -282,7 +282,7 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
         (fun w => mellinBarnesIntegral a b' w z) := by
       filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
         (by simp : b'.re < (b' + 1).re)] with w hw
-      rw [← eulerIntegral_eq_regularizedGaussHGFun a hb' hw hz_norm]
+      rw [regularizedGaussHGFun_eq_eulerIntegral a hb' hw hz_norm]
       exact eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral ha hb' hw hz_slit
     exact congrFun (hfc.eq_of_eventuallyEq hgc hevc) c
   have hfb : AnalyticOnNhd ℂ (fun w => Gamma a * Gamma w * regularizedGaussHGFun a w c z)
