@@ -13,6 +13,7 @@ public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
 The Ionescu--Tulcea trajectory measure can start from an s-finite measure. Its joint law of a
 finite prefix and the following coordinate is the composition-product of the prefix law and the
 next transition kernel. This identity lets finite transport plans be glued without normalization.
+The coordinate at time `0` of the trajectory measure has the initial law.
 
 This generalizes Mathlib's
 `ProbabilityTheory.Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure`, which assumes
@@ -57,5 +58,16 @@ theorem map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite [SFin
   simp [trajMeasure, Measure.compProd_eq_comp_prod, Measure.map_comp _ _ hproj,
     Measure.map_comp _ _ (measurable_frestrictLe n), traj_map_frestrictLe, Measure.comp_assoc,
     hstep]
+
+/-- The coordinate at time `0` of the trajectory measure has the initial law `μ₀`. -/
+@[simp]
+theorem map_eval_zero_trajMeasure : (trajMeasure μ₀ κ).map (fun x ↦ x 0) = μ₀ := by
+  let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
+  have heval : (fun x : (n : ℕ) → X n ↦ x 0) = e ∘ frestrictLe 0 := rfl
+  have hprefix : (trajMeasure μ₀ κ).map (frestrictLe 0) = μ₀.map e.symm := by
+    rw [trajMeasure, Measure.map_comp _ _ (measurable_frestrictLe 0), traj_map_frestrictLe,
+      partialTraj_self, Measure.id_comp]
+  rw [heval, ← Measure.map_map e.measurable (measurable_frestrictLe 0), hprefix,
+    Measure.map_map e.measurable e.symm.measurable, e.self_comp_symm, Measure.map_id]
 
 end ProbabilityTheory.Kernel
