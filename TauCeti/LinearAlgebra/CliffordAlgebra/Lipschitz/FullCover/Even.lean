@@ -5,19 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Basic
 
 /-!
 # The even part of the normalized full Clifford cover
 
 The normalized full Clifford cover `CliffordAlgebra.cliffordFullCover Q` consists of the Lipschitz
-elements whose reverse norm `reverse x * x` is `1` or `-1`. As `star = reverse ∘ involute`, the
-`star` norm `star x * x` agrees with the reverse norm on even elements and is its negative on odd
-ones, so the full cover is also the set where the `star` norm is `±1`.
-
-The even elements of the full cover form a subgroup. Over a field in which every element is a
-square up to sign, as over `ℝ`, it covers all of `SO(Q)` for a finite-dimensional nondegenerate
-quadratic space.
+elements whose reverse norm `reverse x * x` is `1` or `-1`. The even elements of the full cover
+form a subgroup. Over a field in which every element is a square up to sign, as over `ℝ`, it covers
+all of `SO(Q)` for a finite-dimensional nondegenerate quadratic space.
 
 ## Main definitions
 
@@ -25,8 +21,6 @@ quadratic space.
 
 ## Main results
 
-* `CliffordAlgebra.mem_cliffordFullCover_iff_lipschitzNorm`: the full cover is the set where the
-  `star` norm is `±1`.
 * `CliffordAlgebra.map_cliffordFullCoverEven`: when every element is a square up to sign, the even
   part of the full cover covers `SO(Q)`.
 
@@ -51,19 +45,6 @@ section Ring
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   [Invertible (2 : R)] (Q : QuadraticForm R M)
-
-/-- **The full cover through the `star` norm.** A Lipschitz element lies in the normalized full
-cover exactly when its `star` norm `star x * x` is `1` or `-1`: on a homogeneous element it is the
-reverse norm up to sign. -/
-theorem mem_cliffordFullCover_iff_lipschitzNorm (x : lipschitzGroup Q) :
-    x ∈ cliffordFullCover Q ↔ lipschitzNorm Q x = 1 ∨ lipschitzNorm Q x = -1 := by
-  rw [mem_cliffordFullCover_iff]
-  obtain ⟨p, hp⟩ := lipschitzGroup.exists_mem_evenOdd x.property
-  fin_cases p
-  · rw [lipschitzNorm_eq_cliffordNorm_of_mem_even x hp]
-  · rw [lipschitzNorm_eq_neg_cliffordNorm_of_mem_odd x hp, neg_eq_iff_eq_neg, neg_inj, or_comm]
-
-/-! ### The even part of the full cover -/
 
 /-- The subgroup of even elements of the normalized full cover. -/
 def cliffordFullCoverEven : Subgroup (cliffordFullCover Q) where

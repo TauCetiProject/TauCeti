@@ -5,25 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.LowRank
 
 /-!
 # The normalized full Clifford cover in rank one
 
 Over a field in which `-1` is not a square, the kernel of the full-cover action of a nondegenerate
-quadratic space of positive dimension is `{±1}`, a group of order two.
-
-Over a field in which `-1` is not a square but every element is a square up to sign, as over `ℝ`,
-the full cover of a nondegenerate quadratic line is therefore an extension of `O(Q) = {±1}` by
-`{±1}`, a group of order four. It is cyclic exactly when some vector has norm `-1`: then that
-vector has order four, whereas if some vector has norm `1`, it gives together with `1` and `-1`
-three solutions of `x ^ 2 = 1`, which a cyclic group of order four cannot have.
+quadratic space of positive dimension is `{±1}`, a group of order two
+(`CliffordAlgebra.card_ker_cliffordFullCoverToOrthogonal`). When moreover every element is a square
+up to sign, as over `ℝ`, the full cover of a nondegenerate quadratic line is therefore an extension
+of `O(Q) = {±1}` by `{±1}`, a group of order four. It is cyclic exactly when some vector has norm
+`-1`: then that vector has order four, whereas if some vector has norm `1`, it gives together with
+`1` and `-1` three solutions of `x ^ 2 = 1`, which a cyclic group of order four cannot have.
 
 ## Main results
 
-* `CliffordAlgebra.card_ker_cliffordFullCoverToOrthogonal`: when `-1` is not a square, the kernel
-  `{±1}` of the full-cover action of a nondegenerate space of positive dimension has order two.
 * `CliffordAlgebra.card_cliffordFullCover_of_finrank_eq_one` and
   `CliffordAlgebra.isCyclic_cliffordFullCover_iff_of_finrank_eq_one`: when `-1` is not a square
   but every element is a square up to sign, the full cover of a nondegenerate line has order four,
@@ -48,22 +45,6 @@ universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   [Invertible (2 : K)] {Q : QuadraticForm K V}
-
-/-- **The kernel of the full-cover action has order two.** When `-1` is not a square, the kernel of
-the full-cover action of a nontrivial nondegenerate quadratic space is `{1, -1}`. -/
-theorem card_ker_cliffordFullCoverToOrthogonal [Nontrivial V] (hQ : Q.Nondegenerate)
-    (h : ¬IsSquare (-1 : K)) :
-    Nat.card (cliffordFullCoverToOrthogonal Q).ker = 2 := by
-  refine Nat.card_eq_two_iff.2 ⟨1,
-    ⟨spinToCliffordFullCover Q (spinGroup.negOne Q hQ.ne_zero),
-      (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h _).2 (Or.inr rfl)⟩, fun h1 ↦ ?_,
-    Set.eq_univ_of_forall fun x ↦ ?_⟩
-  · refine spinGroup.negOne_ne_one Q hQ.ne_zero (spinToCliffordFullCover_injective Q ?_)
-    rw [map_one]
-    exact (congrArg Subtype.val h1).symm
-  · rcases (mem_ker_cliffordFullCoverToOrthogonal_iff hQ h x).1 x.property with hx | hx
-    · exact Or.inl (Subtype.ext hx)
-    · exact Or.inr (Subtype.ext hx)
 
 /-! ### Rank one -/
 

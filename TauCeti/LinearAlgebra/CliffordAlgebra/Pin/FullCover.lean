@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Norm
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 
 /-!
 # The Pin group and the even part of the normalized full Clifford cover
@@ -22,11 +21,7 @@ elements of reverse norm `1`, inside the even part `CliffordAlgebra.cliffordFull
 Over a field in which `-1` is not a square, the kernel of the full-cover action on a nondegenerate
 quadratic space is `{±1}` in positive dimension and trivial in dimension zero; in either case it
 lies in the Spin group. Hence the Pin and Spin groups are the inverse images in the full cover of
-their images in the orthogonal group, and an element of the full cover has reverse norm `1` exactly
-when the spinor norm of its action is trivial. When moreover every element is a square up to sign,
-as over `ℝ`, the even part of the full cover covers all of `SO(Q)`
-(`CliffordAlgebra.map_cliffordFullCoverEven`), and the Spin group has index in it the number of
-values of the spinor norm on `SO(Q)`.
+their images in the orthogonal group.
 
 ## Main definitions
 
@@ -40,11 +35,6 @@ values of the spinor norm on `SO(Q)`.
 * `CliffordAlgebra.comap_range_pinToOrthogonal` and `CliffordAlgebra.comap_range_spinToOrthogonal`:
   when `-1` is not a square, the Pin and Spin groups of a nondegenerate space are the inverse
   images of their images in `O(Q)`.
-* `CliffordAlgebra.range_spinToCliffordFullCover_eq_cliffordFullCoverEven_inf`: when `-1` is not a
-  square, the Spin group is the part of the even full cover whose action has trivial spinor norm.
-* `CliffordAlgebra.relIndex_range_spinToCliffordFullCover`: when moreover every element is a
-  square up to sign, the index of the Spin group in the even part of the full cover is the number
-  of values of the spinor norm on `SO(Q)`.
 
 ## References
 
@@ -195,48 +185,6 @@ theorem comap_range_pinToOrthogonal (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 :
     exact Subgroup.map_le_range _ _
   rw [← cliffordFullCoverToOrthogonal_comp_pinToCliffordFullCover, ← MonoidHom.map_range,
     Subgroup.comap_map_eq, sup_eq_left.2 hker]
-
-/-- **Reverse norm and spinor norm.** When `-1` is not a square, an element of the full cover of
-a nondegenerate quadratic space has reverse norm `1`, rather than `-1`, exactly when the spinor
-norm of its action is trivial. -/
-theorem cliffordNorm_eq_one_iff_orthogonalSpinorNorm_eq_one (hQ : Q.Nondegenerate)
-    (h : ¬IsSquare (-1 : K)) (x : cliffordFullCover Q) :
-    cliffordNorm Q x = 1 ↔
-      orthogonalSpinorNorm Q hQ (cliffordFullCoverToOrthogonal Q x) = 1 := by
-  rw [cliffordFullCoverToOrthogonal_apply, orthogonalSpinorNorm_lipschitzToOrthogonal,
-    squareClassHom_eq_one_iff]
-  rcases (mem_cliffordFullCover_iff Q x).1 x.property with h1 | h1 <;> rw [h1]
-  · simp
-  · refine iff_of_false (fun h2 ↦ ?_) fun h2 ↦ h ?_
-    · have h3 : (-1 : K) = 1 := by simpa using congrArg Units.val h2
-      exact two_ne_zero (by linear_combination -h3 : (2 : K) = 0)
-    · simpa using Units.isSquare_coe_iff.mpr h2
-
-/-- **The Spin group inside the even full cover.** When `-1` is not a square, the Spin group is
-the subgroup of even elements of the full cover whose action has trivial spinor norm. -/
-theorem range_spinToCliffordFullCover_eq_cliffordFullCoverEven_inf (hQ : Q.Nondegenerate)
-    (h : ¬IsSquare (-1 : K)) :
-    (spinToCliffordFullCover Q).range =
-      cliffordFullCoverEven Q ⊓
-        ((orthogonalSpinorNorm Q hQ).comp (cliffordFullCoverToOrthogonal Q)).ker := by
-  ext x
-  rw [mem_range_spinToCliffordFullCover_iff, Subgroup.mem_inf, mem_cliffordFullCoverEven_iff,
-    MonoidHom.mem_ker, MonoidHom.comp_apply,
-    cliffordNorm_eq_one_iff_orthogonalSpinorNorm_eq_one hQ h]
-
-/-- **The index of the Spin group in the even full cover.** Over a field in which `-1` is not a
-square but every element is a square up to sign, the Spin group has index in the even part of the
-full cover equal to the number of values of the spinor norm on `SO(Q)`. -/
-theorem relIndex_range_spinToCliffordFullCover (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K))
-    (hK : ∀ a : K, IsSquare a ∨ IsSquare (-a)) :
-    (spinToCliffordFullCover Q).range.relIndex (cliffordFullCoverEven Q) =
-      Nat.card (spinorNorm Q hQ).range := by
-  have hθ : spinorNorm Q hQ = (orthogonalSpinorNorm Q hQ).comp
-      (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
-    MonoidHom.ext (spinorNorm_apply Q hQ)
-  rw [range_spinToCliffordFullCover_eq_cliffordFullCoverEven_inf hQ h, Subgroup.inf_relIndex_left,
-    Subgroup.relIndex_ker, ← Subgroup.map_map, map_cliffordFullCoverEven hQ hK, hθ,
-    MonoidHom.range_comp, _root_.QuadraticMap.range_specialOrthogonalToOrthogonal]
 
 end Field
 
