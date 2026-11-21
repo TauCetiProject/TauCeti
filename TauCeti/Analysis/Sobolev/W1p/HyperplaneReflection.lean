@@ -13,7 +13,6 @@ import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.LpSeminorm.Indicator
-import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
