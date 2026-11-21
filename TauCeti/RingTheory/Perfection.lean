@@ -16,6 +16,8 @@ starts such a system, and more generally every coordinate map `Perfection M p �
 Mathlib proves this for rings of characteristic `p` with surjective Frobenius
 (`Perfection.coeff_surjective`); the statement here needs no ring structure, and applies for
 instance to the multiplicative monoid of an algebraically closed field of any characteristic.
+Each coordinate map also detects units: a compatible system is invertible as soon as one of its
+terms is, since the inverses of its terms are again compatible.
 
 ## Main definitions
 
@@ -27,6 +29,9 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
   coordinate map `Perfection.coeffMonoidHom M p n`.
 * `Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem`: all coordinates of an
   idempotent of `Perfection M p` agree.
+* `Perfection.isLocalHom_coeffMonoidHom`, `Perfection.isLocalHom_coeff`,
+  `PreTilt.isLocalHom_coeff`: an element of a perfection, or of a tilt, is a unit as soon as one
+  of its coordinates is.
 * `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
@@ -76,6 +81,30 @@ theorem coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem {e : Perfectio
     · -- for `p = 0` every coordinate is `x ^ 0 = 1`
       rw [pow_zero, ← coeffMonoidHom_pow_p' e (n + 1), pow_zero]
     · exact ((he.map (coeffMonoidHom M p (n + 1))).pow_eq hp).symm
+/-- **An element of the perfection is a unit as soon as one of its coordinates is.** Every
+coordinate of `x` is a `p`-power root of its zeroth coordinate, hence a unit, and the inverses of
+the coordinates form a compatible system, which is the inverse of `x`. -/
+instance isLocalHom_coeffMonoidHom (n : ℕ) : IsLocalHom (coeffMonoidHom M p n) := by
+  refine ⟨fun x hx ↦ ?_⟩
+  have h0 : IsUnit (coeffMonoidHom M p 0 x) := by
+    rw [← coeffMonoidHom_pow_p_pow_self x n]
+    exact hx.pow _
+  have hu (m : ℕ) : IsUnit (coeffMonoidHom M p m x) := by
+    rcases eq_or_ne p 0 with rfl | hp
+    · -- for `p = 0` every coordinate is a `0`-th power, hence `1`
+      rw [← coeffMonoidHom_pow_p' x m, pow_zero]
+      exact isUnit_one
+    · rw [← coeffMonoidHom_pow_p_pow_self x m] at h0
+      exact (isUnit_pow_iff (pow_ne_zero m hp)).mp h0
+  let u (m : ℕ) : Mˣ := (hu m).unit
+  have hpow (m : ℕ) : u (m + 1) ^ p = u m := by
+    apply Units.ext
+    simpa only [Units.val_pow_eq_pow_val, u, IsUnit.unit_spec] using coeffMonoidHom_pow_p' x m
+  let y : Perfection M p := ⟨fun m ↦ ↑((u m)⁻¹), fun m ↦ by
+    rw [← Units.val_pow_eq_pow_val, inv_pow, hpow]⟩
+  refine isUnit_iff_exists_inv.mpr ⟨y, extMonoid fun m ↦ ?_⟩
+  rw [map_mul, coeffMonoidHom_mk, map_one]
+  exact (hu m).mul_val_inv
 
 /-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
 `x` in the perfect ring `k`. -/
@@ -103,6 +132,11 @@ theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔
   exact not_not.mp fun hk ↦ coeff_ne_zero_of_le hk (Nat.le_add_left k n) (hlater k)
 
 end Reduced
+
+/-- **An element of the perfection of a ring is a unit as soon as one of its coordinates is.** -/
+instance isLocalHom_coeff {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] (n : ℕ) :
+    IsLocalHom (coeff R p n) :=
+  ⟨fun x hx ↦ isUnit_of_map_unit (coeffMonoidHom R p n) x hx⟩
 
 end Perfection
 
@@ -158,6 +192,10 @@ theorem coeff_eq_coeff_zero_of_isIdempotentElem {e : PreTilt O p} (he : IsIdempo
     (n : ℕ) : coeff n e = coeff 0 e :=
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeffMonoidHom_eq_coeffMonoidHom_zero_of_isIdempotentElem (M := ModP O p) he n
+/-- **An element of the tilt is a unit as soon as one of its coordinates in `O ⧸ p` is.** -/
+instance isLocalHom_coeff (n : ℕ) : IsLocalHom (coeff (O := O) (p := p) n) :=
+  ⟨fun x hx ↦ (isUnit_map_iff equivPerfection x).mp <|
+    isUnit_of_map_unit (Perfection.coeff (ModP O p) p n) _ (by rwa [coeff_equivPerfection])⟩
 
 end PreTilt
 
