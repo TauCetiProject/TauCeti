@@ -145,7 +145,7 @@ theorem mul_matrixBrownian_mul_conjTranspose_of_ne_one (hβ : β ≠ 1)
       matrixBrownian β n ((U : Matrix (Fin n) (Fin n) ℂ) * H₀ * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ)
         (fun ij t ω ↦ (gueConjMatrix n U *ᵥ (B · t ω)) ij) t ω := by
   rw [matrixBrownian_def, matrixBrownian_def, mul_add, add_mul,
-    gaussianEnsemble_gueConjMatrix_mulVec hβ]
+    gaussianEnsemble_gueConjMatrix_mulVec_of_ne_one hβ]
 
 /-- If every coordinate starts at `0`, matrix Brownian motion starts at `H₀`. -/
 theorem matrixBrownian_zero {ω : Ω} (h : ∀ ij, B ij 0 ω = 0) :

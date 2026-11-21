@@ -43,8 +43,8 @@ GUE and matrix Brownian motion.
   `TauCeti.Probability.gueMatrix_gueConjMatrix_mulVec`: conjugation of `goeMatrix` and
   `gueMatrix` on the self-adjoint subspaces.
 * `TauCeti.Probability.gaussianEnsemble_one_goeConjMatrix_mulVec`,
-  `TauCeti.Probability.gaussianEnsemble_gueConjMatrix_mulVec`: the same for the ambient complex
-  matrices.
+  `TauCeti.Probability.gaussianEnsemble_gueConjMatrix_mulVec_of_ne_one`: the same for the ambient
+  complex matrices.
 
 ## References
 
@@ -61,6 +61,16 @@ open Matrix Module
 namespace TauCeti.Probability
 
 variable {n : ℕ}
+
+/-- A linear map applied to a combination of an orthonormal basis, expanded in the same basis. -/
+private theorem map_sum_smul_orthonormalBasis {ι 𝕜 E F : Type*} [Fintype ι] [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FunLike F E E] [LinearMapClass F 𝕜 E E]
+    (b : OrthonormalBasis ι 𝕜 E) (f : F) (c : ι → 𝕜) :
+    f (∑ i, c i • b i) = ∑ i, (∑ j, b.repr (f (b j)) i * c j) • b i := by
+  simp_rw [map_sum, map_smul, Finset.sum_smul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp_rw [mul_comm _ (c j), mul_smul, ← Finset.smul_sum, OrthonormalBasis.sum_repr]
 
 /-! ### Unitary conjugation of the complex Hermitian ensemble -/
 
@@ -90,18 +100,14 @@ theorem gueConjMatrix_mem_orthogonalGroup (U : unitaryGroup (Fin n) ℂ) :
 theorem gueMatrix_gueConjMatrix_mulVec (U : unitaryGroup (Fin n) ℂ) (g : Fin n × Fin n → ℝ) :
     gueMatrix n (gueConjMatrix n U *ᵥ g) = UnitaryGroup.hermitianConj U (gueMatrix n g) := by
   rw [gueMatrix_eq_smul_sum_orthonormalBasis, gueMatrix_eq_smul_sum_orthonormalBasis, map_smul,
-    map_sum]
-  congr 1
-  simp_rw [map_smul, mulVec, dotProduct, gueConjMatrix_apply, Finset.sum_smul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun ij _ ↦ ?_
-  simp_rw [mul_comm _ (g ij), mul_smul, ← Finset.smul_sum, OrthonormalBasis.sum_repr]
+    map_sum_smul_orthonormalBasis]
+  simp_rw [mulVec, dotProduct, gueConjMatrix_apply]
 
 /-- **Unitary conjugation of the complex Hermitian ensemble** (`β ≠ 1`): conjugating
 `gaussianEnsemble β n g` by a unitary `U` gives the ensemble of the coordinates transformed by
 the orthogonal matrix `gueConjMatrix n U`. -/
-theorem gaussianEnsemble_gueConjMatrix_mulVec {β : ℕ} (hβ : β ≠ 1) (U : unitaryGroup (Fin n) ℂ)
-    (g : Fin n × Fin n → ℝ) :
+theorem gaussianEnsemble_gueConjMatrix_mulVec_of_ne_one {β : ℕ} (hβ : β ≠ 1)
+    (U : unitaryGroup (Fin n) ℂ) (g : Fin n × Fin n → ℝ) :
     gaussianEnsemble β n (gueConjMatrix n U *ᵥ g) =
       (U : Matrix (Fin n) (Fin n) ℂ) * gaussianEnsemble β n g *
         (U : Matrix (Fin n) (Fin n) ℂ)ᴴ := by
@@ -125,11 +131,10 @@ def goeConjMatrix (n : ℕ) (U : orthogonalGroup (Fin n) ℝ) :
 /-- `goeConjMatrix n U` is an orthogonal matrix. -/
 theorem goeConjMatrix_mem_orthogonalGroup (U : orthogonalGroup (Fin n) ℝ) :
     goeConjMatrix n U ∈ orthogonalGroup (Fin n × Fin n) ℝ := by
-  rw [goeConjMatrix, orthogonalGroup, unitaryGroup, submatrix_equiv_mem_unitary,
-    ← unitaryGroup, mem_unitaryGroup_iff, star_eq_conjTranspose, fromBlocks_conjTranspose,
-    fromBlocks_multiply, ← star_eq_conjTranspose,
-    mem_unitaryGroup_iff.1 (OrthonormalBasis.toMatrix_orthonormalBasis_mem_orthogonal _ _)]
-  simp
+  refine submatrix_equiv_mem_unitary.2 ((mem_orthogonalGroup_iff _ _).2 ?_)
+  simp [fromBlocks_transpose, fromBlocks_multiply,
+    (mem_orthogonalGroup_iff _ _).1
+      (OrthonormalBasis.toMatrix_orthonormalBasis_mem_orthogonal _ _)]
 
 /-- On an upper-triangular coordinate, `goeConjMatrix n U` acts by the matrix of conjugation by
 `U` in `TauCeti.symmetricOrthonormalBasis n`. -/
@@ -142,7 +147,7 @@ theorem goeConjMatrix_mulVec_apply_upperTriangle (U : orthogonalGroup (Fin n) �
   simp [mulVec, dotProduct, Basis.toMatrix_apply]
 
 /-- `goeConjMatrix n U` fixes the strictly lower-triangular coordinates. -/
-@[simp] theorem goeConjMatrix_mulVec_apply_of_lt (U : orthogonalGroup (Fin n) ℝ)
+@[simp] theorem goeConjMatrix_mulVec_apply_of_gt (U : orthogonalGroup (Fin n) ℝ)
     (g : Fin n × Fin n → ℝ) {i j : Fin n} (h : j < i) :
     (goeConjMatrix n U *ᵥ g) (i, j) = g (i, j) := by
   rw [goeConjMatrix, submatrix_mulVec_equiv, Function.comp_apply,
@@ -155,12 +160,8 @@ theorem goeConjMatrix_mulVec_apply_upperTriangle (U : orthogonalGroup (Fin n) �
 theorem goeMatrix_goeConjMatrix_mulVec (U : orthogonalGroup (Fin n) ℝ) (g : Fin n × Fin n → ℝ) :
     goeMatrix n (goeConjMatrix n U *ᵥ g) = UnitaryGroup.symmetricConj U (goeMatrix n g) := by
   rw [goeMatrix_eq_smul_sum_orthonormalBasis, goeMatrix_eq_smul_sum_orthonormalBasis, map_smul,
-    map_sum]
-  congr 1
-  simp_rw [map_smul, goeConjMatrix_mulVec_apply_upperTriangle, Finset.sum_smul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun ij _ ↦ ?_
-  simp_rw [mul_comm _ (g ij), mul_smul, ← Finset.smul_sum, OrthonormalBasis.sum_repr]
+    map_sum_smul_orthonormalBasis]
+  simp_rw [goeConjMatrix_mulVec_apply_upperTriangle]
 
 /-- **Orthogonal conjugation of the real symmetric ensemble** (`β = 1`): conjugating
 `gaussianEnsemble 1 n g` by a real orthogonal `U` gives the ensemble of the coordinates
