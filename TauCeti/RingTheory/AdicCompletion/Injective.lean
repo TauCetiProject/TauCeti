@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Injective
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Filtration
 import TauCeti.RingTheory.AdicCompletion.Algebra
+public import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Torsion
 
@@ -25,12 +26,10 @@ Baer's criterion and the Artin–Rees lemma on ideals of `R̂`, any `I`-power-to
 satisfying Baer's criterion over `R` also satisfies Baer's criterion over `R̂`, so injectivity of
 `M` over `R` lifts to injectivity over `R̂` (`TauCeti.AdicCompletion.torsionModule_injective`,
 Stacks Project Tag 08Z5). Moreover, `[Small.{v} R]` supplies `[Small.{v} R̂]` via
-`TauCeti.AdicCompletion.instSmall`.
+`TauCeti.AdicCompletion.instSmall` (from `TauCeti.RingTheory.AdicCompletion.Basic`).
 
 ## Main declarations
 
-* `TauCeti.AdicCompletion.instSmall`: `AdicCompletion I M` is `Small.{v}` whenever `M` is
-  `Small.{v}`.
 * `TauCeti.AdicCompletion.torsionModule_baer` and `TauCeti.AdicCompletion.torsionModule_injective`:
   Baer's criterion and module injectivity lift from `R` to `AdicCompletion I R` over a Noetherian
   ring `R`.
@@ -50,15 +49,6 @@ universe u v w
 namespace TauCeti.AdicCompletion
 
 open _root_.AdicCompletion
-
-/-- The adic completion of a `Small.{v}` module is `Small.{v}`, as a subtype of a countable
-product of quotients of `M`. In particular `[Small.{v} R]` supplies
-`[Small.{v} (AdicCompletion I R)]` for module injectivity over the completion. -/
-instance instSmall {R : Type*} [CommRing R] (I : Ideal R) (M : Type*) [AddCommGroup M]
-    [Module R M] [Small.{v} M] : Small.{v} (_root_.AdicCompletion I M) := by
-  have (n : ℕ) : Small.{v} (M ⧸ (I ^ n • ⊤ : Submodule R M)) :=
-    small_of_surjective (Submodule.Quotient.mk_surjective _)
-  exact small_of_injective (f := Subtype.val) Subtype.val_injective
 
 section Noetherian
 
