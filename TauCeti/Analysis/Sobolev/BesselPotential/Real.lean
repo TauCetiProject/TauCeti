@@ -27,7 +27,8 @@ continuous real representative `BesselPotentialSpace.continuousRep F`
 `BesselPotentialSpace.continuousRep_eq_of_ae_eq`), by the Sobolev embedding into continuous
 functions. It lies in the real `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2`
 and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep` is a linear map), and it
-determines `F` (`BesselPotentialSpace.continuousRep_injective`).
+determines `F` (`BesselPotentialSpace.continuousRep_injective`). Above the threshold
+`s > n + dim E / 2` it is moreover of class `Cⁿ` (`BesselPotentialSpace.contDiff_continuousRep`).
 -/
 
 public section
@@ -171,5 +172,17 @@ theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
     (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
   mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion h (F : H^{s}(E)))
     (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
+
+/-- **The continuous representative is `Cⁿ`** above the threshold `s > n + dim E / 2`: by the
+Sobolev embedding, `F` has a `Cⁿ` representative, which is continuous and hence equal to
+`continuousRep F`. -/
+theorem contDiff_continuousRep {n : ℕ} (hs : finrank ℝ E + 2 * n < 2 * s)
+    (F : realSubmodule E h) : ContDiff ℝ n (continuousRep F) := by
+  have hs' : (finrank ℝ E : ℝ) < 2 * s := by
+    have : (0 : ℝ) ≤ 2 * n := by positivity
+    linarith
+  obtain ⟨g, hg, hFg⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions hs
+    (continuousRep_mem_realSobolevFunctions hs' F)
+  rwa [(continuous_continuousRep hs' F).ae_eq_iff_eq volume hg.continuous |>.1 hFg]
 
 end BesselPotentialSpace

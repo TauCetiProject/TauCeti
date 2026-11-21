@@ -37,8 +37,8 @@ exponential is a homomorphism, two charts differ by a translation of the model s
 common domain (`TauCeti.Vortex.gaugeChart_symm_trans_eqOn_add`), so `G_s` is a manifold of every
 smoothness class `n` over `ℝ`, analytic included
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The group operations are smooth
-in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`); the action of `G_(k+1)` on
-the field space `A_m^k` is not treated here.
+in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`), and so is the action of
+`G_(k+1)` on the field space `A_m^k` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothAction`).
 
 ## References
 
