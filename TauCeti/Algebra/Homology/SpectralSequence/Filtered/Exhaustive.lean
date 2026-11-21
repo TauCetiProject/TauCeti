@@ -83,7 +83,7 @@ lemma isZero_homology_cokernel_ofLE_of_isZero {b m : ℤ}
     exact (HomologicalComplex.acyclic_of_isZero _ (isZero_cokernel_of_epi _) m).isZero_homology
   | succ i hi ih =>
     -- The short exact sequence `F_i/F_b ⟶ F_{i+1}/F_b ⟶ F_{i+1}/F_i`.
-    have hS := TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+    have hS := TauCeti.cokernelCompSequence_shortExact
       (Subobject.ofLE (F b) (F i) (hF hi)) (Subobject.ofLE (F i) (F (i + 1))
         (hF (Int.le_add_one le_rfl)))
     refine IsZero.of_iso ?_ (HomologicalComplex.homologyMapIso
