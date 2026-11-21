@@ -20,7 +20,9 @@ bilinear maps, such as the coordinate expressions of metrics. In particular, pul
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
 (`Continuous.pullbackBilinL_compContinuousMultilinearMap`). Pulling back along a bijection preserves
-nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`).
+nondegeneracy (`ContinuousLinearMap.injective_bilinearComp`). Pulling back a continuous family
+of bilinear maps along two fixed maps preserves continuity (`ContinuousOn.bilinearComp` and
+`Continuous.bilinearComp`), including when all spaces are only seminormed.
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
@@ -229,6 +231,39 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
 end Tendsto
 
 end ContinuousLinearMap
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {X V W F G F' : Type*} [TopologicalSpace X]
+  [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {c : X → V →L[𝕜] W →L[𝕜] F'}
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity on a set. All spaces need only seminorms. -/
+theorem ContinuousOn.bilinearComp {s : Set X} (hc : ContinuousOn c s)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    ContinuousOn (fun r ↦ (c r).bilinearComp e f) s := by
+  let L := (ContinuousLinearMap.compL 𝕜 F V (W →L[𝕜] F')).flip e
+  let R := (ContinuousLinearMap.compL 𝕜 G W F').flip f
+  let P := ContinuousLinearMap.compL 𝕜 F (W →L[𝕜] F') (G →L[𝕜] F') R
+  have hP (d : V →L[𝕜] W →L[𝕜] F') : (P.comp L) d = d.bilinearComp e f := by
+    ext v w
+    rfl
+  simpa only [Function.comp_def, hP] using (P.comp L).continuous.comp_continuousOn hc
+
+/-- Pulling back a continuous family of bilinear maps along fixed trial maps preserves
+continuity. All spaces need only seminorms. -/
+theorem Continuous.bilinearComp (hc : Continuous c)
+    (e : F →L[𝕜] V) (f : G →L[𝕜] W) :
+    Continuous (fun r ↦ (c r).bilinearComp e f) :=
+  continuousOn_univ.mp (hc.continuousOn.bilinearComp e f)
+
+end BilinearComp
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
