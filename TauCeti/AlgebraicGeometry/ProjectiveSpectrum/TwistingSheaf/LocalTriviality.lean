@@ -55,9 +55,9 @@ def chartGenerator : Γ(twistingSheaf 𝒜 n, U) :=
 /-- The standard basis section is the fraction `f ^ n.toNat / f ^ (-n).toNat`. -/
 @[simp]
 theorem chartGenerator_apply (x : U) :
-    (chartGenerator n f hf U hU).1 x =
+    (chartGenerator n f hf U hU).val x =
       Localization.mk (f ^ n.toNat)
-        ⟨f ^ (-n).toNat, fun h ↦ hU x.2 (x.1.isPrime.mem_of_pow_mem _ h)⟩ :=
+        ⟨f ^ (-n).toNat, fun h ↦ hU x.property (x.val.isPrime.mem_of_pow_mem _ h)⟩ :=
   (rfl)
 
 /-- The standard basis sections commute with restriction. -/
@@ -70,9 +70,9 @@ theorem res_chartGenerator {V : (Proj 𝒜).Opens} (i : V ⟶ U) :
 /-- Multiplication of standard basis sections adds their degrees. -/
 @[simp↓]
 theorem mul_chartGenerator_apply (m : ℤ) (x : U) :
-    (mul 𝒜 U m n (chartGenerator m f hf U hU) (chartGenerator n f hf U hU)).1 x =
-      (chartGenerator (m + n) f hf U hU).1 x := by
-  let := x.1.isPrime
+    (mul 𝒜 U m n (chartGenerator m f hf U hU) (chartGenerator n f hf U hU)).val x =
+      (chartGenerator (m + n) f hf U hU).val x := by
+  let := x.val.isPrime
   simp only [mul_apply, chartGenerator_apply, Localization.mk_mul]
   apply Localization.mk_eq_mk_iff.mpr
   apply Localization.r_of_eq
@@ -94,14 +94,14 @@ theorem mul_chartGenerator (m : ℤ) :
 
 /-- The standard basis sections in opposite degrees multiply to one in each localization. -/
 theorem chartGenerator_apply_mul_chartGenerator_neg_apply (x : U) :
-    (chartGenerator n f hf U hU).1 x * (chartGenerator (-n) f hf U hU).1 x = 1 := by
-  let := x.1.isPrime
+    (chartGenerator n f hf U hU).val x * (chartGenerator (-n) f hf U hU).val x = 1 := by
+  let := x.val.isPrime
   simp only [chartGenerator_apply, neg_neg]
   rw [Localization.mk_mul, mul_comm (f ^ n.toNat)]
   exact Localization.mk_self
-    (⟨f ^ (-n).toNat, fun h ↦ hU x.2 (x.1.isPrime.mem_of_pow_mem _ h)⟩ *
-      ⟨f ^ n.toNat, fun h ↦ hU x.2 (x.1.isPrime.mem_of_pow_mem _ h)⟩ :
-        x.1.asHomogeneousIdeal.toIdeal.primeCompl)
+    (⟨f ^ (-n).toNat, fun h ↦ hU x.property (x.val.isPrime.mem_of_pow_mem _ h)⟩ *
+      ⟨f ^ n.toNat, fun h ↦ hU x.property (x.val.isPrime.mem_of_pow_mem _ h)⟩ :
+        x.val.asHomogeneousIdeal.toIdeal.primeCompl)
 
 end twistingSheaf
 
@@ -113,14 +113,14 @@ variable (n : ℤ) (f : A) (hf : f ∈ 𝒜 1) (U : (Proj 𝒜).Opens)
   (hU : U ≤ basicOpen 𝒜 f)
 
 private def chartInverse (s : Γ(twistingSheaf 𝒜 n, U)) : Γ(twistingSheaf 𝒜 0, U) :=
-  ⟨s.1 * (chartGenerator (-n) f hf U hU).1, by
+  ⟨s.val * (chartGenerator (-n) f hf U hU).val, by
     apply (mem_sectionsAddSubgroup_iff _).mpr
     simpa only [add_neg_cancel] using
-      isLocallyFraction_mul s.2 (chartGenerator (-n) f hf U hU).2⟩
+      isLocallyFraction_mul s.property (chartGenerator (-n) f hf U hU).property⟩
 
 private theorem chartInverse_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (chartInverse n f hf U hU s).1 x =
-      s.1 x * (chartGenerator (-n) f hf U hU).1 x :=
+    (chartInverse n f hf U hU s).val x =
+      s.val x * (chartGenerator (-n) f hf U hU).val x :=
   (rfl)
 
 /-- Multiplication by `fⁿ` trivializes the sections of `𝒪(n)` on every open contained in
@@ -138,7 +138,7 @@ def chartSectionsLinearEquiv :
   right_inv s := ext fun x ↦ by
     simp only [smul_apply _ _ x, sectionsLinearEquivTwistingSheafZero_symm_apply_val U _ x,
       chartInverse_apply n f hf U hU s x, mul_assoc,
-      mul_comm ((chartGenerator (-n) f hf U hU).1 x),
+      mul_comm ((chartGenerator (-n) f hf U hU).val x),
       chartGenerator_apply_mul_chartGenerator_neg_apply n f hf U hU x, mul_one]
 
 /-- In standard chart coordinates the forward map multiplies by the basis section. -/
@@ -152,11 +152,11 @@ theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
     {g : A} (hg : g ∈ 𝒜 1) :
     toTwistingSheaf 𝒜 rfl (basicOpen 𝒜 g) r =
       awayToSection 𝒜 g (HomogeneousLocalization.Away.mk 𝒜 hg n r
-        (by simpa only [smul_eq_mul, mul_one] using r.2)) •
+        (by simpa only [smul_eq_mul, mul_one] using r.property)) •
         chartGenerator (n : ℤ) g hg (basicOpen 𝒜 g) le_rfl := by
   apply ext
   intro x
-  let := x.1.isPrime
+  let := x.val.isPrime
   -- The scheme and topological-space presentations of the section domain agree only after
   -- unfolding the structure of `Proj`; `erw` crosses this presentation boundary.
   erw [smul_apply, toTwistingSheaf_apply_apply, val_awayToSection_mk_apply,
@@ -168,15 +168,15 @@ theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
 /-- The forward chart coordinate map is multiplication by `fⁿ` in each localization. -/
 @[simp]
 theorem chartSectionsLinearEquiv_apply_apply (a : Γ(Proj 𝒜, U)) (x : U) :
-    (chartSectionsLinearEquiv n f hf U hU a).1 x =
-      (a.1 x).val * (chartGenerator n f hf U hU).1 x :=
+    (chartSectionsLinearEquiv n f hf U hU a).val x =
+      (a.val x).val * (chartGenerator n f hf U hU).val x :=
   (rfl)
 
 /-- The inverse chart coordinate is multiplication by `f⁻ⁿ` in the localizations. -/
 @[simp]
 theorem chartSectionsLinearEquiv_symm_apply_val (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (((chartSectionsLinearEquiv n f hf U hU).symm s).1 x).val =
-      s.1 x * (chartGenerator (-n) f hf U hU).1 x :=
+    (((chartSectionsLinearEquiv n f hf U hU).symm s).val x).val =
+      s.val x * (chartGenerator (-n) f hf U hU).val x :=
   sectionsLinearEquivTwistingSheafZero_symm_apply_val _ _ _
 
 /-- The chart coordinate isomorphisms commute with restriction to smaller opens. -/
@@ -213,16 +213,16 @@ theorem chartIso_inv_app_apply
 @[simp]
 theorem chartIso_hom_app_apply_apply
     (V : Over (basicOpen 𝒜 f)) (a : Γ(Proj 𝒜, V.left)) (x : V.left) :
-    ((chartIso n f hf).hom.val.app (Opposite.op V) a).1 x =
-      (a.1 x).val * (chartGenerator n f hf V.left V.hom.le).1 x :=
+    ((chartIso n f hf).hom.val.app (Opposite.op V) a).val x =
+      (a.val x).val * (chartGenerator n f hf V.left V.hom.le).val x :=
   (rfl)
 
 /-- The inverse standard sheaf trivialization multiplies values by `f⁻ⁿ`. -/
 @[simp]
 theorem chartIso_inv_app_apply_val
     (V : Over (basicOpen 𝒜 f)) (s : Γ(twistingSheaf 𝒜 n, V.left)) (x : V.left) :
-    (((chartIso n f hf).inv.val.app (Opposite.op V) s).1 x).val =
-      s.1 x * (chartGenerator (-n) f hf V.left V.hom.le).1 x :=
+    (((chartIso n f hf).inv.val.app (Opposite.op V) s).val x).val =
+      s.val x * (chartGenerator (-n) f hf V.left V.hom.le).val x :=
   chartSectionsLinearEquiv_symm_apply_val n f hf V.left V.hom.le s x
 
 end twistingSheaf

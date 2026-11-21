@@ -281,7 +281,7 @@ theorem not_isBigO_exp_mul_norm_of_factorial_le {z : ℕ → ℂ} {a b K L : ℝ
     ((hlim.eventually (gt_mem_nhds one_pos)).and (hz.eventually hc.bound))).exists
   rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hle
   have hexp : Real.exp (C * ‖z n‖) ≤ Real.exp (|C| * b) * Real.exp (|C| * a) ^ n := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     refine Real.exp_le_exp.2 ?_
     calc C * ‖z n‖ ≤ |C| * ‖z n‖ := mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)
       _ ≤ |C| * (a * n + b) := mul_le_mul_of_nonneg_left (hnorm n) (abs_nonneg C)

@@ -70,7 +70,7 @@ example :
         (Term.var (Sum.inr 0))).not.all
     letI : (symbSublang F ∅).Structure ℕ :=
       { funMap := fun {n} _ xs => if h : 0 < n then xs ⟨0, h⟩ + 1 else 0
-        RelMap := fun {_} r _ => r.2.elim }
+        RelMap := fun {_} r _ => r.property.elim }
     letI : L.Structure ℕ := expandSymbStructure F ∅ ℕ
     L.IsAlgebraic ∧
       (Term.func f₀ ![Term.var ()]).realize (fun _ : Unit => (5 : ℕ)) = 6 ∧
@@ -78,7 +78,7 @@ example :
   intro L f₀ F φ
   let : (symbSublang F ∅).Structure ℕ :=
     { funMap := fun {n} _ xs => if h : 0 < n then xs ⟨0, h⟩ + 1 else 0
-      RelMap := fun {_} r _ => r.2.elim }
+      RelMap := fun {_} r _ => r.property.elim }
   have ht : (Term.func f₀ ![Term.var ()] : L.Term Unit).functionsIn ⊆ F := by simp [F]
   have hφF : φ.functionsIn ⊆ F := by simp [φ, F]
   have hφR : φ.relationsIn ⊆ (∅ : Set (Σ n, L.Relations n)) := by simp [φ]
