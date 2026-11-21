@@ -53,6 +53,8 @@ map this multiple is the degree of the map with coefficients in `K`, the mod `2`
   coefficient ring `R` at every point, `μ` is a fundamental class exactly when each of its local
   coordinates is a unit of `R`.
 * `TauCeti.isFundamentalClass_of_subsingleton`: over the zero ring every class is fundamental.
+* `TauCeti.isFundamentalClass_singularHomologyFunctor_map_app_iff`: changing the coefficients along
+  an isomorphism `N ≅ N'` preserves and reflects fundamental classes.
 * `TauCeti.IsFundamentalClass.singularHomologyToLocalHomology_ne_zero`: on an `n`-manifold with
   nontrivial coefficients, a fundamental class has a nonzero image in every local homology group.
 * `TauCeti.not_isFundamentalClass_zero`: on a nonempty `n`-manifold with nontrivial coefficients,
@@ -159,6 +161,41 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
   forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
 
 end Definition
+
+section Coefficients
+
+variable {M : Type w} [TopologicalSpace M] {R : Type u} [Ring R] {N N' : ModuleCat.{w} R} {n : ℕ}
+
+/-- **Fundamental classes do not depend on the presentation of the coefficients.** Changing the
+coefficients of `Hₙ(M; N)` along an isomorphism `N ≅ N'` carries fundamental classes to
+fundamental classes, and only them. -/
+@[simp]
+theorem isFundamentalClass_singularHomologyFunctor_map_app_iff (e : N ≅ N')
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)) :
+    IsFundamentalClass
+        (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) n).map e.hom).app
+          (TopCat.of M) μ) ↔ IsFundamentalClass μ := by
+  refine ((isFundamentalClass_iff _).trans (forall_congr' fun x ↦ ?_)).trans
+    (isFundamentalClass_iff μ).symm
+  -- At each point the coefficient change acts on the local homology by an isomorphism `L`, and
+  -- the map to local homology intertwines it with the coefficient change on `Hₙ(M)`.
+  let P := TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))
+  let L := asIso (HomologicalComplex.homologyMap
+    (((SSetPair.chainComplexFunctor (ModuleCat.{w} R)).map e.hom).app P) n)
+  have h := congrArg (fun φ ↦ φ.hom μ) (SSetPair.homologyπ_coefficient_naturality P e.hom n)
+  have key : singularHomologyToLocalHomology N' x n
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) n).map e.hom).app
+        (TopCat.of M) μ) = L.toLinearEquiv (singularHomologyToLocalHomology N x n μ) := by
+    rw [singularHomologyFunctor_map_app_hom_apply,
+      singularHomologyToLocalHomology_eq_singularHomologyπ,
+      singularHomologyToLocalHomology_eq_singularHomologyπ]
+    -- `TopPair.singularHomologyπ` is an abbreviation for `SSetPair.homologyπ` of `P`, and the
+    -- composites in `h` are applied to `μ`, so `h` closes the goal as stated.
+    exact h
+  rw [key]
+  exact L.toLinearEquiv.span_singleton_apply_eq_top_iff
+
+end Coefficients
 
 section Homeomorph
 

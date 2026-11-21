@@ -163,14 +163,9 @@ theorem fiberLocalization_coefficient_naturality {R R' : A} (φ : R ⟶ R') (p :
         (TopCat.toSSet.obj (TopCat.of E))) k ≫ fiberLocalization R' p b k =
       fiberLocalization R p b k ≫ HomologicalComplex.homologyMap
         (((SSetPair.chainComplexFunctor A).map φ).app
-          (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k := by
-  have h := congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj
-      (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E)))))
-    ((SSetPair.chainComplexFunctorπ A).naturality φ)
-  simp only [NatTrans.comp_app] at h
-  exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
-    ((congrArg (HomologicalComplex.homologyMap · k) h).trans
-      (HomologicalComplex.homologyMap_comp _ _ _))
+          (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E))))) k :=
+  SSetPair.homologyπ_coefficient_naturality
+    (TopPair.toSSetPair.obj (TopPair.ofSubset ((p ⁻¹' {b})ᶜ : Set (TopCat.of E)))) φ k
 
 end Localization
 
