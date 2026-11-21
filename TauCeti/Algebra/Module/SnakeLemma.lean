@@ -180,7 +180,7 @@ theorem finiteDimensional_ker₂_of_finiteDimensional_ker₁₃ [FiniteDimension
     [FiniteDimensional k (ker i₃)] (hf : Exact f₁ f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (ker i₂) :=
-  TauCeti.finiteDimensional_of_exact (hf.restrict_ker hg₁ h₁ h₂)
+  (hf.restrict_ker hg₁ h₁ h₂).moduleFinite
 
 /-- In a commutative diagram with exact bottom row and surjective `f₂`, if the outer vertical maps
 have finite-dimensional cokernels, so does the middle one. -/
@@ -189,7 +189,7 @@ theorem finiteDimensional_coker₂_of_finiteDimensional_coker₁₃
     (hg : Exact g₁ g₂) (hf₂ : Surjective f₂)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₂ ⧸ range i₂) :=
-  TauCeti.finiteDimensional_of_exact (hg.mapQ_range hf₂ h₁ h₂)
+  (hg.mapQ_range hf₂ h₁ h₂).moduleFinite
 
 /-- In a commutative square `g₁ ∘ i₁ = i₂ ∘ f₁` with `f₁` injective, a finite-dimensional kernel
 of `i₂` forces a finite-dimensional kernel of `i₁`. -/
@@ -222,7 +222,7 @@ theorem finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁ [FiniteDim
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (ker i₃) :=
-  TauCeti.finiteDimensional_of_exact (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂)
+  (hf.restrict_ker_snakeδ hg hf₂ hg₁ h₁ h₂).moduleFinite
 
 /-- In a commutative diagram with exact rows, `f₂` surjective and `g₁` injective, if the kernel
 of `i₃` and the cokernel of `i₂` are finite dimensional, so is the cokernel of `i₁`: the snake
@@ -232,7 +232,7 @@ theorem finiteDimensional_coker₁_of_finiteDimensional_ker₃_coker₂ [FiniteD
     (hf₂ : Surjective f₂) (hg₁ : Injective g₁)
     (h₁ : g₁ ∘ₗ i₁ = i₂ ∘ₗ f₁) (h₂ : g₂ ∘ₗ i₂ = i₃ ∘ₗ f₂) :
     FiniteDimensional k (N₁ ⧸ range i₁) :=
-  TauCeti.finiteDimensional_of_exact (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂)
+  (hf.snakeδ_mapQ_range hg hf₂ hg₁ h₁ h₂).moduleFinite
 
 /-- **Additivity of the index along a map of short exact sequences.** For a commutative diagram
 whose rows `0 → M₁ → M₂ → M₃ → 0` and `0 → N₁ → N₂ → N₃ → 0` are short exact, if the outer

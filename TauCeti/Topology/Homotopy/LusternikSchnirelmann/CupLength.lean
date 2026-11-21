@@ -206,6 +206,17 @@ theorem lsCupLength_eq_zero_iff :
     natCast_le_lsCupLength_iff one_ne_zero]
   simp
 
+/-- **Cohomology vanishing above degree `N` gives cup length at most `N`.** If `Hᵖ(X; R)` is a
+subsingleton in every degree `p > N`, then `lsCupLength X R ≤ N`, since a product of `n`
+positive-degree classes has degree at least `n`. -/
+theorem lsCupLength_le_of_subsingleton {N : ℕ}
+    (h : ∀ p, N < p → Subsingleton
+      ((TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p)) :
+    lsCupLength X R ≤ N := by
+  refine lsCupLength_le_iff.mpr fun n d x hx hx0 ↦ ?_
+  by_contra hn
+  exact hx0 (@Subsingleton.elim _ (h d (by have := hx.le_degree; norm_cast at hn; omega)) x 0)
+
 /-- **Cohomology in a single positive degree has cup length at most `1`.** If `Hᵖ(X; R)` is a
 subsingleton in every positive degree `p ≠ N`, so that the cohomology of `X` is nonzero in at most
 one positive degree, then `lsCupLength X R ≤ 1`. -/
@@ -227,18 +238,6 @@ theorem lsCupLength_le_one_of_subsingleton {N : ℕ}
     have := hdeg _ (by omega) hx0
     have := hdeg a hp ha
     exact absurd (by omega : q = 0) hy.degree_ne_zero
-
-/-- **Cohomology vanishing above degree `N` bounds the cup length by `N`.** If `Hᵖ(X; R)` is a
-subsingleton in every degree `p > N`, then `lsCupLength X R ≤ N`: a product of more than `N`
-classes of positive degree lies in degree above `N`. -/
-theorem lsCupLength_le_of_subsingleton {N : ℕ}
-    (h : ∀ p, N < p → Subsingleton
-      ((TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p)) :
-    lsCupLength X R ≤ N := by
-  refine lsCupLength_le_iff.mpr fun n d x hx hx0 ↦ ?_
-  by_contra hnN
-  have : N < d := (Nat.cast_lt.mp (not_le.mp hnN)).trans_le hx.le_degree
-  exact hx0 (@Subsingleton.elim _ (h d this) x 0)
 
 /-- **Monotonicity**: if a continuous map `f : X → Y` induces injective maps on cohomology in every
 positive degree, then the cup length of `Y` is at most that of `X`. -/
@@ -314,9 +313,9 @@ theorem IsPositiveDegreeCupProduct.exists_singularCohomologyπ_eq {n d : ℕ}
     obtain ⟨zy, rfl⟩ := ih (fun i ↦ U (Fin.succ i)) fun i ↦ hU (Fin.succ i)
     let V : Set (TopCat.of X) := ⋃ i, (U (Fin.succ i) : Set X)
     have hU0 : IsOpen ((↑) ⁻¹' (U 0 : Set X) : Set ↥((U 0 : Set X) ∪ V)) :=
-      (U 0).isOpen.preimage continuous_subtype_val
+      (U 0).isOpen.preimage continuous_subtypeVal
     have hV : IsOpen ((↑) ⁻¹' V : Set ↥((U 0 : Set X) ∪ V)) :=
-      (isOpen_iUnion fun i ↦ (U (Fin.succ i)).isOpen).preimage continuous_subtype_val
+      (isOpen_iUnion fun i ↦ (U (Fin.succ i)).isOpen).preimage continuous_subtypeVal
     rw [← TopCat.singularCohomologyπ_singularRelativeCup (X := TopCat.of X) R (λ_ _).inv
       (λ_ _).hom (U 0 : Set X) V hU0 hV p q d h za zy]
     refine restrict (iUnion_subset fun i ↦ ?_) _

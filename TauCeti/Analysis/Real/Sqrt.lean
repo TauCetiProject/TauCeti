@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -31,6 +31,10 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 `√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
 `2 t + t² < 1`.
 
+For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
+`√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
+`√a - √b` expands to `a + b - 2√(ab)`.
+
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
@@ -47,6 +51,10 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sqrt_one_sub_sq_pos`: `0 < √(1 - t²)` for `t ∈ (-1, 1)`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
 * `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
+* `Real.sqrt_mul_le_half_add`: `√(ab) ≤ (a + b) / 2` for `0 ≤ a` and `0 ≤ b`.
+* `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
+* `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
+  and `1 ≤ r`.
 -/
 
 public section
@@ -188,5 +196,43 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
   have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
   rw [sq_sqrt zero_le_two] at hsq
   linarith
+
+/-- For nonnegative `a`, `b`, the geometric mean is at most the arithmetic mean:
+`√(ab) ≤ (a + b) / 2`. This is `NNReal.sqrt_mul_le_half_add` for real numbers. -/
+theorem sqrt_mul_le_half_add {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    √(a * b) ≤ (a + b) / 2 :=
+  sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (a - b)]⟩
+
+/-- For nonnegative `a`, `b`, `(√a - √b)² = a + b - 2 √(ab)`. -/
+theorem sq_sqrt_sub_sqrt {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (√a - √b) ^ 2 = a + b - 2 * √(a * b) := by
+  rw [sub_sq, sq_sqrt ha, sq_sqrt hb, sqrt_mul ha]
+  ring
+
+/-- A relative error at most `1 - r⁻²` bounds square roots within the factor `r ≥ 1`.
+The reference value need not be assumed nonnegative. -/
+theorem sqrt_bounds_of_abs_sub_le {x y r : ℝ} (hr : 1 ≤ r)
+    (herror : |x - y| ≤ (1 - r⁻¹ ^ 2) * y) :
+    sqrt y / r ≤ sqrt x ∧ sqrt x ≤ r * sqrt y := by
+  rcases hr.eq_or_lt with h | hr
+  · subst r
+    have hxy : x = y := sub_eq_zero.mp (abs_nonpos_iff.mp (by simpa using herror))
+    simp [hxy]
+  have hrpos : 0 < r := zero_lt_one.trans hr
+  have hri : 0 < r⁻¹ := inv_pos.mpr hrpos
+  have hri1 : r⁻¹ < 1 := (inv_lt_one₀ hrpos).mpr hr
+  have hd : 0 < 1 - r⁻¹ ^ 2 := by
+    nlinarith [(sq_lt_sq₀ hri.le zero_le_one).mpr hri1]
+  have hy : 0 ≤ y := nonneg_of_mul_nonneg_right ((abs_nonneg _).trans herror) hd
+  have hrinv : r * r⁻¹ = 1 := mul_inv_cancel₀ hrpos.ne'
+  have hmargin : 1 - r⁻¹ ^ 2 ≤ r ^ 2 - 1 := by nlinarith [sq_nonneg (r - r⁻¹)]
+  have hupper : x ≤ (r * sqrt y) ^ 2 := by
+    rw [mul_pow, sq_sqrt hy]
+    nlinarith [(abs_le.mp herror).2, mul_le_mul_of_nonneg_right hmargin hy]
+  have hlower : (sqrt y / r) ^ 2 ≤ x := by
+    rw [div_pow, sq_sqrt hy, div_eq_mul_inv, ← inv_pow]
+    nlinarith [(abs_le.mp herror).1]
+  exact ⟨le_sqrt_of_sq_le hlower,
+    sqrt_le_iff.mpr ⟨mul_nonneg hrpos.le (sqrt_nonneg _), hupper⟩⟩
 
 end Real

@@ -268,32 +268,33 @@ noncomputable def exactOrderQuotientEquivTateNormalForm {N : ℕ} (hN : 4 ≤ N)
     MulAction.orbitRel.Quotient (WeierstrassCurve.VariableChange F) (exactOrder F N) ≃
       tateNormalFormExactOrder F N where
   toFun := Quotient.lift
-    (fun X ↦ ⟨X.1.tateNormalFormCoeffs, tateNormalFormCoeffs_mem_tateNormalFormExactOrder hN X.2⟩)
+    (fun X ↦ ⟨X.val.tateNormalFormCoeffs, tateNormalFormCoeffs_mem_tateNormalFormExactOrder hN
+        X.property⟩)
     fun X Y h ↦ by
       obtain ⟨C, hC⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
       refine Subtype.ext ?_
       dsimp only
       rw [← hC, SubMulAction.val_smul, tateNormalFormCoeffs_smul]
-  invFun p := ⟦⟨tateNormalForm p.1.1 p.2.1, p.2.2⟩⟧
+  invFun p := ⟦⟨tateNormalForm p.val.1 p.property.1, p.property.2⟩⟧
   left_inv q := Quotient.inductionOn q fun X ↦ by
-    obtain ⟨hb, C, hC⟩ := exists_smul_eq_tateNormalForm X.1
-      (nsmul_point_ne_zero_of_mem_exactOrder hN X.2 two_ne_zero (by norm_num))
-      (nsmul_point_ne_zero_of_mem_exactOrder hN X.2 three_ne_zero (by norm_num))
+    obtain ⟨hb, C, hC⟩ := exists_smul_eq_tateNormalForm X.val
+      (nsmul_point_ne_zero_of_mem_exactOrder hN X.property two_ne_zero (by norm_num))
+      (nsmul_point_ne_zero_of_mem_exactOrder hN X.property three_ne_zero (by norm_num))
     exact Quotient.sound (MulAction.orbitRel_apply.mpr
       (MulAction.mem_orbit_iff.mpr ⟨C, Subtype.ext (by rw [SubMulAction.val_smul]; exact hC)⟩))
-  right_inv p := Subtype.ext (tateNormalFormCoeffs_tateNormalForm p.1.1 p.2.1)
+  right_inv p := Subtype.ext (tateNormalFormCoeffs_tateNormalForm p.val.1 p.property.1)
 
 @[simp]
 theorem coe_exactOrderQuotientEquivTateNormalForm_mk {N : ℕ} (hN : 4 ≤ N) (X : exactOrder F N) :
-    (exactOrderQuotientEquivTateNormalForm F hN ⟦X⟧ : F × F) = X.1.tateNormalFormCoeffs :=
+    (exactOrderQuotientEquivTateNormalForm F hN ⟦X⟧ : F × F) = X.val.tateNormalFormCoeffs :=
   (rfl)
 
 @[simp]
 theorem exactOrderQuotientEquivTateNormalForm_symm_apply {N : ℕ} (hN : 4 ≤ N)
     (p : tateNormalFormExactOrder F N) :
     (exactOrderQuotientEquivTateNormalForm F hN).symm p =
-      ⟦⟨tateNormalForm p.1.1 (mem_tateNormalFormExactOrder_iff.mp p.2).1,
-        (mem_tateNormalFormExactOrder_iff.mp p.2).2⟩⟧ :=
+      ⟦⟨tateNormalForm p.val.1 (mem_tateNormalFormExactOrder_iff.mp p.property).1,
+        (mem_tateNormalFormExactOrder_iff.mp p.property).2⟩⟧ :=
   (rfl)
 
 end Field

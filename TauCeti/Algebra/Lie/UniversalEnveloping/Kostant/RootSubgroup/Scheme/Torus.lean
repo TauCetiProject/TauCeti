@@ -145,7 +145,7 @@ closed immersion. -/
 @[simp]
 theorem coe_weightTorusClosedSubgroup (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_weightTorusRepresentation b wt hwt
-    (weightTorusClosedSubgroup b wt hwt).1 =
+    (weightTorusClosedSubgroup b wt hwt).val =
       Subobject.mk (weightTorusRepresentation b wt) := by
   have _ := isClosedImmersion_weightTorusRepresentation b wt hwt
   rw [weightTorusClosedSubgroup]

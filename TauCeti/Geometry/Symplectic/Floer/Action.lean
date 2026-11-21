@@ -12,6 +12,7 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The Hamiltonian action and the energy of cylindrical Floer solutions
@@ -100,6 +101,8 @@ derivatives.
   the two boundary circles, is the change of action minus the integrated curvature.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`: the energy of a map over
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
+* `SymplecticForm.integrableOn_and_integral_setIntegral_floerEnergyDensity_eq`: the same identity
+  through Fubini's theorem, for the energies `∫₀¹ e(r, t) dt` of the slices.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
 * `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
@@ -361,6 +364,34 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticFor
   simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
       (H := fun w ↦ H w.2) (contDiff_uncurry_cylindrical hH) hU hu hab hRU hper
+
+/-- **The energy identity in slices.** Let `u` be a `C²` map on an open set containing
+`[a, b] × [0, 1]` whose loops satisfy `u(s, 1) = u(s, 0)`, and let `H` be a `C¹` Hamiltonian. For
+the cylindrical perturbation `K = H_t dt`, the energy `∫₀¹ e(r, t) dt` of the slice at `r` is
+integrable over `[a, b]`, and its integral is the change `A_H(u(b, ·)) - A_H(u(a, ·))` of the
+action. This is `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub` read
+through Fubini's theorem. -/
+theorem integrableOn_and_integral_setIntegral_floerEnergyDensity_eq (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
+    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1,
+        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) (Icc a b) ∧
+      ∫ r in Icc a b, ∫ t in Icc (0 : ℝ) 1,
+          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) =
+        ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u with he
+  have hRint : IntegrableOn e (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
+    ((ω.continuousOn_floerEnergyDensity hU (hu.of_le one_le_two) contDiffOn_const
+      (contDiff_uncurry_cylindrical hH).contDiffOn).mono hRU).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
+  have hdiff := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hu hab hRU hper
+  rw [← he, Measure.volume_eq_prod,
+    setIntegral_prod e (by rwa [Measure.volume_eq_prod] at hRint)] at hdiff
+  refine ⟨?_, hdiff⟩
+  have h : Integrable e ((volume.restrict (Icc a b)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
+    rw [Measure.prod_restrict]
+    exact hRint
+  exact h.integral_prod_left
 
 /-- The Floer energy density of a solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical perturbation `K = H_t dt` is

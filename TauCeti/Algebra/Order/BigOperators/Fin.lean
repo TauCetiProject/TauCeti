@@ -62,7 +62,7 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
     (∏ j, c (s j)) ^ D ≤ ∏ i, c i := by
   obtain rfl | hD := D.eq_zero_or_pos
   · -- `Fin (0 * k)` is empty, so both sides are `1`.
-    have : IsEmpty (Fin (0 * k)) := ⟨fun i ↦ by simpa using i.2⟩
+    have : IsEmpty (Fin (0 * k)) := ⟨fun i ↦ by simpa using i.isLt⟩
     simp
   let e : Fin k × Fin D ≃ Fin (D * k) := finProdFinEquiv.trans (finCongr (Nat.mul_comm k D))
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]

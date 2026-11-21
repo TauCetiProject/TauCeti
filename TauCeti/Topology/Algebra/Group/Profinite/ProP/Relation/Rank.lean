@@ -145,6 +145,8 @@ universe u v w
 -- Preferring the ring path locally keeps a single additive structure on `ZMod p`.
 attribute [local instance 2000] Ring.toAddCommGroup
 
+section Prime
+
 variable {p : ℕ} [Fact p.Prime]
 
 section Quotient
@@ -249,9 +251,17 @@ theorem h2DualEquiv_h2QuotientEquiv_transgression
   congr 1
   exact (AddEquiv.ofBijective _ _).symm_apply_eq.2 rfl
 
+end Presentation
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF htriv in
+section PresentationCount
+
+variable {X : Type u} {R : Subgroup (freeProP p X)} [R.Normal]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
+  (hRc : IsClosed (R : Set (freeProP p X))) (hR : R ≤ proPFrattini p (freeProP p X))
+  (e : freeProP p X ⧸ R ≃ₜ* G)
+include hRc hR e
+
 /-- **Finiteness of `H²(G, 𝔽_p)` for a quotient of a free pro-`p` group.** Let `F` be the free
 pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let `G ≅ F ⧸ R` be a group
 acting continuously on `𝔽_p`. Then `H²(G, 𝔽_p)` is finite exactly when `R ⧸ Rᵖ[R, F]`
@@ -269,8 +279,6 @@ theorem finite_H2_iff_of_le_proPFrattini :
   rw [← finite_H2_quotient_iff_of_le_proPFrattini hRc hR (fun _ _ ↦ rfl)]
   exact (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv.finite_iff.symm
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF htriv in
 /-- **`H²(G, 𝔽_p)` counts the generators of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p`
 group.** Let `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup with
 `R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting
@@ -290,8 +298,6 @@ theorem natCard_H2_of_le_proPFrattini
   rw [← natCard_H2_quotient_of_le_proPFrattini hRc hR (fun _ _ ↦ rfl) h]
   exact Nat.card_congr (h2QuotientEquiv e (fun _ _ ↦ rfl) htriv).toEquiv.symm
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF htriv in
 /-- **`dim H²(G, 𝔽_p)` is the rank of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p` group.** Let
 `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup, and let
 `G ≅ F ⧸ R` be a group acting continuously on `𝔽_p`, necessarily trivially. Then the dimension of
@@ -319,8 +325,6 @@ theorem lift_rank_H2_of_le_proPFrattini :
   rw [hQ.topologicalGeneratorRank_eq_rank_continuousZModDual]
   exact (LinearEquiv.ofBijective (f.toAddMonoidHom.toZModLinearMap p) f.bijective).lift_rank_eq
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF htriv in
 /-- **`dim H²(G, 𝔽_p)` counts the generators of `R ⧸ Rᵖ[R, F]` for a quotient of a free pro-`p`
 group.** Let `F` be the free pro-`p` group on `X`, let `R ≤ Φ(F)` be a closed normal subgroup with
 `R ⧸ Rᵖ[R, F]` topologically finitely generated, and let `G ≅ F ⧸ R` be a group acting continuously
@@ -337,9 +341,9 @@ theorem finrank_H2_of_le_proPFrattini
   rw [← topologicalGeneratorRankNat_eq_topologicalGeneratorRank h, Cardinal.lift_natCast] at hrank
   rw [Module.finrank, ← Cardinal.toNat_lift.{u}, hrank, Cardinal.toNat_natCast]
 
-end Presentation
+end PresentationCount
 
-section FiniteRank
+section FiniteRankQuotient
 
 variable {X : Type u} [Finite X] [DistribMulAction (freeProP p X) (ZMod p)]
   [ContinuousSMul (freeProP p X) (ZMod p)] {R : Subgroup (freeProP p X)} [R.Normal]
@@ -377,13 +381,17 @@ theorem natCard_H2_quotient_mul_pow_card_of_isClosed
   rw [hF, hQ, hC, ← pow_add] at key
   rw [mul_comm, key]
 
-variable {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+end FiniteRankQuotient
+
+section IsClosedFinite
+
+variable {X : Type u} {R : Subgroup (freeProP p X)} [R.Normal]
+  (hRc : IsClosed (R : Set (freeProP p X)))
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
   (e : freeProP p X ⧸ R ≃ₜ* G)
-include e
+include hRc e
 
-omit [Finite X] [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF in
 /-- **`H²(G, 𝔽_p)` is finite when the relation subgroup is finitely normally generated.** Let `F` be
 the free pro-`p` group on any type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
 topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
@@ -404,8 +412,17 @@ theorem finite_H2_of_isClosed
   exact Finite.of_surjective _ ((transgression_surjective_iff (freeProP p X) (ZMod p) R hRc).2
     (AddMonoidHom.ext fun _ ↦ Subsingleton.elim _ _))
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF in
+end IsClosedFinite
+
+section FiniteRank
+
+variable {X : Type u} [Finite X] {R : Subgroup (freeProP p X)} [R.Normal]
+  (hRc : IsClosed (R : Set (freeProP p X)))
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [DistribMulAction G (ZMod p)] [ContinuousSMul G (ZMod p)]
+  (e : freeProP p X ⧸ R ≃ₜ* G)
+include hRc e
+
 /-- **The five-term count for a group presented by a free pro-`p` group of finite rank.** Let `F` be
 the free pro-`p` group on a finite type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
 topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
@@ -427,8 +444,6 @@ theorem natCard_H2_mul_pow_card_of_isClosed
     natCard_H2_quotient_mul_pow_card_of_isClosed hRc (fun _ _ ↦ rfl) h,
     topologicalGeneratorRankNat_congr e]
 
-omit [DistribMulAction (freeProP p X) (ZMod p)] [ContinuousSMul (freeProP p X) (ZMod p)]
-  htrivF in
 /-- **The generator, relation and normal-generator counts of a presentation.** Let `F` be the free
 pro-`p` group on a finite type `X`, let `R` be a closed normal subgroup with `R ⧸ Rᵖ[R, F]`
 topologically finitely generated, and let `G ≅ F ⧸ R` act continuously on `𝔽_p`, necessarily
@@ -455,13 +470,14 @@ theorem card_add_finrank_H2_of_isClosed
 
 end FiniteRank
 
+end Prime
+
 namespace presentedProP
 
-section Relators
+section RelatorsFinset
 
-variable {X : Type u} {rels : Set (freeProP p X)}
+variable {p : ℕ} {X : Type u} {rels : Set (freeProP p X)}
 
-omit [Fact p.Prime] in
 /-- A finite set of relators is a finset of its closed normal closure `R` in the free pro-`p`
 group, with as many elements: `rels` is the image under `Subtype.val` of a finset of `R` of
 `Nat.card rels` elements. -/
@@ -470,6 +486,14 @@ theorem exists_finset_card_eq_image_val_eq (hrels : rels.Finite) :
       Subtype.val '' (s : Set (normalClosure rels).topologicalClosure) = rels :=
   hrels.exists_finset_subtype_image_val_eq fun _ hx ↦
     le_topologicalClosure _ (subset_normalClosure hx)
+
+end RelatorsFinset
+
+variable {p : ℕ} [Fact p.Prime]
+
+section Relators
+
+variable {X : Type u} {rels : Set (freeProP p X)}
 
 /-- **A finite relator set normally generates its relation subgroup finitely.** For a finite set of
 relators `rels`, with closed normal closure `R` in the free pro-`p` group `F`, the quotient
@@ -529,7 +553,15 @@ theorem card_add_finrank_H2
             (normalClosure rels).topologicalClosure) h := by
   exact card_add_finrank_H2_of_isClosed (isClosed_topologicalClosure _) e h
 
-omit [Finite X] in
+end Count
+
+section FiniteH2
+
+variable {X : Type u} {rels : Set (freeProP p X)} {G : Type v} [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G] [DistribMulAction G (ZMod p)]
+  [ContinuousSMul G (ZMod p)] (e : presentedProP p X rels ≃ₜ* G)
+include e
+
 /-- **`H²(G, 𝔽_p)` is finite for finitely many relators.** Let `G ≅ ⟨X ∣ rels⟩` be a presentation,
 on any type `X`, by finitely many relators, of a group acting continuously on `𝔽_p`. Then
 `H²(G, 𝔽_p)` is finite. -/
@@ -537,7 +569,7 @@ theorem finite_H2_of_finite (hrels : rels.Finite) : Finite (H2 G (ZMod p)) := by
   exact finite_H2_of_isClosed (isClosed_topologicalClosure _) e
     (isTopologicallyFinitelyGenerated_quotient_pLowerCentralStep_of_finite hrels)
 
-end Count
+end FiniteH2
 
 section CohomFp
 
@@ -574,7 +606,14 @@ theorem card_add_finrank_cohomFp_two
   rw [(cohomFpLinearEquivH2 p G fun _ _ ↦ rfl).finrank_eq]
   exact card_add_finrank_H2 e h
 
-omit [Finite X] in
+end CohomFp
+
+section CohomFpFinite
+
+variable {X : Type u} {rels : Set (freeProP p X)} {G : Type v} [Group G]
+  [TopologicalSpace G] [IsTopologicalGroup G] (e : presentedProP p X rels ≃ₜ* G)
+include e
+
 /-- **`H²(G, 𝔽_p)` is finite-dimensional for finitely many relators**, on any type of generators,
 so that the relation rank `r(G) = dim_{𝔽_p} H²(G, 𝔽_p)` of a group presented by finitely many
 relators is a natural number. -/
@@ -588,7 +627,7 @@ theorem module_finite_cohomFp_two_of_finite (hrels : rels.Finite) :
   have := finite_H2_of_finite e hrels
   exact Module.Finite.equiv (cohomFpLinearEquivH2 p G fun _ _ ↦ rfl).symm
 
-end CohomFp
+end CohomFpFinite
 
 section MinimalPresentation
 

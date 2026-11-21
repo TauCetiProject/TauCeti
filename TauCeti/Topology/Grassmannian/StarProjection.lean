@@ -7,57 +7,72 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
-# The Grassmannian of an inner product space as a space of orthogonal projections
+# The Grassmannian of an inner product space in projection form
 
-A `k`-dimensional subspace `S` of a finite-dimensional inner product space `E` over `𝕜 = ℝ` or
-`ℂ` is recorded by its orthogonal projection `P_S`, a self-adjoint idempotent operator of rank
-`k`. This file studies the set `TauCeti.Euclidean.grassmannian 𝕜 E k` of such operators, with the
-subspace topology and the operator-norm metric of `E →L[𝕜] E`. It is the fibre of the Grassmann
-bundle over which varifolds are measures, and recording planes by their projections lets one
-state the tangential trace `tr (P ∘ A)` of an endomorphism `A` along a plane, and distances between
-planes, directly in terms of `P`.
+For an inner product space `E` over `𝕜 = ℝ` or `ℂ` and `k : ℕ`, `Euclidean.grassmannian 𝕜 E k` is
+the set of continuous linear maps `P : E → E` that are self-adjoint idempotents
+(`IsStarProjection`) whose range has rank `k` (`Module.rank`, so the range is finite-dimensional),
+with the topology and the operator-norm metric of `E →L[𝕜] E`. Each `k`-plane of `E` is recorded
+by its orthogonal projection: when `E` is finite-dimensional, `S ↦ S.starProjection` is a
+bijection from the `k`-dimensional subspaces of `E` onto `Euclidean.grassmannian 𝕜 E k`, with
+inverse `P ↦ P.range` (`Euclidean.grassmannian.submoduleEquiv`), by Mathlib's
+`isStarProjection_iff_eq_starProjection_range`. Recording planes by their projections lets one
+state the tangential trace `tr (P ∘ A)` of an endomorphism `A` along a plane, and distances
+between planes, directly in terms of `P`.
+
+For a surjective linear isometry `e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`, sending a point `S` of
+Tau Ceti's finite Grassmannian `TauCeti.finiteGrassmannian 𝕜 k N` to `e⁻¹ P_S e`, where `P_S` is
+the orthogonal projection onto `S.toEuclidean`, is a homeomorphism onto
+`Euclidean.grassmannian 𝕜 E k` (`Euclidean.grassmannian.finiteGrassmannianHomeomorph`). It is a
+continuous bijection (`TauCeti.finiteGrassmannian.continuous_starProjection_toEuclidean`) from a
+compact space to a Hausdorff space. In particular `Euclidean.grassmannian 𝕜 E k` is compact for
+finite-dimensional `E`. Every element has operator norm at most `1`
+(`Euclidean.grassmannian.norm_le_one`), equal to `1` when `k ≠ 0`.
+
+This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean space
+(L. Simon, *Lectures on Geometric Measure Theory*, §38).
 
 ## Main definitions
 
-* `TauCeti.Euclidean.grassmannian 𝕜 E k`: the self-adjoint idempotents of `E →L[𝕜] E` whose range
-  has dimension `k`.
-* `TauCeti.Euclidean.grassmannianOrthogonalHomeomorph`: the passage `P ↦ 1 - P` to orthogonal
+* `Euclidean.grassmannian 𝕜 E k`: the orthogonal projections of `E` with range of rank `k`.
+* `Euclidean.grassmannian.submoduleEquiv`: the bijection with the `k`-dimensional subspaces.
+* `Euclidean.grassmannian.finiteGrassmannianHomeomorph`: the homeomorphism from
+  `TauCeti.finiteGrassmannian 𝕜 k N` induced by a linear isometry
+  `E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)`.
+* `Euclidean.grassmannianOrthogonalHomeomorph`: the passage `P ↦ 1 - P` to orthogonal
   complements, a homeomorphism `G(E, k) ≃ₜ G(E, l)` when `k + l = dim E`.
 * `LinearIsometryEquiv.grassmannianCongr`: the homeomorphism `P ↦ U P U⁻¹` of `G(E, k)` onto
   `G(F, k)` induced by a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F`.
-* `TauCeti.finiteGrassmannian.starProjectionHomeomorph`: the finite Grassmannian
-  `TauCeti.finiteGrassmannian 𝕜 k N`, a quotient of the space of frames, is homeomorphic to
-  `G(EuclideanSpace 𝕜 (Fin N), k)` by sending a subspace to its orthogonal projection, so both
-  carriers describe the same space of planes.
 
 ## Main results
 
-* `TauCeti.Euclidean.mem_grassmannian_iff_exists_starProjection`: the points of `G(E, k)` are
-  exactly the orthogonal projections `U.starProjection` onto the `k`-dimensional subspaces `U`.
-* `TauCeti.Euclidean.mem_grassmannian_iff_trace`: among orthogonal projections, the points of
-  `G(E, k)` are those of trace `k`.
-* `TauCeti.Euclidean.isCompact_grassmannian`: `G(E, k)` is compact; it is closed, and every point
-  has norm at most one (`TauCeti.Euclidean.norm_le_one_of_mem_grassmannian`), equal to one when
-  `k ≠ 0`.
-* `TauCeti.Euclidean.norm_trace_comp_le_of_mem_grassmannian`: the tangential trace satisfies
+* `Euclidean.mem_grassmannian_iff_exists_starProjection`: the points of `G(E, k)` are exactly the
+  orthogonal projections `U.starProjection` onto the `k`-dimensional subspaces `U`.
+* `Euclidean.mem_grassmannian_iff_trace`: among orthogonal projections, the points of `G(E, k)`
+  are those of trace `k`.
+* `Euclidean.isClosed_grassmannian`, `Euclidean.isCompact_grassmannian`: `G(E, k)` is closed and
+  compact.
+* `Euclidean.grassmannian.norm_trace_comp_le`: the tangential trace satisfies
   `‖tr (P ∘ A)‖ ≤ k ‖A‖` for `P ∈ G(E, k)`.
-* `TauCeti.Euclidean.grassmannian_zero`, `TauCeti.Euclidean.grassmannian_finrank` and
-  `TauCeti.Euclidean.grassmannian_eq_empty`: `G(E, 0) = {0}`, `G(E, dim E) = {1}`, and `G(E, k)` is
+* `Euclidean.grassmannian_zero`, `Euclidean.grassmannian_finrank` and
+  `Euclidean.grassmannian_eq_empty`: `G(E, 0) = {0}`, `G(E, dim E) = {1}`, and `G(E, k)` is
   empty for `k > dim E`.
 
 ## Implementation notes
 
 The rank condition is stated with `Module.rank`, so that the definition is meaningful in every
-complete inner product space; in finite dimension it is equivalent to the condition on
-`Module.finrank` (`TauCeti.Euclidean.mem_grassmannian_iff_finrank`), which is how it is used.
-Self-adjointness is `IsStarProjection` for the adjoint as the star operation on `E →L[𝕜] E`, which
-requires `E` to be complete. Requiring only `P ∘ P = P` would admit the non-self-adjoint
-idempotents of the plane, `[[1, t], [0, 0]]` for `t` real, which form an unbounded family.
+complete inner product space, and an infinite-rank projection of an infinite-dimensional `E` is
+not a point of `G(E, 0)`; in finite dimension it is equivalent to the condition on
+`Module.finrank` (`Euclidean.mem_grassmannian_iff_finrank`). Self-adjointness is
+`IsStarProjection` for the adjoint as the star operation on `E →L[𝕜] E`, which requires `E` to be
+complete. Requiring only `P ∘ P = P` would admit the non-self-adjoint idempotents of the plane,
+`[[1, t], [0, 0]]` for `t` real, which form an unbounded family.
 
 ## References
 
@@ -67,42 +82,167 @@ idempotents of the plane, `[[1, t], [0, 0]]` for `t` real, which form an unbound
 
 public section
 
-open Module Set Topology
-
-namespace TauCeti
+open Module Set TauCeti
 
 namespace Euclidean
 
-variable {𝕜 : Type*} [RCLike 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {k l : ℕ}
+
+section CompleteSpace
+
+variable [CompleteSpace E]
 
 variable (𝕜 E) in
-/-- The **Grassmannian** `G(E, k)` of an inner product space `E`, presented by orthogonal
-projections: the self-adjoint idempotent operators on `E` whose range has dimension `k`, that is,
-the orthogonal projections onto the `k`-dimensional subspaces of `E`. -/
+/-- The **Grassmannian** `G(E, k)` of an inner product space in projection form: the
+self-adjoint idempotent continuous linear maps of `E` whose range has rank `k`, that is, the
+orthogonal projections onto the `k`-dimensional subspaces of `E` (L. Simon, *Lectures on
+Geometric Measure Theory*, §38). The rank is the cardinal `Module.rank`, so that an
+infinite-rank projection of an infinite-dimensional `E` is not a point of `G(E, 0)`. -/
 def grassmannian (k : ℕ) : Set (E →L[𝕜] E) :=
   {P | IsStarProjection P ∧ Module.rank 𝕜 P.range = k}
 
-variable {k l : ℕ} {P : E →L[𝕜] E}
-
-theorem mem_grassmannian :
+/-- Membership in the Grassmannian unfolds to its defining conditions. -/
+theorem mem_grassmannian {P : E →L[𝕜] E} :
     P ∈ grassmannian 𝕜 E k ↔ IsStarProjection P ∧ Module.rank 𝕜 P.range = k :=
   Iff.rfl
 
-theorem isStarProjection_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
-    IsStarProjection P :=
+namespace grassmannian
+
+/-- A point of the Grassmannian is a star projection. -/
+theorem isStarProjection {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) : IsStarProjection P :=
   hP.1
 
-variable [FiniteDimensional 𝕜 E]
+/-- The range of a point of `G(E, k)` is finite-dimensional. -/
+theorem finiteDimensional_range {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) :
+    FiniteDimensional 𝕜 P.range :=
+  Module.finite_of_rank_eq_nat hP.2
+
+/-- The range of a point of `G(E, k)` has dimension `k`. -/
+theorem finrank_range {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) :
+    finrank 𝕜 P.range = k :=
+  finrank_eq_of_rank_eq hP.2
+
+/-- A point of the Grassmannian has operator norm at most `1`. -/
+theorem norm_le_one {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) :
+    ‖P‖ ≤ 1 :=
+  hP.1.norm_le
+
+/-- A point of `G(E, k)` with `k ≠ 0` has operator norm `1`. -/
+theorem norm_eq_one {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) (hk : k ≠ 0) :
+    ‖P‖ = 1 := by
+  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP.1
+  rw [h]
+  refine Submodule.norm_starProjection _ fun hb ↦ hk ?_
+  have := hP.2
+  rwa [hb, rank_bot, eq_comm, Nat.cast_eq_zero] at this
+
+/-- The orthogonal projection onto a `k`-dimensional subspace is a point of `G(E, k)`. -/
+theorem starProjection_mem {S : Submodule 𝕜 E} [FiniteDimensional 𝕜 S]
+    (hS : finrank 𝕜 S = k) : S.starProjection ∈ grassmannian 𝕜 E k :=
+  ⟨isStarProjection_starProjection, by
+    rw [Submodule.range_starProjection, ← Module.finrank_eq_rank, hS]⟩
+
+/-- A point of the Grassmannian is the orthogonal projection onto its range. -/
+theorem eq_starProjection_range {P : E →L[𝕜] E}
+    (hP : P ∈ grassmannian 𝕜 E k) :
+    ∃ (_ : P.range.HasOrthogonalProjection), P = P.range.starProjection :=
+  isStarProjection_iff_eq_starProjection_range.1 hP.1
+
+section FiniteGrassmannian
+
+variable {N : ℕ}
+
+/-- For `S` in the finite Grassmannian, `e⁻¹ P_S e` lies in `G(E, k)`, where `P_S` is the
+orthogonal projection onto `S.toEuclidean`. -/
+private theorem conj_starProjection_toEuclidean_mem (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (S : finiteGrassmannian 𝕜 k N) :
+    e.symm.conjStarAlgEquiv S.toEuclidean.starProjection ∈ grassmannian 𝕜 E k := by
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_starProjection]
+  exact starProjection_mem <| (e.symm.toLinearEquiv.finrank_map_eq _).trans S.finrank_toEuclidean
+
+/-- The map `S ↦ e⁻¹ P_S e` is a bijection from the finite Grassmannian onto `G(E, k)`. -/
+private theorem bijective_conj_starProjection_toEuclidean
+    (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)) :
+    Function.Bijective fun S : finiteGrassmannian 𝕜 k N ↦
+      (⟨_, conj_starProjection_toEuclidean_mem e S⟩ : grassmannian 𝕜 E k) := by
+  refine ⟨fun S T h ↦ finiteGrassmannian.toEuclidean_injective ?_, fun P ↦ ?_⟩
+  · have h := congrArg (fun P : grassmannian 𝕜 E k ↦ P.val.range) h
+    simp only [LinearIsometryEquiv.conjStarAlgEquiv_starProjection,
+      Submodule.range_starProjection] at h
+    exact Submodule.map_injective_of_injective e.symm.injective h
+  · let W := P.val.range.map (e.toLinearEquiv : E →ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    let L := (WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm
+    have hS : finrank 𝕜 (W.comap L.toLinearMap) = k := by
+      rw [Submodule.comap_equiv_eq_map_symm, L.symm.finrank_map_eq,
+        e.toLinearEquiv.finrank_map_eq, finrank_range P.property]
+    let S : finiteGrassmannian 𝕜 k N := ⟨W.comap L.toLinearMap, hS⟩
+    have hSW : S.toEuclidean = W := by
+      ext x
+      simp [S, L]
+    refine ⟨S, Subtype.ext <| ContinuousLinearMap.IsStarProjection.ext
+      (conj_starProjection_toEuclidean_mem e S).1 P.property.1 ?_⟩
+    dsimp only
+    rw [LinearIsometryEquiv.conjStarAlgEquiv_starProjection, Submodule.range_starProjection, hSW,
+      LinearIsometryEquiv.toLinearEquiv_symm, Submodule.map_symm_eq_iff]
+
+variable (k) in
+/-- A linear isometry `e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)` induces the homeomorphism
+`S ↦ e⁻¹ P_S e` from Tau Ceti's finite Grassmannian `TauCeti.finiteGrassmannian 𝕜 k N` onto
+`G(E, k)`, where `P_S` is the orthogonal projection onto `S.toEuclidean`. Its inverse sends `P` to
+the subspace `e(range P)` read in coordinates (`toEuclidean_finiteGrassmannianHomeomorph_symm`). -/
+noncomputable def finiteGrassmannianHomeomorph (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)) :
+    finiteGrassmannian 𝕜 k N ≃ₜ grassmannian 𝕜 E k :=
+  Continuous.homeoOfEquivCompactToT2
+    (f := Equiv.ofBijective _ (bijective_conj_starProjection_toEuclidean e)) <| by
+    refine Continuous.subtype_mk ?_ _
+    simp only [LinearIsometryEquiv.conjStarAlgEquiv_apply]
+    fun_prop
+
+/-- `finiteGrassmannianHomeomorph k e` sends `S` to `e⁻¹ P_S e`. -/
+@[simp]
+theorem coe_finiteGrassmannianHomeomorph_apply (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (S : finiteGrassmannian 𝕜 k N) :
+    (finiteGrassmannianHomeomorph k e S : E →L[𝕜] E) =
+      e.symm.conjStarAlgEquiv S.toEuclidean.starProjection :=
+  (rfl)
+
+/-- The inverse of `finiteGrassmannianHomeomorph k e` sends `P` to the subspace `e(range P)`,
+read in the coordinates of `EuclideanSpace 𝕜 (Fin N)`. -/
+theorem toEuclidean_finiteGrassmannianHomeomorph_symm (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (P : grassmannian 𝕜 E k) :
+    ((finiteGrassmannianHomeomorph k e).symm P).toEuclidean =
+      P.val.range.map (e.toLinearEquiv : E →ₗ[𝕜] EuclideanSpace 𝕜 (Fin N)) := by
+  set S := (finiteGrassmannianHomeomorph k e).symm P
+  have h : (finiteGrassmannianHomeomorph k e S : E →L[𝕜] E).range = P.val.range := by
+    rw [Homeomorph.apply_symm_apply]
+  rw [coe_finiteGrassmannianHomeomorph_apply, LinearIsometryEquiv.conjStarAlgEquiv_starProjection,
+    Submodule.range_starProjection, LinearIsometryEquiv.toLinearEquiv_symm,
+    Submodule.map_symm_eq_iff] at h
+  exact h.symm
+
+end FiniteGrassmannian
+
+end grassmannian
+
+/-- The range of the complementary projection `1 - P` of a point `P` of `G(E, k)` is the orthogonal
+complement of the range of `P`. -/
+@[simp]
+theorem range_one_sub_coe_grassmannian (P : grassmannian 𝕜 E k) :
+    LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ := by
+  obtain ⟨_, h⟩ := grassmannian.eq_starProjection_range P.property
+  rw [h, Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
+
+end CompleteSpace
+
+section FiniteDimensional
+
+variable [CompleteSpace E] [FiniteDimensional 𝕜 E] {P : E →L[𝕜] E}
 
 /-- In finite dimension, the rank condition defining `G(E, k)` is a condition on `finrank`. -/
 theorem mem_grassmannian_iff_finrank :
     P ∈ grassmannian 𝕜 E k ↔ IsStarProjection P ∧ finrank 𝕜 P.range = k := by
   rw [mem_grassmannian, ← Module.finrank_eq_rank, Nat.cast_inj]
-
-theorem finrank_range_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
-    finrank 𝕜 P.range = k :=
-  (mem_grassmannian_iff_finrank.mp hP).2
 
 /-- The orthogonal projection onto a subspace `U` lies in `G(E, k)` exactly when `U` has
 dimension `k`. -/
@@ -112,25 +252,14 @@ theorem starProjection_mem_grassmannian_iff {U : Submodule 𝕜 E} :
   rw [mem_grassmannian_iff_finrank, Submodule.range_starProjection]
   exact and_iff_right isStarProjection_starProjection
 
-/-- The orthogonal projection onto a subspace `U` lies in the Grassmannian of planes of
-dimension `finrank U`. -/
-theorem starProjection_mem_grassmannian (U : Submodule 𝕜 E) :
-    U.starProjection ∈ grassmannian 𝕜 E (finrank 𝕜 U) :=
-  starProjection_mem_grassmannian_iff.mpr rfl
-
-/-- A point of the Grassmannian is the orthogonal projection onto its range. -/
-theorem eq_starProjection_range_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
-    P = P.range.starProjection :=
-  (isStarProjection_iff_eq_starProjection_range.mp hP.1).2
-
 /-- The points of `G(E, k)` are exactly the orthogonal projections onto the `k`-dimensional
 subspaces of `E`. -/
 theorem mem_grassmannian_iff_exists_starProjection :
     P ∈ grassmannian 𝕜 E k ↔ ∃ U : Submodule 𝕜 E, finrank 𝕜 U = k ∧ P = U.starProjection := by
-  refine ⟨fun hP ↦ ⟨P.range, finrank_range_of_mem_grassmannian hP,
-    eq_starProjection_range_of_mem_grassmannian hP⟩, ?_⟩
+  refine ⟨fun hP ↦ ⟨P.range, grassmannian.finrank_range hP,
+    (grassmannian.eq_starProjection_range hP).2⟩, ?_⟩
   rintro ⟨U, rfl, rfl⟩
-  exact starProjection_mem_grassmannian U
+  exact grassmannian.starProjection_mem rfl
 
 /-- Among orthogonal projections, the points of `G(E, k)` are those of trace `k`. -/
 theorem mem_grassmannian_iff_trace :
@@ -141,7 +270,7 @@ theorem mem_grassmannian_iff_trace :
     Submodule.trace_starProjection, Nat.cast_inj]
 
 /-- The trace of a point of `G(E, k)` is `k`. -/
-theorem trace_eq_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
+theorem grassmannian.trace_eq (hP : P ∈ grassmannian 𝕜 E k) :
     LinearMap.trace 𝕜 E P = k :=
   (mem_grassmannian_iff_trace.mp hP).2
 
@@ -157,44 +286,31 @@ theorem isClosed_grassmannian : IsClosed (grassmannian 𝕜 E k) := by
     isClosed_setOfPred_isSelfAdjoint).inter
       (isClosed_eq (traceCLM 𝕜 E).continuous continuous_const)
 
-omit [FiniteDimensional 𝕜 E] in
-/-- An operator in the Grassmannian has norm at most one. -/
-theorem norm_le_one_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) : ‖P‖ ≤ 1 :=
-  hP.1.norm_le P
+/-- The Grassmannian `G(E, k)` of a finite-dimensional inner product space is compact: it is the
+image of the compact finite Grassmannian under `grassmannian.finiteGrassmannianHomeomorph`. -/
+theorem isCompact_grassmannian : IsCompact (grassmannian 𝕜 E k) := by
+  let h := grassmannian.finiteGrassmannianHomeomorph k (stdOrthonormalBasis 𝕜 E).repr
+  simpa [Set.range_comp, h.surjective.range_eq] using
+    isCompact_range (continuous_subtypeVal.comp h.continuous)
 
-omit [FiniteDimensional 𝕜 E] in
-/-- An operator in `G(E, k)` with `k ≠ 0` has norm one. -/
-theorem norm_eq_one_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) (hk : k ≠ 0) :
-    ‖P‖ = 1 := by
-  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP.1
-  rw [h]
-  refine Submodule.norm_starProjection _ fun hb ↦ hk ?_
-  have := hP.2
-  rwa [hb, rank_bot, eq_comm, Nat.cast_eq_zero] at this
-
-/-- The Grassmannian is compact. -/
-theorem isCompact_grassmannian : IsCompact (grassmannian 𝕜 E k) :=
-  haveI := FiniteDimensional.proper 𝕜 (E →L[𝕜] E)
-  (isCompact_closedBall 0 1).of_isClosed_subset isClosed_grassmannian
-    fun _ hP ↦ mem_closedBall_zero_iff.mpr (norm_le_one_of_mem_grassmannian hP)
-
-instance : CompactSpace (grassmannian 𝕜 E k) :=
-  isCompact_iff_compactSpace.mp isCompact_grassmannian
+/-- The Grassmannian of a finite-dimensional inner product space is a compact space. -/
+instance grassmannian.instCompactSpace : CompactSpace (grassmannian 𝕜 E k) :=
+  isCompact_iff_compactSpace.1 isCompact_grassmannian
 
 /-- The tangential trace of an operator `A` along a plane `P ∈ G(E, k)` is bounded by `k ‖A‖`. -/
-theorem norm_trace_comp_le_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k)
-    (A : E →L[𝕜] E) : ‖LinearMap.trace 𝕜 E (P ∘L A : E →L[𝕜] E)‖ ≤ k * ‖A‖ := by
+theorem grassmannian.norm_trace_comp_le (hP : P ∈ grassmannian 𝕜 E k) (A : E →L[𝕜] E) :
+    ‖LinearMap.trace 𝕜 E (P ∘L A : E →L[𝕜] E)‖ ≤ k * ‖A‖ := by
   rw [← traceCLM_apply]
   refine (P ∘L A).norm_traceCLM_le_finrank_range_mul.trans
     (mul_le_mul ?_ ?_ (norm_nonneg _) (Nat.cast_nonneg _))
-  · rw [← finrank_range_of_mem_grassmannian hP]
+  · rw [← grassmannian.finrank_range hP]
     exact_mod_cast Submodule.finrank_mono (LinearMap.range_comp_le_range _ _)
   · exact (P.opNorm_comp_le A).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (norm_le_one_of_mem_grassmannian hP))
+      (mul_le_of_le_one_left (norm_nonneg _) (grassmannian.norm_le_one hP))
 
 /-- The passage to the orthogonal complement: `P ∈ G(E, k)` gives `1 - P ∈ G(E, l)` when
 `k + l = dim E`. -/
-theorem one_sub_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) (hkl : k + l = finrank 𝕜 E) :
+theorem grassmannian.one_sub_mem (hP : P ∈ grassmannian 𝕜 E k) (hkl : k + l = finrank 𝕜 E) :
     1 - P ∈ grassmannian 𝕜 E l := by
   rw [mem_grassmannian_iff_trace] at hP ⊢
   refine ⟨hP.1.one_sub, ?_⟩
@@ -204,29 +320,20 @@ theorem one_sub_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) (hkl : k + l
 
 theorem one_sub_mem_grassmannian_iff (hkl : k + l = finrank 𝕜 E) :
     1 - P ∈ grassmannian 𝕜 E l ↔ P ∈ grassmannian 𝕜 E k :=
-  ⟨fun h ↦ by simpa using one_sub_mem_grassmannian h (l := k) (by omega),
-    fun h ↦ one_sub_mem_grassmannian h hkl⟩
-
-omit [FiniteDimensional 𝕜 E] in
-/-- The range of the complementary projection `1 - P` of a point `P` of `G(E, k)` is the orthogonal
-complement of the range of `P`. -/
-@[simp]
-theorem range_one_sub_coe_grassmannian (P : grassmannian 𝕜 E k) :
-    LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ := by
-  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp P.2.1
-  rw [h, Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
+  ⟨fun h ↦ by simpa using grassmannian.one_sub_mem h (l := k) (by omega),
+    fun h ↦ grassmannian.one_sub_mem h hkl⟩
 
 /-- The passage to orthogonal complements `P ↦ 1 - P`, a homeomorphism from `G(E, k)` onto
 `G(E, l)` when `k + l = dim E`: if `P` projects onto `S`, then `1 - P` projects onto `Sᗮ`
 (Mathlib's `Submodule.starProjection_orthogonal'`). -/
 noncomputable def grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E) :
     grassmannian 𝕜 E k ≃ₜ grassmannian 𝕜 E l where
-  toFun P := ⟨1 - P, one_sub_mem_grassmannian P.2 hkl⟩
-  invFun Q := ⟨1 - Q, one_sub_mem_grassmannian Q.2 (by omega)⟩
-  left_inv P := Subtype.ext (sub_sub_cancel 1 P.1)
-  right_inv Q := Subtype.ext (sub_sub_cancel 1 Q.1)
-  continuous_toFun := (continuous_const.sub continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_const.sub continuous_subtype_val).subtype_mk _
+  toFun P := ⟨1 - P, grassmannian.one_sub_mem P.property hkl⟩
+  invFun Q := ⟨1 - Q, grassmannian.one_sub_mem Q.property (by omega)⟩
+  left_inv P := Subtype.ext (sub_sub_cancel 1 P.val)
+  right_inv Q := Subtype.ext (sub_sub_cancel 1 Q.val)
+  continuous_toFun := (continuous_const.sub continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_const.sub continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E)
@@ -267,16 +374,42 @@ theorem grassmannian_finrank : grassmannian 𝕜 E (finrank 𝕜 E) = {1} := by
 
 /-- `G(E, k)` is empty for `k > dim E`: no subspace has dimension larger than `E`. -/
 theorem grassmannian_eq_empty (hk : finrank 𝕜 E < k) : grassmannian 𝕜 E k = ∅ :=
-  eq_empty_of_forall_notMem fun _ hP ↦ (finrank_range_of_mem_grassmannian hP ▸
+  eq_empty_of_forall_notMem fun _ hP ↦ (grassmannian.finrank_range hP ▸
     Submodule.finrank_le _).not_gt hk
+
+namespace grassmannian
+
+variable (𝕜 E k) in
+/-- The bijection `S ↦ S.starProjection` from the `k`-dimensional subspaces of `E` onto the
+Grassmannian `G(E, k)`, with inverse `P ↦ P.range`. -/
+noncomputable def submoduleEquiv :
+    {S : Submodule 𝕜 E // finrank 𝕜 S = k} ≃ grassmannian 𝕜 E k where
+  toFun S := ⟨S.val.starProjection, starProjection_mem S.property⟩
+  invFun P := ⟨P.val.range, finrank_range P.property⟩
+  left_inv S := Subtype.ext S.val.range_starProjection
+  right_inv P := Subtype.ext (eq_starProjection_range P.property).2.symm
+
+/-- `submoduleEquiv` sends a subspace to its orthogonal projection. -/
+@[simp]
+theorem coe_submoduleEquiv_apply (S : {S : Submodule 𝕜 E // finrank 𝕜 S = k}) :
+    (submoduleEquiv 𝕜 E k S : E →L[𝕜] E) = S.val.starProjection :=
+  (rfl)
+
+/-- The inverse of `submoduleEquiv` sends a projection to its range. -/
+@[simp]
+theorem coe_submoduleEquiv_symm_apply (P : grassmannian 𝕜 E k) :
+    ((submoduleEquiv 𝕜 E k).symm P : Submodule 𝕜 E) = P.val.range :=
+  (rfl)
+
+end grassmannian
+
+end FiniteDimensional
 
 end Euclidean
 
-end TauCeti
-
 namespace LinearIsometryEquiv
 
-open TauCeti.Euclidean
+open Euclidean
 
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -304,14 +437,14 @@ variable (k) in
 equivalence `U : E ≃ₗᵢ[𝕜] F`. -/
 noncomputable def grassmannianCongr (U : E ≃ₗᵢ[𝕜] F) :
     grassmannian 𝕜 E k ≃ₜ grassmannian 𝕜 F k where
-  toFun P := ⟨U.conjStarAlgEquiv P, U.conjStarAlgEquiv_mem_grassmannian P.2⟩
-  invFun Q := ⟨U.conjStarAlgEquiv.symm Q, U.symm.conjStarAlgEquiv_mem_grassmannian Q.2⟩
+  toFun P := ⟨U.conjStarAlgEquiv P, U.conjStarAlgEquiv_mem_grassmannian P.property⟩
+  invFun Q := ⟨U.conjStarAlgEquiv.symm Q, U.symm.conjStarAlgEquiv_mem_grassmannian Q.property⟩
   left_inv P := Subtype.ext (U.conjStarAlgEquiv.symm_apply_apply P)
   right_inv Q := Subtype.ext (U.conjStarAlgEquiv.apply_symm_apply Q)
   continuous_toFun := (U.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.comp
-    continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal).subtype_mk _
   continuous_invFun := (U.symm.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.comp
-    continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_grassmannianCongr_apply (U : E ≃ₗᵢ[𝕜] F) (P : grassmannian 𝕜 E k) :
@@ -342,69 +475,3 @@ theorem grassmannianCongr_trans (U : E ≃ₗᵢ[𝕜] F) (V : F ≃ₗᵢ[𝕜]
   simp [grassmannianCongr, conjStarAlgEquiv_trans]
 
 end LinearIsometryEquiv
-
-namespace TauCeti
-
-namespace finiteGrassmannian
-
-open Euclidean
-
-variable {𝕜 : Type*} [RCLike 𝕜] {r N : ℕ}
-
-/-- The orthogonal projection onto a point of the finite Grassmannian, read in
-`EuclideanSpace 𝕜 (Fin N)`, is a point of the projection Grassmannian. -/
-theorem starProjection_toEuclidean_mem_grassmannian (V : finiteGrassmannian 𝕜 r N) :
-    V.toEuclidean.starProjection ∈ grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r := by
-  simp
-
-/-- Sending a subspace to its orthogonal projection is a bijection from the finite Grassmannian
-onto the projection Grassmannian of `EuclideanSpace 𝕜 (Fin N)`. -/
-theorem starProjection_toEuclidean_bijective :
-    Function.Bijective fun V : finiteGrassmannian 𝕜 r N ↦
-      (⟨V.toEuclidean.starProjection, V.starProjection_toEuclidean_mem_grassmannian⟩ :
-        grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r) := by
-  refine ⟨fun V W h ↦ toEuclidean_injective ?_, fun P ↦ ?_⟩
-  · simpa using congrArg (fun P : grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r ↦
-      (P : EuclideanSpace 𝕜 (Fin N) →L[𝕜] EuclideanSpace 𝕜 (Fin N)).range) h
-  -- The preimage of `P` is its range, read in the coordinates `Fin N → 𝕜`.
-  let V : finiteGrassmannian 𝕜 r N :=
-    ⟨P.1.range.map (WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap, by
-      rw [LinearEquiv.finrank_map_eq, finrank_range_of_mem_grassmannian P.2]⟩
-  have hV : V.toEuclidean = P.1.range := by
-    ext x
-    simp [V, Submodule.mem_map_equiv]
-  refine ⟨V, Subtype.ext ?_⟩
-  rw [ContinuousLinearMap.IsStarProjection.ext_iff isStarProjection_starProjection
-    (isStarProjection_of_mem_grassmannian P.2), Submodule.range_starProjection, hV]
-
-variable (𝕜 r N) in
-/-- The finite Grassmannian `TauCeti.finiteGrassmannian 𝕜 r N` is homeomorphic to the projection
-Grassmannian of `EuclideanSpace 𝕜 (Fin N)`, by sending a subspace to its orthogonal projection.
-Composing with `LinearIsometryEquiv.grassmannianCongr` for a linear isometry equivalence
-`e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)` identifies it with `G(E, r)` by `V ↦ e⁻¹ P_V e`. -/
-noncomputable def starProjectionHomeomorph :
-    finiteGrassmannian 𝕜 r N ≃ₜ grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r :=
-  -- A continuous bijection from a compact space onto a Hausdorff space is a homeomorphism.
-  Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective _ starProjection_toEuclidean_bijective)
-    (continuous_starProjection_toEuclidean.subtype_mk _)
-
-@[simp]
-theorem coe_starProjectionHomeomorph_apply (V : finiteGrassmannian 𝕜 r N) :
-    (starProjectionHomeomorph 𝕜 r N V :
-      EuclideanSpace 𝕜 (Fin N) →L[𝕜] EuclideanSpace 𝕜 (Fin N)) = V.toEuclidean.starProjection :=
-  (rfl)
-
-/-- The inverse of `TauCeti.finiteGrassmannian.starProjectionHomeomorph` sends a projection to
-its range. -/
-@[simp]
-theorem toEuclidean_starProjectionHomeomorph_symm_apply
-    (P : grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r) :
-    ((starProjectionHomeomorph 𝕜 r N).symm P).toEuclidean =
-      (P : EuclideanSpace 𝕜 (Fin N) →L[𝕜] EuclideanSpace 𝕜 (Fin N)).range := by
-  conv_rhs => rw [← (starProjectionHomeomorph 𝕜 r N).apply_symm_apply P]
-  rw [coe_starProjectionHomeomorph_apply, Submodule.range_starProjection]
-
-end finiteGrassmannian
-
-end TauCeti

@@ -69,7 +69,7 @@ private def filteredSpaceCocone (hX : Monotone X) :
     Cocone ({ obj q := TopCat.of (X q)
               map f := TopCat.ofHom (ContinuousMap.inclusion (hX f.le)) } : ℤ ⥤ TopCat.{w}) where
   pt := Y
-  ι := { app q := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app q := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 /-- **Singular chains of an exhaustive filtration of a space.** If every compact subset of `Y` lies
 in some `X q`, every singular chain of `Y`, in each degree of the reindexed chain complex, lies in
@@ -111,11 +111,8 @@ variable (hX : Monotone X)
 class of `Hₙ(Y)` lies in some piece of its filtration. -/
 theorem exists_mem_range_filteredSpaceAbutmentFiltrationι
     (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) {n : ℤ}
-    (x : (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_chainFiltration ((singularChainComplexFunctor _).obj M) hX))).abutment n) :
-    ∃ q, x ∈ LinearMap.range ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_chainFiltration ((singularChainComplexFunctor _).obj M) hX))).abutmentFiltrationι q
-        n).hom :=
+    (x : (filteredSpaceSpectralObject M hX).abutment n) :
+    ∃ q, x ∈ LinearMap.range ((filteredSpaceSpectralObject M hX).abutmentFiltrationι q n).hom :=
   CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι _ _
     (exists_mem_range_singularChainFiltration_arrow M hX hK n) x
 
@@ -127,9 +124,7 @@ theorem isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive
     (hvanish : ∀ i, b ≤ i →
       IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
         M n)) :
-    IsIso ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_chainFiltration ((singularChainComplexFunctor _).obj M) hX))).abutmentFiltrationι b
-        (-n)) :=
+    IsIso ((filteredSpaceSpectralObject M hX).abutmentFiltrationι b (-n)) :=
   CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive _ _
     (exists_mem_range_singularChainFiltration_arrow M hX hK _) fun i hi ↦
       isZero_homology_cokernel_singularChainFiltration M _ _ fun n' hn' ↦ by
@@ -149,9 +144,7 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive
       IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
         M n)) :
     ((filteredSpaceSpectralSequence M hX).page r).X pq ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration ((singularChainComplexFunctor _).obj M)
-          hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
+      cokernel ((filteredSpaceSpectralObject M hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive _ _ r hr pq
     (exists_mem_range_singularChainFiltration_arrow M hX hK _)
     ((chainFiltration ((singularChainComplexFunctor _).obj M) X _).isZero_homology_of_eq_bot

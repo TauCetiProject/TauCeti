@@ -205,8 +205,8 @@ theorem schreierGenerator_of_ne {x : α} (hx : x ≠ a) :
 /-- The Schreier generator of the source generator indexed by `y` is the generator `y`. -/
 @[simp]
 theorem schreierGenerator_symm (y : β) :
-    schreierGenerator a e W (e.symm y).1 = PresentedGroup.of y := by
-  rw [schreierGenerator_of_ne a e W (e.symm y).2, Subtype.coe_eta, Equiv.apply_symm_apply]
+    schreierGenerator a e W (e.symm y).val = PresentedGroup.of y := by
+  rw [schreierGenerator_of_ne a e W (e.symm y).property, Subtype.coe_eta, Equiv.apply_symm_apply]
 
 /-- The class of the singleton rewrite of a source letter read at representative `1` is the inverse
 of its Schreier generator. -/
@@ -373,7 +373,7 @@ the rewrite of `w` from representative `t` satisfies `ρ(w) · t' = t · w`, whe
 representative reached after reading `w`. -/
 theorem lift_mk_schreierWord (positive : Bool) (w : PresentationWord α) :
     FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1)
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val)
         (FreeGroup.mk (schreierWord a e positive w)) *
       cond (positive ^^ decide (Odd w.length)) (PresentedGroup.of a) 1 =
     cond positive (PresentedGroup.of a) 1 * PresentedGroup.mk R (FreeGroup.mk w) := by
@@ -403,7 +403,7 @@ theorem lift_mk_schreierWord (positive : Bool) (w : PresentationWord α) :
 
 theorem lift_mk_schreierWord_of_mem {w : PresentationWord α} (hw : w ∈ W) (positive : Bool) :
     FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1)
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val)
       (FreeGroup.mk (schreierWord a e positive w)) = 1 := by
   have key := h.lift_mk_schreierWord a e positive w
   have hodd : decide (Odd w.length) = false := by
@@ -418,20 +418,20 @@ the parity homomorphism,
 `TauCeti.IsSchreierIndexTwoSource.range_toPresentedGroup_eq_ker_parityHom`. -/
 def toPresentedGroup : PresentedGroup (schreierRelators a e W) →* PresentedGroup R :=
   PresentedGroup.toGroup
-    (f := fun y => (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1) (by
+    (f := fun y => (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val) (by
       rintro r ⟨positive, w, hw, rfl⟩
       exact h.lift_mk_schreierWord_of_mem a e hw positive)
 
 @[simp]
 theorem toPresentedGroup_of (y : β) :
     h.toPresentedGroup a e (PresentedGroup.of y) =
-      PresentedGroup.of a * PresentedGroup.of (e.symm y).1 :=
+      PresentedGroup.of a * PresentedGroup.of (e.symm y).val :=
   PresentedGroup.toGroup.of _
 
 theorem toPresentedGroup_mk (z : FreeGroup β) :
     h.toPresentedGroup a e (PresentedGroup.mk _ z) =
       FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1) z :=
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val) z :=
   (rfl)
 
 /-- The Schreier generator of `x` goes to `a x`. -/
@@ -661,7 +661,7 @@ theorem GroupPresentation.coe_mulEquivCommutator_of (P : GroupPresentation)
     (hrel : Subgroup.normalClosure (Relator.relatorSet P.transcribed) =
       Subgroup.normalClosure (schreierRelators a e W)) (i : Fin P.generatorCount) :
     (P.mulEquivCommutator h a e habel hrel (PresentedGroup.of i) : PresentedGroup R) =
-      PresentedGroup.of a * PresentedGroup.of (e.symm i).1 := by
+      PresentedGroup.of a * PresentedGroup.of (e.symm i).val := by
   unfold GroupPresentation.mulEquivCommutator
   -- The two group instances on the middle quotient agree only up to unfolding, so the
   -- composite is evaluated by terms rather than by rewriting.

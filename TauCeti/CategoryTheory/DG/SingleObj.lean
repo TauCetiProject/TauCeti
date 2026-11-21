@@ -135,7 +135,7 @@ noncomputable def homComplexData : DGCategoryData R (DGSingleObj h) :=
     (fun {_ _ _ q p n} hn g f ↦ (homComplexXEquiv h (n + 1)).injective <| Subtype.ext <| by
       simpa only [map_add, Units.smul_def, map_zsmul, Submodule.coe_add,
         Submodule.coe_smul_of_tower, homComplexXEquiv_d, homComplexXEquiv_kellerComp] using
-        h.leibniz (homComplexXEquiv h q g).2 (homComplexXEquiv h p f))
+        h.leibniz (homComplexXEquiv h q g).property (homComplexXEquiv h p f))
     (fun {_ _ _ _ r q p rq qp n} hrq hqp hn k g f ↦
       (homComplexXEquiv h n).injective <| Subtype.ext <| by
         simp only [homComplexXEquiv_kellerComp, mul_assoc])
