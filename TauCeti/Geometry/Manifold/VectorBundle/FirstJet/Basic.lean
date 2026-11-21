@@ -146,8 +146,8 @@ image of a point of the first-jet chart domains at `i` and `j` when `M` is. -/
 theorem contDiffAt_ext_coord_change_of_mem_baseSet [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
     {i j y : M} (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
     ContDiffAt 𝕜 n (extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y) :=
-  contDiffAt_ext_coord_change i j (PartialEquiv.mem_symm_trans_source _
-    (mem_extChartAt_source_of_mem_baseSet I hj) (mem_extChartAt_source_of_mem_baseSet I hi))
+  contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
+    ((mem_baseSet_iff F V).1 hj).2
 
 end FirstJetBundle
 
