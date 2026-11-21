@@ -11,6 +11,7 @@ import TauCeti.Analysis.PDE.Regularity.PlanarPoisson
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
@@ -286,16 +287,9 @@ theorem exists_norm_fderiv_normSq_le_mul_exp
   refine exists_forall_le_mul_exp_of_eventually_le (K := K)
     (hscd.continuous_fderiv (by norm_num)).norm ?_
   filter_upwards [hK, hlim.eventually (lt_mem_nhds (by norm_num : (0 : ℝ) < 1))] with z hz hpos
-  -- Where `|α|² > 0`, `∇ |α|² = |α|² ∇ log |α|²` and `|α|² ≤ 1`.
-  have hd := ((hscd.differentiable (by norm_num)) z).hasFDerivAt.log hpos.ne'
-  rw [hd.fderiv, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hpos] at hz
-  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
-  have heq : ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ =
-      4 * (x z 2 ^ 2 + x z 3 ^ 2) * ((4 * (x z 2 ^ 2 + x z 3 ^ 2))⁻¹ *
-        ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖) := by
-    rw [← mul_assoc, mul_inv_cancel₀ hpos.ne', one_mul]
-  rw [heq]
-  exact (mul_le_mul h₁ hz (by positivity) zero_le_one).trans_eq (one_mul _)
+  -- Where `0 < |α|² ≤ 1`, `|∇ |α|²| ≤ |∇ log |α|²|`.
+  exact (norm_fderiv_le_norm_fderiv_log ((hscd.differentiable (by norm_num)) z) hpos
+    (normSq_le_one_of_tendsto hp hq hsol hlim z)).trans hz
 
 /-- **Exponential decay of the covariant derivative of a plane vortex.** A vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity has `|d_a α (v)| ≤ K |v| exp (-c |z|)` for
@@ -319,8 +313,8 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     exact (norm_covariantDerivative_one_le_norm_fderiv_normSq (hp₁ z) (hq₁ z) (by simp [hsol z])
       (by simp [hsol z]) hz.le).trans (hK z))
   refine ⟨K', fun z v ↦ ?_⟩
-  rw [covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
-    (by simp [hsol z]) v, norm_mul, mul_comm K', mul_assoc]
+  rw [norm_covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
+    (by simp [hsol z]) v, mul_comm K', mul_assoc]
   exact mul_le_mul_of_nonneg_left (hK' z) (norm_nonneg v)
 
 /-- **The covariant derivative of a plane vortex vanishes at infinity.** A vortex on the whole
@@ -354,22 +348,14 @@ theorem exists_energyDensity_le_mul_exp
   obtain ⟨K₁, hK₁⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc'
   obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc'
   refine ⟨65 / 64 * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
-  set E := Real.exp (-(c / 2 * ‖z‖)) with hE
-  have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
-    rw [hE, ← Real.exp_natCast_mul]
-    ring_nf
-  -- The modulus defect is bounded by `K₁ E`, and `|d_a α (1)|` by `K₂ E`.
-  have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
-  have hdef : (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2 ≤ K₁ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ hdef₀ (hK₁ z) 2
-  have hcov : ‖covariantDerivative x z 1‖ ^ 2 ≤ K₂ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using hK₂ z 1) 2
-  rw [energyDensity_eq_of_equation_eq_zero ((hp.differentiable (by norm_num)) z)
-    ((hq.differentiable (by norm_num)) z) (hsol z), sq_norm_sectionValue, ← hEsq]
-  nlinarith
+  -- The modulus defect is bounded by `K₁ exp (-(c / 2) |z|)`, and `|d_a α (1)|` by
+  -- `K₂ exp (-(c / 2) |z|)`.
+  refine (energyDensity_le_of_equation_eq_zero ((hp.differentiable (by norm_num)) z)
+    ((hq.differentiable (by norm_num)) z) (hsol z)
+    (by linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]) (hK₁ z)
+    (by simpa using hK₂ z 1)).trans_eq ?_
+  rw [mul_pow, mul_pow, exp_neg_half_mul_sq]
+  ring
 
 /-! ### Derivatives of all orders -/
 

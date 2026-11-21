@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.PDE.Regularity.PlanarGradientEstimate
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Uniform decay of the derivatives of plane vortices away from their zeros
@@ -176,13 +177,9 @@ theorem exists_norm_fderiv_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c 
       (le_max_right R L).trans (hR.trans (hρ a ha))
   have hs₁ := normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
-  have h := hK x D hx hsol hframe hD z ρ ((le_max_left R L).trans hR) hρ
-  -- Where `|α|² > 0`, `∇ log |α|² = |α|⁻² ∇ |α|²`, and `|α|² ≤ 1`.
-  have hd := (((contDiff_normSq hp hq).differentiable (by norm_num)) z).hasFDerivAt.log
-    (by linarith)
-  rw [hd.fderiv, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (by linarith),
-    inv_mul_le_iff₀ (by linarith)] at h
-  exact h.trans (mul_le_of_le_one_left (by positivity) hs₁)
+  -- Where `0 < |α|² ≤ 1`, `|∇ |α|²| ≤ |∇ log |α|²|`.
+  exact (norm_fderiv_le_norm_fderiv_log (((contDiff_normSq hp hq).differentiable (by norm_num)) z)
+    (by linarith) hs₁).trans (hK x D hx hsol hframe hD z ρ ((le_max_left R L).trans hR) hρ)
 
 /-- **Uniform exponential decay of the covariant derivative of plane vortices away from the
 zeros.** For every degree `m` and rate `0 ≤ c < 1 / 2` there are constants `K ≥ 0` and `R` such that
@@ -206,8 +203,8 @@ theorem exists_norm_covariantDerivative_le_mul_exp_of_forall_le_norm_sub (m : �
     (half_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD fun a ha ↦
       (le_max_right R L).trans (hR.trans (hρ a ha))).le
   -- `d_a α` is complex linear, and `|d_a α (1)|` is bounded by the gradient of `|α|²`.
-  rw [covariantDerivative_eq_mul_of_equation_eq_zero hp hq (by simp [hsol z]) (by simp [hsol z]) v,
-    norm_mul, mul_comm K, mul_assoc]
+  rw [norm_covariantDerivative_eq_mul_of_equation_eq_zero hp hq (by simp [hsol z])
+    (by simp [hsol z]) v, mul_comm K, mul_assoc]
   exact mul_le_mul_of_nonneg_left ((norm_covariantDerivative_one_le_norm_fderiv_normSq hp hq
     (by simp [hsol z]) (by simp [hsol z]) hhalf).trans
     (hK x D hx hsol hframe hD z ρ ((le_max_left R L).trans hR) hρ)) (norm_nonneg v)
@@ -233,22 +230,14 @@ theorem exists_energyDensity_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
   refine ⟨65 / 64 * K₁ ^ 2 + 2 * K₂ ^ 2, R, by positivity,
     fun x D hx hsol hframe hD z ρ hR hρ ↦ ?_⟩
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  set E := Real.exp (-(c / 2 * ρ)) with hE
-  have hEsq : E ^ 2 = Real.exp (-(c * ρ)) := by
-    rw [hE, ← Real.exp_natCast_mul]
-    ring_nf
-  -- The modulus defect is at most `K₁ E`, and `|d_a α (1)| ≤ K₂ E`.
-  have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    linarith [normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z]
-  have hdef : (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2 ≤ K₁ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ hdef₀ (hK₁ x D hx hsol hframe hD z ρ hρ) 2
-  have hcov : ‖covariantDerivative x z 1‖ ^ 2 ≤ K₂ ^ 2 * E ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using hK₂ x D hx hsol hframe hD z ρ hR hρ 1) 2
-  rw [energyDensity_eq_of_equation_eq_zero (((hxi 2).differentiable (by simp)) z)
-    (((hxi 3).differentiable (by simp)) z) (hsol z), sq_norm_sectionValue, ← hEsq]
-  nlinarith
+  have hs₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  -- The modulus defect is at most `K₁ exp (-(c / 2) ρ)`, and `|d_a α (1)| ≤ K₂ exp (-(c / 2) ρ)`.
+  refine (energyDensity_le_of_equation_eq_zero (((hxi 2).differentiable (by simp)) z)
+    (((hxi 3).differentiable (by simp)) z) (hsol z) (by linarith)
+    (hK₁ x D hx hsol hframe hD z ρ hρ)
+    (by simpa using hK₂ x D hx hsol hframe hD z ρ hR hρ 1)).trans_eq ?_
+  rw [mul_pow, mul_pow, exp_neg_half_mul_sq]
+  ring
 
 end TauCeti.Vortex
