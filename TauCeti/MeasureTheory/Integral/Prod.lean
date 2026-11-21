@@ -42,10 +42,10 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
-* `MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero` transfers zeros of a nonnegative function's marginal
-  to the function itself, almost everywhere on the product.
-* `MeasureTheory.Measure.integrable_mul_marginal_weight` derives integrability of a weighted product function
-  from integrability of its weighted marginal.
+* `MeasureTheory.Measure.ae_eq_zero_of_marginal_eq_zero` transfers zeros of a nonnegative
+  function's marginal to the function itself, almost everywhere on the product.
+* `MeasureTheory.Measure.integrable_mul_marginal_weight` derives integrability of a weighted
+  product function from integrability of its weighted marginal.
 * `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
   truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
   to pass from bilinear to retarded estimates.
