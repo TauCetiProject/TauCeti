@@ -146,22 +146,14 @@ omit [MonoidalPreadditive C] [MonoidalLinear R C] in
 then `g` closes up every nonzero `η : 𝟙_ C ⟶ Z` to a nonzero endomorphism of the unit. -/
 private theorem comp_ne_zero_of_forall_eq_smul {Z : C} {g : Z ⟶ 𝟙_ C}
     (hg : ∀ f : Z ⟶ 𝟙_ C, ∃ c : R, f = c • g) {η : 𝟙_ C ⟶ Z} (hη : η ≠ 0) : η ≫ g ≠ 0 := by
-  obtain ⟨ι, _, S, hS, _, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
-  -- Some simple summand `a : S i ⟶ 𝟙_ C` of the unit is not killed by `η`.
-  obtain ⟨i, hi⟩ : ∃ i, biproduct.ι S i ≫ e.inv ≫ η ≠ 0 := by
-    by_contra! h
-    exact hη <| (cancel_epi e.inv).1 <| biproduct.hom_ext' _ _ fun i ↦ by simpa using h i
-  let a : S i ⟶ 𝟙_ C := biproduct.ι S i ≫ e.inv
-  have : IsSplitMono (a ≫ η) :=
-    isSplitMono_of_nonzero_from_simple (by simpa only [a, Category.assoc] using hi)
+  -- Some nonzero `a : S ⟶ 𝟙_ C` out of a simple object makes `a ≫ η` split.
+  obtain ⟨S, _, a, ha, _⟩ := exists_simple_isSplitMono_comp_of_ne_zero hη
   -- Its retraction, followed by `a`, is a multiple of `g`; so `η ≫ g = 0` would kill `a`.
   obtain ⟨c, hc⟩ := hg (retraction (a ≫ η) ≫ a)
   intro h
-  have ha : a = 0 := by
-    rw [← IsSplitMono.id_assoc (a ≫ η) a, hc, Category.assoc, Linear.comp_smul, h, smul_zero,
-      comp_zero]
-  exact CategoryTheory.id_ne_zero (S i) <| by
-    simpa [a] using congrArg (· ≫ e.hom ≫ biproduct.π S i) ha
+  refine ha ?_
+  rw [← IsSplitMono.id_assoc (a ≫ η) a, hc, Category.assoc, Linear.comp_smul, h, smul_zero,
+    comp_zero]
 
 /-- **Schur's lemma for an exact pairing with right member having scalar endomorphisms**: in a
 finite semisimple category, if `Y` has scalar endomorphisms over `R`, every nonzero

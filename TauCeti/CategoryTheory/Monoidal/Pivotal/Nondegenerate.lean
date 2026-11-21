@@ -75,18 +75,12 @@ include hR
 which its composite has nonzero right trace. -/
 theorem exists_rightTrace_comp_ne_zero {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
     ∃ g : Y ⟶ X, rightTrace (f ≫ g) ≠ 0 := by
-  obtain ⟨ι, _, S, hS, hB, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  -- A nonzero component of `f` has simple source, so it admits a retraction.
-  obtain ⟨i, hi⟩ : ∃ i, biproduct.ι S i ≫ e.inv ≫ f ≠ 0 := by
-    by_contra! h
-    exact hf <| (cancel_epi e.inv).1 <| biproduct.hom_ext' _ _ fun i ↦ by simpa using h i
-  let a : S i ⟶ X := biproduct.ι S i ≫ e.inv
-  have : IsSplitMono (a ≫ f) :=
-    isSplitMono_of_nonzero_from_simple (by simpa only [a, Category.assoc] using hi)
+  -- Some morphism `a` from a simple object makes `a ≫ f` admit a retraction.
+  obtain ⟨S, _, a, -, _⟩ := exists_simple_isSplitMono_comp_of_ne_zero hf
   refine ⟨retraction (a ≫ f) ≫ a, ?_⟩
-  -- Cyclicity moves the simple summand around the loop, leaving its nonzero dimension.
+  -- Cyclicity moves the simple object around the loop, leaving its nonzero dimension.
   rw [← Category.assoc, rightTrace_comm, ← Category.assoc, IsSplitMono.id, rightTrace_id]
-  exact rightDim_ne_zero_of_surjective (Simple.not_isZero (S i)) (hR (S i))
+  exact rightDim_ne_zero_of_surjective (Simple.not_isZero S) (hR S)
 
 /-- If every simple object has scalar endomorphisms, every nonzero morphism has a partner with
 which its composite has nonzero left trace. -/
