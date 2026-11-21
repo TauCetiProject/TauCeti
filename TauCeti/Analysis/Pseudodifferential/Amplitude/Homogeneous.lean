@@ -155,11 +155,16 @@ private theorem fderiv_coefficient_eq_of_eventuallyEq
       fderiv ℝ h.coefficient ((p.1, p.2.1), p.2.2) ((d.1, d.2.1), d.2.2) := by
   let e := (ContinuousLinearEquiv.prodAssoc ℝ (CoordinateSpace n) (CoordinateSpace n)
     (CoordinateSpace n)).symm
+  have hpe (q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n) :
+      e q = ((q.1, q.2.1), q.2.2) :=
+    ContinuousLinearEquiv.prodAssoc_symm_apply ℝ _ _ _ q.1 q.2.1 q.2.2
   have he : (fun q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-      h.coefficient ((q.1, q.2.1), q.2.2)) = h.coefficient ∘ e := rfl
+      h.coefficient ((q.1, q.2.1), q.2.2)) = h.coefficient ∘ e := by
+    funext q
+    rw [Function.comp_apply, hpe]
   rw [hp.fderiv_eq, he, fderiv_comp _ (h.differentiableAt_coefficient (p := e p) hξ)
-    e.differentiableAt, e.fderiv]
-  rfl
+    e.differentiableAt, e.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    hpe, hpe]
 
 private theorem EqAtInfinity.frequencyDeriv (hah : EqAtInfinity a h) (j : Fin n) :
     EqAtInfinity (frequencyDeriv j a) (h.frequencyDeriv (EuclideanSpace.single j 1)) := by
@@ -168,8 +173,7 @@ private theorem EqAtInfinity.frequencyDeriv (hah : EqAtInfinity a h) (j : Fin n)
   refine ⟨R, fun x y hxy ξ hξ ↦ ?_⟩
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (hR0.trans_le hξ)
   rw [coefficient_frequencyDeriv, fderiv_coefficient_eq_of_eventuallyEq (hR x y hxy ξ hξ) hξ0,
-    HomogeneousSymbol.coefficient_frequencyDeriv_eq_fderiv _ _ hξ0]
-  rfl
+    HomogeneousSymbol.coefficient_frequencyDeriv_eq_fderiv _ _ hξ0, Prod.mk_zero_zero]
 
 private theorem EqAtInfinity.spatialDerivSnd (hah : EqAtInfinity a h) (j : Fin n) :
     EqAtInfinity (spatialDerivSnd j a) (h.spatialDeriv (0, EuclideanSpace.single j 1)) := by

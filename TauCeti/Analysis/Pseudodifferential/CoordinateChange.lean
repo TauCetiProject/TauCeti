@@ -67,7 +67,8 @@ becomes `ρ(M(x, y) ξ / t)`, whose position derivatives are bounded uniformly i
 
 * `TauCeti.Symbol.exists_quantizeSchwartzValue_comp_eq_leftSymbol_compAmplitude`: the transported
   operator is the quantization of the explicit amplitude `g(x, y) • a(κ x, M(x, y) ξ)`, with
-  `g(x, x) = ψ(x)` and `M(x, x) = (Dκ(x)*)⁻¹` on the diagonal.
+  `g(x, x) = ψ(x)` on the diagonal where `κ x ∈ K`, and `M(x, x) = (Dκ(x)*)⁻¹` where moreover
+  `ψ(x) ≠ 0`.
 * `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`: the transported operator is the
   quantization of an amplitude with proper input support, whose restriction to the diagonal is
   `ψ(x) a(κ x, (Dκ(x)*)⁻¹ ξ)`.
@@ -565,7 +566,7 @@ of `g`, such that, whenever `v ∘ κ = ψ • u`,
 (`TauCeti.Symbol.compAmplitude`).
 
 On the diagonal over `κ⁻¹ K` the weight is `g(x, x) = ψ(x)`, and `M(x, x) = (Dκ(x)*)⁻¹` wherever
-`ψ(x) ≠ 0`. The data `M` and `g` are built from `κ`, `K` and `ψ` only. -/
+`ψ(x) ≠ 0`. -/
 theorem Symbol.exists_quantizeSchwartzValue_comp_eq_leftSymbol_compAmplitude (a : Symbol n V W m)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (haK : ∀ z ∉ K, ∀ η, a.coefficient (z, η) = 0)
@@ -707,6 +708,27 @@ theorem Symbol.exists_quantizeSchwartzValue_comp_eq_leftSymbol_compAmplitude (a 
     congr 1
     ring
 
+omit [CompleteSpace W] in
+/-- On the diagonal, the weight `g` and frequency map `M` of
+`TauCeti.Symbol.exists_quantizeSchwartzValue_comp_eq_leftSymbol_compAmplitude` turn a function
+`f` vanishing at positions outside `K` into its pullback by the cotangent map of `κ`. -/
+private theorem smul_apply_diagonal_eq {K : Set (CoordinateSpace n)}
+    {κ : CoordinateSpace n ≃ₜ CoordinateSpace n} {ψ : CoordinateSpace n → ℝ}
+    {M : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n}
+    {g : CoordinateSpace n × CoordinateSpace n → ℝ}
+    (hdiag : ∀ x, κ x ∈ K → g (x, x) = ψ x ∧
+      (ψ x ≠ 0 → M (x, x) = ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x))))
+    {f : CoordinateSpace n × CoordinateSpace n → W} (hf : ∀ z ∉ K, ∀ η, f (z, η) = 0)
+    (x ξ : CoordinateSpace n) :
+    g (x, x) • f (κ x, M (x, x) ξ) =
+      ψ x • f (κ x, ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x)) ξ) := by
+  by_cases hx : κ x ∈ K
+  · obtain ⟨hgx, hMx⟩ := hdiag x hx
+    by_cases hψx : ψ x = 0
+    · simp [hgx, hψx]
+    · rw [hgx, hMx hψx]
+  · simp [hf _ hx]
+
 /-- **Changes of coordinates for pseudodifferential operators.** Let `κ` be a smooth homeomorphism
 of `ℝⁿ`, `a` a symbol of order `m` vanishing at positions outside a compact set `K`, and `ψ` a
 smooth compactly supported cutoff such that `Dκ` is invertible on the support of `ψ`. Suppose the
@@ -736,12 +758,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
     a.exists_quantizeSchwartzValue_comp_eq_leftSymbol_compAmplitude hK haK κ hκ hψ hψc hκ' hΦ
   refine ⟨_, a.hasProperInputSupport_compAmplitude hκ hM hg hgc hgM, fun x ξ ↦ ?_, hop⟩
   rw [Amplitude.coefficient_diagonal, coefficient_compAmplitude]
-  by_cases hx : κ x ∈ K
-  · obtain ⟨hgx, hMx⟩ := hdiag x hx
-    by_cases hψx : ψ x = 0
-    · simp [hgx, hψx]
-    · rw [hgx, hMx hψx]
-  · simp [haK _ hx]
+  exact smul_apply_diagonal_eq hdiag haK x ξ
 
 /-- **Changes of coordinates, the leading term.** Under the hypotheses of
 `TauCeti.Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq`, the transported operator
@@ -802,11 +819,7 @@ theorem ClassicalSymbol.exists_quantizeSchwartzValue_comp_eq (a : ClassicalSymbo
     rw [ClassicalSymbol.toSymbol_leftSymbolCompAmplitude]
     exact hop u v huv x⟩
   rw [ClassicalSymbol.coefficient_principal_leftSymbolCompAmplitude]
-  by_cases hx : κ x ∈ K
-  · obtain ⟨hgx, hMx⟩ := hdiag x hx
-    by_cases hψx : ψ x = 0
-    · simp [hgx, hψx]
-    · rw [hgx, hMx hψx]
-  · simp [a.coefficient_principal_eq_zero_of_forall_coefficient_eq_zero (haK _ hx)]
+  exact smul_apply_diagonal_eq hdiag
+    (fun z hz ↦ a.coefficient_principal_eq_zero_of_forall_coefficient_eq_zero (haK z hz)) x ξ
 
 end TauCeti
