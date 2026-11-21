@@ -76,6 +76,30 @@ def relativePicardDegreeZeroAddPresheafAddEquiv (T : (Over S)ᵒᵖ) :
       (relativePicardDegreeZeroAddPresheaf f).obj T :=
   AddEquiv.refl _
 
+/-- The additive presentation identifies the presheaf section with its native additive class. -/
+@[simp]
+theorem relativePicardDegreeZeroAddPresheaf_eqToHom_app_addEquiv
+    (T : (Over S)ᵒᵖ) (c : Additive ((relativePicardDegreeZeroFunctor f).obj T)) :
+    ConcreteCategory.hom (C := AddCommGrpCat.{u + 1})
+      (X := (relativePicardDegreeZeroAddPresheaf f).obj T)
+      (Y := CommGrpCat.toAddCommGrp.obj ((relativePicardDegreeZeroFunctor f).obj T))
+      (eqToHom (by simpa only [Functor.comp_obj] using
+        Functor.congr_obj (relativePicardDegreeZeroAddPresheaf_eq f) T))
+      (relativePicardDegreeZeroAddPresheafAddEquiv f T c) = c := by
+  rfl
+
+/-- The inverse presentation transport is the canonical additive class equivalence. -/
+@[simp]
+theorem relativePicardDegreeZeroAddPresheaf_eqToHom_symm_app
+    (T : (Over S)ᵒᵖ) (c : Additive ((relativePicardDegreeZeroFunctor f).obj T)) :
+    ConcreteCategory.hom (C := AddCommGrpCat.{u + 1})
+      (X := CommGrpCat.toAddCommGrp.obj ((relativePicardDegreeZeroFunctor f).obj T))
+      (Y := (relativePicardDegreeZeroAddPresheaf f).obj T)
+      (eqToHom (by simpa only [Functor.comp_obj] using
+        Functor.congr_obj (relativePicardDegreeZeroAddPresheaf_eq f).symm T)) c =
+      relativePicardDegreeZeroAddPresheafAddEquiv f T c := by
+  rfl
+
 /-- Pullback of a section commutes with changing the degree-zero Picard functor from
 multiplicative to additive notation. -/
 @[simp]

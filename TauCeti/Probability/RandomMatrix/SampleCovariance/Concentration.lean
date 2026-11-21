@@ -1,265 +1,197 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Matrix.SampleSecondMoment
-public import Mathlib.Probability.Moments.SubGaussian
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import TauCeti.Probability.Moments.SubGaussian.SubExponential
+public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
+public import TauCeti.Probability.Independence.Matrix
+
+import TauCeti.Analysis.Matrix.SampleCovariance.Rank
+import TauCeti.Analysis.Matrix.SpectralMeasure.RankPerturbation
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
+import TauCeti.Probability.McDiarmid.Independent
+import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
-# Entrywise concentration of sample covariances
+# Concentration of sample covariance spectral measures
 
-For independent observations with a common second-moment matrix and sub-Gaussian coordinates,
-each sample covariance entry has a Bernstein tail. A finite union bound gives simultaneous
-control of all entries at scale `√(log p / n)`. Independence is required across observations.
-The coordinates of each observation may be dependent.
+Replacing one row or column of a rectangular data matrix changes its sample covariance by
+rank at most two. The rank inequality and McDiarmid's inequality consequently control the
+empirical cumulative distribution function with independent rows or independent columns,
+without any entry moment assumptions.
+
+With independent rows and summable tails in the row dimension, pointwise fluctuations vanish
+almost surely. Weak convergence of the expected spectral measures is then equivalent to
+almost sure weak convergence to the same deterministic law. This also works for limits with
+atoms, including the Marchenko–Pastur law above aspect ratio one.
 
 ## References
 
-* M. J. Wainwright, *High-Dimensional Statistics* (2019), Lemma 6.26, p. 183.
-* R. Vershynin, *High-Dimensional Probability* (2018), Lemma 2.7.7 and Theorem 2.8.1.
+* Z. Bai and J. Silverstein, *Spectral Analysis of Large Dimensional Random Matrices*,
+  second edition, Springer, 2010, §3.3 and Theorem A.43.
+* C. McDiarmid, *On the method of bounded differences*, Surveys in Combinatorics 141 (1989).
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Real
-open scoped NNReal
+noncomputable section
 
-namespace ProbabilityTheory.iIndepFun
+open Filter MeasureTheory ProbabilityTheory Set
+open scoped ENNReal NNReal Topology
 
-variable {Ω ι p : Type*} [MeasurableSpace Ω] [Fintype ι]
-  {μ : Measure Ω} {x : ι → Ω → p → ℝ} {c : ℝ≥0} {cov : Matrix p p ℝ}
+namespace TauCeti.Probability
 
-private theorem sampleCovariance_bernstein_exponent {N v δ : ℝ}
-    (hN : 0 ≤ N) (hv : v ≠ 0) (hδ : 0 ≤ δ) :
-    -(N * v * δ) ^ 2 / (4 * (N * (40 * v) ^ 2 + 40 * v * (N * v * δ))) ≤
-      -(N / 6560) * min δ (δ ^ 2) := by
-  rcases hN.eq_or_lt with rfl | hN
-  · simp
-  have hrate : min δ (δ ^ 2) * (6400 + 160 * δ) ≤ 6560 * δ ^ 2 := by
-    rcases le_total δ 1 with h | h
-    · have hsq : δ ^ 2 ≤ δ := by nlinarith [mul_nonneg hδ (sub_nonneg.mpr h)]
-      rw [min_eq_right hsq]
-      nlinarith [mul_nonneg (sq_nonneg δ) (sub_nonneg.mpr h)]
-    · have hsq : δ ≤ δ ^ 2 := by nlinarith [mul_nonneg hδ (sub_nonneg.mpr h)]
-      rw [min_eq_left hsq]
-      nlinarith
-  have hform :
-      -(N * v * δ) ^ 2 / (4 * (N * (40 * v) ^ 2 + 40 * v * (N * v * δ))) =
-        -N * (δ ^ 2 / (6400 + 160 * δ)) := by
-    field_simp [hN.ne', hv]
+variable {Ω p n 𝕜 : Type*} [MeasurableSpace Ω] [Fintype p] [DecidableEq p] [Nonempty p]
+  [Fintype n] [RCLike 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+  {P : Measure Ω} [IsProbabilityMeasure P]
+
+private theorem measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le
+    {ι E : Type*} [Fintype ι] [MeasurableSpace E] {Y : ι → Ω → E} (hind : iIndepFun Y P)
+    (hY : ∀ i, AEMeasurable (Y i) P) {F : (ι → E) → Matrix p n 𝕜} (hF : Measurable F)
+    (hrank : ∀ (i : ι) (a b : ι → E), (∀ j ≠ i, a j = b j) → (F a - F b).rank ≤ 1)
+    (x : ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    P.real {ω | t ≤ |cdf ((F (fun i ↦ Y i ω)).sampleCovariance.spectralMeasure
+        (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
+      cdf (expectedCovarianceSpectralMeasure
+        (hF.comp_aemeasurable (aemeasurable_pi_iff.2 hY)) : Measure ℝ) x|} ≤
+      2 * Real.exp (-(t ^ 2) * (Fintype.card p : ℝ) ^ 2 / (2 * Fintype.card ι)) := by
+  let f (a : ι → E) := cdf ((F a).sampleCovariance.spectralMeasure
+    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x
+  have hf : Measurable f := by
+    simp only [f, cdf_eq_real, measureReal_def]
+    exact ((Measure.measurable_coe measurableSet_Iic).comp
+      (measurable_subtypeVal.comp
+        (Matrix.measurable_spectralMeasure_sampleCovariance.comp hF))).ennreal_toReal
+  have hdiff (i : ι) (a b : ι → E) (hab : ∀ j ≠ i, a j = b j) :
+      |f a - f b| ≤ ((2 / (Fintype.card p : ℝ≥0) : ℝ≥0) : ℝ) := by
+    simp only [f, cdf_eq_real, NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_natCast]
+    refine ((Matrix.isHermitian_sampleCovariance (F a)).abs_spectralMeasure_Iic_sub_le_rank_div_card
+      (Matrix.isHermitian_sampleCovariance (F b)) x).trans ?_
+    gcongr
+    exact_mod_cast (Matrix.rank_sampleCovariance_sub_le (F a) (F b)).trans
+      (Nat.mul_le_mul_left 2 (hrank i a b hab))
+  rw [cdf_expectedCovarianceSpectralMeasure]
+  have htail := hind.measureReal_abs_sub_integral_ge_le_of_bounded_differences hY f hf
+    (fun _ ↦ 2 / (Fintype.card p : ℝ≥0)) hdiff ht
+  have hrates : -2 * t ^ 2 / (∑ _ : ι, ((2 / (Fintype.card p : ℝ≥0) : ℝ≥0) : ℝ) ^ 2) =
+      -(t ^ 2) * (Fintype.card p : ℝ) ^ 2 / (2 * Fintype.card ι) := by
+    simp only [NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_natCast, Finset.sum_const,
+      Finset.card_univ, nsmul_eq_mul]
+    simp only [div_eq_mul_inv, mul_pow, mul_inv_rev, inv_pow, inv_inv]
     ring
-  have h : min δ (δ ^ 2) / 6560 ≤ δ ^ 2 / (6400 + 160 * δ) := by
-    exact (div_le_div_iff₀ (by norm_num) (by positivity)).2 (by simpa [mul_comm] using hrate)
-  calc
-    _ = -(N * (δ ^ 2 / (6400 + 160 * δ))) := by rw [hform, neg_mul]
-    _ ≤ -(N * (min δ (δ ^ 2) / 6560)) := neg_le_neg (mul_le_mul_of_nonneg_left h hN.le)
-    _ = _ := by ring
+  rwa [hrates] at htail
 
-private theorem measureReal_abs_sampleSecondMoment_sub_apply_pos_eq_zero [Nonempty ι]
-    {i j : p} (hi : ∀ a, HasSubgaussianMGF (fun ω ↦ x a ω i) 0 μ)
-    (hcov : ∀ a, ∫ ω, x a ω i * x a ω j ∂μ = cov i j) :
-    μ.real {ω | 0 < |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} = 0 := by
-  have hz (a : ι) : (fun ω ↦ x a ω i * x a ω j) =ᵐ[μ] 0 := by
-    filter_upwards [(hi a).ae_eq_zero_of_hasSubgaussianMGF_zero] with ω hω
-    simp [hω]
-  have hcovzero : cov i j = 0 := by
-    rw [← hcov (Classical.choice ‹Nonempty ι›)]
-    simpa using (integral_congr_ae (hz _))
-  have hbad : μ {ω | 0 < |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} = 0 := by
-    apply measure_eq_zero_iff_ae_notMem.2
-    filter_upwards [ae_all_iff.2 hz] with ω hω
-    have he : TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j = 0 := by
-      have hp (a : ι) : x a ω i * x a ω j = 0 := hω a
-      simp [TauCeti.finiteMean_eq_inv_smul_sum, hp]
-    intro hb
-    have hb' : 0 < |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j| := hb
-    rw [he, hcovzero, sub_zero, abs_zero] at hb'
-    exact (lt_irrefl (0 : ℝ)) hb'
-  rw [Measure.real, hbad, ENNReal.toReal_zero]
+variable {X : Ω → Matrix p n 𝕜}
 
-/-- An individual entry of the empirical second-moment matrix has a two-sided Bernstein tail
-about its common population value. The strict event includes the zero-proxy case. -/
-theorem measureReal_abs_sampleSecondMoment_sub_apply_gt_le
-    (hindep : iIndepFun x μ) {i j : p}
-    (hi : ∀ a, HasSubgaussianMGF (fun ω ↦ x a ω i) c μ)
-    (hj : ∀ a, HasSubgaussianMGF (fun ω ↦ x a ω j) c μ)
-    (hcov : ∀ a, ∫ ω, x a ω i * x a ω j ∂μ = cov i j) (δ : ℝ) :
-    μ.real {ω | (c : ℝ) * δ <
-      |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} ≤
-        2 * exp (-(Fintype.card ι / 6560) * min δ (δ ^ 2)) := by
-  classical
-  have : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · norm_num
-    exact measureReal_le_one.trans (by norm_num)
-  rcases le_or_gt δ 0 with hδ | hδ
-  · have hrate : 0 ≤ -(Fintype.card ι / 6560 : ℝ) * min δ (δ ^ 2) :=
-      mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.mpr (by positivity)) ((min_le_left _ _).trans hδ)
-    exact measureReal_le_one.trans (by linarith [Real.one_le_exp hrate])
-  by_cases hc : c = 0
-  · subst c
-    simp only [NNReal.coe_zero, zero_mul]
-    rw [measureReal_abs_sampleSecondMoment_sub_apply_pos_eq_zero hi hcov]
-    positivity
-  let N := (Fintype.card ι : ℝ)
-  have hN : 0 < N := Nat.cast_pos.mpr (Fintype.card_pos (α := ι))
-  let Y : ι → Ω → ℝ := fun a ω ↦ x a ω i * x a ω j - cov i j
-  have hentry (ω : Ω) : TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j =
-      N⁻¹ * ∑ a, Y a ω := by
-    simp only [TauCeti.sampleSecondMoment_apply, star_trivial]
-    rw [← TauCeti.finiteMean_sub_const]
-    simp [TauCeti.finiteMean_eq_inv_smul_sum, Y, N]
-  have hc' : 0 < (c : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
-  have hprod (a : ι) := (hi a).hasSubexponentialMGF_mul (hj a) (pos_iff_ne_zero.2 hc)
-  have hsub (a : ι) : TauCeti.Probability.HasSubexponentialMGF (Y a) (40 * c) μ := by
-    simpa only [Y, hcov a] using (hprod a).center
-  have hmean (a : ι) : μ[Y a] = 0 := by
-    simp [Y, integral_sub (hprod a).integrable (integrable_const _), hcov a]
-  have hY : iIndepFun Y μ := hindep.comp
-    (fun _ v ↦ v i * v j - cov i j) (fun _ ↦ by fun_prop)
-  have hmono : {ω | (c : ℝ) * δ < |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} ⊆
-      {ω | N * c * δ ≤ |∑ a, Y a ω|} := by
-    intro ω hω
-    simp only [Set.mem_ofPred_eq, hentry, abs_mul, abs_inv, abs_of_pos hN] at hω ⊢
-    exact ((lt_inv_mul_iff₀ hN).1 hω).le.trans_eq' (by ring)
-  exact (measureReal_mono hmono).trans
-    ((hY.measureReal_abs_sum_ge_le_of_hasSubexponentialMGF (s := Finset.univ)
-      (by positivity) (fun a _ ↦ hsub a) (fun a _ ↦ hmean a) (by positivity)).trans (by
-        simp only [Finset.card_univ]
-        exact mul_le_mul_of_nonneg_left
-          (exp_le_exp.mpr (sampleCovariance_bernstein_exponent hN.le hc'.ne' hδ.le)) (by norm_num)))
+/-- With independent rows, deviations of the empirical CDF from its mean have Gaussian tails
+with exponent −p t²/2, where p is the number of rows. -/
+theorem measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le_of_indep_row
+    (hX : AEMeasurable X P) (hind : iIndepFun (fun i ω ↦ (X ω).row i) P)
+    (x : ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    P.real {ω | t ≤ |cdf ((X ω).sampleCovariance.spectralMeasure
+        (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
+      cdf (expectedCovarianceSpectralMeasure hX : Measure ℝ) x|} ≤
+      2 * Real.exp (-(t ^ 2) * Fintype.card p / 2) := by
+  have hy (i : p) : AEMeasurable (fun ω ↦ (X ω).row i) P :=
+    aemeasurable_pi_iff.2 fun _ ↦ Matrix.measurable_apply.comp_aemeasurable hX
+  have htail := measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le hind hy
+    (F := Matrix.of) (Matrix.ofMeasurableEquiv p n 𝕜).measurable
+    (fun i a b hab ↦ Matrix.rank_sub_le_one_of_row_eq (Matrix.of a) (Matrix.of b) i hab)
+    x ht
+  have hcard : (Fintype.card p : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  have hrates : -(t ^ 2) * (Fintype.card p : ℝ) ^ 2 / (2 * Fintype.card p) =
+      -(t ^ 2) * Fintype.card p / 2 := by field_simp [hcard]
+  rwa [hrates] at htail
 
-/-- A union bound over all entries of the empirical second-moment matrix. This form gives the
-dimension factor explicitly and applies to every normalized error threshold. -/
-theorem measureReal_exists_abs_sampleSecondMoment_sub_gt_le [Fintype p]
-    (hindep : iIndepFun x μ) (hsub : ∀ a i, HasSubgaussianMGF (fun ω ↦ x a ω i) c μ)
-    (hcov : ∀ a i j, ∫ ω, x a ω i * x a ω j ∂μ = cov i j) (δ : ℝ) :
-    μ.real {ω | ∃ i j, (c : ℝ) * δ <
-      |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} ≤
-        2 * (Fintype.card p : ℝ) ^ 2 * exp (-(Fintype.card ι / 6560) * min δ (δ ^ 2)) := by
-  let S : p × p → Set Ω := fun q ↦ {ω | (c : ℝ) * δ <
-    |TauCeti.sampleSecondMoment (fun a ↦ x a ω) q.1 q.2 - cov q.1 q.2|}
-  have hset : {ω | ∃ i j, (c : ℝ) * δ <
-      |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} = ⋃ q, S q := by
-    ext ω
-    simp [S, Prod.exists]
-  rw [hset]
-  calc
-    _ ≤ ∑ q, μ.real (S q) := measureReal_iUnion_fintype_le _
-    _ ≤ ∑ _ : p × p, 2 * exp (-(Fintype.card ι / 6560) * min δ (δ ^ 2)) :=
-      Finset.sum_le_sum fun q _ ↦ hindep.measureReal_abs_sampleSecondMoment_sub_apply_gt_le
-        (fun a ↦ hsub a q.1) (fun a ↦ hsub a q.2) (fun a ↦ hcov a q.1 q.2) δ
-    _ = _ := by simp [Fintype.card_prod, Nat.cast_mul]; ring
+/-- With independent columns, deviations of the empirical CDF from its mean have Gaussian
+tails with exponent −p² t²/(2n), where the data have p rows and n columns. -/
+theorem measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le_of_indep_col
+    (hX : AEMeasurable X P) (hind : iIndepFun (fun j ω ↦ (X ω).col j) P)
+    (x : ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    P.real {ω | t ≤ |cdf ((X ω).sampleCovariance.spectralMeasure
+        (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
+      cdf (expectedCovarianceSpectralMeasure hX : Measure ℝ) x|} ≤
+      2 * Real.exp (-(t ^ 2) * (Fintype.card p : ℝ) ^ 2 / (2 * Fintype.card n)) := by
+  have hy (j : n) : AEMeasurable (fun ω ↦ (X ω).col j) P :=
+    aemeasurable_pi_iff.2 fun i ↦ by
+      simpa only [Matrix.col_apply, Function.comp_def] using
+        (Matrix.measurable_apply (i := i) (j := j)).comp_aemeasurable hX
+  exact measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le hind hy
+    (F := fun a ↦ Matrix.of fun i j ↦ a j i)
+    (.of_eval_matrix _ fun i j ↦ (measurable_pi_apply i).comp (measurable_pi_apply j))
+    (fun j a b hab ↦ Matrix.rank_sub_le_one_of_col_eq
+      (Matrix.of fun i k ↦ a k i) (Matrix.of fun i k ↦ b k i) j hab)
+    x ht
 
-private theorem sampleCovariance_log_offset {L δ : ℝ} (hL' : L ≤ 1)
-    (hδ : 0 ≤ δ) :
-    13120 * L + min δ (δ ^ 2) ≤
-      min (13120 * √L + δ) ((13120 * √L + δ) ^ 2) := by
-  rcases lt_or_ge L 0 with hL | hL
-  · rw [Real.sqrt_eq_zero_of_nonpos hL.le, mul_zero, zero_add]
-    linarith
-  have hsq := Real.sq_sqrt hL
-  have hs := Real.sqrt_nonneg L
-  have hroot : L ≤ √L := by
-    have hle : √L ≤ 1 := by simpa using Real.sqrt_le_sqrt hL'
-    nlinarith [mul_nonneg hs (sub_nonneg.mpr hle)]
-  refine le_min ?_ ?_
-  · linarith [min_le_left δ (δ ^ 2)]
-  · nlinarith [min_le_right δ (δ ^ 2), mul_nonneg hs hδ]
+section Sequence
 
-/-- Simultaneous entrywise covariance concentration, with the number of entries absorbed
-into the threshold. The observations need a common second moment and common coordinate
-proxy, but may have different distributions. -/
-theorem measureReal_max_abs_sampleCovariance_sub_gt_le [Fintype p]
-    (hindep : iIndepFun x μ) (hsub : ∀ a i, HasSubgaussianMGF (fun ω ↦ x a ω i) c μ)
-    (hcov : ∀ a i j, ∫ ω, x a ω i * x a ω j ∂μ = cov i j)
-    (hn : log (Fintype.card p) ≤ Fintype.card ι) (δ : ℝ) :
-    μ.real {ω | ∃ i j, (c : ℝ) * (13120 * √(log (Fintype.card p) / Fintype.card ι) + δ) <
-      |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} ≤
-        2 * exp (-(Fintype.card ι / 6560) * min δ (δ ^ 2)) := by
-  rcases isEmpty_or_nonempty p with hp | hp
-  · have he : {ω | ∃ i j, (c : ℝ) * (13120 * √(log (Fintype.card p) / Fintype.card ι) + δ) <
-        |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} = ∅ :=
-      Set.eq_empty_iff_forall_notMem.2 (fun _ ⟨i, _, _⟩ ↦ isEmptyElim i)
-    rw [he, measureReal_empty]
-    positivity
-  have : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · norm_num
-    exact measureReal_le_one.trans (by norm_num)
-  rcases lt_or_ge δ 0 with hδ | hδ
-  · have hrate : 0 ≤ -(Fintype.card ι / 6560 : ℝ) * min δ (δ ^ 2) :=
-      mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.mpr (by positivity))
-        ((min_le_left _ _).trans hδ.le)
-    exact measureReal_le_one.trans (by linarith [Real.one_le_exp hrate])
-  let N := (Fintype.card ι : ℝ)
-  let P := (Fintype.card p : ℝ)
-  let L := log P / N
-  have hP : 0 < P := Nat.cast_pos.mpr (Fintype.card_pos (α := p))
-  have hN : 0 < N := Nat.cast_pos.mpr (Fintype.card_pos (α := ι))
-  have hL' : L ≤ 1 := (div_le_one hN).2 hn
-  have hoff := sampleCovariance_log_offset hL' hδ
-  have hrate : (N / 6560) * (13120 * L + min δ (δ ^ 2)) =
-      2 * log P + (N / 6560) * min δ (δ ^ 2) := by
-    dsimp [L]
-    field_simp
-    ring
-  calc
-    _ ≤ 2 * P ^ 2 * exp (-(N / 6560) *
-        min (13120 * √L + δ) ((13120 * √L + δ) ^ 2)) :=
-      hindep.measureReal_exists_abs_sampleSecondMoment_sub_gt_le hsub hcov (13120 * √L + δ)
-    _ ≤ 2 * P ^ 2 * exp (-(N / 6560) * (13120 * L + min δ (δ ^ 2))) := by
-      exact mul_le_mul_of_nonneg_left
-        (exp_le_exp.mpr (mul_le_mul_of_nonpos_left hoff (neg_nonpos.mpr (by positivity))))
-        (by positivity)
-    _ = _ := by
-      have hP2 : P ^ 2 = exp (2 * log P) := by
-        rw [← Real.exp_log hP, Real.log_exp, ← Real.exp_nat_mul]
-        norm_num
-      rw [hP2, mul_assoc 2, ← Real.exp_add, neg_mul, hrate]
-      congr 2
-      ring
+variable {p n : ℕ → Type*} [∀ m, Fintype (p m)] [∀ m, DecidableEq (p m)]
+  [∀ m, Nonempty (p m)] [∀ m, Fintype (n m)]
+  {X : (m : ℕ) → Ω → Matrix (p m) (n m) 𝕜}
 
-/-- With probability at least one minus the two-sided tail bound, all sample covariance
-entries lie within the same tolerance of their respective population entries. -/
-theorem one_sub_exp_le_measureReal_forall_abs_sampleSecondMoment_sub_le [Fintype p]
-    (hindep : iIndepFun x μ) (hsub : ∀ a i, HasSubgaussianMGF (fun ω ↦ x a ω i) c μ)
-    (hcov : ∀ a i j, ∫ ω, x a ω i * x a ω j ∂μ = cov i j)
-    (hn : log (Fintype.card p) ≤ Fintype.card ι) (δ : ℝ) :
-    let threshold := (c : ℝ) * (13120 * √(log (Fintype.card p) / Fintype.card ι) + δ)
-    1 - 2 * exp (-(Fintype.card ι / 6560) * min δ (δ ^ 2)) ≤ μ.real {ω |
-      ∀ i j, |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j| ≤ threshold} := by
-  intro threshold
-  have : IsProbabilityMeasure μ := hindep.isProbabilityMeasure
-  let bad : Set Ω := {ω | ∃ i j,
-    threshold < |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|}
-  have hbad : NullMeasurableSet bad μ := by
-    have hset : bad = ⋃ i, ⋃ j, {ω | threshold <
-        |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j|} := by
-      ext ω
-      simp [bad]
-    rw [hset]
-    refine NullMeasurableSet.iUnion fun i ↦ NullMeasurableSet.iUnion fun j ↦
-      nullMeasurableSet_lt aemeasurable_const ?_
-    refine continuous_abs.measurable.comp_aemeasurable ?_
-    refine AEMeasurable.sub_const ?_ _
-    simp only [TauCeti.sampleSecondMoment_apply, star_trivial,
-      TauCeti.finiteMean_eq_inv_smul_sum, smul_eq_mul]
-    have hsum : AEMeasurable (fun ω ↦ ∑ a, x a ω i * x a ω j) μ :=
-      Finset.aemeasurable_fun_sum _ fun a _ ↦ (hsub a i).aemeasurable.mul (hsub a j).aemeasurable
-    exact hsum.const_mul _
-  have hgood : {ω | ∀ i j,
-      |TauCeti.sampleSecondMoment (fun a ↦ x a ω) i j - cov i j| ≤ threshold} = badᶜ := by
-    ext ω
-    simp [bad, not_lt]
-  rw [hgood, probReal_compl_eq_one_sub₀ hbad]
-  exact sub_le_sub_left (hindep.measureReal_max_abs_sampleCovariance_sub_gt_le hsub hcov hn δ) _
+/-- At each fixed threshold, the CDF of the random covariance spectrum and the CDF of its
+expected measure differ by an almost surely vanishing error. The row dimension must grow
+fast enough to make the exponential concentration bounds summable. -/
+theorem ae_tendsto_cdf_sampleCovariance_sub_expected
+    (hX : ∀ m, AEMeasurable (X m) P) (hind : ∀ m, iIndepFun (fun i ω ↦ (X m ω).row i) P)
+    (hdim : ∀ a : ℝ, 0 < a → Summable (fun m ↦ Real.exp (-a * Fintype.card (p m))))
+    (x : ℝ) :
+    ∀ᵐ ω ∂P, Tendsto (fun m ↦ cdf ((X m ω).sampleCovariance.spectralMeasure
+      (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
+        cdf (expectedCovarianceSpectralMeasure (hX m) : Measure ℝ) x) atTop (𝓝 0) := by
+  let D (m : ℕ) (ω : Ω) := cdf ((X m ω).sampleCovariance.spectralMeasure
+    (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
+      cdf (expectedCovarianceSpectralMeasure (hX m) : Measure ℝ) x
+  have hbc (j : ℕ) : ∀ᵐ ω ∂P, ∀ᶠ m in atTop, |D m ω| < (j + 1 : ℝ)⁻¹ := by
+    let t := (j + 1 : ℝ)⁻¹
+    have ht : 0 < t := by positivity
+    have hsum := (hdim (t ^ 2 / 2) (by positivity)).mul_left 2
+    have htail : Summable (fun m ↦ P.real {ω | t ≤ |D m ω|}) := by
+      refine hsum.of_nonneg_of_le (fun _ ↦ measureReal_nonneg) fun m ↦ ?_
+      calc
+        _ ≤ 2 * Real.exp (-(t ^ 2) * Fintype.card (p m) / 2) :=
+          measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le_of_indep_row
+            (hX m) (hind m) x ht.le
+        _ = _ := by congr 2; ring
+    have hfinite : (∑' m, P {ω | t ≤ |D m ω|}) ≠ ∞ := by
+      simpa only [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top _ _)] using
+        htail.tsum_ofReal_ne_top
+    simpa only [Set.mem_ofPred_eq, not_le] using ae_eventually_notMem hfinite
+  filter_upwards [ae_all_iff.2 hbc] with ω hω
+  apply Metric.tendsto_nhds.2
+  intro ε hε
+  obtain ⟨j, hj⟩ := exists_nat_one_div_lt hε
+  filter_upwards [hω j] with m hm
+  simpa only [Real.dist_eq, sub_zero, D] using hm.trans (by simpa only [one_div] using hj)
 
-end ProbabilityTheory.iIndepFun
+/-- For sample covariance matrices with independent rows and summable concentration bounds,
+almost sure weak convergence to a deterministic law is equivalent to weak convergence of the
+expected measures. The matrix sizes may be coupled arbitrarily on the common sample space. -/
+theorem ae_tendsto_spectralMeasure_sampleCovariance_iff_tendsto_expected
+    (hX : ∀ m, AEMeasurable (X m) P) (hind : ∀ m, iIndepFun (fun i ω ↦ (X m ω).row i) P)
+    (hdim : ∀ a : ℝ, 0 < a → Summable (fun m ↦ Real.exp (-a * Fintype.card (p m))))
+    {μ : ProbabilityMeasure ℝ} :
+    (∀ᵐ ω ∂P, Tendsto (fun m ↦ (X m ω).sampleCovariance.spectralMeasure
+      (Matrix.isHermitian_sampleCovariance _)) atTop (𝓝 μ)) ↔
+      Tendsto (fun m ↦ expectedCovarianceSpectralMeasure (hX m)) atTop (𝓝 μ) := by
+  refine ⟨tendsto_expectedCovarianceSpectralMeasure_of_ae_tendsto hX, fun hμ ↦ ?_⟩
+  let C : Set ℝ := {x | ContinuousAt (cdf (μ : Measure ℝ)) x}
+  have hC : Dense C := by
+    simpa only [C, Set.compl_ofPred, not_not] using
+      ((cdf (μ : Measure ℝ)).mono.countable_not_continuousAt).dense_compl ℝ
+  obtain ⟨D, hDC, hDcount, hCD⟩ :=
+    (TopologicalSpace.IsSeparable.of_separableSpace C).exists_countable_dense_subset
+  have hD : Dense D := fun x ↦ closure_minimal hCD isClosed_closure (hC x)
+  filter_upwards [(ae_ball_iff hDcount).2 (fun x _ ↦
+    ae_tendsto_cdf_sampleCovariance_sub_expected hX hind hdim x)] with ω hω
+  apply ProbabilityMeasure.tendsto_of_tendsto_cdf_of_dense hD
+  intro x hx
+  have hmean := ProbabilityMeasure.tendsto_cdf_of_tendsto_of_continuousAt hμ (hDC hx)
+  simpa only [sub_add_cancel, zero_add] using (hω x hx).add hmean
+
+end Sequence
+
+end TauCeti.Probability

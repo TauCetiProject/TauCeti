@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.RandomMatrix.SampleCovariance.Concentration
+public import TauCeti.Probability.RandomMatrix.SampleCovariance.EntrywiseConcentration
 public import TauCeti.Analysis.Matrix.HardThreshold
 
 /-!

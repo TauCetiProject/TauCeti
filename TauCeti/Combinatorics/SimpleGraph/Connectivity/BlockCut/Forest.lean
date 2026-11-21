@@ -77,8 +77,8 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
     rename_i x
     rcases x with B | w
     · rw [blockCutCarrier_inl] at ha hb
-      obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne B.2.connected
-        B.2.not_isCutVertex ha hb hac hbc
+      obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne B.property.connected
+        B.property.not_isCutVertex ha hb hac hbc
       exact ⟨p, fun h ↦ (hp c h).2 rfl⟩
     · rw [blockCutCarrier_inr, Set.mem_singleton_iff] at ha hb
       subst ha hb
@@ -92,8 +92,8 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
     · -- From a block to one of its cut vertices: walk inside the block to it.
       have hwc : (w' : V) ≠ c := hq w' (List.mem_cons_of_mem _ q.start_mem_support)
       rw [blockCutCarrier_inl] at ha
-      obtain ⟨r, hr⟩ := exists_walk_forall_mem_support_mem_and_ne B.2.connected
-        B.2.not_isCutVertex ha ((G.blockCutGraph_adj_block_cutVertex B w').1 h) hac hwc
+      obtain ⟨r, hr⟩ := exists_walk_forall_mem_support_mem_and_ne B.property.connected
+        B.property.not_isCutVertex ha ((G.blockCutGraph_adj_block_cutVertex B w').1 h) hac hwc
       obtain ⟨p, hp⟩ := ih hq' (a := w') (blockCutCarrier_inr w' ▸ Set.mem_singleton _) hb hwc
       refine ⟨r.append p, fun hc ↦ ?_⟩
       rcases (Walk.mem_support_append_iff r p).mp hc with hc | hc
@@ -142,14 +142,14 @@ theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
       rcases z with C | w
       · have hcC : (c : V) ∈ (C : Set V) := (G.blockCutGraph_adj_cutVertex_block c C).1 h
         have hCB : (C : Set V) ≠ B := fun hCB ↦ hp' (by simp [Subtype.ext hCB])
-        obtain ⟨a, haC, hca⟩ := C.2.exists_adj_of_ne B.2 hCB hcC hcB
-        obtain ⟨b, hbB, hcb⟩ := B.2.exists_adj_of_ne C.2 hCB.symm hcB hcC
+        obtain ⟨a, haC, hca⟩ := C.property.exists_adj_of_ne B.property hCB hcC hcB
+        obtain ⟨b, hbB, hcb⟩ := B.property.exists_adj_of_ne C.property hCB.symm hcB hcC
         have hq : ∀ w : G.CutVertex, (.inr w : G.BlockCutVertex) ∈ q.support →
             (w : V) ≠ c := fun w hw hwc ↦ hP.2 (by rwa [← Subtype.ext hwc])
         obtain ⟨r, hr⟩ := exists_walk_notMem_support_of_blockCutGraph_walk q hq
           (a := a) (b := b) (blockCutCarrier_inl C ▸ haC) (blockCutCarrier_inl B ▸ hbB) hca.ne'
           hcb.ne'
-        exact hr (C.2.mem_support_of_ne B.2 hCB hcC hcB haC hbB r)
+        exact hr (C.property.mem_support_of_ne B.property hCB hcC hcB haC hbB r)
       · simp at h
   rw [isAcyclic_iff_forall_adj_isBridge]
   rintro (B | v) (C | w) h
@@ -165,7 +165,7 @@ variable (G) in
 /-- The connected component of `G` determined by a vertex of the block--cut graph: the component
 containing the vertices of a block, or the component of a cut vertex. -/
 noncomputable def blockCutVertexComponent : G.BlockCutVertex → G.ConnectedComponent
-  | .inl B => G.connectedComponentMk B.2.nonempty.some
+  | .inl B => G.connectedComponentMk B.property.nonempty.some
   | .inr v => G.connectedComponentMk v
 
 /-- A block determines the component of each of its vertices. -/
@@ -173,7 +173,7 @@ theorem blockCutVertexComponent_block_of_mem (B : G.BlockVertex) {x : V}
     (hx : x ∈ (B : Set V)) :
     G.blockCutVertexComponent (.inl B) = G.connectedComponentMk x := by
   rw [blockCutVertexComponent, ConnectedComponent.eq]
-  exact (B.2.connected.preconnected ⟨_, B.2.nonempty.some_mem⟩ ⟨x, hx⟩).map
+  exact (B.property.connected.preconnected ⟨_, B.property.nonempty.some_mem⟩ ⟨x, hx⟩).map
     (Embedding.induce _).toHom
 
 /-- A cut vertex determines its own component. -/
@@ -211,7 +211,7 @@ private theorem reachableAvoiding_blockCutGraph_block_block_of_mem (B C : G.Bloc
   by_cases hBC : (B : Set V) = C
   · rw [Subtype.ext hBC]
     exact .refl (by simp)
-  · let c : G.CutVertex := ⟨x, B.2.isCutVertex_of_ne C.2 hBC hxB hxC⟩
+  · let c : G.CutVertex := ⟨x, B.property.isCutVertex_of_ne C.property hBC hxB hxC⟩
     have hcS : (.inr c : G.BlockCutVertex) ∉ Sum.inr '' S := by
       rintro ⟨s, hs, hsc⟩
       apply hxS s hs
@@ -258,8 +258,8 @@ private theorem exists_blockCutGraph_reachable_block (x : G.BlockCutVertex) :
     ∃ B : G.BlockVertex, ∃ a ∈ (B : Set V), G.blockCutGraph.Reachable x (.inl B) ∧
       G.blockCutVertexComponent x = G.connectedComponentMk a := by
   rcases x with B | v
-  · exact ⟨B, _, B.2.nonempty.some_mem, .rfl,
-      blockCutVertexComponent_block_of_mem B B.2.nonempty.some_mem⟩
+  · exact ⟨B, _, B.property.nonempty.some_mem, .rfl,
+      blockCutVertexComponent_block_of_mem B B.property.nonempty.some_mem⟩
   · obtain ⟨D, hD, hvD⟩ := G.exists_isBlock_mem v
     have h : G.blockCutGraph.Adj (.inr v) (.inl ⟨D, hD⟩) :=
       (G.blockCutGraph_adj_cutVertex_block v ⟨D, hD⟩).2 hvD

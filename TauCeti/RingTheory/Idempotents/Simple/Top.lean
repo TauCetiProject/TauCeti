@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 public import TauCeti.RingTheory.Idempotents.Quotient.Span
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
 /-!
 # Simple tops of the projectives `A eⱼ`
@@ -18,7 +19,9 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 Let `A` be an algebra over a field `k`, let `J` be a two-sided ideal of `A`, and let `e : ι → A`
 be a complete family of orthogonal idempotents whose classes span `A ⧸ J` over `k`. Then a
 module killed by `J` is a module over `A ⧸ J`, a product of copies of `k`, and the top
-`Sⱼ = A eⱼ / J (A eⱼ)` is the line spanned by the class of `eⱼ` whenever `eⱼ ∉ J`.
+`Sⱼ = A eⱼ / J (A eⱼ)` is the line spanned by the class of `eⱼ` whenever `eⱼ ∉ J`. Distinct
+idempotents annihilate one another's tops, so distinct tops admit no nonzero homomorphisms and
+exhaust the simple `A`-modules killed by `J` without repetition.
 
 ## Main definitions
 
@@ -32,9 +35,15 @@ module killed by `J` is a module over `A ⧸ J`, a product of copies of `k`, and
 
 ## Main results
 
+* `CompleteOrthogonalIdempotents.smul_quotient_smul_top_eq_zero_of_ne` and
+  `CompleteOrthogonalIdempotents.nonempty_linearEquiv_quotient_smul_top_iff`: for `i ≠ j`, `eᵢ`
+  annihilates `Sⱼ`, every `A`-linear map `Sᵢ → Sⱼ` vanishes, and `Sᵢ ≃ₗ[A] Sⱼ` holds only for
+  `i = j` when `eⱼ ∉ J`.
 * `CompleteOrthogonalIdempotents.isSimpleModule_quotient_smul_top` and
   `CompleteOrthogonalIdempotents.finrank_quotient_smul_top`: each top `Sⱼ` with `eⱼ ∉ J` is a
   simple module of dimension one.
+* `CompleteOrthogonalIdempotents.existsUnique_nonempty_linearEquiv_quotient_smul_top`: every
+  simple `A`-module killed by `J` is isomorphic to `Sᵢ` for a unique `i`.
 
 ## References
 
@@ -142,6 +151,49 @@ theorem smul_quotient_smul_top_eq_self (he : CompleteOrthogonalIdempotents e)
 
 end Hom
 
+section Orthogonal
+
+variable {k : Type*} {A : Type*} [CommRing k] [Ring A] [Algebra k A]
+  {ι : Type*} [Fintype ι] {e : ι → A} {J : Ideal A} [J.IsTwoSided]
+
+/-- For `i ≠ j`, the idempotent `e i` annihilates the top `A e j / J (A e j)`. -/
+theorem smul_quotient_smul_top_eq_zero_of_ne (he : CompleteOrthogonalIdempotents e)
+    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
+    {i j : ι} (hij : i ≠ j)
+    (s : (Ideal.span {e j} : Ideal A) ⧸
+      J • (⊤ : Submodule A (Ideal.span {e j} : Ideal A))) :
+    e i • s = 0 := by
+  rw [← he.smul_quotient_smul_top_eq_self hquot j s, ← mul_smul, he.ortho hij, zero_smul]
+
+/-- For `i ≠ j`, every `A`-linear map from `A e i / J (A e i)` to `A e j / J (A e j)` vanishes. -/
+theorem subsingleton_quotient_smul_top_linearMap_of_ne (he : CompleteOrthogonalIdempotents e)
+    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
+    {i j : ι} (hij : i ≠ j) :
+    Subsingleton (((Ideal.span {e i} : Ideal A) ⧸
+        J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))) →ₗ[A]
+      ((Ideal.span {e j} : Ideal A) ⧸
+        J • (⊤ : Submodule A (Ideal.span {e j} : Ideal A)))) :=
+  subsingleton_of_forall_eq 0 fun φ ↦ LinearMap.ext fun s ↦ by
+    rw [LinearMap.zero_apply, ← he.smul_quotient_smul_top_eq_self hquot j (φ s),
+      ← map_smul, he.smul_quotient_smul_top_eq_zero_of_ne hquot hij.symm s, map_zero]
+
+/-- When `e j ∉ J`, the tops `A e i / J (A e i)` and `A e j / J (A e j)` are `A`-linearly
+equivalent if and only if `i = j`. -/
+theorem nonempty_linearEquiv_quotient_smul_top_iff (he : CompleteOrthogonalIdempotents e)
+    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
+    {i j : ι} (hj : e j ∉ J) :
+    Nonempty (((Ideal.span {e i} : Ideal A) ⧸
+        J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))) ≃ₗ[A]
+      ((Ideal.span {e j} : Ideal A) ⧸
+        J • (⊤ : Submodule A (Ideal.span {e j} : Ideal A)))) ↔ i = j := by
+  refine ⟨fun ⟨φ⟩ ↦ by_contra fun hij ↦ ?_, fun h ↦ h ▸ ⟨LinearEquiv.refl _ _⟩⟩
+  have hsub := he.subsingleton_quotient_smul_top_linearMap_of_ne hquot hij
+  obtain ⟨x, hx⟩ := φ.surjective (Submodule.Quotient.mk (spanSingletonGenerator (e j)))
+  exact mk_spanSingletonGenerator_ne_zero hj
+    (hx.symm.trans (LinearMap.congr_fun (Subsingleton.elim φ.toLinearMap 0) x))
+
+end Orthogonal
+
 section Top
 
 variable {k : Type*} {A : Type*} [Field k] [Ring A] [Algebra k A]
@@ -230,6 +282,38 @@ theorem isSimpleModule_quotient_smul_top (he : CompleteOrthogonalIdempotents e)
       J • (⊤ : Submodule A (Ideal.span {e j} : Ideal A))) :=
   (isSimpleModule_iff ..).mpr
     (is_simple_module_of_finrank_eq_one (he.finrank_quotient_smul_top hquot j hj))
+
+/-- **Every simple `A`-module killed by `J` is `A`-linearly equivalent to `A e i / J (A e i)` for
+a unique index `i`.** -/
+theorem existsUnique_nonempty_linearEquiv_quotient_smul_top
+    (he : CompleteOrthogonalIdempotents e)
+    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤)
+    (X : Type*) [AddCommGroup X] [Module A X] [IsSimpleModule A X]
+    (hX : Module.IsTorsionBySet A X J) :
+    ∃! i : ι, Nonempty (((Ideal.span {e i} : Ideal A) ⧸
+      J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))) ≃ₗ[A] X) := by
+  have := IsSimpleModule.nontrivial A X
+  obtain ⟨i, f, hf⟩ := he.exists_surjective_of_isSimpleModule X
+  have hle : J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A)) ≤ LinearMap.ker f := by
+    rw [Submodule.smul_le]
+    intro r hr y _
+    rw [LinearMap.mem_ker, map_smul]
+    exact @hX (f y) ⟨r, hr⟩
+  have hf_ne : f ≠ 0 := LinearMap.ne_zero_of_surjective hf
+  have hi : e i ∉ J := fun hmem ↦ hf_ne <| LinearMap.ext fun y ↦ by
+    rw [LinearMap.zero_apply, ← smul_spanSingletonGenerator (he.idem i) y, map_smul,
+      ← smul_spanSingletonGenerator (he.idem i) (spanSingletonGenerator (e i)),
+      coe_spanSingletonGenerator,
+      LinearMap.mem_ker.mp (hle (Submodule.smul_mem_smul hmem Submodule.mem_top)), smul_zero]
+  have := he.isSimpleModule_quotient_smul_top hquot i hi
+  have hcoatom : IsCoatom (J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A))) :=
+    isSimpleModule_iff_isCoatom.mp inferInstance
+  have hker : J • (⊤ : Submodule A (Ideal.span {e i} : Ideal A)) = LinearMap.ker f :=
+    ((hcoatom.le_iff_eq (LinearMap.ker_eq_top.not.mpr hf_ne)).mp hle).symm
+  refine ⟨i, ⟨Submodule.quotEquivOfEq _ _ hker ≪≫ₗ f.quotKerEquivOfSurjective hf⟩, ?_⟩
+  rintro j ⟨φ⟩
+  exact (he.nonempty_linearEquiv_quotient_smul_top_iff hquot hi).mp
+    ⟨φ ≪≫ₗ (Submodule.quotEquivOfEq _ _ hker ≪≫ₗ f.quotKerEquivOfSurjective hf).symm⟩
 
 end Top
 
