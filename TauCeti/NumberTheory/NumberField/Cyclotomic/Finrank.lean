@@ -31,6 +31,8 @@ input below.
 
 ## Main results
 
+* `IsCyclotomicExtension.Rat.finrank_ringOfIntegers`: the ring of integers `𝓞 K` of an `n`-th
+  cyclotomic extension `K / ℚ` (`n ≠ 0`) has `ℤ`-rank `φ n`.
 * `IsCyclotomicExtension.Rat.prime_dvd_of_dvd_natAbs_discr`: a prime dividing the discriminant
   of an `m`-th cyclotomic field divides `m`. This is the divisibility input that turns
   coprimality to `m` into coprimality of discriminants.
@@ -55,9 +57,19 @@ Adapted from the Birkbeck–Brasca Chebotarev density project.
 
 public section
 
+open scoped NumberField
+
 namespace IsCyclotomicExtension
 
 namespace Rat
+
+/-- **The `ℤ`-rank of the ring of integers of a cyclotomic field.** For an `n`-th cyclotomic
+extension `K / ℚ` with `n ≠ 0`, the ring of integers `𝓞 K` has rank `φ n` over `ℤ`. -/
+theorem finrank_ringOfIntegers (n : ℕ) (K : Type*) [Field K] [CharZero K] [NeZero n]
+    [IsCyclotomicExtension {n} ℚ K] :
+    Module.finrank ℤ (𝓞 K) = n.totient := by
+  have : NumberField K := IsCyclotomicExtension.numberField {n} ℚ K
+  rw [NumberField.RingOfIntegers.rank, IsCyclotomicExtension.Rat.finrank n K]
 
 /-- A prime dividing the discriminant of an `m`-th cyclotomic extension of `ℚ` divides `m`. -/
 theorem prime_dvd_of_dvd_natAbs_discr (E : Type*) [Field E] [NumberField E] (m : ℕ)

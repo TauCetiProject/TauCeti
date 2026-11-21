@@ -115,16 +115,16 @@ theorem isHomeomorph_spaComap_toSpectralTop (Aplus : Subring A) :
     exact hv
   refine Homeomorph.isHomeomorph
     { toFun := spaComap _ hcont Aplus _ fun _ ha ↦ Subring.mem_map.mpr ⟨_, ha, rfl⟩
-      invFun v := ⟨ValuationSpectrum.comap e v.1, he v.1 v.2⟩
+      invFun v := ⟨ValuationSpectrum.comap e v.val, he v.val v.property⟩
       left_inv v := Subtype.ext ?_
       right_inv v := Subtype.ext ?_
       continuous_toFun := continuous_spaComap ..
       continuous_invFun := continuous_induced_rng.mpr
-        ((continuous_comap e).comp continuous_subtype_val) }
+        ((continuous_comap e).comp continuous_subtypeVal) }
   · simp only [spaComap_val]
-    exact comap_symm_comap v.1
+    exact comap_symm_comap v.val
   · rw [spaComap_val]
-    exact comap_comap_symm v.1
+    exact comap_comap_symm v.val
 
 open scoped Classical in
 /-- **The rational subsets of `Spa(A_sp, A⁺)` and `Spa(A, A⁺)` agree.** Pulling back along

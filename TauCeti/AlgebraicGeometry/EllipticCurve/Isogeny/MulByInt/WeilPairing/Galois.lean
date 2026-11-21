@@ -62,10 +62,10 @@ theorem divisorGaloisAction_divisorPullback_mulByIntIsogeny_ofPoint (σ : K ≃�
     letI := (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).fieldPullback.toAlgebra
     Multiplicative.toAdd (W.divisorGaloisAction σ)
         ((mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
-          (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace T).1)) =
+          (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace T).val)) =
       (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).divisorPullback
         (fun _ ↦ rfl) (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace
-          (Multiplicative.toAdd (W.pointGaloisAction σ) T)).1) := by
+          (Multiplicative.toAdd (W.pointGaloisAction σ) T)).val) := by
   let _ := (mulByIntIsogeny (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)).fieldPullback.toAlgebra
   set e := Multiplicative.toAdd (W.pointGaloisAction σ)
   -- `σ` carries the fibre of `[n]` over `T` onto the fibre over `σ T`
@@ -108,7 +108,7 @@ theorem weilPairing_torsionGaloisAction (σ : K ≃ₐ[F] K)
       Additive.ofMul (restrictRootsOfUnity σ N (weilPairing (W⁄K) N hN S T).toMul) := by
   have hchar : ((N : ℤ) : K) ≠ 0 := by rwa [Int.cast_natCast]
   obtain ⟨g, hg⟩ := exists_principal_eq_weilPairingDivisor (W⁄K) hchar
-    ((Submodule.mem_torsionBy_iff _ _).mp T.2)
+    ((Submodule.mem_torsionBy_iff _ _).mp T.property)
   let σg := Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ)) g
   have hσg : Divisor.principal (W⁄K).toAffine.isFunctionField σg =
       weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hchar)

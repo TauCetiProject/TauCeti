@@ -65,7 +65,7 @@ def cuspDatumInfty : psl2zToPSL2R.range.CuspDatum := by
         exact h
       have hc : a 1 0 = 0 := by
         rw [OnePoint.smul_infty_eq_self_iff, Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hfix
-        simp only [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+        simp only [Matrix.SpecialLinearGroup.map_apply_coe,
           Matrix.map_apply, Int.coe_castRingHom] at hfix
         exact_mod_cast hfix
       obtain ⟨n, hn⟩ := _root_.ModularGroup.exists_eq_T_zpow_of_c_eq_zero hc

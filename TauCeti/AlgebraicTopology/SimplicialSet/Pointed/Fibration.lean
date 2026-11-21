@@ -41,16 +41,14 @@ variable {X E B : PointedSSet.{u}}
 
 /-- The based mapping simplicial set preserves Kan fibrations in the target. -/
 instance fibration_ihom_map (X : PointedSSet.{u}) (p : E ⟶ B) [Fibration p.right] :
-    Fibration ((PointedSSet.ihom X).map p).right := by
-  let i : Under.mk (𝟙 (Δ[0] : SSet.{u})) ⟶ X := Under.homMk X.hom
-  have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from X.hom
-  exact fibration_pullbackObjObjπ i p
-    (Functor.PullbackObjObj.ofIsInitial MonoidalClosed.internalHom i p Under.mkIdInitial)
+    Fibration ((PointedSSet.ihom X).map p).right :=
+  fibration_pullbackObjObjπ (initial.to X) p
+    (Functor.PullbackObjObj.ofIsInitial MonoidalClosed.internalHom (initial.to X) p
+      initialIsInitial)
 
 /-- Based maps into a Kan complex form a Kan complex, with no hypothesis on the source. -/
 instance kanComplex_ihom (X E : PointedSSet.{u}) [SSet.KanComplex E.right] :
     SSet.KanComplex ((PointedSSet.ihom X).obj E).right := by
-  have : Mono X.hom := SSet.stdSimplex.isTerminalObj₀.mono_from X.hom
   have hf : Fibration (SSet.stdSimplex.isTerminalObj₀.from (basedMaps X E).toSSet) := by
     rw [SSet.modelCategoryQuillen.fibration_iff]
     exact MorphismProperty.of_isPullback (basedMaps_isPullback X E)

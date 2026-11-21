@@ -421,4 +421,17 @@ theorem HasLaw.hasPDF_inner_vonMisesFisherMeasure
   exact (hasLaw_map (X := fun x : sphere (0 : E) 1 ↦ ⟪(m : E), (x : E)⟫)
     (by fun_prop)).comp hX
 
+/-- The canonical Lebesgue density of the mean-direction projection of a von Mises–Fisher
+random point agrees almost everywhere with `vonMisesFisherProjectionPDF`. -/
+theorem HasLaw.pdf_eq_vonMisesFisherProjectionPDF
+    (hX : HasLaw X (vonMisesFisherMeasure m κ) P)
+    (hd : 2 ≤ Module.finrank ℝ E) :
+    pdf (fun ω ↦ ⟪(m : E), (X ω : E)⟫) P volume =ᵐ[volume]
+      vonMisesFisherProjectionPDF (Module.finrank ℝ E) κ := by
+  apply pdf_eq_of_hasLaw_withDensity
+    (measurable_vonMisesFisherProjectionPDF _ _).aemeasurable
+  rw [← map_inner_vonMisesFisherMeasure_eq_withDensity hd m κ]
+  exact (hasLaw_map (X := fun x : sphere (0 : E) 1 ↦ ⟪(m : E), (x : E)⟫)
+    (by fun_prop)).comp hX
+
 end ProbabilityTheory

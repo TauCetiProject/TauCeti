@@ -40,6 +40,8 @@ the point factors uniquely through the quotient algebra.
   quotient morphism, with the pullback written through `quotientPointsHom`.
 * `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
   quotient-subgroup membership along a surjective bialgebra morphism.
+* `CommHopfAlgCat.range_mapDomain_mkQuotient`: the image of `(mkQuotient H I).hom` under
+  `BialgHom.mapDomain` on `A`-valued points is `quotientPointsSubgroup H I (CommAlgCat.of R A)`.
 
 ## Implementation notes
 
@@ -161,6 +163,21 @@ theorem commutator_liftQuotientPoint_apply_mkQuotient
   rw [mkQuotient_apply]
   exact heval.symm
 
+/-- The quotient point factoring an ambient point `g` is `f` exactly when `g` is the inclusion of
+`f`. -/
+lemma liftQuotientPoint_eq_iff (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : HopfAlgebra.points (R := R) (H := H) A)
+    (hg : ∀ h : H, h ∈ I → g.ofConv h = 0)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    liftQuotientPoint H I A g hg = f ↔ g = quotientPointsHom H I A f := by
+  constructor
+  · rintro rfl
+    rw [quotientPointsHom_liftQuotientPoint]
+  · intro h
+    apply quotientPointsHom_injective H I A
+    rw [quotientPointsHom_liftQuotientPoint, h]
+
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it
 kills the Hopf ideal. -/
 lemma mem_range_quotientPointsHom_iff (H : _root_.CommHopfAlgCat.{v} R)
@@ -248,6 +265,18 @@ theorem mem_quotientPointsSubgroup_map_iff
       exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
     exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
 
+/-- If a morphism `phi` maps the Hopf ideal `I` into `J`, then pulling back along `phi` carries
+the points of `J` into the points of `I`. -/
+theorem mapDomain_mem_quotientPointsSubgroup_of_map_le
+    {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
+    {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R)
+    {f : HopfAlgebra.points (R := R) (H := K) A} (hf : f ∈ quotientPointsSubgroup K J A) :
+    BialgHom.mapDomain (A := A) phi.hom f ∈ quotientPointsSubgroup H I A := by
+  rw [mem_quotientPointsSubgroup_iff] at hf ⊢
+  intro x hx
+  rw [BialgHom.mapDomain_apply_apply]
+  exact hf _ (hIJ (HopfIdeal.mem_map_of_mem phi.hom hx))
+
 /-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
 `H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of
 `H` vanishes on `J`. -/
@@ -290,6 +319,24 @@ lemma quotientPointsHom_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v
     (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     quotientPointsHom H I A f ∈ quotientPointsSubgroup H I A :=
   ⟨f, rfl⟩
+
+/-- On `A`-valued points, the image of `(mkQuotient H I).hom` under `BialgHom.mapDomain` is the
+underlying set of `quotientPointsSubgroup H I (CommAlgCat.of R A)`. -/
+theorem _root_.CommHopfAlgCat.range_mapDomain_mkQuotient (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} [CommRing A] [Algebra R A] :
+    Set.range (BialgHom.mapDomain (A := A) (mkQuotient H I).hom) =
+      (quotientPointsSubgroup H I (CommAlgCat.of R A) :
+        Set (HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A))) := by
+  have hfun : (BialgHom.mapDomain (A := A) (mkQuotient H I).hom :
+        HopfAlgebra.points (R := R) (H := quotient H I) (CommAlgCat.of R A) →
+          HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) =
+      quotientPointsHom H I (CommAlgCat.of R A) := by
+    funext f
+    rw [BialgHom.mapDomain_apply, quotientPointsHom_apply]
+  ext g
+  rw [hfun, SetLike.mem_coe]
+  exact (mem_range_quotientPointsHom_iff H I (CommAlgCat.of R A) g).trans
+    (mem_quotientPointsSubgroup_iff H I (CommAlgCat.of R A) g).symm
 
 end CommHopfAlgCat
 

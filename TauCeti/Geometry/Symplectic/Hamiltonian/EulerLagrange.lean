@@ -65,6 +65,16 @@ is `H` along the Legendre lift, is conserved along every solution of the Euler�
 with differentiable velocity (`TauCeti.energy_eq_of_eulerLagrange`); this needs neither an
 inverse `w` nor finite dimensionality.
 
+The Euler–Lagrange equations also come directly from the Lagrangian side. Let `X` be a vector
+at `(q, v)` with base component `v`, solving the Lagrangian equation
+`ω(dFL X, dFL W) = dE_L(W)` for every `W`, that is `ι_X (FL^* ω) = dE_L`. Then the momentum
+changes along `X` by the force, `d(∂_v L)(X) = ∂_q L(q, v)`
+(`TauCeti.snd_fderiv_linearLegendreMap_apply_eq_of_symplecticForm`): pairing with a horizontal
+direction `(b, 0)`, the mixed second derivatives of `L` occur on both sides and cancel. So a curve
+`(q, v)` with velocity `X` at `t` satisfies the Euler–Lagrange equation at `t`
+(`TauCeti.eulerLagrange_of_hasDerivAt_of_symplecticForm`). This needs no inverse of the Legendre
+map; it is the coordinate form of the Lagrangian vector field of a Lagrangian on a manifold.
+
 No convexity or global invertibility of the Legendre map is assumed: all statements are pointwise
 along the curve, so they apply equally to a local inverse of the Legendre map of a regular
 Lagrangian.
@@ -110,6 +120,23 @@ theorem linearLegendreMap_fst (L : E × E → ℝ) (x : E × E) : (linearLegendr
 theorem linearLegendreMap_snd (L : E × E → ℝ) (x : E × E) :
     (linearLegendreMap L x).2 = fderiv ℝ (fun v ↦ L (x.1, v)) x.2 :=
   (rfl)
+
+/-- Lagrangians that agree near `x` have Legendre maps that agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap {L₁ L₂ : E × E → ℝ} {x : E × E}
+    (h : L₁ =ᶠ[𝓝 x] L₂) : linearLegendreMap L₁ =ᶠ[𝓝 x] linearLegendreMap L₂ := by
+  filter_upwards [h.eventually_nhds] with y hy
+  refine Prod.ext rfl ?_
+  rw [linearLegendreMap_snd, linearLegendreMap_snd]
+  exact Filter.EventuallyEq.fderiv_eq
+    (((continuous_const.prodMk continuous_id).tendsto y.2).eventually hy)
+
+/-- Lagrangians that agree near `x` have energies `E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` that
+agree near `x`. -/
+theorem _root_.Filter.EventuallyEq.linearLegendreMap_snd_apply_sub {L₁ L₂ : E × E → ℝ}
+    {x : E × E} (h : L₁ =ᶠ[𝓝 x] L₂) :
+    (fun y ↦ (linearLegendreMap L₁ y).2 y.2 - L₁ y) =ᶠ[𝓝 x]
+      fun y ↦ (linearLegendreMap L₂ y).2 y.2 - L₂ y :=
+  (h.linearLegendreMap.and h).mono fun y hy ↦ by dsimp only; rw [hy.1, hy.2]
 
 /-- The **Hamiltonian** of a Lagrangian `L`, given a map `w` solving the momentum for the velocity:
 `H(q, p) = p(w(q, p)) - L(q, w(q, p))`. When `∂_v L(q, w(q, p)) = p`, this is the energy of `L`
@@ -183,6 +210,78 @@ theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {q v : ℝ → E}
     simp
   exact is_const_of_deriv_eq_zero (fun r ↦ (hderiv r).differentiableAt)
     (fun r ↦ (hderiv r).deriv) s t
+
+/-! ### The Lagrangian vector field
+
+The Lagrangian vector field `X` of `L` solves `ι_X (FL^* ω) = dE_L` for the energy
+`E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)`. In bundle charts of a tangent bundle this is the equation
+satisfied by the Lagrangian vector field of a Lagrangian on a manifold. -/
+
+/-- **The Legendre map of a `C²` Lagrangian is differentiable.** Near a point where `L` is `C²`,
+the momentum `∂_v L` is the restriction of `dL` to the velocity factor. -/
+theorem differentiableAt_linearLegendreMap {L : E × E → ℝ} {x : E × E}
+    (hL : ContDiffAt ℝ 2 L x) : DifferentiableAt ℝ (linearLegendreMap L) x := by
+  have hmom : (fun y ↦ (linearLegendreMap L y).2) =ᶠ[𝓝 x]
+      fun y ↦ (fderiv ℝ L y).comp (ContinuousLinearMap.inr ℝ E E) := by
+    filter_upwards [hL.eventually (by simp)] with y hy
+    rw [linearLegendreMap_snd]
+    exact fderiv_slice_right (hy.differentiableAt (by norm_num))
+  have hF : DifferentiableAt ℝ (fun y ↦ (linearLegendreMap L y).2) x :=
+    (((hL.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_comp
+      (differentiableAt_const _)).congr_of_eventuallyEq hmom
+  exact differentiableAt_fst.prodMk hF
+
+/-- **The Euler–Lagrange equation of the Lagrangian vector field, pointwise.** Let `L` be `C²` at
+`x = (q, v)` and let `X` be a vector with base component `X.1 = v` solving the Lagrangian equation
+`ω(dFL X, dFL W) = dE_L(W)` for every `W`, where `ω` is the canonical symplectic form of `E × E'`.
+Then the momentum changes along `X` by the force: `d(∂_v L)(X) = ∂_q L(q, v)`. -/
+theorem snd_fderiv_linearLegendreMap_apply_eq_of_symplecticForm {L : E × E → ℝ} {x X : E × E}
+    (hL : ContDiffAt ℝ 2 L x) (hX₁ : X.1 = x.2)
+    (hX : ∀ W, strongDualCotangentSymplecticForm (fderiv ℝ (linearLegendreMap L) x X)
+      (fderiv ℝ (linearLegendreMap L) x W) =
+        fderiv ℝ (fun y ↦ (linearLegendreMap L y).2 y.2 - L y) x W) :
+    (fderiv ℝ (linearLegendreMap L) x X).2 = fderiv ℝ (fun q ↦ L (q, x.2)) x.1 := by
+  have hF : DifferentiableAt ℝ (fun y ↦ (linearLegendreMap L y).2) x :=
+    (differentiableAt_linearLegendreMap hL).snd
+  have hLd : DifferentiableAt ℝ L x := hL.differentiableAt (by norm_num)
+  have hFL : HasFDerivAt (linearLegendreMap L)
+      ((ContinuousLinearMap.fst ℝ E E).prod (fderiv ℝ (fun y ↦ (linearLegendreMap L y).2) x)) x :=
+    hasFDerivAt_fst.prodMk hF.hasFDerivAt
+  have hE : HasFDerivAt (fun y ↦ (linearLegendreMap L y).2 y.2 - L y) _ x :=
+    (hF.hasFDerivAt.clm_apply hasFDerivAt_snd).sub hLd.hasFDerivAt
+  -- Pair `X` with the horizontal vector `(b, 0)`: the mixed second derivatives of `L` along `b`
+  -- occur on both sides and cancel, as `X.1 = v`, leaving `d(∂_v L)(X) b = ∂_q L b`.
+  ext b
+  have h := hX (b, 0)
+  rw [hFL.fderiv, hE.fderiv, strongDualCotangentSymplecticForm_apply] at h
+  have hslice : fderiv ℝ L x (b, 0) = fderiv ℝ (fun q ↦ L (q, x.2)) x.1 b := by
+    rw [fderiv_slice_left hLd]
+    simp only [coe_comp, Function.comp_apply, inl_apply]
+  simp only [ContinuousLinearMap.prod_apply, coe_fst', coe_snd', sub_apply, add_apply, comp_apply,
+    map_zero, flip_apply, hslice, hX₁] at h
+  rw [hFL.fderiv]
+  simp only [ContinuousLinearMap.prod_apply]
+  linarith
+
+/-- **Integral curves of the Lagrangian vector field satisfy the Euler–Lagrange equation.** Let
+`L` be `C²` at `(q t, v t)`, and let the curve `s ↦ (q s, v s)` have velocity `X` at `t`, where
+`X.1 = v t` and `X` solves the Lagrangian equation `ω(dFL X, dFL W) = dE_L(W)` for every `W`. Then
+`q'(t) = v(t)` and `d/dt ∂_v L(q, v) = ∂_q L(q, v)` at `t`. -/
+theorem eulerLagrange_of_hasDerivAt_of_symplecticForm {L : E × E → ℝ} {q v : ℝ → E} {X : E × E}
+    {t : ℝ} (hL : ContDiffAt ℝ 2 L (q t, v t)) (hγ : HasDerivAt (fun s ↦ (q s, v s)) X t)
+    (hX₁ : X.1 = v t)
+    (hX : ∀ W, strongDualCotangentSymplecticForm (fderiv ℝ (linearLegendreMap L) (q t, v t) X)
+      (fderiv ℝ (linearLegendreMap L) (q t, v t) W) =
+        fderiv ℝ (fun y ↦ (linearLegendreMap L y).2 y.2 - L y) (q t, v t) W) :
+    HasDerivAt q (v t) t ∧
+      HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s))
+        (fderiv ℝ (fun y ↦ L (y, v t)) (q t)) t := by
+  refine ⟨hX₁ ▸ hγ.fst, ?_⟩
+  have h : HasDerivAt (fun s ↦ linearLegendreMap L (q s, v s))
+      (fderiv ℝ (linearLegendreMap L) (q t, v t) X) t :=
+    (differentiableAt_linearLegendreMap hL).hasFDerivAt.comp_hasDerivAt_of_eq t hγ rfl
+  rw [← snd_fderiv_linearLegendreMap_apply_eq_of_symplecticForm hL hX₁ hX]
+  exact h.snd
 
 /-! ### Hamilton's equations
 

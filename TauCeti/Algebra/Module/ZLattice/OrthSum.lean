@@ -137,7 +137,8 @@ theorem coe_orthSumEquivProd_symm_apply (p : L × M) :
 instance [TopologicalSpace E] [TopologicalSpace F] (L : Submodule ℤ E) (M : Submodule ℤ F)
     [DiscreteTopology L] [DiscreteTopology M] : DiscreteTopology (orthSum L M) :=
   .of_continuous_injective (f := fun x : orthSum L M ↦
-      ((⟨x.1.fst, (mem_orthSum.mp x.2).1⟩ : L), (⟨x.1.snd, (mem_orthSum.mp x.2).2⟩ : M)))
+      ((⟨x.val.fst, (mem_orthSum.mp x.property).1⟩ : L), (⟨x.val.snd, (mem_orthSum.mp x.property).2⟩
+          : M)))
     (by fun_prop) fun x y h ↦ by
       simp only [Prod.mk.injEq, Subtype.mk.injEq] at h
       exact Subtype.ext (ofLp_injective 2 (Prod.ext h.1 h.2))

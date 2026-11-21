@@ -304,7 +304,7 @@ theorem exponent_discriminantGroup_dvd_level :
   refine AddMonoid.exponent_dvd_iff_forall_nsmul_eq_zero.mpr fun a ↦ ?_
   induction a using Submodule.Quotient.induction_on with | _ x
   rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff]
-  exact level_nsmul_mem x.2
+  exact level_nsmul_mem x.property
 
 /-- A full integral lattice has positive level. -/
 theorem IsIntegral.level_pos (h : IsIntegral L) : 0 < level L := by
@@ -504,7 +504,7 @@ theorem IsEven.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell (hL 
   obtain ⟨hv, hvt⟩ := mem_cosetShell.mp hv
   rw [ZMod.toRatAddCircle_intCast, eq_comm,
     discriminantQuadraticMap_ratModelDiscriminantGroupEquiv_mk_eq_coe_iff hL.isIntegral hL]
-  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq x.2 hv
+  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq x.property hv
   refine ⟨-j, ?_⟩
   push_cast
   linear_combination (hvt - hj) / 2
@@ -572,7 +572,7 @@ theorem IsEven.cosetShell_eq_empty_of_level_dvd (hL : IsEven L) (x : dual L)
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, t = 2 * m / N := by
     by_contra hdiv
     exact Set.notMem_empty v
-      (hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd x.2 hN hdvd hdiv ▸ hv)
+      (hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd x.property hN hdvd hdiv ▸ hv)
   have hv' : v ∈ cosetShell L (x : E) (2 * (m : ℤ) / N) := by simpa using hv
   exact ⟨m, rfl,
     by simpa using hL.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell x hv'⟩

@@ -44,10 +44,10 @@ theorem exists_forall_apply_sub_lt {F : Type*} [Field F] (S : Finset (AbsoluteVa
     (hS : ∀ v ∈ S, v.IsNontrivial) (hS' : ∀ v ∈ S, ∀ w ∈ S, v.IsEquiv w → v = w)
     (t : AbsoluteValue F ℝ → F) {ε : ℝ} (hε : 0 < ε) :
     ∃ x : F, ∀ v ∈ S, v (x - t v) < ε := by
-  obtain ⟨x, hx⟩ := (AbsoluteValue.denseRange_algebraMap_pi (v := fun v : S ↦ v.1)
-    (fun v ↦ hS v.1 v.2)
-    (fun v w hvw h ↦ hvw (Subtype.ext (hS' v.1 v.2 w.1 w.2 h)))).exists_dist_lt
-      (fun v : S ↦ WithAbs.toAbs v.1 (t v.1)) hε
+  obtain ⟨x, hx⟩ := (AbsoluteValue.denseRange_algebraMap_pi (v := fun v : S ↦ v.val)
+    (fun v ↦ hS v.val v.property)
+    (fun v w hvw h ↦ hvw (Subtype.ext (hS' v.val v.property w.val w.property h)))).exists_dist_lt
+      (fun v : S ↦ WithAbs.toAbs v.val (t v.val)) hε
   refine ⟨x, fun v hv ↦ ?_⟩
   have h := (dist_pi_lt_iff hε).mp hx ⟨v, hv⟩
   rwa [dist_comm, dist_eq_norm, WithAbs.norm_eq_apply_ofAbs, WithAbs.ofAbs_sub] at h

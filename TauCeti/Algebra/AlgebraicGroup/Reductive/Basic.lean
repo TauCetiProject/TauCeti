@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Radical.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 
 /-!
 # Reductive affine groups
@@ -154,11 +155,9 @@ theorem reductiveCommHopfAlgProperty_of_geometricFiber_iso_of_smooth_connected
   have hbaseSmooth : smoothCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H).obj :=
     (smoothCommHopfAlgProperty K).prop_of_iso e' hsmooth
-  -- `baseChange` bundles the tensor product; `coe_of` identifies its underlying algebra.
-  let _ : Algebra.Smooth K (K ⊗[k] H.obj) := by
-    simpa only [FiniteTypeCommHopfAlgCat.baseChange, CommHopfAlgCat.baseChange,
-      _root_.CommHopfAlgCat.coe_of] using
-      (smoothCommHopfAlgProperty_iff _).mp hbaseSmooth
+  let _ : Algebra.Smooth K (K ⊗[k] H.obj) :=
+    FiniteTypeCommHopfAlgCat.smooth_baseChange_obj
+      ((smoothCommHopfAlgProperty_iff _).mp hbaseSmooth)
   exact reductiveCommHopfAlgProperty_of_geometricFiber_iso k H G
     (Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K)
     (geometricallyConnectedCommHopfAlgProperty.of_baseChange k K H.obj

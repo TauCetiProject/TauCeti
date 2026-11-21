@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
+import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -51,8 +53,11 @@ this construction gives the Liouville measure of a symplectic manifold.
   `TauCeti.RoughForm.measure_zero`: `|c • φ| = |c| • |φ|`.
 * `TauCeti.RoughForm.isLocallyFiniteMeasure_measure`: the measure of a continuous form is locally
   finite.
+* `TauCeti.RoughForm.aemeasurable_ofReal_abs_inChartAt`: the coordinate density of a continuous
+  form is a.e.-measurable on chart images, for any measure on the model space.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension points are null.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
@@ -112,7 +117,7 @@ private theorem chartMeasure_apply (φ : RoughForm I M ℝ k) (α : M) {s : Set 
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|
           ∂(finBasisOfFinrankEq ℝ E hk.out).addHaar := by
-  rw [chartMeasure, Measure.map_apply measurable_subtype_coe hs,
+  rw [chartMeasure, Measure.map_apply measurable_subtypeVal hs,
     (measurableEmbedding_extChartAt_restrict α).comap_apply, image_domRestrict,
     withDensity_apply _ ((hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α
       inter_subset_right)]
@@ -254,6 +259,20 @@ theorem isLocallyFiniteMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoot
   · exact ((measure_mono (himage.trans inter_subset_right)).trans_lt measure_ball_lt_top).ne
   · exact ENNReal.ofReal_le_ofReal (himage hy).1.le
 
+omit [FiniteDimensional ℝ E] hk [LindelofSpace M] in
+/-- The coordinate density `|φ(v)|` of a continuous top form in the chart at `α` is
+a.e.-measurable, for any measure on `E`, on the coordinate image of a measurable subset of the
+chart source. -/
+theorem aemeasurable_ofReal_abs_inChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
+    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (v : Fin k → E) {α : M} {s : Set M}
+    (hs : MeasurableSet s) (hsα : s ⊆ (extChartAt I α).source) {μ : Measure E} :
+    AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt α y v|) (μ.restrict (extChartAt I α '' s)) :=
+  (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
+    ((continuous_eval_const v).comp_continuousOn
+      ((hφ.continuousOn_inChartAt α).mono
+        ((image_mono hsα).trans (extChartAt I α).image_source_eq_target.subset))))).aemeasurable
+    (hs.image_extChartAt α hsα)
+
 /-- **The measure of a continuous nowhere-vanishing top form is positive on nonempty open sets.**
 In a chart the coefficient of such a form vanishes nowhere, and a nonempty open subset of a chart
 source has a coordinate image of positive Lebesgue measure, even at boundary or corner points. -/
@@ -279,12 +298,7 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
         (subset_closure (mem_interior_iff_mem_nhds.mpr (hV.mem_nhds ⟨hx, mem_extChartAt_source x⟩)))
         (mem_extChartAt_source x))
   -- The coordinate density is measurable and vanishes nowhere on that image.
-  have hd : AEMeasurable (fun y ↦ ENNReal.ofReal |φ.inChartAt x y b|)
-      (b.addHaar.restrict (e '' V)) :=
-    (ENNReal.continuous_ofReal.comp_continuousOn (continuous_abs.comp_continuousOn
-      ((continuous_eval_const (b : Fin k → E)).comp_continuousOn
-        ((hφ.continuousOn_inChartAt x).mono
-          (e.image_source_eq_target ▸ image_mono hVsub))))).aemeasurable hA
+  have hd := aemeasurable_ofReal_abs_inChartAt hφ b hV.measurableSet hVsub (μ := b.addHaar)
   have hpos : ∀ y ∈ e '' V, ENNReal.ofReal |φ.inChartAt x y b| ≠ 0 := by
     rintro _ ⟨z, hz, rfl⟩
     have hz0 : φ.inChartAt x (e z) ≠ 0 := by
@@ -301,6 +315,18 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
 
+/-- **In positive dimension points are null for the measure of a top form.** A point of a chart
+source has a single point as coordinate image, which is null for Lebesgue measure. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
+    NullSingletonClass φ.measure where
+  measure_singleton x := by
+    have hsub : {x} ⊆ (extChartAt I x).source := singleton_subset_iff.2 (mem_extChartAt_source x)
+    -- A point is measurable, even without separation axioms: its chart image is.
+    have hx : MeasurableSet {x} :=
+      (measurableSet_image_extChartAt_iff x hsub).1 (image_singleton ▸ measurableSet_singleton _)
+    rw [φ.measure_apply_of_subset hx hsub, image_singleton]
+    exact setLIntegral_measure_zero _ _ (measure_singleton _)
+
 /-! ### Top forms on the model space -/
 
 section ModelSpace
@@ -314,26 +340,20 @@ theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
   obtain rfl : mE = borel E := hE.measurable_eq
   set b₀ := finBasisOfFinrankEq ℝ E hk.out
   refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
-  -- In the identity chart, the coefficient in `b₀` is `det_b b₀` times the coefficient in `b`.
-  have hchart (y : E) : φ.inChartAt α y b₀ = b.det b₀ * φ y b := by
+  -- In the identity chart, the coefficients of `φ` are those of `φ` itself.
+  have hchart (y : E) : φ.inChartAt α y b₀ = φ y b₀ := by
     -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
     rw [inChartAt_apply, extChartAt_model_space_eq_id]
     simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
       mfderivWithin_univ, mfderiv_id]
-    have h := congr($((φ y).toAlternatingMap.eq_smul_basis_det b) b₀)
-    rw [smul_apply, smul_eq_mul] at h
-    exact h.trans (mul_comm _ _)
-  have hdet : ENNReal.ofReal |(b.det b₀)⁻¹| * ENNReal.ofReal |b.det b₀| = 1 := by
-    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b₀).ne_zero,
-      abs_one, ENNReal.ofReal_one]
-  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
-    b.addHaar_eq_smul_of_basis b₀, Measure.restrict_smul, lintegral_smul_measure]
-  have hint : ∫⁻ y in s, ENNReal.ofReal |φ.inChartAt α y b₀| ∂b.addHaar =
-      ENNReal.ofReal |b.det b₀| * ∫⁻ y in s, ENNReal.ofReal |φ y b| ∂b.addHaar := by
-    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine setLIntegral_congr_fun hs fun y _ ↦ ?_
-    rw [hchart, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
-  rw [hint, smul_eq_mul, ← mul_assoc, hdet, one_mul]
+    -- `id y` is `y` and the identity map fixes each `b₀ i`, both by definition; `simp` cannot use
+    -- `ContinuousLinearMap.id_apply` on the tangent space `TangentSpace 𝓘(ℝ, E) y` here.
+    rfl
+  -- The density `|φ_y(b)|` against the Haar measure of `b` may be computed in `b₀` instead.
+  rw [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id]
+  refine congr($(b₀.addHaar_withDensity_ofReal_abs_apply_eq b fun y ↦ φ y) s).trans ?_
+  rw [withDensity_apply _ hs]
+  exact setLIntegral_congr_fun hs fun y _ ↦ congrArg (fun t ↦ ENNReal.ofReal |t|) (hchart y).symm
 
 /-- **The measure of a constant top form on the model space.** If a top form `φ` on `E` takes the
 same value `c` on a basis `b` at every point, then `|φ|` is `|c|` times the Haar measure
