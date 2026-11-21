@@ -346,6 +346,26 @@ theorem memLp_energyIntegrand_of_continuousOn
     (E := (ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ)
     (ContinuousOn.energyIntegrand ha hb hc) hΩ Omega.isOpen.measurableSet subset_closure
 
+/-- Coefficient fields continuous on `Ω` and bounded there, `‖a‖ ≤ Λ`, `‖b‖ ≤ β` and `‖c‖ ≤ γ`,
+define an essentially bounded field of pointwise energy forms on `Ω`. Unlike
+`memLp_energyIntegrand_of_continuousOn`, nothing is asked of the coefficients near the boundary
+of `Ω`. -/
+theorem memLp_energyIntegrand_of_continuousOn_of_norm_le
+    (ha : ContinuousOn a Omega) (hb : ContinuousOn b Omega) (hc : ContinuousOn c Omega)
+    (hLam : ∀ x ∈ Omega, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    (hbeta : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hgamma : ∀ x ∈ Omega, ‖c x‖ ≤ gamma) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_bounds (Lam := max Lam 0) (le_max_right _ _)
+    -- The topology of `Matrix ι ι ℝ` is the product topology, which instance search does not
+    -- see through, so the codomain is named explicitly.
+    (ContinuousOn.aestronglyMeasurable (β := ι → ι → ℝ) ha Omega.isOpen.measurableSet)
+    (hb.aestronglyMeasurable Omega.isOpen.measurableSet)
+    (hc.aestronglyMeasurable Omega.isOpen.measurableSet)
+    (fun x hx eta xi => by
+      simpa [Real.norm_eq_abs] using (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
+        ((hLam x hx).trans (le_max_left _ _)) le_rfl le_rfl)
+    hbeta hgamma
+
 variable [mu.IsAddHaarMeasure]
 
 /-- The continuous linear inclusion that forgets the `W^{1,2}` weak-derivative constraint and
@@ -834,6 +854,19 @@ theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     energyFormH1 (a - a') (b - b') (c - c') u v =
       energyFormH1 a b c u v - energyFormH1 a' b' c' u v :=
   energyFormIntegral_sub (h := integrable_energyIntegrand_jetField hcoeff u v)
+    (h' := integrable_energyIntegrand_jetField hcoeff' u v)
+
+/-- **Additivity of the Sobolev energy form in its coefficients.** For two essentially bounded
+coefficient fields, the energy form of the sum of the coefficient triples is the sum of the energy
+forms; this is the `H¹` form of `energyFormIntegral_add`. -/
+theorem energyFormH1_add {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (a + a') (b + b') (c + c') u v =
+      energyFormH1 a b c u v + energyFormH1 a' b' c' u v :=
+  energyFormIntegral_add (h := integrable_energyIntegrand_jetField hcoeff u v)
     (h' := integrable_energyIntegrand_jetField hcoeff' u v)
 
 /-- Boundedness of the Sobolev energy form from almost-everywhere upper bounds on `Ω` alone. No
