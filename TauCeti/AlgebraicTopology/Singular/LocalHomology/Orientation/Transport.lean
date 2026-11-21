@@ -13,7 +13,11 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
 The integral local homology system transports generators along paths. This file restricts its
 transport to equivalences between the sets of local orientations, compatible with identities,
 composition, path reversal and orientation reversal. They act on the generator fibres of the
-existing integral local homology system.
+existing integral local homology system. Along loops at `x` they form an action of the
+fundamental group on the local orientations at `x` (`TauCeti.localOrientationTransportPerm`). In
+the dimension of a manifold, transport along a loop either fixes every local orientation or
+reverses every local orientation (`TauCeti.localOrientationTransport_eq_self_of_eq_self`,
+`TauCeti.localOrientationTransport_eq_neg_of_eq_neg`).
 
 The underlying local homology transport is described through compact convex sets in charts by
 `TauCeti.localHomologyRestriction_comp_localHomologyTransport` in
@@ -103,5 +107,44 @@ lemma localOrientationTransport_neg {x y : FundamentalGroupoid M} (f : x ⟶ y)
   apply Subtype.ext
   exact (localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
       M E d f).hom.map_neg z.val
+
+/-- Transport of local orientations along loops at `x`: the action of the fundamental group
+`π₁(M, x)` on the local orientations at `x`. -/
+def localOrientationTransportPerm (x : M) :
+    FundamentalGroup M x →* Equiv.Perm (LocalOrientation M x d) where
+  toFun γ := localOrientationTransport M E d γ.asHom
+  map_one' := by
+    rw [End.one_asHom, localOrientationTransport_id]
+    rfl
+  map_mul' γ δ := by
+    rw [End.mul_asHom, localOrientationTransport_comp]
+    rfl
+
+@[simp]
+lemma localOrientationTransportPerm_apply (x : M) (γ : FundamentalGroup M x) :
+    localOrientationTransportPerm M E d x γ = localOrientationTransport M E d γ.asHom :=
+  (rfl)
+
+variable {M d}
+
+/-- Transport of local orientations along a loop is the identity as soon as it fixes one local
+orientation. -/
+theorem localOrientationTransport_eq_self_of_eq_self (hd : Module.finrank ℝ E = d) {x : M}
+    (γ : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk x) {z₀ : LocalOrientation M x d}
+    (h : localOrientationTransport M E d γ z₀ = z₀) (z : LocalOrientation M x d) :
+    localOrientationTransport M E d γ z = z := by
+  rcases LocalOrientation.eq_or_eq_neg hd z₀ z with rfl | rfl
+  · exact h
+  · rw [localOrientationTransport_neg, h]
+
+/-- Transport of local orientations along a loop reverses every local orientation as soon as it
+reverses one. -/
+theorem localOrientationTransport_eq_neg_of_eq_neg (hd : Module.finrank ℝ E = d) {x : M}
+    (γ : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk x) {z₀ : LocalOrientation M x d}
+    (h : localOrientationTransport M E d γ z₀ = -z₀) (z : LocalOrientation M x d) :
+    localOrientationTransport M E d γ z = -z := by
+  rcases LocalOrientation.eq_or_eq_neg hd z₀ z with rfl | rfl
+  · exact h
+  · rw [localOrientationTransport_neg, h]
 
 end TauCeti

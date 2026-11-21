@@ -57,7 +57,10 @@ the product of the units. Twisting turns products into composites, `Φ^{L L'} = 
 isomorphism of groups onto the characters `π₁(B, b) →* Rˣ`
 (`TauCeti.RankOneLocalSystem.monodromyEquiv`), with inverse
 `TauCeti.RankOneLocalSystem.ofMonodromy`, so a rank-one local system is a classical local system of
-rank one.
+rank one. A character with values in `ℤˣ = {±1}`, read in `Rˣ`, gives a rank-one local system which
+is its own inverse (`TauCeti.RankOneLocalSystem.inv_ofMonodromy_unitsMap_comp`) and which is
+trivial exactly when the character is trivial or `2 = 0` in `R`
+(`TauCeti.RankOneLocalSystem.ofMonodromy_unitsMap_comp_eq_one_iff`).
 
 Along a based map `f : (B, b) → (B', b')`, rank-one local systems pull back by letting a loop act
 through its image (`TauCeti.RankOneLocalSystem.pullback`), a group homomorphism, functorial in `f`,
@@ -421,6 +424,34 @@ theorem monodromy_inv : L⁻¹.monodromy = L.monodromy⁻¹ :=
 /-- A rank-one local system is determined by its monodromy. -/
 theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem B b R → _) :=
   monodromyEquiv.injective
+
+/-! ### Characters with values in `ℤˣ` -/
+
+/-- A unit of `ℤ` maps to `1` in `R` exactly when it is `1` or `2 = 0` in `R`. -/
+private theorem unitsMap_intCast_eq_one_iff (u : ℤˣ) :
+    Units.map (Int.castRingHom R).toMonoidHom u = 1 ↔ u = 1 ∨ (2 : R) = 0 := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two]
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
+trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
+theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤˣ) :
+    ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) = 1 ↔
+      χ = 1 ∨ (2 : R) = 0 := by
+  rw [← monodromy_injective.eq_iff, monodromy_ofMonodromy, monodromy_one, MonoidHom.ext_iff,
+    MonoidHom.ext_iff]
+  simp only [MonoidHom.comp_apply, MonoidHom.one_apply, unitsMap_intCast_eq_one_iff,
+    forall_or_right]
+
+/-- The rank-one local system whose monodromy is a `ℤˣ`-valued character, read in `Rˣ`, is its own
+inverse, since the character takes only the values `±1`. -/
+theorem inv_ofMonodromy_unitsMap_comp (χ : FundamentalGroup B b →* ℤˣ) :
+    (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ))⁻¹ =
+      ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ) :=
+  monodromy_injective <| MonoidHom.ext fun γ ↦ by
+    rw [monodromy_inv, MonoidHom.inv_apply, monodromy_ofMonodromy, MonoidHom.comp_apply, ← map_inv,
+      Int.units_inv_eq_self]
 
 /-! ### Pullback along based maps -/
 

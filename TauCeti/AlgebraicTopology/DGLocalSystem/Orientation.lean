@@ -25,8 +25,12 @@ The character takes only the values `±1`, so `o_M` is its own inverse
 (`TauCeti.RankOneLocalSystem.inv_orientation`). It is trivial on an orientable manifold
 (`TauCeti.HomologicalOrientation.rankOneLocalSystem_orientation_eq_one`) and, since `-1 = 1` there,
 over every ring in which `2 = 0` (`TauCeti.RankOneLocalSystem.orientation_eq_one_of_two_eq_zero`).
-Over a ring in which `2 ≠ 0` it detects orientability: on a connected manifold it is trivial
-exactly when the manifold is orientable (`TauCeti.RankOneLocalSystem.orientation_eq_one_iff`).
+Over a ring in which `2 ≠ 0` it is trivial exactly when the orientation character is
+(`TauCeti.RankOneLocalSystem.orientation_eq_one_iff_orientationCharacter_eq_one`), so it detects
+orientability: on a connected manifold it is trivial exactly when the manifold is orientable
+(`TauCeti.RankOneLocalSystem.orientation_eq_one_iff`). These coefficient laws are those of every
+rank-one local system of a `ℤˣ`-valued character
+(`TauCeti.RankOneLocalSystem.ofMonodromy_unitsMap_comp_eq_one_iff`).
 
 ## Main definitions
 
@@ -38,6 +42,8 @@ exactly when the manifold is orientable (`TauCeti.RankOneLocalSystem.orientation
 * `TauCeti.RankOneLocalSystem.monodromy_orientation`: the monodromy of `o_M` is the orientation
   character.
 * `TauCeti.RankOneLocalSystem.inv_orientation`: `o_M⁻¹ = o_M`.
+* `TauCeti.RankOneLocalSystem.orientation_eq_one_iff_orientationCharacter_eq_one`: over a ring
+  with `2 ≠ 0`, `o_M` is trivial exactly when the orientation character is.
 * `TauCeti.RankOneLocalSystem.orientation_eq_one_iff`: over a ring with `2 ≠ 0`, `o_M` is trivial
   exactly when the connected manifold `M` is orientable.
 
@@ -82,6 +88,7 @@ theorem monodromy_orientation (hd : finrank ℝ E = d) (x : M) :
 
 /-- A Moore loop acts on the orientation local system by the orientation character of its class,
 the sign by which transport along it acts on local orientations. -/
+@[simp]
 theorem orientation_ρ_apply (hd : finrank ℝ E = d) {x : M} (γ : MooreLoopSpace M x) :
     (orientation R hd x).ρ γ =
       Units.map (Int.castRingHom R).toMonoidHom
@@ -93,9 +100,7 @@ only the values `±1`. -/
 @[simp]
 theorem inv_orientation (hd : finrank ℝ E = d) (x : M) :
     (orientation R hd x)⁻¹ = orientation R hd x :=
-  monodromy_injective <| MonoidHom.ext fun γ ↦ by
-    rw [monodromy_inv, MonoidHom.inv_apply, monodromy_orientation, MonoidHom.comp_apply, ← map_inv,
-      Int.units_inv_eq_self]
+  inv_ofMonodromy_unitsMap_comp _
 
 /-- The square of the orientation local system is trivial. -/
 @[simp]
@@ -107,15 +112,14 @@ theorem orientation_mul_self (hd : finrank ℝ E = d) (x : M) :
 /-- **Over a ring of characteristic two the orientation local system is trivial**: there `-1 = 1`,
 so every sign acts trivially. -/
 theorem orientation_eq_one_of_two_eq_zero (h : (2 : R) = 0) (hd : finrank ℝ E = d) (x : M) :
-    orientation R hd x = 1 := by
-  refine monodromy_injective <| MonoidHom.ext fun γ ↦ Units.ext ?_
-  rw [monodromy_orientation, monodromy_one, MonoidHom.comp_apply, MonoidHom.one_apply,
-    Units.coe_map, Units.val_one]
-  rcases Int.units_eq_one_or (orientationCharacter hd x γ) with h' | h'
-  · simp [h']
-  · simp only [h', Units.val_neg, Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      map_neg, map_one]
-    rw [neg_eq_iff_add_eq_zero, one_add_one_eq_two, h]
+    orientation R hd x = 1 :=
+  (ofMonodromy_unitsMap_comp_eq_one_iff _).2 (.inr h)
+
+/-- Over a ring in which `2 ≠ 0`, the orientation local system is trivial exactly when the
+orientation character is trivial. -/
+theorem orientation_eq_one_iff_orientationCharacter_eq_one (h : (2 : R) ≠ 0)
+    (hd : finrank ℝ E = d) (x : M) : orientation R hd x = 1 ↔ orientationCharacter hd x = 1 :=
+  (ofMonodromy_unitsMap_comp_eq_one_iff _).trans (or_iff_left h)
 
 end RankOneLocalSystem
 
@@ -136,18 +140,9 @@ variable {R}
 orientation local system of a connected manifold is trivial exactly when the manifold is
 orientable. -/
 theorem orientation_eq_one_iff [ConnectedSpace M] (h : (2 : R) ≠ 0) (hd : finrank ℝ E = d)
-    (x : M) : orientation R hd x = 1 ↔ Nonempty (HomologicalOrientation M E d) := by
-  refine ⟨fun h1 ↦ (nonempty_homologicalOrientation_iff hd x).2 <| MonoidHom.ext fun γ ↦ ?_,
-    fun ⟨o⟩ ↦ o.rankOneLocalSystem_orientation_eq_one R hd x⟩
-  have hγ := congrArg (fun L : RankOneLocalSystem M x R ↦ ((L.monodromy γ : Rˣ) : R)) h1
-  simp only [monodromy_orientation, monodromy_one, MonoidHom.comp_apply, MonoidHom.one_apply,
-    Units.coe_map, Units.val_one] at hγ
-  rcases Int.units_eq_one_or (orientationCharacter hd x γ) with h' | h'
-  · exact h'
-  · simp only [h', Units.val_neg, Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      map_neg, map_one] at hγ
-    rw [neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hγ
-    exact absurd hγ h
+    (x : M) : orientation R hd x = 1 ↔ Nonempty (HomologicalOrientation M E d) :=
+  (orientation_eq_one_iff_orientationCharacter_eq_one h hd x).trans
+    (nonempty_homologicalOrientation_iff hd x).symm
 
 end RankOneLocalSystem
 
