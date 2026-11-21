@@ -36,64 +36,38 @@ universe u
 namespace Scheme
 
 /-- The disjoint union of the spectra of the residue fields at the component-generic points. -/
-noncomputable def genericPointScheme (X : Scheme.{u}) : Scheme.{u} :=
+noncomputable abbrev genericPointScheme (X : Scheme.{u}) : Scheme.{u} :=
   ∐ fun x : genericPoints X ↦ Spec (X.residueField x)
 
-/-- The coproduct presentation of the scheme of generic points. -/
-theorem genericPointScheme_eq (X : Scheme.{u}) :
-    X.genericPointScheme = ∐ fun x : genericPoints X ↦ Spec (X.residueField x) := (rfl)
-
-/-- The inclusion of the residue field of a component-generic point in the generic-point scheme. -/
-noncomputable def genericPointSchemeι (X : Scheme.{u}) (x : genericPoints X) :
-    Spec (X.residueField x) ⟶ X.genericPointScheme :=
-  Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x
-
-/-- The morphism out of the generic-point scheme determined by morphisms on its components. -/
-noncomputable def genericPointSchemeDesc (X : Scheme.{u}) {Y : Scheme.{u}}
-    (f : ∀ x : genericPoints X, Spec (X.residueField x) ⟶ Y) : X.genericPointScheme ⟶ Y :=
-  Sigma.desc f
-
-/-- The universal morphism has the prescribed restriction on each component. -/
+/-- The coproduct inclusions are compatible with transport between equal generic points. -/
 @[reassoc (attr := simp)]
-theorem genericPointSchemeι_desc (X : Scheme.{u}) {Y : Scheme.{u}}
-    (f : ∀ x : genericPoints X, Spec (X.residueField x) ⟶ Y) (x : genericPoints X) :
-    X.genericPointSchemeι x ≫ X.genericPointSchemeDesc f = f x := by
-  unfold genericPointSchemeι genericPointSchemeDesc
-  exact Sigma.ι_comp_desc _ _
-
-/-- Every point of the generic-point scheme comes from a residue-field component. -/
-theorem exists_genericPointSchemeι_eq (X : Scheme.{u}) (z : X.genericPointScheme) :
-    ∃ (x : genericPoints X) (t : Spec (X.residueField x)), X.genericPointSchemeι x t = z := by
-  obtain ⟨⟨x, t⟩, rfl⟩ := (sigmaMk _).surjective z
-  exact ⟨x, t, (sigmaMk_mk _ _ _).symm⟩
-
-/-- Morphisms out of the scheme of generic points agree if they agree on each residue-field
-component. -/
-@[ext]
-theorem genericPointScheme_hom_ext (X : Scheme.{u}) {Y : Scheme.{u}}
-    {f g : X.genericPointScheme ⟶ Y}
-    (h : ∀ x, X.genericPointSchemeι x ≫ f = X.genericPointSchemeι x ≫ g) : f = g := by
-  apply Sigma.hom_ext
-  exact h
+theorem residueFieldCongr_genericPointScheme_ι (X : Scheme.{u}) {x y : genericPoints X}
+    (h : (x : X) = y) :
+    Spec.map (X.residueFieldCongr h).hom ≫
+      Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x =
+      Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) y := by
+  obtain rfl : x = y := Subtype.ext h
+  simp
 
 /-- The canonical morphism from the scheme of generic points to the original scheme. -/
 noncomputable def fromGenericPointScheme (X : Scheme.{u}) : X.genericPointScheme ⟶ X :=
-  X.genericPointSchemeDesc fun x ↦ X.fromSpecResidueField x
+  Sigma.desc fun x ↦ X.fromSpecResidueField x
 
 /-- On each component the structural morphism is the canonical residue-field morphism. -/
 @[reassoc (attr := simp)]
-theorem genericPointSchemeι_fromGenericPointScheme (X : Scheme.{u}) (x : genericPoints X) :
-    X.genericPointSchemeι x ≫ X.fromGenericPointScheme = X.fromSpecResidueField x := by
+theorem ι_fromGenericPointScheme (X : Scheme.{u}) (x : genericPoints X) :
+    Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x ≫
+      X.fromGenericPointScheme = X.fromSpecResidueField x := by
   unfold fromGenericPointScheme
-  exact X.genericPointSchemeι_desc _ x
+  exact Sigma.ι_comp_desc _ x
 
 /-- Every point of a residue-field component maps to its indexing generic point. -/
 @[simp]
-theorem fromGenericPointScheme_genericPointSchemeι_apply (X : Scheme.{u})
+theorem fromGenericPointScheme_ι_apply (X : Scheme.{u})
     (x : genericPoints X) (t : Spec (X.residueField x)) :
-    X.fromGenericPointScheme (X.genericPointSchemeι x t) = x := by
-  rw [← Hom.comp_apply, genericPointSchemeι_fromGenericPointScheme,
-    fromSpecResidueField_apply]
+    X.fromGenericPointScheme
+      (Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x t) = x := by
+  rw [← Hom.comp_apply, ι_fromGenericPointScheme, fromSpecResidueField_apply]
 
 /-- The image of the scheme of generic points is precisely the set of component-generic points. -/
 @[simp]
@@ -102,13 +76,14 @@ theorem range_fromGenericPointScheme (X : Scheme.{u}) :
   ext x
   constructor
   · rintro ⟨z, rfl⟩
-    obtain ⟨y, t, rfl⟩ := X.exists_genericPointSchemeι_eq z
-    rw [fromGenericPointScheme_genericPointSchemeι_apply]
+    obtain ⟨⟨y, t⟩, rfl⟩ := (sigmaMk _).surjective z
+    rw [sigmaMk_mk, fromGenericPointScheme_ι_apply]
     exact y.property
   · intro hx
     let y : genericPoints X := ⟨x, hx⟩
-    exact ⟨X.genericPointSchemeι y (IsLocalRing.closedPoint (X.residueField y)),
-      X.fromGenericPointScheme_genericPointSchemeι_apply y _⟩
+    exact ⟨Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) y
+      (IsLocalRing.closedPoint (X.residueField y)),
+      X.fromGenericPointScheme_ι_apply y _⟩
 
 /-- The scheme of generic points has dense image in the original scheme. -/
 instance (X : Scheme.{u}) : IsDominant X.fromGenericPointScheme := by
@@ -135,23 +110,26 @@ variable {X Y Z : Scheme.{u}}
 /-- A maximally dominating morphism induces a map between the schemes of generic points. -/
 noncomputable def IsMaximallyDominating.genericPointSchemeMap {f : X ⟶ Y}
     (hf : f.IsMaximallyDominating) : X.genericPointScheme ⟶ Y.genericPointScheme :=
-  X.genericPointSchemeDesc fun x ↦ Spec.map (f.residueFieldMap x) ≫
-    Y.genericPointSchemeι ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩
+  Sigma.desc fun x ↦ Spec.map (f.residueFieldMap x) ≫
+    Sigma.ι (fun y : genericPoints Y ↦ Spec (Y.residueField y))
+      ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩
 
 /-- On each component, the induced map of generic-point schemes uses the residue-field map. -/
 @[reassoc (attr := simp)]
-theorem IsMaximallyDominating.genericPointSchemeι_genericPointSchemeMap {f : X ⟶ Y}
+theorem IsMaximallyDominating.ι_genericPointSchemeMap {f : X ⟶ Y}
     (hf : f.IsMaximallyDominating) (x : genericPoints X) :
-    X.genericPointSchemeι x ≫ hf.genericPointSchemeMap = Spec.map (f.residueFieldMap x) ≫
-      Y.genericPointSchemeι ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩ := by
+    Sigma.ι (fun x : genericPoints X ↦ Spec (X.residueField x)) x ≫ hf.genericPointSchemeMap =
+      Spec.map (f.residueFieldMap x) ≫
+        Sigma.ι (fun y : genericPoints Y ↦ Spec (Y.residueField y))
+          ⟨f x, (f.isMaximallyDominating_iff.mp hf) x x.property⟩ := by
   simp [IsMaximallyDominating.genericPointSchemeMap]
 
 /-- The induced map on generic-point schemes commutes with the maps to the original schemes. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem IsMaximallyDominating.genericPointSchemeMap_fromGenericPointScheme {f : X ⟶ Y}
     (hf : f.IsMaximallyDominating) :
     hf.genericPointSchemeMap ≫ Y.fromGenericPointScheme = X.fromGenericPointScheme ≫ f := by
-  apply X.genericPointScheme_hom_ext
+  apply Sigma.hom_ext
   intro x
   simp
 
@@ -168,6 +146,23 @@ theorem IsMaximallyDominating.comp {f : X ⟶ Y} {g : Y ⟶ Z}
 @[simp]
 theorem isMaximallyDominating_id (X : Scheme.{u}) : IsMaximallyDominating (𝟙 X) :=
   fun _ hx ↦ hx
+
+/-- The generic-point map of the identity is the identity. -/
+@[simp]
+theorem IsMaximallyDominating.genericPointSchemeMap_id
+    (h : IsMaximallyDominating (𝟙 X)) : h.genericPointSchemeMap = 𝟙 X.genericPointScheme := by
+  apply Sigma.hom_ext
+  intro x
+  simp
+
+/-- Generic-point maps preserve composition. -/
+@[simp]
+theorem IsMaximallyDominating.genericPointSchemeMap_comp {f : X ⟶ Y} {g : Y ⟶ Z}
+    (hg : IsMaximallyDominating g) (hf : IsMaximallyDominating f) :
+    (hg.comp hf).genericPointSchemeMap = hf.genericPointSchemeMap ≫ hg.genericPointSchemeMap := by
+  apply Sigma.hom_ext
+  intro x
+  simp [Category.assoc]
 
 /-- Every open immersion is maximally dominating, including an empty open immersion. -/
 theorem isMaximallyDominating_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] :
