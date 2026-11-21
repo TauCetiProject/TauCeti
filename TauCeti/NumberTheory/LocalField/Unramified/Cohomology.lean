@@ -234,24 +234,19 @@ theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1_iff_of_biject
     explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology c ∈
       unramifiedH1 K N ↔ c ∈ unramifiedH1 K M := by
   refine ⟨fun hc ↦ ?_, f.explicitCoeff1_mem_unramifiedH1 continuous_of_discreteTopology⟩
-  let e := AddEquiv.ofBijective f hf
-  let fInv : N →+[AbsoluteGaloisGroup K] M :=
-    { toFun := e.symm
-      map_zero' := map_zero e.symm
-      map_add' := map_add e.symm
-      map_smul' := fun g y ↦ e.injective <| by
-        rw [e.apply_symm_apply, MonoidHom.id_apply, AddEquiv.ofBijective_apply, map_smul]
-        exact congrArg (g • ·)
-          ((e.apply_symm_apply y).symm.trans (AddEquiv.ofBijective_apply f hf _)) }
-  have hcomp : fInv.comp f = DistribMulActionHom.id _ :=
-    DistribMulActionHom.ext fun x ↦ e.symm_apply_apply x
-  have hc' := fInv.explicitCoeff1_mem_unramifiedH1 continuous_of_discreteTopology hc
-  rwa [← AddMonoidHom.comp_apply,
-    ← explicitCoeff1_comp (AbsoluteGaloisGroup K) M f fInv
-      continuous_of_discreteTopology continuous_of_discreteTopology,
-    congrArg (fun g ↦ explicitCoeff1 (AbsoluteGaloisGroup K) M g continuous_of_discreteTopology)
-      hcomp,
-    explicitCoeff1_id, AddMonoidHom.id_apply] at hc'
+  let e := explicitCoeff1Equiv (AbsoluteGaloisGroup K) M (AddEquiv.ofBijective f hf)
+    continuous_of_discreteTopology continuous_of_discreteTopology
+    (AddEquiv.ofBijective_smul hf)
+  have hec : e c = explicitCoeff1 (AbsoluteGaloisGroup K) M f continuous_of_discreteTopology c := by
+    rw [explicitCoeff1Equiv_apply]
+    exact congrArg (fun φ : M →+[AbsoluteGaloisGroup K] N ↦
+        explicitCoeff1 (AbsoluteGaloisGroup K) M φ continuous_of_discreteTopology c)
+      (AddEquiv.ofBijective_toDistribMulActionHom hf)
+  have hc' : e.symm (e c) ∈ unramifiedH1 K M := by
+    rw [explicitCoeff1Equiv_symm_apply, hec]
+    exact DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 _
+      continuous_of_discreteTopology hc
+  rwa [e.symm_apply_apply] at hc'
 
 /-- **Functoriality of `unramifiedH1` along an extension of local fields.** For a valuative
 extension `L/K` of nonarchimedean local fields, a `K`-embedding `τ : Kˢ →ₐ[K] Lˢ` of separable

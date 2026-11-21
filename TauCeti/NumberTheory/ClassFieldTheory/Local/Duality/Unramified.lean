@@ -10,8 +10,9 @@ public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
 import TauCeti.Algebra.Module.ZMod.Annihilator
-import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Explicit
+import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
+import TauCeti.RepresentationTheory.Homological.ContCohomology.TopologicallyFinitelyGenerated
 
 /-!
 # Unramified local Tate duality
@@ -137,7 +138,7 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K).finite_H1
   rw [(dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_of_addEquiv_zmod
       ((muNRepH2Equiv n K).trans (h2MuEquivZMod K hn))
@@ -164,7 +165,7 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
     InternalHom.nsmul_eq_zero_of_domain hM
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
-    finite_H1_of_nsmul_eq_zero hn.ne_zero _ hM'
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K).finite_H1
   rw [unramifiedH1_eq_ker_compl₂_dualityMap1 p hpn M hM,
     (dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)
       ).ker_flip_compl₂_subtype_ker_compl₂_subtype_of_addEquiv_zmod

@@ -14,8 +14,6 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 
-import TauCeti.NumberTheory.ClassFieldTheory.DiscreteGalRep
-
 /-!
 # Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
+public import TauCeti.NumberTheory.ClassFieldTheory.DiscreteGalRep
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
@@ -124,31 +125,23 @@ variable (n : ℕ) (F : Type u) [Field F]
 
 /-! ### The coefficient object `μₙ` -/
 
-/-- **Coefficient objects for the absolute Galois group with `ZMod n` scalars**: topological
-representations of `G_F = Field.absoluteGaloisGroup F` over `ZMod n`, on which Mathlib's
-`continuousCohomology` is defined. -/
-abbrev GalRep : Type (u + 1) :=
-  TopRep.{u} (ZMod n) (Field.absoluteGaloisGroup F)
-
 /-- **The `n`th roots of unity `μₙ(Fˢ)` of a separable closure, written additively, as a
 coefficient object.** An automorphism of the algebraic closure acts through its restriction to
 the separable closure, `TauCeti.absoluteGaloisGroupRestrictEquiv`; `kummerCoeffEquivMuNRep`
 identifies the underlying module with `TauCeti.KummerCoeff F n`. -/
 def muNRep : GalRep n F :=
-  TopRep.res
-    (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-    (ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) (KummerCoeff F n))
+  galRepOfZModModule n F (KummerCoeff F n)
 
 /-- `μₙ` carries the discrete topology. -/
 instance : DiscreteTopology (muNRep n F).V :=
-  inferInstanceAs (DiscreteTopology (KummerCoeff F n))
+  inferInstanceAs (DiscreteTopology (galRepOfZModModule n F (KummerCoeff F n)).V)
 
 /-- **The coefficient dictionary** between the Kummer coefficient module `TauCeti.KummerCoeff F n`
 of `Gal(Fˢ/F)` and the underlying module of `muNRep n F`. It and its inverse are continuous
 (`continuous_kummerCoeffEquivMuNRep`, `continuous_kummerCoeffEquivMuNRep_symm`), and it is
 equivariant along the restriction isomorphism by `kummerCoeffEquivMuNRep_smul`. -/
 def kummerCoeffEquivMuNRep : KummerCoeff F n ≃+ (muNRep n F).V :=
-  AddEquiv.refl _
+  galRepOfZModModuleEquiv n F (KummerCoeff F n)
 
 /-- The coefficient dictionary is continuous, `TauCeti.KummerCoeff F n` being discrete. -/
 theorem continuous_kummerCoeffEquivMuNRep : Continuous (kummerCoeffEquivMuNRep n F) :=
@@ -165,17 +158,12 @@ restriction to the separable closure acts on `TauCeti.KummerCoeff F n`. -/
 theorem kummerCoeffEquivMuNRep_smul (g : Field.absoluteGaloisGroup F) (x : KummerCoeff F n) :
     kummerCoeffEquivMuNRep n F (absoluteGaloisGroupRestrictEquiv F g • x) =
       (muNRep n F).ρ g (kummerCoeffEquivMuNRep n F x) :=
-  (ofDiscreteModule_ρ_apply_apply (R := ZMod n) (absoluteGaloisGroupRestrictEquiv F g) x).symm.trans
-    (ContRepresentation.restrict_apply_apply
-      (ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) (KummerCoeff F n)).ρ
-      (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-      g x).symm
+  galRepOfZModModuleEquiv_smul n F (KummerCoeff F n) g x
 
 /-- **`μₙ` is a smooth discrete coefficient object**: the stabilizer of a root of unity is the
 preimage, under the restriction isomorphism, of its open stabilizer in `Gal(Fˢ/F)`. -/
 theorem isSmoothDiscrete_muNRep : IsSmoothDiscrete (ZMod n) (muNRep n F) :=
-  (ofDiscreteModule_isSmoothDiscrete (ZMod n) (AbsoluteGaloisGroup F) (KummerCoeff F n)).res
-    (absoluteGaloisGroupRestrictEquiv F).continuous
+  isSmoothDiscrete_galRepOfZModModule n F (KummerCoeff F n)
 
 attribute [local instance] TopRep.distribMulAction
 
@@ -210,12 +198,7 @@ comparison of explicit and canonical continuous cohomology, and by forgetting th
 scalars, which continuous cohomology does not see. -/
 def muNRepH1Equiv :
     H1 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+ continuousCohomology 1 (muNRep n F) :=
-  (explicitMap1Equiv (AbsoluteGaloisGroup F) (KummerCoeff F n) (Field.absoluteGaloisGroup F)
-      (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F) (kummerCoeffEquivMuNRep n F)
-      (continuous_kummerCoeffEquivMuNRep n F) (continuous_kummerCoeffEquivMuNRep_symm n F)
-      fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-        (TopRep.distribMulAction_smul _ g _).symm).trans <|
-    (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete
+  galRepOfZModModuleH1Equiv n F (KummerCoeff F n)
 
 /-- `muNRepH1Equiv` is the pullback along the restriction isomorphism and the coefficient
 dictionary, followed by the degree-one comparison for the discrete object `muNRep n F`. -/
@@ -226,8 +209,8 @@ theorem muNRepH1Equiv_apply (x : H1 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
           (muNRep n F).V (absoluteGaloisGroupRestrictEquiv F)
           (kummerCoeffEquivMuNRep n F).toAddMonoidHom (continuous_kummerCoeffEquivMuNRep n F)
           (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) := by
-  rw [muNRepH1Equiv, AddEquiv.trans_apply, explicitMap1Equiv_apply]
+            (TopRep.distribMulAction_smul _ g _).symm) x) :=
+  galRepOfZModModuleH1Equiv_apply n F (KummerCoeff F n) x
 
 /-! ### Transport of `H²` -/
 
@@ -238,13 +221,7 @@ cohomology. -/
 def muNRepH2Equiv :
     H2 (AbsoluteGaloisGroup F) (KummerCoeff F n) ≃+
       continuousCohomology 2 (muNRep n F) :=
-  (explicitMap2Equiv (AbsoluteGaloisGroup F) (KummerCoeff F n)
-      (Field.absoluteGaloisGroup F) (muNRep n F).V
-      (absoluteGaloisGroupRestrictEquiv F) (kummerCoeffEquivMuNRep n F)
-      (continuous_kummerCoeffEquivMuNRep n F) (continuous_kummerCoeffEquivMuNRep_symm n F)
-      fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-        (TopRep.distribMulAction_smul _ g _).symm).trans <|
-    (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete
+  galRepOfZModModuleH2Equiv n F (KummerCoeff F n)
 
 /-- `muNRepH2Equiv` is the degree-two explicit transport followed by the comparison with
 Mathlib's canonical continuous cohomology. -/
@@ -257,8 +234,8 @@ theorem muNRepH2Equiv_apply (x : H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :
           (kummerCoeffEquivMuNRep n F).toAddMonoidHom
           (continuous_kummerCoeffEquivMuNRep n F)
           (fun g x => (kummerCoeffEquivMuNRep_smul n F g x).trans
-            (TopRep.distribMulAction_smul _ g _).symm) x) := by
-  rw [muNRepH2Equiv, AddEquiv.trans_apply, explicitMap2Equiv_apply]
+            (TopRep.distribMulAction_smul _ g _).symm) x) :=
+  galRepOfZModModuleH2Equiv_apply n F (KummerCoeff F n) x
 
 /-! ### The Kummer isomorphism on `muNRep n F` -/
 

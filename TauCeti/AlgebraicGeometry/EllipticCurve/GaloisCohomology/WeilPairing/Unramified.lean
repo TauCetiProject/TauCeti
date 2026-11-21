@@ -10,7 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Unramified
 import TauCeti.Algebra.Module.ZMod.Annihilator
-import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Finiteness
+import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
 
 /-!
 # Unramified local Tate duality for elliptic torsion and isogeny kernels
@@ -209,8 +210,10 @@ theorem unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairin
   have hdual_nsmul : ∀ P : (ofIsogeny φ.dual).KerCoeff, φ.degree • P = 0 := fun P ↦ by
     rw [← hdeg_dual]
     exact φ.dual.degree_nsmul_kerCoeff_eq_zero P
+  have : Finite (ofIsogeny φ.dual).KerCoeff :=
+    (ofIsogeny φ.dual).finite_kerCoeff (ofIsogeny_ne_zero φ.dual)
   have : Finite (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :=
-    finite_H1_of_nsmul_eq_zero hn.ne_zero (ofIsogeny φ.dual).KerCoeff hdual_nsmul
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K).finite_H1
   rw [φ.unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing p hn hpn]
   exact ((φ.localTateKerWeilPairing hn).ker_flip_compl₂_subtype_ker_compl₂_subtype_zmod
     (φ.localTateKerWeilPairing_bijective hn)
