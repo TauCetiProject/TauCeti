@@ -22,10 +22,6 @@ quaternionic line in real dimension above four, and packages the standard basis
 ## Main declarations
 
 * `TauCeti.inner_op_smul_op_smul`: right multiplication by quaternions scales inner products.
-* `TauCeti.inner_op_smul_op_smul_eq_norm_sq_mul_inner`: right multiplication by a fixed quaternion
-  `q` scales inner products by `‖q‖ ^ 2`.
-* `TauCeti.inner_op_smul_op_smul_eq_zero`: right multiples of a vector orthogonal to a quaternionic
-  line are orthogonal to it.
 * `TauCeti.inner_op_smul_self_left_eq_zero_iff`: multiplication by a quaternion is orthogonal to a
   vector with nonzero seminorm exactly when the quaternion is purely imaginary.
 * `TauCeti.quaternionLineIsometry`: the quaternionic line through a unit vector is linearly
@@ -107,26 +103,6 @@ theorem inner_op_smul_op_smul (x : E) (p q : ℍ) :
     real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two p q,
     ← add_smul, ← op_add, hnorm, hnorm, hnorm]
   ring
-
-/-- Right multiplication by a quaternion `q` scales inner products by `‖q‖ ^ 2`:
-`⟪x <• q, y <• q⟫ = ‖q‖ ^ 2 * ⟪x, y⟫`. -/
-theorem inner_op_smul_op_smul_eq_norm_sq_mul_inner (x y : E) (q : ℍ) :
-    ⟪x <• q, y <• q⟫ = ‖q‖ ^ 2 * ⟪x, y⟫ := by
-  have hnorm (z : E) : ‖z <• q‖ = ‖q‖ * ‖z‖ := by rw [norm_smul, norm_op]
-  rw [real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two,
-    real_inner_eq_norm_add_mul_self_sub_norm_mul_self_sub_norm_mul_self_div_two x y,
-    ← smul_add, hnorm, hnorm, hnorm]
-  ring
-
-/-- If `y` is orthogonal to the quaternionic line `{x <• c}`, then every right multiple of `y` is
-orthogonal to it as well: `⟪x <• a, y <• b⟫ = 0`. -/
-theorem inner_op_smul_op_smul_eq_zero {x y : E} (h : ∀ c : ℍ, ⟪x <• c, y⟫ = 0) (a b : ℍ) :
-    ⟪x <• a, y <• b⟫ = 0 := by
-  rcases eq_or_ne b 0 with rfl | hb
-  · simp
-  · have hx : x <• a = (x <• (a * b⁻¹)) <• b := by
-      rw [← mul_smul, ← op_mul, inv_mul_cancel_right₀ hb]
-    rw [hx, inner_op_smul_op_smul_eq_norm_sq_mul_inner, h, mul_zero]
 
 /-- The inner product of `x <• q` with `x` is `‖x‖ ^ 2` times the real part of `q`. -/
 @[simp]

@@ -21,17 +21,11 @@ orbits of this action (`TauCeti.hopfSphere4_eq_hopfSphere4_iff`). It is onto
 the quotient of `S⁷` by the unit quaternions. It sends the base point `[e₀]` to the north pole
 `(1, 0)` and `[e₁]` to the south pole `(-1, 0)`.
 
-Through this homeomorphism the quaternionic projective lines of `HPⁿ` are four-spheres, and the
-great two-spheres of `S⁴` through its poles give the families of two-spheres of quaternionic
-projective spaces.
-
 ## Main declarations
 
 * `TauCeti.hopfSphere4`: the quaternionic Hopf map `S⁷ → S⁴`.
 * `TauCeti.hopfSphere4_eq_hopfSphere4_iff`: its fibres are the orbits of the unit quaternions.
 * `TauCeti.hopfSphere4_surjective`: it is onto.
-* `TauCeti.coe_hopfSphere4_conj`: conjugating both coordinates by a unit quaternion conjugates the
-  quaternion coordinate of the image.
 * `TauCeti.QuaternionicProjectiveSpace.homeomorphSphere4`: `HP¹ ≃ₜ S⁴`, induced by the Hopf map.
 
 ## References
@@ -104,28 +98,6 @@ theorem hopfSphere4_op_smul (q : sphere (0 : ℍ) 1) (v : sphere (0 : PiLp 2 fun
   refine Subtype.ext ?_
   simp only [coe_hopfSphere4_apply, Sphere.coe_op_sphere_smul, unop_op, PiLp.smul_apply,
     op_smul_eq_mul, norm_mul, hq, mul_one, h]
-
-/-- **Conjugation by a unit quaternion acts on the quaternionic Hopf map**: if
-`w = (c* a c, c* b c)` for `v = (a, b)` and a unit quaternion `c`, then `h w` is `h v` with its
-quaternion coordinate conjugated by `c`. -/
-theorem coe_hopfSphere4_conj (c : sphere (0 : ℍ) 1)
-    (v w : sphere (0 : PiLp 2 fun _ : Fin 2 ↦ ℍ) 1)
-    (hw : ∀ i, (w : PiLp 2 fun _ : Fin 2 ↦ ℍ) i =
-      star (c : ℍ) * (v : PiLp 2 fun _ : Fin 2 ↦ ℍ) i * c) :
-    (hopfSphere4 w : WithLp 2 (ℝ × ℍ)) = WithLp.toLp 2
-      ((hopfSphere4 v : WithLp 2 (ℝ × ℍ)).fst,
-        star (c : ℍ) * (hopfSphere4 v : WithLp 2 (ℝ × ℍ)).snd * c) := by
-  have hc : ‖(c : ℍ)‖ = 1 := norm_eq_of_mem_sphere c
-  have hcc : (c : ℍ) * star (c : ℍ) = 1 :=
-    Unitary.mul_star_self_of_mem ((mem_unitary_iff_mem_sphere_zero_one _).2 c.2)
-  have hnorm (a : ℍ) : ‖star (c : ℍ) * a * c‖ = ‖a‖ := by
-    rw [norm_mul, norm_mul, _root_.norm_star, hc, one_mul, mul_one]
-  rw [coe_hopfSphere4_apply, coe_hopfSphere4_apply, hw, hw, hnorm, hnorm]
-  simp only [WithLp.toLp_fst, WithLp.toLp_snd, star_mul, star_star, mul_smul_comm,
-    smul_mul_assoc]
-  congr 3
-  simp only [mul_assoc]
-  rw [← mul_assoc (c : ℍ), hcc, one_mul]
 
 /-- Two pairs `(a, b)`, `(a', b')` of quaternions with `|a|² + |b|² = 1 = |a'|² + |b'|²`,
 `|a|² - |b|² = |a'|² - |b'|²` and `a b* = a' b'*` differ by a unit quaternion on the right. -/
