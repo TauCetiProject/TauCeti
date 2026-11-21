@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -53,8 +52,6 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
   `TauCeti.analyticOnNhd_integral_mul_ofReal_add_cpow` — complex differentiability and holomorphy
   on `slitPlane`.
-* `TauCeti.norm_cpow_mul_log_le_of_mem_ball` — a bound on the exponent derivative `w ^ b log w`
-  uniform for `b` in a ball, by the Cauchy estimate.
 -/
 
 public section
@@ -218,26 +215,6 @@ theorem analyticOnNhd_integral_mul_ofReal_add_cpow {μ : Measure ℝ} {g : ℝ �
     (hg : IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z₀) ^ s) (Ioi 0) μ) :
     AnalyticOnNhd ℂ (fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ) slitPlane :=
   (differentiableOn_integral_mul_ofReal_add_cpow hz₀ hg).analyticOnNhd isOpen_slitPlane
-
-/-- The Cauchy estimate on circles of radius `r` bounds the exponent derivative `w ^ b log w` of
-`b ↦ w ^ b` uniformly for `b` in the ball of radius `r` about `a₀`:
-`‖w ^ b log w‖ ≤ e^{π (|Im a₀| + 2r)} (‖w‖^{Re a₀ − 2r} + ‖w‖^{Re a₀ + 2r}) / r`. At `w = 0` the
-left side is `0`. Such bounds dominate the parameter derivatives of power integrals. -/
-theorem norm_cpow_mul_log_le_of_mem_ball {w a₀ b : ℂ} {r : ℝ} (hb : b ∈ Metric.ball a₀ r) :
-    ‖w ^ b * log w‖ ≤
-      Real.exp (Real.pi * (|a₀.im| + 2 * r)) * (‖w‖ ^ (a₀.re - 2 * r) + ‖w‖ ^ (a₀.re + 2 * r)) /
-        r := by
-  have hr : 0 < r := Metric.pos_of_mem_ball hb
-  rcases eq_or_ne w 0 with rfl | hw
-  · rw [log_zero, mul_zero, norm_zero]
-    positivity
-  have hd (c : ℂ) : HasDerivAt (fun c => w ^ c) (w ^ c * log w) c :=
-    (hasStrictDerivAt_const_cpow (Or.inl hw)).hasDerivAt
-  rw [← (hd b).deriv]
-  refine norm_deriv_le_of_forall_mem_sphere_norm_le hr
-    (Differentiable.diffContOnCl fun c => (hd c).differentiableAt) fun c hc => ?_
-  refine norm_cpow_le_of_mem_closedBall hw (Metric.mem_closedBall.mpr ?_)
-  linarith [dist_triangle c b a₀, Metric.mem_sphere.mp hc, Metric.mem_ball.mp hb]
 
 end TauCeti
 

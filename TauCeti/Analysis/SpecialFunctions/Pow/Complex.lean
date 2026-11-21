@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -102,9 +103,10 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `TauCeti.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
   in a closed ball.
+* `TauCeti.norm_cpow_mul_log_le_of_mem_ball` -- a bound on the exponent derivative `w ^ b log w`
+  uniform for `b` in a ball, by the Cauchy estimate.
 * `Complex.cpow_sub_one` -- `x ^ (y − 1) = x ^ y / x` for `x ≠ 0`.
 * `Complex.hasDerivAt_cpow_mul_exp_neg` -- the derivative of `w ↦ w ^ b e^{−w}` on the slit plane.
-
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
@@ -589,6 +591,26 @@ theorem norm_cpow_le_of_mem_closedBall {w : ℂ} (hw : w ≠ 0) {a₀ b : ℂ} {
         rw [mul_comm, ← div_eq_mul_inv]
         exact norm_cpow_le _ _
     _ ≤ _ := by gcongr
+
+/-- The Cauchy estimate on circles of radius `r` bounds the exponent derivative `w ^ b log w` of
+`b ↦ w ^ b` uniformly for `b` in the ball of radius `r` about `a₀`:
+`‖w ^ b log w‖ ≤ e^{π (|Im a₀| + 2r)} (‖w‖^{Re a₀ − 2r} + ‖w‖^{Re a₀ + 2r}) / r`. At `w = 0` the
+left side is `0`. Such bounds dominate the parameter derivatives of power integrals. -/
+theorem norm_cpow_mul_log_le_of_mem_ball {w a₀ b : ℂ} {r : ℝ} (hb : b ∈ Metric.ball a₀ r) :
+    ‖w ^ b * log w‖ ≤
+      Real.exp (Real.pi * (|a₀.im| + 2 * r)) * (‖w‖ ^ (a₀.re - 2 * r) + ‖w‖ ^ (a₀.re + 2 * r)) /
+        r := by
+  have hr : 0 < r := Metric.pos_of_mem_ball hb
+  rcases eq_or_ne w 0 with rfl | hw
+  · rw [log_zero, mul_zero, norm_zero]
+    positivity
+  have hd (c : ℂ) : HasDerivAt (fun c => w ^ c) (w ^ c * log w) c :=
+    (hasStrictDerivAt_const_cpow (Or.inl hw)).hasDerivAt
+  rw [← (hd b).deriv]
+  refine norm_deriv_le_of_forall_mem_sphere_norm_le hr
+    (Differentiable.diffContOnCl fun c => (hd c).differentiableAt) fun c hc => ?_
+  refine norm_cpow_le_of_mem_closedBall hw (Metric.mem_closedBall.mpr ?_)
+  linarith [dist_triangle c b a₀, Metric.mem_sphere.mp hc, Metric.mem_ball.mp hb]
 
 end TauCeti
 
