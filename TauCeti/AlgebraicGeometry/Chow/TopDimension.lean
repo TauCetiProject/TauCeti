@@ -87,9 +87,8 @@ noncomputable def cyclesOfDimensionEquivFinsupp :
         refine Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
         by_cases h : x ∈ pointsOfDimension X k
         · exact cycleOfFinsupp_apply X k _ ⟨x, h⟩
-        · rw [Function.notMem_support.mp fun hx ↦ h (mem_cyclesOfDimension_iff.mp α.2 hx)]
-          exact Function.notMem_support.mp fun hx ↦
-            h (mem_cyclesOfDimension_iff.mp (cycleOfFinsupp X k _).2 hx)
+        · rw [apply_eq_zero_of_notMem_pointsOfDimension α.2 h]
+          exact apply_eq_zero_of_notMem_pointsOfDimension (cycleOfFinsupp X k _).2 h
       right_inv f := Finsupp.ext (cycleOfFinsupp_apply X k f)
       map_add' _ _ := Finsupp.ext fun _ ↦ rfl }
 
@@ -134,8 +133,7 @@ lemma coe_cyclesOfDimensionBasis [DecidableEq X] (x : pointsOfDimension X k) :
     simp only [← Subtype.coe_inj, eq_comm]
   · have hne : y ≠ x.1 := fun h ↦ hy (h ▸ x.2)
     simp only [hne, ite_false]
-    exact Function.notMem_support.mp fun h ↦
-      hy (mem_cyclesOfDimension_iff.mp (cyclesOfDimensionBasis X k x).2 h)
+    exact apply_eq_zero_of_notMem_pointsOfDimension (cyclesOfDimensionBasis X k x).2 hy
 
 end Compact
 
