@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import Mathlib.CategoryTheory.Linear.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
-import TauCeti.CategoryTheory.Preadditive.Indecomposable
+import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Semiperfect
 import TauCeti.RingTheory.Semisimple.Regular
 
 /-!
@@ -16,13 +16,12 @@ import TauCeti.RingTheory.Semisimple.Regular
 
 Let `C` be an additive category in which idempotents split. If the endomorphism ring of every
 object is semisimple, then `C` is abelian, with the given addition of morphisms
-(`TauCeti.abelianOfIsSemisimpleRingEnd`). If moreover `C` is linear over a division ring `K` and
-endomorphism spaces are finite-dimensional, then every object is a finite biproduct of simple
-objects (`TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`), so `C` is a finite
-semisimple category (`TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`).
-Conversely, in a finite semisimple abelian category linear over a division ring, an object with
-finite-dimensional endomorphisms has a semisimple endomorphism ring
-(`TauCeti.IsFiniteSemisimpleCategory.isSemisimpleRing_end`).
+(`TauCeti.abelianOfIsSemisimpleRingEnd`), and every object is a finite biproduct of simple objects
+(`TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`), so `C` is a finite semisimple
+category (`TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`). Conversely, in an
+abelian category linear over a division ring in which monomorphisms split, for instance a finite
+semisimple one, an object with finite-dimensional endomorphisms has a semisimple endomorphism ring
+(`TauCeti.isSemisimpleRing_end_of_splitMonoCategory`).
 
 This is Jannsen's criterion: it is how one shows that a category of motives modulo numerical
 equivalence is abelian and semisimple, knowing only that its endomorphism algebras are
@@ -38,15 +37,16 @@ has inverse induced by `g` (`TauCeti.isIso_coimageImageComparison_of_comp_comp_e
 
 For the decomposition, a nonzero object with no idempotent endomorphism besides `0` and `𝟙` is
 simple, because a nonzero monomorphism `f` into it with `f ≫ g ≫ f = f` has the idempotent
-`g ≫ f`, which must be `𝟙` (`TauCeti.simple_of_idempotent_eq_zero_or_id`). Any other object splits
-along a nontrivial idempotent into two summands with endomorphism spaces of smaller dimension.
+`g ≫ f`, which must be `𝟙` (`TauCeti.simple_of_idempotent_eq_zero_or_id`). Semisimple rings are
+semiperfect, so the category is Krull–Schmidt, and its indecomposable summands, having local
+endomorphism rings, are simple.
 
 ## Main results
 
 * `TauCeti.abelianOfIsSemisimpleRingEnd`: an additive category with split idempotents and
   semisimple endomorphism rings is abelian.
-* `TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`: an object of such a category with
-  finite-dimensional endomorphisms is a finite biproduct of simple objects.
+* `TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`: every object of such a category is a
+  finite biproduct of simple objects.
 * `TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`: Jannsen's criterion.
 * `TauCeti.isFiniteSemisimpleCategory_iff_isSemisimpleRing_end`: an abelian category linear over a
   division ring with finite-dimensional endomorphism spaces is finite semisimple if and only if its
@@ -147,58 +147,23 @@ theorem isIso_coimageImageComparison_of_comp_comp_eq_self {X Y : C} {f : X ⟶ Y
   · exact (cancel_mono (Abelian.image.ι f)).1 (by simpa using hι)
 
 
-/-- **A proper retract has a smaller endomorphism space**: if `i ≫ r = 𝟙 Y` but `r ≫ i ≠ 𝟙 X`,
-then `Y ⟶ Y` has smaller dimension than `X ⟶ X`. -/
-theorem finrank_end_lt_of_comp_eq_id (K : Type*) [DivisionRing K] [Linear K C] {X Y : C}
-    [FiniteDimensional K (X ⟶ X)] {i : Y ⟶ X} {r : X ⟶ Y} (hir : i ≫ r = 𝟙 Y)
-    (hri : r ≫ i ≠ 𝟙 X) : Module.finrank K (Y ⟶ Y) < Module.finrank K (X ⟶ X) := by
-  -- `h ↦ r ≫ h ≫ i` embeds `Y ⟶ Y` into `X ⟶ X`, and `𝟙 X` is not in its range.
-  let L := (Linear.leftComp K X r).comp (Linear.rightComp K Y i)
-  have hL : Function.Injective L := fun a b hab ↦ by
-    simpa [L, reassoc_of% hir, hir] using congrArg (fun h ↦ i ≫ h ≫ r) hab
-  rw [← LinearMap.finrank_range_of_inj hL]
-  refine Submodule.finrank_lt fun htop ↦ hri ?_
-  obtain ⟨a, ha⟩ := LinearMap.range_eq_top.1 htop (𝟙 X)
-  simp only [L, LinearMap.coe_comp, Function.comp_apply, Linear.rightComp_apply,
-    Linear.leftComp_apply] at ha
-  rw [← Category.comp_id (r ≫ i), ← ha]
-  simp [reassoc_of% hir]
-
 /-- **Jannsen's decomposition**: in an additive category with split idempotents and semisimple
-endomorphism rings, linear over a division ring `K`, an object with finite-dimensional
-endomorphisms is a finite biproduct of simple objects. -/
-theorem exists_biproduct_simples_of_isSemisimpleRing_end (K : Type*) [DivisionRing K] [Linear K C]
-    [HasBinaryBiproducts C] [IsIdempotentComplete C] [∀ X : C, IsSemisimpleRing (End X)] (X : C)
-    [FiniteDimensional K (X ⟶ X)] :
+endomorphism rings, every object is a finite biproduct of simple objects. Semisimple rings are
+semiperfect, so the category is Krull–Schmidt (`TauCeti.isKrullSchmidt_of_isSemiperfectRing_end`),
+and a summand with local endomorphism ring has only the trivial idempotents, so it is simple. -/
+theorem exists_biproduct_simples_of_isSemisimpleRing_end [HasFiniteBiproducts C]
+    [IsIdempotentComplete C] [∀ X : C, IsSemisimpleRing (End X)] (X : C) :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
       Nonempty (X ≅ ⨁ f) := by
-  -- Strong induction on the dimension of `X ⟶ X`.
-  induction hn : Module.finrank K (X ⟶ X) using Nat.strong_induction_on generalizing X with
-  | _ n ih =>
-  by_cases hX : IsZero X
-  · exact IsFiniteSemisimpleCategory.exists_biproduct_simples_of_isZero hX
-  by_cases hidem : ∀ e : X ⟶ X, e ≫ e = e → e = 0 ∨ e = 𝟙 X
-  · have := simple_of_idempotent_eq_zero_or_id hX hidem fun _ f _ ↦
-      exists_comp_comp_eq_self_of_isSemisimpleRing_end f
-    exact IsFiniteSemisimpleCategory.exists_biproduct_simples_of_simple X
-  -- Otherwise `X` splits along a nontrivial idempotent into two proper retracts.
-  push Not at hidem
-  obtain ⟨e, he, he0, he1⟩ := hidem
-  have key {W : C} (i : W ⟶ X) (r : X ⟶ W) (hir : i ≫ r = 𝟙 W) (hri : r ≫ i ≠ 𝟙 X) :
-      ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
-        Nonempty (W ≅ ⨁ f) := by
-    have : FiniteDimensional K (W ⟶ W) :=
-      Module.Finite.of_surjective ((Linear.leftComp K W i).comp (Linear.rightComp K X r))
-        fun g ↦ ⟨r ≫ g ≫ i, by simp [reassoc_of% hir, hir]⟩
-    exact ih _ (hn ▸ finrank_end_lt_of_comp_eq_id K hir hri) W rfl
-  obtain ⟨Y, i₁, r₁, h₁, hr₁⟩ := IsIdempotentComplete.idempotents_split X e he
-  obtain ⟨Z, i₂, r₂, h₂, hr₂⟩ := IsIdempotentComplete.idempotents_split X (𝟙 X - e) (by
-    simp [Preadditive.sub_comp, Preadditive.comp_sub, he])
-  have hsum : r₁ ≫ i₁ + r₂ ≫ i₂ = 𝟙 X := by rw [hr₁, hr₂]; abel
-  obtain ⟨ι, _, f, hf, _, ⟨d⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples_biprod
-    (key i₁ r₁ h₁ (hr₁ ▸ he1)) (key i₂ r₂ h₂ (by rw [hr₂, Ne, sub_eq_self]; exact he0))
-  exact ⟨ι, inferInstance, f, hf, inferInstance,
-    ⟨isoBiprodOfRetracts i₁ r₁ i₂ r₂ h₁ h₂ hsum ≪≫ d⟩⟩
+  have := hasBinaryBiproducts_of_finite_biproducts C
+  have := isKrullSchmidt_of_isSemiperfectRing_end (C := C) fun _ ↦ inferInstance
+  obtain ⟨n, P, hP, e⟩ := IsKrullSchmidt.exists_iso_biproduct X
+  refine ⟨Fin n, inferInstance, P, fun i ↦ ?_, inferInstance, e⟩
+  have := hP i
+  exact simple_of_idempotent_eq_zero_or_id indecomposable_of_isLocalRing_end.1
+    (fun p hp ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
+      (a := End.of p) (End.ext hp)).imp (congrArg End.asHom) (congrArg End.asHom))
+    fun _ f _ ↦ exists_comp_comp_eq_self_of_isSemisimpleRing_end f
 
 variable (C) in
 /-- **An additive category with split idempotents and semisimple endomorphism rings is abelian.**
@@ -249,20 +214,18 @@ theorem exists_comp_comp_eq_self_of_splitMonoCategory [SplitMonoCategory C] {X Y
   rw [Category.assoc, Category.assoc, ← Category.assoc f (retraction _), ← hf]
   simp [s, Preadditive.sub_comp]
 
-namespace IsFiniteSemisimpleCategory
-
-/-- **An abelian category with semisimple, finite-dimensional endomorphism rings is finite
-semisimple.** -/
-theorem of_isSemisimpleRing_end (K : Type*) [DivisionRing K] [Linear K C]
-    [∀ X : C, IsSemisimpleRing (End X)] [∀ X : C, FiniteDimensional K (X ⟶ X)] :
+/-- **An abelian category with semisimple endomorphism rings is finite semisimple.** -/
+theorem IsFiniteSemisimpleCategory.of_isSemisimpleRing_end [∀ X : C, IsSemisimpleRing (End X)] :
     IsFiniteSemisimpleCategory C :=
   have := Abelian.hasFiniteBiproducts (C := C)
-  ⟨fun X ↦ exists_biproduct_simples_of_isSemisimpleRing_end K X⟩
+  ⟨exists_biproduct_simples_of_isSemisimpleRing_end⟩
 
-/-- **Endomorphism rings in a finite semisimple category are semisimple**, for objects with
-finite-dimensional endomorphisms over a division ring. -/
-theorem isSemisimpleRing_end [IsFiniteSemisimpleCategory C] (K : Type*) [DivisionRing K]
-    [Linear K C] (X : C) [FiniteDimensional K (X ⟶ X)] : IsSemisimpleRing (End X) := by
+/-- **Endomorphism rings in an abelian category where monomorphisms split are semisimple**, for
+objects with finite-dimensional endomorphisms over a division ring. This applies in particular to
+a finite semisimple category (`TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`). -/
+theorem isSemisimpleRing_end_of_splitMonoCategory [SplitMonoCategory C] (K : Type*)
+    [DivisionRing K] [Linear K C] (X : C) [FiniteDimensional K (X ⟶ X)] :
+    IsSemisimpleRing (End X) := by
   have : Module.Finite K (End X) := Module.Finite.equiv (End.linearEquiv (R := K)).symm
   have : IsScalarTower K (End X) (End X) := ⟨fun k a b ↦ End.ext (by simp)⟩
   have : IsArtinianRing (End X) := IsArtinianRing.of_finite K (End X)
@@ -270,29 +233,26 @@ theorem isSemisimpleRing_end [IsFiniteSemisimpleCategory C] (K : Type*) [Divisio
   obtain ⟨g, hg⟩ := exists_comp_comp_eq_self_of_splitMonoCategory a.asHom
   exact ⟨End.of g, End.ext (by simpa using hg)⟩
 
-end IsFiniteSemisimpleCategory
-
 /-- **An abelian category with finite-dimensional endomorphism spaces over a division ring is
 finite semisimple if and only if its endomorphism rings are semisimple.** -/
 theorem isFiniteSemisimpleCategory_iff_isSemisimpleRing_end (K : Type*) [DivisionRing K]
     [Linear K C] [∀ X : C, FiniteDimensional K (X ⟶ X)] :
     IsFiniteSemisimpleCategory C ↔ ∀ X : C, IsSemisimpleRing (End X) :=
-  ⟨fun _ X ↦ IsFiniteSemisimpleCategory.isSemisimpleRing_end K X,
-    fun _ ↦ IsFiniteSemisimpleCategory.of_isSemisimpleRing_end K⟩
+  ⟨fun _ X ↦ isSemisimpleRing_end_of_splitMonoCategory K X,
+    fun _ ↦ IsFiniteSemisimpleCategory.of_isSemisimpleRing_end⟩
 
 end Abelian
 
-/-- **Jannsen's criterion.** Let `C` be an additive category in which idempotents split, linear
-over a division ring `K`. If every endomorphism ring is semisimple and finite-dimensional over
-`K`, then `C` is abelian with the given addition (`TauCeti.abelianOfIsSemisimpleRingEnd`), and
-every object is a finite biproduct of simple objects. -/
-theorem isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd (K : Type*) [DivisionRing K]
-    [Preadditive C] [Linear K C] [HasFiniteBiproducts C] [IsIdempotentComplete C]
-    [∀ X : C, IsSemisimpleRing (End X)] [∀ X : C, FiniteDimensional K (X ⟶ X)] :
+/-- **Jannsen's criterion.** Let `C` be an additive category in which idempotents split. If every
+endomorphism ring is semisimple, then `C` is abelian with the given addition
+(`TauCeti.abelianOfIsSemisimpleRingEnd`), and every object is a finite biproduct of simple
+objects. -/
+theorem isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd [Preadditive C]
+    [HasFiniteBiproducts C] [IsIdempotentComplete C] [∀ X : C, IsSemisimpleRing (End X)] :
     letI := abelianOfIsSemisimpleRingEnd C
     IsFiniteSemisimpleCategory C :=
   letI := abelianOfIsSemisimpleRingEnd C
-  IsFiniteSemisimpleCategory.of_isSemisimpleRing_end K
+  IsFiniteSemisimpleCategory.of_isSemisimpleRing_end
 
 
 end TauCeti

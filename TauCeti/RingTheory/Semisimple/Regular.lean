@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Semisimple rings are von Neumann regular
@@ -59,8 +60,10 @@ theorem isSemisimpleRing_of_forall_exists_mul_mul_eq_self (h : ∀ a : R, ∃ b,
   have hz : (-b * a + 1) * z = 1 := mul_eq_one_comm.1 <| by
     rw [mul_add_one, ← mul_assoc]
     exact sub_eq_zero.1 ((Submodule.mem_bot R).1 hz)
-  rw [Submodule.mem_bot, ← mul_one a, ← hz, ← mul_assoc, mul_add_one, neg_mul, mul_neg,
-    ← mul_assoc, hb, neg_add_cancel, zero_mul]
+  rw [Submodule.mem_bot]
+  calc a = a * ((-b * a + 1) * z) := by rw [hz, mul_one]
+    _ = (a - a * b * a) * z := by noncomm_ring
+    _ = 0 := by rw [hb, sub_self, zero_mul]
 
 /-- **An Artinian ring is semisimple exactly when it is von Neumann regular.** -/
 theorem isSemisimpleRing_iff_forall_exists_mul_mul_eq_self :
