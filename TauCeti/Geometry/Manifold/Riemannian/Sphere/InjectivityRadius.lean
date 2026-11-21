@@ -272,7 +272,7 @@ and its antipode `-p` is `ENNReal.ofReal Real.pi` (equal to `injectivityRadiusAt
         ENNReal.ofReal_lt_ofReal_iff Real.pi_pos] at hv_lt_inj
     have hcos := (inner_coe_riemannianExp_sphere p v).symm
     rw [hv_exp, coe_neg_sphere, inner_neg_right, real_inner_self_eq_norm_sq,
-      mem_sphere_zero_iff_norm.1 p.2, one_pow] at hcos
+      mem_sphere_zero_iff_norm.1 p.property, one_pow] at hcos
     linarith [Real.cos_pi ▸ Real.strictAntiOn_cos ⟨norm_nonneg v, hv_lt.le⟩
       ⟨Real.pi_pos.le, le_rfl⟩ hv_lt]
 

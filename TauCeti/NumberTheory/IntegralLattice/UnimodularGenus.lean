@@ -20,9 +20,10 @@ the same signature and are both even or both odd.
 
 The determinant of a unimodular lattice is `(-1) ^ n₋`, so only the prime `2` needs a local
 comparison. There the unimodular forms over `ℤ_[2]` are classified by rank, type, determinant
-square class and oddity, and the oddity of a unimodular lattice is its signature modulo `8` by
-van der Blij's theorem (`TauCeti.IntegralLattice.vanDerBlij`). For instance, the odd unimodular
-lattices of signature `(p, q)` form the single genus of `I_{p,q} = ⟨1⟩ ^ p ⊕ ⟨-1⟩ ^ q`.
+square class and oddity, and the oddity of a unimodular lattice is the difference `n₊ - n₋` of its
+signature, taken modulo `8`, by van der Blij's theorem (`TauCeti.IntegralLattice.vanDerBlij`). For
+instance, if `p + q ≥ 1`, the odd unimodular lattices of signature `(p, 0, q)` form the single genus
+of `I_{p,q} = ⟨1⟩ ^ p ⊕ ⟨-1⟩ ^ q`.
 
 ## Main results
 
@@ -51,9 +52,8 @@ theorem sameGenus_iff_of_isUnimodular (hLu : L.IsUnimodular) (hMu : M.IsUnimodul
   have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
   have : M.IsNondegenerate := ⟨hMu.nondegenerate⟩
   -- Read off the positive and negative indices from the signature equality.
-  have hsig' := hsig
-  simp only [signature, Prod.mk.injEq] at hsig'
-  obtain ⟨hpos, -, hneg⟩ := hsig'
+  have hpos : L.sigPos = M.sigPos := congrArg (fun s ↦ s.1) hsig
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
   -- Both determinants are `(-1) ^ n₋`, since both discriminants are `1`.
   have hdet : L.determinant = M.determinant := by
     rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
@@ -76,8 +76,6 @@ theorem sameGenus_iff_of_isUnimodular (hLu : L.IsUnimodular) (hMu : M.IsUnimodul
   rw [hpos, hneg] at hLw
   refine (L.localIntegralForm_two_equivalent_iff_of_isCharacteristicVector M
     (hL.map (Int.castRingHom ℤ_[2])) (hM.map (Int.castRingHom ℤ_[2])) hw hw').mpr
-    ⟨L.finrank_eq_of_signature_eq hsig, heven, ?_, hLw.symm.trans hMw⟩
-  rw [hdet]
-  exact IsSquare.mul_self _
+    ⟨L.finrank_eq_of_signature_eq hsig, heven, hdet ▸ IsSquare.mul_self _, hLw.symm.trans hMw⟩
 
 end TauCeti.IntegralLattice

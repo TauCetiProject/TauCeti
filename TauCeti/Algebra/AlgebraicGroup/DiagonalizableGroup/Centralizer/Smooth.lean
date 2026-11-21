@@ -53,7 +53,7 @@ to the centralizer of the kernel of a root, and recovers smoothness of the dynam
 
 public section
 
-open CategoryTheory TensorProduct WithConv
+open TensorProduct WithConv
 
 namespace BialgHom
 
@@ -273,7 +273,7 @@ theorem conjugationComoduleAlgebra_coact_apply (a : H) :
 
 /-- **A point of `G` lies in the centralizer exactly when it is a fixed point of the conjugation
 action of `D(X)`.** -/
-theorem centralizerHopfIdeal_le_ker_iff_fixedPointIdeal_le_ker {B : Type x} [CommRing B]
+private theorem centralizerHopfIdeal_le_ker_iff_fixedPointIdeal_le_ker {B : Type x} [CommRing B]
     [Algebra R B] (q : H →ₐ[R] B) :
     (centralizerHopfIdeal π).toIdeal ≤ RingHom.ker q ↔
       letI := conjugationComoduleAlgebra π

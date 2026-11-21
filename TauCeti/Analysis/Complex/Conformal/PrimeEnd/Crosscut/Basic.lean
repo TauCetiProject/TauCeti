@@ -100,7 +100,7 @@ theorem IsCrosscut.source_ne_target (hγ : IsCrosscut γ U) : x ≠ y := by
 theorem IsCrosscut.range_subset_closure (hγ : IsCrosscut γ U) :
     range γ ⊆ closure U := by
   rintro z ⟨t, rfl⟩
-  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
   · have : t = 0 := Subtype.ext ht
     subst t
     simpa using frontier_subset_closure hγ.source_mem_frontier
@@ -115,7 +115,7 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
   ext z
   constructor
   · rintro ⟨⟨t, rfl⟩, htfr⟩
-    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
     · left
       have : t = 0 := Subtype.ext ht
       subst t
@@ -130,6 +130,17 @@ theorem IsCrosscut.range_inter_frontier (hγ : IsCrosscut γ U) (hU : IsOpen U) 
     · exact ⟨⟨0, by simp⟩, hγ.source_mem_frontier⟩
     · exact ⟨⟨1, by simp⟩, hγ.target_mem_frontier⟩
 
+/-- A crosscut of an open set and a path in its frontier with the same endpoints meet
+exactly there. -/
+theorem IsCrosscut.range_inter_range_eq_pair (hγ : IsCrosscut γ U) (hU : IsOpen U)
+    {α : Path x y} (hα : range α ⊆ frontier U) : range γ ∩ range α = {x, y} := by
+  refine Subset.antisymm (fun z hz ↦ ?_) ?_
+  · rw [← hγ.range_inter_frontier hU]
+    exact ⟨hz.1, hα hz.2⟩
+  · rintro z (rfl | rfl)
+    · exact ⟨γ.source_mem_range, α.source_mem_range⟩
+    · exact ⟨γ.target_mem_range, α.target_mem_range⟩
+
 /-- For an open set, the part of a crosscut inside the set is its open arc, the image of the
 open parameter interval. -/
 theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen U) :
@@ -137,7 +148,7 @@ theorem IsCrosscut.range_inter_eq_image_Ioo (hγ : IsCrosscut γ U) (hU : IsOpen
   ext z
   constructor
   · rintro ⟨⟨t, rfl⟩, htU⟩
-    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.2 with ht | ht | ht
+    rcases eq_endpoints_or_mem_Ioo_of_mem_Icc t.property with ht | ht | ht
     · have : t = 0 := Subtype.ext ht
       subst t
       exact ((hU.frontier_eq.subset hγ.source_mem_frontier).2 (by simpa using htU)).elim
@@ -210,6 +221,12 @@ theorem IsCrosscut.map' {f : ℂ → ℂ} (hγ : γ.IsCrosscut U) (hUo : IsOpen 
   rw [isCrosscut_def, map'_coe]
   exact ⟨fun s t hst => hγ.injective (hfi (hγU s) (hγU t) hst), hfr hγ.source_mem_frontier,
     hfr hγ.target_mem_frontier, fun t ht => mem_image_of_mem f (hγ.mapsTo_interior ht)⟩
+
+/-- The existence of a crosscut of a disc forces its radius to be positive. -/
+theorem IsCrosscut.radius_pos {c : ℂ} {r : ℝ} (hγ : IsCrosscut γ (ball c r)) : 0 < r :=
+  not_le.mp fun hr ↦ hγ.source_ne_target (subsingleton_sphere c hr
+    (frontier_ball_subset_sphere hγ.source_mem_frontier)
+    (frontier_ball_subset_sphere hγ.target_mem_frontier))
 
 /-- **A nondegenerate chord of a disc is a crosscut.** If `x` and `y` are distinct points of
 `sphere c r`, then the straight path from `x` to `y` is injective, its endpoints lie on the

@@ -80,7 +80,7 @@ private theorem eq_of_mul_transversal {G : Type*} [Group G] {H : Subgroup G}
           = (b : G)⁻¹ * ((b : G) * r j) * (r i)⁻¹ := by rw [hh]
       simpa [mul_assoc] using h2
     rw [← he']
-    exact H.mul_mem (H.inv_mem b.2) a.2
+    exact H.mul_mem (H.inv_mem b.property) a.property
   obtain rfl : i = j := he <| by
     rw [eq_comm, QuotientGroup.eq]
     simpa [inv_inv] using hmem
@@ -216,7 +216,8 @@ theorem IsFundamentalDomain.of_subgroupOf {G α : Type*} [Group G] [MeasurableSp
     (hs : IsFundamentalDomain (H.subgroupOf K) s μ) :
     IsFundamentalDomain (H ⊓ K : Subgroup G) s μ := by
   have hbij : Function.Bijective
-      (fun k : H.subgroupOf K ↦ (⟨(k : K), ⟨Subgroup.mem_subgroupOf.mp k.2, (k : K).2⟩⟩ :
+      (fun k : H.subgroupOf K ↦ (⟨(k : K), ⟨Subgroup.mem_subgroupOf.mp k.property,
+          (k : K).property⟩⟩ :
         (H ⊓ K : Subgroup G))) := by
     constructor
     · intro a b hab
@@ -385,9 +386,9 @@ theorem covolume_eq_card_mul_covolume {G α : Type*} [Group G] [MulAction G α]
     [MeasurableSpace α] {μ : Measure α} {Γ Δ : Subgroup G} [MeasurableConstSMul Γ α]
     [SMulInvariantMeasure Γ α μ] [Countable Γ] [HasFundamentalDomain Γ α μ] (h : Δ ≤ Γ) :
     covolume Δ α μ = ENat.card (Γ ⧸ Δ.subgroupOf Γ) * covolume Γ α μ := by
-  have : MeasurableConstSMul Δ α := ⟨fun d ↦ measurable_const_smul (⟨d, h d.2⟩ : Γ)⟩
+  have : MeasurableConstSMul Δ α := ⟨fun d ↦ measurable_const_smul (⟨d, h d.property⟩ : Γ)⟩
   have : SMulInvariantMeasure Δ α μ :=
-    ⟨fun d ↦ SMulInvariantMeasure.measure_preimage_smul (⟨d, h d.2⟩ : Γ)⟩
+    ⟨fun d ↦ SMulInvariantMeasure.measure_preimage_smul (⟨d, h d.property⟩ : Γ)⟩
   have : Countable Δ := (Subgroup.inclusion_injective h).countable
   have : Countable (Γ ⧸ Δ.subgroupOf Γ) := QuotientGroup.mk_surjective.countable
   obtain ⟨s, hs⟩ := HasFundamentalDomain.ExistsIsFundamentalDomain (G := Γ) (ν := μ)

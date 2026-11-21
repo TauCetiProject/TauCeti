@@ -45,8 +45,8 @@ include hg
 theorem mem_expDomain_iff {x : WithMetric g} {v : TangentSpace I x} :
     v ∈ expDomain I (WithMetric g) x ↔
       mfderiv I I ofWithMetric x v ∈ expDomain I M x.ofWithMetric := by
-  have h := (riemannianIsometry g hg).mfderiv_mem_expDomain_iff (p := x) (v := v)
-  rw [coe_riemannianIsometry] at h; exact h.symm
+  have h := (riemannianIsometryOfInner g hg).mfderiv_mem_expDomain_iff (p := x) (v := v)
+  rw [coe_riemannianIsometryOfInner] at h; exact h.symm
 
 /-- `ofWithMetric` intertwines `riemannianExp` on `WithMetric g` with `riemannianExp` on `M` when
 `M` carries `g`. -/
@@ -54,8 +54,8 @@ theorem ofWithMetric_riemannianExp [I.Boundaryless] [T2Space M]
     (x : WithMetric g) (v : TangentSpace I x) :
     (riemannianExp I (WithMetric g) x v).ofWithMetric =
       riemannianExp I M x.ofWithMetric (mfderiv I I ofWithMetric x v) := by
-  have h := (riemannianIsometry g hg).riemannianExp_mfderiv x v
-  rw [coe_riemannianIsometry] at h; exact h.symm
+  have h := (riemannianIsometryOfInner g hg).riemannianExp_mfderiv x v
+  rw [coe_riemannianIsometryOfInner] at h; exact h.symm
 
 end RiemannianBundle
 

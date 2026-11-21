@@ -160,7 +160,7 @@ theorem geodesicSpray_rescale_const :
       geodesicSpray I M) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
   funext z; simp only [geodesicSpray_apply]
-  exact congrArg (fun Γ : E →L[ℝ] E →L[ℝ] E ↦ (z.2, -Γ z.2 z.2))
+  exact congrArg (fun Γ : E →L[ℝ] E →L[ℝ] E ↦ (z.snd, -Γ z.snd z.snd))
     (christoffelMap_congr (finBasis ℝ E) _ _ fun _ _ hY ↦
       leviCivitaConnection_rescale_const_apply g hn hc hY)
 

@@ -187,15 +187,15 @@ inner product of `g`. -/
 theorem injectivityRadiusAt_toWithMetric [I.Boundaryless] [T2Space M]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] (p : M) :
     injectivityRadiusAt I (WithMetric g) (toWithMetric g p) = injectivityRadiusAt I M p := by
-  simpa only [riemannianIsometry_apply, ofWithMetric_toWithMetric] using
-    ((riemannianIsometry g hg).injectivityRadiusAt_apply (toWithMetric g p)).symm
+  simpa only [riemannianIsometryOfInner_apply, ofWithMetric_toWithMetric] using
+    ((riemannianIsometryOfInner g hg).injectivityRadiusAt_apply (toWithMetric g p)).symm
 
 /-- The global injectivity radius on `WithMetric g` agrees with that on `M` when `M` carries the
 inner product of `g`. -/
 theorem injectivityRadius_eq [I.Boundaryless] [T2Space M]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] :
     injectivityRadius I (WithMetric g) = injectivityRadius I M :=
-  (riemannianIsometry g hg).injectivityRadius_eq.symm
+  (riemannianIsometryOfInner g hg).injectivityRadius_eq.symm
 
 end RiemannianIsometry
 

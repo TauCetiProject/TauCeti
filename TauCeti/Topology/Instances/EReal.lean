@@ -8,11 +8,12 @@ module
 public import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
-# Limits of weighted extended-real sums
+# Limits and lower semicontinuity of extended-real sums
 
 Weighted sums `s a + t b - r` with nonnegative real weights and a real correction preserve
 limits when both endpoint limits are different from `⊤`. This allows convexity inequalities
 for extended-real energies to pass to pointwise limits, including endpoint energies `⊥`.
+Sums of lower semicontinuous extended-real functions are lower semicontinuous.
 -/
 
 public section
@@ -45,3 +46,17 @@ theorem tendsto_coe_mul_add_coe_mul_sub {ι : Type*} {l : Filter ι}
   simpa only [EReal.coe_neg, ← sub_eq_add_neg] using hR
 
 end EReal
+
+/-- The sum of two lower semicontinuous extended-real functions is lower semicontinuous. -/
+theorem LowerSemicontinuous.ereal_add {X : Type*} [TopologicalSpace X] {f g : X → EReal}
+    (hf : LowerSemicontinuous f) (hg : LowerSemicontinuous g) :
+    LowerSemicontinuous (fun x ↦ f x + g x) := by
+  intro x y hy
+  have hfbot : f x ≠ ⊥ := by
+    intro h
+    simp [h] at hy
+  have hgbot : g x ≠ ⊥ := by
+    intro h
+    simp [h] at hy
+  exact LowerSemicontinuousAt.add' (hf x) (hg x)
+    (EReal.continuousAt_add (.inr hgbot) (.inl hfbot)) y hy

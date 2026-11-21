@@ -269,7 +269,7 @@ theorem isGeodesicCurveOn_riemannianExp_smul_sphere_univ (p : sphere (0 : E) 1)
 theorem inner_coe_riemannianExp_sphere (p : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) p) :
     ⟪(p : E), (riemannianExp (𝓡 n) (sphere (0 : E) 1) p v : E)⟫_ℝ = Real.cos ‖v‖ := by
   rw [coe_riemannianExp_sphere, inner_add_right, real_inner_smul_right, real_inner_smul_right,
-    real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.1 p.2,
+    real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.1 p.property,
     inner_coe_mvfderiv_subtypeVal_sphere, one_pow, mul_one, mul_zero, add_zero]
 
 /-- Every tangent vector of norm `π` at `p : Sⁿ` exponentiates to the antipodal point `-p`. -/

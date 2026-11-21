@@ -202,7 +202,7 @@ theorem isNormalDomain_eball_injectivityRadiusAt {p : M} (hpos : 0 < injectivity
     (by simpa only [Metric.mem_eball, edist_zero_right] using hv)
   injOn := injOn_riemannianExp_eball_injectivityRadiusAt p
   isLocalDiffeomorphOn v := isLocalDiffeomorphAt_riemannianExp_of_enorm_lt_injectivityRadiusAt
-    (by simpa only [Metric.mem_eball, edist_zero_right] using v.2)
+    (by simpa only [Metric.mem_eball, edist_zero_right] using v.property)
 
 /-- For any extended radius `0 < r ≤ ∞`, `Metric.eball (0 : TangentSpace I p) r` is a normal domain
 if and only if `r ≤ injectivityRadiusAt I M p`. -/
