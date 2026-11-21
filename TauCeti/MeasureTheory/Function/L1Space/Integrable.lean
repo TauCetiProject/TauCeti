@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 import TauCeti.Analysis.Normed.Module.Basic
@@ -47,7 +48,9 @@ a set containing the support of an integrable function keeps it integrable
 (`MeasureTheory.Integrable.smul_of_support_subset`), and so does an operator-valued function
 bounded on a set outside which the integrable function vanishes
 (`MeasureTheory.Integrable.apply_of_norm_le`). An `Lᵖ` function with `1 ≤ p` vanishing outside
-a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`).
+a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`), and
+so is a function vanishing outside a measurable set and dominated on it by a function integrable
+there (`MeasureTheory.integrable_of_forall_notMem_eq_zero_of_norm_le`).
 Scalar multiplication by a finite product of multiplicative indicators, each constant on a
 null-measurable set and equal to `1` off it, preserves integrability
 (`MeasureTheory.Integrable.prod_mulIndicator_const_smul`).
@@ -224,6 +227,15 @@ theorem MemLp.integrable_of_ae_notMem_eq_zero {α E : Type*} [MeasurableSpace α
     (hs : μ s ≠ ⊤) (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
+
+/-- A function vanishing outside a measurable set `s`, a.e. strongly measurable on `s` and dominated
+on `s` by a function integrable there, is integrable. -/
+theorem integrable_of_forall_notMem_eq_zero_of_norm_le {α E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] {s : Set α} {f : α → E} {g : α → ℝ}
+    (hs : MeasurableSet s) (hf : AEStronglyMeasurable f (μ.restrict s)) (hg : IntegrableOn g s μ)
+    (hf0 : ∀ x ∉ s, f x = 0) (hfg : ∀ x ∈ s, ‖f x‖ ≤ g x) : Integrable f μ :=
+  IntegrableOn.integrable_of_forall_notMem_eq_zero
+    (hg.mono' hf (ae_restrict_of_forall_mem hs hfg)) hf0
 
 end MeasureTheory
 

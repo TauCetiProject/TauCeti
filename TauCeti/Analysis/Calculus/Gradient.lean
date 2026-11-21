@@ -51,6 +51,7 @@ chain rule for the gradient of a real profile composed with a real function.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
+* `TauCeti.gradient_fun_mul`: the Leibniz rule `∇ (f g) = conj f ∇ g + conj g ∇ f`.
 * `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
   linear isometry equivalence `l`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
@@ -158,6 +159,15 @@ theorem gradient_neg : ∇ (-f) x = -∇ f x := by
 theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
     ∇ (f - g) x = ∇ f x - ∇ g x := by
   rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
+
+/-- **The Leibniz rule for the gradient.** The gradient of a product of functions differentiable
+at `x` is `conj (f x) • ∇ g x + conj (g x) • ∇ f x`: `toDual` is conjugate-linear. Over `ℝ` the
+conjugation is the identity. -/
+theorem gradient_fun_mul (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
+    ∇ (fun y => f y * g y) x = conj (f x) • ∇ g x + conj (g x) • ∇ f x := by
+  apply (toDual 𝕜 F).injective
+  simp only [toDual_gradient, fderiv_fun_mul hf hg, map_add, map_smulₛₗ,
+    RingHomCompTriple.comp_apply, RingHom.id_apply]
 
 /-- The gradient transforms under right composition by a linear isometry equivalence `l` as
 `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))`. No differentiability hypothesis is needed. -/
