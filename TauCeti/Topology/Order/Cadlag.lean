@@ -24,12 +24,12 @@ If a function converges from the right at `x` in a regular space, its strict lef
 (`Filter.Tendsto.leftLim_nhdsGT`), and in particular for a càdlàg path it converges to `f x`
 (`IsCadlag.tendsto_nhdsGT_leftLim`). Consequently, the first time at which a càdlàg path or its left
 limit enters a closed set is attained whenever such a time exists and is bounded below
-(`IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag`). On a compact initial interval `[⊥, T]`, crossing
-a level `ε` in value or left limit for a càdlàg function into a complete linear order with the order
-topology is equivalent to the supremum of values and left limits reaching `ε`
-(`IsCadlag.exists_le_or_le_leftLim_iff_le_sup_biSup`). In a second-countable order topology, a
-single countable subset of `(-∞, T]` realizes that supremum through function values alone
-(`IsCadlag.exists_countable_subset_Iic_biSup_eq`).
+(`IsClosed.csInf_mem_or_leftLim_mem_of_isCadlag`). In a complete linear order with closed lower
+rays, strict left limits on `(-∞, T]` never exceed the supremum of values on `(-∞, T]`
+(`TauCeti.leftLim_le_biSup_Iic`). On a compact initial interval `[⊥, T]`, crossing a level `ε`
+in value or left limit for a càdlàg function into a complete linear order with the order topology
+is equivalent to the supremum of values up to `T` reaching `ε`
+(`IsCadlag.exists_le_or_le_leftLim_iff_le_biSup`).
 
 For any path `f` into a pseudometric space and threshold `ε : ℝ`,
 `TauCeti.oscillationExitAfter f ε u` takes the infimum of times strictly after `u` at which `f` or
@@ -131,44 +131,43 @@ theorem comp_min_const {X Y : Type*} [LinearOrder X] [TopologicalSpace X] [Order
       filter_upwards [Ioo_mem_nhdsLT hut] with s hs
       simp [min_eq_right hs.1.le]
 
-/-- In a second-countable order topology, one countable subset of `(-∞, T]` suffices to compute
-the joint supremum of values and left limits up to `T` for every càdlàg function into a complete
-linear order, using function evaluations alone. -/
-theorem exists_countable_subset_Iic_biSup_eq {X α : Type*} [LinearOrder X] [TopologicalSpace X]
-    [OrderTopology X] [SecondCountableTopology X] [CompleteLinearOrder α] [TopologicalSpace α]
-    [OrderTopology α] (T : X) :
-    ∃ S : Set X, S.Countable ∧ S ⊆ Iic T ∧ ∀ ⦃g : X → α⦄, IsCadlag g →
-      (⨆ s ∈ S, g s) = (⨆ t ≤ T, g t) ⊔ (⨆ t ≤ T, g.leftLim t) := by
-  obtain ⟨S, hSc, hST, hS⟩ :=
-    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := α) T
-  refine ⟨S, hSc, hST, fun g hg => le_antisymm ?_ (sup_le ?_ ?_)⟩
-  · exact iSup₂_le fun s hs => le_sup_of_le_left (le_biSup g (hST hs))
-  · refine iSup₂_le fun t ht => le_of_forall_lt fun a ha => ?_
-    obtain ⟨s, hsS, has⟩ := hS (fun u _ => hg.isRightContinuous u) ht ha
-    exact has.trans_le (le_biSup g hsS)
-  · refine iSup₂_le fun t ht => le_of_forall_lt fun a ha => ?_
-    rcases eq_or_neBot (𝓝[<] t) with hbot | _
-    · rw [leftLim_eq_of_eq_bot g hbot] at ha
-      obtain ⟨s, hsS, has⟩ := hS (fun u _ => hg.isRightContinuous u) ht ha
-      exact has.trans_le (le_biSup g hsS)
-    · have hmem := (hg.tendsto_nhdsLT_leftLim t).eventually (Ioi_mem_nhds ha)
-      obtain ⟨u, hau, hut⟩ := (hmem.and self_mem_nhdsWithin).exists
-      obtain ⟨s, hsS, has⟩ := hS (fun v _ => hg.isRightContinuous v) ((le_of_lt hut).trans ht) hau
-      exact has.trans_le (le_biSup g hsS)
+end IsCadlag
+
+namespace TauCeti
+
+/-- Strict left limits on `(-∞, T]` never exceed the supremum of function values on `(-∞, T]`, in
+any complete linear order with closed lower rays. No càdlàg hypothesis is required. -/
+theorem leftLim_le_biSup_Iic {X α : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [CompleteLinearOrder α] [TopologicalSpace α] [ClosedIicTopology α]
+    (g : X → α) {t T : X} (ht : t ≤ T) :
+    g.leftLim t ≤ ⨆ s ≤ T, g s :=
+  isClosed_Iic.mem_of_mapClusterPt (mapClusterPt_leftLim g t) <|
+    eventually_nhdsWithin_of_forall fun y hy => le_iSup₂_of_le y (hy.trans ht) le_rfl
+
+/-- The supremum of strict left limits on `(-∞, T]` never exceeds the supremum of function values
+on `(-∞, T]`, in any complete linear order with closed lower rays. -/
+theorem biSup_Iic_leftLim_le {X α : Type*} [LinearOrder X] [TopologicalSpace X]
+    [OrderTopology X] [CompleteLinearOrder α] [TopologicalSpace α] [ClosedIicTopology α]
+    (g : X → α) (T : X) :
+    (⨆ t ≤ T, g.leftLim t) ≤ ⨆ t ≤ T, g t :=
+  iSup₂_le fun _ ht => leftLim_le_biSup_Iic g ht
+
+end TauCeti
+
+namespace IsCadlag
 
 /-- On a compact initial interval `[⊥, T]`, a càdlàg function into a complete linear order with the
 order topology reaches `ε` in value or left limit at some time `t ≤ T` if and only if the supremum
-of its values and left limits up to `T` is at least `ε`. -/
-theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
+of its values up to `T` is at least `ε`. -/
+theorem exists_le_or_le_leftLim_iff_le_biSup {X α : Type*}
     [LinearOrder X] [OrderBot X] [TopologicalSpace X] [OrderTopology X]
     [CompactIccSpace X] [CompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α]
     {g : X → α} (hg : IsCadlag g) (T : X) (ε : α) :
-    (∃ t ≤ T, ε ≤ g t ∨ ε ≤ g.leftLim t) ↔
-      ε ≤ (⨆ t ≤ T, g t) ⊔ (⨆ t ≤ T, g.leftLim t) := by
+    (∃ t ≤ T, ε ≤ g t ∨ ε ≤ g.leftLim t) ↔ ε ≤ ⨆ t ≤ T, g t := by
   constructor
   · rintro ⟨t, ht, hgt | hlt⟩
-    · exact hgt.trans (le_sup_of_le_left (le_iSup₂_of_le t ht le_rfl))
-    · exact hlt.trans (le_sup_of_le_right (le_iSup₂_of_le t ht le_rfl))
+    · exact hgt.trans (le_iSup₂_of_le t ht le_rfl)
+    · exact hlt.trans (TauCeti.leftLim_le_biSup_Iic g ht)
   · intro hsup
     by_contra! hlt
     have hc_ex (t : Icc (⊥ : X) T) :
@@ -203,14 +202,7 @@ theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
       have hx_mem : x ∈ ⋃ i ∈ F, U i := hF ⟨bot_le, hx⟩
       obtain ⟨i, hiF, hxi⟩ := mem_iUnion₂.mp hx_mem
       exact (hU_sub i hxi).trans (Finset.le_sup' c (Finset.mem_insert_of_mem hiF))
-    have hleft_le (x : X) (hx : x ≤ T) : g.leftLim x ≤ C := by
-      rcases eq_or_neBot (𝓝[<] x) with hbot | _
-      · simpa [leftLim_eq_of_eq_bot g hbot] using hg_le x hx
-      refine isClosed_Iic.mem_of_tendsto (hg.tendsto_nhdsLT_leftLim x) ?_
-      filter_upwards [self_mem_nhdsWithin] with y hy
-      exact hg_le y ((le_of_lt hy).trans hx)
-    exact not_lt_of_ge hsup
-      ((sup_le (iSup₂_le hg_le) (iSup₂_le hleft_le)).trans_lt hC_lt)
+    exact not_lt_of_ge hsup ((iSup₂_le hg_le).trans_lt hC_lt)
 
 end IsCadlag
 
@@ -304,19 +296,6 @@ theorem le_oscillationExitAfter (f : X → E) (ε : ℝ) (u : WithTop X) :
 /-- Iterated oscillation exit times form a nondecreasing sequence. -/
 theorem oscillationExit_mono (f : X → E) (ε : ℝ) : Monotone (oscillationExit f ε) :=
   monotone_nat_of_le_succ fun n => le_oscillationExitAfter f ε (oscillationExit f ε n)
-
-/-- Consecutive half-open oscillation intervals `[τ_n, τ_{n+1})` are pairwise disjoint: at most one
-index `n` contains a given time `t`. Neither càdlàg regularity nor positivity of `ε` is needed. -/
-theorem eq_of_mem_Ico_oscillationExit {f : X → E} {ε : ℝ} {t : X} {m n : ℕ}
-    (hm : oscillationExit f ε m ≤ (t : WithTop X) ∧ (t : WithTop X) < oscillationExit f ε (m + 1))
-    (hn : oscillationExit f ε n ≤ (t : WithTop X) ∧ (t : WithTop X) < oscillationExit f ε (n + 1)) :
-    m = n := by
-  rcases lt_trichotomy m n with hlt | rfl | hgt
-  · exact absurd
-      (hm.2.trans_le ((oscillationExit_mono f ε (Nat.succ_le_of_lt hlt)).trans hn.1)) (lt_irrefl _)
-  · rfl
-  · exact absurd
-      (hn.2.trans_le ((oscillationExit_mono f ε (Nat.succ_le_of_lt hgt)).trans hm.1)) (lt_irrefl _)
 
 /-- `oscillationExitAfter f ε u` equals `⊤` if and only if no strictly later time reaches
 distance `ε` from `f u.untopA` in value or strict left limit. -/
@@ -492,7 +471,8 @@ theorem exists_countable_subset_Iic_oscillationExitAfter_le_coe_iff
         TauCeti.oscillationExitAfter f ε u ≤ (T : WithTop X) ↔
           ENNReal.ofReal ε ≤
             ⨆ s ∈ S, edist (f s) (f (min (s : WithTop X) u).untopA) := by
-  obtain ⟨S, hSc, hST, hS⟩ := exists_countable_subset_Iic_biSup_eq (α := ℝ≥0∞) T
+  obtain ⟨S, hSc, hST, hS⟩ :=
+    TopologicalSpace.exists_countable_subset_Iic_biSup_eq (α := ℝ≥0∞) T
   refine ⟨S, hSc, hST, fun f hf ε hε u => ?_⟩
   let g : X → ℝ≥0∞ := fun t => edist (f t) (f (min (t : WithTop X) u).untopA)
   have hg_eq : g = ENNReal.ofReal ∘ TauCeti.stoppedDist f u := by
@@ -516,8 +496,9 @@ theorem exists_countable_subset_Iic_oscillationExitAfter_le_coe_iff
       exact dist_nonneg
     · exact ge_of_tendsto ((TauCeti.isCadlag_stoppedDist hf u).tendsto_nhdsLT_leftLim t)
         (Eventually.of_forall hsd_nonneg)
-  rw [hf.oscillationExitAfter_le_coe_iff hε u T, hS hg_cadlag,
-    ← hg_cadlag.exists_le_or_le_leftLim_iff_le_sup_biSup T (ENNReal.ofReal ε)]
+  rw [hf.oscillationExitAfter_le_coe_iff hε u T,
+    hS (fun t _ => hg_cadlag.isRightContinuous t),
+    ← hg_cadlag.exists_le_or_le_leftLim_iff_le_biSup T (ENNReal.ofReal ε)]
   refine exists_congr fun t => and_congr_right fun _ => ?_
   have hmem := Set.ext_iff.mp (TauCeti.setOf_oscillation_eq_stoppedDist hf hε u) t
   simp only [mem_ofPred_eq] at hmem
@@ -588,23 +569,6 @@ theorem eventually_lt_oscillationExit {f : X → E} (hf : IsCadlag f) {ε : ℝ}
 theorem tendsto_oscillationExit_top {f : X → E} (hf : IsCadlag f) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (TauCeti.oscillationExit f ε) atTop (𝓝 ⊤) :=
   (WithTop.tendsto_nhds_top_iff _).mpr (hf.eventually_lt_oscillationExit hε)
-
-/-- Every finite time `t` lies in a half-open interval `[τ_n, τ_{n+1})` between consecutive
-`ε`-oscillation exits (`ε > 0`) of a càdlàg path. -/
-theorem exists_mem_Ico_oscillationExit {f : X → E} (hf : IsCadlag f) {ε : ℝ} (hε : 0 < ε)
-    (t : X) :
-    ∃ n, TauCeti.oscillationExit f ε n ≤ (t : WithTop X) ∧
-      (t : WithTop X) < TauCeti.oscillationExit f ε (n + 1) := by
-  classical
-  obtain ⟨N, hN⟩ := (hf.eventually_lt_oscillationExit hε t).exists
-  have hex : ∃ k, (t : WithTop X) < TauCeti.oscillationExit f ε k := ⟨N, hN⟩
-  have hn_lt : (t : WithTop X) < TauCeti.oscillationExit f ε (Nat.find hex) := Nat.find_spec hex
-  rcases hm : Nat.find hex with _ | k
-  · rw [hm, TauCeti.oscillationExit_zero] at hn_lt
-    exact (not_le_of_gt (WithTop.coe_lt_coe.mp hn_lt) bot_le).elim
-  · have hk_ge : ¬ (t : WithTop X) < TauCeti.oscillationExit f ε k :=
-      Nat.find_min hex (by omega)
-    exact ⟨k, le_of_not_gt hk_ge, hm ▸ hn_lt⟩
 
 end OscillationExit
 
