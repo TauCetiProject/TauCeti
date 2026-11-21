@@ -327,7 +327,7 @@ theorem baseChangeTowerAlgEquiv_symm_tmul (m : M) (a : A) :
 
 /-- `M ⊗[K] A` is the base change of `L ⊗[K] A` along `L → M`: the inverse tower comparison sends
 the image of `x ∈ L ⊗[K] A` under the scalar map `L → M` to `1 ⊗ x`. -/
-theorem baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
+theorem _root_.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor (x : L ⊗[K] A) :
     (baseChangeTowerAlgEquiv K L A M).symm
         (Algebra.TensorProduct.rTensor A (IsScalarTower.toAlgHom K L M) x) =
       (1 : M) ⊗ₜ[L] x := by

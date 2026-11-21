@@ -413,7 +413,7 @@ theorem projectiveCharpolyRev_lmul_rTensor (φ : A →ₐ[R] A') (x : A ⊗[R] S
   -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
   rw [← AlgEquiv.projectiveCharpolyRev_lmul
       (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm,
-    ← hφ, TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
+    ← hφ, Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
     ← Algebra.baseChange_lmul, LinearMap.projectiveCharpolyRev_baseChange,
     IsScalarTower.coe_toAlgHom]
 

@@ -138,7 +138,7 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
   -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
   rw [← projectiveNorm_eq_of_algEquiv
       (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm, ← hφ,
-    TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
+    Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
     projectiveNorm_baseChange_tmul, IsScalarTower.toAlgHom_apply]
 
 end BaseChange
