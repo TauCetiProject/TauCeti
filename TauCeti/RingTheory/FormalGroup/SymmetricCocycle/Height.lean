@@ -343,8 +343,7 @@ theorem eq_zero_of_sum_smul_eq_homDefect_𝔾ₐ (hp : p.Prime)
       simp [hij.ne', homogeneousComponent_of_lt_order_eq_zero hlt]
   have hord : ((p ^ i : ℕ) : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
     rw [← hag]
-    exact Finset.sum_induction _ (fun f : MvPowerSeries (Fin 2) R ↦ ((p ^ i : ℕ) : ℕ∞) ≤ f.order)
-      (fun _ _ ↦ le_order_add) (by simp) fun j hj ↦ (hterm j hj).1
+    exact le_order_sum fun j hj ↦ (hterm j hj).1
   -- the coboundary vanishes in degree `pⁱ`, while the combination has degree-`pⁱ` part `aᵢ C_(pⁱ)`
   have hcomp := homogeneousComponent_homDefect_𝔾ₐ_eq_zero hp
     ((Nat.cast_lt.mpr (Nat.pow_lt_pow_right hp.one_lt hih)).trans_le hF) hord
