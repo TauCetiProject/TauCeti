@@ -55,9 +55,8 @@ of positive-length Moore loops, a Moore model of the double loop map, is a Hurew
   fibration need not be a Hurewicz fibration.
 * `TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`: the fibre of the Moore loop map over a
   constant loop of positive length is the loop space of the fibre.
-* `TauCeti.IsHurewiczFibration.posLengthMap`,
-  `TauCeti.IsHurewiczFibration.restrictPreimage_mooreLoopMap`: on the Moore loops of positive
-  length, the Moore loop map of a Hurewicz fibration is a Hurewicz fibration.
+* `TauCeti.IsHurewiczFibration.posLengthMap`: on the Moore loops of positive length, the Moore
+  loop map of a Hurewicz fibration is a Hurewicz fibration.
 * `TauCeti.IsHurewiczFibration.posLengthMap_posLengthMap`: so is the induced map one level up, on
   positive-length Moore loops of positive-length Moore loops.
 
@@ -161,15 +160,16 @@ private theorem map_posLengthHomeomorph_symm_eq_constOfLength (hL : 0 < L)
     (c : Path (⟨x, rfl⟩ : f ⁻¹' {f x}) ⟨x, rfl⟩) :
     map f rfl ((posLengthHomeomorph x).symm (⟨L, hL⟩, c.map continuous_subtypeVal)).val =
       constOfLength (f x) L := by
+  -- every value of the extended loop lies in the fibre `f ⁻¹' {f x}`
+  have hmem (r : ℝ) : (c.map continuous_subtypeVal).extend r ∈ f ⁻¹' {f x} := by
+    obtain ⟨s, hs⟩ := (Path.extend_range (c.map continuous_subtypeVal)).subset
+      (Set.mem_range_self r)
+    exact hs ▸ (c s).property
   refine ext (MoorePath.ext (by simp) fun t ↦ ?_)
-  obtain ⟨s, hs⟩ := (Path.extend_range (c.map continuous_subtypeVal)).subset
-    (Set.mem_range_self (((Path.toMoorePath (c.map continuous_subtypeVal)).length * t / L : ℝ≥0) :
-      ℝ))
   simp only [toMoorePath_map, MoorePath.map_apply, toMoorePath_posLengthHomeomorph_symm_apply,
     MoorePath.rescale_apply, Path.toMoorePath_apply, toMoorePath_constOfLength,
     MoorePath.constOfLength_apply]
-  rw [← hs]
-  exact (c s).property
+  exact hmem _
 
 variable (x) in
 /-- **The fibre of the Moore loop map over a constant loop of positive length is the loop space of
@@ -249,27 +249,6 @@ theorem IsHurewiczFibration.posLengthMap (hp : IsHurewiczFibration.{w} p) (e : E
   exact (posLengthHomeomorph (p e)).symm.isHurewiczFibration.comp
     (((Homeomorph.refl (Set.Ioi (0 : ℝ≥0))).isHurewiczFibration.prodMap
       (hp.loopMap e)).comp_homeomorph _)
-
-/-- **Over the Moore loops of positive length, the Moore loop map of a Hurewicz fibration is a
-Hurewicz fibration**, as the restriction of the Moore loop map over an open subset of its target.
-This is `TauCeti.IsHurewiczFibration.posLengthMap`, since the Moore loop map preserves lengths. -/
-theorem IsHurewiczFibration.restrictPreimage_mooreLoopMap (hp : IsHurewiczFibration.{w} p)
-    (e : E) :
-    IsHurewiczFibration.{w} ((length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace B (p e))).restrictPreimage
-      (map ⟨p, hp.continuous⟩ rfl)) := by
-  -- the domain is the set of Moore loops of positive length, as the loop map preserves lengths
-  have hdom : (map ⟨p, hp.continuous⟩ rfl) ⁻¹' (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace B (p e)))
-      = length ⁻¹' Set.Ioi 0 := by
-    ext; simp
-  have h : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace B (p e))).restrictPreimage
-      (map ⟨p, hp.continuous⟩ rfl) =
-      MooreLoopSpace.posLengthMap ⟨p, hp.continuous⟩ ∘ Homeomorph.setCongr hdom :=
-    funext fun γ ↦ Subtype.ext <| by
-      rw [Set.restrictPreimage_coe, Function.comp_apply, coe_posLengthMap_apply]
-      -- `Homeomorph.setCongr` does not change the underlying point
-      rfl
-  rw [h]
-  exact (hp.posLengthMap e).comp_homeomorph (Homeomorph.setCongr hdom)
 
 /-- **Double loops: the positive-length Moore loop map of a Hurewicz fibration is again a Hurewicz
 fibration one level up.** For a Hurewicz fibration `p : E → B` and a Moore loop `c` of positive

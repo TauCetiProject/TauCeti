@@ -628,6 +628,12 @@ theorem coe_posLengthMap_apply {Y : Type*} [TopologicalSpace Y] (f : C(X, Y))
     (posLengthMap f γ : MooreLoopSpace Y (f x)) = map f rfl γ :=
   (rfl)
 
+/-- `posLengthMap` sends the identity to the identity. -/
+@[simp]
+theorem posLengthMap_id :
+    posLengthMap (ContinuousMap.id X) (x := x) = ContinuousMap.id _ :=
+  ContinuousMap.ext fun γ ↦ Subtype.ext (DFunLike.congr_fun map_id γ.val)
+
 /-- `posLengthMap` sends a composite to the composite. -/
 theorem posLengthMap_comp {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] (g : C(Y, Z))
     (f : C(X, Y)) :
