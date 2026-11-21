@@ -94,9 +94,11 @@ private lemma indicator_closedBall_smul (u : sphere (0 : E) 1) {r ρ : ℝ} (hr 
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The comparison along the ray in direction `u`, for a set `A` star-shaped about the origin:
-under the hypotheses of `setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic`, the
-integral of `φ ‖x‖` over the ray's part in `A` is at most the weight of the ray's part in
-`A ∩ closedBall 0 ρ`. -/
+if `φ ≤ 1` at positive radii and the weighted integral of `φ` over the positive radii is at most
+the weight of `(0, ρ]`, then the integral of `φ ‖x‖` over the ray's part in `A` is at most the
+weight of the ray's part in `A ∩ closedBall 0 ρ`. This is
+`setLIntegral_indicator_le_setLIntegral_indicator_inter` for the radii of the ray in `A` and in
+`closedBall 0 ρ`. -/
 private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
     (hφ : ∀ r ∈ Ioi (0 : ℝ), φ r ≤ 1)
     (hmass : ∫⁻ r in Ioi (0 : ℝ), w r * φ r ≤ ∫⁻ r in Ioi (0 : ℝ), (Iic ρ).indicator w r)
@@ -118,7 +120,9 @@ private lemma lintegral_ray_le {w φ : ℝ → ℝ≥0∞} {ρ : ℝ}
         · rw [indicator_of_notMem hrA, indicator_of_notMem (s := R) (mt mem_preimage.1 hrA),
             mul_zero]
     _ ≤ ∫⁻ r in Ioi (0 : ℝ), (R ∩ Iic ρ).indicator w r :=
-        setLIntegral_indicator_mul_le_setLIntegral_indicator_inter_Iic hφ hmass hR
+        setLIntegral_indicator_le_setLIntegral_indicator_inter measurableSet_Ioi
+          (fun r hr ↦ mul_le_of_le_one_right' (hφ r hr)) hmass hR
+          fun _ _ _ hsr hr ↦ IsLowerSet.Iic ρ hsr hr
     _ = ∫⁻ r in Ioi (0 : ℝ), w r * (A ∩ closedBall 0 ρ).indicator 1 (r • (u : E)) := by
         refine setLIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
         rw [inter_indicator_one, Pi.mul_apply, indicator_closedBall_smul u hr]
