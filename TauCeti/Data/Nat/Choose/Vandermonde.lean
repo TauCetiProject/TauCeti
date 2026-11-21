@@ -34,6 +34,8 @@ aggregation property of the multivariate hypergeometric distribution.
 * `Finset.sum_filter_piAntidiag_prod_choose`: the same count with one coordinate prescribed.
 * `Finset.sum_filter_piAntidiag_prod_choose_fiberwise`: the same count with the totals over the
   fibres of a map prescribed.
+* `Finset.sum_filter_antidiagonal_choose`: Vandermonde's identity summed over pairs in
+  `antidiagonal m ×ˢ antidiagonal n` with fixed coordinatewise sum `(a, b)`.
 -/
 
 public section
@@ -141,5 +143,44 @@ theorem sum_filter_piAntidiag_prod_choose_fiberwise {κ : Type*} [Fintype ι] [F
   · intro k _
     rw [← prod_fiberwise univ f]
     exact prod_congr rfl fun j _ ↦ prod_congr rfl fun i hi ↦ by simp [(mem_filter.mp hi).2]
+
+/-- **Vandermonde's identity** filtered by coordinatewise sums: for `a + b = m + n`, summing
+`a.choose pq.1.1 * b.choose pq.1.2` over pairs `pq ∈ antidiagonal m ×ˢ antidiagonal n` whose
+coordinatewise sums equal `(a, b)` gives `(m + n).choose m`. -/
+theorem sum_filter_antidiagonal_choose (m n a b : ℕ) (hab : a + b = m + n) :
+    ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
+        (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
+      a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
+  rw [← hab, Nat.add_choose_eq a b m]
+  have hsub :
+      ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
+          (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
+        a.choose pq.1.1 * b.choose pq.1.2 =
+      ∑ p ∈ (antidiagonal m).filter (fun p ↦ p.1 ≤ a ∧ p.2 ≤ b),
+        a.choose p.1 * b.choose p.2 := by
+    refine Finset.sum_bij (fun pq _ ↦ pq.1) ?_ ?_ ?_ ?_
+    · intro pq hpq
+      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
+      exact ⟨hpq.1.1, by omega, by omega⟩
+    · rintro ⟨p₁, q₁⟩ hpq₁ ⟨p₂, q₂⟩ hpq₂ hEq
+      dsimp at hEq
+      subst hEq
+      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq₁ hpq₂
+      congr 1
+      ext <;> omega
+    · intro p hp
+      simp only [mem_filter, mem_antidiagonal] at hp
+      refine ⟨(p, (a - p.1, b - p.2)), ?_, rfl⟩
+      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq]
+      exact ⟨⟨hp.1, by omega⟩, by omega, by omega⟩
+    · intro _ _
+      rfl
+  rw [hsub]
+  refine Finset.sum_subset (filter_subset _ _) fun p hp hp' ↦ ?_
+  simp only [mem_filter, not_and, not_le] at hp'
+  by_cases h1 : p.1 ≤ a
+  · have h2 : b < p.2 := hp' hp h1
+    rw [Nat.choose_eq_zero_of_lt h2, mul_zero]
+  · rw [Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge h1), zero_mul]
 
 end Finset

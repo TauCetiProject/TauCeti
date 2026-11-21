@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.DividedPowers.Basic
 import Mathlib.Algebra.MvPolynomial.Basic
 import Mathlib.Algebra.TrivSqZeroExt.Basic
-import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Data.ZMod.Basic
 import Mathlib.RingTheory.DividedPowers.RatAlgebra
+import TauCeti.Data.Nat.Choose.Vandermonde
 
 /-!
 # Divided powers from identities on generators
@@ -178,42 +178,6 @@ theorem mul_dpow_mul {x : A} (hx : x ∈ I) (a : A) {m n : ℕ}
         = a ^ (m + n) * (hI.dpow m x * hI.dpow n x) := by rw [pow_add]; ring
     _ = a ^ (m + n) * (((m + n).choose m : A) * hI.dpow (m + n) x) := by rw [h]
     _ = ((m + n).choose m : A) * (a ^ (m + n) * hI.dpow (m + n) x) := by ring
-
-private lemma sum_filter_antidiagonal_choose (m n a b : ℕ) (hab : a + b = m + n) :
-    ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
-        (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
-      a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
-  rw [← hab, Nat.add_choose_eq a b m]
-  have hsub :
-      ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
-          (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
-        a.choose pq.1.1 * b.choose pq.1.2 =
-      ∑ p ∈ (antidiagonal m).filter (fun p ↦ p.1 ≤ a ∧ p.2 ≤ b),
-        a.choose p.1 * b.choose p.2 := by
-    refine Finset.sum_bij (fun pq _ ↦ pq.1) ?_ ?_ ?_ ?_
-    · intro pq hpq
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
-      exact ⟨hpq.1.1, by omega, by omega⟩
-    · rintro ⟨p₁, q₁⟩ hpq₁ ⟨p₂, q₂⟩ hpq₂ hEq
-      dsimp at hEq
-      subst hEq
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq₁ hpq₂
-      congr 1
-      ext <;> omega
-    · intro p hp
-      simp only [mem_filter, mem_antidiagonal] at hp
-      refine ⟨(p, (a - p.1, b - p.2)), ?_, rfl⟩
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq]
-      exact ⟨⟨hp.1, by omega⟩, by omega, by omega⟩
-    · intro _ _
-      rfl
-  rw [hsub]
-  refine Finset.sum_subset (filter_subset _ _) fun p hp hp' ↦ ?_
-  simp only [mem_filter, not_and, not_le] at hp'
-  by_cases h1 : p.1 ≤ a
-  · have h2 : b < p.2 := hp' hp h1
-    rw [Nat.choose_eq_zero_of_lt h2, mul_zero]
-  · rw [Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge h1), zero_mul]
 
 /-- The multiplication identity is stable under addition: if `mul_dpow` holds for all degrees at
 `x ∈ I` and at `y ∈ I`, then it holds for all degrees at `x + y`. -/

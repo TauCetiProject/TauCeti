@@ -287,17 +287,14 @@ private lemma supAdditive_dpow_right (hI : DividedPowers I) (hJ : DividedPowers 
   simpa only [zero_add] using
     (supDpow_add_eq hI hJ h n I.zero_mem hy).trans (hI.dpowConv_zero_left hJ n y)
 
-private lemma sup_eq_span_union (I J : Ideal A) :
-    I ⊔ J = Ideal.span ((I : Set A) ∪ (J : Set A)) := by
-  rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]
-
 /-- Stacks Project, Lemma 23.2.5 (tag `07GQ`): given divided power structures `hI` on `I` and
 `hJ` on `J` that agree on `I ⊓ J` in every degree, construct the unique divided power structure on
 `I ⊔ J` extending both `hI` and `hJ`. -/
 noncomputable def sup (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     DividedPowers (I ⊔ J) :=
-  (supAdditive hI hJ h).toDividedPowers (sup_eq_span_union I J)
+  (supAdditive hI hJ h).toDividedPowers
+    (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union])
     (by
       rintro s (hsI | hsJ) m n
       · simp only [supAdditive_dpow_left hI hJ h _ hsI, hI.mul_dpow hsI]
@@ -399,7 +396,8 @@ theorem isDPMorphism_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     exact ⟨hg.comp hK (hI.isDPMorphism_id_sup_left hJ h),
       hg.comp hK (hI.isDPMorphism_id_sup_right hJ h)⟩
   · rintro ⟨hgI, hgJ⟩
-    refine IsDPMorphism.on_span (hI.sup hJ h) hK (sup_eq_span_union I J) ?_ ?_
+    refine IsDPMorphism.on_span (hI.sup hJ h) hK
+      (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union]) ?_ ?_
     · rintro s (hsI | hsJ)
       · exact hgI.ideal_comp (Ideal.mem_map_of_mem g hsI)
       · exact hgJ.ideal_comp (Ideal.mem_map_of_mem g hsJ)
@@ -418,7 +416,8 @@ theorem eq_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
   · rintro rfl
     exact ⟨fun n _ hx ↦ hI.sup_dpow_left hJ h n hx, fun n _ hy ↦ hI.sup_dpow_right hJ h n hy⟩
   · rintro ⟨hθI, hθJ⟩
-    refine (hI.sup hJ h).dpow_eq_from_gens θ (sup_eq_span_union I J) ?_
+    refine (hI.sup hJ h).dpow_eq_from_gens θ
+      (by rw [← Ideal.span_eq I, ← Ideal.span_eq J, ← Ideal.span_union]) ?_
     rintro n s (hsI | hsJ)
     · rw [hI.sup_dpow_left hJ h n hsI, hθI n s hsI]
     · rw [hI.sup_dpow_right hJ h n hsJ, hθJ n s hsJ]
