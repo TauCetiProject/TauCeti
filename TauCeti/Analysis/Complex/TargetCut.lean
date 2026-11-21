@@ -11,14 +11,13 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.GroupTheory.Perm.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Affine
-import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Data.Finite.Perm
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.GroupTheory.Coset.Card
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.DiscreteSubset
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
@@ -151,7 +150,7 @@ theorem coe_markingPerm_apply (f : markingStabilizer P C) (c : C) :
 /-- An automorphism of the sphere fixing `∞` and each point of `P`, and preserving the marking
 `C`, is determined by the permutation of `C` it induces, provided `P ∪ C` contains two distinct
 points. -/
-theorem markingPerm_injective (h : ∃ p ∈ P ∪ C, ∃ q ∈ P ∪ C, p ≠ q) :
+theorem markingPerm_injective (h : (P ∪ C).Nontrivial) :
     Function.Injective (markingPerm P C) := by
   refine (injective_iff_map_eq_one _).2 fun f hf ↦ ?_
   have hfix : ∀ a ∈ P ∪ C, f.1 a = a := by
@@ -166,7 +165,7 @@ theorem markingPerm_injective (h : ∃ p ∈ P ∪ C, ∃ q ∈ P ∪ C, p ≠ q
 distinct points, the sphere with the special point `∞`, the marked points `P` and the unordered
 marking `C` has finitely many automorphisms, and their number divides `|C|!`. -/
 theorem card_markingStabilizer_dvd_factorial (hC : C.Finite)
-    (h : ∃ p ∈ P ∪ C, ∃ q ∈ P ∪ C, p ≠ q) :
+    (h : (P ∪ C).Nontrivial) :
     Nat.card (markingStabilizer P C) ∣ (Nat.card C)! := by
   have := hC.to_subtype
   rw [← Nat.card_perm]
@@ -175,7 +174,7 @@ theorem card_markingStabilizer_dvd_factorial (hC : C.Finite)
 /-- If the marking `C` is finite and `P ∪ C` contains two distinct points, the sphere with the
 special point `∞`, the marked points `P` and the unordered marking `C` has finitely many
 automorphisms. -/
-theorem finite_markingStabilizer (hC : C.Finite) (h : ∃ p ∈ P ∪ C, ∃ q ∈ P ∪ C, p ≠ q) :
+theorem finite_markingStabilizer (hC : C.Finite) (h : (P ∪ C).Nontrivial) :
     Finite (markingStabilizer P C) :=
   Nat.finite_of_card_ne_zero <| ne_zero_of_dvd_ne_zero (Nat.factorial_ne_zero _)
     (card_markingStabilizer_dvd_factorial hC h)
@@ -230,7 +229,7 @@ theorem markedIsotropy_le_markingStabilizer (D : Set X) :
 `P ∪ u⁻¹(D)` contains two distinct points, the isotropy of `u` is finite of order dividing
 `|u⁻¹(D)|!`. -/
 theorem card_markedIsotropy_dvd_factorial {D : Set X} (hD : (u ⁻¹' D).Finite)
-    (h : ∃ p ∈ P ∪ u ⁻¹' D, ∃ q ∈ P ∪ u ⁻¹' D, p ≠ q) :
+    (h : (P ∪ u ⁻¹' D).Nontrivial) :
     Nat.card (markedIsotropy u P) ∣ (Nat.card (u ⁻¹' D))! :=
   (Subgroup.card_dvd_of_le (markedIsotropy_le_markingStabilizer D)).trans
     (card_markingStabilizer_dvd_factorial hD h)
@@ -238,7 +237,7 @@ theorem card_markedIsotropy_dvd_factorial {D : Set X} (hD : (u ⁻¹' D).Finite)
 /-- If the full preimage `u⁻¹(D)` is finite and `P ∪ u⁻¹(D)` contains two distinct points, the
 isotropy of `u` is finite. -/
 theorem finite_markedIsotropy {D : Set X} (hD : (u ⁻¹' D).Finite)
-    (h : ∃ p ∈ P ∪ u ⁻¹' D, ∃ q ∈ P ∪ u ⁻¹' D, p ≠ q) :
+    (h : (P ∪ u ⁻¹' D).Nontrivial) :
     Finite (markedIsotropy u P) :=
   Nat.finite_of_card_ne_zero <| ne_zero_of_dvd_ne_zero (Nat.factorial_ne_zero _)
     (card_markedIsotropy_dvd_factorial hD h)
@@ -306,24 +305,16 @@ theorem IsTransverseCutAt.comp {ρ : ℂ → ℂ} (h : IsTransverseCutAt u D (ρ
   rw [← ContinuousLinearEquiv.comp_coe]
   exact hg.comp z hρ
 
-/-- An affine automorphism of `ℂ` has an invertible real derivative: its linear part, read over
-`ℝ`. -/
-theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars (f : ℂ ≃ᵃ[ℂ] ℂ) (z : ℂ) :
-    HasFDerivAt f ((f.linear.toContinuousLinearEquiv.restrictScalars ℝ : ℂ ≃L[ℝ] ℂ) :
-      ℂ →L[ℝ] ℂ) z :=
-  (ContinuousAffineMap.hasFDerivAt (f := ⟨f.toAffineMap,
-    f.toAffineMap.continuous_of_finiteDimensional⟩)).restrictScalars ℝ
-
 /-- `IsTransverseCutAt` is invariant under the automorphisms of the sphere fixing `∞`, so it is a
 property of the unparametrized map. -/
 theorem isTransverseCutAt_comp_affineEquiv_iff (f : ℂ ≃ᵃ[ℂ] ℂ) :
     IsTransverseCutAt (u ∘ f) D z ↔ IsTransverseCutAt u D (f z) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (f.hasFDerivAt_restrictScalars z)⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (f.hasFDerivAt_restrictScalars ℝ z)⟩
   have h' : IsTransverseCutAt (u ∘ f) D (f.symm (f z)) := by simpa using h
   have hu : (u ∘ f) ∘ f.symm = u := by
     funext w
     simp
-  simpa [hu] using h'.comp (f.symm.hasFDerivAt_restrictScalars (f z))
+  simpa [hu] using h'.comp (f.symm.hasFDerivAt_restrictScalars ℝ (f z))
 
 /-- Transversality of a smooth map `u` from `ℂ` to a manifold to a set `D` with a local defining
 function `g` at `u z`: if `d(g ∘ u) = dg ∘ du` is injective at `z`, then `u` meets the target cut
