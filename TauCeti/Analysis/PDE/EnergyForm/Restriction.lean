@@ -282,7 +282,7 @@ theorem energyFormH1_restrictL_add_const_nonneg_mass
   refine (energyFormH1_restrictL_nonneg hU hu v hv).trans_eq ?_
   rw [energyFormH1_def, energyFormH1_def]
   refine integral_congr_ae ?_
-  filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ, W1p.value_restrictL_ae hU u,
+  filter_upwards [W1p.value_restrictL_add_const_ae hU u δ, W1p.value_restrictL_ae hU u,
     hu0] with x h1 h2 h3
   have hne : W1p.value u x + δ ≠ 0 := by linarith
   simp only [energyIntegrand_apply, jetField_apply, W1p.gradient_add_const, massForm_apply, h1,
