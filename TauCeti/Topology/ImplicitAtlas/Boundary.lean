@@ -53,10 +53,9 @@ The example of the interval `[0, 1]`, with boundary `{0, 1}`, is in
 
 ## Implementation notes
 
-* The data and the axioms other than the product axiom are those of `TauCeti.ImplicitAtlas`,
-  restated here because the product axiom of an implicit atlas is a field of that structure. For
-  the same reason the regular footprints (`TauCeti.ImplicitAtlasWithBoundary.footprint`) and their
-  basic properties are restated.
+* The data and the axioms other than the boundaries and the product axiom are those of
+  `TauCeti.ImplicitAtlas`: both structures extend `TauCeti.PreImplicitAtlas`, so the regular
+  footprints (`TauCeti.PreImplicitAtlas.footprint`) and their basic properties apply to both.
 * The boundary `Y` of the base is a parameter, a subset of `X`; the boundary restriction is an
   implicit atlas on the subtype `Y`, with thickenings the subtypes `∂X_I`.
 * The half-space is modelled as `ℝⁿ × ℝ≥0` rather than as Mathlib's `EuclideanHalfSpace (n + 1)`,
@@ -78,78 +77,18 @@ namespace TauCeti
 variable {A : Type*}
 
 /-- An **implicit atlas with boundary** of virtual dimension `d` on a pair `(X, Y)` (Pardon,
-Definition 3.2.1). The fields other than `boundary`, `isClosed_boundary`, `act_mem_boundary`,
-`baseHomeomorph_mem_iff`, `footprintMap_mem_boundary_iff` and `exists_openPartialHomeomorph` are
-those of `TauCeti.ImplicitAtlas`. The first five of these give the closed invariant boundaries
-`∂X_I ⊆ X_I`, identified with `Y` at `I = ∅` and compatible with the footprint maps, and the local
-product axiom `exists_openPartialHomeomorph` allows half-space charts. See the module docstring. -/
+Definition 3.2.1): a pre-implicit atlas (`TauCeti.PreImplicitAtlas`) with closed invariant
+boundaries `∂X_I ⊆ X_I`, identified with `Y` at `I = ∅` and compatible with the footprint maps,
+satisfying the local product axiom `exists_openPartialHomeomorph`, which allows half-space charts.
+See the module docstring. -/
 structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
     [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
     [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
     (ρ : ∀ α, Representation ℝ (Γ α) (E α)) (T : Finset A → Type*)
     [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
     (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I))
-    (X : Type*) [TopologicalSpace X] (Y : Set X) (d : ℤ) where
-  /-- The identification `X_∅ ≃ₜ X` of the thickening at the empty index set. -/
-  baseHomeomorph : T ∅ ≃ₜ X
-  /-- The Kuranishi map `s_α : X_I → E_α`, for `α ∈ I`. -/
-  kuranishi : ∀ (I : Finset A) (α : I), T I → E α
-  continuous_kuranishi : ∀ (I : Finset A) (α : I), Continuous (kuranishi I α)
-  /-- The Kuranishi map `s_α` is `Γ_α`-equivariant, and the other factors of `Γ_I` act trivially
-  on `E_α`. -/
-  kuranishi_act : ∀ (I : Finset A) (α : I) (g : (β : I) → Γ β) (x : T I),
-    kuranishi I α (act I g x) = ρ α (g α) (kuranishi I α x)
-  /-- The regular locus `X_I^reg ⊆ X_I`. -/
-  regLocus : ∀ I : Finset A, Set (T I)
-  isOpen_regLocus : ∀ I : Finset A, IsOpen (regLocus I)
-  act_mem_regLocus : ∀ (I : Finset A) (g : (α : I) → Γ α) (x : T I),
-    x ∈ regLocus I → act I g x ∈ regLocus I
-  /-- The footprint map `ψ_IJ : Z_IJ → X_I`, for `I ⊆ J`. -/
-  footprintMap : ∀ ⦃I J : Finset A⦄, I ⊆ J → kuranishiZeroSet kuranishi I J → T I
-  continuous_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J), Continuous (footprintMap h)
-  /-- The footprint map `ψ_IJ` is equivariant, with `Γ_J` acting on `X_I` through the
-  restriction `Γ_J → Γ_I`. -/
-  footprintMap_act : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (g : (α : J) → Γ α)
-    (x : kuranishiZeroSet kuranishi I J)
-    (hx : act J g x ∈ kuranishiZeroSet kuranishi I J),
-    footprintMap h ⟨act J g x, hx⟩ = act I (Finset.restrict₂ (π := Γ) h g) (footprintMap h x)
-  footprintMap_self : ∀ (I : Finset A) (x : T I),
-    footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self kuranishi x⟩ = x
-  /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK` on the common domain. -/
-  footprintMap_footprintMap : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
-    (x : kuranishiZeroSet kuranishi J K)
-    (hx : footprintMap hJK x ∈ kuranishiZeroSet kuranishi I J)
-    (hx' : x.val ∈ kuranishiZeroSet kuranishi I K),
-    footprintMap hIJ ⟨footprintMap hJK x, hx⟩ = footprintMap (hIJ.trans hJK) ⟨x, hx'⟩
-  /-- The Kuranishi maps are compatible with the footprint maps: `s_I ∘ ψ_IJ = s_I`. -/
-  kuranishi_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J)
-    (α : I),
-    kuranishi I α (footprintMap h x) = kuranishi J ⟨α, h α.property⟩ x
-  isOpen_range_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J), IsOpen (range (footprintMap h))
-  /-- `U_IJ₁ ∩ U_IJ₂ = U_I(J₁ ∪ J₂)`. -/
-  range_footprintMap_inter : ∀ ⦃I J₁ J₂ : Finset A⦄ (h₁ : I ⊆ J₁) (h₂ : I ⊆ J₂),
-    range (footprintMap h₁) ∩ range (footprintMap h₂) =
-      range (footprintMap (h₁.trans (Finset.subset_union_left (s₂ := J₂))))
-  /-- `ψ_IJ⁻¹(U_IK) = U_JK ∩ Z_IJ`. -/
-  footprintMap_mem_range_iff : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
-    (x : kuranishiZeroSet kuranishi I J),
-    footprintMap hIJ x ∈ range (footprintMap (hIJ.trans hJK)) ↔ x.val ∈ range (footprintMap hJK)
-  /-- The footprint map is a quotient map onto its image `U_IJ`. -/
-  isQuotientMap_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J),
-    IsQuotientMap (rangeFactorization (footprintMap h))
-  /-- The fibres of the footprint map `ψ_IJ` are the orbits of `Γ_(J \ I)`. -/
-  footprintMap_eq_footprintMap_iff : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
-    (x y : kuranishiZeroSet kuranishi I J),
-    footprintMap h x = footprintMap h y ↔
-      ∃ g : (α : J) → Γ α, Finset.restrict₂ (π := Γ) h g = 1 ∧ act J g x = y
-  /-- `ψ_IJ⁻¹(X_I^reg) ⊆ X_J^reg`. -/
-  mem_regLocus_of_footprintMap_mem : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
-    (x : kuranishiZeroSet kuranishi I J),
-    footprintMap h x ∈ regLocus I → x.val ∈ regLocus J
-  /-- `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
-  eq_one_of_act_eq : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J),
-    footprintMap h x ∈ regLocus I → ∀ g : (α : J) → Γ α,
-      Finset.restrict₂ (π := Γ) h g = 1 → act J g x = x → g = 1
+    (X : Type*) [TopologicalSpace X] (Y : Set X) (d : ℤ)
+    extends PreImplicitAtlas Γ E ρ T act X where
   /-- The boundary `∂X_I ⊆ X_I`. -/
   boundary : ∀ I : Finset A, Set (T I)
   /-- The boundary `∂X_I` is closed in `X_I`. -/
@@ -177,9 +116,6 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
           ((EuclideanSpace ℝ (Fin n) × NNReal) × ((α : ↥(J \ I)) → E α)),
           x.val ∈ e.source ∧ ∀ y ∈ e.source, (y ∈ boundary J ↔ (e y).1.2 = 0) ∧
             (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y)
-  /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
-  exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
-    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
 
 variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
   {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
@@ -194,7 +130,7 @@ variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Fin
 empty boundary. -/
 def ImplicitAtlas.toImplicitAtlasWithBoundary (𝒜 : ImplicitAtlas Γ E ρ T act X d) :
     ImplicitAtlasWithBoundary Γ E ρ T act X ∅ d where
-  __ := 𝒜
+  toPreImplicitAtlas := 𝒜.toPreImplicitAtlas
   boundary _ := ∅
   isClosed_boundary _ := isClosed_empty
   act_mem_boundary _ _ _ h := h
@@ -205,24 +141,14 @@ def ImplicitAtlas.toImplicitAtlasWithBoundary (𝒜 : ImplicitAtlas Γ E ρ T ac
     Or.inl ⟨n, hn, e, hxe, fun y hy ↦ ⟨notMem_empty y, he y hy⟩⟩
 
 @[simp]
-theorem ImplicitAtlas.baseHomeomorph_toImplicitAtlasWithBoundary
+theorem ImplicitAtlas.toPreImplicitAtlas_toImplicitAtlasWithBoundary
     (𝒜 : ImplicitAtlas Γ E ρ T act X d) :
-    𝒜.toImplicitAtlasWithBoundary.baseHomeomorph = 𝒜.baseHomeomorph :=
+    𝒜.toImplicitAtlasWithBoundary.toPreImplicitAtlas = 𝒜.toPreImplicitAtlas :=
   (rfl)
 
 @[simp]
 theorem ImplicitAtlas.boundary_toImplicitAtlasWithBoundary (𝒜 : ImplicitAtlas Γ E ρ T act X d)
     (I : Finset A) : 𝒜.toImplicitAtlasWithBoundary.boundary I = ∅ :=
-  (rfl)
-
-@[simp]
-theorem ImplicitAtlas.regLocus_toImplicitAtlasWithBoundary (𝒜 : ImplicitAtlas Γ E ρ T act X d)
-    (I : Finset A) : 𝒜.toImplicitAtlasWithBoundary.regLocus I = 𝒜.regLocus I :=
-  (rfl)
-
-@[simp]
-theorem ImplicitAtlas.kuranishi_toImplicitAtlasWithBoundary (𝒜 : ImplicitAtlas Γ E ρ T act X d) :
-    𝒜.toImplicitAtlasWithBoundary.kuranishi = 𝒜.kuranishi :=
   (rfl)
 
 @[simp]
@@ -257,57 +183,6 @@ include 𝒜 in
 /-- The boundary `Y` of the base is closed. -/
 theorem isClosed_baseBoundary : IsClosed Y :=
   𝒜.image_baseHomeomorph_boundary ▸ 𝒜.baseHomeomorph.isClosedMap _ (𝒜.isClosed_boundary ∅)
-
-/-! ### Footprints
-
-The general facts about the zero sets and the regular footprints of an implicit atlas, restated for
-implicit atlases with boundary, whose fields restate those of `TauCeti.ImplicitAtlas`. -/
-
-/-- The zero sets `Z_IJ` are invariant under `Γ_J`. -/
-theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : T J}
-    (hx : x ∈ kuranishiZeroSet 𝒜.kuranishi I J) :
-    act J g x ∈ kuranishiZeroSet 𝒜.kuranishi I J := mem_kuranishiZeroSet.2 fun α hα ↦ by
-  rw [𝒜.kuranishi_act, mem_kuranishiZeroSet.1 hx α hα, map_zero]
-
-/-- Points of `Z_IJ` with the same image under `ψ_IJ` lie together in `X_J^reg` or outside it,
-since they lie in one orbit and the regular locus is invariant. -/
-theorem mem_regLocus_of_footprintMap_eq {I J : Finset A} (h : I ⊆ J)
-    {x y : kuranishiZeroSet 𝒜.kuranishi I J} (hxy : 𝒜.footprintMap h x = 𝒜.footprintMap h y)
-    (hx : x.val ∈ 𝒜.regLocus J) : y.val ∈ 𝒜.regLocus J := by
-  obtain ⟨g, -, hg⟩ := (𝒜.footprintMap_eq_footprintMap_iff h x y).1 hxy
-  exact hg ▸ 𝒜.act_mem_regLocus J g x hx
-
-/-- The regular footprint `V_I = ψ_∅I(X_I^reg ∩ Z_∅I) ⊆ X`. -/
-def footprint (I : Finset A) : Set X :=
-  𝒜.baseHomeomorph '' (𝒜.footprintMap (Finset.empty_subset I) '' {x | x.val ∈ 𝒜.regLocus I})
-
-@[simp]
-theorem mem_footprint {I : Finset A} {y : X} :
-    y ∈ 𝒜.footprint I ↔ ∃ x : kuranishiZeroSet 𝒜.kuranishi ∅ I,
-      x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
-  simp [footprint]
-
-/-- The regular footprints are open: `X_I^reg ∩ Z_∅I` is an open union of fibres of `ψ_∅I`, so its
-image is open in the open image `U_∅I` by the quotient axiom. -/
-theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) :=
-  𝒜.baseHomeomorph.isOpenMap _ <| (𝒜.isQuotientMap_footprintMap _).isOpen_image_of_saturated
-    (𝒜.isOpen_range_footprintMap _) ((𝒜.isOpen_regLocus I).preimage continuous_subtypeVal)
-    fun _ _ hxy hx ↦ 𝒜.mem_regLocus_of_footprintMap_eq _ hxy hx
-
-/-- The regular footprints cover `X`. -/
-theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
-  eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
-    let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
-    ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
-
-/-- An implicit atlas, viewed as an implicit atlas with empty boundary, has the same regular
-footprints. -/
-@[simp]
-theorem _root_.TauCeti.ImplicitAtlas.footprint_toImplicitAtlasWithBoundary
-    (𝒜 : ImplicitAtlas Γ E ρ T act X d) (I : Finset A) :
-    𝒜.toImplicitAtlasWithBoundary.footprint I = 𝒜.footprint I := by
-  ext
-  simp [mem_footprint, ImplicitAtlas.mem_footprint]
 
 /-! ### The boundary restriction -/
 
@@ -539,7 +414,7 @@ footprints: `V_I ∩ Y`, viewed in the subtype `Y`. -/
 theorem footprint_boundaryAtlas (I : Finset A) :
     𝒜.boundaryAtlas.footprint I = Subtype.val ⁻¹' 𝒜.footprint I := by
   ext y
-  simp only [ImplicitAtlas.mem_footprint, mem_preimage, mem_footprint]
+  simp only [PreImplicitAtlas.mem_footprint, mem_preimage]
   refine ⟨fun ⟨x, hx, hxy⟩ ↦ ⟨𝒜.toKuranishiZeroSet x, hx, congrArg Subtype.val hxy⟩,
     fun ⟨x, hx, hxy⟩ ↦ ?_⟩
   have hxb : x.val ∈ 𝒜.boundary I := (𝒜.footprintMap_mem_boundary_iff _ x).1 <|
