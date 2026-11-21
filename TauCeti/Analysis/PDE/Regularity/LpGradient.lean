@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Analysis.Fourier.MihlinHormander
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
+import TauCeti.Analysis.Fourier.HessianMultiplier
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
@@ -51,10 +51,10 @@ operators there are of the form treated here.
   `Lᵖ`. To make the constant uniform in `A`, write `ξᵀ A ξ = ‖e ξ‖²` for a linear automorphism
   `e` with `‖e‖ ≤ √Λ` and `‖e⁻¹‖ ≤ 1 / √λ`
   (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). Then
-  `mᵢⱼ(ξ) = ⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²` for vectors with `‖a‖ ‖b‖ ≤ 1 / λ`, and the derivatives of
-  the single map `η ↦ (a, b ↦ ⟪η, a⟫ ⟪η, b⟫ / ‖η‖²)` are estimated once and for all
-  (`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`); the change of variables costs the
-  factor `(‖e‖ ‖e⁻¹‖) ^ k ≤ √(Λ / λ) ^ k` in the `k`-th derivative.
+  `mᵢⱼ(ξ) = ⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²`, the Hessian symbol `TauCeti.hessianSymbol a b` at `e ξ`,
+  for vectors with `‖a‖ ‖b‖ ≤ 1 / λ`. The Hessian symbols satisfy Mihlin's condition uniformly in
+  `a`, `b` and `e` (`TauCeti.exists_norm_iteratedFDeriv_hessianSymbol_comp_le`); the change of
+  variables costs the factor `(‖e‖ ‖e⁻¹‖) ^ k ≤ √(Λ / λ) ^ k` in the `k`-th derivative.
 
 ## Main declarations
 
@@ -78,94 +78,6 @@ namespace TauCeti
 open MeasureTheory SchwartzMap
 open scoped FourierTransform LineDeriv InnerProductSpace ENNReal NNReal ContDiff Distributions
   Gradient
-
-section Symbol
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The orthogonal projection `a ↦ (⟪η, a⟫ / ‖η‖²) η` onto the line through `η`, and `0` for
-`η = 0`. It is homogeneous of degree `0` in `η`. -/
-private def lineProj (η : E) : E →L[ℝ] E :=
-  ((‖η‖ ^ 2)⁻¹ • innerSL ℝ η).smulRight η
-
-private theorem inner_lineProj_apply (η a b : E) :
-    ⟪b, lineProj η a⟫_ℝ = ⟪η, a⟫_ℝ * ⟪η, b⟫_ℝ / ‖η‖ ^ 2 := by
-  simp [lineProj, inner_smul_right, real_inner_comm b η, div_eq_inv_mul, mul_assoc]
-
-private theorem contDiffOn_lineProj : ContDiffOn ℝ ∞ (lineProj (E := E)) {0}ᶜ := by
-  have h₂ : ContDiffOn ℝ ∞ (fun η : E => (‖η‖ ^ 2)⁻¹) {0}ᶜ :=
-    (contDiff_norm_sq ℝ).contDiffOn.inv fun η hη => by
-      simpa using Set.mem_compl_singleton_iff.1 hη
-  exact (h₂.smul (innerSL ℝ (E := E)).contDiff.contDiffOn).smulRight contDiffOn_id
-
-private theorem lineProj_smul {t : ℝ} (ht : 0 < t) (η : E) :
-    lineProj (t • η) = lineProj η := by
-  rcases eq_or_ne η 0 with rfl | hη
-  · rw [smul_zero]
-  ext a
-  have hη' : ‖η‖ ≠ 0 := norm_ne_zero_iff.2 hη
-  simp only [lineProj, ContinuousLinearMap.smulRight_apply, smul_apply,
-    innerSL_apply_apply, inner_smul_left, norm_smul, Real.norm_of_nonneg ht.le,
-    RCLike.conj_to_real, smul_smul, smul_eq_mul]
-  congr 1
-  field_simp
-
-/-- **Mihlin bound for the symbols `⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²`.** For every order `N` there is a
-constant `A₀` such that, for every linear automorphism `e` with `c ‖ξ‖ ≤ ‖e ξ‖`, `c > 0`, the
-symbol `ξ ↦ ⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²` satisfies Mihlin's condition of order `N` with constant
-`A₀ ‖a‖ ‖b‖ (‖e‖ / c) ^ k` in order `k`. The constant `A₀` depends neither on `e` nor on `a, b`. -/
-private theorem exists_norm_iteratedFDeriv_lineProj_comp_le [FiniteDimensional ℝ E] (N : ℕ) :
-    ∃ A₀ : ℝ≥0, ∀ (e : E ≃L[ℝ] E) (a b : E) {c : ℝ}, 0 < c → (∀ ξ, c * ‖ξ‖ ≤ ‖e ξ‖) →
-      ∀ k ≤ N, ∀ ξ : E, ξ ≠ 0 →
-        ‖iteratedFDeriv ℝ k (fun ξ => ((⟪b, lineProj (e ξ) a⟫_ℝ : ℝ) : ℂ)) ξ‖ ≤
-          A₀ * ‖a‖ * ‖b‖ * (‖(e : E →L[ℝ] E)‖ / c) ^ k / ‖ξ‖ ^ k := by
-  obtain ⟨A₀, hA₀⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq (N := N)
-    ((contDiffOn_lineProj (E := E)).of_le (by exact_mod_cast le_top))
-    fun t ht ξ => lineProj_smul ht ξ
-  refine ⟨A₀, fun e a b c hc he k hk ξ hξ => ?_⟩
-  -- Evaluation `β ↦ ⟪b, β a⟫` followed by the inclusion `ℝ → ℂ`, of norm at most `‖a‖ ‖b‖`.
-  set L : (E →L[ℝ] E) →L[ℝ] ℂ := Complex.ofRealCLM.comp
-    ((innerSL ℝ b).comp (ContinuousLinearMap.apply ℝ E a))
-  have hL : ‖L‖ ≤ ‖a‖ * ‖b‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun β => ?_
-    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-      Complex.ofRealCLM_apply, Complex.norm_real, innerSL_apply_apply, Real.norm_eq_abs]
-    calc |⟪b, β a⟫_ℝ| ≤ ‖b‖ * ‖β a‖ := abs_real_inner_le_norm b (β a)
-      _ ≤ ‖b‖ * (‖β‖ * ‖a‖) := by gcongr; exact β.le_opNorm a
-      _ = ‖a‖ * ‖b‖ * ‖β‖ := by ring
-  have heξ : e ξ ≠ 0 := (map_ne_zero_iff e e.injective).2 hξ
-  have hg : ContDiffAt ℝ ∞ (lineProj ∘ e) ξ :=
-    ((contDiffOn_lineProj (E := E)).contDiffAt
-      (isOpen_compl_singleton.mem_nhds (Set.mem_compl_singleton_iff.2 heξ))).comp ξ
-        e.contDiff.contDiffAt
-  have hcomp : (fun ξ => ((⟪b, lineProj (e ξ) a⟫_ℝ : ℝ) : ℂ)) = L ∘ (lineProj ∘ e) := by
-    ext ξ
-    simp [L]
-  -- Differentiate through the linear change of variables `e`.
-  have hright : iteratedFDeriv ℝ k (lineProj ∘ e) ξ =
-      (iteratedFDeriv ℝ k lineProj (e ξ)).compContinuousLinearMap
-        fun _ => (e : E →L[ℝ] E) := by
-    have h := e.iteratedFDerivWithin_comp_right (lineProj (E := E)) uniqueDiffOn_univ
-      (Set.mem_univ (e ξ)) k
-    simpa only [Set.preimage_univ, iteratedFDerivWithin_univ] using h
-  rw [hcomp]
-  calc ‖iteratedFDeriv ℝ k (L ∘ (lineProj ∘ e)) ξ‖
-      ≤ ‖L‖ * ‖iteratedFDeriv ℝ k (lineProj ∘ e) ξ‖ :=
-        L.norm_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top)
-    _ ≤ (‖a‖ * ‖b‖) * (‖iteratedFDeriv ℝ k lineProj (e ξ)‖ *
-          ‖(e : E →L[ℝ] E)‖ ^ k) := by
-        gcongr
-        rw [hright]
-        refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
-        simp
-    _ ≤ (‖a‖ * ‖b‖) * (A₀ / (c * ‖ξ‖) ^ k * ‖(e : E →L[ℝ] E)‖ ^ k) := by
-        gcongr
-        exact (hA₀ k hk (e ξ) heξ).trans (by gcongr; exact he ξ)
-    _ = A₀ * ‖a‖ * ‖b‖ * (‖(e : E →L[ℝ] E)‖ / c) ^ k / ‖ξ‖ ^ k := by
-        rw [div_pow, mul_pow]
-        field_simp
-
-end Symbol
 
 section Equation
 
@@ -230,41 +142,16 @@ private def divergenceSymbol (A : Matrix ι ι ℝ) (v w : EuclideanSpace ℝ ι
     (ξ : EuclideanSpace ℝ ι) : ℂ :=
   ((⟪ξ, v⟫_ℝ * ⟪ξ, w⟫_ℝ / PDE.matrixBilinearForm A ξ ξ : ℝ) : ℂ)
 
-private theorem memLp_divergenceSymbol {A : Matrix ι ι ℝ} {lam Lam : ℝ}
-    (hA : PDE.UniformlyEllipticOn Set.univ (fun _ : EuclideanSpace ℝ ι => A) lam Lam)
-    (v w : EuclideanSpace ℝ ι) : MemLp (divergenceSymbol A v w) ⊤ volume := by
-  refine memLp_top_of_bound ?_ (‖v‖ * ‖w‖ / lam) (.of_forall fun ξ => ?_)
-  · unfold divergenceSymbol
-    exact (Complex.measurable_ofReal.comp (by fun_prop)).aestronglyMeasurable
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · rw [show divergenceSymbol A v w 0 = 0 by simp [divergenceSymbol], norm_zero]
-    exact div_nonneg (by positivity) hA.pos.le
-  have hq : lam * ‖ξ‖ ^ 2 ≤ PDE.matrixBilinearForm A ξ ξ := by
-    rw [PDE.matrixBilinearForm_self]
-    exact hA.lower_bound (Set.mem_univ ξ) ξ
-  have hpos : 0 < PDE.matrixBilinearForm A ξ ξ := by
-    rw [PDE.matrixBilinearForm_self]
-    exact hA.quadraticForm_pos (Set.mem_univ ξ) hξ
-  simp only [divergenceSymbol, Complex.norm_real, Real.norm_eq_abs, abs_div, abs_mul]
-  rw [abs_of_pos hpos, div_le_div_iff₀ hpos hA.pos]
-  calc |⟪ξ, v⟫_ℝ| * |⟪ξ, w⟫_ℝ| * lam ≤ (‖ξ‖ * ‖v‖) * (‖ξ‖ * ‖w‖) * lam := by
-        gcongr
-        · exact hA.pos.le
-        · exact abs_real_inner_le_norm ξ v
-        · exact abs_real_inner_le_norm ξ w
-    _ = ‖v‖ * ‖w‖ * (lam * ‖ξ‖ ^ 2) := by ring
-    _ ≤ ‖v‖ * ‖w‖ * PDE.matrixBilinearForm A ξ ξ := by gcongr
-
 /-- **The divergence symbol in normalized coordinates.** For a uniformly elliptic constant
 matrix `A` there is a linear automorphism `e` with `√λ ‖ξ‖ ≤ ‖e ξ‖` and `‖e‖ ≤ √Λ` such that every
-symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ξᵀ A ξ` is `⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²` for vectors with
-`‖a‖ ‖b‖ ≤ ‖v‖ ‖w‖ / λ`. -/
-private theorem exists_divergenceSymbol_eq_lineProj {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ξᵀ A ξ` is the Hessian symbol `⟪e ξ, a⟫ ⟪e ξ, b⟫ / ‖e ξ‖²` for vectors
+with `‖a‖ ‖b‖ ≤ ‖v‖ ‖w‖ / λ`. -/
+private theorem exists_divergenceSymbol_eq_hessianSymbol_comp {A : Matrix ι ι ℝ} {lam Lam : ℝ}
     (hA : PDE.UniformlyEllipticOn Set.univ (fun _ : EuclideanSpace ℝ ι => A) lam Lam) :
     ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι, (∀ ξ, √lam * ‖ξ‖ ≤ ‖e ξ‖) ∧
       ‖(e : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)‖ ≤ √Lam ∧
       ∀ v w : EuclideanSpace ℝ ι, ∃ a b : EuclideanSpace ℝ ι, ‖a‖ * ‖b‖ ≤ ‖v‖ * ‖w‖ / lam ∧
-        divergenceSymbol A v w = fun ξ => ((⟪b, lineProj (e ξ) a⟫_ℝ : ℝ) : ℂ) := by
+        divergenceSymbol A v w = hessianSymbol a b ∘ e := by
   have hlam := hA.pos
   have hsqlam : 0 < √lam := Real.sqrt_pos.2 hlam
   -- Write `ξᵀ A ξ = ‖e ξ‖²` for a linear automorphism `e`.
@@ -291,8 +178,18 @@ private theorem exists_divergenceSymbol_eq_lineProj {A : Matrix ι ι ℝ} {lam 
       rw [ContinuousLinearMap.adjoint_inner_right, ContinuousLinearEquiv.coe_coe,
         ContinuousLinearEquiv.symm_apply_apply]
     funext ξ
-    rw [divergenceSymbol, inner_lineProj_apply, hinner, hinner, hnorm,
+    rw [divergenceSymbol, Function.comp_apply, hessianSymbol_apply, hinner, hinner, hnorm,
       PDE.matrixBilinearForm_self]
+
+private theorem memLp_divergenceSymbol {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+    (hA : PDE.UniformlyEllipticOn Set.univ (fun _ : EuclideanSpace ℝ ι => A) lam Lam)
+    (v w : EuclideanSpace ℝ ι) : MemLp (divergenceSymbol A v w) ⊤ volume := by
+  obtain ⟨e, -, -, hsym⟩ := exists_divergenceSymbol_eq_hessianSymbol_comp hA
+  obtain ⟨a, b, hab, hsym⟩ := hsym v w
+  rw [hsym]
+  exact memLp_top_of_bound
+    ((measurable_hessianSymbol a b).comp e.continuous.measurable).aestronglyMeasurable _
+    (.of_forall fun ξ => (norm_hessianSymbol_le a b (e ξ)).trans hab)
 
 /-- **Mihlin's condition for the divergence symbol, uniformly in the matrix.** For every order `N`
 there is a constant `A₀` such that for every uniformly elliptic constant matrix `A` the symbol
@@ -305,19 +202,17 @@ private theorem exists_norm_iteratedFDeriv_divergenceSymbol_le (N : ℕ) :
         ∀ k ≤ N, ∀ ξ : EuclideanSpace ℝ ι, ξ ≠ 0 →
           ‖iteratedFDeriv ℝ k (divergenceSymbol A v w) ξ‖ ≤
             A₀ * (√(Lam / lam) ^ N / lam * ‖v‖ * ‖w‖) / ‖ξ‖ ^ k := by
-  obtain ⟨A₀, hA₀⟩ := exists_norm_iteratedFDeriv_lineProj_comp_le (E := EuclideanSpace ℝ ι) N
+  obtain ⟨A₀, hA₀⟩ :=
+    exists_norm_iteratedFDeriv_hessianSymbol_comp_le (E := EuclideanSpace ℝ ι) N
   refine ⟨A₀, fun {A lam Lam} hA v w => ?_⟩
   have hlam := hA.pos
-  obtain ⟨e, hlow, he, hab⟩ := exists_divergenceSymbol_eq_lineProj hA
+  obtain ⟨e, hlow, he, hab⟩ := exists_divergenceSymbol_eq_hessianSymbol_comp hA
   obtain ⟨a, b, hab, hsym⟩ := hab v w
   rw [hsym]
   refine ⟨?_, fun k hk ξ hξ => (hA₀ e a b (Real.sqrt_pos.2 hlam) hlow k hk ξ hξ).trans ?_⟩
-  · have h₁ : ContDiffOn ℝ ∞ (fun ξ => lineProj (e ξ)) {0}ᶜ :=
-      (contDiffOn_lineProj (E := EuclideanSpace ℝ ι)).comp e.contDiff.contDiffOn
-        fun ξ hξ => Set.mem_compl_singleton_iff.2
-          ((map_ne_zero_iff e e.injective).2 (Set.mem_compl_singleton_iff.1 hξ))
-    exact Complex.ofRealCLM.contDiff.comp_contDiffOn
-      (contDiffOn_const.inner ℝ (h₁.clm_apply contDiffOn_const))
+  · exact (contDiffOn_hessianSymbol a b).comp e.contDiff.contDiffOn
+      fun ξ hξ => Set.mem_compl_singleton_iff.2
+        ((map_ne_zero_iff e e.injective).2 (Set.mem_compl_singleton_iff.1 hξ))
   -- `(‖e‖ / √λ) ^ k ≤ √(Λ / λ) ^ N`, since `√(Λ / λ) ≥ 1` and `k ≤ N`.
   have hk' : (‖(e : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)‖ / √lam) ^ k ≤
       √(Lam / lam) ^ N := by
