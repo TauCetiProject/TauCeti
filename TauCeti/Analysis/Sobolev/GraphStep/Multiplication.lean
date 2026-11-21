@@ -130,14 +130,25 @@ def smulLeftCLM (ψ : E → ℝ) (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃
           with x hx h₂ h₃
         rw [hx, Pi.add_apply, h₂, h₃, ContinuousLinearMap.id_apply]
 
+private theorem prev_smulLeftCLM (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    prev _ (smulLeftCLM ψ hψ h₀ h₁ u) = smulLp F hψ h₀ (prev _ u) := by
+  simp [prev_coe, smulLeftCLM]
+
+private theorem weakFDeriv_smulLeftCLM (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u) =
+      smulLp (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u) + smulRightLp hψ h₁ (prev _ u) := by
+  simp [weakFDeriv_coe, smulLeftCLM]
+
 /-- The field of `ψ u` is represented almost everywhere by `x ↦ ψ x • u x`. -/
 theorem prev_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega) (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C)
     (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     ⇑(prev _ (smulLeftCLM ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega] fun x ↦ ψ x • prev _ u x := by
-  have : prev _ (smulLeftCLM ψ hψ h₀ h₁ u) = smulLp F hψ h₀ (prev _ u) := by
-    simp [prev_coe, smulLeftCLM]
-  rw [this]
+  rw [prev_smulLeftCLM]
   exact smulLp_ae F hψ h₀ (prev _ u)
 
 /-- **The Leibniz rule.** The weak derivative of `ψ u` is represented almost everywhere by
@@ -147,15 +158,63 @@ theorem weakFDeriv_smulLeftCLM_ae (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     ⇑(weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u)) =ᵐ[mu.restrict Omega]
       fun x ↦ ψ x • weakFDeriv _ u x + (fderiv ℝ ψ x).smulRight (prev _ u x) := by
-  have : weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u) =
-      smulLp (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u) + smulRightLp hψ h₁ (prev _ u) := by
-    simp [weakFDeriv_coe, smulLeftCLM]
-  rw [this]
+  rw [weakFDeriv_smulLeftCLM]
   filter_upwards [Lp.coeFn_add ((smulLp (E →L[ℝ] F) hψ h₀) (weakFDeriv _ u))
       ((smulRightLp hψ h₁) (prev _ u)),
     smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), smulRightLp_ae hψ h₁ (prev _ u)]
     with x hx h₂ h₃
   rw [hx, Pi.add_apply, h₂, h₃]
+
+private theorem norm_prev_smulLeftCLM_le (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) {C₀ : ℝ}
+    (hC₀ : ∀ x ∈ Omega, ‖ψ x‖ ≤ C₀)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ‖prev _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ ≤ C₀ * ‖prev _ u‖ := by
+  refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+  filter_upwards [prev_smulLeftCLM_ae hψ h₀ h₁ u, ae_restrict_mem Omega.isOpen.measurableSet]
+    with x hx hxΩ
+  rw [hx, norm_smul]
+  exact mul_le_mul_of_nonneg_right (hC₀ x hxΩ) (norm_nonneg _)
+
+private theorem norm_weakFDeriv_smulLeftCLM_le (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C) {C₀ C₁ : ℝ}
+    (hC₀ : ∀ x ∈ Omega, ‖ψ x‖ ≤ C₀) (hC₁ : ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C₁)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ‖weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ ≤ C₀ * ‖weakFDeriv _ u‖ + C₁ * ‖prev _ u‖ := by
+  have hΩ := Omega.isOpen.measurableSet
+  rw [weakFDeriv_smulLeftCLM]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+    filter_upwards [smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), ae_restrict_mem hΩ]
+      with x hx hxΩ
+    rw [hx, norm_smul]
+    exact mul_le_mul_of_nonneg_right (hC₀ x hxΩ) (norm_nonneg _)
+  · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+    filter_upwards [smulRightLp_ae hψ h₁ (prev _ u), ae_restrict_mem hΩ] with x hx hxΩ
+    rw [hx, ContinuousLinearMap.norm_smulRight_apply]
+    exact mul_le_mul_of_nonneg_right (hC₁ x hxΩ) (norm_nonneg _)
+
+omit [NormedSpace ℝ E] [BorelSpace E] [FiniteDimensional ℝ E] [CompleteSpace F]
+  [IsFiniteMeasureOnCompacts mu] in
+/-- On an empty domain every class in `Lᵖ(Ω, G)` has norm zero. -/
+private theorem norm_eq_zero_of_coe_eq_empty {G : Type*} [NormedAddCommGroup G]
+    (hΩ : (Omega : Set E) = ∅) (f : Lp G p (mu.restrict Omega)) : ‖f‖ = 0 := by
+  have hnull : ∀ᵐ _ ∂(mu.restrict Omega), False := by
+    rw [hΩ, Measure.restrict_empty]
+    simp
+  refine le_antisymm ?_ (norm_nonneg f)
+  simpa using Lp.norm_le_mul_norm_of_ae_le_mul (c := 0) (f := f) (g := f)
+    (hnull.mono fun _ h ↦ h.elim)
+
+omit [FiniteDimensional ℝ E] in
+/-- On an empty domain every field of `W^{1,p}(Ω, F)` has norm zero. -/
+private theorem norm_weakDerivStep_eq_zero_of_coe_eq_empty (hΩ : (Omega : Set E) = ∅)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ‖u‖ = 0 := by
+  have h := norm_le_norm_prev_add_norm_weakFDeriv
+    (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u
+  rw [norm_eq_zero_of_coe_eq_empty hΩ, norm_eq_zero_of_coe_eq_empty hΩ, add_zero] at h
+  exact le_antisymm h (norm_nonneg u)
 
 /-- **The norm of multiplication by a smooth function.** If `|ψ| ≤ C₀` and `‖Dψ‖ ≤ C₁` on `Ω`,
 then `‖ψ u‖ ≤ (√2 C₀ + C₁) ‖u‖` in the graph norm. -/
@@ -164,70 +223,21 @@ theorem norm_smulLeftCLM_apply_le (hψ : ContDiffOn ℝ ∞ ψ Omega)
     (hC₀ : ∀ x ∈ Omega, ‖ψ x‖ ≤ C₀) (hC₁ : ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C₁)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     ‖smulLeftCLM ψ hψ h₀ h₁ u‖ ≤ (√2 * C₀ + C₁) * ‖u‖ := by
-  have hΩ := Omega.isOpen.measurableSet
-  have hprev : ‖prev _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ ≤ C₀ * ‖prev _ u‖ := by
-    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-    filter_upwards [prev_smulLeftCLM_ae hψ h₀ h₁ u, ae_restrict_mem hΩ] with x hx hxΩ
-    rw [hx, norm_smul]
-    exact mul_le_mul_of_nonneg_right (hC₀ x hxΩ) (norm_nonneg _)
-  have hD : ‖weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ ≤
-      C₀ * ‖weakFDeriv _ u‖ + C₁ * ‖prev _ u‖ := by
-    have : weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u) =
-        smulLp (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u) + smulRightLp hψ h₁ (prev _ u) := by
-      simp [weakFDeriv_coe, smulLeftCLM]
-    rw [this]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-      filter_upwards [smulLp_ae (E →L[ℝ] F) hψ h₀ (weakFDeriv _ u), ae_restrict_mem hΩ]
-        with x hx hxΩ
-      rw [hx, norm_smul]
-      exact mul_le_mul_of_nonneg_right (hC₀ x hxΩ) (norm_nonneg _)
-    · refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-      filter_upwards [smulRightLp_ae hψ h₁ (prev _ u), ae_restrict_mem hΩ] with x hx hxΩ
-      rw [hx, ContinuousLinearMap.norm_smulRight_apply]
-      exact mul_le_mul_of_nonneg_right (hC₁ x hxΩ) (norm_nonneg _)
-  have hle : ‖smulLeftCLM ψ hψ h₀ h₁ u‖ ≤
-      C₀ * (‖prev _ u‖ + ‖weakFDeriv _ u‖) + C₁ * ‖prev _ u‖ := by
-    refine (norm_le_norm_prev_add_norm_weakFDeriv
-      (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) (smulLeftCLM ψ hψ h₀ h₁ u)).trans ?_
-    rw [mul_add, add_assoc]
-    exact add_le_add hprev hD
   rcases (Omega : Set E).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
-  · -- On an empty domain every `Lᵖ` class vanishes, so both sides are zero.
-    have hnull : ∀ᵐ _ ∂(mu.restrict Omega), False := by
-      rw [hempty, Measure.restrict_empty]
-      simp
-    have h₁ : ‖prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ = 0 := by
-      have hf := Lp.norm_le_mul_norm_of_ae_le_mul (c := 0)
-        (f := prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)
-        (g := prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)
-        (hnull.mono fun _ h ↦ h.elim)
-      rw [zero_mul] at hf
-      exact le_antisymm hf (norm_nonneg _)
-    have h₂ : ‖weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ = 0 := by
-      have hf := Lp.norm_le_mul_norm_of_ae_le_mul (c := 0)
-        (f := weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)
-        (g := weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)
-        (hnull.mono fun _ h ↦ h.elim)
-      rw [zero_mul] at hf
-      exact le_antisymm hf (norm_nonneg _)
-    have hu : ‖u‖ = 0 := by
-      refine le_antisymm ?_ (norm_nonneg u)
-      have := norm_le_norm_prev_add_norm_weakFDeriv
-        (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u
-      rwa [h₁, h₂, add_zero] at this
-    rw [h₁, h₂] at hle
-    rw [hu, mul_zero]
-    simpa using hle
-  · have hC₀' : 0 ≤ C₀ := (norm_nonneg _).trans (hC₀ x₀ hx₀)
-    have hC₁' : 0 ≤ C₁ := (norm_nonneg _).trans (hC₁ x₀ hx₀)
-    calc ‖smulLeftCLM ψ hψ h₀ h₁ u‖
-        ≤ C₀ * (‖prev _ u‖ + ‖weakFDeriv _ u‖) + C₁ * ‖prev _ u‖ := hle
-      _ ≤ C₀ * (√2 * ‖u‖) + C₁ * ‖u‖ := by
-          gcongr
-          · exact norm_prev_add_norm_weakFDeriv_le
-              (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u
-          · exact norm_prev_le (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u
-      _ = (√2 * C₀ + C₁) * ‖u‖ := by ring
+  · rw [norm_weakDerivStep_eq_zero_of_coe_eq_empty hempty,
+      norm_weakDerivStep_eq_zero_of_coe_eq_empty hempty u, mul_zero]
+  have hC₀' : 0 ≤ C₀ := (norm_nonneg _).trans (hC₀ x₀ hx₀)
+  have hC₁' : 0 ≤ C₁ := (norm_nonneg _).trans (hC₁ x₀ hx₀)
+  calc ‖smulLeftCLM ψ hψ h₀ h₁ u‖
+      ≤ ‖prev _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ + ‖weakFDeriv _ (smulLeftCLM ψ hψ h₀ h₁ u)‖ :=
+        norm_le_norm_prev_add_norm_weakFDeriv _ _
+    _ ≤ C₀ * (‖prev _ u‖ + ‖weakFDeriv _ u‖) + C₁ * ‖prev _ u‖ := by
+        linarith [norm_prev_smulLeftCLM_le hψ h₀ h₁ hC₀ u,
+          norm_weakFDeriv_smulLeftCLM_le hψ h₀ h₁ hC₀ hC₁ u]
+    _ ≤ C₀ * (√2 * ‖u‖) + C₁ * ‖u‖ := by
+        gcongr
+        · exact norm_prev_add_norm_weakFDeriv_le _ u
+        · exact norm_prev_le _ u
+    _ = (√2 * C₀ + C₁) * ‖u‖ := by ring
 
 end TauCeti.WeakDerivStep
