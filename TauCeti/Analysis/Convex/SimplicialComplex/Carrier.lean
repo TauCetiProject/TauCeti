@@ -69,8 +69,8 @@ theorem exists_mem_faces_subset_mem_intrinsicInterior (hs : s ∈ K.faces)
   rw [← Finset.setOfPred_mem, ← Subtype.range_coe_subtype,
     (K.indep ht).mem_intrinsicInterior_convexHull_iff]
   have ht₁' : ∑ y : t, w y = 1 := by rw [Finset.sum_coe_sort t w, ht₁]
-  refine ⟨fun y => w y, fun y => (hw₀ _ (Finset.mem_filter.1 y.2).1).lt_of_ne'
-    (Finset.mem_filter.1 y.2).2, ht₁', ?_⟩
+  refine ⟨fun y => w y, fun y => (hw₀ _ (Finset.mem_filter.1 y.property).1).lt_of_ne'
+    (Finset.mem_filter.1 y.property).2, ht₁', ?_⟩
   rw [Finset.affineCombination_eq_linear_combination _ _ _ ht₁',
     Finset.sum_coe_sort t fun y => w y • y]
   exact Finset.sum_filter_of_ne fun y _ hy => left_ne_zero_of_smul hy
@@ -114,7 +114,7 @@ theorem pairwise_disjoint_intrinsicInterior (K : SimplicialComplex ℝ E) :
       (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := by
   intro s t hst
   exact Set.disjoint_left.mpr fun x hxs hxt =>
-    hst (Subtype.ext (eq_of_mem_intrinsicInterior s.2 t.2 hxs hxt))
+    hst (Subtype.ext (eq_of_mem_intrinsicInterior s.property t.property hxs hxt))
 
 /-- The open simplex of a face outside a subcomplex misses the subcomplex's underlying space. -/
 theorem disjoint_intrinsicInterior_space_of_not_mem {A : SimplicialComplex ℝ E}

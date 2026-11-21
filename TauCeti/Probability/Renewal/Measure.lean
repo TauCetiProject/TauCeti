@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Sub
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
 import TauCeti.MeasureTheory.Measure.Dirac
@@ -45,7 +47,8 @@ measure and the renewal function are the objects of the renewal limit theorems a
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_renewalMeasure` — `F` is locally finite when
   `U` is.
 * `MeasureTheory.Measure.renewalMeasure_eq_dirac_add_conv` — the renewal equation
-  `U = δ₀ + F ∗ U`.
+  `U = δ₀ + F ∗ U`, and `MeasureTheory.Measure.renewalMeasure_sub_dirac`, identifying
+  `U - δ₀` with `F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
 * `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments, and
@@ -139,6 +142,11 @@ theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α)
     renewalMeasure_apply _,
     tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
 
+/-- Removing the artificial point mass at zero from the renewal measure leaves `μ ∗ U`. -/
+theorem renewalMeasure_sub_dirac [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
+    μ.renewalMeasure - dirac 0 = μ ∗ μ.renewalMeasure := by
+  conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
+
 end RenewalMeasure
 
 /-! ### The renewal function on the half-line -/
@@ -174,6 +182,35 @@ theorem renewalMeasure_Iic [SFinite μ] (t : ℝ≥0) :
 /-- The renewal function is nondecreasing in time. -/
 theorem monotone_renewalFunction : Monotone μ.renewalFunction :=
   fun _ _ h ↦ measure_mono (Iic_subset_Iic.2 h)
+
+/-- The real increment of the renewal function between ordered times is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (μ.renewalFunction t).toReal - (μ.renewalFunction s).toReal =
+      μ.renewalMeasure.real (Ioc s t) := by
+  have hmass (v : ℝ≥0) : μ.renewalMeasure.real (Iic v) =
+      1 + (μ.renewalFunction v).toReal := by
+    have hfinite : μ.renewalFunction v < ∞ := by
+      have h := measure_Iic_lt_top (μ := μ.renewalMeasure) (a := v)
+      rw [renewalMeasure_Iic] at h
+      exact (ENNReal.add_lt_top.1 h).2
+    simp [measureReal_def, renewalMeasure_Iic, ENNReal.toReal_add, hfinite.ne]
+  have hset : Iic t \ Iic s = Ioc s t := by
+    ext x
+    simp [and_comm]
+  have he := measureReal_sdiff (μ := μ.renewalMeasure)
+    (Iic_subset_Iic.2 hst) measurableSet_Iic measure_Iic_lt_top.ne
+  rw [hset, hmass, hmass] at he
+  linarith
+
+/-- The real increment of the renewal function over a window is its renewal mass.
+The artificial arrival at zero is excluded, and genuine zero-time arrivals cancel. -/
+theorem toReal_renewalFunction_add_sub [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure]
+    (t u : ℝ≥0) :
+    (μ.renewalFunction (t + u)).toReal - (μ.renewalFunction t).toReal =
+      μ.renewalMeasure.real (Ioc t (t + u)) :=
+  μ.toReal_renewalFunction_sub le_self_add
 
 end RenewalFunction
 
@@ -238,6 +275,13 @@ theorem renewalFunction_lt_top (hμ : μ {0} < 1) (t : ℝ≥0) : μ.renewalFunc
     rwa [← hmap 0, map_apply (hT 0) (measurableSet_singleton 0)] at hμ
   rw [← hmap 0, ← TauCeti.Probability.lintegral_renewalCount hindep hid t]
   simpa using TauCeti.Probability.lintegral_renewalCount_pow_lt_top hT hindep hid hzero t 1
+
+/-- The real-valued renewal function is nondecreasing for a probability law not concentrated
+at zero. -/
+theorem monotone_toReal_renewalFunction (hμ : μ {0} < 1) :
+    Monotone (fun t ↦ (μ.renewalFunction t).toReal) :=
+  fun _ t h ↦ ENNReal.toReal_mono (μ.renewalFunction_lt_top hμ t).ne
+    (μ.monotone_renewalFunction h)
 
 /-- The renewal measure of a probability measure on `ℝ≥0` other than the point mass at zero is
 finite on every bounded interval `[0, t]`. -/

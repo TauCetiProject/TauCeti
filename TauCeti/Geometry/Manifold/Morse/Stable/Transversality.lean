@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Dynamics.Flow.ConnectingOrbit
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -95,6 +95,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {a b y : M}
 
 namespace IsAdaptedPseudoGradient
+
+section TangentSpaces
 
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
@@ -283,7 +285,8 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
     exact (Submodule.mem_bot ℝ).1 hmem
   omega
 
-omit hX in
+end TangentSpaces
+
 /-- **The Morse–Smale condition** for a pseudo-gradient `X` adapted to `f`: for all critical points
 `a` and `b` of `f`, the unstable manifold of `a` and the stable manifold of `b` meet transversally
 at each common point `y`, that is, their tangent spaces at `y` span the tangent space of `M`. -/
@@ -293,7 +296,6 @@ def IsMorseSmale (hX : IsAdaptedPseudoGradient f X) : Prop :=
     Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤
 
-omit hX in
 /-- **The introduction rule for `IsMorseSmale`.** A pseudo-gradient is Morse–Smale once, at every
 point `y` of `W^u(a) ∩ W^s(b)` for critical points `a` and `b`, the tangent spaces of `W^u(a)` and
 `W^s(b)` span the tangent space of `M`. -/
@@ -305,7 +307,6 @@ theorem IsMorseSmale.of_forall {hX : IsAdaptedPseudoGradient f X}
     hX.IsMorseSmale :=
   h
 
-omit hX in
 /-- **The Morse–Smale condition is only a condition between intermediate indices.** Let `f` be a
 Morse function on a manifold of dimension `n`. A pseudo-gradient adapted to `f` is Morse–Smale as
 soon as `W^u(a)` and `W^s(b)` meet transversally for all distinct critical points `a` and `b` whose
@@ -358,7 +359,6 @@ theorem IsMorseSmale.of_forall_ne_of_manifoldMorseIndex_ne {hX : IsAdaptedPseudo
     exact (hXy ((Submodule.mem_bot ℝ).1 hmems)).elim
   exact htr ha hb hab ha0 han hb0 hbn hy
 
-omit hX in
 /-- **At most one critical point of intermediate index forces the Morse–Smale condition.** If at
 most one critical point of a Morse function `f` on a manifold of dimension `n` has an index other
 than `0` and `n`, then every pseudo-gradient adapted to `f` is Morse–Smale. This applies, for
@@ -371,7 +371,6 @@ theorem IsMorseSmale.of_subsingleton {hX : IsAdaptedPseudoGradient f X} (hf : Is
   of_forall_ne_of_manifoldMorseIndex_ne hf fun _ _ _ ha hb hab ha0 han hb0 hbn _ ↦
     (hab (hsub ⟨ha, ha0, han⟩ ⟨hb, hb0, hbn⟩)).elim
 
-omit hX in
 /-- **Extremal indices force the Morse–Smale condition.** If every critical point of a Morse
 function `f` has Morse index `0` or `n`, then every pseudo-gradient adapted to `f` is Morse–Smale.
 This applies, for instance, to the height function on the sphere. -/
@@ -383,7 +382,6 @@ theorem IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank
     hX.IsMorseSmale :=
   of_subsingleton hf fun x hx ↦ ((hind x hx.1).elim hx.2.1 hx.2.2).elim
 
-omit hX in
 /-- **The pointwise elimination rule for `IsMorseSmale`.** Under the Morse–Smale condition, at a
 point `y` of `W^u(a) ∩ W^s(b)` for critical points `a` and `b`, the tangent spaces of `W^u(a)` and
 `W^s(b)` span the tangent space of `M`. -/
@@ -394,7 +392,6 @@ theorem IsMorseSmale.span_mtangentConeAt_sup_eq_top {hX : IsAdaptedPseudoGradien
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤ :=
   h (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy
 
-omit hX in
 /-- **Reversing a Morse–Smale pseudo-gradient.** If a pseudo-gradient `X` adapted to a Morse
 function `f` is Morse–Smale, then so is `-X`, adapted to `-f`: reversing the flow exchanges the
 unstable and stable manifolds of each critical point. -/
@@ -406,7 +403,6 @@ theorem IsMorseSmale.neg {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale
   rw [sup_comm]
   exact h hb ha ⟨hy.2, hy.1⟩
 
-omit hX in
 /-- **Spaces of trajectories are manifolds.** Under the Morse–Smale condition, if some trajectory
 runs from a critical point `a` to a critical point `b`, then `W^u(a) ∩ W^s(b)` carries a smooth
 manifold structure, modelled on a subspace of dimension `ind a - ind b`, with its subspace topology
@@ -440,7 +436,6 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold
   exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩
 
-omit hX in
 /-- **Under the Morse–Smale condition, the Morse index drops along every trajectory** joining
 distinct critical points: if a trajectory runs from `a` to `b ≠ a`, then `ind b < ind a`. -/
 theorem IsMorseSmale.manifoldMorseIndex_lt {hX : IsAdaptedPseudoGradient f X}

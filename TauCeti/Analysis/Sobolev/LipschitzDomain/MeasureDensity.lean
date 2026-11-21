@@ -107,7 +107,7 @@ theorem exists_ball_subset_inter_ball (hc : Ω.IsLipschitzChart e γ K h r) {z :
   have hzC : e z ∈ normalCylinder h r := hball (mem_ball_self (by positivity))
   -- In the chart, `z` lies on or above the graph.
   have hzγ : γ (e z).snd ≤ (e z).fst := (hc.mem_closure_iff hzC).1 hz
-  have hK : (0 : ℝ) ≤ K := K.2
+  have hK : (0 : ℝ) ≤ K := K.property
   set t := s / (1 + K) with ht_def
   have _ : 0 < t := by positivity
   have hts : t ≤ s := div_le_self hs.le (by linarith)
@@ -158,7 +158,7 @@ theorem exists_ball_subset_inter_ball (hΩ : Ω.IsLipschitzDomain E)
   obtain ⟨K, m, e, γ, h, ρ, hc, hcov⟩ := hΩ.exists_finite_cover hK
   obtain ⟨ρ₀, hρ₀, hleb⟩ := lebesgue_number_lemma_of_metric hK
     (fun i ↦ (isOpen_normalCylinder (h i) (ρ i)).preimage (e i).continuous) hcov
-  have hK : (0 : ℝ) ≤ K := K.2
+  have hK : (0 : ℝ) ≤ K := K.property
   -- The corkscrew condition at radii up to the Lebesgue number `ρ₀`, with `δ = 1 / (4 (1 + K))`.
   have hsmall : ∀ x ∈ closure Ω, ∀ r : ℝ, 0 < r → r ≤ ρ₀ →
       ∃ y, ball y (r / 4 / (1 + K)) ⊆ Ω ∩ ball x r := by

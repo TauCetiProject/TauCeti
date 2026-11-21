@@ -9,17 +9,12 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Analysis.Matrix.PosDef
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Topology.Instances.Matrix
--- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
-import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+-- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!
@@ -48,15 +43,12 @@ use.
 
 * `LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap`: making a finite-dimensional
   bilinear form continuous and then forgetting continuity returns the original form.
-
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
 * `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
   the dual is symmetric if and only if the map takes symmetric values.
 * `ContinuousLinearMap.ker_toBilinForm`: the kernel of the bilinear form of a continuous linear
   map into the dual is the kernel of the map.
-* `ContinuousLinearMap.inf_eq_bot_of_le_ker`: a subspace on which the diagonal of the form has no
-  nonzero zeros meets every subspace of the kernel trivially.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -64,7 +56,7 @@ use.
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
 * `TauCeti.isOpen_setOf_nondegenerate`: nondegeneracy is open for a family of bilinear forms
-  on a finite-dimensional space with continuous scalar evaluations.
+  on a finite free module over a `T₁` topological domain with continuous scalar evaluations.
 * `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
   the continuous bilinear forms with nondegenerate bilinear form are an open set.
 * `ContinuousAt.eventually_toBilinForm_nondegenerate`: in finite dimensions, nondegeneracy of a
@@ -85,6 +77,8 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
+  compact set is bounded by a uniform multiple of `‖v‖²`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
@@ -94,6 +88,8 @@ use.
   lemma where the first form is positive semidefinite, over a compact family. If the diagonal of
   `a x` is nonnegative and that of `b x` is positive at the nonzero zeros of the diagonal of
   `a x`, then `t a x + b x` is uniformly coercive for every large `t`.
+* `TauCeti.convex_setOfPred_symm_pos`: the symmetric, positive definite continuous bilinear forms
+  on a real topological vector space form a convex set.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -115,28 +111,12 @@ theorem _root_.LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap
     {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
     [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
     [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [T2Space V]
-    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B := by
-  ext v w
-  simp only [ContinuousLinearMap.toBilinForm_apply, LinearMap.toContinuousBilinearMap_apply]
+    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B :=
+  rfl
 
 section
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-
-/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
-when the map is injective. -/
-theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L : E →L[𝕜] E →L[𝕜] 𝕜)
-    :
-    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
-  rw [LinearMap.separatingLeft_iff_ker_eq_bot, LinearMap.ker_eq_bot]
-  exact ⟨fun h v w hvw ↦ h (LinearMap.ext fun u ↦ by simp [hvw]),
-    fun h v w hvw ↦ h (ContinuousLinearMap.ext fun u ↦ by simpa using LinearMap.congr_fun hvw u)⟩
-
-/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
-the map takes symmetric values. -/
-theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
-    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
-  LinearMap.BilinForm.isSymm_def
 
 /-- The kernel of the bilinear form of a continuous linear map into the dual space is the kernel of
 the map. -/
@@ -145,29 +125,35 @@ theorem _root_.ContinuousLinearMap.ker_toBilinForm (L : E →L[𝕜] E →L[𝕜
   ext x
   simp [LinearMap.ext_iff, ContinuousLinearMap.ext_iff]
 
-/-- A subspace on whose nonzero vectors the diagonal of a continuous bilinear form does not vanish
-meets every subspace of the kernel of the form trivially. -/
-theorem _root_.ContinuousLinearMap.inf_eq_bot_of_le_ker {L : E →L[𝕜] E →L[𝕜] 𝕜}
-    {N M : Submodule 𝕜 E} (hN : ∀ x ∈ N, x ≠ 0 → L x x ≠ 0) (hM : M ≤ L.ker) : N ⊓ M = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ ?_
-  by_contra hx0
-  have h : L x = 0 := hM hx.2
-  exact hN x hx.1 hx0 (by simp [h])
+/-- The bilinear form of a continuous linear map into the dual space is left-separating exactly
+when the map is injective. -/
+theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective
+    (L : E →L[𝕜] E →L[𝕜] 𝕜) :
+    L.toBilinForm.SeparatingLeft ↔ Function.Injective L := by
+  rw [LinearMap.separatingLeft_iff_ker_eq_bot, L.ker_toBilinForm]
+  exact LinearMap.ker_eq_bot
+
+/-- The bilinear form of a continuous linear map into the dual space is symmetric exactly when
+the map takes symmetric values. -/
+theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
+    L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
+  LinearMap.BilinForm.isSymm_def
 
 end
 
 section FiniteDimensional
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module 𝕜 E]
+  [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] {L : E →L[𝕜] E →L[𝕜] 𝕜}
 
 /-- In finite dimensions an injective continuous linear map into the dual is invertible: injectivity
 makes it a linear equivalence onto its range, and the dual has the same finite dimension as the
 space, so that range is everything. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_injective
     (hinj : Function.Injective L) : L.IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq L
-    ContinuousLinearMap.dual_finrank_eq.symm hinj
+  ⟨((L : E →ₗ[𝕜] E →L[𝕜] 𝕜).linearEquivOfInjective hinj
+    ContinuousLinearMap.dual_finrank_eq.symm).toContinuousLinearEquiv, rfl⟩
 
 /-- In finite dimensions a surjective continuous linear map into the dual is invertible: the dual
 has the same finite dimension as the space, so surjectivity forces injectivity. -/
@@ -197,7 +183,7 @@ theorem _root_.ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm :
     L.IsInvertible ↔ L.toBilinForm.Nondegenerate :=
   L.isInvertible_iff_separatingLeft.trans ⟨.ofSeparatingLeft, And.left⟩
 
-omit [CompleteSpace 𝕜] in
+omit [CompleteSpace 𝕜] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E] in
 /-- In finite dimensions, the bilinear form of a continuous linear map into the dual is
 nondegenerate exactly when the map is injective. -/
 theorem _root_.ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective
@@ -216,11 +202,12 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
 
 end FiniteDimensional
 
-/-- Nondegeneracy is open for a family of bilinear forms on a finite-dimensional space.
-Only continuity of each scalar evaluation is required. -/
+/-- Nondegeneracy is open for a family of bilinear forms on a finite free module over a `T₁`
+topological domain. Only continuity of each scalar evaluation is required. -/
 theorem isOpen_setOf_nondegenerate
-    {𝕜 V X : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
-    [AddCommGroup V] [Module 𝕜 V] [FiniteDimensional 𝕜 V] [TopologicalSpace X]
+    {𝕜 V X : Type*} [CommRing 𝕜] [IsDomain 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
+    [T1Space 𝕜] [AddCommGroup V] [Module 𝕜 V] [Module.Free 𝕜 V] [Module.Finite 𝕜 V]
+    [TopologicalSpace X]
     {B : X → LinearMap.BilinForm 𝕜 V}
     (hB : ∀ v w, Continuous fun x ↦ B x v w) :
     IsOpen {x | (B x).Nondegenerate} := by
@@ -240,8 +227,8 @@ an open set. -/
 theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [FiniteDimensional 𝕜 E] :
-    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
-  exact isOpen_setOf_nondegenerate fun v w ↦ by
+    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} :=
+  isOpen_setOf_nondegenerate fun v w ↦ by
     simpa only [ContinuousLinearMap.toBilinForm_apply] using
       (continuous_id.clm_apply continuous_const).clm_apply continuous_const
 
@@ -257,37 +244,12 @@ theorem _root_.ContinuousAt.eventually_toBilinForm_nondegenerate
 /-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
 diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
 theorem _root_.ContinuousLinearMap.isInvertible_of_pos
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {E : Type*} [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E] [Module ℝ E]
+    [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
     {L : E →L[ℝ] E →L[ℝ] ℝ} (hpos : ∀ v, v ≠ 0 → 0 < L v v) : L.IsInvertible :=
   ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ by
     by_contra hv0
     exact (hpos v hv0).ne' (hv v)
-
-/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
-subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
-theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
-    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
-    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
-  set Q := L.toBilinForm.toQuadraticMap.restrict N
-  have hQ : Q.Anisotropic := fun x hx ↦ by
-    by_contra hx0
-    have h := hN x x.2 (by simpa using hx0)
-    simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      ContinuousLinearMap.toBilinForm_apply] at hx
-    linarith
-  have hcont : Continuous Q :=
-    (L.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
-  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
-  refine ⟨c, hc, fun x hx ↦ ?_⟩
-  rcases eq_or_ne x 0 with rfl | hx0
-  · simp
-  have h := hle ⟨x, hx⟩
-  simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    ContinuousLinearMap.toBilinForm_apply, Real.norm_eq_abs, abs_of_neg (hN x hx hx0),
-    ← Submodule.norm_coe] at h
-  linarith
 
 section Convex
 
@@ -311,6 +273,22 @@ theorem isVonNBounded_setOfPred_lt_one_of_le {g h : V →L[ℝ] V →L[ℝ] ℝ}
     _ ≤ h v v := hle v
     _ < 1 := hv
 
+omit [ContinuousConstSMul ℝ V] in
+/-- The symmetric, positive definite continuous bilinear forms on a real topological vector space
+are closed under convex combinations. -/
+theorem convex_setOfPred_symm_pos :
+    Convex ℝ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ ∀ v, v ≠ 0 → 0 < g v v} := by
+  rintro g ⟨hgs, hgp⟩ g' ⟨hgs', hgp'⟩ a b ha hb hab
+  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_⟩
+  have hab' : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
+  rw [hab']
+  -- One of the two coefficients is positive.
+  rcases ha.eq_or_lt with rfl | ha'
+  · rw [zero_add] at hab
+    subst hab
+    simpa using hgp' v hv
+  · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv)) (mul_nonneg hb (hgp' v hv).le)
+
 /-- The fibrewise conditions of a Riemannian metric cut out a convex set: the continuous bilinear
 forms on a real topological vector space that are symmetric, positive definite and have a
 von Neumann bounded unit set are closed under convex combinations. -/
@@ -324,21 +302,14 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
     · exact (hg v hv).le
   rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', hgb'⟩ a b ha hb hab
   have hab' (v : V) : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
-  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_, ?_⟩
-  · -- One of the two coefficients is positive.
-    rw [hab']
-    rcases ha.eq_or_lt with rfl | ha'
-    · rw [zero_add] at hab
-      subst hab
-      simpa using hgp' v hv
-    · exact add_pos_of_pos_of_nonneg (mul_pos ha' (hgp v hv))
-        (mul_nonneg hb (nonneg hgp' v))
-  · -- One of the two coefficients is at least `1 / 2`, and that term dominates.
-    rcases le_total (1 / 2 : ℝ) a with ha' | hb'
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
-    · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-        rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
+  obtain ⟨hs, hp⟩ := convex_setOfPred_symm_pos ⟨hgs, hgp⟩ ⟨hgs', hgp'⟩ ha hb hab
+  refine ⟨hs, hp, ?_⟩
+  -- One of the two coefficients is at least `1 / 2`, and that term dominates.
+  rcases le_total (1 / 2 : ℝ) a with ha' | hb'
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
+  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
 
 omit [ContinuousConstSMul ℝ V] in
 /-- A continuous bilinear form that reads as the inner product of a real inner product space
@@ -419,6 +390,33 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
+subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
+theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
+    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
+    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
+  obtain ⟨c, hc, h⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le (E := N)
+    (b := fun _ ↦ -(L.bilinearComp N.subtypeL N.subtypeL)) continuousOn_const
+    fun _ _ v hv ↦ by simpa using hN v v.property (by simpa using hv)
+  exact ⟨c, hc, fun x hx ↦ by have := h () rfl ⟨x, hx⟩; simp at this; linarith⟩
+
+/-- **Uniform bound over a compact family.** On a real normed space, let `b x` be a family of
+continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
+`b x v v ≤ C ‖v‖²` for every `x ∈ K` and every `v`. -/
+theorem _root_.IsCompact.exists_forall_le_mul_norm_sq
+    {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hb : ContinuousOn b K) : ∃ C, ∀ x ∈ K, ∀ v, b x v v ≤ C * ‖v‖ ^ 2 := by
+  -- `hb` is stated for the topology of `→L[ℝ]`, which is the operator-norm topology only up to
+  -- unfolding instances, so it is passed by `exact`.
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := b) (by exact hb)
+  refine ⟨C, fun x hx v ↦ ?_⟩
+  calc b x v v ≤ ‖b x‖ * ‖v‖ * ‖v‖ := (Real.le_norm_self _).trans ((b x).le_opNorm₂ v v)
+    _ = ‖b x‖ * ‖v‖ ^ 2 := by ring
+    _ ≤ C * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (hC x hx) (sq_nonneg _)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms

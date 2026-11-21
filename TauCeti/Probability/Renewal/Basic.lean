@@ -10,6 +10,7 @@ public import Mathlib.Probability.BorelCantelli
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.Independence.ConvolutionPower
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -281,17 +282,10 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT'_ae (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
-  have hT' (n : ℕ) : Measurable (T' n) := (hid n).aemeasurable_fst.measurable_mk
-  have hindep' : iIndepFun T' P := hindep.congr hT'_ae
-  have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
-    ((hid n).aemeasurable_fst.identDistrib_mk.symm.trans (hid n)).trans
-      (hid 0).aemeasurable_fst.identDistrib_mk
-  have hzero' : P {ω | T' 0 ω = 0} < 1 := by
-    have hset : ({ω | T' 0 ω = 0} : Set Ω) =ᵐ[P] {ω | T 0 ω = 0} :=
-      Filter.Eventually.mono (hT'_ae 0).symm fun ω hω ↦ by simp only [Set.mem_ofPred_eq, hω]
-    rwa [measure_congr hset]
+  obtain ⟨T', hT', hT'_ae, hindep', hid', hT'_id⟩ :=
+    hindep.exists_measurable_ae_eq_of_identDistrib hid
+  have hzero' : P {ω | T' 0 ω = 0} < 1 :=
+    ((hT'_id 0).measure_mem_eq (measurableSet_singleton 0)).trans_lt hzero
   -- Since `T' 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T' 0)`.
   obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T' 0 ⁻¹' Ici (1 / (k + 1))) := by
     refine exists_measure_pos_of_not_measure_iUnion_null fun h0 ↦ hzero'.ne ?_
@@ -350,7 +344,7 @@ theorem hasLaw_arrival_shift (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under
 the product measure whose factors are the common law of the increments. -/
-theorem map_renewalCount_eq_infinitePi_map (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem map_renewalCount_eq_infinitePi_map (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
     P.map (renewalCount T t) =
       (Measure.infinitePi fun _ : ℕ ↦ P.map (T 0)).map
@@ -359,8 +353,10 @@ theorem map_renewalCount_eq_infinitePi_map (hT : ∀ n, Measurable (T n)) (hinde
       renewalCount (fun n (w : ℕ → ℝ≥0) ↦ w n) t ∘ fun ω i ↦ T i ω := by
     ext ω
     simp only [Function.comp_apply, renewalCount_def, arrival_def]
-  rw [hcomp, ← Measure.map_map (measurable_renewalCount (fun n ↦ measurable_pi_apply n) t)
-    (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
+  have hae : ∀ n, AEMeasurable (T n) P := fun n ↦ (hid n).aemeasurable_fst
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
+    (measurable_renewalCount (fun n ↦ measurable_pi_apply n) t).aemeasurable
+    (aemeasurable_pi_iff.2 hae), hindep.map_fun_eq_infinitePi_map₀' hae]
   simp_rw [fun n ↦ (hid n).map_eq]
 
 end Probability

@@ -61,7 +61,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.perimeter_setOf_lt_schwarzRearran
   rcases eq_or_ne (volume {x | t < f x}) ∞ with hinf | hfin
   · have hset : {x | t < schwarzRearrangement volume f x} = univ := by
       rw [setOf_lt_schwarzRearrangement, hinf]
-      exact volume.setOf_measure_ball_norm_lt_top
+      simp [measure_ball_lt_top]
     simp only [hset, perimeter_univ, zero_le]
   obtain ⟨r, hr0, hr⟩ := (volume : Measure E).exists_nonneg_addHaar_ball_eq hfin
   have hset : {x | t < schwarzRearrangement volume f x} = ball 0 r := by

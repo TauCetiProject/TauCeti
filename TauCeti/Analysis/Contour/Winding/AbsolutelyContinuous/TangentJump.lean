@@ -12,6 +12,7 @@ import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 import TauCeti.Analysis.Contour.Winding.Number.Segment.Jump
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Order.Interval.Set.Injective
 
 /-!
 # Winding-number jump across a regular point of an absolutely continuous curve
@@ -539,12 +540,8 @@ theorem eventually_windingNumber_add_I_mul_eq_add_one
       γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧
       γ t₀ - h • (I * v) ∉ γ '' uIcc a b ∧
       windingNumber γ a b (γ t₀ + h • (I * v)) =
-        windingNumber γ a b (γ t₀ - h • (I * v)) + 1 := by
-  refine hγ.eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq hab hclosed ht₀ hd hv ?_
-  intro t ht heq
-  rcases ht.2.eq_or_lt with htb | hlt
-  · rw [htb, ← hclosed] at heq
-    exact absurd (hinj ⟨le_rfl, hab⟩ ⟨ht₀.1.le, ht₀.2⟩ heq) ht₀.1.ne
-  · exact hinj ⟨ht.1, hlt⟩ ⟨ht₀.1.le, ht₀.2⟩ heq
+        windingNumber γ a b (γ t₀ - h • (I * v)) + 1 :=
+  hγ.eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq hab hclosed ht₀ hd hv
+    fun _ ht heq ↦ hinj.eq_of_mem_Ioo_of_mem_Icc hclosed ht₀ ht heq
 
 end AbsolutelyContinuousOnInterval

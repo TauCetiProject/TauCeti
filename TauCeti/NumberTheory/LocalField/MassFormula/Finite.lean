@@ -112,7 +112,7 @@ the weighted count `∑_{L ∈ σ_K(n)} q ^ (-c(L))` of Serre's mass formula is 
 `σ_K(n)` is finite. With the mass formula, this makes `σ_K(n)` finite. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite {n : ℕ}
     (hnK : (n : K) ≠ 0) :
-    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent ≠ ∞ ↔
+    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent ≠ ∞ ↔
       (totallyRamifiedOfDegree K n).Finite := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- Every weight is at least `q ^ (-n · v_K(n))`, which is nonzero.
@@ -121,7 +121,7 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite {n 
     have hfin := ENNReal.finite_const_le_of_tsum_ne_top h (ENNReal.div_pos one_ne_zero hq).ne'
     refine Set.finite_coe_iff.1 (Set.finite_univ_iff.1 (hfin.subset fun L _ ↦ ?_))
     exact ENNReal.div_le_div_left (pow_le_pow_right₀ (Nat.one_le_cast.2 Nat.card_pos)
-      (IntermediateField.wildExponent_le_mul_natCastValuation L.2 hnK)) 1
+      (IntermediateField.wildExponent_le_mul_natCastValuation L.property hnK)) 1
   · -- Every weight is at most `1`.
     refine ne_top_of_le_ne_top (b := ∑' _ : totallyRamifiedOfDegree K n, (1 : ℝ≥0∞)) ?_
       (tsum_le_tsum fun L ↦ ?_)
@@ -136,11 +136,11 @@ every member of `σ_K(n)` has weight `q ^ (-c(L)) = 1`, so the weighted count
 formula, `σ_K(n)` has exactly `n` elements. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_encard {n : ℕ}
     (hn : ¬ ringChar 𝓀[K] ∣ n) :
-    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent =
+    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent =
       (totallyRamifiedOfDegree K n).encard := by
   rw [← ENNReal.tsum_set_one]
   refine tsum_congr fun L ↦ ?_
-  rw [(IntermediateField.wildExponent_eq_zero_iff L.2).2 hn, pow_zero, div_one]
+  rw [(IntermediateField.wildExponent_eq_zero_iff L.property).2 hn, pow_zero, div_one]
 
 /-- **Serre's finiteness dichotomy, relative to the weighted count**: for `0 < n`, `σ_K(n)` is
 infinite exactly when `K` has equal characteristic `p`, the residue characteristic, with `p ∣ n`,
@@ -149,7 +149,8 @@ mass formula makes that count `n`, the second alternative never occurs. -/
 theorem infinite_totallyRamifiedOfDegree_iff_or_tsum_eq_top {n : ℕ} (hn : 0 < n) :
     (totallyRamifiedOfDegree K n).Infinite ↔
       (ringChar K = ringChar 𝓀[K] ∧ ringChar 𝓀[K] ∣ n) ∨
-        ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = ∞ := by
+        ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = ∞
+            := by
   rw [← natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd hn]
   by_cases hnK : (n : K) = 0
   · simpa [hnK] using infinite_totallyRamifiedOfDegree hn hnK

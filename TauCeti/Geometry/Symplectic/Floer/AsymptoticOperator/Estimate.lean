@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -47,6 +49,14 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   (`Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`). For an actual
   nondegenerate one-periodic orbit of a Hamiltonian, the hypothesis on the return map holds
   (`SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`).
+* **The weighted estimate.** The weighted operator `D - δ` is the stationary cylinder operator of
+  `S_t - δ J_t`, whose return map stays nondegenerate for small `δ`, so the cylinder estimate
+  holds for `D - δ` for every weight `δ` close to `0`
+  (`eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`,
+  in `Floer` and, at a Hamiltonian orbit, in `SymplecticForm`). Moreover, the
+  `e^{2 δ s}`-weighted energy of `η` is controlled by the energy of `e^{δ s} η` for the field
+  `S_t - δ J_t` (`Floer.setIntegral_exp_mul_associatedBilinForm_le`), which turns estimates of
+  `D - δ` into estimates in `L²` norms with weight `e^{δ s}`.
 * **Stability under perturbation.** The cylinder estimate survives replacing `D ξ` by any `η`
   with `‖η - D ξ‖ ≤ ε (‖∂t ξ‖ + ‖ξ‖)` for a small `ε` depending only on the constant, `J` and `S`
   (`Floer.exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le`).
@@ -54,6 +64,10 @@ property of the linearized operator on the cylindrical ends of Floer's moduli sp
   the form in which the estimate passes to the linearized operator of a Floer solution on a far
   part of a cylindrical end, which is such a perturbation of `D`
   (`TauCeti.Geometry.Symplectic.Floer.EndLinearization`).
+* **The norm of `V`.** Since the `g_t` are uniformly equivalent to the norm of `V` for `t ∈ [0, 1]`
+  and `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 ‖S‖² ‖ξ‖²`, an estimate of the energy of `ξ` in the `g_t` by
+  `∫ g(η, η)` gives one of `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)` by `∫ ‖η‖²`
+  (`SymplecticForm.exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le`).
 
 In contrast, `Floer.eq_zero_of_stationaryCylinderOperator_eq_zero` shows that `D` is injective on
 decaying maps with no nondegeneracy assumption, but without an estimate; at a degenerate orbit
@@ -299,9 +313,6 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
   refine ⟨ε, by positivity, 4 * C₀ * M / m, by positivity,
     fun ξ hξ a b hest η hη hclose ↦ ?_⟩
   have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
-    ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).sub
-      ((hSc.comp continuous_snd).clm_apply hξ.continuous)
   have hQi : IntegrableOn (fun z : ℝ × ℝ ↦
       (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
           (fderiv ℝ ξ z stdComplexLineReal) +
@@ -311,10 +322,7 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hξ).add
     (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)).continuousOn
     |>.integrableOn_compact (μ := volume) hR
-  have hDc : Continuous (stationaryCylinderOperator J S ξ) :=
-    (((hξ.continuous_fderiv one_ne_zero).clm_apply
-      (continuous_const (y := stdComplexLineReal))).add
-      (hJc.comp (continuous_snd.prodMk hw))).congr fun z ↦ by simp [stationaryCylinderOperator_def]
+  have hDc := continuous_stationaryCylinderOperator he hSc hξ
   have hdi := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hDc).continuousOn
     |>.integrableOn_compact (μ := volume) hR
   have hηi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (η z) (η z))
@@ -351,23 +359,151 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     (hmM z.2 ht _).1 (hmM z.2 ht (ξ z)).1 hD
   simpa only [mul_add, add_assoc] using this
 
+/-- **The weighted cylinder estimate.** Under the hypotheses of
+`exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`, for every weight `δ`
+close enough to `0` there is a constant `C ≥ 0` such that for every `C²` map `ξ` of period one in
+`t` and every `a ≤ b` with `ξ` vanishing on the slices `s = a` and `s = b`,
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S_δ ξ, ∂t ξ - S_δ ξ) + g(ξ, ξ)) ≤ C ∫ g((D - δ) ξ, (D - δ) ξ)`
+
+over `[a, b] × [0, 1]`, where `S_δ = S_t - δ J_t` is the linearized field of the weighted operator
+`D - δ` (`stationaryCylinderOperator_sub_smul`), whose return map stays nondegenerate for small
+`δ` (`eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero`). The constant does not depend on
+`a`, `b` or `ξ`. -/
+theorem eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
+    (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ t, ξ (a, t) = 0) →
+      (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag -
+                  (S z.2 - δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag -
+                  (S z.2 - δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))) +
+              ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+            (stationaryCylinderOperator J S ξ z - δ • ξ z)
+            (stationaryCylinderOperator J S ξ z - δ • ξ z) := by
+  have hJo : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    continuous_clm_apply.2 fun v ↦ by
+      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
+  filter_upwards [eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero hSc
+    (AlmostComplexStructure.continuous_iff.2 hJo) hdet] with δ hdetδ
+  obtain ⟨C, hC, hest⟩ := exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
+    hJ hJc (fun t ↦ sub_smul_apply_add_apply_eq_zero (hJ t).invariant (hS t) δ)
+    (hSc.sub (hJo.const_smul δ)) hdetδ
+  refine ⟨C, hC, fun ξ hξ hper a b hab ha hb ↦ ?_⟩
+  simp only [← stationaryCylinderOperator_sub_smul]
+  exact hest hξ hper hab ha hb
+
+/-- **The energy density under the exponential weight.** For a compatible `J₀` with metric
+`g = ω(·, J₀ ·)` and any `T`, the `e^{2 δ s}`-weighted energy density of `η` at `z` is at most
+`2 + 4 δ²` times the energy density of `ξ = e^{δ s} η` for the shifted field `T - δ J₀`: one has
+`e^{δ s} ∂s η = ∂s ξ - δ ξ` and `e^{δ s} (∂t η - T η) = (∂t ξ - (T - δ J₀) ξ) - δ J₀ ξ`. -/
+theorem exp_mul_associatedBilinForm_le {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Compatible J₀)
+    (T : V →L[ℝ] V) (δ : ℝ) {η : ℝ × ℝ → V} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η z) :
+    Real.exp (2 * δ * z.1) * ((ω.associatedBilinForm J₀ (fderiv ℝ η z stdComplexLineReal)
+          (fderiv ℝ η z stdComplexLineReal) +
+        ω.associatedBilinForm J₀ (fderiv ℝ η z stdComplexLineImag - T (η z))
+          (fderiv ℝ η z stdComplexLineImag - T (η z))) +
+        ω.associatedBilinForm J₀ (η z) (η z)) ≤
+      (2 + 4 * δ ^ 2) *
+        ((ω.associatedBilinForm J₀
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal)
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal) +
+          ω.associatedBilinForm J₀
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
+              (T - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
+              (T - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
+          ω.associatedBilinForm J₀ (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
+  set e := Real.exp (δ * z.1)
+  have hd := fderiv_exp_smul_apply (φ := fun w : ℝ × ℝ ↦ δ * w.1)
+    ((hasFDerivAt_fst (p := z)).const_smul δ) hη
+  -- The derivatives of `ξ = e^{δ s} η` in terms of those of `η`.
+  have hs : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal =
+      e • fderiv ℝ η z stdComplexLineReal + δ • (e • η z) := by
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, smul_eq_mul,
+      mul_one]
+    module
+  have ht : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
+      (T - δ • J₀.toLinearMap.toContinuousLinearMap) (e • η z) =
+      e • (fderiv ℝ η z stdComplexLineImag - T (η z)) + δ • J₀ (e • η z) := by
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst, smul_eq_mul,
+      mul_zero, zero_smul, add_zero, sub_apply, LinearMap.coe_toContinuousLinearMap', map_smul]
+    module
+  have hexp : Real.exp (2 * δ * z.1) = e * e := by
+    rw [← Real.exp_add]
+    ring_nf
+  rw [hs, ht, hexp]
+  have h := hJ₀.associatedBilinForm_add_add_le δ (e • fderiv ℝ η z stdComplexLineReal) (e • η z)
+    (e • (fderiv ℝ η z stdComplexLineImag - T (η z)))
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h ⊢
+  linarith
+
+/-- **The weighted energy under the exponential weight.** The integrated form of
+`exp_mul_associatedBilinForm_le` over a compact set `R` of the cylinder: for compatible `J_t`
+depending continuously on `t` and continuous `S`, the `e^{2 δ s}`-weighted energy of a `C¹` map
+`η` is at most `2 + 4 δ²` times the energy of `e^{δ s} η` for the shifted field `S_t - δ J_t`. -/
+theorem setIntegral_exp_mul_associatedBilinForm_le (hJ : ∀ t, ω.Compatible (J t))
+    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S) (δ : ℝ)
+    {η : ℝ × ℝ → V} (hη : ContDiff ℝ 1 η) {R : Set (ℝ × ℝ)} (hR : IsCompact R) :
+    ∫ z in R, Real.exp (2 * δ * z.1) *
+        ((ω.associatedBilinForm (J z.2) (fderiv ℝ η z stdComplexLineReal)
+            (fderiv ℝ η z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2) (fderiv ℝ η z stdComplexLineImag - S z.2 (η z))
+            (fderiv ℝ η z stdComplexLineImag - S z.2 (η z))) +
+          ω.associatedBilinForm (J z.2) (η z) (η z)) ≤
+      (2 + 4 * δ ^ 2) * ∫ z in R,
+        ((ω.associatedBilinForm (J z.2)
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal)
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal) +
+          ω.associatedBilinForm (J z.2)
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
+              (S z.2 - δ • (J z.2).toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))
+            (fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
+              (S z.2 - δ • (J z.2).toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
+          ω.associatedBilinForm (J z.2) (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
+  have hJo : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    continuous_clm_apply.2 fun v ↦ by
+      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
+  have hξ : ContDiff ℝ 1 fun w : ℝ × ℝ ↦ Real.exp (δ * w.1) • η w :=
+    (Real.contDiff_exp.comp (contDiff_const.mul contDiff_fst)).smul hη
+  have hL := ((Real.continuous_exp.comp ((continuous_const (y := 2 * δ)).mul continuous_fst)).mul
+    ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hη).add
+      (continuous_associatedBilinForm_apply_self (ω := ω) hJc hη.continuous))).continuousOn
+    |>.integrableOn_compact (μ := volume) hR
+  have hQ := ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc
+    (hSc.sub (hJo.const_smul δ)) hξ).add
+      (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)).continuousOn
+    |>.integrableOn_compact (μ := volume) hR
+  rw [← integral_const_mul]
+  exact setIntegral_mono_on hL (hQ.const_mul (2 + 4 * δ ^ 2)) hR.measurableSet
+    fun z _ ↦ exp_mul_associatedBilinForm_le (hJ z.2) _ δ (hη.differentiable one_ne_zero z)
+
 end Floer
 
 namespace SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- **The cylinder estimate at a nondegenerate Hamiltonian orbit.** Let `x` be a one-periodic
-orbit of a one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field
-is globally Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map, and let `J_t`
-be `ω`-compatible complex structures depending continuously on `t`. Then the stationary cylinder
-operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` along `x`, with `S_t = dX_{H_t}(x(t))`, satisfies the
-estimate of `Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`. -/
+/-- **The cylinder estimate at a nondegenerate Hamiltonian orbit.** Let `x` be an orbit of a
+jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz,
+with `x(0)` a nondegenerate fixed point of the time-one map, as for a nondegenerate one-periodic
+orbit of a one-periodic Hamiltonian, and let `J_t` be `ω`-compatible complex structures depending
+continuously on `t`. Then the stationary cylinder operator `D ξ = ∂s ξ + J_t (∂t ξ - S_t ξ)` along
+`x`, with `S_t = dX_{H_t}(x(t))`, satisfies the estimate of
+`Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`; the hypothesis
+on the return map is `det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt`. -/
 theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t))
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) :
@@ -389,21 +525,127 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     ω.continuous_fderiv_hamiltonianVectorField_comp hH
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
-    fun t ↦ by simp only [hHp t, hxp t]
-  -- Nondegeneracy rules out a periodic kernel element, hence a fixed vector of `Ψ(1)`.
-  have hdet : LinearMap.det ((1 - dysonSeriesLeft
-      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠
-      0 := by
-    intro h
-    obtain ⟨ζ, hζ, hζp, hne, hA⟩ :=
-      (Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := J) hSc hSp).2 h
-    exact hne ((isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH
-      hHp hx hxp J).1 hnd ζ hζ hζp hA)
   exact Floer.exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
     (S := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) hJ hJc
     (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
-      (hH.comp (contDiff_prodMk_right t)).contDiffAt) hSc hdet
+      (hH.comp (contDiff_prodMk_right t)).contDiffAt) hSc
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
+/-- **The weighted cylinder estimate at a nondegenerate Hamiltonian orbit.** Under the hypotheses
+of `exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`, for every weight `δ`
+close enough to `0` the weighted operator `D - δ` along `x` satisfies the estimate of
+`Floer.eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul`
+for `S_t = dX_{H_t}(x(t))`: there is a constant `C ≥ 0` such that every `C²` map `ξ` of period one
+in `t`, vanishing on two slices `s = a` and `s = b`, satisfies
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S_δ ξ, ∂t ξ - S_δ ξ) + g(ξ, ξ)) ≤ C ∫ g((D - δ) ξ, (D - δ) ξ)`
+
+over `[a, b] × [0, 1]`, with `S_δ = S_t - δ J_t` and `g_t = ω(·, J_t ·)`. -/
+theorem eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → AlmostComplexStructure V} (hJ : ∀ t, ω.Compatible (J t))
+    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ t, ξ (a, t) = 0) →
+      (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1,
+            ((ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
+                (fderiv ℝ ξ z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineImag -
+                  (fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) -
+                    δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))
+                (fderiv ℝ ξ z stdComplexLineImag -
+                  (fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) -
+                    δ • LinearMap.toContinuousLinearMap (J z.2).toLinearMap) (ξ z))) +
+              ω.associatedBilinForm (J z.2) (ξ z) (ξ z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2)
+            (Floer.stationaryCylinderOperator J
+              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z)
+            (Floer.stationaryCylinderOperator J
+              (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ξ z - δ • ξ z) :=
+  Floer.eventually_exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator_sub_smul
+    (S := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) hJ hJc
+    (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
+      (hH.comp (contDiff_prodMk_right t)).contDiffAt)
+    (ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
+
+/-- **From the norms `ω(·, J₀(t) ·)` to the norm of `V`.** Let `J₀(t)` be `ω`-tame complex
+structures and `S(t)` linear maps, both continuous in `t`. Then there is a constant `k ≥ 0` with
+the following property. If a `C¹` map `ξ` and a map `η` continuous on `[a, b] × [0, 1]` satisfy
+
+`∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ) + g(ξ, ξ)) ≤ C ∫ g(η, η)`
+
+over `[a, b] × [0, 1]`, for `g_t = ω(·, J₀(t) ·)` and a constant `C ≥ 0`, then
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ k C ∫ ‖η‖²` over the same rectangle. This turns the estimates of
+stationary cylinder operators and their perturbations, stated in the norms `g_t`, into estimates
+in the norm of `V`. -/
+theorem exists_forall_setIntegral_le_mul_mul_setIntegral_norm_sq_of_le (ω : SymplecticForm V)
+    {J₀ : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V} (hJ₀ : ∀ t, ω.Tames (J₀ t))
+    (hJ₀c : Continuous fun t ↦ (J₀ t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S) :
+    ∃ k, 0 ≤ k ∧ ∀ ⦃ξ η : ℝ × ℝ → V⦄ ⦃a b C : ℝ⦄, ContDiff ℝ 1 ξ →
+      ContinuousOn η (Icc a b ×ˢ Icc 0 1) → 0 ≤ C →
+      ∫ z in Icc a b ×ˢ Icc 0 1,
+          ((ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+              (fderiv ℝ ξ z stdComplexLineReal) +
+            ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+              (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+            ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)) ≤
+        C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J₀ z.2) (η z) (η z) →
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+        k * C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2 := by
+  -- The inner products `g_t` are uniformly equivalent to the norm, and `‖S_t‖ ≤ m`, for
+  -- `t ∈ [0, 1]`.
+  obtain ⟨a₀, ha₀, b₀, hb₀, hg⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    (isCompact_Icc (a := (0 : ℝ)) (b := 1)) hJ₀c.continuousOn fun t _ ↦ hJ₀ t
+  obtain ⟨m, hm⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
+    hSc.continuousOn
+  set k₁ := (2 + 2 * m ^ 2) / a₀
+  refine ⟨k₁ * b₀, by positivity, fun ξ η a b C hξ hη hC hest ↦ ?_⟩
+  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+  have hmeas : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) :=
+    measurableSet_Icc.prod measurableSet_Icc
+  have hJzc : ContinuousOn (fun z : ℝ × ℝ ↦ (J₀ z.2).toLinearMap.toContinuousLinearMap)
+      (Icc a b ×ˢ Icc (0 : ℝ) 1) := (hJ₀c.comp continuous_snd).continuousOn
+  have hdξ := hξ.continuous_fderiv one_ne_zero
+  have hξc := hξ.continuous
+  -- The energy density of `ξ` in the inner products `g_t`.
+  set G : ℝ × ℝ → ℝ := fun z ↦
+    (ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineReal)
+        (fderiv ℝ ξ z stdComplexLineReal) +
+      ω.associatedBilinForm (J₀ z.2) (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))
+        (fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z))) +
+      ω.associatedBilinForm (J₀ z.2) (ξ z) (ξ z)
+  have hG : ContinuousOn G (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
+    have hSz : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) := by
+      have : Continuous fun z : ℝ × ℝ ↦ S z.2 := hSc.comp continuous_snd
+      fun_prop
+    exact ((ω.continuousOn_associatedBilinForm_apply_self hJzc
+      (hdξ.clm_apply continuous_const).continuousOn).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hSz.continuousOn)).add
+      (ω.continuousOn_associatedBilinForm_apply_self hJzc hξc.continuousOn)
+  calc _ ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, k₁ * G z :=
+        setIntegral_mono_on (ContinuousOn.integrableOn_compact hrect (by fun_prop))
+          ((hG.integrableOn_compact hrect).const_mul k₁) hmeas fun z hz ↦
+            norm_sq_add_norm_sq_add_norm_sq_le ha₀ (fun w ↦ (hg z.2 hz.2 w).1) (hm z.2 hz.2) _ _ _
+    _ = k₁ * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, G z := integral_const_mul _ _
+    _ ≤ k₁ * (C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, b₀ * ‖η z‖ ^ 2) := by
+        refine mul_le_mul_of_nonneg_left (hest.trans (mul_le_mul_of_nonneg_left ?_ hC))
+          (by positivity)
+        exact setIntegral_mono_on
+          ((ω.continuousOn_associatedBilinForm_apply_self hJzc hη).integrableOn_compact
+            (μ := volume) hrect)
+          ((hη.norm.pow 2).integrableOn_compact (μ := volume) hrect |>.const_mul b₀) hmeas
+          fun z hz ↦ (hg z.2 hz.2 _).2
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
 
 end SymplecticForm
 

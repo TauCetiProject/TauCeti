@@ -171,7 +171,7 @@ variable {R Γ}
 theorem mapDomain_mapOfLE_proj {U V : OpenNormalSubgroup Γ} (hUV : U ≤ V)
     (x : completedGroupAlgebra R Γ) :
     MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE hUV) (proj R Γ U x) = proj R Γ V x :=
-  x.2 hUV
+  x.property hUV
 
 /-- Two elements of the completed group algebra with the same projections at every
 level are equal. -/

@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # The relative comparison of cubical and simplicial singular chains
@@ -54,7 +57,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
   boundary of a cube sending the boundary of the cube into the subspace, as a chain and as a cycle
   of the subspace (`TopPair.map_cubicalBoundaryChainOfCube`).
 * `TopPair.singularToCubicalRel k P`, `TopPair.cubicalToSingularRel k P`: the relative comparison
-  maps.
+  maps. Under the identification `TopPair.cokernelSingularChainComplexIso` of relative singular
+  chains with a cokernel, the latter is the map of cokernels induced by `TauCeti.cubicalToSingular`
+  (`TopPair.cokernel_map_cubicalToSingular_comp`).
 * `TopPair.singularCubicalHomologyIso k P n`: relative cubical homology is relative singular
   homology.
 * `TopPair.singularToCubicalRelCompHomotopy k P`: the relative comparison maps compose to a map
@@ -65,10 +70,22 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance), and in
   each degree the chains of the subspace split off those of the ambient space
   (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
+* `TopPair.cokernel_π_f_map_eq_zero_of_range_subset`: a chain pushed forward along a map with
+  values in the subspace vanishes in the relative chains.
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
+* `TopPair.cubicalChainComplexMap_eq_zero_of_fac`: a map of pairs whose ambient map factors
+  through the target subspace induces the zero map on relative cubical chains.
+* `TopPair.homologyMap_cubicalChainComplexMap_eq`: on relative cubical homology, a map of pairs
+  induces its relative singular homology map, conjugated by the comparison isomorphisms.
 * `TopPair.Homotopy.congr_homologyMap_cubicalChainComplexMap`: homotopic maps of pairs induce the
   same map on relative cubical homology.
+* `TopPair.IsCubicalRepresentative.map`: a map of pairs carries a representative of a relative
+  class to a representative of its image.
+* `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
+  relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
+  of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
+  and every relative cycle whose image bounds modulo the subspace bounds modulo the subspace.
 * `TopPair.exists_boundary_eq_sub_add_map_of_injective`: when `Hₙ(X) → Hₙ(X, A)` is injective
   and `s`, `s'` are relative cycles representing the same class, any cycle `s - s' + a` with `a` a
   chain of `A` is a boundary.
@@ -119,6 +136,20 @@ theorem cubicalChainComplex_condition_f (P : TopPair.{u}) (n : ℕ) :
     ((normalizedCubicalChainComplex k).map P.map).f n ≫
       (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n = 0 := by
   simp [← HomologicalComplex.comp_f]
+
+/-- A chain pushed forward along a map with values in the subspace of a pair vanishes in the
+relative normalized cubical chains of the pair. -/
+theorem cokernel_π_f_map_eq_zero_of_range_subset (P : TopPair.{u}) {Z : TopCat.{u}}
+    (g : Z ⟶ P.fst) (hg : Set.range g ⊆ Set.range P.map) {n : ℕ}
+    (b : NormalizedCubicalChain Z k n) :
+    ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom
+      (NormalizedCubicalChain.map k g.hom n b) = 0 := by
+  -- `g` factors through the embedding of the subspace.
+  have hg' : g.hom = P.map.hom.comp (P.liftSnd g.hom fun z ↦ hg ⟨z, rfl⟩) := by
+    ext z
+    exact (TopPair.map_liftSnd _ _ z).symm
+  rw [hg', ← NormalizedCubicalChain.map_map]
+  exact ConcreteCategory.congr_hom (cubicalChainComplex_condition_f k P n) _
 
 /-- The sequence `N(A) ⟶ N(X) ⟶ N(X, A)` of normalized cubical chain complexes of a pair. -/
 abbrev cubicalChainComplexShortComplex (P : TopPair.{u}) :
@@ -187,6 +218,35 @@ theorem exists_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
   obtain ⟨c, hc⟩ := surjective_cokernel_π_f k P n (((P.cubicalChainComplex k).iCycles n).hom r)
   exact ⟨c, r, hc, rfl⟩
 
+/-- **The relative class of a cycle is represented by any chain agreeing with it modulo the
+subspace.** Let `z` be an `n`-cycle of the ambient space `X` of a pair `(X, A)`, and `c` an
+`n`-chain of `X` whose difference with `z` is a chain of `A`. If `c` represents the relative class
+`μ ∈ Hₙ(X, A)`, then `μ` is the image of the class of `z` under `Hₙ(X) → Hₙ(X, A)`. -/
+theorem homologyMap_homologyπ_eq_of_isCubicalRepresentative (P : TopPair.{u}) {n : ℕ}
+    (z : ((normalizedCubicalChainComplex k).obj P.fst).cycles n)
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (hc : P.IsCubicalRepresentative k c μ)
+    (hzc : normalizedCubicalChainComplexXEquiv P.fst n
+        ((((normalizedCubicalChainComplex k).obj P.fst).iCycles n).hom z) - c ∈
+      LinearMap.range (NormalizedCubicalChain.map k P.map.hom n)) :
+    (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map P.map))
+      n).hom ((((normalizedCubicalChainComplex k).obj P.fst).homologyπ n).hom z) = μ := by
+  obtain ⟨r, hcr, rfl⟩ := hc
+  obtain ⟨a, ha⟩ := hzc
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ]
+  congr 1
+  -- The images of `z` and `c` in the relative chains differ by the image of a chain of `A`.
+  have h₀ : ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom
+      ((normalizedCubicalChainComplexXEquiv P.fst n).symm
+        (NormalizedCubicalChain.map k P.map.hom n a)) = 0 := by
+    rw [normalizedCubicalChainComplexXEquiv_symm_apply, ← normalizedCubicalChainComplex_map_f_apply]
+    exact congr(ModuleCat.Hom.hom $(cubicalChainComplex_condition_f k P n) _)
+  rw [ha, map_sub, LinearEquiv.symm_apply_apply, map_sub,
+    normalizedCubicalChainComplexXEquiv_symm_apply, sub_eq_zero] at h₀
+  refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, ← hcr]
+  exact h₀
+
 /-- **A cycle with vanishing relative class is a boundary when relative classes determine
 absolute ones.** Let `s, s'` be normalized cubical `n`-chains of `X` which are relative cycles
 representing the same class of `Hₙ(X, A)`, and `a` an `n`-chain of `A` such that `s - s' + a` is
@@ -210,14 +270,10 @@ theorem exists_boundary_eq_sub_add_map_of_injective (P : TopPair.{u}) (n : ℕ)
         s - s' + NormalizedCubicalChain.map k P.map.hom n a := by
   set K := (normalizedCubicalChainComplex k).obj P.fst
   set π := cokernel.π ((normalizedCubicalChainComplex k).map P.map)
-  have hnext : (ComplexShape.down ℕ).next n = n - 1 := by
-    rcases n with _ | m
-    · exact ChainComplex.next_nat_zero
-    · exact ChainComplex.next_nat_succ m
   obtain ⟨w, hw⟩ : ∃ w : K.cycles n, K.iCycles n w =
       (normalizedCubicalChainComplexXEquiv P.fst n).symm
         (s - s' + NormalizedCubicalChain.map k P.map.hom n a) :=
-    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ hnext hd⟩
+    ⟨_, K.iCycles_moduleCatCyclesMk n _ _ (ChainComplex.next_nat n) hd⟩
   -- The relative class of the cycle `w` is that of `s - s'`, which vanishes.
   have hπw : HomologicalComplex.cyclesMap π n w = r - r' := by
     refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
@@ -273,6 +329,31 @@ theorem π_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') :
       (normalizedCubicalChainComplex k).map (Hom.fst f) ≫ cokernel.π _ := by
   simp [cubicalChainComplexMap]
 
+/-- Element-wise form of `TopPair.π_cubicalChainComplexMap`: a map of pairs sends the class of a
+chain of the ambient space to the class of its push-forward along the map of ambient spaces. -/
+@[simp]
+theorem π_cubicalChainComplexMap_f_apply {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ)
+    (x : ((normalizedCubicalChainComplex k).obj P.fst).X n) :
+    (cubicalChainComplexMap k f).f n
+        ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n x) =
+      (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f n
+        (NormalizedCubicalChain.map k (Hom.fst f).hom n x) :=
+  ConcreteCategory.congr_hom (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k f)) x
+
+variable {k} in
+/-- A map of pairs sends a representative of a relative class to a representative of its image:
+the push-forward of the chain along the map of ambient spaces. -/
+theorem IsCubicalRepresentative.map {P P' : TopPair.{u}} (f : P ⟶ P') {n : ℕ}
+    {c : NormalizedCubicalChain P.fst k n} {μ : (P.cubicalChainComplex k).homology n}
+    (h : P.IsCubicalRepresentative k c μ) :
+    P'.IsCubicalRepresentative k (NormalizedCubicalChain.map k (Hom.fst f).hom n c)
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n μ) := by
+  obtain ⟨r, hc, rfl⟩ := h
+  refine ⟨(HomologicalComplex.cyclesMap (cubicalChainComplexMap k f) n).hom r, ?_, ?_⟩
+  · refine (π_cubicalChainComplexMap_f_apply k f n c).symm.trans ?_
+    rw [hc, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+  · rw [← ModuleCat.comp_apply, ← HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
+
 @[simp]
 theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
     cubicalChainComplexMap k (𝟙 P) = 𝟙 (P.cubicalChainComplex k) :=
@@ -282,6 +363,138 @@ theorem cubicalChainComplexMap_id (P : TopPair.{u}) :
 theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g : P' ⟶ P'') :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
+
+/-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
+instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
+    IsIso (cubicalChainComplexMap k f) :=
+  ⟨cubicalChainComplexMap k (inv f), by
+    rw [← cubicalChainComplexMap_comp, IsIso.hom_inv_id, cubicalChainComplexMap_id], by
+    rw [← cubicalChainComplexMap_comp, IsIso.inv_hom_id, cubicalChainComplexMap_id]⟩
+
+/-! ### Quasi-isomorphisms on chains of the ambient spaces -/
+
+/-- In each degree, a chain of the ambient space of a pair vanishes in the relative chains exactly
+when it is a chain of the subspace. -/
+theorem cokernel_π_f_eq_zero_iff (P : TopPair.{u}) {n : ℕ}
+    (c : ((normalizedCubicalChainComplex k).obj P.fst).X n) :
+    (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n c = 0 ↔
+      c ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom := by
+  have h := (shortExact_cubicalChainComplexShortComplex_map_eval k P n).exact.moduleCat_range_eq_ker
+  exact ((SetLike.ext_iff.1 h c).trans LinearMap.mem_ker).symm
+
+/-- In each degree, the chains of the subspace of a pair are the chains of the ambient space
+supported in it. -/
+theorem mem_range_normalizedCubicalChainComplex_map_f_iff (P : TopPair.{u}) {n : ℕ}
+    (c : ((normalizedCubicalChainComplex k).obj P.fst).X n) :
+    c ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom ↔
+      normalizedCubicalChainComplexXEquiv P.fst n c ∈
+        NormalizedCubicalChain.supportedIn k (Set.range P.map) n := by
+  rw [← NormalizedCubicalChain.range_map_eq_supportedIn_range k P.isEmbedding_map.isInducing n]
+  -- `normalizedCubicalChainComplexXEquiv` intertwines the two push-forwards along `P.map`.
+  constructor
+  · rintro ⟨a, rfl⟩
+    exact ⟨normalizedCubicalChainComplexXEquiv _ n a,
+      (normalizedCubicalChainComplexXEquiv_map_f_apply P.map n a).symm⟩
+  · rintro ⟨a, ha⟩
+    refine ⟨(normalizedCubicalChainComplexXEquiv _ n).symm a,
+      (normalizedCubicalChainComplexXEquiv _ n).injective ?_⟩
+    rw [normalizedCubicalChainComplexXEquiv_map_f_apply, LinearEquiv.apply_symm_apply, ha]
+
+/-- The projection onto the relative chains commutes with the differentials, on elements. -/
+private theorem d_cokernel_π_f_apply (P : TopPair.{u}) {i j : ℕ}
+    (c : ((normalizedCubicalChainComplex k).obj P.fst).X i) :
+    (P.cubicalChainComplex k).d i j
+        ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f i c) =
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f j
+        (((normalizedCubicalChainComplex k).obj P.fst).d i j c) :=
+  HomologicalComplex.Hom.comm_apply _ i j c
+
+/-- **Quasi-isomorphisms of relative cubical chains, on chains of the ambient spaces.** A map of
+pairs `f : (X, A) ⟶ (X', A')` induces a quasi-isomorphism of relative normalized cubical chains in
+degree `n` exactly when
+
+* every chain `y` of `X'` whose boundary lies in `A'` is, up to the boundary of a chain and a chain
+  of `A'`, the image of a chain `x` of `X` whose boundary lies in `A`, and
+* every chain `x` of `X` whose boundary lies in `A` and whose image is, up to a chain of `A'`, the
+  boundary of a chain of `X'` is, up to a chain of `A`, the boundary of a chain of `X`.
+
+These are surjectivity and injectivity on relative homology, written on representatives
+(`HomologicalComplex.moduleCat_quasiIsoAt_iff`). Here `m` is the degree below `n`. -/
+theorem quasiIsoAt_cubicalChainComplexMap_iff {P P' : TopPair.{u}} (f : P ⟶ P') {n m : ℕ}
+    (hm : (ComplexShape.down ℕ).next n = m) :
+    QuasiIsoAt (cubicalChainComplexMap k f) n ↔
+      (∀ y : ((normalizedCubicalChainComplex k).obj P'.fst).X n,
+        ((normalizedCubicalChainComplex k).obj P'.fst).d n m y ∈
+            LinearMap.range (((normalizedCubicalChainComplex k).map P'.map).f m).hom →
+          ∃ x : ((normalizedCubicalChainComplex k).obj P.fst).X n,
+            ((normalizedCubicalChainComplex k).obj P.fst).d n m x ∈
+                LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f m).hom ∧
+              ∃ b : ((normalizedCubicalChainComplex k).obj P'.fst).X (n + 1),
+                y - ((normalizedCubicalChainComplex k).map (Hom.fst f)).f n x -
+                    ((normalizedCubicalChainComplex k).obj P'.fst).d (n + 1) n b ∈
+                  LinearMap.range (((normalizedCubicalChainComplex k).map P'.map).f n).hom) ∧
+        ∀ x : ((normalizedCubicalChainComplex k).obj P.fst).X n,
+          ((normalizedCubicalChainComplex k).obj P.fst).d n m x ∈
+              LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f m).hom →
+            ∀ b : ((normalizedCubicalChainComplex k).obj P'.fst).X (n + 1),
+              ((normalizedCubicalChainComplex k).map (Hom.fst f)).f n x -
+                  ((normalizedCubicalChainComplex k).obj P'.fst).d (n + 1) n b ∈
+                LinearMap.range (((normalizedCubicalChainComplex k).map P'.map).f n).hom →
+              ∃ a : ((normalizedCubicalChainComplex k).obj P.fst).X (n + 1),
+                x - ((normalizedCubicalChainComplex k).obj P.fst).d (n + 1) n a ∈
+                  LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom := by
+  -- Chains of the subspace are the kernel of the projection, which commutes with `d` and `f`.
+  have hπ (i : ℕ) := cokernel_π_f_eq_zero_iff k P (n := i)
+  have hπ' (i : ℕ) := cokernel_π_f_eq_zero_iff k P' (n := i)
+  have hφ : ∀ (i : ℕ) (c : ((normalizedCubicalChainComplex k).obj P.fst).X i),
+      (cubicalChainComplexMap k f).f i
+          ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f i c) =
+        (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f i
+          (((normalizedCubicalChainComplex k).map (Hom.fst f)).f i c) :=
+    π_cubicalChainComplexMap_f_apply k f
+  rw [HomologicalComplex.moduleCat_quasiIsoAt_iff _ (ChainComplex.prev ℕ n) hm]
+  refine and_congr ⟨fun H y hy ↦ ?_, fun H y' hy' ↦ ?_⟩
+    ⟨fun H x hx b hxb ↦ ?_, fun H x' hx' b' hb' ↦ ?_⟩
+  · obtain ⟨x', hx', b', hb'⟩ :=
+      H ((cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f n y)
+        (by rw [d_cokernel_π_f_apply, hπ']; exact hy)
+    obtain ⟨x, rfl⟩ := surjective_cokernel_π_f k P n x'
+    obtain ⟨b, rfl⟩ := surjective_cokernel_π_f k P' (n + 1) b'
+    rw [d_cokernel_π_f_apply] at hx'
+    rw [d_cokernel_π_f_apply, hφ] at hb'
+    refine ⟨x, (hπ _ _).1 hx', b, (hπ' _ _).1 ?_⟩
+    rw [map_sub, map_sub, ← hb', sub_self]
+  · obtain ⟨y, rfl⟩ := surjective_cokernel_π_f k P' n y'
+    rw [d_cokernel_π_f_apply, hπ'] at hy'
+    obtain ⟨x, hx, b, hb⟩ := H y hy'
+    refine ⟨(cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n x,
+      by rw [d_cokernel_π_f_apply, hπ]; exact hx,
+      (cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f (n + 1) b, ?_⟩
+    rw [← hπ', map_sub, map_sub, sub_eq_zero] at hb
+    rw [d_cokernel_π_f_apply, ← hb, hφ]
+  · rw [← hπ', map_sub, sub_eq_zero] at hxb
+    obtain ⟨a', ha'⟩ := H ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n x)
+      (by rw [d_cokernel_π_f_apply, hπ]; exact hx)
+      ((cokernel.π ((normalizedCubicalChainComplex k).map P'.map)).f (n + 1) b)
+      (by rw [d_cokernel_π_f_apply, ← hxb, hφ])
+    obtain ⟨a, rfl⟩ := surjective_cokernel_π_f k P (n + 1) a'
+    rw [d_cokernel_π_f_apply] at ha'
+    exact ⟨a, (hπ _ _).1 (by rw [map_sub, ha', sub_self])⟩
+  · obtain ⟨x, rfl⟩ := surjective_cokernel_π_f k P n x'
+    obtain ⟨b, rfl⟩ := surjective_cokernel_π_f k P' (n + 1) b'
+    rw [d_cokernel_π_f_apply] at hx'
+    rw [d_cokernel_π_f_apply, hφ] at hb'
+    obtain ⟨a, ha⟩ := H x ((hπ _ _).1 hx') b ((hπ' _ _).1 (by rw [map_sub, hb', sub_self]))
+    rw [← hπ, map_sub, sub_eq_zero] at ha
+    exact ⟨(cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f (n + 1) a,
+      by rw [d_cokernel_π_f_apply, ha]⟩
+
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative cubical chains. -/
+theorem cubicalChainComplexMap_eq_zero_of_fac {P P' : TopPair.{u}} (f : P ⟶ P')
+    (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f) : cubicalChainComplexMap k f = 0 := by
+  rw [← cancel_epi (cokernel.π _), π_cubicalChainComplexMap, comp_zero, ← hg, Functor.map_comp,
+    Category.assoc, cokernel.condition, comp_zero]
 
 /-! ### Singular cubes as relative chains -/
 
@@ -363,9 +576,7 @@ theorem cubicalChainComplexMap_f_cubicalChainOfCube {P P' : TopPair.{u}} (f : P 
     (c : SingularCube P.fst m) :
     (cubicalChainComplexMap k f).f m (cubicalChainOfCube k c) =
       cubicalChainOfCube k ((Hom.fst f).hom.comp c) := by
-  rw [cubicalChainOfCube_def, cubicalChainOfCube_def, ← ModuleCat.comp_apply,
-    ← HomologicalComplex.comp_f, π_cubicalChainComplexMap, HomologicalComplex.comp_f,
-    ModuleCat.comp_apply]
+  rw [cubicalChainOfCube_def, cubicalChainOfCube_def, π_cubicalChainComplexMap_f_apply]
   simp [NormalizedCubicalChain.map_ofCube]
 
 /-- A singular cube sending the boundary of the cube into the subspace is a relative cycle. -/
@@ -526,6 +737,12 @@ def singularRelπ (P : TopPair.{u}) :
     (singularChains k).obj P.fst ⟶ P.singularChainComplex (ModuleCat.of k k) :=
   P.singularChainComplexπ _
 
+/-- The quotient map `TopPair.singularRelπ` is the quotient map `TopPair.singularChainComplexπ`
+onto the relative singular chains. -/
+lemma singularRelπ_eq (P : TopPair.{u}) :
+    singularRelπ k P = P.singularChainComplexπ (ModuleCat.of k k) := by
+  rw [singularRelπ]
+
 instance (P : TopPair.{u}) : Epi (singularRelπ k P) :=
   epi_of_isColimit_cofork (P.isColimitCokernelCoforkSingularChainComplex _)
 
@@ -570,6 +787,23 @@ theorem π_cubicalToSingularRel (P : TopPair.{u}) :
     cokernel.π _ ≫ cubicalToSingularRel k P =
       (cubicalToSingular k).app P.fst ≫ singularRelπ k P :=
   cokernel.π_desc _ _ _
+
+/-- On the cokernel of the map of chains of a pair, the map induced by `TauCeti.cubicalToSingular`
+is the relative comparison map `TopPair.cubicalToSingularRel`, under the identification
+`TopPair.cokernelSingularChainComplexIso` of that cokernel with the relative singular chains. -/
+@[reassoc]
+theorem cokernel_map_cubicalToSingular_comp (P : TopPair.{u}) :
+    cokernel.map _ _ ((cubicalToSingular k).app _) ((cubicalToSingular k).app _)
+        ((cubicalToSingular k).naturality P.map).symm ≫
+        (P.cokernelSingularChainComplexIso (ModuleCat.of k k)).hom =
+      cubicalToSingularRel k P := by
+  -- The cokernel of the map of singular chains is written through `TauCeti.singularChains` on one
+  -- side and through simplicial chains on the other, so the composites are formed with terms.
+  exact (cancel_epi (cokernel.π _)).1 <| (cokernel.π_desc_assoc _ _ _ _).trans <|
+    (Category.assoc _ _ _).trans <|
+      ((congrArg (_ ≫ ·) (π_cokernelSingularChainComplexIso_hom P _)).trans <|
+        congrArg (_ ≫ ·) (singularRelπ_eq k P).symm).trans
+          (π_cubicalToSingularRel k P).symm
 
 /-- The comparison maps as a morphism of short complexes from the simplicial chain sequence of a
 pair to the cubical one. -/
@@ -697,6 +931,14 @@ theorem singularCubicalHomologyIso_inv_naturality {P P' : TopPair.{u}} (f : P �
       (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n := by
   rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality_assoc, Iso.hom_inv_id,
     Category.comp_id]
+
+/-- On relative cubical homology, a map of pairs induces its relative singular homology map,
+conjugated by the comparison isomorphisms. -/
+theorem homologyMap_cubicalChainComplexMap_eq {P P' : TopPair.{u}} (f : P ⟶ P') (n : ℕ) :
+    HomologicalComplex.homologyMap (cubicalChainComplexMap k f) n =
+      (singularCubicalHomologyIso k P n).inv ≫ P.singularHomologyMap f (ModuleCat.of k k) n ≫
+        (singularCubicalHomologyIso k P' n).hom := by
+  rw [Iso.eq_inv_comp, singularCubicalHomologyIso_hom_naturality]
 
 /-- The inverse comparison isomorphisms of absolute and relative homology commute with the maps
 from absolute to relative homology: an absolute cubical class, read in relative cubical homology

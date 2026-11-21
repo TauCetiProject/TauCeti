@@ -128,11 +128,11 @@ interlacing the polynomial part of `l`, the weight `ν + lₙ·(1, …, 1)` of `
 `l` by `|ν₀| - |ν| + lₙ`, where `ν₀` is the polynomial part of `l`. -/
 private theorem sum_sub_sum_shift_weightOfShape (l : DominantWeight (n + 1)) {ν : YoungDiagram}
     (hν : ν ∈ YoungDiagram.interlacingShapes n l.detShiftShape) :
-    ∑ i, l.1 i - ∑ i, ((weightOfShape n ν).shift l.detShift).1 i =
+    ∑ i, l.val i - ∑ i, ((weightOfShape n ν).shift l.detShift).val i =
       ((l.detShiftShape.card - ν.card : ℕ) : ℤ) + l.detShift := by
   obtain ⟨hint, hrows⟩ := YoungDiagram.mem_interlacingShapes.mp hν
   have hcard {N : ℕ} {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ N) :
-      (μ.card : ℤ) = ∑ i, (weightOfShape N μ).1 i := by
+      (μ.card : ℤ) = ∑ i, (weightOfShape N μ).val i := by
     conv_lhs => rw [← shape_weightOfShape hμ]
     exact DominantWeight.natCast_card_shape (isPolynomial_weightOfShape N μ)
   rw [Nat.cast_sub (Finset.card_le_card (YoungDiagram.cells_subset_iff.mpr hint.le)),
@@ -152,7 +152,7 @@ theorem char_rationalWeylRep_diagonal_snoc (l : DominantWeight (n + 1)) (t : Fin
     Representation.character (V := ↥(weylModuleOfShape k (n + 1) l.detShiftShape).toSubmodule)
         (rationalWeylRep k (n + 1) l) (diagGL (Fin.snoc t z)) =
       ∑ m ∈ interlacingWeights l,
-        (((z ^ (∑ i, l.1 i - ∑ i, m.1 i)) : kˣ) : k) *
+        (((z ^ (∑ i, l.val i - ∑ i, m.val i)) : kˣ) : k) *
           Representation.character (V := ↥(weylModuleOfShape k n m.detShiftShape).toSubmodule)
             (rationalWeylRep k n m) (diagGL t) := by
   rw [char_rationalWeylRep, det_diagGL, char_weylRepOfShape_diagonal_snoc, Finset.mul_sum]
@@ -177,7 +177,7 @@ theorem char_rationalWeylFDRep_diagonal_snoc (l : DominantWeight (n + 1)) (t : F
     (z : kˣ) :
     (rationalWeylFDRep k (n + 1) l).character (diagGL (Fin.snoc t z)) =
       ∑ m ∈ interlacingWeights l,
-        (((z ^ (∑ i, l.1 i - ∑ i, m.1 i)) : kˣ) : k) *
+        (((z ^ (∑ i, l.val i - ∑ i, m.val i)) : kˣ) : k) *
           (rationalWeylFDRep k n m).character (diagGL t) :=
   char_rationalWeylRep_diagonal_snoc k n l t z
 

@@ -76,8 +76,8 @@ closed subgroup `H` of `A × G` whose projection to `G` is surjective has a quot
 private theorem isQuotientMap_snd_subtype (H : Subgroup (A × G))
     (hclosed : IsClosed (H : Set (A × G))) (hsurj : ∀ g : G, ∃ a : A, (a, g) ∈ H) :
     Topology.IsQuotientMap ((MonoidHom.snd A G).comp H.subtype) :=
-  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtype_val).isQuotientMap
-    (continuous_snd.comp continuous_subtype_val) fun g ↦ by
+  (isClosedMap_snd_of_compactSpace.comp hclosed.isClosedMap_subtypeVal).isQuotientMap
+    (continuous_snd.comp continuous_subtypeVal) fun g ↦ by
       obtain ⟨a, ha⟩ := hsurj g
       exact ⟨⟨(a, g), ha⟩, rfl⟩
 
@@ -113,7 +113,7 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   have hπcont : Continuous π :=
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
-        (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
+        (continuous_fst.comp continuous_subtypeVal)).subtype_mk _)
   let β := ContinuousMonoidHom.liftOfIsQuotientMap ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle
   have hβ (h : H) : β (s h) = π h :=
     ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle h
@@ -125,7 +125,7 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     ((MonoidHom.continuous_iff_isOpen_ker _).mp β.continuous)
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
-      continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
+      continuous_subtypeVal.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
   refine ⟨δ, fun g ↦ ?_⟩
   -- Stage 5: over `g`, pick `h ∈ H` with `s h = g`; then `τ h` and `γ g` agree modulo
   -- `K = τ (ker s)`, so correcting `h` by an element of `ker s` gives a point of `H` over `g`
@@ -139,8 +139,8 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   obtain ⟨k, hk, hkτ⟩ := Subgroup.mem_map.mp (QuotientGroup.eq.mp hquot)
   have hsg : s (h * k) = g := by
     rw [map_mul, hh, MonoidHom.mem_ker.mp hk, mul_one]
-  refine ⟨(h * k).1.1, ?_, ?_⟩
-  · have hm := (h * k).2
+  refine ⟨(h * k).val.1, ?_, ?_⟩
+  · have hm := (h * k).property
     rwa [← hsg, hs_apply, Prod.mk.eta]
   · have ht : τ (h * k) = γ g := by
       rw [map_mul, hkτ, mul_inv_cancel_left]
