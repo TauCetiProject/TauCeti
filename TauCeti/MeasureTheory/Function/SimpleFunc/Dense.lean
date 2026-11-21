@@ -128,8 +128,10 @@ theorem coeFn_toLpTop {𝕜 E : Type*} [NormedAddCommGroup E] [NormedRing 𝕜] 
 theorem toLpTop_one {𝕜 E : Type*} [NormedAddCommGroup E] [One E]
     [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
     toLpTop μ 𝕜 (1 : SimpleFunc α E) = 1 :=
-  Lp.ext ((coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (1 : SimpleFunc α E)).trans
-    (Lp.coeFn_one (E := E) (μ := μ)).symm)
+  Lp.ext <| by
+    filter_upwards [coeFn_toLpTop (μ := μ) (𝕜 := 𝕜) (1 : SimpleFunc α E),
+      Lp.coeFn_one (E := E) (μ := μ)] with x h₁ h₂
+    rw [h₁, FunLike.coe_one, h₂]
 
 /-- Simple functions are dense in real `L∞`, for any measure: an essentially bounded function
 has a bounded measurable representative, which is a uniform limit of simple functions. -/

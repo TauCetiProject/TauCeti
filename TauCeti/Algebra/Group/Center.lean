@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Center
-public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.Units.Defs
 
 /-!

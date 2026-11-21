@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 public import TauCeti.LinearAlgebra.LinearPMap.SmulSub
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.LinearAlgebra.LinearPMap.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence

@@ -14,7 +14,7 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
+import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

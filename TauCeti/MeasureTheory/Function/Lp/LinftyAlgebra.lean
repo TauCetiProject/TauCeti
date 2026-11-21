@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Classes
-public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
-public import TauCeti.MeasureTheory.Function.Lp.Norm
-public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.Const
 
@@ -29,7 +27,9 @@ Consequently `L∞(μ, A)` is a (commutative) C⋆-algebra whenever `A` is. In p
 `gelfandStarTransform (Lp ℂ ∞ μ)` identifies it isometrically, as a C⋆-algebra, with the
 continuous functions on its character space. When `μ ≠ 0`, `L∞(μ, R)` is nontrivial if `R` is,
 and its unit has norm one if that of `R` does. Over a Dirac measure `Measure.dirac x₀`, every
-element of `Lp 𝕜 ∞ (Measure.dirac x₀)` is a scalar in the image of `algebraMap`.
+element of `Lp 𝕜 ∞ (Measure.dirac x₀)` is a scalar in the image of `algebraMap`. Over counting
+measure on a finite measurable-singleton space `α`, `MeasureTheory.Lp.countStarAlgEquiv`
+identifies `α → R` with `Lp R ∞ Measure.count`.
 
 The unit indicator of any measurable set `s`, represented in `L∞(μ, R)` by
 `TauCeti.linftyIndicator μ R s hs`, is an idempotent (and a star projection when `R` is a normed
@@ -52,6 +52,8 @@ almost everywhere equalities in place of pointwise ones.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.exists_eq_algebraMap_dirac`: over a Dirac measure, every element of `L∞` is
   a scalar in the image of `algebraMap`.
+* `MeasureTheory.Lp.countStarAlgEquiv`: over counting measure on a finite measurable-singleton
+  space, `α → R` is star-isomorphic to `Lp R ∞ Measure.count`.
 * `TauCeti.linftyIndicator_mul_linftyIndicator`, `TauCeti.isStarProjection_linftyIndicator`:
   algebraic and star properties of measurable-set indicators in `L∞`.
 * `MeasureTheory.Lp.exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem`: over a normed
@@ -225,9 +227,52 @@ instance inftyCStarAlgebra [CStarAlgebra R] : CStarAlgebra (Lp R ∞ μ) where
 
 instance inftyCommCStarAlgebra [CommCStarAlgebra R] : CommCStarAlgebra (Lp R ∞ μ) where
 
+section Count
+
+private theorem toLp_of_discrete_apply {α R : Type*} [MeasurableSpace α] [Finite α]
+    [MeasurableSingletonClass α] [NormedRing R] (f : α → R) (x : α) :
+    (MemLp.of_discrete (p := ∞) (μ := (Measure.count : Measure α)) (f := f)).toLp f x = f x :=
+  Measure.ae_count_iff.mp MemLp.of_discrete.coeFn_toLp x
+
+/-- Over a finite measurable-singleton space `α`, pointwise evaluation identifies `α → R` with
+`Lp R ∞ (Measure.count : Measure α)` as a unital ⋆-algebra. -/
+def countStarAlgEquiv (α 𝕜 R : Type*) [MeasurableSpace α] [Finite α]
+    [MeasurableSingletonClass α] [NormedField 𝕜] [NormedRing R] [StarRing R]
+    [NormedStarGroup R] [NormedAlgebra 𝕜 R] :
+    (α → R) ≃⋆ₐ[𝕜] Lp R ∞ (Measure.count : Measure α) where
+  toFun f := MemLp.of_discrete.toLp f
+  invFun a x := a x
+  left_inv f := funext (toLp_of_discrete_apply f)
+  right_inv a := Lp.ext (MemLp.coeFn_toLp _)
+  map_mul' f g := Lp.ext <| Measure.ae_count_iff.mpr fun x ↦ by
+    rw [toLp_of_discrete_apply, Measure.ae_count_iff.mp (coeFn_mul _ _) x]
+    simp [toLp_of_discrete_apply]
+  map_add' _ _ := MemLp.toLp_add MemLp.of_discrete MemLp.of_discrete
+  map_smul' c _ := MemLp.toLp_const_smul c MemLp.of_discrete
+  map_star' f := Lp.ext <| Measure.ae_count_iff.mpr fun x ↦ by
+    rw [toLp_of_discrete_apply, Measure.ae_count_iff.mp (coeFn_star _) x]
+    simp [toLp_of_discrete_apply]
+
+@[simp]
+theorem countStarAlgEquiv_apply {α 𝕜 R : Type*} [MeasurableSpace α] [Finite α]
+    [MeasurableSingletonClass α] [NormedField 𝕜] [NormedRing R] [StarRing R]
+    [NormedStarGroup R] [NormedAlgebra 𝕜 R] (f : α → R) :
+    countStarAlgEquiv α 𝕜 R f = MemLp.of_discrete.toLp f := by
+  rw [countStarAlgEquiv]; rfl
+
+@[simp]
+theorem countStarAlgEquiv_symm_apply {α 𝕜 R : Type*} [MeasurableSpace α] [Finite α]
+    [MeasurableSingletonClass α] [NormedField 𝕜] [NormedRing R] [StarRing R]
+    [NormedStarGroup R] [NormedAlgebra 𝕜 R] (a : Lp R ∞ (Measure.count : Measure α)) :
+    (countStarAlgEquiv α 𝕜 R).symm a = ⇑a := by
+  rw [countStarAlgEquiv]; rfl
+
+end Count
+
 section Idempotent
 
 /-- Multiplying measurable-set unit indicators in `Lp R ∞ μ` intersects the underlying sets. -/
+@[simp]
 theorem _root_.TauCeti.linftyIndicator_mul_linftyIndicator [NormedRing R] {s t : Set α}
     (hs : MeasurableSet s) (ht : MeasurableSet t) :
     TauCeti.linftyIndicator μ R s hs * TauCeti.linftyIndicator μ R t ht =

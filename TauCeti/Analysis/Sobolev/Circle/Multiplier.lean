@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Basic
 public import TauCeti.Analysis.Sobolev.Circle.Lp
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.Analysis.Calculus.ContDiff.Operations
