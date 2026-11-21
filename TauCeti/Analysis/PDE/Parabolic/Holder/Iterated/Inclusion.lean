@@ -142,13 +142,10 @@ theorem holderWith_mixedDerivL_slabMk_of_add_one_le (f : ParabolicCkHolderSpace 
     have h₂ : ‖mixedDerivL r m f‖₊ ≤ ‖f‖₊ := f.norm_mixedDerivL_le r m
     calc _ ≤ ‖f‖₊ + 2 * ‖f‖₊ := by gcongr
       _ = _ := by ring
-  · have hle : ‖timeSliceL r m f x‖₊ ≤ 3 * ‖f‖₊ := by
-      rw [← NNReal.coe_le_coe]
-      push_cast
-      linarith [lp.norm_apply_le_norm ENNReal.top_ne_zero (timeSliceL r m f) x,
-        f.norm_timeSliceL_le r m, norm_nonneg f]
-    have hslice := (timeSliceL r m f x).holderWith_nnnorm.mono hle
-    rwa [coe_timeSliceL f h x] at hslice
+  · refine (f.holderWith_mixedDerivL_slabMk h x).mono ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    linarith [f.norm_timeSliceL_le r m, norm_nonneg f]
 
 /-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α / 2`-Hölder in time with constant `5 ‖u‖`: at
 the top order by the parabolic Hölder condition, below it from the `(1 + α) / 2`-Hölder bound at
