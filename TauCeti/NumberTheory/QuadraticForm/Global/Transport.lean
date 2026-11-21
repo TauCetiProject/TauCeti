@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
 import TauCeti.Algebra.Ring.Hom
 import TauCeti.Analysis.Normed.Field.WithAbs
+import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
 import TauCeti.NumberTheory.QuadraticForm.CompletionTransport
 
 /-!
@@ -86,13 +87,6 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
 
 namespace TauCeti
 
-private theorem valuation_mapRingEquiv (e : K ≃+* L)
-    {v : HeightOneSpectrum (𝓞 K)} {w : HeightOneSpectrum (𝓞 L)}
-    (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal) (x : K) :
-    w.valuation L (e x) = v.valuation K x := by
-  have h := valuation_ringEquivOfRingEquiv (K := K) (K' := L) (RingOfIntegers.mapRingEquiv e) hvw x
-  rwa [RingOfIntegers.ringEquivOfRingEquiv_mapRingEquiv] at h
-
 /-- Extending a valuation-preserving isomorphism `e : K ≃+* L` to the adic completions intertwines
 `unitAtFinitePlace` with `Units.map e`. -/
 @[simp]
@@ -112,7 +106,7 @@ theorem isSquare_unitAtFinitePlace_iff_of_ringEquiv (e : K ≃+* L)
     (hvw : w.asIdeal = Ideal.map (RingOfIntegers.mapRingEquiv e) v.asIdeal) (a : Kˣ) :
     IsSquare (w.unitAtFinitePlace (Units.map (e : K →* L) a)) ↔
       IsSquare (v.unitAtFinitePlace a) := by
-  have he := valuation_mapRingEquiv e hvw
+  have he := valuation_mapRingEquiv v w e hvw
   let f := Units.mapEquiv (adicCompletionCongr v w e he).toMulEquiv
   have hf : f (v.unitAtFinitePlace a) = w.unitAtFinitePlace (Units.map (e : K →* L) a) :=
     units_map_adicCompletionCongr_unitAtFinitePlace he a
@@ -139,7 +133,7 @@ theorem hilbertSymbol_unitAtFinitePlace_of_ringEquiv (e : K ≃+* L)
     hilbertSymbol (w.unitAtFinitePlace (Units.map (e : K →* L) a))
         (w.unitAtFinitePlace (Units.map (e : K →* L) b)) =
       hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) := by
-  have he := valuation_mapRingEquiv e hvw
+  have he := valuation_mapRingEquiv v w e hvw
   rw [← units_map_adicCompletionCongr_unitAtFinitePlace he a,
     ← units_map_adicCompletionCongr_unitAtFinitePlace he b,
     hilbertSymbol_units_map_ringEquiv (adicCompletionCongr v w e he)]
@@ -184,7 +178,7 @@ theorem RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv (e : 
   let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
   let _ : Finite (𝓞 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
   exact RegularFormClass.localHasse_baseChange_adicCompletion_mapRingEquiv_of_valuation_eq
-    (valuation_mapRingEquiv e hvw) x
+    (valuation_mapRingEquiv v w e hvw) x
 
 end TauCeti
 
@@ -265,7 +259,7 @@ theorem exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv (e : K ≃+* L)
       ∃ x y : v.adicCompletion K,
         algebraMap K (v.adicCompletion K) a =
           x ^ 2 - algebraMap K (v.adicCompletion K) d * y ^ 2 := by
-  have he := TauCeti.valuation_mapRingEquiv e hvw
+  have he := valuation_mapRingEquiv v w e hvw
   rw [← adicCompletionCongr_algebraMap he a, ← adicCompletionCongr_algebraMap he d,
     (adicCompletionCongr v w e he).exists_eq_sq_sub_mul_sq_map_iff]
 
