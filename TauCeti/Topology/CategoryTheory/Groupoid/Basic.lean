@@ -60,7 +60,7 @@ class IsTopologicalGroupoid (C : Type*) [Category C] [IsGroupoid C] [Topological
   /-- Composition is continuous on the subspace of composable pairs. -/
   continuous_comp : Continuous fun p :
     {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2
+      p.val.1.comp p.val.2 p.property
 
 attribute [fun_prop] IsTopologicalGroupoid.continuous_source
   IsTopologicalGroupoid.continuous_target IsTopologicalGroupoid.continuous_unit
@@ -133,17 +133,18 @@ theorem exists_continuousAt_comp {C : Type*} [Category C] [IsGroupoid C] [Topolo
   classical
   obtain ⟨U, hUsub, hUo, hx₀U⟩ := mem_nhds_iff.mp heq
   let pair : U → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
-    fun z ↦ ⟨(α z, β z), hUsub z.2⟩
+    fun z ↦ ⟨(α z, β z), hUsub z.property⟩
   let γ : X → Quiver.Total C := fun x ↦
-    if hx : x ∈ U then (pair ⟨x, hx⟩).1.1.comp (pair ⟨x, hx⟩).1.2 (pair ⟨x, hx⟩).2 else α x₀
+    if hx : x ∈ U then (pair ⟨x, hx⟩).val.1.comp (pair ⟨x, hx⟩).val.2 (pair ⟨x, hx⟩).property
+    else α x₀
   have hpair : ContinuousAt pair ⟨x₀, hx₀U⟩ := by
     rw [ContinuousAt, tendsto_subtype_rng]
-    exact (hα.comp continuous_subtype_val.continuousAt).prodMk
-      (hβ.comp continuous_subtype_val.continuousAt)
+    exact (hα.comp continuous_subtypeVal.continuousAt).prodMk
+      (hβ.comp continuous_subtypeVal.continuousAt)
   have hγ_sub : ContinuousAt (γ ∘ (Subtype.val : U → X)) ⟨x₀, hx₀U⟩ := by
     have hcomp : γ ∘ (Subtype.val : U → X) =
-        fun z : U ↦ (pair z).1.1.comp (pair z).1.2 (pair z).2 :=
-      funext fun z ↦ by simp only [Function.comp_apply, γ, z.2, ↓reduceDIte]
+        fun z : U ↦ (pair z).val.1.comp (pair z).val.2 (pair z).property :=
+      funext fun z ↦ by simp only [Function.comp_apply, γ, z.property, ↓reduceDIte]
     rw [hcomp]
     exact IsTopologicalGroupoid.continuous_comp.continuousAt.comp hpair
   refine ⟨γ, hUo.isOpenEmbedding_subtypeVal.continuousAt_iff.mp hγ_sub,
@@ -169,11 +170,11 @@ theorem eventually_exists_comp_eq
   -- For arrows `a'` and `c` with the same source, `Ψ` is the inverse of `a'` followed by `c`,
   -- so that `c` is `a'` followed by `Ψ`. It sends `(a, a ≫ b)` to `b`.
   let Ψ : {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} → Quiver.Total C := fun p ↦
-    (⟨p.1.1.right, p.1.1.left, inv p.1.1.hom⟩ : Quiver.Total C).comp p.1.2 p.2
+    (⟨p.val.1.right, p.val.1.left, inv p.val.1.hom⟩ : Quiver.Total C).comp p.val.2 p.property
   have hΨ : Continuous Ψ := IsTopologicalGroupoid.continuous_comp.comp
     (((IsTopologicalGroupoid.continuous_inverse.comp
-      (continuous_fst.comp continuous_subtype_val)).prodMk
-        (continuous_snd.comp continuous_subtype_val)).subtype_mk fun p ↦ p.2)
+      (continuous_fst.comp continuous_subtypeVal)).prodMk
+        (continuous_snd.comp continuous_subtypeVal)).subtype_mk fun p ↦ p.property)
   let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} :=
     ⟨(a, a.comp b h), (Quiver.Total.comp_left a b h).symm⟩
   have hΨp₀ : Ψ p₀ = b := Quiver.Total.inv_comp_comp a b h _

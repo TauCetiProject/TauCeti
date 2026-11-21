@@ -151,22 +151,22 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The coarse topological support of a smooth differential form on the objects of `C`. -/
 def coarseTSupport (φ : SmoothForm I C V k) : Set (Quotient (isIsomorphicSetoid C)) :=
-  RoughForm.coarseTSupport (F := V) φ.1
+  RoughForm.coarseTSupport (F := V) φ.val
 
 /-- The coarse topological support of a smooth form is that of its underlying rough form. -/
 theorem coarseTSupport_def (φ : SmoothForm I C V k) :
-    φ.coarseTSupport = RoughForm.coarseTSupport (F := V) φ.1 := (rfl)
+    φ.coarseTSupport = RoughForm.coarseTSupport (F := V) φ.val := (rfl)
 
 /-- The coarse topological support of a smooth form is closed in the coarse quotient. -/
 theorem isClosed_coarseTSupport (φ : SmoothForm I C V k) : _root_.IsClosed φ.coarseTSupport := by
-  rw [coarseTSupport_def]; exact RoughForm.isClosed_coarseTSupport (I := I) (F := V) φ.1
+  rw [coarseTSupport_def]; exact RoughForm.isClosed_coarseTSupport (I := I) (F := V) φ.val
 
 /-- The object-level topological support of a smooth form lies in the preimage of its coarse
 topological support. -/
 theorem tsupport_subset_preimage_coarseTSupport (φ : SmoothForm I C V k) :
-    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 ⊆
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val ⊆
       Quotient.mk (isIsomorphicSetoid C) ⁻¹' φ.coarseTSupport :=
-  RoughForm.tsupport_subset_preimage_coarseTSupport (I := I) (F := V) φ.1
+  RoughForm.tsupport_subset_preimage_coarseTSupport (I := I) (F := V) φ.val
 
 /-- The zero smooth form has empty coarse topological support. -/
 @[simp]
@@ -181,29 +181,30 @@ theorem coarseTSupport_eq_empty_iff {φ : SmoothForm I C V k} : φ.coarseTSuppor
 /-- Coarse topological support of a sum of smooth forms lies in the union of their supports. -/
 theorem coarseTSupport_add_subset (φ ψ : SmoothForm I C V k) :
     (φ + ψ).coarseTSupport ⊆ φ.coarseTSupport ∪ ψ.coarseTSupport := by
-  have h : ((φ + ψ : SmoothForm I C V k) : RoughForm I C V k) = (φ.1 : RoughForm I C V k) + ψ.1 :=
+  have h : ((φ + ψ : SmoothForm I C V k) : RoughForm I C V k) =
+      (φ.val : RoughForm I C V k) + ψ.val :=
     funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_add_subset (F := V) φ.1 ψ.1
+  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_add_subset (F := V) φ.val ψ.val
 
 /-- Scalar multiplication does not enlarge the coarse topological support of a smooth form. -/
 theorem coarseTSupport_smul_subset (c : ℝ) (φ : SmoothForm I C V k) :
     (c • φ).coarseTSupport ⊆ φ.coarseTSupport := by
-  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.1 : RoughForm I C V k) :=
+  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.val : RoughForm I C V k) :=
     funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul_subset (F := V) c φ.1
+  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul_subset (F := V) c φ.val
 
 /-- Multiplication by a nonzero scalar preserves the coarse support of a smooth form. -/
 theorem coarseTSupport_smul (c : ℝ) (φ : SmoothForm I C V k) (hc : c ≠ 0) :
     (c • φ).coarseTSupport = φ.coarseTSupport := by
-  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.1 : RoughForm I C V k) :=
+  have h : ((c • φ : SmoothForm I C V k) : RoughForm I C V k) = c • (φ.val : RoughForm I C V k) :=
     funext fun _ ↦ ContinuousAlternatingMap.ext fun _ ↦ rfl
-  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul (F := V) c φ.1 hc
+  simpa only [coarseTSupport_def, h] using RoughForm.coarseTSupport_smul (F := V) c φ.val hc
 
 /-- Exterior differentiation does not enlarge the coarse support of a smooth form. -/
 theorem coarseTSupport_mextDerivₗ_subset [IsManifold I 2 C] (φ : SmoothForm I C V k) :
     (TauCeti.mextDerivₗ I k φ).coarseTSupport ⊆ φ.coarseTSupport := by
   rw [coarseTSupport_def, coarseTSupport_def, TauCeti.mextDerivₗ_apply]
-  exact RoughForm.coarseTSupport_mextDeriv_subset (V := V) φ.1
+  exact RoughForm.coarseTSupport_mextDeriv_subset (V := V) φ.val
 
 end SingleCoeff
 
@@ -216,13 +217,13 @@ variable {V₁ V₂ V₃ : Type*} [NormedAddCommGroup V₁] [NormedSpace ℝ V�
 theorem coarseTSupport_wedgeWith_subset_left (φ : SmoothForm I C V₁ k) (ψ : SmoothForm I C V₂ l) :
     (SmoothForm.wedgeWith μ φ ψ).coarseTSupport ⊆ φ.coarseTSupport := by
   rw [coarseTSupport_def, coarseTSupport_def, SmoothForm.coe_wedgeWith]
-  exact RoughForm.coarseTSupport_wedgeWith_subset_left μ φ.1 ψ.1
+  exact RoughForm.coarseTSupport_wedgeWith_subset_left μ φ.val ψ.val
 
 /-- Paired wedge product of smooth forms is supported in the coarse support of its right factor. -/
 theorem coarseTSupport_wedgeWith_subset_right (φ : SmoothForm I C V₁ k) (ψ : SmoothForm I C V₂ l) :
     (SmoothForm.wedgeWith μ φ ψ).coarseTSupport ⊆ ψ.coarseTSupport := by
   rw [coarseTSupport_def, coarseTSupport_def, SmoothForm.coe_wedgeWith]
-  exact RoughForm.coarseTSupport_wedgeWith_subset_right μ φ.1 ψ.1
+  exact RoughForm.coarseTSupport_wedgeWith_subset_right μ φ.val ψ.val
 
 end Wedge
 
@@ -260,35 +261,36 @@ include hφ
 object-level topological support of an invariant form is saturated under isomorphism. -/
 theorem preimage_image_tsupport_eq :
     Quotient.mk (isIsomorphicSetoid C) ⁻¹'
-        (Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1) =
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := by
+        (Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val) =
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val := by
   refine Set.Subset.antisymm ?_ (Set.subset_preimage_image _ _)
   rintro y ⟨x, hx, hxy⟩
   -- Only a category structure is assumed, so unpack `Quotient.exact` rather than groupoid helpers.
   obtain ⟨e⟩ := Quotient.exact hxy
   have ha : (⟨x, y, e.hom⟩ : _root_.Quiver.Total C) ∈
-      _root_.Quiver.Total.left ⁻¹' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := hx
-  rw [← RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.1 hs.contMDiff.continuous
+      _root_.Quiver.Total.left ⁻¹' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val := hx
+  rw [← RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.val hs.contMDiff.continuous
     hs.isOpenMap (hs.isInvertible_mfderiv (by simp))] at ha
   have hinv := congrArg Subtype.val (mem_invariantForms_iff.mp hφ)
   rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at hinv
-  exact RoughForm.tsupport_mpullback_subset_preimage (F := V) (k := k) ht.continuous φ.1 (hinv ▸ ha)
+  exact RoughForm.tsupport_mpullback_subset_preimage (F := V) (k := k) ht.continuous φ.val
+    (hinv ▸ ha)
 
 /-- On a smooth category whose source is a local diffeomorphism and whose target is smooth, the
 image in the coarse quotient of the topological support of an invariant form is already closed. -/
 theorem coarseTSupport_eq_image_tsupport :
     φ.coarseTSupport =
-      Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 :=
+      Quotient.mk (isIsomorphicSetoid C) '' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val :=
   IsClosed.closure_eq ((isQuotientMap_quotient_mk' (X := C)
     (s := isIsomorphicSetoid C)).isClosed_preimage.mp <|
       (preimage_image_tsupport_eq hs hφ).symm ▸
-        _root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1)
+        _root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val)
 
 /-- On a smooth category whose source is a local diffeomorphism and whose target is smooth, pulling
 the coarse support of an invariant form back to objects recovers its exact topological support. -/
 theorem preimage_coarseTSupport_eq_tsupport :
     Quotient.mk (isIsomorphicSetoid C) ⁻¹' φ.coarseTSupport =
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.1 := by
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] V) φ.val := by
   rw [coarseTSupport_eq_image_tsupport hs hφ, preimage_image_tsupport_eq hs hφ]
 
 end EtaleSaturation
@@ -361,7 +363,8 @@ variable (I J hs ht V k) in
 theorem compactlySupportedInvariantForms.mextDerivₗ_comp_mextDerivₗ :
     (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V (k + 1)).comp
       (compactlySupportedInvariantForms.mextDerivₗ I J hs ht V k) = 0 := by
-  ext φ : 1; exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.1)
+  ext φ : 1
+  exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.val)
 
 end SingleCoeff
 
@@ -464,13 +467,13 @@ theorem coarseTSupport_mpullback_eq_preimage {A' K' : Type*}
       isomorphismClasses.map Φ.toCatHom ⁻¹' φ.coarseTSupport := by
   rw [SmoothForm.coarseTSupport_def, SmoothForm.coe_mpullback]
   refine (Φ.coarseTSupport_mpullback_subset_preimage (I := I) (F := V)
-    hΦ.contMDiff.continuous φ.1).antisymm fun q hq ↦ ?_
+    hΦ.contMDiff.continuous φ.val).antisymm fun q hq ↦ ?_
   induction q using Quotient.inductionOn with
   | h x =>
-    have hΦx : Φ.obj x ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] V) φ.1 := by
+    have hΦx : Φ.obj x ∈ _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] V) φ.val := by
       rwa [← TauCeti.Quiver.preimage_coarseTSupport_eq_tsupport hs' hφ]
     refine subset_closure ⟨x, ?_, rfl⟩
-    rwa [RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.1 hΦ.contMDiff.continuous
+    rwa [RoughForm.tsupport_mpullback_eq_preimage (F := V) (k := k) φ.val hΦ.contMDiff.continuous
       hΦ.isOpenMap (hΦ.isInvertible_mfderiv (by simp))]
 
 end CategoryTheory.Functor
@@ -485,7 +488,7 @@ theorem coarseTSupport_mpullback_subset_preimage [IsManifold I 1 C] [IsManifold 
     (SmoothForm.mpullback Φ.obj hΦ φ).coarseTSupport ⊆
       isomorphismClasses.map Φ.toCatHom ⁻¹' φ.coarseTSupport := by
   rw [SmoothForm.coarseTSupport_def, SmoothForm.coe_mpullback]
-  exact Φ.coarseTSupport_mpullback_subset_preimage (I := I) (F := V) hΦ.continuous φ.1
+  exact Φ.coarseTSupport_mpullback_subset_preimage (I := I) (F := V) hΦ.continuous φ.val
 
 end TauCeti.SmoothForm
 
@@ -561,7 +564,7 @@ theorem mextDerivₗ_compactlySupportedInvariantFormsPullback
         (Φ.compactlySupportedInvariantFormsPullback hΦ hΦ₁ hp φ) =
       Φ.compactlySupportedInvariantFormsPullback hΦ hΦ₁ hp
         (compactlySupportedInvariantForms.mextDerivₗ I' J' hs' ht' V k φ) :=
-  Subtype.ext (SmoothForm.mextDerivₗ_mpullback _ _ k φ.1)
+  Subtype.ext (SmoothForm.mextDerivₗ_mpullback _ _ k φ.val)
 
 end SingleProper
 
@@ -571,7 +574,7 @@ theorem compactlySupportedInvariantFormsPullback_id :
     (𝟭 C).compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht) (hs' := hs) (ht' := ht)
         (V := V) (k := k) contMDiff_id contMDiff_id isProperMap_isomorphismClasses_map_id =
       LinearMap.id :=
-  LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.1)
+  LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.val)
 
 end ProperPullback
 
@@ -589,11 +592,12 @@ theorem coarseTSupport_invariantFormsEquiv_symm {V : Type*} [NormedAddCommGroup 
     (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (hΦ₁ : ContMDiff J J' ∞ Φ.toPrefunctor.mapTotal)
     (α : invariantForms I J hs.contMDiff ht V k) :
-    ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1.coarseTSupport =
-      isomorphismClasses.map Φ.toCatHom '' α.1.coarseTSupport := by
+    ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val.coarseTSupport =
+      isomorphismClasses.map Φ.toCatHom '' α.val.coarseTSupport := by
   let β := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α
-  have hpre : isomorphismClasses.map Φ.toCatHom ⁻¹' β.1.coarseTSupport = α.1.coarseTSupport := by
-    rw [← Φ.coarseTSupport_mpullback_eq_preimage hs' hΦ β.2,
+  have hpre :
+      isomorphismClasses.map Φ.toCatHom ⁻¹' β.val.coarseTSupport = α.val.coarseTSupport := by
+    rw [← Φ.coarseTSupport_mpullback_eq_preimage hs' hΦ β.property,
       Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ α]
   exact hpre ▸ (Φ.isomorphismClasses_map_surjective.image_preimage _).symm
 
@@ -624,8 +628,8 @@ def compactlySupportedInvariantFormsEquiv :
           hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap))
     ⟨fun φ ψ h ↦ by
         have hpull : Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
-            hΦ.contMDiff hΦ₁ ⟨φ.1, φ.2.1⟩ =
-          Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁ ⟨ψ.1, ψ.2.1⟩ := by
+            hΦ.contMDiff hΦ₁ ⟨φ.val, φ.property.1⟩ =
+          Φ.toPrefunctor.invariantFormsPullback hΦ.contMDiff hΦ₁ ⟨ψ.val, ψ.property.1⟩ := by
           apply Subtype.ext
           rw [Prefunctor.coe_invariantFormsPullback, Prefunctor.coe_invariantFormsPullback]
           exact congrArg Subtype.val h
@@ -635,11 +639,11 @@ def compactlySupportedInvariantFormsEquiv :
             (fun x ↦ (hΦ.isInvertible_mfderiv (by simp) x).surjective)
             (fun a ↦ (ht'.isInvertible_mfderiv (by simp) a).surjective) hpull)),
       fun α ↦ by
-        let β := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm ⟨α.1, α.2.1⟩
-        refine ⟨⟨β.1, β.2, ?_⟩, Subtype.ext
-          (Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.1, α.2.1⟩)⟩
-        rw [Φ.coarseTSupport_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.1, α.2.1⟩]
-        exact α.2.2.image (Φ.continuous_isomorphismClasses_map hΦ.contMDiff.continuous)⟩
+        let β := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm ⟨α.val, α.property.1⟩
+        refine ⟨⟨β.val, β.property, ?_⟩, Subtype.ext
+          (Φ.mpullback_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.val, α.property.1⟩)⟩
+        rw [Φ.coarseTSupport_invariantFormsEquiv_symm hs ht hs' ht' hΦ hΦ₁ ⟨α.val, α.property.1⟩]
+        exact α.property.2.image (Φ.continuous_isomorphismClasses_map hΦ.contMDiff.continuous)⟩
 
 /-- Applying `compactlySupportedInvariantFormsEquiv` computes pullback along `Φ`. -/
 @[simp]
@@ -659,12 +663,12 @@ theorem coe_compactlySupportedInvariantFormsEquiv_symm
     ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α :
         SmoothForm I' D V k) =
       ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨α.1, compactlySupportedInvariantForms_le_invariantForms α.2⟩).1 := by
+        ⟨α.val, compactlySupportedInvariantForms_le_invariantForms α.property⟩).val := by
   have h : Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁
-      ⟨((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1,
+      ⟨((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val,
         compactlySupportedInvariantForms_le_invariantForms
-          ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).2⟩ =
-      ⟨α.1, compactlySupportedInvariantForms_le_invariantForms α.2⟩ := by
+          ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).property⟩ =
+      ⟨α.val, compactlySupportedInvariantForms_le_invariantForms α.property⟩ := by
     apply Subtype.ext
     have ha := congrArg Subtype.val
       ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).apply_symm_apply α)
@@ -677,15 +681,15 @@ theorem coe_compactlySupportedInvariantFormsEquiv_symm
 theorem mpullback_compactlySupportedInvariantFormsEquiv_symm
     (α : compactlySupportedInvariantForms I J hs.contMDiff ht V k) :
     SmoothForm.mpullback Φ.obj hΦ.contMDiff
-      ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1 = α.1 := by
+      ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val = α.val := by
   rw [coe_compactlySupportedInvariantFormsEquiv_symm, mpullback_invariantFormsEquiv_symm]
 
 /-- Descent of a compact-coarse-support invariant form transports its coarse support by the induced
 map on isomorphism classes. -/
 theorem coarseTSupport_compactlySupportedInvariantFormsEquiv_symm
     (α : compactlySupportedInvariantForms I J hs.contMDiff ht V k) :
-    ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1.coarseTSupport =
-      isomorphismClasses.map Φ.toCatHom '' α.1.coarseTSupport := by
+    ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val.coarseTSupport =
+      isomorphismClasses.map Φ.toCatHom '' α.val.coarseTSupport := by
   rw [coe_compactlySupportedInvariantFormsEquiv_symm, coarseTSupport_invariantFormsEquiv_symm]
 
 /-- Descent of compact-coarse-support invariant forms commutes with exterior differentiation. -/
@@ -714,15 +718,15 @@ theorem compactlySupportedInvariantFormsEquiv_symm_wedgeWith_left
     (α : compactlySupportedInvariantForms I J hs.contMDiff ht V₁ k)
     (β : invariantForms I J hs.contMDiff ht V₂ l) :
     (((Φ.compactlySupportedInvariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedgeWith μ α.1 β.1,
-          wedgeWith_mem_compactlySupportedInvariantForms_left μ α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedgeWith μ α.val β.val,
+          wedgeWith_mem_compactlySupportedInvariantForms_left μ α.property β.property⟩).val :
         SmoothForm I' D V₃ (k + l)) =
       SmoothForm.wedgeWith μ
-        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   rw [coe_compactlySupportedInvariantFormsEquiv_symm,
     coe_compactlySupportedInvariantFormsEquiv_symm]
-  exact Φ.invariantFormsEquiv_symm_wedgeWith hs ht hs' ht' hΦ hΦ₁ μ ⟨α.1, α.2.1⟩ β
+  exact Φ.invariantFormsEquiv_symm_wedgeWith hs ht hs' ht' hΦ hΦ₁ μ ⟨α.val, α.property.1⟩ β
 
 /-- Descent commutes with pairing any invariant form on the left with a compact-coarse-support form
 on the right. -/
@@ -730,14 +734,14 @@ theorem compactlySupportedInvariantFormsEquiv_symm_wedgeWith_right
     (α : invariantForms I J hs.contMDiff ht V₁ k)
     (β : compactlySupportedInvariantForms I J hs.contMDiff ht V₂ l) :
     (((Φ.compactlySupportedInvariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedgeWith μ α.1 β.1,
-          wedgeWith_mem_compactlySupportedInvariantForms_right μ α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedgeWith μ α.val β.val,
+          wedgeWith_mem_compactlySupportedInvariantForms_right μ α.property β.property⟩).val :
         SmoothForm I' D V₃ (k + l)) =
-      SmoothForm.wedgeWith μ ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+      SmoothForm.wedgeWith μ ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   rw [coe_compactlySupportedInvariantFormsEquiv_symm,
     coe_compactlySupportedInvariantFormsEquiv_symm]
-  exact Φ.invariantFormsEquiv_symm_wedgeWith hs ht hs' ht' hΦ hΦ₁ μ α ⟨β.1, β.2.1⟩
+  exact Φ.invariantFormsEquiv_symm_wedgeWith hs ht hs' ht' hΦ hΦ₁ μ α ⟨β.val, β.property.1⟩
 
 end Wedge
 
@@ -747,10 +751,11 @@ theorem compactlySupportedInvariantFormsEquiv_symm_wedge_left {l : ℕ}
     (α : compactlySupportedInvariantForms I J hs.contMDiff ht ℝ k)
     (β : invariantForms I J hs.contMDiff ht ℝ l) :
     (((Φ.compactlySupportedInvariantFormsEquiv (V := ℝ) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedge α.1 β.1, wedge_mem_compactlySupportedInvariantForms_left α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedge α.val β.val,
+          wedge_mem_compactlySupportedInvariantForms_left α.property β.property⟩).val :
         SmoothForm I' D ℝ (k + l)) =
-      SmoothForm.wedge ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+      SmoothForm.wedge ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   simp only [SmoothForm.wedge_def]
   exact Φ.compactlySupportedInvariantFormsEquiv_symm_wedgeWith_left hs ht hs' ht' hΦ hΦ₁ _ α β
 
@@ -760,10 +765,11 @@ theorem compactlySupportedInvariantFormsEquiv_symm_wedge_right {l : ℕ}
     (α : invariantForms I J hs.contMDiff ht ℝ k)
     (β : compactlySupportedInvariantForms I J hs.contMDiff ht ℝ l) :
     (((Φ.compactlySupportedInvariantFormsEquiv (V := ℝ) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedge α.1 β.1, wedge_mem_compactlySupportedInvariantForms_right α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedge α.val β.val,
+          wedge_mem_compactlySupportedInvariantForms_right α.property β.property⟩).val :
         SmoothForm I' D ℝ (k + l)) =
-      SmoothForm.wedge ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+      SmoothForm.wedge ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.compactlySupportedInvariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   simp only [SmoothForm.wedge_def]
   exact Φ.compactlySupportedInvariantFormsEquiv_symm_wedgeWith_right hs ht hs' ht' hΦ hΦ₁ _ α β
 
@@ -816,7 +822,7 @@ theorem compactlySupportedInvariantFormsPullback_comp
         (isProperMap_isomorphismClasses_map_comp Φ Ψ hpΦ hpΨ) =
       (Φ.compactlySupportedInvariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁ hpΦ).comp
         (Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ) :=
-  LinearMap.ext fun φ ↦ Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.1).symm
+  LinearMap.ext fun φ ↦ Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.val).symm
 
 /-- Composing étale refinements reflecting isomorphisms reverses composition of their equivalences
 on compact-coarse-support invariant forms. -/
@@ -871,7 +877,7 @@ theorem compactlySupportedInvariantFormsPullback_eq
     Φ.compactlySupportedInvariantFormsPullback (hs := hs) (ht := ht) (hs' := hs') (ht' := ht')
         (V := V) (k := k) hΦ hΦ₁ hpΦ =
       Ψ.compactlySupportedInvariantFormsPullback hΨ hΨ₁ hpΨ :=
-  LinearMap.ext fun φ ↦ Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.2.1)
+  LinearMap.ext fun φ ↦ Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.property.1)
 
 /-- Smoothly naturally related étale refinements reflecting isomorphisms induce the same
 equivalence on compact-coarse-support invariant forms. -/
@@ -891,7 +897,7 @@ theorem compactlySupportedInvariantFormsEquiv_eq [IsGroupoid D] [TauCeti.IsTopol
   LinearEquiv.ext fun φ ↦ Subtype.ext <| by
     simp only [Functor.compactlySupportedInvariantFormsEquiv_apply,
       Functor.coe_compactlySupportedInvariantFormsPullback]
-    exact η.mpullback_eq_of_mem_invariantForms hΦ.contMDiff hΨ.contMDiff hη φ.2.1
+    exact η.mpullback_eq_of_mem_invariantForms hΦ.contMDiff hΨ.contMDiff hη φ.property.1
 
 end CategoryTheory.NatTrans
 
@@ -942,7 +948,7 @@ theorem Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_c
   have huniv : (SmoothForm.mpullback f hf φ).coarseTSupport = Set.univ :=
     Set.eq_univ_iff_forall.mpr <| Quotient.ind fun x ↦
       subset_closure ⟨x, subset_tsupport (α := E [⋀^Fin 0]→L[ℝ] V) _ fun h0 ↦ hv <| by
-        have hp : ((SmoothForm.mpullback f hf φ).1 x : E [⋀^Fin 0]→L[ℝ] V) 0 = v := by
+        have hp : ((SmoothForm.mpullback f hf φ).val x : E [⋀^Fin 0]→L[ℝ] V) 0 = v := by
           rw [SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction]
           exact RoughForm.ofFunction_apply (I := I) (fun _ ↦ v) x 0
         exact hp.symm.trans (congrArg (· 0) h0), rfl⟩

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.EssentialImage
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Basic
 
@@ -93,8 +92,7 @@ theorem isomorphismClasses_map_surjective (F : C ⥤ D) [F.EssSurj] :
   induction q using Quotient.inductionOn with
   | h y =>
     exact ⟨Quotient.mk _ (F.objPreimage y),
-      (F.isomorphismClasses_map_mk (F.objPreimage y)).trans
-        (Quotient.sound ⟨F.objObjPreimageIso y⟩)⟩
+      (F.isomorphismClasses_map_mk _).trans (Quotient.sound ⟨F.objObjPreimageIso y⟩)⟩
 
 /-- An essentially surjective full functor reflecting isomorphisms induces a bijection on
 isomorphism classes. -/

@@ -85,16 +85,16 @@ theorem invariantFormsPullback_injective (Φ : C ⥤ D) [Φ.EssSurj]
   intro φ hφ
   refine Subtype.ext <| Subtype.ext <| funext fun y ↦ ?_
   let a : Quiver.Total D := ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩
-  have hΦx : mpullback (F := V) (k := k) I I' Φ.obj φ.1.1 (Φ.objPreimage y) = 0 := by
+  have hΦx : mpullback (F := V) (k := k) I I' Φ.obj φ.val.val (Φ.objPreimage y) = 0 := by
     have h0 := congrArg Subtype.val hφ
     rw [Prefunctor.coe_invariantFormsPullback, Submodule.coe_zero] at h0
-    have h0x := congrArg (fun η : SmoothForm I C V k ↦ η.1 (Φ.objPreimage y)) h0
+    have h0x := congrArg (fun η : SmoothForm I C V k ↦ η.val (Φ.objPreimage y)) h0
     rwa [SmoothForm.coe_mpullback, Submodule.coe_zero, Pi.zero_apply] at h0x
-  have hleft : (φ.1.1 : RoughForm I' D V k) a.left = 0 :=
+  have hleft : (φ.val.val : RoughForm I' D V k) a.left = 0 :=
     (mpullback_apply_eq_mpullback_apply_iff (η := (0 : RoughForm I' D V k))
       (hdΦ (Φ.objPreimage y))).mp (hΦx.trans (by rw [mpullback_zero, Pi.zero_apply]))
-  have hinv := congrArg (fun η : SmoothForm J' (Quiver.Total D) V k ↦ η.1 a)
-    (mem_invariantForms_iff.mp φ.2)
+  have hinv := congrArg (fun η : SmoothForm J' (Quiver.Total D) V k ↦ η.val a)
+    (mem_invariantForms_iff.mp φ.property)
   simp only [SmoothForm.coe_mpullback] at hinv
   exact (mpullback_apply_eq_mpullback_apply_iff (η := (0 : RoughForm I' D V k)) (hdt' a)).mp
     (hinv.symm.trans ((mpullback_apply_eq_zero hleft).trans
@@ -267,11 +267,12 @@ private theorem mpullback_apply_eq_of_isLocalLiftAt [Φ.Full]
     {y₀ : D} {ℓ₁ ℓ₂ : D → C} {τ₁ τ₂ : D → Quiver.Total D}
     (h₁ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₁ τ₁)
     (h₂ : IsLocalLiftAt (I := I) (I' := I') Φ y₀ ℓ₂ τ₂) :
-    mpullback (F := V) (k := k) I' I ℓ₁ α.1 y₀ = mpullback (F := V) (k := k) I' I ℓ₂ α.1 y₀ := by
+    mpullback (F := V) (k := k) I' I ℓ₁ α.val y₀ =
+      mpullback (F := V) (k := k) I' I ℓ₂ α.val y₀ := by
   obtain ⟨σ, hσ, hleft, hright⟩ := exists_smooth_connecting_arrow Φ hs ht hs' hΦ hΦ₁ h₁ h₂
   have hσd : MDifferentiableAt I' J σ y₀ := hσ.mdifferentiableAt (by simp)
   have hinv := congrArg (fun η : SmoothForm J (Quiver.Total C) V k ↦
-    mpullback (F := V) (k := k) I' J σ η.1 y₀) (mem_invariantForms_iff.mp hα)
+    mpullback (F := V) (k := k) I' J σ η.val y₀) (mem_invariantForms_iff.mp hα)
   simp only [SmoothForm.coe_mpullback] at hinv
   rw [← hleft.mpullback_eq, mpullback_comp_at hσd (hs.mdifferentiable (by simp) (σ y₀)), hinv,
     ← mpullback_comp_at hσd (ht.contMDiffAt.mdifferentiableAt (by simp)), hright.mpullback_eq]
@@ -288,8 +289,8 @@ include hs' hΦ₁
 private theorem eventually_descendedRoughForm_eq [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ invariantForms I J hs.contMDiff ht V k)
     (x : C) (a : Quiver.Total D) (ha : a.left = Φ.obj x) :
-    ∀ᶠ z in 𝓝 a.right, descendedRoughForm Φ ht' hΦ α.1 z =
-      mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x a) α.1 z :=
+    ∀ᶠ z in 𝓝 a.right, descendedRoughForm Φ ht' hΦ α.val z =
+      mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x a) α.val z :=
   eventually_of_mem ((isOpen_arrowLocalLiftOpen Φ ht' hΦ x a hs').mem_nhds
     (mem_arrowLocalLiftOpen Φ ht' hΦ x a ha)) fun y hy ↦
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
@@ -300,7 +301,7 @@ private theorem eventually_descendedRoughForm_eq [Φ.Full] [Φ.EssSurj]
 
 private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D] [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ invariantForms I J hs.contMDiff ht V k) :
-    IsSmoothForm I' ∞ (descendedRoughForm Φ ht' hΦ α.1) := by
+    IsSmoothForm I' ∞ (descendedRoughForm Φ ht' hΦ α.val) := by
   rw [isSmoothForm_def]; intro y
   let x := Φ.objPreimage y
   let a : Quiver.Total D := ⟨Φ.obj x, y, (Φ.objObjPreimageIso y).hom⟩
@@ -313,19 +314,19 @@ private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D] [Φ.Full] 
 
 private theorem mpullback_descendedRoughForm [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ invariantForms I J hs.contMDiff ht V k) :
-    mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.1) = α.1 := by
+    mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.val) = α.val := by
   funext x
-  have hpt : descendedRoughForm Φ ht' hΦ α.1 (Φ.obj x) =
-      mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.1 (Φ.obj x) :=
+  have hpt : descendedRoughForm Φ ht' hΦ α.val (Φ.obj x) =
+      mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.val (Φ.obj x) :=
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
       (isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage (Φ.obj x))
         ⟨Φ.obj (Φ.objPreimage (Φ.obj x)), Φ.obj x, (Φ.objObjPreimageIso (Φ.obj x)).hom⟩ hs'
         (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage (Φ.obj x)) _ rfl))
       ⟨(hΦ x).contMDiffAt_localInverse, IsTopologicalGroupoid.continuous_unit.continuousAt,
         (hΦ x).localInverse_eventuallyEq_right.symm, Eventually.of_forall fun _ ↦ rfl⟩
-  have heq : mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.1) x =
+  have heq : mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.val) x =
       mpullback (F := V) (k := k) I I' Φ.obj
-        (mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.1) x := by
+        (mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.val) x := by
     ext v; rw [mpullback_apply, hpt, ← mpullback_apply]
   rw [heq, ← mpullback_comp_at (hΦ.mdifferentiable (by simp) x)
       ((hΦ x).mdifferentiableAt_localInverse (by simp)),
@@ -333,37 +334,37 @@ private theorem mpullback_descendedRoughForm [Φ.Full] [Φ.EssSurj]
 
 private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj]
     {α : SmoothForm I C V k} (hα : α ∈ invariantForms I J hs.contMDiff ht V k) :
-    mpullback (F := V) (k := k) J' I' Quiver.Total.left (descendedRoughForm Φ ht' hΦ α.1) =
-      mpullback (F := V) (k := k) J' I' Quiver.Total.right (descendedRoughForm Φ ht' hΦ α.1) := by
+    mpullback (F := V) (k := k) J' I' Quiver.Total.left (descendedRoughForm Φ ht' hΦ α.val) =
+      mpullback (F := V) (k := k) J' I' Quiver.Total.right (descendedRoughForm Φ ht' hΦ α.val) := by
   funext a
   let x₁ := Φ.objPreimage a.left
   let a₁ : Quiver.Total D := ⟨Φ.obj x₁, a.left, (Φ.objObjPreimageIso a.left).hom⟩
   have hl : mpullback (F := V) (k := k) J' I' Quiver.Total.left
-        (descendedRoughForm Φ ht' hΦ α.1) a =
+        (descendedRoughForm Φ ht' hΦ α.val) a =
       mpullback (F := V) (k := k) J' I
-        (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left) α.1 a := by
+        (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left) α.val a := by
     have hpt_l : mpullback (F := V) (k := k) J' I' Quiver.Total.left
-          (descendedRoughForm Φ ht' hΦ α.1) a =
+          (descendedRoughForm Φ ht' hΦ α.val) a =
         mpullback (F := V) (k := k) J' I' Quiver.Total.left
-          (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.1) a := by
+          (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.val) a := by
       ext v; rw [mpullback_apply, descendedRoughForm, ← mpullback_apply]
     rw [hpt_l, ← mpullback_comp_at (hs'.mdifferentiable (by simp) a)
       ((isLocalLiftAt_arrowLocalLift Φ ht' hΦ x₁ a₁ hs'
         (mem_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ rfl)).contMDiffAt.mdifferentiableAt (by simp))]
   obtain ⟨τ₂, hlift₂⟩ := isLocalLiftAt_comp_target_localInverse (I := I) (I' := I')
     Φ hs' ht' hΦ x₁ a₁ a rfl rfl
-  have hcomp_eq : descendedRoughForm Φ ht' hΦ α.1 a.right =
+  have hcomp_eq : descendedRoughForm Φ ht' hΦ α.val a.right =
       mpullback (F := V) (k := k) I' I
-        (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.1 a.right :=
+        (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val a.right :=
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
       (isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage a.right)
         ⟨Φ.obj (Φ.objPreimage a.right), a.right, (Φ.objObjPreimageIso a.right).hom⟩ hs'
         (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage a.right) _ rfl)) hlift₂
   have hr : mpullback (F := V) (k := k) J' I' Quiver.Total.right
-        (descendedRoughForm Φ ht' hΦ α.1) a =
+        (descendedRoughForm Φ ht' hΦ α.val) a =
       mpullback (F := V) (k := k) J' I' Quiver.Total.right
         (mpullback (F := V) (k := k) I' I
-          (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.1) a := by
+          (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val) a := by
     ext v; rw [mpullback_apply, hcomp_eq, ← mpullback_apply]
   have hev_a : (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) ∘
       Quiver.Total.right =ᶠ[𝓝 a] arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left := by
@@ -396,15 +397,16 @@ theorem invariantFormsPullback_surjective :
     Function.Surjective (Φ.toPrefunctor.invariantFormsPullback (hs := hs.contMDiff) (ht := ht)
       (hs' := hs'.contMDiff) (ht' := ht'.contMDiff) (V := V) (k := k) hΦ.contMDiff hΦ₁) := by
   intro α
-  refine ⟨⟨⟨descendedRoughForm Φ ht' hΦ α.1.1,
+  refine ⟨⟨⟨descendedRoughForm Φ ht' hΦ α.val.val,
     (isSmoothForm_descendedRoughForm (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁)
-      hs α.2).mem_smoothBundleForms⟩, ?_⟩, Subtype.ext (Subtype.ext ?_)⟩
+      hs α.property).mem_smoothBundleForms⟩, ?_⟩, Subtype.ext (Subtype.ext ?_)⟩
   · rw [mem_invariantForms_iff]; apply Subtype.ext
     rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
     exact mpullback_left_eq_right_descendedRoughForm (hs' := hs') (ht' := ht')
-      (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.2
+      (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.property
   · rw [Prefunctor.coe_invariantFormsPullback, SmoothForm.coe_mpullback]
-    exact mpullback_descendedRoughForm (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.2
+    exact mpullback_descendedRoughForm (hs' := hs') (ht' := ht')
+      (hΦ := hΦ) (hΦ₁ := hΦ₁) hs α.property
 
 /-- **Étale-refinement descent of invariant forms.** Pullback along a full, essentially surjective
 functor with locally diffeomorphic object map, between smooth presentations where the source of `C`
@@ -430,7 +432,7 @@ theorem invariantFormsEquiv_apply
 @[simp]
 theorem mpullback_invariantFormsEquiv_symm (α : invariantForms I J hs.contMDiff ht V k) :
     SmoothForm.mpullback Φ.obj hΦ.contMDiff
-      ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1 = α.1 := by
+      ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val = α.val := by
   have h := congrArg Subtype.val ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).apply_symm_apply α)
   rwa [invariantFormsEquiv_apply, Prefunctor.coe_invariantFormsPullback] at h
 
@@ -452,15 +454,18 @@ theorem invariantFormsEquiv_symm_wedgeWith {V₁ V₂ V₃ : Type*}
     [NormedAddCommGroup V₃] [NormedSpace ℝ V₃] {k l : ℕ} (μ : V₁ →L[ℝ] V₂ →L[ℝ] V₃)
     (α : invariantForms I J hs.contMDiff ht V₁ k) (β : invariantForms I J hs.contMDiff ht V₂ l) :
     (((Φ.invariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedgeWith μ α.1 β.1, wedgeWith_mem_invariantForms μ α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedgeWith μ α.val β.val,
+          wedgeWith_mem_invariantForms μ α.property β.property⟩).val :
         SmoothForm I' D V₃ (k + l)) =
-      SmoothForm.wedgeWith μ ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+      SmoothForm.wedgeWith μ ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   let e₁ := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α
   let e₂ := (Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β
   have heq : (Φ.invariantFormsEquiv (V := V₃) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-      ⟨SmoothForm.wedgeWith μ α.1 β.1, wedgeWith_mem_invariantForms μ α.2 β.2⟩ =
-      ⟨SmoothForm.wedgeWith μ e₁.1 e₂.1, wedgeWith_mem_invariantForms μ e₁.2 e₂.2⟩ := by
+      ⟨SmoothForm.wedgeWith μ α.val β.val,
+        wedgeWith_mem_invariantForms μ α.property β.property⟩ =
+      ⟨SmoothForm.wedgeWith μ e₁.val e₂.val,
+        wedgeWith_mem_invariantForms μ e₁.property e₂.property⟩ := by
     rw [LinearEquiv.symm_apply_eq]; apply Subtype.ext
     rw [invariantFormsEquiv_apply, Prefunctor.coe_invariantFormsPullback,
       SmoothForm.mpullback_wedgeWith]
@@ -474,10 +479,10 @@ products. -/
 theorem invariantFormsEquiv_symm_wedge {k l : ℕ}
     (α : invariantForms I J hs.contMDiff ht ℝ k) (β : invariantForms I J hs.contMDiff ht ℝ l) :
     (((Φ.invariantFormsEquiv (V := ℝ) (k := k + l) hs ht hs' ht' hΦ hΦ₁).symm
-        ⟨SmoothForm.wedge α.1 β.1, wedge_mem_invariantForms α.2 β.2⟩).1 :
+        ⟨SmoothForm.wedge α.val β.val, wedge_mem_invariantForms α.property β.property⟩).val :
         SmoothForm I' D ℝ (k + l)) =
-      SmoothForm.wedge ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).1
-        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).1 := by
+      SmoothForm.wedge ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm α).val
+        ((Φ.invariantFormsEquiv hs ht hs' ht' hΦ hΦ₁).symm β).val := by
   simp only [SmoothForm.wedge_def]
   exact Φ.invariantFormsEquiv_symm_wedgeWith hs ht hs' ht' hΦ hΦ₁ _ α β
 

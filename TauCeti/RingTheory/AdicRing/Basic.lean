@@ -62,8 +62,10 @@ instance (priority := 100) of_discreteTopology [DiscreteTopology A] : IsAdicRing
 
 variable {A}
 
-/-- An adic ring is Hausdorff. -/
-instance (priority := 100) t2Space [IsAdicRing A] : T2Space A := by
+/-- An adic ring is Hausdorff. Priority `50` keeps this below Mathlib's `priority := 100` metric
+and separation `T2Space` instances so metric adic rings such as `ℤ_[p]` retain compact `T2Space`
+proof terms. -/
+instance (priority := 50) t2Space [IsAdicRing A] : T2Space A := by
   have := (ideal_spec A).2.2
   exact (ideal_spec A).2.1.isHausdorff_iff.mp inferInstance
 
