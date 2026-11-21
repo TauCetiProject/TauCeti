@@ -71,7 +71,7 @@ private theorem card_filter_bipartiteWord_le {k r : ℕ} (hr : r < k)
 
 /-- A collection of bipartite words of half-length `k > 0` with at most `k` visited vertices
 has at most `p · max(p,n)^(k-1) · k^(2k+1)` elements, where `p` and `n` are the dimensions. -/
-theorem card_bipartiteWord_le {k : ℕ} (hk : k ≠ 0)
+theorem card_bipartiteWord_le_of_card_image_add_card_image_le {k : ℕ} (hk : k ≠ 0)
     (S : Finset ((Fin k → α) × (Fin k → β)))
     (hS : ∀ w ∈ S, #(univ.image w.1) + #(univ.image w.2) ≤ k) :
     #S ≤ Fintype.card α * max (Fintype.card α) (Fintype.card β) ^ (k - 1) * k ^ (2 * k + 1) := by

@@ -17,7 +17,8 @@ import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
 
 For almost everywhere measurable random matrices with independent centred entries of unit second
 absolute moment, the expected spectral moments converge to the Marchenko–Pastur moments when the
-column dimension tends to infinity and the aspect ratio converges. At each degree `k > 1`,
+column dimension tends to infinity and the ratio of rows to columns converges. The row type is
+nonempty at every index, including when this ratio tends to zero. At each degree `k > 1`,
 the entries must eventually lie in `L^(2k)` with a uniform bound on their absolute moments of
 order `2k`. The formula `integral_pow_marchenkoPastur` identifies the limits of the leading counts,
 and `ProbabilityMeasure.tendsto_of_tendsto_integral_pow` turns moment convergence into weak
@@ -51,7 +52,10 @@ private theorem leadingCovarianceMoment_summand_eq (p n k c : ℕ)
   rw [hr, hfactor, Nat.cast_mul, inv_pow, div_mul_div_comm, ← pow_add, Nat.sub_add_cancel hc]
   field_simp
 
-private theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p n : ι → ℕ}
+/-- The leading covariance moment tends to the Marchenko–Pastur moment of the same degree
+when the column count tends to infinity, the row count is eventually positive and the ratio
+of rows to columns tends to `y`. -/
+theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p n : ι → ℕ}
     {y : ℝ≥0} (hn : Tendsto n l atTop) (hp : ∀ᶠ i in l, p i ≠ 0)
     (hy : Tendsto (fun i ↦ (p i : ℝ) / n i) l (𝓝 (y : ℝ))) (k : ℕ) :
     Tendsto (fun i ↦ leadingCovarianceMoment k (p i) (n i)) l
@@ -85,11 +89,12 @@ variable {ι : Type*} {l : Filter ι} {Ω : ι → Type*} [∀ i, MeasurableSpac
   [∀ i, DecidableEq (p i)] [∀ i, Nonempty (p i)]
   {X : (i : ι) → Ω i → Matrix (p i) (n i) 𝕜} {y : ℝ≥0}
 
-/-- If the column dimension tends to infinity and the aspect ratio tends to `y`, the
-`k`th expected spectral moment tends to the `k`th Marchenko–Pastur moment. The matrices are
-almost everywhere measurable at every index. For positive `k`, the entries eventually have
-unit second absolute moment. For `k > 1`, they are also eventually independent, centred and
-in `L^(2k)`, with a uniform bound on their absolute moments of order `2k`. -/
+/-- If the column dimension tends to infinity and the ratio of rows to columns tends to `y`, the
+`k`th expected spectral moment tends to the `k`th Marchenko–Pastur moment. The row types are
+nonempty and the matrices are almost everywhere measurable at every index. For positive `k`, the
+entries eventually have unit second absolute moment. For `k > 1`, they are also eventually
+independent, centred and in `L^(2k)`, with a uniform bound on their absolute moments of order
+`2k`. -/
 theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (k : ℕ)
     (hn : Tendsto (fun i ↦ Fintype.card (n i)) l atTop)
     (hy : Tendsto (fun i ↦ (Fintype.card (p i) : ℝ) / Fintype.card (n i)) l (𝓝 (y : ℝ)))
@@ -105,17 +110,12 @@ theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (
   rcases eq_or_ne k 0 with rfl | hk
   · simpa only [pow_zero, integral_const, probReal_univ, one_smul] using
       (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℝ)) l (𝓝 1))
-  have eventual_imp {Q : ι → Prop} (h : 1 < k → ∀ᶠ i in l, Q i) :
-      ∀ᶠ i in l, 1 < k → Q i := by
-    by_cases hlarge : 1 < k
-    · exact (h hlarge).mono fun _ hi _ ↦ hi
-    · exact .of_forall fun _ h' ↦ (hlarge h').elim
   obtain ⟨B, hBound⟩ : ∃ B : ℝ≥0, ∀ᶠ i in l,
       1 < k → ∀ a b, ∫ ω, ‖X i ω a b‖ ^ (2 * k) ∂P i ≤ B := by
     by_cases hlarge : 1 < k
     · obtain ⟨B, hB⟩ := hB hlarge
-      exact ⟨B, hB.mono fun _ hi _ ↦ hi⟩
-    · exact ⟨0, .of_forall fun _ h' ↦ (hlarge h').elim⟩
+      exact ⟨B, eventually_imp_distrib_left.mpr fun _ ↦ hB⟩
+    · exact ⟨0, eventually_imp_distrib_left.mpr fun h' ↦ (hlarge h').elim⟩
   have hnR : Tendsto (fun i ↦ (Fintype.card (n i) : ℝ)) l atTop :=
     tendsto_natCast_atTop_atTop.comp hn
   have hmajorant : Tendsto (fun i ↦ ((k : ℝ) ^ (2 * k + 1) * B *
@@ -126,19 +126,19 @@ theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (
       (∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure (hXm i) : Measure ℝ)) -
         leadingCovarianceMoment k (Fintype.card (p i)) (Fintype.card (n i))) l (𝓝 0) := by
     refine squeeze_zero_norm' ?_ hmajorant
-    filter_upwards [eventual_imp hindep, eventual_imp hmean, eventual_imp hLp, hsecond hk, hBound]
-      with i hI hM hL hS hBi
+    filter_upwards [eventually_imp_distrib_left.mpr hindep, eventually_imp_distrib_left.mpr hmean,
+      eventually_imp_distrib_left.mpr hLp, hsecond hk, hBound] with i hI hM hL hS hBi
     exact norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le hk (hXm i) hI hM hL hS hBi
   have hlead := tendsto_leadingCovarianceMoment hn (.of_forall fun _ ↦ Fintype.card_ne_zero) hy k
   simpa only [sub_add_cancel, zero_add] using herror.add hlead
 
-/-- **Marchenko–Pastur convergence of the expected spectral measures by moments.** The matrices
-are almost everywhere measurable at every index, and their entries are eventually independent
-and centred with unit second absolute moment. For each degree `k > 1`, the entries
-eventually lie in `L^(2k)` and have uniformly bounded absolute moments of order `2k`. The expected
-spectral measures converge weakly when the column dimension tends to infinity and the aspect
-ratio converges. Sample spaces and entry laws may vary. At aspect ratio zero the limit is the
-point mass at one. -/
+/-- **Marchenko–Pastur convergence of the expected spectral measures by moments.** The row types
+are nonempty and the matrices are almost everywhere measurable at every index. The entries are
+eventually independent and centred with unit second absolute moment. For each degree `k > 1`, the
+entries eventually lie in `L^(2k)` and have uniformly bounded absolute moments of order `2k`. The
+expected spectral measures converge weakly when the column dimension tends to infinity and the
+ratio of rows to columns converges. Sample spaces and entry laws may vary. At aspect ratio zero the
+limit is the point mass at one. -/
 theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_uniform_entry_moment_bounds
     (hn : Tendsto (fun i ↦ Fintype.card (n i)) l atTop)
     (hy : Tendsto (fun i ↦ (Fintype.card (p i) : ℝ) / Fintype.card (n i)) l (𝓝 (y : ℝ)))

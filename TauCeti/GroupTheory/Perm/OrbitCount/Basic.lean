@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.SetTheory.Cardinal.NatCard
-public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
@@ -114,11 +113,10 @@ theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_and_eq_iff
     (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π ∧
       ((Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
         Function.Injective f) := by
-  rw [card_image_invariantColouringEquiv, orbitCount_def]
-  refine ⟨Nat.card_le_card_of_surjective _ Set.rangeFactorization_surjective, ?_⟩
-  refine ⟨fun h x y hxy ↦ ?_, Nat.card_range_of_injective⟩
-  exact (Set.rangeFactorization_surjective.bijective_of_nat_card_le
-    (f := Set.rangeFactorization f) h.ge).injective (Subtype.ext hxy)
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  have h : (Set.univ : Set (Quotient (SameCycle.setoid π))).Finite := Set.finite_univ
+  simpa only [Set.image_univ, Set.injOn_univ, ← Nat.card_coe_set_eq, Nat.card_univ] using
+    And.intro (Set.ncard_image_le (f := f) h) (Set.ncard_image_iff (f := f) h)
 
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]

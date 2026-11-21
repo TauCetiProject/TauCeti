@@ -259,7 +259,7 @@ private theorem leadingBipartiteWordEquiv_symm_apply_labels (hk : k ≠ 0)
 
 /-- The partition recovered by the inverse has the permutation that matches the two orientations
 of each edge in the original word. -/
-theorem bipartiteEdge_eq_of_leadingBipartiteWordEquiv_symm_apply_formPerm (hk : k ≠ 0)
+theorem bipartiteEdge_inl_formPerm_leadingBipartiteWordEquiv_symm (hk : k ≠ 0)
     (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
     let σ := ((leadingBipartiteWordEquiv hk).symm w).1.val.formPerm
     bipartiteEdge w.val.1 w.val.2 (.inl (σ i)) = bipartiteEdge w.val.1 w.val.2 (.inr i) := by
@@ -291,5 +291,19 @@ theorem card_leadingBipartiteWord [Finite α] [Finite β] (hk : k ≠ 0) :
       k + 1 - #π.val.parts := by omega
   rw [Fintype.card_prod, Fintype.card_embedding_eq, Fintype.card_embedding_eq]
   simp only [← Nat.card_eq_fintype_card, ← orbitCount_def, Finpartition.orbitCount_formPerm, hr]
+
+/-- A leading word of half-length one is specified by one row and one column. -/
+theorem card_leadingBipartiteWord_one :
+    Nat.card {w : (Fin 1 → α) × (Fin 1 → β) // IsLeadingBipartiteWord w.1 w.2} =
+      Nat.card α * Nat.card β := by
+  have h (w : (Fin 1 → α) × (Fin 1 → β)) : IsLeadingBipartiteWord w.1 w.2 := by
+    refine ⟨?_, ?_⟩
+    · rintro (i | i)
+      · exact ⟨.inr i, Sum.inr_ne_inl, by simp⟩
+      · exact ⟨.inl i, Sum.inl_ne_inr, by simp⟩
+    · simp [univ_unique]
+  exact Nat.card_congr ((Equiv.subtypeUnivEquiv h).trans
+    (Equiv.prodCongr (Equiv.funUnique (Fin 1) α) (Equiv.funUnique (Fin 1) β))) |>.trans
+      (Nat.card_prod α β)
 
 end TauCeti

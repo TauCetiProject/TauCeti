@@ -10,6 +10,7 @@ public import TauCeti.Data.Fin.Sum
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Data.Fin.Cast
 
 /-!
 # Vertex and edge counts of bipartite trace words
@@ -110,8 +111,7 @@ theorem card_image_add_card_image_le_card_image_bipartiteEdge_add_one (u : Fin k
     let w (i : ℕ) : α ⊕ β := Sum.map u v (e.symm (encode i))
     let edge (p : α × β) : Sym2 (α ⊕ β) := s(.inl p.1, .inr p.2)
     have hread (a : Fin (m + 1) ⊕ Fin (m + 1)) : w (e a).val = Sum.map u v a := by
-      have h : encode (e a).val = e a := by simp [encode]
-      simp only [w, h, Equiv.symm_apply_apply]
+      simp only [w, encode, Fin.ofNat_val_eq_self, Equiv.symm_apply_apply]
     have hvertices : (univ.image u).disjSum (univ.image v) ⊆
         (range (2 * m + 2)).image w := by
       rintro (a | b) hx <;> simp only [inl_mem_disjSum, inr_mem_disjSum] at hx
@@ -123,20 +123,9 @@ theorem card_image_add_card_image_le_card_image_bipartiteEdge_add_one (u : Fin k
         (((range (2 * m + 1)).filter fun i ↦ w i ≠ w (i + 1)).image
           fun i ↦ s(w i, w (i + 1))) ⊆ (univ.image (bipartiteEdge u v)).image edge := by
       intro a ha
-      obtain ⟨i, hi, rfl⟩ := mem_image.1 ha
-      have hi' : i < 2 * m + 1 := mem_range.1 (mem_filter.1 hi).1
-      have hencode : (encode i).val = i := Nat.mod_eq_of_lt (by omega)
-      have hne : encode i ≠ Fin.last (2 * m + 1) := by
-        intro h
-        have hval := congrArg Fin.val h
-        rw [hencode, Fin.val_last] at hval
-        omega
+      obtain ⟨i, -, rfl⟩ := mem_image.1 ha
       have hnext : finRotate (2 * (m + 1)) (encode i) = encode (i + 1) := by
-        apply Fin.ext
-        have hrot : (finRotate (2 * (m + 1)) (encode i)).val = (encode i).val + 1 :=
-          coe_finRotate_of_ne_last hne
-        rw [hrot, hencode]
-        exact (Nat.mod_eq_of_lt (by omega)).symm
+        simpa only [encode] using Fin.finRotate_ofNat (n := 2 * (m + 1)) i
       obtain ⟨a, ha⟩ := e.surjective (encode i)
       refine mem_image.2 ⟨bipartiteEdge u v a, mem_image_of_mem _ (mem_univ _), ?_⟩
       simpa only [w, ← ha, ← hnext, Function.comp_apply, edge] using

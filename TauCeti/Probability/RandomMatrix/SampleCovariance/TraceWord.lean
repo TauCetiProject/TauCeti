@@ -134,15 +134,6 @@ theorem integrable_trace_sampleCovariance_pow_of_ne_zero [Fintype p] [DecidableE
   exact (integrable_finsetSum _ fun u _ ↦ integrable_finsetSum _ fun v _ ↦
     integrable_prod_apply_mul_star_apply hk hXk u v).const_mul _
 
-/-- On a finite measure space, the trace power is integrable for entries in `L^(2k)`, including
-at `k = 0`, when the trace is constant. -/
-theorem integrable_trace_sampleCovariance_pow [Fintype p] [DecidableEq p] [Fintype n]
-    [IsFiniteMeasure P] {k : ℕ} (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P) :
-    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · exact integrable_trace_sampleCovariance_pow_of_ne_zero hk hXk
-
 private theorem norm_readFactor {k : ℕ} (s : Fin k ⊕ Fin k) (z : 𝕜) :
     ‖readFactor s z‖ = ‖z‖ := by
   cases s <;> simp [readFactor]

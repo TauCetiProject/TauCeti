@@ -92,8 +92,8 @@ theorem integral_expectedCovarianceSpectralMeasure {E : Type*} [NormedAddCommGro
   exact Measure.integral_bind (aemeasurable_covarianceMeasure hX) hf
 
 variable {k : ℕ} in
-/-- For sample covariance matrices, integrability of the trace power implies integrability of
-the corresponding power of the expected spectral measure. -/
+/-- If the trace of the `k`th sample covariance matrix power is integrable, then `x ↦ x ^ k`
+is integrable against the expected spectral measure. -/
 theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
     (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
     Integrable (fun x : ℝ ↦ x ^ k) (expectedCovarianceSpectralMeasure hXm : Measure ℝ) := by
@@ -116,8 +116,8 @@ theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P
       fun x hx ↦ (Real.norm_of_nonneg (pow_nonneg hx k)).symm
 
 variable {k : ℕ} in
-/-- The expected spectral moment, cast into the matrix scalar field, is the expected
-normalized trace power. -/
+/-- If the trace of the `k`th sample covariance matrix power is integrable, its expectation
+divided by the row count is the expected spectral moment cast into the matrix scalar field. -/
 theorem ofReal_integral_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
     (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
     ((∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure hXm : Measure ℝ) : ℝ) : 𝕜) =

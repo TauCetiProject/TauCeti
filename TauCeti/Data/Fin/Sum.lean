@@ -10,6 +10,7 @@ public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
 public import Mathlib.Logic.Equiv.Fin.Rotate
+import Mathlib.Data.Fin.Embedding
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -31,12 +32,19 @@ The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv`
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
 two- or three-variable object can rewrite rather than unfold them.
 
+Interleaving sends the two blocks of `Fin k ⊕ Fin k` to the even and odd positions of
+`Fin (2 * k)`. The inverse reads the parity and divides the position by two. Rotation sends
+`inl i` to `inr i` and `inr i` to `inl (finRotate k i)`, so an alternating word can be read as
+an ordinary cyclic path.
+
 ## Main declarations
 
 * `TauCeti.unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left
   summand to `0` and the right to `1`.
 * `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
   sending the outer left summand to `0` and the two inner ones to `1` and `2`.
+* `TauCeti.interleaveIndex`: the even/odd embedding for two blocks of possibly different sizes.
+* `TauCeti.interleaveIndexEquiv`: the even/odd equivalence for equal-sized blocks.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
@@ -44,10 +52,8 @@ two- or three-variable object can rewrite rather than unfold them.
 
 ## Implementation notes
 
-The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
-`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
-than re-exported. Only the finite sum, finiteness, equivalence and embedding interfaces needed by
-the declaration types are public.
+The construction imports are private. Only the finite sum, finiteness, equivalence, embedding
+and rotation interfaces used in the declaration types are public.
 -/
 
 public section
@@ -66,26 +72,6 @@ theorem exists_equiv_sum_fin {α β : Type*} [Finite β] (s : α ↪ β) :
 end Function.Embedding
 
 namespace TauCeti
-
-/-- The disjoint even/odd positions for two finite coordinate blocks. -/
-def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
-  toFun := Sum.elim
-    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
-    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
-  inj' := by
-    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
-    · exact congrArg Sum.inl (Fin.ext (by omega))
-    · omega
-    · omega
-    · exact congrArg Sum.inr (Fin.ext (by omega))
-
-/-- The left block occupies the even positions. -/
-@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
-    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
-
-/-- The right block occupies the odd positions. -/
-@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
-    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
 
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to `0` and the right to `1`.
 
@@ -119,13 +105,35 @@ def interleaveIndexEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) :=
 
 /-- The even position of a left index. -/
 @[simp] theorem interleaveIndexEquiv_inl_val {k : ℕ} (i : Fin k) :
-    (interleaveIndexEquiv k (.inl i)).val = 2 * i.val :=
-  Nat.zero_add _
+    (interleaveIndexEquiv k (.inl i)).val = 2 * i.val := by
+  simp [interleaveIndexEquiv, finProdFinEquiv_apply_val]
 
 /-- The odd position of a right index. -/
 @[simp] theorem interleaveIndexEquiv_inr_val {k : ℕ} (i : Fin k) :
     (interleaveIndexEquiv k (.inr i)).val = 2 * i.val + 1 := by
-  exact Nat.add_comm 1 _
+  simp [interleaveIndexEquiv, finProdFinEquiv_apply_val, Nat.add_comm]
+
+/-- The disjoint even/odd positions for two finite coordinate blocks. -/
+def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) :=
+  ((Fin.castLEEmb (le_max_left a b)).sumMap (Fin.castLEEmb (le_max_right a b))).trans
+    (interleaveIndexEquiv (max a b)).toEmbedding
+
+/-- The left block occupies the even positions. -/
+@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
+    (interleaveIndex a b (.inl i)).val = 2 * i.val := by
+  simp [interleaveIndex]
+
+/-- The right block occupies the odd positions. -/
+@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
+    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := by
+  simp [interleaveIndex]
+
+/-- For equal block sizes, the interleaving embedding is the even/odd equivalence after
+transporting its codomain along `max_self`. -/
+@[simp] theorem interleaveIndex_self (k : ℕ) :
+    (interleaveIndex k k).trans (finCongr (congrArg (2 * ·) (max_self k))).toEmbedding =
+      (interleaveIndexEquiv k).toEmbedding := by
+  ext (i | i) <;> simp
 
 /-- The inverse interleaving reads an even position on the left and an odd position on the right. -/
 theorem interleaveIndexEquiv_symm_apply {k : ℕ} (i : Fin (2 * k)) :
