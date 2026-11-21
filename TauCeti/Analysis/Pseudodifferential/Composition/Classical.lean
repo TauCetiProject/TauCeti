@@ -40,6 +40,10 @@ In particular the principal symbol of `a # b` is `a_{m'} ∘ b_m`, and its next 
 * `TauCeti.ClassicalSymbol.sharp`: **the composition of classical symbols is classical**, with the
   terms `sharpTerms a.term b.term` (`TauCeti.ClassicalSymbol.term_sharp`), the formal composition
   of the expansions of `a` and `b`.
+* `TauCeti.ClassicalSymbol.exists_remainder_sharpTerms_of_isAsymptoticSum`: any asymptotic sum of
+  the terms of the composition expansion has the classical expansion with the terms
+  `sharpTerms a.term b.term`; this also gives the classical composition with a properly supported
+  left factor, `TauCeti.ClassicalSymbol.properSharp`.
 * `TauCeti.ClassicalSymbol.principal_sharp`: the principal symbol of `a # b` is `a_{m'} ∘ b_m`.
 * `TauCeti.ClassicalSymbol.coefficient_term_one_sharp`: the term of degree `m' + m - 1` of `a # b`.
 * `TauCeti.ClassicalSymbol.sharpCommutator`: the commutator symbol `a # b - b # a` of two classical
@@ -172,36 +176,41 @@ end Terms
 
 /-! ### The composition of classical symbols -/
 
-section Sharp
-
-variable [CompleteSpace W] [CompleteSpace U]
-
-/-- The remainder of the composition symbol of classical symbols after `N` terms has order
-`m' + m - N`: it is the remainder of the composition expansion after `N` terms, plus the remainder
-after `N - k` homogeneous terms of each term `sharpTerm a b k`, `k < N`. -/
-private theorem exists_remainder_sharp (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
-    (hb : b.toSymbol.HasCompactSpatialSupport) (χ : FrequencyCutoff (CoordinateSpace n))
-    (N : ℕ) :
+/-- **Classical remainders of the composition expansion.** If a symbol `c` of order `m' + m` is an
+asymptotic sum `c ∼ ∑ₖ sharpTerm a b k` of the terms of the composition expansion of classical
+symbols `a` and `b`, then its remainder after the first `N` homogeneous terms
+`sharpTerms a.term b.term` has order `m' + m - N`: it is the remainder of the asymptotic sum after
+`N` terms, plus the remainder after `N - k` homogeneous terms of each term `sharpTerm a b k`,
+`k < N`. This applies to the composition symbol `a # b` (`TauCeti.Symbol.isAsymptoticSum_sharp`)
+and to the composition symbol with a properly supported left factor
+(`TauCeti.Symbol.isAsymptoticSum_properSharp`). -/
+theorem exists_remainder_sharpTerms_of_isAsymptoticSum (a : ClassicalSymbol n W U m')
+    (b : ClassicalSymbol n V W m) {c : Symbol n V U (m' + m)}
+    (hc : Symbol.IsAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) (Symbol.inclusion (by simp) c)
+      (a.toSymbol.sharpTerm b.toSymbol))
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
     ∃ r : Symbol n V U (m' + m - N), ∀ p, r.coefficient p =
-      (a.toSymbol.sharp b.toSymbol hb).coefficient p -
-        ∑ j ∈ range N, χ p.2 • (sharpTerms a.term b.term j).coefficient p := by
-  -- The remainder of `sharpTerm a b k` after `N - k` terms has order `m' + m - N` for `k ≤ N`,
-  -- and order `m' + m - k ≤ m' + m - N` for `k > N`.
+      c.coefficient p - ∑ j ∈ range N, χ p.2 • (sharpTerms a.term b.term j).coefficient p := by
+  obtain ⟨r₀, hr₀⟩ := Symbol.isAsymptoticSum_iff.1 hc N
+  -- The remainder of `sharpTerm a b k` after `N - k` terms has order `m' + m - N` for `k ≤ N`.
   have hord (k : ℕ) : m' + m - k - ((N - k : ℕ) : ℝ) ≤ m' + m - N := by
     have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
     linarith
-  refine ⟨a.toSymbol.sharpRemainder b.toSymbol hb N +
-    ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.sharpTerm b k).remainder χ (N - k)),
-    fun p => ?_⟩
+  refine ⟨r₀ + ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.sharpTerm b k).remainder χ (N - k)),
+    fun p ↦ ?_⟩
+  have hp := congrFun hr₀ p
+  simp only [Pi.sub_apply, Finset.sum_apply, Symbol.coefficient_inclusion] at hp
   simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Symbol.coefficient_sharpRemainder, Pi.add_apply, Pi.sub_apply, Finset.sum_apply,
-    coefficient_remainder, toSymbol_sharpTerm, coefficient_sharpTerms_eq_sum_term_sharpTerm,
-    Finset.smul_sum,
-    Finset.sum_sub_distrib]
+    Pi.add_apply, Finset.sum_apply, ← hp, coefficient_remainder, toSymbol_sharpTerm,
+    coefficient_sharpTerms_eq_sum_term_sharpTerm, Finset.smul_sum, Finset.sum_sub_distrib]
   -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
   rw [Finset.sum_range_diag_flip N
-    fun k i => χ p.2 • ((a.sharpTerm b k).term i).coefficient p]
+    fun k i ↦ χ p.2 • ((a.sharpTerm b k).term i).coefficient p]
   abel
+
+section Sharp
+
+variable [CompleteSpace W] [CompleteSpace U]
 
 /-- **The composition of classical symbols is classical.** For classical symbols `a` of order
 `m'` and `b` of order `m`, with `b` of compact spatial support, the composition symbol `a # b`,
@@ -213,7 +222,8 @@ def sharp (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
     (hb : b.toSymbol.HasCompactSpatialSupport) : ClassicalSymbol n V U (m' + m) where
   toSymbol := a.toSymbol.sharp b.toSymbol hb
   term := sharpTerms a.term b.term
-  exists_remainder' := ⟨default, exists_remainder_sharp a b hb default⟩
+  exists_remainder' := ⟨default, exists_remainder_sharpTerms_of_isAsymptoticSum a b
+    (Symbol.isAsymptoticSum_sharp hb) default⟩
 
 variable (a : ClassicalSymbol n W U m') (b : ClassicalSymbol n V W m)
   (hb : b.toSymbol.HasCompactSpatialSupport)
