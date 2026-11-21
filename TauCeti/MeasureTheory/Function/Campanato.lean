@@ -228,6 +228,15 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {Ω : Set E} {c : ℝ≥0}
   {x : E} {M α ρ : ℝ}
 
+/-- Integrating over a closed ball for the restriction of an additive Haar measure to a set `Ω`
+is integrating over the intersection of `Ω` with the open ball, since spheres are null. So the
+averages over closed balls for `μ.restrict Ω` below are the averages over `B(x, r) ∩ Ω`. -/
+theorem restrict_restrict_closedBall_eq_restrict_ball_inter [Nontrivial E] (Ω : Set E) (x : E)
+    (r : ℝ) : (μ.restrict Ω).restrict (closedBall x r) = μ.restrict (ball x r ∩ Ω) := by
+  rw [Measure.restrict_restrict measurableSet_closedBall]
+  exact Measure.restrict_congr_set
+    ((μ.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
+
 /-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
 private lemma one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
   sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))

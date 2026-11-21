@@ -401,10 +401,11 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
           2 * r * ‖hf.toLp‖ := by ring
 
 /-- Squaring the energy estimate `λ E ≤ t (K_a X + K_G Y) + 2 r F` of a frozen replacement, with
-`X² = Φ`, `Y² = ω V` and `F² = I`. -/
-private theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I : ℝ}
+`X² = Φ`, `Y² ≤ ω V` and `F² = I`. Here `Y²` is the volume of the domain of the replacement, at
+most the volume `ω V` of a ball containing it. -/
+theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I : ℝ}
     (hlam : 0 < lam) (hE : 0 ≤ E) (hω : 0 ≤ ω) (hV : 0 ≤ V)
-    (hest : lam * E ≤ t * (Ka * X + KG * Y) + 2 * r * F) (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 = ω * V)
+    (hest : lam * E ≤ t * (Ka * X + KG * Y) + 2 * r * F) (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 ≤ ω * V)
     (hFI : F ^ 2 = I) :
     E ^ 2 ≤ 3 * (1 + ω) * ((t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) + 4 * r ^ 2 * I) / lam ^ 2) := by
   have h1 : (lam * E) ^ 2 ≤ (t * (Ka * X + KG * Y) + 2 * r * F) ^ 2 :=
@@ -417,7 +418,9 @@ private theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I
       (1 + ω) * (t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) + 4 * r ^ 2 * I) := by
     have e : (t * Ka * X) ^ 2 + (t * KG * Y) ^ 2 + (2 * r * F) ^ 2 =
         t ^ 2 * Ka ^ 2 * X ^ 2 + t ^ 2 * KG ^ 2 * Y ^ 2 + 4 * r ^ 2 * F ^ 2 := by ring
-    rw [e, hYV, ← hFI, ← hXΦ]
+    have hYd : t ^ 2 * KG ^ 2 * Y ^ 2 ≤ t ^ 2 * KG ^ 2 * (ω * V) :=
+      mul_le_mul_of_nonneg_left hYV (by positivity)
+    rw [e, ← hFI, ← hXΦ]
     have : 0 ≤ t ^ 2 * Ka ^ 2 * X ^ 2 * ω := by positivity
     have : 0 ≤ t ^ 2 * KG ^ 2 * V := by positivity
     have : 0 ≤ 4 * r ^ 2 * F ^ 2 * ω := by positivity
@@ -486,7 +489,7 @@ theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n
     rw [← Real.rpow_natCast, ← Real.rpow_mul hr.le]
     ring_nf
   rw [← hr2]
-  exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) hω (by positivity) hest hX hY hF
+  exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) hω (by positivity) hest hX hY.le hF
 
 end PDE
 
