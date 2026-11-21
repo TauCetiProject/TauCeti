@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.AddChar
 
+import Mathlib.LinearAlgebra.Matrix.Vec
 import Mathlib.Order.Int.ConditionallyCompleteOrder
 import TauCeti.Algebra.Group.AddChar
 
@@ -23,13 +24,14 @@ being a nonarchimedean additive group by `TauCeti.instNonarchimedeanRingOfIsValu
 Then the fractional ideals `P ^ m` on which `ψ` is trivial are exactly those with `m ≥ -ν` for a
 unique integer `ν = ν(ψ)`, the *conductor exponent* `AddChar.conductorExponent ψ`: `ψ` is trivial
 on `P ^ (-ν)` and nontrivial on `P ^ (-ν - 1)`. Such an exponent exists because the `P ^ m` form a
-neighbourhood basis of `0`, and because every nonzero element of `K` lies in some `P ^ m`.
+neighbourhood basis of `0`, and because `ψ` is nontrivial: if `ψ x₀ ≠ 1` then `ψ` is nontrivial on
+every `P ^ m` containing `x₀`, that is for all `m ≤ v_K(x₀)`.
 
 The conductor exponent controls the duality of fractional ideals under the pairing
 `(x, y) ↦ ψ (x * y)`. For `b ∈ Kˣ` the character `ψ_b = ψ.mulShift b`, `x ↦ ψ (b * x)`, has
 conductor exponent `ν(ψ) + v_K(b)`. Consequently the annihilator of `P ^ m` is `P ^ (-ν - m)`,
-and likewise for the coordinatewise lattices of `Kⁿ` under the dot product and of `n × n`
-matrices under the trace form `(X, Y) ↦ trace (X * Y)`. These are the dual lattices entering the
+and likewise for the coordinatewise lattices of `Kⁿ` under the dot product and of matrices under
+the trace form `(X, Y) ↦ trace (X * Y)`. These are the dual lattices entering the
 self-dual Haar measures and Fourier inversion on these spaces.
 
 ## Main definitions
@@ -43,11 +45,12 @@ self-dual Haar measures and Fourier inversion on these spaces.
 * `AddChar.conductorExponent_eq_iff`: `ν(ψ) = n` exactly when `ψ` is trivial on `P ^ (-n)` and
   nontrivial on `P ^ (-n - 1)`.
 * `AddChar.conductorExponent_mulShift`: `ν(ψ_b) = ν(ψ) + v_K(b)`.
-* `AddChar.forall_mul_eq_one_iff`: the annihilator of `P ^ m` under `ψ (x * y)` is
+* `AddChar.forall_mul_eq_one_iff_valuation_le`: the annihilator of `P ^ m` under `ψ (x * y)` is
   `P ^ (-ν(ψ) - m)`.
-* `AddChar.forall_dotProduct_eq_one_iff` and `AddChar.forall_trace_mul_eq_one_iff`: the
-  annihilators of `(P ^ m)ⁿ` under the dot product and of `Mₙ(P ^ m)` under the trace form are
-  `(P ^ (-ν(ψ) - m))ⁿ` and `Mₙ(P ^ (-ν(ψ) - m))`.
+* `AddChar.forall_dotProduct_eq_one_iff_forall_valuation_le` and
+  `AddChar.forall_trace_mul_eq_one_iff_forall_valuation_le`: the annihilators of `(P ^ m)ⁿ` under
+  the dot product and of `M_{l×n}(P ^ m)` under the trace form are `(P ^ (-ν(ψ) - m))ⁿ` and
+  `M_{n×l}(P ^ (-ν(ψ) - m))`.
 
 ## References
 
@@ -161,7 +164,8 @@ theorem conductorExponent_mulShift (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : 
 /-- **Duality of fractional ideals.** For a nontrivial additive character `ψ` of `K` which is
 trivial on a neighbourhood of `0`, the annihilator of `P ^ m` under the pairing `ψ (x * y)` is
 `P ^ (-ν(ψ) - m)`. -/
-theorem forall_mul_eq_one_iff (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1) (m : ℤ) (y : K) :
+theorem forall_mul_eq_one_iff_valuation_le (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1)
+    (m : ℤ) (y : K) :
     (∀ x : K, valuation K x ≤ uniformizer K ^ m → ψ (x * y) = 1) ↔
       valuation K y ≤ uniformizer K ^ (-ψ.conductorExponent - m) := by
   rcases eq_or_ne y 0 with rfl | hy
@@ -178,12 +182,12 @@ theorem forall_mul_eq_one_iff (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ �
 /-- **Duality of coordinate lattices in `Kⁿ`.** For a nontrivial additive character `ψ` of `K`
 which is trivial on a neighbourhood of `0`, the annihilator of `(P ^ m)ⁿ` under the pairing
 `ψ (x ⬝ᵥ y)` is `(P ^ (-ν(ψ) - m))ⁿ`. -/
-theorem forall_dotProduct_eq_one_iff {ι : Type*} [Fintype ι] (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K))
-    (h1 : ψ ≠ 1) (m : ℤ) (y : ι → K) :
+theorem forall_dotProduct_eq_one_iff_forall_valuation_le {ι : Type*} [Fintype ι]
+    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1) (m : ℤ) (y : ι → K) :
     (∀ x : ι → K, (∀ i, valuation K (x i) ≤ uniformizer K ^ m) → ψ (x ⬝ᵥ y) = 1) ↔
       ∀ i, valuation K (y i) ≤ uniformizer K ^ (-ψ.conductorExponent - m) := by
   classical
-  simp_rw [← forall_mul_eq_one_iff h0 h1]
+  simp_rw [← forall_mul_eq_one_iff_valuation_le h0 h1]
   refine ⟨fun h i x hx ↦ ?_, fun h x hx ↦ ?_⟩
   · -- Test against the vector with a single nonzero coordinate `x` in position `i`.
     rw [← single_dotProduct]
@@ -195,26 +199,18 @@ theorem forall_dotProduct_eq_one_iff {ι : Type*} [Fintype ι] (h0 : {x | ψ x =
     exact Finset.prod_eq_one fun i _ ↦ h i (x i) (hx i)
 
 /-- **Duality of matrix lattices under the trace form.** For a nontrivial additive character `ψ`
-of `K` which is trivial on a neighbourhood of `0`, the annihilator of the matrices with entries
-in `P ^ m` under the pairing `ψ (trace (X * Y))` is the set of matrices with entries in
-`P ^ (-ν(ψ) - m)`. -/
-theorem forall_trace_mul_eq_one_iff {n : Type*} [Fintype n] (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K))
-    (h1 : ψ ≠ 1) (m : ℤ) (Y : Matrix n n K) :
-    (∀ X : Matrix n n K, (∀ i j, valuation K (X i j) ≤ uniformizer K ^ m) → ψ (X * Y).trace = 1) ↔
+of `K` which is trivial on a neighbourhood of `0`, the annihilator of the `l × n` matrices with
+entries in `P ^ m` under the pairing `ψ (trace (X * Y))` is the set of `n × l` matrices with
+entries in `P ^ (-ν(ψ) - m)`. -/
+theorem forall_trace_mul_eq_one_iff_forall_valuation_le {l n : Type*} [Fintype l] [Fintype n]
+    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1) (m : ℤ) (Y : Matrix n l K) :
+    (∀ X : Matrix l n K, (∀ i j, valuation K (X i j) ≤ uniformizer K ^ m) → ψ (X * Y).trace = 1) ↔
       ∀ i j, valuation K (Y i j) ≤ uniformizer K ^ (-ψ.conductorExponent - m) := by
-  classical
-  simp_rw [← forall_mul_eq_one_iff h0 h1]
-  refine ⟨fun h i j x hx ↦ ?_, fun h X hX ↦ ?_⟩
-  · -- Test against the matrix with a single nonzero entry `x` in position `(j, i)`.
-    rw [← smul_eq_mul, ← Matrix.trace_single_mul]
-    refine h _ fun k l ↦ ?_
-    by_cases hkl : j = k ∧ i = l
-    · obtain ⟨rfl, rfl⟩ := hkl
-      simpa using hx
-    · simp [hkl]
-  · -- Expand `trace (X * Y) = ∑ i, ∑ j, X i j * Y j i`.
-    simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, map_sum_eq_prod]
-    exact Finset.prod_eq_one fun i _ ↦ Finset.prod_eq_one fun j _ ↦ h j i (X i j) (hX i j)
+  -- `trace (X * Y)` is the dot product of the vectorizations of `Xᵀ` and `Y`.
+  have key := forall_dotProduct_eq_one_iff_forall_valuation_le h0 h1 m Y.vec
+  rw [Matrix.vec_bijective.surjective.forall,
+    (Matrix.transposeAddEquiv l n K).surjective.forall] at key
+  simpa [Matrix.vec_dotProduct_vec, Matrix.vec, forall_comm (α := l)] using key
 
 end CommMonoid
 

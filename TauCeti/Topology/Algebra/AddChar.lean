@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 
 An additive character `ψ` of a topological additive group is trivial on a neighbourhood of `0`
 when `{x | ψ x = 1} ∈ 𝓝 0`. Over a nonarchimedean local field this is the condition under which
-`ψ` has a conductor, the largest fractional ideal on which it is trivial.
+a nontrivial `ψ` has a conductor, the largest fractional ideal on which it is trivial.
 
 This file records two sources of such characters. A continuous circle-valued character of a
 nonarchimedean additive group is trivial on a neighbourhood of `0`: some open subgroup maps into
