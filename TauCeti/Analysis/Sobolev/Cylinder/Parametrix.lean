@@ -37,8 +37,8 @@ regularity theory for weak solutions of the adjoint equation.
   (`TauCeti.CylinderSobolev.jetOperator_cutoffCoeff_mem_H1`).
 * **Compact zeroth-order operators.** A coefficient field that acts on the value of a jet only and
   tends to zero as `|s| → ∞` gives a compact operator on `W^{1,2}`
-  (`TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL`): over each compact
-  piece `[-R, R] × S¹` this is Rellich's theorem
+  (`TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero`): over
+  each compact piece `[-R, R] × S¹` this is Rellich's theorem
   (`TauCeti.CylinderSobolev.isCompactOperator_restrictValue_comp_subtypeL`), the remainder is small
   in operator norm, and compact operators form a closed set.
 * **The parametrix.** Choose smooth cutoffs `γneg + γpos = 1` in `s`, with `γneg` vanishing for
@@ -56,8 +56,8 @@ regularity theory for weak solutions of the adjoint equation.
 * `TauCeti.CylinderSobolev.isFredholm_jetOperator_comp_subtypeL_of_isInvertible`: a first-order
   operator on the cylinder with the principal part of, and asymptotic to, invertible models at
   both ends is Fredholm on `W^{1,2}`.
-* `TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL`: zeroth-order operators
-  with coefficients vanishing at infinity are compact on `W^{1,2}`.
+* `TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero`:
+  zeroth-order operators with coefficients vanishing at infinity are compact on `W^{1,2}`.
 * `TauCeti.CylinderSobolev.jetOperator_cutoffCoeff_mem_H1`: multiplication by a cutoff in `s`
   preserves `W^{1,2}`.
 
@@ -92,12 +92,12 @@ section Cutoff
 
 variable (V) in
 /-- The map `(a, b, c) ↦ (0, a, 0)` on jets, moving the value into the `s`-derivative slot. -/
-def sSlot : V × V × V →L[ℝ] V × V × V :=
+private def sSlot : V × V × V →L[ℝ] V × V × V :=
   (ContinuousLinearMap.inr ℝ V (V × V)).comp
     ((ContinuousLinearMap.inl ℝ V V).comp (ContinuousLinearMap.fst ℝ V (V × V)))
 
 @[simp]
-theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
+private theorem sSlot_apply (v : V × V × V) : sSlot V v = (0, v.1, 0) := by
   simp [sSlot]
 
 variable (V) in
@@ -304,7 +304,8 @@ private theorem exists_isCompactOperator_norm_jetOperator_comp_subtypeL_sub_le
 If the coefficient field `G` acts on values only, `G z (0, a, b) = 0`, and tends to zero as
 `|s| → ∞`, in the sense that for every `ε > 0` there is `R` with `‖G z‖ ≤ ε` for `|s| > R`, then
 `x ↦ G x` is a compact operator from `H1 V` to `L²`. -/
-theorem isCompactOperator_jetOperator_comp_subtypeL [FiniteDimensional ℝ V] [CompleteSpace W]
+theorem isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero [FiniteDimensional ℝ V]
+    [CompleteSpace W]
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
     (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0)
     (hlim : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < |z.1| → ‖G z‖ ≤ ε) :
@@ -766,7 +767,7 @@ private theorem isCompactOperator_errCoeff [FiniteDimensional ℝ V] [CompleteSp
     (hsmall : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < |z.1| → χ z.1 = 0 ∨ ‖M z - M' z‖ ≤ ε) :
     IsCompactOperator ((jetOperator fun z ↦ errCoeff V (χ z.1) (b z.1) (M z) (M' z)).comp
       (H1 V).subtypeL) :=
-  isCompactOperator_jetOperator_comp_subtypeL
+  isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero
     (memLp_errCoeff hχ hb (fun s ↦ (hχ1 s).trans (le_max_left _ _)) hbB hM hM')
     (ae_of_all _ fun _ a b ↦ errCoeff_apply_zero_fst _ _ _ _ a b)
     (tendsto_errCoeff hχ1 hb0 hsmall)
