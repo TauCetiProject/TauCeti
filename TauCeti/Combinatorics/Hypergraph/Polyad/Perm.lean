@@ -17,6 +17,8 @@ import Mathlib.Algebra.Group.Action.Basic
 import Mathlib.Data.Finset.Sort
 import Mathlib.Data.Fintype.Perm
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Finset.Image
+import TauCeti.Data.Set.PowersetCard
 
 /-!
 # Permuting the roles of a triadic polyad
@@ -76,48 +78,6 @@ public section
 open Finset
 
 namespace TauCeti
-
-section PrecompSupport
-
-variable {V : Type*}
-
-private theorem mem_iff_comp_inv_mem_of_comp_mem_iff
-    {s t : Finset {x : Fin 3 → V // Function.Injective x}} (σ : Equiv.Perm (Fin 3))
-    (hcomp : ∀ x : {x : Fin 3 → V // Function.Injective x},
-      ⟨x.val ∘ σ, x.property.comp σ.injective⟩ ∈ t ↔ x ∈ s)
-    (y : {x : Fin 3 → V // Function.Injective x}) :
-    y ∈ t ↔ ⟨y.val ∘ ⇑σ⁻¹, y.property.comp σ⁻¹.injective⟩ ∈ s := by
-  have hy : (⟨(y.val ∘ ⇑σ⁻¹) ∘ σ, (y.property.comp σ⁻¹.injective).comp σ.injective⟩ :
-      {x : Fin 3 → V // Function.Injective x}) = y :=
-    Subtype.ext (funext fun i ↦ by simp)
-  simpa only [hy] using hcomp ⟨y.val ∘ ⇑σ⁻¹, y.property.comp σ⁻¹.injective⟩
-
-private theorem eq_map_subtypeInjectiveCongr_of_comp_mem_iff
-    {s t : Finset {x : Fin 3 → V // Function.Injective x}} (σ : Equiv.Perm (Fin 3))
-    (hcomp : ∀ x : {x : Fin 3 → V // Function.Injective x},
-      ⟨x.val ∘ σ, x.property.comp σ.injective⟩ ∈ t ↔ x ∈ s) :
-    t = s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding := by
-  ext y
-  rw [mem_map_equiv, Equiv.subtypeInjectiveCongr_symm, Equiv.subtypeInjectiveCongr_apply,
-    Equiv.symm_symm]
-  simpa [Equiv.Perm.inv_def] using mem_iff_comp_inv_mem_of_comp_mem_iff σ hcomp y
-
-private theorem image_ofFinEmb_map_subtypeInjectiveCongr [DecidableEq V]
-    (s : Finset {x : Fin 3 → V // Function.Injective x}) (σ : Equiv.Perm (Fin 3)) :
-    (s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding).image
-        (fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) =
-      s.image (fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) := by
-  ext u
-  simp only [mem_image, mem_map, Equiv.coe_toEmbedding, Equiv.subtypeInjectiveCongr_apply,
-    Equiv.coe_refl, Function.id_comp, Equiv.symm_symm]
-  constructor
-  · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact ⟨x, hx, (Set.powersetCard.ofFinEmb_comp_perm σ x.val _).symm⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨x.val ∘ σ, x.property.comp σ.injective⟩, ⟨x, hx, rfl⟩,
-      Set.powersetCard.ofFinEmb_comp_perm σ x.val _⟩
-
-end PrecompSupport
 
 namespace Polyad3
 
@@ -180,11 +140,13 @@ theorem perm_colorAt (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) {i j : Fin 3} (hi
 /-- The pair graph from role `i` to role `j` in `P.perm σ` is the pair graph from role `σ i` to
 role `σ j` in `P`. -/
 @[simp]
-theorem perm_pairSupportAt (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) {i j : Fin 3} (hij : i ≠ j) :
+theorem perm_pairSupportAt (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) (i j : Fin 3) :
     (P.perm σ).pairSupportAt i j = P.pairSupportAt (σ i) (σ j) := by
-  ext p
-  rw [mem_pairSupportAt _ hij, mem_pairSupportAt _ (σ.injective.ne hij), perm_cell, perm_cell,
-    perm_colorAt]
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · ext p
+    rw [mem_pairSupportAt _ hij, mem_pairSupportAt _ (σ.injective.ne hij), perm_cell,
+      perm_cell, perm_colorAt]
 
 @[simp]
 theorem perm_one (P : Polyad3 S) : P.perm 1 = P :=
@@ -249,19 +211,21 @@ theorem comp_mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
   rw [mem_support_iff_eq_ofTriple, ofTriple_comp_perm, (perm_injective σ).eq_iff,
     ← mem_support_iff_eq_ofTriple]
 
-/-- Membership in `(P.perm σ).support` is membership in `P.support` after precomposing with
-`σ⁻¹`. -/
-theorem mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    x ∈ (P.perm σ).support ↔ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩ ∈ P.support :=
-  mem_iff_comp_inv_mem_of_comp_mem_iff σ (P.comp_mem_support_perm σ) x
-
 /-- The support of a permuted polyad is the image of its original support under
 `Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)`. -/
 theorem support_perm_eq_map (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
     (P.perm σ).support =
       P.support.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding :=
-  eq_map_subtypeInjectiveCongr_of_comp_mem_iff σ (P.comp_mem_support_perm σ)
+  Finset.eq_map_equiv_iff.2 fun x ↦ by
+    simpa [Equiv.subtypeInjectiveCongr_apply] using P.comp_mem_support_perm σ x
+
+/-- Membership in `(P.perm σ).support` is membership in `P.support` after precomposing with
+`σ⁻¹`. -/
+theorem mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ (P.perm σ).support ↔ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩ ∈ P.support := by
+  rw [support_perm_eq_map, mem_map_equiv]
+  simp [Equiv.Perm.inv_def]
 
 /-- Role permutation preserves the support size of a polyad. -/
 @[simp]
@@ -273,8 +237,8 @@ theorem card_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
 @[simp]
 theorem unorderedSupport_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
     (P.perm σ).unorderedSupport = P.unorderedSupport := by
-  rw [unorderedSupport_def, support_perm_eq_map, image_ofFinEmb_map_subtypeInjectiveCongr,
-    ← unorderedSupport_def]
+  rw [unorderedSupport_def, support_perm_eq_map,
+    Set.powersetCard.image_ofFinEmb_map_subtypeInjectiveCongr, ← unorderedSupport_def]
 
 /-- Mapping cells and colors commutes with role permutation whenever the color map intertwines
 palette reversal. -/
@@ -434,42 +398,43 @@ noncomputable def perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
 /-- The pair graph from role `i` to role `j` in `Q.perm σ` is the pair graph from role `σ i`
 to role `σ j` in `Q`. -/
 @[simp]
-theorem perm_pairGraph (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) {i j : Fin 3}
-    (hij : i ≠ j) :
+theorem perm_pairGraph (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) (i j : Fin 3) :
     (Q.perm σ).pairGraph i j = Q.pairGraph (σ i) (σ j) := by
-  have h01 : (Q.perm σ).pairGraph 0 1 = Q.pairGraph (σ 0) (σ 1) := by
-    rw [pairGraph_zero_one]; rfl
-  have h02 : (Q.perm σ).pairGraph 0 2 = Q.pairGraph (σ 0) (σ 2) := by
-    rw [pairGraph_zero_two]; rfl
-  have h12 : (Q.perm σ).pairGraph 1 2 = Q.pairGraph (σ 1) (σ 2) := by
-    rw [pairGraph_one_two]; rfl
-  have hswap (a b : Fin 3) (hab : a ≠ b)
-      (h : (Q.perm σ).pairGraph b a = Q.pairGraph (σ b) (σ a)) :
-      (Q.perm σ).pairGraph a b = Q.pairGraph (σ a) (σ b) := by
-    ext p
-    rw [← (Q.perm σ).swapDistinctPair_mem_pairGraph hab p, h,
-      Q.swapDistinctPair_mem_pairGraph (σ.injective.ne hab) p]
-  match i, j with
-  | 0, 1 => exact h01
-  | 0, 2 => exact h02
-  | 1, 2 => exact h12
-  | 1, 0 => exact hswap 1 0 (by decide) h01
-  | 2, 0 => exact hswap 2 0 (by decide) h02
-  | 2, 1 => exact hswap 2 1 (by decide) h12
-  | 0, 0 | 1, 1 | 2, 2 => exact (hij rfl).elim
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · have h01 : (Q.perm σ).pairGraph 0 1 = Q.pairGraph (σ 0) (σ 1) := by
+      rw [pairGraph_zero_one]; rfl
+    have h02 : (Q.perm σ).pairGraph 0 2 = Q.pairGraph (σ 0) (σ 2) := by
+      rw [pairGraph_zero_two]; rfl
+    have h12 : (Q.perm σ).pairGraph 1 2 = Q.pairGraph (σ 1) (σ 2) := by
+      rw [pairGraph_one_two]; rfl
+    have hswap (a b : Fin 3) (hab : a ≠ b)
+        (h : (Q.perm σ).pairGraph b a = Q.pairGraph (σ b) (σ a)) :
+        (Q.perm σ).pairGraph a b = Q.pairGraph (σ a) (σ b) := by
+      ext p
+      rw [← (Q.perm σ).swapDistinctPair_mem_pairGraph hab p, h,
+        Q.swapDistinctPair_mem_pairGraph (σ.injective.ne hab) p]
+    match i, j with
+    | 0, 1 => exact h01
+    | 0, 2 => exact h02
+    | 1, 2 => exact h12
+    | 1, 0 => exact hswap 1 0 (by decide) h01
+    | 2, 0 => exact hswap 2 0 (by decide) h02
+    | 2, 1 => exact hswap 2 1 (by decide) h12
+    | 0, 0 | 1, 1 | 2, 2 => exact (hij rfl).elim
 
 /-- Permuting a subpolyad by the identity leaves it unchanged up to `P.perm_one`. -/
 @[simp]
 theorem perm_one (Q : Subpolyad3 P) :
     (P.perm_one ▸ Q.perm 1 : Subpolyad3 P) = Q :=
-  ext_pairGraph fun i j hij ↦ by simp [hij]
+  ext_pairGraph fun _ _ _ ↦ by simp
 
 /-- Permuting a subpolyad by `σ` and then `τ` equals permuting by `σ * τ` up to
 `P.perm_perm σ τ`. -/
 @[simp]
 theorem perm_perm (Q : Subpolyad3 P) (σ τ : Equiv.Perm (Fin 3)) :
     ((P.perm_perm σ τ) ▸ (Q.perm σ).perm τ : Subpolyad3 (P.perm (σ * τ))) = Q.perm (σ * τ) :=
-  ext_pairGraph fun i j hij ↦ by simp [hij]
+  ext_pairGraph fun _ _ _ ↦ by simp
 
 private theorem eq_cast_of_cast_eq {P₁ P₂ P₃ : Polyad3 S} (h₁₂ : P₁ = P₂) (h₂₃ : P₂ = P₃)
     (h₁₃ : P₁ = P₃) (Q : Subpolyad3 P₁) :
@@ -511,27 +476,29 @@ theorem comp_mem_support_perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3))
   constructor
   · intro h i j hij
     have h1 := h (σ⁻¹ i) (σ⁻¹ j) (σ⁻¹.injective.ne hij)
-    rw [hc, Q.perm_pairGraph σ (σ⁻¹.injective.ne hij)] at h1
+    rw [hc, Q.perm_pairGraph σ] at h1
     have heq : coordPair x (σ (σ⁻¹ i)) (σ (σ⁻¹ j)) (σ.injective.ne (σ⁻¹.injective.ne hij)) =
         coordPair x i j hij := Subtype.ext (by simp [coe_coordPair])
     simpa [heq] using h1
   · intro h i j hij
-    rw [hc, Q.perm_pairGraph σ hij]
+    rw [hc, Q.perm_pairGraph σ]
     exact h (σ i) (σ j) (σ.injective.ne hij)
-
-/-- Membership in `(Q.perm σ).support` is membership in `Q.support` after precomposing with
-`σ⁻¹`. -/
-theorem mem_support_perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3))
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    x ∈ (Q.perm σ).support ↔ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩ ∈ Q.support :=
-  mem_iff_comp_inv_mem_of_comp_mem_iff σ (Q.comp_mem_support_perm σ) x
 
 /-- The support of a permuted subpolyad is the image of its original support under
 `Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)`. -/
 theorem support_perm_eq_map (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
     (Q.perm σ).support =
       Q.support.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding :=
-  eq_map_subtypeInjectiveCongr_of_comp_mem_iff σ (Q.comp_mem_support_perm σ)
+  Finset.eq_map_equiv_iff.2 fun x ↦ by
+    simpa [Equiv.subtypeInjectiveCongr_apply] using Q.comp_mem_support_perm σ x
+
+/-- Membership in `(Q.perm σ).support` is membership in `Q.support` after precomposing with
+`σ⁻¹`. -/
+theorem mem_support_perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3))
+    (x : {x : Fin 3 → V // Function.Injective x}) :
+    x ∈ (Q.perm σ).support ↔ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩ ∈ Q.support := by
+  rw [support_perm_eq_map, mem_map_equiv]
+  simp [Equiv.Perm.inv_def]
 
 /-- Role permutation preserves the support cardinality of a subpolyad. -/
 @[simp]
@@ -543,8 +510,8 @@ theorem card_support_perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
 @[simp]
 theorem unorderedSupport_perm (Q : Subpolyad3 P) (σ : Equiv.Perm (Fin 3)) :
     (Q.perm σ).unorderedSupport = Q.unorderedSupport := by
-  rw [unorderedSupport_def, support_perm_eq_map, image_ofFinEmb_map_subtypeInjectiveCongr,
-    ← unorderedSupport_def]
+  rw [unorderedSupport_def, support_perm_eq_map,
+    Set.powersetCard.image_ofFinEmb_map_subtypeInjectiveCongr, ← unorderedSupport_def]
 
 /-- Permuting a family of subpolyads permutes its union support. -/
 theorem unionSupport_perm {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P)

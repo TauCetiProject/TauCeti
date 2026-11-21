@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Set.PowersetCard
+public import TauCeti.Logic.Embedding.Basic
 import Mathlib.Data.Fintype.CardEmbedding
 
 import TauCeti.Algebra.BigOperators.Finset.Powerset
@@ -46,7 +47,9 @@ without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq
 embedding or injective `r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
 (`Set.powersetCard.ofFinEmb_trans_perm`, `Set.powersetCard.ofFinEmb_comp_perm`), and two embeddings
 `Fin r ↪ β` have the same unordered image precisely when they differ by a permutation of `Fin r`
-(`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
+(`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`), and mapping a finite set of injective
+`r`-tuples by `Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl β)` preserves its unordered image
+(`Set.powersetCard.image_ofFinEmb_map_subtypeInjectiveCongr`).
 -/
 
 public section
@@ -296,6 +299,23 @@ theorem ofFinEmb_comp_perm (σ : Equiv.Perm (Fin r)) (x : Fin r → β)
   have htr : (⟨x ∘ σ, h⟩ : Fin r ↪ β) = σ.toEmbedding.trans ⟨x, (σ.injective_comp x).1 h⟩ :=
     Function.Embedding.ext fun _ ↦ rfl
   rw [htr, ofFinEmb_trans_perm]
+
+/-- Mapping a finite set of injective `r`-tuples by precomposition with `σ` leaves its image
+under `Set.powersetCard.ofFinEmb r β` unchanged. -/
+theorem image_ofFinEmb_map_subtypeInjectiveCongr [DecidableEq β]
+    (s : Finset {x : Fin r → β // Function.Injective x}) (σ : Equiv.Perm (Fin r)) :
+    (s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl β)).toEmbedding).image
+        (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) =
+      s.image (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) := by
+  ext u
+  simp only [Finset.mem_image, Finset.mem_map, Equiv.coe_toEmbedding,
+    Equiv.subtypeInjectiveCongr_apply, Equiv.coe_refl, Function.id_comp, Equiv.symm_symm]
+  constructor
+  · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+    exact ⟨x, hx, (ofFinEmb_comp_perm σ x.val _).symm⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨⟨x.val ∘ σ, x.property.comp σ.injective⟩, ⟨x, hx, rfl⟩,
+      ofFinEmb_comp_perm σ x.val _⟩
 
 /-- Two embeddings `Fin r ↪ β` have the same unordered image if and only if they differ by a
 permutation of `Fin r`. -/

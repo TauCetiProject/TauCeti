@@ -64,10 +64,14 @@ exceptional mass instead.
   family is a decomposition exactly when it contains every polyad with nonempty support.
 * `TauCeti.TriadicComplex3.IsPolyadDecomposition.sum_card_support`: the selected supports have
   `|V|.descFactorial 3` triples in total.
+* `TauCeti.TriadicComplex3.IsPolyadDecomposition.sum_filter_card_support`: filtered sums of
+  support sizes over selected polyads match sums over all polyads.
 * `TauCeti.TriadicComplex3.sum_card_support_le`: in general they have at most that many.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.card_le`: controlled cells are small.
-* `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le`: the support of
-  the irregular polyads is at most an `ε`-proportion of the selected support.
+* `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le` and
+  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.sum_card_support_univ_le`: the support of
+  the irregular polyads is at most an `ε`-proportion of the selected support (and over all polyads
+  of a decomposition).
 * `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_rank_one`: rank-one top regularity over
   most polyads upgrades to any rank `r` with explicit parameter loss.
 * `TauCeti.Colored3Graph.exceptional_route_mass_le`: the embeddings of `Fin k` meeting an
@@ -254,6 +258,19 @@ theorem IsPolyadDecomposition.sum_card_support (h : C.IsPolyadDecomposition) :
   rw [hU, card_univ, Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _),
     Fintype.card_embedding_eq, Fintype.card_fin]
 
+/-- In a polyad decomposition, filtering a sum of support sizes over the selected polyads gives
+the same total as filtering over all polyads of the skeleton, because omitted polyads have empty
+support. -/
+theorem IsPolyadDecomposition.sum_filter_card_support (h : C.IsPolyadDecomposition)
+    (p : Polyad3 C.skeleton → Prop) [DecidablePred p] :
+    ∑ P ∈ C.polyads with p P, #P.support =
+      ∑ P : Polyad3 C.skeleton with p P, #P.support := by
+  rw [sum_filter, sum_filter]
+  refine sum_subset (subset_univ _) fun P _ hP ↦ ?_
+  have hzero : P.support = ∅ := not_nonempty_iff_eq_empty.1 fun hne ↦
+    hP (C.isPolyadDecomposition_iff_forall_mem_of_nonempty.1 h P hne)
+  simp [hzero]
+
 variable (C)
 
 /-- The supports of the selected polyads contain at most `|V| (|V| - 1) (|V| - 2)` triples in
@@ -325,16 +342,12 @@ theorem exceptionalPolyadMass_eq_sum_div (hC : C.IsPolyadDecomposition) :
     H.exceptionalPolyadMass C η r =
       (∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ)) /
         (Fintype.card V).descFactorial 3 := by
-  have hsum : ∑ P ∈ C.polyads, (if ¬H.IsTopRegularOverPolyad P η r then (#P.support : ℝ) else 0) =
-      ∑ P : Polyad3 C.skeleton,
-        if ¬H.IsTopRegularOverPolyad P η r then (#P.support : ℝ) else 0 := by
-    refine sum_subset (subset_univ _) fun P _ hP ↦ ?_
-    have hzero : P.support = ∅ := not_nonempty_iff_eq_empty.1 fun h ↦
-      hP (C.isPolyadDecomposition_iff_forall_mem_of_nonempty.1 hC P h)
-    simp [hzero]
+  have hsum : ∑ P ∈ C.polyads with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) =
+      ∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) := by
+    exact_mod_cast hC.sum_filter_card_support _
   have htotal : ∑ P ∈ C.polyads, (#P.support : ℝ) = (Fintype.card V).descFactorial 3 := by
     exact_mod_cast hC.sum_card_support
-  rw [exceptionalPolyadMass_def, sum_filter, hsum, ← sum_filter, htotal]
+  rw [exceptionalPolyadMass_def, hsum, htotal]
 
 /-- The exceptional polyad mass is nonnegative. -/
 theorem exceptionalPolyadMass_nonneg : 0 ≤ H.exceptionalPolyadMass C η r := by
@@ -410,6 +423,20 @@ theorem TopRegularOverMostPolyads.sum_card_support_le (h : H.TopRegularOverMostP
   refine ((topRegularOverMostPolyads_iff_sum_card_support_le h.nonneg).1 h).trans ?_
   rw [← Nat.cast_sum]
   exact mul_le_mul_of_nonneg_left (by exact_mod_cast C.sum_card_support_le) h.nonneg
+
+open Classical in
+/-- Over a polyad decomposition, the irregular polyads among all polyads of the skeleton carry at
+most `ε |V| (|V| - 1) (|V| - 2)` injective triples. -/
+theorem TopRegularOverMostPolyads.sum_card_support_univ_le
+    (h : H.TopRegularOverMostPolyads C η ε r) (hC : C.IsPolyadDecomposition) :
+    ∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) ≤
+      ε * (Fintype.card V).descFactorial 3 := by
+  have hfilt :
+      ∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) =
+        ∑ P ∈ C.polyads with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) := by
+    exact_mod_cast (hC.sum_filter_card_support _).symm
+  rw [hfilt]
+  exact h.sum_card_support_le
 
 /-- Top regularity over most polyads weakens as the regularity parameter and the exceptional
 proportion grow and as the rank drops. -/

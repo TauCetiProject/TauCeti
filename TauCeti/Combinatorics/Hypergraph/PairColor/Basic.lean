@@ -236,6 +236,13 @@ theorem swapDistinctPair_swap (p : {p : V × V // p.1 ≠ p.2}) :
 theorem swapDistinctPair_injective : Function.Injective (swapDistinctPair (V := V)) :=
   Function.Involutive.injective swapDistinctPair_swap
 
+/-- Swapping an ordered distinct pair applies palette reversal to its color. -/
+@[simp]
+theorem PairColorSystem.color_swapDistinctPair {κ V : Type*} (C : PairColorSystem κ V)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    C.color (swapDistinctPair p) = C.rev (C.color p) :=
+  C.color_rev p
+
 /-- The ordered distinct pair formed by two coordinates of an injective tuple. -/
 def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
     (hij : i ≠ j) : {p : V × V // p.1 ≠ p.2} :=

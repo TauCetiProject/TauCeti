@@ -16,13 +16,14 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
+import TauCeti.Combinatorics.Enumerative.RandomColoring
 import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Gap
+import TauCeti.Combinatorics.Hypergraph.Polyad.Nontransversal
 import TauCeti.Combinatorics.Hypergraph.Polyad.Perm
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.OrbitCoupling
 import TauCeti.Data.Finset.Piecewise
 import TauCeti.Data.Nat.Factorial.Basic
-import TauCeti.Data.Set.PowersetCard
 import TauCeti.Order.Partition.Equipartition
 
 /-!
@@ -259,27 +260,6 @@ private theorem topRegularOverMostPolyads_of_good_children
   · rw [div_le_iff₀ (Nat.cast_pos.2 hdesc)]
     exact hsum_irr.trans (hbudget hdesc)
 
-open Classical in
-/-- Total support cardinality of irregular polyads over a polyad decomposition `D`, even when
-`D.polyads ≠ univ` (omitting empty-support polyads). -/
-private theorem sum_card_support_not_isTopRegularOverPolyad_le
-    {H : Colored3Graph κ V} {D : TriadicComplex3 V} {η μ : ℝ}
-    (hD : D.IsPolyadDecomposition) (htopD : H.TopRegularOverMostPolyads D η μ 1) :
-    ∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η 1, (#Q.support : ℝ) ≤
-      μ * (Fintype.card V).descFactorial 3 := by
-  rcases Nat.eq_zero_or_pos ((Fintype.card V).descFactorial 3) with hdesc0 | hdesc
-  · have hempty : IsEmpty {x : Fin 3 → V // Function.Injective x} := by
-      rw [← Fintype.card_eq_zero_iff,
-        Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _),
-        Fintype.card_embedding_eq, Fintype.card_fin, hdesc0]
-    have hs0 : ∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η 1,
-        (#Q.support : ℝ) = 0 :=
-      sum_eq_zero fun Q _ ↦ by simp [eq_empty_of_isEmpty Q.support]
-    rw [hs0]
-    exact mul_nonneg htopD.nonneg (Nat.cast_nonneg _)
-  · have hm := topRegularOverMostPolyads_iff.1 htopD
-    rwa [exceptionalPolyadMass_eq_sum_div hD, div_le_iff₀ (Nat.cast_pos.2 hdesc)] at hm
-
 end SharedCoarsePassage
 
 section EnergyGapRecoloring
@@ -312,11 +292,7 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le
         ((μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
           (Fintype.card V).descFactorial 3) / θ) 1 := by
   classical
-  have hN₀_pos : 0 < N₀ := by
-    by_contra! hle
-    have : β ^ 2 * N₀ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hle
-    have : (0 : ℝ) < 221 * (3 * (Fintype.card V : ℝ) ^ 2 + Fintype.card κ + 7) := by positivity
-    linarith
+  have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
   obtain ⟨H', happrox, hchild⟩ :=
     exists_coupled_recoloring_of_polyadEnergy_sub_le (H := H) (C := C) (D := D) hV f hf hgap hβ hN₀
   refine ⟨H', happrox, ?_⟩
@@ -336,7 +312,7 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le
             sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ hN₀_pos.le
         _ = Fintype.card (Polyad3 D.skeleton) * N₀ := by rw [sum_const, card_univ, nsmul_eq_mul]
     have hirr_D : ∑ Q ∈ s₂, (#Q.support : ℝ) ≤ μ * (Fintype.card V).descFactorial 3 := by
-      simpa only [s₂] using sum_card_support_not_isTopRegularOverPolyad_le hD h
+      simpa only [s₂] using h.sum_card_support_univ_le hD
     have hinter : 0 ≤ ∑ Q ∈ s₁ ∩ s₂, (#Q.support : ℝ) := sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
     rw [hunion]
     linarith [sum_union_inter (s₁ := s₁) (s₂ := s₂) (f := fun Q ↦ (#Q.support : ℝ))]
@@ -425,7 +401,7 @@ private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
     exact two_mul_add_one_mul_exp_lt_of_le_two_pow hIcard hN_bound
   have hQcount (c : κ) : (#{e ∈ Q.unorderedSupport | H.color e = c} : ℝ) =
       (H.relativeDensity c Q : ℝ) * #Q.support := by
-    rw [hdist.card_filter_unorderedSupport H c, relativeDensity_def]
+    rw [hdist.card_filter_unorderedSupport H c, H.relativeDensity_def]
     exact_mod_cast (H.relDensityOn_mul_card c Q.support).symm
   have hx₀ (S : Subpolyad3 Q) (c : κ) :
       |(#{e ∈ S.unorderedSupport | H.color e = c} : ℝ) -
@@ -670,7 +646,7 @@ private theorem sum_card_support_bad_fine_le (H : Colored3Graph κ V) {C D : Tri
     split_ifs with hQ hirr htiny <;> try linarith
     exact absurd ⟨(Polyad3.hasDistinctCells_coarsen_iff Q hVeq π).1 hQ.1,
       not_lt.1 htiny, hirr⟩ hQ.2
-  have hirrD := sum_card_support_not_isTopRegularOverPolyad_le hD htopD
+  have hirrD := htopD.sum_card_support_univ_le hD
   have htinyD : ∑ Q : Polyad3 D.skeleton with (#Q.support : ℝ) < γ * (s : ℝ) ^ 3,
         (#Q.support : ℝ) ≤
       2 * (D.pairColorCount : ℝ) ^ 3 * γ * (Fintype.card V).descFactorial 3 := by

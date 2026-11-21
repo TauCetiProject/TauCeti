@@ -5,14 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Partition.Equipartition
 public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Subpolyad
-import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Ring
 import TauCeti.Data.Set.PowersetCard
-import TauCeti.Order.Partition.Equipartition
-import TauCeti.Order.Partition.Pi
 
 /-!
 # Unordered supports of polyads and subpolyads
@@ -26,9 +21,7 @@ When `P` has pairwise distinct vertex cells (`Polyad3.HasDistinctCells`), `ofFin
 on `P.support`, so unordered supports preserve support cardinalities and color-fiber counts
 (`Polyad3.HasDistinctCells.card_unorderedSupport`,
 `Polyad3.HasDistinctCells.card_filter_unorderedSupport`, `Subpolyad3.card_unorderedSupport`,
-`Subpolyad3.card_filter_unorderedSupport`). Over a finite equipartition into `t` cells, the
-total support of repeated-cell polyads is at most `6 * |V|³ / t`
-(`Polyad3.sum_card_support_not_hasDistinctCells_le`).
+`Subpolyad3.card_filter_unorderedSupport`).
 
 ## Main definitions
 
@@ -42,8 +35,6 @@ total support of repeated-cell polyads is at most `6 * |V|³ / t`
 * `TauCeti.Polyad3.HasDistinctCells.card_unorderedSupport` and
   `TauCeti.Subpolyad3.card_unorderedSupport`: unordered and ordered supports have equal size over
   distinct cells.
-* `TauCeti.Polyad3.sum_card_support_not_hasDistinctCells_le`: repeated-cell equipartition mass
-  bound `6 * |V|³ / t`.
 -/
 
 public section
@@ -107,48 +98,6 @@ theorem HasDistinctCells.card_filter_unorderedSupport {κ₃ : Type*} [Decidable
       #{x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} := by
   rw [unorderedSupport_def, filter_image,
     card_image_of_injOn (hP.injOn_ofFinEmb.mono (filter_subset _ _))]
-
-open Classical in
-/-- Repeated-cell injective triples over an equipartition into `t` nonempty cells carry at most
-`6 * |V|³ / t` triples. -/
-theorem sum_card_support_not_hasDistinctCells_le [Fintype κ] (S : PairSkeleton3 κ V)
-    (hEq : S.vertexPart.IsEquipartition) (ht : 0 < #S.vertexPart.parts) :
-    ∑ P : Polyad3 S with ¬P.HasDistinctCells, (#P.support : ℝ) ≤
-      6 * (Fintype.card V : ℝ) ^ 3 / #S.vertexPart.parts := by
-  set t := #S.vertexPart.parts
-  set s := Fintype.card V / t
-  have hm : ∀ A ∈ S.vertexPart.parts, #A ≤ 2 * s := fun A hA ↦ by
-    simpa only [card_univ, s, t] using hEq.card_part_le_two_mul_div hA
-  have hsum_nat : ∑ P : Polyad3 S with ¬P.HasDistinctCells, #P.support ≤
-      3 * (2 * s) * Fintype.card V ^ 2 := by
-    rw [← card_biUnion fun P _ Q _ hne ↦ Polyad3.pairwise_disjoint_support hne]
-    calc #((univ.filter fun P : Polyad3 S ↦ ¬P.HasDistinctCells).biUnion Polyad3.support)
-        ≤ #{g ∈ Fintype.piFinset (fun _ : Fin 3 ↦ (univ : Finset V)) |
-            ¬Function.Injective fun i ↦ S.vertexPart.part (g i)} := by
-          refine card_le_card_of_injOn (fun x ↦ x.val) (fun x hx ↦ ?_)
-            (fun _ _ _ _ h ↦ Subtype.ext h)
-          obtain ⟨P, hP, hxP⟩ := mem_biUnion.1 hx
-          rw [mem_coe, mem_filter]
-          refine ⟨Fintype.mem_piFinset.2 fun _ ↦ mem_univ _, fun hinj ↦ (mem_filter.1 hP).2 ?_⟩
-          rw [Polyad3.hasDistinctCells_iff_injective_cell]
-          intro i j hij
-          apply hinj
-          dsimp only
-          have hci := ((Polyad3.mem_support_iff_cell_colorAt P x).1 hxP).1
-          rw [S.vertexPart.part_eq_of_mem (P.cell_mem_parts i) (hci i),
-            S.vertexPart.part_eq_of_mem (P.cell_mem_parts j) (hci j), hij]
-      _ ≤ (Fintype.card (Fin 3)).choose 2 * (2 * s) *
-            #(univ : Finset V) ^ (Fintype.card (Fin 3) - 1) :=
-          S.vertexPart.card_filter_not_injective_part_le_of_card_le hm
-      _ = 3 * (2 * s) * Fintype.card V ^ 2 := by simp [card_univ]
-  have hst : (s : ℝ) * t ≤ Fintype.card V := by
-    exact_mod_cast Nat.div_mul_le_self (Fintype.card V) t
-  rw [le_div_iff₀ (Nat.cast_pos.2 ht)]
-  calc (∑ P : Polyad3 S with ¬P.HasDistinctCells, (#P.support : ℝ)) * t
-      ≤ (3 * (2 * (s : ℝ)) * (Fintype.card V : ℝ) ^ 2) * t := by gcongr; exact_mod_cast hsum_nat
-    _ = 6 * ((s : ℝ) * t) * (Fintype.card V : ℝ) ^ 2 := by ring
-    _ ≤ 6 * (Fintype.card V : ℝ) * (Fintype.card V : ℝ) ^ 2 := by gcongr
-    _ = 6 * (Fintype.card V : ℝ) ^ 3 := by ring
 
 end Polyad3
 

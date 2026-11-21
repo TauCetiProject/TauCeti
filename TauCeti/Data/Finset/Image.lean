@@ -18,11 +18,22 @@ public import Mathlib.Data.Finset.Image
   set `t` mapping onto `u ∩ v`, map onto `u` when `u ⊆ f(s) ∪ v`.
 * `Finset.mem_map_subtype`: an element lies in the image of a finset of a subtype under the
   subtype embedding exactly when it satisfies the predicate and lies in the finset.
+* `Finset.eq_map_equiv_iff`: characterization of `t = s.map e.toEmbedding` for an equivalence `e`.
 -/
 
 public section
 
 namespace Finset
+
+/-- A finite set `t` equals `s.map e.toEmbedding` for an equivalence `e` precisely when
+membership in `t` at `e x` matches membership in `s` at `x`. -/
+theorem eq_map_equiv_iff {α β : Type*} {e : α ≃ β} {s : Finset α} {t : Finset β} :
+    t = s.map e.toEmbedding ↔ ∀ x, e x ∈ t ↔ x ∈ s := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ ext fun y ↦ ?_⟩
+  · subst h
+    simp
+  · rw [mem_map_equiv]
+    simpa only [Equiv.apply_symm_apply] using h (e.symm y)
 
 variable {α β : Type*} [DecidableEq β]
 

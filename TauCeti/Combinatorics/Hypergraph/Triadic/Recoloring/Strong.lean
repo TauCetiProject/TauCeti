@@ -13,7 +13,6 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.Coupled
 
 /-!

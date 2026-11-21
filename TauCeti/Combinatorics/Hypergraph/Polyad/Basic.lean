@@ -576,6 +576,21 @@ theorem pairSupportAt_zero_two (P : Polyad3 S) : P.pairSupportAt 0 2 = P.pairSup
 @[simp]
 theorem pairSupportAt_one_two (P : Polyad3 S) : P.pairSupportAt 1 2 = P.pairSupport₁₂ := (rfl)
 
+/-- On roles `(1, 0)`, `pairSupportAt` is `pairSupport₀₁` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairSupportAt_one_zero (P : Polyad3 S) :
+    P.pairSupportAt 1 0 = P.pairSupport₀₁.image swapDistinctPair := (rfl)
+
+/-- On roles `(2, 0)`, `pairSupportAt` is `pairSupport₀₂` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairSupportAt_two_zero (P : Polyad3 S) :
+    P.pairSupportAt 2 0 = P.pairSupport₀₂.image swapDistinctPair := (rfl)
+
+/-- On roles `(2, 1)`, `pairSupportAt` is `pairSupport₁₂` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairSupportAt_two_one (P : Polyad3 S) :
+    P.pairSupportAt 2 1 = P.pairSupport₁₂.image swapDistinctPair := (rfl)
+
 /-- Membership in `pairSupportAt i j` for distinct roles `i ≠ j`. -/
 theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
     (p : {p : V × V // p.1 ≠ p.2}) :
@@ -589,17 +604,13 @@ theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
     · rintro hp
       obtain ⟨q, hq, rfl⟩ := mem_image.1 hp
       obtain ⟨hqA, hqB, hqc⟩ := (hs q).1 hq
-      have hsw : swapDistinctPair q = ⟨q.val.swap, q.property.symm⟩ :=
-        Subtype.ext (swapDistinctPair_val q)
       refine ⟨by simpa using hqB, by simpa using hqA, ?_⟩
-      rw [hsw, S.pairColors.color_rev, hqc]
+      rw [S.pairColors.color_swapDistinctPair, hqc]
     · rintro ⟨hpB, hpA, hpc⟩
       refine mem_image.2
         ⟨swapDistinctPair p, (hs _).2 ⟨by simpa using hpA, by simpa using hpB, ?_⟩,
           swapDistinctPair_swap p⟩
-      have hsw : swapDistinctPair p = ⟨p.val.swap, p.property.symm⟩ :=
-        Subtype.ext (swapDistinctPair_val p)
-      rw [hsw, S.pairColors.color_rev, hpc, S.pairColors.rev_rev]
+      rw [S.pairColors.color_swapDistinctPair, hpc, S.pairColors.rev_rev]
   fin_cases i <;> fin_cases j <;> dsimp at hij ⊢ <;>
     first
     | exact (hij rfl).elim
@@ -614,11 +625,9 @@ theorem mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
 theorem swapDistinctPair_mem_pairSupportAt (P : Polyad3 S) {i j : Fin 3} (hij : i ≠ j)
     (p : {p : V × V // p.1 ≠ p.2}) :
     swapDistinctPair p ∈ P.pairSupportAt j i ↔ p ∈ P.pairSupportAt i j := by
-  have hsw : swapDistinctPair p = ⟨p.val.swap, p.property.symm⟩ :=
-    Subtype.ext (swapDistinctPair_val p)
   rw [P.mem_pairSupportAt hij.symm, P.mem_pairSupportAt hij, P.colorAt_swap hij,
-    hsw, S.pairColors.color_rev]
-  simp only [Prod.fst_swap, Prod.snd_swap, and_left_comm]
+    S.pairColors.color_swapDistinctPair]
+  simp only [swapDistinctPair_val, Prod.fst_swap, Prod.snd_swap, and_left_comm]
   exact and_congr_right fun _ ↦ and_congr_right fun _ ↦
     S.pairColors.rev_involutive.injective.eq_iff
 

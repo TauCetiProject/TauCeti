@@ -514,6 +514,63 @@ theorem pairGraph_zero_two (Q : Subpolyad3 P) : Q.pairGraph 0 2 = Q.pair₀₂ :
 @[simp]
 theorem pairGraph_one_two (Q : Subpolyad3 P) : Q.pairGraph 1 2 = Q.pair₁₂ := (rfl)
 
+/-- On roles `(1, 0)`, `pairGraph` is `pair₀₁` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairGraph_one_zero (Q : Subpolyad3 P) :
+    Q.pairGraph 1 0 = Q.pair₀₁.image swapDistinctPair := (rfl)
+
+/-- On roles `(2, 0)`, `pairGraph` is `pair₀₂` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairGraph_two_zero (Q : Subpolyad3 P) :
+    Q.pairGraph 2 0 = Q.pair₀₂.image swapDistinctPair := (rfl)
+
+/-- On roles `(2, 1)`, `pairGraph` is `pair₁₂` mapped by `swapDistinctPair`. -/
+@[simp]
+theorem pairGraph_two_one (Q : Subpolyad3 P) :
+    Q.pairGraph 2 1 = Q.pair₁₂.image swapDistinctPair := (rfl)
+
+/-- Every role-indexed pair graph of a finite intersection of subpolyads is the intersection of
+their corresponding pair graphs. -/
+@[simp]
+theorem finsetInter_pairGraph {ι' : Type*} (s : Finset ι') (hs : s.Nonempty)
+    (Q : ι' → Subpolyad3 P) (i j : Fin 3) :
+    (finsetInter s hs Q).pairGraph i j = s.inf' hs fun k ↦ (Q k).pairGraph i j := by
+  have himg (f : ι' → Finset {p : V × V // p.1 ≠ p.2}) :
+      (s.inf' hs f).image swapDistinctPair = s.inf' hs fun k ↦ (f k).image swapDistinctPair := by
+    ext p
+    simp only [mem_image, mem_inf']
+    constructor
+    · rintro ⟨q, hq, rfl⟩ k hk
+      exact ⟨q, hq k hk, rfl⟩
+    · intro hp
+      obtain ⟨k₀, hk₀⟩ := hs
+      obtain ⟨q, -, rfl⟩ := hp k₀ hk₀
+      exact ⟨q, fun k hk ↦ by
+        obtain ⟨r, hr, hrq⟩ := hp k hk
+        exact swapDistinctPair_injective hrq ▸ hr, rfl⟩
+  fin_cases i <;> fin_cases j <;>
+    first
+    | exact (inf'_const (s := s) hs (∅ : Finset _)).symm
+    | rfl
+    | exact himg _
+
+/-- Including a subpolyad preserves every role-indexed pair graph. -/
+@[simp]
+theorem inclusion_pairGraph {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+    (h₀₁ : P'.pairSupport₀₁ ⊆ P.pairSupport₀₁) (h₀₂ : P'.pairSupport₀₂ ⊆ P.pairSupport₀₂)
+    (h₁₂ : P'.pairSupport₁₂ ⊆ P.pairSupport₁₂) (Q : Subpolyad3 P') (i j : Fin 3) :
+    (Q.inclusion h₀₁ h₀₂ h₁₂).pairGraph i j = Q.pairGraph i j := by
+  fin_cases i <;> fin_cases j <;> rfl
+
+/-- Restricting a subpolyad to `P` intersects every role-indexed pair graph with the corresponding
+pair graph of `P`. -/
+@[simp]
+theorem restrict_pairGraph {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+    (Q : Subpolyad3 P') (P : Polyad3 S) (i j : Fin 3) :
+    (Q.restrict P).pairGraph i j = Q.pairGraph i j ∩ P.pairSupportAt i j := by
+  fin_cases i <;> fin_cases j <;>
+    simp [Finset.image_inter _ _ swapDistinctPair_injective]
+
 /-- Two subpolyads agree precisely when all their oriented pair graphs agree. -/
 theorem ext_pairGraph {Q R : Subpolyad3 P}
     (h : ∀ i j : Fin 3, i ≠ j → Q.pairGraph i j = R.pairGraph i j) : Q = R :=
@@ -537,6 +594,35 @@ theorem swapDistinctPair_mem_pairGraph (Q : Subpolyad3 P) {i j : Fin 3} (hij : i
   | 0, 1 | 0, 2 | 1, 2 => exact himg _ p
   | 1, 0 | 2, 0 | 2, 1 => exact himg' _
   | 0, 0 | 1, 1 | 2, 2 => exact (hij rfl).elim
+
+/-- Membership in the role-indexed pair graphs of a vertex restriction `ofSubcells`. -/
+@[simp]
+theorem mem_ofSubcells_pairGraph (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) (i j : Fin 3)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    p ∈ (ofSubcells P a₀ a₁ a₂).pairGraph i j ↔
+      p ∈ P.pairSupportAt i j ∧ p.val.1 ∈ ![a₀, a₁, a₂] i ∧ p.val.2 ∈ ![a₀, a₁, a₂] j := by
+  have hrev (a b : Fin 3) (hab : a ≠ b)
+      (h : swapDistinctPair p ∈ (ofSubcells P a₀ a₁ a₂).pairGraph b a ↔
+        swapDistinctPair p ∈ P.pairSupportAt b a ∧
+          (swapDistinctPair p).val.1 ∈ ![a₀, a₁, a₂] b ∧
+          (swapDistinctPair p).val.2 ∈ ![a₀, a₁, a₂] a) :
+      p ∈ (ofSubcells P a₀ a₁ a₂).pairGraph a b ↔
+        p ∈ P.pairSupportAt a b ∧ p.val.1 ∈ ![a₀, a₁, a₂] a ∧ p.val.2 ∈ ![a₀, a₁, a₂] b := by
+    rw [← (ofSubcells P a₀ a₁ a₂).swapDistinctPair_mem_pairGraph hab,
+      ← P.swapDistinctPair_mem_pairSupportAt hab, h]
+    simp only [swapDistinctPair_val, Prod.fst_swap, Prod.snd_swap]
+    tauto
+  match i, j with
+  | 0, 1 => simp [mem_ofSubcells_pair₀₁]
+  | 0, 2 => simp [mem_ofSubcells_pair₀₂]
+  | 1, 2 => simp [mem_ofSubcells_pair₁₂]
+  | 1, 0 =>
+    exact hrev 1 0 (by decide) (by simp [mem_ofSubcells_pair₀₁])
+  | 2, 0 =>
+    exact hrev 2 0 (by decide) (by simp [mem_ofSubcells_pair₀₂])
+  | 2, 1 =>
+    exact hrev 2 1 (by decide) (by simp [mem_ofSubcells_pair₁₂])
+  | 0, 0 | 1, 1 | 2, 2 => simp
 
 /-- Each oriented pair graph of a subpolyad lies in the corresponding pair graph of its parent. -/
 theorem pairGraph_subset_pairSupportAt (Q : Subpolyad3 P) (i j : Fin 3) :

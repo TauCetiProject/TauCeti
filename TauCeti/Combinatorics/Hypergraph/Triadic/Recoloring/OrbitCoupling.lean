@@ -58,6 +58,11 @@ open scoped Matrix
 
 namespace TauCeti
 
+/-- The Hoeffding support lower bound `221 * (3 * n² + q + 7) ≤ β² * N₀` forces `0 < N₀`. -/
+theorem pos_of_support_lower_bound {n q : ℕ} {β N₀ : ℝ}
+    (hN₀ : 221 * (3 * (n : ℝ) ^ 2 + q + 7) ≤ β ^ 2 * N₀) : 0 < N₀ :=
+  pos_of_mul_pos_right (lt_of_lt_of_le (by positivity) hN₀) (sq_nonneg β)
+
 namespace Colored3Graph
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V] [Fintype κ] [DecidableEq κ]
@@ -82,13 +87,6 @@ private theorem card_testIdx_le {κ₂ : Type*} {T : PairSkeleton3 κ₂ V} (Q�
         rw [sum_const, card_univ, Fintype.card_perm, Fintype.card_fin, smul_eq_mul]
         norm_num [Nat.factorial]
         ring
-
-private theorem pos_of_support_lower_bound {n q : ℕ} {β N₀ : ℝ}
-    (hN₀ : 221 * (3 * (n : ℝ) ^ 2 + q + 7) ≤ β ^ 2 * N₀) : 0 < N₀ := by
-  by_contra! hle
-  have : β ^ 2 * N₀ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hle
-  have hpos : (0 : ℝ) < 221 * (3 * (n : ℝ) ^ 2 + q + 7) := by positivity
-  linarith
 
 omit [DecidableEq κ] in
 open Real in
@@ -210,6 +208,148 @@ private theorem relativeDensity_coarsen_canonPolyad {κ₁ κ₂ : Type*} {S : P
   conv_rhs => rw [← hσ₀]
   rw [Polyad3.coarsen_perm_of_support_nonempty _ hcan_ne σ₀ hV f hf, H.relativeDensity_perm]
 
+omit [Fintype κ] in
+/-- Unordered `3`-subsets of color `c₀` occurring with ordered multiplicity `idx.2.2 + 1` in the
+subpolyad `idx.2.1`. -/
+private noncomputable def multFiber {κ₂ : Type*} {T : PairSkeleton3 κ₂ V} (H : Colored3Graph κ V)
+    (Q₀ : Polyad3 T) (c₀ : κ) (idx : TestIdx Q₀) : Finset (Set.powersetCard V 3) :=
+  open Classical in
+  univ.filter fun s ↦ H.color s = c₀ ∧
+    #{x ∈ idx.2.1.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
+      idx.2.2.val + 1
+
+omit [Fintype κ] in
+private theorem card_multFiber_le {κ₂ : Type*} {T : PairSkeleton3 κ₂ V} (H : Colored3Graph κ V)
+    (Q₀ : Polyad3 T) (c₀ : κ) (idx : TestIdx Q₀) :
+    #(multFiber H Q₀ c₀ idx) ≤ #Q₀.support := by
+  classical
+  obtain ⟨σ, S', k⟩ := idx
+  calc #(multFiber H Q₀ c₀ ⟨σ, S', k⟩)
+      = ∑ _s ∈ multFiber H Q₀ c₀ ⟨σ, S', k⟩, 1 := by simp
+    _ ≤ ∑ s ∈ multFiber H Q₀ c₀ ⟨σ, S', k⟩,
+          #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
+        sum_le_sum fun s hs ↦ by
+          have hmem := (mem_filter.1 hs).2.2
+          dsimp only at hmem
+          rw [hmem]
+          omega
+    _ ≤ ∑ s : Set.powersetCard V 3,
+          #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
+        sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ Nat.zero_le _
+    _ = #S'.support := (card_eq_sum_card_fiberwise fun _ _ ↦ mem_univ _).symm
+    _ ≤ #(Q₀.perm σ).support := card_le_card S'.support_subset
+    _ = #Q₀.support := Q₀.card_support_perm σ
+
+/-- Representative-level sampling: on a single fine polyad `Q₀`, if `N₀ ≤ #Q₀.support`, builds a
+row-stochastic coupling matrix `M` pushing `Q₀` densities to its coarsening and unordered-triple
+samplers `φ c₀` achieving discrepancy `< (β / 21) #Q₀.support` across all `TestIdx Q₀`. -/
+private theorem exists_rep_coupled_recoloring
+    {H : Colored3Graph κ V} {C D : TriadicComplex3 V} {β N₀ : ℝ}
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
+    (hβ : 0 < β)
+    (hN₀ : 221 * (3 * (Fintype.card V : ℝ) ^ 2 + Fintype.card κ + 7) ≤ β ^ 2 * N₀)
+    (Q₀ : Polyad3 D.skeleton) :
+    ∃ (M : Matrix κ κ ℝ) (φ : κ → Set.powersetCard V 3 → κ),
+      N₀ ≤ (#Q₀.support : ℝ) →
+        M ∈ Matrix.rowStochastic ℝ κ ∧
+        (fun c₀ ↦ (H.relativeDensity c₀ Q₀ : ℝ)) ᵥ* M =
+          (fun c ↦ (H.relativeDensity c (Q₀.coarsen hV f) : ℝ)) ∧
+        (∀ c₀, (H.relativeDensity c₀ Q₀ : ℝ) * (1 - M c₀ c₀) =
+          max ((H.relativeDensity c₀ Q₀ : ℝ) -
+            H.relativeDensity c₀ (Q₀.coarsen hV f)) 0) ∧
+        ∀ c₀ (idx : TestIdx Q₀) c,
+          |(#{s ∈ multFiber H Q₀ c₀ idx | φ c₀ s = c} : ℝ) -
+            M c₀ c * #(multFiber H Q₀ c₀ idx)| < (β / 21) * #Q₀.support := by
+  classical
+  have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
+  by_cases hQ₀ : N₀ ≤ (#Q₀.support : ℝ)
+  · have hQ₀_ne : Q₀.support.Nonempty := card_pos.1 (by exact_mod_cast hN₀_pos.trans_le hQ₀)
+    have hP₀_ne : (Q₀.coarsen hV f).support.Nonempty :=
+      hQ₀_ne.mono (Polyad3.support_subset_coarsen hV f hf Q₀)
+    have hsum : (∑ c, (H.relativeDensity c Q₀ : ℝ)) =
+        ∑ c, (H.relativeDensity c (Q₀.coarsen hV f) : ℝ) := by
+      exact_mod_cast (H.sum_relativeDensity hQ₀_ne).trans (H.sum_relativeDensity hP₀_ne).symm
+    obtain ⟨M, hMmem, hMpush, hMdiag⟩ := Matrix.exists_mem_rowStochastic_vecMul_eq hsum
+      (fun c ↦ mod_cast H.relativeDensity_nonneg c _)
+    obtain ⟨ha, hub⟩ := testIdx_union_bound (κ := κ) hβ hN₀ Q₀ hQ₀
+    have hφ (c₀ : κ) : ∃ φ₀ : Set.powersetCard V 3 → κ, ∀ (idx : TestIdx Q₀) c,
+        |(#{s ∈ multFiber H Q₀ c₀ idx | φ₀ s = c} : ℝ) - M c₀ c * #(multFiber H Q₀ c₀ idx)| <
+          (β / 21) * #Q₀.support :=
+      exists_forall_abs_card_filter_sub_mul_card_lt
+        (fun c ↦ Matrix.nonneg_of_mem_rowStochastic hMmem)
+        (Matrix.sum_row_of_mem_rowStochastic hMmem c₀) (multFiber H Q₀ c₀)
+        (card_multFiber_le H Q₀ c₀) ha hub
+    choose φ hφ using hφ
+    exact ⟨M, φ, fun _ ↦ ⟨hMmem, hMpush, hMdiag, hφ⟩⟩
+  · exact ⟨0, fun c₀ _ ↦ c₀, fun h' ↦ absurd h' hQ₀⟩
+
+omit [Fintype κ] in
+/-- Stratify ordered triples of `S'` by unordered multiplicity `k + 1 ∈ {1, …, 6}` and transfer a
+`(β / 21) #Q₀.support` discrepancy bound on each `multFiber` into a `β #Q.support` ordered-count
+discrepancy bound for `H'`. -/
+private theorem abs_card_sub_mul_le_of_multFiber_discrepancy
+    {H H' : Colored3Graph κ V} {κ₂ : Type*} {T : PairSkeleton3 κ₂ V}
+    {Q Q₀ : Polyad3 T} {σ₀ : Equiv.Perm (Fin 3)} (hQ₀_card : #Q₀.support = #Q.support)
+    {S' : Subpolyad3 Q} {S₀ : Subpolyad3 (Q₀.perm σ₀)} (hS₀ : S₀.support = S'.support)
+    {M : Matrix κ κ ℝ} {φ : κ → Set.powersetCard V 3 → κ} {β : ℝ} (c₀ c : κ)
+    (hagree : ∀ {s}, (∃ x ∈ S'.support,
+        Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s) →
+      H.color s = c₀ → H'.color s = φ c₀ s)
+    (hdisc : ∀ k : Fin (Nat.factorial 3),
+      |(#{s ∈ multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ c₀ s = c} : ℝ) -
+        M c₀ c * #(multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩)| ≤ (β / 21) * #Q₀.support) :
+    |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) -
+      M c₀ c * #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val,
+        x.property⟩) = c₀}| ≤ β * #Q.support := by
+  classical
+  have hH'_on_L (k : Fin (Nat.factorial 3)) :
+      #{s : Set.powersetCard V 3 | (H.color s = c₀ ∧ H'.color s = c) ∧
+          #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
+            k.val + 1} =
+        #{s ∈ multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ c₀ s = c} := by
+    refine congrArg card (ext fun s ↦ ?_)
+    simp only [multFiber, mem_filter, mem_univ, true_and, hS₀]
+    by_cases hm : #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val,
+        x.property⟩ = s} = k.val + 1
+    · obtain ⟨x, hx⟩ := card_pos.1 (by omega : 0 < #{x ∈ S'.support |
+        Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s})
+      obtain ⟨hxS, hxs⟩ := mem_filter.1 hx
+      by_cases hc₀ : H.color s = c₀
+      · simp [hm, hc₀, hagree ⟨x, hxS, hxs⟩ hc₀]
+      · simp [hm, hc₀]
+    · simp [hm]
+  rw [S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀,
+    S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀ ∧ H'.color s = c]
+  simp_rw [hH'_on_L]
+  have h1' (k : Fin (Nat.factorial 3)) :
+      #{s : Set.powersetCard V 3 | H.color s = c₀ ∧
+          #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
+            k.val + 1} =
+        #(multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩) := by simp only [multFiber, hS₀]
+  simp_rw [h1']
+  push_cast
+  rw [mul_sum, ← sum_sub_distrib]
+  let d (k : Fin (Nat.factorial 3)) : ℝ :=
+    (#{s ∈ multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ c₀ s = c} : ℝ) -
+      M c₀ c * #(multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩)
+  calc |∑ k : Fin (Nat.factorial 3), ((k.val + 1 : ℝ) *
+          #{s ∈ multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ c₀ s = c} -
+          M c₀ c * ((k.val + 1 : ℝ) * #(multFiber H Q₀ c₀ ⟨σ₀, S₀, k⟩)))|
+      = |∑ k, (k.val + 1 : ℝ) * d k| := congrArg abs (sum_congr rfl fun k _ ↦ by dsimp [d]; ring)
+    _ ≤ ∑ k, |(k.val + 1 : ℝ) * d k| := abs_sum_le_sum_abs _ _
+    _ ≤ ∑ k : Fin (Nat.factorial 3), (k.val + 1 : ℝ) * ((β / 21) * #Q₀.support) := by
+        refine sum_le_sum fun k _ ↦ ?_
+        rw [abs_mul, abs_of_nonneg (by positivity)]
+        exact mul_le_mul_of_nonneg_left (hdisc k) (by positivity)
+    _ = β * #Q.support := by
+        rw [← sum_mul, hQ₀_card]
+        have hsum21 : ∑ k : Fin (Nat.factorial 3), ((k : ℕ) + 1 : ℝ) = 21 := by
+          exact_mod_cast (by decide : ∑ k : Fin (Nat.factorial 3), ((k : ℕ) + 1) = 21)
+        rw [hsum21]; ring
+
 /-- Orbit-glued coupled recoloring: produces a coloring `H'` and row-stochastic transition
 matrices `M Q₀` pushing fine densities to coarse parent densities on every fine polyad `Q` with
 `N₀ ≤ #Q.support`, tracking `M` within `β * #Q.support` on every subpolyad while leaving smaller
@@ -238,56 +378,8 @@ private theorem exists_coupled_recoloring
             β * #Q.support) ∧
       (∀ Q : Polyad3 D.skeleton, ¬N₀ ≤ (#Q.support : ℝ) → H.editedOn H' Q.support = ∅) := by
   classical
-  have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
-  let L (Q₀ : Polyad3 D.skeleton) (c₀ : κ) (idx : TestIdx Q₀) : Finset (Set.powersetCard V 3) :=
-    univ.filter fun s ↦ H.color s = c₀ ∧
-      #{x ∈ idx.2.1.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
-        idx.2.2.val + 1
-  have hL_card (Q₀ : Polyad3 D.skeleton) (c₀ : κ) (idx : TestIdx Q₀) :
-      #(L Q₀ c₀ idx) ≤ #Q₀.support := by
-    obtain ⟨σ, S', k⟩ := idx
-    calc #(L Q₀ c₀ ⟨σ, S', k⟩)
-        = ∑ _s ∈ L Q₀ c₀ ⟨σ, S', k⟩, 1 := by simp
-      _ ≤ ∑ s ∈ L Q₀ c₀ ⟨σ, S', k⟩,
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
-          sum_le_sum fun s hs ↦ by rw [(mem_filter.1 hs).2.2]; omega
-      _ ≤ ∑ s : Set.powersetCard V 3,
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} :=
-          sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ Nat.zero_le _
-      _ = #S'.support := (card_eq_sum_card_fiberwise fun _ _ ↦ mem_univ _).symm
-      _ ≤ #(Q₀.perm σ).support := card_le_card S'.support_subset
-      _ = #Q₀.support := Q₀.card_support_perm σ
-  have hcouple (Q₀ : Polyad3 D.skeleton) :
-      ∃ (M : Matrix κ κ ℝ) (φ : κ → Set.powersetCard V 3 → κ),
-        N₀ ≤ (#Q₀.support : ℝ) →
-          M ∈ Matrix.rowStochastic ℝ κ ∧
-          (fun c₀ ↦ (H.relativeDensity c₀ Q₀ : ℝ)) ᵥ* M =
-            (fun c ↦ (H.relativeDensity c (Q₀.coarsen hV f) : ℝ)) ∧
-          (∀ c₀, (H.relativeDensity c₀ Q₀ : ℝ) * (1 - M c₀ c₀) =
-            max ((H.relativeDensity c₀ Q₀ : ℝ) - H.relativeDensity c₀ (Q₀.coarsen hV f)) 0) ∧
-          ∀ c₀ (idx : TestIdx Q₀) c,
-            |(#{s ∈ L Q₀ c₀ idx | φ c₀ s = c} : ℝ) - M c₀ c * #(L Q₀ c₀ idx)| <
-              (β / 21) * #Q₀.support := by
-    by_cases hQ₀ : N₀ ≤ (#Q₀.support : ℝ)
-    · have hQ₀_ne : Q₀.support.Nonempty := card_pos.1 (by exact_mod_cast hN₀_pos.trans_le hQ₀)
-      have hP₀_ne : (Q₀.coarsen hV f).support.Nonempty :=
-        hQ₀_ne.mono (Polyad3.support_subset_coarsen hV f hf Q₀)
-      have hsum : (∑ c, (H.relativeDensity c Q₀ : ℝ)) =
-          ∑ c, (H.relativeDensity c (Q₀.coarsen hV f) : ℝ) := by
-        exact_mod_cast (H.sum_relativeDensity hQ₀_ne).trans (H.sum_relativeDensity hP₀_ne).symm
-      obtain ⟨M, hMmem, hMpush, hMdiag⟩ := Matrix.exists_mem_rowStochastic_vecMul_eq hsum
-        (fun c ↦ mod_cast H.relativeDensity_nonneg c _)
-      obtain ⟨ha, hub⟩ := testIdx_union_bound (κ := κ) hβ hN₀ Q₀ hQ₀
-      have hφ (c₀ : κ) : ∃ φ₀ : Set.powersetCard V 3 → κ, ∀ (idx : TestIdx Q₀) c,
-          |(#{s ∈ L Q₀ c₀ idx | φ₀ s = c} : ℝ) - M c₀ c * #(L Q₀ c₀ idx)| <
-            (β / 21) * #Q₀.support :=
-        exists_forall_abs_card_filter_sub_mul_card_lt
-          (fun c ↦ Matrix.nonneg_of_mem_rowStochastic hMmem)
-          (Matrix.sum_row_of_mem_rowStochastic hMmem c₀) (L Q₀ c₀) (hL_card Q₀ c₀) ha hub
-      choose φ hφ using hφ
-      exact ⟨M, φ, fun _ ↦ ⟨hMmem, hMpush, hMdiag, hφ⟩⟩
-    · exact ⟨0, fun c₀ _ ↦ c₀, fun h' ↦ absurd h' hQ₀⟩
-  choose M φ hMφ using hcouple
+  choose M φ hMφ using fun Q₀ : Polyad3 D.skeleton ↦
+    exists_rep_coupled_recoloring (H := H) hV f hf hβ hN₀ Q₀
   let H' : Colored3Graph κ V :=
     ⟨fun s ↦ if N₀ ≤ (#(canonTriple D.skeleton s).support : ℝ) then
       φ (canonTriple D.skeleton s) (H.color s) s else H.color s⟩
@@ -300,50 +392,13 @@ private theorem exists_coupled_recoloring
     refine ⟨hMmem, hMpush, hMdiag, fun S' c₀ c ↦ ?_⟩
     let S₀ : Subpolyad3 (Q₀.perm σ₀) :=
       S'.inclusion (hσ₀ ▸ Subset.rfl) (hσ₀ ▸ Subset.rfl) (hσ₀ ▸ Subset.rfl)
-    have hS₀ : S₀.support = S'.support := Subpolyad3.support_inclusion _ _ _ S'
-    have hH'_on_L (k : Fin (Nat.factorial 3)) :
-        #{s : Set.powersetCard V 3 | (H.color s = c₀ ∧ H'.color s = c) ∧
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
-              k.val + 1} =
-          #{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} := by
-      refine congrArg card (ext fun s ↦ ?_)
-      simp only [L, mem_filter, mem_univ, true_and, hS₀]
-      by_cases hm : #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val,
-          x.property⟩ = s} = k.val + 1
-      · obtain ⟨x, hx⟩ := card_pos.1 (by omega : 0 < #{x ∈ S'.support |
-          Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s})
-        obtain ⟨hxS, hxs⟩ := mem_filter.1 hx
-        have hcan : canonTriple D.skeleton s = Q₀ :=
-          hxs ▸ canonTriple_ofFinEmb_eq (S'.support_subset hxS)
-        by_cases hc₀ : H.color s = c₀ <;> simp [H', hcan, hQ₀, hc₀, hm]
-      · simp [hm]
-    rw [S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀,
-      S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀ ∧ H'.color s = c]
-    simp_rw [hH'_on_L]
-    have h1' (k : Fin (Nat.factorial 3)) :
-        #{s : Set.powersetCard V 3 | H.color s = c₀ ∧
-            #{x ∈ S'.support | Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩ = s} =
-              k.val + 1} =
-          #(L Q₀ c₀ ⟨σ₀, S₀, k⟩) := by simp only [L, hS₀]
-    simp_rw [h1']
-    push_cast
-    rw [mul_sum, ← sum_sub_distrib]
-    let d (k : Fin (Nat.factorial 3)) : ℝ :=
-      (#{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} : ℝ) - M Q₀ c₀ c * #(L Q₀ c₀ ⟨σ₀, S₀, k⟩)
-    calc |∑ k : Fin (Nat.factorial 3), ((k.val + 1 : ℝ) *
-            #{s ∈ L Q₀ c₀ ⟨σ₀, S₀, k⟩ | φ Q₀ c₀ s = c} -
-            M Q₀ c₀ c * ((k.val + 1 : ℝ) * #(L Q₀ c₀ ⟨σ₀, S₀, k⟩)))|
-        = |∑ k, (k.val + 1 : ℝ) * d k| := congrArg abs (sum_congr rfl fun k _ ↦ by dsimp [d]; ring)
-      _ ≤ ∑ k, |(k.val + 1 : ℝ) * d k| := abs_sum_le_sum_abs _ _
-      _ ≤ ∑ k : Fin (Nat.factorial 3), (k.val + 1 : ℝ) * ((β / 21) * #Q₀.support) := by
-          refine sum_le_sum fun k _ ↦ ?_
-          rw [abs_mul, abs_of_nonneg (by positivity)]
-          exact mul_le_mul_of_nonneg_left (hφ_disc c₀ ⟨σ₀, S₀, k⟩ c).le (by positivity)
-      _ = β * #Q.support := by
-          rw [← sum_mul, hQ₀_card]
-          have hsum21 : ∑ k : Fin (Nat.factorial 3), ((k : ℕ) + 1 : ℝ) = 21 := by
-            exact_mod_cast (by decide : ∑ k : Fin (Nat.factorial 3), ((k : ℕ) + 1) = 21)
-          rw [hsum21]; ring
+    refine abs_card_sub_mul_le_of_multFiber_discrepancy hQ₀_card
+      (Subpolyad3.support_inclusion _ _ _ S') c₀ c ?_
+      fun k ↦ (hφ_disc c₀ ⟨σ₀, S₀, k⟩ c).le
+    rintro s ⟨x, hxS, rfl⟩ hc₀
+    have hcan : canonTriple D.skeleton (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = Q₀ :=
+      canonTriple_ofFinEmb_eq (S'.support_subset hxS)
+    simp [H', hcan, hQ₀, hc₀]
   · rw [eq_empty_iff_forall_notMem]
     intro x hx
     obtain ⟨hxQ, hne⟩ := (H.mem_editedOn H' Q.support x).1 hx
@@ -352,6 +407,117 @@ private theorem exists_coupled_recoloring
             := by
       rwa [canonTriple_ofFinEmb_eq hxQ, card_support_canonPolyad Q]
     exact hne (by simp [H', hnot])
+
+omit [Fintype κ] in
+/-- Per-color edit bound on a large fine polyad `Q`. -/
+private theorem card_editedOn_color_le
+    {H H' : Colored3Graph κ V} {C D : TriadicComplex3 V}
+    {M : Polyad3 D.skeleton → Matrix κ κ ℝ} {β : ℝ}
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
+    {Q : Polyad3 D.skeleton} (hQ_ne : Q.support.Nonempty)
+    (hdiag : ∀ c₀, (H.relativeDensity c₀ (canonPolyad Q) : ℝ) *
+        (1 - M (canonPolyad Q) c₀ c₀) =
+      max ((H.relativeDensity c₀ (canonPolyad Q) : ℝ) -
+        H.relativeDensity c₀ ((canonPolyad Q).coarsen hV f)) 0)
+    (hkeep : ∀ c₀,
+      |(#{x ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀} : ℝ) -
+        M (canonPolyad Q) c₀ c₀ *
+          #{x ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀}| ≤
+        β * #Q.support)
+    (c₀ : κ) :
+    (#{x ∈ Q.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) ≠
+          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)} : ℝ) ≤
+      #Q.support * |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| +
+        β * #Q.support := by
+  classical
+  let e₃ : {x : Fin 3 → V // Function.Injective x} → Set.powersetCard V 3 :=
+    fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩
+  set Q₀ := canonPolyad Q
+  let s₀ := {x ∈ Q.support | H.color (e₃ x) = c₀}
+  have hsplit : #{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} +
+      #{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} = #s₀ := by
+    rw [← card_filter_add_card_filter_not (s := s₀) (p := fun x ↦ H'.color (e₃ x) = c₀),
+      add_comm]
+    congr 1 <;> refine congrArg card (ext fun x ↦ ?_) <;> simp only [s₀, mem_filter]
+    · exact and_assoc.symm
+    · exact ⟨fun ⟨hx, hc₀, hne⟩ ↦ ⟨⟨hx, hc₀⟩, fun hc' ↦ hne (hc₀.trans hc'.symm)⟩,
+        fun ⟨⟨hx, hc₀⟩, hne⟩ ↦ ⟨hx, hc₀, fun hc' ↦ hne (hc'.symm.trans hc₀)⟩⟩
+  have hdens : (#s₀ : ℝ) = (H.relativeDensity c₀ Q₀ : ℝ) * #Q.support := by
+    rw [relativeDensity_canonPolyad H Q c₀, H.relativeDensity_def]
+    exact_mod_cast (H.relDensityOn_mul_card c₀ Q.support).symm
+  have hkeep_lo : M Q₀ c₀ c₀ * ((H.relativeDensity c₀ Q₀ : ℝ) * #Q.support) - β * #Q.support ≤
+      (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} : ℝ) := by
+    dsimp only [Q₀, s₀, e₃] at hdens ⊢
+    have hkc := hkeep c₀
+    rw [hdens] at hkc
+    linarith [(abs_le.1 hkc).1]
+  have hsplitR :
+      (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} : ℝ) +
+      (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} : ℝ) =
+      (H.relativeDensity c₀ Q₀ : ℝ) * #Q.support := by
+    rw [← Nat.cast_add, hsplit, hdens]
+  have hdiag_le : (H.relativeDensity c₀ Q₀ : ℝ) * (1 - M Q₀ c₀ c₀) ≤
+      |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| := by
+    rw [hdiag c₀, relativeDensity_canonPolyad H Q c₀,
+      relativeDensity_coarsen_canonPolyad hV f hf H hQ_ne c₀]
+    exact max_le (le_abs_self _) (abs_nonneg _)
+  have hdiag_Q := mul_le_mul_of_nonneg_right hdiag_le (Nat.cast_nonneg (α := ℝ) #Q.support)
+  nlinarith
+
+/-- Per-polyad edit bound for a coupled recoloring witnessing `M`. -/
+private theorem card_editedOn_polyad_le
+    {H H' : Colored3Graph κ V} {C D : TriadicComplex3 V}
+    {M : Polyad3 D.skeleton → Matrix κ κ ℝ} {β N₀ : ℝ}
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
+    (hβ : 0 < β) (hN₀_pos : 0 < N₀)
+    (hdiag : ∀ Q : Polyad3 D.skeleton, N₀ ≤ (#Q.support : ℝ) →
+      ∀ c₀, (H.relativeDensity c₀ (canonPolyad Q) : ℝ) * (1 - M (canonPolyad Q) c₀ c₀) =
+        max ((H.relativeDensity c₀ (canonPolyad Q) : ℝ) -
+          H.relativeDensity c₀ ((canonPolyad Q).coarsen hV f)) 0)
+    (hkeep : ∀ Q : Polyad3 D.skeleton, N₀ ≤ (#Q.support : ℝ) →
+      ∀ (S' : Subpolyad3 Q) (c₀ c : κ),
+        |(#{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℝ) -
+          M (canonPolyad Q) c₀ c *
+            #{x ∈ S'.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀}| ≤
+          β * #Q.support)
+    (hsmall : ∀ Q : Polyad3 D.skeleton, ¬N₀ ≤ (#Q.support : ℝ) → H.editedOn H' Q.support = ∅)
+    (Q : Polyad3 D.skeleton) :
+    (#(H.editedOn H' Q.support) : ℝ) ≤
+      (∑ c₀, #Q.support *
+        |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
+        Fintype.card κ * β * #Q.support := by
+  classical
+  by_cases hQ : N₀ ≤ (#Q.support : ℝ)
+  · have hQ_ne : Q.support.Nonempty := card_pos.1 (by exact_mod_cast hN₀_pos.trans_le hQ)
+    have hpart : #(H.editedOn H' Q.support) =
+        ∑ c₀ : κ, #{x ∈ Q.support |
+          H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c₀ ∧
+          H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) ≠
+            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)} := by
+      rw [editedOn_def]
+      exact card_filter_color_fiberwise H Q.support fun s ↦ H.color s ≠ H'.color s
+    rw [hpart, Nat.cast_sum]
+    calc _ ≤ ∑ c₀ : κ, (#Q.support *
+            |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| +
+            β * #Q.support) := by
+          refine sum_le_sum fun c₀ _ ↦ card_editedOn_color_le hV f hf hQ_ne (hdiag Q hQ) ?_ c₀
+          intro c₁
+          simpa only [Subpolyad3.support_ofSubcells_cells] using
+            hkeep Q hQ (Subpolyad3.ofSubcells Q Q.c₀ Q.c₁ Q.c₂) c₁ c₁
+      _ = (∑ c₀, #Q.support *
+            |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
+            Fintype.card κ * β * #Q.support := by
+          rw [sum_add_distrib, sum_const, card_univ, nsmul_eq_mul]; ring
+  · rw [hsmall Q hQ, card_empty, Nat.cast_zero]
+    exact add_nonneg (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _))
+      (by positivity)
 
 /-- Deterministic global edit-discrepancy bound for any coupled recoloring witnessing `M`. -/
 private theorem approximates3_of_coupled_recoloring
@@ -375,68 +541,6 @@ private theorem approximates3_of_coupled_recoloring
           β * #Q.support)
     (hsmall : ∀ Q : Polyad3 D.skeleton, ¬N₀ ≤ (#Q.support : ℝ) → H.editedOn H' Q.support = ∅) :
     H.Approximates3 H' (Fintype.card κ * (√g + β)) := by
-  let e₃ : {x : Fin 3 → V // Function.Injective x} → Set.powersetCard V 3 :=
-    fun x ↦ Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩
-  have hedit_Q (Q : Polyad3 D.skeleton) :
-      (#(H.editedOn H' Q.support) : ℝ) ≤
-        (∑ c₀, #Q.support *
-          |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
-          Fintype.card κ * β * #Q.support := by
-    by_cases hQ : N₀ ≤ (#Q.support : ℝ)
-    · have hQ_ne : Q.support.Nonempty := card_pos.1 (by exact_mod_cast hN₀_pos.trans_le hQ)
-      set Q₀ := canonPolyad Q
-      have hpart : #(H.editedOn H' Q.support) =
-          ∑ c₀ : κ, #{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} := by
-        rw [editedOn_def]
-        exact card_filter_color_fiberwise H Q.support fun s ↦ H.color s ≠ H'.color s
-      rw [hpart, Nat.cast_sum]
-      have hbound_c₀ (c₀ : κ) :
-          (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} : ℝ) ≤
-            #Q.support *
-              |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| +
-              β * #Q.support := by
-        have hkeep_c₀ := hkeep Q hQ (Subpolyad3.ofSubcells Q Q.c₀ Q.c₁ Q.c₂) c₀ c₀
-        rw [Subpolyad3.support_ofSubcells_cells] at hkeep_c₀
-        let s₀ := {x ∈ Q.support | H.color (e₃ x) = c₀}
-        have hsplit : #{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} +
-            #{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} = #s₀ := by
-          rw [← card_filter_add_card_filter_not (s := s₀) (p := fun x ↦ H'.color (e₃ x) = c₀),
-            add_comm]
-          congr 1 <;> refine congrArg card (ext fun x ↦ ?_) <;> simp only [s₀, mem_filter]
-          · exact and_assoc.symm
-          · exact ⟨fun ⟨hx, hc₀, hne⟩ ↦ ⟨⟨hx, hc₀⟩, fun hc' ↦ hne (hc₀.trans hc'.symm)⟩,
-              fun ⟨⟨hx, hc₀⟩, hne⟩ ↦ ⟨hx, hc₀, fun hc' ↦ hne (hc'.symm.trans hc₀)⟩⟩
-        have hdens : (#s₀ : ℝ) = (H.relativeDensity c₀ Q₀ : ℝ) * #Q.support := by
-          rw [relativeDensity_canonPolyad H Q c₀, H.relativeDensity_def]
-          exact_mod_cast (H.relDensityOn_mul_card c₀ Q.support).symm
-        have hkeep_lo : M Q₀ c₀ c₀ * ((H.relativeDensity c₀ Q₀ : ℝ) * #Q.support) -
-            β * #Q.support ≤
-            (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} : ℝ) := by
-          dsimp only [Q₀, s₀, e₃] at hdens ⊢
-          rw [hdens] at hkeep_c₀
-          linarith [(abs_le.1 hkeep_c₀).1]
-        have hsplitR :
-            (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H.color (e₃ x) ≠ H'.color (e₃ x)} : ℝ) +
-            (#{x ∈ Q.support | H.color (e₃ x) = c₀ ∧ H'.color (e₃ x) = c₀} : ℝ) =
-            (H.relativeDensity c₀ Q₀ : ℝ) * #Q.support := by
-          rw [← Nat.cast_add, hsplit, hdens]
-        have hdiag_le : (H.relativeDensity c₀ Q₀ : ℝ) * (1 - M Q₀ c₀ c₀) ≤
-            |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| := by
-          rw [hdiag Q hQ c₀, relativeDensity_canonPolyad H Q c₀,
-            relativeDensity_coarsen_canonPolyad hV f hf H hQ_ne c₀]
-          exact max_le (le_abs_self _) (abs_nonneg _)
-        have hdiag_Q := mul_le_mul_of_nonneg_right hdiag_le (Nat.cast_nonneg (α := ℝ) #Q.support)
-        nlinarith
-      calc _ ≤ ∑ c₀ : κ, (#Q.support *
-              |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)| +
-              β * #Q.support) := sum_le_sum fun c₀ _ ↦ hbound_c₀ c₀
-        _ = (∑ c₀, #Q.support *
-              |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
-              Fintype.card κ * β * #Q.support := by
-            rw [sum_add_distrib, sum_const, card_univ, nsmul_eq_mul]; ring
-    · rw [hsmall Q hQ, card_empty, Nat.cast_zero]
-      exact add_nonneg (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _))
-        (by positivity)
   have hbi : #(H.editedOn H' univ) = ∑ Q : Polyad3 D.skeleton, #(H.editedOn H' Q.support) := by
     rw [← Polyad3.sum_card_inter_support (S := D.skeleton) (H.editedOn H' univ)]
     refine sum_congr rfl fun Q _ ↦ congrArg card (ext fun x ↦ ?_)
@@ -449,7 +553,8 @@ private theorem approximates3_of_coupled_recoloring
       = ∑ Q : Polyad3 D.skeleton, (#(H.editedOn H' Q.support) : ℝ) := by exact_mod_cast hbi
     _ ≤ ∑ Q : Polyad3 D.skeleton, ((∑ c₀, #Q.support *
           |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
-          Fintype.card κ * β * #Q.support) := sum_le_sum fun Q _ ↦ hedit_Q Q
+          Fintype.card κ * β * #Q.support) :=
+        sum_le_sum fun Q _ ↦ card_editedOn_polyad_le hV f hf hβ hN₀_pos hdiag hkeep hsmall Q
     _ = (∑ c₀, ∑ Q : Polyad3 D.skeleton, #Q.support *
           |(H.relativeDensity c₀ Q : ℝ) - H.relativeDensity c₀ (Q.coarsen hV f)|) +
           Fintype.card κ * β * (Fintype.card V).descFactorial 3 := by

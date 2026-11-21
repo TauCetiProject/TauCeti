@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Probability.Moments.SubGaussian
+import Mathlib.Tactic.FieldSimp
 import TauCeti.Probability.McDiarmid.Basic
 
 /-!
@@ -38,6 +39,8 @@ sets in which every color has nearly the same density on every large rectangle.
 * `TauCeti.two_mul_two_pow_mul_two_pow_add_mul_exp_lt` and
   `TauCeti.two_mul_two_pow_mul_two_pow_mul_exp_lt`: exponential union bounds for families of
   subrectangles of `s ×ˢ t` (with `r` optional auxiliary test sets).
+* `TauCeti.two_mul_add_one_mul_exp_lt_of_le_two_pow`: exponential union bound for at most `2 ^ m`
+  test sets at deviation `η * N`.
 
 ## Implementation notes
 
@@ -292,5 +295,41 @@ theorem two_mul_two_pow_mul_two_pow_mul_exp_lt {α β : Type*} [Fintype κ] [Non
       exp (-2 * (η * (#s * #t : ℕ)) ^ 2 / (#s * #t : ℕ)) < 1 := by
   simpa using two_mul_two_pow_mul_two_pow_add_mul_exp_lt (r := 0) (by simpa using hs)
     (by simpa using ht)
+
+/-- **Exponential union bound.** If at most `2 ^ m` test sets are checked across `q` colors at
+relative deviation `η` on a sample of size `N` satisfying `m + q + 2 ≤ 2 * η ^ 2 * N`, then
+`2 * (cardI + 1) * q * exp (-2 * (η * N) ^ 2 / N) < 1`. -/
+theorem two_mul_add_one_mul_exp_lt_of_le_two_pow {cardI q m : ℕ} {η N : ℝ}
+    (hI : cardI ≤ 2 ^ m) (hN : (m : ℝ) + q + 2 ≤ 2 * η ^ 2 * N) :
+    2 * ((cardI : ℝ) + 1) * q * exp (-2 * (η * N) ^ 2 / N) < 1 := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp
+  have hq_pos : (0 : ℝ) < q := Nat.cast_pos.2 (Nat.pos_of_ne_zero hq)
+  have hN_pos : 0 < N := by
+    by_contra! hN0
+    have : 2 * η ^ 2 * N ≤ 0 := mul_nonpos_of_nonneg_of_nonpos (by positivity) hN0
+    linarith
+  have hpow2 : (2 : ℝ) ^ (m + 2) ≤ exp ((m + 2 : ℕ) : ℝ) := by
+    calc (2 : ℝ) ^ (m + 2)
+        ≤ (exp 1) ^ (m + 2) :=
+          pow_le_pow_left₀ (by norm_num) (by linarith [add_one_le_exp (1 : ℝ)]) _
+      _ = exp ((m + 2 : ℕ) : ℝ) := by rw [← exp_natCast_mul, mul_one]
+  have hI1 : 2 * ((cardI : ℝ) + 1) ≤ (2 : ℝ) ^ (m + 2) := by
+    have h1 : 1 ≤ 2 ^ m := Nat.one_le_pow _ _ two_pos
+    exact_mod_cast (by calc 2 * (cardI + 1) ≤ 2 * (2 ^ m + 2 ^ m) := by omega
+      _ = 2 ^ (m + 2) := by ring)
+  have hqexp : (q : ℝ) < exp (q : ℝ) :=
+    lt_of_lt_of_le (by linarith) (add_one_le_exp (q : ℝ))
+  have hexp_eq : -2 * (η * N) ^ 2 / N = -(2 * η ^ 2 * N) := by
+    field_simp [hN_pos.ne']
+  rw [hexp_eq]
+  calc 2 * ((cardI : ℝ) + 1) * q * exp (-(2 * η ^ 2 * N))
+      ≤ exp ((m + 2 : ℕ) : ℝ) * q * exp (-(2 * η ^ 2 * N)) := by
+        gcongr; exact hI1.trans hpow2
+    _ < exp ((m + 2 : ℕ) : ℝ) * exp (q : ℝ) * exp (-(2 * η ^ 2 * N)) := by gcongr
+    _ = exp (((m + 2 : ℕ) : ℝ) + q - 2 * η ^ 2 * N) := by
+        rw [← exp_add, ← exp_add, sub_eq_add_neg]
+    _ ≤ exp 0 := exp_le_exp.2 (by push_cast; linarith)
+    _ = 1 := exp_zero
 
 end TauCeti
