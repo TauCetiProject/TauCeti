@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 
 /-!
 # Component groups of conjugate closed subgroups
@@ -22,22 +23,18 @@ The closed subgroup cut out by `J` is allowed to be any closed subgroup whose id
 as equalities of Hopf ideals, such as those for stabilizers and centralizers, be used without
 transport.
 
-Building on `TauCeti.HopfIdeal.componentGroupConjugationEquiv`, this file provides the coordinate
-representation law (`componentGroupConjugationEquiv_mk`), the inverse law
-(`componentGroupConjugationEquiv_symm`), compatibility with the induced homomorphism
-`π₀(N) → π₀(G)` (`componentGroupInclusion_componentGroupConjugationEquiv`), inner action for
-self-conjugation by `g ∈ N(k)` (`componentGroupConjugationEquiv_self_eq_conj`), triviality on
-`N°(k)`, and naturality with respect to nested closed-subgroup inclusions.
-
 ## Main declarations
 
-* `TauCeti.HopfIdeal.componentGroupConjugationEquiv_mk`: representation-level action of
-  `componentGroupConjugationEquiv` via prime-spectrum comap.
-* `TauCeti.HopfIdeal.componentGroupConjugationEquiv_symm`,
+* `TauCeti.HopfIdeal.componentGroupConjugationEquiv`: the conjugation isomorphism
+  `π₀(N) ≃* π₀(gNg⁻¹)`, with coordinate representation (`componentGroupConjugationEquiv_mk`) and
+  rational-point evaluation (`componentGroupConjugationEquiv_rationalComponentMap`).
+* `TauCeti.HopfIdeal.componentGroupConjugationEquiv_one`,
+  `TauCeti.HopfIdeal.componentGroupConjugationEquiv_trans`,
+  `TauCeti.HopfIdeal.componentGroupConjugationEquiv_symm`,
   `TauCeti.HopfIdeal.componentGroupConjugationEquiv_self_eq_conj`, and
-  `TauCeti.HopfIdeal.componentGroupInclusion_componentGroupConjugationEquiv`: inverse, inner
-  self-conjugation, and ambient-homomorphism compatibility laws for
-  `componentGroupConjugationEquiv`.
+  `TauCeti.HopfIdeal.componentGroupInclusion_componentGroupConjugationEquiv`: identity,
+  composition, inverse, inner self-conjugation, triviality on `N°(k)`, and ambient-homomorphism
+  compatibility laws for `componentGroupConjugationEquiv`.
 * `TauCeti.HopfIdeal.mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv`: naturality
   with respect to nested closed-subgroup inclusions.
 
@@ -61,6 +58,14 @@ universe u
 variable {k : Type u} [Field k] [IsAlgClosed k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
+/-- **Conjugation of component groups.** Conjugation by a rational point `g` induces an
+isomorphism `π₀(N) ≃* π₀(gNg⁻¹)`, where `N` is cut out by `I` and `gNg⁻¹` by
+`J = I.conjugate g`. -/
+noncomputable def componentGroupConjugationEquiv (I J : HopfIdeal k H)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (hJ : J = I.conjugate g) :
+    I.ComponentGroup ≃* J.ComponentGroup :=
+  FiniteTypeCommHopfAlgCat.mapComponentGroupMulEquiv (I.quotientConjugationIso J g hJ)
+
 /-- On a represented component, the conjugation isomorphism of component groups is contraction
 along the coordinate isomorphism of conjugation. -/
 @[simp]
@@ -76,6 +81,48 @@ theorem componentGroupConjugationEquiv_mk (I J : HopfIdeal k H)
   ext y
   exact I.quotientConjugationIso_hom_apply J g hJ y
 
+/-- On rational points, the conjugation isomorphism sends the component of `n` to the component
+of `gng⁻¹`. -/
+@[simp]
+theorem componentGroupConjugationEquiv_rationalComponentMap (I J : HopfIdeal k H)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (hJ : J = I.conjugate g)
+    (n : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
+    componentGroupConjugationEquiv I J g hJ (I.rationalComponentMap n) =
+      J.rationalComponentMap ⟨g * n * g⁻¹,
+        hJ ▸ (CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff I g n).mpr n.property⟩ := by
+  rw [componentGroupConjugationEquiv, FiniteTypeCommHopfAlgCat.mapComponentGroupMulEquiv_apply]
+  -- `gng⁻¹` is the point `n ∘ conj g`, which is what the coordinate isomorphism pulls back to.
+  exact mapComponentGroup_rationalComponentMap_of_mk _ (HopfAlgebra.pointConjugationAlgHom g)
+    (fun a ↦ by rw [quotientConjugationIso_hom_apply, quotientConjugationEquiv_mk]) _ _
+    (HopfAlgebra.comp_pointConjugationAlgHom_self g _).symm
+
+/-- Conjugation by the identity point induces the identity of `π₀(N)`. -/
+@[simp]
+theorem componentGroupConjugationEquiv_one (I : HopfIdeal k H) :
+    componentGroupConjugationEquiv I I 1 (conjugate_one I).symm =
+      MulEquiv.refl I.ComponentGroup := by
+  ext c
+  obtain ⟨n, rfl⟩ := I.rationalComponentMap_surjective c
+  rw [componentGroupConjugationEquiv_rationalComponentMap, MulEquiv.refl_apply]
+  refine congrArg I.rationalComponentMap (Subtype.ext ?_)
+  simp only [one_mul, inv_one, mul_one]
+
+/-- Conjugating by `g` and then by `g'` is conjugating by `g' * g`. -/
+@[simp]
+theorem componentGroupConjugationEquiv_trans (I J L : HopfIdeal k H)
+    (g g' : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (hJ : J = I.conjugate g) (hL : L = J.conjugate g') :
+    (componentGroupConjugationEquiv I J g hJ).trans
+        (componentGroupConjugationEquiv J L g' hL) =
+      componentGroupConjugationEquiv I L (g' * g) (by rw [hL, hJ, conjugate_mul]) := by
+  ext c
+  obtain ⟨n, rfl⟩ := I.rationalComponentMap_surjective c
+  rw [MulEquiv.trans_apply, componentGroupConjugationEquiv_rationalComponentMap,
+    componentGroupConjugationEquiv_rationalComponentMap,
+    componentGroupConjugationEquiv_rationalComponentMap]
+  refine congrArg _ (Subtype.ext ?_)
+  simp only [mul_assoc, mul_inv_rev]
+
 /-- The inverse of `componentGroupConjugationEquiv` is conjugation by `g⁻¹`. -/
 @[simp]
 theorem componentGroupConjugationEquiv_symm (I J : HopfIdeal k H)
@@ -88,10 +135,33 @@ theorem componentGroupConjugationEquiv_symm (I J : HopfIdeal k H)
       (componentGroupConjugationEquiv J I g⁻¹ (by rw [hJ, conjugate_inv_conjugate])).trans
           (componentGroupConjugationEquiv I J g hJ) =
         MulEquiv.refl J.ComponentGroup := by
-    rw [componentGroupConjugationEquiv_trans]
-    simp only [mul_inv_cancel, componentGroupConjugationEquiv_one]
+    simp only [componentGroupConjugationEquiv_trans, mul_inv_cancel,
+      componentGroupConjugationEquiv_one]
   ext C
   exact (MulEquiv.symm_apply_eq _).mpr (MulEquiv.congr_fun hcomp C).symm
+
+/-- Postcomposing conjugation with equality transport gives conjugation into the transported
+Hopf ideal. -/
+theorem componentGroupConjugationEquiv_trans_componentGroupEquivOfEq (I J J' : HopfIdeal k H)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (hJ : J = I.conjugate g) (hJJ' : J = J') :
+    (componentGroupConjugationEquiv I J g hJ).trans (componentGroupEquivOfEq hJJ') =
+      componentGroupConjugationEquiv I J' g (hJJ' ▸ hJ) := by
+  subst hJJ'
+  rw [componentGroupEquivOfEq_refl]
+  rfl
+
+/-- Precomposing conjugation with equality transport gives conjugation from the transported
+Hopf ideal. -/
+theorem componentGroupEquivOfEq_trans_componentGroupConjugationEquiv {I I' : HopfIdeal k H}
+    (hI : I = I') (J : HopfIdeal k H)
+    (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k))
+    (hJ : J = I'.conjugate g) :
+    (componentGroupEquivOfEq hI).trans (componentGroupConjugationEquiv I' J g hJ) =
+      componentGroupConjugationEquiv I J g (hI ▸ hJ) := by
+  subst hI
+  rw [componentGroupEquivOfEq_refl]
+  rfl
 
 /-- Conjugation on a closed subgroup's component group commutes with the induced homomorphism
 `π₀(N) → π₀(G)` from the closed-subgroup inclusion `N ⊆ G`, via inner conjugation by the ambient

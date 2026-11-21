@@ -18,6 +18,8 @@ range and kernel of the pointwise inverse of a homomorphism into a commutative g
 
 * `MonoidHom.mem_eqLocus`: membership in the equality locus is pointwise equality.
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
+* `MonoidHom.ker_eq_map_of_comp_eq`: the kernel after a surjection is the image of the source
+  kernel.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
@@ -41,6 +43,14 @@ range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
     (hf : Function.Surjective f) : (g.comp f).range = g.range :=
   SetLike.coe_injective <| by simpa only [coe_range, coe_comp] using hf.range_comp g
+
+/-- If `ψ.comp p = φ` and `p` is surjective, then `ker ψ` is the image of `ker φ` under `p`. -/
+@[to_additive /-- If `ψ.comp p = φ` and `p` is surjective, then `ker ψ` is the image of
+`ker φ` under `p`. -/]
+theorem ker_eq_map_of_comp_eq {Q : Type*} [Group Q] {p : G →* Q} (hp : Function.Surjective p)
+    {φ : G →* M} {ψ : Q →* M} (hcomp : ψ.comp p = φ) :
+    ψ.ker = φ.ker.map p := by
+  rw [← Subgroup.map_comap_eq_self_of_surjective hp ψ.ker, MonoidHom.comap_ker, hcomp]
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative

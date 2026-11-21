@@ -51,16 +51,10 @@ theorem centralizerHopfIdeal_le_of_isCentral {H : Type u} [CommRing H] [HopfAlge
     (H := _root_.CommHopfAlgCat.of k H) _ _).mpr
   intro A g hg
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  -- `Derivation.pointInCounitAlgebra` is not `@[expose]`d, so its defining equation cannot be
-  -- unfolded across module boundaries.
   have hpt : Derivation.pointInCounitAlgebra A g =
-      AlgHom.mapValue (Bialgebra.CounitAlgebra.algEquivSelf k H A).symm.toAlgHom g := by
-    apply WithConv.ofConv_injective
-    ext y
-    rw [Derivation.pointInCounitAlgebra_apply, AlgHom.mapValue_apply]
-    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-    exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply (R := k) (A := H) (B := A)
-      (g.ofConv y)).symm
+      AlgHom.mapValue (Bialgebra.CounitAlgebra.algEquivSelf k H A).symm.toAlgHom g :=
+    (Derivation.pointInCounitAlgebra_eq_pointsMulEquiv_symm A g).trans
+      (Bialgebra.CounitAlgebra.pointsMulEquiv_symm_eq_mapValue k H A g)
   have hcent : HopfAlgebra.IsCentralPoint (Derivation.pointInCounitAlgebra A g) :=
     hpt ▸ (CommHopfAlgCat.isCentralPoint_of_mem_quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of k H) I hI A hg).mapValue

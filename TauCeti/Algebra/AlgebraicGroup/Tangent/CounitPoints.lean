@@ -24,8 +24,9 @@ ordinary functor of points.
 
 * `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv`: points valued in the counit algebra are the
   points valued in the coefficient algebra.
-* `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_eq_mapValue`: the identification is
-  postcomposition with `TauCeti.Bialgebra.CounitAlgebra.algEquivSelf`.
+* `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_eq_mapValue` and
+  `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_symm_eq_mapValue`: the identification and its
+  inverse are postcomposition with `TauCeti.Bialgebra.CounitAlgebra.algEquivSelf` and its inverse.
 * `TauCeti.Bialgebra.CounitAlgebra.pointsMulEquiv_mapValue` and
   `TauCeti.Bialgebra.CounitAlgebra.mapValue_pointsMulEquiv_symm_apply`: the identification is
   natural in the coefficient algebra.
@@ -69,6 +70,13 @@ with the coefficient algebra. -/
 theorem pointsMulEquiv_eq_mapValue (g : WithConv (H →ₐ[R] CounitAlgebra R H B)) :
     pointsMulEquiv R H B g =
       AlgHom.mapValue (H := H) (algEquivSelf R H B).toAlgHom g :=
+  (rfl)
+
+/-- The inverse transport of points is postcomposition with the inverse identification of the
+counit algebra with the coefficient algebra. -/
+theorem pointsMulEquiv_symm_eq_mapValue (f : WithConv (H →ₐ[R] B)) :
+    (pointsMulEquiv R H B).symm f =
+      AlgHom.mapValue (H := H) (algEquivSelf R H B).symm.toAlgHom f :=
   (rfl)
 
 /-- Transporting a counit-algebra-valued point does not change its values. -/

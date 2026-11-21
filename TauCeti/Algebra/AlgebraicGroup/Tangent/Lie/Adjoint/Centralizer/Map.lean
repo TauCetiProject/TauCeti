@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
+import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
 # Maps between centralizers of Lie algebra elements
@@ -22,7 +23,9 @@ Thus this is an equality of defining Hopf ideals, not only an equality on ration
 
 The coordinate arrow `φ : H →ₐc[k] K` represents `Spec K → Spec H`. The induced map on
 centralizer coordinate rings has the same contravariant direction. Its computation rule
-records compatibility with the ambient group homomorphism.
+records compatibility with the ambient group homomorphism. Moreover, if `φ` is faithfully flat
+with injective differential, the restricted map `BialgHom.centralizerMap` is itself faithfully
+flat by base change.
 
 ## References
 
@@ -107,6 +110,17 @@ noncomputable def centralizerMap (φ : H →ₐc[k] K)
     (K := _root_.CommHopfAlgCat.of k K) _ _ (_root_.CommHopfAlgCat.ofHom φ)
     (φ.map_centralizerHopfIdeal_le x)).hom
 
+/-- The bundled coordinate arrow of `BialgHom.centralizerMap` is `CommHopfAlgCat.quotientMap`. -/
+theorem _root_.CommHopfAlgCat.ofHom_centralizerMap (φ : H →ₐc[k] K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    _root_.CommHopfAlgCat.ofHom (φ.centralizerMap x) =
+      _root_.CommHopfAlgCat.quotientMap (H := _root_.CommHopfAlgCat.of k H)
+        (K := _root_.CommHopfAlgCat.of k K)
+        (centralizerHopfIdeal H (dualCotangentMap φ x)) (centralizerHopfIdeal K x)
+        (_root_.CommHopfAlgCat.ofHom φ) (φ.map_centralizerHopfIdeal_le x) := by
+  apply _root_.CommHopfAlgCat.hom_ext
+  rfl
+
 /-- The centralizer coordinate map is induced by the ambient coordinate map. -/
 @[simp]
 theorem centralizerMap_mk (φ : H →ₐc[k] K)
@@ -125,6 +139,41 @@ theorem centralizerMap_comp_mkBialgHom (φ : H →ₐc[k] K)
       (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal K x).toIdeal).comp φ := by
   ext a
   exact φ.centralizerMap_mk x a
+
+/-- If the source centralizer pulls back to the target centralizer and `φ` is faithfully flat,
+then `φ.centralizerMap x` is faithfully flat by base change. -/
+theorem faithfullyFlat_centralizerMap_of_map_eq (φ : H →ₐc[k] K)
+    (hff : φ.toAlgHom.toRingHom.FaithfullyFlat)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K))
+    (hideal : (centralizerHopfIdeal H (dualCotangentMap φ x)).map φ =
+      centralizerHopfIdeal K x) :
+    (φ.centralizerMap x).toAlgHom.toRingHom.FaithfullyFlat := by
+  have hI := congrArg HopfIdeal.toIdeal hideal
+  rw [HopfIdeal.map_toIdeal] at hI
+  have hcoe : φ.toAlgHom.toRingHom = (φ : H →+* K) := rfl
+  have h := RingHom.FaithfullyFlat.isStableUnderBaseChange.quotientMap (φ : H →+* K)
+    (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal (hcoe ▸ hff)
+  have h' := RingHom.FaithfullyFlat.respectsIso.left _ (Ideal.quotEquivOfEq hI) h
+  have hmap : (φ.centralizerMap x).toAlgHom.toRingHom =
+      (Ideal.quotEquivOfEq hI).toRingHom.comp
+        (Ideal.quotientMap _ (φ : H →+* K) Ideal.le_comap_map) := by
+    ext a
+    simp only [RingHom.comp_apply, Ideal.quotientMap_mk, RingEquiv.toRingHom_eq_coe,
+      RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom, coe_toAlgHom]
+    exact φ.centralizerMap_mk x a
+  rw [hmap]
+  exact h'
+
+/-- If `φ` is faithfully flat with injective differential, then `φ.centralizerMap x` is
+faithfully flat. -/
+theorem faithfullyFlat_centralizerMap_of_injective (φ : H →ₐc[k] K)
+    (hff : φ.toAlgHom.toRingHom.FaithfullyFlat)
+    (hinj : Function.Injective (dualCotangentMap φ))
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    (φ.centralizerMap x).toAlgHom.toRingHom.FaithfullyFlat :=
+  φ.faithfullyFlat_centralizerMap_of_map_eq hff x
+    (φ.map_centralizerHopfIdeal_eq_of_injective hinj x)
 
 end BialgHom
 
@@ -146,18 +195,16 @@ theorem kernelHopfIdeal_centralizerMap (f : H ⟶ K)
     CommHopfAlgCat.kernelHopfIdeal (CommHopfAlgCat.ofHom (f.hom.centralizerMap x)) =
       (CommHopfAlgCat.kernelHopfIdeal f).map
         (CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x)).hom := by
-  have hcomm :
-      CommHopfAlgCat.mkQuotient H (centralizerHopfIdeal H (dualCotangentMap f.hom x)) ≫
-          CommHopfAlgCat.ofHom (f.hom.centralizerMap x) =
-        f ≫ CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x) := by
-    apply CommHopfAlgCat.hom_ext
-    simpa only [CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient,
-      CommHopfAlgCat.hom_ofHom] using f.hom.centralizerMap_comp_mkBialgHom x
-  rw [← CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective
+  rw [_root_.CommHopfAlgCat.ofHom_centralizerMap,
+    ← CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective
       (CommHopfAlgCat.mkQuotient H (centralizerHopfIdeal H (dualCotangentMap f.hom x)))
       (CommHopfAlgCat.mkQuotient_surjective H _)
-      (CommHopfAlgCat.ofHom (f.hom.centralizerMap x)),
-    hcomm, CommHopfAlgCat.kernelHopfIdeal_comp]
+      (_root_.CommHopfAlgCat.quotientMap _ _ (_root_.CommHopfAlgCat.ofHom f.hom) _),
+    CommHopfAlgCat.mkQuotient_comp_quotientMap, CommHopfAlgCat.kernelHopfIdeal_comp]
+  have hof : _root_.CommHopfAlgCat.ofHom f.hom = f := by
+    apply _root_.CommHopfAlgCat.hom_ext
+    rfl
+  rw [hof]
 
 /-- Pulling back the kernel of `C_K(x) → C_H(df(x))` to `K` gives the scheme-theoretic intersection
 `ker(f) ∩ C_K(x)` (`kernelHopfIdeal f ⊔ centralizerHopfIdeal K x`). -/

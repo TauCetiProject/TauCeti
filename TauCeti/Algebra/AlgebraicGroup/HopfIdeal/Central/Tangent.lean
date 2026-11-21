@@ -54,14 +54,9 @@ theorem IsCentral.lieSubalgebra_le_center (hI : I.IsCentral) :
       (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R (DualNumber C)) :=
     (I.mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff d).mpr hd
   let g := (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm p
-  have hg_eq : g = AlgHom.mapValue
-      (Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)).symm.toAlgHom p := by
-    apply WithConv.ofConv_injective
-    ext x
-    simp only [g, Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply,
-      AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
   have hg : HopfAlgebra.IsCentralPoint g := by
-    rw [hg_eq]
+    rw [show g = _ from
+      Bialgebra.CounitAlgebra.pointsMulEquiv_symm_eq_mapValue R H (DualNumber C) p]
     exact (CommHopfAlgCat.isCentralPoint_of_mem_quotientPointsSubgroup
       (_root_.CommHopfAlgCat.of R H) I hI _ hp).mapValue
         (Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)).symm.toAlgHom

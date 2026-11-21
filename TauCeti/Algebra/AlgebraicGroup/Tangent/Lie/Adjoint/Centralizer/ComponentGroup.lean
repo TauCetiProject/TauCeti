@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Action
+public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Exact
-public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Central
-public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Centralizer
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Center
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Conjugation
 
-import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Conjugation
+import TauCeti.Algebra.Exact.Basic
 
 /-!
 # Component groups of centralizers of Lie algebra elements
@@ -30,11 +28,12 @@ Scheme-theoretic containment of central subgroups (including `Z(G)`) and the ker
 `BialgHom.centralizerMap` are developed over an arbitrary field in
 `TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map` and
 `TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Center`. This file develops the
-component-group API over an algebraically closed field `k`:
+component-group API over an algebraically closed field `k` (with isogeny specializations in
+`TauCeti.Algebra.AlgebraicGroup.Isogeny.Centralizer`):
 
 * **Transport and trivial cases**:
   - `TauCeti.FiniteTypeCommHopfAlgCat.centralizerComponentGroupEquivOfEq`: transport across
-    equalities of Lie algebra elements.
+    equalities of Lie algebra elements, with rational-point, `refl`, `symm`, and `trans` laws.
   - `TauCeti.FiniteTypeCommHopfAlgCat.centralizerComponentGroupZeroEquiv`: `A(0) ≃* π₀(G)`.
   - `TauCeti.FiniteTypeCommHopfAlgCat.componentGroupInclusion_centralizer_eq_one`: the
     homomorphism `A(x) →* π₀(G)` induced by `C_G(x) ⊆ G` is trivial when `G` is connected.
@@ -54,19 +53,16 @@ component-group API over an algebraically closed field `k`:
     (`centralizerComponentGroupMap_eq_mapComponentGroup`).
   - Surjectivity (`TauCeti.centralizerComponentGroupMap_surjective`): holds when `toBialgHom f`
     is injective and `C_G'(x)` is the scheme-theoretic inverse image of `C_G(dφ x)`, in
-    particular when `dualCotangentMap (toBialgHom f)` is injective
-    (`centralizerComponentGroupMap_surjective_of_injective_differential`), for isogenies of
-    smooth groups with étale kernel (`centralizerComponentGroupMap_surjective_of_etaleKernel`),
-    and for characteristic-zero isogenies (`centralizerComponentGroupMap_surjective_of_isIsogeny`).
+    particular when `toBialgHom f` and `dualCotangentMap (toBialgHom f)` are both injective
+    (`centralizerComponentGroupMap_surjective_of_injective_of_injective_differential`).
   - Exactness at `A_K(x)` (`TauCeti.mulExact_centralizerComponentGroupMap_of_faithfullyFlat`,
-    `mulExact_centralizerComponentGroupMap_of_le`): whenever `centralizerMap` is faithfully flat,
-    the sequence `π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is exact at `A_K(x)` (with
-    surjectivity at `A_H(df(x))` given separately by `centralizerComponentGroupMap_surjective`
-    and its corollaries); when moreover `centralizerHopfIdeal K x ≤ kernelHopfIdeal f.hom` (in
+    `TauCeti.mulExact_centralizerComponentGroupMap_of_le`, and their specializations):
+    whenever `centralizerMap` is faithfully flat (in particular when `toBialgHom f` is faithfully
+    flat with injective differential), the sequence `π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is
+    exact at `A_K(x)`; when moreover `centralizerHopfIdeal K x ≤ kernelHopfIdeal f.hom` (in
     particular when `ker f` is central), this specializes to `π₀(ker f) → A_K(x) → A_H(df(x))`
     and characterizes injectivity by `(ker f)(k) ⊆ C_K(x)°(k)`
-    (`injective_centralizerComponentGroupMap_iff_of_le`,
-    `injective_centralizerComponentGroupMap_iff_of_isCentral`).
+    (`injective_centralizerComponentGroupMap_iff_of_le` and its central-kernel specialization).
 
 ## References
 
@@ -93,9 +89,8 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 noncomputable def centralizerComponentGroupEquivOfEq (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     {x y : Module.Dual k (Bialgebra.CotangentSpace k H)} (hxy : x = y) :
     (centralizerHopfIdeal H x).ComponentGroup ≃*
-      (centralizerHopfIdeal H y).ComponentGroup := by
-  subst hxy
-  exact MulEquiv.refl _
+      (centralizerHopfIdeal H y).ComponentGroup :=
+  HopfIdeal.componentGroupEquivOfEq (congrArg (centralizerHopfIdeal (H := H.obj)) hxy)
 
 /-- Transporting a rational-point component class along an equality of Lie algebra elements
 preserves the underlying rational point. -/
@@ -108,16 +103,41 @@ theorem centralizerComponentGroupEquivOfEq_rationalComponentMap
     centralizerComponentGroupEquivOfEq H hxy ((centralizerHopfIdeal H x).rationalComponentMap g) =
       (centralizerHopfIdeal H y).rationalComponentMap ⟨g.val, hxy ▸ g.property⟩ := by
   subst hxy
-  rfl
+  rw [centralizerComponentGroupEquivOfEq]
+  exact HopfIdeal.componentGroupEquivOfEq_rationalComponentMap rfl g
+
+/-- Reflexive transport on centralizer component groups is the identity equivalence. -/
+@[simp]
+theorem centralizerComponentGroupEquivOfEq_refl (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) (h : x = x) :
+    centralizerComponentGroupEquivOfEq H h =
+      MulEquiv.refl (centralizerHopfIdeal H x).ComponentGroup :=
+  HopfIdeal.componentGroupEquivOfEq_refl _ _
+
+/-- The inverse of a centralizer component-group transport is transport along the symmetric
+equality. -/
+@[simp]
+theorem centralizerComponentGroupEquivOfEq_symm (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    {x y : Module.Dual k (Bialgebra.CotangentSpace k H)} (hxy : x = y) :
+    (centralizerComponentGroupEquivOfEq H hxy).symm =
+      centralizerComponentGroupEquivOfEq H hxy.symm :=
+  HopfIdeal.componentGroupEquivOfEq_symm _
+
+/-- Composing two centralizer component-group transports gives the transport along the transitive
+equality. -/
+@[simp]
+theorem centralizerComponentGroupEquivOfEq_trans (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    {x y z : Module.Dual k (Bialgebra.CotangentSpace k H)} (hxy : x = y) (hyz : y = z) :
+    (centralizerComponentGroupEquivOfEq H hxy).trans
+        (centralizerComponentGroupEquivOfEq H hyz) =
+      centralizerComponentGroupEquivOfEq H (hxy.trans hyz) :=
+  HopfIdeal.componentGroupEquivOfEq_trans _ _
 
 /-- The centralizer component group of `0` is canonically isomorphic to `π₀(G)`. -/
 noncomputable def centralizerComponentGroupZeroEquiv (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (centralizerHopfIdeal H (0 : Module.Dual k (Bialgebra.CotangentSpace k H))).ComponentGroup ≃*
       ConnectedComponents (PrimeSpectrum H) :=
-  let e : H ≅ quotient H (centralizerHopfIdeal H 0) :=
-    (quotientBotIso H).symm ≪≫
-      eqToIso (congrArg (quotient H) (centralizerHopfIdeal_zero (k := k) (H := H)).symm)
-  mapComponentGroupMulEquiv e
+  HopfIdeal.componentGroupEquivOfEqBot (centralizerHopfIdeal_zero (k := k) (H := H))
 
 /-- On rational points, the canonical isomorphism `A(0) ≃* π₀(G)` sends the component of a
 centralizer point `g ∈ C_G(0)(k)` to its ambient component in `π₀(G)`. -/
@@ -129,15 +149,9 @@ theorem centralizerComponentGroupZeroEquiv_rationalComponentMap
       (CommAlgCat.of k k)) :
     centralizerComponentGroupZeroEquiv H
         ((centralizerHopfIdeal H 0).rationalComponentMap g) =
-      rationalComponentMap H g.val := by
-  have he :
-      ((quotientBotIso H).symm ≪≫
-        eqToIso (congrArg (quotient H) (centralizerHopfIdeal_zero (k := k) (H := H)).symm)).hom =
-        mkQuotient H (centralizerHopfIdeal H 0) := by
-    rw [Iso.trans_hom, Iso.symm_hom, quotientBotIso_inv, eqToIso.hom,
-      mkQuotient_comp_eqToHom (centralizerHopfIdeal_zero (k := k) (H := H))]
-  rw [centralizerComponentGroupZeroEquiv, mapComponentGroupMulEquiv_apply, he]
-  exact (centralizerHopfIdeal H 0).componentGroupInclusion_rationalComponentMap g
+      rationalComponentMap H g.val :=
+  HopfIdeal.componentGroupEquivOfEqBot_rationalComponentMap
+    (centralizerHopfIdeal_zero (k := k) (H := H)) g
 
 /-- If `G` is connected, the homomorphism `A(x) →* π₀(G)` induced by the centralizer inclusion
 `C_G(x) ⊆ G` is trivial (even though `A(x)` itself may be nontrivial). -/
@@ -146,7 +160,7 @@ theorem componentGroupInclusion_centralizer_eq_one (H : FiniteTypeCommHopfAlgCat
     (x : Module.Dual k (Bialgebra.CotangentSpace k H))
     (C : (centralizerHopfIdeal H x).ComponentGroup) :
     (centralizerHopfIdeal H x).componentGroupInclusion C = 1 :=
-  Subsingleton.elim _ _
+  HopfIdeal.componentGroupInclusion_eq_one (centralizerHopfIdeal H x) C
 
 end FiniteTypeCommHopfAlgCat
 
@@ -187,21 +201,19 @@ theorem centralizerComponentGroupConjugationEquiv_rationalComponentMap
   HopfIdeal.componentGroupConjugationEquiv_rationalComponentMap _ _ g _ c
 
 /-- Conjugation by the identity point induces the identity of `A(x)`. -/
+@[simp]
 theorem centralizerComponentGroupConjugationEquiv_one
     (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
     (centralizerComponentGroupConjugationEquiv x 1).trans
         (centralizerComponentGroupEquivOfEq H
           (by rw [map_one]; exact one_apply_eq_self x)) =
-      MulEquiv.refl (centralizerHopfIdeal H x).ComponentGroup := by
-  ext C
-  obtain ⟨c, rfl⟩ := (centralizerHopfIdeal H x).rationalComponentMap_surjective C
-  rw [MulEquiv.trans_apply, centralizerComponentGroupConjugationEquiv_rationalComponentMap,
-    centralizerComponentGroupEquivOfEq_rationalComponentMap, MulEquiv.refl_apply]
-  refine congrArg (centralizerHopfIdeal H x).rationalComponentMap (Subtype.ext ?_)
-  simp only [one_mul, inv_one, mul_one]
+      MulEquiv.refl (centralizerHopfIdeal H x).ComponentGroup :=
+  (HopfIdeal.componentGroupConjugationEquiv_trans_componentGroupEquivOfEq _ _ _ 1 _ _).trans
+    (HopfIdeal.componentGroupConjugationEquiv_one _)
 
 /-- Conjugating a centralizer component group by `g` and then by `g'` agrees with conjugating by
 `g' * g`, modulo canonical transport along `Ad(g')(Ad(g) x) = Ad(g' * g) x`. -/
+@[simp]
 theorem centralizerComponentGroupConjugationEquiv_trans
     (x : Module.Dual k (Bialgebra.CotangentSpace k H))
     (g g' : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
@@ -210,16 +222,10 @@ theorem centralizerComponentGroupConjugationEquiv_trans
           (Comodule.basePointsRepresentation (H := H) _ g x) g') =
       (centralizerComponentGroupConjugationEquiv x (g' * g)).trans
         (centralizerComponentGroupEquivOfEq H
-          (by rw [map_mul]; exact mul_apply_eq_comp _ _ x)) := by
-  ext C
-  obtain ⟨c, rfl⟩ := (centralizerHopfIdeal H x).rationalComponentMap_surjective C
-  rw [MulEquiv.trans_apply, MulEquiv.trans_apply,
-    centralizerComponentGroupConjugationEquiv_rationalComponentMap,
-    centralizerComponentGroupConjugationEquiv_rationalComponentMap,
-    centralizerComponentGroupConjugationEquiv_rationalComponentMap,
-    centralizerComponentGroupEquivOfEq_rationalComponentMap]
-  refine congrArg _ (Subtype.ext ?_)
-  simp only [mul_assoc, mul_inv_rev]
+          (by rw [map_mul]; exact mul_apply_eq_comp _ _ x)) :=
+  (HopfIdeal.componentGroupConjugationEquiv_trans _ _ _ g g' _ _).trans
+    (HopfIdeal.componentGroupConjugationEquiv_trans_componentGroupEquivOfEq
+      _ _ _ (g' * g) _ _).symm
 
 /-- Self-conjugation by a rational point `g ∈ C_G(x)(k)` acts on `A(x)` by inner conjugation by
 `[g] ∈ A(x)`. -/
@@ -233,13 +239,10 @@ theorem centralizerComponentGroupConjugationEquiv_self_eq_conj
             ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr
               (by simpa only [centralizerHopfIdeal_def] using
                 (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H.obj _ _ _).mp g.property)))) =
-      MulAut.conj ((centralizerHopfIdeal H x).rationalComponentMap g) := by
-  rw [← HopfIdeal.componentGroupConjugationEquiv_self_eq_conj (centralizerHopfIdeal H x) g]
-  ext C
-  obtain ⟨c, rfl⟩ := (centralizerHopfIdeal H x).rationalComponentMap_surjective C
-  rw [MulEquiv.trans_apply, centralizerComponentGroupConjugationEquiv_rationalComponentMap,
-    centralizerComponentGroupEquivOfEq_rationalComponentMap,
-    HopfIdeal.componentGroupConjugationEquiv_rationalComponentMap]
+      MulAut.conj ((centralizerHopfIdeal H x).rationalComponentMap g) :=
+  (HopfIdeal.componentGroupConjugationEquiv_trans_componentGroupEquivOfEq
+      (centralizerHopfIdeal H x) _ _ g.val _ _).trans
+    (HopfIdeal.componentGroupConjugationEquiv_self_eq_conj (centralizerHopfIdeal H x) g)
 
 end Conjugation
 
@@ -271,38 +274,34 @@ theorem centralizerComponentGroupMap_rationalComponentMap (f : H ⟶ K)
 
 /-- Along the identity morphism, `centralizerComponentGroupMap` is the identity modulo canonical
 transport along `d(id)(x) = x`. -/
+@[simp]
 theorem centralizerComponentGroupMap_id (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
     (centralizerComponentGroupEquivOfEq H
-        (by rw [toBialgHom_id, dualCotangentMap_id, LinearMap.id_apply])).toMonoidHom.comp
+          (x := dualCotangentMap (toBialgHom (𝟙 H)) x) (y := x)
+          (by rw [toBialgHom_id, dualCotangentMap_id, LinearMap.id_apply]) : _ →* _).comp
         (centralizerComponentGroupMap (𝟙 H) x) =
       MonoidHom.id (centralizerHopfIdeal H x).ComponentGroup := by
-  ext C
-  obtain ⟨c, rfl⟩ := (centralizerHopfIdeal H x).rationalComponentMap_surjective C
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    centralizerComponentGroupMap_rationalComponentMap,
-    centralizerComponentGroupEquivOfEq_rationalComponentMap, MonoidHom.id_apply]
-  refine congrArg (centralizerHopfIdeal H x).rationalComponentMap (Subtype.ext ?_)
-  simp only [toBialgHom_id, BialgHom.mapDomain_id, MonoidHom.id_apply]
+  rw [← MulEquiv.toMonoidHom_eq_coe]
+  exact (HopfIdeal.componentGroupEquivOfEq_comp_componentGroupMap _ (centralizerHopfIdeal H x)
+    (𝟙 H) _).trans (HopfIdeal.componentGroupMap_id (centralizerHopfIdeal H x) _)
 
 /-- `centralizerComponentGroupMap` is contravariantly functorial in coordinate homomorphisms,
 modulo canonical transport along `df(dg(x)) = d(g ∘ f)(x)`. -/
+@[simp]
 theorem centralizerComponentGroupMap_comp {L : FiniteTypeCommHopfAlgCat.{u, u} k}
     (f : H ⟶ K) (g : K ⟶ L) (x : Module.Dual k (Bialgebra.CotangentSpace k L)) :
     (centralizerComponentGroupEquivOfEq H
-        (by rw [toBialgHom_comp, dualCotangentMap_comp, LinearMap.comp_apply])).toMonoidHom.comp
+          (x := dualCotangentMap (toBialgHom f) (dualCotangentMap (toBialgHom g) x))
+          (y := dualCotangentMap (toBialgHom (f ≫ g)) x)
+          (by rw [toBialgHom_comp, dualCotangentMap_comp, LinearMap.comp_apply]) : _ →* _).comp
         ((centralizerComponentGroupMap f (dualCotangentMap (toBialgHom g) x)).comp
           (centralizerComponentGroupMap g x)) =
       centralizerComponentGroupMap (f ≫ g) x := by
-  ext C
-  obtain ⟨c, rfl⟩ := (centralizerHopfIdeal L x).rationalComponentMap_surjective C
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    centralizerComponentGroupMap_rationalComponentMap,
-    centralizerComponentGroupMap_rationalComponentMap,
-    centralizerComponentGroupEquivOfEq_rationalComponentMap,
-    centralizerComponentGroupMap_rationalComponentMap]
-  refine congrArg _ (Subtype.ext ?_)
-  simp only [toBialgHom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply]
+  rw [← MulEquiv.toMonoidHom_eq_coe, ← MonoidHom.comp_assoc, centralizerComponentGroupMap,
+    centralizerComponentGroupMap, centralizerComponentGroupEquivOfEq,
+    HopfIdeal.componentGroupEquivOfEq_comp_componentGroupMap, HopfIdeal.componentGroupMap_comp,
+    centralizerComponentGroupMap]
 
 /-- `centralizerComponentGroupMap` equals the component-group map of the coordinate arrow
 `BialgHom.centralizerMap`. -/
@@ -310,13 +309,17 @@ theorem centralizerComponentGroupMap_eq_mapComponentGroup (f : H ⟶ K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     centralizerComponentGroupMap f x =
       mapComponentGroup (ofHom ((toBialgHom f).centralizerMap x)) := by
-  unfold centralizerComponentGroupMap HopfIdeal.componentGroupMap
+  rw [centralizerComponentGroupMap, HopfIdeal.componentGroupMap_eq_mapComponentGroup]
   congr 1
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_quotientMap]
   apply ObjectProperty.hom_ext
+  change f.hom ≫ _root_.CommHopfAlgCat.mkQuotient K.obj _ =
+    _root_.CommHopfAlgCat.mkQuotient H.obj _ ≫
+      _root_.CommHopfAlgCat.ofHom ((toBialgHom f).centralizerMap x)
+  rw [_root_.CommHopfAlgCat.ofHom_centralizerMap, _root_.CommHopfAlgCat.mkQuotient_comp_quotientMap]
   apply _root_.CommHopfAlgCat.hom_ext
-  ext a
-  obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective a
-  exact (quotientMap_mk _ _ f _ y).trans ((toBialgHom f).centralizerMap_mk x y).symm
+  rfl
 
 /-- `centralizerComponentGroupMap` commutes with the homomorphisms `A_K(x) →* π₀(K)` and
 `A_H(df(x)) →* π₀(H)` induced by the centralizer inclusions into the ambient groups. -/
@@ -325,12 +328,10 @@ theorem componentGroupInclusion_centralizerComponentGroupMap (f : H ⟶ K)
     (C : (centralizerHopfIdeal K x).ComponentGroup) :
     (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)).componentGroupInclusion
         (centralizerComponentGroupMap f x C) =
-      mapComponentGroup f ((centralizerHopfIdeal K x).componentGroupInclusion C) := by
-  obtain ⟨g, rfl⟩ := (centralizerHopfIdeal K x).rationalComponentMap_surjective C
-  rw [centralizerComponentGroupMap_rationalComponentMap,
-    HopfIdeal.componentGroupInclusion_rationalComponentMap,
-    HopfIdeal.componentGroupInclusion_rationalComponentMap,
-    mapComponentGroup_rationalComponentMap]
+      mapComponentGroup f ((centralizerHopfIdeal K x).componentGroupInclusion C) :=
+  DFunLike.congr_fun
+    (HopfIdeal.componentGroupInclusion_comp_componentGroupMap _ _ f
+      ((toBialgHom f).map_centralizerHopfIdeal_le x)) C
 
 /-- `centralizerComponentGroupMap` commutes with conjugation by a rational point `g ∈ K(k)`. -/
 theorem centralizerComponentGroupMap_conjugationEquiv (f : H ⟶ K)
@@ -367,32 +368,13 @@ theorem centralizerComponentGroupMap_surjective (f : H ⟶ K)
 
 /-- A homomorphism with injective coordinate map and injective differential induces a surjection
 `A_K(x) ↠ A_H(df(x))`. -/
-theorem centralizerComponentGroupMap_surjective_of_injective_differential (f : H ⟶ K)
-    (hf : Function.Injective (toBialgHom f))
+theorem centralizerComponentGroupMap_surjective_of_injective_of_injective_differential
+    (f : H ⟶ K) (hf : Function.Injective (toBialgHom f))
     (hinj : Function.Injective (dualCotangentMap (toBialgHom f)))
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     Function.Surjective (centralizerComponentGroupMap f x) :=
   centralizerComponentGroupMap_surjective f hf x
     ((toBialgHom f).map_centralizerHopfIdeal_eq_of_injective hinj x)
-
-/-- An isogeny of smooth affine groups with étale kernel induces a surjection
-`A_K(x) ↠ A_H(df(x))`. -/
-theorem centralizerComponentGroupMap_surjective_of_etaleKernel (f : H ⟶ K)
-    (hf : CommHopfAlgCat.IsIsogeny f.hom)
-    (hker : Algebra.Etale k (K ⧸ (CommHopfAlgCat.kernelHopfIdeal f.hom).toIdeal))
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    Function.Surjective (centralizerComponentGroupMap f x) :=
-  centralizerComponentGroupMap_surjective_of_injective_differential f hf.injective
-    (hf.dualCotangentMap_bijective_of_etaleKernel hker).injective x
-
-/-- In characteristic zero, an isogeny `φ : G' → G` induces a surjection
-`π₀(C_G'(x)) →* π₀(C_G(dφ x))` of centralizer component groups. This includes central isogenies
-of semisimple groups, for which the map need not be injective. -/
-theorem centralizerComponentGroupMap_surjective_of_isIsogeny [CharZero k] (f : H ⟶ K)
-    (hf : CommHopfAlgCat.IsIsogeny f.hom) (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    Function.Surjective (centralizerComponentGroupMap f x) :=
-  centralizerComponentGroupMap_surjective f hf.injective x
-    (hf.map_centralizerHopfIdeal_of_charZero x)
 
 /-- Whenever the restricted coordinate map `BialgHom.centralizerMap` is faithfully flat, the
 sequence `π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is exact at `A_K(x)`. -/
@@ -410,11 +392,10 @@ theorem mulExact_centralizerComponentGroupMap_of_faithfullyFlat (f : H ⟶ K)
   rw [centralizerComponentGroupMap_eq_mapComponentGroup]
   exact mulExact_mapComponentGroup_kernel c hf
 
-/-- For an isogeny `f` with injective differential, the sequence
-`π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is exact at `A_K(x)` (and surjective at `A_H(df(x))`
-by `centralizerComponentGroupMap_surjective_of_injective_differential`). -/
-theorem mulExact_centralizerComponentGroupMap_of_injective_differential (f : H ⟶ K)
-    (hf : CommHopfAlgCat.IsIsogeny f.hom)
+/-- For a faithfully flat homomorphism `f` with injective differential, the sequence
+`π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is exact at `A_K(x)`. -/
+theorem mulExact_centralizerComponentGroupMap_of_faithfullyFlat_of_injective_differential
+    (f : H ⟶ K) (hf : (toBialgHom f).toAlgHom.toRingHom.FaithfullyFlat)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom f)))
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     let c : quotient H (centralizerHopfIdeal H (dualCotangentMap (toBialgHom f) x)) ⟶
@@ -425,7 +406,7 @@ theorem mulExact_centralizerComponentGroupMap_of_injective_differential (f : H �
         (CommHopfAlgCat.kernelHopfIdeal c.hom)))
       (centralizerComponentGroupMap f x) :=
   mulExact_centralizerComponentGroupMap_of_faithfullyFlat f x
-    (hf.centralizerMap_of_injective hinj x).faithfullyFlat
+    ((toBialgHom f).faithfullyFlat_centralizerMap_of_injective hf hinj x)
 
 /-- Whenever `BialgHom.centralizerMap` is faithfully flat and `ker(f) ⊆ C_K(x)`, the sequence
 `π₀(ker f) → A_K(x) → A_H(df(x))` is exact at `A_K(x)`. -/
@@ -440,6 +421,7 @@ theorem mulExact_centralizerComponentGroupMap_of_le (f : H ⟶ K)
       quotient K (centralizerHopfIdeal K x) :=
     ofHom ((toBialgHom f).centralizerMap x)
   have hex := mulExact_centralizerComponentGroupMap_of_faithfullyFlat f x hf
+  dsimp only at hex
   let _ := instGroupConnectedComponents
     (quotient (quotient K (centralizerHopfIdeal K x)) (CommHopfAlgCat.kernelHopfIdeal c.hom))
   let iso : quotient K (CommHopfAlgCat.kernelHopfIdeal f.hom) ≅
@@ -451,29 +433,18 @@ theorem mulExact_centralizerComponentGroupMap_of_le (f : H ⟶ K)
           (CommHopfAlgCat.kernelHopfIdeal c.hom) :=
     ObjectProperty.hom_ext _
       (f.hom.quotientMapOfLe_comp_kernelCentralizerMapIso_hom x hle)
-  have hrange :
-      Set.range (mapComponentGroup (mkQuotient (quotient K (centralizerHopfIdeal K x))
-          (CommHopfAlgCat.kernelHopfIdeal c.hom))) =
-        Set.range (mapComponentGroup (quotientMapOfLe K hle)) := by
-    have hmap :
-        mapComponentGroup (mkQuotient (quotient K (centralizerHopfIdeal K x))
-            (CommHopfAlgCat.kernelHopfIdeal c.hom)) =
-          (mapComponentGroup (quotientMapOfLe K hle)).comp
-            (mapComponentGroupMulEquiv iso).toMonoidHom := by
-      have hiso : (mapComponentGroupMulEquiv iso).toMonoidHom = mapComponentGroup iso.hom :=
-        MonoidHom.ext fun D ↦ mapComponentGroupMulEquiv_apply iso D
-      rw [← hcomp, mapComponentGroup_comp, hiso]
-    rw [hmap, MonoidHom.coe_comp]
-    exact (mapComponentGroupMulEquiv iso).surjective.range_comp _
-  intro C
-  rw [hex C, hrange]
+  have hsurj : Function.Surjective (mapComponentGroup iso.hom) := fun D ↦ by
+    obtain ⟨E, rfl⟩ := (mapComponentGroupMulEquiv iso).surjective D
+    exact ⟨E, (mapComponentGroupMulEquiv_apply iso E).symm⟩
+  rw [← hcomp, mapComponentGroup_comp, MonoidHom.coe_comp] at hex
+  exact (Function.MulExact.comp_iff_of_surjective hsurj).mp hex
 
-/-- **Central-isogeny exact sequence on centralizer component groups.** For an isogeny `f` with
-injective differential and central kernel, the natural sequence
-`π₀(ker f) → A_K(x) → A_H(df(x))` is exact at `A_K(x)` (and surjective at `A_H(df(x))` by
-`centralizerComponentGroupMap_surjective_of_injective_differential`). -/
-theorem mulExact_centralizerComponentGroupMap_of_isCentral (f : H ⟶ K)
-    (hf : CommHopfAlgCat.IsIsogeny f.hom)
+/-- **Central-kernel exact sequence on centralizer component groups.** For a faithfully flat
+homomorphism `f` with injective differential and central kernel, the natural sequence
+`π₀(ker f) → A_K(x) → A_H(df(x))` is exact at `A_K(x)`. -/
+theorem
+    mulExact_centralizerComponentGroupMap_of_faithfullyFlat_of_injective_differential_of_isCentral
+    (f : H ⟶ K) (hf : (toBialgHom f).toAlgHom.toRingHom.FaithfullyFlat)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom f)))
     (hcent : (CommHopfAlgCat.kernelHopfIdeal f.hom).IsCentral)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
@@ -481,38 +452,8 @@ theorem mulExact_centralizerComponentGroupMap_of_isCentral (f : H ⟶ K)
       (mapComponentGroup (quotientMapOfLe K (centralizerHopfIdeal_le_of_isCentral hcent x)))
       (centralizerComponentGroupMap f x) :=
   mulExact_centralizerComponentGroupMap_of_le f x
-    (hf.centralizerMap_of_injective hinj x).faithfullyFlat
+    ((toBialgHom f).faithfullyFlat_centralizerMap_of_injective hf hinj x)
     (centralizerHopfIdeal_le_of_isCentral hcent x)
-
-/-- Characteristic-zero central-isogeny exactness at `A_K(x)` in
-`π₀(ker f) → A_K(x) → A_H(df(x))` (with surjectivity at `A_H(df(x))` given separately by
-`centralizerComponentGroupMap_surjective_of_isIsogeny`). -/
-theorem mulExact_centralizerComponentGroupMap_of_isCentralIsogeny_of_charZero [CharZero k]
-    (f : H ⟶ K) (hf : CommHopfAlgCat.IsCentralIsogeny f.hom)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    Function.MulExact
-      (mapComponentGroup (quotientMapOfLe K
-        (centralizerHopfIdeal_le_of_isCentral hf.isCentral_kernelHopfIdeal x)))
-      (centralizerComponentGroupMap f x) :=
-  mulExact_centralizerComponentGroupMap_of_isCentral f hf.isIsogeny
-    hf.isIsogeny.dualCotangentMap_bijective_of_charZero.injective
-    hf.isCentral_kernelHopfIdeal x
-
-/-- In characteristic zero, every isogeny from a geometrically connected affine group is central
-and therefore gives exactness at `A_K(x)` in `π₀(ker f) → A_K(x) → A_H(df(x))` (with
-surjectivity at `A_H(df(x))` given separately by
-`centralizerComponentGroupMap_surjective_of_isIsogeny`). -/
-theorem mulExact_centralizerComponentGroupMap_of_isIsogeny_of_connected_of_charZero [CharZero k]
-    (f : H ⟶ K) (hf : CommHopfAlgCat.IsIsogeny f.hom)
-    (hK : geometricallyConnectedCommHopfAlgProperty k K.obj)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    Function.MulExact
-      (mapComponentGroup (quotientMapOfLe K
-        (centralizerHopfIdeal_le_of_isCentral
-          (hf.isCentralIsogeny_of_charZero hK).isCentral_kernelHopfIdeal x)))
-      (centralizerComponentGroupMap f x) :=
-  mulExact_centralizerComponentGroupMap_of_isCentralIsogeny_of_charZero f
-    (hf.isCentralIsogeny_of_charZero hK) x
 
 /-- Whenever `BialgHom.centralizerMap` is faithfully flat and `ker(f) ⊆ C_K(x)`,
 `A_K(x) → A_H(df(x))` is injective if and only if every rational point of `ker f` lies in
@@ -527,30 +468,28 @@ theorem injective_centralizerComponentGroupMap_iff_of_le (f : H ⟶ K)
         CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x).identityComponent
           (CommAlgCat.of k k) := by
   have hex := mulExact_centralizerComponentGroupMap_of_le f x hf hle
-  rw [injective_iff_map_eq_one]
-  constructor
-  · intro hinjC g hg
-    let gK : CommHopfAlgCat.quotientPointsSubgroup K.obj (CommHopfAlgCat.kernelHopfIdeal f.hom)
-        (CommAlgCat.of k k) := ⟨g, hg⟩
-    let gC : CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x)
-        (CommAlgCat.of k k) :=
-      ⟨g, CommHopfAlgCat.quotientPointsSubgroup_le_of_le K.obj hle _ hg⟩
-    have hmap : centralizerComponentGroupMap f x
-        ((centralizerHopfIdeal K x).rationalComponentMap gC) = 1 := by
-      rw [← mapComponentGroup_quotientMapOfLe_rationalComponentMap K hle gK]
-      exact (hex _).mpr ⟨(CommHopfAlgCat.kernelHopfIdeal f.hom).rationalComponentMap gK, rfl⟩
-    exact ((centralizerHopfIdeal K x).rationalComponentMap_eq_one_iff gC).mp (hinjC _ hmap)
-  · intro hle' C hC
-    obtain ⟨D, rfl⟩ := (hex C).mp hC
-    obtain ⟨gK, rfl⟩ := (CommHopfAlgCat.kernelHopfIdeal f.hom).rationalComponentMap_surjective D
-    rw [mapComponentGroup_quotientMapOfLe_rationalComponentMap]
-    exact ((centralizerHopfIdeal K x).rationalComponentMap_eq_one_iff _).mpr (hle' gK.property)
+  rw [← MonoidHom.ker_eq_bot_iff, hex.monoidHom_ker_eq, MonoidHom.range_eq_map,
+    ← MonoidHom.range_eq_top_of_surjective _
+      (CommHopfAlgCat.kernelHopfIdeal f.hom).rationalComponentMap_surjective,
+    ← MonoidHom.range_comp, MonoidHom.range_eq_map, Subgroup.map_eq_bot_iff, top_le_iff,
+    Subgroup.eq_top_iff']
+  refine ⟨fun h g hg ↦ ?_, fun h gK ↦ ?_⟩
+  · have h1 := h ⟨g, hg⟩
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply,
+      mapComponentGroup_quotientMapOfLe_rationalComponentMap,
+      (centralizerHopfIdeal K x).rationalComponentMap_eq_one_iff] at h1
+    exact h1
+  · rw [MonoidHom.mem_ker, MonoidHom.comp_apply,
+      mapComponentGroup_quotientMapOfLe_rationalComponentMap,
+      (centralizerHopfIdeal K x).rationalComponentMap_eq_one_iff]
+    exact h gK.property
 
-/-- For a central isogeny with injective differential, `A_K(x) → A_H(df(x))` is injective (hence
-an isomorphism, combined with `centralizerComponentGroupMap_surjective_of_injective_differential`)
-if and only if every rational point of `ker f` lies in `C_K(x)°(k)`. -/
-theorem injective_centralizerComponentGroupMap_iff_of_isCentral (f : H ⟶ K)
-    (hf : CommHopfAlgCat.IsIsogeny f.hom)
+/-- For a faithfully flat homomorphism with injective differential and central kernel,
+`A_K(x) → A_H(df(x))` is injective if and only if every rational point of `ker f` lies in
+`C_K(x)°(k)`. -/
+theorem
+injective_centralizerComponentGroupMap_iff_of_faithfullyFlat_of_injective_differential_of_isCentral
+    (f : H ⟶ K) (hf : (toBialgHom f).toAlgHom.toRingHom.FaithfullyFlat)
     (hinj : Function.Injective (dualCotangentMap (toBialgHom f)))
     (hcent : (CommHopfAlgCat.kernelHopfIdeal f.hom).IsCentral)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
@@ -560,7 +499,7 @@ theorem injective_centralizerComponentGroupMap_iff_of_isCentral (f : H ⟶ K)
         CommHopfAlgCat.quotientPointsSubgroup K.obj (centralizerHopfIdeal K x).identityComponent
           (CommAlgCat.of k k) :=
   injective_centralizerComponentGroupMap_iff_of_le f x
-    (hf.centralizerMap_of_injective hinj x).faithfullyFlat
+    ((toBialgHom f).faithfullyFlat_centralizerMap_of_injective hf hinj x)
     (centralizerHopfIdeal_le_of_isCentral hcent x)
 
 end Map
