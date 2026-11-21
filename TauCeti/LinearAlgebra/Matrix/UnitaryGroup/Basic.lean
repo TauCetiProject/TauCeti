@@ -22,6 +22,9 @@ unitarity along a possibly rectangular matrix whose conjugate transpose is a two
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
 `1` except one is unitary exactly when that entry is.
+
+`Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup` says that a unitary matrix preserves
+the Hermitian dot product `star x ⬝ᵥ y`.
 -/
 
 public section
@@ -74,6 +77,13 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     [Semiring α] [StarRing α] {a : α} {i : n} :
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
+
+/-- A unitary matrix preserves the Hermitian dot product. -/
+theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {n α : Type*} [Fintype n]
+    [DecidableEq n] [CommRing α] [StarRing α] {A : Matrix n n α} (hA : A ∈ unitaryGroup n α)
+    (x y : n → α) : star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
+  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
+    (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
 
 variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]

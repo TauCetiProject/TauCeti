@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.GroupTheory.Commutator.Basic
-public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.Analysis.Matrix.Eigenvalues.UnitEigenvector
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -53,42 +53,6 @@ namespace Matrix
 open scoped commutatorElement
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-section Unitary
-
-/-- A unitary matrix preserves the Hermitian dot product. -/
-theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {α : Type*} [CommRing α] [StarRing α]
-    {A : Matrix n n α} (hA : A ∈ unitaryGroup n α) (x y : n → α) :
-    star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
-  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
-    (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
-
-variable {𝕜 : Type*} [RCLike 𝕜]
-
-open scoped ComplexOrder in
-/-- Eigenvectors of a unitary matrix for distinct eigenvalues are orthogonal for the Hermitian
-dot product. -/
-theorem star_dotProduct_eq_zero_of_mem_unitaryGroup {A : Matrix n n 𝕜}
-    (hA : A ∈ unitaryGroup n 𝕜) {x y : n → 𝕜} {α β : 𝕜} (hx : A *ᵥ x = α • x)
-    (hy : A *ᵥ y = β • y) (hαβ : α ≠ β) : star x ⬝ᵥ y = 0 := by
-  have key := star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hA x y
-  have keyx := star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup hA x x
-  rw [hx, hy, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul] at key
-  rw [hx, star_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul] at keyx
-  by_cases hx0 : x = 0
-  · simp [hx0]
-  -- The eigenvalue `α` of the nonzero vector `x` has modulus one.
-  have hαα : star α * α = 1 := by
-    have hne : star x ⬝ᵥ x ≠ 0 := dotProduct_star_self_eq_zero.not.mpr hx0
-    exact mul_right_cancel₀ hne (by rw [one_mul, mul_assoc, keyx])
-  by_contra hxy
-  have hαβ' : star α * β = 1 := mul_right_cancel₀ hxy (by rw [one_mul, mul_assoc, key])
-  apply hαβ
-  calc α = α * (star α * β) := by rw [hαβ', mul_one]
-    _ = (star α * α) * β := by ring
-    _ = β := by rw [hαα, one_mul]
-
-end Unitary
 
 /-- **The twisted commutator relation.** For special unitary matrices, the group commutator
 `⁅A, B⁆ = A B A⁻¹ B⁻¹` is the scalar matrix `ζ • 1` exactly when `A B = ζ • (B A)`. -/
@@ -172,30 +136,6 @@ private theorem mul_eigenframe (h : A * B = ζ • (B * A)) (hv : A *ᵥ v = μ 
   rw [← mulVec_mulVec, ← mulVec_mulVec, eigenframe_mulVec_single, diagonal_mulVec_single,
     ← smul_eq_mul _ (1 : ℂ), Pi.single_smul, mulVec_smul, eigenframe_mulVec_single,
     mulVec_pow_mulVec_of_mul_eq_smul_mul h hv]
-
-omit [DecidableEq n] in
-open scoped ComplexOrder in
-/-- Every complex square matrix on a nonempty index type has an eigenvector `v` of unit length,
-`star v ⬝ᵥ v = 1`. -/
-theorem exists_mulVec_eq_smul_and_star_dotProduct_self_eq_one [Nonempty n] (A : Matrix n n ℂ) :
-    ∃ (μ : ℂ) (v : n → ℂ), A *ᵥ v = μ • v ∧ star v ⬝ᵥ v = 1 := by
-  classical
-  obtain ⟨μ, hμ⟩ := Module.End.exists_eigenvalue (toLin' A)
-  obtain ⟨w, hw⟩ := hμ.exists_hasEigenvector
-  have hAw : A *ᵥ w = μ • w := by simpa using hw.apply_eq_smul
-  obtain ⟨t, ht, htw⟩ := RCLike.nonneg_iff_exists_ofReal.mp (dotProduct_star_self_nonneg w)
-  have ht0 : t ≠ 0 := by
-    rintro rfl
-    exact hw.2 (dotProduct_star_self_eq_zero.mp (by simpa using htw.symm))
-  refine ⟨μ, ((Real.sqrt t)⁻¹ : ℂ) • w, by rw [mulVec_smul, hAw, smul_comm], ?_⟩
-  rw [star_smul, smul_dotProduct, dotProduct_smul, ← htw, smul_eq_mul, smul_eq_mul]
-  have hsqrt : (Real.sqrt t : ℂ) ^ 2 = t := by
-    rw [← Complex.ofReal_pow, Real.sq_sqrt ht]
-  have hsqrt0 : (Real.sqrt t : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr (lt_of_le_of_ne ht (Ne.symm ht0)))
-  rw [← Complex.ofReal_inv, Complex.star_def, Complex.conj_ofReal, Complex.ofReal_inv]
-  field_simp
-  exact hsqrt.symm
 
 /-- The matrix form of `Matrix.coe_pow_card_eq_of_coe_commutatorElement_eq_smul_one`: if `A` and
 `B` are unitary, `det A = 1` and `A B = ζ • (B A)`, then `A ^ card n = (-1) ^ (card n + 1) • 1`. -/
@@ -345,18 +285,12 @@ theorem exists_coe_commutatorElement_eq_smul_one {ζ : ℂ}
     · rw [hij, hπ, smul_eq_mul]
       ring
     · simp
-  have hP : π.permMatrix ℂ ∈ unitaryGroup n ℂ := by
-    rw [mem_unitaryGroup_iff, star_eq_conjTranspose, conjTranspose_permMatrix, ← permMatrix_mul,
-      inv_mul_cancel, permMatrix_one]
+  have hP : π.permMatrix ℂ ∈ unitaryGroup n ℂ := permMatrix_mem_unitary π
   have hC : diagonal (fun i => ζ ^ (e i : ℕ)) ∈ unitaryGroup n ℂ := by
-    rw [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal,
-      ← diagonal_one]
-    congr 1
-    ext i
+    refine diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun i => pow_mem ?_ _)
     have : Nonempty n := ⟨i⟩
-    rw [Pi.star_apply, Complex.star_def, Complex.mul_conj', norm_pow,
-      hζ.norm'_eq_one Fintype.card_ne_zero]
-    simp
+    exact Circle.coe_mem_unitary
+      ⟨ζ, mem_sphere_zero_iff_norm.mpr (hζ.norm'_eq_one Fintype.card_ne_zero)⟩
   obtain ⟨a, ha⟩ := exists_circle_smul_mem_specialUnitaryGroup ⟨_, hP⟩
   obtain ⟨b, hb⟩ := exists_circle_smul_mem_specialUnitaryGroup ⟨_, hC⟩
   refine ⟨⟨_, ha⟩, ⟨_, hb⟩, coe_commutatorElement_eq_smul_one_iff.mpr ?_⟩
