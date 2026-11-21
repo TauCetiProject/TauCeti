@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
@@ -21,8 +20,9 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 For a normed-space-valued function `f : ℝ → E`, its sequence of repeated improper tail integrals
 is defined recursively by `I_0 = f` and
 `I_{n + 1} x = lim_{R → ∞} ∫ t in x..R, I_n t` (`TauCeti.iteratedTailIntegral`). Unlike iterated
-Bochner integrals over `Ioi x`, these improper integrals converge for conditionally integrable
-oscillatory functions whose amplitude decays too slowly for absolute integrability.
+Bochner integrals over `Ioi x`, some oscillatory functions (under the hypotheses in
+`TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Oscillatory`) admit repeated conditional
+integration even when their amplitudes decay too slowly for absolute integrability.
 
 This file develops the general calculus of `TauCeti.iteratedTailIntegral`:
 
@@ -33,9 +33,9 @@ This file develops the general calculus of `TauCeti.iteratedTailIntegral`:
 * Agreement with Bochner tail integrals on `(x, ∞)` when absolutely integrable.
 * One- and two-sided differentiation (`I_{n + 1}' = -I_n`) and higher `iteratedDeriv` formulas.
 * Linearity (`const_smul`, `neg`, `add`, `sub`).
-* Cauchy's single-integral representation
-  `I_{n + 1} x = (n !)⁻¹ • ∫ t in Ioi x, (t - x) ^ n • f t` when the weighted tail is Bochner
-  integrable, together with the closed form for decaying exponentials.
+
+Single-integral Cauchy representations and exponential evaluations live in
+`TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Evaluation`.
 
 ## Main declarations
 
@@ -49,8 +49,6 @@ This file develops the general calculus of `TauCeti.iteratedTailIntegral`:
 * `TauCeti.hasStrictDerivAt_iteratedTailIntegral_succ`,
   `TauCeti.hasDerivWithinAt_iteratedTailIntegral_succ`,
   `TauCeti.iteratedDeriv_iteratedTailIntegral`: differentiation of iterated tail integrals.
-* `TauCeti.iteratedTailIntegral_succ_eq_inv_factorial_smul_integral_Ioi`: Cauchy's repeated
-  tail-integral formula on `(x, ∞)`.
 
 ## References
 
@@ -70,8 +68,18 @@ section Basic
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- **Iterated improper tail integrals** of `f : ℝ → E`: `iteratedTailIntegral f 0 = f`, and
-`iteratedTailIntegral f (n + 1) x` is the improper integral
-`lim_{R → ∞} ∫ t in x..R, iteratedTailIntegral f n t` defined via `limUnder atTop`. -/
+`iteratedTailIntegral f (n + 1) x` is the totalized improper integral
+`lim_{R → ∞} ∫ t in x..R, iteratedTailIntegral f n t` defined via `Filter.limUnder atTop`.
+
+Because both `Filter.limUnder` and `intervalIntegral` are totalized in Lean, two fallback
+conventions apply when convergence or local integrability fails:
+1. If `R ↦ ∫ t in x..R, iteratedTailIntegral f n t` does not converge as `R → ∞`,
+   `Filter.limUnder` returns the junk value `Classical.arbitrary E` (by
+   `Filter.limUnder_of_not_tendsto`).
+2. If `iteratedTailIntegral f n` is not locally integrable on `[x, ∞)`, Mathlib's
+   `intervalIntegral.integral_undef` returns `0` for all sufficiently large `R`, so the truncated
+   integrals collapse to `0` and `iteratedTailIntegral f (n + 1) x = 0`
+   (`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici`). -/
 noncomputable def iteratedTailIntegral (f : ℝ → E) : ℕ → ℝ → E
   | 0, x => f x
   | n + 1, x => limUnder atTop fun R : ℝ ↦ ∫ t in x..R, iteratedTailIntegral f n t
@@ -213,8 +221,8 @@ theorem iteratedTailIntegral_succ_sub_eq_intervalIntegral {f : ℝ → E} {n : �
     iteratedTailIntegral_succ_eq_sub_intervalIntegral hloc hb hy hconv,
     sub_sub_sub_cancel_left,
     ← intervalIntegral.integral_add_adjacent_intervals
-      (hloc.intervalIntegrable fun _ ht ↦ (le_min hb hx).trans ht.1)
-      (hloc.intervalIntegrable fun _ ht ↦ (le_min hx hy).trans ht.1),
+      (hloc.intervalIntegrable (ordConnected_Ici.uIcc_subset hb hx))
+      (hloc.intervalIntegrable (ordConnected_Ici.uIcc_subset hx hy)),
     add_sub_cancel_left]
 
 /-- Under convergence from a basepoint `b ≥ a`, subtracting `iteratedTailIntegral f 1 y` from
@@ -254,7 +262,7 @@ theorem continuousOn_iteratedTailIntegral_succ {f : ℝ → E} {n : ℕ} {a : �
     refine ContinuousOn.congr (continuousOn_const.sub fun x (hx : a ≤ x) ↦ ?_)
       fun _ hx ↦ iteratedTailIntegral_succ_eq_sub_intervalIntegral hloc le_rfl hx hL
     have hprim := intervalIntegral.continuousOn_primitive_interval'
-      (hloc.intervalIntegrable fun _ ht ↦ (le_min le_rfl (by linarith : a ≤ x + 1)).trans ht.1)
+      (hloc.intervalIntegrable (ordConnected_Ici.uIcc_subset le_rfl (by linarith : a ≤ x + 1)))
       left_mem_uIcc
     rw [uIcc_of_le (by linarith : a ≤ x + 1)] at hprim
     refine (hprim x ⟨hx, by linarith⟩).mono_of_mem_nhdsWithin ?_
@@ -311,7 +319,7 @@ theorem hasStrictDerivAt_iteratedTailIntegral_succ {f : ℝ → E} {n : ℕ} {a 
     (hcont : ContinuousAt (iteratedTailIntegral f n) x) (hx : a < x) :
     HasStrictDerivAt (iteratedTailIntegral f (n + 1)) (-iteratedTailIntegral f n x) x := by
   have hftc := intervalIntegral.integral_hasStrictDerivAt_right
-    (hloc.intervalIntegrable fun _ ht ↦ (le_min le_rfl hx.le).trans ht.1)
+    (hloc.intervalIntegrable (ordConnected_Ici.uIcc_subset le_rfl hx.le))
     (AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem hloc.aestronglyMeasurable
       (Ici_mem_nhds hx)) hcont
   refine (hftc.const_sub L).congr_of_eventuallyEq ?_
@@ -346,7 +354,7 @@ theorem hasDerivWithinAt_iteratedTailIntegral_succ {f : ℝ → E} {n : ℕ} {a 
     HasDerivWithinAt (iteratedTailIntegral f (n + 1)) (-iteratedTailIntegral f n x) (Ici a) x := by
   rcases hx.eq_or_lt with rfl | hlt
   · have hftc := intervalIntegral.integral_hasDerivWithinAt_right (s := Ici a) (t := Ioi a)
-      (hloc.intervalIntegrable fun _ ht ↦ (le_min le_rfl le_rfl).trans ht.1)
+      (hloc.intervalIntegrable (ordConnected_Ici.uIcc_subset le_rfl le_rfl))
       (AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem
         (hloc.aestronglyMeasurable.mono_set Ioi_subset_Ici_self) self_mem_nhdsWithin)
       (hcont.mono Ioi_subset_Ici_self)
@@ -357,8 +365,9 @@ theorem hasDerivWithinAt_iteratedTailIntegral_succ {f : ℝ → E} {n : ℕ} {a 
       (hcont.continuousAt (Ici_mem_nhds hlt)) hlt).hasDerivWithinAt
 
 /-- Higher iterated derivatives of `iteratedTailIntegral f n` at an interior point `x > a`:
-when `f` is locally integrable on `[a, ∞)`, continuous at `x` if `k = n ≠ 0`, and the improper tail
-integrals of orders `n - k ≤ m < n` converge at `a`,
+when `f` is locally integrable on `[a, ∞)`, continuous at `x` if `k = n ≠ 0`, and the truncated
+integrals of `iteratedTailIntegral f m` converge at `a` for `n - k ≤ m < n` (equivalently, the
+improper tail integrals of orders `m + 1` converge at `a`),
 `iteratedDeriv k (iteratedTailIntegral f n) x = (-1) ^ k • iteratedTailIntegral f (n - k) x` for
 `k ≤ n`. -/
 theorem iteratedDeriv_iteratedTailIntegral {f : ℝ → E} {n k : ℕ} {a x : ℝ}
@@ -401,8 +410,8 @@ theorem iteratedDeriv_iteratedTailIntegral {f : ℝ → E} {n k : ℕ} {a x : �
 end Complete
 
 /-- Scalar multiplication commutes with `iteratedTailIntegral` on `[a, ∞)` when `f` is locally
-integrable on `[a, ∞)` (for `n > 0`) and its improper tail integrals up to order `n` converge at
-`a`. -/
+integrable on `[a, ∞)` (for `n > 0`) and the truncated integrals of `iteratedTailIntegral f m`
+for `m < n` (equivalently, the tail integrals of orders `1 ≤ m + 1 ≤ n`) converge at `a`. -/
 theorem iteratedTailIntegral_const_smul {R : Type*} [NormedRing R] [Module R E] [IsBoundedSMul R E]
     [SMulCommClass ℝ R E] {f : ℝ → E} {n : ℕ} {a x : ℝ} (c : R)
     (hloc : 0 < n → LocallyIntegrableOn f (Ici a))
@@ -420,15 +429,16 @@ theorem iteratedTailIntegral_const_smul {R : Type*} [NormedRing R] [Module R E] 
     have hcongr : (fun R : ℝ ↦ ∫ t in x..R, iteratedTailIntegral (fun s ↦ c • f s) n t) =ᶠ[atTop]
         fun R ↦ c • ∫ t in x..R, iteratedTailIntegral f n t := by
       filter_upwards [eventually_ge_atTop x] with R hR
-      rw [← (hloc_n.intervalIntegrable fun _ ht ↦
-        (le_min hx (hx.trans hR)).trans ht.1).integral_smul c]
+      rw [← (hloc_n.intervalIntegrable
+        (ordConnected_Ici.uIcc_subset hx (hx.trans hR))).integral_smul c]
       refine intervalIntegral.integral_congr fun t ht ↦ ih (fun _ ↦ hf_loc)
         (fun m hm ↦ hconv m (Nat.lt_succ_of_lt hm)) (hx.trans ((uIcc_of_le hR ▸ ht).1))
     rw [iteratedTailIntegral_succ_eq_of_tendsto ((htend.const_smul c).congr' hcongr.symm),
       iteratedTailIntegral_succ_apply, htend.limUnder_eq]
 
 /-- Negation commutes with `iteratedTailIntegral` on `[a, ∞)` when `f` is locally integrable on
-`[a, ∞)` (for `n > 0`) and its improper tail integrals up to order `n` converge at `a`. -/
+`[a, ∞)` (for `n > 0`) and the truncated integrals of `iteratedTailIntegral f m` for `m < n`
+converge at `a`. -/
 theorem iteratedTailIntegral_neg {f : ℝ → E} {n : ℕ} {a x : ℝ}
     (hloc : 0 < n → LocallyIntegrableOn f (Ici a))
     (hconv : ∀ m < n, ∃ L,
@@ -439,8 +449,8 @@ theorem iteratedTailIntegral_neg {f : ℝ → E} {n : ℕ} {a x : ℝ}
   rw [hneg, iteratedTailIntegral_const_smul (-1 : ℝ) hloc hconv hx, neg_one_smul]
 
 /-- Addition commutes with `iteratedTailIntegral` on `[a, ∞)` when `f` and `g` are locally
-integrable on `[a, ∞)` (for `n > 0`) and their improper tail integrals up to order `n` converge at
-`a`. -/
+integrable on `[a, ∞)` (for `n > 0`) and the truncated integrals of `iteratedTailIntegral f m`
+and `iteratedTailIntegral g m` for `m < n` converge at `a`. -/
 theorem iteratedTailIntegral_add {f g : ℝ → E} {n : ℕ} {a x : ℝ}
     (hloc_f : 0 < n → LocallyIntegrableOn f (Ici a))
     (hconv_f : ∀ m < n, ∃ L,
@@ -467,8 +477,8 @@ theorem iteratedTailIntegral_add {f g : ℝ → E} {n : ℕ} {a x : ℝ}
           ∫ t in x..R, iteratedTailIntegral g n t := by
       filter_upwards [eventually_ge_atTop x] with R hR
       rw [← intervalIntegral.integral_add
-        (hloc_fn.intervalIntegrable fun _ ht ↦ (le_min hx (hx.trans hR)).trans ht.1)
-        (hloc_gn.intervalIntegrable fun _ ht ↦ (le_min hx (hx.trans hR)).trans ht.1)]
+        (hloc_fn.intervalIntegrable (ordConnected_Ici.uIcc_subset hx (hx.trans hR)))
+        (hloc_gn.intervalIntegrable (ordConnected_Ici.uIcc_subset hx (hx.trans hR)))]
       refine intervalIntegral.integral_congr fun t ht ↦ ih (fun _ ↦ hf_loc)
         (fun m hm ↦ hconv_f m (Nat.lt_succ_of_lt hm)) (fun _ ↦ hg_loc)
         (fun m hm ↦ hconv_g m (Nat.lt_succ_of_lt hm)) (hx.trans ((uIcc_of_le hR ▸ ht).1))
@@ -477,8 +487,8 @@ theorem iteratedTailIntegral_add {f g : ℝ → E} {n : ℕ} {a x : ℝ}
       htg.limUnder_eq]
 
 /-- Subtraction commutes with `iteratedTailIntegral` on `[a, ∞)` when `f` and `g` are locally
-integrable on `[a, ∞)` (for `n > 0`) and their improper tail integrals up to order `n` converge at
-`a`. -/
+integrable on `[a, ∞)` (for `n > 0`) and the truncated integrals of `iteratedTailIntegral f m`
+and `iteratedTailIntegral g m` for `m < n` converge at `a`. -/
 theorem iteratedTailIntegral_sub {f g : ℝ → E} {n : ℕ} {a x : ℝ}
     (hloc_f : 0 < n → LocallyIntegrableOn f (Ici a))
     (hconv_f : ∀ m < n, ∃ L,
@@ -504,72 +514,6 @@ theorem iteratedTailIntegral_sub {f g : ℝ → E} {n : ℕ} {a x : ℝ}
   rw [sub_eq_add_neg,
     iteratedTailIntegral_add hloc_f hconv_f (fun hn ↦ (hloc_g hn).neg) hconv_ng hx,
     iteratedTailIntegral_neg hloc_g hconv_g hx, ← sub_eq_add_neg]
-
-/-- **Cauchy's repeated tail-integral formula.** If `t ↦ (t - x) ^ n • f t` is Bochner integrable
-on `(x, ∞)`, then
-`iteratedTailIntegral f (n + 1) x = (n !)⁻¹ • ∫ t in Ioi x, (t - x) ^ n • f t`. -/
-theorem iteratedTailIntegral_succ_eq_inv_factorial_smul_integral_Ioi {f : ℝ → E} {x : ℝ} {n : ℕ}
-    (hf_top : IntegrableOn (fun t : ℝ ↦ (t - x) ^ n • f t) (Ioi x)) :
-    iteratedTailIntegral f (n + 1) x =
-      (n.factorial : ℝ)⁻¹ • ∫ t in Ioi x, (t - x) ^ n • f t := by
-  by_cases hE : CompleteSpace E
-  swap
-  · rw [iteratedTailIntegral_succ_of_not_completeSpace hE, integral_of_not_completeSpace hE,
-      smul_zero]
-  induction n generalizing x with
-  | zero =>
-    simp only [pow_zero, one_smul, Nat.factorial_zero, Nat.cast_one, inv_one] at hf_top ⊢
-    exact iteratedTailIntegral_one_eq_integral_Ioi hf_top
-  | succ m ih =>
-    have hsub (s : ℝ) (hs : x < s) :
-        IntegrableOn (fun t : ℝ ↦ (t - s) ^ m • f t) (Ioi s) := by
-      have hf_meas : AEStronglyMeasurable f (volume.restrict (Ioi x)) := by
-        refine (((by fun_prop : Measurable fun t : ℝ ↦ ((t - x) ^ (m + 1))⁻¹
-          ).aestronglyMeasurable).smul hf_top.aestronglyMeasurable).congr ?_
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : x < t)
-        rw [Pi.smul_apply', smul_smul,
-          inv_mul_cancel₀ (pow_ne_zero _ (sub_pos.mpr ht).ne'), one_smul]
-      refine ((hf_top.mono_set (Ioi_subset_Ioi hs.le)).norm.const_mul ((s - x)⁻¹)).mono'
-        (((by fun_prop : Continuous fun t : ℝ ↦ (t - s) ^ m).aestronglyMeasurable).smul
-          (hf_meas.mono_set (Ioi_subset_Ioi hs.le))) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : s < t)
-      have htx : 0 < t - x := sub_pos.mpr (hs.trans ht)
-      have hts : 0 < t - s := sub_pos.mpr ht
-      have hsx : 0 < s - x := sub_pos.mpr hs
-      rw [norm_smul, norm_smul, Real.norm_of_nonneg (pow_nonneg hts.le _),
-        Real.norm_of_nonneg (pow_nonneg htx.le _), ← mul_assoc]
-      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-      rw [inv_mul_eq_div, le_div_iff₀' hsx, pow_succ']
-      exact mul_le_mul (by linarith) (pow_le_pow_left₀ hts.le (by linarith) m)
-        (pow_nonneg hts.le _) htx.le
-    have heq_on : EqOn (iteratedTailIntegral f (m + 1))
-        (fun s ↦ (m.factorial : ℝ)⁻¹ • ∫ t in Ioi s, (t - s) ^ m • f t) (Ioi x) :=
-      fun s hs ↦ ih (hsub s hs)
-    have hint_swap := integrableOn_integral_Ioi_sub_pow_smul hf_top
-    rw [iteratedTailIntegral_succ_eq_integral_Ioi
-        (IntegrableOn.congr_fun (hint_swap.smul (m.factorial : ℝ)⁻¹) heq_on.symm
-          measurableSet_Ioi),
-      setIntegral_congr_fun measurableSet_Ioi heq_on, integral_smul,
-      integral_Ioi_integral_Ioi_sub_pow_smul hf_top, smul_smul]
-    congr 1
-    simp [Nat.factorial_succ, mul_comm]
-
-/-- Closed form of `iteratedTailIntegral` for a decaying exponential `t ↦ exp (-(a * t))` with
-`0 < a`: `iteratedTailIntegral (fun t ↦ exp (-(a * t))) n x = exp (-(a * x)) / a ^ n`. -/
-theorem iteratedTailIntegral_exp_neg_mul {a : ℝ} (ha : 0 < a) (n : ℕ) (x : ℝ) :
-    iteratedTailIntegral (fun t : ℝ ↦ Real.exp (-(a * t))) n x = Real.exp (-(a * x)) / a ^ n := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih =>
-    have hint : IntegrableOn (fun t : ℝ ↦ Real.exp (-(a * t)) / a ^ n) (Ioi x) :=
-      IntegrableOn.congr_fun ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr ha) x).mul_const (a ^ n)⁻¹)
-        (fun _ _ ↦ by rw [← neg_mul, div_eq_mul_inv]) measurableSet_Ioi
-    rw [iteratedTailIntegral_succ_eq_integral_Ioi
-        (hint.congr_fun (fun t _ ↦ (ih t).symm) measurableSet_Ioi),
-      setIntegral_congr_fun measurableSet_Ioi (fun t _ ↦ ih t)]
-    simp_rw [div_eq_mul_inv, ← neg_mul]
-    rw [integral_mul_const, integral_exp_mul_Ioi (neg_lt_zero.mpr ha)]
-    field_simp [ha.ne']; ring
 
 end Basic
 

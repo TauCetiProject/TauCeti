@@ -5,17 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Oscillatory
+public import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.Basic
 
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.LaplaceTransform.Real
 import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
-import TauCeti.MeasureTheory.Integral.Exp.Laplace
-import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.MeasureTheory.Integral.IteratedTailIntegral.IntegrationByParts
 
 /-!
 # Abelian Laplace-moment theorems for iterated improper tail integrals
@@ -26,16 +22,14 @@ a function `f : ℝ → E` on `[0, ∞)` to the `p → 0⁺` limit of its Laplac
 transform `p ↦ ∫ t in Ioi 0, exp (-(p * t)) • f t`.
 
 Crucially, `f` and its intermediate tail integrals are **not** required to be absolutely integrable
-on `(0, ∞)`: the Abelian theorems assume Bochner integrability of `t ↦ exp (-(p * t)) • f t` on
-`(0, ∞)` for every `p > 0` together with conditional convergence of the improper integrals
-`R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` as `R → ∞` for `m ≤ n`. For functions locally
-integrable on `[0, ∞)` satisfying `TauCeti.HasOscillatoryDecay c q α₀ f` with `c ≠ 0`, `1 ≤ q`, and
-`0 < α₀ + q - 1`, those Laplace-integrability and improper-convergence hypotheses are discharged
-automatically, yielding Laplace-moment and Laplace-derivative limits for oscillatory functions such
-as Fresnel integrals and negative-axis oscillatory special functions.
+on `(0, ∞)`: the Abelian theorems assume that the exponentially weighted Laplace integrals
+`t ↦ exp (-(p * t)) • f t` (`p > 0`) are Bochner integrable on `(0, ∞)` and that the unweighted
+improper integrals `R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge (not
+necessarily absolutely) as `R → ∞`.
 
-General real Laplace moment integrability and parametric differentiation live in
-`TauCeti.MeasureTheory.Integral.Exp.Laplace`.
+General real Laplace moment integrability, parametric differentiation, and the rescaled Abelian
+limit live in `TauCeti.Analysis.LaplaceTransform.Real`. Specializations to oscillatory functions
+satisfying `TauCeti.HasOscillatoryDecay` live in `TauCeti.Analysis.LaplaceTransform.Oscillatory`.
 
 ## Main results
 
@@ -47,11 +41,6 @@ General real Laplace moment integrability and parametric differentiation live in
   `p → 0⁺`.
 * `TauCeti.tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero`: `n`-th derivative form
   `iteratedDeriv n L p → ((-1) ^ n * n !) • iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`.
-* `TauCeti.HasOscillatoryDecay.integrableOn_exp_neg_mul_mul`,
-  `TauCeti.HasOscillatoryDecay.tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero`, and
-  `TauCeti.HasOscillatoryDecay.tendsto_iteratedDeriv_integral_exp_neg_mul_mul_nhdsGT_zero`:
-  Abelian Laplace-moment and Laplace-derivative limits for functions locally integrable on `[0, ∞)`
-  satisfying `HasOscillatoryDecay c q α₀ f` (`c ≠ 0`, `1 ≤ q`, `0 < α₀ + q - 1`).
 -/
 
 public section
@@ -65,58 +54,7 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-! ### Improper integration by parts on `(0, ∞)` -/
-
-/-- Improper integration by parts on `(0, ∞)` for a conditionally convergent improper tail integral
-`G := iteratedTailIntegral g 1` against a `C¹` weight `φ` whose derivative is integrable on
-`(0, ∞)`. -/
-private theorem integral_Ioi_smul_eq_of_tendsto [CompleteSpace E] {φ : ℝ → ℝ} {g : ℝ → E}
-    (hg_loc : LocallyIntegrableOn g (Ici 0))
-    (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, g t) atTop (𝓝 L))
-    (hφ : ContDiff ℝ 1 φ) (hφ'_int : IntegrableOn (deriv φ) (Ioi 0))
-    (hφg_int : IntegrableOn (fun t ↦ φ t • g t) (Ioi 0)) :
-    IntegrableOn (fun s ↦ deriv φ s • iteratedTailIntegral g 1 s) (Ioi 0) ∧
-      ∫ t in Ioi 0, φ t • g t =
-        φ 0 • iteratedTailIntegral g 1 0 +
-          ∫ s in Ioi 0, deriv φ s • iteratedTailIntegral g 1 s := by
-  obtain ⟨L, hL⟩ := hg_conv
-  set G := iteratedTailIntegral g 1
-  have hG_cont : ContinuousOn G (Ici 0) := continuousOn_iteratedTailIntegral_one hg_loc
-  have hG_top : Tendsto G atTop (𝓝 0) := tendsto_iteratedTailIntegral_one_atTop hg_loc hL
-  have hφ'G_int : IntegrableOn (fun s ↦ deriv φ s • G s) (Ioi 0) :=
-    hφ'_int.smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hG_cont (hG_top.isBigO_one ℝ)
-  have hφ_eq (R : ℝ) : ∫ s in 0..R, deriv φ s = φ R - φ 0 :=
-    _root_.intervalIntegral.integral_deriv_eq_sub (fun s _ ↦ hφ.differentiable one_ne_zero s)
-      ((hφ.continuous_deriv le_rfl).intervalIntegrable 0 R)
-  have hφ_top : Tendsto φ atTop (𝓝 (φ 0 + ∫ s in Ioi 0, deriv φ s)) := by
-    simpa only [id_eq, hφ_eq, add_sub_cancel] using
-      (intervalIntegral_tendsto_integral_Ioi 0 hφ'_int tendsto_id).const_add (φ 0)
-  have hRHS : Tendsto (fun R : ℝ ↦
-      φ 0 • G 0 - φ R • G R + ∫ s in 0..R, deriv φ s • G s) atTop
-      (𝓝 (φ 0 • G 0 + ∫ s in Ioi 0, deriv φ s • G s)) := by
-    simpa using (tendsto_const_nhds.sub (hφ_top.smul hG_top)).add
-      (intervalIntegral_tendsto_integral_Ioi 0 hφ'G_int tendsto_id)
-  refine ⟨hφ'G_int, tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi 0 hφg_int tendsto_id)
-    (hRHS.congr' ?_)⟩
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with R hR
-  have hibp := TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hR hφ
-    (hg_loc.intervalIntegrable (by rw [uIcc_of_le hR]; exact Icc_subset_Ici_self))
-  have hφ'G_sub : ∫ s in 0..R, deriv φ s • (∫ t in 0..s, g t) =
-      (φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s := by
-    rw [← hφ_eq, ← _root_.intervalIntegral.integral_smul_const,
-      ← _root_.intervalIntegral.integral_sub
-        ((hφ.continuous_deriv le_rfl).continuousOn.fun_smul continuousOn_const).intervalIntegrable
-        (((hφ.continuous_deriv le_rfl).continuousOn.fun_smul
-          (hG_cont.mono Icc_subset_Ici_self)).intervalIntegrable_of_Icc hR)]
-    refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
-    rw [uIcc_of_le hR] at hs
-    rw [← iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hs.1 hL, smul_sub]
-  have hlhs : ∫ t in 0..R, φ t • g t = φ R • (G 0 - G R) -
-      ((φ R - φ 0) • G 0 - ∫ s in 0..R, deriv φ s • G s) := by
-    rw [iteratedTailIntegral_one_sub_eq_intervalIntegral hg_loc le_rfl le_rfl hR hL, ← hφ'G_sub,
-      hibp, sub_sub_cancel]
-  rw [id, hlhs, smul_sub, sub_smul]
-  abel
+/-! ### Exponentially weighted improper integration by parts on `(0, ∞)` -/
 
 /-- Improper integration by parts for `∫ t in Ioi 0, exp (-(p * t)) • g t` (`0 < p`). -/
 private theorem integral_Ioi_exp_neg_mul_smul_eq [CompleteSpace E] {g : ℝ → E} {p : ℝ} (hp : 0 < p)
@@ -164,13 +102,16 @@ private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq [CompleteSpace E] 
     (hpow_int k).smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self
       (continuousOn_iteratedTailIntegral_one hg_loc)
       ((tendsto_iteratedTailIntegral_one_atTop hg_loc hL).isBigO_one ℝ)
-  have hpt : (fun s : ℝ ↦ deriv φ s • iteratedTailIntegral g 1 s) =
-      ((m + 1 : ℝ) • fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ m) • iteratedTailIntegral g 1 s) -
-        (p • fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ (m + 1)) • iteratedTailIntegral g 1 s) := by
-    ext s; simp only [hderiv, φ', Pi.sub_apply, Pi.smul_apply]
-    rw [sub_smul, mul_smul (m + 1 : ℝ), mul_smul p]
-  rw [heq, hpt, Pi.sub_def, integral_sub ((hG_int m).smul (m + 1 : ℝ)) ((hG_int (m + 1)).smul p),
-    Pi.smul_def, Pi.smul_def, integral_smul, integral_smul]
+  have hG_smul (k : ℕ) (c : ℝ) : IntegrableOn
+      (fun s : ℝ ↦ c • ((Real.exp (-(p * s)) * s ^ k) • iteratedTailIntegral g 1 s)) (Ioi 0) :=
+    (hG_int k).smul c
+  have hpt : (fun s : ℝ ↦ deriv φ s • iteratedTailIntegral g 1 s) = fun s ↦
+      (m + 1 : ℝ) • ((Real.exp (-(p * s)) * s ^ m) • iteratedTailIntegral g 1 s) -
+        p • ((Real.exp (-(p * s)) * s ^ (m + 1)) • iteratedTailIntegral g 1 s) := by
+    ext s
+    rw [hderiv, sub_smul, mul_smul (m + 1 : ℝ), mul_smul p]
+  rw [heq, hpt, integral_sub (hG_smul m (m + 1 : ℝ)) (hG_smul (m + 1) p),
+    integral_smul, integral_smul]
   simp [φ]
 
 /-! ### Vanishing of rescaled Laplace moments and the Abelian theorem -/
@@ -236,7 +177,8 @@ private theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero_aux [CompleteSpace
 
 /-- **Abelian Laplace-moment theorem for `iteratedTailIntegral`.** If `t ↦ exp (-(p * t)) • f t` is
 Bochner integrable on `(0, ∞)` for every `p > 0` and all improper tail integrals
-`R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge as `R → ∞`, then
+`R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge (not necessarily absolutely) as
+`R → ∞`, then
 `∫ t in Ioi 0, (exp (-(p * t)) * t ^ n) • f t → n ! • iteratedTailIntegral f (n + 1) 0` as
 `p → 0⁺`. -/
 theorem tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n : ℕ}
@@ -279,10 +221,10 @@ theorem tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero {f : ℝ → E} {n
       (integrableOn_exp_neg_mul_mul_pow_smul_of_lt (half_lt_self hp) (hf (p / 2) (half_pos hp))
         (n + 1))).symm
 
-/-- **Abel's theorem for conditionally convergent Laplace integrals.** If
-`t ↦ exp (-(p * t)) • f t` is Bochner integrable on `(0, ∞)` for every `p > 0` and the improper
-integral `R ↦ ∫ t in 0..R, f t` converges as `R → ∞`, then
-`∫ t in Ioi 0, exp (-(p * t)) • f t → iteratedTailIntegral f 1 0` as `p → 0⁺`. -/
+/-- **Abel's theorem for Laplace integrals of possibly conditionally convergent improper
+integrals.** If `t ↦ exp (-(p * t)) • f t` is Bochner integrable on `(0, ∞)` for every `p > 0` and
+the unweighted improper integral `R ↦ ∫ t in 0..R, f t` converges (not necessarily absolutely) as
+`R → ∞`, then `∫ t in Ioi 0, exp (-(p * t)) • f t → iteratedTailIntegral f 1 0` as `p → 0⁺`. -/
 theorem tendsto_integral_exp_neg_mul_smul_nhdsGT_zero {f : ℝ → E}
     (hf : ∀ p > 0, IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi 0))
     (hconv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in 0..R, f t) atTop (𝓝 L)) :
@@ -310,49 +252,5 @@ theorem tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero {f : ℝ →
   filter_upwards [self_mem_nhdsWithin] with p (hp : 0 < p)
   exact (iteratedDeriv_integral_exp_neg_mul_smul (half_lt_self hp)
     (hf (p / 2) (half_pos hp)) n).symm
-
-/-! ### Oscillatory Abelian Laplace corollaries -/
-
-namespace HasOscillatoryDecay
-
-/-- Every locally integrable function on `[a, ∞)` satisfying `HasOscillatoryDecay c q α₀ f` has an
-absolutely convergent Laplace integral on `(a, ∞)` for every `p > 0`. -/
-theorem integrableOn_exp_neg_mul_mul {c q α₀ a p : ℝ} {f : ℝ → ℝ}
-    (hf : HasOscillatoryDecay c q α₀ f) (hloc : LocallyIntegrableOn f (Ici a)) (hp : 0 < p) :
-    IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * f t) (Ioi a) := by
-  have hexp : f =O[atTop] fun t : ℝ ↦ Real.exp ((p / 2) * t) :=
-    hf.isBigO_rpow_neg.trans (isLittleO_rpow_exp_pos_mul_atTop (-α₀) (half_pos hp)).isBigO
-  have hIci := integrableOn_exp_neg_mul_of_isBigO_exp hloc hexp (half_lt_self hp)
-  simpa only [neg_mul] using hIci.mono_set Ioi_subset_Ici_self
-
-/-- **Oscillatory Abelian Laplace-moment theorem.** If `f` is locally integrable on `[0, ∞)` and
-satisfies `HasOscillatoryDecay c q α₀ f` with `c ≠ 0`, `1 ≤ q`, and `0 < α₀ + q - 1`, then for
-every `n : ℕ`,
-`∫ t in Ioi 0, exp (-(p * t)) * t ^ n * f t → n ! * iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`.
--/
-theorem tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero {c q α₀ : ℝ} {f : ℝ → ℝ}
-    (hc : c ≠ 0) (hq : 1 ≤ q) (hα : 0 < α₀ + q - 1)
-    (hf : HasOscillatoryDecay c q α₀ f) (hloc : LocallyIntegrableOn f (Ici 0)) (n : ℕ) :
-    Tendsto (fun p : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(p * t)) * t ^ n * f t) (𝓝[>] 0)
-      (𝓝 ((n.factorial : ℝ) * TauCeti.iteratedTailIntegral f (n + 1) 0)) := by
-  simpa only [smul_eq_mul] using tendsto_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero
-    (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp)
-    (fun m _ ↦ ⟨_, hf.tendsto_intervalIntegral_iteratedTailIntegral hc hq hα m 0⟩)
-
-/-- **Oscillatory Abelian Laplace-derivative theorem.** Under the hypotheses of
-`HasOscillatoryDecay.tendsto_integral_exp_neg_mul_mul_pow_mul_nhdsGT_zero`, the `n`-th derivative of
-the Laplace integral `r ↦ ∫ t in Ioi 0, exp (-(r * t)) * f t` tends to
-`(-1) ^ n * n ! * iteratedTailIntegral f (n + 1) 0` as `p → 0⁺`. -/
-theorem tendsto_iteratedDeriv_integral_exp_neg_mul_mul_nhdsGT_zero {c q α₀ : ℝ} {f : ℝ → ℝ}
-    (hc : c ≠ 0) (hq : 1 ≤ q) (hα : 0 < α₀ + q - 1)
-    (hf : HasOscillatoryDecay c q α₀ f) (hloc : LocallyIntegrableOn f (Ici 0)) (n : ℕ) :
-    Tendsto (fun p : ℝ ↦
-        iteratedDeriv n (fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) * f t) p)
-      (𝓝[>] 0) (𝓝 ((-1 : ℝ) ^ n * n.factorial * TauCeti.iteratedTailIntegral f (n + 1) 0)) := by
-  simpa only [smul_eq_mul] using tendsto_iteratedDeriv_integral_exp_neg_mul_smul_nhdsGT_zero
-    (fun p hp ↦ hf.integrableOn_exp_neg_mul_mul hloc hp)
-    (fun m _ ↦ ⟨_, hf.tendsto_intervalIntegral_iteratedTailIntegral hc hq hα m 0⟩)
-
-end HasOscillatoryDecay
 
 end TauCeti

@@ -23,18 +23,25 @@ This file establishes basic analytic properties of one-sided real Laplace integr
 `p ↦ ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • f t ∂μ` for functions `f : ℝ → E` into a real normed
 space `E`.
 
+The moment integrability and parametric differentiation results hold for an arbitrary measure
+`μ : Measure ℝ`, `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul` assumes
+`NullSingletonClass μ`, and the rescaled Abelian limit
+`TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero` is a
+Lebesgue-measure (`volume`) result.
+
 ## Main results
 
-* `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul`: integrability of
-  `t ↦ exp (-(p * t)) • f t` on `(a, ∞)` implies `LocallyIntegrableOn f (Ici a)`.
+* `TauCeti.locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul`: for any measure `μ` with
+  `NullSingletonClass μ`, integrability of `t ↦ exp (-(p * t)) • f t` on `(a, ∞)` implies
+  `LocallyIntegrableOn f (Ici a) μ`.
 * `TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_lt`: integrability of
-  `t ↦ exp (-(q * t)) • f t` on `(0, ∞)` implies integrability of all polynomial moments
-  `t ↦ (exp (-(p * t)) * t ^ j) • f t` for every `p > q`.
+  `t ↦ exp (-(q * t)) • f t` on `(0, ∞)` with respect to `μ` implies integrability of all
+  polynomial moments `t ↦ (exp (-(p * t)) * t ^ j) • f t` for every `p > q`.
 * `TauCeti.hasDerivAt_integral_exp_neg_mul_mul_pow_smul` and
   `TauCeti.iteratedDeriv_integral_exp_neg_mul_smul`: differentiation under the Laplace integral on
-  `{p | q < p}`.
-* `TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: if `h` is locally
-  integrable on `[0, ∞)` and `h t → L` as `t → ∞`, then
+  `{p | q < p}` for any measure `μ`.
+* `TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: for Lebesgue
+  measure `volume`, if `h` is locally integrable on `[0, ∞)` and `h t → L` as `t → ∞`, then
   `p ^ (j + 1) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → j ! • L` as `p → 0⁺`.
 -/
 
@@ -48,8 +55,9 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- If `t ↦ exp (-(p * t)) • f t` is integrable on `(a, ∞)`, then `f` is locally integrable on
-`[a, ∞)`. -/
+/-- If `t ↦ exp (-(p * t)) • f t` is integrable on `(a, ∞)` with respect to a measure `μ`
+satisfying `NullSingletonClass μ`, then `f` is locally integrable on `[a, ∞)` with respect to `μ`.
+-/
 theorem locallyIntegrableOn_of_integrableOn_exp_neg_mul_smul {μ : Measure ℝ}
     [NullSingletonClass μ] {f : ℝ → E} {a p : ℝ}
     (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) • f t) (Ioi a) μ) :
@@ -169,8 +177,8 @@ private theorem integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le {h : 
         mul_nonneg hc (mul_nonneg (pow_nonneg (mem_Ioi.mp ht).le _) (Real.exp_pos _).le))
       (Eventually.of_forall (Ioi_subset_Ioi hT))
 
-/-- **Abelian limit for rescaled Laplace moments.** If `h` is locally integrable on `[0, ∞)` and
-`h t → L` as `t → ∞`, then
+/-- **Abelian limit for rescaled Lebesgue-measure Laplace moments.** If `h` is locally integrable
+on `[0, ∞)` with respect to Lebesgue measure `volume` and `h t → L` as `t → ∞`, then
 `p ^ (j + 1) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → j ! • L` as `p → 0⁺`. -/
 theorem tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero [CompleteSpace E]
     {h : ℝ → E} {L : E} (hh : LocallyIntegrableOn h (Ici 0)) (hh_top : Tendsto h atTop (𝓝 L))
