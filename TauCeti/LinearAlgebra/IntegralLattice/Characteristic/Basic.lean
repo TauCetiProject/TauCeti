@@ -9,14 +9,16 @@ public import Mathlib.Data.Int.ModEq
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Characteristic vectors of integral lattices
 
 A lattice vector is characteristic when pairing it with any lattice vector agrees modulo two
-with the latter's norm. This parity condition is the input to the characteristic-norm congruence
-for unimodular lattices. The results here give its behavior under evenness, isometries,
-translation by twice a vector, and orthogonal sums.
+with the latter's norm. Every integral lattice admits a characteristic vector
+(`TauCeti.IntegralLattice.exists_isCharacteristicVector`). The results here also record the
+behavior of characteristic vectors under evenness, isometries, translation by twice a vector, and
+orthogonal sums.
 
 The congruences are in `ℤ`, using the integral restriction of the rational bilinear form, so the
 characteristic vectors of a lattice are those of that integral form in the sense of
@@ -170,6 +172,15 @@ theorem IsCharacteristicVector.integralNorm_add_two_smul_modEq {L : IntegralLatt
   rw [L.integralNorm_apply, L.integralNorm_apply]
   exact L.isSymm_integralForm.eight_dvd_apply_add_two_smul_sub
     ((L.isCharacteristicVector_iff_isCharacteristic w).1 hw) v
+
+/-- **Every integral lattice has a characteristic vector.** This specializes
+`LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite` to the integral bilinear form
+of `L`. -/
+theorem exists_isCharacteristicVector (L : IntegralLattice V) :
+    ∃ w : L, L.IsCharacteristicVector w := by
+  obtain ⟨w, hw⟩ :=
+    L.isSymm_integralForm.exists_isCharacteristic_of_finite Int.two_dvd_sq_sub_self
+  exact ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr hw⟩
 
 end IntegralLattice
 

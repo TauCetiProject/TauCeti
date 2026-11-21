@@ -434,6 +434,10 @@ theorem restrict_toFiniteBilinearModule (H : AddSubgroup A) :
     (A.restrict H).toFiniteBilinearModule = A.toFiniteBilinearModule.restrict H := by
   rfl
 
+/-- The cardinality of a restricted finite quadratic module is the cardinality of the subgroup. -/
+theorem natCard_restrict (H : AddSubgroup A) : Nat.card (A.restrict H) = Nat.card H :=
+  (rfl)
+
 /-- The inclusion of a restricted finite quadratic module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
   toLinearMap := H.toIntSubmodule.subtype
