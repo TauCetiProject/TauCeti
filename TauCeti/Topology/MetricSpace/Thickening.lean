@@ -32,8 +32,10 @@ closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and desc
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
-(`IsCompact.disjoint_cthickening_left`). In a proper space, the closed `δ`-thickening of a compact
-set is compact (`TopologicalSpace.Compacts.cthickening`).
+(`IsCompact.disjoint_cthickening_left`). A point is not in the closed `δ`-thickening of the
+complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). In a
+proper space, the closed `δ`-thickening of a compact set is compact
+(`TopologicalSpace.Compacts.cthickening`).
 
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
@@ -114,6 +116,16 @@ theorem _root_.IsCompact.disjoint_cthickening_left {X : Type*} [PseudoMetricSpac
   rw [hs.cthickening_eq_biUnion_closedBall (le_max_left 0 δ), Set.disjoint_iUnion₂_left]
   refine fun x hx ↦ Set.disjoint_left.2 fun y hy hyt ↦ Set.disjoint_left.1 h hx ?_
   exact mem_cthickening_of_dist_le x y _ t hyt (by rw [dist_comm]; exact mem_closedBall.1 hy)
+
+/-- A point does not lie in the closed `δ`-thickening of the complement of an open ball around it
+of radius `r > δ`. -/
+theorem notMem_cthickening_compl_ball {X : Type*} [PseudoMetricSpace X] {x : X} {δ r : ℝ}
+    (hδr : δ < r) (hr : 0 < r) : x ∉ cthickening δ (ball x r)ᶜ := by
+  rw [mem_cthickening_iff, not_le]
+  refine lt_of_lt_of_le (b := ENNReal.ofReal r) (ENNReal.ofReal_lt_ofReal_iff'.2 ⟨hδr, hr⟩)
+    (le_infEDist.2 fun y hy ↦ ?_)
+  rw [edist_dist]
+  exact ENNReal.ofReal_le_ofReal (not_lt.1 fun h ↦ hy (mem_ball'.2 h))
 
 /-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
 def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
