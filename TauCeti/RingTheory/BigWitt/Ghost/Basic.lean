@@ -104,7 +104,7 @@ theorem ghostPolynomial_eq_sum_properDivisors_add {R : Type*} [Semiring R]
     pow_one, add_comm]
 
 /-- Ghost equality determines coordinates on a truncation set when its indices act injectively. -/
-theorem ghost_injective {R : Type*} [NonUnitalSemiring R] [IsLeftCancelAdd R]
+theorem eqOn_of_ghostPolynomial_eq {R : Type*} [NonUnitalSemiring R] [IsLeftCancelAdd R]
     (S : TruncationSet) (hS : ∀ n ∈ S, Function.Injective (n • · : R → R))
     {x y : ℕ → R} (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) :
     Set.EqOn x y S := by
@@ -124,12 +124,12 @@ theorem ghost_injective {R : Type*} [NonUnitalSemiring R] [IsLeftCancelAdd R]
     exact add_left_cancel hg
 
 /-- Torsion-freeness at the primes occurring in a truncation set suffices for ghost injectivity. -/
-theorem ghost_injective_of_prime_nsmul_injective {R : Type*} [NonUnitalSemiring R]
+theorem eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective {R : Type*} [NonUnitalSemiring R]
     [IsLeftCancelAdd R] (S : TruncationSet)
     (hS : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R))
     {x y : ℕ → R} (h : ∀ n ∈ S, ghostPolynomial n x = ghostPolynomial n y) :
     Set.EqOn x y S := by
-  apply ghost_injective S _ h
+  apply eqOn_of_ghostPolynomial_eq S _ h
   intro n hn
   have hreg : IsSMulRegular R n := by
     rw [Nat.prod_primeFactors_pow_factorization (S.pos hn).ne']

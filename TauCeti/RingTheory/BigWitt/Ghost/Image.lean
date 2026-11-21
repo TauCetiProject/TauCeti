@@ -10,9 +10,8 @@ public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.Data.Nat.PadicValNat
 
 import TauCeti.Data.Nat.Factorization.MulDvd
+import TauCeti.Algebra.Ring.FrobeniusLift
 import TauCeti.RingTheory.Coprime.Lemmas
-import Mathlib.NumberTheory.Basic
-import Mathlib.Algebra.Ring.GeomSum
 
 /-!
 # The image of the big Witt ghost map
@@ -21,7 +20,7 @@ Dwork's criterion describes integral ghost sequences using prime Frobenius lifts
 requiring the lifts to commute or the coefficient ring to be torsion-free. Ghost coordinates
 are unique when multiplication by each truncation index is injective. If those indices are
 units, every ghost sequence has unique coordinates on the truncation set.
-The single-prime congruence is `ghostPolynomial_mul_sub_map_dvd`.
+The single-prime congruence is `pow_padicValNat_dvd_ghostPolynomial_mul_sub_map`.
 
 The image criterion follows Hesselholt, *The big de Rham–Witt complex*, Lemma 1.1.
 -/
@@ -46,12 +45,8 @@ private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
   -- The power congruence supplies the factors of `p` missing from the coefficient `d`.
   have hpower : (p : R) ^ ((m / d).factorization p + 1) ∣
       (a ^ p) ^ (m / d) - (φ a) ^ (m / d) := by
-    obtain ⟨k, hk⟩ := Nat.ordProj_dvd (m / d) p
-    have h := dvd_trans (dvd_sub_pow_of_dvd_sub
-      (by simpa only [neg_sub] using dvd_neg.mpr (hφ a)) ((m / d).factorization p))
-      (sub_dvd_pow_sub_pow ((a ^ p) ^ p ^ (m / d).factorization p)
-        ((φ a) ^ p ^ (m / d).factorization p) k)
-    simpa only [← pow_mul, mul_assoc, ← hk] using h
+    exact pow_factorization_succ_dvd_pow_sub_pow
+      (by simpa only [neg_sub] using dvd_neg.mpr (hφ a)) (m / d)
   have hcoeff : (p : R) ^ d.factorization p ∣ (d : R) := by
     simpa using (Nat.castRingHom R).map_dvd (Nat.ordProj_dvd d p)
   have hsummand : (d : R) * a ^ (p * m / d) - φ ((d : R) * a ^ (m / d)) =
@@ -67,10 +62,12 @@ private theorem dvd_sub_ghostSummand (p d m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
 
 /-- A prime Frobenius lift carries the `m`th ghost polynomial to the `(p * m)`th
 ghost polynomial modulo the full power `p ^ padicValNat p (p * m)`. -/
-theorem ghostPolynomial_mul_sub_map_dvd (p m : ℕ) (hp : p.Prime) (hm : m ≠ 0)
+theorem pow_padicValNat_dvd_ghostPolynomial_mul_sub_map (p m : ℕ) (hp : p.Prime)
     (φ : R →+* R) (hφ : ∀ a : R, (p : R) ∣ φ a - a ^ p)
     (x : ℕ → R) : (p : R) ^ padicValNat p (p * m) ∣
       ghostPolynomial (p * m) x - φ (ghostPolynomial m x) := by
+  obtain rfl | hm := eq_or_ne m 0
+  · simp
   rw [Nat.padicValNat_def, ← Nat.factorization_def (p * m) hp]
   classical
   have hn : p * m ≠ 0 := mul_ne_zero hp.ne_zero hm
@@ -144,14 +141,13 @@ private theorem ghost_numerator_dvd (S : TruncationSet) (φ : ℕ → R →+* R)
     intro p hp
     have hpp := Nat.prime_of_mem_primeFactors hp
     have hpn := Nat.dvd_of_mem_primeFactors hp
-    have hm := Nat.div_pos (Nat.le_of_dvd (S.pos hn) hpn) hpp.pos
     have hmn := Nat.div_lt_self (S.pos hn) hpp.one_lt
     have hmy : ghostPolynomial (n / p) y = b (n / p) := by
       refine (ghostPolynomial_congr (y := x) ?_).trans
         (hprev _ (S.mem_of_dvd hn (Nat.div_dvd_of_dvd hpn)) hmn)
       intro d hd
       exact Function.update_of_ne ((Nat.divisor_le hd).trans_lt hmn).ne 0 x
-    have hy := ghostPolynomial_mul_sub_map_dvd p (n / p) hpp hm.ne' (φ p)
+    have hy := pow_padicValNat_dvd_ghostPolynomial_mul_sub_map p (n / p) hpp (φ p)
       (hφ p hpp (S.mem_of_dvd hn hpn)) y
     rw [Nat.mul_div_cancel' hpn, hmy, Nat.padicValNat_def,
       ← Nat.factorization_def n hpp] at hy
@@ -179,10 +175,9 @@ theorem ghost_image (S : TruncationSet) (φ : ℕ → R →+* R)
     exact Ideal.mem_span_singleton.mp (hφ p hp hps a)
   constructor
   · rintro ⟨x, hx⟩ p hp n hn hpn
-    have hm := Nat.div_pos (Nat.le_of_dvd (S.pos hn) hpn) hp.pos
     apply Ideal.mem_span_singleton.mpr
     rw [← hx n hn, ← hx (n / p) (S.mem_of_dvd hn (Nat.div_dvd_of_dvd hpn))]
-    have h := ghostPolynomial_mul_sub_map_dvd p (n / p) hp hm.ne' (φ p)
+    have h := pow_padicValNat_dvd_ghostPolynomial_mul_sub_map p (n / p) hp (φ p)
       (hφ' p hp (S.mem_of_dvd hn hpn)) x
     simpa only [Nat.mul_div_cancel' hpn] using h
   · intro hb
@@ -213,7 +208,8 @@ theorem ghost_exists_eqOn_unique_of_isUnit (S : TruncationSet)
   obtain ⟨x, hx⟩ := (ghost_image S (fun _ => RingHom.id R) hφ b).mpr (by
     intro p _ n hn hpn
     exact Ideal.mem_span_singleton.mpr ((hS p (S.mem_of_dvd hn hpn)).pow _).dvd)
-  refine ⟨x, hx, fun y hy => ghost_injective S ?_ (fun n hn => (hy n hn).trans (hx n hn).symm)⟩
+  refine ⟨x, hx, fun y hy =>
+    eqOn_of_ghostPolynomial_eq S ?_ (fun n hn => (hy n hn).trans (hx n hn).symm)⟩
   intro n hn a c hac
   apply (hS n hn).mul_right_injective
   simpa only [nsmul_eq_mul] using hac
