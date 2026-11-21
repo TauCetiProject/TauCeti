@@ -65,7 +65,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {r s t : ℝ} {u v
 bundled as an `R`-algebra homomorphism. -/
 noncomputable def restrictedRescaleAlgHom (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r) :
     IsRestricted.subring (R := R) r →ₐ[R] IsRestricted.subring (R := R) s where
-  toFun f := ⟨PowerSeries.rescale u (f : R⟦X⟧), IsRestricted.rescale_of_le f.2 hs hsr⟩
+  toFun f := ⟨PowerSeries.rescale u (f : R⟦X⟧), IsRestricted.rescale_of_le f.property hs hsr⟩
   map_one' := Subtype.ext (map_one (PowerSeries.rescale u))
   map_mul' f g := Subtype.ext (map_mul (PowerSeries.rescale u) (f : R⟦X⟧) g)
   map_zero' := Subtype.ext (map_zero (PowerSeries.rescale u))

@@ -144,7 +144,7 @@ theorem exists_of_comp_eq_of_finitePresentation [Nonempty ι] [IsDirectedOrder �
   have hrel (r : s) : ∃ m, ∃ him : i ≤ m, f i m him (ψ r) = 0 := by
     refine of.zero_exact ?_
     have : π r = 0 := by
-      simpa using (hs ▸ Ideal.subset_span r.2 : (r : MvPolynomial (Fin n) ℤ) ∈ RingHom.ker π)
+      simpa using (hs ▸ Ideal.subset_span r.property : (r : MvPolynomial (Fin n) ℤ) ∈ RingHom.ker π)
     rw [hψ, this, map_zero]
   choose m him hm using hrel
   obtain ⟨l₀, hl₀⟩ := Finite.exists_le m

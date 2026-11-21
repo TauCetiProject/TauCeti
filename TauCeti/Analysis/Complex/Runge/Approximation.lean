@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.SummableUniformlyOn
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
@@ -45,8 +46,8 @@ connected complement.
   stages of `TauCeti.filledExhaustion` form Runge compact pairs with `Ω`, which absorb every compact
   subset of `Ω` into their interior.
 * `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt` and
-  `TauCeti.isRungeCompactPair_iff_approximation`: forward uniform Runge approximation and the full
-  domain-relative Runge equivalence.
+  `TauCeti.isRungeCompactPair_iff_approximation`: forward uniform Runge approximation of functions
+  with values in a complex normed space, and the full domain-relative Runge equivalence.
 * `TauCeti.differentiableOn_tsum_of_forall_norm_le_filledExhaustion`: a series of holomorphic
   functions whose `k`-th term is bounded on the `k`-th stage by a summable sequence has a
   holomorphic sum.
@@ -99,12 +100,13 @@ theorem _root_.IsOpen.exists_subset_interior_and_isRungeCompactPair {Ω K : Set 
   obtain ⟨n, hn⟩ := hΩ.exists_subset_interior_filledExhaustion hK hKΩ
   exact ⟨filledExhaustion Ω n, hn, hΩ.isRungeCompactPair_filledExhaustion n⟩
 
-/-- Forward Runge approximation for a `IsRungeCompactPair`: every function holomorphic on an open
-neighbourhood `U` of `K` can be approximated uniformly on `K` by functions holomorphic on `Ω`. -/
-theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {Ω K U : Set ℂ}
-    (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U) (hKU : K ⊆ U)
-    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
+/-- Forward Runge approximation for a `IsRungeCompactPair`: every function with values in a complex
+normed space that is holomorphic on an open neighbourhood `U` of `K` can be approximated uniformly
+on `K` by functions holomorphic on `Ω`. -/
+theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] {Ω K U : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
+    (hKU : K ⊆ U) {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : ℂ → W, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
   obtain ⟨L, hL, -, hLUO, hop⟩ := exists_finite_rank_runge_operator hRunge hU hKU
   obtain ⟨M, hM⟩ :=
     hL.bddAbove_image (hf.continuousOn.mono (hLUO.trans inter_subset_left)).norm
@@ -113,11 +115,20 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {Ω K U : Set ℂ
   have hLB : ∀ z ∈ L, ‖f z‖ ≤ B := fun z hz =>
     (hM ⟨z, hz, rfl⟩).trans (le_max_left _ _)
   obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
-  refine ⟨fun z => ∑ j : Fin N, w j * f (ζ j) * g j z, ?_, fun z hz => ?_⟩
-  · exact DifferentiableOn.fun_sum fun j _ => (hg_diff j).const_mul (w j * f (ζ j))
-  · refine (hbound f hf B hB1.le hLB z hz).trans_lt ?_
-    rw [div_mul_cancel₀ _ hB1.ne']
-    exact half_lt_self hε
+  refine ⟨fun z => ∑ j : Fin N, (w j * g j z) • f (ζ j), ?_, fun z hz => ?_⟩
+  · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
+  -- The scalar estimate for `φ ∘ f`, for every continuous linear functional `φ`, bounds the norm.
+  refine (NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun φ => ?_).trans_lt
+    ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
+  have hφ := hbound (fun z => φ (f z)) (φ.differentiable.comp_differentiableOn hf)
+    (‖φ‖ * B) (by positivity) (fun z hz => (φ.le_opNorm _).trans (by gcongr; exact hLB z hz)) z hz
+  calc ‖φ (f z - ∑ j : Fin N, (w j * g j z) • f (ζ j))‖
+      = ‖φ (f z) - ∑ j : Fin N, w j * φ (f (ζ j)) * g j z‖ := by
+        simp only [map_sub, map_sum, map_smul, smul_eq_mul]
+        congr 2
+        exact Finset.sum_congr rfl fun j _ => by ring
+    _ ≤ ε / 2 / B * (‖φ‖ * B) := hφ
+    _ = ε / 2 / B * B * ‖φ‖ := by ring
 
 /-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
 `u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each

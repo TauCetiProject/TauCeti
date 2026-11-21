@@ -97,16 +97,16 @@ theorem maximal_isMatching_iff :
 of each matching edge. Kept `private` because its values depend on `Sym2.out`'s choice. -/
 private noncomputable def vertsEquivEdgeSetProdBool (hM : M.IsMatching) :
     M.edgeSet × Bool ≃ M.verts := by
-  have hout (e : M.edgeSet) : M.Adj e.1.out.1 e.1.out.2 := by
-    have he := e.2
-    rwa [← Sym2.mk_fst_out_snd_out e.1, Subgraph.mem_edgeSet] at he
+  have hout (e : M.edgeSet) : M.Adj e.val.out.1 e.val.out.2 := by
+    have he := e.property
+    rwa [← Sym2.mk_fst_out_snd_out e.val, Subgraph.mem_edgeSet] at he
   refine Equiv.ofBijective
-    (fun eb ↦ cond eb.2 ⟨eb.1.1.out.2, (hout eb.1).snd_mem⟩ ⟨eb.1.1.out.1, (hout eb.1).fst_mem⟩)
+    (fun eb ↦ cond eb.2 ⟨eb.1.val.out.2, (hout eb.1).snd_mem⟩ ⟨eb.1.val.out.1, (hout eb.1).fst_mem⟩)
     ⟨fun ⟨e₁, b₁⟩ ⟨e₂, b₂⟩ h ↦ ?_, fun ⟨v, hv⟩ ↦ ?_⟩
   · have hto (e : M.edgeSet) (b : Bool) :
-        hM.toEdge (cond b ⟨e.1.out.2, (hout e).snd_mem⟩ ⟨e.1.out.1, (hout e).fst_mem⟩) = e := by
+        hM.toEdge (cond b ⟨e.val.out.2, (hout e).snd_mem⟩ ⟨e.val.out.1, (hout e).fst_mem⟩) = e := by
       have he : hM.toEdge ⟨_, (hout e).fst_mem⟩ = e := Subtype.ext <|
-        (congrArg Subtype.val (hM.toEdge_eq_of_adj (hout e))).trans (Sym2.mk_fst_out_snd_out e.1)
+        (congrArg Subtype.val (hM.toEdge_eq_of_adj (hout e))).trans (Sym2.mk_fst_out_snd_out e.val)
       cases b
       · exact he
       · exact (hM.toEdge_eq_toEdge_of_adj (hout e)).symm.trans he
@@ -119,7 +119,7 @@ private noncomputable def vertsEquivEdgeSetProdBool (hM : M.IsMatching) :
     · rfl
   · let e : M.edgeSet := hM.toEdge ⟨v, hv⟩
     have hmem : v ∈ (e : Sym2 V) := hM.mem_coe_toEdge hv
-    rw [← Sym2.mk_fst_out_snd_out e.1, Sym2.mem_iff] at hmem
+    rw [← Sym2.mk_fst_out_snd_out e.val, Sym2.mem_iff] at hmem
     rcases hmem with hv₁ | hv₂
     · exact ⟨(e, false), Subtype.ext hv₁.symm⟩
     · exact ⟨(e, true), Subtype.ext hv₂.symm⟩
@@ -149,9 +149,9 @@ theorem IsMatching.encard_edgeSet_le_encard_of_isVertexCover {C : Set V}
     (hM : M.IsMatching) (hC : G.IsVertexCover C) :
     M.edgeSet.encard ≤ C.encard := by
   classical
-  have hout (e : M.edgeSet) : M.Adj e.1.out.1 e.1.out.2 := by
-    have he := e.2
-    rwa [← Sym2.mk_fst_out_snd_out e.1, Subgraph.mem_edgeSet] at he
+  have hout (e : M.edgeSet) : M.Adj e.val.out.1 e.val.out.2 := by
+    have he := e.property
+    rwa [← Sym2.mk_fst_out_snd_out e.val, Subgraph.mem_edgeSet] at he
   -- Send each matching edge to whichever of its `Sym2.out` endpoints lies in the cover `C`.
   let pick (e : Sym2 V) : V := if e.out.1 ∈ C then e.out.1 else e.out.2
   have hmaps : MapsTo pick M.edgeSet C := by
@@ -193,10 +193,11 @@ theorem IsMatching.ncard_edgeSet_le_ncard_of_isVertexCover {C : Set V}
 theorem IsMatching.encard_le_encard_biUnion_neighborSet {S : Set V}
     (hM : M.IsMatching) (hS : S ⊆ M.verts) :
     S.encard ≤ (⋃ x ∈ S, G.neighborSet x).encard := by
-  choose f hf _ using fun x : S ↦ hM (hS x.2)
+  choose f hf _ using fun x : S ↦ hM (hS x.property)
   rw [← ENat.card_coe_set_eq, ← ENat.card_coe_set_eq]
   refine ENat.card_le_card_of_injective
-    (f := fun x : S ↦ ⟨f x, mem_biUnion x.2 (M.adj_sub (hf x))⟩) fun x₁ x₂ heq ↦ Subtype.ext ?_
+    (f := fun x : S ↦ ⟨f x, mem_biUnion x.property (M.adj_sub (hf x))⟩) fun x₁ x₂ heq ↦ Subtype.ext
+        ?_
   exact hM.eq_of_adj_left (hf x₁).symm (Subtype.mk.inj heq ▸ (hf x₂).symm)
 
 /-- Every matching covering `S` maps `S` injectively into any finite neighbourhood of `S` in `G`, so
@@ -213,27 +214,27 @@ matching edge is a bijection `(M.verts ∩ L : Set V) ≃ M.edgeSet`. -/
 private noncomputable def vertsInterLeftEquivEdgeSet {L R : Set V}
     (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
     ↑(M.verts ∩ L) ≃ M.edgeSet := by
-  refine Equiv.ofBijective (fun x ↦ hM.toEdge ⟨x.1, x.2.1⟩) ⟨fun x₁ x₂ hx ↦ ?_, fun e ↦ ?_⟩
-  · have hm₂ : x₂.1 ∈ (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) := by
-      simpa [← hx] using hM.mem_coe_toEdge x₂.2.1
-    obtain ⟨w, hw, -⟩ := hM x₁.2.1
-    have heq : (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) = s(x₁.1, w) :=
+  refine Equiv.ofBijective (fun x ↦ hM.toEdge ⟨x.val, x.property.1⟩) ⟨fun x₁ x₂ hx ↦ ?_, fun e ↦ ?_⟩
+  · have hm₂ : x₂.val ∈ (hM.toEdge ⟨x₁.val, x₁.property.1⟩ : Sym2 V) := by
+      simpa [← hx] using hM.mem_coe_toEdge x₂.property.1
+    obtain ⟨w, hw, -⟩ := hM x₁.property.1
+    have heq : (hM.toEdge ⟨x₁.val, x₁.property.1⟩ : Sym2 V) = s(x₁.val, w) :=
       congrArg Subtype.val (hM.toEdge_eq_of_adj hw)
     rw [heq, Sym2.mem_iff] at hm₂
     rcases hm₂ with h₁₂ | h₂w
     · exact Subtype.ext h₁₂.symm
     · subst h₂w
-      exact False.elim <| hLR.disjoint.ne_of_mem x₂.2.2
-        (hLR.mem_of_mem_adj x₁.2.2 (M.adj_sub hw)) rfl
-  · have hout : M.Adj e.1.out.1 e.1.out.2 := by
-      have he := e.2
-      rwa [← Sym2.mk_fst_out_snd_out e.1, Subgraph.mem_edgeSet] at he
-    have hfst : hM.toEdge ⟨e.1.out.1, hout.fst_mem⟩ = e :=
+      exact False.elim <| hLR.disjoint.ne_of_mem x₂.property.2
+        (hLR.mem_of_mem_adj x₁.property.2 (M.adj_sub hw)) rfl
+  · have hout : M.Adj e.val.out.1 e.val.out.2 := by
+      have he := e.property
+      rwa [← Sym2.mk_fst_out_snd_out e.val, Subgraph.mem_edgeSet] at he
+    have hfst : hM.toEdge ⟨e.val.out.1, hout.fst_mem⟩ = e :=
       Subtype.ext <| (congrArg Subtype.val (hM.toEdge_eq_of_adj hout)).trans
-        (Sym2.mk_fst_out_snd_out e.1)
+        (Sym2.mk_fst_out_snd_out e.val)
     rcases hLR.mem_of_adj (M.adj_sub hout) with ⟨h₁, -⟩ | ⟨-, h₂⟩
-    · exact ⟨⟨e.1.out.1, hout.fst_mem, h₁⟩, hfst⟩
-    · exact ⟨⟨e.1.out.2, hout.snd_mem, h₂⟩,
+    · exact ⟨⟨e.val.out.1, hout.fst_mem, h₁⟩, hfst⟩
+    · exact ⟨⟨e.val.out.2, hout.snd_mem, h₂⟩,
         (hM.toEdge_eq_toEdge_of_adj hout).symm.trans hfst⟩
 
 /-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
@@ -325,10 +326,10 @@ theorem matchingNum_le_vertexCoverNum (G : SimpleGraph V) :
 theorem matchingNum_exists (hfin : G.matchingNum ≠ ⊤) :
     ∃ M : G.Subgraph, M.IsMatching ∧ M.edgeSet.encard = G.matchingNum := by
   have : Nonempty {M : G.Subgraph // M.IsMatching} := ⟨⟨⊥, Subgraph.isMatching_bot⟩⟩
-  have hsup : (⨆ M : {M : G.Subgraph // M.IsMatching}, M.1.edgeSet.encard) = G.matchingNum := by
+  have hsup : (⨆ M : {M : G.Subgraph // M.IsMatching}, M.val.edgeSet.encard) = G.matchingNum := by
     rw [matchingNum_def, iSup_subtype]
   obtain ⟨M, hM⟩ := ENat.exists_eq_iSup_of_lt_top (hsup ▸ lt_top_iff_ne_top.2 hfin)
-  exact ⟨M.1, M.2, hM.trans hsup⟩
+  exact ⟨M.val, M.property, hM.trans hsup⟩
 
 /-- A matching attaining a finite matching number is maximal. -/
 theorem Subgraph.IsMatching.maximal_of_encard_edgeSet_eq_matchingNum {M : G.Subgraph}

@@ -67,7 +67,7 @@ theorem IsCombinatorialManifold.isPure (h : IsCombinatorialManifold K n) : IsPur
         obtain ⟨τ, hτ, -, hcard⟩ := hpure.exists_coface hρ
         exact ⟨τ, hτ, by simp [hempty], hcard⟩
       · apply hpure.exists_coface
-        exact erase_mem_link_singleton hσ hv (nonempty_iff_ne_empty.mpr hempty)
+        exact erase_mem_link_singleton hσ hv (ne_empty_iff_nonempty.1 hempty)
     obtain ⟨τ, hτ, hsub, hcard⟩ := hex
     obtain ⟨-, hdis, hface⟩ := mem_link_nonempty.mp hτ
     refine ⟨insert v τ, by rwa [union_singleton] at hface, ?_, ?_⟩

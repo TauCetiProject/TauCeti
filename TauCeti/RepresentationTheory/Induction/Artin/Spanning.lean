@@ -104,7 +104,7 @@ theorem eq_of_comp_indK0_eq_of_cyclic_coprime {M : Type*} [AddCommGroup M] [IsAd
   refine eq_of_nsmul_eq_nsmul_of_addCommute (Nat.card_pos (α := G)).ne' (.all _ _) ?_
   simp only [← map_nsmul, ← ha x, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul]
   exact Finsupp.sum_congr fun D _ ↦ by
-    rw [← AddMonoidHom.comp_apply f, ← AddMonoidHom.comp_apply g, h D.1 D.2]
+    rw [← AddMonoidHom.comp_apply f, ← AddMonoidHom.comp_apply g, h D.val D.property]
 
 end Membership
 

@@ -568,7 +568,7 @@ lemma SlashInvariantForm.restrict_trace (hΓ' : Γ' ≤ Γ)
   have he : Function.Bijective e := by
     refine ⟨e.injective, fun q ↦ ?_⟩
     induction q using QuotientGroup.induction_on with | H h => ?_
-    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.2
+    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.property
     refine ⟨QuotientGroup.mk ⟨x, hx⟩, Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]
     simpa [← hxg] using hg

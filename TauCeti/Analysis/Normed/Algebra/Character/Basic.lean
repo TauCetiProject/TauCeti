@@ -35,8 +35,6 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
-* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`: nonunital
-  characters of Banach algebras are contractive, hence continuous.
 * `WeakDual.CharacterSpace.isCompact_union_zero`,
   `WeakDual.CharacterSpace.instLocallyCompactSpace`: the character space of any nonunital Banach
   algebra over a proper nontrivially normed field is locally compact, realized inside the weak-star
@@ -66,26 +64,6 @@ variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSp
 section Class
 
 variable [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
-
-/-- A nonunital character of a Banach algebra is contractive. No continuity is assumed, and the
-scalar field need not be complete. -/
-theorem norm_apply_le_self (φ : F) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
-  by_contra! h
-  have hφ : φ a ≠ 0 := fun h0 ↦ (norm_nonneg a).not_gt (by simpa [h0] using h)
-  -- If `‖φ a‖ > ‖a‖`, then `b = (φ a)⁻¹ • a` has norm `< 1` and `φ b = 1`, but the geometric
-  -- series `s` of `b` satisfies `b + b * s = s`, so `1 + φ s = φ s`.
-  have hb : φ ((φ a)⁻¹ • a) = 1 := by simp [hφ]
-  have hbn : ‖(φ a)⁻¹ • a‖ < 1 := by
-    rw [norm_smul, norm_inv]
-    exact (inv_mul_lt_iff₀ (norm_pos_iff.2 hφ)).2 (by simpa using h)
-  simpa [hb] using congrArg φ (add_self_mul_geom_series hbn)
-
-/-- A nonunital character of a Banach algebra is automatically continuous, so `map_continuous`
-applies to it. This is the nonunital counterpart of Mathlib's instance for unital characters. -/
-instance (priority := 100) instContinuousLinearMapClass : ContinuousLinearMapClass F 𝕜 A 𝕜 :=
-  { NonUnitalAlgHomClass.instLinearMapClass with
-    map_continuous := fun φ =>
-      AddMonoidHomClass.continuous_of_bound φ 1 fun a => by simpa using norm_apply_le_self φ a }
 
 /-- If `e * a → a` along `l` for an element `a` not in the kernel of a character `φ`, then
 `φ e → 1` along `l`. -/
@@ -244,12 +222,12 @@ instance instLocallyCompactSpace : LocallyCompactSpace (characterSpace 𝕜 A) :
   have : CompactSpace K := isCompact_iff_compactSpace.mp isCompact_union_zero
   let z₀ : K := ⟨0, Or.inr rfl⟩
   let e : characterSpace 𝕜 A ≃ₜ {x : K // x ≠ z₀} :=
-    { toFun φ := ⟨⟨φ.1, Or.inl φ.2⟩, fun h ↦ φ.2.1 (congrArg Subtype.val h)⟩
-      invFun x := ⟨x.1.1, x.1.2.resolve_right fun h0 ↦ x.2 (Subtype.ext h0)⟩
+    { toFun φ := ⟨⟨φ.val, Or.inl φ.property⟩, fun h ↦ φ.property.1 (congrArg Subtype.val h)⟩
+      invFun x := ⟨x.val.val, x.val.property.resolve_right fun h0 ↦ x.property (Subtype.ext h0)⟩
       left_inv _ := rfl
       right_inv _ := rfl
-      continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
   exact e.isOpenEmbedding.locallyCompactSpace
 
 end LocallyCompact

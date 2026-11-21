@@ -116,7 +116,7 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
   · convert summable_zero with k
     rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
   set b := a - algebraMap ℂ A z₀
-  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  obtain ⟨w, hw, hsr⟩ := spectrum.exists_eNorm_eq_spectralRadius b
   have hw_mem : w + z₀ ∈ spectrum ℂ a := by
     rwa [spectrum.add_mem_iff, neg_add_eq_sub]
   have hlt : ENNReal.ofReal (gelfandRadius b) < p.radius := by
@@ -140,7 +140,7 @@ theorem summable_norm_smul_sub_pow_of_le_radius {A : Type*} [NormedRing A] [Norm
   rcases subsingleton_or_nontrivial A with hsub | hnt
   · exact summable_zero.congr fun n => by
       rw [Subsingleton.elim (p.coeff n • b ^ n) 0, norm_zero]
-  · obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  · obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_eNorm_eq_spectralRadius b
     have hzw : z₀ + w ∈ spectrum ℂ a :=
       (add_comm z₀ w).symm ▸ spectrum.add_mem_iff.mpr (by simpa [b, neg_add_eq_sub] using hw)
     have hw_lt : (‖w‖₊ : ℝ≥0∞) < r := by

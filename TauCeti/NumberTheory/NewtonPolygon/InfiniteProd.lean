@@ -85,7 +85,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
   set F : IsEntire.subring K :=
     ∏' i, IsEntire.polynomialHom (1 - Polynomial.C (a i)⁻¹ * Polynomial.X)
   let P : Polynomial K := ∏ i ∈ s, (1 - Polynomial.C (a i)⁻¹ * Polynomial.X)
-  have hF_ent : (F : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp F.2
+  have hF_ent : (F : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp F.property
   have hF_ne : (F : K⟦X⟧) ≠ 0 := by
     intro h
     have h1 := constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (a i)⁻¹)
@@ -93,8 +93,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
     exact zero_ne_one h1
   obtain ⟨l, u, hface⟩ := hF_ent.exists_isFiniteFace_newtonPolygon v hb hv hF_ne σ
   obtain ⟨-, hu_dist⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
-    (F : K⟦X⟧) v hb hv (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (hF_ent.isRestricted r))
-    hface
+    (F : K⟦X⟧) v hb hv hface
   have hu_eq : u = s.card := hu_dist.unique hprep.isDistinguished
   have hroots : P.roots = s.val.map a := by
     have hz1 := hprep.zeroMultiset_eq_roots_map (L := K) hr
@@ -103,7 +102,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
   have hsplits : P.Splits := Polynomial.splits_iff_card_roots.mpr (by
     rw [hroots, Multiset.card_map, ← Finset.card_def, hprep.natDegree_eq])
   have hl_eq : l = {i : ι | ‖a i‖ < r}.ncard := by
-    have hlt := card_filter_roots_norm_lt_of_isUnit_mul v hb hv (hF_ent.isRestricted r) hface
+    have hlt := card_filter_roots_norm_lt_of_isUnit_mul v hb hv hface
       (hprep.isUnit hr) (hprep.natDegree_eq.trans hu_eq.symm).le
       ((mul_comm _ _).trans hprep.eq_mul.symm) hsplits
     rw [← hlt, hroots]

@@ -513,9 +513,9 @@ theorem structureConstant_eq (i j k : Fin d.numClasses) :
     exact mul_inv_cancel_left _ _
   · intro p hp
     have h1 : (p.1 : G) ∈ d.classFinset i := by
-      rw [← Finset.mem_coe, d.coe_classFinset i]; exact p.1.2
+      rw [← Finset.mem_coe, d.coe_classFinset i]; exact p.1.property
     have h2 : (p.2 : G) ∈ d.classFinset j := by
-      rw [← Finset.mem_coe, d.coe_classFinset j]; exact p.2.2
+      rw [← Finset.mem_coe, d.coe_classFinset j]; exact p.2.property
     have hp' : (p.1 : G) * (p.2 : G) = d.rep k := (Finset.mem_filter.mp hp).2
     refine Finset.mem_filter.mpr ⟨h1, ?_⟩
     rw [← hp', inv_mul_cancel_left]

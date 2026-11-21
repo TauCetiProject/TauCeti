@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.Integral
@@ -40,7 +40,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
-  solves the equation without lower-order terms, with some `L²` forcing.
+  solves the equation without lower-order terms, with an `L²` forcing bounded by
+  `‖f‖₂ + ‖b‖_∞ ‖∇u‖₂ + ‖c‖_∞ ‖u‖₂` (`TauCeti.PDE.eLpNorm_sub_inner_gradient_sub_mul_value_le`).
 * `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
   restrict to weak solutions of the same equation.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner`: weak solutions of
@@ -60,11 +61,16 @@ integrability hypotheses on `Ω`.
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
   `v ∈ H¹₀(B)`, with no integrability of `f` on all of `Ω`.
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner`: the
+  same for `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with `f, G ∈ L²(B)`, in the integral form
+  `a(u, v) = ∫_B f v - ∫_B ⟪-G, ∇v⟫`.
 * `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
   `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_top_eq_setIntegral`: if `v ∈ H¹(ℝⁿ)` solves `Δv = G`
   weakly, tested against compactly supported smooth functions, and `G = -F` on an open `Ω` with
   `F ∈ L²(Ω)`, then `v|_Ω` solves `-Δv = F` weakly on `Ω`, tested against `H¹₀(Ω)`.
+* `TauCeti.PDE.energyFormH1_one_zero_zero_restrictL_eq_restrictL`: the Dirichlet forms of the
+  restrictions of two functions whose weak gradients agree almost everywhere on `U` coincide.
 -/
 
 public section
@@ -274,7 +280,11 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
 restriction of `u` to `U` solves the equation with principal part `a'` and no lower-order terms,
-with some forcing `g ∈ L²(U)`. -/
+with a forcing `g ∈ L²(U)` bounded by
+
+`‖g‖_{L²(U)} ≤ ‖f‖_{L²(U)} + ‖b‖_{L∞(U)} ‖∇u‖_{L²(U)} + ‖c‖_{L∞(U)} ‖u‖_{L²(U)}`.
+
+The forcing is `f - ⟪b, ∇u⟫ - c u`. -/
 theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
@@ -284,13 +294,19 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict U), ∀ v : W1p0 mu U 2,
+    ∃ g : Lp ℝ 2 (mu.restrict U), (∀ v : W1p0 mu U 2,
       energyFormH1 a' 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) =
-        ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu) ∧
+      ‖g‖ ≤ (eLpNorm f 2 (mu.restrict U)).toReal +
+        (eLpNorm b ⊤ (mu.restrict U)).toReal * ‖W1p.gradient (W1p.restrictL hU u)‖ +
+        (eLpNorm c ⊤ (mu.restrict U)).toReal * ‖W1p.value (W1p.restrictL hU u)‖ := by
+  set uU := W1p.restrictL hU u
   have hle : mu.restrict U ≤ mu.restrict Omega :=
     Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl
+  have hbU := hb.mono_measure hle
+  have hcU := hc.mono_measure hle
   have hfU : MemLp f 2 (mu.restrict U) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu U 2, energyFormH1 a' b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+  have hu₁ : ∀ v : W1p0 mu U 2, energyFormH1 a' b c uU (v : W1p mu U 2) =
       ∫ x in U, hfU.toLp f x * W1p.value (v : W1p mu U 2) x ∂mu := by
     intro v
     have h := energyFormH1_restrictL_eq_setIntegral hU hu v
@@ -299,8 +315,8 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
     refine integral_congr_ae ?_
     filter_upwards [hfU.coeFn_toLp] with x hx
     rw [hx]
-  exact exists_forcing_energyFormH1_principal_eq ha'
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
+  obtain ⟨g, hg, hgle⟩ := exists_forcing_energyFormH1_principal_eq ha' hbU hcU hu₁
+  exact ⟨g, hg, hgle.trans_eq (by rw [Lp.norm_toLp])⟩
 
 open scoped InnerProductSpace in
 /-- **Weak solutions with a datum in divergence form restrict to weak solutions.** If
@@ -337,6 +353,22 @@ theorem energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner
   rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL, W1p0.gradient_extendByZeroL,
     setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _),
     setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => ⟪F x, y⟫_ℝ) (fun _ => inner_zero_right _)]
+
+/-- **The Dirichlet form of restrictions only sees the gradients.** If `f ∈ H¹(Ω)` and
+`g ∈ H¹(Ω')` have weak gradients agreeing almost everywhere on an open set `U` contained in both,
+then their restrictions to `U` have the same Dirichlet form `∫_U ⟨∇·, ∇v⟩` against every
+`v ∈ H¹(U)`. -/
+theorem energyFormH1_one_zero_zero_restrictL_eq_restrictL [DecidableEq ι]
+    {Omega' : Opens (EuclideanSpace ℝ ι)} (hU : U ≤ Omega) (hU' : U ≤ Omega')
+    {f : W1p mu Omega 2} {g : W1p mu Omega' 2}
+    (hfg : W1p.gradient f =ᵐ[mu.restrict U] W1p.gradient g) (v : W1p mu U 2) :
+    energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hU f) v =
+      energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL hU' g) v := by
+  rw [energyFormH1_one_zero_zero_apply, energyFormH1_one_zero_zero_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae hU f, W1p.gradient_restrictL_ae hU' g, hfg]
+    with x h1 h2 h3
+  rw [h1, h2, h3]
 
 section Transfer
 
@@ -396,7 +428,7 @@ theorem energyFormH1_restrictL_eq_of_forall_testFunction {B : Opens (EuclideanSp
     simp only [L, sub_apply, energyFormH1L_apply, Pi.zero_def]
   -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
   suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
-    have := hzero v.2
+    have := hzero v.property
     simp only [mem_ofPred_eq, hL] at this
     linarith
   refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
@@ -493,6 +525,33 @@ theorem forall_energyFormH1_restrictL_eq_setIntegral {B : Opens (EuclideanSpace 
   -- On `B`, the `L²` inner product with `f` is the integral against `f`.
   exact integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by
     simp [hx, RCLike.inner_apply, mul_comm])
+
+/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `Ω`, tested against test functions, holds on
+every open `B ⊆ Ω` against all of `H¹₀(B)` in integral form, `a(u, v) = ∫_B f v - ∫_B ⟪-G, ∇v⟫`,
+provided `G` and `f` are square integrable on `B` and the coefficients are essentially bounded on
+`B`. This is the equation `L u = f + div (-G)`, and the case `c = 0` of
+`forall_energyFormH1_restrictL_eq_inner_add_inner` written with integrals. -/
+theorem forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner
+    {B : Opens (EuclideanSpace ℝ ι)} (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu + ∫ x in Omega, f x * φ x ∂mu)
+    (hG : MemLp G 2 (mu.restrict B)) (hf : MemLp f 2 (mu.restrict B)) (v : W1p0 mu B 2) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      ∫ x in B, f x * W1p.value (v : W1p mu B 2) x ∂mu -
+        ∫ x in B, ⟪-G x, W1p.gradient (v : W1p mu B 2) x⟫_ℝ ∂mu := by
+  have hG0 : MemLp (fun x => G x - 0) 2 (mu.restrict B) := by simpa only [sub_zero] using hG
+  rw [forall_energyFormH1_restrictL_eq_inner_add_inner hB ha hu hG0 hf v, L2.inner_def,
+    L2.inner_def, sub_eq_add_neg, ← integral_neg, add_comm]
+  congr 1
+  · refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp] with x hx
+    rw [hx, RCLike.inner_apply, conj_trivial, mul_comm]
+  · refine integral_congr_ae ?_
+    filter_upwards [hG0.coeFn_toLp] with x hx
+    simp only [inner_neg_left, neg_neg]
+    rw [hx, sub_zero]
 
 /-- **Global weak solutions of Poisson's equation restrict to weak solutions.** If `v ∈ H¹(ℝⁿ)`
 solves `Δv = G` weakly, tested against compactly supported smooth functions, and `G` agrees on an

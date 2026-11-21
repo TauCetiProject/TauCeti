@@ -712,7 +712,7 @@ theorem tendsto_sectionValue_gaugeTransform {u : ℂ → Circle}
     Tendsto (fun z ↦ sectionValue (gaugeTransform u x) z * phase z)
       (cocompact ℂ) (𝓝 1) := by
   have huc : Tendsto (fun z ↦ (u z : ℂ)) (cocompact ℂ) (𝓝 1) := by
-    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtype_val
+    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtypeVal
     simpa only [Function.comp_def, Circle.coe_one] using (hc.tendsto 1).comp hu
   simpa only [sectionValue_gaugeTransform, mul_assoc, one_mul] using huc.mul hx
 

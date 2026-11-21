@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Int.Init
 public import Mathlib.Data.Set.Inclusion
+public import Mathlib.Logic.Equiv.Set
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Tactic.Coe
 
@@ -24,6 +25,10 @@ A function `g` on a subset `t` extends to the whole type along `Subtype.val`, fo
 zero. Restricting `g` to a smaller subset `s` before extending does not change the extension at
 the points which lie in `s` as soon as they lie in `t`.
 
+A dependent function on the range of an injection `f` extends to the whole index type, for
+instance by a fallback function, so restriction `g ↦ fun i ↦ g (f i)` of dependent functions
+along `f` is surjective.
+
 ## Main results
 
 * `Function.extend_natCast_of_neg`: the extension of `a` along `ℕ → ℤ` with fallback `e` takes
@@ -36,6 +41,8 @@ the points which lie in `s` as soon as they lie in `t`.
   vacuously off the range).
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
+* `Function.Injective.surjective_pi_comp_right`: restriction of dependent functions along an
+  injection is surjective.
 -/
 
 public section
@@ -122,8 +129,8 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
   · exact (Subtype.val_injective.extend_apply _ e ⟨a, ha hat⟩).trans
       (Subtype.val_injective.extend_apply g e ⟨a, hat⟩).symm
   · have has : a ∉ s := fun has ↦ hat (h has)
-    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.2),
-      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.2)]
+    rw [extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ has (hb ▸ b.property),
+      extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.property)]
 
 /-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
 outer map `f₂₃` is injective. The inner extension of `g` along `f₁₂` uses the fallback `e' ∘ f₂₃`,
@@ -146,5 +153,18 @@ theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β}
     · rw [extend_apply' _ _ _ hx,
         extend_apply' _ _ _ (fun ⟨a, ha⟩ => hx ⟨a, h.eq_iff.1 ha⟩)]
   · rw [extend_apply' _ _ _ hk, extend_apply' _ _ _ (fun ⟨a, ha⟩ => hk ⟨_, ha⟩)]
+
+/-- Restriction `g ↦ fun i ↦ g (f i)` of dependent functions along an injective map `f` is
+surjective: extend by a fallback `g₀` off the range of `f`. This is the dependent version of
+Mathlib's `Function.Injective.surjective_comp_right'`; Mathlib's `Subtype.surjective_restrict` is
+the case of `Subtype.val`. -/
+theorem Injective.surjective_pi_comp_right {σ τ : Type*} {G : τ → Sort*} {f : σ → τ}
+    (hf : Injective f) (g₀ : ∀ j, G j) : Surjective fun (g : ∀ j, G j) i ↦ g (f i) := fun k ↦ by
+  classical
+  let e := Equiv.ofInjective f hf
+  refine ⟨fun j ↦ if hj : j ∈ Set.range f then
+    Equiv.piCongrLeft (fun j : Set.range f ↦ G j) e k ⟨j, hj⟩ else g₀ j, funext fun i ↦ ?_⟩
+  simp only [Set.mem_range_self, ↓reduceDIte]
+  exact Equiv.piCongrLeft_apply_apply (fun j : Set.range f ↦ G j) e k i
 
 end Function
