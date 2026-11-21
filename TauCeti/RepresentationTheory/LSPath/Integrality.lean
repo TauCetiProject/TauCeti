@@ -13,15 +13,17 @@ import TauCeti.RepresentationTheory.LSPath.Concatenation
 # Integral heights and root strings of Lakshmibai–Seshadri paths
 
 The chain conditions of an LS encoding imply integrality of its endpoint against every
-integral linear form, and integrality of its minimum height against every simple coroot.
-Here these facts are proved for the actual `LSPath.toPLPath` realization, so they apply directly
-to the raising and lowering operators. In particular the raising and lowering strings have
-lengths exactly `-min H` and `H(1) - min H`, not just their integer parts, by the
-iteration criteria in `TauCeti.RepresentationTheory.LSPath.StringLength`.
+integral linear form, and integrality of its minimum height against every simple coroot, produced by
+a single integer independent of the ordered-field realization
+(`TauCeti.LSPath.exists_minHeight_eq_intCast_and_eq_intCast`). Here these facts are proved for the
+actual `LSPath.toPLPath` realization, so they apply directly to the raising and lowering operators.
+In particular the raising and lowering strings have lengths exactly `-min H` and `H(1) - min H`, not
+just their integer parts, by the iteration criteria in
+`TauCeti.RepresentationTheory.LSPath.StringLength`.
 
-The same chain conditions control the shape of the height around a lowering step. After the last
-time `t₀` at which the height `⟨π(t), αᵢ^∨⟩` attains its minimum `h`, it rises strictly until it
-reaches `h + 1`, and it never returns below `h + 1` afterwards
+The same chain conditions control the shape of the height around lowering and raising steps. After
+the last time `t₀` at which the height `⟨π(t), αᵢ^∨⟩` attains its minimum `h`, it rises strictly
+until it reaches `h + 1`, and it never returns below `h + 1` afterwards
 (`TauCeti.exists_isLeast_sum_coroot'_Icc_of_isAChain` and the lemmas following it). Hence
 Littelmann's lowering operator `f_αᵢ` acts on an LS path by reflecting the single piece of the path
 between `t₀` and the first time `t₁` at which the height is `h + 1`, cutting the segment containing
@@ -177,6 +179,19 @@ private theorem minHeight_eq_of_isLeast (π : LSPath P b lam) (f : M →+ V)
     rw [hk, ← htake, π.apply_sum_take f F (P.coroot' i) hF n (Nat.min_le_right _ _)]
     exact_mod_cast hq.2 ⟨n, Nat.min_le_right _ _, rfl⟩
 
+/-- The minimum simple-coroot heights of an LS path of dominant shape in any two ordered-field
+simple-coroot realizations equal the same integer. -/
+theorem exists_minHeight_eq_intCast_and_eq_intCast {𝕜' V' : Type*} [Field 𝕜'] [LinearOrder 𝕜']
+    [IsStrictOrderedRing 𝕜'] [AddCommGroup V'] [Module 𝕜' V'] (π : LSPath P b lam)
+    (hlam : lam ∈ dominantChamber P b) (i : b.support)
+    (f : M →+ V) (F : Module.Dual 𝕜 V) (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜))
+    (f' : M →+ V') (F' : Module.Dual 𝕜' V') (hF' : ∀ m, F' (f' m) = (P.coroot' i m : 𝕜')) :
+    ∃ z : ℤ, (π.toPLPath 𝕜 f).minHeight F = z ∧ (π.toPLPath 𝕜' f').minHeight F' = z := by
+  obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam
+    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i
+  exact ⟨z, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast],
+    by rw [π.minHeight_eq_of_isLeast f' i F' hF' hz, Rat.cast_intCast]⟩
+
 /-- The minimum simple-coroot height of the actual piecewise-linear realization of an LS path
 is an integer. This includes minima attained on stationary-height segments or at an endpoint. -/
 theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
@@ -184,9 +199,8 @@ theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
     (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) :
     ∃ z : ℤ, (π.toPLPath 𝕜 f).minHeight F = z := by
-  obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp [π.natTime_last]⟩ i
-  exact ⟨z, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast]⟩
+  obtain ⟨z, hz, -⟩ := π.exists_minHeight_eq_intCast_and_eq_intCast hlam i f F hF f F hF
+  exact ⟨z, hz⟩
 
 /-- The raising and lowering heights of an LS path are natural numbers. Their difference is
 the final simple-coroot height, so they are the normal-crystal string parameters. -/
