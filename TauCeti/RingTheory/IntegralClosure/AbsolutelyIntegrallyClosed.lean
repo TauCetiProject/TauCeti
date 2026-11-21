@@ -142,7 +142,9 @@ instance pi {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)]
       · exact exists_root _ (hq.map _) ((hq.natDegree_map (Pi.evalRingHom R i)).symm ▸ hdeg)
     choose x hx using key
     refine ⟨x, funext fun i ↦ ?_⟩
-    exact (eval₂_hom (Pi.evalRingHom R i) x).symm.trans (by rw [← eval_map]; exact hx i)
+    have h := (hx i).eq_zero
+    rw [← Pi.evalRingHom_apply R i x, eval_map_apply, Pi.evalRingHom_apply] at h
+    rw [Pi.zero_apply, h]
 
 end IsAbsolutelyIntegrallyClosed
 
