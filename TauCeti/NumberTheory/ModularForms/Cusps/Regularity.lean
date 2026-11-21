@@ -77,7 +77,7 @@ theorem exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj (γ 
 private lemma cuspDatum_width_mem_periods {D : (Γ.map sl2zToPSL2R).CuspDatum} {γ : SL(2, ℤ)}
     (hσ : D.scaling = sl2zToPSL2R γ⁻¹) :
     D.width ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ))).periods := by
-  obtain ⟨g₀, hg₀, hg₀_eq⟩ := Subgroup.mem_map.mp D.generator.2
+  obtain ⟨g₀, hg₀, hg₀_eq⟩ := Subgroup.mem_map.mp D.generator.property
   have hconj : sl2zToPSL2R (γ⁻¹ * g₀ * γ) =
       Matrix.ProjectiveSpecialLinearGroup.upperRightHom D.width := by
     simpa [map_mul, map_inv, hσ, hg₀_eq] using D.scaling_mul_generator_mul_inv

@@ -197,7 +197,7 @@ theorem semilinearMonomialEquiv_toEquiv_mem_semilinearAut_iff (u : ι → Rˣ) (
 
 /-- A semilinear automorphism of a code permutes its codewords. -/
 instance instSMulSemilinearAut : SMul (semilinearAut C) C where
-  smul f c := ⟨(f : Equiv.Perm (ι → R)) c, apply_mem_of_mem_semilinearAut f.2 c.2⟩
+  smul f c := ⟨(f : Equiv.Perm (ι → R)) c, apply_mem_of_mem_semilinearAut f.property c.property⟩
 
 /-- Coercing the action of a semilinear automorphism on a codeword back to a word gives the
 underlying permutation of the word space applied to that codeword. -/
@@ -213,31 +213,36 @@ instance instDistribMulActionSemilinearAut : DistribMulAction (semilinearAut C) 
   mul_smul _ _ _ := Subtype.ext (by simp)
   smul_zero f :=
     Subtype.ext
-      (map_zero_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.2))
+      (map_zero_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup
+          f.property))
   smul_add f c d :=
     Subtype.ext
-      (map_add_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.2) c d)
+      (map_add_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.property)
+          c d)
 
 /-- A semilinear automorphism of a code acts on its codewords semilinearly for some automorphism
 of the alphabet. -/
 theorem exists_smul_smul_semilinearAut (f : semilinearAut C) :
     ∃ σ : R ≃+* R, ∀ (r : R) (c : C), f • (r • c) = σ r • (f • c) := by
   obtain ⟨σ, hσ⟩ :=
-    exists_map_smul_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.2)
+    exists_map_smul_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup
+        f.property)
   exact ⟨σ, fun r c ↦ Subtype.ext (hσ r c)⟩
 
 /-- A semilinear automorphism of a code preserves Hamming weight. -/
 @[simp]
 theorem hammingNorm_semilinearAut_apply [Fintype ι] [DecidableEq R] (f : semilinearAut C)
     (x : ι → R) : hammingNorm ((f : Equiv.Perm (ι → R)) x) = hammingNorm x :=
-  hammingNorm_apply_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.2) x
+  hammingNorm_apply_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup
+      f.property) x
 
 /-- A semilinear automorphism of a code preserves Hamming distance. -/
 @[simp]
 theorem hammingDist_semilinearAut_apply [Fintype ι] [DecidableEq R] (f : semilinearAut C)
     (x y : ι → R) :
     hammingDist ((f : Equiv.Perm (ι → R)) x) ((f : Equiv.Perm (ι → R)) y) = hammingDist x y :=
-  hammingDist_apply_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup f.2)
+  hammingDist_apply_of_mem_semilinearMonomialGroup (semilinearAut_le_semilinearMonomialGroup
+      f.property)
     x y
 
 end SemilinearAut

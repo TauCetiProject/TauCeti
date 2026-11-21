@@ -23,6 +23,10 @@ projection off the range of `A`. Composing a linear map with this projection ann
 A continuous linear injection of a space into a finite-dimensional space of strictly larger
 dimension over a complete field has a continuous left inverse and a nonzero continuous covector
 annihilating its range (`ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero`).
+
+A space with a continuous linear map into a complete space that has a continuous linear left
+inverse is complete (`ContinuousLinearMap.HasLeftInverse.completeSpace`), as a retract of a
+complete space; this needs uniform additive groups, but no separation and no norm.
 -/
 
 public section
@@ -53,6 +57,21 @@ theorem sub_comp_inverse_comp_comp_eq_zero (a : E →L[R] G) (A : F →L[R] E)
     (P : E →L[R] F) (hQ : (P ∘L A).IsInvertible) :
     (a - a ∘L A ∘L (P ∘L A).inverse ∘L P) ∘L A = 0 := by
   simp [comp_assoc, hQ.inverse_comp_self]
+
+section Uniform
+
+variable {R E F : Type*} [Semiring R]
+  [UniformSpace E] [AddCommGroup E] [IsUniformAddGroup E] [Module R E]
+  [UniformSpace F] [AddCommGroup F] [IsUniformAddGroup F] [Module R F]
+
+/-- The source of a continuous linear map between uniform additive groups which has a continuous
+linear left inverse is complete when the target is. -/
+theorem HasLeftInverse.completeSpace [CompleteSpace F] {L : E →L[R] F} (hL : L.HasLeftInverse) :
+    CompleteSpace E :=
+  .of_comp_eq_id hL.leftInverse L hL.leftInverse_leftInverse.comp_eq_id
+    hL.leftInverse.continuous L.uniformContinuous
+
+end Uniform
 
 section FiniteDimensional
 

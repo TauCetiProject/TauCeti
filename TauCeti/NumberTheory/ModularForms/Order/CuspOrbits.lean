@@ -103,7 +103,7 @@ theorem orderAtCusp_slash_scaling_inv_eq (f : F) {D : (Γ.map sl2zToPSL2R).CuspD
       (by rw [map_inv, inv_smul_smul])
   obtain ⟨g₀, hg₀_cusp⟩ := mem_orbit_iff.mp <| (D.cuspOrbit_eq_iff D₀).mp
     ((cuspDatum_cuspOrbit_eq_of_scaling_eq hD₀_scal).trans hγ).symm
-  obtain ⟨γ₀, hγ₀, hg₀_eq⟩ := Subgroup.mem_map.mp g₀.2
+  obtain ⟨γ₀, hγ₀, hg₀_eq⟩ := Subgroup.mem_map.mp g₀.property
   set h₀ : SL(2, ℝ) := Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ₀
   set s₀ : SL(2, ℝ) := Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) γ⁻¹
   set t : SL(2, ℝ) := s * h₀ * s₀⁻¹ with ht_def
@@ -118,7 +118,7 @@ theorem orderAtCusp_slash_scaling_inv_eq (f : F) {D : (Γ.map sl2zToPSL2R).CuspD
       Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hfix
   have hw : D.width = t 0 0 ^ 2 * Γγ.widthInfty := by
     have hw₀ := TauCeti.cuspDatum_width_eq_mul
-      (D := D₀.conj (Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer g₀.2)))
+      (D := D₀.conj (Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer g₀.property)))
       (D' := D) (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hg₀_cusp, Subgroup.smul_def])
       (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
         rw [_root_.Subgroup.CuspDatum.conj_scaling, mul_smul, Complex.ofReal_pow,
