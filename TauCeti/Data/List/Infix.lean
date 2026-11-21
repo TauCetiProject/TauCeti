@@ -77,24 +77,29 @@ theorem IsInfix.exists_prefix_drop_flatten_replicate {w l : List α} {n : ℕ}
     (h : w <:+: (replicate n l).flatten) (hl : l ≠ []) :
     ∃ o < l.length, w <+: ((replicate n l).flatten).drop o := by
   obtain ⟨s, t, hst⟩ := h
-  have hq : s.length / l.length ≤ n :=
-    Nat.div_le_of_le_mul (by have := congrArg length hst; simp at this; lia)
-  -- the position `|s|` is `|s| / |l|` whole copies of `l` followed by `|s| % |l|` letters
-  have hdrop := drop_sum_flatten (replicate n l) (s.length / l.length)
-  simp only [map_replicate, take_replicate, drop_replicate, Nat.min_eq_left hq,
-    sum_replicate_nat] at hdrop
-  refine ⟨s.length % l.length, Nat.mod_lt _ (length_pos_iff.2 hl), IsPrefix.trans ⟨t, ?_⟩
-    ((flatten_replicate_prefix_flatten_replicate l (Nat.sub_le n (s.length / l.length))).drop _)⟩
-  rw [← hdrop, drop_drop, Nat.div_add_mod', ← hst, append_assoc, drop_left]
+  -- the position `|s|` is `q` whole copies of `l` followed by `o` letters
+  set q := s.length / l.length
+  set o := s.length % l.length
+  have hs : s.length = q * l.length + o := (Nat.div_add_mod' _ _).symm
+  have hq : q ≤ n := Nat.div_le_of_le_mul (by have := congrArg length hst; simp at this; lia)
+  -- dropping the `q` whole copies leaves `n - q` copies
+  have hdrop : ((replicate n l).flatten).drop (q * l.length) = (replicate (n - q) l).flatten := by
+    simpa [Nat.min_eq_left hq] using drop_sum_flatten (replicate n l) q
+  have hw : w <+: ((replicate n l).flatten).drop s.length :=
+    ⟨t, by rw [← hst, append_assoc, drop_left]⟩
+  rw [hs, ← drop_drop, hdrop] at hw
+  exact ⟨o, Nat.mod_lt _ (length_pos_iff.2 hl),
+    hw.trans ((flatten_replicate_prefix_flatten_replicate l (Nat.sub_le n q)).drop o)⟩
 
 /-- A factor of a concatenation of copies of `l`, at least as long as `l`, begins with a rotation
 of `l`. -/
 theorem IsInfix.take_isRotated_of_flatten_replicate {w l : List α} {n : ℕ}
     (h : w <:+: (replicate n l).flatten) (hl : l.length ≤ w.length) : w.take l.length ~r l := by
-  obtain ⟨s, t, hst⟩ := h
-  rw [take_eq_rotate_of_prefix_drop_flatten_replicate (m := n) (o := s.length)
-    ⟨t, by rw [← hst, append_assoc, drop_left]⟩ hl]
-  exact IsRotated.forall l _
+  rcases eq_or_ne l [] with rfl | hl0
+  · simp
+  obtain ⟨o, -, ho⟩ := h.exists_prefix_drop_flatten_replicate hl0
+  rw [take_eq_rotate_of_prefix_drop_flatten_replicate ho hl]
+  exact IsRotated.forall l o
 
 /-- If `l ++ y :: t` begins with `k` copies of `x` and `x ≠ y`, then `l` begins with these `k`
 copies: the entry `y` cannot lie among them. -/

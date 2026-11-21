@@ -9,11 +9,10 @@ public import Mathlib.Data.List.PeriodicityLemma
 public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.FreeGroup.Basic
 
+import TauCeti.Data.List.Commutation
 import TauCeti.Data.List.Infix
 import TauCeti.Data.List.PeriodicityLemma
 import TauCeti.Data.List.Rotate
-import TauCeti.GroupTheory.FreeGroup.CSA
-import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 import TauCeti.GroupTheory.FreeGroup.Reduce
 
@@ -22,27 +21,29 @@ import TauCeti.GroupTheory.FreeGroup.Reduce
 
 Let `P` be a word over `α^{±1}`. A word `w` is *`P`-periodic* when it is at least as long as `P`
 and is a factor of the concatenation `Pⁿ` of `n` copies of `P` or of `P⁻¹ = invRev P`, for some
-`n`. Such a word has the period `|P|` and begins with a cyclic permutation `A` of `P` or of `P⁻¹`;
-for `P` nonempty, the `P`-periodic words are exactly the words `w = A^r A₁` with `A` a cyclic
-permutation of `P` or of `P⁻¹`, `r ≥ 1` and `A₁` a proper prefix of `A`, as in [IFT], §5.4, (22).
-When `P` is cyclically reduced, for instance when it is the reduced word of a period `A`
-(`FreeGroup.IsPeriod A`), the reduced powers of `P` and of `P⁻¹` are these concatenations, and the
-`P`-periodic words are the subwords of length at least `|P|` of the powers of `mk P` in `F(α)`.
+`n`. Such a word has the period `|P|` and begins with a cyclic permutation `A` of `P` or of `P⁻¹`.
+For `P` nonempty, the `P`-periodic words are exactly the words with these two properties, and
+exactly the words `w = A^r A₁` with `A` a cyclic permutation of `P` or of `P⁻¹`, `r ≥ 1` and `A₁`
+a proper prefix of `A`, as in [IFT], §5.4, (22). When `P` is cyclically reduced, for instance when
+it is the reduced word of a period `A` (`FreeGroup.IsPeriod A`), the reduced powers of `P` and of
+`P⁻¹` are these concatenations, and the `P`-periodic words are the subwords of length at least
+`|P|` of the powers of `mk P` in `F(α)`.
 
 For a word `P` that is not a power `uⁿ`, `n ≥ 2`, of a word, a word at least as long as `P` occurs
 in the powers of `P` only at positions in a single residue class modulo `|P|`, so the place where it
 cuts `P` is unique (`List.modEq_of_prefix_drop_flatten_replicate`; likewise for `P⁻¹`). If `P` is
-not a cyclic permutation of `P⁻¹`, for instance if `P` represents a nontrivial element of `F(α)`,
-then a word at least as long as `P` is not a factor of both a power of `P` and a power of `P⁻¹`
-(`FreeGroup.not_infix_flatten_replicate_invRev`). Two overlapping periodicities agree: if a word is
-`P`-periodic and `Q`-periodic for words `P`, `Q` that are not powers `uⁿ`, `n ≥ 2`, of words, and it
-has length at least `|P| + |Q| - gcd(|P|, |Q|)`, then `Q` is a cyclic permutation of `P` or of
-`P⁻¹` (`FreeGroup.isRotated_or_isRotated_invRev_of_isPeriodicWord`: the consequence of [Adian],
-Lemma I.2.9, that the proof of [IFT], Lemma 20 uses). This is the periodicity lemma of Fine and
-Wilf (`List.HasPeriod.gcd`), through `List.isRotated_of_infix_flatten_replicate`. A word whose
-element of `F(α)` is not a proper power is not a power `uⁿ`, `n ≥ 2`, of a word
-(`FreeGroup.not_exists_eq_flatten_replicate_of_not_isProperPower`), so all of this applies to the
-reduced word of a period.
+not a cyclic permutation of `P⁻¹`, for instance if `P` represents a nontrivial element of `F(α)`
+(`FreeGroup.not_isRotated_invRev_of_mk_ne_one`), then a word at least as long as `P` is not a
+factor of both a power of `P` and a power of `P⁻¹` (`FreeGroup.not_infix_flatten_replicate_invRev`).
+Under both conditions a `P`-periodic word determines its orientation, `P` or `P⁻¹`, and the offset
+`o < |P|` at which it starts in the powers of that word. Two overlapping periodicities agree: if a
+word is `P`-periodic and `Q`-periodic for words `P`, `Q` that are not powers `uⁿ`, `n ≥ 2`, of
+words, and it has length at least `|P| + |Q| - gcd(|P|, |Q|)`, then `Q` is a cyclic permutation of
+`P` or of `P⁻¹` (the consequence of [Adian], Lemma I.2.9, that the proof of [IFT], Lemma 20 uses).
+This follows from the periodicity lemma of Fine and Wilf (`List.HasPeriod.gcd`), through
+`List.HasPeriod.eq_of_hasPeriod`. A word whose element of `F(α)` is not a proper power is not a
+power `uⁿ`, `n ≥ 2`, of a word (`FreeGroup.not_exists_eq_flatten_replicate_of_not_isProperPower`),
+so all of this applies to the reduced word of a period.
 
 These are the words that periodic solutions of generalised equations take on their periodic
 sections ([IFT], §5.4).
@@ -55,12 +56,16 @@ sections ([IFT], §5.4).
 
 * `FreeGroup.IsPeriodicWord.hasPeriod` and
   `FreeGroup.IsPeriodicWord.take_isRotated_or_isRotated_invRev`: a `P`-periodic word has the period
-  `|P|` and begins with a cyclic permutation of `P` or of `P⁻¹`.
-* `FreeGroup.isPeriodicWord_iff_exists_eq_flatten_replicate_append`: the `P`-periodic words are the
-  words `A^r A₁`.
+  `|P|` and begins with a cyclic permutation of `P` or of `P⁻¹`; for nonempty `P` these two
+  properties characterise the `P`-periodic words (`FreeGroup.isPeriodicWord_iff_hasPeriod`).
+* `FreeGroup.isPeriodicWord_iff_exists_eq_flatten_replicate_append`: for nonempty `P`, the
+  `P`-periodic words are the words `A^r A₁`.
 * `FreeGroup.not_infix_flatten_replicate_invRev`: if `P` is not a cyclic permutation of `P⁻¹`, a
   word at least as long as `P` is not a factor of both a power of `P` and a power of `P⁻¹`; this
-  applies when `mk P ≠ 1` (`FreeGroup.not_isRotated_invRev_of_mk_ne_one`).
+  applies when `mk P ≠ 1`.
+* `FreeGroup.IsPeriodicWord.existsUnique_prefix_drop_flatten_replicate`: if `P` is not a power
+  `uⁿ`, `n ≥ 2`, and not a cyclic permutation of `P⁻¹`, the orientation and the offset of a
+  `P`-periodic word are unique.
 * `FreeGroup.isRotated_or_isRotated_invRev_of_isPeriodicWord`: overlapping periodicities.
 
 ## References
@@ -112,6 +117,11 @@ theorem isPeriodicWord_flatten_replicate (P : List (α × Bool)) {n : ℕ} (hn :
   refine ⟨?_, n, .inl (List.infix_refl _)⟩
   simpa using Nat.le_mul_of_pos_left P.length (Nat.pos_of_ne_zero hn)
 
+/-- Every word is periodic with respect to itself. -/
+@[simp]
+theorem isPeriodicWord_self (P : List (α × Bool)) : IsPeriodicWord P P := by
+  simpa using isPeriodicWord_flatten_replicate P one_ne_zero
+
 /-- The `P⁻¹`-periodic words are the `P`-periodic words. -/
 @[simp]
 theorem isPeriodicWord_invRev_left {P w : List (α × Bool)} :
@@ -154,41 +164,30 @@ theorem _root_.List.IsRotated.isPeriodicWord_iff {P Q w : List (α × Bool)} (h 
   · exact ⟨h.perm.length_eq ▸ hl, n + 1, .inl (hw.trans (h.flatten_replicate_infix n))⟩
   · exact ⟨h.perm.length_eq ▸ hl, n + 1, .inr (hw.trans (h.invRev.flatten_replicate_infix n))⟩
 
+/-- For a nonempty word `P`, a word `w` is `P`-periodic exactly when it has the period `|P|` and
+begins with a cyclic permutation of `P` or of `P⁻¹`. -/
+theorem isPeriodicWord_iff_hasPeriod {P w : List (α × Bool)} (hP : P ≠ []) :
+    IsPeriodicWord P w ↔
+      w.HasPeriod P.length ∧ (w.take P.length ~r P ∨ w.take P.length ~r invRev P) := by
+  have h := List.length_le_and_exists_infix_flatten_replicate_iff (w := w) (l := invRev P)
+    (by simpa [invRev] using hP)
+  rw [invRev_length] at h
+  rw [isPeriodicWord_iff, exists_or, and_or_left,
+    List.length_le_and_exists_infix_flatten_replicate_iff hP, h, and_or_left]
+
 /-- **The form `A^r A₁` of a periodic word** ([IFT], §5.4, (22)). For a nonempty word `P`, a word
 `w` is `P`-periodic exactly when `w = A^r A₁` for a cyclic permutation `A` of `P` or of `P⁻¹`, some
 `r ≥ 1` and a proper prefix `A₁` of `A`. -/
 theorem isPeriodicWord_iff_exists_eq_flatten_replicate_append {P w : List (α × Bool)}
     (hP : P ≠ []) : IsPeriodicWord P w ↔ ∃ A r A₁, (A ~r P ∨ A ~r invRev P) ∧ 0 < r ∧
       A₁ <+: A ∧ A₁.length < A.length ∧ w = (List.replicate r A).flatten ++ A₁ := by
-  refine ⟨fun h => ?_, ?_⟩
-  · have hpos := List.length_pos_iff.2 hP
-    refine ⟨w.take P.length, w.length / P.length, w.take (w.length % P.length),
-      h.take_isRotated_or_isRotated_invRev, Nat.div_pos h.length_le hpos,
-      List.take_prefix_take_left (Nat.mod_lt _ hpos).le, ?_,
-      h.hasPeriod.flatten_replicate_take_append_take.symm⟩
-    have := Nat.mod_lt w.length hpos
-    have := h.length_le
-    simp only [List.length_take]
-    lia
-  · rintro ⟨A, r, A₁, hA, hr, hA₁, -, rfl⟩
-    -- `A^r A₁` is a prefix of `A^(r + 1)`, so it is `A`-periodic
-    have hAw : IsPeriodicWord A ((List.replicate r A).flatten ++ A₁) := by
-      refine ⟨?_, r + 1, .inl (List.IsPrefix.isInfix ?_)⟩
-      · simpa using Nat.le_add_right_of_le (Nat.le_mul_of_pos_left A.length hr)
-      · rw [List.replicate_succ', List.flatten_append, List.flatten_singleton]
-        exact (List.prefix_append_right_inj _).2 hA₁
-    rcases hA with hA | hA
-    · exact hA.isPeriodicWord_iff.1 hAw
-    · exact isPeriodicWord_invRev_left.1 (hA.isPeriodicWord_iff.1 hAw)
-
-/-- A word representing a nontrivial element of the free group is not a cyclic permutation of its
-formal inverse: otherwise the element would be conjugate to its inverse. -/
-theorem not_isRotated_invRev_of_mk_ne_one {P : List (α × Bool)} (hP : mk P ≠ 1) :
-    ¬P ~r invRev P := by
-  intro h
-  refine IsFreeGroup.isCommTransitive.not_isConj_inv hP ?_
-  rw [inv_mk]
-  exact isConj_mk_of_isRotated h
+  have h :=
+    List.length_le_and_exists_infix_flatten_replicate_iff_exists_eq_flatten_replicate_append
+      (w := w) (l := invRev P) (by simpa [invRev] using hP)
+  rw [invRev_length] at h
+  rw [isPeriodicWord_iff, exists_or, and_or_left,
+    List.length_le_and_exists_infix_flatten_replicate_iff_exists_eq_flatten_replicate_append hP, h]
+  simp only [or_and_right, exists_or]
 
 /-- Let `P` be a word that is not a cyclic permutation of its formal inverse `P⁻¹`, for instance
 a word representing a nontrivial element of the free group
@@ -201,6 +200,37 @@ theorem not_infix_flatten_replicate_invRev {P w : List (α × Bool)} (hP : ¬P ~
   hP ((h.take_isRotated_of_flatten_replicate hw).symm.trans
     (by simpa using h'.take_isRotated_of_flatten_replicate (by simpa using hw)))
 
+/-- **Uniqueness of the cut** ([IFT], §5.4). Let `P` be a word that is not a power `uⁿ` of a word
+with `n ≥ 2` and not a cyclic permutation of its formal inverse `P⁻¹`. For a `P`-periodic word `w`
+there is exactly one orientation `b` and offset `o < |P|` such that `w` starts at position `o` of
+a concatenation of copies of `P` (for `b = true`) or of `P⁻¹` (for `b = false`). -/
+theorem IsPeriodicWord.existsUnique_prefix_drop_flatten_replicate {P w : List (α × Bool)}
+    (hP : ¬∃ u n, 2 ≤ n ∧ P = (List.replicate n u).flatten) (hPi : ¬P ~r invRev P)
+    (h : IsPeriodicWord P w) :
+    ∃! c : Bool × ℕ, c.2 < P.length ∧
+      ∃ n, w <+: ((List.replicate n (bif c.1 then P else invRev P)).flatten).drop c.2 := by
+  have hP0 := List.ne_nil_of_not_exists_eq_flatten_replicate hP
+  refine existsUnique_of_exists_of_unique ?_ ?_
+  · obtain ⟨-, n, hw | hw⟩ := h
+    · obtain ⟨o, ho, hwo⟩ := hw.exists_prefix_drop_flatten_replicate hP0
+      exact ⟨(true, o), ho, n, hwo⟩
+    · obtain ⟨o, ho, hwo⟩ := hw.exists_prefix_drop_flatten_replicate
+        (by simpa [invRev] using hP0)
+      exact ⟨(false, o), by simpa using ho, n, hwo⟩
+  -- one orientation forces congruent offsets, and two orientations are impossible
+  rintro ⟨b, o⟩ ⟨b', o'⟩ ⟨ho, n, hw⟩ ⟨ho', n', hw'⟩
+  have hl := h.length_le
+  have hinf {X : List (α × Bool)} {m k : ℕ} (hX : w <+: ((List.replicate m X).flatten).drop k) :
+      w <:+: (List.replicate m X).flatten :=
+    hX.isInfix.trans (List.drop_suffix _ _).isInfix
+  cases b <;> cases b' <;> simp only [Bool.cond_true, Bool.cond_false] at hw hw' ho ho'
+  · exact Prod.ext rfl ((List.modEq_of_prefix_drop_flatten_replicate (by simpa using hP)
+      (by simpa using hl) hw hw').eq_of_lt_of_lt (by simpa using ho) (by simpa using ho'))
+  · exact absurd (hinf hw) (not_infix_flatten_replicate_invRev hPi hl (hinf hw'))
+  · exact absurd (hinf hw') (not_infix_flatten_replicate_invRev hPi hl (hinf hw))
+  · exact Prod.ext rfl
+      ((List.modEq_of_prefix_drop_flatten_replicate hP hl hw hw').eq_of_lt_of_lt ho ho')
+
 /-- **Overlapping periodicities** (the consequence of [Adian], Lemma I.2.9, used in [IFT], proof of
 Lemma 20). Let `P` and `Q` be words that are not powers `uⁿ` of words with `n ≥ 2`. If a word of
 length at least `|P| + |Q| - gcd(|P|, |Q|)` is both `P`-periodic and `Q`-periodic, then `Q` is a
@@ -210,17 +240,19 @@ theorem isRotated_or_isRotated_invRev_of_isPeriodicWord {P Q w : List (α × Boo
     (hQ : ¬∃ u n, 2 ≤ n ∧ Q = (List.replicate n u).flatten) (hwP : IsPeriodicWord P w)
     (hwQ : IsPeriodicWord Q w) (hw : P.length + Q.length - P.length.gcd Q.length ≤ w.length) :
     Q ~r P ∨ Q ~r invRev P := by
-  -- the formal inverse of a word that is not a power is not a power
-  have hinv {X : List (α × Bool)} (hX : ¬∃ u n, 2 ≤ n ∧ X = (List.replicate n u).flatten) :
-      ¬∃ u n, 2 ≤ n ∧ invRev X = (List.replicate n u).flatten := fun ⟨u, n, hn, h⟩ =>
-    hX ⟨invRev u, n, hn, by rw [← invRev_invRev (L₁ := X), h, invRev_flatten_replicate]⟩
-  obtain ⟨-, m, hm | hm⟩ := hwP <;> obtain ⟨-, n, hn | hn⟩ := hwQ
-  · exact .inl (List.isRotated_of_infix_flatten_replicate hP hQ hm hn hw)
-  · exact .inr (by simpa using (List.isRotated_of_infix_flatten_replicate hP (hinv hQ) hm hn
-      (by simpa using hw)).invRev)
-  · exact .inr (List.isRotated_of_infix_flatten_replicate (hinv hP) hQ hm hn (by simpa using hw))
-  · exact .inl (by simpa using (List.isRotated_of_infix_flatten_replicate (hinv hP) (hinv hQ) hm hn
-      (by simpa using hw)).invRev)
+  -- the prefixes of `w` of lengths `|P|` and `|Q|` are rotations of `P` or `P⁻¹` and of `Q` or
+  -- `Q⁻¹`, so they are not powers, and the two periods agree
+  have hP' := hwP.take_isRotated_or_isRotated_invRev
+  have hQ' := hwQ.take_isRotated_or_isRotated_invRev
+  have hnp {X Y : List (α × Bool)} (hX : ¬∃ u n, 2 ≤ n ∧ X = (List.replicate n u).flatten)
+      (h : Y ~r X ∨ Y ~r invRev X) : ¬∃ u n, 2 ≤ n ∧ Y = (List.replicate n u).flatten := by
+    rcases h with h | h <;> rw [h.exists_eq_flatten_replicate_iff] <;> simpa using hX
+  rw [← hwP.hasPeriod.eq_of_hasPeriod hwQ.hasPeriod (hnp hP hP') (hnp hQ hQ') hw] at hQ'
+  rcases hP' with hP' | hP' <;> rcases hQ' with hQ' | hQ'
+  · exact .inl (hQ'.symm.trans hP')
+  · exact .inr (by simpa using (hQ'.symm.trans hP').invRev)
+  · exact .inr (hQ'.symm.trans hP')
+  · exact .inl (by simpa using (hQ'.symm.trans hP').invRev)
 
 /-! ### Examples -/
 
@@ -229,7 +261,7 @@ private theorem not_exists_eq_flatten_replicate_of_lift_eq {w : List (Fin 2 × B
     (h : lift (fun c => if c = 1 then Multiplicative.ofAdd (1 : ℤ) else 1) (mk w) =
       Multiplicative.ofAdd 1) : ¬∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten :=
   not_exists_eq_flatten_replicate_of_not_isProperPower
-    fun hw => Group.not_isProperPower_ofAdd_one (h ▸ hw.map _)
+    (Group.not_isProperPower_of_map_eq_ofAdd_one _ h)
 
 /-- The length bound of overlapping periodicities is sharp: in `F(a, b)` the word `aabaa`, of length
 `5 < 3 + 4 - gcd(3, 4)`, is both `aab`-periodic and `aaba`-periodic, and neither `aab` nor `aaba`

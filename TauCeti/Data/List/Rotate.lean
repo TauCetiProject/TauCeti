@@ -244,11 +244,12 @@ theorem IsRotated.flatten_replicate_infix {α : Type*} {l l' : List α} (h : l ~
     (replicate n l).flatten <:+: (replicate (n + 1) l').flatten := by
   obtain ⟨k, hk, rfl⟩ := isRotated_iff_mod.1 h.symm
   rw [rotate_eq_drop_append_take hk]
-  -- `(x ++ y)ⁿ⁺¹ = x ++ (y ++ x)ⁿ ++ y` with `x = l'.take k` and `y = l'.drop k`
+  -- `x (y x)ⁿ y = (x y)ⁿ x y = (x y)ⁿ⁺¹` with `x = l'.take k` and `y = l'.drop k`
   refine ⟨l'.take k, l'.drop k, ?_⟩
-  have := append_flatten_map_append (replicate n (l'.drop k)) (l'.take k)
-  simp only [map_replicate] at this
-  rw [this, replicate_succ', flatten_append, flatten_singleton, append_assoc, take_append_drop]
+  have hblock := append_flatten_map_append (replicate n (l'.drop k)) (l'.take k)
+  simp only [map_replicate] at hblock
+  rw [hblock]
+  simp [replicate_succ']
 
 /-- A cyclic rotation of a word is a power `uⁿ` of a word `u` with `n ≥ 2` exactly when the word
 itself is such a power. -/

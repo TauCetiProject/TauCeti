@@ -50,8 +50,7 @@ theorem exists_monoidHom_apply_eq_ofAdd_one (a : α) :
 /-- A free generator is not a proper power. -/
 @[simp] theorem not_isProperPower_of (a : α) : ¬ Group.IsProperPower (of a) := by
   obtain ⟨f, hf⟩ := exists_monoidHom_apply_eq_ofAdd_one a
-  intro h
-  exact Group.not_isProperPower_ofAdd_one (by simpa [hf] using Group.IsProperPower.map f h)
+  exact Group.not_isProperPower_of_map_eq_ofAdd_one f hf
 
 /-- A free generator is not a square. -/
 @[simp] theorem not_isSquare_of (a : α) : ¬IsSquare (of a) := fun ⟨r, hr⟩ =>

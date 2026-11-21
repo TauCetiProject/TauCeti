@@ -21,13 +21,14 @@ Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGrou
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
 inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
-(`FreeGroup.invRev_flatten`) and of powers of a word (`FreeGroup.invRev_flatten_replicate`),
-cyclic permutations (`List.IsRotated.invRev`), generator renaming
-(`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
-(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
-either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
-(`FreeGroup.isReduced_invRev_append`). The reduced word of a
-product `of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
+(`FreeGroup.invRev_flatten`) and of powers of a word (`FreeGroup.invRev_flatten_replicate`; so a
+word is a power `uⁿ`, `n ≥ 2`, exactly when its formal inverse is), cyclic permutations
+(`List.IsRotated.invRev`), generator renaming (`FreeGroup.map_prodMap_invRev`), and
+factorisations splitting no occurrence of a word (`FreeGroup.invRev_isUnsplit`), and reducedness
+of words `w u w⁻¹` in which no letter cancels at either join, and of words `u⁻¹ v` for reduced
+`u` and `v` with different first letters (`FreeGroup.isReduced_invRev_append`). The reduced word
+of a product `of a * of b` of two generators is `[(a, true), (b, true)]`
+(`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
 empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
 by its inverse does not change the element represented.
@@ -147,6 +148,16 @@ copies of its formal inverse. -/
 theorem invRev_flatten_replicate (w : List (α × Bool)) (n : ℕ) :
     invRev (List.replicate n w).flatten = (List.replicate n (invRev w)).flatten := by
   simp [invRev_flatten]
+
+/-- The formal inverse of a word is a power `uⁿ` of a word `u` with `n ≥ 2` exactly when the word
+itself is such a power. -/
+@[simp]
+theorem exists_invRev_eq_flatten_replicate_iff {w : List (α × Bool)} :
+    (∃ u n, 2 ≤ n ∧ invRev w = (List.replicate n u).flatten) ↔
+      ∃ u n, 2 ≤ n ∧ w = (List.replicate n u).flatten := by
+  constructor <;> rintro ⟨u, n, hn, h⟩ <;> refine ⟨invRev u, n, hn, ?_⟩
+  · rw [← invRev_invRev (L₁ := w), h, invRev_flatten_replicate]
+  · rw [h, invRev_flatten_replicate]
 
 /-- The formal inverses of two cyclic permutations of each other are cyclic permutations of each
 other. -/

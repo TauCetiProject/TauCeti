@@ -10,7 +10,6 @@ public import Mathlib.Data.Nat.ModEq
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.ProperPower
 import TauCeti.Data.List.Commutation
-import TauCeti.Data.List.Infix
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
@@ -158,23 +157,29 @@ theorem modEq_of_isStableOccurrence {W A : FreeGroup α} (hA : ¬Group.IsProperP
   · exact (this h₂ h₁ hji hij (by lia)).symm
   obtain ⟨-, u, v, hW, rfl⟩ := h₁
   obtain ⟨-, u', v', hW', rfl⟩ := h₂
-  -- the word of `A` occurs at offset `|u'| - |u|` in the first block and at offset `0` in the
-  -- second, so these offsets are congruent modulo `|A|`
+  -- each block is a prefix of the word of `W` from the position where it starts
+  have hblock {s t : List (α × Bool)} {k : ℕ}
+      (h : W.toWord = s ++ (List.replicate k A.toWord).flatten ++ t) :
+      (List.replicate k A.toWord).flatten <+: W.toWord.drop s.length :=
+    ⟨t, by rw [h, List.append_assoc, List.drop_left]⟩
+  -- the word of `A` begins the second block, at position `|u'|` of `W`, and it lies in the first
+  -- block at offset `|u'| - |u|`, as the first block reaches at least `|A|` letters past `|u'|`
+  have hA₂ : A.toWord <+: W.toWord.drop u'.length :=
+    List.IsPrefix.trans (by simp [List.replicate_succ]) (hblock hW')
+  have hA₁ : A.toWord <+: ((List.replicate (q + 2) A.toWord).flatten).drop
+      (u'.length - u.length) := by
+    refine List.prefix_of_prefix_length_le hA₂ ?_ ?_
+    · have hdrop : W.toWord.drop u'.length =
+          (W.toWord.drop u.length).drop (u'.length - u.length) := by
+        rw [List.drop_drop, Nat.add_sub_cancel' hle]
+      exact hdrop ▸ (hblock hW).drop _
+    · simp only [List.length_drop, List.length_flatten, List.map_replicate, List.sum_replicate_nat,
+        add_mul, one_mul] at hji ⊢
+      lia
   refine (Nat.modEq_iff_dvd' hle).2 (Nat.modEq_zero_iff_dvd.1
     (List.modEq_of_prefix_drop_flatten_replicate
-      (not_exists_eq_flatten_replicate_of_not_isProperPower (by rwa [mk_toWord])) le_rfl
-      (m := q + 2) (m' := r + 2) (List.prefix_iff_eq_take.2 ?_) (by simp [List.replicate_succ])))
-  have hX : u'.length - u.length + A.toWord.length ≤ (q + 2) * A.toWord.length := by
-    simp only [add_mul, one_mul] at hji ⊢
-    lia
-  -- both are the `|A|` letters of `W` from position `|u'|`
-  calc A.toWord
-      = ((W.toWord.drop u.length).drop (u'.length - u.length)).take A.toWord.length := by
-        rw [List.drop_drop, Nat.add_sub_cancel' hle, hW', List.append_assoc, List.drop_left,
-          List.replicate_succ, List.flatten_cons, List.append_assoc, List.take_left]
-    _ = _ := by
-        rw [hW, List.append_assoc, List.drop_left, List.drop_append_of_le_length (by simp; lia),
-          List.take_append_of_le_length (by simp; lia)]
+      (not_exists_eq_flatten_replicate_of_not_isProperPower (by rwa [mk_toWord])) le_rfl hA₁
+      (m' := r + 2) (by simp [List.replicate_succ])))
 
 /-- A maximal stable occurrence of a power of `A` in `W` ([IFT], §7.1, p. 92): a stable occurrence
 whose power `A ^ q` is not contained in the power of another stable occurrence. -/
@@ -396,11 +401,9 @@ end Examples
 
 /- The element `aba` of the free group on two generators is not a proper power: it has
 exponent sum `1` in `b`. -/
-private theorem not_isProperPower_aba : ¬Group.IsProperPower (of (0 : Fin 2) * of 1 * of 0) := by
-  let f : FreeGroup (Fin 2) →* Multiplicative ℤ :=
-    FreeGroup.lift fun c => if c = 1 then Multiplicative.ofAdd 1 else 1
-  intro h
-  exact Group.not_isProperPower_ofAdd_one (by simpa [f] using h.map f)
+private theorem not_isProperPower_aba : ¬Group.IsProperPower (of (0 : Fin 2) * of 1 * of 0) :=
+  Group.not_isProperPower_of_map_eq_ofAdd_one
+    (FreeGroup.lift fun c => if c = 1 then Multiplicative.ofAdd (1 : ℤ) else 1) (by simp)
 
 /-- Lemma 57 needs `A` not to be a proper power: `A = (ab)²` has stable occurrences at `0` and
 `2` in `(ab)⁷`, whose blocks share `10 ≥ |A|` letters, at positions not congruent modulo

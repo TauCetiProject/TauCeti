@@ -18,7 +18,8 @@ import Mathlib.Tactic.Group
 
 Rotating a word conjugates the free-group element it represents. Together with Mathlib's
 explicit cyclic-reduction conjugator, this relates rotation of cyclic reductions to
-conjugacy of the original elements.
+conjugacy of the original elements. A word representing a nontrivial element is not a cyclic
+permutation of its formal inverse.
 
 Conversely, two cyclically reduced words represent conjugate elements only if they are
 rotations of each other. This gives the classical conjugacy criterion in free groups: `x` and
@@ -31,6 +32,8 @@ rotations of each other.
   reduced.
 * `FreeGroup.isConj_mk_iff_isRotated`: cyclically reduced words represent conjugate elements
   exactly when they are rotations of each other.
+* `FreeGroup.not_isRotated_invRev_of_mk_ne_one`: a word representing a nontrivial element is not
+  a cyclic permutation of its formal inverse.
 * `FreeGroup.isConj_iff_isRotated_reduceCyclically`: the conjugacy criterion for elements of a
   free group.
 * `FreeGroup.length_reduceCyclically_toWord_le_norm_of_isConj` and
@@ -122,6 +125,24 @@ theorem isConj_mk_of_isRotated {u v : List (α × Bool)} (h : u.IsRotated v) :
   obtain ⟨n, rfl⟩ := h
   exact isConj_iff.mpr ⟨(mk (u.take (n % u.length)))⁻¹,
     by simpa only [inv_inv] using conj_mk_rotate u n⟩
+
+/-- A word representing a nontrivial element of the free group is not a cyclic permutation of its
+formal inverse. -/
+theorem not_isRotated_invRev_of_mk_ne_one {P : List (α × Bool)} (hP : mk P ≠ 1) :
+    ¬P ~r invRev P := by
+  rintro ⟨k, hk⟩
+  -- a word equal to its formal inverse represents an element of square `1`, hence `1`
+  have h1 {w : List (α × Bool)} (hw : w = invRev w) : mk w = 1 := by
+    refine (pow_eq_one_iff_left two_ne_zero).1 ?_
+    calc mk w ^ 2 = mk (invRev w) * mk w := by rw [sq, ← hw]
+      _ = 1 := by rw [← inv_mk, inv_mul_cancel]
+  -- cut `P = s t` where the rotation cuts it: `t s = t⁻¹ s⁻¹` forces `t = t⁻¹` and `s = s⁻¹`
+  have hst : P.drop (k % P.length) ++ P.take (k % P.length) =
+      invRev (P.drop (k % P.length)) ++ invRev (P.take (k % P.length)) := by
+    rw [← invRev_append, List.take_append_drop, ← List.rotate_eq_drop_append_take_mod, hk]
+  obtain ⟨ht, hs⟩ := List.append_inj hst (by simp)
+  apply hP
+  rw [← List.take_append_drop (k % P.length) P, ← mul_mk, h1 hs, h1 ht, one_mul]
 
 /-- The cyclic reduction of any word has an explicit group conjugator. -/
 theorem mk_conjugator_mul_mk_reduceCyclically (L : List (α × Bool)) [DecidableEq α] :

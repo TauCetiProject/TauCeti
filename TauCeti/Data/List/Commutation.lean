@@ -139,8 +139,9 @@ theorem rotate_eq_self_iff_length_dvd {l : List α}
     (a := l.take (k % l.length)) (b := l.drop (k % l.length)) (by rw [take_append_drop, hk])
   have hi0 : i ≠ 0 := by rintro rfl; simpa [hpos.ne', hr] using congrArg length hi
   have hj0 : j ≠ 0 := by rintro rfl; have := congrArg length hj; simp at this; lia
-  exact hl ⟨u, i + j, by lia, by
-    rw [← take_append_drop (k % l.length) l, hi, hj, replicate_add, flatten_append]⟩
+  refine hl ⟨u, i + j, by lia, ?_⟩
+  calc l = l.take (k % l.length) ++ l.drop (k % l.length) := (take_append_drop _ _).symm
+    _ = (replicate (i + j) u).flatten := by rw [hi, hj, replicate_add, flatten_append]
 
 /-- Let `l` be a word that is not a power `uⁿ` of a word with `n ≥ 2`. Its rotations by amounts
 that are not congruent modulo `|l|` are distinct: rotating `l` by `i` and by `j` gives the same
@@ -151,10 +152,10 @@ theorem rotate_eq_rotate_iff_modEq {l : List α}
   refine ⟨fun h => ?_, fun h => by rw [← rotate_mod l i, h, rotate_mod]⟩
   wlog hij : i ≤ j generalizing i j
   · exact (this h.symm (by lia)).symm
-  -- cancel the common rotation by `i`
-  rw [← Nat.sub_add_cancel hij, ← rotate_rotate, rotate_eq_rotate, eq_comm,
-    rotate_eq_self_iff_length_dvd hl] at h
-  exact (Nat.modEq_iff_dvd' hij).2 h
+  -- cancelling the common rotation by `i`, the rotation by `j - i` fixes `l`
+  have hfix : l.rotate (j - i) = l := by
+    rw [← rotate_eq_rotate (n := i), rotate_rotate, Nat.sub_add_cancel hij, h]
+  exact (Nat.modEq_iff_dvd' hij).2 ((rotate_eq_self_iff_length_dvd hl).1 hfix)
 
 /-- **Uniqueness of the cut** ([IFT], §5.4, before Lemma 20). Let `l` be a word that is not a power
 `uⁿ` of a word with `n ≥ 2`. If a word `w` at least as long as `l` occurs in the concatenation of
