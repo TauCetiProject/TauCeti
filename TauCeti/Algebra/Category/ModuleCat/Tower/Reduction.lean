@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
-public import TauCeti.RingTheory.Ideal.Quotient.PowTransition
-
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
 public import TauCeti.RingTheory.AdicCompletion.Finite
+public import TauCeti.RingTheory.Ideal.Quotient.PowTransition
 
 /-!
 # Finite modules over a complete ring as adic systems
@@ -94,6 +94,9 @@ noncomputable abbrev reduction : ModuleTower.{v} A :=
 /-- The quotient map from `M` onto the `n`-th term `M ⧸ I^{n+1} M` of its reduction. -/
 noncomputable abbrev reductionπ (n : ℕ) : M →ₗ[A] (reduction I M).obj (op n) :=
   quotientsπ _ (I.pow_succ_smul_top_antitone M) n
+
+instance [Module.Finite A M] (n : ℕ) : Module.Finite A ((reduction I M).obj (op n)) :=
+  .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) n)
 
 /-- **The reduction of a module is an `I`-adic system.** -/
 theorem isAdicSystem_reduction : (reduction I M).IsAdicSystem I where
@@ -310,6 +313,19 @@ theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
     limMap (reductionMap I u) (toLimReduction I M x) = toLimReduction I N (u x) :=
   Subtype.ext <| funext fun n ↦ by simp
 
+/-- `limReductionEquiv` intertwines `limMap` of a reduced linear map with `AdicCompletion.map`. -/
+@[simp]
+theorem limReductionEquiv_limMap_reductionMap (u : M →ₗ[A] N) (y : (reduction I M).lim) :
+    limReductionEquiv I N (limMap (reductionMap I u) y) =
+      AdicCompletion.map I u (limReductionEquiv I M y) := by
+  ext n
+  obtain ⟨m, hm⟩ := quotientsπ_surjective _ _ n ((reduction I M).limπ n y)
+  have hm' : (reduction I N).limπ n (limMap (reductionMap I u) y) = reductionπ I N n (u m) := by
+    rw [← LinearMap.comp_apply, limπ_comp_limMap, LinearMap.comp_apply, ← hm,
+      reductionMap_app_reductionπ]
+  rw [limReductionEquiv_apply_val I N hm', AdicCompletion.map_val_apply,
+    limReductionEquiv_apply_val I M hm.symm, LinearMap.reduceModIdeal_apply]
+
 /-- Reduction along `I` as a functor from `A`-modules to towers. -/
 @[expose, simps]
 noncomputable def reductionFunctor : ModuleCat.{v} A ⥤ ModuleTower.{v} A where
@@ -392,6 +408,11 @@ theorem isFiniteAdicSystem_iff (F : ModuleTower.{v} A) :
 /-- The category of `I`-adic systems with finite term `M₀`, a full subcategory of the towers of
 `A`-modules. -/
 abbrev FiniteAdicSystem := (isFiniteAdicSystem.{v} I).FullSubcategory
+
+instance FiniteAdicSystem.finite_obj {I : Ideal A} (F : FiniteAdicSystem.{v} I) (n : ℕ) :
+    Module.Finite A (F.obj.obj (op n)) :=
+  have := ((isFiniteAdicSystem_iff I _).1 F.property).2
+  ((isFiniteAdicSystem_iff I _).1 F.property).1.finite_obj n
 
 /-- Reduction of finite `A`-modules to `I`-adic systems with finite `M₀`. -/
 @[expose, simps! obj_obj map_hom]
@@ -515,6 +536,14 @@ theorem finiteReductionEquiv_functor [IsNoetherianRing A] [IsAdicComplete I A] :
 @[simp]
 theorem finiteReductionEquiv_inverse [IsNoetherianRing A] [IsAdicComplete I A] :
     (finiteReductionEquiv.{v} I).inverse = finiteLim I := (rfl)
+
+/-- The unit of the finite reduction equivalence sends `x` to its reduction sequence. -/
+@[simp]
+theorem finiteReductionEquiv_unitIso_hom_app_apply [IsNoetherianRing A] [IsAdicComplete I A]
+    (M : FGModuleCat.{v} A) (x : M) :
+    dsimp% ((finiteReductionEquiv.{v} I).unitIso.hom.app M).hom.hom x = toLimReduction I M x := by
+  simp only [finiteReductionEquiv]
+  rfl
 
 /-- The counit of the finite reduction equivalence evaluates a reduction class by the limit
 projection. -/

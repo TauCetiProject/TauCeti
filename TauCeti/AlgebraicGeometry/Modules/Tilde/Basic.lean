@@ -58,7 +58,11 @@ out of `M~` is determined by where it sends the global sections coming from `M`.
 * `TauCeti.AlgebraicGeometry.tilde_hom_ext`: a morphism out of `M~` is determined by its values
   on the global sections coming from `M`;
 * `AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijective`: morphisms of
-  quasi-coherent modules on `Spec R` are the `R`-linear maps of their global sections.
+  quasi-coherent modules on `Spec R` are the `R`-linear maps of their global sections;
+* `AlgebraicGeometry.Scheme.Modules.isoOfModuleSpecΓIso`: lifts an isomorphism of global sections
+  between quasi-coherent modules on `Spec R` to an isomorphism of sheaves, with
+  `moduleSpecΓFunctor_map_isoOfModuleSpecΓIso_hom` and
+  `moduleSpecΓFunctor_map_isoOfModuleSpecΓIso_inv` identifying its action on global sections.
 
 ## References
 
@@ -417,6 +421,34 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_bijectiv
   rw [h]
   exact (Equiv.bijective _).comp
     ⟨fun _ _ hfg ↦ (cancel_epi ε).1 hfg, fun g ↦ ⟨inv ε ≫ g, IsIso.hom_inv_id_assoc ε g⟩⟩
+
+/-- Lift an isomorphism of global sections between quasi-coherent `𝒪_{Spec R}`-modules to an
+isomorphism of sheaves, via the equivalence `tildeEquiv`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.isoOfModuleSpecΓIso
+    {M N : (Spec R).Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (i : moduleSpecΓFunctor.obj M ≅ moduleSpecΓFunctor.obj N) : M ≅ N :=
+  (SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).ι.mapIso
+    ((tildeEquiv (R := R)).symm.fullyFaithfulFunctor.preimageIso (X := ⟨M, ‹_›⟩) (Y := ⟨N, ‹_›⟩) i)
+
+/-- The isomorphism `isoOfModuleSpecΓIso i` induces `i.hom` on global sections. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_isoOfModuleSpecΓIso_hom
+    {M N : (Spec R).Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (i : moduleSpecΓFunctor.obj M ≅ moduleSpecΓFunctor.obj N) :
+    moduleSpecΓFunctor.map (Scheme.Modules.isoOfModuleSpecΓIso i).hom = i.hom := by
+  simp only [Scheme.Modules.isoOfModuleSpecΓIso, Functor.mapIso_hom]
+  exact (tildeEquiv (R := R)).symm.fullyFaithfulFunctor.map_preimage
+    (X := ⟨M, ‹_›⟩) (Y := ⟨N, ‹_›⟩) i.hom
+
+/-- The inverse of `isoOfModuleSpecΓIso i` induces `i.inv` on global sections. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.moduleSpecΓFunctor_map_isoOfModuleSpecΓIso_inv
+    {M N : (Spec R).Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (i : moduleSpecΓFunctor.obj M ≅ moduleSpecΓFunctor.obj N) :
+    moduleSpecΓFunctor.map (Scheme.Modules.isoOfModuleSpecΓIso i).inv = i.inv := by
+  simp only [Scheme.Modules.isoOfModuleSpecΓIso, Functor.mapIso_inv]
+  exact (tildeEquiv (R := R)).symm.fullyFaithfulFunctor.map_preimage
+    (X := ⟨N, ‹_›⟩) (Y := ⟨M, ‹_›⟩) i.inv
 
 end Extensionality
 

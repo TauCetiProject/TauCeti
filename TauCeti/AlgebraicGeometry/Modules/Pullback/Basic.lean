@@ -54,6 +54,14 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Modules.pullbackSquareIso`: comparison isomorphism
+  `pullback g₂ ⋙ pullback ιX ≅ pullback ιY ⋙ pullback g₁` for a commutative square of schemes,
+  compatible with morphism equality (`pullbackSquareIso_congr`), identities
+  (`pullbackSquareIso_id_hom_app`), and horizontal pasting
+  (`pullback_map_pullbackComp_hom_app_comp_pullbackSquareIso_hom_app`);
+* `AlgebraicGeometry.Scheme.Modules.pullbackEquiv` and
+  `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback`: pulling back along an isomorphism of
+  schemes induces an equivalence of categories of modules;
 * `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
   pullback is direct image along the inverse;
 * `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app`: the unit of
@@ -225,6 +233,96 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
       eqToHom (by rw [p]) ≫ (pullbackComp f b).inv.app M := by
   subst p
   simp [pullbackCongr]
+
+/-- For a commutative square `ιX ≫ g₂ = g₁ ≫ ιY` of schemes, the canonical isomorphism
+`pullback g₂ ⋙ pullback ιX ≅ pullback ιY ⋙ pullback g₁` induced by the pullback pseudofunctor. -/
+def pullbackSquareIso {X₁ X₂ Y₁ Y₂ : Scheme.{u}} {ιX : X₁ ⟶ X₂} {ιY : Y₁ ⟶ Y₂}
+    {g₁ : X₁ ⟶ Y₁} {g₂ : X₂ ⟶ Y₂} (w : ιX ≫ g₂ = g₁ ≫ ιY) :
+    pullback g₂ ⋙ pullback ιX ≅ pullback ιY ⋙ pullback g₁ :=
+  pullbackComp ιX g₂ ≪≫ pullbackCongr w ≪≫ (pullbackComp g₁ ιY).symm
+
+/-- On components, `pullbackSquareIso` factors through `pullbackComp` and `pullbackCongr`. -/
+@[simp]
+lemma pullbackSquareIso_hom_app {X₁ X₂ Y₁ Y₂ : Scheme.{u}} {ιX : X₁ ⟶ X₂} {ιY : Y₁ ⟶ Y₂}
+    {g₁ : X₁ ⟶ Y₁} {g₂ : X₂ ⟶ Y₂} (w : ιX ≫ g₂ = g₁ ≫ ιY) (M : Y₂.Modules) :
+    (pullbackSquareIso w).hom.app M =
+      (pullbackComp ιX g₂).hom.app M ≫ (pullbackCongr w).hom.app M ≫
+        (pullbackComp g₁ ιY).inv.app M := by
+  simp [pullbackSquareIso]
+
+/-- On components, the inverse of `pullbackSquareIso` factors through `pullbackComp` and
+`pullbackCongr`. -/
+@[simp]
+lemma pullbackSquareIso_inv_app {X₁ X₂ Y₁ Y₂ : Scheme.{u}} {ιX : X₁ ⟶ X₂} {ιY : Y₁ ⟶ Y₂}
+    {g₁ : X₁ ⟶ Y₁} {g₂ : X₂ ⟶ Y₂} (w : ιX ≫ g₂ = g₁ ≫ ιY) (M : Y₂.Modules) :
+    (pullbackSquareIso w).inv.app M =
+      (pullbackComp g₁ ιY).hom.app M ≫ (pullbackCongr w).inv.app M ≫
+        (pullbackComp ιX g₂).inv.app M := by
+  simp [pullbackSquareIso]
+
+/-- Compatibility of `pullbackSquareIso` with replacing the vertical morphisms by equal ones. -/
+@[reassoc]
+lemma pullbackSquareIso_congr {X₁ X₂ Y₁ Y₂ : Scheme.{u}} {ιX : X₁ ⟶ X₂} {ιY : Y₁ ⟶ Y₂}
+    {g₁ g₁' : X₁ ⟶ Y₁} {g₂ g₂' : X₂ ⟶ Y₂} (hg₁ : g₁ = g₁') (hg₂ : g₂ = g₂')
+    (w : ιX ≫ g₂ = g₁ ≫ ιY) (w' : ιX ≫ g₂' = g₁' ≫ ιY) (M : Y₂.Modules) :
+    (pullback ιX).map ((pullbackCongr hg₂).hom.app M) ≫ (pullbackSquareIso w').hom.app M =
+      (pullbackSquareIso w).hom.app M ≫ (pullbackCongr hg₁).hom.app ((pullback ιY).obj M) := by
+  subst hg₁ hg₂
+  simp [pullbackCongr]
+
+/-- For the identity square `ι ≫ 𝟙 X₂ = 𝟙 X₁ ≫ ι`, `pullbackSquareIso` commutes with
+`pullbackId`. -/
+@[reassoc]
+lemma pullbackSquareIso_id_hom_app {X₁ X₂ : Scheme.{u}} (ι : X₁ ⟶ X₂)
+    (w : ι ≫ 𝟙 X₂ = 𝟙 X₁ ≫ ι) (M : X₂.Modules) :
+    (pullbackSquareIso w).hom.app M ≫ (pullbackId X₁).hom.app ((pullback ι).obj M) =
+      (pullback ι).map ((pullbackId X₂).hom.app M) := by
+  simp only [pullbackSquareIso_hom_app, Category.assoc]
+  rw [pseudofunctor_right_unitality_app, ← Iso.hom_inv_id_app_assoc (pullbackComp ι (𝟙 X₂)) M
+    ((pullback ι).map ((pullbackId X₂).hom.app M)), pseudofunctor_left_unitality_app]
+  simp [pullbackCongr]
+
+/-- Horizontal pasting of commutative squares: `pullbackSquareIso` commutes with `pullbackComp`. -/
+@[reassoc]
+lemma pullback_map_pullbackComp_hom_app_comp_pullbackSquareIso_hom_app
+    {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : Scheme.{u}}
+    {ιX : X₁ ⟶ X₂} {ιY : Y₁ ⟶ Y₂} {ιZ : Z₁ ⟶ Z₂}
+    {f₁ : X₁ ⟶ Y₁} {f₂ : X₂ ⟶ Y₂} {g₁ : Y₁ ⟶ Z₁} {g₂ : Y₂ ⟶ Z₂}
+    (wf : ιX ≫ f₂ = f₁ ≫ ιY) (wg : ιY ≫ g₂ = g₁ ≫ ιZ)
+    (wfg : ιX ≫ (f₂ ≫ g₂) = (f₁ ≫ g₁) ≫ ιZ) (M : Z₂.Modules) :
+    (pullback ιX).map ((pullbackComp f₂ g₂).hom.app M) ≫ (pullbackSquareIso wfg).hom.app M =
+      (pullbackSquareIso wf).hom.app ((pullback g₂).obj M) ≫
+        (pullback f₁).map ((pullbackSquareIso wg).hom.app M) ≫
+        (pullbackComp f₁ g₁).hom.app ((pullback ιZ).obj M) := by
+  simp only [pullbackSquareIso_hom_app, Functor.map_comp, Category.assoc]
+  rw [pullback_map_pullbackComp_hom_app_comp_pullbackComp_hom_app_assoc,
+    pullbackComp_inv_app_comp_pullback_map_pullbackComp_hom_app_assoc,
+    pullbackCongr_hom_app_comp_pullbackComp_hom_app_assoc,
+    pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app_assoc,
+    pullbackComp_inv_app_comp_pullback_map_pullbackComp_inv_app_assoc,
+    Iso.inv_hom_id_app, Category.comp_id]
+  simp [pullbackCongr]
+
+/-- An isomorphism `e : X ≅ Y` of schemes induces an equivalence of categories of modules
+`Y.Modules ≌ X.Modules` by pullback along `e.hom` and `e.inv`. -/
+def pullbackEquiv (e : X ≅ Y) : Y.Modules ≌ X.Modules :=
+  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
+    ((pullbackId Y).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm)
+    (pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId X)
+
+/-- The forward functor of `pullbackEquiv e` is `pullback e.hom`. -/
+@[simp]
+theorem pullbackEquiv_functor (e : X ≅ Y) : (pullbackEquiv e).functor = pullback e.hom :=
+  (rfl)
+
+/-- The inverse functor of `pullbackEquiv e` is `pullback e.inv`. -/
+@[simp]
+theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
+/-- Pulling back modules along an isomorphism of schemes is an equivalence of categories. -/
+instance isEquivalence_pullback (f : X ⟶ Y) [IsIso f] : (pullback f).IsEquivalence :=
+  (pullbackEquiv (asIso f)).isEquivalence_functor
 
 end Coherence
 

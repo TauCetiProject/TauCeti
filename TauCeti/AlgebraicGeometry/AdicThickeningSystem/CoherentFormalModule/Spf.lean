@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Basic
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.GlobalSections
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Reduction
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
+import TauCeti.RingTheory.AdicCompletion.Noetherian
+import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
-# Global sections of coherent formal modules on `spf I`
+# Global sections and equivalence of coherent formal modules on `spf I`
 
 Let `I` be an ideal of a commutative ring `R`. A coherent formal module `M` on the formal spectrum
 `spf I`, whose levels are the affine schemes `Spec (R ⧸ I ^ (n + 1))`, is a system of finitely
@@ -28,19 +31,27 @@ affine scheme (`isFiniteAdicSystem_sectionsTower_obj`). Morphisms of coherent fo
 `spf I` are exactly the morphisms of these towers: global sections identify quasi-coherent modules
 on an affine scheme with modules over its ring, and a family of linear maps compatible with the
 transitions of the towers is compatible with the reduction isomorphisms. Thus
-`finiteSectionsTower I` is a fully faithful functor from coherent formal modules on `spf I` to the
-`I`-adic systems with finite first term, for any commutative ring `R`.
+`finiteSectionsTower I` is an additive, fully faithful functor from coherent formal modules on
+`spf I` to `I`-adic systems with finite first term, for any commutative ring `R`.
 
-Over a noetherian ring it is moreover essentially surjective, hence an equivalence (Stacks,
-Lemma 30.23.1). The `n`-th term `Mₙ` of an `I`-adic system with `M₀` finite is a finite, hence
-finitely presented, module over `R ⧸ I ^ (n + 1)`, and the pullback of the associated sheaf `Mₙ₊₁~`
-to `Spec (R ⧸ I ^ (n + 1))` is the sheaf associated with `Mₙ₊₁ ⧸ I ^ (n + 1) Mₙ₊₁ ≅ Mₙ`, so the
-sheaves `Mₙ~` form a coherent formal module with tower of sections `(Mₙ)`. When `R` is moreover
-`I`-adically complete, finite `I`-adic systems are the reductions of finite `R`-modules
-(`TauCeti.ModuleTower.finiteReduction_isEquivalence`), so for a noetherian adic ring `A` the
-coherent formal modules on `Spf A` are equivalent to the finite `A`-modules
-(`spfEquivFGModuleCat`). Applied to the completion `Â` of a noetherian ring along an
-ideal, this describes the coherent formal modules on `Spf Â`.
+When every quotient `R ⧸ I ^ (n + 1)` is Noetherian — in particular when `I` is finitely generated
+and `R ⧸ I` is Noetherian (`essSurj_finiteSectionsTower_of_fg`), or when `R` is Noetherian — every
+finite `I`-adic system `(Mₙ)` arises in this way: `Mₙ` is a finite, hence finitely presented,
+module over `R ⧸ I ^ (n + 1)`, and the pullback of the associated sheaf `Mₙ₊₁~` to
+`Spec (R ⧸ I ^ (n + 1))` is the sheaf associated with `Mₙ₊₁ ⧸ I ^ (n + 1) Mₙ₊₁ ≅ Mₙ`, so the
+sheaves `Mₙ~` form a coherent formal module with tower of sections `(Mₙ)`
+(`essSurj_finiteSectionsTower`). Conversely, essential surjectivity of `finiteSectionsTower I`
+forces every `R ⧸ I ^ (n + 1)` to be Noetherian (`essSurj_finiteSectionsTower_iff`,
+`isEquivalence_finiteSectionsTower_iff`). Consequently, without Noetherianity essential surjectivity
+fails even for `I = ⊥`: over `k[x₀, x₁, …]` (`k` nontrivial), `finiteSectionsTower ⊥` is not
+essentially surjective (`not_essSurj_finiteSectionsTower_mvPolynomial`).
+
+When `R` is moreover `I`-adically complete and Noetherian, finite `I`-adic systems are the
+reductions of finite `R`-modules (`TauCeti.ModuleTower.finiteReductionEquiv`), giving the
+equivalence `CoherentFormalModule.spfEquiv` for `spf I`, and
+`CoherentFormalModule.spfEquivFGModuleCat` for a Noetherian adic ring `A` (`Spf A`) (Stacks,
+Lemma 30.23.1). Applied to the completion `Â` of a Noetherian ring along an ideal, this describes
+the coherent formal modules on `Spf Â`.
 
 ## Main definitions
 
@@ -48,6 +59,11 @@ ideal, this describes the coherent formal modules on `Spf Â`.
   of global sections of the levels of a coherent formal module on `spf I`.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.finiteSectionsTower`: the
   same functor, valued in `I`-adic systems with finite first term.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.sectionsLim`,
+  `finiteSectionsLim`: the inverse limit `lim Γ(M n)` of levelwise global sections.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.spfEquiv`: equivalence
+  between finite modules over a Noetherian `I`-adically complete ring and coherent formal modules on
+  `spf I`.
 * `CoherentFormalModule.spfEquivFGModuleCat`: for an adic ring `A` with noetherian
   underlying ring, the equivalence between coherent formal modules on `Spf A` and finite
   `A`-modules, with `spfEquivFGModuleCatFunctorCompFiniteReductionIso` identifying the
@@ -57,8 +73,13 @@ ideal, this describes the coherent formal modules on `Spf Â`.
 
 * `CoherentFormalModule.isFiniteAdicSystem_sectionsTower_obj`: the tower of global sections is an
   `I`-adic system with finite first term.
-* `CoherentFormalModule.sectionsTower` is full and faithful.
-* `CoherentFormalModule.finiteSectionsTower` is an equivalence when `R` is noetherian.
+* `CoherentFormalModule.sectionsTower` is additive, full, and faithful; `finiteSectionsTower I` is
+  an equivalence if and only if every `R ⧸ I ^ (n + 1)` is Noetherian
+  (`isEquivalence_finiteSectionsTower`, `isEquivalence_finiteSectionsTower_iff`), in particular when
+  `I` is finitely generated and `R ⧸ I` is Noetherian (`isEquivalence_finiteSectionsTower_of_fg`)
+  or when `R` is Noetherian.
+* `CoherentFormalModule.not_essSurj_finiteSectionsTower_mvPolynomial`: `finiteSectionsTower ⊥` is
+  not essentially surjective over `MvPolynomial ℕ k` for nontrivial `k`.
 
 ## References
 
@@ -68,8 +89,8 @@ ideal, this describes the coherent formal modules on `Spf Â`.
 public section
 
 open CategoryTheory Opposite AlgebraicGeometry
-open TauCeti.AlgebraicGeometry
 open scoped ChangeOfRings
+open TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -228,7 +249,9 @@ instance : (sectionsTower I).Additive where
         (Functor.map_add _)
 
 /-- The tower of global sections of a coherent formal module on `spf I`, as an `I`-adic system with
-finite first term (`isFiniteAdicSystem_sectionsTower_obj`). It is fully faithful. -/
+finite first term (`isFiniteAdicSystem_sectionsTower_obj`). It is additive and fully faithful, and
+is an equivalence if and only if every quotient `R ⧸ I ^ (n + 1)` is Noetherian
+(`isEquivalence_finiteSectionsTower`, `isEquivalence_finiteSectionsTower_iff`). -/
 -- `@[expose]` is forced by dependent typing, as for `ModuleTower.finiteReduction`: the morphisms
 -- in `finiteSectionsTower_map_hom` are morphisms of towers only because the underlying towers of
 -- `finiteSectionsTower I` reduce definitionally to those of `sectionsTower I`.
@@ -263,11 +286,11 @@ variable {I} {F : ModuleTower.{u} R} (hF : F.IsAdicSystem I)
 
 open ModuleTower.IsAdicSystem
 
-variable [IsNoetherianRing R] [Module.Finite R (F.obj (op 0))]
+variable [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] [Module.Finite R (F.obj (op 0))]
 
 /-- The coherent formal module on `spf I` whose `n`-th level is the sheaf associated with the
-`n`-th term `Mₙ` of an `I`-adic system with `M₀` finite, over a noetherian ring. Its reduction
-isomorphisms are `ι n ^* Mₙ₊₁~ ≅ ((R ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁)~ ≅ Mₙ~`. -/
+`n`-th term `Mₙ` of an `I`-adic system with `M₀` finite, when `R ⧸ I ^ (n + 1)` is noetherian.
+Its reduction isomorphisms are `ι n ^* Mₙ₊₁~ ≅ ((R ⧸ I ^ (n + 1)) ⊗ Mₙ₊₁)~ ≅ Mₙ~`. -/
 private def ofAdicSystem : CoherentFormalModule (spf I) where
   obj n := tilde (levelModule hF n)
   isFinitePresentation n :=
@@ -334,19 +357,193 @@ private instance : IsIso (sectionsHom hF) :=
 
 end EssSurj
 
-/-- **Finite adic systems are towers of sections of coherent formal modules.** Over a noetherian
-ring `R`, every `I`-adic system `(Mₙ)` with `M₀` finite is the tower of global sections of a
-coherent formal module on `spf I`, the system of sheaves `Mₙ~` on `Spec (R ⧸ I ^ (n + 1))`. -/
-instance [IsNoetherianRing R] : (finiteSectionsTower I).EssSurj where
+/-- When every quotient `R ⧸ I ^ (n + 1)` is Noetherian — in particular when `R` is Noetherian —
+every `I`-adic system with finite first term is the global-sections tower of a coherent formal
+module on `spf I`. No `I`-adic completeness assumption on `R` is needed. -/
+instance essSurj_finiteSectionsTower [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] :
+    (finiteSectionsTower I).EssSurj where
   mem_essImage F := by
     obtain ⟨hF, hF₀⟩ := (ModuleTower.isFiniteAdicSystem_iff I _).1 F.property
     exact ⟨ofAdicSystem hF, ⟨ObjectProperty.isoMk _ (asIso (sectionsHom hF)).symm⟩⟩
 
-/-- **Coherent formal modules on `spf I` are finite adic systems** (Stacks, Lemma 30.23.1): over a
-noetherian ring `R`, taking global sections levelwise is an equivalence from coherent formal modules
-on `spf I` to `I`-adic systems of `R`-modules with finite first term. -/
+end
+
+noncomputable section
+
+variable {R : Type u} [CommRing R]
+
+/-- When `I` is finitely generated and `R ⧸ I` is Noetherian, every quotient `R ⧸ I ^ (n + 1)` is
+Noetherian, so `finiteSectionsTower I` is essentially surjective without global Noetherianity or
+`I`-adic completeness assumptions on `R`. -/
+theorem essSurj_finiteSectionsTower_of_fg (I : Ideal R) (hI : I.FG) [IsNoetherianRing (R ⧸ I)] :
+    (finiteSectionsTower I).EssSurj :=
+  have : ∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1)) := fun n ↦
+    Ideal.isNoetherianRing_quotient_pow_of_fg I hI (n + 1)
+  inferInstance
+
+/-- `finiteSectionsTower I` is essentially surjective if and only if every quotient
+`R ⧸ I ^ (n + 1)` is Noetherian. -/
+theorem essSurj_finiteSectionsTower_iff (I : Ideal R) :
+    (finiteSectionsTower I).EssSurj ↔ ∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1)) := by
+  refine ⟨fun hEss n ↦ (isNoetherianRing_iff_ideal_fg _).2 fun J ↦ ?_,
+    fun h ↦ @essSurj_finiteSectionsTower _ _ I h⟩
+  let S := R ⧸ I ^ (n + 1)
+  let φ : R →+* S := Ideal.Quotient.mk (I ^ (n + 1))
+  let M : ModuleCat.{u} R := (ModuleCat.restrictScalars φ).obj (ModuleCat.of S (S ⧸ J))
+  have : Module.Finite S (S ⧸ J) := .of_surjective J.mkQ (Submodule.mkQ_surjective J)
+  have : Module.Finite R M :=
+    (φ.finite_restrictScalars_iff Ideal.Quotient.mk_surjective (ModuleCat.of S (S ⧸ J))).2
+      inferInstance
+  let F : ModuleTower.FiniteAdicSystem.{u} I :=
+    (ModuleTower.finiteReduction.{u} I).obj (FGModuleCat.of R M)
+  have hker : LinearMap.ker (ModuleTower.reductionπ I M n) = ⊥ := by
+    rw [ModuleTower.ker_quotientsπ]
+    refine eq_bot_iff.2 (Submodule.smul_le.2 fun r hr x _ ↦ ?_)
+    rw [Submodule.mem_bot]
+    exact (ModuleCat.restrictScalars.smul_def φ (M := ModuleCat.of S (S ⧸ J)) r x).trans
+      (by rw [Ideal.Quotient.eq_zero_iff_mem.2 hr, zero_smul]; rfl)
+  let eRed : M ≃ₗ[R] F.obj.obj (op n) :=
+    LinearEquiv.ofBijective (ModuleTower.reductionπ I M n)
+      ⟨LinearMap.ker_eq_bot.1 hker, ModuleTower.quotientsπ_surjective _ _ n⟩
+  obtain ⟨ℱ, ⟨e⟩⟩ := hEss.mem_essImage F
+  let eR : (ModuleCat.restrictScalars φ).obj (moduleSpecΓFunctor.obj (ℱ.obj n)) ≅
+      (ModuleCat.restrictScalars φ).obj (ModuleCat.of S (S ⧸ J)) :=
+    ((evaluation _ _).obj (op n)).mapIso ((ModuleTower.isFiniteAdicSystem I).ι.mapIso e) ≪≫
+      eRed.symm.toModuleIso
+  have := φ.full_restrictScalars Ideal.Quotient.mk_surjective
+  let eS : moduleSpecΓFunctor.obj (ℱ.obj n) ≅ ModuleCat.of S (S ⧸ J) :=
+    (Functor.FullyFaithful.ofFullyFaithful (ModuleCat.restrictScalars φ)).preimageIso eR
+  have : Module.FinitePresentation S (moduleSpecΓFunctor.obj (ℱ.obj n)) :=
+    @Scheme.Modules.finitePresentation_moduleSpecΓ _ (ℱ.obj n) (ℱ.isFinitePresentation n)
+  have : Module.FinitePresentation S (S ⧸ J) := .of_equiv eS.toLinearEquiv
+  obtain ⟨s, hs⟩ := Module.FinitePresentation.fg_ker J.mkQ (Submodule.mkQ_surjective J)
+  exact ⟨s, hs.trans (Submodule.ker_mkQ J)⟩
+
+/-- When every quotient `R ⧸ I ^ (n + 1)` is Noetherian — in particular when `R` is Noetherian —
+taking levelwise global sections identifies coherent formal modules on `spf I` with `I`-adic
+systems of `R`-modules having finite first term. -/
+instance isEquivalence_finiteSectionsTower (I : Ideal R)
+    [∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1))] :
+    (finiteSectionsTower I).IsEquivalence where
+
+/-- When `I` is finitely generated and `R ⧸ I` is Noetherian, taking levelwise global sections
+identifies coherent formal modules on `spf I` with finite `I`-adic systems, without global
+Noetherianity or `I`-adic completeness assumptions on `R`. -/
+theorem isEquivalence_finiteSectionsTower_of_fg (I : Ideal R) (hI : I.FG)
+    [IsNoetherianRing (R ⧸ I)] :
+    (finiteSectionsTower I).IsEquivalence :=
+  have : ∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1)) := fun n ↦
+    Ideal.isNoetherianRing_quotient_pow_of_fg I hI (n + 1)
+  inferInstance
+
+/-- Taking levelwise global sections identifies coherent formal modules on `spf I` with finite
+`I`-adic systems if and only if every quotient `R ⧸ I ^ (n + 1)` is Noetherian. -/
+theorem isEquivalence_finiteSectionsTower_iff (I : Ideal R) :
+    (finiteSectionsTower I).IsEquivalence ↔ ∀ n, IsNoetherianRing (R ⧸ I ^ (n + 1)) :=
+  ⟨fun h ↦ have := h; (essSurj_finiteSectionsTower_iff I).1 inferInstance,
+    fun h ↦ @isEquivalence_finiteSectionsTower _ _ I h⟩
+
+/-! ### Failure of essential surjectivity without Noetherianity -/
+
+/-- **Essential surjectivity of `finiteSectionsTower` fails without Noetherianity.** Over the
+infinite-variable polynomial ring `k[x₀, x₁, …]` (`k` nontrivial), `k[x₀, x₁, …]` is not Noetherian
+(the ideal `(x₀, x₁, …)` is not finitely generated), so `finiteSectionsTower ⊥` fails to be
+essentially surjective by `essSurj_finiteSectionsTower_iff`. -/
+theorem not_essSurj_finiteSectionsTower_mvPolynomial (k : Type u) [CommRing k] [Nontrivial k] :
+    ¬ (finiteSectionsTower (⊥ : Ideal (MvPolynomial ℕ k))).EssSurj := fun hEss ↦ by
+  have : IsNoetherianRing (MvPolynomial ℕ k ⧸ (⊥ : Ideal (MvPolynomial ℕ k)) ^ 1) :=
+    (essSurj_finiteSectionsTower_iff (⊥ : Ideal (MvPolynomial ℕ k))).1 hEss 0
+  have : IsNoetherianRing (MvPolynomial ℕ k) := isNoetherianRing_of_ringEquiv _
+    ((Ideal.quotEquivOfEq (pow_one (⊥ : Ideal (MvPolynomial ℕ k)))).trans
+      (RingEquiv.quotientBot (MvPolynomial ℕ k)))
+  exact MvPolynomial.not_isNoetherianRing ℕ k inferInstance
+
+/-! ### Inverse-limit sections, completion on `spf I`, and Tag 087W -/
+
+/-- The inverse limit `lim Γ(M n)` of the levelwise global sections of a coherent formal module on
+`spf I`. -/
+-- `@[expose]` is forced by dependent typing: `sectionsLim_map` and `limπ_sectionsLim_map` need
+-- `(sectionsLim I).obj M` to reduce to `ModuleCat.of R ((sectionsTower I).obj M).lim`.
+@[expose]
+def sectionsLim (I : Ideal R) : CoherentFormalModule (spf I) ⥤ ModuleCat.{u} R :=
+  sectionsTower I ⋙ ModuleTower.limFunctor R
+
+instance (I : Ideal R) : (sectionsLim I).Additive :=
+  inferInstanceAs (sectionsTower I ⋙ ModuleTower.limFunctor R).Additive
+
+/-- `sectionsLim I` is the composition of `sectionsTower I` with `ModuleTower.limFunctor R`. -/
+theorem sectionsLim_eq (I : Ideal R) :
+    sectionsLim I = sectionsTower I ⋙ ModuleTower.limFunctor R :=
+  (rfl)
+
+/-- On objects, `sectionsLim I` sends `M` to the inverse limit of `(sectionsTower I).obj M`. -/
+@[simp]
+theorem sectionsLim_obj (I : Ideal R) (M : CoherentFormalModule (spf I)) :
+    (sectionsLim I).obj M = ModuleCat.of R ((sectionsTower I).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, `sectionsLim I` sends `f` to the induced map on inverse limits. -/
+@[simp]
+theorem sectionsLim_map (I : Ideal R) {M N : CoherentFormalModule (spf I)} (f : M ⟶ N) :
+    (sectionsLim I).map f =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((sectionsTower I).map f)) :=
+  (rfl)
+
+/-- The `n`-th projection of `(sectionsLim I).map f` is global sections of `f.app n`. -/
+theorem limπ_sectionsLim_map (I : Ideal R) {M N : CoherentFormalModule (spf I)} (f : M ⟶ N)
+    (n : ℕ) (x : (sectionsLim I).obj M) :
+    ((sectionsTower I).obj N).limπ n ((sectionsLim I).map f x) =
+      moduleSpecΓFunctor.map (f.app n) (((sectionsTower I).obj M).limπ n x) :=
+  LinearMap.congr_fun (TauCeti.ModuleTower.limπ_comp_limMap ((sectionsTower I).map f) n) x
+
+/-- Over an `I`-adically precomplete ring, the inverse limit `lim Γ(M n)` of a coherent formal
+module on `spf I` as a finite `R`-module (`ModuleTower.finiteLim`). -/
+-- `@[expose]` is forced by dependent typing: `finiteSectionsLim_map_hom` needs
+-- `((finiteSectionsLim I).obj M).obj` to reduce to `ModuleCat.of R ((sectionsTower I).obj M).lim`.
+@[expose]
+def finiteSectionsLim (I : Ideal R) [IsPrecomplete I R] :
+    CoherentFormalModule (spf I) ⥤ FGModuleCat.{u} R :=
+  finiteSectionsTower I ⋙ ModuleTower.finiteLim I
+
+instance (I : Ideal R) [IsPrecomplete I R] : (finiteSectionsLim I).Additive :=
+  inferInstanceAs (finiteSectionsTower I ⋙ ModuleTower.finiteLim I).Additive
+
+/-- `finiteSectionsLim I` is the composition of `finiteSectionsTower I` with
+`ModuleTower.finiteLim I`. -/
+theorem finiteSectionsLim_eq (I : Ideal R) [IsPrecomplete I R] :
+    finiteSectionsLim I = finiteSectionsTower I ⋙ ModuleTower.finiteLim I :=
+  (rfl)
+
+/-- On objects, the underlying module of `(finiteSectionsLim I).obj M` is the inverse limit of
+`(sectionsTower I).obj M`. -/
+@[simp]
+theorem finiteSectionsLim_obj_obj (I : Ideal R) [IsPrecomplete I R]
+    (M : CoherentFormalModule (spf I)) :
+    ((finiteSectionsLim I).obj M).obj = ModuleCat.of R ((sectionsTower I).obj M).lim :=
+  (rfl)
+
+/-- On morphisms, the underlying `ModuleCat` morphism of `(finiteSectionsLim I).map f` is
+`ModuleTower.limMap ((sectionsTower I).map f)`. -/
+@[simp]
+theorem finiteSectionsLim_map_hom (I : Ideal R) [IsPrecomplete I R]
+    {M N : CoherentFormalModule (spf I)} (f : M ⟶ N) :
+    ((finiteSectionsLim I).map f).hom =
+      ModuleCat.ofHom (TauCeti.ModuleTower.limMap ((sectionsTower I).map f)) :=
+  (rfl)
+
+/-- **Coherent formal modules on `spf I` over a complete Noetherian ring** (Stacks, Lemma 30.23.1):
+for an `I`-adically complete Noetherian ring `R`, coherent formal modules on `spf I` are equivalent
+to finite `R`-modules via finite `I`-adic systems, with inverse functor `finiteSectionsLim I` taking
+the inverse limit of levelwise global sections. -/
 @[stacks 087W]
-instance [IsNoetherianRing R] : (finiteSectionsTower I).IsEquivalence where
+def spfEquiv (I : Ideal R) [IsNoetherianRing R] [IsAdicComplete I R] :
+    FGModuleCat.{u} R ≌ CoherentFormalModule (spf I) :=
+  (ModuleTower.finiteReductionEquiv I).trans (finiteSectionsTower I).asEquivalence.symm
+
+@[simp]
+theorem spfEquiv_inverse (I : Ideal R) [IsNoetherianRing R] [IsAdicComplete I R] :
+    (spfEquiv I).inverse = finiteSectionsLim I := by
+  simp [spfEquiv, finiteSectionsLim]
 
 end
 

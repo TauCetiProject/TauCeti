@@ -290,12 +290,11 @@ lemma levelReduction_bijective (n : ℕ) : Function.Bijective (levelReduction hF
   · obtain ⟨x, rfl⟩ := hF.transition_surjective n y
     exact ⟨_, levelReduction_one_tmul hF n x⟩
 
-variable {F : ModuleTower.{v} A} (hF : F.IsAdicSystem I)
-  [IsNoetherianRing A] [Module.Finite A (F.obj (op 0))]
+variable {F : ModuleTower.{v} A} (hF : F.IsAdicSystem I) [Module.Finite A (F.obj (op 0))]
 
-/-- Over a noetherian ring, every quotient-ring level of a finite adic system is finitely
-presented. -/
-lemma finitePresentation_levelModule (n : ℕ) :
+/-- When `A ⧸ I ^ (n + 1)` is noetherian, the `n`-th quotient-ring level of a finite adic system
+is finitely presented. -/
+lemma finitePresentation_levelModule (n : ℕ) [IsNoetherianRing (A ⧸ I ^ (n + 1))] :
     Module.FinitePresentation (A ⧸ I ^ (n + 1)) (levelModule hF n) := by
   let := (isTorsionBySet_obj hF n).module
   have := (isTorsionBySet_obj hF n).isScalarTower (S := A)
