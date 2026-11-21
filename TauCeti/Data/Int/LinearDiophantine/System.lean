@@ -8,6 +8,7 @@ module
 public import Mathlib.Computability.Primrec.Basic
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Data.Int.LinearDiophantine
+import TauCeti.Algebra.Order.BigOperators.Sum.NatSub
 import TauCeti.Computability.Primrec.Bitwise
 import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.Order.Ring.Abs
@@ -80,20 +81,6 @@ private lemma primrec_homogeneousBound : Primrec homogeneousBound := by
   exact Primrec.snd.comp <| Primrec.nat_iterate (Primrec.nat_pow.comp h1 .id)
     (Primrec.pair .id (.const 1)) (hstep.comp .snd).to₂
 
-/- The value of a row on a combination of vectors is the combination of its values. -/
-private lemma sum_mul_sum_mul {κ : Type*} [Fintype κ] (r : ι → ℤ) (c : κ → ℕ) (s : κ → ι → ℕ) :
-    ∑ j, r j * ((∑ t, c t * s t j : ℕ) : ℤ) = ∑ t, (c t : ℤ) * ∑ j, r j * s t j := by
-  push_cast
-  simp_rw [mul_sum, mul_left_comm (r _)]
-  exact sum_comm
-
-/- Subtracting a nonzero vector `y ≤ x` decreases the total size. -/
-private lemma sum_tsub_lt {x y : ι → ℕ} (h : y ≤ x) (hy : y ≠ 0) :
-    ∑ j, (x - y) j < ∑ j, x j := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.mp hy
-  exact sum_lt_sum (fun j _ => Nat.sub_le _ _)
-    ⟨j, mem_univ _, Nat.sub_lt_self (Nat.pos_of_ne_zero hj) (h j)⟩
-
 /- Every solution of one homogeneous equation is a combination, with coefficients in `ℕ`, of
 the nonzero solutions of total size at most `2 * H + 1`. -/
 private lemma exists_sum_mul_eq {a : ι → ℤ} {H : ℕ} (ha : ∀ j, |a j| ≤ H) (S : Finset (ι → ℕ))
@@ -106,7 +93,7 @@ private lemma exists_sum_mul_eq {a : ι → ℤ} {H : ℕ} (ha : ∀ j, |a j| �
   by_cases hx0 : x = 0
   · exact ⟨0, by simp [hx0]⟩
   obtain ⟨y, hy0, hyx, hy, hyH⟩ := exists_le_sum_mul_eq_zero a H ha x hx hx0
-  obtain ⟨c, hc⟩ := ih _ (h ▸ sum_tsub_lt hyx hy0) (x - y)
+  obtain ⟨c, hc⟩ := ih _ (h ▸ sum_tsub_lt_sum hyx hy0) (x - y)
     (by simp [Nat.cast_sub (hyx _), mul_sub, hx, hy]) rfl
   refine ⟨fun s => c s + if s = ⟨y, hS y hy0 hy hyH⟩ then 1 else 0, fun j => ?_⟩
   simpa only [add_mul, sum_add_distrib, hc, ite_mul, one_mul, zero_mul, Fintype.sum_ite_eq',
@@ -173,10 +160,11 @@ private lemma exists_le_forall_sum_mul_eq_zero_of_multiplicities {a : ι → ℤ
     refine Function.ne_iff.mpr ⟨j, ((Nat.pos_of_ne_zero (mul_ne_zero ht hj)).trans_le ?_).ne'⟩
     exact single_le_sum (f := fun t : S => c' t * (t : ι → ℕ) j) (fun _ _ => Nat.zero_le _)
       (mem_univ t)
-  · rw [sum_mul_sum_mul]
+  · suffices ∑ t : S, (∑ j, b j * (t : ι → ℕ) j : ℤ) * c' t = 0 by
+      simpa [mul_sum, sum_mul, mul_comm, mul_left_comm, sum_comm (γ := S)] using this
     rcases hRR' b hb with rfl | hb'
-    · exact sum_eq_zero fun t _ => by rw [(hS t t.property).2.1, mul_zero]
-    · simpa [mul_comm] using hc'R b hb'
+    · exact sum_eq_zero fun t _ => by rw [(hS t t.property).2.1, zero_mul]
+    · exact hc'R b hb'
   · rw [sum_comm, mul_sum]
     refine sum_le_sum fun t _ => ?_
     rw [← mul_sum, mul_comm (2 * M + 1)]
@@ -211,20 +199,14 @@ private lemma exists_le_forall_sum_mul_eq_zero (r M P : ℕ) (R : Finset (ι →
       (by
         simp only [forall_mem_image]
         intro b hb
-        have := sum_mul_sum_mul b c fun s : S => (s : ι → ℕ)
-        simp_rw [hc, hx b (hR'R hb)] at this
-        simpa [mul_comm] using this.symm)
+        simpa [← hc, mul_sum, sum_mul, mul_comm, mul_left_comm, sum_comm (γ := S)] using
+          hx b (hR'R hb))
       (fun hc0 => hx0 (funext fun j => by simp [← hc j, hc0]))
     obtain ⟨y, hy0, hyx, hyR, hy⟩ := exists_le_forall_sum_mul_eq_zero_of_multiplicities hRR' hS
       hc hc'0 hc'c fun b hb => hc'R _ (mem_image_of_mem _ hb)
     refine ⟨y, hy0, hyx, hyR, ?_⟩
     rw [Function.iterate_succ_apply, boundStep_apply]
     exact le_trans (by simpa [mul_assoc] using Nat.mul_le_mul_left P hy) hc'P
-
-/- A homogeneous system as a family of equations. -/
-private lemma mulVec_natCast_eq_zero_iff {m n : Type*} [Fintype n] (A : Matrix m n ℤ) (x : n → ℕ) :
-    A *ᵥ (fun j => (x j : ℤ)) = 0 ↔ ∀ i, ∑ j, A i j * x j = 0 := by
-  simp [funext_iff, mulVec, dotProduct]
 
 /- The rows of a matrix with entries in `[-M, M]` and at most `M` columns form a set of at most
 `(2 * M + 1) ^ M` vectors with entries in `[-M, M]` and the same solutions. -/
@@ -244,15 +226,9 @@ private lemma exists_finset_forall_sum_mul_eq_zero_iff {m n : Type*} [Fintype n]
   · simp only [mem_filter, and_imp, forall_exists_index]
     rintro _ - i rfl
     exact hA i
-  · simp only [mulVec_natCast_eq_zero_iff, mem_filter, and_imp, forall_exists_index]
+  · rw [funext_iff]
+    simp only [mulVec, dotProduct, Pi.zero_apply, mem_filter, and_imp, forall_exists_index]
     exact ⟨fun h _ _ i hi => hi ▸ h i, fun h i => h _ (hAR i) i rfl⟩
-
-/- The value of a matrix on a difference `x - y` of vectors with `y ≤ x`. -/
-private lemma mulVec_natCast_tsub {m n : Type*} [Fintype n] (A : Matrix m n ℤ) {x y : n → ℕ}
-    (h : y ≤ x) : A *ᵥ (fun j => ((x - y) j : ℤ)) =
-      A *ᵥ (fun j => (x j : ℤ)) - A *ᵥ (fun j => (y j : ℤ)) := by
-  ext i
-  simp [mulVec, dotProduct, Nat.cast_sub (h _), mul_sub]
 
 /- The homogenization `A x - b t` of `A x = b`, with the unknown `t` at `none`. -/
 private def homogenization {m n : Type*} (A : Matrix m n ℤ) (b : m → ℤ) : Matrix m (Option n) ℤ :=
@@ -292,8 +268,9 @@ private lemma exists_le_mulVec_eq_of_homogenization {m n : Type*} [Fintype n] (A
       | none => exact h0
       | some j => exact congrFun h j
     rw [h0, Nat.cast_zero, zero_smul, sub_zero] at hy
-    obtain ⟨z, hzx, hz, hzB⟩ := ih _ (hN ▸ sum_tsub_lt hy'x hy'0) _
-      (by rw [mulVec_natCast_tsub A hy'x, hx]; simp [hy]) rfl
+    obtain ⟨z, hzx, hz, hzB⟩ := ih _ (hN ▸ sum_tsub_lt_sum hy'x hy'0) _
+      (by rw [← sub_zero b, ← hx, ← hy, ← mulVec_sub]; congr with j; simp [Nat.cast_sub (hy'x j)])
+      rfl
     exact ⟨z, fun j => (hzx j).trans (Nat.sub_le _ _), hz, hzB⟩
   · rw [h1, sub_eq_zero] at hy
     refine ⟨fun j => y (some j), fun j => hyx (some j), by simpa using hy, fun j => ?_⟩
