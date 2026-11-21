@@ -47,7 +47,7 @@ def sphereCoord (i : ι) : C(sphere (0 : EuclideanSpace ℝ ι) 1, R) where
   toFun x := algebraMap ℝ R (EuclideanSpace.proj i (x : EuclideanSpace ℝ ι))
   continuous_toFun :=
     (continuous_algebraMap ℝ R).comp
-      ((EuclideanSpace.proj i).continuous.comp continuous_subtype_val)
+      ((EuclideanSpace.proj i).continuous.comp continuous_subtypeVal)
 
 variable {R}
 
@@ -90,7 +90,7 @@ theorem dotProduct_sphereCoord_self [IsTopologicalSemiring R] :
   simp only [dotProduct, ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.mul_apply,
     sphereCoord_apply, ← map_mul, ← map_sum, ContinuousMap.one_apply]
   have hx : WithLp.ofLp (x : EuclideanSpace ℝ ι) ⬝ᵥ WithLp.ofLp (x : EuclideanSpace ℝ ι) = 1 :=
-    EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp x.2
+    EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp x.property
   rw [dotProduct] at hx
   simpa only [hx] using map_one (algebraMap ℝ R)
 

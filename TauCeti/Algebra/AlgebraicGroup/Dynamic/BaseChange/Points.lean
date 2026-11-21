@@ -161,8 +161,8 @@ theorem baseChangePointsMulEquiv_extend (l : H →ₐc[R] LaurentPolynomial R)
     (g : parabolic A l) :
     AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) (extend A l g) =
       extend A (l.baseChangeCocharacter S)
-        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.1,
-          (baseChangePointsMulEquiv_mem_parabolic_iff l g.1).mpr g.2⟩ := by
+        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.val,
+          (baseChangePointsMulEquiv_mem_parabolic_iff l g.val).mpr g.property⟩ := by
   apply (extend_unique ?_).symm
   rw [← baseChangePointsMulEquiv_ofPolyPoint, ofPolyPoint_extend,
     baseChangePointsMulEquiv_conjugate]
@@ -172,8 +172,8 @@ theorem baseChangePointsMulEquiv_limit (l : H →ₐc[R] LaurentPolynomial R)
     (g : parabolic A l) :
     AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) (limit A l g) =
       limit A (l.baseChangeCocharacter S)
-        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.1,
-          (baseChangePointsMulEquiv_mem_parabolic_iff l g.1).mpr g.2⟩ := by
+        ⟨AlgHom.baseChangePointsMulEquiv (k := R) (K := S) (A := H) g.val,
+          (baseChangePointsMulEquiv_mem_parabolic_iff l g.val).mpr g.property⟩ := by
   rw [limit_apply, limit_apply, baseChangePointsMulEquiv_evalZeroPoint,
     baseChangePointsMulEquiv_extend]
 

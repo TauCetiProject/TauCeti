@@ -79,20 +79,20 @@ variable {R M : Type u} [CommRing R] [AddCommGroup M] [Module R M]
 /-- Let `a` be `M`-regular. A section of `M~` over `U` vanishing at every point of `U ∩ D(a)`
 vanishes. -/
 private lemma eq_zero_of_isSMulRegular {U : Opens (PrimeSpectrum.Top R)} {a : R}
-    (ha : IsSMulRegular M a) (s : (structureSheafInType R M).1.obj (op U))
-    (hs : ∀ x : U, x.1 ∈ basicOpen a → s.1 x = 0) : s = 0 := by
+    (ha : IsSMulRegular M a) (s : (structureSheafInType R M).obj.obj (op U))
+    (hs : ∀ x : U, x.val ∈ basicOpen a → s.val x = 0) : s = 0 := by
   refine Subtype.ext (funext fun x ↦ ?_)
   -- Near `x`, the section `s` is a fraction `z / g`.
-  obtain ⟨g, hxg, i, z, hz⟩ := exists_const U s x.1 x.2
+  obtain ⟨g, hxg, i, z, hz⟩ := exists_const U s x.val x.property
   have hval (y : PrimeSpectrum.Top R) (hy : y ∈ basicOpen g) :
-      s.1 ⟨y, i hy⟩ = LocalizedModule.mk z ⟨g, hy⟩ :=
-    (congrArg (fun t ↦ t.1 ⟨y, hy⟩) hz).symm
+      s.val ⟨y, i hy⟩ = LocalizedModule.mk z ⟨g, hy⟩ :=
+    (congrArg (fun t ↦ t.val ⟨y, hy⟩) hz).symm
   -- The fraction `z / g` vanishes on `D(g a)`, so `(g a)ᵏ z = 0`, hence `gᵏ z = 0`.
   have hzero : toOpenₗ R M (basicOpen (g * a)) z = 0 := by
     refine Subtype.ext (funext fun y ↦ ?_)
-    obtain ⟨hyg, hya⟩ : y.1 ∈ basicOpen g ∧ y.1 ∈ basicOpen a := by
-      simpa [PrimeSpectrum.basicOpen_mul] using y.2
-    have hy0 := (hval y.1 hyg).symm.trans (hs ⟨y.1, i hyg⟩ hya)
+    obtain ⟨hyg, hya⟩ : y.val ∈ basicOpen g ∧ y.val ∈ basicOpen a := by
+      simpa [PrimeSpectrum.basicOpen_mul] using y.property
+    have hy0 := (hval y.val hyg).symm.trans (hs ⟨y.val, i hyg⟩ hya)
     rw [← LocalizedModule.zero_mk ⟨g, hyg⟩, LocalizedModule.mk_eq] at hy0
     obtain ⟨u, hu⟩ := hy0
     -- A section of `M~` is a family of fractions, and `toOpenₗ` sends `z` to the family `z / 1`;
@@ -104,8 +104,8 @@ private lemma eq_zero_of_isSMulRegular {U : Opens (PrimeSpectrum.Top R)} {a : R}
     (toOpenₗ R M (basicOpen (g * a)))).1 hzero
   have hgk : g ^ k • z = 0 :=
     (ha.pow k).right_eq_zero_of_smul (by rw [smul_smul, ← mul_pow, mul_comm]; exact hk)
-  rw [hval x.1 hxg]
-  refine (LocalizedModule.mk_eq.2 ⟨⟨g ^ k, x.1.asIdeal.primeCompl.pow_mem hxg k⟩, ?_⟩).trans
+  rw [hval x.val hxg]
+  refine (LocalizedModule.mk_eq.2 ⟨⟨g ^ k, x.val.asIdeal.primeCompl.pow_mem hxg k⟩, ?_⟩).trans
     (LocalizedModule.zero_mk 1)
   simp [hgk]
 
@@ -113,11 +113,11 @@ private lemma eq_zero_of_isSMulRegular {U : Opens (PrimeSpectrum.Top R)} {a : R}
 over `U` is determined by its restriction to `V`. -/
 theorem res_injective_of_isSMulRegular {U V : Opens (PrimeSpectrum.Top R)} (hVU : V ≤ U) {a : R}
     (ha : IsSMulRegular M a) (haV : U ⊓ basicOpen a ≤ V) :
-    Function.Injective ((structureSheafInType R M).1.map (homOfLE hVU).op) := by
+    Function.Injective ((structureSheafInType R M).obj.map (homOfLE hVU).op) := by
   intro s t hst
   rw [← sub_eq_zero]
   refine eq_zero_of_isSMulRegular ha (s - t) fun x hx ↦ ?_
-  have := congrArg (fun r ↦ r.1 ⟨x.1, haV ⟨x.2, hx⟩⟩) hst
+  have := congrArg (fun r ↦ r.val ⟨x.val, haV ⟨x.property, hx⟩⟩) hst
   exact sub_eq_zero.2 this
 
 /-- Let `a` be `M`-regular. If `D(a) ⊆ U`, then `M → M~(U)` is injective. -/
@@ -125,7 +125,7 @@ theorem toOpenₗ_injective_of_isSMulRegular {U : Opens (PrimeSpectrum.Top R)} {
     (ha : IsSMulRegular M a) (haU : basicOpen a ≤ U) : Function.Injective (toOpenₗ R M U) := by
   refine (injective_iff_map_eq_zero _).2 fun m hm ↦ ?_
   have hres : toOpenₗ R M (basicOpen a) m = 0 :=
-    congrArg ((structureSheafInType R M).1.map (homOfLE haU).op) hm
+    congrArg ((structureSheafInType R M).obj.map (homOfLE haU).op) hm
   obtain ⟨⟨_, k, rfl⟩, hk⟩ :=
     (IsLocalizedModule.eq_zero_iff (.powers a) (toOpenₗ R M (basicOpen a))).1 hres
   exact (ha.pow k).right_eq_zero_of_smul hk
@@ -140,26 +140,26 @@ theorem toOpenₗ_bijective_of_isWeaklyRegular {U : Opens (PrimeSpectrum.Top R)}
   refine ⟨toOpenₗ_injective_of_isSMulRegular ha haU, fun s ↦ ?_⟩
   -- On `D(a)` and `D(b)` the section `s` is a fraction `x / aⁿ`, respectively `y / bᵐ`.
   obtain ⟨⟨x, _, n, rfl⟩, hx⟩ := IsLocalizedModule.surj (.powers a)
-    (toOpenₗ R M (basicOpen a)) ((structureSheafInType R M).1.map (homOfLE haU).op s)
+    (toOpenₗ R M (basicOpen a)) ((structureSheafInType R M).obj.map (homOfLE haU).op s)
   obtain ⟨⟨y, _, m, rfl⟩, hy⟩ := IsLocalizedModule.surj (.powers b)
-    (toOpenₗ R M (basicOpen b)) ((structureSheafInType R M).1.map (homOfLE hbU).op s)
+    (toOpenₗ R M (basicOpen b)) ((structureSheafInType R M).obj.map (homOfLE hbU).op s)
   have hxp (p : PrimeSpectrum.Top R) (hp : p ∈ basicOpen a) :
-      a ^ n • s.1 ⟨p, haU hp⟩ = LocalizedModule.mk x 1 :=
-    congrArg (fun t ↦ t.1 ⟨p, hp⟩) hx
+      a ^ n • s.val ⟨p, haU hp⟩ = LocalizedModule.mk x 1 :=
+    congrArg (fun t ↦ t.val ⟨p, hp⟩) hx
   have hyp (p : PrimeSpectrum.Top R) (hp : p ∈ basicOpen b) :
-      b ^ m • s.1 ⟨p, hbU hp⟩ = LocalizedModule.mk y 1 :=
-    congrArg (fun t ↦ t.1 ⟨p, hp⟩) hy
+      b ^ m • s.val ⟨p, hbU hp⟩ = LocalizedModule.mk y 1 :=
+    congrArg (fun t ↦ t.val ⟨p, hp⟩) hy
   -- The two fractions agree on `D(ab)`, so `(ab)ᵏ (bᵐ x - aⁿ y) = 0`.
   have hab : toOpenₗ R M (basicOpen (a * b)) (b ^ m • x - a ^ n • y) = 0 := by
     refine Subtype.ext (funext fun p ↦ ?_)
-    obtain ⟨hpa, hpb⟩ : p.1 ∈ basicOpen a ∧ p.1 ∈ basicOpen b := by
-      simpa [PrimeSpectrum.basicOpen_mul] using p.2
+    obtain ⟨hpa, hpb⟩ : p.val ∈ basicOpen a ∧ p.val ∈ basicOpen b := by
+      simpa [PrimeSpectrum.basicOpen_mul] using p.property
     -- Evaluate the section `toOpenₗ (bᵐ x - aⁿ y)`, the family of fractions `(bᵐ x - aⁿ y) / 1`,
     -- at `p`.
     change LocalizedModule.mk (b ^ m • x - a ^ n • y) 1 = 0
     rw [← LocalizedModule.mkLinearMap_apply, map_sub, map_smul, map_smul,
-      LocalizedModule.mkLinearMap_apply, LocalizedModule.mkLinearMap_apply, ← hxp p.1 hpa,
-      ← hyp p.1 hpb]
+      LocalizedModule.mkLinearMap_apply, LocalizedModule.mkLinearMap_apply, ← hxp p.val hpa,
+      ← hyp p.val hpb]
     exact sub_eq_zero.2 (smul_comm _ _ _)
   obtain ⟨⟨_, k, rfl⟩, hk⟩ :=
     (IsLocalizedModule.eq_zero_iff (.powers (a * b)) (toOpenₗ R M (basicOpen (a * b)))).1 hab
@@ -175,7 +175,7 @@ theorem toOpenₗ_bijective_of_isWeaklyRegular {U : Opens (PrimeSpectrum.Top R)}
   obtain ⟨c, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hxn
   -- Now `s` and `c` agree on `D(a)`, hence on `U`, as `aⁿ` acts invertibly on `M~(D(a))`.
   refine ⟨c, res_injective_of_isSMulRegular haU ha inf_le_right ?_⟩
-  have hc : (structureSheafInType R M).1.map (homOfLE haU).op (toOpenₗ R M U c) =
+  have hc : (structureSheafInType R M).obj.map (homOfLE haU).op (toOpenₗ R M U c) =
       toOpenₗ R M (basicOpen a) c := by
     rw [toOpenₗ_eq_const, toOpenₗ_eq_const, res_const]
   refine IsLocalizedModule.smul_injective (toOpenₗ R M (basicOpen a))

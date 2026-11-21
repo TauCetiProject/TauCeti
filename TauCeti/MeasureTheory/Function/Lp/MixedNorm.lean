@@ -133,7 +133,7 @@ private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r �
     ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ by positivity)]
   refine lintegral_mono_ae ?_
   filter_upwards [coeFn_truncLp (𝕜 := 𝕜) N le_rfl u] with x hx
-  have hm : 0 ≤ min ‖u x‖ N := le_min (norm_nonneg _) N.2
+  have hm : 0 ≤ min ‖u x‖ N := le_min (norm_nonneg _) N.property
   rw [hx, ← ofReal_norm, TauCeti.norm_truncPow N one_pos, Real.rpow_one,
     ENNReal.ofReal_rpow_of_nonneg hm (by linarith)]
   refine ENNReal.ofReal_le_ofReal ?_

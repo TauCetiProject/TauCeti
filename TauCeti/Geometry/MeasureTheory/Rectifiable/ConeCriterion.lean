@@ -79,7 +79,8 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
     rw [NNReal.coe_inv, Real.coe_toNNReal _ hθ'1.le, ← div_eq_inv_mul, le_div_iff₀' hθ'1]
     have hdist : ‖(y : V) - x - P.starProjection ((y : V) - x)‖ ≤ θ' * ‖(y : V) - x‖ := by
       rw [← dist_eq_norm, P.dist_starProjection_eq_infDist]
-      exact (hs x x.2 y y.2).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+      exact (hs x x.property y y.property).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (norm_nonneg _))
     have htri : ‖(y : V) - x‖ ≤
         ‖P.starProjection ((y : V) - x)‖ + ‖(y : V) - x - P.starProjection ((y : V) - x)‖ := by
       simpa only [add_sub_cancel] using norm_add_le (P.starProjection ((y : V) - x))
@@ -97,8 +98,8 @@ theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimens
 private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
     {P : T → Submodule ℝ V} [∀ x, FiniteDimensional ℝ (P x)] (hdim : ∀ x, finrank ℝ (P x) = d)
     {r₀ θ₀ : ℝ} (hr₀ : 0 < r₀) (hθ₀ : θ₀ < 1)
-    (hcone : ∀ x : T, ∀ y ∈ T, dist y x.1 < r₀ →
-      infDist (y - x.1) (P x : Set V) ≤ θ₀ * dist y x.1) :
+    (hcone : ∀ x : T, ∀ y ∈ T, dist y x.val < r₀ →
+      infDist (y - x.val) (P x : Set V) ≤ θ₀ * dist y x.val) :
     CountablyRectifiable d T := by
   classical
   let b (x : T) : OrthonormalBasis (Fin d) ℝ (P x) :=
@@ -115,8 +116,8 @@ private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
     (f := fun v ↦ Φ ⁻¹' ball (Φ v) ε) fun v _ ↦ nhdsWithin_le_nhds
       (hΦ.continuousAt.preimage_mem_nhds (ball_mem_nhds _ (half_pos (sub_pos.2 hθ₀))))
   have := hU_cnt.to_subtype
-  choose x₀ hx₀ using fun v : U ↦ hU_sub v.2
-  let S (v : U) : Set V := {y : V | ∃ hy : y ∈ T, u ⟨y, hy⟩ ∈ Φ ⁻¹' ball (Φ v.1) ε}
+  choose x₀ hx₀ using fun v : U ↦ hU_sub v.property
+  let S (v : U) : Set V := {y : V | ∃ hy : y ∈ T, u ⟨y, hy⟩ ∈ Φ ⁻¹' ball (Φ v.val) ε}
   have hT_eq : T = ⋃ v : U, S v := by
     ext y
     simp only [S, mem_iUnion, mem_ofPred_eq]
@@ -128,7 +129,7 @@ private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
   obtain ⟨C, _, hC_cnt, hC_cov⟩ := countable_cover_nhdsWithin (s := S v)
     (f := fun z ↦ ball z (r₀ / 2)) fun z _ ↦ nhdsWithin_le_nhds (ball_mem_nhds z (half_pos hr₀))
   have := hC_cnt.to_subtype
-  have hSv_eq : S v = ⋃ z : C, S v ∩ ball z.1 (r₀ / 2) := by
+  have hSv_eq : S v = ⋃ z : C, S v ∩ ball z.val (r₀ / 2) := by
     ext y; simp only [mem_iUnion, mem_inter_iff]
     exact ⟨fun hy ↦ let ⟨z, hzC, hyz⟩ := mem_iUnion₂.1 (hC_cov hy); ⟨⟨z, hzC⟩, hy, hyz⟩,
       fun ⟨_, hy, _⟩ ↦ hy⟩
@@ -136,7 +137,7 @@ private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
   refine CountablyRectifiable.iUnion fun z : C ↦
     of_forall_infDist_sub_le (P (x₀ v)) (θ := θ₀ + ε) (by simp [ε]; linarith) fun p hp q hq ↦ ?_
   obtain ⟨hpT, hpu⟩ := hp.1
-  have hpq : dist q p < r₀ := (dist_triangle_right q p z.1).trans_lt
+  have hpq : dist q p < r₀ := (dist_triangle_right q p z.val).trans_lt
     ((add_lt_add hq.2 hp.2).trans_eq (add_halves r₀))
   have hdiff : ‖(P (x₀ v)).starProjection - (P ⟨p, hpT⟩).starProjection‖ ≤ ε := by
     rw [hΦu, hΦu, hx₀ v, ← dist_eq_norm, dist_comm]
@@ -160,11 +161,11 @@ theorem of_forall_exists_submodule_infDist_sub_le [SecondCountableTopology V] {k
         ∀ y ∈ s, dist y x < r → infDist (y - x) (P : Set V) ≤ θ * dist y x) :
     CountablyRectifiable k s := by
   classical
-  choose P hPfin hPdim θ hθ r hr hcone using fun x : s ↦ h x.1 x.2
+  choose P hPfin hPdim θ hθ r hr hcone using fun x : s ↦ h x.val x.property
   let r₀ (m : ℕ) : ℝ := 1 / ((m : ℝ) + 1)
   let θ₀ (l : ℕ) : ℝ := 1 - 1 / ((l : ℝ) + 2)
   let T (d : Fin (k + 1)) (m l : ℕ) : Set V :=
-    {x : V | ∃ hx : x ∈ s, finrank ℝ (P ⟨x, hx⟩) = d.1 ∧ r₀ m ≤ r ⟨x, hx⟩ ∧ θ ⟨x, hx⟩ ≤ θ₀ l}
+    {x : V | ∃ hx : x ∈ s, finrank ℝ (P ⟨x, hx⟩) = d.val ∧ r₀ m ≤ r ⟨x, hx⟩ ∧ θ ⟨x, hx⟩ ≤ θ₀ l}
   have hs_eq : s = ⋃ (d : Fin (k + 1)) (m : ℕ) (l : ℕ), T d m l := by
     ext x
     simp only [T, mem_iUnion, mem_ofPred_eq]
@@ -181,13 +182,13 @@ theorem of_forall_exists_submodule_infDist_sub_le [SecondCountableTopology V] {k
     CountablyRectifiable.iUnion fun l ↦ ?_
   have hr₀ : 0 < r₀ m := Nat.one_div_pos_of_nat
   have hθ₀ : θ₀ l < 1 := sub_lt_self 1 (by positivity)
-  let P' (x : T d m l) : Submodule ℝ V := P ⟨x.1, x.2.choose⟩
-  have hP'fin (x : T d m l) : FiniteDimensional ℝ (P' x) := hPfin ⟨x.1, x.2.choose⟩
-  have hP'dim (x : T d m l) : finrank ℝ (P' x) = d.1 := x.2.choose_spec.1
+  let P' (x : T d m l) : Submodule ℝ V := P ⟨x.val, x.property.choose⟩
+  have hP'fin (x : T d m l) : FiniteDimensional ℝ (P' x) := hPfin ⟨x.val, x.property.choose⟩
+  have hP'dim (x : T d m l) : finrank ℝ (P' x) = d.val := x.property.choose_spec.1
   refine (of_stratum (P := P') hP'dim hr₀ hθ₀ fun x y hy hyx ↦ ?_).mono_dim
-    (Nat.lt_succ_iff.1 d.2)
-  obtain ⟨hrx, hθx⟩ := x.2.choose_spec.2
-  exact (hcone ⟨x.1, x.2.choose⟩ y hy.choose (hyx.trans_le hrx)).trans
+    (Nat.lt_succ_iff.1 d.isLt)
+  obtain ⟨hrx, hθx⟩ := x.property.choose_spec.2
+  exact (hcone ⟨x.val, x.property.choose⟩ y hy.choose (hyx.trans_le hrx)).trans
     (mul_le_mul_of_nonneg_right hθx dist_nonneg)
 
 /-- **The codimension-one cone criterion.** In a finite-dimensional real inner product space `V`, if

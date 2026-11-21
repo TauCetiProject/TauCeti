@@ -38,11 +38,11 @@ variable [CommSemiring R]
 theorem monomialBidegree_relabelRows_finRotate (x : GridState n) (d : Fin n →₀ ℕ) :
     (G.relabelRows (finRotate n)).monomialBidegree (x.relabelRows (finRotate n)) d =
       G.monomialBidegree x d := by
-  have hM := G.1.maslovO_relabelRows_finRotate x
+  have hM := G.val.maslovO_relabelRows_finRotate x
   rw [GridDiagram.maslovO_eq_intCast, GridDiagram.maslovO_eq_intCast,
     ← G.val_relabelRows] at hM
-  have hM' : (G.relabelRows (finRotate n)).1.maslovOℤ
-      (x.relabelRows (finRotate n)) = G.1.maslovOℤ x := by exact_mod_cast hM
+  have hM' : (G.relabelRows (finRotate n)).val.maslovOℤ
+      (x.relabelRows (finRotate n)) = G.val.maslovOℤ x := by exact_mod_cast hM
   apply Prod.ext <;>
     simp only [monomialBidegree_fst, monomialBidegree_snd, hM',
       alexanderℤ_relabelRows_finRotate]
@@ -53,11 +53,11 @@ Not a simp lemma: simplification expands `finRotate` inside `Finsupp.mapDomain`.
 theorem monomialBidegree_relabelColumns_finRotate (x : GridState n) (d : Fin n →₀ ℕ) :
     (G.relabelColumns (finRotate n)).monomialBidegree (x.relabelColumns (finRotate n))
         (d.mapDomain (finRotate n)) = G.monomialBidegree x d := by
-  have hM := G.1.maslovO_relabelColumns_finRotate x
+  have hM := G.val.maslovO_relabelColumns_finRotate x
   rw [GridDiagram.maslovO_eq_intCast, GridDiagram.maslovO_eq_intCast,
     ← G.val_relabelColumns] at hM
-  have hM' : (G.relabelColumns (finRotate n)).1.maslovOℤ
-      (x.relabelColumns (finRotate n)) = G.1.maslovOℤ x := by exact_mod_cast hM
+  have hM' : (G.relabelColumns (finRotate n)).val.maslovOℤ
+      (x.relabelColumns (finRotate n)) = G.val.maslovOℤ x := by exact_mod_cast hM
   apply Prod.ext <;>
     simp only [monomialBidegree_fst, monomialBidegree_snd, hM',
       alexanderℤ_relabelColumns_finRotate, Finsupp.degree_mapDomain]
