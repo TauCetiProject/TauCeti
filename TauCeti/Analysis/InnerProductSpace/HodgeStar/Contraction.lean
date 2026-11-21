@@ -45,8 +45,10 @@ the identity above as its symbol.
 * `Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar`: on `⋀ᵏ⁺¹ V` with
   `m = finrank ℝ V`, `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆`.
 * `Orientation.inner_hodgeStar_wedgeLeft`: `⟪⋆(u ∧ x), y⟫ = (-1) ^ (k l) ⟪x, ⋆(u ∧ y)⟫` for
-  `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V` with `k + 1 + l = finrank ℝ V`. In dimension three, on vectors, the
-  map `x ↦ ⋆(u ∧ x)` (the cross product with `u`) is therefore skew-adjoint.
+  `x ∈ ⋀ᵏ V` and `y ∈ ⋀ˡ V` with `k + 1 + l = finrank ℝ V`.
+* `Orientation.adjoint_hodgeStar_comp_wedgeLeft`: on `⋀ᵏ V` with `k + 1 + k = finrank ℝ V`, the
+  adjoint of `x ↦ ⋆(u ∧ x)` is `(-1) ^ k` times itself. In dimension three, on vectors, this map is
+  the cross product with `u`, which is therefore skew-adjoint.
 
 ## References
 
@@ -199,5 +201,21 @@ theorem inner_hodgeStar_wedgeLeft (u : V) {k l : ℕ} (hkl : k + 1 + l = finrank
     real_inner_smul_right, ← mul_assoc, ← pow_add,
     show (k + 1) * l + l = k * l + 2 * l by ring, pow_add, pow_mul]
   simp
+
+/-- **The adjoint of `⋆(u ∧ ·)`**: on `⋀ᵏ V` with `k + 1 + k = finrank ℝ V`, the map
+`x ↦ ⋆(u ∧ x)` is symmetric for even `k` and skew-adjoint for odd `k`. In dimension three, on
+vectors, it is the cross product with `u`, which is skew-adjoint. -/
+theorem adjoint_hodgeStar_comp_wedgeLeft (u : V) {k : ℕ} (hk : k + 1 + k = finrank ℝ V) :
+    LinearMap.adjoint ((o.hodgeStar hk : ⋀[ℝ]^(k + 1) V →ₗ[ℝ] ⋀[ℝ]^k V) ∘ₗ
+        ExteriorAlgebra.wedgeLeft u k) =
+      (-1 : ℝ) ^ k • ((o.hodgeStar hk : ⋀[ℝ]^(k + 1) V →ₗ[ℝ] ⋀[ℝ]^k V) ∘ₗ
+        ExteriorAlgebra.wedgeLeft u k) := by
+  refine ((LinearMap.eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
+  rw [LinearMap.smul_apply, real_inner_smul_left, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, o.inner_hodgeStar_wedgeLeft u hk hk, ← mul_assoc]
+  -- The sign is `(-1) ^ k (-1) ^ (k k) = 1`, since `k` and `k k` have the same parity.
+  rcases Nat.even_or_odd k with hk' | hk'
+  · simp [hk'.neg_one_pow, (hk'.mul_right k).neg_one_pow]
+  · simp [hk'.neg_one_pow, (hk'.mul hk').neg_one_pow]
 
 end Orientation

@@ -47,9 +47,9 @@ operator `curl u = ∑ⱼ ⋆ (eⱼ ∧ ∂ⱼ u)` on `(⋀¹ ℝⁿ)_ℂ`-value
 order `1` (`TauCeti.ClassicalSymbol.curl`) whose quantization is this differential operator on
 Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_curl`), with no smoothing remainder,
 and whose principal symbol is `TauCeti.HomogeneousSymbol.curl`
-(`TauCeti.ClassicalSymbol.principal_curl`). More generally, every first-order operator
-`u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant coefficients, given by a real-linear `L` of the frequency, is
-the classical symbol `TauCeti.ClassicalSymbol.ofLinear L` with full and principal symbol `L ξ`.
+(`TauCeti.ClassicalSymbol.principal_curl`). It is an instance of the classical symbol
+`TauCeti.ClassicalSymbol.ofLinear L` of a first-order operator `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant
+coefficients, whose full and principal symbol is `L ξ`.
 
 ## References
 
@@ -118,38 +118,34 @@ theorem coefficient_curl_eq_comp (h : 2 + 1 = finrank ℝ E) (p : X × E) :
         (extDeriv X E 1).coefficient p := by
   rw [coefficient_curl h, coefficient_extDeriv, ContinuousLinearMap.comp_smul,
     ← ContinuousLinearMap.complexifyL2_comp]
-  congr 2
-
-/-- The real symbol `⋆ (ξ ∧ ·)` of the curl, the cross product with `ξ`, is skew-adjoint. -/
-private theorem adjoint_hodgeStar_comp_wedgeLeft (h : 2 + 1 = finrank ℝ E) (ξ : E) :
-    LinearMap.adjoint ((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ
-        ExteriorAlgebra.wedgeLeft ξ 1) =
-      -((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ ExteriorAlgebra.wedgeLeft ξ 1) := by
-  refine ((LinearMap.eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
-  simp [o.inner_hodgeStar_wedgeLeft ξ h h x y]
+  -- `LinearMap.toContinuousLinearMap` of a composition is the composition, by definition.
+  rfl
 
 /-- **The symbol of the curl is self-adjoint**: `(i ξ × ·)† = -i (-ξ × ·)`. -/
 @[simp]
 theorem adjoint_curl : (curl X o).adjoint = curl X o := by
   have h : 2 + 1 = finrank ℝ E := (Fact.out : finrank ℝ E = 3).symm
-  have hneg (T : ⋀[ℝ]^1 E →L[ℝ] ⋀[ℝ]^1 E) : (-T).complexifyL2 = -T.complexifyL2 := by
-    rw [eq_neg_iff_add_eq_zero, ← ContinuousLinearMap.complexifyL2_add, neg_add_cancel,
-      ContinuousLinearMap.complexifyL2_zero]
   ext1
   funext p
+  -- The real symbol `⋆ (ξ ∧ ·)`, the cross product with `ξ`, is skew-adjoint. The general lemma
+  -- is stated in degree `1 + 1`, which is `2` only up to unfolding, so `exact` closes the sign.
+  have hskew : LinearMap.adjoint ((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ
+      ExteriorAlgebra.wedgeLeft p.2 1) =
+        -((o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E) ∘ₗ ExteriorAlgebra.wedgeLeft p.2 1) := by
+    rw [o.adjoint_hodgeStar_comp_wedgeLeft p.2 (k := 1) h, pow_one]
+    exact neg_one_smul ℝ _
   rw [coefficient_adjoint, coefficient_curl h, ContinuousLinearMap.adjoint.map_smulₛₗ,
-    ContinuousLinearMap.adjoint_complexifyL2, ← LinearMap.adjoint_toContinuousLinearMap,
-    adjoint_hodgeStar_comp_wedgeLeft, Complex.conj_I, map_neg, hneg, smul_neg, neg_smul, neg_neg]
+    ContinuousLinearMap.adjoint_complexifyL2, ← LinearMap.adjoint_toContinuousLinearMap, hskew]
+  simp
 
 /-- **`curl grad = 0`** on symbols: `ξ × ξ = 0`, since `ξ ∧ ξ = 0`. -/
 @[simp]
 theorem curl_comp_extDeriv_zero : (curl X o).comp (extDeriv X E 0) = 0 := by
-  have h : 2 + 1 = finrank ℝ E := (Fact.out : finrank ℝ E = 3).symm
   ext1
   funext p
-  rw [coefficient_comp, coefficient_curl_eq_comp h, ContinuousLinearMap.comp_assoc,
-    ← coefficient_comp, extDeriv_comp_extDeriv, coefficient_zero, Pi.zero_apply,
-    ContinuousLinearMap.comp_zero, coefficient_zero, Pi.zero_apply]
+  rw [coefficient_comp, coefficient_curl_eq_comp (Fact.out : finrank ℝ E = 3).symm,
+    ContinuousLinearMap.comp_assoc, ← coefficient_comp, extDeriv_comp_extDeriv]
+  simp
 
 /-- **`div curl = 0`** on symbols: the adjoint of the symbol of the gradient, the symbol of the
 negative divergence, vanishes on the image of the symbol of the curl. -/
@@ -173,16 +169,13 @@ theorem adjoint_curl_comp_curl :
         (LinearMap.toContinuousLinearMap (o.hodgeStar h : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^1 E)).complexifyL2 =
       ContinuousLinearMap.id ℂ _ := by
     rw [ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp,
-      ← ContinuousLinearMap.complexifyL2_id]
-    congr 1
-    ext1 x
-    refine ext_inner_left ℝ fun y ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.adjoint_inner_right]
-    simp [o.inner_hodgeStar_hodgeStar]
+      o.adjoint_hodgeStar_comp_hodgeStar h, ContinuousLinearMap.one_def,
+      ContinuousLinearMap.complexifyL2_id]
   ext1
   funext p
-  rw [coefficient_comp, coefficient_comp, coefficient_adjoint, coefficient_adjoint,
-    coefficient_curl_eq_comp h, ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.comp_assoc,
+  simp only [coefficient_comp, coefficient_adjoint, coefficient_curl_eq_comp h,
+    ContinuousLinearMap.adjoint_comp]
+  rw [ContinuousLinearMap.comp_assoc,
     ← ContinuousLinearMap.comp_assoc _ _ ((extDeriv X E 1).coefficient p), hS,
     ContinuousLinearMap.id_comp]
 
@@ -209,11 +202,10 @@ theorem curl_comp_curl_add_extDeriv_zero_comp_adjoint :
     have hp := congrFun (congrArg coefficient (hodgeLaplacian_extDeriv_zero_curl (X := X) (o := o)))
       (x, ξ)
     rw [coefficient_hodgeLaplacian, ContinuousLinearMap.hodgeLaplacian_def,
-      ← coefficient_adjoint (curl X o), adjoint_curl,
-      coefficient_normRpow_of_ne_zero _ _ _ hξ] at hp
-    rw [coefficient_add, Pi.add_apply, coefficient_comp, coefficient_comp, coefficient_adjoint,
-      add_comm, hp, coefficient_normRpow_of_ne_zero _ _ _ hξ]
-    norm_num
+      ← coefficient_adjoint (curl X o), adjoint_curl] at hp
+    simp only [coefficient_add, Pi.add_apply, coefficient_comp, coefficient_adjoint] at hp ⊢
+    rw [add_comm, hp]
+    norm_num [coefficient_normRpow_of_ne_zero _ _ _ hξ]
 
 /-- **The kernel of the curl symbol is the image of the gradient symbol**: at every nonzero
 covector `ξ`, the symbol sequence `ℂ → (⋀¹ E)_ℂ → (⋀¹ E)_ℂ`, `c ↦ i c ξ`, `v ↦ i ξ × v`, is
@@ -247,70 +239,10 @@ end HomogeneousSymbol
 
 namespace ClassicalSymbol
 
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W]
-
-/-! ### First-order operators with constant coefficients -/
-
-/-- The classical symbol of order `1` with full symbol `L ξ`, for a continuous real-linear function
-`L` of the frequency: the symbol of the first-order operator `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant
-coefficients (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofLinear`). Its principal symbol is
-`HomogeneousSymbol.ofLinear L` (`TauCeti.ClassicalSymbol.principal_ofLinear`). -/
-def ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) : ClassicalSymbol n V W 1 :=
-  ofContDiffHomogeneous (fun p ↦ L p.2) (L.contDiff.comp contDiff_snd)
-    fun _ _ _ _ _ ↦ by rw [Real.rpow_one, map_smul]
-
-/-- The full symbol of `ClassicalSymbol.ofLinear L` is `L ξ`. -/
-@[simp]
-theorem coefficient_toSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (ofLinear L).toSymbol.coefficient p = L p.2 := by
-  rw [ofLinear, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
-
-/-- The principal symbol of `ClassicalSymbol.ofLinear L` is the homogeneous symbol `L ξ`. -/
-@[simp]
-theorem principal_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) :
-    (ofLinear L).principal = HomogeneousSymbol.ofLinear _ L :=
-  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ ↦ by
-    rw [ofLinear, principal_ofContDiffHomogeneous,
-      HomogeneousSymbol.coefficient_mk'_of_ne_zero _ _ _ hξ, HomogeneousSymbol.coefficient_ofLinear]
-
-/-- The full symbol `L ξ` is the differential symbol of `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`. -/
-private theorem differentialSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ (fun j _ ↦ EuclideanSpace.single j 1)
-      (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) p = L p.2 := by
-  rw [differentialSymbol_def]
-  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr p.2]
-  simp only [map_sum, map_smul, EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [smul_smul, ← Complex.coe_smul]
-  congr 1
-  simp only [EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real, Finset.prod_const,
-    Finset.card_univ, Fintype.card_fin, pow_one]
-  ring_nf
-  simp
-
-/-- **First-order operators with constant coefficients are pseudodifferential operators.** On
-Schwartz input, the quantization of `ClassicalSymbol.ofLinear L` is `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`, with no
-smoothing remainder. -/
-theorem quantizeSchwartzValue_ofLinear [CompleteSpace V] [CompleteSpace W]
-    (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) (u : 𝓢(CoordinateSpace n, V))
-    (x : CoordinateSpace n) :
-    quantizeSchwartzValue (ofLinear L).toSymbol.coefficient u x =
-      -Complex.I • ∑ j, L (EuclideanSpace.single j 1)
-        (∂_{(EuclideanSpace.single j 1 : CoordinateSpace n)} u x) := by
-  have h : (ofLinear L).toSymbol.coefficient =
-      differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ
-        (fun j _ ↦ EuclideanSpace.single j 1)
-        (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) :=
-    funext fun p ↦ by rw [coefficient_toSymbol_ofLinear, differentialSymbol_ofLinear]
-  rw [h, quantizeSchwartzValue_differentialSymbol, Finset.smul_sum]
-  simp [LineDeriv.iteratedLineDerivOp_one]
-
 /-! ### The curl on `ℝ³` -/
 
-variable [Fact (finrank ℝ (CoordinateSpace n) = 3)] (o : Orientation ℝ (CoordinateSpace n) (Fin 3))
+variable {n : ℕ} [Fact (finrank ℝ (CoordinateSpace n) = 3)]
+  (o : Orientation ℝ (CoordinateSpace n) (Fin 3))
 
 /-- **The curl** on the oriented three-dimensional coordinate space, acting on functions with values
 in complex `1`-forms: the classical symbol of order `1` of `curl u = ∑ⱼ ⋆ (eⱼ ∧ ∂ⱼ u)`
