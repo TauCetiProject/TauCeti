@@ -46,6 +46,12 @@ tends to zero. This is how valuation bounds on coefficients give convergence of 
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
 larger exponent outgrows every constant multiple of a smaller one.
+
+## Powers outgrowing geometric sequences
+
+For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
+power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+proof of the Gelfond–Schneider theorem.
 -/
 
 public section
@@ -246,5 +252,35 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+/-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
+theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
+    C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · norm_num
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast hr
+  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
+  set s := √(r : ℝ)
+  have hs₀ : 0 < s := sqrt_pos.2 hr₀
+  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
+  -- `2 |C| ≤ s`, since `(2 |C|) ^ 2 = 4 C ^ 2 ≤ r`.
+  have hCs : 2 * |C| ≤ s := le_sqrt_of_sq_le (by rw [mul_pow, sq_abs]; linarith)
+  -- `r ^ ((1 - r) / 2) = s ^ (1 - r) = s / s ^ r`.
+  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
+    rw [rpow_div_two_eq_sqrt _ hr₀.le, rpow_sub hs₀]
+    simp
+  have hCs' : |C| / s ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hs₀ two_pos]
+    linarith
+  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) ≤ |C| ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) :=
+        mul_le_mul_of_nonneg_right ((le_abs_self _).trans_eq (abs_pow C r)) (by positivity)
+    _ = s * (|C| / s) ^ r := by
+        rw [hrs, div_pow]
+        field_simp
+    _ ≤ s * (1 / 2) ^ r := by gcongr
+    _ = s / 2 ^ r := by rw [one_div_pow, mul_one_div]
+    _ < 1 := by
+        rw [div_lt_one (by positivity)]
+        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
 
 end Real

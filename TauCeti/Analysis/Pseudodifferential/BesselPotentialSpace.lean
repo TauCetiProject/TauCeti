@@ -17,6 +17,7 @@ import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
@@ -322,7 +323,7 @@ private theorem HasCompactSpatialSupport.exists_eLpNorm_quantizeSchwartzValue_sh
         _ ≤ S * (‖ζ‖ ^ k)⁻¹ * ρ η := by
             gcongr
             · exact Finset.single_le_sum (fun i _ ↦ hD0 i) (Finset.mem_range.2 (by omega))
-            · exact one_add_norm_sq_rpow_neg_le_inv_norm_pow hζ k
+            · simpa only [one_div] using Real.one_add_sq_rpow_neg_le (norm_pos_iff.2 hζ) k
         _ = _ := by ring
     have hgrowth : (shiftedMultiplier b η).HasTemperateGrowth :=
       Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow (m := 0)

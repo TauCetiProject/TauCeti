@@ -15,8 +15,8 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Complex powers of the Japanese bracket

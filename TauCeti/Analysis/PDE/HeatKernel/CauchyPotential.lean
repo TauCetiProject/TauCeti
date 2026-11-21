@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
-import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue.Pow
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -519,13 +519,16 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   -- `set` does not fold the applications `heatCauchyPotential g r x` into `u r`.
   change ‖u b - u a‖ ≤ _
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
-  have hrate : ∀ r, 0 ≤ r → ‖u r - g x‖ ≤ H * Mα * r ^ β := fun r hr =>
-    norm_heatCauchyPotential_sub_le hg hgc hr x
+  have hrate : ∀ r, 0 ≤ r → dist (u r) (g x) ≤ H * Mα * r ^ β := fun r hr =>
+    (dist_eq_norm _ _).trans_le (norm_heatCauchyPotential_sub_le hg hgc hr x)
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
+    calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_neg_right hβ₀ hβ₁ (mul_nonneg H.coe_nonneg hMα) ha
+            (fun hb ↦ by rw [hneg b hb, hneg a ha.le, dist_self])
+            (fun hb ↦ by rw [hneg a ha.le]; exact hrate b hb.le)
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
         gcongr
@@ -545,12 +548,19 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
         gcongr
         linarith
       _ = _ := by ring
-  · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hneg hrate ha hb
+  · calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+      _ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
+          dist_le_mul_abs_sub_mul_rpow_of_le_half ha hb.le ?_ (hrate a ha.le)
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr
         nlinarith
       _ = _ := by ring
+    -- `u b` is within `H Mα b ^ β ≤ H Mα a ^ β` of `g x`, and equals it if `b ≤ 0`.
+    rcases le_or_gt b 0 with hb0 | hb0
+    · rw [hneg b hb0, dist_self]
+      exact mul_nonneg (mul_nonneg H.coe_nonneg hMα) (rpow_nonneg ha.le β)
+    · exact (hrate b hb0.le).trans (mul_le_mul_of_nonneg_left
+        (rpow_le_rpow hb0.le (by linarith) hβ₀) (mul_nonneg H.coe_nonneg hMα))
 
 end TauCeti

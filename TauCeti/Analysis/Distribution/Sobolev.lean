@@ -11,7 +11,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Bessel-potential regularity from first derivatives
