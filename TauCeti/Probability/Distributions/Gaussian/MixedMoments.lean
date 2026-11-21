@@ -45,7 +45,7 @@ including real or complex observables and the empty product. -/
 theorem integrable_prod_clm (μ : Measure E) [IsGaussian μ]
     {ι 𝕜 : Type*} [RCLike 𝕜] (s : Finset ι) (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
     Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ :=
-  MemLp.integrable_fun_prod_card fun i _ ↦
+  TauCeti.integrable_fun_prod_of_memLp_card fun i _ ↦
     ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
       (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i))
 

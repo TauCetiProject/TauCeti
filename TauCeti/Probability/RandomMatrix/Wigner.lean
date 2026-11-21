@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
@@ -675,7 +674,7 @@ theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fin
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (Fintype.card ι) P)
     (hη : ∀ i < n, MemLp (η i) (Fintype.card ι) P) (u v : ι → Fin n) :
     Integrable (fun ω ↦ ∏ s, wignerMatrix ξ η n ω (u s) (v s)) P :=
-  MemLp.integrable_fun_prod_card fun s _ ↦ by
+  integrable_fun_prod_of_memLp_card fun s _ ↦ by
     rw [Finset.card_univ]
     exact memLp_wignerMatrix_apply hξ hη (u s) (v s)
 
