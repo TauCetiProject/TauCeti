@@ -38,7 +38,8 @@ be continuous.
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+Sums, differences and finite sums of Hölder functions, also with natural multiplicities, are
+Hölder, with the sum of the constants,
 a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`, the reciprocal of a
 Hölder function bounded away from zero is Hölder, and a pointwise limit of Hölder functions with a
 common constant is Hölder with that constant.
@@ -351,6 +352,27 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     simp_rw [Finset.sum_insert ha]
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
+
+/-- A natural multiple `n • f` of an `r`-Hölder map `f` with constant `C` is `r`-Hölder with
+constant `n C`. Compare Mathlib's `HolderWith.smul`, which needs a normed scalar group. -/
+theorem HolderWith.nsmul {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C r : ℝ≥0} {f : X → Y} (n : ℕ) (hf : HolderWith C r f) :
+    HolderWith (n * C) r (n • f) := by
+  induction n with
+  | zero =>
+    simp only [Nat.cast_zero, zero_mul, zero_smul]
+    exact HolderWith.const
+  | succ n ih =>
+    simp only [succ_nsmul, Nat.cast_succ, add_mul, one_mul]
+    exact ih.add hf
+
+/-- A sum of `cᵢ` copies of maps `fᵢ` which are `r`-Hölder with constants `Cᵢ` is `r`-Hölder
+with constant `∑ cᵢ Cᵢ`. -/
+theorem HolderWith.sum_nsmul {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C : ι → ℝ≥0} {r : ℝ≥0} (s : Finset ι) (c : ι → ℕ) {f : ι → X → Y}
+    (hf : ∀ i ∈ s, HolderWith (C i) r (f i)) :
+    HolderWith (∑ i ∈ s, c i * C i) r fun x ↦ ∑ i ∈ s, c i • f i x :=
+  HolderWith.sum fun i hi ↦ (hf i hi).nsmul (c i)
 
 /-- A function that agrees on `s` with a function Hölder on `s` is Hölder on `s`, with the same
 constant and exponent. -/
