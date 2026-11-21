@@ -43,6 +43,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
 * `TauCeti.gaussSum_ne_zero`: `g(χ, ψ) ≠ 0` for every `χ` when `ψ` is primitive and `#F ≠ 0` in
   the coefficients.
+* `TauCeti.sum_prod_eq_prod_gaussSum`, `TauCeti.sum_prod_neg_eq_prod_gaussSum`: a sum over `A^ι`
+  of products of one-variable factors `ψ(±xᵢ) χᵢ(xᵢ)` is a product of Gauss sums.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
 * `TauCeti.gaussSum_pow_char_pow`: `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)` when the coefficients have
@@ -85,6 +87,26 @@ theorem gaussSum_ne_zero {R : Type*} [CommRing R] [IsDomain R] (h : (Fintype.car
   · rw [gaussSum_one_left (by simpa using hψ one_ne_zero)]
     exact neg_ne_zero.mpr one_ne_zero
   · exact gaussSum_ne_zero_of_nontrivial h hχ hψ
+
+/-- **A product of Gauss sums as one sum.** Over a finite ring `A`, the sum over `A^ι` of the
+product of the one-variable factors `ψ(xᵢ) χᵢ(xᵢ)` is the product of the Gauss sums
+`g(χᵢ, ψ)`. -/
+theorem sum_prod_eq_prod_gaussSum {A R ι : Type*} [CommRing A] [Fintype A] [CommRing R]
+    [Fintype ι] [DecidableEq ι] (ψ : AddChar A R) (χ : ι → MulChar A R) :
+    ∑ x : ι → A, ∏ i, ψ (x i) * χ i (x i) = ∏ i, gaussSum (χ i) ψ := by
+  rw [← Fintype.prod_sum (fun i z ↦ ψ z * χ i z)]
+  simp [gaussSum, mul_comm]
+
+/-- **A product of Gauss sums at `-x` as one sum.** Over a finite ring `A`, the sum over `A^ι` of
+the product of the one-variable factors `ψ(-xᵢ) χᵢ(xᵢ)` is the product of the
+`χᵢ(-1) g(χᵢ, ψ)`. -/
+theorem sum_prod_neg_eq_prod_gaussSum {A R ι : Type*} [CommRing A] [Fintype A] [CommRing R]
+    [Fintype ι] [DecidableEq ι] (ψ : AddChar A R) (χ : ι → MulChar A R) :
+    ∑ x : ι → A, ∏ i, ψ (-x i) * χ i (x i) = ∏ i, χ i (-1) * gaussSum (χ i) ψ := by
+  rw [← Fintype.prod_sum (fun i z ↦ ψ (-z) * χ i z)]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  rw [← gaussSum_inv_right, gaussSum]
+  simp [AddChar.inv_apply, mul_comm]
 
 /-- **The `l`-th power of a Gauss sum modulo `l`.** Let `l` be a prime, `χ` a multiplicative
 character with `χ ^ l = 1` and `ψ` an additive character with `ψ ^ l ≠ 1` of a finite field `F`,

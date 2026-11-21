@@ -162,8 +162,11 @@ parameters. -/
 @[simp]
 theorem hypergeometricSum_zero (ω : MulChar F ℂ) {ψ : AddChar F ℂ} (hψ : ψ.IsPrimitive)
     (a b : Multiset ℤ) : hypergeometricSum ω ψ a b 0 = (1 - (Fintype.card F : ℂ))⁻¹ := by
-  rw [hypergeometricSum_def, katzSum_zero, cast_card_sub_one, mul_left_comm, neg_mul,
-    inv_mul_cancel₀ (normalizer_ne_zero ω hψ a b), mul_neg_one, ← inv_neg, neg_sub]
+  -- cancel the normalizing product from `S_q(a, b | 0) = -(∏ᵢ g(aᵢ) g(-bᵢ)) H_q(a, b | 0)`
+  refine mul_left_cancel₀ (neg_ne_zero.mpr (normalizer_ne_zero ω hψ a b)) ?_
+  rw [← katzSum_eq_neg_mul_hypergeometricSum ω hψ, katzSum_zero, cast_card_sub_one,
+    ← neg_sub (Fintype.card F : ℂ), inv_neg]
+  ring
 
 section ExpSum
 
@@ -187,6 +190,14 @@ theorem katzExpSum_def (ω : MulChar F ℂ) (ψ : AddChar F ℂ) (a : ι → ℤ
       else 0 :=
   (rfl)
 
+omit [DecidableEq F] [Fintype F] [Fintype ι] [DecidableEq ι] [DecidableEq κ] in
+/-- A product of character values `∏ⱼ χⱼ(yⱼ)` vanishes when `∏ⱼ yⱼ = 0`: some `yⱼ` is then `0`,
+where every character vanishes. -/
+private theorem prod_apply_eq_zero_of_prod_eq_zero (χ : κ → MulChar F ℂ) {y : κ → F}
+    (hy : ∏ j, y j = 0) : ∏ j, χ j (y j) = 0 := by
+  obtain ⟨j, -, hj⟩ := prod_eq_zero_iff.mp hy
+  exact prod_eq_zero (mem_univ j) (by rw [hj, MulChar.map_zero])
+
 /-- Katz's exponential sum vanishes at `t = 0`: there `∏ⱼ yⱼ = 0`, and a character factor
 vanishes at the zero coordinate. -/
 @[simp]
@@ -195,8 +206,7 @@ theorem katzExpSum_zero (ω : MulChar F ℂ) (ψ : AddChar F ℂ) (a : ι → �
   refine Fintype.sum_eq_zero _ fun x ↦ Fintype.sum_eq_zero _ fun y ↦ ?_
   rw [zero_mul, ite_eq_right_iff]
   intro h
-  obtain ⟨j, -, hj⟩ := prod_eq_zero_iff.mp h.symm
-  rw [prod_eq_zero (mem_univ j) (by rw [hj, MulChar.map_zero]), mul_zero, mul_zero]
+  rw [prod_apply_eq_zero_of_prod_eq_zero _ h.symm, mul_zero, mul_zero]
 
 /-- Katz's exponential sum does not depend on the indexing of the parameters. -/
 theorem katzExpSum_comp_equiv {ι' κ' : Type*} [Fintype ι'] [Fintype κ'] [DecidableEq ι']
@@ -229,11 +239,7 @@ private theorem ite_eq_sum_range {ω : MulChar F ℂ} (hω : orderOf ω = Fintyp
         (ω ^ m) t * (∏ i, (ω ^ m) (x i)) * (∏ j, (ω ^ m)⁻¹ (y j)) *
           (c * ((∏ i, (ω ^ a i) (x i)) * ∏ j, (ω ^ (-b j)) (y j))) := by
   by_cases hy : ∏ j, y j = 0
-  · -- some `yⱼ` vanishes, and with it the character factor at `yⱼ`
-    obtain ⟨j, -, hj⟩ := prod_eq_zero_iff.mp hy
-    have hP : ∏ j, (ω ^ (-b j)) (y j) = 0 :=
-      prod_eq_zero (mem_univ j) (by rw [hj, MulChar.map_zero])
-    simp only [hP, mul_zero, ite_self, sum_const_zero]
+  · simp only [prod_apply_eq_zero_of_prod_eq_zero _ hy, mul_zero, ite_self, sum_const_zero]
   have key (m : ℕ) : (ω ^ m) t * (∏ i, (ω ^ m) (x i)) * (∏ j, (ω ^ m)⁻¹ (y j)) =
       (ω ^ m) (t * (∏ i, x i) * (∏ j, y j)⁻¹) := by
     rw [← map_prod, ← map_prod, MulChar.inv_apply', map_mul, map_mul]
@@ -255,34 +261,13 @@ private theorem katzExpSum_eq_sum_range {ω : MulChar F ℂ} (hω : orderOf ω =
         ((∑ x : ι → F, ∏ i, ψ (x i) * (ω ^ ((m : ℤ) + a i)) (x i)) *
           (∑ y : κ → F, ∏ j, ψ (-y j) * (ω ^ (-(m : ℤ) - b j)) (y j))) := by
   rw [katzExpSum_def]
-  simp_rw [ite_eq_sum_range hω a b t, sum_mul_sum, mul_sum]
-  -- both sides are now triple sums; bring the sum over `m` inside on the right
-  conv_rhs =>
-    rw [sum_comm]
-    enter [2, x]
-    rw [sum_comm]
-  refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun m _ ↦ ?_
+  -- pair up the sums over `x` and `y`, then bring the sum over `m` outside on the left
+  simp_rw [ite_eq_sum_range hω a b t, sum_mul_sum, mul_sum, ← Fintype.sum_prod_type']
+  rw [sum_comm]
+  refine sum_congr rfl fun m _ ↦ sum_congr rfl fun p _ ↦ ?_
   simp only [zpow_add, zpow_neg, zpow_natCast, MulChar.mul_apply, prod_mul_distrib,
     sub_eq_add_neg, AddChar.map_add_eq_mul, ← sum_neg_distrib, AddChar.map_sum_eq_prod]
   ring
-
-omit [DecidableEq F] in
-/-- A sum over `F^ι` of a product of one-variable factors `ψ(xᵢ) χᵢ(xᵢ)` is the product of the
-Gauss sums `g(χᵢ, ψ)`. -/
-private theorem sum_prod_eq_prod_gaussSum (ψ : AddChar F ℂ) (χ : ι → MulChar F ℂ) :
-    ∑ x : ι → F, ∏ i, ψ (x i) * χ i (x i) = ∏ i, gaussSum (χ i) ψ := by
-  rw [← Fintype.prod_sum (fun i z ↦ ψ z * χ i z)]
-  simp [gaussSum, mul_comm]
-
-omit [DecidableEq F] in
-/-- A sum over `F^κ` of a product of one-variable factors `ψ(-yⱼ) χⱼ(yⱼ)` is the product of the
-`χⱼ(-1) g(χⱼ, ψ)`. -/
-private theorem sum_prod_neg_eq_prod_gaussSum (ψ : AddChar F ℂ) (χ : κ → MulChar F ℂ) :
-    ∑ y : κ → F, ∏ j, ψ (-y j) * χ j (y j) = ∏ j, χ j (-1) * gaussSum (χ j) ψ := by
-  rw [← Fintype.prod_sum (fun j z ↦ ψ (-z) * χ j z)]
-  refine prod_congr rfl fun j _ ↦ ?_
-  rw [← gaussSum_inv_right, gaussSum]
-  simp [AddChar.inv_apply, mul_comm]
 
 /-- **Beukers–Cohen–Mellit, Proposition 3.1.** For `ω` of order `q - 1` and `t ≠ 0`, Katz's
 exponential sum is `ω(-1)^{∑ⱼ bⱼ} S_q(a, b | t)`, the parameters being equally many. -/
@@ -293,7 +278,7 @@ theorem katzExpSum_eq {ω : MulChar F ℂ} (hω : orderOf ω = Fintype.card F - 
   have hs0 : ω (-1) ≠ 0 := (isUnit_neg_one.map ω).ne_zero
   -- `ω (-1) = ±1`, so every integer power of `ω (-1)` is its own inverse
   have hinv (n : ℤ) : (ω (-1) ^ n)⁻¹ = ω (-1) ^ n :=
-    inv_eq_of_mul_eq_one_right (by rw [← mul_zpow, ω.apply_neg_one_mul_self, one_zpow])
+    inv_eq_of_mul_eq_one_right (ω.apply_neg_one_zpow_mul_self n)
   have hneg (n : ℤ) : (ω ^ n) (-1) = ω (-1) ^ n := by
     simpa using ω.zpow_apply_coe_eq_zpow n (-1)
   have ht' (m : ℕ) : (ω ^ m) t = ω t ^ m := by simpa using ω.pow_apply_coe m (Units.mk0 t ht)
@@ -305,7 +290,7 @@ theorem katzExpSum_eq {ω : MulChar F ℂ} (hω : orderOf ω = Fintype.card F - 
   have hsign : ω (-1) ^ ∑ j, (-(m : ℤ) - b j) =
       ω (-1) ^ (∑ j, b j) * (ω (-1) ^ Fintype.card κ) ^ m := by
     have hsum : ∑ j, (-(m : ℤ) - b j) = -(((Fintype.card κ * m : ℕ) : ℤ) + ∑ j, b j) := by
-      simp [sum_sub_distrib]
+      simp only [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, Nat.cast_mul]
       ring
     rw [hsum, zpow_neg, hinv, zpow_add₀ hs0, zpow_natCast, pow_mul, mul_comm]
   rw [sum_prod_eq_prod_gaussSum ψ fun i ↦ ω ^ ((m : ℤ) + a i),
@@ -324,16 +309,13 @@ theorem isIntegral_katzSum {ω : MulChar F ℂ} (hω : orderOf ω = Fintype.card
     (ψ : AddChar F ℂ) {a b : Multiset ℤ} (hab : Multiset.card a = Multiset.card b) {t : F}
     (ht : t ≠ 0) : IsIntegral ℤ (katzSum ω ψ a b t) := by
   classical
-  have ha : univ.val.map a.toList.get = a := by
-    rw [Fin.univ_val_map, List.ofFn_get, Multiset.coe_toList]
-  have hb : univ.val.map b.toList.get = b := by
+  have hmap (s : Multiset ℤ) : univ.val.map s.toList.get = s := by
     rw [Fin.univ_val_map, List.ofFn_get, Multiset.coe_toList]
   have h := katzExpSum_eq hω ψ a.toList.get b.toList.get (by simpa using hab) ht
-  rw [ha, hb] at h
+  rw [hmap, hmap] at h
   -- the sign `s = ω (-1) ^ ∑ b` satisfies `s * s = 1`
   set s := ω (-1) ^ ∑ j, b.toList.get j
-  have hs : s * s = 1 := by
-    rw [← mul_zpow, ω.apply_neg_one_mul_self, one_zpow]
+  have hs : s * s = 1 := ω.apply_neg_one_zpow_mul_self _
   have hkatz : katzSum ω ψ a b t = s * katzExpSum ω ψ a.toList.get b.toList.get t := by
     rw [h, ← mul_assoc, hs, one_mul]
   rw [hkatz]

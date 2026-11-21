@@ -25,7 +25,8 @@ This is how Galois automorphisms of a number field act on characters such as pow
 symbols.
 
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
-(`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
+(`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain. The
+same holds for every integer power of `χ (-1)` (`MulChar.apply_neg_one_zpow_mul_self`).
 
 A character of order dividing two is `1` at the square of every unit
 (`MulChar.apply_sq_eq_one_of_sq_eq_one`). An integer-valued character pushed into a ring along
@@ -39,8 +40,8 @@ its inverse carry the trivial character `1` and the trivial unit homomorphism `1
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
-With values in a field, an integer power of a character at a unit is the integer power of its
-value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
+With values in a commutative group with zero, an integer power of a character at a unit is the
+integer power of its value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
 `MulChar.pow_apply_coe`.
 
 On a monoid with finitely many units, every value of a character is an algebraic integer
@@ -103,6 +104,11 @@ theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
     [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
   rw [← map_mul, neg_one_mul, neg_neg, map_one]
 
+/-- An integer power of the value of a multiplicative character at `-1` squares to `1`. -/
+theorem apply_neg_one_zpow_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
+    [CommGroupWithZero R'] (χ : MulChar R R') (n : ℤ) : χ (-1) ^ n * χ (-1) ^ n = 1 := by
+  rw [← mul_zpow, apply_neg_one_mul_self, one_zpow]
+
 /-- A character of order dividing two is `1` at the square of a unit. -/
 theorem apply_sq_eq_one_of_sq_eq_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
     {χ : MulChar R R'} (hχ : χ ^ 2 = 1) {a : R} (ha : IsUnit a) : χ (a ^ 2) = 1 := by
@@ -160,11 +166,11 @@ theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
     (∏ i ∈ s, χ i).IsQuadratic :=
   Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
 
-/-- With values in a field, an integer power of a character takes the integer power of its value
-at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulChar.zpow_apply_coe` instead moves the power onto
-the unit, `(χ ^ n) a = χ (a ^ n)`. -/
-theorem zpow_apply_coe_eq_zpow {R R' : Type*} [CommMonoid R] [Field R'] (χ : MulChar R R') (n : ℤ)
-    (a : Rˣ) : (χ ^ n) a = χ a ^ n := by
+/-- With values in a commutative group with zero, an integer power of a character takes the
+integer power of its value at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulChar.zpow_apply_coe`
+instead moves the power onto the unit, `(χ ^ n) a = χ (a ^ n)`. -/
+theorem zpow_apply_coe_eq_zpow {R R' : Type*} [CommMonoid R] [CommGroupWithZero R']
+    (χ : MulChar R R') (n : ℤ) (a : Rˣ) : (χ ^ n) a = χ a ^ n := by
   obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
   · simp [pow_apply_coe]
   · rw [zpow_neg, zpow_natCast, inv_apply_eq_inv, pow_apply_coe, zpow_neg, zpow_natCast,
