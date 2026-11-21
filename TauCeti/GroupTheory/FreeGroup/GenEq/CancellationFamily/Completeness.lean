@@ -14,16 +14,18 @@ import TauCeti.GroupTheory.FreeGroup.GenEq.Completeness
 Let `S` be a finite system of equations and inequations over the free group `F(A)`, in the
 variables of a finite type `X`. A solution `U` of the generalised equation of a cancellation scheme
 `T` of `S` gives the solution `x ↦ P_x(U)` of `S`. This file proves the converse, over any
-alphabet `A`: every solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a cancellation scheme
-`T` with letters in `Fin (systemSize S.toWords)` and a solution `U` of its generalised equation.
-When `A` is finite, such a `T` is a member of the finite cancellation family of `S`, so a system
-whose cancellation family is empty has no solution.
+alphabet `A`: every solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a solution `U` of the
+generalised equation of a cancellation scheme `T` over the auxiliary alphabet `Fin n`, where
+`n = systemSize S.toWords`. The entries of `T` are words over `Fin n ⊕ A`: they may contain
+constants of `A`, and they need not use every auxiliary letter. When `A` is finite, such a `T`
+is a member of the finite cancellation family of `S`, so a system whose cancellation family is
+empty has no solution.
 
 ## Main results
 
 * `TauCeti.EqIneqSystem.exists_isCancellationScheme_of_isSolution`: **Lemma 14(3)**, every
-  solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a cancellation scheme `T` with
-  `systemSize S.toWords` letters and a solution `U` of its generalised equation.
+  solution `W` of `S` is `x ↦ P_x(U)`, graphically, for a solution `U` of the generalised
+  equation of a cancellation scheme `T` over the auxiliary alphabet `Fin (systemSize S.toWords)`.
 * `TauCeti.EqIneqSystem.not_isSolution_of_cancellationFamily_eq_empty`: **Lemma 14(1)**, over a
   finite alphabet `A`, a system whose cancellation family is empty has no solution in `F(A)`.
 
@@ -49,9 +51,10 @@ variable {X A : Type*} [Finite X] [DecidableEq X] [DecidableEq A]
 
 /-- **Kharlampovich–Myasnikov, Lemma 14(3), with inequations.** Every solution `W` of a system of
 equations and inequations over `F(A)`, for any alphabet `A`, comes from a cancellation scheme `T`
-with letters in `Fin (systemSize S.toWords)` (a member of the cancellation family when `A` is
-finite) and a solution `U` of its generalised equation: `W = P(U)`, graphically, as `P_x(U)` is
-the reduced word of `W x` for every variable `x`. -/
+over the auxiliary alphabet `Fin n`, where `n = systemSize S.toWords`, with entries words over
+`Fin n ⊕ A` (a member of the cancellation family when `A` is finite), and a solution `U` of its
+generalised equation: `W = P(U)`, graphically, as `P_x(U)` is the reduced word of `W x` for every
+variable `x`. -/
 theorem exists_isCancellationScheme_of_isSolution {S : EqIneqSystem X A} {W : X → FreeGroup A}
     (hW : S.IsSolution W FreeGroup.of) :
     ∃ T : Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool),

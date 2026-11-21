@@ -18,8 +18,10 @@ for some `z ≠ 1`, so `S` is equivalent to a system of equations in the variabl
 *witness* `z_t` for each inequation, together with the conditions `z_t ≠ 1`. This file defines
 the *cancellation schemes* of `S`, over any alphabet `A`, and proves their soundness: solutions of
 the generalised equations of the schemes give solutions of `S`. When `A` is finite, the schemes
-with letters in `Fin (systemSize S.toWords)` form a finite family, the *cancellation family*
-of `S`. The cancellation schemes of `S` are the partition tables of the system of words
+over the auxiliary alphabet `Z = Fin (systemSize S.toWords)` form a finite family, the
+*cancellation family* of `S`; the entries of such a scheme are words over `Z ⊕ A`, which may
+contain constants of `A` and need not use every auxiliary letter. The cancellation schemes of `S`
+are the partition tables of the system of words
 
 * `s`, for each equation `s = 1`;
 * `t z_t⁻¹` and `z_t z_t⁻¹`, for each inequation `t ≠ 1`;
@@ -42,7 +44,7 @@ nontrivial. The converse, that every solution of `S` comes from a scheme, is
   `TauCeti.EqIneqSystem.witnessWord`: the generalised equation of a table, the word maps `P_x` of
   the variables and of the witnesses.
 * `TauCeti.EqIneqSystem.cancellationFamily`: for a finite alphabet `A`, the finite set of
-  cancellation schemes with `systemSize S.toWords` letters.
+  cancellation schemes over the auxiliary alphabet `Fin (systemSize S.toWords)`.
 
 ## Main results
 
@@ -445,8 +447,9 @@ variable [Finite A]
 
 open scoped Classical in
 /-- The cancellation family of a system of equations and inequations over a finite alphabet `A`:
-the finite set of its cancellation schemes with letters `Z = Fin (systemSize S.toWords)`. Each
-member `T` gives the generalised equation `S.genEq T` and the word maps `S.wordMap T`. -/
+the finite set of its cancellation schemes over the auxiliary alphabet
+`Z = Fin (systemSize S.toWords)`, whose entries are words over `Z ⊕ A`. Each member `T` gives the
+generalised equation `S.genEq T` and the word maps `S.wordMap T`. -/
 noncomputable def cancellationFamily (S : EqIneqSystem X A) :
     Finset (Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool)) :=
   (GenEq.cancellationFamily S.toWords).filter fun T =>
@@ -467,7 +470,8 @@ theorem cancellationFamily_subset (S : EqIneqSystem X A) :
 
 /-- The cancellation family of a system over a finite alphabet `A` whose words have size
 `n = systemSize S.toWords` has at most `(2 (n + |A|) + 1) ^ n` members: there are at most that
-many cancellation schemes with letters `Z = Fin n`. -/
+many cancellation schemes over the auxiliary alphabet `Z = Fin n`, with entries words over
+`Z ⊕ A`. -/
 theorem card_cancellationFamily_le (S : EqIneqSystem X A) :
     S.cancellationFamily.card ≤
       (2 * (systemSize S.toWords + Nat.card A) + 1) ^ systemSize S.toWords :=
