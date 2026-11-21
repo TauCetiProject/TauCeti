@@ -72,7 +72,7 @@ private theorem W1p.exists_lipschitzRepresentative (u : W1p μ Ω ∞) :
   have hL : HolderOnWith ‖W1p.gradient u‖₊ 1 (fun x : closure (Ω : Set E) ↦ f x) s := by
     rw [holderOnWith_one]
     have h := (W1p.lipschitzOnWith_preciseRepresentative_of_convex u hΩ subset_rfl).comp
-      (LipschitzWith.subtype_val (closure (Ω : Set E))).lipschitzOnWith
+      (LipschitzWith.subtypeVal (closure (Ω : Set E))).lipschitzOnWith
       (fun _ hx ↦ hx : MapsTo Subtype.val s (Ω : Set E))
     rw [mul_one] at h
     exact h
