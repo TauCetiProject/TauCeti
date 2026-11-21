@@ -207,7 +207,8 @@ theorem ofLinearMap_apply (τ : M.toStarSubalgebra →ₗ[ℂ] ℂ)
     (hnormal : M.IsNormalFunctional τ) (x : Nonneg M.toStarSubalgebra) :
     ofLinearMap τ hpos htr hnormal x = ENNReal.ofReal (τ x).re := (rfl)
 
-/-- A normal positive linear functional with trivial star-square kernel induces a faithful trace.
+/-- A normal positive tracial linear functional with trivial star-square kernel induces a faithful
+trace.
 This kernel condition is available, for example, for the canonical trace of a group algebra. -/
 theorem faithful_ofLinearMap (τ : M.toStarSubalgebra →ₗ[ℂ] ℂ)
     (hpos : ∀ x, 0 ≤ τ (star x * x))
