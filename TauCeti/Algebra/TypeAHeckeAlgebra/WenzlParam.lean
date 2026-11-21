@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Algebra.BigOperators.Field
@@ -297,7 +297,7 @@ theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin
     rw [two_cos]
     linear_combination -e₁ x - e₂ x
   have hpow (n : ℤ) : 1 - exp (2 * θ * I) ^ n = -I * (2 * sin (n * θ)) * exp (n * θ * I) := by
-    rw [← exp_int_mul, ← one_sub_exp]
+    rw [← exp_intCast_mul, ← one_sub_exp]
     ring_nf
   have hk' : 1 - exp (2 * θ * I) ^ k ≠ 0 := by
     rw [hpow]
