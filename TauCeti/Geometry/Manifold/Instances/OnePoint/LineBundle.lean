@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Scalar
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The line bundles `𝒪(k)` on the projective line
@@ -35,6 +36,8 @@ section `z` of `𝒪(1)` vanishes exactly once, at `0` (`OnePoint.contMDiff_iden
 * `OnePoint.twistTransition k x y p`: the scalar transition function of `𝒪(k)` from the chart
   at `x` to the chart at `y`, evaluated at `p`.
 * `OnePoint.twistCore k`: the vector-bundle core of `𝒪(k)`.
+* `OnePoint.twistCore_localTriv_scalarCoordChange`: its native scalar frame change is the
+  actual gluing function, for every integer degree.
 * `OnePoint.isContMDiff_twistCore`: `𝒪(k)` is an analytic line bundle.
 * `OnePoint.twistTransition_add` and `OnePoint.twistTransition_neg`: the transitions of
   `𝒪(k + l)` and `𝒪(-k)` are the products and the inverses of those of `𝒪(k)` and `𝒪(l)`.
@@ -220,6 +223,16 @@ theorem twistCore_indexAt (k : ℤ) (x : OnePoint 𝕜) : (twistCore k).indexAt 
 theorem twistCore_coordChange_apply (k : ℤ) (x y p : OnePoint 𝕜) (v : 𝕜) :
     (twistCore k).coordChange x y p v = twistTransition k x y p * v :=
   (rfl)
+
+/-- The native scalar transition between the local trivializations of `𝒪(k)` is its gluing
+function, for every integer degree and every proper nontrivially normed field. -/
+theorem twistCore_localTriv_scalarCoordChange (k : ℤ) (i j p : OnePoint 𝕜)
+    (hi : p ∈ (chartAt 𝕜 i).source) (hj : p ∈ (chartAt 𝕜 j).source) :
+    ((twistCore k).localTriv i).scalarCoordChange ((twistCore k).localTriv j)
+        (ContinuousLinearEquiv.refl 𝕜 𝕜) (ContinuousLinearEquiv.refl 𝕜 𝕜) p =
+      twistTransition k i j p := by
+  rw [Trivialization.scalarCoordChange_def]
+  simpa using (twistCore k).localTriv_coordChange_eq i j ⟨hi, hj⟩ 1
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on the Riemann sphere. -/

@@ -381,30 +381,27 @@ section Evaluation
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- Evaluating a smooth bundle-valued two-form on two `C^n` tangent fields along a `C^n` map is
-`C^n`. -/
-theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
+/-- Evaluating a smooth bundle-valued two-form on two tangent fields along a map, both `C^n` at
+`y₀`, is `C^n` at `y₀`. -/
+theorem contMDiffAt_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
     (φ : SmoothBundleForm I F V 2) {b : N → M}
-    {U W : ∀ y : N, TangentSpace I (b y)}
-    (hU : ContMDiff I' I.tangent n
-      (fun y ↦ TotalSpace.mk' E (b y) (U y)))
-    (hW : ContMDiff I' I.tangent n
-      (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
-    ContMDiff I' (I.prod 𝓘(ℝ, F)) n
-      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) := by
-  have hb : ContMDiff I' I n b := fun y ↦ by
-    have hy := hU y
-    rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace_iff.mp hy).1
-  have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
-  have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
+    {U W : ∀ y : N, TangentSpace I (b y)} {y₀ : N}
+    (hU : ContMDiffAt I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (U y)) y₀)
+    (hW : ContMDiffAt I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (W y)) y₀) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) y₀ := by
+  have hb : ContMDiffAt I' I n b y₀ := (contMDiff_proj (TangentSpace I)).contMDiffAt.comp y₀ hU
+  have hφ := ((φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out) (b y₀)).comp y₀ hb
+  have hφ' : ContMDiffAt I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
         (E := fun x ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] V x) (b y)
-        (φ.toContMDiffSection (b y))) := by
+        (φ.toContMDiffSection (b y))) y₀ := by
     convert hφ using 1
     funext y
     rfl
-  have happly := ContMDiff.continuousAlternatingMap_bundle_apply
+  have happly := ContMDiffAt.continuousAlternatingMap_bundle_apply
     (b := b) (v := fun i ↦ ![U, W] i) hφ'
     (fun i ↦ by
       fin_cases i
@@ -417,6 +414,19 @@ theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- Evaluating a smooth bundle-valued two-form on two `C^n` tangent fields along a `C^n` map is
+`C^n`. -/
+theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
+    (φ : SmoothBundleForm I F V 2) {b : N → M}
+    {U W : ∀ y : N, TangentSpace I (b y)}
+    (hU : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (U y)))
+    (hW : ContMDiff I' I.tangent n
+      (fun y ↦ TotalSpace.mk' E (b y) (W y))) :
+    ContMDiff I' (I.prod 𝓘(ℝ, F)) n
+      (fun y ↦ TotalSpace.mk' F (b y) (φ.eval₂ (b y) (U y) (W y))) :=
+  fun y ↦ φ.contMDiffAt_eval₂ (hU y) (hW y)
 
 end Evaluation
 
