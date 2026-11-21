@@ -13,11 +13,15 @@ public import TauCeti.RingTheory.Affinoid.SpectralRadius
 import Mathlib.RingTheory.Polynomial.RationalRoot
 import Mathlib.Topology.UniformSpace.Equiv
 import TauCeti.Analysis.Normed.Operator.Embedding
+import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Affinoid.Integral.Basic
+import TauCeti.RingTheory.Affinoid.MaximumModulus
+import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.StrictMorphism
 import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
+import TauCeti.RingTheory.Localization.TensorProduct
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeaklyStable
@@ -30,8 +34,9 @@ be an affinoid `K`-algebra. When `A` is reduced, its supremum seminorm `supSemin
 `A` (`TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`). This file proves **Bosch,
 Güntzer, Remmert, §6.2.4, Theorem 1**: on every reduced affinoid `K`-algebra `A` carrying any
 complete ultrametric `K`-algebra norm, the supremum norm is equivalent to the Banach norm:
-
-`∃ C > 0, ∀ f : A, supSeminorm K f ≤ ‖f‖ ∧ ‖f‖ ≤ C * supSeminorm K f`.
+`supSeminorm K f ≤ ‖f‖` (`TauCeti.IsAffinoidAlgebra.supSeminorm_le_norm`) and
+`∃ C > 0, ∀ f : A, ‖f‖ ≤ C * supSeminorm K f`
+(`TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`).
 
 In particular:
 * Every completely normed reduced affinoid algebra is uniform
@@ -51,7 +56,7 @@ In particular:
 * `TauCeti.supSeminorm_eq_spectralValue_minpoly` and
   `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: minimal-polynomial and base-change formulas for
   `supSeminorm K` along a finite torsion-free Tate normalization.
-* `TauCeti.IsAffinoidAlgebra.banachFunctionAlgebra`: [BGR, §6.2.4, Theorem 1].
+* `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
 * `TauCeti.IsAffinoidAlgebra.isUniform`: reduced completely normed affinoid algebras are uniform.
 * `TauCeti.IsAffinoidAlgebra.SupNormModel` and
   `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv`: the canonical complete supremum-normed
@@ -90,19 +95,33 @@ theorem supSeminorm_eq_spectralValue_minpoly {σ : Type*} [Finite σ]
     [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A] (f : A) :
     supSeminorm K f = spectralValue (minpoly (Tate σ) f) := by
   have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
+  have : Algebra.IsIntegral (Tate σ) A := Algebra.IsIntegral.of_finite _ _
   let _ := Fintype.ofFinite σ
-  have : Countable σ := Finite.to_countable
-  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  let : NormedCommRing A := hA.residueNormedCommRing
-  let : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  have hcont : Continuous (algebraMap (Tate σ) A) :=
-    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
-  rw [hA.supSeminorm_eq_smoothingFun, smoothingFun_normRingSeminorm_eq_gelfandRadius]
-  exact gelfandRadius_eq_spectralValue_minpoly K
-    (F := MvPowerSeries.GaussFractionField σ K (fun _ ↦ 1))
-    (MvPowerSeries.norm_algebraMap_gaussFractionField σ K (fun _ ↦ 1)) hcont f
+  let e : Tate σ ≃ₐ[K] Tate (Fin (Fintype.card σ)) :=
+    _root_.MvPowerSeries.IsRestricted.renameAlgEquiv (R := K) (Fintype.equivFin σ) fun _ ↦ 1
+  have hsup (t : Tate σ) : supSeminorm K t = ‖t‖ := by
+    rw [← AlgEquiv.supSeminorm_eq e t, MvPowerSeries.supSeminorm_eq_norm,
+      _root_.MvPowerSeries.IsRestricted.norm_renameAlgEquiv]
+  rw [hA.supSeminorm_eq_iSup_minpoly_coeff_rpow (A := Tate σ) f]
+  simp_rw [hsup]
+  set p := minpoly (Tate σ) f
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · have hp1 : p = 1 :=
+      (minpoly.monic (Algebra.IsIntegral.isIntegral (R := Tate σ) f)).natDegree_eq_zero.mp h0
+    have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
+    rw [Real.iSup_of_isEmpty, hp1, Polynomial.spectralValue_one]
+  · have : Nonempty (Fin p.natDegree) := ⟨⟨0, hpos⟩⟩
+    refine le_antisymm ?_ ?_
+    · refine Real.iSup_le (fun i ↦ ?_) (spectralValue_nonneg p)
+      rw [← spectralValueTerms_of_lt_natDegree p i.isLt]
+      exact le_ciSup (spectralValueTerms_bddAbove p) (i : ℕ)
+    · refine ciSup_le fun n ↦ ?_
+      by_cases hn : n < p.natDegree
+      · rw [spectralValueTerms_of_lt_natDegree p hn]
+        exact le_ciSup (Finite.bddAbove_range
+          (fun i : Fin p.natDegree ↦ ‖p.coeff i‖ ^ (1 / (p.natDegree - i : ℝ)))) ⟨n, hn⟩
+      · rw [spectralValueTerms_of_natDegree_le p (not_lt.mp hn)]
+        exact Real.iSup_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
 
 /-- Over a complete nontrivially normed ultrametric field `K`, when `A` is a reduced commutative
 `K`-algebra that is finite and torsion-free over a finite-variable Tate algebra
@@ -116,18 +135,14 @@ theorem supSeminorm_eq_reducedSpectralAlgNorm {σ : Type*} [Finite σ]
     [IsScalarTower K (Tate σ) A] [Module.Finite (Tate σ) A] [Module.IsTorsionFree (Tate σ) A]
     (f : A) :
     supSeminorm K f = reducedSpectralAlgNorm F (F ⊗[Tate σ] A) (1 ⊗ₜ[Tate σ] f) := by
-  have hA : IsAffinoidAlgebra K A := (isAffinoidAlgebra_tate (K := K) (σ := σ)).of_finite
-  let _ := Fintype.ofFinite σ
-  have : Countable σ := Finite.to_countable
-  have : IsNoetherianRing (Tate σ) := (isAffinoidAlgebra_tate (K := K) (σ := σ)).isNoetherianRing
-  let : NormedCommRing A := hA.residueNormedCommRing
-  let : NormedAlgebra K A := hA.residueNormedAlgebra
-  have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
-  have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  have hcont : Continuous (algebraMap (Tate σ) A) :=
-    hA.continuous_algHom (IsScalarTower.toAlgHom K (Tate σ) A)
-  rw [hA.supSeminorm_eq_smoothingFun]
-  exact smoothingFun_eq_reducedSpectralAlgNorm K hF hcont f
+  let φ : A →ₐ[Tate σ] F ⊗[Tate σ] A := Algebra.TensorProduct.includeRight
+  have hφ : Function.Injective φ := Algebra.TensorProduct.includeRight_injective_of_isFractionRing
+  have hmin : minpoly F ((1 : F) ⊗ₜ[Tate σ] f) =
+      (minpoly (Tate σ) f).map (algebraMap (Tate σ) F) :=
+    TauCeti.minpoly.isIntegrallyClosed_eq_field_fractions_of_injective F φ hφ
+      (Algebra.IsIntegral.isIntegral f)
+  rw [supSeminorm_eq_spectralValue_minpoly (σ := σ) f, reducedSpectralAlgNorm_def, hmin,
+    (algebraMap (Tate σ) F).spectralValue_map_of_norm_eq hF]
 
 end TorsionFreeNormalization
 
@@ -257,9 +272,10 @@ section BanachFunctionAlgebra
 /-- Domain case of [BGR, §6.2.4, Theorem 1]: an affinoid domain embeds finitely and torsion-freely
 over a Tate algebra via Noether normalization, and the fraction field of that Tate algebra is
 weakly stable in arbitrary characteristic. -/
-private theorem banachFunctionAlgebra_of_isDomain {B : Type*} [NormedCommRing B] [IsDomain B]
-    [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B] (hB : IsAffinoidAlgebra K B) :
-    ∃ C : ℝ, 0 < C ∧ ∀ b : B, supSeminorm K b ≤ ‖b‖ ∧ ‖b‖ ≤ C * supSeminorm K b := by
+private theorem exists_norm_le_mul_supSeminorm_of_isDomain {B : Type*} [NormedCommRing B]
+    [IsDomain B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
+    (hB : IsAffinoidAlgebra K B) :
+    ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖b‖ ≤ C * supSeminorm K b := by
   obtain ⟨d, g, hg_inj, hg_fin⟩ := hB.exists_finite_injective
   have : IsNoetherianRing (Tate (Fin d)) :=
     (isAffinoidAlgebra_tate (K := K) (σ := Fin d)).isNoetherianRing
@@ -273,16 +289,17 @@ private theorem banachFunctionAlgebra_of_isDomain {B : Type*} [NormedCommRing B]
     (MvPowerSeries.isWeaklyStable_gaussFractionField (Fin d) K (fun _ ↦ 1))
   refine ⟨C, hC, fun b ↦ ?_⟩
   rw [hB.supSeminorm_eq_smoothingFun]
-  exact hbound b
+  exact (hbound b).2
 
 /-- **Bosch–Güntzer–Remmert, §6.2.4, Theorem 1 (Banach function algebra theorem).**
 Let `A` be a reduced affinoid algebra over a complete nontrivially normed ultrametric field `K` (of
 arbitrary characteristic), equipped with any complete ultrametric `K`-algebra norm. Then the Banach
-norm on `A` is equivalent to the supremum norm `supSeminorm K`: there exists `C > 0` such that
-`supSeminorm K f ≤ ‖f‖` and `‖f‖ ≤ C * supSeminorm K f` for every `f : A`. -/
-theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+norm on `A` is bounded by a constant multiple of the supremum norm `supSeminorm K`: there exists
+`C > 0` such that `‖f‖ ≤ C * supSeminorm K f` for every `f : A`. Combined with
+`TauCeti.IsAffinoidAlgebra.supSeminorm_le_norm`, the two norms are equivalent. -/
+theorem exists_norm_le_mul_supSeminorm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
-    ∃ C : ℝ, 0 < C ∧ ∀ f : A, supSeminorm K f ≤ ‖f‖ ∧ ‖f‖ ≤ C * supSeminorm K f := by
+    ∃ C : ℝ, 0 < C ∧ ∀ f : A, ‖f‖ ≤ C * supSeminorm K f := by
   rcases subsingleton_or_nontrivial A with _ | _
   · refine ⟨1, zero_lt_one, fun f ↦ ?_⟩
     simp [Subsingleton.elim f 0]
@@ -297,8 +314,7 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
       ∃ C : ℝ, 0 < C ∧ ∀ q : A ⧸ 𝔭.val, ‖q‖ ≤ C * supSeminorm K q := by
     have := hclosed 𝔭
     have := hprime 𝔭
-    obtain ⟨C, hC, h⟩ := banachFunctionAlgebra_of_isDomain (hA.quotient 𝔭.val)
-    exact ⟨C, hC, fun q ↦ (h q).2⟩
+    exact exists_norm_le_mul_supSeminorm_of_isDomain (hA.quotient 𝔭.val)
   choose C𝔭 hC𝔭_pos hC𝔭 using hdom_bound
   -- Glue across the finitely many irreducible components via the strict injective diagonal map.
   let δ : A →ₗ[A] ∀ 𝔭 : minimalPrimes A, A ⧸ 𝔭.val :=
@@ -318,7 +334,7 @@ theorem banachFunctionAlgebra {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
   have hM_pos : 0 < M :=
     let ⟨𝔭₀⟩ := ‹Nonempty (minimalPrimes A)›
     (hC𝔭_pos 𝔭₀).trans_le (Finset.le_sup' C𝔭 (Finset.mem_univ 𝔭₀))
-  refine ⟨D * M, mul_pos hD hM_pos, fun f ↦ ⟨hA.supSeminorm_le_norm f, ?_⟩⟩
+  refine ⟨D * M, mul_pos hD hM_pos, fun f ↦ ?_⟩
   have hδ_le : ‖δ f‖ ≤ M * supSeminorm K f := by
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg hM_pos.le (supSeminorm_nonneg f))).mpr fun 𝔭 ↦ ?_
     have := hclosed 𝔭
@@ -341,10 +357,10 @@ bounded power-bounded subring (`TauCeti.Huber.IsUniform`). -/
 theorem isUniform {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) :
     Huber.IsUniform A := by
-  obtain ⟨C, _, hC⟩ := hA.banachFunctionAlgebra
+  obtain ⟨C, _, hC⟩ := hA.exists_norm_le_mul_supSeminorm
   refine Huber.IsUniform.of_norm_le_mul_smoothingFun K ⟨C, fun f ↦ ?_⟩
   rw [← hA.supSeminorm_eq_smoothingFun]
-  exact (hC f).2
+  exact hC f
 
 end BanachFunctionAlgebra
 
@@ -406,15 +422,15 @@ instance [IsReduced A] : CompleteSpace hA.SupNormModel := by
   let : NormedAlgebra K A := hA.residueNormedAlgebra
   have : IsUltrametricDist A := hA.isUltrametricDist_residueNormedCommRing
   have : CompleteSpace A := hA.completeSpace_residueNormedCommRing
-  obtain ⟨C, hC, hbound⟩ := hA.banachFunctionAlgebra
+  obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
   have hlip₁ : LipschitzWith 1 (toSupNorm : A → hA.SupNormModel) :=
     LipschitzWith.of_dist_le_mul fun x y ↦ by
       simpa only [NNReal.coe_one, one_mul, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-        ofSupNorm_neg, ofSupNorm_toSupNorm] using (hbound (-x + y)).1
+        ofSupNorm_neg, ofSupNorm_toSupNorm] using hA.supSeminorm_le_norm (-x + y)
   have hlip₂ : LipschitzWith (Real.toNNReal C) (ofSupNorm : hA.SupNormModel → A) :=
     LipschitzWith.of_dist_le_mul fun x y ↦ by
       simpa only [Real.coe_toNNReal C hC.le, dist_eq_norm_neg_add, norm_def, ofSupNorm_add,
-        ofSupNorm_neg] using (hbound (-x.ofSupNorm + y.ofSupNorm)).2
+        ofSupNorm_neg] using hbound (-x.ofSupNorm + y.ofSupNorm)
   let e : A ≃ᵤ hA.SupNormModel :=
     { toEquiv := (algEquiv hA).toEquiv
       uniformContinuous_toFun := hlip₁.uniformContinuous
@@ -474,10 +490,10 @@ field `K`: there exists `C > 0` such that `‖φ b‖ ≤ C * gelfandRadius b �
 theorem exists_pos_norm_apply_le_mul_gelfandRadius_of_isReduced
     (hA : IsAffinoidAlgebra K A) (φ : B →ₐ[K] A) :
     ∃ C : ℝ, 0 < C ∧ ∀ b : B, ‖φ b‖ ≤ C * gelfandRadius b ∧ ‖φ b‖ ≤ C * ‖b‖ := by
-  obtain ⟨C, hC, hbound⟩ := hA.banachFunctionAlgebra
+  obtain ⟨C, hC, hbound⟩ := hA.exists_norm_le_mul_supSeminorm
   refine ⟨C, hC, fun b ↦ ?_⟩
   have h1 : ‖φ b‖ ≤ C * gelfandRadius b :=
-    ((hbound (φ b)).2).trans (mul_le_mul_of_nonneg_left (φ.supSeminorm_apply_le_gelfandRadius b)
+    (hbound (φ b)).trans (mul_le_mul_of_nonneg_left (φ.supSeminorm_apply_le_gelfandRadius b)
       hC.le)
   exact ⟨h1, h1.trans (mul_le_mul_of_nonneg_left (gelfandRadius_le_norm b) hC.le)⟩
 

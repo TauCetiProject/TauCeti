@@ -54,15 +54,17 @@ namespace TauCeti.IsAffinoidAlgebra
 
 open Filter Topology
 
+/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every complete
+algebra norm over a complete ultrametric field `K`, `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
+theorem supSeminorm_le_norm_pow_rpow {K A : Type*} [NormedField K] [IsUltrametricDist K]
+    [CompleteSpace K] [NormedCommRing A] [NormedAlgebra K A] [CompleteSpace A]
+    (_hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
+    supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) :=
+  ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f).trans <| by
+    simpa only [one_div] using gelfandRadius_le_norm_pow f hn
+
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
   {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
-
-/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every complete
-ultrametric algebra norm on an affinoid algebra, `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
-theorem supSeminorm_le_norm_pow_rpow (hA : IsAffinoidAlgebra K A) (f : A) {n : ℕ} (hn : n ≠ 0) :
-    supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) := by
-  rw [← Real.pow_rpow_inv_natCast (supSeminorm_nonneg f) hn, ← supSeminorm_pow f hn, one_div]
-  exact Real.rpow_le_rpow (supSeminorm_nonneg _) (hA.supSeminorm_le_norm _) (by positivity)
 
 /-- **Norms of powers grow at most like the supremum seminorm.** For every complete ultrametric
 algebra norm on an affinoid algebra and every `f` with `|f|sup > 0`, there is a constant `C` with

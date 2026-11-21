@@ -14,9 +14,11 @@ public import TauCeti.RingTheory.Localization.Reduced
 
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Finsupp.Pi
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Algebra.Module.LocalizedModule.Lift
+import TauCeti.Analysis.Normed.Algebra.MinpolyRemainder
 import TauCeti.Analysis.Normed.Operator.Embedding
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import TauCeti.FieldTheory.Minpoly.TorsionFree
@@ -68,78 +70,6 @@ open Filter Polynomial Topology
 open scoped TensorProduct nonZeroDivisors
 
 namespace TauCeti
-
-section RemainderBound
-
-variable (K : Type*) [NontriviallyNormedField K]
-  {B A : Type*} [NormedCommRing B] [IsDomain B] [IsUltrametricDist B] [CompleteSpace B]
-  [NormedAlgebra K B] [IsNoetherianRing B] [IsIntegrallyClosed B]
-  [NormedCommRing A] [IsUltrametricDist A] [CompleteSpace A] [NormedAlgebra K A]
-  [Algebra B A] [IsScalarTower K B A] [Module.Finite B A] [Module.IsTorsionFree B A]
-
-include K
-
-/-- For an element `a` of a nontrivial finite torsion-free ultrametric Banach algebra over a
-Noetherian integrally closed Banach domain `B`, the truncated evaluation map
-`(Fin d → B) →ₗ[B] A` (`d = (minpoly B a).natDegree`) is injective and strict, so the coefficients
-of `X ^ n %ₘ minpoly B a` are bounded linearly by `‖a ^ n‖`. -/
-private theorem exists_pos_norm_coeff_modByMonic_le [Nontrivial A]
-    (hBA : Continuous (algebraMap B A)) (a : A) :
-    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (i : Fin (minpoly B a).natDegree),
-      ‖((X ^ n %ₘ minpoly B a).coeff (i : ℕ))‖ ≤ C * ‖a ^ n‖ := by
-  have ha_int : IsIntegral B a := Algebra.IsIntegral.isIntegral a
-  set p := minpoly B a
-  have hp_monic : p.Monic := minpoly.monic ha_int
-  set d := p.natDegree
-  have hd : 0 < d := by
-    refine Nat.pos_of_ne_zero fun hd0 ↦ ?_
-    have h0 : aeval a p = 0 := minpoly.aeval B a
-    rw [hp_monic.natDegree_eq_zero.mp hd0, map_one] at h0
-    exact one_ne_zero h0
-  have hp_ne_one : p ≠ 1 := fun h1 ↦ by simp [d, h1] at hd
-  have : Huber.IsTateRing B := Huber.IsTateRing.of_normedAlgebra K B
-  have : ContinuousSMul B A := continuousSMul_of_algebraMap B A hBA
-  let Φ : (Fin d → B) →ₗ[B] A :=
-    { toFun := fun c ↦ ∑ i : Fin d, c i • a ^ (i : ℕ)
-      map_add' := fun c₁ c₂ ↦ by simp [add_smul, Finset.sum_add_distrib]
-      map_smul' := fun b c ↦ by simp [Finset.smul_sum, smul_smul] }
-  have hΦ_inj : Function.Injective Φ := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro c hc
-    let q : B[X] := ∑ i : Fin d, C (c i) * X ^ (i : ℕ)
-    have hq_aeval : aeval a q = 0 := by
-      simpa [q, Φ, map_sum, aeval_C, Algebra.smul_def] using hc
-    have hdvd : p ∣ q := TauCeti.minpoly.isIntegrallyClosed_dvd_of_isTorsionFree ha_int hq_aeval
-    have hq0 : q = 0 := by
-      by_contra hq_ne
-      have hlt : q.natDegree < d := by
-        refine (natDegree_sum_le Finset.univ _).trans_lt ?_
-        rw [Finset.fold_max_lt]
-        refine ⟨hd, fun i _ ↦ ?_⟩
-        exact (natDegree_C_mul_X_pow_le (c i) (i : ℕ)).trans_lt i.isLt
-      exact hlt.not_ge (Polynomial.natDegree_le_of_dvd hdvd hq_ne)
-    ext i
-    have hci : q.coeff (i : ℕ) = c i := by
-      simp [q, coeff_C_mul, coeff_X_pow, Fin.val_inj]
-    rw [Pi.zero_apply, ← hci, hq0, coeff_zero]
-  obtain ⟨C, hC, hΦ_bound⟩ :=
-    (Φ.restrictScalars K).exists_pos_norm_le_mul_norm_of_isStrictMap_of_injective
-      Φ.isStrictMap_of_module_finite hΦ_inj
-  refine ⟨C, hC, fun n i ↦ ?_⟩
-  let rn : B[X] := (X : B[X]) ^ n %ₘ p
-  have hrn_deg : rn.natDegree < d := natDegree_modByMonic_lt (X ^ n) hp_monic hp_ne_one
-  let cn : Fin d → B := fun j ↦ rn.coeff j
-  have hΦ_cn : Φ cn = a ^ n := by
-    have haeval : aeval a rn = a ^ n := by
-      have hap : aeval a p = 0 := minpoly.aeval B a
-      have h := congrArg (aeval a) (modByMonic_add_div ((X : B[X]) ^ n) p)
-      simpa only [rn, map_add, map_mul, hap, zero_mul, add_zero, map_pow, aeval_X] using h
-    rw [← haeval, aeval_eq_sum_range' hrn_deg, ← Fin.sum_univ_eq_sum_range]
-    simp [Φ, cn, Algebra.smul_def]
-  exact (norm_le_pi_norm cn i).trans
-    ((hΦ_bound cn).trans_eq (by rw [LinearMap.restrictScalars_apply, hΦ_cn]))
-
-end RemainderBound
 
 section Extension
 
@@ -215,7 +145,9 @@ theorem gelfandRadius_eq_spectralValue_minpoly
         rw [map_smul_eq_mul, hBF]
       _ ≤ ∑ i : Fin p.natDegree, (C * ‖a ^ n‖) * f (x ^ (i : ℕ)) :=
         Finset.sum_le_sum fun i _ ↦
-          mul_le_mul_of_nonneg_right (hcoeff n i) (apply_nonneg f _)
+          mul_le_mul_of_nonneg_right
+            (by simpa only [map_pow, aeval_X] using hcoeff ((X : B[X]) ^ n) (i : ℕ))
+            (apply_nonneg f _)
       _ = (C * ∑ i : Fin p.natDegree, f (x ^ (i : ℕ))) * ‖a ^ n‖ := by
         rw [← Finset.mul_sum]
         ring
@@ -263,8 +195,10 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
   let ι := Module.Free.ChooseBasisIndex F E
   let b : Module.Basis ι F E := Module.Free.chooseBasis F E
   have : Nonempty ι := b.index_nonempty
-  obtain ⟨Ψ, d₀, hΨ_inj, hΨ_spec⟩ := Module.Finite.exists_injective_lift_pi_of_basis
+  obtain ⟨Ψ₀, d₀, hΨ₀_inj, hΨ₀_spec⟩ := Module.Finite.exists_injective_lift_finsupp_of_basis
     B⁰ (IsFractionRing.injective B F) b (f := φ.toLinearMap) hφ
+  let Ψ : A →ₗ[B] (ι → B) := Finsupp.lcoeFun.comp Ψ₀
+  have hΨ_inj : Function.Injective Ψ := DFunLike.coe_injective.comp hΨ₀_inj
   have hd₀_ne : (d₀ : B) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp d₀.property
   have : 0 < ‖(d₀ : B)‖ := norm_pos_iff.mpr hd₀_ne
   have : Huber.IsTateRing B := Huber.IsTateRing.of_normedAlgebra K B
@@ -277,7 +211,8 @@ theorem exists_pos_norm_le_mul_smoothingFun_of_isWeaklyStable [IsReduced A]
     fun a ↦ ⟨smoothingFun_le_self (normRingSeminorm A) a, ?_⟩⟩
   have hΨ_norm : ‖Ψ a‖ ≤ ‖(d₀ : B)‖ * b.norm (φ a) := by
     refine (pi_norm_le_iff_of_nonneg (mul_nonneg (norm_nonneg _) (b.norm_nonneg _))).mpr fun i ↦ ?_
-    rw [← hBF (Ψ a i), hΨ_spec a i, AlgHom.toLinearMap_apply, norm_mul, hBF]
+    rw [← hBF (Ψ a i), show Ψ a i = Ψ₀ a i from rfl, hΨ₀_spec a i,
+      AlgHom.toLinearMap_apply, norm_mul, hBF]
     exact mul_le_mul_of_nonneg_left (b.norm_repr_le_norm i) (norm_nonneg _)
   calc
     ‖a‖ ≤ C₁ * ‖Ψ a‖ := hΨ_bound a
