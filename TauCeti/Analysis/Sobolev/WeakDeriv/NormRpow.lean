@@ -57,7 +57,6 @@ second weak derivatives of norm powers are their classical ones.
 * `TauCeti.HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn`: for `s ≠ 0`, a weak
   derivative of the power agrees with the classical one away from the origin, so it is
   `p`-integrable near the origin only when `(s - 1) p > -d`.
-* `TauCeti.neg_lt_of_neg_lt_mul`: for `c ≥ 0` and `p ≥ 1`, `a p > -c` implies `a > -c`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`: for `s > -d`, the products `‖x‖ ^ s ⟪x, v⟫` are
   weakly differentiable on every open set, with their classical derivatives.
 * `TauCeti.abs_norm_rpow_mul_inner_le`, `TauCeti.norm_norm_rpow_smul_innerSL_add_le`: the products
@@ -253,13 +252,6 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
       fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
-
-/-- For `c ≥ 0` and an exponent `p ≥ 1`, the condition `a p > -c` implies `a > -c`, since
-multiplying a negative `a` by `p` only decreases it. With `c = dim E`: when `‖x‖ ^ a` is locally
-`Lᵖ`, it is also locally integrable. -/
-theorem neg_lt_of_neg_lt_mul {a p c : ℝ} (hc : 0 ≤ c) (hp : 1 ≤ p) (h : -c < a * p) :
-    -c < a := by
-  nlinarith
 
 /-- **Weak derivatives of non-integrable norm powers.** Let `s ≠ 0` and let `D` be a weak
 derivative of `x ↦ ‖x‖ ^ s` on an open set containing a ball `B(0, r)` with `r > 0`. If
