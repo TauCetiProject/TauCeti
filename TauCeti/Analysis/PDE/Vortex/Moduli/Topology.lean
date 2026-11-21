@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Coupling
 public import TauCeti.Analysis.PDE.Vortex.Reduced.Continuity
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import Mathlib.Topology.CompactOpen
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -268,20 +269,27 @@ private theorem exists_continuous_framedVortexDivisor_eq (hc : 0 < c) (hm : 0 < 
 
 variable (c m) in
 /-- The orbit spaces of the smooth framed gauge group on `framedVortexSubMulAction c m` and on
-`framedVortices c m` are identified by the equivariant `TauCeti.Vortex.framedVortexEquiv`. -/
+`framedVortices c m` are identified by the equivariant `TauCeti.Vortex.framedVortexEquiv`
+(`TauCeti.MulAction.orbitRelQuotientCongr`). -/
 def framedVortexOrbitEquiv :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction c m) ≃
       MulAction.orbitRel.Quotient framedGaugeGroup (framedVortices c m) :=
-  Quotient.congr (framedVortexEquiv c m) fun x y ↦ by
-    simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, ← framedVortexEquiv_smul,
-      (framedVortexEquiv c m).apply_eq_iff_eq]
+  MulAction.orbitRelQuotientCongr (MulEquiv.refl _) (framedVortexEquiv c m) framedVortexEquiv_smul
 
 /-- The orbit of a framed vortex goes to the orbit of the same vortex regarded as a continuous
 field. -/
 @[simp]
 theorem framedVortexOrbitEquiv_mk (x : framedVortexSubMulAction c m) :
     framedVortexOrbitEquiv c m (Quotient.mk'' x) = Quotient.mk'' (framedVortexEquiv c m x) :=
-  (rfl)
+  MulAction.orbitRelQuotientCongr_mk _ _ _ x
+
+/-- The orbit of a framed vortex regarded as a continuous field goes back to the orbit of the same
+vortex in `framedVortexSubMulAction c m`. -/
+@[simp]
+theorem framedVortexOrbitEquiv_symm_mk (x : framedVortices c m) :
+    (framedVortexOrbitEquiv c m).symm (Quotient.mk'' x) =
+      Quotient.mk'' ((framedVortexEquiv c m).symm x) :=
+  MulAction.orbitRelQuotientCongr_symm_mk _ _ _ x
 
 /-- **The moduli space of framed plane vortices is homeomorphic to `Sym ℂ m`** (Taubes). For
 `c > 0`, the zero divisor identifies the orbit space of the smooth framed gauge group on the smooth
@@ -291,21 +299,25 @@ def framedVortexModuliHomeomorph (hc : 0 < c) (m : ℕ) :
     MulAction.orbitRel.Quotient framedGaugeGroup (framedVortices c m) ≃ₜ Sym ℂ m where
   toEquiv := (framedVortexOrbitEquiv c m).symm.trans (framedVortexModuliEquiv hc m)
   continuous_toFun := isQuotientMap_quotient_mk'.continuous_iff.2 <|
-    continuous_framedVortexDivisor.congr fun x ↦ (framedVortexModuliEquiv_mk hc _).symm
+    continuous_framedVortexDivisor.congr fun _ ↦
+      ((congrArg (framedVortexModuliEquiv hc m) (framedVortexOrbitEquiv_symm_mk _)).trans
+        (framedVortexModuliEquiv_mk hc _)).symm
   continuous_invFun := by
     rcases Nat.eq_zero_or_pos m with rfl | hm
     · exact continuous_of_const fun _ _ ↦ congrArg _ (Subsingleton.elim _ _)
     obtain ⟨s, hs, hsD⟩ := exists_continuous_framedVortexDivisor_eq hc hm
     refine (continuous_quot_mk.comp hs).congr fun D ↦ ?_
     exact (((framedVortexOrbitEquiv c m).symm.trans (framedVortexModuliEquiv hc m)).symm_apply_eq.2
-      ((hsD D).symm.trans (framedVortexModuliEquiv_mk hc _).symm)).symm
+      ((hsD D).symm.trans ((congrArg (framedVortexModuliEquiv hc m)
+        (framedVortexOrbitEquiv_symm_mk _)).trans (framedVortexModuliEquiv_mk hc _)).symm)).symm
 
 /-- The orbit of a framed vortex goes to its divisor. -/
 @[simp]
 theorem framedVortexModuliHomeomorph_mk (hc : 0 < c) (x : framedVortices c m) :
     framedVortexModuliHomeomorph hc m (Quotient.mk'' x) =
       framedVortexDivisor ((framedVortexEquiv c m).symm x) :=
-  framedVortexModuliEquiv_mk hc _
+  (congrArg (framedVortexModuliEquiv hc m) (framedVortexOrbitEquiv_symm_mk x)).trans
+    (framedVortexModuliEquiv_mk hc _)
 
 /-- The homeomorphism `TauCeti.Vortex.framedVortexModuliHomeomorph` extends the bijection
 `TauCeti.Vortex.framedVortexModuliEquiv` on the orbit space of `framedVortexSubMulAction c m`. -/
