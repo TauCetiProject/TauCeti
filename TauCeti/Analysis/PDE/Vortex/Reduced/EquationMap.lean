@@ -17,7 +17,7 @@ import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
 import TauCeti.Analysis.Polynomial.Sobolev
-import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian
+import TauCeti.Analysis.Sobolev.BesselPotential.Laplacian.Basic
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
