@@ -76,6 +76,19 @@ theorem twistedHomologyPullbackSignLocalSystemIso_congr {e e' : Trivialization F
   simp only [twistedHomologyPullbackSignLocalSystemIso,
     pullbackSignLocalSystemIso_congr hι g hg hg' h]
 
+/-- Equal maps into the base set of a trivialization give the same identification of homology
+with coefficients in the pulled-back orientation local system with ordinary homology, after the
+identification of the two pulled-back systems. -/
+theorem twistedHomologyPullbackSignLocalSystemIso_inv_of_eq (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) (P : TopPair.{u})
+    {g g' : C(P.fst, TopCat.of B)} (h : g = g') (hg : ∀ y, g y ∈ e.baseSet)
+    (hg' : ∀ y, g' y ∈ e.baseSet) (n : ℕ) :
+    (twistedHomologyPullbackSignLocalSystemIso R hι e ω P g' hg' n).inv =
+      (twistedHomologyPullbackSignLocalSystemIso R hι e ω P g hg n).inv ≫
+        P.twistedHomologyCoefficientMap (eqToHom (by rw [h])) n := by
+  subst h
+  simp
+
 /-- Reversing the orientation of the model fibre negates the identification of homology with
 coefficients in the pulled-back orientation local system with ordinary homology. -/
 theorem twistedHomologyPullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
