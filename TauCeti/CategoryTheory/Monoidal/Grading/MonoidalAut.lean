@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Grading.UnitSummands
+public import TauCeti.CategoryTheory.Monoidal.Grading.UnitDegree
 public import TauCeti.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.CategoryTheory.Semisimple.CatCenter

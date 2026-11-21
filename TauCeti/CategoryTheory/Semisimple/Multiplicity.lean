@@ -241,4 +241,39 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
     have := isIso_of_hom_simple hi
     exact ⟨i, ⟨asIso (f ≫ e.hom ≫ biproduct.π A i)⟩⟩
 
+/-- An object whose endomorphisms commute is multiplicity-free: every simple isomorphism class
+occurs at most once in it. -/
+theorem simpleMultiplicities_le_one_of_comm (X : C)
+    (hcomm : ∀ f g : X ⟶ X, f ≫ g = g ≫ f) (S : SimpleClasses C) :
+    simpleMultiplicities X S ≤ 1 := by
+  classical
+  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ :=
+    IsFiniteSemisimpleCategory.exists_biproduct_simples X
+  let _ := hι
+  let _ := ha
+  let _ := hba
+  rw [simpleMultiplicities_apply_eq_card a e S, Nat.card_eq_fintype_card,
+    Fintype.card_le_one_iff_subsingleton]
+  refine ⟨fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ ?_⟩
+  apply Subtype.ext
+  by_contra hne
+  obtain ⟨φ⟩ := (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).1 (hi.trans hj.symm)
+  let f₁ : a i ⟶ X := biproduct.ι a i ≫ e.inv
+  let p₁ : X ⟶ a i := e.hom ≫ biproduct.π a i
+  let f₂ : a i ⟶ X := φ.hom ≫ biproduct.ι a j ≫ e.inv
+  let p₂ : X ⟶ a i := e.hom ≫ biproduct.π a j ≫ φ.inv
+  have h₁₁ : f₁ ≫ p₁ = 𝟙 (a i) := by simp [f₁, p₁]
+  have h₂₂ : f₂ ≫ p₂ = 𝟙 (a i) := by simp [f₂, p₂]
+  have h₁₂ : f₁ ≫ p₂ = 0 := by
+    simp only [f₁, p₂, Category.assoc, Iso.inv_hom_id_assoc]
+    rw [← Category.assoc, biproduct.ι_π_ne a hne, zero_comp]
+  have hhc := f₁ ≫= hcomm (p₁ ≫ f₂) (p₂ ≫ f₁) =≫ p₁
+  have hlhs : f₁ ≫ ((p₁ ≫ f₂) ≫ p₂ ≫ f₁) ≫ p₁ = 𝟙 (a i) := by
+    simp only [Category.assoc]
+    rw [reassoc_of% h₁₁, reassoc_of% h₂₂, h₁₁]
+  have hrhs : f₁ ≫ ((p₂ ≫ f₁) ≫ p₁ ≫ f₂) ≫ p₁ = 0 := by
+    simp only [Category.assoc]
+    rw [reassoc_of% h₁₂, zero_comp]
+  exact CategoryTheory.id_ne_zero (a i) (hlhs.symm.trans (hhc.trans hrhs))
+
 end TauCeti

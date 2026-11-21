@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Hom.Instances
-public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.CategoryTheory.SingleObj
 
 /-!
