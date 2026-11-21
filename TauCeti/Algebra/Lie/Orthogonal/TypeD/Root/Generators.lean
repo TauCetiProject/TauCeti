@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.LinearAlgebra.Matrix.Alternating
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -400,7 +400,7 @@ theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fi
     cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
   rw [cartanGenerator_eq_typeDDiagonalEquiv]
   exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
-    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
+    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).property
 
 /-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
 type-D simple root. -/

@@ -268,7 +268,7 @@ base. -/
 theorem simpleIndex_mem_support (i : Fin t.rank) :
     t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
   rw [← coe_simpleSupportEquiv]
-  exact (t.simpleSupportEquiv ht i).2
+  exact (t.simpleSupportEquiv ht i).property
 
 variable {t ht} in
 /-- A simple root belongs to the positive roots of the pinned rational base. -/

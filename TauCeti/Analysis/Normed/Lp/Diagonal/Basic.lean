@@ -271,7 +271,7 @@ theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
   refine ⟨fun h ↦ Set.not_infinite.1 fun hinf ↦ ?_, fun hfin ↦ ?_⟩
   · have : Infinite {i | d i ≠ 0} := hinf.to_subtype
     let v : {i | d i ≠ 0} → LinearMap.range (diagonalCLM (p := p) d).toLinearMap := fun i ↦
-      ⟨lp.single p i.1 1, lp.single p i.1 (d i.1)⁻¹, by simp [mul_inv_cancel₀ i.2]⟩
+      ⟨lp.single p i.val 1, lp.single p i.val (d i.val)⁻¹, by simp [mul_inv_cancel₀ i.property]⟩
     have hv : LinearIndependent 𝕜 v := by
       apply LinearIndependent.of_comp (LinearMap.range (diagonalCLM (p := p) d).toLinearMap).subtype
       exact (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p)).comp

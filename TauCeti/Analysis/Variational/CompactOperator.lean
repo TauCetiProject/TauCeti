@@ -18,7 +18,7 @@ example, Rayleigh normalization spheres `{u | ‖J u‖ = 1}`) need not be weakl
 Nevertheless, once an energy controls norm sublevels (`TauCeti.HasBoundedSublevelsOn`), every
 variational argument localizes to closed norm balls, which are weakly closed over `ℝ` or `ℂ`
 (`TauCeti.isClosed_toWeakSpace_closedBall`) and on which a compact operator `J` is weak-to-norm
-continuous (`IsCompactOperator.continuousOn_toWeakSpace_symm`).
+continuous (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`).
 
 This file specializes the general bounded-ball localization theorems of
 `TauCeti.Analysis.Variational.DirectMethod` to compact perturbations and compact constraints:

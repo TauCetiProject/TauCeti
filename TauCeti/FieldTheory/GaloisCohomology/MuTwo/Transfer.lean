@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Corestriction.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.BrauerTorsion
-public import TauCeti.FieldTheory.GaloisCohomology.UnitsRestriction
+public import TauCeti.FieldTheory.GaloisCohomology.Units.Restriction
 
 /-!
 # Restriction and corestriction of mod-two Kummer classes
