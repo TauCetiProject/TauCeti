@@ -227,7 +227,7 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
   let μf : FiniteMeasure Circle := ⟨μ, hμ⟩
   have hweak : Tendsto νf U (𝓝 μf) := FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 hlim
   have hcont : Continuous fun z : Circle ↦ (z : ℂ) ^ m :=
-    (continuous_subtype_val.comp (continuous_zpow (G := Circle) m)).congr fun z ↦
+    (continuous_subtypeVal.comp (continuous_zpow (G := Circle) m)).congr fun z ↦
       Circle.coe_zpow z m
   have hconv := (FiniteMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).1 hweak
     (.mkOfCompact ⟨_, hcont⟩)

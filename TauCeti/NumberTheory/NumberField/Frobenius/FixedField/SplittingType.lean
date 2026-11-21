@@ -59,7 +59,7 @@ theorem fullCycleType_toPerm_quotient_eq_map_inertiaDeg
     {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     (toPerm σ : Equiv.Perm ((L ≃ₐ[K] L) ⧸ H)).fullCycleType =
       (Finset.univ : Finset (p.primesOver (𝓞 ↥(fixedField H)))).val.map
-        (fun P => P.1.inertiaDeg (𝓞 K)) := by
+        (fun P => P.val.inertiaDeg (𝓞 K)) := by
   have : Q.IsMaximal := IsMaximal.of_liesOver_isMaximal Q p
   rw [fullCycleType_toPerm_eq_map_card_orbit (X := (L ≃ₐ[K] L) ⧸ H) σ,
     zpowers_eq_stabilizer_of_isArithFrobAt Q hσ,
@@ -70,7 +70,7 @@ theorem fullCycleType_toPerm_quotient_eq_map_inertiaDeg
   -- descends from a translate of the chosen prime of `L`.
   obtain ⟨x, hx⟩ := primesOverOfCoset_surjective p Q H (𝓞 ↥(fixedField H)) P
   induction x using QuotientGroup.induction_on with | H g => ?_
-  have hP : P.1 = (g⁻¹ • Q).under (𝓞 ↥(fixedField H)) := by
+  have hP : P.val = (g⁻¹ • Q).under (𝓞 ↥(fixedField H)) := by
     rw [← hx, coe_primesOverOfCoset_mk]
   have : Algebra.IsUnramifiedAt (𝓞 K) (g⁻¹ • Q) :=
     (Q.isUnramifiedAt_pointwise_smul_iff g⁻¹).mpr inferInstance
@@ -93,7 +93,7 @@ theorem fullCycleType_toPerm_inertiaOrbitQuotient_eq_map_inertiaDeg
       Equiv.Perm (orbitRel.Quotient (Q.inertia (stabilizer (L ≃ₐ[K] L) Q))
         ((L ≃ₐ[K] L) ⧸ H))).fullCycleType =
       (Finset.univ : Finset (p.primesOver (𝓞 ↥(fixedField H)))).val.map
-        (fun P => P.1.inertiaDeg (𝓞 K)) := by
+        (fun P => P.val.inertiaDeg (𝓞 K)) := by
   have : Q.IsMaximal := IsMaximal.of_liesOver_isMaximal Q p
   have : (Q.under (𝓞 K)).IsMaximal := Q.over_def p ▸ ‹p.IsMaximal›
   have : Finite (𝓞 K ⧸ Q.under (𝓞 K)) :=
@@ -121,7 +121,7 @@ theorem fullCycleType_toPerm_inertiaOrbitQuotient_eq_map_inertiaDeg
       orbit (Subgroup.zpowers frob) ω = orbit (D ⧸ I) ω := fun ω ↦ by
     ext ω'
     simp only [mem_orbit_iff, Subgroup.smul_def]
-    exact ⟨fun ⟨g, hg⟩ ↦ ⟨g.1, hg⟩, fun ⟨g, hg⟩ ↦ ⟨⟨g, hgen ▸ Subgroup.mem_top g⟩, hg⟩⟩
+    exact ⟨fun ⟨g, hg⟩ ↦ ⟨g.val, hg⟩, fun ⟨g, hg⟩ ↦ ⟨⟨g, hgen ▸ Subgroup.mem_top g⟩, hg⟩⟩
   rw [fullCycleType_toPerm_eq_map_card_orbit frob, TauCeti.map_card_orbit_eq_of_orbit_eq horb_eq,
     map_card_orbit_quotientInertia_eq_map_inertiaDeg p Q H (𝓞 ↥(fixedField H))]
 

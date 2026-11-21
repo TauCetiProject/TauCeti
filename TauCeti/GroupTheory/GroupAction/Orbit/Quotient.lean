@@ -124,7 +124,7 @@ theorem stabilizer_quotientGroup_mk (N : Subgroup G) [N.Normal] (x : X) :
     refine ⟨(n : G)⁻¹ * g, ?_, ?_⟩
     · rw [mul_smul, inv_smul_eq_iff, ← Subgroup.smul_def, hn]
     · rw [QuotientGroup.eq, mul_inv_rev, inv_inv]
-      exact ‹N.Normal›.conj_mem' n n.2 g
+      exact ‹N.Normal›.conj_mem' n n.property g
   · rintro ⟨s, hs, hsg⟩
     have hns : s⁻¹ * g ∈ N := QuotientGroup.eq.mp hsg
     have hgn : g * s⁻¹ ∈ N := by

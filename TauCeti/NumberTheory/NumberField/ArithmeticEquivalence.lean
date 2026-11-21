@@ -39,8 +39,8 @@ included (`TauCeti.map_inertiaDeg_fixedField_eq_of_almostConjugate`).
 
 Over `ℚ` this yields **Gassmann's theorem**: fixed fields of almost-conjugate subgroups have the
 same number of ideals of every norm and the same Dedekind zeta function
-(`TauCeti.dedekindZetaCoeff_fixedField_eq_of_almostConjugate`,
-`TauCeti.dedekindZeta_fixedField_eq_of_almostConjugate`). Realizing `S₁₆` as a Galois group over
+(`Subgroup.dedekindZetaCoeff_fixedField_eq_of_almostConjugate`,
+`Subgroup.dedekindZeta_fixedField_eq_of_almostConjugate`). Realizing `S₁₆` as a Galois group over
 `ℚ` (`TauCeti.exists_monic_int_polynomial_hasFullSymmetricGaloisGroup`) and pulling back the
 non-conjugate almost-conjugate pair of order `16` in `S₁₆` (`TauCeti.exists_S16_gassmann_pair`)
 then yields two nonisomorphic number fields with the same Dedekind zeta function
@@ -57,9 +57,9 @@ Galois extension are isomorphic exactly when the subgroups are conjugate
 * `TauCeti.map_inertiaDeg_fixedField_eq_of_almostConjugate`: almost-conjugate subgroups of
   `Gal(L / K)` have fixed fields with the same multiset of residue degrees above every maximal
   ideal of `𝓞 K` (ramified or unramified).
-* `TauCeti.dedekindZetaCoeff_fixedField_eq_of_almostConjugate`: **Gassmann's theorem** for ideal
+* `Subgroup.dedekindZetaCoeff_fixedField_eq_of_almostConjugate`: **Gassmann's theorem** for ideal
   counts.
-* `TauCeti.dedekindZeta_fixedField_eq_of_almostConjugate`: **Gassmann's theorem** for Dedekind
+* `Subgroup.dedekindZeta_fixedField_eq_of_almostConjugate`: **Gassmann's theorem** for Dedekind
   zeta functions.
 * `TauCeti.exists_dedekindZetaCoeff_eq_not_isomorphic`: existence of two nonisomorphic number
   fields with the same Dedekind zeta coefficients.
@@ -87,7 +87,7 @@ theorem normCoeff_one_apply_pow_eq_prod_inertiaDeg (K : Type*) [Field K] [Number
     (v : HeightOneSpectrum (𝓞 ℚ)) (k : ℕ) :
     normCoeff K (1 : IdealArithmeticFunction K) (Ideal.absNorm v.asIdeal ^ k) =
       (((Finset.univ : Finset (v.asIdeal.primesOver (𝓞 K))).val.map
-          (fun P ↦ P.1.inertiaDeg (𝓞 ℚ))).map
+          (fun P ↦ P.val.inertiaDeg (𝓞 ℚ))).map
         (fun d ↦ ArithmeticFunction.ofPowerSeries (Ideal.absNorm v.asIdeal ^ d)
           (PowerSeries.mk fun _ ↦ (1 : ℂ)))).prod (Ideal.absNorm v.asIdeal ^ k) := by
   have hp : (Ideal.absNorm v.asIdeal).Prime := by
@@ -95,9 +95,9 @@ theorem normCoeff_one_apply_pow_eq_prod_inertiaDeg (K : Type*) [Field K] [Number
     exact Rat.HeightOneSpectrum.prime_natGenerator v
   -- Identify `v.asIdeal.primesOver (𝓞 K)` with the height-one primes above `v`.
   let e := HeightOneSpectrum.equivPrimesOver (𝓞 K) (p := v.asIdeal) v.ne_bot
-  let toSpec : v.asIdeal.primesOver (𝓞 K) → HeightOneSpectrum (𝓞 K) := fun P ↦ (e.symm P).1
+  let toSpec : v.asIdeal.primesOver (𝓞 K) → HeightOneSpectrum (𝓞 K) := fun P ↦ (e.symm P).val
   have htoSpec_inj : Function.Injective toSpec := Subtype.val_injective.comp e.symm.injective
-  have htoSpec_asIdeal : ∀ P, (toSpec P).asIdeal = P.1 := fun P ↦ by
+  have htoSpec_asIdeal : ∀ P, (toSpec P).asIdeal = P.val := fun P ↦ by
     rw [← HeightOneSpectrum.equivPrimesOver_apply (𝓞 K) (p := v.asIdeal) v.ne_bot (e.symm P)]
     exact congrArg Subtype.val (e.apply_symm_apply P)
   -- Every height-one prime of `𝓞 K` containing `N(v)` divides the lift of `v.asIdeal`.
@@ -116,10 +116,10 @@ theorem normCoeff_one_apply_pow_eq_prod_inertiaDeg (K : Type*) [Field K] [Number
   congr 1
   rw [Multiset.map_map, Function.comp_def, Finset.prod_eq_multiset_prod]
   refine congrArg Multiset.prod (Multiset.map_congr rfl fun P _ ↦ ?_)
-  have := P.2.1
-  have := P.2.2
+  have := P.property.1
+  have := P.property.2
   rw [IdealArithmeticFunction.localArithmeticFactor_def, htoSpec_asIdeal,
-    ← Ideal.absNorm_pow_inertiaDeg v.asIdeal P.1]
+    ← Ideal.absNorm_pow_inertiaDeg v.asIdeal P.val]
   congr 1
   ext n
   simp
@@ -132,9 +132,9 @@ theorem dedekindZetaCoeff_eq_of_forall_map_inertiaDeg_eq
     (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L]
     (h : ∀ v : HeightOneSpectrum (𝓞 ℚ),
       (Finset.univ : Finset (v.asIdeal.primesOver (𝓞 K))).val.map
-          (fun P ↦ P.1.inertiaDeg (𝓞 ℚ)) =
+          (fun P ↦ P.val.inertiaDeg (𝓞 ℚ)) =
         (Finset.univ : Finset (v.asIdeal.primesOver (𝓞 L))).val.map
-          (fun P ↦ P.1.inertiaDeg (𝓞 ℚ))) (n : ℕ) :
+          (fun P ↦ P.val.inertiaDeg (𝓞 ℚ))) (n : ℕ) :
     dedekindZetaCoeff K n = dedekindZetaCoeff L n := by
   by_cases hn : n = 0
   · subst hn
@@ -164,9 +164,9 @@ theorem map_inertiaDeg_fixedField_eq_of_almostConjugate
     [Algebra K L] [IsGalois K L] {H H' : Subgroup (L ≃ₐ[K] L)}
     (hHH' : H.AlmostConjugate H') (p : Ideal (𝓞 K)) [p.IsMaximal] :
     (Finset.univ : Finset (p.primesOver (𝓞 ↥(IntermediateField.fixedField H)))).val.map
-        (fun P ↦ P.1.inertiaDeg (𝓞 K)) =
+        (fun P ↦ P.val.inertiaDeg (𝓞 K)) =
       (Finset.univ : Finset (p.primesOver (𝓞 ↥(IntermediateField.fixedField H')))).val.map
-        (fun P ↦ P.1.inertiaDeg (𝓞 K)) := by
+        (fun P ↦ P.val.inertiaDeg (𝓞 K)) := by
   -- Choose a prime `Q` of `𝓞 L` above `p` and an arithmetic Frobenius `σ` at `Q`.
   obtain ⟨Q, hQmax, hQp⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral (S := 𝓞 L) p
     fun x hx ↦ by
@@ -186,9 +186,13 @@ theorem map_inertiaDeg_fixedField_eq_of_almostConjugate
   -- `I`-orbits.
   have hfix : ∀ d : stabilizer (L ≃ₐ[K] L) Q,
       Nat.card (fixedBy ((L ≃ₐ[K] L) ⧸ H) d) = Nat.card (fixedBy ((L ≃ₐ[K] L) ⧸ H') d) :=
-    fun d ↦ Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq.mp hHH' d.1
+    fun d ↦ Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq.mp hHH' d.val
   exact fullCycleType_toPerm_orbitRelQuotient_eq hfix (Q.inertia (stabilizer (L ≃ₐ[K] L) Q))
     (QuotientGroup.mk ⟨σ, hσ.mem_stabilizer⟩)
+
+end TauCeti
+
+namespace Subgroup
 
 /-- **Gassmann's theorem.** If two subgroups `H` and `K` of the Galois group of a Galois number
 field `E / ℚ` are almost conjugate, then their fixed fields have the same number of integral ideals
@@ -196,10 +200,10 @@ of every absolute norm. -/
 theorem dedekindZetaCoeff_fixedField_eq_of_almostConjugate
     {E : Type*} [Field E] [NumberField E] [IsGalois ℚ E] (H K : Subgroup (E ≃ₐ[ℚ] E))
     (hHK : H.AlmostConjugate K) (n : ℕ) :
-    dedekindZetaCoeff (IntermediateField.fixedField H) n =
-      dedekindZetaCoeff (IntermediateField.fixedField K) n :=
-  dedekindZetaCoeff_eq_of_forall_map_inertiaDeg_eq _ _
-    (fun v ↦ map_inertiaDeg_fixedField_eq_of_almostConjugate hHK v.asIdeal) n
+    TauCeti.dedekindZetaCoeff (IntermediateField.fixedField H) n =
+      TauCeti.dedekindZetaCoeff (IntermediateField.fixedField K) n :=
+  TauCeti.dedekindZetaCoeff_eq_of_forall_map_inertiaDeg_eq _ _
+    (fun v ↦ TauCeti.map_inertiaDeg_fixedField_eq_of_almostConjugate hHK v.asIdeal) n
 
 /-- **Gassmann's theorem for Dedekind zeta functions.** Almost-conjugate subgroups of the Galois
 group of a Galois number field `E / ℚ` have fixed fields with the same Dedekind zeta function. -/
@@ -208,10 +212,15 @@ theorem dedekindZeta_fixedField_eq_of_almostConjugate
     (hHK : H.AlmostConjugate K) (s : ℂ) :
     NumberField.dedekindZeta (IntermediateField.fixedField H) s =
       NumberField.dedekindZeta (IntermediateField.fixedField K) s := by
-  rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff, dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+  rw [TauCeti.dedekindZeta_eq_LSeries_dedekindZetaCoeff,
+    TauCeti.dedekindZeta_eq_LSeries_dedekindZetaCoeff]
   congr 1
   ext n
-  exact congrArg Nat.cast (dedekindZetaCoeff_fixedField_eq_of_almostConjugate H K hHK n)
+  exact congrArg Nat.cast (H.dedekindZetaCoeff_fixedField_eq_of_almostConjugate K hHK n)
+
+end Subgroup
+
+namespace TauCeti
 
 /-! ### Nonisomorphic arithmetically equivalent number fields -/
 
@@ -242,7 +251,7 @@ theorem exists_dedekindZetaCoeff_eq_not_isomorphic :
   -- Their fixed fields are arithmetically equivalent by Gassmann's theorem and nonisomorphic.
   refine ⟨↥(IntermediateField.fixedField H), ↥(IntermediateField.fixedField K),
     inferInstance, inferInstance, inferInstance, inferInstance,
-    dedekindZetaCoeff_fixedField_eq_of_almostConjugate H K hac, ⟨fun φ ↦ ?_⟩⟩
+    H.dedekindZetaCoeff_fixedField_eq_of_almostConjugate K hac, ⟨fun φ ↦ ?_⟩⟩
   have halg : ↥(IntermediateField.fixedField H) ≃ₐ[ℚ] ↥(IntermediateField.fixedField K) :=
     AlgEquiv.ofRingEquiv (f := φ) fun q ↦ by
       simp [eq_ratCast]

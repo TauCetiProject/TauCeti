@@ -124,7 +124,7 @@ theorem primesOverOfCoset_eq_iff [Finite H] [Algebra.IsInvariant C B H] (x y : G
     · rw [mem_stabilizer_iff, mul_assoc, mul_smul, hh, smul_smul, mul_inv_cancel, one_smul]
     · rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, QuotientGroup.eq, smul_eq_mul,
         Subgroup.coe_mk]
-      convert H.inv_mem h.2 using 1
+      convert H.inv_mem h.property using 1
       group
   · rintro ⟨d, hd⟩
     rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, QuotientGroup.eq] at hd
@@ -132,7 +132,8 @@ theorem primesOverOfCoset_eq_iff [Finite H] [Algebra.IsInvariant C B H] (x y : G
       have := H.inv_mem hd
       simpa [mul_inv_rev, mul_assoc] using this
     refine ⟨⟨τ⁻¹ * d * τ', hmem⟩, ?_⟩
-    rw [Subgroup.smul_def, smul_smul, mul_inv_cancel_right, mul_smul, mem_stabilizer_iff.mp d.2]
+    rw [Subgroup.smul_def, smul_smul, mul_inv_cancel_right, mul_smul,
+        mem_stabilizer_iff.mp d.property]
 
 /-- **Every prime of `C` above `p` is attached to a coset.** -/
 theorem primesOverOfCoset_surjective [Finite G] [Algebra.IsInvariant A B G] [FaithfulSMul C B] :
@@ -180,8 +181,8 @@ has as many elements as the ramification index times the residue degree of the p
 attached to the coset. No hypothesis on the residue fields is needed. -/
 theorem card_orbit_stabilizer_coset (x : G ⧸ H) :
     Nat.card (orbit (stabilizer G Q) x) =
-      (primesOverOfCoset p Q H C x).1.ramificationIdx A *
-        (primesOverOfCoset p Q H C x).1.inertiaDeg A := by
+      (primesOverOfCoset p Q H C x).val.ramificationIdx A *
+        (primesOverOfCoset p Q H C x).val.inertiaDeg A := by
   induction x using QuotientGroup.induction_on with | H τ => ?_
   rw [coe_primesOverOfCoset_mk,
     ramificationIdx_mul_inertiaDeg_under_smul_eq_relIndex (Q := Q) H C τ⁻¹,
@@ -193,13 +194,13 @@ separable, the orbit of a coset `τ H` under the inertia subgroup `I(Q) ≤ D(Q)
 the ramification index of the attached prime `τ⁻¹ Q ∩ C` over `A`. -/
 theorem card_orbit_inertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) (B ⧸ Q)] (x : G ⧸ H) :
     Nat.card (orbit (Q.inertia (stabilizer G Q)) x) =
-      (primesOverOfCoset p Q H C x).1.ramificationIdx A := by
+      (primesOverOfCoset p Q H C x).val.ramificationIdx A := by
   have horb : orbit (Q.inertia (stabilizer G Q)) x = orbit (Q.inertia G) x := by
     ext y
     simp only [mem_orbit_iff]
     constructor
     · rintro ⟨⟨d, hd⟩, rfl⟩
-      exact ⟨⟨d.1, by simpa [mem_inertia, Subgroup.smul_def] using hd⟩, rfl⟩
+      exact ⟨⟨d.val, by simpa [mem_inertia, Subgroup.smul_def] using hd⟩, rfl⟩
     · rintro ⟨⟨g, hg⟩, rfl⟩
       exact ⟨⟨⟨g, Q.inertia_le_stabilizer hg⟩,
         by simpa [mem_inertia, Subgroup.smul_def] using hg⟩, rfl⟩
@@ -216,7 +217,7 @@ theorem card_orbit_quotientInertia_coset [Algebra.IsSeparable (A ⧸ Q.under A) 
     (x : G ⧸ H) :
     Nat.card (orbit (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
         (Quotient.mk'' x : orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H))) =
-      (primesOverOfCoset p Q H C x).1.inertiaDeg A := by
+      (primesOverOfCoset p Q H C x).val.inertiaDeg A := by
   have : Finite G := IsGaloisGroup.finite G A B
   have : Nonempty (orbit (Q.inertia (stabilizer G Q)) x) := ⟨⟨x, mem_orbit_self x⟩⟩
   have hpos : 0 < Nat.card (orbit (Q.inertia (stabilizer G Q)) x) := Nat.card_pos
@@ -236,22 +237,22 @@ theorem map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg
     (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q) (G ⧸ H))).val.map
         (fun ω => Nat.card ω.orbit) =
       (Finset.univ : Finset (p.primesOver C)).val.map
-        (fun 𝔮 : p.primesOver C => 𝔮.1.ramificationIdx A * 𝔮.1.inertiaDeg A) := by
+        (fun 𝔮 : p.primesOver C => 𝔮.val.ramificationIdx A * 𝔮.val.inertiaDeg A) := by
   -- The orbit sizes, read through the bijection with the primes above `p`.
   have hcard : ∀ ω : orbitRel.Quotient (stabilizer G Q) (G ⧸ H),
-      Nat.card ω.orbit = (orbitQuotientEquivPrimesOver p Q H C ω).1.ramificationIdx A *
-        (orbitQuotientEquivPrimesOver p Q H C ω).1.inertiaDeg A := by
+      Nat.card ω.orbit = (orbitQuotientEquivPrimesOver p Q H C ω).val.ramificationIdx A *
+        (orbitQuotientEquivPrimesOver p Q H C ω).val.inertiaDeg A := by
     intro ω
     refine _root_.Quotient.inductionOn' ω fun x => ?_
     rw [orbitRel.Quotient.orbit_mk, orbitQuotientEquivPrimesOver_mk p Q H C,
       card_orbit_stabilizer_coset p Q H C]
   calc (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q) (G ⧸ H))).val.map
           (fun ω => Nat.card ω.orbit)
-      = Finset.univ.val.map (fun ω => (orbitQuotientEquivPrimesOver p Q H C ω).1.ramificationIdx
-          A * (orbitQuotientEquivPrimesOver p Q H C ω).1.inertiaDeg A) :=
+      = Finset.univ.val.map (fun ω => (orbitQuotientEquivPrimesOver p Q H C ω).val.ramificationIdx
+          A * (orbitQuotientEquivPrimesOver p Q H C ω).val.inertiaDeg A) :=
         Multiset.map_congr rfl fun ω _ => hcard ω
     _ = (Finset.univ.val.map (orbitQuotientEquivPrimesOver p Q H C)).map
-          (fun 𝔮 : p.primesOver C => 𝔮.1.ramificationIdx A * 𝔮.1.inertiaDeg A) := by
+          (fun 𝔮 : p.primesOver C => 𝔮.val.ramificationIdx A * 𝔮.val.inertiaDeg A) := by
         rw [Multiset.map_map, Function.comp_def]
     _ = _ := by rw [Multiset.map_univ_val_equiv]
 
@@ -267,12 +268,12 @@ theorem map_card_orbit_quotientInertia_eq_map_inertiaDeg
         (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)))).val.map
         (fun ω => Nat.card ω.orbit) =
       (Finset.univ : Finset (p.primesOver C)).val.map
-        (fun 𝔮 : p.primesOver C => 𝔮.1.inertiaDeg A) := by
+        (fun 𝔮 : p.primesOver C => 𝔮.val.inertiaDeg A) := by
   let e : orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
         (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)) ≃ p.primesOver C :=
     (orbitRel.Quotient.quotientEquiv (Q.inertia (stabilizer G Q))).trans
       (orbitQuotientEquivPrimesOver p Q H C)
-  have hcard : ∀ ω, Nat.card ω.orbit = (e ω).1.inertiaDeg A := by
+  have hcard : ∀ ω, Nat.card ω.orbit = (e ω).val.inertiaDeg A := by
     intro ω
     refine _root_.Quotient.inductionOn' ω fun ω' => _root_.Quotient.inductionOn' ω' fun x => ?_
     rw [orbitRel.Quotient.orbit_mk]
@@ -282,9 +283,9 @@ theorem map_card_orbit_quotientInertia_eq_map_inertiaDeg
   calc (Finset.univ : Finset (orbitRel.Quotient (stabilizer G Q ⧸ Q.inertia (stabilizer G Q))
           (orbitRel.Quotient (Q.inertia (stabilizer G Q)) (G ⧸ H)))).val.map
           (fun ω => Nat.card ω.orbit)
-      = Finset.univ.val.map (fun ω => (e ω).1.inertiaDeg A) :=
+      = Finset.univ.val.map (fun ω => (e ω).val.inertiaDeg A) :=
         Multiset.map_congr rfl fun ω _ => hcard ω
-    _ = (Finset.univ.val.map e).map (fun 𝔮 : p.primesOver C => 𝔮.1.inertiaDeg A) := by
+    _ = (Finset.univ.val.map e).map (fun 𝔮 : p.primesOver C => 𝔮.val.inertiaDeg A) := by
         rw [Multiset.map_map, Function.comp_def]
     _ = _ := by rw [Multiset.map_univ_val_equiv]
 

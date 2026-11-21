@@ -83,16 +83,16 @@ theorem stabilizer_eq_normalizer_fixingSubgroup (E : IntermediateField K L) :
 field to conjugates of its fixing subgroup. -/
 noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField K L) :
     conjugateFields E ≃ MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup where
-  toFun E' := ⟨E'.1.fixingSubgroup, by
-    obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.2
+  toFun E' := ⟨E'.val.fixingSubgroup, by
+    obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.property
     refine TauCeti.mem_orbit_conjAct_iff.mpr ⟨σ, ?_⟩
     calc
       E.fixingSubgroup.map (MulAut.conj σ) = (E.map σ.toAlgHom).fixingSubgroup := by
         rw [IsGalois.map_fixingSubgroup]
         congr 1
-      _ = E'.1.fixingSubgroup := congrArg fixingSubgroup hσ⟩
-  invFun H := ⟨fixedField H.1, by
-    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
+      _ = E'.val.fixingSubgroup := congrArg fixingSubgroup hσ⟩
+  invFun H := ⟨fixedField H.val, by
+    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.property
     apply mem_conjugateFields_iff.mpr
     refine ⟨σ, ?_⟩
     calc
@@ -100,15 +100,15 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
       _ = fixedField (E.fixingSubgroup.map (MulAut.conj σ)) := by
         simp only [Subgroup.fixedField_map_conj, InfiniteGalois.fixedField_fixingSubgroup,
           AlgEquiv.smul_intermediateField_def]
-      _ = fixedField H.1 := congrArg fixedField hσ
+      _ = fixedField H.val := congrArg fixedField hσ
       _ = _ := rfl⟩
-  left_inv E' := Subtype.ext (InfiniteGalois.fixedField_fixingSubgroup E'.1)
+  left_inv E' := Subtype.ext (InfiniteGalois.fixedField_fixingSubgroup E'.val)
   right_inv H := by
-    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.2
+    obtain ⟨σ, hσ⟩ := TauCeti.mem_orbit_conjAct_iff.mp H.property
     apply Subtype.ext
     -- By the `toFun` and `invFun` fields above, the round trip is by definition the fixing
     -- subgroup of the fixed field of `H`; `change` states this before the Galois rewrites.
-    change (fixedField H.1).fixingSubgroup = H.1
+    change (fixedField H.val).fixingSubgroup = H.val
     rw [← hσ, Subgroup.fixedField_map_conj,
       InfiniteGalois.fixedField_fixingSubgroup, IsGalois.map_fixingSubgroup]
     congr 1
@@ -117,14 +117,14 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
 @[simp]
 theorem conjugateFieldsEquivConjugateSubgroups_apply (E : IntermediateField K L)
     (E' : conjugateFields E) :
-    (conjugateFieldsEquivConjugateSubgroups E E').1 = E'.1.fixingSubgroup := by
+    (conjugateFieldsEquivConjugateSubgroups E E').val = E'.val.fixingSubgroup := by
   simp [conjugateFieldsEquivConjugateSubgroups]
 
 /-- The inverse Galois correspondence sends a conjugate subgroup to its fixed field. -/
 @[simp]
 theorem conjugateFieldsEquivConjugateSubgroups_symm_apply (E : IntermediateField K L)
     (H : MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup) :
-    ((conjugateFieldsEquivConjugateSubgroups E).symm H).1 = fixedField H.1 := by
+    ((conjugateFieldsEquivConjugateSubgroups E).symm H).val = fixedField H.val := by
   simp [conjugateFieldsEquivConjugateSubgroups]
 
 /-- The normalizer cosets index the conjugate images of an intermediate field. -/
@@ -141,7 +141,7 @@ noncomputable def quotientNormalizerEquivConjugateFields (E : IntermediateField 
 @[simp]
 theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
     (σ : L ≃ₐ[K] L) :
-    ((quotientNormalizerEquivConjugateFields E) (QuotientGroup.mk σ)).1 = σ • E := by
+    ((quotientNormalizerEquivConjugateFields E) (QuotientGroup.mk σ)).val = σ • E := by
   simp only [quotientNormalizerEquivConjugateFields, Equiv.trans_apply,
     Subgroup.quotientEquivOfEq_mk, Equiv.subtypeEquivRight_apply,
     MulAction.orbitEquivQuotientStabilizer_symm_apply]
@@ -151,8 +151,8 @@ theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
 theorem quotientNormalizerEquivConjugateFields_smul (E : IntermediateField K L)
     (σ : L ≃ₐ[K] L)
     (q : (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))) :
-    (quotientNormalizerEquivConjugateFields E (σ • q)).1 =
-      σ • (quotientNormalizerEquivConjugateFields E q).1 := by
+    (quotientNormalizerEquivConjugateFields E (σ • q)).val =
+      σ • (quotientNormalizerEquivConjugateFields E q).val := by
   induction q using Quotient.inductionOn' with
   | _ τ => simp [mul_smul]
 

@@ -13,6 +13,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.Polynomial.Reverse
 public import TauCeti.GroupTheory.Perm.Partition
 public import TauCeti.LinearAlgebra.Finsupp.LMapDomain
+import TauCeti.RepresentationTheory.Charpoly
 import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
 /-!
@@ -48,8 +49,6 @@ element.
   same characteristic polynomial iff the permutations have the same full cycle type.
 * `Representation.charpoly_ofMulAction`, `Representation.reverse_charpoly_ofMulAction`: the same
   formulas for the permutation representation of a group acting on a finite set.
-* `Representation.Equiv.charpoly_eq`: equivalent representations on finite free modules have equal
-  characteristic polynomials at every monoid element.
 * `Representation.Equiv.fullCycleType_toPerm_eq`: in characteristic zero, equivalent permutation
   representations have equal full cycle types at every group element.
 -/
@@ -76,10 +75,10 @@ theorem charpoly_lmapDomain_eq_mul_subtypePerm [Finite α] (π : Perm α) (p : �
   rw [← LinearMap.charpoly_prodMap, ← e.charpoly_conj]
   congr 1
   apply LinearMap.prod_ext <;> apply Finsupp.lhom_ext <;> intro y c
-  · have hy : p (π y) := (h y).mpr y.2
+  · have hy : p (π y) := (h y).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_pos hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
-  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.2
+  · have hy : ¬ p (π y) := (not_congr (h y)).mpr y.property
     simp [e, LinearEquiv.conj_apply, Equiv.sumCompl_symm_apply_of_neg hy,
       Finsupp.comapDomain_single, Finsupp.comapDomain_single_of_notMem_range]
 
@@ -154,7 +153,7 @@ theorem charpoly_lmapDomain (π : Perm α) :
       Multiset.map_add, Multiset.prod_add]
     congr 1
     · have hc : ∀ y, (π.subtypePerm h).SameCycle ⟨x, SameCycle.refl π x⟩ y :=
-        fun y ↦ sameCycle_subtypePerm.mpr y.2
+        fun y ↦ sameCycle_subtypePerm.mpr y.property
       rw [charpoly_lmapDomain_of_forall_sameCycle _ hc, fullCycleType_of_forall_sameCycle _ hc,
         Multiset.map_singleton, Multiset.prod_singleton]
     · refine ih _ ?_ _ rfl
@@ -219,19 +218,6 @@ theorem reverse_charpoly_ofMulAction (g : G) :
 
 namespace Equiv
 
-/-- Equivalent representations on finite free modules have the same characteristic polynomial at
-every monoid element. -/
-theorem charpoly_eq {R G V W : Type*} [CommRing R] [Monoid G] [AddCommGroup V] [Module R V]
-    [Module.Finite R V] [Module.Free R V] [AddCommGroup W] [Module R W] [Module.Finite R W]
-    [Module.Free R W] {ρ : Representation R G V} {σ : Representation R G W}
-    (e : ρ.Equiv σ) (g : G) :
-    (ρ g).charpoly = (σ g).charpoly := by
-  have h : σ g = e.toLinearEquiv.conj (ρ g) := by
-    rw [LinearEquiv.conj_apply, e.isIntertwining' g, LinearMap.comp_assoc]
-    ext w
-    exact congrArg (σ g) (e.right_inv w).symm
-  rw [h, LinearEquiv.charpoly_conj]
-
 /-- **Equivalent permutation representations have the same cycle types in characteristic zero.**
 Over a commutative ring of characteristic zero, if two permutation representations of a group `G`
 on finite sets are equivalent, then every element of `G` acts with the same full cycle type on both
@@ -244,7 +230,7 @@ theorem fullCycleType_toPerm_eq {R G X Y : Type*} [CommRing R] [CharZero R] [Gro
   have h : (Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm X)).charpoly =
       (Finsupp.lmapDomain R R (MulAction.toPerm g : Equiv.Perm Y)).charpoly := by
     rw [Equiv.Perm.charpoly_lmapDomain, Equiv.Perm.charpoly_lmapDomain,
-      ← charpoly_ofMulAction, ← charpoly_ofMulAction, e.charpoly_eq g]
+      ← charpoly_ofMulAction, ← charpoly_ofMulAction, e.charpoly_apply_eq g]
   exact (Equiv.Perm.charpoly_lmapDomain_eq_iff _ _).mp h
 
 end Equiv
