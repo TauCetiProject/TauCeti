@@ -35,7 +35,7 @@ finite-dimensional endomorphisms over an algebraically closed field), Frobenius 
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
 evaluation. Both choices of the member are available; they control the two categorical trace
 pairings. In a finite semisimple category, a nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some
-simple summand of the unit, and the evaluation is a multiple of the retraction there, so
+simple summand of the unit, and the retraction there is a scalar multiple of the evaluation, so
 composing `η` with the evaluation gives a nonzero endomorphism of the unit. The unit need not be
 simple; when it is, this endomorphism is invertible by Schur's lemma.
 
