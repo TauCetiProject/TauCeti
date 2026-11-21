@@ -110,7 +110,7 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
     Finite.of_equiv (κ c ↪ I) (Equiv.subtypeInjectiveEquivEmbedding (κ c) I).symm
   have : Fintype Q := Fintype.ofFinite Q
   suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
-      (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
+      (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.val j)) ⊆ U q.1 by
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := h Finset.univ
     exact ⟨W, hWo, hWne, hWV, fun c t ht => hW ⟨c, t, ht⟩ (Finset.mem_univ _)⟩
   intro s
@@ -118,9 +118,9 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
   | empty => exact ⟨V, hVo, hVne, fun _ => subset_rfl, by simp⟩
   | insert q s _ ih =>
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := ih
-    have := Finite.of_injective q.2.1 q.2.2
+    have := Finite.of_injective q.2.val q.2.property
     obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ :=
-      exists_univ_pi_subset hWo hWne q.2.2 (hUo q.1) (hUd q.1)
+      exists_univ_pi_subset hWo hWne q.2.property (hUo q.1) (hUd q.1)
     refine ⟨W', hW'o, hW'ne, fun i => (hW'W i).trans (hWV i), fun q' hq' => ?_⟩
     rcases Finset.mem_insert.1 hq' with rfl | hq'
     · exact hW'

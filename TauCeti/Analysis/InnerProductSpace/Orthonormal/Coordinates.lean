@@ -39,10 +39,14 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.toLinearMapₛₗ₂_one_eq_innerₛₗ`: the sesquilinear form making `b.toBasis`
+  orthonormal is `innerₛₗ 𝕜`.
 * `OrthonormalBasis.subsingleton_of_isEmpty`: a space with an orthonormal basis indexed by an
   empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
+* `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
+  `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -64,7 +68,7 @@ theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {E : Type*} [NormedAdd
       ∀ x, ⟪v, x⟫ = ‖v‖ * f x i := by
   -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
   have hE : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by
-    have := i.2
+    have := i.isLt
     omega)
   let g := (stdOrthonormalBasis ℝ E).repr
   let w : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := ‖v‖ • EuclideanSpace.single i 1
@@ -96,6 +100,16 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
 
+/-- The sesquilinear form making the underlying basis of an orthonormal basis orthonormal is the
+inner product `innerₛₗ 𝕜`. -/
+@[simp]
+theorem toLinearMapₛₗ₂_one_eq_innerₛₗ [DecidableEq ι] (b : OrthonormalBasis ι 𝕜 E) :
+    Matrix.toLinearMapₛₗ₂ (starRingEnd 𝕜) b.toBasis b.toBasis (1 : Matrix ι ι 𝕜) =
+      innerₛₗ 𝕜 := by
+  refine LinearMap.ext_basis b.toBasis b.toBasis fun i j ↦ ?_
+  rw [Matrix.toLinearMapₛₗ₂_apply_basis, Matrix.one_apply, innerₛₗ_apply_apply, b.coe_toBasis,
+    orthonormal_iff_ite.mp b.orthonormal i j]
+
 /-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
 theorem subsingleton_of_isEmpty [IsEmpty ι] (b : OrthonormalBasis ι 𝕜 E) : Subsingleton E :=
   haveI := Module.Finite.of_basis b.toBasis
@@ -109,6 +123,16 @@ theorem repr_apply_of_eigenbasis (b : OrthonormalBasis ι 𝕜 E) (S : E →ₗ[
   classical
   conv_lhs => rw [← b.sum_repr x]
   simp [map_sum, hb, smul_smul, mul_comm, Pi.single_apply]
+
+/-- For two orthonormal bases indexed by the same finite type, the algebraic `Basis.equiv` along
+`Equiv.refl ι` coincides with `d₀.repr.trans c.repr.symm`. -/
+theorem toBasis_equiv_refl {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (d₀ : OrthonormalBasis ι 𝕜 E) (c : OrthonormalBasis ι 𝕜 F) :
+    d₀.toBasis.equiv c.toBasis (Equiv.refl ι) = (d₀.repr.trans c.repr.symm).toLinearEquiv := by
+  classical
+  refine LinearEquiv.toLinearMap_injective (d₀.toBasis.ext fun i ↦ ?_)
+  rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
+  simp
 
 end OrthonormalBasis
 

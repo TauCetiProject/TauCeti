@@ -97,7 +97,7 @@ variable {I X}
 private theorem map_eqToHom_apply {U V : Opens X} (h : U = V)
     (s : (holomorphicStructureSheaf I X).obj.obj (op U)) (x : V) :
     toFun I X (op V) (((holomorphicStructureSheaf I X).obj.map (eqToHom h.symm).op).hom s) x =
-      toFun I X (op U) s ⟨x.1, Eq.mpr congr(x.1 ∈ $h) x.2⟩ := by subst h; simp
+      toFun I X (op U) s ⟨x.val, Eq.mpr congr(x.val ∈ $h) x.property⟩ := by subst h; simp
 
 /-- Two presheafed-space morphisms from `(locallyRingedSpace I X).toPresheafedSpace` to `W` are
 equal if they agree on underlying continuous maps and pointwise on all pulled-back sections. -/
@@ -105,7 +105,7 @@ theorem toPresheafedSpace_hom_ext {W : PresheafedSpace CommRingCat}
     {α β : (locallyRingedSpace I X).toPresheafedSpace ⟶ W} (w : α.base = β.base)
     (h : ∀ (U : Opens W) (s : W.presheaf.obj (op U)) (x : ↥((Opens.map β.base).obj U)),
       toFun I X (op ((Opens.map α.base).obj U)) ((α.c.app (op U)).hom s)
-        ⟨x.1, Eq.mpr congr(x.1 ∈ (Opens.map $w).obj U) x.2⟩ =
+        ⟨x.val, Eq.mpr congr(x.val ∈ (Opens.map $w).obj U) x.property⟩ =
       toFun I X (op ((Opens.map β.base).obj U)) ((β.c.app (op U)).hom s) x) :
     α = β :=
   PresheafedSpace.ext_of_app w fun U ↦ CommRingCat.hom_ext <| RingHom.ext fun s ↦ ext fun x ↦ by
@@ -118,7 +118,7 @@ theorem locallyRingedSpace_hom_ext {W : LocallyRingedSpace}
     {α β : locallyRingedSpace I X ⟶ W} (w : α.base = β.base)
     (h : ∀ (U : Opens W) (s : W.presheaf.obj (op U)) (x : ↥((Opens.map β.base).obj U)),
       toFun I X (op ((Opens.map α.base).obj U)) ((α.c.app (op U)).hom s)
-        ⟨x.1, Eq.mpr congr(x.1 ∈ (Opens.map $w).obj U) x.2⟩ =
+        ⟨x.val, Eq.mpr congr(x.val ∈ (Opens.map $w).obj U) x.property⟩ =
       toFun I X (op ((Opens.map β.base).obj U)) ((β.c.app (op U)).hom s) x) :
     α = β :=
   LocallyRingedSpace.Hom.ext' (toPresheafedSpace_hom_ext w h)
@@ -177,12 +177,12 @@ theorem locallyRingedSpaceMap_c_app_apply (f : X → Y) (hf : ContMDiff I J ω f
     (x : ↥((Opens.map (locallyRingedSpaceMap f hf).base).obj U)) :
     toFun I X (op ((Opens.map (locallyRingedSpaceMap f hf).base).obj U))
         (((locallyRingedSpaceMap f hf).c.app (op U)).hom s) x =
-      toFun J Y (op U) s ⟨f x.1, x.2⟩ := by
+      toFun J Y (op U) s ⟨f x.val, x.property⟩ := by
   have hc : ((locallyRingedSpaceMap f hf).c.app (op U)).hom s = precomp I X f hf (op U) s :=
     (congrArg (fun k ↦ k.hom s) (locallyRingedSpaceMap_c_app f hf (op U))).trans
       (CommRingCat.ofHom_apply (precomp I X f hf (op U)) s)
   exact (congrArg (fun t ↦ toFun I X _ t x) hc).trans
-    (precomp_apply I X f hf (op U) s ⟨x.1, x.2⟩)
+    (precomp_apply I X f hf (op U) s ⟨x.val, x.property⟩)
 
 /-- `locallyRingedSpaceMap f hf` preserves complex scalar sections on every open `U : Opens Y`. -/
 theorem locallyRingedSpaceMap_c_app_algebraMap (f : X → Y) (hf : ContMDiff I J ω f)
@@ -217,14 +217,14 @@ theorem locallyRingedSpaceMap_id :
       𝟙 (locallyRingedSpace I X) :=
   locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
     rw [locallyRingedSpaceMap_c_app_apply (I := I) (J := I) (id : X → X) contMDiff_id U s
-      ⟨x.1, x.2⟩]
+      ⟨x.val, x.property⟩]
     have hid : ((𝟙 (locallyRingedSpace I X) : locallyRingedSpace I X ⟶
         locallyRingedSpace I X).c.app (op U)).hom s = s :=
       (congrArg (fun k ↦ k.hom s)
         ((PresheafedSpace.id_c_app (locallyRingedSpace I X).toPresheafedSpace (op U)).trans
           ((holomorphicStructureSheaf I X).presheaf.map_id (op U)))).trans
         (CommRingCat.id_apply _ s)
-    exact (congrArg (fun t ↦ toFun I X (op U) t ⟨x.1, x.2⟩) hid).symm
+    exact (congrArg (fun t ↦ toFun I X (op U) t ⟨x.val, x.property⟩) hid).symm
 
 /-- `locallyRingedSpaceMap` is covariantly functorial under composition of analytic maps. -/
 theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
@@ -232,11 +232,11 @@ theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
     locallyRingedSpaceMap (g ∘ f) (hg.comp hf) =
       locallyRingedSpaceMap f hf ≫ locallyRingedSpaceMap g hg :=
   locallyRingedSpace_hom_ext (by ext; rfl) fun U s x ↦ by
-    have h₁ := locallyRingedSpaceMap_c_app_apply (g ∘ f) (hg.comp hf) U s ⟨x.1, x.2⟩
+    have h₁ := locallyRingedSpaceMap_c_app_apply (g ∘ f) (hg.comp hf) U s ⟨x.val, x.property⟩
     have h₂ := locallyRingedSpaceMap_c_app_apply f hf
       ((Opens.map (locallyRingedSpaceMap g hg).base).obj U)
-      (((locallyRingedSpaceMap g hg).c.app (op U)).hom s) ⟨x.1, x.2⟩
-    have h₃ := locallyRingedSpaceMap_c_app_apply g hg U s ⟨f x.1, x.2⟩
+      (((locallyRingedSpaceMap g hg).c.app (op U)).hom s) ⟨x.val, x.property⟩
+    have h₃ := locallyRingedSpaceMap_c_app_apply g hg U s ⟨f x.val, x.property⟩
     exact h₁.trans <| h₃.symm.trans <| h₂.symm.trans <|
       congrArg (fun t ↦ toFun I X _ t x)
         (LocallyRingedSpace.comp_c_app_apply (locallyRingedSpaceMap f hf)
@@ -245,34 +245,34 @@ theorem locallyRingedSpaceMap_comp {f : X → Y} (hf : ContMDiff I J ω f)
 /-- Inclusion of an open subset induces an open immersion of holomorphic locally ringed spaces. -/
 instance instIsOpenImmersionLocallyRingedSpaceMapSubtypeVal (U : Opens X) :
     LocallyRingedSpace.IsOpenImmersion
-      (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtype_val) where
+      (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal) where
   base_open := U.isOpenEmbedding'
   c_iso V := by
     rw [ConcreteCategory.isIso_iff_bijective]
     let a : TopCat.of U ⟶ TopCat.of X :=
-      (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtype_val).base
+      (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal).base
     have ha : IsOpenEmbedding a.hom := U.isOpenEmbedding'
     let V' : Opens U := (Opens.map a).obj (ha.isOpenMap.functor.obj V)
     refine ⟨fun s₁ s₂ hs ↦ ext fun ⟨x, y, hy, hyx⟩ ↦ ?_, fun g ↦ ?_⟩
-    · obtain rfl : y.1 = x := hyx
+    · obtain rfl : y.val = x := hyx
       have hyV' : y ∈ V' := ⟨y, hy, rfl⟩
-      exact (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtype_val
+      exact (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtypeVal
           (ha.isOpenMap.functor.obj V) s₁ ⟨y, hyV'⟩).symm.trans <|
         (congrArg (fun s ↦ toFun I U (op V') s ⟨y, hyV'⟩) hs).trans
-          (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtype_val
+          (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtypeVal
             (ha.isOpenMap.functor.obj V) s₂ ⟨y, hyV'⟩)
     · let b : V' ≃ₜ ha.isOpenMap.functor.obj V :=
-        U.isOpenEmbedding'.homeomorphOfSubsetRange <| Set.image_subset_range _ V.1
+        U.isOpenEmbedding'.homeomorphOfSubsetRange <| Set.image_subset_range _ V.carrier
       have hb : ContMDiff I I ω (b.symm : ha.isOpenMap.functor.obj V → V') := by
         refine (TauCeti.ContMDiff.subtypeVal_comp_iff V' _).mp ?_
         rw [← TauCeti.ContMDiff.subtypeVal_comp_iff U _]
-        convert contMDiff_subtype_val using 1
+        convert contMDiff_subtypeVal using 1
         exact funext fun x ↦ congrArg Subtype.val (b.apply_symm_apply x)
       let gFun : V' → ℂ := toFun I U (op V') g
       refine ⟨ofContMDiff (gFun ∘ b.symm) ((contMDiff g).comp hb), ext fun x ↦ ?_⟩
-      exact (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtype_val
+      exact (locallyRingedSpaceMap_c_app_apply Subtype.val contMDiff_subtypeVal
           (ha.isOpenMap.functor.obj V) _ x).trans <|
-        (ofContMDiff_apply (gFun ∘ b.symm) _ ⟨x.1.1, x.2⟩).trans
+        (ofContMDiff_apply (gFun ∘ b.symm) _ ⟨x.val.val, x.property⟩).trans
           (congrArg gFun (b.symm_apply_apply x))
 
 variable (I X) in
@@ -282,7 +282,7 @@ def restrictLocallyRingedSpaceIso (U : Opens X) :
     (locallyRingedSpace I X).restrict (Opens.isOpenEmbedding (X := TopCat.of X) U) ≅
       locallyRingedSpace I U :=
   (LocallyRingedSpace.IsOpenImmersion.isoRestrict
-    (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtype_val)).symm
+    (locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal)).symm
 
 /-- The forward direction of `restrictLocallyRingedSpaceIso` is the identity on points. -/
 @[simp]
@@ -299,17 +299,17 @@ theorem restrictLocallyRingedSpaceIso_inv_base (U : Opens X) :
 @[reassoc (attr := simp)]
 theorem restrictLocallyRingedSpaceIso_hom_comp_locallyRingedSpaceMap (U : Opens X) :
     (restrictLocallyRingedSpaceIso I X U).hom ≫
-      locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtype_val =
+      locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal =
       (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) :=
   LocallyRingedSpace.IsOpenImmersion.isoRestrict_inv_ofRestrict _
 
 /-- Composing `(restrictLocallyRingedSpaceIso I X U).inv` with `ofRestrict` gives
-`locallyRingedSpaceMap Subtype.val contMDiff_subtype_val`. -/
+`locallyRingedSpaceMap Subtype.val contMDiff_subtypeVal`. -/
 @[reassoc (attr := simp)]
 theorem restrictLocallyRingedSpaceIso_inv_comp_ofRestrict (U : Opens X) :
     (restrictLocallyRingedSpaceIso I X U).inv ≫
       (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) =
-      locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtype_val :=
+      locallyRingedSpaceMap (I := I) (J := I) (Subtype.val : U → X) contMDiff_subtypeVal :=
   LocallyRingedSpace.IsOpenImmersion.isoRestrict_hom_ofRestrict _
 
 end LocallyRingedSpace
@@ -448,8 +448,8 @@ theorem locallyRingedSpaceMap_comp_smoothLocallyRingedSpaceIso_hom
     have hL₁ := LocallyRingedSpace.comp_c_app_apply
       (locallyRingedSpaceMap f hf) (smoothLocallyRingedSpaceIso J Y).hom (op U) s
     have hL₂ := locallyRingedSpaceMap_c_app_apply f hf U
-      (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op U)).hom s) ⟨x.1, x.2⟩
-    have hL₃ := smoothLocallyRingedSpaceIso_hom_c_app_apply J Y U s ⟨f x.1, x.2⟩
+      (((smoothLocallyRingedSpaceIso J Y).hom.c.app (op U)).hom s) ⟨x.val, x.property⟩
+    have hL₃ := smoothLocallyRingedSpaceIso_hom_c_app_apply J Y U s ⟨f x.val, x.property⟩
     have hR₁ := LocallyRingedSpace.comp_c_app_apply
       (smoothLocallyRingedSpaceIso I X).hom
       (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) (op U) s
@@ -457,19 +457,19 @@ theorem locallyRingedSpaceMap_comp_smoothLocallyRingedSpaceIso_hom
       ((Opens.map (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).base).obj U)
       (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s) x
     have hR₃ :
-        (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s).1 x =
-          s.1 ⟨f x.1, x.2⟩ := by
-      have hxU : f x.1 ∈ U := x.2
+        (((ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))).c.app (op U)).hom s).val x =
+          s.val ⟨f x.val, x.property⟩ := by
+      have hxU : f x.val ∈ U := x.property
       have hev := congrArg (fun k ↦ k.hom
-        (((smoothSheafCommRing J 𝓘(ℂ) Y ℂ).presheaf.germ U (f x.1) hxU).hom s))
-        (ChartedSpace.stalkMap_locallyRingedSpaceMap_evalHom f (hf.of_le (by simp)) x.1)
+        (((smoothSheafCommRing J 𝓘(ℂ) Y ℂ).presheaf.germ U (f x.val) hxU).hom s))
+        (ChartedSpace.stalkMap_locallyRingedSpaceMap_evalHom f (hf.of_le (by simp)) x.val)
       have hgerm := LocallyRingedSpace.stalkMap_germ_apply
-        (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) U x.1 hxU s
-      have hev' := (congrArg (smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x.1).hom hgerm).symm.trans <|
+        (ChartedSpace.locallyRingedSpaceMap f (hf.of_le (by simp))) U x.val hxU s
+      have hev' := (congrArg (smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x.val).hom hgerm).symm.trans <|
         (CommRingCat.comp_apply _ _ _).symm.trans hev
-      exact (smoothSheafCommRing.evalHom_germ I 𝓘(ℂ) X ℂ _ x.1 hxU _).symm.trans <|
-        hev'.trans (smoothSheafCommRing.evalHom_germ J 𝓘(ℂ) Y ℂ U (f x.1) hxU s)
-    exact (congrArg (fun t ↦ toFun I X _ t ⟨x.1, x.2⟩) hL₁).trans <|
+      exact (smoothSheafCommRing.evalHom_germ I 𝓘(ℂ) X ℂ _ x.val hxU _).symm.trans <|
+        hev'.trans (smoothSheafCommRing.evalHom_germ J 𝓘(ℂ) Y ℂ U (f x.val) hxU s)
+    exact (congrArg (fun t ↦ toFun I X _ t ⟨x.val, x.property⟩) hL₁).trans <|
       hL₂.trans <| hL₃.trans <| hR₃.symm.trans <| hR₂.symm.trans <|
         (congrArg (fun t ↦ toFun I X _ t x) hR₁).symm
 
@@ -482,21 +482,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
   {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
 
-/-- If the stalk map of a presheafed-space morphism `φ` at `x.1` commutes with evaluation, then
+/-- If the stalk map of a presheafed-space morphism `φ` at `x.val` commutes with evaluation, then
 `φ.c.app (op U)` acts at `x` by pointwise precomposition with `φ.base`. -/
 theorem c_app_apply_of_stalkMap_evalHom
     (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
       (locallyRingedSpace J Y).toPresheafedSpace)
     (U : Opens Y) (g : (holomorphicStructureSheaf J Y).obj.obj (op U))
     (x : ↥((Opens.map φ.base).obj U))
-    (h : φ.stalkMap x.1 ≫ evalHom I X x.1 = evalHom J Y (φ.base x.1)) :
+    (h : φ.stalkMap x.val ≫ evalHom I X x.val = evalHom J Y (φ.base x.val)) :
     toFun I X (op ((Opens.map φ.base).obj U)) ((φ.c.app (op U)).hom g) x =
-      toFun J Y (op U) g ⟨φ.base x.1, x.2⟩ := by
+      toFun J Y (op U) g ⟨φ.base x.val, x.property⟩ := by
   have hev := congrArg (fun k ↦ k.hom
-      (((holomorphicStructureSheaf J Y).presheaf.germ U (φ.base x.1) x.2).hom g)) h
+      (((holomorphicStructureSheaf J Y).presheaf.germ U (φ.base x.val) x.property).hom g)) h
   rw [CommRingCat.hom_comp, RingHom.comp_apply, evalHom_hom_apply, evalHom_hom_apply,
-    PresheafedSpace.stalkMap_germ_apply φ U x.1 x.2 g] at hev
-  exact (eval_germ I X _ x.1 x.2 _).symm.trans (hev.trans (eval_germ J Y U (φ.base x.1) x.2 g))
+    PresheafedSpace.stalkMap_germ_apply φ U x.val x.property g] at hev
+  exact (eval_germ I X _ x.val x.property _).symm.trans
+    (hev.trans (eval_germ J Y U (φ.base x.val) x.property g))
 
 /-- Four equivalent formulations of `ℂ`-linearity for a presheafed-space morphism between
 holomorphic ringed spaces: preserving constants on all opens, preserving constants on global
@@ -533,8 +534,8 @@ theorem c_app_algebraMap_tfae
     exact (evalHom_hom_apply x (ψ s)).trans
       ((eval_algHom_apply ψ s).trans (evalHom_hom_apply (φ.base x) s).symm)
   tfae_have 4 → 2 := fun h c ↦ ext fun x ↦
-    (c_app_apply_of_stalkMap_evalHom φ ⊤ (algebraMap ℂ _ c) x (h x.1)).trans <|
-      (algebraMap_apply (op ⊤) c ⟨φ.base x.1, x.2⟩).trans
+    (c_app_apply_of_stalkMap_evalHom φ ⊤ (algebraMap ℂ _ c) x (h x.val)).trans <|
+      (algebraMap_apply (op ⊤) c ⟨φ.base x.val, x.property⟩).trans
         (algebraMap_apply (op ((Opens.map φ.base).obj ⊤)) c x).symm
   tfae_finish
 
@@ -590,8 +591,8 @@ sections over every open `U : Opens Y` by pointwise precomposition with `φ.base
 theorem c_app_apply_of_c_app_top_algebraMap (U : Opens Y)
     (g : (holomorphicStructureSheaf J Y).obj.obj (op U)) (x : ↥((Opens.map φ.base).obj U)) :
     toFun I X (op ((Opens.map φ.base).obj U)) ((φ.c.app (op U)).hom g) x =
-      toFun J Y (op U) g ⟨φ.base x.1, x.2⟩ :=
-  c_app_apply_of_stalkMap_evalHom φ U g x (((c_app_algebraMap_tfae φ).out 2 4 rfl rfl).1 hφ x.1)
+      toFun J Y (op U) g ⟨φ.base x.val, x.property⟩ :=
+  c_app_apply_of_stalkMap_evalHom φ U g x (((c_app_algebraMap_tfae φ).out 2 4 rfl rfl).1 hφ x.val)
 
 /-- If the base map of a `ℂ`-linear presheafed-space morphism `φ` is complex analytic, then `φ`
 equals `(locallyRingedSpaceMap φ.base hf).toHom` on both points and sections. -/
@@ -599,7 +600,7 @@ theorem locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap
     (hf : ContMDiff I J ω φ.base) :
     (locallyRingedSpaceMap (X := X) (Y := Y) φ.base hf).toHom = φ :=
   toPresheafedSpace_hom_ext rfl fun U g x ↦
-    (locallyRingedSpaceMap_c_app_apply (X := X) (Y := Y) φ.base hf U g ⟨x.1, x.2⟩).trans
+    (locallyRingedSpaceMap_c_app_apply (X := X) (Y := Y) φ.base hf U g ⟨x.val, x.property⟩).trans
       (c_app_apply_of_c_app_top_algebraMap φ hφ U g x).symm
 
 /-- If the base map of a `ℂ`-linear presheafed-space morphism `φ` is complex analytic near `x : X`,
@@ -619,7 +620,7 @@ theorem stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom (x : X)
     PresheafedSpace.stalkMap_germ_apply φ U x hxU g, toFilterGerm_stalkPullback,
     toFilterGerm_germ le_rfl hxU g gExt hgExt, Germ.coe_compTendsto]
   exact toFilterGerm_germ le_rfl hxX ((φ.c.app (op U)).hom g) (gExt ∘ φ.base) fun w ↦
-    (c_app_apply_of_c_app_top_algebraMap φ hφ U g w).trans (hgExt ⟨φ.base w.1, w.2⟩)
+    (c_app_apply_of_c_app_top_algebraMap φ hφ U g w).trans (hgExt ⟨φ.base w.val, w.property⟩)
 
 end TopAlgebraMap
 
@@ -701,26 +702,27 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
   rw [← contMDiffAt_subtype_iff (U := V) (x := ⟨x₀, hx₀⟩)]
   let b := Module.finBasis ℂ E'
   let s : Fin (Module.finrank ℂ E') → (holomorphicStructureSheaf J Y).obj.obj (op U) := fun i ↦
-    ofContMDiff (fun z : U ↦ b.coord i (extChartAt J y₀ z.1)) fun z ↦
+    ofContMDiff (fun z : U ↦ b.coord i (extChartAt J y₀ z.val)) fun z ↦
       ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff (n := ω)).contMDiff.contMDiffAt.comp z
-        ((contMDiffAt_extChartAt' z.2).comp z contMDiff_subtype_val.contMDiffAt)
+        ((contMDiffAt_extChartAt' z.property).comp z contMDiff_subtypeVal.contMDiffAt)
   let t : Fin (Module.finrank ℂ E') → (holomorphicStructureSheaf I X).obj.obj (op V) := fun i ↦
     (φ.c.app (op U)).hom (s i)
   let G : V → E' := fun w ↦ ∑ i, t i w • b i
   have hG_cm : ContMDiff I 𝓘(ℂ, E') ω G := fun w ↦ ContMDiffAt.sum fun i _ ↦
     ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
       (n := ω)).contMDiff.contMDiffAt.comp w (contMDiff (t i) w)
-  have hG_eq (w : V) : G w = extChartAt J y₀ (φ.base w.1) := by
+  have hG_eq (w : V) : G w = extChartAt J y₀ (φ.base w.val) := by
     have htw (i : Fin (Module.finrank ℂ E')) :
-        t i w = b.coord i (extChartAt J y₀ (φ.base w.1)) :=
+        t i w = b.coord i (extChartAt J y₀ (φ.base w.val)) :=
       (c_app_apply_of_c_app_top_algebraMap φ hφ U (s i) w).trans (ofContMDiff_apply _ _ _)
-    simp_rw [G, htw]; exact b.sum_repr (extChartAt J y₀ (φ.base w.1))
+    simp_rw [G, htw]; exact b.sum_repr (extChartAt J y₀ (φ.base w.val))
   have hx₀_tgt : G ⟨x₀, hx₀⟩ ∈ (extChartAt J y₀).target := by
     rw [hG_eq]; exact (extChartAt J y₀).map_source (by rw [extChartAt_source]; exact hy₀)
   refine (((contMDiffOn_extChartAt_symm (n := ω) y₀).contMDiffAt
     (extChartAt_target_mem_nhds' hx₀_tgt)).comp (⟨x₀, hx₀⟩ : V)
       (hG_cm ⟨x₀, hx₀⟩)).congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)
-  have hw_src : φ.base w.1 ∈ (extChartAt J y₀).source := by rw [extChartAt_source]; exact w.2
+  have hw_src : φ.base w.val ∈ (extChartAt J y₀).source := by
+    rw [extChartAt_source]; exact w.property
   rw [Function.comp_apply, hG_eq w, (extChartAt J y₀).left_inv hw_src]
 
 /-- When `𝒪_{X, x}` is maximal-ideal separated (`IsHausdorff`), the inverse
@@ -768,16 +770,17 @@ def holomorphicMapLocalRingedEquivalence :
             ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c} where
   toFun f := ⟨locallyRingedSpaceMap f f.contMDiff,
     locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff⟩
-  invFun φ := ⟨φ.1.base, contMDiff_base_of_c_app_top_algebraMap φ.1.toHom (φ.2 ⊤)⟩
+  invFun φ := ⟨φ.val.base, contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤)⟩
   left_inv _ := ContMDiffMap.ext fun _ ↦ rfl
-  right_inv φ := Subtype.ext (locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ.1 (φ.2 ⊤)
-    (contMDiff_base_of_c_app_top_algebraMap φ.1.toHom (φ.2 ⊤)))
+  right_inv φ := Subtype.ext <|
+    locallyRingedSpaceMap_base_of_c_app_top_algebraMap φ.val (φ.property ⊤)
+      (contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤))
 
 /-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `f` to
 `locallyRingedSpaceMap f f.contMDiff`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_apply_val (f : C^ω⟮I, X; J, Y⟯) :
-    (holomorphicMapLocalRingedEquivalence I X J Y f).1 =
+    (holomorphicMapLocalRingedEquivalence I X J Y f).val =
       locallyRingedSpaceMap f f.contMDiff := (rfl)
 
 /-- `holomorphicMapLocalRingedEquivalence` sends `ContMDiffMap.id` to the identity morphism. -/
@@ -804,15 +807,16 @@ variable
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c})
 
 /-- Coercing `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` to a function gives
-`φ.1.base`. -/
+`φ.val.base`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_symm_apply_coe :
-    ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ : X → Y) = φ.1.base := (rfl)
+    ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ : X → Y) = φ.val.base := (rfl)
 
-/-- Evaluating `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` at `x` gives `φ.1.base x`. -/
+/-- Evaluating `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` at `x` gives
+`φ.val.base x`. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_symm_apply (x : X) :
-    (holomorphicMapLocalRingedEquivalence I X J Y).symm φ x = φ.1.base x := (rfl)
+    (holomorphicMapLocalRingedEquivalence I X J Y).symm φ x = φ.val.base x := (rfl)
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] [FiniteDimensional ℂ E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} [K.Boundaryless]
@@ -823,12 +827,12 @@ morphisms. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquivalence_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯) :
     holomorphicMapLocalRingedEquivalence I X K Z (g.comp f) =
-      ⟨(holomorphicMapLocalRingedEquivalence I X J Y f).1 ≫
-          (holomorphicMapLocalRingedEquivalence J Y K Z g).1,
-        comp_c_app_algebraMap (φ := (holomorphicMapLocalRingedEquivalence I X J Y f).1.toHom)
-          (ψ := (holomorphicMapLocalRingedEquivalence J Y K Z g).1.toHom)
-          (holomorphicMapLocalRingedEquivalence I X J Y f).2
-          (holomorphicMapLocalRingedEquivalence J Y K Z g).2⟩ :=
+      ⟨(holomorphicMapLocalRingedEquivalence I X J Y f).val ≫
+          (holomorphicMapLocalRingedEquivalence J Y K Z g).val,
+        comp_c_app_algebraMap (φ := (holomorphicMapLocalRingedEquivalence I X J Y f).val.toHom)
+          (ψ := (holomorphicMapLocalRingedEquivalence J Y K Z g).val.toHom)
+          (holomorphicMapLocalRingedEquivalence I X J Y f).property
+          (holomorphicMapLocalRingedEquivalence J Y K Z g).property⟩ :=
   Subtype.ext (locallyRingedSpaceMap_comp f.contMDiff g.contMDiff)
 
 /-- `holomorphicMapLocalRingedEquivalence.symm` sends composition of morphisms to composition of
@@ -839,7 +843,8 @@ theorem holomorphicMapLocalRingedEquivalence_symm_comp
       ∀ (U : Opens Z) (c : ℂ), (ψ.c.app (op U)).hom (algebraMap ℂ _ c) =
         algebraMap ℂ ((holomorphicStructureSheaf J Y).obj.obj (op ((Opens.map ψ.base).obj U))) c}) :
     (holomorphicMapLocalRingedEquivalence I X K Z).symm
-        ⟨φ.1 ≫ ψ.1, comp_c_app_algebraMap (φ := φ.1.toHom) (ψ := ψ.1.toHom) φ.2 ψ.2⟩ =
+        ⟨φ.val ≫ ψ.val,
+          comp_c_app_algebraMap (φ := φ.val.toHom) (ψ := ψ.val.toHom) φ.property ψ.property⟩ =
       ((holomorphicMapLocalRingedEquivalence J Y K Z).symm ψ).comp
         ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ) :=
   ContMDiffMap.ext fun _ ↦ rfl
@@ -849,13 +854,13 @@ under `holomorphicMapLocalRingedEquivalence` to precomposing with the open immer
 `(restrictLocallyRingedSpaceIso I X U).inv ≫ (locallyRingedSpace I X).ofRestrict _`. -/
 theorem holomorphicMapLocalRingedEquivalence_restrict_val (f : C^ω⟮I, X; J, Y⟯) (U : Opens X) :
     (holomorphicMapLocalRingedEquivalence I U J Y
-      (f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^ω⟮I, U; I, X⟯))).1 =
+      (f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^ω⟮I, U; I, X⟯))).val =
       (restrictLocallyRingedSpaceIso I X U).inv ≫
         (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) ≫
-        (holomorphicMapLocalRingedEquivalence I X J Y f).1 := by
+        (holomorphicMapLocalRingedEquivalence I X J Y f).val := by
   rw [restrictLocallyRingedSpaceIso_inv_comp_ofRestrict_assoc,
     holomorphicMapLocalRingedEquivalence_apply_val, holomorphicMapLocalRingedEquivalence_apply_val,
-    ← locallyRingedSpaceMap_comp contMDiff_subtype_val f.contMDiff]; rfl
+    ← locallyRingedSpaceMap_comp contMDiff_subtypeVal f.contMDiff]; rfl
 
 end SymmAndComp
 
@@ -884,7 +889,7 @@ theorem base_eq_symm_sum_of_c_app_top_algebraMap {ι : Type*} [Fintype ι] (b : 
     (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
     (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
-    φ.base w.1 = e.symm (z +
+    φ.base w.val = e.symm (z +
       ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
         ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
           (e.holomorphicLinearCoordinateSection he
@@ -892,11 +897,11 @@ theorem base_eq_symm_sum_of_c_app_top_algebraMap {ι : Type*} [Fintype ι] (b : 
   have hsum : ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
       ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
         (e.holomorphicLinearCoordinateSection he
-          (LinearMap.toContinuousLinearMap (b.coord i)) z)) w • b i = e (φ.base w.1) - z := by
-    refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e (φ.base w.1) - z))
+          (LinearMap.toContinuousLinearMap (b.coord i)) z)) w • b i = e (φ.base w.val) - z := by
+    refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e (φ.base w.val) - z))
     rw [c_app_apply_of_c_app_top_algebraMap φ hφ ⟨e.source, e.open_source⟩ _ w]
     exact congrArg (· • b i) (e.holomorphicLinearCoordinateSection_apply he
-      (LinearMap.toContinuousLinearMap (b.coord i)) z ⟨φ.base w.1, w.2⟩)
-  rw [hsum, add_sub_cancel, e.left_inv w.2]
+      (LinearMap.toContinuousLinearMap (b.coord i)) z ⟨φ.base w.val, w.property⟩)
+  rw [hsum, add_sub_cancel, e.left_inv w.property]
 
 end OpenPartialHomeomorph

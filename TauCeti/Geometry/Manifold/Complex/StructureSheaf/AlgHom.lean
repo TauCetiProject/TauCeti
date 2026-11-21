@@ -78,7 +78,7 @@ def AnalyticMapGerm.mk {x : X} {y : Y} (f : X → Y)
 @[simp]
 theorem AnalyticMapGerm.val_mk {x : X} {y : Y} (f : X → Y)
     (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
-    (AnalyticMapGerm.mk f hf hfx).1 = (f : Germ (𝓝 x) Y) := (rfl)
+    (AnalyticMapGerm.mk f hf hfx).val = (f : Germ (𝓝 x) Y) := (rfl)
 
 /-- Two `AnalyticMapGerm.mk` germs are equal if and only if their representatives agree near `x`. -/
 @[simp]
@@ -92,12 +92,12 @@ theorem AnalyticMapGerm.mk_eq_mk {x : X} {y : Y} {f₁ f₂ : X → Y}
 theorem AnalyticMapGerm.exists_mk {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
     ∃ (f : X → Y) (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y),
       AnalyticMapGerm.mk f hf hfx = F :=
-  let ⟨f, hF, hfx, hf⟩ := F.2; ⟨f, hf, hfx, Subtype.ext hF⟩
+  let ⟨f, hF, hfx, hf⟩ := F.property; ⟨f, hf, hfx, Subtype.ext hF⟩
 
 /-- Every analytic map germ `(X, x) → (Y, y)` tends to `𝓝 y` along `𝓝 x`. -/
 theorem AnalyticMapGerm.tendsto {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    F.1.Tendsto (𝓝 y) := by
-  obtain ⟨f, hF, hfx, hf⟩ := F.2
+    F.val.Tendsto (𝓝 y) := by
+  obtain ⟨f, hF, hfx, hf⟩ := F.property
   exact hF ▸ Germ.coe_tendsto.2 (hfx ▸ hf.self_of_nhds.continuousAt.tendsto)
 
 /-- The identity analytic map germ at `x`. -/
@@ -107,13 +107,13 @@ def AnalyticMapGerm.id (I : ModelWithCorners ℂ E H) (x : X) : AnalyticMapGerm 
 /-- The underlying `Germ (𝓝 x) X` of `AnalyticMapGerm.id I x` is the germ of `id`. -/
 @[simp]
 theorem AnalyticMapGerm.val_id (I : ModelWithCorners ℂ E H) (x : X) :
-    (AnalyticMapGerm.id I x).1 = ((_root_.id : X → X) : Germ (𝓝 x) X) := (rfl)
+    (AnalyticMapGerm.id I x).val = ((_root_.id : X → X) : Germ (𝓝 x) X) := (rfl)
 
 /-- Pullback of holomorphic stalks along an analytic map germ `F : AnalyticMapGerm I J x y`. -/
 def stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
     (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
       (holomorphicStructureSheaf I X).presheaf.stalk x :=
-  stalkPullbackAt F.2.choose_spec.2.2 F.2.choose_spec.2.1
+  stalkPullbackAt F.property.choose_spec.2.2 F.property.choose_spec.2.1
 
 /-- Pullback along `AnalyticMapGerm.mk f hf hfx` agrees with `stalkPullbackAt hf hfx`. -/
 @[simp]
@@ -121,16 +121,16 @@ theorem stalkPullbackGerm_mk {x : X} {y : Y} (f : X → Y)
     (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) :
     stalkPullbackGerm (AnalyticMapGerm.mk f hf hfx) = stalkPullbackAt hf hfx := by
   let F := AnalyticMapGerm.mk f hf hfx
-  exact stalkPullbackAt_congr F.2.choose_spec.2.2 F.2.choose_spec.2.1 hf hfx
-    (Germ.coe_eq.1 F.2.choose_spec.1)
+  exact stalkPullbackAt_congr F.property.choose_spec.2.2 F.property.choose_spec.2.1 hf hfx
+    (Germ.coe_eq.1 F.property.choose_spec.1)
 
 /-- The function germ of `stalkPullbackGerm F s` is composition of the function germ of `s` with
-`F.1` via `Germ.compTendsto'`. -/
+`F.val` via `Germ.compTendsto'`. -/
 @[simp]
 theorem toFilterGerm_stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J x y)
     (s : (holomorphicStructureSheaf J Y).presheaf.stalk y) :
     toFilterGerm I X x (𝓝 x) le_rfl (stalkPullbackGerm F s) =
-      (toFilterGerm J Y y (𝓝 y) le_rfl s).compTendsto' F.1 F.tendsto := by
+      (toFilterGerm J Y y (𝓝 y) le_rfl s).compTendsto' F.val F.tendsto := by
   obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
   rw [stalkPullbackGerm_mk, toFilterGerm_stalkPullbackAt]
   exact Germ.inductionOn (toFilterGerm J Y y (𝓝 y) le_rfl s) fun _ ↦ rfl
@@ -149,16 +149,16 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E'']
 /-- Composition of analytic map germs `(X, x) → (Y, y)` and `(Y, y) → (Z, z)`. -/
 def AnalyticMapGerm.comp {x : X} {y : Y} {z : Z}
     (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) : AnalyticMapGerm I K x z :=
-  ⟨G.1.compTendsto' F.1 F.tendsto, by
-    obtain ⟨g, hG, hgy, hg⟩ := G.2; obtain ⟨f, hF, hfx, hf⟩ := F.2
+  ⟨G.val.compTendsto' F.val F.tendsto, by
+    obtain ⟨g, hG, hgy, hg⟩ := G.property; obtain ⟨f, hF, hfx, hf⟩ := F.property
     exact ⟨g ∘ f, by simp [← hG, ← hF], (congrArg g hfx).trans hgy,
       eventually_contMDiffAt_comp hg hf hfx⟩⟩
 
-/-- The underlying filter germ of `G.comp F` is `G.1.compTendsto' F.1 F.tendsto`. -/
+/-- The underlying filter germ of `G.comp F` is `G.val.compTendsto' F.val F.tendsto`. -/
 @[simp]
 theorem AnalyticMapGerm.val_comp {x : X} {y : Y} {z : Z}
     (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
-    (G.comp F).1 = G.1.compTendsto' F.1 F.tendsto := (rfl)
+    (G.comp F).val = G.val.compTendsto' F.val F.tendsto := (rfl)
 
 /-- Composing `AnalyticMapGerm.mk` representatives produces `AnalyticMapGerm.mk (g ∘ f) _ _`. -/
 @[simp]
@@ -376,9 +376,11 @@ theorem exists_stalkPullbackAt_eq (x : X) (y : Y)
           rw [← stalkPullbackAt_comp hΦ rfl hf hfx]
           exact stalkPullbackAt_congr _ _ hg hgx hΦf_eq
     _ = ψ.comp (stalkPullbackAlgHom hΦ) := hgψ
-  exact (AlgHom.cancel_right (by
-    simpa only [Function.Surjective, stalkPullbackAlgHom_apply] using
-      (stalkPullback_comp_extChartAt_bijective (I := J) y L).2)).1 hcomp
+  refine (AlgHom.cancel_right ?_).1 hcomp
+  intro s
+  obtain ⟨t, ht⟩ := (stalkEquivModelSpace y L).symm.surjective s
+  refine ⟨t, ?_⟩
+  rw [stalkPullbackAlgHom_apply, ← ht, stalkEquivModelSpace_symm_apply]
 
 /-- **Equivalence between analytic map germs and `ℂ`-algebra homomorphisms of holomorphic stalks.**
 For any finite-dimensional boundaryless complex manifold `Y` and any complex charted space `X`
@@ -393,10 +395,10 @@ def analyticMapGermEquivStalkAlgHom (x : X) (y : Y)
         (holomorphicStructureSheaf I X).presheaf.stalk x) :=
   Equiv.ofBijective stalkPullbackGerm
     ⟨fun F₁ F₂ h ↦ Subtype.ext <| by
-        rw [← F₁.2.choose_spec.1, ← F₂.2.choose_spec.1, Germ.coe_eq]
+        rw [← F₁.property.choose_spec.1, ← F₂.property.choose_spec.1, Germ.coe_eq]
         exact (stalkPullbackAt_eq_iff_eventuallyEq
-          F₁.2.choose_spec.2.2 F₁.2.choose_spec.2.1
-          F₂.2.choose_spec.2.2 F₂.2.choose_spec.2.1).1 h,
+          F₁.property.choose_spec.2.2 F₁.property.choose_spec.2.1
+          F₂.property.choose_spec.2.2 F₂.property.choose_spec.2.1).1 h,
       fun ψ ↦ by
         obtain ⟨f, hf, hfx, rfl⟩ := exists_stalkPullbackAt_eq x y ψ
         exact ⟨AnalyticMapGerm.mk f hf hfx, stalkPullbackGerm_mk f hf hfx⟩⟩

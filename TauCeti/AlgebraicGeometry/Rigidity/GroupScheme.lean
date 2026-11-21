@@ -182,7 +182,7 @@ noncomputable def commGrpHomEquivPointed (A B : CommGrp (Over S))
     [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom] :
     (A ⟶ B) ≃ {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]} where
   toFun F := ⟨F.hom.hom.hom, IsMonHom.one_hom F.hom.hom.hom⟩
-  invFun f := commGrpHomOfOneHom hA f.1 f.2
+  invFun f := commGrpHomOfOneHom hA f.val f.property
   left_inv _ := CommGrp.hom_ext _ _ (commGrpHomOfOneHom_hom_hom_hom hA _ _)
   right_inv _ := Subtype.ext (commGrpHomOfOneHom_hom_hom_hom hA _ _)
 
@@ -204,7 +204,7 @@ theorem commGrpHomEquivPointed_symm_apply {A B : CommGrp (Over S)}
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
     [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
     (f : {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]}) :
-    (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.1 f.2 := by
+    (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.val f.property := by
   simp [commGrpHomEquivPointed]
 
 end Relative
