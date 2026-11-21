@@ -20,6 +20,7 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
+* `LinearPMap.IsClosed.closure_eq`: a closed partial linear map is its own closure.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
 * `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
@@ -117,6 +118,21 @@ end Submodule
 
 namespace LinearPMap
 
+section Closed
+
+variable {R E F : Type*} [CommRing R] [AddCommGroup E] [AddCommGroup F] [Module R E] [Module R F]
+  [TopologicalSpace E] [TopologicalSpace F] [ContinuousAdd E] [ContinuousAdd F]
+  [TopologicalSpace R] [ContinuousSMul R E] [ContinuousSMul R F]
+
+/-- A closed partial linear map is its own closure: its graph is already topologically closed. -/
+theorem IsClosed.closure_eq {f : E →ₗ.[R] F} (hf : f.IsClosed) : f.closure = f := by
+  refine eq_of_eq_graph ?_
+  rw [← hf.isClosable.graph_closure_eq_closure_graph]
+  rw [IsClosed] at hf
+  exact hf.submodule_topologicalClosure_eq
+
+end Closed
+
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
@@ -158,9 +174,8 @@ theorem adjoint_adjoint_eq_closure {T : E →ₗ.[𝕜] F} (hT : T.IsClosable)
 /-- **The adjoint of a closed operator is involutive.** For a closed densely defined partial linear
 map `T` between Hilbert spaces, `T†† = T`. -/
 theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
-    T.adjoint.adjoint = T := by
-  refine (adjoint_adjoint_eq_closure hT.isClosable hd).trans (eq_of_eq_graph ?_)
-  rw [← hT.isClosable.graph_closure_eq_closure_graph, IsClosed.submodule_topologicalClosure_eq hT]
+    T.adjoint.adjoint = T :=
+  (adjoint_adjoint_eq_closure hT.isClosable hd).trans hT.closure_eq
 
 /-- For a closed densely defined `T`, the double adjoint `T††` evaluates as `T` on `dom T`. -/
 theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
