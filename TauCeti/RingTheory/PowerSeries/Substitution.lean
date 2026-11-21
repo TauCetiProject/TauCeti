@@ -72,6 +72,9 @@ of a completed group algebra attached to two topological generators.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
+* `PowerSeries.HasSubst.sub_one`: `f - 1` can be substituted when `constantCoeff f = 1`.
+* `PowerSeries.constantCoeff_subst_of_constantCoeff_zero'`: univariate `PowerSeries.constantCoeff`
+  form of `constantCoeff_subst_of_constantCoeff_zero`.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
 * `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
@@ -157,6 +160,12 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- If `f` has constant coefficient `1`, then `f - 1` has zero constant coefficient and can be
+substituted into any power series. -/
+theorem HasSubst.sub_one {R : Type*} [CommRing R] {f : R⟦X⟧} (hf : constantCoeff f = 1) :
+    HasSubst (f - 1) :=
+  .of_constantCoeff_zero' (by simp [hf])
 
 /-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
 @[simp]
@@ -290,6 +299,12 @@ theorem transcendental_of_constantCoeff_eq_zero (hφ : constantCoeff φ = 0) (h�
 section Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- A variant of `constantCoeff_subst_of_constantCoeff_zero` using `PowerSeries.constantCoeff`
+instead of `MvPowerSeries.constantCoeff`. -/
+theorem constantCoeff_subst_of_constantCoeff_zero' {a : S⟦X⟧} (ha : constantCoeff a = 0)
+    (f : R⟦X⟧) : constantCoeff (f.subst a) = algebraMap R S (constantCoeff f) := by
+  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero (by rwa [← constantCoeff_eq])]
 
 /-- The linear coefficient of `f (a)`, for `a` of zero constant coefficient, is the product of
 the linear coefficients of `f` and `a`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
@@ -56,6 +57,8 @@ manifolds, with the same source and target read in them.
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
   partial diffeomorphism between the ambient manifolds.
+* `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
+  a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
 -/
 
 public section
@@ -482,3 +485,30 @@ theorem liftOpens_target : (Ψ.liftOpens hU hV).target = Subtype.val '' Ψ.targe
     exact ⟨z.property, by rwa [subtypeVal_symm_apply_coe]⟩
 
 end PartialDiffeomorph
+
+namespace IsLocalDiffeomorphAt
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] {f : M → N} {x : M}
+
+/-- A `C^n` local diffeomorphism at `x` agrees with a partial diffeomorphism on its source, which
+contains `x` and lies inside any prescribed open set containing `x`. -/
+theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s : Set M}
+    (hs : IsOpen s) (hxs : x ∈ s) :
+    ∃ Φ : PartialDiffeomorph I J M N n, x ∈ Φ.source ∧ Φ.source ⊆ s ∧ EqOn f Φ Φ.source := by
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  refine ⟨Φ.restrOpen s hs, ?_, ?_, fun y hy ↦ ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact ⟨hxΦ, hxs⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact inter_subset_right
+  · rw [PartialDiffeomorph.restrOpen_source] at hy
+    rw [PartialDiffeomorph.coe_restrOpen]
+    exact hfΦ hy.1
+
+end IsLocalDiffeomorphAt

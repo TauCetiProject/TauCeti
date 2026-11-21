@@ -35,7 +35,10 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
 (`TauCeti.norm_natCast_eq_norm_padic`). It also registers `PadicInt.isAdicComplete_span_p`,
-packaging the `(p)`-adic completeness of `ℤ_[p]` alongside Mathlib's maximal-ideal instance.
+packaging the `(p)`-adic completeness of `ℤ_[p]` alongside Mathlib's maximal-ideal instance. A
+continuous ring homomorphism between normed `ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear
+(`RingHom.map_algebraMap_padic_of_continuous`), since it fixes the dense subfield `ℚ`; for instance
+a continuous Frobenius lift on a `p`-adic field fixes `ℚ_[p]`.
 -/
 
 public section
@@ -136,3 +139,20 @@ theorem continuous_padicIntAlgebraMap : Continuous (padicIntAlgebraMap p K) :=
 end Algebra
 
 end TauCeti
+
+namespace RingHom
+
+variable {p : ℕ} [Fact (Nat.Prime p)] {K L : Type*} [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
+  [NormedRing L] [NormedAlgebra ℚ_[p] L]
+
+/-- A continuous ring homomorphism between normed `ℚ_[p]`-algebras is `ℚ_[p]`-linear: it agrees
+with the structure maps on the dense subfield `ℚ`. -/
+theorem map_algebraMap_padic_of_continuous (σ : K →+* L) (hσ : Continuous σ) (a : ℚ_[p]) :
+    σ (algebraMap ℚ_[p] K a) = algebraMap ℚ_[p] L a :=
+  congrFun ((Padic.denseRange_ratCast p).equalizer
+    (hσ.comp (continuous_algebraMap ℚ_[p] K)) (continuous_algebraMap ℚ_[p] L)
+    (funext fun r ↦ DFunLike.congr_fun (RingHom.ext_rat
+      ((σ.comp (algebraMap ℚ_[p] K)).comp (Rat.castHom ℚ_[p]))
+      ((algebraMap ℚ_[p] L).comp (Rat.castHom ℚ_[p]))) r)) a
+
+end RingHom

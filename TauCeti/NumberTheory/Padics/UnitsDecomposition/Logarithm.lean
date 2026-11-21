@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.ExpLog
+import TauCeti.NumberTheory.Padics.ExponentialDisc
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
 
 /-!
@@ -285,9 +286,10 @@ theorem unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (u : ℤ_[p]ˣ) :
   have hu := mem_unitsPrincipal_iff_norm.mp hu
   rw [← norm_coe_sub_one, coe_unitsPrincipalLogEquiv_symm_apply] at hu
   simp only [toAdd_ofAdd] at hu
-  have hlog := Padic.norm_log (one_lt_sub_one_mul_padicUnitsDepth_add 1) hu
-  rw [Padic.log_exp one_lt_sub_one_mul_padicUnitsDepth
-      (norm_q_mul_le (p := p) (u : ℤ_[p])), norm_mul,
+  have hlog := norm_log_of_norm_sub_one_lt
+    (hu.trans_lt (zpow_neg_lt_amiceRadius_zero (one_lt_sub_one_mul_padicUnitsDepth_add 1)))
+  rw [log_exp_of_norm_lt ((norm_q_mul_le (p := p) (u : ℤ_[p])).trans_lt
+      (zpow_neg_lt_amiceRadius_zero one_lt_sub_one_mul_padicUnitsDepth)), norm_mul,
     norm_q, ← PadicInt.norm_def, PadicInt.norm_units, mul_one] at hlog
   have := hlog.trans_le hu
   rw [zpow_le_zpow_iff_right₀ (by exact_mod_cast hp.out.one_lt)] at this
