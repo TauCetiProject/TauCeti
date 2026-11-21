@@ -623,7 +623,7 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
 /-- If `t` computes the address `q` on the everywhere undefined oracle, then at sufficient
 fuel `comp oracle t` looks up `q` with use `q + 1` when the answer is supplied, and fails
 otherwise. The same threshold works for every answer table. -/
-theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
+theorem exists_forall_evaln_comp_oracle_eq_map_of_mem_eval_none {t : Code} {x q : ℕ}
     (h : q ∈ eval (fun _ => Part.none) t x) :
     ∃ K, ∀ (σ : ℕ → Option ℕ) (k : ℕ), K ≤ k →
       evaln σ k (comp oracle t) x = (σ q).map (fun y => ⟨y, q + 1⟩) := by
@@ -640,10 +640,10 @@ theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
 
 /-- If `t` computes the address `q` on the everywhere undefined oracle, then every successful
 bounded run of `comp oracle t` has use `q + 1`, for every answer table and fuel. -/
-theorem evaln_comp_oracle_use {t : Code} {x q k : ℕ} {r : Halt}
+theorem evaln_comp_oracle_use_eq_add_one_of_mem_eval_none {t : Code} {x q k : ℕ} {r : Halt}
     (ht : q ∈ eval (fun _ => Part.none) t x) (h : evaln σ k (comp oracle t) x = some r) :
     r.use = q + 1 := by
-  obtain ⟨K, hK⟩ := exists_forall_evaln_comp_oracle_eq_map ht
+  obtain ⟨K, hK⟩ := exists_forall_evaln_comp_oracle_eq_map_of_mem_eval_none ht
   have hr := evaln_mono (le_max_left k K) h
   rw [hK σ _ (le_max_right k K)] at hr
   obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.1 hr

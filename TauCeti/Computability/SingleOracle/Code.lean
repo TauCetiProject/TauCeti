@@ -564,11 +564,15 @@ theorem primrec₂_curry : Primrec₂ curry :=
     (Primrec.const (pair left right))
 
 /-- Specialization retains both the source program and the parameter in its syntax. -/
-theorem curry_inj {c d : Code} {a b : ℕ} (h : curry c a = curry d b) :
-    c = d ∧ a = b := by
-  simp only [curry, Code.comp.injEq, Code.pair.injEq] at h
-  exact ⟨h.1, Nat.Partrec.Code.const_inj
-    (Nat.Partrec.Code.toSingleOracleCode_injective h.2.1)⟩
+@[simp]
+theorem curry_inj {c d : Code} {a b : ℕ} : c.curry a = d.curry b ↔ c = d ∧ a = b := by
+  constructor
+  · intro h
+    simp only [curry, Code.comp.injEq, Code.pair.injEq] at h
+    exact ⟨h.1, Nat.Partrec.Code.const_inj
+      (Nat.Partrec.Code.toSingleOracleCode_injective h.2.1)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
 
 /-- Run `c` on the fixed input `x`, ignoring the input of the compiled program. -/
 def fixInput (c : Code) (x : ℕ) : Code :=
