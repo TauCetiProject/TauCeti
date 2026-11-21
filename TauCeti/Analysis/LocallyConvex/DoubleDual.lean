@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.LocallyConvex.Barrelled
 public import TauCeti.Analysis.LocallyConvex.Bipolar
+public import TauCeti.Analysis.LocallyConvex.SeparatingDual
 public import TauCeti.Analysis.LocallyConvex.Separation
 
 /-!
@@ -42,17 +43,6 @@ evaluation into `TauCeti.strongEval 𝕜 E : E →L[𝕜] StrongDual 𝕜 (Stron
 surjectivity on a barrelled `T₁` locally convex space directly to
 `TauCeti.strongBidualEquivOfSurjective`.
 
-Finally, canonical evaluation intertwines every continuous linear map `u : E →L[𝕜] F` with its
-double strong transpose `precomp G (precomp G u)`
-(`ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`),
-recovering `u` when both spaces carry canonical bidual isomorphisms
-(`ContinuousLinearMap.symm_comp_precomp_precomp_comp_of_forall_apply_eq`). When
-`e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` agrees with canonical evaluation,
-`e.arrowCongr (.refl 𝕜 𝕜)` — whose inverse sends `Ξ` to `Ξ ∘ e`, the strong transpose of `e` —
-agrees with canonical evaluation on `StrongDual 𝕜 E`
-(`ContinuousLinearEquiv.toLinearMap_arrowCongr_refl_of_forall_apply_eq`), showing that the strong
-dual of a reflexive space is canonically reflexive.
-
 ## Main declarations
 
 * `TauCeti.comap_applyₗ_le_nhds_zero`, `TauCeti.comap_le_nhds_zero_of_forall_apply_eq`: inverse
@@ -66,10 +56,6 @@ dual of a reflexive space is canonically reflexive.
 * `TauCeti.strongBidualEquivOfContinuousOfSurjective`, `TauCeti.strongBidualEquivOfSurjective`:
   topological linear isomorphisms `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` from surjectivity of
   evaluation.
-* `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`:
-  naturality of canonical evaluation with respect to the double strong transpose.
-* `ContinuousLinearEquiv.toLinearMap_arrowCongr_refl_of_forall_apply_eq`: the inverse of the strong
-  transpose of a canonical bidual isomorphism is the canonical bidual evaluation of the strong dual.
 
 ## References
 
@@ -85,21 +71,6 @@ open ContinuousLinearMap Filter Set Topology Uniformity
 open scoped ComplexOrder
 
 namespace TauCeti
-
-section Injectivity
-
-/-- Any map `ev : E → H` into a family of `𝕜`-valued functions on `G` that recovers every
-`φ : StrongDual 𝕜 E` along some map `p : StrongDual 𝕜 E → G` is injective when continuous
-functionals separate points of `E`. -/
-theorem injective_of_forall_apply_eq {𝕜 E G H : Type*} [Ring 𝕜] [TopologicalSpace 𝕜]
-    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeparatingDual 𝕜 E] [FunLike H G 𝕜]
-    {ev : E → H} {p : StrongDual 𝕜 E → G}
-    (hev : ∀ x (φ : StrongDual 𝕜 E), ev x (p φ) = φ x) :
-    Function.Injective ev := fun x y hxy ↦
-  (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun φ ↦ by
-    rw [← hev x φ, ← hev y φ, hxy]
-
-end Injectivity
 
 section InverseContinuity
 
@@ -346,96 +317,3 @@ theorem toLinearMap_strongBidualEquivOfSurjective [T1Space E]
 end BarrelledRCLike
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-section ApplyLinear
-
-variable {𝕜 E F G : Type*} [NormedField 𝕜]
-  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
-  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [ContinuousConstSMul 𝕜 G]
-
-/-- **Naturality of canonical evaluation.** Composing canonical evaluation at `x` with
-`precomp G u` gives canonical evaluation at `u x`. Together with `precomp_apply`, this lets
-`simp` reduce `precomp G (precomp G u) (applyₗ G (RingHom.id 𝕜) x)` to
-`applyₗ G (RingHom.id 𝕜) (u x)`. -/
-@[simp]
-theorem applyₗ_comp_precomp (u : E →L[𝕜] F) (x : E) :
-    (applyₗ G (RingHom.id 𝕜) x).comp (precomp G u) = applyₗ G (RingHom.id 𝕜) (u x) := by
-  ext ψ
-  simp
-
-/-- Linear-map form of the naturality of canonical evaluation under `precomp G (precomp G u)`. -/
-theorem precomp_precomp_comp_applyₗ (u : E →L[𝕜] F) :
-    (precomp G (precomp G u)).toLinearMap.comp (applyₗ G (RingHom.id 𝕜)) =
-      (applyₗ G (RingHom.id 𝕜)).comp u.toLinearMap := by
-  ext x ψ
-  simp
-
-end ApplyLinear
-
-section EvaluationMaps
-
-variable {𝕜 E F G : Type*} [NormedField 𝕜]
-  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [ContinuousConstSMul 𝕜 G]
-
-/-- Any two continuous linear maps `E → (E →L[𝕜] G) →L[𝕜] G` and `F → (F →L[𝕜] G) →L[𝕜] G` that
-agree pointwise with canonical evaluation intertwine `u : E →L[𝕜] F` with its double transpose
-`precomp G (precomp G u)`; for `G = 𝕜` these are maps into the strong biduals. -/
-theorem precomp_precomp_comp_of_forall_apply_eq (u : E →L[𝕜] F)
-    {e₁ : E →L[𝕜] (E →L[𝕜] G) →L[𝕜] G} {e₂ : F →L[𝕜] (F →L[𝕜] G) →L[𝕜] G}
-    (he₁ : ∀ x (φ : E →L[𝕜] G), e₁ x φ = φ x)
-    (he₂ : ∀ y (ψ : F →L[𝕜] G), e₂ y ψ = ψ y) :
-    (precomp G (precomp G u)).comp e₁ = e₂.comp u := by
-  ext x ψ
-  simp [he₁, he₂]
-
-/-- When `E` and `F` carry topological linear isomorphisms with `(E →L[𝕜] G) →L[𝕜] G` and
-`(F →L[𝕜] G) →L[𝕜] G` (for `G = 𝕜`, their strong biduals) agreeing with canonical evaluation,
-conjugating the double transpose `precomp G (precomp G u)` by these isomorphisms recovers `u`. -/
-theorem symm_comp_precomp_precomp_comp_of_forall_apply_eq (u : E →L[𝕜] F)
-    {e₁ : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G} {e₂ : F ≃L[𝕜] (F →L[𝕜] G) →L[𝕜] G}
-    (he₁ : ∀ x (φ : E →L[𝕜] G), e₁ x φ = φ x)
-    (he₂ : ∀ y (ψ : F →L[𝕜] G), e₂ y ψ = ψ y) :
-    e₂.symm.toContinuousLinearMap.comp
-      ((precomp G (precomp G u)).comp e₁.toContinuousLinearMap) = u := by
-  ext x
-  rw [comp_apply, comp_apply, ContinuousLinearEquiv.coe_coe, e₂.symm_apply_eq]
-  ext ψ
-  simp [he₁, he₂]
-
-end EvaluationMaps
-
-end ContinuousLinearMap
-
-namespace ContinuousLinearEquiv
-
-variable {𝕜 E G : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
-  [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [ContinuousConstSMul 𝕜 G]
-
-/-- If `e : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G` agrees pointwise with canonical evaluation, then
-`e.arrowCongr (.refl 𝕜 G)` agrees pointwise with canonical evaluation on `E →L[𝕜] G`. For `G = 𝕜`,
-`e` is a strong-bidual isomorphism and `e.arrowCongr (.refl 𝕜 𝕜)` is the inverse of its strong
-transpose. -/
-theorem arrowCongr_refl_apply_of_forall_apply_eq (e : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G)
-    (he : ∀ x (φ : E →L[𝕜] G), e x φ = φ x) (φ : E →L[𝕜] G) (Ψ : (E →L[𝕜] G) →L[𝕜] G) :
-    e.arrowCongr (.refl 𝕜 G) φ Ψ = Ψ φ := by
-  rw [arrowCongr_apply, refl_apply, ← he (e.symm Ψ) φ, e.apply_symm_apply]
-
-/-- If `e : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G` agrees pointwise with canonical evaluation, then the
-underlying linear map of `e.arrowCongr (.refl 𝕜 G)` is canonical evaluation on `E →L[𝕜] G`; for
-`G = 𝕜`, the inverse of the strong transpose of a canonical bidual isomorphism is the canonical
-bidual evaluation map of `StrongDual 𝕜 E`. -/
-theorem toLinearMap_arrowCongr_refl_of_forall_apply_eq [ContinuousSMul 𝕜 G]
-    (e : E ≃L[𝕜] (E →L[𝕜] G) →L[𝕜] G) (he : ∀ x (φ : E →L[𝕜] G), e x φ = φ x) :
-    (e.arrowCongr (.refl 𝕜 G)).toLinearMap = ContinuousLinearMap.applyₗ G (RingHom.id 𝕜) := by
-  ext φ Ψ
-  exact e.arrowCongr_refl_apply_of_forall_apply_eq he φ Ψ
-
-end ContinuousLinearEquiv

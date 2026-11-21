@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.LocallyConvex.DualProjectiveLimit
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import Mathlib.Analysis.LocallyConvex.StrongTopology
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
+import TauCeti.Topology.Algebra.Module.Spaces.StrongDual
 
 /-!
 # Inductive limits of normed spaces with compact bonding maps
@@ -70,9 +72,11 @@ Finally, still when `L` is `T₁`, the bonding maps are weakly compact, and `eva
 continuous, composing `evalEquiv` with `(strongDualEquiv …).symm.arrowCongr (.refl 𝕜 𝕜)` constructs
 the canonical strong-bidual isomorphism `L ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 L)`
 (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv`), which agrees pointwise with canonical
-evaluation (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv_apply_apply`) and intertwines
+evaluation (`TauCeti.dualProjectiveLimit.inductiveBidualEquiv_apply_apply`), intertwines
 continuous linear maps between such limits with their double strong transposes
-(`TauCeti.dualProjectiveLimit.precomp_precomp_comp_inductiveBidualEquiv`).
+(`TauCeti.dualProjectiveLimit.precomp_precomp_comp_inductiveBidualEquiv`), and matches
+`strongDualEquiv` followed by `bidualEquiv` with `(evalEquiv …).arrowCongr (.refl 𝕜 𝕜)`
+(`TauCeti.dualProjectiveLimit.strongDualEquiv_trans_bidualEquiv`).
 
 A typical example is the space of holomorphic germs along a compact subset of `ℂⁿ`, the inductive
 limit of the Banach spaces of bounded holomorphic functions on a shrinking sequence of
@@ -476,6 +480,30 @@ theorem evalEquiv_symm_eval [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [IsTopolog
     (evalEquiv hT hι hinj hcover hcont).symm (eval T n z) = ι n z :=
   (evalEquiv hT hι hinj hcover hcont).symm_apply_eq.2
     (evalEquiv_ι hT hι hinj hcover hcont n z).symm
+
+/-- Precomposition `strongDualEquiv` followed by canonical bidual evaluation
+`dualProjectiveLimit.bidualEquiv` on `dualProjectiveLimit T` agrees with the inverse strong
+transpose `arrowCongr` of `evalEquiv`. -/
+theorem strongDualEquiv_trans_bidualEquiv [Module ℝ L] [IsScalarTower ℝ 𝕜 L]
+    [IsTopologicalAddGroup L] [ContinuousSMul 𝕜 L] [LocallyConvexSpace ℝ L] [T1Space L]
+    (hT : ∀ n, (T n).IsWeaklyCompact) (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hcont : Continuous (evalInductive hι hinj hcover)) :
+    (strongDualEquiv hT hι hinj hcover
+      (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont)).trans
+      (dualProjectiveLimit.bidualEquiv hT) =
+    (evalEquiv hT hι hinj hcover hcont).arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜) := by
+  let a := strongDualEquiv hT hι hinj hcover
+    (continuous_of_continuous_evalInductive_of_continuous_comp hι hinj hcover hcont)
+  let b := evalEquiv hT hι hinj hcover hcont
+  have h : ∀ (x : L) (ℓ : StrongDual 𝕜 L), b x (a ℓ) = ℓ x := fun x ℓ ↦ by
+    simp [a, b, evalInductive_apply_precomp]
+  have hbidual : dualProjectiveLimit.bidualEquiv hT =
+      ContinuousLinearEquiv.dualBidualEquivOfDualEquiv a b h := by
+    ext f φ
+    simp
+  rw [hbidual]
+  exact a.trans_dualBidualEquivOfDualEquiv b h
 
 /-- **Completeness of compact inductive limits.** Let `L` be a locally convex uniform additive
 group over `ℝ` or `ℂ`, covered by compatible injective continuous linear maps `ι n : B n →L[𝕜] L`
