@@ -157,6 +157,16 @@ def reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)) 
     (expSubOne (finrank_real_complex_lt_two_mul hs) ((2 : ℂ) • inclusion (by linarith) w)) +
     sobolevBackgroundSource hm (by linarith)
 
+/-- The defining formula of `TauCeti.Vortex.reducedEquationMap`:
+`N(w) = -Δw + (1 - (1 - h)) (exp (2w) - 1) / 8 + k`. -/
+theorem reducedEquationMap_def (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)) :
+    reducedEquationMap hm hs w = -laplacianCLM s w + (8⁻¹ : ℂ) •
+      (ContinuousLinearMap.id ℂ H^{s}(ℂ) - mulCLM (finrank_real_complex_lt_two_mul hs)
+        (sobolevBackgroundDefect hm (by linarith)))
+      (expSubOne (finrank_real_complex_lt_two_mul hs) ((2 : ℂ) • inclusion (by linarith) w)) +
+    sobolevBackgroundSource hm (by linarith) :=
+  (rfl)
+
 /-- **The linearized reduced vortex equation.** The derivative of
 `TauCeti.Vortex.reducedEquationMap` at `w`, the operator `v ↦ -Δv + h exp (2w) v / 4`
 (`TauCeti.Vortex.coeFn_inclusionLp_reducedEquationDeriv`), computed as
@@ -168,6 +178,17 @@ def reducedEquationDeriv (hm : 0 < P.natDegree) (hs : 1 < s) (w : H^{s + 2}(ℂ)
     (ContinuousLinearMap.id ℂ H^{s}(ℂ) + mulCLM (finrank_real_complex_lt_two_mul hs)
       (expSubOne (finrank_real_complex_lt_two_mul hs) ((2 : ℂ) • inclusion (by linarith) w))) ∘L
     inclusion (by linarith))
+
+/-- The operator `TauCeti.Vortex.reducedEquationDeriv` applied to `v`:
+`DN(w) v = -Δv + (1 - (1 - h)) (v + (exp (2w) - 1) v) / 4`. -/
+theorem reducedEquationDeriv_apply (hm : 0 < P.natDegree) (hs : 1 < s) (w v : H^{s + 2}(ℂ)) :
+    reducedEquationDeriv hm hs w v = -laplacianCLM s v + (4⁻¹ : ℂ) •
+      (ContinuousLinearMap.id ℂ H^{s}(ℂ) - mulCLM (finrank_real_complex_lt_two_mul hs)
+        (sobolevBackgroundDefect hm (by linarith)))
+      (inclusion (by linarith) v + mulCLM (finrank_real_complex_lt_two_mul hs)
+        (expSubOne (finrank_real_complex_lt_two_mul hs) ((2 : ℂ) • inclusion (by linarith) w))
+        (inclusion (by linarith) v)) :=
+  (rfl)
 
 /-- **The derivative of the reduced vortex equation**: at `w`, the derivative of
 `TauCeti.Vortex.reducedEquationMap` is `TauCeti.Vortex.reducedEquationDeriv`,
@@ -184,7 +205,7 @@ theorem hasFDerivAt_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s) (w : 
     (sobolevBackgroundSource hm (by linarith : (0 : ℝ) ≤ s))
   refine h₃.congr_fderiv ?_
   ext v
-  simp only [reducedEquationDeriv, _root_.add_apply, _root_.neg_apply,
+  simp only [reducedEquationDeriv_apply, _root_.add_apply, _root_.neg_apply,
     _root_.smul_apply, ContinuousLinearMap.comp_apply, map_smul, smul_smul, A, ι]
   norm_num
 
@@ -241,7 +262,7 @@ theorem coeFn_inclusionLp_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s)
       (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs e)))
     (coeFn_inclusionLp_sobolevBackgroundSource hm h0)
   filter_upwards [hN, he] with z h₁ h₂
-  rw [reducedEquationMap]
+  rw [reducedEquationMap_def]
   simp only [_root_.sub_apply, ContinuousLinearMap.id_apply]
   rw [h₁, h₂, smul_eq_mul]
   ring
@@ -271,8 +292,8 @@ theorem coeFn_inclusionLp_reducedEquationDeriv (hm : 0 < P.natDegree) (hs : 1 < 
     ring
   have hD : reducedEquationDeriv hm hs w v =
       -laplacianCLM s v + (4⁻¹ : ℂ) • (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X) := by
-    simp only [reducedEquationDeriv, _root_.add_apply, _root_.neg_apply, _root_.smul_apply,
-      _root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, X, e, ι]
+    simp only [reducedEquationDeriv_apply, _root_.sub_apply, ContinuousLinearMap.id_apply, X,
+      e, ι]
   rw [hD]
   filter_upwards [coeFn_inclusionLp_add_ae_eq h0
       (coeFn_inclusionLp_neg_ae_eq h0 (u := laplacianCLM s v) EventuallyEq.rfl)

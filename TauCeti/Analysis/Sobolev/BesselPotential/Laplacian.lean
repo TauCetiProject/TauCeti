@@ -97,8 +97,9 @@ theorem laplacian_toTemperedDistribution_ofRealCLM_compLp {f : E → ℝ} (hf : 
         sub_zero]
       ring)
   have hsub : Complex.ofRealCLM.compLp (u - v) =
-      Complex.ofRealCLM.compLp u - Complex.ofRealCLM.compLp v :=
-    map_sub (Complex.ofRealCLM.compLpL 2 (volume : Measure E)) u v
+      Complex.ofRealCLM.compLp u - Complex.ofRealCLM.compLp v := by
+    simpa only [ContinuousLinearMap.compLpₗ_apply] using
+      map_sub (Complex.ofRealCLM.compLpₗ 2 (volume : Measure E)) u v
   rw [hsub, Lp.toTemperedDistribution_sub, one_smul] at h
   rw [← neg_inj, ← add_right_cancel_iff (a := (Lp.toTemperedDistribution
     (Complex.ofRealCLM.compLp u) : 𝓢'(E, ℂ))), h]

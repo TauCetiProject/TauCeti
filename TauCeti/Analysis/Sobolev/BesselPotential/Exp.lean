@@ -132,7 +132,8 @@ theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
   -- The element of `w` is `(exp v - 1) - v`.
   have hweq : hws.toBesselPotentialSpace = expSubOne hs v - v := by
     refine toLp_inclusion_injective h (Lp.ext ?_)
-    simp only
+    -- `toLp_inclusion_injective` is stated for a `fun`, so beta-reduce its applications.
+    beta_reduce
     rw [toLp_inclusion_toBesselPotentialSpace h hws rfl]
     filter_upwards [hw, coeFn_toLp_inclusion_sub h (expSubOne hs v) v,
       coeFn_toLp_inclusion_expSubOne hs h v] with x hx h₁ h₂
