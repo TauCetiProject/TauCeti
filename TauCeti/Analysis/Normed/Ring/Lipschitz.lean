@@ -32,15 +32,13 @@ namespace TauCeti
 variable {A : Type*} [NonUnitalSeminormedRing A]
 
 /-- Left multiplication `(a * ·)` in a seminormed ring is `‖a‖₊`-Lipschitz. -/
-theorem lipschitzWith_mul_left (a : A) : LipschitzWith ‖a‖₊ (a * ·) := by
-  rw [show (a * ·) = (a • ·) from funext fun b => (smul_eq_mul a b).symm]
-  exact lipschitzWith_smul a
+theorem lipschitzWith_mul_left (a : A) : LipschitzWith ‖a‖₊ (a * ·) := fun x y => by
+  simpa only [smul_eq_mul] using lipschitzWith_smul a x y
 
 /-- Right multiplication `(· * a)` in a seminormed ring is `‖a‖₊`-Lipschitz. -/
-theorem lipschitzWith_mul_right (a : A) : LipschitzWith ‖a‖₊ (· * a) := by
-  rw [← MulOpposite.nnNorm_op a, show (· * a) = (MulOpposite.op a • ·) from
-    funext fun b => (MulOpposite.smul_eq_mul_unop (MulOpposite.op a) b).symm]
-  exact lipschitzWith_smul (MulOpposite.op a)
+theorem lipschitzWith_mul_right (a : A) : LipschitzWith ‖a‖₊ (· * a) := fun x y => by
+  simpa only [MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, MulOpposite.nnNorm_op] using
+    lipschitzWith_smul (MulOpposite.op a) x y
 
 /-- Taking the commutator `b ↦ a * b - b * a` with a fixed left factor `a` in a seminormed ring is
 `(2 * ‖a‖₊)`-Lipschitz. -/

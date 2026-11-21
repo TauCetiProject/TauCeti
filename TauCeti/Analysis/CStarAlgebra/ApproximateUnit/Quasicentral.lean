@@ -10,6 +10,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.Normed.Ring.Lipschitz
+import TauCeti.RingTheory.TwoSidedIdeal.Operations
 import TauCeti.Topology.MetricSpace.UniformConvergence
 
 /-!
@@ -84,6 +85,16 @@ open Filter Topology
 open scoped CStarAlgebra
 
 namespace TwoSidedIdeal
+
+private theorem eventually_nnNorm_le_one {A : Type*} [NonUnitalSeminormedRing A] {l : Filter A}
+    (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) : ∀ᶠ e in l, ‖e‖₊ ≤ 1 :=
+  hnorm.mono fun _ h => by rwa [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
+
+private theorem eventually_lipschitzWith_commutator_left {A : Type*} [NonUnitalSeminormedRing A]
+    {l : Filter A} (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) :
+    ∀ᶠ e in l, LipschitzWith 2 (fun a => e * a - a * e) :=
+  (eventually_nnNorm_le_one hnorm).mono fun e he =>
+    (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he)
 
 section Basic
 
@@ -169,11 +180,11 @@ theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_right hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) => (TauCeti.lipschitzWith_mul_left e).weaken he)
+      ((eventually_nnNorm_le_one hnorm).mono fun e he =>
+        (TauCeti.lipschitzWith_mul_left e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
     (fun a => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
-        (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he))
+      (eventually_lipschitzWith_commutator_left hnorm)
       continuousWithinAt_const hcomm (hsA a))
 
 /-- Dense-subset criterion for `IsQuasicentralApproximateUnit`: for a proper filter `l` eventually
@@ -188,20 +199,20 @@ theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_left hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) => (TauCeti.lipschitzWith_mul_right e).weaken he)
+      ((eventually_nnNorm_le_one hnorm).mono fun e he =>
+        (TauCeti.lipschitzWith_mul_right e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
     (fun a => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
-        (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he))
+      (eventually_lipschitzWith_commutator_left hnorm)
       continuousWithinAt_const hcomm (hsA a))
 
 /-- Elements along a quasicentral approximate unit eventually have `nnnorm` at most `1`. -/
 theorem eventually_nnNorm (hl : I.IsQuasicentralApproximateUnit l) : ∀ᶠ e in l, ‖e‖₊ ≤ 1 :=
-  hl.eventually_norm
+  eventually_nnNorm_le_one hl.eventually_norm
 
 /-- The closed unit ball belongs to any quasicentral approximate unit. -/
-theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l := by
-  simpa [Metric.closedBall] using! hl.eventually_norm
+theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l :=
+  hl.eventually_norm.mono fun _ h => mem_closedBall_zero_iff.mpr h
 
 /-- Reversed commutators `a * e - e * a` also tend to `0` along a quasicentral approximate unit. -/
 theorem tendsto_commutator_rev (hl : I.IsQuasicentralApproximateUnit l) (a : A) :
@@ -243,8 +254,7 @@ every compact subset `K` of `A`. -/
 theorem tendstoUniformlyOn_commutator (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) : TendstoUniformlyOn (fun e a => e * a - a * e) 0 l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (hl.eventually_nnNorm.mono fun e he =>
-      (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he))
+    (eventually_lipschitzWith_commutator_left hl.eventually_norm)
     hK fun a _ => hl.tendsto_commutator a
 
 /-- Along a quasicentral approximate unit of `I`, `x * e → x` uniformly on compact subsets of
@@ -266,8 +276,9 @@ theorem isIncreasingApproximateUnit_comap_coe [IsClosed (I : Set A)]
   tendsto_mul_right x := by
     rw [IsInducing.subtypeVal.tendsto_nhds_iff]
     exact (hl.tendsto_mul_right x.property).comp tendsto_comap
-  eventually_nonneg := hl.eventually_nonneg.comap _
-  eventually_norm := hl.eventually_norm.comap _
+  eventually_nonneg := (hl.eventually_nonneg.comap _).mono fun _ h => Subtype.coe_le_coe.mp h
+  eventually_norm := (hl.eventually_norm.comap _).mono fun _ h => by
+    rwa [AddSubgroupClass.coe_norm]
 
 /-- Pushing `l.comap ((↑) : I → A)` forward to `A` recovers `l`. -/
 theorem map_coe_comap_coe (hl : I.IsQuasicentralApproximateUnit l) :
@@ -320,12 +331,12 @@ theorem isQuasicentralApproximateUnit_bot_iff {l : Filter A} :
 theorem isQuasicentralApproximateUnit_top_iff {l : Filter A} :
     (⊤ : TwoSidedIdeal A).IsQuasicentralApproximateUnit l ↔ l.IsIncreasingApproximateUnit :=
   ⟨fun hl => { neBot := hl.neBot
-               tendsto_mul_left := fun _ => hl.tendsto_mul_left trivial
-               tendsto_mul_right := fun _ => hl.tendsto_mul_right trivial
+               tendsto_mul_left := fun _ => hl.tendsto_mul_left (TwoSidedIdeal.mem_top A)
+               tendsto_mul_right := fun _ => hl.tendsto_mul_right (TwoSidedIdeal.mem_top A)
                eventually_nonneg := hl.eventually_nonneg
                eventually_norm := hl.eventually_norm },
    fun hl => { neBot := hl.neBot
-               eventually_mem := Eventually.of_forall fun _ => trivial
+               eventually_mem := Eventually.of_forall fun _ => TwoSidedIdeal.mem_top A
                eventually_nonneg := hl.eventually_nonneg
                eventually_norm := hl.eventually_norm
                tendsto_mul_right := fun _ => hl.tendsto_mul_right _
@@ -347,8 +358,9 @@ theorem isQuasicentralApproximateUnit_map_coe_iff {I : TwoSidedIdeal A} [IsClose
   · have := hl.neBot
     exact .of_tendsto_mul_right
       (eventually_map.mpr (Eventually.of_forall fun e => e.property))
-      (eventually_map.mpr hl.eventually_nonneg)
-      (eventually_map.mpr hl.eventually_norm)
+      (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ h => Subtype.coe_le_coe.mpr h)
+      (eventually_map.mpr <| hl.eventually_norm.mono fun _ h => by
+        rwa [← AddSubgroupClass.coe_norm])
       (fun x hx => tendsto_map'_iff.mpr <|
         (continuous_subtypeVal.tendsto ⟨x, hx⟩).comp (hl.tendsto_mul_right ⟨x, hx⟩))
       (fun a => tendsto_map'_iff.mpr (hc a))
@@ -382,35 +394,22 @@ theorem IsQuasicentralApproximateUnit.map {I : TwoSidedIdeal A} {l : Filter A}
     (hl : I.IsQuasicentralApproximateUnit l) (f : F) (hf : Function.Surjective f) :
     (I.map f).IsQuasicentralApproximateUnit (l.map f) := by
   have := hl.neBot
-  have hcomm (b : B) : Tendsto (fun e => f e * b - b * f e) l (𝓝 0) := by
-    obtain ⟨a, rfl⟩ := hf b
-    simpa only [Function.comp_def, map_sub, map_mul, map_zero] using
-      ((map_continuous f).tendsto 0).comp (hl.tendsto_commutator a)
-  have hmul : ∀ y ∈ I.map f, Tendsto (fun e => f e * y) l (𝓝 y) := by
-    intro y hy
-    induction hy using TwoSidedIdeal.span_induction with
-    | mem _ h =>
-      rcases h with ⟨x, hx, rfl⟩
-      simpa only [Function.comp_def, map_mul] using
-        ((map_continuous f).tendsto x).comp (hl.tendsto_mul_right hx)
-    | zero =>
-      simp only [mul_zero]
-      exact tendsto_const_nhds
-    | add _ _ _ _ hy hz => simpa only [mul_add] using hy.add hz
-    | neg _ _ hy => simpa only [mul_neg] using hy.neg
-    | left_absorb b y _ hy =>
-      have h1 : Tendsto (fun e => (f e * b - b * f e) * y + b * (f e * y)) l (𝓝 (0 * y + b * y)) :=
-        ((hcomm b).mul_const y).add (hy.const_mul b)
-      simpa only [zero_mul, zero_add, sub_mul, mul_assoc, sub_add_cancel] using h1
-    | right_absorb b _ _ hy => simpa only [mul_assoc] using hy.mul_const b
-  exact .of_tendsto_mul_right
+  refine .of_tendsto_mul_right
     (eventually_map.mpr <| hl.eventually_mem.mono fun e he =>
       TwoSidedIdeal.subset_span ⟨e, he, rfl⟩)
     (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => map_nonneg f hx)
     (eventually_map.mpr <| hl.eventually_norm.mono fun e he =>
       (NonUnitalStarAlgHom.norm_apply_le f e).trans he)
-    (fun y hy => tendsto_map'_iff.mpr (hmul y hy))
-    (fun b => tendsto_map'_iff.mpr (hcomm b))
+    (fun y hy => ?_)
+    (fun b => ?_)
+  · obtain ⟨x, hx, rfl⟩ := (TwoSidedIdeal.mem_map_iff_of_surjective f hf).mp hy
+    rw [tendsto_map'_iff]
+    simpa only [Function.comp_def, map_mul] using
+      ((map_continuous f).tendsto x).comp (hl.tendsto_mul_right hx)
+  · obtain ⟨a, rfl⟩ := hf b
+    rw [tendsto_map'_iff]
+    simpa only [Function.comp_def, map_sub, map_mul, map_zero] using
+      ((map_continuous f).tendsto 0).comp (hl.tendsto_commutator a)
 
 end Map
 
@@ -569,6 +568,13 @@ section Existence
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+omit [PartialOrder A] [StarOrderedRing A] in
+private theorem norm_mul_commutator_le (d v a : A) :
+    ‖d * (v * a - a * v)‖ ≤ ‖d * v - d‖ * ‖a‖ + ‖d * a * v - d * a‖ := by
+  have hid : d * (v * a - a * v) = (d * v - d) * a - (d * a * v - d * a) := by noncomm_ring
+  rw [hid]
+  exact (norm_sub_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
 /-- Single inductive step along `CStarAlgebra.approximateUnit`: given `u_0, …, u_{n-1} ∈ I`, find a
 positive contraction `v ∈ I` that approximates `G` within `ε` and satisfies
 `‖star (u_i * a - a * u_i) * (v * a - a * v)‖ ≤ δ * (‖a‖ + 1)` for all `i < n` and `a ∈ F`. -/
@@ -596,22 +602,16 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
       ‖star (u i * a - a * u i) * ((v : A) * a - a * (v : A))‖ ≤ δ * (‖a‖ + 1) := by
     refine (Finset.range n).eventually_all.mpr fun i hi => F.eventually_all.mpr fun a _ => ?_
     have hui : u i ∈ I := hu i (Finset.mem_range.mp hi)
-    have hsd : star (u i * a - a * u i) ∈ I :=
+    let d : A := star (u i * a - a * u i)
+    have hsd : d ∈ I :=
       I.star_mem_of_isClosed (I.sub_mem (I.mul_mem_right _ _ hui) (I.mul_mem_left _ _ hui))
     filter_upwards [Metric.tendsto_nhds.mp (hmul_l hsd) δ hδ,
       Metric.tendsto_nhds.mp (hmul_l (I.mul_mem_right _ _ hsd)) δ hδ] with v hv₁ hv₂
-    have h1 : ‖star (u i * a - a * u i) * (v : A) - star (u i * a - a * u i)‖ ≤ δ := by
-      simpa only [dist_eq_norm] using hv₁.le
-    have h2 : ‖star (u i * a - a * u i) * a * (v : A) - star (u i * a - a * u i) * a‖ ≤ δ := by
-      simpa only [dist_eq_norm] using hv₂.le
-    have hid : star (u i * a - a * u i) * ((v : A) * a - a * (v : A)) =
-        (star (u i * a - a * u i) * (v : A) - star (u i * a - a * u i)) * a -
-          (star (u i * a - a * u i) * a * (v : A) - star (u i * a - a * u i) * a) := by
-      noncomm_ring
-    rw [hid]
-    calc ‖_ - _‖ ≤ ‖star (u i * a - a * u i) * (v : A) - star (u i * a - a * u i)‖ * ‖a‖ +
-            ‖star (u i * a - a * u i) * a * (v : A) - star (u i * a - a * u i) * a‖ :=
-          (norm_sub_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+    have h1 : ‖d * (v : A) - d‖ ≤ δ := by simpa only [dist_eq_norm] using hv₁.le
+    have h2 : ‖d * a * (v : A) - d * a‖ ≤ δ := by simpa only [dist_eq_norm] using hv₂.le
+    calc ‖d * ((v : A) * a - a * (v : A))‖
+        ≤ ‖d * (v : A) - d‖ * ‖a‖ + ‖d * a * (v : A) - d * a‖ :=
+          norm_mul_commutator_le d (v : A) a
       _ ≤ δ * ‖a‖ + δ := add_le_add (mul_le_mul_of_nonneg_right h1 (norm_nonneg a)) h2
       _ = δ * (‖a‖ + 1) := by ring
   obtain ⟨v, ⟨hv₀, hv₁⟩, hvG, hvF⟩ :=
@@ -656,7 +656,14 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
     e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
       ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε := by
   intro e
-  have hw_pos : 0 < ∑ _k ∈ Finset.range n, (1 : ℝ) := by simpa using hn_pos
+  have hw_pos : 0 < ∑ _k ∈ Finset.range n, (1 : ℝ) := by
+    simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_pos]
+    exact hn_pos
+  have hcm (f : ℕ → A) :
+      (Finset.range n).centerMass (fun _ => (1 : ℝ)) f =
+        (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k := by
+    simp only [Finset.centerMass, Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one,
+      one_smul]
   have heI : e ∈ I := by
     let c : ℝ := (n : ℝ)⁻¹
     have hec : e = (c : ℂ) • ∑ k ∈ Finset.range n, u k :=
@@ -668,14 +675,16 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
   have he₀ : 0 ≤ e := smul_nonneg (by positivity)
     (Finset.sum_nonneg fun k hk => (hu k (Finset.mem_range.mp hk)).2.1)
   have he₁ : ‖e‖ ≤ 1 := by
-    simpa [e, Finset.centerMass] using
-      (convex_closedBall (0 : A) 1).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-        mem_closedBall_zero_iff.mpr (hu k (Finset.mem_range.mp hk)).2.2.1
+    rw [← mem_closedBall_zero_iff]
+    dsimp only [e]
+    rw [← hcm u]
+    exact (convex_closedBall (0 : A) 1).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
+      mem_closedBall_zero_iff.mpr (hu k (Finset.mem_range.mp hk)).2.2.1
   have havg (f : ℕ → A) (y : A) (hf : ∀ k < n, ‖f k - y‖ < ε) :
       ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k) - y‖ < ε := by
-    simpa [Finset.centerMass, dist_eq_norm] using
-      (convex_ball y ε).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-        mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
+    rw [← mem_ball_iff_norm, ← hcm f]
+    exact (convex_ball y ε).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
+      mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
   refine ⟨heI, he₀, he₁, fun x hx => ⟨?_, ?_⟩⟩
   · simpa only [e, smul_mul_assoc, Finset.sum_mul] using
       havg (fun k => u k * (x : A)) x (fun k hk => ((hu k hk).2.2.2 x hx).1)
