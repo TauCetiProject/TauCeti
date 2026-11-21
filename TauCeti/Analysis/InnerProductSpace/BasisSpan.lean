@@ -24,6 +24,8 @@ subspace spanned by the corresponding basis vectors.
 * `OrthonormalBasis.mem_spanIndices_of_mem`: selected basis vectors belong to the span.
 * `OrthonormalBasis.mem_spanIndices_iff`: membership means coordinates vanish
   outside the selected indices.
+* `OrthonormalBasis.spanIndices_le_spanIndices_iff`, `OrthonormalBasis.spanIndices_inj`: the
+  selected subspaces are ordered, and determined, by their index sets.
 * `OrthonormalBasis.finrank_spanIndices_set`: dimension as set cardinality.
 * `OrthonormalBasis.finrank_spanIndices`: the dimension for a finset of indices.
 * `OrthonormalBasis.orthogonal_spanIndices`: orthogonal complement by index complement.
@@ -90,6 +92,20 @@ theorem repr_eq_zero_of_mem_spanIndices (b : OrthonormalBasis ι 𝕜 E)
     {s : Set ι} {x : E} (hx : x ∈ b.spanIndices s) {i : ι} (hi : i ∉ s) :
     b.repr x i = 0 :=
   b.mem_spanIndices_iff.mp hx i hi
+
+/-- One selected subspace lies in another exactly when its index set does. -/
+@[simp]
+theorem spanIndices_le_spanIndices_iff (b : OrthonormalBasis ι 𝕜 E) {s t : Set ι} :
+    b.spanIndices s ≤ b.spanIndices t ↔ s ⊆ t := by
+  refine ⟨fun h i hi ↦ ?_, b.spanIndices_mono⟩
+  have := h (b.mem_spanIndices_of_mem hi)
+  rwa [spanIndices_eq_span, ← b.coe_toBasis, b.toBasis.self_mem_span_image] at this
+
+/-- Selected subspaces are determined by their index sets. -/
+@[simp]
+theorem spanIndices_inj (b : OrthonormalBasis ι 𝕜 E) {s t : Set ι} :
+    b.spanIndices s = b.spanIndices t ↔ s = t := by
+  simp only [le_antisymm_iff, spanIndices_le_spanIndices_iff]
 
 /-- The span of a selected set of basis vectors has dimension equal to the
 number of selected indices. -/
