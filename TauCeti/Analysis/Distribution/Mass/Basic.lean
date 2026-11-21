@@ -35,6 +35,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.localMass_comp_le_of_enorm_apply_le`,
   `Distribution.HasLocallyFiniteMass.comp_of_norm_apply_le`: precomposition with a pointwise
   bounded map of test functions (which does not enlarge supports).
+* `Distribution.mass_comp_le_of_norm_apply_le`: precomposition with a map of test functions that
+  is bounded in the supremum norm.
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
 * `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
   disjoint sets add up to at most the local mass on their union.
@@ -236,6 +238,25 @@ theorem localMass_comp_le_of_enorm_apply_le {G : Type*} [NormedAddCommGroup G] [
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
+
+/-- **The mass of a precomposition.** If a map `L` of test functions satisfies `‖L ψ x‖ ≤ c` for
+every test `ψ` with `‖ψ x‖ ≤ 1` everywhere, then precomposition with `L` multiplies the mass by at
+most `c`. Unlike `Distribution.localMass_comp_le_of_enorm_apply_le`, `L` may enlarge supports and
+change the domain of the tests. -/
+theorem mass_comp_le_of_norm_apply_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {U : Opens E} {m : ℕ∞} (T : 𝓕) {L : 𝓓^{m}(U, G) → 𝓓^{n}(Ω, F)} {c : ℝ}
+    (hL : ∀ ψ : 𝓓^{m}(U, G), (∀ x, ‖ψ x‖ ≤ 1) → ∀ x, ‖L ψ x‖ ≤ c) :
+    mass (T ∘ L) ≤ ENNReal.ofReal c * mass T := by
+  refine mass_le_iff.2 fun ψ hψ ↦ ?_
+  have hb : ‖(L ψ : E →ᵇ F)‖ ≤ c :=
+    (BoundedContinuousFunction.norm_le ((norm_nonneg _).trans (hL ψ hψ 0))).2 fun x ↦ by
+      simpa using hL ψ hψ x
+  calc ‖T (L ψ)‖ₑ ≤ mass T * ‖(L ψ : E →ᵇ F)‖ₑ := enorm_apply_le_mass_mul T _
+    _ ≤ mass T * ENNReal.ofReal c := by
+        gcongr
+        rw [← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal hb
+    _ = ENNReal.ofReal c * mass T := mul_comm _ _
 
 /-- A finite mass bound controls each evaluation by the supremum norm of the test. -/
 theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
