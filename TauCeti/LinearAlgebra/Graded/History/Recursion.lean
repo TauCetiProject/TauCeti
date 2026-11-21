@@ -47,6 +47,30 @@ theorem sum_homogeneousHistory_eq_finiteRecursion (r : ℕ) (x : M) :
   intro j _
   rw [Path.sum_homogeneousHistory, Path.composeLinear_loopPow, Path.composeLinear_toPath]
 
+/-- A complete family of supplied supports expands the truncated geometric sum after
+linear input and output maps. Completeness is required only below the cutoff. -/
+theorem sum_homogeneousHistory_comp_eq_finiteRecursion {E O : Type*}
+    [AddCommMonoid E] [Module R E] [AddCommMonoid O] [Module R O]
+    (a : E →ₗ[R] M) (b : M →ₗ[R] O) (r : ℕ)
+    (S : (j : ℕ) → Finset
+      (((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).Degrees (fun _ => ι)))
+    (hS : ∀ j < r, ∀ d ∉ S j,
+      (((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).homogeneousHistory
+        (fun _ => U) (fun _ => ℳ) d).comp a = 0) :
+    (∑ j ∈ Finset.range r, ∑ d ∈ S j,
+      b.comp ((((Hom.toPath (a := SingleObj.star Unit) ()).loopPow j).homogeneousHistory
+        (fun _ => U) (fun _ => ℳ) d).comp a)) =
+      b.comp ((U.finiteRecursion r).comp a) := by
+  calc
+    _ = ∑ j ∈ Finset.range r, b.comp ((U ^ j).comp a) := by
+      apply Finset.sum_congr rfl
+      intro j hj
+      rw [Path.sum_comp_homogeneousHistory_comp_eq _ _ _ _ _ _ (hS j (Finset.mem_range.mp hj)),
+        Path.composeLinear_loopPow, Path.composeLinear_toPath]
+    _ = b.comp ((U.finiteRecursion r).comp a) := by
+      ext y
+      simp only [LinearMap.sum_apply, LinearMap.comp_apply, finiteRecursion_apply, map_sum]
+
 /-- For any finite cutoff, a finitely generated input range admits common
 finite history supports for all lengths below that cutoff. Their expansion of
 the truncated geometric sum remains valid after every linear output map. -/
@@ -69,19 +93,12 @@ theorem exists_uniform_history_expansion {E : Type*}
   choose S hS using hs
   refine ⟨S, fun j _ => hS j, ?_⟩
   intro O _ _ b
-  calc
-    _ = ∑ j ∈ Finset.range r, b.comp ((U ^ j).comp a) := by
-      apply Finset.sum_congr rfl
-      intro j _
-      rw [Path.sum_comp_homogeneousHistory_comp_eq _ _ _ _ _ _ (hS j),
-        Path.composeLinear_loopPow, Path.composeLinear_toPath]
-    _ = b.comp ((U.finiteRecursion r).comp a) := by
-      ext y
-      simp only [LinearMap.sum_apply, LinearMap.comp_apply, finiteRecursion_apply, map_sum]
+  exact U.sum_homogeneousHistory_comp_eq_finiteRecursion ℳ a b r S (fun j _ => hS j)
 
-/-- A family solving a nilpotent recursion has common finite history supports
-for every input at lengths strictly below the nilpotency cutoff. The same
-supports give the solution after every linear output map. -/
+/-- With finitely generated range of the forcing map `a`, a family solving a
+nilpotent recursion has common finite history supports for every input at lengths
+below the nilpotency cutoff. The same supports give the solution after every
+linear output map. -/
 theorem exists_uniform_history_expansion_of_eq_add {E : Type*}
     [AddCommMonoid E] [Module R E] (a x : E →ₗ[R] M) (ha : (LinearMap.range a).FG)
     {r : ℕ} (hU : U ^ r = 0) (hx : x = a + U.comp x) :
