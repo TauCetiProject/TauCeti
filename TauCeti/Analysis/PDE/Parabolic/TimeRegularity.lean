@@ -10,6 +10,7 @@ import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 import TauCeti.Analysis.PDE.Parabolic.Existence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Time regularity of weak solutions of parabolic equations
@@ -272,22 +273,22 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_sym
       heq hw hae h₀
   refine ⟨d, v, hd, hdd, hu'd, hv, huv, hva, hid, fun t ht ↦ ?_⟩
   -- The bound follows from the identity on `[a, t]` and `2 ⟪g - d, d⟫ ≤ ‖g‖² - ‖d‖²`.
-  have hint {f : ℝ → ℝ} (hf : IntegrableOn f (Ioo a b)) : IntervalIntegrable f volume a t :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le ht.1).2 (hf.mono_set (Ioo_subset_Ioo_right ht.2))
+  have ha : a ∈ Icc a b := left_mem_Icc.2 hab
   have hgd : IntegrableOn (fun r ↦ ⟪g r - d r, d r⟫_ℝ) (Ioo a b) :=
     memLp_one_iff_integrable.1 ((innerSL ℝ (E := H)).memLp_of_bilin 1 (hg.sub hd) hd)
   have hg2 : IntegrableOn (fun r ↦ ‖g r‖ ^ 2) (Ioo a b) :=
     (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
   have hd2 : IntegrableOn (fun r ↦ ‖d r‖ ^ 2) (Ioo a b) :=
     (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).1 hd
+  have hg2t := hg2.intervalIntegrable_of_mem_Icc ha ht
+  have hd2t := hd2.intervalIntegrable_of_mem_Icc ha ht
   have hle : ∫ r in a..t, 2 * ⟪g r - d r, d r⟫_ℝ ≤ ∫ r in a..t, (‖g r‖ ^ 2 - ‖d r‖ ^ 2) :=
-    intervalIntegral.integral_mono_on ht.1 ((hint hgd).const_mul 2) ((hint hg2).sub (hint hd2))
-      fun r _ ↦ by
+    intervalIntegral.integral_mono_on ht.1 ((hgd.intervalIntegrable_of_mem_Icc ha ht).const_mul 2)
+      (hg2t.sub hd2t) fun r _ ↦ by
         rw [inner_sub_left, real_inner_self_eq_norm_sq]
         nlinarith [norm_sub_sq_real (g r) (d r), sq_nonneg ‖g r - d r‖]
-  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_sub (hint hg2) (hint hd2)]
-    at hle
-  have := hid a (left_mem_Icc.2 hab) t ht
+  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_sub hg2t hd2t] at hle
+  have := hid a ha t ht
   rw [hva] at this
   linarith
 
