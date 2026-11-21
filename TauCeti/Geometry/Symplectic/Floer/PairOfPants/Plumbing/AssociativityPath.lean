@@ -56,11 +56,11 @@ along any map into a manifold is bounded uniformly in `τ`
 (`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associativity_le`).
 For the plumbing factor `f = exp (-2πL) / 4` of a neck length `L`, the configuration at `τ ≤ 0` is
 that of the plumbed sphere of `(a ⋆ b) ⋆ c`
-(`TauCeti.Floer.associativityCenter_of_nonpos_eq_plumbingMap`,
-`TauCeti.Floer.associativityScale_of_nonpos_eq_plumbingFactor`), and at `τ ≥ 1`, with the inputs
+(`TauCeti.Floer.associativityCenter_eq_plumbingMap_of_nonpos`,
+`TauCeti.Floer.associativityScale_eq_plumbingFactor_of_nonpos`), and at `τ ≥ 1`, with the inputs
 relabelled by `finRotate 3`, that of `a ⋆ (b ⋆ c)`
-(`TauCeti.Floer.associativityCenter_of_one_le_comp_finRotate`,
-`TauCeti.Floer.associativityScale_of_one_le_comp_finRotate`). So at `τ ≤ 0` the datum is the plumbed
+(`TauCeti.Floer.associativityCenter_comp_finRotate_of_one_le`,
+`TauCeti.Floer.associativityScale_comp_finRotate_of_one_le`). So at `τ ≤ 0` the datum is the plumbed
 datum of `(a ⋆ b) ⋆ c` with the neck switched off
 (`TauCeti.Floer.puncturedSpherePerturbation_associativity_of_nonpos`), and at `τ ≥ 1` that of
 `a ⋆ (b ⋆ c)` (`TauCeti.Floer.puncturedSpherePerturbation_associativity_of_one_le`).
@@ -492,42 +492,35 @@ section Ends
 
 variable {τ L : ℝ}
 
-/-- The plumbing factor of the input end `0` is the real number `exp (-2πL) / 4`. -/
-private theorem plumbingFactor_zero_eq_ofReal (L : ℝ) :
-    zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-  rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
-  push_cast
-  ring
-
 /-- **The path starts at the plumbed configuration of `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the
 plumbing factor `f = exp (-2πL) / 4`, the centers of the associativity path are the centers `c_0`,
 `ψ(1)` and `c_1` of the sphere obtained by plumbing the output end of a pair of pants into the
 input end `0` of another, where `ψ` is the plumbing map. -/
-theorem associativityCenter_of_nonpos_eq_plumbingMap (hτ : τ ≤ 0) :
+theorem associativityCenter_eq_plumbingMap_of_nonpos (hτ : τ ≤ 0) :
     associativityCenter (Real.exp (-(2 * π * L)) / 4) τ =
       ![zero.endCenter, zero.plumbingMap L 1, one.endCenter] := by
-  rw [associativityCenter_of_nonpos hτ, plumbingMap_apply, plumbingFactor_zero_eq_ofReal]
+  rw [associativityCenter_of_nonpos hτ, plumbingMap_apply, plumbingFactor_zero]
   simp
 
 /-- **The path starts at the plumbed configuration of `(a ⋆ b) ⋆ c`.** For `τ ≤ 0` and the
 plumbing factor `f = exp (-2πL) / 4`, the scales of the associativity path are the scales `f`,
 `-f` and `2 b_1` of the sphere obtained by plumbing the output end of a pair of pants into the
 input end `0` of another, where `b_1` is the scale of the end `1`. -/
-theorem associativityScale_of_nonpos_eq_plumbingFactor (hτ : τ ≤ 0) :
+theorem associativityScale_eq_plumbingFactor_of_nonpos (hτ : τ ≤ 0) :
     associativityScale (Real.exp (-(2 * π * L)) / 4) τ =
       ![zero.plumbingFactor L, -zero.plumbingFactor L, 2 * one.endScale] := by
-  rw [associativityScale_of_nonpos hτ, plumbingFactor_zero_eq_ofReal]
+  rw [associativityScale_of_nonpos hτ, plumbingFactor_zero]
   simp
 
 /-- **The path ends at the plumbed configuration of `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
 factor `f = exp (-2πL) / 4`, the centers of the associativity path, listed from the input `b`
 (`finRotate 3`), are the centers `c_1`, `ψ(1)` and `c_0` of the sphere obtained by plumbing the
 output end of a pair of pants into the input end `1` of another, where `ψ` is the plumbing map. -/
-theorem associativityCenter_of_one_le_comp_finRotate (hτ : 1 ≤ τ) :
+theorem associativityCenter_comp_finRotate_of_one_le (hτ : 1 ≤ τ) :
     associativityCenter (Real.exp (-(2 * π * L)) / 4) τ ∘ finRotate 3 =
       ![one.endCenter, one.plumbingMap L 1, zero.endCenter] := by
   rw [associativityCenter_of_one_le hτ, plumbingMap_apply, plumbingFactor_one,
-    plumbingFactor_zero_eq_ofReal]
+    plumbingFactor_zero]
   funext i
   fin_cases i <;> simp [sub_eq_add_neg]
 
@@ -536,10 +529,10 @@ factor `f = exp (-2πL) / 4`, the scales of the associativity path, listed from 
 (`finRotate 3`), are the scales `-f`, `f` and `2 b_0` of the sphere obtained by plumbing the
 output end of a pair of pants into the input end `1` of another, where `b_0` is the scale of the
 end `0`. -/
-theorem associativityScale_of_one_le_comp_finRotate (hτ : 1 ≤ τ) :
+theorem associativityScale_comp_finRotate_of_one_le (hτ : 1 ≤ τ) :
     associativityScale (Real.exp (-(2 * π * L)) / 4) τ ∘ finRotate 3 =
       ![one.plumbingFactor L, -one.plumbingFactor L, 2 * zero.endScale] := by
-  rw [associativityScale_of_one_le hτ, plumbingFactor_one, plumbingFactor_zero_eq_ofReal]
+  rw [associativityScale_of_one_le hτ, plumbingFactor_one, plumbingFactor_zero]
   funext i
   fin_cases i <;> simp
 
@@ -555,8 +548,8 @@ theorem puncturedSpherePerturbation_associativity_of_nonpos (hτ : τ ≤ 0) (hL
         (Hb inf) =
       plumbedPerturbation (update Ha inf 0) (update Hb zero 0) zero L := by
   rw [plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := one) (by simp)
-    (by simp) (by simp) hL, associativityCenter_of_nonpos_eq_plumbingMap hτ,
-    associativityScale_of_nonpos_eq_plumbingFactor hτ]
+    (by simp) (by simp) hL, associativityCenter_eq_plumbingMap_of_nonpos hτ,
+    associativityScale_eq_plumbingFactor_of_nonpos hτ]
 
 /-- **At its end the family is the composition `a ⋆ (b ⋆ c)`.** For `τ ≥ 1` and the plumbing
 factor `f = exp (-2πL) / 4` of a neck length `L ≥ 0`, the datum of the sphere with the input ends
@@ -571,8 +564,8 @@ theorem puncturedSpherePerturbation_associativity_of_one_le (hτ : 1 ≤ τ) (hL
         (Hb inf) =
       plumbedPerturbation (update Ha inf 0) (update Hb one 0) one L := by
   rw [plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := zero) (by simp)
-    (by simp) (by simp) hL, ← associativityCenter_of_one_le_comp_finRotate hτ,
-    ← associativityScale_of_one_le_comp_finRotate hτ]
+    (by simp) (by simp) hL, ← associativityCenter_comp_finRotate_of_one_le hτ,
+    ← associativityScale_comp_finRotate_of_one_le hτ]
   -- The two data list the same three input ends in the orders `a, b, c` and `b, c, a`.
   funext w x
   rw [puncturedSpherePerturbation_def, puncturedSpherePerturbation_def]

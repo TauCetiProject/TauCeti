@@ -504,8 +504,8 @@ theorem puncturedSphereAlmostComplex_associativity_of_nonpos {τ L : ℝ} (hτ :
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ (r := one) (by simp) (by simp)
       (by simp) hL hJa hJb hw, almostComplexStructureAt_puncturedSphereAlmostComplex,
-      Floer.associativityCenter_of_nonpos_eq_plumbingMap hτ,
-      Floer.associativityScale_of_nonpos_eq_plumbingFactor hτ]
+      Floer.associativityCenter_eq_plumbingMap_of_nonpos hτ,
+      Floer.associativityScale_eq_plumbingFactor_of_nonpos hτ]
     -- The configurations agree; it remains to match the end structures entry by entry.
     congr 1
     funext i
@@ -546,8 +546,8 @@ theorem puncturedSphereAlmostComplex_associativity_of_one_le {τ L : ℝ} (hτ :
   SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_plumbedAlmostComplex_update_base h₀ (r := zero) (by simp)
       (by simp) (by simp) hL hJa hJb hw, almostComplexStructureAt_puncturedSphereAlmostComplex,
-      Floer.associativityCenter_of_one_le_comp_finRotate hτ,
-      Floer.associativityScale_of_one_le_comp_finRotate hτ]
+      Floer.associativityCenter_comp_finRotate_of_one_le hτ,
+      Floer.associativityScale_comp_finRotate_of_one_le hτ]
     -- The configurations agree; it remains to match the end structures entry by entry.
     congr 1
     funext i
