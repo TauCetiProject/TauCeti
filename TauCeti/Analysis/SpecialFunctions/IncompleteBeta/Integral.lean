@@ -79,7 +79,6 @@ theorem incompleteBeta_def (a b x : ℝ) :
 /-! ## Elementary values -/
 
 /-- At both parameters `1` the integrand is `1`, and `B_x(1, 1) = x`. -/
-@[simp]
 theorem incompleteBeta_one_one : incompleteBeta 1 1 x = x := by
   simp [incompleteBeta_def]
 
