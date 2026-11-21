@@ -177,8 +177,7 @@ theorem range_lieMap_ofSpinContinuousMonoidHom :
         lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom, zero_add] using hsum
     have hp2 : p.2 = 0 := circleLieAlgebraEquiv.injective <|
       (mul_eq_zero.mp hd).resolve_left two_ne_zero |>.trans (map_zero _).symm
-    exact ⟨p.1, (add_zero _).symm.trans <| (congrArg _ (map_zero _).symm).trans <|
-      (congrArg _ (congrArg _ hp2.symm)).trans hp⟩
+    exact ⟨p.1, by simpa [hp2] using hp⟩
 
 /-- Linear-map form of exactness: the linear range of `ofSpin_*` equals `ker(d det)`. -/
 theorem range_lieMap_ofSpinContinuousMonoidHom_toLinearMap :

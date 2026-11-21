@@ -233,11 +233,11 @@ theorem lieMap_comp_inl_injective
     Function.Injective
       (ContinuousMonoidHom.lieMap (I := I) (I' := I'')
         (f.comp (ContinuousMonoidHom.inl G G'))) := by
-  intro X Y hXY
-  have h : ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (X, 0)) =
-      ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (Y, 0)) := by
-    rw [lieMap_prodLieEquiv_symm, lieMap_prodLieEquiv_symm, map_zero, add_zero, add_zero, hXY]
-  exact (Prod.mk.inj (EquivLike.injective prodLieEquiv.symm (hf h))).1
+  rw [ContinuousMonoidHom.lieMap_comp (I := I) (I' := I.prod I') (I'' := I'')
+    (ContinuousMonoidHom.inl G G') f, LieHom.coe_comp]
+  refine hf.comp fun X Y hXY ↦ ?_
+  have h := congrArg (fun D ↦ (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G') D).1) hXY
+  simpa only [prodLieEquiv_continuousMonoidHom_lieMap_inl] using h
 
 /-- If a continuous homomorphism out of `G × G'` has injective Lie map, so does its restriction to
 the second factor. -/
@@ -250,11 +250,11 @@ theorem lieMap_comp_inr_injective
     Function.Injective
       (ContinuousMonoidHom.lieMap (I := I') (I' := I'')
         (f.comp (ContinuousMonoidHom.inr G G'))) := by
-  intro X Y hXY
-  have h : ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (0, X)) =
-      ContinuousMonoidHom.lieMap (I := I.prod I') (I' := I'') f (prodLieEquiv.symm (0, Y)) := by
-    rw [lieMap_prodLieEquiv_symm, lieMap_prodLieEquiv_symm, map_zero, zero_add, zero_add, hXY]
-  exact (Prod.mk.inj (EquivLike.injective prodLieEquiv.symm (hf h))).2
+  rw [ContinuousMonoidHom.lieMap_comp (I := I') (I' := I.prod I') (I'' := I'')
+    (ContinuousMonoidHom.inr G G') f, LieHom.coe_comp]
+  refine hf.comp fun X Y hXY ↦ ?_
+  have h := congrArg (fun D ↦ (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G') D).2) hXY
+  simpa only [prodLieEquiv_continuousMonoidHom_lieMap_inr] using h
 
 /-- The Lie map of a product homomorphism `f.prod g : K →ₜ* G × G'` is bijective if and only if the
 paired Lie map `D ↦ (f.lieMap D, g.lieMap D)` is bijective. -/

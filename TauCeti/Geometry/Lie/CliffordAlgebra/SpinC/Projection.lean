@@ -237,13 +237,12 @@ theorem ker_lieMap_realToSpecialOrthogonalRange_toLinearMap :
     LinearMap.ker (πO).toLinearMap = LinearMap.range (realDetLieLift n hQ) := by
   refine SetLike.ext fun Y ↦ ⟨fun hY ↦ ?_, ?_⟩
   · let p := (realSpinProdDetLinearEquiv n hQ).symm Y
-    have hp := (realSpinProdDetLinearEquiv n hQ).apply_symm_apply Y
+    have hp : realSpinProdDetLinearEquiv n hQ p = Y :=
+      (realSpinProdDetLinearEquiv n hQ).apply_symm_apply Y
     have hp1 : p.1 = 0 := EquivLike.injective (realSpinToSpecialOrthogonalLieEquiv n) <|
       (lieMap_realToSpecialOrthogonalRange_realSpinProdDetLinearEquiv n hQ p).symm.trans <|
         (congrArg (πO) hp).trans (hY.trans (map_zero _).symm)
-    exact ⟨p.2, (zero_add _).symm.trans <| (congrArg (· + _) (map_zero _).symm).trans <|
-      (congrArg (· + _) (congrArg _ hp1.symm)).trans <|
-        (realSpinProdDetLinearEquiv_apply n hQ p).symm.trans hp⟩
+    exact ⟨p.2, by simpa only [realSpinProdDetLinearEquiv_apply, hp1, map_zero, zero_add] using hp⟩
   · rintro ⟨a, rfl⟩
     exact lieMap_realToSpecialOrthogonalRange_realDetLieLift n hQ a
 
