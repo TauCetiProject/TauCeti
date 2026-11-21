@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedAnnulus
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble.Basic
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
 
@@ -359,18 +358,12 @@ theorem doubleTorusMap_injective : Function.Injective (doubleTorusMap r₁ r₂)
       apply doubleTorusConjugation_involutive.injective
       simpa only [doubleTorusMap, DoubleAlong.desc_inr, ContinuousMap.comp_apply] using h
 
-omit hr₁ hr₁₂ in
-private theorem exp_I_mul_arg_of_norm_eq_one (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
-    exp (I * (arg ζ : ℂ)) = ζ := by
-  simpa only [Circle.coe_exp, mul_comm] using
-    congrArg ((↑) : Circle → ℂ)
-      (Circle.exp_arg (⟨ζ, mem_sphere_zero_iff_norm.mpr hζ⟩ : Circle))
-
 private theorem doubleFirstSheet_innerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
     doubleFirstSheet r₁ r₂ ((innerChart ζ hζ).symm w) =
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ) ((arg ζ : ℂ) - w) := by
-  have heζ : exp (I * (arg ζ : ℂ)) = ζ := exp_I_mul_arg_of_norm_eq_one ζ hζ
+  have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
+    simpa only [hζ, Complex.ofReal_one, mul_one, mul_comm] using norm_mul_exp_arg_mul_I ζ
   rw [doubleFirstSheet_apply, ← doubleLog]
   apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq
     two_pi_mem_doublePeriodLattice
@@ -383,7 +376,8 @@ private theorem doubleFirstSheet_outerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     doubleFirstSheet r₁ r₂ ((outerChart ζ hζ).symm w) =
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ)
         ((arg ζ : ℂ) + w - I * Real.log (r₂ / r₁)) := by
-  have heζ : exp (I * (arg ζ : ℂ)) = ζ := exp_I_mul_arg_of_norm_eq_one ζ hζ
+  have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
+    simpa only [hζ, Complex.ofReal_one, mul_one, mul_comm] using norm_mul_exp_arg_mul_I ζ
   rw [doubleFirstSheet_apply, ← doubleLog]
   apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq
     two_pi_mem_doublePeriodLattice
