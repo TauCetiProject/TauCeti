@@ -121,7 +121,8 @@ morphisms `γ i : T i ⟶ X` whose images together are dense, then `f = g`.
 
 This generalizes `AlgebraicGeometry.ext_of_fromSpecResidueField_eq`, which tests on the canonical
 residue-field points: here the test points may be arbitrary, for instance rational points
-`Spec k ⟶ X` of a scheme over a field `k`. -/
+`Spec k ⟶ X` of a scheme over a field `k`. The proof adapts that of
+`AlgebraicGeometry.ext_of_fromSpecResidueField_eq` in Mathlib. -/
 theorem ext_of_dense_iUnion_range_of_isSeparated [IsReduced X] {f g : X ⟶ Y} (s : Y ⟶ Z)
     [IsSeparated s] (h : f ≫ s = g ≫ s) {ι : Type*} {T : ι → Scheme.{u}} (γ : ∀ i, T i ⟶ X)
     (hγ : Dense (⋃ i, Set.range (γ i))) (hfg : ∀ i, γ i ≫ f = γ i ≫ g) : f = g := by
