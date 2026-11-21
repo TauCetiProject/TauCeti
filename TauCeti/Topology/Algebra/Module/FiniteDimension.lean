@@ -76,6 +76,11 @@ vector space is surjective, since its range is finite-dimensional and therefore 
 topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
 and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
 
+A linear map `Λ` vanishing on the kernel of a continuous linear map `J` into a finite-dimensional
+Hausdorff topological vector space is continuous, since it factors through the finite-dimensional
+range of `J`: `LinearMap.continuous_of_ker_le_ker`. No topological assumption on the domain is
+needed.
+
 An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
@@ -346,6 +351,33 @@ theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
     Function.Surjective f := fun y ↦
   LinearMap.mem_range.mp <| (LinearMap.range f).isClosed_of_finiteDimensional.closure_subset_iff.mpr
     (LinearMap.coe_range f).ge (hf y)
+
+end LinearMap
+
+namespace LinearMap
+
+variable {𝕜 X F G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup X] [Module 𝕜 X] [TopologicalSpace X]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [Module 𝕜 G]
+  [ContinuousSMul 𝕜 G]
+
+/-- **A linear map vanishing on the kernel of a continuous finite-rank map is continuous.** If
+`J` is continuous into a finite-dimensional Hausdorff topological vector space and `Λ` vanishes on
+the kernel of `J`, then `Λ` factors through the finite-dimensional range of `J`, hence is
+continuous. -/
+theorem continuous_of_ker_le_ker {J : X →ₗ[𝕜] F} {Λ : X →ₗ[𝕜] G} (hJ : Continuous J)
+    (h : ker J ≤ ker Λ) : Continuous Λ := by
+  let L : range J →ₗ[𝕜] G := (ker J).liftQ Λ h ∘ₗ J.quotKerEquivRange.symm.toLinearMap
+  have hΛ : ⇑Λ = L ∘ J.rangeRestrict := by
+    ext x
+    have hx : J.quotKerEquivRange.symm (J.rangeRestrict x) = Submodule.Quotient.mk x := by
+      rw [LinearEquiv.symm_apply_eq]
+      exact Subtype.ext (J.quotKerEquivRange_apply_mk x).symm
+    simp [L, hx]
+  rw [hΛ]
+  exact L.continuous_of_finiteDimensional.comp (hJ.subtype_mk _)
 
 end LinearMap
 

@@ -45,6 +45,8 @@ conjugating the coordinates exchanges them.
   is Lagrangian for the standard area form.
 * `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule`: area paired with multiplication
   by `I` is the norm square.
+* `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule_eq_inner`: the metric `ω(·, I ·)` of
+  the standard triple is the real inner product.
 * `TauCeti.stdComplexSymplecticForm_smul_sub_smul`: a real-linear map `v ↦ α v - β ⟪z, v⟫ z`
   scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
@@ -64,6 +66,7 @@ public section
 namespace TauCeti
 
 open Complex Module
+open scoped InnerProductSpace
 
 /-- The standard symplectic area form on `ℂ`, transported from the standard form on `ℝ × ℝ`. -/
 noncomputable def stdComplexSymplecticForm : SymplecticForm ℂ :=
@@ -170,7 +173,12 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
     Complex.normSq_apply]
 
-open scoped InnerProductSpace in
+/-- The metric `ω(·, I ·)` of the standard compatible triple on `ℂ` is the real inner product. -/
+theorem stdComplexSymplecticForm_apply_ofComplexModule_eq_inner (v w : ℂ) :
+    stdComplexSymplecticForm v (AlmostComplexStructure.ofComplexModule ℂ w) = ⟪v, w⟫_ℝ := by
+  simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply, Complex.inner]
+  ring
+
 /-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
 `α (α - β |z|²)`. -/
 theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :

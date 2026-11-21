@@ -53,6 +53,10 @@ additive under the concatenation `GenLoop.transAt 0` that defines the product of
 because a frame along the concatenation restricts to frames along both halves
 (`TauCeti.clutchingNumber_transAt`).
 
+A family of complex-linear isomorphisms `E x ≃ E' x`, continuous on total spaces, carries frames
+of `E` to frames of `E'` and changes the clutching function only by conjugation, so isomorphic
+bundles have the same clutching numbers (`TauCeti.clutchingNumber_eq_of_continuousLinearEquiv`).
+
 The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
 made a complex vector bundle by
 `TauCeti.ContMDiffAlmostComplexStructure.toContinuousComplexStructure`; this gives the clutching
@@ -71,6 +75,9 @@ number of the almost complex tangent bundle on spheres.
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
 * `TauCeti.clutchingNumber_transAt`: additivity under concatenation.
+* `TauCeti.clutchingNumber_eq_of_continuousLinearEquiv`,
+  `TauCeti.clutchingNumberHom_eq_of_continuousLinearEquiv`: invariance under isomorphisms of
+  complex vector bundles.
 
 ## References
 
@@ -347,5 +354,72 @@ theorem clutchingNumberHom_apply_mk (p : Ω^ (Fin 2) X x) :
   (rfl)
 
 end ClutchingNumber
+
+/-! ### Isomorphic bundles -/
+
+section Equiv
+
+variable [VectorBundle ℂ F E] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul ℂ (E x)]
+  [FiniteDimensional ℂ F] {x : X}
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+  {E' : X → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module ℂ (E' x)]
+  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E']
+  [VectorBundle ℂ F' E'] [∀ x, IsTopologicalAddGroup (E' x)] [∀ x, ContinuousSMul ℂ (E' x)]
+
+/-- The finite-dimensional model fibre is complete, as `TauCeti.exists_continuous_frame` needs. -/
+private local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
+
+/-- **Isomorphic bundles have the same clutching numbers.** If `Φ x : E x ≃ E' x` is a family of
+complex-linear isomorphisms that is continuous on total spaces, then `E` and `E'` have the same
+clutching number on every sphere. The model fibres `F` and `F'` may differ. -/
+theorem clutchingNumber_eq_of_continuousLinearEquiv (Φ : ∀ x, E x ≃L[ℂ] E' x)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.snd))
+    (p : Ω^ (Fin 2) X x) : clutchingNumber F' E' p = clutchingNumber F E p := by
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
+  set e := trivializationAt F E x
+  set e' := trivializationAt F' E' x
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
+  have hx' : x ∈ e'.baseSet := mem_baseSet_trivializationAt F' E' x
+  -- The model fibres are identified through the fibres over the base point, and `Φ` carries the
+  -- frame `φ` of `E` to a frame `ψ` of `E'`.
+  let L : F' ≃L[ℂ] F := (e'.continuousLinearEquivAt ℂ x hx').symm.trans
+    ((Φ x).symm.trans (e.continuousLinearEquivAt ℂ x hx))
+  let ψ : ∀ y, F' ≃L[ℂ] E' (p y) := fun y ↦ L.trans ((φ y).trans (Φ (p y)))
+  have hψ : Continuous fun q : (Fin 2 → I) × F' ↦ TotalSpace.mk' F' (p q.1) (ψ q.1 q.2) :=
+    hΦ.comp (hφ.comp (continuous_fst.prodMk (L.continuous.comp continuous_snd)))
+  -- Over the base point, `Φ` read in the two trivializations is `L⁻¹` read in `e`.
+  have hΦx : ∀ z, z = x → ∀ (h : z ∈ e.baseSet) (h' : z ∈ e'.baseSet),
+      (Φ z).trans (e'.continuousLinearEquivAt ℂ z h') =
+        (e.continuousLinearEquivAt ℂ z h).trans L.symm := by
+    rintro z rfl h h'
+    ext v
+    simp [L, e.symm_apply_apply_mk h]
+  rw [clutchingNumber_eq_squareBoundaryDegree p e' hx' hψ,
+    clutchingNumber_eq_squareBoundaryDegree p e hx hφ]
+  refine squareBoundaryDegree_congr fun y hy ↦ ?_
+  have hpy : p y = x := GenLoop.boundary p y hy
+  have h : p y ∈ e.baseSet := mem_of_eq_of_mem hpy hx
+  have h' : p y ∈ e'.baseSet := mem_of_eq_of_mem hpy hx'
+  -- On the boundary, the transition of `ψ` in `e'` is that of `φ` in `e`, conjugated by `L`.
+  have hconj : (ψ y).trans (e'.continuousLinearEquivAt ℂ (p y) h') =
+      L.trans (((φ y).trans (e.continuousLinearEquivAt ℂ (p y) h)).trans L.symm) := by
+    ext v
+    simpa [ψ] using congrArg (fun T : E (p y) ≃L[ℂ] F' ↦ T (φ y (L v))) (hΦx (p y) hpy h h')
+  rw [clutchingFunction_of_mem h', clutchingFunction_of_mem h, hconj,
+    ContinuousLinearEquiv.normalizedDet_trans_trans_symm]
+
+/-- **Isomorphic bundles have the same clutching number homomorphisms**: the clutching number
+homomorphisms of `E` and `E'` agree, for any family of complex-linear isomorphisms
+`Φ x : E x ≃ E' x` that is continuous on total spaces. -/
+theorem clutchingNumberHom_eq_of_continuousLinearEquiv (Φ : ∀ x, E x ≃L[ℂ] E' x)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.snd)) (x : X) :
+    clutchingNumberHom F' E' x = clutchingNumberHom F E x := by
+  ext a
+  induction a using Additive.rec with
+  | ofMul a =>
+    induction a using Quotient.inductionOn with
+    | h p => exact clutchingNumber_eq_of_continuousLinearEquiv Φ hΦ p
+
+end Equiv
 
 end TauCeti
