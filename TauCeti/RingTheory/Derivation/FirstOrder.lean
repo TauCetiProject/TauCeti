@@ -24,6 +24,15 @@ first-order differential operators on scalar functions; no continuity assumption
   by the value at one.
 * `TauCeti.firstOrderOperatorsEquivDerivationProd` identifies the module of these endomorphisms
   with `Derivation R A A × A`.
+
+The basic first-order endomorphisms are the derivations and the multiplication operators, and
+their commutator is again a multiplication: `⁅δ, a⁆ = δ(a)` (`Derivation.lie_mulLeft`).
+Conjugating a derivation `δ` by a unit `u` gives the first-order endomorphism
+`u ∘ δ ∘ u⁻¹ = δ - u⁻¹ δ(u)` (`Derivation.mulLeft_mul_mul_mulLeft_inv`), so the powers of
+`δ - u⁻¹ δ(u)` are the conjugates of those of `δ` (`Derivation.sub_mulLeft_inv_mul_pow`); the
+unit `u` is killed by `δ - a` exactly when `a = u⁻¹ δ(u)`
+(`Derivation.sub_mulLeft_apply_eq_zero_iff`). These are the gauge computations for rank-one
+connections `δ + a` on `A`.
 -/
 
 public section
@@ -115,6 +124,36 @@ theorem lie_mulLeft (δ : Derivation R A A) (a : A) :
   ext b
   rw [LinearMap.lie_mulLeft_apply]
   simp [smul_eq_mul, mul_comm]
+
+/-- **Conjugating a derivation by a unit.** Conjugating `δ` by multiplication by a unit `u`
+subtracts multiplication by the logarithmic derivative `u⁻¹ * δ u`: `u ∘ δ ∘ u⁻¹ = δ - u⁻¹ δ(u)`.
+-/
+theorem mulLeft_mul_mul_mulLeft_inv (δ : Derivation R A A) (u : Aˣ) :
+    LinearMap.mulLeft R (u : A) * δ.toLinearMap * LinearMap.mulLeft R (↑u⁻¹ : A) =
+      δ.toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * δ u) := by
+  ext b
+  have h : δ (↑u⁻¹ * u) = 0 := by rw [u.inv_mul, map_one_eq_zero]
+  rw [leibniz, smul_eq_mul, smul_eq_mul] at h
+  simp only [mul_apply_eq_comp, LinearMap.mulLeft_apply, coeFn_coe, leibniz, smul_eq_mul,
+    LinearMap.sub_apply]
+  linear_combination δ b * u.mul_inv + b * h
+
+/-- The powers of `δ - u⁻¹ δ(u)` are the conjugates of the powers of `δ` by multiplication by `u`,
+in every characteristic. -/
+theorem sub_mulLeft_inv_mul_pow (δ : Derivation R A A) (u : Aˣ) (n : ℕ) :
+    (δ.toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * δ u)) ^ n =
+      LinearMap.mulLeft R (u : A) * δ.toLinearMap ^ n * LinearMap.mulLeft R (↑u⁻¹ : A) := by
+  rw [← mulLeft_mul_mul_mulLeft_inv]
+  let U : (Module.End R A)ˣ :=
+    ⟨LinearMap.mulLeft R (u : A), LinearMap.mulLeft R (↑u⁻¹ : A), by ext; simp, by ext; simp⟩
+  exact U.conj_pow δ.toLinearMap n
+
+/-- **Horizontal units.** A unit `u` is killed by `δ - a` exactly when `a` is the logarithmic
+derivative `u⁻¹ * δ u`. -/
+theorem sub_mulLeft_apply_eq_zero_iff (δ : Derivation R A A) (a : A) (u : Aˣ) :
+    (δ.toLinearMap - LinearMap.mulLeft R a) u = 0 ↔ a = ↑u⁻¹ * δ u := by
+  rw [LinearMap.sub_apply, LinearMap.mulLeft_apply, coeFn_coe, sub_eq_zero, eq_comm,
+    Units.eq_inv_mul_iff_mul_eq, mul_comm]
 
 end Derivation
 
