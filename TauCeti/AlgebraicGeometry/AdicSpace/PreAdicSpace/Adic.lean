@@ -36,7 +36,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 
 * `TauCeti.PreAdicSpace.isAdic`: the adic spaces among the objects of `𝒱^pre`.
 * `TauCeti.AdicSpace`: Wedhorn's category `(Adic)`, the full subcategory of `𝒱^pre` of adic
-  spaces.
+  spaces, with `TauCeti.AdicSpace.liftOfIsOpenImmersion` factoring morphisms through open
+  immersions.
 * `TauCeti.AdicSpace.restrict`, `TauCeti.AdicSpace.ofRestrict`,
   `TauCeti.AdicSpace.restrictPreimage`, `TauCeti.AdicSpace.liftRestrict`: open adic subspaces
   `X.restrict U`, their canonical open immersions `X.ofRestrict U`, and restrictions of morphisms
@@ -72,6 +73,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   `Spa(A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
   for the rational localisation as a pair.
+* `TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair`: rational localisation
+  preserves `TauCeti.Huber.IsSheafyForEveryPresentation`.
 
 ## References
 
@@ -252,6 +255,11 @@ theorem isAdic_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isAdic X) (f : Y 
     [IsOpenImmersion f] : isAdic Y :=
   ⟨isSheafy_of_isOpenImmersion hX.1 f, isLocallyAffinoid_of_isOpenImmersion hX.2 f⟩
 
+/-- **Every morphism of sheafy pre-adic spaces out of an empty space is an open immersion.** -/
+theorem isOpenImmersion_of_isEmpty {X Y : PreAdicSpace.{u}} (f : Y ⟶ X) [IsEmpty Y]
+    (hY : isSheafy Y) (hX : isSheafy X) : IsOpenImmersion f :=
+  AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isOpenImmersion_of_isEmpty f.toHom hY hX
+
 end PreAdicSpace
 
 /-- Wedhorn's category `(Adic)` of adic spaces: the full subcategory of `𝒱^pre` whose objects are
@@ -259,14 +267,24 @@ the sheafy locally affinoid objects (`PreAdicSpace.isAdic`). -/
 abbrev AdicSpace : Type (u + 1) :=
   PreAdicSpace.isAdic.{u}.FullSubcategory
 
-/-- Adic spaces are objects of `𝒱`: the full inclusion of `(Adic)` into the category of sheafy
-pre-adic spaces. -/
-abbrev AdicSpace.toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
-  ObjectProperty.ιOfLE PreAdicSpace.isAdic_le_isSheafy
-
 namespace AdicSpace
 
-variable {X Y : AdicSpace.{u}}
+/-- Adic spaces are objects of `𝒱`: the full inclusion of `(Adic)` into the category of sheafy
+pre-adic spaces. -/
+abbrev toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
+  ObjectProperty.ιOfLE PreAdicSpace.isAdic_le_isSheafy
+
+variable {X Y Z : AdicSpace.{u}}
+
+/-- `ObjectProperty.homMk` preserves open immersions of underlying pre-adic spaces. -/
+instance isOpenImmersion_homMk (m : X.obj ⟶ Y.obj) [PreAdicSpace.IsOpenImmersion m] :
+    PreAdicSpace.IsOpenImmersion (ObjectProperty.homMk m : X ⟶ Y).hom :=
+  inferInstanceAs (PreAdicSpace.IsOpenImmersion m)
+
+/-- Every morphism in `AdicSpace` out of an empty adic space is an open immersion. -/
+instance (priority := 100) isOpenImmersion_of_isEmpty (f : Y ⟶ X) [IsEmpty Y.obj] :
+    PreAdicSpace.IsOpenImmersion f.hom :=
+  PreAdicSpace.isOpenImmersion_of_isEmpty f.hom Y.property.isSheafy X.property.isSheafy
 
 /-- The open subspace `X|_U` of an adic space `X` associated to an open `U : Opens X.obj`, packaged
 as an object of `AdicSpace`. Marked `abbrev` so `(X.restrict U).obj` reduces definitionally to
@@ -306,6 +324,34 @@ instance (X : AdicSpace.{u}) (U : Opens X.obj) :
 a monomorphism in `AdicSpace`. -/
 instance mono_of_isOpenImmersion (i : X ⟶ Y) [PreAdicSpace.IsOpenImmersion i.hom] : Mono i :=
   (ObjectProperty.ι PreAdicSpace.isAdic).mono_of_mono_map (inferInstanceAs (Mono i.hom))
+
+section LiftOfIsOpenImmersion
+
+variable (f : X ⟶ Z) [PreAdicSpace.IsOpenImmersion f.hom] (g : Y ⟶ Z)
+  (H : Set.range g.hom.base ⊆ Set.range f.hom.base)
+
+/-- **Factorization through an open immersion in `AdicSpace`**: a morphism `g : Y ⟶ Z` whose image
+lies in the image of an open immersion `f : X ⟶ Z` lifts uniquely (`liftOfIsOpenImmersion_uniq`) to
+`Y ⟶ X` (`liftOfIsOpenImmersion_fac`). -/
+noncomputable def liftOfIsOpenImmersion : Y ⟶ X :=
+  ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H)
+
+/-- The underlying morphism of `liftOfIsOpenImmersion` is `PreAdicSpace.IsOpenImmersion.lift`. -/
+@[simp]
+theorem liftOfIsOpenImmersion_hom :
+    (liftOfIsOpenImmersion f g H).hom = PreAdicSpace.IsOpenImmersion.lift f.hom g.hom H := (rfl)
+
+/-- Composing `liftOfIsOpenImmersion` with the open immersion recovers the original morphism. -/
+@[reassoc (attr := simp)]
+theorem liftOfIsOpenImmersion_fac : liftOfIsOpenImmersion f g H ≫ f = g :=
+  InducedCategory.Hom.ext (PreAdicSpace.IsOpenImmersion.lift_fac f.hom g.hom H)
+
+/-- The factorization through an open immersion in `AdicSpace` is unique. -/
+theorem liftOfIsOpenImmersion_uniq (l : Y ⟶ X) (hl : l ≫ f = g) :
+    l = liftOfIsOpenImmersion f g H := by
+  rw [← cancel_mono f, hl, liftOfIsOpenImmersion_fac]
+
+end LiftOfIsOpenImmersion
 
 /-- The restriction `X|_{f⁻¹(V)} ⟶ Y|_V` of a morphism `f : X ⟶ Y` of adic spaces over an open
 `V : Opens Y.obj`. -/
@@ -454,6 +500,26 @@ theorem isSheaf_presentationLimitPresheaf_rationalLocalizationPair {A : Type u}
   rw [rationalLocalizationPair_plus]
   exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
     U.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheaf
+
+/-- Rational localisation preserves `TauCeti.Huber.IsSheafyForEveryPresentation`. -/
+theorem _root_.TauCeti.Huber.isSheafyForEveryPresentation_rationalLocalizationPair {A : Type u}
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] (P : PairOfDefinition A)
+    (S : Pair A) (hP : P.ringOfDefinition ≤ S.plus) (T : Finset A) (s : A) (L : Type u)
+    [CommRing L] [Algebra A L] [IsLocalization.Away s L] (hden : P.HasDenominatorPower T s L)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (hS : IsSheafyForEveryPresentation S.plus) :
+    letI := P.locUniformSpace T s L hden
+    haveI := P.isUniformAddGroup_locUniformSpace T s L hden
+    haveI := P.isTopologicalRing_locUniformSpace T s L hden
+    haveI := P.isHuberRing_completion_locTopology T s L hden
+    IsSheafyForEveryPresentation (P.rationalLocalizationPair S hP T s L hden).plus :=
+  letI := P.locUniformSpace T s L hden
+  haveI := P.isUniformAddGroup_locUniformSpace T s L hden
+  haveI := P.isTopologicalRing_locUniformSpace T s L hden
+  haveI := P.isHuberRing_completion_locTopology T s L hden
+  (isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf _).mpr
+    ⟨(P.rationalLocalizationPair S hP T s L hden).isRingOfIntegralElements,
+      isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hP T s L hden hT
+        (hS.isSheaf P hP)⟩
 
 /-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
 complete, Hausdorff, or Tate. -/

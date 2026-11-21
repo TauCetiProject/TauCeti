@@ -13,11 +13,12 @@ public import TauCeti.RingTheory.Idempotents.BaseChange
 # Étale algebras and idempotent decompositions
 
 Idempotents split an algebra into a product of its clopen components. This file records that
-étaleness is compatible with both directions of such a splitting: a binary product of étale
-algebras is étale (`TauCeti.Algebra.Etale.prod`), and the quotient of an étale algebra by an
-idempotent, which is the complementary component, is étale
-(`TauCeti.Algebra.Etale.quotient_span_singleton`). Mathlib supplies the finite products
-`Π i, A i` indexed by a type; the binary product `A × B` is reduced to these.
+étaleness is compatible with both directions of such a splitting: any subsingleton algebra is étale
+(`TauCeti.Algebra.Etale.of_subsingleton`), a binary product of étale algebras is étale
+(`TauCeti.Algebra.Etale.prod`), and the quotient of an étale algebra by an idempotent, which is the
+complementary component, is étale (`TauCeti.Algebra.Etale.quotient_span_singleton`). Mathlib
+supplies the finite products `Π i, A i` indexed by a type; the binary product `A × B` is reduced to
+these.
 
 Idempotents of the base split it in the same way, and étaleness is local for such a splitting: an
 algebra is étale if its base change to every component of a complete orthogonal family of
@@ -102,5 +103,14 @@ theorem of_completeOrthogonalIdempotents {T X : Type*} [CommRing T] [CommRing X]
     have := h i
     exact Algebra.Etale.comp T (T ⧸ Ideal.span {1 - f i}) _
   exact .of_equiv (hf.tensorProductEquiv X).symm
+
+/-- Every subsingleton `R`-algebra is étale. -/
+instance (priority := 100) of_subsingleton {B : Type v} [CommRing B] [Algebra R B]
+    [Subsingleton B] : Algebra.Etale R B :=
+  have : IsLocalization.Away (0 : R) B :=
+    { map_units := fun _ ↦ isUnit_of_subsingleton _
+      surj := fun _ ↦ ⟨(0, 1), Subsingleton.elim _ _⟩
+      exists_of_eq := fun _ ↦ ⟨⟨0, 1, pow_one 0⟩, by simp⟩ }
+  .of_isLocalizationAway (0 : R)
 
 end TauCeti.Algebra.Etale

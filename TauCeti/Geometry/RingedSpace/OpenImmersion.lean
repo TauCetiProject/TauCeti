@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.RingedSpace.OpenImmersion
 public import TauCeti.Topology.Sheaves.Functors
+import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
 /-!
 # Open immersions of presheafed and locally ringed spaces
@@ -27,6 +28,10 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
   `f x`.
 * `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq`: the sources of two
   open immersions with the same range satisfy the sheaf condition together.
+* `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
+  immersion through an open immersion gives an open immersion.
+* `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isOpenImmersion_of_isEmpty`: every morphism of
+  sheafy presheafed spaces out of an empty space is an open immersion.
 * `AlgebraicGeometry.LocallyRingedSpace.range_iso_inv_comp`: precomposing a morphism of locally
   ringed spaces with an isomorphism does not change its image.
 * `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
@@ -63,6 +68,28 @@ theorem isSheaf_iff_of_range_eq {X Y Z : PresheafedSpace C} (f : X ⟶ Z) [IsOpe
     X.presheaf.IsSheaf ↔ Y.presheaf.IsSheaf :=
   (TopCat.Presheaf.isSheaf_iff_of_iso_pushforward ((forget C).mapIso (isoOfRangeEq f g e))
     (sheafIsoOfIso (isoOfRangeEq f g e))).symm
+
+/-- The lift of an open immersion through an open immersion is an open immersion. -/
+instance isOpenImmersion_lift {X Y Z : PresheafedSpace C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [IsOpenImmersion f] [IsOpenImmersion g]
+    (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (lift f g H) := by
+  have := pullback_snd_isIso_of_range_subset f g H
+  dsimp only [lift]
+  infer_instance
+
+/-- **Every morphism of sheafy presheafed spaces out of an empty space is an open immersion.** -/
+theorem isOpenImmersion_of_isEmpty {X Y : PresheafedSpace C} (f : Y ⟶ X) [IsEmpty Y]
+    (hY : Y.presheaf.IsSheaf) (hX : X.presheaf.IsSheaf) : IsOpenImmersion f := by
+  have hopen : Topology.IsOpenEmbedding f.base := Topology.IsOpenEmbedding.of_isEmpty f.base
+  refine ⟨hopen, fun U ↦ ?_⟩
+  have hmapU : (TopologicalSpace.Opens.map f.base).obj (hopen.functor.obj U) = ⊥ :=
+    Subsingleton.elim _ ⊥
+  have himgU : hopen.functor.obj U = ⊥ := by
+    ext x
+    exact ⟨fun ⟨y, _, _⟩ ↦ IsEmpty.false y, False.elim⟩
+  have hTY := TopCat.Sheaf.isTerminalOfEqEmpty ⟨Y.presheaf, hY⟩ hmapU
+  have hTX := TopCat.Sheaf.isTerminalOfEqEmpty ⟨X.presheaf, hX⟩ himgU
+  exact ⟨hTX.from _, hTX.hom_ext _ _, hTY.hom_ext _ _⟩
 
 end IsOpenImmersion
 
