@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Positive-definite functions on groups and unitary representations
@@ -226,39 +227,22 @@ theorem tendsto_inner_gnsRepresentation_of_tendsto_mul {ι : Type*} {l : Filter 
     | zero => simpa using tendsto_const_nhds
     | add _ _ _ _ h₁ h₂ => simpa [inner_add_left] using h₁.add h₂
     | smul c _ _ h => simpa [inner_smul_left] using h.const_mul (conj c)
-  -- A function uniformly approximated by functions tending to `0` along `l` also tends to `0`.
-  have hlim (f : ι → 𝕜) (hf : ∀ ε > 0, ∃ f' : ι → 𝕜,
-      Tendsto f' l (𝓝 0) ∧ ∀ i, ‖f i - f' i‖ < ε) : Tendsto f l (𝓝 0) := by
-    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-    obtain ⟨f', hf', hclose⟩ := hf (ε / 2) (half_pos hε)
-    filter_upwards [Metric.tendsto_nhds.mp hf' (ε / 2) (half_pos hε)] with i hi
-    rw [dist_zero_right] at hi ⊢
-    linarith [norm_sub_norm_le (f i) (f' i), hclose i]
-  have hdense (z : hφ.gnsSpace) {δ : ℝ} (hδ : 0 < δ) : ∃ z' ∈ S, ‖z - z'‖ < δ := by
-    have hz : z ∈ closure (S : Set hφ.gnsSpace) := by
-      rw [← Submodule.topologicalClosure_coe, hφ.gnsVector_dense]
-      trivial
-    simpa only [dist_eq_norm, SetLike.mem_coe] using Metric.mem_closure_iff.mp hz δ hδ
   have hπ := hφ.isUnitary_gnsRepresentation
-  -- Approximate `x` and then `y` by elements of `S`, using `‖⟪u, π (s i) v⟫‖ ≤ ‖u‖ * ‖v‖`.
+  have hD : Dense (S : Set hφ.gnsSpace) := hφ.dense_span_range_gnsVector
   have hS' : ∀ y ∈ S, Tendsto (fun i ↦ ⟪x, hφ.gnsRepresentation (s i) y⟫_𝕜) l (𝓝 0) := by
     intro y hy
-    refine hlim _ fun ε hε ↦ ?_
-    obtain ⟨x', hx', hxx'⟩ := hdense x (div_pos hε (by positivity : (0 : ℝ) < ‖y‖ + 1))
-    refine ⟨_, hS x' hx' y hy, fun i ↦ ?_⟩
-    rw [← inner_sub_left]
-    have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖y‖ + 1)).mp hxx'
-    calc ‖⟪x - x', hφ.gnsRepresentation (s i) y⟫_𝕜‖
-        ≤ ‖x - x'‖ * ‖hφ.gnsRepresentation (s i) y‖ := norm_inner_le_norm _ _
-      _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (x - x')]
-  refine hlim _ fun ε hε ↦ ?_
-  obtain ⟨y', hy', hyy'⟩ := hdense y (div_pos hε (by positivity : (0 : ℝ) < ‖x‖ + 1))
-  refine ⟨_, hS' y' hy', fun i ↦ ?_⟩
-  rw [← inner_sub_right, ← map_sub]
-  have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖x‖ + 1)).mp hyy'
-  calc ‖⟪x, hφ.gnsRepresentation (s i) (y - y')⟫_𝕜‖
-      ≤ ‖x‖ * ‖hφ.gnsRepresentation (s i) (y - y')‖ := norm_inner_le_norm _ _
-    _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (y - y'), norm_nonneg x]
+    let f : ι → hφ.gnsSpace →L⋆[𝕜] 𝕜 := fun i ↦ innerSLFlip 𝕜 (hφ.gnsRepresentation (s i) y)
+    have hbound : ∀ᶠ i in l, ‖f i‖ ≤ ‖y‖ := Eventually.of_forall fun i ↦
+      (f i).opNorm_le_bound (norm_nonneg y) fun u ↦ by
+        simpa [f, hπ.norm_map, mul_comm] using norm_inner_le_norm u (hφ.gnsRepresentation (s i) y)
+    simpa [f] using ContinuousLinearMap.tendsto_apply_of_dense (g := 0) hD hbound
+      (fun u hu ↦ by simpa [f] using hS u hu y hy) x
+  let f : ι → hφ.gnsSpace →L[𝕜] 𝕜 := fun i ↦ (innerSL 𝕜 x).comp (hφ.gnsRepresentation (s i))
+  have hbound : ∀ᶠ i in l, ‖f i‖ ≤ ‖x‖ := Eventually.of_forall fun i ↦
+    (f i).opNorm_le_bound (norm_nonneg x) fun v ↦ by
+      simpa [f, hπ.norm_map] using norm_inner_le_norm x (hφ.gnsRepresentation (s i) v)
+  simpa [f] using ContinuousLinearMap.tendsto_apply_of_dense (g := 0) hD hbound
+    (fun v hv ↦ by simpa [f] using hS' v hv) y
 
 /-- If all double translates `i ↦ φ (a⁻¹ * s i * b)` converge to `0` along a nontrivial filter `l`,
 then any vector in the GNS space fixed eventually by `gnsRepresentation (s i)` is zero. -/

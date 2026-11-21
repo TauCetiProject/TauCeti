@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Order.Filter.Cofinite.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
-import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 
 /-!
 # Restriction, limits, zero extension and induction of positive-definite functions
@@ -47,8 +46,6 @@ permanence of the Haagerup property under increasing unions and finite-index ove
 * `Matrix.PosSemidef.norm_apply_le_one`, `Matrix.PosSemidef.one_sub_re_nonneg`,
   `Matrix.PosSemidef.norm_sub_one_sq_le`: norm and real-part bounds for normalized positive-definite
   functions.
-* `Matrix.PosSemidef.sqrt_re_one_sub_re_mul_le`: subadditivity (triangle inequality) of
-  `g ↦ √(re (φ 1) - re (φ g))` for positive-definite functions on a group.
 * `Matrix.PosSemidef.comp_monoidHom`: restriction along a group homomorphism.
 * `TauCeti.posSemidef_inv_mul_of_tendsto`: pointwise limits.
 * `Matrix.PosSemidef.extend_subtype`: extension by zero from a subgroup.
@@ -108,30 +105,6 @@ theorem norm_sub_one_sq_le {φ : G → 𝕜} (hφ : (of fun g h : G ↦ φ (g⁻
   rw [← RCLike.normSq_eq_def', RCLike.normSq_apply]
   simp only [map_sub, RCLike.one_re, RCLike.one_im, sub_zero]
   nlinarith
-
-/-- **Triangle inequality for positive-definite functions.** For any positive-definite function
-`φ : G → 𝕜`, `g ↦ √(re (φ 1) - re (φ g))` is subadditive:
-`√(re (φ 1) - re (φ (g * h))) ≤ √(re (φ 1) - re (φ g)) + √(re (φ 1) - re (φ h))`. -/
-theorem sqrt_re_one_sub_re_mul_le {φ : G → 𝕜}
-    (hφ : (of fun x y : G ↦ φ (x⁻¹ * y)).PosSemidef) (g h : G) :
-    Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (g * h))) ≤
-      Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ g)) +
-        Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ h)) := by
-  have hdist (a b : G) :
-      dist (hφ.kolmogorovFeature a) (hφ.kolmogorovFeature b) =
-        Real.sqrt 2 * Real.sqrt (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by
-    rw [dist_eq_norm, ← Real.sqrt_sq (norm_nonneg _), hφ.norm_kolmogorovFeature_sub_sq a b]
-    simp only [of_apply, inv_mul_cancel]
-    have hmul :
-        RCLike.re (φ 1) - 2 * RCLike.re (φ (a⁻¹ * b)) + RCLike.re (φ 1) =
-          2 * (RCLike.re (φ 1) - RCLike.re (φ (a⁻¹ * b))) := by ring
-    rw [hmul, Real.sqrt_mul (by norm_num)]
-  have htri := dist_triangle (hφ.kolmogorovFeature 1) (hφ.kolmogorovFeature g)
-    (hφ.kolmogorovFeature (g * h))
-  rw [hdist 1 (g * h), hdist 1 g, hdist g (g * h)] at htri
-  simp only [inv_one, one_mul, inv_mul_cancel_left] at htri
-  rw [← mul_add] at htri
-  exact le_of_mul_le_mul_left htri (by positivity)
 
 /-- The restriction of a positive-definite function on `G` along a group homomorphism `f : K →* G`
 is positive definite. In particular, the restriction to a subgroup is positive definite. -/

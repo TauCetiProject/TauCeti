@@ -10,8 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import Mathlib.Analysis.Convex.Topology
-import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
-import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 /-!
 # The Alaoglu–Birkhoff orbit projection for unitary representations
@@ -60,24 +58,24 @@ section ConvexHull
 variable [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
 
 /-- Each operator of a representation maps the closed convex hull of an orbit into itself. -/
-private theorem mapsTo_closure_convexHull_orbit (ρ : ContRepresentation 𝕜 M V) (v : V) (m : M) :
-    Set.MapsTo (ρ m) (closure (convexHull ℝ (Set.range fun n : M ↦ ρ n v)))
-      (closure (convexHull ℝ (Set.range fun n : M ↦ ρ n v))) := by
-  let C := closure (convexHull ℝ (Set.range fun n : M ↦ ρ n v))
+private theorem mapsTo_closedConvexHull_orbit (ρ : ContRepresentation 𝕜 M V) (v : V) (m : M) :
+    Set.MapsTo (ρ m) (closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v))
+      (closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v)) := by
+  let C := closedConvexHull ℝ (Set.range fun n : M ↦ ρ n v)
   have hconv : Convex ℝ (ρ m ⁻¹' C) := by
     intro x hx y hy a b ha hb hab
     rw [Set.mem_preimage, map_add, ← algebraMap_smul 𝕜 a, ← algebraMap_smul 𝕜 b, map_smul, map_smul,
       algebraMap_smul, algebraMap_smul]
-    exact (convex_convexHull ℝ _).closure hx hy ha hb hab
-  have hclosed : IsClosed (ρ m ⁻¹' C) := isClosed_closure.preimage (ρ m).continuous
-  refine closure_minimal (convexHull_min ?_ hconv) hclosed
+    exact convex_closedConvexHull hx hy ha hb hab
+  have hclosed : IsClosed (ρ m ⁻¹' C) := isClosed_closedConvexHull.preimage (ρ m).continuous
+  refine closedConvexHull_min ?_ hconv hclosed
   rintro _ ⟨n, rfl⟩
-  exact subset_closure (subset_convexHull ℝ _ ⟨m * n, by simp [mul_apply_eq_comp]⟩)
+  exact subset_closedConvexHull ⟨m * n, by simp [mul_apply_eq_comp]⟩
 
 /-- Every vector in the closed convex hull of the orbit of `v` under a unitary representation
 differs from `v` by a vector orthogonal to `ρ.invariants`. -/
-private theorem sub_mem_invariants_orthogonal_of_mem_closure_convexHull (hρ : ρ.IsUnitary) (v : V) :
-    ∀ z ∈ closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v)), v - z ∈ ρ.invariantsᗮ := by
+private theorem sub_mem_invariants_orthogonal_of_mem_closedConvexHull (hρ : ρ.IsUnitary) (v : V) :
+    ∀ z ∈ closedConvexHull ℝ (Set.range fun m : M ↦ ρ m v), v - z ∈ ρ.invariantsᗮ := by
   let S : Set V := {z | v - z ∈ ρ.invariantsᗮ}
   have hclosed : IsClosed S :=
     (Submodule.isClosed_orthogonal _).preimage (continuous_const.sub continuous_id)
@@ -89,7 +87,7 @@ private theorem sub_mem_invariants_orthogonal_of_mem_closure_convexHull (hρ : �
         _ = a • (v - x) + b • (v - y) := by rw [add_smul, smul_sub, smul_sub]; abel
     rw [Set.mem_ofPred_eq, hlin, ← algebraMap_smul 𝕜 a, ← algebraMap_smul 𝕜 b]
     exact ρ.invariantsᗮ.add_mem (ρ.invariantsᗮ.smul_mem _ hx) (ρ.invariantsᗮ.smul_mem _ hy)
-  refine closure_minimal (convexHull_min ?_ hconv) hclosed
+  refine closedConvexHull_min ?_ hconv hclosed
   rintro _ ⟨m, rfl⟩
   rw [Set.mem_ofPred_eq, Submodule.mem_orthogonal]
   intro u hu
@@ -103,9 +101,10 @@ convex hull of the orbit `{ρ m v | m : M}`. -/
 theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ : ρ.IsUnitary)
     (v : V) :
     ρ.invariants.starProjection v ∈ closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v)) := by
-  let C := closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v))
-  have hCne : C.Nonempty := ⟨v, subset_closure (subset_convexHull ℝ _ ⟨1, by simp⟩)⟩
-  have hCconv : Convex ℝ C := (convex_convexHull ℝ _).closure
+  rw [← closedConvexHull_eq_closure_convexHull]
+  let C := closedConvexHull ℝ (Set.range fun m : M ↦ ρ m v)
+  have hCne : C.Nonempty := ⟨v, subset_closedConvexHull ⟨1, by simp⟩⟩
+  have hCconv : Convex ℝ C := convex_closedConvexHull
   -- Pass `InnerProductSpace.rclikeToReal 𝕜 V` explicitly rather than as a local instance so its
   -- restricted `NormedSpace ℝ V` does not clash with the caller's `[NormedSpace ℝ V]`.
   have hCconv_r : @Convex ℝ V _ _ _ (InnerProductSpace.rclikeToReal 𝕜 V).toSMul C := by
@@ -116,7 +115,7 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
     simpa only [hsmul] using hCconv hx hy ha hb hab
   obtain ⟨w, hwC, hwmin⟩ :=
     @exists_norm_eq_iInf_of_complete_convex V _ (InnerProductSpace.rclikeToReal 𝕜 V)
-      C hCne isClosed_closure.isComplete hCconv_r 0
+      C hCne isClosed_closedConvexHull.isComplete hCconv_r 0
   have hle (z : V) (hz : z ∈ C) : ‖w‖ ≤ ‖z‖ := by
     have h0 : ‖(0 : V) - w‖ ≤ ‖(0 : V) - z‖ := by
       rw [hwmin]
@@ -125,7 +124,7 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
   -- Minimal norm in `C` forces `ρ m w = w` by the parallelogram law.
   have hwinv : w ∈ ρ.invariants := by
     intro m
-    have hmw : ρ m w ∈ C := mapsTo_closure_convexHull_orbit ρ v m hwC
+    have hmw : ρ m w ∈ C := mapsTo_closedConvexHull_orbit ρ v m hwC
     have hmid : (2 : ℝ)⁻¹ • w + (2 : ℝ)⁻¹ • ρ m w ∈ C :=
       hCconv hwC hmw (by positivity) (by positivity) (by ring)
     have hmid_norm : 2 * ‖w‖ ≤ ‖w + ρ m w‖ := by
@@ -142,7 +141,7 @@ theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ 
     exact sub_eq_zero.mp (norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _))))
   have heq : ρ.invariants.starProjection v = w :=
     Submodule.eq_starProjection_of_mem_orthogonal hwinv
-      (hρ.sub_mem_invariants_orthogonal_of_mem_closure_convexHull v w hwC)
+      (hρ.sub_mem_invariants_orthogonal_of_mem_closedConvexHull v w hwC)
   exact heq ▸ hwC
 
 end ConvexHull
@@ -157,9 +156,9 @@ theorem norm_starProjection_invariants_sub_le (hρ : ρ.IsUnitary) {v : V} {ε :
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   let : IsScalarTower ℝ 𝕜 V := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hmem : ρ.invariants.starProjection v ∈ Metric.closedBall v ε := by
-    refine closure_minimal
-      (convexHull_min ?_ (convex_closedBall v ε)) Metric.isClosed_closedBall
-      (hρ.starProjection_invariants_mem_closure_convexHull v)
+    have hmem' := hρ.starProjection_invariants_mem_closure_convexHull v
+    rw [← closedConvexHull_eq_closure_convexHull] at hmem'
+    refine closedConvexHull_min ?_ (convex_closedBall v ε) Metric.isClosed_closedBall hmem'
     rintro _ ⟨m, rfl⟩
     simpa only [Metric.mem_closedBall, dist_eq_norm] using hv m
   simpa only [Metric.mem_closedBall, dist_eq_norm] using hmem

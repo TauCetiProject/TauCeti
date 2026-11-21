@@ -8,8 +8,8 @@ module
 public import Mathlib.GroupTheory.Index
 public import TauCeti.GroupTheory.PropertyT.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Basic
-import TauCeti.GroupTheory.PropertyT.KazhdanPair
 import TauCeti.GroupTheory.PropertyT.PositiveDefinite
+import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # Finite-index permanence of relative property (T)
@@ -90,53 +90,45 @@ private theorem relativePropertyT_of_exists_invariant_half {K Λ : Subgroup Γ}
   classical
   let Q := Λ ⧸ K.subgroupOf Λ
   let : Fintype Q := Subgroup.fintypeQuotientOfFiniteIndex
-  let s : Q → Λ := Quotient.out
-  have hs (x : Q) : (s x : Q) = x := QuotientGroup.out_eq' x
-  let F : Finset Γ := F₁ ∪ Finset.univ.image fun x : Q ↦ (s x : Γ)
+  let F : Finset Γ := F₁ ∪ Finset.univ.image fun x : Q ↦ (x.out : Γ)
   let δ : ℝ := min δ₁ (1 / 4)
   have hδ : 0 < δ := lt_min hδ₁ (by norm_num)
   refine (isKazhdanPair_of_exists_invariant_norm_sub_lt_one (F := F)
     fun V _ _ _ ρ hρ ξ hξ hξF ↦ ?_).relativePropertyT hδ
   obtain ⟨v, hvK, hvξ⟩ := hK V ρ hρ ξ hξ fun g hg ↦
     (hξF g (Finset.mem_union_left _ hg)).trans_le (min_le_left _ _)
-  let w : V := (Fintype.card Q : ℂ)⁻¹ • ∑ x : Q, ρ (s x : Γ) v
+  let ρΛ := (ρ.restrict Λ.subtype).toRepresentation
+  let w : V := (Fintype.card Q : ℂ)⁻¹ • Representation.relNorm ρΛ (K.subgroupOf Λ) v
+  have hvK' : ∀ h : K.subgroupOf Λ, ρΛ h v = v := fun h ↦
+    hvK ⟨h.1.1, h.2⟩
   have hwΛ : w ∈ (ρ.restrict Λ.subtype).invariants := fun g ↦ by
     dsimp only [w]
-    rw [restrict_apply_apply, Subgroup.coe_subtype, map_smul, map_sum]
+    rw [map_smul]
     congr 1
-    have hstep (x : Q) : ρ (g : Γ) (ρ (s x : Γ) v) = ρ (s (g • x) : Γ) v := by
-      have hk : (s (g • x) : Γ)⁻¹ * (g : Γ) * (s x : Γ) ∈ K := by
-        simpa only [Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv] using
-          TauCeti.inv_mul_mul_mem_of_section hs g x
-      have hfix : ρ ((s (g • x) : Γ)⁻¹ * (g : Γ) * (s x : Γ)) v = v := by
-        simpa only [restrict_apply_apply, Subgroup.coe_subtype] using hvK ⟨_, hk⟩
-      calc ρ (g : Γ) (ρ (s x : Γ) v)
-          = ρ (s (g • x) : Γ) (ρ ((s (g • x) : Γ)⁻¹ * (g : Γ) * (s x : Γ)) v) := by
-              simp [← mul_apply_eq_comp, ← map_mul, mul_assoc]
-        _ = ρ (s (g • x) : Γ) v := by rw [hfix]
-    simp_rw [hstep]
-    exact Fintype.sum_equiv (MulAction.toPerm g : Equiv.Perm Q) _ _ fun x ↦ rfl
+    exact Representation.relNorm_apply_eq_self ρΛ hvK' g
   have hcard_ne : (Fintype.card Q : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hw_sub : w - ξ = (Fintype.card Q : ℂ)⁻¹ • ∑ x : Q, (ρ (s x : Γ) v - ξ) := by
-    simp only [w, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, smul_sub,
-      ← Nat.cast_smul_eq_nsmul ℂ, ← mul_smul, inv_mul_cancel₀ hcard_ne, one_smul]
-  have hterm_lt (x : Q) : ‖ρ (s x : Γ) v - ξ‖ < 3 / 4 := by
-    have hsx_mem : (s x : Γ) ∈ F :=
+  have hw_sub : w - ξ = (Fintype.card Q : ℂ)⁻¹ • ∑ x : Q, (ρ (x.out : Γ) v - ξ) := by
+    simp only [w, Representation.relNorm_apply, ρΛ, Finset.sum_sub_distrib, Finset.sum_const,
+      Finset.card_univ, smul_sub, ← Nat.cast_smul_eq_nsmul ℂ, ← mul_smul,
+      inv_mul_cancel₀ hcard_ne, one_smul]
+    rfl
+  have hterm_lt (x : Q) : ‖ρ (x.out : Γ) v - ξ‖ < 3 / 4 := by
+    have hsx_mem : (x.out : Γ) ∈ F :=
       Finset.mem_union_right _ (Finset.mem_image_of_mem _ (Finset.mem_univ x))
-    have hsx_lt : ‖ρ (s x : Γ) ξ - ξ‖ < 1 / 4 := (hξF _ hsx_mem).trans_le (min_le_right _ _)
-    have hsplit : ρ (s x : Γ) v - ξ = ρ (s x : Γ) (v - ξ) + (ρ (s x : Γ) ξ - ξ) := by
+    have hsx_lt : ‖ρ (x.out : Γ) ξ - ξ‖ < 1 / 4 := (hξF _ hsx_mem).trans_le (min_le_right _ _)
+    have hsplit : ρ (x.out : Γ) v - ξ = ρ (x.out : Γ) (v - ξ) + (ρ (x.out : Γ) ξ - ξ) := by
       rw [map_sub]
       abel
     rw [hsplit]
-    calc ‖ρ (s x : Γ) (v - ξ) + (ρ (s x : Γ) ξ - ξ)‖
-        ≤ ‖ρ (s x : Γ) (v - ξ)‖ + ‖ρ (s x : Γ) ξ - ξ‖ := norm_add_le _ _
-      _ = ‖v - ξ‖ + ‖ρ (s x : Γ) ξ - ξ‖ := by rw [hρ.norm_map]
+    calc ‖ρ (x.out : Γ) (v - ξ) + (ρ (x.out : Γ) ξ - ξ)‖
+        ≤ ‖ρ (x.out : Γ) (v - ξ)‖ + ‖ρ (x.out : Γ) ξ - ξ‖ := norm_add_le _ _
+      _ = ‖v - ξ‖ + ‖ρ (x.out : Γ) ξ - ξ‖ := by rw [hρ.norm_map]
       _ < 3 / 4 := by linarith
   have hw_lt : ‖w - ξ‖ < 3 / 4 := by
     have hpos : (0 : ℝ) < Fintype.card Q := Nat.cast_pos.mpr Fintype.card_pos
     rw [hw_sub, norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_lt_iff₀ hpos]
-    calc ‖∑ x : Q, (ρ (s x : Γ) v - ξ)‖
-        ≤ ∑ x : Q, ‖ρ (s x : Γ) v - ξ‖ := norm_sum_le _ _
+    calc ‖∑ x : Q, (ρ (x.out : Γ) v - ξ)‖
+        ≤ ∑ x : Q, ‖ρ (x.out : Γ) v - ξ‖ := norm_sum_le _ _
       _ < ∑ _x : Q, (3 / 4 : ℝ) :=
           Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun x _ ↦ hterm_lt x
       _ = Fintype.card Q * (3 / 4) := by simp
@@ -251,11 +243,10 @@ theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Norm
   have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
     hdown (Λ.subgroupOf H) N_H hΛH
   have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
-    ext g
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, MonoidHom.comp_apply,
-      Subgroup.coe_subtype, Subgroup.mem_inf]
-    exact ⟨by rintro ⟨⟨⟨x, _⟩, hxN⟩, hxΛ, rfl⟩; exact ⟨hxΛ, hxN⟩,
-      fun ⟨hgΛ, hgN⟩ ↦ ⟨⟨⟨g, H.normalCore_le hgN⟩, hgN⟩, hgΛ, rfl⟩⟩
+    rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_inf _ _ _ H.subtype_injective, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_subgroupOf_eq_of_le H.normalCore_le, inf_assoc,
+      inf_of_le_right H.normalCore_le]
   have hinfT : (Λ ⊓ N).RelativePropertyT.{v} := by
     rw [← hmap]
     exact hΛNH.map (H.subtype.comp N_H.subtype)

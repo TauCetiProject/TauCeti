@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.GroupTheory.PropertyT.KazhdanPair
-public import TauCeti.RepresentationTheory.Continuous.Invariants
 import TauCeti.Analysis.Matrix.PosSemidef.Exponential
 import TauCeti.GroupTheory.PositiveDefinite.Basic
-import TauCeti.RepresentationTheory.Continuous.InvariantComplement
+import TauCeti.GroupTheory.PositiveDefinite.Metric
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 
@@ -22,10 +20,9 @@ import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 This file establishes the quantitative invariant-vector and positive-definite characterizations of
 relative property (T) for a subgroup `Λ` of a discrete group `Γ`:
 
-* For a normal subgroup `Λ` of an arbitrary discrete group `Γ`, the subspace `H^Λ` of
-  `Λ`-invariant vectors is `Γ`-invariant, so restricting a unitary representation to `(H^Λ)ᗮ` turns
-  any Kazhdan pair `(F, δ)` with `δ > 0` into a quantitative approximation bound: every vector `ξ`
-  moved by at most `ε * δ` on `F` lies within `ε` of its orthogonal projection onto `H^Λ`.
+* For a normal subgroup `Λ` of an arbitrary discrete group `Γ`, quantitative Kazhdan approximation
+  (`IsKazhdanPair.exists_invariant_norm_sub_lt`) yields the quantitative and net uniform-convergence
+  positive-definite characterizations without countability.
 * For an arbitrary subgroup `Λ` of a countable discrete group `Γ`, relative property (T) is
   equivalent to:
   1. **Quantitative invariant-vector approximation**: for every `ε > 0`, there exist a finite set
@@ -47,9 +44,6 @@ normalized positive-definite function `Φ = exp (-t * ψ)` whose GNS representat
 
 ## Main statements
 
-* `Subgroup.IsKazhdanPair.norm_sub_starProjection_invariants_le`,
-  `Subgroup.IsKazhdanPair.exists_invariant_norm_sub_lt`: quantitative Kazhdan approximation for
-  normal subgroups, without countability.
 * `Subgroup.relativePropertyT_iff_forall_exists_invariant_norm_sub_lt`: quantitative
   `Λ`-invariant vector characterization for countable groups.
 * `Subgroup.relativePropertyT_iff_forall_posSemidef_norm_sub_one_lt`: quantitative
@@ -78,88 +72,6 @@ open ContRepresentation Filter Topology
 open scoped ComplexConjugate ComplexOrder InnerProductSpace
 
 variable {Γ : Type v} [Group Γ]
-
-/-! ### Normal subgroups: quantitative Kazhdan approximation without countability -/
-
-section Normal
-
-/-- **Quantitative Kazhdan approximation for normal subgroups.** If `(F, δ)` with `δ > 0` is a
-Kazhdan pair for a normal subgroup `Λ` in the universe of `Γ`, then in any unitary representation
-`ρ` of `Γ` on a Hilbert space (in any universe) every vector `ξ` moved by at most `ε * δ` on `F`
-lies within `ε` of its orthogonal projection onto `H^Λ`. -/
-theorem IsKazhdanPair.norm_sub_starProjection_invariants_le {Λ : Subgroup Γ} [Λ.Normal]
-    {F : Finset Γ} {δ : ℝ} (hK : Λ.IsKazhdanPair.{v} F δ) (hδ : 0 < δ)
-    {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    {ρ : ContRepresentation ℂ Γ H} (hρ : ρ.IsUnitary) {ε : ℝ} (hε : 0 ≤ ε) (ξ : H)
-    (hF : ∀ g ∈ F, ‖ρ g ξ - ξ‖ ≤ ε * δ) :
-    ‖ξ - (ρ.restrict Λ.subtype).invariants.starProjection ξ‖ ≤ ε := by
-  let W := (ρ.restrict Λ.subtype).invariants
-  have hW : ∀ g, ∀ v ∈ W, ρ g v ∈ W := apply_mem_invariants_restrict ρ Λ
-  let η : H := ξ - W.starProjection ξ
-  by_cases hη0 : η = 0
-  · dsimp only [η] at hη0
-    rw [hη0, norm_zero]
-    exact hε
-  have hηpos : 0 < ‖η‖ := norm_pos_iff.mpr hη0
-  -- Restrict `ρ` to `Wᗮ`, which is `Γ`-invariant since `Λ` is normal and `ρ` is unitary, and has
-  -- no nonzero `Λ`-invariant vectors.
-  let σ := ρ.subrepresentation Wᗮ (hρ.apply_mem_orthogonal hW)
-  have hσ : σ.IsUnitary := hρ.subrepresentation (hρ.apply_mem_orthogonal hW)
-  let η₀ : Wᗮ := ⟨(‖η‖⁻¹ : ℂ) • η, Wᗮ.smul_mem _ (W.sub_starProjection_mem_orthogonal ξ)⟩
-  have hη₀_norm : ‖η₀‖ = 1 := by
-    rw [← Submodule.norm_coe]
-    exact norm_smul_inv_norm hη0
-  have hno_inv : ¬ ∃ v : Wᗮ, v ≠ 0 ∧ v ∈ (σ.restrict Λ.subtype).invariants := by
-    rintro ⟨v, hv0, hv⟩
-    have hvW : (v : H) ∈ W := fun k ↦ by
-      simpa only [σ, restrict_apply_apply, coe_subrepresentation_apply] using
-        congrArg Subtype.val (hv k)
-    exact hv0 (Subtype.ext ((Submodule.disjoint_def.mp W.orthogonal_disjoint) v hvW v.property))
-  have hnotF : ¬ ∀ g ∈ F, ‖σ g η₀ - η₀‖ < δ := fun hlt ↦
-    hno_inv ((isKazhdanPair_def Λ F δ).mp hK.of_universe Wᗮ σ hσ ⟨η₀, hη₀_norm, hlt⟩)
-  push Not at hnotF
-  obtain ⟨g, hgF, hgδ⟩ := hnotF
-  have hcomm : ρ g η - η = Wᗮ.starProjection (ρ g ξ - ξ) := by
-    dsimp only [η]
-    rw [Submodule.starProjection_orthogonal_val, map_sub, map_sub,
-      hρ.starProjection_apply_comm hW g ξ]
-    abel
-  have hproj_le : ‖ρ g η - η‖ ≤ ‖ρ g ξ - ξ‖ := by
-    rw [hcomm]
-    exact Wᗮ.norm_starProjection_apply_le _
-  have hscale : ‖σ g η₀ - η₀‖ = ‖η‖⁻¹ * ‖ρ g η - η‖ := by
-    rw [← Submodule.norm_coe, Submodule.coe_sub, coe_subrepresentation_apply, map_smul, ← smul_sub,
-      norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _)]
-  rw [hscale, le_inv_mul_iff₀' hηpos] at hgδ
-  have hle : δ * ‖η‖ ≤ δ * ε := by linarith [hproj_le, hF g hgF]
-  exact le_of_mul_le_mul_left hle hδ
-
-/-- For a Kazhdan pair `(F, δ)` (`δ > 0`) of a normal subgroup `Λ` in the universe `v` of `Γ`,
-any vector in a unitary representation on a Hilbert space (in any universe) moved by strictly less
-than `ε * δ` on `F` (`ε > 0`) is strictly within `ε` of a `Λ`-invariant vector. -/
-theorem IsKazhdanPair.exists_invariant_norm_sub_lt {Λ : Subgroup Γ} [Λ.Normal]
-    {F : Finset Γ} {δ : ℝ} (hK : Λ.IsKazhdanPair.{v} F δ) (hδ : 0 < δ)
-    {H : Type u} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    {ρ : ContRepresentation ℂ Γ H} (hρ : ρ.IsUnitary) {ε : ℝ} (hε : 0 < ε) (ξ : H)
-    (hF : ∀ g ∈ F, ‖ρ g ξ - ξ‖ < ε * δ) :
-    ∃ v ∈ (ρ.restrict Λ.subtype).invariants, ‖v - ξ‖ < ε := by
-  refine ⟨(ρ.restrict Λ.subtype).invariants.starProjection ξ,
-    Submodule.starProjection_apply_mem _ ξ, ?_⟩
-  rw [norm_sub_rev]
-  rcases F.eq_empty_or_nonempty with rfl | hFne
-  · exact (hK.norm_sub_starProjection_invariants_le hδ hρ le_rfl ξ (by simp)).trans_lt hε
-  · let m : ℝ := (F.sup' hFne fun g ↦ ‖ρ g ξ - ξ‖) / δ
-    have hm_nonneg : 0 ≤ m := by
-      obtain ⟨g₀, hg₀⟩ := hFne
-      exact div_nonneg ((norm_nonneg _).trans (F.le_sup' (fun g ↦ ‖ρ g ξ - ξ‖) hg₀)) hδ.le
-    have hm_lt : m < ε := by
-      rw [div_lt_iff₀ hδ, Finset.sup'_lt_iff]
-      exact hF
-    refine (hK.norm_sub_starProjection_invariants_le hδ hρ hm_nonneg ξ fun g hg ↦ ?_).trans_lt hm_lt
-    rw [div_mul_cancel₀ _ hδ.ne']
-    exact F.le_sup' (fun g ↦ ‖ρ g ξ - ξ‖) hg
-
-end Normal
 
 /-! ### Equivalence bridges between invariant vectors and positive-definite functions -/
 
