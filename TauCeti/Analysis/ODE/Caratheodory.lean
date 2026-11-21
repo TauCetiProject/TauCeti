@@ -34,9 +34,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x` on `[a, b]`, for 
 
 ## Main results
 
-* `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard_of_integrableOn`: the integral equation
+* `TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`: the integral equation
   has a solution continuous on `[a, b]`.
-* `TauCeti.eqOn_of_forall_mem_Icc_eq_picard_of_integrableOn`: two such solutions agree on
+* `TauCeti.eqOn_of_forall_mem_Icc_eq_picard`: two such solutions agree on
   `[a, b]`.
 * `TauCeti.absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard` and
   `TauCeti.ae_hasDerivAt_of_forall_mem_Icc_eq_picard`: every solution is absolutely continuous
@@ -47,11 +47,9 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x` on `[a, b]`, for 
 * `TauCeti.norm_le_mul_exp_of_forall_mem_Icc_eq_picard`: every solution satisfies
   `‖x t‖ ≤ (‖x₀‖ + |∫ s in t₀..t, ‖F s‖|) exp |∫ s in t₀..t, ‖M s‖|`.
 
-For an essentially bounded coefficient and `t₀ = a`, existence and uniqueness are restated with
-hypotheses on `(a, b)` as `TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard` and
-`TauCeti.eqOn_of_forall_mem_Icc_eq_picard`. Such equations arise as the Galerkin approximations of
-linear parabolic equations, whose coefficients are only measurable in time; integrable but
-unbounded coefficients arise for Dirac and Schrödinger systems with locally integrable potentials.
+Such equations arise as the Galerkin approximations of linear parabolic equations, whose
+coefficients are only measurable in time; integrable but unbounded coefficients arise for Dirac and
+Schrödinger systems with locally integrable potentials.
 For continuous coefficients and classical solutions on the whole line,
 `Continuous.eq_of_hasDerivAt_clm_apply` deduces uniqueness for `v' = B(t) v` from Mathlib's
 `ODE_solution_unique_of_mem_Ioo`, and `Continuous.eqOn_Ici_of_hasDerivAt_clm_apply` does the same
@@ -80,7 +78,7 @@ open scoped Nat NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : ℝ → E →L[ℝ] E} {F : ℝ → E}
-  {a b t₀ K : ℝ} {x₀ : E}
+  {a b t₀ : ℝ} {x₀ : E}
 
 /-- The right-hand side `s ↦ M s (x s) + F s` of a linear equation whose coefficient `M` and
 forcing term `F` are integrable on `[a, b]` is integrable on `[a, b]` along every curve `x`
@@ -96,22 +94,13 @@ theorem integrableOn_Icc_clm_apply_add (hM : IntegrableOn M (Icc a b))
   filter_upwards [ae_restrict_mem measurableSet_Icc] with s hs
   exact ((M s).le_opNorm _).trans (mul_le_mul_of_nonneg_left (hC s hs) (norm_nonneg _))
 
-/-- An almost everywhere strongly measurable coefficient that is essentially bounded on `(a, b)`
-is integrable on `[a, b]`. -/
-private theorem integrableOn_Icc_of_ae_norm_le
-    (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
-    (hK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K) : IntegrableOn M (Icc a b) :=
-  (integrableOn_Icc_iff_integrableOn_Ioo (f := M)).2 ((integrable_const K).mono' hM hK)
-
-/-- The right-hand side `s ↦ M s (x s) + F s` of a linear equation with essentially bounded
-measurable `M` and integrable `F` on `(a, b)` is integrable on `(a, b)` along every curve `x`
-continuous on `[a, b]`. -/
-theorem integrableOn_clm_apply_add (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
-    (hK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K) (hF : IntegrableOn F (Ioo a b))
-    {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
-    IntegrableOn (fun s ↦ M s (x s) + F s) (Ioo a b) :=
-  (integrableOn_Icc_clm_apply_add (integrableOn_Icc_of_ae_norm_le hM hK)
-    ((integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 hF) hx).mono_set Ioo_subset_Icc_self
+/-- The right-hand side `s ↦ M s (x s) + F s` of a linear equation whose coefficient `M` and
+forcing term `F` are integrable on `[a, b]`, with `a ≤ b`, is interval integrable on `a..b` along
+every curve `x` continuous on `[a, b]`. -/
+theorem intervalIntegrable_clm_apply_add (hab : a ≤ b) (hM : IntegrableOn M (Icc a b))
+    (hF : IntegrableOn F (Icc a b)) {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
+    IntervalIntegrable (fun s ↦ M s (x s) + F s) volume a b :=
+  (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 (integrableOn_Icc_clm_apply_add hM hF hx)
 
 namespace CaratheodoryLinear
 
@@ -150,8 +139,8 @@ private theorem abs_integral_norm_mul_abs_pow {t : ℝ}
     refine integral_congr fun s hs ↦ ?_
     simp only [hΛ s hs, mul_pow]
     ring
-  rw [h, hM.integral_mul_pow_integral, abs_mul, abs_pow, hσ, one_pow, one_mul, abs_div, abs_pow,
-    abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
+  rw [h, hM.integral_mul_pow_integral]
+  simp [abs_mul, abs_div, abs_pow, hσ, abs_of_pos (by positivity : (0 : ℝ) < n + 1)]
 
 /-- The Picard map `y ↦ x₀ + ∫_{t₀}^t (M s (y s) + F s) ds` on `C([a, b], E)`. -/
 private noncomputable def next (ht₀ : t₀ ∈ Icc a b) (hM : IntegrableOn M (Icc a b))
@@ -160,8 +149,7 @@ private noncomputable def next (ht₀ : t₀ ∈ Icc a b) (hM : IntegrableOn M (
   continuous_toFun := by
     have hab := ht₀.1.trans ht₀.2
     have hI : IntervalIntegrable (fun s ↦ M s (IccExtend hab y s) + F s) volume a b :=
-      (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-        (integrableOn_Icc_clm_apply_add hM hF y.continuous.Icc_extend'.continuousOn)
+      intervalIntegrable_clm_apply_add hab hM hF y.continuous.Icc_extend'.continuousOn
     have h := continuousOn_primitive_interval' hI (by rwa [uIcc_of_le hab])
     rw [uIcc_of_le hab] at h
     exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
@@ -312,7 +300,7 @@ open CaratheodoryLinear
 linear equation `x' = M(t) x + F(t)` with `x(t₀) = x₀` has a solution in Carathéodory's sense: a
 curve `x` continuous on `[a, b]` with `x t = x₀ + ∫ s in t₀..t, (M s (x s) + F s)` for every
 `t ∈ [a, b]`. -/
-theorem exists_continuousOn_forall_mem_Icc_eq_picard_of_integrableOn [CompleteSpace E]
+theorem exists_continuousOn_forall_mem_Icc_eq_picard [CompleteSpace E]
     (ht₀ : t₀ ∈ Icc a b) (hM : IntegrableOn M (Icc a b)) (hF : IntegrableOn F (Icc a b))
     (x₀ : E) :
     ∃ x : ℝ → E, ContinuousOn x (Icc a b) ∧
@@ -329,7 +317,7 @@ theorem exists_continuousOn_forall_mem_Icc_eq_picard_of_integrableOn [CompleteSp
 /-- **Uniqueness for linear equations with integrable coefficients.** Let `M : ℝ → E →L[ℝ] E` and
 `F : ℝ → E` be integrable on `[a, b]` and let `t₀ ∈ [a, b]`. Two curves continuous on `[a, b]`
 that solve `x t = x₀ + ∫ s in t₀..t, (M s (x s) + F s)` on `[a, b]` agree on `[a, b]`. -/
-theorem eqOn_of_forall_mem_Icc_eq_picard_of_integrableOn (ht₀ : t₀ ∈ Icc a b)
+theorem eqOn_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b)
     (hM : IntegrableOn M (Icc a b)) (hF : IntegrableOn F (Icc a b)) {x₁ x₂ : ℝ → E}
     (hx₁ : ContinuousOn x₁ (Icc a b)) (hx₂ : ContinuousOn x₂ (Icc a b))
     (h₁ : ∀ t ∈ Icc a b, x₁ t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x₁ t)
@@ -348,8 +336,7 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_picard (ht₀ : t₀
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t) :
     AbsolutelyContinuousOnInterval x a b := by
   have hab := ht₀.1.trans ht₀.2
-  have hI := (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-    (integrableOn_Icc_clm_apply_add hM hF hx)
+  have hI := intervalIntegrable_clm_apply_add hab hM hF hx
   refine ((LipschitzWith.const x₀).lipschitzOnWith.absolutelyContinuousOnInterval.add
     (hI.absolutelyContinuousOnInterval_intervalIntegral' (by rwa [uIcc_of_le hab]))).congr
     fun t ht ↦ ?_
@@ -365,8 +352,7 @@ theorem ae_hasDerivAt_of_forall_mem_Icc_eq_picard [CompleteSpace E] (ht₀ : t�
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t) :
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt x (M t (x t) + F t) t := by
   have hab := ht₀.1.trans ht₀.2
-  have hI := (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-    (integrableOn_Icc_clm_apply_add hM hF hx)
+  have hI := intervalIntegrable_clm_apply_add hab hM hF hx
   filter_upwards [hI.ae_hasDerivAt_integral] with t hd ht
   rw [uIcc_of_le hab] at hd
   refine ((hd (Ioo_subset_Icc_self ht) t₀ ht₀).const_add x₀).congr_of_eventuallyEq ?_
@@ -384,8 +370,7 @@ theorem forall_mem_Icc_eq_picard_of_absolutelyContinuousOnInterval [CompleteSpac
     ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) t₀ x₀ x t := by
   have hab := ht₀.1.trans ht₀.2
   have hxc : ContinuousOn x (Icc a b) := by simpa [uIcc_of_le hab] using hx.continuousOn
-  have hI := (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-    (integrableOn_Icc_clm_apply_add hM hF hxc)
+  have hI := intervalIntegrable_clm_apply_add hab hM hF hxc
   have ht₀' : t₀ ∈ uIcc a b := by rwa [uIcc_of_le hab]
   -- `x` minus the primitive of its derivative is constant on `[a, b]`.
   obtain ⟨C, hC⟩ := (hx.sub (hI.absolutelyContinuousOnInterval_intervalIntegral' ht₀')
@@ -412,47 +397,11 @@ theorem norm_le_mul_exp_of_forall_mem_Icc_eq_picard (ht₀ : t₀ ∈ Icc a b)
     (ht : t ∈ Icc a b) :
     ‖x t‖ ≤ (‖x₀‖ + |∫ s in t₀..t, ‖F s‖|) * exp |∫ s in t₀..t, ‖M s‖| := by
   rcases le_total t₀ t with hle | hle
-  · rw [abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _),
-      abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _)]
-    exact norm_le_of_le ht₀ hM hF hx h ht hle
-  · rw [integral_symm t t₀, integral_symm t t₀, abs_neg, abs_neg,
-      abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _),
-      abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _)]
-    exact norm_le_of_ge ht₀ hM hF hx h ht hle
-
-/-- **Carathéodory's existence theorem for linear equations.** Let `M : ℝ → E →L[ℝ] E` be almost
-everywhere strongly measurable and essentially bounded on `(a, b)`, and let `F : ℝ → E` be
-integrable on `(a, b)`. Then the linear equation `x' = M(t) x + F(t)` with `x(a) = x₀` has a
-solution in Carathéodory's sense: a curve `x` continuous on `[a, b]` with `x a = x₀` and
-`x t = x₀ + ∫ s in a..t, (M s (x s) + F s)` for every `t ∈ [a, b]`. -/
-theorem exists_continuousOn_eq_forall_mem_Icc_eq_picard [CompleteSpace E]
-    (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
-    (hK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K) (hF : IntegrableOn F (Ioo a b)) (x₀ : E) :
-    ∃ x : ℝ → E, ContinuousOn x (Icc a b) ∧ x a = x₀ ∧
-      ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t := by
-  rcases lt_or_ge b a with hba | hab
-  · exact ⟨fun _ ↦ x₀, continuousOn_const, rfl, by simp [Icc_eq_empty_of_lt hba]⟩
-  obtain ⟨x, hx, h⟩ := exists_continuousOn_forall_mem_Icc_eq_picard_of_integrableOn
-    (left_mem_Icc.2 hab) (integrableOn_Icc_of_ae_norm_le hM hK)
-    ((integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 hF) x₀
-  exact ⟨x, hx, by simpa using h a (left_mem_Icc.2 hab), h⟩
-
-/-- **Uniqueness for linear equations with measurable coefficients.** Let `M : ℝ → E →L[ℝ] E` be
-almost everywhere strongly measurable and essentially bounded on `(a, b)`, and let `F : ℝ → E` be
-integrable on `(a, b)`. Two curves continuous on `[a, b]` that solve
-`x t = x₀ + ∫ s in a..t, (M s (x s) + F s)` on `[a, b]` agree on `[a, b]`. -/
-theorem eqOn_of_forall_mem_Icc_eq_picard
-    (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
-    (hK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K) (hF : IntegrableOn F (Ioo a b))
-    {x₁ x₂ : ℝ → E} (hx₁ : ContinuousOn x₁ (Icc a b)) (hx₂ : ContinuousOn x₂ (Icc a b))
-    (h₁ : ∀ t ∈ Icc a b, x₁ t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x₁ t)
-    (h₂ : ∀ t ∈ Icc a b, x₂ t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x₂ t) :
-    EqOn x₁ x₂ (Icc a b) := by
-  rcases lt_or_ge b a with hba | hab
-  · simp [Icc_eq_empty_of_lt hba]
-  exact eqOn_of_forall_mem_Icc_eq_picard_of_integrableOn (left_mem_Icc.2 hab)
-    (integrableOn_Icc_of_ae_norm_le hM hK) ((integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 hF)
-    hx₁ hx₂ h₁ h₂
+  · simpa only [abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _)] using
+      norm_le_of_le ht₀ hM hF hx h ht hle
+  · simpa only [integral_symm t t₀, abs_neg,
+      abs_of_nonneg (integral_nonneg hle fun _ _ ↦ norm_nonneg _)] using
+      norm_le_of_ge ht₀ hM hF hx h ht hle
 
 end TauCeti
 

@@ -29,7 +29,7 @@ The coefficient `p` need not be bounded on the whole line.
 
 Existence on the whole line cannot be taken from `TauCeti.timeDependentFlow`, whose suspended
 field must be globally Lipschitz, nor from the Carathéodory solutions of
-`TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard`, which live on one compact interval;
+`TauCeti.exists_continuousOn_forall_mem_Icc_eq_picard`, which live on one compact interval;
 the series also supplies the explicit expansion. Uniqueness is
 `Continuous.eq_of_hasDerivAt_clm_apply`.
 
