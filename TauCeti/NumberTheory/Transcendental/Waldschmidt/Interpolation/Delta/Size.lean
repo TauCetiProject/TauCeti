@@ -58,6 +58,8 @@ degree and denominator parameters are kept separate.
 * `TauCeti.l1Norm_waldschmidtDelta_le`: the coefficient-length bound for the delta rows.
 * `TauCeti.l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le`: a parameter-only bound
   on the coefficient length of the entry polynomial in the normalized coefficients.
+* `TauCeti.l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_waldschmidtDeltaOperator_le`:
+  the coefficient-length bound with the explicit delta-operator bound substituted for `H`.
 
 ## References
 
@@ -110,22 +112,6 @@ theorem abs_intCast_mul_waldschmidtPoint_waldschmidtNormalize_le (a₀ : ℤ) {a
       gcongr
       exact hs' _
 
-/-- The rational factor of the entry of `P(∂/∂z₀)` on the delta row `∏ᵢ Δ(q zᵢ; τᵢ)`, by the
-formula `TauCeti.waldschmidtOperatorEntry_prod_aeval_X` for separated rows with `α = 1`. -/
-private theorem eval_waldschmidtEntryPolynomial_waldschmidtDelta (b : Fin (n + 1) → ℚ) (t : ℤ)
-    (s : Fin (n + 1) → ℤ) (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) (P : Polynomial ℚ) :
-    eval b (waldschmidtEntryPolynomial t s P (waldschmidtDelta q τ)) =
-      (∑ k ∈ range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval (t : ℚ) *
-        (Polynomial.hasseDeriv k ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ 0)).comp
-          (Polynomial.C (q : ℚ) * Polynomial.X))).eval (waldschmidtPoint b s 0)) *
-        ∏ i : Fin n, ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ i.succ)).comp
-          (Polynomial.C (q : ℚ) * Polynomial.X)).eval (waldschmidtPoint b s i.succ) := by
-  have h₁ : waldschmidtOperatorEntry (fun _ ↦ (1 : ℚ)) b t s (waldschmidtDelta q τ) P =
-      eval b (waldschmidtEntryPolynomial t s P (waldschmidtDelta q τ)) := by
-    simp [waldschmidtOperatorEntry_eq_aeval]
-  rw [← h₁, waldschmidtDelta_def, waldschmidtOperatorEntry_prod_aeval_X]
-  simp only [Algebra.algebraMap_self, Polynomial.map_id, one_zpow, prod_const_one, mul_one]
-
 /-- **The size of the delta-row entries.** Let the coefficients `b` be rational, let `q` be an
 integer with `|q xᵢ| ≤ Nᵢ` for the coordinates of the grid point `x = s · y`, and let the
 operator `P` satisfy `|P^{[k]}(t)| ≤ H` for its Hasse derivatives of order `k ≤ τ₀`. Then the
@@ -146,8 +132,12 @@ theorem abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le {b : Fin (n + 1)
     exact prod_le_prod₀ (fun _ _ ↦ abs_nonneg _) fun i _ ↦ by
       simpa only [Polynomial.hasseDeriv_zero', pow_zero, pow_one, one_mul] using
         abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le (hx i.succ) (τ i.succ) 1 0
-  rw [eval_waldschmidtEntryPolynomial_waldschmidtDelta, abs_mul, Fin.sum_univ_succ, pow_add,
-    ← mul_assoc]
+  have hentry := waldschmidtOperatorEntry_eq_aeval (fun _ ↦ (1 : ℚ)) b t s
+    (waldschmidtDelta q τ) P
+  simp only [aeval_eq_eval, one_zpow, prod_const_one, mul_one] at hentry
+  rw [← hentry, waldschmidtDelta_def, waldschmidtOperatorEntry_prod_aeval_X]
+  simp only [Algebra.algebraMap_self, Polynomial.map_id, one_zpow, prod_const_one, mul_one]
+  rw [abs_mul, Fin.sum_univ_succ, pow_add, ← mul_assoc]
   exact mul_le_mul (abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le (hx 0) hP)
     (hprod.trans_eq (prod_pow_eq_pow_sum _ _ _)) (abs_nonneg _) (by positivity)
 
@@ -159,7 +149,7 @@ theorem l1Norm_waldschmidtDelta_le (q : ℤ) (τ : Fin (n + 1) →₀ ℕ) :
   rw [waldschmidtDelta_def]
   refine (l1Norm_prod_le _ _).trans (prod_le_prod₀ (fun _ _ ↦ l1Norm_nonneg _) fun i _ ↦ ?_)
   simp only [Algebra.algebraMap_self, Polynomial.map_id]
-  refine (Polynomial.l1Norm_toMvPolynomial_le i _).trans
+  refine (Polynomial.l1Norm_toMvPolynomial i _).le.trans
     ((Polynomial.l1Norm_comp_le _ _).trans ?_)
   have hΔ : (Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ i)).l1Norm ≤ τ i + 1 := by
     simpa using l1Norm_taylor_multichoose_X_add_one_le (x := 0) (n := 0) (by simp) (τ i)
@@ -212,6 +202,25 @@ theorem l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le {t : ℤ} {P : Pol
   refine mul_le_mul_of_nonneg_left ?_ hH
   exact (sum_le_sum fun μ hμ ↦ mul_le_mul_of_nonneg_left (hweight μ hμ) (norm_nonneg _)).trans
     (by rw [← sum_mul, ← l1Norm_def]; gcongr; exact l1Norm_waldschmidtDelta_le q τ)
+
+/-- **The coefficient length of delta rows with delta-operator columns.** If `|sⱼ| ≤ S` and
+`|t| ≤ T₁`, the coefficient length of the entry polynomial is bounded solely by the grid,
+row degrees, rescaling, and delta-operator parameters. -/
+theorem l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_waldschmidtDeltaOperator_le
+    {t : ℤ} {T₁ : ℕ} (ht : t.natAbs ≤ T₁) {s : Fin (n + 1) → ℤ} {S : ℕ}
+    (hs : ∀ j, (s j).natAbs ≤ S) (q : ℤ) (k σ : ℕ) (τ : Fin (n + 1) →₀ ℕ) :
+    (waldschmidtEntryPolynomial t s (waldschmidtDeltaOperator k σ) (waldschmidtDelta q τ)).l1Norm ≤
+      (2 : ℝ) ^ (σ / k * (T₁ + k + 1) + (T₁ + σ % k + 1)) *
+        (∏ i, ((τ i + 1 : ℝ) * max 1 ‖(q : ℚ)‖ ^ τ i)) *
+        (τ.degree + 2 * S + 1 : ℝ) ^ τ.degree := by
+  have htT : |(t : ℚ)| ≤ T₁ := by
+    rw [← Int.cast_abs, ← Nat.cast_natAbs]
+    exact_mod_cast ht
+  apply l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le (s := s) (hs := hs)
+  intro κ
+  simpa only [← Rat.norm_cast_real, Real.norm_eq_abs, Rat.cast_abs, Rat.cast_pow,
+    Rat.cast_ofNat] using
+    (Rat.cast_le (K := ℝ)).2 (abs_eval_hasseDeriv_waldschmidtDeltaOperator_le htT k σ κ)
 
 /-- **The size of the delta-row entries with delta-operator columns.** Let the coefficients `b`
 be rational, let `q` be an integer with `|q xᵢ| ≤ Nᵢ` for the coordinates of the grid point
