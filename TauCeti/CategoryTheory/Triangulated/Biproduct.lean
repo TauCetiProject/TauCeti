@@ -30,8 +30,8 @@ where every object is a summand of an object of the subcategory.
 * `CategoryTheory.Retract.exists_iso_biprod`: a retract of `Y` is a biproduct summand of `Y`.
 * `CategoryTheory.ObjectProperty.prop_retractClosure_iff_exists_biprod`: the retract closure of
   an isomorphism-closed property consists of the summands of its objects.
-* `CategoryTheory.Pretriangulated.exists_distTriang_iso_biprod`: the vertexwise biproduct of two
-  distinguished triangles is the vertex family of a distinguished triangle.
+* `CategoryTheory.Pretriangulated.exists_distTriang_iso_biprod`: there is a distinguished triangle
+  whose vertices are isomorphic to the vertexwise biproducts of two distinguished triangles.
 -/
 
 public section

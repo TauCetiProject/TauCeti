@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.GrothendieckGroup.Split.Dense
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.Biproduct
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
@@ -36,7 +37,7 @@ stable class of `X` together with a correction in `K₀(A)`, in the abelian grou
 
 * every object `X` has an inverse, since density provides `X'` with `X ⊞ X'` in `A`;
 * an element `(0, a)` vanishes only when `a = 0`, because split `K₀` of `A` injects into split
-  `K₀` of `C` (two objects of `A` stably isomorphic in `C` are already stably isomorphic in `A`);
+  `K₀` of `C` (`TauCeti.SplitK0.map_ι_injective_of_retractClosure_eq_top`);
 * the stable class `X ↦ ([X], 0)` is additive on distinguished triangles. When the third vertex
   of the triangle lies in `A`, adding a complement of the middle vertex produces a triangle with
   all vertices in `A`, whose relation holds in `K₀(A)`; the general case reduces to this one by
@@ -93,25 +94,6 @@ private lemma exists_prop_biprod (hA : A.retractClosure = ⊤) (X : C) :
 
 variable [A.IsTriangulated] [EssentiallySmall.{w} C] [EssentiallySmall.{w'} A.FullSubcategory]
 
-/-- For a dense subcategory, the inclusion is injective on split `K₀`: two objects of `A` which
-become isomorphic in `C` after adding an object of `C` already become isomorphic after adding an
-object of `A`, namely the sum of that object and a complement of it. -/
-private lemma splitK0Map_ι_injective (hA : A.retractClosure = ⊤) :
-    Function.Injective (SplitK0.map A.ι) := by
-  rw [injective_iff_map_eq_zero]
-  intro s hs
-  obtain ⟨P, Q, rfl⟩ := SplitK0.exists_eq_sub s
-  rw [map_sub, SplitK0.map_of, SplitK0.map_of, sub_eq_zero, SplitK0.of_eq_of_iff] at hs
-  obtain ⟨W, ⟨e⟩⟩ := hs
-  obtain ⟨W', hW'⟩ := exists_prop_biprod A hA W
-  have : PreservesBinaryBiproducts A.ι := preservesBinaryBiproducts_of_preservesBiproducts _
-  let B : A.FullSubcategory := ⟨W ⊞ W', hW'⟩
-  have h := SplitK0.of_congr (C := A.FullSubcategory) (A.fullyFaithfulι.preimageIso
-    (A.ι.mapBiprod P B ≪≫ (biprod.associator _ _ _).symm ≪≫ biprod.mapIso e (Iso.refl _) ≪≫
-      biprod.associator _ _ _ ≪≫ (A.ι.mapBiprod Q B).symm))
-  rw [SplitK0.of_biprod, SplitK0.of_biprod] at h
-  rw [add_right_cancel h, sub_self]
-
 /-- The relations of the stable group: a split class `s` of `A` is identified with its image in
 split `K₀` of `C`, corrected by its class in triangulated `K₀` of `A`. -/
 private noncomputable def stableRel :
@@ -132,12 +114,20 @@ private noncomputable def toStable₂ : TriangulatedK0 A.FullSubcategory →+ St
   (QuotientAddGroup.mk' _).comp (AddMonoidHom.inr _ _)
 
 omit [A.IsClosedUnderIsomorphisms] in
+/-- An element of the stable group vanishes exactly when it is the image of a relation. -/
+private lemma toStable₁_add_toStable₂_eq_zero_iff (s : SplitK0 C)
+    (a : TriangulatedK0 A.FullSubcategory) :
+    toStable₁ A s + toStable₂ A a = 0 ↔ ∃ t, stableRel A t = (s, a) := by
+  rw [toStable₁, toStable₂, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, ← map_add,
+    QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
+  simp
+
+omit [A.IsClosedUnderIsomorphisms] in
 /-- The defining relation of the stable group. -/
 private lemma toStable₁_map (s : SplitK0 A.FullSubcategory) :
     toStable₁ A (SplitK0.map A.ι s) = toStable₂ A (fromSplit _ s) := by
-  rw [← sub_eq_zero, toStable₁, toStable₂, AddMonoidHom.comp_apply, AddMonoidHom.comp_apply,
-    ← map_sub, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
-  exact ⟨s, by simp [stableRel]⟩
+  rw [← sub_eq_zero, sub_eq_add_neg, ← map_neg, toStable₁_add_toStable₂_eq_zero_iff]
+  exact ⟨s, rfl⟩
 
 omit [A.IsClosedUnderIsomorphisms] in
 /-- On an object of `A`, the stable class is the correction term of its class in `K₀(A)`. -/
@@ -146,16 +136,15 @@ private lemma toStable₁_of_prop {X : C} (hX : A X) :
   rw [← fromSplit_of, ← toStable₁_map, SplitK0.map_of, ObjectProperty.ι_obj]
 
 /-- The correction term is injective: this is where density enters, through
-`splitK0Map_ι_injective`. -/
+`SplitK0.map_ι_injective_of_retractClosure_eq_top`. -/
 private lemma toStable₂_injective (hA : A.retractClosure = ⊤) :
     Function.Injective (toStable₂ A) := by
   rw [injective_iff_map_eq_zero]
   intro a ha
-  rw [toStable₂, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
-    QuotientAddGroup.eq_zero_iff] at ha
-  obtain ⟨s, hs⟩ := ha
-  simp only [stableRel, AddMonoidHom.prod_apply, AddMonoidHom.inr_apply, Prod.mk.injEq] at hs
-  obtain rfl : s = 0 := splitK0Map_ι_injective A hA (by rw [hs.1, map_zero])
+  obtain ⟨s, hs⟩ := (toStable₁_add_toStable₂_eq_zero_iff A 0 a).1 (by rw [map_zero, zero_add, ha])
+  simp only [stableRel, AddMonoidHom.prod_apply, Prod.mk.injEq] at hs
+  obtain rfl : s = 0 :=
+    SplitK0.map_ι_injective_of_retractClosure_eq_top A hA (by rw [hs.1, map_zero])
   simpa using hs.2.symm
 
 /-- The stable class is additive on a distinguished triangle whose third vertex lies in `A`:
@@ -230,27 +219,20 @@ theorem of_mem_range_map_ι_iff (hA : A.retractClosure = ⊤) (X : C) :
   refine ⟨fun ⟨a, ha⟩ => ?_, fun hX => ⟨of ⟨X, hX⟩, map_of _ _⟩⟩
   -- In the stable group, `(0, a)` and `([X], 0)` agree, so `([X], -a)` is a relation.
   have h := congrArg (toStable A hA) ha
-  rw [← AddMonoidHom.comp_apply, toStable_comp_map, toStable_of, toStable₁, toStable₂,
-    AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, QuotientAddGroup.mk'_apply,
-    QuotientAddGroup.mk'_apply, QuotientAddGroup.eq] at h
-  obtain ⟨s, hs⟩ := h
+  rw [← AddMonoidHom.comp_apply, toStable_comp_map, toStable_of] at h
+  obtain ⟨s, hs⟩ := (toStable₁_add_toStable₂_eq_zero_iff A (SplitK0.of X) (-a)).1
+    (by rw [map_neg, ← h, add_neg_cancel])
   have hs₁ := congrArg Prod.fst hs
-  simp only [stableRel, AddMonoidHom.prod_apply, Prod.fst_add, Prod.fst_neg,
-    AddMonoidHom.inl_apply, AddMonoidHom.inr_apply, neg_zero, zero_add] at hs₁
-  -- Writing `s = [P] - [Q]` gives a stable isomorphism `P ⊞ W ≅ (X ⊞ Q) ⊞ W` in `C`.
+  simp only [stableRel, AddMonoidHom.prod_apply] at hs₁
+  -- Writing `s = [P] - [Q]` and using density gives `P ⊞ B ≅ (X ⊞ Q) ⊞ B` with `B` in `A`.
   obtain ⟨P, Q, rfl⟩ := SplitK0.exists_eq_sub s
   rw [map_sub, SplitK0.map_of, SplitK0.map_of, ObjectProperty.ι_obj, ObjectProperty.ι_obj,
-    sub_eq_iff_eq_add, ← SplitK0.of_biprod, SplitK0.of_eq_of_iff] at hs₁
-  obtain ⟨W, ⟨e⟩⟩ := hs₁
-  obtain ⟨W', hW'⟩ := exists_prop_biprod A hA W
-  -- Adding a complement `W'` of `W` gives `P ⊞ (W ⊞ W') ≅ X ⊞ (Q ⊞ (W ⊞ W'))`.
-  have e' : P.obj ⊞ (W ⊞ W') ≅ X ⊞ (Q.obj ⊞ (W ⊞ W')) :=
-    (biprod.associator _ _ _).symm ≪≫ biprod.mapIso e (Iso.refl _) ≪≫
-      biprod.associator _ _ _ ≪≫ biprod.associator _ _ _
-  have hP : A (P.obj ⊞ (W ⊞ W')) :=
-    A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ P.property hW')
-  have hQ : A (Q.obj ⊞ (W ⊞ W')) :=
-    A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ Q.property hW')
+    sub_eq_iff_eq_add, ← SplitK0.of_biprod,
+    SplitK0.of_eq_of_iff_of_retractClosure_eq_top A hA] at hs₁
+  obtain ⟨B, hB, ⟨e⟩⟩ := hs₁
+  have e' : P.obj ⊞ B ≅ X ⊞ (Q.obj ⊞ B) := e ≪≫ biprod.associator _ _ _
+  have hP : A (P.obj ⊞ B) := A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ P.property hB)
+  have hQ : A (Q.obj ⊞ B) := A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ Q.property hB)
   -- The split triangle `X ⟶ X ⊞ B₁ ⟶ B₁ ⟶ X⟦1⟧` has its last two vertices in `A`.
   exact A.ext_of_isTriangulatedClosed₁ _ (binaryBiproductTriangle_distinguished _ _)
     (A.prop_of_iso e' hP) hQ
