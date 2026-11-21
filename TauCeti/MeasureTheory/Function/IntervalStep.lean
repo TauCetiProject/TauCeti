@@ -30,7 +30,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set Metric
+open MeasureTheory Set Filter
 open scoped Topology BoundedContinuousFunction
 
 namespace MeasureTheory
@@ -79,57 +79,46 @@ private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
     a ≤ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ ∧
     a + (⌊(t - a) / δ⌋₊ : ℝ) * δ ≤ t ∧
     t - (a + (⌊(t - a) / δ⌋₊ : ℝ) * δ) < δ := by
-  have hx : 0 ≤ (t - a) / δ := div_nonneg (sub_nonneg.mpr hat) hδ.le
-  have hlo := (mul_le_mul_of_nonneg_right (Nat.floor_le hx) hδ.le)
-  have hhi := (mul_lt_mul_of_pos_right (Nat.lt_floor_add_one ((t - a) / δ)) hδ)
+  have hlo := mul_le_mul_of_nonneg_right
+    (Nat.floor_le (div_nonneg (sub_nonneg.mpr hat) hδ.le)) hδ.le
+  have hhi := mul_lt_mul_of_pos_right (Nat.lt_floor_add_one ((t - a) / δ)) hδ
   rw [div_mul_cancel₀ _ hδ.ne'] at hlo hhi
-  constructor
-  · exact le_add_of_nonneg_right (mul_nonneg (Nat.cast_nonneg _) hδ.le)
-  constructor
-  · linarith
-  · linarith
+  exact ⟨le_add_of_nonneg_right (by positivity), by linarith, by linarith⟩
 
-/-- Left-node sampling on a sufficiently fine uniform subdivision uniformly approximates a
-function continuous on a compact interval. -/
-theorem exists_intervalStep_dist_lt [PseudoMetricSpace E] (g : ℝ → E) {a b ε : ℝ}
-    (hg : ContinuousOn g (Icc a b)) (hε : 0 < ε) :
-    ∃ N : ℕ, 0 < N ∧ ∀ t ∈ Icc a b,
-      dist (intervalStep a ((b - a) / N) g t) (g t) < ε := by
-  rcases eq_or_ne a b with rfl | hne
-  · refine ⟨1, one_pos, fun t ht ↦ ?_⟩
-    obtain rfl : t = a := le_antisymm ht.2 ht.1
+/-- Left-node sampling of a function continuous on `Icc a b`, on the uniform subdivision of
+`Icc a b` into `N` cells, converges to the function uniformly on `Icc a b` as `N → ∞`. -/
+theorem tendstoUniformlyOn_intervalStep [UniformSpace E] {g : ℝ → E} {a b : ℝ}
+    (hg : ContinuousOn g (Icc a b)) :
+    TendstoUniformlyOn (fun N : ℕ ↦ intervalStep a ((b - a) / N) g) g atTop (Icc a b) := by
+  intro U hU
+  rcases le_or_gt b a with hba | hab
+  · -- The interval is empty or the single point `a`, which is sampled at itself.
+    refine Eventually.of_forall fun N t ht ↦ ?_
+    obtain rfl : t = a := le_antisymm (ht.2.trans hba) ht.1
     simpa only [intervalStep, sub_self, zero_div, Nat.floor_zero, Nat.cast_zero, zero_mul,
-      add_zero, dist_self] using hε
-  rcases lt_or_gt_of_ne hne with hab | hab
-  swap
-  · exact ⟨1, one_pos, fun t ht ↦ absurd (ht.1.trans ht.2) (not_le.mpr hab)⟩
-  obtain ⟨η, hη, hg⟩ := Metric.uniformContinuousOn_iff.mp
-    (isCompact_Icc.uniformContinuousOn_of_continuous hg) ε hε
-  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / η)
+      add_zero] using refl_mem_uniformity hU
+  -- Uniform continuity gives a mesh `η` below which sampling moves `g` by less than `U`.
+  obtain ⟨η, hη, hηU⟩ := Metric.mem_uniformity_dist.mp
+    (mem_inf_principal.mp (isCompact_Icc.uniformContinuousOn_of_continuous hg hU))
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop ((b - a) / η)] with N hN t ht
   have hNpos : (0 : ℝ) < N := (div_pos (sub_pos.mpr hab) hη).trans hN
   have hδ : 0 < (b - a) / N := div_pos (sub_pos.mpr hab) hNpos
-  have hmesh : (b - a) / N < η := by
-    rw [div_lt_iff₀ hNpos]
-    simpa only [mul_comm] using (div_lt_iff₀ hη).mp hN
-  refine ⟨N, Nat.cast_pos.mp hNpos, fun t ht ↦ ?_⟩
   obtain ⟨hs0, hs1, hs2⟩ := sample_bounds hδ ht.1
-  have hs : a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N) ∈ Icc a b :=
-    ⟨hs0, hs1.trans ht.2⟩
-  have hd : dist (a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N)) t < η := by
-    rw [Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hs1)]
-    linarith
-  simpa only [intervalStep] using hg _ hs t ht hd
+  have hd : dist t (a + (⌊(t - a) / ((b - a) / N)⌋₊ : ℝ) * ((b - a) / N)) < η := by
+    rw [Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hs1)]
+    exact hs2.trans ((div_lt_comm₀ hη hNpos).mp hN)
+  simpa only [intervalStep, mem_preimage] using hηU hd ⟨ht, hs0, hs1.trans ht.2⟩
 
 /-- The sampled step function is constant between two successive subdivision nodes. -/
-theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
+theorem intervalStep_eq {a δ t : ℝ} (g : ℝ → E) (i : ℕ)
     (ht : t ∈ Ico (a + i * δ) (a + (i + 1) * δ)) :
     intervalStep a δ g t = g (a + i * δ) := by
-  have ht0 : 0 ≤ (t - a) / δ := by
-    apply div_nonneg _ hδ.le
-    nlinarith [ht.1]
-  have hf : ⌊(t - a) / δ⌋₊ = i := (Nat.floor_eq_iff ht0).mpr ⟨by
+  -- A nonempty cell forces a positive mesh.
+  have hδ : 0 < δ := by linarith [ht.1.trans_lt ht.2]
+  have hlo : (i : ℝ) ≤ (t - a) / δ := by
     rw [le_div_iff₀ hδ]
-    linarith [ht.1], by
+    linarith [ht.1]
+  have hf : ⌊(t - a) / δ⌋₊ = i := (Nat.floor_eq_iff (i.cast_nonneg.trans hlo)).mpr ⟨hlo, by
     rw [div_lt_iff₀ hδ]
     linarith [ht.2]⟩
   simp only [intervalStep, hf]
@@ -138,13 +127,15 @@ theorem intervalStep_eq {a δ t : ℝ} (hδ : 0 < δ) (g : ℝ → E) (i : ℕ)
 step functions. -/
 theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le
     [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {a b ε : ℝ} (hf : IntegrableOn f (Ioc a b))
-    (hab : a < b) (hε : 0 < ε) :
+    {f : ℝ → E} {a b ε : ℝ} (hf : IntegrableOn f (Ioc a b)) (hε : 0 < ε) :
     ∃ N : ℕ, 0 < N ∧ ∃ g : ℝ →ᵇ E,
       (∫ t in Ioc a b, ‖intervalStep a ((b - a) / N) g t - f t‖) ≤ ε := by
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨1, one_pos, 0, by simp [Ioc_eq_empty_of_le hba, hε.le]⟩
   obtain ⟨g, hg, hgi⟩ := hf.exists_boundedContinuous_integral_sub_le (half_pos hε)
-  obtain ⟨N, hN, hs⟩ := exists_intervalStep_dist_lt g g.continuous.continuousOn
-    (div_pos (half_pos hε) (sub_pos.mpr hab))
+  obtain ⟨N, hs, hN⟩ := ((Metric.tendstoUniformlyOn_iff.mp
+    (tendstoUniformlyOn_intervalStep g.continuous.continuousOn) _
+    (div_pos (half_pos hε) (sub_pos.mpr hab))).and (eventually_gt_atTop 0)).exists
   refine ⟨N, hN, g, ?_⟩
   have hsi := integrableOn_intervalStep a b ((b - a) / N) g
   have hbound : (∫ t in Ioc a b, ‖intervalStep a ((b - a) / N) g t - g t‖) ≤ ε / 2 := by
@@ -152,11 +143,9 @@ theorem IntegrableOn.exists_intervalStep_integral_norm_sub_le
       _ ≤ ∫ _ in Ioc a b, (ε / 2) / (b - a) := by
         apply integral_mono_ae (hsi.sub hgi).norm (integrable_const _)
         exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦ by
-          simpa only [dist_eq_norm, Pi.sub_apply] using (hs t ⟨ht.1.le, ht.2⟩).le
+          simpa only [dist_eq_norm_sub', Pi.sub_apply] using (hs t ⟨ht.1.le, ht.2⟩).le
       _ = ε / 2 := by
-        rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
-          ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
-        simp only [smul_eq_mul]
+        rw [setIntegral_const, Real.volume_real_Ioc_of_le hab.le, smul_eq_mul]
         field_simp [(sub_pos.mpr hab).ne']
   calc
     _ ≤ ∫ t in Ioc a b, ‖intervalStep a ((b - a) / N) g t - g t‖ + ‖f t - g t‖ := by

@@ -59,6 +59,8 @@ frequency derivative of its Fourier transform.
   `‖Op(a) u (x)‖ ≤ C ∫ ⟨2πζ⟩ ^ m ‖𝓕 u ζ‖ dζ`.
 * `TauCeti.continuous_quantizeSchwartzValue`: `Op(a) u` is continuous for continuous `a` with
   growth bounds locally uniform in `x`.
+* `TauCeti.integrable_quantizeSchwartzValue`: `Op(a) u` is integrable for continuous `a` that
+  vanishes at positions outside a compact set and has a growth bound there.
 * `TauCeti.quantizeSchwartzCLM`: for continuous `a` with growth bounds uniform in `x`, the
   quantization is a continuous linear map from Schwartz space to bounded continuous functions.
   `TauCeti.continuous_quantizeSchwartzValue_input` is the pointwise version: `u ↦ Op(a) u (x)`
@@ -76,8 +78,13 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
-* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: multiplying a symbol by a real
-  function `f` of the position multiplies its quantization by `f`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial` and
+  `TauCeti.Symbol.quantizeSchwartzValue_const`: the symbol `f(x)` quantizes to multiplication by
+  `f`, and a constant symbol `T` to `T`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_comp` and
+  `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: composing a symbol on the left
+  with a smooth function `f` of the position, operator-valued between Banach spaces or real,
+  composes its quantization with `f`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -331,6 +338,30 @@ theorem continuous_quantizeSchwartzValue (ha : Continuous a)
     (u : 𝓢(E, V)) : Continuous (quantizeSchwartzValue a u) := by
   simp only [funext (quantizeSchwartzValue_def a u)]
   exact continuous_integral_integrand ha hC (𝓕 u)
+
+/-- The quantization of a coefficient vanishing at positions outside a compact set `K` vanishes
+outside `K`. -/
+theorem hasCompactSupport_quantizeSchwartzValue {K : Set E} (hK : IsCompact K)
+    (hKa : ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0) (u : 𝓢(E, V)) :
+    HasCompactSupport (quantizeSchwartzValue a u) :=
+  HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+
+/-- **Integrability.** The quantization of a continuous coefficient vanishing at positions outside
+a compact set `K`, with a growth bound `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` on `K`, is integrable for every
+measure that is finite on compact sets. -/
+theorem integrable_quantizeSchwartzValue {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    (ha : Continuous a) {K : Set E} (hK : IsCompact K) {C : ℝ}
+    (hC : ∀ x ∈ K, ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hKa : ∀ x ∉ K, ∀ ξ, a (x, ξ) = 0) (u : 𝓢(E, V)) :
+    Integrable (quantizeSchwartzValue a u) μ := by
+  -- Since `a` vanishes outside `K`, the bound `max C 0` holds at every position.
+  have hC' (x ξ : E) : ‖a (x, ξ)‖ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+    by_cases hx : x ∈ K
+    · exact (hC x hx ξ).trans (by gcongr; exact le_max_left C 0)
+    · rw [hKa x hx, norm_zero]
+      positivity
+  exact (continuous_quantizeSchwartzValue ha (fun _ _ ↦ ⟨max C 0, fun x _ ξ ↦ hC' x ξ⟩)
+    u).integrable_of_hasCompactSupport (hasCompactSupport_quantizeSchwartzValue hK hKa u)
 
 end Continuity
 
@@ -925,6 +956,22 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
       quantizeSchwartzValue_coefficient_add, ih]
 
 open scoped ContDiff in
+/-- Composing a symbol on the left with a smooth operator-valued function `f` of the position
+before quantizing composes the quantization with `f`: `Op(f(x) a(x, ξ)) u = f (Op(a) u)`. -/
+theorem quantizeSchwartzValue_ofSpatial_comp [CompleteSpace W] {U : Type*}
+    [NormedAddCommGroup U] [NormedSpace ℂ U] [CompleteSpace U]
+    {f : CoordinateSpace n → W →L[ℂ] U} (hf : ContDiff ℝ ∞ f) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((ofSpatial f hf).comp a).coefficient u x =
+      f x (quantizeSchwartzValue a.coefficient u x) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, ← (f x).integral_comp_comm
+    (integrable_quantizeSchwartzValue_integrand
+      (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 u))]
+  simp only [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_apply,
+    Circle.smul_def, map_smul]
+
+open scoped ContDiff in
 /-- Multiplying a symbol by a real function `f` of the position before quantizing multiplies the
 quantization by `f`. -/
 theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
@@ -936,6 +983,23 @@ theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
       rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
         ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
     quantizeSchwartzValue_smul_left]
+
+open scoped ContDiff in
+/-- The symbol `f(x)` of multiplication by `f` quantizes to multiplication: `Op(f) u = f u`. -/
+@[simp]
+theorem quantizeSchwartzValue_ofSpatial [CompleteSpace V] [CompleteSpace W]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (ofSpatial f hf).coefficient u x = f x (u x) := by
+  rw [coefficient_ofSpatial_eq, quantizeSchwartzValue_comp_fst]
+
+/-- The constant symbol `T` quantizes to `T`: `Op(T) u = T u`. -/
+@[simp]
+theorem quantizeSchwartzValue_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (const T : Symbol n V W 0).coefficient u x = T (u x) := by
+  rw [quantizeSchwartzValue_congr_left (b := (ofSpatial (fun _ ↦ T) contDiff_const).coefficient)
+    (fun _ ↦ by simp) u, quantizeSchwartzValue_ofSpatial]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
@@ -1007,13 +1071,14 @@ theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
     HasCompactSupport (quantizeSchwartzValue a.coefficient u) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  exact HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+  exact TauCeti.hasCompactSupport_quantizeSchwartzValue hK hKa u
 
 theorem HasCompactSpatialSupport.integrable_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
-    Integrable (quantizeSchwartzValue a.coefficient u) :=
-  (a.continuous_quantizeSchwartzValue_coefficient u).integrable_of_hasCompactSupport
-    (ha.hasCompactSupport_quantizeSchwartzValue u)
+    Integrable (quantizeSchwartzValue a.coefficient u) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  obtain ⟨C, hC⟩ := a.exists_norm_coefficient_le K hK
+  exact TauCeti.integrable_quantizeSchwartzValue a.contDiff_coefficient.continuous hK hC hKa u
 
 theorem HasCompactSpatialSupport.memLp_quantizeSchwartzValue
     (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (p : ENNReal) :

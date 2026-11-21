@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import Mathlib.FieldTheory.Normal.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Finite extensions of the constant field
@@ -47,8 +48,9 @@ carried out after a finite constant field extension.
   extension of an exact constant field, `k'` is separably closed in `F · k'`.
 * `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
   `F · k'` over `k'`.
-* `TauCeti.isSeparable_adjoin_image_of_constantCompositum_eq_top`: if `F` is separable over
-  `k(S)`, then `F · k'` is separable over `k'(S)`.
+* `TauCeti.isSeparable_adjoin_image_of_constantCompositum_eq_top` and
+  `TauCeti.isSeparable_ratFunc_of_constantCompositum_eq_top`: if `F` is separable over `k(S)` or
+  `RatFunc k`, then `F · k'` is separable over `k'(S)` or `RatFunc k'`.
 * `TauCeti.exists_finiteDimensional_lt_card_constantCompositum_eq_top` and
   `TauCeti.exists_finiteDimensional_normal_splits_constantCompositum_eq_top`: finite constant field
   extensions `F · k'` with more than a given number of constants, or with `k'` normal and
@@ -205,6 +207,25 @@ theorem isSeparable_adjoin_image_of_constantCompositum_eq_top
         (hk' ▸ IntermediateField.mem_top)
   rw [← IntermediateField.isSeparable_top, ← htop]
   exact (IntermediateField.isSeparable_adjoin_iff_isSeparable L F').mpr fun _ ⟨z, hz⟩ ↦ hz ▸ hsep z
+
+/-- **Separability over the rational parameter field persists in a constant compositum**: if
+`F' = F · k'`, the rational variable `X` acts compatibly on `F` and `F'`, and `F` is separable
+algebraic over `RatFunc k`, then `F'` is separable algebraic over `RatFunc k'`. No hypothesis on
+`k' / k` is needed. -/
+theorem isSeparable_ratFunc_of_constantCompositum_eq_top
+    [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+    [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    [Algebra.IsSeparable (RatFunc k) F] :
+    Algebra.IsSeparable (RatFunc k') F' := by
+  have : Algebra.IsSeparable k⟮algebraMap (RatFunc k) F RatFunc.X⟯ F :=
+    isSeparable_adjoin_algebraMap_X_iff.mpr ‹_›
+  have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (k' := k') h
+    (S := {algebraMap (RatFunc k) F RatFunc.X})
+  rw [Set.image_singleton, hX] at hsep
+  exact isSeparable_adjoin_algebraMap_X_iff.mp hsep
 
 /-! ### Large finite extensions of constants -/
 

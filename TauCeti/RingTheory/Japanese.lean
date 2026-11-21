@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import Mathlib.RingTheory.EssentialFiniteness
 public import Mathlib.RingTheory.Etale.Basic
@@ -21,9 +22,11 @@ import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.Normal.FixedField
+import TauCeti.RingTheory.IntegralClosure.LinearSeparation
 import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 
@@ -91,7 +94,8 @@ need to be tested.
 * `TauCeti.Ring.isJapanese_iff_isPurelyInseparable`: a Noetherian domain is Japanese if and only
   if its integral closure in every finite purely inseparable extension of the fraction field is
   finite (Stacks, Lemma 10.161.12 (032N)); `TauCeti.Ring.IsJapanese.of_isPurelyInseparable` is
-  the criterion for an arbitrary model of the fraction field.
+  the criterion for an arbitrary model of the fraction field, and
+  `TauCeti.Ring.IsJapanese.of_forall_exists_dual_ne_zero` tests it via separating linear forms.
 
 ## Implementation notes
 
@@ -103,6 +107,7 @@ every fraction field and every universe.
 ## References
 
 * [Stacks Project, Section 10.161 (0BI1)](https://stacks.math.columbia.edu/tag/0BI1)
+* S. Bosch, U. Güntzer, and R. Remmert, *Non-Archimedean Analysis*, §4.1, Lemma 3.
 * The proof of `TauCeti.Ring.finite_integralClosure_of_etale` through the field factors follows
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -423,6 +428,23 @@ theorem isJapanese_iff_isPurelyInseparable [IsDomain R] [IsNoetherianRing R] :
       [IsPurelyInseparable (FractionRing R) L], Module.Finite R (integralClosure R L) :=
   ⟨fun _ L _ _ _ _ _ _ ↦ IsJapanese.finite_integralClosure_fractionRing L,
     fun h ↦ IsJapanese.of_isPurelyInseparable (FractionRing R) fun M _ _ _ _ _ _ ↦ h M⟩
+
+/-- **Linear-functional criterion for Japanese domains.** A Noetherian domain `R` with fraction
+field `K` is Japanese if, for every finite purely inseparable extension `M` of `K` (in the universe
+of `R`) and every nonzero `x : M` integral over `R`, there exists a `K`-linear functional
+`φ : Module.Dual K M` sending every element of `M` integral over `R` into
+`Set.range (algebraMap R K)` with `φ x ≠ 0`
+(Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §4.1, Lemma 3, combined with
+Stacks, Lemma 10.161.12 (032N)). -/
+theorem IsJapanese.of_forall_exists_dual_ne_zero [IsDomain R] [IsNoetherianRing R]
+    (K : Type v) [Field K] [Algebra R K] [IsFractionRing R K]
+    (h : ∀ (M : Type u) [Field M] [Algebra K M] [Algebra R M] [IsScalarTower R K M]
+      [FiniteDimensional K M] [IsPurelyInseparable K M] (x : M), IsIntegral R x → x ≠ 0 →
+      ∃ φ : Module.Dual K M,
+        (∀ y : M, IsIntegral R y → φ y ∈ Set.range (algebraMap R K)) ∧ φ x ≠ 0) :
+    IsJapanese R :=
+  IsJapanese.of_isPurelyInseparable K fun M _ _ _ _ _ _ ↦
+    TauCeti.IsIntegralClosure.finite_of_forall_exists_dual_ne_zero (integralClosure R M) K (h M)
 
 /-- **A localization of an N-1 domain is N-1.** Stacks, Lemma 10.161.3 (032G). -/
 theorem isN1_of_isLocalization [IsDomain R] [IsN1 R] (M : Submonoid R) (S : Type*)

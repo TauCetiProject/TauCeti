@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Snoc
 public import TauCeti.Topology.Grassmannian.Orthonormal
 
 /-!
@@ -84,17 +85,9 @@ def complement (f : finiteOrthonormalFrame 𝕜 r N) : Submodule 𝕜 (Euclidean
 def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complement) 1) :
     finiteOrthonormalFrame 𝕜 (r + 1) N :=
   ⟨Fin.snoc f.val (WithLp.ofLp v.val.val), by
-    classical
-    have hv : ‖(v.val.val : EuclideanSpace 𝕜 (Fin N))‖ = 1 :=
-      mem_sphere_zero_iff_norm.1 v.property
-    have ho := (mem_complement f v.val.val).1 v.val.property
-    refine orthonormal_iff_ite.2 fun i j ↦ ?_
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i <;>
-      refine Fin.lastCases ?_ (fun j ↦ ?_) j
-    · simp [inner_self_eq_norm_sq_to_K, hv]
-    · simpa [(Fin.castSucc_ne_last j).symm] using (inner_eq_zero_symm.2 (ho j))
-    · simpa using ho i
-    · simpa using orthonormal_iff_ite.1 f.property i j⟩
+    simpa [← Function.comp_def, Fin.comp_snoc] using
+      f.property.snoc (mem_sphere_zero_iff_norm.1 v.property) ((mem_complement f v.val.val).1
+          v.val.property)⟩
 
 @[simp] theorem snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
@@ -103,6 +96,19 @@ def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complem
 @[simp] theorem snoc_last (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) :
     (f.snoc v).val (Fin.last r) = WithLp.ofLp v.val.val := by simp [snoc]
+
+/-- Appending a perpendicular unit vector keeps the earlier vectors, as unit vectors. -/
+@[simp] theorem toSphere_snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
+    (f.snoc v).toSphere i.castSucc = f.toSphere i :=
+  Subtype.ext <| by rw [coe_toSphere, coe_toSphere, snoc_castSucc]
+
+/-- The appended perpendicular unit vector is the last vector of the frame, as a unit vector. -/
+@[simp] theorem toSphere_snoc_last (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) :
+    (f.snoc v).toSphere (Fin.last r) =
+      ⟨v.val.val, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 v.property)⟩ :=
+  Subtype.ext <| by rw [coe_toSphere, snoc_last, WithLp.toLp_ofLp]
 
 @[simp] theorem forgetLast_snoc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) : forgetLast (f.snoc v) = f := by

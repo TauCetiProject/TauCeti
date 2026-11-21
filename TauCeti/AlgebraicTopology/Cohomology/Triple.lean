@@ -38,6 +38,11 @@ sequence of a filtered space.
   `TauCeti.TopTriple.singularCohomology_exact_outer`,
   `TauCeti.TopTriple.singularCohomology_exact_total` and
   `TauCeti.TopTriple.singularCohomology_exact_inner`.
+* `TauCeti.TopTriple.isIso_biprod_lift_singularCohomology`: when retractions out of `Hⁿ(X, B)` and
+  `Hⁿ⁺¹(X, B)` split the outer maps `H*(X, A) ⟶ H*(X, B)` up to isomorphism, the connecting
+  morphism vanishes and `Hⁿ(X, B)` splits as a binary biproduct.
+* `TauCeti.TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero`: if `Hⁿ(A, B)` vanishes,
+  and so does `Hⁿ⁻¹(A, B)` when `n > 0`, restriction `Hⁿ(X, A) ⟶ Hⁿ(X, B)` is an isomorphism.
 
 ## References
 
@@ -108,6 +113,59 @@ lemma singularCohomology_exact_total (n : ℕ) :
 lemma singularCohomology_exact_inner (n m : ℕ) (h : n + 1 = m := by lia) :
     (ShortComplex.mk _ _ (T.comp_singularCohomologyδ R k M n m h)).Exact :=
   (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
+
+/-- **Splitting the cohomology sequence of a triple.** In a triple `T = (X, A, B)`, if morphisms
+out of `Hⁿ(X, B)` and `Hⁿ⁺¹(X, B)` compose with `H*(X, A) ⟶ H*(X, B)` to isomorphisms, then
+`Hⁿ(X, B) ⟶ B₀ ⊞ Hⁿ(A, B)` is an isomorphism. -/
+theorem isIso_biprod_lift_singularCohomology (n : ℕ) {B₀ B₁ : ModuleCat.{v} k}
+    (p₀ : (totalPair.obj T).singularCohomology R k M n ⟶ B₀)
+    (p₁ : (totalPair.obj T).singularCohomology R k M (n + 1) ⟶ B₁)
+    (hp₀ : IsIso (TopPair.singularCohomologyMap (totalToOuter.app T) n ≫ p₀))
+    (hp₁ : IsIso (TopPair.singularCohomologyMap (totalToOuter.app T) (n + 1) ≫ p₁)) :
+    IsIso (biprod.lift p₀ (TopPair.singularCohomologyMap (innerToTotal.app T) n)) := by
+  let q₀ := TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n
+  let q₁ := TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) (n + 1)
+  let i₀ := TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (innerToTotal.app T) n
+  have hδ : T.singularCohomologyδ R k M n (n + 1) rfl = 0 := by
+    rw [← Category.comp_id (T.singularCohomologyδ R k M n (n + 1) rfl),
+      ← IsIso.hom_inv_id (q₁ ≫ p₁), ← Category.assoc, ← Category.assoc,
+      T.singularCohomologyδ_comp R k M n (n + 1) rfl, zero_comp, zero_comp]
+  have hepi : Epi i₀ := (T.singularCohomology_exact_inner R k M n (n + 1) rfl).epi_f hδ
+  let r' : (totalPair.obj T).singularCohomology R k M n ⟶
+      (outerPair.obj T).singularCohomology R k M n := p₀ ≫ inv (q₀ ≫ p₀)
+  have hr' : q₀ ≫ r' = 𝟙 _ := by
+    dsimp only [r']
+    rw [← Category.assoc]
+    exact IsIso.hom_inv_id _
+  let spl := ShortComplex.Splitting.ofExactOfRetraction _
+    (T.singularCohomology_exact_total R k M n) r' hr' hepi
+  have hspl : IsIso (biprod.lift r' i₀) := spl.isoBinaryBiproduct.isIso_hom
+  have hfac : biprod.lift r' i₀ ≫ (biprod.mapIso (asIso (q₀ ≫ p₀)) (Iso.refl _)).hom =
+      biprod.lift p₀ i₀ :=
+    biprod.hom_ext _ _ (by simp [r', biprod.lift_fst_assoc]) (by simp)
+  rw [← hfac]
+  infer_instance
+
+/-- **Removing an acyclic inner pair**: if `Hⁿ(A, B)` vanishes, and so does `Hᵐ(A, B)` for
+`m + 1 = n`, then restriction `Hⁿ(X, A) ⟶ Hⁿ(X, B)` is an isomorphism. -/
+theorem isIso_singularCohomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularCohomology R k M n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularCohomology R k M m)) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) := by
+  have : Epi (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) :=
+    (T.singularCohomology_exact_total R k M n).epi_f (hn.eq_of_tgt _ _)
+  have :
+      Mono (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (totalToOuter.app T) n) := by
+    cases n with
+    | zero =>
+      -- In degree `0` there is no earlier term: the cochain map is injective in degree `0`.
+      have := (T.shortExact_singularCochainComplexShortComplex R k M).mono_f
+      have : Mono ((T.singularCochainComplexShortComplex R k M).f.f 0) := inferInstance
+      exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
+        (T.singularCochainComplexShortComplex R k M).f 0 (by simp)
+    | succ m =>
+      exact (T.singularCohomology_exact_outer R k M m (m + 1)).mono_g ((hm m rfl).eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
 
 end TopTriple
 
