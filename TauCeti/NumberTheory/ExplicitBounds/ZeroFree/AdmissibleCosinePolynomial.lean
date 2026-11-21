@@ -34,7 +34,8 @@ to that predicate, as `TauCeti.cosinePolynomial`.
 * `IsAdmissibleCosinePolynomial.one_le`: the index bound of an admissible polynomial satisfies
   `1 ≤ n`.
 * `IsAdmissibleCosinePolynomial.re_sum_nonneg` and `.sum_re_neg_log_one_sub_nonneg`: positivity
-  on the closed unit disk and its Euler-product form.
+  on the closed unit disk and its Euler-product form. These and `.alternating_sum_nonneg` are the
+  admissible cases of the `TauCeti.cosinePolynomial` lemmas that assume only nonnegativity.
 * `isAdmissibleCosinePolynomial_threeFourOne`: `(3, 4, 1)` is admissible.
 
 ## References
@@ -89,7 +90,7 @@ theorem cosinePolynomial_nonneg (h : IsAdmissibleCosinePolynomial n a) (θ : ℝ
 `π`. -/
 theorem alternating_sum_nonneg (h : IsAdmissibleCosinePolynomial n a) :
     0 ≤ ∑ k ∈ range (n + 1), (-1) ^ k * a k :=
-  cosinePolynomial_pi n a ▸ h.cosinePolynomial_nonneg Real.pi
+  alternating_sum_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg
 
 /-- The index bound of an admissible cosine polynomial satisfies `1 ≤ n`: for `n = 0` the
 vanishing clause forces `a 1 = 0`, against `0 ≤ a 0 < a 1`. -/
@@ -124,16 +125,14 @@ theorem mono (h : IsAdmissibleCosinePolynomial n a) {m : ℕ} (hnm : n ≤ m) :
 part on the closed unit disk. -/
 theorem re_sum_nonneg (h : IsAdmissibleCosinePolynomial n a) {z : ℂ} (hz : ‖z‖ ≤ 1) :
     0 ≤ (∑ k ∈ range (n + 1), (a k : ℂ) * z ^ k).re :=
-  trigonometricCombination_eq_re_sum _ _ _ z ▸
-    trigonometricCombination_nonneg_of_boundary h.isNonnegativeTrigonometricCombination hz
+  re_sum_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg hz
 
 /-- The Euler-product form of positivity: for `0 ≤ r < 1` and `‖z‖ ≤ 1`,
 `Σ_{k ≤ n} a k Re (-log (1 - r z^k)) ≥ 0`. -/
 theorem sum_re_neg_log_one_sub_nonneg (h : IsAdmissibleCosinePolynomial n a) {r : ℝ}
     (hr₀ : 0 ≤ r) (hr₁ : r < 1) {z : ℂ} (hz : ‖z‖ ≤ 1) :
-    0 ≤ ∑ k ∈ range (n + 1), a k * (-log (1 - r * z ^ k)).re := by
-  simpa [re_ofReal_mul] using
-    TauCeti.sum_re_neg_log_one_sub_nonneg h.isNonnegativeTrigonometricCombination hr₀ hr₁ hz
+    0 ≤ ∑ k ∈ range (n + 1), a k * (-log (1 - r * z ^ k)).re :=
+  sum_re_neg_log_one_sub_nonneg_of_cosinePolynomial_nonneg h.cosinePolynomial_nonneg hr₀ hr₁ hz
 
 end IsAdmissibleCosinePolynomial
 
