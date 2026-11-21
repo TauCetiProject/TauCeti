@@ -25,8 +25,6 @@ Picard–Lindelöf solution space until all of its curves lie in a prescribed ne
 * `LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt`: for an autonomous locally
   Lipschitz vector field, every initial point carries a solution on `Icc (t₀ - ε) (t₀ + ε)` for
   every initial time `t₀`, with `ε > 0` depending only on the initial point.
-* `LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt`: solutions of an autonomous locally Lipschitz
-  ODE on `[a, b]` are determined by their value at `a`.
 -/
 
 public section
@@ -118,17 +116,3 @@ theorem LocallyLipschitz.exists_eq_forall_mem_Icc_hasDerivWithinAt {E : Type*}
       ⟨t₀, by simp [(div_pos ha hB).le]⟩ y a 0 B C :=
     IsPicardLindelof.of_time_independent hbound (hC.mono hball) (by simp [field])
   exact hPL.exists_eq_forall_mem_Icc_hasDerivWithinAt₀
-
-/-- **Uniqueness for a locally Lipschitz field.** Two solutions of the autonomous ODE `x' = v x`
-on `[a, b]`, for a locally Lipschitz field `v`, which agree at `a` agree on `[a, b]`. -/
-theorem LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {v : E → E} (hv : LocallyLipschitz v) {f g : ℝ → E} {a b : ℝ}
-    (hf : ContinuousOn f (Icc a b)) (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (v (f t)) (Ici t) t)
-    (hg : ContinuousOn g (Icc a b)) (hg' : ∀ t ∈ Ico a b, HasDerivWithinAt g (v (g t)) (Ici t) t)
-    (ha : f a = g a) : EqOn f g (Icc a b) := by
-  -- Both trajectories lie in a compact set, on which `v` is Lipschitz.
-  obtain ⟨K, hK⟩ := hv.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
-    ((isCompact_Icc.image_of_continuousOn hf).union (isCompact_Icc.image_of_continuousOn hg))
-  exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ v) (fun _ _ ↦ hK) hf hf'
-    (fun t ht ↦ .inl ⟨t, Ico_subset_Icc_self ht, rfl⟩) hg hg'
-    (fun t ht ↦ .inr ⟨t, Ico_subset_Icc_self ht, rfl⟩) ha

@@ -26,6 +26,8 @@ any preconnected real parameter set.
 * `ContDiffAt.ode_eventuallyEq_nhdsWithin`: C¹ local uniqueness.
 * `IsPreconnected.ode_eqOn`: locally Lipschitz uniqueness on a preconnected parameter set.
 * `IsPreconnected.ode_eqOn_of_contDiffAt`: the C¹ specialization.
+* `LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt`: solutions of an autonomous locally Lipschitz
+  ODE on `[a, b]` are determined by their value at `a`.
 
 ## References
 
@@ -133,3 +135,18 @@ theorem IsPreconnected.ode_eqOn_of_contDiffAt (hI : IsPreconnected I)
   obtain ⟨K, s, hs, hL⟩ := (hV t ht).exists_lipschitzOnWith
   refine ⟨K, s, hs, fun r x hx y hy ↦ ?_⟩
   simpa only [Prod.edist_eq, edist_self, zero_max] using hL hx hy
+
+/-- **Uniqueness for a locally Lipschitz field.** Two solutions of the autonomous ODE `x' = v x`
+on `[a, b]`, for a locally Lipschitz field `v`, which agree at `a` agree on `[a, b]`. -/
+theorem LocallyLipschitz.eqOn_Icc_of_hasDerivWithinAt {v : E → E} (hv : LocallyLipschitz v)
+    {a b : ℝ} (hf : ContinuousOn f (Set.Icc a b))
+    (hf' : ∀ t ∈ Set.Ico a b, HasDerivWithinAt f (v (f t)) (Set.Ici t) t)
+    (hg : ContinuousOn g (Set.Icc a b))
+    (hg' : ∀ t ∈ Set.Ico a b, HasDerivWithinAt g (v (g t)) (Set.Ici t) t)
+    (ha : f a = g a) : Set.EqOn f g (Set.Icc a b) := by
+  -- Both trajectories lie in a compact set, on which `v` is Lipschitz.
+  obtain ⟨K, hK⟩ := hv.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
+    ((isCompact_Icc.image_of_continuousOn hf).union (isCompact_Icc.image_of_continuousOn hg))
+  exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ v) (fun _ _ ↦ hK) hf hf'
+    (fun t ht ↦ .inl ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) hg hg'
+    (fun t ht ↦ .inr ⟨t, Set.Ico_subset_Icc_self ht, rfl⟩) ha

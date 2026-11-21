@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 public import TauCeti.Analysis.ODE.ConvexInvariance
+import TauCeti.Analysis.ODE.ExistUnique
 
 /-!
 # The reaction ODE `R' = Q(R)` on four-tensors
