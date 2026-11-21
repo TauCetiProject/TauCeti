@@ -80,6 +80,15 @@ section Gradient
 
 variable {f : M → ℝ}
 
+omit [T2Space M] in
+/-- The Hessian form of a smooth function pairs vector fields differentiable at `x` to a function
+differentiable at `x`. -/
+private theorem mdifferentiableAt_hessianForm_apply_of_contMDiff (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {x : M} {σ τ : Π y : M, TangentSpace I y} (hσ : MDiffAt (T% σ) x)
+    (hτ : MDiffAt (T% τ) x) : MDiffAt (fun y ↦ I.hessianForm f y (σ y) (τ y)) x :=
+  mdifferentiableAt_hessianForm_apply (m := ∞) (k := ∞) (by simp) (by simp) isOpen_univ
+    (hf.of_le (by simp)).contMDiffOn (Set.mem_univ x) hσ hτ
+
 /-- Pairing the second covariant derivative of `grad f` with a vector is the covariant derivative
 of the Hessian: `⟪∇²(grad f)(u, v), w⟫ = (∇_u Hess f)(v, w)`. -/
 private theorem inner_secondCovariantDerivative_mgradient_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f)
@@ -92,8 +101,7 @@ private theorem inner_secondCovariantDerivative_mgradient_eq (hf : ContMDiff I �
   have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
   rw [inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian hf hV hWd,
     (CovariantDerivative.leviCivitaConnection I M).derivBilinearTensor_apply
-      (fun _ _ ↦ mdifferentiableAt_hessianForm_apply (m := ∞) (k := ∞) (by simp) (by simp)
-        isOpen_univ (hf.of_le (by simp)).contMDiffOn (Set.mem_univ _))
+      (fun _ _ ↦ mdifferentiableAt_hessianForm_apply_of_contMDiff hf)
       (hV.mdifferentiable (by simp) x) hWd u]
   simp only [I.hessianForm_apply]
 
@@ -129,8 +137,7 @@ theorem sum_inner_secondCovariantDerivative_mgradient_self (hf : ContMDiff I �
       (ContinuousLinearMap.toLinearMap₁₂ (I.hessianForm f y))) = laplaceBeltrami I f :=
     funext fun y ↦ (I.laplaceBeltrami_eq_metricTrace_hessianForm f y).symm
   have htr := hcov.mvfderiv_metricTrace
-    (fun _ _ ↦ mdifferentiableAt_hessianForm_apply (m := ∞) (k := ∞) (by simp) (by simp)
-      isOpen_univ (hf.of_le (by simp)).contMDiffOn (Set.mem_univ _)) b w
+    (fun _ _ ↦ mdifferentiableAt_hessianForm_apply_of_contMDiff hf) b w
   rw [hlap] at htr
   rw [Finset.sum_congr rfl fun i _ ↦ hswap i, Finset.sum_add_distrib, ← htr,
     cov.ricciTensor_eq_sum_inner x b]

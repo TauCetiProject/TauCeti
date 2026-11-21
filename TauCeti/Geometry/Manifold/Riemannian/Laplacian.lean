@@ -171,6 +171,17 @@ noncomputable def _root_.ModelWithCorners.hessianForm (I : ModelWithCorners ℝ 
     (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
   (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
 
+/-- The Hessian form is the metric lowering `innerSL ℝ ∘L ∇ grad f` of the Levi–Civita covariant
+derivative of the gradient. -/
+theorem _root_.ModelWithCorners.hessianForm_def (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) :
+    I.hessianForm f x =
+      (innerSL ℝ).comp (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x) := by
+  rw [ModelWithCorners.hessianForm]
+
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
 tangent vector: the values of `ModelWithCorners.hessianForm`. -/
 noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -187,7 +198,7 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
-  rw [hessian, ModelWithCorners.hessianForm, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  rw [hessian, I.hessianForm_def, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 @[simp]
 theorem _root_.ModelWithCorners.hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*}
@@ -534,29 +545,48 @@ theorem hessian_add_of_contMDiffAt {f g : M → ℝ} {x : M}
     hcov.add hgradf hgradg, add_apply, inner_add_left,
     ← hessian_def, ← hessian_def]
 
-/-- The Hessian commutes with constant scalar multiplication at a point of `C²` regularity. -/
-theorem hessian_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
-    hessian I (c • f) x v w = c * hessian I f x v w := by
-  let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian_def, mgradient_smul,
-    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
-      (mdifferentiableAt_mgradient hf),
-    smul_apply, real_inner_smul_left]
+/-- The Hessian form commutes with constant scalar multiplication at a point where the gradient
+is differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_smul_of_mdifferentiableAt_mgradient (c : ℝ)
+    {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (c • f) x = c • I.hessianForm f x := by
+  rw [I.hessianForm_def, I.hessianForm_def, mgradient_smul,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c hf,
+    ContinuousLinearMap.comp_smul]
 
-/-- Negating a function negates its Hessian at a point of `C²` regularity. -/
-theorem hessian_neg_of_contMDiffAt {f : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w : TangentSpace I x) :
+/-- The Hessian commutes with constant scalar multiplication at a point where the gradient is
+differentiable. -/
+theorem hessian_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
+    hessian I (c • f) x v w = c * hessian I f x v w := by
+  rw [← I.hessianForm_apply, I.hessianForm_smul_of_mdifferentiableAt_mgradient c hf, smul_apply,
+    smul_apply, I.hessianForm_apply, smul_eq_mul]
+
+/-- Negating a function negates its Hessian form at a point where its gradient is
+differentiable. -/
+theorem _root_.ModelWithCorners.hessianForm_neg_of_mdifferentiableAt_mgradient {f : M → ℝ}
+    {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
+    I.hessianForm (-f) x = -I.hessianForm f x := by
+  rw [← neg_one_smul ℝ f, I.hessianForm_smul_of_mdifferentiableAt_mgradient (-1) hf,
+    neg_one_smul ℝ (I.hessianForm f x)]
+
+/-- Negating a function negates its Hessian at a point where its gradient is differentiable. -/
+theorem hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
+    (v w : TangentSpace I x) :
     hessian I (-f) x v w = -hessian I f x v w := by
-  simpa only [neg_one_smul, neg_one_mul] using hessian_smul_of_contMDiffAt I (-1) hf v w
+  rw [← I.hessianForm_apply, I.hessianForm_neg_of_mdifferentiableAt_mgradient hf, neg_apply,
+    neg_apply, I.hessianForm_apply]
 
 /-- The Hessian respects subtraction at a point where both functions are `C²`. -/
 theorem hessian_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (v w : TangentSpace I x) :
     hessian I (f - g) x v w = hessian I f x v w - hessian I g x v w := by
   rw [sub_eq_add_neg, hessian_add_of_contMDiffAt I (g := -g) hf hg.neg,
-    hessian_neg_of_contMDiffAt I hg, sub_eq_add_neg]
+    hessian_neg_of_mdifferentiableAt_mgradient I (mdifferentiableAt_mgradient hg), sub_eq_add_neg]
 
 /-- The Hessian form of a function that is `C²` at `x` is symmetric. -/
 theorem _root_.ModelWithCorners.flip_hessianForm {f : M → ℝ} {x : M}
@@ -573,12 +603,25 @@ theorem _root_.ModelWithCorners.hessianForm_add_of_contMDiffAt {f g : M → ℝ}
     rw [add_apply, add_apply, I.hessianForm_apply,
       I.hessianForm_apply, I.hessianForm_apply, hessian_add_of_contMDiffAt I hf hg]
 
-/-- The Hessian form commutes with constant scalar multiplication at a point of `C²` regularity. -/
-theorem _root_.ModelWithCorners.hessianForm_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) : I.hessianForm (c • f) x = c • I.hessianForm f x :=
+/-- The Hessian form respects subtraction at a point where both functions are `C²`. -/
+theorem _root_.ModelWithCorners.hessianForm_sub_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
+    I.hessianForm (f - g) x = I.hessianForm f x - I.hessianForm g x :=
   ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
-    rw [smul_apply, smul_apply, I.hessianForm_apply,
-      I.hessianForm_apply, hessian_smul_of_contMDiffAt I c hf, smul_eq_mul]
+    rw [sub_apply, sub_apply, I.hessianForm_apply, I.hessianForm_apply, I.hessianForm_apply,
+      hessian_sub_of_contMDiffAt I hf hg]
+
+/-- The Hessian form of a constant function is zero. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_const (c : ℝ) (x : M) :
+    I.hessianForm (fun _ : M ↦ c) x = 0 :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
+    rw [I.hessianForm_apply, hessian_const, zero_apply, zero_apply]
+
+/-- The Hessian form of the zero function is zero. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_zero (x : M) : I.hessianForm (0 : M → ℝ) x = 0 :=
+  I.hessianForm_const 0 x
 
 /-- The Hessian is additive on twice continuously differentiable functions. -/
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
@@ -590,7 +633,7 @@ theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (x : M) (v w : TangentSpace I x) :
     hessian I (c • f) x v w = c * hessian I f x v w :=
-  hessian_smul_of_contMDiffAt I c (hf x) v w
+  hessian_smul_of_mdifferentiableAt_mgradient I c (mdifferentiableAt_mgradient (hf x)) v w
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
 @[simp]

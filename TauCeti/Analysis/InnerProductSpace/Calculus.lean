@@ -36,8 +36,15 @@ proves that both are smooth; this file computes their derivatives. The first is
 `v ↦ s v - s³ ⟪x, v⟫ x`, where `s = 1 / √(1 + ‖x‖²)`: a multiple `s` of the identity on the
 orthogonal complement of `x`, multiplying `x` itself by `s³`. The second is `r` times the first.
 
+## The second derivative of the squared norm
+
+On a real inner product space the squared norm `x ↦ ‖x‖²` has constant second derivative
+`2 • innerSL ℝ`, twice the inner product.
+
 ## Main results
 
+* `TauCeti.fderiv_fderiv_norm_sq`: the second derivative of the squared norm is
+  `2 • innerSL ℝ`.
 * `HasDerivAt.inner_comp_conj`: if `f` has derivative `f'` at `conj z` and `g` has derivative `g'`
   at `z`, then `w ↦ ⟪f (conj w), g w⟫` has derivative `⟪f', g z⟫ + ⟪f (conj z), g'⟫` at `z`.
 * `OpenPartialHomeomorph.hasFDerivAt_univUnitBall`: the derivative of the radial map onto the
@@ -67,9 +74,16 @@ theorem HasDerivAt.inner_comp_conj {f g : ℂ → X} {f' g' : X} {z : ℂ}
   ext1 h
   simp [fderivInnerCLM_apply, inner_smul_left, inner_smul_right, mul_add, add_comm]
 
-section UnitBall
-
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The second derivative of the squared norm is twice the inner product:
+`D²(‖·‖²)(y) = 2 • innerSL ℝ` at every point `y`. -/
+theorem TauCeti.fderiv_fderiv_norm_sq (y : E) :
+    fderiv ℝ (fderiv ℝ fun z : E ↦ ‖z‖ ^ 2) y = 2 • innerSL ℝ := by
+  rw [fderiv_norm_sq]
+  exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
+
+section UnitBall
 
 /-- **The derivative of the radial map onto the unit ball.** Mathlib's
 `OpenPartialHomeomorph.univUnitBall`, `x ↦ (√(1 + ‖x‖²))⁻¹ • x`, has derivative

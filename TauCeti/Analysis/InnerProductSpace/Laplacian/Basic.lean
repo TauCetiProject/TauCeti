@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -483,12 +484,8 @@ the dimension. -/
 @[simp]
 theorem laplacian_norm_sq (x : E) :
     Δ (fun y : E => ‖y‖ ^ 2) x = 2 * (Module.finrank ℝ E : ℝ) := by
-  -- The Hessian of `‖·‖²` is the constant bilinear map `2 • innerSL ℝ`.
-  have hsnd : fderiv ℝ (fderiv ℝ fun y : E => ‖y‖ ^ 2) x
-      = (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [fderiv_norm_sq]
-    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [laplacian_eq_traceL, hsnd, map_nsmul, traceL_innerSL, nsmul_eq_mul, Nat.cast_ofNat]
+  rw [laplacian_eq_traceL, fderiv_fderiv_norm_sq, map_nsmul, traceL_innerSL, nsmul_eq_mul,
+    Nat.cast_ofNat]
 
 open Filter Gradient Topology in
 /-- **The Leibniz rule for the Laplacian.** For scalar functions twice differentiable at `x`,

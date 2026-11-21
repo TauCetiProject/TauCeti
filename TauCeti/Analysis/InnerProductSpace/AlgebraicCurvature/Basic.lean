@@ -543,10 +543,16 @@ def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
     -- `ricciSlice` is homogeneous in the tensor by its definition.
     rfl
 
+/-- The Ricci contraction is the metric trace of the slice `(x, y) ↦ r(x, u, y, v)`. -/
+private theorem ricci_apply (r : FourTensor V) (u v : V) :
+    ricci r u v = LinearMap.BilinMap.metricTrace (ricciSlice r u v) := by
+  simp only [ricci, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.mk₂_apply]
+
 /-- In every orthonormal basis `(eᵢ)`, the Ricci contraction is `∑ᵢ r(eᵢ, u, eᵢ, v)`. -/
 theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
-  LinearMap.BilinMap.metricTrace_eq_sum (ricciSlice r u v) b
+    (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] := by
+  rw [ricci_apply, LinearMap.BilinMap.metricTrace_eq_sum (ricciSlice r u v) b]
+  simp only [ricciSlice_apply]
 
 /-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
 theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
@@ -574,8 +580,7 @@ theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAdd
       simp only [ricciSlice_apply, LinearMap.compl₁₂_apply, compContinuousLinearMap_apply_vec,
         LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
         LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
-  exact (congrArg LinearMap.BilinMap.metricTrace h).trans
-    (LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv _ e)
+  rw [ricci_apply, ricci_apply, h, LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv]
 
 /-- The scalar contraction of a four-tensor: the metric trace of its Ricci contraction. -/
 def scalar : FourTensor V →ₗ[ℝ] ℝ :=

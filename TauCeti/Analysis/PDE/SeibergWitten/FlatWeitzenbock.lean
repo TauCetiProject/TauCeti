@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -17,7 +18,6 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
-import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
 
 /-!
@@ -31,9 +31,10 @@ operator
 `∇_v ψ = dψ(v) + i b(v) ψ`  (`TauCeti.SeibergWitten.covariantDeriv`),
 `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`  (`flatDirac`),
 
-for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`); this is the Dirac operator of the twisted
-spinors on a flat chart in which the background connection is trivial. For `ψ = α u₀` with `u₀`
-constant it is the operator of the flat limiting equations of
+for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). Without a basis, `D ψ` is the metric
+trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ` (`cliffordPairing`, `flatDirac_def`). This is
+the Dirac operator of the twisted spinors on a flat chart in which the background connection is
+trivial. For `ψ = α u₀` with `u₀` constant it is the operator of the flat limiting equations of
 `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). Since the `c(eₖ)`
 satisfy the Clifford relations and the commutator of covariant derivatives is the curvature,
 `∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
@@ -247,12 +248,17 @@ theorem laplacian_norm_sq_eq [FiniteDimensional ℝ V] (hψ : ContDiffAt ℝ 2 �
 
 /-- The real-bilinear pairing `(v, w) ↦ c(v) (L w)` of a linear map `L : V → W`, whose contraction
 along the metric is the Clifford contraction `∑ₖ c(eₖ) (L eₖ)`. -/
-private def cliffordPairing (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
+def cliffordPairing (L : V →L[ℝ] W) : V →ₗ[ℝ] V →ₗ[ℝ] W :=
   LinearMap.mk₂ ℝ (fun v w ↦ ρ (ι Q v) (L w))
     (fun _ _ _ ↦ by simp)
     (fun c v w ↦ by rw [map_smul, map_smul, LinearMap.smul_apply])
     (fun _ _ _ ↦ by simp)
     (fun c v w ↦ by rw [map_smul, LinearMap.map_smul_of_tower])
+
+@[simp]
+theorem cliffordPairing_apply (L : V →L[ℝ] W) (v w : V) :
+    cliffordPairing ρ L v w = ρ (ι Q v) (L w) := by
+  rw [cliffordPairing, LinearMap.mk₂_apply]
 
 section Dirac
 
@@ -263,11 +269,18 @@ without a basis as the metric contraction of `(v, w) ↦ c(v) ∇_w ψ`. -/
 def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) : W :=
   LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x))
 
+/-- The flat Dirac operator is the metric trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ`. -/
+theorem flatDirac_def (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
+    flatDirac ρ b ψ x =
+      LinearMap.BilinMap.metricTrace (cliffordPairing ρ (covariantDeriv b ψ x)) := by
+  rw [flatDirac]
+
 /-- The flat Dirac operator in an orthonormal basis: `D ψ = ∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
 theorem flatDirac_eq_sum {κ : Type*} [Fintype κ] (e : OrthonormalBasis κ ℝ V)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
     flatDirac ρ b ψ x = ∑ k, ρ (ι Q (e k)) (covariantDeriv b ψ x (e k)) := by
-  simp [flatDirac, LinearMap.BilinMap.metricTrace_eq_sum _ e, cliffordPairing]
+  rw [flatDirac_def, LinearMap.BilinMap.metricTrace_eq_sum _ e]
+  simp only [cliffordPairing_apply]
 
 /-- The flat Dirac operator of `α u₀` for a constant spinor `u₀`:
 `D (α u₀) = ∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`. On the canonical line this is the flat limiting Dirac

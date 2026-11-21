@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Complex.Pseudoconvex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Squared distance along a differentiable map
@@ -115,11 +116,7 @@ theorem fderiv_norm_sq_sub_comp_eq_zero_iff (hi : DifferentiableAt ℝ i x) :
 /-- The second derivative of squared norm is twice the inner product. -/
 theorem fderiv_fderiv_norm_sq_apply (y u v : E) :
     fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y u v = 2 * inner ℝ u v := by
-  have hsnd : fderiv ℝ (fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2)) y =
-      (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [fderiv_norm_sq]
-    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [hsnd]
+  rw [fderiv_fderiv_norm_sq]
   simp only [two_smul, add_apply]
   rw [innerSL_apply_apply]
   ring
