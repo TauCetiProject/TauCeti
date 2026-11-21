@@ -20,10 +20,9 @@ It is linear over the ground field, but generally not over smooth functions: its
 Consequently its commutator with multiplication by `f` is a smooth-function-linear map,
 and first-jet extension is a differential operator of order at most one in the iterated
 commutator filtration. The formula identifies the derivative contribution intrinsically
-in the kernel of the first-jet projection, without choosing a connection. A nonzero value
-of `df ⊗ s` witnesses that the operator does not have order zero.
+in the kernel of the first-jet projection, without choosing a connection. Nonzero values
+of `df` and `s` at a common point witness that the operator does not have order zero.
 
-The pointwise rules require only differentiability at the point and `C¹` bundle charts.
 Neither finite rank nor finite dimension of the base is needed.
 
 ## References
@@ -36,8 +35,8 @@ public section
 
 noncomputable section
 
-open Bundle Set Filter
-open scoped Manifold ContDiff Topology
+open Bundle
+open scoped Manifold ContDiff
 
 namespace TauCeti.FirstJetBundle
 
@@ -49,98 +48,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
-
-section Pointwise
-
-variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
-
-/-- First jets are additive on differentiable sections. -/
-theorem jet_add {s t : ∀ x, V x} {x : M}
-    (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) :
-    jet I F (s + t) x = jet I F s x + jet I F t x := by
-  have huniq : UniqueDiffWithinAt 𝕜 (range I) (extChartAt I x x) :=
-    I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x))
-  apply Prod.ext
-  · -- Jet fibres inherit the product operations through `VectorBundleCore.Fiber`.
-    erw [Prod.fst_add]
-    simpa only [jet_fst, Pi.add_apply] using
-      (trivializationAt F V x).linear 𝕜 (mem_baseSet_trivializationAt F V x) |>.map_add (s x) (t x)
-  · rw [jet_snd, (localRep_eventuallyEq_add I F s t x).fderivWithin_eq_of_mem
-        (extChartAt_target_subset_range x (mem_extChartAt_target x))]
-    -- Read the inherited product addition through the fibre type synonym.
-    erw [Prod.snd_add]
-    simp only [jet_snd]
-    rw [fderivWithin_add huniq
-      (differentiableWithinAt_localRep I F hs (mem_baseSet_self F V x))
-      (differentiableWithinAt_localRep I F ht (mem_baseSet_self F V x))]
-
-/-- First jets commute with constant scalar multiplication, even for nondifferentiable sections. -/
-theorem jet_const_smul (c : 𝕜) (s : ∀ x, V x) (x : M) :
-    jet I F (c • s) x = c • jet I F s x := by
-  apply Prod.ext
-  · -- Jet fibres inherit scalar multiplication from the product model fibre.
-    erw [Prod.smul_fst]
-    simpa only [jet_fst, Pi.smul_apply] using
-      (trivializationAt F V x).linear 𝕜 (mem_baseSet_trivializationAt F V x) |>.map_smul c (s x)
-  · have h : localRep I F (c • s) x =ᶠ[𝓝[range I] extChartAt I x x]
-        c • localRep I F s x := by
-      simpa only [Pi.smul_def, Pi.smul_def', Function.comp_def] using
-        localRep_eventuallyEq_smul (I := I) (F := F) (fun _ ↦ c) s x
-    rw [jet_snd, h.fderivWithin_eq_of_mem
-      (extChartAt_target_subset_range x (mem_extChartAt_target x))]
-    -- Read the inherited product action through the fibre type synonym.
-    erw [Prod.smul_snd]
-    rw [jet_snd]
-    exact fderivWithin_const_smul_field c
-      (I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x)))
-
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-
-/-- The first-jet Leibniz rule; the derivative term lies in the kernel of the value projection. -/
-theorem jet_smul {f : M → 𝕜} {s : ∀ x, V x} {x : M}
-    (hf : MDiffAt f x) (hs : MDiffAt (T% s) x) :
-    jet I F (f • s) x = f x • jet I F s x +
-      ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
-  have hx := mem_extChartAt_source (I := I) x
-  have hrep : writtenInExtChartAt I 𝓘(𝕜) x f = f ∘ (extChartAt I x).symm := by
-    simp [writtenInExtChartAt]
-  have hf' : DifferentiableWithinAt 𝕜 (f ∘ (extChartAt I x).symm)
-      (range I) (extChartAt I x x) := by
-    rw [← hrep]
-    exact hf.differentiableWithinAt_writtenInExtChartAt
-  have hdf : fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) =
-      mvfderiv I f x := by
-    rw [hf.mvfderiv, hrep]
-  have huniq : UniqueDiffWithinAt 𝕜 (range I) (extChartAt I x x) :=
-    I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x))
-  apply Prod.ext
-  · -- Use the product operations underlying `VectorBundleCore.Fiber`.
-    erw [Prod.fst_add, Prod.smul_fst]
-    rw [jet_fst, jet_fst, ofDeriv_apply, add_zero]
-    exact (trivializationAt F V x).linear 𝕜 (mem_baseSet_trivializationAt F V x)
-      |>.map_smul (f x) (s x)
-  · rw [jet_snd, (localRep_eventuallyEq_smul I F f s x).fderivWithin_eq_of_mem
-        (extChartAt_target_subset_range x (mem_extChartAt_target x))]
-    -- Use the product operations underlying `VectorBundleCore.Fiber`.
-    erw [Prod.snd_add, Prod.smul_snd]
-    rw [jet_snd, fderivWithin_smul huniq hf'
-        (differentiableWithinAt_localRep I F hs (mem_baseSet_self F V x)), hdf]
-    rw [Function.comp_apply, (extChartAt I x).left_inv hx,
-      localRep_extChartAt I F s (mem_chart_source H x), ofDeriv_apply]
-    congr 1
-    ext v
-    -- The domain is the tangent-space type synonym; evaluating both linear maps
-    -- exposes the scalar multiplication in the fibre.
-    change mvfderiv I f x v • (trivializationAt F V x ⟨x, s x⟩).2 =
-      (trivializationAt F V x).continuousLinearMapAt 𝕜 x (mvfderiv I f x v • s x)
-    rw [map_smul, Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _
-      (mem_baseSet_trivializationAt F V x)]
-
-end Pointwise
-
-section Smooth
-
-variable [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
+  [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
 
 variable (I F V) in
 /-- The ground-field-linear first-jet extension of smooth sections. -/
@@ -160,7 +68,19 @@ def jetExtension : Cₛ^∞⟮I; F, V⟯ →ₗ[𝕜]
 theorem jetExtension_apply (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
     jetExtension I F V s x = jet I F s x := (rfl)
 
+section Leibniz
+
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+
+/-- The first-jet extension of a smooth-function multiple satisfies the pointwise Leibniz rule. -/
+theorem jetExtension_smul_apply (f : C^∞⟮I, M; 𝕜⟯) (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    jetExtension I F V (f • s) x = f x • jetExtension I F V s x +
+      ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
+  have hfs : ⇑(f • s) = (f : M → 𝕜) • (s : ∀ x, V x) :=
+    funext fun y ↦ ContMDiffSection.smul_apply f s y
+  rw [jetExtension_apply, jetExtension_apply, hfs]
+  exact jet_smul (f.contMDiff.mdifferentiable (by simp) x)
+    (s.contMDiff.mdifferentiable (by simp) x)
 
 /-- The commutator of jet extension and multiplication is insertion of `df ⊗ s`. -/
 theorem smulCommutator_jetExtension_apply (f : C^∞⟮I, M; 𝕜⟯)
@@ -169,17 +89,17 @@ theorem smulCommutator_jetExtension_apply (f : C^∞⟮I, M; 𝕜⟯)
       ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
   rw [smulCommutator_apply_apply]
   simp only [ContMDiffSection.coe_sub, Pi.sub_apply, ContMDiffSection.smul_apply,
-    jetExtension_apply]
-  have hfs : ⇑(f • s) = (f : M → 𝕜) • (s : ∀ x, V x) :=
-    funext fun y ↦ ContMDiffSection.smul_apply f s y
-  rw [hfs, jet_smul (f.contMDiff.mdifferentiable (by simp) x)
-    (s.contMDiff.mdifferentiable (by simp) x), add_sub_cancel_left]
+    jetExtension_smul_apply, add_sub_cancel_left]
+
+end Leibniz
 
 /-- The commutator of first-jet extension with multiplication is smooth-function-linear. -/
 theorem smulCommutator_jetExtension_smul (f g : C^∞⟮I, M; 𝕜⟯)
     (s : Cₛ^∞⟮I; F, V⟯) :
     smulCommutator 𝕜 f (jetExtension I F V) (g • s) =
       g • smulCommutator 𝕜 f (jetExtension I F V) s := by
+  have : ∀ x, IsTopologicalAddGroup (V x) := VectorBundle.isTopologicalAddGroup 𝕜 F V
+  have : ∀ x, ContinuousSMul 𝕜 (V x) := VectorBundle.continuousSMul 𝕜 F V
   ext x
   simp only [ContMDiffSection.smul_apply, smulCommutator_jetExtension_apply]
   rw [← map_smul]
@@ -196,17 +116,22 @@ theorem jetExtension_mem_differentialOperators_one :
   rw [mem_differentialOperators_zero_iff]
   exact smulCommutator_jetExtension_smul f
 
-/-- A nonzero derivative tensor witnesses that first-jet extension does not have order zero. -/
+/-- A nonzero scalar derivative and a nonzero section value at the same point witness that
+first-jet extension does not have order zero. -/
 theorem jetExtension_notMem_differentialOperators_zero (f : C^∞⟮I, M; 𝕜⟯)
-    (s : Cₛ^∞⟮I; F, V⟯) (x : M) (h : (mvfderiv I f x).smulRight (s x) ≠ 0) :
+    (s : Cₛ^∞⟮I; F, V⟯) (x : M) (hf : mvfderiv I f x ≠ 0) (hs : s x ≠ 0) :
     jetExtension I F V ∉ differentialOperators 𝕜 C^∞⟮I, M; 𝕜⟯
       Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F × (E →L[𝕜] F), FirstJetBundle I F V⟯ 0 := by
+  have : ∀ x, IsTopologicalAddGroup (V x) := VectorBundle.isTopologicalAddGroup 𝕜 F V
+  have : ∀ x, ContinuousSMul 𝕜 (V x) := VectorBundle.continuousSMul 𝕜 F V
   intro hj
   have hz := congrArg (fun D ↦ D s x)
     (smulCommutator_eq_zero_of_mem_differentialOperators_zero hj f)
   rw [smulCommutator_jetExtension_apply] at hz
-  exact h ((ofDeriv_injective I F x) (hz.trans (map_zero (ofDeriv I F x)).symm))
-
-end Smooth
+  have h := (ofDeriv_injective I F x) (hz.trans (map_zero (ofDeriv I F x)).symm)
+  apply hf
+  ext v
+  simpa only [ContinuousLinearMap.smulRight_apply, zero_apply, smul_eq_zero, hs, or_false]
+    using DFunLike.congr_fun h v
 
 end TauCeti.FirstJetBundle
