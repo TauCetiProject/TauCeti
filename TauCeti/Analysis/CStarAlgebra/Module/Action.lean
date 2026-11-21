@@ -24,9 +24,9 @@ Neither completeness nor the analytic C⋆-algebra axioms are needed for these a
 
 Over a (possibly non-unital) C⋆-algebra `A`, combining these algebraic laws with
 `CStarModule.norm_smul_le` bundles the action `a ↦ a • x` at a fixed vector `x : E` as a bounded
-complex-linear map `CStarModule.smulCLM A x : A →L[ℂ] E` (and
-`CStarModule.opSMulCLM A x : A →L[ℂ] E` for right Hilbert `A`-modules) of operator norm at most
-`‖x‖`.
+complex-linear map `TauCeti.CStarModule.smulCLM A x : A →L[ℂ] E` (and
+`TauCeti.CStarModule.opSMulCLM A x : A →L[ℂ] E` for right Hilbert `A`-modules) of operator norm at
+most `‖x‖`.
 
 ## References
 
@@ -136,6 +136,10 @@ abbrev module (A E : Type*) [Ring A] [StarRing A] [Module ℂ A]
   add_smul := CStarModule.add_smul
   zero_smul := (smulWithZero A E).zero_smul
 
+end CStarModule
+
+namespace TauCeti.CStarModule
+
 section Analytic
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -177,8 +181,8 @@ theorem opSMulCLM_apply [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) (
 /-- The operator norm of `a ↦ MulOpposite.op a • x` is at most `‖x‖`. -/
 theorem norm_opSMulCLM_le [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : E) :
     ‖opSMulCLM A x‖ ≤ ‖x‖ :=
-  (opSMulCLM A x).opNorm_le_bound (norm_nonneg x) fun a ↦ norm_op_smul_le a x
+  (opSMulCLM A x).opNorm_le_bound (norm_nonneg x) fun a ↦ CStarModule.norm_op_smul_le a x
 
 end Analytic
 
-end CStarModule
+end TauCeti.CStarModule

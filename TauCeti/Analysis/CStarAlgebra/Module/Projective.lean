@@ -131,7 +131,7 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
   let : NormedSpace ℂ M := .ofCore (CStarModule.normedSpaceCore Aᵐᵒᵖ)
   have hisom : Isometry g := AddMonoidHomClass.isometry_of_norm (g.restrictScalars ℂ) fun _ ↦ rfl
   exact ⟨‹_›, ‹_›, hisom.isUniformInducing.completeSpace
-    (hfg_apply.isClosed_range f.continuous_cstarModule hisom.continuous).isComplete⟩
+    (hfg_apply.isClosed_range f.continuous_of_finite_pi_cstarModule hisom.continuous).isComplete⟩
 
 end FiniteProjective
 

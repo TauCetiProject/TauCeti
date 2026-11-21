@@ -56,9 +56,9 @@ def gram (A : Type*) [Inner Aᵐᵒᵖ E] (x : n → E) : CStarMatrix n n A :=
 lemma gram_apply [Inner Aᵐᵒᵖ E] (x : n → E) (i j : n) :
     gram A x i j = unop (inner Aᵐᵒᵖ (x i) (x j)) := (rfl)
 
-section Algebraic
+section SelfAdjoint
 
-variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
+variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm Aᵐᵒᵖ]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- Every Gram matrix is self-adjoint, by the conjugate symmetry of the module inner product. -/
@@ -66,7 +66,12 @@ theorem isSelfAdjoint_gram (x : n → E) : IsSelfAdjoint (gram A x) := by
   ext i j
   simp [CStarMatrix.star_apply, gram_apply, ← unop_star, CStarModule.star_inner]
 
-variable [StarModule ℂ A]
+end SelfAdjoint
+
+section Algebraic
+
+variable [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A]
+  [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- The quadratic forms of a Gram matrix are the inner products of the corresponding right
 linear combinations. This only uses the algebraic `CStarModule` axioms, so the coefficients need
@@ -83,9 +88,8 @@ end Algebraic
 
 section UnitalAlgebraic
 
-variable [Fintype n] [DecidableEq n] [SeminormedRing A] [StarRing A] [Module ℂ A]
-  [PartialOrder A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
-  [CStarModule Aᵐᵒᵖ E]
+variable [Fintype n] [DecidableEq n] [Ring A] [StarRing A] [Module ℂ A] [PartialOrder A]
+  [Norm Aᵐᵒᵖ] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
 /-- If a finite family `x : n → E` has identity Gram matrix `gram A x = 1`, pairing `x i` against
 a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coefficient `op (c i)`. -/
