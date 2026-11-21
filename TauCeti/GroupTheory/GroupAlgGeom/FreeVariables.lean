@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
-public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.GroupAlgGeom.Separated
 public import Mathlib.Algebra.Group.Commutator
 import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.FreeGroup.Basic
@@ -287,35 +286,13 @@ variable {X' : Type*} {S : Set (GX G X)} {T : Set (GX G X')}
   (ψ : GHom ((inl : SystemGroup G S →* GX (SystemGroup G S) Y).comp (SystemGroup.coeff S))
     (SystemGroup.coeff T))
 
-/-- A `G`-homomorphism `ψ : G_S ∗ F(Y) → G_T` sends the class of an element of the radical of `S`
-into the kernel of `G_T → G_{R(T)}`: at a point of `T`, the composite `G_S → H` is evaluation at a
-point of `S`. -/
-private theorem toCoordGroup_apply_inl_eq_one {w : GX G X} (hw : w ∈ Rad ι S) :
-    SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) = 1 := by
-  obtain ⟨t, ht⟩ := QuotientGroup.mk_surjective (ψ (inl (w : SystemGroup G S)))
-  rw [← ht, SystemGroup.toCoordGroup_mk, QuotientGroup.eq_one_iff, mem_Rad]
-  intro v hv
-  let χ : GHom (SystemGroup.coeff S) ι :=
-    ⟨((SystemGroup.evalGHom v hv : SystemGroup G T →* H).comp
-      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inl, fun g => by
-      simpa using congrArg (SystemGroup.evalGHom v hv) (ψ.map_coeff g)⟩
-  have h := mem_Rad.1 hw _ (SystemGroup.homEquiv ι S χ).property
-  rw [SystemGroup.eval_homEquiv] at h
-  rwa [← SystemGroup.evalGHom_mk hv, ht]
-
 variable (ι) in
-/-- The homomorphism `G_{R(S)} → G_{R(T)}` induced by `G_S → G_S ∗ F(Y) → G_T`. -/
-private def inlCoordMap : CoordGroup ι S →* CoordGroup ι T :=
-  QuotientGroup.lift (Rad ι S)
-    (((SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp
-      (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp
-        ((inl : SystemGroup G S →* GX (SystemGroup G S) Y).comp (QuotientGroup.mk' _)))
-    fun _ hw => toCoordGroup_apply_inl_eq_one ψ hw
-
-private theorem inlCoordMap_mk (w : GX G X) :
-    inlCoordMap ι ψ (w : CoordGroup ι S) =
-      SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) :=
-  (rfl)
+/-- The homomorphism `G_{R(S)} → G_{R(T)}` induced by `G_S → G_S ∗ F(Y) → G_T`: evaluation at the
+solution of `S` in `G_{R(T)}` given by `G_S → G_S ∗ F(Y) → G_T → G_{R(T)}`, since `G_{R(T)}` is
+separated by `H`. -/
+private def inlCoordMap : GHom (coeff ι S) (coeff ι T) :=
+  evalGHomOfIsSeparatedBy (isSeparatedBy_coeff T) _ (SystemGroup.homEquiv _ S
+    ((SystemGroup.toCoordGroup ι T).comp (ψ.comp ⟨inl, fun _ => rfl⟩))).property
 
 variable (ι) in
 /-- A `G`-homomorphism `ψ : G_S ∗ F(Y) → G_T` of presented groups induces a `G`-homomorphism
@@ -323,18 +300,17 @@ variable (ι) in
 `G_S → G_{R(S)}` and `G_T → G_{R(T)}`. -/
 def freeProdMap :
     GHom ((inl : CoordGroup ι S →* GX (CoordGroup ι S) Y).comp (coeff ι S)) (coeff ι T) where
-  toMonoidHom := lift (inlCoordMap ι ψ)
+  toMonoidHom := lift (inlCoordMap ι ψ : CoordGroup ι S →* CoordGroup ι T)
     (((SystemGroup.toCoordGroup ι T : SystemGroup G T →* CoordGroup ι T).comp
       (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inr)
-  map_coeff' g := by
-    simpa [inlCoordMap_mk] using congrArg (SystemGroup.toCoordGroup ι T) (ψ.map_coeff g)
+  map_coeff' g := by simpa using (inlCoordMap ι ψ).map_coeff g
 
 /-- On `G_{R(S)}`, the induced homomorphism is `G_S → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
 @[simp]
 theorem freeProdMap_inl (w : GX G X) :
     freeProdMap ι ψ (inl (w : CoordGroup ι S)) =
       SystemGroup.toCoordGroup ι T (ψ (inl (w : SystemGroup G S))) := by
-  simp [freeProdMap, inlCoordMap_mk]
+  simp [freeProdMap, inlCoordMap, GHom.coe_comp]
 
 /-- On `F(Y)`, the induced homomorphism is `F(Y) → G_S ∗ F(Y) → G_T → G_{R(T)}`. -/
 @[simp]

@@ -9,6 +9,7 @@ public import Mathlib.Data.Fintype.Sort
 public import TauCeti.GroupTheory.FreeGroup.GenEq.DeleteItems
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 public import TauCeti.GroupTheory.GroupAlgGeom.FreeVariables
+import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
 
 /-!
 # Free items of a generalised equation
@@ -112,17 +113,12 @@ theorem toSystem_eq_image_addFreeVars :
     Ω.toSystem = GX.renameEquiv (FreeGroup A)
         (finSumEquivOfFinset (s := Ω.freeItemsᶜ) rfl (congrArg Finset.card (compl_compl _))) ''
       addFreeVars (Fin #Ω.freeItems) Ω.deleteFreeItems.toSystem := by
-  ext t
-  refine ⟨fun ht => ?_, ?_⟩
-  · obtain ⟨_, he, rfl⟩ := (mem_toSystem_iff _).1 ht
-    obtain ⟨u, hu, rfl⟩ := Ω.image_equations_deleteFreeItems.symm ▸ he
-    exact ⟨_, mem_addFreeVars.2 ⟨_, (mem_toSystem_iff _).2 ⟨u, hu, rfl⟩, rfl⟩,
-      Ω.renameEquiv_inclFreeVars_toGX u⟩
-  · rintro ⟨_, ht, rfl⟩
-    obtain ⟨_, hs, rfl⟩ := mem_addFreeVars.1 ht
-    obtain ⟨u, hu, rfl⟩ := (mem_toSystem_iff _).1 hs
-    exact (mem_toSystem_iff _).2 ⟨restoreEquation Ω.freeItems u, Ω.image_equations_deleteFreeItems ▸
-      ⟨u, hu, rfl⟩, (Ω.renameEquiv_inclFreeVars_toGX u).symm⟩
+  have h (Ω : GenEq A) : Ω.toSystem = (fun e => EqIneqSystem.toGX _ FreeGroup.of
+      (FreeGroup.mk e.1 * (FreeGroup.mk e.2)⁻¹)) '' Ω.equations :=
+    Set.ext fun _ => Ω.mem_toSystem_iff
+  rw [h, h, addFreeVars_def, Set.image_image, Set.image_image,
+    ← Ω.image_equations_deleteFreeItems, Set.image_image]
+  exact Set.image_congr fun u _ => (Ω.renameEquiv_inclFreeVars_toGX u).symm
 
 variable {Ω} in
 /-- The points of `Ω*` are the points of the system of `Ω` without its free items, with
@@ -131,9 +127,8 @@ theorem mem_V_toSystem_iff_deleteFreeItems {H : Type*} [Group H] {ι : FreeGroup
     {v : Fin Ω.numItems → H} :
     v ∈ V ι Ω.toSystem ↔ (fun k => v (Ω.freeItemsᶜ.orderEmbOfFin rfl k)) ∈
       V ι Ω.deleteFreeItems.toSystem := by
-  rw [Ω.toSystem_eq_image_addFreeVars, mem_V, Set.forall_mem_image]
-  simp_rw [GX.eval_renameEquiv]
-  rw [← mem_V, mem_V_addFreeVars]
+  rw [Ω.toSystem_eq_image_addFreeVars, mem_V_image_mulEquiv_iff ι _ (GX.renameEquiv_inl _),
+    mem_V_addFreeVars]
   exact Iff.of_eq (congrArg (· ∈ V ι _) (funext fun k => by simp))
 
 end GenEq
