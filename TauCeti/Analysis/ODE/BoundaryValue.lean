@@ -121,7 +121,7 @@ private theorem exists_forall_norm_le_mul_norm_dysonSeriesLeft_apply_sub [Finite
     have hvu : dysonSeriesLeft M d v = u := by
       simpa [hΦ, ← sub_eq_add_neg, sub_eq_zero] using h
     have hu : (u : X) = 0 :=
-      Submodule.disjoint_def.1 hP _ ⟨v, v.2, hvu⟩ u.2
+      Submodule.disjoint_def.1 hP _ ⟨v, v.property, hvu⟩ u.property
     have hv : (v : X) = 0 := by
       have h' := (disjoint_map_dysonSeriesLeft_iff hM).1 hP
         (hasDerivAt_dysonSeriesLeft_apply hM (v : X)) (by simp) (by simp [hvu, hu])
