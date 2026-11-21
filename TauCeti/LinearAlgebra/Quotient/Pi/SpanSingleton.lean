@@ -84,7 +84,7 @@ noncomputable def piSplitAt : (X → R) ≃ₗ[R] ({x // x ≠ x₀} → R) × R
   map_add' u v := by ext <;> simp [add_mul, sub_add_sub_comm]
   map_smul' c u := by ext <;> simp [mul_sub, mul_assoc]
   left_inv u := funext fun x ↦ by by_cases h : x = x₀ <;> simp [h, hw]
-  right_inv a := Prod.ext (funext fun x ↦ by simp [x.2, hw]) (by simp [hw])
+  right_inv a := Prod.ext (funext fun x ↦ by simp [x.property, hw]) (by simp [hw])
 
 @[simp]
 theorem piSplitAt_apply (u : X → R) :
@@ -113,7 +113,7 @@ the vector `w - e_{x₀}` supported away from `x₀`. -/
 theorem piSplitAt_single_self [DecidableEq X] :
     piSplitAt x₀ w hw (Pi.single x₀ 1) = (fun x : {x // x ≠ x₀} ↦ -w x, 1) := by
   ext y
-  · simp [Pi.single_eq_of_ne y.2]
+  · simp [Pi.single_eq_of_ne y.property]
   · simp
 
 end LinearEquiv

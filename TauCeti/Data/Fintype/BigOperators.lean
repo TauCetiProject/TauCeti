@@ -27,6 +27,12 @@ substituted with `Function.update`. Telescoping arguments use this to test one p
 coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
 one triple of coordinates.
 
+Prescribing the values of the maps in such a box on a finset `I` of coordinates leaves as many
+maps as the volume of the cells outside `I`
+(`Fintype.card_filter_piFinset_forall_eq_of_forall_mem`), so the volume of the box is that number
+times the volume of the cells on `I` (`Fintype.prod_card_eq_card_filter_piFinset_mul_prod`). The
+cases of one, two and three coordinates are stated separately.
+
 Splitting at a single coordinate `e` averages it out: if `G` does not see the value at `e`, the
 sum of `a (f e) * G f` over all maps `f` vanishes as soon as `a` sums to zero
 (`Fintype.sum_apply_mul_eq_zero`). Second-moment computations over uniformly random colorings
@@ -39,7 +45,9 @@ on `Fin (n + 1)` splits as a sum over their first `n` values and their last valu
 `r p.1.1 p.2.1` splits over pairs in `α × γ` satisfying `r` and both second coordinates
 (`Fintype.sum_filter_fst`), and on a lexicographic product `V ×ₗ ι` over a preordered base `V`, a
 sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and inter-cluster pairs
-(`Fintype.sum_filter_lt_lex`).
+(`Fintype.sum_filter_lt_lex`). A sum over strictly increasing triples of a function of the clusters
+that vanishes when two consecutive clusters coincide counts each strictly increasing triple of
+clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`).
 -/
 
 public section
@@ -56,6 +64,20 @@ theorem sum_ite_eq_card_nsmul {ι M : Type*} [Fintype ι] [AddCommMonoid M] {p :
   rw [Fintype.card_subtype, ← sum_filter]
   exact sum_eq_card_nsmul fun i hi ↦ hf i (mem_filter.1 hi).2
 
+/-- Prescribing the values `a m ∈ s m` of the maps in a finite box at the coordinates `m` of a
+finset `I` leaves as many maps as the volume of the cells outside `I`. -/
+theorem card_filter_piFinset_forall_eq_of_forall_mem {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} = ∏ m ∈ univ \ I, #(s m) := by
+  -- The maps with the prescribed values on `I` form the box with cells `{a m}` on `I`.
+  have hbox : {h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} =
+      piFinset fun m ↦ if hm : m ∈ I then {a m hm} else s m := by
+    grind
+  rw [hbox, card_piFinset, ← prod_sdiff (subset_univ I),
+    Finset.prod_eq_one (s := I) fun m hm ↦ by simp [hm], mul_one]
+  exact Finset.prod_congr rfl fun m hm ↦ by simp [(mem_sdiff.1 hm).2]
+
 /-- A sum of a function of two distinct coordinates over a finite box counts each pair
 of values once for every choice of the remaining coordinates. -/
 theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι] [AddCommMonoid M]
@@ -66,17 +88,11 @@ theorem sum_piFinset_apply_apply {ι κ M : Type*} [Fintype ι] [DecidableEq ι]
   have hfib (p : κ × κ) (hp : p ∈ s i ×ˢ s j) :
       #{g ∈ piFinset s | (g i, g j) = p} = ∏ k ∈ univ \ {i, j}, #(s k) := by
     rw [mem_product] at hp
-    have hj : p.2 ∈ Function.update s i {p.1} j := by
-      simpa [Function.update_of_ne hij.symm] using hp.2
-    simp only [Prod.ext_iff, ← filter_filter]
-    rw [← piFinset_update_singleton_eq_filter_piFinset_eq s i hp.1,
-      ← piFinset_update_singleton_eq_filter_piFinset_eq _ j hj, card_piFinset]
-    simp_rw [Function.apply_update (fun _ ↦ Finset.card (α := κ))]
-    rw [prod_update_of_mem (mem_univ j), prod_update_of_mem (by simpa using hij)]
-    simp only [card_singleton, one_mul]
+    rw [← card_filter_piFinset_forall_eq_of_forall_mem s {i, j}
+      (a := fun m _ ↦ if m = i then p.1 else p.2) (by simp_all [hij.symm])]
     congr 1
-    ext k
-    simp [and_comm]
+    ext g
+    simp [Prod.ext_iff, hij.symm]
   rw [← sum_fiberwise_of_maps_to (g := fun g : ι → κ ↦ (g i, g j)) (t := s i ×ˢ s j)
     fun g hg ↦ mem_product.2 ⟨mem_piFinset.1 hg i, mem_piFinset.1 hg j⟩]
   calc ∑ p ∈ s i ×ˢ s j, ∑ g ∈ piFinset s with (g i, g j) = p, F (g i) (g j)
@@ -152,6 +168,50 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype
   rw [sum_comm]
   refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
   rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values
+`a m ∈ s m` at the coordinates `m` of a finset `I`, times the volume of the cells on `I`. -/
+theorem prod_card_eq_card_filter_piFinset_mul_prod {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (I : Finset ι)
+    {a : ∀ m ∈ I, κ m} (ha : ∀ m (hm : m ∈ I), a m hm ∈ s m) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | ∀ m (hm : m ∈ I), h m = a m hm} * ∏ m ∈ I, #(s m) := by
+  rw [card_filter_piFinset_forall_eq_of_forall_mem s I ha, prod_sdiff (subset_univ I)]
+
+/-- The volume of a finite box is the number of maps in the box with a prescribed value `a ∈ s i`
+at the coordinate `i`, times the size of the cell at `i`. -/
+theorem prod_card_eq_card_filter_piFinset_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] (s : ∀ m, Finset (κ m)) (i : ι) {a : κ i}
+    (ha : a ∈ s i) : ∏ m, #(s m) = #{h ∈ piFinset s | h i = a} * #(s i) := by
+  rw [card_filter_piFinset_eq_of_mem s i ha, prod_erase_mul _ _ (mem_univ i)]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`
+and `b ∈ s j` at two distinct coordinates `i` and `j`, times the volume of the cells at those
+coordinates. -/
+theorem prod_card_eq_card_filter_piFinset_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j : ι} (hij : i ≠ j) (s : ∀ m, Finset (κ m))
+    {a : κ i} {b : κ j} (ha : a ∈ s i) (hb : b ∈ s j) :
+    ∏ m, #(s m) = #{h ∈ piFinset s | h i = a ∧ h j = b} * (#(s i) * #(s j)) := by
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j}
+    (a := Pi.cons {j} i a fun m hm ↦ (mem_singleton.1 hm).symm ▸ b)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_pair hij]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
+
+/-- The volume of a finite box is the number of maps in the box with prescribed values `a ∈ s i`,
+`b ∈ s j` and `c ∈ s l` at three distinct coordinates `i`, `j` and `l`, times the volume of the
+cells at those coordinates. -/
+theorem prod_card_eq_card_filter_piFinset_mul_mul_mul {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    [DecidableEq ι] [∀ m, DecidableEq (κ m)] {i j l : ι} (hij : i ≠ j) (hil : i ≠ l)
+    (hjl : j ≠ l) (s : ∀ m, Finset (κ m)) {a : κ i} {b : κ j} {c : κ l} (ha : a ∈ s i)
+    (hb : b ∈ s j) (hc : c ∈ s l) :
+    ∏ m, #(s m) =
+      #{h ∈ piFinset s | h i = a ∧ h j = b ∧ h l = c} * (#(s i) * #(s j) * #(s l)) := by
+  rw [prod_card_eq_card_filter_piFinset_mul_prod s {i, j, l}
+    (a := Pi.cons {j, l} i a <| Pi.cons {l} j b fun m hm ↦ (mem_singleton.1 hm).symm ▸ c)
+    (by grind [Pi.cons_same, Pi.cons_ne]), prod_insert (by simp [hij, hil]), prod_pair hjl,
+    mul_assoc]
+  congr 2
+  grind [Pi.cons_same, Pi.cons_ne]
 
 /-- **Averaging out one coordinate.** If `a` sums to zero and `G` does not depend on the value of
 its argument at `e`, then summing `a (f e) * G f` over all maps `f : ι → α` gives zero. -/
@@ -264,5 +324,43 @@ theorem prod_filter_lt_lex {V ι M : Type*} [Fintype V] [Preorder V] [DecidableL
         ∏ p : (V × ι) × (V × ι) with p.1.1 < p.2.1, f (toLex p.1, toLex p.2) :=
       Finset.prod_equiv (Equiv.prodCongr ofLex ofLex) (by simp) (by simp)
     rw [hinter, prod_filter_fst]
+
+/-- On a lexicographic product `V ×ₗ ι`, a product over strictly increasing triples of a function
+of the clusters `(ofLex x).1` that is trivial as soon as two consecutive clusters coincide takes
+each strictly increasing triple of clusters `(Fintype.card ι) ^ 3` times. -/
+@[to_additive /-- On a lexicographic product `V ×ₗ ι`, a sum over strictly increasing triples of a
+function of the clusters `(ofLex x).1` that vanishes as soon as two consecutive clusters coincide
+counts each strictly increasing triple of clusters `(Fintype.card ι) ^ 3` times. -/]
+theorem prod_filter_lt_lex_triple {V ι M : Type*} [Fintype V] [PartialOrder V] [DecidableLT V]
+    [Fintype ι] [Preorder ι] [DecidableLT (V ×ₗ ι)] [CommMonoid M] (g : V × V × V → M)
+    (hg₁ : ∀ i k, g (i, i, k) = 1) (hg₂ : ∀ i j, g (i, j, j) = 1) :
+    ∏ p : (V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι) with p.1 < p.2.1 ∧ p.2.1 < p.2.2,
+        g ((ofLex p.1).1, (ofLex p.2.1).1, (ofLex p.2.2).1) =
+      (∏ t : V × V × V with t.1 < t.2.1 ∧ t.2.1 < t.2.2, g t) ^ (Fintype.card ι ^ 3) := by
+  -- Only triples meeting three distinct clusters contribute.
+  have hsub : ({p | (ofLex p.1).1 < (ofLex p.2.1).1 ∧ (ofLex p.2.1).1 < (ofLex p.2.2).1} :
+        Finset ((V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι))) ⊆
+      ({p | p.1 < p.2.1 ∧ p.2.1 < p.2.2} : Finset ((V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι))) := by
+    intro p hp
+    simp only [mem_filter, mem_univ, true_and] at hp ⊢
+    exact ⟨Prod.Lex.lt_iff.mpr (Or.inl hp.1), Prod.Lex.lt_iff.mpr (Or.inl hp.2)⟩
+  rw [← Finset.prod_subset hsub fun p hp hnot => ?_]
+  · -- Split each vertex into its cluster and its position inside the cluster.
+    let e : (V ×ₗ ι) × (V ×ₗ ι) × (V ×ₗ ι) ≃ (V × V × V) × (ι × ι × ι) :=
+      { toFun p := (((ofLex p.1).1, (ofLex p.2.1).1, (ofLex p.2.2).1),
+          (ofLex p.1).2, (ofLex p.2.1).2, (ofLex p.2.2).2)
+        invFun q := (toLex (q.1.1, q.2.1), toLex (q.1.2.1, q.2.2.1), toLex (q.1.2.2, q.2.2.2))
+        left_inv _ := rfl
+        right_inv _ := rfl }
+    rw [Finset.prod_filter, Finset.prod_filter, ← Finset.prod_pow]
+    refine (Fintype.prod_equiv e _
+      (fun q => if q.1.1 < q.1.2.1 ∧ q.1.2.1 < q.1.2.2 then g q.1 else 1) fun _ => rfl).trans ?_
+    rw [Fintype.prod_prod_type]
+    refine Finset.prod_congr rfl fun t _ => ?_
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_prod, pow_three]
+  · simp only [mem_filter, mem_univ, true_and, not_and_or] at hp hnot
+    rcases hnot with h | h
+    · rw [(Prod.Lex.monotone_fst _ _ hp.1.le).eq_of_not_lt h]; exact hg₁ _ _
+    · rw [(Prod.Lex.monotone_fst _ _ hp.2.le).eq_of_not_lt h]; exact hg₂ _ _
 
 end Fintype

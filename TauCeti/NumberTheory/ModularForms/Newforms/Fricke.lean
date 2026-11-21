@@ -194,7 +194,7 @@ theorem exists_normalizedFrickeOperatorCusp_eq_smul_of_mem_cuspFormsNew
   · exact ⟨1, Or.inl rfl, by rw [hf0, map_zero, smul_zero]⟩
   -- `𝒲_N ∘ 𝒲_N = (-1) ^ k`, and `(-1) ^ k = 1` since `f ≠ 0` has trivial nebentypus
   have hk : (-1 : ℂ) ^ k = 1 := by
-    simpa using (char_neg_one_of_mem_cuspFormCharSpace f.2 hf0).symm
+    simpa using (char_neg_one_of_mem_cuspFormCharSpace f.property hf0).symm
   have hWW : normalizedFrickeCharCuspOneEnd k (normalizedFrickeCharCuspOneEnd k f) = f := by
     rw [Subtype.ext_iff, coe_normalizedFrickeCharCuspOneEnd_apply,
       coe_normalizedFrickeCharCuspOneEnd_apply,

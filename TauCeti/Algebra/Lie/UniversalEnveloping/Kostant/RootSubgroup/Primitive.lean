@@ -76,7 +76,7 @@ private theorem exists_pow_kostantRootOperator_eq_factorial_smul
   let N : ℕ := (wt j).toNat
   have hN_eq : (N : ℤ) = wt j := Int.toNat_of_nonneg hjpos.le
   let m₀ : M := ⟨(dividedPower N F) (b j : V),
-    dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM opp N (b j).2⟩
+    dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM opp N (b j).property⟩
   have hcoe_pow (k : ℕ) (x : M) : (((op ^ k) x : M) : V) = (E ^ k) (x : V) := by
     induction k with
     | zero => rfl

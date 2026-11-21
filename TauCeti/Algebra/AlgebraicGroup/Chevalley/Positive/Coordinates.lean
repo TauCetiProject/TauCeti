@@ -5,44 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Collection
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic
 import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
-# Positive-root coordinates on the positive subgroup of a Chevalley datum
+# Positive-root coordinates in Chevalley groups
 
 For **any** Chevalley datum `D` of **any** valid Dynkin type and **any** commutative ring `A`,
-every duplicate-free enumeration `l` of the positive roots determines a canonical coordinate
-bijection between `(posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A)` and
-`D.positivePoints A` (`ChevalleyDatum.positivePointsEquiv`), sending each coordinate family to its
-ordered positive-root product (`ChevalleyDatum.positivePointsProd`).
+multiplication of the positive root subgroups in any order without repetitions is a bijection onto
+the positive point subgroup `D.positivePoints A` (`ChevalleyDatum.positiveRootEquiv`). The
+parameters are indexed only by positive roots: there are no unused coordinates at negative roots.
+The resulting equivalence and its inverse commute with changes of the value ring, including
+noninjective ring maps.
 
 In particular, every element of `D.positivePoints A` admits a **unique** ordered product
 representation along `l`, the positive point subgroup over a finite commutative ring `A` is finite,
-and `Nat.card (D.positivePoints A) = Nat.card A ^ (posRoots ...).ncard` unconditionally. For a
-field `k`, this realizes the unipotent subgroup `U(k) = D.positivePoints k` with its full root-data
-coordinate parameterization across all isogeny types and characteristics.
+and `Nat.card (D.positivePoints A) = Nat.card A ^ (posRoots ...).ncard` unconditionally.
 
-## Main definitions
-
-* `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd`: the ordered positive-root product map
-  `({γ // γ ∈ l} → A) → D.positivePoints A` along any list `l` of positive roots.
-* `TauCeti.DynkinType.ChevalleyDatum.positivePointsEquiv`: the coordinate bijection
-  `(posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) ≃ D.positivePoints A` determined by
-  a duplicate-free enumeration `l` of the positive roots.
-
-## Main results
-
-* `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_injective` and
-  `TauCeti.DynkinType.ChevalleyDatum.positivePointsProd_surjective`: ordered positive-root products
-  along a duplicate-free positive-root list are injective, and surjective when the list covers all
-  positive roots.
-* `TauCeti.DynkinType.ChevalleyDatum.map_positivePointsEquiv` and
-  `TauCeti.DynkinType.ChevalleyDatum.positivePointsEquiv_symm_map`: positive-root coordinates
-  commute with scalar change along any ring homomorphism.
-* `TauCeti.DynkinType.ChevalleyDatum.card_positivePoints`: the cardinality of `D.positivePoints A`
-  is `Nat.card A ^ (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)).ncard`.
+This combines the collection theorem
+`mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod` with the integral
+uniqueness theorem `ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`.
+It gives coordinates for the positive factor in Bruhat and big-cell factorizations. It does
+not identify the entire point group with its elementary subgroup, or assert a
+scheme-theoretic factorization.
 
 ## References
 
@@ -52,206 +39,220 @@ coordinate parameterization across all isogeny types and characteristics.
 
 public section
 
+open Multiplicative TensorProduct TauCeti.UniversalEnvelopingAlgebra
+
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v v'
+universe v w
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- The ordered product of positive root elements of `D` with coordinates `u : {γ // γ ∈ l} → A`
-along a list `l` of positive roots, valued in `D.positivePoints A`. -/
-noncomputable def positivePointsProd {l : List (Fin t.numRoots)}
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] (u : {γ // γ ∈ l} → A) : D.positivePoints A :=
-  ⟨(l.attach.map fun γ => D.rootSubgroupPoints γ.1 A (Multiplicative.ofAdd (u γ))).prod,
-    Subgroup.list_prod_mem _ fun x hx => by
-      obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hx
-      exact D.rootSubgroupPoints_mem_positivePoints A (hpos γ.1 γ.2) _⟩
+local notation "PositiveRoot" =>
+  {γ // γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)}
 
-/-- Coercing `positivePointsProd` to `D.points A` gives the underlying attached list product. -/
+/-- Multiply positive-root parameters in the order of `l`, as an element of the positive
+point subgroup. This is a map of sets, not an assertion that coordinates add under multiplication.
+-/
+noncomputable def positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A]
+    (u : PositiveRoot → A) : D.positivePoints A :=
+  ⟨(l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod,
+    Subgroup.list_prod_mem _ fun _ hg => by
+      obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hg
+      exact D.rootSubgroupPoints_mem_positivePoints A γ.property _⟩
+
+/-- The positive-root product has the stated ordered factors in the datum point group. -/
 @[simp]
-theorem coe_positivePointsProd {l : List (Fin t.numRoots)}
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] (u : {γ // γ ∈ l} → A) :
-    (D.positivePointsProd hpos A u : D.points A) =
-      (l.attach.map fun γ => D.rootSubgroupPoints γ.1 A (Multiplicative.ofAdd (u γ))).prod := by
-  rfl
-
-/-- Evaluating `positivePointsProd` on restricted full-root coordinates gives the unattached list
-product. -/
-theorem coe_positivePointsProd_comp {l : List (Fin t.numRoots)}
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] (u : Fin t.numRoots → A) :
-    (D.positivePointsProd hpos A (fun γ => u γ.1) : D.points A) =
-      (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod := by
-  rw [coe_positivePointsProd]
-  conv_rhs => rw [← l.attach_map_subtype_val, List.map_map]
-  rfl
+theorem coe_positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A]
+    (u : PositiveRoot → A) :
+    (D.positiveRootProduct l A u : D.points A) =
+      (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
+  (rfl)
 
 /-- Zero coordinates evaluate to the identity element of `D.positivePoints A`. -/
 @[simp]
-theorem positivePointsProd_zero {l : List (Fin t.numRoots)}
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    D.positivePointsProd hpos A 0 = 1 := by
+theorem positiveRootProduct_zero (l : List PositiveRoot) (A : Type v) [CommRing A] :
+    D.positiveRootProduct l A 0 = 1 := by
   ext1
-  rw [coe_positivePointsProd, Subgroup.coe_one]
-  exact List.prod_eq_one fun x hx => by
+  rw [coe_positiveRootProduct, Subgroup.coe_one]
+  exact List.prod_eq_one fun _ hx => by
     obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hx
     simp
 
-/-- Ring homomorphisms commute with ordered positive-root products on datum points. -/
-theorem map_positivePointsProd {l : List (Fin t.numRoots)}
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
-    (u : {γ // γ ∈ l} → A) :
-    ((D.pointsPresentation A).map (D.pointsPresentation B) f)
-        (D.positivePointsProd hpos A u : D.points A) =
-      (D.positivePointsProd hpos B (f ∘ u) : D.points B) := by
-  simp only [coe_positivePointsProd, map_list_prod, List.map_map, Function.comp_def,
+/-- Changing the value ring applies the ring map to each root coordinate. -/
+theorem map_positiveRootProduct (l : List PositiveRoot)
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
+    (u : PositiveRoot → A) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f
+        (D.positiveRootProduct l A u : D.points A) =
+      (D.positiveRootProduct l B (fun γ => f (u γ)) : D.points B) := by
+  simp only [coe_positiveRootProduct, map_list_prod, List.map_map, Function.comp_def,
     D.map_rootSubgroupPoints, toAdd_ofAdd]
 
-/-- Ordered positive-root products along any duplicate-free list of positive roots are injective
-over every commutative ring. -/
-theorem positivePointsProd_injective {l : List (Fin t.numRoots)} (hl : l.Nodup)
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    Function.Injective (D.positivePointsProd hpos A) := by
+attribute [local instance high] Algebra.toModule
+
+/-- Every positive point has coordinates in any enumeration of the positive roots.
+No field or reducedness hypothesis is required. -/
+theorem positiveRootProduct_surjective (l : List PositiveRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    Function.Surjective (D.positiveRootProduct l A) := by
+  intro g
+  have hg := (D.mem_positivePoints_iff).mp g.property
+  obtain ⟨q, hq, hmatrix⟩ := hg
+  rw [D.positiveSubgroup_eq_iSup] at hq
+  obtain ⟨u, hu⟩ := (mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_prod
+    D.representation D.lattice D.representation_mem_lattice
+    D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A) l hl hcover q).mp hq
+  refine ⟨u, ?_⟩
+  apply Subtype.ext
+  apply Subtype.ext
+  have h := congrArg
+    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) hu
+  simpa only [map_list_prod, List.map_map, Function.comp_def,
+    coe_positiveRootProduct, SubmonoidClass.coe_list_prod,
+    coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, hmatrix] using h
+
+/-- A datum point is positive exactly when it is a product of its positive root
+subgroups, in any order containing every positive root exactly once. Existence holds for every
+Chevalley datum and every commutative value ring. -/
+theorem mem_positivePoints_iff_exists_prod
+    (A : Type v) [CommRing A] {l : List PositiveRoot}
+    (hl : l.Nodup) (hall : ∀ γ, γ ∈ l) (g : D.points A) :
+    g ∈ D.positivePoints A ↔
+      ∃ u : PositiveRoot → A,
+        (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod = g := by
+  constructor
+  · intro hg
+    obtain ⟨u, hu⟩ := D.positiveRootProduct_surjective l hl hall A ⟨g, hg⟩
+    exact ⟨u, congrArg Subtype.val hu⟩
+  · rintro ⟨u, rfl⟩
+    exact (D.positiveRootProduct l A u).property
+
+/-- For any Chevalley datum, an ordered enumeration of all positive roots without repetitions
+gives an injective parameter map. The value ring is arbitrary. -/
+theorem positiveRootProduct_injective (l : List PositiveRoot) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    Function.Injective (D.positiveRootProduct l A) := by
   classical
   intro u v huv
-  let u' : Fin t.numRoots → A := fun γ => if h : γ ∈ l then u ⟨γ, h⟩ else 0
-  let v' : Fin t.numRoots → A := fun γ => if h : γ ∈ l then v ⟨γ, h⟩ else 0
-  have hu' : (fun γ : {γ // γ ∈ l} => u' γ.1) = u := funext fun ⟨γ, hγ⟩ => by simp [u', hγ]
-  have hv' : (fun γ : {γ // γ ∈ l} => v' γ.1) = v := funext fun ⟨γ, hγ⟩ => by simp [v', hγ]
-  have hprod : (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u' γ))).prod =
-      (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (v' γ))).prod := by
-    rw [← D.coe_positivePointsProd_comp hpos A u', ← D.coe_positivePointsProd_comp hpos A v',
-      hu', hv', huv]
-  have heq := (D.list_prod_map_rootSubgroupPoints_inj A hl hpos).mp hprod
-  funext ⟨γ, hγ⟩
-  simpa only [u', v', hγ, ↓reduceDIte] using heq γ hγ
+  let extend := fun (u : PositiveRoot → A) (γ : Fin t.numRoots) =>
+    if h : γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) then u ⟨γ, h⟩ else 0
+  have heq := congrArg (fun g : D.positivePoints A => (g : D.points A)) huv
+  have hprod (u : PositiveRoot → A) :
+      ((l.map Subtype.val).map fun γ => D.rootSubgroupPoints γ A
+        (ofAdd (extend u γ))).prod = (D.positiveRootProduct l A u : D.points A) := by
+    simp only [coe_positiveRootProduct, List.map_map, Function.comp_def]
+    congr 1
+    apply List.map_congr_left
+    intro γ _
+    simp only [extend, dite_eq_left γ.property]
+  have hparams := (D.list_prod_map_rootSubgroupPoints_inj A
+    (hl.map Subtype.val_injective)
+    (by rintro γ hγ; obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ; exact γ.property)).mp
+      ((hprod u).trans (heq.trans (hprod v).symm))
+  funext γ
+  simpa only [extend, dite_eq_left γ.property] using
+    hparams γ.val (List.mem_map.mpr ⟨γ, hcover γ, rfl⟩)
 
-/-- When `l` enumerates all positive roots without repetition, ordered positive-root products cover
-`D.positivePoints A`. -/
-theorem positivePointsProd_surjective (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    Function.Surjective (D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A) := by
-  rintro ⟨g, hg⟩
-  obtain ⟨u, hu⟩ := (D.mem_positivePoints_iff_exists_prod l hl hcover A g).mp hg
-  refine ⟨fun γ => u γ.1, Subtype.ext ?_⟩
-  rw [D.coe_positivePointsProd_comp, hu]
-
-/-- The coordinate bijection between functions on the positive roots with values in `A` and the
-positive point subgroup `D.positivePoints A`, determined by a duplicate-free enumeration `l` of all
-positive roots. -/
-noncomputable def positivePointsEquiv (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) ≃ D.positivePoints A :=
-  (Equiv.piCongrLeft' (fun _ => A) (Equiv.subtypeEquivRight hcover)).symm.trans
-    (Equiv.ofBijective (D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A)
-      ⟨D.positivePointsProd_injective hl _ A, D.positivePointsProd_surjective l hl hcover A⟩)
-
-/-- Evaluating `positivePointsEquiv` restricts the positive-root coordinates to `l` and takes their
-ordered product. -/
-theorem positivePointsEquiv_apply (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+/-- For any Chevalley datum, every positive point has exactly one positive-root parameter tuple in
+any prescribed duplicate-free order. No characteristic or reducedness hypothesis is needed. -/
+theorem mem_positivePoints_iff_existsUnique_prod
     (A : Type v) [CommRing A]
-    (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
-    D.positivePointsEquiv l hl hcover A u =
-      D.positivePointsProd (fun γ hγ => (hcover γ).mp hγ) A
-        (fun γ => u ⟨γ.1, (hcover γ.1).mp γ.2⟩) := by
-  rfl
+    {l : List PositiveRoot} (hl : l.Nodup) (hall : ∀ γ, γ ∈ l) (g : D.points A) :
+    g ∈ D.positivePoints A ↔
+      ∃! u : PositiveRoot → A,
+        (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod = g := by
+  have hinj : Function.Injective (fun u : PositiveRoot → A =>
+      (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod) := by
+    intro u v huv
+    exact D.positiveRootProduct_injective l hl hall A (Subtype.ext huv)
+  rw [D.mem_positivePoints_iff_exists_prod A hl hall g]
+  exact hinj.existsUnique_iff_exists.symm
 
-/-- Coercing `positivePointsEquiv` to `D.points A` gives the attached ordered root product. -/
+/-- Positive-root coordinates for any Chevalley datum over an arbitrary commutative ring. The list
+enumerates all positive roots, in any order without repetitions. -/
+noncomputable def positiveRootEquiv (l : List PositiveRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    (PositiveRoot → A) ≃ D.positivePoints A :=
+  Equiv.ofBijective (D.positiveRootProduct l A)
+    ⟨D.positiveRootProduct_injective l hl hcover A,
+      D.positiveRootProduct_surjective l hl hcover A⟩
+
+/-- The coordinate equivalence multiplies the given root parameters in the specified order. -/
 @[simp]
-theorem coe_positivePointsEquiv_apply (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A]
-    (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
-    (D.positivePointsEquiv l hl hcover A u : D.points A) =
-      (l.attach.map fun γ => D.rootSubgroupPoints γ.1 A
-        (Multiplicative.ofAdd (u ⟨γ.1, (hcover γ.1).mp γ.2⟩))).prod := by
-  rfl
+theorem positiveRootEquiv_apply (l : List PositiveRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A]
+    (u : PositiveRoot → A) :
+    D.positiveRootEquiv l hl hcover A u = D.positiveRootProduct l A u :=
+  (rfl)
 
-/-- Evaluating `positivePointsEquiv` on restricted full-root coordinates gives the unattached
-ordered root product. -/
-theorem coe_positivePointsEquiv_comp (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] (u : Fin t.numRoots → A) :
-    (D.positivePointsEquiv l hl hcover A (fun γ => u γ.1) : D.points A) =
-      (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod :=
-  D.coe_positivePointsProd_comp (fun γ hγ => (hcover γ).mp hγ) A u
-
-/-- If an ordered positive-root product equals `g`, the inverse of `positivePointsEquiv` recovers
-its positive-root coordinates. -/
-theorem positivePointsEquiv_symm_of_prod_eq (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] {u : Fin t.numRoots → A} {g : D.positivePoints A}
-    (hg : (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod = g) :
-    (D.positivePointsEquiv l hl hcover A).symm g = fun γ => u γ.1 := by
-  apply (D.positivePointsEquiv l hl hcover A).injective
-  rw [Equiv.apply_symm_apply]
-  exact Subtype.ext ((D.coe_positivePointsEquiv_comp l hl hcover A u).trans hg).symm
-
-/-- Ring homomorphisms commute with `positivePointsEquiv` on datum points. -/
-theorem map_positivePointsEquiv (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
-    (u : posRoots (t.rationalRootSystem ht) (t.rationalBase ht) → A) :
-    ((D.pointsPresentation A).map (D.pointsPresentation B) f)
-        (D.positivePointsEquiv l hl hcover A u : D.points A) =
-      (D.positivePointsEquiv l hl hcover B (f ∘ u) : D.points B) :=
-  D.map_positivePointsProd (fun γ hγ => (hcover γ).mp hγ) f
-    (fun γ => u ⟨γ.1, (hcover γ.1).mp γ.2⟩)
-
-/-- Extracting positive-root coordinates after scalar change applies the ring homomorphism
-coordinatewise. In particular, coordinates are natural under reduction modulo an ideal. -/
+/-- Extracting coordinates from an ordered positive-root product recovers its parameters. -/
 @[simp]
-theorem positivePointsEquiv_symm_map (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (f : A →+* B)
+theorem positiveRootEquiv_symm_positiveRootProduct
+    (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    (D.positiveRootEquiv l hl hcover A).symm (D.positiveRootProduct l A u) = u :=
+  (D.positiveRootEquiv l hl hcover A).symm_apply_apply u
+
+/-- Multiplying the extracted positive-root coordinates reproduces the original positive point. -/
+@[simp]
+theorem positiveRootProduct_positiveRootEquiv_symm
+    (l : List PositiveRoot) (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    (A : Type v) [CommRing A] (g : D.positivePoints A) :
+    D.positiveRootProduct l A ((D.positiveRootEquiv l hl hcover A).symm g) = g :=
+  (D.positiveRootEquiv l hl hcover A).apply_symm_apply g
+
+/-- Ring homomorphisms commute with `positiveRootEquiv` on datum points. -/
+theorem map_positiveRootEquiv (l : List PositiveRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
+    (u : PositiveRoot → A) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f
+        (D.positiveRootEquiv l hl hcover A u : D.points A) =
+      (D.positiveRootEquiv l hl hcover B (f ∘ u) : D.points B) :=
+  D.map_positiveRootProduct l f u
+
+/-- Extracting coordinates after scalar change applies the ring map coordinatewise. In
+particular, coordinates are natural even under reduction modulo a prime. -/
+@[simp]
+theorem positiveRootEquiv_symm_map (l : List PositiveRoot)
+    (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (g : D.positivePoints A) :
-    (D.positivePointsEquiv l hl hcover B).symm
-        ⟨((D.pointsPresentation A).map (D.pointsPresentation B) f) (g : D.points A),
-          D.map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩)⟩ =
-      f ∘ (D.positivePointsEquiv l hl hcover A).symm g := by
-  apply (D.positivePointsEquiv l hl hcover B).injective
-  rw [Equiv.apply_symm_apply]
+    (D.positiveRootEquiv l hl hcover B).symm
+        ⟨(D.pointsPresentation A).map (D.pointsPresentation B) f (g : D.points A),
+          D.map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.property, rfl⟩)⟩ =
+      fun γ => f ((D.positiveRootEquiv l hl hcover A).symm g γ) := by
+  apply (D.positiveRootEquiv l hl hcover B).injective
+  simp only [Equiv.apply_symm_apply, positiveRootEquiv_apply]
   apply Subtype.ext
-  rw [← D.map_positivePointsEquiv l hl hcover f, Equiv.apply_symm_apply]
+  rw [← D.map_positiveRootProduct l f]
+  exact congrArg ((D.pointsPresentation A).map (D.pointsPresentation B) f)
+    (congrArg Subtype.val
+      ((D.positiveRootEquiv l hl hcover A).apply_symm_apply g).symm)
 
 /-- Zero positive-root coordinates map to the identity element of `D.positivePoints A`. -/
-@[simp]
-theorem positivePointsEquiv_zero (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    D.positivePointsEquiv l hl hcover A 0 = 1 := by
-  rw [positivePointsEquiv_apply]
-  exact D.positivePointsProd_zero (fun γ hγ => (hcover γ).mp hγ) A
+theorem positiveRootEquiv_zero (l : List PositiveRoot) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    D.positiveRootEquiv l hl hcover A 0 = 1 :=
+  D.positiveRootProduct_zero l A
 
 /-- The identity element of `D.positivePoints A` has all positive-root coordinates equal to zero.
 -/
 @[simp]
-theorem positivePointsEquiv_symm_one (l : List (Fin t.numRoots)) (hl : l.Nodup)
-    (hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
-    (A : Type v) [CommRing A] :
-    (D.positivePointsEquiv l hl hcover A).symm 1 = 0 :=
-  (D.positivePointsEquiv l hl hcover A).symm_apply_eq.mpr
-    (D.positivePointsEquiv_zero l hl hcover A).symm
+theorem positiveRootEquiv_symm_one (l : List PositiveRoot) (hl : l.Nodup)
+    (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
+    (D.positiveRootEquiv l hl hcover A).symm 1 = 0 :=
+  (D.positiveRootEquiv l hl hcover A).symm_apply_eq.mpr
+    (D.positiveRootEquiv_zero l hl hcover A).symm
 
 /-- Over a finite commutative ring, the positive point subgroup of a Chevalley datum is finite. -/
 instance finite_positivePoints (A : Type v) [CommRing A] [Finite A] :
     Finite (D.positivePoints A) := by
   classical
-  let l := (List.finRange t.numRoots).filter
-    (· ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht))
-  have hl : l.Nodup := (List.nodup_finRange _).filter _
-  have hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    intro γ
-    simp [l]
-  exact Finite.of_equiv _ (D.positivePointsEquiv l hl hcover A)
+  let l : List PositiveRoot := (Finset.univ : Finset PositiveRoot).toList
+  have hl : l.Nodup := Finset.nodup_toList _
+  have hcover : ∀ γ, γ ∈ l := fun γ => Finset.mem_toList.mpr (Finset.mem_univ γ)
+  exact Finite.of_equiv _ (D.positiveRootEquiv l hl hcover A)
 
 /-- The cardinality of the positive point subgroup of a Chevalley datum is `|A| ^ |Φ⁺|` over every
 commutative ring `A`. -/
@@ -259,12 +260,9 @@ theorem card_positivePoints (A : Type v) [CommRing A] :
     Nat.card (D.positivePoints A) =
       Nat.card A ^ (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)).ncard := by
   classical
-  let l := (List.finRange t.numRoots).filter
-    (· ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht))
-  have hl : l.Nodup := (List.nodup_finRange _).filter _
-  have hcover : ∀ γ, γ ∈ l ↔ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
-    intro γ
-    simp [l]
-  rw [Nat.card_congr (D.positivePointsEquiv l hl hcover A).symm, Nat.card_fun, Nat.card_coe_set_eq]
+  let l : List PositiveRoot := (Finset.univ : Finset PositiveRoot).toList
+  have hl : l.Nodup := Finset.nodup_toList _
+  have hcover : ∀ γ, γ ∈ l := fun γ => Finset.mem_toList.mpr (Finset.mem_univ γ)
+  rw [Nat.card_congr (D.positiveRootEquiv l hl hcover A).symm, Nat.card_fun, Nat.card_coe_set_eq]
 
 end TauCeti.DynkinType.ChevalleyDatum

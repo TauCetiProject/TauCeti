@@ -55,7 +55,7 @@ fibre norm is a continuous function on the total space. For fibres with inner pr
 `RCLike` field, this is continuity of the fibre metric. -/
 class ContinuousFiberNorm : Prop where
   /-- The fibre norm is continuous on the total space. -/
-  continuous_norm : Continuous fun z : TotalSpace F E ↦ ‖z.2‖
+  continuous_norm : Continuous fun z : TotalSpace F E ↦ ‖z.snd‖
 
 /-- The fibre norm of a continuous Riemannian bundle is continuous. -/
 instance [NormedSpace ℝ F] [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E]

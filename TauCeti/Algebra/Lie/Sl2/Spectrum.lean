@@ -291,7 +291,7 @@ private theorem iSup_eigenspace_toEnd_eq_top_of_isAlgClosed (t : IsSl2Triple h e
       simpa only [LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket_of_module,
         LieSubmodule.coe_smul] using congrArg (fun w : ↥N ↦ (w : M)) hv'
     have hmem : (v : M) ∈ eigenspaceSup t ⊓ N :=
-      ⟨mem_eigenspaceSup_of_lie_h_eq_smul t hvM, v.2⟩
+      ⟨mem_eigenspaceSup_of_lie_h_eq_smul t hvM, v.property⟩
     rw [hN.inf_eq_bot] at hmem
     exact hv0 (Subtype.ext (by simpa using (LieSubmodule.mem_bot _).1 hmem))
   have hsup : eigenspaceSup (K := K) (M := M) t = ⊤ := by
@@ -476,8 +476,8 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
     have heig : toEnd K L M h ⁅f, v j₀⁆ = ((wt j₀ - 2 : ℤ) : K) • ⁅f, v j₀⁆ := by
       simpa [Module.End.mem_eigenspace_iff] using hmem
     refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_
-    have := hj₀min (wt r.1) ⟨r.1, r.2, rfl⟩
-    exact_mod_cast (by omega : wt r.1 ≠ wt j₀ - 2)
+    have := hj₀min (wt r.val) ⟨r.val, r.property, rfl⟩
+    exact_mod_cast (by omega : wt r.val ≠ wt j₀ - 2)
   let n : ℕ := (-wt j₀).toNat
   have hn : (n : ℤ) = -wt j₀ := Int.toNat_of_nonneg (by omega)
   have hP : t.symm.HasPrimitiveVectorWith (v j₀) (n : K) :=
@@ -491,8 +491,8 @@ theorem exists_pos_weight_of_span_eq_top (t : IsSl2Triple h e f) {η : Type*} {v
     rw [toEnd_apply_apply, hneg, ← neg_smul]
     congr 1; push_cast; ring
   refine hne ((toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_)
-  have := hle0 r.1 r.2
-  exact_mod_cast (by omega : wt r.1 ≠ (n : ℤ))
+  have := hle0 r.val r.property
+  exact_mod_cast (by omega : wt r.val ≠ (n : ℤ))
 
 /-- If a spanning family `v : η → M` of `h`-eigenvectors with integral weights `wt` has weights
 bounded both below and above and `h` acts nontrivially on `M`, then a maximal-weight nonzero
@@ -523,8 +523,8 @@ theorem exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top (t : IsSl2Tr
   have heig : toEnd K L M h ⁅e, v j⁆ = ((wt j + 2 : ℤ) : K) • ⁅e, v j⁆ := by
     simpa [Module.End.mem_eigenspace_iff] using hmem
   refine (toEnd K L M h).eq_zero_of_apply_eq_smul_of_span_eq_top hspanS hwtS heig fun r ↦ ?_
-  have := hjmax (wt r.1) ⟨r.1, r.2, rfl⟩
-  exact_mod_cast (by omega : wt r.1 ≠ wt j + 2)
+  have := hjmax (wt r.val) ⟨r.val, r.property, rfl⟩
+  exact_mod_cast (by omega : wt r.val ≠ wt j + 2)
 
 end SpanningWeights
 

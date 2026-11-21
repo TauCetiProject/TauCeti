@@ -31,7 +31,7 @@ Clifford algebra is faithful.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
   twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
   intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
-  linear case.
+  linear case, and `CliffordAlgebra.map_apply_of_forall_ιₛₗ` is the pointwise form for `f = id`.
 * `CliffordAlgebra.map_app_of_forall_ι`: a nonzero map of real Clifford modules intertwining the
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
@@ -126,6 +126,21 @@ theorem comp_eq_map_comp_of_forall_ιₛₗ {S : Type*} [CommRing S] [Algebra R 
     simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
     simp only [LinearMap.comp_assoc, hb]
   | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+
+/-- A semilinear map `U` of Clifford modules over the same quadratic space that commutes with the
+generators, `U (c(m) w) = c(m) (U w)`, commutes with every Clifford element,
+`U (a w) = a (U w)`, provided its twist `σ` fixes the scalars coming from the base ring. -/
+theorem map_apply_of_forall_ιₛₗ {S : Type*} [CommRing S] [Algebra R S]
+    {W₁ W₂ : Type*} [AddCommGroup W₁] [Module S W₁] [Module R W₁] [IsScalarTower R S W₁]
+    [AddCommGroup W₂] [Module S W₂] [Module R W₂] [IsScalarTower R S W₂]
+    {ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₁} {ρ₂ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₂}
+    {σ : S →+* S} (hσ : ∀ r, σ (algebraMap R S r) = algebraMap R S r)
+    {U : W₁ →ₛₗ[σ] W₂} (hU : ∀ m w, U (ρ₁ (ι Q₁ m) w) = ρ₂ (ι Q₁ m) (U w))
+    (a : CliffordAlgebra Q₁) (w : W₁) :
+    U (ρ₁ a w) = ρ₂ a (U w) := by
+  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q₁) hσ
+    (fun m ↦ LinearMap.ext (hU m)) a
+  simpa [map_id] using LinearMap.congr_fun h w
 
 /-- A linear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`. -/

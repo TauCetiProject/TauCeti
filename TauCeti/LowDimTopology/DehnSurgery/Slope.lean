@@ -102,7 +102,7 @@ variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 equivalence relation on primitive classes. -/
 private def slopeSetoid (M : Type*) [AddCommGroup M] :
     Setoid {v : M // IsPrimitive v} where
-  r a b := a.1 = b.1 ∨ a.1 = -b.1
+  r a b := a.val = b.val ∨ a.val = -b.val
   iseqv :=
     { refl := fun _ => Or.inl rfl
       symm := fun {a b} h => h.imp Eq.symm fun hab => by rw [hab, neg_neg]
@@ -116,7 +116,7 @@ private def slopeSetoid (M : Type*) [AddCommGroup M] :
 /-- Characterization of the relation defining slopes: representatives agree up to sign. This is
 internal to the quotient construction; consumers use `Slope.mk_eq_mk_iff`. -/
 private theorem slopeSetoid_rel_iff {a b : {v : M // IsPrimitive v}} :
-    slopeSetoid M a b ↔ a.1 = b.1 ∨ a.1 = -b.1 :=
+    slopeSetoid M a b ↔ a.val = b.val ∨ a.val = -b.val :=
   Iff.rfl
 
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
@@ -146,7 +146,7 @@ primitive. -/
 @[elab_as_elim]
 theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
-  Quotient.inductionOn s fun v => h v.1 v.2
+  Quotient.inductionOn s fun v => h v.val v.property
 
 variable [Module ℤ M] [Module ℤ N]
 
@@ -154,10 +154,10 @@ variable [Module ℤ M] [Module ℤ N]
 isomorphism uses this to carry a slope to the standard lattice. -/
 def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
   Quotient.congr
-    { toFun := fun v => ⟨φ v.1, φ.isPrimitive_iff.mpr v.2⟩
-      invFun := fun w => ⟨φ.symm w.1, φ.symm.isPrimitive_iff.mpr w.2⟩
-      left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
-      right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
+    { toFun := fun v => ⟨φ v.val, φ.isPrimitive_iff.mpr v.property⟩
+      invFun := fun w => ⟨φ.symm w.val, φ.symm.isPrimitive_iff.mpr w.property⟩
+      left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.val)
+      right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.val) }
     fun a b => by simp only [slopeSetoid_rel_iff, Equiv.coe_fn_mk, ← map_neg, φ.injective.eq_iff]
 
 /-- Transporting the slope of a primitive class `v` along `φ` gives the slope of `φ v`. -/
@@ -240,7 +240,7 @@ theorem slopeValue_neg (v : ℤ × ℤ) : slopeValue (-v) = slopeValue v := by
 
 /-- The `ℚ ∪ {∞}` value of a standard-lattice slope, the ratio of its coordinates. -/
 def Slope.value : Slope (ℤ × ℤ) → OnePoint ℚ :=
-  Quotient.lift (fun v => slopeValue v.1) fun _ _ h => by
+  Quotient.lift (fun v => slopeValue v.val) fun _ _ h => by
     rcases h with h | h
     · rw [h]
     · rw [h, slopeValue_neg]
