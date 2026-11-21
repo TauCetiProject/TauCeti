@@ -148,6 +148,11 @@ theorem contDiff_littlewoodPaley {n : ℕ∞} (j : ℤ) : ContDiff ℝ n (φ.lit
   (φ.contDiff.comp (contDiff_const_smul ((2 : ℝ) ^ j)⁻¹)).sub
     (φ.contDiff.comp (contDiff_const_smul ((2 : ℝ) ^ (j - 1))⁻¹))
 
+/-- Each Littlewood–Paley cutoff, viewed as a complex-valued symbol, is smooth. -/
+theorem contDiff_ofReal_littlewoodPaley {n : ℕ∞} (j : ℤ) :
+    ContDiff ℝ n (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :=
+  Complex.ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley j)
+
 /-- The cutoff `ψⱼ` vanishes on the closed ball of radius `2^{j-1} φ.rIn`, where both terms
 are `1`. -/
 theorem littlewoodPaley_eq_zero_of_norm_le {j : ℤ} {ξ : E}
@@ -205,6 +210,11 @@ theorem zero_notMem_tsupport_littlewoodPaley (j : ℤ) : (0 : E) ∉ tsupport (�
     have := (φ.tsupport_littlewoodPaley_subset j h).1
     rw [norm_zero] at this
     exact not_le.2 (mul_pos (zpow_pos two_pos _) φ.rIn_pos) this
+
+/-- The cutoff `ψⱼ`, viewed as a complex-valued symbol, vanishes near the origin. -/
+theorem zero_notMem_tsupport_ofReal_littlewoodPaley (j : ℤ) :
+    (0 : E) ∉ tsupport (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) := fun h ↦
+  φ.zero_notMem_tsupport_littlewoodPaley j (tsupport_comp_subset Complex.ofReal_zero _ h)
 
 /-- **Scaling of the dyadic cutoffs.** Each `ψⱼ` is `ψ₀` rescaled to frequency `2^j`:
 `ψⱼ ξ = ψ₀ (2^{-j} ξ)`. -/
@@ -340,6 +350,19 @@ theorem inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le {j : ℕ} {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ j * φ.rIn) : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0 := by
   rw [inhomogeneousLittlewoodPaley_succ]
   exact φ.littlewoodPaley_eq_zero_of_norm_le (by simpa using hξ)
+
+/-- The piece `ψ_{j+1} = φ (2^{-(j+1)} ·) - φ (2^{-j} ·)` equals one where
+`2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, since there its first term is `1` and its second is `0`. -/
+theorem inhomogeneousLittlewoodPaley_succ_eq_one_of_le_norm_of_norm_le {j : ℕ} {ξ : E}
+    (h₁ : 2 ^ j * φ.rOut ≤ ‖ξ‖) (h₂ : ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rIn) :
+    φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 1 := by
+  have h₁' : φ.rOut ≤ ‖((2 : ℝ) ^ (j : ℤ))⁻¹ • ξ‖ := le_norm_two_zpow_inv_smul_iff.2 (by simpa)
+  have h₂' : ‖((2 : ℝ) ^ ((j + 1 : ℕ) : ℤ))⁻¹ • ξ‖ ≤ φ.rIn :=
+    norm_two_zpow_inv_smul_le_iff.2 (by simpa)
+  rw [zpow_natCast] at h₁' h₂'
+  rw [inhomogeneousLittlewoodPaley_succ_apply,
+    φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h₂'),
+    φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_zero]
 
 /-- On a nontrivial space no piece `ψⱼ` of the inhomogeneous partition is identically zero:
 `ψ₀ = φ` is positive at the origin, and `ψⱼ`, `j ≥ 1`, is a dyadic cutoff. -/
@@ -716,6 +739,11 @@ theorem hasCompactSupport_littlewoodPaley (j : ℤ) : HasCompactSupport (φ.litt
   HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ j * φ.rOut)) fun ξ hξ ↦
     φ.littlewoodPaley_eq_zero_of_le_norm
       (not_le.1 (by simpa [mem_closedBall_zero_iff] using hξ)).le
+
+/-- Each Littlewood–Paley cutoff, viewed as a complex-valued symbol, is compactly supported. -/
+theorem hasCompactSupport_ofReal_littlewoodPaley (j : ℤ) :
+    HasCompactSupport (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :=
+  (φ.hasCompactSupport_littlewoodPaley j).comp_left Complex.ofReal_zero
 
 /-- **Derivative bounds for the Littlewood–Paley cutoffs.** The `k`-th derivative of `ψⱼ` is
 bounded by `B / 2^{jk}`, with `B` independent of `j`. -/

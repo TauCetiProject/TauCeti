@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -140,6 +141,30 @@ theorem setOf_isRegularValue_eq_compl_image :
 theorem isRegularValue_of_notMem_range (hy : y ∉ range f) : IsRegularValue I J f y :=
   fun x hx ↦ (hy ⟨x, hx⟩).elim
 
+/-- Every value of the identity is a regular value. -/
+theorem isRegularValue_id (y : M) : IsRegularValue I I (id : M → M) y := fun _ _ ↦ by
+  rw [isRegularPoint_iff, mfderiv_id, ContinuousLinearMap.coe_id']
+  exact surjective_id
+
+/-- On a manifold modelled on the zero space, no point is a regular point of a map to a manifold
+modelled on a nonzero space: the derivative is defined on the zero space and cannot be
+surjective. -/
+theorem not_isRegularPoint_of_subsingleton [Subsingleton E] [Nontrivial E'] :
+    ¬IsRegularPoint I J f x := fun h ↦ by
+  have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
+  have : Nontrivial (TangentSpace J (f x)) := ‹Nontrivial E'›
+  obtain ⟨v, hv⟩ := exists_ne (0 : TangentSpace J (f x))
+  obtain ⟨u, hu⟩ := h v
+  rw [Subsingleton.elim u 0, map_zero] at hu
+  exact hv hu.symm
+
+/-- On a manifold modelled on the zero space, a value of a map to a manifold modelled on a nonzero
+space is regular exactly when it is not attained: every attained value is critical, and a regular
+level is empty. -/
+theorem isRegularValue_iff_notMem_range_of_subsingleton [Subsingleton E] [Nontrivial E'] :
+    IsRegularValue I J f y ↔ y ∉ range f :=
+  ⟨fun h ⟨x, hx⟩ ↦ not_isRegularPoint_of_subsingleton (h x hx), isRegularValue_of_notMem_range⟩
+
 /-- Read in the extended charts at `x₀` and `y₀`, whose sources contain `x` and `f x`, a point
 `x` at which `f` is differentiable is regular exactly when the Fréchet derivative within
 `range I` of the coordinate expression of `f` is surjective at the chart image of `x`. The charts
@@ -183,9 +208,7 @@ theorem ker_mvfderiv {g : M → E'} :
 scalar field using `mvfderiv`. No differentiability hypothesis is needed. -/
 theorem isRegularPoint_iff_mvfderiv_ne_zero {g : M → 𝕜} :
     IsRegularPoint I 𝓘(𝕜) g x ↔ mvfderiv I g x ≠ 0 := by
-  rw [isRegularPoint_iff_surjective_mvfderiv]
-  refine (LinearMap.surjective_iff_ne_zero (f := (mvfderiv I g x).toLinearMap)).trans ?_
-  exact not_congr (ContinuousLinearMap.coe_inj (f := mvfderiv I g x) (g := 0))
+  rw [isRegularPoint_iff_surjective_mvfderiv, ContinuousLinearMap.surjective_iff_ne_zero]
 
 /-- For a map between normed spaces, a regular point is a point at which the Fréchet derivative
 is surjective. -/
@@ -195,6 +218,12 @@ theorem isRegularPoint_iff_surjective_fderiv {f : E → E'} {x : E} :
   rw [isRegularPoint_iff, mfderiv_eq_fderiv]
   exact (EquivLike.comp_surjective _ (NormedSpace.fromTangentSpace (f x)).symm).trans
     (EquivLike.surjective_comp (NormedSpace.fromTangentSpace x) _)
+
+/-- Every value of the first projection of a product of normed spaces is a regular value. -/
+theorem isRegularValue_fst {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] (y : E) :
+    IsRegularValue 𝓘(𝕜, E × F) 𝓘(𝕜, E) (Prod.fst : E × F → E) y := fun _ _ ↦ by
+  rw [isRegularPoint_iff_surjective_fderiv, fderiv_fst, ContinuousLinearMap.coe_fst']
+  exact Prod.fst_surjective
 
 /-- Between manifolds modelled on finite-dimensional spaces of the same dimension, a point is
 regular exactly when the manifold derivative there is injective. -/
