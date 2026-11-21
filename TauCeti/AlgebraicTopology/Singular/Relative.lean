@@ -445,7 +445,7 @@ lemma singularHomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ :
     {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
     (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
     (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
-    (hφψ : ∀ x : t, (Hom.fst φ x).1 = (Hom.fst ψ ⟨x, ht ▸ x.2⟩).1) (n : ℕ) :
+    (hφψ : ∀ x : t, (Hom.fst φ x).val = (Hom.fst ψ ⟨x, ht ▸ x.property⟩).val) (n : ℕ) :
     TopPair.singularHomologyMap φ R n ≫
         eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h' h₁' hs' ht')) =
       eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h h₁ hs ht)) ≫

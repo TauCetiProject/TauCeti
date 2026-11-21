@@ -25,7 +25,8 @@ soon as its trace on the base is (`TauCeti.isClosed_of_subset_skeletonLT_one`), 
 preconnected space into the `0`-skeleton cannot leave such a subset whose complement there is
 also closed (`TauCeti.forall_mem_of_subset_skeletonLT_one`).  The preimages of the skeleta under
 a map into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`), carried
-along any map over a map of bases that preserves the skeleta (`TauCeti.mapsTo_preimageSkeleton`).
+along any map over a map of bases that preserves the skeleta
+(`TauCeti.mapsTo_preimageSkeleton_of_mapsTo_skeletonLT`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -318,18 +319,12 @@ lemma preimageSkeleton_ofNat (f : E → X) (n : ℕ) [n.AtLeastTwo] :
 carries each skeleton of `C` into the skeleton of `C'` of the same dimension, then `f` carries the
 preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton of
 `C'`. -/
-lemma mapsTo_preimageSkeleton {E' X' : Type*} [TopologicalSpace X'] [T2Space X'] {C' D' : Set X'}
-    [RelCWComplex C' D'] {p : E → X} {p' : E' → X'} {f : E → E'} {g : X → X'}
+lemma mapsTo_preimageSkeleton_of_mapsTo_skeletonLT {E' X' : Type*} [TopologicalSpace X']
+    [T2Space X'] {C' D' : Set X'} [RelCWComplex C' D'] {p : E → X} {p' : E' → X'} {f : E → E'}
+    {g : X → X'}
     (hfg : p' ∘ f = g ∘ p) (hg : ∀ n : ℕ, MapsTo g (skeletonLT C n) (skeletonLT C' n)) (q : ℤ) :
     MapsTo f (preimageSkeleton C p q) (preimageSkeleton C' p' q) := fun x hx ↦ by
   rw [mem_preimageSkeleton_iff, ← Function.comp_apply (f := p'), hfg]
   exact hg _ hx
-
-/-- **A map over `X` preserves the skeletal filtrations.** If `p' ∘ f = p`, then `f` carries the
-preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton. -/
-lemma mapsTo_preimageSkeleton_of_comp_eq {E' : Type*} {p : E → X} {p' : E' → X} {f : E → E'}
-    (hf : p' ∘ f = p) (q : ℤ) :
-    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C p' q) :=
-  mapsTo_preimageSkeleton (g := id) hf (fun _ ↦ mapsTo_id _) q
 
 end TauCeti
