@@ -63,7 +63,12 @@ for parameters in the closed unit ball.
   and membership in stable and unstable sets, are those of `f`.
 * `TauCeti.stableSet_perturb_inter_preimage_Iic`, `TauCeti.unstableSet_perturb_inter_preimage_Ici`:
   for a family supported where `f > c` (resp. `f < c`), the stable sets where `f ≤ c` (resp. the
-  unstable sets where `c ≤ f`) are those of `f`.
+  unstable sets where `c ≤ f`) are those of `f`; so are their tangent cones at points where
+  `f < c` (resp. `c < f`) (`TauCeti.tangentConeAt_stableSet_perturb`,
+  `TauCeti.tangentConeAt_unstableSet_perturb`).
+* `TauCeti.fderiv_negativeGradientFlow_perturb`: for a parameter of norm at most `1`, the
+  derivative of the flow of `perturb f h s` is the derivative in the initial condition of the
+  perturbed flow.
 
 ## References
 
@@ -346,6 +351,32 @@ theorem unstableSet_perturb_inter_preimage_Ici
     simpa using negativeGradientFlow_orbit_antitone f hf y hτ
   exact (hc i hmem).not_ge (hy.trans hle)
 
+/-- **Tangent cones of stable sets below a level are unchanged.** If the family is supported where
+`f > c`, then at a point `y` with `f y < c` where `f` is continuous, the tangent cone of the stable
+set of `q` for the perturbed flow is that for the flow of `f`. -/
+theorem tangentConeAt_stableSet_perturb (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ}
+    (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Ioi c) (q : E) {y : E} (hy : f y < c)
+    (hfy : ContinuousAt f y) :
+    tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow (perturb f h s) hf') q) y =
+      tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y := by
+  have hN : f ⁻¹' Iic c ∈ 𝓝 y := hfy.preimage_mem_nhds (Iic_mem_nhds hy)
+  rw [← tangentConeAt_inter_nhds hN, stableSet_perturb_inter_preimage_Iic hf hf' hc q,
+    tangentConeAt_inter_nhds hN]
+
+/-- **Tangent cones of unstable sets above a level are unchanged.** If the family is supported
+where `f < c`, then at a point `y` with `c < f y` where `f` is continuous, the tangent cone of the
+unstable set of `p` for the perturbed flow is that for the flow of `f`. -/
+theorem tangentConeAt_unstableSet_perturb (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι}
+    {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s))) {c : ℝ}
+    (hc : ∀ i, tsupport (h i) ⊆ f ⁻¹' Iio c) (p : E) {y : E} (hy : c < f y)
+    (hfy : ContinuousAt f y) :
+    tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p) y =
+      tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y := by
+  have hN : f ⁻¹' Ici c ∈ 𝓝 y := hfy.preimage_mem_nhds (Ici_mem_nhds hy)
+  rw [← tangentConeAt_inter_nhds hN, unstableSet_perturb_inter_preimage_Ici hf hf' hc p,
+    tangentConeAt_inter_nhds hN]
+
 end AwayFromSupport
 
 section Flow
@@ -584,6 +615,24 @@ private theorem differentiableAt_perturbedFlow (hfs : ContDiff ℝ 2 f)
     (p : E × EuclideanSpace ℝ ι) : DifferentiableAt ℝ (perturbedFlow f h hf hh hc t) p := by
   rw [perturbedFlow_eq_flowOfLipschitz]
   exact differentiable_flowOfLipschitz_apply _ (contDiff_perturbedField hfs hh) t p
+
+/-- **The derivative of the perturbed gradient flow.** For a parameter `s` of norm at most `1`,
+the derivative of the time-`t` map of the negative-gradient flow of `perturb f h s` at `x` is the
+derivative in the initial condition of the perturbed flow at `(x, s)`. -/
+theorem fderiv_negativeGradientFlow_perturb (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i))
+    {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s)))
+    (t : ℝ) (x : E) :
+    fderiv ℝ (negativeGradientFlow (perturb f h s) hf' t) x =
+      (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+        ((fderiv ℝ (perturbedFlow f h hf hh hc t) (x, s)).comp
+          (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ ι))) := by
+  have heq : (fun x' ↦ (perturbedFlow f h hf hh hc t (x', s)).1) =
+      negativeGradientFlow (perturb f h s) hf' t := funext fun x' ↦ by
+    rw [perturbedFlow_apply_of_norm_le (hfs.differentiable two_ne_zero) hf hh hc hs hf']
+  rw [← heq]
+  exact ((differentiableAt_perturbedFlow hfs hf hh hc t (x, s)).hasFDerivAt.comp x
+    (hasFDerivAt_prodMk_left x s)).fst.fderiv
 
 /-- **The parameter component of a variation is constant**: the derivative of the time-`t` map
 of the perturbed flow does not change the parameter component of a tangent vector. -/
