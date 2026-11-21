@@ -351,24 +351,30 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero
 
 /-- **Flat convergence of pushforwards**: let `T` be a normal `(k + 1)`-current on `Ω` and let `χ`
 be a test function with `|χ| ≤ 1`, equal to one near the support of `T`. If maps `Φ i` smooth on
-`Ω` converge uniformly to `Φ` on the support of `χ`, and eventually their derivatives, as well as
-that of `Φ`, are bounded by a common `L` there, then `Φ i # T → Φ# T` in real normal flat mass,
-where `Ψ# T = T ∘ (χ Ψ^*)`. -/
+`Ω` converge uniformly to `Φ` on the support of `χ`, and eventually their derivatives are bounded
+by a common `L` there, then `Φ i # T → Φ# T` in real normal flat mass, where
+`Ψ# T = T ∘ (χ Ψ^*)`. -/
 theorem tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub {ι : Type*} {l : Filter ι}
     {Φs : ι → E → E'} {hΦs : ∀ i, ContDiffOn ℝ (⊤ : ℕ∞) (Φs i) Ω} {Φ : E → E'}
     {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω} (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ)
     (hT : IsNormal T) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (hχ₁ : ∀ x, |χ x| ≤ 1)
     (hu : TendstoUniformlyOn Φs Φ l (tsupport χ)) {L : ℝ≥0}
-    (hL : ∀ᶠ i in l, ∀ x ∈ tsupport χ, ‖fderiv ℝ (Φs i) x‖ ≤ L)
-    (hLΦ : ∀ x ∈ tsupport χ, ‖fderiv ℝ Φ x‖ ≤ L) :
+    (hL : ∀ᶠ i in l, ∀ x ∈ tsupport χ, ‖fderiv ℝ (Φs i) x‖ ≤ L) :
     Tendsto (fun i ↦ (T ∘L cutoffPullbackCLM χ (Φs i) (hΦs i) - T ∘L cutoffPullbackCLM χ Φ hΦ :
       𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ).normalFlatMass) l (𝓝 0) := by
   obtain ⟨hT₀, hT₁⟩ := isNormal_succ_iff.1 hT
+  -- The derivative of `Φ` is bounded on the compact set `tsupport χ`.
+  obtain ⟨C, hC⟩ := χ.hasCompactSupport.exists_bound_of_continuousOn
+    ((hΦ.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).mono χ.tsupport_subset)
   refine TauCeti.tendsto_nhds_zero_of_forall_eventually_le_mul
-    (C := L ^ (k + 1) * mass T + L ^ k * mass (T ∘L extDerivCLM)) (by finiteness) fun δ hδ ↦ ?_
+    (C := max L C.toNNReal ^ (k + 1) * mass T + max L C.toNNReal ^ k * mass (T ∘L extDerivCLM))
+    (by finiteness) fun δ hδ ↦ ?_
   filter_upwards [hL, Metric.tendstoUniformlyOn_iff.1 hu δ hδ] with i hi hdist
   exact normalFlatMass_comp_cutoffPullbackCLM_sub_le T hT hχ hχ₁
-    (fun x hx ↦ by rw [← dist_eq_norm, dist_comm]; exact (hdist x hx).le) hLΦ hi
+    (fun x hx ↦ by rw [← dist_eq_norm, dist_comm]; exact (hdist x hx).le)
+    (fun x hx ↦ ((hC x hx).trans (Real.le_coe_toNNReal C)).trans
+      (NNReal.coe_le_coe.2 (le_max_right _ _)))
+    fun x hx ↦ (hi x hx).trans (NNReal.coe_le_coe.2 (le_max_left _ _))
 
 /-- **Flat convergence of pushforwards in degree zero**: let `T` be a `0`-current of finite mass
 on `Ω` and let `χ` be a test function with `|χ| ≤ 1`, equal to one near the support of `T`. If

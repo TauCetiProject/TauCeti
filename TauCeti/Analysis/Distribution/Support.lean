@@ -43,6 +43,8 @@ near the support.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
+* `Distribution.dsupport_comp_subset_of_disjoint`: the support of `T ∘ P` lies in a closed set `S`
+  when `P` takes tests supported off `S` to tests supported off the support of `T`.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values;
   by `Distribution.map_eq_map_of_forall_eventuallyEq` it suffices that they agree near each point
   of the support in `Ω`.
@@ -189,6 +191,20 @@ support. -/
 theorem map_eq_zero_of_disjoint_dsupport {φ : 𝓓^{n}(Ω, F)}
     (h : Disjoint (tsupport φ) (dsupport T)) : T φ = 0 :=
   isVanishingOn_compl_dsupport T φ h.subset_compl_right
+
+/-- **The support of a composition**: if `P` takes every test function on `Ω'` supported off a
+closed set `S` to a test function supported off the support of `T`, then the support of `T ∘ P`
+lies in `S`. -/
+theorem dsupport_comp_subset_of_disjoint {E' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω' : Opens E'} {m : ℕ∞}
+    {P : 𝓓^{m}(Ω', G) → 𝓓^{n}(Ω, F)} {S : Set E'} (hS : IsClosed S)
+    (hP : ∀ φ : 𝓓^{m}(Ω', G), Disjoint (tsupport φ) S →
+      Disjoint (tsupport (P φ)) (dsupport T)) :
+    dsupport (T ∘ P) ⊆ S := by
+  have hvan : IsVanishingOn (T ∘ P) Sᶜ := fun φ hφ ↦
+    map_eq_zero_of_disjoint_dsupport T (hP φ (subset_compl_iff_disjoint_right.1 hφ))
+  have h := (hvan.disjoint_dsupport hS.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
 
 /-- An additive map on test functions vanishes exactly when its support is empty. -/
 theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=

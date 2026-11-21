@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The homotopy operator on a cylinder over a subset of a normed space
@@ -67,6 +68,8 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
   `TauCeti.norm_cylinderHomotopy_le`, `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support
   and sup-norm bounds for `h ω` and its derivatives, which make `h` continuous on compactly
   supported smooth forms.
+* `TauCeti.norm_cylinderHomotopy_pullback_le`: the sup-norm bound `B A L ^ n` for `h (H^* ω)`
+  when `‖∂ₜ H‖ ≤ A`, the spatial derivative of `H` has norm at most `L` and `‖ω‖ ≤ B`.
 
 ## References
 
@@ -234,6 +237,39 @@ theorem norm_cylinderHomotopy_le {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]
   rw [cylinderHomotopy_apply]
   simp only [← contractInl_apply]
   exact hI
+
+/-- **The pointwise bound of the homotopy operator**: if, along the track `t ↦ H (x, t)`,
+`t ∈ [0, 1]`, the time derivative satisfies `‖∂ₜ H‖ ≤ A`, the spatial derivative of `H` has operator
+norm at most `L` and the form satisfies `‖ω‖ ≤ B`, then the cylinder homotopy operator of the
+pullback `H^* ω` has norm at most `B A L ^ n` at `x`. -/
+theorem norm_cylinderHomotopy_pullback_le {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    (ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F) (H : E × ℝ → E') (x : E) {A L B : ℝ}
+    (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ H (x, t) (0, 1)‖ ≤ A)
+    (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L)
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (H (x, t))‖ ≤ B) :
+    ‖cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap (fderiv ℝ H p)) x‖ ≤
+      B * A * L ^ n := by
+  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0 h0)
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 h0)
+  rw [cylinderHomotopy_apply]
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := B * A * L ^ n)
+    fun t ht ↦ ?_).trans_eq (by simp)
+  rw [uIoc_of_le zero_le_one] at ht
+  have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+  rw [ContinuousAlternatingMap.curryLeft_compContinuousLinearMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap]
+  calc _ ≤ ‖(ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))‖ *
+        ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ^ n :=
+        (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
+    _ ≤ (‖ω (H (x, t))‖ * ‖fderiv ℝ H (x, t) (0, 1)‖) * L ^ n := by
+        gcongr
+        · exact ((ω (H (x, t))).curryLeft.le_opNorm _).trans_eq
+            (by rw [ContinuousAlternatingMap.norm_curryLeft])
+        · exact hL t ht'
+    _ ≤ B * A * L ^ n :=
+        mul_le_mul_of_nonneg_right (mul_le_mul (hB t ht') (hA t ht') (norm_nonneg _) hB0)
+          (pow_nonneg hL0 n)
 
 /-- The `i`-th derivative of a time slice of `x ↦ contractInl (ω (x, t))`, explicitly. -/
 private theorem iteratedFDeriv_contractInl_comp {r : WithTop ℕ∞}

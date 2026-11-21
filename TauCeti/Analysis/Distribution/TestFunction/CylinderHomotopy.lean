@@ -58,7 +58,8 @@ estimate their masses.
 * `TopologicalSpace.Opens.cylinder`: the open cylinder `Ω × ℝ`, and `TestFunction.timeCutoff`, a
   test function of time equal to one near `[0, 1]`, used to cut forms on it off in time.
 * `TestFunction.cylinderCutoff`: the cutoff `(x, t) ↦ τ t • χ x` on the cylinder built from a test
-  function `χ` on `Ω` and the time cutoff `τ`, equal to `χ` at the times `t ∈ [0, 1]`.
+  function `χ` on `Ω` and the time cutoff `τ`, with its values `TestFunction.cylinderCutoff_apply`,
+  equal to `χ` at the times `t ∈ [0, 1]`.
 * `TestFunction.cylinderHomotopyCLM`: the cylinder homotopy operator on test forms, as a
   continuous linear map.
 * `TauCeti.isCompact_inter_preimage_prodMk_left`: the slices `ιₜ` are proper from `Ω` to `W` at
@@ -184,10 +185,15 @@ changing what the cylinder homotopy operator sees over the points where `χ` is 
 def cylinderCutoff (χ : 𝓓(Ω, ℝ)) : 𝓓(Ω.cylinder, ℝ) :=
   prodSMulCLM timeCutoff Opens.prod_top_subset_cylinder χ
 
+/-- The cylinder cutoff is `(x, t) ↦ τ t χ x`. -/
+@[simp]
+theorem cylinderCutoff_apply (p : E × ℝ) : cylinderCutoff χ p = timeCutoff p.2 * χ p.1 := by
+  rw [cylinderCutoff, prodSMulCLM_apply, smul_eq_mul]
+
 /-- At the times `t ∈ [0, 1]`, the cylinder cutoff is `χ`. -/
 theorem cylinderCutoff_apply_of_mem_Icc {x : E} {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     cylinderCutoff χ (x, t) = χ x := by
-  simp [cylinderCutoff, prodSMulCLM_apply, timeCutoff_eq_one ht]
+  simp [timeCutoff_eq_one ht]
 
 /-- Near every point `(x, t)` with `t ∈ [0, 1]` near which `χ` is one, the cylinder cutoff is
 one. -/
@@ -197,7 +203,7 @@ theorem cylinderCutoff_eventually_eq_one {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y 
     (nhds_le_nhdsSet ht)
   filter_upwards [continuous_fst.continuousAt.eventually hx,
     continuous_snd.continuousAt.eventually hτ] with q hq₁ hq₂
-  simp [cylinderCutoff, prodSMulCLM_apply, hq₁, hq₂]
+  simp [hq₁, hq₂]
 
 end CylinderCutoff
 

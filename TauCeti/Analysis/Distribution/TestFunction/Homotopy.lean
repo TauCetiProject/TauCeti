@@ -58,7 +58,7 @@ pulls `ω` back to the cylinder with the cutoff `(x, t) ↦ τ t • χ x`
 (`TestFunction.cylinderCutoff`). When `χ` is equal to one near the support of `T`, the same
 homotopy formula holds with `Hₜ# T = T ∘ (χ Hₜ^*)`, the current `T ∘ K` is supported in the union
 of the tracks `H ({x} × [0, 1])` of the points `x` of the support of `T`, and its mass is at most
-`A L ^ k M(T)` when the bounds on `H` hold over the support of `χ`.
+`A L ^ k M(T)` when `|χ| ≤ 1` and the bounds on `H` hold over the support of `χ`.
 
 ## Main declarations
 
@@ -101,53 +101,6 @@ noncomputable section
 
 open Set Filter TopologicalSpace ContinuousAlternatingMap
 open scoped Distributions Topology NNReal ENNReal Interval
-
-namespace TauCeti
-
-variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-/-- **The pointwise bound of the homotopy operator**: if, along the track `t ↦ H (x, t)`,
-`t ∈ [0, 1]`, the time derivative satisfies `‖∂ₜ H‖ ≤ A`, the spatial derivative of `H` has operator
-norm at most `L` and the form satisfies `‖ω‖ ≤ B`, then the cylinder homotopy operator of the
-pullback `H^* ω` has norm at most `B A L ^ k` at `x`. -/
-theorem norm_cylinderHomotopy_pullback_le (ω : E' → E' [⋀^Fin (k + 1)]→L[ℝ] F) (H : E × ℝ → E')
-    (x : E) {A L B : ℝ} (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ H (x, t) (0, 1)‖ ≤ A)
-    (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L)
-    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (H (x, t))‖ ≤ B) :
-    ‖cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap (fderiv ℝ H p)) x‖ ≤
-      B * A * L ^ k := by
-  have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0 h0)
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0 h0)
-  rw [cylinderHomotopy_apply]
-  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := B * A * L ^ k)
-    fun t ht ↦ ?_).trans_eq (by simp)
-  rw [uIoc_of_le zero_le_one] at ht
-  have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
-  rw [curryLeft_compContinuousLinearMap]
-  calc _ ≤ ‖(ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))‖ *
-        ‖(fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)‖ ^ k := by
-        have hcomp : (((ω (H (x, t))).curryLeft
-            (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
-              (fderiv ℝ H (x, t))).compContinuousLinearMap (.inl ℝ E ℝ) =
-            ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1))).compContinuousLinearMap
-              ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ)) := by
-          ext v
-          rfl
-        rw [hcomp]
-        exact (norm_compContinuousLinearMap_le
-          ((ω (H (x, t))).curryLeft (fderiv ℝ H (x, t) (0, 1)))
-          ((fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ))).trans_eq (by simp)
-    _ ≤ (‖ω (H (x, t))‖ * ‖fderiv ℝ H (x, t) (0, 1)‖) * L ^ k := by
-        gcongr
-        · exact ((ω (H (x, t))).curryLeft.le_opNorm _).trans_eq (by rw [norm_curryLeft])
-        · exact hL t ht'
-    _ ≤ B * A * L ^ k :=
-        mul_le_mul_of_nonneg_right (mul_le_mul (hB t ht') (hA t ht') (norm_nonneg _) hB0)
-          (pow_nonneg hL0 k)
-
-end TauCeti
 
 namespace TestFunction
 
@@ -539,19 +492,7 @@ theorem mass_comp_homotopyPullbackCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E
         (fun t ht ↦ hL _ ⟨hx, ht⟩) fun t _ ↦ hω _).trans_eq (by ring)
     · rw [homotopyPullbackCLM_apply_of_notMem ω hx, norm_zero]
       positivity
-  have hb : ‖(homotopyPullbackCLM hH hHp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k :=
-    (BoundedContinuousFunction.norm_le (by positivity)).2 hpt
-  calc ‖T (homotopyPullbackCLM hH hHp ω)‖ₑ
-      ≤ mass T * ‖(homotopyPullbackCLM hH hHp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-        exact ENNReal.ofReal_le_ofReal (by simpa using hb)
-    _ = A * L ^ k * mass T := by
-        rw [mul_comm]
-        push_cast
-        ring
+  simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := A * L ^ k) (by simpa using hpt)
 
 end Distribution
 
@@ -594,6 +535,7 @@ private theorem cutoffHomotopyPullbackCLM_eq
 
 /-- The homotopy operator with a cutoff is `χ` times the cylinder homotopy operator of the pullback
 `H^* ω`: `x ↦ χ x • ∫₀¹ (H^* ω)(x, t)(∂ₜ, ·) dt`. -/
+@[simp]
 theorem cutoffHomotopyPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F)) (x : E) :
     cutoffHomotopyPullbackCLM χ H hH ω x =
       χ x • cylinderHomotopy (fun p ↦ (ω (H p)).compContinuousLinearMap (fderiv ℝ H p)) x := by
@@ -766,20 +708,13 @@ theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [AddCommMonoid V]
     (T : 𝓕) :
     dsupport (T ∘ (cutoffHomotopyPullbackCLM χ H hH :
         𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ⊆
-      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) := by
-  have hS : IsCompact (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1)) :=
-    ((IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).prod
-      isCompact_Icc).image_of_continuousOn (hH.continuousOn.mono fun p hp ↦
-        Opens.mem_cylinder.2 (χ.tsupport_subset hp.1.1))
-  -- A test form supported off this image is taken to a test form supported off `spt T`.
-  have hvan : IsVanishingOn (T ∘ (cutoffHomotopyPullbackCLM χ H hH :
-      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _))
-      (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1))ᶜ := fun ω hω ↦
-    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦ by
+      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) :=
+  dsupport_comp_subset_of_disjoint T (((IsCompact.inter_right χ.hasCompactSupport
+    isClosed_dsupport).prod isCompact_Icc).image_of_continuousOn (hH.continuousOn.mono
+      fun p hp ↦ Opens.mem_cylinder.2 (χ.tsupport_subset hp.1.1))).isClosed
+    fun ω hω ↦ disjoint_left.2 fun x hx hxT ↦ by
       obtain ⟨p, ⟨⟨hpχ, hpt⟩, hpω⟩, rfl⟩ := tsupport_cutoffHomotopyPullbackCLM_subset ω hx
-      exact hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
-  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
-  rwa [compl_compl] at h
+      exact disjoint_left.1 hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
 
 /-- **The mass of a homotopy current with a cutoff**: if `|χ| ≤ 1`, `‖∂ₜ H‖ ≤ A` and the spatial
 derivative of `H` has operator norm at most `L` on `tsupport χ × [0, 1]`, then
@@ -807,18 +742,6 @@ theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpa
     · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
         norm_zero]
       positivity
-  have hb : ‖(cutoffHomotopyPullbackCLM χ H hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k :=
-    (BoundedContinuousFunction.norm_le (by positivity)).2 hpt
-  calc ‖T (cutoffHomotopyPullbackCLM χ H hH ω)‖ₑ
-      ≤ mass T * ‖(cutoffHomotopyPullbackCLM χ H hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-        exact ENNReal.ofReal_le_ofReal (by simpa using hb)
-    _ = A * L ^ k * mass T := by
-        rw [mul_comm]
-        push_cast
-        ring
+  simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := A * L ^ k) (by simpa using hpt)
 
 end Distribution
