@@ -80,14 +80,17 @@ theorem halfDiscChart_symm_preimage {x : ℂ} (hx : x.im = 0) (r : ℝ) :
     mem_ball, dist_eq_norm, norm_halfDiscChart_symm_sub, im_halfDiscChart_symm hx]
 
 /-- The chart maps the closed model half-disc into `closedBall x r ∩ {0 ≤ im}`. -/
-theorem halfDiscChart_symm_mapsTo_closure {x : ℂ} (hx : x.im = 0) {r : ℝ} (hr : 0 < r) :
+theorem halfDiscChart_symm_mapsTo_closure {x : ℂ} (hx : x.im = 0) {r : ℝ} :
     MapsTo (halfDiscChart x).symm (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))
       (closedBall x r ∩ {z | 0 ≤ z.im}) := by
   intro w hw
-  rw [closure_halfDisc hr] at hw
-  exact ⟨by rw [mem_closedBall, dist_eq_norm, norm_halfDiscChart_symm_sub]
-            exact mem_closedBall_zero_iff.1 hw.1,
-    by rw [mem_ofPred_eq, im_halfDiscChart_symm hx]; exact hw.2⟩
+  by_cases hr : 0 < r
+  · rw [closure_halfDisc hr] at hw
+    exact ⟨by rw [mem_closedBall, dist_eq_norm, norm_halfDiscChart_symm_sub]
+              exact mem_closedBall_zero_iff.1 hw.1,
+      by rw [mem_ofPred_eq, im_halfDiscChart_symm hx]; exact hw.2⟩
+  · rw [coe_halfDisc, ball_eq_empty.2 (not_lt.1 hr), empty_inter, closure_empty] at hw
+    exact hw.elim
 
 /-- The chart maps the flat segment into the real points of `closedBall x r`. -/
 theorem halfDiscChart_symm_mapsTo_flatSegment {x : ℂ} (hx : x.im = 0) {r : ℝ} :
