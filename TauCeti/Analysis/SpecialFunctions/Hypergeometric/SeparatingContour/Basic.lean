@@ -9,11 +9,8 @@ public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import TauCeti.Analysis.Contour.Residue.Basic
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Complex.Rectangle
-import TauCeti.Analysis.Contour.Curve.Rectangle
-import TauCeti.Analysis.Contour.Residue.Cycle
+import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Contour.Residue.SimplePole
-import TauCeti.Analysis.Contour.Winding.Number.Rectangle
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
@@ -120,6 +117,28 @@ theorem mellinBarnesLeftPoles_eq_empty_iff {a b : ℂ} {σ : ℝ} :
     · simp only [sub_re, neg_re, natCast_re] at hσ; linarith [ha, k.cast_nonneg (α := ℝ)]
     · simp only [sub_re, neg_re, natCast_re] at hσ; linarith [hb, k.cast_nonneg (α := ℝ)]
 
+/-- `mellinBarnesLeftPoles a b` is antitone in the abscissa `σ`: shifting `σ` to the left only
+adds left-family poles. -/
+theorem mellinBarnesLeftPoles_antitone (a b : ℂ) : Antitone (mellinBarnesLeftPoles a b) :=
+  fun _ _ h s hs => by
+    rw [mem_mellinBarnesLeftPoles] at hs ⊢
+    exact ⟨h.trans_lt hs.1, hs.2⟩
+
+/-- A point lies in `mellinBarnesLeftPoles a b σ₁ \ mellinBarnesLeftPoles a b σ₂` if and only if
+its real part lies in `(σ₁, σ₂]` and it belongs to one of the two left-pole families. -/
+theorem mem_mellinBarnesLeftPoles_sdiff {a b : ℂ} {σ₁ σ₂ : ℝ} {s : ℂ} :
+    s ∈ mellinBarnesLeftPoles a b σ₁ \ mellinBarnesLeftPoles a b σ₂ ↔
+      s.re ∈ Ioc σ₁ σ₂ ∧ ((∃ k : ℕ, s = -a - k) ∨ (∃ k : ℕ, s = -b - k)) := by
+  simp only [Finset.mem_sdiff, mem_mellinBarnesLeftPoles, mem_Ioc]
+  exact ⟨fun ⟨⟨h1, hp⟩, h2⟩ => ⟨⟨h1, not_lt.1 fun h => h2 ⟨h, hp⟩⟩, hp⟩,
+    fun ⟨⟨h1, h2⟩, hp⟩ => ⟨⟨h1, hp⟩, fun h => not_lt_of_ge h2 h.1⟩⟩
+
+/-- Every pole in `mellinBarnesLeftPoles a b σ` lies in the horizontal strip
+`|Im s| ≤ max |Im a| |Im b|`. -/
+theorem abs_im_le_of_mem_mellinBarnesLeftPoles {a b : ℂ} {σ : ℝ} {s : ℂ}
+    (hs : s ∈ mellinBarnesLeftPoles a b σ) : |s.im| ≤ max |a.im| |b.im| := by
+  rcases (mem_mellinBarnesLeftPoles.1 hs).2 with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp
+
 /-- The separating-contour Mellin–Barnes functional at abscissa `σ`, representing
 `Γ(a) Γ(b) 𝐅(a, b; c; z)` (hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`): the vertical-line
 integral `(2πi)⁻¹ ∫_{Re t = σ} ... dt = (2π)⁻¹ ∫_{-∞}^∞ ... (σ + i y) dy` plus the sum of
@@ -178,6 +197,44 @@ theorem analyticAt_mellinBarnesIntegrand (a b c z : ℂ) {t : ℂ}
     ((differentiable_one_div_Gamma.analyticAt (c + t)).comp
       (analyticAt_const.add analyticAt_id))).mul
     (analyticAt_id.const_cpow (Or.inr (by simpa using ht 0)))
+
+/-- Joint analyticity of the uncurried Mellin–Barnes integrand in `(a, b, c, z, t)` away from
+the pole families `-a - ℕ`, `-b - ℕ`, `ℕ` and the branch cut `-z ∉ slitPlane`. -/
+theorem analyticAt_mellinBarnesIntegrand_uncurry {p : ℂ × ℂ × ℂ × ℂ} {t : ℂ}
+    (ha : ∀ k : ℕ, p.1 + t ≠ -k) (hb : ∀ k : ℕ, p.2.1 + t ≠ -k) (ht : ∀ m : ℕ, -t ≠ -m)
+    (hz : -p.2.2.2 ∈ slitPlane) :
+    AnalyticAt ℂ
+      (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
+        mellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)
+      (p, t) := by
+  have hp1 : AnalyticAt ℂ (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ => x.1.1) (p, t) :=
+    analyticAt_fst.comp analyticAt_fst
+  have hp2 : AnalyticAt ℂ (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ => x.1.2.1) (p, t) :=
+    analyticAt_fst.comp (analyticAt_snd.comp analyticAt_fst)
+  have hp3 : AnalyticAt ℂ (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ => x.1.2.2.1) (p, t) :=
+    analyticAt_fst.comp (analyticAt_snd.comp (analyticAt_snd.comp analyticAt_fst))
+  have hp4 : AnalyticAt ℂ (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ => x.1.2.2.2) (p, t) :=
+    analyticAt_snd.comp (analyticAt_snd.comp (analyticAt_snd.comp analyticAt_fst))
+  simp_rw [mellinBarnesIntegrand_def]
+  exact ((((((analyticAt_Gamma ha).comp_of_eq (hp1.add analyticAt_snd) rfl).mul
+    ((analyticAt_Gamma hb).comp_of_eq (hp2.add analyticAt_snd) rfl)).mul
+    ((analyticAt_Gamma ht).comp_of_eq analyticAt_snd.neg rfl)).mul
+    ((differentiable_one_div_Gamma.analyticAt (p.2.2.1 + t)).comp_of_eq
+      (hp3.add analyticAt_snd) rfl)).mul (hp4.neg.cpow analyticAt_snd hz))
+
+/-- Joint analyticity of the uncurried Mellin–Barnes integrand along a vertical point `t = σ + i y`
+when `Re a + σ`, `Re b + σ ∉ -ℕ`, `σ ∉ ℕ`, and `-z ∈ slitPlane`. -/
+theorem analyticAt_mellinBarnesIntegrand_uncurry_vertical {p : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
+    (ha : ∀ k : ℕ, p.1.re + σ ≠ -k) (hb : ∀ k : ℕ, p.2.1.re + σ ≠ -k)
+    (hσ : ∀ m : ℕ, σ ≠ m) (hz : -p.2.2.2 ∈ slitPlane) (y : ℝ) :
+    AnalyticAt ℂ
+      (fun x : (ℂ × ℂ × ℂ × ℂ) × ℂ =>
+        mellinBarnesIntegrand x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 x.2)
+      (p, (σ : ℂ) + y * I) :=
+  analyticAt_mellinBarnesIntegrand_uncurry
+    (fun k h => ha k (by have hre := congrArg re h; simp at hre; linarith))
+    (fun k h => hb k (by have hre := congrArg re h; simp at hre; linarith))
+    (fun m h => hσ m (by have hre := congrArg re h; simp at hre; linarith)) hz
 
 /-- Simple-pole residue of `mellinBarnesIntegrand a b c z` at `t = -a - k` when `-a - k` avoids
 both `-b - ℕ` and `ℕ`. -/
@@ -323,11 +380,9 @@ theorem verticalIntegrable_mellinBarnesIntegrand {a b : ℂ} (c : ℂ) {z : ℂ}
   obtain ⟨B, Y₀, _, _, _, _, hdom, htail⟩ := exists_norm_mellinBarnesIntegrand_tail_le a b c hz σ σ
   have hcont : Continuous fun y : ℝ => mellinBarnesIntegrand a b c z (σ + y * I) :=
     continuous_iff_continuousAt.2 fun y =>
-      (analyticAt_mellinBarnesIntegrand a b c z
-        (fun k h => ha k (by have hre := congrArg re h; simp at hre; linarith))
-        (fun k h => hb k (by have hre := congrArg re h; simp at hre; linarith))
-        (fun m h => hσ m (by have hre := congrArg re h; simp at hre; linarith))).continuousAt.comp
-        (by fun_prop)
+      (analyticAt_mellinBarnesIntegrand_uncurry_vertical
+        (p := (a, b, c, z)) ha hb hσ hz y).continuousAt.comp
+        (f := fun y' : ℝ => ((a, b, c, z), (σ : ℂ) + y' * I)) (by fun_prop)
   have hout : IntegrableOn (fun y : ℝ => mellinBarnesIntegrand a b c z (σ + y * I))
       (Icc (-Y₀) Y₀)ᶜ := by
     refine hdom.integrableOn.mono' hcont.aestronglyMeasurable ?_
@@ -337,138 +392,6 @@ theorem verticalIntegrable_mellinBarnesIntegrand {a b : ℂ} (c : ℂ) {z : ℂ}
   rw [VerticalIntegrable, ← integrableOn_univ, ← union_compl_self (Icc (-Y₀) Y₀)]
   exact hcont.integrableOn_Icc.union hout
 
-private theorem im_mem_Ioo_of_leftPole {a b s : ℂ} {T : ℝ} (hTim : max |a.im| |b.im| < T)
-    (h : (∃ k : ℕ, s = -a - k) ∨ (∃ k : ℕ, s = -b - k)) : s.im ∈ Ioo (-T) T :=
-  abs_lt.1 (by rcases h with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> simp <;>
-    linarith [le_max_left |a.im| |b.im|, le_max_right |a.im| |b.im|])
-
-private theorem sum_windingNumber_rect_mellinBarnes {a b : ℂ} {σ₁ σ₂ T : ℝ} (f : ℂ → ℂ)
-    (h12 : σ₁ < σ₂) (hTim : max |a.im| |b.im| < T)
-    (ha₁ : ∀ k : ℕ, a.re + σ₁ ≠ -k) (hb₁ : ∀ k : ℕ, b.re + σ₁ ≠ -k)
-    (ha₂ : ∀ k : ℕ, a.re + σ₂ ≠ -k) (hb₂ : ∀ k : ℕ, b.re + σ₂ ≠ -k) :
-    (∑ s ∈ mellinBarnesLeftPoles a b (σ₁ - 1),
-      TauCeti.Contour.windingNumber (rectBoundary (σ₁ - T * I) (σ₂ + T * I)) 0 4 s *
-        TauCeti.Contour.residue f s) =
-      (∑ s ∈ mellinBarnesLeftPoles a b σ₁, TauCeti.Contour.residue f s) -
-        ∑ s ∈ mellinBarnesLeftPoles a b σ₂, TauCeti.Contour.residue f s := by
-  have hT_pos : 0 < T := (abs_nonneg a.im).trans_lt ((le_max_left _ _).trans_lt hTim)
-  set zL : ℂ := (σ₁ : ℂ) - T * I
-  set wR : ℂ := (σ₂ : ℂ) + T * I
-  have hRect_eq : Rectangle zL wR = Icc σ₁ σ₂ ×ℂ Icc (-T) T := by
-    simpa [zL, wR] using rectangle_eq_reProdIm (z := zL) (w := wR)
-      (by simp [zL, wR, h12.le]) (by simp [zL, wR]; linarith)
-  have hsub : mellinBarnesLeftPoles a b σ₂ ⊆ mellinBarnesLeftPoles a b σ₁ := fun s hs => by
-    rw [mem_mellinBarnesLeftPoles] at hs ⊢; exact ⟨h12.trans hs.1, hs.2⟩
-  have hP₁S : mellinBarnesLeftPoles a b σ₁ ⊆ mellinBarnesLeftPoles a b (σ₁ - 1) := fun s hs => by
-    rw [mem_mellinBarnesLeftPoles] at hs ⊢; exact ⟨by linarith [hs.1], hs.2⟩
-  have hne_line {s : ℂ} (h : (∃ k : ℕ, s = -a - k) ∨ (∃ k : ℕ, s = -b - k)) :
-      s.re ≠ σ₁ ∧ s.re ≠ σ₂ := by
-    rcases h with ⟨k, rfl⟩ | ⟨k, rfl⟩
-    · exact ⟨fun e => ha₁ k (by simp at e; linarith), fun e => ha₂ k (by simp at e; linarith)⟩
-    · exact ⟨fun e => hb₁ k (by simp at e; linarith), fun e => hb₂ k (by simp at e; linarith)⟩
-  rw [← Finset.sum_sdiff_eq_sub hsub]; symm
-  refine (Finset.sum_congr rfl fun s hs => ?_).trans
-    (Finset.sum_subset (Finset.sdiff_subset.trans hP₁S) fun s hsS hs_not => ?_)
-  · rw [Finset.mem_sdiff, mem_mellinBarnesLeftPoles, mem_mellinBarnesLeftPoles] at hs
-    have hlt2 : s.re < σ₂ := lt_of_le_of_ne (not_lt.1 fun h => hs.2 ⟨h, hs.1.2⟩) (hne_line hs.1.2).2
-    rw [TauCeti.Contour.windingNumber_rectBoundary_eq_one
-      (by simpa [zL, wR] using ⟨⟨hs.1.1, hlt2⟩, im_mem_Ioo_of_leftPole hTim hs.1.2⟩), one_mul]
-  · have hs_poles := (mem_mellinBarnesLeftPoles.1 hsS).2
-    have hs_out : s ∉ Rectangle zL wR := fun hsR => hs_not (by
-      rw [hRect_eq] at hsR
-      rw [Finset.mem_sdiff, mem_mellinBarnesLeftPoles, mem_mellinBarnesLeftPoles]
-      exact ⟨⟨lt_of_le_of_ne hsR.1.1 (hne_line hs_poles).1.symm, hs_poles⟩,
-        fun h => (lt_of_le_of_ne hsR.1.2 (hne_line hs_poles).2).not_gt h.1⟩)
-    rw [TauCeti.Contour.windingNumber_rectBoundary_eq_zero hs_out, zero_mul]
-
-private theorem frontier_rectangle_notMem_mellinBarnesLeftPoles {a b : ℂ} {σ₁ σ₂ T : ℝ}
-    (hTim : max |a.im| |b.im| < T)
-    (ha₁ : ∀ k : ℕ, a.re + σ₁ ≠ -k) (hb₁ : ∀ k : ℕ, b.re + σ₁ ≠ -k)
-    (ha₂ : ∀ k : ℕ, a.re + σ₂ ≠ -k) (hb₂ : ∀ k : ℕ, b.re + σ₂ ≠ -k) :
-    ∀ t ∈ frontier (Rectangle ((σ₁ : ℂ) - T * I) ((σ₂ : ℂ) + T * I)),
-      t ∉ (↑(mellinBarnesLeftPoles a b (σ₁ - 1)) : Set ℂ) := by
-  intro t ht htS
-  have hpoles := (mem_mellinBarnesLeftPoles.1 htS).2
-  have htim := im_mem_Ioo_of_leftPole hTim hpoles
-  rw [frontier_rectangle] at ht
-  have htre : t.re = σ₁ ∨ t.re = σ₂ := by
-    rcases ht with ⟨_, hmem⟩ | ⟨hmem, _⟩
-    · have hmem' : t.im = -T ∨ t.im = T := by simpa using hmem
-      rcases hmem' with h | h <;> linarith [htim.1, htim.2]
-    · simpa using hmem
-  rcases hpoles with ⟨k, rfl⟩ | ⟨k, rfl⟩ <;> rcases htre with h1 | h2
-  · exact ha₁ k (by simp at h1; linarith)
-  · exact ha₂ k (by simp at h2; linarith)
-  · exact hb₁ k (by simp at h1; linarith)
-  · exact hb₂ k (by simp at h2; linarith)
-
-private theorem rectBoundary_mellinBarnesIntegrand_eq {a b c z : ℂ} {σ₁ σ₂ T : ℝ}
-    (h12 : σ₁ < σ₂) (hσ₂ : σ₂ < 0) (hTim : max |a.im| |b.im| < T)
-    (ha₁ : ∀ k : ℕ, a.re + σ₁ ≠ -k) (hb₁ : ∀ k : ℕ, b.re + σ₁ ≠ -k)
-    (ha₂ : ∀ k : ℕ, a.re + σ₂ ≠ -k) (hb₂ : ∀ k : ℕ, b.re + σ₂ ≠ -k) :
-    (∫ x : ℝ in σ₁..σ₂, mellinBarnesIntegrand a b c z (x - T * I)) -
-      (∫ x : ℝ in σ₁..σ₂, mellinBarnesIntegrand a b c z (x + T * I)) +
-      I * (∫ y : ℝ in (-T)..T, mellinBarnesIntegrand a b c z (σ₂ + y * I)) -
-      I * (∫ y : ℝ in (-T)..T, mellinBarnesIntegrand a b c z (σ₁ + y * I)) =
-    2 * (π : ℂ) * I *
-      ((∑ s ∈ mellinBarnesLeftPoles a b σ₁,
-          TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) s) -
-        ∑ s ∈ mellinBarnesLeftPoles a b σ₂,
-          TauCeti.Contour.residue (mellinBarnesIntegrand a b c z) s) := by
-  have hT_pos : 0 < T := (abs_nonneg a.im).trans_lt ((le_max_left _ _).trans_lt hTim)
-  set g : ℂ → ℂ := mellinBarnesIntegrand a b c z
-  set S : Finset ℂ := mellinBarnesLeftPoles a b (σ₁ - 1)
-  let U : Set ℂ := {t : ℂ | σ₁ - 1 < t.re ∧ t.re < 0}
-  have hU : IsOpen U := (isOpen_lt continuous_const continuous_re).inter
-    (isOpen_lt continuous_re continuous_const)
-  have hg_diff : DifferentiableOn ℂ g (U \ (↑S : Set ℂ)) := fun t ht =>
-    (analyticAt_mellinBarnesIntegrand a b c z
-      (fun k hk => ht.2 (mem_mellinBarnesLeftPoles.2 ⟨ht.1.1, Or.inl ⟨k, hk⟩⟩))
-      (fun k hk => ht.2 (mem_mellinBarnesLeftPoles.2 ⟨ht.1.1, Or.inr ⟨k, hk⟩⟩))
-      (fun m hm => by
-        have hre : t.re = m := by simp [hm]
-        linarith [ht.1.2, m.cast_nonneg (α := ℝ)]))
-      |>.differentiableAt.differentiableWithinAt
-  set zL : ℂ := (σ₁ : ℂ) - T * I
-  set wR : ℂ := (σ₂ : ℂ) + T * I
-  have hRectU : Rectangle zL wR ⊆ U := fun t ht => by
-    have hRect_eq : Rectangle zL wR = Icc σ₁ σ₂ ×ℂ Icc (-T) T := by
-      simpa [zL, wR] using rectangle_eq_reProdIm (z := zL) (w := wR)
-        (by simp [zL, wR, h12.le]) (by simp [zL, wR]; linarith)
-    rw [hRect_eq] at ht
-    exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩
-  have hfr_notS := frontier_rectangle_notMem_mellinBarnesLeftPoles hTim ha₁ hb₁ ha₂ hb₂
-  have hres := TauCeti.Contour.classicalResidueTheorem_nullHomologous hU hg_diff
-    (fun s _ _ => meromorphicAt_mellinBarnesIntegrand a b c z s)
-    (isPiecewiseC1On_rectBoundary zL wR)
-    (fun t _ => hRectU (rectBoundary_mem_rectangle t)) (by simp)
-    (fun t _ => hfr_notS _ (rectBoundary_mem_frontier t))
-    (TauCeti.Contour.isNullHomologous_rectBoundary hRectU)
-  rw [integral_rectBoundary (z := zL) (w := wR)
-      (hg_diff.continuousOn.mono fun t ht =>
-        ⟨hRectU ((isClosed_rectangle zL wR).closure_subset ht.1), hfr_notS t ht⟩),
-    sum_windingNumber_rect_mellinBarnes g h12 hTim ha₁ hb₁ ha₂ hb₂] at hres
-  simpa [zL, wR, sub_eq_add_neg, smul_eq_mul] using hres
-
-private theorem tendsto_horizontal_mellinBarnesIntegrand_zero (a b c : ℂ) {z : ℂ} (σ₁ σ₂ : ℝ)
-    (h12 : σ₁ < σ₂) (hz : -z ∈ slitPlane) {sgn : ℝ} (hsgn : |sgn| = 1) :
-    Tendsto (fun T : ℝ => ∫ x : ℝ in σ₁..σ₂, mellinBarnesIntegrand a b c z (x + (sgn * T) * I))
-      atTop (𝓝 0) := by
-  obtain ⟨B, Y₀, δ, _, hY₀, hδ, _, htail⟩ :=
-    exists_norm_mellinBarnesIntegrand_tail_le a b c hz σ₁ σ₂
-  have hexp : Tendsto (fun T : ℝ => B * Real.exp (-δ * T) * (σ₂ - σ₁)) atTop (𝓝 0) := by
-    simpa using ((Real.tendsto_exp_atBot.comp
-      (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B).mul_const (σ₂ - σ₁)
-  refine tendsto_zero_iff_norm_tendsto_zero.2
-    (squeeze_zero' (Eventually.of_forall fun _ => norm_nonneg _) ?_ hexp)
-  filter_upwards [eventually_ge_atTop Y₀] with T hT
-  have habs : |sgn * T| = T := by
-    rw [abs_mul, hsgn, one_mul, abs_of_nonneg ((zero_lt_one.trans_le hY₀).le.trans hT)]
-  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := B * Real.exp (-δ * T))
-    fun x hx => ?_).trans (by rw [abs_of_pos (sub_pos.2 h12)])
-  rw [uIoc_of_le h12.le] at hx
-  simpa only [habs, ofReal_mul] using htail x (Ioc_subset_Icc_self hx) (sgn * T) (habs.symm ▸ hT)
-
 private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (c : ℂ) {z : ℂ}
     {σ₁ σ₂ : ℝ} (h12 : σ₁ < σ₂) (hσ₂ : σ₂ < 0)
     (ha₁ : ∀ k : ℕ, a.re + σ₁ ≠ -k) (hb₁ : ∀ k : ℕ, b.re + σ₁ ≠ -k)
@@ -476,32 +399,51 @@ private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (
     (hz : -z ∈ slitPlane) :
     mellinBarnesSeparatingIntegral a b c z σ₁ = mellinBarnesSeparatingIntegral a b c z σ₂ := by
   set g : ℂ → ℂ := mellinBarnesIntegrand a b c z
-  have hbot : Tendsto (fun T : ℝ => ∫ x : ℝ in σ₁..σ₂, g (x - T * I)) atTop (𝓝 0) := by
-    simpa [sub_eq_add_neg, neg_one_mul] using
-      tendsto_horizontal_mellinBarnesIntegrand_zero a b c σ₁ σ₂ h12 hz (sgn := -1) (by norm_num)
-  have htop : Tendsto (fun T : ℝ => ∫ x : ℝ in σ₁..σ₂, g (x + T * I)) atTop (𝓝 0) := by
-    simpa [one_mul] using
-      tendsto_horizontal_mellinBarnesIntegrand_zero a b c σ₁ σ₂ h12 hz (sgn := 1) (by norm_num)
-  have hv₁ := intervalIntegral_tendsto_integral
+  set S : Finset ℂ := mellinBarnesLeftPoles a b σ₁ \ mellinBarnesLeftPoles a b σ₂
+  obtain ⟨B₀, Y₀, δ, _, hY₀, hδ, _, htail⟩ :=
+    exists_norm_mellinBarnesIntegrand_tail_le a b c hz σ₁ σ₂
+  have hne_line {t : ℂ} (h : (∃ k : ℕ, t = -a - k) ∨ (∃ k : ℕ, t = -b - k)) :
+      t.re ≠ σ₁ ∧ t.re ≠ σ₂ := by
+    rcases h with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    · exact ⟨fun e => ha₁ k (by simp at e; linarith), fun e => ha₂ k (by simp at e; linarith)⟩
+    · exact ⟨fun e => hb₁ k (by simp at e; linarith), fun e => hb₂ k (by simp at e; linarith)⟩
+  have hshift :=
+    TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le
+      (f := g) (S := S) (B := fun T : ℝ => B₀ * Real.exp (-δ * T)) h12.le
+    (fun t ht htS => analyticAt_mellinBarnesIntegrand a b c z
+      (fun k hk => htS (mem_mellinBarnesLeftPoles_sdiff.2
+        ⟨⟨lt_of_le_of_ne ht.1 (hne_line (Or.inl ⟨k, hk⟩)).1.symm, ht.2⟩, Or.inl ⟨k, hk⟩⟩))
+      (fun k hk => htS (mem_mellinBarnesLeftPoles_sdiff.2
+        ⟨⟨lt_of_le_of_ne ht.1 (hne_line (Or.inr ⟨k, hk⟩)).1.symm, ht.2⟩, Or.inr ⟨k, hk⟩⟩))
+      (fun m hm => by
+        have hre : t.re = m := by simp [hm]
+        linarith [ht.2, hσ₂, m.cast_nonneg (α := ℝ)]))
+    (fun s _ => meromorphicAt_mellinBarnesIntegrand a b c z s)
+    (fun s hs => by
+      obtain ⟨hs_re, hs_poles⟩ := mem_mellinBarnesLeftPoles_sdiff.1 hs
+      exact ⟨hs_re.1, lt_of_le_of_ne hs_re.2 (hne_line hs_poles).2⟩)
     (verticalIntegrable_mellinBarnesIntegrand c ha₁ hb₁
       (fun m _ => by linarith [h12, hσ₂, m.cast_nonneg (α := ℝ)]) hz)
-    tendsto_neg_atTop_atBot tendsto_id
-  have hv₂ := intervalIntegral_tendsto_integral
     (verticalIntegrable_mellinBarnesIntegrand c ha₂ hb₂
       (fun m _ => by linarith [hσ₂, m.cast_nonneg (α := ℝ)]) hz)
-    tendsto_neg_atTop_atBot tendsto_id
-  let T₀ : ℝ := max |a.im| |b.im| + 1
-  have heq := tendsto_nhds_unique ((((hbot.sub htop).add (hv₂.const_mul I)).sub
-    (hv₁.const_mul I)).congr' (by
-      filter_upwards [eventually_ge_atTop T₀] with T hT
-      exact rectBoundary_mellinBarnesIntegrand_eq h12 hσ₂
-        (by dsimp [T₀] at hT; linarith) ha₁ hb₁ ha₂ hb₂)) tendsto_const_nhds
-  simp only [sub_zero, zero_add] at heq
-  have hdiv := congrArg ((2 * (π : ℂ) * I)⁻¹ * ·) heq
-  rw [inv_mul_cancel_left₀ two_pi_I_ne_zero] at hdiv
-  have hI : (2 * (π : ℂ) * I)⁻¹ * I = (2 * π : ℂ)⁻¹ := by
-    rw [mul_inv, mul_assoc, inv_mul_cancel₀ I_ne_zero, mul_one]
-  rw [mul_sub, ← mul_assoc, ← mul_assoc, hI] at hdiv
+    (by
+      simpa using (Real.tendsto_exp_atBot.comp
+        (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B₀)
+    (by
+      filter_upwards [eventually_ge_atTop Y₀] with T hT x hx
+      have hT0 : 0 ≤ T := (zero_lt_one.trans_le hY₀).le.trans hT
+      have hpos : ‖g (x + T * I)‖ ≤ B₀ * Real.exp (-δ * T) := by
+        simpa only [abs_of_nonneg hT0] using htail x hx T (by rwa [abs_of_nonneg hT0])
+      have hneg : ‖g (x - T * I)‖ ≤ B₀ * Real.exp (-δ * T) := by
+        have hsub : (x : ℂ) - T * I = (x : ℂ) + ((-T : ℝ) : ℂ) * I := by push_cast; ring
+        simpa only [hsub, abs_neg, abs_of_nonneg hT0] using
+          htail x hx (-T) (by rwa [abs_neg, abs_of_nonneg hT0])
+      exact ⟨hpos, hneg⟩)
+  have h2pi : (2 * (π : ℂ)) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.2 Real.pi_ne_zero)
+  have hdiv := congrArg ((2 * π : ℂ)⁻¹ * ·) hshift
+  dsimp only [S] at hdiv
+  rw [mul_sub, inv_mul_cancel_left₀ h2pi, Finset.sum_sdiff_eq_sub
+    (mellinBarnesLeftPoles_antitone a b h12.le)] at hdiv
   rw [mellinBarnesSeparatingIntegral_def, mellinBarnesSeparatingIntegral_def]
   linear_combination -hdiv
 

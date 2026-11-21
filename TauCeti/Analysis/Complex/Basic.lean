@@ -53,7 +53,8 @@ embedded in `ℂ` form a closed set (`Complex.isClosed_range_natCast`), and the 
 `{w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)}` of the nonpositive integers is connected
 (`Complex.isConnected_setOf_forall_ne_neg_natCast`). For a closed set `s ⊆ ℝ` avoiding `w₀.re`,
 an open ball around `w₀` avoids `s` in real part and preserves strict order against every element
-of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`). Negating `x + y * I` reflects both real
+of `s` (`Complex.exists_ball_re_notMem_and_lt_iff`, with the shifted negative-integer specialization
+`Complex.exists_ball_re_add_ne_neg_natCast_and_lt_iff`). Negating `x + y * I` reflects both real
 coordinates (`Complex.neg_ofReal_add_mul_I`).
 
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
@@ -390,6 +391,24 @@ theorem exists_ball_re_notMem_and_lt_iff (w₀ : ℂ) {s : Set ℝ} (hs : IsClos
     (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
   exact h w.re ⟨by linarith [(abs_lt.1 hre).1, min_le_left (w₀.re - a) (b - w₀.re)],
     by linarith [(abs_lt.1 hre).2, min_le_right (w₀.re - a) (b - w₀.re)]⟩
+
+/-- For `w₀ : ℂ` and `σ : ℝ` with `w₀.re + σ ∉ -ℕ`, there is `δ > 0` such that on
+`Metric.ball w₀ δ`, every `w` still avoids `w.re + σ ∈ -ℕ` and keeps every shifted pole
+`-w - k` on the same side of `Re s = σ` as `-w₀ - k`. -/
+theorem exists_ball_re_add_ne_neg_natCast_and_lt_iff (w₀ : ℂ) {σ : ℝ}
+    (hw₀ : ∀ k : ℕ, w₀.re + σ ≠ -k) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
+      (∀ k : ℕ, w.re + σ ≠ -k) ∧
+        ∀ k : ℕ, (-w₀ - k).re < σ ↔ (-w - k).re < σ := by
+  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' Set.range ((↑) : ℕ → ℝ)) :=
+    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+      (continuous_neg.comp (continuous_id.add continuous_const))
+  obtain ⟨δ, hδ, hav⟩ := w₀.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact hw₀ k (by linarith))
+  refine ⟨δ, hδ, fun w hw => ⟨fun k hk => (hav w hw).1 ⟨k, by linarith⟩, fun k => ?_⟩⟩
+  have h := (hav w hw).2 (-(k : ℝ) - σ) ⟨k, by ring⟩
+  simp only [sub_re, neg_re, natCast_re]
+  exact ⟨fun _ => by linarith [h.1 (by linarith)], fun _ => by linarith [h.2 (by linarith)]⟩
 
 /-- The real coordinates `equivRealProdCLM` do not increase distances, so they map the disc of
 radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`. -/

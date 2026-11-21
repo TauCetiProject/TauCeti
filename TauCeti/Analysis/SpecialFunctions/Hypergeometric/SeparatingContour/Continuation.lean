@@ -72,6 +72,17 @@ open scoped Real Topology
 
 namespace Complex
 
+private theorem setIntegral_Ioo_zero_one_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : ℝ → E) :
+    ∫ t in Ioo (0 : ℝ) 1, f t = ∫ t in (0 : ℝ)..1, f t := by
+  rw [setIntegral_congr_set Ioo_ae_eq_Ioc, intervalIntegral.integral_of_le zero_le_one]
+
+private theorem integrableOn_Ioo_zero_one_of_intervalIntegrable {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} (hf : IntervalIntegrable f volume 0 1) :
+    IntegrableOn f (Ioo (0 : ℝ) 1) volume := by
+  have h := (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).1 hf
+  rwa [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at h
+
 private def mellinBarnesFubiniKernel (a b c : ℂ) (x σ : ℝ) (t y : ℝ) : ℂ :=
   (t : ℂ) ^ (b + (σ + y * I) - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
     ((x : ℂ) ^ (σ + y * I) * (Gamma (-(σ + y * I)) * Gamma (a + (σ + y * I))))
@@ -101,12 +112,10 @@ private theorem integrable_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
       ((volume.restrict (Ioo (0 : ℝ) 1)).prod volume) := by
   let g₁ : ℝ → ℝ := fun t => ‖(t : ℂ) ^ ((b + σ : ℂ) - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖
   let g₂ : ℝ → ℝ := fun y => x ^ σ * ‖Gamma (-(σ + y * I)) * Gamma (a + (σ + y * I))‖
-  have hg₁ : Integrable g₁ (volume.restrict (Ioo (0 : ℝ) 1)) := by
-    have hbeta := (intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).1
+  have hg₁ : Integrable g₁ (volume.restrict (Ioo (0 : ℝ) 1)) :=
+    (integrableOn_Ioo_zero_one_of_intervalIntegrable
       (betaIntegral_convergent (u := b + σ) (v := c - b) (by simpa using hbσ)
-        (by simpa using sub_pos.2 hbc))
-    rw [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hbeta
-    exact hbeta.norm
+        (by simpa using sub_pos.2 hbc))).norm
   have hg₂ : Integrable g₂ volume := by
     have hv : Integrable (fun y : ℝ =>
         Gamma ((-σ : ℝ) + y * I) * Gamma (a - ((-σ : ℝ) + y * I))) volume :=
@@ -158,8 +167,7 @@ private theorem integral_mellinBarnesFubiniKernel_t {a b c : ℂ} {x σ : ℝ} (
     ∫ t in Ioo (0 : ℝ) 1, mellinBarnesFubiniKernel a b c x σ t y =
       Gamma (c - b) * mellinBarnesIntegrand a b c (-(x : ℂ)) (σ + y * I) := by
   dsimp only [mellinBarnesFubiniKernel]
-  rw [integral_mul_const, setIntegral_congr_set Ioo_ae_eq_Ioc,
-    ← intervalIntegral.integral_of_le zero_le_one, ← betaIntegral,
+  rw [integral_mul_const, setIntegral_Ioo_zero_one_eq, ← betaIntegral,
     betaIntegral_eq_Gamma_mul_div (b + (σ + y * I)) (c - b) (by simpa using hbσ)
       (by simpa using sub_pos.2 hbc),
     add_right_comm b ((σ : ℂ) + y * I) (c - b), add_sub_cancel,
@@ -185,8 +193,7 @@ private theorem eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral {a b c : ℂ} {
       2 * π * Gamma (c - b) * (Gamma a * Gamma b * eulerIntegral a b c (-(x : ℂ))) := by
     rw [setIntegral_congr_fun measurableSet_Ioo fun t ht =>
         integral_mellinBarnesFubiniKernel_y hx ht hσ haσ,
-      integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
-      ← intervalIntegral.integral_of_le zero_le_one, eulerIntegral_def]
+      integral_const_mul, setIntegral_Ioo_zero_one_eq, eulerIntegral_def]
     have hcoeff : 2 * (π : ℂ) * Gamma a =
         2 * π * Gamma (c - b) * (Gamma a * Gamma b * (Gamma b * Gamma (c - b))⁻¹) := by
       field_simp [hGb, hGcb]
