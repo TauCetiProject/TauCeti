@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Algebra.Order.Floor.Semiring
+public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
 
+import Mathlib.Order.Filter.AtTopBot.Map
 import Mathlib.Order.SuccPred.Nat
 import TauCeti.Order.SuccPred.IntermediateValue
 
@@ -41,11 +44,15 @@ steps of at most one.
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
 (`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
+
+For a subset `I` of an ordered additive group, negation pushes the right-endpoint filter of `-I`
+forward to the left-endpoint filter of `I` (`TauCeti.map_neg_map_coe_neg_atTop`).
 -/
 
 public section
 
 open Filter
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -154,5 +161,22 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact ⟨by simpa [hb] using hk', hb⟩
   · push Not at h
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
+
+/-- Negation pushes the right-endpoint filter of `-I` forward to the left-endpoint filter of
+`I`. -/
+theorem map_neg_map_coe_neg_atTop {α : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] (I : Set α) :
+    map Neg.neg (map ((↑) : (-I : Set α) → α) atTop) = map ((↑) : I → α) atBot := by
+  let e : (-I : Set α) ≃o (I : Set α)ᵒᵈ :=
+    { toFun x := OrderDual.toDual ⟨-x.1, Set.mem_neg.1 x.2⟩
+      invFun x := ⟨-x.ofDual.1, by simp⟩
+      left_inv x := Subtype.ext (neg_neg x.1)
+      right_inv x := OrderDual.ofDual.injective (Subtype.ext (neg_neg x.ofDual.1))
+      map_rel_iff' := @fun _ _ ↦ neg_le_neg_iff }
+  have hcomp : Neg.neg ∘ ((↑) : (-I : Set α) → α) =
+      ((↑) : I → α) ∘ OrderDual.ofDual ∘ e := rfl
+  rw [Filter.map_map, hcomp, ← Filter.map_map, ← Filter.map_map, e.map_atTop]
+  change map ((↑) : I → α) (map id atBot) = _
+  rw [Filter.map_id]
 
 end TauCeti

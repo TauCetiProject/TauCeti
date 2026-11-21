@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
+public import Mathlib.Algebra.Order.Group.Defs
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Order.Filter.AtTopBot.Defs
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Elementary asymptotic criteria
@@ -81,6 +85,8 @@ evaluations of elliptic integrals.
   when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when `f` and `g`
   are continuous on `[a, ∞)` and `g` does not vanish there.
+* `Asymptotics.isBigO_comp_neg_map_atTop`: `f (-x) = O(g (-x))` towards the right endpoint of
+  `-I` if and only if `f = O(g)` towards the left endpoint of `I`.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -101,6 +107,7 @@ bound `f(σ) = O((σ - 1)⁻¹)` for the Dirichlet `L`-function of the trivial c
 public section
 
 open Filter Topology
+open scoped Pointwise
 
 namespace Asymptotics
 
@@ -231,6 +238,15 @@ theorem IsBigO.isBigO_principal_Ici_of_continuousOn {E F : Type*} [SeminormedAdd
   · have hBx := hB x ⟨hx, hbx.le⟩
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_le_iff₀ hgx] at hBx
     exact hBx.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hgx.le)
+
+/-- For a subset `I` of an ordered additive group, `f (-x) = O(g (-x))` along the right-endpoint
+filter of `-I` if and only if `f x = O(g x)` along the left-endpoint filter of `I`. -/
+theorem isBigO_comp_neg_map_atTop {α E F : Type*} [AddCommGroup α] [PartialOrder α]
+    [IsOrderedAddMonoid α] [Norm E] [Norm F] {f : α → E} {g : α → F} (I : Set α) :
+    (fun x ↦ f (-x)) =O[map ((↑) : (-I : Set α) → α) atTop] (fun x ↦ g (-x)) ↔
+      f =O[map ((↑) : I → α) atBot] g := by
+  conv_rhs => rw [← TauCeti.map_neg_map_coe_neg_atTop I, isBigO_map]
+  rfl
 
 end Asymptotics
 

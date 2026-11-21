@@ -46,6 +46,8 @@ A path that starts in an open set and leaves it has a first exit time.
   interval around it.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
+* `Set.OrdConnected.exists_Icc_mem_nhdsWithin` — every point of an order-connected set lies in a
+  closed subinterval that is a neighbourhood of it within the set.
 * `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
   different values at `a` and `b`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
@@ -149,6 +151,32 @@ theorem _root_.Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ
       obtain ⟨y, hy, hyx⟩ := not_bddBelow_iff.1 hbelow x
       obtain ⟨z, hz, hxz⟩ := not_bddAbove_iff.1 habove x
       exact hs.out hy hz ⟨hyx.le, hxz.le⟩
+
+/-- Every point `x₀` of an order-connected set `I` has a closed subinterval `[c, d] ⊆ I`
+containing `x₀` that is a neighbourhood of `x₀` within `I`. -/
+theorem _root_.Set.OrdConnected.exists_Icc_mem_nhdsWithin {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderClosedTopology α] {I : Set α} (hI : I.OrdConnected) {x₀ : α}
+    (hx₀ : x₀ ∈ I) :
+    ∃ c ∈ I, ∃ d ∈ I, c ≤ x₀ ∧ x₀ ≤ d ∧ Icc c d ⊆ I ∧ Icc c d ∈ 𝓝[I] x₀ := by
+  have hc : ∃ c ∈ I, c ≤ x₀ ∧ Ici c ∈ 𝓝[I] x₀ := by
+    by_cases h : ∃ y ∈ I, y < x₀
+    · obtain ⟨c, hcI, hcx⟩ := h
+      exact ⟨c, hcI, hcx.le,
+        mem_nhdsWithin_of_mem_nhds (mem_of_superset (isOpen_Ioi.mem_nhds hcx) Ioi_subset_Ici_self)⟩
+    · push Not at h
+      exact ⟨x₀, hx₀, le_rfl, mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+        ⟨univ, univ_mem, fun y hy ↦ h y hy.2⟩⟩
+  have hd : ∃ d ∈ I, x₀ ≤ d ∧ Iic d ∈ 𝓝[I] x₀ := by
+    by_cases h : ∃ y ∈ I, x₀ < y
+    · obtain ⟨d, hdI, hxd⟩ := h
+      exact ⟨d, hdI, hxd.le,
+        mem_nhdsWithin_of_mem_nhds (mem_of_superset (isOpen_Iio.mem_nhds hxd) Iio_subset_Iic_self)⟩
+    · push Not at h
+      exact ⟨x₀, hx₀, le_rfl, mem_nhdsWithin_iff_exists_mem_nhds_inter.2
+        ⟨univ, univ_mem, fun y hy ↦ h y hy.2⟩⟩
+  obtain ⟨c, hcI, hcx, hcN⟩ := hc
+  obtain ⟨d, hdI, hxd, hdN⟩ := hd
+  exact ⟨c, hcI, d, hdI, hcx, hxd, hI.out hcI hdI, Filter.inter_mem hcN hdN⟩
 
 /-- **A continuous strictly increasing map sends a half-line to a half-open interval.** The finite
 limit at `+∞` is approached but is not attained. -/
