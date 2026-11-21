@@ -26,7 +26,8 @@ small `q` (`isZero_abutmentFiltration`) and `H^n(q ≤ ⊤)` vanishes for large 
 (`isIso_abutmentFiltrationι`). If `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the
 abutment itself vanishes (`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
 `isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable morphisms in any index
-category.
+category. If all graded pieces in degree `n` of a finite filtration vanish except one, that graded
+piece is the whole abutment (`cokernelAbutmentFiltrationMapIsoAbutment`).
 
 ## Main definitions
 
@@ -34,6 +35,8 @@ category.
 * `CategoryTheory.Abelian.SpectralObject.abutmentFiltration X q n`: the `q`th filtration piece.
 * `CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel X q n`: `E∞` is the graded piece
   (characterized by `opcyclesToE_EInftyIsoCokernel_hom`).
+* `CategoryTheory.Abelian.SpectralObject.cokernelAbutmentFiltrationMapIsoAbutment`: a graded piece
+  is the whole abutment when the other graded pieces of a finite filtration vanish.
 -/
 
 public section
@@ -143,5 +146,50 @@ lemma isZero_abutment_of_le {a b n : ℤ} (hba : b ≤ a)
   X.isZero_H_obj_mk₁_of_isZero_of_isZero (homOfLE (bot_le : (⊥ : EInt) ≤ b))
     (homOfLE (WithBotTop.coe_le_coe.mpr hba)) (homOfLE (le_top : (a : EInt) ≤ ⊤)) _ _ _
     (Subsingleton.elim _ _) (Subsingleton.elim _ _) (Subsingleton.elim _ _) n ha hb
+
+instance (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
+  mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
+
+/-- **A filtration concentrated in one graded piece.** Suppose that in degree `n` the piece
+`F_a H^n` of the filtration of the abutment vanishes, the piece `F_b H^n` is the whole abutment, and
+every graded piece `F_{q+1} H^n / F_q H^n` with `a ≤ q < b` vanishes except possibly the one at
+`q₀`. Then `F_{q₀} H^n = 0` and `F_{q₀+1} H^n` is the whole abutment, so the graded piece at `q₀`
+is the abutment. -/
+noncomputable def cokernelAbutmentFiltrationMapIsoAbutment {n a b q₀ : ℤ} (ha : a ≤ q₀)
+    (hb : q₀ < b) (hbot : IsZero (X.abutmentFiltration a n))
+    (htop : IsIso (X.abutmentFiltrationι b n))
+    (hgr : ∀ q, a ≤ q → q < b → q ≠ q₀ → IsZero (cokernel (X.abutmentFiltrationMap q n))) :
+    cokernel (X.abutmentFiltrationMap q₀ n) ≅ X.abutment n :=
+  -- Below `q₀` the pieces vanish, since each is a quotient of the previous one.
+  have hzero : ∀ k : ℕ, ∀ q, q - a = k → q ≤ q₀ → IsZero (X.abutmentFiltration q n) := by
+    intro k
+    induction k with
+    | zero =>
+      intro q hq _
+      obtain rfl : q = a := by lia
+      exact hbot
+    | succ k ih =>
+      intro q hq hq₀
+      obtain ⟨q, rfl⟩ : ∃ q', q = q' + 1 := ⟨q - 1, by lia⟩
+      have := Preadditive.epi_of_isZero_cokernel _ (hgr q (by lia) (by lia) (by lia))
+      exact IsZero.of_epi (X.abutmentFiltrationMap q n) (ih q (by lia) (by lia))
+  -- Above `q₀` the embeddings into the abutment are isomorphisms, since each piece is the next.
+  have hiso : ∀ k : ℕ, ∀ q, b - q = k → q₀ < q → IsIso (X.abutmentFiltrationι q n) := by
+    intro k
+    induction k with
+    | zero =>
+      intro q hq _
+      obtain rfl : q = b := by lia
+      exact htop
+    | succ k ih =>
+      intro q hq hq₀
+      have := Preadditive.epi_of_isZero_cokernel _ (hgr q (by lia) (by lia) (by lia))
+      have := isIso_of_mono_of_epi (X.abutmentFiltrationMap q n)
+      have := ih (q + 1) (by lia) (by lia)
+      rw [← X.abutmentFiltrationMap_ι q n]
+      infer_instance
+  have := hiso (b - (q₀ + 1)).toNat (q₀ + 1) (by lia) (by lia)
+  cokernelIsoOfEq ((hzero (q₀ - a).toNat q₀ (by lia) le_rfl).eq_of_src _ _) ≪≫
+    cokernelZeroIsoTarget ≪≫ asIso (X.abutmentFiltrationι (q₀ + 1) n)
 
 end CategoryTheory.Abelian.SpectralObject
