@@ -235,19 +235,6 @@ theorem Group.fg_iff_exists_fin_generating_family {G : Type*} [Group G] :
   obtain ⟨n, s, rfl, hs⟩ := Group.fg_iff'.1 h
   exact ⟨_, Subtype.val ∘ s.equivFin.symm, by simpa using hs⟩
 
-/-- A subgroup of a commutative group is finitely generated if and only if it is the range of a
-homomorphism out of `Fin n → Multiplicative ℤ` for some `n`. This is the multiplicative counterpart
-of `AddSubgroup.fg_iff_exists_fin_addMonoidHom`. -/
-theorem Subgroup.fg_iff_exists_fin_monoidHom {G : Type*} [CommGroup G] {H : Subgroup G} :
-    H.FG ↔ ∃ (n : ℕ) (f : (Fin n → Multiplicative ℤ) →* G), f.range = H := by
-  refine ⟨fun hH => ?_, fun ⟨_, f, hf⟩ => hf ▸ (Group.fg_iff_subgroup_fg f.range).1 inferInstance⟩
-  obtain ⟨S, rfl, hS⟩ := (Subgroup.fg_iff H).1 hH
-  obtain ⟨n, ⟨e⟩⟩ := hS.exists_equiv_fin S
-  refine ⟨n, TauCeti.zpowersPiHom (fun i => (e.symm i : G)) (fun _ _ => Commute.all _ _), ?_⟩
-  rw [TauCeti.range_zpowersPiHom]
-  congr 1
-  simp [← Function.comp_def, Set.range_comp]
-
 /-- A universe lift of a finitely generated magma is finitely generated. -/
 @[to_additive /-- A universe lift of a finitely generated additive magma is finitely
 generated. -/]
@@ -338,5 +325,16 @@ theorem CommGroup.fg_iff_exists_fin_monoidHom_surjective {G : Type*} [CommGroup 
         Multiplicative.ofAdd.surjective)
 
 end TauCeti
+
+/-- A subgroup of a commutative group is finitely generated if and only if it is the range of a
+homomorphism out of `Fin n → Multiplicative ℤ` for some `n`. This is the multiplicative counterpart
+of `AddSubgroup.fg_iff_exists_fin_addMonoidHom`. -/
+theorem Subgroup.fg_iff_exists_fin_monoidHom {G : Type*} [CommGroup G] {H : Subgroup G} :
+    H.FG ↔ ∃ (n : ℕ) (f : (Fin n → Multiplicative ℤ) →* G), f.range = H := by
+  refine ⟨fun hH => ?_, fun ⟨_, f, hf⟩ => hf ▸ (Group.fg_iff_subgroup_fg f.range).1 inferInstance⟩
+  have : Group.FG H := (Group.fg_iff_subgroup_fg H).2 hH
+  obtain ⟨n, f, hf⟩ := TauCeti.CommGroup.fg_iff_exists_fin_monoidHom_surjective.1 this
+  refine ⟨n, H.subtype.comp f, ?_⟩
+  rw [MonoidHom.range_comp, MonoidHom.range_eq_top.2 hf, Subgroup.map_top, H.range_subtype]
 
 end

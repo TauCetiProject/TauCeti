@@ -9,65 +9,34 @@ public import TauCeti.GroupTheory.Amenable.DirectedUnion
 public import TauCeti.GroupTheory.Amenable.DiscreteFoelner
 public import TauCeti.GroupTheory.Amenable.Extension
 public import TauCeti.GroupTheory.Amenable.Prod
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
-import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
-public import TauCeti.Topology.Algebra.Group.UCB.Additive
 
 /-!
-# Amenable additive topological groups
+# Additive amenability: products, subgroups, extensions, directed unions, and Følner sets
 
-`TauCeti.Amenable G` is defined by the existence of a left-invariant mean on the real algebra
-`TauCeti.UCB G` of left uniformly continuous bounded functions. We define
-`TauCeti.AddAmenable A` for an additive topological group `A` by amenability of the topological
-group `Multiplicative A`, register `insert_to_additive_translation TauCeti.Amenable
-TauCeti.AddAmenable`, and provide native additive formulations of the invariant-mean, permanence,
-directed-union, and Følner theorems directly on `A`. Precomposition with
-`AddUCB.equivMultiplicative.symm` identifies additive means on `TauCeti.AddUCB A` with means on
-`UCB (Multiplicative A)`, preserving left invariance, so `A` is additively amenable exactly when
-`AddUCB A` carries a left-invariant additive mean.
-
-To avoid typeclass synthesis cycles between `A`, `Multiplicative A`, and `Additive G`, only the
-forward transport instances `AddAmenable A → Amenable (Multiplicative A)` and
-`Amenable G → AddAmenable (Additive G)` are registered as instances; the two-way equivalences
-`TauCeti.amenable_multiplicative_iff` and `TauCeti.addAmenable_additive_iff` are plain `@[simp]`
-theorems.
-
-## Main definitions
-
-* `TauCeti.AddAmenable A`: `A` is an amenable additive topological group, defined via
-  `TauCeti.Amenable (Multiplicative A)` and paired with `TauCeti.Amenable` via `@[to_additive]`.
-* `TauCeti.AddMean.equivMultiplicative`: the bijection `AddMean A ≃ Mean (Multiplicative A)`.
-* `TauCeti.Mean.equivAdditive`: the bijection `Mean G ≃ AddMean (Additive G)`.
+This module complements the additive amenability API in
+`TauCeti.GroupTheory.Amenable.Basic`, `TauCeti.GroupTheory.Amenable.Finite`,
+`TauCeti.GroupTheory.Amenable.Discrete`, and `TauCeti.GroupTheory.Amenable.DiscreteFoelner`
+with additive versions of finite products, subgroups and extensions of discrete groups, directed
+unions, and Følner characterizations.
 
 ## Main results
 
-* `TauCeti.amenable_multiplicative_iff` and `TauCeti.addAmenable_additive_iff`: compatibility of
-  `Amenable` and `AddAmenable` with `Multiplicative` and `Additive`.
-* `TauCeti.AddMean.isLeftInvariant_equivMultiplicative_iff` and
-  `TauCeti.Mean.isLeftInvariant_equivAdditive_iff`: the type-tag bijections of means preserve and
-  reflect left invariance.
-* `TauCeti.addAmenable_iff`: `A` is additively amenable exactly when `AddUCB A` carries a
-  left-invariant additive mean.
-* `TauCeti.addAmenable_iff_exists_boundedContinuousFunction_mean`: a discrete additive group `A` is
-  amenable if and only if `A →ᵇ ℝ` admits a normalized positive translation-invariant linear
-  functional.
-* `TauCeti.AddAmenable.of_denseRange`, `TauCeti.AddAmenable.of_surjective`,
-  `TauCeti.AddAmenable.of_le`, `TauCeti.AddAmenable.of_discrete`, and
-  `ContinuousAddEquiv.addAmenable_iff`: functoriality and topology change.
-* `TauCeti.AddAmenable.of_finite`, `TauCeti.AddAmenable.prod`, `TauCeti.addAmenable_prod_iff`,
-  `TauCeti.AddAmenable.pi`, and `TauCeti.addAmenable_pi_iff`: finite groups and finite products.
+* `TauCeti.AddAmenable.prod`, `TauCeti.addAmenable_prod_iff`, `TauCeti.AddAmenable.pi`, and
+  `TauCeti.addAmenable_pi_iff`: finite products.
 * `TauCeti.AddAmenable.of_injective`, `TauCeti.AddAmenable.addSubgroup`,
-  `TauCeti.AddAmenable.of_ker_le_range`, and `TauCeti.addAmenable_iff_addSubgroup_quotient`:
-  subgroups and extensions of discrete additive groups.
+  `TauCeti.AddAmenable.of_ker_le_range`, `TauCeti.addAmenable_iff_addSubgroup_quotient`, and
+  `TauCeti.AddAmenable.of_addSubgroup_quotient`: subgroups and extensions of discrete additive
+  groups.
 * `TauCeti.AddAmenable.of_forall_finset_subset_range`, `TauCeti.addAmenable_iSup_of_directed`,
   `TauCeti.AddAmenable.of_directed_of_iSup_eq_top`, and `TauCeti.AddAmenable.of_forall_fg`:
   directed unions and reduction to finitely generated additive subgroups.
-* `TauCeti.addAmenable_iff_hasAddFoelnerSets`, `TauCeti.addAmenable_iff_maxAddFoelner_neBot`,
-  `TauCeti.addAmenable_iff_exists_finset`, `TauCeti.addAmenable_iff_exists_seq`,
+* `TauCeti.AddAmenable.of_hasAddFoelnerSets`, `TauCeti.addAmenable_iff_hasAddFoelnerSets`,
+  `TauCeti.addAmenable_iff_maxAddFoelner_neBot`, `TauCeti.addAmenable_iff_exists_finset`,
+  `TauCeti.addAmenable_iff_exists_seq`,
   `TauCeti.addAmenable_iff_exists_finset_of_closure_eq_top`, and
   `TauCeti.addAmenable_iff_exists_finset_of_closure_finset_eq_top`: Følner characterizations of
-  discrete additive amenability.
+  additive amenability.
 
 ## References
 
@@ -80,112 +49,14 @@ public section
 noncomputable section
 
 open Filter Finset Topology
-open scoped BoundedContinuousFunction Pointwise symmDiff
+open scoped Pointwise symmDiff
 
 namespace TauCeti
 
-section Basic
+section Prod
 
 variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
   [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-variable (A) in
-/-- An additive topological group `A` is amenable when the topological group `Multiplicative A` is
-amenable. -/
-class AddAmenable : Prop where
-  /-- `Multiplicative A` is amenable when `A` is additively amenable. -/
-  amenable_multiplicative : Amenable (Multiplicative A)
-
-insert_to_additive_translation TauCeti.Amenable TauCeti.AddAmenable
-
-instance [AddAmenable A] : Amenable (Multiplicative A) :=
-  AddAmenable.amenable_multiplicative
-
-instance {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Amenable G] :
-    AddAmenable (Additive G) :=
-  ⟨(ContinuousMulEquiv.multiplicativeAdditive G).amenable_iff.2 ‹_›⟩
-
-/-- `Multiplicative A` is amenable if and only if `A` is additively amenable. -/
-@[simp]
-theorem amenable_multiplicative_iff : Amenable (Multiplicative A) ↔ AddAmenable A :=
-  ⟨fun h => ⟨h⟩, fun h => h.amenable_multiplicative⟩
-
-/-- `Additive G` is additively amenable if and only if `G` is amenable. -/
-@[simp]
-theorem addAmenable_additive_iff {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] : AddAmenable (Additive G) ↔ Amenable G :=
-  ⟨fun _ => (ContinuousMulEquiv.multiplicativeAdditive G).amenable_iff.1 inferInstance,
-    fun _ => inferInstance⟩
-
-/-- The target of a continuous additive homomorphism with dense range from an amenable additive
-topological group is amenable; in particular, so is the image under a surjective continuous
-additive homomorphism. -/
-theorem AddAmenable.of_denseRange [AddAmenable A] (φ : A →ₜ+ B) (hφ : DenseRange φ) :
-    AddAmenable B :=
-  ⟨.of_denseRange φ.toMultiplicative (φ.denseRange_toMultiplicative_iff.2 hφ)⟩
-
-attribute [to_additive existing] Amenable.of_denseRange
-
-/-- The range of a continuous additive homomorphism from an amenable additive topological group is
-amenable. -/
-theorem AddAmenable.range_of_continuous [AddAmenable A] {φ : A →+ B} (hφ : Continuous φ) :
-    AddAmenable φ.range :=
-  .of_denseRange ⟨φ.rangeRestrict, hφ.subtype_mk _⟩ φ.rangeRestrict_surjective.denseRange
-
-attribute [to_additive existing] Amenable.range_of_continuous
-
-/-- Any quotient of an amenable additive topological group by a normal additive subgroup is
-amenable. -/
-instance AddAmenable.quotientAddGroup [AddAmenable A] (N : AddSubgroup A) [N.Normal] :
-    AddAmenable (A ⧸ N) :=
-  .of_denseRange ⟨QuotientAddGroup.mk' N, QuotientAddGroup.continuous_mk⟩
-    (QuotientAddGroup.mk'_surjective N).denseRange
-
-attribute [to_additive existing] Amenable.quotientGroup
-
-omit [TopologicalSpace A] [IsTopologicalAddGroup A] in
-/-- Additive amenability passes from a finer additive-group topology to a coarser one. -/
-theorem AddAmenable.of_le {t₁ t₂ : TopologicalSpace A}
-    [@IsTopologicalAddGroup A t₁ _] [@IsTopologicalAddGroup A t₂ _] (h : t₁ ≤ t₂)
-    (ha : @AddAmenable A _ t₁ _) : @AddAmenable A _ t₂ _ := by
-  let φ : @ContinuousAddMonoidHom A A _ _ t₁ t₂ :=
-    @ContinuousAddMonoidHom.mk A A _ _ t₁ t₂ (AddMonoidHom.id A) (continuous_id_of_le h)
-  exact @AddAmenable.of_denseRange A A _ t₁ _ _ t₂ _ ha φ
-    (@Function.Surjective.denseRange A t₂ A _ fun x => ⟨x, AddMonoidHom.id_apply A x⟩)
-
-attribute [to_additive existing] Amenable.of_le
-
-end Basic
-
-end TauCeti
-
-namespace ContinuousAddEquiv
-
-open TauCeti
-
-variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-/-- Additive amenability is invariant under topological additive-group isomorphisms. -/
-theorem addAmenable_iff (e : A ≃ₜ+ B) : AddAmenable A ↔ AddAmenable B := by
-  rw [← amenable_multiplicative_iff, ← amenable_multiplicative_iff, e.toMultiplicative.amenable_iff]
-
-attribute [to_additive existing ContinuousAddEquiv.addAmenable_iff] ContinuousMulEquiv.amenable_iff
-
-end ContinuousAddEquiv
-
-namespace TauCeti
-
-section FiniteAndProd
-
-variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-  [AddGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
-
-/-- A finite additive topological group is amenable, for any additive-group topology. -/
-instance (priority := 100) AddAmenable.of_finite [Finite A] : AddAmenable A :=
-  ⟨inferInstance⟩
-
-attribute [to_additive existing] Amenable.of_finite
 
 /-- The product of two amenable additive topological groups is amenable. -/
 instance AddAmenable.prod [AddAmenable A] [AddAmenable B] : AddAmenable (A × B) :=
@@ -219,120 +90,7 @@ theorem addAmenable_pi_iff {ι : Type*} [Finite ι] {A : ι → Type*} [∀ i, A
 
 attribute [to_additive existing addAmenable_pi_iff] amenable_pi_iff
 
-end FiniteAndProd
-
-section Discrete
-
-variable {A : Type*} [AddGroup A] [TopologicalSpace A]
-
-section DiscreteTopology
-
-variable [DiscreteTopology A]
-
-variable (A) in
-/-- A discrete additive group is amenable exactly when all bounded functions admit a normalized
-positive translation-invariant real linear functional. -/
-theorem addAmenable_iff_exists_boundedContinuousFunction_mean :
-    AddAmenable A ↔ ∃ m : (A →ᵇ ℝ) →ₚ[ℝ] ℝ, m 1 = 1 ∧
-      ∀ (a : A) (f : A →ᵇ ℝ),
-        m (f.compContinuous (ContinuousMap.addLeft (-a))) = m f := by
-  rw [← amenable_multiplicative_iff,
-    amenable_iff_exists_boundedContinuousFunction_mean (Multiplicative A)]
-  let toAddMap : C(Multiplicative A, A) := ⟨Multiplicative.toAdd, continuous_toAdd⟩
-  let ofAddMap : C(A, Multiplicative A) := ⟨Multiplicative.ofAdd, continuous_ofAdd⟩
-  constructor
-  · rintro ⟨m, hm1, hm⟩
-    refine ⟨{ toFun f := m (f.compContinuous toAddMap)
-              map_add' f g := map_add m _ _
-              map_smul' c f := map_smul m c _
-              monotone' _ _ h := OrderHomClass.mono m fun x => h x.toAdd }, hm1, fun a f => ?_⟩
-    have htrans : (f.compContinuous (ContinuousMap.addLeft (-a))).compContinuous toAddMap =
-        (f.compContinuous toAddMap).compContinuous
-          (ContinuousMap.mulLeft (Multiplicative.ofAdd a)⁻¹) := by
-      ext x
-      simp [toAddMap, toAdd_mul]
-    exact (congrArg m htrans).trans (hm (Multiplicative.ofAdd a) (f.compContinuous toAddMap))
-  · rintro ⟨m, hm1, hm⟩
-    refine ⟨{ toFun f := m (f.compContinuous ofAddMap)
-              map_add' f g := map_add m _ _
-              map_smul' c f := map_smul m c _
-              monotone' _ _ h := OrderHomClass.mono m fun x => h (Multiplicative.ofAdd x) },
-      hm1, fun g f => ?_⟩
-    have htrans : (f.compContinuous (ContinuousMap.mulLeft g⁻¹)).compContinuous ofAddMap =
-        (f.compContinuous ofAddMap).compContinuous (ContinuousMap.addLeft (-g.toAdd)) := by
-      ext x
-      simp [ofAddMap, ofAdd_add]
-    exact (congrArg m htrans).trans (hm g.toAdd (f.compContinuous ofAddMap))
-
-/-- An additive topological group which is a homomorphic image of an amenable discrete additive
-group is amenable, for every additive-group topology on the target. -/
-theorem AddAmenable.of_surjective [AddAmenable A] {B : Type*} [AddGroup B]
-    [TopologicalSpace B] [IsTopologicalAddGroup B] (φ : A →+ B) (hφ : Function.Surjective φ) :
-    AddAmenable B :=
-  .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange
-
-attribute [to_additive existing] Amenable.of_surjective
-
-/-- The range of an additive homomorphism out of an amenable discrete additive group into an
-additive topological group is amenable. -/
-instance AddAmenable.range [AddAmenable A] {B : Type*} [AddGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] (φ : A →+ B) : AddAmenable φ.range :=
-  .range_of_continuous continuous_of_discreteTopology
-
-attribute [to_additive existing] Amenable.range
-
-end DiscreteTopology
-
-/-- An abstract additive group which is amenable with the discrete topology is amenable with any
-additive-group topology. -/
-theorem AddAmenable.of_discrete [IsTopologicalAddGroup A]
-    (h : letI : TopologicalSpace A := ⊥;
-      letI := discreteTopology_bot A; AddAmenable A) :
-    AddAmenable A := by
-  let : @DiscreteTopology A ⊥ := discreteTopology_bot A
-  exact AddAmenable.of_le (t₁ := ⊥) bot_le h
-
-attribute [to_additive existing] Amenable.of_discrete
-
-end Discrete
-
-end TauCeti
-
-namespace AddEquiv
-
-open TauCeti
-
-/-- Additive amenability of discrete additive groups is invariant under additive group
-isomorphisms. -/
-theorem addAmenable_iff_of_discreteTopology {A B : Type*} [AddGroup A] [TopologicalSpace A]
-    [DiscreteTopology A] [AddGroup B] [TopologicalSpace B] [DiscreteTopology B] (e : A ≃+ B) :
-    AddAmenable A ↔ AddAmenable B :=
-  ⟨fun _ => .of_surjective e.toAddMonoidHom e.surjective,
-    fun _ => .of_surjective e.symm.toAddMonoidHom e.symm.surjective⟩
-
-attribute [to_additive existing AddEquiv.addAmenable_iff_of_discreteTopology]
-  MulEquiv.amenable_iff_of_discreteTopology
-
-end AddEquiv
-
-namespace AddMonoidHom
-
-open TauCeti
-
-/-- For an additive homomorphism `φ : A →+ B` of discrete additive groups, `A ⧸ φ.ker` is
-amenable if and only if `φ.range` is amenable, via `QuotientAddGroup.quotientKerEquivRange`. -/
-theorem addAmenable_quotient_ker_iff_range {A B : Type*} [AddGroup A] [TopologicalSpace A]
-    [DiscreteTopology A] [AddGroup B] [TopologicalSpace B] [DiscreteTopology B] (φ : A →+ B) :
-    AddAmenable (A ⧸ φ.ker) ↔ AddAmenable φ.range := by
-  have := QuotientAddGroup.discreteTopology (isOpen_discrete (φ.ker : Set A))
-  exact (QuotientAddGroup.quotientKerEquivRange φ).addAmenable_iff_of_discreteTopology
-
-attribute [to_additive existing AddMonoidHom.addAmenable_quotient_ker_iff_range]
-  MonoidHom.amenable_quotient_ker_iff_range
-
-end AddMonoidHom
-
-namespace TauCeti
+end Prod
 
 section SubgroupAndExtension
 
@@ -550,305 +308,6 @@ theorem addAmenable_iff_exists_seq [Countable A] [DecidableEq A] :
 
 attribute [to_additive existing addAmenable_iff_exists_seq] amenable_iff_exists_seq
 
-/-- **Reiter's condition for discrete additive groups.** In an amenable discrete additive group,
-for every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
-`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
-theorem AddAmenable.exists_sum_tsum_abs_sub_lt [AddAmenable A] (K : Finset A) {ε : ℝ}
-    (hε : 0 < ε) :
-    ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
-      ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε := by
-  classical
-  obtain ⟨p, hp0, hpfin, hp1, hpε⟩ :=
-    Amenable.exists_sum_tsum_abs_sub_lt (K.image Multiplicative.ofAdd) hε
-  refine ⟨p ∘ Multiplicative.ofAdd, fun _ => hp0 _, ?_,
-    (Multiplicative.ofAdd.tsum_eq p).trans hp1, ?_⟩
-  · rw [Function.HasFiniteSupport, Function.support_comp_eq_preimage]
-    exact hpfin.preimage Multiplicative.ofAdd.injective.injOn
-  · rw [sum_image Multiplicative.ofAdd.injective.injOn] at hpε
-    refine lt_of_eq_of_lt (sum_congr rfl fun a _ => ?_) hpε
-    simpa using
-      (Multiplicative.ofAdd.tsum_eq fun x => |p ((Multiplicative.ofAdd a)⁻¹ * x) - p x|)
-
-attribute [to_additive existing] Amenable.exists_sum_tsum_abs_sub_lt
-
-/-- A discrete additive group is amenable exactly when it satisfies additive **Reiter's condition**:
-for every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
-`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
-theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt :
-    AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
-      ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
-        ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε := by
-  refine ⟨fun _ K _ hε => AddAmenable.exists_sum_tsum_abs_sub_lt K hε, fun h => ?_⟩
-  rw [← amenable_multiplicative_iff, amenable_iff_exists_sum_tsum_abs_sub_lt]
-  classical
-  intro K ε hε
-  obtain ⟨p, hp0, hpfin, hp1, hpε⟩ := h (K.image Multiplicative.toAdd) ε hε
-  refine ⟨p ∘ Multiplicative.toAdd, fun _ => hp0 _, ?_,
-    (Multiplicative.toAdd.tsum_eq p).trans hp1, ?_⟩
-  · rw [Function.HasFiniteSupport, Function.support_comp_eq_preimage]
-    exact hpfin.preimage Multiplicative.toAdd.injective.injOn
-  · rw [sum_image Multiplicative.toAdd.injective.injOn] at hpε
-    refine lt_of_eq_of_lt (sum_congr rfl fun g _ => ?_) hpε
-    simpa using (Multiplicative.toAdd.tsum_eq fun x => |p (-g.toAdd + x) - p x|)
-
-attribute [to_additive existing addAmenable_iff_exists_sum_tsum_abs_sub_lt]
-  amenable_iff_exists_sum_tsum_abs_sub_lt
-
 end DiscreteFoelner
-
-end TauCeti
-
-namespace TauCeti
-
-/-! ### Additive means and type tags -/
-
-section AddMean
-
-open Multiplicative Additive
-
-variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
-
-namespace AddMean
-
-/-- Precomposition with `AddUCB.equivMultiplicative.symm` (and its inverse
-`AddUCB.equivMultiplicative`) identifies additive means on `AddUCB A` with means on
-`UCB (Multiplicative A)`. -/
-def equivMultiplicative : AddMean A ≃ Mean (Multiplicative A) where
-  toFun m := Mean.mk₀
-    (m.toPositiveLinearMap.toLinearMap ∘ₗ AddUCB.equivMultiplicative.symm.toLinearMap)
-    (fun _ hf => by
-      simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap, coe_toPositiveLinearMap,
-        AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m (by
-        simpa only [map_zero] using
-          AddUCB.equivMultiplicative_symm_le_equivMultiplicative_symm_iff.2 hf))
-    (by simp)
-  invFun m := mk₀
-    (m.toPositiveLinearMap.toLinearMap ∘ₗ AddUCB.equivMultiplicative.toLinearMap)
-    (fun _ hf => by
-      simp only [LinearMap.comp_apply, PositiveLinearMap.coe_toLinearMap,
-        Mean.coe_toPositiveLinearMap, AlgEquiv.toLinearMap_apply]
-      exact map_nonneg m (by
-        simpa only [map_zero] using
-          AddUCB.equivMultiplicative_le_equivMultiplicative_iff.2 hf))
-    (by simp)
-  left_inv m := ext fun f => by simp [mk₀_apply, Mean.mk₀_apply]
-  right_inv m := Mean.ext fun f => by simp [mk₀_apply, Mean.mk₀_apply]
-
-@[simp]
-theorem equivMultiplicative_apply (m : AddMean A) (f : UCB (Multiplicative A)) :
-    equivMultiplicative m f = m (AddUCB.equivMultiplicative.symm f) :=
-  Mean.mk₀_apply _ _ _ f
-
-@[simp]
-theorem equivMultiplicative_symm_apply (m : Mean (Multiplicative A)) (f : AddUCB A) :
-    equivMultiplicative.symm m f = m (AddUCB.equivMultiplicative f) :=
-  mk₀_apply _ _ _ f
-
-/-- `equivMultiplicative` preserves and reflects left invariance. -/
-@[simp]
-theorem isLeftInvariant_equivMultiplicative_iff {m : AddMean A} :
-    (equivMultiplicative m).IsLeftInvariant ↔ m.IsLeftInvariant := by
-  simp only [Mean.isLeftInvariant_iff, isLeftInvariant_iff, equivMultiplicative_apply,
-    AddUCB.equivMultiplicative_symm_leftTranslation]
-  exact ⟨fun h a f => by simpa using h (ofAdd a) (AddUCB.equivMultiplicative f),
-    fun h g f => h g.toAdd (AddUCB.equivMultiplicative.symm f)⟩
-
-/-- `equivMultiplicative.symm` preserves and reflects left invariance. -/
-@[simp]
-theorem isLeftInvariant_equivMultiplicative_symm_iff {m : Mean (Multiplicative A)} :
-    (equivMultiplicative.symm m).IsLeftInvariant ↔ m.IsLeftInvariant := by
-  rw [← isLeftInvariant_equivMultiplicative_iff, Equiv.apply_symm_apply]
-
-/-- `equivMultiplicative` intertwines pushforward along `φ` and
-`ContinuousAddMonoidHom.toMultiplicative φ`. -/
-theorem equivMultiplicative_map {B : Type*} [AddGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (m : AddMean A) :
-    equivMultiplicative (m.map φ) =
-      (equivMultiplicative m).map (ContinuousAddMonoidHom.toMultiplicative φ) :=
-  Mean.ext fun _ => by
-    simp only [equivMultiplicative_apply, Mean.map_apply, map_apply]
-    congr 1
-    ext x
-    simp
-
-/-- `equivMultiplicative.symm` intertwines pushforward along
-`ContinuousAddMonoidHom.toMultiplicative φ` and `φ`. -/
-theorem equivMultiplicative_symm_map {B : Type*} [AddGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] (φ : A →ₜ+ B) (m : Mean (Multiplicative A)) :
-    equivMultiplicative.symm (m.map (ContinuousAddMonoidHom.toMultiplicative φ)) =
-      (equivMultiplicative.symm m).map φ :=
-  ext fun _ => by
-    simp only [equivMultiplicative_symm_apply, map_apply, Mean.map_apply]
-    congr 1
-    ext x
-    simp
-
-/-- `equivMultiplicative` sends additive evaluation at `a` to evaluation at `ofAdd a`. -/
-@[simp]
-theorem equivMultiplicative_eval (a : A) :
-    equivMultiplicative (eval A a) = Mean.eval (Multiplicative A) (ofAdd a) :=
-  Mean.ext fun _ => by simp
-
-/-- `equivMultiplicative.symm` sends evaluation at `x` to additive evaluation at `x.toAdd`. -/
-@[simp]
-theorem equivMultiplicative_symm_eval (x : Multiplicative A) :
-    equivMultiplicative.symm (Mean.eval (Multiplicative A) x) = eval A x.toAdd :=
-  ext fun _ => by simp
-
-/-- `equivMultiplicative` carries `AddMean.uniform A` to `Mean.uniform (Multiplicative A)`. -/
-@[simp]
-theorem equivMultiplicative_uniform [Finite A] :
-    equivMultiplicative (uniform A) = Mean.uniform (Multiplicative A) :=
-  (isLeftInvariant_equivMultiplicative_iff.2 isLeftInvariant_uniform).eq_uniform
-
-/-- `equivMultiplicative.symm` carries `Mean.uniform (Multiplicative A)` to `AddMean.uniform A`. -/
-@[simp]
-theorem equivMultiplicative_symm_uniform [Finite A] :
-    equivMultiplicative.symm (Mean.uniform (Multiplicative A)) = uniform A :=
-  (equivMultiplicative (A := A)).symm_apply_eq.2 equivMultiplicative_uniform.symm
-
-end AddMean
-
-namespace Mean
-
-section Additive
-
-variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- Precomposition with `UCB.equivAdditive.symm` (and its inverse `UCB.equivAdditive`) identifies
-means on `UCB G` with additive means on `AddUCB (Additive G)`. -/
-def equivAdditive : Mean G ≃ AddMean (Additive G) :=
-  Equiv.trans
-    { toFun m := m.map ((ContinuousMulEquiv.multiplicativeAdditive G).symm :
-        G →ₜ* Multiplicative (Additive G))
-      invFun m := m.map (ContinuousMulEquiv.multiplicativeAdditive G :
-        Multiplicative (Additive G) →ₜ* G)
-      left_inv m := by
-        ext f
-        simp only [map_apply]
-        congr 1
-        ext x
-        simp
-      right_inv m := by
-        ext f
-        simp only [map_apply]
-        congr 1
-        ext x
-        simp }
-    (AddMean.equivMultiplicative (A := Additive G)).symm
-
-@[simp]
-theorem equivAdditive_apply (m : Mean G) (f : AddUCB (Additive G)) :
-    equivAdditive m f = m (UCB.equivAdditive.symm f) := by
-  simp only [equivAdditive, Equiv.trans_apply, Equiv.coe_fn_mk,
-    AddMean.equivMultiplicative_symm_apply, map_apply]
-  congr 1
-  ext x
-  simp
-
-@[simp]
-theorem equivAdditive_symm_apply (m : AddMean (Additive G)) (f : UCB G) :
-    equivAdditive.symm m f = m (UCB.equivAdditive f) := by
-  simp only [equivAdditive, Equiv.symm_trans_apply, Equiv.symm_symm, Equiv.coe_fn_symm_mk,
-    map_apply, AddMean.equivMultiplicative_apply]
-  congr 1
-  ext x
-  simp
-
-/-- `equivAdditive` preserves and reflects left invariance. -/
-@[simp]
-theorem isLeftInvariant_equivAdditive_iff {m : Mean G} :
-    (equivAdditive m).IsLeftInvariant ↔ m.IsLeftInvariant := by
-  let e := ContinuousMulEquiv.multiplicativeAdditive G
-  simp only [equivAdditive, Equiv.trans_apply, Equiv.coe_fn_mk,
-    AddMean.isLeftInvariant_equivMultiplicative_symm_iff]
-  refine ⟨fun hm => ?_, fun hm =>
-    hm.map (φ := (e.symm : G →ₜ* Multiplicative (Additive G))) e.symm.surjective.denseRange⟩
-  have h := hm.map (φ := (e : Multiplicative (Additive G) →ₜ* G)) e.surjective.denseRange
-  have hid : (m.map (e.symm : G →ₜ* Multiplicative (Additive G))).map
-      (e : Multiplicative (Additive G) →ₜ* G) = m := by
-    ext f
-    simp only [map_apply]
-    congr 1
-    ext x
-    simp [e]
-  rwa [hid] at h
-
-/-- `equivAdditive.symm` preserves and reflects left invariance. -/
-@[simp]
-theorem isLeftInvariant_equivAdditive_symm_iff {m : AddMean (Additive G)} :
-    (equivAdditive.symm m).IsLeftInvariant ↔ m.IsLeftInvariant := by
-  rw [← isLeftInvariant_equivAdditive_iff, Equiv.apply_symm_apply]
-
-/-- `equivAdditive` intertwines pushforward along `φ` and `ContinuousMonoidHom.toAdditive φ`. -/
-theorem equivAdditive_map {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    (φ : G →ₜ* H) (m : Mean G) :
-    equivAdditive (m.map φ) = (equivAdditive m).map (ContinuousMonoidHom.toAdditive φ) :=
-  AddMean.ext fun _ => by
-    simp only [equivAdditive_apply, AddMean.map_apply, map_apply]
-    congr 1
-    ext x
-    simp
-
-/-- `equivAdditive.symm` intertwines pushforward along `ContinuousMonoidHom.toAdditive φ` and
-`φ`. -/
-theorem equivAdditive_symm_map {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    (φ : G →ₜ* H) (m : AddMean (Additive G)) :
-    equivAdditive.symm (m.map (ContinuousMonoidHom.toAdditive φ)) =
-      (equivAdditive.symm m).map φ :=
-  ext fun _ => by
-    simp only [equivAdditive_symm_apply, map_apply, AddMean.map_apply]
-    congr 1
-    ext x
-    simp
-
-/-- `equivAdditive` sends evaluation at `g` to additive evaluation at `ofMul g`. -/
-@[simp]
-theorem equivAdditive_eval (g : G) :
-    equivAdditive (eval G g) = AddMean.eval (Additive G) (ofMul g) :=
-  AddMean.ext fun _ => by simp
-
-/-- `equivAdditive.symm` sends additive evaluation at `x` to evaluation at `x.toMul`. -/
-@[simp]
-theorem equivAdditive_symm_eval (x : Additive G) :
-    equivAdditive.symm (AddMean.eval (Additive G) x) = eval G x.toMul :=
-  ext fun _ => by simp
-
-/-- `equivAdditive` sends `Mean.uniform G` to `AddMean.uniform (Additive G)`. -/
-@[simp]
-theorem equivAdditive_uniform [Finite G] :
-    equivAdditive (uniform G) = AddMean.uniform (Additive G) :=
-  (isLeftInvariant_equivAdditive_iff.2 isLeftInvariant_uniform).eq_uniform
-
-/-- `equivAdditive.symm` sends `AddMean.uniform (Additive G)` to `Mean.uniform G`. -/
-@[simp]
-theorem equivAdditive_symm_uniform [Finite G] :
-    equivAdditive.symm (AddMean.uniform (Additive G)) = uniform G :=
-  (equivAdditive (G := G)).symm_apply_eq.2 equivAdditive_uniform.symm
-
-end Additive
-
-end Mean
-
-variable (A) in
-/-- An additive topological group is amenable exactly when `AddUCB A` carries a left-invariant
-additive mean. -/
-theorem addAmenable_iff : AddAmenable A ↔ ∃ m : AddMean A, m.IsLeftInvariant := by
-  rw [← amenable_multiplicative_iff, amenable_iff]
-  exact ⟨fun ⟨m, hm⟩ => ⟨AddMean.equivMultiplicative.symm m, by simpa using hm⟩,
-    fun ⟨m, hm⟩ => ⟨AddMean.equivMultiplicative m, by simpa using hm⟩⟩
-
-attribute [to_additive existing addAmenable_iff] amenable_iff
-
-/-- An amenable additive topological group carries a left-invariant additive mean on
-`AddUCB A`. -/
-theorem AddAmenable.exists_isLeftInvariant [AddAmenable A] :
-    ∃ m : AddMean A, m.IsLeftInvariant :=
-  (addAmenable_iff A).1 ‹_›
-
-attribute [to_additive existing] Amenable.exists_isLeftInvariant
-
-end AddMean
 
 end TauCeti

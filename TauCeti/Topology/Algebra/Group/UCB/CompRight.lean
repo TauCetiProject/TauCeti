@@ -152,11 +152,19 @@ theorem compRightAlgHom_leftTranslation (φ : G →ₜ* H) (g : G) (f : UCB H) :
   ext
   simp
 
+/-- The pullback intertwines unbundled right translation by `φ g` with right translation by `g`. -/
+@[to_additive compRightAlgHom_rightTranslation
+  /-- The pullback intertwines right translation by `φ a` with right translation by `a`. -/]
+theorem compRightAlgHom_rightTranslationEquiv (φ : G →ₜ* H) (g : G) (f : UCB H) :
+    compRightAlgHom φ (rightTranslationEquiv (φ g) f) =
+      rightTranslationEquiv g (compRightAlgHom φ f) := by
+  ext x
+  simp [rightTranslationEquiv_apply]
+
 /-- The pullback intertwines right translation by `φ g` with right translation by `g`. -/
 theorem compRightAlgHom_rightTranslation (φ : G →ₜ* H) (g : G) (f : UCB H) :
-    compRightAlgHom φ (rightTranslation (φ g) f) = rightTranslation g (compRightAlgHom φ f) := by
-  ext
-  simp
+    compRightAlgHom φ (rightTranslation (φ g) f) = rightTranslation g (compRightAlgHom φ f) :=
+  compRightAlgHom_rightTranslationEquiv φ g f
 
 end UCB
 
@@ -168,12 +176,6 @@ variable {A B : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup 
 /-- The pullback intertwines left translation by `φ a` with left translation by `a`. -/
 theorem compRightAlgHom_leftTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
     compRightAlgHom φ (leftTranslation (φ a) f) = leftTranslation a (compRightAlgHom φ f) := by
-  ext
-  simp
-
-/-- The pullback intertwines right translation by `φ a` with right translation by `a`. -/
-theorem compRightAlgHom_rightTranslation (φ : A →ₜ+ B) (a : A) (f : AddUCB B) :
-    compRightAlgHom φ (rightTranslation (φ a) f) = rightTranslation a (compRightAlgHom φ f) := by
   ext
   simp
 

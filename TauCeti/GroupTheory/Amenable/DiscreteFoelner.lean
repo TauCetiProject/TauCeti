@@ -62,8 +62,9 @@ sets of `p`, by `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`.
 * `TauCeti.Amenable.exists_stdSimplex_sum_norm_leftTranslation_sub_lt`,
   `TauCeti.amenable_iff_exists_stdSimplex_sum_norm_leftTranslation_sub_lt`: Reiter's `ℓ¹`
   condition in terms of `Convexity.StdSimplex ℝ G`.
-* `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt`, `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`:
-  Reiter's condition in coordinate form.
+* `TauCeti.Amenable.exists_sum_tsum_abs_sub_lt`, `TauCeti.amenable_iff_exists_sum_tsum_abs_sub_lt`,
+  `TauCeti.AddAmenable.exists_sum_tsum_abs_sub_lt`,
+  `TauCeti.addAmenable_iff_exists_sum_tsum_abs_sub_lt`: Reiter's condition in coordinate form.
 * `TauCeti.Amenable.hasFoelnerSets`, `TauCeti.amenable_iff_hasFoelnerSets`,
   `TauCeti.amenable_iff_exists_finset`: equivalence of amenability and Følner sets on discrete
   groups.
@@ -316,5 +317,76 @@ theorem amenable_iff_exists_seq [Countable G] [DecidableEq G] :
   amenable_iff_hasFoelnerSets.trans hasFoelnerSets_iff_exists_seq
 
 end DiscreteGroup
+
+section AdditiveReiter
+
+/-- Transport of a coordinate Reiter witness between `A` and `Multiplicative A`. -/
+private theorem exists_sum_tsum_abs_sub_lt_multiplicative_iff {A : Type*} [AddGroup A]
+    [DecidableEq (Multiplicative A)] (K : Finset A) {ε : ℝ} :
+    (∃ p : Multiplicative A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ g ∈ K.image Multiplicative.ofAdd, ∑' x, |p (g⁻¹ * x) - p x| < ε) ↔
+    (∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε) := by
+  classical
+  refine (Equiv.arrowCongr Multiplicative.toAdd (Equiv.refl ℝ)).exists_congr fun p ↦ ?_
+  have h0 : 0 ≤ p ↔ 0 ≤ (p ∘ Multiplicative.ofAdd) :=
+    ⟨fun h x ↦ h _, fun h x ↦ h (Multiplicative.toAdd x)⟩
+  have hfin : p.HasFiniteSupport ↔ (p ∘ Multiplicative.ofAdd).HasFiniteSupport := by
+    simp only [Function.HasFiniteSupport, Function.support_comp_eq_preimage]
+    refine ⟨fun h ↦ h.preimage Multiplicative.ofAdd.injective.injOn, fun h ↦ ?_⟩
+    simpa [Set.preimage_preimage] using h.preimage Multiplicative.toAdd.injective.injOn
+  have h1 : ∑' x, p x = ∑' x, (p ∘ Multiplicative.ofAdd) x :=
+    (Multiplicative.ofAdd.tsum_eq p).symm
+  have hsum :
+      ∑ g ∈ K.image Multiplicative.ofAdd, ∑' x, |p (g⁻¹ * x) - p x| =
+        ∑ a ∈ K, ∑' x, |(p ∘ Multiplicative.ofAdd) (-a + x) - (p ∘ Multiplicative.ofAdd) x| := by
+    rw [Finset.sum_image Multiplicative.ofAdd.injective.injOn]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    simpa using
+      (Multiplicative.ofAdd.tsum_eq fun x ↦ |p ((Multiplicative.ofAdd a)⁻¹ * x) - p x|).symm
+  change (0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ g ∈ K.image Multiplicative.ofAdd, ∑' x, |p (g⁻¹ * x) - p x| < ε) ↔
+    (0 ≤ p ∘ Multiplicative.ofAdd ∧ (p ∘ Multiplicative.ofAdd).HasFiniteSupport ∧
+      ∑' x, (p ∘ Multiplicative.ofAdd) x = 1 ∧
+      ∑ a ∈ K, ∑' x, |(p ∘ Multiplicative.ofAdd) (-a + x) - (p ∘ Multiplicative.ofAdd) x| < ε)
+  rw [h0, hfin, h1, hsum]
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
+/-- A discrete additive group is amenable exactly when it satisfies additive **Reiter's condition**:
+for every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
+`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
+theorem addAmenable_iff_exists_sum_tsum_abs_sub_lt :
+    AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
+      ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+        ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε := by
+  classical
+  rw [← amenable_multiplicative_iff, amenable_iff_exists_sum_tsum_abs_sub_lt]
+  refine ⟨fun h K ε hε ↦ (exists_sum_tsum_abs_sub_lt_multiplicative_iff K).1
+    (h (K.image Multiplicative.ofAdd) ε hε), fun h K ε hε ↦ ?_⟩
+  have hK : (K.image Multiplicative.toAdd).image Multiplicative.ofAdd = K := by
+    ext x
+    simp only [Finset.mem_image]
+    exact ⟨by rintro ⟨a, ⟨y, hy, rfl⟩, rfl⟩; simpa using hy,
+      fun hx ↦ ⟨Multiplicative.toAdd x, ⟨x, hx, rfl⟩, by simp⟩⟩
+  simpa [hK] using
+    (exists_sum_tsum_abs_sub_lt_multiplicative_iff (K.image Multiplicative.toAdd)).2
+      (h (K.image Multiplicative.toAdd) ε hε)
+
+attribute [to_additive existing addAmenable_iff_exists_sum_tsum_abs_sub_lt]
+  amenable_iff_exists_sum_tsum_abs_sub_lt
+
+/-- **Reiter's condition for discrete additive groups.** In an amenable discrete additive group,
+for every finite `K` and `ε > 0` there is a finitely supported probability density `p` with
+`∑_{a ∈ K} ∑_x |p (-a + x) - p x| < ε`. -/
+theorem AddAmenable.exists_sum_tsum_abs_sub_lt [AddAmenable A] (K : Finset A) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ p : A → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ a ∈ K, ∑' x, |p (-a + x) - p x| < ε :=
+  addAmenable_iff_exists_sum_tsum_abs_sub_lt.1 ‹_› K ε hε
+
+attribute [to_additive existing] Amenable.exists_sum_tsum_abs_sub_lt
+
+end AdditiveReiter
 
 end TauCeti

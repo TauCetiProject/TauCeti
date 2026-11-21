@@ -149,13 +149,13 @@ theorem toAddMonoidHom_toAdditive (f : M →ₜ* N) :
 @[simp]
 theorem toAdditive_id :
     (ContinuousMonoidHom.id M).toAdditive = ContinuousAddMonoidHom.id (Additive M) :=
-  (rfl)
+  ContinuousAddMonoidHom.ext fun x => by simp
 
 /-- `toAdditive` commutes with composition of continuous multiplicative homomorphisms. -/
 @[simp]
 theorem toAdditive_comp (g : N →ₜ* P) (f : M →ₜ* N) :
     (g.comp f).toAdditive = g.toAdditive.comp f.toAdditive :=
-  (rfl)
+  ContinuousAddMonoidHom.ext fun x => by simp
 
 /-- `f.toAdditive` is surjective if and only if `f` is surjective. -/
 @[simp]

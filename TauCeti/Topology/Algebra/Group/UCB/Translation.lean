@@ -259,15 +259,35 @@ theorem leftTranslation_rightTranslation (g h : G) (f : UCB G) :
     leftTranslation g (rightTranslation h f) = rightTranslation h (leftTranslation g f) :=
   congr($(commute_leftTranslation_rightTranslation g h) f)
 
-/-- On a finite group, the sum of the left translates `L_g f` of a function `f` in `UCB G` is the
-constant function `∑ x, f x`. -/
-theorem sum_leftTranslation [Fintype G] (f : UCB G) :
-    ∑ g, leftTranslation g f = algebraMap ℝ (UCB G) (∑ x, (f : G →ᵇ ℝ) x) := by
-  refine ext fun x => ?_
-  simp only [AddSubmonoidClass.coe_finsetSum, FunLike.coe_sum, Finset.sum_apply,
-    leftTranslation_apply, SubalgebraClass.coe_algebraMap,
-    BoundedContinuousFunction.algebraMap_apply, smul_eq_mul, mul_one]
-  exact Fintype.sum_equiv ((Equiv.inv G).trans (Equiv.mulRight x)) _ _ fun _ => rfl
+/-- Unbundled left translation `L_g` on `UCB G`, as a linear isometry equivalence, for
+`@[to_additive]` compatibility with `TauCeti.AddUCB.leftTranslation`. -/
+@[expose]
+def leftTranslationEquiv (g : G) : UCB G ≃ₗᵢ[ℝ] UCB G :=
+  leftTranslation g
+
+/-- Unbundled right translation `R_g` on `UCB G`, as a linear isometry equivalence, for
+`@[to_additive]` compatibility with `TauCeti.AddUCB.rightTranslation`. -/
+@[expose]
+def rightTranslationEquiv (g : G) : UCB G ≃ₗᵢ[ℝ] UCB G :=
+  rightTranslation g
+
+/-- `leftTranslationEquiv g` is definitionally `leftTranslation g`. -/
+theorem leftTranslationEquiv_eq (g : G) : leftTranslationEquiv g = leftTranslation g :=
+  rfl
+
+/-- `rightTranslationEquiv g` is definitionally `rightTranslation g`. -/
+theorem rightTranslationEquiv_eq (g : G) : rightTranslationEquiv g = rightTranslation g :=
+  rfl
+
+/-- Pointwise evaluation of `leftTranslationEquiv`. -/
+theorem leftTranslationEquiv_apply (g : G) (f : UCB G) (x : G) :
+    (leftTranslationEquiv g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (g⁻¹ * x) :=
+  leftTranslation_apply g f x
+
+/-- Pointwise evaluation of `rightTranslationEquiv`. -/
+theorem rightTranslationEquiv_apply (g : G) (f : UCB G) (x : G) :
+    (rightTranslationEquiv g f : G →ᵇ ℝ) x = (f : G →ᵇ ℝ) (x * g) :=
+  rightTranslation_apply g f x
 
 end UCB
 
@@ -411,9 +431,6 @@ theorem rightTranslation_add (a b : A) :
   ext
   simp [add_assoc]
 
-theorem rightTranslation_neg (a : A) : rightTranslation (-a) = (rightTranslation a).symm :=
-  (rightTranslation_symm a).symm
-
 /-- Right translation preserves and reflects the pointwise order. -/
 @[simp]
 theorem rightTranslation_le_rightTranslation_iff {a : A} {f f' : AddUCB A} :
@@ -444,16 +461,34 @@ theorem leftTranslation_rightTranslation (a b : A) (f : AddUCB A) :
     leftTranslation a (rightTranslation b f) = rightTranslation b (leftTranslation a f) :=
   congr($(commute_leftTranslation_rightTranslation a b) f)
 
-/-- On a finite additive group, the sum of the left translates `L_a f` of a function `f` in
-`AddUCB A` is the constant function `∑ x, f x`. -/
-theorem sum_leftTranslation [Fintype A] (f : AddUCB A) :
-    ∑ a, leftTranslation a f = algebraMap ℝ (AddUCB A) (∑ x, (f : A →ᵇ ℝ) x) := by
+end AddUCB
+
+attribute [to_additive existing AddUCB.leftTranslation] UCB.leftTranslationEquiv
+attribute [to_additive existing AddUCB.rightTranslation] UCB.rightTranslationEquiv
+attribute [to_additive existing AddUCB.leftTranslation_apply] UCB.leftTranslationEquiv_apply
+attribute [to_additive existing AddUCB.rightTranslation_apply] UCB.rightTranslationEquiv_apply
+
+namespace UCB
+
+/-- On a finite group, the sum of the unbundled left translates `L_g f` of a function `f` in
+`UCB G` is the constant function `∑ x, f x`. -/
+@[to_additive sum_leftTranslation
+  /-- On a finite additive group, the sum of the left translates `L_a f` of a function `f` in
+  `AddUCB A` is the constant function `∑ x, f x`. -/]
+theorem sum_leftTranslationEquiv [Fintype G] (f : UCB G) :
+    ∑ g, leftTranslationEquiv g f = algebraMap ℝ (UCB G) (∑ x, (f : G →ᵇ ℝ) x) := by
   refine ext fun x => ?_
   simp only [AddSubmonoidClass.coe_finsetSum, FunLike.coe_sum, Finset.sum_apply,
-    leftTranslation_apply, SubalgebraClass.coe_algebraMap,
+    leftTranslationEquiv_apply, SubalgebraClass.coe_algebraMap,
     BoundedContinuousFunction.algebraMap_apply, smul_eq_mul, mul_one]
-  exact Fintype.sum_equiv ((Equiv.neg A).trans (Equiv.addRight x)) _ _ fun _ => rfl
+  exact Fintype.sum_equiv ((Equiv.inv G).trans (Equiv.mulRight x)) _ _ fun _ => rfl
 
-end AddUCB
+/-- On a finite group, the sum of the left translates `L_g f` of a function `f` in `UCB G` is the
+constant function `∑ x, f x`. -/
+theorem sum_leftTranslation [Fintype G] (f : UCB G) :
+    ∑ g, leftTranslation g f = algebraMap ℝ (UCB G) (∑ x, (f : G →ᵇ ℝ) x) :=
+  sum_leftTranslationEquiv f
+
+end UCB
 
 end TauCeti
