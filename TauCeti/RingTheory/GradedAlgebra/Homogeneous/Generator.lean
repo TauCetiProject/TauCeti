@@ -119,15 +119,11 @@ all have degree zero, every compatible `ℤ`-grading of the free rank-one module
 graded-isomorphic to a shift `A(d)` for a unique integer `d`. -/
 theorem existsUnique_shift_linearEquiv_of_connected (hbot : homogeneousUnitDegrees 𝒜 = ⊥) :
     ∃! d : ℤ, ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d) := by
-  obtain ⟨d₀, φ₀, hφ₀⟩ := exists_shift_linearEquiv_of_connected 𝒜 ℳ
-  refine ⟨d₀, ⟨φ₀, hφ₀⟩, fun d ⟨φ, hφ⟩ ↦ ?_⟩
-  have hsub : d - d₀ ∈ homogeneousUnitDegrees 𝒜 :=
-    (sub_mem_homogeneousUnitDegrees_iff 𝒜).mpr
-      ⟨φ.trans φ₀.symm, fun n x ↦ by
-        rw [LinearEquiv.trans_apply, ← hφ n x]
-        simpa using (hφ₀ n (φ₀.symm (φ x))).symm⟩
-  rw [hbot, AddSubgroup.mem_bot, sub_eq_zero] at hsub
-  exact hsub
+  obtain ⟨c, hc, -⟩ := existsUnique_shiftClass_of_connected 𝒜 ℳ
+  obtain ⟨d₀, rfl⟩ := QuotientAddGroup.mk_surjective c
+  refine ⟨d₀, (hc d₀).mpr rfl, fun d hd ↦ ?_⟩
+  have hmk : (d : ShiftClassGroup 𝒜) = d₀ := (hc d).mp hd
+  rwa [QuotientAddGroup.eq, hbot, AddSubgroup.mem_bot, neg_add_eq_zero] at hmk
 
 end ShiftClassification
 
