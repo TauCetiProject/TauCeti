@@ -143,11 +143,9 @@ private theorem zigzagComponentBasis_mem (C : G.ConnectedComponent)
     · simp
     · exact (C.toSimpleGraph.ne_of_adj d.adj (Subsingleton.elim _ _)).elim
     · simp
-  · have hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    rw [mem_zigzagComponentGrade_of_nontrivial,
-      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns, zigzagBasis_apply]
+  · rw [mem_zigzagComponentGrade_of_nontrivial,
+      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+        C.exists_adj_toSimpleGraph, zigzagBasis_apply]
     rcases b with i | d | i
     · simp only [zigzagBasisFun_inl, Sum.elim_inl]
       exact zigzagMk_mem_zigzagGrade k C.toSimpleGraph

@@ -429,6 +429,55 @@ theorem sum_comp_ofTriple [Fintype κ] {M : Type*} [AddCommMonoid M] (φ : Polya
   ext x
   rw [mem_filter, mem_support_iff_eq_ofTriple, eq_comm, and_iff_right (mem_univ x)]
 
+open Classical in
+/-- If `π Q = P`, every triple in `Q.support \ P.support` has a polyad over `S` distinct from
+`π (ofTriple T x)`. -/
+theorem support_sdiff_subset_filter_ofTriple_ne {κ' : Type*} {T : PairSkeleton3 κ' V}
+    {π : Polyad3 T → Polyad3 S} {P : Polyad3 S} {Q : Polyad3 T} (hπ : π Q = P) :
+    Q.support \ P.support ⊆ ({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) := by
+  intro x hx
+  obtain ⟨hxQ, hxP⟩ := mem_sdiff.1 hx
+  refine mem_filter.2 ⟨mem_univ x, fun h ↦ hxP ?_⟩
+  rw [mem_support_iff_eq_ofTriple, h, ← mem_support_iff_eq_ofTriple.1 hxQ, hπ]
+
+open Classical in
+/-- If `π Q ≠ P`, every triple in `P.support ∩ Q.support` has a polyad over `S` distinct from
+`π (ofTriple T x)`. -/
+theorem inter_support_subset_filter_ofTriple_ne {κ' : Type*} {T : PairSkeleton3 κ' V}
+    {π : Polyad3 T → Polyad3 S} {P : Polyad3 S} {Q : Polyad3 T} (hπ : π Q ≠ P) :
+    P.support ∩ Q.support ⊆ ({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) := by
+  intro x hx
+  obtain ⟨hxP, hxQ⟩ := mem_inter.1 hx
+  refine mem_filter.2 ⟨mem_univ x, fun h ↦ hπ ?_⟩
+  rw [mem_support_iff_eq_ofTriple.1 hxQ, ← h, ← mem_support_iff_eq_ofTriple.1 hxP]
+
+open Classical in
+/-- Fine supports assigned to `P` by `π` exceed `#P.support` only through moved triples. -/
+theorem sum_card_support_polyadMap_le {κ' : Type*} [Fintype κ'] {T : PairSkeleton3 κ' V}
+    (π : Polyad3 T → Polyad3 S) (P : Polyad3 S) :
+    ∑ Q : Polyad3 T with π Q = P, #Q.support ≤
+      #P.support +
+        ∑ Q : Polyad3 T with π Q = P,
+          #(({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) ∩ Q.support) := by
+  have hQ (Q : Polyad3 T) (hπ : π Q = P) :
+      #Q.support ≤ #(P.support ∩ Q.support) +
+        #(({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) ∩ Q.support) := by
+    rw [← card_sdiff_add_card_inter Q.support P.support, inter_comm Q.support P.support,
+      add_comm]
+    exact Nat.add_le_add_left
+      (card_le_card (subset_inter (support_sdiff_subset_filter_ofTriple_ne hπ) sdiff_subset)) _
+  calc ∑ Q : Polyad3 T with π Q = P, #Q.support
+      ≤ ∑ Q : Polyad3 T with π Q = P, (#(P.support ∩ Q.support) +
+          #(({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) ∩ Q.support)) :=
+        sum_le_sum fun Q h ↦ hQ Q (mem_filter.1 h).2
+    _ = ∑ Q : Polyad3 T with π Q = P, #(P.support ∩ Q.support) +
+          ∑ Q : Polyad3 T with π Q = P,
+            #(({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) ∩ Q.support) := sum_add_distrib
+    _ ≤ #P.support + ∑ Q : Polyad3 T with π Q = P,
+          #(({x | ofTriple S x ≠ π (ofTriple T x)} : Finset _) ∩ Q.support) :=
+        Nat.add_le_add_right ((sum_le_univ_sum_of_nonneg fun _ ↦ Nat.zero_le _).trans_eq
+          (sum_card_inter_support (S := T) P.support)) _
+
 end Polyad3
 
 end TauCeti

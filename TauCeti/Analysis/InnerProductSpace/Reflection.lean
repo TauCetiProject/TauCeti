@@ -45,8 +45,11 @@ reflections. It supplies the sphere motion which interchanges the two halves of 
 
 In the same way, two unit vectors `a` and `b` with `a ≠ -b` are joined by a rotation in the plane
 they span: reflecting in the hyperplane orthogonal to `a` and then in the one orthogonal to `a + b`
-sends `a` to `b` and fixes every vector orthogonal to both. Moving the second normal from `a` to
-`a + b` connects this rotation to the identity by an analytic path of linear isometries
+(`TauCeti.pairRotation`) sends `a` to `b` and fixes every vector orthogonal to both. Away from
+`b = -a` this rotation depends continuously on `b` (`ContinuousOn.pairRotation_apply`), so it
+moves a fixed point of a sphere continuously to every point of the complement of its antipode, as
+local trivializations of bundles of frames over the sphere need. Moving the second normal from `a`
+to `a + b` connects this rotation to the identity by an analytic path of linear isometries
 (`TauCeti.exists_contDiff_path_apply_eq`).
 
 Composing four such reflections rotates a whole `C^k` path `u` of unit vectors orthogonal to a
@@ -452,6 +455,15 @@ theorem contDiff_reflection_orthogonal_singleton_apply {X : Type*} [NormedAddCom
   exact hy.sub ((contDiff_const.mul ((hc.inner ℝ hy).div ((contDiff_norm_sq ℝ).comp hc)
     fun p => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc₀ p)))).smul hc)
 
+/-- Reflection in the hyperplane orthogonal to a normal `c x`, applied to a vector `y x`, depends
+continuously on a parameter `x` wherever the normal does not vanish. -/
+theorem _root_.ContinuousOn.reflection_orthogonal_singleton_apply {X : Type*} [TopologicalSpace X]
+    {s : Set X} {c y : X → F} (hc : ContinuousOn c s) (hy : ContinuousOn y s)
+    (hc₀ : ∀ x ∈ s, c x ≠ 0) : ContinuousOn (fun x => (ℝ ∙ c x)ᗮ.reflection (y x)) s := by
+  simp only [reflection_orthogonal_singleton_apply_div_norm_sq]
+  exact hy.sub ((continuousOn_const.mul ((hc.inner hy).div (hc.norm.pow 2)
+    fun x hx => pow_ne_zero 2 (norm_ne_zero_iff.2 (hc₀ x hx)))).smul hc)
+
 /-- Reflecting in the hyperplane orthogonal to `a` and then in the hyperplane orthogonal to a
 nonvanishing analytic normal `c t` is analytic jointly in the time and the vector. -/
 private theorem contDiff_reflection_trans_reflection {a : F} {c : ℝ → F} (hc : ContDiff ℝ ω c)
@@ -460,10 +472,58 @@ private theorem contDiff_reflection_trans_reflection {a : F} {c : ℝ → F} (hc
   contDiff_reflection_orthogonal_singleton_apply (hc.comp contDiff_fst)
     ((ℝ ∙ a)ᗮ.reflection.toContinuousLinearEquiv.contDiff.comp contDiff_snd) fun p => hc₀ p.1
 
-/-- The rotation from `a` toward `b` at time `t`: the reflection in the hyperplane orthogonal to
-`a`, followed by the reflection in the hyperplane orthogonal to `a + t² b`. -/
-private def pairRotation (a b : F) (t : ℝ) : F ≃ₗᵢ[ℝ] F :=
-  (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ (a + t ^ 2 • b))ᗮ.reflection
+/-- **The rotation carrying `a` to `b`**: the reflection in the hyperplane orthogonal to `a`,
+followed by the reflection in the hyperplane orthogonal to `a + b`. When `a` and `b` have the same
+norm it sends `a` to `b` (`TauCeti.pairRotation_apply_self`), and it fixes every vector
+orthogonal to both (`TauCeti.pairRotation_apply_of_inner_eq_zero`). It depends continuously on `b`
+away from `b = -a` (`ContinuousOn.pairRotation_apply`), where the second hyperplane degenerates. -/
+def pairRotation (a b : F) : F ≃ₗᵢ[ℝ] F :=
+  (ℝ ∙ a)ᗮ.reflection.trans (ℝ ∙ (a + b))ᗮ.reflection
+
+theorem pairRotation_apply (a b x : F) :
+    pairRotation a b x = (ℝ ∙ (a + b))ᗮ.reflection ((ℝ ∙ a)ᗮ.reflection x) :=
+  (rfl)
+
+theorem pairRotation_symm_apply (a b x : F) :
+    (pairRotation a b).symm x = (ℝ ∙ a)ᗮ.reflection ((ℝ ∙ (a + b))ᗮ.reflection x) :=
+  (rfl)
+
+/-- The rotation carrying `a` to a vector `b` of the same norm sends `a` to `b`. -/
+theorem pairRotation_apply_self {a b : F} (h : ‖a‖ = ‖b‖) : pairRotation a b a = b := by
+  rw [pairRotation_apply, Submodule.reflection_orthogonalComplement_singleton_eq_neg]
+  exact reflection_orthogonal_singleton_add_apply_neg h
+
+/-- The rotation carrying `a` to `b` fixes every vector orthogonal to both `a` and `b`. -/
+theorem pairRotation_apply_of_inner_eq_zero {a b x : F} (hax : ⟪a, x⟫ = 0) (hbx : ⟪b, x⟫ = 0) :
+    pairRotation a b x = x := by
+  rw [pairRotation_apply, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [inner_add_left, hax, hbx,
+      add_zero])]
+
+/-- The rotation carrying `a` to itself is the identity. -/
+@[simp]
+theorem pairRotation_self (a : F) : pairRotation a a = LinearIsometryEquiv.refl ℝ F := by
+  have hspan : (ℝ ∙ (a + a)) = ℝ ∙ a := by
+    rw [← two_smul ℝ a, Submodule.span_singleton_smul_eq (isUnit_of_invertible (2 : ℝ))]
+  simp only [pairRotation, hspan, Submodule.reflection_trans_reflection]
+
+/-- The rotation carrying `a` to `b x`, applied to `y x`, depends continuously on a parameter `x`
+wherever `a + b x ≠ 0`. -/
+theorem _root_.ContinuousOn.pairRotation_apply {X : Type*} [TopologicalSpace X] {s : Set X}
+    {a : F} {b y : X → F} (hb : ContinuousOn b s) (hy : ContinuousOn y s)
+    (h : ∀ x ∈ s, a + b x ≠ 0) : ContinuousOn (fun x => pairRotation a (b x) (y x)) s := by
+  simp only [TauCeti.pairRotation_apply]
+  exact (continuousOn_const.add hb).reflection_orthogonal_singleton_apply
+    ((ℝ ∙ a)ᗮ.reflection.continuous.comp_continuousOn hy) h
+
+/-- The inverse of the rotation carrying `a` to `b x`, applied to `y x`, depends continuously on a
+parameter `x` wherever `a + b x ≠ 0`. -/
+theorem _root_.ContinuousOn.pairRotation_symm_apply {X : Type*} [TopologicalSpace X] {s : Set X}
+    {a : F} {b y : X → F} (hb : ContinuousOn b s) (hy : ContinuousOn y s)
+    (h : ∀ x ∈ s, a + b x ≠ 0) : ContinuousOn (fun x => (pairRotation a (b x)).symm (y x)) s := by
+  simp only [TauCeti.pairRotation_symm_apply]
+  exact (ℝ ∙ a)ᗮ.reflection.continuous.comp_continuousOn
+    ((continuousOn_const.add hb).reflection_orthogonal_singleton_apply hy h)
 
 /-- **Rotating one unit vector to another.** Two unit vectors `a` and `b` with `a ≠ -b` are
 joined by an analytic path of linear isometries, starting at the identity, whose time-one map
@@ -480,19 +540,13 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
       rwa [norm_neg, norm_smul, ha, hb, mul_one, Real.norm_of_nonneg (sq_nonneg t), eq_comm]
         at this
     rw [h₁, hs, one_smul]
-  refine ⟨pairRotation a b, ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
+  -- At time `t`, rotate `a` toward `t² b`; at time `1` this is the rotation carrying `a` to `b`.
+  refine ⟨fun t => pairRotation a (t ^ 2 • b), ?_, fun x => ?_, ?_, fun x hax hbx => ?_⟩
   · exact contDiff_reflection_trans_reflection (c := fun t => a + t ^ 2 • b)
       (contDiff_const.add ((contDiff_id.pow 2).smul contDiff_const)) hu
-  · simp [pairRotation]
-  · rw [pairRotation, LinearIsometryEquiv.trans_apply,
-      Submodule.reflection_orthogonalComplement_singleton_eq_neg]
-    simpa only [one_pow, one_smul] using
-      reflection_orthogonal_singleton_add_apply_neg (ha.trans hb.symm)
-  · rw [pairRotation, LinearIsometryEquiv.trans_apply,
-      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hax,
-      reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
-    rw [inner_add_left, inner_smul_left, hax, hbx]
-    simp
+  · simp [pairRotation_apply]
+  · simpa only [one_pow, one_smul] using pairRotation_apply_self (ha.trans hb.symm)
+  · simpa only [one_pow, one_smul] using pairRotation_apply_of_inner_eq_zero hax hbx
 
 /-- A differentiable path `u`, in a space where the orthogonal complement of `v` has dimension at
 least three, avoids the antipode of some unit vector `p` orthogonal to `v`: `u s + p ≠ 0` for
