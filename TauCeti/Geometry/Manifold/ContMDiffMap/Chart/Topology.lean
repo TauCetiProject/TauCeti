@@ -206,7 +206,7 @@ theorem continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv
     ext p
     constructor
     · intro hp z _
-      exact hp z.2
+      exact hp z.property
     · intro hp z hz
       exact hp (mem_univ (⟨z, hz⟩ : K'))
 
@@ -229,11 +229,11 @@ with each component valued in its native supremum-norm continuous-map space. -/
 noncomputable def compactChartJet :
     C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
       (∀ i : Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target,
-        C(i.2.2, E [×i.2.1.1]→L[𝕜] F)) :=
+        C(i.2.2, E [×i.2.1.val]→L[𝕜] F)) :=
   LinearMap.pi fun i ↦
-    (ContinuousMap.compCLM 𝕜 (E [×i.2.1.1]→L[𝕜] F)
+    (ContinuousMap.compCLM 𝕜 (E [×i.2.1.val]→L[𝕜] F)
       (ContinuousMap.subtypeVal (i.2.2 : Set (extChartAt I i.1).target))).toLinearMap ∘ₗ
-        chartIteratedFDerivLinearMap i.1 i.2.1.1 i.2.1.2
+        chartIteratedFDerivLinearMap i.1 i.2.1.val i.2.1.property
 
 /-- A component of the compact chart jet is the corresponding restricted chart derivative. -/
 -- Spell out the chart target in the coercion type, as for chartIteratedFDerivLinearMap_apply.
@@ -243,14 +243,14 @@ theorem compactChartJet_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
     DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
       (∀ j : Σ x : M, {m : ℕ // m ≤ n} ×
           TopologicalSpace.Compacts ↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target),
-        C(j.2.2, E [×j.2.1.1]→L[𝕜] F))) compactChartJet f i =
-      (chartIteratedFDeriv f i.1 i.2.1.1 i.2.1.2).restrict (i.2.2 : Set _) := by
+        C(j.2.2, E [×j.2.1.val]→L[𝕜] F))) compactChartJet f i =
+      (chartIteratedFDeriv f i.1 i.2.1.val i.2.1.property).restrict (i.2.2 : Set _) := by
   -- The expanded target in chartIteratedFDerivLinearMap_apply is definitionally
   -- (extChartAt I i.1).target, so restriction acts on the same continuous-map space.
   exact congrArg
-    (fun A : C((extChartAt I i.1).target, E [×i.2.1.1]→L[𝕜] F) ↦
+    (fun A : C((extChartAt I i.1).target, E [×i.2.1.val]→L[𝕜] F) ↦
       A.restrict (i.2.2 : Set _))
-    (chartIteratedFDerivLinearMap_apply i.1 i.2.1.1 i.2.1.2 f)
+    (chartIteratedFDerivLinearMap_apply i.1 i.2.1.val i.2.1.property f)
 
 /-- All compact chart jets together induce the vector-valued weak Whitney topology. -/
 theorem isInducing_compactChartJet :
@@ -259,7 +259,7 @@ theorem isInducing_compactChartJet :
     apply continuous_pi
     intro i
     exact ((ContinuousMap.continuous_restrict (i.2.2 : Set (extChartAt I i.1).target)).comp
-      (continuous_chartIteratedFDeriv (I := I) (F := F) i.1 i.2.1.1 i.2.1.2)).congr
+      (continuous_chartIteratedFDeriv (I := I) (F := F) i.1 i.2.1.val i.2.1.property)).congr
         (fun f ↦ (compactChartJet_apply f i).symm)
   constructor
   apply le_antisymm

@@ -108,7 +108,7 @@ compact subset of the realization. -/
 theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_one
     (σ : Φ.cones) :
     IsCompact (Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ s, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1}) := by
   have h := isCompact_setOf_forall_norm_apply_single_le_one (Φ.analyticChartGenerators σ).2
   rw [← Φ.analyticAffineChart_str_eq σ] at h
@@ -120,9 +120,9 @@ theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_
 of `σ` where the monomials of `g` have absolute value at most `R` is a compact subset of the
 realization. -/
 theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_le
-    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r) (R : ℝ) :
+    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.val) r) (R : ℝ) :
     IsCompact (Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ ≤ R}) := by
   have h := isCompact_setOf_forall_norm_apply_single_toFun_le g R
   rw [← Φ.analyticAffineChart_str_eq σ] at h
@@ -133,12 +133,12 @@ theorem isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_toF
 /-- For a finite generating family `g` of the dual semigroup of a cone `σ`, the part of the chart
 of `σ` where the monomials of `g` have absolute value less than `R` is open in the realization. -/
 theorem isOpen_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_lt
-    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) r) (R : ℝ) :
+    (σ : Φ.cones) {r : ℕ} (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.val) r) (R : ℝ) :
     IsOpen (Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ < R}) := by
   have h : IsOpen[affinePointTopology g]
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ j, ‖x (MonoidAlgebra.single (ofAdd (g.toFun j)) 1)‖ < R} := by
     let _ := affinePointTopology g
     simp only [ofPred_forall]
@@ -152,9 +152,9 @@ at most `1` lies in the part of the chart of `σ` where every monomial has absol
 most `1`. -/
 theorem analyticTorusι_mem_image_setOf_forall_norm_apply_single_le_one
     (hΦ0 : Nonempty Φ.cones) {σ : Φ.cones} {t : ComplexTorus N}
-    (ht : ∀ m : dualSemigroup Φ.lattice σ.1, ‖((t m : ℂˣ) : ℂ)‖ ≤ 1) :
+    (ht : ∀ m : dualSemigroup Φ.lattice σ.val, ‖((t m : ℂˣ) : ℂ)‖ ≤ 1) :
     Φ.analyticTorusι hΦ hΦ0 t ∈ Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ s, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} := by
   refine ⟨_, fun s ↦ ?_, (Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ t).symm⟩
   rw [AffineSemigroupComplexPoint.ambient_smul_apply_single, default_apply_single, mul_one]
@@ -165,14 +165,14 @@ where every monomial has absolute value at most `1`. -/
 private theorem analyticTorusι_mem_iUnion_image (hc : Φ.IsComplete) (hΦ0 : Nonempty Φ.cones)
     (t : ComplexTorus N) :
     Φ.analyticTorusι hΦ hΦ0 t ∈ ⋃ σ : Φ.cones, Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ s, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} := by
   -- The point `w` of `V` at which the characters take the values `-log ‖t m‖`.
   obtain ⟨w, hw⟩ := Φ.lattice.exists_realCharacter_apply_eq_neg_log_norm t
   obtain ⟨σ, hσ, hwσ⟩ := Φ.isComplete_iff.1 hc w
   refine mem_iUnion.2 ⟨⟨σ, hσ⟩,
     Φ.analyticTorusι_mem_image_setOf_forall_norm_apply_single_le_one hΦ hΦ0 fun s ↦ ?_⟩
-  have hs := (mem_dualSemigroup _ _).1 s.2 hwσ
+  have hs := (mem_dualSemigroup _ _).1 s.property hwσ
   rw [hw] at hs
   exact (Real.log_nonpos_iff (norm_nonneg _)).1 (by linarith)
 
@@ -185,7 +185,7 @@ theorem compactSpace_analyticRealization_of_isComplete (hc : Φ.IsComplete) :
   -- they cover the dense torus, whose closure is the whole realization.
   let K : Φ.cones → Set (Φ.analyticRealization hΦ) := fun σ ↦
     Φ.analyticAffineChartι hΦ σ ''
-      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+      {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
         ∀ s, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1}
   have hK : ∀ σ, IsCompact (K σ) :=
     Φ.isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_one hΦ
@@ -203,12 +203,12 @@ private theorem exists_frequently_norm_lt_of_mapClusterPt (hΦ0 : Nonempty Φ.co
     {ι : Type*} {l : Filter ι} {t : ι → ComplexTorus N} {σ : Φ.cones}
     {y : (Φ.analyticAffineChartDiagram).obj σ}
     (h : MapClusterPt (Φ.analyticAffineChartι hΦ σ y) l fun k ↦ Φ.analyticTorusι hΦ hΦ0 (t k))
-    (m : dualSemigroup Φ.lattice σ.1) : ∃ C : ℝ, ∃ᶠ k in l, ‖((t k m : ℂˣ) : ℂ)‖ < C := by
+    (m : dualSemigroup Φ.lattice σ.val) : ∃ C : ℝ, ∃ᶠ k in l, ‖((t k m : ℂˣ) : ℂ)‖ < C := by
   let g := (Φ.analyticChartGenerators σ).2
   -- The bundled chart point, read as an algebra homomorphism so that it can be evaluated.
-  let y' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) := y
+  let y' : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) := y
   let C := ‖y' (MonoidAlgebra.single (ofAdd m) 1)‖ + 1
-  let U : Set (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :=
+  let U : Set (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :=
     {z | ‖z (MonoidAlgebra.single (ofAdd m) 1)‖ < C}
   have hU : IsOpen[affinePointTopology g] U := by
     let _ := affinePointTopology g
@@ -222,7 +222,7 @@ private theorem exists_frequently_norm_lt_of_mapClusterPt (hΦ0 : Nonempty Φ.co
   refine ⟨C, (mapClusterPt_iff_frequently.1 h _ hnhds).mono fun k ⟨z, hz, hzk⟩ ↦ ?_⟩
   rw [Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ] at hzk
   have hzt := (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).injective hzk
-  have hz' : ‖(t k • default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
+  have hz' : ‖(t k • default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
       (MonoidAlgebra.single (ofAdd m) 1)‖ < C := by
     rw [← hzt]
     exact hz
@@ -237,11 +237,11 @@ theorem mem_of_mapClusterPt_analyticTorusι (hΦ0 : Nonempty Φ.cones) {w : V}
     {σ : Φ.cones} {y : (Φ.analyticAffineChartDiagram).obj σ}
     (h : MapClusterPt (Φ.analyticAffineChartι hΦ σ y) atTop
       fun k ↦ Φ.analyticTorusι hΦ hΦ0 (t k)) :
-    w ∈ σ.1 := by
+    w ∈ σ.val := by
   -- Every character of the dual semigroup of `σ` stays frequently bounded along `t`, which forces
   -- it to be nonnegative at `w`.
   refine (IsRegularCone.mem_iff_forall_realCharacter_nonneg Φ.lattice
-    ((isRegular_iff.mp hΦ) σ.1 σ.2)).2 fun m hm ↦ ?_
+    ((isRegular_iff.mp hΦ) σ.val σ.property)).2 fun m hm ↦ ?_
   by_contra hneg
   rw [not_le] at hneg
   obtain ⟨C, hC⟩ := Φ.exists_frequently_norm_lt_of_mapClusterPt hΦ hΦ0 h ⟨m, hm⟩
@@ -264,7 +264,7 @@ theorem isComplete_of_compactSpace_analyticRealization (hΦ0 : Nonempty Φ.cones
   obtain ⟨p, hp⟩ := exists_clusterPt_of_compactSpace
     (Filter.map (fun k ↦ Φ.analyticTorusι hΦ hΦ0 (t k)) atTop)
   obtain ⟨σ, y, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ p
-  exact ⟨σ.1, σ.2, Φ.mem_of_mapClusterPt_analyticTorusι hΦ hΦ0 ht hp⟩
+  exact ⟨σ.val, σ.property, Φ.mem_of_mapClusterPt_analyticTorusι hΦ hΦ0 ht hp⟩
 
 /-- A nonempty regular fan has compact analytic realization exactly when it is complete. The
 nonemptiness hypothesis is necessary: the realization of the empty fan is empty, hence compact,

@@ -78,15 +78,17 @@ noncomputable def indexClassicalEntry (q : ℤ) (x : {x : P // ind x = q + 1})
     (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology (k - (q + 1)) ⟶
       (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q) :=
   shiftedModuleComplexActHomology hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1)) (k - q)
+    (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property]))
+    (m.d_m_eq_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property])) q (k -
+        (q + 1)) (k - q)
     (by ring)
 
 theorem indexClassicalEntry_def (q : ℤ) (x : {x : P // ind x = q + 1})
     (y : {y : P // ind y = q}) :
     m.indexClassicalEntry hM k q x y = shiftedModuleComplexActHomology hM
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-      (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (k - (q + 1))
+      (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property]))
+      (m.d_m_eq_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property])) q
+          (k - (q + 1))
       (k - q) (by ring) :=
   (rfl)
 
@@ -106,19 +108,19 @@ which is `-op (d (m x z)) • α` by the twisting equation, a coboundary by the 
 theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1})
     (z : {z : P // ind z = q}) :
     ∑ y, m.indexClassicalEntry hM k (q + 1) x y ≫ m.indexClassicalEntry hM k q y z = 0 := by
-  have hx := x.2
-  have hz := z.2
+  have hx := x.property
+  have hz := z.property
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1 + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1 + 1) + 1) (by simp) c
   have h1 := fun y : {y : P // ind y = q + 1} ↦ exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) (q + 1)
+    (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property]))
+    (m.d_m_eq_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property])) (q + 1)
     (k - (q + 1 + 1)) (k - (q + 1)) (by ring) α hα
   choose β hβ' hβ hβπ using h1
   have h2 := fun y : {y : P // ind y = q + 1} ↦ exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := y.1) (y := z.1) (by rw [y.2, z.2]))
-    (m.d_m_eq_zero_of_eq_add_one (x := y.1) (y := z.1) (by rw [y.2, z.2])) q
+    (m.m_mem_zero_of_eq_add_one (x := y.val) (y := z.val) (by rw [y.property, z.property]))
+    (m.d_m_eq_zero_of_eq_add_one (x := y.val) (y := z.val) (by rw [y.property, z.property])) q
     (k - (q + 1)) (k - q) (by ring) (β y) (hβ' y)
   choose γ hγ' hγ hγπ using h2
   simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp,
@@ -141,8 +143,8 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   simp only [hγ, hβ]
   -- The twisting equation at index difference two: the double action is by `∑ y, m x y * m y z`.
   rw [Finset.sum_congr rfl fun y _ ↦ op_smul_koszulTwist_op_smul_koszulTwist
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hα₀ 1,
-    ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two q x.2 z.2]
+      (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property])) hα₀ 1,
+    ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two q x.property z.property]
   -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)
   rw [hdα₀, smul_zero, zero_add] at hl
@@ -239,8 +241,9 @@ theorem homologyMap_single_comp_page_two_d_comp_eval (pq pq' : ℤ × ℤ)
         (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM pq' i₁ q hi₁ hq' n' hn').hom ≫
         HomologicalComplex.homologyMap (indexGradedPieceEval hM ind y) n' =
       shiftedModuleComplexActHomology hM
-        (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-        (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q n n'
+        (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property]))
+        (m.d_m_eq_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property,
+            y.property])) q n n'
         (by rw [hn, hn', hpq']; dsimp only; ring) := by
   obtain ⟨a, b⟩ := pq
   subst hpq'
@@ -251,8 +254,9 @@ theorem homologyMap_single_comp_page_two_d_comp_eval (pq pq' : ℤ × ℤ)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1)).exists_homologyπ_moduleCatCyclesMk_eq (a + q + 1) (by simp) c
   obtain ⟨β, hβ', hβ, hβπ⟩ := exists_shiftedModuleComplexActHomology_homologyπ hM
-    (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2]))
-    (m.d_m_eq_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) q (a + q) (a + q + 1)
+    (m.m_mem_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property]))
+    (m.d_m_eq_zero_of_eq_add_one (x := x.val) (y := y.val) (by rw [x.property, y.property])) q
+        (a + q) (a + q + 1)
     (by ring) α hα
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
   rw [hβπ, m.homologyMap_indexGradedPieceEval_page_two_d hM x y a α hα]

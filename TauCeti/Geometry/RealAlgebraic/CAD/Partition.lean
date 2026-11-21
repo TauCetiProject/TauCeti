@@ -128,7 +128,7 @@ theorem isCAD_succ_iff {𝒞 : Set (Set (Fin (n + 1) → ℝ))} :
       -- The projections of the cells of `𝒞` partition `ℝ ^ n`, so `E` lies over `C`.
       have hEC : Fin.tail '' E = C := h𝒟.isPartition.pairwiseDisjoint.elim
         (mem_image_of_mem _ hE) hC (not_disjoint_iff.2
-          ⟨_, mem_image_of_mem _ hzE, by rw [tail_cylinder]; exact z.1.2⟩)
+          ⟨_, mem_image_of_mem _ hzE, by rw [tail_cylinder]; exact z.1.property⟩)
       exact mem_sUnion.2 ⟨_, mem_image_of_mem _ ⟨hE, hEC⟩, hzE⟩)
     (by
       rintro _ ⟨E, ⟨hE, rfl⟩, rfl⟩

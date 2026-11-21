@@ -411,7 +411,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_unit_mk [Fintype �
     have h :=
       novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_right
         r₁ r r q hq hF₁ hF hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ b.2
+        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ b.property
     -- The Novikov module structure, for the identity map of the identity matrix.
     let := module (R := R) hF
     rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,
@@ -467,7 +467,7 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
     have h :=
       novikovProductOfMatrix_coefficientComparison_sub_novikovMapOfMatrix_mem_coboundaries_left
         r r₂ r q hq hF hF₂ hF Q D E
-        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ a.2
+        (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ a.property
     -- The Novikov module structure, for the identity map of the identity matrix.
     let := module (R := R) hF
     rw [coefficientComparison_one_apply, novikovMapOfMatrix_one, LinearMap.id_apply,

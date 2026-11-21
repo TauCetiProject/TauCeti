@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import TauCeti.Analysis.SpecialFunctions.Gamma.TaylorSeries
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The explicit Gamma conformal radius and its odd-zeta expansion

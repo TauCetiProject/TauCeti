@@ -177,7 +177,8 @@ theorem exists_reverse_eq {𝔬' : MorseOrientation f X} (h : 𝔬.chart = 𝔬'
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_true_eq_false, ↓reduceIte]
   · simp only [Set.mem_ofPred_eq, hp, ne_eq, not_false_eq_true, ↓reduceIte]
     exact (((o p).eq_or_eq_neg (o₀ p)
-      (chart p).card_fin_manifoldMorseIndex_eq_finrank).resolve_left hp).symm
+      (Nat.card_eq_fintype_card.trans
+        (chart p).card_fin_manifoldMorseIndex_eq_finrank)).resolve_left hp).symm
 
 end MorseOrientation
 
@@ -352,7 +353,7 @@ an orientation. -/
 theorem nonempty_morseOrientation (hX : IsAdaptedPseudoGradient f X) :
     Nonempty (MorseOrientation f X) := by
   choose φ hφ using fun p : criticalPoints 𝓘(ℝ, E) f ↦
-    hX.exists_morseChart p (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
+    hX.exists_morseChart p (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)
   exact ⟨⟨φ, hφ, fun p ↦ (φ p).negativeOrientation⟩⟩
 
 end IsAdaptedPseudoGradient

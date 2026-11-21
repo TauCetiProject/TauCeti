@@ -159,7 +159,7 @@ theorem IsSymplectic.invariants_normalSubrepresentation
     (ω.normalSubrepresentation hρ).toRepresentation.invariants = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro v hv
-  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.2)
+  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.property)
   intro g
   simpa [Subrepresentation.toRepresentation_apply_coe] using
     congrArg Subtype.val ((Representation.mem_invariants _ v).1 hv g)
