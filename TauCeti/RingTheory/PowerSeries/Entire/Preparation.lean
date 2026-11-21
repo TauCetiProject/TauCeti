@@ -50,6 +50,9 @@ entire factor.
 * `TauCeti.PowerSeries.IsEntirePreparation.eq_smul_and_smul_eq`: the normalised preparation is
   the rescaling of any factorization of `F` as a unit of the ring of restricted series times a
   monic polynomial of degree `d`, in particular of Weierstrass preparation.
+* `TauCeti.PowerSeries.IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq`: conversely, a
+  normalised preparation rescales to a unit of the ring of restricted series times a monic
+  polynomial of degree `d`.
 * `TauCeti.PowerSeries.IsEntirePreparation.isCoprime`: the two factors are coprime in the ring
   of entire series.
 * `TauCeti.PowerSeries.IsEntirePreparation.mono`: a normalised preparation at `c` is one at every
@@ -99,6 +102,17 @@ structure IsEntirePreparation : Prop where
   /-- `F` is the product of the two factors. -/
   eq_mul : F = P * G
 
+/-- The polynomial factor of a normalised entire preparation over a nontrivial ring is
+nonzero. -/
+theorem IsEntirePreparation.coe_ne_zero [Nontrivial R] (h : IsEntirePreparation c d F P G) :
+    (P : R⟦X⟧) ≠ 0 := fun hP ↦ by
+  simpa [Polynomial.coe_eq_zero_iff.mp hP] using h.coeff_zero_eq_one
+
+/-- The series factor of a normalised entire preparation over a nontrivial ring is nonzero. -/
+theorem IsEntirePreparation.right_ne_zero [Nontrivial R] (h : IsEntirePreparation c d F P G) :
+    G ≠ 0 := fun hG ↦ by
+  simpa [hG] using h.constantCoeff_eq_one
+
 /-- **The normalised preparation rescales every unit-times-monic factorization.** Let `F` be
 multiplicatively distinguished of degree `d` at a positive radius `c`, and let `F = e * ω` with
 `e` a unit of the ring of series restricted at `c` and `ω` a monic polynomial of degree `d`. Then
@@ -113,6 +127,27 @@ theorem IsEntirePreparation.eq_smul_and_smul_eq (h : IsEntirePreparation c d F P
     P = P.leadingCoeff • ω ∧ P.leadingCoeff • G = e := by
   exact hF.eq_smul_and_smul_eq hc h.isUnit_leadingCoeff h.natDegree_eq h.isUnit
     h.eq_mul he hω heω
+
+/-- **A normalised preparation is a unit-times-monic factorization.** A normalised entire
+preparation `F = P * G` at `c` in degree `d` gives `F = e * (a⁻¹ • P)` for the leading
+coefficient `a` of `P`, with `e = a • G` a unit of the ring of series restricted at `c` and
+`a⁻¹ • P` monic of degree `d`. This is the converse of
+`TauCeti.PowerSeries.IsEntirePreparation.eq_smul_and_smul_eq`. -/
+theorem IsEntirePreparation.exists_isUnit_isMonicOfDegree_mul_eq
+    (h : IsEntirePreparation c d F P G) :
+    ∃ e : IsRestricted.subring (R := R) c, IsUnit e ∧
+      (Polynomial.C (Ring.inverse P.leadingCoeff) * P).IsMonicOfDegree d ∧
+      (e : R⟦X⟧) *
+        ((Polynomial.C (Ring.inverse P.leadingCoeff) * P : Polynomial R) : R⟦X⟧) = F := by
+  have ha := h.isUnit_leadingCoeff
+  refine ⟨polynomialToRestricted c (Polynomial.C P.leadingCoeff) *
+      ⟨G, h.isEntire.isRestricted c⟩,
+    ((ha.map Polynomial.C).map (polynomialToRestricted c)).mul h.isUnit,
+    ⟨by rw [Polynomial.natDegree_C_mul_of_isUnit ha.ringInverse, h.natDegree_eq],
+      Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (Ring.inverse_mul_cancel _ ha)⟩, ?_⟩
+  simp only [Subring.coe_mul, coe_polynomialToRestricted, Polynomial.coe_mul, Polynomial.coe_C]
+  rw [h.eq_mul, mul_mul_mul_comm, ← map_mul, Ring.mul_inverse_cancel _ ha, map_one, one_mul,
+    mul_comm]
 
 /-- **Uniqueness of the normalised entire preparation.** Over an ultrametric normed commutative
 ring, a series multiplicatively distinguished of degree `d` at a positive radius `c` has at most
@@ -205,23 +240,8 @@ theorem IsEntirePreparation.dvd_of_le [NormMulClass R] {d' : ℕ}
     (h : IsEntirePreparation c d F P G) (h' : IsEntirePreparation c' d' F P' G')
     (hF : IsDistinguished c d F) (hc : 0 < c) (hcc' : c ≤ c') : P ∣ P' := by
   -- Rescale both preparations to unit-times-monic factorizations and compare them.
-  have key {c₀ : ℝ} {d₀ : ℕ} {P₀ : Polynomial R} {G₀ : R⟦X⟧}
-      (h₀ : IsEntirePreparation c₀ d₀ F P₀ G₀) :
-      ∃ e : IsRestricted.subring (R := R) c₀, IsUnit e ∧
-        (Polynomial.C (Ring.inverse P₀.leadingCoeff) * P₀).IsMonicOfDegree d₀ ∧
-        (e : R⟦X⟧) * ((Polynomial.C (Ring.inverse P₀.leadingCoeff) * P₀ : Polynomial R) : R⟦X⟧) =
-          F := by
-    have ha := h₀.isUnit_leadingCoeff
-    refine ⟨polynomialToRestricted c₀ (Polynomial.C P₀.leadingCoeff) *
-        ⟨G₀, h₀.isEntire.isRestricted c₀⟩,
-      ((ha.map Polynomial.C).map (polynomialToRestricted c₀)).mul h₀.isUnit,
-      ⟨by rw [Polynomial.natDegree_C_mul_of_isUnit ha.ringInverse, h₀.natDegree_eq],
-        Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (Ring.inverse_mul_cancel _ ha)⟩, ?_⟩
-    simp only [Subring.coe_mul, coe_polynomialToRestricted, Polynomial.coe_mul, Polynomial.coe_C]
-    rw [h₀.eq_mul, mul_mul_mul_comm, ← map_mul, Ring.mul_inverse_cancel _ ha, map_one, one_mul,
-      mul_comm]
-  obtain ⟨e, he, hω, heω⟩ := key h
-  obtain ⟨e', he', hω', heω'⟩ := key h'
+  obtain ⟨e, he, hω, heω⟩ := h.exists_isUnit_isMonicOfDegree_mul_eq
+  obtain ⟨e', he', hω', heω'⟩ := h'.exists_isUnit_isMonicOfDegree_mul_eq
   obtain ⟨A, -, hA, -⟩ := hF.exists_isMonicOfDegree_mul_eq_of_preparations hc hcc' he he' hω hω'
     heω heω'
   have hP' : P' = Polynomial.C P'.leadingCoeff *

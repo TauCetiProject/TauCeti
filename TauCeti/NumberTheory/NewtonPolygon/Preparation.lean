@@ -31,7 +31,7 @@ factorisation `f = Q_(≤σ) * S_(>σ)` behind the finite-slope decomposition of
 * `PowerSeries.IsEntire.isMulDistinguished_finsum_newtonSlopeMultiplicity`: an entire series
   with nonzero constant coefficient is multiplicatively distinguished at `b ^ σ` in the degree
   `∑ᶠ s ∈ Set.Iic σ, f.newtonSlopeMultiplicity v s`.
-* `TauCeti.PowerSeries.IsEntirePreparation.newtonSlopeMultiplicity_coe` and
+* `TauCeti.PowerSeries.IsEntirePreparation.newtonSlopeMultiplicity_left` and
   `TauCeti.PowerSeries.IsEntirePreparation.newtonSlopeMultiplicity_right`: the slope
   multiplicities of the two factors of a normalised entire preparation at `b ^ σ`.
 
@@ -101,28 +101,33 @@ private theorem newtonSlopeMultiplicity_right_of_le (h : IsEntirePreparation (b 
     {s : ℝ} (hs : s ≤ σ) : G.newtonSlopeMultiplicity v s = 0 := by
   have hb0 : 0 < b := zero_lt_one.trans hb
   have hcs : 0 < b ^ s := Real.rpow_pos_of_pos hb0 s
-  have hG0 : G ≠ 0 := fun hG ↦ by simpa [hG] using h.constantCoeff_eq_one
   have hunit := (h.mono (c' := b ^ s) (by
     rw [abs_of_pos hcs, abs_of_pos (Real.rpow_pos_of_pos hb0 σ)]
     exact Real.rpow_le_rpow_of_exponent_le hb.le hs)).isUnit
-  obtain ⟨l, j, hface⟩ := h.isEntire.exists_isFiniteFace_newtonPolygon v hb hv hG0 s
+  obtain ⟨l, j, hface⟩ := h.isEntire.exists_isFiniteFace_newtonPolygon v hb hv h.right_ne_zero s
   have hj : j = 0 := ((isDistinguished_of_isFiniteFace v hb hv (h.isEntire.isRestricted _)
     hface).unique (isDistinguished_zero_of_isUnit hcs hunit))
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface, hj, Nat.zero_sub]
 
+/-- The slope multiplicities of `f` are the sums of those of the two factors of a normalised entire
+preparation. -/
+private theorem newtonSlopeMultiplicity_eq_add (h : IsEntirePreparation (b ^ σ) d f P G) (s : ℝ) :
+    f.newtonSlopeMultiplicity v s =
+      (P : K⟦X⟧).newtonSlopeMultiplicity v s + G.newtonSlopeMultiplicity v s := by
+  rw [h.eq_mul]
+  exact (isEntire_coe P).newtonSlopeMultiplicity_mul v hb hv h.isEntire h.coe_ne_zero
+    h.right_ne_zero s
+
 /-- **Slopes of the polynomial factor of a normalised entire preparation.** Let `f` be entire and
 distinguished of degree `d` at `b ^ σ`, with normalised entire preparation `f = P * G` there. Then
 `P` has the slopes of `f` at most `σ`, with the same multiplicities, and no other slopes. -/
-theorem newtonSlopeMultiplicity_coe (h : IsEntirePreparation (b ^ σ) d f P G)
+theorem newtonSlopeMultiplicity_left (h : IsEntirePreparation (b ^ σ) d f P G)
     (hf : IsDistinguished (b ^ σ) d f) (s : ℝ) :
     (P : K⟦X⟧).newtonSlopeMultiplicity v s =
       if s ≤ σ then f.newtonSlopeMultiplicity v s else 0 := by
   split_ifs with hs
-  · have hP0 : (P : K⟦X⟧) ≠ 0 := fun hP ↦ by
-      simpa [Polynomial.coe_eq_zero_iff.mp hP] using h.coeff_zero_eq_one
-    have hG0 : G ≠ 0 := fun hG ↦ by simpa [hG] using h.constantCoeff_eq_one
-    rw [h.eq_mul, (isEntire_coe P).newtonSlopeMultiplicity_mul v hb hv h.isEntire hP0 hG0,
-      h.newtonSlopeMultiplicity_right_of_le v hb hv hs, add_zero]
+  · rw [h.newtonSlopeMultiplicity_eq_add v hb hv, h.newtonSlopeMultiplicity_right_of_le v hb hv hs,
+      add_zero]
   · rw [Polynomial.newtonSlopeMultiplicity_coe, Multiset.count_eq_zero]
     exact fun hmem ↦ hs <| PowerSeries.le_of_mem_newtonSlopes_of_isUnit_mul v hb hv hf h.isUnit
       h.natDegree_eq.le (by rw [mul_comm]; exact h.eq_mul.symm) hmem
@@ -135,11 +140,7 @@ theorem newtonSlopeMultiplicity_right (h : IsEntirePreparation (b ^ σ) d f P G)
     G.newtonSlopeMultiplicity v s = if s ≤ σ then 0 else f.newtonSlopeMultiplicity v s := by
   split_ifs with hs
   · exact h.newtonSlopeMultiplicity_right_of_le v hb hv hs
-  · have hP0 : (P : K⟦X⟧) ≠ 0 := fun hP ↦ by
-      simpa [Polynomial.coe_eq_zero_iff.mp hP] using h.coeff_zero_eq_one
-    have hG0 : G ≠ 0 := fun hG ↦ by simpa [hG] using h.constantCoeff_eq_one
-    rw [h.eq_mul, (isEntire_coe P).newtonSlopeMultiplicity_mul v hb hv h.isEntire hP0 hG0,
-      h.newtonSlopeMultiplicity_coe v hb hv hf s]
+  · rw [h.newtonSlopeMultiplicity_eq_add v hb hv, h.newtonSlopeMultiplicity_left v hb hv hf s]
     simp [hs]
 
 end TauCeti.PowerSeries.IsEntirePreparation

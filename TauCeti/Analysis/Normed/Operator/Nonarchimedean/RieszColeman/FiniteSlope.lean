@@ -130,7 +130,7 @@ theorem IsPrCompact.exists_isRieszColemanProjection_finiteSlope (hu : u.IsPrComp
     (by simp) h
   have hc : 0 < b ^ h := Real.rpow_pos_of_pos (zero_lt_one.trans hb) h
   obtain ⟨Q, S, E, hQS, hE, -⟩ := hu.exists_isRieszColemanProjection_of_isMulDistinguished hc hN
-  refine ⟨Q, S, E, hQS, hQS.newtonSlopeMultiplicity_coe v hb hv hN.toIsDistinguished,
+  refine ⟨Q, S, E, hQS, hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished,
     hQS.newtonSlopeMultiplicity_right v hb hv hN.toIsDistinguished, hE, ?_⟩
   rw [hE.finrank_range_of_isPrCompact hu hQS.coeff_zero_eq_one hQS.isEntire hQS.eq_mul
     (hQS.isCoprime hN hc), hQS.natDegree_eq]
@@ -177,7 +177,7 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
   obtain ⟨c, hgc, hgcQ⟩ := hg.exists_isCoprime_mul_eq σ
   have hdeg : (g σ).natDegree = u.charPowerSeries.newtonSlopeMultiplicity v σ := by
     rw [hg.natDegree_apply (fun _ ↦ v.top_iff.mp), ← Polynomial.newtonSlopeMultiplicity_coe,
-      hQS.newtonSlopeMultiplicity_coe v hb hv hN.toIsDistinguished]
+      hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished]
     simp [hσh]
   have hlc : IsUnit (g σ).leadingCoeff :=
     isUnit_iff_ne_zero.mpr (leadingCoeff_ne_zero.mpr (hg.apply_ne_zero σ))
