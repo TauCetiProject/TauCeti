@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 

@@ -144,13 +144,18 @@ end Submodule
 
 namespace Module.Basis
 
-variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] {n : ℕ}
+variable {k V : Type*} [CommRing k] [AddCommGroup V] [Module k V] {n : ℕ}
 
 noncomputable section
 
 /-- The prefix wedge through the `i`-th vector of a basis, in exterior degree `i + 1`. -/
 def prefixExteriorVector (b : Module.Basis (Fin n) k V) (i : Fin n) : ⋀[k]^(i.val + 1) V :=
   b.exteriorPower (i.val + 1) ⟨Finset.Iic i, Fin.card_Iic i⟩
+
+/-- The prefix exterior vector is the exterior-basis vector indexed by the initial segment. -/
+theorem prefixExteriorVector_def (b : Module.Basis (Fin n) k V) (i : Fin n) :
+    b.prefixExteriorVector i =
+      b.exteriorPower (i.val + 1) ⟨Finset.Iic i, Fin.card_Iic i⟩ := by rfl
 
 /-- A prefix wedge of a basis is unimodular. -/
 theorem isUnimodular_prefixExteriorVector (b : Module.Basis (Fin n) k V) (i : Fin n) :

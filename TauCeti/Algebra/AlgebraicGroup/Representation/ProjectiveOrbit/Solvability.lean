@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.SolvableSubgroup
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.TriangularEmbedding
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit

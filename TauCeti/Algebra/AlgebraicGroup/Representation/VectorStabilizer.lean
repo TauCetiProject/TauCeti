@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation

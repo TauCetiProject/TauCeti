@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!

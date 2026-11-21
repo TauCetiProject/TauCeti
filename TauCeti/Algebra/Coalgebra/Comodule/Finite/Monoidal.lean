@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Finite.TensorProduct
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Tensor.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 This file equips finitely generated right comodules over a bialgebra with their standard
 monoidal structure. The tensor product is the diagonal comodule constructed in
-`TauCeti.Algebra.Coalgebra.Comodule.Finite.TensorProduct`, and the tensor unit is the base
+`TauCeti.Algebra.Coalgebra.Comodule.Finite.Tensor.Product`, and the tensor unit is the base
 semiring with its trivial coaction.
 
 The associator and unitors are the usual tensor-product linear equivalences. Their

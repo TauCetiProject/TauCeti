@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.Finite.TensorFin
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Tensor.Fin
 public import TauCeti.LinearAlgebra.Unimodular
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Order.CompleteLattice.Basic
@@ -74,7 +74,7 @@ theorem stabilizerHopfIdeal_span_singleton_tmul (m : M) (n : N)
       LinearEquiv.apply_symm_apply] using congrArg e
       (endOfPoint_tensor_tmul g.ofConv (1 : A) (1 : A) m n).symm
   rw [hact, TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
-  exact Module.IsUnimodular.span_tmul_eq_iff (hm.one_tmul (S := A)) (hn.one_tmul (S := A))
+  exact Module.IsUnimodular.span_singleton_tmul_eq_iff (hm.one_tmul (S := A)) (hn.one_tmul (S := A))
     ((hm.one_tmul (S := A)).map_linearEquiv (pointsAction M g))
     ((hn.one_tmul (S := A)).map_linearEquiv (pointsAction N g))
 

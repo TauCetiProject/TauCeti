@@ -78,6 +78,12 @@ def flagTensorVector (b : Module.Basis (Fin n) k V) :
   FGComoduleCat.tensorFinVector k H (flagExteriorPowers (H := H) V n)
     (fun i ↦ prefixExteriorVector b i)
 
+/-- The flag tensor is the finite pure tensor of the basis prefix wedges. -/
+theorem flagTensorVector_def (b : Module.Basis (Fin n) k V) :
+    b.flagTensorVector (H := H) =
+      FGComoduleCat.tensorFinVector k H (flagExteriorPowers (H := H) V n)
+        (fun i ↦ b.prefixExteriorVector i) := by rfl
+
 /-- The flag tensor of a basis is unimodular. -/
 theorem isUnimodular_flagTensorVector (b : Module.Basis (Fin n) k V) :
     Module.IsUnimodular k (flagTensorVector (H := H) b) :=
@@ -124,22 +130,22 @@ theorem iSup_stabilizerHopfIdeal_flag (b : Module.Basis (Fin n) k V) :
       (GeneralLinear.UpperTriangular.definingHopfIdeal k n).map
           (coordinateBialgHom (H := H) b) ≤ J ↔
         (coefficientMatrix (C := H ⧸ J.toIdeal) b).IsUpperTriangular := by
-    rw [← HopfIdeal.toIdeal_le_toIdeal, HopfIdeal.map_toIdeal,
-      Ideal.map_le_iff_le_comap, GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal,
-      Ideal.span_le]
-    rw [coefficientMatrix_corestrict b q.toCoalgHom]
-    constructor
-    · intro h i j hji
-      apply Ideal.Quotient.eq_zero_iff_mem.mpr
-      have hx := h ((GeneralLinear.UpperTriangular.mem_definingRelationSet_iff k n _).mpr
-        ⟨i, j, hji, rfl⟩)
-      rw [SetLike.mem_coe, Ideal.mem_comap, RingHom.coe_coe, coordinateBialgHom_X] at hx
-      exact hx
-    · intro h x hx
-      obtain ⟨i, j, hji, rfl⟩ :=
-        (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff k n x).mp hx
-      rw [SetLike.mem_coe, Ideal.mem_comap, RingHom.coe_coe, coordinateBialgHom_X]
-      exact Ideal.Quotient.eq_zero_iff_mem.mp (h hji)
+    calc
+      _ ↔ WithConv.toConv (q.toAlgHom.comp (coordinateBialgHom (H := H) b).toAlgHom) ∈
+          CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra k n)
+            (GeneralLinear.UpperTriangular.definingHopfIdeal k n)
+            (CommAlgCat.of k (H ⧸ J.toIdeal)) := by
+        rw [HopfIdeal.map_le_iff, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+        simp only [q, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+          Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem,
+          HopfIdeal.mem_toIdeal]
+      _ ↔ _ := by
+        rw [GeneralLinear.UpperTriangular.mem_definingPointsSubgroup_iff,
+          UpperTriangularGroup.mem_iff, AlgHom.pointsMulEquiv_comp_coordinateBialgHom,
+          coefficientMatrix_corestrict]
+        have hq : (q.toCoalgHom : H → H ⧸ J.toIdeal) = q :=
+          funext (BialgHom.toCoalgHom_apply q)
+        rw [BialgHom.coe_toAlgHom, hq]
   exact hflags.trans hupper.symm
 
 /-- The line stabilizer of the flag tensor is the inverse image of the upper-triangular
@@ -151,13 +157,13 @@ theorem stabilizerHopfIdeal_span_singleton_flagTensorVector (b : Module.Basis (F
   have ht := FGComoduleCat.stabilizerHopfIdeal_span_singleton_tensorFinVector
     (flagExteriorPowers (H := H) V n) (fun i ↦ prefixExteriorVector b i)
     (isUnimodular_prefixExteriorVector b)
-  unfold flagTensorVector
+  rw [flagTensorVector_def]
   rw [ht]
   calc
     _ = ⨆ i : Fin n, (k ∙ prefixExteriorVector b i).stabilizerHopfIdeal H := by
       apply iSup_congr
       intro i
-      exact FGComoduleCat.stabilizerHopfIdeal_of (H := H) (k ∙ prefixExteriorVector b i)
+      exact Submodule.stabilizerHopfIdeal_fgComoduleCat_of (H := H) (k ∙ prefixExteriorVector b i)
     _ = _ :=
       (iSup_congr fun i ↦
         b.stabilizerHopfIdeal_span_singleton_prefixExteriorVector (H := H) i).trans
