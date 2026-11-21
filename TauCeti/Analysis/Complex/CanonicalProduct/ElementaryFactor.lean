@@ -112,6 +112,20 @@ theorem weierstrassFactor_one_mul_neg (z : ℂ) :
         rw [← exp_add, add_neg_cancel, exp_zero, mul_one]
         ring
 
+/-- Pairing opposite purely imaginary roots `±ρ` in the genus-one Weierstrass product cancels the
+exponential factors and yields `(1 + z ^ 2 / (Im ρ) ^ 2) ^ d`. -/
+theorem weierstrassFactor_one_imag_pair {ρ : ℂ} (hre : ρ.re = 0) (d : ℕ) (z : ℂ) :
+    weierstrassFactor 1 (ρ⁻¹ * z) ^ d * weierstrassFactor 1 ((-ρ)⁻¹ * z) ^ d =
+      (1 + z ^ 2 / (ρ.im : ℂ) ^ 2) ^ d := by
+  have hneg : (-ρ)⁻¹ * z = -(ρ⁻¹ * z) := by rw [inv_neg, neg_mul]
+  have hρ_sq : ρ ^ 2 = -(ρ.im : ℂ) ^ 2 := by
+    have hρ : ρ = (ρ.im : ℂ) * I := by simpa [hre] using (re_add_im ρ).symm
+    conv_lhs => rw [hρ]
+    rw [mul_pow, I_sq, mul_neg_one]
+  rw [hneg, ← mul_pow, weierstrassFactor_one_mul_neg]
+  congr 1
+  rw [mul_pow, inv_pow, ← div_eq_inv_mul, hρ_sq, div_neg, sub_neg_eq_add]
+
 /-- The derivative of `E_p` is `-z ^ p * exp (-logTaylor (p + 1) (-z))`. -/
 theorem hasDerivAt_weierstrassFactor (p : ℕ) (z : ℂ) :
     HasDerivAt (weierstrassFactor p)

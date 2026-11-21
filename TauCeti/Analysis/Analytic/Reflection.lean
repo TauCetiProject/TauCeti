@@ -88,18 +88,13 @@ theorem eq_neg_one_pow_and_even_of_eq_pow_smul {𝕜 E : Type*} [NontriviallyNor
   have hg_rel (z : 𝕜) : (-1 : 𝕜) ^ m • g (-z) = δ • g z := by
     by_cases hz : z = 0
     · subst hz
-      have hneg0 : Tendsto (fun w : 𝕜 ↦ g (-w)) (𝓝 0) (𝓝 (g 0)) := by
-        simpa only [Function.comp_def, neg_zero] using
-          (hg_cts.comp_of_eq continuous_neg.continuousAt neg_zero).tendsto
-      have hlim₁ : Tendsto (fun w : 𝕜 ↦ (-1 : 𝕜) ^ m • g (-w)) (𝓝[≠] 0)
-          (𝓝 ((-1 : 𝕜) ^ m • g 0)) :=
-        (hneg0.const_smul ((-1 : 𝕜) ^ m)).mono_left nhdsWithin_le_nhds
-      have hlim₂ : Tendsto (fun w : 𝕜 ↦ δ • g w) (𝓝[≠] 0) (𝓝 (δ • g 0)) :=
-        (hg_cts.tendsto.const_smul δ).mono_left nhdsWithin_le_nhds
-      have heq : (fun w : 𝕜 ↦ (-1 : 𝕜) ^ m • g (-w)) =ᶠ[𝓝[≠] (0 : 𝕜)] fun w ↦ δ • g w := by
-        filter_upwards [self_mem_nhdsWithin] with w hw using hg_rel_ne hw
-      rw [neg_zero]
-      exact tendsto_nhds_unique (hlim₁.congr' heq) hlim₂
+      have hleft : ContinuousAt (fun w : 𝕜 ↦ (-1 : 𝕜) ^ m • g (-w)) 0 :=
+        (hg_cts.comp_of_eq continuous_neg.continuousAt neg_zero).const_smul _
+      have hright : ContinuousAt (fun w : 𝕜 ↦ δ • g w) 0 := hg_cts.const_smul δ
+      have heq : (fun w : 𝕜 ↦ (-1 : 𝕜) ^ m • g (-w)) =ᶠ[𝓝[≠] (0 : 𝕜)] fun w ↦ δ • g w :=
+        eventually_nhdsWithin_of_forall fun _ hw ↦ hg_rel_ne hw
+      simpa only [neg_zero] using
+        ((hleft.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hright).mp heq).eq_of_nhds
     · exact hg_rel_ne hz
   have hδ_eq : δ = (-1 : 𝕜) ^ m := by
     have h0 := hg_rel 0

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Hadamard.OrderOne
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Analysis.Complex.GrowthOrder.Zero.Factorization
-import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Hadamard factorization at order at most one with a zero at the origin
@@ -23,12 +22,11 @@ Applying `TauCeti.OrderLE.exists_eq_cexp_mul_divisorProductOne` to `g` yields
 `f z = z ^ m * exp (a + b * z) * divisorProductOne f z`: away from `0` the whole-plane divisor of
 `g` coincides with that of `f` (`AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne`), while at
 `ρ = 0` the totalized factor `E₁(0⁻¹ * z) = E₁(0) = 1` leaves
-`divisorProductOne f = divisorProductOne g` unchanged.
+`divisorProductOne f = divisorProductOne g` unchanged
+(`TauCeti.divisorProductOne_eq_of_eq_pow_mul`).
 
 ## Main results
 
-* `TauCeti.divisorProductOne_eq_of_eq_pow_mul`: invariance of `divisorProductOne` under factoring
-  out `z ^ m`.
 * `TauCeti.OrderLE.exists_eq_pow_mul_cexp_mul_divisorProductOne`: Hadamard factorization for any
   nonzero entire function of order at most one, allowing a zero at the origin.
 
@@ -45,20 +43,7 @@ open scoped BigOperators
 
 namespace TauCeti
 
-variable {f g : ℂ → ℂ}
-
-/-- Factoring out `z ^ m` from an entire function leaves `divisorProductOne` unchanged. -/
-theorem divisorProductOne_eq_of_eq_pow_mul (hg : Differentiable ℂ g)
-    {m : ℕ} (hfg : ∀ z : ℂ, f z = z ^ m * g z) :
-    divisorProductOne f = divisorProductOne g := by
-  have hga : AnalyticOnNhd ℂ g Set.univ := Complex.analyticOnNhd_univ_iff_differentiable.mpr hg
-  funext z
-  rw [divisorProductOne_eq_tprod, divisorProductOne_eq_tprod]
-  refine tprod_congr fun ρ ↦ ?_
-  by_cases hρ : ρ = 0
-  · simp [hρ]
-  · rw [hga.divisor_eq_of_eq_sub_pow_smul_of_ne
-      (fun w ↦ by simpa only [sub_zero, smul_eq_mul] using hfg w) hρ]
+variable {f : ℂ → ℂ}
 
 /-- **Hadamard factorization at order at most one, allowing a zero at the origin.** Every nonzero
 entire function `f` with `OrderLE f 1` has the form
@@ -129,10 +114,7 @@ example (z : ℂ) :
       (ha 1 trivial).analyticOrderAt_eq_one_of_zero_deriv_ne_zero (by norm_num)
         (by rw [deriv_const_sub, deriv_pow_field]; norm_num), ENat.toNat_one, Nat.cast_one]
   have hm1 : MeromorphicOn.divisor (fun w : ℂ ↦ 1 - w ^ 2) Set.univ (-1) = 1 := by
-    rw [MeromorphicOn.divisor_eq_analyticOrderNatAt ha.meromorphicOn (ha (-1) trivial)
-      (Set.mem_univ (-1)), analyticOrderNatAt,
-      (ha (-1) trivial).analyticOrderAt_eq_one_of_zero_deriv_ne_zero (by norm_num)
-        (by rw [deriv_const_sub, deriv_pow_field]; norm_num), ENat.toNat_one, Nat.cast_one]
+    rw [ha.divisor_neg_eq_of_even (fun _ ↦ by ring) 1, h1]
   have hout (ρ : ℂ) (hρ1 : ρ ≠ 1) (hρm1 : ρ ≠ -1) :
       MeromorphicOn.divisor (fun w : ℂ ↦ 1 - w ^ 2) Set.univ ρ = 0 := by
     refine AnalyticAt.divisor_apply_eq_zero (ha ρ trivial) fun hzero ↦ ?_
