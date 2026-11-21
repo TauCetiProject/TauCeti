@@ -9,10 +9,10 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -41,8 +41,6 @@ support, and null-set agreement with `TauCeti.Manifold.ae`) are proved in
 
 ## Main results
 
-* `MeasureTheory.Measure.setLIntegral_extendCoordChange`: change of variables between two charts
-  of the `C¹` maximal atlas for a weighted Haar integral.
 * `TauCeti.IsPositiveContinuousDensity.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
   continuous chart weight on the extended chart target.
 * `TauCeti.IsPositiveContinuousDensity.chartWeight_haar_eq`: scaling of chart weights under a
@@ -60,34 +58,6 @@ open Filter Function MeasureTheory Set
 open scoped ENNReal Manifold Topology
 
 noncomputable section
-
-namespace MeasureTheory.Measure
-
-/-- Change of variables between two charts of the maximal atlas for a weighted Haar integral. -/
-theorem setLIntegral_extendCoordChange {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    (ν : Measure E) [ν.IsAddHaarMeasure]
-    {e e' : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
-    {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source)
-    (g : E → ℝ≥0∞) :
-    ∫⁻ z in I.extendCoordChange e e' '' A, g z ∂ν =
-      ∫⁻ y in A,
-        ENNReal.ofReal |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
-          g (I.extendCoordChange e e' y) ∂ν := by
-  have hArange : A ⊆ range I :=
-    hAsub.trans (by rw [I.extendCoordChange_source]; exact image_subset_range _ _)
-  have hderiv : ∀ y ∈ A,
-      HasFDerivWithinAt (I.extendCoordChange e e')
-        (fderivWithin ℝ (I.extendCoordChange e e') (range I) y) A y := fun y hy ↦
-    ((I.contDiffWithinAt_extendCoordChange he he' (hAsub hy)).differentiableWithinAt
-      one_ne_zero).hasFDerivWithinAt.mono hArange
-  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul ν hA hderiv
-    ((I.extendCoordChange e e').injOn.mono hAsub) g
-
-end MeasureTheory.Measure
 
 namespace TauCeti
 
@@ -121,15 +91,6 @@ private theorem isOpenPosMeasure_comap_range_inter
   rw [(MeasurableEmbedding.subtypeVal hV).comap_apply]
   exact ((hopen.measure_pos ν ⟨z, hz⟩).trans_le (measure_mono hsub)).ne'
 
-private theorem isLocallyFiniteMeasure_comap_subtype [FiniteDimensional ℝ E]
-    [MeasurableSpace E] (ν : Measure E) [ν.IsAddHaarMeasure]
-    {V : Set E} (hV : MeasurableSet V) :
-    IsLocallyFiniteMeasure (ν.comap (Subtype.val : V → E)) := by
-  refine ⟨fun y ↦ ⟨Subtype.val ⁻¹' Metric.ball y.val 1,
-    continuous_subtypeVal.continuousAt.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos), ?_⟩⟩
-  rw [(MeasurableEmbedding.subtypeVal hV).comap_apply]
-  exact (measure_mono (image_preimage_subset _ _)).trans_lt measure_ball_lt_top
-
 /-- Continuous nonnegative real densities presenting the same weighted Haar measure on a
 relatively open subset of `range I` agree pointwise there. -/
 private theorem eqOn_of_withDensity_ofReal_eq [FiniteDimensional ℝ E]
@@ -148,8 +109,6 @@ private theorem eqOn_of_withDensity_ofReal_eq [FiniteDimensional ℝ E]
   have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtypeVal hV
   have : (ν.comap (Subtype.val : V → E)).IsOpenPosMeasure :=
     isOpenPosMeasure_comap_range_inter (I := I) ν hU
-  have : IsLocallyFiniteMeasure (ν.comap (Subtype.val : V → E)) :=
-    isLocallyFiniteMeasure_comap_subtype ν hV
   have hcomap (w : E → ℝ) :
       ((ν.restrict V).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap (Subtype.val : V → E) =
         (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.val) := by

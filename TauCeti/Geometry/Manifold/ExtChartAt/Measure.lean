@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.Geometry.Manifold.ExtChartAt
+import Mathlib.MeasureTheory.Function.Jacobian
 
 /-!
 # Measurability and Jacobian determinants of extended charts
 
 This file provides measurability, measurable-embedding, coordinate-change source measurability,
 and chart-pushforward evaluation lemmas for arbitrary extended charts `e.extend I`, together with
-continuity, positivity, and the chain rule for the absolute Jacobian determinant of `C¹` extended
-coordinate changes.
+continuity, positivity, the chain rule for the absolute Jacobian determinant of `C¹` extended
+coordinate changes, and the chart change-of-variables formula for Lebesgue integrals.
 
 ## Main results
 
@@ -28,6 +30,8 @@ coordinate changes.
   `TauCeti.abs_det_fderivWithin_extendCoordChange_pos`,
   `TauCeti.abs_det_fderivWithin_extendCoordChange_comp`: continuity, positivity, and chain rule
   for the absolute Jacobian determinant of `C¹` extended coordinate changes.
+* `MeasureTheory.Measure.setLIntegral_extendCoordChange`: change of variables between two charts
+  of the `C¹` maximal atlas for a weighted Haar integral.
 -/
 
 public section
@@ -227,3 +231,38 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
 end ExtendCoordChangeDet
 
 end TauCeti
+
+section
+
+open MeasureTheory Set
+open scoped ENNReal
+
+namespace MeasureTheory.Measure
+
+/-- Change of variables between two charts of the maximal atlas for a weighted Haar integral. -/
+theorem setLIntegral_extendCoordChange {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    (ν : Measure E) [ν.IsAddHaarMeasure]
+    {e e' : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M)
+    {A : Set E} (hA : MeasurableSet A) (hAsub : A ⊆ (I.extendCoordChange e e').source)
+    (g : E → ℝ≥0∞) :
+    ∫⁻ z in I.extendCoordChange e e' '' A, g z ∂ν =
+      ∫⁻ y in A,
+        ENNReal.ofReal |(fderivWithin ℝ (I.extendCoordChange e e') (range I) y).det| *
+          g (I.extendCoordChange e e' y) ∂ν := by
+  have hArange : A ⊆ range I :=
+    hAsub.trans (by rw [I.extendCoordChange_source]; exact image_subset_range _ _)
+  have hderiv : ∀ y ∈ A,
+      HasFDerivWithinAt (I.extendCoordChange e e')
+        (fderivWithin ℝ (I.extendCoordChange e e') (range I) y) A y := fun y hy ↦
+    ((I.contDiffWithinAt_extendCoordChange he he' (hAsub hy)).differentiableWithinAt
+      one_ne_zero).hasFDerivWithinAt.mono hArange
+  exact lintegral_image_eq_lintegral_abs_det_fderiv_mul ν hA hderiv
+    ((I.extendCoordChange e e').injOn.mono hAsub) g
+
+end MeasureTheory.Measure
+
+end
