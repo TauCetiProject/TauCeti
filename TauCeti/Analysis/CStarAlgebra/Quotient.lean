@@ -367,9 +367,11 @@ theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I :=
 theorem starAlgHom_ext {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     ⦃f g : A ⧸ I →⋆ₐ[ℂ] B⦄
     (h : f.comp (mkUnitalStarAlgHom I) = g.comp (mkUnitalStarAlgHom I)) : f = g := by
-  ext x
-  obtain ⟨a, rfl⟩ := mk_surjective I x
-  exact DFunLike.congr_fun h a
+  have h' : f.toNonUnitalStarAlgHom.comp (mkStarAlgHom I) =
+      g.toNonUnitalStarAlgHom.comp (mkStarAlgHom I) := by
+    rw [← toNonUnitalStarAlgHom_mkUnitalStarAlgHom]
+    exact congrArg StarAlgHom.toNonUnitalStarAlgHom h
+  exact StarAlgHom.ext fun x ↦ DFunLike.congr_fun (nonUnitalStarAlgHom_ext h') x
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/

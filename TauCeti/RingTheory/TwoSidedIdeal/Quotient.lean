@@ -124,10 +124,8 @@ protected theorem subsingleton_iff {I : TwoSidedIdeal A} :
 
 /-- The quotient `A ⧸ I` is nontrivial if and only if `I ≠ ⊤`. -/
 protected theorem nontrivial_iff {I : TwoSidedIdeal A} :
-    Nontrivial (A ⧸ I) ↔ I ≠ ⊤ :=
-  (QuotientAddGroup.nontrivial_iff (N := AddSubgroup.ofClass I)).trans <| by
-    simp only [ne_eq, SetLike.ext_iff, AddSubgroup.mem_top, iff_true, mem_top]
-    rfl
+    Nontrivial (A ⧸ I) ↔ I ≠ ⊤ := by
+  rw [← not_subsingleton_iff_nontrivial, Quotient.subsingleton_iff]
 
 @[simp]
 theorem ker_mk (I : TwoSidedIdeal A) : TwoSidedIdeal.ker (mk I) = I := by

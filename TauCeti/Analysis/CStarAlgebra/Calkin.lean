@@ -48,9 +48,8 @@ and the Banach-ring simplicity criterion (`TauCeti.Analysis.Normed.Ring.Simple`)
   classification of closed two-sided ideals of `H →L[ℂ] H` and its equivalence with
   `SeparableSpace H`.
 * `TauCeti.CalkinAlgebra`: the quotient `(H →L[ℂ] H) ⧸ ContinuousLinearMap.compactIdeal ℂ H`, with
-  quotient projection `TauCeti.CalkinAlgebra.mk`, its characterization lemmas
-  (`TauCeti.CalkinAlgebra.mk_eq_zero_iff`, `TauCeti.CalkinAlgebra.mk_eq_mk_iff`), and
-  essential-norm formula `TauCeti.CalkinAlgebra.norm_mk_eq`.
+  quotient projection `TauCeti.CalkinAlgebra.mk` and essential-norm formula
+  `TauCeti.CalkinAlgebra.norm_mk_eq`.
 * `TauCeti.CalkinAlgebra.subsingleton_iff_finiteDimensional`,
   `TauCeti.CalkinAlgebra.nontrivial_iff_not_finiteDimensional`,
   `TauCeti.CalkinAlgebra.eq_bot_or_eq_top_of_isClosed`,
@@ -178,20 +177,6 @@ example : CStarAlgebra (CalkinAlgebra H) := inferInstance
 abbrev mk : (H →L[ℂ] H) →⋆ₐ[ℂ] CalkinAlgebra H :=
   TwoSidedIdeal.Quotient.mkUnitalStarAlgHom (ContinuousLinearMap.compactIdeal ℂ H)
 
--- Not `@[simp]`: since `mk` is an `abbrev`, `simp` already reduces `mk T = 0` to
--- `IsCompactOperator T` via `TwoSidedIdeal.Quotient` and `ContinuousLinearMap.mem_compactIdeal`.
-/-- An operator maps to `0` in `CalkinAlgebra H` if and only if it is compact. -/
-theorem mk_eq_zero_iff {T : H →L[ℂ] H} : mk T = 0 ↔ IsCompactOperator T := by
-  rw [TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem,
-    ContinuousLinearMap.mem_compactIdeal]
-
-/-- Two operators have the same image in `CalkinAlgebra H` if and only if their difference is
-compact. -/
-theorem mk_eq_mk_iff {S T : H →L[ℂ] H} : mk S = mk T ↔ IsCompactOperator (S - T) := by
-  rw [TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply,
-    TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply, TwoSidedIdeal.Quotient.eq,
-    ContinuousLinearMap.mem_compactIdeal]
-
 /-- **Essential norm formula.** The norm of `mk T` in `CalkinAlgebra H` is the infimum of
 `‖T + K‖` over all compact operators `K : H →L[ℂ] H`. -/
 theorem norm_mk_eq (T : H →L[ℂ] H) :
@@ -205,30 +190,30 @@ theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (Calk
     (hJ : IsClosed (J : Set (CalkinAlgebra H))) : J = ⊥ ∨ J = ⊤ := by
   let π : (H →L[ℂ] H) →+* CalkinAlgebra H := (mk (H := H)).toRingHom
   let I : TwoSidedIdeal (H →L[ℂ] H) := J.comap π
-  have hmemI : ∀ a : H →L[ℂ] H, a ∈ I ↔ mk a ∈ J := fun a ↦ TwoSidedIdeal.mem_comap π
   have hI_set : (I : Set (H →L[ℂ] H)) = mk ⁻¹' (J : Set (CalkinAlgebra H)) :=
-    Set.ext hmemI
+    Set.ext fun a ↦ TwoSidedIdeal.mem_comap π
   have hI_closed : IsClosed (I : Set (H →L[ℂ] H)) := by
     rw [hI_set]
     refine hJ.preimage ?_
     simpa only [TwoSidedIdeal.Quotient.coe_mkUnitalStarAlgHom,
       ← TwoSidedIdeal.Quotient.coe_mkStarAlgHom] using
       map_continuous (TwoSidedIdeal.Quotient.mkStarAlgHom (ContinuousLinearMap.compactIdeal ℂ H))
+  have hcomap_inj : Function.Injective (fun K : TwoSidedIdeal (CalkinAlgebra H) ↦ K.comap π) :=
+    fun K₁ K₂ h ↦ TwoSidedIdeal.ringCon_injective
+      (RingCon.comap_injective π (TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _)
+        (congrArg TwoSidedIdeal.ringCon h))
+  have hbot_comap :
+      (⊥ : TwoSidedIdeal (CalkinAlgebra H)).comap π = ContinuousLinearMap.compactIdeal ℂ H := by
+    refine Eq.trans ?_ (TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom _)
+    ext a
+    simp [TwoSidedIdeal.mem_comap, TwoSidedIdeal.mem_bot, π]
+  have hle : ContinuousLinearMap.compactIdeal ℂ H ≤ I :=
+    hbot_comap ▸ TwoSidedIdeal.comap_le_comap (f := π) (bot_le : ⊥ ≤ J)
   rcases ContinuousLinearMap.eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
-  · refine Or.inl (le_bot_iff.mp fun x hx ↦ ?_)
-    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _ x
-    have ha : a ∈ (⊥ : TwoSidedIdeal (H →L[ℂ] H)) := hbot ▸ (hmemI a).mpr hx
-    rw [TwoSidedIdeal.mem_bot] at ha ⊢
-    rw [ha, map_zero]
-  · refine Or.inl (le_bot_iff.mp fun x hx ↦ ?_)
-    obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective _ x
-    have ha : a ∈ ContinuousLinearMap.compactIdeal ℂ H := hcpt ▸ (hmemI a).mpr hx
-    rw [TwoSidedIdeal.mem_bot, mk_eq_zero_iff]
-    exact ContinuousLinearMap.mem_compactIdeal.mp ha
-  · refine Or.inr (J.eq_top ?_)
-    have h1 : (1 : H →L[ℂ] H) ∈ I := by rw [htop, TwoSidedIdeal.one_mem_iff]
-    simpa only [hmemI, map_one] using h1
+  · exact Or.inl (hcomap_inj ((le_antisymm (hbot ▸ bot_le) hle).trans hbot_comap.symm))
+  · exact Or.inl (hcomap_inj (hcpt.trans hbot_comap.symm))
+  · exact Or.inr (hcomap_inj (htop.trans (by ext; simp [TwoSidedIdeal.mem_comap])))
 
 /-- **Simplicity of the Calkin algebra.** When `H` is a separable infinite-dimensional complex
 Hilbert space, `CalkinAlgebra H` is algebraically simple: it is nontrivial and has no proper
@@ -257,8 +242,9 @@ theorem isSimpleRing_iff :
   rcases IsSimpleOrder.eq_bot_or_eq_top J with hbot | htop
   · obtain ⟨T, hT_sep, hT_not_cpt⟩ := IsConcreteLE.exists_of_lt hlt₁
     have hmem : mk T ∈ J := (hmemJ T).mpr hT_sep
-    rw [hbot, TwoSidedIdeal.mem_bot, mk_eq_zero_iff] at hmem
-    exact hT_not_cpt (ContinuousLinearMap.mem_compactIdeal.mpr hmem)
+    rw [hbot, TwoSidedIdeal.mem_bot, TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply,
+      TwoSidedIdeal.Quotient.eq_zero_iff_mem] at hmem
+    exact hT_not_cpt hmem
   · have h1 : (1 : CalkinAlgebra H) ∈ J := by rw [htop, TwoSidedIdeal.one_mem_iff]
     rw [← map_one (mk (H := H)), hmemJ, TwoSidedIdeal.one_mem_iff] at h1
     exact hlt₂.ne h1
