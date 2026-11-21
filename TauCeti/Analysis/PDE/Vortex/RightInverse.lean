@@ -36,8 +36,10 @@ is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such 
 solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
 (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Thus
 `Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
-`L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
-gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
+`L²`-orthogonal complement of the weak kernel. It is unique, since a weak solution orthogonal to
+the weak kernel is (`TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`). At an actual
+vortex with `|α| → 1`, the spectral gap
+`exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
 bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
 uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
 the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
@@ -75,6 +77,8 @@ are not proved here.
   right inverse at a plane vortex with `|α| → 1`.
 * `exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`: a bound
   on its norm uniform over the smooth vortices of degree `m`.
+* `TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`: a weak solution orthogonal to the
+  weak kernel is unique, so the weak right inverse is.
 * `TauCeti.Vortex.exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`: the
   exponentially weighted `L²` estimate for the weak right inverse at such a vortex.
 * `TauCeti.Vortex.adjoint_apply_ae_eq_of_ae_eq_gaugeFixedAdjoint`,
@@ -222,6 +226,37 @@ theorem exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFix
   exact ⟨(√c)⁻¹, fun x D hx hsol hframe hD ↦
     exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le hx.continuous hc
       (hgap x D hx hsol hframe hD)⟩
+
+/-- **Uniqueness of the weak solution orthogonal to the weak kernel.** At a continuous field `x`,
+two weak solutions of `L_x y = f` that are both orthogonal to the weak kernel of `L_x` are equal.
+Hence a bounded weak right inverse of `L_x` with values orthogonal to the weak kernel, as in
+`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`, is unique. -/
+theorem eq_of_integral_inner_gaugeFixedAdjoint_eq (hx : Continuous x)
+    {y₁ y₂ f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (h₁ : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y₁ z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (h₂ : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y₂ z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (hK₁ : ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y₁ z, w z⟫ ∂μ = 0)
+    (hK₂ : ∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪w z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y₂ z, w z⟫ ∂μ = 0) :
+    y₁ = y₂ := by
+  -- The difference `y₁ - y₂` lies in the weak kernel, and is orthogonal to itself.
+  have hw (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+      ∫ z, ⟪(y₁ - y₂) z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+    have hm : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+      (continuous_gaugeFixedAdjoint hx (hη.of_le (by norm_cast))).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedAdjoint hηc)
+    rw [← L2.inner_toLp _ hm, inner_sub_left, L2.inner_toLp _ hm, L2.inner_toLp _ hm,
+      h₁ η hη hηc, h₂ η hη hηc, sub_self]
+  have h0 : ⟪y₁ - y₂, y₁ - y₂⟫ = 0 := by
+    rw [inner_sub_left, L2.inner_def y₁, L2.inner_def y₂, hK₁ _ hw, hK₂ _ hw, sub_zero]
+  exact sub_eq_zero.1 (inner_self_eq_zero.1 h0)
 
 /-! ### The exponentially weighted estimate -/
 
