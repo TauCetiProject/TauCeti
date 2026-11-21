@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
@@ -23,8 +24,8 @@ The proof needs no classification of subgroups. Elementary transvections generat
 (`Matrix.SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field`), and in
 characteristic `p` each of them has `p`-th power `1`. A subgroup of index `d < p` contains every
 element whose `p`-th power is `1`, since some power `g ^ n` with `0 < n ≤ d` lies in it and `n` is
-prime to `p`. The bound for `PSL(ι, K)` follows by pulling a subgroup back to `SL(ι, K)`, which
-does not change its index.
+prime to `p`. The bound for `PSL(ι, K)` follows by pulling a subgroup back to `SL(ι, K)` with
+`Subgroup.liftSL`, which does not change its index.
 
 Lower bounds of this kind on the index of a proper subgroup of the finite image of a monodromy
 representation are what turn lower bounds on the gonality of modular curves into the statement
@@ -68,10 +69,7 @@ index at least `p`. For `K = ZMod p` the finite-index hypothesis holds automatic
 theorem le_index_projectiveSpecialLinearGroup
     {H : Subgroup (ProjectiveSpecialLinearGroup ι K)} [H.FiniteIndex] (hH : H ≠ ⊤) :
     p ≤ H.index := by
-  have hsurj := QuotientGroup.mk'_surjective (center (SpecialLinearGroup ι K))
-  have hindex := H.index_comap_of_surjective hsurj
-  have : (H.comap (QuotientGroup.mk' _)).FiniteIndex := ⟨hindex ▸ FiniteIndex.index_ne_zero⟩
-  refine hindex ▸ le_index_specialLinearGroup fun htop ↦ hH ?_
-  rw [← map_comap_eq_self_of_surjective hsurj H, htop, map_top_of_surjective _ hsurj]
+  rw [← H.index_liftSL]
+  exact le_index_specialLinearGroup fun h ↦ hH (liftSL_injective (h.trans liftSL_top.symm))
 
 end Subgroup
