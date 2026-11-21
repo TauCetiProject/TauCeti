@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Matching.Coloring
-public import TauCeti.Combinatorics.Graph.Matching.Regular
+public import TauCeti.Combinatorics.Graph.Matching.EdgeColoring
 import Mathlib.Tactic.FinCases
 import TauCeti.Combinatorics.Graph.Union
 
@@ -18,12 +17,16 @@ using the matching-decomposition and regular-completion interfaces.
 
 * Two vertices carrying `k` parallel edges form a `k`-regular bipartite multigraph. Its
   edges split into `k` perfect matchings and admit a proper colouring by `Fin k`, while the
-  incidence bound shows that no smaller finite colour type suffices.
+  incidence bound shows that no smaller finite colour type suffices. For an arbitrary finite
+  palette `C`, they are properly coloured, equivalently partitioned into `C`-indexed matchings,
+  exactly when `k ≤ Nat.card C`; every colouring is injective on the parallel edge identities, and
+  transporting along `Option.some` gives a colouring with an empty colour class.
 * The three-vertex path is irregular, but its regular-completion theorem embeds it in a finite
   `2`-regular bipartite multigraph. A perfect-matching decomposition of the completion gives a
   two-colouring which restricts to the original path.
 * An isolated vertex has no perfect matching. Nevertheless its edgeless graph, and the empty
-  graph, have empty perfect-matching decompositions and proper edge-colourings by `Fin 0`.
+  graph, have empty perfect-matching decompositions and proper edge-colourings by `Fin 0`. They are
+  also coloured by the empty palette `Empty`, which colours no graph with an edge.
 
 The examples retain actual edge identities, so the parallel-edge example is genuinely a
 multigraph example rather than a statement about its simplification.
@@ -90,6 +93,40 @@ theorem parallel_edges_have_sharp_coloring :
   intro C _ ⟨c⟩
   simpa [parallelGraph] using
     c.incidenceCount_le_card (x := false)
+
+-- Proper colourings of the complete line graph preserve the parallel-edge identities.
+example {C : Type*} (c : (parallelGraph k).EdgeColoring C) : Function.Injective c := by
+  have htop : (parallelGraph k).lineGraph = ⊤ := by simp [parallelGraph]
+  refine SimpleGraph.Hom.injective_of_top_hom (G' := (⊤ : SimpleGraph C)) ⟨c, ?_⟩
+  intro e f hef
+  exact c.map_adj (by simpa only [htop] using hef)
+
+/-- The palette bound is sharp for `k` parallel edges: they are properly edge-coloured by a finite
+palette `C` exactly when `k ≤ Nat.card C`. -/
+theorem parallel_nonempty_edgeColoring_iff (C : Type*) [Finite C] :
+    Nonempty ((parallelGraph k).EdgeColoring C) ↔ k ≤ Nat.card C := by
+  rw [(parallel_bipartition k).nonempty_edgeColoring_iff_forall_incidenceCount_le]
+  refine ⟨fun h ↦ ?_, fun h x hx ↦ ((parallel_regular k).incidenceCount_eq hx).trans_le h⟩
+  simpa [(parallel_regular k).incidenceCount_eq (x := false) (by simp)] using
+    h false (by simp)
+
+-- The same sharp bound in the matching-partition form, with matchings indexed by a palette `C`.
+example (C : Type*) [Finite C] :
+    (∃ M : C → Set E(parallelGraph k), (∀ i, (parallelGraph k).IsMatching (M i)) ∧
+      (Pairwise fun i j ↦ Disjoint (M i) (M j)) ∧ ⋃ i, M i = Set.univ) ↔ k ≤ Nat.card C := by
+  rw [(parallel_bipartition k).exists_matching_partition_iff_forall_incidenceCount_le,
+    ← (parallel_bipartition k).nonempty_edgeColoring_iff_forall_incidenceCount_le,
+    parallel_nonempty_edgeColoring_iff]
+
+-- With a palette of `k + 1` colours, one colour class of `k` parallel edges is empty.
+example : ∃ c : (parallelGraph k).EdgeColoring (Option (Fin k)),
+    c.colorClass none = ∅ := by
+  let c₀ := ((parallel_nonempty_edgeColoring_iff k (Fin k)).2 (by simp)).some
+  let c := (parallelGraph k).lineGraph.recolorOfEmbedding
+    ⟨Option.some, Option.some_injective _⟩ c₀
+  refine ⟨c, Set.eq_empty_of_forall_notMem fun e he ↦ ?_⟩
+  have : c e = none := he
+  simp [c] at this
 
 end Parallel
 
@@ -237,5 +274,24 @@ example :
   · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.val.elim) fun e ↦ e.val.elim⟩
   · exact empty_bipartition.exists_perfectMatching_decomposition empty_regular
   · exact ⟨Graph.EdgeColoring.mk (fun e ↦ e.val.elim) fun e ↦ e.val.elim⟩
+
+/-! ## The empty palette -/
+
+-- Kőnig's theorem with the empty palette: the isolated vertex and the empty graph are coloured by
+-- `Empty`, with an `Empty`-indexed matching partition, while `k + 1` parallel edges are not.
+example (k : ℕ) :
+    Nonempty (isolatedGraph.EdgeColoring Empty) ∧
+      (∃ M : Empty → Set E(isolatedGraph), (∀ i, isolatedGraph.IsMatching (M i)) ∧
+        (Pairwise fun i j ↦ Disjoint (M i) (M j)) ∧ ⋃ i, M i = Set.univ) ∧
+      Nonempty (emptyGraph.EdgeColoring Empty) ∧
+      IsEmpty ((parallelGraph (k + 1)).EdgeColoring Empty) := by
+  have hiso : ∀ x ∈ V(isolatedGraph), isolatedGraph.incidenceCount x ≤ Nat.card Empty := by
+    simp [Graph.incidenceCount_def, isolatedGraph]
+  refine ⟨isolated_bipartition.nonempty_edgeColoring_iff_forall_incidenceCount_le.2 hiso,
+    isolated_bipartition.exists_matching_partition_iff_forall_incidenceCount_le.2 hiso,
+    empty_bipartition.nonempty_edgeColoring_iff_forall_incidenceCount_le.2 ?_, ?_⟩
+  · simp [emptyGraph]
+  · rw [← not_nonempty_iff, parallel_nonempty_edgeColoring_iff]
+    simp
 
 end TauCeti.Examples.BipartiteEdgeColoring

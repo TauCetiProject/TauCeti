@@ -14,13 +14,16 @@ public import TauCeti.Combinatorics.Graph.Matching.Regular
 Kőnig's edge-colouring theorem says that a finite bipartite multigraph has a proper
 edge-colouring by `k` colours exactly when every vertex is incident with at most `k` edges.
 Parallel edges retain their identities and therefore receive different colours when they have a
-common end. The cases `k = 0`, an empty graph, and isolated vertices are included.
+common end. The cases `k = 0`, an empty graph, and isolated vertices are included. The theorem
+holds for every finite palette `C` with `Nat.card C` colours, including the empty palette; it is
+transported from `Fin k` by relabelling colours along an equivalence.
 
 The proof embeds the graph in a finite `k`-regular bipartite multigraph, decomposes the completion
 into `k` perfect matchings, colours by the matching indices, and restricts the colouring back to
-the original graph. The matching-partition and chromatic-number formulations are included as
-equivalent interfaces. Consequently the least number of colours is the largest number of edges at
-a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
+the original graph. The matching-partition formulation, with matchings indexed by an arbitrary
+finite palette, and the chromatic-number formulation are included as equivalent interfaces.
+Consequently the least number of colours is the largest number of edges at a vertex, which is zero
+for the empty graph; for a simple graph this is its maximum degree.
 For a finite bipartite simple graph the theorem is also stated through colourings of Mathlib's
 `SimpleGraph.lineGraph`.
 
@@ -35,21 +38,21 @@ public section
 
 open Set
 
-universe u v
+universe u v w
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β} {L R : Finset V(G)} {k : ℕ}
+variable {α : Type u} {β : Type v} {C : Type w} {G : Graph α β} {L R : Finset V(G)} {k : ℕ}
 
 namespace IsBipartition
 
 /-- **Kőnig's edge-colouring theorem.** A finite bipartite multigraph admits a proper
-edge-colouring by `k` colours exactly when every actual vertex is incident with at most `k`
-actual edges. -/
-theorem nonempty_edgeColoring_iff_forall_incidenceCount_le [Finite E(G)]
+edge-colouring by any finite palette `C` exactly when every actual vertex is incident with
+at most `Nat.card C` actual edges. Empty palettes and parallel edges are included. -/
+theorem nonempty_edgeColoring_iff_forall_incidenceCount_le [Finite E(G)] [Finite C]
     (hLR : G.IsBipartition L R) :
-    Nonempty (G.EdgeColoring (Fin k)) ↔
-      ∀ x ∈ V(G), G.incidenceCount x ≤ k := by
+    Nonempty (G.EdgeColoring C) ↔
+      ∀ x ∈ V(G), G.incidenceCount x ≤ Nat.card C := by
   constructor
   · rintro ⟨c⟩ x -
     simpa using c.incidenceCount_le_card x
@@ -59,18 +62,20 @@ theorem nonempty_edgeColoring_iff_forall_incidenceCount_le [Finite E(G)]
     let _ : G'.Loopless := hC.isBipartition.loopless
     obtain ⟨M, hM, hdisj, hcover⟩ :=
       hC.isBipartition.exists_perfectMatching_decomposition hC.isRegularOfDegree
-    have hc : Nonempty (G'.EdgeColoring (Fin k)) :=
+    have hc : Nonempty (G'.EdgeColoring (Fin (Nat.card C))) :=
       nonempty_edgeColoring_iff_exists_matchings.mpr
         ⟨M, fun i ↦ (isPerfectMatching_def.mp (hM i)).1, hdisj, hcover⟩
-    exact hc.map hC.restrictEdgeColoring
+    exact (hc.map hC.restrictEdgeColoring).map
+      (G.lineGraph.recolorOfEquiv (Finite.equivFin C).symm)
 
-/-- A finite bipartite multigraph has its actual edge set partitioned into `k` matchings exactly
-when every actual vertex is incident with at most `k` actual edges. Empty matchings are allowed. -/
-theorem exists_matching_partition_iff_forall_incidenceCount_le [Finite E(G)]
+/-- A finite bipartite multigraph has its actual edge set partitioned into a family of matchings
+indexed by a finite type `C` exactly when every actual vertex is incident with at most
+`Nat.card C` actual edges. Empty matchings are allowed, and `C` may be empty. -/
+theorem exists_matching_partition_iff_forall_incidenceCount_le [Finite E(G)] [Finite C]
     (hLR : G.IsBipartition L R) :
-    (∃ M : Fin k → Set E(G), (∀ i, G.IsMatching (M i)) ∧
+    (∃ M : C → Set E(G), (∀ i, G.IsMatching (M i)) ∧
       (Pairwise fun i j ↦ Disjoint (M i) (M j)) ∧ ⋃ i, M i = univ) ↔
-      ∀ x ∈ V(G), G.incidenceCount x ≤ k := by
+      ∀ x ∈ V(G), G.incidenceCount x ≤ Nat.card C := by
   let _ : G.Loopless := hLR.loopless
   rw [← hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le,
     nonempty_edgeColoring_iff_exists_matchings]
@@ -82,7 +87,8 @@ theorem chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le [Finite E(G)]
     G.lineGraph.chromaticNumber ≤ k ↔
       ∀ x ∈ V(G), G.incidenceCount x ≤ k := by
   rw [SimpleGraph.chromaticNumber_le_iff_colorable]
-  exact hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le
+  change Nonempty (G.EdgeColoring (Fin k)) ↔ _
+  simpa using (hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le (C := Fin k))
 
 /-- In a finite bipartite multigraph, the chromatic number of the line graph is the largest
 incidence count over the bipartition sides `L` and `R`, which cover all actual vertices. This
