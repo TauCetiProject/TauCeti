@@ -260,10 +260,8 @@ theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
   have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (hg.integrable one_le_two)
     fun k hk => by
-    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
-      ← preimage_lineEquiv_intervalDomain, ← hmp.setIntegral_preimage_emb
-        lineEquiv.toHomeomorph.measurableEmbedding]
-    simp only [lineEquiv_apply_zero]
+    rw [← h k hk, ← setIntegral_intervalDomain hab.le]
+    simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
   rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
   filter_upwards [hmpΩ'.quasiMeasurePreserving.ae_eq_comp hg0, Lp.coeFn_zero ℝ 2
