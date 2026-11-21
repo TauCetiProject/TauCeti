@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 
 /-!
@@ -16,7 +17,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 
 Let `M` be a smooth Hausdorff manifold without boundary modelled on a finite-dimensional real inner
 product space `E`, let `V → M` be a smooth real vector bundle with finite-dimensional model fibre
-`F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p < ∞` and every order
+`F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p ≤ ∞` and every order
 `k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
 compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). Composing these, the
 inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact as well.
@@ -45,6 +46,8 @@ spaces (`TauCeti.SectionChartData.isCompactOperator_of_forall_apply`).
 
 ## Main results
 
+* `TauCeti.SobolevSection.isCompactOperator_lowerOrdersL_comp_ofExponentLEL`:
+  `W^{k+d+1,q}(V) → W^{k,p}(V)` is compact for `1 ≤ p ≤ q ≤ ∞`.
 * `TauCeti.SectionChartData.isCompactOperator_of_forall_apply`: a map into the Sobolev sections is
   a compact operator as soon as all its chart components are.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
@@ -112,8 +115,8 @@ namespace SobolevSection
 
 /-- **Rellich's theorem for Sobolev sections.** On a compact manifold without boundary, given by a
 finite bundle atlas of a Hausdorff manifold, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` is a compact
-operator for every order `k` and every `1 ≤ p < ∞`. -/
-theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
+operator for every order `k` and every `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerOrderL [T2Space M] :
     IsCompactOperator (A.sectionChartData.lowerOrderL μ p k) := by
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
   have hPj (i j : Fin A.n) : P i j ≤ A.image j :=
@@ -142,31 +145,39 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
   -- transferred from the chart-`i` data on `Q i`.
   refine Wkp.isCompactOperator_of_restrictL (fun i ↦ hPj i j) (hcov j) fun i ↦ ?_
   convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
-    (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
+    (A.transferL μ p k i j (hPc i j) (hPD i j) (hPQ i j))) using 1
   funext w
-  exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).property (hP i j)
+  exact A.restrictL_eq_transferL μ p k (A.sectionChartData.lowerOrderL μ p k w).property (hP i j)
     (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
 
 /-- **Rellich's theorem for Sobolev sections**, for any loss of derivatives: the inclusion
-`W^{k+d+1,p}(V) → W^{k,p}(V)` is a compact operator for `1 ≤ p < ∞`. -/
-theorem isCompactOperator_lowerOrdersL [T2Space M] (hp : p ≠ ⊤) (d : ℕ) :
+`W^{k+d+1,p}(V) → W^{k,p}(V)` is a compact operator for `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerOrdersL [T2Space M] (d : ℕ) :
     IsCompactOperator (A.sectionChartData.lowerOrdersL μ p k (d + 1)) := by
   rw [SectionChartData.lowerOrdersL_succ]
-  exact (isCompactOperator_lowerOrderL A μ p (k + d) hp).clm_comp _
+  exact (isCompactOperator_lowerOrderL A μ p (k + d)).clm_comp _
+
+/-- **Rellich with exponent change.** The inclusion `W^{k+d+1,q} → W^{k,p}` is compact
+for `1 ≤ p ≤ q`; both exponents may be infinite. -/
+theorem isCompactOperator_lowerOrdersL_comp_ofExponentLEL [T2Space M]
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) (d : ℕ) :
+    IsCompactOperator ((A.sectionChartData.lowerOrdersL μ p k (d + 1)).comp
+      (A.sectionChartData.ofExponentLEL μ (k + (d + 1)) hpq)) :=
+  (isCompactOperator_lowerOrdersL A μ p k d).comp_clm _
 
 /-- **Ehrling's inequality for Sobolev sections.** On a compact manifold without boundary, given by
-a finite bundle atlas of a Hausdorff manifold, for `1 ≤ p < ∞`, orders `k < k + d + 1` and every
+a finite bundle atlas of a Hausdorff manifold, for `1 ≤ p ≤ ∞`, orders `k < k + d + 1` and every
 `ε > 0` there is `C ≥ 0` with
 
 `‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + C ‖w‖_{Lᵖ}`
 
 for every `w ∈ W^{k+d+1,p}(V)`, where `‖w‖_{Lᵖ}` is the norm of the chart data of `w`
 (`TauCeti.SectionChartData.chartValuesL`). -/
-theorem exists_norm_lowerOrdersL_le [T2Space M] (hp : p ≠ ⊤) (d : ℕ) {ε : ℝ} (hε : 0 < ε) :
+theorem exists_norm_lowerOrdersL_le [T2Space M] (d : ℕ) {ε : ℝ} (hε : 0 < ε) :
     ∃ C, 0 ≤ C ∧ ∀ w : SobolevSection A μ p (k + (d + 1)),
       ‖A.sectionChartData.lowerOrdersL μ p k (d + 1) w‖ ≤
         ε * ‖w‖ + C * ‖A.sectionChartData.chartValuesL μ p (k + (d + 1)) w‖ := by
-  obtain ⟨C, hC, h⟩ := (isCompactOperator_lowerOrdersL A μ p k hp d)
+  obtain ⟨C, hC, h⟩ := (isCompactOperator_lowerOrdersL A μ p k d)
     |>.exists_norm_le_mul_norm_add_mul_norm
       (A.sectionChartData.chartValuesL_injective μ p k) hε
   exact ⟨C, hC, fun w ↦ by simpa using h w⟩
