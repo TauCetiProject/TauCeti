@@ -127,11 +127,12 @@ of their torsion subgroups. -/
 def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)] (n : ℤ) :
     _root_.AddSubgroup.torsionBy (∀ i, A i) n ≃+
       (∀ i, _root_.AddSubgroup.torsionBy (A i) n) where
-  toFun x i := ⟨x.1 i, (Submodule.mem_torsionBy_iff _ _).2 <| by
+  toFun x i := ⟨x.val i, (Submodule.mem_torsionBy_iff _ _).2 <| by
     simpa only [Pi.smul_apply, Pi.zero_apply] using
-      congrFun ((Submodule.mem_torsionBy_iff _ _).1 x.2) i⟩
+      congrFun ((Submodule.mem_torsionBy_iff _ _).1 x.property) i⟩
   invFun x := ⟨fun i ↦ x i, (Submodule.mem_torsionBy_iff _ _).2 <| funext fun i ↦ by
-    simpa only [Pi.smul_apply, Pi.zero_apply] using (Submodule.mem_torsionBy_iff _ _).1 (x i).2⟩
+    simpa only [Pi.smul_apply, Pi.zero_apply] using (Submodule.mem_torsionBy_iff _ _).1
+        (x i).property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -140,7 +141,7 @@ def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
 @[simp]
 theorem torsionByPiEquiv_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
     (n : ℤ) (x : _root_.AddSubgroup.torsionBy (∀ i, A i) n) (i : ι) :
-    ((torsionByPiEquiv A n x i : _root_.AddSubgroup.torsionBy (A i) n) : A i) = x.1 i :=
+    ((torsionByPiEquiv A n x i : _root_.AddSubgroup.torsionBy (A i) n) : A i) = x.val i :=
   by simp [torsionByPiEquiv]
 
 /-- The inverse of `torsionByPiEquiv` assembles torsion elements pointwise. -/
@@ -148,17 +149,18 @@ theorem torsionByPiEquiv_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCo
 theorem torsionByPiEquiv_symm_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
     (n : ℤ) (x : ∀ i, _root_.AddSubgroup.torsionBy (A i) n) (i : ι) :
     (((torsionByPiEquiv A n).symm x : _root_.AddSubgroup.torsionBy (∀ i, A i) n) :
-      ∀ i, A i) i = (x i).1 :=
+      ∀ i, A i) i = (x i).val :=
   by simp [torsionByPiEquiv]
 
 /-- Torsion by `a` inside the `b`-torsion subgroup is the ambient `a`-torsion when `a ∣ b`. -/
 def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℤ} (hab : a ∣ b) :
     _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A b) a ≃+
       _root_.AddSubgroup.torsionBy A a where
-  toFun x := ⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 <|
-    congrArg Subtype.val ((Submodule.mem_torsionBy_iff _ _).1 x.2)⟩
-  invFun x := ⟨⟨x.1, Submodule.torsionBy_le_torsionBy_of_dvd a b hab x.2⟩,
-    (Submodule.mem_torsionBy_iff _ _).2 <| Subtype.ext <| (Submodule.mem_torsionBy_iff _ _).1 x.2⟩
+  toFun x := ⟨x.val.val, (Submodule.mem_torsionBy_iff _ _).2 <|
+    congrArg Subtype.val ((Submodule.mem_torsionBy_iff _ _).1 x.property)⟩
+  invFun x := ⟨⟨x.val, Submodule.torsionBy_le_torsionBy_of_dvd a b hab x.property⟩,
+    (Submodule.mem_torsionBy_iff _ _).2 <| Subtype.ext <| (Submodule.mem_torsionBy_iff _ _).1
+        x.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -167,7 +169,7 @@ def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℤ} (hab : a �
 @[simp]
 theorem torsionByTorsionByEquiv_apply_coe {A : Type*} [AddCommGroup A] {a b : ℤ} (hab : a ∣ b)
     (x : _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A b) a) :
-    ((torsionByTorsionByEquiv hab x : _root_.AddSubgroup.torsionBy A a) : A) = x.1.1 :=
+    ((torsionByTorsionByEquiv hab x : _root_.AddSubgroup.torsionBy A a) : A) = x.val.val :=
   by simp [torsionByTorsionByEquiv]
 
 /-- The inverse of `torsionByTorsionByEquiv` preserves the underlying ambient element. -/
@@ -175,7 +177,7 @@ theorem torsionByTorsionByEquiv_apply_coe {A : Type*} [AddCommGroup A] {a b : �
 theorem torsionByTorsionByEquiv_symm_apply_coe {A : Type*} [AddCommGroup A] {a b : ℤ}
     (hab : a ∣ b) (x : _root_.AddSubgroup.torsionBy A a) :
     (((torsionByTorsionByEquiv hab).symm x :
-      _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A b) a) : A) = x.1 :=
+      _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A b) a) : A) = x.val :=
   by simp [torsionByTorsionByEquiv]
 
 end AddSubgroup
@@ -188,9 +190,9 @@ namespace AddEquiv
 def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B) (n : ℤ) :
     _root_.AddSubgroup.torsionBy A n ≃+ _root_.AddSubgroup.torsionBy B n where
   toFun x := ⟨e x, (Submodule.mem_torsionBy_iff _ _).2 <| by
-    rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).1 x.2, map_zero]⟩
+    rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).1 x.property, map_zero]⟩
   invFun x := ⟨e.symm x, (Submodule.mem_torsionBy_iff _ _).2 <| by
-    rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).1 x.2, map_zero]⟩
+    rw [← map_zsmul, (Submodule.mem_torsionBy_iff _ _).1 x.property, map_zero]⟩
   left_inv x := Subtype.ext (e.symm_apply_apply x)
   right_inv x := Subtype.ext (e.apply_symm_apply x)
   map_add' _ _ := Subtype.ext (map_add e _ _)
@@ -199,14 +201,14 @@ def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B
 @[simp]
 theorem torsionByCongr_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B)
     (n : ℤ) (x : _root_.AddSubgroup.torsionBy A n) :
-    ((torsionByCongr e n x : _root_.AddSubgroup.torsionBy B n) : B) = e x.1 :=
+    ((torsionByCongr e n x : _root_.AddSubgroup.torsionBy B n) : B) = e x.val :=
   by simp [torsionByCongr]
 
 /-- The inverse of `torsionByCongr` applies the inverse additive equivalence. -/
 @[simp]
 theorem torsionByCongr_symm_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B]
     (e : A ≃+ B) (n : ℤ) (x : _root_.AddSubgroup.torsionBy B n) :
-    (((torsionByCongr e n).symm x : _root_.AddSubgroup.torsionBy A n) : A) = e.symm x.1 :=
+    (((torsionByCongr e n).symm x : _root_.AddSubgroup.torsionBy A n) : A) = e.symm x.val :=
   by simp [torsionByCongr]
 
 end AddEquiv
@@ -253,9 +255,9 @@ variable (R M N) in
 def torsionProdEquiv :
     _root_.Submodule.torsion R (M × N) ≃ₗ[R]
       _root_.Submodule.torsion R M × _root_.Submodule.torsion R N where
-  toFun x := (⟨x.1.1, (LinearMap.fst R M N).le_comap_torsion x.2⟩,
-    ⟨x.1.2, (LinearMap.snd R M N).le_comap_torsion x.2⟩)
-  invFun x := ⟨(x.1, x.2), prodMk_mem_torsion x.1.2 x.2.2⟩
+  toFun x := (⟨x.val.1, (LinearMap.fst R M N).le_comap_torsion x.property⟩,
+    ⟨x.val.2, (LinearMap.snd R M N).le_comap_torsion x.property⟩)
+  invFun x := ⟨(x.1, x.2), prodMk_mem_torsion x.1.property x.2.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -294,7 +296,7 @@ theorem torsion_le_ker [Module.IsTorsionFree R N] (f : M →ₗ[R] N) :
     Submodule.torsion R M ≤ LinearMap.ker f := by
   rintro x ⟨a, hax⟩
   rw [LinearMap.mem_ker]
-  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
+  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.property).isSMulRegular
   dsimp only
   rw [smul_zero, ← map_smul, ← Submonoid.smul_def, hax, map_zero]
 

@@ -58,11 +58,11 @@ theorem exists_mem_adjoin_simple_eq_top [Infinite k] [Finite (IntermediateField 
     ∃ α ∈ V, F⟮α⟯ = ⊤ := by
   -- Each proper intermediate field meets `V` in a proper subspace.
   let p : {K : IntermediateField F E // K ≠ ⊤} → Submodule k V := fun K ↦
-    ((K.1.restrictScalars k).toSubalgebra.toSubmodule).comap V.subtype
-  have hp : ∀ K, p K ≠ ⊤ := fun K hK ↦ K.2 <| top_unique <| hV.ge.trans <| adjoin_le_iff.mpr
+    ((K.val.restrictScalars k).toSubalgebra.toSubmodule).comap V.subtype
+  have hp : ∀ K, p K ≠ ⊤ := fun K hK ↦ K.property <| top_unique <| hV.ge.trans <| adjoin_le_iff.mpr
     fun x hx ↦ by simpa [p] using (hK ▸ Submodule.mem_top : (⟨x, hx⟩ : V) ∈ p K)
   obtain ⟨α, hα⟩ := Submodule.exists_forall_notMem_of_forall_ne_top p hp
-  exact ⟨α, α.2, by_contra fun hne ↦ hα ⟨F⟮(α : E)⟯, hne⟩ (mem_adjoin_simple_self F (α : E))⟩
+  exact ⟨α, α.property, by_contra fun hne ↦ hα ⟨F⟮(α : E)⟯, hne⟩ (mem_adjoin_simple_self F (α : E))⟩
 
 /-- In a separable algebraic extension, an element generates the whole extension if and only if
 its minimal-polynomial degree bounds those of all elements. No finite-dimensionality assumption

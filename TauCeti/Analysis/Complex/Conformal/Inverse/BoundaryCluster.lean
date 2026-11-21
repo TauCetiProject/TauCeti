@@ -225,7 +225,7 @@ theorem isPreconnected_frontier_fiber_of_image_approach
       simp only [Set.mem_ofPred_eq,
         mem_empty_iff_false, iff_false]
       intro hz
-      exact ha (hboundary ⟨z, z.2, hz⟩)
+      exact ha (hboundary ⟨z, z.property, hz⟩)
     rw [hempty]
     exact isPreconnected_empty
 

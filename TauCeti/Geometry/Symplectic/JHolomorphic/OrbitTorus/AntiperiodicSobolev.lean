@@ -215,8 +215,8 @@ theorem antiperiodicTorusOperator_apply_apply_eq (ℓ : ℝ) (S : C(AddCircle T,
           ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).snd,
         I • loopOperator T S ((x : 𝕏[F]).1 k).snd -
           ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).fst) := by
-  rw [antiperiodicTorusOperator_apply_apply, fst_snd_apply_of_mem_antiperiodicSobolev x.2,
-    snd_snd_apply_of_mem_antiperiodicSobolev x.2]
+  rw [antiperiodicTorusOperator_apply_apply, fst_snd_apply_of_mem_antiperiodicSobolev x.property,
+    snd_snd_apply_of_mem_antiperiodicSobolev x.property]
 
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
 with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
@@ -368,7 +368,7 @@ private theorem norm_apply_le_mode {ℓ : ℝ} (hℓ : ℓ ≠ 0) (S : C(AddCirc
     ‖(x : 𝕏[F]).1 k‖ ≤ √(modeConstant T ℓ M) * ‖antiperiodicTorusOperator T ℓ S x k‖ ∧
       ‖(x : 𝕏[F]).2 k‖ ≤ ‖antiperiodicTorusOperator T ℓ S x k‖ := by
   have hD := antiperiodicTorusOperator_apply_apply_eq T ℓ S x k
-  rw [mem_antiperiodicSobolev_iff.1 x.2 k]
+  rw [mem_antiperiodicSobolev_iff.1 x.property k]
   exact norm_le_mode T hℓ S hS hM (div_le_abs_frequency hℓ k)
     (congrArg WithLp.fst hD).symm (congrArg WithLp.snd hD).symm
 

@@ -333,10 +333,10 @@ private theorem IsFullSetOfSections.algebraMap_norm_eq_prod
 localizations `A[1/r]`, `r ∈ t`, are full sets of sections, then `s` is a full set of sections. -/
 theorem IsFullSetOfSections.of_localizationSpan (t : Set A)
     (ht : Ideal.span t = ⊤)
-    (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.1)) :
+    (h : ∀ r : t, IsFullSetOfSections fun i ↦ (s i).sectionBaseChange (Localization.Away r.val)) :
     IsFullSetOfSections s := by
   intro T _ _ _ f
-  let T' (r : t) := Localization (Algebra.algebraMapSubmonoid T (Submonoid.powers r.1))
+  let T' (r : t) := Localization (Algebra.algebraMapSubmonoid T (Submonoid.powers r.val))
   refine Module.eq_of_isLocalized_span t ht (Mₚ := T')
     (f := fun r ↦ (IsScalarTower.toAlgHom A T (T' r)).toLinearMap) _ _ fun r ↦ ?_
   rw [AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom']
@@ -728,7 +728,7 @@ noncomputable def quotientFullSetIdealHomEquiv (u : ι → B →ₐ[A] C) (T : T
   toFun g := ⟨g.comp (Ideal.Quotient.mkₐ A _), (isFullSetOfSections_liftEquiv_comp_iff u _).2
     fun x hx ↦ by simp [Ideal.Quotient.eq_zero_iff_mem.2 hx]⟩
   invFun φ := Ideal.Quotient.liftₐ _ φ fun _ hx ↦ (isFullSetOfSections_liftEquiv_comp_iff u _).1
-    φ.2 hx
+    φ.property hx
   left_inv g := Ideal.Quotient.algHom_ext A (Ideal.Quotient.liftₐ_comp _ _ _)
   right_inv φ := Subtype.ext (Ideal.Quotient.liftₐ_comp _ _ _)
 
@@ -745,7 +745,7 @@ theorem coe_quotientFullSetIdealHomEquiv_apply (u : ι → B →ₐ[A] C) {T : T
 theorem quotientFullSetIdealHomEquiv_symm_apply_mk (u : ι → B →ₐ[A] C) {T : Type w}
     [CommRing T] [Algebra A T]
     (φ : {φ : C →ₐ[A] T // IsFullSetOfSections fun i ↦ AlgHom.liftEquiv A T B T (φ.comp (u i))})
-    (x : C) : (quotientFullSetIdealHomEquiv u T).symm φ (Ideal.Quotient.mk _ x) = φ.1 x :=
+    (x : C) : (quotientFullSetIdealHomEquiv u T).symm φ (Ideal.Quotient.mk _ x) = φ.val x :=
   (rfl)
 
 end Locus
