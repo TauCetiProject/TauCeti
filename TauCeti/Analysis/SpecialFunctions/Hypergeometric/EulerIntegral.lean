@@ -101,6 +101,29 @@ theorem intervalIntegrable_eulerIntegrand (a : ℂ) {b c z : ℂ}
   exact (betaIntegral_convergent hb (by simpa using sub_pos.mpr hcb)).mul_continuousOn
     (by simpa only [uIcc_of_le zero_le_one] using continuousOn_eulerKernel a hz)
 
+/-- On an interval bounded away from zero, the Euler integrand only requires the endpoint
+condition `re b < re c` at one. -/
+theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re)
+    (hz : 1 - z ∈ slitPlane) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) :
+    IntervalIntegrable (fun t : ℝ =>
+      (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
+      volume ρ 1 := by
+  have hsub : uIcc ρ 1 ⊆ Icc 0 1 := by
+    rw [uIcc_of_le hρ1]
+    exact Icc_subset_Icc_left hρ.le
+  have hweight : IntervalIntegrable (fun t : ℝ => (1 - (t : ℂ)) ^ (c - b - 1)) volume ρ 1 := by
+    have h := betaIntegral_convergent (u := 1) (v := c - b) one_pos
+      (by simpa only [sub_re, sub_pos] using hbc)
+    simp only [sub_self, cpow_zero, one_mul] at h
+    exact h.mono_set (by simpa only [uIcc_of_le zero_le_one] using hsub)
+  have hpow : ContinuousOn (fun t : ℝ => (t : ℂ) ^ (b - 1)) (uIcc ρ 1) := by
+    rw [uIcc_of_le hρ1]
+    exact continuousOn_of_forall_continuousAt fun t ht =>
+      continuous_ofReal.continuousAt.cpow continuousAt_const
+        (ofReal_mem_slitPlane.mpr (hρ.trans_le ht.1))
+  simpa only [Pi.mul_apply, mul_left_comm, mul_comm, mul_assoc] using
+    hweight.mul_continuousOn (hpow.mul ((continuousOn_eulerKernel a hz).mono hsub))
+
 /-- For fixed `b` and `c` in the convergence region, the unnormalized Euler integral is
 jointly holomorphic in its first parameter and its argument, away from the cut `[1, ∞)`. -/
 private theorem analyticOnNhd_integral_eulerIntegrand {b c : ℂ} (hb : 0 < b.re)

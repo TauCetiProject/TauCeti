@@ -756,25 +756,6 @@ private theorem hypergeometricLoopZero_eq_affineLoopZero (a b c z : ℂ) (ρ : �
   rw [hypergeometricLoopZero_def, h1, h2, affineLoopZero]
   dsimp only [affineCircIntegrand]; ring
 
-private theorem intervalIntegrable_loopZero_seg (a b c z : ℂ) (hcb : 0 < (c - b).re) {ρ : ℝ}
-    (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : 1 - z ∈ slitPlane) :
-    IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume ρ 1 := by
-  have hweight : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (c - b - 1)) volume ρ 1 := by
-    have h01 := betaIntegral_convergent (u := 1) (v := c - b) one_pos hcb
-    simp only [sub_self, cpow_zero, one_mul] at h01
-    exact h01.mono_set (by
-      rw [uIcc_of_le hρ1.le, uIcc_of_le zero_le_one]; exact Icc_subset_Icc_left hρ.le)
-  have hcont : ContinuousOn (fun u : ℝ => (u : ℂ) ^ (b - 1) * (1 - z * u) ^ (-a)) (uIcc ρ 1) := by
-    rw [uIcc_of_le hρ1.le]
-    refine continuousOn_of_forall_continuousAt fun u hu => ContinuousAt.mul ?_ ?_
-    · exact ContinuousAt.cpow continuous_ofReal.continuousAt continuousAt_const
-        (ofReal_mem_slitPlane.mpr (hρ.trans_le hu.1))
-    · exact ContinuousAt.cpow
-        (continuousAt_const.sub (continuousAt_const.mul continuous_ofReal.continuousAt))
-        continuousAt_const (one_sub_mul_ofReal_mem_slitPlane hz ⟨hρ.le.trans hu.1, hu.2⟩)
-  convert hweight.mul_continuousOn hcont using 1
-  ext u; simp only [affineSegIntegrand]; ring
-
 /-- **Radius independence of the `(0+)` loop integral.** Whenever `re b < re c`,
 `1 - z ∈ Complex.slitPlane`, and `ρ₁, ρ₂ ∈ (0, 1)` satisfy `‖z‖ ρᵢ < 1`, the `(0+)` loop integral
 `Complex.hypergeometricLoopZero` takes the same value at `ρ₁` and `ρ₂`. -/
@@ -782,12 +763,11 @@ theorem hypergeometricLoopZero_eq (a b c z : ℂ) (hbc : b.re < c.re) (hz : 1 - 
     {ρ₁ ρ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₁1 : ρ₁ < 1) (hρ₂ : 0 < ρ₂) (hρ₂1 : ρ₂ < 1)
     (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1) :
     hypergeometricLoopZero a b c z ρ₁ = hypergeometricLoopZero a b c z ρ₂ := by
-  have hcb : 0 < (c - b).re := by simpa only [sub_re, sub_pos] using hbc
   rw [hypergeometricLoopZero_eq_affineLoopZero, hypergeometricLoopZero_eq_affineLoopZero]
   exact affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₁ hρ₁1 hρ₂ hρ₂1
     (closedBall_one_subset_slitPlane_iff.mpr hz₁) (closedBall_one_subset_slitPlane_iff.mpr hz₂)
-    (intervalIntegrable_loopZero_seg a b c z hcb hρ₁ hρ₁1 hz)
-    (intervalIntegrable_loopZero_seg a b c z hcb hρ₂ hρ₂1 hz)
+    (intervalIntegrable_eulerIntegrand_right a hbc hz hρ₁ hρ₁1.le)
+    (intervalIntegrable_eulerIntegrand_right a hbc hz hρ₂ hρ₂1.le)
 
 /-- **Joint holomorphy of the `(0+)` loop integral along lines of fixed `c - b`.** For fixed `d`
 with `0 < re d` and `ρ ∈ (0, 1)`, `(a, b, z) ↦ hypergeometricLoopZero a b (b + d) z ρ` is jointly
