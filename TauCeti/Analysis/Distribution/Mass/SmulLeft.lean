@@ -27,21 +27,29 @@ together with its local form, and shows that a current `T` such that both `T` an
 locally finite mass keeps this property after multiplication by any smooth function, which is
 how smooth cutoffs act on locally normal currents. Here the mass is taken with respect to the
 operator norm on forms (`Distribution.mass`); the factor `k + 1` comes from the unnormalized
-alternatization defining the wedge with a one-form.
+alternatization defining the wedge with a one-form on a general normed space. When `E` is a real
+inner product space, the operator norm is the comass and satisfies `‖α ∧ ω‖ ≤ ‖α‖ * ‖ω‖`
+(`ContinuousAlternatingMap.norm_alternatizeUncurryFin_smulRight_le`), removing the `(k + 1)` factor
+from all contraction and boundary mass bounds.
 
 ## Main declarations
 
 * `Distribution.localMass_comp_smulLeftCLM_le`, `Distribution.mass_comp_smulLeftCLM_le`: the mass
   of a smooth multiple.
 * `Distribution.localMass_comp_oneFormWedgeCLM_le`, `Distribution.mass_comp_oneFormWedgeCLM_le`:
-  the mass of a contraction with a smooth one-form.
+  the mass of a contraction with a smooth one-form, with sharp inner-product forms
+  `Distribution.localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace` and
+  `Distribution.mass_comp_oneFormWedgeCLM_le_of_innerProductSpace`.
 * `Distribution.HasLocallyFiniteMass.comp_smulLeftCLM`,
   `Distribution.HasLocallyFiniteMass.comp_oneFormWedgeCLM`: preservation of locally finite mass.
-* `Distribution.mass_comp_oneFormWedgeCLM_le_lintegral`: the sharper bound
-  `M(T ⌞ α) ≤ (k + 1) ∫ ‖α‖ d‖T‖` against the mass measure of `T`.
+* `Distribution.mass_comp_oneFormWedgeCLM_le_lintegral`,
+  `Distribution.mass_comp_oneFormWedgeCLM_le_lintegral_of_innerProductSpace`: the sharper bounds
+  `M(T ⌞ α) ≤ (k + 1) ∫ ‖α‖ d‖T‖` and `M(T ⌞ α) ≤ ∫ ‖α‖ d‖T‖` against the mass measure of `T`.
 * `Distribution.localMass_comp_smulLeftCLM_comp_extDerivCLM_le`,
   `Distribution.mass_comp_smulLeftCLM_comp_extDerivCLM_le`: the mass of the boundary of a smooth
-  multiple.
+  multiple, with sharp inner-product forms
+  `Distribution.localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace` and
+  `Distribution.mass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace`.
 * `Distribution.HasLocallyFiniteMass.comp_smulLeftCLM_comp_extDerivCLM`: if `T` and `∂T` have
   locally finite mass, so does `∂(fT)`.
 
@@ -60,6 +68,8 @@ open TopologicalSpace Set TestFunction
 open scoped BoundedContinuousFunction ENNReal Distributions
 
 namespace Distribution
+
+section NormedSpace
 
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V]
@@ -186,5 +196,89 @@ theorem HasLocallyFiniteMass.comp_smulLeftCLM_comp_extDerivCLM (hT : HasLocallyF
   exact (hdT.comp_smulLeftCLM hf).sub (hT.comp_oneFormWedgeCLM _)
 
 end Boundary
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {E F V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {Ω : Opens E} {n : ℕ∞} {k : ℕ} {U : Set E} {c c' : ℝ≥0∞} {f : E → ℝ} {α : E → E →L[ℝ] ℝ}
+
+section OneFormWedge
+
+variable {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) V]
+  [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) V]
+
+/-- **Sharp local mass of a contraction on an inner product space.** If `‖α‖ ≤ c` on `U ∩ Ω`, then
+the local mass of `T ⌞ α = T ∘ (α ∧ ·)` on `U` is at most `c * localMass T U`. -/
+theorem localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace (T : 𝓕) (hα : ContDiff ℝ n α)
+    (hαc : ∀ x ∈ U ∩ Ω, ‖α x‖ₑ ≤ c) :
+    localMass (T ∘ oneFormWedgeCLM (k := k) hα) U ≤ c * localMass T U :=
+  localMass_comp_le_of_enorm_apply_le T
+    (fun ω => (tsupport_oneFormWedgeCLM_subset hα ω).trans inter_subset_right)
+    (enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace hα) hαc
+
+/-- **Sharp mass of a contraction on an inner product space.** If `‖α‖ ≤ c` on `Ω`, then
+`M(T ⌞ α) ≤ c M(T)`. -/
+theorem mass_comp_oneFormWedgeCLM_le_of_innerProductSpace (T : 𝓕) (hα : ContDiff ℝ n α)
+    (hαc : ∀ x ∈ Ω, ‖α x‖ₑ ≤ c) :
+    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ c * mass T := by
+  simpa using localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace (U := univ) T hα
+    fun x hx => hαc x hx.2
+
+end OneFormWedge
+
+section MassMeasure
+
+open MeasureTheory
+
+omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
+/-- **Sharp mass of a contraction against the mass measure on an inner product space.** For `T` of
+locally finite mass, `M(T ⌞ α) ≤ ∫ ‖α‖ d‖T‖`. -/
+theorem mass_comp_oneFormWedgeCLM_le_lintegral_of_innerProductSpace
+    [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
+    [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
+    [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
+    {T : 𝓕} (hT : HasLocallyFiniteMass T) (hα : ContDiff ℝ n α) :
+    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ ∫⁻ x, ‖α x‖ₑ ∂massMeasure T := by
+  refine mass_le_iff.2 fun ω hω => (enorm_apply_le_lintegral_massMeasure hT _).trans ?_
+  refine lintegral_mono fun x =>
+    (enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace hα ω x).trans ?_
+  have hωx : ‖ω x‖ₑ ≤ 1 := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 (hω x)
+  simpa using mul_le_mul_right hωx ‖α x‖ₑ
+
+end MassMeasure
+
+section Boundary
+
+variable (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) (hf : ContDiff ℝ (⊤ : ℕ∞) f)
+
+/-- **Sharp local mass of the boundary of a smooth multiple on an inner product space.** If
+`|f| ≤ c` and `‖df‖ ≤ c'` on `U ∩ Ω`, then
+`localMass (∂(fT)) U ≤ c * localMass (∂T) U + c' * localMass T U`. -/
+theorem localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace
+    (hfc : ∀ x ∈ U ∩ Ω, ‖f x‖ₑ ≤ c) (hdfc : ∀ x ∈ U ∩ Ω, ‖fderiv ℝ f x‖ₑ ≤ c') :
+    localMass ((T ∘L smulLeftCLM hf) ∘L extDerivCLM) U ≤
+      c * localMass (T ∘L extDerivCLM) U + c' * localMass T U := by
+  rw [ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM, FunLike.coe_sub]
+  refine localMass_sub_le.trans (add_le_add ?_ ?_)
+  · exact localMass_comp_smulLeftCLM_le (T ∘L extDerivCLM) hf hfc
+  · exact localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace T _ hdfc
+
+/-- **Sharp mass of the boundary of a smooth multiple on an inner product space.** If `|f| ≤ c`
+and `‖df‖ ≤ c'` on `Ω`, then `M(∂(fT)) ≤ c M(∂T) + c' M(T)`. -/
+theorem mass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace
+    (hfc : ∀ x ∈ Ω, ‖f x‖ₑ ≤ c) (hdfc : ∀ x ∈ Ω, ‖fderiv ℝ f x‖ₑ ≤ c') :
+    mass ((T ∘L smulLeftCLM hf) ∘L extDerivCLM) ≤
+      c * mass (T ∘L extDerivCLM) + c' * mass T := by
+  simpa using localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace (U := univ) T hf
+    (fun x hx => hfc x hx.2) fun x hx => hdfc x hx.2
+
+end Boundary
+
+end InnerProductSpace
 
 end Distribution

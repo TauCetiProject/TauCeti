@@ -15,6 +15,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
@@ -41,9 +42,13 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
+* `TestFunction.tendsto_toLp_smul_of_dominated`: dominated convergence in `Lᵖ(μ)` for
+  scalar-multiplied test functions `c i x • φ x`.
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.exists_tendsto_lintegral_indicator`: approximation of `1_{A ∩ K}` in `L¹(μ; ℝ)` by
+  smooth scalar test functions on `Ω`.
 * `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
   and an `Lᵖ` function is integrable.
 * `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
@@ -63,7 +68,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Set Metric
-open scoped BoundedContinuousFunction ENNReal Distributions InnerProductSpace
+open scoped BoundedContinuousFunction ENNReal Distributions InnerProductSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
@@ -238,6 +243,29 @@ theorem norm_indicatorToLp_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
   exact ENNReal.toReal_mono (memLp_subtype φ).eLpNorm_ne_top
     (eLpNorm_indicator_le _ hA.nullMeasurableSet)
 
+/-- Dominated convergence in `Lᵖ(μ; F)` (`1 ≤ p < ∞`) for scalar-multiplied test functions
+`c i x • φ x`. -/
+theorem tendsto_toLp_smul_of_dominated {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    (hp : p ≠ ∞) {φ : 𝓓^{n}(Ω, F)} {c : ι → Ω → ℝ} {c₀ : Ω → ℝ}
+    (hc : ∀ i, MemLp (fun x : Ω => c i x • φ x) p μ)
+    (hc₀ : MemLp (fun x : Ω => c₀ x • φ x) p μ) (C : ℝ)
+    (hbound : ∀ᶠ i in l, ∀ x : Ω, (x : E) ∈ tsupport φ → |c i x - c₀ x| ≤ C)
+    (hlim : ∀ x : Ω, (x : E) ∈ tsupport φ → Tendsto (fun i => c i x) l (𝓝 (c₀ x))) :
+    Tendsto (fun i => (hc i).toLp _) l (𝓝 (hc₀.toLp _)) := by
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ hc _ hc₀]
+  refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (C := C.toNNReal) hp
+    (.of_forall fun i => (hc i).aestronglyMeasurable) (memLp_subtype φ)
+    (hbound.mono fun i hi => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
+  · by_cases hx : (x : E) ∈ tsupport φ
+    · rw [← sub_smul, eNorm_smul]
+      gcongr
+      rw [← ofReal_norm, Real.norm_eq_abs]
+      exact ENNReal.ofReal_le_ofReal (hi x hx)
+    · simp [image_eq_zero_of_notMem_tsupport hx]
+  · by_cases hx : (x : E) ∈ tsupport φ
+    · exact (hlim x hx).smul_const (φ x)
+    · simpa [image_eq_zero_of_notMem_tsupport hx] using tendsto_const_nhds
+
 end FiniteOnCompacts
 
 section Ambient
@@ -311,6 +339,30 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
+
+/-- For any locally finite Borel measure `μ` on `Ω`, a measurable set `A ⊆ Ω`, and a compact set
+`K ⊆ Ω`, the indicator `1_{A ∩ K}` can be approximated in `L¹(μ; ℝ)` by scalar test functions on
+`Ω`. -/
+theorem exists_tendsto_lintegral_indicator [FiniteDimensional ℝ E] (μ : Measure Ω)
+    [IsFiniteMeasureOnCompacts μ] (hA : MeasurableSet A) {K : Set Ω} (hK : IsCompact K) :
+    ∃ χ : ℕ → 𝓓(Ω, ℝ),
+      Tendsto (fun m => ∫⁻ x : Ω, ‖χ m x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ) atTop (𝓝 0) := by
+  have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have hmem : MemLp ((A ∩ K).indicator (1 : Ω → ℝ)) 1 μ :=
+    memLp_indicator_const 1 (hA.inter hK.isClosed.measurableSet).nullMeasurableSet (1 : ℝ)
+      (Or.inr ((measure_mono inter_subset_right).trans_lt hK.measure_lt_top).ne)
+  have hd := denseRange_toLp (Ω := Ω) (n := ⊤) (F := ℝ) (μ := μ) ENNReal.one_ne_top (hmem.toLp _)
+  have step (m : ℕ) : ∃ χ : 𝓓(Ω, ℝ),
+      ∫⁻ x : Ω, ‖χ x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ ≤ ((m + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
+    obtain ⟨_, ⟨χ, rfl⟩, hχ⟩ := (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).1 hd _
+      (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top (m + 1)))
+    refine ⟨χ, ?_⟩
+    rw [Metric.mem_closedEBall, toLp_apply, Lp.edist_toLp_toLp,
+      eLpNorm_one_eq_lintegral_eNorm ((memLp_subtype χ).sub hmem).aestronglyMeasurable] at hχ
+    simpa [Pi.sub_apply] using hχ
+  choose χ hχ using step
+  exact ⟨χ, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)) (fun _ => bot_le) hχ⟩
 
 /-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
 integrable, for a measure that is finite on compact sets. -/

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents
@@ -46,7 +47,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 * `TestFunction.oneFormWedgeCLM`: the wedge `ω ↦ α ∧ ω` of test forms with a smooth one-form.
 * `TestFunction.norm_oneFormWedgeCLM_apply_le`: the pointwise bound
   `‖(α ∧ ω) x‖ ≤ (k + 1) ‖α x‖ ‖ω x‖`, with its extended-norm form
-  `TestFunction.enorm_oneFormWedgeCLM_apply_le`.
+  `TestFunction.enorm_oneFormWedgeCLM_apply_le`, and the sharp inner-product forms
+  `TestFunction.norm_oneFormWedgeCLM_apply_le_of_innerProductSpace` and
+  `TestFunction.enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace` without the `(k + 1)` factor.
 * `TestFunction.extDerivCLM_smulLeftCLM`: the Leibniz rule `d (f ω) = df ∧ ω + f dω`.
 * `ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM`: the boundary of a smooth multiple of
   a current, `∂(fT) = f ∂T - T ⌞ df`.
@@ -267,6 +270,32 @@ theorem extDerivCLM_smulLeftCLM (hf : ContDiff ℝ (⊤ : ℕ∞) f) (ω : 𝓓(
   simp [add_comm]
 
 end Leibniz
+
+end TestFunction
+
+namespace TestFunction
+
+open TopologicalSpace ContinuousAlternatingMap
+open scoped Distributions
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞} {k : ℕ} {α : E → E →L[ℝ] ℝ}
+
+/-- On a real inner product space, the wedge `α ∧ ω` is bounded pointwise in operator norm by
+`‖α x‖ * ‖ω x‖`, without the `(k + 1)` factor. -/
+theorem norm_oneFormWedgeCLM_apply_le_of_innerProductSpace (hα : ContDiff ℝ n α)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖oneFormWedgeCLM hα ω x‖ ≤ ‖α x‖ * ‖ω x‖ := by
+  rw [oneFormWedgeCLM_apply]
+  exact norm_alternatizeUncurryFin_smulRight_le (α x) (ω x)
+
+/-- Pointwise extended-norm bound for `oneFormWedgeCLM` on a real inner product space, without the
+`(k + 1)` factor. -/
+theorem enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace (hα : ContDiff ℝ n α)
+    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
+    ‖oneFormWedgeCLM hα ω x‖ₑ ≤ ‖α x‖ₑ * ‖ω x‖ₑ := by
+  rw [oneFormWedgeCLM_apply]
+  exact enorm_alternatizeUncurryFin_smulRight_le (α x) (ω x)
 
 end TestFunction
 
