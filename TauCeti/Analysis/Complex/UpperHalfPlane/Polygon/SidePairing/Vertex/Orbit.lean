@@ -52,7 +52,8 @@ theorem mem_orbit_iff_mem_cycle {j k : Fin n} {z w : ℍ}
   rw [MulAction.mem_orbit_iff, σ.mem_cycle_iff]
   constructor
   · rintro ⟨g, hg⟩
-    obtain ⟨m, -, -, hm⟩ := σ.exists_partialCycleMap_eq_of_smul_vertex_eq hz hw hmap hdisj g.2 hg
+    obtain ⟨m, -, -, hm⟩ := σ.exists_partialCycleMap_eq_of_smul_vertex_eq hz hw hmap hdisj
+        g.property hg
     exact ⟨m, hm⟩
   · rintro ⟨m, hm⟩
     refine ⟨⟨σ.partialCycleMap j m, σ.partialCycleMap_mem hmap j m⟩, ?_⟩
@@ -66,11 +67,12 @@ theorem finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j k : {i : Fin n // (P.vertex i).isLeft}) :
-    (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ) =
-        Quotient.mk'' ((P.vertex k).getLeft k.2) ↔ σ.next.SameCycle j k := by
+    (Quotient.mk'' ((P.vertex j).getLeft j.property) : MulAction.orbitRel.Quotient Γ ℍ) =
+        Quotient.mk'' ((P.vertex k).getLeft k.property) ↔ σ.next.SameCycle j k := by
   rw [Quotient.eq'']
   have h := σ.mem_orbit_iff_mem_cycle
-    (Sum.inl_getLeft (P.vertex k) k.2).symm (Sum.inl_getLeft (P.vertex j) j.2).symm hmap hdisj
+    (Sum.inl_getLeft (P.vertex k) k.property).symm (Sum.inl_getLeft (P.vertex j) j.property).symm
+        hmap hdisj
   -- `orbitRel` relates `z` to `w` when `z` belongs to the orbit of `w`.
   rw [MulAction.orbitRel_apply, h]
   rw [σ.mem_cycle_iff, Equiv.Perm.sameCycle_comm]
@@ -112,9 +114,9 @@ noncomputable def finiteVertexCycleEquiv
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     σ.FiniteVertexCycle ≃ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2) : MulAction.orbitRel.Quotient Γ ℍ)) := by
+        (Quotient.mk'' ((P.vertex j).getLeft j.property) : MulAction.orbitRel.Quotient Γ ℍ)) := by
   let f : {i : Fin n // (P.vertex i).isLeft} → MulAction.orbitRel.Quotient Γ ℍ :=
-    fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2)
+    fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.property)
   have hker : ∀ j k, σ.next.SameCycle j.val k.val ↔ Setoid.ker f j k :=
     fun j k ↦ (σ.finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle hmap hdisj j k).symm
   exact (Quotient.congrRight hker).trans (Setoid.quotientKerEquivRange f)
@@ -127,7 +129,7 @@ theorem finiteVertexCycleEquiv_apply
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isLeft}) :
     (σ.finiteVertexCycleEquiv hmap hdisj (Quotient.mk'' j)).val =
-      Quotient.mk'' ((P.vertex j).getLeft j.2) := by
+      Quotient.mk'' ((P.vertex j).getLeft j.property) := by
   -- Compute on representatives through Mathlib's kernel-quotient/image equivalence.
   rfl
 

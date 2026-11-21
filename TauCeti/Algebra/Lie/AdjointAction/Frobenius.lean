@@ -9,6 +9,9 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.Algebra.Lie.AdjointAction.Basic
+-- Non-public: `Module.End.instExpChar` gives `Module.End R A` the exponential characteristic
+-- of `A`.
+import TauCeti.Algebra.CharP.LinearMaps
 
 /-!
 # The adjoint action of an associative algebra and the Frobenius
@@ -75,9 +78,6 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 @[simp]
 theorem ad_pow_expChar_pow (p : ℕ) [ExpChar A p] (a : A) (n : ℕ) :
     LieAlgebra.ad R A (a ^ p ^ n) = LieAlgebra.ad R A a ^ p ^ n := by
-  have : ExpChar (Module.End R A) p :=
-    expChar_of_injective_ringHom
-      (f := (Algebra.lmul R A : A →ₐ[R] Module.End R A).toRingHom) Algebra.lmul_injective p
   rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply, Pi.sub_apply,
     sub_pow_expChar_pow_of_commute p n (LinearMap.commute_mulLeft_right a a),
     LinearMap.pow_mulLeft, LinearMap.pow_mulRight]

@@ -49,7 +49,7 @@ variable [CommRing k]
 def symplecticGroupToGL :
     Matrix.symplecticGroup (Fin n) k →* GL (Fin n ⊕ Fin n) k where
   toFun g := Matrix.SpecialLinearGroup.toGL
-    ⟨g, SymplecticGroup.det_eq_one g.2⟩
+    ⟨g, SymplecticGroup.det_eq_one g.property⟩
   map_one' := by
     ext i j
     rfl
@@ -156,7 +156,7 @@ theorem stdSymplecticBilinForm_comp_stdSymplecticRep (g : Matrix.symplecticGroup
         (g : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k).mulVecLin =
       stdSymplecticBilinForm k n := by
   rw [stdSymplecticBilinForm, ← Matrix.toLin'_apply', Matrix.toBilin'_comp]
-  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.2]
+  rw [(SymplecticGroup.mem_iff' (l := Fin n) (R := k)).mp g.property]
 
 /-- The standard symplectic pairing is invariant under the standard action. -/
 @[simp]

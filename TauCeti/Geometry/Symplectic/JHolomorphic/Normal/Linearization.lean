@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
-public import Mathlib.LinearAlgebra.Quotient.Defs
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Quotient
 
 /-!
 # Descent of the Cauchy–Riemann linearization to normal directions
@@ -22,7 +22,10 @@ be integrable.
 `normalCauchyRiemannLinearization` is the resulting local-coordinate expression on ambient
 lifts of normal sections. Under these hypotheses, its value on a lift differentiable at `x`
 is unchanged on adding `du · a` for any source vector field `a` differentiable at `x`.
-Its Leibniz rule identifies its first-order symbol explicitly.
+Its values are complex-antilinear maps into the normal quotient, and its Leibniz rule
+identifies the real Cauchy–Riemann symbol for the induced quotient structure. Over a source
+of real dimension two, this symbol is bijective at every nonzero real covector by
+`cauchyRiemannSymbolAntilinear_bijective`.
 These statements do not require `u` to be immersive; for an embedding the quotient is its
 normal fiber. Global bundle gluing, Sobolev realizations and Fredholm theory are not asserted
 here. The source endomorphism is constant, as in a holomorphic coordinate on a Riemann surface.
@@ -125,5 +128,54 @@ theorem normalCauchyRiemannLinearization_fun_smul
   simp only [normalCauchyRiemannLinearization_apply,
     cauchyRiemannLinearization_fun_smul j J u ξ f x v hf hξ, map_sub, map_add, map_smul]
   abel
+
+/-- The normal linearization is complex-antilinear on the source tangent space, with values
+in the normal quotient. This is distinct from complex linearity in the normal section, which
+need not hold when `J` is not integrable. -/
+theorem isComplexAntilinear_normalCauchyRiemannLinearization
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V}
+    (j₀ : AlmostComplexStructure U) (J₀ : AlmostComplexStructure V)
+    (u ξ : U → V) (x : U)
+    (hj : j.toLinearMap = j₀.toLinearMap) (hJ₀ : (J (u x)).toLinearMap = J₀.toLinearMap)
+    (hJ : ∀ᶠ y in 𝓝 (u x), ∀ v, J y (J y v) = -v)
+    (hu : IsComplexLinearMap j₀ J₀ (fderiv ℝ u x).toLinearMap) :
+    IsComplexAntilinear j₀.toLinearMap hu.quotientRange.toLinearMap
+      (normalCauchyRiemannLinearization j J u ξ x) := by
+  have hjv (v : U) : j v = j₀ v := LinearMap.congr_fun hj v
+  have hJv (v : V) : J (u x) v = J₀ v := LinearMap.congr_fun hJ₀ v
+  have hzero : cauchyRiemannOperator j J u x = 0 := by
+    ext v
+    simp only [cauchyRiemannOperator_apply, hjv, hJv, _root_.zero_apply,
+      sub_eq_zero]
+    exact (isComplexLinearMap_iff_apply _ _ _).1 hu v
+  have h := isComplexAntilinear_cauchyRiemannLinearization ξ
+    (fun v ↦ by simp only [hjv, j₀.apply_apply]) hJ hzero
+  rw [hj, hJ₀] at h
+  exact ((isComplexLinearMap_iff_isComplexLinear _ _ _).1
+    hu.isComplexLinearMap_quotientRange_mkQ).comp_isComplexAntilinear h
+
+/-- The Leibniz remainder of the actual normal linearization is the intrinsic real
+Cauchy–Riemann symbol on the normal quotient. Together with
+`cauchyRiemannSymbolAntilinear_bijective`, this identifies its elliptic symbol over a source
+curve. -/
+theorem normalCauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol
+    {j : U →L[ℝ] U} {J : V → V →L[ℝ] V}
+    (j₀ : AlmostComplexStructure U) (J₀ : AlmostComplexStructure V)
+    (u ξ : U → V) (f : U → ℝ) (x : U)
+    (hj : j.toLinearMap = j₀.toLinearMap) (hJ₀ : (J (u x)).toLinearMap = J₀.toLinearMap)
+    (hu : IsComplexLinearMap j₀ J₀ (fderiv ℝ u x).toLinearMap)
+    (hf : DifferentiableAt ℝ f x) (hξ : DifferentiableAt ℝ ξ x) :
+    normalCauchyRiemannLinearization j J u (fun y ↦ f y • ξ y) x =
+      f x • normalCauchyRiemannLinearization j J u ξ x +
+      cauchyRiemannSymbol j₀ hu.quotientRange (fderiv ℝ f x).toLinearMap
+        ((fderiv ℝ u x).toLinearMap.range.mkQ (ξ x)) := by
+  have h := congrArg (fun L : U →ₗ[ℝ] V ↦ (fderiv ℝ u x).toLinearMap.range.mkQ.comp L)
+    (cauchyRiemannLinearization_fun_smul_eq_smul_add_cauchyRiemannSymbol j₀ J₀ u ξ f x hj hJ₀ hf hξ)
+  rw [LinearMap.comp_add, LinearMap.comp_smul,
+    hu.isComplexLinearMap_quotientRange_mkQ.comp_cauchyRiemannSymbol] at h
+  ext v
+  simpa only [normalCauchyRiemannLinearization_apply, LinearMap.comp_apply,
+    LinearMap.add_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe] using
+    LinearMap.congr_fun h v
 
 end TauCeti

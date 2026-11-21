@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Topology
 public import TauCeti.Algebra.AlgebraicGroup.NormTorus.Complex
 public import TauCeti.Topology.Algebra.PointTopology.WeilRestriction
 import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Complex.Circle
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Algebra.HopfAlgebra.Antipode
 
@@ -265,23 +266,18 @@ theorem norm_real_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
 /-- **The real norm-one locus of the Deligne torus is compact** in the point topology, being the
 homeomorphic preimage of the compact unit circle `U(1)` under `S(ℝ) ≃ ℂˣ`. -/
 theorem isCompact_ker_norm_real : IsCompact {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} := by
-  have : CompactSpace (Metric.sphere (0 : ℂ) 1) :=
-    isCompact_iff_compactSpace.mp (isCompact_sphere (0 : ℂ) 1)
-  have hz0 : ∀ z : Metric.sphere (0 : ℂ) 1, (z : ℂ) ≠ 0 := fun z ↦
-    norm_ne_zero_iff.mp (by rw [mem_sphere_zero_iff_norm.mp z.2]; exact one_ne_zero)
-  let u : Metric.sphere (0 : ℂ) 1 → ℂˣ := fun z ↦ Units.mk0 (z : ℂ) (hz0 z)
-  have hcont : Continuous u := Units.continuous_iff.2
-    ⟨continuous_subtype_val, continuous_subtype_val.inv₀ hz0⟩
+  have hcont : Continuous Circle.toUnits := Units.continuous_iff.2
+    ⟨continuous_subtypeVal, continuous_subtypeVal.inv₀ Circle.coe_ne_zero⟩
   let e := isHomeomorph_realPointsMulEquiv.homeomorph
   have hrange : {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} =
-      Set.range (fun z : Metric.sphere (0 : ℂ) 1 ↦ e.symm (u z)) := by
+      Set.range (fun z : Circle ↦ e.symm z.toUnits) := by
     ext f
     simp only [Set.mem_ofPred_eq, norm_real_eq_one_iff, Set.mem_range]
     exact ⟨fun hf ↦ ⟨⟨(realPointsMulEquiv f : ℂ), mem_sphere_zero_iff_norm.2 hf⟩,
         e.symm_apply_eq.2 (Units.ext rfl)⟩,
       fun ⟨z, hz⟩ ↦ hz ▸ by
-        rw [← isHomeomorph_realPointsMulEquiv.homeomorph_apply, e.apply_symm_apply]
-        exact mem_sphere_zero_iff_norm.mp z.2⟩
+        rw [← isHomeomorph_realPointsMulEquiv.homeomorph_apply, e.apply_symm_apply,
+          Circle.toUnits_apply, Units.val_mk0, Circle.norm_coe]⟩
   rw [hrange]
   exact isCompact_range (e.continuous_symm.comp hcont)
 
