@@ -129,10 +129,10 @@ theorem IsEllipticAbove.exists_isSmoothing_sharp_sub_ofSpatial (hp : p.IsEllipti
   obtain ⟨b, hL, -⟩ := hp.exists_isAsymptoticSum_sharpTerm
   have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
   set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
-  set q := inclusion (zero_add (-m)).le (F.comp b)
-  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
-    simp [q, F]
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
+  set q := smulLeft (φ.smooth ⊤) b
+  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_smulLeft (φ.smooth ⊤) hφ b
+  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦
+    coefficient_smulLeft _ b (x, ξ)
   exact ⟨q, hq, fun x hx ξ ↦ by rw [hqb, image_eq_zero_of_notMem_tsupport hx, zero_smul],
     (hq.sharp ha).sub (hF.inclusion _), isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha hap⟩
 
