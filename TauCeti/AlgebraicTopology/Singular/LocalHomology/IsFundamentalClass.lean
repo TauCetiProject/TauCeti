@@ -316,9 +316,8 @@ theorem IsFundamentalClass.existsUnique_eq_smul [T2Space M] [ConnectedSpace M]
   -- The fundamental class is nonzero, so `Hₙ(M; K) ≠ 0` and the connected manifold is compact.
   have : T1Space M := ChartedSpace.t1Space E M
   have : Nonempty M := ConnectedSpace.toNonempty
-  have : CompactSpace M := compactSpace_of_not_isZero_singularHomology (ModuleCat.of K K) hn le_rfl
-    fun hz ↦ not_isFundamentalClass_zero hn (ModuleCat.of K K)
-      ((@Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero hz) μ 0) ▸ hμ)
+  have : CompactSpace M := compactSpace_of_nontrivial_singularHomology (ModuleCat.of K K) hn le_rfl
+    (h := ⟨⟨μ, 0, fun h0 ↦ not_isFundamentalClass_zero hn (ModuleCat.of K K) (h0 ▸ hμ)⟩⟩)
   obtain ⟨e, u, hu⟩ := hμ.exists_linearEquiv_isUnit hn (LinearEquiv.refl K K)
   -- In the coordinate `e`, the equation `γ = c • μ` reads `e γ = c * u` for the unit `u = e μ`.
   have key (c : K) : γ = c • μ ↔ c = e γ * ↑u⁻¹ := by

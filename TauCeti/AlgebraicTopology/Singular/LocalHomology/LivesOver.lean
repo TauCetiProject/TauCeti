@@ -339,8 +339,8 @@ theorem livesOverFundamentalClass_id_iff_ne_zero [T2Space M] [ConnectedSpace M]
   refine ⟨fun h hγ ↦ not_livesOverFundamentalClass_zero (ModuleCat.of K K) id b n (hγ ▸ h),
     fun hγ ↦ ?_⟩
   -- A nonzero class of `Hₙ(M; K)` forces the connected manifold `M` to be compact.
-  have : CompactSpace M := compactSpace_of_not_isZero_singularHomology (ModuleCat.of K K) hn le_rfl
-    fun hz ↦ hγ (@Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero hz) γ 0)
+  have : CompactSpace M := compactSpace_of_nontrivial_singularHomology (ModuleCat.of K K) hn le_rfl
+    (h := ⟨⟨γ, 0, hγ⟩⟩)
   exact ((isFundamentalClass_iff_ne_zero hn γ).2 hγ).livesOverFundamentalClass_id hn b
 
 end FundamentalClass
