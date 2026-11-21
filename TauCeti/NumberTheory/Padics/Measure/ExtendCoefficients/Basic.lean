@@ -231,16 +231,19 @@ private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (
       locallyConstantIntegral j μ φ := by
   let e := locallyConstantTestEquiv (X := X) K
   have hφ : (locallyConstantTests (X := X) K).subtypeL (e φ) =
-      LocallyConstant.toContinuousMapLinearMap K φ :=
-    LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
+      LocallyConstant.toContinuousMapLinearMap K φ := by
+    rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
+    exact LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
       (h := LocallyConstant.toContinuousMap_injective) φ
+  have hd : DenseRange (locallyConstantTests (X := X) K).subtypeL := by
+    rw [Submodule.coe_subtypeL]
+    exact LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype K
   have he : IsUniformInducing (locallyConstantTests (X := X) K).subtypeL := by
     rw [Submodule.coe_subtypeL, Submodule.coe_subtype]
     exact ⟨uniformity_subtype.symm⟩
   rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
     (e := (locallyConstantTests (X := X) K).subtypeL)
-    (LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype K)
-    he (e φ)]
+    hd he (e φ)]
   simp only [integralOnLocallyConstantTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
     LinearEquiv.coe_toLinearMap, e, LinearEquiv.symm_apply_apply]
 
@@ -282,8 +285,7 @@ def extendCoefficients (hj : ∀ a, ‖j a‖ ≤ B) : D(X, O) →+ D(X, K) wher
     rw [finiteProjection_extendCoefficientsCLM j 0 hj]
     simp
   map_add' μ ν := finiteProjection_ext _ _ fun q ↦ by
-    rw [map_add, finiteProjection_extendCoefficientsCLM j _ hj,
-      finiteProjection_extendCoefficientsCLM j _ hj, finiteProjection_extendCoefficientsCLM j _ hj]
+    simp only [map_add, finiteProjection_extendCoefficientsCLM]
     ext a
     simp
 
