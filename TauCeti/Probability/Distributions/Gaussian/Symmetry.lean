@@ -25,7 +25,7 @@ Gaussian laws assign equal mass to opposite half-lines (giving positive-variance
 `2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
 multiplication by deterministic scalars of unit modulus.
 In particular, integrals against the standard Gaussian measure are invariant under linear isometry
-self-equivalences (`TauCeti.Probability.integral_comp_linearIsometryEquiv_stdGaussian`), such as the
+equivalences (`TauCeti.Probability.integral_comp_linearIsometryEquiv_stdGaussian`), such as the
 coordinate sign changes `TauCeti.Probability.signFlip` of `EuclideanSpace ℝ ι`, so a standard
 Gaussian integral may be replaced by the integral of the average of the integrand over all sign
 changes (`TauCeti.Probability.integral_eq_integral_expect_signFlip`).
@@ -144,20 +144,22 @@ theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
 
 section LinearIsometryEquiv
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F]
 
-/-- A linear isometry self-equivalence of a finite-dimensional real inner product space preserves
-the standard Gaussian measure. -/
-theorem measurePreserving_linearIsometryEquiv_stdGaussian (f : E ≃ₗᵢ[ℝ] E) :
-    MeasurePreserving f (stdGaussian E) (stdGaussian E) :=
+/-- A linear isometry equivalence between finite-dimensional real inner product spaces carries the
+standard Gaussian measure of the source to that of the target. -/
+theorem measurePreserving_linearIsometryEquiv_stdGaussian (f : E ≃ₗᵢ[ℝ] F) :
+    MeasurePreserving f (stdGaussian E) (stdGaussian F) :=
   ⟨f.continuous.measurable, stdGaussian_map f⟩
 
 /-- Integrals against the standard Gaussian measure are invariant under linear isometry
-self-equivalences. -/
+equivalences between finite-dimensional real inner product spaces. -/
 theorem integral_comp_linearIsometryEquiv_stdGaussian {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (f : E ≃ₗᵢ[ℝ] E) (φ : E → G) :
-    ∫ x, φ (f x) ∂stdGaussian E = ∫ x, φ x ∂stdGaussian E :=
+    [NormedSpace ℝ G] (f : E ≃ₗᵢ[ℝ] F) (φ : F → G) :
+    ∫ x, φ (f x) ∂stdGaussian E = ∫ y, φ y ∂stdGaussian F :=
   (measurePreserving_linearIsometryEquiv_stdGaussian f).integral_comp
     f.toHomeomorph.measurableEmbedding φ
 
