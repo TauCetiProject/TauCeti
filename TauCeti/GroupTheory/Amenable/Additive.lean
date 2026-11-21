@@ -53,10 +53,10 @@ theorems.
   amenable if and only if `A →ᵇ ℝ` admits a normalized positive translation-invariant linear
   functional.
 * `TauCeti.AddAmenable.of_denseRange`, `TauCeti.AddAmenable.of_surjective`,
-  `TauCeti.AddAmenable.of_le`, `TauCeti.AddAmenable.of_discrete`, and
-  `ContinuousAddEquiv.addAmenable_iff`: functoriality and topology change.
+  `TauCeti.AddAmenable.quotient`, `TauCeti.AddAmenable.of_le`, `TauCeti.AddAmenable.of_discrete`,
+  and `ContinuousAddEquiv.addAmenable_iff`: functoriality, quotients, and topology change.
 * `TauCeti.AddAmenable.of_finite`, `TauCeti.AddAmenable.prod`, `TauCeti.addAmenable_prod_iff`,
-  `TauCeti.AddAmenable.pi`, and `TauCeti.addAmenable_pi_iff`: finite groups and finite products.
+  `TauCeti.AddAmenable.pi`, and `TauCeti.addAmenable_pi_iff`: finite groups and products.
 * `TauCeti.AddAmenable.of_injective`, `TauCeti.AddAmenable.addSubgroup`,
   `TauCeti.AddAmenable.of_ker_le_range`, and `TauCeti.addAmenable_iff_addSubgroup_quotient`:
   subgroups and extensions of discrete additive groups.
@@ -126,6 +126,15 @@ theorem AddAmenable.of_denseRange [AddAmenable A] (φ : A →ₜ+ B) (hφ : Dens
 
 attribute [to_additive existing] Amenable.of_denseRange
 
+/-- Every quotient of an amenable additive topological group by a normal additive subgroup is
+amenable. -/
+instance AddAmenable.quotient [AddAmenable A] (N : AddSubgroup A) [N.Normal] :
+    AddAmenable (A ⧸ N) :=
+  .of_denseRange ⟨QuotientAddGroup.mk' N, continuous_quot_mk⟩
+    (QuotientAddGroup.mk'_surjective N).denseRange
+
+attribute [to_additive existing] Amenable.quotient
+
 omit [TopologicalSpace A] [IsTopologicalAddGroup A] in
 /-- Additive amenability passes from a finer additive-group topology to a coarser one. -/
 theorem AddAmenable.of_le {t₁ t₂ : TopologicalSpace A}
@@ -184,17 +193,16 @@ theorem addAmenable_prod_iff : AddAmenable (A × B) ↔ AddAmenable A ∧ AddAme
 
 attribute [to_additive existing addAmenable_prod_iff] amenable_prod_iff
 
-/-- The product of a finite family of amenable additive topological groups is amenable. -/
-instance AddAmenable.pi {ι : Type*} [Finite ι] {A : ι → Type*} [∀ i, AddGroup (A i)]
-    [∀ i, TopologicalSpace (A i)] [∀ i, IsTopologicalAddGroup (A i)] [∀ i, AddAmenable (A i)] :
-    AddAmenable (∀ i, A i) :=
+/-- The product of a family of amenable additive topological groups is amenable. -/
+instance AddAmenable.pi {ι : Type*} {A : ι → Type*} [∀ i, AddGroup (A i)]
+    [∀ i, TopologicalSpace (A i)] [∀ i, IsTopologicalAddGroup (A i)]
+    [∀ i, AddAmenable (A i)] : AddAmenable (∀ i, A i) :=
   ⟨(ContinuousMulEquiv.piMultiplicative A).amenable_iff.2 inferInstance⟩
 
 attribute [to_additive existing] Amenable.pi
 
-/-- A product of a finite family of additive topological groups is amenable exactly when every
-factor is. -/
-theorem addAmenable_pi_iff {ι : Type*} [Finite ι] {A : ι → Type*} [∀ i, AddGroup (A i)]
+/-- A product of additive topological groups is amenable exactly when every factor is. -/
+theorem addAmenable_pi_iff {ι : Type*} {A : ι → Type*} [∀ i, AddGroup (A i)]
     [∀ i, TopologicalSpace (A i)] [∀ i, IsTopologicalAddGroup (A i)] :
     AddAmenable (∀ i, A i) ↔ ∀ i, AddAmenable (A i) := by
   simp_rw [← amenable_multiplicative_iff, (ContinuousMulEquiv.piMultiplicative A).amenable_iff,

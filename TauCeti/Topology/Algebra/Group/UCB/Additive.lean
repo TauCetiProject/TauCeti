@@ -197,6 +197,25 @@ theorem equivMultiplicative_symm_leftTranslation (g : Multiplicative A)
   ext x
   simp
 
+/-- `equivMultiplicative` intertwines additive right translation by `a` with multiplicative right
+translation by `Multiplicative.ofAdd a`. -/
+@[simp]
+theorem equivMultiplicative_rightTranslation (a : A) (f : AddUCB A) :
+    equivMultiplicative (rightTranslation a f) =
+      UCB.rightTranslation (ofAdd a) (equivMultiplicative f) := by
+  ext x
+  simp
+
+/-- `equivMultiplicative.symm` intertwines multiplicative right translation by `g` with additive
+right translation by `g.toAdd`. -/
+@[simp]
+theorem equivMultiplicative_symm_rightTranslation (g : Multiplicative A)
+    (f : UCB (Multiplicative A)) :
+    equivMultiplicative.symm (UCB.rightTranslation g f) =
+      rightTranslation g.toAdd (equivMultiplicative.symm f) := by
+  ext x
+  simp
+
 end AddUCB
 
 namespace UCB
@@ -292,6 +311,23 @@ translation by `a.toMul`. -/
 theorem equivAdditive_symm_leftTranslation (a : Additive G) (f : AddUCB (Additive G)) :
     equivAdditive.symm (AddUCB.leftTranslation a f) =
       leftTranslation a.toMul (equivAdditive.symm f) := by
+  ext x
+  simp
+
+/-- `equivAdditive` intertwines multiplicative right translation by `g` with additive right
+translation by `Additive.ofMul g`. -/
+@[simp]
+theorem equivAdditive_rightTranslation (g : G) (f : UCB G) :
+    equivAdditive (rightTranslation g f) = AddUCB.rightTranslation (ofMul g) (equivAdditive f) := by
+  ext x
+  simp
+
+/-- `equivAdditive.symm` intertwines additive right translation by `a` with multiplicative right
+translation by `a.toMul`. -/
+@[simp]
+theorem equivAdditive_symm_rightTranslation (a : Additive G) (f : AddUCB (Additive G)) :
+    equivAdditive.symm (AddUCB.rightTranslation a f) =
+      rightTranslation a.toMul (equivAdditive.symm f) := by
   ext x
   simp
 
