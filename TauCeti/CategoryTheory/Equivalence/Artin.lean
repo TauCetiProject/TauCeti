@@ -72,7 +72,7 @@ def artinAutoequivalenceAction (E : V → (C ≌ C))
           (Equivalence.toAutoequivalenceClass_trans (E j) (E i)).symm
         _ = ((E i).trans (E j)).toAutoequivalenceClass :=
           (Equivalence.toAutoequivalenceClass_eq_iff _ _).2
-            (Nonempty.map Iso.symm (commute hij hadj))
+            (Nonempty.map CategoryTheory.Iso.symm (commute hij hadj))
         _ = (E j).toAutoequivalenceClass * (E i).toAutoequivalenceClass :=
           Equivalence.toAutoequivalenceClass_trans (E i) (E j))
     (fun {i j} hadj ↦ by

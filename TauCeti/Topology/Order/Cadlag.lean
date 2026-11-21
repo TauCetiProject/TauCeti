@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.Cadlag
+public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Order.WithTop
+import Mathlib.Topology.Instances.ENNReal.Lemmas
+import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Topology.Order.LeftRight
 
 /-!
@@ -157,14 +160,14 @@ theorem exists_le_or_le_leftLim_iff_le_sup_biSup {X α : Type*}
     · exact hlt.trans (le_sup_of_le_right (le_iSup₂_of_le t ht le_rfl))
   · intro hsup
     by_contra! hlt
-    have hc_ex (t : Icc (⊥ : X) T) : ∃ c, max (g t.1) (g.leftLim t.1) < c ∧ c < ε :=
-      exists_between (max_lt (hlt t.1 t.2.2).1 (hlt t.1 t.2.2).2)
+    have hc_ex (t : Icc (⊥ : X) T) : ∃ c, max (g t.val) (g.leftLim t.val) < c ∧ c < ε :=
+      exists_between (max_lt (hlt t.val t.property.2).1 (hlt t.val t.property.2).2)
     choose c hc_gt hc_lt using hc_ex
-    have hnhds (t : Icc (⊥ : X) T) : {x | g x < c t} ∈ 𝓝 t.1 := by
-      rw [← nhdsLT_sup_nhdsGE t.1, mem_sup]
-      refine ⟨(hg.tendsto_nhdsLT_leftLim t.1).eventually
+    have hnhds (t : Icc (⊥ : X) T) : {x | g x < c t} ∈ 𝓝 t.val := by
+      rw [← nhdsLT_sup_nhdsGE t.val, mem_sup]
+      refine ⟨(hg.tendsto_nhdsLT_leftLim t.val).eventually
           (Iio_mem_nhds ((le_max_right _ _).trans_lt (hc_gt t))),
-        (isRightContinuous_iff_continuousWithinAt_Ici.mp hg.isRightContinuous t.1).eventually
+        (isRightContinuous_iff_continuousWithinAt_Ici.mp hg.isRightContinuous t.val).eventually
           (Iio_mem_nhds ((le_max_left _ _).trans_lt (hc_gt t)))⟩
     choose U hU_sub hU_open htU using fun t => mem_nhds_iff.mp (hnhds t)
     obtain ⟨F, hF⟩ := isCompact_Icc.elim_finite_subcover U hU_open fun x hx =>

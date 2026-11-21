@@ -178,20 +178,17 @@ theorem zero : IsIntervalWeakSupersolution a b c d (0 : W1p volume ⟨Ioo x₀ x
   refine ⟨integrableOn_zero.congr_fun_ae ?_, (integral_zero ℝ ℝ).ge.trans_eq
     (integral_congr_ae ?_)⟩ <;>
   · filter_upwards [hv, hg] with y h₁ h₂
-    simp [h₁, h₂]
+    rw [h₁, h₂]
+    simp
 
 /-- A nonnegative multiple of a weak supersolution is a weak supersolution. -/
 theorem smul (h : IsIntervalWeakSupersolution a b c d u) {r : ℝ} (hr : 0 ≤ r) :
     IsIntervalWeakSupersolution a b c d (r • u) := fun w hw ↦ by
-  have hg : ⇑(W1p.gradient (r • u)) =ᵐ[volume.restrict (Ioo x₀ x₁)] r • ⇑(W1p.gradient u) := by
-    rw [show W1p.gradient (r • u) = r • W1p.gradient u by
-      simpa only [W1p.gradientL_apply] using map_smul W1p.gradientL r u]
-    exact Lp.coeFn_smul r (W1p.gradient u)
   refine ⟨IntegrableOn.congr_fun_ae (Integrable.const_mul (h.integrableOn w hw) r) ?_,
     (mul_nonneg hr (h.integral_nonneg w hw)).trans_eq ?_⟩
   on_goal 2 => rw [← integral_const_mul]; refine integral_congr_ae ?_
   all_goals
-    filter_upwards [hg, W1p.value_smul_ae r u] with y h₁ h₂
+    filter_upwards [W1p.gradient_smul_ae r u, W1p.value_smul_ae r u] with y h₁ h₂
     simp only [h₁, h₂, Pi.smul_apply, smul_eq_mul]
     ring
 
@@ -199,18 +196,13 @@ theorem smul (h : IsIntervalWeakSupersolution a b c d u) {r : ℝ} (hr : 0 ≤ r
 theorem add (hu : IsIntervalWeakSupersolution a b c d u)
     {v : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ 2} (hv : IsIntervalWeakSupersolution a b c d v) :
     IsIntervalWeakSupersolution a b c d (u + v) := fun w hw ↦ by
-  have hg : ⇑(W1p.gradient (u + v)) =ᵐ[volume.restrict (Ioo x₀ x₁)]
-      ⇑(W1p.gradient u) + ⇑(W1p.gradient v) := by
-    rw [show W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v by
-      simpa only [W1p.gradientL_apply] using map_add W1p.gradientL u v]
-    exact Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)
   refine ⟨((hu.integrableOn w hw).add (hv.integrableOn w hw)).congr_fun_ae ?_,
     (add_nonneg (hu.integral_nonneg w hw) (hv.integral_nonneg w hw)).trans_eq ?_⟩
   on_goal 2 =>
     rw [← integral_add (hu.integrableOn w hw) (hv.integrableOn w hw)]
     refine integral_congr_ae ?_
   all_goals
-    filter_upwards [hg, W1p.value_add_ae u v] with y h₁ h₂
+    filter_upwards [W1p.gradient_add_ae u v, W1p.value_add_ae u v] with y h₁ h₂
     simp only [h₁, h₂, Pi.add_apply]
     ring
 

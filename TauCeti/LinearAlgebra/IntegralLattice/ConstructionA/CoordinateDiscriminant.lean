@@ -114,7 +114,7 @@ noncomputable def dualCarrierIntEquiv : (ι → ℤ) ≃ₗ[ℤ] (zeroLattice m 
       (intCastPi_mem_dualCarrier m ι))
     ⟨fun _ _ h ↦ (Function.Injective.piMap fun _ ↦ Int.cast_injective)
         (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨z, hz⟩ := (mem_zeroLattice_dualCarrier_iff m ι).mp x.2
+      obtain ⟨z, hz⟩ := (mem_zeroLattice_dualCarrier_iff m ι).mp x.property
       exact ⟨z, Subtype.ext hz⟩⟩
 
 @[simp]

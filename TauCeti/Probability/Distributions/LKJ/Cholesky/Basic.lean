@@ -45,7 +45,7 @@ in `partialCorrelationCholesky`, rather than additional independent variables. -
 theorem map_cholesky_comap_lkjMeasure (hη : 0 < η) :
     ((lkjMeasure p η).comap
         (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
-        (fun A ↦ (cholesky A).1) =
+        (fun A ↦ (cholesky A).val) =
       (Measure.pi fun ij : strictLowerTriangle p ↦
         (betaMeasure (lkjPartialCorrelationShape p η ij)
           (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)).map
@@ -63,9 +63,9 @@ theorem map_cholesky_comap_lkjMeasure (hη : 0 < η) :
       (map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη)
   have hemb : MeasurableEmbedding
       (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
-  have hchol : Measurable (fun A : PosDefMatrix p ↦ (cholesky A).1) :=
-    measurable_subtype_coe.comp measurable_cholesky
+    MeasurableEmbedding.subtypeVal (measurableSet_posDefMatrix p)
+  have hchol : Measurable (fun A : PosDefMatrix p ↦ (cholesky A).val) :=
+    measurable_subtypeVal.comp measurable_cholesky
   ext s hs
   have hE := hemb.measurableSet_image.2 (hchol hs)
   rw [Measure.map_apply hchol hs, hemb.comap_apply, ← hmap, Measure.map_apply hf hE,
@@ -75,7 +75,7 @@ theorem map_cholesky_comap_lkjMeasure (hη : 0 < η) :
     (lkjPartialCorrelationShape_pos hη)] with z hz
   have hpos : (f z : Matrix (Fin p) (Fin p) ℝ).PosDef :=
     mem_posDefCorrelationRegion.1 (mapsTo_correlationCoordinatesOfPartialCorrelation hz)
-  have hfactor : (cholesky ⟨f z, hpos⟩).1 = partialCorrelationCholesky z := by
+  have hfactor : (cholesky ⟨f z, hpos⟩).val = partialCorrelationCholesky z := by
     exact (congrArg Subtype.val (eq_cholesky_of_mul_transpose_self_eq ⟨f z, hpos⟩
       ⟨partialCorrelationCholesky z, isLowerTriangular_partialCorrelationCholesky z,
         partialCorrelationCholesky_diag_pos hz⟩
@@ -98,13 +98,13 @@ constructed from independent centered symmetric Beta partial correlations. -/
 theorem cholesky_lkjMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {p : ℕ} {η : ℝ} {A : Ω → TauCeti.PosDefMatrix p}
     (hA : HasLaw A ((TauCeti.Probability.lkjMeasure p η).comap Subtype.val) P) (hη : 0 < η) :
-    HasLaw (fun ω ↦ (TauCeti.cholesky (A ω)).1)
+    HasLaw (fun ω ↦ (TauCeti.cholesky (A ω)).val)
       ((Measure.pi fun ij : TauCeti.strictLowerTriangle p ↦
         (betaMeasure (TauCeti.Probability.lkjPartialCorrelationShape p η ij)
           (TauCeti.Probability.lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)).map
         TauCeti.partialCorrelationCholesky) P := by
-  exact HasLaw.fun_comp (Y := fun B : TauCeti.PosDefMatrix p ↦ (TauCeti.cholesky B).1)
-    ⟨(measurable_subtype_coe.comp TauCeti.measurable_cholesky).aemeasurable,
+  exact HasLaw.fun_comp (Y := fun B : TauCeti.PosDefMatrix p ↦ (TauCeti.cholesky B).val)
+    ⟨(measurable_subtypeVal.comp TauCeti.measurable_cholesky).aemeasurable,
       TauCeti.Probability.map_cholesky_comap_lkjMeasure hη⟩ hA
 
 end ProbabilityTheory.HasLaw
