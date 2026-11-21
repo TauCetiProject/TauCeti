@@ -33,9 +33,14 @@ Minkowski's second theorem.
 
 * `MeasureTheory.successiveMin_of_finrank_le`, `MeasureTheory.successiveMin_of_setFinrank_le` and
   `MeasureTheory.successiveMin_of_finrank_int_le`: the minima vanish at indices beyond the
-  dimension of `E`, beyond the real rank of `L`, and, for discrete `L`, beyond its integer rank.
-* `MeasureTheory.exists_lt_setFinrank_smul_inter`: for discrete `L` and absorbent `s`, the
-  infimum defining a minimum below the integer rank of `L` is over a nonempty set.
+  dimension of `E` (when `E` is finite-dimensional), beyond the real rank of `L` (when `span ℝ L`
+  is finite-dimensional), and, for discrete `L` with finite-dimensional real span, beyond its
+  integer rank.
+* `MeasureTheory.exists_lt_setFinrank_smul_inter` and
+  `MeasureTheory.exists_lt_setFinrank_smul_inter_zLattice`: for discrete `L` and absorbent `s`, the
+  infimum defining a minimum below the integer rank of `L` (or, for a full lattice, below the
+  dimension of `E`) is over a nonempty set; the ambient space need not be assumed
+  finite-dimensional.
 * `MeasureTheory.successiveMin_mono`: below the integer rank the minima are nondecreasing.
 * `MeasureTheory.successiveMin_le_of_lt_setFinrank` and
   `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate whose lattice vectors
@@ -94,31 +99,37 @@ theorem successiveMin_le_of_lt_setFinrank {r : ℝ≥0} (hr : i < Set.finrank �
   rw [successiveMin_def]
   exact csInf_le' hr
 
-variable [FiniteDimensional ℝ E]
-
-/-- The successive minima vanish at every index at least the dimension of the ambient space. -/
+/-- The successive minima vanish at every index at least the dimension of a finite-dimensional
+ambient space. -/
 @[simp]
-theorem successiveMin_of_finrank_le (hi : finrank ℝ E ≤ i) : successiveMin L s i = 0 := by
+theorem successiveMin_of_finrank_le [FiniteDimensional ℝ E] (hi : finrank ℝ E ≤ i) :
+    successiveMin L s i = 0 := by
   simp [successiveMin_def, Set.finrank, ((finrank_le _).trans hi).not_gt]
 
-/-- The successive minima vanish at every index at least the real rank of `L`. -/
+/-- The successive minima vanish at every index at least the real rank of `L`, when `span ℝ L` is
+finite-dimensional. -/
 @[simp]
-theorem successiveMin_of_setFinrank_le (hi : Set.finrank ℝ (L : Set E) ≤ i) :
-    successiveMin L s i = 0 := by
+theorem successiveMin_of_setFinrank_le [FiniteDimensional ℝ (span ℝ (L : Set E))]
+    (hi : Set.finrank ℝ (L : Set E) ≤ i) : successiveMin L s i = 0 := by
   simp [successiveMin_def, Set.finrank, fun r : ℝ≥0 ↦
     ((finrank_mono (span_mono (Set.inter_subset_right (s := r • s)))).trans hi).not_gt]
 
-/-- For a discrete `L`, the successive minima vanish at every index at least the integer rank
-of `L`. -/
-theorem successiveMin_of_finrank_int_le [DiscreteTopology L] (hi : finrank ℤ L ≤ i) :
+/-- For a discrete `L` with finite-dimensional real span, the successive minima vanish at every
+index at least the integer rank of `L`. -/
+theorem successiveMin_of_finrank_int_le [DiscreteTopology L]
+    [FiniteDimensional ℝ (span ℝ (L : Set E))] (hi : finrank ℤ L ≤ i) :
     successiveMin L s i = 0 := by
   simp [hi]
 
 /-- Below the integer rank of a discrete `L`, some dilate of an absorbent set `s` contains vectors
 of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
-`successiveMin L s i` is taken over a nonempty set. -/
+`successiveMin L s i` is taken over a nonempty set. The ambient space need not be
+finite-dimensional. -/
 theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ s)
     (hi : i < finrank ℤ L) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
+  have hi' : i < Set.finrank ℝ (L : Set E) := by rwa [setFinrank_real_eq_finrank_int]
+  have : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
+    Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hi')
   -- Finitely many vectors of `L` span `span ℝ L`, and `s` absorbs them.
   obtain ⟨f, hfL, hspan, -⟩ := exists_fun_fin_finrank_span_eq ℝ (L : Set E)
   obtain ⟨r, hr, hrs⟩ := (hs.absorbs_finite (Set.finite_range f)).exists_pos
@@ -127,18 +138,22 @@ theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ
     rintro _ ⟨j, rfl⟩
     obtain ⟨y, hy, hyf⟩ := hrs r (Real.norm_of_nonneg hr.le).ge ⟨j, rfl⟩
     exact ⟨Set.mem_smul_set.2 ⟨y, hy, by simpa [NNReal.smul_def] using hyf⟩, hfL j⟩
-  calc i < Set.finrank ℝ (L : Set E) := by rwa [setFinrank_real_eq_finrank_int]
+  have : FiniteDimensional ℝ (span ℝ (((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) : Set E)) :=
+    Submodule.finiteDimensional_of_le (span_mono Set.inter_subset_right)
+  calc i < Set.finrank ℝ (L : Set E) := hi'
     _ = Set.finrank ℝ (Set.range f) := by rw [Set.finrank, Set.finrank, hspan]
     _ ≤ Set.finrank ℝ ((⟨r, hr.le⟩ : ℝ≥0) • s ∩ L) := finrank_mono (span_mono hf)
 
 /-- For a full lattice `L`, the infimum defining `successiveMin L s i` is taken over a nonempty set
 at every index below the dimension of `E`. -/
 theorem exists_lt_setFinrank_smul_inter_zLattice [DiscreteTopology L] [IsZLattice ℝ L]
-    (hs : Absorbent ℝ s) (hi : i < finrank ℝ E) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) :=
-  exists_lt_setFinrank_smul_inter hs (hi.trans_eq (ZLattice.rank ℝ L).symm)
+    (hs : Absorbent ℝ s) (hi : i < finrank ℝ E) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
+  have := Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hi)
+  exact exists_lt_setFinrank_smul_inter hs (hi.trans_eq (ZLattice.rank ℝ L).symm)
 
 /-- **Monotonicity in the index.** Below the integer rank of a discrete `L`, the successive minima
-of an absorbent set are nondecreasing. Beyond the rank they take the junk value `0`. -/
+of an absorbent set are nondecreasing. The ambient space need not be finite-dimensional. Beyond
+the rank they take the junk value `0`. -/
 @[gcongr]
 theorem successiveMin_mono [DiscreteTopology L] {j : ℕ} (hs : Absorbent ℝ s) (hij : i ≤ j)
     (hj : j < finrank ℤ L) : successiveMin L s i ≤ successiveMin L s j :=
@@ -146,30 +161,35 @@ theorem successiveMin_mono [DiscreteTopology L] {j : ℕ} (hs : Absorbent ℝ s)
 
 /-- Below the integer rank of a discrete `L`, every dilate of an absorbent set `s`, star-convex
 about `0`, by a factor strictly greater than the `i`-th successive minimum contains vectors of `L`
-spanning a real subspace of dimension greater than `i`. -/
+spanning a real subspace of dimension greater than `i`. The ambient space need not be
+finite-dimensional. -/
 theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : StarConvex ℝ 0 s) (hs : Absorbent ℝ s) (hi : i < finrank ℤ L)
     (hr : successiveMin L s i < r) : i < Set.finrank ℝ (r • s ∩ L) := by
+  have : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
+    Module.finite_of_finrank_pos (by
+      rw [← Set.finrank, setFinrank_real_eq_finrank_int]
+      exact (Nat.zero_le i).trans_lt hi)
+  have : FiniteDimensional ℝ (span ℝ ((r • s ∩ L) : Set E)) :=
+    Submodule.finiteDimensional_of_le (span_mono Set.inter_subset_right)
   rw [successiveMin_def] at hr
   obtain ⟨r₀, hr₀⟩ := exists_lt_setFinrank_smul_inter hs hi
   obtain ⟨r', hr', hr'r⟩ := exists_lt_of_csInf_lt ⟨r₀, hr₀⟩ hr
-  refine hr'.trans_le (Set.finrank_mono (Set.inter_subset_inter_left _ ?_))
-  -- `r' • x = r • ((r⁻¹ * r') • x)`, and `(r⁻¹ * r') • x ∈ s` as `0 ≤ r⁻¹ * r' ≤ 1`.
+  refine hr'.trans_le (finrank_mono (span_mono (Set.inter_subset_inter_left _ ?_)))
   rintro _ ⟨x, hx, rfl⟩
-  have hr0 : 0 < r := hr'r.pos
-  refine ⟨(r⁻¹ * r') • x, ?_, ?_⟩
-  · rw [NNReal.smul_def]
-    exact hsc.smul_mem hx (by positivity) (NNReal.coe_le_one.2 ((inv_mul_le_one₀ hr0).2 hr'r.le))
-  · simp only [NNReal.smul_def, smul_smul, ← NNReal.coe_mul, mul_inv_cancel_left₀ hr0.ne']
+  obtain ⟨y, hy, hyx⟩ := hsc.smul_mono r'.2 hr'r.le ⟨x, hx, rfl⟩
+  exact ⟨y, hy, by simpa [NNReal.smul_def] using hyx⟩
 
 /-- Below the integer rank of a discrete `L`, every dilate of a convex neighbourhood `s` of `0` by
 a factor strictly greater than the `i`-th successive minimum contains `i + 1` linearly independent
-vectors of `L`. -/
+vectors of `L`. The ambient space need not be finite-dimensional. -/
 theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) (hr : successiveMin L s i < r) :
     ∃ v : Fin (i + 1) → L, (∀ j, (v j : E) ∈ r • s ∩ L) ∧ LinearIndependent ℤ v := by
   have hri := lt_setFinrank_smul_inter_of_successiveMin_lt
     (hsc.starConvex (mem_of_mem_nhds hs₀)) (absorbent_nhds_zero hs₀) hi hr
+  have : FiniteDimensional ℝ (span ℝ ((r • s ∩ L) : Set E)) :=
+    Module.finite_of_finrank_pos ((Nat.zero_le i).trans_lt hri)
   rw [Set.finrank] at hri
   obtain ⟨f, hfli, hf⟩ := le_finrank_span_iff_exists_linearIndependent.mp hri
   refine ⟨fun j ↦ ⟨f j, (hf j).2⟩, hf, ?_⟩
@@ -183,6 +203,7 @@ vectors of `L` spanning a real subspace of dimension greater than `i`: the infim
 theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ s)
     (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) :
     i < Set.finrank ℝ (successiveMin L s i • s ∩ L) := by
+  have := FiniteDimensional.of_totallyBounded_nhds_zero ℝ hs₀ hs.totallyBounded
   set m := successiveMin L s i
   have h₀ : (0 : E) ∈ s := mem_of_mem_nhds hs₀
   have hsmul (c : ℝ≥0) : c • s = (c : ℝ) • s := by
@@ -251,6 +272,7 @@ theorem exists_directional_set' [DiscreteTopology L] (hsc : Convex ℝ s) (hs : 
     (hs₀ : s ∈ 𝓝 0) :
     ∃ v : Fin (finrank ℤ L) → E,
       (∀ j : Fin (finrank ℤ L), v j ∈ successiveMin L s j • s ∩ L) ∧ LinearIndependent ℝ v := by
+  have := FiniteDimensional.of_totallyBounded_nhds_zero ℝ hs₀ hs.totallyBounded
   -- Build the family one vector at a time: the vectors of `L` in the dilate by the `d`-th
   -- minimum span more than `d` dimensions, so one of them lies outside the span of the first `d`.
   suffices ∀ d ≤ finrank ℤ L, ∃ v : Fin d → E,
@@ -291,6 +313,7 @@ theorem exists_directional_basis [DiscreteTopology L] [IsZLattice ℝ L] (hsc : 
     (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) :
     ∃ b : Basis (Fin (finrank ℝ E)) ℝ E,
       ∀ j : Fin (finrank ℝ E), b j ∈ successiveMin L s j • s ∩ L := by
+  have := FiniteDimensional.of_totallyBounded_nhds_zero ℝ hs₀ hs.totallyBounded
   obtain ⟨v, hv, hvli⟩ := exists_directional_set' L hsc hs hs₀
   rw [← ZLattice.rank ℝ L]
   exact ⟨basisOfLinearIndependentOfCardEqFinrank' v hvli (by simp [ZLattice.rank ℝ L]),
