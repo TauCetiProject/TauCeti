@@ -35,9 +35,13 @@ only on the `Int(L)`-orbit of the nilpositive element.
 
 ## Main results
 
-* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
-  `RootPairing.Base.injOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
-  disjoint `Int(L)`-orbits.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
+  `RootPairing.Base.injOn_orbit_dominantNeutralElements`, and
+  `RootPairing.Base.bijOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
+  disjoint `Int(L)`-orbits, so they map bijectively onto the `Int(L)`-orbits of neutral elements
+  of `sl₂` triples.
+* `IsSl2Triple.existsUnique_mem_dominantNeutralElements_of_isAlgClosed`: every `sl₂` triple's
+  neutral element is `Int(L)`-conjugate to a unique dominant neutral element.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
   automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
@@ -91,6 +95,17 @@ theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
     exact MulAction.mem_orbit_self (h₂ : L)
   obtain ⟨⟨g, hg⟩, hgh⟩ := hmem
   exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq hh₁ hh₂ hg hgh
+
+/-- **Bijection with `Int(L)`-orbits of neutral elements.** Over an algebraically closed field,
+the dominant neutral elements for `b` map bijectively onto the `Int(L)`-orbits of neutral elements
+of `sl₂` triples. -/
+theorem bijOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
+    Set.BijOn (fun h : H ↦ MulAction.orbit (intLieAlgebra K L) (h : L))
+      b.dominantNeutralElements
+      (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}) :=
+  ⟨b.image_orbit_dominantNeutralElements ▸ Set.mapsTo_image _ _,
+    b.injOn_orbit_dominantNeutralElements,
+    b.image_orbit_dominantNeutralElements.superset⟩
 
 end IntOrbits
 
@@ -162,6 +177,20 @@ theorem weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H
   congr 1
   exact Subtype.ext (t₁.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b t₂
     hh₁ hh₂ hg hge)
+
+/-- **Existence and uniqueness of the dominant neutral element.** Over an algebraically closed
+field, the neutral element of an `sl₂` triple is `Int(L)`-conjugate to a unique dominant neutral
+element for `b`. -/
+theorem existsUnique_mem_dominantNeutralElements_of_isAlgClosed (b : (rootSystem H).Base)
+    {h e f : L} (t : IsSl2Triple h e f) :
+    ∃! h' : H, h' ∈ b.dominantNeutralElements ∧ ∃ g ∈ intLieAlgebra K L, g • h = h' := by
+  obtain ⟨g, hg, h', hh', hgh, -⟩ :=
+    t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
+  refine ⟨h', ⟨hh', g, hg, hgh⟩, ?_⟩
+  rintro h'' ⟨hh'', g', hg', hg'h⟩
+  refine RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b
+    hh'' hh' (mul_mem hg (inv_mem hg')) ?_
+  rw [mul_smul, ← hg'h, inv_smul_smul, hgh]
 
 end IntConjugacy
 

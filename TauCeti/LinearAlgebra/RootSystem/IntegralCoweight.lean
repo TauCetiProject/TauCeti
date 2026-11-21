@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# Making an integral coweight dominant
+# Making an integral coweight dominant and uniqueness in its Weyl orbit
 
 Let `P` be a reduced crystallographic root system over a field of characteristic zero, and let
 `x` be a coweight on which every root takes an integer value. This file proves that some base of
@@ -28,9 +30,17 @@ moved: some element of the Weyl group carries `x` to a coweight that is dominant
 this is the counterpart, over a field of characteristic zero carrying no order, of the
 ordered-field statement `RootPairing.exists_mem_dominantChamber`.
 
+Moreover, this dominant coweight is **unique** in its Weyl orbit
+(`RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`), over any integral domain of
+characteristic zero without an order: passing to the flipped root pairing `P.flip` via
+`RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` reduces coweight dominance directly to
+weight dominance (`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`). Combining existence and
+uniqueness gives `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`.
+
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
-splitting Cartan subalgebra: its roots take integer values, and a base making `h` dominant puts the
-nilpositive element of the triple into the positive nilradical.
+splitting Cartan subalgebra: its roots take integer values, a base making `h` dominant puts the
+nilpositive element of the triple into the positive nilradical, and uniqueness in the Weyl orbit
+shows that each orbit has at most one dominant neutral element.
 
 ## Main results
 
@@ -38,10 +48,15 @@ nilpositive element of the triple into the positive nilradical.
   integer value is dominant for some base.
 * `RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`: such a coweight is
   carried by the Weyl group to a coweight that is dominant for a given base.
+* `RootPairing.Base.eq_of_coweightEquiv_eq_of_forall_exists_nat`: two dominant coweights in the
+  same Weyl orbit are equal, over any integral domain of characteristic zero.
+* `RootPairing.Base.existsUnique_coweightEquiv_forall_exists_nat`: the Weyl orbit of an integral
+  coweight contains a unique dominant coweight.
 
 ## References
 
 * J.-P. Serre, *Algèbres de Lie semi-simples complexes*, Benjamin, 1966, Ch. V, §8.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §10.3.
 -/
 
 public section
@@ -49,6 +64,31 @@ public section
 open Module IsAddIndecomposable
 
 namespace RootPairing
+
+section Uniqueness
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
+  [P.IsReduced] (b : P.Base)
+
+/-- **Uniqueness of a dominant coweight in a Weyl orbit.** Over any integral domain of
+characteristic zero (with no order assumed), two coweights at which every simple root takes a
+natural-number value and which lie in the same Weyl-group orbit must coincide. -/
+theorem Base.eq_of_coweightEquiv_eq_of_forall_exists_nat {x y : N}
+    (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n)
+    (hy : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n)
+    {w : P.weylGroup} (hw : (w : P.Aut).coweightEquiv x = y) : x = y := by
+  have := P.flip_isReduced
+  obtain ⟨w', hw'⟩ := P.exists_flip_weylGroup_smul_eq_coweightEquiv w
+  have hsmul : w' • x = y := (hw' x).trans hw
+  have hcoroot (i : ι) (z : N) : P.flip.coroot' i z = P.root' i z := by
+    simp [coroot', root']
+  exact (hsmul.symm.trans (TauCeti.weylGroup_smul_eq_self_of_dominantIntegral (P := P.flip)
+    (b := b.flip) (w := w') (x := x)
+    (by simpa only [Base.flip_support, hcoroot] using hx)
+    (by simpa only [Base.flip_support, hcoroot, hsmul] using hy))).symm
+
+end Uniqueness
 
 variable {ι R M N : Type*} [Finite ι] [AddCommGroup M] [AddCommGroup N] [Field R] [CharZero R]
   [Module R M] [Module R N] (P : RootPairing ι R M N) [P.IsRootSystem] [P.IsCrystallographic]
@@ -127,5 +167,25 @@ theorem Base.exists_forall_exists_nat_root'_coweightEquiv_apply (b : P.Base) (x 
   refine ⟨n, ?_⟩
   rw [← hn, ← (w : P.Aut).root'_coweightEquiv j x]
   simp
+
+variable {P} in
+/-- **Existence and uniqueness of a dominant coweight in the Weyl orbit of an integral coweight.**
+Fix a base `b`. If every root takes an integer value at `x`, then its Weyl-group orbit contains a
+unique coweight at which every simple root of `b` takes a natural-number value. -/
+theorem Base.existsUnique_coweightEquiv_forall_exists_nat (b : P.Base) (x : N)
+    (hx : ∀ i, ∃ z : ℤ, P.root' i x = z) :
+    ∃! y : N, (∃ w : P.weylGroup, (w : P.Aut).coweightEquiv x = y) ∧
+      ∀ i ∈ b.support, ∃ n : ℕ, P.root' i y = n := by
+  obtain ⟨w, hw⟩ := b.exists_forall_exists_nat_root'_coweightEquiv_apply x hx
+  refine ⟨(w : P.Aut).coweightEquiv x, ⟨⟨w, rfl⟩, hw⟩, ?_⟩
+  rintro y ⟨⟨v, rfl⟩, hy⟩
+  refine b.eq_of_coweightEquiv_eq_of_forall_exists_nat hy hw (w := v⁻¹ * w) ?_
+  have hmul : ((v⁻¹ * w : P.weylGroup) : P.Aut).coweightEquiv =
+      (v⁻¹ : P.Aut).coweightEquiv.trans (w : P.Aut).coweightEquiv := by
+    ext z
+    simp [Equiv.coweightEquiv_apply, Subgroup.coe_mul]
+  rw [hmul, LinearEquiv.trans_apply]
+  congr 1
+  exact LinearEquiv.symm_apply_apply (v : P.Aut).coweightEquiv x
 
 end RootPairing
