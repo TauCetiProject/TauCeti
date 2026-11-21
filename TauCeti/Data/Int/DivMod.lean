@@ -5,22 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Int.Init
+public import Mathlib.Algebra.Order.Group.Unbundled.Int
 
 /-!
 # Quotient and remainder of a successor in `ℤ`
 
-Passing from `m` to `m + 1` either increases the remainder `m % n` by one, keeping the quotient
-`m / n`, or, when `m % n + 1 = n`, resets the remainder to `0` and increases the quotient by one.
-These are the integer counterparts of `Nat.succ_div_of_not_dvd` and `Nat.succ_div_of_dvd`, phrased
-by the remainder so that they apply to the periodic indexing `m ↦ (m / n, m % n)`.
+For `n ≠ 0` the remainder `m % n` lies in `[0, |n|)`, so passing from `m` to `m + 1` either
+increases the remainder by one, keeping the quotient `m / n`, or, when `m % n + 1 = |n|`, resets
+the remainder to `0` and moves the quotient by the sign of `n`. These are the integer counterparts
+of `Nat.succ_div_of_not_dvd` and `Nat.succ_div_of_dvd`, phrased by the remainder so that they apply
+to the periodic indexing `m ↦ (m / n, m % n)`. Each of the four formulas below holds for every `n`,
+including `n = 0`; the two cases are exhaustive only for `n ≠ 0`.
 
 ## Main results
 
 * `Int.add_one_ediv_of_emod_add_one_lt`, `Int.add_one_emod_of_emod_add_one_lt`: if
-  `m % n + 1 < n` then `(m + 1) / n = m / n` and `(m + 1) % n = m % n + 1`.
+  `m % n + 1 < |n|` then `(m + 1) / n = m / n` and `(m + 1) % n = m % n + 1`.
 * `Int.add_one_ediv_of_emod_add_one_eq`, `Int.add_one_emod_of_emod_add_one_eq`: if
-  `m % n + 1 = n` then `(m + 1) / n = m / n + 1` (for `n ≠ 0`) and `(m + 1) % n = 0`.
+  `m % n + 1 = |n|` then `(m + 1) / n = m / n + n.sign` and `(m + 1) % n = 0`.
 -/
 
 public section
@@ -29,26 +31,33 @@ namespace Int
 
 variable {m n : ℤ}
 
-/-- If the remainder of `m` modulo `n` is not the last one, `m + 1` has the same quotient. -/
-theorem add_one_ediv_of_emod_add_one_lt (h : m % n + 1 < n) : (m + 1) / n = m / n := by
-  by_cases hn : n = 0
-  · simp [hn]
+/-- If `m % n + 1 < |n|`, then `m + 1` has the same quotient as `m` on division by `n`. -/
+theorem add_one_ediv_of_emod_add_one_lt (h : m % n + 1 < |n|) : (m + 1) / n = m / n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   have := emod_nonneg m hn
-  have := emod_add_mul_ediv m n
-  exact ((Int.ediv_emod_unique (r := m % n + 1) (by omega)).2 ⟨by omega, by omega, h⟩).1
+  have hm : m + 1 = m % n + 1 + n * (m / n) := by have := emod_add_mul_ediv m n; omega
+  rw [hm, add_mul_ediv_left _ _ hn, ediv_eq_zero_of_lt_abs (by omega) h, zero_add]
 
-/-- If the remainder of `m` modulo `n` is not the last one, `m + 1` has the next remainder. -/
-theorem add_one_emod_of_emod_add_one_lt (h : m % n + 1 < n) : (m + 1) % n = m % n + 1 := by
+/-- If `m % n + 1 < |n|`, then the remainder of `m + 1` on division by `n` is `m % n + 1`. -/
+theorem add_one_emod_of_emod_add_one_lt (h : m % n + 1 < |n|) : (m + 1) % n = m % n + 1 := by
   rw [emod_def, add_one_ediv_of_emod_add_one_lt h, emod_def]
   omega
 
-/-- If the remainder of `m` modulo `n ≠ 0` is the last one, `m + 1` has the next quotient. -/
-theorem add_one_ediv_of_emod_add_one_eq (hn : n ≠ 0) (h : m % n + 1 = n) :
-    (m + 1) / n = m / n + 1 :=
-  Int.ediv_eq_of_eq_mul_right hn (by have := emod_add_mul_ediv m n; rw [Int.mul_add]; omega)
+/-- If `m % n + 1 = |n|`, then the quotient of `m + 1` on division by `n` is `m / n + n.sign`. -/
+theorem add_one_ediv_of_emod_add_one_eq (h : m % n + 1 = |n|) : (m + 1) / n = m / n + n.sign := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  refine Int.ediv_eq_of_eq_mul_right hn ?_
+  rw [Int.mul_add, mul_comm n n.sign, sign_mul_self_eq_abs, ← h]
+  have := emod_add_mul_ediv m n
+  omega
 
-/-- If the remainder of `m` modulo `n` is the last one, `m + 1` is divisible by `n`. -/
-theorem add_one_emod_of_emod_add_one_eq (h : m % n + 1 = n) : (m + 1) % n = 0 :=
-  emod_eq_zero_of_dvd ⟨m / n + 1, by have := emod_add_mul_ediv m n; rw [Int.mul_add]; omega⟩
+/-- If `m % n + 1 = |n|`, then `m + 1` is divisible by `n`. -/
+theorem add_one_emod_of_emod_add_one_eq (h : m % n + 1 = |n|) : (m + 1) % n = 0 := by
+  refine emod_eq_zero_of_dvd ⟨m / n + n.sign, ?_⟩
+  rw [Int.mul_add, mul_comm n n.sign, sign_mul_self_eq_abs, ← h]
+  have := emod_add_mul_ediv m n
+  omega
 
 end Int

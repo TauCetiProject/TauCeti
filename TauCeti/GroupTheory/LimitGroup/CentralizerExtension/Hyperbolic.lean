@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Centralizer
+public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.PushoutI.Centralizer
+import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
 # Centralizers of hyperbolic elements of an extension of a centralizer
@@ -15,11 +16,15 @@ Let `u` be an element of a group `G` whose centralizer `C_G(u)` is malnormal in 
 any element of a CSA group, and let `G(u, ℤⁿ) = G ∗_{C_G(u)} (C_G(u) × ℤⁿ)` be the extension of
 the centralizer of `u`. An element of `G(u, ℤⁿ)` conjugate into neither factor, that is, a
 hyperbolic element for the action on the Bass–Serre tree of the amalgam, has cyclic centralizer.
-This is the case `‖h‖ ≥ 2` of the description of centralizers in an extension of a centralizer;
-the elements conjugate into a factor can have noncyclic centralizers, such as the centralizer
-`C_G(u) × ℤⁿ` of `u` (`TauCeti.LimitGroup.CentralizerExt.centralizer_of_eq_range_ofProd`). The
-centralizers of these elliptic elements are computed in
-`TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Elliptic`.
+This is the case `‖h‖ ≥ 2` of the description of centralizers in an extension of a centralizer,
+where `‖h‖` is the least number of letters of a reduced form of a conjugate of `h`; the elements
+with `‖h‖ ≤ 1` are those conjugate into a factor. These elliptic elements can have noncyclic
+centralizers, such as the centralizer `C_G(u) × ℤⁿ` of `u`
+(`TauCeti.LimitGroup.CentralizerExt.centralizer_of_eq_range_ofProd`).
+`TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Elliptic` computes the centralizers of two
+kinds of elliptic elements: of an element of `G` not conjugate in `G` into `C_G(u)`, for every
+group `G`, and of a nonidentity element of the factor `C_G(u) × ℤⁿ`, when moreover `C_G(u)` is
+abelian (as it is for `u ≠ 1` in a CSA group).
 
 For distinct basis elements `a` and `b` of a free group `F`, the element `b * tᵢ` of `F(a, ℤⁿ)` is
 hyperbolic, so its centralizer is cyclic, while the centralizer of `a` is free abelian of rank

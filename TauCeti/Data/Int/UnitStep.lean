@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Int.Init
-public import Mathlib.Logic.Function.Defs
 import Mathlib.Algebra.AddConstMap.Basic
 import Mathlib.Algebra.Ring.Periodic
 import Mathlib.Tactic.Ring

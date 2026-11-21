@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.PushoutI.Basic
 public import TauCeti.GroupTheory.PushoutI.Reduced
 public import TauCeti.GroupTheory.TrivialIntersection
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
-public import Mathlib.GroupTheory.Subgroup.Centralizer
 import TauCeti.Data.Int.DivMod
 import TauCeti.Data.Int.UnitStep
+import TauCeti.GroupTheory.PushoutI.Basic
+import TauCeti.GroupTheory.Subgroup.Centralizer
+import Mathlib.Data.List.ChainOfFn
 
 /-!
 # Centralizers in an amalgamated product
 
-Let `φ i : H →* G i` be a family of injective group homomorphisms, with amalgamated product
-`Monoid.PushoutI φ`. In the action of the amalgamated product on its Bass–Serre tree an element
-either fixes a vertex, and is then conjugate into a factor, or is hyperbolic: it translates a line,
-its axis. This file describes the centralizers of elements of both kinds.
+Let `φ i : H →* G i` be a nonempty family of injective group homomorphisms, with amalgamated
+product `Monoid.PushoutI φ`. In the action of the amalgamated product on its Bass–Serre tree an
+element either fixes a vertex, and is then conjugate into a factor, or is hyperbolic: it translates
+a line, its axis. This file describes the centralizers of elements of both kinds.
 
 If an element `g` of a factor `G i` is not conjugate in `G i` into the amalgamated subgroup
 `φ i H`, then every element of the amalgamated product commuting with `g` lies in `G i`: the
@@ -29,10 +30,11 @@ with `g` preserves its fixed point set.
 
 Let now `E = A ∗_C B` be an amalgamated product of two groups, indexed by `Bool`, and suppose that
 `C` is malnormal in one factor. Then the centralizer of an element `x` of `E` conjugate into
-neither factor is cyclic. An element commuting with `x` preserves the axis of `x` and translates it
-in the direction of `x`. At a vertex of the malnormal factor, the stabilizer of the two edges of
-the axis is `C ∩ a C a⁻¹ = 1` for a letter `a ∉ C`, so the centralizer of `x` acts faithfully on
-the axis by translations and embeds in `ℤ`.
+neither factor is cyclic. An element commuting with `x` preserves the axis of `x` and acts on it by
+a translation, not a reflection; the translation length is an integer, positive, negative or zero.
+At a vertex of the malnormal factor, the stabilizer of the two edges of the axis is
+`C ∩ a C a⁻¹ = 1` for a letter `a ∉ C`, so the centralizer of `x` acts faithfully on the axis by
+translations and embeds in `ℤ`.
 
 ## Main results
 
@@ -51,13 +53,15 @@ For an element `g` of a factor `G i`, write an element `x` commuting with `g` as
 `x⁻¹ * g * x = w⁻¹ * (a⁻¹ * g * a) * w` lies in no factor
 (`Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_of`), but it equals `g`.
 
-For an element conjugate into neither factor, a conjugate of it is cyclically reduced,
-`a₁ ⋯ aᵣ` with `r ≥ 2` letters alternately from `A ∖ C` and `B ∖ C`, the first and the last from
-different factors. The cosets `P m C` of the partial products `P m` of the periodic word
-`⋯ a₁ ⋯ aᵣ a₁ ⋯ aᵣ ⋯` play the role of the edges of the axis, and the number of letters of a
+For an element `x` conjugate into neither factor, cyclic reduction
+(`Monoid.PushoutI.exists_conj_eq_base_mul_list_prod`) gives a conjugate `z = a₁ ⋯ aᵣ` of `x` with
+`r ≥ 2` letters alternately from `A ∖ C` and `B ∖ C`, the first and the last from different
+factors. The cosets `P m C` of the partial products `P m` of the periodic word
+`⋯ a₁ ⋯ aᵣ a₁ ⋯ aᵣ ⋯` play the role of the edges of the axis of `z`, and the number of letters of a
 normal form, an invariant of the element, plays the role of the distance. An element `g` for which
-`g⁻¹ x g` has at most `r` letters lies in one of the cosets `P m C`; so an element commuting with
-`x` permutes these cosets, by a translation of the index since it commutes with `x`.
+`g⁻¹ z g` has at most `r` letters lies in one of the cosets `P m C`; so an element commuting with
+`z` permutes these cosets, by a translation of the index since it commutes with `z`. The
+centralizer of `x` is conjugate to that of `z`.
 
 Inside these proofs a letter is a pair `(i, e)` of a factor `i` and an element `e` of the amalgam
 in the image of that factor and not in the image of `C`, so that letters of one factor can be
@@ -144,13 +148,13 @@ private theorem IsLetter.inv {l : ι × PushoutI φ} (h : IsLetter l) : IsLetter
 private theorem IsLetter.base_mul {l : ι × PushoutI φ} (h : IsLetter l) (c : H) :
     IsLetter (l.1, base φ c * l.2) := by
   have hc : base φ c ∈ (base φ).range := ⟨c, rfl⟩
-  exact ⟨mul_mem (base_range_le_of_range _ hc) h.1,
+  exact ⟨mul_mem (MonoidHom.mem_range.2 (base_mrange_le_of_mrange l.1 ⟨c, rfl⟩)) h.1,
     fun h' => h.2 (by simpa using mul_mem (inv_mem hc) h')⟩
 
 private theorem IsLetter.mul_base {l : ι × PushoutI φ} (h : IsLetter l) (c : H) :
     IsLetter (l.1, l.2 * base φ c) := by
   have hc : base φ c ∈ (base φ).range := ⟨c, rfl⟩
-  exact ⟨mul_mem h.1 (base_range_le_of_range _ hc),
+  exact ⟨mul_mem h.1 (MonoidHom.mem_range.2 (base_mrange_le_of_mrange l.1 ⟨c, rfl⟩)),
     fun h' => h.2 (by simpa using mul_mem h' (inv_mem hc))⟩
 
 @[simp] private theorem isRed_nil : IsRed ([] : List (ι × PushoutI φ)) := by
@@ -230,8 +234,23 @@ private theorem IsRed.exists_sigma {L : List (ι × PushoutI φ)} (hL : IsRed L)
   · simp only [List.map_map, lprod]
     exact congrArg List.prod (List.map_congr_left fun l hl => hpre l (hL.2 l hl))
 
+@[simp] private theorem lprod_map_of (L : List (Σ i, G i)) :
+    lprod (L.map fun l => (l.1, of (φ := φ) l.1 l.2)) = (L.map fun l => of l.1 l.2).prod := by
+  simp [lprod, Function.comp_def]
+
 variable (hφ : ∀ i, Injective (φ i))
 include hφ
+
+/-- A list of letters of the factors, consecutive ones from different factors and none of them in
+the amalgamated subgroup, is a reduced list of letters of the amalgamated product. -/
+private theorem isRed_map_of {L : List (Σ i, G i)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
+    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) :
+    IsRed (L.map fun l => (l.1, of (φ := φ) l.1 l.2)) := by
+  refine ⟨(List.isChain_map _).2 hc, ?_⟩
+  simp only [List.mem_map]
+  rintro _ ⟨k, hk, rfl⟩
+  refine ⟨⟨k.2, rfl⟩, fun ⟨c', hc'⟩ => hred k hk ⟨c', of_injective hφ k.1 ?_⟩⟩
+  rw [of_apply_eq_base, hc']
 
 /-- The number of letters of a reduced list is determined by its product up to the amalgamated
 subgroup. -/
@@ -247,14 +266,8 @@ private theorem IsRed.length_eq {L L' : List (ι × PushoutI φ)} (hL : IsRed L)
 private theorem exists_eq_base_mul_lprod (x : PushoutI φ) :
     ∃ (c : H) (L : List (ι × PushoutI φ)), IsRed L ∧ x = base φ c * lprod L := by
   obtain ⟨c, ⟨K, _, hc⟩, hred, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
-  refine ⟨c, K.map fun k => (k.1, of k.1 k.2), ⟨?_, ?_⟩, ?_⟩
-  · rw [List.isChain_map]
-    exact hc
-  · simp only [List.mem_map]
-    rintro _ ⟨k, hk, rfl⟩
-    refine ⟨⟨k.2, rfl⟩, fun ⟨c', hc'⟩ => hred k hk ⟨c', of_injective hφ k.1 ?_⟩⟩
-    rw [of_apply_eq_base, hc']
-  · simp [lprod, CoprodI.Word.prod, map_list_prod, Function.comp_def]
+  exact ⟨c, _, isRed_map_of hφ hc hred,
+    by simp [CoprodI.Word.prod, map_list_prod, Function.comp_def]⟩
 
 end General
 
@@ -322,44 +335,28 @@ private def reverse (A : Axis φ) : Axis φ where
     rw [this, hm', mul_inv_cancel_right]
 
 /-- The letters `ℓ a, …, ℓ (a + k - 1)`. -/
-private def seg (A : Axis φ) (a : ℤ) : ℕ → List (Bool × PushoutI φ)
-  | 0 => []
-  | k + 1 => A.ℓ a :: A.seg (a + 1) k
+private def seg (A : Axis φ) (a : ℤ) (k : ℕ) : List (Bool × PushoutI φ) :=
+  List.ofFn fun i : Fin k => A.ℓ (a + i)
 
-@[simp] private theorem seg_zero (A : Axis φ) (a : ℤ) : A.seg a 0 = [] := (rfl)
+@[simp] private theorem length_seg (A : Axis φ) (a : ℤ) (k : ℕ) : (A.seg a k).length = k :=
+  List.length_ofFn
 
 @[simp] private theorem seg_succ (A : Axis φ) (a : ℤ) (k : ℕ) :
-    A.seg a (k + 1) = A.ℓ a :: A.seg (a + 1) k :=
-  (rfl)
-
-@[simp] private theorem length_seg (A : Axis φ) (a : ℤ) (k : ℕ) : (A.seg a k).length = k := by
-  induction k generalizing a with
-  | zero => rfl
-  | succ k ih => simp [ih]
+    A.seg a (k + 1) = A.ℓ a :: A.seg (a + 1) k := by
+  simp [seg, List.ofFn_succ, add_assoc, add_comm (1 : ℤ)]
 
 private theorem seg_succ_right (A : Axis φ) (a : ℤ) (k : ℕ) :
     A.seg a (k + 1) = A.seg a k ++ [A.ℓ (a + k)] := by
-  induction k generalizing a with
-  | zero => simp
-  | succ k ih =>
-    rw [seg_succ, ih, seg_succ, List.cons_append]
-    push_cast
-    ring_nf
+  rw [seg, seg, List.ofFn_succ', List.concat_eq_append]
+  simp
 
-private theorem isRed_seg (A : Axis φ) (a : ℤ) (k : ℕ) : IsRed (A.seg a k) := by
-  induction k generalizing a with
-  | zero => exact isRed_nil
-  | succ k ih =>
-    refine isRed_cons.2 ⟨A.isLetter a, fun l hl => ?_, ih _⟩
-    cases k with
-    | zero => simp at hl
-    | succ k =>
-      obtain rfl : l = A.ℓ (a + 1) := by simpa using hl.symm
-      exact (A.ne a).symm
+private theorem isRed_seg (A : Axis φ) (a : ℤ) (k : ℕ) : IsRed (A.seg a k) :=
+  ⟨List.isChain_ofFn.2 fun i _ => by simpa [add_assoc] using (A.ne (a + i)).symm,
+    List.forall_mem_ofFn_iff.2 fun _ => A.isLetter _⟩
 
 private theorem P_add (A : Axis φ) (a : ℤ) (k : ℕ) : A.P (a + k) = A.P a * lprod (A.seg a k) := by
   induction k generalizing a with
-  | zero => simp
+  | zero => simp [seg]
   | succ k ih =>
     rw [seg_succ, lprod_cons, ← mul_assoc, ← A.P_succ, ← ih]
     push_cast
@@ -500,9 +497,7 @@ private theorem exists_P_inv_mul_mem (hφ : ∀ b, Injective (φ b)) :
       have hj' : j = (A.reverse.ℓ 0).1 := by
         have h := A.ne (-1)
         rw [neg_add_cancel] at h
-        simp only [reverse, sub_zero]
-        revert hj h
-        cases j <;> cases (A.ℓ 0).1 <;> cases (A.ℓ (-1)).1 <;> simp
+        simpa [reverse] using (Bool.eq_not_of_ne hj).trans (Bool.eq_not_of_ne h.symm).symm
       obtain ⟨m, hm⟩ := A.reverse.exists_P_inv_mul_mem_step hφ hK' hj' ih (isRed_revInv hL)
         (by simpa [reverse] using hLr) (by
           simp only [reverse]
@@ -538,7 +533,8 @@ private theorem eq_of_mem_of_mem (hφ : ∀ b, Injective (φ b)) (A : Axis φ) {
     (hk' : (A.P k')⁻¹ * (y * A.P m) ∈ (base φ).range) : k = k' :=
   A.eq_of_P_inv_mul_P_mem hφ (by simpa [mul_assoc] using mul_mem hk (inv_mem hk'))
 
-/-- Consecutive cosets of the axis differ by one letter. -/
+/-- If `P a⁻¹ * P b` is a single letter up to multiplication by elements of the amalgamated subgroup
+on both sides, then the indices `a` and `b` differ by one. -/
 private theorem eq_add_one_or_eq_sub_one (hφ : ∀ b, Injective (φ b)) (A : Axis φ) {a b : ℤ}
     {c c' : H} {l : Bool × PushoutI φ} (hl : IsLetter l)
     (h : (A.P a)⁻¹ * A.P b = base φ c * l.2 * base φ c') : b = a + 1 ∨ b = a - 1 := by
@@ -560,8 +556,8 @@ private theorem exists_P_inv_mul_mul_P_mem (hφ : ∀ b, Injective (φ b)) (A : 
     rw [← A.P_add_r, A.P_add, inv_mul_cancel_left]
   have hconj : y⁻¹ * A.P A.r * y = A.P A.r := by rw [mul_assoc, ← hy.eq, inv_mul_cancel_left]
   rw [← hg, hseg]
-  nth_rw 2 [← hconj]
-  group
+  calc (y * A.P m)⁻¹ * A.P A.r * (y * A.P m) = (A.P m)⁻¹ * (y⁻¹ * A.P A.r * y) * A.P m := by group
+    _ = (A.P m)⁻¹ * (A.P A.r * A.P m) := by rw [hconj, mul_assoc]
 
 /-- **An element commuting with `P r` translates the axis**: there is `τ` with
 `y * P m ∈ P (m + τ) C` for all `m`. -/
@@ -605,11 +601,7 @@ private theorem eq_one_of_forall_mem (hφ : ∀ b, Injective (φ b)) (A : Axis �
   obtain ⟨m, hm⟩ : ∃ m, (A.ℓ m).1 = b := by
     by_cases h : (A.ℓ 0).1 = b
     · exact ⟨0, h⟩
-    · refine ⟨1, ?_⟩
-      have := A.ne 0
-      rw [zero_add] at this
-      revert h this
-      cases b <;> cases (A.ℓ 0).1 <;> cases (A.ℓ 1).1 <;> simp
+    · exact ⟨0 + 1, (Bool.eq_not_of_ne (A.ne 0)).trans (Bool.eq_not_of_ne (Ne.symm h)).symm⟩
   obtain ⟨c₀, hc₀⟩ := hy m
   obtain ⟨c₁, hc₁⟩ := hy (m + 1)
   obtain ⟨a, ha⟩ : (A.ℓ m).2 ∈ (of (φ := φ) b).range := hm ▸ (A.isLetter m).1
@@ -643,122 +635,63 @@ private theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) (A : Axis �
 
 end Axis
 
-private theorem lprod_take_add_one (Z : List (Bool × PushoutI φ)) (j : ℕ) (hj : j < Z.length) :
-    lprod (Z.take (j + 1)) = lprod (Z.take j) * Z[j].2 := by
-  rw [List.take_add_one, List.getElem?_eq_getElem hj, Option.toList_some, lprod_append,
-    lprod_cons, lprod_nil, mul_one]
+/-- The step from `m` to `m + 1` in the indexing `m ↦ (m / n, m.natMod n)` of a periodic word on
+`n > 0` letters: the index moves to the next letter, or from the last letter back to `0` while the
+quotient increases by one. -/
+private theorem natMod_add_one {n : ℕ} (hn : 0 < n) (m : ℤ) :
+    ((m + 1).natMod n = m.natMod n + 1 ∧ (m + 1) / n = m / n) ∨
+      ((m + 1).natMod n = 0 ∧ m.natMod n + 1 = n ∧ (m + 1) / n = m / n + 1) := by
+  have h0 := Int.emod_nonneg m (b := n) (by omega)
+  have h1 := Int.emod_lt_of_pos m (b := n) (by omega)
+  have habs : |(n : ℤ)| = n := abs_of_nonneg (by omega)
+  obtain h | h : m % n + 1 < |(n : ℤ)| ∨ m % n + 1 = |(n : ℤ)| := by omega
+  · refine .inl ⟨?_, Int.add_one_ediv_of_emod_add_one_lt h⟩
+    rw [Int.natMod, Int.natMod, Int.add_one_emod_of_emod_add_one_lt h]
+    omega
+  · refine .inr ⟨by rw [Int.natMod, Int.add_one_emod_of_emod_add_one_eq h]; rfl, ?_, ?_⟩
+    · rw [Int.natMod]
+      omega
+    · rw [Int.add_one_ediv_of_emod_add_one_eq h, Int.sign_natCast_of_ne_zero hn.ne']
 
 namespace Axis
 
 /-- The axis of a cyclically reduced word `Z`: the letters of `Z` repeated periodically, with
-`P m = Z ^ q * (the first j letters of Z)` for `m = q * |Z| + j`. -/
+`P m = Z ^ q * (the first j letters of Z)` for `m = q * |Z| + j`, `0 ≤ j < |Z|`. -/
 private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ [])
-    (hcyc : (Z.head hne).1 ≠ (Z.getLast hne).1) : Axis φ where
-  ℓ m := Z.getD (m % Z.length).toNat (false, 1)
-  P m := lprod Z ^ (m / Z.length) * lprod (Z.take (m % Z.length).toNat)
+    (hcyc : ∀ z ∈ Z.head?, ∀ z' ∈ Z.getLast?, z.1 ≠ z'.1) : Axis φ where
+  ℓ m := Z[m.natMod Z.length]'(Int.natMod_lt (List.length_pos_of_ne_nil hne).ne')
+  P m := lprod Z ^ (m / Z.length) * lprod (Z.take (m.natMod Z.length))
   r := Z.length
   r_pos := List.length_pos_of_ne_nil hne
-  isLetter m := by
-    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt (List.length_pos_of_ne_nil hne).ne'
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt]
-    exact hZ.2 _ (List.getElem_mem _)
+  isLetter m := hZ.2 _ (List.getElem_mem _)
   ne m := by
-    have hn := List.length_pos_of_ne_nil hne
-    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
-    have h0 := Int.emod_nonneg m (b := Z.length) (by omega)
-    have h1 := Int.emod_lt_of_pos m (b := Z.length) (by omega)
-    simp only [List.getD_eq_getElem?_getD]
-    obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
-    · have hj : (m % Z.length).toNat + 1 < Z.length := by omega
-      have hk : (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 := by omega
-      rw [Int.add_one_emod_of_emod_add_one_lt h, hk, List.getElem?_eq_getElem hj,
-        List.getElem?_eq_getElem hlt]
-      exact (hZ.1.getElem _ hj).symm
-    · rw [Int.add_one_emod_of_emod_add_one_eq h, Int.toNat_zero, List.getElem?_eq_getElem hn,
-        List.getElem?_eq_getElem hlt]
-      have hidx : (m % (Z.length : ℤ)).toNat = Z.length - 1 := by omega
-      rw [List.head_eq_getElem, List.getLast_eq_getElem] at hcyc
-      simpa [hidx] using hcyc
-  periodic m := by rw [Int.add_emod_right]
-  P_zero := by simp
+    have hlt := Int.natMod_lt (m := m + 1) (List.length_pos_of_ne_nil hne).ne'
+    rcases natMod_add_one (List.length_pos_of_ne_nil hne) m with ⟨h, -⟩ | ⟨h, h', -⟩
+    · simp only [h]
+      exact (hZ.1.getElem _ (by omega)).symm
+    · simp only [h]
+      have hidx : m.natMod Z.length = Z.length - 1 := by omega
+      simp only [hidx]
+      exact hcyc _ (by simp [List.head?_eq_getElem?]) _ (by simp [List.getLast?_eq_getElem?])
+  periodic m := by simp [Int.natMod]
+  P_zero := by simp [Int.natMod]
   P_succ m := by
-    have hn := List.length_pos_of_ne_nil hne
-    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
-    have h0 := Int.emod_nonneg m (b := Z.length) (by omega)
-    have h1 := Int.emod_lt_of_pos m (b := Z.length) (by omega)
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
-    obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
-    · have hk : (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 := by omega
-      rw [Int.add_one_ediv_of_emod_add_one_lt h, Int.add_one_emod_of_emod_add_one_lt h, hk,
-        lprod_take_add_one _ _ hlt, mul_assoc]
-    · have hZ : lprod Z = lprod (Z.take ((m % Z.length).toNat + 1)) := by
-        rw [List.take_of_length_le (by omega)]
-      rw [Int.add_one_ediv_of_emod_add_one_eq (by omega) h, Int.add_one_emod_of_emod_add_one_eq h,
-        Int.toNat_zero, List.take_zero, lprod_nil, mul_one, zpow_add_one, mul_assoc]
-      nth_rw 2 [hZ]
-      rw [lprod_take_add_one _ _ hlt]
+    have hlt := Int.natMod_lt (m := m) (List.length_pos_of_ne_nil hne).ne'
+    have hk : lprod (Z.take (m.natMod Z.length + 1)) =
+        lprod (Z.take (m.natMod Z.length)) * Z[m.natMod Z.length].2 := by
+      simp [lprod, List.map_take, List.prod_take_succ (Z.map Prod.snd) _ (by simpa using hlt)]
+    rcases natMod_add_one (List.length_pos_of_ne_nil hne) m with ⟨h, h'⟩ | ⟨h, h', h''⟩
+    · rw [h, h', hk, mul_assoc]
+    · rw [h, h'', zpow_add_one, List.take_zero, lprod_nil, mul_one, mul_assoc, ← hk, h',
+        List.take_length]
 
 private theorem ofList_P_r (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ [])
-    (hcyc : (Z.head hne).1 ≠ (Z.getLast hne).1) :
+    (hcyc : ∀ z ∈ Z.head?, ∀ z' ∈ Z.getLast?, z.1 ≠ z'.1) :
     (ofList Z hZ hne hcyc).P (ofList Z hZ hne hcyc).r = lprod Z := by
   have hn : (Z.length : ℤ) ≠ 0 := by exact_mod_cast (List.length_pos_of_ne_nil hne).ne'
-  simp [ofList, Int.ediv_self hn]
+  simp [ofList, Int.natMod, Int.ediv_self hn]
 
 end Axis
-
-/-- One step of cyclic reduction: a reduced word of length `≥ 2` whose first and last letters lie
-in the same factor is conjugate to `c * w` for a shorter reduced word `w`. -/
-private theorem exists_conj_shorter {j : Bool} {e : PushoutI φ} {M : List (Bool × PushoutI φ)}
-    {l : Bool × PushoutI φ} (hZ : IsRed ((j, e) :: (M ++ [l]))) (hl : l.1 = j) :
-    ∃ (w : PushoutI φ) (c : H) (M' : List (Bool × PushoutI φ)), IsRed M' ∧
-      M'.length < M.length + 2 ∧ w * lprod ((j, e) :: (M ++ [l])) * w⁻¹ = base φ c * lprod M' := by
-  obtain ⟨he, -, hMl⟩ := isRed_cons.1 hZ
-  obtain ⟨hM, hl', hlast⟩ := isRed_append.1 hMl
-  have hconj : e⁻¹ * lprod ((j, e) :: (M ++ [l])) * e = lprod M * (l.2 * e) := by
-    simp [mul_assoc]
-  by_cases hm : l.2 * e ∈ (base φ).range
-  · obtain ⟨c, hc⟩ := hm
-    refine ⟨base φ c * e⁻¹, c, M, hM, by omega, ?_⟩
-    calc _ = base φ c * (e⁻¹ * lprod ((j, e) :: (M ++ [l])) * e) * (base φ c)⁻¹ := by group
-      _ = _ := by rw [hconj, ← hc]; group
-  · refine ⟨e⁻¹, 1, M ++ [(j, l.2 * e)], ?_, by simp, ?_⟩
-    · refine isRed_append.2 ⟨hM, isRed_singleton.2 ⟨mul_mem ?_ he.1, hm⟩, ?_⟩
-      · exact hl ▸ (isRed_singleton.1 hl').1
-      · simpa [hl] using hlast
-    · rw [inv_inv, hconj]
-      simp
-
-/-- **Cyclic reduction.** Every element of the amalgam is conjugate into a factor or to the
-cyclically reduced element `P r` of an axis. -/
-private theorem exists_conj_eq_P_r (n : ℕ) :
-    ∀ (K : List (Bool × PushoutI φ)), K.length = n → IsRed K → ∀ c : H,
-      (∃ (i : Bool) (y : PushoutI φ), y * (base φ c * lprod K) * y⁻¹ ∈ (of (φ := φ) i).range) ∨
-      ∃ (y : PushoutI φ) (A : Axis φ), y * (base φ c * lprod K) * y⁻¹ = A.P A.r := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro K hKn hK c
-  rcases K with _ | ⟨⟨j, e⟩, K⟩
-  · exact Or.inl ⟨false, 1, by simpa using base_range_le_of_range false ⟨c, rfl⟩⟩
-  have hZ : IsRed ((j, base φ c * e) :: K) := by
-    obtain ⟨he, hh, hK'⟩ := isRed_cons.1 hK
-    exact isRed_cons.2 ⟨he.base_mul c, hh, hK'⟩
-  have hx : base φ c * lprod ((j, e) :: K) = lprod ((j, base φ c * e) :: K) := by
-    simp [mul_assoc]
-  rw [hx]
-  by_cases hcyc : (((j, base φ c * e) :: K).head (List.cons_ne_nil _ _)).1 ≠
-      (((j, base φ c * e) :: K).getLast (List.cons_ne_nil _ _)).1
-  · exact Or.inr ⟨1, Axis.ofList _ hZ _ hcyc, by simp [Axis.ofList_P_r]⟩
-  rcases eq_or_ne K [] with rfl | hK'
-  · exact Or.inl ⟨j, 1, by simpa using (isRed_cons.1 hZ).1.1⟩
-  obtain ⟨M, l, rfl⟩ : ∃ M l, K = M ++ [l] :=
-    ⟨K.dropLast, K.getLast hK', (List.dropLast_append_getLast hK').symm⟩
-  have hl : l.1 = j := by
-    rw [ne_eq, not_not] at hcyc
-    simpa using hcyc.symm
-  obtain ⟨w, c', M', hM', hlen, hw⟩ := exists_conj_shorter hZ hl
-  rcases ih M'.length (by simp at hKn; omega) M' rfl hM' c' with ⟨i, y, hy⟩ | ⟨y, A, hy⟩
-  · exact Or.inl ⟨i, y * w, by rw [← hw] at hy; simpa [mul_assoc] using hy⟩
-  · exact Or.inr ⟨y * w, A, by rw [← hy, ← hw]; group⟩
 
 /-- In an amalgamated product `A ∗_C B` in which `C` is malnormal in one of the factors, the
 centralizer of an element conjugate into neither factor is cyclic. -/
@@ -766,19 +699,31 @@ theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) {b : Bool}
     (hT : TauCeti.IsTISubgroup (φ b).range) {x : PushoutI φ}
     (hx : ∀ (i : Bool) (y : PushoutI φ), y * x * y⁻¹ ∉ (of i).range) :
     IsCyclic (Subgroup.centralizer {x}) := by
-  obtain ⟨c, K, hK, rfl⟩ := exists_eq_base_mul_lprod hφ x
-  rcases exists_conj_eq_P_r K.length K rfl hK c with ⟨i, y, hy⟩ | ⟨y, A, hy⟩
-  · exact absurd hy (hx i y)
-  set x := base φ c * lprod K
-  have : IsCyclic (Subgroup.centralizer {y * x * y⁻¹}) := by
-    rw [hy]
-    exact A.isCyclic_centralizer hφ hT
-  refine isCyclic_of_injective (G' := Subgroup.centralizer {y * x * y⁻¹})
-    (((MulAut.conj y).toMonoidHom.comp (Subgroup.centralizer {x}).subtype).codRestrict
-      (Subgroup.centralizer {y * x * y⁻¹}) fun z => ?_) fun z₁ z₂ h => ?_
-  · exact Subgroup.mem_centralizer_singleton_iff.2
-      ((Commute.conj_iff y).2 (Subgroup.mem_centralizer_singleton_iff.1 z.property))
-  · exact Subtype.ext (by simpa using congrArg Subtype.val h)
+  obtain ⟨y, c, L, hc, hred, hcyc, hy⟩ := exists_conj_eq_base_mul_list_prod x
+  -- A cyclically reduced conjugate with at most one letter lies in a factor.
+  rcases L with _ | ⟨⟨j, a⟩, L⟩
+  · refine absurd ?_ (hx false y)
+    rw [hy, List.map_nil, List.prod_nil, mul_one]
+    exact MonoidHom.mem_range.2 (base_mrange_le_of_mrange false ⟨c, rfl⟩)
+  rcases eq_or_ne L [] with rfl | hL
+  · exact absurd ⟨φ j c * a, by simp [hy, of_apply_eq_base]⟩ (hx j y)
+  -- Otherwise `y * x * y⁻¹` is the element `P r` of the axis of `(c * a) ⋯`.
+  set Z : List (Bool × PushoutI φ) := (j, base φ c * of j a) :: L.map fun l => (l.1, of l.1 l.2)
+  have hZ : IsRed Z := by
+    obtain ⟨he, hh, hL'⟩ := isRed_cons.1 (isRed_map_of hφ hc hred)
+    exact isRed_cons.2 ⟨he.base_mul c, hh, hL'⟩
+  have hcyc' : ∀ z ∈ Z.head?, ∀ z' ∈ Z.getLast?, z.1 ≠ z'.1 := by
+    intro z hz z' hz'
+    simp only [Z, List.head?_cons, Option.mem_def, Option.some.injEq] at hz hz'
+    subst hz
+    rw [List.getLast?_cons_of_ne_nil (by simpa using hL), List.getLast?_map] at hz'
+    obtain ⟨l, hl, rfl⟩ := Option.mem_map.1 hz'
+    refine (hcyc.resolve_left (by simpa using hL)) ⟨j, a⟩ rfl l ?_
+    rwa [List.getLast?_cons_of_ne_nil hL]
+  have hyZ : y * x * y⁻¹ = lprod Z := by simp [Z, hy, mul_assoc]
+  have := (Axis.ofList Z hZ (List.cons_ne_nil _ _) hcyc').isCyclic_centralizer hφ hT
+  rw [Axis.ofList_P_r, ← hyZ] at this
+  exact (MulEquiv.centralizerMap (MulAut.conj y) (by simp)).isCyclic.2 this
 
 end Bool
 
