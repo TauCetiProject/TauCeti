@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 
@@ -20,11 +19,11 @@ over every commutative ring. Over a field, the existing rank-one collection theo
 has a unique open-cell factorization, with a root-group element and a Borel element, whenever
 a word in the opposite simple-root pair and the actual torus does not belong to `B`.
 
-These results concern root-group elements for an arbitrary datum: injectivity of every root
-parameter over an arbitrary commutative ring is not assumed. For the simply connected datum,
-injectivity of the root map gives uniqueness of the additive parameter as well, and over a field
-we also obtain the corresponding unique existence statement. These are local normal-form results,
-not a Bruhat decomposition of the entire point group.
+Since every root map is injective over arbitrary commutative rings
+(`ChevalleyDatum.rootSubgroupPoints_injective`), this also gives uniqueness of the additive
+parameter and the right Borel factor for any Chevalley datum, and over a field we obtain the
+corresponding unique existence statement. These are local normal-form results, not a Bruhat
+decomposition of the entire point group.
 
 The central inputs are the native opposite-intersection theorem in `Chevalley.Borel`, the
 rank-one collection theorem `ChevalleyDatum.mem_sup_simpleRootPair_torus_iff`, and the
@@ -104,50 +103,40 @@ theorem existsUnique_mul_weylElement_mul_eq_of_mem_sup_simpleRootPair_torus_of_n
     rw [he]
     group
 
-end TauCeti.DynkinType.ChevalleyDatum
-
-namespace TauCeti.DynkinType
-
-open ChevalleyDatum
-
-variable (t : DynkinType) (ht : t.Valid) (i : Fin t.rank)
-variable (A : Type v) [CommRing A]
-
-/-- For the simply connected datum, the simple Bruhat normal form has a unique additive
-root parameter and a unique right Borel factor, over every commutative ring. -/
-theorem scChevalleyDatum_rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgroup_injective :
-    Function.Injective (fun p : A × (t.scChevalleyDatum ht).borelSubgroup A =>
-      (t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) A
-          (Multiplicative.ofAdd p.1) *
-        (t.scChevalleyDatum ht).weylElement (t.simpleIndex ht i) A 1 * p.2) := by
+/-- For any Chevalley datum, the simple Bruhat normal form has a unique additive root parameter
+and a unique right Borel factor, over every commutative ring. -/
+theorem rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgroup_injective :
+    Function.Injective (fun p : A × D.borelSubgroup A =>
+      D.rootSubgroupPoints (t.simpleIndex ht i) A (Multiplicative.ofAdd p.1) *
+        D.weylElement (t.simpleIndex ht i) A 1 * p.2) := by
   intro p q h
-  have he := ChevalleyDatum.range_rootSubgroupPoints_mul_weylElement_mul_borelSubgroup_injective
-    (t.scChevalleyDatum ht) i A (a₁ := (⟨_, ⟨Multiplicative.ofAdd p.1, rfl⟩⟩, p.2))
+  have he := D.range_rootSubgroupPoints_mul_weylElement_mul_borelSubgroup_injective
+    i A (a₁ := (⟨_, ⟨Multiplicative.ofAdd p.1, rfl⟩⟩, p.2))
     (a₂ := (⟨_, ⟨Multiplicative.ofAdd q.1, rfl⟩⟩, q.2)) h
-  have hpq := congrArg (fun z => (z.1 : (t.scChevalleyDatum ht).points A)) he
-  have ha := (t.scChevalleyDatum ht).rootSubgroupPoints_injective (t.simpleIndex ht i) A hpq
+  have hpq := congrArg (fun z => (z.1 : D.points A)) he
+  have ha := D.rootSubgroupPoints_injective (t.simpleIndex ht i) A hpq
   exact Prod.ext (congrArg Multiplicative.toAdd ha) (congrArg (fun z => z.2) he)
 
-/-- Over a field, a simply connected opposite-simple-root-pair/torus word outside the Borel
-has a unique additive root parameter and right Borel factor in its simple Bruhat form. -/
-theorem existsUnique_scChevalleyDatum_rootSubgroupPoints_ofAdd_mul_weylElement_mul_eq
-    (K : Type v) [Field K] (g : (t.scChevalleyDatum ht).points K)
+/-- Over a field, an opposite-simple-root-pair/torus word outside the positive Borel has a unique
+additive root parameter and right Borel factor in its simple Bruhat form, for any Chevalley datum.
+-/
+theorem existsUnique_rootSubgroupPoints_ofAdd_mul_weylElement_mul_eq
+    (K : Type v) [Field K] (g : D.points K)
     (hg : g ∈ Subgroup.closure
-      (Set.range ((t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) K) ∪
-        Set.range ((t.scChevalleyDatum ht).rootSubgroupPoints
+      (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) K) ∪
+        Set.range (D.rootSubgroupPoints
           ((t.simplyConnectedRootDatum ht).reflectionPerm
             (t.simpleIndex ht i) (t.simpleIndex ht i)) K)) ⊔
-        ((t.scChevalleyDatum ht).torusPoints K).range)
-    (hB : g ∉ (t.scChevalleyDatum ht).borelSubgroup K) :
-    ∃! p : K × (t.scChevalleyDatum ht).borelSubgroup K,
-      (t.scChevalleyDatum ht).rootSubgroupPoints (t.simpleIndex ht i) K
-          (Multiplicative.ofAdd p.1) *
-        (t.scChevalleyDatum ht).weylElement (t.simpleIndex ht i) K 1 * p.2 = g := by
-  apply (t.scChevalleyDatum_rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgroup_injective
-    ht i K).existsUnique_iff_exists.mpr
+        (D.torusPoints K).range)
+    (hB : g ∉ D.borelSubgroup K) :
+    ∃! p : K × D.borelSubgroup K,
+      D.rootSubgroupPoints (t.simpleIndex ht i) K (Multiplicative.ofAdd p.1) *
+        D.weylElement (t.simpleIndex ht i) K 1 * p.2 = g := by
+  apply (D.rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgroup_injective
+    i K).existsUnique_iff_exists.mpr
   obtain ⟨⟨⟨_, u, rfl⟩, b⟩, he⟩ := (
-    existsUnique_mul_weylElement_mul_eq_of_mem_sup_simpleRootPair_torus_of_notMem_borelSubgroup
-      (t.scChevalleyDatum ht) i K g hg hB).exists
+    D.existsUnique_mul_weylElement_mul_eq_of_mem_sup_simpleRootPair_torus_of_notMem_borelSubgroup
+      i K g hg hB).exists
   exact ⟨(Multiplicative.toAdd u, b), he⟩
 
-end TauCeti.DynkinType
+end TauCeti.DynkinType.ChevalleyDatum

@@ -22,11 +22,10 @@ commutative rings, including nonreduced rings and rings of bad characteristic.
 For every datum `D`, its toral centralizer is the group of unit-valued characters of
 `Λ(D) / Q`, expressed in the chosen basis `D.weightLatticeBasis`: the denominator is the span
 of `D.coordinateRoot`, not the roots read in the full weight lattice. For the simply connected
-datum, this quotient is `P / Q`, where `P` is the full weight lattice. The equivalences land in
-actual datum points, not merely in torus parameters, and retain their evaluation equations.
-`ChevalleyDatum.torusInfCentralizerRootTorusSubgroupEquiv` treats arbitrary Chevalley data;
-`scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv` reads the simply connected quotient
-directly in fundamental-weight coordinates.
+datum, `span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan` identifies that denominator with
+`rootSpan`, so `ChevalleyDatum.torusInfCentralizerRootTorusSubgroupEquiv` identifies the toral
+centralizer with characters of `P / Q` in fundamental-weight coordinates. The equivalence lands in
+actual datum points, not merely in torus parameters, and retains its evaluation equations.
 
 This identifies only the intersection of the torus with the centralizer of the generated
 subgroup. It does not assert that all central elements lie in the torus or that the generated
@@ -150,55 +149,15 @@ theorem torusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
 
 end ChevalleyDatum
 
-variable (t ht A)
+variable (t ht)
 
-/-- Unit-valued characters of `P / Q` identify with the simply connected torus points
-centralizing the root-and-torus-generated group, over any commutative ring. Here `P` and `Q`
-are the weight and root lattices in fundamental-weight coordinates. -/
-def scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv :
-    AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Aˣ ≃*
-      ↥(((t.scChevalleyDatum ht).torusPoints A).range ⊓
-        Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup A :
-          Set ((t.scChevalleyDatum ht).points A))) :=
-  (torusAnnihilatorEquiv _).trans
-    (((torusAnnihilator (R := A)
-      ((t.simplyConnectedRootDatum ht).rootSpan ℤ)).equivMapOfInjective
-        ((t.scChevalleyDatum ht).torusPoints A)
-        ((t.scChevalleyDatum ht).torusPoints_injective A)).trans
-      (MulEquiv.subgroupCongr (by
-        simpa only [funext (t.scChevalleyDatum_coordinateRoot ht)] using
-          (t.scChevalleyDatum ht).map_torusAnnihilator_eq_range_inf_centralizer_rootTorusSubgroup)))
-
-/-- The simply connected equivalence obtains the torus coordinates by evaluating the
-quotient character on the fundamental-weight classes. -/
+/-- In fundamental-weight coordinates, the span of the simply connected coordinate roots is the
+root lattice `rootSpan`. -/
 @[simp]
-theorem coe_scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv
-    (χ : AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Aˣ) :
-    (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A χ :
-        (t.scChevalleyDatum ht).points A) =
-      (t.scChevalleyDatum ht).torusPoints A (quotientCharTorusPoint _ χ) := by
-  simp [scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv]
-
-/-- The inverse simply connected equivalence evaluates a weight class by the character of
-the given torus parameter. -/
-@[simp]
-theorem scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
-    (s : Fin t.rank → Aˣ)
-    (hg : (t.scChevalleyDatum ht).torusPoints A s ∈
-      ((t.scChevalleyDatum ht).torusPoints A).range ⊓
-        Subgroup.centralizer ((t.scChevalleyDatum ht).rootTorusSubgroup A :
-          Set ((t.scChevalleyDatum ht).points A)))
-    (μ : Fin t.rank → ℤ) :
-    (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A).symm
-      ⟨(t.scChevalleyDatum ht).torusPoints A s, hg⟩ (Submodule.Quotient.mk μ) =
-        torusCharacter s μ := by
-  have hcoord : quotientCharTorusPoint _
-      ((t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht A).symm
-        ⟨(t.scChevalleyDatum ht).torusPoints A s, hg⟩) = s := by
-    apply (t.scChevalleyDatum ht).torusPoints_injective A
-    rw [← coe_scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv,
-      MulEquiv.apply_symm_apply]
-  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
+theorem span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan :
+    Submodule.span ℤ (Set.range (t.scChevalleyDatum ht).coordinateRoot) =
+      (t.simplyConnectedRootDatum ht).rootSpan ℤ := by
+  simp only [funext (t.scChevalleyDatum_coordinateRoot ht)]
 
 end
 

@@ -68,6 +68,34 @@ theorem coe_positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A
       (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
   (rfl)
 
+/-- The empty positive-root product is the identity element of `D.positivePoints A`. -/
+@[simp]
+theorem positiveRootProduct_nil (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    D.positiveRootProduct [] A u = 1 := by
+  ext1
+  simp
+
+/-- Prepending a positive root multiplies its root-subgroup element on the left inside
+`D.positivePoints A`. -/
+@[simp]
+theorem positiveRootProduct_cons (γ : PositiveRoot) (l : List PositiveRoot)
+    (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    D.positiveRootProduct (γ :: l) A u =
+      ⟨D.rootSubgroupPoints γ.val A (ofAdd (u γ)),
+        D.rootSubgroupPoints_mem_positivePoints A γ.property _⟩ *
+        D.positiveRootProduct l A u := by
+  ext1
+  simp
+
+/-- Concatenating lists of positive roots multiplies the corresponding positive-root products in
+`D.positivePoints A`. -/
+theorem positiveRootProduct_append (l₁ l₂ : List PositiveRoot)
+    (A : Type v) [CommRing A] (u : PositiveRoot → A) :
+    D.positiveRootProduct (l₁ ++ l₂) A u =
+      D.positiveRootProduct l₁ A u * D.positiveRootProduct l₂ A u := by
+  ext1
+  simp
+
 /-- Zero coordinates evaluate to the identity element of `D.positivePoints A`. -/
 @[simp]
 theorem positiveRootProduct_zero (l : List PositiveRoot) (A : Type v) [CommRing A] :
@@ -79,6 +107,7 @@ theorem positiveRootProduct_zero (l : List PositiveRoot) (A : Type v) [CommRing 
     simp
 
 /-- Changing the value ring applies the ring map to each root coordinate. -/
+@[simp]
 theorem map_positiveRootProduct (l : List PositiveRoot)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (u : PositiveRoot → A) :
@@ -224,6 +253,7 @@ theorem positiveRootProduct_positiveRootEquiv_symm
   (D.positiveRootEquiv l hl hcover A).apply_symm_apply g
 
 /-- Ring homomorphisms commute with `positiveRootEquiv` on positive datum points. -/
+@[simp]
 theorem map_positiveRootEquiv (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l)
     {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)

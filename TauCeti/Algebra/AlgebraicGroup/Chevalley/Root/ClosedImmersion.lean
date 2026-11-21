@@ -182,7 +182,9 @@ base change, and does not require generation of all group points by root subgrou
 instance isClosedImmersion_rootSubgroup (γ : Fin t.numRoots) :
     IsClosedImmersion (D.rootSubgroup γ).hom.hom.left :=
   D.isClosedImmersion_rootSubgroup_of_simple
-    (fun i => D.isClosedImmersion_rootSubgroup_simpleIndex i) γ
+    (fun i => by
+      rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
+      infer_instance) γ
 
 end ChevalleyDatum
 

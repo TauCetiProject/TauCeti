@@ -21,10 +21,6 @@ including to nonreduced rings and rings of small characteristic, and across all 
 
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_kostantRootSubgroupToToral`: every numbered
   positive or negative simple-root morphism into `D.groupScheme` is a closed immersion over `ℤ`.
-* `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_simpleIndex` and
-  `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex`:
-  closed-immersion instances for the canonical positive and negative simple-root morphisms,
-  supplying the base case for `TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion`.
 
 ## References
 
@@ -60,22 +56,6 @@ instance isClosedImmersion_kostantRootSubgroupToToral (i : Fin t.rank ⊕ Fin t.
       (D.isNilpotent_representation_rootGenerator i) D.basis
       D.isCartanWeightVector_basis (t.lie_lieBasis_h_rootGenerator ht i)
       (t.rootGeneratorWeight_ne_zero ht i) m hm
-
-/-- The canonical positive simple-root morphism of a Chevalley datum is a closed immersion over
-`ℤ`. -/
-instance isClosedImmersion_rootSubgroup_simpleIndex (i : Fin t.rank) :
-    IsClosedImmersion (D.rootSubgroup (t.simpleIndex ht i)).hom.hom.left := by
-  rw [D.rootSubgroup_simpleIndex_eq_kostantRootSubgroupToToral]
-  infer_instance
-
-/-- The canonical negative simple-root morphism of a Chevalley datum is a closed immersion over
-`ℤ`. -/
-instance isClosedImmersion_rootSubgroup_reflectionPerm_simpleIndex (i : Fin t.rank) :
-    IsClosedImmersion (D.rootSubgroup
-      ((t.simplyConnectedRootDatum ht).reflectionPerm
-        (t.simpleIndex ht i) (t.simpleIndex ht i))).hom.hom.left := by
-  rw [D.rootSubgroup_reflectionPerm_simpleIndex_eq_kostantRootSubgroupToToral]
-  infer_instance
 
 end
 

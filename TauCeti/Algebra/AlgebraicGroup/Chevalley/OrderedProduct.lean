@@ -108,4 +108,12 @@ theorem rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v) [CommRin
     (by simpa using huv) (t.simpleIndex ht i) (List.mem_singleton_self _)
   exact Multiplicative.toAdd.injective h
 
+/-- Two elements of the same root subgroup of a Chevalley datum are equal if and only if their
+parameters coincide. -/
+@[simp]
+theorem rootSubgroupPoints_inj (γ : Fin t.numRoots) (A : Type v) [CommRing A]
+    {u v : Multiplicative A} :
+    D.rootSubgroupPoints γ A u = D.rootSubgroupPoints γ A v ↔ u = v :=
+  (D.rootSubgroupPoints_injective γ A).eq_iff
+
 end TauCeti.DynkinType.ChevalleyDatum
