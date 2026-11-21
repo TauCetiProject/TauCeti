@@ -266,7 +266,7 @@ private def extractBlock {m : ℕ} (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
     (h00 : τ.val 0 0 = 1) (h0j : ∀ j : Fin (m + 1), j ≠ 0 → τ.val 0 j = 0)
     (_hi0 : ∀ i : Fin (m + 1), i ≠ 0 → τ.val i 0 = 0) :
     SpecialLinearGroup (Fin m) ℤ :=
-  ⟨Matrix.of fun i j ↦ τ.val i.succ j.succ, det_lowerRight τ h00 h0j⟩
+  .mk (Matrix.of fun i j ↦ τ.val i.succ j.succ) (det_lowerRight τ h00 h0j)
 
 private lemma extractBlock_blockLift {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c : ℤ)
     (τ : SpecialLinearGroup (Fin (m + 1)) ℤ)
@@ -284,7 +284,7 @@ private lemma extractBlock_blockLift {m : ℕ} (i j : Fin m) (hij : i ≠ j) (c 
     (transvection hij c * extractBlock τ h00 h0j hi0).val a b
   rw [blockLift_entry i j hij c τ a.succ b.succ,
       transvection_mul_entry i j hij c (extractBlock τ h00 h0j hi0) a b]
-  simp only [Fin.succ_inj, extractBlock, Matrix.of_apply]
+  simp only [Fin.succ_inj, extractBlock, Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply]
 
 /-- The sum of the absolute values of the off-diagonal entries in the first row. -/
 private def row0Sum {m : ℕ} (σ : SpecialLinearGroup (Fin (m + 1)) ℤ) : ℕ :=
@@ -418,8 +418,8 @@ private lemma block_form_transvec_lift {m : ℕ} (M : SpecialLinearGroup (Fin (m
       · obtain ⟨a', rfl⟩ := Fin.exists_succ_eq.mpr ha
         obtain ⟨b', rfl⟩ := Fin.exists_succ_eq.mpr hb
         have h := congr_fun (congr_fun (congr_arg Subtype.val hT_eq) a') b'
-        simp only [extractBlock, Matrix.of_apply, Matrix.SpecialLinearGroup.coe_one,
-          Matrix.one_apply] at h
+        simp only [extractBlock, Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply,
+          Matrix.SpecialLinearGroup.coe_one, Matrix.one_apply] at h
         simpa using h
   | cons t T' ihT =>
     obtain ⟨i, j, hij, c⟩ := t
