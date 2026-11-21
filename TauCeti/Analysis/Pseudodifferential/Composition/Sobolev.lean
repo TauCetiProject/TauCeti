@@ -213,14 +213,14 @@ theorem exists_isSmoothing_toDistr_smulLeftCLM_eq_quantizeSobolev_sub_sub
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   -- The parametrix symbol `q = φ e`: `q ∘ a - φ` vanishes at large frequencies, and
   -- `q # a - q ∘ a` is a symbol `rem` of order `-1` vanishing outside `tsupport φ`.
-  set q := inclusion (zero_add (-m)).le (F.comp e)
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right e).inclusion _
+  set q := smulLeft (φ.smooth ⊤) e
+  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_smulLeft (φ.smooth ⊤) hφ e
   set sm := q.comp a - Symbol.inclusion (le_of_eq (by ring)) F
   have hsm : sm.IsSmoothing := isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
     by_cases hx : x ∈ tsupport φ
-    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_inclusion,
-        coefficient_ofSpatial, Pi.sub_apply, he x (hφU hx) ξ hξ, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, sub_self]
+    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_smulLeft,
+        coefficient_inclusion, coefficient_ofSpatial, Pi.sub_apply, ContinuousLinearMap.smul_comp,
+        he x (hφU hx) ξ hξ, sub_self]
     · simp [sm, q, F, hφ0 x hx]
   have hsmK : sm.HasCompactSpatialSupport := (hq.comp_right a).sub (hF.inclusion _)
   set rem := q.sharpRemainder a ha 1
@@ -231,8 +231,8 @@ theorem exists_isSmoothing_toDistr_smulLeftCLM_eq_quantizeSobolev_sub_sub
   have hsm0 : -m + m ≤ 0 := (neg_add_cancel m).le
   have hrem1 : -m + m - ((1 : ℕ) : ℝ) ≤ -1 := by push_cast; linarith
   refine ⟨q, hq, inclusion hsm0 sm, hsmK.inclusion hsm0, inclusion hrem1 rem,
-    hremK.inclusion hrem1, hsm.inclusion hsm0, fun x hx ξ ↦ by simp [q, F, hφ0 x hx],
-    fun x hx ξ ↦ by rw [coefficient_inclusion, ← hrem]; simp [q, F, hφ0 x hx], fun s u ↦ ?_⟩
+    hremK.inclusion hrem1, hsm.inclusion hsm0, fun x hx ξ ↦ by simp [q, hφ0 x hx],
+    fun x hx ξ ↦ by rw [coefficient_inclusion, ← hrem]; simp [q, hφ0 x hx], fun s u ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_ofSpatial_smul_id φ hF,
     toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK,
     toDistr_quantizeSobolev_congr (coefficient_inclusion _ _).symm hsmK (hsmK.inclusion hsm0) rfl,
