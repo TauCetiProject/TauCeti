@@ -114,7 +114,10 @@ private theorem contMDiff_graphEndomorphism :
       (A.contMDiff_apply hproj hhor)
   refine (contMDiff_equivTangentBundleProd_symm.comp (hhor.prodMk hver)).congr fun r ↦ ?_
   rw [graphEndomorphism_apply, graphLinear_apply]
-  simp only [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
+  simp only [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_symm_apply,
+    Function.comp_apply]
+  -- `(equivTangentBundleProd IP P I M).symm` reassembles a pair of tangent vectors over `q.1` and
+  -- `q.2` into the tangent vector over `q` with these components, by its definition.
   rfl
 
 /-- **Gromov's graph structure** on `P × M`: the skew product of a `Cⁿ` structure `j` on `P` and a
@@ -150,18 +153,15 @@ theorem almostComplexStructureAt_graphStructure (q : P × M) :
   rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, graphStructure_apply,
     AlmostComplexStructure.transport_apply, AlmostComplexStructure.skewProd_apply]
   simp only [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,
-    ContinuousLinearMap.coe_coe, J.freeze_apply]
-  rfl
+    ContinuousLinearMap.coe_coe, J.freeze_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- For `A = 0`, Gromov's graph structure is the block structure `(ξ, v) ↦ (j ξ, J v)` of
 `TauCeti.ContMDiffAlmostComplexStructure.prodFamily`. -/
 theorem graphStructure_zero :
     (0 : DomainDependentHomSection I M IP P n).graphStructure j J =
       j.prodFamily (fun q ↦ (J.freeze q.1).almostComplexStructureAt q.2)
-        (J.contMDiff.congr fun q ↦ by
-          rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-            J.freeze_toEndomorphism_apply]
-          rfl) := by
+        J.contMDiff_freeze_almostComplexStructureAt := by
   refine ContMDiffAlmostComplexStructure.ext fun q v ↦ ?_
   rw [graphStructure_apply, ContMDiffAlmostComplexStructure.prodFamily_apply, tangentHom_zero,
     zero_apply, zero_apply, sub_zero, add_zero]
@@ -230,6 +230,17 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP] in
 theorem almostComplexStructureAt_graphStructure (ν : InhomogeneousTerm j J) (q : P × M) :
     ν.graphStructure.almostComplexStructureAt q = ν.graphStructureAt q :=
   ν.val.almostComplexStructureAt_graphStructure j J q
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP] in
+/-- Gromov's `Cⁿ` graph structure of a forcing term acts on each tangent vector as the pointwise
+structure `ν.graphStructureAt`, whose formula is
+`TauCeti.InhomogeneousTerm.graphStructureAt_apply`. -/
+@[simp]
+theorem graphStructure_apply (ν : InhomogeneousTerm j J) (q : P × M)
+    (v : TangentSpace (IP.prod I) q) :
+    ν.graphStructure q v = ν.graphStructureAt q v := by
+  rw [← ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,
+    almostComplexStructureAt_graphStructure]
 
 section Model
 

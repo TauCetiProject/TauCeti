@@ -46,9 +46,10 @@ tangent bundle.
   structure `J(z, ·)` frozen at `z`
   (`exists_hasMFDerivAt_prodMk_isComplexLinearMap_floerGraphStructure_iff`).
 
-So the theory of pseudoholomorphic curves for a `Cⁿ` almost complex structure on a manifold applies
-to the graphs of Floer solutions, with the spheres bubbling off in the fibres holomorphic for `J`
-frozen at their domain points.
+So the graphs of Floer solutions are pseudoholomorphic curves for a `Cⁿ` almost complex structure
+on the manifold `(ℝ × ℝ) × M`, and maps into the fibre over `z` are pseudoholomorphic for it exactly
+when they are for `J(z, ·)`. Applying compactness and bubbling for such curves to the graphs also
+needs a taming form, Gromov's form `Ω_c` closed on `(ℝ × ℝ) × M`, which is not treated here.
 
 ## References
 
@@ -69,14 +70,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {n : ℕ∞} {Ks Kt : ℝ × ℝ → M → ℝ}
 
-/-- The **Hamiltonian one-form** `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of a jointly `C^(n+1)`
-perturbation, as a native `Cⁿ` Hom section from the tangent bundle of `ℝ × ℝ` to the tangent bundle
-of `M` over `(ℝ × ℝ) × M`. -/
-def hamiltonianOneFormSection (hω : ω.IsNondegenerate)
+/-- The Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of a jointly `C^(n+1)`
+perturbation is jointly `Cⁿ` as a section of the bundle of homomorphisms from the tangent bundle of
+`ℝ × ℝ` to the tangent bundle of `M` over `(ℝ × ℝ) × M`. -/
+theorem contMDiff_hamiltonianOneForm (hω : ω.IsNondegenerate)
     (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Ks))
     (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Kt)) :
-    DomainDependentHomSection I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) n := by
-  refine ⟨fun q ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2, ?_⟩
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((𝓘(ℝ, ℝ × ℝ).prod I).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] E)) n
+      (fun q : (ℝ × ℝ) × M ↦ TotalSpace.mk' ((ℝ × ℝ) →L[ℝ] E)
+        (E := fun q : (ℝ × ℝ) × M ↦ horizontalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) q →L[ℝ]
+          verticalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) q) q
+        (ω.hamiltonianOneForm Ks Kt q.1 q.2)) := by
   refine (TauCeti.contMDiff_hom_bundle_iff
     (E₁ := horizontalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ))
     (E₂ := verticalTangentBundle I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ)) _).2 ?_
@@ -111,6 +115,15 @@ def hamiltonianOneFormSection (hω : ω.IsNondegenerate)
   exact congrArg (TotalSpace.mk' E p.proj.2)
     (hamiltonianOneForm_apply ω Ks Kt p.proj.1 p.proj.2 p.snd)
 
+/-- The **Hamiltonian one-form** `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of a jointly `C^(n+1)`
+perturbation, as a native `Cⁿ` Hom section from the tangent bundle of `ℝ × ℝ` to the tangent bundle
+of `M` over `(ℝ × ℝ) × M`. -/
+def hamiltonianOneFormSection (hω : ω.IsNondegenerate)
+    (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Kt)) :
+    DomainDependentHomSection I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) n :=
+  ⟨fun q ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2, hω.contMDiff_hamiltonianOneForm hKs hKt⟩
+
 variable (hω : ω.IsNondegenerate)
   (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Ks))
   (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (n + 1) (uncurry Kt))
@@ -121,6 +134,9 @@ theorem hamiltonianOneFormSection_tangentHom_apply (q : (ℝ × ℝ) × M)
     (hω.hamiltonianOneFormSection hKs hKt).tangentHom q ξ =
       ω.hamiltonianOneForm Ks Kt q.1 q.2 ξ := by
   rw [DomainDependentHomSection.tangentHom_apply]
+  -- The section is `ContMDiffSection.mk` of `fun q ↦ ω.hamiltonianOneForm Ks Kt q.1 q.2`. Its
+  -- fibres `ℝ × ℝ →L[ℝ] TangentSpace I q.2` are the pulled-back Hom fibres only definitionally,
+  -- so `ContMDiffSection.coeFn_mk` does not typecheck as a rewrite here, and `rfl` evaluates it.
   rfl
 
 variable (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℝ × ℝ) (ℝ × ℝ) n)
