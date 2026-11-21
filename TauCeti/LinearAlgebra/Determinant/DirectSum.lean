@@ -815,6 +815,14 @@ theorem detLineProdMapEquiv_symm_tmul_ne_zero {y₁ : f.detLine} {y₂ : g.detLi
     (hy₂ : y₂ ≠ 0) : (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
   (LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero hy₁ hy₂)
 
+/-- The direct sum of nonzero elements of determinant lines, multiplied by a sign `(-1) ^ n`, is
+nonzero. -/
+theorem neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero (n : ℕ) {y₁ : f.detLine}
+    {y₂ : g.detLine} (hy₁ : y₁ ≠ 0) (hy₂ : y₂ ≠ 0) :
+    (-1 : K) ^ n • (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
+  smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
+    (detLineProdMapEquiv_symm_tmul_ne_zero f g hy₁ hy₂)
+
 /-! ### Naturality of the direct sum isomorphism -/
 
 section Naturality

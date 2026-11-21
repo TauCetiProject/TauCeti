@@ -280,7 +280,7 @@ theorem IsInvertible.prod_coprod_prodMap (h : ((T.coprod D₂).prod q).IsInverti
   have h₁ := DFunLike.congr_fun he (x, l)
   have h₂ := DFunLike.congr_fun he' (x', l')
   simp only [ContinuousLinearEquiv.coe_coe] at h₁ h₂
-  simp [ContinuousLinearEquiv.prodCongr, h₁, h₂]
+  simp [h₁, h₂]
 
 section FiniteDimensional
 
@@ -369,20 +369,10 @@ theorem detLineChartEquiv_neg_one_pow_smul_prodMap (h : ((T.coprod D₂).prod q)
   -- The index of `T'` is `dim G' - dim Λ'`, so `dim ker T' + dim coker T'` has the parity of
   -- `dim G' + dim Λ'`.
   have hidx := finrank_ker_add_finrank_eq_of_isInvertible_prod_coprod h'
-  set c := finrank 𝕜 (F ⧸ T.range) * finrank 𝕜 (F' ⧸ T'.range)
-  set k' := finrank 𝕜 T'.ker
-  set c' := finrank 𝕜 (F' ⧸ T'.range)
-  have hsum : c + (finrank 𝕜 Λ * (k' + c') + c) + finrank 𝕜 Λ * (finrank 𝕜 G' + finrank 𝕜 Λ') =
-      2 * (c + finrank 𝕜 Λ * (finrank 𝕜 G' + c')) := by
-    have : k' + c' + (finrank 𝕜 G' + finrank 𝕜 Λ') = 2 * (finrank 𝕜 G' + c') := by omega
-    have hΛ := congrArg (finrank 𝕜 Λ * ·) this
-    simp only [Nat.mul_add] at hΛ ⊢
-    linarith
-  rw [← TauCeti.neg_one_pow_add_two_mul (c + (finrank 𝕜 Λ * (k' + c') + c))
-    (finrank 𝕜 Λ * (finrank 𝕜 G' + finrank 𝕜 Λ')), ← TauCeti.neg_one_pow_add_two_mul
-    (finrank 𝕜 Λ * (finrank 𝕜 G' + finrank 𝕜 Λ')) (c + finrank 𝕜 Λ * (finrank 𝕜 G' + c'))]
-  congr 1
-  omega
+  refine neg_one_pow_congr ?_
+  have hpar := (congrArg Even hidx).to_iff
+  simp only [Nat.even_add, Nat.even_mul] at hpar ⊢
+  grind
 
 end FiniteDimensional
 
@@ -524,13 +514,11 @@ theorem detLineOrientationTransport_prodMap (hT : ContinuousOn T (uIcc a b))
         (rayOfNeZero ℝ ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T a).range) * finrank ℝ (F' ⧸ (T' a).range)) •
           ((LinearMap.detLineProdMapEquiv (T a : E →ₗ[ℝ] F) (T' a : E' →ₗ[ℝ] F')).symm
             (v₀ ⊗ₜ v₀') : ((T a).prodMap (T' a) : E × E' →ₗ[ℝ] F × F').detLine))
-          (smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
-            (LinearMap.detLineProdMapEquiv_symm_tmul_ne_zero _ _ hv₀ hv₀'))) =
+          (LinearMap.neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero _ _ _ hv₀ hv₀')) =
       rayOfNeZero ℝ ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T b).range) * finrank ℝ (F' ⧸ (T' b).range)) •
           ((LinearMap.detLineProdMapEquiv (T b : E →ₗ[ℝ] F) (T' b : E' →ₗ[ℝ] F')).symm (u ⊗ₜ u') :
             ((T b).prodMap (T' b) : E × E' →ₗ[ℝ] F × F').detLine))
-        (smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
-          (LinearMap.detLineProdMapEquiv_symm_tmul_ne_zero _ _ hu hu')) := by
+        (LinearMap.neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero _ _ _ hu hu') := by
   classical
   -- Coherent families through `v₀` and `v₀'` end on the rays of `u` and `u'`.
   obtain ⟨V, rfl, hV⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
