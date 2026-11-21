@@ -228,9 +228,8 @@ def signFiberComapEquiv (x : X) : signFiber R τ hτ x ≃ₗ[R] signFiber R σ 
     let φ := Equiv.ofBijective _
       (Function.bijective_fiberMap_of_comp_eq hσ hf hfστ hfixτ hfib hfibτ hsurj x)
   · -- The fibre map is onto, so functions agreeing after precomposition agree.
-    refine Subtype.ext (funext fun e' ↦ ?_)
-    obtain ⟨e, rfl⟩ := φ.surjective e'
-    exact congrFun (congrArg Subtype.val h) e
+    exact Subtype.ext (LinearMap.funLeft_injective_of_surjective R R _ φ.surjective
+      (congrArg Subtype.val h))
   · -- Precompose with the inverse of the fibre map.
     refine ⟨⟨(g : p ⁻¹' {x} → R) ∘ φ.symm, mem_signFiber_iff.2 fun e' ↦ ?_⟩,
       Subtype.ext (funext fun e ↦ ?_)⟩
