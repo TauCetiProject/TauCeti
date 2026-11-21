@@ -111,7 +111,7 @@ include hc hstep hsq in
 root-subgroup morphism itself. -/
 @[simp]
 theorem coe_kostantRootSubgroupInToral :
-    (kostantRootSubgroupInToral e h ρ M hM i hnil b wt hc hstep hsq).1 =
+    (kostantRootSubgroupInToral e h ρ M hM i hnil b wt hc hstep hsq).val =
       letI := mono_kostantRootSubgroupToToral
         e h ρ M hM i hnil b wt hc hstep hsq
       Subobject.mk (kostantRootSubgroupToToral e h ρ M hM hnil b wt i) :=

@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Geometry.Variational.PolynomialJet.Basic
-public import TauCeti.RingTheory.Kaehler.MvPolynomialDeRham
+public import TauCeti.RingTheory.Kaehler.DeRham.Basic
+public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
+public import TauCeti.RingTheory.Kaehler.DeRham.Polynomial
 import Mathlib.Algebra.MvPolynomial.Variables
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.RingTheory.Derivation.BaseChange
 
 /-!
@@ -468,11 +471,11 @@ abbrev VertForms :=
 
 /-- The algebraic vertical exterior derivative on `VertForms B ι α`. -/
 abbrev dAlg : VertForms B ι α →ₗ[B] VertForms B ι α :=
-  MvPolynomialDeRham.d B (α × (ι →₀ ℕ))
+  KaehlerDeRham.extDeriv B (RelJetAlgebra B ι α)
 
 /-- The subalgebra of vertical forms supported on field-jet coordinates of order at most `r`. -/
 def vertStage (r : ℕ) : Subalgebra B (VertForms B ι α) :=
-  MvPolynomialDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}
+  KaehlerDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r}
 
 variable {B ι α}
 
@@ -481,14 +484,14 @@ variable {R : Type*} [CommRing R] [Algebra R B]
 /-- The Lie-derivative action of total differentiation `totalDeriv δ i` on relative vertical
 forms `VertForms B ι α`. -/
 def totalDerivForm (δ : ι → Derivation R B B) (i : ι) : Module.End R (VertForms B ι α) :=
-  MvPolynomialDeRham.lieDeriv (totalDeriv δ i)
+  (totalDeriv δ i).deRhamLieDeriv (fun b ↦ by simp)
 
 /-- On zero-forms, `totalDerivForm δ i` acts by `totalDeriv δ i`. -/
 @[simp]
 theorem totalDerivForm_algebraMap (δ : ι → Derivation R B B) (i : ι) (p : RelJetAlgebra B ι α) :
     totalDerivForm δ i (algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) p) =
       algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) (totalDeriv δ i p) :=
-  MvPolynomialDeRham.lieDeriv_algebraMap _ p
+  Derivation.deRhamLieDeriv_algebraMap _ _ p
 
 /-- On vertical generator one-forms `duᵃ_I`, `totalDerivForm δ i` shifts `I ↦ I + eᵢ`. -/
 @[simp]
@@ -503,13 +506,13 @@ theorem totalDerivForm_ι_D_X (δ : ι → Derivation R B B) (i : ι) (a : α) (
 /-- `totalDerivForm δ i` satisfies the degree-zero Leibniz rule on wedge products. -/
 theorem totalDerivForm_mul (δ : ι → Derivation R B B) (i : ι) (ω η : VertForms B ι α) :
     totalDerivForm δ i (ω * η) = totalDerivForm δ i ω * η + ω * totalDerivForm δ i η :=
-  MvPolynomialDeRham.lieDeriv_mul _ ω η
+  Derivation.deRhamLieDeriv_mul _ _ ω η
 
 /-- `totalDerivForm δ i` annihilates `1`. -/
 @[simp]
 theorem totalDerivForm_one (δ : ι → Derivation R B B) (i : ι) :
     totalDerivForm δ i (1 : VertForms B ι α) = 0 :=
-  MvPolynomialDeRham.lieDeriv_one _
+  Derivation.deRhamLieDeriv_one _ _
 
 /-- `totalDerivForm δ i` commutes with the grade involution on vertical forms. -/
 theorem totalDerivForm_involute (δ : ι → Derivation R B B) (i : ι) (ω : VertForms B ι α) :
@@ -517,73 +520,75 @@ theorem totalDerivForm_involute (δ : ι → Derivation R B B) (i : ι) (ω : Ve
         (CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _)) ω) =
       CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _))
         (totalDerivForm δ i ω) :=
-  MvPolynomialDeRham.lieDeriv_involute _ ω
+  Derivation.deRhamLieDeriv_involute _ _ ω
 
 /-- `totalDerivForm δ i` preserves vertical exterior degree. -/
 theorem totalDerivForm_mem_exteriorPower (δ : ι → Derivation R B B) (i : ι) {q : ℕ}
     {ω : VertForms B ι α} (hω : ω ∈ ⋀[RelJetAlgebra B ι α]^q (Ω[RelJetAlgebra B ι α⁄B])) :
     totalDerivForm δ i ω ∈ ⋀[RelJetAlgebra B ι α]^q (Ω[RelJetAlgebra B ι α⁄B]) :=
-  MvPolynomialDeRham.lieDeriv_mem_exteriorPower _ hω
+  Derivation.deRhamLieDeriv_mem_exteriorPower _ _ hω
 
 /-- **Commutation of `d_alg` and `Dᵢ`**: the algebraic vertical exterior derivative commutes with
 total differentiation on all vertical forms. -/
 theorem dAlg_totalDerivForm (δ : ι → Derivation R B B) (i : ι) (ω : VertForms B ι α) :
     dAlg B ι α (totalDerivForm δ i ω) = totalDerivForm δ i (dAlg B ι α ω) :=
-  MvPolynomialDeRham.d_lieDeriv (totalDeriv δ i) (fun b ↦ by simp) ω
+  Derivation.extDeriv_deRhamLieDeriv (totalDeriv δ i) (fun b ↦ by simp) ω
 
 /-- Commuting base derivations yield commuting total-derivative actions on vertical forms. -/
 theorem totalDerivForm_comm {δ : ι → Derivation R B B} {i j : ι}
     (hδ : ∀ b, δ i (δ j b) = δ j (δ i b)) (ω : VertForms B ι α) :
     totalDerivForm δ i (totalDerivForm δ j ω) = totalDerivForm δ j (totalDerivForm δ i ω) :=
-  MvPolynomialDeRham.lieDeriv_comm (totalDeriv δ i) (totalDeriv δ j) (fun b ↦ by simp)
-    (fun b ↦ by simp) (totalDeriv_comm hδ) ω
+  Derivation.commute_deRhamLieDeriv_of_lie_eq_zero (fun b ↦ by simp) (fun b ↦ by simp)
+    (Derivation.ext fun p ↦ by
+      rw [Derivation.commutator_apply, zero_apply, sub_eq_zero,
+        totalDeriv_comm hδ p]) ω
 
 /-- `vertStage B ι α r` is the supported-form subalgebra on coordinates of order at most `r`. -/
 theorem vertStage_eq_supportedForms (r : ℕ) :
     vertStage B ι α r =
-      MvPolynomialDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} := by
+      KaehlerDeRham.supportedForms B {aI : α × (ι →₀ ℕ) | aI.2.degree ≤ r} := by
   rfl
 
 /-- Increasing the jet-order bound enlarges the vertical stage subalgebra. -/
 theorem vertStage_mono : Monotone (vertStage B ι α) := by
   intro r s hrs
-  exact MvPolynomialDeRham.supportedForms_mono fun _ h ↦ h.trans hrs
+  exact KaehlerDeRham.supportedForms_mono fun _ h ↦ h.trans hrs
 
 /-- A zero-form in `stage B ι α r` lies in `vertStage B ι α r`. -/
 theorem algebraMap_mem_vertStage {r : ℕ} {p : RelJetAlgebra B ι α} (hp : p ∈ stage B ι α r) :
     algebraMap (RelJetAlgebra B ι α) (VertForms B ι α) p ∈ vertStage B ι α r :=
-  MvPolynomialDeRham.algebraMap_mem_supportedForms hp
+  KaehlerDeRham.algebraMap_mem_supportedForms hp
 
 /-- A vertical generator one-form `duᵃ_I` lies in `vertStage B ι α r` whenever `I.degree ≤ r`. -/
 theorem ι_D_X_mem_vertStage {r : ℕ} {a : α} {I : ι →₀ ℕ} (hI : I.degree ≤ r) :
     ExteriorAlgebra.ι (RelJetAlgebra B ι α)
       (KaehlerDifferential.D B (RelJetAlgebra B ι α) (X (a, I))) ∈ vertStage B ι α r :=
-  MvPolynomialDeRham.ι_D_X_mem_supportedForms hI
+  KaehlerDeRham.ι_D_X_mem_supportedForms hI
 
 /-- The grade involution preserves every finite vertical stage `vertStage B ι α r`. -/
 theorem involute_mem_vertStage {r : ℕ} {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
     CliffordAlgebra.involute (Q := (0 : QuadraticForm (RelJetAlgebra B ι α) _)) ω ∈
       vertStage B ι α r :=
-  MvPolynomialDeRham.involute_mem_supportedForms hω
+  KaehlerDeRham.involute_mem_supportedForms hω
 
 /-- Every vertical form belongs to some finite vertical stage. -/
 theorem exists_mem_vertStage (ω : VertForms B ι α) : ∃ r, ω ∈ vertStage B ι α r := by
-  obtain ⟨s, hs⟩ := MvPolynomialDeRham.exists_mem_supportedForms_finset ω
+  obtain ⟨s, hs⟩ := KaehlerDeRham.exists_mem_supportedForms_finset ω
   refine ⟨s.sup (fun aI ↦ aI.2.degree), ?_⟩
-  exact MvPolynomialDeRham.supportedForms_mono
+  exact KaehlerDeRham.supportedForms_mono
     (fun aI haI ↦ Finset.le_sup (f := fun x : α × (ι →₀ ℕ) ↦ x.2.degree) haI) hs
 
 /-- `dAlg` preserves every finite vertical stage `vertStage B ι α r`. -/
 theorem dAlg_mem_vertStage {r : ℕ} {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
     dAlg B ι α ω ∈ vertStage B ι α r :=
-  MvPolynomialDeRham.d_mem_supportedForms hω
+  KaehlerDeRham.extDeriv_mem_supportedForms hω
 
 /-- `totalDerivForm δ i` raises the vertical stage by at most one. -/
 theorem totalDerivForm_mem_vertStage (δ : ι → Derivation R B B) (i : ι) {r : ℕ}
     {ω : VertForms B ι α} (hω : ω ∈ vertStage B ι α r) :
     totalDerivForm δ i ω ∈ vertStage B ι α (r + 1) :=
-  MvPolynomialDeRham.lieDeriv_mem_supportedForms (fun _ h ↦ le_trans h (Nat.le_succ r))
-    (fun _ hp ↦ totalDeriv_mem_stage δ i hp) hω
+  KaehlerDeRham.deRhamLieDeriv_mem_supportedForms (fun b ↦ by simp)
+    (fun _ h ↦ le_trans h (Nat.le_succ r)) (fun _ hp ↦ totalDeriv_mem_stage δ i hp) hω
 
 end VerticalComplex
 
@@ -609,7 +614,7 @@ theorem dAlgTensor_tmul (ω : VertForms B ι α) (β : ExteriorAlgebra R (ι →
 theorem dAlgTensor_dAlgTensor (x : VertForms B ι α ⊗[R] ExteriorAlgebra R (ι →₀ R)) :
     dAlgTensor R B ι α (dAlgTensor R B ι α x) = 0 := by
   induction x using TensorProduct.inductionOn with
-  | tmul ω β => simp [MvPolynomialDeRham.d_d]
+  | tmul ω β => simp [KaehlerDeRham.extDeriv_extDeriv]
   | add x y hx hy => simp [hx, hy]
 
 /-- The unsigned horizontal differential `D_H⁰(ω ⊗ₜ β) = ∑ μ, (D_μ ω) ⊗ₜ (dx^μ ∧ β)` on
@@ -641,19 +646,6 @@ theorem dAlgTensor_horizDerivUnsigned [Fintype ι] (δ : ι → Derivation R B B
     rw [dAlg_totalDerivForm]
   | add x y hx hy => simp [hx, hy]
 
-/-- A double sum over a finite set vanishes in any additive group when diagonal terms vanish and
-symmetric pairs sum to zero (characteristic-free). -/
-private theorem sum_sum_eq_zero_of_antisymm {M : Type*} [AddCommGroup M] (s : Finset ι)
-    (f : ι → ι → M) (hdiag : ∀ i, f i i = 0) (hsym : ∀ i j, f i j + f j i = 0) :
-    ∑ i ∈ s, ∑ j ∈ s, f i j = 0 := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    simp only [Finset.sum_insert ha, hdiag, zero_add, Finset.sum_add_distrib, ih, add_zero]
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_eq_zero fun i _ ↦ hsym a i
-
 /-- **Nilpotency of the unsigned horizontal differential**: `(D_H⁰)² = 0` whenever the base
 derivations commute, over any commutative ring `R` (including in characteristic two). -/
 theorem horizDerivUnsigned_horizDerivUnsigned [Fintype ι] {δ : ι → Derivation R B B}
@@ -663,12 +655,12 @@ theorem horizDerivUnsigned_horizDerivUnsigned [Fintype ι] {δ : ι → Derivati
   induction x using TensorProduct.inductionOn with
   | tmul ω β =>
     simp only [horizDerivUnsigned_tmul, map_sum]
-    refine sum_sum_eq_zero_of_antisymm Finset.univ
-      (fun i j ↦ totalDerivForm δ j (totalDerivForm δ i ω) ⊗ₜ[R]
+    refine Finset.sum_sum_eq_zero_of_diag Finset.univ
+      (f := fun i j ↦ totalDerivForm δ j (totalDerivForm δ i ω) ⊗ₜ[R]
         (ExteriorAlgebra.ι R (Finsupp.single j (1 : R)) *
           (ExteriorAlgebra.ι R (Finsupp.single i (1 : R)) * β)))
-      (fun i ↦ by rw [← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul, TensorProduct.tmul_zero])
-      (fun i j ↦ ?_)
+      (fun i _ ↦ by rw [← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul, TensorProduct.tmul_zero])
+      (fun i _ j _ _ ↦ ?_)
     rw [totalDerivForm_comm (hδ j i), ← TensorProduct.tmul_add, ← mul_assoc, ← mul_assoc,
       ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, TensorProduct.tmul_zero]
   | add x y hx hy => simp [hx, hy]

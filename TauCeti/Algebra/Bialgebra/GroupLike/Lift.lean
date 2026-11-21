@@ -49,15 +49,7 @@ theorem liftBialgHom_apply_val (f : GroupLike R A →* GroupLike R B)
     (hA : Submodule.span R (Set.range (GroupLike.val (R := R) (A := A))) = ⊤)
     (x : GroupLike R A) :
     f.liftBialgHom hlinear hA x.val = (f x).val := by
-  have hx : (TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop
-      R A hlinear hA).symm x.val =
-      MonoidAlgebra.single x 1 := by
-    apply EquivLike.injective
-      (TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop R A hlinear hA)
-    simp only [BialgEquiv.apply_symm_apply,
-      TauCeti.GroupLike.evaluationBialgEquivOfLinearIndependentOfSpanEqTop_apply,
-      MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul]
-  simp [liftBialgHom, hx]
+  simp [liftBialgHom]
 
 /-- Restricting the extension to group-like elements recovers the given homomorphism. -/
 @[simp]

@@ -215,10 +215,10 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ
     exact_mod_cast (multiplicity_dvd_iff_le (p := (ℓ : ℕ)) Nat.card_pos.ne').mp
       ((pow_multiplicity_dvd _ _).trans hdvd)
   · refine iSup_le fun N ↦ ?_
-    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtype_val
+    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtypeVal
     refine le_iSup_of_le V ?_
     have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
-      OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
+      OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtypeVal
     rw [← V.toSubgroup.index_eq_card, hV, Subgroup.index_comap_subtype_eq_card_map]
 
 /-- The supernatural order of a subgroup is the supremum of the orders of its images in the

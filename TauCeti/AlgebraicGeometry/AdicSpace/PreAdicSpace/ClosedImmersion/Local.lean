@@ -59,12 +59,12 @@ theorem IsClosedImmersion.of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (V : ι → 
     ext x
     constructor
     · rintro ⟨⟨z, hz⟩, rfl⟩
-      have hzW : (⟨f.base z.1, z.2⟩ : Y.restrict (V i).isOpenEmbedding) ∈ W := by
+      have hzW : (⟨f.base z.val, z.property⟩ : Y.restrict (V i).isOpenEmbedding) ∈ W := by
         rw [← Hom.restrictPreimage_base_apply]
         exact Opens.mem_map.mp hz
-      exact ⟨⟨z.1, ⟨⟨f.base z.1, z.2⟩, hzW, rfl⟩⟩, rfl⟩
+      exact ⟨⟨z.val, ⟨⟨f.base z.val, z.property⟩, hzW, rfl⟩⟩, rfl⟩
     · rintro ⟨⟨x, z, hz, hzx⟩, rfl⟩
-      have hxV : f.base x ∈ V i := hzx ▸ z.2
+      have hxV : f.base x ∈ V i := hzx ▸ z.property
       let x' : X.restrict U.isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxV⟩
       refine ⟨⟨x', ?_⟩, rfl⟩
       have heq : (f.restrictPreimage (V i)).base x' = z :=

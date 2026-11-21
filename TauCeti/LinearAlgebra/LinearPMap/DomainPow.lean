@@ -58,7 +58,7 @@ theorem mem_domainPow_succ {A : E →ₗ.[R] E} {n : ℕ} {x : E} :
   rw [domainPow_succ]
   constructor
   · rintro ⟨y, hy, rfl⟩
-    exact ⟨y.2, hy⟩
+    exact ⟨y.property, hy⟩
   · rintro ⟨hx, hAx⟩
     exact ⟨⟨x, hx⟩, hAx, rfl⟩
 

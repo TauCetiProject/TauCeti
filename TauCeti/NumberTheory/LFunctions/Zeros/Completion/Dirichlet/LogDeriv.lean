@@ -11,23 +11,25 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 /-!
 # Logarithmic derivatives of completed Dirichlet functions
 
-Let `χ` be a nonprincipal primitive Dirichlet character of conductor `N`, and write
-`Λ₀ = (dirichletData χ hχ).entireCompletion`, so that `Λ₀ s = N ^ (s / 2) Λ(χ, s)`. On the
+Let `χ` be a primitive Dirichlet character of conductor `N`, and write
+`Λ₀ = (dirichletData χ hχ).entireCompletion`. For `χ ≠ 1`, `Λ₀ s = N ^ (s / 2) Λ(χ, s)`, so on the
 positive half-plane, away from the zeros of `L(χ, ·)`,
 `Λ₀'/Λ₀ (s) = ½ log N + Γℝ'/Γℝ (s + a) + L'/L (s, χ)`, where `a` is `0` for even and `1` for odd
 characters; the gamma term equals `ψ((s + a)/2)/2 − ½ log π`. These are the terms of the
 partial-fraction expansion of `Λ₀'/Λ₀` other than its sum over zeros.
 
-The functional equation gives `Λ₀'/Λ₀(χ, 1 − s) = −Λ₀'/Λ₀(χ⁻¹, s)` and conjugation gives
+For every primitive character `χ` (including conductor `1`), the functional equation gives
+`Λ₀'/Λ₀(χ, 1 − s) = −Λ₀'/Λ₀(χ⁻¹, s)` and conjugation gives
 `Λ₀'/Λ₀(χ⁻¹, conj s) = conj (Λ₀'/Λ₀(χ, s))`. Both hold at every `s`, including zeros, where every
-logarithmic derivative involved is zero. For a quadratic character `Λ₀'/Λ₀` is therefore real on
-the real axis.
+logarithmic derivative involved is zero. Together they reflect `Λ₀'/Λ₀(χ, ·)` across the
+critical line: `Λ₀'/Λ₀(χ, 1 − conj s) = −conj (Λ₀'/Λ₀(χ, s))`. For a quadratic character
+`Λ₀'/Λ₀` is therefore real on the real axis.
 
 On each compact subset of the positive half-plane, away from the zeros of `L(χ, ·)`, the
-difference `Λ₀'/Λ₀ (s) − ½ log N − L'/L (s, χ)` is bounded by one constant, chosen before the
-modulus and the character. On `[1, 2]` the condition `L(χ, σ) ≠ 0` holds automatically, so this
-compares `Re Λ₀'/Λ₀(σ)` with `½ log N + Re L'/L(σ, χ)` everywhere there, as in the real-zero
-estimates for Dirichlet L-functions.
+difference `Λ₀'/Λ₀ (s) − ½ log N − L'/L (s, χ)` is bounded for all `χ ≠ 1` by one constant, chosen
+before the modulus and the character. On `[1, 2]` the condition `L(χ, σ) ≠ 0` holds automatically,
+so this compares `Re Λ₀'/Λ₀(σ)` with `½ log N + Re L'/L(σ, χ)` everywhere there, as in the
+real-zero estimates for Dirichlet L-functions.
 
 ## References
 
@@ -85,43 +87,44 @@ theorem logDeriv_dirichletData_entireCompletion_eq_digamma (hne : χ ≠ 1) {s :
   rw [logDeriv_dirichletData_entireCompletion χ hχ hne hs hL,
     χ.logDeriv_gammaFactor_eq_digamma (χ.gammaFactor_ne_zero_of_re_pos hs)]
 
-/-- The functional equation reflects the logarithmic derivative of the entire completion to
-that of the inverse character. -/
-theorem logDeriv_dirichletData_entireCompletion_one_sub (hne : χ ≠ 1) (s : ℂ) :
+/-- The functional equation reflects the logarithmic derivative of a primitive Dirichlet entire
+completion to that of the inverse character. -/
+theorem logDeriv_dirichletData_entireCompletion_one_sub (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (1 - s) =
       -logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  have h : logDeriv (fun z ↦ (dirichletData χ hχ).entireCompletion (1 - z)) s =
-      -logDeriv (dirichletData χ hχ).entireCompletion (1 - s) := by
-    rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
-  rw [← neg_neg (logDeriv _ (1 - s)), ← h,
-    funext (dirichletData_entireCompletion_one_sub χ hχ hne),
-    logDeriv_const_mul s _ (DirichletCharacter.rootNumber_ne_zero hχ)]
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasFunctionalEquation χ hχ).logDeriv_entireCompletion_one_sub
+      (dirichletData_hasMeromorphicContinuation χ hχ) s
 
-/-- Conjugation exchanges the logarithmic derivatives of the entire completions of a character
-and its inverse. -/
-theorem logDeriv_dirichletData_entireCompletion_inv_conj (hne : χ ≠ 1) (s : ℂ) :
+/-- Conjugation exchanges the logarithmic derivatives of the entire completions of a primitive
+character and its inverse. -/
+theorem logDeriv_dirichletData_entireCompletion_inv_conj (s : ℂ) :
     logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion (conj s) =
       conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
-  have h : (dirichletData χ⁻¹ hχ.inv).entireCompletion =
-      conj ∘ (dirichletData χ hχ).entireCompletion ∘ conj :=
-    funext (dirichletData_entireCompletion_inv_conj χ hχ hne)
-  rw [h, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-  simp
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasMeromorphicContinuation χ hχ).logDeriv_dual_entireCompletion_conj s
 
-/-- For a quadratic character, conjugation commutes with the logarithmic derivative of the
-entire completion. -/
-theorem logDeriv_dirichletData_entireCompletion_conj (hq : χ.IsQuadratic) (hne : χ ≠ 1)
-    (s : ℂ) :
+/-- The functional equation against `χ⁻¹` and conjugation together reflect the logarithmic
+derivative across the critical line: `Λ₀'/Λ₀ (1 - conj s) = -conj (Λ₀'/Λ₀ (s))`. -/
+theorem logDeriv_dirichletData_entireCompletion_one_sub_conj (s : ℂ) :
+    logDeriv (dirichletData χ hχ).entireCompletion (1 - conj s) =
+      -conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
+  rw [logDeriv_dirichletData_entireCompletion_one_sub χ hχ,
+    logDeriv_dirichletData_entireCompletion_inv_conj χ hχ]
+
+/-- For a primitive quadratic character, conjugation commutes with the logarithmic derivative of
+the entire completion. -/
+theorem logDeriv_dirichletData_entireCompletion_conj (hq : χ.IsQuadratic) (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (conj s) =
       conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
-  have h := logDeriv_dirichletData_entireCompletion_inv_conj χ hχ hne s
+  have h := logDeriv_dirichletData_entireCompletion_inv_conj χ hχ s
   rwa [dirichletData_inv_of_inv_eq χ hχ hq.inv] at h
 
-/-- For a quadratic character, the logarithmic derivative of the entire completion is real on
-the real axis. -/
-theorem im_logDeriv_dirichletData_entireCompletion_ofReal (hq : χ.IsQuadratic) (hne : χ ≠ 1)
+/-- For a primitive quadratic character, the logarithmic derivative of the entire completion is
+real on the real axis. -/
+theorem im_logDeriv_dirichletData_entireCompletion_ofReal (hq : χ.IsQuadratic)
     (σ : ℝ) : (logDeriv (dirichletData χ hχ).entireCompletion σ).im = 0 := by
-  have h := logDeriv_dirichletData_entireCompletion_conj χ hχ hq hne σ
+  have h := logDeriv_dirichletData_entireCompletion_conj χ hχ hq σ
   rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 

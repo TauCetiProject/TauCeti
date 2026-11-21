@@ -166,7 +166,7 @@ theorem indK0_comp_indK0 {T : Subgroup G} (h : S ≤ T) :
   -- Write `M` as the module of the representation `ρ` it defines.
   let := Module.restrictScalars k k[S.subgroupOf T] M.obj
   have := IsScalarTower.restrictScalars k k[S.subgroupOf T] M.obj
-  have : Module.Finite k[S.subgroupOf T] M.obj := M.2
+  have : Module.Finite k[S.subgroupOf T] M.obj := M.property
   have : Module.Finite k M.obj := Module.Finite.trans k[S.subgroupOf T] M.obj
   let ρ := Representation.ofModule' (k := k) (G := S.subgroupOf T) M.obj
   have : Module.Finite k[S.subgroupOf T] ρ.asModule :=
