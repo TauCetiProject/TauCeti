@@ -39,6 +39,8 @@ completeness of `O` and no finiteness of its residue field is needed for this.
   local ring.
 * `TauCeti.MvPowerSeries.isRegularLocalRing`: multivariate power series in finitely many variables
   over a regular local ring form a regular local ring.
+* `TauCeti.PowerSeries.isRegularRing_quotient_span_X`: over a regular ring `R`, the quotient
+  `R⟦X⟧ ⧸ (X)` is regular.
 * `TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing` and
   `TauCeti.PowerSeries.maximalIdeal_eq_span_C_X`: over a discrete valuation ring with uniformizer
   `ϖ`, the power series ring has dimension two and maximal ideal `(ϖ, X)`.
@@ -135,6 +137,12 @@ instance isRegularLocalRing [IsRegularLocalRing R] : IsRegularLocalRing R⟦X⟧
   rw [ringKrullDim_of_isNoetherianRing,
     ← IsRegularLocalRing.spanFinrank_maximalIdeal]
   exact_mod_cast spanFinrank_maximalIdeal_le
+
+/-- Over a regular ring `R`, the quotient `R⟦X⟧ ⧸ (X)` is regular, being isomorphic to `R` via the
+constant coefficient (`PowerSeries.quotientSpanXAlgEquiv`). -/
+instance isRegularRing_quotient_span_X [IsRegularRing R] :
+    IsRegularRing (R⟦X⟧ ⧸ span {(X : R⟦X⟧)}) :=
+  .of_ringEquiv (quotientSpanXAlgEquiv R).symm.toRingEquiv
 
 section IsDiscreteValuationRing
 

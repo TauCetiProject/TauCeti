@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 
 /-!
@@ -16,12 +17,14 @@ This file names that equivalence, as an isomorphism of `R`-algebras for any `R`-
 structure on `S`, so that statements about `Localization.AtPrime (maximalIdeal S)` transfer to
 `S` along a single map.
 
-More generally, a ring homomorphism `f : A →+* R` to a local ring extends to the localization of
-`A` at the preimage `f⁻¹(𝔪_R)`, and this extension maps the maximal ideal into `𝔪_R`. Hence an
-element whose image under `f` lies outside `𝔪_Rⁿ` stays outside the `n`-th power of the maximal
-ideal of that localization. For `f` the constant coefficient map of a polynomial ring over `R`,
-this says that a polynomial whose constant coefficient lies outside `𝔪_R²` does not lie in the
-square of the maximal ideal of the polynomial ring localized at `(𝔪_R, X_i)`.
+More generally, if a prime ideal `q` of an `R`-algebra `S` lies over the maximal ideal of a local
+ring `R`, then the algebra map from `R` to any localization of `S` at `q` is local. Likewise, a ring
+homomorphism `f : A →+* R` to a local ring extends to the localization of `A` at the preimage
+`f⁻¹(𝔪_R)`, and this extension maps the maximal ideal into `𝔪_R`. Hence an element whose image under
+`f` lies outside `𝔪_Rⁿ` stays outside the `n`-th power of the maximal ideal of that localization.
+For `f` the constant coefficient map of a polynomial ring over `R`, this says that a polynomial
+whose constant coefficient lies outside `𝔪_R²` does not lie in the square of the maximal ideal of
+the polynomial ring localized at `(𝔪_R, X_i)`.
 
 A homomorphism `ψ : R →+* T` to a local ring which inverts the complement of a prime
 `p` and maps `p` into the maximal ideal lifts to a local homomorphism from the localization of `R`
@@ -34,6 +37,9 @@ kernel.
   ring `S` to its localization at its maximal ideal.
 * `IsLocalization.AtPrime.isLocalHom_lift`: the lift of a homomorphism to a local ring along the
   localization at a prime mapped into the maximal ideal is local.
+* `IsLocalization.AtPrime.isLocalHom_algebraMap_of_liesOver` and
+  `Localization.AtPrime.isLocalHom_algebraMap_of_liesOver`: if `q` lies over `maximalIdeal R`, the
+  algebra map from `R` to a localization at `q` is local.
 * `TauCeti.algebraMap_notMem_maximalIdeal_pow`: an element whose image under `f : A →+* R` is not
   in `𝔪_Rⁿ` does not lie in the `n`-th power of the maximal ideal of `A` localized at `f⁻¹(𝔪_R)`.
 -/
@@ -84,7 +90,32 @@ theorem isLocalHom_lift {ψ : R →+* T} (hψ : ∀ y : p.primeCompl, IsUnit (ψ
     (IsLocalization.lift_mk'_spec _ _ _ _).mp rfl
   exact hp hr (hr' ▸ (hψ y).mul hz)
 
+/-- If `q` is a prime ideal of an `R`-algebra `S` lying over the maximal ideal of the local ring
+`R`, then the algebra map from `R` to any localization `T` of `S` at `q` is local. -/
+theorem isLocalHom_algebraMap_of_liesOver {R S T : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring T] [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
+    [IsLocalRing R] (q : Ideal S) [q.IsPrime] [IsLocalization.AtPrime T q]
+    [q.LiesOver (maximalIdeal R)] :
+    IsLocalHom (algebraMap R T) :=
+  ⟨fun r hr ↦ by
+    by_contra hr'
+    exact (IsLocalization.AtPrime.to_map_mem_maximal_iff T q (algebraMap R S r)).mpr
+      ((Ideal.mem_of_liesOver q (maximalIdeal R) r).mp ((mem_maximalIdeal r).mpr hr'))
+      (by rwa [IsScalarTower.algebraMap_apply R S T] at hr)⟩
+
 end IsLocalization.AtPrime
+
+namespace Localization.AtPrime
+
+/-- If `q` is a prime ideal of an `R`-algebra `S` lying over the maximal ideal of the local ring
+`R`, then `algebraMap R (Localization.AtPrime q)` is a local homomorphism. -/
+theorem isLocalHom_algebraMap_of_liesOver {R S : Type*} [CommSemiring R] [CommSemiring S]
+    [Algebra R S] [IsLocalRing R] (q : Ideal S) [q.IsPrime]
+    [q.LiesOver (IsLocalRing.maximalIdeal R)] :
+    IsLocalHom (algebraMap R (Localization.AtPrime q)) :=
+  IsLocalization.AtPrime.isLocalHom_algebraMap_of_liesOver q
+
+end Localization.AtPrime
 
 namespace TauCeti
 
@@ -101,7 +132,7 @@ theorem algebraMap_notMem_maximalIdeal_pow {f : A →+* R} {n : ℕ} {a : A}
       maximalIdeal (Localization.AtPrime ((maximalIdeal R).comap f)) ^ n := by
   let φ : Localization.AtPrime ((maximalIdeal R).comap f) →+* R :=
     IsLocalization.lift (M := ((maximalIdeal R).comap f).primeCompl) (g := f) fun s ↦
-      notMem_maximalIdeal.mp s.2
+      notMem_maximalIdeal.mp s.property
   have hφ : φ.comp (algebraMap _ _) = f := IsLocalization.lift_comp _
   have hmap : (maximalIdeal (Localization.AtPrime ((maximalIdeal R).comap f))).map φ ≤
       maximalIdeal R := by

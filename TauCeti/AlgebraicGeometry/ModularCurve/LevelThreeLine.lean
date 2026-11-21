@@ -794,7 +794,7 @@ theorem isInvariant_tetrahedralGroup {ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0) (h3 : 
     rw [← this, ← pb.basis.sum_repr (mu R ^ 3 * a), map_sum]
     refine Submodule.sum_mem _ fun j _ => ?_
     rw [map_smul, pb.basis_eq_pow, hgen]
-    exact Submodule.smul_mem _ _ (orbitSum_mu_pow_mem hζ h3 (hdim ▸ j.2))
+    exact Submodule.smul_mem _ _ (orbitSum_mu_pow_mem hζ h3 (hdim ▸ j.isLt))
   -- Since `3 (u - 24)` is a unit times a monic polynomial, it is a nonzerodivisor, so `a` itself
   -- lies in `R[u]`.
   have hnzd : (3 * (X - 24) : R[X]) ∈ nonZeroDivisors R[X] := by

@@ -149,7 +149,7 @@ field `K` is ultrametric, as needed for the restricted series to form a ring. -/
 noncomputable def restrictedPrimitive (i : σ) (hle : ∀ j, c' j ≤ c j) (hlt : c' i < c i) :
     IsRestricted.subring (R := K) c →ₗ[K] IsRestricted.subring (R := K) c' where
   toFun f := ⟨primitive i (f : MvPowerSeries σ K),
-    f.2.primitive (fun j ↦ (Fact.out : 0 < c' j).le) hle hlt⟩
+    f.property.primitive (fun j ↦ (Fact.out : 0 < c' j).le) hle hlt⟩
   map_add' f g := Subtype.ext (map_add (primitive i) (f : MvPowerSeries σ K) g)
   map_smul' a f := by
     apply Subtype.ext
@@ -174,7 +174,7 @@ theorem exists_norm_restrictedPrimitive_le (i : σ) (hle : ∀ j, c' j ≤ c j) 
     exists_gaussNorm_primitive_le (K := K) c c' i (fun j ↦ (Fact.out : 0 < c' j).le) hle hlt
   refine ⟨C, hC₀, fun f ↦ ?_⟩
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrictedPrimitive]
-  exact (hC f f.2.hasGaussNorm).2
+  exact (hC f f.property.hasGaussNorm).2
 
 /-- The termwise primitive from series restricted at `c` to series restricted at `c'` is
 continuous for the Gauss norms. -/

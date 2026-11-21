@@ -62,7 +62,7 @@ def zsmulTorsionSqHom (n : ℤ) :
       (AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n) fun P ↦
     (Submodule.mem_torsionBy_iff _ _).mpr <| by
     have hP : (n ^ 2 : ℤ) • (P : (W⁄F).toAffine.Point) = 0 :=
-      (Submodule.mem_torsionBy_iff _ _).mp P.2
+      (Submodule.mem_torsionBy_iff _ _).mp P.property
     have hnn : n • (n • (P : (W⁄F).toAffine.Point)) = 0 := by
       simpa only [smul_smul, sq] using hP
     exact hnn
@@ -89,7 +89,7 @@ private theorem natCard_ker_zsmulTorsionSqHom_le {n : ℤ}
   refine Nat.card_le_card_of_injective
     (fun P ↦ (⟨P.val.val, (Submodule.mem_torsionBy_iff _ _).mpr
       (by
-        have hP := congrArg Subtype.val (AddMonoidHom.mem_ker.mp P.2)
+        have hP := congrArg Subtype.val (AddMonoidHom.mem_ker.mp P.property)
         rw [zsmulTorsionSqHom_apply] at hP
         exact hP)⟩ :
         AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n)) ?_
@@ -143,7 +143,7 @@ theorem exists_zsmul_eq_of_zsmul_eq_zero_of_torsion_rational {n : ℤ}
     ⟨T, (Submodule.mem_torsionBy_iff _ _).mpr hT⟩
   have hPval := congrArg Subtype.val hP
   rw [zsmulTorsionSqHom_apply] at hPval
-  exact ⟨P.val, hPval, (Submodule.mem_torsionBy_iff _ _).mp P.2⟩
+  exact ⟨P.val, hPval, (Submodule.mem_torsionBy_iff _ _).mp P.property⟩
 
 end WeierstrassCurve.Affine
 

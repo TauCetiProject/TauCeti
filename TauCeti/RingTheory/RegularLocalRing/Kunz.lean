@@ -16,8 +16,9 @@ import TauCeti.RingTheory.AdicCompletion.LocalRing
 import TauCeti.RingTheory.Flat.ProjectiveDimension
 import TauCeti.RingTheory.KrullDimension.PowerSeries
 import TauCeti.RingTheory.LocalRing.CoefficientField
+import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.Perfect.PerfectClosure
-import TauCeti.RingTheory.Perfect.ProjectiveDimension
+import TauCeti.RingTheory.Perfect.Projective.Dimension
 import TauCeti.RingTheory.RegularLocalRing.Frobenius
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension

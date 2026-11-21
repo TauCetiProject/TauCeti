@@ -152,17 +152,17 @@ variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle �
 /-- The fibre coordinate of `c • y` is `c` times that of `y`, by linearity of the trivialization
 at the base point of `y`. -/
 theorem trivializationAt_smul_snd (y : TotalSpace F V) (c : 𝕜) :
-    (trivializationAt F V y.proj (⟨y.proj, c • y.2⟩ : TotalSpace F V)).2 =
+    (trivializationAt F V y.proj (⟨y.proj, c • y.snd⟩ : TotalSpace F V)).2 =
       c • (trivializationAt F V y.proj y).2 :=
   ((trivializationAt F V y.proj).linear 𝕜
-    (FiberBundle.mem_baseSet_trivializationAt F V y.proj)).map_smul c y.2
+    (FiberBundle.mem_baseSet_trivializationAt F V y.proj)).map_smul c y.snd
 
 /-- If `f` has derivative `f'` at `t`, then the curve `r ↦ f r • y` in the fibre of `y` has
 velocity `(0, f' • ξ)` at `t`, read in the chart at `y`, where `ξ` is the fibre coordinate of
 `y`. -/
 theorem hasMFDerivAt_smul_curve (y : TotalSpace F V) {f : 𝕜 → 𝕜} {f' : 𝕜}
     (hf : HasDerivAt f f' t) :
-    HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) (fun r : 𝕜 ↦ (⟨y.proj, f r • y.2⟩ : TotalSpace F V)) t
+    HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) (fun r : 𝕜 ↦ (⟨y.proj, f r • y.snd⟩ : TotalSpace F V)) t
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : EB), f' • (trivializationAt F V y.proj y).2)) := by
   rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
   -- Both the continuity and the derivative of the fibre coordinate reduce to those of

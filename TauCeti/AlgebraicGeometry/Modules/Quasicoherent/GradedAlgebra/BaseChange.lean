@@ -58,6 +58,9 @@ of the graded ring of sections over the ring of regular functions, and generatio
   `pullbackGradedSectionsGradedHom`.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isPushout_pullbackGradedSections`: for
   affine `U` and `V`, the square above is a pushout of commutative rings.
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isBaseChange_pullbackGradedSections`:
+  the same statement as a base change of `Γ(X, U)`-modules, for the `Γ(X, U)`-algebra structure
+  `algebraPullbackGradedSections` on `⨁ n, Γ(f^* Aₙ, V)`.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.finiteType_gradedSections_pullback` and
   `adjoin_gradedSectionsGrading_zero_union_one_eq_top_pullback`: finite generation and
   generation in degree one pass to `f^* A`.
@@ -409,6 +412,53 @@ theorem isPushout_pullbackGradedSections (hU : IsAffineOpen U) (hV : IsAffineOpe
     exact (pullbackGradedSections_of f A hVU n x).trans (DirectSum.lmap_lof ρ n x).symm
   exact CommRingCat.isPushout_iff_isPushout.mpr this
 
+/-- The `Γ(X, U)`-algebra structure on the sections `⨁ n, Γ(f^* Aₙ, V)` of `f^* A` over an open
+`V ≤ f⁻¹ U`, through the map of functions `f.appLE U V hVU : Γ(X, U) → Γ(Y, V)`. -/
+abbrev algebraPullbackGradedSections :
+    Algebra Γ(X, U) (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) :=
+  ((algebraMap Γ(Y, V) (⨁ n, Γ(((pullback f).obj A).obj.X n, V))).comp
+    (f.appLE U V hVU).hom).toAlgebra
+
+/-- Pullback of sections is a homomorphism of `Γ(X, U)`-algebras. -/
+theorem pullbackGradedSectionsGradedHom_algebraMap (r : Γ(X, U)) :
+    let := algebraPullbackGradedSections f A hVU
+    pullbackGradedSectionsGradedHom f A hVU (algebraMap Γ(X, U) (⨁ n, Γ(A.obj.X n, U)) r) =
+      algebraMap Γ(X, U) (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) r := by
+  intro
+  rw [pullbackGradedSectionsGradedHom_apply, pullbackGradedSections_algebraMap,
+    RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+
+/-- The algebra structures of `⨁ n, Γ(f^* Aₙ, V)` over `Γ(X, U)` and `Γ(Y, V)` form a scalar
+tower over `f.appLE U V hVU`. -/
+theorem isScalarTower_pullbackGradedSections :
+    let := (f.appLE U V hVU).hom.toAlgebra
+    let := algebraPullbackGradedSections f A hVU
+    IsScalarTower Γ(X, U) Γ(Y, V) (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) := by
+  intro _ _
+  -- `algebraPullbackGradedSections` is defined by this composite of algebra maps
+  exact .of_algebraMap_eq' rfl
+
+/-- **Affine base change of graded sections.** For affine opens `U` of `X` and `V ≤ f⁻¹ U` of `Y`,
+pulling back sections exhibits `⨁ n, Γ(f^* Aₙ, V)` as the base change
+`Γ(Y, V) ⊗[Γ(X, U)] ⨁ n, Γ(Aₙ, U)` along `f.appLE U V hVU`. This is the linear-map form of
+`isPushout_pullbackGradedSections`. -/
+theorem isBaseChange_pullbackGradedSections (hU : IsAffineOpen U) (hV : IsAffineOpen V) :
+    let := (f.appLE U V hVU).hom.toAlgebra
+    let := algebraPullbackGradedSections f A hVU
+    have := isScalarTower_pullbackGradedSections f A hVU
+    IsBaseChange Γ(Y, V)
+      (AlgHom.mk (R := Γ(X, U)) (pullbackGradedSectionsGradedHom f A hVU).toRingHom
+        (pullbackGradedSectionsGradedHom_algebraMap f A hVU)).toLinearMap := by
+  intro _ _ _
+  let := (pullbackGradedSections f A hVU).toAlgebra
+  have : IsScalarTower Γ(X, U) (⨁ n, Γ(A.obj.X n, U))
+      (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) :=
+    .of_algebraMap_eq fun r ↦ (pullbackGradedSections_algebraMap f A hVU r).symm
+  have h := CommRingCat.isPushout_iff_isPushout.mp
+    (isPushout_pullbackGradedSections f A hVU hU hV)
+  convert h.out using 1
+  exact LinearMap.ext fun x ↦ pullbackGradedSectionsGradedHom_apply f A hVU x
+
 include hVU in
 /-- **Finite generation passes to the pullback.** If the graded ring of sections
 `⨁ n, Γ(Aₙ, U)` over an affine open `U` is of finite type over `Γ(X, U)`, and `V ≤ f⁻¹ U` is
@@ -437,11 +487,8 @@ theorem adjoin_gradedSectionsGrading_zero_union_one_eq_top_pullback (hU : IsAffi
         ((pullback f).obj A).obj.gradedSectionsGrading V 1) = ⊤ := by
   let := (f.appLE U V hVU).hom.toAlgebra
   let := (pullbackGradedSections f A hVU).toAlgebra
-  let : Algebra Γ(X, U) (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) :=
-    ((algebraMap Γ(Y, V) (⨁ n, Γ(((pullback f).obj A).obj.X n, V))).comp
-      (algebraMap Γ(X, U) Γ(Y, V))).toAlgebra
-  have : IsScalarTower Γ(X, U) Γ(Y, V)
-      (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) := .of_algebraMap_eq fun _ ↦ rfl
+  let := algebraPullbackGradedSections f A hVU
+  have := isScalarTower_pullbackGradedSections f A hVU
   have : IsScalarTower Γ(X, U) (⨁ n, Γ(A.obj.X n, U))
       (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) :=
     .of_algebraMap_eq fun r ↦ (pullbackGradedSections_algebraMap f A hVU r).symm

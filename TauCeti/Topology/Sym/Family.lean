@@ -64,7 +64,7 @@ omit [Fintype ι] in
 private theorem continuous_regroup (e : (Σ i, Fin (m i)) ≃ Fin n) :
     Continuous (regroup U m e) :=
   continuous_pi fun _j =>
-    continuous_subtype_val.comp ((continuous_apply _).comp (continuous_apply _))
+    continuous_subtypeVal.comp ((continuous_apply _).comp (continuous_apply _))
 
 omit [Fintype ι] in
 private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m i)) ≃ Fin n) :
@@ -76,7 +76,7 @@ private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m 
     funext f j
     simp [regroup, R]
   rw [hfun]
-  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtype_val) (by simp)).comp R.isOpenMap
+  exact (IsOpenMap.piMap (fun j => (hU _).isOpenMap_subtypeVal) (by simp)).comp R.isOpenMap
 
 omit [Fintype ι] in
 private theorem isOpenQuotientMap_piMap_ofFn :
@@ -138,15 +138,15 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
   obtain ⟨V₀, hV₀, hdisj⟩ := (S : Set α).toFinite.t2_separation (X := α)
   let V : S → Set α := fun i => V₀ (i : α) ∩ W (i : α)
   have hVdisj : Pairwise (Function.onFun Disjoint V) := fun i j hij =>
-    (hdisj i.2 j.2 (Subtype.coe_ne_coe.2 hij)).mono
+    (hdisj i.property j.property (Subtype.coe_ne_coe.2 hij)).mono
       Set.inter_subset_left Set.inter_subset_left
-  refine ⟨V, fun i => (hV₀ i).2.inter (hWo i i.2),
-    fun i => ⟨(hV₀ i).1, hWm i i.2⟩,
+  refine ⟨V, fun i => (hV₀ i).2.inter (hWo i i.property),
+    fun i => ⟨(hV₀ i).1, hWm i i.property⟩,
     fun i => Set.inter_subset_right, hVdisj, ?_⟩
   intro n w hw
   have hm : ∑ i : S, Multiset.count (i : α) (w : Multiset α) = n := by
     rw [Finset.sum_coe_sort S fun a => Multiset.count a (w : Multiset α)]
-    exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.2
+    exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.property
   refine ⟨hm, ?_⟩
   rw [Sym.mem_range_sumSubtype hVdisj]
   refine ⟨fun a ha => ⟨⟨a, hw a ha⟩, (hV₀ a).1, hWm a (hw a ha)⟩, fun i => ?_⟩
@@ -154,10 +154,10 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
       = Multiset.filter (fun a => (i : α) = a) (w : Multiset α) := by
     refine Multiset.filter_congr fun a ha => ⟨fun haV => ?_, ?_⟩
     · by_contra hne
-      exact Set.disjoint_left.1 (hdisj (hw a (_root_.Sym.mem_coe.1 ha)) i.2 (Ne.symm hne))
+      exact Set.disjoint_left.1 (hdisj (hw a (_root_.Sym.mem_coe.1 ha)) i.property (Ne.symm hne))
         (hV₀ a).1 haV.1
     · rintro rfl
-      exact ⟨(hV₀ _).1, hWm _ i.2⟩
+      exact ⟨(hV₀ _).1, hWm _ i.property⟩
   rw [hfilter, ← Multiset.count_eq_card_filter_eq]
 
 end Finset
