@@ -311,37 +311,16 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
     ∃ G : Lp F 2 (volume : Measure E),
       smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G ∧
         ‖G‖ ≤ ‖u‖ := by
-  set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  have hw_le (x : E) : ‖w x‖ ≤ 1 := by
+  have hw_le (x : E) : ‖(((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)‖ ≤ 1 := by
     rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
     exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
       (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
-  -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
-  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
-  have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
-      G₀ :=
-    (toTemperedDistribution_fourier_toLp u).symm
-  have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
-    (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
-      (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
-        rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x))
-  refine ⟨hmem.toLp, ?_, ?_⟩
-  · -- `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u = w • G₀`.
-    have hweight : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
-      ext x
-      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add]
-      congr 2
-      ring
-    rw [hweight, ← smulLeftCLM_smulLeftCLM_apply
-      (g₁ := fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop) hw, hG₀]
-    ext φ
-    rw [Lp.smulLeftCLM_toTemperedDistribution_apply hw, Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
-  · rw [← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
-    refine Lp.norm_le_norm_of_ae_le (hmem.coeFn_toLp.mono fun x hx ↦ ?_)
+  refine ⟨𝓕 (inclusion h u).toLp, ?_, ?_⟩
+  · rw [toTemperedDistribution_fourier_toLp, toDistr_inclusion]
+  · -- `𝓕 (inclusion h u).toLp = ⟨ξ⟩ ^ (r - s) 𝓕 u.toLp` almost everywhere.
+    rw [← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
+    refine Lp.norm_le_norm_of_ae_le ((fourier_toLp_ae_eq_of_toDistr_eq
+      (toDistr_inclusion h u).symm).mono fun x hx ↦ ?_)
     rw [hx, norm_smul]
     exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x)
 

@@ -26,6 +26,9 @@ parametrix identity `(φ b) # a = φ + r` with `r` smoothing
 the Bessel-potential spaces `H^s = H^{s,2}(ℝⁿ; V)`. This file proves this operator identity and
 the regularity of solutions of elliptic equations:
 
+* `Symbol.IsAsymptoticSum.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add`
+  is the operator identity for a target symbol: if `c ∼ ∑ₖ sharpTerm b p k` for a symbol `c` of
+  order `0`, then `Op(φ b) Op(a) u = Op(φ c) u + Op(r) u` with `r` smoothing.
 * `TauCeti.Symbol.IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLeftCLM_add`
   is the operator identity: for an elliptic `p`, there are a symbol `q` of order `-m`, vanishing
   at positions outside `tsupport φ`, and a smoothing symbol `r`, both with compact spatial
@@ -96,6 +99,47 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ}
   {p a : Symbol n V W m}
 
+/-- **The local parametrix identity for a target symbol.** Let `b` be a symbol of order `-m`
+whose formal composition with the symbol `p` of order `m` is a symbol `c` of order `0`,
+`c ∼ ∑ₖ sharpTerm b p k`, let `φ` be a compactly supported Schwartz function, and let `a` be a
+symbol with compact spatial support that agrees with `p` on a neighbourhood of `tsupport φ`. There
+are symbols `q(x, ξ) = φ(x) b(x, ξ)` of order `-m` and `e(x, ξ) = φ(x) c(x, ξ)` of order `0`, and a
+smoothing symbol `r`, all with compact spatial support, such that
+`Op(q) Op(a) u = Op(e) u + Op(r) u` for every `u ∈ H^s` and every real `s`. -/
+theorem IsAsymptoticSum.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add
+    {b : Symbol n W V (-m)} {c : Symbol n V V 0}
+    (hpc : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) c) (b.sharpTerm p))
+    (ha : a.HasCompactSpatialSupport) {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ)
+    (hap : ∀ᶠ x in 𝓝ˢ (tsupport φ), ∀ ξ, a.coefficient (x, ξ) = p.coefficient (x, ξ)) :
+    ∃ (q : Symbol n W V (-m)) (hq : q.HasCompactSpatialSupport),
+      (∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ)) ∧
+      ∃ (e : Symbol n V V 0) (he : e.HasCompactSpatialSupport),
+        (∀ x ξ, e.coefficient (x, ξ) = φ x • c.coefficient (x, ξ)) ∧
+        ∃ (r : Symbol n V V (-m + m)) (hr : r.HasCompactSpatialSupport), r.IsSmoothing ∧
+          ∀ (s : ℝ) (u : H^{s}(CoordinateSpace n, V)),
+            (q.quantizeSobolev hq (s - m) (a.quantizeSobolev ha s u)).toDistr =
+              (e.quantizeSobolev he s u).toDistr + (r.quantizeSobolev hr s u).toDistr := by
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
+  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
+  set q := inclusion (zero_add (-m)).le (F.comp b)
+  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
+  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
+    simp [q, F]
+  set e : Symbol n V V 0 := inclusion (by norm_num) (F.comp c)
+  have he : e.HasCompactSpatialSupport := (hF.comp_right c).inclusion _
+  have hec : ∀ x ξ, e.coefficient (x, ξ) = φ x • c.coefficient (x, ξ) := fun x ξ ↦ by
+    simp [e, F]
+  have he' := he.inclusion (neg_add_cancel m).ge
+  have hr := (hq.sharp ha).sub he'
+  refine ⟨q, hq, hqb, e, he, hec, _, hr,
+    isSmoothing_sharp_sub_of_isAsymptoticSum hpc (φ.smooth ⊤) hqb ha hap hec, fun s u ↦ ?_⟩
+  rw [← toDistr_quantizeSobolev_sharp hq ha,
+    toDistr_quantizeSobolev_congr
+      (b := inclusion (neg_add_cancel m).ge e + (q.sharp a ha - inclusion (neg_add_cancel m).ge e))
+      (by simp) (hq.sharp ha) (he'.add hr) rfl,
+    quantizeSobolev_add he' hr, add_apply, BesselPotentialSpace.toDistr_add,
+    toDistr_quantizeSobolev_congr (by simp) he' he rfl]
+
 /-- **The local parametrix of an elliptic operator.** Let `p` be elliptic of order `m`, let `φ`
 be a compactly supported Schwartz function, and let `a` be a symbol with compact spatial support
 that agrees with `p` on a neighbourhood of `tsupport φ`. There are a symbol `q` of order `-m`,
@@ -113,22 +157,12 @@ theorem IsEllipticAbove.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_smulLe
             (BesselPotentialSpace.smulLeftCLM s φ u).toDistr +
               (r.quantizeSobolev hr s u).toDistr := by
   obtain ⟨b, hL, -⟩ := hp.exists_isAsymptoticSum_sharpTerm
-  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := V) hφ
-  set F := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
-  set q := inclusion (zero_add (-m)).le (F.comp b)
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right b).inclusion _
-  have hqb : ∀ x ξ, q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := fun x ξ ↦ by
-    simp [q, F]
-  have hF' := hF.inclusion (neg_add_cancel m).ge
-  have hr := (hq.sharp ha).sub hF'
-  refine ⟨q, hq, fun x hx ξ ↦ by rw [hqb, image_eq_zero_of_notMem_tsupport hx, zero_smul], _, hr,
-    isSmoothing_sharp_sub_ofSpatial hL (φ.smooth ⊤) hqb ha hap, fun s u ↦ ?_⟩
-  rw [← toDistr_quantizeSobolev_sharp hq ha,
-    toDistr_quantizeSobolev_congr
-      (b := inclusion (neg_add_cancel m).ge F + (q.sharp a ha - inclusion (neg_add_cancel m).ge F))
-      (by simp) (hq.sharp ha) (hF'.add hr) rfl,
-    quantizeSobolev_add hF' hr, add_apply, BesselPotentialSpace.toDistr_add,
-    toDistr_quantizeSobolev_congr (by simp) hF' hF rfl, toDistr_quantizeSobolev_ofSpatial_smul_id]
+  obtain ⟨q, hq, hqb, e, he, hec, r, hr, hsm, hid⟩ :=
+    hL.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add ha hφ hap
+  refine ⟨q, hq, fun x hx ξ ↦ by rw [hqb, image_eq_zero_of_notMem_tsupport hx, zero_smul], r, hr,
+    hsm, fun s u ↦ ?_⟩
+  rw [hid, toDistr_quantizeSobolev_congr (by ext ⟨x, ξ⟩; simp [hec]) he
+    (hasCompactSpatialSupport_ofSpatial_smul_id hφ) rfl, toDistr_quantizeSobolev_ofSpatial_smul_id]
 
 /-! ### Interior regularity -/
 

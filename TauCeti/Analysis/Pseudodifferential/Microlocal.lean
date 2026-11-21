@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
+import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.FourierSchur
@@ -49,8 +50,8 @@ is `H^{s - m}` in the frequencies of `Γ`, then the cut-off distributions `φ u`
 near `x₀`, are `H^s` in an open cone around each frequency of `Γ`
 (`Symbol.HasCompactSpatialSupport.exists_nhds_cone_forall_memLp_smul_fourier_toLp_smulLeftCLM`).
 This is a Fourier-side estimate from which the inclusion `WF_s(u) ⊆ WF_{s - m}(Op(a) u) ∪ Char(a)`
-follows after localizing `Op(a) u` in position; its restatement through
-`Distribution.IsMicrolocallySobolevAt` is not yet done.
+follows after localizing `Op(a) u` in position; this file does not state that inclusion for
+distributions through `Distribution.IsMicrolocallySobolevAt`.
 
 ## The argument
 
@@ -82,7 +83,9 @@ where `a` is elliptic (`TauCeti.Symbol.exists_microlocalCutoff`), and a microloc
 symbol `b` with `c ∼ ∑ₖ sharpTerm b a k`
 (`TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`). For `φ` supported in the
 ball, `(φ b) # a` is `φ c` up to a smoothing symbol `r`
-(`TauCeti.Symbol.isSmoothing_sharp_sub_of_isAsymptoticSum`), so
+(`TauCeti.Symbol.isSmoothing_sharp_sub_of_isAsymptoticSum`), so `Op(φ b) Op(a) = Op(φ c) + Op(r)`
+(`Symbol.IsAsymptoticSum.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add`)
+and
 
 `φ u = Op(φ b) (Op(a) u) + Op(φ (1 - c)) u - Op(r) u`.
 
@@ -534,33 +537,17 @@ private theorem HasCompactSpatialSupport.exists_toDistr_smulLeftCLM_eq
           (BesselPotentialSpace.smulLeftCLM t φ u).toDistr =
             (q.quantizeSobolev hq (t - m) (a.quantizeSobolev ha t u)).toDistr +
               (P.quantizeSobolev hP t u).toDistr - (r.quantizeSobolev hr t u).toDistr := by
-  have hφ' : ContDiff ℝ ∞ (φ : CoordinateSpace n → ℂ) := φ.smooth ⊤
-  -- The symbols `e = φ`, `e₁ = φ c` and `q = φ b`.
-  set e := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) (hφ'.smul contDiff_const)
+  obtain ⟨q, hq, -, e₁, he₁, hce₁, r₀, hr₀, hsm, hid⟩ :=
+    hab.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_add ha hφ
+      (.of_forall fun _ _ ↦ rfl)
+  set e := ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V) ((φ.smooth ⊤).smul contDiff_const)
   have he : e.HasCompactSpatialSupport := hasCompactSpatialSupport_ofSpatial_smul_id hφ
-  set e₁ : Symbol n V V 0 := Symbol.inclusion (by norm_num) (e.comp c)
-  have he₁ : e₁.HasCompactSpatialSupport := (he.comp_right c).inclusion _
-  have hce₁ (x ξ : CoordinateSpace n) : e₁.coefficient (x, ξ) = φ x • c.coefficient (x, ξ) := by
-    simp [e₁, e, coefficient_inclusion, ContinuousLinearMap.smul_comp]
-  set q : Symbol n W V (-m) := Symbol.inclusion (zero_add (-m)).le (e.comp b)
-  have hq : q.HasCompactSpatialSupport := (he.comp_right b).inclusion _
-  have hcq (x ξ : CoordinateSpace n) : q.coefficient (x, ξ) = φ x • b.coefficient (x, ξ) := by
-    simp [q, e, coefficient_inclusion, ContinuousLinearMap.smul_comp]
-  -- `q # a - e₁` is smoothing.
-  have hsm := isSmoothing_sharp_sub_of_isAsymptoticSum hab hφ' hcq ha
-    (.of_forall fun _ _ ↦ rfl) hce₁
-  have hqa := (hq.sharp ha).sub (he₁.inclusion (neg_add_cancel m).ge)
   refine ⟨q, hq, e - e₁, he.sub he₁, fun x ξ ↦ by simp [e, hce₁, smul_sub], fun μ ↦ ?_⟩
   obtain ⟨r, hr⟩ := isSmoothing_iff.1 hsm μ
-  refine ⟨r, hqa.of_coefficient_eq hr, fun t u ↦ ?_⟩
-  rw [toDistr_quantizeSobolev_congr hr (hqa.of_coefficient_eq hr) hqa rfl,
-    toDistr_quantizeSobolev_sub_apply (hq.sharp ha) (he₁.inclusion _) hqa,
-    toDistr_quantizeSobolev_sharp hq ha,
-    toDistr_quantizeSobolev_congr (by simp [coefficient_inclusion]) (he₁.inclusion _) he₁ rfl,
+  refine ⟨r, hr₀.of_coefficient_eq hr, fun t u ↦ ?_⟩
+  rw [toDistr_quantizeSobolev_congr hr (hr₀.of_coefficient_eq hr) hr₀ rfl, hid,
     toDistr_quantizeSobolev_sub_apply he he₁ (he.sub he₁) t u,
-    BesselPotentialSpace.toDistr_smulLeftCLM]
-  simp only [e, quantizeSobolev_ofSpatial_smul, ContinuousLinearMap.comp_apply,
-    BesselPotentialSpace.toDistr_inclusion, BesselPotentialSpace.toDistr_smulLeftCLM]
+    ← toDistr_quantizeSobolev_ofSpatial_smul_id φ he]
   abel
 
 /-- The parametrix step of microlocal elliptic regularity, for one cutoff `φ`. Let `b` be a
