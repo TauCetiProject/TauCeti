@@ -153,7 +153,7 @@ theorem standardKahlerForm_def (n : ℕ) :
 theorem standardKahlerForm_apply (n : ℕ) (v : Fin 2 → EuclideanSpace ℂ (Fin n)) :
     standardKahlerForm n v = (⟪v 0, v 1⟫_ℂ).im := by
   rw [standardKahlerForm_def, AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply
-    AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply]
+    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule]
   simp only [AlmostComplexStructure.ofComplexModule_apply, PiLp.inner_apply, PiLp.smul_apply,
     Complex.inner, Complex.im_sum]
   refine Finset.sum_congr rfl fun _ _ ↦ ?_
@@ -169,7 +169,7 @@ theorem standardKahlerForm_zero : standardKahlerForm 0 = 0 := by
 /-- **Wirtinger's inequality on `ℂⁿ`**: for `n ≠ 0` the standard Kähler form has comass one. -/
 theorem norm_standardKahlerForm (n : ℕ) [NeZero n] : ‖standardKahlerForm n‖ = 1 :=
   AlmostComplexStructure.norm_alternatingFormEquiv_kahlerForm
-    AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply
+    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule
 
 /-- The frames calibrated by the standard Kähler form on `ℂⁿ` are the pairs `(v, i v)` with
 `‖v‖ = 1`. -/
@@ -178,7 +178,7 @@ theorem isCalibratedFrame_standardKahlerForm_iff {n : ℕ}
     (standardKahlerForm n).IsCalibratedFrame v ↔ ‖v 0‖ = 1 ∧ v 1 = Complex.I • v 0 := by
   rw [standardKahlerForm_def,
     AlmostComplexStructure.isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff
-      AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply,
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
     AlmostComplexStructure.ofComplexModule_apply]
 
 /-- **The equality case of Wirtinger's inequality on `ℂⁿ`**: for `v ≠ 0`, the standard Kähler
@@ -189,7 +189,7 @@ theorem standardKahlerForm_apply_eq_norm_ιMulti_iff {n : ℕ} {v w : EuclideanS
     standardKahlerForm n ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ c : ℂ, 0 ≤ c.im ∧ w = c • v := by
   rw [standardKahlerForm_def,
     AlmostComplexStructure.alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff
-      AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply hv]
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule hv]
   simp only [AlmostComplexStructure.ofComplexModule_apply]
   exact ⟨fun ⟨a, b, hb, hw⟩ ↦ ⟨⟨a, b⟩, hb, hw.trans (Complex.re_smul_add_im_smul ⟨a, b⟩ v)⟩,
     fun ⟨c, hc, hw⟩ ↦ ⟨c.re, c.im, hc, hw.trans (Complex.re_smul_add_im_smul c v).symm⟩⟩
