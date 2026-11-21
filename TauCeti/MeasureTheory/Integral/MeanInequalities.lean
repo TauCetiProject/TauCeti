@@ -246,14 +246,18 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
 
+private theorem integrable_max_rpow [IsFiniteMeasure ν] {g : β → ℝ} {p ε : ℝ}
+    (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
+    Integrable (fun x ↦ (max (g x) ε) ^ p) ν :=
+  (hgp.sup (integrable_const (ε ^ p))).congr
+    (h0.mono fun _ hx ↦ (Real.rpow_max hx hε.le hp.le).symm)
+
 /-- On a finite measure space, `x ↦ Real.log (max (g x) ε)` is integrable whenever `0 < p`,
 `0 < ε`, `g ≥ 0` almost everywhere, and `g ^ p` is integrable. -/
 theorem integrable_log_max_of_integrable_rpow [IsFiniteMeasure ν] {g : β → ℝ} {p ε : ℝ}
     (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x) (hgp : Integrable (fun x ↦ g x ^ p) ν) :
     Integrable (fun x ↦ Real.log (max (g x) ε)) ν := by
-  have hmax : Integrable (fun x ↦ (max (g x) ε) ^ p) ν :=
-    (hgp.sup (integrable_const (ε ^ p))).congr
-      (h0.mono fun _ hx ↦ (Real.rpow_max hx hε.le hp.le).symm)
+  have hmax := integrable_max_rpow hp hε h0 hgp
   refine ((integrable_const |Real.log ε|).add (hmax.const_mul p⁻¹)).mono'
     (((Real.measurable_log.comp_aemeasurable hmax.aemeasurable).const_mul p⁻¹).congr
       (.of_forall fun _ ↦ by
@@ -261,11 +265,12 @@ theorem integrable_log_max_of_integrable_rpow [IsFiniteMeasure ν] {g : β → �
     (.of_forall fun x ↦ ?_)
   have hpos : 0 < max (g x) ε := lt_max_of_lt_right hε
   have hhi : Real.log (max (g x) ε) ≤ p⁻¹ * (max (g x) ε) ^ p := by
-    rw [le_inv_mul_iff₀ hp, ← Real.log_rpow hpos]
-    exact (Real.log_le_sub_one_of_pos (Real.rpow_pos_of_pos hpos p)).trans (by linarith)
+    rw [mul_comm, ← div_eq_mul_inv]
+    exact Real.log_le_rpow_div hpos.le hp
+  have hnonneg : 0 ≤ p⁻¹ * (max (g x) ε) ^ p := by positivity
   simp only [Pi.add_apply, Real.norm_eq_abs, abs_le]
-  exact ⟨by linarith [Real.log_le_log hε (le_max_right (g x) ε), neg_abs_le (Real.log ε),
-    show 0 ≤ p⁻¹ * (max (g x) ε) ^ p by positivity], by linarith [abs_nonneg (Real.log ε)]⟩
+  exact ⟨by linarith [Real.log_le_log hε (le_max_right (g x) ε), neg_abs_le (Real.log ε)],
+    by linarith [abs_nonneg (Real.log ε)]⟩
 
 /-- **Geometric–power mean inequality (Jensen's inequality for `Real.exp`).** On a probability
 space, for `0 ≤ α`, `0 < p`, and an almost everywhere positive `g` with `log ∘ g` and `g ^ p`
@@ -289,9 +294,7 @@ theorem exp_mul_integral_log_max_le_rpow_integral_rpow_add [IsProbabilityMeasure
     {α p ε : ℝ} (hα : 0 ≤ α) (hp : 0 < p) (hε : 0 < ε) (h0 : ∀ᵐ x ∂ν, 0 ≤ g x)
     (hgp : Integrable (fun x ↦ g x ^ p) ν) :
     Real.exp (α * ∫ x, Real.log (max (g x) ε) ∂ν) ≤ ((∫ x, g x ^ p ∂ν) + ε ^ p) ^ (α / p) := by
-  have hmax : Integrable (fun x ↦ (max (g x) ε) ^ p) ν :=
-    (hgp.sup (integrable_const (ε ^ p))).congr
-      (h0.mono fun _ hx ↦ (Real.rpow_max hx hε.le hp.le).symm)
+  have hmax := integrable_max_rpow hp hε h0 hgp
   refine (exp_mul_integral_log_le_rpow_integral_rpow hα hp
     (.of_forall fun _ ↦ lt_max_of_lt_right hε)
     (integrable_log_max_of_integrable_rpow hp hε h0 hgp) hmax).trans ?_

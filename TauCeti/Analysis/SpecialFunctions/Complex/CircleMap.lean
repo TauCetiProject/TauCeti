@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
@@ -28,6 +29,8 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
+* `TauCeti.circleMap_pi_sub_two_arctan`: rational Cayley parametrization of the unit circle via
+  `π - 2 * arctan (a / b)`.
 -/
 
 public section
@@ -93,5 +96,25 @@ theorem contDiff_circleMap_zpow (R : ℝ) (k : ℤ) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun θ ↦ circleMap 0 R θ ^ k := by
   simp_rw [circleMap_zero_zpow]
   exact (contDiff_circleMap 0 (R ^ k)).comp (contDiff_const.mul contDiff_id)
+
+/-- Rational Cayley parametrization of the unit circle: for `b ≠ 0`,
+`circleMap 0 1 (π - 2 * arctan (a / b)) = (a + b I) / (a - b I)`. -/
+theorem circleMap_pi_sub_two_arctan {a b : ℝ} (hb : b ≠ 0) :
+    circleMap 0 1 (Real.pi - 2 * Real.arctan (a / b)) = ((a : ℂ) + b * I) / ((a : ℂ) - b * I) := by
+  set β := Real.arctan (a / b)
+  have htan := Real.tan_arctan (a / b)
+  rw [Real.tan_eq_sin_div_cos, div_eq_div_iff (Real.cos_arctan_pos _).ne' hb] at htan
+  have hsin' : (b : ℂ) * Real.sin β = a * Real.cos β := by exact_mod_cast (by linarith : b * _ = _)
+  have hden₂ : (a : ℂ) - b * I ≠ 0 := fun h ↦ hb <| by
+    simpa using (congrArg Complex.im (sub_eq_zero.1 h)).symm
+  have harg : ((Real.pi - 2 * β : ℝ) : ℂ) * I =
+      ↑Real.pi * I + (((-β : ℝ) : ℂ) * I - (β : ℂ) * I) := by
+    push_cast; ring
+  have hexp : circleMap 0 1 (Real.pi - 2 * β) = -exp (((-β : ℝ) : ℂ) * I) / exp ((β : ℂ) * I) := by
+    simp only [circleMap, zero_add, ofReal_one, one_mul]
+    rw [harg, Complex.exp_add, exp_pi_mul_I, Complex.exp_sub]; ring
+  rw [hexp, div_eq_div_iff (Complex.exp_ne_zero _) hden₂, exp_ofReal_mul_I, exp_ofReal_mul_I,
+    Real.cos_neg, Real.sin_neg, ofReal_neg]
+  linear_combination 2 * hsin' - (2 * b * Real.sin β : ℂ) * I_mul_I
 
 end TauCeti

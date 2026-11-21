@@ -57,6 +57,30 @@ variable {X₀ X₁ V : Type*}
   [AddCommGroup V] [Module ℂ V] [TopologicalSpace V] [ContinuousAdd V] [T1Space V]
   {C : CompatibleCouple ℂ X₀ X₁ V} {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
 
+private def smulBoundary {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y]
+    {c : ℂ → ℂ} (hcc : ContinuousOn c (verticalClosedStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
+    (γ : ℝ → ℂ) (hγ_cont : Continuous γ) (hγ_mem : ∀ t, γ t ∈ verticalClosedStrip 0 1) :
+    C₀(ℝ, Y) → C₀(ℝ, Y) :=
+  ZeroAtInftyContinuousMap.compLeftFamily
+    (fun t : ℝ => c (γ t) • ContinuousLinearMap.id ℂ Y)
+    (fun x => by
+      have hcont : Continuous fun t : ℝ => c (γ t) := hcc.comp_continuous hγ_cont hγ_mem
+      simpa only [smul_apply, ContinuousLinearMap.id_apply] using
+        hcont.fun_smul (continuous_const (y := x)))
+    ⟨K, fun t x => by
+      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
+      exact mul_le_mul_of_nonneg_right (hK (γ t) (hγ_mem t)) (norm_nonneg x)⟩
+
+@[simp]
+private theorem smulBoundary_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℂ Y]
+    {c : ℂ → ℂ} (hcc : ContinuousOn c (verticalClosedStrip 0 1))
+    {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
+    {γ : ℝ → ℂ} {hγ_cont : Continuous γ} {hγ_mem : ∀ t, γ t ∈ verticalClosedStrip 0 1}
+    (f : C₀(ℝ, Y)) (t : ℝ) :
+    smulBoundary hcc hK γ hγ_cont hγ_mem f t = c (γ t) • f t := by
+  simp [smulBoundary]
+
 /-- Multiplying an admissible function by a scalar function `c`, holomorphic on the open strip,
 continuous up to its boundary, and bounded on the closed strip, gives an admissible function with
 boundary traces `(t ↦ c (t * I) • g₀ t, t ↦ c (1 + t * I) • g₁ t)`. -/
@@ -65,30 +89,17 @@ theorem exists_smul_of_diffContOnCl (hF : C.IsStripFunction F g) {c : ℂ → �
     {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) :
     ∃ g' : C₀(ℝ, X₀) × C₀(ℝ, X₁), C.IsStripFunction (fun z => c z • F z) g' ∧
       (∀ t, g'.1 t = c (t * I) • g.1 t) ∧ ∀ t, g'.2 t = c (1 + t * I) • g.2 t := by
-  have hcl : closure (verticalStrip 0 1) = verticalClosedStrip 0 1 := by
-    rw [verticalStrip, closure_preimage_re, closure_Ioo zero_ne_one]; rfl
-  have hcc : ContinuousOn c (verticalClosedStrip 0 1) := hcl ▸ hc.continuousOn
-  have hc0 : Continuous fun t : ℝ => c (t * I) :=
-    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
-  have hc1 : Continuous fun t : ℝ => c (1 + t * I) :=
-    hcc.comp_continuous (by fun_prop) fun _ => by simp [mem_verticalClosedStrip_iff]
-  let G₀ := ZeroAtInftyContinuousMap.compLeftFamily
-    (fun t : ℝ => c (t * I) • ContinuousLinearMap.id ℂ X₀)
-    (fun x => by simpa using hc0.fun_smul continuous_const)
-    ⟨K, fun t x => by
-      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
-      exact mul_le_mul_of_nonneg_right
-        (hK (t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
-  let G₁ := ZeroAtInftyContinuousMap.compLeftFamily
-    (fun t : ℝ => c (1 + t * I) • ContinuousLinearMap.id ℂ X₁)
-    (fun x => by simpa using hc1.fun_smul continuous_const)
-    ⟨K, fun t x => by
-      rw [smul_apply, ContinuousLinearMap.id_apply, norm_smul]
-      exact mul_le_mul_of_nonneg_right
-        (hK (1 + t * I) (by simp [mem_verticalClosedStrip_iff])) (norm_nonneg x)⟩
-  exact ⟨(G₀ g.1, G₁ g.2),
-    hF.smul hc hK (fun t => by simp [G₀]) (fun t => by simp [G₁]),
-    fun t => by simp [G₀], fun t => by simp [G₁]⟩
+  have hcc : ContinuousOn c (verticalClosedStrip 0 1) :=
+    hc.continuousOn_verticalClosedStrip zero_lt_one
+  let g'₀ := smulBoundary hcc hK (fun t : ℝ => t * I) (by fun_prop)
+    (fun _ => by simp [mem_verticalClosedStrip_iff]) g.1
+  let g'₁ := smulBoundary hcc hK (fun t : ℝ => 1 + t * I) (by fun_prop)
+    (fun _ => by simp [mem_verticalClosedStrip_iff]) g.2
+  exact ⟨(g'₀, g'₁),
+    hF.smul hc hK (fun _ => by simp only [g'₀, smulBoundary_apply])
+      (fun _ => by simp only [g'₁, smulBoundary_apply]),
+    fun _ => by simp only [g'₀, smulBoundary_apply],
+    fun _ => by simp only [g'₁, smulBoundary_apply]⟩
 
 end CompatibleCouple.IsStripFunction
 
@@ -252,6 +263,14 @@ theorem norm_mk_le_rpow_integral_stripPoissonMeasure {θ p₀ p₁ : ℝ} (hθ :
   norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ hp₁ (C.isStripFunction_stripFunction g)
     (by simp [stripEval_apply])
 
+private theorem integral_norm_rpow_le_norm_rpow {X : Type*} [NormedAddCommGroup X]
+    {μ : Measure ℝ} [IsProbabilityMeasure μ] (f : C₀(ℝ, X)) {α : ℝ} (hα : 0 ≤ α) :
+    (∫ t, ‖f t‖ ∂μ) ^ α ≤ ‖f‖ ^ α :=
+  Real.rpow_le_rpow (integral_nonneg fun _ ↦ norm_nonneg _)
+    ((integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
+      (.of_forall f.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul]))
+    hα
+
 /-- **Mixed `(L^∞, L^{p₁})` strip Poisson bound for `[X₀, X₁]_θ`.** -/
 theorem norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure {θ p₁ : ℝ}
     (hθ : θ ∈ Ioo 0 1) (hp₁ : 0 < p₁) {u : C.ComplexMethodSpace θ} {F : ℂ → C.SumSpace}
@@ -260,11 +279,9 @@ theorem norm_le_norm_fst_rpow_mul_rpow_integral_stripPoissonMeasure {θ p₁ : �
   have := isProbabilityMeasure_stripPoissonMeasure₀ hθ
   have h := norm_le_rpow_integral_stripPoissonMeasure hθ one_pos hp₁ hF hu
   simp only [div_one, Real.rpow_one] at h
-  refine h.trans <| mul_le_mul_of_nonneg_right (Real.rpow_le_rpow
-    (integral_nonneg fun _ ↦ norm_nonneg _)
-    ((integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
-      (.of_forall g.1.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul]))
-    (sub_nonneg.2 hθ.2.le)) (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
+  exact h.trans <| mul_le_mul_of_nonneg_right
+    (integral_norm_rpow_le_norm_rpow g.1 (sub_nonneg.2 hθ.2.le))
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **Mixed `(L^{p₀}, L^∞)` strip Poisson bound for `[X₀, X₁]_θ`.** -/
 theorem norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow {θ p₀ : ℝ}
@@ -274,11 +291,9 @@ theorem norm_le_rpow_integral_stripPoissonMeasure_mul_norm_snd_rpow {θ p₀ : �
   have := isProbabilityMeasure_stripPoissonMeasure₁ hθ
   have h := norm_le_rpow_integral_stripPoissonMeasure hθ hp₀ one_pos hF hu
   simp only [div_one, Real.rpow_one] at h
-  refine h.trans <| mul_le_mul_of_nonneg_left (Real.rpow_le_rpow
-    (integral_nonneg fun _ ↦ norm_nonneg _)
-    ((integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (integrable_const _)
-      (.of_forall g.2.norm_coe_le_norm)).trans_eq (by rw [integral_const, probReal_univ, one_smul]))
-    hθ.1.le) (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
+  exact h.trans <| mul_le_mul_of_nonneg_left
+    (integral_norm_rpow_le_norm_rpow g.2 hθ.1.le)
+    (Real.rpow_nonneg (integral_nonneg fun _ ↦ by positivity) _)
 
 /-- **`L¹` strip Poisson bound (Calderón–Hirschman).** -/
 theorem norm_le_rpow_integral_stripPoissonKernel {θ : ℝ} (hθ : θ ∈ Ioo 0 1)

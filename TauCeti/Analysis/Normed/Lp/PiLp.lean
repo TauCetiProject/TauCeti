@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.OfNorm
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
@@ -44,7 +45,8 @@ Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
-and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
+the two-point sum-and-difference operator `PiLp.clarksonPairCLM` with its `(1, ∞)` and `(2, 2)`
+norm bounds, and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
 
 ## Source
 
@@ -364,6 +366,56 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
   exact (singleLI (𝕜 := 𝕜) p β i).norm_toContinuousLinearMap_le
 
 end Single
+
+section ClarksonPair
+
+/-- The two-point sum-and-difference operator `(x₀, x₁) ↦ (x₀ + x₁, x₀ - x₁)` from `ℓ^p_2(X)` to
+`ℓ^q_2(X)` as a continuous `𝕜`-linear map. -/
+def clarksonPairCLM (p q : ℝ≥0∞) (𝕜 X : Type*) [Ring 𝕜] [TopologicalSpace X] [AddCommGroup X]
+    [IsTopologicalAddGroup X] [Module 𝕜 X] :
+    PiLp p (fun _ : Fin 2 ↦ X) →L[𝕜] PiLp q (fun _ : Fin 2 ↦ X) :=
+  let pr := fun i : Fin 2 ↦
+    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin 2 ↦ X) i).comp
+      (continuousLinearEquiv p 𝕜 (fun _ : Fin 2 ↦ X)).toContinuousLinearMap
+  (continuousLinearEquiv q 𝕜 (fun _ : Fin 2 ↦ X)).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi fun i : Fin 2 ↦ if i = 0 then pr 0 + pr 1 else pr 0 - pr 1)
+
+/-- Coordinate evaluation of `PiLp.clarksonPairCLM`. -/
+@[simp]
+theorem clarksonPairCLM_apply (p q : ℝ≥0∞) (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [TopologicalSpace X] [AddCommGroup X] [IsTopologicalAddGroup X] [Module 𝕜 X]
+    (x : PiLp p (fun _ : Fin 2 ↦ X)) (i : Fin 2) :
+    clarksonPairCLM p q 𝕜 X x i = if i = 0 then x 0 + x 1 else x 0 - x 1 := by
+  split_ifs with hi <;> simp [clarksonPairCLM, hi]
+
+/-- As an operator `ℓ¹_2(X) → ℓ^∞_2(X)`, `PiLp.clarksonPairCLM` has norm at most `1`. -/
+theorem norm_clarksonPairCLM_one_top_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [SeminormedAddCommGroup X] [Module 𝕜 X] (x : PiLp 1 (fun _ : Fin 2 ↦ X)) :
+    ‖clarksonPairCLM 1 ∞ 𝕜 X x‖ ≤ ‖x‖ := by
+  have hx : ‖x‖ = ‖x 0‖ + ‖x 1‖ := by
+    simp [norm_eq_sum (p := 1) (by simp), Fin.sum_univ_two]
+  rw [norm_eq_ciSup, hx]
+  refine ciSup_le fun i ↦ ?_
+  fin_cases i
+  · simpa using norm_add_le (x 0) (x 1)
+  · simpa using norm_sub_le (x 0) (x 1)
+
+/-- When `X` satisfies `InnerProductSpaceable`, `PiLp.clarksonPairCLM` from `ℓ²_2(X)` to
+`ℓ²_2(X)` has norm at most `√2`. -/
+theorem norm_clarksonPairCLM_two_two_le (𝕜 : Type*) {X : Type*} [Ring 𝕜]
+    [NormedAddCommGroup X] [Module 𝕜 X] [InnerProductSpaceable X]
+    (x : PiLp 2 (fun _ : Fin 2 ↦ X)) :
+    ‖clarksonPairCLM 2 2 𝕜 X x‖ ≤ Real.sqrt 2 * ‖x‖ := by
+  have hpar : ‖x 0 + x 1‖ ^ (2 : ℝ) + ‖x 0 - x 1‖ ^ (2 : ℝ) =
+      2 * (‖x 0‖ ^ (2 : ℝ) + ‖x 1‖ ^ (2 : ℝ)) := by
+    simp only [Real.rpow_two, sq]
+    exact InnerProductSpaceable.parallelogram_identity (x 0) (x 1)
+  rw [norm_eq_sum (p := 2) (by simp), norm_eq_sum (p := 2) (by simp)]
+  simp only [ENNReal.toReal_ofNat, Fin.sum_univ_two, clarksonPairCLM_apply, Fin.isValue,
+    ↓reduceIte, one_ne_zero, hpar, Real.sqrt_eq_rpow]
+  exact (Real.mul_rpow zero_le_two (by positivity)).le
+
+end ClarksonPair
 
 end PiLp
 

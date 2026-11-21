@@ -24,6 +24,7 @@ Marcinkiewicz). This file records its elementary arithmetic.
 
 * `TauCeti.inv_eq_ofReal_of_inv_eq`: `1 / s` is the real convex combination of `1 / s₀` and
   `1 / s₁`.
+* `TauCeti.toReal_mul_inv_add`: for finite `s`, `s * ((1 - θ) / s₀) + s * (θ / s₁) = 1`.
 * `TauCeti.exists_inv_eq_ofReal_mul_inv_of_inv_eq`: for `s < ∞`, `1 / s₀ = r(0) / s` and
   `1 / s₁ = r(1) / s` for an affine `r ≥ 0` on `[0, 1]` with `r(θ) = 1`.
 * `TauCeti.mem_uIcc_of_inv_eq`: `s` lies between `s₀` and `s₁`.
@@ -57,6 +58,21 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
   rw [ENNReal.ofReal_add (mul_nonneg hθ1 ENNReal.toReal_nonneg)
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
+
+/-- Real normalization identity for a finite interpolated exponent
+`1 / s = (1 - θ) / s₀ + θ / s₁`: `s * ((1 - θ) / s₀) + s * (θ / s₁) = 1`. -/
+theorem toReal_mul_inv_add (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    s.toReal * ((1 - θ) * (s₀⁻¹).toReal) + s.toReal * (θ * (s₁⁻¹).toReal) = 1 := by
+  have hs' := inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
+  have hs0 : s ≠ 0 := ENNReal.inv_ne_top.1 (hs' ▸ ENNReal.ofReal_ne_top)
+  have hinv := congrArg ENNReal.toReal hs'
+  have hθ1 : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2
+  rw [ENNReal.toReal_inv, ENNReal.toReal_ofReal
+    (add_nonneg (mul_nonneg hθ1 ENNReal.toReal_nonneg)
+      (mul_nonneg hθ.1 ENNReal.toReal_nonneg))] at hinv
+  rw [← mul_add, ← hinv, mul_inv_cancel₀ (ENNReal.toReal_pos hs0 hs_top).ne']
 
 /-- For a finite interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁`, there is a slope `k` with
 `1 / s₀ = (1 - θ k) / s` and `1 / s₁ = (1 + (1 - θ) k) / s`, both factors nonnegative. These are
