@@ -12,7 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Slicing currents by a function
 
-Let `Ω` be an open set of a finite-dimensional real normed space `E`, let `T` be a
+Let `Ω` be an open set of a real normed space `E`, let `T` be a
 `(k + 1)`-current on `Ω` (a continuous linear functional on the test `(k + 1)`-forms), and let
 `u : E → ℝ` be measurable. The **slice** of `T` by `u` at `t` is the `k`-current
 
@@ -34,7 +34,8 @@ inequality**
 so for a normal current `T` and a smooth `u` with bounded derivative almost every slice is a
 normal current. The mass here is taken with respect to the operator norm on alternating forms
 (`Distribution.mass`); the factor `k + 1` comes from the unnormalized alternatization defining the
-wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here.
+wedge `du ∧ φ`. Slices by merely Lipschitz functions are not treated here. If `E` is
+infinite-dimensional, every test form is zero, so every current and every slice is zero.
 
 ## Main declarations
 
@@ -64,7 +65,7 @@ open scoped ENNReal Distributions Topology ContDiff
 
 namespace Distribution
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E} {k : ℕ} {u : E → ℝ} {t : ℝ}
 
@@ -218,6 +219,12 @@ private theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) :
     ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ t, mass (slice T u t) ≤ G t) ∧
       ∫⁻ t, G t ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In infinite dimension every test form is zero, so every slice has mass zero.
+    refine ⟨0, measurable_const, fun t => ?_, by simp⟩
+    rw [Pi.zero_apply, nonpos_iff_eq_zero, mass_eq_zero_iff]
+    exact funext fun φ => by simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtypeVal
   have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_eNorm.comp

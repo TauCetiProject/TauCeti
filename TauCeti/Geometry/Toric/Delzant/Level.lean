@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Toric.Delzant.Torus
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.Fredholm.Basic
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 
 /-!
 # The level set of the Delzant construction
@@ -90,6 +91,8 @@ reduction needs.
   derivative of the moment map of the kernel torus has index `d + n`.
 * `TauCeti.Toric.IsDelzant.isManifold_delzantLevel`: `Z` is a smooth manifold of dimension `d + n`.
 * `TauCeti.Toric.IsDelzant.contMDiff_coe_delzantLevel`: the inclusion of `Z` into `ℂ^ι` is smooth.
+* `TauCeti.Toric.IsDelzant.contMDiff_codRestrict_delzantLevel`: a smooth map into `ℂ^ι` with
+  values in `Z` is smooth into `Z`.
 
 ## References
 
@@ -603,6 +606,26 @@ theorem contMDiff_coe_delzantLevel {m : WithTop ℕ∞} :
       ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
   contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦
     ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
+
+include hi in
+/-- **Maps into the level.** A `C^m` map into `ℂ^ι` with values in the level `Z` is a `C^m` map
+into `Z`, for the atlas `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+theorem contMDiff_codRestrict_delzantLevel {E' H M : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H] {I : ModelWithCorners ℝ E' H} [TopologicalSpace M]
+    [ChartedSpace H M] {m : WithTop ℕ∞} {g : M → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}
+    (hg : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) m g)
+    (hgZ : ∀ x, g x ∈ delzantLevel i u c) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    ContMDiff I 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) m
+      (fun x ↦ (⟨g x, hgZ x⟩ : delzantLevel i u c)) :=
+  ContMDiff.codRestrict_levelSet
+    (f := fun y ↦ (delzantMomentMap c y).comp
+      (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) (c := 0)
+    (fun _ _ ↦ ((contDiff_delzantMomentMap c).clm_comp contDiff_const).hasStrictFDerivAt
+      one_ne_zero)
+    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
+    (fun _ hx ↦ hΔ.surjective_fderiv_delzantMomentMap_comp hi hx)
+    (fun _ _ ↦ hΔ.index_fderiv_delzantMomentMap_comp hi _) hg hgZ
 
 end IsDelzant
 

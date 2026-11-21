@@ -36,7 +36,9 @@ map whose range contains the homogeneous projections of its elements, with
 
 A third group is about maps compatible with a decomposition. Two linear maps out of a finite
 product `P → M` agree as soon as they agree on the homogeneous single-coordinate functions
-`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`.
+`Pi.single x α`, `LinearMap.pi_ext_of_decomposition`, and two additive maps out of `α →₀ M`
+agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
+`Finsupp.addHom_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
@@ -52,6 +54,11 @@ supremum-independent family with supremum `S` into an internal direct sum of `S`
 
 `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
+When the ambient carrier is an additive commutative group, `DirectSum.coe_decompose_neg` shows that
+homogeneous projections commute with negation even when the summand type carries only
+`AddSubmonoidClass` (such as submodules over a semiring), giving closure of each summand under
+negation, subtraction, and integer scaling (`DirectSum.Decomposition.neg_mem`,
+`DirectSum.Decomposition.sub_mem`, `DirectSum.Decomposition.zsmul_mem`).
 
 Finally, the external direct sum `⨁ i, M i` of a family of `R`-modules is the internal direct sum
 of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectSum.lof R ι M i`
@@ -361,6 +368,22 @@ theorem pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid
 
 end LinearMap
 
+namespace Finsupp
+
+/-- Two additive maps out of `α →₀ M` agree if they agree on `Finsupp.single x c` for every `x`
+and every `c` in a piece `ℳ i` of a decomposition of `M`. -/
+theorem addHom_ext_of_decomposition {ι α M N σ : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike σ M] [AddSubmonoidClass σ M] (ℳ : ι → σ) [DirectSum.Decomposition ℳ]
+    [AddZeroClass N] {φ ψ : (α →₀ M) →+ N}
+    (h : ∀ x i (c : M), c ∈ ℳ i → φ (single x c) = ψ (single x c)) : φ = ψ :=
+  addHom_ext fun x c ↦ by
+    induction c using DirectSum.Decomposition.inductionOn ℳ with
+    | zero => simp
+    | @homogeneous i c => exact h x i c c.property
+    | add c c' hc hc' => rw [single_add, map_add, map_add, hc, hc']
+
+end Finsupp
+
 namespace DirectSum.IsInternal
 
 /-- The recomposition map of the fiberwise collection of an internal decomposition is injective. -/
@@ -502,6 +525,43 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
 end DirectSum
 
 namespace DirectSum
+
+section AddCommGroup
+
+variable {ι M σ : Type*} [DecidableEq ι] [AddCommGroup M] [SetLike σ M] [AddSubmonoidClass σ M]
+
+/-- In an additive commutative group decomposed into additive submonoids (for instance submodules
+over a semiring), homogeneous projections commute with negation. -/
+theorem coe_decompose_neg (ℳ : ι → σ) [Decomposition ℳ] (x : M) (i : ι) :
+    (decompose ℳ (-x) i : M) = -(decompose ℳ x i : M) :=
+  eq_neg_of_add_eq_zero_left <| by
+    rw [← AddMemClass.coe_add, ← DirectSum.add_apply, ← decompose_add, neg_add_cancel,
+      decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+negation, even when the summand type carries only `AddSubmonoidClass` (such as `Submodule R M`
+over a semiring `R`). -/
+theorem Decomposition.neg_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M} (hx : x ∈ ℳ i) :
+    -x ∈ ℳ i := by
+  rw [← decompose_of_mem_same ℳ hx, ← coe_decompose_neg]
+  exact (decompose ℳ (-x) i).property
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+subtraction. -/
+theorem Decomposition.sub_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x y : M}
+    (hx : x ∈ ℳ i) (hy : y ∈ ℳ i) : x - y ∈ ℳ i := by
+  rw [sub_eq_add_neg]
+  exact add_mem hx (Decomposition.neg_mem hy)
+
+/-- Each summand of a `DirectSum.Decomposition` of an additive commutative group is closed under
+integer scalar multiplication. -/
+theorem Decomposition.zsmul_mem {ℳ : ι → σ} [Decomposition ℳ] {i : ι} {x : M}
+    (hx : x ∈ ℳ i) (n : ℤ) : n • x ∈ ℳ i := by
+  cases n with
+  | ofNat k => simpa only [Int.ofNat_eq_natCast, natCast_zsmul] using nsmul_mem hx k
+  | negSucc k => simpa only [negSucc_zsmul] using Decomposition.neg_mem (nsmul_mem hx (k + 1))
+
+end AddCommGroup
 
 section Module
 
