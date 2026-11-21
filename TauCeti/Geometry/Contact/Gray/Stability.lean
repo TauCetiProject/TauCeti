@@ -173,10 +173,10 @@ private theorem mfderiv_timeDependentFlowOf_restrictTimeDependentField_mem_kerDi
   rw [mem_kerDistribution, coe_mpullback] at hv
   have h := congrArg (fun A ↦ A ![v]) hexp
   simp only [ContinuousAlternatingMap.smul_apply] at h
+  -- The differential applied entrywise to `![v]` is the one-entry vector of `mfderiv … v`.
   rw [hv, smul_zero, TauCeti.mpullback_apply] at h
-  rw [mem_kerDistribution, coe_mpullback]
-  convert h using 2
-  simp only [Matrix.vec_single_eq_const]
+  simp only [Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const] at h
+  rwa [mem_kerDistribution, coe_mpullback]
 
 /-- **The local step of Gray's argument.** For initial and final times near `t₀` and initial
 points near `y`, the flow of the Gray vector field is defined and its differential maps the
@@ -331,6 +331,11 @@ theorem grayPartialDiffeomorph_apply (s t : ℝ) (x : M) :
     hξ.grayPartialDiffeomorph s t x = timeDependentFlowOf (distributionGrayVectorField ξ) s t x :=
   timeDependentFlowPartialDiffeomorph_apply _ _ s t x
 
+/-- As a function, Gray's partial isotopy is the time-dependent flow of the Gray vector field. -/
+theorem coe_grayPartialDiffeomorph (s t : ℝ) :
+    ⇑(hξ.grayPartialDiffeomorph s t) = timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
+  funext (hξ.grayPartialDiffeomorph_apply s t)
+
 /-- The inverse of Gray's partial isotopy from `s` to `t` is the time-dependent flow of the Gray
 vector field from `t` to `s`. -/
 @[simp]
@@ -371,9 +376,7 @@ theorem map_mfderiv_grayPartialDiffeomorph {s t : ℝ} {x : M}
     (hx : x ∈ (hξ.grayPartialDiffeomorph s t).source) :
     (ξ s x).map (mfderiv I I (hξ.grayPartialDiffeomorph s t) x).toLinearMap =
       ξ t (hξ.grayPartialDiffeomorph s t x) := by
-  rw [show ⇑(hξ.grayPartialDiffeomorph s t) =
-      timeDependentFlowOf (distributionGrayVectorField ξ) s t from
-    funext (hξ.grayPartialDiffeomorph_apply s t)]
+  rw [coe_grayPartialDiffeomorph]
   exact hξ.map_mfderiv_timeDependentFlowOf ((hξ.mem_grayPartialDiffeomorph_source_iff).1 hx)
 
 /-- A point at which the contact hyperplane `ξ_u` is the same for all times lies in the source of
@@ -440,6 +443,11 @@ theorem grayDiffeomorph_apply (s t : ℝ) (x : M) :
     hξ.grayDiffeomorph s t x = timeDependentFlowOf (distributionGrayVectorField ξ) s t x :=
   timeDependentFlowDiffeomorph_apply _ _ _ s t x
 
+/-- As a function, Gray's isotopy is the time-dependent flow of the Gray vector field. -/
+theorem coe_grayDiffeomorph (s t : ℝ) :
+    ⇑(hξ.grayDiffeomorph s t) = timeDependentFlowOf (distributionGrayVectorField ξ) s t :=
+  funext (hξ.grayDiffeomorph_apply s t)
+
 /-- The inverse of Gray's isotopy from `s` to `t` is Gray's isotopy from `t` to `s`. -/
 @[simp]
 theorem grayDiffeomorph_symm_apply (s t : ℝ) (x : M) :
@@ -476,8 +484,7 @@ it is a contactomorphism from `ξ_s` to `ξ_t`. -/
 theorem map_mfderiv_grayDiffeomorph (s t : ℝ) (x : M) :
     (ξ s x).map (mfderiv I I (hξ.grayDiffeomorph s t) x).toLinearMap =
       ξ t (hξ.grayDiffeomorph s t x) := by
-  rw [show ⇑(hξ.grayDiffeomorph s t) = timeDependentFlowOf (distributionGrayVectorField ξ) s t from
-    funext (hξ.grayDiffeomorph_apply s t)]
+  rw [coe_grayDiffeomorph]
   exact hξ.map_mfderiv_timeDependentFlowOf ((timeDependentFlowDomain_eq_univ
     hξ.isCompleteVectorField_timeDependentSuspensionField_distributionGrayVectorField).symm ▸
       mem_univ _)
