@@ -46,8 +46,6 @@ the mapping cone of the monomorphism `S.f` with `X₃`.
 
 ## Main results
 
-* `CochainComplex.mappingCocone.inl_v_d`, `CochainComplex.mappingCocone.inr_v_d`: the
-  differential of the mapping cocone on the two inclusions.
 * `CochainComplex.mappingCocone.liftCycles_homologyπ_shiftMap_triangle_mor₃`: the connecting map
   of the cocone sends `[b]` to `[inr b]`.
 * `CochainComplex.mappingCocone.liftCycles_homologyπ_δ_homologyMap_lift`,
@@ -71,34 +69,6 @@ namespace CochainComplex.mappingCocone
 
 open HomComplex
 
-section Preadditive
-
-variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
-  {K L : CochainComplex C ℤ} (φ : K ⟶ L)
-
-/-- The differential of the mapping cocone on the inclusion of `K`:
-`d (inl a) = inl (d a) - inr (φ a)`. -/
-@[reassoc]
-lemma inl_v_d (p q : ℤ) (hpq : p + 1 = q) :
-    (inl φ).v p p (add_zero p) ≫ (mappingCocone φ).d p q =
-      K.d p q ≫ (inl φ).v q q (add_zero q) - φ.f p ≫ (inr φ).val.v p q hpq := by
-  obtain rfl : q = p + 1 := hpq.symm
-  apply ext_to φ (p + 1) p (by lia)
-  · rw [assoc, ← (fst φ).comm, inl_v_fst_f_assoc]
-    simp
-  · simp [d_snd_v]
-
-/-- The inclusion `inr φ` of `L` is a cocycle of degree `1`:
-`d (inr b) = -inr (d b)`. -/
-@[reassoc]
-lemma inr_v_d (p q r : ℤ) (hpq : p + 1 = q) (hqr : q + 1 = r) :
-    (inr φ).val.v p q hpq ≫ (mappingCocone φ).d q r = -(L.d p q ≫ (inr φ).val.v q r hqr) := by
-  have h := δ_v 1 2 rfl (inr φ).val p r (by lia) q q (by lia) hpq
-  rw [Cocycle.δ_eq_zero, Cochain.zero_v, Int.negOnePow_even 2 ⟨1, rfl⟩, one_smul] at h
-  exact eq_neg_of_add_eq_zero_left h.symm
-
-end Preadditive
-
 section Abelian
 
 variable {C : Type*} [Category* C] [Abelian C]
@@ -113,8 +83,7 @@ lemma liftCycles_homologyπ_shiftMap_triangle_mor₃ {K L : CochainComplex C ℤ
         (HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) 0).shiftMap
           (triangle φ).mor₃ n₀ n₁ (by lia) =
       (mappingCocone φ).liftCycles (x ≫ (inr φ).val.v n₀ n₁ h) (n₁ + 1) (by simp)
-          (by rw [assoc, inr_v_d φ n₀ n₁ (n₁ + 1) h rfl, comp_neg, reassoc_of% hx, zero_comp,
-            neg_zero]) ≫
+          (comp_inr_v_d_eq_zero φ n₀ n₁ (n₁ + 1) h rfl x hx) ≫
         (mappingCocone φ).homologyπ n₁ := by
   dsimp [Functor.shiftMap, homologyFunctor_shift]
   rw [HomologicalComplex.homologyπ_naturality_assoc,
@@ -138,8 +107,7 @@ lemma liftCycles_homologyπ_δ_homologyMap_lift {A : C} (n₀ n₁ : ℤ) (h : n
     S.X₃.liftCycles x n₁ (by simp [h]) hx ≫ S.X₃.homologyπ n₀ ≫ hS.δ n₀ n₁ h ≫
         HomologicalComplex.homologyMap (lift S.g S.f 0 (by simp)) n₁ =
       (mappingCocone S.g).liftCycles (x ≫ (inr S.g).val.v n₀ n₁ h) (n₁ + 1) (by simp)
-          (by rw [assoc, inr_v_d S.g n₀ n₁ (n₁ + 1) h rfl, comp_neg, reassoc_of% hx, zero_comp,
-            neg_zero]) ≫
+          (comp_inr_v_d_eq_zero S.g n₀ n₁ (n₁ + 1) h rfl x hx) ≫
         (mappingCocone S.g).homologyπ n₁ := by
   have hS₀ := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS n₀
   have hS₁ := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS n₁
@@ -163,13 +131,12 @@ lemma liftCycles_homologyπ_δ_homologyMap_lift {A : C} (n₀ n₁ : ℤ) (h : n
     HomologicalComplex.homologyπ_naturality, HomologicalComplex.liftCycles_comp_cyclesMap_assoc,
     HomologicalComplex.comp_liftCycles_assoc]
   -- The two cycles differ by the boundary of `inl x₂`.
+  have hπx : (π ≫ x) ≫ S.X₃.d n₀ n₁ = 0 := by rw [assoc, hx, comp_zero]
   have hsplit : (mappingCocone S.g).liftCycles (x₁ ≫ (lift S.g S.f 0 (by simp)).f n₁) (n₁ + 1)
-        (by simp) (by rw [key, add_comp, assoc, assoc, inr_v_d S.g n₀ n₁ (n₁ + 1) h rfl,
-          comp_neg, reassoc_of% hx, zero_comp, neg_zero, comp_zero, zero_add, assoc, d_comp_d,
-          comp_zero]) =
+        (by simp) (by rw [key, add_comp, comp_inr_v_d_eq_zero S.g n₀ n₁ (n₁ + 1) h rfl _ hπx,
+          zero_add, assoc, d_comp_d, comp_zero]) =
       (mappingCocone S.g).liftCycles ((π ≫ x) ≫ (inr S.g).val.v n₀ n₁ h) (n₁ + 1) (by simp)
-          (by rw [assoc, assoc, inr_v_d S.g n₀ n₁ (n₁ + 1) h rfl, comp_neg, reassoc_of% hx,
-            zero_comp, neg_zero, comp_zero]) +
+          (comp_inr_v_d_eq_zero S.g n₀ n₁ (n₁ + 1) h rfl _ hπx) +
         (mappingCocone S.g).liftCycles
           ((x₂ ≫ (inl S.g).v n₀ n₀ (add_zero n₀)) ≫ (mappingCocone S.g).d n₀ n₁) (n₁ + 1)
           (by simp) (by rw [assoc, d_comp_d, comp_zero]) := by
