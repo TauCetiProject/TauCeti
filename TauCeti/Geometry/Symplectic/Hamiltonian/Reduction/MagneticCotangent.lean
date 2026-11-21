@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Submersion
+public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient.ProperAction
 public import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Translate
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LevelShift
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent
 
@@ -152,26 +154,6 @@ theorem proj_comp_magneticReductionMap :
 theorem magneticReductionMap_zero : magneticReductionMap I IB ρ 0 = reductionMap I IB ρ :=
   funext fun z ↦ by simp [magneticReductionMap_def]
 
-/-- **Translation preserves the cotangent relation.** If `(q, p)` is related to `(ρ q, p')`, that
-is `p = p' ∘ dρ_q`, then translating `p` by the pullback `ρ^* γ` of a one-form `γ` on `B` and `p'`
-by `γ` keeps them related. -/
-theorem cotangentRel_vectorBundleTranslateDiffeomorph_mpullback [IsManifold IB ∞ B]
-    (hρs : ContMDiff I IB ∞ ρ) (γ : SmoothForm IB B ℝ 1) {y : CotangentBundle I Q}
-    {w : CotangentBundle IB B} (h : cotangentRel I IB ρ y w) :
-    cotangentRel I IB ρ (vectorBundleTranslateDiffeomorph
-        (SmoothForm.degreeOneEquiv (SmoothForm.mpullback ρ hρs γ))
-        (SmoothForm.degreeOneEquiv (SmoothForm.mpullback ρ hρs γ)).contMDiff y)
-      (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv γ)
-        (SmoothForm.degreeOneEquiv γ).contMDiff w) := by
-  obtain ⟨q, p⟩ := y
-  obtain ⟨b, p'⟩ := w
-  obtain rfl : ρ q = b := cotangentRel_proj h
-  rw [cotangentRel_mk_iff] at h
-  rw [vectorBundleTranslateDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply,
-    cotangentRel_mk_iff, h]
-  ext v
-  simp [SmoothForm.degreeOneEquiv_apply_apply_vec, Matrix.vec_single_eq_const]
-
 end Map
 
 /-! ### Levels of the cotangent moment map -/
@@ -226,6 +208,32 @@ theorem exists_momentMap_eq_and_magneticReductionMap_eq
   · rw [← momentMap_vectorBundleTranslateDiffeomorph_eq_zero_iff hα, Diffeomorph.apply_symm_apply]
     exact hz₀
   · rw [magneticReductionMap_def, Diffeomorph.apply_symm_apply]
+
+/-- **Change of connection.** Let `ρ` be a smooth map whose differentials have continuous right
+inverses and whose vertical tangent vectors are the orbit directions, and let `α` pair the
+fundamental vector fields with `-ν`. If `α' = α + ρ^* γ` for a one-form `γ` on `B`, so that `α'`
+pairs them with `-ν` as well, then on the level `μ⁻¹(ν)` the magnetic reduction map of `α'` is that
+of `α` followed by the fibre translation by `γ`: `Ψ_α' = τ_γ ∘ Ψ_α`. -/
+theorem magneticReductionMap_eq_vectorBundleTranslateDiffeomorph [IsManifold IB ∞ B]
+    (hρs : ContMDiff I IB ∞ ρ) (hρ : ∀ q, (mfderiv I IB ρ q).HasRightInverse)
+    (hker : ∀ q, (mfderiv I IB ρ q).ker =
+      (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) {α' : SmoothForm I Q ℝ 1}
+    {γ : SmoothForm IB B ℝ 1} (hγ : SmoothForm.mpullback ρ hρs γ = α' - α)
+    {z : CotangentBundle I Q} (hz : momentMap IG G z = ν) :
+    magneticReductionMap I IB ρ α' z =
+      vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv γ)
+        (SmoothForm.degreeOneEquiv γ).contMDiff (magneticReductionMap I IB ρ α z) := by
+  set y := vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
+    (SmoothForm.degreeOneEquiv α).contMDiff z
+  -- `Ψ_α' z` is the reduction of `τ_(α' - α) y`, which is related to `τ_γ (Ψ_α z)`.
+  have h := cotangentRel_vectorBundleTranslateDiffeomorph_mpullback hρs γ
+    (cotangentRel_reductionMap (hρ y.proj)
+      (vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq hker hα hz))
+  rw [hγ] at h
+  rw [magneticReductionMap_def, magneticReductionMap_def,
+    ← vectorBundleTranslateDiffeomorph_trans_sub (α := α) α', Diffeomorph.coe_trans, comp_apply]
+  exact (eq_reductionMap_of_cotangentRel (hρ _) h).symm
 
 variable [ContMDiffConstSMul I ∞ G Q]
 
@@ -344,32 +352,6 @@ theorem mpullback_magneticReductionMap_comp_symplecticForm_add (hρ : IsSubmersi
     simp only [← comp_assoc, proj_comp_magneticReductionMap]
   rw [map_add, h₁, h₂, ← map_add, sub_add_cancel]
 
-omit [I.Boundaryless] in
-/-- **Change of connection.** Let `ρ` be a smooth submersion whose vertical tangent vectors are the
-orbit directions, and let `α` pair the fundamental vector fields with `-ν`. If `α' = α + ρ^* γ` for
-a one-form `γ` on `B`, so that `α'` pairs them with `-ν` as well, then on the level `μ⁻¹(ν)` the
-magnetic reduction map of `α'` is that of `α` followed by the fibre translation by `γ`:
-`Ψ_α' = τ_γ ∘ Ψ_α`. -/
-theorem magneticReductionMap_eq_vectorBundleTranslateDiffeomorph (hρ : IsSubmersion I IB ∞ ρ)
-    (hker : ∀ q, (mfderiv I IB ρ q).ker =
-      (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
-    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) {α' : SmoothForm I Q ℝ 1}
-    {γ : SmoothForm IB B ℝ 1} (hγ : SmoothForm.mpullback ρ hρ.contMDiff γ = α' - α)
-    {z : CotangentBundle I Q} (hz : momentMap IG G z = ν) :
-    magneticReductionMap I IB ρ α' z =
-      vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv γ)
-        (SmoothForm.degreeOneEquiv γ).contMDiff (magneticReductionMap I IB ρ α z) := by
-  set y := vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
-    (SmoothForm.degreeOneEquiv α).contMDiff z
-  -- `Ψ_α' z` is the reduction of `τ_(α' - α) y`, which is related to `τ_γ (Ψ_α z)`.
-  have h := cotangentRel_vectorBundleTranslateDiffeomorph_mpullback hρ.contMDiff γ
-    (cotangentRel_reductionMap (hρ.hasRightInverse_mfderiv (by simp) y.proj)
-      (vectorBundleTranslateDiffeomorph_snd_eq_zero_of_momentMap_eq hker hα hz))
-  rw [hγ] at h
-  rw [magneticReductionMap_def, magneticReductionMap_def,
-    ← vectorBundleTranslateDiffeomorph_trans_sub (α := α) α', Diffeomorph.coe_trans, comp_apply]
-  exact (eq_reductionMap_of_cotangentRel (hρ.hasRightInverse_mfderiv (by simp) _) h).symm
-
 end Smooth
 
 end TauCeti.CotangentBundle
@@ -391,35 +373,6 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDim
   [TopologicalSpace Q] [ChartedSpace H Q] [IsManifold I ∞ Q] [MulAction G Q]
   [ContMDiffSMul IG I ∞ G Q] [ContMDiffConstSMul I ∞ G Q] [ProperSMul G Q] [IsCancelSMul G Q]
   {α α' : SmoothForm I Q ℝ 1} {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
-
-omit [ContMDiffConstSMul I ∞ G Q] in
-/-- **Invariant forms killing the orbit directions are basic.** For a free proper action, a form
-on `Q` that is invariant under `G` and vanishes as soon as one of its arguments is the value of a
-fundamental vector field is basic for the orbit projection `Q → Q ⧸ G`, hence the pullback of a
-unique form on `Q ⧸ G`. -/
-theorem isBasic_quotientMk {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-    {φ : SmoothForm I Q F k}
-    (hinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) g) φ = φ)
-    (hvert : ∀ x (v : Fin k → TangentSpace I x) j (ξ : GroupLieAlgebra IG G),
-      v j = fundamentalVectorField I ξ x → φ.val x v = 0) :
-    letI := orbitRelQuotientChartedSpace IG G I Q
-    RoughForm.IsBasic (V := F) 𝓘(ℝ, QuotientModelSpace EG E)
-      (Quotient.mk (MulAction.orbitRel G Q)) φ.val := by
-  let _ := orbitRelQuotientChartedSpace IG G I Q
-  refine RoughForm.isBasic_of_mpullback_eq (σ := fun g : G ↦ (g • ·))
-    (fun q ↦ (contMDiff_quotientMk q).mdifferentiableAt (by simp))
-    (fun g ↦ (ContMDiffSMul.contMDiff_const_smul (I := IG) (I' := I) (n := ∞) g).mdifferentiable
-      (by simp))
-    (fun g ↦ funext fun _ ↦ MulAction.orbitRel.Quotient.quotient_smul_eq)
-    (fun x y hxy ↦ Or.inr ?_) (fun x v j hv ↦ ?_) fun g ↦ ?_
-  · obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.1
-      (MulAction.orbitRel_apply.1 (Quotient.exact hxy.symm))
-    exact ⟨g, hg⟩
-  · obtain ⟨ξ, hξ⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1
-      ((ker_mfderiv_quotientMk (I := IG) (G := G) x).le hv)
-    exact hvert x v j ξ (by rw [← hξ, InfinitesimalAction.fundamental_apply])
-  · exact (SmoothForm.coe_mpullback _ _ _).symm.trans (congrArg Subtype.val (hinv g))
 
 omit [ContMDiffConstSMul I ∞ G Q] in
 /-- **The magnetic term.** For a free proper action and a `G`-invariant one-form `α` pairing
@@ -575,6 +528,7 @@ theorem magneticReductionMap_eq_vectorBundleTranslateDiffeomorph_quotientMk
             (Quotient.mk (MulAction.orbitRel G Q)) α z) := by
   let _ := orbitRelQuotientChartedSpace IG G I Q
   exact fun γ hγ ↦ CotangentBundle.magneticReductionMap_eq_vectorBundleTranslateDiffeomorph
-    isSubmersion_quotientMk ker_mfderiv_quotientMk hα hγ hz
+    contMDiff_quotientMk (isSubmersion_quotientMk.hasRightInverse_mfderiv (by simp))
+    ker_mfderiv_quotientMk hα hγ hz
 
 end ProperSMul
