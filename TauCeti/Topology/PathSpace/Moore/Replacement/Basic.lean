@@ -297,6 +297,15 @@ theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
 theorem continuous_val : Continuous (val : Fiber p b → MooreReplacement p) :=
   continuous_subtypeVal
 
+variable (p b) in
+/-- The projection of the Moore fibre to `E`, `(e, γ) ↦ e`. -/
+def proj : C(Fiber p b, E) :=
+  ⟨fun x ↦ x.val.point, continuous_point.comp continuous_val⟩
+
+@[simp]
+theorem proj_apply (x : Fiber p b) : proj p b x = x.val.point :=
+  (rfl)
+
 /-- The point `(e, γ)` of the fibre, for a pair whose path ends at `b`. -/
 def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
   ⟨x, h⟩
