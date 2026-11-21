@@ -58,13 +58,12 @@ theorem spectrum_exp (Y : Matrix m m ℂ) : spectrum ℂ (exp Y) = exp '' spectr
   rw [← AlgEquiv.spectrum_eq e, ← AlgEquiv.spectrum_eq e Y, ← ContinuousLinearMap.spectrum_exp,
     NormedSpace.map_exp e he Y]
 
-/-- The exponential of a real matrix, viewed as a complex matrix, is the exponential of the
-complex matrix. -/
+/-- Taking the exponential of a real matrix commutes with viewing it as a complex matrix. -/
 theorem exp_map_ofReal (Y : Matrix m m ℝ) :
-    (exp Y).map ((↑) : ℝ → ℂ) = exp (Y.map ((↑) : ℝ → ℂ)) := by
+    exp (Y.map ((↑) : ℝ → ℂ)) = (exp Y).map ((↑) : ℝ → ℂ) := by
   let +nondep : NormedAlgebra ℚ (Matrix m m ℝ) := .restrictScalars ℚ ℝ _
-  exact NormedSpace.map_exp (Complex.ofRealHom.mapMatrix (m := m))
-    (continuous_id.matrix_map Complex.continuous_ofReal) Y
+  exact (NormedSpace.map_exp (Complex.ofRealHom.mapMatrix (m := m))
+    (continuous_id.matrix_map Complex.continuous_ofReal) Y).symm
 
 /-- **The eigenvalues of the exponential of a complex matrix.** Every eigenvalue `z` of `exp Y` is
 `exp ν` for an eigenvalue `ν` of `Y` with `‖ν‖ ≤ ‖Y‖`, where `‖Y‖` is the `ℓ²` operator norm. -/
@@ -106,7 +105,7 @@ theorem isUnit_exp_add_one {Y : Matrix m m ℂ} (hYπ : ‖Y‖ < Real.pi) : IsU
 theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖ < 2 * Real.pi) :
     IsUnit (exp Y - 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_sub _ Complex.ofReal_sub,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, exp_map_ofReal]
+    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_sub_one (isUnit_map_ofReal_iff.2 hY) (by rwa [l2_opNorm_map_ofReal])
 
 /-- The real case of `Matrix.isUnit_exp_add_one`: if a real matrix `Y` has `‖Y‖ < π`, then
@@ -114,7 +113,7 @@ theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : �
 theorem isUnit_exp_add_one_real {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) :
     IsUnit (exp Y + 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_add _ Complex.ofReal_add,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, exp_map_ofReal]
+    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_add_one (by rwa [l2_opNorm_map_ofReal])
 
 end Matrix
