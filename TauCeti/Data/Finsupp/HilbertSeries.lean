@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.PWO
-public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.RingTheory.PowerSeries.InvOneSubPow
 
 /-!
 # Hilbert series of upper and lower sets of exponents
@@ -21,7 +21,8 @@ standard monomials of an ideal with respect to a monomial order. In both cases t
 rational, of the form `p / (1 - T)ᵈ` for a polynomial `p`.
 
 The proof is combinatorial. There are `d.multichoose n` exponents of degree `n`
-(`Finsupp.ncard_setOf_degree_eq`), whose series is `(1 - T)⁻ᵈ`, and the exponents above a fixed
+(`Finsupp.ncard_setOf_degree_eq`), whose series is `(1 - T)⁻ᵈ`
+(`PowerSeries.mk_multichoose_eq_invOneSubPow`), and the exponents above a fixed
 `m` contribute `T^(deg m) (1 - T)⁻ᵈ`. By Dickson's lemma an upper set is the union of the sets of
 exponents above each of its finitely many minimal elements, and inclusion–exclusion, through
 `Ici m ∩ Ici m' = Ici (m ⊔ m')`, assembles its series.
@@ -33,9 +34,10 @@ retains the counts. With coefficients in a field of characteristic zero, Mathlib
 
 ## Main results
 
-* `Finsupp.mk_ncard_setOf_degree_eq`: the series counting all exponents by degree is `(1 - T)⁻ᵈ`.
-* `Finsupp.mk_ncard_Ici_inter_setOf_degree_eq`: the series of the exponents above `m` is
-  `T^(deg m) (1 - T)⁻ᵈ`.
+* `Finsupp.mk_ncard_setOf_degree_eq_invOneSubPow`: the series counting all exponents by degree is
+  `(1 - T)⁻ᵈ`.
+* `Finsupp.mk_ncard_Ici_inter_setOf_degree_eq_X_pow_mul_invOneSubPow`: the series of the
+  exponents above `m` is `T^(deg m) (1 - T)⁻ᵈ`.
 * `IsUpperSet.exists_mk_ncard_inter_setOf_degree_eq_mul_invOneSubPow`: the series of an upper set
   of exponents is `p / (1 - T)ᵈ` for a polynomial `p`.
 * `IsLowerSet.exists_mk_ncard_inter_setOf_degree_eq_mul_invOneSubPow`: the same for a lower set.
@@ -57,26 +59,18 @@ variable {ι : Type*} [Fintype ι] (R : Type*) [CommRing R]
 
 /-- The series counting the exponents `c : ι →₀ ℕ` by total degree is `(1 - T)⁻ᵈ`, where
 `d = card ι`. -/
-theorem mk_ncard_setOf_degree_eq :
+theorem mk_ncard_setOf_degree_eq_invOneSubPow :
     PowerSeries.mk (fun n ↦ ({c : ι →₀ ℕ | c.degree = n}.ncard : R)) =
       invOneSubPow R (Fintype.card ι) := by
   simp_rw [ncard_setOf_degree_eq]
-  cases Fintype.card ι with
-  | zero =>
-    ext n
-    cases n <;> simp [invOneSubPow_zero]
-  | succ r =>
-    rw [invOneSubPow_val_succ_eq_mk_add_choose]
-    ext n
-    simp only [coeff_mk, Nat.multichoose_eq]
-    rw [Nat.succ_add_sub_one, Nat.choose_symm_add]
+  exact mk_multichoose_eq_invOneSubPow R _
 
 /-- The series counting the exponents `c ≥ m` by total degree is `T^(deg m) (1 - T)⁻ᵈ`, where
 `d = card ι`. -/
-theorem mk_ncard_Ici_inter_setOf_degree_eq (m : ι →₀ ℕ) :
+theorem mk_ncard_Ici_inter_setOf_degree_eq_X_pow_mul_invOneSubPow (m : ι →₀ ℕ) :
     PowerSeries.mk (fun n ↦ ((Ici m ∩ {c : ι →₀ ℕ | c.degree = n}).ncard : R)) =
       (X : R⟦X⟧) ^ m.degree * invOneSubPow R (Fintype.card ι) := by
-  rw [← mk_ncard_setOf_degree_eq]
+  rw [← mk_ncard_setOf_degree_eq_invOneSubPow]
   ext n
   rw [coeff_mk, coeff_X_pow_mul', coeff_mk]
   split_ifs with h
@@ -145,7 +139,7 @@ private theorem exists_mk_ncard_setOf_exists_le_inter_setOf_degree_eq (F : Finse
         simp only [coeff_mk, map_add, map_sub]
         rw [hF, ncard_union_inter_setOf_degree_eq, hinter]
     _ = _ := by
-        rw [mk_ncard_Ici_inter_setOf_degree_eq, hp, hq]
+        rw [mk_ncard_Ici_inter_setOf_degree_eq_X_pow_mul_invOneSubPow, hp, hq]
         push_cast
         ring
 
@@ -195,6 +189,6 @@ theorem IsLowerSet.exists_mk_ncard_inter_setOf_degree_eq_mul_invOneSubPow {L : S
         ext n
         simp [h]
     _ = _ := by
-        rw [mk_ncard_setOf_degree_eq, hp]
+        rw [mk_ncard_setOf_degree_eq_invOneSubPow, hp]
         push_cast
         ring
