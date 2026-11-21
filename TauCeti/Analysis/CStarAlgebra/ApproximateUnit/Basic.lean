@@ -5,33 +5,50 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Topology.ApproximateUnit
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Analysis.Normed.Ring.Convex
 
 /-!
-# Increasing approximate units: images and uniform convergence
+# Increasing approximate units: subnets, convexification, transport and estimates
 
 A star-algebra homomorphism between C⋆-algebras is positive and contractive, so it maps the
 positive part of the closed unit ball into itself. Hence the image of an increasing approximate
 unit under a surjective homomorphism is an increasing approximate unit of the target,
-`Filter.IsIncreasingApproximateUnit.map`. This transfers approximate-unit limits, such as the
-norm of a positive functional, from a C⋆-algebra to its quotients.
+`Filter.IsIncreasingApproximateUnit.map`, and star-algebra equivalences preserve increasing
+approximate units in both directions, `Filter.IsIncreasingApproximateUnit.map_equiv_iff`. Passing
+to a proper subfilter (`Filter.IsIncreasingApproximateUnit.mono`), restricting
+`CStarAlgebra.approximateUnit` to the open unit ball
+(`TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball`), or replacing every member of the filter
+by its real convex hull (`Filter.IsIncreasingApproximateUnit.lift'_convexHull`) also preserves
+`Filter.IsIncreasingApproximateUnit`. `Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right`
+constructs an increasing approximate unit from right-multiplication convergence of nonnegative
+contractions, and `Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right_of_dense` weakens the
+check to any dense subset.
 
-Since an increasing approximate unit eventually lies in the closed unit ball, two-sided
-compressions `e * a * e` converge to `a` (`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`),
-the convergence `e * a → a` is uniform for `a` in a compact set
-(`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`), and so is the convergence
-`a * e → a` (`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`). This controls
-`e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
-`α`, as needed for approximate units of twisted convolution algebras.
+Along any approximate unit of a C⋆-algebra, two-sided compression `e * a * e` converges in norm to
+`a`, `Filter.IsApproximateUnit.tendsto_mul_mul` (and
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_self`), and an approximate unit of `B` mapped into
+`A` by a star-algebra homomorphism `f` right-approximates every `a` with `star a * a ∈ Set.range f`
+(`Filter.IsApproximateUnit.tendsto_mul_left_of_star_mul_self_mem_range`) and left-approximates
+every `a` with `a * star a ∈ Set.range f`
+(`Filter.IsApproximateUnit.tendsto_mul_right_of_mul_star_self_mem_range`). For closed
+`⋆`-subalgebras `B`, `Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem`,
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_star_mul_self_mem`, and
+`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_mul_star_self_mem` specialize this to increasing
+approximate units of `B`. Since an increasing approximate unit eventually lies in the closed unit
+ball, the convergence `e * a → a` is uniform for `a` in a compact set,
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is `a * e → a`,
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`.
 
 `TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
-that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint and
-that `x * e → x` along an increasing approximate unit of a closed `⋆`-subalgebra `B` containing
-`star x * x` (`Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` and
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_of_star_mul_self_mem`):
+that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
 `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companions
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`, and
 `TauCeti.CStarAlgebra.norm_sub_mul_le_of_star_mul_self_le`, `‖x - x * e‖ ≤ ‖y - y * e‖` whenever
@@ -42,6 +59,74 @@ public section
 
 open Filter Topology
 open scoped CStarAlgebra ComplexOrder
+
+namespace Filter.IsApproximateUnit
+
+private theorem tendsto_mul_mul_of_tendsto {ι A : Type*} [NonUnitalCStarAlgebra A]
+    {l : Filter ι} {u v : ι → A}
+    (hu : ∀ x : A, Tendsto (fun i => u i * x) l (𝓝 x))
+    (hv : ∀ x : A, Tendsto (fun i => x * v i) l (𝓝 x)) (a : A) :
+    Tendsto (fun i => u i * a * v i) l (𝓝 a) := by
+  let _ := CStarAlgebra.spectralOrder A
+  have _ := CStarAlgebra.spectralOrderedRing A
+  have ha : a ∈ Submodule.span ℂ {x : A | 0 ≤ x} := by simp [CStarAlgebra.span_nonneg]
+  induction ha using Submodule.span_induction with
+  | mem b hb =>
+    rw [← CFC.sqrt_mul_sqrt_self b]
+    exact ((hu (CFC.sqrt b)).mul (hv (CFC.sqrt b))).congr fun _ => by simp only [mul_assoc]
+  | zero => simpa using tendsto_const_nhds
+  | add x y _ _ hx hy => exact (hx.add hy).congr fun _ => by rw [mul_add, add_mul]
+  | smul c x _ hx => exact (hx.const_smul c).congr fun _ => by rw [mul_smul_comm, smul_mul_assoc]
+
+/-- Along any approximate unit of a C⋆-algebra, two-sided compression `e * a * e` converges in
+norm to `a`, without assuming positivity or norm boundedness of the filter. -/
+theorem tendsto_mul_mul {A : Type*} [NonUnitalCStarAlgebra A] {l : Filter A}
+    (hl : l.IsApproximateUnit) (a : A) :
+    Tendsto (fun e => e * a * e) l (𝓝 a) :=
+  tendsto_mul_mul_of_tendsto hl.tendsto_mul_right hl.tendsto_mul_left a
+
+/-- Along any approximate unit `l` of `B` mapped into `A` by a star-algebra homomorphism `f`, right
+multiplication `a * f e` converges to `a` whenever `star a * a` lies in the range of `f`. In
+particular, if `B` is a closed C⋆-subalgebra of `A` and `star a * a ∈ B`, then `a * e → a` along
+any approximate unit of `B`. -/
+theorem tendsto_mul_left_of_star_mul_self_mem_range {A B F : Type*} [NonUnitalCStarAlgebra A]
+    [NonUnitalCStarAlgebra B] [FunLike F B A] [NonUnitalAlgHomClass F ℂ B A] [StarHomClass F B A]
+    {l : Filter B} (hl : l.IsApproximateUnit) (f : F) {a : A} (ha : star a * a ∈ Set.range f) :
+    Tendsto (fun e => a * f e) l (𝓝 a) := by
+  obtain ⟨b, hb⟩ := ha
+  have hstar_right (x : B) : Tendsto (fun e => star e * x) l (𝓝 x) :=
+    tendsto_map'_iff.mp (hl.map_star.tendsto_mul_right x)
+  have hquad : Tendsto (fun e => star e * b * e - star e * b - b * e + b) l (𝓝 0) := by
+    simpa using (((tendsto_mul_mul_of_tendsto hstar_right hl.tendsto_mul_left b).sub
+      (hstar_right b)).sub (hl.tendsto_mul_left b)).add (tendsto_const_nhds (x := b))
+  have hf_quad : Tendsto (fun e => star (a * f e - a) * (a * f e - a)) l (𝓝 0) := by
+    have hlim := ((map_continuous f).tendsto 0).comp hquad
+    rw [map_zero] at hlim
+    refine hlim.congr fun e => ?_
+    simp only [Function.comp_apply, map_add, map_sub, map_mul, StarHomClass.map_star, hb, star_sub,
+      star_mul]
+    noncomm_ring
+  have hnorm_sq : Tendsto (fun e => ‖a * f e - a‖ * ‖a * f e - a‖) l (𝓝 0) := by
+    simpa only [Function.comp_def, CStarRing.norm_star_mul_self, norm_zero] using
+      (continuous_norm.tendsto (0 : A)).comp hf_quad
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hsqrt := (Real.continuous_sqrt.tendsto 0).comp hnorm_sq
+  rw [Real.sqrt_zero] at hsqrt
+  exact hsqrt.congr fun e => Real.sqrt_mul_self (norm_nonneg _)
+
+/-- Along any approximate unit `l` of `B` mapped into `A` by a star-algebra homomorphism `f`, left
+multiplication `f e * a` converges to `a` whenever `a * star a` lies in the range of `f`. -/
+theorem tendsto_mul_right_of_mul_star_self_mem_range {A B F : Type*} [NonUnitalCStarAlgebra A]
+    [NonUnitalCStarAlgebra B] [FunLike F B A] [NonUnitalAlgHomClass F ℂ B A] [StarHomClass F B A]
+    {l : Filter B} (hl : l.IsApproximateUnit) (f : F) {a : A} (ha : a * star a ∈ Set.range f) :
+    Tendsto (fun e => f e * a) l (𝓝 a) := by
+  have ha' : star (star a) * star a ∈ Set.range f := by rwa [star_star]
+  have hlim := (continuous_star.tendsto (star a)).comp
+    (tendsto_map'_iff.mp (hl.map_star.tendsto_mul_left_of_star_mul_self_mem_range f ha'))
+  rw [star_star] at hlim
+  exact hlim.congr fun e => by simp [star_mul, ← StarHomClass.map_star]
+
+end Filter.IsApproximateUnit
 
 namespace Filter.IsIncreasingApproximateUnit
 
@@ -122,6 +207,67 @@ theorem map {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (f : F)
 
 end Map
 
+/-- Any proper subfilter (subnet) of an increasing approximate unit is an increasing approximate
+unit. -/
+theorem mono {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] {l l' : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) (hle : l' ≤ l) [l'.NeBot] :
+    l'.IsIncreasingApproximateUnit where
+  tendsto_mul_left a := (hl.tendsto_mul_left a).mono_left hle
+  tendsto_mul_right a := (hl.tendsto_mul_right a).mono_left hle
+  eventually_nonneg := hl.eventually_nonneg.filter_mono hle
+  eventually_norm := hl.eventually_norm.filter_mono hle
+
+/-- Construct `l.IsIncreasingApproximateUnit` from right-multiplication convergence, eventual
+nonnegativity, and eventual contractivity, deriving self-adjointness and left-multiplication
+convergence automatically. -/
+theorem of_tendsto_mul_right {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {l : Filter A} [l.NeBot]
+    (hright : ∀ a : A, Tendsto (· * a) l (𝓝 a))
+    (hnonneg : ∀ᶠ x in l, 0 ≤ x) (hnorm : ∀ᶠ x in l, ‖x‖ ≤ 1) :
+    l.IsIncreasingApproximateUnit where
+  tendsto_mul_left :=
+    (CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right
+      (hnonneg.mono fun _ hx => hx.isSelfAdjoint)).mpr hright
+  tendsto_mul_right := hright
+  eventually_nonneg := hnonneg
+  eventually_norm := hnorm
+
+/-- An eventually nonnegative, eventually contractive proper filter `l` is an increasing
+approximate unit as soon as `e * x → x` along `l` for every `x` in a dense set `s`. -/
+theorem of_tendsto_mul_right_of_dense {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {l : Filter A} [l.NeBot] {s : Set A} (hs : Dense s)
+    (hright : ∀ x ∈ s, Tendsto (· * x) l (𝓝 x))
+    (hnonneg : ∀ᶠ x in l, 0 ≤ x) (hnorm : ∀ᶠ x in l, ‖x‖ ≤ 1) :
+    l.IsIncreasingApproximateUnit :=
+  of_tendsto_mul_right (fun a => TauCeti.tendsto_mul_right_of_dense hnorm hs hright a)
+    hnonneg hnorm
+
+/-- Convexification of an increasing approximate unit: replacing every member of `l` by its real
+convex hull yields a coarser increasing approximate unit. -/
+theorem lift'_convexHull {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+    [StarOrderedRing A] {l : Filter A} (hl : l.IsIncreasingApproximateUnit) :
+    (l.lift' (convexHull ℝ)).IsIncreasingApproximateUnit where
+  toIsApproximateUnit := hl.toIsApproximateUnit.lift'_convexHull
+  eventually_nonneg :=
+    eventually_of_mem (mem_lift' hl.eventually_nonneg)
+      fun _ hx => convexHull_min subset_rfl (convex_Ici (0 : A)) hx
+  eventually_norm := by
+    refine eventually_of_mem (mem_lift' hl.closedBall_mem) fun x hx => ?_
+    have hmem := convexHull_min subset_rfl (convex_closedBall (0 : A) 1) hx
+    simpa [Metric.mem_closedBall, dist_zero_right] using hmem
+
+/-- Transporting a filter along a star-algebra equivalence preserves increasing approximate units
+in both directions. -/
+@[simp]
+theorem map_equiv_iff {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (e : A ≃⋆ₐ[ℂ] B) {l : Filter A} :
+    (l.map e).IsIncreasingApproximateUnit ↔ l.IsIncreasingApproximateUnit := by
+  refine ⟨fun h => ?_, fun h => h.map e e.surjective⟩
+  have hsymm := h.map e.symm e.symm.surjective
+  rwa [Filter.map_map, show (e.symm : B → A) ∘ e = id from funext e.symm_apply_apply,
+    Filter.map_id] at hsymm
+
 end Filter.IsIncreasingApproximateUnit
 
 namespace TauCeti.CStarAlgebra
@@ -129,6 +275,18 @@ namespace TauCeti.CStarAlgebra
 open Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+variable (A) in
+/-- Restricting `CStarAlgebra.approximateUnit A` to the open unit ball preserves the increasing
+approximate unit property and ensures every member has norm strictly less than `1`. -/
+theorem isIncreasingApproximateUnit_ball :
+    ((CStarAlgebra.isBasis_nonneg_sections A).filter ⊓
+      𝓟 (Metric.ball 0 1)).IsIncreasingApproximateUnit := by
+  let l₀ : Filter A := (CStarAlgebra.isBasis_nonneg_sections A).filter ⊓ 𝓟 (Metric.ball 0 1)
+  have hbasis := (CStarAlgebra.isBasis_nonneg_sections A).hasBasis.inf_principal (Metric.ball 0 1)
+  have : l₀.NeBot := hbasis.neBot_iff.mpr fun ⟨_, hx⟩ => ⟨_, ⟨le_rfl, by simpa using hx⟩⟩
+  exact (CStarAlgebra.increasingApproximateUnit A).mono
+    (inf_le_inf_left _ (principal_mono.mpr Metric.ball_subset_closedBall))
 
 /-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a`, the C⋆-identity in the
 unitization gives `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. -/

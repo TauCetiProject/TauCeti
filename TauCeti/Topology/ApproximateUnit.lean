@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Star
 public import Mathlib.Topology.ApproximateUnit
 
 /-!
@@ -18,7 +19,10 @@ The image of an approximate unit under a continuous surjective multiplicative ma
 approximate unit, `Filter.IsApproximateUnit.map`. Surjectivity is what lets every element of the
 target be written as an image, so that its products with the image filter converge. This is the
 input for transferring approximate units, and quantities computed as their limits, from a
-C⋆-algebra to its quotients.
+C⋆-algebra to its quotients. Likewise, pushing a filter forward along a continuous
+anti-multiplicative involution `star` swaps left and right multiplication and therefore preserves
+approximate units in both directions (`Filter.IsApproximateUnit.map_star` and
+`Filter.IsApproximateUnit.map_star_iff`).
 
 In a Hausdorff space, a one-sided approximate unit forces the corresponding annihilator to
 vanish: `TauCeti.faithfulSMul_of_tendsto_mul_left` (if `x * c = y * c` for every `c`, then
@@ -32,6 +36,8 @@ public section
 open Filter Topology
 
 namespace Filter.IsApproximateUnit
+
+section
 
 variable {α β F : Type*} [TopologicalSpace α] [Mul α] [TopologicalSpace β] [Mul β]
   [FunLike F α β] [MulHomClass F α β]
@@ -57,6 +63,30 @@ theorem map {l : Filter α} (hl : l.IsApproximateUnit) (f : F) (hf : Continuous 
     simpa [tendsto_map'_iff, Function.comp_def, ← map_mul] using
       (hf.tendsto a).comp (hl.tendsto_mul_right a)
   neBot := hl.neBot.map f
+
+end
+
+/-- Pushing an approximate unit forward along a continuous anti-multiplicative involution `star`
+yields an approximate unit. -/
+theorem map_star {α : Type*} [TopologicalSpace α] [Mul α] [StarMul α] [ContinuousStar α]
+    {l : Filter α} (hl : l.IsApproximateUnit) : (l.map star).IsApproximateUnit where
+  tendsto_mul_left a := by
+    rw [tendsto_map'_iff]
+    simpa [Function.comp_def, star_mul, star_star] using
+      (hl.tendsto_mul_right (star a)).star
+  tendsto_mul_right a := by
+    rw [tendsto_map'_iff]
+    simpa [Function.comp_def, star_mul, star_star] using
+      (hl.tendsto_mul_left (star a)).star
+  neBot := hl.neBot.map star
+
+/-- Pushing a filter forward along a continuous anti-multiplicative involution `star` preserves
+approximate units in both directions. -/
+@[simp]
+theorem map_star_iff {α : Type*} [TopologicalSpace α] [Mul α] [StarMul α] [ContinuousStar α]
+    {l : Filter α} : (l.map star).IsApproximateUnit ↔ l.IsApproximateUnit :=
+  ⟨fun h => by simpa [Filter.map_map, Function.comp_def, star_star] using h.map_star,
+    fun h => h.map_star⟩
 
 end Filter.IsApproximateUnit
 

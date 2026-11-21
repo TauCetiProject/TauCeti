@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.NonUnitalSubalgebra
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.Convex.Cone.Hereditary
 public import TauCeti.Order.Hereditary
 public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra

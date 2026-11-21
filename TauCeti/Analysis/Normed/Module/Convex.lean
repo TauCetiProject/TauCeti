@@ -27,6 +27,9 @@ that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
 convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
 
+Replacing every member of a filter by its real convex hull preserves limits of real-linear maps
+into real seminormed spaces (`Filter.Tendsto.lift'_convexHull`).
+
 In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`, is not convex
 (`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
 (`TauCeti.ball_sdiff_singleton_ne_ball`, `TauCeti.ball_sdiff_singleton_ne_closedBall`), although it
@@ -160,6 +163,17 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (ht₀ : 0 ≤ t) (ht : t ≤ 1) : Metric.ball (x + t • (y - x)) ((1 - t) * r) ⊆ s :=
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
+
+/-- If an `ℝ`-linear map `f` into a real seminormed space tends to `y` along `l`, then it still
+tends to `y` along the real convexification `l.lift' (convexHull ℝ)`. -/
+theorem Filter.Tendsto.lift'_convexHull {B E : Type*} [AddCommMonoid B] [Module ℝ B]
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {l : Filter B} {f : B →ₗ[ℝ] E} {y : E}
+    (h : Filter.Tendsto f l (nhds y)) :
+    Filter.Tendsto f (l.lift' (convexHull ℝ)) (nhds y) := by
+  rw [Metric.tendsto_nhds] at h ⊢
+  intro ε hε
+  exact Filter.eventually_of_mem (Filter.mem_lift' (h ε hε)) fun _ hx =>
+    convexHull_min subset_rfl ((convex_ball y ε).linear_preimage f) hx
 
 namespace TauCeti
 

@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
@@ -272,6 +273,29 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I := by
+  have : StarOrderedRing I.toNonUnitalStarSubalgebra :=
+    Subtype.starOrderedRing I.toNonUnitalStarSubalgebra
+  let e := I.toNonUnitalStarSubalgebraEquiv
+  have hmap : (AddSubmonoid.closure (Set.range fun s : I => star s * s)).map
+      e.toAddEquiv.toAddMonoidHom =
+      AddSubmonoid.closure (Set.range fun s : I.toNonUnitalStarSubalgebra => star s * s) := by
+    rw [AddMonoidHom.map_mclosure]
+    refine congrArg AddSubmonoid.closure ?_
+    calc (e.toAddEquiv.toAddMonoidHom : I → _) '' Set.range (fun s : I => star s * s)
+        = Set.range (fun s : I => e (star s * s)) := (Set.range_comp _ _).symm
+      _ = Set.range (fun s : I => star (e s) * e s) := by simp only [map_mul, map_star]
+      _ = Set.range (fun t : I.toNonUnitalStarSubalgebra => star t * t) :=
+          e.surjective.range_comp (fun t => star t * t)
+  refine ⟨fun x y => ?_⟩
+  have hle : x ≤ y ↔ e x ≤ e y := by
+    simp only [← Subtype.coe_le_coe, e, I.coe_toNonUnitalStarSubalgebraEquiv_apply]
+  rw [hle, StarOrderedRing.le_iff, (EquivLike.surjective e).exists]
+  refine exists_congr fun p => and_congr ?_ ?_
+  · rw [← hmap, AddSubmonoid.mem_map]
+    exact ⟨fun ⟨q, hq, hqp⟩ => e.injective hqp ▸ hq, fun hp => ⟨p, hp, rfl⟩⟩
+  · rw [← map_add e x p, (EquivLike.injective e).eq_iff]
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

@@ -13,11 +13,13 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
 nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
 norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
-(`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
-shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
-with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b`.
+multiplicative, the commutator bound `‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖`
+(`TauCeti.norm_commutator_le`), the density criterion for asymptotic centrality along eventually
+norm-bounded filters (`TauCeti.tendsto_commutator_of_dense`), convergence to `0` of finite partial
+products when factors tend to `0` cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm
+bounds for powers of units — including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that
+the norms of integer powers of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every
+open interval `(a, b)` with `0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
@@ -251,6 +253,53 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- In a nonunital seminormed ring, the norm of the ring commutator `a * b - b * a` is bounded by
+`2 * ‖a‖ * ‖b‖`. -/
+theorem norm_commutator_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖ :=
+  calc ‖a * b - b * a‖ ≤ ‖a * b‖ + ‖b * a‖ := norm_sub_le _ _
+    _ ≤ ‖a‖ * ‖b‖ + ‖b‖ * ‖a‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
+    _ = 2 * ‖a‖ * ‖b‖ := by rw [mul_comm ‖b‖, ← two_mul, mul_assoc]
+
+/-- If `l` is eventually norm-bounded in a nonunital seminormed ring `R` and the commutator
+`e * x - x * e` tends to `0` along `l` for every `x` in a dense set `s`, then `e * a - a * e → 0`
+along `l` for every `a : R`. -/
+theorem tendsto_commutator_of_dense {R : Type*} [NonUnitalSeminormedRing R]
+    {l : Filter R} {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) {s : Set R} (hs : Dense s)
+    (h : ∀ x ∈ s, Filter.Tendsto (fun e => e * x - x * e) l (nhds 0)) (a : R) :
+    Filter.Tendsto (fun e => e * a - a * e) l (nhds 0) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  let M : ℝ := max C 0
+  have hM0 : 0 ≤ M := le_max_right C 0
+  have hMpos : 0 < 2 * (2 * M + 1) := by positivity
+  let δ : ℝ := ε / (2 * (2 * M + 1))
+  have hδ : 0 < δ := div_pos hε hMpos
+  obtain ⟨x, hxball, hxs⟩ := Metric.dense_iff.mp hs a δ hδ
+  have hax : ‖a - x‖ < δ := by
+    rw [Metric.mem_ball, dist_comm, dist_eq_norm] at hxball
+    exact hxball
+  have hx_ev := Metric.tendsto_nhds.mp (h x hxs) (ε / 2) (half_pos hε)
+  filter_upwards [hC, hx_ev] with e he hxe
+  rw [dist_zero_right] at hxe ⊢
+  have hsplit : (e * a - a * e) - (e * x - x * e) = e * (a - x) - (a - x) * e := by
+    simp only [mul_sub, sub_mul]
+    abel
+  have heM : ‖e‖ ≤ M := he.trans (le_max_left C 0)
+  have hpert : ‖e * (a - x) - (a - x) * e‖ ≤ 2 * M * δ := by
+    calc ‖e * (a - x) - (a - x) * e‖ ≤ 2 * ‖e‖ * ‖a - x‖ := norm_commutator_le e (a - x)
+      _ ≤ 2 * M * δ := by gcongr
+  have h2Mδ : 2 * M * δ ≤ ε / 2 := by
+    have hmul : 2 * M ≤ 2 * M + 1 := by linarith
+    calc 2 * M * δ ≤ (2 * M + 1) * δ := mul_le_mul_of_nonneg_right hmul hδ.le
+      _ = ε / 2 := by dsimp only [δ]; field_simp
+  calc ‖e * a - a * e‖
+      ≤ ‖e * x - x * e‖ + ‖(e * a - a * e) - (e * x - x * e)‖ := norm_le_insert' _ _
+    _ = ‖e * x - x * e‖ + ‖e * (a - x) - (a - x) * e‖ := by rw [hsplit]
+    _ < ε / 2 + 2 * M * δ := add_lt_add_of_lt_of_le hxe hpert
+    _ ≤ ε / 2 + ε / 2 := by gcongr
+    _ = ε := add_halves ε
 
 /-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
 finite partial products `s ↦ ∏ i ∈ s, f i`. -/

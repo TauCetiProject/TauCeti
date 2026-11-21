@@ -100,6 +100,18 @@ theorem toGNS_eq_zero_iff (f : A →ₚ[ℂ] ℂ) (a : A) :
   rw [← f.norm_toGNS_sq, ← Complex.ofReal_pow, Complex.ofReal_eq_zero, sq_eq_zero_iff,
     norm_eq_zero]
 
+/-- A positive linear functional whose GNS quotient map vanishes identically is zero. -/
+theorem eq_zero_of_forall_toGNS_eq_zero {f : A →ₚ[ℂ] ℂ}
+    (h : ∀ a : A, f.toGNS a = 0) : f = 0 := by
+  have hnonneg : ∀ a ∈ {x : A | 0 ≤ x}, (f : A →ₗ[ℂ] ℂ) a = (0 : A →ₗ[ℂ] ℂ) a := by
+    intro a ha
+    have hsq : star (CFC.sqrt a) * CFC.sqrt a = a := by
+      rw [(CFC.sqrt_nonneg (a := a)).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self a]
+    exact hsq ▸ (f.toGNS_eq_zero_iff (CFC.sqrt a)).mp (h (CFC.sqrt a))
+  have hext := LinearMap.ext_on (CStarAlgebra.span_nonneg (A := A)) hnonneg
+  ext a
+  exact LinearMap.congr_fun hext a
+
 section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
