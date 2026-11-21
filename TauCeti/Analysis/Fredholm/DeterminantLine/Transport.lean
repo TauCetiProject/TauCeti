@@ -34,7 +34,9 @@ rescaling by positive functions, that is, a continuous orientation of the determ
 of the same transition at `x₀`, with a coefficient which depends continuously on `x` and equals `1`
 at `x₀`, hence is positive nearby (`ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`).
 So the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
-(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`).
+(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`), and conversely, when `T x₀` is Fredholm,
+coherence may be checked in any kernel chart valid at `x₀`
+(`TauCeti.isDetLineCoherentWithinAt_of_eventually_sameRay`).
 
 * **Uniqueness.** Two coherent families on a preconnected set that lie on the same ray at one point
   lie on the same ray everywhere (`TauCeti.IsDetLineCoherentOn.sameRay`). The set where they agree

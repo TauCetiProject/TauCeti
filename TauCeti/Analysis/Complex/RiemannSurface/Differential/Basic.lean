@@ -393,6 +393,13 @@ theorem isOpen_setOf_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] (ω : OneForm X) :
     IsOpen {x | ω.HolomorphicAt x} :=
   isOpen_iff_mem_nhds.2 fun _ hx ↦ HolomorphicAt.eventually_holomorphicAt hx
 
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere is holomorphic away from a
+finite set. -/
+theorem finite_setOf_not_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X]
+    (hω : ∀ x, ω.MeromorphicAt x) : {x | ¬ ω.HolomorphicAt x}.Finite :=
+  mem_cofinite.1 (cofinite_le_codiscrete
+    (mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦ (hω x).eventually_holomorphicAt))
+
 /-- A `1`-form meromorphic and of finite order at `x` does not vanish on a punctured
 neighbourhood of `x`. -/
 theorem MeromorphicAt.eventually_apply_ne_zero [IsManifold 𝓘(ℂ) 1 X]
