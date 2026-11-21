@@ -35,8 +35,8 @@ the integral to `z`.
   with respect to `μ` and has integral `z`.
 * Congruence, uniqueness, and linearity: `HasLaplace.unique`, `HasLaplace.congr_ae`,
   `hasLaplace_congr_Ioi`, `hasLaplace_restrict_Ici_iff`, `hasLaplace_zero`, `hasLaplace_zero_iff`,
-  `HasLaplace.add`, `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`, `HasLaplace.const_smul`,
-  `HasLaplace.smul_const`, and `ContinuousLinearMap.hasLaplace`.
+  `hasLaplace_fun_zero_iff`, `HasLaplace.add`, `HasLaplace.neg`, `HasLaplace.sub`, `hasLaplace_sum`,
+  `HasLaplace.const_smul`, `HasLaplace.smul_const`, and `ContinuousLinearMap.hasLaplace`.
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
@@ -182,24 +182,33 @@ end Basic
 section Algebra
 
 /-- The zero function has Laplace transform `0` at every complex parameter and for every measure. -/
-@[simp, grind .]
+@[grind .]
 theorem hasLaplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     HasLaplace (0 : ℝ → E) s 0 μ := by
   simp [HasLaplace]
 
 /-- Functional form of `hasLaplace_zero`: the constant zero function has Laplace transform `0`. -/
-@[simp, grind .]
+@[grind .]
 theorem hasLaplace_fun_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     HasLaplace (fun _ : ℝ ↦ (0 : E)) s 0 μ :=
   hasLaplace_zero s μ
 
 /-- The zero function has Laplace transform `z` if and only if `z = 0`. -/
+@[simp, grind =]
 theorem hasLaplace_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [SMulZeroClass ℂ E] {s : ℂ} {z : E} {μ : Measure ℝ} :
     HasLaplace (0 : ℝ → E) s z μ ↔ z = 0 :=
   ⟨fun h ↦ h.unique (hasLaplace_zero s μ), fun hz ↦ hz ▸ hasLaplace_zero s μ⟩
+
+/-- Functional form of `hasLaplace_zero_iff`: the constant zero function has Laplace transform `z`
+if and only if `z = 0`. -/
+@[simp, grind =]
+theorem hasLaplace_fun_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [SMulZeroClass ℂ E] {s : ℂ} {z : E} {μ : Measure ℝ} :
+    HasLaplace (fun _ : ℝ ↦ (0 : E)) s z μ ↔ z = 0 :=
+  hasLaplace_zero_iff
 
 section DistribSMul
 
@@ -279,10 +288,7 @@ theorem HasLaplace.smul_const {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     [CompleteSpace E] {f : ℝ → ℂ} {s z : ℂ} {μ : Measure ℝ}
     (hf : HasLaplace f s z μ) (a : E) :
     HasLaplace (fun t : ℝ ↦ f t • a) s (z • a) μ := by
-  refine HasLaplace.intro ?_ ?_
-  · exact (hf.integrable.smul_const a).congr (.of_forall fun _ ↦ smul_assoc ..)
-  · simp_rw [← smul_assoc]
-    rw [integral_smul_const, hf.integral_eq]
+  simpa using (ContinuousLinearMap.toSpanSingleton ℂ a).hasLaplace hf
 
 /-- Multiplying `f(t)` by `exp (w * t)` shifts the Laplace parameter from `s` to `s - w`. -/
 theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -413,17 +419,13 @@ theorem integrableOn_cexp_neg_mul_ofReal_pow_smul_of_re_lt {E : Type*}
     congr 3
     ring
   rw [hre]
-  refine Integrable.mono' (hf.norm.const_mul M)
-    ((by fun_prop : Continuous fun t : ℝ ↦
-      Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable.smul
-      hf.aestronglyMeasurable) ?_
+  refine hf.bdd_smul M (by fun_prop : Continuous fun t : ℝ ↦
+    Complex.exp (-(s - s₀) * t) * (t : ℂ) ^ k).aestronglyMeasurable ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   have ht0 : 0 ≤ t := (Set.mem_Ioi.mp ht).le
-  rw [norm_smul, norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
+  rw [norm_mul, Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re,
     norm_pow, Complex.norm_real, Real.norm_of_nonneg ht0]
-  have hb : Real.exp (-(s.re - s₀.re) * t) * t ^ k ≤ M := by
-    simpa only [Real.rpow_natCast, mul_comm, neg_mul, mul_neg] using hM t ht0
-  exact mul_le_mul_of_nonneg_right hb (norm_nonneg _)
+  simpa only [Real.rpow_natCast, mul_comm, neg_mul, mul_neg] using hM t ht0
 
 /-- Pointwise domination of `exp (-w * t) • (-(t : ℂ) • v)` by `δ⁻¹ * ‖exp (-s₀ * t) • v‖`
 whenever `0 < t`, `0 < δ`, and `s₀.re + δ ≤ w.re`. -/
@@ -519,8 +521,7 @@ theorem hasDerivAt_integral_cexp_neg_mul_smul {E : Type*} [NormedAddCommGroup E]
       (∫ t in Ioi (0 : ℝ), Complex.exp (-s * t) • (-(t : ℂ) • f t)) s := by
   have hF : ∀ᶠ w in 𝓝 s, HasLaplace f w (∫ t in Ioi (0 : ℝ), Complex.exp (-w * t) • f t) := by
     filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs] with w hw
-    exact (integrable_cexp_neg_mul_smul_of_re_le hf
-      ((ae_restrict_mem measurableSet_Ioi).mono fun _ ht ↦ ht.le) hw.le).hasLaplace
+    exact (hf.hasLaplace.integrableOn_of_re_le hw.le).hasLaplace
   obtain ⟨z', hz', hder⟩ := exists_hasLaplace_neg_smul_and_hasDerivAt hF
   rwa [← hz'.integral_eq] at hder
 
