@@ -58,24 +58,24 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
     rintro F (rfl | ⟨a, _, rfl⟩)
     · exact compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K
     · exact mem_coeffIntermediateField.mpr (frickeMeromorphicFunction_mem_coeffSubfield hK a)
-  let T := B.val ⁻¹' S
+  let T := algebraMap B
+    (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) ⁻¹' S
   let C := IntermediateField.adjoin K T
-  have himage : B.val '' T = S := Set.image_preimage_eq_of_subset (by
-    intro F hF
-    exact ⟨⟨F, hAB (IntermediateField.subset_adjoin K S hF)⟩, rfl⟩)
-  have hmap : C.map B.val = A := by
-    rw [IntermediateField.adjoin_map, himage]
+  have himage : algebraMap B
+      (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) '' T = S :=
+    Set.image_preimage_eq_of_subset fun F hF ↦
+      ⟨⟨F, hAB (IntermediateField.subset_adjoin K S hF)⟩, IntermediateField.algebraMap_apply _ _⟩
+  have hrange : Set.range (algebraMap C
+      (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) = A := by
+    rw [TauCeti.IntermediateField.range_algebraMap_adjoin, himage]
+  have hmap : C.map B.val = A := SetLike.coe_injective <| by
+    rw [← IntermediateField.fieldRange_comp_val, AlgHom.coe_fieldRange, ← hrange]
+    refine congrArg Set.range (funext fun F ↦ ?_)
+    rw [AlgHom.comp_apply, IntermediateField.coe_val, IntermediateField.coe_val,
+      IsScalarTower.algebraMap_apply C B, IntermediateField.algebraMap_apply,
+      IntermediateField.algebraMap_apply]
   have hgen : IntermediateField.adjoin ℂ (Set.range (algebraMap C
       (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient))) = ⊤ := by
-    have hrange : Set.range (algebraMap C
-        (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) = A := by
-      have himage' : algebraMap B
-          (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) '' T = S := by
-        calc
-          _ = B.val '' T := Set.image_congr fun x _ ↦ by
-            rw [IntermediateField.algebraMap_apply, IntermediateField.coe_val]
-          _ = S := himage
-      rw [TauCeti.IntermediateField.range_algebraMap_adjoin, himage']
     rw [hrange, IntermediateField.adjoin_adjoin_right]
     exact adjoin_insert_image_frickeMeromorphicFunction_eq_top
   have hrank := (linearDisjoint_fieldRange_coeffIntermediateField

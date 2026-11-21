@@ -142,9 +142,8 @@ theorem frickeMeromorphicFunction_mem_coeffSubfield {K : Subfield ℂ}
 
 /-- The Fricke functions are elements of the arithmetic modular function field `F_N`. -/
 theorem frickeMeromorphicFunction_mem_modularFunctionField (a : Fin 2 → ZMod N) :
-    frickeMeromorphicFunction a ∈ modularFunctionField N :=
-  mem_modularFunctionField.mpr fun n ↦
-    laurentQExpansion_frickeMeromorphicFunction_coeff_mem
-      (fun _ hζ ↦ Subfield.subset_closure hζ) a n
+    frickeMeromorphicFunction a ∈ modularFunctionField N := by
+  rw [modularFunctionField_def]
+  exact frickeMeromorphicFunction_mem_coeffSubfield (fun _ hζ ↦ Subfield.subset_closure hζ) a
 
 end TauCeti
