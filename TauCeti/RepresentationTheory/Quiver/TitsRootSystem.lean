@@ -94,21 +94,21 @@ instance : (titsRootPairing Q hpd).IsRootSystem :=
 /-- The integral Cartan pairing of two Tits roots is the polarized Tits form. -/
 theorem pairingIn_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootPairing Q hpd).pairingIn ℤ a b = titsPolarForm Q a.1 b.1 := by
+    (titsRootPairing Q hpd).pairingIn ℤ a b = titsPolarForm Q a.val b.val := by
   exact (((titsForm_posDef_iff_posDef_toMatrix Q).mp hpd).pairingIn_normTwoShellRootPairing
-    ℚ a b).trans (dotProduct_toMatrix_titsPolarForm_mulVec Q a.1 b.1)
+    ℚ a b).trans (dotProduct_toMatrix_titsPolarForm_mulVec Q a.val b.val)
 
 /-- The pairing of two Tits roots is the polarized Tits form. -/
 theorem pairing_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
-    (titsRootPairing Q hpd).pairing a b = (titsPolarForm Q a.1 b.1 : ℚ) := by
+    (titsRootPairing Q hpd).pairing a b = (titsPolarForm Q a.val b.val : ℚ) := by
   rw [Matrix.PosDef.pairing_normTwoShellRootPairing, dotProduct_toMatrix_titsPolarForm_mulVec]
 
 /-- Reflection in a Tits root is its integral lattice reflection. -/
 theorem coe_reflectionPerm_titsRootPairing
     (a b : ((titsPolarForm Q).toMatrix (Pi.basisFun ℤ Q)).normTwoShell) :
     ((titsRootPairing Q hpd).reflectionPerm a b : Q → ℤ) =
-      b.1 - titsPolarForm Q b.1 a.1 • a.1 := by
+      b.val - titsPolarForm Q b.val a.val • a.val := by
   rw [titsRootPairing, Matrix.PosDef.coe_reflectionPerm_normTwoShellRootPairing,
     dotProduct_toMatrix_titsPolarForm_mulVec]
 

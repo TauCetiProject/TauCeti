@@ -78,18 +78,18 @@ variable {α : Type u} {β : Type v} {K : Type w} {G : Graph α β}
 bidirected arrow family carries the capacity of its edge, so both arrows of a nonloop edge carry
 that capacity. -/
 def bidirectedCapacity (c : E(G) → K) : Assignment G.BidirectedHom K :=
-  fun _ _ a ↦ c ⟨a.1, a.2.edge_mem⟩
+  fun _ _ a ↦ c ⟨a.val, a.property.edge_mem⟩
 
 /-- Every arrow of the bidirected network carries the capacity of its edge. -/
 @[simp]
 theorem bidirectedCapacity_apply (c : E(G) → K) {x y : V(G)} (a : G.BidirectedHom x y) :
-    G.bidirectedCapacity c a = c ⟨a.1, a.2.edge_mem⟩ :=
+    G.bidirectedCapacity c a = c ⟨a.val, a.property.edge_mem⟩ :=
   (rfl)
 
 /-- Nonnegative edge capacities give nonnegative arrow capacities. -/
 theorem bidirectedCapacity_nonneg [Zero K] [LE K] {c : E(G) → K} (hc : 0 ≤ c) :
     0 ≤ G.bidirectedCapacity c :=
-  fun _ _ a ↦ hc ⟨a.1, a.2.edge_mem⟩
+  fun _ _ a ↦ hc ⟨a.val, a.property.edge_mem⟩
 
 /-- The bundled bidirected network of a weighted multigraph with nonnegative edge capacities:
 zero lower bounds and `G.bidirectedCapacity c` as upper bounds on `G.BidirectedHom`.
@@ -125,13 +125,13 @@ theorem arrowSum_bidirectedCapacity [AddCommMonoid K] (c : E(G) → K) (S : Fins
   rw [edgeCutCapacity_def, ← sum_filter]
   have hsum : arrowSum (G.bidirectedCapacity c) S Sᶜ =
       ∑ a ∈ S.sigma fun x ↦ Sᶜ.sigma fun y ↦ (univ : Finset (G.BidirectedHom x y)),
-        c ⟨a.2.2.1, a.2.2.2.edge_mem⟩ := by
+        c ⟨a.2.2.val, a.2.2.property.edge_mem⟩ := by
     rw [arrowSum_def, sum_sigma]
     refine sum_congr rfl fun x _ ↦ ?_
     rw [sum_sigma]
     simp only [bidirectedCapacity_apply]
   rw [hsum]
-  refine sum_nbij (fun a ↦ ⟨a.2.2.1, a.2.2.2.edge_mem⟩) ?_ ?_ ?_ fun _ _ ↦ rfl
+  refine sum_nbij (fun a ↦ ⟨a.2.2.val, a.2.2.property.edge_mem⟩) ?_ ?_ ?_ fun _ _ ↦ rfl
   · -- An arrow leaving `S` comes from an edge crossing `S`.
     rintro ⟨x, y, e, hxy⟩ ha
     simp only [mem_sigma, mem_compl, mem_univ, and_true] at ha
@@ -148,7 +148,7 @@ theorem arrowSum_bidirectedCapacity [AddCommMonoid K] (c : E(G) → K) (S : Fins
     rintro e he
     simp only [mem_coe, mem_filter, mem_univ, true_and, mem_edgeCut_iff] at he
     obtain ⟨x, y, hxy, ⟨x', hx', rfl⟩, hy⟩ := he
-    refine ⟨⟨x', ⟨y, hxy.right_mem⟩, e.1, hxy⟩, ?_, rfl⟩
+    refine ⟨⟨x', ⟨y, hxy.right_mem⟩, e.val, hxy⟩, ?_, rfl⟩
     simp only [mem_coe, mem_sigma, mem_compl, mem_univ, and_true]
     exact ⟨hx', fun hy' ↦ hy ⟨_, hy', rfl⟩⟩
 

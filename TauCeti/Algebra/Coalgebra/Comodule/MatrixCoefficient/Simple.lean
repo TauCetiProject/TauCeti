@@ -5,17 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trace
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
+import TauCeti.LinearAlgebra.Trace.Nondegenerate
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Subcoalgebra
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Convolution
-import TauCeti.LinearAlgebra.Trace.Nondegenerate
 
 /-!
 # The coefficient space of a simple comodule
 
 Over an algebraically closed field, the matrix coefficient map of a finite-dimensional
 simple comodule `M` identifies `M* ⊗ M` with its coefficient subcoalgebra. In particular,
-that subcoalgebra has dimension `(dim M)²`.
+that subcoalgebra has dimension `(dim M)²`, and the entries of the coefficient matrix of any
+simple comodule in any basis are linearly independent
+(`TauCeti.Comodule.linearIndependent_coefficientMatrix`).
 
 The convolution dual exhausts all endomorphisms of `M` by Burnside's theorem, and the
 trace pairing detects the kernel of the coefficient map. No linear reductivity assumption
@@ -33,6 +39,8 @@ public section
 open scoped TensorProduct
 
 namespace TauCeti.Comodule
+
+section Finite
 
 variable {k C M : Type*} [Field k] [IsAlgClosed k]
   [AddCommGroup C] [Module k C] [Coalgebra k C]
@@ -84,5 +92,30 @@ theorem finrank_matrixCoefficientSubcoalgebra :
       Module.finrank k M ^ 2 := by
   rw [← (matrixCoefficientTensorEquiv (k := k) (C := C) (M := M)).finrank_eq,
     Module.finrank_tensorProduct, Subspace.dual_finrank_eq, pow_two]
+
+end Finite
+
+/-- **Linear independence of the matrix coefficients of a simple comodule.** Over an algebraically
+closed field, the entries of the coefficient matrix of any simple comodule in any basis are
+linearly independent. -/
+theorem linearIndependent_coefficientMatrix {k C M ι : Type*} [Field k] [IsAlgClosed k]
+    [AddCommGroup C] [Module k C] [Coalgebra k C]
+    [AddCommGroup M] [Module k M] [Comodule k C M] [IsSimpleOrder (Subcomodule k C M)]
+    (b : Module.Basis ι k M) :
+    LinearIndependent k (Function.uncurry (coefficientMatrix (C := C) b)) := by
+  classical
+  have : Module.Finite k M := Comodule.finite_of_isSimpleOrder (C := C)
+  have : Finite ι := Module.Finite.finite_basis b
+  have hcomp :
+      ⇑(Finsupp.linearCombination k (Function.uncurry (coefficientMatrix (C := C) b))) =
+        ⇑(matrixCoefficientTensor (R := k) (C := C) (M := M)) ∘
+          ⇑(Finsupp.linearCombination k ⇑(b.dualBasis.tensorProduct b)) := by
+    ext l
+    simp only [Function.comp_apply, Finsupp.linearCombination_apply, map_finsuppSum, map_smul]
+    refine Finsupp.sum_congr fun ⟨i, j⟩ _ ↦ ?_
+    simp [Function.uncurry, coefficientMatrix_apply, Module.Basis.tensorProduct_apply,
+      b.coe_dualBasis]
+  rw [LinearIndependent, hcomp]
+  exact matrixCoefficientTensor_injective.comp (b.dualBasis.tensorProduct b).linearIndependent
 
 end TauCeti.Comodule

@@ -223,7 +223,7 @@ theorem _root_.CompleteOrthogonalIdempotents.exists_surjective_pathAlgebra_isAdm
   have hlift (i j : Q) (a : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
       Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) =
         Module.finBasis k (W i j) a.down :=
-    mem_radicalLayerCorner.mp (Module.finBasis k (W i j) a.down).2
+    mem_radicalLayerCorner.mp (Module.finBasis k (W i j) a.down).property
   choose x hxJ hx using hlift
   let f : ∀ {i j : Q}, (i ⟶ j) → A := fun {i j} a => e j * x i j a * e i
   have hl {i j : Q} (a : i ⟶ j) : e j * f a = f a := by

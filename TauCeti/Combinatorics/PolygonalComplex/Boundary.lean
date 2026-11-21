@@ -103,21 +103,21 @@ graph. -/
 @[expose] def boundary : SerreGraph.{u, v} where
   V := S.BoundaryVertex
   E := S.boundaryDarts
-  src e := ⟨S.graph.src e.1, e.1, mem_boundaryGerms_iff.2 ⟨e.2, rfl⟩⟩
-  rev e := ⟨S.graph.rev e.1, rev_mem_boundaryDarts_iff.2 e.2⟩
-  rev_rev e := Subtype.ext (S.graph.rev_rev e.1)
-  rev_ne e he := S.graph.rev_ne e.1 (congrArg Subtype.val he)
+  src e := ⟨S.graph.src e.val, e.val, mem_boundaryGerms_iff.2 ⟨e.property, rfl⟩⟩
+  rev e := ⟨S.graph.rev e.val, rev_mem_boundaryDarts_iff.2 e.property⟩
+  rev_rev e := Subtype.ext (S.graph.rev_rev e.val)
+  rev_ne e he := S.graph.rev_ne e.val (congrArg Subtype.val he)
 
 variable {S}
 
 @[simp] theorem boundary_src_val (e : S.boundary.E) :
-    (S.boundary.src e).1 = S.graph.src e.1 := (rfl)
+    (S.boundary.src e).val = S.graph.src e.val := (rfl)
 
 @[simp] theorem boundary_rev_val (e : S.boundary.E) :
-    (S.boundary.rev e).1 = S.graph.rev e.1 := (rfl)
+    (S.boundary.rev e).val = S.graph.rev e.val := (rfl)
 
 @[simp] theorem boundary_tgt_val (e : S.boundary.E) :
-    (S.boundary.tgt e).1 = S.graph.tgt e.1 := (rfl)
+    (S.boundary.tgt e).val = S.graph.tgt e.val := (rfl)
 
 variable (S)
 
@@ -129,10 +129,10 @@ variable (S)
   map_rev _ := rfl
 
 @[simp] theorem boundaryInclusion_mapV (x : S.boundary.V) :
-    S.boundaryInclusion.mapV x = x.1 := (rfl)
+    S.boundaryInclusion.mapV x = x.val := (rfl)
 
 @[simp] theorem boundaryInclusion_mapE (e : S.boundary.E) :
-    S.boundaryInclusion.mapE e = e.1 := (rfl)
+    S.boundaryInclusion.mapE e = e.val := (rfl)
 
 /-- The inclusion of the boundary graph is injective on darts. -/
 theorem boundaryInclusion_mapE_injective : Function.Injective S.boundaryInclusion.mapE :=
@@ -146,15 +146,16 @@ instance : Finite S.boundary.E := inferInstanceAs (Finite S.boundaryDarts)
 
 /-- Every boundary vertex is the source of a boundary dart. -/
 theorem boundary_src_surjective : Function.Surjective S.boundary.src := fun x => by
-  obtain ⟨e, he⟩ := x.2
+  obtain ⟨e, he⟩ := x.property
   rw [mem_boundaryGerms_iff] at he
   exact ⟨⟨e, he.1⟩, Subtype.ext he.2⟩
 
 /-- The boundary darts starting at a boundary vertex are its boundary germs. -/
 private def boundarySrcFiberEquiv (x : S.boundary.V) :
-    {e : S.boundary.E // S.boundary.src e = x} ≃ S.boundaryGerms x.1 where
-  toFun e := ⟨e.1.1, mem_boundaryGerms_iff.2 ⟨e.1.2, congrArg Subtype.val e.2⟩⟩
-  invFun e := ⟨⟨e.1, (mem_boundaryGerms_iff.1 e.2).1⟩, Subtype.ext (mem_boundaryGerms_iff.1 e.2).2⟩
+    {e : S.boundary.E // S.boundary.src e = x} ≃ S.boundaryGerms x.val where
+  toFun e := ⟨e.val.val, mem_boundaryGerms_iff.2 ⟨e.val.property, congrArg Subtype.val e.property⟩⟩
+  invFun e := ⟨⟨e.val, (mem_boundaryGerms_iff.1 e.property).1⟩, Subtype.ext
+      (mem_boundaryGerms_iff.1 e.property).2⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -163,7 +164,7 @@ the two ends of its interval link. -/
 theorem card_boundary_src_fiber (x : S.boundary.V) :
     Nat.card {e : S.boundary.E // S.boundary.src e = x} = 2 := by
   rw [Nat.card_congr (S.boundarySrcFiberEquiv x), Nat.card_coe_set_eq]
-  exact S.ncard_boundaryGerms_eq_two x.2
+  exact S.ncard_boundaryGerms_eq_two x.property
 
 /-- The boundary graph has twice as many darts as vertices, hence as many geometric edges as
 vertices. -/

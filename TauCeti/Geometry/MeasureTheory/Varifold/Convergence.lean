@@ -12,7 +12,6 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.MeasureTheory.Measure.Prokhorov
-import TauCeti.MeasureTheory.Measure.Tight.LocallyBounded
 import TauCeti.MeasureTheory.Measure.Vague
 
 /-!
@@ -43,10 +42,9 @@ this file proves the basic properties of the convergence for them:
   compact set uniformly in `n` has a subsequence converging to a measure that is finite on
   compact sets (`TauCeti.exists_subseq_varifoldTendsto`; L. Simon, Theorem 4.4).
 
-The compactness theorem weights the sequence by a strictly positive continuous function that
-makes it tight with bounded total mass
-(`MeasureTheory.exists_weight_bound_isTightMeasureSet_withDensity`), and applies Prokhorov's
-theorem to the weighted measures (`TauCeti.exists_subseq_tendsto_integral_of_withDensity`).
+The compactness theorem is vague compactness of measures with locally bounded masses
+(`TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`), which applies because a
+locally compact, second countable Hausdorff space is σ-compact and metrizable.
 
 The Dirac masses at a convergent sequence of points converge to the Dirac mass at the limit
 (`TauCeti.varifoldTendsto_dirac`), while Dirac masses at points leaving every compact set converge
@@ -176,9 +174,7 @@ theorem exists_subseq_varifoldTendsto [T2Space Y] [LocallyCompactSpace Y]
     (hμ : ∀ K, IsCompact K → ⨆ n, μ n K ≠ ∞) :
     ∃ (ν : Measure Y) (φ : ℕ → ℕ), IsFiniteMeasureOnCompacts ν ∧ StrictMono φ ∧
       VarifoldTendsto (μ ∘ φ) ν := by
-  obtain ⟨w, hw, hpos, hmass, htight⟩ := exists_weight_bound_isTightMeasureSet_withDensity μ hμ
-  obtain ⟨ν, φ, hν, hφ, hlim⟩ :=
-    exists_subseq_tendsto_integral_of_withDensity μ w hw hpos 2 (by simpa using hmass) htight
+  obtain ⟨ν, φ, hν, hφ, hlim⟩ := exists_subseq_tendsto_integral_of_iSup_measure_ne_top μ hμ
   exact ⟨ν, φ, inferInstance, hφ, hlim⟩
 
 /-- Dirac masses at a convergent sequence of points converge to the Dirac mass at the limit. -/

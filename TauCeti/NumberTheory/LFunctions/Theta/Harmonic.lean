@@ -150,8 +150,8 @@ theorem harmonicDegree_eq_sum_add_sum (t : ContinuousInfinityType K) :
       (∑ w : {w : InfinitePlace K // w.IsReal}, (t.realParity w).val) +
         ∑ w : {w : InfinitePlace K // w.IsComplex}, (t.complexAngularFrequency w).natAbs := by
   rw [harmonicDegree_def, InfinitePlace.sum_eq_sum_add_sum]
-  exact congrArg₂ _ (Finset.sum_congr rfl fun w _ ↦ t.harmonicExponent_of_isReal w.2)
-    (Finset.sum_congr rfl fun w _ ↦ t.harmonicExponent_of_isComplex w.2)
+  exact congrArg₂ _ (Finset.sum_congr rfl fun w _ ↦ t.harmonicExponent_of_isReal w.property)
+    (Finset.sum_congr rfl fun w _ ↦ t.harmonicExponent_of_isComplex w.property)
 
 @[simp]
 theorem zero_harmonicDegree : (0 : ContinuousInfinityType K).harmonicDegree = 0 := by
@@ -168,8 +168,8 @@ theorem harmonicDegree_eq_zero_iff (t : ContinuousInfinityType K) :
     t.harmonicDegree = 0 ↔ t.realParity = 0 ∧ t.complexAngularFrequency = 0 := by
   rw [harmonicDegree_def, Finset.sum_eq_zero_iff, funext_iff, funext_iff]
   refine ⟨fun h ↦ ⟨fun w ↦ ?_, fun w ↦ ?_⟩, fun ⟨hr, hc⟩ w _ ↦ ?_⟩
-  · simpa [t.harmonicExponent_of_isReal w.2] using h w.1 (Finset.mem_univ _)
-  · simpa [t.harmonicExponent_of_isComplex w.2] using h w.1 (Finset.mem_univ _)
+  · simpa [t.harmonicExponent_of_isReal w.property] using h w.val (Finset.mem_univ _)
+  · simpa [t.harmonicExponent_of_isComplex w.property] using h w.val (Finset.mem_univ _)
   · exact w.isReal_or_isComplex.elim (fun hw ↦ by simp [hw, hr ⟨w, hw⟩])
       fun hw ↦ by simp [hw, hc ⟨w, hw⟩]
 
@@ -242,10 +242,10 @@ theorem norm_harmonicFactor (t : ContinuousInfinityType K) (x : mixedSpace K) :
   classical
   rw [harmonicFactor_def, norm_mul, norm_prod, norm_prod, InfinitePlace.prod_eq_prod_mul_prod]
   refine congrArg₂ _ (Finset.prod_congr rfl fun w _ ↦ ?_) (Finset.prod_congr rfl fun w _ ↦ ?_)
-  · rw [norm_pow, Complex.norm_real, ← normAtPlace_apply_of_isReal w.2,
-      t.harmonicExponent_of_isReal w.2]
-  · rw [TauCeti.norm_complexHarmonicMonomial, ← normAtPlace_apply_of_isComplex w.2,
-      t.harmonicExponent_of_isComplex w.2]
+  · rw [norm_pow, Complex.norm_real, ← normAtPlace_apply_of_isReal w.property,
+      t.harmonicExponent_of_isReal w.property]
+  · rw [TauCeti.norm_complexHarmonicMonomial, ← normAtPlace_apply_of_isComplex w.property,
+      t.harmonicExponent_of_isComplex w.property]
 
 /-- On `mixedSpaceOfRealSpace r`, `harmonicFactor` evaluates to `∏_w r_w ^ P_w`. -/
 theorem harmonicFactor_mixedSpaceOfRealSpace (t : ContinuousInfinityType K) (r : realSpace K) :
@@ -254,8 +254,8 @@ theorem harmonicFactor_mixedSpaceOfRealSpace (t : ContinuousInfinityType K) (r :
   classical
   rw [harmonicFactor_def, InfinitePlace.prod_eq_prod_mul_prod, ofReal_mul, ofReal_prod, ofReal_prod]
   refine congrArg₂ _ (Finset.prod_congr rfl fun w _ ↦ ?_) (Finset.prod_congr rfl fun w _ ↦ ?_)
-  · simp [mixedSpaceOfRealSpace_apply, t.harmonicExponent_of_isReal w.2]
-  · simp [mixedSpaceOfRealSpace_apply, t.harmonicExponent_of_isComplex w.2]
+  · simp [mixedSpaceOfRealSpace_apply, t.harmonicExponent_of_isReal w.property]
+  · simp [mixedSpaceOfRealSpace_apply, t.harmonicExponent_of_isComplex w.property]
 
 /-- Scaling by `mixedSpaceOfRealSpace r` multiplies `harmonicFactor` by `∏_w r_w ^ P_w`. -/
 theorem harmonicFactor_mixedSpaceOfRealSpace_mul (t : ContinuousInfinityType K)
@@ -453,8 +453,8 @@ private theorem archGaussian_one_eq_prod_mul_prod (x : mixedSpace K) :
   simp only [Pi.one_apply, one_mul, mul_add, Real.exp_add, ofReal_mul, Finset.mul_sum,
     Real.exp_sum, ofReal_prod, ofReal_exp]
   refine congrArg₂ _ (Finset.prod_congr rfl fun w _ ↦ ?_) (Finset.prod_congr rfl fun w _ ↦ ?_)
-  · rw [normAtPlace_apply_of_isReal w.2]; push_cast; ring_nf
-  · rw [normAtPlace_apply_of_isComplex w.2]; push_cast; ring_nf
+  · rw [normAtPlace_apply_of_isReal w.property]; push_cast; ring_nf
+  · rw [normAtPlace_apply_of_isComplex w.property]; push_cast; ring_nf
 
 open scoped Classical in
 /-- At `y = 1`, the Fourier integrand on `mixedSpace K` splits into the product of its real-place
@@ -518,7 +518,8 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian_one (t : ContinuousInfinity
         (-I) ^ (t.realParity w).val * ((ξ.1 w : ℝ) : ℂ) ^ (t.realParity w).val *
           cexp (-π * ‖ξ.1 w‖ ^ 2) := by
     have he : (t.realParity w).val ≤ 1 := by
-      simpa [t.harmonicExponent_of_isReal w.2] using t.harmonicExponent_le_one_of_isReal w.2
+      simpa [t.harmonicExponent_of_isReal w.property] using t.harmonicExponent_le_one_of_isReal
+          w.property
     rw [← Real.fourier_real_eq, TauCeti.fourier_pow_mul_cexp_neg_mul_norm_sq_real hb he,
       div_self hpi, one_cpow, one_mul, hdiv]
   have hcomp (w : {w : InfinitePlace K // w.IsComplex}) :
@@ -604,7 +605,7 @@ private theorem exists_injective_forall_normAtPlace_bounds
   have hr (n : ℕ) (w : InfinitePlace K) : 0 ≤ r n w := by dsimp [r]; split_ifs <;> positivity
   let z (n : ℕ) : mixedSpace K := mixedSpaceOfRealSpace (r n)
   let q (n : ℕ) : L := ⟨ZSpan.floor b (z n - v), (b₀.ofZLatticeBasis_span ℝ).le
-    (ZSpan.floor b (z n - v)).2⟩
+    (ZSpan.floor b (z n - v)).property⟩
   have hdist (n : ℕ) (w : InfinitePlace K) :
       |r n w - normAtPlace w (v + (q n : mixedSpace K))| ≤ M := by
     have hz : normAtPlace w (z n) = r n w := normAtPlace_mixedSpaceOfRealSpace (hr n w)

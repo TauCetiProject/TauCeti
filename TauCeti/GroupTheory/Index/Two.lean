@@ -69,9 +69,9 @@ theorem isMulCommutative_of_conj_eq_inv {s : G} (hinv : ∀ x ∈ N, s * x * s�
   IsMulCommutative.of_comm fun y z => Subtype.ext <| by
     have h : (z : G)⁻¹ * (y : G)⁻¹ = (y : G)⁻¹ * (z : G)⁻¹ :=
       calc (z : G)⁻¹ * (y : G)⁻¹ = ((y : G) * z)⁻¹ := (mul_inv_rev _ _).symm
-        _ = s * ((y : G) * z) * s⁻¹ := (hinv _ (N.mul_mem y.2 z.2)).symm
+        _ = s * ((y : G) * z) * s⁻¹ := (hinv _ (N.mul_mem y.property z.property)).symm
         _ = s * y * s⁻¹ * (s * z * s⁻¹) := by group
-        _ = (y : G)⁻¹ * (z : G)⁻¹ := by rw [hinv y y.2, hinv z z.2]
+        _ = (y : G)⁻¹ * (z : G)⁻¹ := by rw [hinv y y.property, hinv z z.property]
     simpa using congrArg Inv.inv h
 
 /-- **A subgroup inverted by conjugation by one of its own elements has exponent two.**  If an
@@ -96,7 +96,8 @@ Read contrapositively, a single `ψ` with `ψ ^ 2 ≠ 1` places every element in
 theorem monoidHom_sq_eq_one_of_mem_of_conj_eq_inv {M : Type*} [CommMonoid M] {s : G}
     (hs : s ∈ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (ψ : N →* M) : ψ ^ 2 = 1 := by
   ext x
-  have hx : x ^ 2 = 1 := Subtype.ext (by simpa using sq_eq_one_of_mem_of_conj_eq_inv hs hinv x.2)
+  have hx : x ^ 2 = 1 := Subtype.ext
+      (by simpa using sq_eq_one_of_mem_of_conj_eq_inv hs hinv x.property)
   rw [MonoidHom.pow_apply, ← map_pow, hx, map_one, MonoidHom.one_apply]
 
 /-- **One inverting element outside a subgroup of index two makes every element outside it

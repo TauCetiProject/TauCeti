@@ -290,7 +290,7 @@ theorem contMDiffAt_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J
   simp only [cayley_pairOfPantsContinuationAlmostComplex, map_sum, map_smul,
     toContinuousLinearMap_cayley_continuationAlmostComplex]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
       (fun p : (Puncture → ℝ) × ℂ × M => p.2.1) (L, (w : ℂ), x) :=
     contMDiffAt_fst.comp (L, (w : ℂ), x) contMDiffAt_snd

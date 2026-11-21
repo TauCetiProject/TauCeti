@@ -117,13 +117,13 @@ end GridDiagram
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
-  (C : GridDiagram.ColumnCommutationData G.1)
+  (C : GridDiagram.ColumnCommutationData G.val)
 
 /-- The simply blocked commutation homotopy has bidegree `(1, 0)` over any commutative
 coefficient semiring: Maslov degree increases by one and Alexander degree is preserved. -/
 theorem simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece (i : Fin n)
     {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    G.1.simplyBlockedCommutationHomotopy R C i c ∈
+    G.val.simplyBlockedCommutationHomotopy R C i c ∈
       G.bigradedChainHatPiece R i (g + (1, 0)) := by
   obtain ⟨b, hb, rfl⟩ := G.mem_bigradedChainHatPiece_iff_exists.mp hc
   rw [← GridDiagram.simplyBlockedSpecialization_commutationHomotopy]
@@ -134,7 +134,7 @@ theorem simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece (i : Fin n)
 Alexander degree, raising Maslov degree by one. -/
 noncomputable def gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ) :
     G.bigradedChainHatPiece R i (m, a) →ₗ[R] G.bigradedChainHatPiece R i (m + 1, a) :=
-  ((G.1.simplyBlockedCommutationHomotopy R C i).restrictScalars R).restrict fun c hc => by
+  ((G.val.simplyBlockedCommutationHomotopy R C i).restrictScalars R).restrict fun c hc => by
     simpa using G.simplyBlockedCommutationHomotopy_mem_bigradedChainHatPiece R C i hc
 
 /-- Inclusion into the total chain module intertwines the graded and total hexagon maps. -/
@@ -142,7 +142,7 @@ noncomputable def gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ)
 theorem coe_gradedSimplyBlockedCommutationHomotopy (i : Fin n) (a m : ℤ)
     (c : G.bigradedChainHatPiece R i (m, a)) :
     (G.gradedSimplyBlockedCommutationHomotopy R C i a m c : GridChainHat R n i) =
-      G.1.simplyBlockedCommutationHomotopy R C i c := (rfl)
+      G.val.simplyBlockedCommutationHomotopy R C i c := (rfl)
 
 end OddComponentGridDiagram
 
