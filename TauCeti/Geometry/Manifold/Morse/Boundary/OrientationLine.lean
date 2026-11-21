@@ -178,7 +178,7 @@ variable {𝔬 hf R}
 theorem orientationLineEquiv_apply
     (c : (p : criticalPoints 𝓘(ℝ, E) f) → (𝔬.chart p).unstableOrientationLine R)
     (p : criticalPoints 𝓘(ℝ, E) f) :
-    𝔬.orientationLineEquiv hf R c p = (c p).1 (𝔬.orientation p) := by
+    𝔬.orientationLineEquiv hf R c p = (c p).val (𝔬.orientation p) := by
   simp [orientationLineEquiv]
 
 /-- The family of elements of the orientation lines taking the values of `c` at the chosen
@@ -186,7 +186,7 @@ orientations. -/
 @[simp]
 theorem orientationLineEquiv_symm_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ R)
     (p : criticalPoints 𝓘(ℝ, E) f) :
-    ((𝔬.orientationLineEquiv hf R).symm c p).1 (𝔬.orientation p) = c p := by
+    ((𝔬.orientationLineEquiv hf R).symm c p).val (𝔬.orientation p) = c p := by
   rw [← orientationLineEquiv_apply (hf := hf) ((𝔬.orientationLineEquiv hf R).symm c),
     LinearEquiv.apply_symm_apply]
 
@@ -209,7 +209,7 @@ signed count of the trajectories from `p` to `q`. The product does not depend on
 a basis. -/
 noncomputable def trajectoryLineMap :
     φp.unstableOrientationLine R →ₗ[R] φq.unstableOrientationLine R where
-  toFun g := ⟨fun oq ↦ g.1 φp.negativeOrientation *
+  toFun g := ⟨fun oq ↦ g.val φp.negativeOrientation *
       hX.signedTrajectoryCount φp φq φp.negativeOrientation oq hpq,
     mem_orientationLine_iff.2 fun oq ↦ by simp⟩
   map_add' g g' := by ext; simp [add_mul]
@@ -223,8 +223,8 @@ variable {hX φp φq hpq R}
 theorem trajectoryLineMap_apply (g : φp.unstableOrientationLine R)
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
     (oq : Orientation ℝ ({i // φq.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q))) :
-    (hX.trajectoryLineMap φp φq hpq R g).1 oq =
-      g.1 op * hX.signedTrajectoryCount φp φq op oq hpq := by
+    (hX.trajectoryLineMap φp φq hpq R g).val oq =
+      g.val op * hX.signedTrajectoryCount φp φq op oq hpq := by
   simp only [trajectoryLineMap, LinearMap.coe_mk, AddHom.coe_mk]
   rcases φp.negativeOrientation.eq_or_eq_neg_of_card_eq_finrank op
     φp.card_fin_manifoldMorseIndex_eq_finrank with h | h <;> simp [h]
@@ -260,10 +260,10 @@ theorem orientationLineBoundary_apply (hf : IsMorse 𝓘(ℝ, E) f)
     (o : (p : criticalPoints 𝓘(ℝ, E) f) →
       Orientation ℝ ({i // (φ p).weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
     (q : criticalPoints 𝓘(ℝ, E) f) :
-    (hX.orientationLineBoundary φ R c q).1 (o q) =
+    (hX.orientationLineBoundary φ R c q).val (o q) =
       ∑ᶠ p : criticalPoints 𝓘(ℝ, E) f,
         if hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
-          (c p).1 (o p) * hX.signedTrajectoryCount (φ p) (φ q) (o p) (o q) hpq
+          (c p).val (o p) * hX.signedTrajectoryCount (φ p) (φ q) (o p) (o q) hpq
         else 0 := by
   have := hf.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f)

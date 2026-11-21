@@ -33,7 +33,7 @@ The construction does not integrate vector fields. It has two ingredients.
 
 * **Perturbations of the identity.** If `u : E → E` is `C^n` and `K`-Lipschitz with `K < 1`, then
   `x ↦ x + u x` is a `C^n` diffeomorphism of `E`, for `E` a Banach space over any nontrivially
-  normed field (`ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith`, in
+  normed field (`LipschitzWith.idAddDiffeomorph`, in
   `TauCeti.Geometry.Manifold.Diffeomorph.Perturbation`): it is a
   homeomorphism because it approximates the identity (`ApproximatesLinearOn.toHomeomorph`), and
   its derivative `1 + Du` is invertible everywhere, so its inverse is `C^n`

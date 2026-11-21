@@ -55,22 +55,22 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.toRankTwoBLieIndex.AmbientGroup) 
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ i j : Fin 4,
         Matrix.symplecticSpecialIsogeny
-          ((g : GL (Fin 4) d.1.Closure) : Matrix (Fin 4) (Fin 4) d.1.Closure) i j =
-          ((g : GL (Fin 4) d.1.Closure) : Matrix (Fin 4) (Fin 4) d.1.Closure) i j ^
+          ((g : GL (Fin 4) d.val.Closure) : Matrix (Fin 4) (Fin 4) d.val.Closure) i j =
+          ((g : GL (Fin 4) d.val.Closure) : Matrix (Fin 4) (Fin 4) d.val.Closure) i j ^
             (2 ^ (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1)) := by
   have hinj : Function.Injective d.halfFrobenius := by
     intro x y h
     have hsq := congrArg d.halfFrobenius h
     rw [halfFrobenius_halfFrobenius, halfFrobenius_halfFrobenius,
       RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_eq_map] at hsq
-    exact (SpStd.pointsPresentation 1 d.1.Closure).map_injective
-      (SpStd.pointsPresentation 1 d.1.Closure) (RingHom.injective _) hsq
+    exact (SpStd.pointsPresentation 1 d.val.Closure).map_injective
+      (SpStd.pointsPresentation 1 d.val.Closure) (RingHom.injective _) hsq
   rw [mem_fixedSubgroup, ← hinj.eq_iff, halfFrobenius_steinberg]
   constructor
   · intro h i j
     have hij := congrArg
       (fun x : d.toRankTwoBLieIndex.AmbientGroup =>
-        ((x : GL (Fin 4) d.1.Closure) : Matrix (Fin 4) (Fin 4) d.1.Closure) i j) h
+        ((x : GL (Fin 4) d.val.Closure) : Matrix (Fin 4) (Fin 4) d.val.Closure) i j) h
     simpa only [halfFrobenius_def, SpStd.coe_specialIsogeny,
       SpStd.coe_frobenius_apply, d.characteristic_eq_two] using hij.symm
   · intro h
@@ -84,22 +84,22 @@ theorem mem_fixedSubgroup_steinberg_iff (g : d.toRankTwoBLieIndex.AmbientGroup) 
 equation and the special-isogeny minor equations. The alternating form uses the coordinate
 pairs `(0,2)` and `(1,3)`, as in `JFin 2`. -/
 theorem mem_map_fixedSubgroup_steinberg_iff
-    (g : GL (Fin 4) d.1.Closure) :
+    (g : GL (Fin 4) d.val.Closure) :
     g ∈ (fixedSubgroup d.steinberg).map
-        (SpStd.points 1 d.1.Closure).subtype ↔
-      (g : Matrix (Fin 4) (Fin 4) d.1.Closure) * JFin 2 d.1.Closure *
-          (g : Matrix (Fin 4) (Fin 4) d.1.Closure)ᵀ = JFin 2 d.1.Closure ∧
+        (SpStd.points 1 d.val.Closure).subtype ↔
+      (g : Matrix (Fin 4) (Fin 4) d.val.Closure) * JFin 2 d.val.Closure *
+          (g : Matrix (Fin 4) (Fin 4) d.val.Closure)ᵀ = JFin 2 d.val.Closure ∧
         ∀ i j : Fin 4,
-          Matrix.symplecticSpecialIsogeny (g : Matrix (Fin 4) (Fin 4) d.1.Closure) i j =
-            (g : Matrix (Fin 4) (Fin 4) d.1.Closure) i j ^
+          Matrix.symplecticSpecialIsogeny (g : Matrix (Fin 4) (Fin 4) d.val.Closure) i j =
+            (g : Matrix (Fin 4) (Fin 4) d.val.Closure) i j ^
               (2 ^ (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1)) := by
   constructor
   · rintro ⟨x, hx, rfl⟩
     refine ⟨?_, (d.mem_fixedSubgroup_steinberg_iff x).mp hx⟩
     exact GLSymplecticFin.mem_iff.mp
-      ((SpStd.points_eq_GLSymplecticFin (K := d.1.Closure) 1) ▸ x.property)
+      ((SpStd.points_eq_GLSymplecticFin 1 d.val.Closure) ▸ x.property)
   · rintro ⟨hg, h⟩
-    have hmem : g ∈ SpStd.points 1 d.1.Closure := by
+    have hmem : g ∈ SpStd.points 1 d.val.Closure := by
       rw [SpStd.points_eq_GLSymplecticFin]
       exact GLSymplecticFin.mem_iff.mpr hg
     exact ⟨⟨g, hmem⟩, (d.mem_fixedSubgroup_steinberg_iff ⟨g, hmem⟩).mpr h, rfl⟩
@@ -109,7 +109,8 @@ of order `2^(2m+1)`. -/
 theorem coe_mem_fixedField_of_mem_fixedSubgroup_steinberg
     (g : d.toRankTwoBLieIndex.AmbientGroup) (hg : g ∈ fixedSubgroup d.steinberg)
     (i j : Fin 4) :
-    ((g : GL (Fin 4) d.1.Closure) : Matrix (Fin 4) (Fin 4) d.1.Closure) i j ∈ d.1.fixedField := by
+    ((g : GL (Fin 4) d.val.Closure) : Matrix (Fin 4) (Fin 4) d.val.Closure) i j ∈ d.val.fixedField
+        := by
   apply (d.toRankTwoBLieIndex.mem_fixedSubgroup_frobenius_iff g).mp _ i j
   simpa only [mem_fixedSubgroup, mem_fixedSubgroup.mp hg] using
     (d.steinberg_steinberg g).symm

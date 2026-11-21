@@ -77,7 +77,7 @@ private abbrev dualBall : Set (WeakDual 𝕜 E) :=
 
 private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
-  mem_closedBall_zero_iff.mp f.2
+  mem_closedBall_zero_iff.mp f.property
 
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/

@@ -77,9 +77,9 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
     ∃ φ : 𝓓^{n}(Ω, F), eLpNorm (g - fun x : Ω => φ x) p μ ≤ ε := by
   -- Mollify the extension of `g` by zero, inside a closed thickening `K'` of its support.
   set K : Set E := (↑) '' tsupport g
-  have hK : IsCompact K := hgc.isCompact.image continuous_subtype_val
+  have hK : IsCompact K := hgc.isCompact.image continuous_subtypeVal
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen
-    (image_subset_iff.2 fun x _ => x.2)
+    (image_subset_iff.2 fun x _ => x.property)
   set K' := cthickening δ K
   set M := μ ((↑) ⁻¹' K') ^ (1 / p.toReal)
   have hM : M ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (by positivity)
@@ -87,14 +87,14 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
       (by simpa using hδΩ)).measure_ne_top
   obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hε
   obtain ⟨φ, hφK', hφ⟩ := (hgc.continuous_extend_zero Ω.isOpen hg).exists_testFunction_dist_le hK
-    (hgc.tsupport_extend_zero_subset continuous_subtype_val) hδ hδΩ (NNReal.coe_pos.2 hη)
+    (hgc.tsupport_extend_zero_subset continuous_subtypeVal) hδ hδΩ (NNReal.coe_pos.2 hη)
   refine ⟨⟨φ, φ.contDiff.of_le (WithTop.coe_le_coe.2 le_top), φ.hasCompactSupport,
     φ.tsupport_subset⟩, ?_⟩
   -- The error is supported in `K'` and bounded by `η` there.
   simp only [TestFunction.coe_mk]
   refine (eLpNorm_sub_le_of_dist_bdd μ hp
-    (measurable_subtype_coe isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
-    (hg.sub (φ.continuous.comp continuous_subtype_val)).aestronglyMeasurable (fun x => ?_)
+    (measurable_subtypeVal isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
+    (hg.sub (φ.continuous.comp continuous_subtypeVal)).aestronglyMeasurable (fun x => ?_)
     (fun x hx => self_subset_cthickening K (mem_image_of_mem _ (subset_tsupport _ hx)))
     fun x hx => hφK' (subset_tsupport _ hx)).trans ?_
   · rw [dist_comm]

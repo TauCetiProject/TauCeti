@@ -125,7 +125,7 @@ theorem fixedPointQuotientHomEquiv_symm_comp_mk {T : Type*} [CommRing T] [Algebr
       y (ρC γ c) = Algebra.TensorProduct.rTensor T (ρB γ : B →ₐ[A] B) (y c)}) :
     ((fixedPointQuotientHomEquiv ρB ρC h T).symm y).comp
         (Ideal.Quotient.mkₐ A (fixedPointIdealOfInduced ρB ρC h)) =
-      (homEquiv A B C T).symm y.1 := by
+      (homEquiv A B C T).symm y.val := by
   refine (homEquiv A B C T).injective ?_
   rw [← fixedPointQuotientHomEquiv_apply, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
@@ -214,7 +214,8 @@ def mapFixedPointQuotient (φ : C →ₐ[B] C') (hφ : ∀ (γ : Γ) (c : C), φ
     fun _ hx ↦ RingHom.mem_ker.mp <| (fixedPointIdealOfInduced_le_ker_algHom_iff ρB ρC h _).mpr
       (fun γ c ↦ by
         have hmk := (fixedPointQuotientHomEquiv ρB ρC' h' _
-          (AlgHom.id A (WeilRestriction A B C' ⧸ fixedPointIdealOfInduced ρB ρC' h'))).2 γ (φ c)
+          (AlgHom.id A (WeilRestriction A B C' ⧸ fixedPointIdealOfInduced ρB ρC' h'))).property γ
+              (φ c)
         simp only [fixedPointQuotientHomEquiv_apply, AlgHom.id_comp] at hmk
         rw [homEquiv_comp_map, AlgHom.comp_apply, AlgHom.comp_apply, hφ, hmk]) hx
 
@@ -362,7 +363,7 @@ private def unitFixedPointQuotientLinearMap (hc : ∃ c : B, ∑ γ : Γ, γ •
     (baseChangeSemilinearAction A B D Γ) (baseChangeSemilinearAction_algebraMap A B D Γ)
     (BaseChangeQuotient A B D Γ) (AlgHom.id A _)
   (MulSemiringAction.invariantsBaseChangeEquiv A B Γ _ hc).symm.toLinearMap ∘ₗ
-    (((uQ.1.restrictScalars A).comp
+    (((uQ.val.restrictScalars A).comp
         (Algebra.TensorProduct.includeRight (R := A) (A := B) (B := D))).toLinearMap.codRestrict
       (Representation.ofDistribMulAction A Γ (B ⊗[A] BaseChangeQuotient A B D Γ)).invariants
       fun d ↦ (Representation.mem_invariants _ _).mpr fun γ ↦ by
@@ -374,14 +375,14 @@ private def unitFixedPointQuotientLinearMap (hc : ∃ c : B, ∑ γ : Γ, γ •
           induction w using TensorProduct.inductionOn with
           | tmul b q => simp [TensorProduct.smul_tmul']
           | add _ _ hx hy => rw [map_add, smul_add, hx, hy]
-        rw [← hr, ← uQ.2 γ (1 ⊗ₜ[A] d), baseChangeSemilinearAction_tmul, smul_one])
+        rw [← hr, ← uQ.property γ (1 ⊗ₜ[A] d), baseChangeSemilinearAction_tmul, smul_one])
 
 private theorem one_tmul_unitFixedPointQuotientLinearMap (hc : ∃ c : B, ∑ γ : Γ, γ • c = 1)
     (d : D) :
     (1 : B) ⊗ₜ[A] unitFixedPointQuotientLinearMap A B D Γ hc d =
       (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
         (baseChangeSemilinearAction A B D Γ) (baseChangeSemilinearAction_algebraMap A B D Γ)
-        _ (AlgHom.id A _)).1 (1 ⊗ₜ[A] d) := by
+        _ (AlgHom.id A _)).val (1 ⊗ₜ[A] d) := by
   have _ : SMulCommClass A Γ B := SMulCommClass.symm Γ A B
   let eInv := MulSemiringAction.invariantsBaseChangeEquiv A B Γ (BaseChangeQuotient A B D Γ) hc
   dsimp only [unitFixedPointQuotientLinearMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
@@ -399,7 +400,7 @@ private theorem unitFixedPointQuotientLinearMap_map_mul (hc : ∃ c : B, ∑ γ 
     calc (1 : B) ⊗ₜ[A] unitFixedPointQuotientLinearMap A B D Γ hc (d₁ * d₂)
         = (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
             (baseChangeSemilinearAction A B D Γ) (baseChangeSemilinearAction_algebraMap A B D Γ)
-            _ (AlgHom.id A _)).1 ((1 : B) ⊗ₜ[A] d₁ * (1 : B) ⊗ₜ[A] d₂) := by
+            _ (AlgHom.id A _)).val ((1 : B) ⊗ₜ[A] d₁ * (1 : B) ⊗ₜ[A] d₂) := by
           rw [Algebra.TensorProduct.tmul_mul_tmul, one_mul,
             one_tmul_unitFixedPointQuotientLinearMap]
       _ = (1 : B) ⊗ₜ[A] (unitFixedPointQuotientLinearMap A B D Γ hc d₁ *
@@ -511,7 +512,7 @@ theorem one_tmul_fixedPointQuotientBaseChangeAlgEquivOfTraceOne_symm
     (1 : B) ⊗ₜ[A] (fixedPointQuotientBaseChangeAlgEquivOfTraceOne A B D Γ hc).symm d =
       (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
         (baseChangeSemilinearAction A B D Γ) (baseChangeSemilinearAction_algebraMap A B D Γ)
-        _ (AlgHom.id A _)).1 (1 ⊗ₜ[A] d) :=
+        _ (AlgHom.id A _)).val (1 ⊗ₜ[A] d) :=
   one_tmul_unitFixedPointQuotientLinearMap A B D Γ hc d
 
 end TraceOne
@@ -579,7 +580,7 @@ theorem one_tmul_fixedPointQuotientBaseChangeAlgEquiv_symm
     (1 : B) ⊗ₜ[A] (fixedPointQuotientBaseChangeAlgEquiv A B D Γ hΓ).symm d =
       (fixedPointQuotientHomEquiv (MulSemiringAction.toAlgAut Γ A B)
         (baseChangeSemilinearAction A B D Γ) (baseChangeSemilinearAction_algebraMap A B D Γ)
-        _ (AlgHom.id A _)).1 (1 ⊗ₜ[A] d) := by
+        _ (AlgHom.id A _)).val (1 ⊗ₜ[A] d) := by
   rcases subsingleton_or_nontrivial A with _ | _
   · have : Subsingleton (B ⊗[A] BaseChangeQuotient A B D Γ) := Module.subsingleton A _
     exact Subsingleton.elim _ _

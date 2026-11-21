@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Analysis.Normed.Lp.PiLp
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -85,7 +86,10 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   automorphism to its invertible matrix, inverse to `Matrix.toEuclideanCLE`; both directions are
   continuous in families
   (`Matrix.GeneralLinearGroup.continuous_ofEuclideanCLE`,
-  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`).
+  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`);
+* `TauCeti.matrixUnitaryContinuousMulEquivEuclidean` — topological group isomorphism induced by
+  `Matrix.toEuclideanCLM` identifying unitary matrices with unitary operators on
+  `EuclideanSpace 𝕜 ι`.
 -/
 
 public section
@@ -183,8 +187,8 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
   -- and `toLin'` is `mulVecLin`
   have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
       A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
-  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq]
-  rfl
+  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
+    Matrix.finrank_range_mulVecLin]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -330,7 +334,7 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv :
     Continuous fun A : unitaryGroup ι 𝕜 ↦
       ((UnitaryGroup.toLinearIsometryEquiv A).toContinuousLinearEquiv :
         EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
-  refine (continuous_toEuclideanCLM.comp continuous_subtype_val).congr fun A ↦ ?_
+  refine (continuous_toEuclideanCLM.comp continuous_subtypeVal).congr fun A ↦ ?_
   ext x
   simp
 
@@ -340,8 +344,8 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
     Continuous fun p : unitaryGroup ι 𝕜 × Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1 ↦
       UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
   refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
-    ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
+    ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦ ?_
   simp [toLpLin_apply]
 
 /-- The determinant of the continuous linear map of a square matrix is the determinant of the
@@ -480,3 +484,59 @@ instance isStarNormal_toEuclideanLin {𝕜 : Type*} [RCLike 𝕜] (A : Matrix n 
       Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← toLpLin_mul_same, ← toLpLin_mul_same, h]
 
 end Matrix
+
+namespace TauCeti
+
+noncomputable section
+
+section MatrixUnitary
+
+variable (ι 𝕜 : Type*) [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
+
+/-- Unitary `ι × ι` matrices over `𝕜` and unitary operators on `EuclideanSpace 𝕜 ι` are isomorphic
+as topological groups via `Matrix.toEuclideanCLM`. -/
+def matrixUnitaryContinuousMulEquivEuclidean :
+    Matrix.unitaryGroup ι 𝕜 ≃ₜ*
+      unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  { (Unitary.mapEquiv (StarMulEquiv.ofClass (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv
+    with
+    continuous_toFun :=
+      (Matrix.continuous_toEuclideanCLM.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun :=
+      (Matrix.continuous_toEuclideanCLM_symm.comp continuous_subtypeVal).subtype_mk _ }
+
+variable {ι 𝕜}
+
+/-- The underlying continuous linear map of `matrixUnitaryContinuousMulEquivEuclidean` is
+`Matrix.toEuclideanCLM`. -/
+@[simp]
+theorem coe_matrixUnitaryContinuousMulEquivEuclidean (A : Matrix.unitaryGroup ι 𝕜) :
+    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) =
+      Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜) (A : Matrix ι ι 𝕜) :=
+  (rfl)
+
+/-- The underlying matrix of `(matrixUnitaryContinuousMulEquivEuclidean ι 𝕜).symm` is given by
+`Matrix.toEuclideanCLM.symm`. -/
+@[simp]
+theorem coe_matrixUnitaryContinuousMulEquivEuclidean_symm
+    (u : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
+    ((matrixUnitaryContinuousMulEquivEuclidean ι 𝕜).symm u : Matrix ι ι 𝕜) =
+      (Matrix.toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+        (u : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  (rfl)
+
+/-- The unitary operator of a unitary matrix acts on `EuclideanSpace 𝕜 ι` by
+`Matrix.toEuclideanLin`. -/
+theorem matrixUnitaryContinuousMulEquivEuclidean_apply_apply (A : Matrix.unitaryGroup ι 𝕜)
+    (v : EuclideanSpace 𝕜 ι) :
+    (matrixUnitaryContinuousMulEquivEuclidean ι 𝕜 A :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) v =
+      Matrix.toEuclideanLin (A : Matrix ι ι 𝕜) v :=
+  Matrix.toEuclideanCLM_apply (A : Matrix ι ι 𝕜) v
+
+end MatrixUnitary
+
+end
+
+end TauCeti

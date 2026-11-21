@@ -89,7 +89,7 @@ variable (T H x)
 
 theorem orbit_subset_orbitHull : orbit H x ⊆ T.orbitHull H x := by
   rintro _ ⟨h, rfl⟩
-  exact smul_mem_orbitHull h.2
+  exact smul_mem_orbitHull h.property
 
 theorem orbitHull_eq_iUnion : T.orbitHull H x = ⋃ h : H, T.convexHull {x, (h : G) • x} := by
   ext v
@@ -266,9 +266,8 @@ theorem inducedDarts_orbitHull_closure : T.inducedDarts (T.orbitHull (Subgroup.c
       (fun g C => (smul_set_inducedDarts T g C).symm)
       (fun _ _ hA hB hAB => T.isTree.inducedDarts_union hA hB hAB) hh he
   · rintro _ ⟨h, hh, e, he, rfl⟩
-    have he' := inducedDarts_mono (convexHull_insert_image_smul_subset_orbitHull T x S) he
-    rw [← smul_set_orbitHull (x := x) hh, ← smul_set_inducedDarts]
-    exact Set.smul_mem_smul_set he'
+    exact smul_mem_inducedDarts (fun _ => (smul_mem_orbitHull_iff hh).2)
+      (inducedDarts_mono (convexHull_insert_image_smul_subset_orbitHull T x S) he)
 
 variable {T} (H) in
 /-- A finitely generated subgroup has a finite subtree containing `x` whose translates cover the
