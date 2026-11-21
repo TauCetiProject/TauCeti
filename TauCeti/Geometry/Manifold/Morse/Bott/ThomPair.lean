@@ -507,6 +507,44 @@ variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
     Disjoint (range (TopPair.Hom.fst (φ a)) \ X) (range (TopPair.Hom.fst (φ b)) \ X))
   (hφcover : X ∪ ⋃ a, range (TopPair.Hom.fst (φ a)) = univ)
 
+omit [Finite ι] [∀ a, FiniteDimensional ℝ (E' a)] [∀ a, IsManifold (J a) 1 (S a)]
+  [∀ a, NormedAddCommGroup (P a)] [∀ a, NormedSpace ℝ (P a)] [∀ a, FiniteDimensional ℝ (P a)] in
+include hφ hφX hdisj hφcover in
+/-- The hypotheses of the attachment theorems for finite families of gauge disc bundles
+(`TauCeti.isIso_biproductDesc_singularHomologyMap_of_attach_gaugeDiscBundles` and
+`TauCeti.isIso_biproductLift_singularCohomologyMap_of_attach_gaugeDiscBundles`) for the disc-sphere
+pairs of the norms `negativeNormalNorm`, given those of an attachment of the negative disc bundles:
+the composites with `discSpherePairIso` are closed embeddings meeting `X` only along the sphere
+bundles, with pairwise disjoint images outside `X`, covering `Z` together with `X`. -/
+private theorem attach_discSpherePairIso_hom_comp_family :
+    letI : ∀ a, TopologicalSpace
+        (TotalSpace (Fin (r a) → ℝ) fun s ↦ (h a).negativeNormalSpace hn (g a) s) :=
+      fun a ↦ subbundleTopology (P a) ((h a).negativeNormalSpace hn (g a))
+    letI := fun a ↦ (h a).negativeNormalNorm hn (g a) hε
+    (∀ a, IsClosedEmbedding
+        (TopPair.Hom.fst (((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom ≫ φ a))) ∧
+      (∀ a (v : gaugeDiscBundle (fun v : TotalSpace (Fin (r a) → ℝ)
+          (fun s ↦ (h a).negativeNormalSpace hn (g a) s) ↦ ‖v.snd‖)),
+        TopPair.Hom.fst (((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom ≫ φ a) v ∈ X →
+          (v : TotalSpace (Fin (r a) → ℝ) fun s ↦ (h a).negativeNormalSpace hn (g a) s) ∈
+            gaugeSphereBundle (fun v : TotalSpace (Fin (r a) → ℝ)
+              (fun s ↦ (h a).negativeNormalSpace hn (g a) s) ↦ ‖v.snd‖)) ∧
+      (Pairwise fun a b ↦ Disjoint
+        (range (TopPair.Hom.fst (((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom ≫ φ a)) \ X)
+        (range (TopPair.Hom.fst (((h b).discSpherePairIso hn (P b) (g b) (r b) hε).hom ≫ φ b)) \
+          X)) ∧
+      X ∪ ⋃ a, range
+        (TopPair.Hom.fst (((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom ≫ φ a)) = univ := by
+  let _ (a : ι) : TopologicalSpace
+      (TotalSpace (Fin (r a) → ℝ) fun s ↦ (h a).negativeNormalSpace hn (g a) s) :=
+    subbundleTopology (P a) ((h a).negativeNormalSpace hn (g a))
+  let _ (a : ι) := (h a).negativeNormalNorm hn (g a) hε
+  choose h₁ h₂ h₃ using fun a ↦
+    (h a).attach_discSpherePairIso_hom_comp hn (P a) (g a) (r a) hε (φ a) (hφ a) (hφX a)
+  exact ⟨h₁, h₂,
+    fun a b hab ↦ (congrArg₂ (fun s t ↦ Disjoint (s \ X) (t \ X)) (h₃ a) (h₃ b)).mpr (hdisj hab),
+    (congrArg (X ∪ ·) (iUnion_congr h₃)).trans hφcover⟩
+
 include hdim hV hε hX hφ hφX hdisj hφcover in
 /-- **Attaching the negative disc bundles of finitely many critical submanifolds induces direct-sum
 isomorphisms on relative homology.** Let `i a : S a → M`, for `a` in a finite index type, be
@@ -537,11 +575,9 @@ theorem isIso_biproductDesc_singularHomologyMap_of_attach_negativeDiscBundles
   -- the attachment theorem for finite families of gauge disc bundles.
   have hρ (a : ι) := isFiberGauge_norm
     ((h a).continuous_norm_negativeNormalNorm hn (g a) (r a) (hdim a) hε)
-  choose h₁ h₂ h₃ using fun a ↦
-    (h a).attach_discSpherePairIso_hom_comp hn (P a) (g a) (r a) hε (φ a) (hφ a) (hφX a)
-  have key := isIso_biproductDesc_singularHomologyMap_of_attach_gaugeDiscBundles hρ h₁ hX h₂
-    (fun a b hab ↦ (congrArg₂ (fun s t ↦ Disjoint (s \ X) (t \ X)) (h₃ a) (h₃ b)).mpr (hdisj hab))
-    ((congrArg (X ∪ ·) (iUnion_congr h₃)).trans hφcover) R k
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := attach_discSpherePairIso_hom_comp_family hn hε hφ hφX hdisj hφcover
+  have key := isIso_biproductDesc_singularHomologyMap_of_attach_gaugeDiscBundles hρ h₁ hX h₂ h₃ h₄
+    R k
   have hmap : IsIso (biproduct.map fun a ↦ TopPair.singularHomologyMap
       ((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom R k) :=
     (biproduct.mapIso fun a ↦ TopPair.singularHomologyMapIso R
@@ -574,11 +610,9 @@ theorem isIso_biproductLift_singularCohomologyMap_of_attach_negativeDiscBundles
   let _ (a : ι) := (h a).negativeNormalNormedSpace hn (g a) hε
   have hρ (a : ι) := isFiberGauge_norm
     ((h a).continuous_norm_negativeNormalNorm hn (g a) (r a) (hdim a) hε)
-  choose h₁ h₂ h₃ using fun a ↦
-    (h a).attach_discSpherePairIso_hom_comp hn (P a) (g a) (r a) hε (φ a) (hφ a) (hφX a)
-  have key := isIso_biproductLift_singularCohomologyMap_of_attach_gaugeDiscBundles hρ h₁ hX h₂
-    (fun a b hab ↦ (congrArg₂ (fun s t ↦ Disjoint (s \ X) (t \ X)) (h₃ a) (h₃ b)).mpr (hdisj hab))
-    ((congrArg (X ∪ ·) (iUnion_congr h₃)).trans hφcover) R K N k
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := attach_discSpherePairIso_hom_comp_family hn hε hφ hφX hdisj hφcover
+  have key := isIso_biproductLift_singularCohomologyMap_of_attach_gaugeDiscBundles hρ h₁ hX h₂ h₃ h₄
+    R K N k
   have hmap : IsIso (biproduct.map fun a ↦ TopPair.singularCohomologyMap (R := R) (k := K)
       (M := N) ((h a).discSpherePairIso hn (P a) (g a) (r a) hε).hom k) :=
     (biproduct.mapIso fun a ↦ @asIso _ _ _ _ _

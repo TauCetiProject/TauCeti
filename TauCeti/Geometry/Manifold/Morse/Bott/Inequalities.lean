@@ -8,11 +8,12 @@ module
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.ThomPair
 public import TauCeti.Geometry.Manifold.Morse.Generic.Inequalities
+import Mathlib.Order.Interval.Set.Union
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Geometry.Manifold.Morse.Bott.Adjunction
 import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 import TauCeti.Topology.VectorBundle.Thom.Homology
 
@@ -119,13 +120,12 @@ private theorem hasLocalSubbundleFrames_negativeNormalSpace
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric) := by
-  have h2 : (∞ : ℕ∞ω) + 2 = ∞ := by rw [← WithTop.coe_ofNat, ← WithTop.coe_add]; rfl
-  have : IsManifold I (∞ + 2) M := by rw [h2]; infer_instance
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
   have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
   exact (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
-    (fun s ↦ hfs.contMDiffAt.of_le h2.le) hdim g hr).hasLocalSubbundleFrames
+    (fun s ↦ hfs.contMDiffAt.of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
 
 /-- **The mod `2` homology of the negative disc bundle of a Morse–Bott submanifold.** Let `i` be a
 nondegenerate critical submanifold of a smooth function `f`, with Morse index `r` at every point,
@@ -181,27 +181,6 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
   [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpace ℝ (P j)] [∀ j, FiniteDimensional ℝ (P j)]
   {f : M → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M} (hn : (∞ : ℕ∞ω) ≠ 0)
-
-omit [I.Boundaryless] in
-/-- The normal bundle of a smooth embedding of a σ-compact manifold into a Hausdorff manifold
-carries a smooth fibre metric. -/
-private theorem nonempty_contMDiffRiemannianMetric_normalSpace [T2Space M] {E' H' P S : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S]
-    [SigmaCompactSpace S] [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [FiniteDimensional ℝ P] (i : SmoothEmbedding J I ∞ S M)
-    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E') :
-    letI := i.normalSpaceFiberBundle hn hdim
-    letI := i.normalSpaceVectorBundle hn hdim
-    Nonempty (ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) := by
-  have : T2Space S := i.isEmbedding.t2Space
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  exact nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
 
 /-- **The homology of an attachment of negative disc bundles across a level.** Let `Θ j` be
 Morse–Bott normal forms `f (Θ j v) = c + ½ Hessₛ (v, v)` for finitely many compact Morse–Bott
@@ -341,7 +320,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
   -- Fix the model fibres of the normal bundles and smooth fibre metrics on them.
   have hdim (j : ι) : finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) =
       finrank ℝ E - finrank ℝ (E' j) := finrank_euclideanSpace_fin
-  let g (j : ι) := (nonempty_contMDiffRiemannianMetric_normalSpace hn (i j) (hdim j)).some
+  let g (j : ι) := ((i j).nonempty_contMDiffRiemannianMetric_normalSpace hn (hdim j)).some
   -- Crossing the level `c` attaches the negative disc bundles of the pieces on it.
   obtain ⟨Θ, -, -, hΘf, ε₀, hε₀, hmain⟩ :=
     h.exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn c hdim g
@@ -386,18 +365,6 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
     fun j ↦ if r j ≤ n then bettiNumber K (S j) (n - r j) else 0).symm
   simp
 
-omit h hr in
-/-- A value `v` with `s 0 < v ≤ s (N + 1)`, for a monotone `s`, lies in one of the intervals
-`(s j, s (j + 1)]` with `j ≤ N`. -/
-private theorem exists_lt_le_of_monotone {s : ℕ → ℝ} {N : ℕ} {v : ℝ} (h₀ : s 0 < v)
-    (hN : v ≤ s (N + 1)) : ∃ j ≤ N, s j < v ∧ v ≤ s (j + 1) := by
-  classical
-  have hex : ∃ k, v ≤ s (k + 1) := ⟨N, hN⟩
-  refine ⟨Nat.find hex, Nat.find_min' hex hN, ?_, Nat.find_spec hex⟩
-  rcases hk : Nat.find hex with _ | k
-  · exact h₀
-  · exact not_le.1 (Nat.find_min hex (by omega))
-
 /-- **A cut of the values of a Morse–Bott function.** On a compact manifold the values of a
 Morse–Bott function can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
 `s 0 < f ≤ s (N + 1)`, such that each band `[s j, s (j + 1)]` has at most one critical value, lying
@@ -439,7 +406,8 @@ private theorem exists_cut_sum_finrank_sublevelPair :
   have hv := (h.isNondegenerateCriticalSubmanifold p).mem_criticalPoints t₀
   have hfp (t : S p) : f (i p t) = f (i p t₀) := h.subsingleton_image_range hn p
     (mem_image_of_mem f (mem_range_self t)) (mem_image_of_mem f (mem_range_self t₀))
-  obtain ⟨j₀, hj₀, hlt, hle⟩ := exists_lt_le_of_monotone (hs₀ (i p t₀)) (hsN (i p t₀))
+  obtain ⟨j₀, hj₀, hlt, hle⟩ := mem_iUnion₂.1
+    (Ioc_subset_biUnion_Ioc (N + 1) s ⟨hs₀ (i p t₀), hsN (i p t₀)⟩)
   have hcj₀ : f (i p t₀) = c j₀ := hcrit j₀ _ hv ⟨hlt.le, hle⟩
   have hlevel (j : ℕ) : (∀ t, f (i p t) = c j) ↔ j = j₀ := by
     refine ⟨fun hj ↦ ?_, fun hj t ↦ hj ▸ (hfp t).trans hcj₀⟩
@@ -448,7 +416,7 @@ private theorem exists_cut_sum_finrank_sublevelPair :
     · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).2, (hc j₀).1]
     · rfl
     · linarith [hs (Nat.succ_le_of_lt hlt'), (hc j).1, (hc j₀).2]
-  rw [Finset.sum_eq_single_of_mem j₀ (Finset.mem_range.2 (by omega))
+  rw [Finset.sum_eq_single_of_mem j₀ hj₀
     fun j _ hj ↦ ite_eq_right fun hpj ↦ hj ((hlevel j).1 hpj.1)]
   simp [(hlevel j₀).2 rfl]
 
