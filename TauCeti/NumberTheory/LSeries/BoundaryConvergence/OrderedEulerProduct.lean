@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.NumberTheory.PrimeCounting
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
+import TauCeti.NumberTheory.Chebyshev.CofinalCutoff
 import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SumPrimePow
 
@@ -48,6 +49,10 @@ at `s = 1` is asserted.
   Euler products in both directions, multiplying the limit by `∏ p ∈ S, (1 - c p / p)`;
   `TauCeti.LSeries.tendsto_prod_primesLE_filter_notMem_inv_congr_iff` changes one finite set of
   deleted primes into another.
+* `TauCeti.LSeries.tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div`: along monotone cofinal
+  cutoffs `B k` with `log B (k + 1) / log B k → 1`, the finite Euler products converge exactly
+  when the ordered ones do; `TauCeti.LSeries.tendsto_prod_primesLE_pow_inv_iff` is the special
+  case of the cutoffs `b ^ k`.
 -/
 
 public section
@@ -149,5 +154,62 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_of_tendsto_sum {L : ℂ}
     (tendsto_prod_primesLE_inv_of_tendsto_sum hc ha ha_pow hL)
 
 end Comparison
+
+section Cutoff
+
+variable {B : ℕ → ℕ} (hBm : Monotone B) (hB : Tendsto B atTop atTop)
+  (hlog : Tendsto (fun k ↦ Real.log (B (k + 1)) / Real.log (B k)) atTop (𝓝 1))
+include hBm hB hlog
+
+/-- **Ordered Euler products along slowly growing cutoffs.** Let `‖c p‖ ≤ 1` at every prime `p`,
+and let the cutoffs `B k` be monotone, tend to infinity and satisfy
+`log B (k + 1) / log B k → 1`. Then the Euler products `∏ p ≤ B k, (1 - c p / p)⁻¹` converge
+exactly when the ordered Euler products `∏ p ≤ n, (1 - c p / p)⁻¹` do. -/
+theorem tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div
+    (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) {L : ℂ} :
+    Tendsto (fun k ↦ ∏ p ∈ Nat.primesLE (B k), (1 - c p / p)⁻¹) atTop (𝓝 L) ↔
+      Tendsto (fun n ↦ ∏ p ∈ Nat.primesLE n, (1 - c p / p)⁻¹) atTop (𝓝 L) := by
+  refine tendsto_prod_primesLE_comp_iff_of_tendsto_log_div hBm hB hlog (C := 2) fun p hp ↦ ?_
+  -- With `w = c p / p` of norm at most `1 / 2`, `(1 - w)⁻¹ - 1 = w / (1 - w)` has norm at most
+  -- `2 ‖w‖ ≤ 2 / p`.
+  have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp.two_le
+  have hw : ‖c p / p‖ ≤ 1 / p := by
+    rw [norm_div, Complex.norm_natCast]
+    gcongr
+    exact hc p hp
+  have hw2 : ‖c p / p‖ ≤ 1 / 2 := hw.trans (by gcongr)
+  have hne : 1 - c p / p ≠ 0 := Complex.one_sub_div_natCast_ne_zero hp.one_lt (hc p hp)
+  have hnorm : 1 / 2 ≤ ‖1 - c p / p‖ := by
+    have := norm_sub_norm_le (1 : ℂ) (c p / p)
+    rw [norm_one] at this
+    linarith
+  have hid : (1 - c p / p)⁻¹ - 1 = c p / p / (1 - c p / p) := by
+    field_simp
+    ring
+  rw [hid, norm_div]
+  calc ‖c p / p‖ / ‖1 - c p / p‖ ≤ (1 / p) / (1 / 2) := by gcongr
+    _ = 2 / p := by ring
+
+end Cutoff
+
+/-- **Ordered Euler products along powers.** Let `‖c p‖ ≤ 1` at every prime `p` and `2 ≤ b`.
+The Euler products `∏ p ≤ b ^ k, (1 - c p / p)⁻¹` converge exactly when the ordered Euler
+products `∏ p ≤ n, (1 - c p / p)⁻¹` do. -/
+theorem tendsto_prod_primesLE_pow_inv_iff {b : ℕ} (hb : 2 ≤ b)
+    (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) {L : ℂ} :
+    Tendsto (fun k ↦ ∏ p ∈ Nat.primesLE (b ^ k), (1 - c p / p)⁻¹) atTop (𝓝 L) ↔
+      Tendsto (fun n ↦ ∏ p ∈ Nat.primesLE n, (1 - c p / p)⁻¹) atTop (𝓝 L) := by
+  refine tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div
+    (pow_right_monotone (by omega)) (tendsto_pow_atTop_atTop_of_one_lt (by omega)) ?_ hc
+  -- `log (b ^ (k + 1)) / log (b ^ k) = 1 + 1 / k` for `k ≥ 1`.
+  have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
+  refine (by simpa using (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ)).const_add 1 :
+    Tendsto (fun k : ℕ ↦ 1 + 1 / (k : ℝ)) atTop (𝓝 1)).congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with k hk
+  have hk0 : (k : ℝ) ≠ 0 := by positivity
+  simp only [Nat.cast_pow, Real.log_pow]
+  field_simp [hk0]
+  push_cast
+  ring
 
 end TauCeti.LSeries

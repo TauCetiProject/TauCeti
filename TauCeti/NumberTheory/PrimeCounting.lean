@@ -40,8 +40,6 @@ convergence of the cutoffs therefore transports in both directions with this exp
 ## Main results
 
 * `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
-* `Nat.primesLE_sdiff_eq_filter_lt`: the primes `p ≤ n` outside `Nat.primesLE m` are those with
-  `m < p`.
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
   first primes in increasing order.
 * `Nat.prod_primesLE_eq_prod_range_nth`: a product over the primes `p ≤ n` is the product over
@@ -71,14 +69,6 @@ theorem primesLE_filter_lt (n : ℕ) :
   ext p
   simp only [mem_filter, mem_primesLE, mem_primesBelow]
   exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
-
-/-- The primes `p ≤ n` that are not at most `m` are the primes `p ≤ n` with `m < p`. -/
-theorem primesLE_sdiff_eq_filter_lt (m n : ℕ) :
-    primesLE n \ primesLE m = (primesLE n).filter (m < ·) := by
-  ext p
-  simp only [Finset.mem_sdiff, mem_filter, mem_primesLE]
-  exact ⟨fun ⟨hn, hm⟩ ↦ ⟨hn, lt_of_not_ge fun h ↦ hm ⟨h, hn.2⟩⟩,
-    fun ⟨hn, hlt⟩ ↦ ⟨hn, fun h ↦ h.1.not_gt hlt⟩⟩
 
 /-- The primes below `n` are the first `π' n` primes. -/
 theorem primesBelow_eq_image_nth (n : ℕ) :

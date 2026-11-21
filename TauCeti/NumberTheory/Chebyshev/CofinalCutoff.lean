@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
-import Mathlib.Analysis.SpecificLimits.Basic
-import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Mertens
 import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.Order.Filter.AtTopBot
 
@@ -19,17 +16,17 @@ import TauCeti.Order.Filter.AtTopBot
 # Ordered prime sums and products along slowly growing cutoffs
 
 Let `B : ℕ → ℕ` be a monotone sequence of cutoffs tending to infinity with
-`log B (k + 1) / log B k → 1`, for instance `B k = 2 ^ k` or `B k = k ^ 2`. Mertens' first
-theorem `∑_{y < p ≤ x} log p / p = log (x / y) + O(1)`
-(`Chebyshev.abs_sum_primesLE_filter_gt_log_div_sub_log_div_le`) bounds the reciprocal prime sum
-over a block `(B k, B (k + 1)]` by `log B (k + 1) / log B k - 1 + O(1 / log B k)`, so these block
+`log B (k + 1) / log B k → 1`, for instance `B k = 2 ^ k` or `B k = k ^ 2`. Mertens' interval
+estimate `∑_{y < p ≤ x} 1 / p = log (log x / log y) + O(1 / log y)`
+(`TauCeti.exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le`) bounds the reciprocal prime sum over
+a block `(B k, B (k + 1)]` by `|log (log B (k + 1) / log B k)| + O(1 / log B k)`, so these block
 sums tend to zero (`TauCeti.tendsto_sum_sdiff_primesLE_inv_of_tendsto_log_div`).
 
 Consequently a cutoff `n` and the largest `B k ≤ n` differ only by primes whose reciprocals sum
 to almost nothing. For `‖f p‖ ≤ C / p` the ordered sums `∑ p ≤ n, f p` converge exactly when the
 sums `∑ p ≤ B k, f p` do, and for `‖g p - 1‖ ≤ C / p` the same holds for the ordered products
-`∏ p ≤ n, g p`. This applies to the Euler factors `(1 - c p / p)⁻¹` with `‖c p‖ ≤ 1`, such as
-those of a Dirichlet `L`-function at `s = 1`, where only ordered cutoffs make sense.
+`∏ p ≤ n, g p`. The Euler factors `(1 - c p / p)⁻¹` with `‖c p‖ ≤ 1` are treated in
+`TauCeti/NumberTheory/LSeries/BoundaryConvergence/OrderedEulerProduct.lean`.
 
 Along an arbitrary cofinal sequence of cutoffs only the forward implication holds, and it is
 `Filter.Tendsto.comp`. Some growth condition is needed for the converse: the primes in `(x, x²]`
@@ -45,9 +42,6 @@ sums do not tend to zero. The cutoffs passing at most one new prime per step are
   `‖f p‖ ≤ C / p` converge along `B` exactly when they converge.
 * `TauCeti.tendsto_prod_primesLE_comp_iff_of_tendsto_log_div`: the same for ordered products of
   `g` with `‖g p - 1‖ ≤ C / p`.
-* `TauCeti.tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div`: the same for the ordered Euler
-  products `∏ p ≤ n, (1 - c p / p)⁻¹` with `‖c p‖ ≤ 1`.
-* `TauCeti.tendsto_prod_primesLE_pow_inv_iff`: the special case of the cutoffs `a ^ k`.
 
 ## References
 
@@ -71,46 +65,26 @@ theorem tendsto_sum_sdiff_primesLE_inv_of_tendsto_log_div (hB : Tendsto B atTop 
     (hlog : Tendsto (fun k ↦ Real.log (B (k + 1)) / Real.log (B k)) atTop (𝓝 1)) :
     Tendsto (fun k ↦ ∑ p ∈ Nat.primesLE (B (k + 1)) \ Nat.primesLE (B k), (p : ℝ)⁻¹) atTop
       (𝓝 0) := by
-  set c : ℝ := 2 * (Real.log 4 + 4)
+  obtain ⟨C, hC⟩ := exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le
   have hlogB : Tendsto (fun k ↦ Real.log (B k)) atTop atTop :=
     Real.tendsto_log_atTop.comp (tendsto_natCast_atTop_atTop.comp hB)
-  have hupper : Tendsto (fun k ↦ |Real.log (B (k + 1)) / Real.log (B k) - 1| +
-      c / Real.log (B k)) atTop (𝓝 0) := by
-    simpa using ((hlog.sub_const 1).abs).add (tendsto_const_nhds.div_atTop hlogB)
+  have hupper : Tendsto (fun k ↦ |Real.log (Real.log (B (k + 1)) / Real.log (B k))| +
+      C / Real.log (B k)) atTop (𝓝 0) := by
+    simpa using (((Real.continuousAt_log one_ne_zero).tendsto.comp hlog).abs).add
+      (tendsto_const_nhds.div_atTop hlogB)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
     (.of_forall fun k ↦ sum_nonneg fun p _ ↦ by positivity) ?_
   filter_upwards [hB.eventually_ge_atTop 2] with k hk
-  have hpos : 0 < Real.log (B k) := Real.log_pos (by exact_mod_cast hk)
+  have hk2 : (2 : ℝ) ≤ B k := by exact_mod_cast hk
   rcases le_or_gt (B (k + 1)) (B k) with hle | hlt
-  · rw [sdiff_eq_empty_iff_subset.mpr (Nat.primesLE_mono hle), sum_empty]
-    positivity
-  -- The block is the set of primes `p ≤ B (k + 1)` with `B k < p`, whose sum of `log p / p` is
-  -- `log (B (k + 1) / B k) + O(1)` by Mertens' first theorem.
-  have hk1 : (1 : ℝ) ≤ B k := by exact_mod_cast (by omega : 1 ≤ B k)
-  have hk1' : (1 : ℝ) ≤ B (k + 1) := by exact_mod_cast (by omega : 1 ≤ B (k + 1))
-  have hmertens := (abs_le.mp (Chebyshev.abs_sum_primesLE_filter_gt_log_div_sub_log_div_le hk1
-    (by exact_mod_cast hlt.le : ((B k : ℕ) : ℝ) ≤ B (k + 1)))).2
-  simp only [Nat.floor_natCast, Nat.cast_lt] at hmertens
-  rw [← Nat.primesLE_sdiff_eq_filter_lt, Real.log_div (by positivity) (by positivity)] at hmertens
-  calc ∑ p ∈ Nat.primesLE (B (k + 1)) \ Nat.primesLE (B k), (p : ℝ)⁻¹
-      ≤ ∑ p ∈ Nat.primesLE (B (k + 1)) \ Nat.primesLE (B k),
-          Real.log p / p / Real.log (B k) := by
-        refine sum_le_sum fun p hp ↦ ?_
-        have hp' : B k < p := by
-          rw [Nat.primesLE_sdiff_eq_filter_lt, Finset.mem_filter] at hp
-          exact hp.2
-        rw [show (p : ℝ)⁻¹ = Real.log (B k) / p / Real.log (B k) by field_simp]
-        gcongr
-    _ = (∑ p ∈ Nat.primesLE (B (k + 1)) \ Nat.primesLE (B k), Real.log p / p) /
-          Real.log (B k) := (sum_div _ _ _).symm
-    _ ≤ (Real.log (B (k + 1)) - Real.log (B k) + c) / Real.log (B k) := by
-        gcongr
-        linarith
-    _ = Real.log (B (k + 1)) / Real.log (B k) - 1 + c / Real.log (B k) := by
-        field_simp
-    _ ≤ |Real.log (B (k + 1)) / Real.log (B k) - 1| + c / Real.log (B k) := by
-        gcongr
-        exact le_abs_self _
+  · -- The block is empty, and the interval estimate on `(B k, B k]` shows `0 ≤ C / log B k`.
+    have hC0 := hC (B k) (B k) hk2 le_rfl
+    simp only [Nat.floor_natCast, sdiff_self, bot_eq_empty, sum_empty] at hC0
+    rw [sdiff_eq_empty_iff_subset.mpr (Nat.primesLE_mono hle), sum_empty]
+    exact add_nonneg (abs_nonneg _) ((abs_nonneg _).trans hC0)
+  have h := (abs_le.mp (hC (B k) (B (k + 1)) hk2 (by exact_mod_cast hlt.le))).2
+  simp only [Nat.floor_natCast] at h
+  linarith [le_abs_self (Real.log (Real.log (B (k + 1)) / Real.log (B k)))]
 
 section Comparison
 
@@ -185,55 +159,6 @@ theorem tendsto_prod_primesLE_comp_iff_of_tendsto_log_div {R : Type*} [NormedCom
     exact prod_sdiff (Nat.primesLE_mono (hblock n hn).1)
   simpa using (hratio.mul (h.comp hκ)).congr' heq
 
-/-- **Ordered Euler products along slowly growing cutoffs.** Let `‖c p‖ ≤ 1` at every prime `p`,
-and let the cutoffs `B k` be monotone, tend to infinity and satisfy
-`log B (k + 1) / log B k → 1`. Then the Euler products `∏ p ≤ B k, (1 - c p / p)⁻¹` converge
-exactly when the ordered Euler products `∏ p ≤ n, (1 - c p / p)⁻¹` do. -/
-theorem tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div {c : ℕ → ℂ}
-    (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) {L : ℂ} :
-    Tendsto (fun k ↦ ∏ p ∈ Nat.primesLE (B k), (1 - c p / p)⁻¹) atTop (𝓝 L) ↔
-      Tendsto (fun n ↦ ∏ p ∈ Nat.primesLE n, (1 - c p / p)⁻¹) atTop (𝓝 L) := by
-  refine tendsto_prod_primesLE_comp_iff_of_tendsto_log_div hBm hB hlog (C := 2) fun p hp ↦ ?_
-  -- With `w = c p / p` of norm at most `1 / 2`, `(1 - w)⁻¹ - 1 = w / (1 - w)` has norm at most
-  -- `2 ‖w‖ ≤ 2 / p`.
-  have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp.two_le
-  have hw : ‖c p / p‖ ≤ 1 / p := by
-    rw [norm_div, Complex.norm_natCast]
-    gcongr
-    exact hc p hp
-  have hw2 : ‖c p / p‖ ≤ 1 / 2 := hw.trans (by gcongr)
-  have hne : 1 - c p / p ≠ 0 := Complex.one_sub_div_natCast_ne_zero hp.one_lt (hc p hp)
-  have hnorm : 1 / 2 ≤ ‖1 - c p / p‖ := by
-    have := norm_sub_norm_le (1 : ℂ) (c p / p)
-    rw [norm_one] at this
-    linarith
-  have hid : (1 - c p / p)⁻¹ - 1 = c p / p / (1 - c p / p) := by
-    field_simp
-    ring
-  rw [hid, norm_div]
-  calc ‖c p / p‖ / ‖1 - c p / p‖ ≤ (1 / p) / (1 / 2) := by gcongr
-    _ = 2 / p := by ring
-
 end Comparison
-
-/-- **Ordered Euler products along powers.** Let `‖c p‖ ≤ 1` at every prime `p` and `2 ≤ a`.
-The Euler products `∏ p ≤ a ^ k, (1 - c p / p)⁻¹` converge exactly when the ordered Euler
-products `∏ p ≤ n, (1 - c p / p)⁻¹` do. -/
-theorem tendsto_prod_primesLE_pow_inv_iff {a : ℕ} (ha : 2 ≤ a) {c : ℕ → ℂ}
-    (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) {L : ℂ} :
-    Tendsto (fun k ↦ ∏ p ∈ Nat.primesLE (a ^ k), (1 - c p / p)⁻¹) atTop (𝓝 L) ↔
-      Tendsto (fun n ↦ ∏ p ∈ Nat.primesLE n, (1 - c p / p)⁻¹) atTop (𝓝 L) := by
-  refine tendsto_prod_primesLE_inv_comp_iff_of_tendsto_log_div
-    (pow_right_monotone (by omega)) (tendsto_pow_atTop_atTop_of_one_lt (by omega)) ?_ hc
-  -- `log (a ^ (k + 1)) / log (a ^ k) = 1 + 1 / k` for `k ≥ 1`.
-  have hloga : 0 < Real.log a := Real.log_pos (by exact_mod_cast ha)
-  refine (by simpa using (tendsto_one_div_atTop_nhds_zero_nat (𝕜 := ℝ)).const_add 1 :
-    Tendsto (fun k : ℕ ↦ 1 + 1 / (k : ℝ)) atTop (𝓝 1)).congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with k hk
-  have hk0 : (k : ℝ) ≠ 0 := by positivity
-  simp only [Nat.cast_pow, Real.log_pow]
-  field_simp [hk0]
-  push_cast
-  ring
 
 end TauCeti
