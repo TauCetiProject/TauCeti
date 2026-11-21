@@ -58,6 +58,8 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
+* `TauCeti.isRegularPoint_snd`: the second projection of a product is regular everywhere.
 * `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
   `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a `C^n` local diffeomorphism (surjective, for regular values) or diffeomorphism (`n ≠ 0`)
@@ -312,6 +314,19 @@ theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
   fun p hp ↦ (hf (g p) hp).comp (hg p hp)
 
 end Composition
+
+/-- A `C^n` local diffeomorphism at `x`, with `n ≠ 0`, has `x` as a regular point. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : ℕ∞ω}
+    (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
+  (h.isInvertible_mfderiv hn).surjective
+
+/-- Every point of a product is a regular point of the second projection. -/
+theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by
+  rw [isRegularPoint_iff, mfderiv_snd]
+  -- The tangent space of `M × N` is the product of the tangent spaces of the factors by
+  -- definition, so the pair `(0, w)` is a tangent vector of the product, and
+  -- `ContinuousLinearMap.snd` sends it to `w` by definition.
+  exact fun w ↦ ⟨(0, w), rfl⟩
 
 /-- Every point of an open subset is a regular point of its inclusion. -/
 theorem isRegularPoint_subtype_val {U : TopologicalSpace.Opens M} (x : U) :

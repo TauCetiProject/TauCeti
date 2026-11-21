@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 import Mathlib.Order.Interval.Set.Nat
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 /-!
 # Closed orbits of the suspension flow and their orbit tori
@@ -47,6 +49,9 @@ is the least period of `x`.
 
 * `TauCeti.SmoothMappingTorus.closedOrbit φ h`: for `h : Function.IsPeriodicPt φ d x`, the map
   `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`.
+* `TauCeti.SmoothMappingTorus.fixedPtCircle φ hx`: for a fixed point `x` of `φ`, the closed orbit
+  `[t] ↦ [t, x]` of period one as a smooth embedding of `ℝ / ℤ`, with velocity `∂_t`
+  (`TauCeti.SmoothMappingTorus.hasMFDerivAt_fixedPtCircle`).
 * `TauCeti.SmoothMappingTorus.orbitTorus φ h`: the orbit torus `(s, θ) ↦ (s, γ θ)` of the closed
   orbit through a periodic point.
 
@@ -421,6 +426,62 @@ theorem mfderiv_closedOrbit (θ : AddCircle (d : ℝ)) :
   (hasMFDerivAt_closedOrbit hx θ).mfderiv
 
 end VectorField
+
+/-! ### The circle through a fixed point -/
+
+section FixedPoint
+
+variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] [FiniteDimensional ℝ E]
+  [I.Boundaryless]
+
+/-- The period one, cast from `ℕ`, is positive. -/
+local instance : Fact (0 < ((1 : ℕ) : ℝ)) := ⟨Nat.cast_pos.2 one_pos⟩
+
+/-- **The circle through a fixed point** `x` of `φ`: the closed orbit `[t] ↦ [t, x]` of the
+suspension flow, as a smooth embedding of `ℝ / ℤ` into the mapping torus. It is the closed orbit
+`TauCeti.SmoothMappingTorus.closedOrbit` of period one, read on `ℝ / ℤ`
+(`TauCeti.SmoothMappingTorus.fixedPtCircle_coe`). -/
+def fixedPtCircle (φ : M ≃ₘ⟮I, I⟯ M) (hx : IsFixedPt φ x) :
+    SmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ UnitAddCircle (SmoothMappingTorus φ) :=
+  .ofIsSmoothEmbedding
+    (closedOrbit φ (hx.isPeriodicPt 1) ∘ AddCircle.diffeomorphAddCircle 1 ((1 : ℕ) : ℝ) ∞)
+    (isSmoothEmbedding_comp_diffeomorph _
+      ((isSmoothEmbedding_closedOrbit_iff _ (by simp)).2
+        (minimalPeriod_eq_one_iff_isFixedPt.2 hx)))
+
+variable {φ : M ≃ₘ⟮I, I⟯ M} (hx : IsFixedPt φ x)
+
+/-- The circle through a fixed point `x` sends the class of `t` to `[t, x]`. -/
+@[simp]
+theorem fixedPtCircle_coe (t : ℝ) : fixedPtCircle φ hx t = mk φ t x := by
+  simp [fixedPtCircle]
+
+/-- The point `[t, y]` lies on the circle through the fixed point `x` exactly when `y = x`. -/
+theorem mk_mem_range_fixedPtCircle_iff {t : ℝ} {y : M} :
+    mk φ t y ∈ range (fixedPtCircle φ hx) ↔ y = x := by
+  -- The circle has the image of the closed orbit of period one through `x`.
+  rw [fixedPtCircle, SmoothEmbedding.coe_ofIsSmoothEmbedding, EquivLike.range_comp,
+    mk_mem_range_closedOrbit_iff]
+  exact ⟨fun ⟨j, hj⟩ ↦ hj.symm.trans (hx.iterate j).eq, fun h ↦ ⟨0, h.symm⟩⟩
+
+/-- **The circle through a fixed point is an orbit of the suspension flow**: its velocity at `θ`
+is the time direction `T = ∂_t` at its point `θ`. -/
+theorem hasMFDerivAt_fixedPtCircle (θ : UnitAddCircle) :
+    HasMFDerivAt 𝓘(ℝ) (𝓘(ℝ).prod I) (fixedPtCircle φ hx) θ
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (fixedPtCircle φ hx θ))) := by
+  induction θ using QuotientAddGroup.induction_on with | H t => ?_
+  -- The rescaling `ℝ / ℤ → ℝ / 1ℤ` is the identity on representatives, so it has derivative one.
+  have hD : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (AddCircle.diffeomorphAddCircle 1 ((1 : ℕ) : ℝ) ∞)
+      (t : UnitAddCircle) (ContinuousLinearMap.id ℝ ℝ) :=
+    AddCircle.hasMFDerivAt_of_comp_coe_eq (f := id) (funext fun s ↦ by simp) (hasFDerivAt_id t)
+  have h := (hasMFDerivAt_closedOrbit (hx.isPeriodicPt 1) _).comp (t : UnitAddCircle) hD
+  rw [fixedPtCircle, SmoothEmbedding.coe_ofIsSmoothEmbedding]
+  -- The two derivatives agree pointwise by definition: precomposing with `id ℝ ℝ` does nothing,
+  -- and `(closedOrbit ∘ D) t` is `closedOrbit (D t)`. They are compared through `ext` because
+  -- their tangent-space types only agree after unfolding the composite.
+  exact h.congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end FixedPoint
 
 /-! ### Orbit tori -/
 

@@ -68,6 +68,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   discontinuous, free and by `C^n` maps, so `SmoothMappingTorus φ` is a `C^n` manifold.
 * `TauCeti.SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk`: the quotient map `ℝ × M → Y_φ` is a
   `C^n` local diffeomorphism.
+* `TauCeti.SmoothMappingTorus.contMDiff_iff_of_forall_mk_eq`: a function `f` with
+  `f [t, x] = g x` is `C^m` exactly when `g` is.
 * `TauCeti.SmoothMappingTorus.mk_eq_mk_iff`, `TauCeti.SmoothMappingTorus.mk_add_intCast`: when two
   points of `ℝ × M` have the same class.
 * `TauCeti.SmoothMappingTorus.uncurry_mk_image_Icc_prod_univ`: every point is the class of a point
@@ -381,6 +383,44 @@ theorem contMDiff_uncurry_mk :
 /-- The inclusion `x ↦ [t, x]` of the fibre at height `t` is `C^n`. -/
 theorem contMDiff_mk (t : ℝ) : ContMDiff I (𝓘(ℝ).prod I) n (mk φ t) :=
   (contMDiff_uncurry_mk φ).comp (contMDiff_const.prodMk contMDiff_id)
+
+section FibreCoordinate
+
+variable {F G β : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace β] [ChartedSpace G β] {m : ℕ∞ω}
+  {f : SmoothMappingTorus φ → β} {g : M → β}
+
+omit [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [TopologicalSpace β] in
+/-- A function `f` with `f [t, x] = g x` reads, in the coordinates `(t, x)`, as the function
+`g ∘ Prod.snd` of the second factor. -/
+theorem comp_uncurry_mk_eq_comp_snd (hfg : ∀ t x, f (mk φ t x) = g x) :
+    f ∘ Function.uncurry (mk φ) = g ∘ Prod.snd :=
+  funext fun p ↦ hfg p.1 p.2
+
+/-- **A function of the fibre coordinate is `C^m` at `[t, x]` exactly when it is so on `M`**: if
+`f [t, x] = g x` for all `t` and `x`, then `f` is `C^m` at `[t, x]` exactly when `g` is `C^m` at
+`x`, for `m` at most the smoothness of `φ`. The quotient map `(t, x) ↦ [t, x]` is a local
+diffeomorphism, along which `f` reads as `g ∘ Prod.snd`. -/
+theorem contMDiffAt_mk_iff_of_forall_mk_eq (hfg : ∀ t x, f (mk φ t x) = g x) (hm : m ≤ n)
+    {t : ℝ} {x : M} :
+    ContMDiffAt (𝓘(ℝ).prod I) J m f (mk φ t x) ↔ ContMDiffAt I J m g x := by
+  have h := (isLocalDiffeomorph_uncurry_mk φ (t, x)).contMDiffAt_comp_iff (g := f) (I' := J) hm
+  rw [comp_uncurry_mk_eq_comp_snd φ hfg] at h
+  refine h.symm.trans ⟨fun h ↦ ?_, fun h ↦ h.comp (t, x) contMDiffAt_snd⟩
+  -- `g` is `g ∘ Prod.snd` on the slice `x ↦ (t, x)`.
+  exact h.comp x (contMDiffAt_const.prodMk contMDiffAt_id)
+
+/-- **A function of the fibre coordinate is `C^m` exactly when it is so on `M`**: if
+`f [t, x] = g x` for all `t` and `x`, then `f` is `C^m` exactly when `g` is, for `m` at most the
+smoothness of `φ`. -/
+theorem contMDiff_iff_of_forall_mk_eq (hfg : ∀ t x, f (mk φ t x) = g x) (hm : m ≤ n) :
+    ContMDiff (𝓘(ℝ).prod I) J m f ↔ ContMDiff I J m g := by
+  refine ⟨fun h x ↦ (contMDiffAt_mk_iff_of_forall_mk_eq φ hfg hm (t := 0)).1 (h _),
+    fun h z ↦ ?_⟩
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  exact (contMDiffAt_mk_iff_of_forall_mk_eq φ hfg hm).2 (h x)
+
+end FibreCoordinate
 
 end Manifold
 
