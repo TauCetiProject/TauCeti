@@ -16,6 +16,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Normed.Operator.CompactFamily
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
 # Persistence of nondegenerate fixed points under small `C¹` perturbations
@@ -302,34 +303,6 @@ private theorem exists_pos_forall_le_norm_sub (hK : IsCompact K) (hf₀ : Contin
   have hfix : y₀ ∈ fixedPoints f ∩ K := ⟨(sub_eq_zero.1 h).symm, hy₀.1⟩
   exact mem_iInter₂.1 hy₀.2 y₀ hfix (mem_ball_self hr)
 
-omit [NormedSpace ℝ E] in
-/-- A common radius for finitely many interior points `x ∈ F` of `K` and an eventual property
-`P x` of radii: some `r ∈ (0, ε]` satisfies every `P x`, the closed balls of radius `r` around the
-points of `F` lie in `K`, and the balls around distinct points are disjoint. -/
-private theorem exists_radius {F : Set E} (hF : F.Finite) {P : E → ℝ → Prop}
-    (hP : ∀ x ∈ F, ∀ᶠ r in 𝓝[>] 0, P x r) (hint : ∀ x ∈ F, x ∈ interior K) {ε : ℝ}
-    (hε : 0 < ε) :
-    ∃ r > 0, r ≤ ε ∧ ∀ x ∈ F, P x r ∧ closedBall x r ⊆ K ∧
-      ∀ x' ∈ F, x ≠ x' → 2 * r < dist x x' := by
-  have hball (x : E) (hx : x ∈ F) : ∀ᶠ r in 𝓝[>] 0, closedBall x r ⊆ K := by
-    obtain ⟨ρ, hρ, hρK⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 (hint x hx))
-    filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
-    exact (closedBall_subset_ball hr.2).trans hρK
-  have hsep (x : E) (_ : x ∈ F) (x' : E) (_ : x' ∈ F) :
-      ∀ᶠ r in 𝓝[>] 0, x ≠ x' → 2 * r < dist x x' := by
-    rcases eq_or_ne x x' with rfl | hne
-    · exact Eventually.of_forall fun _ h ↦ absurd rfl h
-    filter_upwards [Ioo_mem_nhdsGT (half_pos (dist_pos.2 hne))] with r hr _
-    linarith [hr.2]
-  have hev : ∀ᶠ r in 𝓝[>] 0, 0 < r ∧ r ≤ ε ∧ ∀ x ∈ F, P x r ∧ closedBall x r ⊆ K ∧
-      ∀ x' ∈ F, x ≠ x' → 2 * r < dist x x' := by
-    filter_upwards [eventually_mem_nhdsWithin, Ioc_mem_nhdsGT hε, (eventually_all_finite hF).2
-      fun x hx ↦ (hP x hx).and ((hball x hx).and ((eventually_all_finite hF).2 (hsep x hx)))]
-      with r hr0 hrε h
-    exact ⟨hr0, hrε.2, h⟩
-  obtain ⟨r, hr0, h⟩ := hev.exists
-  exact ⟨r, hr0, h⟩
-
 /-- **The fixed points in a compact set persist under small `C¹` perturbations, with their
 signs.**
 
@@ -366,27 +339,27 @@ theorem exists_pos_forall_exists_bijOn_fixedPoints_inter [FiniteDimensional ℝ 
   -- `δx x`, and a common threshold `δ < m` below them.
   choose! C hC using fun x (hx : x ∈ F) ↦
     (hnd x hx.2 hx.1).exists_isNondegenerateFixedPt_perturbation (hf x hx.2 hx.1)
-  obtain ⟨r, hr0, hrε, hr⟩ := exists_radius hFfin hC (fun x hx ↦ hint x hx.2 hx.1) hε
+  obtain ⟨r, hr0, hr, hrε, hrK, hsep⟩ := (eventually_mem_nhdsWithin.and <|
+    ((eventually_all_finite hFfin).2 hC).and <| nhdsWithin_le_nhds <| (eventually_le_nhds hε).and <|
+    eventually_closedBall_subset_and_lt_dist hFfin fun x hx ↦
+      mem_interior_iff_mem_nhds.1 (hint x hx.2 hx.1)).exists
   obtain ⟨m, hm, hmK⟩ := hK.exists_pos_forall_le_norm_sub hf₀ hr0
-  choose! δx hδx hQ using fun x hx ↦ (hr x hx).1
-  obtain ⟨δ, hδ, hδm, hδF⟩ : ∃ δ, 0 < δ ∧ δ < m ∧ ∀ x ∈ F, δ ∈ Ioc 0 (δx x) := by
-    have : ∀ᶠ δ in 𝓝[>] 0, 0 < δ ∧ δ < m ∧ ∀ x ∈ F, δ ∈ Ioc 0 (δx x) := by
-      filter_upwards [eventually_mem_nhdsWithin, Ioo_mem_nhdsGT hm,
-        (eventually_all_finite hFfin).2 fun x hx ↦ Ioc_mem_nhdsGT (hδx x hx)] with δ hδ hδm h
-      exact ⟨hδ, hδm.2, h⟩
-    exact this.exists
+  choose! δx hδx hQ using hr
+  obtain ⟨δ, hδ, hδm, hδF⟩ := (eventually_mem_nhdsWithin.and <| nhdsWithin_le_nhds <|
+    (eventually_lt_nhds hm).and <| (eventually_all_finite hFfin).2 fun x hx ↦
+      eventually_le_nhds (hδx x hx)).exists (f := 𝓝[>] 0)
   refine ⟨δ, hδ, fun g hg hg₀ hg₁ ↦ ?_⟩
   -- At each point `x` of `F`, the unique fixed point of `g` in the ball of radius `r`.
-  have hloc (x : E) (hx : x ∈ F) := hQ x hx g (fun y hy ↦ hg y ((hr x hx).2.1 hy))
-    (fun y hy ↦ (hg₁ y ((hr x hx).2.1 hy)).trans (hδF x hx).2)
-    ((hg₀ x hx.2).trans (hδF x hx).2)
+  have hloc (x : E) (hx : x ∈ F) := hQ x hx g (fun y hy ↦ hg y (hrK x hx hy))
+    (fun y hy ↦ (hg₁ y (hrK x hx hy)).trans (hδF x hx))
+    ((hg₀ x hx.2).trans (hδF x hx))
   choose! φ hφr hφnd hφsign _ hφuniq using hloc
-  refine ⟨φ, ⟨fun x hx ↦ ⟨(hφnd x hx).isFixedPt, (hr x hx).2.1 (hφr x hx)⟩, ?_, ?_⟩,
+  refine ⟨φ, ⟨fun x hx ↦ ⟨(hφnd x hx).isFixedPt, hrK x hx (hφr x hx)⟩, ?_, ?_⟩,
     fun x hx ↦ ⟨(mem_closedBall.1 (hφr x hx)).trans hrε, hφnd x hx, hφsign x hx⟩⟩
   · -- Distinct points of `F` have disjoint balls.
     intro x₁ hx₁ x₂ hx₂ h
     by_contra hne
-    have := (hr x₁ hx₁).2.2 x₂ hx₂ hne
+    have := hsep x₁ hx₁ x₂ hx₂ hne
     have h₁ := mem_closedBall.1 (hφr x₁ hx₁)
     have h₂ := mem_closedBall.1 (hφr x₂ hx₂)
     rw [h] at h₁
