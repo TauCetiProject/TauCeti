@@ -60,6 +60,8 @@ bounds.
 * `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
   function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
   norm, for any measure.
+* `MeasureTheory.Lp.norm_toLp_memLp_top_const_le`: the `L∞` class of a constant `c` has norm at
+  most `‖c‖`.
 * `MeasureTheory.Lp.norm_le_norm_top_of_ae_eq_of_continuousAt`: when the measure is positive on
   open sets, a representative of an `L∞` class is bounded by its norm at every point where it is
   continuous.
@@ -334,6 +336,14 @@ theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
     (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
   rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
   exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
+
+/-- The `L∞` class of the constant function `c` has norm at most `‖c‖`, whatever the measure. -/
+theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} (c : F) :
+    ‖(memLp_top_const (μ := m) c).toLp _‖ ≤ ‖c‖ := by
+  refine Lp.norm_top_le_of_ae_bound (norm_nonneg c) ?_
+  filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
+  rw [hx]
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
