@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -56,7 +57,7 @@ theorem HasCompactSupport.lintegral_eNorm_mul_eNorm_fderiv_apply_ne_top [Measura
     (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ) (v : E) :
     ∫⁻ t, ‖t‖ₑ * ‖fderiv ℝ ρ t v‖ₑ ∂μ ≠ ∞ := by
   have hc : Continuous fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
-    continuous_norm.mul ((hρ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+    continuous_norm.mul (hρ.continuous_fderiv_apply_const one_ne_zero v)
   have hs : HasCompactSupport fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
     (hρc.fderiv_apply (𝕜 := ℝ) v).mul_left
   simpa [HasFiniteIntegral, eNorm_mul] using
@@ -130,8 +131,8 @@ theorem lintegral_eNorm_mul_eNorm_fderiv_normed_apply_eq [MeasurableSpace E] [Bo
   have hmap : Measure.map (fun t : E ↦ c • t) μ = ENNReal.ofReal |(c ^ n)⁻¹| • μ :=
     Measure.map_addHaar_smul μ hc.ne'
   have hmeas : Measurable w :=
-    measurable_eNorm.mul ((ψ.contDiff_normed (n := 1)).continuous_fderiv one_ne_zero
-      |>.clm_apply continuous_const).eNorm.measurable
+    measurable_eNorm.mul
+      ((ψ.contDiff_normed (n := 1)).continuous_fderiv_apply_const one_ne_zero _).eNorm.measurable
   have hone : ‖c ^ n‖ₑ * ENNReal.ofReal |(c ^ n)⁻¹| = 1 := by
     rw [Real.eNorm_of_nonneg (pow_pos hc n).le, ← ENNReal.ofReal_mul (pow_pos hc n).le,
       abs_of_pos (inv_pos.2 (pow_pos hc n)), mul_inv_cancel₀ (pow_pos hc n).ne',

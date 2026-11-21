@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Commutator
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Algebra.Support
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
@@ -125,12 +126,6 @@ theorem mollifierCommutator_apply (ρ : E → ℝ) (a : E → F →L[ℝ] F') (v
 variable [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] [μ.IsNegInvariant]
   [CompleteSpace F] [CompleteSpace F'] {ρ : E → ℝ} {a : E → F →L[ℝ] F'} {g h : E → F}
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The directional derivative `∂ᵥ ρ` of a `C¹` kernel is continuous. -/
-private theorem continuous_fderiv_apply (hρ : ContDiff ℝ 1 ρ) (v : E) :
-    Continuous fun t ↦ fderiv ℝ ρ t v :=
-  (hρ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-
 omit [FiniteDimensional ℝ E] [CompleteSpace F] [CompleteSpace F'] in
 /-- The integrand of the commutator is integrable. -/
 private theorem integrable_sub_apply_smul (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ)
@@ -140,7 +135,7 @@ private theorem integrable_sub_apply_smul (hρc : HasCompactSupport ρ) (hρ : C
   have hk : HasCompactSupport fun t ↦ fderiv ℝ ρ t v • (a (x - t) - a x) :=
     (hρc.fderiv_apply (𝕜 := ℝ) v).smul_right
   have hkc : Continuous fun t ↦ fderiv ℝ ρ t v • (a (x - t) - a x) :=
-    (continuous_fderiv_apply hρ v).smul
+    (hρ.continuous_fderiv_apply_const one_ne_zero v).smul
       ((ha.comp (continuous_const.sub continuous_id)).sub continuous_const)
   simpa [map_smul] using
     (hk.convolutionExists_left (ContinuousLinearMap.id ℝ (F →L[ℝ] F')) hkc hg x).integrable
@@ -153,9 +148,9 @@ theorem mollifierCommutator_eq_integral (hρc : HasCompactSupport ρ) (hρ : Con
     mollifierCommutator μ ρ a v g x = ∫ t, (a (x - t) - a x) (fderiv ℝ ρ t v • g (x - t)) ∂μ := by
   have hag : LocallyIntegrable (fun y ↦ a y (g y)) μ := hg.continuous_clm_apply ha
   have h₁ := ((hρc.fderiv_apply (𝕜 := ℝ) v).convolutionExists_left (lsmul ℝ ℝ)
-    (continuous_fderiv_apply hρ v) hag x).integrable
+    (hρ.continuous_fderiv_apply_const one_ne_zero v) hag x).integrable
   have h₂ := ((hρc.fderiv_apply (𝕜 := ℝ) v).convolutionExists_left (lsmul ℝ ℝ)
-    (continuous_fderiv_apply hρ v) hg x).integrable
+    (hρ.continuous_fderiv_apply_const one_ne_zero v) hg x).integrable
   rw [mollifierCommutator_apply, hρc.fderiv_convolution_left_apply _ hρ hag,
     hρc.fderiv_convolution_left_apply _ hρ hg, convolution_def, convolution_def,
     ← (a x).integral_comp_comm h₂, ← integral_sub h₁ ((a x).integrable_comp h₂)]
@@ -184,7 +179,8 @@ theorem eLpNorm_mollifierCommutator_le {K : ℝ≥0} (hρc : HasCompactSupport �
       K * (∫⁻ t, ‖t‖ₑ * ‖fderiv ℝ ρ t v‖ₑ ∂μ) * eLpNorm g p μ := by
   rw [show mollifierCommutator μ ρ a v g = _ from
     funext (mollifierCommutator_eq_integral hρc hρ ha.continuous hg v)]
-  exact eLpNorm_integral_sub_apply_smul_le ha (continuous_fderiv_apply hρ v).aestronglyMeasurable
+  exact eLpNorm_integral_sub_apply_smul_le ha
+    (hρ.continuous_fderiv_apply_const one_ne_zero v).aestronglyMeasurable
     hg.aestronglyMeasurable hp
 
 omit [μ.IsNegInvariant] [CompleteSpace F] [CompleteSpace F'] in
@@ -340,8 +336,9 @@ private theorem sum_apply_fderiv_convolution_eq {ρ : E → ℝ} (hρc : HasComp
   rw [Finset.sum_congr rfl fun j hj ↦ integral_add
     (f := fun y ↦ -(fderiv ℝ ρ (x - y) (w j) • a j y (g y)))
     (g := fun y ↦ ρ (x - y) • fderiv ℝ (a j) y (w j) (g y))
-    (hint (hρc.fderiv_apply (𝕜 := ℝ) (w j)) (continuous_fderiv_apply hρ1 (w j))
-      (hagj j hj)).neg (hint hρc hρ1.continuous (hGj j hj))] at hw
+    (hint (hρc.fderiv_apply (𝕜 := ℝ) (w j))
+      (hρ1.continuous_fderiv_apply_const one_ne_zero (w j)) (hagj j hj)).neg
+      (hint hρc hρ1.continuous (hGj j hj))] at hw
   -- So `∑ⱼ ∂_{wⱼ} (ρ ⋆ aⱼ g) = ρ ⋆ f + ∑ⱼ ρ ⋆ (∂_{wⱼ} aⱼ) g` at `x`.
   have h3 : ∑ j ∈ s, fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦ a j y (g y)) x (w j) =
       (ρ ⋆[lsmul ℝ ℝ, μ] f) x + ∑ j ∈ s, (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦
