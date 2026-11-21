@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.AlmostIntegral
+public import TauCeti.RingTheory.Perfection
 
 /-!
 # The `p`-root closure and the complete integral closure away from an element
@@ -238,6 +239,7 @@ def awayCompleteIntegralClosure : Subalgebra R S where
 variable {g S}
 
 /-- Unfolding `awayCompleteIntegralClosure`. -/
+@[simp]
 theorem mem_awayCompleteIntegralClosure {s : S} :
     s ∈ awayCompleteIntegralClosure g S ↔
       ∃ m : ℕ, ∀ n : ℕ, g ^ m • s ^ n ∈ (algebraMap R S).range :=
@@ -295,18 +297,6 @@ end AwayCompleteIntegralClosure
 end TauCeti
 
 /-! ### Root saturation -/
-
-namespace TauCeti
-
-/-- For compatible `p`-power roots `t (k + 1) ^ p = t k`, the root `t (j + k)` is a `p ^ k`-th
-root of `t j`. -/
-theorem pow_pow_of_succ_pow_eq {M : Type*} [Monoid M] {p : ℕ} {t : ℕ → M}
-    (ht : ∀ k, t (k + 1) ^ p = t k) (j k : ℕ) : t (j + k) ^ p ^ k = t j := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [← ih, ← add_assoc, ← ht (j + k), ← pow_mul, pow_succ']
-
-end TauCeti
 
 namespace Subalgebra
 
