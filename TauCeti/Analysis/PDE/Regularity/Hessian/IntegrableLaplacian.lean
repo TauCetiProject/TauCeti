@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Integral.Dilation
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -407,17 +408,10 @@ private theorem setLIntegral_le_eLpNorm_iteratedFDeriv_two_testFunction
     (by simp)).aestronglyMeasurable]
   refine (setLIntegral_mono' measurableSet_ball fun x hx => ?_).trans
     (setLIntegral_le_lintegral _ _)
-  -- A unit vector `h` orthogonal to `x`: the line through `x` is not all of `V`.
-  obtain ⟨h, hh, hxh⟩ : ∃ h : V, ‖h‖ = 1 ∧ ⟪x, h⟫_ℝ = 0 := by
-    have hpos : 0 < finrank ℝ (ℝ ∙ x)ᗮ := by
-      have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ x)
-      have : finrank ℝ (ℝ ∙ x) ≤ 1 := by
-        simpa using finrank_span_le_card (R := ℝ) ({x} : Set V)
-      omega
-    obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-      (Submodule.one_le_finrank_iff.mp hpos)
-    exact ⟨‖w‖⁻¹ • w, norm_smul_inv_norm hw0, by
-      rw [inner_smul_right, Submodule.mem_orthogonal_singleton_iff_inner_right.1 hw, mul_zero]⟩
+  -- A unit vector `h` orthogonal to `x`, which exists since `1 < finrank ℝ V`.
+  obtain ⟨h, hh, hxh⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ) {x}
+    (by rw [Finset.card_singleton]; omega)
+  replace hxh : ⟪x, h⟫_ℝ = 0 := hxh x (Finset.mem_singleton_self x)
   have hσ : ‖x‖ ^ 2 ≤ 1 / 4 := by
     rw [mem_ball, dist_zero_right] at hx
     nlinarith [norm_nonneg x]
