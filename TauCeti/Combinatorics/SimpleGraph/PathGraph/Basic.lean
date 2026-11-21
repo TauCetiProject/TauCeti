@@ -11,6 +11,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import Mathlib.Combinatorics.SimpleGraph.Metric
 public import Mathlib.Data.Nat.Dist
 
+import TauCeti.Combinatorics.SimpleGraph.Metric
+
 /-!
 # Path graphs: distances and trees of maximum degree two
 
@@ -107,12 +109,10 @@ variable {V : Type*} {G : SimpleGraph V}
 
 /-- Every walk in a path graph has length at least the index distance between its endpoints. -/
 private theorem dist_le_length_of_pathGraph {n : ℕ} {u v : Fin n}
-    (w : (pathGraph n).Walk u v) : Nat.dist u.val v.val ≤ w.length := by
-  induction w with
-  | nil => simp
-  | @cons a b c hab _ ih =>
+    (w : (pathGraph n).Walk u v) : Nat.dist u.val v.val ≤ w.length :=
+  w.natDist_le_length fun a b hab ↦ by
     rw [pathGraph_adj] at hab
-    simp only [Walk.length_cons, Nat.dist] at ih ⊢
+    simp only [Nat.dist]
     omega
 
 /-- In a path graph, the extended distance between `u` and `v` with `u ≤ v` is at most

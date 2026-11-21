@@ -41,8 +41,11 @@ file does not assert the existence of a Markov trace at every loop parameter.
   `TauCeti.TemperleyLieb.IsMarkovTraceUpTo.eq_of_le`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.unique`: uniqueness of Markov traces up to `N` strands and
   on the full tower.
-* `TauCeti.TemperleyLieb.isMarkovTrace_iff_forall_isMarkovTraceUpTo`: equivalence between a global
-  Markov trace and truncated Markov traces at every finite level `N`.
+* `TauCeti.TemperleyLieb.isMarkovTrace_iff_forall_isMarkovTraceUpTo`,
+  `TauCeti.TemperleyLieb.isMarkovTrace_of_forall_isMarkovTraceUpTo`,
+  `TauCeti.TemperleyLieb.existsUnique_isMarkovTrace_of_isMarkovTraceUpTo`: equivalence between a
+  global Markov trace and truncated Markov traces at every finite level `N`, and gluing of
+  independently constructed finite Markov traces into a unique global Markov trace.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.eq_of_isMarkovTraceUpTo`: a global Markov trace agrees up
   to `N` strands with any Markov trace defined up to `N` strands.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.apply_succ_eq_zero`: at loop parameter `0`, every Markov
@@ -140,7 +143,8 @@ theorem unique {tr' : ∀ m ≤ N, TemperleyLieb R δ m →ₗ[R] R}
     · rw [htr.map_strandIncl, htr'.map_strandIncl, ih (by omega)]
     · rw [htr.map_strandIncl_mul_e_last_mul, htr'.map_strandIncl_mul_e_last_mul, ih (by omega)]
 
-/-- Any two Markov traces defined up to levels `N₁` and `N₂` agree at every common strand level. -/
+/-- Any two Markov traces over the same commutative semiring and at the same loop parameter, defined
+up to levels `N₁` and `N₂`, agree at every strand level covered by both bounds. -/
 theorem eq_of_le {N₁ N₂ : ℕ} {tr₁ : ∀ m ≤ N₁, TemperleyLieb R δ m →ₗ[R] R}
     {tr₂ : ∀ m ≤ N₂, TemperleyLieb R δ m →ₗ[R] R}
     (htr₁ : IsMarkovTraceUpTo R δ N₁ tr₁) (htr₂ : IsMarkovTraceUpTo R δ N₂ tr₂)
@@ -158,6 +162,34 @@ theorem isMarkovTrace_iff_forall_isMarkovTraceUpTo {tr : ∀ n : ℕ, TemperleyL
     fun h ↦ ⟨fun n ↦ (h n).map_one n le_rfl, fun n ↦ (h n).map_mul_comm n le_rfl,
       fun n ↦ (h (n + 2)).map_strandIncl n le_rfl,
       fun n ↦ (h (n + 2)).map_strandIncl_mul_e_last n le_rfl⟩⟩
+
+/-- A family of truncated Markov traces up to every finite level `N` over the same commutative
+semiring and at the same loop parameter glues along its diagonal `n ↦ tr n n le_rfl` to a global
+Markov trace on the full tower. -/
+theorem isMarkovTrace_of_forall_isMarkovTraceUpTo
+    {tr : ∀ N : ℕ, ∀ m ≤ N, TemperleyLieb R δ m →ₗ[R] R}
+    (htr : ∀ N, IsMarkovTraceUpTo R δ N (tr N)) :
+    IsMarkovTrace R δ (fun n ↦ tr n n le_rfl) := by
+  refine ⟨fun n ↦ (htr n).map_one n le_rfl, fun n ↦ (htr n).map_mul_comm n le_rfl,
+    fun n x ↦ ?_, fun n x ↦ ?_⟩
+  · rw [(htr (n + 2)).map_strandIncl n le_rfl,
+      (htr (n + 2)).eq_of_le (htr (n + 1)) (by omega) le_rfl]
+  · rw [(htr (n + 2)).map_strandIncl_mul_e_last n le_rfl,
+      (htr (n + 2)).eq_of_le (htr (n + 1)) (by omega) le_rfl]
+
+/-- **Gluing of finite Markov traces.** Given a Markov trace up to `N` strands for every `N` over
+the same commutative semiring and at the same loop parameter, there is a unique global Markov trace
+on the Temperley–Lieb tower agreeing with each finite trace at every strand level within its
+bound. -/
+theorem existsUnique_isMarkovTrace_of_isMarkovTraceUpTo
+    {tr : ∀ N : ℕ, ∀ m ≤ N, TemperleyLieb R δ m →ₗ[R] R}
+    (htr : ∀ N, IsMarkovTraceUpTo R δ N (tr N)) :
+    ∃! tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R,
+      IsMarkovTrace R δ tr' ∧ ∀ N m (hm : m ≤ N), tr' m = tr N m hm :=
+  ⟨fun n ↦ tr n n le_rfl,
+    ⟨isMarkovTrace_of_forall_isMarkovTraceUpTo htr,
+      fun N m hm ↦ (htr m).eq_of_le (htr N) le_rfl hm⟩,
+    fun _ ⟨_, hEq⟩ ↦ funext fun n ↦ hEq n n le_rfl⟩
 
 namespace IsMarkovTrace
 
