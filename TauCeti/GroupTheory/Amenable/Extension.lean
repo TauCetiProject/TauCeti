@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.Amenable.Subgroup
 import TauCeti.GroupTheory.Amenable.Finite
+import TauCeti.GroupTheory.Amenable.Quotient
 
 /-!
 # Extensions of amenable discrete groups
@@ -198,8 +199,8 @@ theorem amenable_iff_subgroup_quotient {G : Type*} [Group G] [TopologicalSpace G
     [DiscreteTopology G] (N : Subgroup G) [N.Normal] :
     Amenable G ↔ Amenable N ∧ Amenable (G ⧸ N) := by
   have := QuotientGroup.discreteTopology (isOpen_discrete (N : Set G))
-  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩,
-    fun ⟨_, _⟩ => .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
+  exact ⟨fun _ => ⟨inferInstance, inferInstance⟩, fun ⟨_, _⟩ =>
+    .of_ker_le_range N.subtype (QuotientGroup.mk' N) (by simp)⟩
 
 /-- A discrete group is amenable when it has an amenable normal subgroup with amenable
 quotient. -/

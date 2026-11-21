@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Mean
 public import TauCeti.Topology.Algebra.Group.UCB.CompRight
-import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Amenable topological groups
@@ -43,7 +42,6 @@ isomorphisms of topological groups.
   continuous homomorphism with dense range preserves left invariance.
 * `TauCeti.Amenable.of_denseRange`: amenability passes to the target of a continuous homomorphism
   with dense range, in particular to images under surjective continuous homomorphisms.
-* `TauCeti.Amenable.quotient`: quotients of amenable topological groups are amenable.
 * `TauCeti.Amenable.of_le`: amenability passes from a finer to a coarser group topology.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
@@ -206,13 +204,6 @@ theorem Amenable.of_denseRange [Amenable G] (φ : G →ₜ* H) (hφ : DenseRange
     Amenable H :=
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
-
-/-- Every quotient of an amenable topological group by a normal subgroup is amenable. -/
-instance Amenable.quotient [Amenable G] (N : Subgroup G) [N.Normal] : Amenable (G ⧸ N) :=
-  .of_denseRange (Subgroup.quotientMkContinuousMonoidHom N) <|
-    Function.Surjective.denseRange <| by
-      simpa only [Function.Surjective, Subgroup.quotientMkContinuousMonoidHom_apply,
-        QuotientGroup.mk'_apply] using QuotientGroup.mk'_surjective N
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] in
 /-- Amenability passes from a finer group topology to a coarser group topology. -/
