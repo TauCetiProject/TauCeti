@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebyshev.WeightedPrimeMellin
 public import TauCeti.NumberTheory.DirichletCharacter.Bounds
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
-public import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
+public import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 
 /-!
 # Split primes and the Landau combination `-ζ′/ζ - L′/L`

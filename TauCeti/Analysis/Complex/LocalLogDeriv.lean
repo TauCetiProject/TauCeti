@@ -15,8 +15,8 @@ import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.CanonicalFactor
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.JensenFormula
-import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Meromorphic.FactorizedRational
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Landau's local logarithmic-derivative lemma
@@ -45,8 +45,8 @@ point are counted by Jensen's formula, and the remaining part of `logDeriv f` is
   at `R / 2` and `R / 4`.
 * `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_le`,
   `AnalyticOnNhd.neg_re_logDeriv_add_sum_divisor_half_le`,
-  `AnalyticOnNhd.inv_sub_re_le_divisor_mul`, and
-  `AnalyticOnNhd.neg_re_logDeriv_add_inv_sub_le`: the retained-zero real-part inequalities summing
+  `AnalyticOnNhd.sub_inv_re_le_divisor_mul`, and
+  `AnalyticOnNhd.neg_re_logDeriv_add_sub_inv_le`: the retained-zero real-part inequalities summing
   over an arbitrary `S : Finset ℂ` when all zeros in the inner disc have real part at most `z.re`,
   for general `2 r ≤ R` and at `r = R / 2`, together with the single-zero term bound
   `((z - ρ)⁻¹).re ≤ m_ρ ((z - ρ)⁻¹).re` and its horizontal-line specialization.
@@ -369,15 +369,64 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
 /-- At a zero `ρ ∈ U` of an analytic function `f` on a preconnected set `U` where `f` is not
 identically zero, if `ρ.re ≤ z.re` then `((z - ρ)⁻¹).re` is bounded above by the divisor-weighted
 term `(divisor f U ρ : ℝ) * ((z - ρ)⁻¹).re`. -/
-theorem inv_sub_re_le_divisor_mul {U : Set ℂ} (hf : AnalyticOnNhd ℂ f U) (hU : IsPreconnected U)
+theorem sub_inv_re_le_divisor_mul {U : Set ℂ} (hf : AnalyticOnNhd ℂ f U) (hU : IsPreconnected U)
     (h0 : ∃ w ∈ U, f w ≠ 0) {ρ z : ℂ} (hρ : ρ ∈ U) (hfρ : f ρ = 0) (hre : ρ.re ≤ z.re) :
     ((z - ρ)⁻¹).re ≤ (divisor f U ρ : ℝ) * ((z - ρ)⁻¹).re := by
+  obtain ⟨w, hw, hfw⟩ := h0
+  have hne : divisor f U ρ ≠ 0 :=
+    mt (hf.divisor_apply_eq_zero_iff hU hw hfw hρ).1 (not_not.2 hfρ)
   have hD : (1 : ℝ) ≤ (divisor f U ρ : ℝ) :=
-    mod_cast Int.add_one_le_iff.2 ((hf.zero_lt_divisor_iff hU h0 hρ).2 hfρ)
+    mod_cast lt_of_le_of_ne (hf.divisor_nonneg ρ) (Ne.symm hne)
   have hnonneg : 0 ≤ ((z - ρ)⁻¹).re := by
     rw [Complex.inv_re]
     exact div_nonneg (by simpa using sub_nonneg.2 hre) (Complex.normSq_nonneg _)
   exact le_mul_of_one_le_left hnonneg hD
+
+-- Convert a norm bound on `logDeriv f z - ∑ᶠ ρ, D ρ / (z - ρ)` into a retained-sum bound over `S`.
+private lemma neg_re_logDeriv_add_sum_divisor_le_of_norm_le {z : ℂ} {B : ℝ}
+    (hf : AnalyticOnNhd ℂ f (closedBall z₀ R)) (hrR : r ≤ R)
+    (hre : ∀ ρ ∈ closedBall z₀ r, f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ)
+    (hmain : ‖logDeriv f z - ∑ᶠ ρ, (divisor f (closedBall z₀ r) ρ : ℂ) / (z - ρ)‖ ≤ B) :
+    -(logDeriv f z).re +
+        ∑ ρ ∈ S, (divisor f (closedBall z₀ r) ρ : ℝ) * ((z - ρ)⁻¹).re ≤ B := by
+  classical
+  set D := divisor f (closedBall z₀ r)
+  let g : ℂ → ℝ := fun ρ ↦ (D ρ : ℝ) * ((z - ρ)⁻¹).re
+  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
+  have hfin_g : g.support.Finite :=
+    hfin.subset fun ρ hρ ↦ fun h0 ↦ hρ (by simp [g, h0])
+  have hg_nonneg (ρ : ℂ) : 0 ≤ g ρ := by
+    by_cases hD : D ρ = 0
+    · simp [g, hD]
+    have hρ_mem : ρ ∈ closedBall z₀ r := D.supportWithinDomain hD
+    have hfρ : f ρ = 0 := by_contra fun hne ↦
+      hD ((hf ρ (closedBall_subset_closedBall hrR hρ_mem)).divisor_apply_eq_zero hne)
+    have hD0 : 0 ≤ (D ρ : ℝ) :=
+      mod_cast (hf.mono (closedBall_subset_closedBall hrR)).divisor_nonneg ρ
+    dsimp only [g]
+    rw [Complex.inv_re]
+    exact mul_nonneg hD0 (div_nonneg (by simpa using sub_nonneg.2 (hre ρ hρ_mem hfρ))
+      (Complex.normSq_nonneg _))
+  have hS_eq : ∑ ρ ∈ S, g ρ = ∑ᶠ ρ, (S : Set ℂ).indicator g ρ := by
+    rw [finsum_eq_sum_of_support_subset ((S : Set ℂ).indicator g) Set.support_indicator_subset]
+    exact Finset.sum_congr rfl fun ρ hρ ↦ (Set.indicator_of_mem hρ g).symm
+  have hle_finsum : ∑ ρ ∈ S, g ρ ≤ ∑ᶠ ρ, g ρ := by
+    rw [hS_eq]
+    exact finsum_le_finsum (S.finite_toSet.subset Set.support_indicator_subset)
+      hfin_g fun ρ ↦ by by_cases h : ρ ∈ S <;> simp [h, hg_nonneg]
+  have hre_finsum : (∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re = ∑ᶠ ρ, g ρ := by
+    have h1 : ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ) = ∑ ρ ∈ hfin.toFinset, (D ρ : ℂ) / (z - ρ) :=
+      finsum_eq_sum_of_support_subset _ fun ρ hρ ↦
+        hfin.mem_toFinset.2 fun h0 ↦ hρ (by simp [h0])
+    have h2 : ∑ᶠ ρ, g ρ = ∑ ρ ∈ hfin.toFinset, g ρ :=
+      finsum_eq_sum_of_support_subset _ fun ρ hρ ↦
+        hfin.mem_toFinset.2 fun h0 ↦ hρ (by simp [g, h0])
+    rw [h1, h2, Complex.re_sum]
+    simp [g, div_eq_mul_inv, ← Complex.ofReal_intCast]
+  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤ B :=
+    (neg_le_abs _).trans ((Complex.abs_re_le_norm _).trans hmain)
+  rw [Complex.sub_re, hre_finsum] at h1
+  linarith
 
 /-- **Retained-zero real-part form of Landau's lemma.** Let `f` be analytic on `closedBall z₀ R`
 with `2 r ≤ R` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose `‖z - z₀‖ < r`, `f z ≠ 0`, and
@@ -391,36 +440,10 @@ theorem neg_re_logDeriv_add_sum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBall
     (hre : ∀ ρ ∈ closedBall z₀ r, f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
     -(logDeriv f z).re +
         ∑ ρ ∈ S, (divisor f (closedBall z₀ r) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
-      4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
-  classical
-  have hr : 0 < r := (norm_nonneg _).trans_lt hz
-  set D := divisor f (closedBall z₀ r)
-  have hfin : D.support.Finite := D.finiteSupport (isCompact_closedBall _ _)
-  have hg_nonneg (ρ : ℂ) : 0 ≤ (D ρ : ℝ) * ((z - ρ)⁻¹).re := by
-    by_cases hD : D ρ = 0
-    · simp [hD]
-    have hρ_mem : ρ ∈ closedBall z₀ r := D.supportWithinDomain hD
-    have hfρ : f ρ = 0 := by_contra fun hne ↦
-      hD ((hf ρ (closedBall_subset_closedBall (by linarith) hρ_mem)).divisor_apply_eq_zero hne)
-    have hD0 : 0 ≤ (D ρ : ℝ) :=
-      mod_cast (hf.mono (closedBall_subset_closedBall (by linarith))).divisor_nonneg ρ
-    rw [Complex.inv_re]
-    exact mul_nonneg hD0 (div_nonneg (by simpa using sub_nonneg.2 (hre ρ hρ_mem hfρ))
-      (Complex.normSq_nonneg _))
-  set T : Finset ℂ := S ∪ hfin.toFinset
-  have hsum : ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ) = ∑ ρ ∈ T, (D ρ : ℂ) / (z - ρ) :=
-    finsum_eq_sum_of_support_subset _ fun ρ hρ ↦
-      Finset.mem_coe.2 (Finset.mem_union_right _ (hfin.mem_toFinset.2 fun h0 ↦ hρ (by simp [h0])))
-  have hre_sum : (∑ ρ ∈ T, (D ρ : ℂ) / (z - ρ)).re = ∑ ρ ∈ T, (D ρ : ℝ) * ((z - ρ)⁻¹).re := by
-    simp [div_eq_mul_inv, Complex.re_sum, ← Complex.ofReal_intCast]
-  have hsub : ∑ ρ ∈ S, (D ρ : ℝ) * ((z - ρ)⁻¹).re ≤ ∑ ρ ∈ T, (D ρ : ℝ) * ((z - ρ)⁻¹).re :=
-    Finset.sum_le_sum_of_subset_of_nonneg Finset.subset_union_left fun ρ _ _ ↦ hg_nonneg ρ
-  have hmain := hf.norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le hrR hM hz hfz
-  have h1 : -(logDeriv f z - ∑ᶠ ρ, (D ρ : ℂ) / (z - ρ)).re ≤
       4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M :=
-    (neg_le_abs _).trans ((Complex.abs_re_le_norm _).trans hmain)
-  rw [hsum, Complex.sub_re, hre_sum] at h1
-  linarith
+  have _ : 0 < r := (norm_nonneg _).trans_lt hz
+  hf.neg_re_logDeriv_add_sum_divisor_le_of_norm_le (by linarith) hre S
+    (hf.norm_logDeriv_sub_finsum_divisor_le_of_two_mul_le hrR hM hz hfz)
 
 /-- **Retained-zero real-part form of Landau's lemma** in the classical normalization. Let `f` be
 analytic on `closedBall z₀ R` with `R ≠ 0` and `‖f w‖ ≤ M * ‖f z₀‖` on `sphere z₀ R`. Suppose
@@ -435,29 +458,16 @@ theorem neg_re_logDeriv_add_sum_divisor_half_le (hf : AnalyticOnNhd ℂ f (close
     (hre : ∀ ρ ∈ closedBall z₀ (R / 2), f ρ = 0 → ρ.re ≤ z.re) (S : Finset ℂ) :
     -(logDeriv f z).re +
         ∑ ρ ∈ S, (divisor f (closedBall z₀ (R / 2)) ρ : ℝ) * ((z - ρ)⁻¹).re ≤
-      48 / R * Real.log M := by
+      48 / R * Real.log M :=
   have hRpos : 0 < R := lt_of_le_of_ne (by linarith [norm_nonneg (z - z₀)]) hR.symm
-  have hz₀ : f z₀ ≠ 0 :=
-    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).ne_zero_of_forall_mem_sphere_norm_le_mul hM
-      (by rw [mem_closedBall, dist_eq_norm]; linarith) hfz
-  have hM1 : 1 ≤ M :=
-    (hf.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
-      hRpos hz₀ hM
-  refine (hf.neg_re_logDeriv_add_sum_divisor_le (by linarith) hM (by linarith) hfz hre S).trans
-    (mul_le_mul_of_nonneg_right ?_ (Real.log_nonneg hM1))
-  calc 4 * (R / 2 + ‖z - z₀‖) / (R / 2 - ‖z - z₀‖) ^ 2
-      ≤ 4 * (R / 2 + R / 4) / (R / 2 - R / 4) ^ 2 := by
-        have h4 : 0 < R / 2 - R / 4 := by linarith
-        gcongr
-    _ = 48 / R := by
-        field_simp
-        ring
+  hf.neg_re_logDeriv_add_sum_divisor_le_of_norm_le (by linarith) hre S
+    (hf.norm_logDeriv_sub_finsum_divisor_half_le hRpos hM hz hfz)
 
 /-- Retaining a single zero `ρ` on the horizontal line `Im = ρ.im` inside a divisor-sum upper
 bound: if `f` is analytic on `closedBall (σ₀ + ρ.im * I) r`, nonzero at the centre, and vanishes at
 `ρ` with `|ρ.re - σ₀| ≤ r` and `ρ.re ≤ σ`, then the `S = {ρ}` sum contributes at least
 `(σ - ρ.re)⁻¹`. -/
-theorem neg_re_logDeriv_add_inv_sub_le {σ₀ σ B : ℝ} {ρ : ℂ}
+theorem neg_re_logDeriv_add_sub_inv_le {σ₀ σ B : ℝ} {ρ : ℂ}
     (hf : AnalyticOnNhd ℂ f (closedBall ((σ₀ : ℂ) + ρ.im * Complex.I) r))
     (hfz₀ : f ((σ₀ : ℂ) + ρ.im * Complex.I) ≠ 0) (hρ : |ρ.re - σ₀| ≤ r) (hfρ : f ρ = 0)
     (hre : ρ.re ≤ σ)
@@ -467,11 +477,14 @@ theorem neg_re_logDeriv_add_inv_sub_le {σ₀ σ B : ℝ} {ρ : ℂ}
             ((((σ : ℂ) + ρ.im * Complex.I) - w)⁻¹).re ≤ B) :
     -(logDeriv f ((σ : ℂ) + ρ.im * Complex.I)).re + (σ - ρ.re)⁻¹ ≤ B := by
   have hr : 0 ≤ r := (abs_nonneg _).trans hρ
-  have hterm := hf.inv_sub_re_le_divisor_mul (z := (σ : ℂ) + ρ.im * Complex.I)
+  have hmem : ρ ∈ closedBall ((σ₀ : ℂ) + ρ.im * Complex.I) r := by
+    rw [mem_closedBall, Complex.dist_of_im_eq (by simp), Real.dist_eq]
+    simpa using hρ
+  have hterm := hf.sub_inv_re_le_divisor_mul (z := (σ : ℂ) + ρ.im * Complex.I)
     (convex_closedBall _ _).isPreconnected ⟨_, mem_closedBall_self hr, hfz₀⟩
-    (Complex.mem_closedBall_ofReal_add_im_mul_I_iff.2 hρ) hfρ (by simpa using hre)
+    hmem hfρ (by simpa using hre)
   have hdiff : ((σ : ℂ) + ρ.im * Complex.I) - ρ = ((σ - ρ.re : ℝ) : ℂ) := by
-    simpa using Complex.sub_eq_ofReal_re_sub_of_im_eq (z := (σ : ℂ) + ρ.im * Complex.I) (w := ρ)
+    simpa using RCLike.sub_eq_ofReal_re_sub_of_im_eq (z := (σ : ℂ) + ρ.im * Complex.I) (w := ρ)
       (by simp)
   rw [Finset.sum_singleton] at hsum
   rw [hdiff, ← Complex.ofReal_inv, Complex.ofReal_re] at hterm hsum

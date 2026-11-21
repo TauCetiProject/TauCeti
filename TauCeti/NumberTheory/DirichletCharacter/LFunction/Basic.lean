@@ -47,29 +47,6 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-omit χ in
-/-- The principal Dirichlet `L`-function modulo `N` is not differentiable at its simple pole
-`s = 1`. -/
-theorem not_differentiableAt_LFunctionTrivChar_one :
-    ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
-  intro hd
-  have h0 : Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
-    have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
-      hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
-    simpa using h
-  have h1 := tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))
-  exact LFunctionTrivChar₁_apply_one_ne_zero N (by simpa using h1.symm)
-
-/-- The continued Dirichlet `L`-function `χ.LFunction` is differentiable at `s` if and only if
-`s ≠ 1` or `χ ≠ 1`. -/
-@[simp]
-theorem differentiableAt_LFunction_iff (s : ℂ) :
-    DifferentiableAt ℂ χ.LFunction s ↔ s ≠ 1 ∨ χ ≠ 1 := by
-  refine ⟨fun hd ↦ by_contra fun h ↦ ?_, χ.differentiableAt_LFunction s⟩
-  obtain ⟨hs1, hχ1⟩ := not_or.mp h
-  rw [not_ne_iff.mp hs1, not_ne_iff.mp hχ1] at hd
-  exact not_differentiableAt_LFunctionTrivChar_one hd
-
 /-- The continued Dirichlet L-function is analytic everywhere except possibly at `s = 1` for the
 principal character. -/
 @[fun_prop]
@@ -108,8 +85,33 @@ theorem meromorphicOrderAt_LFunctionTrivChar_one :
     |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul (LFunctionTrivChar₁_apply_one_ne_zero N)
     (by simpa using LFunctionTrivChar_residue_one (N := N))
 
+omit χ in
+/-- The principal Dirichlet `L`-function modulo `N` is not differentiable at its simple pole
+`s = 1`. -/
+theorem not_differentiableAt_LFunctionTrivChar_one :
+    ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
+  intro hd
+  have hnonneg : 0 ≤ meromorphicOrderAt (LFunctionTrivChar N) 1 :=
+    Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
+      ((hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).isBigO_one ℝ)
+  rw [meromorphicOrderAt_LFunctionTrivChar_one] at hnonneg
+  change ((0 : ℤ) : WithTop ℤ) ≤ ((-1 : ℤ) : WithTop ℤ) at hnonneg
+  rw [WithTop.coe_le_coe] at hnonneg
+  omega
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` is differentiable at `s` if and only if
+`s ≠ 1` or `χ ≠ 1`. -/
+@[simp]
+theorem differentiableAt_LFunction_iff (s : ℂ) :
+    DifferentiableAt ℂ χ.LFunction s ↔ s ≠ 1 ∨ χ ≠ 1 := by
+  refine ⟨fun hd ↦ by_contra fun h ↦ ?_, χ.differentiableAt_LFunction s⟩
+  obtain ⟨hs1, hχ1⟩ := not_or.mp h
+  rw [not_ne_iff.mp hs1, not_ne_iff.mp hχ1] at hd
+  exact not_differentiableAt_LFunctionTrivChar_one hd
+
 /-- The continued Dirichlet `L`-function `χ.LFunction` has positive meromorphic order at `s` if and
 only if `χ.LFunction s = 0` and `(s ≠ 1 ∨ χ ≠ 1)`. -/
+@[simp]
 theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
     0 < meromorphicOrderAt χ.LFunction s ↔ χ.LFunction s = 0 ∧ (s ≠ 1 ∨ χ ≠ 1) := by
   by_cases hs : s = 1 ∧ χ = 1

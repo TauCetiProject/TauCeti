@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.Nonvanishing
+public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Complex.LocalLogDeriv
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
+import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.ThreeFourOne
 
 /-!
@@ -34,10 +38,14 @@ corresponding real series.
 
 The file also records the triangle-inequality comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ))` on
 `1 < σ ≤ re s`, its tail-extension corollary from `re s ≤ σ₀` to all `s : ℂ`, the classical
-nonnegative combinations of logarithmic derivatives (`Re (ζ′/ζ(re s)) + Re (L′/L(s, χ)) ≤ 0` and
-`3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`), and the level-change
-comparison `‖L′/L(s, changeLevel hMN ψ) - L′/L(s, ψ)‖ ≤ log N` on `1 ≤ re s` (specializing to
-`‖L′/L(s, 1_N) - ζ′/ζ(s)‖ ≤ log N`).
+nonpositive weighted sums of real logarithmic derivatives
+(`Re (ζ′/ζ(re s)) + Re (L′/L(s, χ)) ≤ 0` and
+`3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`), the level-change
+comparison `‖logDeriv (changeLevel hMN ψ).LFunction s - logDeriv ψ.LFunction s‖ ≤ log N` on
+`1 ≤ re s` (specializing to `‖logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s‖ ≤ log N`,
+where at the principal pole `s = 1` both terms vanish by Lean's totalization), and Landau's uniform
+upper bound `-(logDeriv χ.LFunction s).re ≪ log (N * (|s.im| + 3))` on `1 ≤ s.re` for
+nonprincipal `χ` (with its retained-zero form).
 
 The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_div`, is in
 `TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt`.
@@ -60,7 +68,7 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
   terms of the twisted von Mangoldt series.
 * `DirichletCharacter.norm_logDeriv_LFunction_le_of_le_re`,
   `DirichletCharacter.norm_logDeriv_LFunction_le`,
-  `DirichletCharacter.neg_re_logDeriv_LFunction_le_max_of_re_le`,
+  `DirichletCharacter.neg_re_logDeriv_LFunction_le_max_of_bound_on_left`,
   `DirichletCharacter.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos`, and
   `DirichletCharacter.threeFourOne_re_logDeriv_riemannZeta_LFunction_nonpos`: the half-plane
   triangle inequality, its right-tail extension, and the `1 + χ` and `3-4-1` logarithmic-derivative
@@ -68,6 +76,15 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
 * `DirichletCharacter.norm_logDeriv_LFunction_changeLevel_sub_le` and
   `DirichletCharacter.norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le`: the
   deleted-Euler-factor logarithmic-derivative bounds on `1 ≤ re s`.
+* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le` and
+  `DirichletCharacter.exists_neg_re_logDeriv_LFunction_le`: Landau's retained-zero and uniform
+  upper bounds for `-Re (logDeriv χ.LFunction s)` on `1 ≤ re s` when `χ ≠ 1`.
+
+## References
+
+* Michael Stoll, David Loeffler, and Terence Tao,
+  `DirichletCharacter.LFunction_ne_zero_of_one_le_re` in
+  `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 -/
 
 public section
@@ -265,7 +282,7 @@ theorem im_logDeriv_LFunction_ofReal [NeZero N] {σ : ℝ} (hσ : 1 < σ) :
 
 end Real
 
-/-! ### Nonnegative combinations and deleted Euler factors -/
+/-! ### Nonpositive combinations and deleted Euler factors -/
 
 /-- **Triangle-inequality bound for `L′/L` against `-ζ′/ζ`.** For every Dirichlet character `χ` of
 positive level, `1 < σ` and `σ ≤ s.re`, `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ))`. -/
@@ -276,13 +293,18 @@ theorem norm_logDeriv_LFunction_le_of_le_re [NeZero N] {σ : ℝ} (hσ : 1 < σ)
   have hσ' : 1 < (σ : ℂ).re := by simpa using hσ
   have S₀ := LSeriesSummable_twist_vonMangoldt χ₀ hσ'
   have hterm₀ (n : ℕ) : ‖term (↗χ * ↗Λ) s n‖ ≤ (term (↗χ₀ * ↗Λ) σ n).re := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    have hn1 : (1 : ℝ) ≤ n := mod_cast Nat.one_le_iff_ne_zero.mpr hn
-    rw [χ.norm_term_twist_vonMangoldt, re_term_modOne_twist_vonMangoldt_ofReal]
-    exact div_le_div₀ vonMangoldt_nonneg
-      (mul_le_of_le_one_left vonMangoldt_nonneg (χ.norm_le_one n))
-      (by positivity) (Real.rpow_le_rpow_of_exponent_le hn1 hs)
+    calc ‖term (↗χ * ↗Λ) s n‖
+        ≤ ‖term (↗χ * ↗Λ) σ n‖ := LSeries.norm_term_le_of_re_le_re _ (by simpa using hs) n
+      _ ≤ ‖term (↗χ₀ * ↗Λ) σ n‖ := by
+          refine LSeries.norm_term_le _ ?_
+          simpa [Subsingleton.elim χ₀ 1, MulChar.one_apply (isUnit_of_subsingleton _)]
+            using mul_le_of_le_one_left (norm_nonneg (Λ n : ℂ)) (χ.norm_le_one n)
+      _ = (term (↗χ₀ * ↗Λ) σ n).re := by
+          rcases eq_or_ne n 0 with rfl | hn0
+          · simp
+          rw [norm_term_eq, re_term_modOne_twist_vonMangoldt_ofReal]
+          simp [hn0, Real.norm_of_nonneg vonMangoldt_nonneg,
+            Subsingleton.elim χ₀ 1, MulChar.one_apply (isUnit_of_subsingleton _)]
   rw [← LFunction_modOne_eq (χ := χ₀), χ₀.logDeriv_LFunction_eq_neg_LSeries hσ',
     χ.logDeriv_LFunction_eq_neg_LSeries hs', norm_neg, Complex.neg_re, neg_neg, LSeries, LSeries]
   exact tsum_of_norm_bounded (Complex.hasSum_re S₀.hasSum) hterm₀
@@ -296,7 +318,7 @@ theorem norm_logDeriv_LFunction_le [NeZero N] (hs : 1 < s.re) :
 /-- Extending an upper bound `-(logDeriv (LFunction χ) s).re ≤ A₀ * M` from `s.re ≤ σ₀` (`1 < σ₀`)
 to arbitrary `s : ℂ` via the Dirichlet-series comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ₀))` on
 `σ₀ ≤ s.re`. -/
-theorem neg_re_logDeriv_LFunction_le_max_of_re_le [NeZero N] {σ₀ A₀ M₀ M : ℝ}
+theorem neg_re_logDeriv_LFunction_le_max_of_bound_on_left [NeZero N] {σ₀ A₀ M₀ M : ℝ}
     (hσ₀ : 1 < σ₀) (hM₀ : 0 < M₀) (hM : M₀ ≤ M)
     (hre : s.re ≤ σ₀ → -(logDeriv (LFunction χ) s).re ≤ A₀ * M) :
     -(logDeriv (LFunction χ) s).re ≤ max A₀ (-(logDeriv riemannZeta σ₀).re / M₀) * M := by
@@ -365,7 +387,7 @@ omit χ in
 /-- **Deleted Euler factors in the logarithmic derivative under level change.** On the closed
 half-plane `1 ≤ re s`, raising the level of a character `ψ` modulo `M` to a multiple `N` changes
 `logDeriv` by at most `log N` in norm. At `s = 1` for `ψ = 1`, both `L`-functions fail to be
-differentiable so both logarithmic derivatives vanish. -/
+differentiable so both logarithmic derivatives vanish by Lean's totalization. -/
 theorem norm_logDeriv_LFunction_changeLevel_sub_le {M : ℕ} [NeZero M] [NeZero N]
     (ψ : DirichletCharacter ℂ M) (hMN : M ∣ N) (hs : 1 ≤ s.re) :
     ‖logDeriv (changeLevel hMN ψ).LFunction s - logDeriv ψ.LFunction s‖ ≤ Real.log N := by
@@ -380,26 +402,21 @@ theorem norm_logDeriv_LFunction_changeLevel_sub_le {M : ℕ} [NeZero M] [NeZero 
   have h : s ≠ 1 ∨ ψ ≠ 1 := not_and_or.mp h1
   set f : ℕ → ℂ → ℂ := fun p z ↦ 1 - ψ p * (p : ℂ) ^ (-z)
   have hdf (p : ℕ) (hp : p ∈ N.primeFactors) : Differentiable ℂ (f p) :=
-    differentiable_one_sub_mul_natCast_cpow ψ (Nat.prime_of_mem_primeFactors hp).ne_zero
+    Complex.differentiable_one_sub_mul_cpow_neg
+      (mod_cast (Nat.prime_of_mem_primeFactors hp).ne_zero) _
   have hPs : (∏ p ∈ N.primeFactors, f p) s ≠ 0 := by
     simpa [f, Finset.prod_apply] using
       prod_one_sub_mul_prime_cpow_ne_zero (N := N) ψ (zero_lt_one.trans_le hs)
   have hnef (p : ℕ) (hp : p ∈ N.primeFactors) : f p s ≠ 0 :=
     prod_ne_zero_iff.mp (by simpa [Finset.prod_apply] using hPs) p hp
   have hPdiff : Differentiable ℂ (∏ p ∈ N.primeFactors, f p) :=
-    differentiable_prod_one_sub_mul_prime_cpow ψ
-  have heq : (changeLevel hMN ψ).LFunction =ᶠ[𝓝 s] ψ.LFunction * ∏ p ∈ N.primeFactors, f p := by
-    rcases h with hs1 | hψ
-    · filter_upwards [eventually_ne_nhds hs1] with z hz
-      simp [f, Finset.prod_apply, LFunction_changeLevel hMN ψ (.inr hz)]
-    · exact Eventually.of_forall fun z ↦ by
-        simp [f, Finset.prod_apply, LFunction_changeLevel hMN ψ (.inl hψ)]
+    Differentiable.finsetProd fun p hp ↦ hdf p hp
   have hlog : logDeriv (changeLevel hMN ψ).LFunction s - logDeriv ψ.LFunction s =
       ∑ p ∈ N.primeFactors, logDeriv (f p) s := by
-    rw [(logDeriv_congr_nhds heq).eq_of_nhds,
-      logDeriv_mul s (LFunction_ne_zero_of_one_le_re ψ h.symm hs) hPs
-        (ψ.differentiableAt_LFunction s h) (hPdiff s),
-      add_sub_cancel_left]
+    rw [(logDeriv_congr_nhds (LFunction_changeLevel_eventuallyEq_nhds ψ hMN h)).eq_of_nhds,
+      logDeriv_mul s hPs (LFunction_ne_zero_of_one_le_re ψ h.symm hs)
+        (hPdiff s) (ψ.differentiableAt_LFunction s h),
+      add_sub_cancel_right]
     exact logDeriv_prod hnef fun p hp ↦ hdf p hp s
   have hsum_log : ∑ p ∈ N.primeFactors, Real.log p ≤ Real.log N := by
     simpa [Nat.cast_prod] using Int.sum_mul_log_le_log_abs (P := N.primeFactors) (fun _ ↦ 1)
@@ -412,12 +429,89 @@ theorem norm_logDeriv_LFunction_changeLevel_sub_le {M : ℕ} [NeZero M] [NeZero 
 
 omit χ in
 /-- **Deleted Euler factors in the logarithmic derivative of the principal character.** On the
-closed half-plane `1 ≤ re s`, the logarithmic derivative of `LFunctionTrivChar N` differs from
-`ζ′/ζ(s)` by at most `log N` in norm. -/
+closed half-plane `1 ≤ re s`, `logDeriv (LFunctionTrivChar N) s` differs from
+`logDeriv riemannZeta s` by at most `log N` in norm. At the principal pole `s = 1`, both terms
+vanish by Lean's totalization. -/
 theorem norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le [NeZero N] (hs : 1 ≤ s.re) :
     ‖logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s‖ ≤ Real.log N := by
   have hch : changeLevel (one_dvd N) (1 : DirichletCharacter ℂ 1) = 1 := map_one _
   simpa [hch, LFunctionTrivChar, LFunction_modOne_eq] using
     norm_logDeriv_LFunction_changeLevel_sub_le (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
+
+/-! ### Uniform Landau logarithmic-derivative bounds for nonprincipal characters -/
+
+private theorem norm_LFunction_on_closedBall {q : ℕ} [NeZero q] {χ : DirichletCharacter ℂ q}
+    (hχ : χ ≠ 1) {t : ℝ} {w : ℂ}
+    (hw : w ∈ Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) (1 / 2)) :
+    5 / 8 ≤ w.re ∧ ‖χ.LFunction w‖ ≤ 2 * ((q : ℝ) * (|t| + 3)) := by
+  have hre_diff : |w.re - 9 / 8| ≤ 1 / 2 := by
+    simpa using RCLike.abs_re_sub_le_of_mem_closedBall hw
+  have hw_re : 5 / 8 ≤ w.re := by linarith [(abs_le.mp hre_diff).1]
+  have hwn : ‖w‖ ≤ |t| + 3 := by
+    have h : ‖w‖ ≤ |(9 / 8 : ℝ)| + |t| + 1 / 2 :=
+      RCLike.norm_le_of_mem_closedBall_ofReal_add_mul_I hw
+    rw [abs_of_nonneg (by norm_num)] at h
+    linarith
+  refine ⟨hw_re, ?_⟩
+  calc ‖χ.LFunction w‖ ≤ (q : ℝ) * ‖w‖ / w.re :=
+      χ.norm_LFunction_le_level_mul_norm_div_re hχ (by linarith)
+    _ ≤ (q : ℝ) * (|t| + 3) / (5 / 8) := by gcongr
+    _ ≤ 2 * ((q : ℝ) * (|t| + 3)) := by
+      have hq0 : 0 ≤ (q : ℝ) * (|t| + 3) := by positivity
+      linarith
+
+omit χ in
+/-- **Retained-zero Landau upper bound for `-Re (L′/L)` of a nonprincipal character.** There is an
+absolute constant `A > 0` such that for `χ ≠ 1` modulo `q ≥ 1`, `1 ≤ σ ≤ 9 / 8`, and any
+`S : Finset ℂ`, retaining the divisor-weighted zero terms over `S` still gives an
+`A * Real.log (q * (|t| + 3))` upper bound. -/
+theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
+    ∃ A : ℝ, 0 < A ∧ ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ ≠ 1 →
+      ∀ {σ t : ℝ}, 1 ≤ σ → σ ≤ 9 / 8 → ∀ S : Finset ℂ,
+        -(logDeriv χ.LFunction (σ + t * Complex.I)).re +
+            ∑ ρ ∈ S, (MeromorphicOn.divisor χ.LFunction
+              (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
+              ((((σ : ℂ) + t * Complex.I) - ρ)⁻¹).re ≤
+          A * Real.log (q * (|t| + 3)) := by
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le
+    (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
+    (c := 2) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
+  refine ⟨A, hA, fun {q} _ χ hχ {σ t} hσ1 hσ2 S ↦ ?_⟩
+  have hf : AnalyticOnNhd ℂ χ.LFunction
+      (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) (1 / 2)) :=
+    fun z _ ↦ (differentiable_LFunction hχ).analyticAt z
+  have hb₀ : Real.exp (-(riemannZeta (9 / 8 : ℝ)).re) ≤
+      ‖χ.LFunction ((9 / 8 : ℝ) + t * Complex.I)‖ := by
+    simpa using χ.exp_neg_re_riemannZeta_le_norm_LFunction
+      (s := (9 / 8 : ℝ) + t * Complex.I) (by simp; norm_num)
+  have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
+  have hz : ‖((σ : ℂ) + t * Complex.I) - ((9 / 8 : ℝ) + t * Complex.I)‖ ≤ (1 / 2 : ℝ) / 4 := by
+    rw [← dist_eq_norm, Complex.dist_of_im_eq (by simp), Real.dist_eq]
+    simpa [abs_le] using ⟨by linarith, by linarith⟩
+  exact hLandau hf hb₀
+    (fun w hw ↦ (norm_LFunction_on_closedBall hχ (Metric.sphere_subset_closedBall hw)).2) hz
+    (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp [hσ1]))
+    (fun ρ _ h0 ↦ (not_le.mp fun h1 ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) h1 h0).le.trans
+      (by simp [hσ1]))
+    (by nlinarith [abs_nonneg t]) S
+
+omit χ in
+/-- **Upper bound for `-Re (L′/L)` of a nonprincipal character across `1 ≤ Re s`.** There is an
+absolute constant `A > 0` such that
+`-(logDeriv χ.LFunction s).re ≤ A * Real.log (q * (|s.im| + 3))` for every modulus `q ≥ 1`, every
+`χ ≠ 1` modulo `q`, and every `s : ℂ` with `1 ≤ s.re`. -/
+theorem exists_neg_re_logDeriv_LFunction_le :
+    ∃ A : ℝ, 0 < A ∧ ∀ {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q), χ ≠ 1 →
+      ∀ {s : ℂ}, 1 ≤ s.re →
+        -(logDeriv χ.LFunction s).re ≤ A * Real.log (q * (|s.im| + 3)) := by
+  obtain ⟨A₀, hA₀, h⟩ := exists_neg_re_logDeriv_LFunction_add_sum_le
+  have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
+  let σ₀ : ℝ := 9 / 8
+  refine ⟨max A₀ (-(logDeriv riemannZeta σ₀).re / Real.log 3), lt_max_of_lt_left hA₀,
+    fun {q} _ χ hχ {s} hs ↦ ?_⟩
+  have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
+  exact χ.neg_re_logDeriv_LFunction_le_max_of_bound_on_left (σ₀ := σ₀) (by norm_num [σ₀]) hlog3
+    (Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg s.im])) fun hs9 ↦ by
+      simpa [Complex.re_add_im s] using h χ hχ (t := s.im) hs hs9 ∅
 
 end DirichletCharacter

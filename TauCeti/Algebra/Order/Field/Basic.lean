@@ -111,9 +111,9 @@ zero only at `0`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
-* `TauCeti.le_div_mul_of_le`, `TauCeti.div_le_of_le_mul_of_le`,
-  `TauCeti.mul_lt_mul_inv_of_le_div_two_mul`: rescaling bounds across `0 < a ≤ b` and comparing
-  `M * L` against `a * δ⁻¹` when `δ ≤ (a / (2 * M)) / L`.
+* `TauCeti.le_div_mul_of_le`, `TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv`: rescaling bounds
+  across `0 < a ≤ b` and choosing a uniform cutoff constant `c > 0` yielding both `δ ≤ cutoff`
+  and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
@@ -444,30 +444,31 @@ theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStri
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
 
 /-- Rescaling a nonnegative bound across a positive threshold `a ≤ b`: `c ≤ c / a * b`. -/
-theorem le_div_mul_of_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a b c : α} (hc : 0 ≤ c) (ha : 0 < a) (hab : a ≤ b) : c ≤ c / a * b :=
+theorem le_div_mul_of_le {α : Type*} [CommGroupWithZero α] [LinearOrder α]
+    [PosMulMono α] [PosMulReflectLT α] {a b c : α}
+    (hc : 0 ≤ c) (ha : 0 < a) (hab : a ≤ b) : c ≤ c / a * b :=
   (div_mul_cancel₀ c ha.ne').symm.trans_le (mul_le_mul_of_nonneg_left hab (div_nonneg hc ha.le))
 
-/-- If `c ≤ r * a` with `0 ≤ r` and `0 ≤ a ≤ b`, then `c / b ≤ r` (including `a = b = 0`, where
-`c / 0 = 0 ≤ r`). -/
-theorem div_le_of_le_mul_of_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
-    {a b c r : α} (hr : 0 ≤ r) (ha : 0 ≤ a) (hab : a ≤ b) (hc : c ≤ r * a) :
-    c / b ≤ r := by
-  rcases (ha.trans hab).eq_or_lt with rfl | hb
-  · simp [hr]
-  · exact (div_le_iff₀ hb).2 (hc.trans (mul_le_mul_of_nonneg_left hab hr))
-
-/-- If `0 < δ ≤ (a / (2 * M)) / L` with `0 < M` and `0 < L`, then `M * L < a * δ⁻¹` (in fact
-`M * L ≤ (a / 2) * δ⁻¹` and `0 < a`). -/
-theorem mul_lt_mul_inv_of_le_div_two_mul {α : Type*} [Semifield α] [LinearOrder α]
-    [IsStrictOrderedRing α] {a δ M L : α} (hδ : 0 < δ) (hM : 0 < M) (hL : 0 < L)
-    (h : δ ≤ a / (2 * M) / L) : M * L < a * δ⁻¹ := by
-  have ha : 0 < a := (by positivity : 0 < δ * L * (2 * M)).trans_le
-    ((le_div_iff₀ (by positivity : 0 < 2 * M)).1 ((le_div_iff₀ hL).1 h))
+/-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
+`c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both
+`δ ≤ cutoff` and `M * L < weight * δ⁻¹`. -/
+theorem exists_pos_le_mul_and_mul_lt_mul_inv {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {cutoff L₀ weight M : α}
+    (hcutoff : 0 < cutoff) (hL₀ : 0 < L₀) (hweight : 0 < weight) (hM : 0 < M) :
+    ∃ c : α, 0 < c ∧ c ≤ cutoff * L₀ ∧
+      ∀ {δ L : α}, 0 < δ → L₀ ≤ L → δ ≤ c / L →
+        δ ≤ cutoff ∧ M * L < weight * δ⁻¹ := by
+  refine ⟨min (cutoff * L₀) (weight / (2 * M)), by positivity, min_le_left _ _,
+    fun {δ L} hδ hL hδc ↦ ?_⟩
+  have hLpos : 0 < L := hL₀.trans_le hL
+  refine ⟨hδc.trans (div_le_of_le_mul₀ hLpos.le hcutoff.le
+    ((min_le_left _ _).trans (mul_le_mul_of_nonneg_left hL hcutoff.le))), ?_⟩
   rw [lt_mul_inv_iff₀ hδ]
-  calc M * L * δ ≤ M * L * (a / (2 * M) / L) := by gcongr
-    _ = a / 2 := by field_simp
-    _ < a := half_lt_self ha
+  calc M * L * δ ≤ M * L * (weight / (2 * M) / L) := by
+        gcongr
+        exact hδc.trans (div_le_div_of_nonneg_right (min_le_right _ _) hLpos.le)
+    _ = weight / 2 := by field_simp
+    _ < weight := half_lt_self hweight
 
 /-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
 theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]

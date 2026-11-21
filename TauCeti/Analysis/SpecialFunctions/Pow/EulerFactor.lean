@@ -23,6 +23,12 @@ public section
 open Complex Real
 namespace Complex
 
+/-- A weighted exponential Euler factor `z ↦ 1 - a * q ^ (-z)` with `q ≠ 0` is entire. -/
+@[fun_prop]
+theorem differentiable_one_sub_mul_cpow_neg {q : ℂ} (hq : q ≠ 0) (a : ℂ) :
+    Differentiable ℂ fun z : ℂ ↦ 1 - a * q ^ (-z) := by
+  fun_prop (disch := exact Or.inl hq)
+
 /-- The logarithmic derivative of a weighted exponential Euler factor, with total division. -/
 theorem logDeriv_one_sub_mul_cpow_neg {q : ℂ} (hq : q ≠ 0) (a s : ℂ) :
     logDeriv (fun z : ℂ ↦ 1 - a * q ^ (-z)) s =

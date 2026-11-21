@@ -20,6 +20,13 @@ public import Mathlib.Analysis.RCLike.Basic
   jointly continuous `K`-scalar multiplication.
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
+* `RCLike.inv_re_le_inv_two_mul_abs_im`: off the real axis, `re z⁻¹ ≤ (2 * |im z|)⁻¹`.
+* `RCLike.abs_re_sub_le_of_mem_closedBall`, `RCLike.abs_im_sub_le_of_mem_closedBall`,
+  `RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall`,
+  `RCLike.norm_le_of_mem_closedBall_ofReal_add_mul_I`, and
+  `RCLike.mem_closedBall_of_abs_re_sub_add_abs_im_sub_le`: coordinate bounds on and membership
+  in closed balls.
+* `RCLike.sub_eq_ofReal_re_sub_of_im_eq`: horizontal differences are real casts.
 -/
 
 public section
@@ -60,5 +67,50 @@ theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z
     re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
   simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
     lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
+
+/-- Off the real axis, the real part of `z⁻¹` is at most `(2 * |im z|)⁻¹`. -/
+theorem inv_re_le_inv_two_mul_abs_im {z : K} (hz : im z ≠ 0) :
+    re z⁻¹ ≤ (2 * |im z|)⁻¹ := by
+  have : 0 < |im z| := abs_pos.2 hz
+  have : 0 < re z * re z + im z * im z :=
+    add_pos_of_nonneg_of_pos (mul_self_nonneg (re z)) (mul_self_pos.2 hz)
+  rw [inv_re, normSq_apply, div_le_iff₀ this, le_inv_mul_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (re z - |im z|), sq_abs (im z)]
+
+/-- On `closedBall z₀ r`, the real part differs from `re z₀` by at most `r`. -/
+theorem abs_re_sub_le_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |re z - re z₀| ≤ r := by
+  simpa only [← map_sub] using (abs_re_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the imaginary part differs from `im z₀` by at most `r`. -/
+theorem abs_im_sub_le_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : |im z - im z₀| ≤ r := by
+  simpa only [← map_sub] using (abs_im_le_norm (z - z₀)).trans (by simpa [dist_eq_norm] using hz)
+
+/-- On `closedBall z₀ r`, the norm of `z` is at most `|re z₀| + |im z₀| + r`. -/
+theorem norm_le_abs_re_add_abs_im_add_of_mem_closedBall {z z₀ : K} {r : ℝ}
+    (hz : z ∈ Metric.closedBall z₀ r) : ‖z‖ ≤ |re z₀| + |im z₀| + r :=
+  (norm_le_of_mem_closedBall hz).trans (add_le_add_left (norm_le_abs_re_add_abs_im z₀) r)
+
+/-- On `closedBall ((x : K) + y * I) r`, the norm of `w` is at most `|x| + |y| + r`. -/
+theorem norm_le_of_mem_closedBall_ofReal_add_mul_I {w : K} {x y r : ℝ}
+    (hw : w ∈ Metric.closedBall ((x : K) + y * I) r) : ‖w‖ ≤ |x| + |y| + r := by
+  refine (norm_le_of_mem_closedBall hw).trans (add_le_add_left ?_ r)
+  calc ‖(x : K) + y * I‖ ≤ ‖(x : K)‖ + ‖(y : K) * I‖ := norm_add_le _ _
+    _ ≤ |x| + |y| := by
+      rw [norm_ofReal, norm_mul, norm_ofReal, norm_I]
+      split_ifs <;> simp [abs_nonneg]
+
+/-- If `|re z - re w| + |im z - im w| ≤ r`, then `z ∈ Metric.closedBall w r`. -/
+theorem mem_closedBall_of_abs_re_sub_add_abs_im_sub_le {z w : K} {r : ℝ}
+    (h : |re z - re w| + |im z - im w| ≤ r) : z ∈ Metric.closedBall w r := by
+  rw [Metric.mem_closedBall, dist_eq_norm]
+  exact (norm_le_abs_re_add_abs_im (z - w)).trans (by simpa [map_sub] using h)
+
+/-- Two scalars with the same imaginary part differ by the real cast of the difference of their
+real parts. -/
+theorem sub_eq_ofReal_re_sub_of_im_eq {z w : K} (h : im z = im w) :
+    z - w = ((re z - re w : ℝ) : K) :=
+  RCLike.ext (by simp) (by simp [h])
 
 end RCLike
