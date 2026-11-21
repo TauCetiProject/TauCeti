@@ -213,27 +213,10 @@ theorem average_smul (c : ℂ) (a : HomogeneousSymbol E E V W m) :
 homogeneous symbol along the action of any `h ∈ G` gives the average back. -/
 theorem transport_average [MeasurableMul G] [μ.IsMulLeftInvariant]
     (a : HomogeneousSymbol E E V W m) (h : G) :
-    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a := by
-  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
-  -- Conjugation by `σ(h)`, `τ(h)` passes through the integral; then the transports compose and
-  -- the measure is invariant under `g ↦ h g`.
-  have hconj (T : V →L[ℂ] W) : (τ h : W →L[ℂ] W) ∘L T ∘L ((σ h).symm : V →L[ℂ] V) =
-      (σ h).arrowCongr (τ h) T :=
-    ContinuousLinearMap.ext fun v ↦ by simp
-  have hgh (g : G) : (σ h).arrowCongr (τ h) ((transport (ρ g) (σ g) (τ g) a).coefficient
-      ((ρ h).symm p.1, (ρ h).adjointEquiv p.2)) =
-      (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p := by
-    rw [← hconj, ← coefficient_transport, transport_transport, map_mul, map_mul, map_mul]
-  calc (transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a)).coefficient p
-      = (σ h).arrowCongr (τ h) (∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient
-          ((ρ h).symm p.1, (ρ h).adjointEquiv p.2) ∂μ) := by
-        rw [coefficient_transport, ← hconj, average, coefficient_integral]
-    _ = ∫ g, (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p ∂μ := by
-        rw [← ContinuousLinearEquiv.integral_comp_comm]
-        exact integral_congr_ae (Filter.Eventually.of_forall hgh)
-    _ = ∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
-        integral_mul_left_eq_self (fun g ↦ (transport (ρ g) (σ g) (τ g) a).coefficient p) h
-    _ = (average μ hρ hσ hτ a).coefficient p := by rw [average, coefficient_integral]
+    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
+  HomogeneousSymbol.ext (funext fun p ↦ by
+    simpa only [coefficient_transport, coefficient_average] using
+      comp_integral_transport_comp μ a.coefficient h p)
 
 /-- **Averaging fixes invariant homogeneous symbols.** For a probability measure, a homogeneous
 symbol invariant under the action of every `g ∈ G` is its own average. -/

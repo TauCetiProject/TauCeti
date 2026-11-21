@@ -92,6 +92,34 @@ theorem continuous_transportParams (hρ : Continuous fun g ↦ (ρ g : E →L[�
     (ContinuousLinearEquiv.continuous_adjointEquiv hρ)).prodMk
     (hτ.prodMk hσ.continuous_symm_of_monoidHom)
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- **Averaged coefficients are invariant.** For a left-invariant measure `μ` and any coefficient
+function `c`, the average `∫ τ(g) ∘ c(ρ(g)⁻¹ x, ρ(g)ᵀ ξ) ∘ σ(g)⁻¹ dμ(g)` of its transports is
+fixed by the transport along any `h ∈ G`. This is the common core of the invariance of averaged
+symbols and averaged homogeneous symbols. -/
+theorem comp_integral_transport_comp [MeasurableSpace G] [MeasurableMul G] (μ : Measure G)
+    [μ.IsMulLeftInvariant] (c : E × E → V →L[ℂ] W) (h : G) (p : E × E) :
+    (τ h : W →L[ℂ] W) ∘L (∫ g, (τ g : W →L[ℂ] W) ∘L
+        c ((ρ g).symm ((ρ h).symm p.1), (ρ g).adjointEquiv ((ρ h).adjointEquiv p.2)) ∘L
+          ((σ g).symm : V →L[ℂ] V) ∂μ) ∘L ((σ h).symm : V →L[ℂ] V) =
+      ∫ g, (τ g : W →L[ℂ] W) ∘L c ((ρ g).symm p.1, (ρ g).adjointEquiv p.2) ∘L
+        ((σ g).symm : V →L[ℂ] V) ∂μ := by
+  -- Conjugation by `σ(h)`, `τ(h)` passes through the integral; then the transports compose and
+  -- the measure is invariant under `g ↦ h g`.
+  have hconj (T : V →L[ℂ] W) : (τ h : W →L[ℂ] W) ∘L T ∘L ((σ h).symm : V →L[ℂ] V) =
+      (σ h).arrowCongr (τ h) T :=
+    ContinuousLinearMap.ext fun v ↦ by simp
+  rw [hconj, ← ContinuousLinearEquiv.integral_comp_comm]
+  calc _ = ∫ g, (τ (h * g) : W →L[ℂ] W) ∘L
+        c ((ρ (h * g)).symm p.1, (ρ (h * g)).adjointEquiv p.2) ∘L
+          ((σ (h * g)).symm : V →L[ℂ] V) ∂μ := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
+        refine ContinuousLinearMap.ext fun v ↦ ?_
+        simp [ContinuousLinearEquiv.mul_eq_trans, ContinuousLinearEquiv.adjointEquiv_apply,
+          ← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.adjoint_comp]
+    _ = _ := integral_mul_left_eq_self (fun g ↦ (τ g : W →L[ℂ] W) ∘L
+        c ((ρ g).symm p.1, (ρ g).adjointEquiv p.2) ∘L ((σ g).symm : V →L[ℂ] V)) h
+
 end TransportParams
 
 section SchwartzRep
@@ -405,27 +433,10 @@ variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 /-- **The average is invariant.** For a left-invariant measure, transporting the average along
 the action of any `h ∈ G` gives the average back. -/
 theorem transport_average (a : Symbol n V W m) (h : G) :
-    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a := by
-  refine Symbol.ext (funext fun p ↦ ?_)
-  -- Conjugation by `σ(h)`, `τ(h)` passes through the integral; then the transports compose and
-  -- the measure is invariant under `g ↦ h g`.
-  have hconj (T : V →L[ℂ] W) : (τ h : W →L[ℂ] W) ∘L T ∘L ((σ h).symm : V →L[ℂ] V) =
-      (σ h).arrowCongr (τ h) T :=
-    ContinuousLinearMap.ext fun v ↦ by simp
-  have hgh (g : G) : (σ h).arrowCongr (τ h) ((transport (ρ g) (σ g) (τ g) a).coefficient
-      ((ρ h).symm p.1, (ρ h).adjointEquiv p.2)) =
-      (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p := by
-    rw [← hconj, ← coefficient_transport, transport_transport, map_mul, map_mul, map_mul]
-  calc (transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a)).coefficient p
-      = (σ h).arrowCongr (τ h) (∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient
-          ((ρ h).symm p.1, (ρ h).adjointEquiv p.2) ∂μ) := by
-        rw [coefficient_transport, ← hconj, average, coefficient_integral]
-    _ = ∫ g, (transport (ρ (h * g)) (σ (h * g)) (τ (h * g)) a).coefficient p ∂μ := by
-        rw [← ContinuousLinearEquiv.integral_comp_comm]
-        exact integral_congr_ae (Filter.Eventually.of_forall hgh)
-    _ = ∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
-        integral_mul_left_eq_self (fun g ↦ (transport (ρ g) (σ g) (τ g) a).coefficient p) h
-    _ = (average μ hρ hσ hτ a).coefficient p := by rw [average, coefficient_integral]
+    transport (ρ h) (σ h) (τ h) (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
+  Symbol.ext (funext fun p ↦ by
+    simpa only [coefficient_transport, coefficient_average] using
+      comp_integral_transport_comp μ a.coefficient h p)
 
 open scoped FourierTransform in
 /-- **The averaged operator is equivariant.** For a left-invariant measure, the quantization of
