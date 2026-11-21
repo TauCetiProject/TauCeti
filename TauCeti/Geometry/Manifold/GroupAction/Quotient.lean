@@ -683,12 +683,7 @@ theorem contMDiffSMul_orbitRelQuotient (hm : m ≤ ∞) {EL HL L : Type*} [Norme
   have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
   refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
     (surjective_id.prodMap Quotient.mk_surjective) hm).1 ?_⟩
-  -- On representatives the action is that of `L` on `M`, followed by the projection.
-  have hcomp : (fun p : L × _root_.MulAction.orbitRel.Quotient G M ↦ p.1 • p.2) ∘
-      Prod.map id (Quotient.mk (_root_.MulAction.orbitRel G M)) =
-      Quotient.mk (_root_.MulAction.orbitRel G M) ∘ fun p : L × M ↦ p.1 • p.2 :=
-    funext fun p ↦ _root_.MulAction.orbitRel.Quotient.smul_mk p.1 p.2
-  rw [hcomp]
+  rw [_root_.MulAction.orbitRel.Quotient.smul_comp_prodMap_mk]
   exact (hπ.contMDiff.of_le hm).comp ContMDiffSMul.contMDiff_smul
 
 /-- **Commuting actions by smooth maps descend to the orbit manifold.** For a free proper smooth Lie
@@ -703,11 +698,7 @@ theorem contMDiffConstSMul_orbitRelQuotient (hm : m ≤ ∞) {L : Type*} [SMul L
   let _ := orbitRelQuotientChartedSpace I G I' M
   have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
   refine ⟨fun l ↦ (hπ.contMDiff_comp_iff Quotient.mk_surjective hm).1 ?_⟩
-  have hcomp : (fun q : _root_.MulAction.orbitRel.Quotient G M ↦ l • q) ∘
-      Quotient.mk (_root_.MulAction.orbitRel G M) =
-      Quotient.mk (_root_.MulAction.orbitRel G M) ∘ fun x : M ↦ l • x :=
-    funext fun x ↦ _root_.MulAction.orbitRel.Quotient.smul_mk l x
-  rw [hcomp]
+  rw [_root_.MulAction.orbitRel.Quotient.smul_comp_mk]
   exact (hπ.contMDiff.of_le hm).comp (contMDiff_const_smul l)
 
 variable (I) in
@@ -1159,11 +1150,7 @@ theorem contMDiffVAdd_orbitRelQuotient (hm : m ≤ ∞) {EL HL L : Type*} [Norme
   have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
   refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
     (surjective_id.prodMap Quotient.mk_surjective) hm).1 ?_⟩
-  have hcomp : (fun p : L × _root_.AddAction.orbitRel.Quotient G M ↦ p.1 +ᵥ p.2) ∘
-      Prod.map id (Quotient.mk (_root_.AddAction.orbitRel G M)) =
-      Quotient.mk (_root_.AddAction.orbitRel G M) ∘ fun p : L × M ↦ p.1 +ᵥ p.2 :=
-    funext fun p ↦ _root_.AddAction.orbitRel.Quotient.vadd_mk p.1 p.2
-  rw [hcomp]
+  rw [_root_.AddAction.orbitRel.Quotient.vadd_comp_prodMap_mk]
   exact (hπ.contMDiff.of_le hm).comp ContMDiffVAdd.contMDiff_vadd
 
 /-- For a free proper smooth additive Lie group action of `G` on `M` and `m ≤ ∞`, an additive
@@ -1177,11 +1164,7 @@ theorem contMDiffConstVAdd_orbitRelQuotient (hm : m ≤ ∞) {L : Type*} [VAdd L
   let _ := orbitRelQuotientChartedSpace I G I' M
   have hπ := isSubmersion_quotientMk (I := I) (G := G) (I' := I') (M := M)
   refine ⟨fun l ↦ (hπ.contMDiff_comp_iff Quotient.mk_surjective hm).1 ?_⟩
-  have hcomp : (fun q : _root_.AddAction.orbitRel.Quotient G M ↦ l +ᵥ q) ∘
-      Quotient.mk (_root_.AddAction.orbitRel G M) =
-      Quotient.mk (_root_.AddAction.orbitRel G M) ∘ fun x : M ↦ l +ᵥ x :=
-    funext fun x ↦ _root_.AddAction.orbitRel.Quotient.vadd_mk l x
-  rw [hcomp]
+  rw [_root_.AddAction.orbitRel.Quotient.vadd_comp_mk]
   exact (hπ.contMDiff.of_le hm).comp (contMDiff_const_vadd l)
 
 variable (I) in

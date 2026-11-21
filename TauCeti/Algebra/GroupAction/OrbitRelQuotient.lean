@@ -95,7 +95,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
 * `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with that of
   `K` acts on the space of `K`-orbits by translating representatives
-  (`MulAction.orbitRel.Quotient.smul_mk`), and its additive version.
+  (`MulAction.orbitRel.Quotient.smul_mk`, `MulAction.orbitRel.Quotient.smul_comp_mk`,
+  `MulAction.orbitRel.Quotient.smul_comp_prodMap_mk`), and its additive version.
 * `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
   identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
@@ -997,6 +998,23 @@ instance instSMulOfSMulCommClass [SMul L Z] [SMulCommClass L K Z] :
 computed on representatives. -/]
 theorem smul_mk [SMul L Z] [SMulCommClass L K Z] (l : L) (z : Z) :
     l • Quotient.mk (orbitRel K Z) z = Quotient.mk (orbitRel K Z) (l • z) :=
+  rfl
+
+/-- The orbit projection intertwines a commuting action with its action on `K`-orbits. -/
+@[to_additive /-- The orbit projection intertwines a commuting additive action with its action on
+`K`-orbits. -/]
+theorem smul_comp_mk [SMul L Z] [SMulCommClass L K Z] (l : L) :
+    (fun q : orbitRel.Quotient K Z ↦ l • q) ∘ Quotient.mk (orbitRel K Z) =
+      Quotient.mk (orbitRel K Z) ∘ fun z : Z ↦ l • z :=
+  rfl
+
+/-- The orbit projection intertwines a commuting action, viewed as a map on pairs, with its
+action on `K`-orbits. -/
+@[to_additive vadd_comp_prodMap_mk /-- The orbit projection intertwines a commuting additive
+action, viewed as a map on pairs, with its action on `K`-orbits. -/]
+theorem smul_comp_prodMap_mk [SMul L Z] [SMulCommClass L K Z] :
+    (fun p : L × orbitRel.Quotient K Z ↦ p.1 • p.2) ∘ Prod.map id (Quotient.mk (orbitRel K Z)) =
+      Quotient.mk (orbitRel K Z) ∘ fun p : L × Z ↦ p.1 • p.2 :=
   rfl
 
 /-- A monoid action on `Z` commuting with the action of `K` descends to a monoid action on the

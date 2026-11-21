@@ -90,38 +90,6 @@ variable [Monoid L] [MulAction L M]
 
 /-! ### The action on the level -/
 
-omit [I'.Boundaryless] in
-variable (c) in
-/-- **A symmetry preserving `μ` acts on the level.** An action of `L` on `M` with
-`μ (l • x) = μ x` preserves the level `μ⁻¹(c)`, and restricts to an action on it. -/
-@[instance_reducible]
-def levelMulAction (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) :
-    MulAction L (h.levelSubMulAction c) where
-  smul l z := ⟨l • (z : M), h.mem_levelSubMulAction.2
-    ((hμL l z).trans (h.mem_levelSubMulAction.1 z.property))⟩
-  one_smul z := Subtype.ext (one_smul L (z : M))
-  mul_smul l l' z := Subtype.ext (mul_smul l l' (z : M))
-
-omit [I'.Boundaryless] in
-/-- The action of `L` on the level is the restriction of its action on `M`. -/
-@[simp]
-theorem coe_smul_levelMulAction (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (l : L)
-    (z : h.levelSubMulAction c) :
-    letI := h.levelMulAction c hμL
-    ((l • z : h.levelSubMulAction c) : M) = l • (z : M) :=
-  (rfl)
-
-omit [I'.Boundaryless] in
-variable (c) in
-/-- **The symmetry commutes with the stabilizer on the level.** Since `L` commutes with `G`, its
-action on the level `μ⁻¹(c)` commutes with that of the coadjoint stabilizer `G_c`. -/
-theorem smulCommClass_levelMulAction [SMulCommClass L G M]
-    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) :
-    letI := h.levelMulAction c hμL
-    SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
-  letI := h.levelMulAction c hμL
-  ⟨fun l k z ↦ Subtype.ext (smul_comm l (k : G) (z : M))⟩
-
 variable (c) in
 /-- **The symmetry acts by smooth maps on a regular level.** If `L` acts on `M` by smooth maps, it
 acts by smooth maps on the regular level `μ⁻¹(c)`, with the atlas
@@ -137,11 +105,7 @@ theorem contMDiffConstSMul_levelMulAction [ContMDiffConstSMul I' ∞ L M]
   let := h.levelMulAction c hμL
   have hi := h.isSmoothEmbedding_coe_levelSubMulAction hreg hn
   refine ⟨fun l ↦ hi.contMDiff_iff_comp.2 ?_⟩
-  -- The inclusion intertwines the actions on the level and on `M`.
-  have hcomp : (Subtype.val : h.levelSubMulAction c → M) ∘ (fun z ↦ l • z) =
-      (fun x : M ↦ l • x) ∘ Subtype.val :=
-    funext (h.coe_smul_levelMulAction (c := c) hμL l)
-  rw [hcomp]
+  rw [h.coe_comp_smul_levelMulAction hμL l]
   exact (contMDiff_const_smul l).comp hi.contMDiff
 
 variable (c) in
@@ -244,11 +208,8 @@ theorem mpullback_smul_orbitRelQuotient_eq_self [ContMDiffConstSMul I' ∞ L M]
     (fun z ↦ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).surjective_mfderiv
       (by simp) z) hl ?_ _ rfl
   -- The inclusion intertwines the actions on the level and on `M`, and `L` preserves `σ`.
-  have hcomp : (Subtype.val : h.levelSubMulAction c → M) ∘ (fun z ↦ l • z) =
-      (fun x : M ↦ l • x) ∘ Subtype.val :=
-    funext (h.coe_smul_levelMulAction (c := c) hμL l)
   rw [SmoothForm.mpullback_mpullback]
-  simp only [hcomp]
+  simp only [h.coe_comp_smul_levelMulAction hμL l]
   rw [← SmoothForm.mpullback_mpullback _ _ hi (contMDiff_const_smul l), hLσ l]
 
 end Quotient
