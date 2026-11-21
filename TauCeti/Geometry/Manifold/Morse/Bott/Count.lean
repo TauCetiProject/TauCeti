@@ -183,7 +183,7 @@ theorem morseBottCount_eq_criticalCount (hf : IsMorse I f) (j : ℕ) :
       {a // h.index a = j} := fun x ↦
     ⟨x.1, by
       have hx := x.2.pos
-      rw [hb x.1 x.1.2] at hx
+      rw [hb x.1 x.1.property] at hx
       by_contra hne
       simp [hne] at hx⟩
   have hφ : Bijective φ := by
@@ -206,7 +206,7 @@ theorem morseBottCount_eq_criticalCount (hf : IsMorse I f) (j : ℕ) :
     ext x
     refine ⟨?_, fun ⟨hx, hxj⟩ ↦ ?_⟩
     · rintro ⟨a, rfl⟩
-      exact ⟨h.range_subset_criticalPoints a (mem_range_self _), a.2⟩
+      exact ⟨h.range_subset_criticalPoints a (mem_range_self _), a.property⟩
     · obtain ⟨a, s, rfl⟩ := h.mem_criticalPoints_iff.1 hx
       obtain rfl : s = (h.nonempty a).some := (h.subsingleton_of_isMorse hf a).elim _ _
       exact ⟨⟨a, hxj⟩, rfl⟩
