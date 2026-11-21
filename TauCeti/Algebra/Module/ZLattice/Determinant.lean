@@ -71,8 +71,6 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
   discrete if and only if `L` is.
 * `ZLattice.card_discriminantGroup_comap`: the order of the discriminant group is invariant under
   linear isometry equivalences.
-* `ZLattice.span_eq_top_of_finite_discriminantGroup`: a lattice with finite discriminant group in
-  a finite-dimensional space spans the space over `ℝ`.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
 * `ZLattice.IsIntegral.finite_discriminantGroup`: for integral `L`, `L^∨ ⧸ L` is finite.
 * `ZLattice.IsIntegral.one_le_det`: for integral `L`, `1 ≤ det L`.
@@ -283,14 +281,6 @@ theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
     rw [one_smul]
     exact not_infinite_iff_finite.mp hfin
   exact h (span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1)
-
-/-- If the discriminant group of a lattice in a finite-dimensional space is finite, the lattice
-spans the space over `ℝ`. -/
-theorem span_eq_top_of_finite_discriminantGroup [FiniteDimensional ℝ E]
-    [Finite (DiscriminantGroup L)] : span ℝ (L : Set E) = ⊤ := by
-  by_contra h
-  have := infinite_discriminantGroup_of_span_ne_top h
-  exact not_finite (DiscriminantGroup L)
 
 /-- In a nontrivial space, the zero lattice `⊥` has an infinite discriminant group: its dual is
 the whole space. -/

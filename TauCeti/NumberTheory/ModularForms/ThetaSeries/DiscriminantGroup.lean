@@ -46,12 +46,11 @@ any point of the imaginary axis) holds if and only if `L` is integral
 `ZLattice.thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero`); in particular it fails at every
 point of the imaginary axis whenever `L^∨ < L`
 (`ZLattice.thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt`). Whenever `L^∨ ≤ L` the
-discriminant group is trivial, so the sum over `A_L` reduces to `θ_0 = Θ_L`, and for discrete `L`
-in finite-dimensional `E` the finitely supported sum identity holds for every `τ` if and only if
-`L` is integral (`ZLattice.forall_thetaSeries_dual_eq_finsum_iff_isIntegral`). Concretely, for
-`L = ½ ℤ ⊆ ℝ` the dual `L^∨ = 2 ℤ` is a proper sublattice of `L`, the discriminant group is
-trivial, and `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
-(`ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
+discriminant group is trivial, so the sum over `A_L` reduces to `θ_0 = Θ_L`
+(`ZLattice.finsum_thetaCosetClass_of_dual_le`, `ZLattice.sum_thetaCosetClass_of_dual_le`).
+Concretely, for `L = ½ ℤ ⊆ ℝ`
+the dual `L^∨ = 2 ℤ` is a proper sublattice of `L`, the discriminant group is trivial, and
+`Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)` (`ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
 `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`).
 
 ## Main definitions
@@ -85,9 +84,6 @@ trivial, and `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
   axis.
 * `ZLattice.finsum_thetaCosetClass_of_dual_le`, `ZLattice.sum_thetaCosetClass_of_dual_le`: when
   `L^∨ ≤ L`, the sum of `θ_γ` over `A_L` reduces to `Θ_L`.
-* `ZLattice.forall_thetaSeries_dual_eq_finsum_iff_isIntegral`: in finite-dimensional `E`, when
-  `L` is discrete and `L^∨ ≤ L`, the dual decomposition `Θ_{L^∨} = ∑ᶠ γ, θ_γ` holds if and only if
-  `L` is integral.
 * `ZLattice.thetaSeries_span_two_I_ne_thetaSeries_span_one_half_I`,
   `ZLattice.thetaSeries_dual_span_one_half_I_ne_sum`: for `L = ½ ℤ ⊆ ℝ`, `Θ_{2ℤ}(i) ≠ Θ_{½ℤ}(i)`
   and `Θ_{L^∨}(i) ≠ ∑_{γ ∈ A_L} θ_γ(i)`.
@@ -281,7 +277,10 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
     exact heq
   · exfalso
     classical
-    have hspan : Submodule.span ℝ (L : Set E) = ⊤ := span_eq_top_of_finite_discriminantGroup
+    have : Finite (dual L ⧸ ((1 : ℝ) • L).submoduleOf (dual L)) := by
+      simpa only [one_smul] using inferInstanceAs (Finite (DiscriminantGroup L))
+    have hspan : Submodule.span ℝ (L : Set E) = ⊤ :=
+      span_eq_top_of_finite_quotient_smul_submoduleOf_dual 1
     let b := Module.Basis.ofSpan hspan.ge
     have := FiniteDimensional.fintypeBasisIndex b
     have hd : DiscreteTopology (dual (Submodule.span ℤ (Set.range b))) := by
@@ -378,26 +377,6 @@ theorem re_thetaSeries_dual_lt_of_dual_le_of_not_isIntegral (h : dual L ≤ L)
     (hL : ¬ IsIntegral L) {τ : ℍ} (hτ : τ.re = 0) :
     (thetaSeries (dual L) τ).re < (thetaSeries L τ).re :=
   re_thetaSeries_lt_of_lt (lt_of_le_not_ge h (mt isIntegral_iff_le_dual.mpr hL)) hτ
-
-/-- For a discrete subgroup `L` with `L^∨ ≤ L`, at any point `τ` of the imaginary axis the identity
-`Θ_{L^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` holds if and only if `L` is integral. -/
-theorem thetaSeries_dual_eq_finsum_iff_isIntegral_of_re_eq_zero (h : dual L ≤ L) {τ : ℍ}
-    (hτ : τ.re = 0) :
-    thetaSeries (dual L) τ = (∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ) ↔
-      IsIntegral L := by
-  rw [finsum_thetaCosetClass_of_dual_le h, thetaSeries_eq_iff_eq_of_le_of_re_eq_zero h hτ,
-    isIntegral_iff_le_dual]
-  exact ⟨fun heq => heq.ge, h.antisymm⟩
-
-/-- For a discrete subgroup `L` with `L^∨ ≤ L`, the dual decomposition
-`∀ τ, Θ_{L^∨}(τ) = ∑ᶠ γ, θ_γ(τ)` holds if and only if `L` is integral. -/
-theorem forall_thetaSeries_dual_eq_finsum_iff_isIntegral (h : dual L ≤ L) :
-    (∀ τ : ℍ, thetaSeries (dual L) τ = ∑ᶠ γ : DiscriminantGroup L, thetaCosetClass L γ τ) ↔
-      IsIntegral L :=
-  ⟨fun hall => (thetaSeries_dual_eq_finsum_iff_isIntegral_of_re_eq_zero h UpperHalfPlane.I_re).mp
-    (hall UpperHalfPlane.I),
-    fun hL τ => by
-      rw [finsum_thetaCosetClass_of_dual_le h, h.antisymm (isIntegral_iff_le_dual.mp hL)]⟩
 
 end DualLe
 

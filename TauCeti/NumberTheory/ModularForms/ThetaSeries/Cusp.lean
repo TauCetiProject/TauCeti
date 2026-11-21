@@ -431,13 +431,12 @@ theorem thetaCoset_ne_of_lt (hML : M < L) (γ : E) : thetaCoset M γ ≠ thetaCo
 /-- For `M ≤ L`, the theta series `Θ_M` and `Θ_L` are equal as functions on `ℍ` if and only if
 `M = L`. -/
 theorem thetaSeries_eq_iff_of_le (hML : M ≤ L) :
-    thetaSeries M = thetaSeries L ↔ M = L :=
-  ⟨fun h => (thetaSeries_eq_iff_eq_of_le_of_re_eq_zero hML UpperHalfPlane.I_re).mp
-    (congrFun h UpperHalfPlane.I), fun h => h ▸ rfl⟩
+    thetaSeries M = thetaSeries L ↔ M = L := by
+  simpa using thetaCoset_eq_iff_of_le hML 0
 
 /-- For a proper subgroup `M < L`, `Θ_M ≠ Θ_L`. -/
-theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L :=
-  mt (thetaSeries_eq_iff_of_le hML.le).mp hML.ne
+theorem thetaSeries_ne_of_lt (hML : M < L) : thetaSeries M ≠ thetaSeries L := by
+  simpa using thetaCoset_ne_of_lt hML 0
 
 end SublatticeFunction
 
