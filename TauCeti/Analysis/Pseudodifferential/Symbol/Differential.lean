@@ -69,7 +69,13 @@ For the differential symbol of order `m`:
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
   (`TauCeti.ClassicalSymbol.principal_negLaplacian`); it is elliptic
   (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its quantization is Mathlib's `-Δ` on
-  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
+  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`);
+* `TauCeti.ClassicalSymbol.ofLinear`: the classical symbol of order `1` of a first-order operator
+  `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant coefficients, given by a real-linear `L` of the frequency,
+  with full and principal symbol `L ξ` (`TauCeti.ClassicalSymbol.principal_ofLinear`); its
+  quantization is this operator on Schwartz input
+  (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofLinear`), and it is elliptic exactly when `L ξ`
+  is invertible at every nonzero frequency (`TauCeti.ClassicalSymbol.isElliptic_ofLinear_iff`).
 
 ## References
 
@@ -310,6 +316,72 @@ theorem principal_negLaplacian :
 theorem isElliptic_negLaplacian : (negLaplacian n V).IsElliptic := by
   rw [isElliptic_def, principal_negLaplacian]
   exact HomogeneousSymbol.isElliptic_normRpow _ _ _ _
+
+/-! ### First-order operators with constant coefficients -/
+
+/-- The classical symbol of order `1` with full symbol `L ξ`, for a continuous real-linear function
+`L` of the frequency: the symbol of the first-order operator `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant
+coefficients (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofLinear`). Its principal symbol is
+`HomogeneousSymbol.ofLinear L` (`TauCeti.ClassicalSymbol.principal_ofLinear`). -/
+def ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) : ClassicalSymbol n V W 1 :=
+  ofContDiffHomogeneous (fun p ↦ L p.2) (L.contDiff.comp contDiff_snd)
+    fun _ _ _ _ _ ↦ by rw [Real.rpow_one, map_smul]
+
+/-- The full symbol of `ClassicalSymbol.ofLinear L` is `L ξ`. -/
+@[simp]
+theorem coefficient_toSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofLinear L).toSymbol.coefficient p = L p.2 := by
+  rw [ofLinear, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
+
+/-- The principal symbol of `ClassicalSymbol.ofLinear L` is the homogeneous symbol `L ξ`. -/
+@[simp]
+theorem principal_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) :
+    (ofLinear L).principal = HomogeneousSymbol.ofLinear _ L :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [ofLinear, principal_ofContDiffHomogeneous,
+      HomogeneousSymbol.coefficient_mk'_of_ne_zero _ _ _ hξ, HomogeneousSymbol.coefficient_ofLinear]
+
+/-- The full symbol `L ξ` is the differential symbol of `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`. -/
+private theorem differentialSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ (fun j _ ↦ EuclideanSpace.single j 1)
+      (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) p = L p.2 := by
+  rw [differentialSymbol_def]
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr p.2]
+  simp only [map_sum, map_smul, EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [smul_smul, ← Complex.coe_smul]
+  congr 1
+  simp only [EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real, Finset.prod_const,
+    Finset.card_univ, Fintype.card_fin, pow_one]
+  linear_combination -(p.2.ofLp j : ℂ) * Complex.I_mul_I
+
+/-- **First-order operators with constant coefficients are pseudodifferential operators.** On
+Schwartz input, the quantization of `ClassicalSymbol.ofLinear L` is `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`, with no
+smoothing remainder. -/
+theorem quantizeSchwartzValue_ofLinear [CompleteSpace V] [CompleteSpace W]
+    (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (ofLinear L).toSymbol.coefficient u x =
+      -Complex.I • ∑ j, L (EuclideanSpace.single j 1)
+        (∂_{(EuclideanSpace.single j 1 : CoordinateSpace n)} u x) := by
+  have h : (ofLinear L).toSymbol.coefficient =
+      differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ
+        (fun j _ ↦ EuclideanSpace.single j 1)
+        (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) :=
+    funext fun p ↦ by rw [coefficient_toSymbol_ofLinear, differentialSymbol_ofLinear]
+  rw [h, quantizeSchwartzValue_differentialSymbol, Finset.smul_sum]
+  simp [LineDeriv.iteratedLineDerivOp_one]
+
+/-- **Ellipticity of a first-order operator with constant coefficients.** The classical symbol
+`ClassicalSymbol.ofLinear L` is elliptic exactly when `L ξ` is invertible at every nonzero
+frequency. -/
+theorem isElliptic_ofLinear_iff (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) :
+    (ofLinear L).IsElliptic ↔ ∀ ξ, ξ ≠ 0 → (L ξ).IsInvertible := by
+  rw [isElliptic_def, principal_ofLinear, HomogeneousSymbol.isElliptic_iff]
+  simp only [HomogeneousSymbol.coefficient_ofLinear]
+  exact ⟨fun h ξ hξ ↦ h 0 ξ hξ, fun h _ ξ hξ ↦ h ξ hξ⟩
 
 end ClassicalSymbol
 

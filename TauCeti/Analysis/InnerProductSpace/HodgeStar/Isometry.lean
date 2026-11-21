@@ -19,9 +19,11 @@ The Hodge star preserves the inner product and hence defines a linear isometric 
 between complementary exterior powers. Combined with the defining identity
 `⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
 On the top exterior power the inner product is the product of the volumes,
-`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
-middle degree the Hodge star is an isometric involution, hence symmetric, so a self-dual or
-anti-self-dual form pairs with `⋆y` as with `±y`.
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. Since `⋆⋆` is
+`(-1) ^ (k l)` on `⋀ᵏ V`, the adjoint of the star `⋀ᵏ V → ⋀ˡ V` is `(-1) ^ (k l)` times the star
+`⋀ˡ V → ⋀ᵏ V` (`Orientation.inner_hodgeStar_left`), and the adjoint composed with the star is
+the identity (`Orientation.adjoint_hodgeStar_comp_hodgeStar`). In an even middle degree the Hodge
+star is therefore symmetric, so a self-dual or anti-self-dual form pairs with `⋆y` as with `±y`.
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
@@ -114,12 +116,23 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
 
+/-- **The adjoint of the Hodge star**: `⟪⋆x, y⟫ = (-1) ^ (k l) ⟪x, ⋆y⟫` for `x ∈ ⋀ᵏ V` and
+`y ∈ ⋀ˡ V`, where `k + l = finrank ℝ V`. -/
+theorem inner_hodgeStar_left {k l : ℕ} (hkl : k + l = finrank ℝ V) (hlk : l + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) (y : ⋀[ℝ]^l V) :
+    ⟪o.hodgeStar hkl x, y⟫ = (-1) ^ (k * l) * ⟪x, o.hodgeStar hlk y⟫ := by
+  -- Pair `⋆x` with `y = (-1) ^ (l k) ⋆⋆y` and use that the star preserves inner products.
+  have h := o.inner_hodgeStar_hodgeStar hkl x (o.hodgeStar hlk y)
+  rw [o.hodgeStar_hodgeStar hlk hkl, real_inner_smul_right] at h
+  rw [← h, ← mul_assoc, ← pow_add, mul_comm l k, ← two_mul, pow_mul]
+  simp
+
 /-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is symmetric,
 `⟪⋆x, y⟫ = ⟪x, ⋆y⟫`, being an isometric involution. This covers two-forms in dimension four. -/
 theorem isSymmetric_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
     (o.hodgeStar hkk : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^k V).IsSymmetric := fun x y ↦ by
-  conv_lhs => rw [← o.hodgeStar_hodgeStar_of_even hk hkk y]
-  exact o.inner_hodgeStar_hodgeStar hkk x (o.hodgeStar hkk y)
+  rw [LinearEquiv.coe_coe, o.inner_hodgeStar_left hkk hkk,
+    (hk.mul_right k).neg_one_pow, one_mul]
 
 /-- A self-dual `η`, with `⋆η = η`, in an even middle degree pairs with `⋆y` as with `y`:
 `⟪η, ⋆y⟫ = ⟪η, y⟫`. -/
@@ -151,6 +164,13 @@ theorem norm_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x : ⋀[ℝ]^k
     ‖o.hodgeStar hkl x‖ = ‖x‖ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).norm_map x
+
+/-- The Hodge star `⋀ᵏ V → ⋀ˡ V`, an isometry, composed with its adjoint is the identity. -/
+theorem adjoint_hodgeStar_comp_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) :
+    ContinuousLinearMap.adjoint
+        (LinearMap.toContinuousLinearMap (o.hodgeStar hkl : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^l V)) ∘L
+      LinearMap.toContinuousLinearMap (o.hodgeStar hkl : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^l V) = 1 :=
+  (ContinuousLinearMap.norm_map_iff_adjoint_comp_self _).1 (o.norm_hodgeStar hkl)
 
 /-- On the top exterior power, a line, the inner product is the product of the volumes:
 `⟪x, y⟫ = vol x * vol y`. Equivalently, the unit volume element `vol⁻¹ 1` has norm one. -/
