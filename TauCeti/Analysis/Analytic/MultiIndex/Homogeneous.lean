@@ -86,9 +86,10 @@ theorem AnalyticAt.exists_isHomogeneous_eval_eq {𝕜 : Type*} [NontriviallyNorm
   have hpL : HasFPowerSeriesOnBall (f ∘ L) (p.compContinuousLinearMap L) 0 (r / ‖L‖ₑ) :=
     HasFPowerSeriesOnBall.compContinuousLinearMap (x := 0) (by simpa using hp)
   -- Compare the two expressions for the `d`-th derivative of the restriction at `0`.
+  have hpow : iteratedDeriv d (fun t : 𝕜 ↦ t ^ d * f v) 0 = d ! * f v := by
+    simp [iteratedDeriv_mul_const_field, Nat.descFactorial_self]
   have hderiv := hpL.factorial_smul 1 d
-  rw [hL, ← iteratedDeriv_eq_iteratedFDeriv, iteratedDeriv_mul_const_field, iteratedDeriv_pow,
-    Nat.descFactorial_self, Nat.sub_self, pow_zero, mul_one,
+  rw [hL, ← iteratedDeriv_eq_iteratedFDeriv, hpow,
     FormalMultilinearSeries.compContinuousLinearMap_apply, nsmul_eq_mul,
     show L ∘ (fun _ : Fin d ↦ (1 : 𝕜)) = fun _ ↦ v by ext; simp [L]] at hderiv
   rw [hPeval]

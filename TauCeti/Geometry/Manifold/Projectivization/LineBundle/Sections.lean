@@ -211,8 +211,7 @@ private theorem exists_isHomogeneous_eval_eq_homogeneousLift (d : ℕ)
     rw [hvsmul, homogeneousLift_smul _ s hv0]
     simp [mul_comm]
   · obtain ⟨G, hG, hGeq⟩ := exists_analyticOnNhd_eqOn_homogeneousLift hn hs
-    have hGcont : Continuous G :=
-      continuous_iff_continuousAt.2 fun v ↦ (hG v trivial).continuousAt
+    have hGcont : Continuous G := hG.continuous
     -- `G` is homogeneous off the origin, hence everywhere by density and continuity.
     have hhom : ∀ (t : ℂ) v, G (t • v) = t ^ d * G v := by
       have hdense : Dense ({(0 : ℂ)}ᶜ ×ˢ {(0 : Fin (n + 1) → ℂ)}ᶜ) :=
@@ -243,8 +242,7 @@ theorem eq_zero_of_mdifferentiable_section_twistCore (hn : n ≠ 0) {k : ℤ} (h
   -- `G v = t ^ (m + 1) * G (t • v)` for `t ≠ 0`; letting `t → 0` gives `G v = 0`.
   have hG0 (v : Fin (n + 1) → ℂ) (hv : v ≠ 0) : G v = 0 := by
     have hcont : Continuous fun t : ℂ ↦ t ^ (m + 1) * G (t • v) :=
-      (continuous_pow _).mul ((continuous_iff_continuousAt.2 fun w ↦ (hG w trivial).continuousAt)
-        |>.comp (continuous_id.smul continuous_const))
+      (continuous_pow _).mul (hG.continuous.comp (continuous_id.smul continuous_const))
     have := Continuous.ext_on (dense_compl_singleton (0 : ℂ)) (g := fun _ ↦ G v) hcont
       continuous_const
       fun t (ht : t ≠ 0) ↦ by
@@ -331,8 +329,8 @@ complex vector space of dimension `binomial (n + d) n`. -/
 theorem finrank_holomorphicTwistSections (n d : ℕ) :
     Module.finrank ℂ (holomorphicTwistSections n d) = (n + d).choose n := by
   rw [(holomorphicTwistSectionsEquiv n d).finrank_eq,
-    TauCeti.finrank_homogeneousSubmodule_eq_multichoose, Fintype.card_fin, Nat.multichoose_eq,
-    Nat.add_right_comm, Nat.add_sub_cancel, Nat.choose_symm_add]
+    TauCeti.finrank_homogeneousSubmodule_eq_multichoose]
+  simpa [Nat.multichoose_eq, Nat.add_right_comm] using Nat.choose_symm_add.symm
 
 /-- The holomorphic sections of `𝒪(k)` on `ℂℙⁿ` form a space of dimension `0` when `n ≥ 1` and
 `k < 0`. -/
