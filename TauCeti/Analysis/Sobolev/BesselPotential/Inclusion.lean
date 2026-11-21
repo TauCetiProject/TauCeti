@@ -292,8 +292,7 @@ theorem norm_le_of_toDistr_eq_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTe
     have hpos : 0 < (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by positivity
     have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) =
         (1 + ‖ξ‖ ^ 2) ^ (r / 2) / (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-      rw [← Real.rpow_sub (by positivity)]
-      ring_nf
+      rw [eq_div_iff hpos.ne', ← TauCeti.one_add_norm_sq_rpow_add, sub_add_cancel]
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), hsplit, ← mul_div_assoc,
       div_le_iff₀ hpos]
     exact hC ξ
