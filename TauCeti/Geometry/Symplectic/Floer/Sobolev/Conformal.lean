@@ -71,6 +71,14 @@ def floerConformalJetCoeff (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ) (J 
     (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V →L[ℝ] V :=
   firstOrderJetCoeff (J z (u z)) ((√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z)
 
+/-- The definition of the coefficient field of the linearized Floer operator on conformal jets:
+the coefficient field `TauCeti.firstOrderJetCoeff` of `∂s + J(z, u z) ∂t + ρ(z)^(-1/2) C(z)`. -/
+theorem floerConformalJetCoeff_def (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerConformalJetCoeff ρ J Ks Kt u z =
+      firstOrderJetCoeff (J z (u z)) ((√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z) :=
+  (rfl)
+
 /-- The coefficient field of the linearized Floer operator on conformal jets, evaluated on a
 jet. -/
 theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
