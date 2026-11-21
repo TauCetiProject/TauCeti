@@ -150,7 +150,7 @@ private theorem finSumPerm_finRotate_apply_natAdd :
 
 /-- The rotation of the marked block in the coordinates of the pattern, transported to the
 component positions, is the block rotation. -/
-theorem permCongr_finSumPerm_finRotate :
+private theorem permCongr_finSumPerm_finRotate :
     (finCongr (by decide : 1 + 3 + 1 = a5FourthD4.components.length)).permCongr
         (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) =
       a5FourthD4BlockRotation := by
@@ -258,12 +258,12 @@ private noncomputable def componentTrialityLabel (i : Fin a5FourthD4.components.
     FiniteQuadraticModule.Isometry
       ((a5FourthD4.componentType i).glueAlphabet (a5FourthD4.isSimplyLaced_componentType i))
       ((a5FourthD4.componentType i).glueAlphabet (a5FourthD4.isSimplyLaced_componentType i)) :=
-  (((a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
-      (a5FourthD4.isSimplyLaced_componentType i)).trans
-    ((componentTriality i).discriminantQuadraticIsometry
-      ((a5FourthD4.componentType i).isEven_rootLattice _))).trans
-    ((a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
-      (a5FourthD4.isSimplyLaced_componentType i)).symm
+  if h : i = a5FourthD4D4Index then h ▸ typeD4GlueAlphabetTriality (isSimplyLaced_D 4)
+  else QuadraticMap.IsometryEquiv.refl _
+
+private theorem componentTrialityLabel_d4Index :
+    componentTrialityLabel a5FourthD4D4Index = typeD4GlueAlphabetTriality (isSimplyLaced_D 4) :=
+  dite_eq_left rfl
 
 private theorem glueAlphabetIsometry_componentTrialityLabel
     (i : Fin a5FourthD4.components.length)
@@ -274,20 +274,32 @@ private theorem glueAlphabetIsometry_componentTrialityLabel
         ((a5FourthD4.componentType i).isEven_rootLattice _)
         ((a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
           (a5FourthD4.isSimplyLaced_componentType i) x) := by
-  rw [componentTrialityLabel, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply, QuadraticMap.IsometryEquiv.trans_apply]
+  by_cases hi : i = a5FourthD4D4Index
+  · subst hi
+    have h1 : componentTrialityLabel a5FourthD4D4Index x =
+        glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl)
+          (typeD4Triality (isSimplyLaced_D 4)) x :=
+      DFunLike.congr_fun
+        (componentTrialityLabel_d4Index.trans
+          (typeD4GlueAlphabetTriality_def (isSimplyLaced_D 4))) x
+    have h2 : componentTriality a5FourthD4D4Index = typeD4Triality (isSimplyLaced_D 4) :=
+      componentTriality_d4Index
+    refine (congrArg _ h1).trans ?_
+    refine (glueAlphabetIsometry_glueAlphabetIsometryOfIsometry
+      (valid_D.mpr le_rfl) (valid_D.mpr le_rfl) (typeD4Triality (isSimplyLaced_D 4)) x).trans ?_
+    exact congrArg (fun f : IntegralLattice.Isometry _ _ ↦
+      f.discriminantQuadraticIsometry ((D 4).isEven_rootLattice (isSimplyLaced_D 4)) _) h2.symm
+  · refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+    rw [componentTrialityLabel, dite_eq_right hi, QuadraticMap.IsometryEquiv.refl_apply,
+      componentTriality_of_ne hi, Isometry.one_def, Isometry.discriminantGroupEquiv_refl]
+    exact (LinearEquiv.refl_apply (M := ((a5FourthD4.componentType i).rootLattice
+      (a5FourthD4.isSimplyLaced_componentType i)).DiscriminantGroup) _).symm
 
 private theorem componentTrialityLabel_of_ne {i : Fin a5FourthD4.components.length}
     (hi : i ≠ a5FourthD4D4Index)
     (x : (a5FourthD4.componentType i).glueAlphabet (a5FourthD4.isSimplyLaced_componentType i)) :
     componentTrialityLabel i x = x := by
-  unfold componentTrialityLabel
-  rw [QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.symm_apply_eq]
-  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-  rw [componentTriality_of_ne hi, Isometry.one_def, Isometry.discriminantGroupEquiv_refl]
-  exact LinearEquiv.refl_apply (M := ((a5FourthD4.componentType i).rootLattice
-    (a5FourthD4.isSimplyLaced_componentType i)).DiscriminantGroup) _
+  rw [componentTrialityLabel, dite_eq_right hi, QuadraticMap.IsometryEquiv.refl_apply]
 
 private theorem val_glueLabelEquiv_symm_componentTrialityLabel_d4Index
     (x : (a5FourthD4.componentType a5FourthD4D4Index).glueAlphabet
@@ -296,21 +308,21 @@ private theorem val_glueLabelEquiv_symm_componentTrialityLabel_d4Index
         (componentTrialityLabel a5FourthD4D4Index x)).val =
       [0, 2, 3, 1].getD
         (((a5FourthD4.componentType a5FourthD4D4Index).glueLabelEquiv _).symm x).val 0 := by
-  obtain ⟨d, rfl⟩ := ((a5FourthD4.componentType a5FourthD4D4Index).glueLabelEquiv
-    (a5FourthD4.isSimplyLaced_componentType a5FourthD4D4Index)).surjective x
-  have key : componentTrialityLabel a5FourthD4D4Index
-      ((D 4).glueLabelEquiv (isSimplyLaced_D 4) d) =
-        (D 4).glueLabelEquiv (isSimplyLaced_D 4) (![0, 2, 3, 1] d) := by
-    apply ((D 4).glueAlphabetIsometry (by decide) (isSimplyLaced_D 4)).injective
-    refine (glueAlphabetIsometry_componentTrialityLabel a5FourthD4D4Index _).trans ?_
-    refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
-    refine (congrArg (fun e : IntegralLattice.Isometry _ _ ↦ e.discriminantGroupEquiv _)
-      componentTriality_d4Index).trans ?_
-    exact discriminantGroupEquiv_typeD4Triality_glueLabelEquiv (isSimplyLaced_D 4) (by decide) d
-  rw [Equiv.symm_apply_apply]
-  refine (congrArg (fun y ↦ (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm y).val) key).trans ?_
-  rw [Equiv.symm_apply_apply]
-  fin_cases d <;> rfl
+  let d : Fin 4 :=
+    ((a5FourthD4.componentType a5FourthD4D4Index).glueLabelEquiv _).symm x
+  have h1 : (((a5FourthD4.componentType a5FourthD4D4Index).glueLabelEquiv _).symm
+        (componentTrialityLabel a5FourthD4D4Index x)).val =
+      (typeD4TrialityLabelPerm d).val := by
+    have h2 : ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
+          (componentTrialityLabel a5FourthD4D4Index x) =
+        typeD4TrialityLabelPerm (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm x) := by
+      rw [← glueLabelEquiv_symm_typeD4GlueAlphabetTriality (isSimplyLaced_D 4) x]
+      exact congrArg (fun f : FiniteQuadraticModule.Isometry ((D 4).glueAlphabet _) _ ↦
+        ((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm (f x)) componentTrialityLabel_d4Index
+    exact congrArg Fin.val h2
+  have hget : ∀ i : Fin 4, (typeD4TrialityLabelPerm i).val = [0, 2, 3, 1].getD i.val 0 :=
+    fun i ↦ by fin_cases i <;> simp
+  exact h1.trans (hget _)
 
 /-! ### The rotation combined with triality on glue words -/
 

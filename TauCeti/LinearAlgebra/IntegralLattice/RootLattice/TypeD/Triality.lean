@@ -474,6 +474,13 @@ noncomputable def typeD4GlueAlphabetTriality :
     FiniteQuadraticModule.Isometry ((D 4).glueAlphabet ht) ((D 4).glueAlphabet ht) :=
   glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl) (typeD4Triality ht)
 
+/-- `typeD4GlueAlphabetTriality` is the glue-alphabet isometry induced by `typeD4Triality`. -/
+theorem typeD4GlueAlphabetTriality_def :
+    typeD4GlueAlphabetTriality ht =
+      glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl)
+        (typeD4Triality ht) :=
+  (rfl)
+
 /-- Reading the Conway--Sloane label after `typeD4GlueAlphabetTriality` applies
 `typeD4TrialityLabelPerm`. -/
 @[simp]

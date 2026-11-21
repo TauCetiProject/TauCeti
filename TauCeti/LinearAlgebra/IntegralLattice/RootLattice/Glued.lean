@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
-import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
 
 /-!
 # Gluing an orthogonal sum of ADE root lattices along glue words
@@ -601,9 +600,7 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
   gluedLatticePiCongrIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK (fun _ ↦ hvT) hK σ.symm
     (fun j ↦ Isometry.unitsSMul (u (σ.symm j)) (T.rootLattice hT))
     (fun j x ↦ u (σ.symm j) • x)
-    (fun j x ↦ (map_zsmul (T.glueAlphabetIsometry hvT hT) (u (σ.symm j) : ℤ) x).trans
-      ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-        (Isometry.discriminantGroupEquiv_unitsSMul_apply (u (σ.symm j)) _ _)).symm) hσ
+    (fun j x ↦ glueAlphabetIsometry_unitsSMul hvT (u (σ.symm j)) x) hσ
 
 /-- The isometry of a glued lattice induced by a signed permutation of identical components moves
 the coordinates in position `σ.symm j`, multiplied by their sign, to position `j`. -/

@@ -56,8 +56,9 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr'_glueWordIsometry`: naturality of
   the glue-word isometry under componentwise isometries, permutations of the components, and their
   composites.
-* `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
-  the glue-word isometry under signed permutations of identical components.
+* `TauCeti.DynkinType.glueAlphabetIsometry_unitsSMul`,
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
+  glue labels and glue words under signed permutations of identical components.
 * `TauCeti.DynkinType.piGlueAlphabetCongr`: quadratic isometry of glue words induced by
   equalities of component types along a reindexing, with `_refl` and `_trans` lemmas.
 * `TauCeti.DynkinType.isNondegenerate_pi_glueAlphabet`,
@@ -327,6 +328,17 @@ section SignedPermutation
 
 variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
 
+/-- **Naturality of glue labels under unit scalar multiplication on one component.**  Scaling the
+root lattice of a valid simply-laced Dynkin type `T` by a unit `u : ℤˣ` acts on its discriminant
+quadratic module compatibly with scaling the glue alphabet by `u`. -/
+theorem glueAlphabetIsometry_unitsSMul (u : ℤˣ) (x : T.glueAlphabet hT) :
+    T.glueAlphabetIsometry hvT hT (u • x) =
+      (Isometry.unitsSMul u (T.rootLattice hT)).discriminantQuadraticIsometry
+        (T.isEven_rootLattice hT) (T.glueAlphabetIsometry hvT hT x) :=
+  (map_zsmul (T.glueAlphabetIsometry hvT hT) (u : ℤ) x).trans
+    ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+      (Isometry.discriminantGroupEquiv_unitsSMul_apply u _ _)).symm
+
 /-- **Naturality of glue words under signed permutations of identical components.**  Let all
 components have the same type `T`.  Multiplying component `i` of the orthogonal sum of root
 lattices by the sign `u i` and then moving it to position `σ i` carries the discriminant class of
@@ -343,12 +355,10 @@ theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → �
   refine (discriminantQuadraticIsometry_isometryPiCongr_glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT)
     (fun _ ↦ hvT) (s := fun _ ↦ T) (hs := fun _ ↦ hT) (fun _ ↦ hvT) σ
     (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
-    (fun i x ↦ u i • x) (fun i x ↦ ?_) w).trans (congrArg _ (funext fun j ↦ ?_))
-  · refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-      (Isometry.discriminantGroupEquiv_unitsSMul_apply (u i) _ _)).symm
-    exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x
-  · obtain ⟨k, rfl⟩ := σ.surjective j
-    rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply]
+    (fun i x ↦ u i • x) (fun i x ↦ glueAlphabetIsometry_unitsSMul hvT (u i) x) w).trans
+      (congrArg _ (funext fun j ↦ ?_))
+  obtain ⟨k, rfl⟩ := σ.surjective j
+  rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply]
 
 end SignedPermutation
 

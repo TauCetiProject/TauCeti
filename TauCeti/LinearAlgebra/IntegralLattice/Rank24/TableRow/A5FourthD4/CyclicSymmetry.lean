@@ -245,12 +245,15 @@ private noncomputable def a5FourthD4ComponentIsometry :
   | ⟨4, h⟩ => typeD4Triality (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)
   | ⟨_ + 5, h⟩ => False.elim (Nat.not_lt_of_ge (Nat.le_add_left 5 _) h)
 
-private noncomputable def a5FourthD4ComponentGlueEquiv
-    (k : Fin a5FourthD4.components.length) :
-    (a5FourthD4.componentType k).glueAlphabet (a5FourthD4.isSimplyLaced_componentType k) ≃+
-      (a5FourthD4.componentType k).glueAlphabet (a5FourthD4.isSimplyLaced_componentType k) :=
-  (glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType k)
-    (a5FourthD4.valid_componentType k) (a5FourthD4ComponentIsometry k)).toLinearEquiv.toAddEquiv
+private noncomputable def a5FourthD4ComponentGlueEquiv :
+    ∀ k : Fin a5FourthD4.components.length,
+      (a5FourthD4.componentType k).glueAlphabet (a5FourthD4.isSimplyLaced_componentType k) ≃+
+        (a5FourthD4.componentType k).glueAlphabet (a5FourthD4.isSimplyLaced_componentType k)
+  | ⟨0, _⟩ | ⟨1, _⟩ | ⟨2, _⟩ | ⟨3, _⟩ => AddEquiv.refl _
+  | ⟨4, h⟩ =>
+    (typeD4GlueAlphabetTriality
+      (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)).toLinearEquiv.toAddEquiv
+  | ⟨_ + 5, h⟩ => False.elim (Nat.not_lt_of_ge (Nat.le_add_left 5 _) h)
 
 private def a5FourthD4DigitPerm : Fin a5FourthD4.components.length → ℕ → ℕ
   | ⟨0, _⟩ | ⟨1, _⟩ | ⟨2, _⟩ | ⟨3, _⟩ => id
@@ -266,25 +269,20 @@ private theorem val_glueLabelEquiv_symm_a5FourthD4ComponentGlueEquiv
         ((a5FourthD4.componentType k).glueLabelEquiv
           (a5FourthD4.isSimplyLaced_componentType k) j))).val =
       a5FourthD4DigitPerm k j.val := by
-  have hcoe (y) : a5FourthD4ComponentGlueEquiv k y =
-      glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType k)
-        (a5FourthD4.valid_componentType k) (a5FourthD4ComponentIsometry k) y := rfl
-  rw [hcoe]
   match k with
   | ⟨0, _⟩ | ⟨1, _⟩ | ⟨2, _⟩ | ⟨3, _⟩ =>
-    simp only [a5FourthD4ComponentIsometry, a5FourthD4DigitPerm,
-      glueAlphabetIsometryOfIsometry_refl]
-    exact congrArg Fin.val (Equiv.symm_apply_apply _ j)
+    simp only [a5FourthD4ComponentGlueEquiv, a5FourthD4DigitPerm, AddEquiv.refl_apply,
+      Equiv.symm_apply_apply, id_eq]
   | ⟨4, h⟩ =>
-    let e := (D 4).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)
     have hm : j.val < 4 := j.isLt
-    have h4 : (e.symm (glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType ⟨4, h⟩)
-        (a5FourthD4.valid_componentType ⟨4, h⟩) (a5FourthD4ComponentIsometry ⟨4, h⟩)
-        (e ⟨j.val, hm⟩))).val = (typeD4TrialityLabelPerm ⟨j.val, hm⟩).val :=
-      congrArg Fin.val ((congrArg e.symm
-        (glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv _ ⟨j.val, hm⟩)).trans
-        (e.symm_apply_apply _))
-    exact h4.trans (by simp [a5FourthD4DigitPerm, hm])
+    have h4 := congrArg Fin.val
+      (glueLabelEquiv_symm_typeD4GlueAlphabetTriality
+        (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)
+        ((D 4).glueLabelEquiv (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩) ⟨j.val, hm⟩))
+    rw [Equiv.symm_apply_apply] at h4
+    have hdigit : (typeD4TrialityLabelPerm ⟨j.val, hm⟩).val = a5FourthD4DigitPerm ⟨4, h⟩ j.val := by
+      simp [a5FourthD4DigitPerm, hm]
+    exact h4.trans hdigit
   | ⟨_ + 5, h⟩ => exact False.elim (Nat.not_lt_of_ge (Nat.le_add_left 5 _) h)
 
 private theorem a5FourthD4ComponentGlueEquiv_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
@@ -311,8 +309,26 @@ noncomputable def a5FourthD4TrialityRotation :
   a5FourthD4.coupledLatticeIsometry (g := (a5FourthD4BlockRot⁻¹ : Equiv.Perm (Fin 5)))
     componentType_a5FourthD4BlockRot_inv a5FourthD4ComponentIsometry
     (fun k x ↦ a5FourthD4ComponentGlueEquiv k x)
-    (fun k ↦ glueAlphabetIsometry_glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType k)
-      (a5FourthD4.valid_componentType k) (a5FourthD4ComponentIsometry k))
+    (fun k x ↦ by
+      match k with
+      | ⟨0, _⟩ | ⟨1, _⟩ | ⟨2, _⟩ | ⟨3, _⟩ =>
+        rw [a5FourthD4ComponentGlueEquiv, AddEquiv.refl_apply, a5FourthD4ComponentIsometry]
+        refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+        rw [Isometry.discriminantGroupEquiv_refl]
+        exact (LinearEquiv.refl_apply (M := ((a5FourthD4.componentType _).rootLattice
+          (a5FourthD4.isSimplyLaced_componentType _)).DiscriminantGroup) _).symm
+      | ⟨4, h⟩ =>
+        have h1 : a5FourthD4ComponentGlueEquiv ⟨4, h⟩ x =
+            glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType ⟨4, h⟩)
+              (a5FourthD4.valid_componentType ⟨4, h⟩)
+              (typeD4Triality (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)) x :=
+          DFunLike.congr_fun
+            (typeD4GlueAlphabetTriality_def (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)) x
+        exact (congrArg _ h1).trans
+          (glueAlphabetIsometry_glueAlphabetIsometryOfIsometry
+            (a5FourthD4.valid_componentType ⟨4, h⟩) (a5FourthD4.valid_componentType ⟨4, h⟩)
+            (typeD4Triality (a5FourthD4.isSimplyLaced_componentType ⟨4, h⟩)) x)
+      | ⟨_ + 5, h⟩ => exact False.elim (Nat.not_lt_of_ge (Nat.le_add_left 5 _) h))
     a5FourthD4ComponentGlueEquiv_mem_glueSubgroup_iff
 
 private theorem a5FourthD4TrialityRotation_apply
