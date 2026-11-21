@@ -50,8 +50,9 @@ For a manifold `M` that is already boundaryless as a `C¹` manifold,
 * `OpenPartialHomeomorph.interiorExtend_source`, `OpenPartialHomeomorph.interiorExtend_target`,
   `OpenPartialHomeomorph.coe_interiorExtend_symm_apply`: the source, target and inverse of the
   chart of the interior given by a chart of `M`.
-* `ModelWithCorners.chartAt_interior`, `ModelWithCorners.mem_atlas_interior_iff`: the preferred
-  charts and the atlas of the interior.
+* `ModelWithCorners.chartAt_interior`, `ModelWithCorners.coe_chartAt_interior_symm_apply`,
+  `ModelWithCorners.mem_atlas_interior_iff`: the preferred charts, their inverses and the atlas of
+  the interior.
 * `ModelWithCorners.instIsManifoldInterior`: the interior of a `C^n` manifold with corners is a
   `C^n` manifold modelled on `E`.
 * `ModelWithCorners.contMDiff_subtypeVal_interior`: its inclusion into `M` is `C^n`.
@@ -181,6 +182,14 @@ theorem chartAt_interior_target (x : I.interior M) :
   have : Nonempty (I.interior M) := ⟨x⟩
   rw [chartAt_interior, OpenPartialHomeomorph.interiorExtend_target]
 
+/-- The inverse of the preferred chart of the interior at `x` is the inverse of the extended
+preferred chart of `M` at `x`. -/
+theorem coe_chartAt_interior_symm_apply (x : I.interior M) {v : E}
+    (hv : v ∈ (chartAt E x).target) :
+    ((chartAt E x).symm v : M) = (chartAt H (x : M)).symm (I.symm v) := by
+  have : Nonempty (I.interior M) := ⟨x⟩
+  exact (chartAt H (x : M)).coe_interiorExtend_symm_apply I hv
+
 /-- The charts of the atlas of the interior are the charts of the interior given by the charts of
 the atlas of `M`. -/
 theorem mem_atlas_interior_iff [Nonempty (I.interior M)]
@@ -233,13 +242,12 @@ theorem contMDiff_subtypeVal_interior {n : WithTop ℕ∞} :
   filter_upwards [(chartAt E x).open_target.mem_nhds hx] with v hv
   -- On the target of the chart of the interior, its inverse is the inverse of the extended chart
   -- of `M` at `x`, which the extended chart of `M` at `x` undoes.
-  have : Nonempty (I.interior M) := ⟨x⟩
   have hv' := hv
   rw [chartAt_interior_target] at hv'
   simp only [Function.comp_apply, extChartAt_coe, extChartAt_coe_symm,
     modelWithCornersSelf_coe_symm, id_eq]
-  rw [chartAt_interior, OpenPartialHomeomorph.coe_interiorExtend_symm_apply I _ hv,
-    (chartAt H (x : M)).right_inv hv'.1, I.right_inv (interior_subset hv'.2)]
+  rw [coe_chartAt_interior_symm_apply I x hv, (chartAt H (x : M)).right_inv hv'.1,
+    I.right_inv (interior_subset hv'.2)]
 
 omit [FiniteDimensional 𝕜 E] in
 /-- The interior of `M` is the complement of its boundary. -/
