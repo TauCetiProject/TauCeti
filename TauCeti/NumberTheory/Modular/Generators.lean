@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Modular.Relations
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+public import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -80,6 +81,15 @@ theorem U_pow_three : U ^ 3 = 1 := by
 /-- The integral generators `R⁻¹` and `U` are conjugate up to sign. -/
 theorem S_mul_R_inv_mul_S_inv : S * R⁻¹ * S⁻¹ = -U := by
   decide
+
+/-- Coordinate reflection sends `R = S T` to `-U`. -/
+@[simp]
+theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- Conjugating `R⁻¹` by `S⁻¹` on the left and `S` on the right yields `conjJ R`. -/
+theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
+  rw [conjJ_R]; decide
 
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by

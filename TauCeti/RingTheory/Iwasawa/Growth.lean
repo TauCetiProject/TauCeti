@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.Iwasawa.EulerQuotient
 import TauCeti.Algebra.Module.Submodule.Pointwise
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Iwasawa.CyclotomicGrowth
+import TauCeti.RingTheory.Iwasawa.Cyclotomic.Growth
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Norm.Cokernel
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow

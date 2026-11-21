@@ -42,6 +42,7 @@ to standard simplices.
 * `SSet.slice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.slice.isIso_π`: the slice over the empty diagram is the whole simplicial set.
+* `SSet.slice.isTerminal`: the slice of a terminal simplicial set is terminal.
 * `SSet.slice.isPullback_map`: slices preserve pullback squares.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
@@ -81,18 +82,19 @@ simplicial sets, acting by precomposition with `g ⋆ K`. -/
 @[expose]
 def functor : SSet.{u}ᵒᵖ ⥤ Type u where
   obj X := {τ : join X.unop K ⟶ C // join.inr X.unop K ≫ τ = p}
-  map g := ↾fun τ ↦ ⟨join.map g.unop (𝟙 K) ≫ τ.1, by rw [join.inr_map_assoc, Category.id_comp, τ.2]⟩
+  map g := ↾fun τ ↦ ⟨join.map g.unop (𝟙 K) ≫ τ.val, by rw [join.inr_map_assoc, Category.id_comp,
+      τ.property]⟩
   map_id X := by
     refine ConcreteCategory.hom_ext _ _ fun τ ↦ Subtype.ext ?_
-    exact (congrArg (· ≫ τ.1) join.map_id).trans (Category.id_comp _)
+    exact (congrArg (· ≫ τ.val) join.map_id).trans (Category.id_comp _)
   map_comp f g := by
     refine ConcreteCategory.hom_ext _ _ fun τ ↦ Subtype.ext ?_
-    refine (congrArg (· ≫ τ.1) ?_).trans (Category.assoc _ _ _)
+    refine (congrArg (· ≫ τ.val) ?_).trans (Category.assoc _ _ _)
     simpa using join.map_comp g.unop (𝟙 K) f.unop (𝟙 K)
 
 @[simp]
 lemma functor_map_coe {X Y : SSet.{u}ᵒᵖ} (g : X ⟶ Y) (τ : (functor p).obj X) :
-    ((functor p).map g τ).1 = join.map g.unop (𝟙 K) ≫ τ.1 :=
+    ((functor p).map g τ).val = join.map g.unop (𝟙 K) ≫ τ.val :=
   (rfl)
 
 end slice
@@ -115,13 +117,14 @@ def objEquiv {n : SimplexCategoryᵒᵖ} :
 
 @[simp]
 lemma objEquiv_map_coe {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m) (σ : (slice p).obj n) :
-    (objEquiv ((slice p).map f σ)).1 = join.map (stdSimplex.map f.unop) (𝟙 K) ≫ (objEquiv σ).1 :=
+    (objEquiv ((slice p).map f σ)).val = join.map (stdSimplex.map f.unop) (𝟙 K) ≫ (objEquiv σ).val
+        :=
   (rfl)
 
 variable (p) in
 /-- The projection `C_{/p} ⟶ C`, restricting a simplex `Δ[n] ⋆ K ⟶ C` of the slice to `Δ[n]`. -/
 def π : slice p ⟶ C where
-  app n := ↾fun σ ↦ yonedaEquiv (join.inl _ K ≫ (objEquiv σ).1)
+  app n := ↾fun σ ↦ yonedaEquiv (join.inl _ K ≫ (objEquiv σ).val)
   naturality n m f := by
     ext σ
     dsimp
@@ -129,14 +132,14 @@ def π : slice p ⟶ C where
 
 @[simp]
 lemma π_app {n : SimplexCategoryᵒᵖ} (σ : (slice p).obj n) :
-    (π p).app n σ = yonedaEquiv (join.inl _ K ≫ (objEquiv σ).1) :=
+    (π p).app n σ = yonedaEquiv (join.inl _ K ≫ (objEquiv σ).val) :=
   (rfl)
 
 /-- The map to the slice given by a map `τ : X ⋆ K ⟶ C` extending `p`: a simplex `x` of `X` goes to
 the restriction of `τ` along `x ⋆ K`. -/
 private def ofHom (τ : {τ : join X K ⟶ C // join.inr X K ≫ τ = p}) : X ⟶ slice p where
-  app n := ↾fun x ↦ objEquiv.symm ⟨join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.1,
-    by rw [join.inr_map_assoc, Category.id_comp, τ.2]⟩
+  app n := ↾fun x ↦ objEquiv.symm ⟨join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.val,
+    by rw [join.inr_map_assoc, Category.id_comp, τ.property]⟩
   naturality n m f := by
     ext x
     induction n using Opposite.rec with | op n
@@ -151,15 +154,16 @@ private def ofHom (τ : {τ : join X K ⟶ C // join.inr X K ≫ τ = p}) : X �
 compatibly with precomposition by maps of standard simplices. -/
 private lemma objEquiv_app_yonedaEquiv_comp (F : X ⟶ slice p) {a b : SimplexCategory}
     (h : stdSimplex.obj b ⟶ stdSimplex.obj a) (g : stdSimplex.obj a ⟶ X) :
-    (objEquiv (F.app _ (yonedaEquiv (h ≫ g)))).1 =
-      join.map h (𝟙 K) ≫ (objEquiv (F.app _ (yonedaEquiv g))).1 := by
+    (objEquiv (F.app _ (yonedaEquiv (h ≫ g)))).val =
+      join.map h (𝟙 K) ≫ (objEquiv (F.app _ (yonedaEquiv g))).val := by
   obtain ⟨θ, rfl⟩ : ∃ θ, stdSimplex.map θ = h := ⟨_, stdSimplex.map_preimage h⟩
   rw [← yonedaEquiv_naturality, NatTrans.naturality_apply, objEquiv_map_coe, Quiver.Hom.unop_op]
 
 /-- Two retractions along equal maps to `Δ[1]` agree. -/
 private lemma joinFiberZeroRetraction_app_coe_congr {m k : ℕ} {q q' : Δ[m] ⟶ Δ[1]}
     (hq : q = q') (h : yonedaEquiv q 0 = 0) (h' : yonedaEquiv q' 0 = 0) (y : Δ[m] _⦋k⦌) :
-    ((joinFiberZeroRetraction q h).app _ y).1 = ((joinFiberZeroRetraction q' h').app _ y).1 := by
+    ((joinFiberZeroRetraction q h).app _ y).val = ((joinFiberZeroRetraction q' h').app _ y).val
+        := by
   subst hq
   rfl
 
@@ -171,7 +175,7 @@ the simplex lies in `K`, and its value is given by `p`. -/
 private noncomputable def value (F : X ⟶ slice p) {m : ℕ} (d : JoinData Δ[m] X K) : C _⦋m⦌ :=
   if h : yonedaEquiv d.p 0 = 0 then
     yonedaEquiv (join.homEquiv.symm ⟨d.p, (joinFiber d.p 0).ι, d.right⟩ ≫
-      (objEquiv (F.app _ (yonedaEquiv (joinFiberZeroRetraction d.p h ≫ d.left)))).1)
+      (objEquiv (F.app _ (yonedaEquiv (joinFiberZeroRetraction d.p h ≫ d.left)))).val)
   else p.app _ (d.right.app _ ⟨yonedaEquiv (𝟙 _), by simp [joinFiber_one_eq_top h]⟩)
 
 /-- On a simplex of `X ⋆ K` coming from a simplex `k` of `K`, the value is `p k`. -/
@@ -196,7 +200,7 @@ simplex `g : Δ[a] ⟶ X`, the value is the value of the simplex `F g` of the sl
 private lemma value_of_eq_comp_map (F : X ⟶ slice p) {m : ℕ} (d : JoinData Δ[m] X K)
     {a : SimplexCategory} (t : Δ[m] ⟶ join (stdSimplex.obj a) K) (g : stdSimplex.obj a ⟶ X)
     (hd : join.homEquiv.symm d = t ≫ join.map g (𝟙 K)) :
-    value F d = yonedaEquiv (t ≫ (objEquiv (F.app _ (yonedaEquiv g))).1) := by
+    value F d = yonedaEquiv (t ≫ (objEquiv (F.app _ (yonedaEquiv g))).val) := by
   set e := join.homEquiv t
   have hd' : d = e.postcomp g (𝟙 K) := by
     rw [← join.homEquiv_comp_map, ← hd, Equiv.apply_symm_apply]
@@ -213,7 +217,7 @@ private lemma value_of_eq_comp_map (F : X ⟶ slice p) {m : ℕ} (d : JoinData �
       ext n y
       induction n using Opposite.rec with | op n
       induction n using SimplexCategory.rec with | _ n
-      have hy := ((joinFiberZeroRetraction d.p h').app _ y).2
+      have hy := ((joinFiberZeroRetraction d.p h').app _ y).property
       refine (JoinData.congr_left_app hd' _ hy ?_).trans ?_
       · rwa [JoinData.postcomp_p, ← hp]
       · rw [JoinData.postcomp_left_app]
@@ -223,7 +227,7 @@ private lemma value_of_eq_comp_map (F : X ⟶ slice p) {m : ℕ} (d : JoinData �
       ← Category.assoc, ← join.homEquiv_symm_eq_comp_map, Equiv.symm_apply_apply]
   · obtain ⟨k, rfl⟩ := join.exists_eq_comp_inr t h
     rw [value_of_eq_comp_inr F d k (by rw [hd, Category.assoc, join.inr_map, Category.id_comp]),
-      Category.assoc, (objEquiv _).2]
+      Category.assoc, (objEquiv _).property]
 
 /-- The map `X ⋆ K ⟶ C` attached to a map `F : X ⟶ C_{/p}`. -/
 private noncomputable def toHom (F : X ⟶ slice p) : join X K ⟶ C where
@@ -263,7 +267,7 @@ private lemma inr_comp_toHom (F : X ⟶ slice p) : join.inr X K ≫ toHom F = p 
 
 private lemma ofHom_app_coe {n : SimplexCategory}
     (τ : {τ : join X K ⟶ C // join.inr X K ≫ τ = p}) (x : X.obj (op n)) :
-    (objEquiv ((ofHom τ).app _ x)).1 = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.1 :=
+    (objEquiv ((ofHom τ).app _ x)).val = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.val :=
   (rfl)
 
 /-- **The universal property of the slice**: maps `X ⟶ C_{/p}` correspond to maps `X ⋆ K ⟶ C`
@@ -296,7 +300,7 @@ noncomputable def homEquiv : (X ⟶ slice p) ≃ {τ : join X K ⟶ C // join.in
     rw [toHom_app]
     rcases join.exists_eq_comp_inr_or_exists_eq_comp_map
       (join.homEquiv.symm (join.objEquiv s)) with ⟨k, hk⟩ | ⟨t, g, ht⟩
-    · rw [value_of_eq_comp_inr _ _ k hk, ← whisker_eq k τ.2, ← Category.assoc, ← hk,
+    · rw [value_of_eq_comp_inr _ _ k hk, ← whisker_eq k τ.property, ← Category.assoc, ← hk,
         join.homEquiv_symm_objEquiv, yonedaEquiv_symm_comp, Equiv.apply_symm_apply]
     · rw [value_of_eq_comp_map _ _ t g ht, ofHom_app_coe, Equiv.symm_apply_apply,
         ← Category.assoc, ← ht, join.homEquiv_symm_objEquiv, yonedaEquiv_symm_comp,
@@ -307,17 +311,17 @@ noncomputable def homEquiv : (X ⟶ slice p) ≃ {τ : join X K ⟶ C // join.in
 @[simp]
 lemma homEquiv_symm_app_coe {n : SimplexCategory}
     (τ : {τ : join X K ⟶ C // join.inr X K ≫ τ = p}) (x : X.obj (op n)) :
-    (objEquiv ((homEquiv.symm τ).app _ x)).1 = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.1 :=
+    (objEquiv ((homEquiv.symm τ).app _ x)).val = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.val :=
   (rfl)
 
 /-- The universal property of the slice is natural in `X`: precomposing with `f : Y ⟶ X`
 corresponds to precomposing with `f ⋆ K`. -/
 @[simp]
 lemma homEquiv_comp_coe (f : Y ⟶ X) (F : X ⟶ slice p) :
-    (homEquiv (f ≫ F)).1 = join.map f (𝟙 K) ≫ (homEquiv F).1 := by
+    (homEquiv (f ≫ F)).val = join.map f (𝟙 K) ≫ (homEquiv F).val := by
   obtain ⟨τ, rfl⟩ := homEquiv.symm.surjective F
-  have : f ≫ homEquiv.symm τ = homEquiv.symm ⟨join.map f (𝟙 K) ≫ τ.1,
-      by rw [join.inr_map_assoc, Category.id_comp, τ.2]⟩ := by
+  have : f ≫ homEquiv.symm τ = homEquiv.symm ⟨join.map f (𝟙 K) ≫ τ.val,
+      by rw [join.inr_map_assoc, Category.id_comp, τ.property]⟩ := by
     ext n y
     induction n using Opposite.rec with | op n
     refine objEquiv.injective (Subtype.ext ?_)
@@ -335,18 +339,18 @@ noncomputable def representableBy : (functor p).RepresentableBy (slice p) where
 /-- The simplex of the slice that a map `F : X ⟶ C_{/p}` assigns to a simplex `x` of `X` is the
 restriction along `x ⋆ K` of the map `X ⋆ K ⟶ C` corresponding to `F`. -/
 lemma objEquiv_app_coe {n : SimplexCategory} (F : X ⟶ slice p) (x : X.obj (op n)) :
-    (objEquiv (F.app _ x)).1 = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ (homEquiv F).1 := by
+    (objEquiv (F.app _ x)).val = join.map (yonedaEquiv.symm x) (𝟙 K) ≫ (homEquiv F).val := by
   conv_lhs => rw [← homEquiv.symm_apply_apply F]
   exact homEquiv_symm_app_coe _ x
 
 /-- Maps to the slice are equal when the corresponding maps `X ⋆ K ⟶ C` are equal. -/
-lemma hom_ext {F G : X ⟶ slice p} (h : (homEquiv F).1 = (homEquiv G).1) : F = G :=
+lemma hom_ext {F G : X ⟶ slice p} (h : (homEquiv F).val = (homEquiv G).val) : F = G :=
   homEquiv.injective (Subtype.ext h)
 
 /-- The projection of the slice to `C` corresponds, under the universal property, to restricting
 along the inclusion `X ⟶ X ⋆ K`. -/
 @[reassoc (attr := simp)]
-lemma comp_π (F : X ⟶ slice p) : F ≫ π p = join.inl X K ≫ (homEquiv F).1 := by
+lemma comp_π (F : X ⟶ slice p) : F ≫ π p = join.inl X K ≫ (homEquiv F).val := by
   conv_lhs => rw [← homEquiv.symm_apply_apply F]
   ext n x
   induction n using Opposite.rec with | op n
@@ -365,6 +369,13 @@ lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
     refine ⟨homEquiv.symm ⟨inv (join.inl X K) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
     simp
 
+variable (p) in
+/-- The slice of a terminal simplicial set is terminal: over the point there is exactly one cone
+on every diagram. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (slice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
+
 section map
 
 variable {L D : SSet.{u}} {q : L ⟶ D}
@@ -374,15 +385,15 @@ variable {L D : SSet.{u}} {q : L ⟶ D}
 (`SSet.slice.objEquiv_map_app_coe`). Restricting a cone along `i` and pushing it forward
 along `g` are the special cases `g = 𝟙 C` and `i = 𝟙 K`. -/
 noncomputable def map (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) : slice p ⟶ slice q :=
-  homEquiv.symm ⟨join.map (𝟙 _) i ≫ (homEquiv (𝟙 (slice p))).1 ≫ g, by
-    rw [join.inr_map_assoc, reassoc_of% (homEquiv (𝟙 (slice p))).2, h]⟩
+  homEquiv.symm ⟨join.map (𝟙 _) i ≫ (homEquiv (𝟙 (slice p))).val ≫ g, by
+    rw [join.inr_map_assoc, reassoc_of% (homEquiv (𝟙 (slice p))).property, h]⟩
 
 /-- Under the universal property of the slice, composing with `SSet.slice.map i g h`
 corresponds to precomposing with `X ⋆ i` and postcomposing with `g`. -/
 @[simp high]
 lemma homEquiv_comp_map_coe (F : X ⟶ slice p) (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) :
-    (homEquiv (F ≫ map i g h)).1 = join.map (𝟙 X) i ≫ (homEquiv F).1 ≫ g := by
-  have hF : (homEquiv F).1 = join.map F (𝟙 K) ≫ (homEquiv (𝟙 (slice p))).1 := by
+    (homEquiv (F ≫ map i g h)).val = join.map (𝟙 X) i ≫ (homEquiv F).val ≫ g := by
+  have hF : (homEquiv F).val = join.map F (𝟙 K) ≫ (homEquiv (𝟙 (slice p))).val := by
     rw [← homEquiv_comp_coe, Category.comp_id]
   rw [homEquiv_comp_coe, map, Equiv.apply_symm_apply, hF]
   simp only [Category.assoc, ← join.map_comp_assoc, Category.id_comp, Category.comp_id]
@@ -391,15 +402,15 @@ lemma homEquiv_comp_map_coe (F : X ⟶ slice p) (i : L ⟶ K) (g : C ⟶ D) (h :
 universal map `C_{/p} ⋆ K ⟶ C` precomposed with `C_{/p} ⋆ i` and postcomposed with `g`. -/
 @[simp]
 lemma homEquiv_map_coe (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) :
-    (homEquiv (map i g h)).1 = join.map (𝟙 _) i ≫ (homEquiv (𝟙 (slice p))).1 ≫ g := by
+    (homEquiv (map i g h)).val = join.map (𝟙 _) i ≫ (homEquiv (𝟙 (slice p))).val ≫ g := by
   rw [map, Equiv.apply_symm_apply]
 
 /-- The map of slices sends a simplex `σ : Δ[n] ⋆ K ⟶ C` to `(Δ[n] ⋆ i) ≫ σ ≫ g`. -/
 @[simp]
 lemma objEquiv_map_app_coe {n : SimplexCategory} (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q)
     (σ : (slice p).obj (op n)) :
-    (objEquiv ((map i g h).app _ σ)).1 = join.map (𝟙 _) i ≫ (objEquiv σ).1 ≫ g := by
-  have hσ : (homEquiv (yonedaEquiv.symm σ)).1 = (objEquiv σ).1 := by
+    (objEquiv ((map i g h).app _ σ)).val = join.map (𝟙 _) i ≫ (objEquiv σ).val ≫ g := by
+  have hσ : (homEquiv (yonedaEquiv.symm σ)).val = (objEquiv σ).val := by
     have := objEquiv_app_coe (yonedaEquiv.symm σ) (yonedaEquiv (𝟙 _))
     rw [← yonedaEquiv_comp, Category.id_comp, Equiv.apply_symm_apply, Equiv.symm_apply_apply,
       join.map_id, Category.id_comp] at this
@@ -445,15 +456,15 @@ lemma isPullback_map {C' D' : SSet.{u}} {t : C' ⟶ C} {l : C' ⟶ D'} {r : C �
   -- A cone over the cospan consists of maps `T ⋆ K ⟶ C` and `T ⋆ K ⟶ D'` agreeing in `D`, which
   -- lift uniquely to `T ⋆ K ⟶ C'`.
   have hcond (s : Limits.PullbackCone (map (𝟙 K) r hr) (map (𝟙 K) b hb)) :
-      (homEquiv s.fst).1 ≫ r = (homEquiv s.snd).1 ≫ b := by
-    simpa using congrArg (fun F ↦ (homEquiv F).1) s.condition
+      (homEquiv s.fst).val ≫ r = (homEquiv s.snd).val ≫ b := by
+    simpa using congrArg (fun F ↦ (homEquiv F).val) s.condition
   refine IsPullback.of_isLimit (Limits.PullbackCone.IsLimit.mk hw
     (fun s ↦ homEquiv.symm ⟨sq.lift _ _ (hcond s), sq.hom_ext
-      (by rw [Category.assoc, sq.lift_fst, (homEquiv s.fst).2, ← ht, Category.id_comp])
-      (by rw [Category.assoc, sq.lift_snd, (homEquiv s.snd).2, ← hl, Category.id_comp])⟩)
+      (by rw [Category.assoc, sq.lift_fst, (homEquiv s.fst).property, ← ht, Category.id_comp])
+      (by rw [Category.assoc, sq.lift_snd, (homEquiv s.snd).property, ← hl, Category.id_comp])⟩)
     (fun s ↦ hom_ext (by simp)) (fun s ↦ hom_ext (by simp)) (fun s m hm₁ hm₂ ↦ hom_ext ?_))
-  have h₁ := congrArg (fun F ↦ (homEquiv F).1) hm₁
-  have h₂ := congrArg (fun F ↦ (homEquiv F).1) hm₂
+  have h₁ := congrArg (fun F ↦ (homEquiv F).val) hm₁
+  have h₂ := congrArg (fun F ↦ (homEquiv F).val) hm₂
   simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp] at h₁ h₂
   rw [Equiv.apply_symm_apply]
   exact sq.hom_ext (by simp [h₁]) (by simp [h₂])
@@ -512,12 +523,12 @@ lemma isPullback_restrictionMap {X' S' : SSet.{u}} {t : X' ⟶ X} {p' : X' ⟶ S
       (by simpa using s.condition =≫ Limits.pullback.snd _ _))
     (fun s ↦ hK.lift_fst _ _ _) (fun s ↦ Limits.pullback.hom_ext ?_ ?_) (fun s m hm₁ hm₂ ↦ ?_))
   · -- Both maps `T ⋆ L ⟶ X'` agree after composing with `t` and with `p'`.
-    have h₁ := congrArg (fun F ↦ (homEquiv F).1) (hK.lift_fst s.fst
+    have h₁ := congrArg (fun F ↦ (homEquiv F).val) (hK.lift_fst s.fst
       (s.snd ≫ Limits.pullback.snd _ _) (by simpa using s.condition =≫ Limits.pullback.snd _ _))
-    have h₂ := congrArg (fun F ↦ (homEquiv F).1) (hK.lift_snd s.fst
+    have h₂ := congrArg (fun F ↦ (homEquiv F).val) (hK.lift_snd s.fst
       (s.snd ≫ Limits.pullback.snd _ _) (by simpa using s.condition =≫ Limits.pullback.snd _ _))
-    have h₃ := congrArg (fun F ↦ (homEquiv F).1) (s.condition =≫ Limits.pullback.fst _ _)
-    have h₄ := congrArg (fun F ↦ (homEquiv F).1) (s.snd ≫=
+    have h₃ := congrArg (fun F ↦ (homEquiv F).val) (s.condition =≫ Limits.pullback.fst _ _)
+    have h₄ := congrArg (fun F ↦ (homEquiv F).val) (s.snd ≫=
       Limits.pullback.condition (f := map (𝟙 L) p' (by simp)) (g := map i (𝟙 S') (by simp)))
     rw [← Category.assoc s.snd, ← Category.assoc s.snd] at h₄
     rw [homEquiv_comp_map_coe, join.map_id, Category.id_comp] at h₁ h₂
