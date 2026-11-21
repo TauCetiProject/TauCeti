@@ -340,6 +340,14 @@ theorem mpullbackWithin_zero (f : M → M') (s : Set M) :
 theorem mpullback_zero (f : M → M') : mpullback I I' f (0 : RoughForm I' M' F k) = 0 :=
   bundleMpullback_zero f
 
+/-- The pullback of a form of positive degree along a constant map is zero: the derivative of a
+constant map vanishes. -/
+@[simp]
+theorem mpullback_const (y : M') (ω : RoughForm I' M' F (k + 1)) :
+    mpullback I I' (fun _ : M ↦ y) ω = 0 := by
+  ext x v
+  simpa [mpullback_apply, mfderiv_const] using (ω y).map_coord_zero 0 rfl
+
 /-- Within-set pullback preserves addition. -/
 @[simp]
 theorem mpullbackWithin_add [ContinuousAdd F] (f : M → M') (s : Set M)
