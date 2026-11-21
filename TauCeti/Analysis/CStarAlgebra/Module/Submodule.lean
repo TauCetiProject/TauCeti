@@ -10,9 +10,6 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Module.Self
 
-import TauCeti.Analysis.CStarAlgebra.Module.Action
-import TauCeti.Analysis.CStarAlgebra.Module.Basic
-
 /-!
 # Submodules of Hilbert C⋆-modules and closed right ideals
 
@@ -270,12 +267,16 @@ theorem mem_iInf {ι : Sort*} {f : ι → CStarSubmodule A E} {x : E} :
     x ∈ ⨅ i, f i ↔ ∀ i, x ∈ f i := by
   simp [← mem_toSubmodule]
 
-/-- Under a `CStarModule A E` structure, `⊥` is the zero submodule `{0}`. -/
+end Lattice
+
+section LatticeBot
+
+variable {A E : Type*} [AddCommGroup E] [Module ℂ E] [SMulZeroClass A E]
+
+/-- When the coefficient action fixes `0`, `⊥` is the zero submodule `{0}`. -/
 @[simp]
-theorem toSubmodule_bot [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] :
+theorem toSubmodule_bot :
     (⊥ : CStarSubmodule A E).toSubmodule = ⊥ := by
-  let _ := CStarModule.distribSMul A E
   let zeroSub : CStarSubmodule A E :=
     { toSubmodule := ⊥
       smul_mem_coeff' := fun a _ hx ↦ by
@@ -284,25 +285,37 @@ theorem toSubmodule_bot [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModul
   exact le_antisymm (toSubmodule_le_toSubmodule.mpr (bot_le (a := zeroSub))) bot_le
 
 @[simp]
-theorem mem_bot [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] {x : E} :
+theorem mem_bot {x : E} :
     x ∈ (⊥ : CStarSubmodule A E) ↔ x = 0 := by
   rw [← mem_toSubmodule, toSubmodule_bot, Submodule.mem_bot]
 
 @[simp]
-theorem coe_bot [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] :
+theorem coe_bot :
     ((⊥ : CStarSubmodule A E) : Set E) = {0} := by
   ext x
   exact mem_bot
 
-/-- Under a `CStarModule A E` structure, the join `F ⊔ G` has underlying subspace
-`F.toSubmodule ⊔ G.toSubmodule` (the algebraic sum `F + G`). -/
+theorem eq_bot_iff {F : CStarSubmodule A E} :
+    F = ⊥ ↔ ∀ x ∈ F, x = 0 := by
+  rw [← toSubmodule_inj, toSubmodule_bot, Submodule.eq_bot_iff]
+  rfl
+
+theorem disjoint_iff {F G : CStarSubmodule A E} :
+    Disjoint F G ↔ Disjoint F.toSubmodule G.toSubmodule := by
+  rw [disjoint_iff_inf_le, disjoint_iff_inf_le, ← toSubmodule_le_toSubmodule, toSubmodule_inf,
+    toSubmodule_bot]
+
+end LatticeBot
+
+section LatticeSup
+
+variable {A E : Type*} [AddCommGroup E] [Module ℂ E] [DistribSMul A E]
+
+/-- When the coefficient action distributes over addition, the join `F ⊔ G` has underlying
+subspace `F.toSubmodule ⊔ G.toSubmodule` (the algebraic sum `F + G`). -/
 @[simp]
-theorem toSubmodule_sup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] (F G : CStarSubmodule A E) :
+theorem toSubmodule_sup (F G : CStarSubmodule A E) :
     (F ⊔ G).toSubmodule = F.toSubmodule ⊔ G.toSubmodule := by
-  let _ := CStarModule.distribSMul A E
   let supSub : CStarSubmodule A E :=
     { toSubmodule := F.toSubmodule ⊔ G.toSubmodule
       smul_mem_coeff' := fun a _ hx ↦ by
@@ -315,21 +328,16 @@ theorem toSubmodule_sup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModul
     (sup_le (toSubmodule_le_toSubmodule.mpr le_sup_left)
       (toSubmodule_le_toSubmodule.mpr le_sup_right))
 
-theorem mem_sup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] {F G : CStarSubmodule A E} {z : E} :
+theorem mem_sup {F G : CStarSubmodule A E} {z : E} :
     z ∈ F ⊔ G ↔ ∃ x ∈ F, ∃ y ∈ G, x + y = z := by
   rw [← mem_toSubmodule, toSubmodule_sup, Submodule.mem_sup]
   rfl
 
-/-- Under a `CStarModule A E` structure with `SMulCommClass ℂ A A`, `sSup S` has underlying
-subspace `sSup (toSubmodule '' S)`. -/
+/-- When the coefficient action distributes over addition and commutes with complex scalar
+multiplication, `sSup S` has underlying subspace `sSup (toSubmodule '' S)`. -/
 @[simp]
-theorem toSubmodule_sSup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [SMulCommClass ℂ A A] [PartialOrder A] [Norm A] [Norm E] [CStarModule A E]
-    (S : Set (CStarSubmodule A E)) :
+theorem toSubmodule_sSup [SMulCommClass ℂ A E] (S : Set (CStarSubmodule A E)) :
     (sSup S).toSubmodule = sSup (toSubmodule '' S) := by
-  let _ := CStarModule.distribSMul A E
-  have _ := CStarModule.smulCommClass A E
   let supSub : CStarSubmodule A E :=
     { toSubmodule := sSup (toSubmodule '' S)
       smul_mem_coeff' := fun a _ hx ↦ by
@@ -360,26 +368,12 @@ theorem toSubmodule_sSup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModu
       exact toSubmodule_le_toSubmodule.mpr (le_sSup hF))
 
 @[simp]
-theorem toSubmodule_iSup [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [SMulCommClass ℂ A A] [PartialOrder A] [Norm A] [Norm E] [CStarModule A E]
-    {ι : Sort*} (f : ι → CStarSubmodule A E) :
+theorem toSubmodule_iSup [SMulCommClass ℂ A E] {ι : Sort*} (f : ι → CStarSubmodule A E) :
     (⨆ i, f i).toSubmodule = ⨆ i, (f i).toSubmodule := by
   rw [iSup, toSubmodule_sSup, ← Set.range_comp, ← iSup]
   rfl
 
-theorem eq_bot_iff [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] {F : CStarSubmodule A E} :
-    F = ⊥ ↔ ∀ x ∈ F, x = 0 := by
-  rw [← toSubmodule_inj, toSubmodule_bot, Submodule.eq_bot_iff]
-  rfl
-
-theorem disjoint_iff [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-    [PartialOrder A] [Norm A] [Norm E] [CStarModule A E] {F G : CStarSubmodule A E} :
-    Disjoint F G ↔ Disjoint F.toSubmodule G.toSubmodule := by
-  rw [disjoint_iff_inf_le, disjoint_iff_inf_le, ← toSubmodule_le_toSubmodule, toSubmodule_inf,
-    toSubmodule_bot]
-
-end Lattice
+end LatticeSup
 
 /-! ### Continuous subtype inclusions -/
 
@@ -493,17 +487,14 @@ end RightInner
 
 section TopologicalClosure
 
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+variable {A E : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+  [TopologicalSpace E] [ContinuousAdd E] [ContinuousConstSMul ℂ E] [ContinuousConstSMul A E]
 
-/-- The norm closure of a C⋆-submodule is again a C⋆-submodule. -/
+/-- The topological closure of a C⋆-submodule is again a C⋆-submodule. -/
 def topologicalClosure (F : CStarSubmodule A E) : CStarSubmodule A E where
   toSubmodule := F.toSubmodule.topologicalClosure
-  smul_mem_coeff' a x hx := by
-    have hcont : Continuous (fun y : E ↦ a • y) := CStarModule.continuous_const_smul a
-    have hmem : a • x ∈ (fun y : E ↦ a • y) '' closure (F : Set E) := ⟨x, hx, rfl⟩
-    refine closure_mono (Set.image_subset_iff.mpr fun y hy ↦ F.smul_mem_coeff a hy) ?_
-    exact image_closure_subset_closure_image hcont hmem
+  smul_mem_coeff' a _ hx :=
+    map_mem_closure (continuous_const_smul a) hx fun _ hy ↦ F.smul_mem_coeff a hy
 
 @[simp]
 theorem toSubmodule_topologicalClosure (F : CStarSubmodule A E) :
@@ -630,6 +621,14 @@ theorem toSubmodule_ofRightIdeal {A : Type*} [NonUnitalRing A] [Module ℂ A] (I
     (ofRightIdeal I hmul).toSubmodule = I :=
   (rfl)
 
+end RightIdeals
+
+end CStarSubmodule
+
+end TauCeti
+
+namespace AddSubgroup
+
 /-- Every closed right additive subgroup of a (possibly nonunital) C⋆-algebra `A` is automatically
 closed under complex scalar multiplication, hence forms a closed right Hilbert `A`-submodule of
 the right self-module `CStarModule Aᵐᵒᵖ A`. -/
@@ -641,9 +640,15 @@ theorem smul_mem_of_isClosed_right {A : Type*} [NonUnitalCStarAlgebra A]
   have _ := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
-  have hlim : Tendsto (fun e : A ↦ a * (c • e)) (CStarAlgebra.approximateUnit A) (𝓝 (c • a)) := by
-    simpa only [mul_smul_comm] using (hl.tendsto_mul_left a).const_smul c
-  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e ↦ hmul ha (c • e))
+  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul hl.tendsto_mul_left c ha
+
+end AddSubgroup
+
+namespace TauCeti
+
+namespace CStarSubmodule
+
+section RightIdeals
 
 /-- Bundle a closed right ring ideal (an `AddSubgroup A` closed under right multiplication and
 topologically closed) of a possibly nonunital C⋆-algebra `A` as a submodule of the right
@@ -654,7 +659,7 @@ def ofClosedRightAddSubgroup {A : Type*} [NonUnitalCStarAlgebra A]
   carrier := I
   add_mem' := I.add_mem'
   zero_mem' := I.zero_mem'
-  smul_mem' c _ hx := smul_mem_of_isClosed_right I hI hmul c hx
+  smul_mem' c _ hx := I.smul_mem_of_isClosed_right hI hmul c hx
   smul_mem_coeff' b _ hx := hmul hx (unop b)
 
 @[simp]

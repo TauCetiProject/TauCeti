@@ -26,10 +26,11 @@ We establish the algebraic and metric properties of orthogonality and `F.orthogo
 * `F.orthogonal` is always a norm-closed C⋆-submodule forming a self-adjoint Galois connection on
   `CStarSubmodule A E`, satisfying `F ⊓ F.orthogonal = ⊥`, `F ≤ F.orthogonal.orthogonal`, and
   `F.topologicalClosure.orthogonal = F.orthogonal`.
-* The canonical addition map `F.orthogonalAddₗᵢ : C⋆ᵐᵒᵈ(A, F × F.orthogonal) →ₗᵢ[ℂ] E` preserves
-  the `A`-valued inner product, the `A`-action, and the module norm; hence `F ⊔ F.orthogonal` is
-  norm-closed whenever `F` and `F.orthogonal` are complete (in particular, when `E` is complete and
-  `F` is closed).
+* The canonical addition map `F.addₗᵢ G hFG : C⋆ᵐᵒᵈ(A, F × G) →ₗᵢ[ℂ] E` for orthogonal
+  submodules `G ≤ F.orthogonal` (and in particular `F.orthogonalAddₗᵢ`) preserves the `A`-valued
+  inner product, the `A`-action, and the module norm; hence `F ⊔ G` is norm-closed whenever `F`
+  and `G` are complete (in particular, `F ⊔ F.orthogonal` is closed when `E` is complete and `F`
+  is closed).
 
 For orthogonal complementability (`F ⊔ F.orthogonal = ⊤`), canonical projections, characterizations
 via adjoints and self-adjoint idempotents, and concrete examples/counterexamples, see
@@ -45,9 +46,10 @@ via adjoints and self-adjoint idempotents, and concrete examples/counterexamples
 * `TauCeti.CStarSubmodule.orthogonal`: the orthogonal complement of a C⋆-submodule, with its
   Galois connection (`orthogonal_gc`), closedness (`isClosed_orthogonal`), and invariance under
   closure (`orthogonal_topologicalClosure`).
-* `TauCeti.CStarSubmodule.orthogonalAddₗᵢ`, `TauCeti.CStarSubmodule.isClosed_sup_orthogonal`,
-  `TauCeti.CStarSubmodule.isClosed_sup_orthogonal_of_isClosed`: orthogonal direct-sum isometry and
-  closedness of `F ⊔ F.orthogonal`.
+* `TauCeti.CStarSubmodule.addₗᵢ`, `TauCeti.CStarSubmodule.isClosed_sup_of_le_orthogonal`,
+  `TauCeti.CStarSubmodule.orthogonalAddₗᵢ`, `TauCeti.CStarSubmodule.isClosed_sup_orthogonal`,
+  `TauCeti.CStarSubmodule.isClosed_sup_orthogonal_of_isClosed`: orthogonal direct-sum isometries and
+  closedness of `F ⊔ G` and `F ⊔ F.orthogonal`.
 
 ## References
 
@@ -91,15 +93,6 @@ theorem isRefl_innerₛₗ : (CStarModule.innerₛₗ (A := A) (E := E)).IsRefl 
   rw [innerₛₗ_apply] at h ⊢
   rw [← star_inner, h, star_zero]
 
-/-- The orthogonal complement of any complex submodule with respect to `CStarModule.innerₛₗ` is
-stable under the coefficient action `SMul A E`. -/
-theorem smul_mem_orthogonalBilin (S : Submodule ℂ E) (a : A) {y : E}
-    (hy : y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A))) :
-    a • y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) := by
-  rw [Submodule.mem_orthogonalBilin] at hy ⊢
-  intro x hx
-  rw [innerₛₗ_apply, inner_op_smul_right, ← innerₛₗ_apply, hy x hx, mul_zero]
-
 end Algebraic
 
 section Norm
@@ -132,6 +125,27 @@ theorem norm_le_norm_add_right_of_inner_eq_zero [StarOrderedRing A] {x y : E}
 
 end Norm
 
+end CStarModule
+
+namespace Submodule
+
+section Algebraic
+
+variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+  [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- The orthogonal complement of any complex submodule with respect to `CStarModule.innerₛₗ` is
+stable under the coefficient action `SMul A E`. -/
+theorem smul_mem_orthogonalBilin (S : Submodule ℂ E) (a : A) {y : E}
+    (hy : y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A))) :
+    a • y ∈ S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) := by
+  rw [Submodule.mem_orthogonalBilin] at hy ⊢
+  intro x hx
+  rw [CStarModule.innerₛₗ_apply, CStarModule.inner_op_smul_right,
+    ← CStarModule.innerₛₗ_apply, hy x hx, mul_zero]
+
+end Algebraic
+
 section Analytic
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
@@ -144,15 +158,16 @@ theorem isClosed_orthogonalBilin (S : Submodule ℂ E) :
   have heq : (S.orthogonalBilin (CStarModule.innerₛₗ (A := A)) : Set E) =
       ⋂ x ∈ S, {y : E | inner A x y = 0} := by
     ext y
-    simp only [SetLike.mem_coe, Submodule.mem_orthogonalBilin, innerₛₗ_apply, Set.mem_iInter,
-      Set.mem_ofPred_eq]
+    simp only [SetLike.mem_coe, Submodule.mem_orthogonalBilin, CStarModule.innerₛₗ_apply,
+      Set.mem_iInter, Set.mem_ofPred_eq]
   rw [heq]
   exact isClosed_biInter fun x _ ↦
-    isClosed_eq (continuous_inner.comp (continuous_const.prodMk continuous_id)) continuous_const
+    isClosed_eq (CStarModule.continuous_inner.comp (continuous_const.prodMk continuous_id))
+      continuous_const
 
 end Analytic
 
-end CStarModule
+end Submodule
 
 namespace TauCeti.CStarSubmodule
 
@@ -167,7 +182,7 @@ variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule
 `⟪x, y⟫_A = 0` for all `x ∈ F`. -/
 def orthogonal (F : CStarSubmodule A E) : CStarSubmodule A E where
   toSubmodule := F.toSubmodule.orthogonalBilin (CStarModule.innerₛₗ (A := A))
-  smul_mem_coeff' a _ hy := CStarModule.smul_mem_orthogonalBilin F.toSubmodule a hy
+  smul_mem_coeff' a _ hy := F.toSubmodule.smul_mem_orthogonalBilin a hy
 
 theorem toSubmodule_orthogonal (F : CStarSubmodule A E) :
     F.orthogonal.toSubmodule = F.toSubmodule.orthogonalBilin (CStarModule.innerₛₗ (A := A)) :=
@@ -241,17 +256,20 @@ theorem orthogonal_bot : (⊥ : CStarSubmodule A E).orthogonal = ⊤ :=
 
 @[simp]
 theorem orthogonal_top : (⊤ : CStarSubmodule A E).orthogonal = ⊥ := by
+  let _ := CStarModule.distribSMul A E
   rw [eq_bot_iff]
   intro x hx
   exact (CStarModule.inner_self (A := A)).mp (mem_orthogonal.mp hx x (mem_top x))
 
 @[simp]
 theorem orthogonal_eq_top_iff {F : CStarSubmodule A E} : F.orthogonal = ⊤ ↔ F = ⊥ := by
+  let _ := CStarModule.distribSMul A E
   refine ⟨fun h ↦ eq_bot_iff.mpr fun x hx ↦ ?_, fun h ↦ by rw [h, orthogonal_bot]⟩
   exact (CStarModule.inner_self (A := A)).mp (mem_orthogonal.mp (h ▸ mem_top x) x hx)
 
 @[simp]
 theorem inf_orthogonal_eq_bot (F : CStarSubmodule A E) : F ⊓ F.orthogonal = ⊥ := by
+  let _ := CStarModule.distribSMul A E
   rw [eq_bot_iff]
   intro x hx
   exact (CStarModule.inner_self (A := A)).mp (inner_right_of_mem_orthogonal hx.1 hx.2)
@@ -295,11 +313,15 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 
 /-- The orthogonal complement of any C⋆-submodule is norm-closed. -/
 theorem isClosed_orthogonal (F : CStarSubmodule A E) : IsClosed (F.orthogonal : Set E) :=
-  CStarModule.isClosed_orthogonalBilin F.toSubmodule
+  F.toSubmodule.isClosed_orthogonalBilin
 
 instance instOrthogonalCompleteSpace [CompleteSpace E] (F : CStarSubmodule A E) :
     CompleteSpace F.orthogonal :=
   (isClosed_orthogonal F).completeSpace_coe
+
+section
+
+local instance : ContinuousConstSMul A E := ⟨CStarModule.continuous_const_smul⟩
 
 /-- Taking the topological closure does not change the orthogonal complement. -/
 @[simp]
@@ -319,12 +341,15 @@ theorem topologicalClosure_le_orthogonal_orthogonal (F : CStarSubmodule A E) :
     F.topologicalClosure ≤ F.orthogonal.orthogonal :=
   topologicalClosure_minimal (le_orthogonal_orthogonal F) (isClosed_orthogonal F.orthogonal)
 
-/-! ### Orthogonal direct-sum isometry and closedness of `F + F⊥` -/
+end
 
-/-- The canonical addition map `C⋆ᵐᵒᵈ(A, F × F.orthogonal) →ₗᵢ[ℂ] E` sending `(x, y)` to `x + y`.
-It preserves both the `A`-valued inner product and the `A`-action. -/
-noncomputable def orthogonalAddₗᵢ (F : CStarSubmodule A E) :
-    C⋆ᵐᵒᵈ(A, F × F.orthogonal) →ₗᵢ[ℂ] E where
+/-! ### Orthogonal direct-sum isometry and closedness of `F ⊔ G` -/
+
+/-- The canonical addition map `C⋆ᵐᵒᵈ(A, F × G) →ₗᵢ[ℂ] E` sending `(x, y)` to `x + y` for
+orthogonal C⋆-submodules `G ≤ F.orthogonal`. It preserves both the `A`-valued inner product and
+the `A`-action. -/
+noncomputable def addₗᵢ (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal) :
+    C⋆ᵐᵒᵈ(A, F × G) →ₗᵢ[ℂ] E where
   toFun p := (p.1 : E) + (p.2 : E)
   map_add' p q := by
     rw [WithCStarModule.add_fst, WithCStarModule.add_snd]
@@ -334,7 +359,7 @@ noncomputable def orthogonalAddₗᵢ (F : CStarSubmodule A E) :
       RingHom.id_apply, smul_add]
   norm_map' p := by
     have horth : inner A (p.1 : E) (p.2 : E) = 0 :=
-      inner_right_of_mem_orthogonal p.1.property p.2.property
+      inner_right_of_mem_orthogonal p.1.property (hFG p.2.property)
     have hnorm : ‖(p.1 : E) + (p.2 : E)‖ = ‖p‖ := by
       rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A),
         CStarModule.inner_add_self_of_inner_eq_zero horth, WithCStarModule.prod_norm]
@@ -342,56 +367,97 @@ noncomputable def orthogonalAddₗᵢ (F : CStarSubmodule A E) :
     exact hnorm
 
 @[simp]
-theorem orthogonalAddₗᵢ_apply (F : CStarSubmodule A E) (p : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
-    F.orthogonalAddₗᵢ p = (p.1 : E) + (p.2 : E) :=
+theorem addₗᵢ_apply (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal) (p : C⋆ᵐᵒᵈ(A, F × G)) :
+    F.addₗᵢ G hFG p = (p.1 : E) + (p.2 : E) :=
   (rfl)
 
-theorem inner_orthogonalAddₗᵢ (F : CStarSubmodule A E) (p q : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
-    inner A (F.orthogonalAddₗᵢ p) (F.orthogonalAddₗᵢ q) = inner A p q := by
+theorem inner_addₗᵢ (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal)
+    (p q : C⋆ᵐᵒᵈ(A, F × G)) :
+    inner A (F.addₗᵢ G hFG p) (F.addₗᵢ G hFG q) = inner A p q := by
   have h12 : inner A (p.1 : E) (q.2 : E) = 0 :=
-    inner_right_of_mem_orthogonal p.1.property q.2.property
+    inner_right_of_mem_orthogonal p.1.property (hFG q.2.property)
   have h21 : inner A (p.2 : E) (q.1 : E) = 0 :=
-    inner_left_of_mem_orthogonal q.1.property p.2.property
-  simp [orthogonalAddₗᵢ_apply, CStarModule.inner_add_left, CStarModule.inner_add_right, h12, h21,
+    inner_left_of_mem_orthogonal q.1.property (hFG p.2.property)
+  simp [addₗᵢ_apply, CStarModule.inner_add_left, CStarModule.inner_add_right, h12, h21,
     WithCStarModule.prod_inner]
 
-theorem orthogonalAddₗᵢ_smul_coeff (F : CStarSubmodule A E) (a : A)
-    (p : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
-    F.orthogonalAddₗᵢ (a • p) = a • F.orthogonalAddₗᵢ p := by
+theorem addₗᵢ_smul_coeff (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal) (a : A)
+    (p : C⋆ᵐᵒᵈ(A, F × G)) :
+    F.addₗᵢ G hFG (a • p) = a • F.addₗᵢ G hFG p := by
   let _ := CStarModule.distribSMul A E
-  simp [orthogonalAddₗᵢ_apply, smul_add]
+  simp [addₗᵢ_apply, smul_add]
 
 @[simp]
-theorem range_orthogonalAddₗᵢ (F : CStarSubmodule A E) :
-    LinearMap.range F.orthogonalAddₗᵢ.toLinearMap = (F ⊔ F.orthogonal).toSubmodule := by
+theorem range_addₗᵢ (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal) :
+    LinearMap.range (F.addₗᵢ G hFG).toLinearMap = (F ⊔ G).toSubmodule := by
+  let _ := CStarModule.distribSMul A E
   ext z
-  simp only [LinearMap.mem_range, LinearIsometry.coe_toLinearMap, orthogonalAddₗᵢ_apply,
+  simp only [LinearMap.mem_range, LinearIsometry.coe_toLinearMap, addₗᵢ_apply,
     mem_toSubmodule, mem_sup]
   constructor
   · rintro ⟨p, rfl⟩
     exact ⟨p.1, p.1.property, p.2, p.2.property, rfl⟩
   · rintro ⟨x, hx, y, hy, rfl⟩
-    exact ⟨(WithCStarModule.equiv A (F × F.orthogonal)).symm (⟨x, hx⟩, ⟨y, hy⟩), rfl⟩
+    exact ⟨(WithCStarModule.equiv A (F × G)).symm (⟨x, hx⟩, ⟨y, hy⟩), rfl⟩
+
+/-- If `F` and `G` are complete orthogonal C⋆-submodules (`G ≤ F.orthogonal`), then their
+algebraic sum `F ⊔ G` is norm-closed in `E`. -/
+theorem isClosed_sup_of_le_orthogonal {F G : CStarSubmodule A E} (hFG : G ≤ F.orthogonal)
+    [CompleteSpace F] [CompleteSpace G] :
+    IsClosed ((F ⊔ G : CStarSubmodule A E) : Set E) := by
+  have hrange : ((F ⊔ G : CStarSubmodule A E) : Set E) = Set.range (F.addₗᵢ G hFG) := by
+    rw [← coe_toSubmodule, ← range_addₗᵢ F G hFG]
+    rfl
+  rw [hrange]
+  exact (F.addₗᵢ G hFG).isometry.isUniformInducing.isComplete_range.isClosed
+
+/-- If `E` is complete and `F`, `G` are closed orthogonal C⋆-submodules (`G ≤ F.orthogonal`), then
+their algebraic sum `F ⊔ G` is norm-closed in `E`. -/
+theorem isClosed_sup_of_isClosed [CompleteSpace E] {F G : CStarSubmodule A E}
+    (hFG : G ≤ F.orthogonal) (hF : IsClosed (F : Set E)) (hG : IsClosed (G : Set E)) :
+    IsClosed ((F ⊔ G : CStarSubmodule A E) : Set E) := by
+  have _ : CompleteSpace F := hF.completeSpace_coe
+  have _ : CompleteSpace G := hG.completeSpace_coe
+  exact isClosed_sup_of_le_orthogonal hFG
+
+/-- The canonical addition map `C⋆ᵐᵒᵈ(A, F × F.orthogonal) →ₗᵢ[ℂ] E` sending `(x, y)` to `x + y`.
+It preserves both the `A`-valued inner product and the `A`-action. -/
+noncomputable def orthogonalAddₗᵢ (F : CStarSubmodule A E) :
+    C⋆ᵐᵒᵈ(A, F × F.orthogonal) →ₗᵢ[ℂ] E :=
+  F.addₗᵢ F.orthogonal le_rfl
+
+@[simp]
+theorem orthogonalAddₗᵢ_apply (F : CStarSubmodule A E) (p : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
+    F.orthogonalAddₗᵢ p = (p.1 : E) + (p.2 : E) :=
+  F.addₗᵢ_apply F.orthogonal le_rfl p
+
+theorem inner_orthogonalAddₗᵢ (F : CStarSubmodule A E) (p q : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
+    inner A (F.orthogonalAddₗᵢ p) (F.orthogonalAddₗᵢ q) = inner A p q :=
+  F.inner_addₗᵢ F.orthogonal le_rfl p q
+
+theorem orthogonalAddₗᵢ_smul_coeff (F : CStarSubmodule A E) (a : A)
+    (p : C⋆ᵐᵒᵈ(A, F × F.orthogonal)) :
+    F.orthogonalAddₗᵢ (a • p) = a • F.orthogonalAddₗᵢ p :=
+  F.addₗᵢ_smul_coeff F.orthogonal le_rfl a p
+
+@[simp]
+theorem range_orthogonalAddₗᵢ (F : CStarSubmodule A E) :
+    LinearMap.range F.orthogonalAddₗᵢ.toLinearMap = (F ⊔ F.orthogonal).toSubmodule :=
+  F.range_addₗᵢ F.orthogonal le_rfl
 
 /-- If `F` and `F.orthogonal` are complete (in particular, if `E` is complete and `F` is closed),
 then the algebraic orthogonal sum `F ⊔ F.orthogonal` is norm-closed in `E`. -/
 theorem isClosed_sup_orthogonal (F : CStarSubmodule A E) [CompleteSpace F]
     [CompleteSpace F.orthogonal] :
-    IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) := by
-  have hrange : ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) =
-      Set.range F.orthogonalAddₗᵢ := by
-    rw [← coe_toSubmodule, ← range_orthogonalAddₗᵢ]
-    rfl
-  rw [hrange]
-  exact F.orthogonalAddₗᵢ.isometry.isUniformInducing.isComplete_range.isClosed
+    IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) :=
+  isClosed_sup_of_le_orthogonal (F := F) (G := F.orthogonal) le_rfl
 
 /-- If `E` is complete and `F` is closed, then the algebraic orthogonal sum `F ⊔ F.orthogonal` is
 norm-closed in `E`. -/
 theorem isClosed_sup_orthogonal_of_isClosed [CompleteSpace E] {F : CStarSubmodule A E}
     (hF : IsClosed (F : Set E)) :
-    IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) := by
-  have _ : CompleteSpace F := hF.completeSpace_coe
-  exact isClosed_sup_orthogonal F
+    IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) :=
+  isClosed_sup_of_isClosed le_rfl hF (isClosed_orthogonal F)
 
 end OrthogonalAnalytic
 
