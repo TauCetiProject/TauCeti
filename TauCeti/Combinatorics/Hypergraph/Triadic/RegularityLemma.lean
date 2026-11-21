@@ -145,11 +145,22 @@ theorem strongTriadicRegularityStep_mono (F : ℕ → ℝ) (g : ℝ) (η μ : �
     Monotone (strongTriadicRegularityStep F g η μ r) := by
   intro B₁ B₂ hB
   rw [strongTriadicRegularityStep_def, strongTriadicRegularityStep_def]
-  refine Finset.sup_le fun t ht ↦ Finset.sup_le fun m hm ↦ ?_
-  have ht' : t ≤ B₂ := (Nat.lt_succ_iff.1 (mem_range.1 ht)).trans hB
-  have hm' : m ≤ strongTopRegularityStep t η μ r B₂ :=
-    (Nat.lt_succ_iff.1 (mem_range.1 hm)).trans (strongTopRegularityStep_mono η μ r le_rfl hB)
-  exact max_pairApproximationBound_le_strongTriadicRegularityStep ht' hm'
+  refine (Finset.sup_mono_fun fun t _ ↦ Finset.sup_mono (Finset.range_mono
+    (Nat.succ_le_succ (strongTopRegularityStep_mono η μ r le_rfl hB)))).trans
+    (Finset.sup_mono (Finset.range_mono (Nat.succ_le_succ hB)))
+
+/-- `strongTriadicRegularityBound` is at least the requested vertex-cell floor `l₀`. -/
+theorem le_strongTriadicRegularityBound {F : ℕ → ℝ} {g : ℝ} (hg : 0 < g)
+    (hF : ∀ n, 0 < F n) (η μ : ℕ → ℝ) (r : ℕ → ℕ) (l₀ : ℕ) :
+    l₀ ≤ strongTriadicRegularityBound F g η μ r l₀ := by
+  calc l₀
+      ≤ pairApproximationPartsBound 1 (g / 24) F l₀ :=
+        le_pairApproximationPartsBound 1 (by positivity) hF l₀
+    _ ≤ pairApproximationBound 1 (g / 24) F l₀ :=
+        pairApproximationPartsBound_le_pairApproximationBound 1 (by positivity) hF l₀
+    _ ≤ max (pairApproximationBound 1 (g / 24) F l₀) 6 := le_max_left _ _
+    _ ≤ strongTriadicRegularityBound F g η μ r l₀ :=
+        le_iterate_strongTriadicRegularityStep F g η μ r _ _
 
 /-- `strongTriadicRegularityBound` is monotone in the starting vertex-cell count `l₀`. -/
 theorem strongTriadicRegularityBound_mono (F : ℕ → ℝ) (g : ℝ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) :
@@ -407,15 +418,7 @@ theorem exists_strong_lowerSkeletonRegular_topRegularOverMostPolyads
   have ht₁_pos : 0 < max t₀ 1 := lt_of_lt_of_le Nat.zero_lt_one (le_max_right t₀ 1)
   have ht₁_le : max t₀ 1 ≤ #(univ : Finset V) := by
     rw [card_univ]
-    calc max t₀ 1
-        ≤ pairApproximationPartsBound 1 (g / 24) F (max t₀ 1) :=
-          le_pairApproximationPartsBound 1 (by positivity) hF _
-      _ ≤ pairApproximationBound 1 (g / 24) F (max t₀ 1) :=
-          pairApproximationPartsBound_le_pairApproximationBound 1 (by positivity) hF _
-      _ ≤ max (pairApproximationBound 1 (g / 24) F (max t₀ 1)) 6 := le_max_left _ _
-      _ ≤ strongTriadicRegularityBound F g η μ r (max t₀ 1) :=
-          le_iterate_strongTriadicRegularityStep F g η μ r _ _
-      _ ≤ Fintype.card V := hV
+    exact (le_strongTriadicRegularityBound hg hF η μ r (max t₀ 1)).trans hV
   obtain ⟨P₀, hP₀eq, hP₀card⟩ :=
     Finpartition.exists_equipartition_card_eq (s := (univ : Finset V)) ht₁_pos.ne' ht₁_le
   obtain ⟨C, D, f, hCt, hCm, hDcard, hCV, hCeq, hDV, hCreg, hf, hfrev, hCpol, hDpol, hDreg, hgap⟩ :=

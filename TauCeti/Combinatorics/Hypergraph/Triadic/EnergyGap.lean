@@ -418,33 +418,35 @@ theorem topRegularFineTolerance_pos {δ : ℝ} (hδ : 0 < δ) :
 /-- Fine exceptional-mass bound for scheduled-rank energy-gap transfer at coarse tolerance `δ` and
 exceptional proportion `ε`. -/
 noncomputable def topRegularFineProportion (δ ε : ℝ) : ℝ :=
-  ε * δ ^ 2 / 4
+  ε * topRegularFineTolerance δ / 2
 
 /-- Unfolding lemma for `TauCeti.topRegularFineProportion`. -/
 theorem topRegularFineProportion_def (δ ε : ℝ) :
-    topRegularFineProportion δ ε = ε * δ ^ 2 / 4 :=
+    topRegularFineProportion δ ε = ε * topRegularFineTolerance δ / 2 :=
   (rfl)
 
 /-- For positive `δ` and `ε`, `topRegularFineProportion δ ε` is positive. -/
 theorem topRegularFineProportion_pos {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
     0 < topRegularFineProportion δ ε := by
   rw [topRegularFineProportion_def]
+  have := topRegularFineTolerance_pos hδ
   positivity
 
 /-- Calibrated polyad energy-gap threshold for scheduled-rank regularity transfer with `q` top
 colors, coarse tolerance `δ`, and exceptional proportion `ε`. -/
 noncomputable def topRegularEnergyGap (q : ℕ) (δ ε : ℝ) : ℝ :=
-  (ε * δ ^ 2 / (4 * (q + 1))) ^ 2
+  (topRegularFineProportion δ ε / (q + 1)) ^ 2
 
 /-- Unfolding lemma for `TauCeti.topRegularEnergyGap`. -/
 theorem topRegularEnergyGap_def (q : ℕ) (δ ε : ℝ) :
-    topRegularEnergyGap q δ ε = (ε * δ ^ 2 / (4 * (q + 1))) ^ 2 :=
+    topRegularEnergyGap q δ ε = (topRegularFineProportion δ ε / (q + 1)) ^ 2 :=
   (rfl)
 
 /-- For positive `δ` and `ε`, `topRegularEnergyGap q δ ε` is positive. -/
 theorem topRegularEnergyGap_pos (q : ℕ) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
     0 < topRegularEnergyGap q δ ε := by
   rw [topRegularEnergyGap_def]
+  have := topRegularFineProportion_pos hδ hε
   positivity
 
 namespace Colored3Graph
@@ -468,25 +470,28 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ
       topRegularEnergyGap (Nat.card κ) δ ε)
     (hδ : 0 < δ) (hε : 0 < ε) :
     H.TopRegularOverMostPolyads C δ ε r := by
-  rw [topRegularFineTolerance_def, topRegularFineProportion_def] at h
   rw [topRegularEnergyGap_def] at hgap
   set q : ℝ := (Nat.card κ : ℝ)
-  set γ := ε * δ ^ 2 / (4 * (q + 1))
-  have hγ : 0 < γ := by positivity
-  have hreg := h.of_polyadEnergy_sub_le hC hD hV f hf hgap (by positivity) hδ
-    (by linarith [pow_pos hδ 2])
+  set γ := topRegularFineProportion δ ε / (q + 1)
+  have hγ : 0 < γ := div_pos (topRegularFineProportion_pos hδ hε) (by positivity)
+  have hη : topRegularFineTolerance δ < δ ^ 2 := by
+    rw [topRegularFineTolerance_def]
+    linarith [pow_pos hδ 2]
+  have hreg := h.of_polyadEnergy_sub_le hC hD hV f hf hgap
+    (topRegularFineTolerance_pos hδ).le hδ hη
   refine hreg.mono le_rfl ?_ le_rfl
   -- The exceptional proportion is at most `(ε δ² / 4 + √(q γ²)) / (δ² / 2) ≤ ε`.
-  rw [← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
+  rw [← Nat.card_eq_fintype_card, div_le_iff₀ (sub_pos.2 hη)]
   have hsqrt : √(q * γ ^ 2) ≤ q * γ := by
-    rw [← Real.sqrt_sq (mul_nonneg (Nat.cast_nonneg _) hγ.le)]
-    refine Real.sqrt_le_sqrt ?_
-    have hq : (Nat.card κ : ℝ) ≤ (Nat.card κ : ℝ) ^ 2 :=
-      mod_cast Nat.le_self_pow two_ne_zero (Nat.card κ)
-    nlinarith [pow_pos hγ 2]
-  have hqγ : q * γ ≤ ε * δ ^ 2 / 4 := by
-    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_pos hε (pow_pos hδ 2)]
+    rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hγ.le]
+    exact mul_le_mul_of_nonneg_right
+      (Real.sqrt_le_self_iff.2
+        ((em (Nat.card κ = 0)).imp Nat.cast_eq_zero.2 Nat.one_le_cast_iff_ne_zero.2))
+      hγ.le
+  have hqγ : q * γ ≤ topRegularFineProportion δ ε := by
+    rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+    nlinarith [topRegularFineProportion_pos hδ hε]
+  rw [topRegularFineProportion_def, topRegularFineTolerance_def] at hqγ ⊢
   linarith
 
 /-! ### Reference density targets -/
