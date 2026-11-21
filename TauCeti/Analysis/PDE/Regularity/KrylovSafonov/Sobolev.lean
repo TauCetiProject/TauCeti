@@ -16,10 +16,12 @@ import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.Holder
 import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.LocalMaximumPrinciple
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Sobolev
 import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.LpSeminorm.Haar
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -202,30 +204,13 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
   rintro y ⟨hy1, hy2⟩
   exact ⟨(div_le_div_of_nonneg_right hy1 hσ.le).trans (hwū y (hQ hy2)).1, hy2⟩
 
-omit [DecidableEq ι] in
-/-- Given `x, y ∈ B(x₀, r)`, chooses a radius `r / 2 < s < r` such that `x, y ∈ B(x₀, s)` and
-`closedBall x₀ (2 s) ⊆ B(x₀, 2 r)`. -/
-private theorem exists_radius_between_half_of_mem_ball {x₀ x y : EuclideanSpace ℝ ι} {r : ℝ}
-    (hx : x ∈ ball x₀ r) (hy : y ∈ ball x₀ r) :
-    ∃ s : ℝ, 0 < s ∧ r / 2 < s ∧ s < r ∧ x ∈ ball x₀ s ∧ y ∈ ball x₀ s ∧
-      closedBall x₀ (2 * s) ⊆ ball x₀ (2 * r) := by
-  have hr : 0 < r := pos_of_mem_ball hx
-  obtain ⟨s, hs_gt, hs_lt⟩ :=
-    exists_between (max_lt (max_lt (mem_ball.1 hx) (mem_ball.1 hy)) (half_lt_self hr))
-  have hs_r2 : r / 2 < s := lt_of_le_of_lt (le_max_right _ _) hs_gt
-  exact ⟨s, (half_pos hr).trans hs_r2, hs_r2, hs_lt,
-    mem_ball.2 ((le_max_left _ _).trans (le_max_left _ _) |>.trans_lt hs_gt),
-    mem_ball.2 ((le_max_right _ _).trans (le_max_left _ _) |>.trans_lt hs_gt),
-    closedBall_subset_ball (by linarith)⟩
-
 section StrongSolutions
 
 variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
 
 omit [DecidableEq ι] in
-/-- Transfers a `mu`-`Lⁿ(S)` bound `‖G‖_{Lⁿ(S)} ≤ ‖F‖_{Lⁿ(S)} + η` on `S ⊆ U` to Lebesgue `volume`
-and bounds the scaled elliptic forcing term `s ‖G‖_{Lⁿ(S, volume)} / λ` by
-`K · (R (‖F‖_{Lⁿ(U, mu)} + η) / λ)` whenever `0 ≤ s ≤ R` and `α₀^(1/n) ≤ K`. -/
+/-- Scales the `mu`-to-`volume` restricted `Lⁿ` comparison from `Haar.lean` by `s / λ ≤ R / λ`
+with `α₀^(1/n) ≤ K`. -/
 private theorem memLp_volume_and_mul_eLpNorm_div_le
     {G F_fn : EuclideanSpace ℝ ι → ℝ} {S U : Set (EuclideanSpace ℝ ι)} {s R lam η K : ℝ}
     (hSU : S ⊆ U) (hs0 : 0 ≤ s) (hsR : s ≤ R) (hlam : 0 < lam) (hη : 0 ≤ η)
@@ -236,21 +221,12 @@ private theorem memLp_volume_and_mul_eLpNorm_div_le
     MemLp G (Fintype.card ι) (volume.restrict S) ∧
       s * (eLpNorm G (Fintype.card ι) (volume.restrict S)).toReal / lam ≤
         K * (R * ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η) / lam) := by
-  have hle : eLpNorm G (Fintype.card ι) (mu.restrict S) ≤
-      eLpNorm F_fn (Fintype.card ι) (mu.restrict U) + ENNReal.ofReal η :=
-    hg.trans (add_le_add_left (eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)) _)
-  have htop : eLpNorm F_fn (Fintype.card ι) (mu.restrict U) + ENNReal.ofReal η < ∞ :=
-    ENNReal.add_lt_top.2 ⟨hf.eLpNorm_lt_top, ENNReal.ofReal_lt_top⟩
-  refine ⟨(memLp_iff.2 (hle.trans_lt htop)).restrict_of_isAddHaarMeasure volume, ?_⟩
-  have htr : (eLpNorm G (Fintype.card ι) (mu.restrict S)).toReal ≤
-      (eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η := by
-    have h := ENNReal.toReal_mono htop.ne hle
-    rwa [ENNReal.toReal_add hf.eLpNorm_ne_top ENNReal.ofReal_ne_top, ENNReal.toReal_ofReal hη] at h
-  rw [toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul G (Fintype.card ι) volume mu S,
-    ENNReal.toReal_natCast]
+  refine ⟨hf.restrict_of_isAddHaarMeasure_of_eLpNorm_le_add hSU ENNReal.ofReal_ne_top hg volume, ?_⟩
+  have htr := toReal_eLpNorm_restrict_le_addHaarScalarFactor_rpow_mul_add G volume mu hSU hf
+    ENNReal.ofReal_ne_top hg
+  rw [ENNReal.toReal_natCast, ENNReal.toReal_ofReal hη] at htr
   have hR : 0 ≤ R := hs0.trans hsR
-  calc s * ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
-          (eLpNorm G (Fintype.card ι) (mu.restrict S)).toReal) / lam
+  calc s * (eLpNorm G (Fintype.card ι) (volume.restrict S)).toReal / lam
       ≤ R * ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
           ((eLpNorm F_fn (Fintype.card ι) (mu.restrict U)).toReal + η)) / lam := by gcongr
     _ = (Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹ *
@@ -357,12 +333,8 @@ theorem exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
       exact posPart_mono (hwK y (ball_subset_closedBall hy)).2
     exact ENNReal.toReal_mono hup.eLpNorm_ne_top hmono
   have hs_rpow : s ^ (-n / p) ≤ 2 ^ (n / p) * R ^ (-n / p) := by
-    calc s ^ (-n / p) ≤ (R / 2) ^ (-n / p) :=
-          Real.rpow_le_rpow_of_nonpos (half_pos hR) hsR2.le
-            (div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (Nat.cast_nonneg _)) hp.le)
-      _ = 2 ^ (n / p) * R ^ (-n / p) := by
-          rw [Real.div_rpow hR.le zero_le_two, neg_div, Real.rpow_neg zero_le_two,
-            div_inv_eq_mul, mul_comm]
+    rw [neg_div]
+    exact Real.rpow_neg_le_mul_rpow_neg hR zero_le_two (by positivity) (by linarith)
   have h1 : s ^ (-n / p) * (α₀ ^ p⁻¹ *
       (eLpNorm (fun y ↦ (w y)⁺) (ENNReal.ofReal p) (mu.restrict (ball c s))).toReal) ≤
       K_haar * (R ^ (-n / p) * Np) := by
@@ -560,7 +532,10 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
     Wkp.le_preciseRepresentative_of_ae_le (by simp [finrank_euclideanSpace]) u isOpen_ball hBΩ
       continuousOn_const hnn
   -- Choose `r / 2 < s < r` with `x, y ∈ B(x₀, s)` so `closedBall x₀ (2 s) ⊆ B(x₀, 2 r) ⊆ Ω`.
-  obtain ⟨s, hs0, -, hs_lt, hxs, hys, hcs_sub⟩ := exists_radius_between_half_of_mem_ball hx hy
+  obtain ⟨s, -, hs_lt, hxs, hys⟩ :=
+    TauCeti.exists_lt_mem_ball_of_mem_ball (half_lt_self (pos_of_mem_ball hx)) hx hy
+  have hs0 : 0 < s := pos_of_mem_ball hxs
+  have hcs_sub : closedBall x₀ (2 * s) ⊆ ball x₀ (2 * r) := closedBall_subset_ball (by linarith)
   have hbs_sub : ball x₀ (2 * s) ⊆ ball x₀ (2 * r) := ball_subset_closedBall.trans hcs_sub
   set F : ℝ := (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal
   refine le_of_forall_pos_mul_le (C := C * (1 + r / lam)) fun η hη ↦ ?_
@@ -680,14 +655,15 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
     Wkp.abs_preciseRepresentative_le (by simp [finrank_euclideanSpace]) u isOpen_ball hBΩ hM hz
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hū_abs x (ball_subset_ball (by linarith) hx))
   -- Choose `r / 2 < s < r` with `x, y ∈ B(x₀, s)` so `closedBall x₀ (2 s) ⊆ B(x₀, 2 r) ⊆ Ω`.
-  obtain ⟨s, hs0, hs_r2, hs_lt, hxs, hys, hcs_sub⟩ := exists_radius_between_half_of_mem_ball hx hy
+  obtain ⟨s, hs_r2, hs_lt, hxs, hys⟩ :=
+    TauCeti.exists_lt_mem_ball_of_mem_ball (half_lt_self hr) hx hy
+  have hs0 : 0 < s := pos_of_mem_ball hxs
+  have hcs_sub : closedBall x₀ (2 * s) ⊆ ball x₀ (2 * r) := closedBall_subset_ball (by linarith)
   have hbs_sub : ball x₀ (2 * s) ⊆ ball x₀ (2 * r) := ball_subset_closedBall.trans hcs_sub
   set F : ℝ := (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal
   have hs_rpow : s ^ (-(α : ℝ)) ≤ 2 * r ^ (-(α : ℝ)) := by
-    calc s ^ (-(α : ℝ)) ≤ (r / 2) ^ (-(α : ℝ)) :=
-          Real.rpow_le_rpow_of_nonpos (half_pos hr) hs_r2.le (neg_nonpos.2 hα0'.le)
-      _ = 2 ^ (α : ℝ) * r ^ (-(α : ℝ)) := by
-          rw [Real.div_rpow hr.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
+    calc s ^ (-(α : ℝ)) ≤ 2 ^ (α : ℝ) * r ^ (-(α : ℝ)) :=
+          Real.rpow_neg_le_mul_rpow_neg hr zero_le_two hα0'.le (by linarith)
       _ ≤ 2 ^ (1 : ℝ) * r ^ (-(α : ℝ)) :=
           mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_le one_le_two hα1')
             (by positivity)
@@ -719,15 +695,13 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
   have hyK : y ∈ closedBall x₀ (2 * s) :=
     ball_subset_closedBall (ball_subset_ball (by linarith) hys)
   have hdist_u : dist (ū x) (ū y) ≤ dist (v x) (v y) + 2 * η := by
-    have htx := dist_triangle (ū x) (v x) (ū y)
-    have hty := dist_triangle (v x) (v y) (ū y)
     have hdx : dist (ū x) (v x) ≤ η := by
       rw [dist_comm, Real.dist_eq]
       exact hvK x hxK
     have hdy : dist (v y) (ū y) ≤ η := by
       rw [Real.dist_eq]
       exact hvK y hyK
-    linarith
+    linarith [dist_triangle4 (ū x) (v x) (v y) (ū y)]
   have hv_bound : dist (v x) (v y) ≤
       C * r ^ (-(α : ℝ)) * (M + η + r * (F + η) / lam) * dist x y ^ (α : ℝ) := by
     calc dist (v x) (v y)

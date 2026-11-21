@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 
 /-!
 # Monotonicity and subadditivity of `eLpNorm` in the measure
@@ -52,6 +53,8 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_rpow_le`: subadditivity of the `p`-th power of
   `eLpNorm` over a finite union, for `0 < p < ∞` (including `p < 1`).
 * `MeasureTheory.eLpNorm_restrict_rpow_le_sum_of_subset_iUnion`: the same over a finite cover.
+* `MeasureTheory.eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: finite-cover `eLpNorm` bound
+  `‖f‖_{Lᵖ(s)} ≤ card(t) ^ (1 / p) * B` from uniform bounds `≤ B` on the pieces.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.
 * `MeasureTheory.eLpNorm_restrict_le_sum_of_subset_iUnion`: subadditivity over a finite cover.
 * `MeasureTheory.MemLp.restrict_of_subset_iUnion`: `Lᵖ` on each piece of a finite cover gives
@@ -143,17 +146,23 @@ theorem eLpNorm_restrict_biUnion_finset_rpow_le {α ε ι : Type*} [MeasurableSp
       ∑ i ∈ t, eLpNorm f p (μ.restrict (s i)) ^ p.toReal := by
   classical
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  induction t using Finset.induction_on with
-  | empty => simp [hr]
-  | insert a t ha ih =>
-    rw [Finset.set_biUnion_insert, Finset.sum_insert ha]
-    calc eLpNorm f p (μ.restrict (s a ∪ ⋃ i ∈ t, s i)) ^ p.toReal
-        ≤ eLpNorm f p (μ.restrict (s a) + μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal :=
-          ENNReal.rpow_le_rpow (eLpNorm_mono_measure _ (Measure.restrict_union_le _ _)) hr.le
-      _ ≤ eLpNorm f p (μ.restrict (s a)) ^ p.toReal +
-            eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal :=
-          eLpNorm_add_measure_rpow_le f _ _
-      _ ≤ _ := by gcongr
+  by_cases hm : ∀ i ∈ t, AEStronglyMeasurable f (μ.restrict (s i))
+  · have hpow {m : Measure α} (h : AEStronglyMeasurable f m) :
+        eLpNorm f p m ^ p.toReal = ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂m := by
+      rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp h, ← ENNReal.rpow_mul, one_div,
+        inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
+    have hfm : AEStronglyMeasurable f (μ.restrict (⋃ i ∈ t, s i)) :=
+      (aestronglyMeasurable_sum_measure_iff.2 fun ⟨i, hi⟩ ↦ hm i hi).mono_measure
+        (Measure.restrict_biUnion_le t.countable_toSet)
+    rw [hpow hfm]
+    refine (TauCeti.lintegral_biUnion_finset_le t s _).trans_eq ?_
+    exact Finset.sum_congr rfl fun i hi ↦ (hpow (hm i hi)).symm
+  · push Not at hm
+    obtain ⟨i, hi, hni⟩ := hm
+    have htop : ∑ j ∈ t, eLpNorm f p (μ.restrict (s j)) ^ p.toReal = ∞ :=
+      eq_top_iff.2 <| le_trans (by simp [eLpNorm_of_not_aestronglyMeasurable hni, hr])
+        (Finset.single_le_sum (fun _ _ ↦ zero_le) hi)
+    exact htop ▸ le_top
 
 /-- **Subadditivity of the `p`-th power of `eLpNorm` over a finite cover.** For `0 < p < ∞`, the
 `p`-th power of the `Lᵖ` seminorm of `f` on a set covered by finitely many sets is at most the sum
@@ -168,6 +177,27 @@ theorem eLpNorm_restrict_rpow_le_sum_of_subset_iUnion {α ε ι : Type*} [Measur
     (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)) hr.le).trans ?_
   simpa only [Finset.mem_univ, Set.iUnion_true] using
     eLpNorm_restrict_biUnion_finset_rpow_le (μ := μ) f hp0 hp Finset.univ t
+
+/-- **Finite-cover bound for `eLpNorm`.** For `0 < p < ∞`, if `s` is covered by the sets
+`u i`, `i ∈ t`, and `‖f‖_{Lᵖ(u i)} ≤ B` for every `i ∈ t`, then
+`‖f‖_{Lᵖ(s)} ≤ t.card ^ (1 / p) * B`. -/
+theorem eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion {α ε ι : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞}
+    {μ : Measure α} (f : α → ε) (hp0 : p ≠ 0) (hp : p ≠ ∞) {s : Set α} {t : Finset ι}
+    {u : ι → Set α} (hs : s ⊆ ⋃ i ∈ t, u i) {B : ℝ≥0∞}
+    (hf : ∀ i ∈ t, eLpNorm f p (μ.restrict (u i)) ≤ B) :
+    eLpNorm f p (μ.restrict s) ≤ (t.card : ℝ≥0∞) ^ p.toReal⁻¹ * B := by
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  rw [← ENNReal.rpow_le_rpow_iff hr, ENNReal.mul_rpow_of_nonneg _ _ hr.le, ← ENNReal.rpow_mul,
+    inv_mul_cancel₀ hr.ne', ENNReal.rpow_one]
+  calc eLpNorm f p (μ.restrict s) ^ p.toReal
+      ≤ eLpNorm f p (μ.restrict (⋃ i ∈ t, u i)) ^ p.toReal :=
+        ENNReal.rpow_le_rpow (eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hs)) hr.le
+    _ ≤ ∑ i ∈ t, eLpNorm f p (μ.restrict (u i)) ^ p.toReal :=
+        eLpNorm_restrict_biUnion_finset_rpow_le f hp0 hp t u
+    _ ≤ ∑ _i ∈ t, B ^ p.toReal :=
+        Finset.sum_le_sum fun i hi ↦ ENNReal.rpow_le_rpow (hf i hi) hr.le
+    _ = (t.card : ℝ≥0∞) * B ^ p.toReal := by rw [Finset.sum_const, nsmul_eq_mul]
 
 variable {α ε : Type*} {m : MeasurableSpace α} [TopologicalSpace ε] [ContinuousENorm ε]
   [TopologicalSpace.PseudoMetrizableSpace ε] {p : ℝ≥0∞} {μ ν : Measure α}

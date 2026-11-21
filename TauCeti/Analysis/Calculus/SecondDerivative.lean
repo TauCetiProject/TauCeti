@@ -95,9 +95,7 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
-* `TauCeti.fderiv_fderiv_add_const`, `TauCeti.fderiv_fderiv_const_add`, and
-  `TauCeti.fderiv_fderiv_sub_const`: adding or subtracting a constant does not change the second
-  derivative.
+* `TauCeti.fderiv_fderiv_add_const`: adding a constant does not change the second derivative.
 * `TauCeti.fderiv_fderiv_comp_add_right`: the second derivative of a translate is the translate
   of the second derivative.
 * `TauCeti.fderiv_fderiv_smul_const_apply`: the second derivative of `y ↦ P y • v` is that of the
@@ -429,22 +427,10 @@ theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
 
 /-- Adding a constant on the right does not change the second derivative. No regularity is
 needed. -/
+@[simp]
 theorem fderiv_fderiv_add_const (f : E → F) (c : F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 fun y ↦ f y + c) x = fderiv 𝕜 (fderiv 𝕜 f) x := by
   have h : (fderiv 𝕜 fun y ↦ f y + c) = fderiv 𝕜 f := funext fun _ ↦ fderiv_add_const c
-  rw [h]
-
-/-- Adding a constant on the left does not change the second derivative. No regularity is
-needed. -/
-theorem fderiv_fderiv_const_add (c : F) (f : E → F) (x : E) :
-    fderiv 𝕜 (fderiv 𝕜 fun y ↦ c + f y) x = fderiv 𝕜 (fderiv 𝕜 f) x := by
-  have h : (fderiv 𝕜 fun y ↦ c + f y) = fderiv 𝕜 f := funext fun _ ↦ fderiv_const_add c
-  rw [h]
-
-/-- Subtracting a constant does not change the second derivative. No regularity is needed. -/
-theorem fderiv_fderiv_sub_const (f : E → F) (c : F) (x : E) :
-    fderiv 𝕜 (fderiv 𝕜 fun y ↦ f y - c) x = fderiv 𝕜 (fderiv 𝕜 f) x := by
-  have h : (fderiv 𝕜 fun y ↦ f y - c) = fderiv 𝕜 f := funext fun _ ↦ fderiv_sub_const c
   rw [h]
 
 /-- The second derivative of a translate `v ↦ φ (v + y)` at `w` is that of `φ` at `w + y`. No

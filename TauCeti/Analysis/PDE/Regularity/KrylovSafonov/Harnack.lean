@@ -126,9 +126,7 @@ private theorem exists_le_mul_add_of_dist_le_div_five [Nonempty ι] {κ : ℝ} :
       (eLpNorm f (Fintype.card ι) (volume.restrict t)).toReal ≤ F := fun ht ↦
     ENNReal.toReal_mono hf.eLpNorm_ne_top (eLpNorm_mono_measure _ (Measure.restrict_mono ht le_rfl))
   -- The balls about `z`: `B(z, r / 4) ⊆ B(z, r) ⊆ B(x₀, 2 r)`.
-  have hb : ball z r ⊆ ball x₀ (2 * r) := fun v hv ↦ by
-    rw [mem_ball] at hz hv ⊢
-    linarith [dist_triangle v z x₀]
+  have hb : ball z r ⊆ ball x₀ (2 * r) := ball_subset_ball' (by linarith [mem_ball.1 hz])
   have h4r : 1 / 4 * r < r := by linarith
   have hb4 : ball z (1 / 4 * r) ⊆ ball x₀ (2 * r) := (ball_subset_ball h4r.le).trans hb
   have hcb4 : closedBall z (1 / 4 * r) ⊆ ball x₀ (2 * r) := (closedBall_subset_ball h4r).trans hb

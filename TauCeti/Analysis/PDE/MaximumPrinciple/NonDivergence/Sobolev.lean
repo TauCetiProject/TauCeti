@@ -257,8 +257,8 @@ theorem exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0�
   obtain ⟨v, hv, hvK, hvH⟩ := Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le hp
     u hcont hū hK hKΩ hδ
   set w : EuclideanSpace ℝ ι → ℝ := fun y ↦ v y - η / 2
-  have hww : ∀ x, fderiv ℝ (fderiv ℝ w) x = fderiv ℝ (fderiv ℝ v) x :=
-    fderiv_fderiv_sub_const v (η / 2)
+  have hww : ∀ x, fderiv ℝ (fderiv ℝ w) x = fderiv ℝ (fderiv ℝ v) x := fun x ↦ by
+    simpa only [w, sub_eq_add_neg] using fderiv_fderiv_add_const v (-(η / 2)) x
   set D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
     fun x ↦ fderiv ℝ (∇ v) x - Wkp.iteratedGradient 1 u x
   set L : EuclideanSpace ℝ ι → ℝ := fun x ↦ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
