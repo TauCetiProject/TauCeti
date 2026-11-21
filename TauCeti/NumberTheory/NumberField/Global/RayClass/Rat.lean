@@ -71,6 +71,10 @@ and a class with positive sign is determined by its residue.
   a nonzero integral ideal prime to `n` is its absolute norm modulo `n`, up to sign.
 * `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_ratFiniteModulus`: for `n > 2`, the ray
   class group modulo `(n)` has order `φ(n) / 2`.
+* `TauCeti.GlobalNumberFields.mem_support_rat_iff`,
+  `TauCeti.GlobalNumberFields.image_absNorm_support`, and
+  `TauCeti.GlobalNumberFields.isPrimeTo_span_natCast_support_iff`: finite prime support of
+  rational moduli in terms of prime factors of the finite-part norm.
 
 ## References
 
@@ -422,13 +426,8 @@ theorem two_mul_card_rayClassGroup_ratFiniteModulus (h2 : 2 < n) :
 -- Not a `simp` lemma: `ratModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the LHS.
 theorem absNorm_ratModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
     Ideal.absNorm (ratModulus n hn).finitePart = n := by
-  have h := Rat.RingOfIntegers.ideal_span_absNorm_eq_self (ratModulus n hn).finitePart
-  rw [ratModulus_finitePart] at h ⊢
-  exact Nat.dvd_antisymm
-    (NumberField.RingOfIntegers.natCast_dvd_natCast.mp
-      (Ideal.span_singleton_dvd_span_singleton_iff_dvd.mp (dvd_of_eq h)))
-    (NumberField.RingOfIntegers.natCast_dvd_natCast.mp
-      (Ideal.span_singleton_dvd_span_singleton_iff_dvd.mp (dvd_of_eq h.symm)))
+  rw [ratModulus_finitePart, Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank,
+    Module.finrank_self, pow_one]
 
 /-- The finite part of `ratFiniteModulus n hn` has absolute norm `n`. -/
 -- Not a `simp` lemma: `ratFiniteModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the
@@ -456,6 +455,48 @@ theorem ratModulus_absNorm_support (𝔪 : Modulus ℚ) :
   ext v
   rw [Modulus.mem_support_iff, Modulus.mem_support_iff, ratModulus_finitePart,
     Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
+
+/-- A height-one prime of `𝓞 ℚ` belongs to the support of `𝔪` exactly when its absolute norm
+divides `Ideal.absNorm 𝔪.finitePart`. -/
+theorem mem_support_rat_iff {𝔪 : Modulus ℚ} {v : HeightOneSpectrum (𝓞 ℚ)} :
+    v ∈ 𝔪.support ↔ Ideal.absNorm v.asIdeal ∣ Ideal.absNorm 𝔪.finitePart := by
+  conv_lhs =>
+    rw [Modulus.mem_support_iff, ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart,
+      Ideal.dvd_span_singleton, Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
+
+/-- Mapping height-one primes of `𝓞 ℚ` to their absolute norms identifies the support of `𝔪` with
+the prime factors of `Ideal.absNorm 𝔪.finitePart`. -/
+-- Not a `simp` lemma: `Rat.HeightOneSpectrum.absNorm_asIdeal` rewrites the LHS.
+theorem image_absNorm_support (𝔪 : Modulus ℚ) :
+    𝔪.support.image (fun v ↦ Ideal.absNorm v.asIdeal) =
+      (Ideal.absNorm 𝔪.finitePart).primeFactors := by
+  ext p
+  rw [Finset.mem_image, Nat.mem_primeFactors]
+  refine ⟨?_, fun ⟨hp, hdvd, _⟩ ↦ ?_⟩
+  · rintro ⟨v, hv, rfl⟩
+    exact ⟨(Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸
+      Rat.HeightOneSpectrum.prime_natGenerator v, mem_support_rat_iff.mp hv, NeZero.ne _⟩
+  · obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    exact ⟨v, mem_support_rat_iff.mpr hdvd, rfl⟩
+
+/-- For `m ≠ 0`, the ideal `(m)` of `𝓞 ℚ` is prime to `𝔪.support` exactly when `m` is coprime to
+`Ideal.absNorm 𝔪.finitePart`. -/
+theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : m ≠ 0) :
+    Ideal.IsPrimeTo (Ideal.span {(m : 𝓞 ℚ)}) 𝔪.support ↔
+      m.Coprime (Ideal.absNorm 𝔪.finitePart) := by
+  have hbot : Ideal.span {(m : 𝓞 ℚ)} ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]
+    exact_mod_cast hm
+  rw [Ideal.isPrimeTo_iff, and_iff_right hbot]
+  simp only [Finset.mem_coe, mem_support_rat_iff, Ideal.dvd_span_singleton,
+    Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
+  refine ⟨fun h ↦ by_contra fun hncop ↦ ?_, fun hcop v hv hm' ↦ ?_⟩
+  · obtain ⟨p, hp, hpm, hpN⟩ := (Nat.Prime.not_coprime_iff_dvd).mp hncop
+    obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    exact h v hpN hpm
+  · have hp : (Ideal.absNorm v.asIdeal).Prime :=
+      (Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸ Rat.HeightOneSpectrum.prime_natGenerator v
+    exact hp.not_dvd_one (hcop.gcd_eq_one ▸ Nat.dvd_gcd hm' hv)
 
 /-- **The moduli `(d)` and `(n)` without the real place divide each other as `d` and `n` do.** -/
 theorem ratFiniteModulus_dvd_ratFiniteModulus_iff {d : ℕ} {hd : d ≠ 0} :

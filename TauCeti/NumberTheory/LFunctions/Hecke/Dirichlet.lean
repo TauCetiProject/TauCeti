@@ -94,56 +94,6 @@ open GlobalNumberFields
 
 namespace GlobalNumberFields
 
-private theorem absNorm_asIdeal_injective :
-    Function.Injective (fun v : HeightOneSpectrum (𝓞 ℚ) ↦ Ideal.absNorm v.asIdeal) := by
-  intro v w h
-  dsimp only at h
-  apply HeightOneSpectrum.ext
-  rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self v.asIdeal,
-    ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self w.asIdeal, h]
-
-/-- A height-one prime of `𝓞 ℚ` belongs to the support of `𝔪` exactly when its absolute norm
-divides `Ideal.absNorm 𝔪.finitePart`. -/
-theorem mem_support_rat_iff {𝔪 : Modulus ℚ} {v : HeightOneSpectrum (𝓞 ℚ)} :
-    v ∈ 𝔪.support ↔ Ideal.absNorm v.asIdeal ∣ Ideal.absNorm 𝔪.finitePart := by
-  conv_lhs =>
-    rw [Modulus.mem_support_iff, ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart,
-      Ideal.dvd_span_singleton, Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
-
-/-- Mapping height-one primes of `𝓞 ℚ` to their absolute norms identifies the support of `𝔪` with
-the prime factors of `Ideal.absNorm 𝔪.finitePart`. -/
--- Not a `simp` lemma: `Rat.HeightOneSpectrum.absNorm_asIdeal` rewrites the LHS.
-theorem image_absNorm_support (𝔪 : Modulus ℚ) :
-    𝔪.support.image (fun v ↦ Ideal.absNorm v.asIdeal) =
-      (Ideal.absNorm 𝔪.finitePart).primeFactors := by
-  ext p
-  rw [Finset.mem_image, Nat.mem_primeFactors]
-  refine ⟨?_, fun ⟨hp, hdvd, _⟩ ↦ ?_⟩
-  · rintro ⟨v, hv, rfl⟩
-    exact ⟨(Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸
-      Rat.HeightOneSpectrum.prime_natGenerator v, mem_support_rat_iff.mp hv, NeZero.ne _⟩
-  · obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
-    exact ⟨v, mem_support_rat_iff.mpr hdvd, rfl⟩
-
-/-- For `m ≠ 0`, the ideal `(m)` of `𝓞 ℚ` is prime to `𝔪.support` exactly when `m` is coprime to
-`Ideal.absNorm 𝔪.finitePart`. -/
-theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : m ≠ 0) :
-    Ideal.IsPrimeTo (Ideal.span {(m : 𝓞 ℚ)}) 𝔪.support ↔
-      m.Coprime (Ideal.absNorm 𝔪.finitePart) := by
-  have hbot : Ideal.span {(m : 𝓞 ℚ)} ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    exact_mod_cast hm
-  rw [Ideal.isPrimeTo_iff, and_iff_right hbot]
-  simp only [Finset.mem_coe, mem_support_rat_iff, Ideal.dvd_span_singleton,
-    Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd]
-  refine ⟨fun h ↦ by_contra fun hncop ↦ ?_, fun hcop v hv hm' ↦ ?_⟩
-  · obtain ⟨p, hp, hpm, hpN⟩ := (Nat.Prime.not_coprime_iff_dvd).mp hncop
-    obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
-    exact h v hpN hpm
-  · have hp : (Ideal.absNorm v.asIdeal).Prime :=
-      (Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸ Rat.HeightOneSpectrum.prime_natGenerator v
-    exact hp.not_dvd_one (hcop.gcd_eq_one ▸ Nat.dvd_gcd hm' hv)
-
 namespace RayClassCharacter
 
 variable {𝔪 𝔫 : Modulus ℚ}
@@ -224,7 +174,8 @@ vanishes there). -/
 theorem eulerCorrection_eq_prod_primeFactors (η : RayClassCharacter 𝔪) (𝔫 : Modulus ℚ) (s : ℂ) :
     η.eulerCorrection 𝔫 s = ∏ p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors,
       (1 - η.toDirichletCharacter p * (p : ℂ) ^ (-s)) := by
-  rw [← image_absNorm_support 𝔫, Finset.prod_image absNorm_asIdeal_injective.injOn,
+  rw [← image_absNorm_support 𝔫,
+    Finset.prod_image Rat.HeightOneSpectrum.absNorm_asIdeal_injective.injOn,
     eulerCorrection_eq_prod_support]
   exact Finset.prod_congr rfl fun 𝔭 _ ↦ by
     rw [toMultiplicativeIdealWeight_eq_toDirichletCharacter_absNorm η 𝔭.ne_bot]
@@ -612,41 +563,65 @@ theorem heckeLFunctionC_one_rat_eq_mul_riemannZeta (𝔪 : Modulus ℚ) {s : ℂ
   rw [heckeLFunctionC_eq_LFunction 1 (.inl hs), map_one]
   exact LFunctionTrivChar_eq_mul_riemannZeta hs
 
+private theorem LFunction_eq_of_changeLevel_eq {M N : ℕ} [NeZero M] [NeZero N]
+    {ψ : DirichletCharacter ℂ M} {χ : DirichletCharacter ℂ N}
+    (hMN : M = N) (h : changeLevel (dvd_of_eq hMN) ψ = χ) :
+    ψ.LFunction = χ.LFunction := by
+  subst hMN
+  rw [changeLevel_self] at h
+  subst h
+  congr 1
+
+private theorem LFunction_toDirichletCharacter_ratDirichletEquiv_symm {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) :
+    ((ratDirichletEquiv N (NeZero.ne N)).symm χ).toDirichletCharacter.LFunction = χ.LFunction :=
+  LFunction_eq_of_changeLevel_eq (absNorm_ratModulus_finitePart N (NeZero.ne N))
+    (by rw [RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus,
+      MulEquiv.apply_symm_apply])
+
+private theorem LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive {N : ℕ}
+    [NeZero N] {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
+    (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character.toDirichletCharacter.LFunction =
+      χ.LFunction :=
+  LFunction_eq_of_changeLevel_eq
+    ((PrimitiveRayClassCharacter.absNorm_conductor_ofDirichletCharacter χ).trans
+      ((isPrimitive_def χ).mp hχ))
+    (PrimitiveRayClassCharacter.changeLevel_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive
+      hχ)
+
 /-- At `(N)·∞`, `heckeLFunctionC ((ratDirichletEquiv N _).symm χ)` is the meromorphic normal form of
 `χ.LFunction`. -/
 theorem heckeLFunctionC_ratDirichletEquiv_symm_eq_toMeromorphicNFOn {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) :
     heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ) =
       toMeromorphicNFOn χ.LFunction univ := by
-  rw [heckeLFunctionC_def]
-  exact meromorphicContinuation_eq_toMeromorphicNFOn
-    χ.meromorphic_LFunction
-    (fun _ hs ↦ χ.analyticAt_LFunction (.inl (by rintro rfl; simp at hs)))
-    fun s hs ↦ (χ.LFunction_eq_LSeries hs).trans
-      (RayClassCharacter.LSeries_ratDirichletEquiv_symm (NeZero.ne N) χ s).symm
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction,
+    LFunction_toDirichletCharacter_ratDirichletEquiv_symm]
 
 /-- At `(N)·∞`, `heckeLFunctionC ((ratDirichletEquiv N _).symm χ)` has the same punctured germ as
 `χ.LFunction` at every `s : ℂ`. -/
 theorem heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (s : ℂ) :
     heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ) =ᶠ[𝓝[≠] s] χ.LFunction := by
-  rw [heckeLFunctionC_ratDirichletEquiv_symm_eq_toMeromorphicNFOn]
-  exact χ.meromorphic_LFunction.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
+  simpa only [LFunction_toDirichletCharacter_ratDirichletEquiv_symm] using
+    heckeLFunctionC_eventuallyEq_LFunction ((ratDirichletEquiv N (NeZero.ne N)).symm χ) s
 
 /-- Away from the pole at `1` of the trivial character, the Hecke L-function of
 `(ratDirichletEquiv N _).symm χ` agrees pointwise with `χ.LFunction`. -/
 theorem heckeLFunctionC_ratDirichletEquiv_symm {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
     {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
     heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ) s = χ.LFunction s := by
-  rw [heckeLFunctionC_ratDirichletEquiv_symm_eq_toMeromorphicNFOn,
-    toMeromorphicNFOn_apply_of_analyticAt χ.meromorphic_LFunction (χ.analyticAt_LFunction hs)]
+  rw [heckeLFunctionC_eq_LFunction _
+      (hs.imp_right (mt (map_eq_one_iff _ (MulEquiv.injective _)).mp)),
+    LFunction_toDirichletCharacter_ratDirichletEquiv_symm]
 
 /-- For `χ ≠ 1`, `heckeLFunctionC ((ratDirichletEquiv N _).symm χ) = χ.LFunction` on `ℂ`. -/
 theorem heckeLFunctionC_ratDirichletEquiv_symm_of_ne_one {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
     heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ) = χ.LFunction := by
-  ext s
-  exact heckeLFunctionC_ratDirichletEquiv_symm χ (.inr hχ)
+  simpa only [LFunction_toDirichletCharacter_ratDirichletEquiv_symm] using
+    heckeLFunctionC_eq_LFunction_of_ne_one
+      ((map_ne_one_iff (ratDirichletEquiv N (NeZero.ne N)).symm (MulEquiv.injective _)).mpr hχ)
 
 /-- For a primitive Dirichlet character `χ`, the Hecke L-function of `ofDirichletCharacter χ` is
 the meromorphic normal form of `χ.LFunction`. -/
@@ -654,16 +629,8 @@ theorem heckeLFunctionC_ofDirichletCharacter_eq_toMeromorphicNFOn_of_isPrimitive
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
     heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character =
       toMeromorphicNFOn χ.LFunction univ := by
-  rw [heckeLFunctionC_def]
-  refine meromorphicContinuation_eq_toMeromorphicNFOn
-    χ.meromorphic_LFunction
-    (fun _ hs ↦ χ.analyticAt_LFunction (.inl (by rintro rfl; simp at hs)))
-    fun s hs ↦ (χ.LFunction_eq_LSeries hs).trans ?_
-  rw [RayClassCharacter.LSeries_toUnitaryIdealWeight_eq]
-  apply LSeries_congr
-  intro m _
-  rw [← PrimitiveRayClassCharacter.toDirichletCharacter_def,
-    PrimitiveRayClassCharacter.toDirichletCharacter_ofDirichletCharacter_natCast_of_isPrimitive hχ]
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction,
+    LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ]
 
 /-- For a primitive Dirichlet character `χ`, `heckeLFunctionC (ofDirichletCharacter χ).character`
 has the same punctured germ as `χ.LFunction` at every `s : ℂ`. -/
@@ -671,8 +638,9 @@ theorem heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive {N : �
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (s : ℂ) :
     heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character =ᶠ[𝓝[≠] s]
       χ.LFunction := by
-  rw [heckeLFunctionC_ofDirichletCharacter_eq_toMeromorphicNFOn_of_isPrimitive hχ]
-  exact χ.meromorphic_LFunction.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
+  simpa only [LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ] using
+    heckeLFunctionC_eventuallyEq_LFunction
+      (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s
 
 /-- For a primitive Dirichlet character `χ`, `heckeLFunctionC (ofDirichletCharacter χ).character s`
 equals `χ.LFunction s` whenever `s ≠ 1 ∨ χ ≠ 1`. -/
@@ -680,8 +648,12 @@ theorem heckeLFunctionC_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
     heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s =
       χ.LFunction s := by
-  rw [heckeLFunctionC_ofDirichletCharacter_eq_toMeromorphicNFOn_of_isPrimitive hχ,
-    toMeromorphicNFOn_apply_of_analyticAt χ.meromorphic_LFunction (χ.analyticAt_LFunction hs)]
+  have hne : χ ≠ 1 → (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character ≠ 1 :=
+    mt fun h ↦ (PrimitiveRayClassCharacter.ofDirichletCharacter_eq_one_iff χ).mp <| by
+      rw [← PrimitiveRayClassCharacter.of_character
+        (PrimitiveRayClassCharacter.ofDirichletCharacter χ), h, PrimitiveRayClassCharacter.of_one]
+  rw [heckeLFunctionC_eq_LFunction _ (hs.imp_right hne),
+    LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ]
 
 /-- For a nonprincipal primitive Dirichlet character `χ`, the Hecke L-function of
 `ofDirichletCharacter χ` equals `χ.LFunction` on the entire complex plane. -/
@@ -727,43 +699,49 @@ theorem zeroCount_heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) (U 
 theorem meromorphicOrderAt_heckeLFunctionC_ratDirichletEquiv_symm {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (s : ℂ) :
     meromorphicOrderAt (heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ)) s =
-      meromorphicOrderAt χ.LFunction s :=
-  meromorphicOrderAt_congr (heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq χ s)
+      meromorphicOrderAt χ.LFunction s := by
+  simpa only [LFunction_toDirichletCharacter_ratDirichletEquiv_symm] using
+    meromorphicOrderAt_heckeLFunctionC_eq_LFunction ((ratDirichletEquiv N (NeZero.ne N)).symm χ) s
 
 theorem divisor_heckeLFunctionC_ratDirichletEquiv_symm {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (U : Set ℂ) :
     MeromorphicOn.divisor (heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ)) U =
-      MeromorphicOn.divisor χ.LFunction U :=
-  MeromorphicOn.divisor_congr_nhdsNE fun z _ ↦
-    heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq χ z
+      MeromorphicOn.divisor χ.LFunction U := by
+  simpa only [LFunction_toDirichletCharacter_ratDirichletEquiv_symm] using
+    divisor_heckeLFunctionC_eq_LFunction ((ratDirichletEquiv N (NeZero.ne N)).symm χ) U
 
 theorem zeroCount_heckeLFunctionC_ratDirichletEquiv_symm {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (U R : Set ℂ) :
     zeroCount (heckeLFunctionC ((ratDirichletEquiv N (NeZero.ne N)).symm χ)) U R =
-      zeroCount χ.LFunction U R :=
-  zeroCount_congr_nhdsNE fun z _ ↦ heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq χ z
+      zeroCount χ.LFunction U R := by
+  simpa only [LFunction_toDirichletCharacter_ratDirichletEquiv_symm] using
+    zeroCount_heckeLFunctionC_eq_LFunction ((ratDirichletEquiv N (NeZero.ne N)).symm χ) U R
 
 theorem meromorphicOrderAt_heckeLFunctionC_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (s : ℂ) :
     meromorphicOrderAt
         (heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character) s =
-      meromorphicOrderAt χ.LFunction s :=
-  meromorphicOrderAt_congr (heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive hχ s)
+      meromorphicOrderAt χ.LFunction s := by
+  simpa only [LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ] using
+    meromorphicOrderAt_heckeLFunctionC_eq_LFunction
+      (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s
 
 theorem divisor_heckeLFunctionC_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (U : Set ℂ) :
     MeromorphicOn.divisor
         (heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character) U =
-      MeromorphicOn.divisor χ.LFunction U :=
-  MeromorphicOn.divisor_congr_nhdsNE fun z _ ↦
-    heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive hχ z
+      MeromorphicOn.divisor χ.LFunction U := by
+  simpa only [LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ] using
+    divisor_heckeLFunctionC_eq_LFunction
+      (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character U
 
 theorem zeroCount_heckeLFunctionC_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (U R : Set ℂ) :
     zeroCount (heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character) U R =
-      zeroCount χ.LFunction U R :=
-  zeroCount_congr_nhdsNE fun z _ ↦
-    heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive hχ z
+      zeroCount χ.LFunction U R := by
+  simpa only [LFunction_toDirichletCharacter_ofDirichletCharacter_of_isPrimitive hχ] using
+    zeroCount_heckeLFunctionC_eq_LFunction
+      (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character U R
 
 /-- **For every primitive ray class character `ψ` of `ℚ` (including `ψ = 1`), the zero count of
 its entire Dirichlet completion on any region `R` equals the zero count of

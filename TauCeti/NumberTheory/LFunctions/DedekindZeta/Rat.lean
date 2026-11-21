@@ -27,14 +27,12 @@ on arbitrary sets without excluding `1`.
 
 ## Main results
 
-* `TauCeti.dedekindZeta_rat_eq_LSeries_zeta`: `dedekindZeta ℚ s` equals the `LSeries` of
-  `ArithmeticFunction.zeta`.
-* `TauCeti.LFunctions.dedekindZetaC_rat_eq_toMeromorphicNFOn`: `dedekindZetaC ℚ` is the
-  meromorphic normal form of `riemannZeta`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_rat`,
   `TauCeti.LFunctions.divisor_dedekindZetaC_rat`,
   `TauCeti.LFunctions.divisorCount_dedekindZetaC_rat`, and
   `TauCeti.LFunctions.zeroCount_dedekindZetaC_rat`: order, divisor, and zero-count transport.
+* `TauCeti.LFunctions.zeroCount_zetaEntireCompletion_eq_dedekindZetaC_rat_inter`: zero-count
+  comparison between `zetaEntireCompletion` and `dedekindZetaC ℚ`.
 
 ## References
 
@@ -48,25 +46,7 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- Over `ℚ`, the Dedekind zeta series is the `L`-series of `ArithmeticFunction.zeta` at every
-complex point (both sides vanish outside the convergence half-plane). -/
-theorem dedekindZeta_rat_eq_LSeries_zeta (s : ℂ) :
-    dedekindZeta ℚ s = LSeries (fun n ↦ (ArithmeticFunction.zeta n : ℂ)) s := by
-  rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
-  apply LSeries_congr
-  intro n hn
-  simp [hn]
-
 namespace LFunctions
-
-/-- **The continued Dedekind zeta function of `ℚ` is the meromorphic normal form of
-`riemannZeta`.** -/
-theorem dedekindZetaC_rat_eq_toMeromorphicNFOn :
-    dedekindZetaC ℚ = toMeromorphicNFOn riemannZeta univ := by
-  rw [dedekindZetaC_def]
-  exact meromorphicContinuation_eq_toMeromorphicNFOn meromorphic_riemannZeta
-    (fun s hs ↦ analyticOn_riemannZeta s fun h1 ↦ by simp [mem_singleton_iff.mp h1] at hs)
-    fun _ hs ↦ (dedekindZeta_rat_eq_riemannZeta hs).symm
 
 @[simp]
 theorem meromorphicOrderAt_dedekindZetaC_rat (s : ℂ) :

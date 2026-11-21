@@ -71,18 +71,10 @@ theorem ker_classMap_ratModulus_eq_bot_iff {d : ℕ} {hd : d ≠ 0}
 private theorem exists_eq_ratModulus_or_eq_ratFiniteModulus {𝔫 : Modulus ℚ}
     (h : 𝔫 ∣ ratModulus n hn) :
     ∃ (d : ℕ) (hd : d ≠ 0), d ∣ n ∧ (𝔫 = ratModulus d hd ∨ 𝔫 = ratFiniteModulus d hd) := by
-  have hd : Ideal.absNorm 𝔫.finitePart ≠ 0 := by
-    rw [Ne, Ideal.absNorm_eq_zero_iff]
-    exact 𝔫.finitePart_ne_bot
-  have hspan := Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔫.finitePart
-  have hinf := (Modulus.dvd_iff.mp h).2
-  rw [ratModulus_infinitePart] at hinf
-  refine ⟨_, hd, dvd_ratModulus_iff.mp h, ?_⟩
-  rcases Finset.subset_singleton_iff.mp hinf with hinf | hinf
-  · exact Or.inr (Modulus.ext (by rw [ratFiniteModulus_finitePart, hspan])
-      (by rw [ratFiniteModulus_infinitePart, hinf]))
-  · exact Or.inl (Modulus.ext (by rw [ratModulus_finitePart, hspan])
-      (by rw [ratModulus_infinitePart, hinf]))
+  refine ⟨_, NeZero.ne _, dvd_ratModulus_iff.mp h, ?_⟩
+  by_cases hinf : 𝔫.infinitePart = ∅
+  · exact Or.inr (eq_ratFiniteModulus_of_infinitePart_eq_empty hinf)
+  · exact Or.inl (eq_ratModulus_of_infinitePart_ne_empty hinf)
 
 -- For `n > 2` the transition map from `(n)·∞` to a modulus `(d)` without the real place is not
 -- injective: the class of `-1` is nontrivial modulo `(n)·∞` and trivial modulo `(d)`.
