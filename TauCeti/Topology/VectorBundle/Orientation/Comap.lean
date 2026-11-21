@@ -73,7 +73,7 @@ namespace VectorBundleOrientation
 constant when read in the preferred trivialization of `E'` at `b'`. -/
 private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank ℝ F')
     (o : VectorBundleOrientation F E ι)
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
     (b' : B') :
     ∀ᶠ x in 𝓝 b', ∀ hx : x ∈ (trivializationAt F' E' b').baseSet,
       (trivializationAt F' E' b').mapOrientation ι hx
@@ -132,13 +132,13 @@ private theorem eventually_mapOrientation_comap (hι : Fintype.card ι = finrank
 the orientation of `E'` orienting the fibre over `b'` as the pull-back of `o (g b')` along `φ b'`.
 This needs `ι` to have cardinality the rank of `E'`. -/
 def comap (hι : Fintype.card ι = finrank ℝ F') (o : VectorBundleOrientation F E ι)
-    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2)) :
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd)) :
     VectorBundleOrientation F' E' ι where
   toFun b' := Orientation.map ι (φ b').symm.toLinearEquiv (o (g b'))
   eventually_mapOrientation_eq' := eventually_mapOrientation_comap hι o hφ
 
 variable (hι : Fintype.card ι = finrank ℝ F') (o : VectorBundleOrientation F E ι)
-  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.2))
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
 
 theorem comap_apply (b' : B') :
     o.comap hι hφ b' = Orientation.map ι (φ b').symm.toLinearEquiv (o (g b')) :=
@@ -177,7 +177,7 @@ theorem comap_comp {B'' : Type*} [TopologicalSpace B''] {F'' : Type*} [NormedAdd
     [∀ b, AddCommMonoid (E'' b)] [∀ b, Module ℝ (E'' b)] [∀ b, TopologicalSpace (E'' b)]
     [FiberBundle F'' E''] [VectorBundle ℝ F'' E''] {g' : C(B'', B')}
     {ψ : ∀ b'', E'' b'' ≃L[ℝ] E' (g' b'')} (hι' : Fintype.card ι = finrank ℝ F'')
-    (hψ : Continuous fun v : TotalSpace F'' E'' ↦ TotalSpace.mk' F' (g' v.proj) (ψ v.proj v.2)) :
+    (hψ : Continuous fun v : TotalSpace F'' E'' ↦ TotalSpace.mk' F' (g' v.proj) (ψ v.proj v.snd)) :
     (o.comap hι hφ).comap hι' hψ =
       o.comap (g := g.comp g') (φ := fun b'' ↦ (ψ b'').trans (φ (g' b''))) hι' (hφ.comp hψ) :=
   ext fun b'' ↦ by

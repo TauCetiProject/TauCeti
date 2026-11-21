@@ -8,7 +8,10 @@ module
 public import Mathlib.Topology.Spectral.Prespectral
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.Topology.Separation.Hausdorff
+public import Mathlib.Topology.Spectral.Basic
 public import TauCeti.Topology.ConnectedComponents
+import Mathlib.Topology.Separation.Regular
+import TauCeti.Topology.Spectral.PatchCriterion
 
 /-!
 # Connected components of spectral spaces
@@ -41,6 +44,10 @@ the two copies of `0` are separate components but lie in the same clopen sets.
   clopen neighbourhoods.
 * `ConnectedComponents.t2Space_of_prespectralSpace`: the space of connected components of such a
   space, for instance of a spectral space, is Hausdorff.
+* `TauCeti.spectralSpace_connectedComponents`, `ConnectedComponents.isSpectralMap_coe`: when `X` is
+  compact and `ConnectedComponents X` is Hausdorff (in particular, when `X` is spectral or compact
+  Hausdorff), `ConnectedComponents X` is spectral and the quotient projection
+  `ConnectedComponents.mk : X → ConnectedComponents X` is a spectral map.
 
 ## References
 
@@ -65,9 +72,9 @@ theorem connectedComponent_eq_iInter_isClopen (x : X) :
   apply Subset.antisymm connectedComponent_subset_iInter_isClopen
   -- It suffices to show that the intersection `T` of the clopen neighbourhoods is preconnected.
   set T := ⋂ s : { s : Set X // IsClopen s ∧ x ∈ s }, (s : Set X)
-  have hxT : x ∈ T := mem_iInter.2 fun s => s.2.2
+  have hxT : x ∈ T := mem_iInter.2 fun s => s.property.2
   refine IsPreconnected.subset_connectedComponent ?_ hxT
-  rw [isPreconnected_iff_subset_of_fully_disjoint_closed (isClosed_iInter fun s => s.2.1.1)]
+  rw [isPreconnected_iff_subset_of_fully_disjoint_closed (isClosed_iInter fun s => s.property.1.1)]
   intro a b ha hb hab hdisj
   -- Separate `a` and `b` by compact open sets `u ⊇ a` and `v ⊇ b`, with `u` missing `b` and `v`
   -- missing `a`.
@@ -85,12 +92,12 @@ theorem connectedComponent_eq_iInter_isClopen (x : X) :
     · exact hyK.elim (fun h => h (Or.inl (hau hya))) fun h => hva h.2 hya
     · exact hyK.elim (fun h => h (Or.inr (hbv hyb))) fun h => hub h.1 hyb
   obtain ⟨F, hF⟩ := hK.elim_finite_subfamily_closed
-    (fun s : { s : Set X // IsClopen s ∧ x ∈ s } => (s : Set X)) (fun s => s.2.1.1) hKT
+    (fun s : { s : Set X // IsClopen s ∧ x ∈ s } => (s : Set X)) (fun s => s.property.1.1) hKT
   set s := ⋂ i ∈ F, (i : Set X)
-  have hs : IsClopen s := isClopen_biInter_finset fun i _ => i.2.1
+  have hs : IsClopen s := isClopen_biInter_finset fun i _ => i.property.1
   have hsK : ∀ y ∈ s, y ∈ u ∪ v ∧ y ∉ u ∩ v := fun y hy => by
     simpa [not_or, or_iff_not_imp_left] using disjoint_right.1 hF hy
-  have hxs : x ∈ s := mem_iInter₂.2 fun i _ => i.2.2
+  have hxs : x ∈ s := mem_iInter₂.2 fun i _ => i.property.2
   -- `T` lies in the clopen neighbourhood `s ∩ u` or `s ∩ v` of `x`, hence in `a` or in `b`.
   have hTs : ∀ w w' : Set X, IsOpen w → IsOpen w' → s ⊆ w ∪ w' → s ∩ w ∩ w' = ∅ → x ∈ w →
       T ⊆ w := fun w w' hw hw' hcover hempty hxw =>
@@ -122,13 +129,13 @@ instance t2Space_of_prespectralSpace [CompactSpace X] [QuasiSeparatedSpace X]
   -- Finitely many clopen neighbourhoods of `b` already miss the compact component of `a`; their
   -- intersection `U` is a clopen union of components, so its image is clopen.
   obtain ⟨F, hF⟩ := isClosed_connectedComponent.isCompact.elim_finite_subfamily_closed
-    _ (fun s : { s : Set X // IsClopen s ∧ b ∈ s } => s.2.1.1) h
+    _ (fun s : { s : Set X // IsClopen s ∧ b ∈ s } => s.property.1.1) h
   set U : Set X := ⋂ i ∈ F, (i : Set X)
-  have hU : IsClopen U := isClopen_biInter_finset fun i _ => i.2.1
+  have hU : IsClopen U := isClopen_biInter_finset fun i _ => i.property.1
   have hV : IsClopen (mk '' U : Set (ConnectedComponents X)) := by
     simpa using (clopensEquiv.symm ⟨U, hU⟩).isClopen
   refine ⟨(mk '' U)ᶜ, mk '' U, hV.compl.isOpen, hV.isOpen, ?_,
-    mem_image_of_mem _ (mem_iInter₂.2 fun i _ => i.2.2), disjoint_compl_left⟩
+    mem_image_of_mem _ (mem_iInter₂.2 fun i _ => i.property.2), disjoint_compl_left⟩
   rintro ⟨c, hc, hca⟩
   rw [coe_eq_coe] at hca
   have hcU : c ∈ connectedComponent a ∩ U := ⟨hca ▸ mem_connectedComponent, hc⟩
@@ -136,3 +143,23 @@ instance t2Space_of_prespectralSpace [CompactSpace X] [QuasiSeparatedSpace X]
   exact hcU
 
 end ConnectedComponents
+
+namespace TauCeti
+
+universe u
+
+/-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
+spectral or compact Hausdorff), `ConnectedComponents X` is spectral. -/
+instance spectralSpace_connectedComponents (X : Type u) [TopologicalSpace X]
+    [CompactSpace X] [T2Space (ConnectedComponents X)] :
+    SpectralSpace (ConnectedComponents X) :=
+  spectralSpace_of_zeroDimensionalSpace (ConnectedComponents X)
+
+/-- When `X` is compact and `ConnectedComponents X` is Hausdorff (for instance, when `X` is
+spectral), the quotient projection `X → ConnectedComponents X` is a spectral map. -/
+theorem _root_.ConnectedComponents.isSpectralMap_coe {X : Type u} [TopologicalSpace X]
+    [CompactSpace X] [T2Space (ConnectedComponents X)] :
+    IsSpectralMap (ConnectedComponents.mk : X → ConnectedComponents X) :=
+  ConnectedComponents.continuous_coe.isProperMap.isSpectralMap
+
+end TauCeti

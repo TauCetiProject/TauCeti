@@ -82,7 +82,7 @@ without boilerplate transports. -/
 def scale (n : ℤ) (L : IntegralLattice V) : IntegralLattice V where
   carrier := L.carrier
   form := (n : ℚ) • L.form
-  isLattice := L.isLattice
+  isFullLattice := L.isFullLattice
   isSymm := L.isSymm.smul (n : ℚ)
   le_dual := by
     intro x hx
@@ -514,7 +514,7 @@ theorem exists_eq_smul_iff_forall_dvd {n : ℤ} (hn : n ≠ 0) {L : IntegralLatt
     dsimp only at hxy
     rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, ← hxy,
       inv_mul_cancel_left₀ hnq, algebraMap_int_eq, eq_intCast]
-  refine ⟨⟨L.carrier, (n : ℚ)⁻¹ • L.form, L.isLattice, L.isSymm.smul _, hdual⟩, ?_⟩
+  refine ⟨⟨L.carrier, (n : ℚ)⁻¹ • L.form, L.isFullLattice, L.isSymm.smul _, hdual⟩, ?_⟩
   ext : 1
   · rfl
   · rw [smul_form, smul_smul, mul_inv_cancel₀ hnq, one_smul]
@@ -555,7 +555,7 @@ theorem smul_isometryQuotient_injective {n : ℤ} (hn : n ≠ 0) :
 /-! ## Interaction with constructors -/
 
 @[simp]
-theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     n • ofSubmodule S B hB hle = ofSubmodule S ((n : ℚ) • B) (hB.smul (n : ℚ))
       (by
@@ -567,7 +567,7 @@ theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
   apply IntegralLattice.ext <;> simp
 
 @[simp]
-theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     -ofSubmodule S B hB hle = ofSubmodule S (-B) hB.neg
       (by

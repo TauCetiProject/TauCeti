@@ -69,10 +69,10 @@ local notation "Coset₀(" N ")" => HeckeCoset (Delta0 N) (Γ₀Q(N)) (Γ₀Q(N)
 
 /-- The Atkin-Lehner bar of a coset's chosen representative stays inside that coset. -/
 private lemma bar_out_mem_doubleCoset_rep (D : Coset₀(N)) :
-    ((atkinLehnerAntiInvolution N).bar D.out D.out.2 : GL (Fin 2) ℚ) ∈
+    ((atkinLehnerAntiInvolution N).bar D.out D.out.property : GL (Fin 2) ℚ) ∈
       doubleCoset (D.rep : GL (Fin 2) ℚ) (Γ₀Q(N)) (Γ₀Q(N)) := by
   rw [HeckeCoset.rep_def]
-  exact atkinLehnerAntiInvolution_bar_mem_doubleCoset N D.out D.out.2
+  exact atkinLehnerAntiInvolution_bar_mem_doubleCoset N D.out D.out.property
 
 /-- The reversed, inverted multiplicity from a right slash action is the ordinary `Γ₀(N)`
 Hecke-ring structure constant. -/
@@ -83,9 +83,9 @@ theorem multiplicity_inv_reverse_eq (D₁ D₂ D : Coset₀(N)) :
       multiplicity (Γ₀Q(N)) (Γ₀Q(N)) (Γ₀Q(N))
         (D₁.rep : GL (Fin 2) ℚ) (D₂.rep : GL (Fin 2) ℚ) (D.rep : GL (Fin 2) ℚ) := by
   let ι := atkinLehnerAntiInvolution N
-  let b₁ : Delta0 N := ⟨ι.bar D₁.out D₁.out.2, ι.bar_mem_Δ _ D₁.out.2⟩
-  let b₂ : Delta0 N := ⟨ι.bar D₂.out D₂.out.2, ι.bar_mem_Δ _ D₂.out.2⟩
-  let b : Delta0 N := ⟨ι.bar D.out D.out.2, ι.bar_mem_Δ _ D.out.2⟩
+  let b₁ : Delta0 N := ⟨ι.bar D₁.out D₁.out.property, ι.bar_mem_Δ _ D₁.out.property⟩
+  let b₂ : Delta0 N := ⟨ι.bar D₂.out D₂.out.property, ι.bar_mem_Δ _ D₂.out.property⟩
+  let b : Delta0 N := ⟨ι.bar D.out D.out.property, ι.bar_mem_Δ _ D.out.property⟩
   have hmap := multiplicity_map_equiv (atkinLehnerAutomorphism N)
     (Γ₀Q(N)) (Γ₀Q(N)) (Γ₀Q(N)) (D₂.out : GL (Fin 2) ℚ)⁻¹
       (D₁.out : GL (Fin 2) ℚ)⁻¹ (D.out : GL (Fin 2) ℚ)⁻¹
@@ -97,9 +97,9 @@ theorem multiplicity_inv_reverse_eq (D₁ D₂ D : Coset₀(N)) :
           (c : GL (Fin 2) ℚ) (a : GL (Fin 2) ℚ) (d : GL (Fin 2) ℚ) :=
     ι.multiplicity_comm hfix a c d
   rw [atkinLehnerAutomorphism_map_Gamma0] at hmap
-  rw [atkinLehnerAutomorphism_inv_apply N D₂.out.2,
-    atkinLehnerAutomorphism_inv_apply N D₁.out.2,
-    atkinLehnerAutomorphism_inv_apply N D.out.2] at hmap
+  rw [atkinLehnerAutomorphism_inv_apply N D₂.out.property,
+    atkinLehnerAutomorphism_inv_apply N D₁.out.property,
+    atkinLehnerAutomorphism_inv_apply N D.out.property] at hmap
   calc
     _ = multiplicity (Γ₀Q(N)) (Γ₀Q(N)) (Γ₀Q(N))
         (b₂ : GL (Fin 2) ℚ) (b₁ : GL (Fin 2) ℚ) (b : GL (Fin 2) ℚ) := hmap.symm
@@ -158,7 +158,7 @@ private lemma image_pairCoset_eq_support_structureConstants (D₁ D₂ : Coset�
         Nat.card (PairCosetFiber D₁ D₂ D (D.out : GL (Fin 2) ℚ)) ≠ 0 := by
       rwa [hcard]
     obtain ⟨i⟩ := (Nat.card_ne_zero.mp hcardne).1
-    exact ⟨i.1.1, i.1.2⟩
+    exact ⟨i.val.val, i.val.property⟩
 
 /-- The linear extension of the twisted slash action is anti-multiplicative on Hecke-ring basis
 elements. -/
@@ -234,7 +234,7 @@ noncomputable def twistedHeckeSlashModularFormCharLinearMap :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) =
       (twistedHeckeSlashRingCharLinearMap k χ T
         ⟨⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k),
-          (coe_mem_functionCharSpace_iff k χ _).mpr f.2⟩ : functionCharSpace k χ) := by
+          (coe_mem_functionCharSpace_iff k χ _).mpr f.property⟩ : functionCharSpace k χ) := by
   induction T using HeckeCosetModule.induction_linear with
   | h0 => simp
   | hadd S T hS hT =>
@@ -252,7 +252,7 @@ noncomputable def twistedHeckeSlashModularFormCharLinearMap :
         ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) : ℍ → ℂ) τ =
           c • (twistedHeckeSlashSumCharEnd k χ D
             ⟨⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k),
-              (coe_mem_functionCharSpace_iff k χ _).mpr f.2⟩ : ℍ → ℂ) τ
+              (coe_mem_functionCharSpace_iff k χ _).mpr f.property⟩ : ℍ → ℂ) τ
       rw [coe_twistedHeckeSlashModularFormCharEnd, coe_twistedHeckeSlashSumCharEnd]
 
 /-- The modular-form extension sends one to the identity endomorphism. -/
@@ -271,11 +271,11 @@ theorem twistedHeckeSlashModularFormCharLinearMap_map_mul
   refine LinearMap.ext fun f ↦ Subtype.ext (ModularForm.ext fun τ ↦ ?_)
   let f₀ : functionCharSpace k χ :=
     ⟨⇑(f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k),
-      (coe_mem_functionCharSpace_iff k χ _).mpr f.2⟩
+      (coe_mem_functionCharSpace_iff k χ _).mpr f.property⟩
   let Tf := twistedHeckeSlashModularFormCharLinearMap k χ T f
   let Tf₀ : functionCharSpace k χ :=
     ⟨⇑(Tf : ModularForm ((Gamma1 N).map (mapGL ℝ)) k),
-      (coe_mem_functionCharSpace_iff k χ _).mpr Tf.2⟩
+      (coe_mem_functionCharSpace_iff k χ _).mpr Tf.property⟩
   have hT : Tf₀ = twistedHeckeSlashRingCharLinearMap k χ T f₀ :=
     Subtype.ext (coe_twistedHeckeSlashModularFormCharLinearMap k χ T f)
   calc
@@ -326,7 +326,7 @@ noncomputable def twistedHeckeSlashCuspFormCharLinearMap :
           (coe_mem_functionCharSpace_iff k χ
             ((f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
               ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).mpr
-            ((coe_mem_modFormCharSpace_iff k χ _).mpr f.2)⟩ : functionCharSpace k χ) := by
+            ((coe_mem_modFormCharSpace_iff k χ _).mpr f.property)⟩ : functionCharSpace k χ) := by
   induction T using HeckeCosetModule.induction_linear with
   | h0 => simp
   | hadd S T hS hT =>
@@ -346,7 +346,7 @@ noncomputable def twistedHeckeSlashCuspFormCharLinearMap :
               (coe_mem_functionCharSpace_iff k χ
                 ((f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
                   ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).mpr
-                ((coe_mem_modFormCharSpace_iff k χ _).mpr f.2)⟩ : ℍ → ℂ) τ
+                ((coe_mem_modFormCharSpace_iff k χ _).mpr f.property)⟩ : ℍ → ℂ) τ
       rw [coe_twistedHeckeSlashCuspFormCharEnd, coe_twistedHeckeSlashSumCharEnd]
 
 /-- The cusp-form extension sends one to the identity endomorphism. -/
@@ -368,14 +368,14 @@ theorem twistedHeckeSlashCuspFormCharLinearMap_map_mul
       (coe_mem_functionCharSpace_iff k χ
         ((f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
           ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).mpr
-        ((coe_mem_modFormCharSpace_iff k χ _).mpr f.2)⟩
+        ((coe_mem_modFormCharSpace_iff k χ _).mpr f.property)⟩
   let Tf := twistedHeckeSlashCuspFormCharLinearMap k χ T f
   let Tf₀ : functionCharSpace k χ :=
     ⟨⇑(Tf : CuspForm ((Gamma1 N).map (mapGL ℝ)) k),
       (coe_mem_functionCharSpace_iff k χ
         ((Tf : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
           ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).mpr
-        ((coe_mem_modFormCharSpace_iff k χ _).mpr Tf.2)⟩
+        ((coe_mem_modFormCharSpace_iff k χ _).mpr Tf.property)⟩
   have hT : Tf₀ = twistedHeckeSlashRingCharLinearMap k χ T f₀ :=
     Subtype.ext (coe_twistedHeckeSlashCuspFormCharLinearMap k χ T f)
   calc
@@ -418,7 +418,7 @@ this one. -/
       twistedHeckeSlashModularFormCharLinearMap k χ T (cuspToModFormCharSpace k χ f) := by
   have hι : cuspToModFormCharSpace k χ f =
       (⟨(f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k),
-        (coe_mem_modFormCharSpace_iff k χ _).mpr f.2⟩ : modFormCharSpace k χ) :=
+        (coe_mem_modFormCharSpace_iff k χ _).mpr f.property⟩ : modFormCharSpace k χ) :=
     Subtype.ext (coe_cuspToModFormCharSpace k χ f)
   rw [hι]
   refine Subtype.ext (DFunLike.coe_injective ?_)

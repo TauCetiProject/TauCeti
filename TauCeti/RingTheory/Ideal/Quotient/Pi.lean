@@ -60,7 +60,7 @@ variable {A : Type*} [CommRing A]
 /-- Dropping the factors with exponent zero from `∏ᵢ A ⧸ Iᵢ ^ nᵢ` is bijective, as those factors
 are `A ⧸ A = 0`. -/
 theorem bijective_pi_restrict_pow {ι : Type*} (I : ι → Ideal A) (n : ι → ℕ) :
-    Function.Bijective (LinearMap.pi fun y : {i // n i ≠ 0} ↦ LinearMap.proj y.1 :
+    Function.Bijective (LinearMap.pi fun y : {i // n i ≠ 0} ↦ LinearMap.proj y.val :
       (∀ i, A ⧸ I i ^ n i) →ₗ[A] ∀ y : {i // n i ≠ 0}, A ⧸ I y ^ n y) := by
   classical
   refine ⟨fun x x' hxx' ↦ funext fun i ↦ ?_, fun y ↦ ?_⟩
@@ -71,7 +71,7 @@ theorem bijective_pi_restrict_pow {ι : Type*} (I : ι → Ideal A) (n : ι → 
       exact Subsingleton.elim _ _
     · exact congr_fun hxx' ⟨i, hi⟩
   · refine ⟨fun i ↦ if hi : n i = 0 then 0 else y ⟨i, hi⟩, funext fun i ↦ ?_⟩
-    simp only [LinearMap.pi_apply, LinearMap.proj_apply, i.2, ↓reduceDIte]
+    simp only [LinearMap.pi_apply, LinearMap.proj_apply, i.property, ↓reduceDIte]
 
 end Ideal.Quotient
 

@@ -20,7 +20,8 @@ import TauCeti.Analysis.Normed.Group.CompactSupport
 For a compactly supported `C¹` map `g : ℂ → G` into a real normed space, write `z = s + i t`.
 Over the half-plane `{0 < t}` the integral of `∂_s g` vanishes, and the integral of `∂_t g` is
 minus the integral of the boundary values of `g` on `ℝ`. Both follow from the directional Green
-identities on a rectangle containing the support of `g` in the closed half-plane.
+identities on a rectangle containing the support of `g` in the closed half-plane. For a
+noncomplete target both sides vanish by the convention for the Bochner integral.
 
 ## Main results
 
@@ -29,7 +30,7 @@ identities on a rectangle containing the support of `g` in the closed half-plane
 * `TauCeti.setIntegral_im_pos_fderiv_one_eq_zero_of_contDiffOn` and
   `TauCeti.setIntegral_im_pos_fderiv_I_eq_neg_integral_of_contDiffOn`: the same identities for `g`
   only `C¹` up to the real axis on the closed half-plane `{0 ≤ t}`, as for the product of a test
-  function with a map that is smooth up to a boundary. The derivative on the open half-plane is
+  function with a map that is `C¹` up to the axis. The derivative on the open half-plane is
   the derivative at the point, and the boundary values enter only through `g` on `ℝ`.
 * `TauCeti.integrableOn_im_pos_fderiv_apply_of_contDiffOn`: the directional derivatives of such a
   `g` are integrable on the open half-plane.

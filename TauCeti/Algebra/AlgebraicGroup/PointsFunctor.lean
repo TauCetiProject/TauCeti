@@ -187,7 +187,7 @@ algebra: every value-algebra morphism `φ : A ⟶ B` maps `S A` into `S B`, and 
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (S A)
   map {A B} φ := GrpCat.ofHom
-    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.2)
+    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.property)
   map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by simp
   map_comp φ ψ := GrpCat.ext fun g ↦ Subtype.ext <| by
     simp only [CommAlgCat.hom_comp, AlgHom.mapValue_comp]
@@ -212,7 +212,7 @@ lemma subgroupFunctor_map
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (subgroupFunctor (H := H) S hS).map φ = GrpCat.ofHom
       (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B)
-        fun g ↦ hS φ g.2) :=
+        fun g ↦ hS φ g.property) :=
   rfl
 
 /-- The inclusion of a stable family of point subgroups into the functor of points is natural. -/

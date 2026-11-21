@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # `Lᵖ` limits of metric-valued chains and sequences with a vanishing Cauchy modulus
@@ -66,14 +67,8 @@ theorem ae_tsum_edist_lt_top_of_eLpNorm_le (hp : 1 ≤ p) {f : ℕ → α → Z}
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   let d : ℕ → α → ℝ≥0∞ := fun k x ↦ edist (f k x) (f (k + 1) x)
   have hd : ∀ k, AEMeasurable (d k) μ := fun k ↦ (hf k).edist (hf (k + 1))
-  have htsum_le : eLpNorm (fun x ↦ ∑' k, d k x) p μ ≤ ∑' k, b k := by
-    refine eLpNorm_ennreal_le_of_ae_tendsto (u := atTop)
-      (fun N ↦ (Finset.range N).aemeasurable_fun_sum fun k _ ↦ hd k)
-      (.of_forall fun x ↦ ENNReal.tendsto_nat_tsum fun k ↦ d k x) (.of_forall fun N ↦ ?_)
-    have hsum : (fun x ↦ ∑ k ∈ Finset.range N, d k x) = ∑ k ∈ Finset.range N, d k := by
-      ext x; simp
-    rw [hsum]
-    exact (eLpNorm_sum_le hp).trans ((Finset.sum_le_sum fun k _ ↦ hjump k).trans (sum_le_tsum _))
+  have htsum_le : eLpNorm (fun x ↦ ∑' k, d k x) p μ ≤ ∑' k, b k :=
+    (eLpNorm_tsum_le hd hp).trans (tsum_le_tsum hjump)
   exact ae_lt_top_of_eLpNorm_ne_top hp0 (ne_top_of_le_ne_top hb htsum_le)
 
 /-- **Metric-valued `Lᵖ` chain completeness.** For `1 ≤ p` (including `p = ∞`) and a complete

@@ -25,21 +25,23 @@ facts about these coproducts which are used to compare homology of tensor produc
   When these coproducts are exact, a family of exact sequences induces an exact sequence
   (`CategoryTheory.GradedObject.exact_mapMap`), and likewise a family of short exact sequences
   induces a short exact sequence (`CategoryTheory.GradedObject.shortExact_mapMap`).  In particular
-  the tensor product of morphisms of graded objects is a monomorphism in a degree with finitely
-  many summands as soon as each summand is
-  (`CategoryTheory.GradedObject.Monoidal.mono_tensorHom`), for instance in every degree for graded
-  objects indexed by `ℕ`.  Tensoring with an identity is the map of coproducts induced by the
-  whiskerings (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so these facts
-  apply to it.
+  the tensor product of morphisms of graded objects is a monomorphism in a degree whose
+  coproducts preserve monomorphisms as soon as each summand is
+  (`CategoryTheory.GradedObject.Monoidal.mono_tensorHom`), for instance in a degree with finitely
+  many summands, or for graded modules.  Tensoring with an identity is the map of coproducts
+  induced by the whiskerings (`CategoryTheory.GradedObject.Monoidal.id_tensorHom_eq_mapMap`), so
+  these facts apply to it.
 * The inclusion of a summand `X i ⊗ Y j` into the tensor product is a split monomorphism in a
   category with zero morphisms (`CategoryTheory.GradedObject.Monoidal.isSplitMono_ιTensorObj`).
   It is an isomorphism when one factor vanishes outside a single degree
   (`CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_right`,
   `CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left`).
-* For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
-  `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
-  (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
-  a connecting morphism between tensor products.
+* If `Y` vanishes in the degrees which are not of the form `q + 1`, for instance in degree `0` for
+  graded objects indexed by `ℕ`, then the summands of `X ⊗ Y` in degree `m + 1` are those of `X`
+  tensored with `Y` shifted down by one, in degree `m`
+  (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`), and symmetrically for `X` when the
+  indices commute (`CategoryTheory.GradedObject.Monoidal.succTensorObjIso`).  This identifies the
+  degree shift of a connecting morphism between tensor products.
 -/
 
 public section
@@ -56,12 +58,12 @@ variable {I J C : Type*} [Category* C]
 objects is the map of colimits of the corresponding discrete diagrams. -/
 lemma mapMap_eq_colimMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMap p]
     [Y.HasMap p] (j : J) :
-    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+    mapMap φ p j = colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
       Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) := by
   refine mapObj_ext _ _ _ _ fun i hi ↦ ?_
   rw [ι_mapMap]
   -- `ιMapObj` is the colimit inclusion `Sigma.ι` of the discrete diagram `mapObjFun`
-  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.1 :
+  exact (ι_colimMap (Discrete.natTrans fun i ↦ φ i.as.val :
     Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j)) ⟨⟨i, hi⟩⟩).symm
 
 /-- A morphism of graded objects which is a monomorphism in each degree induces a monomorphism on
@@ -72,8 +74,8 @@ lemma mono_mapMap {X Y : GradedObject I C} (φ : X ⟶ Y) (p : I → J) [X.HasMa
     [(colim : (Discrete (p ⁻¹' {j}) ⥤ C) ⥤ C).PreservesMonomorphisms]
     [hφ : ∀ i, Mono (φ i)] : Mono (mapMap φ p j) := by
   let α : Discrete.functor (X.mapObjFun p j) ⟶ Discrete.functor (Y.mapObjFun p j) :=
-    Discrete.natTrans fun i ↦ φ i.as.1
-  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.1))
+    Discrete.natTrans fun i ↦ φ i.as.val
+  have : ∀ i, Mono (α.app i) := fun i ↦ inferInstanceAs (Mono (φ i.as.val))
   have : Mono α := NatTrans.mono_of_mono_app _
   rw [mapMap_eq_colimMap, ← colim_map]
   exact CategoryTheory.Functor.map_mono colim α
@@ -99,16 +101,17 @@ lemma exact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I → 
   let T : ShortComplex (Discrete (p ⁻¹' {j}) ⥤ C) :=
     ShortComplex.mk (X₁ := Discrete.functor (S.X₁.mapObjFun p j))
       (X₂ := Discrete.functor (S.X₂.mapObjFun p j)) (X₃ := Discrete.functor (S.X₃.mapObjFun p j))
-      (Discrete.natTrans fun i ↦ S.f i.as.1) (Discrete.natTrans fun i ↦ S.g i.as.1)
-      (by ext i; exact congr_fun S.zero i.as.1)
+      (Discrete.natTrans fun i ↦ S.f i.as.val) (Discrete.natTrans fun i ↦ S.g i.as.val)
+      (by ext i; exact congr_fun S.zero i.as.val)
   have hT : T.Exact := by
     have hP : JointlyReflectIsomorphisms fun i : Discrete (p ⁻¹' {j}) ↦ (evaluation _ C).obj i :=
       ⟨fun f h ↦ have : ∀ i, IsIso (f.app i) := h; NatIso.isIso_of_isIso_app f⟩
     rw [hP.exact_iff]
-    exact fun i ↦ hS i.as.1
+    exact fun i ↦ hS i.as.val
   exact colim.exact_mapShortComplex hT (colimit.isColimit _) (colimit.isColimit _)
     (colimit.isColimit _) (mapMap S.f p j) (mapMap S.g p j)
-    (fun i ↦ ι_mapMap S.f p i.as.1 j i.as.2) (fun i ↦ ι_mapMap S.g p i.as.1 j i.as.2)
+    (fun i ↦ ι_mapMap S.f p i.as.val j i.as.property) (fun i ↦ ι_mapMap S.g p i.as.val j
+        i.as.property)
 
 /-- A short complex of graded objects which is short exact in each degree induces a short exact
 sequence on the coproducts over the fibre of `p : I → J` over `j`, when coproducts of that shape
@@ -128,15 +131,15 @@ lemma shortExact_mapMap [Abelian C] (S : ShortComplex (GradedObject I C)) (p : I
 
 namespace Monoidal
 
-/-- In a degree `n` with finitely many pairs `i + j = n`, the tensor product of two morphisms of
-graded objects is a monomorphism as soon as each of its summands `f i ⊗ g j` is, in a category
-with zero morphisms and finite biproducts. -/
-lemma mono_tensorHom [AddMonoid I] [MonoidalCategory C] [HasZeroMorphisms C]
-    [HasFiniteBiproducts C] {X₁ X₂ Y₁ Y₂ : GradedObject I C}
+/-- In a degree `n`, the tensor product of two morphisms of graded objects is a monomorphism as soon
+as each of its summands `f i ⊗ g j` is, when coproducts over the pairs `i + j = n` preserve
+monomorphisms; for instance when there are finitely many such pairs in a category with finite
+biproducts, or in a category of modules. -/
+lemma mono_tensorHom [AddMonoid I] [MonoidalCategory C] {X₁ X₂ Y₁ Y₂ : GradedObject I C}
     (f : X₁ ⟶ X₂) (g : Y₁ ⟶ Y₂) [HasTensor X₁ Y₁] [HasTensor X₂ Y₂] (n : I)
-    (hn : Set.Finite {x : I × I | x.1 + x.2 = n}) [∀ i j, Mono (f i ⊗ₘ g j)] :
-    Mono (tensorHom f g n) := by
-  have : Finite ((fun (⟨i, j⟩ : I × I) ↦ i + j) ⁻¹' {n}) := hn.to_subtype
+    [HasColimitsOfShape (Discrete ((fun x : I × I ↦ x.1 + x.2) ⁻¹' {n})) C]
+    [(colim : (Discrete ((fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}) ⥤ C) ⥤ C).PreservesMonomorphisms]
+    [∀ i j, Mono (f i ⊗ₘ g j)] : Mono (tensorHom f g n) := by
   unfold tensorHom mapBifunctorMapMap
   refine mono_mapMap _ _ n (hφ := fun ⟨i, j⟩ ↦ ?_)
   -- Compute the component of the bifunctor map to identify it with the tensor product.
@@ -153,7 +156,6 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
       mapMap (((mapBifunctor (curriedTensor C) I I).obj X).map g) (fun x ↦ x.1 + x.2) n := by
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
-  rfl
 
 /-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
 degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection
@@ -196,40 +198,154 @@ lemma isIso_ιTensorObj_of_isZero_left [AddMonoid I] [IsLeftCancelAdd I] [Monoid
     simp
   · exact ((tensorRight _).map_isZero (hX i' hi)).eq_of_src _ _
 
-variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
-  [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))
-  [HasTensor X Y] [HasTensor X (fun q ↦ Y (q + 1))] (m : ℕ)
+section SuccRight
 
-/-- For graded objects indexed by `ℕ` with `Y 0 = 0`, the tensor product of `X` with `Y` shifted
-down by one in degree `m` is the tensor product of `X` and `Y` in degree `m + 1`: both are the
-coproduct of the `X p ⊗ Y (q + 1)` with `p + q = m`. -/
+variable [AddRightCancelMonoid I] [One I] [HasZeroMorphisms C] [MonoidalCategory C]
+  (X Y : GradedObject I C) [HasTensor X (fun q ↦ Y (q + 1))]
+
+open Classical in
+/-- The component of the inverse of `tensorObjSuccIso` on the summand `X p ⊗ Y q` of degree
+`m + 1`: the inclusion of the same summand of degree `m` if `q` is of the form `q' + 1`, and zero
+otherwise. -/
+private def tensorObjSuccInvComponent (m p q : I) (h : p + q = m + 1) :
+    X p ⊗ Y q ⟶ tensorObj X (fun q ↦ Y (q + 1)) m :=
+  if hq : ∃ q', q' + 1 = q then
+    eqToHom (by rw [hq.choose_spec]) ≫ ιTensorObj X (fun q ↦ Y (q + 1)) p hq.choose m
+      (add_right_cancel (by rw [add_assoc, hq.choose_spec, h]))
+  else 0
+
+private lemma tensorObjSuccInvComponent_add_one (m p q : I) (h : p + (q + 1) = m + 1)
+    (h' : p + q = m) :
+    tensorObjSuccInvComponent X Y m p (q + 1) h = ιTensorObj X (fun q ↦ Y (q + 1)) p q m h' := by
+  -- the chosen predecessor of `q + 1` is `q`, by cancellation
+  have key (a : I) (ha : a + 1 = q + 1) (h₁ : X p ⊗ Y (q + 1) = X p ⊗ Y (a + 1))
+      (h₂ : p + a = m) : eqToHom h₁ ≫ ιTensorObj X (fun q ↦ Y (q + 1)) p a m h₂ =
+        ιTensorObj X (fun q ↦ Y (q + 1)) p q m h' := by
+    obtain rfl := add_right_cancel ha
+    simp
+  rw [tensorObjSuccInvComponent]
+  split_ifs with hq
+  · exact key _ hq.choose_spec _ _
+  · exact absurd ⟨q, rfl⟩ hq
+
+variable [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms]
+  (hY : ∀ q, (∀ q', q' + 1 ≠ q) → IsZero (Y q)) [HasTensor X Y] (m : I)
+
+/-- If `Y` vanishes in every degree which is not of the form `q + 1`, as for graded objects indexed
+by `ℕ` with `Y 0 = 0`, then the tensor product of `X` with `Y` shifted down by one in degree `m`
+is the tensor product of `X` and `Y` in degree `m + 1`: both are the coproduct of the
+`X p ⊗ Y (q + 1)` with `p + q = m`. -/
 def tensorObjSuccIso : tensorObj X (fun q ↦ Y (q + 1)) m ≅ tensorObj X Y (m + 1) where
-  hom := tensorObjDesc fun p q h ↦ ιTensorObj X Y p (q + 1) (m + 1) (by omega)
-  inv := tensorObjDesc fun p q h ↦ match q, h with
-    | 0, _ => 0
-    | q + 1, h => ιTensorObj X (fun q ↦ Y (q + 1)) p q m (by omega)
-  hom_inv_id := by ext; simp
+  hom := tensorObjDesc fun p q h ↦ ιTensorObj X Y p (q + 1) (m + 1) (by rw [← add_assoc, h])
+  inv := tensorObjDesc (tensorObjSuccInvComponent X Y m)
+  hom_inv_id := by
+    ext p q h
+    simp [tensorObjSuccInvComponent_add_one _ _ _ _ _ _ h]
   inv_hom_id := by
     ext p q h
-    match q, h with
-    | 0, _ => exact ((tensorLeft _).map_isZero hY).eq_of_src _ _
-    | q + 1, h => simp
+    by_cases hq : ∃ q', q' + 1 = q
+    · obtain ⟨q, rfl⟩ := hq
+      have h' : p + q = m := add_right_cancel (b := 1) (by rw [add_assoc, h])
+      simp [tensorObjSuccInvComponent_add_one _ _ _ _ _ _ h']
+    · exact ((tensorLeft _).map_isZero (hY q (not_exists.1 hq))).eq_of_src _ _
 
 /-- `tensorObjSuccIso` sends the summand `X p ⊗ Y (q + 1)` of degree `m` to the same summand of
 degree `m + 1`. -/
 @[reassoc (attr := simp)]
-lemma ι_tensorObjSuccIso_hom (p q : ℕ) (h : p + q = m) :
+lemma ι_tensorObjSuccIso_hom (p q : I) (h : p + q = m) :
     ιTensorObj X (fun q ↦ Y (q + 1)) p q m h ≫ (tensorObjSuccIso X Y hY m).hom =
-      ιTensorObj X Y p (q + 1) (m + 1) (by omega) := by
+      ιTensorObj X Y p (q + 1) (m + 1) (by rw [← add_assoc, h]) := by
   simp [tensorObjSuccIso]
 
 /-- The inverse of `tensorObjSuccIso` sends the summand `X p ⊗ Y (q + 1)` of degree `m + 1` to the
 same summand of degree `m`. -/
 @[reassoc (attr := simp)]
-lemma ι_tensorObjSuccIso_inv (p q : ℕ) (h : p + (q + 1) = m + 1) :
+lemma ι_tensorObjSuccIso_inv (p q : I) (h : p + (q + 1) = m + 1) :
     ιTensorObj X Y p (q + 1) (m + 1) h ≫ (tensorObjSuccIso X Y hY m).inv =
-      ιTensorObj X (fun q ↦ Y (q + 1)) p q m (by omega) := by
-  simp [tensorObjSuccIso]
+      ιTensorObj X (fun q ↦ Y (q + 1)) p q m
+        (add_right_cancel (b := 1) (by rw [add_assoc, h])) := by
+  have h' : p + q = m := add_right_cancel (b := 1) (by rw [add_assoc, h])
+  simp [tensorObjSuccIso, tensorObjSuccInvComponent_add_one _ _ _ _ _ _ h']
+
+end SuccRight
+
+section SuccLeft
+
+variable [AddCancelCommMonoid I] [One I] [HasZeroMorphisms C] [MonoidalCategory C]
+  (X Y : GradedObject I C) [HasTensor (fun p ↦ X (p + 1)) Y]
+
+/-- `(p + 1) + q = (p + q) + 1` in an additive commutative monoid. -/
+private lemma succ_add_eq {p q m : I} (h : p + q = m) : p + 1 + q = m + 1 := by
+  rw [add_right_comm, h]
+
+/-- `p + q = m` if `(p + 1) + q = m + 1` in an additive cancellative commutative monoid. -/
+private lemma add_eq_of_succ_add_eq {p q m : I} (h : p + 1 + q = m + 1) : p + q = m :=
+  add_right_cancel (b := 1) (by rw [← h, add_right_comm])
+
+open Classical in
+/-- The component of the inverse of `succTensorObjIso` on the summand `X p ⊗ Y q` of degree
+`m + 1`: the inclusion of the same summand of degree `m` if `p` is of the form `p' + 1`, and zero
+otherwise. -/
+private def succTensorObjInvComponent (m p q : I) (h : p + q = m + 1) :
+    X p ⊗ Y q ⟶ tensorObj (fun p ↦ X (p + 1)) Y m :=
+  if hp : ∃ p', p' + 1 = p then
+    eqToHom (by rw [hp.choose_spec]) ≫ ιTensorObj (fun p ↦ X (p + 1)) Y hp.choose q m
+      (add_eq_of_succ_add_eq (by rw [hp.choose_spec, h]))
+  else 0
+
+private lemma succTensorObjInvComponent_add_one (m p q : I) (h : p + 1 + q = m + 1)
+    (h' : p + q = m) :
+    succTensorObjInvComponent X Y m (p + 1) q h = ιTensorObj (fun p ↦ X (p + 1)) Y p q m h' := by
+  -- the chosen predecessor of `p + 1` is `p`, by cancellation
+  have key (a : I) (ha : a + 1 = p + 1) (h₁ : X (p + 1) ⊗ Y q = X (a + 1) ⊗ Y q)
+      (h₂ : a + q = m) : eqToHom h₁ ≫ ιTensorObj (fun p ↦ X (p + 1)) Y a q m h₂ =
+        ιTensorObj (fun p ↦ X (p + 1)) Y p q m h' := by
+    obtain rfl := add_right_cancel ha
+    simp
+  rw [succTensorObjInvComponent]
+  split_ifs with hp
+  · exact key _ hp.choose_spec _ _
+  · exact absurd ⟨p, rfl⟩ hp
+
+variable [∀ q, (tensorRight (Y q)).PreservesZeroMorphisms]
+  (hX : ∀ p, (∀ p', p' + 1 ≠ p) → IsZero (X p)) [HasTensor X Y] (m : I)
+
+/-- If `X` vanishes in every degree which is not of the form `p + 1`, as for graded objects indexed
+by `ℕ` with `X 0 = 0`, then the tensor product of `X` shifted down by one with `Y` in degree `m` is
+the tensor product of `X` and `Y` in degree `m + 1`: both are the coproduct of the
+`X (p + 1) ⊗ Y q` with `p + q = m`.  This is the counterpart of `tensorObjSuccIso` for the first
+factor. -/
+def succTensorObjIso : tensorObj (fun p ↦ X (p + 1)) Y m ≅ tensorObj X Y (m + 1) where
+  hom := tensorObjDesc fun p q h ↦ ιTensorObj X Y (p + 1) q (m + 1) (succ_add_eq h)
+  inv := tensorObjDesc (succTensorObjInvComponent X Y m)
+  hom_inv_id := by
+    ext p q h
+    simp [succTensorObjInvComponent_add_one _ _ _ _ _ _ h]
+  inv_hom_id := by
+    ext p q h
+    by_cases hp : ∃ p', p' + 1 = p
+    · obtain ⟨p, rfl⟩ := hp
+      simp [succTensorObjInvComponent_add_one _ _ _ _ _ _ (add_eq_of_succ_add_eq h)]
+    · exact ((tensorRight _).map_isZero (hX p (not_exists.1 hp))).eq_of_src _ _
+
+/-- `succTensorObjIso` sends the summand `X (p + 1) ⊗ Y q` of degree `m` to the same summand of
+degree `m + 1`. -/
+@[reassoc (attr := simp)]
+lemma ι_succTensorObjIso_hom (p q : I) (h : p + q = m) :
+    ιTensorObj (fun p ↦ X (p + 1)) Y p q m h ≫ (succTensorObjIso X Y hX m).hom =
+      ιTensorObj X Y (p + 1) q (m + 1) (by rw [add_right_comm, h]) := by
+  simp [succTensorObjIso]
+
+/-- The inverse of `succTensorObjIso` sends the summand `X (p + 1) ⊗ Y q` of degree `m + 1` to the
+same summand of degree `m`. -/
+@[reassoc (attr := simp)]
+lemma ι_succTensorObjIso_inv (p q : I) (h : p + 1 + q = m + 1) :
+    ιTensorObj X Y (p + 1) q (m + 1) h ≫ (succTensorObjIso X Y hX m).inv =
+      ιTensorObj (fun p ↦ X (p + 1)) Y p q m
+        (add_right_cancel (b := 1) (by rw [← h, add_right_comm])) := by
+  simp [succTensorObjIso, succTensorObjInvComponent_add_one _ _ _ _ _ _ (add_eq_of_succ_add_eq h)]
+
+end SuccLeft
 
 end Monoidal
 
