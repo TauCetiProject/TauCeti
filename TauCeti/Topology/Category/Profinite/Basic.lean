@@ -17,7 +17,7 @@ topology on the right is discrete by construction. The isomorphism
 `Profinite.isoToProfiniteOfFintype` is the identity on points in both directions.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
@@ -40,13 +40,13 @@ def isoToProfiniteOfFintype (S : Profinite.{u}) [Fintype S] :
 @[simp]
 theorem isoToProfiniteOfFintype_hom_apply (S : Profinite.{u}) [Fintype S] (x : S) :
     (isoToProfiniteOfFintype S).hom x = x :=
-  rfl
+  (rfl)
 
 /-- The inverse map of `isoToProfiniteOfFintype S` is the identity on points. -/
 @[simp]
 theorem isoToProfiniteOfFintype_inv_apply (S : Profinite.{u}) [Fintype S]
     (x : FintypeCat.toProfinite.obj (FintypeCat.of S)) :
     (isoToProfiniteOfFintype S).inv x = x :=
-  rfl
+  (rfl)
 
 end Profinite
