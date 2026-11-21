@@ -16,77 +16,51 @@ import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 /-!
 # Sobolev `(0,1)`-forms over a complex curve
 
-Let `M` be a complex curve without boundary, a complex manifold modelled on `ℂ`, and let `V → M`
-be a complex vector bundle with finite-dimensional model fibre `F`, regarded as a real vector
-bundle. A `V`-valued one-form `η : T_x M → V x` is a `(0,1)`-form when it is complex antilinear,
-`η (i v) = -(i • η v)` (`TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm` for the almost
-complex structure `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold ℂ M`). This file
-constructs the target space `W^{k,p}(Σ, Λ^{0,1} ⊗_ℂ V)` of real Cauchy–Riemann operators on a
-compact boundaryless curve as a closed subspace of the Sobolev space
-`TauCeti.SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k` of `V`-valued one-forms, built on the charts
-of a finite bundle atlas `A` of `V`.
+Let `M` be a boundaryless complex curve (modelled on `ℂ`) and `V → M` a complex vector bundle
+with finite-dimensional fibre `F`, regarded as a real bundle. A `V`-valued one-form
+`η : T_x M → V x` is a `(0,1)`-form when `η (i v) = -(i • η v)`
+(`TauCeti.SmoothAlmostComplexStructure.IsZeroOneForm` for `ofComplexManifold ℂ M`). We construct
+`W^{k,p}(Σ, Λ^{0,1} ⊗_ℂ V)` as a closed complemented Banach subspace of
+`TauCeti.SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k` for a finite bundle atlas `A` of `V`.
 
-The subspace theory is first developed for general chart data
-`C : TauCeti.SectionChartData E (G →L[ℝ] F) S` whose model fibre is a space of continuous real
-linear maps between complex normed spaces (`TauCeti.SectionChartData.antilinearSobolevSections`),
-so that the same construction serves Riemann surfaces with boundary. An element belongs to the
-subspace when its chart data are complex antilinear almost everywhere in every chart; it is the
-intersection of the kernels of continuous linear maps, hence closed and complete whenever the
-ambient Sobolev space is complete. When a section-level map lifts the model-fibre projection
-`ContinuousLinearMap.complexAntilinearPartL` on every chart image, applying this constant linear
-map chartwise gives a continuous projection (`TauCeti.SectionChartData.antilinearPartSobolevL`), so
-the subspace is complemented, and the projection commutes with lowering the order, lowering the
-exponent, and chartwise multiplication by smooth real functions.
-
-For a complex manifold, `TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart` shows that a
-one-form is a `(0,1)`-form at a point exactly when its chart reading `η : ℂ →L[ℝ] F` is complex
-antilinear (`TauCeti.FiniteBundleAtlas.isZeroOneForm_iff_coord_tangentHom`), and that its
-`(0,1)`-part is read as `ContinuousLinearMap.complexAntilinearPartL` of its reading
-(`TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`). Instantiating the chart-data
-construction gives `TauCeti.zeroOneSobolevSections A μ p k`, its continuous projection
-`TauCeti.zeroOnePartSobolevL`, the scale inclusions `TauCeti.zeroOneLowerOrderL` and
-`TauCeti.zeroOneOfExponentLEL`, and multiplication by smooth real functions
+First, for general chart data `C : TauCeti.SectionChartData E (G →L[ℝ] F) S` whose model fibre is
+`G →L[ℝ] F`, `TauCeti.SectionChartData.antilinearSobolevSections` cuts out the sections whose
+chart data are complex antilinear almost everywhere in every chart; a section-level map lifting
+`ContinuousLinearMap.complexAntilinearPartL` gives the continuous projection
+`TauCeti.SectionChartData.antilinearPartSobolevL`, which commutes with
+`antilinearLowerOrdersL`, `antilinearOfExponentLEL`, and chartwise smooth real multiplication.
+Using `TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart`, instantiating on
+`(A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData` yields `TauCeti.zeroOneSobolevSections A μ p k`,
+`TauCeti.zeroOnePartSobolevL`, `TauCeti.zeroOneLowerOrdersL`, `TauCeti.zeroOneOfExponentLEL`, and
 `TauCeti.zeroOneContMDiffSMulL`.
 
 ## Main definitions
 
-* `TauCeti.SectionChartData.antilinearSobolevSections`: the subspace of Sobolev sections of chart
-  data with fibre `G →L[ℝ] F` whose chart readings are complex antilinear almost everywhere.
-* `TauCeti.SectionChartData.antilinearPartSobolevL`,
-  `TauCeti.SectionChartData.antilinearLowerOrderL`,
-  `TauCeti.SectionChartData.antilinearOfExponentLEL`: the projection and scale inclusions on
-  `antilinearSobolevSections`.
-* `TauCeti.zeroOneSobolevSections A μ p k`: the `(0,1)`-forms in `W^{k,p}` of `V`-valued
-  one-forms.
-* `TauCeti.zeroOnePartSobolevL`: the continuous `(0,1)`-projection onto it.
-* `TauCeti.zeroOneLowerOrderL`, `TauCeti.zeroOneOfExponentLEL`,
-  `TauCeti.zeroOneContMDiffSMulL`: the order and exponent inclusions and multiplication by smooth
-  real functions on `zeroOneSobolevSections`.
+* `TauCeti.SectionChartData.antilinearSobolevSections`,
+  `TauCeti.SectionChartData.antilinearPartSobolevL`,
+  `TauCeti.SectionChartData.antilinearLowerOrdersL`,
+  `TauCeti.SectionChartData.antilinearOfExponentLEL`: chart-data subspace, projection, and scale
+  inclusions.
+* `TauCeti.zeroOneSobolevSections`, `TauCeti.zeroOnePartSobolevL`, `TauCeti.zeroOneLowerOrdersL`,
+  `TauCeti.zeroOneOfExponentLEL`, `TauCeti.zeroOneContMDiffSMulL`: native `(0,1)`-forms,
+  `(0,1)`-projection, order/exponent inclusions, and multiplication by smooth real functions.
 
 ## Main results
 
-* `TauCeti.SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul`,
-  `TauCeti.SectionChartData.restrict_antilinearPartSobolevL_of_chartValueL_ae_smul`: chartwise real
-  scalar multiplication operators preserve `antilinearSobolevSections` and their restrictions
-  commute with `antilinearPartSobolevL`.
-* `TauCeti.mem_zeroOneSobolevSections_iff`,
-  `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`,
-  `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: characterizations of membership.
-* `TauCeti.isClosed_zeroOneSobolevSections`, `TauCeti.zeroOneSobolevSections.instCompleteSpace`,
-  `TauCeti.closedComplemented_zeroOneSobolevSections`: closedness, completeness, and
+* `TauCeti.mem_zeroOneSobolevSections_iff`, `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`,
+  `TauCeti.isClosed_zeroOneSobolevSections`, `TauCeti.zeroOneSobolevSections.instCompleteSpace`,
+  `TauCeti.closedComplemented_zeroOneSobolevSections`: membership, closedness, completeness, and
   complementedness.
-* `TauCeti.zeroOnePartSobolevL_coe`, `TauCeti.chartValueL_zeroOnePartSobolevL_ae`,
-  `TauCeti.zeroOnePartSobolevL_eq_zero_iff`, `TauCeti.chartValueL_zeroOnePartSobolevL_ae_coord`:
-  properties of the `(0,1)`-projection.
-* `TauCeti.zeroOneLowerOrderL_zeroOnePartSobolevL`,
+* `TauCeti.zeroOnePartSobolevL_coe`, `TauCeti.zeroOnePartSobolevL_eq_zero_iff`,
+  `TauCeti.chartValueL_zeroOnePartSobolevL_ae_coord`: properties of the `(0,1)`-projection.
+* `TauCeti.zeroOneLowerOrdersL_zeroOnePartSobolevL`,
   `TauCeti.zeroOneOfExponentLEL_zeroOnePartSobolevL`,
-  `TauCeti.zeroOneContMDiffSMulL_zeroOnePartSobolevL`: the `(0,1)`-projection commutes with the
-  scale inclusions and with multiplication by smooth real functions.
+  `TauCeti.zeroOneContMDiffSMulL_zeroOnePartSobolevL`: commutation with scale inclusions and smooth
+  real multiplication.
 
 ## References
 
-* D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Appendix C.1 and C.2.
+* D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., Appendix C.1–C.2.
 -/
 
 public section
@@ -273,32 +247,33 @@ end Projection
 
 /-! #### Lowering the order -/
 
-/-- Forgetting the highest derivative preserves `C.antilinearSobolevSections`. -/
-theorem lowerOrderL_mem_antilinearSobolevSections {w : C.sobolevSections μ p (k + 1)}
-    (hw : w ∈ C.antilinearSobolevSections μ p (k + 1)) :
-    C.lowerOrderL μ p k w ∈ C.antilinearSobolevSections μ p k :=
+/-- Forgetting derivatives preserves `C.antilinearSobolevSections`. -/
+theorem lowerOrdersL_mem_antilinearSobolevSections (d : ℕ) {w : C.sobolevSections μ p (k + d)}
+    (hw : w ∈ C.antilinearSobolevSections μ p (k + d)) :
+    C.lowerOrdersL μ p k d w ∈ C.antilinearSobolevSections μ p k :=
   mem_antilinearSobolevSections_iff.2 fun i ↦ by
-    simpa only [C.chartValueL_coe_lowerOrderL] using mem_antilinearSobolevSections_iff.1 hw i
+    simpa only [C.chartValueL_lowerOrdersL] using mem_antilinearSobolevSections_iff.1 hw i
 
 variable (C μ p k) in
-/-- The continuous inclusion of `C.antilinearSobolevSections μ p (k + 1)` into
+/-- The continuous inclusion of `C.antilinearSobolevSections μ p (k + d)` into
 `C.antilinearSobolevSections μ p k`. -/
-def antilinearLowerOrderL :
-    C.antilinearSobolevSections μ p (k + 1) →L[ℝ] C.antilinearSobolevSections μ p k :=
-  (C.lowerOrderL μ p k).restrict fun _ ↦ C.lowerOrderL_mem_antilinearSobolevSections
+def antilinearLowerOrdersL (d : ℕ) :
+    C.antilinearSobolevSections μ p (k + d) →L[ℝ] C.antilinearSobolevSections μ p k :=
+  (C.lowerOrdersL μ p k d).restrict fun _ ↦ C.lowerOrdersL_mem_antilinearSobolevSections d
 
 @[simp]
-theorem coe_antilinearLowerOrderL (w : C.antilinearSobolevSections μ p (k + 1)) :
-    (C.antilinearLowerOrderL μ p k w : C.sobolevSections μ p k) = C.lowerOrderL μ p k w :=
+theorem coe_antilinearLowerOrdersL (d : ℕ) (w : C.antilinearSobolevSections μ p (k + d)) :
+    (C.antilinearLowerOrdersL μ p k d w : C.sobolevSections μ p k) =
+      C.lowerOrdersL μ p k d w :=
   ContinuousLinearMap.coe_restrict_apply _ w
 
-/-- The complex-antilinear projection commutes with forgetting the highest derivative. -/
-theorem antilinearLowerOrderL_antilinearPartSobolevL (proj : S → S)
+/-- The complex-antilinear projection commutes with forgetting derivatives. -/
+theorem antilinearLowerOrdersL_antilinearPartSobolevL (d : ℕ) (proj : S → S)
     (hproj : ∀ i s, ∀ y ∈ C.image i, C.coord i (proj s) y = complexAntilinearPartL (C.coord i s y))
-    (w : C.sobolevSections μ p (k + 1)) :
-    C.antilinearLowerOrderL μ p k (C.antilinearPartSobolevL μ p (k + 1) proj hproj w) =
-      C.antilinearPartSobolevL μ p k proj hproj (C.lowerOrderL μ p k w) :=
-  Subtype.ext (C.lowerOrderL_constMapL μ p k hproj w)
+    (w : C.sobolevSections μ p (k + d)) :
+    C.antilinearLowerOrdersL μ p k d (C.antilinearPartSobolevL μ p (k + d) proj hproj w) =
+      C.antilinearPartSobolevL μ p k proj hproj (C.lowerOrdersL μ p k d w) :=
+  Subtype.ext (C.lowerOrdersL_constMapL μ p k d hproj w)
 
 end Antilinear
 
@@ -360,13 +335,13 @@ theorem antilinearOfExponentLEL_antilinearOfExponentLEL {r : ℝ≥0∞} [Fact (
       C.antilinearOfExponentLEL μ k (hpq.trans hqr) w :=
   Subtype.ext <| by simp [C.ofExponentLEL_ofExponentLEL]
 
-/-- Lowering the exponent commutes with forgetting the highest derivative on
+/-- Lowering the exponent commutes with forgetting derivatives on
 `C.antilinearSobolevSections`. -/
-theorem antilinearLowerOrderL_antilinearOfExponentLEL (hpq : p ≤ q)
-    (w : C.antilinearSobolevSections μ q (k + 1)) :
-    C.antilinearLowerOrderL μ p k (C.antilinearOfExponentLEL μ (k + 1) hpq w) =
-      C.antilinearOfExponentLEL μ k hpq (C.antilinearLowerOrderL μ q k w) :=
-  Subtype.ext <| by simp [C.lowerOrderL_ofExponentLEL]
+theorem antilinearLowerOrdersL_antilinearOfExponentLEL (d : ℕ) (hpq : p ≤ q)
+    (w : C.antilinearSobolevSections μ q (k + d)) :
+    C.antilinearLowerOrdersL μ p k d (C.antilinearOfExponentLEL μ (k + d) hpq w) =
+      C.antilinearOfExponentLEL μ k hpq (C.antilinearLowerOrdersL μ q k d w) :=
+  Subtype.ext <| by simp [C.lowerOrdersL_ofExponentLEL]
 
 /-- Lowering the exponent commutes with the complex-antilinear projection. -/
 theorem antilinearOfExponentLEL_antilinearPartSobolevL (proj : S → S)
@@ -629,34 +604,81 @@ theorem closedComplemented_zeroOneSobolevSections :
 
 /-! ### Lowering the order -/
 
-/-- Forgetting the highest derivative of a `(0,1)`-form gives a `(0,1)`-form. -/
-theorem lowerOrderL_mem_zeroOneSobolevSections
-    {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + 1)}
-    (hw : w ∈ zeroOneSobolevSections A μ p (k + 1)) :
-    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrderL μ p k w ∈
+/-- Forgetting derivatives preserves the native `(0,1)` condition. -/
+theorem lowerOrdersL_mem_zeroOneSobolevSections (d : ℕ)
+    {w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + d)}
+    (hw : w ∈ zeroOneSobolevSections A μ p (k + d)) :
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ p k d w ∈
       zeroOneSobolevSections A μ p k :=
-  SectionChartData.lowerOrderL_mem_antilinearSobolevSections hw
+  SectionChartData.lowerOrdersL_mem_antilinearSobolevSections d hw
 
 variable (A μ p k) in
-/-- The continuous inclusion of the `(0,1)`-forms of order `k + 1` into those of order `k`. -/
-def zeroOneLowerOrderL :
-    zeroOneSobolevSections A μ p (k + 1) →L[ℝ] zeroOneSobolevSections A μ p k :=
-  (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.antilinearLowerOrderL μ p k
+/-- The continuous inclusion of native `(0,1)`-forms from order `k + d` to order `k`. -/
+def zeroOneLowerOrdersL (d : ℕ) :
+    zeroOneSobolevSections A μ p (k + d) →L[ℝ] zeroOneSobolevSections A μ p k :=
+  (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.antilinearLowerOrdersL μ p k d
 
-/-- The inclusion of `(0,1)`-forms forgets the highest derivative. -/
+/-- As a function, the native order inclusion is the restriction of the canonical order map. -/
+theorem coeFn_zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
+    ⇑(zeroOneLowerOrdersL A μ p k d) =
+      Set.codRestrict
+        (⇑((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ p k d) ∘
+          ⇑(zeroOneSobolevSections A μ p (k + d)).subtypeL)
+        (zeroOneSobolevSections A μ p k)
+        (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property) :=
+  funext fun w ↦ Subtype.ext (SectionChartData.coe_antilinearLowerOrdersL d w)
+
+/-- The inclusion acts by the canonical order inclusion on the underlying one-form. -/
 @[simp]
-theorem coe_zeroOneLowerOrderL (w : zeroOneSobolevSections A μ p (k + 1)) :
-    (zeroOneLowerOrderL A μ p k w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
-      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrderL μ p k w :=
-  SectionChartData.coe_antilinearLowerOrderL w
+theorem coe_zeroOneLowerOrdersL (d : ℕ) (w : zeroOneSobolevSections A μ p (k + d)) :
+    (zeroOneLowerOrdersL A μ p k d w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ p k d w :=
+  SectionChartData.coe_antilinearLowerOrdersL d w
 
-/-- The `(0,1)`-projection commutes with forgetting the highest derivative. -/
-theorem zeroOneLowerOrderL_zeroOnePartSobolevL
-    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + 1)) :
-    zeroOneLowerOrderL A μ p k (zeroOnePartSobolevL A μ p (k + 1) w) =
+/-- Forgetting zero derivatives is the identity. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zero (w : zeroOneSobolevSections A μ p k) :
+    zeroOneLowerOrdersL A μ p k 0 w = w :=
+  Subtype.ext <| by simp only [coe_zeroOneLowerOrdersL, SectionChartData.lowerOrdersL_zero]
+
+omit k in
+/-- Coercion to one-forms commutes with equality transport of the Sobolev order. -/
+@[simp]
+theorem coe_zeroOneSobolevSections_eqRec {a b : ℕ} (h : a = b)
+    (w : zeroOneSobolevSections A μ p a) :
+    ((h ▸ w : zeroOneSobolevSections A μ p b) : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p b) =
+      h ▸ (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p a) := by
+  subst b; rfl
+
+/-- Native order inclusions compose, with the source order reassociated by `Nat.add_assoc`. -/
+@[simp]
+theorem zeroOneLowerOrdersL_zeroOneLowerOrdersL (d e : ℕ)
+    (w : zeroOneSobolevSections A μ p ((k + d) + e)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneLowerOrdersL A μ p (k + d) e w) =
+      zeroOneLowerOrdersL A μ p k (d + e) ((Nat.add_assoc k d e) ▸ w) := by
+  apply Subtype.ext
+  simpa only [coe_zeroOneLowerOrdersL, coe_zeroOneSobolevSections_eqRec] using
+    (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL_lowerOrdersL μ p k d e w
+
+/-- Forgetting `d + 1` derivatives first forgets the highest derivative. -/
+theorem zeroOneLowerOrdersL_succ (d : ℕ) :
+    zeroOneLowerOrdersL A μ p k (d + 1) =
+      (zeroOneLowerOrdersL A μ p k d).comp (zeroOneLowerOrdersL A μ p (k + d) 1) :=
+  ContinuousLinearMap.ext fun w ↦ (zeroOneLowerOrdersL_zeroOneLowerOrdersL d 1 w).symm
+
+/-- The native order inclusion is injective. -/
+theorem zeroOneLowerOrdersL_injective (d : ℕ) :
+    Function.Injective (zeroOneLowerOrdersL A μ p k d) := fun _ _ hw ↦
+  Subtype.ext <| (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL_injective μ p k d <| by
+    rw [← coe_zeroOneLowerOrdersL, hw, coe_zeroOneLowerOrdersL]
+
+/-- The native `(0,1)` projection commutes with forgetting derivatives. -/
+theorem zeroOneLowerOrdersL_zeroOnePartSobolevL (d : ℕ)
+    (w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p (k + d)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOnePartSobolevL A μ p (k + d) w) =
       zeroOnePartSobolevL A μ p k
-        ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrderL μ p k w) :=
-  SectionChartData.antilinearLowerOrderL_antilinearPartSobolevL _ _ w
+        ((A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.lowerOrdersL μ p k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearPartSobolevL d _ _ w
 
 /-! ### Lowering the integrability exponent -/
 
@@ -695,12 +717,12 @@ theorem zeroOneOfExponentLEL_zeroOneOfExponentLEL {r : ℝ≥0∞} [Fact (1 ≤ 
       zeroOneOfExponentLEL A μ k (hpq.trans hqr) w :=
   SectionChartData.antilinearOfExponentLEL_antilinearOfExponentLEL hpq hqr w
 
-/-- Lowering the exponent commutes with forgetting the highest derivative on `(0,1)`-forms. -/
-theorem zeroOneLowerOrderL_zeroOneOfExponentLEL (hpq : p ≤ q)
-    (w : zeroOneSobolevSections A μ q (k + 1)) :
-    zeroOneLowerOrderL A μ p k (zeroOneOfExponentLEL A μ (k + 1) hpq w) =
-      zeroOneOfExponentLEL A μ k hpq (zeroOneLowerOrderL A μ q k w) :=
-  SectionChartData.antilinearLowerOrderL_antilinearOfExponentLEL hpq w
+/-- Lowering the exponent commutes with forgetting derivatives on `(0,1)`-forms. -/
+theorem zeroOneLowerOrdersL_zeroOneOfExponentLEL (d : ℕ) (hpq : p ≤ q)
+    (w : zeroOneSobolevSections A μ q (k + d)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneOfExponentLEL A μ (k + d) hpq w) =
+      zeroOneOfExponentLEL A μ k hpq (zeroOneLowerOrdersL A μ q k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearOfExponentLEL d hpq w
 
 /-- Lowering the exponent commutes with the `(0,1)`-projection. -/
 theorem zeroOneOfExponentLEL_zeroOnePartSobolevL (hpq : p ≤ q)
@@ -751,12 +773,19 @@ theorem zeroOneContMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ 
       (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) := by
   ext1 w; exact Subtype.ext (DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.val)
 
-/-- Smooth real multiplication commutes with forgetting the highest derivative on `(0,1)`-forms. -/
-theorem zeroOneLowerOrderL_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
-    (w : zeroOneSobolevSections A μ p (k + 1)) :
-    zeroOneLowerOrderL A μ p k (zeroOneContMDiffSMulL A μ p (k + 1) hφ w) =
-      zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrderL A μ p k w) :=
-  Subtype.ext (SobolevSection.lowerOrderL_contMDiffSMulL hφ w.val)
+/-- Smooth real multiplication commutes with forgetting derivatives on `(0,1)`-forms. -/
+theorem zeroOneLowerOrdersL_zeroOneContMDiffSMulL (d : ℕ) (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
+    (w : zeroOneSobolevSections A μ p (k + d)) :
+    zeroOneLowerOrdersL A μ p k d (zeroOneContMDiffSMulL A μ p (k + d) hφ w) =
+      zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrdersL A μ p k d w) := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    rw [zeroOneLowerOrdersL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
+    refine (congrArg (zeroOneLowerOrdersL A μ p k d) (Subtype.ext ?_)).trans (ih _)
+    simp only [coe_zeroOneLowerOrdersL, coe_zeroOneContMDiffSMulL,
+      SectionChartData.lowerOrdersL_one]
+    exact SobolevSection.lowerOrderL_contMDiffSMulL hφ w.val
 
 /-- Smooth real multiplication commutes with the `(0,1)`-projection. -/
 theorem zeroOneContMDiffSMulL_zeroOnePartSobolevL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
