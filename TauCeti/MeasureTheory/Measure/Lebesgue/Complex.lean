@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 import Mathlib.Analysis.Complex.Isometry
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
@@ -167,8 +167,7 @@ theorem integral_comp_mul_left_of_norm_eq_one {E : Type*} [NormedAddCommGroup E]
     {c : ℂ} (hc : ‖c‖ = 1) (g : ℂ → E) :
     ∫ z, g (c * z) = ∫ z, g z := by
   set a : Circle := ⟨c, by simpa [Submonoid.unitSphere] using hc⟩
-  simpa only [rotation_apply] using ((rotation a).measurePreserving).integral_comp
-    (rotation a).toHomeomorph.measurableEmbedding g
+  simpa only [rotation_apply] using MeasureTheory.integral_comp (rotation a) g
 
 end Complex
 
