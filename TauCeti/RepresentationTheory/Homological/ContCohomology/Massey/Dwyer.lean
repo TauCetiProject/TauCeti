@@ -81,9 +81,8 @@ private theorem liftEntries_apply_of_corner (D : DefiningSystem Γ R n χ) (c : 
 
 private theorem isUpperUnitriangular_liftEntries (D : DefiningSystem Γ R n χ) (c : Γ → R)
     (g : Γ) : (liftEntries D c g).IsUpperUnitriangular := by
-  rw [isUpperUnitriangular_def]
+  rw [isUpperUnitriangular_iff]
   refine ⟨fun i j hji ↦ ?_, fun i ↦ by simp [liftEntries]⟩
-  replace hji : j < i := hji
   have hc : ¬ (i = 0 ∧ j = Fin.last n) := fun h ↦ absurd hji (by rw [h.1]; exact Fin.not_lt_zero j)
   rw [liftEntries_apply_of_ne D c g hji.ne' hc, D.entry_eq_zero i j (Or.inl hji.le), Pi.zero_apply]
 
@@ -292,6 +291,7 @@ private theorem toLift_apply (D : DefiningSystem Γ R n χ) (f : Γ → R)
   rw [DefiningSystem.toLift, MonoidHom.mk'_apply]
 
 /-- The corner entry of `D.toLift f hval g` is `f g`. -/
+@[simp]
 theorem DefiningSystem.toLift_apply_zero_last [NeZero n] (D : DefiningSystem Γ R n χ)
     (f : Γ → R) (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) (g : Γ) :
     ((D.toLift f hval g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0

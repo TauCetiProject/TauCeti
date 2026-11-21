@@ -113,6 +113,12 @@ theorem isUpperUnitriangular_def [LT m] [Zero R] [One R] (M : Matrix m m R) :
     M.IsUpperUnitriangular ↔ M.IsUpperTriangular ∧ ∀ i, M i i = 1 :=
   Iff.rfl
 
+/-- A matrix is upper unitriangular exactly when its entries strictly below the diagonal vanish
+and its diagonal entries are one. -/
+theorem isUpperUnitriangular_iff [LT m] [Zero R] [One R] (M : Matrix m m R) :
+    M.IsUpperUnitriangular ↔ (∀ ⦃i j⦄, j < i → M i j = 0) ∧ ∀ i, M i i = 1 :=
+  Iff.rfl
+
 /-- An upper-unitriangular matrix is upper triangular. -/
 theorem IsUpperUnitriangular.isUpperTriangular [LT m] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : M.IsUpperTriangular :=

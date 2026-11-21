@@ -39,10 +39,9 @@ theorem transvectionUnit_mem_upperTriangularGroup [CommRing R] {i j : m} (hij : 
 theorem transvectionUnit_mem_upperUnitriangularGroup [Ring R] {i j : m} (hij : i < j) (c : R) :
     transvectionUnit hij.ne c ∈ upperUnitriangularGroup m R := by
   rw [UpperUnitriangularGroup.mem_iff, coe_transvectionUnit_eq_one_add_single,
-    isUpperUnitriangular_def]
+    isUpperUnitriangular_iff]
   refine ⟨fun a b hba ↦ ?_, fun k ↦ ?_⟩
-  · replace hba : b < a := hba
-    have hab : ¬ (i = a ∧ j = b) := by
+  · have hab : ¬ (i = a ∧ j = b) := by
       rintro ⟨rfl, rfl⟩
       exact lt_asymm hij hba
     rw [Matrix.add_apply, Matrix.one_apply_ne hba.ne', Matrix.single_apply_of_ne (h := hab),

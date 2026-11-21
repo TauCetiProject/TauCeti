@@ -63,7 +63,7 @@ private theorem apply_eq_zero_of_mem_center {z : upperUnitriangularGroup (Fin (n
     intro k l hkl
     have h := (Subgroup.mem_center_iff.1 hz)
       ⟨_, transvectionUnit_mem_upperUnitriangularGroup hkl (1 : R)⟩
-    simpa [Z, coe_transvectionUnit_eq_one_add_single] using
+    simpa only [Subgroup.coe_mul, Units.val_mul, coe_transvectionUnit_eq_one_add_single] using
       congrArg (fun g : upperUnitriangularGroup (Fin (n + 1)) R ↦
         ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)) h
   by_cases hj : j = Fin.last n
@@ -73,13 +73,15 @@ private theorem apply_eq_zero_of_mem_center {z : upperUnitriangularGroup (Fin (n
       · exact absurd ⟨h, hj⟩ hc
       · exact Fin.succ_pos k
     have h := congrFun (congrFun (key hi) 0) j
-    simpa [Matrix.add_mul, Matrix.mul_add, single_mul_apply_same,
-      mul_single_apply_of_ne (hbj := hij.ne')] using h
+    simpa only [Matrix.add_mul, Matrix.mul_add, one_mul, mul_one, Matrix.add_apply,
+      single_mul_apply_same, mul_single_apply_of_ne (hbj := hij.ne'), add_zero, add_eq_left]
+      using h
   · -- Otherwise `j < n`: compare the `(i, n)` entries of `z eⱼₙ(1) = eⱼₙ(1) z`.
     have hjl : j < Fin.last n := lt_of_le_of_ne (Fin.le_last j) hj
     have h := congrFun (congrFun (key hjl) i) (Fin.last n)
-    simpa [Matrix.add_mul, Matrix.mul_add, single_mul_apply_of_ne (h := hij.ne),
-      mul_single_apply_same] using h.symm
+    simpa only [Matrix.add_mul, Matrix.mul_add, one_mul, mul_one, Matrix.add_apply,
+      mul_single_apply_same, single_mul_apply_of_ne (h := hij.ne), add_zero, add_eq_left]
+      using h.symm
 
 /-- The corner matrix unit `t E₀ₙ` vanishes away from the corner. -/
 private theorem single_zero_last_apply_of_not {i j : Fin (n + 1)}
