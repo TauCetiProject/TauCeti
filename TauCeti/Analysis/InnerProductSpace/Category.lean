@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 
 /-!
-# The dagger category of Hilbert spaces
+# The C*-category and dagger category of Hilbert spaces
 
 `TauCeti.HilbertCat 𝕜` bundles complete inner product spaces over an `RCLike` field.
 Its morphisms are Mathlib continuous linear maps, with their existing Banach-space
@@ -20,7 +20,9 @@ Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
 Unitary arrows are precisely the maps underlying linear isometric equivalences.
 The operator norm satisfies the C*-identity in categorical composition order, and complex
-Hilbert spaces form a `TauCeti.CStarCategory`.
+Hilbert spaces form a `TauCeti.CStarCategory`, identifying `CategoryTheory.End X` as a
+star-algebra with `X →L[𝕜] X` (`HilbertCat.endStarAlgEquiv`) and, over `ℂ`, its spectral
+order with `ContinuousLinearMap.IsPositive` (`HilbertCat.end_nonneg_iff_isPositive`).
 -/
 
 public section
@@ -317,6 +319,26 @@ theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
     (unitaryEquivLinearIsometryEquiv.symm e).val x = e x := (rfl)
 
+/-- The endomorphism star-algebra `CategoryTheory.End X` of a Hilbert space is canonically
+star-isomorphic to the bounded operator algebra `X →L[𝕜] X`. -/
+def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L[𝕜] X) where
+  toFun a := a.asHom
+  invFun f := End.of f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' a b := by rw [End.mul_asHom, comp_eq_comp, ContinuousLinearMap.mul_def]
+  map_add' a b := End.add_asHom _ _ a b
+  map_smul' r a := End.smul_asHom r a
+  map_star' a := by rw [End.star_asHom, dagger_eq_adjoint, ContinuousLinearMap.star_eq_adjoint]
+
+/-- Applying `endStarAlgEquiv` returns the underlying continuous linear map. -/
+@[simp] theorem endStarAlgEquiv_apply (X : HilbertCat.{u, v} 𝕜) (a : End X) :
+    endStarAlgEquiv X a = a.asHom := (rfl)
+
+/-- The inverse of `endStarAlgEquiv` wraps a continuous linear operator as an endomorphism. -/
+@[simp] theorem endStarAlgEquiv_symm_apply (X : HilbertCat.{u, v} 𝕜) (f : X →L[𝕜] X) :
+    (endStarAlgEquiv X).symm f = End.of f := (rfl)
+
 /-- The operator norms of a Hom space satisfy the normed space axioms. -/
 theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) where
   norm_nonneg := norm_nonneg
@@ -356,6 +378,13 @@ instance : CStarCategory (HilbertCat.{0, v} ℂ) where
   norm_comp_le f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
   norm_mul_self_le f := by rw [norm_self_comp_dagger, pow_two]
   exists_self_comp_dagger_eq := exists_self_comp_dagger_eq
+
+/-- Positivity of an endomorphism in `HilbertCat ℂ` coincides with operator positivity
+`ContinuousLinearMap.IsPositive`. -/
+theorem end_nonneg_iff_isPositive {X : HilbertCat.{0, v} ℂ} {a : End X} :
+    0 ≤ a ↔ a.asHom.IsPositive := by
+  rw [← map_le_map_iff (endStarAlgEquiv X), map_zero, endStarAlgEquiv_apply,
+    ContinuousLinearMap.nonneg_iff_isPositive]
 
 end HilbertCat
 

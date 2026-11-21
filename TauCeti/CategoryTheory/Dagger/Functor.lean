@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Dagger.Basic
 public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.CategoryTheory.NatIso
+public import TauCeti.CategoryTheory.Dagger.Basic
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
@@ -17,7 +17,7 @@ Preserving a chosen dagger is a property of a native functor. Natural transforma
 dagger-preserving functors admit a pointwise dagger, and pointwise unitary transformations
 give natural isomorphisms. These constructions require no additive or analytic structure.
 A linear dagger-preserving functor restricts to unital star algebra homomorphisms between
-endomorphism algebras.
+endomorphism algebras (`CategoryTheory.Functor.mapEndStarAlgHom`).
 -/
 
 public section
@@ -91,6 +91,13 @@ def mapEndStarAlgHom (X : C) : End X →⋆ₐ[R] End (F.obj X) where
 @[simp] theorem mapEndStarAlgHom_asHom (X : C) (a : End X) :
     (F.mapEndStarAlgHom R X a).asHom = F.map a.asHom :=
   F.mapEndAlgHom_asHom R X a
+
+variable (R) in
+/-- A faithful additive `R`-linear dagger-preserving functor embeds each endomorphism
+star-algebra. -/
+theorem mapEndStarAlgHom_injective [F.Faithful] (X : C) :
+    Function.Injective (F.mapEndStarAlgHom R X) :=
+  F.mapEndAlgHom_injective R X
 
 end Linear
 
