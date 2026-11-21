@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
