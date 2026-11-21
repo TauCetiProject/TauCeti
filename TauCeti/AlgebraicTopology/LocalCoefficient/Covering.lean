@@ -30,7 +30,9 @@ transfer of the covering (`TauCeti.AlgebraicTopology.Singular.Transfer.Permutati
 
 A continuous map `σ : E → E` over the base commutes with monodromy, so moving each sheet by `σ`
 is an endomorphism of the permutation local system
-(`IsCoveringMap.permutationLocalSystemFiberMap`). On singular chains it induces `σ_*`.
+(`IsCoveringMap.permutationLocalSystemFiberMap`). On singular chains it induces `σ_*`. Likewise
+monodromy follows a continuous section `s` of `p`, so `r ↦ r • s x` is a morphism from the
+constant system (`IsCoveringMap.permutationLocalSystemSection`), which induces `s_*`.
 
 The local-system viewpoint follows Hatcher, *Algebraic Topology*, Section 3.H; the covering
 monodromy is Mathlib's `IsCoveringMap.monodromyFunctor`.
@@ -216,6 +218,33 @@ theorem permutationLocalSystemTransfer_app_hom_apply_apply (hfin : ∀ b, Finite
   simp
 
 end Transfer
+
+section Section
+
+variable (hp : IsCoveringMap p) (R : Type u) [Ring R] (s : C(B, E)) (hs : ∀ b, s b ∈ p ⁻¹' {b})
+
+/-- The morphism from the constant system to the permutation local system given by a continuous
+section `s` of `p`: on the fibre over `x` it sends `r` to the formal sum `r • s x`. It commutes
+with transport because monodromy follows continuous sections. -/
+noncomputable def permutationLocalSystemSection :
+    (TauCeti.LocalCoefficientSystem.constantFunctor B).obj (ModuleCat.of R R) ⟶
+      hp.permutationLocalSystem R where
+  app x := hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩
+  naturality x y γ := by
+    dsimp only [TauCeti.LocalCoefficientSystem.constantFunctor, Functor.const_obj_map,
+      Functor.const_obj_obj]
+    rw [Category.id_comp, permutationLocalSystemSingle_map]
+    exact congrArg _ (hp.monodromy_section s.continuous hs γ).symm
+
+/-- The morphism given by a section `s` is, over `x`, the inclusion of the coefficients at the
+sheet `s x`. -/
+@[simp]
+theorem permutationLocalSystemSection_app (x : FundamentalGroupoid B) :
+    (hp.permutationLocalSystemSection R s hs).app x =
+      hp.permutationLocalSystemSingle R x ⟨s x.as, hs x.as⟩ :=
+  (rfl)
+
+end Section
 
 section FiberMap
 
