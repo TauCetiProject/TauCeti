@@ -62,8 +62,9 @@ corner pair with `(A ∪ B, C ∪ D)`.
   maps `C(X, U ∩ V) ⟶ C(X, U) ⊞ C(X, V) ⟶ C(X, U ∪ V)` of relative singular chain complexes.
 * `TopCat.mono_relativeMayerVietorisChainToBiprod` and
   `TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod`: on chains the first map is
-  a monomorphism, and for open `U` and `V` the second map induces a quasi-isomorphism from its
-  cokernel, so the sequence is short exact up to quasi-isomorphism.
+  a monomorphism, and for open `U` and `V`, with `W = U ∩ V` and `Z = U ∪ V`, the second map
+  induces a quasi-isomorphism from the cokernel of the first map, so the sequence is short exact
+  up to quasi-isomorphism.
 * `TopCat.mono_relativeMayerVietorisToBiprod`: injectivity of the first map when
   `Hₖ₊₁(X, U ∪ V)` vanishes.
 * `TopCat.relativeMayerVietorisToBiprod_naturality`,
@@ -546,11 +547,7 @@ lemma relativeMayerVietorisChainToBiprod_fromBiprod :
       relativeMayerVietorisChainFromBiprod R hUZ hVZ = 0 :=
   SSetPair.mayerVietoris_chainComplex_zero R _ _ _ _ (by
     simp only [← Functor.map_comp]
-    refine congrArg TopPair.toSSetPair.map (TopPair.hom_ext_of_fst _ ?_)
-    rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst (𝟙 X) hWU,
-      TopPair.ofSubsetMap_fst (𝟙 X) hUZ, TopPair.ofSubsetMap_fst (𝟙 X) hWV,
-      TopPair.ofSubsetMap_fst (𝟙 X) hVZ]
-    rfl)
+    exact congrArg TopPair.toSSetPair.map (TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl))
 
 /-- The first map `C(X, W) ⟶ C(X, U) ⊞ C(X, V)` of the relative Mayer–Vietoris sequence of
 singular chain complexes is a monomorphism when `W = U ∩ V`, for any subsets `U` and `V`: a chain
@@ -581,9 +578,9 @@ theorem quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod (hW : U ∩ V
   -- `(X, U ∪ V)` carries its last map to the second map.
   have w := SSetPair.mayerVietoris_chainComplex_zero R _ _ _ _
     (MorphismProperty.Arrow.Hom.ext (isPushout_left U V).w (isPushout_right U V).w)
-  have : IsIso (cokernel.desc _ _ w) :=
-    (SSetPair.shortExact_mayerVietoris R (isPushout_left U V)
-      (isPushout_right U V)).isIso_cokernelDesc
+  have hS := SSetPair.shortExact_mayerVietoris R (isPushout_left U V) (isPushout_right U V)
+  have := hS.epi_g
+  have : IsIso (cokernel.desc _ _ w) := hS.exact.isIso_cokernelDesc
   have he : cokernel.desc _ _ (relativeMayerVietorisChainToBiprod_fromBiprod R hWU hWV hUZ hVZ) =
       cokernel.desc _ _ w ≫
         SSetPair.chainComplexMap (smallSingularSubcomplexPairToUnion U V) R := by

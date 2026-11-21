@@ -31,7 +31,7 @@ of chain complexes and for an arbitrary space `M`:
   `(res, -res)` and second map `res + res`, has monomorphic first map
   (`TauCeti.mono_localChainMayerVietorisToBiprod`, for any `S` and `T`), and the second map
   induces a quasi-isomorphism from the cokernel of the first
-  (`TauCeti.quasiIso_cokernelDesc_localChainMayerVietoris`). So the total complex of this
+  (`TauCeti.quasiIso_cokernelDesc_localChainMayerVietorisFromBiprod`). So the total complex of this
   three-term complex is acyclic. This is the relative Mayer–Vietoris sequence of the open sets
   `M ∖ S` and `M ∖ T` on chains
   (`TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod`).
@@ -48,6 +48,9 @@ of chain complexes and for an arbitrary space `M`:
 
 * `TauCeti.localChainComplex R S`: the relative singular chains `C(M, M ∖ S)`.
 * `TauCeti.localChainRestriction R h`: the restriction `C(M, M ∖ T) ⟶ C(M, M ∖ S)` for `S ⊆ T`.
+* `TauCeti.localChainMayerVietorisToBiprod R S T`,
+  `TauCeti.localChainMayerVietorisFromBiprod R S T`: the maps
+  `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T) ⟶ C(M, M ∖ (S ∩ T))`.
 * `TauCeti.complPairDiagram hK`, `TauCeti.complPairCocone hK hSK`: the pairs `(M, M ∖ K i)` of a
   decreasing family of sets, and their cocone over the pair `(M, M ∖ S)` for `S ⊆ K i`.
 
@@ -118,8 +121,8 @@ lemma homologyMap_localChainRestriction {S T : Set M} (h : S ⊆ T) (k : ℕ) :
 
 /-- **The relative chains along the empty set vanish**: `C(M, M ∖ ∅) = C(M, M) = 0`. -/
 theorem isZero_localChainComplex_empty : IsZero (localChainComplex R (∅ : Set M)) :=
-  TopPair.isZero_singularChainComplex_of_surjective_map _ R fun x ↦
-    ⟨⟨x, notMem_empty x⟩, by rw [TopPair.ofSubset_map]; rfl⟩
+  TopPair.isZero_singularChainComplex_of_surjective_map _ R <|
+    Set.range_eq_univ.1 (TopPair.range_ofSubset_map.trans compl_empty)
 
 /-! ### Mayer–Vietoris -/
 
@@ -127,14 +130,25 @@ section MayerVietoris
 
 variable (S T : Set M)
 
+/-- The first map `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T)` of the Mayer–Vietoris sequence of
+relative singular chains, with components the restriction and minus the restriction. -/
+abbrev localChainMayerVietorisToBiprod :
+    localChainComplex R (S ∪ T) ⟶ localChainComplex R S ⊞ localChainComplex R T :=
+  biprod.lift (localChainRestriction R subset_union_left)
+    (-localChainRestriction R subset_union_right)
+
+/-- The second map `C(M, M ∖ S) ⊞ C(M, M ∖ T) ⟶ C(M, M ∖ (S ∩ T))` of the Mayer–Vietoris sequence
+of relative singular chains, the sum of the restrictions. -/
+abbrev localChainMayerVietorisFromBiprod :
+    localChainComplex R S ⊞ localChainComplex R T ⟶ localChainComplex R (S ∩ T) :=
+  biprod.desc (localChainRestriction R inter_subset_left)
+    (localChainRestriction R inter_subset_right)
+
 /-- The two maps `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T) ⟶ C(M, M ∖ (S ∩ T))` of the
 Mayer–Vietoris sequence of relative singular chains compose to zero. -/
 @[reassoc]
-lemma localChainMayerVietoris_zero :
-    biprod.lift (localChainRestriction R (subset_union_left : S ⊆ S ∪ T))
-        (-localChainRestriction R (subset_union_right : T ⊆ S ∪ T)) ≫
-      biprod.desc (localChainRestriction R (inter_subset_left : S ∩ T ⊆ S))
-        (localChainRestriction R (inter_subset_right : S ∩ T ⊆ T)) = 0 :=
+lemma localChainMayerVietorisToBiprod_fromBiprod :
+    localChainMayerVietorisToBiprod R S T ≫ localChainMayerVietorisFromBiprod R S T = 0 :=
   TopCat.relativeMayerVietorisChainToBiprod_fromBiprod R (X := TopCat.of M)
     (U := Sᶜ) (V := Tᶜ) (compl_subset_compl.2 subset_union_left)
     (compl_subset_compl.2 subset_union_right) (compl_subset_compl.2 inter_subset_left)
@@ -143,9 +157,7 @@ lemma localChainMayerVietoris_zero :
 /-- The first map `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T)` of the Mayer–Vietoris sequence of
 relative singular chains, with components the restriction and minus the restriction, is a
 monomorphism, for any sets `S` and `T`. -/
-theorem mono_localChainMayerVietorisToBiprod :
-    Mono (biprod.lift (localChainRestriction R (subset_union_left : S ⊆ S ∪ T))
-      (-localChainRestriction R (subset_union_right : T ⊆ S ∪ T))) :=
+theorem mono_localChainMayerVietorisToBiprod : Mono (localChainMayerVietorisToBiprod R S T) :=
   TopCat.mono_relativeMayerVietorisChainToBiprod R (X := TopCat.of M) (U := Sᶜ) (V := Tᶜ)
     (compl_subset_compl.2 subset_union_left) (compl_subset_compl.2 subset_union_right)
     (compl_union S T).ge
@@ -157,8 +169,9 @@ induces a quasi-isomorphism from the cokernel of the first map
 `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T)`, which is a monomorphism
 (`TauCeti.mono_localChainMayerVietorisToBiprod`). So the total complex of the three-term complex
 `C(M, M ∖ (S ∪ T)) ⟶ C(M, M ∖ S) ⊞ C(M, M ∖ T) ⟶ C(M, M ∖ (S ∩ T))` is acyclic. -/
-theorem quasiIso_cokernelDesc_localChainMayerVietoris (hS : IsClosed S) (hT : IsClosed T) :
-    QuasiIso (cokernel.desc _ _ (localChainMayerVietoris_zero R S T)) :=
+theorem quasiIso_cokernelDesc_localChainMayerVietorisFromBiprod (hS : IsClosed S)
+    (hT : IsClosed T) :
+    QuasiIso (cokernel.desc _ _ (localChainMayerVietorisToBiprod_fromBiprod R S T)) :=
   TopCat.quasiIso_cokernelDesc_relativeMayerVietorisChainFromBiprod R (X := TopCat.of M)
     hS.isOpen_compl hT.isOpen_compl (compl_subset_compl.2 subset_union_left)
     (compl_subset_compl.2 subset_union_right) (compl_subset_compl.2 inter_subset_left)
