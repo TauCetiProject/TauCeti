@@ -12,10 +12,11 @@ public import Mathlib.NumberTheory.NumberField.Basic
 /-!
 # Trace characters on residue rings of number fields
 
-The phase in a number-field Gauss sum is `exp (2πi Tr(xy))`. It depends only on
-`x mod I` precisely when `y` belongs to the trace dual of `I`, namely
+Let `I` be a nonzero ideal of `𝓞 K`. The phase `exp (2πi Tr(xy))`, for `x ∈ 𝓞 K`
+and `y ∈ K`, depends only on `x mod I` precisely when `y` belongs to the trace dual
 `I⁻¹ 𝔡⁻¹`. This file constructs that additive character as `Ideal.traceAddChar`,
-using Mathlib's `Real.fourierChar` and `FractionalIdeal.dual`.
+using Mathlib's `Real.fourierChar` and `FractionalIdeal.dual`. The construction also
+works for the zero ideal, whose trace dual in Mathlib is zero.
 
 The evaluation lemma `Ideal.traceAddChar_mk` permits any representative of a residue
 class. The character is trivial exactly when its parameter lies in the inverse different,
@@ -45,12 +46,14 @@ def numberFieldTraceChar : AddChar K Circle :=
   Real.fourierChar.compAddMonoidHom
     ((Rat.castHom ℝ).toAddMonoidHom.comp (Algebra.trace ℚ K).toAddMonoidHom)
 
-@[simp]
+/-- Evaluate the trace character by applying the real Fourier character to the rational trace. -/
 theorem numberFieldTraceChar_apply (x : K) :
-    numberFieldTraceChar K x = Real.fourierChar (Algebra.trace ℚ K x : ℝ) := (rfl)
+    numberFieldTraceChar K x = Real.fourierChar (Algebra.trace ℚ K x : ℝ) := by
+  simp [numberFieldTraceChar]
 
-/-- The trace character is one exactly when the rational trace is an integer. -/
-theorem numberFieldTraceChar_eq_one_iff (x : K) :
+/-- The trace character takes the value one exactly when the rational trace is an integer. -/
+@[simp]
+theorem numberFieldTraceChar_apply_eq_one_iff (x : K) :
     numberFieldTraceChar K x = 1 ↔ Algebra.trace ℚ K x ∈ (algebraMap ℤ ℚ).range := by
   rw [numberFieldTraceChar_apply, Real.fourierChar_apply', Circle.exp_eq_one]
   constructor
@@ -58,42 +61,52 @@ theorem numberFieldTraceChar_eq_one_iff (x : K) :
     refine ⟨n, ?_⟩
     have h : (Algebra.trace ℚ K x : ℝ) = n := by
       nlinarith [Real.pi_pos]
+    rw [eq_intCast]
     exact_mod_cast h.symm
   · rintro ⟨n, hn⟩
-    refine ⟨n, ?_⟩
-    have hn' : (n : ℚ) = Algebra.trace ℚ K x := hn
-    rw [← hn', Rat.cast_intCast]
-    ring
+    exact ⟨n, by rw [← hn, eq_intCast, Rat.cast_intCast, mul_comm]⟩
 
 end TauCeti
 
-namespace Ideal
-
 open TauCeti
 
-variable {K : Type*} [Field K] [NumberField K]
-variable (I : Ideal (𝓞 K)) (hI : I ≠ ⊥)
+namespace FractionalIdeal
 
-include hI in
-/-- The inverse-different condition for the phase to vanish on an integral ideal.
-Mathlib's trace dual is `I⁻¹ 𝔡⁻¹`, by `FractionalIdeal.dual_eq_mul_inv`. -/
-theorem mem_dual_iff_traceChar_eq_one (y : K) :
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- A parameter lies in the trace dual of a nonzero fractional ideal `J` exactly when
+its trace phase takes the value one on every element of `J`. -/
+theorem mem_dual_iff_forall_numberFieldTraceChar_eq_one
+    (J : FractionalIdeal (𝓞 K)⁰ K) (hJ : J ≠ 0) (y : K) :
+    y ∈ dual ℤ ℚ J ↔ ∀ a ∈ J, numberFieldTraceChar K (y * a) = 1 := by
+  rw [mem_dual hJ]
+  simp only [Algebra.traceForm_apply, numberFieldTraceChar_apply_eq_one_iff]
+
+end FractionalIdeal
+
+namespace Ideal
+
+variable {K : Type*} [Field K] [NumberField K]
+variable (I : Ideal (𝓞 K))
+
+/-- A parameter lies in the trace dual of a nonzero ideal `I` exactly when its trace phase
+is one on every algebraic integer in `I`. The trace dual is `I⁻¹ 𝔡⁻¹` by
+`FractionalIdeal.dual_eq_mul_inv` and `coeIdeal_differentIdeal`. -/
+theorem mem_dual_iff_forall_numberFieldTraceChar_eq_one (hI : I ≠ ⊥) (y : K) :
     y ∈ FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) ↔
       ∀ a ∈ I, numberFieldTraceChar K (y * algebraMap (𝓞 K) K a) = 1 := by
-  rw [FractionalIdeal.mem_dual (FractionalIdeal.coeIdeal_ne_zero.mpr hI)]
-  simp only [Algebra.traceForm_apply]
+  rw [FractionalIdeal.mem_dual_iff_forall_numberFieldTraceChar_eq_one _
+    (FractionalIdeal.coeIdeal_ne_zero.mpr hI)]
   constructor
   · intro hy a ha
-    exact (numberFieldTraceChar_eq_one_iff K _).mpr
-      (hy _ ((FractionalIdeal.mem_coeIdeal _).mpr ⟨a, ha, rfl⟩))
+    exact hy _ ((FractionalIdeal.mem_coeIdeal _).mpr ⟨a, ha, rfl⟩)
   · intro hy a ha
-    obtain ⟨b, hb, hab⟩ := (FractionalIdeal.mem_coeIdeal _).mp ha
-    rw [← hab]
-    exact (numberFieldTraceChar_eq_one_iff K _).mp (hy b hb)
+    obtain ⟨b, hb, rfl⟩ := (FractionalIdeal.mem_coeIdeal _).mp ha
+    exact hy b hb
 
-/-- The additive character of `𝓞 K / I` with parameter `y ∈ I⁻¹ 𝔡⁻¹`, given by
-`x ↦ exp (2πi Tr(xy))`. The trace-dual condition makes the phase independent of the
-representative of `x`. -/
+/-- The additive character of `𝓞 K / I` given by `x ↦ exp (2πi Tr(xy))`.
+The parameter `y` belongs to the trace dual of `I`, which is `I⁻¹ 𝔡⁻¹` when `I ≠ ⊥`.
+This ensures the phase is independent of the representative of `x`. -/
 def traceAddChar
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
     AddChar (𝓞 K ⧸ I) ℂ :=
@@ -101,19 +114,32 @@ def traceAddChar
     QuotientAddGroup.lift I.toAddSubgroup
       (((numberFieldTraceChar K).mulShift (y : K)).compAddMonoidHom
         (algebraMap (𝓞 K) K).toAddMonoidHom).toAddMonoidHom
-      (fun a ha ↦ (I.mem_dual_iff_traceChar_eq_one hI y).mp y.property a ha)
+      (fun a ha ↦ by
+        have haI := (Submodule.mem_toAddSubgroup I).mp ha
+        simp only [AddMonoidHom.mem_ker, AddChar.toAddMonoidHom_apply,
+          AddChar.compAddMonoidHom_apply, AddChar.mulShift_apply, ofMul_eq_zero]
+        by_cases hI : I = ⊥
+        · have h : a = 0 := Ideal.mem_bot.mp (hI ▸ haI)
+          simp [h]
+        · exact (I.mem_dual_iff_forall_numberFieldTraceChar_eq_one hI y).mp y.property a haI)
 
 /-- Evaluate the trace character using any representative of a residue class. -/
 @[simp]
 theorem traceAddChar_mk
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
     (a : 𝓞 K) :
-    I.traceAddChar hI y (Ideal.Quotient.mk I a) =
-      (numberFieldTraceChar K ((y : K) * algebraMap (𝓞 K) K a) : ℂ) := (rfl)
+    I.traceAddChar y (Ideal.Quotient.mk I a) =
+      (numberFieldTraceChar K ((y : K) * algebraMap (𝓞 K) K a) : ℂ) := by
+  rw [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.quotientAddGroupMk_eq_mk]
+  rw [traceAddChar, MonoidHom.coe_compAddChar]
+  -- The lift uses the additive-group quotient, definitionally the same as the ideal quotient.
+  erw [Function.comp_apply, AddChar.toAddMonoidHomEquiv_symm_apply, QuotientAddGroup.lift_mk']
+  -- `Circle.coeHom` is the coercion to `ℂ`, and `Additive.toMul` removes only a type tag.
+  rfl
 
 /-- The zero parameter gives the trivial residue character. -/
 @[simp]
-theorem traceAddChar_zero : I.traceAddChar hI 0 = 1 := by
+theorem traceAddChar_zero : I.traceAddChar 0 = 1 := by
   ext x
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp
@@ -122,70 +148,62 @@ theorem traceAddChar_zero : I.traceAddChar hI 0 = 1 := by
 @[simp]
 theorem traceAddChar_add
     (y z : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    I.traceAddChar hI (y + z) = I.traceAddChar hI y * I.traceAddChar hI z := by
+    I.traceAddChar (y + z) = I.traceAddChar y * I.traceAddChar z := by
   ext x
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   simp only [traceAddChar_mk, Submodule.coe_add, add_mul, AddChar.map_add_eq_mul,
     Circle.coe_mul, mul_apply]
+
+/-- Negating the parameter inverts the residue character. -/
+@[simp]
+theorem traceAddChar_neg
+    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
+    I.traceAddChar (-y) = (I.traceAddChar y)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← traceAddChar_add, neg_add_cancel, traceAddChar_zero]
+
+/-- Subtracting parameters divides the residue characters. -/
+@[simp]
+theorem traceAddChar_sub
+    (y z : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
+    I.traceAddChar (y - z) = I.traceAddChar y / I.traceAddChar z := by
+  rw [sub_eq_add_neg, traceAddChar_add, traceAddChar_neg, div_eq_mul_inv]
 
 /-- The phase of the trace character has absolute value one at every residue class. -/
 @[simp]
 theorem norm_traceAddChar
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
     (x : 𝓞 K ⧸ I) :
-    ‖I.traceAddChar hI y x‖ = 1 := by
+    ‖I.traceAddChar y x‖ = 1 := by
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [traceAddChar_mk, Circle.norm_coe]
+
+/-- Two parameters define the same residue character exactly when their difference lies in
+the inverse different. -/
+theorem traceAddChar_eq_iff
+    (y z : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
+    I.traceAddChar y = I.traceAddChar z ↔
+      (y : K) - (z : K) ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+  rw [← div_eq_one, ← traceAddChar_sub, AddChar.eq_one_iff, Ideal.Quotient.mk_surjective.forall,
+    ← FractionalIdeal.coeIdeal_top (𝓞 K)⁰,
+    mem_dual_iff_forall_numberFieldTraceChar_eq_one ⊤ top_ne_bot]
+  simp only [traceAddChar_mk, Circle.coe_eq_one, Submodule.coe_sub, Submodule.mem_top,
+    forall_true_left]
 
 /-- Characterization of the trivial trace character: its parameter is in the inverse different. -/
 @[simp]
 theorem traceAddChar_eq_one_iff
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    I.traceAddChar hI y = 1 ↔
+    I.traceAddChar y = 1 ↔
       (y : K) ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
-  rw [FractionalIdeal.mem_dual one_ne_zero]
-  constructor
-  · intro h a ha
-    obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff _).mp ha
-    apply (numberFieldTraceChar_eq_one_iff K _).mp
-    apply Subtype.val_injective
-    simpa using DFunLike.congr_fun h (Ideal.Quotient.mk I a)
-  · intro hy
-    ext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [traceAddChar_mk, one_apply]
-    exact congrArg Subtype.val ((numberFieldTraceChar_eq_one_iff K _).mpr
-      (hy _ ((FractionalIdeal.mem_one_iff _).mpr ⟨a, rfl⟩)))
-
-/-- Parameters differing by the inverse different define the same residue character, and only
-such parameters do. -/
-theorem traceAddChar_eq_iff
-    (y z : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
-    I.traceAddChar hI y = I.traceAddChar hI z ↔
-      (y : K) - (z : K) ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
-  rw [FractionalIdeal.mem_dual one_ne_zero]
-  simp only [Algebra.traceForm_apply]
-  constructor
-  · intro h a ha
-    obtain ⟨a, rfl⟩ := (FractionalIdeal.mem_one_iff _).mp ha
-    apply (numberFieldTraceChar_eq_one_iff K _).mp
-    rw [sub_mul, AddChar.map_sub_eq_div, div_eq_one]
-    apply Subtype.val_injective
-    simpa only [traceAddChar_mk] using DFunLike.congr_fun h (Ideal.Quotient.mk I a)
-  · intro hy
-    ext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    have h := (numberFieldTraceChar_eq_one_iff K _).mpr
-      (hy _ ((FractionalIdeal.mem_one_iff _).mpr ⟨a, rfl⟩))
-    rw [sub_mul, AddChar.map_sub_eq_div, div_eq_one] at h
-    exact congrArg Subtype.val h
+  simpa only [traceAddChar_zero, Submodule.coe_zero, sub_zero] using I.traceAddChar_eq_iff y 0
 
 /-- Multiplying the parameter by an algebraic integer multiplies the residue argument by
 its class. This is the change of phase used to reindex number-field Gauss sums. -/
 theorem traceAddChar_smul
     (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K))
     (a : 𝓞 K) :
-    I.traceAddChar hI (a • y) = (I.traceAddChar hI y).mulShift (Ideal.Quotient.mk I a) := by
+    I.traceAddChar (a • y) = (I.traceAddChar y).mulShift (Ideal.Quotient.mk I a) := by
   ext x
   obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [AddChar.mulShift_apply, ← map_mul, traceAddChar_mk, traceAddChar_mk]
