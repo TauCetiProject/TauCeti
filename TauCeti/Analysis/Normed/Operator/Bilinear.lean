@@ -44,8 +44,10 @@ invertible map and `X` tends to the identity. On Banach spaces the comparison op
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
 
-On normable spaces, the flip `ContinuousLinearMap.pairingFlip` of a jointly continuous pairing is
-Mathlib's flip `ContinuousLinearMap.flip` (`ContinuousLinearMap.pairingFlip_eq_flip`).
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip `LinearMap.pairingFlip` of a continuous pairing
+`μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is Mathlib's flip `ContinuousLinearMap.flip`
+(`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -243,12 +245,14 @@ variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [Nont
   [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
   [IsTopologicalAddGroup H]
 
-/-- On normable spaces, the flip of a jointly continuous pairing is Mathlib's flip. -/
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip `LinearMap.pairingFlip` of a continuous pairing is Mathlib's flip. -/
 @[simp]
 theorem pairingFlip_eq_flip (μ : E →SL[σ₁₃] F →SL[σ₂₃] H)
-    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : pairingFlip μ hμ = μ.flip := by
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
   ext
-  rw [pairingFlip_apply, flip_apply]
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
 
 end PairingFlip
 
