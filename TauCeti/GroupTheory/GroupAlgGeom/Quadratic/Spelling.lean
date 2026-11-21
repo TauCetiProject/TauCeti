@@ -45,24 +45,6 @@ variable {G X : Type*}
 
 /-! ### Pairs of letters of one variable -/
 
-/- A spelling in which `x` is spelled has a letter `x^{±1}`. -/
-private theorem exists_eq_append_cons_of_countVar_ne_zero {x : X} {l : List (G ⊕ X × Bool)}
-    (h : countVar x l ≠ 0) : ∃ l₁ b l₂, l = l₁ ++ .inr (x, b) :: l₂ := by
-  obtain ⟨b, hb⟩ : ∃ b, .inr (x, b) ∈ l := not_forall_not.1 (mt countVar_eq_zero.2 h)
-  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hb
-  exact ⟨l₁, b, l₂, rfl⟩
-
-/- A spelling in which `x` is spelled at least twice has a pair of letters `x^{±1}`. -/
-private theorem exists_eq_append_cons_append_cons {x : X} {l : List (G ⊕ X × Bool)}
-    (h : 2 ≤ countVar x l) : ∃ p A q e d, l = p ++ .inr (x, e) :: (A ++ .inr (x, d) :: q) := by
-  obtain ⟨s, b, t, rfl⟩ := exists_eq_append_cons_of_countVar_ne_zero (x := x) (l := l) (by omega)
-  by_cases ht : countVar x t = 0
-  · obtain ⟨s₁, b', s₂, rfl⟩ :=
-      exists_eq_append_cons_of_countVar_ne_zero (x := x) (l := s) (by simp at h; omega)
-    exact ⟨s₁, s₂, t, b', b, by simp⟩
-  · obtain ⟨t₁, b', t₂, rfl⟩ := exists_eq_append_cons_of_countVar_ne_zero ht
-    exact ⟨s, t₁, t₂, b, b', rfl⟩
-
 /- An innermost pair of letters of one variable `x`: between them `x` is not spelled and no
 variable is spelled twice. -/
 private theorem exists_innermost_pair (p A q : List (G ⊕ X × Bool)) (y : X) (e d : Bool) :
@@ -79,12 +61,12 @@ private theorem exists_innermost_pair (p A q : List (G ⊕ X × Bool)) (y : X) (
     push Not at hA
     obtain ⟨z, hz⟩ := hA
     -- a pair of letters `z^{±1}` inside `A`
-    obtain ⟨p₁, A₁, q₁, e₁, d₁, rfl⟩ := exists_eq_append_cons_append_cons hz
+    obtain ⟨p₁, e₁, A₁, d₁, q₁, rfl, -⟩ := exists_two_split_of_two_le_countVar hz
     obtain ⟨x, e', d', p', A', q', h, hx, hA'⟩ := ih _ (by simp; omega)
       (p ++ .inr (y, e) :: p₁) A₁ (q₁ ++ .inr (y, d) :: q) z e₁ d₁ rfl
     exact ⟨x, e', d', p', A', q', by simpa using h, hx, hA'⟩
   · -- the pair formed by the letter `y^e` and the first letter `y^{±1}` inside `A`
-    obtain ⟨A₁, b, A₂, rfl⟩ := exists_eq_append_cons_of_countVar_ne_zero hy
+    obtain ⟨A₁, b, A₂, rfl, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hy)
     obtain ⟨x, e', d', p', A', q', h, hx, hA'⟩ := ih _ (by simp)
       p A₁ (A₂ ++ .inr (y, d) :: q) y e b rfl
     exact ⟨x, e', d', p', A', q', by simpa using h, hx, hA'⟩
@@ -110,8 +92,8 @@ theorem exists_crossCap_or_handle_or_boundary {l : List (G ⊕ X × Bool)}
         ∃ (x : X) (ε : Bool) (L : List G) (B : List (G ⊕ X × Bool)),
           q ++ p = .inr (x, ε) :: (L.map .inl ++ .inr (x, !ε) :: B)) := by
   obtain ⟨x₀, hx₀⟩ := hne
-  obtain ⟨p₀, A₀, q₀, e₀, d₀, rfl⟩ :=
-    exists_eq_append_cons_append_cons (x := x₀) (l := l) (by have := hl x₀; omega)
+  obtain ⟨p₀, e₀, A₀, d₀, q₀, rfl, -⟩ :=
+    exists_two_split_of_two_le_countVar (x := x₀) (l := l) (by have := hl x₀; omega)
   -- an innermost pair `x^e A x^d` of `l = p ++ x^e A x^d q`
   obtain ⟨x, e, d, p, A, q, hpq, hxA, hA⟩ := exists_innermost_pair p₀ A₀ q₀ x₀ e₀ d₀
   rw [hpq] at hl ⊢
@@ -124,13 +106,13 @@ theorem exists_crossCap_or_handle_or_boundary {l : List (G ⊕ X × Bool)}
   push Not at hvar
   obtain ⟨z, hz⟩ := hvar
   have hxz : x ≠ z := by rintro rfl; exact hz hxA
-  obtain ⟨A₁, η, A₂, rfl⟩ := exists_eq_append_cons_of_countVar_ne_zero hz
+  obtain ⟨A₁, η, A₂, rfl, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hz)
   have hzqp : countVar z (q ++ p) ≠ 0 := by
     have h₁ := hA z
     have h₂ := hl z
     simp [hxz] at h₁ h₂ ⊢
     omega
-  obtain ⟨B₁, θ, B₂, hB⟩ := exists_eq_append_cons_of_countVar_ne_zero hzqp
+  obtain ⟨B₁, θ, B₂, hB, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hzqp)
   obtain rfl | rfl : η = θ ∨ θ = !η := by cases θ <;> cases η <;> simp
   · -- the two letters of `z` have the same exponent: a cross-cap starting inside the pair
     have hB' : q ++ (p ++ .inr (x, e) :: A₁) = B₁ ++ .inr (z, η) :: (B₂ ++ .inr (x, e) :: A₁) := by
@@ -139,5 +121,48 @@ theorem exists_crossCap_or_handle_or_boundary {l : List (G ⊕ X × Bool)}
     exact ⟨p ++ .inr (x, e) :: A₁, .inr (z, η) :: (A₂ ++ .inr (x, !e) :: q), by simp,
       .inl ⟨z, η, A₂ ++ .inr (x, !e) :: B₁, B₂ ++ .inr (x, e) :: A₁, by simp [hB']⟩⟩
   · exact ⟨p, _, rfl, .inr (.inl ⟨x, z, e, η, A₁, A₂, B₁, B₂, hxz, by simp [hB]⟩)⟩
+
+/-- Non-cyclic version of `exists_crossCap_or_handle_or_boundary`: a word in which no variable is
+spelled exactly once and some variable is spelled contains a cross-cap pattern
+`P ++ x^ε :: (A ++ x^ε :: Q)`, a handle pattern
+`P ++ x^ε :: (A₁ ++ y^η :: (A₂ ++ x^{-ε} :: (B₁ ++ y^{-η} :: B₂)))` in two distinct variables, or
+a boundary pattern `P ++ x^ε :: (L.map .inl ++ x^{-ε} :: Q)` enclosing only coefficients. -/
+theorem exists_crossCap_or_handle_or_boundary_noncyclic {l : List (G ⊕ X × Bool)}
+    (hl : ∀ x, countVar x l ≠ 1) (hne : ∃ x, countVar x l ≠ 0) :
+    (∃ (x : X) (ε : Bool) (P A Q : List (G ⊕ X × Bool)),
+        l = P ++ .inr (x, ε) :: (A ++ .inr (x, ε) :: Q)) ∨
+      (∃ (x y : X) (ε η : Bool) (P A₁ A₂ B₁ B₂ : List (G ⊕ X × Bool)), x ≠ y ∧
+        l = P ++ .inr (x, ε) :: (A₁ ++ .inr (y, η) :: (A₂ ++ .inr (x, !ε) ::
+          (B₁ ++ .inr (y, !η) :: B₂)))) ∨
+      ∃ (x : X) (ε : Bool) (L : List G) (P Q : List (G ⊕ X × Bool)),
+        l = P ++ .inr (x, ε) :: (L.map .inl ++ .inr (x, !ε) :: Q) := by
+  obtain ⟨x₀, hx₀⟩ := hne
+  obtain ⟨p₀, e₀, A₀, d₀, q₀, rfl, -⟩ :=
+    exists_two_split_of_two_le_countVar (x := x₀) (l := l) (by have := hl x₀; omega)
+  obtain ⟨x, e, d, p, A, q, hpq, hxA, hA⟩ := exists_innermost_pair p₀ A₀ q₀ x₀ e₀ d₀
+  rw [hpq] at hl ⊢
+  obtain rfl | rfl : e = d ∨ d = !e := by cases d <;> cases e <;> simp
+  · exact .inl ⟨x, e, p, A, q, rfl⟩
+  by_cases hvar : ∀ z, countVar z A = 0
+  · obtain ⟨L, rfl⟩ := exists_eq_map_inl hvar
+    exact .inr (.inr ⟨x, e, L, p, q, rfl⟩)
+  push Not at hvar
+  obtain ⟨z, hz⟩ := hvar
+  have hxz : x ≠ z := by rintro rfl; exact hz hxA
+  obtain ⟨A₁, η, A₂, rfl, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hz)
+  have hzpq : countVar z p ≠ 0 ∨ countVar z q ≠ 0 := by
+    have h₁ := hA z
+    have h₂ := hl z
+    simp [hxz] at h₁ h₂ ⊢
+    omega
+  rcases hzpq with hzp | hzq
+  · obtain ⟨P₁, θ, P₂, hP, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hzp)
+    obtain rfl | rfl : θ = η ∨ η = !θ := by cases θ <;> cases η <;> simp
+    · exact .inl ⟨z, θ, P₁, P₂ ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: q, by simp [hP]⟩
+    · exact .inr (.inl ⟨z, x, θ, e, P₁, P₂, A₁, A₂, q, hxz.symm, by simp [hP]⟩)
+  · obtain ⟨Q₁, θ, Q₂, hQ, -⟩ := exists_split_of_countVar_pos (Nat.pos_of_ne_zero hzq)
+    obtain rfl | rfl : η = θ ∨ θ = !η := by cases θ <;> cases η <;> simp
+    · exact .inl ⟨z, η, p ++ .inr (x, e) :: A₁, A₂ ++ .inr (x, !e) :: Q₁, Q₂, by simp [hQ]⟩
+    · exact .inr (.inl ⟨x, z, e, η, p, A₁, A₂, Q₁, Q₂, hxz, by simp [hQ]⟩)
 
 end TauCeti.GroupAlgGeom.GX

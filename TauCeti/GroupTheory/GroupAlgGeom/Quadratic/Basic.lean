@@ -88,8 +88,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
   images under a homomorphism `G[X] → H[Y]`, from those in the images of the generators.
 * `TauCeti.GroupAlgGeom.Quadratic.eval_congr`,
   `TauCeti.GroupAlgGeom.Quadratic.mem_V_congr`,
-  `TauCeti.GroupAlgGeom.Quadratic.Standard.mem_V_toWord_congr`: evaluation and solution-set
-  membership depend only on the coordinates of variables that occur.
+  `TauCeti.GroupAlgGeom.Quadratic.update_mem_V_iff_of_occurrences_eq_zero`: evaluation and
+  solution-set membership depend only on the coordinates of variables that occur.
 * `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
   `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
   occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
@@ -359,8 +359,15 @@ theorem occVars_eq_empty_iff {w : GX G X} :
 theorem finite_setOf_occurrences_ne_zero (w : GX G X) : {x | occurrences x w ≠ 0}.Finite :=
   coe_occVars w ▸ (occVars w).finite_toSet
 
+/-- A variable that is not spelled in `L` does not occur in `(L.map GX.letter).prod`. -/
+theorem notMem_occVars_prod_of_countVar_eq_zero {x : X} {L : List (G ⊕ X × Bool)}
+    (h : GX.countVar x L = 0) : x ∉ occVars (L.map GX.letter).prod := by
+  rw [mem_occVars_iff, not_not, occurrences_eq_countVar_reducedWord]
+  exact Nat.eq_zero_of_le_zero ((GX.countVar_reducedWord_le x L).trans_eq h)
+
 /-- The value of `w ∈ G[X]` at a point depends only on the coordinates of the variables that occur
-in `w`. -/
+in `w` (simultaneously across all occurring variables, without requiring `DecidableEq X`; for a
+single avoided variable see `GX.eval_congr_of_mem_avoiding`). -/
 theorem eval_congr (ι : G →* H) {w : GX G X} {v v' : X → H}
     (h : ∀ x, occurrences x w ≠ 0 → v x = v' x) : eval ι v w = eval ι v' w := by
   conv_lhs => rw [← prod_reducedWord w]
@@ -378,17 +385,6 @@ equations of `T`. -/
 theorem mem_V_congr (ι : G →* H) {T : Set (GX G X)} {v v' : X → H}
     (h : ∀ w ∈ T, ∀ x, occurrences x w ≠ 0 → v x = v' x) : v ∈ V ι T ↔ v' ∈ V ι T := by
   simp only [mem_V]; exact forall₂_congr fun w hw => by rw [eval_congr ι (h w hw)]
-
-/-- Membership in `V ι {w}` depends only on the coordinates of the variables that occur in `w`. -/
-theorem mem_V_singleton_congr (ι : G →* H) {w : GX G X} {v v' : X → H}
-    (h : ∀ x, occurrences x w ≠ 0 → v x = v' x) : v ∈ V ι {w} ↔ v' ∈ V ι {w} :=
-  mem_V_congr ι (by simpa using h)
-
-/-- Updating a coordinate that does not occur in `w` leaves the value of `w` unchanged. -/
-@[simp] theorem eval_update_of_occurrences_eq_zero [DecidableEq X] (ι : G →* H) {w : GX G X} {x : X}
-    (hx : occurrences x w = 0) (v : X → H) (c : H) :
-    eval ι (Function.update v x c) w = eval ι v w :=
-  eval_congr ι fun _ hy => Function.update_of_ne (by rintro rfl; exact hy hx) c v
 
 /-- Updating a coordinate that occurs in no equation of `T` leaves membership in `V ι T`
 unchanged. -/
@@ -914,17 +910,6 @@ theorem eval_toWord_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ 
   · simp [h]
   · rw [hι _ (constant_mem_coeffs_iff.2 h)]
 
-/-- Membership in `V ι {S.toWord}` depends only on the coordinates in `S.vars`: variables outside
-`S.vars` are unconstrained. -/
-theorem mem_V_toWord_congr (ι : G →* H) {v v' : X → H} (hv : ∀ x ∈ S.vars, v x = v' x) :
-    v ∈ V ι {S.toWord} ↔ v' ∈ V ι {S.toWord} := by
-  simp [S.eval_toWord_congr (fun _ _ => rfl) hv]
-
-/-- Updating a coordinate outside `S.vars` leaves membership in `V ι {S.toWord}` unchanged. -/
-theorem update_mem_V_toWord_iff [DecidableEq X] (ι : G →* H) {x : X} (hx : x ∉ S.vars)
-    (v : X → H) (c : H) : Function.update v x c ∈ V ι {S.toWord} ↔ v ∈ V ι {S.toWord} :=
-  S.mem_V_toWord_congr ι fun _ hy => Function.update_of_ne (ne_of_mem_of_not_mem hy hx) c v
-
 end Kappa
 
 /-! ### Standard equations are quadratic -/
@@ -1041,43 +1026,9 @@ private theorem prod_wordLetters (S : Standard G X) :
   cases S <;>
     simp [wordLetters, atomBlocks, toWord_def, Function.comp_def, hcomm, hsq, hconj, mul_assoc]
 
-private theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G ⊕ X × Bool))}
-    (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, GX.IsReduced l)
-    (hwrap : ∀ l₁ ∈ blocks, ∀ l₂ ∈ blocks,
-      ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬GX.Combines a b) :
-    GX.IsCyclicallyReduced blocks.flatten := by
-  refine GX.isCyclicallyReduced_iff.2 ⟨GX.isReduced_flatten hne hred ?_, fun a b m hm => ?_⟩
-  · exact List.isChain_iff_getElem.2 fun _ _ => hwrap _ (List.getElem_mem _) _ (List.getElem_mem _)
-  · obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some
-      (by rw [← List.head?_flatten, hm]; rfl : blocks.findSome? List.head? = some a)
-    obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some
-      (by rw [← List.getLast?_flatten, hm, ← List.cons_append, List.getLast?_concat] :
-        blocks.reverse.findSome? List.getLast? = some b)
-    exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ b hlast a ha
-
-private theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × Bool))}
-    {d : G} (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, GX.IsReduced l)
-    (hchain : blocks.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬GX.Combines a b)
-    (hhead : ∀ l ∈ blocks, ∀ b ∈ l.head?, ∀ g, b ≠ .inl g)
-    (hlast : ∀ l ∈ blocks, ∀ a ∈ l.getLast?, ∀ g, a ≠ .inl g) (hd : d ≠ 1) :
-    GX.IsCyclicallyReduced (blocks.flatten ++ [.inl d]) := by
-  rcases blocks with _ | ⟨l₀', rest_blocks⟩
-  · simpa using hd
-  have hr := GX.isReduced_flatten hne hred hchain
-  have hfn : (l₀' :: rest_blocks).flatten ≠ [] := fun h =>
-    hne l₀' List.mem_cons_self (List.flatten_eq_nil_iff.1 h l₀' List.mem_cons_self)
-  obtain ⟨a, rest, hf⟩ := List.exists_cons_of_ne_nil hfn
-  have ha_eq : List.findSome? List.head? (l₀' :: rest_blocks) = some a := by
-    rw [← List.head?_flatten, hf]; rfl
-  obtain ⟨l₀, hl₀, ha⟩ := List.exists_of_findSome?_eq_some ha_eq
-  rw [hf, List.cons_append, GX.isCyclicallyReduced_cons_append, ← List.cons_append, ← hf,
-    GX.isReduced_append]
-  refine ⟨⟨hr, GX.isReduced_singleton_inl.2 hd, fun u hu v hv => ?_⟩, ?_⟩
-  · rw [Option.mem_def, List.getLast?_flatten] at hu
-    obtain ⟨l₁, hl₁, hu'⟩ := List.exists_of_findSome?_eq_some hu
-    obtain rfl : .inl d = v := by simpa using hv
-    rcases u with g | _; exacts [absurd rfl (hlast l₁ (List.mem_reverse.1 hl₁) _ hu' g), by simp]
-  · rcases a with g | _; exacts [absurd rfl (hhead l₀ hl₀ _ ha g), by simp]
+private theorem sumElim_inl_ne_inr {α β : Type*} {f : α → X} {g : β → X}
+    (inj : (Sum.elim f g).Injective) (a : α) (b : β) : f a ≠ g b :=
+  fun h => by have := @inj (.inl a) (.inr b) h; simp at this
 
 private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
     (f : Fin n → List (G ⊕ X × Bool)) (z : Fin m → X) (c : Fin m → G) {d : G}
@@ -1097,7 +1048,7 @@ private theorem isCyclicallyReduced_ofFn_append_conjLetters {n m : ℕ}
       List (Fin n ⊕ Fin m)).Nodup :=
     ((List.nodup_finRange n).map Sum.inl_injective).append
       ((List.nodup_finRange m).map Sum.inr_injective) (by simp [List.Disjoint])
-  refine isCyclicallyReduced_flatten_append_inl ?_ ?_ ?_ ?_ ?_ hd
+  refine GX.isCyclicallyReduced_flatten_append_inl ?_ ?_ ?_ ?_ ?_ hd
   · simp [or_imp, forall_and, hne, conjLetters]
   · simp only [List.mem_append, List.mem_ofFn, or_imp, forall_and, forall_exists_index,
       forall_apply_eq_imp_iff]
@@ -1112,20 +1063,20 @@ private theorem isCyclicallyReduced_orientableCoeff {n m : ℕ} {x y : Fin n →
     {c : Fin m → G} {d : G} (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x y) z).Injective)
     (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
     GX.IsCyclicallyReduced (wordLetters (orientableCoeff n m hnm x y z inj c hc d hd)) := by
+  have hinj₁ := (Sum.elim_injective.1 inj).1
   refine isCyclicallyReduced_ofFn_append_conjLetters (fun i => commLetters (x i) (y i)) z c
     (by simp [commLetters]) (fun i => ?_) hc hd
     (by simp [commLetters]) (by simp [commLetters]) fun s₁ s₂ hs => ?_
-  · have hxy : x i ≠ y i := fun h => by
-      have := @inj (.inl (.inl i)) (.inl (.inr i)) (by simpa using h); simp at this
+  · have hxy := sumElim_inl_ne_inr hinj₁ i i
     simp [commLetters, hxy, hxy.symm]
   · rcases s₁ with i₁ | j₁ <;> rcases s₂ with i₂ | j₂ <;>
       simp only [Sum.elim_inl, Sum.elim_inr, commLetters, conjLetters, List.getLast?_cons_cons,
         List.getLast?_singleton, List.head?_cons, Option.mem_def, Option.some.injEq,
         forall_eq', GX.combines_inr_inr]
-    · rintro ⟨h, -⟩; exact absurd (@inj (.inl (.inr i₁)) (.inl (.inl i₂)) h) (by simp)
-    · rintro ⟨h, -⟩; exact absurd (@inj (.inl (.inr i₁)) (.inr j₂) h) (by simp)
-    · rintro ⟨h, -⟩; exact absurd (@inj (.inr j₁) (.inl (.inl i₂)) h) (by simp)
-    · rintro ⟨h, -⟩; exact hs (congrArg Sum.inr (Sum.inr_injective (@inj (.inr j₁) (.inr j₂) h)))
+    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr hinj₁ i₂ i₁ h.symm
+    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr inj (.inr i₁) j₂ h
+    · rintro ⟨h, -⟩; exact sumElim_inl_ne_inr inj (.inl i₂) j₁ h.symm
+    · rintro ⟨h, -⟩; exact hs (congrArg Sum.inr ((Sum.elim_injective.1 inj).2.1 h))
 
 private theorem isCyclicallyReduced_nonorientableCoeff {n m : ℕ} {x : Fin n → X} {z : Fin m → X}
     {c : Fin m → G} {d : G} (hn : 0 < n) (inj : (Sum.elim x z).Injective)
@@ -1142,16 +1093,15 @@ private theorem isCyclicallyReduced_wordLetters (S : Standard G X) :
     GX.IsCyclicallyReduced (wordLetters S) := by
   cases S with
   | orientable n hn x y inj =>
-    have hxy (i j : Fin n) : y i ≠ x j := fun h => by
-      have := @inj (.inr i) (.inl j) (by simpa using h); simp at this
-    refine isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, commLetters]) ?_ ?_
+    have hxy (i j : Fin n) : y i ≠ x j := (sumElim_inl_ne_inr inj j i).symm
+    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, commLetters]) ?_ ?_
     · simp only [atomBlocks, List.mem_ofFn, forall_exists_index, forall_apply_eq_imp_iff]
       intro i; simp [commLetters, hxy i i, (hxy i i).symm]
     · intro l₁ hl₁ l₂ hl₂
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
       simp [commLetters, hxy i j]
   | nonorientable n hn x inj =>
-    refine isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, sqLetters])
+    refine GX.isCyclicallyReduced_flatten_of_blocks (by simp [atomBlocks, sqLetters])
       (by simp [atomBlocks, sqLetters]) fun l₁ hl₁ l₂ hl₂ => ?_
     obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hl₁; obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hl₂
     simp [sqLetters]
@@ -1179,14 +1129,12 @@ theorem occurrences_toWord_of_mem_vars {S : Standard G X} {x : X} (hx : x ∈ S.
       GX.countVar_nil, add_zero] <;> exact h2.trans hle
   cases S with
   | orientable n hn a b inj =>
-    have hab (i : Fin n) : a i ≠ b i := fun h => by
-      have := @inj (.inl i) (.inr i) (by simpa using h); simp at this
+    have hab (i : Fin n) : a i ≠ b i := sumElim_inl_ne_inr inj i i
     obtain ⟨i | i, rfl⟩ := hx
     · exact ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp [commLetters, (hab i).symm]⟩
     · exact ⟨_, List.mem_ofFn.2 ⟨i, rfl⟩, by simp [commLetters, hab i]⟩
   | orientableCoeff n m hnm a b z inj c hc d hd =>
-    have hab (i : Fin n) : a i ≠ b i := fun h => by
-      have := @inj (.inl (.inl i)) (.inl (.inr i)) (by simpa using h); simp at this
+    have hab (i : Fin n) : a i ≠ b i := sumElim_inl_ne_inr (Sum.elim_injective.1 inj).1 i i
     obtain ⟨(i | i) | j, rfl⟩ := hx
     · exact ⟨_, List.mem_append_left _ (List.mem_ofFn.2 ⟨i, rfl⟩),
         by simp [commLetters, (hab i).symm]⟩
@@ -1231,23 +1179,6 @@ theorem vars_nonempty (S : Standard G X) : S.vars.Nonempty := by
     · exact ⟨x ⟨0, hn⟩, ⟨.inl (.inl ⟨0, hn⟩), rfl⟩⟩
   | nonorientable n hn x _ => exact ⟨x ⟨0, hn⟩, ⟨⟨0, hn⟩, rfl⟩⟩
   | nonorientableCoeff n _ hn x _ _ _ _ _ _ => exact ⟨x ⟨0, hn⟩, ⟨.inl ⟨0, hn⟩, rfl⟩⟩
-
-/-- No standard quadratic word is a coefficient. -/
-theorem toWord_notMem_range_inl (S : Standard G X) :
-    S.toWord ∉ Set.range (inl : G →* GX G X) := by
-  obtain ⟨x, hx⟩ := S.vars_nonempty
-  rw [mem_range_inl_iff_forall_occurrences_eq_zero, not_forall]
-  exact ⟨x, by simp [hx]⟩
-
-@[simp] theorem toWord_ne_inl (S : Standard G X) (c : G) : S.toWord ≠ inl c :=
-  fun h => S.toWord_notMem_range_inl ⟨c, h.symm⟩
-
-@[simp] theorem inl_ne_toWord (S : Standard G X) (c : G) : inl c ≠ S.toWord :=
-  (S.toWord_ne_inl c).symm
-
-@[simp] theorem toWord_ne_one (S : Standard G X) : S.toWord ≠ 1 := by simpa using S.toWord_ne_inl 1
-
-@[simp] theorem one_ne_toWord (S : Standard G X) : 1 ≠ S.toWord := S.toWord_ne_one.symm
 
 end IsQuadratic
 

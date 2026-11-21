@@ -232,16 +232,15 @@ theorem exists_split_of_countVar_pos {x : X} {l : List (G ⊕ X × Bool)} (h : 0
       · obtain ⟨l₁, b', l₂, rfl, h₀⟩ := ih (by simpa [hyx] using h)
         exact ⟨.inr (y, b) :: l₁, b', l₂, rfl, by simp [hyx, h₀]⟩
 
-/-- A word in which `x` occurs twice splits at its two letters `x^{±1}`. -/
-theorem exists_two_split_of_countVar_eq_two {x : X} {l : List (G ⊕ X × Bool)}
-    (h : countVar x l = 2) :
-    ∃ l₁ b₁ l₂ b₂ l₃, l = l₁ ++ [.inr (x, b₁)] ++ l₂ ++ [.inr (x, b₂)] ++ l₃ ∧
-      countVar x l₁ = 0 ∧ countVar x l₂ = 0 ∧ countVar x l₃ = 0 := by
-  obtain ⟨l₁, b₁, rest, rfl, h₁⟩ := exists_split_of_countVar_pos (x := x) (by rw [h]; decide)
-  have hrest : countVar x rest = 1 := by simp [h₁] at h; omega
+/-- A word in which `x` occurs at least twice splits at its first two letters `x^{±1}`. -/
+theorem exists_two_split_of_two_le_countVar {x : X} {l : List (G ⊕ X × Bool)}
+    (h : 2 ≤ countVar x l) :
+    ∃ l₁ b₁ l₂ b₂ l₃, l = l₁ ++ .inr (x, b₁) :: (l₂ ++ .inr (x, b₂) :: l₃) ∧
+      countVar x l₁ = 0 ∧ countVar x l₂ = 0 := by
+  obtain ⟨l₁, b₁, rest, rfl, h₁⟩ := exists_split_of_countVar_pos (x := x) (l := l) (by omega)
   obtain ⟨l₂, b₂, l₃, rfl, h₂⟩ :=
-    exists_split_of_countVar_pos (x := x) (l := rest) (by rw [hrest]; decide)
-  exact ⟨l₁, b₁, l₂, b₂, l₃, by simp [List.append_assoc], h₁, h₂, by simp [h₂] at hrest; omega⟩
+    exists_split_of_countVar_pos (x := x) (l := rest) (by simp [h₁] at h; omega)
+  exact ⟨l₁, b₁, l₂, b₂, l₃, rfl, h₁, h₂⟩
 
 /-- A word without variable letters is a word in coefficients. -/
 theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l = 0) :
@@ -831,6 +830,49 @@ theorem isCyclicallyReduced_append_comm {l₁ l₂ : List (G ⊕ X × Bool)} :
   | cons a l₁ ih =>
     intro l₂ h
     simpa using ih (l₂ ++ [a]) (by simpa using h.append_singleton)
+
+/-- A flatten of nonempty reduced words whose boundary letters (including wrap-around) never
+combine is cyclically reduced. -/
+theorem isCyclicallyReduced_flatten_of_blocks {blocks : List (List (G ⊕ X × Bool))}
+    (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, IsReduced l)
+    (hwrap : ∀ l₁ ∈ blocks, ∀ l₂ ∈ blocks,
+      ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b) :
+    IsCyclicallyReduced blocks.flatten := by
+  refine isCyclicallyReduced_iff.2 ⟨isReduced_flatten hne hred ?_, fun a b m hm => ?_⟩
+  · exact List.isChain_iff_getElem.2 fun _ _ => hwrap _ (List.getElem_mem _) _ (List.getElem_mem _)
+  · obtain ⟨l₂, hl₂, ha⟩ := List.exists_of_findSome?_eq_some
+      (by rw [← List.head?_flatten, hm]; rfl : blocks.findSome? List.head? = some a)
+    obtain ⟨l₁, hl₁, hlast⟩ := List.exists_of_findSome?_eq_some
+      (by rw [← List.getLast?_flatten, hm, ← List.cons_append, List.getLast?_concat] :
+        blocks.reverse.findSome? List.getLast? = some b)
+    exact hwrap l₁ (List.mem_reverse.1 hl₁) l₂ hl₂ b hlast a ha
+
+/-- Appending a nontrivial coefficient `.inl d` to a flatten of nonempty reduced words whose
+boundaries do not combine and whose outer letters are variables yields a cyclically reduced
+word. -/
+theorem isCyclicallyReduced_flatten_append_inl {blocks : List (List (G ⊕ X × Bool))}
+    {d : G} (hne : ∀ l ∈ blocks, l ≠ []) (hred : ∀ l ∈ blocks, IsReduced l)
+    (hchain : blocks.IsChain fun l₁ l₂ => ∀ a ∈ l₁.getLast?, ∀ b ∈ l₂.head?, ¬Combines a b)
+    (hhead : ∀ l ∈ blocks, ∀ b ∈ l.head?, ∀ g, b ≠ .inl g)
+    (hlast : ∀ l ∈ blocks, ∀ a ∈ l.getLast?, ∀ g, a ≠ .inl g) (hd : d ≠ 1) :
+    IsCyclicallyReduced (blocks.flatten ++ [.inl d]) := by
+  rcases blocks with _ | ⟨l₀', rest_blocks⟩
+  · simpa using hd
+  have hr := isReduced_flatten hne hred hchain
+  have hfn : (l₀' :: rest_blocks).flatten ≠ [] := fun h =>
+    hne l₀' List.mem_cons_self (List.flatten_eq_nil_iff.1 h l₀' List.mem_cons_self)
+  obtain ⟨a, rest, hf⟩ := List.exists_cons_of_ne_nil hfn
+  have ha_eq : List.findSome? List.head? (l₀' :: rest_blocks) = some a := by
+    rw [← List.head?_flatten, hf]; rfl
+  obtain ⟨l₀, hl₀, ha⟩ := List.exists_of_findSome?_eq_some ha_eq
+  rw [hf, List.cons_append, isCyclicallyReduced_cons_append, ← List.cons_append, ← hf,
+    isReduced_append]
+  refine ⟨⟨hr, isReduced_singleton_inl.2 hd, fun u hu v hv => ?_⟩, ?_⟩
+  · rw [Option.mem_def, List.getLast?_flatten] at hu
+    obtain ⟨l₁, hl₁, hu'⟩ := List.exists_of_findSome?_eq_some hu
+    obtain rfl : .inl d = v := by simpa using hv
+    rcases u with g | _; exacts [absurd rfl (hlast l₁ (List.mem_reverse.1 hl₁) _ hu' g), by simp]
+  · rcases a with g | _; exacts [absurd rfl (hhead l₀ hl₀ _ ha g), by simp]
 
 end Cyclic
 

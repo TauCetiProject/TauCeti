@@ -153,22 +153,45 @@ theorem toWord_dropTrivial (P : AtomicForm G X) : P.dropTrivial.toWord = P.toWor
     · rw [List.filter_cons_of_pos (by simpa using hp)]
       simp only [List.map_cons, List.prod_cons, ih]
 
+/-- A variable outside `P.vars` does not occur in the commutator product of `P`. -/
+theorem comms_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.comms.map fun p =>
+        ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2) : GX G X)⁻¹⁆).prod ∈
+      GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨p, hp, rfl⟩
+  have h₁ : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_flatMap.2 ⟨p, hp, by simp⟩))))
+  have h₂ : (inr (FreeGroup.of p.2) : GX G X) ∈ GX.avoiding x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_left _
+      (List.mem_flatMap.2 ⟨p, hp, by simp⟩))))
+  rw [commutatorElement_def, inv_inv, inv_inv]
+  exact mul_mem (mul_mem (mul_mem (inv_mem h₁) (inv_mem h₂)) h₁) h₂
+
+/-- A variable outside `P.vars` does not occur in the square product of `P`. -/
+theorem squares_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.squares.map fun s => (inr (FreeGroup.of s) : GX G X) ^ 2).prod ∈ GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨s, hs, rfl⟩
+  exact pow_mem (GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_left _ (List.mem_append_right _ hs)))) 2
+
+/-- A variable outside `P.vars` does not occur in the conjugate product of `P`. -/
+theorem conjs_prod_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
+    (P.conjs.map fun p => (inr (FreeGroup.of p.1) : GX G X)⁻¹ * inl p.2 *
+      inr (FreeGroup.of p.1)).prod ∈ GX.avoiding x := by
+  refine list_prod_mem fun _ hr => ?_
+  rcases List.mem_map.1 hr with ⟨p, hp, rfl⟩
+  have h : (inr (FreeGroup.of p.1) : GX G X) ∈ GX.avoiding (G := G) x := GX.inr_of_mem_avoiding
+    (by rintro rfl; exact hx (List.mem_append_right _ (List.mem_map.2 ⟨p, hp, rfl⟩)))
+  exact mul_mem (mul_mem (inv_mem h) (GX.inl_mem_avoiding _ _)) h
+
 /-- A variable which is not a variable of a word in atomic form does not occur in it. -/
 theorem toWord_mem_avoiding [DecidableEq X] {P : AtomicForm G X} {x : X} (hx : x ∉ P.vars) :
-    P.toWord ∈ GX.avoiding x := by
-  have hv : ∀ y ∈ P.vars, (inr (FreeGroup.of y) : GX G X) ∈ GX.avoiding x := fun y hy =>
-    GX.inr_of_mem_avoiding (by rintro rfl; exact hx hy)
-  simp only [vars_def, List.mem_append, List.mem_flatMap, List.mem_map] at hv
-  refine mul_mem (mul_mem (mul_mem (list_prod_mem ?_) (list_prod_mem ?_))
-    (list_prod_mem ?_)) (GX.inl_mem_avoiding _ _) <;> simp only [List.mem_map] <;>
-    rintro _ ⟨p, hp, rfl⟩
-  · have h₁ := hv p.1 (.inl (.inl ⟨p, hp, by simp⟩))
-    have h₂ := hv p.2 (.inl (.inl ⟨p, hp, by simp⟩))
-    rw [commutatorElement_def, inv_inv, inv_inv]
-    exact mul_mem (mul_mem (mul_mem (inv_mem h₁) (inv_mem h₂)) h₁) h₂
-  · exact pow_mem (hv p (.inl (.inr hp))) 2
-  · have h := hv p.1 (.inr ⟨p, hp, rfl⟩)
-    exact mul_mem (mul_mem (inv_mem h) (GX.inl_mem_avoiding _ _)) h
+    P.toWord ∈ GX.avoiding x :=
+  mul_mem (mul_mem (mul_mem (comms_prod_mem_avoiding hx) (squares_prod_mem_avoiding hx))
+    (conjs_prod_mem_avoiding hx)) (GX.inl_mem_avoiding _ _)
 
 private theorem apply_toWord_eq_conj (P : AtomicForm G X) (hc : P.const = 1)
     {f : MulAut (GX G X)} {t : GX G X} (hf : ∀ g, f (inl g) = inl g)
