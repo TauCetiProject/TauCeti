@@ -107,7 +107,8 @@ on compact sets applies to it.
 * `LinearMap.existsUnique_schwartzKernel_prodSMulCLM`: its form for real test functions and
   distributions with values in a real Banach space.
 * `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous`,
-  `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`: the same for bilinear maps
+  `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`,
+  `LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous`: the same for bilinear maps
   continuous in each variable.
 
 * `Distribution.kernelOperator`: the operator `𝓓(O) → 𝓓'(Ω)` with kernel `K`, with
