@@ -98,6 +98,15 @@ theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
     cubicalChainLof G R n y ∈ cubicalChainGrading G R (-(n : ℤ)) :=
   (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨n, y, by simp, rfl⟩)
 
+/-- A homogeneous element of cohomological degree `-n` is a chain of dimension `n`. -/
+theorem exists_cubicalChainLof_eq {i : ℤ} {x : normalizedCubicalChainAlgebra G R}
+    (hx : x ∈ cubicalChainGrading G R i) (n : ℕ) (hn : (n : ℤ) = -i) :
+    ∃ y, cubicalChainLof G R n y = x := by
+  rcases (mem_cubicalChainGrading_iff G R).1 hx with rfl | ⟨m, y, hm, rfl⟩
+  · exact ⟨0, map_zero _⟩
+  · obtain rfl : m = n := by omega
+    exact ⟨y, rfl⟩
+
 /-- The decomposition of the algebra of cubical chains along its `ℤ`-grading. -/
 def cubicalChainDecompose :
     normalizedCubicalChainAlgebra G R →+ ⨁ i : ℤ, cubicalChainGrading G R i :=
