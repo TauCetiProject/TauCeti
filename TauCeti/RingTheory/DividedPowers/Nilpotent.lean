@@ -30,11 +30,12 @@ Unlike `IsNilpotent I`, PD-nilpotence can strictly fail even when `I ^ 2 = ⊥`:
 `TauCeti.RingTheory.DividedPowers.Padic` for the example `(2) ⊂ ZMod 4` with the divided power
 structure induced from `PadicInt.dividedPowers 2`.
 
-This file also develops the factorial nilpotence bound (generalizing
-`DividedPowers.nilpotent_of_mem_dpIdeal` from `n • y = 0` to `(n ! : R) = 0`) and the nilradical
-criterion: if `m ≠ 0` is a natural number that is nilpotent modulo `I` (or has some power in `I`),
-then `I ≤ nilradical R` if and only if `(m : R)` is nilpotent in `R`. No primality assumption on
-`m` is required.
+This file also develops a factorial-annihilation nilpotence criterion
+(`DividedPowers.pow_eq_zero_of_factorial_eq_zero`, assuming `(n ! : R) = 0`, related to
+`DividedPowers.nilpotent_of_mem_dpIdeal`, which assumes `∀ {y}, y ∈ I → n • y = 0`) and the
+nilradical criterion: if `m ≠ 0` is a natural number that is nilpotent modulo `I` (or has some
+power in `I`), then `I ≤ nilradical R` if and only if `(m : R)` is nilpotent in `R`. No primality
+assumption on `m` is required.
 
 ## Main definitions
 
@@ -238,10 +239,10 @@ section NilradicalCriterion
 
 variable {R : Type*} [CommSemiring R] {I : Ideal R}
 
-/-- Uniform factorial nilpotence bound: if `(n.factorial : R) = 0`, then `x ^ n = 0` for every
-`x ∈ I`. This holds for all `n : ℕ` (including `n = 0`, where `R` is a subsingleton) and
-strengthens `DividedPowers.nilpotent_of_mem_dpIdeal` when `(n.factorial : R) = 0` without
-`n • y = 0`. -/
+/-- Factorial-annihilation nilpotence criterion: if `(n.factorial : R) = 0`, then `x ^ n = 0` for
+every `x ∈ I`. This holds for all `n : ℕ` (including `n = 0`, where `R` is a subsingleton) and is
+a related criterion to `DividedPowers.nilpotent_of_mem_dpIdeal` (which instead assumes
+`∀ {y}, y ∈ I → n • y = 0`). -/
 theorem pow_eq_zero_of_factorial_eq_zero (hI : DividedPowers I) {n : ℕ}
     (hn : (n.factorial : R) = 0) {x : R} (hx : x ∈ I) : x ^ n = 0 := by
   rw [← hI.factorial_mul_dpow_eq_pow hx, hn, zero_mul]

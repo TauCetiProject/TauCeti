@@ -40,6 +40,8 @@ filtration coincides with the ordinary power filtration `I ^ n`.
 ## Main results
 
 * `DividedPowers.pdFiltration_le_iff`: universal containment criterion `hI.pdFiltration n ≤ K`.
+* `DividedPowers.mem_pdFiltration_iff`: elementwise membership characterization in
+  `hI.pdFiltration n`.
 * `DividedPowers.pdFiltration_zero`, `DividedPowers.pdFiltration_one`: `F⁰ = ⊤` and `F¹ = I`.
 * `DividedPowers.pdFiltration_antitone`: `n ↦ hI.pdFiltration n` is antitone.
 * `DividedPowers.pdFiltration_mul_le`:
@@ -140,6 +142,44 @@ theorem list_prod_dpow_mem_pdFiltration {n : ℕ} (l : List (ℕ × R)) (hl : �
     (hn : n ≤ (l.map Prod.fst).sum) :
     (l.map fun p ↦ hI.dpow p.1 p.2).prod ∈ hI.pdFiltration n :=
   (hI.pdFiltration_le_iff.mp le_rfl) l hl hn
+
+/-- An element `x : R` belongs to `hI.pdFiltration n` if and only if it is a finite
+`R`-linear combination of weighted products `∏ j, hI.dpow e_j x_j` with `x_j ∈ I` and
+`∑ j, e_j ≥ n`. -/
+theorem mem_pdFiltration_iff {n : ℕ} {x : R} :
+    x ∈ hI.pdFiltration n ↔
+      ∃ (k : ℕ) (c : Fin k → R) (l : Fin k → List (ℕ × R)),
+        (∀ i, ∀ p ∈ l i, p.2 ∈ I) ∧ (∀ i, n ≤ ((l i).map Prod.fst).sum) ∧
+        ∑ i, c i * ((l i).map fun p ↦ hI.dpow p.1 p.2).prod = x := by
+  constructor
+  · intro hx
+    rw [pdFiltration_def] at hx
+    induction hx using Submodule.span_induction with
+    | mem r hr =>
+      obtain ⟨l, hl, hn, rfl⟩ := hr
+      exact ⟨1, fun _ ↦ 1, fun _ ↦ l, fun _ ↦ hl, fun _ ↦ hn, by simp⟩
+    | zero =>
+      exact ⟨0, Fin.elim0, Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, by simp⟩
+    | add x y _ _ ihx ihy =>
+      obtain ⟨k₁, c₁, l₁, hl₁, hn₁, rfl⟩ := ihx
+      obtain ⟨k₂, c₂, l₂, hl₂, hn₂, rfl⟩ := ihy
+      refine ⟨k₁ + k₂, Fin.append c₁ c₂, Fin.append l₁ l₂, ?_, ?_, ?_⟩
+      · intro i
+        induction i using Fin.addCases with
+        | left i => simpa using hl₁ i
+        | right i => simpa using hl₂ i
+      · intro i
+        induction i using Fin.addCases with
+        | left i => simpa using hn₁ i
+        | right i => simpa using hn₂ i
+      · simp [Fin.sum_univ_add]
+    | smul r x _ ihx =>
+      obtain ⟨k, c, l, hl, hn, rfl⟩ := ihx
+      refine ⟨k, fun i ↦ r * c i, l, hl, hn, ?_⟩
+      simp [Finset.mul_sum, mul_assoc]
+  · rintro ⟨k, c, l, hl, hn, rfl⟩
+    exact Submodule.sum_mem _ fun i _ ↦
+      Ideal.mul_mem_left _ (c i) (hI.list_prod_dpow_mem_pdFiltration (l i) (hl i) (hn i))
 
 /-- For `x ∈ I` and `n : ℕ`, `hI.dpow n x` belongs to `hI.pdFiltration n`. -/
 theorem dpow_mem_pdFiltration {n : ℕ} {x : R} (hx : x ∈ I) :
@@ -387,25 +427,17 @@ theorem pdFiltration_eq_span_of_eq_span_singleton {a : R} (ha : I = Ideal.span {
   refine le_antisymm ?_ ?_
   · rw [hI.pdFiltration_le_iff_of_eq_span ha]
     intro l hl hn
-    have hmul : ∀ {t : List (ℕ × R)}, (∀ p ∈ t, p.2 ∈ ({a} : Set R)) →
-        ∃ c : ℕ, (t.map fun p ↦ hI.dpow p.1 p.2).prod =
-          (c : R) * hI.dpow (t.map Prod.fst).sum a := by
-      intro t ht
-      induction t with
-      | nil =>
-        refine ⟨1, ?_⟩
-        simp [hI.dpow_zero haI]
-      | cons p t ih =>
-        have hpa : p.2 = a := Set.mem_singleton_iff.mp (ht p List.mem_cons_self)
-        obtain ⟨c, hc⟩ := ih fun q hq ↦ ht q (List.mem_cons_of_mem p hq)
-        refine ⟨c * (p.1 + (t.map Prod.fst).sum).choose p.1, ?_⟩
-        simp only [List.map_cons, List.prod_cons, List.sum_cons, hpa, hc]
-        rw [← mul_assoc, mul_comm (hI.dpow p.1 a) (c : R), mul_assoc, hI.mul_dpow haI,
-          ← mul_assoc, Nat.cast_mul]
-    obtain ⟨c, hc⟩ := hmul hl
-    rw [hc]
-    exact Ideal.mul_mem_left _ (c : R)
-      (Ideal.subset_span ⟨(l.map Prod.fst).sum, hn, rfl⟩)
+    have hprod : (l.map fun p ↦ hI.dpow p.1 p.2).prod =
+        ∏ i : Fin l.length, hI.dpow l[i].1 a := by
+      conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.prod_ofFn]
+      refine Finset.prod_congr rfl fun i _ ↦ ?_
+      dsimp
+      rw [Set.mem_singleton_iff.mp (hl l[↑i] (List.getElem_mem _))]
+    have hsum : (l.map Prod.fst).sum = ∑ i : Fin l.length, l[i].1 := by
+      conv_lhs => rw [← List.ofFn_get l, List.map_ofFn, Fin.sum_ofFn]
+      rfl
+    rw [hprod, hI.prod_dpow haI, ← hsum]
+    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨(l.map Prod.fst).sum, hn, rfl⟩)
   · rw [Ideal.span_le]
     rintro _ ⟨m, hm, rfl⟩
     exact hI.dpow_mem_pdFiltration_of_le hm haI

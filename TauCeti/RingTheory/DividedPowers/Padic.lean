@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.DividedPowers.Padic
+public import TauCeti.Data.ZMod.Nilpotent
 public import TauCeti.RingTheory.DividedPowers.Nilpotent
 
 /-!
@@ -63,8 +64,6 @@ every `n : ℕ`, the `p`-adic valuation of `γₙ(p) = p ^ n / n!` satisfies
 * `PadicInt.not_isPDNilpotent_dividedPowers`: `¬ (dividedPowers p).IsPDNilpotent`.
 * `ZMod.isPDNilpotent_dividedPowers_iff`:
   `(ZMod.dividedPowers p e).IsPDNilpotent ↔ p ≠ 2 ∨ e ≤ 1`.
-* `ZMod.span_pow_eq_zero` and `ZMod.isNilpotent_span_natCast`: `(p) ^ e = 0` and
-  `IsNilpotent (Ideal.span {(p : ZMod (p ^ e))})` for all `p, e : ℕ`.
 * `ZMod.dividedPowers_two_two_ne_ofSquareZero`: the two divided power structures on `(2) ⊂ ZMod 4`
   are distinct.
 
@@ -424,15 +423,6 @@ theorem isPDNilpotent_dividedPowers_iff (p : ℕ) [hp : Fact p.Prime] (e : ℕ) 
     · refine (ZMod.dividedPowers p e).isPDNilpotent_of_eq_bot ?_
       rw [Ideal.span_singleton_eq_bot, ZMod.natCast_eq_zero_iff]
       rcases Nat.le_one_iff_eq_zero_or_eq_one.mp he with rfl | rfl <;> simp
-
-/-- In `ZMod (p ^ e)`, the `e`-th power of the principal ideal `(p)` vanishes. -/
-theorem span_pow_eq_zero (p e : ℕ) : (Ideal.span {(p : ZMod (p ^ e))}) ^ e = 0 := by
-  rw [Ideal.span_singleton_pow, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot,
-    ← Nat.cast_pow, ZMod.natCast_self]
-
-/-- In `ZMod (p ^ e)`, the principal ideal `(p)` is nilpotent in the ordinary sense. -/
-theorem isNilpotent_span_natCast (p e : ℕ) : IsNilpotent (Ideal.span {(p : ZMod (p ^ e))}) :=
-  ⟨e, span_pow_eq_zero p e⟩
 
 /-- For every `e ≥ 2`, the canonical `2`-adic divided power structure on `(2) ⊂ ZMod (2 ^ e)` is
 not PD-nilpotent, even though `(2) ^ e = 0`. -/
