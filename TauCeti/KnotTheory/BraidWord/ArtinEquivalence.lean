@@ -49,7 +49,7 @@ namespace ArtinEquiv
 
 /-- Artin equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence (ArtinEquiv (n := n)) :=
-  Relation.EqvGen.is_equivalence ArtinStep
+  Relation.EqvGen.equivalence ArtinStep
 
 /-- Every braid word is Artin equivalent to itself. -/
 @[refl]

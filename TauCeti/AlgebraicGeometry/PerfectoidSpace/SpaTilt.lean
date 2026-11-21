@@ -85,60 +85,60 @@ variable {p : ℕ} [hp : Fact p.Prime] {B : Type*} [CommRing B] [UniformSpace B]
 point `x♭` whose underlying valuation is `v_x ∘ ♯` (Scholze, *Perfectoid spaces*, Theorem 6.3;
 Kedlaya, *AWS 2017*, Lemma 2.6.12). -/
 noncomputable def spaTilt (P : Pair B) (x : spa P.plus) : spa (P.tilt (p := p)).plus :=
-  ⟨ofValuation (x.1.valuation.uniformTilt
-      ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)),
+  ⟨ofValuation (x.val.valuation.uniformTilt
+      ((isContinuous_def x.val).mp ((mem_spa_iff P.plus x.val).mp x.property).1)),
     (mem_spa_iff _ _).mpr
       ⟨(isContinuous_ofValuation_iff _).mpr
-          (x.1.valuation.isContinuous_uniformTilt
-            ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)),
+          (x.val.valuation.isContinuous_uniformTilt
+            ((isContinuous_def x.val).mp ((mem_spa_iff P.plus x.val).mp x.property).1)),
         fun a ha ↦ by
           rw [vle_ofValuation, Valuation.uniformTilt_apply, Valuation.uniformTilt_apply,
             valuation_le_iff, map_one]
           rw [Pair.tilt_plus] at ha
-          exact ((mem_spa_iff P.plus x.1).mp x.2).2 _
+          exact ((mem_spa_iff P.plus x.val).mp x.property).2 _
             (uniformTilt.mem_plusSubring_iff_coeff_zero.mp ha)⟩⟩
 
 /-- The underlying valuation-spectrum point of `spaTilt P x` is represented by
 `Valuation.uniformTilt` applied to a representative valuation of `x`. -/
 theorem spaTilt_val (P : Pair B) (x : spa P.plus) :
-    (spaTilt (p := p) P x).1 =
-      ofValuation (x.1.valuation.uniformTilt
-        ((isContinuous_def x.1).mp ((mem_spa_iff P.plus x.1).mp x.2).1)) :=
+    (spaTilt (p := p) P x).val =
+      ofValuation (x.val.valuation.uniformTilt
+        ((isContinuous_def x.val).mp ((mem_spa_iff P.plus x.val).mp x.property).1)) :=
   (rfl)
 
 /-- **Characterisation of `spaTilt`**: `(spaTilt P x)(f) ≤ (spaTilt P x)(g)` iff `x(f♯) ≤ x(g♯)`. -/
 @[simp]
 theorem spaTilt_vle_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
-    (spaTilt (p := p) P x).1.toValuativeRel.vle f g ↔
-      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
+    (spaTilt (p := p) P x).val.toValuativeRel.vle f g ↔
+      x.val.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) := by
   rw [spaTilt_val, vle_ofValuation, Valuation.uniformTilt_apply, Valuation.uniformTilt_apply]
-  exact valuation_le_iff x.1 _ _
+  exact valuation_le_iff x.val _ _
 
 /-- **Strict comparison under `spaTilt`**: `(spaTilt P x)(f) < (spaTilt P x)(g)` iff
 `x(f♯) < x(g♯)`. -/
 @[simp]
 theorem spaTilt_vlt_iff (P : Pair B) (x : spa P.plus) (f g : uniformTilt p B) :
-    (spaTilt (p := p) P x).1.toValuativeRel.vlt f g ↔
-      x.1.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
+    (spaTilt (p := p) P x).val.toValuativeRel.vlt f g ↔
+      x.val.toValuativeRel.vlt (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g) :=
   not_congr (spaTilt_vle_iff P x g f)
 
 /-- Membership in the support of `x♭`: `f ∈ supp(x♭) ↔ f♯ ∈ supp(x)`. -/
 theorem mem_supp_spaTilt_iff (P : Pair B) (x : spa P.plus) (f : uniformTilt p B) :
-    f ∈ (spaTilt (p := p) P x).1.supp ↔ uniformTilt.coeff p B 0 f ∈ x.1.supp := by
+    f ∈ (spaTilt (p := p) P x).val.supp ↔ uniformTilt.coeff p B 0 f ∈ x.val.supp := by
   simp only [mem_supp_iff, spaTilt_vle_iff, uniformTilt.coeff_zero]
 
 /-- The support ideal of `x♭` is the preimage under `♯` of the support ideal of `x`. -/
 theorem supp_spaTilt (P : Pair B) (x : spa P.plus) :
-    ((spaTilt (p := p) P x).1.supp : Set (uniformTilt p B)) =
-      (uniformTilt.coeff p B 0) ⁻¹' (x.1.supp : Set B) := by
+    ((spaTilt (p := p) P x).val.supp : Set (uniformTilt p B)) =
+      (uniformTilt.coeff p B 0) ⁻¹' (x.val.supp : Set B) := by
   ext f
   simp
 
 /-- Uniqueness of the tilted point: any point of `Spa(B♭, B♭⁺)` whose valuative relation agrees
 with `x` on sharp images equals `spaTilt P x`. -/
 theorem spaTilt_eq_of_vle_iff (P : Pair B) {x : spa P.plus} {y : spa (P.tilt (p := p)).plus}
-    (h : ∀ f g, y.1.toValuativeRel.vle f g ↔
-      x.1.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g)) :
+    (h : ∀ f g, y.val.toValuativeRel.vle f g ↔
+      x.val.toValuativeRel.vle (uniformTilt.coeff p B 0 f) (uniformTilt.coeff p B 0 g)) :
     spaTilt (p := p) P x = y :=
   Subtype.ext (ValuationSpectrum.ext' fun f g ↦ (spaTilt_vle_iff P x f g).trans (h f g).symm)
 

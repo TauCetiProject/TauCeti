@@ -145,7 +145,7 @@ variable {p : ℤ}
 def toComoduleHom (F : homCochains MM NN p) :
     Comodule.Hom R (TensorWords R A) (M ⊗[R] TensorWords R A) (N ⊗[R] TensorWords R A) where
   toLinearMap := F
-  map_coact := F.2.1
+  map_coact := F.property.1
 
 @[simp]
 theorem toComoduleHom_toLinearMap (F : homCochains MM NN p) :
@@ -156,7 +156,7 @@ theorem toComoduleHom_toLinearMap (F : homCochains MM NN p) :
 theorem isHomogeneous (F : homCochains MM NN p) :
     LinearMap.IsHomogeneous (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A)
       (barGrading AA MM.grading).piece (barGrading AA NN.grading).piece p :=
-  F.2.2
+  F.property.2
 
 /-- The Taylor map of a cochain of degree `p`, obtained by applying the coalgebra counit, has
 degree `p` from the suspended bar grading to the suspended grading of the target. -/
@@ -247,7 +247,7 @@ variable (MM NN) in
 /-- The differential of the morphism complex: a cochain `F` of degree `p` is sent to its graded
 commutator `b_N ∘ F - (-1)^p F ∘ b_M` with the module bar differentials. -/
 def homDifferential (p : ℤ) : homCochains MM NN p →ₗ[R] homCochains MM NN (p + 1) where
-  toFun F := ⟨_, sub_negOnePow_smul_mem_homCochains F.2⟩
+  toFun F := ⟨_, sub_negOnePow_smul_mem_homCochains F.property⟩
   map_add' F G := by
     apply Subtype.ext
     simp only [Submodule.coe_add, LinearMap.comp_add, LinearMap.add_comp, smul_add]
@@ -354,7 +354,7 @@ def comp {p q n : ℤ} (h : p + q = n) :
     homCochains NN PP p →ₗ[R] homCochains MM NN q →ₗ[R] homCochains MM PP n :=
   LinearMap.mk₂ R (fun G F ↦ ⟨(G : (N ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) ∘ₗ
       (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A),
-      by subst h; exact comp_mem_homCochains G.2 F.2⟩)
+      by subst h; exact comp_mem_homCochains G.property F.property⟩)
     (fun _ _ _ ↦ Subtype.ext (LinearMap.add_comp _ _ _))
     (fun _ _ _ ↦ Subtype.ext (LinearMap.smul_comp _ _ _))
     (fun _ _ _ ↦ Subtype.ext (LinearMap.comp_add _ _ _))
@@ -468,9 +468,9 @@ def equivZeroCocycles :
   toFun f := ⟨⟨f.barMap, f.barMap_mem_homCochains⟩,
     (homDifferential_zero_eq_zero_iff _).2 f.barDifferential_comp_barMap⟩
   invFun F :=
-    { barHom := homCochains.toComoduleHom F.1
-      isHomogeneous_barMap := homCochains.isHomogeneous F.1
-      barDifferential_comp_barMap := (homDifferential_zero_eq_zero_iff F.1).1 F.2 }
+    { barHom := homCochains.toComoduleHom F.val
+      isHomogeneous_barMap := homCochains.isHomogeneous F.val
+      barDifferential_comp_barMap := (homDifferential_zero_eq_zero_iff F.val).1 F.property }
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
@@ -506,9 +506,9 @@ def equivCochains :
     rw [coe_homDifferential_neg_one]
     exact h.barMap_sub_barMap.symm⟩
   invFun H :=
-    { barHomotopy := homCochains.toComoduleHom H.1
-      isHomogeneous_barHomotopy := homCochains.isHomogeneous H.1
-      barMap_sub_barMap := H.2.symm.trans (coe_homDifferential_neg_one H.1) }
+    { barHomotopy := homCochains.toComoduleHom H.val
+      isHomogeneous_barHomotopy := homCochains.isHomogeneous H.val
+      barMap_sub_barMap := H.property.symm.trans (coe_homDifferential_neg_one H.val) }
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 

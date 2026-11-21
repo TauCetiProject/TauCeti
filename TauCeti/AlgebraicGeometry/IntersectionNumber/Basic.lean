@@ -74,7 +74,8 @@ off-diagonal entries of the intersection matrix.
 ## Main declarations
 
 * `LineBundleClass.intersectionNumber k ι a`: the intersection number `(a · C)` of a line-bundle
-  class `a` on `X` with `ι : C ⟶ X`;
+  class `a` on `X` with `ι : C ⟶ X`, equal to `χ(C, ι^* L) - χ(C, ι^* 𝒪_X)` for the class of `L`
+  (`LineBundleClass.intersectionNumber_mk_eq_eulerCharBelow_sub`);
 * `LineBundleClass.intersectionNumber_pullback`: compatibility with pullback along a morphism
   `g : X ⟶ Y`, `(g^* a · C) = (a · (ι ≫ g))` with `C` mapping to `Y` by `ι ≫ g`; when `C` maps
   finitely and flatly onto a curve, the projection formula with the degree of `C` over that curve
@@ -166,6 +167,18 @@ lemma intersectionNumber_mk (L : InvertibleSheaf X) :
 @[simp]
 lemma intersectionNumber_one : intersectionNumber k ι (1 : LineBundleClass X) = 0 := by
   rw [intersectionNumber_def, pullback_one, eulerDegree_one]
+
+/-- The intersection number of the class of `L` with `ι : C ⟶ X` is
+`χ(C, ι^* L) - χ(C, ι^* 𝒪_X)`, with `χ = dim H⁰ - dim H¹`. -/
+lemma intersectionNumber_mk_eq_eulerCharBelow_sub (L : InvertibleSheaf X) :
+    intersectionNumber k ι (mk L) =
+      Scheme.Modules.eulerCharBelow k C ((InvertibleSheaf.pullback ι).obj L).obj 2 -
+        Scheme.Modules.eulerCharBelow k C
+          ((InvertibleSheaf.pullback ι).obj (InvertibleSheaf.trivial X)).obj 2 := by
+  have h := intersectionNumber_one k ι
+  rw [← mk_trivial, intersectionNumber_mk, InvertibleSheaf.eulerDegree_def] at h
+  rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_def]
+  linarith
 
 /-- **Compatibility with pullback.** The intersection number of the pullback of a class `a` along
 `g : X ⟶ Y` with `ι : C ⟶ X` is the intersection number of `a` with `ι ≫ g`. -/
@@ -542,7 +555,7 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
     0 ≤ intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
       (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η'.2).toInvertibleSheaf)⁻¹ :=
+        hX η'.property).toInvertibleSheaf)⁻¹ :=
   intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
     (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
 

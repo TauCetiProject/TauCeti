@@ -31,15 +31,15 @@ least numbers for its prime-primary components. -/
 theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
     (⊤ : Submodule ℤ A).spanFinrank =
       Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
-        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.1)).spanFinrank) := by
+        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.val)).spanFinrank) := by
   classical
   let M : (Nat.card A).primeFactors → Type _ :=
-    fun p ↦ _root_.AddCommGroup.primaryComponent A p.1
+    fun p ↦ _root_.AddCommGroup.primaryComponent A p.val
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
     dsimp only [M]
-    have hp := Nat.prime_of_mem_primeFactors p.2
-    have hq := Nat.prime_of_mem_primeFactors q.2
+    have hp := Nat.prime_of_mem_primeFactors p.property
+    have hq := Nat.prime_of_mem_primeFactors q.property
     rw [natCard_primaryComponent A hp, natCard_primaryComponent A hq]
     exact ((Nat.coprime_primes hp hq).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv

@@ -277,7 +277,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup {ℓ : ℕ}
   refine Affine.Point.map_eq_self_of_mem_inertiaSubgroup_algebraicClosure (n := ℓ ^ n) ?_ hσ ?_
   · rw [Nat.cast_pow]
     exact pow_ne_zero n hℓ
-  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).2, map_zero]
+  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).property, map_zero]
 
 end AlgebraicClosure
 

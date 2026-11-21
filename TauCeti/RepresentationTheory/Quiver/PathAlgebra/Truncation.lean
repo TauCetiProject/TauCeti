@@ -48,7 +48,7 @@ noncomputable def shortPathCoords (n : ℕ) :
 /-- Reading the coordinate of a short path agrees with the path-basis coordinate. -/
 @[simp]
 theorem shortPathCoords_apply (n : ℕ) (x : pathAlgebra k Q) (p : ShortPath Q n) :
-    shortPathCoords k Q n x p = (pathAlgebraBasis k Q).repr x p.1 := by
+    shortPathCoords k Q n x p = (pathAlgebraBasis k Q).repr x p.val := by
   rfl
 
 /-- The coordinate map kills exactly the span of paths of length at least `n`. -/
@@ -161,7 +161,7 @@ noncomputable def arrowIdealQuotientBasis (n : ℕ) :
 /-- A short path's basis vector is its class in the quotient by `R^n`. -/
 @[simp]
 theorem arrowIdealQuotientBasis_apply (n : ℕ) (p : ShortPath Q n) :
-    arrowIdealQuotientBasis k Q n p = Ideal.Quotient.mk _ (ofPath p.1) := by
+    arrowIdealQuotientBasis k Q n p = Ideal.Quotient.mk _ (ofPath p.val) := by
   apply (arrowIdealQuotientEquiv k Q n).injective
   apply Finsupp.ext
   intro q

@@ -146,7 +146,7 @@ complete: every point of the reduced elliptic curve is the reduction of a point 
 theorem reductionHom_surjective [HenselianLocalRing v.valuationSubring] :
     Function.Surjective (reductionHom v (W := W)) := fun Q ↦ by
   obtain ⟨P, rfl⟩ := W.nonsingularReductionHom_surjective v Q
-  exact ⟨P, reductionHom_apply v _ P.2⟩
+  exact ⟨P, reductionHom_apply v _ P.property⟩
 
 end WeierstrassCurve.Affine.Point
 

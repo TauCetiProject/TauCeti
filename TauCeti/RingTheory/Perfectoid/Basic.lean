@@ -120,7 +120,7 @@ theorem IsPerfectoidTateRing.isTopologicallyNilpotent_natCast
   have hp' : (p : R) = (c : R) * (ϖ : R) ^ p := by
     simpa [mul_comm] using congrArg (powerBoundedSubring R).subtype hc
   rw [hp']
-  exact (mem_powerBoundedSubring.mp c.2).isTopologicallyNilpotent_mul
+  exact (mem_powerBoundedSubring.mp c.property).isTopologicallyNilpotent_mul
     (hϖ.isTopologicallyNilpotent.pow hp)
 
 variable (R) in
