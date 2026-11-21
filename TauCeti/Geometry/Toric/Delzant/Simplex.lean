@@ -52,6 +52,8 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
+* `TauCeti.Toric.linearCombination_simplexNormal`: the combinations of the real normals.
+* `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
 
 ## References
 
@@ -344,5 +346,30 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · cases o with
         | none => simpa [apply_compLeft_one] using hsum.ne
         | some m => simp [hpt, hb.ne']
+
+/-! ### The real normals -/
+
+/-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex is the vector
+`(t_(some k) - t_none)_k`. -/
+theorem linearCombination_simplexNormal (t : Option κ → ℝ) :
+    Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t =
+      fun k ↦ t (some k) - t none := by
+  ext k
+  simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply, sub_eq_neg_add]
+
+/-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex has coordinates
+`t_(some k) - t_none`. -/
+theorem linearCombination_simplexNormal_apply (t : Option κ → ℝ) (k : κ) :
+    Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t k =
+      t (some k) - t none := by
+  rw [linearCombination_simplexNormal]
+
+/-- **The real normals of the standard simplex span `ℝ^κ`**, since the coordinate vectors are among
+them. This is the hypothesis under which the Delzant quotient carries its reduced moment map. -/
+theorem surjective_linearCombination_simplexNormal :
+    Function.Surjective (Fintype.linearCombination ℝ
+      fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) := fun v ↦
+  ⟨fun o ↦ o.elim 0 v, funext fun k ↦ by
+    rw [linearCombination_simplexNormal_apply, Option.elim_some, Option.elim_none, sub_zero]⟩
 
 end TauCeti.Toric
