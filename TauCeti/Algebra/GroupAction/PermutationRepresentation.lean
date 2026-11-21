@@ -87,6 +87,12 @@ theorem permutationRepresentation_apply (e : α ≃ β) (g : G) (i : β) :
     Equiv.permCongrHom_coe, Equiv.permCongr_apply, MulAction.toPermHom_apply,
     MulAction.toPerm_apply]
 
+/-- A transported permutation `permutationRepresentation e g` fixes `e x` if and only if `g` lies
+in the stabilizer of `x`. -/
+theorem permutationRepresentation_apply_eq_self_iff (e : α ≃ β) (g : G) (x : α) :
+    permutationRepresentation e g (e x) = e x ↔ g ∈ MulAction.stabilizer G x := by
+  simp [permutationRepresentation_apply, MulAction.mem_stabilizer_iff]
+
 /-- **`G` embeds in `Equiv.Perm β`** when the action is faithful: an element acting trivially on
 the enumerated points fixes every point, hence is the identity. -/
 theorem permutationRepresentation_injective [FaithfulSMul G α] (e : α ≃ β) :

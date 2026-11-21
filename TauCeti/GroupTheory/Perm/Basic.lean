@@ -218,6 +218,16 @@ theorem ncard_setOf_sameCycle (x : α) :
   simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
   exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
 
+/-- The cardinality of the fibre of `Quotient.mk (SameCycle.setoid σ)` over the cycle of `x`
+is `Function.minimalPeriod σ x`. -/
+theorem natCard_fiber_quotientMk_sameCycle (x : α) :
+    Nat.card {y : α // Quotient.mk (SameCycle.setoid σ) y = Quotient.mk _ x} =
+      Function.minimalPeriod σ x := by
+  rw [← ncard_setOf_sameCycle, ← Nat.card_coe_set_eq]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun y ↦ ?_)
+  simp only [Set.mem_ofPred_eq, Quotient.eq]
+  exact sameCycle_comm
+
 /-- If a single cycle of `σ` passes through every point, then every point has minimal period
 `Nat.card α`. If `α` is infinite, then both sides are `0`. -/
 theorem minimalPeriod_eq_natCard_of_forall_sameCycle {x : α}

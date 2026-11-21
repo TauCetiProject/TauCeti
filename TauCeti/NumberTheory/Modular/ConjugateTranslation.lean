@@ -71,6 +71,33 @@ theorem ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero {g : SL(2, ℤ)}
     ext i j
     fin_cases i <;> fin_cases j <;> simp [ha, hc, hd, ModularGroup.coe_T_zpow]
 
+/-- In `PSL(2, ℤ)`, every element of `SL(2, ℤ)` with vanishing lower-left entry maps to a power
+of `T`. -/
+theorem ModularGroup.exists_coe_eq_T_zpow_of_c_eq_zero {g : SL(2, ℤ)} (hc : g 1 0 = 0) :
+    ∃ k : ℤ, (g : PSL(2, ℤ)) = (_root_.ModularGroup.T : PSL(2, ℤ)) ^ k := by
+  rcases ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with h | h
+  · refine ⟨g 0 1, ?_⟩
+    conv_lhs => rw [h, QuotientGroup.mk_zpow]
+  · refine ⟨-g 0 1, ?_⟩
+    conv_lhs => rw [h, Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_zpow]
+
+/-- An element `g : SL(2, ℤ)` maps into `⟨T⟩ ≤ PSL(2, ℤ)` if and only if its lower-left entry
+vanishes. -/
+theorem ModularGroup.coe_mem_zpowers_T_iff {g : SL(2, ℤ)} :
+    (g : PSL(2, ℤ)) ∈ Subgroup.zpowers (_root_.ModularGroup.T : PSL(2, ℤ)) ↔ g 1 0 = 0 := by
+  constructor
+  · rintro ⟨k, hk⟩
+    dsimp only at hk
+    rw [← QuotientGroup.mk_zpow] at hk
+    rcases Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.mp hk with h | h
+    · have h10 := congr_arg (fun m : SL(2, ℤ) => m 1 0) h
+      simpa [_root_.ModularGroup.coe_T_zpow] using h10
+    · have h10 := congr_arg (fun m : SL(2, ℤ) => m 1 0) h
+      simpa [_root_.ModularGroup.coe_T_zpow] using h10
+  · intro hc
+    obtain ⟨k, hk⟩ := ModularGroup.exists_coe_eq_T_zpow_of_c_eq_zero hc
+    exact ⟨k, hk.symm⟩
+
 /-- Distinct integer powers of `T` are pairwise non-conjugate in `PSL(2, ℤ)`: since elements of
 `SL(2, ℤ)` have determinant `+1`, any element conjugating a nontrivial power of `T` into `⟨T⟩`
 fixes `∞` and hence centralizes `T`. -/

@@ -469,13 +469,24 @@ namespace TauCeti
 
 open Matrix.ProjectiveSpecialLinearGroup OnePoint
 
+private theorem toGL_map_intCastRingHom (a : SL(2, ℤ)) :
+    Matrix.SpecialLinearGroup.toGL (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) a) =
+      Matrix.SpecialLinearGroup.mapGL ℝ a := by
+  apply Units.ext
+  ext i j
+  simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+
 /-- The action of `psl2zToPSL2R a` on `OnePoint ℝ` agrees with the action of `mapGL ℝ a`. -/
 theorem psl2zToPSL2R_smul_boundary (a : SL(2, ℤ)) (c : OnePoint ℝ) :
     psl2zToPSL2R (a : PSL(2, ℤ)) • c = Matrix.SpecialLinearGroup.mapGL ℝ a • c := by
-  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul]
-  -- `Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) a` is definitionally `mapGL ℝ a`
-  -- after coercion to `GL (Fin 2) ℝ`.
-  rfl
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul, toGL_map_intCastRingHom]
+
+/-- An element of `SL(2, ℤ)` has parabolic image under `psl2zToPSL2R` exactly when its image
+`mapGL ℝ a` in `GL(2, ℝ)` is parabolic. -/
+theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
+    IsParabolic (psl2zToPSL2R (a : PSL(2, ℤ))) ↔
+      (Matrix.SpecialLinearGroup.mapGL ℝ a).IsParabolic := by
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, isParabolic_mk_iff, toGL_map_intCastRingHom]
 
 /-- An element of `SL(2, ℤ)` fixes `∞ ∈ OnePoint ℝ` exactly when its lower-left entry vanishes. -/
 theorem sl2zToPSL2R_smul_infty_eq_infty_iff (g : SL(2, ℤ)) :

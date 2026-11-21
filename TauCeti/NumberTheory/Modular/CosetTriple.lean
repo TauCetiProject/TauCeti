@@ -122,6 +122,53 @@ theorem permR_eq_permS_inv_mul_σ0_inv_mul_permS (Γ' : Subgroup PSL(2, ℤ))
     permR Γ' e ^ 3 = 1 := by
   rw [permR, ← map_pow, coe_R_pow_three, map_one]
 
+/-- Integer powers of `permT Γ' e` act on `e (g Γ')` by left multiplication by `T ^ k`. -/
+theorem permT_zpow_apply (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℤ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e ((((T : PSL(2, ℤ)) ^ k * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  rw [permT, modularTriple_σinf, ← map_zpow, Equiv.permutationRepresentation_apply,
+    Equiv.symm_apply_apply, MulAction.Quotient.smul_mk, smul_eq_mul]
+
+/-- Natural powers of `permT Γ' e` act on `e (g Γ')` by left multiplication by `T ^ k`. -/
+theorem permT_pow_apply (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℕ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e ((((T : PSL(2, ℤ)) ^ k * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  simpa only [zpow_natCast] using permT_zpow_apply Γ' e g k
+
+/-- `(permT Γ' e) ^ k` fixes `e (g Γ')` if and only if `g⁻¹ * T ^ k * g ∈ Γ'`. -/
+theorem permT_pow_apply_eq_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℕ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (T : PSL(2, ℤ)) ^ k * g ∈ Γ' := by
+  rw [permT, modularTriple_σinf, ← map_pow]
+  exact e.permutationRepresentation_quotient_apply_eq_self_iff ((T : PSL(2, ℤ)) ^ k) g
+
+/-- `permS Γ' e` fixes `e (g Γ')` if and only if `g⁻¹ * S * g ∈ Γ'`. -/
+theorem permS_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) :
+    permS Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (S : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [permS, modularTriple_σ1]
+  exact e.permutationRepresentation_quotient_apply_eq_self_iff S g
+
+/-- `(modularTriple Γ' e).σ0` fixes `e (g Γ')` if and only if `g⁻¹ * U * g ∈ Γ'`. -/
+theorem modularTriple_σ0_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
+    (modularTriple Γ' e).σ0 (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (U : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [modularTriple_σ0]
+  exact e.permutationRepresentation_quotient_apply_eq_self_iff U g
+
+/-- `permR Γ' e` fixes `e (g Γ')` if and only if `g⁻¹ * R * g ∈ Γ'`. -/
+theorem permR_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) :
+    permR Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (R : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [permR]
+  exact e.permutationRepresentation_quotient_apply_eq_self_iff R g
+
 /-- Transporting cosets along `modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ)` identifies
 `modularTriple Γ' e` with `TriangleGroup.cosetTriple`. -/
 theorem modularTriple_eq_cosetTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
