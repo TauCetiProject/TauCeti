@@ -17,10 +17,11 @@ orthonormal local frame of a surface, and let `ω(X) = ⟪e₁, ∇_X e₀⟫` b
 the Levi-Civita connection `∇`. Then `k_g ‖γ'‖ = Im(z' / z) + ω(γ')`
 (`IsLocalFrameOn.geodesicCurvature_mul_norm_curveVelocity_eq`). Where `z ≠ 0`, `Im(z' / z)` is
 the turning rate of the unit tangent read in the frame. The identity is pointwise; integrating it
-along a curve, under regularity and integrability hypotheses allowing this, splits the geodesic
-curvature integral into the turning of the tangent in the frame and the integral of the connection
-form. This is the boundary identity used with the surface structure equation `dω = -K vol` in
-Gauss–Bonnet.
+along a regular `C²` arc in the frame domain splits the geodesic curvature integral over the arc
+into the turning of the tangent in the frame and the integral of the connection form. Jumps of the
+unit tangent between arcs, as at the corners of a piecewise regular curve, are not seen by this
+integral and need separate treatment. This is the boundary identity used with the surface
+structure equation `dω = -K vol` in Gauss–Bonnet.
 
 The formula allows arbitrary parametrizations, including stationary points. There `Im(z' / z)` is
 zero by the totalized division convention rather than a turning rate, and both sides vanish. It
@@ -72,7 +73,7 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s
   have hsp : curveVelocity I γ t ∈ Submodule.span ℝ (Set.range fun i ↦ s i (γ t)) :=
     hs.generating ht Submodule.mem_top
   have hz : frameVelocityCoordinates s γ t ≠ 0 :=
-    (frameVelocityCoordinates_eq_zero_iff (ho _ ht) hsp).not.mpr hv
+    (frameVelocityCoordinates_eq_zero_iff hsp).not.mpr hv
   -- The connection term of `z' / z` is `-i ω(γ')`, which cancels against `ω(γ')`.
   rw [(hs.hasDerivAt_frameVelocityCoordinates hu ho
       (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) ht hγ hγv).deriv]
