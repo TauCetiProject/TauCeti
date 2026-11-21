@@ -48,7 +48,6 @@ hence abelian and discriminated by `G`
 public section
 
 open TauCeti.GroupAlgGeom
-open scoped commutatorElement
 
 universe u
 
@@ -62,14 +61,6 @@ private def commEquation (k : ℕ) : Quadratic.Standard G (ULift.{u} (Fin (k + 1
     (ULift.up_injective.comp Sum.inl_injective).sumElim (ULift.up_injective.comp Sum.inr_injective)
       fun _ _ h ↦ Sum.inl_ne_inr (ULift.up_injective h)
 
-/-- Over an abelian group every tuple solves `[x₀, y₀] ⋯ [xₖ, yₖ] = 1`. -/
-private theorem mem_V_commEquation [IsMulCommutative G] (k : ℕ)
-    (v : ULift.{u} (Fin (k + 1) ⊕ Fin (k + 1)) → G) :
-    v ∈ V (MonoidHom.id G) {(commEquation k).toWord} := by
-  have h (a b : G) : ⁅a, b⁆ = 1 :=
-    commutatorElement_eq_one_iff_mul_comm.2 (isMulCommutative_iff.1 ‹_› a b)
-  simp [commEquation, Quadratic.Standard.toWord_def, map_list_prod, Function.comp_def, h]
-
 open scoped IsMulCommutative
 
 /-- Over a torsion-free abelian group `G`, for every `k` there are a normalized tower over `G`
@@ -79,7 +70,10 @@ private theorem exists_tower_isDiscriminatedBy [IsMulCommutative G] [IsMulTorsio
     ∃ (T : Type u) (_ : Group T) (j : G →* T) (_ : Tower G T j) (q : Fin k → T),
       IsDiscriminatedBy j (MonoidHom.id G) ∧ IsMulCommutative T ∧
         ∀ t : Fin k → G, ∃ ρ : GHom j (MonoidHom.id G), ⇑ρ ∘ q = t := by
-  have hV := mem_V_commEquation (G := G) k
+  -- Over an abelian group every tuple solves `[x₀, y₀] ⋯ [xₖ, yₖ] = 1`.
+  have hV (v : ULift.{u} (Fin (k + 1) ⊕ Fin (k + 1)) → G) :
+      v ∈ V (MonoidHom.id G) {(commEquation k).toWord} :=
+    Quadratic.Standard.mem_V_orientable_of_commute _ _ _ fun _ ↦ mul_comm' _ _
   have hsep := CoordGroup.isSeparatedBy_coeff (ι := MonoidHom.id G) {(commEquation k).toWord}
   -- The carrier of the quadratic level is the coordinate group of the equation, with its
   -- coefficient map (`TowerLevel.inclusion_quadratic`).
@@ -107,16 +101,15 @@ private theorem exists_gHom_comp_prodGHom [IsMulCommutative G] {T : Type u} [Gro
     (φ : GHom (MonoidHom.inl G (Fin k → Multiplicative ℤ)) (MonoidHom.id G)) :
     ∃ ρ : GHom j (MonoidHom.id G), ρ.comp (prodGHom j q) = φ := by
   obtain ⟨ρ, hρ⟩ := hq fun i ↦ φ (1, Pi.mulSingle i (.ofAdd 1))
-  -- `ρ ∘ prodGHom j q` and `φ` agree on `G` and on the basis vectors of `ℤᵏ`.
+  -- `ρ ∘ prodGHom j q` and `φ` agree on the basis vectors of `ℤᵏ`, and both fix `G`.
   have h₂ : (ρ : T →* G).comp (zpowersPiHom q fun _ _ ↦ .all _ _) =
       (φ : G × (Fin k → Multiplicative ℤ) →* G).comp (MonoidHom.inr _ _) := by
     ext i
     simpa using congrFun hρ i
-  refine ⟨ρ, GHom.ext fun y ↦ ?_⟩
-  have hy : y = MonoidHom.inl _ _ y.1 * MonoidHom.inr _ _ y.2 := by simp
-  rw [GHom.coe_comp, Function.comp_apply, hy, map_mul, map_mul, map_mul, GHom.map_coeff,
-    GHom.map_coeff, GHom.map_coeff]
-  simpa [prodGHom] using congrArg (y.1 * ·) (DFunLike.congr_fun h₂ y.2)
+  have h : (ρ : T →* G).comp (j.coprod (zpowersPiHom q fun _ _ ↦ .all _ _)) = φ := by
+    rw [← MonoidHom.coprod_unique (φ : G × (Fin k → Multiplicative ℤ) →* G),
+      MonoidHom.comp_coprod, GHom.comp_coeff, GHom.comp_coeff, h₂]
+  exact ⟨ρ, GHom.ext fun y ↦ by rw [GHom.coe_comp]; exact DFunLike.congr_fun h y⟩
 
 /-- Over a torsion-free abelian group `G`, the solution set of every system in finitely many
 variables has a cover by normalized towers discriminated by `G`. -/
