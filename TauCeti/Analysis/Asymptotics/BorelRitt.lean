@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.RCLike
 import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.SpecialFunctions.Exp.CpowQuarter
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -32,9 +33,8 @@ second function with the same expansion.
 
 ## Main results
 
-* `Asymptotics.norm_cexp_neg_mul_cpow_quarter_le`,
-  `Asymptotics.hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter`: `exp(-c z^{1/4})` decays
-  faster than every power of `z⁻¹`.
+* `Asymptotics.hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter`: `exp(-c z^{1/4})` has the
+  zero expansion, from the decay estimates of `TauCeti.Analysis.SpecialFunctions.Exp.CpowQuarter`.
 * `Asymptotics.exists_hasAsymptoticExpansion_cobounded`: Borel–Ritt along `cobounded ℂ`.
 * `Asymptotics.exists_hasAsymptoticExpansion_sector`: Borel–Ritt in a closed sector.
 * `Asymptotics.exists_ne_hasAsymptoticExpansion_sector`: two functions that differ everywhere
@@ -57,42 +57,12 @@ namespace Asymptotics
 
 /-! ### A function with the zero expansion -/
 
-/-- For `c > 0`, `‖exp(-c z^{1/4})‖ ≤ (4N)! (2/c)^{4N} |z|⁻ᴺ`. -/
-theorem norm_cexp_neg_mul_cpow_quarter_le {c : ℝ} (hc : 0 < c) (N : ℕ) {z : ℂ} (hz : z ≠ 0) :
-    ‖cexp (-(c * z ^ (1 / 4 : ℂ)))‖ ≤ (4 * N).factorial * (2 / c) ^ (4 * N) * (‖z‖ ^ N)⁻¹ := by
-  have ht : 0 < ‖z‖ ^ (1 / 4 : ℝ) := Real.rpow_pos_of_pos (norm_pos_iff.2 hz) _
-  set t := ‖z‖ ^ (1 / 4 : ℝ) with ht_def
-  have h4 : t ^ (4 * N) = ‖z‖ ^ N := by
-    rw [pow_mul, ht_def, ← Real.rpow_mul_natCast (norm_nonneg z)]
-    norm_num
-  have hre := TauCeti.norm_rpow_le_two_mul_re_cpow_quarter (z := z)
-  have hexp := Real.pow_div_factorial_le_exp (c / 2 * t) (by positivity) (4 * N)
-  rw [Complex.norm_exp, neg_re, re_ofReal_mul]
-  calc Real.exp (-(c * (z ^ (1 / 4 : ℂ)).re)) ≤ Real.exp (-(c / 2 * t)) :=
-        Real.exp_le_exp.2 (by nlinarith)
-    _ = (Real.exp (c / 2 * t))⁻¹ := Real.exp_neg _
-    _ ≤ ((c / 2 * t) ^ (4 * N) / (4 * N).factorial)⁻¹ := inv_anti₀ (by positivity) hexp
-    _ = _ := by rw [← h4]; field_simp; rw [← mul_pow]; congr 1; field_simp
-
-/-- For `c > 0`, `exp(-c z^{1/4}) = O(z⁻ᴺ)` at infinity for every `N`. -/
-theorem isBigO_cexp_neg_mul_cpow_quarter {c : ℝ} (hc : 0 < c) (N : ℕ) :
-    (fun z : ℂ => cexp (-(c * z ^ (1 / 4 : ℂ)))) =O[cobounded ℂ] fun z => (z ^ N)⁻¹ := by
-  refine IsBigO.of_bound ((4 * N).factorial * (2 / c) ^ (4 * N)) ?_
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with z hz
-  rw [norm_inv, norm_pow]
-  exact norm_cexp_neg_mul_cpow_quarter_le hc N (norm_pos_iff.1 hz)
-
 /-- For `c > 0`, the nowhere vanishing function `exp(-c z^{1/4})` has the zero expansion in
 inverse powers of `z` along `cobounded ℂ`. -/
 theorem hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter {c : ℝ} (hc : 0 < c) :
     HasAsymptoticExpansion (cobounded ℂ) (fun n z => (z ^ n)⁻¹) (0 : ℕ → ℂ)
       fun z => cexp (-(c * z ^ (1 / 4 : ℂ))) :=
-  hasAsymptoticExpansion_zero_iff.2 (isBigO_cexp_neg_mul_cpow_quarter hc)
-
-/-- `exp(-c z^{1/4})` is holomorphic off the negative real axis. -/
-theorem differentiableOn_cexp_neg_mul_cpow_quarter {c : ℂ} :
-    DifferentiableOn ℂ (fun z => cexp (-(c * z ^ (1 / 4 : ℂ)))) slitPlane := fun _ hz =>
-  ((differentiableAt_id.cpow_const hz).const_mul c).neg.cexp.differentiableWithinAt
+  hasAsymptoticExpansion_zero_iff.2 (TauCeti.isBigO_cexp_neg_mul_cpow_quarter hc)
 
 /-! ### The Borel–Ritt function -/
 
@@ -199,7 +169,7 @@ private lemma isBigO_borelRittTerm_sub (a : ℕ → ℂ) (s N : ℕ) :
     filter_upwards [tendsto_norm_cobounded_atTop.eventually_ge_atTop 1] with z hz
     rw [norm_inv, norm_pow, norm_one, one_mul]
     exact inv_le_one_of_one_le₀ (one_le_pow₀ hz)
-  have h := ((hpow.mul (isBigO_cexp_neg_mul_cpow_quarter
+  have h := ((hpow.mul (TauCeti.isBigO_cexp_neg_mul_cpow_quarter
     (borelRittWeight_pos a (s + 1)) N)).const_mul_left (-a (s + 1)))
   refine h.congr (fun z => ?_) (fun z => one_mul _)
   simp only [borelRittTerm]
@@ -265,7 +235,7 @@ theorem exists_ne_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (h�
   have he := (hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter one_pos).mono
     (inf_le_left : cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ} ≤ _)
   refine ⟨f, fun z => f z + cexp (-((1 : ℝ) * z ^ (1 / 4 : ℂ))), hfd,
-    hfd.add (differentiableOn_cexp_neg_mul_cpow_quarter.mono fun z hz =>
+    hfd.add (TauCeti.differentiableOn_cexp_neg_mul_cpow_quarter.mono fun z hz =>
       mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1]))),
     fun z h => ?_, hf, (hf.add he).congr_coeff fun n => add_zero _⟩
   exact Complex.exp_ne_zero _ (by linear_combination -h)
