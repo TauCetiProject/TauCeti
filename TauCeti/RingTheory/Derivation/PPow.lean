@@ -45,7 +45,9 @@ of `pPow` on sums (Jacobson's formula) is not treated here.
 
 On multiples `a • D` by elements `a : A`, the `p`-th power obeys Hochschild's formula
 `(a • D)^[p] = a ^ p • D^[p] + (a • D)^[p - 1] a • D` (`pPow_smul`), which underlies the
-`p`-linearity `ψ(a • D) = a ^ p • ψ(D)` of the `p`-curvature.
+`p`-linearity `ψ(a • D) = a ^ p • ψ(D)` of the `p`-curvature. It follows from the vanishing of
+the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion `(a • D)^[p] = ∑ c p k * D^[k]`
+(`smulIterCoeff_eq_zero_of_mem_Ico`).
 
 ## Main declarations
 
@@ -54,6 +56,8 @@ On multiples `a • D` by elements `a : A`, the `p`-th power obeys Hochschild's 
 * `Derivation.pPow`: the `p`-th power of a derivation, as a derivation.
 * `Derivation.pPow_const_smul`: `(c • D)^[p] = c ^ p • D^[p]` for `c : R`.
 * `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A`.
+* `Derivation.smulIterCoeff_eq_zero_of_mem_Ico`: the middle coefficients of the expansion of
+  `(a • D)^[p]` vanish.
 * `Derivation.pPow_smul`: Hochschild's formula for `(a • D)^[p]`, `a : A`.
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
@@ -206,61 +210,6 @@ section Hochschild
 
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
-/-- The coefficients `c n k` of the expansion `(b • D)^[n] = ∑ k ≤ n, c n k * D^[k]`
-(`iterate_smul_apply_eq_sum`): `c 0 k` is `1` for `k = 0` and `0` otherwise, and
-`c (n + 1) k = b * D (c n k) + b * c n (k - 1)`, the second term absent for `k = 0`. -/
-private def smulIterCoeff (D : Derivation R A A) (b : A) : ℕ → ℕ → A
-  | 0, k => if k = 0 then 1 else 0
-  | n + 1, 0 => b * D (smulIterCoeff D b n 0)
-  | n + 1, k + 1 => b * D (smulIterCoeff D b n (k + 1)) + b * smulIterCoeff D b n k
-
-private theorem smulIterCoeff_of_lt (D : Derivation R A A) (b : A) {n k : ℕ} (h : n < k) :
-    smulIterCoeff D b n k = 0 := by
-  induction n generalizing k with
-  | zero => simp [smulIterCoeff, h.ne']
-  | succ n ih =>
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : k ≠ 0)
-    simp [smulIterCoeff, ih (by omega : n < k + 1), ih (by omega : n < k)]
-
-private theorem smulIterCoeff_self (D : Derivation R A A) (b : A) (n : ℕ) :
-    smulIterCoeff D b n n = b ^ n := by
-  induction n with
-  | zero => simp [smulIterCoeff]
-  | succ n ih => simp [smulIterCoeff, ih, smulIterCoeff_of_lt D b n.lt_succ_self, pow_succ']
-
-private theorem smulIterCoeff_succ_zero (D : Derivation R A A) (b : A) (n : ℕ) :
-    smulIterCoeff D b (n + 1) 0 = 0 := by
-  induction n with
-  | zero => simp [smulIterCoeff]
-  | succ n ih => rw [smulIterCoeff, ih, map_zero, mul_zero]
-
-/-- The `n`-th iterate of `b • D` is a combination of the iterates `D^[k]`, `k ≤ n`, with
-coefficients `smulIterCoeff D b n k`. -/
-private theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
-    (b • D)^[n] y = ∑ k ∈ Finset.range (n + 1), smulIterCoeff D b n k * D^[k] y := by
-  induction n with
-  | zero => simp [smulIterCoeff]
-  | succ n ih =>
-    -- Differentiating the coefficients shifts the index by one; the top term vanishes.
-    have hshift : ∑ k ∈ Finset.range (n + 1), b * (D^[k] y * D (smulIterCoeff D b n k)) =
-        ∑ k ∈ Finset.range (n + 1), b * D (smulIterCoeff D b n (k + 1)) * D (D^[k] y) +
-          b * D (smulIterCoeff D b n 0) * y := by
-      have key (f : ℕ → A) (hf : f (n + 1) = 0) :
-          ∑ k ∈ Finset.range (n + 1), f k = ∑ k ∈ Finset.range (n + 1), f (k + 1) + f 0 := by
-        rw [← Finset.sum_range_succ', Finset.sum_range_succ f (n + 1), hf, add_zero]
-      rw [key]
-      · simp only [Function.iterate_succ_apply', Function.iterate_zero_apply]
-        congr 1
-        · exact Finset.sum_congr rfl fun k _ ↦ by ring
-        · ring
-      · simp [smulIterCoeff_of_lt D b n.lt_succ_self]
-    rw [Function.iterate_succ_apply', ih, smul_apply, map_sum, Finset.sum_range_succ' _ (n + 1)]
-    simp only [leibniz, smul_eq_mul, smulIterCoeff, Finset.sum_add_distrib, add_mul,
-      Function.iterate_succ_apply', Function.iterate_zero_apply]
-    rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
-    simp only [mul_assoc]
-    ring
-
 /-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
 `c n 0 = 0` and `c n n = b ^ n` made explicit. -/
 private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
@@ -268,8 +217,9 @@ private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {
       ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
   rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
-    ← Finset.sum_Ico_consecutive _ (Nat.zero_le 2) hn, smulIterCoeff_self]
-  simp [Finset.sum_range_succ, smulIterCoeff_succ_zero]
+    ← Finset.sum_Ico_consecutive _ (Nat.zero_le 2) hn, smulIterCoeff_self,
+    Finset.sum_Ico_succ_top (Nat.zero_le 1), ← Finset.range_eq_Ico, Finset.sum_range_one,
+    smulIterCoeff_succ_zero, zero_mul, Function.iterate_one]
   ring
 
 variable (p : ℕ) [Fact p.Prime] [CharP A p]
@@ -309,47 +259,31 @@ private theorem smulIterCoeff_eq_zero_of_apply_eq_one (D : Derivation ℤ A A) {
       simp
   · exact fun h ↦ absurd hk h
 
-/-- Hochschild's formula, applied to elements, when some `x` satisfies `D x = 1`. The iterates
-of `b • D` are written as iterates of `fun z ↦ b * D z`, a form that survives the change of ring
-in `pPow_smul`. -/
-private theorem iterate_smul_apply_of_apply_eq_one (D : Derivation ℤ A A) {x : A}
-    (hx : D x = 1) (b y : A) :
-    (fun z ↦ b * D z)^[p] y = b ^ p * D^[p] y + (fun z ↦ b * D z)^[p - 1] b * D y := by
-  have hp := (Fact.out : p.Prime)
-  have hbD : ⇑(b • D) = fun z ↦ b * D z := funext fun z ↦ by rw [smul_apply, smul_eq_mul]
-  have hT0 (z : A) : (b • D)^[p] z = b ^ p * D^[p] z + smulIterCoeff D b p 1 * D z := by
-    rw [iterate_smul_apply_eq_add_sum D b z hp.two_le, Finset.sum_eq_zero fun k hk ↦ by
-      rw [smulIterCoeff_eq_zero_of_apply_eq_one p D hx b hk, zero_mul], add_zero]
-  -- Evaluating at `x`, where `D^[p] x = 0`, identifies the coefficient of `D`.
-  have hc1 : smulIterCoeff D b p 1 = (b • D)^[p - 1] b := by
-    obtain ⟨q, hq⟩ := Nat.exists_eq_add_one_of_ne_zero hp.ne_zero
-    have h := hT0 x
-    rw [hx, ← pow_one x, iterate_apply_pow_of_apply_eq_one D hx,
-      Nat.descFactorial_eq_zero_iff_lt.mpr hp.one_lt, hq, Function.iterate_succ_apply,
-      smul_apply, pow_one, hx] at h
-    simpa [hq] using h.symm
-  rw [← hbD, hT0, hc1]
-
 open Polynomial in
+/-- In characteristic `p`, the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion
+`(b • D)^[p] = ∑ k ≤ p, c p k * D^[k]` (`iterate_smul_apply_eq_sum`) vanish. The proof extends
+`D` to `A[X]` by `X ↦ 1` and transports the vanishing back along the injective `Polynomial.C`. -/
+theorem smulIterCoeff_eq_zero_of_mem_Ico (D : Derivation R A A) (b : A) {k : ℕ}
+    (hk : k ∈ Finset.Ico 2 p) : smulIterCoeff D b p k = 0 := by
+  let : Differential A := ⟨D.restrictScalars ℤ⟩
+  apply C_injective
+  rw [map_smulIterCoeff C D (Differential.implicitDeriv 1)
+    (fun y ↦ (Differential.implicitDeriv_C 1 y).symm), map_zero]
+  exact smulIterCoeff_eq_zero_of_apply_eq_one p _ (Differential.implicitDeriv_X 1) (C b) hk
+
 /-- **Hochschild's formula** (Hochschild 1955; Katz, Proposition 5.3, due to Deligne). In
 characteristic `p`, for `a : A`, `(a • D)^[p] = a ^ p • D^[p] + (a • D)^[p - 1] a • D`: the
 `p`-th power is `p`-homogeneous for the scalars of `A` up to a multiple of `D`. -/
 theorem pPow_smul (a : A) (D : Derivation R A A) :
     (a • D).pPow p = a ^ p • D.pPow p + ((a • D)^[p - 1] a) • D := by
-  -- Extend `D` to `A[X]` by `X ↦ 1`, where `iterate_smul_apply_of_apply_eq_one` applies.
-  let E : Derivation ℤ A[X] A[X] :=
-    PolynomialModule.equivPolynomialSelf.compDer (D.restrictScalars ℤ).mapCoeffs +
-      (derivative' : Derivation A A[X] A[X]).restrictScalars ℤ
-  have hEC (y : A) : E (C y) = C (D y) := by simp [E]
-  have hEX : E X = 1 := by simp [E]
-  have h₁ : Function.Semiconj (C : A → A[X]) D E := fun y ↦ (hEC y).symm
-  have h₂ : Function.Semiconj (C : A → A[X]) ⇑(a • D) fun z ↦ C a * E z :=
-    fun y ↦ by simp [hEC]
+  have hp := (Fact.out : p.Prime)
+  have h₁ : smulIterCoeff D a p 1 = (a • D)^[p - 1] a := by
+    obtain ⟨q, hq⟩ := Nat.exists_eq_add_one_of_ne_zero hp.ne_zero
+    rw [hq, smulIterCoeff_succ_one, Nat.add_sub_cancel]
   ext y
-  apply C_injective
-  simp only [pPow_apply, add_apply, smul_apply, smul_eq_mul, map_add, map_mul, map_pow]
-  rw [h₂.iterate_right p y, h₂.iterate_right (p - 1) a, h₁.iterate_right p y, ← hEC]
-  exact iterate_smul_apply_of_apply_eq_one p E hEX (C a) (C y)
+  rw [pPow_apply, iterate_smul_apply_eq_add_sum D a y hp.two_le,
+    Finset.sum_eq_zero fun k hk ↦ by rw [smulIterCoeff_eq_zero_of_mem_Ico p D a hk, zero_mul],
+    add_zero, h₁, add_apply, smul_apply, smul_apply, pPow_apply, smul_eq_mul, smul_eq_mul]
 
 end Hochschild
 
