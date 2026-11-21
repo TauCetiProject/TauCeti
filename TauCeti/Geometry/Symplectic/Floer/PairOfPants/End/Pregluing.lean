@@ -47,7 +47,9 @@ other end of the cylinder `v`.
   integer, which periodicity absorbs, and for `R ≥ 1` the pre-glued pair of pants read in the
   positive end chart is `y ↦ preglue x U v R (y - (R, 0))` on the whole plane
   (`TauCeti.Floer.preglueEnd_comp_positiveEndChart`). Beyond the height `R + 1` it is
-  `v(s - 2R, t)` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`).
+  `v(s - 2R, t)` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`). In the signed end
+  coordinates `(s, t)` themselves no periodicity is needed: for `R ≥ 0` it is `v(s - 2R, t)` where
+  `s ≥ R + 1` (`TauCeti.Floer.preglueEnd_of_add_one_le`).
 * **It is smooth.** For `R ≥ 1` the pre-glued pair of pants of `Cⁿ` data is `Cⁿ` on `S`
   (`TauCeti.Floer.contDiffOn_preglueEnd`): near each point it is the translated pre-glued
   cylinder composed with a local inverse of the end chart.
@@ -56,8 +58,14 @@ other end of the cylinder `v`.
   converges to `x` at the same rate at `-∞` and solves the Floer equation, then for every large
   `R` the Floer operator of the pre-glued pair of pants in the end chart is at most `C' e^{-κ R}`
   beyond the height `T`
-  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le`). The error is
-  measured in the cylindrical coordinates of the end, in which the gluing estimates are made.
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le`). If `v` solves
+  the Floer equation only below a height `T'`, the bound holds on the neck `T < s < 2R + T'`
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio`). Both
+  are cases of the bound at the heights `s > T` with `s - 2R` in a set `S` on which `v` solves the
+  Floer equation
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn`). The
+  error is measured in the cylindrical coordinates of the end, in which the gluing estimates are
+  made.
 
 The hypotheses on `U` are what the asymptotic analysis of the ends supplies for a finite-energy
 Floer pair of pants whose almost complex structure is cylindrical on the end `q` and whose end
@@ -96,8 +104,8 @@ namespace Floer
 `q`, through the loop `x`, with gluing parameter `R`. At a point whose signed end coordinates
 `(s, t)` on the end `q` have `s > 0` it is the pre-glued map `preglue x (u ∘ φ'_q) v R` at
 `(s - R, t)`, for the positive end chart `φ'_q`; elsewhere it is `u`. It is `u` where `s ≤ R - 1`
-(`TauCeti.Floer.preglueEnd_of_le`), and `v(s - 2R, t)` where `s ≥ R + 1` when `x` and `v` have
-period one in `t` (`TauCeti.Floer.preglueEnd_positiveEndChart_of_add_one_le`). -/
+(`TauCeti.Floer.preglueEnd_of_le`), and `v(s - 2R, t)` where `s ≥ R + 1` when `R ≥ 0`
+(`TauCeti.Floer.preglueEnd_of_add_one_le`). -/
 noncomputable def preglueEnd (q : Puncture) (x : ℝ → V) (u v : ℝ × ℝ → V) (R : ℝ)
     (z : ℝ × ℝ) : V :=
   if 0 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re then
@@ -125,8 +133,19 @@ theorem preglueEnd_of_le (h : (positiveEndCoord q z).1 ≤ R - 1) : preglueEnd q
   · rw [fst_positiveEndCoord] at h
     rw [preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
       comp_apply, positiveEndChart_endSign_mul_endCoord
-        (ne_endCenter_of_re_endCoord_ne_zero q fun h ↦ by simp [h] at h₀)]
+        (q.ne_endCenter_of_endSign_mul_re_endCoord_pos h₀)]
   · rfl
+
+/-- **Beyond the neck the pre-glued pair of pants is the translated cylinder.** For `R ≥ 0`, at a
+point whose signed end coordinates `(s, t)` on the end `q` have `s ≥ R + 1`, the pre-glued pair of
+pants is `v(s - 2R, t)`. -/
+theorem preglueEnd_of_add_one_le (hR : 0 ≤ R)
+    (h : R + 1 ≤ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    preglueEnd q x u v R z =
+      v (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re - 2 * R,
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im) := by
+  rw [preglueEnd_def, ite_eq_left (by linarith), preglue_of_one_le (by dsimp only; linarith),
+    Prod.mk_sub_mk, sub_zero, sub_sub, ← two_mul]
 
 /-- Near a point other than the center of the end `q` whose signed longitudinal coordinate on `q`
 is less than `R - 1`, such as a point of `S` away from the neck, the pre-glued pair of pants agrees
@@ -174,19 +193,16 @@ theorem preglueEnd_positiveEndChart_of_add_one_le (hx : Periodic x 1)
   rw [preglueEnd_positiveEndChart hx hv (by linarith) t,
     preglue_of_one_le (by dsimp only; linarith), Prod.mk_sub_mk, sub_zero, sub_sub, ← two_mul]
 
-/-- **The pre-glued pair of pants is smooth.** If `u` is `Cⁿ` on `S`, the loop `x` and the map `v`
-are `Cⁿ` and of period one in `t`, and `R ≥ 1`, the pre-glued pair of pants is `Cⁿ` on `S`. -/
-theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Periodic x 1)
-    (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) (hv : ContDiff ℝ n v)
-    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R) :
-    ContDiffOn ℝ n (preglueEnd q x u v R) thricePuncturedSphereReal := by
-  intro z hz
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- Near `z`, `preglueEnd = F ∘ φ'_q⁻¹` for the translated pre-glued map `F`, with a local inverse
-  -- of the positive end chart around the signed end coordinates `y` of `z`.
-  set y : ℝ × ℝ := (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re,
-    q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im)
-  have hy : positiveEndChart q y = z := positiveEndChart_endSign_mul_endCoord (ne_endCenter hz q)
+/-- **The pre-glued pair of pants is smooth at a point of the end chart.** If the loop `x` is `Cⁿ`,
+`x` and the map `v` have period one in `t`, and `R ≥ 1`, then the pre-glued pair of pants is `Cⁿ`
+at `φ'_q(y)` whenever `u` is `Cⁿ` there and `v` is `Cⁿ` at `y - (2R, 0)`. -/
+theorem contDiffAt_preglueEnd_positiveEndChart {n : ℕ∞} (hx : ContDiff ℝ n x)
+    (hxper : Periodic x 1) (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R)
+    {y : ℝ × ℝ} (hu : ContDiffAt ℝ n u (positiveEndChart q y))
+    (hv : ContDiffAt ℝ n v (y - (2 * R, 0))) :
+    ContDiffAt ℝ n (preglueEnd q x u v R) (positiveEndChart q y) := by
+  -- Near `φ'_q(y)`, `preglueEnd = F ∘ φ'_q⁻¹` for the translated pre-glued map `F`, with a local
+  -- inverse of the positive end chart around `y`.
   -- The end chart is smooth, so its local inverse is smooth, whatever `n` is.
   have hn : ((⊤ : ℕ∞) : WithTop ℕ∞) ≠ 0 := by simp
   have hφ : ContDiffAt ℝ (⊤ : ℕ∞) (positiveEndChart q) y :=
@@ -196,11 +212,10 @@ theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Peri
     ((contDiff_positiveEndChart q 1).differentiable one_ne_zero y).hasFDerivAt
   have hF : ContDiffAt ℝ n
       (fun w ↦ preglue x (u ∘ positiveEndChart q) v R (w - (R, 0))) y := by
-    refine (contDiffAt_preglue hx.contDiffAt ?_ hv.contDiffAt).comp y
-      (contDiffAt_id.sub contDiffAt_const)
-    rw [sub_add_cancel]
-    exact (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hy ▸ hz))).comp y
-      (hφ.of_le (by exact_mod_cast le_top))
+    refine (contDiffAt_preglue hx.contDiffAt ?_ ?_).comp y (contDiffAt_id.sub contDiffAt_const)
+    · rw [sub_add_cancel]
+      exact hu.comp y (hφ.of_le (by exact_mod_cast le_top))
+    · rwa [sub_sub, Prod.mk_add_mk, add_zero, ← two_mul]
   have hEq : preglueEnd q x u v R =ᶠ[𝓝 (positiveEndChart q y)]
       (fun w ↦ preglue x (u ∘ positiveEndChart q) v R (w - (R, 0))) ∘
         hφ.localInverse hφ' hn := by
@@ -208,9 +223,24 @@ theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Peri
     conv_lhs => rw [← hw]
     exact congrFun (preglueEnd_comp_positiveEndChart hxper hvper hR) _
   rw [← hφ.localInverse_apply_image hφ' hn] at hF
-  rw [← hy]
   exact (hF.comp _ ((hφ.to_localInverse hφ' hn).of_le (by exact_mod_cast le_top))
     ).congr_of_eventuallyEq hEq
+
+/-- **The pre-glued pair of pants is smooth.** If `u` is `Cⁿ` on `S`, the loop `x` and the map `v`
+are `Cⁿ` and of period one in `t`, and `R ≥ 1`, the pre-glued pair of pants is `Cⁿ` on `S`. -/
+theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Periodic x 1)
+    (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) (hv : ContDiff ℝ n v)
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R) :
+    ContDiffOn ℝ n (preglueEnd q x u v R) thricePuncturedSphereReal := by
+  intro z hz
+  have hy : positiveEndChart q
+      (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re,
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im) = z :=
+    positiveEndChart_endSign_mul_endCoord (ne_endCenter hz q)
+  rw [← hy] at hz ⊢
+  exact (contDiffAt_preglueEnd_positiveEndChart hx hxper hvper hR
+    (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)) hv.contDiffAt
+    ).contDiffWithinAt
 
 end Floer
 
@@ -219,6 +249,51 @@ namespace SymplecticForm
 open Floer
 
 variable [FiniteDimensional ℝ V]
+
+/-- **The pre-gluing error at an end of a pair of pants, on the heights where `v` solves the
+Floer equation.** Let `H` be a `C²` Hamiltonian and `J_t(y)` a continuous family of endomorphisms,
+the cylindrical data of the end `q` in its positive end chart `φ'_q`, and let `x` be an orbit of
+`X_{H_t}` of period one. Suppose that `U = u ∘ φ'_q` converges to `x` in `C¹` at the exponential
+rate `κ > 0` as `s → ∞` and solves the Floer equation of the datum `H_t dt` beyond the height `T`,
+and that `v`, of period one in `t`, converges to `x` in `C¹` at the rate `κ` as `s → -∞` and solves
+the Floer equation on `S × [0, 1]`. Then for every large gluing parameter `R`, the Floer operator
+of the pre-glued pair of pants, read in the positive end chart, is at most `C' e^{-κ R}` at every
+point `(s, t)` of `(T, ∞) × [0, 1]` with `s - 2R ∈ S`. -/
+theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn (ω : SymplecticForm V)
+    (q : Puncture) {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V}
+    {C κ T : ℝ} (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxper : Periodic x 1)
+    (hκ : 0 < κ)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      DifferentiableAt ℝ (u ∘ positiveEndChart q) (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖u (positiveEndChart q (s, t)) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (u ∘ positiveEndChart q) (s, t) -
+          (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (huF : ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0)
+      (fun p ↦ H p.2) (u ∘ positiveEndChart q) z = 0)
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
+    {S : Set ℝ}
+    (hvF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) 0
+      (S ×ˢ Icc (0 : ℝ) 1)) :
+    ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1, z.1 - 2 * R ∈ S →
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+          (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
+    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) hvF
+  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz hzS ↦ ?_⟩
+  rw [preglueEnd_comp_positiveEndChart hxper hvper hR₁, floerOperator_comp_sub]
+  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
+    fun _ ↦ ⟨?_, by simpa using hz.2⟩
+  · simpa using hz.1
+  · simpa [sub_sub, ← two_mul] using hzS
 
 /-- **The pre-gluing error at an end of a pair of pants is exponentially small.** Let `H` be a
 `C²` Hamiltonian and `J_t(y)` a continuous family of endomorphisms, the cylindrical data of the
@@ -254,13 +329,47 @@ theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le (ω : Symplectic
     ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1,
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
-    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
-  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz ↦ ?_⟩
-  rw [preglueEnd_comp_positiveEndChart hxper hvper hR₁, floerOperator_comp_sub]
-  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
-    fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩
-  simpa using hz.1
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn q hH hJ
+    hx hxper hκ hud hu hdu huF hvd hv hdv hvper fun z hz ↦ hvF z hz
+  exact ⟨C', hC'.mono fun R hR z hz ↦ hR z hz (mem_univ _)⟩
+
+/-- **The pre-gluing error on the neck at an end of a pair of pants is exponentially small.** Under
+the hypotheses of `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglueEnd_comp_le`,
+suppose that `v` solves the Floer equation only below the height `T'`, as the end of a pair of
+pants does. Then for every large gluing parameter `R`, the Floer operator of the pre-glued pair of
+pants, read in the positive end chart, is at most `C' e^{-κ R}` on the neck
+`(T, 2R + T') × [0, 1]`. -/
+theorem exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_Iio (ω : SymplecticForm V)
+    (q : Puncture) {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V}
+    {C κ T T' : ℝ} (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxper : Periodic x 1)
+    (hκ : 0 < κ)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      DifferentiableAt ℝ (u ∘ positiveEndChart q) (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖u (positiveEndChart q (s, t)) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ (u ∘ positiveEndChart q) (s, t) -
+          (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (huF : ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1, ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0)
+      (fun p ↦ H p.2) (u ∘ positiveEndChart q) z = 0)
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
+    (hvF : ∀ z ∈ Iio T' ×ˢ Icc (0 : ℝ) 1,
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0) :
+    ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioo T (2 * R + T') ×ˢ Icc (0 : ℝ) 1,
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+          (preglueEnd q x u v R ∘ positiveEndChart q) z‖ ≤ C' * Real.exp (-(κ * R)) := by
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglueEnd_comp_le_of_eqOn q hH hJ
+    hx hxper hκ hud hu hdu huF hvd hv hdv hvper fun z hz ↦ hvF z hz
+  refine ⟨C', hC'.mono fun R hR z hz ↦ hR z ⟨hz.1.1, hz.2⟩ ?_⟩
+  rw [mem_Iio]
+  linarith [hz.1.2]
 
 end SymplecticForm
 
