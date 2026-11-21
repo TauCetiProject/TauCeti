@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction

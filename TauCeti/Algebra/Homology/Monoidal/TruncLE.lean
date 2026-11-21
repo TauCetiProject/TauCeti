@@ -40,9 +40,10 @@ sets are `DK(τ_{≥ 0} Hom(x, y))` (Lurie, *Higher Algebra*, Construction 1.3.1
 
 ## Implementation notes
 
-The coefficients are `R`-modules, as for `HomologicalComplex.ι_tensorObj_d`: the tensor product of
-cochain complexes indexed by `ℤ` needs countable coproducts commuting with the tensor product,
-which `ModuleCat R` provides; these are also the coefficients of a differential graded category.
+The coefficients are `R`-modules. The lax monoidal truncation uses the monoidal structure
+`HomologicalComplex.monoidalCategory` on all cochain complexes indexed by `ℤ`, which needs countable
+coproducts commuting with the tensor product, and `ModuleCat R` provides these. `R`-modules are
+also the coefficients of a differential graded category.
 
 ## References
 
@@ -105,18 +106,18 @@ private lemma tensorTruncLE'ToRestrictionX_comm (j : ℕ) :
   · omega
   on_goal 1 =>
     obtain rfl : s = j := by omega
-    rw [ι_tensorObj_d'_assoc K L (p := -((0 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
+    rw [ιTensorObj_tensor_d'_assoc K L (p := -((0 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
       (j := -((s + 1 : ℕ) : ℤ)) (p' := -((0 : ℕ) : ℤ) + 1) (q' := -(s : ℤ)) (j' := -(s : ℤ))
       (by omega) rfl (by omega) (by omega),
       ChainComplex.ιTensorObj_D₁_zero_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc]
   on_goal 2 =>
     obtain rfl : r = j := by omega
-    rw [ι_tensorObj_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ))
+    rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ))
       (j := -((r + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -((0 : ℕ) : ℤ) + 1) (j' := -(r : ℤ))
       (by omega) (by omega) rfl (by omega),
       ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_zero_assoc]
   on_goal 3 =>
-    rw [ι_tensorObj_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
+    rw [ιTensorObj_tensor_d'_assoc K L (p := -((r + 1 : ℕ) : ℤ)) (q := -((s + 1 : ℕ) : ℤ))
       (j := -((j + 1 : ℕ) : ℤ)) (p' := -(r : ℤ)) (q' := -(s : ℤ)) (j' := -(j : ℤ)) (by omega)
       (by omega) (by omega) (by omega),
       ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc]
@@ -161,7 +162,7 @@ lemma tensorTruncLE'ToRestriction_f_zero_comp_d (i' : ℤ) (hi' : embeddingDownN
   rw [comp_zero, tensorTruncLE'ToRestriction_f, ι_tensorTruncLE'ToRestrictionX_assoc,
     Iso.inv_hom_id_assoc]
   by_cases hj : -((0 : ℕ) : ℤ) + 1 = j'
-  · rw [ι_tensorObj_d' K L (p := -((0 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ)) (j := -((0 : ℕ) : ℤ))
+  · rw [ιTensorObj_tensor_d' K L (p := -((0 : ℕ) : ℤ)) (q := -((0 : ℕ) : ℤ)) (j := -((0 : ℕ) : ℤ))
       (p' := -((0 : ℕ) : ℤ) + 1) (q' := -((0 : ℕ) : ℤ) + 1) (j' := j') (by omega) rfl rfl hj]
     simp only [Preadditive.comp_add, Linear.comp_units_smul, tensorHom_comp_whiskerRight_assoc,
       tensorHom_comp_whiskerLeft_assoc, truncLE'ToX_zero_d, MonoidalPreadditive.zero_tensor,

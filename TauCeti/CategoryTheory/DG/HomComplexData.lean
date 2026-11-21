@@ -129,9 +129,8 @@ noncomputable def enrichedComp (X Y Z : C) : D.hom X Y ⊗ D.hom Y Z ⟶ D.hom X
     obtain rfl : m = n + 1 := hnm.symm
     apply mapBifunctor.hom_ext
     intro p q h
-    rw [ι_mapBifunctorDesc_assoc, ← Category.assoc, ι_tensorObj_d]
-    simp only [curriedTensor_map_app, curriedTensor_obj_map, Preadditive.add_comp,
-      Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
+    rw [ι_mapBifunctorDesc_assoc, ← Category.assoc, ιTensorObj_tensor_d]
+    simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc, ι_mapBifunctorDesc]
     apply ModuleCat.MonoidalCategory.tensor_ext
     intro f g
     have hn : p + q = n := h
