@@ -54,9 +54,11 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 * `TauCeti.Almost.Module.isIso_toAlmost_map_iff`: `f^a` is an isomorphism iff `f` is an almost
   isomorphism; `mono_toAlmost_map_iff` and `epi_toAlmost_map_iff` treat monomorphisms and
   epimorphisms, and `toAlmost_map_eq_zero_iff` zero morphisms.
-* `TauCeti.Almost.Module.exact_map_toAlmost_iff` and
-  `TauCeti.Almost.Module.exactAt_mapHomologicalComplex_toAlmost_iff`: a short complex or homological
-  complex of `V`-modules becomes exact in `Almost.Module S` iff its homology is almost zero.
+* `TauCeti.Almost.Module.exact_map_toAlmost_iff`,
+  `TauCeti.Almost.Module.exactAt_mapHomologicalComplex_toAlmost_iff`, and
+  `TauCeti.Almost.Module.acyclic_mapHomologicalComplex_toAlmost_iff`: a short complex or
+  homological complex of `V`-modules becomes exact (or acyclic) in `Almost.Module S` iff its
+  homology is almost zero.
 * `TauCeti.Almost.Module.isZero_of_ideal_eq_bot`: for the zero setup `(V, 0)` every almost module is
   zero.
 
@@ -183,6 +185,14 @@ theorem exactAt_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShap
       S.IsAlmostZero (K.homology i) := by
   rw [Functor.mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
   rfl
+
+/-- A complex `K` of `V`-modules becomes acyclic after almostification iff all of its homology
+modules are almost zero. -/
+theorem acyclic_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat.{u} V) c) :
+    (((toAlmost S).mapHomologicalComplex c).obj K).Acyclic ↔
+      ∀ i : ι, S.IsAlmostZero (K.homology i) := by
+  simp_rw [HomologicalComplex.acyclic_iff, exactAt_mapHomologicalComplex_toAlmost_iff]
 
 /-- The inclusion `m ⊆ V` becomes an isomorphism of almost modules. -/
 instance isIso_toAlmost_map_subtype :

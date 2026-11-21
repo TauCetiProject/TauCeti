@@ -95,6 +95,37 @@ theorem functor_map_apply {A B : CommMon (ModuleCat.{u} R)} (f : A ⟶ B) (x : A
     functor.map f x = f.hom.hom x :=
   rfl
 
+/-- The unit of the commutative `R`-algebra attached to a commutative monoid object in
+`ModuleCat R` is its monoid unit applied to `1 : R`. -/
+theorem functor_obj_one (A : CommMon (ModuleCat.{u} R)) :
+    (1 : functor.obj A) = η[A.X] (1 : R) :=
+  (rfl)
+
+/-- Multiplication in the commutative `R`-algebra attached to a commutative monoid object in
+`ModuleCat R` is its monoid multiplication applied to `x ⊗ₜ y`. -/
+theorem functor_obj_mul (A : CommMon (ModuleCat.{u} R)) (x y : functor.obj A) :
+    x * y = μ[A.X] (TensorProduct.tmul R (M := A.X) (N := A.X) x y) :=
+  (rfl)
+
+/-- The unit of the commutative `R`-algebra attached to a mapped commutative monoid
+`F.mapCommMon.obj A` is `F.map η[A.X]` applied to `Functor.LaxMonoidal.ε F 1`. -/
+theorem functor_obj_mapCommMon_one {C : Type*} [Category C] [MonoidalCategory C]
+    [BraidedCategory C] (F : C ⥤ ModuleCat.{u} R) [F.LaxBraided] (A : CommMon C) :
+    (1 : functor.obj (F.mapCommMon.obj A)) = F.map η[A.X] (Functor.LaxMonoidal.ε F (1 : R)) :=
+  (functor_obj_one (F.mapCommMon.obj A)).trans
+    (ConcreteCategory.congr_hom (Functor.obj.η_def (F := F) A.X) (1 : R))
+
+/-- Multiplication in the commutative `R`-algebra attached to a mapped commutative monoid
+`F.mapCommMon.obj A` applies `Functor.LaxMonoidal.μ F` followed by `F.map μ[A.X]`. -/
+theorem functor_obj_mapCommMon_mul {C : Type*} [Category C] [MonoidalCategory C]
+    [BraidedCategory C] (F : C ⥤ ModuleCat.{u} R) [F.LaxBraided] (A : CommMon C)
+    (x y : functor.obj (F.mapCommMon.obj A)) :
+    x * y = F.map μ[A.X] (Functor.LaxMonoidal.μ F A.X A.X
+      (TensorProduct.tmul R (M := F.obj A.X) (N := F.obj A.X) x y)) :=
+  (functor_obj_mul (F.mapCommMon.obj A) x y).trans
+    (ConcreteCategory.congr_hom (Functor.obj.μ_def (F := F) A.X)
+      (TensorProduct.tmul R (M := F.obj A.X) (N := F.obj A.X) x y))
+
 @[simp]
 theorem inverse_obj_X (A : CommAlgCat.{u} R) : (inverse.obj A).X = ModuleCat.of R A :=
   rfl

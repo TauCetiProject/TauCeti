@@ -7,14 +7,19 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
+public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
+public import TauCeti.CategoryTheory.Monoidal.Internal.Module
+
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # Change of rings and tensor products of modules
 
 Extension and restriction of scalars along a morphism of commutative rings are compatible with the
-symmetric braiding on module categories.
+symmetric braiding on module categories (`TauCeti.ModuleCat.restrictScalarsLaxBraided`,
+`TauCeti.ModuleCat.extendScalarsBraided`).
 
 For a morphism `f : A →+* P` and a `P`-module `M`, tensoring an extension of scalars with `M`
 over `P` is tensoring with `M` over `A`: `M ⊗[P] (P ⊗[A] X) ≅ M ⊗[A] X`, naturally in the
@@ -24,6 +29,12 @@ projective resolution over `P` after a flat extension of scalars. Specializing t
 `P` over `A` (`ModuleCat.extendScalarsCompRestrictScalarsIso`). When restriction of scalars along
 `f` is full, the counit `P ⊗[A] M₂ ⟶ M₂` is an isomorphism, so restriction of scalars preserves
 binary tensor products (`ModuleCat.isIso_laxMonoidal_μ_restrictScalars`).
+
+For a morphism `f : R →+* S` of commutative rings, `ModuleCat.extendScalars_ε_apply` and
+`ModuleCat.extendScalars_μ_tmul` record the elementwise action of the monoidal unit and tensorator
+of `ModuleCat.extendScalars f`. For commutative `A`-algebras `P` and `R`, the functor induced on
+commutative monoid objects by `ModuleCat.extendScalars (algebraMap A P)` agrees with the tensor
+product `P`-algebra `P ⊗[A] R` (`ModuleCat.extendScalarsCommAlgIso`).
 -/
 
 public section
@@ -216,5 +227,100 @@ instance isIso_laxMonoidal_μ_restrictScalars [(restrictScalars.{u} f).Full]
     rfl
   rw [h]
   infer_instance
+
+section Monoidal
+
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- The monoidal unit `Functor.LaxMonoidal.ε (extendScalars f)` sends `s : S` to `s ⊗ₜ 1`. -/
+@[simp]
+theorem extendScalars_ε_apply (s : S) :
+    Functor.LaxMonoidal.ε (extendScalars.{u, u, u} f) s = s ⊗ₜ[R, f] (1 : R) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_ε f) s).trans
+    (TensorProduct.AlgebraTensorModule.rid_symm_apply R S s)
+
+/-- On pure tensors, the tensorator `Functor.LaxMonoidal.μ (extendScalars f)` sends
+`(s₁ ⊗ₜ m₁) ⊗ₜ (s₂ ⊗ₜ m₂)` to `(s₁ * s₂) ⊗ₜ (m₁ ⊗ₜ m₂)`. -/
+@[simp]
+theorem extendScalars_μ_tmul (M₁ M₂ : ModuleCat.{u} R) (s₁ s₂ : S) (m₁ : M₁) (m₂ : M₂) :
+    Functor.LaxMonoidal.μ (extendScalars.{u, u, u} f) M₁ M₂
+        (TensorProduct.tmul S (M := (extendScalars f).obj M₁) (N := (extendScalars f).obj M₂)
+          (s₁ ⊗ₜ[R, f] m₁) (s₂ ⊗ₜ[R, f] m₂)) =
+      (s₁ * s₂) ⊗ₜ[R, f] (TensorProduct.tmul R (M := M₁) (N := M₂) m₁ m₂ : ↑(M₁ ⊗ M₂)) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_μ f M₁ M₂) _).trans
+    (TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul R S m₁ m₂ s₁ s₂)
+
+end Monoidal
+
+section CommAlg
+
+variable {A : Type u} [CommRing A]
+
+/-- Extension of scalars of a commutative `A`-algebra `R` along `algebraMap A P` via
+`ModuleCat.extendScalars` on commutative monoid objects agrees with the `P`-algebra `P ⊗[A] R`. -/
+noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P]
+    (R : CommAlgCat.{u} A) :
+    CommAlgCat.of P (P ⊗[A] R) ≅
+      CommMonModuleEquivalenceCommAlgebra.functor.obj
+        ((extendScalars.{u, u, u} (algebraMap A P)).mapCommMon.obj
+          (CommMonModuleEquivalenceCommAlgebra.inverse.obj R)) :=
+  let φ := algebraMap A P
+  let G := extendScalars.{u, u, u} φ
+  let R₀ := ModuleCat.of A R
+  let R' := CommMonModuleEquivalenceCommAlgebra.inverse.obj R
+  let B := CommMonModuleEquivalenceCommAlgebra.functor.obj (G.mapCommMon.obj R')
+  let eLin : (P ⊗[A] R) ≃ₗ[P] B :=
+    (extendScalarsAlgebraMapIso (S := P) R₀).symm.toLinearEquiv
+  let eAlg : (P ⊗[A] R) ≃ₐ[P] B :=
+    Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct eLin
+      (fun p₁ p₂ r₁ r₂ ↦ by
+        have he (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p ⊗ₜ[A, φ] (r : R'.X) :=
+          extendScalarsAlgebraMapIso_inv_tmul R₀ p r
+        symm
+        refine (CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_mul G R' _ _).trans ?_
+        refine (congrArg (fun z ↦ G.map (MonObj.mul (X := R'.X))
+            (Functor.LaxMonoidal.μ G R'.X R'.X z))
+          (congrArg₂ (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X))
+            (he p₁ r₁) (he p₂ r₂))).trans ?_
+        refine (congrArg (G.map (MonObj.mul (X := R'.X)))
+          (extendScalars_μ_tmul φ R'.X R'.X p₁ p₂ r₁ r₂)).trans ?_
+        refine (ExtendScalars.map_tmul φ (MonObj.mul (X := R'.X)) (p₁ * p₂) _).trans ?_
+        rw [CommMonModuleEquivalenceCommAlgebra.inverse_obj_mul]
+        exact (congrArg (fun x : R₀ ↦ (p₁ * p₂) ⊗ₜ[A, φ] x)
+          (LinearMap.mul'_apply (R := A) (a := r₁) (b := r₂))).trans (he (p₁ * p₂) (r₁ * r₂)).symm)
+      (by
+        symm
+        refine (CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_one G R').trans ?_
+        refine (congrArg (G.map (MonObj.one (X := R'.X))) (extendScalars_ε_apply φ 1)).trans ?_
+        refine (ExtendScalars.map_tmul φ (MonObj.one (X := R'.X)) 1 (1 : A)).trans ?_
+        rw [CommMonModuleEquivalenceCommAlgebra.inverse_obj_one]
+        exact (congrArg (fun x : R₀ ↦ (1 : P) ⊗ₜ[A, φ] x) (map_one (algebraMap A R))).trans
+          (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).symm)
+  CommAlgCat.isoMk eAlg
+
+-- Normalize `CommAlgCat.of` carrier projections so `@[simp]` matches after projection reduction.
+/-- `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
+@[simp]
+theorem extendScalarsCommAlgIso_hom_tmul (P : Type u) [CommRing P] [Algebra A P]
+    (R : CommAlgCat.{u} A) (p : P) (r : R) :
+    dsimp% only (extendScalarsCommAlgIso P R).hom (p ⊗ₜ[A] r) = p ⊗ₜ[A, algebraMap A P] r :=
+  (Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply
+    (C := CommMonModuleEquivalenceCommAlgebra.functor.obj
+      ((extendScalars.{u, u, u} (algebraMap A P)).mapCommMon.obj
+        (CommMonModuleEquivalenceCommAlgebra.inverse.obj R))) _ _ _ _).trans
+    (extendScalarsAlgebraMapIso_inv_tmul (ModuleCat.of A R) p r)
+
+/-- The inverse of `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
+@[simp]
+theorem extendScalarsCommAlgIso_inv_tmul (P : Type u) [CommRing P] [Algebra A P]
+    (R : CommAlgCat.{u} A) (p : P) (r : R) :
+    dsimp% only (extendScalarsCommAlgIso P R).inv (p ⊗ₜ[A, algebraMap A P] r) = p ⊗ₜ[A] r :=
+  (congrArg (extendScalarsCommAlgIso P R).inv
+    (extendScalarsCommAlgIso_hom_tmul P R p r).symm).trans
+    (ConcreteCategory.congr_hom (extendScalarsCommAlgIso P R).hom_inv_id (p ⊗ₜ[A] r))
+
+end CommAlg
 
 end ModuleCat
