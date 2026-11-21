@@ -298,10 +298,10 @@ theorem abs_card_filter_colorOfPair_sub_le_of_refines [DecidableEq V]
 
 variable (S) in
 /-- Small rectangle count discrepancy on disjoint nonempty `(s, t)` around `p` implies both
-`|(pairColorDensity S c s t : ℝ) - p c| ≤ η` and `S.IsRegularPair θ s t` whenever
-`2 * η ≤ min 1 θ ^ 3` and `0 < θ`. -/
+`|(pairColorDensity S c s t : ℝ) - p c| ≤ η` and `S.IsRegularPair θ s t` whenever `0 < θ` and
+`θ < 1 → 2 * η ≤ θ ^ 3`. -/
 theorem isRegularPair_of_abs_card_filter_colorOfPair_sub_le (hst : Disjoint s t) (hs : s.Nonempty)
-    (ht : t.Nonempty) {p : κ → ℝ} {η θ : ℝ} (hθ : 0 < θ) (hη : 2 * η ≤ min 1 θ ^ 3)
+    (ht : t.Nonempty) {p : κ → ℝ} {η θ : ℝ} (hθ : 0 < θ) (hη : θ < 1 → 2 * η ≤ θ ^ 3)
     (hrect : ∀ c, ∀ s' ⊆ s, ∀ t' ⊆ t,
       |(#{q ∈ s' ×ˢ t' | S.colorOfPair q.1 q.2 = some c} : ℝ) - p c * (#s' * #t')| ≤
         η * (#s * #t)) :
@@ -321,7 +321,7 @@ theorem isRegularPair_of_abs_card_filter_colorOfPair_sub_le (hst : Disjoint s t)
   refine ⟨?_, hfull⟩
   obtain h1θ | hθ1 := le_or_gt 1 θ
   · exact isRegularPair_of_one_le h1θ
-  rw [min_eq_right hθ1.le] at hη
+  specialize hη hθ1
   rw [isRegularPair_iff]
   intro c s' hs' t' ht' hs's ht't
   have hpos : (0 : ℝ) < #s' * #t' := mul_pos ((mul_pos hθ hs0).trans_le hs's)

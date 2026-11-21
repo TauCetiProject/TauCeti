@@ -297,7 +297,7 @@ private theorem isRegularPair_of_fine_discrepancy {κ V : Type*} [Fintype V] [De
       ∀ d : κ, |(pairColorDensity T_off d A B : ℝ) - p d| ≤ δ / 2 := by
   have hres := T_off.isRegularPair_of_abs_card_filter_colorOfPair_sub_le
     (P.disjoint hA hB hAB) (P.nonempty_of_mem_parts hA) (P.nonempty_of_mem_parts hB)
-    hδ0 (by simpa [min_eq_right hδ1] using hτδ)
+    hδ0 (fun _ ↦ hτδ)
     fun d X hXA Y hYB ↦
       T_off.abs_card_filter_colorOfPair_sub_le_of_refines hQP hA hB d hXA hYB
         fun A' hA' hA'A B' hB' hB'B ↦
