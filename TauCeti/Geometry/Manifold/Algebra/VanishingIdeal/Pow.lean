@@ -142,6 +142,18 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint {x : M}
     iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow hx hf hk,
     mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero hx⟩
 
+/-- **The powers of the vanishing ideal**, indexed by the order of vanishing. At an interior point
+`x`, a smooth function lies in `I_x ^ m` if and only if its chart expression has vanishing
+derivatives of every order `k < m` at the image of `x`. For `m = 0` both sides always hold. -/
+theorem mem_smoothVanishingIdeal_pow_iff_of_isInteriorPoint {x : M}
+    (hx : I.IsInteriorPoint x) (m : ℕ) (f : C^∞⟮I, M; ℝ⟯) :
+    f ∈ smoothVanishingIdeal I x ^ m ↔ ∀ k < m,
+      iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    simp only [mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx, Nat.lt_succ_iff]
+
 /-- **The powers of the vanishing ideal.** On a finite-dimensional Hausdorff boundaryless real
 manifold, a smooth function is a finite sum of products of `m + 1` smooth functions vanishing at
 `x` if and only if its chart expression has vanishing derivatives of every order at most `m` at
