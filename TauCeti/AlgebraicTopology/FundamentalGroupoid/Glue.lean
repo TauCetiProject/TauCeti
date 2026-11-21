@@ -334,10 +334,10 @@ private lemma locVal_comm_of_homotopy (i : ι) {Y : Type*} [TopologicalSpace Y]
   have hc : c = f₁ y₂ := by rw [← S.target, hS, p.target]
   have hd : d = f₁ y₁ := by rw [← S.source, hS, p.source]
   subst ha hb hc hd
-  obtain rfl : P = (p.map f₀.continuous).map continuous_subtype_val := Path.ext (funext hP)
-  obtain rfl : Q = (K.evalAt y₂).map continuous_subtype_val := Path.ext (funext hQ)
-  obtain rfl : R = (K.evalAt y₁).map continuous_subtype_val := Path.ext (funext hR)
-  obtain rfl : S = (p.map f₁.continuous).map continuous_subtype_val := Path.ext (funext hS)
+  obtain rfl : P = (p.map f₀.continuous).map continuous_subtypeVal := Path.ext (funext hP)
+  obtain rfl : Q = (K.evalAt y₂).map continuous_subtypeVal := Path.ext (funext hQ)
+  obtain rfl : R = (K.evalAt y₁).map continuous_subtypeVal := Path.ext (funext hR)
+  obtain rfl : S = (p.map f₁.continuous).map continuous_subtypeVal := Path.ext (funext hS)
   have hmem : ∀ {u v w : X} (A : Path u v) (B : Path v w), (∀ t, A t ∈ U i) →
       (∀ t, B t ∈ U i) → ∀ t, (A.trans B) t ∈ U i := fun A B hA hB ↦
     range_subset_iff.1 <| (Path.trans_range _ _).trans_subset <|
@@ -345,8 +345,8 @@ private lemma locVal_comm_of_homotopy (i : ι) {Y : Type*} [TopologicalSpace Y]
   rw [← locVal_trans hU F hF i _ _ mP mQ (hmem _ _ mP mQ),
     ← locVal_trans hU F hF i _ _ mR mS (hmem _ _ mR mS)]
   simp only [locVal, ← Path.map_trans]
-  have hcr : ∀ {u v : U i} (Z : Path u v) (h : ∀ t, (Z.map continuous_subtype_val) t ∈ U i),
-      (Z.map continuous_subtype_val).codRestrict (x := u) (y := v) h = Z := fun Z h ↦ by
+  have hcr : ∀ {u v : U i} (Z : Path u v) (h : ∀ t, (Z.map continuous_subtypeVal) t ∈ U i),
+      (Z.map continuous_subtypeVal).codRestrict (x := u) (y := v) h = Z := fun Z h ↦ by
     ext t
     exact Path.codRestrict_coe (x := _) (y := _) _ h t
   rw [hcr, hcr, Path.Homotopic.Quotient.eq.2 (Path.Homotopic.map_trans_evalAt K p)]
@@ -674,15 +674,15 @@ def glue : _root_.FundamentalGroupoid X ⥤ D where
 /-- The glued functor restricts to `F i` on the fundamental groupoid of `U i`. -/
 @[simp] theorem map_subtypeVal_comp_glue (i : ι) :
     map (ContinuousMap.subtypeVal (U i)) ⋙ glue hU F hF = F i := by
-  refine CategoryTheory.Functor.ext (fun a ↦ (obj_eq hU F hF i a.as.2).symm) fun a b γ ↦ ?_
+  refine CategoryTheory.Functor.ext (fun a ↦ (obj_eq hU F hF i a.as.property).symm) fun a b γ ↦ ?_
   induction γ using Path.Homotopic.Quotient.ind with | mk γ =>
-  let γ' := γ.map continuous_subtype_val
-  have hγ' : ∀ t, γ' t ∈ U i := fun t ↦ (γ t).2
+  let γ' := γ.map continuous_subtypeVal
+  have hγ' : ∀ t, γ' t ∈ U i := fun t ↦ (γ t).property
   have hγ : γ'.codRestrict (x := a.as) (y := b.as) hγ' = γ := by
     ext t
     exact Path.codRestrict_coe (x := a.as) (y := b.as) _ _ t
-  have key : locVal hU F hF i γ' hγ' = eqToHom (obj_eq hU F hF i a.as.2).symm ≫
-      (F i).map (Path.Homotopic.Quotient.mk γ) ≫ eqToHom (obj_eq hU F hF i b.as.2) := by
+  have key : locVal hU F hF i γ' hγ' = eqToHom (obj_eq hU F hF i a.as.property).symm ≫
+      (F i).map (Path.Homotopic.Quotient.mk γ) ≫ eqToHom (obj_eq hU F hF i b.as.property) := by
     unfold locVal
     rw [hγ]
   -- By the definitions of `FundamentalGroupoid.map` and of `glue`, the left-hand side is the

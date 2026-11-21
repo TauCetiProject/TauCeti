@@ -246,7 +246,7 @@ theorem apply_eq_of_crossings_eq_empty {Y : Type*} {F : V → Y}
     (hF : ∀ θ, (∀ i, θ ∉ W i) → ∀ᶠ φ in nhds θ, F φ = F θ) {x y : WallComplement W}
     (he : crossings x y = ∅) : F x.val = F y.val := by
   have hc : Continuous fun r : I => AffineMap.lineMap x.val y.val (r : ℝ) :=
-    AffineMap.lineMap_continuous.comp continuous_subtype_val
+    AffineMap.lineMap_continuous.comp continuous_subtypeVal
   have hf : IsLocallyConstant fun r : I => F (AffineMap.lineMap x.val y.val (r : ℝ)) := by
     refine (IsLocallyConstant.iff_eventually_eq _).mpr fun r =>
       (hc.tendsto r).eventually (p := fun φ => F φ = F _) (hF _ fun i hi => ?_)

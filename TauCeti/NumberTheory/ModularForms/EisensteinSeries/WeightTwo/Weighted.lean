@@ -16,6 +16,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
+import Mathlib.Algebra.BigOperators.Balance
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 
@@ -122,7 +123,7 @@ open EisensteinSeries
 open TauCeti.UpperHalfPlane (rowSum rowSum_zero hasSum_rowSum summable_one_div_add_intCast_sq
   norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty)
 
-open scoped MatrixGroups Topology Manifold Real
+open scoped BigOperators MatrixGroups Topology Manifold Real
 
 namespace TauCeti.EisensteinSeries
 
@@ -789,6 +790,17 @@ theorem weightedG2_eq_zero_of_forall_vecMul_eq {W : (Fin 2 → ZMod N) → ℂ}
     ((rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) f)
   rwa [ModularForm.coe_ofSlashInvariant, coe_weightedG2MF] at hf
 
+/-- Subtracting a constant from a weight does not change its series: a constant weight is
+invariant under `SL(2, ℤ)`, so its series vanishes. -/
+theorem weightedG2_sub_const (W : (Fin 2 → ZMod N) → ℂ) (m : ℂ) :
+    weightedG2 (fun a ↦ W a - m) = weightedG2 W := by
+  have h := weightedG2_add (fun a ↦ W a - m) fun _ ↦ m
+  rw [weightedG2_eq_zero_of_forall_vecMul_eq (W := fun _ ↦ m) fun _ _ ↦ rfl, add_zero] at h
+  rw [← h]
+  congr 1
+  ext a
+  simp
+
 /-! ### Changing the level -/
 
 variable {M : ℕ} [NeZero M]
@@ -856,21 +868,11 @@ private lemma weightedG2_comp_castHom_of_sum_eq_zero (h : M ∣ N) {W : (Fin 2 �
 `M` and of the weight `c ↦ W(c mod M)` modulo `N` agree. -/
 theorem weightedG2_comp_castHom (h : M ∣ N) (W : (Fin 2 → ZMod M) → ℂ) :
     weightedG2 (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) = weightedG2 W := by
-  -- split off a constant weight, whose series vanishes at every level
-  set m : ℂ := (∑ a, W a) / (M : ℂ) ^ 2
-  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    rw [show (M : ℂ) ^ 2 * m = ∑ a, W a from mul_div_cancel₀ _ (pow_ne_zero 2 hM), sub_self]
-  have hconst {L : ℕ} [NeZero L] : weightedG2 (fun _ : Fin 2 → ZMod L ↦ m) = 0 :=
-    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
-  have hsplit {L : ℕ} [NeZero L] (V : (Fin 2 → ZMod L) → ℂ) :
-      weightedG2 V = weightedG2 fun a ↦ V a - m := by
-    conv_lhs => rw [show V = (fun a ↦ V a - m) + fun _ ↦ m by ext; simp]
-    rw [weightedG2_add, hconst, add_zero]
-  rw [hsplit, hsplit W]
+  -- split off the mean of `W`, a constant weight whose series vanishes at every level
+  set m : ℂ := 𝔼 a, W a
+  have hmass : ∑ a, (W a - m) = 0 := Fintype.sum_balance W
+  rw [← weightedG2_sub_const (fun c : Fin 2 → ZMod N ↦ W (ZMod.castHom h (ZMod M) ∘ c)) m,
+    ← weightedG2_sub_const W m]
   exact weightedG2_comp_castHom_of_sum_eq_zero h (W := fun a ↦ W a - m) hmass
 
 /-! ### Common division points -/
@@ -1051,24 +1053,13 @@ undone. -/
 theorem tsum_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
     ∑' c, weightedG2Row W z c = weightedG2 W z + ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * G2 z := by
   set m : ℂ := ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hmass : ∑ a, (W a - m) = 0 := by
-    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
-      Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    simp only [m]
-    field_simp
-    ring
+  -- `m` is the mean of `W`, so `W - m` has total mass zero
+  have hm : 𝔼 a, W a = m := by
+    rw [Fintype.expect_eq_sum_div_card, Fintype.card_fun, ZMod.card, Fintype.card_fin,
+      Nat.cast_pow, div_eq_inv_mul]
+  have hmass : ∑ a, (W a - m) = 0 := hm ▸ Fintype.sum_balance W
   -- split off a constant weight, whose series vanishes and whose rows are those of `G₂`
-  have hconst : weightedG2 (fun _ : Fin 2 → ZMod N ↦ m) = 0 :=
-    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
-  have hG : weightedG2 (fun a ↦ W a - m) = weightedG2 W := by
-    have h := weightedG2_add (fun a ↦ W a - m) fun _ ↦ m
-    rw [hconst, add_zero] at h
-    rw [← h]
-    congr 1
-    ext a
-    simp
+  have hG := weightedG2_sub_const W m
   have h1 (c : ℤ) : weightedG2Row (1 : (Fin 2 → ZMod N) → ℂ) z c = e2Summand c z := by
     simp [weightedG2Row_def, e2Summand]
   have he2 : Summable fun c ↦ e2Summand c z := (summable_weightedG2Row 1 z).congr h1

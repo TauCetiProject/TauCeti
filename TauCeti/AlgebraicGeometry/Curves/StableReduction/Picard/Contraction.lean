@@ -236,10 +236,10 @@ theorem two_smul_mem_range_picContract (y : (T.contract he).Pic) :
     have h2 : ((2 : ℤ) • d') j = 2 * d'' j := (rfl)
     rw [contractMultidegree_mul_contractWeight, h2]
     by_cases hj : T.ContractHalvesWeight e j
-    · simp only [d, j.2, hj, ↓reduceDIte, ↓reduceIte, zero_mul, add_zero]
+    · simp only [d, j.property, hj, ↓reduceDIte, ↓reduceIte, zero_mul, add_zero]
       rw [← two_mul_contractWeight hj]
       ring
-    · simp only [d, j.2, hj, ↓reduceDIte, ↓reduceIte, zero_mul, add_zero,
+    · simp only [d, j.property, hj, ↓reduceDIte, ↓reduceIte, zero_mul, add_zero,
         contractWeight_of_not hj]
 
 /-! ### Consequences -/

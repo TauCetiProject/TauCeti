@@ -121,12 +121,12 @@ def fullEnhancedSubcategory.verticesEquiv :
 @[simp]
 lemma fullEnhancedSubcategory.verticesEquiv_apply_coe
     (x : (X.fullEnhancedSubcategory P).obj (op ⦋0⦌)) :
-    (verticesEquiv P x : X _⦋0⦌) = x.1 := by
+    (verticesEquiv P x : X _⦋0⦌) = x.val := by
   simp [verticesEquiv]
 
 @[simp]
 lemma fullEnhancedSubcategory.verticesEquiv_symm_apply_coe (x : {x : X _⦋0⦌ // P x}) :
-    ((verticesEquiv P).symm x).1 = x.1 := by
+    ((verticesEquiv P).symm x).val = x.val := by
   simp [verticesEquiv]
 
 /-- The inclusion of a full enhanced subcategory has the right lifting property against every
@@ -139,9 +139,9 @@ lemma hasLiftingProperty_fullEnhancedSubcategory_ι {A B : SSet.{u}} (i : A ⟶ 
       rw [range_le_fullEnhancedSubcategory_iff]
       intro y
       obtain ⟨z, rfl⟩ := hi y
-      have hz : b.app _ (i.app _ z) = (a.app _ z).1 := congr($(sq.w).app _ z).symm
+      have hz : b.app _ (i.app _ z) = (a.app _ z).val := congr($(sq.w).app _ z).symm
       rw [hz]
-      exact (mem_fullEnhancedSubcategory_obj_zero_iff P _).mp (a.app _ z).2
+      exact (mem_fullEnhancedSubcategory_obj_zero_iff P _).mp (a.app _ z).property
     exact ⟨⟨{ l := Subcomplex.lift b hb
               fac_left := by rw [← cancel_mono (Subcomplex.ι _)]; simp [sq.w] }⟩⟩
 
@@ -174,7 +174,7 @@ def nerveFullSubcategoryIso :
   -- The `k`-th vertex of a simplex `x` of `nerve C` is `x.obj k` definitionally, and lifting a
   -- functor through `P.FullSubcategory` and composing with `P.ι` are mutually inverse on the nose.
   inv :=
-    { app n := ↾fun x ↦ P.lift x.1 fun k ↦ x.2 (SimplexCategory.const _ _ k)
+    { app n := ↾fun x ↦ P.lift x.val fun k ↦ x.property (SimplexCategory.const _ _ k)
       naturality _ _ _ := rfl }
   hom_inv_id := rfl
   inv_hom_id := rfl

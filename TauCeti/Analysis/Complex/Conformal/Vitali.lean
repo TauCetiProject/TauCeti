@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Montel.Basic
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Montel.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.UniformSpace.Ascoli
@@ -26,7 +26,7 @@ criterion `tendsto_of_subseq_tendsto` gives locally uniform convergence of the o
 
 When the family already converges pointwise on the *whole* of `Ω`, none of that machinery is
 needed. Local boundedness makes the family equicontinuous on `Ω`
-(`TauCeti.IsLocallyBoundedOn.equicontinuousOn`, the Cauchy-estimate half of Montel's theorem), and
+(`TauCeti.IsLocallyBoundedOn.equicontinuousOn`, the equicontinuity half of Montel's theorem), and
 on an equicontinuous family pointwise convergence *is* uniform convergence on each compact subset,
 by Mathlib's Arzelà–Ascoli lemma `Equicontinuous.tendsto_uniformFun_iff_pi`. This is why the
 whole-domain statements below are not corollaries of `TauCeti.vitali`: they spend no identity
@@ -172,7 +172,7 @@ theorem tendstoLocallyUniformlyOn_of_isLocallyBoundedOn_of_forall_tendsto (hΩ :
   rw [tendstoUniformlyOn_iff_restrict]
   exact UniformFun.tendsto_iff_tendstoUniformly.1
     ((heq.tendsto_uniformFun_iff_pi l (K.domRestrict g)).2
-      (tendsto_pi_nhds.2 fun z => hpoint z (hKΩ z.2)))
+      (tendsto_pi_nhds.2 fun z => hpoint z (hKΩ z.property)))
 
 /-- **The pointwise limit need not be named.** A locally bounded family of holomorphic maps on an
 open `Ω` into a complete complex normed space, which converges along a nontrivial filter `l` at

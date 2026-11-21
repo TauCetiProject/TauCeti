@@ -41,8 +41,8 @@ theorem abelMap_app_mul (T : (Over S)ᵒᵖ)
     (D E : (relativeEffectiveCartierSubfunctor f).toFunctor.obj T) :
     (abelMap f).app T (ULift.up (D * E)) =
       (abelMap f).app T (ULift.up D) * (abelMap f).app T (ULift.up E) := by
-  have hD := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.2).isEffectiveCartier
-  have hE := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.2).isEffectiveCartier
+  have hD := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp D.property).isEffectiveCartier
+  have hE := ((mem_relativeEffectiveCartierSubfunctor_obj_iff f).mp E.property).isEffectiveCartier
   rw [abelMap_app_apply, abelMap_app_apply, abelMap_app_apply]
   rw [LineBundleClass.mk_toInvertibleSheaf_mul hD hE]
   simp only [QuotientGroup.mk_mul, mul_inv_rev, mul_comm]
