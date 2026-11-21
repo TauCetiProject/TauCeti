@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Vertex.HasseDeriv
 public import TauCeti.Algebra.Vertex.ResidueProduct
 public import TauCeti.Algebra.Vertex.NormalOrder
 public import Mathlib.Algebra.Lie.OfAssociative
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Nat.Choose.Sum
 import TauCeti.RingTheory.Binomial
 import Mathlib.Tactic.Module
@@ -416,5 +417,46 @@ theorem ncoeff_neg_one_nthProduct_apply {A B : VertexOperator R V} {vac : V}
   rw [ncoeff_nthProduct_apply_eq_sum n A B (-1) vac (K := 1)
     (fun i _ ↦ hA i (Nat.cast_nonneg i)) (fun i hi ↦ hB (-1 + i) (by omega))]
   simp [hA 0 le_rfl]
+
+/-- Left `n`-th products with the identity field vanish except at `n = -1`, where they act as the
+identity. -/
+theorem nthProduct_idField_left (n : ℤ) (B : VertexOperator R V) :
+    nthProduct n (idField : VertexOperator R V) B = if n = -1 then B else 0 := by
+  rcases le_or_gt 0 n with hn | hn
+  · simp [nthProduct_of_nonneg hn, show n ≠ -1 by omega]
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
+    cases k with
+    | zero => simp
+    | succ k =>
+      rw [nthProduct_neg_natCast_sub_one, hasseDeriv_succ_idField, normalOrder_zero_left]
+      split_ifs <;> [omega; rfl]
+
+/-- Right `n`-th products with the identity field vanish for `n ≥ 0` and yield the `(-n - 1)`-st
+Hasse derivative for `n < 0`. -/
+theorem nthProduct_idField_right (n : ℤ) (A : VertexOperator R V) :
+    nthProduct n A (idField : VertexOperator R V) =
+      if 0 ≤ n then 0 else hasseDeriv (-n - 1).toNat A := by
+  rcases le_or_gt 0 n with hn | hn
+  · simp [nthProduct_of_nonneg hn, hn]
+  · simp [nthProduct_of_neg hn, not_le.mpr hn]
+
+/-- **Mode iterate formula** (`m = 0` case of the Borcherds identity) for any two vertex operators
+over a commutative ring, in `finsum` form:
+`((A_{(n)} B)_{(r)}) v = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (A₍ₙ₋ᵢ₎ (B₍ᵣ₊ᵢ₎ v) - (-1)ⁿ B₍ₙ₊ᵣ₋ᵢ₎ (A₍ᵢ₎ v))`
+for all `A, B : VertexOperator R V`, `n, r : ℤ`, and `v : V`. -/
+theorem ncoeff_nthProduct_apply (A B : VertexOperator R V) (n r : ℤ) (v : V) :
+    ((nthProduct n A B)[[r]]) v =
+      ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
+        ((A[[n - i]]) ((B[[r + i]]) v) -
+          (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[(i : ℤ)]]) v)) := by
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  obtain ⟨Q, hQ⟩ := A.exists_forall_ncoeff_apply_eq_zero v
+  let K := max (P + r.natAbs) Q
+  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by
+      simp [hP (r + i) (by omega), hQ i (by omega)],
+    ncoeff_nthProduct_apply_eq_sum n A B r v (K := K) (fun i hi ↦ hQ i (by omega))
+      (fun i hi ↦ hP (r + i) (by omega))]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [mul_smul, Units.smul_def]
 
 end VertexOperator

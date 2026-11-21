@@ -135,6 +135,12 @@ theorem ncoeff_field_translation (a : V) (n : ℤ) :
     (A.field (A.translation a))[[n]] = (-n) • (A.field a)[[n - 1]] := by
   rw [A.field_translation, ncoeff_derivative]
 
+/-- Iterated translation intertwines with iterated formal differentiation of fields. -/
+theorem field_pow_translation (a : V) (k : ℕ) :
+    A.field ((A.translation ^ k) a) = (derivative^[k]) (A.field a) := by
+  rw [FunLike.coe_pow_eq_iterate]
+  exact Function.Semiconj.iterate_right A.field_translation k a
+
 /-- Translation is a derivation of each mode: `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`. -/
 theorem translation_ncoeff_apply (a b : V) (n : ℤ) :
     A.translation (((A.field a)[[n]]) b) =
@@ -171,6 +177,13 @@ theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :
   rw [← A.factorial_smul_ncoeff_field_apply_vacuum, ← Nat.cast_smul_eq_nsmul ℚ,
     inv_smul_smul₀ (by exact_mod_cast k.factorial_ne_zero)]
 
+/-- The `ℚ`-algebra form of `FormalVertexAxioms.factorial_smul_ncoeff_field_apply_vacuum`
+(cf. `ncoeff_field_apply_vacuum_neg`), `a₍₋ₖ₋₁₎|0⟩ = (k!)⁻¹ • Tᵏ a`. -/
+theorem ncoeff_field_neg_succ_apply_vacuum [Algebra ℚ R] (a : V) (k : ℕ) :
+    ((A.field a)[[-(k : ℤ) - 1]]) A.vacuum =
+      algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (A.translation ^ k) a := by
+  simpa using ncoeff_neg_succ_apply_of_lie A.translation_vacuum (A.lie_translation_ncoeff a) k
+
 /-! ### Extensionality -/
 
 /-- A formal vertex algebra is determined by its state–field map: the vacuum is the unique state
@@ -206,6 +219,15 @@ theorem ncoeff_add_apply_eq_sum {B : VertexOperator R V} {a : V} {N : ℕ}
   · have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
     rw [A.ncoeff_field_apply_vacuum_of_nonneg a _ (by omega), map_zero, smul_zero, smul_zero]
 
+/-- If `Y(a, z)` and `Y(b, z)` are local of order `N`, then `a₍ᵢ₎ b = 0` for all `i ≥ N`. -/
+theorem ncoeff_field_apply_eq_zero_of_isLocalOfOrder {a b : V} {N : ℕ}
+    (h : (A.field a).IsLocalOfOrder (A.field b) N) {i : ℕ} (hi : N ≤ i) :
+    ((A.field a)[[(i : ℤ)]]) b = 0 := by
+  have hsum := A.ncoeff_add_apply_eq_sum (h.mono hi) 0
+  rw [zero_add] at hsum
+  rw [hsum]
+  exact sum_eq_zero fun ij _ ↦ by simp [A.ncoeff_field_apply_vacuum_of_nonneg]
+
 /-- **Goddard's uniqueness theorem.** Two fields that are local to every field `Y(a,z)` of a
 formal vertex algebra and agree on the vacuum are equal. -/
 theorem eq_of_ncoeff_apply_vacuum_eq {B C : VertexOperator R V}
@@ -226,6 +248,16 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
+
+/-- When `V` has unique division by positive integers, a translation-covariant field `B` local to
+every `Y(c, z)` is uniquely determined by `b = B₍₋₁₎|0⟩` as `B = Y(b, z)`. -/
+theorem eq_field_of_lie_translation_ncoeff [HasUniqueDiv V] {B : VertexOperator R V} {b : V}
+    (hloc : ∀ c : V, ∃ N : ℕ, B.IsLocalOfOrder (A.field c) N)
+    (hcov : ∀ m : ℤ, ⁅A.translation, B[[m]]⁆ = (derivative B)[[m]])
+    (hb : (B[[-1]]) A.vacuum = b) : B = A.field b :=
+  A.eq_field_of_ncoeff_apply_vacuum_eq hloc
+    (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hcov (A.lie_translation_ncoeff b)
+      (hb.trans (A.ncoeff_neg_one_field_apply_vacuum b).symm))
 
 end FormalVertexAxioms
 

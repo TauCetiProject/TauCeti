@@ -30,6 +30,8 @@ natural number `n`.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `TauCeti.eq_inv_smul_of_nsmul`: over a `ℚ`-algebra `R`, `n • x = y` with `n ≠ 0` implies
+  `x = algebraMap ℚ R (n : ℚ)⁻¹ • y`.
 -/
 
 public section
@@ -46,5 +48,13 @@ number `n`. -/
 theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n : ℕ} (hn : n ≠ 0)
     (x : A) : (n : ℚ)⁻¹ • ((n : A) * x) = x := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
+
+/-- Over a `ℚ`-algebra `R`, `n • x = y` with `n ≠ 0` implies `x = (n : ℚ)⁻¹ • y` via
+`algebraMap ℚ R`. -/
+theorem eq_inv_smul_of_nsmul {R M : Type*} [Semiring R] [Algebra ℚ R] [AddCommMonoid M]
+    [Module R M] {n : ℕ} (hn : n ≠ 0) {x y : M} (h : n • x = y) :
+    x = algebraMap ℚ R (n : ℚ)⁻¹ • y := by
+  rw [← h, ← Nat.cast_smul_eq_nsmul R, ← map_natCast (algebraMap ℚ R), smul_smul, ← map_mul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), map_one, one_smul]
 
 end TauCeti

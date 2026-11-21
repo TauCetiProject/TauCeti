@@ -529,6 +529,9 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
   division semiring.
+* `TauCeti.Ring.sum_range_choose_add_one_smul` and
+  `TauCeti.Ring.sum_range_neg_one_pow_mul_choose_smul`: Pascal identities summed against a
+  sequence over `Finset.range (N + 1)`.
 
 ## References
 
@@ -684,6 +687,33 @@ theorem choose_neg_mem {G : Type*} [SetLike G R] [AddSubgroupClass G R]
     abel
   rw [hshift]
   exact choose_add_intCast_mem hr _
+
+/-- Pascal's identity summed over `Finset.range (N + 1)`:
+`∑_{i ≤ N} (m + 1 choose i) • u i` equals
+`∑_{i ≤ N} (m choose i) • u i + ∑_{i < N} (m choose i) • u (i + 1)`. -/
+theorem sum_range_choose_add_one_smul {M : Type*} [AddCommMonoid M] [Module R M]
+    (N : ℕ) (m : R) (u : ℕ → M) :
+    (∑ i ∈ range (N + 1), _root_.Ring.choose (m + 1) i • u i) =
+      (∑ i ∈ range (N + 1), _root_.Ring.choose m i • u i) +
+        ∑ i ∈ range N, _root_.Ring.choose m i • u (i + 1) := by
+  rw [sum_range_succ' _ N, sum_range_succ' _ N]
+  simp only [_root_.Ring.choose_zero_right, one_smul, _root_.Ring.choose_succ_succ, add_smul,
+    sum_add_distrib]; ac_rfl
+
+/-- Alternating-sign Pascal identity summed over `Finset.range (N + 1)`:
+`∑_{i ≤ N} (-1)ⁱ (n choose i) • u i =`
+`∑_{i < N} (-1)ⁱ (n choose i) • u (i + 1) + ∑_{i ≤ N} (-1)ⁱ (n + 1 choose i) • u i`. -/
+theorem sum_range_neg_one_pow_mul_choose_smul {M : Type*} [AddCommGroup M] [Module R M]
+    (N : ℕ) (n : R) (u : ℕ → M) :
+    (∑ i ∈ range (N + 1), ((-1 : R) ^ i * _root_.Ring.choose n i) • u i) =
+      (∑ i ∈ range N, ((-1 : R) ^ i * _root_.Ring.choose n i) • u (i + 1)) +
+        ∑ i ∈ range (N + 1), ((-1 : R) ^ i * _root_.Ring.choose (n + 1) i) • u i := by
+  rw [sum_range_succ' _ N, sum_range_succ' _ N]
+  simp only [pow_zero, _root_.Ring.choose_zero_right, one_mul, one_smul]
+  rw [← add_assoc, ← sum_add_distrib]; congr 1
+  exact sum_congr rfl fun i _ ↦ by
+    rw [← add_smul, _root_.Ring.choose_succ_succ, pow_succ, mul_add]
+    congr 1; simp only [mul_neg_one, neg_mul]; abel
 
 end Ring
 

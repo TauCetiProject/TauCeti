@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Vertex.Derivative
 public import TauCeti.Algebra.Vertex.FormalDistribution
+import TauCeti.Algebra.Module.Rat
 
 /-!
 # Hasse derivatives of vertex operators
@@ -190,5 +191,51 @@ theorem hasseDeriv (h : A.IsLocalOfOrder B N) (k l : ℕ) :
   ((h.hasseDeriv_left k).symm.hasseDeriv_left l).symm
 
 end IsLocalOfOrder
+
+/-- Every positive Hasse derivative of the identity field is zero. -/
+@[simp]
+theorem hasseDeriv_succ_idField (k : ℕ) :
+    hasseDeriv (k + 1) (idField : VertexOperator R V) = 0 := by
+  refine ext_ncoeff fun n ↦ ?_
+  rw [ncoeff_hasseDeriv, ncoeff_idField]
+  split_ifs with h
+  · have hn : n = k := by omega
+    subst hn
+    simp [Ring.choose_natCast]
+  · simp
+
+/-- Formal differentiation commutes with every Hasse derivative. -/
+theorem derivative_hasseDeriv_comm (k : ℕ) (A : VertexOperator R V) :
+    derivative (hasseDeriv k A) = hasseDeriv k (derivative A) := by
+  rw [derivative_hasseDeriv, hasseDeriv_derivative]
+
+/-- Over a `ℚ`-algebra, the `k`-th Hasse derivative is `(k!)⁻¹ • ∂_zᵏ A`. -/
+theorem hasseDeriv_eq_smul_iterate_derivative [Algebra ℚ R] (k : ℕ) (A : VertexOperator R V) :
+    hasseDeriv k A = algebraMap ℚ R (k.factorial : ℚ)⁻¹ • (derivative^[k]) A :=
+  TauCeti.eq_inv_smul_of_nsmul k.factorial_ne_zero
+    (iterate_derivative_eq_factorial_smul_hasseDeriv k A).symm
+
+section TranslationCovariance
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Hasse derivatives preserve translation covariance. -/
+theorem lie_ncoeff_hasseDeriv {T : Module.End R V} {A : VertexOperator R V}
+    (hA : ∀ m : ℤ, ⁅T, A[[m]]⁆ = (derivative A)[[m]]) (k : ℕ) (m : ℤ) :
+    ⁅T, (hasseDeriv k A)[[m]]⁆ = (derivative (hasseDeriv k A))[[m]] := by
+  rw [ncoeff_hasseDeriv, derivative_hasseDeriv_comm, ncoeff_hasseDeriv, lie_zsmul, lie_zsmul, hA]
+
+/-- If `vac` is annihilated by nonnegative modes of `A`, it is also annihilated by nonnegative
+modes of every Hasse derivative of `A`. -/
+theorem ncoeff_hasseDeriv_apply_eq_zero_of_nonneg {A : VertexOperator R V} {vac : V}
+    (hA : ∀ m : ℤ, 0 ≤ m → (A[[m]]) vac = 0) (k : ℕ) {m : ℤ} (hm : 0 ≤ m) :
+    ((hasseDeriv k A)[[m]]) vac = 0 := by
+  rw [ncoeff_hasseDeriv, LinearMap.smul_apply, LinearMap.smul_apply]
+  rcases lt_or_ge m k with hlt | hge
+  · lift m to ℕ using hm
+    simp [Ring.choose_natCast, Nat.choose_eq_zero_of_lt (Int.ofNat_lt.mp hlt)]
+  · rw [hA (m - k) (by omega), smul_zero, smul_zero]
+
+end TranslationCovariance
 
 end VertexOperator

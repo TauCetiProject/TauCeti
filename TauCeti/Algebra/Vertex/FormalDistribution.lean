@@ -24,6 +24,8 @@ abelian group, with no division or characteristic hypothesis.
 Every distribution killed by `(z-w)^N` has a unique expansion in these terms for `j < N`.
 The coefficient of the `j`th term is exactly `Res_z (z-w)^j c`. Applied to the commutator of
 native vertex operators, this gives the formal delta expansion of mutual locality.
+If a distribution killed by `(z-w)^N` also vanishes uniformly for large second index, it must be
+identically zero (`FormalDistribution.eq_zero_of_mulSub_pow_eq_zero`).
 No multiplication of arbitrary distributions or convergence of infinite sums is asserted.
 
 ## References
@@ -218,6 +220,21 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
         hindex]
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
+
+/-- If a two-variable formal distribution `c` is annihilated by `(z - w)ᴺ` and vanishes for all
+sufficiently large indices in the second variable (uniformly in the first), then `c = 0`. -/
+theorem eq_zero_of_mulSub_pow_eq_zero {c : FormalDistribution M} {N : ℕ}
+    (hc : (mulSub ^ N) c = 0) (htrunc : ∃ K : ℤ, ∀ m n : ℤ, K ≤ n → c m n = 0) : c = 0 := by
+  induction N generalizing c with
+  | zero => simpa using hc
+  | succ N ih =>
+    obtain ⟨K, hK⟩ := htrunc
+    have h0 := eq_deltaTerm_zero_of_mulSub_eq_zero <|
+      ih (by simpa [pow_succ, AddMonoid.End.coe_mul] using hc)
+        ⟨K, fun m n hn ↦ by rw [mulSub_apply, hK (m + 1) n hn, hK m (n + 1) (by omega), sub_self]⟩
+    have hres : residue c = 0 := funext fun s ↦ by
+      simpa [hK (s - K) K le_rfl] using (congrFun (congrFun h0 (s - K)) K).symm
+    rw [h0, hres, map_zero]
 
 /-- Applying an additive group homomorphism coefficientwise commutes with `(z - w)^N`. -/
 theorem mulSub_pow_comp {M' : Type*} [AddCommGroup M'] (φ : M →+ M')
