@@ -153,6 +153,7 @@ theorem gaugeFixedOperator_apply_three (x y : ℂ → EuclideanSpace ℝ (Fin 4)
   rfl
 
 /-- The last three rows of `L_x` are the rows of the linearized equation `d₁`. -/
+@[simp]
 theorem gaugeFixedOperator_apply_succ (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (i : Fin 3) :
     gaugeFixedOperator x y z i.succ = linearizedEquation x y z i := by
   fin_cases i <;> rfl
@@ -163,8 +164,8 @@ theorem gaugeFixedOperator_eq_iff (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z 
     (w : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedOperator x y z = w ↔
       gaugeAdjoint x y z = w 0 ∧ ∀ i : Fin 3, linearizedEquation x y z i = w i.succ := by
-  refine ⟨fun h ↦ h ▸ ⟨rfl, fun i ↦ (gaugeFixedOperator_apply_succ x y z i).symm⟩,
-    fun ⟨h0, h⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ h ▸ ⟨(gaugeFixedOperator_apply_zero x y z).symm,
+    fun i ↦ (gaugeFixedOperator_apply_succ x y z i).symm⟩, fun ⟨h0, h⟩ ↦ ?_⟩
   ext j
   refine Fin.cases ?_ (fun i ↦ ?_) j
   · rw [gaugeFixedOperator_apply_zero, h0]
