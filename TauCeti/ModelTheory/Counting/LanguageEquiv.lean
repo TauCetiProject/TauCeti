@@ -126,6 +126,7 @@ theorem lift_countableModelCount_onBoundedFormulaInf (φ : L.SentenceInf ι) :
 /-- **Perfect sets along a language equivalence.** The translation of a sentence along a language
 equivalence of relational languages has perfectly many countable models exactly when the sentence
 does. -/
+@[simp]
 theorem hasPerfectlyManyCountableModels_onBoundedFormulaInf_iff (φ : L.SentenceInf ι) :
     HasPerfectlyManyCountableModels (e.toLHom.onBoundedFormulaInf φ) ↔
       HasPerfectlyManyCountableModels φ := by
@@ -147,9 +148,7 @@ together. -/
 theorem countableModelCount_onBoundedFormulaInf_eq_aleph_one_iff (φ : L.SentenceInf ι) :
     countableModelCount (e.toLHom.onBoundedFormulaInf φ) = ℵ₁ ↔
       countableModelCount φ = ℵ₁ := by
-  have h₁ : lift.{v} (ℵ₁ : Cardinal.{v'}) = ℵ₁ := by simp [lift_aleph]
-  have h₂ : lift.{v'} (ℵ₁ : Cardinal.{v}) = ℵ₁ := by simp [lift_aleph]
-  rw [← lift_inj.{v', v}, h₁, ← lift_inj.{v, v'}, h₂,
+  rw [← lift_eq_aleph_one.{v', v}, ← lift_eq_aleph_one.{v, v'},
     e.lift_countableModelCount_onBoundedFormulaInf φ]
 
 /-- A sentence and its translation along a language equivalence have continuum many countable

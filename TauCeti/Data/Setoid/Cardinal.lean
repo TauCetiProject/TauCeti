@@ -7,14 +7,15 @@ module
 
 public import Mathlib.Order.Setoid.Basic
 public import Mathlib.SetTheory.Cardinal.Basic
+import TauCeti.Data.Setoid.Basic
 
 /-!
 # Cardinality of the classes met by a set
 
-For a setoid `s` on `α` and a set `K ⊆ α`, Mathlib's `Setoid.comapQuotientEquiv` puts the quotient
-of `K` by the restricted setoid `s.comap (↑)` in bijection with the image `Quotient.mk s '' K` of
-`K` in `Quotient s`. Consequently the two have the same cardinality, and the number of restricted
-classes is monotone in `K`.
+For a setoid `s` on `α` and a set `K ⊆ α`, `Setoid.comapValQuotientEquiv` puts the quotient of `K`
+by the restricted setoid `s.comap (↑)` in bijection with the image `Quotient.mk s '' K` of `K` in
+`Quotient s`. Consequently the two have the same cardinality, and the number of restricted classes
+is monotone in `K`.
 
 ## Main results
 
@@ -34,8 +35,7 @@ namespace Setoid
 `Quotient s`. -/
 theorem mk_quotient_comap_val_eq_mk_image {α : Type*} (s : Setoid α) (K : Set α) :
     #(Quotient (s.comap ((↑) : K → α))) = #(Quotient.mk s '' K) :=
-  (Cardinal.mk_congr (comapQuotientEquiv _ _)).trans
-    (by rw [Set.range_comp, Subtype.range_coe])
+  Cardinal.mk_congr (comapValQuotientEquiv s K)
 
 /-- If `K ⊆ K'`, then the restriction of `s` to `K` has at most as many classes as its restriction
 to `K'`. -/

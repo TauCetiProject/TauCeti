@@ -42,7 +42,7 @@ homeomorphism `e.onConfiguration` carries `modelsOfTheory T` onto
   `modelsOfTheory_singleton`, `modelsOfTheory_insert`, `modelsOfTheory_union`,
   `modelsOfTheory_iUnion`, and `modelsOfTheory_anti`: set-theoretic laws for model classes of
   theories.
-* `TauCeti.RelationalConfiguration.modelsOfTheory_eq_modelsOf_conjunction`: every first-order
+* `TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`: every first-order
   theory whose `L_{ω₁ω}` image is countable (in particular every theory in a countable relational
   vocabulary, by `Set.to_countable`) has the same model class as a single `L_{ω₁ω}` sentence.
 * `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory_of_countable`,
@@ -133,12 +133,13 @@ theorem modelsOfTheory_anti : Antitone (modelsOfTheory (L := L) (V := V)) :=
 
 /-- **A countable first-order theory has the model class of one `L_{ω₁ω}` sentence**: the coded
 conjunction of the images of its sentences under `BoundedFormula.toOmega`. -/
-theorem modelsOfTheory_eq_modelsOf_conjunction {T : L.Theory}
+@[simp]
+theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
     (hT : (BoundedFormula.toOmega '' T).Countable) :
-    modelsOfTheory (V := V) T =
-      modelsOf (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT) := by
+    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT) =
+      modelsOfTheory T := by
   ext c
-  rw [mem_modelsOfTheory, mem_modelsOf,
+  rw [mem_modelsOf, mem_modelsOfTheory,
     @Theoryω.realize_conjunction_iff L _ V c.toStructure hT,
     @Theoryω.model_image_toOmega_iff L V c.toStructure T]
 
