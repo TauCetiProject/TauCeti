@@ -71,11 +71,15 @@ theorem memLpLoc_norm_rpow (hp : p ≠ ∞) (hs : -2 < s * p.toReal) :
   memLpLoc_iff.2 fun K _ hc => hc.isBounded.memLp_norm_rpow_restrict hp
     (by rw [Complex.finrank_real_complex]; push_cast; linarith)
 
-/-- For `p < ∞`, if `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood
-of the origin. -/
-theorem not_memLpLoc_norm_rpow (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
+/-- If `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood of the origin.
+The hypothesis forces `p < ∞`. -/
+theorem not_memLpLoc_norm_rpow (hU : U ∈ 𝓝 (0 : ℂ))
     (hs : s * p.toReal ≤ -2) : ¬ MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
+  have hp : p ≠ ∞ := by
+    rintro rfl
+    simp only [ENNReal.toReal_top, mul_zero] at hs
+    linarith
   obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   have h2 := (isBounded_closedBall.memLp_norm_rpow_restrict_iff (closedBall_mem_nhds 0 hr) hp).1
     (memLpLoc_iff.1 h _ hrU (isCompact_closedBall 0 r))
@@ -87,7 +91,7 @@ theorem not_memLpLoc_norm_rpow (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
 origin, `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on `U` exactly when `s p > -2`. -/
 theorem memLpLoc_norm_rpow_iff (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ)) :
     MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) ↔ -2 < s * p.toReal :=
-  ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hp hU hs h,
+  ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hU hs h,
     memLpLoc_norm_rpow hp⟩
 
 /-- For `1 ≤ p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is in `W^{1,p}_loc` on every subset of the
@@ -109,12 +113,20 @@ theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hs : -2 < (s -
   refine (norm_rpow_smul_innerSL_le s z).trans (le_of_eq ?_)
   rw [Real.norm_of_nonneg (by positivity)]
 
-/-- For `0 < p < ∞` and `s ≠ 0`, if `(s - 1) p ≤ -2` then `z ↦ ‖z‖ ^ s` is not in
-`W^{1,p}_loc` on any neighbourhood of the origin. -/
-theorem not_memWkpLoc_one_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
+/-- For `s ≠ 0`, if `(s - 1) p ≤ -2` then `z ↦ ‖z‖ ^ s` is not in `W^{1,p}_loc` on any
+neighbourhood of the origin. The hypothesis forces `0 < p < ∞`. -/
+theorem not_memWkpLoc_one_norm_rpow (hU : U ∈ 𝓝 (0 : ℂ))
     (hs0 : s ≠ 0) (hs : (s - 1) * p.toReal ≤ -2) :
     ¬ MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
+  have hp0 : p ≠ 0 := by
+    rintro rfl
+    simp only [ENNReal.toReal_zero, mul_zero] at hs
+    linarith
+  have hp : p ≠ ∞ := by
+    rintro rfl
+    simp only [ENNReal.toReal_top, mul_zero] at hs
+    linarith
   obtain ⟨-, D, hD, hDp⟩ := memWkpLoc_succ_iff.1 h
   obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (interior_mem_nhds.2 hU)
   -- The weak derivative `D` is `p`-integrable on a ball about the origin.
@@ -132,7 +144,7 @@ theorem memWkpLoc_one_norm_rpow_iff (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hU : U ∈
     (hs0 : s ≠ 0) :
     MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ s) ↔ -2 < (s - 1) * p.toReal :=
   ⟨fun h => not_le.1 fun hs =>
-      not_memWkpLoc_one_norm_rpow (zero_lt_one.trans_le hp1).ne' hp hU hs0 hs h,
+      not_memWkpLoc_one_norm_rpow hU hs0 hs h,
     memWkpLoc_one_norm_rpow hp1 hp⟩
 
 private lemma toReal_four_thirds : (4 / 3 : ENNReal).toReal = 4 / 3 := by
@@ -168,8 +180,7 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
     rw [← Real.rpow_add' (norm_nonneg z) (by norm_num)]
     norm_num
   rw [hmul]
-  exact not_memLpLoc_norm_rpow four_thirds_ne_top (ball_mem_nhds 0 one_pos)
-    (by rw [toReal_four_thirds]; norm_num)
+  exact not_memLpLoc_norm_rpow (ball_mem_nhds 0 one_pos) (by rw [toReal_four_thirds]; norm_num)
 
 /-- **Composition at order one fails at `p = 4 / 3`.** On the unit disc,
 `u = ‖z‖ ^ (-2 / 5)` is in `W^{1,4/3}_loc`, but `u ^ 2 = ‖z‖ ^ (-4 / 5)` is not: its derivative
@@ -183,7 +194,7 @@ theorem memWkpLoc_not_memWkpLoc_sq_norm_rpow :
     rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg z)]
     norm_num
   rw [hsq]
-  exact not_memWkpLoc_one_norm_rpow (by simp) four_thirds_ne_top (ball_mem_nhds 0 one_pos)
-    (by norm_num) (by rw [toReal_four_thirds]; norm_num)
+  exact not_memWkpLoc_one_norm_rpow (ball_mem_nhds 0 one_pos) (by norm_num)
+    (by rw [toReal_four_thirds]; norm_num)
 
 end TauCeti
