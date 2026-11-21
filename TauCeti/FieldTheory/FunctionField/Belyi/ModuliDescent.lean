@@ -10,7 +10,6 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
@@ -33,11 +32,12 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
 (`TauCeti.AlgebraicBelyiPair.pointedModel`) and deduces **Köck's Theorem 2.2**:
 
 1. Because `[K(t)(z) : K(t)] = [F : k(t)]` and `K(t)(z) · k = F`, the image of `k` is linearly
-   disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_fieldRange_of_finrank_ratFunc_eq`),
+   disjoint from `K(t)(z)` over `K` (`TauCeti.linearDisjoint_of_finrank_ratFunc_eq`),
    with no algebraicity assumption on `k / K`.
-2. Linearly disjoint base change (`TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`) therefore
-   descends both exactness of the constant field and unramifiedness outside `{0, 1, ∞}` from
-   `F / k(t)` to `K(t)(z) / K(t)`, making `K(t)(z)` a model of `X` over `K` of degree `d`.
+2. Degree-preserving base-change descent (`TauCeti.IsAlgebraicBelyiPair.of_finrank_eq`, via
+   `TauCeti.isAlgebraicBelyiPair_iff_of_linearDisjoint`) therefore descends both exactness of the
+   constant field and unramifiedness outside `{0, 1, ∞}` from `F / k(t)` to `K(t)(z) / K(t)`,
+   making `K(t)(z)` a model of `X` over `K` of degree `d`.
 3. When `k` is algebraically closed (such as `ℂ` or `AlgebraicClosure ℚ`), choosing any place `P`
    above `t = 2` yields a place of degree one whose pointed field of moduli has degree at most `d`
    over the field of moduli of `X`. Every isomorphism class `c` of Belyi pairs over `k` is thus
@@ -135,15 +135,13 @@ private noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K
       constantCompositum_def, IntermediateField.adjoin_toSubfield] at h
     rw [← IntermediateField.toSubfield_inj, IntermediateField.top_toSubfield,
       IntermediateField.adjoin_toSubfield, Set.union_comm, h]
-  have H : (IsScalarTower.toAlgHom K k X).fieldRange.LinearDisjoint E :=
-    linearDisjoint_fieldRange_of_finrank_ratFunc_eq hcomp hX_E hfinrank.symm
   have hembed : ∀ c : K,
       algebraMap E X (algebraMap K E c) = algebraMap k X (algebraMap K k c) := fun c ↦ by
     rw [← IsScalarTower.algebraMap_apply K E X, IsScalarTower.algebraMap_apply K k X]
   ⟨{ pair :=
       { carrier := E
         isAlgebraicBelyiPair :=
-          (isAlgebraicBelyiPair_iff_of_linearDisjoint H hcomp hX_E).mp X.isAlgebraicBelyiPair }
+          X.isAlgebraicBelyiPair.of_finrank_eq hcomp hX_E hfinrank }
      embedding := algebraMap E X
      embedding_algebraMap := hembed
      embedding_algebraMap_X := hX_E
@@ -195,7 +193,7 @@ noncomputable def pointedModel {P : Place k X} {q : ℚ}
     (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (hP : P.degree = 1) : Model (X.pointedFieldOfModuli P) X :=
-  (X.pointedModelAux hq₀ hq₁ hPa hP).1
+  (X.pointedModelAux hq₀ hq₁ hPa hP).val
 
 /-- The pointed model over `X.pointedFieldOfModuli P` has the same Belyi degree as `X`. -/
 @[simp]
@@ -205,7 +203,7 @@ theorem finrank_pointedModel_pair {P : Place k X} {q : ℚ}
     (hP : P.degree = 1) :
     Module.finrank (RatFunc (X.pointedFieldOfModuli P))
       (X.pointedModel hq₀ hq₁ hPa hP).pair = Module.finrank (RatFunc k) X :=
-  (X.pointedModelAux hq₀ hq₁ hPa hP).2
+  (X.pointedModelAux hq₀ hq₁ hPa hP).property
 
 /-- Every algebraic Belyi pair admitting a degree-one place over an unbranched rational point has a
 model over its pointed field of moduli at that place. -/
@@ -283,7 +281,7 @@ theorem exists_finrank_le_degree_and_isDefinedOver [IsAlgClosed k] (c : IsoClass
       c.IsDefinedOver K := by
   obtain ⟨K₀, hle, hpos, hdeg, hc⟩ := c.exists_relfinrank_le_degree_and_isDefinedOver
   let K : IntermediateField c.fieldOfModuli k :=
-    { K₀.toSubfield with algebraMap_mem' := fun m ↦ hle m.2 }
+    { K₀.toSubfield with algebraMap_mem' := fun m ↦ hle m.property }
   have hfinrank : Module.finrank c.fieldOfModuli K = c.fieldOfModuli.relfinrank K₀ :=
     (IntermediateField.relfinrank_eq_finrank_of_le hle).symm
   have : FiniteDimensional c.fieldOfModuli K :=

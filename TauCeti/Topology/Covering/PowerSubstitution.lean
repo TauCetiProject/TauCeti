@@ -103,7 +103,7 @@ theorem eventually_comp_pow_eq_pow_mul {V : Set E} {G w : E × ℂ → ℂ} {m :
 def powerSubstitution (hn : n ≠ 0) (hR : R' ^ n ≤ R) :
     C(U × ↥(ball (0 : ℂ) R' \ {0}), U × ↥(ball (0 : ℂ) R \ {0})) :=
   (ContinuousMap.id U).prodMap
-    ⟨fun s => ⟨(s : ℂ) ^ n, mapsTo_pow_ball_zero_diff_singleton hn hR s.2⟩,
+    ⟨fun s => ⟨(s : ℂ) ^ n, mapsTo_pow_ball_zero_diff_singleton hn hR s.property⟩,
       Continuous.subtype_mk (by fun_prop) _⟩
 
 @[simp]
@@ -142,7 +142,7 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
     (he : p e = powerSubstitution U hn hR a) :
     ∃! F : C(U × ↥(ball (0 : ℂ) R' \ {0}), E), F a = e ∧ p ∘ F = powerSubstitution U hn hR := by
   set q := powerSubstitution U hn hR
-  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
+  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.property.1)
   have := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
       (0 : ℂ) hR')
@@ -195,9 +195,9 @@ theorem _root_.IsCoveringMap.exists_continuousMap_lifts_powerSubstitution
     ∃ F : p ⁻¹' {powerSubstitution U hn hR a} → C(U × ↥(ball (0 : ℂ) R' \ {0}), E),
       (∀ e, F e a = e ∧ p ∘ F e = powerSubstitution U hn hR) ∧ ∀ b, Injective fun e ↦ F e b := by
   choose F hF using fun e : p ⁻¹' {powerSubstitution U hn hR a} ↦
-    (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.2).exists
+    (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.property).exists
   refine ⟨F, hF, fun b e e' h ↦ Subtype.ext ?_⟩
-  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
+  have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.property.1)
   have := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
       (0 : ℂ) hR')

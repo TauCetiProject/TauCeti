@@ -5,45 +5,48 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Discriminant
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
-public import TauCeti.FieldTheory.RatFunc.Transcendental
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
-import TauCeti.FieldTheory.IntermediateField.FieldRange
+import TauCeti.FieldTheory.RatFunc.Map
+import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
-# Degrees and linear disjointness in extensions of constants
+# Degrees and bases after a linearly disjoint extension of constants
 
 Let `F' = F · k'` in a common overfield, with `F` and `k'` linearly disjoint over `k`.
 For every intermediate field `C` of `F/k` with `F/C` algebraic, a `C`-basis of `F` remains a
-basis of `F'` over `k' · C`, with the same multiplication matrices, traces and discriminant.
-In particular, `[F' : k'(x)] = [F : k(x)]` and `[F' : RatFunc k'] = [F : RatFunc k]`.
+basis of `F'` over `k' · C`. In particular, `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`, and
+when `F` and `F'` carry compatible algebras over `RatFunc k` and `RatFunc k'`, linear independence
+over `RatFunc k`, bases of algebraic extensions `F / RatFunc k`, and the degree
+`[F : RatFunc k]` all persist over `RatFunc k'`.
 The extension `k'/k` can be transcendental; no perfectness or exact-constants hypothesis
 is needed once linear disjointness is supplied.
 
-Conversely, if an element `x ∈ F` stays transcendental over `k'`, then `k(x)` and `k'` are
-linearly disjoint over `k`, and equality of finite degrees `[F' : k'(x)] = [F : k(x)]` inside
-`F' = F · k'` forces `F` and `k'` themselves to be linearly disjoint over `k`. Under linear
-disjointness, exactness of the constant field also descends from `F'/k'` to `F/k`.
+Linear independence is transported by
+`IntermediateField.LinearDisjoint.linearIndependent_adjoin_algebraMap_comp`.
+Spanning uses algebraicity of `F/C`: adjoining the algebraic image of `F` to `k' · C`
+already gives the whole field compositum. A transcendental element also remains
+transcendental, so a linearly disjoint extension of constants of a one-variable function
+field is again a one-variable function field. Conversely, preserving the finite degree over
+a shared transcendental parameter `x` (or over `k(t)`) recovers linear disjointness.
 
-## Main results
+## Main definitions and results
 
-* `TauCeti.constantExtensionBasisOfLinearDisjoint`: transport a basis over `C`.
-* `TauCeti.coe_trace_algebraMap_of_linearDisjoint` and
-  `TauCeti.coe_discr_constantExtensionBasisOfLinearDisjoint`: transport trace and discriminant.
+* `TauCeti.constantExtensionBasisOfLinearDisjoint` and `TauCeti.constantExtensionRatFuncBasis`:
+  transport a basis over `C` or over `RatFunc k` along a linearly disjoint constant extension,
+  together with `TauCeti.constantExtensionRatFuncBasis_repr_algebraMap`.
+* `IntermediateField.LinearDisjoint.linearIndependent_ratFunc_algebraMap_comp`: linearly disjoint
+  extensions preserve linear independence over `RatFunc`.
 * `TauCeti.finrank_over_adjoin_simple_eq_of_linearDisjoint` and
   `TauCeti.finrank_ratFunc_eq_of_linearDisjoint`: preserve the degree over `k(x)` and `RatFunc k`.
-* `TauCeti.linearDisjoint_adjoin_simple_of_transcendental`: `k(x)` and `k'` are linearly disjoint
-  when the image of `x` is transcendental over `k'`.
-* `TauCeti.linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq` and
-  `TauCeti.linearDisjoint_fieldRange_of_finrank_ratFunc_eq`: degree preservation in `F · k'`
-  recovers linear disjointness of `F` and `k'`.
-* `TauCeti.isIntegrallyClosedIn_of_linearDisjoint`: exact constants descend along any linearly
-  disjoint extension.
 * `TauCeti.IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint`: preserve the
   one-variable function-field property under an arbitrary linearly disjoint extension of constants.
+* `TauCeti.linearDisjoint_of_transcendental_of_finrank_eq` and
+  `TauCeti.linearDisjoint_of_finrank_ratFunc_eq`: degree preservation over a shared parameter or
+  `k(t)` implies linear disjointness of constants.
 
 ## References
 
@@ -54,7 +57,7 @@ disjointness, exactness of the constant field also descends from `F'/k'` to `F/k
 
 public section
 
-open scoped IntermediateField IntermediateField.algebraAdjoinAdjoin nonZeroDivisors
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -84,212 +87,28 @@ theorem constantExtensionBasisOfLinearDisjoint_apply
     constantExtensionBasisOfLinearDisjoint H h C b i = algebraMap F F' (b i) :=
   Module.Basis.mk_apply _ _ i
 
-/-- Coordinates of an element of `F` in the transported basis are the images of its coordinates in
-the original basis. -/
-theorem coe_constantExtensionBasisOfLinearDisjoint_repr_algebraMap
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
-    [Algebra.IsAlgebraic C F] {ι : Type*} (b : Module.Basis ι C F) (y : F) (i : ι) :
-    ((constantExtensionBasisOfLinearDisjoint H h C b).repr (algebraMap F F' y) i : F') =
-      algebraMap C F' (b.repr y i) := by
-  set C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
-  set b' := constantExtensionBasisOfLinearDisjoint H h C b
-  let g : C →+* C' := (IsScalarTower.toAlgHom k C F').toRingHom.codRestrict C'.toSubring
-    fun c ↦ IntermediateField.subset_adjoin k' _ ⟨c, rfl⟩
-  let f : ι →₀ C' := (b.repr y).mapRange g g.map_zero
-  have hsum : b'.repr.symm f = algebraMap F F' y := by
-    rw [Module.Basis.repr_symm_apply, Finsupp.linearCombination_apply]
-    dsimp only [f]
-    rw [Finsupp.sum_mapRange_index (fun j ↦ zero_smul C' (b' j))]
-    conv_rhs => rw [← b.linearCombination_repr y, Finsupp.linearCombination_apply,
-      Finsupp.sum, map_sum]
-    rw [Finsupp.sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp [g, b', Algebra.smul_def, IsScalarTower.algebraMap_apply C F F']
-  simpa [f, g] using congrArg (fun q : ι →₀ C' ↦ (q i : F')) (b'.repr.symm_apply_eq.mp hsum).symm
-
-/-- Trace from `F'` to `k' · C` agrees with trace from `F` to `C` on elements of `F` in a linearly
-disjoint constant compositum. -/
-theorem coe_trace_algebraMap_of_linearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
-    [FiniteDimensional C F] (y : F) :
-    (Algebra.trace (IntermediateField.adjoin k' (Set.range (algebraMap C F'))) F'
-        (algebraMap F F' y) : F') =
-      algebraMap C F' (Algebra.trace C F y) := by
-  classical
-  let b := Module.finBasis C F
-  let b' := constantExtensionBasisOfLinearDisjoint H h C b
-  rw [Algebra.trace_eq_matrix_trace b', Algebra.trace_eq_matrix_trace b, Matrix.trace,
-    Matrix.trace, map_sum]
-  push_cast
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [Matrix.diag_apply, Algebra.leftMulMatrix_eq_repr_mul, b',
-    constantExtensionBasisOfLinearDisjoint_apply, ← map_mul,
-    coe_constantExtensionBasisOfLinearDisjoint_repr_algebraMap]
-
-/-- **The discriminant of the transported basis is the image of the original discriminant.** -/
-theorem coe_discr_constantExtensionBasisOfLinearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) (C : IntermediateField k F)
-    [Algebra.IsAlgebraic C F] {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι C F) :
-    (Algebra.discr (IntermediateField.adjoin k' (Set.range (algebraMap C F')))
-        (constantExtensionBasisOfLinearDisjoint H h C b) : F') =
-      algebraMap C F' (Algebra.discr C b) := by
-  have : FiniteDimensional C F := Module.Finite.of_basis b
-  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
-  let g : C →+* C' := (IsScalarTower.toAlgHom k C F').toRingHom.codRestrict C'.toSubring
-    fun c ↦ IntermediateField.subset_adjoin k' _ ⟨c, rfl⟩
-  have hmat : g.mapMatrix (Algebra.traceMatrix C b) =
-      Algebra.traceMatrix C' (constantExtensionBasisOfLinearDisjoint H h C b) := by
-    ext i j
-    simp [C', g, Algebra.traceMatrix_apply, ← map_mul,
-      coe_trace_algebraMap_of_linearDisjoint H h C]
-  rw [Algebra.discr_def, Algebra.discr_def, ← hmat, ← g.map_det]
-  simp only [g, RingHom.codRestrict_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    IsScalarTower.toAlgHom_apply]
-
-/-- An arbitrary linearly disjoint extension of constants preserves the finite degree over a
+/-- An arbitrary linearly disjoint extension of constants preserves the degree over a
 simple intermediate field: `[F · k' : k'(x)] = [F : k(x)]`. -/
 theorem finrank_over_adjoin_simple_eq_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤) (x : F) [FiniteDimensional k⟮x⟯ F] :
+    (h : constantCompositum F k' F' = ⊤) (x : F) :
     Module.finrank k'⟮algebraMap F F' x⟯ F' = Module.finrank k⟮x⟯ F := by
-  let b := Module.finBasis k⟮x⟯ F
-  have hdegree := Module.finrank_eq_card_basis (constantExtensionBasisOfLinearDisjoint H h k⟮x⟯ b)
-  rwa [IntermediateField.range_algebraMap_adjoin_simple,
-    IntermediateField.adjoin_adjoin_right, Fintype.card_fin] at hdegree
-
-/-- An arbitrary linearly disjoint extension of constants preserves the degree over the rational
-function field when `X` acts compatibly on both fields. -/
-theorem finrank_ratFunc_eq_of_linearDisjoint [Algebra (RatFunc k) F]
-    [IsScalarTower k (RatFunc k) F] [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
-    [FiniteDimensional (RatFunc k) F]
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F k' F' = ⊤)
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X) :
-    Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F := by
-  have := finiteDimensional_adjoin_algebraMap_X (k := k) (F := F)
-  rw [← finrank_adjoin_algebraMap_X (k := k'), ← hX,
-    finrank_over_adjoin_simple_eq_of_linearDisjoint H h, finrank_adjoin_algebraMap_X]
-
-/-- **A parameter that stays transcendental generates a linearly disjoint rational subfield.** If
-`y ∈ F'` is transcendental over `k'`, then `k(y)` and the image of `k'` in `F'` are linearly
-disjoint over `k`. -/
-theorem linearDisjoint_adjoin_simple_of_transcendental {y : F'}
-    (hy : Transcendental k' y) :
-    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint k⟮y⟯ := by
-  set A := (IsScalarTower.toAlgHom k k' F').fieldRange
-  let φ : Polynomial k →ₐ[k] F' := Polynomial.aeval y
-  have hφ : Function.Injective φ := transcendental_iff_injective.mp (hy.of_tower_top k)
-  -- First, `k[y]` and `k'` are linearly disjoint in `F'` via the monomial basis `y ^ n`.
-  have hdisj_poly : (Algebra.adjoin k {y}).LinearDisjoint A.toSubalgebra := by
-    rw [Algebra.adjoin_singleton_eq_range_aeval]
-    let e : Polynomial k ≃ₐ[k] φ.range := AlgEquiv.ofInjective φ hφ
-    refine Subalgebra.LinearDisjoint.of_basis_left φ.range A.toSubalgebra
-      ((Polynomial.basisMonomials k).map e.toLinearEquiv) ?_
-    have hpow : LinearIndependent A (fun n : ℕ ↦ y ^ n) :=
-      hy.linearIndependent_pow.map_of_surjective_injective
-        (IsScalarTower.toAlgHom k k' F').equivFieldRange (AddMonoidHom.id F')
-        (AlgEquiv.surjective _) (by simp)
-        (fun r m ↦ ((IsScalarTower.toAlgHom k k' F').equivFieldRange_smul
-          (fun _ ↦ (IsScalarTower.toAlgHom_apply k k' F' _).symm) r m).symm)
-    convert hpow using 1
-    ext n
-    simp [e, φ, AlgEquiv.ofInjective_apply]
-  -- Pass from `k[y]` to its fraction field `k(y)` on a `k`-basis of `A`.
-  let a := Module.Basis.ofVectorSpace k A
-  have hli : LinearIndependent k⟮y⟯ (A.val ∘ a) :=
-    (LinearIndependent.iff_fractionRing (Algebra.adjoin k {y}) k⟮y⟯).mp
-      (hdisj_poly.symm.linearIndependent_left_of_flat a.linearIndependent)
-  exact _root_.IntermediateField.LinearDisjoint.of_basis_left a hli
-
-/-- **Degree preservation recovers linear disjointness.** Let `F' = F · k'` with `x ∈ F` remaining
-transcendental over `k'`. If `[F' : k'(x)] = [F : k(x)]` (with `F / k(x)` finite), then `F` and the
-image of `k'` in `F'` are linearly disjoint over `k`. -/
-theorem linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq {x : F}
-    (hx' : Transcendental k' (algebraMap F F' x)) [FiniteDimensional k⟮x⟯ F]
-    (h : constantCompositum F k' F' = ⊤)
-    (hdeg : Module.finrank k'⟮algebraMap F F' x⟯ F' = Module.finrank k⟮x⟯ F) :
-    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
-  set y := algebraMap F F' x
-  have H₀ : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint k⟮x⟯ := by
-    have hrange : (IsScalarTower.toAlgHom k k⟮x⟯ F').range = k⟮y⟯.toSubalgebra := by
-      ext z
-      rw [AlgHom.mem_range, IntermediateField.mem_toSubalgebra, ← SetLike.mem_coe,
-        ← IntermediateField.range_algebraMap_adjoin_simple (K := k) (L := F) (M := F') x,
-        Set.mem_range]
-      simp only [IsScalarTower.toAlgHom_apply]
-    rw [_root_.IntermediateField.linearDisjoint_iff, hrange,
-      ← _root_.IntermediateField.linearDisjoint_iff']
-    exact linearDisjoint_adjoin_simple_of_transcendental (k := k) hx'
-  let γ := Module.Basis.ofVectorSpace k k⟮x⟯
-  let b := Module.finBasis k⟮x⟯ F
-  have hspan : ⊤ ≤ Submodule.span k'⟮y⟯ (Set.range (algebraMap F F' ∘ b)) := by
-    have hs := span_range_basis_of_isAlgebraic_constantCompositum (k := k) h k⟮x⟯ b
-    rw [IntermediateField.range_algebraMap_adjoin_simple,
-      _root_.IntermediateField.adjoin_adjoin_right] at hs
-    exact hs.ge
-  have hb' : LinearIndependent k'⟮y⟯ (algebraMap F F' ∘ b) :=
-    linearIndependent_of_top_le_span_of_card_eq_finrank hspan (by simp [hdeg])
-  let γ' : _ → k'⟮y⟯ := fun m ↦ ⟨algebraMap k⟮x⟯ F' (γ m), by
-    have hm : algebraMap k⟮x⟯ F' (γ m) ∈
-        _root_.IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F')) :=
-      _root_.IntermediateField.subset_adjoin k' _ ⟨γ m, rfl⟩
-    rwa [IntermediateField.range_algebraMap_adjoin_simple,
-      _root_.IntermediateField.adjoin_adjoin_right] at hm⟩
-  have hγ' : LinearIndependent k' γ' :=
-    (H₀.linearIndependent_algebraMap_comp γ.linearIndependent).of_comp k'⟮y⟯.val.toLinearMap
-  have hprod : LinearIndependent k' (algebraMap F F' ∘ (γ.smulTower b)) := by
-    convert linearIndependent_smul hγ' hb' using 1
-    ext p
-    simp [γ', Module.Basis.smulTower_apply, Algebra.smul_def,
-      IsScalarTower.algebraMap_apply k⟮x⟯ F F']
-  refine _root_.IntermediateField.LinearDisjoint.of_basis_right' (γ.smulTower b) ?_
-  exact hprod.map_of_surjective_injective (IsScalarTower.toAlgHom k k' F').equivFieldRange
-    (AddMonoidHom.id F') (AlgEquiv.surjective _) (by simp)
-    (fun r m ↦ ((IsScalarTower.toAlgHom k k' F').equivFieldRange_smul
-      (fun _ ↦ (IsScalarTower.toAlgHom_apply k k' F' _).symm) r m).symm)
-
-/-- **Degree preservation over `RatFunc` recovers linear disjointness.** Let `F' = F · k'` carry a
-`RatFunc k'`-algebra structure sending `X` to the image of `X ∈ RatFunc k`. If
-`[F' : RatFunc k'] = [F : RatFunc k]`, then `F` and the image of `k'` in `F'` are linearly disjoint
-over `k`. -/
-theorem linearDisjoint_fieldRange_of_finrank_ratFunc_eq [Algebra (RatFunc k) F]
-    [IsScalarTower k (RatFunc k) F] [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
-    [FiniteDimensional (RatFunc k) F] (h : constantCompositum F k' F' = ⊤)
-    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
-      algebraMap (RatFunc k') F' RatFunc.X)
-    (hdeg : Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F) :
-    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
-  set x := algebraMap (RatFunc k) F RatFunc.X
-  have hx' : Transcendental k' (algebraMap F F' x) := by
-    rw [hX]
-    exact (transcendental_algebraMap_iff (algebraMap (RatFunc k') F').injective).mpr
-      RatFunc.transcendental_X
-  have := finiteDimensional_adjoin_algebraMap_X (k := k) (F := F)
-  refine linearDisjoint_fieldRange_of_finrank_over_adjoin_simple_eq hx' h ?_
-  rw [hX, finrank_adjoin_algebraMap_X, finrank_adjoin_algebraMap_X, hdeg]
-
-/-- **Exact constants descend along any linearly disjoint extension.** If `F` and the image of `k'`
-in `F'` are linearly disjoint over `k` and `k'` is integrally closed in `F'`, then `k` is integrally
-closed in `F`. Neither finiteness nor generation of `F'` is required. -/
-theorem isIntegrallyClosedIn_of_linearDisjoint
-    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
-    (hex' : IsIntegrallyClosedIn k' F') : IsIntegrallyClosedIn k F := by
-  refine isIntegrallyClosedIn_iff.mpr ⟨(algebraMap k F).injective, fun {z} hz ↦ ?_⟩
-  have hz' : IsIntegral k' (algebraMap F F' z) :=
-    (hz.map (IsScalarTower.toAlgHom k F F')).tower_top
-  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp hz'
-  have hmem : algebraMap F F' z ∈
-      (IsScalarTower.toAlgHom k k' F').fieldRange.toSubalgebra ⊓
-        (IsScalarTower.toAlgHom k F F').range :=
-    ⟨⟨c, hc⟩, ⟨z, rfl⟩⟩
-  rw [Subalgebra.LinearDisjoint.inf_eq_bot H, Algebra.mem_bot] at hmem
-  obtain ⟨a, ha⟩ := hmem
-  refine ⟨a, (algebraMap F F').injective ?_⟩
-  rwa [← IsScalarTower.algebraMap_apply k F F']
+  let b := Module.Basis.ofVectorSpace k⟮x⟯ F
+  have hadj : IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F')) =
+      k'⟮algebraMap F F' x⟯ := by
+    rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
+  by_cases hfin : FiniteDimensional k⟮x⟯ F
+  · have : Algebra.IsAlgebraic k⟮x⟯ F := Algebra.IsAlgebraic.of_finite k⟮x⟯ F
+    have hdegree :=
+      Module.finrank_eq_nat_card_basis (constantExtensionBasisOfLinearDisjoint H h k⟮x⟯ b)
+    rwa [hadj, ← Module.finrank_eq_nat_card_basis b] at hdegree
+  · have hfin' : ¬ FiniteDimensional k'⟮algebraMap F F' x⟯ F' := fun hfin' ↦ hfin <| by
+      have : FiniteDimensional
+          (IntermediateField.adjoin k' (Set.range (algebraMap k⟮x⟯ F'))) F' := hadj ▸ hfin'
+      have : Finite (Module.Basis.ofVectorSpaceIndex k⟮x⟯ F) :=
+        (H.linearIndependent_adjoin_algebraMap_comp k⟮x⟯ b.linearIndependent).finite
+      exact Module.Finite.of_basis b
+    rw [Module.finrank_of_not_finite hfin', Module.finrank_of_not_finite hfin]
 
 /-- Extending constants linearly disjointly, even transcendently, preserves the one-variable
 function-field property. -/
@@ -301,5 +120,132 @@ theorem IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint
   have := hF.finiteDimensional_adjoin hx
   have := finiteDimensional_adjoin_simple_of_constantCompositum_eq_top (k := k) h x
   exact (H.transcendental_algebraMap hx).isFunctionField_adjoin.finite_extension
+
+/-- **Linear disjointness over a shared parameter from degree preservation.** -/
+theorem linearDisjoint_of_transcendental_of_finrank_eq (h : constantCompositum F k' F' = ⊤) {x : F}
+    (hx' : Transcendental k' (algebraMap F F' x)) [FiniteDimensional k⟮x⟯ F]
+    (hn : Module.finrank k'⟮algebraMap F F' x⟯ F' = Module.finrank k⟮x⟯ F) :
+    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
+  let b := Module.finBasis k⟮x⟯ F
+  have hspan := span_range_basis_of_isAlgebraic_constantCompositum h k⟮x⟯ b
+  rw [IntermediateField.range_algebraMap_adjoin_simple,
+    IntermediateField.adjoin_adjoin_right] at hspan
+  exact IntermediateField.linearDisjoint_of_transcendental_of_linearIndependent hx' b
+    (linearIndependent_of_top_le_span_of_card_eq_finrank hspan.ge (by rw [Fintype.card_fin, ← hn]))
+
+section RatFunc
+
+variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+  [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
+
+/-- **Degree preservation over `k(t)` implies linear disjointness of constants.** -/
+theorem linearDisjoint_of_finrank_ratFunc_eq [FiniteDimensional (RatFunc k) F]
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    (hn : Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F) :
+    (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F := by
+  have hx' : Transcendental k' (algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X)) :=
+    hX ▸ (transcendental_algebraMap_iff
+      (FaithfulSMul.algebraMap_injective (RatFunc k') F')).mpr RatFunc.transcendental_X
+  have : FiniteDimensional k⟮algebraMap (RatFunc k) F RatFunc.X⟯ F :=
+    Module.finite_of_finrank_pos
+      (finrank_adjoin_algebraMap_X (k := k) (F := F) ▸ Module.finrank_pos)
+  refine linearDisjoint_of_transcendental_of_finrank_eq h hx' ?_
+  rw [hX, finrank_adjoin_algebraMap_X, finrank_adjoin_algebraMap_X, hn]
+
+/-- **Linearly disjoint extensions preserve linear independence over `RatFunc`**: if the images of
+`k'` and `F` in `F'` are linearly disjoint over `k` and `RatFunc.X` acts compatibly on `F` and
+`F'`, then any `RatFunc k`-linearly independent family in `F` maps to a `RatFunc k'`-linearly
+independent family in `F'`. Neither algebraicity of `k' / k` nor algebraicity of `F / RatFunc k`
+is required. -/
+theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_ratFunc_algebraMap_comp
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    {ι : Type*} {c : ι → F} (hc : LinearIndependent (RatFunc k) c) :
+    LinearIndependent (RatFunc k') (algebraMap F F' ∘ c) := by
+  have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) :=
+    (transcendental_algebraMap_iff
+      (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
+  have hc₁ : LinearIndependent k⟮algebraMap (RatFunc k) F RatFunc.X⟯ c := by
+    simpa using hc.map_of_surjective_injectiveₛ (RatFunc.algEquivOfTranscendental _ hx) (.id F)
+      (RatFunc.algEquivOfTranscendental _ hx).surjective Function.injective_id
+      fun r m ↦ (algEquivOfTranscendental_algebraMap_X_smul r m).symm
+  simpa using (H.linearIndependent_adjoin_algebraMap_comp _ hc₁).map_of_surjective_injectiveₛ
+    (adjoinRangeAlgEquivRatFunc hX) (.id F') (adjoinRangeAlgEquivRatFunc hX).surjective
+    Function.injective_id fun r m ↦ (adjoinRangeAlgEquivRatFunc_smul hX r m).symm
+
+/-- **Transport of a `RatFunc k`-basis along a linearly disjoint extension of constants.**
+If `F' = F · k'` linearly disjointly over `k`, `F / RatFunc k` is algebraic, and the rational
+variable `X` acts compatibly on `F` and `F'`, any `RatFunc k`-basis of `F` maps to a
+`RatFunc k'`-basis of `F'`. The constant extension `k' / k` may be transcendental. -/
+noncomputable def constantExtensionRatFuncBasis
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    [Algebra.IsAlgebraic (RatFunc k) F] {ι : Type*} (b : Module.Basis ι (RatFunc k) F) :
+    Module.Basis ι (RatFunc k') F' :=
+  haveI := (isAlgebraic_adjoin_algebraMap_X_iff (k := k) (F := F)).mpr ‹_›
+  have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) :=
+    (transcendental_algebraMap_iff
+      (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
+  (constantExtensionBasisOfLinearDisjoint H h _
+    (b.mapCoeffs (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
+      (fun _ _ ↦ by simp))).mapCoeffs
+    (adjoinRangeAlgEquivRatFunc hX).toRingEquiv (fun _ _ ↦ by simp)
+
+/-- The transported `RatFunc k'`-basis consists of the images of the original basis vectors. -/
+@[simp]
+theorem constantExtensionRatFuncBasis_apply
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    [Algebra.IsAlgebraic (RatFunc k) F] {ι : Type*} (b : Module.Basis ι (RatFunc k) F) (i : ι) :
+    constantExtensionRatFuncBasis H h hX b i = algebraMap F F' (b i) := by
+  simp [constantExtensionRatFuncBasis]
+
+/-- **Linearly disjoint constant extensions preserve degree over the rational function field.**
+If `F' = F · k'` linearly disjointly over `k` and `X` acts compatibly on `F` and `F'`, then
+`[F' : RatFunc k'] = [F : RatFunc k]`. Unlike
+`TauCeti.finrank_ratFunc_eq_of_constantCompositum_eq_top`, the extension `k' / k` may be
+transcendental or inseparable once linear disjointness holds. -/
+theorem finrank_ratFunc_eq_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X) :
+    Module.finrank (RatFunc k') F' = Module.finrank (RatFunc k) F := by
+  rw [← finrank_adjoin_algebraMap_X (k := k') (F := F'), ← hX,
+    finrank_over_adjoin_simple_eq_of_linearDisjoint H h, finrank_adjoin_algebraMap_X]
+
+/-- The coordinates of an element of `F` in `constantExtensionRatFuncBasis` are the images of its
+coordinates over `RatFunc k`. -/
+@[simp]
+theorem constantExtensionRatFuncBasis_repr_algebraMap
+    [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (h : constantCompositum F k' F' = ⊤)
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X)
+    (hXF : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
+      algebraMap (RatFunc k') F' RatFunc.X)
+    [Algebra.IsAlgebraic (RatFunc k) F] {ι : Type*} (b : Module.Basis ι (RatFunc k) F)
+    (x : F) (i : ι) :
+    (constantExtensionRatFuncBasis H h hXF b).repr (algebraMap F F' x) i =
+      algebraMap (RatFunc k) (RatFunc k') (b.repr x i) := by
+  let φ : F →ₛₗ[algebraMap (RatFunc k) (RatFunc k')] F' :=
+    { toFun := algebraMap F F'
+      map_add' := map_add _
+      map_smul' := fun r y ↦ by
+        simp [Algebra.smul_def, ← algebraMap_ratFunc_apply_eq hX hXF] }
+  have hφ : φ = b.semilinearMap (algebraMap (RatFunc k) (RatFunc k'))
+      (constantExtensionRatFuncBasis H h hXF b) :=
+    b.ext fun j ↦ by simp [φ]
+  simpa [φ] using congrArg ((constantExtensionRatFuncBasis H h hXF b).repr · i)
+    (LinearMap.congr_fun hφ x)
+
+end RatFunc
 
 end TauCeti

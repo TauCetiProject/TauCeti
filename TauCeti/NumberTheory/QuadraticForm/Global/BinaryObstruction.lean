@@ -15,10 +15,10 @@ import Mathlib.NumberTheory.LSeries.PrimesInAP
 # Infinitely many anisotropic places of a binary quadratic form
 
 The binary form `⟨1, 1⟩` over `ℚ` is anisotropic at every finite place above a prime
-`p ≡ 3 (mod 4)`, and there are infinitely many such places. It is also anisotropic at
-all real places. Thus a binary complement in a four-dimensional quadratic form can have
-infinitely many anisotropic places; the finite-exceptional-set argument for dimensions
-at least five cannot be applied to it.
+`p ≢ 1 (mod 4)`, that is `p = 2` or `p ≡ 3 (mod 4)`, and there are infinitely many such
+places. It is also anisotropic at all real places. Thus a binary complement in a
+four-dimensional quadratic form can have infinitely many anisotropic places; the
+finite-exceptional-set argument for dimensions at least five cannot be applied to it.
 
 The finite-place calculation transfers the nonsquareness of `-1` in `ℚ_[p]` through
 Mathlib's isomorphism between `ℚ_[p]` and the canonical finite completion of `ℚ`.
@@ -48,21 +48,20 @@ theorem sumTwoSquares_apply (x : Fin 2 → ℚ) :
     sumTwoSquares x = x 0 ^ 2 + x 1 ^ 2 := by
   simp [sumTwoSquares, weightedSumSquares_apply, Fin.sum_univ_two, pow_two]
 
-/-- The form `⟨1, 1⟩` over `ℚ` is anisotropic at a finite place whose rational prime is
-congruent to `3` modulo `4`. -/
+/-- The form `⟨1, 1⟩` over `ℚ` is anisotropic at a finite place whose rational prime is not
+congruent to `1` modulo `4`. -/
 theorem anisotropic_sumTwoSquares_atFinitePlace
     (v : HeightOneSpectrum (𝓞 ℚ))
-    (hv : (Rat.HeightOneSpectrum.primesEquiv v).1 % 4 = 3) :
+    (hv : (Rat.HeightOneSpectrum.primesEquiv v).val % 4 ≠ 1) :
     (sumTwoSquares.atFinitePlace v).Anisotropic := by
   let p := Rat.HeightOneSpectrum.primesEquiv v
-  have hp : Fact p.1.Prime := ⟨p.2⟩
+  have hp : Fact p.val.Prime := ⟨p.property⟩
   have hneg : ¬ IsSquare (-1 : v.adicCompletion ℚ) := by
     intro hs
-    have hs' : IsSquare (-1 : ℚ_[p.1]) := by
+    have hs' : IsSquare (-1 : ℚ_[p.val]) := by
       have h := hs.map (Rat.HeightOneSpectrum.adicCompletion.padicEquiv v).toRingHom
       simpa using h
-    exact Padic.not_isSquare_neg_one_of_mod_four_eq_three p.1
-      (by simpa [p] using hv) hs'
+    exact Padic.not_isSquare_neg_one_of_mod_four_ne_one p.val hv hs'
   have he : (sumTwoSquares.atFinitePlace v).IsometryEquiv
       (weightedSumSquares (v.adicCompletion ℚ) fun i =>
         algebraMap ℚ (v.adicCompletion ℚ) (![(1 : ℚ), 1] i)) := by
@@ -70,7 +69,8 @@ theorem anisotropic_sumTwoSquares_atFinitePlace
     exact _root_.QuadraticForm.atFinitePlaceWeightedSumSquares v (![(1 : ℚ), 1])
   have hani : (weightedSumSquares (v.adicCompletion ℚ) fun i =>
       algebraMap ℚ (v.adicCompletion ℚ) (![(1 : ℚ), 1] i)).Anisotropic := by
-    convert TauCeti.anisotropic_binary_one_one_iff.mpr hneg using 1
+    convert (TauCeti.anisotropic_binary_iff (1 : v.adicCompletion ℚ) 1).mpr
+      (by rwa [mul_one]) using 1
     congr 1
     funext i
     fin_cases i <;> simp
@@ -88,47 +88,47 @@ theorem infinite_anisotropic_sumTwoSquares_atFinitePlace :
   let S := {n : ℕ | n.Prime ∧ n % 4 = 3}
   have hInfS : Infinite S := Set.infinite_coe_iff.mpr hNat
   let f : S → HeightOneSpectrum (𝓞 ℚ) := fun n =>
-    (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ⟨n.1, n.2.1⟩
+    (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ⟨n.val, n.property.1⟩
   have hinj : Function.Injective f := by
     intro a b h
     have h' := (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm.injective h
     apply Subtype.ext
-    exact congrArg (fun x : Nat.Primes => x.1) h'
+    exact congrArg (fun x : Nat.Primes => x.val) h'
   have hmaps : Set.MapsTo f Set.univ
       {v : HeightOneSpectrum (𝓞 ℚ) |
         (sumTwoSquares.atFinitePlace v).Anisotropic} := by
     intro n _
     apply anisotropic_sumTwoSquares_atFinitePlace
-    have heq : Rat.HeightOneSpectrum.primesEquiv (f n) = (⟨n.1, n.2.1⟩ : Nat.Primes) := by
+    have heq : Rat.HeightOneSpectrum.primesEquiv (f n) = (⟨n.val, n.property.1⟩ : Nat.Primes) := by
       exact Equiv.apply_symm_apply _ _
     rw [heq]
-    exact n.2.2
+    exact fun h ↦ by simp [n.property.2] at h
   exact Set.infinite_of_injOn_mapsTo hinj.injOn hmaps
     (Set.infinite_univ_iff.mpr hInfS)
 
 /-- The form `⟨1, 1⟩` remains anisotropic at every real place of `ℚ`. -/
 theorem anisotropic_sumTwoSquares_atRealPlace
     (w : {w : InfinitePlace ℚ // w.IsReal}) :
-    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+    let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
     (sumTwoSquares.atRealPlace w).Anisotropic := by
-  let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
+  let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.property).toAlgebra
   have hneg : ¬ IsSquare (-1 : ℝ) := by
     rintro ⟨z, hz⟩
     have hz0 : 0 ≤ z * z := mul_self_nonneg z
     linarith
   have he : (sumTwoSquares.atRealPlace w).IsometryEquiv
       (weightedSumSquares ℝ fun i =>
-        InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1] i)) := by
+        InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1] i)) := by
     unfold sumTwoSquares
     exact _root_.QuadraticForm.atRealPlaceWeightedSumSquares w (![(1 : ℚ), 1])
   have hcoeff : (fun i : Fin 2 =>
-      InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1] i)) = ![(1 : ℝ), 1] := by
+      InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1] i)) = ![(1 : ℝ), 1] := by
     funext i
     fin_cases i <;> simp
   have hani : (weightedSumSquares ℝ fun i =>
-      InfinitePlace.embedding_of_isReal w.2 (![(1 : ℚ), 1] i)).Anisotropic := by
+      InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1] i)).Anisotropic := by
     rw [hcoeff]
-    exact TauCeti.anisotropic_binary_one_one_iff.mpr hneg
+    exact (TauCeti.anisotropic_binary_iff 1 1).mpr (by rwa [mul_one])
   exact (QuadraticMap.Equivalent.anisotropic_iff ⟨he⟩).mpr hani
 
 end TauCeti.NumberField.QuadraticForm

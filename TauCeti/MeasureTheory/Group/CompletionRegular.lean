@@ -159,8 +159,8 @@ private theorem measurableSet_extendSimpleRange {Q G β : Type*} [mQ : Measurabl
 agrees with `s` along `π`. -/
 private theorem liftSimpleList_apply_eq {Q G β : Type*} [mQ : MeasurableSpace Q]
     [MeasurableSpace G] (π : G → Q) (s : SimpleFunc G β) (b₀ : β) {A B : ↥s.range → Set Q}
-    (hA : ∀ b, MeasurableSet (A b)) (hpreA : ∀ b, π ⁻¹' A b ⊆ s ⁻¹' {b.1})
-    (hpreB : ∀ b, s ⁻¹' {b.1} ⊆ π ⁻¹' B b) {x : G} (hx : ∀ b : ↥s.range, π x ∉ B b \ A b) :
+    (hA : ∀ b, MeasurableSet (A b)) (hpreA : ∀ b, π ⁻¹' A b ⊆ s ⁻¹' {b.val})
+    (hpreB : ∀ b, s ⁻¹' {b.val} ⊆ π ⁻¹' B b) {x : G} (hx : ∀ b : ↥s.range, π x ∉ B b \ A b) :
     liftSimpleList (extendSimpleRange s A) (measurableSet_extendSimpleRange s hA) b₀
       s.range.toList (π x) = s x := by
   have hmem : s x ∈ s.range := s.mem_range_self x
@@ -582,7 +582,7 @@ theorem AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null
   have hfam (i : idx) : NullMeasurableSet (fam i) μ := by
     cases i with
     | inl _ => exact NullMeasurableSet.of_null hN₀_null
-    | inr p => exact ((s p.1).measurableSet_fiber p.2.1).nullMeasurableSet
+    | inr p => exact ((s p.1).measurableSet_fiber p.2.val).nullMeasurableSet
   obtain ⟨K, hK_norm, hK_cp, hK_cl, hK_met, hK_sc, A', B', hA', hB', _, hpreA', hpreB',
     hnull⟩ := TauCeti.exists_compact_normal_subgroup_forall_quotient_borel_sandwich hfam
   let π : G → G ⧸ K := QuotientGroup.mk

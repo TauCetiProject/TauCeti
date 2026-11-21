@@ -135,7 +135,7 @@ private theorem ker_fontaineTheta_div_step {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣
       (x : WittVector p A♭) - teichmuller p ϖ * (y : WittVector p A♭) ∈ span {ξ} := by
   have hdvd1 : ϖ.untilt ∣ (p : A) := (dvd_pow_self _ hp.out.ne_zero).trans hdvd
   have hx0 : PreTilt.coeff 0 ((x : WittVector p A♭).coeff 0) = 0 := by
-    rw [← mk_fontaineTheta, RingHom.mem_ker.mp x.2, map_zero]
+    rw [← mk_fontaineTheta, RingHom.mem_ker.mp x.property, map_zero]
   have hp_dvd : (p : A) ∣ ((x : WittVector p A♭).coeff 0).untilt := by
     rw [← mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem, PreTilt.mk_untilt_eq_coeff_zero]
     exact hx0
@@ -147,7 +147,7 @@ private theorem ker_fontaineTheta_div_step {ϖ : A♭} {hdvd : ϖ.untilt ^ p ∣
   obtain ⟨u, y, huy⟩ := mem_span_pair.mp hx_mem
   have hy_ker : y ∈ RingHom.ker (fontaineTheta A p) := by
     rw [RingHom.mem_ker, ← mul_right_mem_nonZeroDivisors_eq_zero_iff hreg]
-    simpa [RingHom.mem_ker.mp x.2, RingHom.mem_ker.mp hker] using
+    simpa [RingHom.mem_ker.mp x.property, RingHom.mem_ker.mp hker] using
       congrArg (fontaineTheta A p) huy
   refine ⟨⟨y, hy_ker⟩, mem_span_singleton.mpr ⟨u, ?_⟩⟩
   linear_combination -huy
