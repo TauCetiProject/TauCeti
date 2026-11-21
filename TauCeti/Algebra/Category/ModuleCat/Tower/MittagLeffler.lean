@@ -137,31 +137,16 @@ in the image of every composite transition `Aₖ → Aₙ` is the `n`th componen
 theorem exists_limπ_eq_of_forall_mem_range (h : F.IsMittagLeffler) {n : ℕ} (x : F.obj (op n))
     (hx : ∀ k (hnk : n ≤ k), x ∈ LinearMap.range (F.transitionOfLE hnk)) :
     ∃ y : F.lim, F.limπ n y = x := by
-  choose m hnm hm using (F.isMittagLeffler_iff_ranges).1 h
-  -- `P k y`: the element `y ∈ Aₖ` lies in the image of every composite transition into `Aₖ`.
-  let P (k : ℕ) (y : F.obj (op k)) : Prop :=
-    ∀ j (hkj : k ≤ j), y ∈ LinearMap.range (F.transitionOfLE hkj)
-  -- Such an element lifts to one of `Aₖ₊₁`, through the stable image at `k + 1`.
-  have step (k : ℕ) (y : F.obj (op k)) (hy : P k y) :
-      ∃ y' : F.obj (op (k + 1)), P (k + 1) y' ∧ F.transition k y' = y := by
-    obtain ⟨w, rfl⟩ := hy (m (k + 1)) ((Nat.le_succ k).trans (hnm (k + 1)))
-    refine ⟨F.transitionOfLE (hnm (k + 1)) w, fun j hj ↦ ?_, by simp⟩
-    rcases le_total j (m (k + 1)) with hjm | hjm
-    · exact ⟨F.transitionOfLE hjm w, by simp⟩
-    · exact (hm (k + 1) j hjm).ge ⟨w, rfl⟩
-  choose f hfP hf using step
-  -- Lifts `g j ∈ A_{n + j}` of `x`, each chosen as a preimage of the previous one.
-  let g : ∀ j, {y : F.obj (op (n + j)) // P (n + j) y} := fun j ↦
-    Nat.rec (motive := fun j ↦ {y : F.obj (op (n + j)) // P (n + j) y}) ⟨x, hx⟩
-      (fun j y ↦ ⟨f (n + j) y.1 y.2, hfP _ _ _⟩) j
-  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)).1 = (g j).1 := hf _ _ _
-  have hgx (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j).1 = x := by
-    induction j with
-    | zero => exact LinearMap.congr_fun (F.transitionOfLE_refl n) x
-    | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
-  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k).1, F.mem_lim.2 fun k ↦ ?_⟩,
-    (F.limπ_apply n _).trans (hgx n)⟩
-  rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+  -- `x` lies in the eventual range of the underlying functor to types, and elements of the
+  -- eventual ranges lift along the transitions through the eventual ranges.
+  refine F.exists_limπ_eq_of_forall_exists_transition_eq
+    (fun k y ↦ y ∈ (F ⋙ forget (ModuleCat R)).eventualRange (op k)) (fun k y hy ↦ ?_)
+    ((F ⋙ forget (ModuleCat R)).mem_eventualRange_iff.2 fun k f ↦ ?_)
+  · obtain ⟨y', hy', rfl⟩ :=
+      h.subset_image_eventualRange (F ⋙ forget (ModuleCat R)) (homOfLE (Nat.le_succ k)).op hy
+    exact ⟨y', hy', by simp⟩
+  · rw [range_forget_map]
+    exact hx k.unop (leOfHom f.unop)
 
 /-- Let `Bₙ ⊆ Aₙ` be submodules such that, for every `n`, some composite transition `Aₘ → Aₙ` has
 image in `Bₙ`. Then every family `(bₙ)` agrees with the image of some family under the shift

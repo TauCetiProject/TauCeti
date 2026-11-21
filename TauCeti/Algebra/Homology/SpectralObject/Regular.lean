@@ -320,6 +320,20 @@ private noncomputable def hTower (n q b : ℤ) (hqb : q ≤ b) : TauCeti.ModuleT
     map_id _ := Subsingleton.elim _ _
     map_comp _ _ := Subsingleton.elim _ _ } ⋙ X.H n
 
+/-- The composite transitions of `hTower` are the maps `H^n(q - k' ≤ b) ⟶ H^n(q - k ≤ b)`. -/
+private lemma hTower_transitionOfLE (n q b : ℤ) (hqb : q ≤ b) {k k' : ℕ} (h : k ≤ k') :
+    (X.hTower n q b hqb).transitionOfLE h = ((X.H n).map (twoδ₁Toδ₀' ((q - k' : ℤ) : EInt)
+      ((q - k : ℤ) : EInt) (b : EInt) (WithBotTop.coe_le_coe.2 (by omega))
+      (WithBotTop.coe_le_coe.2 (by omega)))).hom :=
+  TauCeti.ModuleTower.transitionOfLE_def _ h
+
+/-- The transitions of `hTower` are the maps `H^n(q - (k + 1) ≤ b) ⟶ H^n(q - k ≤ b)`. -/
+private lemma hTower_transition (n q b : ℤ) (hqb : q ≤ b) (k : ℕ) :
+    (X.hTower n q b hqb).transition k = ((X.H n).map (twoδ₁Toδ₀' ((q - (k + 1 : ℕ) : ℤ) : EInt)
+      ((q - k : ℤ) : EInt) (b : EInt) (WithBotTop.coe_le_coe.2 (by omega))
+      (WithBotTop.coe_le_coe.2 (by omega)))).hom :=
+  TauCeti.ModuleTower.transition_def _ k
+
 /-- A sequence of elements `g k ∈ H^n(q - k ≤ b)` compatible under the maps between consecutive
 levels gives a family of elements of all the `H^n(s ≤ b)`, `s ≤ b`, compatible under all the maps
 `H^n(s ≤ b) ⟶ H^n(s' ≤ b)`, whose element at `q` is the image of `g 0`. -/
@@ -393,7 +407,7 @@ theorem exists_compatible_family_of_forall_mem_range {n q : ℤ}
     obtain ⟨j, rfl⟩ : ∃ j : ℕ, m = q - j := ⟨(q - m).toNat, by omega⟩
     refine ⟨j, by omega, fun k' hk' ↦ le_antisymm
       (TauCeti.ModuleTower.range_transitionOfLE_le _ _ hk') ?_⟩
-    simp only [TauCeti.ModuleTower.transitionOfLE_def]
+    rw [hTower_transitionOfLE, hTower_transitionOfLE]
     exact hm' (q - k') (by omega)
   -- The image of `z` at the level `q - 0` lifts to the limit of the tower.
   obtain ⟨y, hy⟩ := TauCeti.ModuleTower.exists_limπ_eq_of_forall_mem_range _ hML
@@ -402,14 +416,16 @@ theorem exists_compatible_family_of_forall_mem_range {n q : ℤ}
     fun k _ ↦ by
       obtain ⟨w, hw⟩ := hz (q - k) (by omega)
       refine ⟨w, ?_⟩
-      rw [TauCeti.ModuleTower.transitionOfLE_def, ← hw]
+      rw [hTower_transitionOfLE, ← hw]
       exact (X.H_map_map_apply _ _ _ w).symm
+  -- The terms `(X.hTower n q (q + 1) _).obj (op k)` of the tower are, by definition of
+  -- `hTower`, the modules `H^n(q - k ≤ q + 1)`, so the components of `y` form such a sequence.
   obtain ⟨x, hx, hxq⟩ := X.exists_compatible_family_of_compatible_seq (by omega)
     (fun k ↦ (y : (X.hTower n q (q + 1) (by omega)).Product) k) fun k ↦ by
       have := (TauCeti.ModuleTower.mem_lim _).1 y.2 k
-      rw [TauCeti.ModuleTower.transition_def] at this
-      exact this
+      rwa [hTower_transition] at this
   refine ⟨x, hx, ?_⟩
+  -- `hxq` is stated for the component `(y : Product) 0`, which is `limπ 0 y` by `limπ_apply`.
   rw [hxq, ← TauCeti.ModuleTower.limπ_apply, hy, X.H_map_map_apply _ _ (𝟙 _), X.H_map_self_apply]
 
 end CategoryTheory.Abelian.SpectralObject

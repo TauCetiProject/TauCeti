@@ -40,6 +40,8 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
 * `TauCeti.ModuleTower.limLift_bijective_of_le`: a compatible family of maps into the terms that
   are bijective from some index on induces a bijection onto `lim`.
+* `TauCeti.ModuleTower.exists_limπ_eq_of_forall_exists_transition_eq`: an element that lifts step
+  by step along the transitions, through elements with a given property, lifts to `lim A`.
 * `TauCeti.ModuleTower.limπ_surjective`: if the transitions are surjective, so are the
   projections `lim A → Aₙ`.
 * `TauCeti.ModuleTower.isSplitEpi_shift`: if the transitions are split epimorphisms, so is the
@@ -353,21 +355,32 @@ theorem subsingleton_limOne_of_surjective (h : ∀ n, Function.Surjective (F.tra
     Subsingleton F.limOne :=
   F.subsingleton_limOne_iff.2 (F.shift_surjective h)
 
+/-- **Lifting step by step to `lim A`.** Let `P k` be a property of elements of `Aₖ` such that
+every element of `Aₖ` with `P k` is the image under `φₖ` of an element of `Aₖ₊₁` with `P (k + 1)`.
+Then every element of `Aₙ` with `P n` is the `n`th component of an element of `lim A`. -/
+theorem exists_limπ_eq_of_forall_exists_transition_eq (P : ∀ k, F.obj (op k) → Prop)
+    (hP : ∀ k y, P k y → ∃ y', P (k + 1) y' ∧ F.transition k y' = y) {n : ℕ}
+    {x : F.obj (op n)} (hx : P n x) : ∃ y : F.lim, F.limπ n y = x := by
+  choose f hfP hf using hP
+  -- Lifts `g j ∈ A_{n + j}` of `x`, each chosen as a preimage of the previous one.
+  let g : ∀ j, {y : F.obj (op (n + j)) // P (n + j) y} := fun j ↦
+    Nat.rec (motive := fun j ↦ {y : F.obj (op (n + j)) // P (n + j) y}) ⟨x, hx⟩
+      (fun j y ↦ ⟨f (n + j) y.1 y.2, hfP _ _ _⟩) j
+  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)).1 = (g j).1 := hf _ _ _
+  have hgx (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j).1 = x := by
+    induction j with
+    | zero => exact LinearMap.congr_fun (F.transitionOfLE_refl n) x
+    | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
+  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k).1, F.mem_lim.2 fun k ↦ ?_⟩,
+    (F.limπ_apply n _).trans (hgx n)⟩
+  rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+
 /-- If every transition map of a tower is surjective, then so is every projection
 `lim A → Aₙ`: an element of `Aₙ` lifts step by step to a compatible family. -/
 theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : ℕ) :
-    Function.Surjective (F.limπ n) := by
-  intro y
-  -- Lifts `g j ∈ A_{n + j}` of `y`, each chosen as a preimage of the previous one.
-  let g : ∀ j, F.obj (op (n + j)) := fun j ↦
-    Nat.rec (motive := fun j ↦ F.obj (op (n + j))) y (fun j x ↦ (h (n + j) x).choose) j
-  have hg (j : ℕ) : F.transition (n + j) (g (j + 1)) = g j := (h (n + j) (g j)).choose_spec
-  have hgy (j : ℕ) : F.transitionOfLE (Nat.le_add_right n j) (g j) = y := by
-    induction j with
-    | zero => exact LinearMap.congr_fun (F.transitionOfLE_refl n) y
-    | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
-  refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k), F.mem_lim.2 fun k ↦ ?_⟩, hgy n⟩
-  rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+    Function.Surjective (F.limπ n) := fun _ ↦
+  F.exists_limπ_eq_of_forall_exists_transition_eq (fun _ _ ↦ True)
+    (fun k y _ ↦ (h k y).imp fun _ hy ↦ ⟨trivial, hy⟩) trivial
 
 /-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
 theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :
