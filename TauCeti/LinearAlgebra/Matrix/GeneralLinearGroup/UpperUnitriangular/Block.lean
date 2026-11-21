@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockDiagonal
 public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.LDU
 import Mathlib.Order.Interval.Finset.Basic
@@ -49,7 +50,6 @@ the character in the Levi subgroup is the diagonal copy of `GL_c`.
 * `TauCeti.BlockUpperUnitriangularGroup.submatrix_coe_mul_of_covBy`: adjacent blocks of a product
   are the sums of the adjacent blocks of the factors.
 * `TauCeti.BlockUpperUnitriangularGroup.adjacentTraceChar`: the character `ψ_(k,c)`.
-* `TauCeti.blockDiagonalGL`: the block-diagonal embedding of the Levi subgroup.
 * `TauCeti.BlockUpperUnitriangularGroup.blockDiagonalConj`: the conjugation action of the Levi
   subgroup on `U_(c^k)`.
 * `TauCeti.BlockUpperUnitriangularGroup.adjacentTraceChar_comp_blockDiagonalConj_eq_iff`: a Levi
@@ -145,43 +145,6 @@ end AddCommGroup
 end Matrix
 
 namespace TauCeti
-
-section BlockDiagonalGL
-
-variable (n ι R : Type*) [Fintype n] [DecidableEq n] [Fintype ι] [DecidableEq ι] [Semiring R]
-
-/-- The block-diagonal embedding `∏ᵢ GL n R → GL (n × ι) R` of the Levi subgroup. -/
-def blockDiagonalGL : (ι → GL n R) →* GL (n × ι) R :=
-  (Units.map
-      (blockDiagonalRingHom n ι R : (ι → Matrix n n R) →* Matrix (n × ι) (n × ι) R)).comp
-    MulEquiv.piUnits.symm.toMonoidHom
-
-variable {n ι R}
-
-@[simp]
-theorem coe_blockDiagonalGL (g : ι → GL n R) :
-    (blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) =
-      blockDiagonal fun i => (g i : Matrix n n R) :=
-  (rfl)
-
-/-- The inverse of a Levi element is block diagonal with the inverse blocks. The high `simp`
-priority makes this fire before `Matrix.coe_units_inv` turns the left side into the inverse of a
-block-diagonal matrix. -/
-@[simp high]
-theorem coe_blockDiagonalGL_inv (g : ι → GL n R) :
-    ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R) =
-      (blockDiagonal fun i => ((g i)⁻¹ : GL n R) : Matrix (n × ι) (n × ι) R) := by
-  rw [← map_inv, coe_blockDiagonalGL, Pi.inv_def]
-
-/-- The blocks of a conjugate by a Levi element. -/
-theorem submatrix_blockDiagonalGL_mul_mul_inv (g : ι → GL n R) (X : Matrix (n × ι) (n × ι) R)
-    (i j : ι) :
-    ((blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) * X *
-        ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R)).submatrix (·, i) (·, j) =
-      (g i : Matrix n n R) * X.submatrix (·, i) (·, j) * ((g j)⁻¹ : GL n R) := by
-  rw [coe_blockDiagonalGL, coe_blockDiagonalGL_inv, submatrix_blockDiagonal_mul_mul_blockDiagonal]
-
-end BlockDiagonalGL
 
 variable (n ι R : Type*) [Fintype n] [DecidableEq n] [Fintype ι] [LinearOrder ι] [CommRing R]
 
