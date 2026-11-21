@@ -165,7 +165,7 @@ blocked homology has one dimension for each grid state of bidegree `g`. -/
 theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : ℤ × ℤ) :
     Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) =
       (Finset.univ.filter fun x : GridState n => G.bidegree x = g).card := by
-  let e := G.1.fullyBlockedHomologyEquivChainOfLeTwo hn
+  let e := G.val.fullyBlockedHomologyEquivChainOfLeTwo hn
   have hmap : (G.bigradedFullyBlockedHomologyPiece g).map e.toLinearMap =
       LinearMap.range (G.bigradedChainInclusion F g) := by
     ext c
@@ -175,7 +175,7 @@ theorem finrank_bigradedFullyBlockedHomologyPiece_of_le_two (hn : n ≤ 2) (g : 
       rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]
       exact ⟨d, hd⟩
     · rintro ⟨d, rfl⟩
-      refine ⟨Submodule.Quotient.mk ⟨_, G.1.mem_fullyBlockedCycles_of_le_two hn
+      refine ⟨Submodule.Quotient.mk ⟨_, G.val.mem_fullyBlockedCycles_of_le_two hn
         (G.bigradedChainInclusion F g d)⟩,
         (mem_bigradedFullyBlockedHomologyPiece_iff_exists G).mpr ⟨_, ⟨d, rfl⟩, rfl⟩, ?_⟩
       rw [LinearEquiv.coe_coe, GridDiagram.fullyBlockedHomologyEquivChainOfLeTwo_apply_mk]

@@ -122,7 +122,7 @@ theorem nonempty_box_iff {C : ∀ i, Set (R i)} :
   classical
   constructor
   · rintro ⟨x, hx⟩
-    exact ⟨fun i ↦ ⟨x i, hx i⟩, x.2.mono fun i hi ↦ ⟨x i, hx i, hi⟩⟩
+    exact ⟨fun i ↦ ⟨x i, hx i⟩, x.property.mono fun i hi ↦ ⟨x i, hx i, hi⟩⟩
   · rintro ⟨hC, hCA⟩
     choose f hf using hC
     choose g hgC hgA using fun i (hi : (C i ∩ A i).Nonempty) ↦ hi
@@ -331,7 +331,7 @@ theorem isOpen_box_of_principal {S : Set ι} (hS : cofinite ≤ 𝓟 S) {C : ∀
   simp only [mem_box, mem_preimage, Set.mem_pi]
   refine ⟨fun hx i _ ↦ hx i, fun hx i ↦ ?_⟩
   by_cases hi : i ∈ {j | A j ⊆ C j} ∩ S
-  · exact hi.1 (x.2 hi.2)
+  · exact hi.1 (x.property hi.2)
   · exact hx i hi
 
 /-- A box `box C` in `Πʳ i, [R i, A i]` with open factors `C i` satisfying `A i ⊆ C i` cofinitely
@@ -426,7 +426,7 @@ theorem exists_open_box_subset_of_isOpen (hA : ∀ᶠ i in cofinite, IsOpen (A i
   classical
   obtain ⟨S, hS, hxS, hAS⟩ :
       ∃ S : Set ι, cofinite ≤ 𝓟 S ∧ (∀ i ∈ S, x i ∈ A i) ∧ ∀ i ∈ S, IsOpen (A i) :=
-    ⟨{i | x i ∈ A i ∧ IsOpen (A i)}, le_principal_iff.mpr (x.2.and hA),
+    ⟨{i | x i ∈ A i ∧ IsOpen (A i)}, le_principal_iff.mpr (x.property.and hA),
       fun _ hi ↦ hi.1, fun _ hi ↦ hi.2⟩
   obtain ⟨x', rfl⟩ := exists_inclusion_eq_of_eventually R A hS (eventually_principal.mpr hxS)
   have hV : IsOpen (inclusion R A hS ⁻¹' U) := hU.preimage (continuous_inclusion hS)

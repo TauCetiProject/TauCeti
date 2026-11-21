@@ -229,11 +229,11 @@ theorem spectralPVM_proj_eq_zero_iff {U : Set (spectrum ℂ a)} (hU : IsOpen U) 
 the eigenspace of `a` for `z`: `a P({z}) = z P({z})`. -/
 theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
     a * a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) =
+        ((measurableSet_singleton z).preimage measurable_subtypeVal) =
       z • a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) := by
+        ((measurableSet_singleton z).preimage measurable_subtypeVal) := by
   have hS := (measurableSet_singleton z).preimage
-    (measurable_subtype_coe (p := (· ∈ spectrum ℂ a)))
+    (measurable_subtypeVal (p := (· ∈ spectrum ℂ a)))
   -- On the preimage of `{z}` the coordinate function is the constant `z`.
   have hmul : BoundedBorelFunction.ofContinuousMap
       ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) * BoundedBorelFunction.indicator _ hS 1 =
@@ -252,9 +252,9 @@ theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
 exactly when `ξ` lies in the eigenspace of `a` for `z`. -/
 theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H) :
     a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) ξ = ξ ↔ a ξ = z • ξ := by
+        ((measurableSet_singleton z).preimage measurable_subtypeVal) ξ = ξ ↔ a ξ = z • ξ := by
   have hS := (measurableSet_singleton z).preimage
-    (measurable_subtype_coe (p := (· ∈ spectrum ℂ a)))
+    (measurable_subtypeVal (p := (· ∈ spectrum ℂ a)))
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa [h] using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ)
   -- Conversely, `(w - z)(a) ξ = 0`, so the diagonal measure of `ξ` lives on the point `z`.
@@ -275,7 +275,7 @@ theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H)
 vanishes exactly when `z` is not an eigenvalue of the normal operator `a`. -/
 theorem spectralPVM_proj_preimage_singleton_eq_zero_iff (z : ℂ) :
     a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) = 0 ↔
+        ((measurableSet_singleton z).preimage measurable_subtypeVal) = 0 ↔
       ∀ x, a x = z • x → x = 0 := by
   refine ⟨fun h x hx => ?_, fun hz => ?_⟩
   · rw [← (a.spectralPVM_proj_preimage_singleton_apply_eq_self_iff z x).mpr hx, h,

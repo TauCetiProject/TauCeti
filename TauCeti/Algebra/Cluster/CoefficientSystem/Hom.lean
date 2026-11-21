@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Map
 public import TauCeti.Algebra.Cluster.CoefficientSystem.Basic
 
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
@@ -166,6 +167,17 @@ protected theorem IsNormalized.map {𝕂 𝕂' R : Type*} [CommMonoidWithZero �
     {c' : CoefficientSystem 𝕂' R} {H : ExchangePolynomial 𝕂} (h : c.IsNormalized H)
     (f : c.Hom c') : c'.IsNormalized (H.map f.toMonoidWithZeroHom) := by
   rw [c'.isNormalized_iff, f.normalizer_map, (c.isNormalized_iff).mp h, map_one]
+
+/-- A homomorphism of coefficient systems carries the normalizer subgroup into the normalizer
+subgroup. -/
+theorem Hom.map_normalizerSubgroup_le {𝕂 𝕂' R : Type*} [CommMonoidWithZero 𝕂]
+    [CommMonoidWithZero 𝕂'] [CommSemiring R] {c : CoefficientSystem 𝕂 R}
+    {c' : CoefficientSystem 𝕂' R} (f : c.Hom c') :
+    c.normalizerSubgroup.map (Units.map f.toMonoidWithZeroHom.toMonoidHom) ≤
+      c'.normalizerSubgroup := by
+  rintro _ ⟨_, hu, rfl⟩
+  obtain ⟨H, rfl⟩ := c.mem_normalizerSubgroup_iff.mp hu
+  exact c'.mem_normalizerSubgroup_iff.mpr ⟨H.map f.toMonoidWithZeroHom, f.normalizer_map H⟩
 
 end CoefficientSystem
 

@@ -128,19 +128,20 @@ lemma isClopen_of_isCompact_of_isOpen_generateFrom (htU : t = generateFrom U)
     (isTopologicalBasis_sInter_of_patch htU) V hV hVo
   rw [hT, Set.sUnion_image]
   exact @isClopen_biUnion_finset X t' _ T Subtype.val fun b _ ↦
-    isClopen_patch_of_mem_basis hU b.2
+    isClopen_patch_of_mem_basis hU b.property
 
 /-- The generated topology of a compact patch presentation is quasi-separated. -/
 lemma quasiSeparatedSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
     (hcomp : @CompactSpace X t') (hU : ∀ s ∈ U, @IsClopen X t' s) : QuasiSeparatedSpace X := by
   refine QuasiSeparatedSpace.of_isTopologicalBasis
-    (b := fun f : {f : Set (Set X) // f.Finite ∧ f ⊆ U} ↦ ⋂₀ f.1)
+    (b := fun f : {f : Set (Set X) // f.Finite ∧ f ⊆ U} ↦ ⋂₀ f.val)
     (by
       have h := isTopologicalBasis_sInter_of_patch htU
       rw [Set.image_eq_range] at h
       exact h) fun i j ↦ ?_
   rw [← Set.sInter_union]
-  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (Set.union_subset i.2.2 j.2.2)
+  exact isCompact_sInter_of_isClopen_generateFrom htU hcomp hU (Set.union_subset i.property.2
+      j.property.2)
 
 /-- The generated topology of a compact patch presentation is quasi-sober
 (Wedhorn, Lemma 3.29). -/

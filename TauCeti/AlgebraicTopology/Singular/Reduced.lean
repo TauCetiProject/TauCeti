@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
@@ -353,30 +354,12 @@ lemma isZero_reducedSingularHomologyFunctor_zero (X : TopCat.{w}) [PathConnected
     IsZero ((reducedSingularHomologyFunctor R 0).obj X) :=
   isZero_kernel_of_mono (X.singularHomology₀ε R)
 
-omit [HasKernels C] in
-/-- The zeroth singular homology of the empty space vanishes. -/
-lemma isZero_singularHomologyFunctor_zero_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
-    IsZero (((singularHomologyFunctor C 0).obj R).obj X) := by
-  have hπ : IsEmpty (ZerothHomotopy X) :=
-    ⟨fun c ↦ ZerothHomotopy.rec (motive := fun _ ↦ False) (fun x ↦ isEmptyElim x) c⟩
-  exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ fun c ↦ isEmptyElim c)).of_iso
-    (X.singularHomology₀Iso R)
-
-omit [HasKernels C] in
-/-- The singular homology of the empty space vanishes in every degree. -/
-lemma isZero_singularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
-    IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
-  cases n with
-  | zero => exact isZero_singularHomologyFunctor_zero_of_isEmpty R X
-  | succ n =>
-    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C (n + 1) R X n.succ_ne_zero
-
 /-- The reduced singular homology of the empty space vanishes in every degree. -/
 lemma isZero_reducedSingularHomologyFunctor_of_isEmpty (X : TopCat.{w}) [IsEmpty X] (n : ℕ) :
     IsZero ((reducedSingularHomologyFunctor R n).obj X) := by
   cases n with
   | zero =>
-    have h₀ := isZero_singularHomologyFunctor_zero_of_isEmpty R X
+    have h₀ := isZero_singularHomology_of_isEmpty R X 0
     rw [reducedSingularHomologyFunctor_zero_obj, IsZero.iff_id_eq_zero,
       ← cancel_mono (kernel.ι (X.singularHomology₀ε R))]
     exact h₀.eq_of_tgt _ _
@@ -601,7 +584,7 @@ theorem finite_singularHomology_of_finite_reducedSingularHomology (q : ℕ)
   | zero =>
     rcases isEmpty_or_nonempty X with hX | hX
     · have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) :=
-        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomologyFunctor_zero_of_isEmpty M X)
+        ModuleCat.isZero_iff_subsingleton.mp (isZero_singularHomology_of_isEmpty M X 0)
       infer_instance
     · exact .equiv (singularHomology₀LinearEquiv M (Classical.arbitrary X)).symm
   | succ q => exact .equiv ((reducedSingularHomologySuccIso M q).app X).toLinearEquiv

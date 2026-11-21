@@ -68,7 +68,8 @@ variable (k : Type w) {V : Type u} [Semiring k] (G : SimpleGraph V)
 backtracks along the edges at `v`. -/
 theorem signlessPreprojectiveRelator_vertex (v : V) [Fintype (G.neighborSet v)] :
     signlessPreprojectiveRelator k (DoubledQuiver.vertex G v) =
-      ∑ w : G.neighborSet v, DoubledQuiver.backtrackElem G k ((G.mem_neighborSet v w).1 w.2) := by
+      ∑ w : G.neighborSet v, DoubledQuiver.backtrackElem G k ((G.mem_neighborSet v w).1 w.property)
+          := by
   rw [signlessPreprojectiveRelator_def,
     ← (DoubledQuiver.starEquivNeighborSet G v).symm.sum_comp]
   refine Finset.sum_congr rfl fun w _ => ?_
@@ -181,8 +182,8 @@ theorem sum_signlessArrow_mul_signlessArrow (v : Fin n) :
     _ = 0 := by
         rw [← hrel]
         refine Finset.sum_congr rfl fun w _ => ?_
-        rw [← ofArrow_symm_mul_ofArrow _ k w.2, map_mul, ← signlessArrow_of_adj k w.2,
-          ← signlessArrow_of_adj k (G.adj_symm w.2)]
+        rw [← ofArrow_symm_mul_ofArrow _ k w.property, map_mul, ← signlessArrow_of_adj k w.property,
+          ← signlessArrow_of_adj k (G.adj_symm w.property)]
 
 variable (G) in
 /-- **The signless relation at a vertex `v`, summed over a finite set `S`** of numbers containing

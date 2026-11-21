@@ -40,7 +40,7 @@ theorem map_surjective {S : Type*} [CommRing S] (φ : R →+* S) [IsLocalHom φ]
     ext i j
     by_cases hji : j < i
     · simpa only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_left hji, map_zero] using
-        ((mem_iff.mp g.2) hji).symm
+        ((mem_iff.mp g.property) hji).symm
     · simp only [M, Matrix.map_apply, Matrix.of_apply, ite_eq_right hji, ha]
   have hunit : IsUnit M.det := (isUnit_map_iff φ M.det).mp (by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hM]
