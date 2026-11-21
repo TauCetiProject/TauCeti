@@ -5,9 +5,12 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Rat
 public import TauCeti.Algebra.Lie.Free.LowerCentral
 public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
+
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 
 /-!
 # Augmentation powers and the lower central series of a free Lie algebra
@@ -29,19 +32,26 @@ when `R` is a `ℚ`-algebra the exponential `exp x` and the logarithm `log (1 + 
 element `x` are finite sums.
 
 Injectivity of `ι` holds whenever `F` is free as an `R`-module
-(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), in particular over every field.
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective`), in particular over every field, and also over
+every commutative `ℚ`-algebra `R : Type` via PBW symmetrization
+(`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat`).
 
 ## Main results
 
-* `TauCeti.FreeLieAlgebra.degreeFiltration_eq_augmentation_pow`: the word-length filtration of
-  `U(F)` is the filtration by powers of the augmentation ideal.
+* `TauCeti.FreeLieAlgebra.degreeFiltration_eq_augmentation_pow` and
+  `TauCeti.FreeLieAlgebra.naturals_degreeFiltration_eq_augmentation_pow`: the word-length
+  filtration of `U(F)` is the filtration by powers of the augmentation ideal.
 * `TauCeti.FreeLieAlgebra.mem_augmentation_pow_iff`: membership in `J ^ N` is the vanishing of
   every component of length below `N`.
-* `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι`: if `ι` is injective, the preimage of
-  `J ^ (c + 1)` is the `c`-th term of the lower central series.
-* `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective`: if `ι` is injective, so is the
-  induced map `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from
-  `F ⧸ lowerCentralSeries c` to `U(F) ⧸ J ^ (c + 1)`.
+* `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι` and
+  `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_algebra_rat`: if `ι` is injective (in
+  particular over any commutative `ℚ`-algebra `R : Type`), the preimage of `J ^ (c + 1)` is the
+  `c`-th term of the lower central series.
+* `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective` and
+  `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective_of_algebra_rat`: if `ι` is injective (in
+  particular over any commutative `ℚ`-algebra `R : Type`), so is the induced map
+  `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from `F ⧸ lowerCentralSeries c` to
+  `U(F) ⧸ J ^ (c + 1)`.
 
 ## Attribution
 
@@ -79,6 +89,19 @@ theorem degreeFiltration_eq_augmentation_pow (k : ℕ) : (𝓕).ideal k = J ^ k 
     (_root_.FreeLieAlgebra.of R) (fun _ => 1) (lieSpan_range_of_eq_top R S)
     (fun s => by simpa using word_mem_homogeneousSubmodule R (FreeMagma.of s)) (fun _ => by simp) k
 
+/-- On `U(FreeLieAlgebra R S)`, the degree filtration for `PositiveDegrees.naturals` coincides with
+powers of the augmentation ideal. -/
+theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
+    (UniversalEnvelopingAlgebra.degreeFiltration ℒ
+      PositiveDegrees.naturals.degree
+      (PositiveDegrees.naturals.eq_bot_of_degree_neg ℒ)).ideal k =
+    J ^ k := by
+  have h : ∀ (d : ℕ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥),
+      d = δ → (UniversalEnvelopingAlgebra.degreeFiltration ℒ d hneg).ideal k = J ^ k := by
+    rintro _ _ rfl
+    exact degreeFiltration_eq_augmentation_pow R S k
+  exact h _ _ (AddMonoidHom.ext fun n => PositiveDegrees.naturals_degree n)
+
 /-- An element of the enveloping algebra of a free Lie algebra lies in the `N`-th power of the
 augmentation ideal exactly when its components of word length below `N` vanish. -/
 theorem mem_augmentation_pow_iff {a : U} {N : ℕ} :
@@ -107,5 +130,32 @@ theorem lowerCentralQuotientι_injective
     Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
   (UniversalEnvelopingAlgebra.lowerCentralQuotientι_injective_iff R F c).mpr
     (comap_augmentation_pow_ι R S hι c).le
+
+section Rational
+
+variable (R : Type) [CommRing R] [Algebra ℚ R] (S : Type*)
+
+/-- Over a commutative `ℚ`-algebra `R : Type`, the preimage of the `(c + 1)`-st power of the
+augmentation ideal under `ι R` is the `c`-th term of the lower central series. -/
+theorem comap_augmentation_pow_ι_of_algebra_rat (c : ℕ) :
+    (((HopfIdeal.augmentation R
+          (_root_.UniversalEnvelopingAlgebra R (_root_.FreeLieAlgebra R S))).toIdeal ^
+        (c + 1)).restrictScalars R).comap
+      (_root_.UniversalEnvelopingAlgebra.ι R : _root_.FreeLieAlgebra R S →ₗ⁅R⁆
+        _root_.UniversalEnvelopingAlgebra R (_root_.FreeLieAlgebra R S)).toLinearMap =
+      (LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R S)
+        (_root_.FreeLieAlgebra R S) c).toSubmodule :=
+  comap_augmentation_pow_ι R S
+    (UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat R (_root_.FreeLieAlgebra R S)) c
+
+/-- Over a commutative `ℚ`-algebra `R : Type`, the free nilpotent Lie algebra of class at most `c`
+embeds into the truncated enveloping algebra modulo the `(c + 1)`-st augmentation power. -/
+theorem lowerCentralQuotientι_injective_of_algebra_rat (c : ℕ) :
+    Function.Injective
+      (UniversalEnvelopingAlgebra.lowerCentralQuotientι R (_root_.FreeLieAlgebra R S) c) :=
+  lowerCentralQuotientι_injective R S
+    (UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat R (_root_.FreeLieAlgebra R S)) c
+
+end Rational
 
 end TauCeti.FreeLieAlgebra

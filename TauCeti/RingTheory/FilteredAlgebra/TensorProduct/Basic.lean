@@ -107,6 +107,22 @@ noncomputable def includeRightCompletion :
   G.mapCompletionₐ (F.tensorProduct R G) (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)
     id monotone_id fun k => F.ideal_le_comap_includeRight R G (k + 1)
 
+/-- The completed left inclusion is the algebra completion map of
+`Algebra.TensorProduct.includeLeft`. -/
+theorem includeLeftCompletion_eq_mapCompletionₐ :
+    F.includeLeftCompletion R G =
+      F.mapCompletionₐ (F.tensorProduct R G)
+        (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] B)
+        id monotone_id (fun k => F.ideal_le_comap_includeLeft R G (k + 1)) := (rfl)
+
+/-- The completed right inclusion is the algebra completion map of
+`Algebra.TensorProduct.includeRight`. -/
+theorem includeRightCompletion_eq_mapCompletionₐ :
+    F.includeRightCompletion R G =
+      G.mapCompletionₐ (F.tensorProduct R G)
+        (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)
+        id monotone_id (fun k => F.ideal_le_comap_includeRight R G (k + 1)) := (rfl)
+
 /-- The completed left inclusion extends the ordinary tensor inclusion. -/
 @[simp]
 theorem includeLeftCompletion_toCompletion (a : A) :
@@ -230,6 +246,18 @@ theorem completedTensor_mem_completionIdeal {a b : ℕ}
   exact (F.tensorProduct R G).mul_mem_completionIdeal
     (F.includeLeftCompletion_mem_completionIdeal R G hx)
     (F.includeRightCompletion_mem_completionIdeal R G hy)
+
+/-- Completed pure tensors preserve congruence to one modulo each completion ideal. -/
+theorem completedTensor_sub_one_mem_completionIdeal {k : ℕ}
+    {u : F.completion} {v : G.completion}
+    (hu : u - 1 ∈ F.completionIdeal k) (hv : v - 1 ∈ G.completionIdeal k) :
+    F.completedTensor R G u v - 1 ∈ (F.tensorProduct R G).completionIdeal k := by
+  rw [completedTensor_apply]
+  exact (F.tensorProduct R G).mul_sub_one_mem_completionIdeal
+    (by simpa only [map_sub, map_one] using
+      F.includeLeftCompletion_mem_completionIdeal R G hu)
+    (by simpa only [map_sub, map_one] using
+      F.includeRightCompletion_mem_completionIdeal R G hv)
 
 end Completion
 

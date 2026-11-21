@@ -141,6 +141,20 @@ theorem completedExp_add (x y : F.completionIdeal 1)
   simpa using IsNilpotent.exp_add_of_commute (h.map (F.projection k))
     (F.isNilpotent_projection x.property k) (F.isNilpotent_projection y.property k)
 
+/-- Logarithms of commuting elements congruent to one take products to sums. -/
+theorem completedLog_mul (u v : {u : F.completion // u - 1 ∈ F.completionIdeal 1})
+    (h : Commute (u : F.completion) v) :
+    F.completedLog ⟨(u : F.completion) * v,
+      F.mul_sub_one_mem_completionIdeal u.property v.property⟩ =
+      F.completedLog u + F.completedLog v := by
+  apply F.completion_ext
+  intro k
+  have hu : IsNilpotent (F.projection k u - 1) := by
+    simpa only [map_sub, map_one] using F.isNilpotent_projection u.property k
+  have hv : IsNilpotent (F.projection k v - 1) := by
+    simpa only [map_sub, map_one] using F.isNilpotent_projection v.property k
+  simpa using IsNilpotent.log_mul_of_commute (h.map (F.projection k)) hu hv
+
 /-- Negating the exponential argument gives a right multiplicative inverse. -/
 @[simp]
 theorem completedExp_mul_completedExp_neg (x : F.completionIdeal 1) :

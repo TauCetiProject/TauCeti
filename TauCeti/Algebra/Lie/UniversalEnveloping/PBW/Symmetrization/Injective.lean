@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Ideal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Map
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Powers
 
 /-!
@@ -26,6 +27,8 @@ injectivity pass from Lie algebras that are free as modules to arbitrary ones.
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.pbwSymmetrizationMap_injective`: the general case.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_algebra_rat`: the canonical map
+  `ι : L → U(L)` is injective over any commutative `ℚ`-algebra without freeness.
 
 ## References
 
@@ -125,5 +128,12 @@ theorem pbwSymmetrizationMap_injective : Function.Injective (pbwSymmetrizationMa
   subst hpj
   rw [← RingHom.mem_ker, SymmetricAlgebra.ker_map_of_surjective π.toLinearMap hπ]
   exact hj
+
+/-- Over a commutative `ℚ`-algebra `R : Type`, the canonical map `ι : L → U(L)` is injective
+without any freeness or flatness hypothesis. -/
+theorem ι_injective_of_algebra_rat :
+    Function.Injective (_root_.UniversalEnvelopingAlgebra.ι R : L → U) := fun _ _ h =>
+  SymmetricAlgebra.ι_injective R L <| pbwSymmetrizationMap_injective R L (by
+    simpa only [pbwSymmetrizationMap_ι] using h)
 
 end TauCeti.UniversalEnvelopingAlgebra

@@ -156,6 +156,14 @@ theorem augmentation_le_degreeFiltration_one (hpos : ∀ n, d n ≤ 0 → ℒ n 
   rintro _ ⟨x, rfl⟩
   exact ι_mem_degreeFiltration_one ℒ d hpos x
 
+/-- For a strictly positive Lie grading, the first degree-filtration ideal equals the augmentation
+ideal. -/
+theorem degreeFiltration_one_eq_augmentation (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) :
+    (degreeFiltration ℒ d (fun n hn => hpos n hn.le)).ideal 1 =
+      (TauCeti.HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L)).toIdeal :=
+  le_antisymm (degreeFiltration_le_augmentation ℒ d _ Nat.one_pos)
+    (augmentation_le_degreeFiltration_one ℒ d hpos)
+
 /-- Powers of the augmentation ideal have at least their corresponding total degree. -/
 theorem augmentation_pow_le_degreeFiltration (hpos : ∀ n, d n ≤ 0 → ℒ n = ⊥) (k : ℕ) :
     (TauCeti.HopfIdeal.augmentation R (_root_.UniversalEnvelopingAlgebra R L)).toIdeal ^ k ≤
