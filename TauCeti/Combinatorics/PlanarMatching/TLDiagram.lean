@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PlanarMatching.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Temperley–Lieb diagrams
@@ -399,6 +400,37 @@ theorem verticalReflect_id (n : ℕ) : verticalReflect n n (id n) = id n := by
   ext : 1
   · ext a
     simp
+  · simp
+
+/-- The identity diagram is symmetric under horizontal reflection. -/
+@[simp]
+theorem reflect_id (n : ℕ) : reflect n n (id n) = id n := by
+  ext : 1
+  · ext a
+    simp only [matching_reflect, matching_id, PlanarMatching.coe_rotate_pow_apply,
+      PlanarMatching.coe_reflect_apply, PerfectMatching.congr_trans, PerfectMatching.congr_val,
+      Equiv.permCongr_apply, Equiv.trans_apply, Equiv.symm_trans_apply, PlanarMatching.nested_val,
+      Fin.revPerm_apply, Fin.revPerm_symm, Fin.rev_rev]
+    have hpow : (finRotate (n + n) ^ n : Perm (Fin (n + n))).symm = finRotate (n + n) ^ n := by
+      rw [← Perm.inv_def]
+      apply inv_eq_of_mul_eq_one_right
+      rw [← pow_add]
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      · simpa [orderOf_finRotate (by omega : n + n ≠ 0)] using
+          pow_orderOf_eq_one (finRotate (n + n))
+    rw [hpow]
+    simp only [Fin.coe_finRotate_pow, Fin.val_rev]
+    have ha : (a : ℕ) < n + n := a.isLt
+    by_cases hlt : (a : ℕ) < n
+    · have h1 : ((a : ℕ) + n) % (n + n) = (a : ℕ) + n := Nat.mod_eq_of_lt (by omega)
+      rw [h1, Nat.mod_eq_of_lt (by omega)]
+      omega
+    · have h1 : ((a : ℕ) + n) % (n + n) = (a : ℕ) - n := by
+        rw [show (a : ℕ) + n = ((a : ℕ) - n) + (n + n) by omega, Nat.add_mod_right,
+          Nat.mod_eq_of_lt (by omega)]
+      rw [h1, show n + n - ((a : ℕ) - n + 1) + n = (n + n - ((a : ℕ) + 1)) + (n + n) by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
   · simp
 
 /-- The **cup** `0 → 2`, joining the two top points, with no circles. -/
