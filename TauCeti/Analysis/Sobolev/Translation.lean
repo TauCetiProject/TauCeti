@@ -180,7 +180,7 @@ theorem W1p0.eLpNorm_value_extendByZeroL_comp_add_sub_le_mul_enorm_gradient {Ome
         W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) x) p mu
       ≤ ‖h‖ₑ * ‖W1p.gradient (u : W1p mu Omega p)‖ₑ := by
   refine (W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient h
-    (W1p0.extendByZeroL le_top u).2).trans_eq ?_
+    (W1p0.extendByZeroL le_top u).property).trans_eq ?_
   congr 1
   rw [W1p0.gradient_extendByZeroL]
   exact eNorm_eq_iff_norm_eq.2 ((extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet

@@ -99,7 +99,7 @@ theorem dirichletChart_apply_self (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) :
 @[simp]
 theorem dirichletChart_apply_coe (i₀ : ι) (x : {i // i ≠ i₀} → ℝ) (j : {i // i ≠ i₀}) :
     dirichletChart i₀ x j = x j := by
-  simp [dirichletChart, j.2]
+  simp [dirichletChart, j.property]
 
 /-- The value of the chart at an index other than `i₀`, indexed by `ι` rather than by the
 subtype. -/
@@ -200,6 +200,56 @@ theorem dirichletChart_image_region (i₀ : ι) :
       linarith
     exact ⟨fun j : {i // i ≠ i₀} ↦ p j, ⟨fun j ↦ hp.1 j, hsum⟩,
       (dirichletChart_eq_self_iff i₀ p).2 hp.2⟩
+
+/-- When `{i // i ≠ i₀}` has a unique index, membership in `dirichletChartRegion i₀` means that
+the unique retained coordinate lies in `Ioo 0 1`. -/
+theorem mem_dirichletChartRegion_iff_of_unique [Unique {i // i ≠ i₀}]
+    {x : {i // i ≠ i₀} → ℝ} :
+    x ∈ dirichletChartRegion i₀ ↔ x default ∈ Ioo 0 1 := by
+  rw [mem_dirichletChartRegion_iff, Unique.forall_iff, Fintype.sum_unique, mem_Ioo]
+
+/-- When `{i // i ≠ i₀}` has a unique index, `dirichletChart i₀ x` assigns `1 - x default` to `i₀`
+and `x default` to every other coordinate. -/
+theorem dirichletChart_of_unique (i₀ : ι) [Unique {i // i ≠ i₀}] (x : {i // i ≠ i₀} → ℝ) :
+    dirichletChart i₀ x =
+      (EuclideanSpace.equiv ι ℝ).symm fun i ↦ if i = i₀ then 1 - x default else x default := by
+  ext i
+  by_cases hi : i = i₀
+  · subst hi
+    simp
+  · simp [hi, Unique.eq_default (⟨i, hi⟩ : {i // i ≠ i₀})]
+
+/-- Dropping coordinate `1` on `Fin 2` embeds the retained coordinate `x ⟨0, _⟩` into the simplex
+hyperplane as `(x ⟨0, _⟩, 1 - x ⟨0, _⟩)`. -/
+theorem dirichletChart_one_fin_two (x : {i : Fin 2 // i ≠ 1} → ℝ) :
+    dirichletChart (1 : Fin 2) x =
+      (EuclideanSpace.equiv (Fin 2) ℝ).symm ![x ⟨0, by decide⟩, 1 - x ⟨0, by decide⟩] := by
+  let _ : Unique {i : Fin 2 // i ≠ 1} := ⟨⟨⟨0, by decide⟩⟩, by decide⟩
+  rw [dirichletChart_of_unique, ← Unique.eq_default (⟨0, by decide⟩ : {i : Fin 2 // i ≠ 1})]
+  ext i
+  fin_cases i <;> simp
+
+/-- Dropping coordinate `0` on `Fin 2` embeds the retained coordinate `x ⟨1, _⟩` into the simplex
+hyperplane as `(1 - x ⟨1, _⟩, x ⟨1, _⟩)`. -/
+theorem dirichletChart_zero_fin_two (x : {i : Fin 2 // i ≠ 0} → ℝ) :
+    dirichletChart (0 : Fin 2) x =
+      (EuclideanSpace.equiv (Fin 2) ℝ).symm ![1 - x ⟨1, by decide⟩, x ⟨1, by decide⟩] := by
+  let _ : Unique {i : Fin 2 // i ≠ 0} := ⟨⟨⟨1, by decide⟩⟩, by decide⟩
+  rw [dirichletChart_of_unique, ← Unique.eq_default (⟨1, by decide⟩ : {i : Fin 2 // i ≠ 0})]
+  ext i
+  fin_cases i <;> simp
+
+/-- At dropped coordinate `1` on `Fin 2`, the chart region is `Ioo 0 1` in coordinate `0`. -/
+theorem mem_dirichletChartRegion_one_fin_two_iff {x : {i : Fin 2 // i ≠ 1} → ℝ} :
+    x ∈ dirichletChartRegion (1 : Fin 2) ↔ x ⟨0, by decide⟩ ∈ Ioo 0 1 := by
+  let _ : Unique {i : Fin 2 // i ≠ 1} := ⟨⟨⟨0, by decide⟩⟩, by decide⟩
+  exact mem_dirichletChartRegion_iff_of_unique
+
+/-- At dropped coordinate `0` on `Fin 2`, the chart region is `Ioo 0 1` in coordinate `1`. -/
+theorem mem_dirichletChartRegion_zero_fin_two_iff {x : {i : Fin 2 // i ≠ 0} → ℝ} :
+    x ∈ dirichletChartRegion (0 : Fin 2) ↔ x ⟨1, by decide⟩ ∈ Ioo 0 1 := by
+  let _ : Unique {i : Fin 2 // i ≠ 0} := ⟨⟨⟨1, by decide⟩⟩, by decide⟩
+  exact mem_dirichletChartRegion_iff_of_unique
 
 /-! ### The chart density -/
 

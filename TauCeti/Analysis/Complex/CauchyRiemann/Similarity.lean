@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Normed.Ring.Units
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Complex.Pompeiu.Pointwise
@@ -18,6 +20,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.RankOne
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # The similarity principle for linear Cauchy–Riemann equations
@@ -47,6 +50,11 @@ for no `p ≥ 1`.
 Classical solutions, of class `C¹` with a measurable, locally bounded coefficient, are the special
 case `p = ∞` (`TauCeti.exists_similarity_of_contDiffOn` and its consequences).
 
+A scalar function need not be given with its equation: a `C¹` function `f : ℂ → ℂ` with
+`‖\bar∂ f‖ ≤ K ‖f‖` for a locally bounded `K` solves `\bar∂ f = a f` for the bounded coefficient
+`a = \bar∂ f / f`, extended by `0` at the zeros of `f`, so its zeros are isolated as well unless it
+vanishes identically (`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`).
+
 The coefficient `C` need not commute with `i`, and a solution is in general not holomorphic.
 The proof follows Carleman's argument as presented by McDuff and Salamon, after transporting the
 equation along a complex-linear equivalence of `V` with a Euclidean space, whose inner product is
@@ -66,6 +74,9 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
 
 ## Main results
 
+* `TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`: the Cauchy integral
+  equation `g = ½ (1 + T g) D` on a closed disc, for a coefficient `D` that is `Lᵖ` on the disc
+  with small norm.
 * `TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn`: the local factorization `ξ = Φ σ`
   on a disc, for continuous weak solutions with locally `Lᵖ` coefficient, `p > 2`.
 * `TauCeti.hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn`: the factorization in the
@@ -74,9 +85,14 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
   zero of infinite order.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivOn`: a solution that is
   not identically zero on a connected open set has isolated zeros.
+* `TauCeti.exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn`: each zero of such a
+  solution has a finite positive order `m`, with `‖ξ z‖ ≍ ‖z - z₀‖ ^ m` near it.
 * `TauCeti.exists_similarity_of_contDiffOn`, `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`,
   `TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO` and
   `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: the same for classical solutions.
+* `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`: isolated zeros of a
+  scalar `C¹` function satisfying `‖\bar∂ f‖ ≤ K ‖f‖` that is not identically zero on a connected
+  open set.
 
 ## References
 
@@ -93,9 +109,11 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
 /-! ### The Cauchy integral equation -/
+
+section CauchyEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The source term `½ Ψ D` of the Cauchy integral equation, for `Ψ` given on the closed disc
 and extended by `0`. -/
@@ -111,7 +129,7 @@ private theorem cauchySource_of_mem {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ]
 private theorem cauchySource_of_notMem {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ] E)
     (Ψ : C(closedBall c r, E →L[ℂ] E)) {z : ℂ} (hz : z ∉ closedBall c r) :
     cauchySource D Ψ z = 0 := by
-  rw [cauchySource, extend_apply' _ _ _ fun ⟨w, hw⟩ ↦ hz (hw ▸ w.2)]
+  rw [cauchySource, extend_apply' _ _ _ fun ⟨w, hw⟩ ↦ hz (hw ▸ w.property)]
   simp
 
 private theorem support_cauchySource_subset {c : ℂ} {r : ℝ} (D : ℂ → E →L[ℂ] E)
@@ -210,8 +228,9 @@ whose Cauchy transform is continuous and satisfies `g = ½ (1 + T g) D` on the d
 `‖T g‖ < 1` there. So `Ψ = 1 + T g` is a continuous family of invertible maps on the disc solving
 `bar∂Ψ = ½ Ψ D`. It is the fixed point of the contraction `Ψ ↦ 1 + T (½ Ψ D)` of the continuous
 maps on the disc. -/
-private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ → E →L[ℂ] E} {c : ℂ}
-    {r K : ℝ} {p q : ℝ≥0∞} [p.HolderConjugate q] (hq : q < 2) (hK : 0 ≤ K)
+theorem exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp [CompleteSpace E]
+    {D : ℂ → E →L[ℂ] E} {c : ℂ} {r K : ℝ} {p q : ℝ≥0∞} [p.HolderConjugate q] (hq : q < 2)
+    (hK : 0 ≤ K)
     (hT : ∀ f : ℂ → E →L[ℂ] E, MemLp f p volume → support f ⊆ closedBall c r →
       ∀ w ∈ closedBall c r, ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal)
     (hD : MemLp D p (volume.restrict (closedBall c r)))
@@ -220,7 +239,6 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
       Continuous (cauchyTransform g) ∧
       (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
       ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
-  have := FiniteDimensional.completeSpace ℂ E
   have hTΨ := norm_cauchyTransform_cauchySource_le hK hT hD hKD
   have hcont (Ψ : C(closedBall c r, E →L[ℂ] E)) :
       Continuous (cauchyTransform (cauchySource D Ψ)) :=
@@ -228,7 +246,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
       (support_cauchySource_subset D Ψ)
   let op (Ψ : C(closedBall c r, E →L[ℂ] E)) : C(closedBall c r, E →L[ℂ] E) :=
     ⟨fun w ↦ 1 + cauchyTransform (cauchySource D Ψ) w,
-      (continuous_const.add (hcont Ψ)).comp continuous_subtype_val⟩
+      (continuous_const.add (hcont Ψ)).comp continuous_subtypeVal⟩
   have hop : ContractingWith (4⁻¹ : ℝ).toNNReal op := by
     refine ⟨by rw [Real.toNNReal_lt_one]; norm_num, LipschitzWith.of_dist_le_mul fun Ψ Ψ' ↦ ?_⟩
     rw [Real.coe_toNNReal _ (by norm_num)]
@@ -236,7 +254,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
     simp only [op, ContinuousMap.coe_mk, dist_eq_norm, add_sub_add_left_eq_sub, ← Pi.sub_apply,
       cauchyTransform_cauchySource_sub hq hD]
     rw [dist_eq_norm Ψ Ψ']
-    exact hTΨ (Ψ - Ψ') w.2
+    exact hTΨ (Ψ - Ψ') w.property
   set Ψ₀ := ContractingWith.fixedPoint op hop
   set g := cauchySource D Ψ₀ with hg
   have hfix : op Ψ₀ = Ψ₀ := ContractingWith.fixedPoint_isFixedPt hop
@@ -246,8 +264,8 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   have hnorm : ‖Ψ₀‖ ≤ 4 / 3 := by
     have h1 : ‖Ψ₀‖ ≤ 1 + 4⁻¹ * ‖Ψ₀‖ := by
       refine (ContinuousMap.norm_le _ (by positivity)).2 fun w ↦ ?_
-      rw [hΨ₀ w w.2]
-      exact (norm_add_le _ _).trans (add_le_add ContinuousLinearMap.norm_id_le (hTΨ Ψ₀ w.2))
+      rw [hΨ₀ w w.property]
+      exact (norm_add_le _ _).trans (add_le_add ContinuousLinearMap.norm_id_le (hTΨ Ψ₀ w.property))
     linarith
   refine ⟨g, (memLp_cauchySource hD Ψ₀).1, support_cauchySource_subset D Ψ₀, hcont Ψ₀,
     fun z hz ↦ ?_, fun z hz ↦ ?_⟩
@@ -255,6 +273,10 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   · calc ‖cauchyTransform g z‖ ≤ 4⁻¹ * ‖Ψ₀‖ := hTΨ Ψ₀ hz
       _ ≤ 4⁻¹ * (4 / 3) := by gcongr
       _ < 1 := by norm_num
+
+end CauchyEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
 /-! ### The similarity principle -/
 
@@ -309,8 +331,9 @@ private theorem exists_closedBall_cauchyTransform_eq [FiniteDimensional ℂ E] {
       (w : ℂ) (hw : w ∈ closedBall z₀ r) :
       ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal :=
     norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw)
-  exact ⟨r, hr, hsubΩ,
-    exists_cauchyTransform_eq hq hK hT (hCr'.rankOneDivNormSq_apply (𝕜 := ℂ) hξm) hKD⟩
+  have := FiniteDimensional.completeSpace ℂ E
+  exact ⟨r, hr, hsubΩ, exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK hT
+    (hCr'.rankOneDivNormSq_apply (𝕜 := ℂ) hξm) hKD⟩
 
 /-- The value of `bar∂ (Ψ ξ)` vanishes where `bar∂ξ = ½ (-C ξ)` and `bar∂Ψ = ½ Ψ D`, for
 `Ψ = 1 + T` and `D ξ = C ξ`. -/
@@ -507,6 +530,23 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivOn (hp : 
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt Ω.isOpen hΩc hξ
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz) hne
 
+/-- **Positive orders** of the zeros of weak solutions with `Lᵖ` coefficients, `p > 2`. On a
+connected open set `Ω`, let `ξ` be a continuous weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` that is
+not identically zero. At a zero `z₀ ∈ Ω`, every similarity factorization `ξ = Φ σ` has `σ` of the
+same finite positive analytic order `m`, and `‖ξ z‖` is comparable to `‖z - z₀‖ ^ m` near
+`z₀`. -/
+theorem exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn (hp : 2 < p)
+    (hΩc : IsPreconnected (Ω : Set ℂ)) (hC : MemLpLoc p Ω C) (hξ : ContinuousOn ξ Ω)
+    (heq : HasWeakConjWirtingerDerivOn volume Ω ξ (fun z ↦ (2 : ℂ)⁻¹ • -C z (ξ z)))
+    (hne : ∃ z ∈ Ω, ξ z ≠ 0) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hξ₀ : ξ z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ (ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m) ∧
+      ∀ (Φ : ℂ → V →L[ℝ] V) (σ : ℂ → V), ContinuousAt Φ z₀ → IsUnit (Φ z₀) →
+        AnalyticAt ℂ σ z₀ → (∀ᶠ z in 𝓝 z₀, ξ z = Φ z (σ z)) → analyticOrderAt σ z₀ = m := by
+  have := FiniteDimensional.completeSpace ℂ V
+  exact exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt Ω.isOpen hΩc hξ
+    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz)
+    hne hz₀ hξ₀
+
 /-! ### Classical solutions -/
 
 section Classical
@@ -580,6 +620,56 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
   have := FiniteDimensional.completeSpace ℂ V
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
+
+/-- **Isolated zeros under a differential inequality.** On a connected open set `Ω ⊆ ℂ`, a
+function `f : ℂ → ℂ` of class `C¹` with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω`, for a locally bounded
+`K`, that is not identically zero on `Ω` has isolated zeros. -/
+theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le (hΩ : IsOpen Ω)
+    (hΩc : IsPreconnected Ω) {f : ℂ → ℂ} (hf : ContDiffOn ℝ 1 f Ω) {K : ℂ → ℝ}
+    (hK : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, K w ≤ M)
+    (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) (hne : ∃ z ∈ Ω, f z ≠ 0) :
+    {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
+  -- `f` solves `∂ₛ f + i ∂ₜ f + a f = 0` with `a = -2 \bar∂ f(1) / f`, which is `0` where `f`
+  -- vanishes and bounded by `2 K` elsewhere.
+  set a : ℂ → ℂ := fun z ↦ -(2 * conjWirtingerDeriv f z 1 / f z) with ha
+  have hone : ∀ z, ‖conjWirtingerDeriv f z 1‖ ≤ ‖conjWirtingerDeriv f z‖ := fun z ↦ by
+    simpa using (conjWirtingerDeriv f z).le_opNorm 1
+  have ha_le : ∀ z ∈ Ω, ‖a z‖ ≤ 2 * max (K z) 0 := by
+    intro z hz
+    by_cases h0 : f z = 0
+    · simp only [ha, h0, div_zero, neg_zero, norm_zero]
+      positivity
+    · rw [ha, norm_neg, norm_div, norm_mul, div_le_iff₀ (norm_pos_iff.2 h0), Complex.norm_two,
+        mul_assoc]
+      gcongr
+      exact (hone z).trans ((hfK z hz).trans (by gcongr; exact le_max_left _ _))
+  have hCm : AEStronglyMeasurable (fun z ↦ a z • ContinuousLinearMap.id ℝ ℂ)
+      (volume.restrict Ω) := by
+    have h1 : Measurable fun z ↦ conjWirtingerDeriv f z 1 := by
+      simp_rw [conjWirtingerDeriv_apply]
+      exact ((measurable_fderiv_apply_const ℝ f 1).add
+        ((measurable_fderiv_apply_const ℝ f (I • (1 : ℂ))).const_smul I)).const_smul (2 : ℂ)⁻¹
+    have h2 : AEMeasurable f (volume.restrict Ω) :=
+      (hf.continuousOn.aestronglyMeasurable hΩ.measurableSet).aemeasurable
+    exact (((h1.aemeasurable.const_mul 2).div h2).neg.aestronglyMeasurable).smul_const _
+  have hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖a w • ContinuousLinearMap.id ℝ ℂ‖ ≤ M := by
+    intro z hz
+    obtain ⟨M, hM⟩ := hK z hz
+    refine ⟨2 * max M 0, ?_⟩
+    filter_upwards [hΩ.mem_nhds hz, hM] with w hw hwM
+    calc ‖a w • ContinuousLinearMap.id ℝ ℂ‖ ≤ ‖a w‖ :=
+          ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by simp
+      _ ≤ 2 * max M 0 := (ha_le w hw).trans (by gcongr)
+  refine setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn hΩ hΩc hf hCm hCb (fun z hz ↦ ?_) hne
+  have hfz : (a z • ContinuousLinearMap.id ℝ ℂ) (f z) = a z * f z := by simp
+  rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, hfz, smul_eq_mul, ha]
+  by_cases h0 : f z = 0
+  · have h := hfK z hz
+    rw [h0, norm_zero, mul_zero] at h
+    rw [norm_le_zero_iff.1 ((hone z).trans h), h0]
+    simp
+  · field_simp
+    ring
 
 end Classical
 

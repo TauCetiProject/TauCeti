@@ -18,6 +18,8 @@ public import TauCeti.RingTheory.PowerSeries.Support
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # The level-raising degeneracy maps `V_d`
@@ -53,7 +55,7 @@ results go up only.
   `HeckeRing.GLn.natDiagGL 2 ![d, 1]`, pushes forward to `scaleGL d`.
 * `TauCeti.ModularForm.levelRaise_apply`: `(V_d f) τ = f (d τ)`, the defining formula from which
   the algebraic properties (`levelRaise_one_apply`, `ModularForm.levelRaise_one`,
-  `levelRaise_levelRaise`, `levelRaise_injective`) all follow by `ext`.
+  `levelRaise_levelRaise`, `levelRaise_injective`, `finrank_map_levelRaiseₗ`) all follow.
 * `TauCeti.slash_mapGL_eq_smul_of_unitsMap_eq`: a `T`-periodic function whose level-raise carries a
   nebentypus trivial on the kernel of `(ZMod N)ˣ → (ZMod (N/l))ˣ` transforms under each
   `γ' ∈ Γ₀(N / l)` by the character value at any unit lying over the label of `γ'`.
@@ -106,6 +108,11 @@ results go up only.
   `CuspForm.isSupportedOnDvd_qExpansion_levelRaise`: the same fact as a support statement — the
   `q`-expansion of `V_d f` is supported on the multiples of `d`. This is the forward half of the
   Atkin–Lehner description of the old subspace.
+* `ModularForm.linearIndependent_levelRaise`, `CuspForm.linearIndependent_levelRaise`: when
+  `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, the level-raises `V_{d i} f` in `M_k(𝒢')`
+  (or `S_k(𝒢')`) at pairwise distinct positive indices `d i` of a modular form with a nonzero
+  positive-degree `q`-expansion coefficient (in particular, of any nonzero cusp form) are
+  `ℂ`-linearly independent.
 
 The old subspace is spanned by the images of the `V_d`.
 
@@ -353,6 +360,13 @@ lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZe
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
 
+/-- Level-raising preserves `finrank` on any submodule of modular forms. -/
+@[simp]
+lemma finrank_map_levelRaiseₗ [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZero d]
+    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (ModularForm 𝒢 k)) :
+    Module.finrank ℂ ↥(p.map (levelRaiseₗ d h)) = Module.finrank ℂ p :=
+  (p.equivMapOfInjective _ (levelRaiseₗ_injective h)).finrank_eq.symm
+
 /-- `V₁` is the restriction map: it changes nothing but the invariance group. -/
 lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢)
     (f : ModularForm 𝒢 k) (τ : ℍ) : levelRaise 1 h f τ = f τ := by
@@ -463,6 +477,13 @@ lemma levelRaiseₗ_injective [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZe
     Injective (levelRaiseₗ (k := k) d h) :=
   levelRaise_injective h
 
+/-- Level-raising preserves `finrank` on any submodule of cusp forms. -/
+@[simp]
+lemma finrank_map_levelRaiseₗ [𝒢.HasDetOne] [𝒢'.HasDetOne] {d : ℕ} [NeZero d]
+    (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (p : Submodule ℂ (CuspForm 𝒢 k)) :
+    Module.finrank ℂ ↥(p.map (levelRaiseₗ d h)) = Module.finrank ℂ p :=
+  (p.equivMapOfInjective _ (levelRaiseₗ_injective h)).finrank_eq.symm
+
 /-- `V₁` is the restriction map: it changes nothing but the invariance group. -/
 lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢)
     (f : CuspForm 𝒢 k) (τ : ℍ) : levelRaise 1 h f τ = f τ := by
@@ -548,7 +569,7 @@ lemma exists_conjScale_mem_Gamma0_of_dvd (d M N : ℕ) (hdvd : d * M ∣ N) (γ 
       (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
         ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd) ((Gamma0Map N).toHomUnits γ) := by
   obtain ⟨t, ht⟩ :=
-    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.2)
+    Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp (Gamma0_le_Gamma0_of_dvd hdvd γ.property)
   refine ⟨_, ht.trans (mul_assoc _ _ _), mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
   ext
   simp [Gamma0Map_apply, ZMod.unitsMap_val, ZMod.cast_intCast ((Dvd.intro_left d rfl).trans hdvd)]
@@ -561,7 +582,7 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
   obtain ⟨c, hc, hm, -⟩ :=
-    exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, Gamma1_in_Gamma0 _ hγ⟩
+    exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, Gamma1_le_Gamma0 _ hγ⟩
   refine ⟨_, mem_Gamma1_iff.mpr ⟨hm, ?_⟩, (mapGL_conjScale γ c hc).symm⟩
   -- `conjScale` keeps the lower-right entry, whose congruence only needs reading modulo the
   -- divisor `M` of `dM`
@@ -803,7 +824,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
     (ZMod.isUnit_intCast_iff_isCoprime _ _).mpr (isCoprime_comm.mp hi)
   obtain ⟨j₀, k, hk⟩ :=
     ZMod.exists_dvd_sub_val_mul l (γ' 0 1 - i * γ' 1 1) (γ' 0 0 - i * γ' 1 0) hunit
-  set j : ℤ := (j₀.val : ℤ) with _
+  set j : ℤ := (j₀.val : ℤ)
   have hdetM : (!![γ' 0 0 - i * γ' 1 0, k; (l : ℤ) * γ' 1 0, γ' 1 1 - γ' 1 0 * j]).det = 1 := by
     rw [Matrix.det_fin_two_of]
     linear_combination hdet + γ' 1 0 * hk
@@ -815,7 +836,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
   refine Subtype.ext ?_
   rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow,
     ModularGroup.coe_T_zpow, coe_conjScale]
-  simp only [hγ, Matrix.SpecialLinearGroup.coe_mk, Matrix.mul_fin_two, Matrix.of_apply,
+  simp only [hγ, Matrix.mul_fin_two, Matrix.of_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one]
   conv_lhs => rw [Matrix.eta_fin_two (γ' : Matrix (Fin 2) (Fin 2) ℤ)]
   congrm !![?_, ?_; ?_, ?_] <;> first | linear_combination hk | ring
@@ -1075,7 +1096,7 @@ theorem slash_mapGL_eq_self_of_mem_Gamma1_div (l N : ℕ) [NeZero l] (hlN : l �
     (hT : f ∣[k] (mapGL ℝ ModularGroup.T : GL (Fin 2) ℝ) = f)
     (δ : SL(2, ℤ)) (hδ : δ ∈ Gamma1 (N / l)) :
     f ∣[k] (mapGL ℝ δ : GL (Fin 2) ℝ) = f := by
-  have hδ0 : δ ∈ Gamma0 (N / l) := Gamma1_in_Gamma0 _ hδ
+  have hδ0 : δ ∈ Gamma0 (N / l) := Gamma1_le_Gamma0 _ hδ
   -- a `Γ₁(N / l)` element has trivial label, so this is the `u = 1` case of the general law
   have hlabel : (Gamma0Map (N / l)).toHomUnits ⟨δ, hδ0⟩ = 1 :=
     Units.ext <| by
@@ -1145,7 +1166,7 @@ lemma qParam_scaleGL_smul [NeZero d] (h : ℝ) (τ : ℍ) :
     Function.Periodic.qParam h ((scaleGL d • τ : ℍ) : ℂ) =
       Function.Periodic.qParam h (τ : ℂ) ^ d := by
   simp only [Function.Periodic.qParam, coe_scaleGL_smul]
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   ring_nf
 
 /-- **A level-raise is `1`-periodic through `ofComplex`.** If `d` is a strict period of `𝒢` (for
@@ -1197,7 +1218,8 @@ theorem ModularForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
       simp only [Function.comp_apply, PowerSeries.coeff_expand_mul, smul_eq_mul, pow_mul,
         ← qParam_scaleGL_smul]
   have hana := ModularForm.analyticAt_cuspFunction_levelRaise (by simpa using nsmul_mem h𝒢 d) hle f
-  exact PowerSeries.ext fun n ↦ (UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
+  exact PowerSeries.ext fun n ↦
+    (_root_.UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
 
 /-- **The `q`-expansion of a level-raise, on coefficients.** `aₙ(V_d f) = a_{n/d}(f)` when
 `d ∣ n`, and `0` otherwise. -/
@@ -1290,6 +1312,78 @@ theorem _root_.CuspForm.isSupportedOnDvd_qExpansion_levelRaise [𝒢'.HasDetOne]
     PowerSeries.IsSupportedOnDvd d (qExpansion 1 (CuspForm.levelRaise d hle f)) := by
   rw [CuspForm.qExpansion_levelRaise h𝒢 hle f]
   exact PowerSeries.isSupportedOnDvd_expand (NeZero.ne d) _
+
+/-- **Level-raises of a nonconstant modular form at distinct indices are linearly independent.**
+Assuming `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, if `f` has a nonzero `q`-expansion
+coefficient of positive degree and `d : ι → ℕ` is an injective family of positive integers with
+`𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢` for every `i`, then the level-raises `V_{d i} f` in
+`M_k(𝒢')` are `ℂ`-linearly independent. -/
+theorem _root_.ModularForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
+    {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
+    (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
+    {f : ModularForm 𝒢 k} (hf : ∃ n ≠ 0, (qExpansion 1 f).coeff n ≠ 0) :
+    LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hle i) f) := by
+  -- Evaluate on `ℋ := (zpowers T).map (mapGL ℝ)`, which has strict period `1` and lies in every
+  -- conjugate `diag(d i, 1)⁻¹ 𝒢 diag(d i, 1)` because `(d i : ℝ) ∈ 𝒢.strictPeriods`.
+  let ℋ : Subgroup (GL (Fin 2) ℝ) := (Subgroup.zpowers ModularGroup.T).map (mapGL ℝ)
+  have hT : mapGL ℝ ModularGroup.T = GeneralLinearGroup.upperRightHom (1 : ℝ) := by
+    apply Units.ext
+    ext a b
+    fin_cases a <;> fin_cases b <;> simp [ModularGroup.coe_T, GeneralLinearGroup.upperRightHom]
+  have hℋ : (1 : ℝ) ∈ ℋ.strictPeriods :=
+    Subgroup.mem_strictPeriods_iff.mpr ⟨ModularGroup.T, Subgroup.mem_zpowers _, hT⟩
+  have hleℋ (i : ι) : ℋ ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢 := by
+    rw [Subgroup.map_le_iff_le_comap, Subgroup.zpowers_le, Subgroup.mem_comap, hT,
+      ← Subgroup.mem_strictPeriods_iff,
+      Subgroup.mem_strictPeriods_conj_of_upperTriangular (by simp)]
+    simpa using nsmul_mem h𝒢 (d i)
+  have hliℋ : LinearIndependent ℂ (fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f) := by
+    refine LinearIndependent.of_comp (ModularForm.qExpansionLinearMap one_pos hℋ k) ?_
+    have hcomp : (ModularForm.qExpansionLinearMap one_pos hℋ k ∘
+        fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f) =
+        fun i ↦ (qExpansion 1 f).expand (d i) (NeZero.ne (d i)) :=
+      funext fun i ↦ (ModularForm.qExpansionLinearMap_apply one_pos hℋ _).trans
+        (ModularForm.qExpansion_levelRaise h𝒢 (hleℋ i) f)
+    rw [hcomp]
+    exact (PowerSeries.linearIndependent_expand_of_exists_coeff_ne_zero hf).comp
+      (fun i ↦ (⟨d i, NeZero.pos (d i)⟩ : ℕ+)) fun _ _ h ↦ hd (congrArg Subtype.val h)
+  let evalℋ : ModularForm ℋ k →ₗ[ℂ] (ℍ → ℂ) :=
+    { toFun := DFunLike.coe, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
+  let eval𝒢' : ModularForm 𝒢' k →ₗ[ℂ] (ℍ → ℂ) :=
+    { toFun := DFunLike.coe, map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
+  have hli_fn := hliℋ.map' evalℋ (LinearMap.ker_eq_bot.mpr DFunLike.coe_injective)
+  refine LinearIndependent.of_comp eval𝒢' ?_
+  have heq : (eval𝒢' ∘ fun i ↦ ModularForm.levelRaise (d i) (hle i) f) =
+      evalℋ ∘ fun i ↦ ModularForm.levelRaise (d i) (hleℋ i) f := by
+    ext i τ
+    simp [eval𝒢', evalℋ]
+  rwa [heq]
+
+/-- **Level-raises of a nonzero cusp form at distinct indices are linearly independent.**
+Assuming `[𝒢'.HasDetOne]` and `(1 : ℝ) ∈ 𝒢.strictPeriods`, if `f : CuspForm 𝒢 k` is nonzero and
+`d : ι → ℕ` is an injective family of positive integers with
+`𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢` for every `i`, then the level-raises `V_{d i} f` in
+`S_k(𝒢')` are `ℂ`-linearly independent. -/
+theorem _root_.CuspForm.linearIndependent_levelRaise [𝒢'.HasDetOne]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
+    {ι : Type*} {d : ι → ℕ} [∀ i, NeZero (d i)] (hd : Function.Injective d)
+    (hle : ∀ i, 𝒢' ≤ ConjAct.toConjAct (scaleGL (d i))⁻¹ • 𝒢)
+    {f : CuspForm 𝒢 k} (hf : f ≠ 0) :
+    LinearIndependent ℂ (fun i ↦ CuspForm.levelRaise (d i) (hle i) f) := by
+  have hpos : ∃ n ≠ 0, (qExpansion 1 (f : ModularForm 𝒢 k)).coeff n ≠ 0 := by
+    by_contra! h0
+    refine hf (CuspForm.qExpansion_injective one_pos h𝒢 (PowerSeries.ext fun n ↦ ?_))
+    simp only [FunLike.coe_zero, _root_.UpperHalfPlane.qExpansion_zero, map_zero]
+    rcases eq_or_ne n 0 with rfl | hn
+    · exact CuspFormClass.qExpansion_coeff_zero f one_pos h𝒢
+    · exact h0 n hn
+  refine LinearIndependent.of_comp CuspForm.toModularFormₗ ?_
+  have hcomp : (CuspForm.toModularFormₗ ∘ fun i ↦ CuspForm.levelRaise (d i) (hle i) f) =
+      fun i ↦ ModularForm.levelRaise (d i) (hle i) (f : ModularForm 𝒢 k) :=
+    funext fun i ↦ DFunLike.ext _ _ fun τ ↦ by simp
+  rw [hcomp]
+  exact _root_.ModularForm.linearIndependent_levelRaise h𝒢 hd hle hpos
 
 end QExpansion
 

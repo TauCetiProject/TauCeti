@@ -40,6 +40,8 @@ also cover algebraic functions, where the degree is `0` by convention.
   zero and pole divisors.
 * `TauCeti.Place.finrank_adjoin_eq_mul_degree_of_ord_eq_neg`: `[F : k(z)] = n * deg P` for a
   function `z` whose only pole is `P`, of order `n`.
+* `TauCeti.Place.ord_eq_zero_of_forall_ne_ord_eq_zero`: a function with neither zeros nor poles
+  away from a place `P` has neither at `P`.
 * `TauCeti.Divisor.degreeClass` descends degree to the divisor class group, with
   `TauCeti.Divisor.ker_degreeClass_eq_picZero` identifying its kernel `Cl⁰(F)` with the abstract
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
@@ -281,6 +283,22 @@ theorem finrank_adjoin_eq_mul_degree_of_ord_eq_neg (hF : IsFunctionField k F) {z
     Divisor.degree_zsmul, Divisor.degree_ofPoint, Units.val_mk0] at hdeg
   exact_mod_cast hdeg.symm
 
+/-- **A function with neither zeros nor poles away from a place `P` has neither at `P`**: its
+divisor is a multiple of `P` of degree zero, by the product formula, and `P` has positive
+degree. -/
+theorem ord_eq_zero_of_forall_ne_ord_eq_zero (hF : IsFunctionField k F) {P : Place k F}
+    {z : Fˣ} (h : ∀ Q : Place k F, Q ≠ P → Q.ord (z : F) = 0) : P.ord (z : F) = 0 := by
+  have hdiv : Divisor.principal hF z = P.ord (z : F) • WeilDivisor.ofPoint P := by
+    ext Q
+    rw [Divisor.coeff_principal, WeilDivisor.coeff_zsmul]
+    by_cases hQ : Q = P
+    · rw [hQ, WeilDivisor.coeff_ofPoint_self, mul_one]
+    · rw [h Q hQ, WeilDivisor.coeff_ofPoint_of_ne hQ, mul_zero]
+  have hdeg := Divisor.degree_principal hF z
+  rw [hdiv, Divisor.degree_zsmul, Divisor.degree_ofPoint] at hdeg
+  have hP : (1 : ℤ) ≤ P.degree := mod_cast P.one_le_degree_of_isFunctionField hF
+  exact (mul_eq_zero.mp hdeg).resolve_right (by omega)
+
 end Place
 
 namespace Divisor
@@ -327,7 +345,7 @@ theorem degreeZeroClassHom_surjective (hF : IsFunctionField k F) :
     Function.Surjective (degreeZeroClassHom hF) := fun c ↦ by
   obtain ⟨D, hD⟩ := (Place.orderSystem hF).weightedDegreeZeroClassHom_surjective
     (Place.isWeightedDegreeZero_orderSystem hF) c
-  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.2⟩, Subtype.ext ?_⟩
+  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.property⟩, Subtype.ext ?_⟩
   rw [coe_degreeZeroClassHom_apply, ← hD,
     (Place.orderSystem hF).coe_weightedDegreeZeroClassHom_apply]
 
