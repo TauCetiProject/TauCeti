@@ -52,8 +52,9 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
-  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
-  continuous linear equivalence, such as a linear isometry between inner product spaces.
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the weak chain rule and characterization along
+  any continuous linear equivalence between finite-dimensional real normed spaces carrying additive
+  Haar measures.
 
 ## References
 
@@ -72,9 +73,12 @@ open scoped ENNReal Topology Convolution
 
 variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [MeasurableSpace E'] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E} {ν : Measure E'}
+  [MeasurableSpace E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-variable [BorelSpace E] [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure]
+section MeasurePreserving
+
+variable {μ : Measure E} {ν : Measure E'}
+  [BorelSpace E] [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure]
 
 omit [BorelSpace E] [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure] in
 /-- **Passing the chain rule to the limit.** Let `Φ` be measure-preserving, with
@@ -224,32 +228,41 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
   simp only [Function.comp_apply] at hx
   rw [hx]
 
+end MeasurePreserving
+
+section LinearEquiv
+
+variable [BorelSpace E] [BorelSpace E']
 
 /-- **The weak chain rule for linear changes of variables.** If `u` has weak derivative `D` on the
-open set `V`, and the continuous linear equivalence `e` carries `μ` to `ν` and maps `U` into `V`,
-then `u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U`. Linear isometries between
-finite-dimensional real inner product spaces carry volume to volume
-(`LinearIsometryEquiv.measurePreserving`). -/
-theorem HasWeakFDerivOn.comp_continuousLinearEquiv {U : Opens E} {V : Opens E'} {u : E' → F}
-    {D : E' → E' →L[ℝ] F} (h : HasWeakFDerivOn ν V u D) (e : E ≃L[ℝ] E')
-    (he : MeasurePreserving e μ ν) (hUV : MapsTo e U V) :
+open set `V`, and `e : E ≃L[ℝ] E'` is a continuous linear equivalence mapping `U` into `V`, then
+`u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U` with respect to any additive Haar measure `μ`
+on `E`. No `MeasurePreserving` hypothesis is needed because `μ.map e` is itself an additive Haar
+measure on `E'`, hence a positive scalar multiple of `ν`. -/
+theorem HasWeakFDerivOn.comp_continuousLinearEquiv {ν : Measure E'} [ν.IsAddHaarMeasure]
+    {U : Opens E} {V : Opens E'} {u : E' → F} {D : E' → E' →L[ℝ] F}
+    (h : HasWeakFDerivOn ν V u D) (μ : Measure E) [μ.IsAddHaarMeasure] (e : E ≃L[ℝ] E')
+    (hUV : MapsTo e U V) :
     HasWeakFDerivOn μ U (u ∘ e) fun x => (D (e x)).comp (e : E →L[ℝ] E') := by
-  simpa only [e.fderiv] using h.comp_measurePreserving he
+  simpa only [e.fderiv] using (h.of_isAddHaarMeasure (μ.map e)).comp_measurePreserving
+    ⟨e.continuous.measurable, rfl⟩
     (e : E →L[ℝ] E').lipschitzWith.locallyLipschitz.locallyLipschitzOn hUV
 
-/-- **Weak derivatives through a linear change of variables.** If the continuous linear
-equivalence `e` carries `μ` to `ν` and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative
-`x ↦ D (e x) ∘L e` on `U` exactly when `u` has weak derivative `D` on `V`. -/
+/-- **Weak derivatives through a linear change of variables.** If `e : E ≃L[ℝ] E'` is a continuous
+linear equivalence and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative `x ↦ D (e x) ∘L e` on `U`
+with respect to an additive Haar measure `μ` if and only if `u` has weak derivative `D` on `V` with
+respect to an additive Haar measure `ν`. -/
 theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V : Opens E'}
-    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
+    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E')
+    (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
     (hUV : (U : Set E) = e ⁻¹' V) :
     HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
       HasWeakFDerivOn ν V u D := by
-  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e he (hUV ▸ mapsTo_preimage e V)⟩
-  have he' : MeasurePreserving e.symm ν μ :=
-    MeasurePreserving.symm e.toHomeomorph.toMeasurableEquiv he
+  refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv μ e (hUV ▸ mapsTo_preimage e V)⟩
   have hVU : MapsTo e.symm V U := fun y hy => by simpa [hUV] using hy
   simpa [Function.comp_def, ContinuousLinearMap.comp_assoc] using
-    h.comp_continuousLinearEquiv e.symm he' hVU
+    h.comp_continuousLinearEquiv ν e.symm hVU
+
+end LinearEquiv
 
 end TauCeti

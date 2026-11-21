@@ -66,7 +66,6 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
   `C¹` change of variables.
-* `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
 
 ## References
 
@@ -527,18 +526,6 @@ theorem HasWeakFDerivOn.comp_contDiffOn_diffeo {u : E → F} {Du : E → E →L[
   refine ⟨⟨Metric.ball x r, Metric.isOpen_ball⟩, Metric.mem_ball_self hr, ?_⟩
   simpa only [ContinuousLinearMap.comp_assoc] using
     hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU
-
-/-- **Affine changes of variables.** For `A : E ≃L[ℝ] E` and `b : E` with `x ↦ A x + b` mapping `U`
-into `V`, a weak derivative `Du` of `u` on `V` gives the weak derivative `x ↦ Du (A x + b) ∘ A` of
-`x ↦ u (A x + b)` on `U`. -/
-theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {u : E → F} {Du : E → E →L[ℝ] F}
-    (hu : HasWeakFDerivOn mu V u Du) (A : E ≃L[ℝ] E) (b : E)
-    (hmaps : MapsTo (fun x => A x + b) U V) :
-    HasWeakFDerivOn mu U (fun x => u (A x + b)) (fun x => (Du (A x + b)).comp (A : E →L[ℝ] E)) := by
-  simpa only [fderiv_add_const, A.fderiv] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
-    (A.contDiff.add contDiff_const).contDiffOn ((add_left_injective b).comp A.injective).injOn
-    (fun x _ => by rw [fderiv_add_const, A.fderiv]; exact A.toLinearEquiv.isUnit_det'.ne_zero)
-    hmaps
 
 end ChainRule
 
