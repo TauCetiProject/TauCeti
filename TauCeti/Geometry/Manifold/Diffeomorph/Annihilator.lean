@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
+public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Annihilator
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -84,27 +85,6 @@ open TauCeti TauCeti.CotangentBundle
 /-! ### Annihilating covectors under cotangent lifts -/
 
 section Pointwise
-
-/-- If `h` carries `D` onto `D'`, then `h⁻¹` carries `D'` onto `D`. -/
-theorem mfderiv_symm_mem_iff (h : M ≃ₘ⟮I, J⟯ N)
-    (hh : ∀ x (v : TangentSpace I x), mfderiv I J h x v ∈ D' (h x) ↔ v ∈ D x) (y : N)
-    (w : TangentSpace J y) : mfderiv J I h.symm y w ∈ D (h.symm y) ↔ w ∈ D' y := by
-  -- `h.symm.symm` is `h` up to structure eta.
-  have hw : mfderiv I J h (h.symm y) (mfderiv J I h.symm y w) = w :=
-    h.symm.mfderiv_symm_apply_mfderiv_apply (by simp) y w
-  have key := hh (h.symm y) (mfderiv J I h.symm y w)
-  rw [hw, h.apply_symm_apply] at key
-  exact key.symm
-
-/-- If `h` carries `D` onto `D'` and `g` carries `D'` onto `D''`, then `g ∘ h` carries `D` onto
-`D''`. -/
-theorem mfderiv_trans_mem_iff (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P)
-    (hh : ∀ x (v : TangentSpace I x), mfderiv I J h x v ∈ D' (h x) ↔ v ∈ D x)
-    (hg : ∀ y (w : TangentSpace J y), mfderiv J K g y w ∈ D'' (g y) ↔ w ∈ D' y) (x : M)
-    (v : TangentSpace I x) : mfderiv I K (h.trans g) x v ∈ D'' (h.trans g x) ↔ v ∈ D x := by
-  rw [coe_trans, mfderiv_comp_apply x (g.mdifferentiable (by simp) (h x))
-    (h.mdifferentiable (by simp) x)]
-  exact (hg _ _).trans (hh x v)
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 

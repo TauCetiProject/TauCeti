@@ -29,6 +29,8 @@ coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global special
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
 `PartialDiffeomorph.isInvolutiveDistributionOn_comap_mfderivWithin` shows that the pullback of a
 distribution involutive on the target is involutive on the source.
+`Diffeomorph.mfderiv_symm_mem_iff` and `Diffeomorph.mfderiv_trans_mem_iff` show that carrying one
+distribution onto another is preserved by inverses and composition of diffeomorphisms.
 
 The distributions remain families of tangent subspaces, and their pullback is expressed by
 `Submodule.comap` along the differential. Pulling back a `C^m` frame through a `C^n`
@@ -136,6 +138,38 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
 end Regularity
 
 end TauCeti
+
+namespace Diffeomorph
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  {D'' : Π w : P, Submodule 𝕜 (TangentSpace K w)}
+
+omit [CompleteSpace E] in
+/-- If `h` carries `D` onto `D'`, then `h⁻¹` carries `D'` onto `D`. -/
+theorem mfderiv_symm_mem_iff (h : M ≃ₘ⟮I, J⟯ N)
+    (hh : ∀ x (v : TangentSpace I x), mfderiv I J h x v ∈ D' (h x) ↔ v ∈ D x) (y : N)
+    (w : TangentSpace J y) : mfderiv J I h.symm y w ∈ D (h.symm y) ↔ w ∈ D' y := by
+  -- `h.symm.symm` is `h` up to structure eta.
+  have hw : mfderiv I J h (h.symm y) (mfderiv J I h.symm y w) = w :=
+    h.symm.mfderiv_symm_apply_mfderiv_apply (by simp) y w
+  have key := hh (h.symm y) (mfderiv J I h.symm y w)
+  rw [hw, h.apply_symm_apply] at key
+  exact key.symm
+
+omit [CompleteSpace E] in
+/-- If `h` carries `D` onto `D'` and `g` carries `D'` onto `D''`, then `g ∘ h` carries `D` onto
+`D''`. -/
+theorem mfderiv_trans_mem_iff (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P)
+    (hh : ∀ x (v : TangentSpace I x), mfderiv I J h x v ∈ D' (h x) ↔ v ∈ D x)
+    (hg : ∀ y (w : TangentSpace J y), mfderiv J K g y w ∈ D'' (g y) ↔ w ∈ D' y) (x : M)
+    (v : TangentSpace I x) : mfderiv I K (h.trans g) x v ∈ D'' (h.trans g x) ↔ v ∈ D x := by
+  rw [coe_trans, mfderiv_comp_apply x (g.mdifferentiable (by simp) (h x))
+    (h.mdifferentiable (by simp) x)]
+  exact (hg _ _).trans (hh x v)
+
+end Diffeomorph
 
 namespace PartialDiffeomorph
 
