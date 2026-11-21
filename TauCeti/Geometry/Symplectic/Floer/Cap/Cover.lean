@@ -252,6 +252,13 @@ loops. -/
 def capCoverProj : CapCover ω c x → contractibleLoops X :=
   subgroupQuotientProj _ _
 
+/-- The projection of the cap cover is the projection of the cover attached to
+`TauCeti.Floer.capCoverSubgroup`. -/
+theorem capCoverProj_def :
+    capCoverProj ω c x =
+      subgroupQuotientProj (constContractibleLoop x) (capCoverSubgroup ω c x) :=
+  (rfl)
+
 /-- The cap cover projects the class of a path of contractible loops to its end point. -/
 @[simp]
 theorem capCoverProj_mk (e : UniversalCover (constContractibleLoop x)) :
@@ -265,12 +272,12 @@ def CapCover.basepoint : CapCover ω c x :=
 
 /-- The base point of the cap cover is the class of the constant path at the constant loop at
 `x`. -/
+@[simp]
 theorem CapCover.basepoint_eq_mk :
     CapCover.basepoint ω c x =
       Quotient.mk'' (UniversalCover.mk _ (Path.Homotopic.Quotient.refl _)) :=
   SubgroupQuotient.basepoint_eq_mk _ _
 
-@[simp]
 theorem capCoverProj_basepoint :
     capCoverProj ω c x (CapCover.basepoint ω c x) = constContractibleLoop x :=
   subgroupQuotientProj_basepoint _ _
@@ -335,6 +342,22 @@ theorem capCoverDeckEquiv_capCoverPeriodHom_apply_mk
   rw [← hg] at h
   -- `capCoverProj` is `subgroupQuotientProj` by definition, so the two deck groups are the same
   -- subgroup and `h` is the goal once `capCoverDeckEquiv` is unfolded to its defining composite.
+  exact h
+
+/-- The inverse of the deck transformation of the period class of a loop `g` of contractible free
+loops sends the class of a path `e` of loops to the class of `g⁻¹ • e`. -/
+@[simp]
+theorem capCoverDeckEquiv_capCoverPeriodHom_symm_apply_mk
+    (g : FundamentalGroup (contractibleLoops X) (constContractibleLoop x))
+    (e : UniversalCover (constContractibleLoop x)) :
+    (capCoverDeckEquiv ω c x (capCoverPeriodHom ω c x g) : CapCover ω c x ≃ₜ CapCover ω c x).symm
+        (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
+  have hg : (QuotientGroup.quotientKerEquivOfSurjective _ (capCoverPeriodHom_surjective ω c x)).symm
+      (capCoverPeriodHom ω c x g) = QuotientGroup.mk g :=
+    (MulEquiv.symm_apply_eq _).2 rfl
+  have h := deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply (constContractibleLoop x)
+    (capCoverSubgroup ω c x) g e
+  rw [← hg] at h
   exact h
 
 /-- **The cap cover is a regular cover**: its deck group acts transitively on every fibre. -/
