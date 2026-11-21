@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Padics.GaloisCharacter.Basic
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 public import TauCeti.Topology.Algebra.Group.Units
+import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
@@ -109,13 +110,8 @@ variable (p : ℕ) [Fact p.Prime]
 /-- The continuous product homomorphism `G_{ℚ_p}^{ab} →ₜ* ℤ̂ × ℤ_[p]ˣ` recording the unramified
 coordinate and the `p`-adic cyclotomic character. -/
 private def padicAbelianizationProdHom :
-    Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* zHat.{0} × ℤ_[p]ˣ where
-  toMonoidHom :=
-    (unramifiedCoordinate ℚ_[p]).toMonoidHom.prod
-      (abelianizedLocalCyclotomicCharacter p ℚ_[p]).toMonoidHom
-  continuous_toFun :=
-    (unramifiedCoordinate ℚ_[p]).continuous.prodMk
-      (abelianizedLocalCyclotomicCharacter p ℚ_[p]).continuous
+    Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* zHat.{0} × ℤ_[p]ˣ :=
+  (unramifiedCoordinate ℚ_[p]).prod (abelianizedLocalCyclotomicCharacter p ℚ_[p])
 
 /-- `padicAbelianizationProdHom p` is injective: classes with trivial unramified coordinate are
 Artin symbols of units `u ∈ ℤ_[p]ˣ`, and the cyclotomic character recovers `u⁻¹`. -/
@@ -421,22 +417,12 @@ open scoped IsMulCommutative in
 continuous Galois character `σ ↦ φ((unramifiedCoordinate σ)⁻¹) * δ(χ_cyc(σ))`. When
 `φ zHat.gen = δ(p)`, this extends `δ.toWeilChar` (`toGaloisCharOfZHat_weilToAbsolute`). -/
 def PadicUnitsChar.toGaloisCharOfZHat (δ : PadicUnitsChar p Λ) (φ : zHat.{0} →ₜ* Λˣ) :
-    Field.absoluteGaloisGroup ℚ_[p] →ₜ* Λˣ where
-  toMonoidHom :=
-    (φ.toMonoidHom.comp
-      ((ContinuousMonoidHom.inv zHat.{0}).toMonoidHom.comp
-        ((unramifiedCoordinate ℚ_[p]).toMonoidHom.comp
-          (QuotientGroup.mk'
-            (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure)))) *
-      (δ.toMonoidHom.comp
-        ((padicIntUnitsInclusion p).toMonoidHom.comp (localCyclotomicCharacter p ℚ_[p])))
-  continuous_toFun :=
-    (φ.continuous.comp
-      (continuous_inv.comp
-        ((unramifiedCoordinate ℚ_[p]).continuous.comp QuotientGroup.continuous_mk))).mul
-      (δ.continuous.comp
-        ((padicIntUnitsInclusion p).continuous.comp
-          (localCyclotomicCharacter_continuous p ℚ_[p])))
+    Field.absoluteGaloisGroup ℚ_[p] →ₜ* Λˣ :=
+  ((φ.comp (ContinuousMonoidHom.inv zHat.{0})).coprod δ.toWeight).comp
+    ((padicAbelianizationEquiv p :
+        Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* zHat.{0} × ℤ_[p]ˣ).comp
+      (Subgroup.quotientMkContinuousMonoidHom
+        (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure))
 
 /-- Pointwise formula for `δ.toGaloisCharOfZHat φ`. -/
 @[simp]
@@ -444,8 +430,8 @@ theorem PadicUnitsChar.toGaloisCharOfZHat_apply (δ : PadicUnitsChar p Λ) (φ :
     (σ : Field.absoluteGaloisGroup ℚ_[p]) :
     δ.toGaloisCharOfZHat φ σ =
       φ ((unramifiedCoordinate ℚ_[p] (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]))⁻¹) *
-        δ (padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] σ)) :=
-  (rfl)
+        δ (padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] σ)) := by
+  simp [toGaloisCharOfZHat, abelianizedLocalCyclotomicCharacter_mk]
 
 /-- If `φ zHat.gen = δ(p)`, then `δ.toGaloisCharOfZHat φ` restricts on `W_{ℚ_p}` to
 `δ.toWeilChar`. -/
@@ -469,8 +455,7 @@ theorem PadicUnitsChar.exists_galoisChar_iff_exists_zHat [T1Space Λ] (δ : Padi
   constructor
   · rintro ⟨χ, hχ⟩
     let invMap : zHat.{0} →ₜ* zHat.{0} × ℤ_[p]ˣ :=
-      { toMonoidHom := (ContinuousMonoidHom.inv zHat.{0}).toMonoidHom.prod 1
-        continuous_toFun := continuous_inv.prodMk continuous_const }
+      (ContinuousMonoidHom.inv zHat.{0}).prod 1
     let φ : zHat.{0} →ₜ* Λˣ :=
       ((TopologicalAbelianization.lift χ).comp
         ((padicAbelianizationEquiv p).symm :
@@ -563,26 +548,17 @@ theorem PadicUnitsChar.toGaloisCharOfProfinite_weilToAbsolute [T1Space Λ] [Comp
 order, factoring through `Multiplicative (ZMod (orderOf a))`. -/
 private def zHatLiftOfFinOrder {G : Type*} [Group G] [TopologicalSpace G] {a : G}
     (ha : IsOfFinOrder a) : zHat.{0} →ₜ* G :=
-  let n : ℕ+ := ⟨orderOf a, orderOf_pos_iff.mpr ha⟩
-  have hord : zmultiplesHom (Additive G) (Additive.ofMul a) ((n : ℕ) : ℤ) = 0 := by
-    dsimp [n]
-    rw [natCast_zsmul, ← ofMul_pow, pow_orderOf_eq_one, ofMul_one]
-  let ψ : Multiplicative (ZMod n) →ₜ* G :=
-    ⟨AddMonoidHom.toMultiplicativeLeft (ZMod.lift n ⟨_, hord⟩), continuous_of_discreteTopology⟩
+  haveI : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  let ψ : Multiplicative (ZMod (orderOf a)) →ₜ* G :=
+    ⟨(TauCeti.zmodMonoidHomEquiv (orderOf a) G).symm ⟨a, pow_orderOf_eq_one a⟩,
+      continuous_of_discreteTopology⟩
   ψ.comp (zHat.lift (.ofAdd 1))
 
 private theorem zHatLiftOfFinOrder_gen {G : Type*} [Group G] [TopologicalSpace G] {a : G}
     (ha : IsOfFinOrder a) : zHatLiftOfFinOrder ha zHat.gen = a := by
-  let n : ℕ+ := ⟨orderOf a, orderOf_pos_iff.mpr ha⟩
-  have hord : zmultiplesHom (Additive G) (Additive.ofMul a) ((n : ℕ) : ℤ) = 0 := by
-    dsimp [n]
-    rw [natCast_zsmul, ← ofMul_pow, pow_orderOf_eq_one, ofMul_one]
-  -- Unfold `zHatLiftOfFinOrder` at `zHat.gen`.
-  change (AddMonoidHom.toMultiplicativeLeft (ZMod.lift n ⟨_, hord⟩))
-    ((zHat.lift (.ofAdd 1) : zHat.{0} →ₜ* Multiplicative (ZMod n)) zHat.gen) = a
-  rw [zHat.lift_gen]
-  simp only [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, toAdd_ofAdd]
-  rw [← Int.cast_one, ZMod.lift_coe, zmultiplesHom_apply, one_zsmul, toMul_ofMul]
+  have : NeZero (orderOf a) := ⟨(orderOf_pos_iff.mpr ha).ne'⟩
+  simp only [zHatLiftOfFinOrder, ContinuousMonoidHom.coe_comp, Function.comp_apply, zHat.lift_gen]
+  exact TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one _
 
 /-- Continuous Galois extension when `δ(p)` has finite order in `Λˣ` (for any commutative
 topological monoid `Λ` with continuous multiplication). -/
@@ -793,15 +769,10 @@ theorem map_continuousLocalCyclotomicCharacter_eq_cast_modP {k : Type*} [Ring k]
         ⟨Units.map (ZMod.castHom (dvd_refl p) k).toMonoidHom,
           continuous_of_discreteTopology.units_map _⟩
         (modPLocalCyclotomicCharacter p) := by
-  let f₂ : ℤ_[p] →+* k := (ZMod.castHom (dvd_refl p) k).comp PadicInt.toZMod
-  have hf₂ : Continuous f₂ :=
-    (continuous_of_discreteTopology (f := ZMod.castHom (dvd_refl p) k)).comp
-      PadicInt.continuous_toZMod
-  have heq : (f : ℤ_[p] → k) = f₂ :=
-    PadicInt.denseRange_natCast.equalizer hf hf₂ (funext fun n ↦ by simp [f₂])
   ext1 σ
   apply Units.ext
-  simpa [f₂] using congrFun heq (localCyclotomicCharacter p ℚ_[p] σ : ℤ_[p])
+  simpa using DFunLike.congr_fun (padicInt_ringHom_eq_castHom_comp_toZMod p f hf)
+    (localCyclotomicCharacter p ℚ_[p] σ : ℤ_[p])
 
 /-! #### Unramified characters on inertia and Frobenius lifts -/
 
@@ -828,22 +799,17 @@ theorem apply_eq_of_extends_padicUnramifiedChar_of_isArithFrobeniusLift_inv {Λ 
       χ (weilToAbsolute ℚ_[p] w) = (padicUnramifiedChar p a).toWeilChar w)
     {σ : Field.absoluteGaloisGroup ℚ_[p]} (hσ : IsArithFrobeniusLift ℚ_[p] σ⁻¹) :
     χ σ = a := by
-  have hcoord : unramifiedCoordinate ℚ_[p] (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
-      zHat.ofInt (.ofAdd (-1)) := by
-    have hinv : unramifiedCoordinate ℚ_[p]
-        ((σ⁻¹ : Field.absoluteGaloisGroup ℚ_[p]) :
-          Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
-        zHat.gen := (unramifiedCoordinate_mk_eq_gen_iff σ⁻¹).mpr hσ
-    rw [QuotientGroup.mk_inv, map_inv, inv_eq_iff_eq_inv] at hinv
-    rw [hinv, zHat.ofInt_ofAdd, zpow_neg_one]
-  have hmem : σ ∈ (weilToAbsolute ℚ_[p]).range := by
-    rw [range_weilToAbsolute, mem_localWeilGroup_iff_unramifiedCoordinate]
-    exact ⟨.ofAdd (-1), hcoord.symm⟩
-  obtain ⟨w, hw⟩ := hmem
-  have hdeg : weilDegree ℚ_[p] w = .ofAdd (-1) := zHat.ofInt_injective <| by
-    rw [← unramifiedCoordinate_weilDegree, hw, hcoord]
-  rw [← hw, hχ w, PadicUnitsChar.toWeilChar_apply, hdeg, toAdd_ofAdd, neg_neg, zpow_one,
-    padicUnramifiedChar_padicUniformizer, padicUnramifiedChar_padicIntUnitsInclusion, mul_one]
+  let w₀ : WeilGroup ℚ_[p] :=
+    (weilGroupEquivLocalWeilGroup ℚ_[p]).symm ⟨σ⁻¹, hσ.mem_localWeilGroup⟩
+  have hw₀ : weilToAbsolute ℚ_[p] w₀ = σ⁻¹ :=
+    weilToAbsolute_weilGroupEquivLocalWeilGroup_symm ℚ_[p] _
+  have hdeg : weilDegree ℚ_[p] w₀ = .ofAdd 1 :=
+    weilDegree_eq_ofAdd_one_iff.mpr (by rwa [hw₀])
+  have hw : weilToAbsolute ℚ_[p] w₀⁻¹ = σ := by
+    rw [map_inv, hw₀, inv_inv]
+  rw [← hw, hχ w₀⁻¹, PadicUnitsChar.toWeilChar_apply, map_inv, hdeg, toAdd_inv, toAdd_ofAdd,
+    neg_neg, zpow_one, padicUnramifiedChar_padicUniformizer,
+    padicUnramifiedChar_padicIntUnitsInclusion, mul_one]
 
 /-- **Unramified character check (arithmetic Frobenius).** Any continuous Galois character extending
 `padicUnramifiedChar p a` evaluates to `a⁻¹` on every arithmetic Frobenius lift `σ`. -/
