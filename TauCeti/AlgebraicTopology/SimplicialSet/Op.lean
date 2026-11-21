@@ -34,7 +34,8 @@ fillings, along the opposite.
   invariance of boundary extension under reversal.
 * `SSet.horn.opIso`, `SSet.horn.exists_extension_iff_op`: horn reversal `(Λ[n, i])ᵒᵖ ≅ Λ[n, i.rev]`,
   compatible with horn inclusions and edges, and invariance of horn extension under reversal.
-* `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
+* `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged,
+  compatibly with images along maps (`SSet.Edge.opEquiv_map_edge`).
 * `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
   and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
   opposites of `e₁₂` and `e₀₁`.
@@ -379,6 +380,11 @@ lemma opEquiv_symm_edge (e : X.op.Edge (X.opObjEquiv.symm x₁) (X.opObjEquiv.sy
 lemma opEquiv_id (x : X _⦋0⦌) : opEquiv (id x) = id (X.opObjEquiv.symm x) := by
   ext
   simp
+
+/-- Reversing an edge commutes with taking its image along a map. -/
+lemma opEquiv_map_edge {Y : SSet.{u}} (e : X.Edge x₀ x₁) (g : X ⟶ Y) :
+    (opEquiv (e.map g)).edge = ((opEquiv e).map (opFunctor.map g)).edge := by
+  rw [Edge.map_edge, opEquiv_edge, Edge.map_edge, opEquiv_edge, opFunctor_map]; rfl
 
 namespace CompStruct
 

@@ -47,16 +47,10 @@ variable {X : Type*} (s : Setoid X)
 complement of `t` onto the complement of the image of `t`. -/
 theorem image_quotient_mk_compl {t : Set X} (hst : ∀ ⦃x y⦄, s x y → x ≠ y → x ∈ t) :
     Quotient.mk s '' tᶜ = (Quotient.mk s '' t)ᶜ := by
-  ext q
-  induction q using Quotient.inductionOn with | h y => ?_
-  simp only [mem_image, mem_compl_iff, Quotient.eq, not_exists, not_and]
-  constructor
-  · rintro ⟨x, hx, hxy⟩ z hz hzy
-    by_cases hne : x = z
-    · exact hx (hne ▸ hz)
-    · exact hx (hst (s.trans hxy (s.symm hzy)) hne)
-  · intro h
-    exact ⟨y, fun hy => h y hy (s.refl y), s.refl y⟩
+  refine Subset.antisymm ?_ (subset_image_compl Quotient.mk_surjective)
+  -- a point `x ∉ t` is related to no `y ∈ t`, since `x ≠ y` and `hst` would put `x` in `t`
+  rintro _ ⟨x, hx, rfl⟩ ⟨y, hy, hyx⟩
+  exact hx (hst (Quotient.exact hyx.symm) fun hxy => hx (hxy ▸ hy))
 
 variable [TopologicalSpace X]
 
@@ -149,12 +143,8 @@ def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
   invFun y := ⟨y.val.swap, y.property.symm⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun :=
-    ((_root_.continuous_snd.comp continuous_subtypeVal).prodMk
-      (_root_.continuous_fst.comp continuous_subtypeVal)).subtype_mk _
-  continuous_invFun :=
-    ((_root_.continuous_snd.comp continuous_subtypeVal).prodMk
-      (_root_.continuous_fst.comp continuous_subtypeVal)).subtype_mk _
+  continuous_toFun := (continuous_swap.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_swap.comp continuous_subtypeVal).subtype_mk _
 
 @[simp] theorem Homeomorph.coe_pullbackComm_apply (x : f.Pullback g) :
     (Homeomorph.pullbackComm f g x).val = x.val.swap := (rfl)
