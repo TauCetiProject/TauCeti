@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Delzant.Basic
+public import TauCeti.Geometry.Toric.Delzant.CornerChop
+public import TauCeti.Geometry.Toric.Delzant.Simplex
 
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Toric.Delzant.Equiv
 
 /-!
 # Hirzebruch trapezoids as Delzant polytopes
@@ -30,6 +32,26 @@ adjacent ones are, since one normal cannot span the plane. Each pair of adjacent
 determinant `±1`, so generates `ℤ²`, and hence is a lattice basis
 (`TauCeti.Toric.isSmoothVertex_iff_span_eq_top`). The integer `k` may be negative.
 
+The same analysis gives the vertices: they are exactly the four points `(0, 0)`, `(a, 0)`, `(0, b)`
+and `(a - k b, b)` (`TauCeti.Toric.extremePoints_facetPolyhedron_hirzebruch`), which are distinct
+(`TauCeti.Toric.ncard_extremePoints_facetPolyhedron_hirzebruch`). On the Hirzebruch surface they
+are the moment images of the four fixed points of the torus action; for `k = 0` the trapezoid is
+the rectangle `[0, a] × [0, b]` of `S² × S²`.
+
+**The blowup of `ℂP²`.** Chopping a vertex off the triangle
+`{0 ≤ x(e₁), 0 ≤ x(e₂), x(e₁) + x(e₂) ≤ a}` of `ℂP²` (`TauCeti.Toric.simplexNormal`,
+`TauCeti.Toric.cornerChopNormal`) is the polytope operation of the toric symplectic blowup at the
+fixed point over that vertex. At the vertex `(0, a)`, chopping at depth `ε` adds the facet
+`{x(e₂) ≤ a - ε}`, with normal `e₁ - (e₁ + e₂) = -e₂`, and the result is, up to relabelling the
+facets, the presentation of the Hirzebruch trapezoid with `k = 1` and `b = a - ε`
+(`TauCeti.Toric.exists_equiv_cornerChop_simplex_eq_hirzebruch`,
+`TauCeti.Toric.facetPolyhedron_cornerChop_simplex`). So the chopped triangle is a Delzant polytope
+for every depth `0 < ε < a` (`TauCeti.Toric.isDelzant_cornerChop_simplex`), not only for the small
+depths of `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`. This is the polytope side of
+the classical identification of the blowup of `ℂP²` at a fixed point with the Hirzebruch surface
+`H₁`; the other two vertices of the triangle give the same polytope up to an integral affine
+change of coordinates.
+
 ## Main definitions
 
 * `TauCeti.Toric.hirzebruchNormal k`: the inward facet normals `(1, 0)`, `(0, 1)`, `(0, -1)`,
@@ -41,6 +63,11 @@ determinant `±1`, so generates `ℤ²`, and hence is a lattice basis
 * `TauCeti.Toric.mem_facetPolyhedron_hirzebruch_iff`: the polyhedron is the trapezoid.
 * `TauCeti.Toric.isDelzant_hirzebruch`: for `0 < b`, `0 < a` and `k b < a` it is a Delzant
   polytope.
+* `TauCeti.Toric.extremePoints_facetPolyhedron_hirzebruch`,
+  `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_hirzebruch`: its four vertices.
+* `TauCeti.Toric.exists_equiv_cornerChop_simplex_eq_hirzebruch`,
+  `TauCeti.Toric.isDelzant_cornerChop_simplex`: chopping a vertex off the triangle of `ℂP²` gives
+  the trapezoid with `k = 1`, a Delzant polytope at every depth below `a`.
 
 ## References
 
@@ -292,17 +319,15 @@ private theorem exists_activeSet_hirzebruch_eq_singleton (hb : 0 < b) (ha : 0 < 
     obtain ⟨h₀, h₁, h₂, -⟩ := hact hl
     fin_cases l <;> simp at h₀ h₁ h₂ ⊢ <;> linarith
 
-/-- **Hirzebruch trapezoids are Delzant polytopes.** For an integer `k` and reals with `0 < b`,
-`0 < a` and `k b < a`, the trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` in the
-lattice `ℤ²`, with facet normals `(1, 0)`, `(0, 1)`, `(0, -1)`, `(-1, -k)`, is a Delzant
-polytope. -/
-theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
-    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-      (hirzebruchSupport a b) := by
-  refine ⟨isBounded_facetPolyhedron_hirzebruch hb ha, fun x hx ↦ ?_,
-    exists_activeSet_hirzebruch_eq_singleton hb ha hab⟩
-  -- At a vertex the active constraints are exactly a pair of adjacent facets, since a single
-  -- normal does not span the plane.
+/-- At a vertex of the trapezoid, the active constraints are exactly a pair of adjacent facets,
+since a single normal does not span the plane. -/
+private theorem exists_activeSet_hirzebruch_eq_pair (hb : 0 < b) (ha : 0 < a) (hab : k * b < a)
+    {x : StrongDual ℝ (Fin 2 → ℝ)}
+    (hx : x ∈ (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+      (hirzebruchSupport a b)).extremePoints ℝ) :
+    ∃ i j : Fin 4, ((i, j) = (0, 1) ∨ (i, j) = (0, 2) ∨ (i, j) = (1, 3) ∨ (i, j) = (2, 3)) ∧
+      activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k))
+        (hirzebruchSupport a b) x = {i, j} := by
   obtain ⟨i, j, hij, hsub⟩ :=
     exists_activeSet_hirzebruch_subset_pair hb ha hab (extremePoints_subset hx)
   have hmem {l m : Fin 4} (hsub' : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
@@ -316,12 +341,162 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
     rcases hsub' hn with rfl | rfl
     · exact absurd hn hl
     · rfl
-  have hA : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k))
-      (hirzebruchSupport a b) x = {i, j} :=
-    hsub.antisymm (insert_subset (hmem hsub)
-      (singleton_subset_iff.2 (hmem (pair_comm i j ▸ hsub))))
+  exact ⟨i, j, hij, hsub.antisymm (insert_subset (hmem hsub)
+    (singleton_subset_iff.2 (hmem (pair_comm i j ▸ hsub))))⟩
+
+/-- **Hirzebruch trapezoids are Delzant polytopes.** For an integer `k` and reals with `0 < b`,
+`0 < a` and `k b < a`, the trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` in the
+lattice `ℤ²`, with facet normals `(1, 0)`, `(0, 1)`, `(0, -1)`, `(-1, -k)`, is a Delzant
+polytope. -/
+theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
+    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+      (hirzebruchSupport a b) := by
+  refine ⟨isBounded_facetPolyhedron_hirzebruch hb ha, fun x hx ↦ ?_,
+    exists_activeSet_hirzebruch_eq_singleton hb ha hab⟩
+  obtain ⟨i, j, hij, hA⟩ := exists_activeSet_hirzebruch_eq_pair hb ha hab hx
   rw [isSmoothVertex_iff_span_eq_top, hA, image_pair, span_pair_hirzebruchNormal_eq_top hij,
     Module.finrank_fin_fun]
   exact ⟨rfl, (ncard_insert_le _ _).trans (by simp)⟩
+
+/-! ### Vertices -/
+
+/-- Every vertex of the trapezoid is one of `(0, 0)`, `(a, 0)`, `(0, b)` and `(a - k b, b)`: it is
+the meeting point of a pair of adjacent facets. -/
+private theorem extremePoints_facetPolyhedron_hirzebruch_subset (hb : 0 < b) (ha : 0 < a)
+    (hab : k * b < a) :
+    (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+        (hirzebruchSupport a b)).extremePoints ℝ ⊆
+      {0, a • ContinuousLinearMap.proj 0, b • ContinuousLinearMap.proj 1,
+        (a - k * b) • ContinuousLinearMap.proj 0 + b • ContinuousLinearMap.proj 1} := by
+  intro x hx
+  obtain ⟨i, j, hij, hA⟩ := exists_activeSet_hirzebruch_eq_pair hb ha hab hx
+  have hi : i ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
+      (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
+  have hj : j ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
+      (hirzebruchNormal k)) (hirzebruchSupport a b) x := by rw [hA]; simp
+  -- A point of `(ℝ²)*` is determined by its coordinates `x(e₁)` and `x(e₂)`.
+  have hx' : x = x (Pi.single 0 1) • ContinuousLinearMap.proj 0 +
+      x (Pi.single 1 1) • ContinuousLinearMap.proj 1 :=
+    ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
+      fin_cases l <;> simp
+  rw [hx']
+  obtain h | h | h | h := hij <;> obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
+  · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, one_mem_activeSet_hirzebruch_iff.1 hj]
+  · simp [zero_mem_activeSet_hirzebruch_iff.1 hi, two_mem_activeSet_hirzebruch_iff.1 hj]
+  · have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
+    rw [one_mem_activeSet_hirzebruch_iff.1 hi] at h₃ ⊢
+    simp [show x (Pi.single 0 1) = a by linarith]
+  · have h₃ := three_mem_activeSet_hirzebruch_iff.1 hj
+    rw [two_mem_activeSet_hirzebruch_iff.1 hi] at h₃ ⊢
+    simp [show x (Pi.single 0 1) = a - k * b by linarith]
+
+/-- **The vertices of the Hirzebruch trapezoid.** For `0 < b`, `0 < a` and `k b < a`, the
+trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` has exactly the four vertices
+`(0, 0)`, `(a, 0)`, `(0, b)` and `(a - k b, b)` in the coordinates `(x(e₁), x(e₂))`, written with
+the coordinate functionals `ContinuousLinearMap.proj`. -/
+theorem extremePoints_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
+    (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+        (hirzebruchSupport a b)).extremePoints ℝ =
+      {0, a • ContinuousLinearMap.proj 0, b • ContinuousLinearMap.proj 1,
+        (a - k * b) • ContinuousLinearMap.proj 0 + b • ContinuousLinearMap.proj 1} := by
+  refine (extremePoints_facetPolyhedron_hirzebruch_subset hb ha hab).antisymm fun x hx ↦ ?_
+  -- Each listed point lies on a pair of adjacent facets, and a functional vanishing on their
+  -- normals vanishes on `e₁` and `e₂`.
+  refine mem_extremePoints_facetPolyhedron_iff.2 ⟨mem_facetPolyhedron_hirzebruch_iff.2 ?_,
+    fun w hw ↦ ?_⟩
+  · rcases hx with rfl | rfl | rfl | rfl
+    · simp [hb.le, ha.le]
+    · simp [hb.le, ha.le]
+    · simp [hb.le, hab.le]
+    · refine ⟨?_, ?_, ?_, ?_⟩ <;> simp <;> linarith
+  have hw' (j : Fin 4) (hj : j ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
+      (hirzebruchNormal k)) (hirzebruchSupport a b) x) :
+      facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k) j w = 0 := by
+    rw [facetPairing_apply]
+    exact hw j hj
+  -- A functional on `ℝ²` vanishing on `e₁` and `e₂` is zero.
+  suffices w (Pi.single 0 1) = 0 ∧ w (Pi.single 1 1) = 0 from
+    ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin 2)).ext fun l ↦ by
+      fin_cases l <;> simp [this.1, this.2]
+  rcases hx with rfl | rfl | rfl | rfl
+  · have h₀ := hw' 0 (zero_mem_activeSet_hirzebruch_iff.2 (by simp))
+    have h₁ := hw' 1 (one_mem_activeSet_hirzebruch_iff.2 (by simp))
+    simp only [facetPairing_hirzebruch, Matrix.cons_val] at h₀ h₁
+    exact ⟨h₀, h₁⟩
+  · have h₁ := hw' 1 (one_mem_activeSet_hirzebruch_iff.2 (by simp))
+    have h₃ := hw' 3 (three_mem_activeSet_hirzebruch_iff.2 (by simp))
+    simp only [facetPairing_hirzebruch, Matrix.cons_val] at h₁ h₃
+    exact ⟨by rw [h₁] at h₃; linarith, h₁⟩
+  · have h₀ := hw' 0 (zero_mem_activeSet_hirzebruch_iff.2 (by simp))
+    have h₂ := hw' 2 (two_mem_activeSet_hirzebruch_iff.2 (by simp))
+    simp only [facetPairing_hirzebruch, Matrix.cons_val] at h₀ h₂
+    exact ⟨h₀, by linarith⟩
+  · have h₂ := hw' 2 (two_mem_activeSet_hirzebruch_iff.2 (by simp))
+    have h₃ := hw' 3 (three_mem_activeSet_hirzebruch_iff.2 (by simp))
+    simp only [facetPairing_hirzebruch, Matrix.cons_val] at h₂ h₃
+    have h₁ : w (Pi.single 1 1) = 0 := by linarith
+    exact ⟨by rw [h₁] at h₃; linarith, h₁⟩
+
+/-- **A Hirzebruch trapezoid has four vertices.** For `0 < b`, `0 < a` and `k b < a` its vertices
+`(0, 0)`, `(a, 0)`, `(0, b)` and `(a - k b, b)` are distinct. -/
+theorem ncard_extremePoints_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a)
+    (hab : k * b < a) :
+    ((facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
+        (hirzebruchSupport a b)).extremePoints ℝ).ncard = 4 := by
+  have hkb : a - k * b ≠ 0 := by linarith
+  rw [extremePoints_facetPolyhedron_hirzebruch hb ha hab,
+    ncard_insert_of_notMem, ncard_insert_of_notMem, ncard_pair]
+  · exact DFunLike.ne_iff.2 ⟨Pi.single 0 1, by simpa using hkb.symm⟩
+  · simp only [mem_insert_iff, mem_singleton_iff, not_or]
+    exact ⟨DFunLike.ne_iff.2 ⟨Pi.single 1 1, by simpa using hb.ne⟩,
+      DFunLike.ne_iff.2 ⟨Pi.single 1 1, by simpa using hb.ne⟩⟩
+  · simp only [mem_insert_iff, mem_singleton_iff, not_or]
+    exact ⟨DFunLike.ne_iff.2 ⟨Pi.single 0 1, by simpa using ha.ne⟩,
+      DFunLike.ne_iff.2 ⟨Pi.single 1 1, by simpa using hb.ne⟩,
+      DFunLike.ne_iff.2 ⟨Pi.single 1 1, by simpa using hb.ne⟩⟩
+
+/-! ### The blowup of the projective plane -/
+
+/-- **The chopped triangle is a Hirzebruch trapezoid.** Chopping the vertex `(0, a)` off the
+triangle `{0 ≤ x(e₁), 0 ≤ x(e₂), x(e₁) + x(e₂) ≤ a}` of `ℂP²`, where the facets `{x(e₁) = 0}` and
+`{x(e₁) + x(e₂) = a}` meet, at depth `ε` gives, up to relabelling the facets, the presentation of
+the Hirzebruch trapezoid with `k = 1` and `b = a - ε`: the new facet `{x(e₂) = a - ε}` has normal
+`e₁ - (e₁ + e₂) = -e₂`. -/
+theorem exists_equiv_cornerChop_simplex_eq_hirzebruch (a ε : ℝ) :
+    ∃ e : Fin 4 ≃ Option (Option (Fin 2)),
+      cornerChopNormal (simplexNormal (Fin 2)) {some 0, none} ∘ e = hirzebruchNormal 1 ∧
+        cornerChopSupport (simplexSupport a) {some 0, none} ε ∘ e =
+          hirzebruchSupport a (a - ε) := by
+  -- The facets `x(e₁) ≥ 0`, `x(e₂) ≥ 0`, the new facet and the slanted facet of the triangle.
+  refine ⟨⟨![some (some 0), some (some 1), none, some none], fun
+    | none => 2
+    | some none => 3
+    | some (some l) => Fin.castLE (by decide) l, by decide, by decide⟩,
+    funext fun j ↦ funext fun l ↦ ?_, funext fun j ↦ ?_⟩
+  · fin_cases j <;> fin_cases l <;> simp [hirzebruchNormal_def]
+  · fin_cases j <;> simp [hirzebruchSupport_def, add_comm, sub_eq_add_neg]
+
+/-- **The blown-up triangle.** Chopping the vertex `(0, a)` off the triangle of `ℂP²` at depth `ε`
+gives the Hirzebruch trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ a - ε, x(e₁) + x(e₂) ≤ a}` with `k = 1`. -/
+theorem facetPolyhedron_cornerChop_simplex (a ε : ℝ) :
+    facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2))
+        (cornerChopNormal (simplexNormal (Fin 2)) {some 0, none})
+        (cornerChopSupport (simplexSupport a) {some 0, none} ε) =
+      facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal 1)
+        (hirzebruchSupport a (a - ε)) := by
+  obtain ⟨e, hu, hc⟩ := exists_equiv_cornerChop_simplex_eq_hirzebruch a ε
+  rw [← facetPolyhedron_comp e.surjective, hu, hc]
+
+/-- **The blown-up triangle is Delzant at every depth.** Chopping the vertex `(0, a)` off the
+triangle of `ℂP²` gives a Delzant polytope at every depth `0 < ε < a`, namely the Hirzebruch
+trapezoid with `k = 1` and `b = a - ε`. Compare
+`TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`, which only covers small depths. -/
+theorem isDelzant_cornerChop_simplex {a ε : ℝ} (hε : 0 < ε) (hεa : ε < a) :
+    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin 2))
+      (cornerChopNormal (simplexNormal (Fin 2)) {some 0, none})
+      (cornerChopSupport (simplexSupport a) {some 0, none} ε) := by
+  obtain ⟨e, hu, hc⟩ := exists_equiv_cornerChop_simplex_eq_hirzebruch a ε
+  rw [← isDelzant_comp_equiv_iff e, hu, hc]
+  exact isDelzant_hirzebruch (by linarith) (by linarith) (by simpa using hε)
 
 end TauCeti.Toric
