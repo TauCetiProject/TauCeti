@@ -29,7 +29,9 @@ Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) 
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
 their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is the union of the
 path components of the constant loops (`pathComponent_const_subset_contractibleLoops`), and so is
-open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). The
+open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). On a
+path-connected space all constant loops are joined, so `𝓛₀Q` is the single path component of any of
+them (`TauCeti.contractibleLoops_eq_pathComponent`) and is path-connected. The
 constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
 `TauCeti.basepointContractibleLoop` given by evaluation at `1`. A path in the free loop space
 that starts at a constant loop stays in `𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`),
@@ -46,6 +48,8 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
   they are homotopic through closed paths `I → Q`.
 * `TauCeti.contractibleLoops`, `TauCeti.basepointContractibleLoop`: the contractible free loops
   `𝓛₀Q` and basepoint evaluation `𝓛₀Q → Q` at `1 ∈ Circle`.
+* `TauCeti.contractibleLoops_eq_pathComponent`: on a path-connected space, `𝓛₀Q` is the path
+  component of a constant loop.
 * `TauCeti.constContractibleLoop`: the constant loops as a continuous map `Q → 𝓛₀Q`, an
   embedding by `TauCeti.isEmbedding_constContractibleLoop`.
 * `TauCeti.ConstLoopPath`, `TauCeti.ContractibleConstLoopPath`, `TauCeti.constLoopPathHomeomorph`,
@@ -307,6 +311,23 @@ theorem mem_contractibleLoops_iff_joined_const {γ : C(Circle, Q)} :
     (ContinuousMap.continuous_const' (X := Circle) (Y := Q))
   simp only [mappingSpaceEval_apply, ContinuousMap.const_apply] at hc
   exact hq.trans hc.symm
+
+/-- **On a path-connected space the contractible free loops form one path component**, that of
+any constant loop. -/
+theorem contractibleLoops_eq_pathComponent [PathConnectedSpace Q] (q : Q) :
+    contractibleLoops Q = pathComponent (ContinuousMap.const Circle q) := by
+  refine Set.Subset.antisymm (fun γ hγ ↦ ?_) (pathComponent_const_subset_contractibleLoops q)
+  obtain ⟨q', h⟩ := mem_contractibleLoops_iff.1 hγ
+  -- the constant loops at `q` and `q'` are joined through the constant loops along a path
+  exact ((PathConnectedSpace.joined q' q).map
+    (ContinuousMap.continuous_const' (X := Circle) (Y := Q))).symm.trans h.symm
+
+/-- The contractible free loops of a path-connected space form a path-connected space. -/
+instance instPathConnectedSpaceContractibleLoops [PathConnectedSpace Q] :
+    PathConnectedSpace (contractibleLoops Q) := by
+  obtain ⟨q⟩ := (inferInstance : Nonempty Q)
+  rw [← isPathConnected_iff_pathConnectedSpace, contractibleLoops_eq_pathComponent q]
+  exact isPathConnected_pathComponent
 
 variable (Q) in
 /-- In a locally path-connected free loop space, the contractible free loops form an open set:
