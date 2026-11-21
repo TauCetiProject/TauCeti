@@ -134,6 +134,7 @@ theorem innerPairing_sub_right (T : 𝓓'^{n}(Ω, V)) (g h : 𝓓^{n}(Ω, V)) :
     T.innerPairing (g - h) = T.innerPairing g - T.innerPairing h := by
   simp [sub_eq_add_neg]
 
+@[simp]
 theorem innerPairing_sum_right {ι : Type*} (T : 𝓓'^{n}(Ω, V)) (s : Finset ι)
     (g : ι → 𝓓^{n}(Ω, V)) : T.innerPairing (∑ i ∈ s, g i) = ∑ i ∈ s, T.innerPairing (g i) := by
   classical

@@ -503,6 +503,7 @@ def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
 
 /-- **`Op(a)` on distributions is the transpose of the formal adjoint**: the component of
 `Op(a) T (φ)` along `w` is the pairing of `T` with `Op(a)* (φ • w)`. -/
+@[simp]
 theorem inner_quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ))
     (w : W) :
