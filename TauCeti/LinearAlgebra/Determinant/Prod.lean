@@ -23,6 +23,10 @@ Over a field `K`, an endomorphism `B` of `K × V` that fixes the second componen
 block triangular, with diagonal blocks the scalar `(B (1, 0)).1` on the axis `K × 0` and the
 identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
 
+The same block computation applies to an internal direct sum: if `p` and `q` are complementary
+submodules of `M`, the endomorphism of `M` acting as `f` on `p` and as `g` on `q` is conjugate, by
+`Submodule.prodEquivOfIsCompl`, to `LinearMap.prodMap f g`, so its determinant is `det f * det g`.
+
 ## Main results
 
 * `LinearMap.det_finTwoProd`: the determinant of an endomorphism of `R × R`.
@@ -30,6 +34,8 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
   of two linear forms by its determinant.
 * `LinearMap.det_eq_fst_of_snd_eq`: the determinant of an endomorphism of `K × V` fixing the
   second component.
+* `LinearMap.det_ofIsCompl`: the determinant of an endomorphism acting separately on two
+  complementary submodules.
 -/
 
 public section
@@ -57,6 +63,19 @@ theorem det_mul_wedge_finTwoProd (A : (R × R) →ₗ[R] R × R) (κ α : (R × 
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
   rw [det_finTwoProd, h κ (A (1, 0)), h κ (A (0, 1)), h α (A (1, 0)), h α (A (0, 1))]
   ring
+
+/-- The endomorphism of `M` acting as `f` on a submodule `p` and as `g` on a complement `q` of `p`
+has determinant `det f * det g`. -/
+theorem det_ofIsCompl {M : Type*} [AddCommGroup M] [Module R M] {p q : Submodule R M}
+    [Module.Free R p] [Module.Finite R p] [Module.Free R q] [Module.Finite R q] (h : IsCompl p q)
+    (f : Module.End R p) (g : Module.End R q) :
+    LinearMap.det (ofIsCompl h (p.subtype ∘ₗ f) (q.subtype ∘ₗ g)) =
+      LinearMap.det f * LinearMap.det g := by
+  set e := Submodule.prodEquivOfIsCompl p q h
+  have he : ofIsCompl h (p.subtype ∘ₗ f) (q.subtype ∘ₗ g) =
+      (e : p × q →ₗ[R] M) ∘ₗ prodMap f g ∘ₗ (e.symm : M →ₗ[R] p × q) :=
+    ofIsCompl_eq h (fun u ↦ by simp [e]) fun u ↦ by simp [e]
+  rw [he, det_conj, det_prodMap]
 
 section Field
 
