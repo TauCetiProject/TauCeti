@@ -12,6 +12,7 @@ public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 import Mathlib.Probability.Kernel.Composition.WithDensity
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Kernel.Composition.IntegralCompProd
 
@@ -25,8 +26,9 @@ kernel `K : Kernel S X`.
 
 It builds directly on Mathlib's `MeasureTheory.Measure.compProd`,
 `MeasureTheory.Measure.integral_compProd`, and `MeasureTheory.Measure.withDensity_compProd`,
-together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
-`MeasureTheory.Measure.integrable_integral_compProd`.
+together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp`,
+`MeasureTheory.Measure.integrable_integral_compProd`, and
+`MeasureTheory.setIntegral_preimage_eq_integral_indicator_smul`.
 
 ## Main statements
 
@@ -40,6 +42,8 @@ together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
   iterated integral identities.
 * `ProbabilityTheory.condExp_ae_eq_integral_of_map_prodMk_eq_compProd`: conditional expectation
   given `σ(T)` as fiberwise integration against `K`.
+* `ProbabilityTheory.setIntegral_fst_map_prodMk_eq_measureReal_of_condExp_ae_eq`: rectangle mass
+  identity for a conditional-expectation version `ψ ∘ T` of an indicator `1_{e ∈ B}`.
 * `ProbabilityTheory.map_prodMk_comp_eq_compProd`: preservation of disintegrations under mixtures
   `P ∘ₘ Λ`.
 * `ProbabilityTheory.eq_withDensity_rnDeriv_map_of_map_prodMk_eq_compProd`: if `P ≪ L` share a
@@ -79,21 +83,6 @@ theorem lintegral_eq_lintegral_lintegral_of_map_prodMk_eq_compProd (hT : Measura
 section Bochner
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-omit [MeasurableSpace X] [MeasurableSpace S] in
-/-- Expressing `(T ⁻¹' B).indicator u` as the scalar product with `B.indicator 1 ∘ T`. -/
-private theorem preimage_indicator_eq_indicator_smul (T : X → S) (B : Set S) (u : X → F) :
-    (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • u x) = (T ⁻¹' B).indicator u := by
-  ext x
-  by_cases hx : T x ∈ B <;> simp [hx]
-
-omit [SFinite μ] in
-/-- Rewriting a set integral over a preimage `T ⁻¹' B` as an integral weighted by the indicator
-`B.indicator 1 ∘ T`. -/
-private theorem setIntegral_preimage_eq_integral_indicator_smul (hT : Measurable T)
-    {B : Set S} (hB : MeasurableSet B) (u : X → F) :
-    ∫ x in T ⁻¹' B, u x ∂μ = ∫ x, B.indicator (fun _ ↦ (1 : ℝ)) (T x) • u x ∂μ := by
-  rw [← integral_indicator (hT hB), preimage_indicator_eq_indicator_smul]
 
 /-- Bochner integral disintegration identity for `μ.map (T, id) = μ.map T ⊗ₘ K`. -/
 theorem integral_eq_integral_integral_of_map_prodMk_eq_compProd (hT : Measurable T)
@@ -171,15 +160,50 @@ theorem condExp_ae_eq_integral_of_map_prodMk_eq_compProd [CompleteSpace F]
     hgm.aestronglyMeasurable).symm.trans hinner_ae
   rcases hA with ⟨B, hB, rfl⟩
   have hBφ : Integrable (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • φ' x) μ := by
-    rw [preimage_indicator_eq_indicator_smul]
+    have heq : (fun x ↦ B.indicator (fun _ ↦ (1 : ℝ)) (T x) • φ' x) = (T ⁻¹' B).indicator φ' := by
+      ext x
+      rw [← Set.indicator_comp_right (f := T), ← Set.indicator_smul_apply_left]
+      simp
+    rw [heq]
     exact hφ'int.indicator (hT hB)
-  rw [setIntegral_preimage_eq_integral_indicator_smul hT hB,
+  rw [setIntegral_preimage_eq_integral_indicator_smul hT.aemeasurable hB,
     ← integral_smul_eq_integral_smul_integral_of_map_prodMk_eq_compProd hT h
       (measurable_const.indicator hB) hφ'm hBφ,
-    ← setIntegral_preimage_eq_integral_indicator_smul hT hB]
+    ← setIntegral_preimage_eq_integral_indicator_smul hT.aemeasurable hB]
   exact setIntegral_congr_ae (hT hB) (hφ'ae.symm.mono fun _ hx _ ↦ hx)
 
 end Bochner
+
+/-- Set-integral identity for a conditional-expectation version `ψ ∘ T` of the indicator
+`1_{e ∈ B}`: integrating `ψ` over `A` under the first marginal of `μ.map (T, e)` gives the
+real joint mass `(μ.map (T, e)).real (A ×ˢ B)`. -/
+theorem setIntegral_fst_map_prodMk_eq_measureReal_of_condExp_ae_eq {Y : Type*}
+    [MeasurableSpace Y] {μ : Measure X} {T : X → S} (hT : Measurable T)
+    [SigmaFinite (μ.trim hT.comap_le)] {e : X → Y} (he : Measurable e)
+    {B : Set Y} (hB : MeasurableSet B) {ψ : S → ℝ}
+    (hψ : AEStronglyMeasurable ψ (μ.map T))
+    (hce : μ[(e ⁻¹' B).indicator (fun _ ↦ (1 : ℝ)) |
+      MeasurableSpace.comap T inferInstance] =ᵐ[μ] ψ ∘ T)
+    {A : Set S} (hA : MeasurableSet A) (hBfin : μ (e ⁻¹' B) ≠ ∞ := by finiteness) :
+    ∫ s in A, ψ s ∂(μ.map (fun x ↦ (T x, e x))).fst =
+      (μ.map (fun x ↦ (T x, e x))).real (A ×ˢ B) := by
+  have hφint : Integrable ((e ⁻¹' B).indicator (fun _ ↦ (1 : ℝ))) μ :=
+    (integrableOn_const hBfin).integrable_indicator (he hB)
+  calc ∫ s in A, ψ s ∂(μ.map (fun x ↦ (T x, e x))).fst
+    _ = ∫ s in A, ψ s ∂μ.map T := by rw [Measure.fst_map_prodMk hT he]
+    _ = ∫ x in T ⁻¹' A, ψ (T x) ∂μ :=
+        setIntegral_map hA hψ hT.aemeasurable
+    _ = ∫ x in T ⁻¹' A,
+          μ[(e ⁻¹' B).indicator (fun _ ↦ (1 : ℝ)) |
+            MeasurableSpace.comap T inferInstance] x ∂μ :=
+        setIntegral_congr_ae (hT hA) (hce.symm.mono fun _ hx _ ↦ hx)
+    _ = ∫ x in T ⁻¹' A, (e ⁻¹' B).indicator (fun _ ↦ (1 : ℝ)) x ∂μ :=
+        setIntegral_condExp hT.comap_le hφint ⟨A, hA, rfl⟩
+    _ = μ.real (T ⁻¹' A ∩ e ⁻¹' B) := by
+        rw [setIntegral_indicator (he hB), setIntegral_const, smul_eq_mul, mul_one]
+    _ = (μ.map (fun x ↦ (T x, e x))).real (A ×ˢ B) := by
+        rw [Measure.real, Measure.real,
+          Measure.map_apply (hT.prodMk he) (hA.prod hB), Set.mk_preimage_prod]
 
 /-- Disintegration is preserved under mixtures `P ∘ₘ Λ`: if `K` disintegrates `(P θ).map (T, id)`
 for `Λ`-almost every `θ`, then `K` disintegrates `(P ∘ₘ Λ).map (T, id)`. -/

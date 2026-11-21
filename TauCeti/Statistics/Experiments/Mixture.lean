@@ -33,8 +33,9 @@ work with a dominating measure that is itself a mixture of the laws of the model
   every component.
 * `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`: pushforwards and
   composition products commute with countable mixtures.
-* `TauCeti.countableMixture_eq_withDensity`, `TauCeti.HasDensity.countableMixture`: a mixture of
-  measures with densities has the mixed density.
+* `TauCeti.countableMixture_eq_withDensity`, `TauCeti.countableMixture_eq_withDensity_mul`,
+  `TauCeti.HasDensity.countableMixture`: a mixture of measures with densities has the mixed
+  density.
 * `TauCeti.exists_absolutelyContinuous_countableMixture`: the Halmos–Savage lemma.
 
 ## References
@@ -145,6 +146,18 @@ theorem countableMixture_eq_withDensity {g : ℕ → X → ℝ≥0∞} (hg : ∀
   rw [← withDensity_tsum fun n ↦ (hg n).const_smul (mixtureWeight n)]
   congr with x
   simp [ENNReal.tsum_apply]
+
+/-- A countable mixture of measures whose densities share a measurable factor `h` has the mixed
+density `(∑ₙ mixtureWeight n * g n) * h`. -/
+theorem countableMixture_eq_withDensity_mul {g : ℕ → X → ℝ≥0∞} {h : X → ℝ≥0∞}
+    (hg : ∀ n, Measurable (g n)) (hh : Measurable h)
+    (hP : ∀ n, P (θs n) = μ.withDensity fun x ↦ g n x * h x) :
+    countableMixture P θs = μ.withDensity fun x ↦ (∑' n, mixtureWeight n * g n x) * h x := by
+  rw [countableMixture_eq_withDensity (fun n ↦ (hg n).mul hh) hP]
+  congr 1
+  simp_rw [Pi.mul_apply, ← mul_assoc]
+  funext x
+  rw [ENNReal.tsum_mul_right]
 
 /-- A countable mixture that is a finite measure, of measures with real densities `f n`, has the
 real density `(∑ₙ mixtureWeight n * ofReal (f n)).toReal`. That sum is finite

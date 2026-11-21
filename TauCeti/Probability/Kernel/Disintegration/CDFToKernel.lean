@@ -9,6 +9,7 @@ public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import Mathlib.Probability.Kernel.Disintegration.CDFToKernel
 
 import Mathlib.Probability.Kernel.Disintegration.CondCDF
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # Markov kernels and disintegration from rational conditional CDFs
@@ -58,6 +59,7 @@ def kernelOfMeasurableRat (f : α → ℚ → ℝ) (hf : Measurable f) : Kernel 
 
 /-- Evaluating `kernelOfMeasurableRat f hf` at a point `a` gives the Stieltjes measure of
 `stieltjesOfMeasurableRat f hf a`. -/
+@[simp]
 theorem kernelOfMeasurableRat_apply (f : α → ℚ → ℝ) (hf : Measurable f) (a : α) :
     kernelOfMeasurableRat f hf a = (stieltjesOfMeasurableRat f hf a).measure :=
   (rfl)
@@ -130,21 +132,18 @@ theorem compProd_fst_kernelOfMeasurableRat_of_forall_setIntegral_eq {ρ : Measur
       ∫ b in s, f b q ∂ρ.fst = ρ.real (s ×ˢ Iic (q : ℝ))) :
     ρ.fst ⊗ₘ kernelOfMeasurableRat f hf = ρ := by
   have hRat : IsRatCondKernelCDF (fun (p : Unit × β) ↦ f p.2)
-      (Kernel.const Unit ρ) (Kernel.const Unit ρ).fst :=
-    isRatCondKernelCDF_of_forall_setIntegral_eq (hf.comp measurable_snd)
-      (fun _ q ↦ by simpa [Kernel.fst_apply, Measure.fst] using hint q)
-      (fun _ _ hs q ↦ by simpa [Kernel.fst_apply, Measure.fst] using hsetInt hs q)
-  have hcp : (Kernel.const Unit ρ).fst ⊗ₖ
-      kernelOfMeasurableRat (fun (p : Unit × β) ↦ f p.2) (hf.comp measurable_snd) =
-      Kernel.const Unit ρ :=
-    compProd_kernelOfMeasurableRat hRat
-  have hfst_const : (Kernel.const Unit ρ).fst = Kernel.const Unit ρ.fst := by
-    rw [Measure.fst, Kernel.fst_eq, Kernel.map_const _ measurable_fst]
+      (Kernel.const Unit ρ) (Kernel.const Unit ρ).fst := by
+    rw [Kernel.fst_const]
+    exact isRatCondKernelCDF_of_forall_setIntegral_eq (hf.comp measurable_snd)
+      (fun _ q ↦ by simpa using hint q)
+      (fun _ _ hs q ↦ by simpa using hsetInt hs q)
+  have hcp := compProd_kernelOfMeasurableRat hRat
   have hprod : kernelOfMeasurableRat (fun (p : Unit × β) ↦ f p.2) (hf.comp measurable_snd) =
       (kernelOfMeasurableRat f hf).prodMkLeft Unit := by
     ext ⟨⟨⟩, b⟩ : 1
     rw [kernelOfMeasurableRat_apply, Kernel.prodMkLeft_apply, kernelOfMeasurableRat_apply,
       stieltjesOfMeasurableRat_unit_prod]
-  simpa [Measure.compProd, hfst_const, hprod] using congrArg (fun k ↦ k ()) hcp
+  simp only [Kernel.fst_const, hprod, Kernel.const_compProd_prodMkLeft] at hcp
+  simpa using congrArg (fun k ↦ k ()) hcp
 
 end ProbabilityTheory

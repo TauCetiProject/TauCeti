@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Composition.IntegralCompProd
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # Bochner integrability against the composition-product of a measure and a kernel
@@ -36,7 +37,7 @@ theorem integrable_integral_compProd {α β E : Type*} [MeasurableSpace α] [Mea
     [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} [SFinite μ] {κ : Kernel α β}
     [IsSFiniteKernel κ] {f : α × β → E} (hf : Integrable f (μ ⊗ₘ κ)) :
     Integrable (fun a ↦ ∫ b, f (a, b) ∂κ a) μ := by
-  simpa [Measure.compProd, Kernel.prodMkLeft_apply, Kernel.const_apply] using
-    hf.integral_compProd
+  rw [← Kernel.const_compProd_prodMkLeft_apply Unit μ κ ()] at hf
+  simpa [Kernel.prodMkLeft_apply, Kernel.const_apply] using hf.integral_compProd
 
 end MeasureTheory.Measure

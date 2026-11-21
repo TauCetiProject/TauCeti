@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 import Mathlib.Probability.Kernel.MeasurableIntegral
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 import TauCeti.Probability.Kernel.Disintegration.CDFToKernel
 import TauCeti.Probability.Kernel.Disintegration.Map
 import TauCeti.Probability.Kernel.Disintegration.StandardBorel
@@ -27,7 +28,7 @@ and develops the conditional-expectation characterization of sufficiency:
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
 * `TauCeti.isSufficientStatistic_iff_exists_condExp_ae_eq`: on a nonempty standard Borel space `X`,
-  a measurable statistic `T` is sufficient for a family of probability laws `P` if and only if
+  a measurable statistic `T` is sufficient for a family of finite measures `P` if and only if
   every bounded measurable `φ : X → ℝ` admits a single measurable `ψ : S → ℝ` with
   `(P θ)[φ | comap T _] =ᵐ[P θ] ψ ∘ T` for all `θ`.
 
@@ -98,39 +99,53 @@ theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)]
   rw [Measure.map_id, Kernel.id, Measure.compProd_deterministic measurable_id]
   simp only [id_eq]
 
+/-- A constant statistic is sufficient for a nonempty family of probability measures if and only
+if all measures in the family are equal. -/
+theorem isSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure X}
+    [∀ θ, IsProbabilityMeasure (P θ)] (s₀ : S) :
+    IsSufficientStatistic P (fun _ ↦ s₀) ↔ ∀ θ₁ θ₂, P θ₁ = P θ₂ := by
+  refine ⟨fun h θ₁ θ₂ ↦ ?_, fun hconst ↦ ?_⟩
+  · obtain ⟨_, K, _, hdis⟩ := h
+    have hrec (θ : Θ) : P θ = K ∘ₘ Measure.dirac s₀ := by
+      have hmap : (P θ).map (fun _ : X ↦ s₀) = Measure.dirac s₀ := by
+        rw [Measure.map_const, measure_univ, one_smul]
+      rw [← comp_map_eq_self_of_map_prodMk_eq_compProd measurable_const (hdis θ), hmap]
+    exact (hrec θ₁).trans (hrec θ₂).symm
+  · let θ₀ : Θ := Classical.arbitrary Θ
+    have hpair : Measurable fun x : X ↦ (s₀, x) := measurable_const.prodMk measurable_id
+    refine ⟨measurable_const, Kernel.const S (P θ₀), inferInstance, fun θ ↦ ?_⟩
+    rw [hconst θ θ₀]
+    ext A hA
+    rw [Measure.map_apply hpair hA, Measure.compProd_apply hA]
+    have hmap : (P θ₀).map (fun _ : X ↦ s₀) = Measure.dirac s₀ := by
+      rw [Measure.map_const, measure_univ, one_smul]
+    rw [hmap, lintegral_dirac' _ (Kernel.measurable_kernel_prodMk_left hA), Kernel.const_apply]
+
 /-- Any constant statistic is sufficient for a constant nonempty family of probability measures. -/
 theorem isSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
     [∀ θ, IsProbabilityMeasure (P θ)] (hconst : ∀ θ₁ θ₂, P θ₁ = P θ₂) (s₀ : S) :
-    IsSufficientStatistic P (fun _ ↦ s₀) := by
-  let θ₀ : Θ := Classical.arbitrary Θ
-  have hpair : Measurable fun x : X ↦ (s₀, x) := measurable_const.prodMk measurable_id
-  refine ⟨measurable_const, Kernel.const S (P θ₀), inferInstance, fun θ ↦ ?_⟩
-  rw [hconst θ θ₀]
-  ext A hA
-  rw [Measure.map_apply hpair hA, Measure.compProd_apply hA]
-  have hmap : (P θ₀).map (fun _ : X ↦ s₀) = Measure.dirac s₀ := by
-    rw [Measure.map_const, measure_univ, one_smul]
-  rw [hmap, lintegral_dirac' _ (Kernel.measurable_kernel_prodMk_left hA), Kernel.const_apply]
+    IsSufficientStatistic P (fun _ ↦ s₀) :=
+  (isSufficientStatistic_const_iff s₀).mpr hconst
 
 /-- Composing a sufficient statistic with a measurable equivalence preserves sufficiency. -/
 theorem IsSufficientStatistic.comp_measurableEquiv {P : Θ → Measure X} [∀ θ, SFinite (P θ)]
     {T : X → S} (h : IsSufficientStatistic P T) (e : S ≃ᵐ S') :
     IsSufficientStatistic P (e ∘ T) := by
   obtain ⟨hT, K, hK, hdis⟩ := h
-  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
   refine ⟨e.measurable.comp hT, K.comap e.symm e.symm.measurable, inferInstance, fun θ ↦ ?_⟩
-  ext A hA
-  have hA' : MeasurableSet (Prod.map e id ⁻¹' A) := (e.measurable.prodMap measurable_id) hA
-  have hmap1 : (P θ).map (fun x ↦ ((e ∘ T) x, x)) =
-      ((P θ).map (fun x ↦ (T x, x))).map (Prod.map e id) := by
-    rw [Measure.map_map (e.measurable.prodMap measurable_id) hpair]
-    simp only [Function.comp_def, Prod.map_apply, id_eq]
-  rw [hmap1, Measure.map_apply (e.measurable.prodMap measurable_id) hA, hdis θ,
-    Measure.compProd_apply hA', Measure.compProd_apply hA, ← Measure.map_map e.measurable hT,
-    lintegral_map (Kernel.measurable_kernel_prodMk_left hA) e.measurable]
-  refine lintegral_congr fun s ↦ ?_
-  rw [Kernel.comap_apply, e.symm_apply_apply]
-  simp only [Set.preimage_preimage, Prod.map_apply, id_eq]
+  have hK' : (K.comap e.symm e.symm.measurable).comap e e.measurable = K := by
+    rw [← Kernel.comap_comp_right]
+    simp
+  calc (P θ).map (fun x ↦ ((e ∘ T) x, x))
+    _ = ((P θ).map (fun x ↦ (T x, x))).map (Prod.map e id) :=
+        (Measure.map_map (e.measurable.prodMap measurable_id) (hT.prodMk measurable_id)).symm
+    _ = ((P θ).map T ⊗ₘ K).map (Prod.map e id) := by rw [hdis θ]
+    _ = ((P θ).map T ⊗ₘ (K.comap e.symm e.symm.measurable).comap e e.measurable).map
+          (Prod.map e id) := by rw [hK']
+    _ = ((P θ).map T).map e ⊗ₘ K.comap e.symm e.symm.measurable :=
+        Measure.map_prodMap_compProd_comap _ _ e.measurable
+    _ = (P θ).map (e ∘ T) ⊗ₘ K.comap e.symm e.symm.measurable := by
+        rw [Measure.map_map e.measurable hT]
 
 /-- A measurable statistic agreeing almost everywhere under every `P θ` with a sufficient statistic
 is itself sufficient. -/
@@ -187,6 +202,14 @@ theorem isMinimalSufficientStatistic_const [Nonempty Θ] {P : Θ → Measure X}
   ⟨isSufficientStatistic_const hconst s₀, fun _ _ _ _ ↦
     ⟨fun _ ↦ s₀, measurable_const, fun _ ↦ Filter.EventuallyEq.rfl⟩⟩
 
+/-- A constant statistic is minimal sufficient for a nonempty family of probability measures if and
+only if all measures in the family are equal. -/
+theorem isMinimalSufficientStatistic_const_iff [Nonempty Θ] {P : Θ → Measure X}
+    [∀ θ, IsProbabilityMeasure (P θ)] (s₀ : S) :
+    IsMinimalSufficientStatistic P (fun _ ↦ s₀) ↔ ∀ θ₁ θ₂, P θ₁ = P θ₂ :=
+  ⟨fun h ↦ (isSufficientStatistic_const_iff s₀).mp h.isSufficientStatistic,
+    fun hconst ↦ isMinimalSufficientStatistic_const hconst s₀⟩
+
 /-- Composing a minimal sufficient statistic with a measurable equivalence preserves minimal
 sufficiency. -/
 theorem IsMinimalSufficientStatistic.comp_measurableEquiv.{u, v, w, w', r} {Θ : Type u}
@@ -224,38 +247,9 @@ theorem IsSufficientStatistic.exists_condExp_ae_eq [NormedAddCommGroup F] [Norme
   exact ⟨fun s ↦ ∫ y, φ y ∂K s, hφ.integral_kernel, fun θ ↦
     condExp_ae_eq_integral_of_map_prodMk_eq_compProd hT (hdis θ) (hint θ)⟩
 
-/-- Set-integral identity for a conditional-expectation version `ψ ∘ T` of the indicator
-`1_{e ≤ q}`: integrating `ψ` over `A` under the first marginal of `ρ = P.map (T, e)` gives the
-real joint mass `ρ.real (A ×ˢ Iic q)`. -/
-private theorem setIntegral_eq_measureReal_prod_Iic_of_condExp_ae_eq {P : Measure X}
-    [IsFiniteMeasure P] {T : X → S} (hT : Measurable T) {e : X → ℝ} (he : Measurable e)
-    {q : ℚ} {ψ : S → ℝ} (hψ : Measurable ψ)
-    (hce : P[(e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ)) |
-      MeasurableSpace.comap T inferInstance] =ᵐ[P] ψ ∘ T)
-    {A : Set S} (hA : MeasurableSet A) :
-    ∫ s in A, ψ s ∂(P.map (fun x ↦ (T x, e x))).fst =
-      (P.map (fun x ↦ (T x, e x))).real (A ×ˢ Iic (q : ℝ)) := by
-  have hφint : Integrable ((e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ))) P :=
-    (integrable_const (1 : ℝ)).indicator (he measurableSet_Iic)
-  calc ∫ s in A, ψ s ∂(P.map (fun x ↦ (T x, e x))).fst
-    _ = ∫ s in A, ψ s ∂P.map T := by rw [Measure.fst_map_prodMk hT he]
-    _ = ∫ x in T ⁻¹' A, ψ (T x) ∂P :=
-        setIntegral_map hA hψ.aestronglyMeasurable hT.aemeasurable
-    _ = ∫ x in T ⁻¹' A,
-          P[(e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ)) |
-            MeasurableSpace.comap T inferInstance] x ∂P :=
-        setIntegral_congr_ae (hT hA) (hce.symm.mono fun _ hx _ ↦ hx)
-    _ = ∫ x in T ⁻¹' A, (e ⁻¹' Iic (q : ℝ)).indicator (fun _ ↦ (1 : ℝ)) x ∂P :=
-        setIntegral_condExp hT.comap_le hφint ⟨A, hA, rfl⟩
-    _ = P.real (T ⁻¹' A ∩ e ⁻¹' Iic (q : ℝ)) := by
-        rw [setIntegral_indicator (he measurableSet_Iic), setIntegral_const, smul_eq_mul, mul_one]
-    _ = (P.map (fun x ↦ (T x, e x))).real (A ×ˢ Iic (q : ℝ)) := by
-        rw [Measure.real, Measure.real,
-          Measure.map_apply (hT.prodMk he) (hA.prod measurableSet_Iic), Set.mk_preimage_prod]
-
 /-- On a nonempty standard Borel space `X`, if every bounded measurable `φ : X → ℝ` has a
 parameter-free measurable version `ψ ∘ T` of the conditional expectation `(P θ)[φ | σ(T)]`,
-then `T` is sufficient for the family of probability laws `P`.
+then `T` is sufficient for the family of finite measures `P`.
 
 Adapts Mathlib's `condKernelReal` construction (`stieltjesOfMeasurableRat`,
 `isRatCondKernelCDF_preCDF`, `isCondKernelCDF_stieltjesOfMeasurableRat`, `compProd_toKernel`,
@@ -265,7 +259,7 @@ and `Kernel.borelMarkovFromReal`), via `ProbabilityTheory.kernelOfMeasurableRat`
 parameter-free conditional expectations of the rational half-line indicators
 `1_{embeddingReal X ≤ q}`. -/
 theorem isSufficientStatistic_of_exists_condExp_ae_eq [StandardBorelSpace X] [Nonempty X]
-    {P : Θ → Measure X} [∀ θ, IsProbabilityMeasure (P θ)] {T : X → S} (hT : Measurable T)
+    {P : Θ → Measure X} [∀ θ, IsFiniteMeasure (P θ)] {T : X → S} (hT : Measurable T)
     (hce : ∀ φ : X → ℝ, Measurable φ → (∃ C, ∀ x, |φ x| ≤ C) →
       ∃ ψ : S → ℝ, Measurable ψ ∧
         ∀ θ, (P θ)[φ | MeasurableSpace.comap T inferInstance] =ᵐ[P θ] ψ ∘ T) :
@@ -303,17 +297,18 @@ theorem isSufficientStatistic_of_exists_condExp_ae_eq [StandardBorelSpace X] [No
     exact integrable_condExp.congr (hψce q θ)
   have hreal : ρ.fst ⊗ₘ η = ρ :=
     compProd_fst_kernelOfMeasurableRat_of_forall_setIntegral_eq hfm hint fun hA q ↦
-      setIntegral_eq_measureReal_prod_Iic_of_condExp_ae_eq hT he.measurable (hψm q) (hψce q θ) hA
+      setIntegral_fst_map_prodMk_eq_measureReal_of_condExp_ae_eq hT he.measurable
+        measurableSet_Iic (hψm q).aestronglyMeasurable (hψce q θ) hA
   have hX : ρX.fst ⊗ₘ K = ρX :=
     Measure.compProd_fst_borelMarkovFromReal ρX η (by rw [hρXfst, ← hρfst, hreal, hρeq])
   rw [← hρXfst, hX]
 
 /-- **Conditional-expectation characterization of sufficiency** (Pfanzagl, Corollary 1.3.11):
 on a nonempty standard Borel space `X`, a measurable statistic `T` is sufficient for a family of
-probability measures `P` if and only if every bounded measurable function `φ : X → ℝ` admits a
+finite measures `P` if and only if every bounded measurable function `φ : X → ℝ` admits a
 parameter-free measurable `ψ : S → ℝ` with `(P θ)[φ | σ(T)] =ᵐ[P θ] ψ ∘ T` for all `θ`. -/
 theorem isSufficientStatistic_iff_exists_condExp_ae_eq [StandardBorelSpace X] [Nonempty X]
-    {P : Θ → Measure X} [∀ θ, IsProbabilityMeasure (P θ)] {T : X → S} (hT : Measurable T) :
+    {P : Θ → Measure X} [∀ θ, IsFiniteMeasure (P θ)] {T : X → S} (hT : Measurable T) :
     IsSufficientStatistic P T ↔
       ∀ φ : X → ℝ, Measurable φ → (∃ C, ∀ x, |φ x| ≤ C) →
         ∃ ψ : S → ℝ, Measurable ψ ∧

@@ -90,64 +90,6 @@ theorem IsSufficientStatistic.exists_factorization [Nonempty Θ] {P : Θ → Mea
     exact (ENNReal.ofReal_toReal hx.ne).symm
   exact (hf θ).ae_eq_of_sigmaFinite (hPL_dens.trans hh_dens)
 
-/-- A countable mixture of measures with factorized `ℝ≥0∞`-valued densities `g θ (T x) * h x`
-has factorized density `(∑' n, mixtureWeight n * g (θs n) (T x)) * h x`. -/
-private theorem countableMixture_withDensity_factorized {P : Θ → Measure X} {μ : Measure X}
-    {T : X → S} (hT : Measurable T) {g : Θ → S → ℝ≥0∞} (hg : ∀ θ, Measurable (g θ))
-    {h : X → ℝ≥0∞} (hh : Measurable h)
-    (hP : ∀ θ, P θ = μ.withDensity (fun x ↦ g θ (T x) * h x)) (θs : ℕ → Θ) :
-    countableMixture P θs =
-      μ.withDensity (fun x ↦ (∑' n, mixtureWeight n * g (θs n) (T x)) * h x) := by
-  rw [countableMixture_eq_withDensity (g := fun n x ↦ g (θs n) (T x) * h x)
-    (fun n ↦ ((hg (θs n)).comp hT).mul hh) fun n ↦ hP (θs n)]
-  congr 1
-  funext x
-  simp_rw [← mul_assoc]
-  exact ENNReal.tsum_mul_right
-
-/-- If `P ≪ L` where `L` is finite and `P`, `L` have factorized `ℝ≥0∞`-valued densities
-`g (T x) * h x` and `G (T x) * h x` with respect to `μ`, then `P` has `L`-density
-`(fun s ↦ g s / G s) ∘ T`. -/
-private theorem eq_withDensity_div_of_factorized {P L μ : Measure X} [IsFiniteMeasure L]
-    {T : X → S} (hT : Measurable T) {g G : S → ℝ≥0∞} (hg : Measurable g)
-    (hG : Measurable G) {h : X → ℝ≥0∞} (hh : Measurable h) (hPL : P ≪ L)
-    (hP : P = μ.withDensity (fun x ↦ g (T x) * h x))
-    (hL : L = μ.withDensity (fun x ↦ G (T x) * h x)) :
-    P = L.withDensity ((fun s ↦ g s / G s) ∘ T) := by
-  have hLm : Measurable fun x ↦ G (T x) * h x := (hG.comp hT).mul hh
-  have hPm : Measurable fun x ↦ g (T x) * h x := (hg.comp hT).mul hh
-  -- Finiteness of `L` ensures `G (T x) * h x < ∞` `μ`-almost everywhere.
-  have hLlt : ∀ᵐ x ∂μ, G (T x) * h x < ∞ := by
-    refine ae_lt_top hLm ?_
-    have huniv : ∫⁻ x, G (T x) * h x ∂μ = L univ := by
-      rw [hL, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    rw [huniv]
-    exact measure_ne_top _ _
-  -- `G ∘ T` is nonzero `L`-a.e., hence `P`-a.e., so `G (T x) = 0` forces `g (T x) * h x = 0`
-  -- `μ`-a.e.
-  have hZ : ∀ᵐ x ∂μ, G (T x) = 0 → g (T x) * h x = 0 := by
-    have hLG : ∀ᵐ x ∂L, G (T x) ≠ 0 := by
-      rw [hL, ae_withDensity_iff hLm]
-      exact ae_of_all _ fun _ hx ↦ left_ne_zero_of_mul hx
-    have hPG : ∀ᵐ x ∂P, G (T x) ≠ 0 := hPL.ae_le hLG
-    rw [hP, ae_withDensity_iff hPm] at hPG
-    exact hPG.mono fun _ hx hG0 ↦ not_not.mp fun hne ↦ hx hne hG0
-  have hq : Measurable fun s ↦ g s / G s := hg.div hG
-  rw [hP, hL, ← withDensity_mul _ hLm (hq.comp hT)]
-  refine withDensity_congr_ae ?_
-  filter_upwards [hLlt, hZ] with x hxlt hxZ
-  simp only [Pi.mul_apply, Function.comp_apply]
-  by_cases hh0 : h x = 0
-  · simp [hh0]
-  · by_cases hG0 : G (T x) = 0
-    · rw [hxZ hG0, hG0, zero_mul, zero_mul]
-    · have hGtop : G (T x) ≠ ∞ := by
-        intro htop
-        rw [htop, ENNReal.top_mul hh0] at hxlt
-        exact lt_irrefl _ hxlt
-      rw [mul_comm (G (T x)), mul_assoc, mul_comm (G (T x)),
-        ENNReal.div_mul_cancel hG0 hGtop, mul_comm]
-
 /-- Converse direction of the factorization theorem: on a nonempty standard Borel space `X`, if
 the densities of a nonempty family of probability measures with respect to an s-finite measure `μ`
 factor through a measurable statistic `T`, then `T` is sufficient. -/
@@ -176,14 +118,14 @@ theorem isSufficientStatistic_of_exists_factorization [StandardBorelSpace X] [No
     filter_upwards [hfac θ] with x hx
     rw [hx, ENNReal.ofReal_mul ((hg θ).2 (T x))]
   have hL_wd : L = μ.withDensity (fun x ↦ G (T x) * ENNReal.ofReal (h x)) :=
-    countableMixture_withDensity_factorized hT (fun θ ↦ (hg θ).1.ennreal_ofReal)
-      hhm.ennreal_ofReal hP_wd θs
+    countableMixture_eq_withDensity_mul (fun n ↦ (hg (θs n)).1.ennreal_ofReal.comp hT)
+      hhm.ennreal_ofReal fun n ↦ hP_wd (θs n)
   -- Step 3: express each `P θ` as a `T`-measurable tilt of `L`, preserving the disintegration `K`.
   rw [isSufficientStatistic_def]
   refine ⟨hT, K, inferInstance, fun θ ↦ ?_⟩
   have hP_eq : P θ = L.withDensity ((fun s ↦ ENNReal.ofReal (g θ s) / G s) ∘ T) :=
-    eq_withDensity_div_of_factorized hT (hg θ).1.ennreal_ofReal hGm hhm.ennreal_ofReal
-      (hdom θ) (hP_wd θ) hL_wd
+    eq_withDensity_div_of_eq_withDensity_mul ((hg θ).1.ennreal_ofReal.comp hT).aemeasurable
+      (hGm.comp hT).aemeasurable hhm.ennreal_ofReal.aemeasurable (hdom θ) (hP_wd θ) hL_wd
   rw [hP_eq]
   exact map_prodMk_withDensity_comp_eq_compProd hT hLdis ((hg θ).1.ennreal_ofReal.div hGm)
 

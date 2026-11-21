@@ -84,6 +84,8 @@ requiring the reference measure itself to be sigma-finite.
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.eq_withDensity_div_of_eq_withDensity_mul`: if `P ≪ L` where `L` is σ-finite, and
+  `P`, `L` have `ℝ≥0∞`-densities `g * h` and `G * h` against `μ`, then `P = L.withDensity (g / G)`.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -384,6 +386,51 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- If `P ≪ L` where `L` is σ-finite, and `P`, `L` have `ℝ≥0∞`-valued densities `g * h` and
+`G * h` with respect to `μ`, then `P` has `L`-density `g / G`. -/
+theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace α]
+    {P L μ : Measure α} [SigmaFinite L] {g G h : α → ℝ≥0∞}
+    (hg : AEMeasurable g μ) (hG : AEMeasurable G μ) (hh : AEMeasurable h μ) (hPL : P ≪ L)
+    (hP : P = μ.withDensity fun x ↦ g x * h x)
+    (hL : L = μ.withDensity fun x ↦ G x * h x) :
+    P = L.withDensity fun x ↦ g x / G x := by
+  have hLm : AEMeasurable (fun x ↦ G x * h x) μ := hG.mul hh
+  have hPm : AEMeasurable (fun x ↦ g x * h x) μ := hg.mul hh
+  -- σ-finiteness of `L` ensures `G x * h x < ∞` `μ`-almost everywhere.
+  have hLlt : ∀ᵐ x ∂μ, G x * h x < ∞ := by
+    have hae_n : ∀ n, ∀ᵐ x ∂μ.restrict (spanningSets L n), G x * h x < ∞ := fun n ↦ by
+      refine ae_lt_top' hLm.restrict ?_
+      rw [← withDensity_apply _ (measurableSet_spanningSets L n), ← hL]
+      exact (measure_spanningSets_lt_top L n).ne
+    rw [ae_iff]
+    have hcov : {x | ¬G x * h x < ∞} = ⋃ n, {x | ¬G x * h x < ∞} ∩ spanningSets L n := by
+      rw [← Set.inter_iUnion, iUnion_spanningSets, Set.inter_univ]
+    rw [hcov]
+    refine measure_iUnion_null fun n ↦ ?_
+    have h0 := ae_iff.mp (hae_n n)
+    rwa [Measure.restrict_apply' (measurableSet_spanningSets L n)] at h0
+  -- `G` is nonzero `L`-a.e., hence `P`-a.e., so `G x = 0` forces `g x * h x = 0` `μ`-a.e.
+  have hZ : ∀ᵐ x ∂μ, G x = 0 → g x * h x = 0 := by
+    have hLG : ∀ᵐ x ∂L, G x ≠ 0 := by
+      rw [hL, ae_withDensity_iff' hLm]
+      exact ae_of_all _ fun _ hx ↦ left_ne_zero_of_mul hx
+    have hPG : ∀ᵐ x ∂P, G x ≠ 0 := hPL.ae_le hLG
+    rw [hP, ae_withDensity_iff' hPm] at hPG
+    exact hPG.mono fun _ hx hG0 ↦ not_not.mp fun hne ↦ hx hne hG0
+  rw [hP, hL, ← withDensity_mul₀ (g := fun x ↦ g x / G x) hLm (hg.div hG)]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hLlt, hZ] with x hxlt hxZ
+  simp only [Pi.mul_apply]
+  by_cases hh0 : h x = 0
+  · simp [hh0]
+  · by_cases hG0 : G x = 0
+    · rw [hxZ hG0, hG0, zero_mul, zero_mul]
+    · have hGtop : G x ≠ ∞ := by
+        intro htop
+        rw [htop, ENNReal.top_mul hh0] at hxlt
+        exact lt_irrefl _ hxlt
+      rw [mul_comm (G x), mul_assoc, mul_comm (G x), ENNReal.div_mul_cancel hG0 hGtop, mul_comm]
 
 end MeasureTheory
 

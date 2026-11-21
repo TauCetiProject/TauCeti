@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Disintegration.StandardBorel
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # Measure-level standard Borel disintegration transport
@@ -43,25 +44,19 @@ theorem compProd_fst_borelMarkovFromReal {β Ω : Type*} [MeasurableSpace β] [M
   let e : Ω → ℝ := embeddingReal Ω
   have he : Measurable e := (measurableEmbedding_embeddingReal Ω).measurable
   let κ : Kernel Unit (β × Ω) := Kernel.const Unit ρ
-  have hfst_const : (Kernel.const Unit ρ).fst = Kernel.const Unit ρ.fst := by
-    rw [Measure.fst, Kernel.fst_eq, Kernel.map_const _ measurable_fst]
-  have hfst_const' : (Kernel.const Unit (ρ.map (Prod.map (id : β → β) e))).fst =
-      Kernel.const Unit (ρ.map (Prod.map (id : β → β) e)).fst := by
-    rw [Measure.fst, Kernel.fst_eq, Kernel.map_const _ measurable_fst]
   have hfst_map : (ρ.map (Prod.map (id : β → β) e)).fst = ρ.fst :=
     Measure.fst_map_prodMk measurable_fst (he.comp measurable_snd)
   have hη' : (κ.map (Prod.map (id : β → β) e)).fst ⊗ₖ η.prodMkLeft Unit =
       κ.map (Prod.map (id : β → β) e) := by
-    rw [Kernel.map_const _ (measurable_id.prodMap he), hfst_const', hfst_map]
-    ext u : 1
-    cases u
-    simpa [Measure.compProd] using hη
+    rw [Kernel.map_const _ (measurable_id.prodMap he), Kernel.fst_const, hfst_map,
+      Kernel.const_compProd_prodMkLeft, hη]
   have hdis := Kernel.compProd_fst_borelMarkovFromReal κ (η.prodMkLeft Unit) hη'
   have hprod : Kernel.borelMarkovFromReal Ω (η.prodMkLeft Unit) =
       (Kernel.borelMarkovFromReal Ω η).prodMkLeft Unit := by
     ext p : 1
     rw [Kernel.prodMkLeft_apply, Kernel.borelMarkovFromReal_apply, Kernel.borelMarkovFromReal_apply,
       Kernel.prodMkLeft_apply]
-  simpa [Measure.compProd, κ, hfst_const, hprod] using congrArg (fun k ↦ k ()) hdis
+  rw [Kernel.fst_const, hprod, Kernel.const_compProd_prodMkLeft] at hdis
+  simpa [κ] using congrArg (fun k ↦ k ()) hdis
 
 end MeasureTheory.Measure

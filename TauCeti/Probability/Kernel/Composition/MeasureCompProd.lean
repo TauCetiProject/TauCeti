@@ -35,6 +35,11 @@ kernel masses of the vertical sections.
   and projecting onto the first coordinate gives `μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A))`.
 * `MeasureTheory.Measure.quasiMeasurePreserving_fst_compProd` — `Prod.fst` is quasi-measure
   preserving from `μ ⊗ₘ κ` to `μ` without finiteness or Markov hypotheses.
+* `ProbabilityTheory.Kernel.fst_const` — the first marginal of a constant kernel is the constant
+  kernel of the first marginal.
+* `ProbabilityTheory.Kernel.const_compProd_prodMkLeft` and
+  `ProbabilityTheory.Kernel.const_compProd_prodMkLeft_apply` — bridging `μ ⊗ₘ κ` with
+  `Kernel.const γ μ ⊗ₖ Kernel.prodMkLeft γ κ`.
 -/
 
 public section
@@ -116,3 +121,50 @@ theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
   by_cases hx : x ∈ s <;> simp [Set.preimage_preimage, hx]
 
 end MeasureTheory.Measure
+
+namespace ProbabilityTheory.Kernel
+
+open MeasureTheory
+
+variable {W Y Z : Type*} [MeasurableSpace W] [MeasurableSpace Y] [MeasurableSpace Z]
+
+/-- The first marginal of a constant kernel is the constant kernel of the first marginal. -/
+@[simp]
+theorem fst_const (γ : Type*) [MeasurableSpace γ] (ρ : Measure (W × Y)) :
+    (Kernel.const γ ρ).fst = Kernel.const γ ρ.fst := by
+  rw [Measure.fst, Kernel.fst_eq, Kernel.map_const _ measurable_fst]
+
+/-- Evaluating the composition-product of a constant kernel with `Kernel.prodMkLeft` gives the
+measure-kernel composition-product `μ ⊗ₘ κ`. -/
+theorem const_compProd_prodMkLeft_apply (γ : Type*) [MeasurableSpace γ] (μ : Measure W)
+    (κ : Kernel W Z) (a : γ) :
+    (Kernel.const γ μ ⊗ₖ Kernel.prodMkLeft γ κ) a = μ ⊗ₘ κ := by
+  have : Nonempty γ := ⟨a⟩
+  by_cases hμ : SFinite μ
+  · by_cases hκ : IsSFiniteKernel κ
+    · ext s hs
+      simp [Kernel.compProd_apply hs, Measure.compProd_apply hs]
+    · have hκ' : ¬ IsSFiniteKernel (Kernel.prodMkLeft γ κ) := by
+        intro h
+        have : κ = (Kernel.prodMkLeft γ κ).comap (fun w ↦ (a, w))
+            (measurable_const.prodMk measurable_id) := by
+          ext x s _
+          simp [Kernel.comap_apply, Kernel.prodMkLeft_apply]
+        exact hκ (this ▸ inferInstance)
+      rw [Kernel.compProd_of_not_isSFiniteKernel_right _ _ hκ',
+        Measure.compProd_of_not_isSFiniteKernel _ _ hκ, zero_apply]
+  · have hμ' : ¬ IsSFiniteKernel (Kernel.const γ μ) := by
+      rwa [Kernel.isSFiniteKernel_const]
+    rw [Kernel.compProd_of_not_isSFiniteKernel_left _ _ hμ',
+      Measure.compProd_of_not_sfinite _ _ hμ, zero_apply]
+
+/-- Bridging the kernel composition-product `(Kernel.const γ μ) ⊗ₖ (Kernel.prodMkLeft γ κ)` with
+the constant kernel of `μ ⊗ₘ κ`. -/
+@[simp]
+theorem const_compProd_prodMkLeft (γ : Type*) [MeasurableSpace γ] (μ : Measure W)
+    (κ : Kernel W Z) :
+    Kernel.const γ μ ⊗ₖ Kernel.prodMkLeft γ κ = Kernel.const γ (μ ⊗ₘ κ) := by
+  ext a : 1
+  rw [const_compProd_prodMkLeft_apply, Kernel.const_apply]
+
+end ProbabilityTheory.Kernel
