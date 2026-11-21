@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Exponent
 
@@ -47,6 +48,8 @@ finite-measure sets.
   on a measurable subset.
 * `MeasureTheory.Lp.toReal_eLpNorm_restrict_mono`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` on
   subsets of `Ω` is monotone in the subset.
+* `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
+  form a closed set.
 -/
 
 public section
@@ -212,5 +215,15 @@ theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [Nor
     (eLpNorm g p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
   ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
     (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+
+/-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set: convergence in
+`Lᵖ` implies almost everywhere convergence of a subsequence. -/
+theorem Lp.isClosed_setOf_ae_notMem_imp_eq_zero {α F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup F] {p : ENNReal} [Fact (1 ≤ p)] (s : Set α) :
+    IsClosed {f : Lp F p μ | ∀ᵐ x ∂μ, x ∉ s → f x = 0} := by
+  refine IsSeqClosed.isClosed fun g h hgs hg ↦ ?_
+  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
+  filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
+  exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
 
 end MeasureTheory

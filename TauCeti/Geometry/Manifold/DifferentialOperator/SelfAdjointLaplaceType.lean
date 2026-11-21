@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
