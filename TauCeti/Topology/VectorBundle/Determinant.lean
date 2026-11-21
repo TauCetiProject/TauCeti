@@ -108,7 +108,6 @@ instance : IsTopologicalAddGroup (DetBundle 𝕜 F E x) :=
 
 variable (𝕜 F E x) in
 /-- The fibre of `TauCeti.DetBundle 𝕜 F E` over `x` is the top exterior power of `E x`. -/
-@[expose]
 def linearEquiv : DetBundle 𝕜 F E x ≃ₗ[𝕜] ⋀[𝕜]^(finrank 𝕜 F) (E x) :=
   LinearEquiv.refl 𝕜 _
 
