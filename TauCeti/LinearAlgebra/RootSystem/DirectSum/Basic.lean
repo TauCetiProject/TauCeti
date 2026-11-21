@@ -9,12 +9,10 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.PerfectPairing.Pi
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
-public import TauCeti.LinearAlgebra.RootSystem.Dominance
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+public import TauCeti.LinearAlgebra.RootSystem.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Height
 import Mathlib.Algebra.Ring.Regular
-import TauCeti.Algebra.Group.Submonoid.Closure
-import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.LinearIndependent.Pi
 
 /-!
 # Finite external direct sums of root pairings
@@ -34,34 +32,32 @@ of roots is the union of the coordinate images of the summands' roots, with no c
 The construction preserves root systems (`IsRootSystem`), subring-valuedness (`IsValuedIn`, hence
 `IsCrystallographic`), reducedness (when `2` is regular, in particular when `R` has no zero
 divisors), and anisotropy (`IsAnisotropic`). Bases assemble componentwise into
-`RootPairing.Base.pi`, whose Cartan matrix is block diagonal, and whose heights, positive roots,
-positive root cone, integral root dominance, regular weights, and closed and open dominant chambers
-all decompose coordinatewise. The canonical bilinear form `RootForm` is the orthogonal sum of the
-summands' forms, and the Weyl group is canonically isomorphic to the product of the summands' Weyl
-groups.
+`RootPairing.Base.pi` and split back into `RootPairing.Base.restrictPi`; the Cartan matrix of
+`Base.pi` is block diagonal, heights and positivity decompose coordinatewise, and
+`RootPairing.Equiv.piCongr` transports assembled bases to assembled bases. The canonical bilinear
+forms `RootForm` and `CorootForm` are the orthogonal sums of the summands' forms.
 
 ## Main definitions
 
 * `RootPairing.pi`: the finite external direct sum of a family of root pairings.
 * `RootPairing.Base.pi`: the base of `RootPairing.pi P` assembled from a base of each summand.
+* `RootPairing.Base.restrictPi`: the restriction of a base of `RootPairing.pi P` to a summand.
 * `RootPairing.Equiv.piCongr`: functoriality of `RootPairing.pi` under reindexing and summand
   equivalences.
-* `RootPairing.piAut`: the canonical embedding of `∀ c, (P c).Aut` into `(RootPairing.pi P).Aut`.
-* `RootPairing.piWeylGroupEquiv`: the canonical group isomorphism
-  `(RootPairing.pi P).weylGroup ≃* ∀ c, (P c).weylGroup`.
 
 ## Main results
 
 * `RootPairing.range_pi_root`: the roots of `RootPairing.pi P` are the union of the coordinate
   images of the summands' roots.
+* `RootPairing.pi_flip`: flipping a finite direct sum gives the direct sum of the flipped pairings.
 * `RootPairing.isRootSystem_pi`, `RootPairing.isValuedIn_pi`, `RootPairing.isReduced_pi`,
   `RootPairing.isAnisotropic_pi`: structural instances preserved by finite direct sums.
-* `RootPairing.pi_rootForm_apply_apply`: the canonical bilinear form splits as the orthogonal sum
-  of the summands' root forms.
+* `RootPairing.pi_rootForm_apply_apply`, `RootPairing.pi_corootForm_apply_apply`: the canonical
+  bilinear forms split as the orthogonal sums of the summands' forms.
 * `RootPairing.Base.height_pi`, `RootPairing.Base.isPos_pi_iff`,
-  `RootPairing.mem_posRootCone_pi_iff`, `RootPairing.rootLE_pi_iff`,
-  `RootPairing.mem_dominantChamber_pi_iff`, `RootPairing.mem_openDominantChamber_pi_iff`:
-  coordinatewise decomposition of heights, positive roots, cones, dominance, and chambers.
+  `RootPairing.Base.pi_restrictPi`, `RootPairing.Base.restrictPi_pi`,
+  `RootPairing.Base.map_piCongr_pi`: coordinatewise decomposition and transport of bases, heights,
+  and positivity.
 
 ## References
 
@@ -233,68 +229,44 @@ theorem pi_coreflection_apply_ne {c d : κ} (hdc : d ≠ c) (i : ι c) (y : ∀ 
 roots.** In particular, no sum of nonzero roots from distinct summands is a root. -/
 theorem range_pi_root :
     range (pi P).root = ⋃ c, Pi.single c '' range (P c).root := by
-  ext x
-  simp only [mem_range, mem_iUnion, mem_image, Sigma.exists]
-  constructor
-  · rintro ⟨c, i, rfl⟩
-    exact ⟨c, (P c).root i, ⟨i, rfl⟩, rfl⟩
-  · rintro ⟨c, _, ⟨i, rfl⟩, rfl⟩
-    exact ⟨c, i, rfl⟩
+  have h : ⇑(pi P).root = fun s : Σ c, ι c ↦ Pi.single s.1 ((P s.1).root s.2) := rfl
+  rw [h, Set.range_sigma_eq_iUnion_range]
+  exact iUnion_congr fun c ↦ Set.range_comp' (Pi.single c) (P c).root
 
 /-- The coroots of a finite direct sum are the union of the coordinate images of the summands'
 coroots. -/
 theorem range_pi_coroot :
-    range (pi P).coroot = ⋃ c, Pi.single c '' range (P c).coroot := by
-  ext y
-  simp only [mem_range, mem_iUnion, mem_image, Sigma.exists]
-  constructor
-  · rintro ⟨c, i, rfl⟩
-    exact ⟨c, (P c).coroot i, ⟨i, rfl⟩, rfl⟩
-  · rintro ⟨c, _, ⟨i, rfl⟩, rfl⟩
-    exact ⟨c, i, rfl⟩
+    range (pi P).coroot = ⋃ c, Pi.single c '' range (P c).coroot :=
+  range_pi_root fun c ↦ (P c).flip
 
 /-- Flipping a finite direct sum of root pairings gives the finite direct sum of the flipped
 pairings. -/
-theorem pi_flip : (pi P).flip = pi fun c ↦ (P c).flip := by
-  have hext : ∀ {A B : RootPairing (Σ c, ι c) R (∀ c, N c) (∀ c, M c)},
-      A.toLinearMap = B.toLinearMap → A.root = B.root → A.coroot = B.coroot →
-        A.reflectionPerm = B.reflectionPerm → A = B := by
-    intro A B h1 h2 h3 h4
-    cases A
-    cases B
-    simp only at h1 h2 h3 h4
-    subst h1 h2 h3 h4
-    rfl
-  exact hext (LinearMap.flip_piPairing _) rfl rfl rfl
+@[simp]
+theorem pi_flip : (pi P).flip = pi fun c ↦ (P c).flip :=
+  ext_of_coroot (LinearMap.flip_piPairing _) rfl rfl
 
 /-! ### Structural properties -/
+
+/-- An element of `∀ c, M c` lies in the `S`-span of the coordinate images of `(P c).root '' s c`
+if and only if each coordinate lies in the `S`-span of `(P c).root '' s c`. -/
+theorem mem_span_pi_root_image_iff (S : Type*) [Semiring S] [∀ c, Module S (M c)]
+    (s : ∀ c, Set (ι c)) (x : ∀ c, M c) :
+    x ∈ span S ((pi P).root '' (Set.univ.sigma s)) ↔ ∀ c, x c ∈ span S ((P c).root '' s c) := by
+  have himage : (pi P).root '' (Set.univ.sigma s) = ⋃ c, Pi.single c '' ((P c).root '' s c) := by
+    ext v
+    simp [Set.mem_sigma_iff]
+  rw [himage, Submodule.span_iUnion]
+  have hsingle (c : κ) : span S (Pi.single c '' ((P c).root '' s c)) =
+      (span S ((P c).root '' s c)).map (LinearMap.single S M c) := by
+    rw [show Pi.single c '' ((P c).root '' s c) =
+      (LinearMap.single S M c) '' ((P c).root '' s c) from rfl, ← Submodule.map_span]
+  simp_rw [hsingle, Submodule.iSup_map_single, Submodule.mem_pi, Set.mem_univ, forall_true_left]
 
 /-- The `S`-span of the roots of a finite direct sum is the coordinatewise product of the
 summands' root spans. -/
 theorem mem_rootSpan_pi_iff (S : Type*) [Semiring S] [∀ c, Module S (M c)] (x : ∀ c, M c) :
     x ∈ span S (range (pi P).root) ↔ ∀ c, x c ∈ span S (range (P c).root) := by
-  constructor
-  · intro hx c
-    have hmap : LinearMap.proj (R := S) (φ := M) c x ∈
-        (span S (range (pi P).root)).map (LinearMap.proj (R := S) (φ := M) c) :=
-      mem_map_of_mem hx
-    rw [Submodule.map_span] at hmap
-    refine (span_le.mpr ?_) hmap
-    rintro _ ⟨_, ⟨⟨d, i⟩, rfl⟩, rfl⟩
-    by_cases hdc : d = c
-    · subst hdc
-      exact subset_span ⟨i, by simp⟩
-    · simp [Pi.single_eq_of_ne (Ne.symm hdc)]
-  · intro hx
-    rw [← Finset.univ_sum_single x]
-    refine sum_mem fun c _ ↦ ?_
-    have hmem : LinearMap.single S M c (x c) ∈
-        (span S (range (P c).root)).map (LinearMap.single S M c) :=
-      mem_map_of_mem (hx c)
-    rw [Submodule.map_span] at hmem
-    refine span_mono ?_ hmem
-    rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    exact ⟨⟨c, i⟩, rfl⟩
+  simpa using mem_span_pi_root_image_iff P S (fun _ ↦ Set.univ) x
 
 /-- The `S`-span of the coroots of a finite direct sum is the coordinatewise product of the
 summands' coroot spans. -/
@@ -434,30 +406,34 @@ noncomputable def Base.pi {P : ∀ c, RootPairing (ι c) R (M c) (N c)} (b : ∀
       fun c _ ↦ (b c).linearIndepOn_coroot
   root_mem_or_neg_mem := by
     rintro ⟨c, i⟩
-    have hmono : AddSubmonoid.closure (Pi.single c '' ((P c).root '' (b c).support)) ≤
+    have hmono : (AddSubmonoid.closure ((P c).root '' (b c).support)).map
+          (AddMonoidHom.single M c) ≤
         AddSubmonoid.closure ((RootPairing.pi P).root ''
-          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) :=
-      AddSubmonoid.closure_mono <| by
-        rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-        exact ⟨⟨c, j⟩, by simpa using hj, pi_root P c j⟩
+          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
+      rw [AddMonoidHom.map_mclosure]
+      refine AddSubmonoid.closure_mono ?_
+      rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+      exact ⟨⟨c, j⟩, by simpa using hj, pi_root P c j⟩
     rw [pi_root]
     rcases (b c).root_mem_or_neg_mem i with h | h
-    · exact Or.inl (hmono (AddSubmonoid.single_mem_closure_iff.mpr h))
+    · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h))
     · exact Or.inr <| by
-        simpa [Pi.single_neg] using hmono (AddSubmonoid.single_mem_closure_iff.mpr h)
+        simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h)
   coroot_mem_or_neg_mem := by
     rintro ⟨c, i⟩
-    have hmono : AddSubmonoid.closure (Pi.single c '' ((P c).coroot '' (b c).support)) ≤
+    have hmono : (AddSubmonoid.closure ((P c).coroot '' (b c).support)).map
+          (AddMonoidHom.single N c) ≤
         AddSubmonoid.closure ((RootPairing.pi P).coroot ''
-          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) :=
-      AddSubmonoid.closure_mono <| by
-        rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-        exact ⟨⟨c, j⟩, by simpa using hj, pi_coroot P c j⟩
+          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
+      rw [AddMonoidHom.map_mclosure]
+      refine AddSubmonoid.closure_mono ?_
+      rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+      exact ⟨⟨c, j⟩, by simpa using hj, pi_coroot P c j⟩
     rw [pi_coroot]
     rcases (b c).coroot_mem_or_neg_mem i with h | h
-    · exact Or.inl (hmono (AddSubmonoid.single_mem_closure_iff.mpr h))
+    · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single N c) h))
     · exact Or.inr <| by
-        simpa [Pi.single_neg] using hmono (AddSubmonoid.single_mem_closure_iff.mpr h)
+        simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single N c) h)
 
 variable {P}
 
@@ -466,8 +442,73 @@ theorem Base.support_pi (b : ∀ c, (P c).Base) :
     (Base.pi b).support = Finset.univ.sigma fun c ↦ (b c).support :=
   (rfl)
 
-theorem Base.mem_support_pi (b : ∀ c, (P c).Base) (s : Σ c, ι c) :
-    s ∈ (Base.pi b).support ↔ s.2 ∈ (b s.1).support := by
+/-- **Restricting a base of `RootPairing.pi P` to a summand** by taking the simple roots lying in
+that summand. -/
+noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c).Base where
+  support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
+  linearIndepOn_root := by
+    refine LinearIndependent.of_comp (LinearMap.single R M c) ?_
+    refine b.linearIndepOn_root.comp (fun i : {i // i ∈ b.support.preimage (Sigma.mk c)
+        sigma_mk_injective.injOn} ↦ ⟨⟨c, i.val⟩, Finset.mem_preimage.mp i.property⟩) ?_
+    intro ⟨i, hi⟩ ⟨j, hj⟩ hij
+    simpa using hij
+  linearIndepOn_coroot := by
+    refine LinearIndependent.of_comp (LinearMap.single R N c) ?_
+    refine b.linearIndepOn_coroot.comp (fun i : {i // i ∈ b.support.preimage (Sigma.mk c)
+        sigma_mk_injective.injOn} ↦ ⟨⟨c, i.val⟩, Finset.mem_preimage.mp i.property⟩) ?_
+    intro ⟨i, hi⟩ ⟨j, hj⟩ hij
+    simpa using hij
+  root_mem_or_neg_mem i := by
+    have hle : (AddSubmonoid.closure
+          ((RootPairing.pi P).root '' (b.support : Set (Σ d, ι d)))).map
+          (Pi.evalAddMonoidHom M c) ≤
+        AddSubmonoid.closure ((P c).root '' ((b.support.preimage (Sigma.mk c)
+          sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
+      rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
+      rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
+      by_cases hdc : d = c
+      · subst hdc
+        exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
+      · simp [Pi.single_eq_of_ne (Ne.symm hdc), zero_mem]
+    rcases b.root_mem_or_neg_mem ⟨c, i⟩ with h | h
+    · exact Or.inl <| by
+        simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+    · exact Or.inr <| by
+        simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+  coroot_mem_or_neg_mem i := by
+    have hle : (AddSubmonoid.closure
+          ((RootPairing.pi P).coroot '' (b.support : Set (Σ d, ι d)))).map
+          (Pi.evalAddMonoidHom N c) ≤
+        AddSubmonoid.closure ((P c).coroot '' ((b.support.preimage (Sigma.mk c)
+          sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
+      rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
+      rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
+      by_cases hdc : d = c
+      · subst hdc
+        exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
+      · simp [Pi.single_eq_of_ne (Ne.symm hdc), zero_mem]
+    rcases b.coroot_mem_or_neg_mem ⟨c, i⟩ with h | h
+    · exact Or.inl <| by
+        simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom N c) h)
+    · exact Or.inr <| by
+        simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom N c) h)
+
+@[simp]
+theorem Base.mem_support_restrictPi (b : (RootPairing.pi P).Base) (c : κ) (i : ι c) :
+    i ∈ (b.restrictPi c).support ↔ ⟨c, i⟩ ∈ b.support := by
+  simp [Base.restrictPi]
+
+/-- Assembling the restrictions of a base of `RootPairing.pi P` recovers the original base. -/
+@[simp]
+theorem Base.pi_restrictPi (b : (RootPairing.pi P).Base) :
+    Base.pi (fun c ↦ b.restrictPi c) = b := by
+  ext ⟨c, i⟩
+  simp
+
+/-- Restricting an assembled base `Base.pi b` to coordinate `c` recovers `b c`. -/
+@[simp]
+theorem Base.restrictPi_pi (b : ∀ c, (P c).Base) (c : κ) : (Base.pi b).restrictPi c = b c := by
+  ext i
   simp
 
 @[simp]
@@ -514,58 +555,9 @@ theorem Base.isPos_pi_iff [CharZero R] (b : ∀ c, (P c).Base) (c : κ) (i : ι 
     (Base.pi b).IsPos ⟨c, i⟩ ↔ (b c).IsPos i := by
   simp [Base.isPos_iff]
 
-/-- Membership in `posRoots` of a finite direct sum is membership in the summand's `posRoots`. -/
-theorem mem_posRoots_pi_iff [CharZero R] (b : ∀ c, (P c).Base) (c : κ) (i : ι c) :
-    ⟨c, i⟩ ∈ TauCeti.posRoots (pi P) (Base.pi b) ↔ i ∈ TauCeti.posRoots (P c) (b c) := by
-  simp only [TauCeti.mem_posRoots, Base.isPos_pi_iff]
-
-/-- **The positive root cone of a finite direct sum decomposes coordinatewise.** -/
-theorem mem_posRootCone_pi_iff (b : ∀ c, (P c).Base) (x : ∀ c, M c) :
-    x ∈ TauCeti.posRootCone (pi P) (Base.pi b) ↔
-      ∀ c, x c ∈ TauCeti.posRootCone (P c) (b c) := by
-  simp only [TauCeti.mem_posRootCone]
-  constructor
-  · rintro ⟨n, hx⟩ c
-    refine ⟨fun i ↦ n ⟨c, i⟩, ?_⟩
-    have hxc := congrFun hx c
-    rw [Base.support_pi, Finset.sum_sigma, Finset.sum_apply] at hxc
-    rw [hxc, Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-    · simp
-    · intro d _ hdc
-      simp [Pi.single_eq_of_ne (Ne.symm hdc)]
-  · intro h
-    choose n hn using h
-    refine ⟨fun p ↦ n p.1 p.2, ?_⟩
-    ext c
-    rw [Base.support_pi, Finset.sum_sigma, Finset.sum_apply,
-      Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-    · simp [hn c]
-    · intro d _ hdc
-      simp [Pi.single_eq_of_ne (Ne.symm hdc)]
-
-/-- **Integral root dominance on a finite direct sum is coordinatewise integral root dominance.** -/
-theorem rootLE_pi_iff (b : ∀ c, (P c).Base) (x y : ∀ c, M c) :
-    (pi P).rootLE (Base.pi b) x y ↔ ∀ c, (P c).rootLE (b c) (x c) (y c) := by
-  simpa [rootLE_iff_sub_mem_posRootCone] using mem_posRootCone_pi_iff b (y - x)
-
-/-- A weight of a finite direct sum is regular iff every coordinate is regular. -/
-theorem isRegularWeight_pi_iff (x : ∀ c, M c) :
-    (pi P).IsRegularWeight x ↔ ∀ c, (P c).IsRegularWeight (x c) := by
-  simp [isRegularWeight_iff, Sigma.forall]
-
-/-- **The closed dominant chamber of a finite direct sum decomposes coordinatewise.** -/
-theorem mem_dominantChamber_pi_iff [Preorder R] (b : ∀ c, (P c).Base) (x : ∀ c, M c) :
-    x ∈ (pi P).dominantChamber (Base.pi b) ↔ ∀ c, x c ∈ (P c).dominantChamber (b c) := by
-  simp [mem_dominantChamber, Sigma.forall]
-
-/-- **The open dominant chamber of a finite direct sum decomposes coordinatewise.** -/
-theorem mem_openDominantChamber_pi_iff [Preorder R] (b : ∀ c, (P c).Base) (x : ∀ c, M c) :
-    x ∈ (pi P).openDominantChamber (Base.pi b) ↔ ∀ c, x c ∈ (P c).openDominantChamber (b c) := by
-  simp [mem_openDominantChamber, Sigma.forall]
-
 end Basic
 
-/-! ### Functoriality and the Weyl group -/
+/-! ### Functoriality -/
 
 section Functoriality
 
@@ -599,15 +591,29 @@ noncomputable def Equiv.piCongr (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (e
     refine Finset.sum_congr rfl fun c _ ↦ ?_
     have h1 : (LinearEquiv.piCongrLeft R M' eκ
         (LinearEquiv.piCongrRight (fun c ↦ (e c).weightEquiv) x)) (eκ c) =
-        (e c).weightEquiv (x c) := by
-      simp [LinearEquiv.piCongrLeft_apply_apply]
+        (e c).weightEquiv (x c) :=
+      _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c
     have h2 : (LinearEquiv.piCongrRight (fun c ↦ (e c).coweightEquiv)
         ((LinearEquiv.piCongrLeft R N' eκ).symm y)) c = (e c).coweightEquiv (y (eκ c)) := rfl
     rw [h1, h2]
     exact (e c).toLinearMap_weightEquiv (x c) (y (eκ c))
   root_weightMap := by
     ext ⟨c, i⟩ d
-    simp [Hom.root_weightMap_apply, _root_.Equiv.sigmaCongr]
+    obtain ⟨c', rfl⟩ := eκ.surjective d
+    have hidx : (Equiv.sigmaCongr eκ fun c ↦ (e c).indexEquiv) ⟨c, i⟩ =
+        ⟨eκ c, (e c).indexEquiv i⟩ := rfl
+    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply, pi_root]
+    rw [hidx, pi_root]
+    have h1 : (LinearEquiv.piCongrLeft R M' eκ
+        (LinearEquiv.piCongrRight (fun c ↦ (e c).weightEquiv) (Pi.single c ((P c).root i))))
+        (eκ c') =
+        (LinearEquiv.piCongrRight (fun c ↦ (e c).weightEquiv) (Pi.single c ((P c).root i))) c' :=
+      _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c'
+    rw [h1, LinearEquiv.piCongrRight_apply]
+    by_cases h : c' = c
+    · subst h
+      simp [Hom.root_weightMap_apply]
+    · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
   coroot_coweightMap := by
     ext ⟨d, j⟩ c
     obtain ⟨c', rfl⟩ := eκ.surjective d
@@ -637,8 +643,8 @@ theorem Equiv.piCongr_indexEquiv (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (
 @[simp]
 theorem Equiv.piCongr_weightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
     (x : ∀ c, M c) (c : κ) :
-    (Equiv.piCongr eκ e).weightMap x (eκ c) = (e c).weightMap (x c) := by
-  simp [Equiv.piCongr, LinearEquiv.piCongrLeft_apply_apply]
+    (Equiv.piCongr eκ e).weightMap x (eκ c) = (e c).weightMap (x c) :=
+  _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c
 
 @[simp]
 theorem Equiv.piCongr_coweightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
@@ -646,171 +652,45 @@ theorem Equiv.piCongr_coweightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equ
     (Equiv.piCongr eκ e).coweightMap y c = (e c).coweightMap (y (eκ c)) :=
   (rfl)
 
+/-- Mapping an assembled base `Base.pi b` along `Equiv.piCongr` produces the assembled base
+`Base.pi b'` whenever `e c` carries `b c` to `b' (eκ c)`. -/
+theorem Base.map_piCongr_pi (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
+    {b : ∀ c, (P c).Base} {b' : ∀ c', (Q c').Base}
+    (hb : ∀ c, (b c).map (e c) = b' (eκ c)) :
+    (Base.pi b).map (Equiv.piCongr eκ e) = Base.pi b' := by
+  classical
+  ext ⟨c', j⟩
+  obtain ⟨c, rfl⟩ := eκ.surjective c'
+  simp only [Base.support_map_eq, Base.support_pi, Finset.mem_image, Finset.mem_sigma,
+    Finset.mem_univ, true_and, Sigma.exists]
+  constructor
+  · rintro ⟨d, i, hi, heq⟩
+    rw [Equiv.piCongr_indexEquiv] at heq
+    rcases Sigma.ext_iff.mp heq with ⟨hdc, hij⟩
+    obtain rfl := eκ.injective hdc
+    rw [heq_eq_eq] at hij
+    rw [← hb d]
+    simp only [Base.support_map_eq, Finset.mem_image]
+    exact ⟨i, hi, hij⟩
+  · intro hj
+    rw [← hb c] at hj
+    simp only [Base.support_map_eq, Finset.mem_image] at hj
+    obtain ⟨i, hi, hij⟩ := hj
+    exact ⟨c, i, hi, by rw [Equiv.piCongr_indexEquiv, hij]⟩
+
+/-- Mapping an assembled base `Base.pi b` along `Equiv.piCongr (.refl κ) e` assembles the
+transported summand bases. -/
+@[simp]
+theorem Base.map_piCongr_refl_pi
+    {ι'' M'' N'' : κ → Type*}
+    [∀ c, AddCommGroup (M'' c)] [∀ c, Module R (M'' c)]
+    [∀ c, AddCommGroup (N'' c)] [∀ c, Module R (N'' c)]
+    {Q : ∀ c, RootPairing (ι'' c) R (M'' c) (N'' c)}
+    (e : ∀ c, (P c).Equiv (Q c)) (b : ∀ c, (P c).Base) :
+    (Base.pi b).map (Equiv.piCongr (_root_.Equiv.refl κ) e) =
+      Base.pi fun c ↦ (b c).map (e c) :=
+  Base.map_piCongr_pi (_root_.Equiv.refl κ) e fun _ ↦ rfl
+
 end Functoriality
-
-section WeylGroup
-
-variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : R)]
-  {ι M N : κ → Type*}
-  [∀ c, AddCommGroup (M c)] [∀ c, Module R (M c)]
-  [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
-  (P : ∀ c, RootPairing (ι c) R (M c) (N c))
-
-/-- The canonical embedding of the product of summand automorphism groups into the automorphism
-group of `RootPairing.pi P`. -/
-noncomputable def piAut : (∀ c, (P c).Aut) →* (pi P).Aut where
-  toFun g := Equiv.piCongr (_root_.Equiv.refl κ) g
-  map_one' := by
-    refine Equiv.weightHom_injective (pi P) (LinearEquiv.ext fun x ↦ funext fun c ↦ ?_)
-    have h := Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) (1 : ∀ c, (P c).Aut) x c
-    simp only [Equiv.weightHom_apply, Equiv.weightEquiv_apply, _root_.Equiv.refl_apply,
-      Pi.one_apply] at h ⊢
-    rw [h]
-    rfl
-  map_mul' g h := by
-    refine Equiv.weightHom_injective (pi P) (LinearEquiv.ext fun x ↦ funext fun c ↦ ?_)
-    have h1 := Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) (g * h) x c
-    have h2 := Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) g
-      ((Equiv.piCongr (_root_.Equiv.refl κ) h).weightMap x) c
-    have h3 := Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) h x c
-    simpa [Equiv.weightHom_apply, Equiv.weightEquiv_apply, h3] using h1.trans h2.symm
-
-@[simp]
-theorem piAut_weightMap_apply (g : ∀ c, (P c).Aut) (x : ∀ c, M c) (c : κ) :
-    (piAut P g).weightMap x c = (g c).weightMap (x c) :=
-  Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) g x c
-
-@[simp]
-theorem piAut_coweightMap_apply (g : ∀ c, (P c).Aut) (y : ∀ c, N c) (c : κ) :
-    (piAut P g).coweightMap y c = (g c).coweightMap (y c) :=
-  Equiv.piCongr_coweightMap_apply (_root_.Equiv.refl κ) g y c
-
-@[simp]
-theorem piAut_indexEquiv (g : ∀ c, (P c).Aut) (c : κ) (i : ι c) :
-    (piAut P g).indexEquiv ⟨c, i⟩ = ⟨c, (g c).indexEquiv i⟩ :=
-  Equiv.piCongr_indexEquiv (_root_.Equiv.refl κ) g c i
-
-/-- `RootPairing.piAut` is injective: an automorphism of `RootPairing.pi P` in its image
-determines every coordinate automorphism. -/
-theorem piAut_injective : Function.Injective (piAut P) := by
-  intro g h hgh
-  funext c
-  refine Equiv.weightHom_injective (P c) (LinearEquiv.ext fun x ↦ ?_)
-  have h1 := congrFun (congrArg (fun a : (pi P).Aut ↦ a.weightMap (Pi.single c x)) hgh) c
-  simpa using h1
-
-/-- Inserting a single reflection at coordinate `c` maps under `piAut` to the reflection of the
-direct sum at `⟨c, i⟩`. -/
-@[simp]
-theorem piAut_mulSingle_reflection (c : κ) (i : ι c) :
-    piAut P (Pi.mulSingle c (Equiv.reflection (P c) i)) = Equiv.reflection (pi P) ⟨c, i⟩ := by
-  refine Equiv.weightHom_injective (pi P) (LinearEquiv.ext fun x ↦ funext fun d ↦ ?_)
-  by_cases h : d = c
-  · subst h
-    simp only [Equiv.weightHom_apply, Equiv.weightEquiv_apply, piAut_weightMap_apply,
-      Pi.mulSingle_eq_same, Equiv.reflection_weightEquiv, pi_reflection_apply_same]
-    exact LinearEquiv.congr_fun (Equiv.reflection_weightEquiv (P d) i) (x d)
-  · simp [Equiv.weightHom_apply, Equiv.reflection_weightEquiv, h]
-
-/-- Each single-coordinate Weyl-group element lands in `(pi P).weylGroup` under `piAut`. -/
-private theorem piAut_mulSingle_mem_weylGroup (c : κ) {a : (P c).Aut} (ha : a ∈ (P c).weylGroup) :
-    piAut P (Pi.mulSingle c a) ∈ (pi P).weylGroup := by
-  induction ha using weylGroup.induction with
-  | mem i =>
-    rw [piAut_mulSingle_reflection]
-    exact Subgroup.subset_closure ⟨⟨c, i⟩, rfl⟩
-  | one =>
-    rw [Pi.mulSingle_one, map_one]
-    exact (pi P).weylGroup.one_mem
-  | mul a b _ _ ha hb =>
-    rw [Pi.mulSingle_mul, map_mul]
-    exact (pi P).weylGroup.mul_mem ha hb
-
-/-- Every product of summand Weyl-group elements lands in `(pi P).weylGroup` under `piAut`. -/
-private theorem piAut_mem_weylGroup (w : ∀ c, (P c).weylGroup) :
-    piAut P (fun c ↦ (w c : (P c).Aut)) ∈ (pi P).weylGroup := by
-  suffices ∀ s : Finset κ,
-      piAut P (fun c ↦ if c ∈ s then (w c : (P c).Aut) else 1) ∈ (pi P).weylGroup by
-    simpa using this Finset.univ
-  intro s
-  induction s using Finset.cons_induction with
-  | empty =>
-    have h1 : (fun c : κ ↦ (1 : (P c).Aut)) = 1 := rfl
-    simp only [Finset.notMem_empty, ↓reduceIte, h1, map_one]
-    exact (pi P).weylGroup.one_mem
-  | cons a s ha ih =>
-    have hsplit : (fun c ↦ if c ∈ Finset.cons a s ha then (w c : (P c).Aut) else 1) =
-        Pi.mulSingle a (w a : (P a).Aut) * (fun c ↦ if c ∈ s then (w c : (P c).Aut) else 1) := by
-      funext c
-      by_cases hc : c = a
-      · subst hc
-        simp [ha]
-      · simp [hc]
-    rw [hsplit, map_mul]
-    exact (pi P).weylGroup.mul_mem (piAut_mulSingle_mem_weylGroup P a (w a).property) ih
-
-/-- The homomorphism `(∀ c, (P c).weylGroup) →* (pi P).weylGroup` induced by `piAut`. -/
-private noncomputable def piWeylGroupHom : (∀ c, (P c).weylGroup) →* (pi P).weylGroup where
-  toFun w := ⟨piAut P fun c ↦ (w c : (P c).Aut), piAut_mem_weylGroup P w⟩
-  map_one' := Subtype.ext (map_one (piAut P))
-  map_mul' _ _ := Subtype.ext (map_mul (piAut P) _ _)
-
-/-- **The Weyl group of a finite direct sum is canonically isomorphic to the product of the
-Weyl groups of its summands.** -/
-noncomputable def piWeylGroupEquiv : (pi P).weylGroup ≃* ∀ c, (P c).weylGroup :=
-  (MulEquiv.ofBijective (piWeylGroupHom P)
-    ⟨fun _ _ h ↦ funext fun c ↦ Subtype.ext
-        (congrFun (piAut_injective P (congrArg Subtype.val h)) c),
-     by
-      rintro ⟨g, hg⟩
-      induction hg using weylGroup.induction with
-      | mem s =>
-        rcases s with ⟨c, i⟩
-        let w : ∀ d, (P d).weylGroup := Pi.mulSingle c (weylGroup.ofIdx (P c) i)
-        refine ⟨w, Subtype.ext ?_⟩
-        have hval : (fun d ↦ (w d : (P d).Aut)) = Pi.mulSingle c (Equiv.reflection (P c) i) := by
-          funext d
-          by_cases h : d = c
-          · subst h; simp [w]
-          · simp [w, Pi.mulSingle_eq_of_ne h]
-        simp [piWeylGroupHom, hval]
-      | one => exact ⟨1, map_one _⟩
-      | mul a b _ _ iha ihb =>
-        rcases iha with ⟨wa, hwa⟩
-        rcases ihb with ⟨wb, hwb⟩
-        exact ⟨wa * wb, by rw [map_mul, hwa, hwb]; rfl⟩⟩).symm
-
-@[simp]
-theorem coe_piWeylGroupEquiv_symm (w : ∀ c, (P c).weylGroup) :
-    ((piWeylGroupEquiv P).symm w : (pi P).Aut) = piAut P fun c ↦ (w c : (P c).Aut) :=
-  (rfl)
-
-theorem piWeylGroupEquiv_symm_smul (w : ∀ c, (P c).weylGroup) (x : ∀ c, M c) (c : κ) :
-    ((piWeylGroupEquiv P).symm w • x) c = w c • x c :=
-  piAut_weightMap_apply P (fun d ↦ (w d : (P d).Aut)) x c
-
-@[simp]
-theorem piWeylGroupEquiv_smul (w : (pi P).weylGroup) (x : ∀ c, M c) (c : κ) :
-    (w • x) c = piWeylGroupEquiv P w c • x c := by
-  simpa using piWeylGroupEquiv_symm_smul P (piWeylGroupEquiv P w) x c
-
-/-- The Weyl-group isomorphism matches each reflection of the direct sum with the single-coordinate
-reflection in the product of Weyl groups. -/
-@[simp]
-theorem piWeylGroupEquiv_ofIdx (c : κ) (i : ι c) :
-    piWeylGroupEquiv P (weylGroup.ofIdx (pi P) ⟨c, i⟩) =
-      Pi.mulSingle c (weylGroup.ofIdx (P c) i) := by
-  refine (piWeylGroupEquiv P).symm.injective ?_
-  rw [MulEquiv.symm_apply_apply]
-  apply Subtype.ext
-  rw [coe_piWeylGroupEquiv_symm, weylGroup.coe_ofIdx]
-  refine (piAut_mulSingle_reflection P c i).symm.trans ?_
-  congr 1
-  funext d
-  by_cases h : d = c
-  · subst h; simp
-  · simp [Pi.mulSingle_eq_of_ne h]
-
-end WeylGroup
 
 end RootPairing

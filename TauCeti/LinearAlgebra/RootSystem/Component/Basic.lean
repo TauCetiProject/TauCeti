@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Irreducible components of a root pairing
@@ -39,8 +40,10 @@ root system is irreducible exactly when its graph is connected.
 
 * `RootPairing.isInternal_componentSpace`: a root system is the internal direct sum of its component
   spaces.
-* `RootPairing.sum_componentProj`: every vector is the sum of its component projections, and
-  `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections.
+* `RootPairing.sum_componentProj`: every vector is the sum of its component projections,
+  `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections, and
+  `RootPairing.internalProjection_componentSpace_eq_componentProj`: `TauCeti.internalProjection`
+  onto a component space agrees with `RootPairing.componentProj`.
 * `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
   space of its own component.
 * `RootPairing.mem_closure_root_inter_supp`: a sum of roots lying in the component space of `C` is
@@ -355,6 +358,16 @@ theorem componentProj_reflection_of_ne {C : P.Component} {i : ι} (h : P.compone
   ext
   rw [coe_componentProj_reflection, reflection_apply,
     coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).property, zero_smul, sub_zero]
+
+/-- The internal projection onto a component space agrees with `RootPairing.componentProj`. -/
+theorem internalProjection_componentSpace_eq_componentProj (C : P.Component) (x : M) :
+    TauCeti.internalProjection P.iSupIndep_componentSpace
+        (P.iSup_componentSpace.trans IsRootSystem.span_root_eq_top) C x =
+      P.componentProj C x := by
+  let _ : DecidableEq P.Component := Classical.decEq P.Component
+  exact Subtype.ext
+    (DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+      P.isInternal_componentSpace C x).symm
 
 end Projection
 

@@ -27,6 +27,7 @@ and flipping gives the dual side. No finiteness, freeness, or subtraction on the
 ## Main results
 
 * `LinearMap.IsPerfPair.pi`: a finite product of perfect pairings is a perfect pairing.
+* `Module.IsReflexive.pi`: a finite product of reflexive modules is reflexive.
 * `LinearMap.toPerfPair_piPairing`: the induced linear equivalence into the dual of the product
   factors through `LinearEquiv.piCongrRight` and `LinearMap.lsum`.
 -/
@@ -95,9 +96,8 @@ equivalence followed by `LinearMap.lsum`. -/
 theorem toPerfPair_piPairing [DecidableEq κ] (p : ∀ c, M c →ₗ[R] N c →ₗ[R] R)
     [∀ c, (p c).IsPerfPair] :
     (piPairing p).toPerfPair =
-      (LinearEquiv.piCongrRight fun c ↦ (p c).toPerfPair).trans (lsum R N R) := by
-  ext x y
-  simp [piPairing_apply_apply, lsum_apply]
+      (LinearEquiv.piCongrRight fun c ↦ (p c).toPerfPair).trans (lsum R N R) :=
+  LinearEquiv.ext (congrFun (piPairing_eq_toPerfPair_trans_lsum p))
 
 /-- The inverse of `(piPairing p).toPerfPair` evaluates each coordinate by restricting the
 functional along `LinearMap.single` and applying `(p c).toPerfPair.symm`. -/
@@ -109,3 +109,10 @@ theorem toPerfPair_piPairing_symm_apply [DecidableEq κ] (p : ∀ c, M c →ₗ[
   simp [lsum_symm_apply]
 
 end LinearMap
+
+/-- **A finite product of reflexive modules is reflexive.** -/
+instance Module.IsReflexive.pi {κ R : Type*} [Finite κ] [CommSemiring R] {M : κ → Type*}
+    [∀ c, AddCommMonoid (M c)] [∀ c, Module R (M c)] [∀ c, Module.IsReflexive R (M c)] :
+    Module.IsReflexive R (∀ c, M c) :=
+  let _ := Fintype.ofFinite κ
+  Module.IsReflexive.of_isPerfPair (LinearMap.piPairing fun c ↦ Module.Dual.eval R (M c))

@@ -51,6 +51,8 @@ in the same way, through the induced equivalences of component pairings
 
 * `RootPairing.rootForm_componentPairing`: the canonical form of a component pairing is the
   restriction of the canonical form of the root system.
+* `RootPairing.rootForm_eq_sum_componentPairing`: the canonical bilinear form of a finite root
+  system is the orthogonal sum of the canonical bilinear forms of its irreducible components.
 * `RootPairing.InvariantForm.ofComponent_form_apply`: the reconstructed form is the sum of the
   component forms on the component projections.
 * `RootPairing.InvariantForm.posDef_ofComponent_iff`: the reconstructed form is positive definite
@@ -101,6 +103,27 @@ theorem rootForm_componentPairing {ι K M N : Type*} [Field K] [AddCommGroup M] 
     refine h ?_
     rw [coroot'_eq_zero_of_mem_componentSpace (fun h' ↦ hi ((C.mem_supp_iff i).mpr h')) x.property,
       zero_mul]
+
+/-- **The canonical bilinear form of a finite root system is the orthogonal sum of the canonical
+bilinear forms of its irreducible components.** -/
+theorem rootForm_eq_sum_componentPairing {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
+    [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [Fintype ι] [Fintype P.Component]
+    [∀ C : P.Component, Fintype C.supp] [P.IsRootSystem] (x y : M) :
+    P.RootForm x y =
+      ∑ C : P.Component, (P.componentPairing C).RootForm (P.componentProj C x)
+        (P.componentProj C y) := by
+  let e : ι ≃ Σ C : P.Component, C.supp := (_root_.Equiv.sigmaFiberEquiv P.componentOf).symm
+  rw [rootForm_apply_apply,
+    Fintype.sum_equiv e _
+      (fun s : Σ C : P.Component, C.supp ↦
+        (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 x) *
+          (P.componentPairing s.1).coroot' s.2 (P.componentProj s.1 y))
+      (fun i ↦ by
+        simp only [e, componentPairing_coroot'_componentProj]
+        rfl),
+    Fintype.sum_sigma]
+  refine Finset.sum_congr rfl fun C _ ↦ ?_
+  rw [rootForm_apply_apply]
 
 /-! ### Restriction and orthogonal reconstruction -/
 

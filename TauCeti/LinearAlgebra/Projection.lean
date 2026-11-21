@@ -138,41 +138,6 @@ theorem sum_coe_internalProjection [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i
     sub_eq_zero] at hx
   simpa using hx
 
-/-- The canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` associated to a finite internal direct
-sum decomposition `Q`, sending a tuple to the sum of its coordinates and inversely projecting onto
-each summand via `TauCeti.internalProjection`. Requires no `DecidableEq ι`. -/
-noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) :
-    (∀ i, Q i) ≃ₗ[A] M :=
-  LinearEquiv.ofLinearMap
-    (∑ i, (Q i).subtype.comp (LinearMap.proj i))
-    (LinearMap.pi fun i ↦ internalProjection hQi hQt i)
-    (LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.pi_apply,
-        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply]
-      exact sum_coe_internalProjection hQi hQt x)
-    (LinearMap.ext fun x ↦ funext fun i ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
-        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply, map_sum]
-      rw [Finset.sum_eq_single_of_mem i (Finset.mem_univ i)]
-      · exact internalProjection_apply hQi hQt (x i)
-      · intro j _ hji
-        exact internalProjection_apply_of_ne hQi hQt hji (x j))
-
-/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
-@[simp]
-theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
-    (x : ∀ i, Q i) :
-    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
-  simp [internalDirectSumEquiv]
-
-/-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
-`TauCeti.internalProjection`. -/
-@[simp]
-theorem internalDirectSumEquiv_symm_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
-    (x : M) (i : ι) :
-    (internalDirectSumEquiv hQi hQt).symm x i = internalProjection hQi hQt i x := by
-  simp [internalDirectSumEquiv]
-
 /-- Moving a map by multiples of a vector `d` on none of its secant lines keeps it injective:
 `x ↦ f x - a x • d` is injective for every coefficient function `a`. -/
 theorem injective_sub_smul {α : Type*} {f : α → M} {d : M}
@@ -217,6 +182,51 @@ theorem coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
         congrArg₂ (fun a b ↦ a + b) hx hy
 
 end DirectSum.IsInternal
+
+namespace TauCeti
+
+variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+variable {ι : Type w} {Q : ι → Submodule A M}
+
+/-- The canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` associated to a finite internal direct
+sum decomposition `Q`, sending a tuple to the sum of its coordinates and inversely projecting onto
+each summand via `TauCeti.internalProjection`. Requires no `DecidableEq ι`. -/
+noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) :
+    (∀ i, Q i) ≃ₗ[A] M :=
+  let _ : DecidableEq ι := Classical.decEq ι
+  (DirectSum.linearEquivFunOnFintype A ι (fun i ↦ Q i)).symm.trans
+    (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q)
+      (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt))
+
+/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
+@[simp]
+theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : ∀ i, Q i) :
+    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
+  let _ : DecidableEq ι := Classical.decEq ι
+  let e : (∀ i, Q i) ≃ₗ[A] DirectSum ι (fun i ↦ Q i) :=
+    (DirectSum.linearEquivFunOnFintype A ι (fun i ↦ Q i)).symm
+  have hsum : e x = ∑ i, DirectSum.of (fun i ↦ Q i) i (x i) := by
+    refine (DirectSum.sum_univ_of (e x)).symm.trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+    have hi : (e x) i = x i :=
+      congrFun ((DirectSum.linearEquivFunOnFintype A ι fun i ↦ Q i).apply_symm_apply x) i
+    rw [hi]
+  rw [show internalDirectSumEquiv hQi hQt x = DirectSum.coeLinearMap Q (e x) from rfl,
+    hsum, map_sum]
+  simp [DirectSum.coeLinearMap_of]
+
+/-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
+`TauCeti.internalProjection`. -/
+@[simp]
+theorem internalDirectSumEquiv_symm_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : M) (i : ι) :
+    (internalDirectSumEquiv hQi hQt).symm x i = internalProjection hQi hQt i x := by
+  let _ : DecidableEq ι := Classical.decEq ι
+  exact Subtype.ext
+    (DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+      (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt) i x)
+
+end TauCeti
 
 namespace Submodule
 

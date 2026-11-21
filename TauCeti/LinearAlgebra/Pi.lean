@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Group.Pi.Finset
 public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.Logic.Equiv.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -61,8 +60,6 @@ weights.
   finite dependent product is the product of the determinants of its components.
 * `Module.Basis.det_pi`: the determinant of a change between product bases is the product of the
   factor change-of-basis determinants.
-* `Pi.linearIndepOn_single_iff`: a family of one-point vectors `Pi.single p.1 (v p.1 p.2)` is
-  linearly independent on `t.sigma s` iff each `v c` is linearly independent on `s c` for `c ∈ t`.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
 * `TauCeti.finrank_pi_eq_finsum`: the finite rank of a dependent product over an arbitrary index
@@ -367,46 +364,6 @@ public theorem det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] 
   simp only [Basis.det_apply, he, Matrix.det_blockDiagonal']
 
 end Module.Basis
-
-namespace Pi
-
-/-- A family of one-point vectors `Pi.single p.1 (v p.1 p.2)` is linearly independent on
-`t.sigma s` if and only if each coordinate family `v c` is linearly independent on `s c` for
-`c ∈ t`. This is the `LinearIndepOn` companion of `Pi.linearIndependent_single`. -/
-public theorem linearIndepOn_single_iff {R κ : Type*} [Semiring R] [DecidableEq κ]
-    {ι M : κ → Type*} [∀ c, AddCommMonoid (M c)] [∀ c, Module R (M c)]
-    (v : ∀ c, ι c → M c) {t : Set κ} {s : ∀ c, Set (ι c)} :
-    LinearIndepOn R (fun p : Σ c, ι c ↦ Pi.single p.1 (v p.1 p.2)) (t.sigma s) ↔
-      ∀ c ∈ t, LinearIndepOn R (v c) (s c) := by
-  constructor
-  · intro h c hc
-    let g : {i : ι c // i ∈ s c} → {p : Σ d, ι d // p ∈ t.sigma s} :=
-      fun ⟨i, hi⟩ ↦ ⟨⟨c, i⟩, hc, hi⟩
-    have hg : Function.Injective g := fun ⟨_, _⟩ ⟨_, _⟩ h' ↦ by
-      cases h'
-      rfl
-    exact (h.comp g hg).of_comp (LinearMap.single R M c)
-  · intro hli
-    let e : {p : Σ c, ι c // p ∈ t.sigma s} ≃ Σ c : κ, {i : ι c // c ∈ t ∧ i ∈ s c} :=
-      { toFun := fun ⟨⟨c, i⟩, h⟩ ↦ ⟨c, ⟨i, h⟩⟩
-        invFun := fun ⟨c, ⟨i, h⟩⟩ ↦ ⟨⟨c, i⟩, h⟩
-        left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl
-        right_inv := fun ⟨_, ⟨_, _⟩⟩ ↦ rfl }
-    have hli' : ∀ c : κ, LinearIndependent R fun i : {i : ι c // c ∈ t ∧ i ∈ s c} ↦ v c i.val := by
-      intro c
-      by_cases hc : c ∈ t
-      · let f : {i : ι c // c ∈ t ∧ i ∈ s c} ≃ {i : ι c // i ∈ s c} :=
-          { toFun := fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩
-            invFun := fun ⟨i, h⟩ ↦ ⟨i, hc, h⟩
-            left_inv := fun ⟨_, _⟩ ↦ rfl
-            right_inv := fun ⟨_, _⟩ ↦ rfl }
-        exact (hli c hc).comp f f.injective
-      · have : IsEmpty {i : ι c // c ∈ t ∧ i ∈ s c} := ⟨fun ⟨_, h, _⟩ ↦ hc h⟩
-        exact linearIndependent_empty_type
-    exact (Pi.linearIndependent_single (fun c (i : {i : ι c // c ∈ t ∧ i ∈ s c}) ↦ v c i.val)
-      hli').comp e e.injective
-
-end Pi
 
 namespace TauCeti
 
