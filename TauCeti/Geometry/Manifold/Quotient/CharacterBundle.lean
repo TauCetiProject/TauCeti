@@ -5,52 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Quotient.AssociatedBundle
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Monoidal
+public import TauCeti.Geometry.Manifold.Quotient.Picard
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Dual
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Scalar
 public import TauCeti.Topology.Covering.CharacterBundle
-public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
-# Smooth and holomorphic monoidal algebra and tensor order of character line bundles
+# Duals, cocycle twisting, and bundle equivalences of character line bundles
 
 Let `p : E → X` be a quotient covering map for a group `G` (`IsQuotientCoveringMap p G`) over a
-charted space `X`. For every character `χ : G →* 𝕜ˣ`, the point-indexed rank-one presentation
-`IsQuotientCoveringMap.characterFiniteRankCore χ` in `FiniteRankBundleCore 𝕜 X` is a `C^n` vector
-bundle for every model and every regularity `n`, and the topological monoidal identifications from
-`TauCeti.Topology.Covering.CharacterBundle` refine to `C^n` bundle equivalences over `X`:
+charted space `X`. Building on the `C^n` character cores `IsQuotientCoveringMap.characterCore χ`
+and `IsQuotientCoveringMap.characterContMDiffCore IB n χ` from
+`TauCeti.Geometry.Manifold.Quotient.AssociatedBundle` and
+`TauCeti.Geometry.Manifold.Quotient.Picard`, this file provides:
 
-* `IsQuotientCoveringMap.characterFiniteRankCoreDiffeomorph`: `C^n` bundle equivalence between
-  `(hp.characterFiniteRankCore χ).core` and `hp.characterCore χ`;
-* `IsQuotientCoveringMap.characterFiniteRankCoreOneDiffeomorph`,
-  `IsQuotientCoveringMap.characterFiniteRankCoreMulDiffeomorph`,
-  `IsQuotientCoveringMap.characterFiniteRankCoreInvDiffeomorph`, and
-  `IsQuotientCoveringMap.characterFiniteRankCorePowDiffeomorph`: `C^n` bundle equivalences
-  realizing `L_1 ≃ 𝟙`, `L_{χ₁} ⊗ L_{χ₂} ≃ L_{χ₁ * χ₂}`, `L_χ∨ ≃ L_{χ⁻¹}`, and
-  `L_χ^{⊗ m} ≃ L_{χ ^ m}` (holomorphic over `𝓘(ℂ, EB)` at regularity `∞`).
-
-Over a complete scalar field, twisting cocycle morphisms by `χ₁⁻¹` shows that `hp.characterCore χ₁`
-and `hp.characterCore χ₂` are `C^n` bundle-equivalent if and only if
-`hp.characterCore (χ₁⁻¹ * χ₂)` admits a global compatible `C^n` trivialization
-(`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization`), and
-when `p` is a `C^n` local diffeomorphism this is equivalent to the existence of a
-nowhere-vanishing `(χ₁⁻¹ * χ₂)`-equivariant `C^n` function on `E`
-(`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff`). Likewise, the `m`-th tensor
-power `tensorPow (hp.characterFiniteRankCore χ) m` is globally `C^n`-trivial whenever
-`orderOf χ ∣ m` (via `IsQuotientCoveringMap`'s
-`exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_of_orderOf_dvd`),
-in particular at `m = orderOf χ` and `m = Nat.card G`.
-
-When `E` is a compact connected complex manifold and `p : E → X` is differentiable, combining the
-triviality rigidity theorem
-`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`
-with the monoidal algebra shows that two character line bundles are `C^n` bundle-equivalent
-(`n ≠ 0`, in particular holomorphically isomorphic at `n = ∞`) if and only if their characters are
-equal (`IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`), and for a
-finite-order character `χ` the exact order of `hp.characterFiniteRankCore χ` under `tensorPow` is
-`orderOf χ`
-(`IsQuotientCoveringMap.isLeast_pos_trivialization_tensorPow_characterFiniteRankCore`).
+* `IsQuotientCoveringMap.characterContMDiffCoreDualIso` and
+  `IsQuotientCoveringMap.characterFiniteRankCoreInvDiffeomorph`: over a complete scalar field, the
+  dual `(hp.characterContMDiffCore IB n χ).dual` is canonically isomorphic in
+  `ContMDiffFiniteRankBundleCore IB n X` to `hp.characterContMDiffCore IB n χ⁻¹`, with glued
+  `C^n` total-space equivalence over `X`;
+* `IsQuotientCoveringMap.contMDiffOn_inChartCoordinates_characterCoreHomEquiv_iff`,
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_exists_trivialization`, and
+  `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff`: twisting cocycle morphisms by
+  `χ₁⁻¹` shows that `hp.characterCore χ₁` and `hp.characterCore χ₂` are `C^n` bundle-equivalent
+  over `X` if and only if `hp.characterCore (χ₁⁻¹ * χ₂)` admits a global compatible `C^n`
+  trivialization (and, when `p` is a `C^n` local diffeomorphism, if and only if `E` admits a
+  nowhere-vanishing `(χ₁⁻¹ * χ₂)`-equivariant `C^n` function);
+* `IsQuotientCoveringMap.exists_bundleDiffeomorph_characterCore_iff_eq`,
+  `IsQuotientCoveringMap`'s
+  `exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_iff_orderOf_dvd`,
+  and `IsQuotientCoveringMap.isLeast_pos_trivialization_tensorPow_characterFiniteRankCore`:
+  global-trivialization and bundle-equivalence characterizations for compact connected complex
+  coverings at `n ≠ 0` (in particular holomorphic at `n = ∞`).
 
 ## References
 
@@ -70,7 +55,7 @@ open scoped Manifold ContDiff
 
 namespace IsQuotientCoveringMap
 
-section RegularityAndMonoidal
+section DualAndTwisting
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
@@ -78,84 +63,33 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X] [ChartedSpace HB X]
   [Group G] [MulAction G E] {p : E → X} (hp : IsQuotientCoveringMap p G) {n : ℕ∞ω}
 
-/-- The point-indexed rank-one presentation `hp.characterFiniteRankCore χ` is `C^n` for every model
-of the base and every regularity. -/
-instance isContMDiff_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ).core.IsContMDiff IB n :=
-  inferInstanceAs ((ofScalarCore (hp.characterCore χ)).core.IsContMDiff IB n)
+section Dual
 
-/-- The `C^n` bundle equivalence identifying `(hp.characterFiniteRankCore χ).core` with
-`hp.characterCore χ` over the identity of `X`, without completeness assumptions on `𝕜`. -/
-noncomputable def characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₘ^n⟮
-      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ).rank → 𝕜), IB.prod 𝓘(𝕜)⟯
-    (hp.characterCore χ).TotalSpace :=
-  ofScalarCoreDiffeomorph (hp.characterCore χ)
+variable (IB n) [CompleteSpace 𝕜]
 
-@[simp] theorem coe_characterFiniteRankCoreDiffeomorph (χ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ) =
-      (toScalarCore (hp.characterCore χ)).totalSpaceMap :=
-  coe_ofScalarCoreDiffeomorph (hp.characterCore χ)
+/-- Over a complete scalar field, the dual of `hp.characterContMDiffCore IB n χ` is canonically
+isomorphic in `ContMDiffFiniteRankBundleCore IB n X` to `hp.characterContMDiffCore IB n χ⁻¹`. -/
+noncomputable def characterContMDiffCoreDualIso (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCore IB n χ).dual ≅ hp.characterContMDiffCore IB n χ⁻¹ :=
+  ContMDiffFiniteRankBundleCore.constIso
+    (A := (hp.characterContMDiffCore IB n χ).dual)
+    (D := hp.characterContMDiffCore IB n χ⁻¹)
+    (hp.baseSet_dual_characterFiniteRankCore χ) (ContinuousLinearEquiv.refl 𝕜 (Fin 1 → 𝕜))
+    (hp.coordChange_characterFiniteRankCore_inv_intertwines χ)
 
-@[simp] theorem coe_characterFiniteRankCoreDiffeomorph_symm (χ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ).symm =
-      (fromScalarCore (hp.characterCore χ)).totalSpaceMap :=
-  coe_ofScalarCoreDiffeomorph_symm (hp.characterCore χ)
+@[simp] theorem characterContMDiffCoreDualIso_hom_toHom (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCoreDualIso IB n χ).hom.toHom =
+      (hp.characterFiniteRankCoreInvIso χ).hom :=
+  (ContMDiffFiniteRankBundleCore.constIso_hom_toHom _ _ _).trans
+    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
 
-@[simp] theorem characterFiniteRankCoreDiffeomorph_toHomeomorph (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCoreDiffeomorph (IB := IB) (n := n) χ).toHomeomorph =
-      hp.characterFiniteRankCoreHomeomorph χ :=
-  DFunLike.coe_injective <| by
-    rw [Diffeomorph.coe_toHomeomorph, coe_characterFiniteRankCoreDiffeomorph,
-      coe_characterFiniteRankCoreHomeomorph]
+@[simp] theorem characterContMDiffCoreDualIso_inv_toHom (χ : G →* 𝕜ˣ) :
+    (hp.characterContMDiffCoreDualIso IB n χ).inv.toHom =
+      (hp.characterFiniteRankCoreInvIso χ).inv :=
+  (ContMDiffFiniteRankBundleCore.constIso_inv_toHom _ _ _).trans
+    (hp.characterFiniteRankCoreInvIso_def χ ▸ rfl)
 
-variable (𝕜) in
-/-- The `C^n` bundle equivalence identifying `hp.characterFiniteRankCore 1` with the monoidal unit
-`𝟙_ (FiniteRankBundleCore 𝕜 X)`, without completeness assumptions on `𝕜`. -/
-noncomputable def characterFiniteRankCoreOneDiffeomorph :
-    (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).core.TotalSpace ≃ₘ^n⟮
-      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).rank → 𝕜),
-      IB.prod 𝓘(𝕜, Fin (𝟙_ (FiniteRankBundleCore 𝕜 X)).rank → 𝕜)⟯
-    (𝟙_ (FiniteRankBundleCore 𝕜 X)).core.TotalSpace :=
-  diffeomorphTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
-    fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x
-
-@[simp] theorem coe_characterFiniteRankCoreOneDiffeomorph :
-    ⇑(hp.characterFiniteRankCoreOneDiffeomorph (IB := IB) (n := n) 𝕜) =
-      (hp.characterFiniteRankCoreOneIso 𝕜).hom.totalSpaceMap := by
-  rw [hp.characterFiniteRankCoreOneIso_def 𝕜]
-  exact coe_diffeomorphTrivialOfCoordChangeEqId (I := IB) (n := n) _ _
-
-@[simp] theorem coe_characterFiniteRankCoreOneDiffeomorph_symm :
-    ⇑(hp.characterFiniteRankCoreOneDiffeomorph (IB := IB) (n := n) 𝕜).symm =
-      (hp.characterFiniteRankCoreOneIso 𝕜).inv.totalSpaceMap := by
-  rw [hp.characterFiniteRankCoreOneIso_def 𝕜]
-  exact coe_diffeomorphTrivialOfCoordChangeEqId_symm (I := IB) (n := n) _ _
-
-/-- The `C^n` bundle equivalence identifying
-`hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂` with
-`hp.characterFiniteRankCore (χ₁ * χ₂)` over the identity of `X`. -/
-noncomputable def characterFiniteRankCoreMulDiffeomorph (χ₁ χ₂ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂).core.TotalSpace ≃ₘ^n⟮
-      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂).rank → 𝕜),
-      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore (χ₁ * χ₂)).rank → 𝕜)⟯
-    (hp.characterFiniteRankCore (χ₁ * χ₂)).core.TotalSpace :=
-  constIsoDiffeomorph (A := tensor (hp.characterFiniteRankCore χ₁) (hp.characterFiniteRankCore χ₂))
-    (D := hp.characterFiniteRankCore (χ₁ * χ₂))
-    (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
-    fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x
-
-@[simp] theorem coe_characterFiniteRankCoreMulDiffeomorph (χ₁ χ₂ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreMulDiffeomorph (IB := IB) (n := n) χ₁ χ₂) =
-      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).hom.totalSpaceMap := by
-  rw [hp.characterFiniteRankCoreMulIso_def χ₁ χ₂]
-  exact coe_constIsoDiffeomorph (I := IB) (n := n) _ _ _
-
-@[simp] theorem coe_characterFiniteRankCoreMulDiffeomorph_symm (χ₁ χ₂ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreMulDiffeomorph (IB := IB) (n := n) χ₁ χ₂).symm =
-      (hp.characterFiniteRankCoreMulIso χ₁ χ₂).inv.totalSpaceMap := by
-  rw [hp.characterFiniteRankCoreMulIso_def χ₁ χ₂]
-  exact coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
+end Dual
 
 /-- Over a complete scalar field, the `C^n` bundle equivalence identifying
 `(hp.characterFiniteRankCore χ).dual` with `hp.characterFiniteRankCore χ⁻¹` over the identity of
@@ -181,107 +115,6 @@ noncomputable def characterFiniteRankCoreInvDiffeomorph [CompleteSpace 𝕜] (χ
       (hp.characterFiniteRankCoreInvIso χ).inv.totalSpaceMap := by
   rw [hp.characterFiniteRankCoreInvIso_def χ]
   exact coe_constIsoDiffeomorph_symm (I := IB) (n := n) _ _ _
-
-/-- The forward isomorphism `hp.characterFiniteRankCorePowIso χ m` has `C^n` chart operators,
-without completeness assumptions on `𝕜`. -/
-theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_hom (χ : G →* 𝕜ˣ) (m : ℕ) :
-    ∀ i j : X,
-      ContMDiffOn IB
-        𝓘(𝕜, (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜) →L[𝕜]
-          (Fin (hp.characterFiniteRankCore (χ ^ m)).rank → 𝕜)) n
-        (fun x ↦ (tensorPow (hp.characterFiniteRankCore χ) m).core.inChartCoordinates
-          (hp.characterFiniteRankCore (χ ^ m)).core i j x
-          ((hp.characterFiniteRankCorePowIso χ m).hom.fiberMap x))
-        ((tensorPow (hp.characterFiniteRankCore χ) m).core.baseSet i ∩
-          (hp.characterFiniteRankCore (χ ^ m)).core.baseSet j) := by
-  induction m with
-  | zero =>
-    intro i j
-    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_hom, Iso.symm_hom, eqToIso.hom,
-      hp.characterFiniteRankCoreOneIso_def 𝕜]
-    exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
-      (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
-        (congrArg hp.characterFiniteRankCore (pow_zero χ).symm))
-      (contMDiffOn_inChartCoordinates_isoTrivialOfCoordChangeEqId_inv
-        (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)) _) i j
-  | succ m ih =>
-    intro i j
-    rw [hp.characterFiniteRankCorePowIso_succ χ m, Iso.trans_hom, Iso.trans_hom, ← Category.assoc,
-      whiskerLeftIso_hom, eqToIso.hom, hp.characterFiniteRankCoreMulIso_def χ (χ ^ m)]
-    exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
-      (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
-        (congrArg hp.characterFiniteRankCore (pow_succ' χ m).symm))
-      (CoordinateHom.contMDiffOn_inChartCoordinates_comp
-        (contMDiffOn_inChartCoordinates_constIso_hom
-          (A := tensor (hp.characterFiniteRankCore χ) (hp.characterFiniteRankCore (χ ^ m)))
-          (D := hp.characterFiniteRankCore (χ * χ ^ m))
-          (hp.baseSet_tensor_characterFiniteRankCore χ (χ ^ m)) (kroneckerLid 𝕜 1) _)
-        (contMDiffOn_inChartCoordinates_whiskerLeft (A := hp.characterFiniteRankCore χ)
-          (hp.characterFiniteRankCorePowIso χ m).hom ih)) i j
-
-/-- The inverse isomorphism `hp.characterFiniteRankCorePowIso χ m` has `C^n` chart operators,
-without completeness assumptions on `𝕜`. -/
-theorem contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv (χ : G →* 𝕜ˣ) (m : ℕ) :
-    ∀ i j : X,
-      ContMDiffOn IB
-        𝓘(𝕜, (Fin (hp.characterFiniteRankCore (χ ^ m)).rank → 𝕜) →L[𝕜]
-          (Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜)) n
-        (fun x ↦ (hp.characterFiniteRankCore (χ ^ m)).core.inChartCoordinates
-          (tensorPow (hp.characterFiniteRankCore χ) m).core i j x
-          ((hp.characterFiniteRankCorePowIso χ m).inv.fiberMap x))
-        ((hp.characterFiniteRankCore (χ ^ m)).core.baseSet i ∩
-          (tensorPow (hp.characterFiniteRankCore χ) m).core.baseSet j) := by
-  induction m with
-  | zero =>
-    intro i j
-    rw [hp.characterFiniteRankCorePowIso_zero χ, Iso.trans_inv, Iso.symm_inv, eqToIso.inv,
-      hp.characterFiniteRankCoreOneIso_def 𝕜]
-    exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
-      (contMDiffOn_inChartCoordinates_isoTrivialOfCoordChangeEqId_hom
-        (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)) _)
-      (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
-        (congrArg hp.characterFiniteRankCore (pow_zero χ))) i j
-  | succ m ih =>
-    intro i j
-    rw [hp.characterFiniteRankCorePowIso_succ χ m, Iso.trans_inv, Iso.trans_inv,
-      whiskerLeftIso_inv, eqToIso.inv, hp.characterFiniteRankCoreMulIso_def χ (χ ^ m)]
-    exact CoordinateHom.contMDiffOn_inChartCoordinates_comp
-      (contMDiffOn_inChartCoordinates_whiskerLeft (A := hp.characterFiniteRankCore χ)
-        (hp.characterFiniteRankCorePowIso χ m).inv ih)
-      (CoordinateHom.contMDiffOn_inChartCoordinates_comp
-        (contMDiffOn_inChartCoordinates_constIso_inv
-          (A := tensor (hp.characterFiniteRankCore χ) (hp.characterFiniteRankCore (χ ^ m)))
-          (D := hp.characterFiniteRankCore (χ * χ ^ m))
-          (hp.baseSet_tensor_characterFiniteRankCore χ (χ ^ m)) (kroneckerLid 𝕜 1) _)
-        (contMDiffOn_inChartCoordinates_eqToHom (I := IB) (n := n)
-          (congrArg hp.characterFiniteRankCore (pow_succ' χ m)))) i j
-
-/-- The `C^n` bundle equivalence identifying `tensorPow (hp.characterFiniteRankCore χ) m` with
-`hp.characterFiniteRankCore (χ ^ m)` over the identity of `X`, without completeness assumptions on
-`𝕜`. -/
-noncomputable def characterFiniteRankCorePowDiffeomorph (χ : G →* 𝕜ˣ) (m : ℕ) :
-    (tensorPow (hp.characterFiniteRankCore χ) m).core.TotalSpace ≃ₘ^n⟮
-      IB.prod 𝓘(𝕜, Fin (tensorPow (hp.characterFiniteRankCore χ) m).rank → 𝕜),
-      IB.prod 𝓘(𝕜, Fin (hp.characterFiniteRankCore (χ ^ m)).rank → 𝕜)⟯
-    (hp.characterFiniteRankCore (χ ^ m)).core.TotalSpace :=
-  (hp.characterFiniteRankCorePowIso χ m).hom.toDiffeomorphOfInv
-    (hp.characterFiniteRankCorePowIso χ m).inv
-    (hp.characterFiniteRankCorePowIso χ m).hom_inv_id
-    (hp.characterFiniteRankCorePowIso χ m).inv_hom_id
-    ((hp.characterFiniteRankCorePowIso χ m).hom.contMDiff_totalSpaceMap
-      (hp.contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_hom χ m))
-    ((hp.characterFiniteRankCorePowIso χ m).inv.contMDiff_totalSpaceMap
-      (hp.contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv χ m))
-
-@[simp] theorem coe_characterFiniteRankCorePowDiffeomorph (χ : G →* 𝕜ˣ) (m : ℕ) :
-    ⇑(hp.characterFiniteRankCorePowDiffeomorph (IB := IB) (n := n) χ m) =
-      (hp.characterFiniteRankCorePowIso χ m).hom.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv _ _ _ _ _ _
-
-@[simp] theorem coe_characterFiniteRankCorePowDiffeomorph_symm (χ : G →* 𝕜ˣ) (m : ℕ) :
-    ⇑(hp.characterFiniteRankCorePowDiffeomorph (IB := IB) (n := n) χ m).symm =
-      (hp.characterFiniteRankCorePowIso χ m).inv.totalSpaceMap :=
-  CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
 
 /-! ### Twisting `C^n` chart operators and sections of scalar character cores -/
 
@@ -368,7 +201,7 @@ private theorem contMDiffOn_inChartCoordinates_smulRight_of_section (χ : G →*
   rw [hp.inChartCoordinates_characterCore_one_smulRight χ (fun y ↦ (σ y : 𝕜)) e e' x]
   exact ContinuousLinearMap.ext fun v ↦ mul_comm _ _
 
-end RegularityAndMonoidal
+end DualAndTwisting
 
 /-! ### `C^n` bundle equivalences, tensor powers, and tensor order -/
 
@@ -457,18 +290,16 @@ theorem exists_trivialization_baseSet_eq_univ_tensorPow_characterFiniteRankCore_
         e.toOpenPartialHomeomorph ∈
           (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
             (TotalSpace 𝕜 (hp.characterCore (χ ^ m)).Fiber) ∧
-          e.baseSet = univ :=
-  (CoordinateHom.exists_trivialization_baseSet_eq_univ_iff_of_inv
-    (by simp) (by simp)
-    (hp.characterFiniteRankCorePowIso χ m).hom
-    (hp.characterFiniteRankCorePowIso χ m).inv
-    (hp.characterFiniteRankCorePowIso χ m).hom_inv_id
-    (hp.characterFiniteRankCorePowIso χ m).inv_hom_id
-    ((hp.characterFiniteRankCorePowIso χ m).hom.contMDiff_totalSpaceMap
-      (hp.contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_hom χ m))
-    ((hp.characterFiniteRankCorePowIso χ m).inv.contMDiff_totalSpaceMap
-      (hp.contMDiffOn_inChartCoordinates_characterFiniteRankCorePowIso_inv χ m))).trans
-    (exists_trivialization_baseSet_eq_univ_ofScalarCore_iff (hp.characterCore (χ ^ m)))
+          e.baseSet = univ := by
+  have h1 : (tensorPow (hp.characterContMDiffCore IB n χ) m).toCore =
+      tensorPow (hp.characterFiniteRankCore χ) m :=
+    ContMDiffFiniteRankBundleCore.toCore_tensorPow _ m
+  have hleft := ContMDiffPicardGroup.ofRankOne_eq_one_iff_exists_trivialization_baseSet_eq_univ
+    (tensorPow (hp.characterContMDiffCore IB n χ) m) (by simp)
+  rw [ContMDiffPicardGroup.ofRankOne_tensorPow _ (hp.rank_characterContMDiffCore IB n χ),
+    hp.ofRankOne_characterContMDiffCore, ← map_pow,
+    hp.characterPicardHom_eq_one_iff_exists_trivialization_baseSet_eq_univ] at hleft
+  exact h1 ▸ hleft.symm
 
 /-- Whenever `orderOf χ ∣ m`, the `m`-th tensor power `tensorPow (hp.characterFiniteRankCore χ) m`
 admits a global compatible `C^n` trivialization over `X`. -/

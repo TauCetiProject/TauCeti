@@ -6,38 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Covering.AssociatedBundle
-public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Topology.VectorBundle.FiniteRank.Dual
-public import TauCeti.Topology.VectorBundle.FiniteRank.Scalar
 
 /-!
-# Algebra of line bundles associated with characters of a deck group
+# Duals and cocycle twisting for character line bundles
 
 Let `p : E → X` present `X` as the quotient of `E` by a group `G` (`IsQuotientCoveringMap p G`).
 For each character `χ : G →* 𝕜ˣ`, `IsQuotientCoveringMap.characterCore χ` is the scalar line-bundle
-core over `X` with transitions multiplying by `χ (deckChange e e' x)`. Restricting along the
-preferred local sections and identifying `𝕜` with `Fin 1 → 𝕜` produces the point-indexed rank-one
-core `IsQuotientCoveringMap.characterFiniteRankCore χ : FiniteRankBundleCore 𝕜 X`, whose total space
-is canonically homeomorphic to `(hp.characterCore χ).TotalSpace` over `X`.
+core over `X` with transitions multiplying by `χ (deckChange e e' x)`, and
+`IsQuotientCoveringMap.characterFiniteRankCore χ : FiniteRankBundleCore 𝕜 X` is its point-indexed
+rank-one presentation from `TauCeti.Topology.Covering.AssociatedBundle`.
 
-Because the chart domains of `associatedCore` depend only on `p` and not on the character, the
-monoidal and dual operations on `FiniteRankBundleCore 𝕜 X` match the group operations on
-characters `G →* 𝕜ˣ`:
+Building on that foundation, this file provides:
 
-* `IsQuotientCoveringMap.characterFiniteRankCoreOneIso`: the bundle of the trivial character is
-  canonically isomorphic to the monoidal unit `𝟙_ (FiniteRankBundleCore 𝕜 X)`;
-* `IsQuotientCoveringMap.characterFiniteRankCoreMulIso`: the tensor product of the bundles of `χ₁`
-  and `χ₂` is canonically isomorphic to the bundle of `χ₁ * χ₂`;
-* `IsQuotientCoveringMap.characterFiniteRankCoreInvIso`: over a complete field, the dual of the
-  bundle of `χ` is canonically isomorphic to the bundle of `χ⁻¹`;
-* `IsQuotientCoveringMap.characterFiniteRankCorePowIso`: the `m`-th tensor power
-  `TauCeti.tensorPow (hp.characterFiniteRankCore χ) m` is canonically isomorphic to the bundle of
-  `χ ^ m`.
-
-On scalar cores, twisting chart operators by `χ₁⁻¹ (deckChange e e' x)` identifies cocycle
-morphisms from `hp.characterCore χ₁` to `hp.characterCore χ₂` with cocycle morphisms from
-`hp.characterCore 1` to `hp.characterCore (χ₁⁻¹ * χ₂)` while preserving all fibre maps
-(`IsQuotientCoveringMap.characterCoreHomEquiv`).
+* `IsQuotientCoveringMap.deckChange_inv`: inverting the order of local sections inverts the deck
+  transformation;
+* `IsQuotientCoveringMap.characterFiniteRankCoreInvIso`: over a complete scalar field, the dual
+  `(hp.characterFiniteRankCore χ).dual` is canonically isomorphic to
+  `hp.characterFiniteRankCore χ⁻¹`;
+* `IsQuotientCoveringMap.characterCoreHomEquiv`: twisting chart operators by
+  `χ₁⁻¹ (deckChange e e' x)` identifies cocycle morphisms from `hp.characterCore χ₁` to
+  `hp.characterCore χ₂` with cocycle morphisms from `hp.characterCore 1` to
+  `hp.characterCore (χ₁⁻¹ * χ₂)` while preserving all fibre maps, without completeness assumptions.
 
 ## References
 
@@ -85,140 +75,7 @@ independently of `χ`. -/
     (hp.characterCore χ).indexAt x = Function.surjInv hp.surjective x := by
   rw [characterCore_def, associatedCore_indexAt]
 
-/-! ### Point-indexed rank-one character cores -/
-
--- Expose the rank projection so the dependent fibre model reduces to `Fin 1 → 𝕜`.
-/-- The point-indexed rank-one vector-bundle core over `X` associated with a character
-`χ : G →* 𝕜ˣ`, obtained from `hp.characterCore χ` via `FiniteRankBundleCore.ofScalarCore`. -/
-@[expose]
-noncomputable def characterFiniteRankCore (χ : G →* 𝕜ˣ) : FiniteRankBundleCore 𝕜 X :=
-  ofScalarCore (hp.characterCore χ)
-
-@[simp] theorem rank_characterFiniteRankCore (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ).rank = 1 := (rfl)
-
-/-- The chart domain of `hp.characterFiniteRankCore χ` at `x` depends only on `p`, namely it is the
-source of the local section of `p` through `Function.surjInv hp.surjective x`. -/
-theorem baseSet_characterFiniteRankCore (χ : G →* 𝕜ˣ) (x : X) :
-    (hp.characterFiniteRankCore χ).core.baseSet x =
-      (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source := by
-  simp [characterFiniteRankCore]
-
-@[simp] theorem localTriv_baseSet_characterFiniteRankCore (χ : G →* 𝕜ˣ) (x : X) :
-    ((hp.characterFiniteRankCore χ).core.localTriv x).baseSet =
-      (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective x)).source := by
-  rw [characterFiniteRankCore, localTriv_baseSet_ofScalarCore, characterCore_baseSet,
-    characterCore_indexAt]
-
-/-- The transition map of `hp.characterFiniteRankCore χ` from chart `i` to chart `j` at `x` scales
-by `χ (hp.deckChange (Function.surjInv hp.surjective i) (Function.surjInv hp.surjective j) x)`. -/
-theorem coordChange_characterFiniteRankCore_eq_smul (χ : G →* 𝕜ˣ) (i j x : X) :
-    (hp.characterFiniteRankCore χ).core.coordChange i j x =
-      (χ (hp.deckChange (Function.surjInv hp.surjective i)
-        (Function.surjInv hp.surjective j) x) : 𝕜) •
-        ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore χ).rank → 𝕜) := by
-  dsimp +instances only [characterFiniteRankCore]
-  rw [coordChange_ofScalarCore_eq_smul, characterCore_coordChange_apply, mul_one,
-    characterCore_indexAt, characterCore_indexAt]
-
-/-- The trivial character gives identity transition maps on `hp.characterFiniteRankCore 1`. -/
-@[simp] theorem coordChange_characterFiniteRankCore_one (i j x : X) :
-    (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).core.coordChange i j x =
-      ContinuousLinearMap.id 𝕜 (Fin (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ)).rank → 𝕜) := by
-  rw [hp.coordChange_characterFiniteRankCore_eq_smul, MonoidHom.one_apply, Units.val_one, one_smul]
-
-/-- The total space of `hp.characterFiniteRankCore χ` is canonically homeomorphic to the total space
-of `hp.characterCore χ` over the identity of `X`. -/
-noncomputable def characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
-    (hp.characterFiniteRankCore χ).core.TotalSpace ≃ₜ (hp.characterCore χ).TotalSpace :=
-  ofScalarCoreHomeomorph (hp.characterCore χ)
-
-@[simp] theorem coe_characterFiniteRankCoreHomeomorph (χ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreHomeomorph χ) = (toScalarCore (hp.characterCore χ)).totalSpaceMap :=
-  coe_ofScalarCoreHomeomorph (hp.characterCore χ)
-
-@[simp] theorem coe_characterFiniteRankCoreHomeomorph_symm (χ : G →* 𝕜ˣ) :
-    ⇑(hp.characterFiniteRankCoreHomeomorph χ).symm =
-      (fromScalarCore (hp.characterCore χ)).totalSpaceMap :=
-  coe_ofScalarCoreHomeomorph_symm (hp.characterCore χ)
-
-/-! ### Multiplicativity, inversion, and tensor powers of character cores -/
-
-variable (𝕜) in
-/-- The rank-one core of the trivial character is canonically isomorphic to the monoidal unit
-`𝟙_ (FiniteRankBundleCore 𝕜 X)`. -/
-noncomputable def characterFiniteRankCoreOneIso :
-    hp.characterFiniteRankCore (1 : G →* 𝕜ˣ) ≅ 𝟙_ (FiniteRankBundleCore 𝕜 X) :=
-  isoTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
-    fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x
-
-variable (𝕜) in
-/-- `hp.characterFiniteRankCoreOneIso 𝕜` is defined via `isoTrivialOfCoordChangeEqId`. -/
-theorem characterFiniteRankCoreOneIso_def :
-    hp.characterFiniteRankCoreOneIso 𝕜 =
-      isoTrivialOfCoordChangeEqId (hp.characterFiniteRankCore (1 : G →* 𝕜ˣ))
-        (fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_one i j x) := (rfl)
-
-@[simp] theorem fiberMap_characterFiniteRankCoreOneIso_hom (x : X) :
-    (hp.characterFiniteRankCoreOneIso 𝕜).hom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
-  fiberMap_isoTrivialOfCoordChangeEqId_hom _ _ x
-
-@[simp] theorem fiberMap_characterFiniteRankCoreOneIso_inv (x : X) :
-    (hp.characterFiniteRankCoreOneIso 𝕜).inv.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
-  fiberMap_isoTrivialOfCoordChangeEqId_inv _ _ x
-
-/-- `kroneckerLid 𝕜 1` intertwines the Kronecker product of the transition maps for `χ₁` and `χ₂`
-with the transition map for `χ₁ * χ₂`. -/
-theorem coordChange_characterFiniteRankCore_mul_intertwines (χ₁ χ₂ : G →* 𝕜ˣ) (i j x : X) :
-    (kroneckerLid 𝕜 1 : (Fin (1 * 1) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)).comp
-        ((tensor (hp.characterFiniteRankCore χ₁)
-          (hp.characterFiniteRankCore χ₂)).core.coordChange i j x) =
-      ((hp.characterFiniteRankCore (χ₁ * χ₂)).core.coordChange i j x).comp
-        (kroneckerLid 𝕜 1 : (Fin (1 * 1) → 𝕜) →L[𝕜] (Fin 1 → 𝕜)) := by
-  rw [coordChange_tensor, hp.coordChange_characterFiniteRankCore_eq_smul χ₁,
-    hp.coordChange_characterFiniteRankCore_eq_smul χ₂,
-    hp.coordChange_characterFiniteRankCore_eq_smul (χ₁ * χ₂)]
-  dsimp +instances only [characterFiniteRankCore, ofScalarCore]
-  rw [smul_kronecker, kronecker_smul, id_kronecker_id, smul_smul, MonoidHom.mul_apply,
-    Units.val_mul]
-  exact ContinuousLinearMap.ext fun v ↦ (kroneckerLid 𝕜 1).map_smul _ v
-
-/-- Chart domains of `hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂` coincide with
-those of `hp.characterFiniteRankCore (χ₁ * χ₂)`. -/
-theorem baseSet_tensor_characterFiniteRankCore (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
-    (tensor (hp.characterFiniteRankCore χ₁) (hp.characterFiniteRankCore χ₂)).core.baseSet x =
-      (hp.characterFiniteRankCore (χ₁ * χ₂)).core.baseSet x := by
-  simp [VectorBundleCore.baseSet_at]
-
-/-- The tensor product of the rank-one cores for `χ₁` and `χ₂` is canonically isomorphic to the
-rank-one core for `χ₁ * χ₂`, acting fibrewise by `kroneckerLid 𝕜 1`. -/
-noncomputable def characterFiniteRankCoreMulIso (χ₁ χ₂ : G →* 𝕜ˣ) :
-    hp.characterFiniteRankCore χ₁ ⊗ hp.characterFiniteRankCore χ₂ ≅
-      hp.characterFiniteRankCore (χ₁ * χ₂) :=
-  constIso (A := tensor (hp.characterFiniteRankCore χ₁) (hp.characterFiniteRankCore χ₂))
-    (D := hp.characterFiniteRankCore (χ₁ * χ₂))
-    (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
-    fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x
-
-/-- `hp.characterFiniteRankCoreMulIso χ₁ χ₂` is the constant isomorphism induced by
-`kroneckerLid 𝕜 1`. -/
-theorem characterFiniteRankCoreMulIso_def (χ₁ χ₂ : G →* 𝕜ˣ) :
-    hp.characterFiniteRankCoreMulIso χ₁ χ₂ =
-      constIso (A := tensor (hp.characterFiniteRankCore χ₁) (hp.characterFiniteRankCore χ₂))
-        (D := hp.characterFiniteRankCore (χ₁ * χ₂))
-        (hp.baseSet_tensor_characterFiniteRankCore χ₁ χ₂) (kroneckerLid 𝕜 1)
-        (fun i j x _ _ ↦ hp.coordChange_characterFiniteRankCore_mul_intertwines χ₁ χ₂ i j x) :=
-  (rfl)
-
-@[simp] theorem fiberMap_characterFiniteRankCoreMulIso_hom (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
-    (hp.characterFiniteRankCoreMulIso χ₁ χ₂).hom.fiberMap x =
-      (kroneckerLid 𝕜 1).toContinuousLinearMap :=
-  fiberMap_constIso_hom _ _ _ x
-
-@[simp] theorem fiberMap_characterFiniteRankCoreMulIso_inv (χ₁ χ₂ : G →* 𝕜ˣ) (x : X) :
-    (hp.characterFiniteRankCoreMulIso χ₁ χ₂).inv.fiberMap x =
-      (kroneckerLid 𝕜 1).symm.toContinuousLinearMap :=
-  fiberMap_constIso_inv _ _ _ x
+/-! ### Duals of character cores -/
 
 /-- Chart domains of `(hp.characterFiniteRankCore χ).dual` coincide with those of
 `hp.characterFiniteRankCore χ⁻¹`. -/
@@ -240,11 +97,9 @@ theorem coordChange_characterFiniteRankCore_inv_intertwines [CompleteSpace 𝕜]
     by simpa [VectorBundleCore.baseSet_at] using hi
   have hj' : x ∈ (hp.isLocalHomeomorph.localInverseAt (Function.surjInv hp.surjective j)).source :=
     by simpa [VectorBundleCore.baseSet_at] using hj
-  rw [coordChange_dual, hp.coordChange_characterFiniteRankCore_eq_smul χ j i x,
-    hp.coordChange_characterFiniteRankCore_eq_smul χ⁻¹ i j x]
-  dsimp +instances only [characterFiniteRankCore, ofScalarCore]
-  rw [piTranspose_smul, piTranspose_id, hp.deckChange_inv ⟨hi', hj'⟩, map_inv,
-    MonoidHom.inv_apply, ContinuousLinearEquiv.coe_refl]
+  rw [coordChange_dual, hp.characterFiniteRankCore_coordChange χ j i x,
+    hp.characterFiniteRankCore_coordChange χ⁻¹ i j x, piTranspose_smul, piTranspose_id,
+    hp.deckChange_inv ⟨hi', hj'⟩, map_inv, MonoidHom.inv_apply, ContinuousLinearEquiv.coe_refl]
   exact ContinuousLinearMap.ext fun _ ↦ rfl
 
 /-- Over a complete scalar field, the dual of `hp.characterFiniteRankCore χ` is canonically
@@ -272,30 +127,6 @@ theorem fiberMap_characterFiniteRankCoreInvIso_hom [CompleteSpace 𝕜] (χ : G 
 theorem fiberMap_characterFiniteRankCoreInvIso_inv [CompleteSpace 𝕜] (χ : G →* 𝕜ˣ) (x : X) :
     (hp.characterFiniteRankCoreInvIso χ).inv.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜) :=
   fiberMap_constIso_inv _ _ _ x
-
-/-- The `m`-th tensor power of `hp.characterFiniteRankCore χ` is canonically isomorphic to
-`hp.characterFiniteRankCore (χ ^ m)`. -/
-noncomputable def characterFiniteRankCorePowIso (χ : G →* 𝕜ˣ) :
-    (m : ℕ) → tensorPow (hp.characterFiniteRankCore χ) m ≅ hp.characterFiniteRankCore (χ ^ m)
-  | 0 =>
-    (hp.characterFiniteRankCoreOneIso 𝕜).symm ≪≫
-      eqToIso (congrArg hp.characterFiniteRankCore (pow_zero χ).symm)
-  | m + 1 =>
-    whiskerLeftIso (hp.characterFiniteRankCore χ) (characterFiniteRankCorePowIso χ m) ≪≫
-      hp.characterFiniteRankCoreMulIso χ (χ ^ m) ≪≫
-      eqToIso (congrArg hp.characterFiniteRankCore (pow_succ' χ m).symm)
-
-@[simp] theorem characterFiniteRankCorePowIso_zero (χ : G →* 𝕜ˣ) :
-    hp.characterFiniteRankCorePowIso χ 0 =
-      (hp.characterFiniteRankCoreOneIso 𝕜).symm ≪≫
-        eqToIso (congrArg hp.characterFiniteRankCore (pow_zero χ).symm) := (rfl)
-
-/-- Recursive step of the character tensor-power isomorphism. -/
-theorem characterFiniteRankCorePowIso_succ (χ : G →* 𝕜ˣ) (m : ℕ) :
-    hp.characterFiniteRankCorePowIso χ (m + 1) =
-      whiskerLeftIso (hp.characterFiniteRankCore χ) (hp.characterFiniteRankCorePowIso χ m) ≪≫
-        hp.characterFiniteRankCoreMulIso χ (χ ^ m) ≪≫
-        eqToIso (congrArg hp.characterFiniteRankCore (pow_succ' χ m).symm) := (rfl)
 
 /-! ### Twisting cocycle morphisms between scalar character cores -/
 

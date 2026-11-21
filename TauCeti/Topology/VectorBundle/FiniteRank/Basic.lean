@@ -41,9 +41,7 @@ continuous linear equivalences.
 
 Between two cores with the same chart domains, a fixed coordinate operator intertwining their
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
-intertwining coordinate equivalence is an isomorphism (`constIso`). When a point-indexed core has
-identity transition maps on all chart overlaps (without requiring chart domains to be `Set.univ`),
-`isoTrivialOfCoordChangeEqId` gives the canonical isomorphism to `trivial 𝕜 B A.rank`.
+intertwining coordinate equivalence is an isomorphism (`constIso`).
 
 A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
 coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
@@ -218,6 +216,12 @@ theorem hom_ext_of_fiberFunctor {f g : A ⟶ D}
   apply ContinuousLinearMap.ext
   intro v
   exact congrArg (fun k => k v) (h x)
+
+/-- Isomorphic finite-rank cores over a nonempty base have the same rank. -/
+theorem rank_eq_of_iso [Nonempty B] (e : A ≅ D) : A.rank = D.rank :=
+  let ⟨x⟩ := ‹Nonempty B›
+  (Module.finrank_fin_fun 𝕜).symm.trans <|
+    ((fiberFunctor (𝕜 := 𝕜) x).mapIso e).toLinearEquiv.finrank_eq.trans (Module.finrank_fin_fun 𝕜)
 
 variable (𝕜 B) in
 /-- The trivial point-indexed core of rank `n`. This construction also works on the empty base. -/
@@ -440,60 +444,49 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
     (constIso hbase e he).inv.fiberMap x = e.symm := by
   simp only [constIso, fiberMap_constHom]
 
-/-! ### Cores with identity transition maps -/
+section IsoTrivial
 
-section CoordChangeEqId
-
-variable (A : FiniteRankBundleCore 𝕜 B)
+variable (A : FiniteRankBundleCore 𝕜 B) {r : ℕ}
+  (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin r → 𝕜))
   (h : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
     A.core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
 
-/-- Any point-indexed finite-rank core whose transition maps are identities on chart overlaps is
-canonically isomorphic to `trivial 𝕜 B A.rank`, with identity fibre maps. Unlike `constIso`, the
-chart domains of `A` need not be `Set.univ`. -/
-def isoTrivialOfCoordChangeEqId : A ≅ trivial 𝕜 B A.rank where
+/-- A core whose transition maps on chart overlaps are all the identity, equipped with a continuous
+linear equivalence of its model fibre with `Fin r → 𝕜`, is canonically isomorphic to `trivial 𝕜 B r`
+even when its chart domains are proper subsets of `B`. -/
+def isoTrivialOfCoordChangeEqId : A ≅ trivial 𝕜 B r where
   hom :=
-    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-      compatible i i' _ _ x hi hi' _ _ _ := by rw [h i i' x hi hi']; rfl }
+    { operator := fun _ _ ↦ ⟨fun _ ↦ e.toContinuousLinearMap, continuous_const⟩
+      compatible := fun i i' _ _ x hi hi' _ _ _ ↦ by
+        rw [coordChange_trivial, h i i' x hi hi']; rfl }
   inv :=
-    { operator _ _ := ContinuousMap.const _ (ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜))
-      compatible _ _ j j' x _ _ hj hj' _ := by rw [h j j' x hj hj']; rfl }
-  hom_inv_id := hom_ext fun _ ↦ by
-    rw [fiberMap_comp, fiberMap_id]
-    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
-  inv_hom_id := hom_ext fun _ ↦ by
-    rw [fiberMap_comp, fiberMap_id]
-    ext v; rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]; rfl
+    { operator := fun _ _ ↦ ⟨fun _ ↦ e.symm.toContinuousLinearMap, continuous_const⟩
+      compatible := fun _ _ j j' x _ _ hj hj' _ ↦ by
+        rw [coordChange_trivial, h j j' x hj hj']; rfl }
+  hom_inv_id := hom_ext fun x ↦ by
+    rw [fiberMap_comp, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def, fiberMap_id]
+    ext v : 1; exact e.symm_apply_apply v
+  inv_hom_id := hom_ext fun x ↦ by
+    rw [fiberMap_comp, CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def, fiberMap_id]
+    ext v : 1; exact e.apply_symm_apply v
 
-@[simp]
-theorem fiberMap_isoTrivialOfCoordChangeEqId_hom (x : B) :
-    (isoTrivialOfCoordChangeEqId A h).hom.fiberMap x =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+theorem operator_isoTrivialOfCoordChangeEqId_hom (i j : B)
+    (x : ↥(A.core.baseSet i ∩ (trivial 𝕜 B r).core.baseSet j)) :
+    (isoTrivialOfCoordChangeEqId A e h).hom.operator i j x = e.toContinuousLinearMap := (rfl)
+
+theorem operator_isoTrivialOfCoordChangeEqId_inv (i j : B)
+    (x : ↥((trivial 𝕜 B r).core.baseSet i ∩ A.core.baseSet j)) :
+    (isoTrivialOfCoordChangeEqId A e h).inv.operator i j x = e.symm.toContinuousLinearMap := (rfl)
+
+@[simp] theorem fiberMap_isoTrivialOfCoordChangeEqId_hom (x : B) :
+    (isoTrivialOfCoordChangeEqId A e h).hom.fiberMap x = e.toContinuousLinearMap := by
   rw [CoordinateHom.fiberMap_def]; rfl
 
-@[simp]
-theorem fiberMap_isoTrivialOfCoordChangeEqId_inv (x : B) :
-    (isoTrivialOfCoordChangeEqId A h).inv.fiberMap x =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) := by
+@[simp] theorem fiberMap_isoTrivialOfCoordChangeEqId_inv (x : B) :
+    (isoTrivialOfCoordChangeEqId A e h).inv.fiberMap x = e.symm.toContinuousLinearMap := by
   rw [CoordinateHom.fiberMap_def]; rfl
 
-/-- Chart operator of the forward comparison `(isoTrivialOfCoordChangeEqId A h).hom`. -/
-theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_hom (i j : B) {x : B}
-    (hi : x ∈ A.core.baseSet i) :
-    A.core.inChartCoordinates (trivial 𝕜 B A.rank).core i j x
-        ((isoTrivialOfCoordChangeEqId A h).hom.fiberMap x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-  ((isoTrivialOfCoordChangeEqId A h).hom.operator_eq i j ⟨x, hi, Set.mem_univ _⟩).symm
-
-/-- Chart operator of the inverse comparison `(isoTrivialOfCoordChangeEqId A h).inv`. -/
-theorem inChartCoordinates_isoTrivialOfCoordChangeEqId_inv (i j : B) {x : B}
-    (hj : x ∈ A.core.baseSet j) :
-    (trivial 𝕜 B A.rank).core.inChartCoordinates A.core i j x
-        ((isoTrivialOfCoordChangeEqId A h).inv.fiberMap x) =
-      ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜) :=
-  ((isoTrivialOfCoordChangeEqId A h).inv.operator_eq i j ⟨x, Set.mem_univ _, hj⟩).symm
-
-end CoordChangeEqId
+end IsoTrivial
 
 section Isomorphisms
 

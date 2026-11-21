@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The rough Laplacian of a connection
@@ -46,6 +47,10 @@ The trace is the contraction of the bilinear map `∇²σ` against the canonical
 * `CovariantDerivative.roughLaplacian_smul`: the Leibniz rule for the rough Laplacian of the
   Levi-Civita second covariant derivative.
 * `CovariantDerivative.roughLaplacian_trivial`: on the trivial line bundle, `∇*∇ f = -Δ f`.
+* `CovariantDerivative.roughLaplacian_eq_neg_laplaceBeltrami_sub_add`: the rough Laplacian of a
+  smooth connection `∇` on the trivial line, `∇*∇ f = -Δ f - 2 ω(grad f) + f ∇*∇ 1` for `ω = ∇ 1`.
+* `CovariantDerivative.roughLaplacian_trivialAddInner`: the rough Laplacian of the connection
+  `d + ⟪Y, ·⟫`, `∇*∇ f = -Δ f - 2 df(Y) - (div Y + ‖Y‖²) f`.
 
 ## References
 
@@ -87,6 +92,14 @@ def roughLaplacian (σ : Π y : M, V y) (x : M) : V x :=
   -TensorProduct.lift.equiv (.id ℝ) (TangentSpace I x) (TangentSpace I x) (V x)
     (cov.secondCovariantDerivative covT σ x)
     (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
+
+/-- The rough Laplacian only depends on the values of the connection on smooth sections. -/
+theorem roughLaplacian_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.roughLaplacian covT σ = cov'.roughLaplacian covT σ := by
+  funext x
+  rw [roughLaplacian, roughLaplacian, secondCovariantDerivative_congr cov covT cov' h]
 
 /-- The rough Laplacian in an orthonormal basis: `∇*∇ σ = -∑ᵢ ∇²σ(eᵢ, eᵢ)`. -/
 theorem roughLaplacian_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
@@ -263,6 +276,78 @@ theorem roughLaplacian_trivial (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
   rw [h, roughLaplacian, hsecond, hpar]
   simp [one]
 
+/-- **The rough Laplacian on the trivial line.** For a smooth connection `∇` on the trivial line
+bundle with connection form `ω = ∇ 1`, and the Levi-Civita connection on the tangent bundle,
+`∇*∇ f = -Δ f - 2 ω(grad f) + f ∇*∇ 1` for every smooth function `f`. -/
+theorem roughLaplacian_eq_neg_laplaceBeltrami_sub_add
+    (cov : CovariantDerivative I ℝ (Bundle.Trivial M ℝ)) [ContMDiffCovariantDerivative cov ∞]
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
+    cov.roughLaplacian (leviCivitaConnection I M) f x =
+      -TauCeti.Manifold.laplaceBeltrami I f x -
+        2 * cov (1 : M → ℝ) x (TauCeti.Manifold.mgradient I f x) +
+        f x * cov.roughLaplacian (leviCivitaConnection I M) (1 : M → ℝ) x := by
+  have h := cov.roughLaplacian_smul hf (σ := (1 : M → ℝ)) (Trivial.contMDiff_mk_const 1) x
+  rw [Trivial.smul_one] at h
+  rw [h]
+  simp only [smul_eq_mul, Pi.one_apply, mul_one]
+  ring
+
 end LeviCivita
+
+section TrivialAddInner
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The rough Laplacian of the constant function `1` for `d + ⟪Y, ·⟫` is `-(div Y + ‖Y‖²)`. -/
+theorem roughLaplacian_trivialAddInner_one (Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (x : M) :
+    (trivialAddInner (Y : Π x : M, TangentSpace I x)).roughLaplacian
+        (leviCivitaConnection I M) (1 : M → ℝ) x =
+      -(TauCeti.Manifold.divergence I Y x + ⟪Y x, Y x⟫) := by
+  set cov := trivialAddInner (Y : Π x : M, TangentSpace I x)
+  set covT := leviCivitaConnection I M
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hYd : MDiffAt (T% (Y : Π x : M, TangentSpace I x)) x :=
+    (Y.contMDiff x).mdifferentiableAt (by simp)
+  -- Each diagonal term is `∇²1(eᵢ, eᵢ) = ⟪∇_{eᵢ} Y, eᵢ⟫ + ⟪Y, eᵢ⟫²`.
+  have hterm (i) : cov.secondCovariantDerivative covT (1 : M → ℝ) x (b i) (b i) =
+      ⟪covT Y x (b i), b i⟫ + ⟪Y x, b i⟫ ^ 2 := by
+    obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (b i)
+    have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
+    have hS := cov.secondCovariantDerivative_apply covT (σ := (1 : M → ℝ))
+      (Trivial.contMDiff_mk_const 1) x hW (b i)
+    -- The function `y ↦ ∇_{W y} 1 = ⟪Y y, W y⟫` and its derivative.
+    have hfun : (fun y ↦ cov (1 : M → ℝ) y (W y)) = fun y ↦ ⟪Y y, W y⟫ := by
+      funext y
+      simp only [cov, trivialAddInner_one, innerSL_apply_apply]
+    have hφd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ ⟪Y y, W y⟫) x :=
+      MDifferentiableAt.inner_bundle (F := E) (E := fun y : M ↦ TangentSpace I y) hYd hWd
+    have hLC := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      (FiberBundle.extend E (b i)) hYd hWd
+    simp only [FiberBundle.extend_apply_self] at hLC
+    rw [hfun, cov.apply_eq_mvfderiv_add_smul_one hφd, trivialAddInner_one] at hS
+    rw [hWx] at hS hLC
+    rw [hS]
+    simp only [add_apply, smul_apply, innerSL_apply_apply, smul_eq_mul]
+    rw [mvfderiv_apply_eq_mfderiv_apply] at hLC ⊢
+    rw [hLC]
+    ring
+  rw [roughLaplacian_eq_sum cov covT _ x b, TauCeti.Manifold.divergence_eq_sum_inner I _ x b,
+    real_inner_self_eq_norm_sq, ← b.sum_sq_inner_right (Y x)]
+  simp only [hterm, Finset.sum_add_distrib, real_inner_comm (b _) (Y x), covT]
+
+/-- **The rough Laplacian of `d + ⟪Y, ·⟫`.** With the Levi-Civita connection on the tangent bundle,
+`∇*∇ f = -Δ f - 2 df(Y) - (div Y + ‖Y‖²) f` for every smooth function `f`. -/
+theorem roughLaplacian_trivialAddInner (Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
+    (trivialAddInner (Y : Π x : M, TangentSpace I x)).roughLaplacian
+        (leviCivitaConnection I M) f x =
+      -TauCeti.Manifold.laplaceBeltrami I f x - 2 * mvfderiv I f x (Y x) -
+        (TauCeti.Manifold.divergence I Y x + ⟪Y x, Y x⟫) * f x := by
+  rw [roughLaplacian_eq_neg_laplaceBeltrami_sub_add _ hf, roughLaplacian_trivialAddInner_one,
+    trivialAddInner_one, innerSL_apply_apply, TauCeti.Manifold.inner_mgradient_right]
+  ring
+
+end TrivialAddInner
 
 end CovariantDerivative
