@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 
 /-!
@@ -76,9 +77,7 @@ theorem norm_wedge_le_norm_mul_norm (α : E [⋀^Fin 1]→L[ℝ] ℝ) (ψ : E [�
     simp [w, mulVec, dotProduct]
   -- The reflection changes the value by `det A = ±1`.
   have hdet : |A.det| = 1 := by
-    have h := Matrix.det_of_mem_unitary hA
-    rw [Unitary.mem_iff_star_mul_self, star_trivial] at h
-    rcases mul_self_eq_one_iff.1 h with h | h <;> simp [h]
+    rcases TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup hA with h | h <;> simp [h]
   have hfv : f x = α.wedge ψ v := by simp [f, x, Function.comp_def]
   have hfw : f w = A.det • f x := f.map_sum_smul A x
   -- On the reflected frame the wedge is `α (w 0) * ψ (w 1, …, w l)`.
@@ -118,8 +117,7 @@ theorem norm_wedgePow_succ_le (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) :
     _ ≤ (m + 1) * (‖ω‖ * ‖u‖ * ‖ω.wedgePow m‖ * ∏ i, ‖w i‖) := by
         gcongr
         -- Inserting `u` is Mathlib's normed `curryLeft`, of norm `‖ω‖`.
-        have h : curryLeftTopological (n := 1) ω u = ω.curryLeft u := by ext w; simp
-        rw [h, ← norm_curryLeft ω]
+        rw [← curryLeft_eq_curryLeftTopological, ← norm_curryLeft ω]
         exact (curryLeft ω).le_opNorm u
     _ = (m + 1) * ‖ω‖ * ‖ω.wedgePow m‖ * (‖u‖ * ∏ i, ‖w i‖) := by ring
 

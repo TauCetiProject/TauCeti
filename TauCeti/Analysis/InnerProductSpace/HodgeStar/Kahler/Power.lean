@@ -24,8 +24,8 @@ wedge powers `ContinuousAlternatingMap.wedgePow` in the determinant normalizatio
 For a family `u` of `r` vectors, `TauCeti.AlmostComplexStructure.complexRealFrame J u` is the real
 frame `(u₀, J u₀, u₁, J u₁, …)`. It is orthonormal exactly when `u` is orthonormal for the
 Hermitian metric of `J`: `u` is orthonormal and `⟪J uᵢ, uⱼ⟫ = 0` for all `i` and `j`. Such frames
-are the positively oriented orthonormal frames of complex `r`-planes with their complex
-orientation, and `ω ^ r / r!` takes the value `1` on each of them.
+are positively oriented orthonormal frames of complex `r`-planes with their complex orientation
+(every complex `r`-plane has one), and `ω ^ r / r!` takes the value `1` on each of them.
 
 The **Wirtinger inequality** says that `ω ^ r / r!` has comass at most one. It follows from the
 comass bound `‖ω ^ r‖ ≤ r! ‖ω‖ ^ r` for wedge powers of real two-forms
@@ -83,6 +83,13 @@ def complexRealFrame (u : Fin r → V) : Fin (2 * r) → V :=
   fun k ↦ (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
     (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k))
 
+/-- The frame of `u` is the family `(i, 0) ↦ u i`, `(i, 1) ↦ J (u i)` on `Fin r × Fin 2`,
+reindexed by `Fin (2 * r)` through `finProdFinEquiv`. -/
+theorem complexRealFrame_eq_comp (u : Fin r → V) :
+    J.complexRealFrame u = (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) ∘
+      (finCongr (Nat.mul_comm 2 r)).trans finProdFinEquiv.symm :=
+  (rfl)
+
 /-- The even-indexed vectors of the frame of `u` are the vectors of `u`. -/
 @[simp]
 theorem complexRealFrame_apply_two_mul (u : Fin r → V) (i : Fin r) :
@@ -114,7 +121,7 @@ theorem orthonormal_complexRealFrame_iff {u : Fin r → V} :
   set b : Fin r × Fin 2 → V := fun p ↦ ![u p.1, J (u p.1)] p.2
   set e : Fin (2 * r) ≃ Fin r × Fin 2 :=
     (finCongr (Nat.mul_comm 2 r)).trans finProdFinEquiv.symm
-  have hframe : J.complexRealFrame u = b ∘ e := rfl
+  have hframe : J.complexRealFrame u = b ∘ e := J.complexRealFrame_eq_comp u
   have hb : Orthonormal ℝ (J.complexRealFrame u) ↔ Orthonormal ℝ b := by
     rw [hframe]
     refine ⟨fun h ↦ ?_, fun h ↦ h.comp e e.injective⟩
@@ -177,10 +184,11 @@ theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu :
   have h := wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
     (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) (fun i j ↦ by simpa [hω] using hJu i j)
     (fun i j ↦ by simpa [hω, hJ] using (orthonormal_iff_ite.1 hu) i j)
-  -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`, written out as in
-  -- `complexRealFrame`.
+  -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
   have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
-      r.factorial := h
+      r.factorial := by
+    rw [complexRealFrame_eq_comp, Equiv.coe_trans, Function.comp_def]
+    exact h
   rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, h',
     inv_mul_cancel₀ (by positivity)]
 
