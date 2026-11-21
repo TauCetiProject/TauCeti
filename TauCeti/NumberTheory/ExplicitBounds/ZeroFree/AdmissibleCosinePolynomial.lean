@@ -134,11 +134,8 @@ theorem isAdmissibleCosinePolynomial_threeFourOne :
   nonneg k hk := by interval_cases k <;> norm_num
   eq_zero _ hk := LSeries.threeFourOneCoeff_eq_zero hk
   lt := by norm_num
-  isNonnegativeTrigonometricCombination z hz := by
-    have h := LSeries.isNonnegativeTrigonometricCombination_threeFourOne z hz
-    simp only [trigonometricCombination_def, LSeries.threeFourOneWeight_apply] at h
-    rwa [trigonometricCombination_def, ← Fin.sum_univ_eq_sum_range
-      (fun k ↦ ((LSeries.threeFourOneCoeff k : ℂ) * z ^ id k).re)]
+  isNonnegativeTrigonometricCombination :=
+    LSeries.isNonnegativeTrigonometricCombination_threeFourOne
 
 /-- The coefficients `(1, 2)` satisfy `a₀ < a₁` but give `1 + 2 cos θ`, negative at `π`: the
 coefficient conditions do not imply nonnegativity. -/
