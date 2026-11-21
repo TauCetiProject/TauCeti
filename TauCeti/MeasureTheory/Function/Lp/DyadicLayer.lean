@@ -133,6 +133,13 @@ private theorem toNNReal_decreasingRearrangement_zpow_le (hp0 : p ≠ 0) (g : Lp
     ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos k)).ne
     (μ.antitone_decreasingRearrangement _ (zpow_le_zpow_right₀ one_le_two hkl))
 
+/-- The level `f*(2ᵏ⁺¹)` is at most `f*(2ᵏ)`, as real numbers. -/
+private theorem coe_toNNReal_decreasingRearrangement_succ_le (hp0 : p ≠ 0) (g : Lp E p μ)
+    (k : ℤ) :
+    ((μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal : ℝ) ≤
+      (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k)).toNNReal :=
+  NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g (Int.le_add_one le_rfl))
+
 /-! ### The radial retraction of an `Lᵖ` function -/
 
 variable [NormedSpace ℝ E]
@@ -222,39 +229,42 @@ theorem coeFn_dyadicLayer (k : ℤ) (g : Lp E p μ) :
           (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal (g x) :=
   coeFn_radialRetraction_sub _ _ g
 
+/-- The `k`-th dyadic layer of `g` is bounded by both `‖g‖` and `f*(2ᵏ)`. -/
+theorem norm_dyadicLayer_le_min (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
+    ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ ≤
+      min ‖g x‖ (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k)).toNNReal := by
+  filter_upwards [coeFn_dyadicLayer k g] with x hx
+  rw [hx]
+  exact TauCeti.norm_radialRetraction_sub_radialRetraction_le (NNReal.coe_nonneg _)
+    (coe_toNNReal_decreasingRearrangement_succ_le hp0 g k) (g x)
+
 /-- The `k`-th dyadic layer of `g` is bounded by `f*(2ᵏ)`. -/
 theorem enorm_dyadicLayer_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ₑ ≤ μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ k) := by
-  filter_upwards [coeFn_dyadicLayer k g] with x hx
-  have h := TauCeti.norm_radialRetraction_sub_radialRetraction_le (NNReal.coe_nonneg _)
-    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
-      (Int.le_add_one (le_refl k)))) (g x)
-  rw [hx, ← ofReal_norm]
-  refine (ENNReal.ofReal_le_ofReal (h.trans (min_le_right _ _))).trans ?_
+  filter_upwards [norm_dyadicLayer_le_min hp0 k g] with x hx
+  rw [← ofReal_norm]
+  refine (ENNReal.ofReal_le_ofReal (hx.trans (min_le_right _ _))).trans ?_
   rw [ENNReal.ofReal_coe_nnreal]
   exact ENNReal.coe_toNNReal_le_self
 
 /-- The `k`-th dyadic layer of `g` is bounded by `‖g‖`. -/
 theorem enorm_dyadicLayer_le_enorm (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ₑ ≤ ‖g x‖ₑ := by
-  filter_upwards [coeFn_dyadicLayer k g] with x hx
-  rw [hx]
-  exact eNorm_le_iff_norm_le.2 ((TauCeti.norm_radialRetraction_sub_radialRetraction_le
-    (NNReal.coe_nonneg _) (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
-      (Int.le_add_one (le_refl k)))) (g x)).trans (min_le_left _ _))
+  filter_upwards [norm_dyadicLayer_le_min hp0 k g] with x hx
+  exact eNorm_le_iff_norm_le.2 (hx.trans (min_le_left _ _))
 
 /-- The `k`-th dyadic layer of `g` vanishes where `‖g‖ₑ ≤ f*(2ᵏ⁺¹)`. -/
 theorem dyadicLayer_eq_zero_of_enorm_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖g x‖ₑ ≤ μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1)) →
       dyadicLayer k g x = 0 := by
   filter_upwards [coeFn_dyadicLayer k g] with x hx hle
-  rw [hx, sub_eq_zero]
-  refine TauCeti.radialRetraction_eq_radialRetraction_of_norm_le ?_
-    (NNReal.coe_le_coe.2 (toNNReal_decreasingRearrangement_zpow_le hp0 g
-      (Int.le_add_one (le_refl k))))
   rw [← ofReal_norm, ← ENNReal.ofReal_toReal
     ((Lp.memLp g).decreasingRearrangement_lt_top hp0 (zpow_pos two_pos (k + 1))).ne] at hle
-  exact (ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg).1 hle
+  have h : ‖g x‖ ≤
+      (μ.decreasingRearrangement (fun x ↦ ‖g x‖ₑ) ((2 : ℝ) ^ (k + 1))).toNNReal :=
+    (ENNReal.ofReal_le_ofReal_iff ENNReal.toReal_nonneg).1 hle
+  rw [hx, TauCeti.radialRetraction_of_norm_le h, TauCeti.radialRetraction_of_norm_le
+    (h.trans (coe_toNNReal_decreasingRearrangement_succ_le hp0 g k)), sub_self]
 
 /-- **The size of a dyadic layer.** For every exponent `s`, the `k`-th dyadic layer of `g` has
 `‖gₖ‖_s ≤ (2ᵏ⁺¹) ^ (1 / s) f*(2ᵏ)`: it is bounded by `f*(2ᵏ)` and supported in the set

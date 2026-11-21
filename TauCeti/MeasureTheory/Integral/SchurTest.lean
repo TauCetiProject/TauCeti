@@ -345,18 +345,16 @@ theorem tsum_tsum_mul_mul_le {G : Type*} [AddGroup G] [Countable G] (w y : G →
     rw [lintegral_count]; exact ((Equiv.subLeft k).tsum_eq w).le
   have hcol (l : G) : ∫⁻ k, w (k - l) ∂Measure.count ≤ W := by
     rw [lintegral_count]; exact ((Equiv.subRight l).tsum_eq w).le
-  have hnorm : eLpNorm y 2 Measure.count = (∑' k, y k ^ 2) ^ (2⁻¹ : ℝ) := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
-      (measurable_of_countable y).aestronglyMeasurable, lintegral_count]
-    simp
+  have hnorm : eLpNorm y 2 Measure.count ^ 2 = ∑' k, y k ^ 2 := by
+    simpa [lintegral_count] using eLpNorm_nnreal_pow_eq_lintegral (μ := Measure.count) (p := 2)
+      two_ne_zero (measurable_of_countable y).aestronglyMeasurable
   have h := lintegral_lintegral_mul_mul_le (μ := Measure.count) (ν := Measure.count)
     (k := fun k l : G ↦ w (k - l)) (measurable_of_countable _).aemeasurable
     (measurable_of_countable y).aemeasurable (measurable_of_countable y).aemeasurable
     (p := 2) (q := 2) (ae_of_all _ hrow) (ae_of_all _ hcol)
   simp only [lintegral_count] at h
   refine (h.trans_eq ?_).trans_eq' (tsum_congr fun k ↦ tsum_congr fun l ↦ by ring)
-  rw [hnorm, mul_assoc, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num),
-    ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
+  rw [mul_assoc, ← sq, hnorm, ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
   norm_num
 
 /-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have

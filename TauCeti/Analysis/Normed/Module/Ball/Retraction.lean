@@ -239,21 +239,17 @@ theorem radialRetraction_eq_smul_radialRetraction_one (hr : 0 ≤ r) (x : E) :
   congr 1
   field_simp
 
-/-- Two radial retractions at radii `s ≤ r` agree at a vector of norm at most `s`. -/
-theorem radialRetraction_eq_radialRetraction_of_norm_le {s : ℝ} (hs : ‖x‖ ≤ s) (hsr : s ≤ r) :
-    radialRetraction r x = radialRetraction s x := by
-  rcases (norm_nonneg x).eq_or_lt with h | h
-  · rw [radialRetraction_of_norm_eq_zero h.symm, radialRetraction_of_norm_eq_zero h.symm]
-  · rw [radialRetraction_of_norm_pos_of_norm_le h (hs.trans hsr),
-      radialRetraction_of_norm_pos_of_norm_le h hs]
-
 /-- Truncating the radius at `‖x‖` does not change the radial retraction of `x`. -/
 @[simp]
 theorem radialRetraction_min_norm (r : ℝ) (x : E) :
     radialRetraction (min r ‖x‖) x = radialRetraction r x := by
   rcases le_total r ‖x‖ with h | h
   · rw [min_eq_left h]
-  · rw [min_eq_right h, radialRetraction_eq_radialRetraction_of_norm_le le_rfl h]
+  · rw [min_eq_right h]
+    rcases (norm_nonneg x).eq_or_lt with h0 | h0
+    · rw [radialRetraction_of_norm_eq_zero h0.symm, radialRetraction_of_norm_eq_zero h0.symm]
+    · rw [radialRetraction_of_norm_pos_of_norm_le h0 le_rfl,
+        radialRetraction_of_norm_pos_of_norm_le h0 h]
 
 /-- For nonnegative radii `s ≤ r`, the radial retractions of `x` at `r` and at `s` differ by a
 vector of norm at most `min ‖x‖ r`: the difference is the part of `x` between the heights `s`

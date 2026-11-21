@@ -587,9 +587,8 @@ private theorem ofReal_log_two_mul_tsum_le_eLpNorm_multHaar {f : α → ε} {q :
   set φ : ℝ → ℝ≥0∞ := fun t ↦ ENNReal.ofReal (t ^ q.toReal⁻¹) *
     μ.decreasingRearrangement (fun x ↦ ‖f x‖ₑ) t
   have hφ2 : ∫⁻ t, φ t ^ (2 : ℝ) ∂multHaar = eLpNorm φ 2 multHaar ^ (2 : ℝ) := by
-    rw [eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top
-      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable]
-    simpa using lintegral_rpow_eNorm_eq_rpow_eLpNorm' (f := φ) (μ := multHaar) two_pos
+    simpa using (eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero
+      (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable).symm
   -- On `[2ᵏ⁻¹, 2ᵏ)` the `k`-th term is at most `φ²`.
   have hcmp := ofReal_mul_tsum_int_le_lintegral_multHaar (b := 2) (c := 2⁻¹) (μ := 1)
     one_le_two (by norm_num) (f := fun t ↦ φ t ^ (2 : ℝ))

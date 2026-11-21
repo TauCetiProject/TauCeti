@@ -213,10 +213,7 @@ theorem tsum_sq_two_rpow_mul_levelNorm_le {r' : ℝ≥0∞} (hr'0 : r' ≠ 0) (h
   have ha (k : ℤ) : AEMeasurable (a k) := hF.aemeasurable_decreasingRearrangement_enorm _
   -- The square of an `L²` norm in time is the integral of the square.
   have hL2 {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) : eLpNorm f 2 ^ 2 = ∫⁻ t, f t ^ (2 : ℝ) := by
-    rw [← ENNReal.rpow_two, eLpNorm_eq_eLpNorm' two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable, ENNReal.toReal_ofNat,
-      ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' two_pos]
-    simp only [eNorm_eq_self]
+    simpa using eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hf.aestronglyMeasurable
   have hsq (k : ℤ) : (2 ^ ((k : ℝ) * r'.toReal⁻¹) * levelNorm μ F k) ^ 2 =
       ∫⁻ t, (ENNReal.ofReal ((2 : ℝ) ^ k) ^ r'.toReal⁻¹ * a k t) ^ (2 : ℝ) := by
     rw [levelNorm_def, ← eLpNorm_const_mul_ennreal_of_pos (by norm_num : (0 : ℝ≥0∞) < 2),
