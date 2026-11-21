@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.FiberBundle.Principal.Extension
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
 
@@ -70,20 +71,6 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
   {G : Type*} [Group G] [TopologicalSpace G] {ρ : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)}
   {H : Type w} [Group H] [TopologicalSpace H] {ρ' : H →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)}
 
-/-- A linear automorphism of `ℝⁿ` preserving the Euclidean norm, as a linear isometric
-automorphism of `EuclideanSpace ℝ (Fin n)`. -/
-private noncomputable def euclideanIsometry (A : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
-    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) :
-    EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) where
-  toLinearEquiv := (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).trans
-    (A.trans (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm)
-  norm_map' w := hA (WithLp.ofLp w)
-
-private theorem euclideanIsometry_toLp (A : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ))
-    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) (v : Fin n → ℝ) :
-    euclideanIsometry A hA (WithLp.toLp 2 v) = WithLp.toLp 2 (A v) :=
-  (rfl)
-
 section Construction
 
 variable [ContinuousMul H]
@@ -100,7 +87,7 @@ noncomputable def extendToFrame (z : TotalSpace H (Extend s.P σ hσ)) :
     OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n)) :=
   let p₀ : s.P z.proj := (FiberBundle.homeomorphAt G s.P z.proj).symm 1
   ⟨(s.toFrame ⟨z.proj, p₀⟩).proj,
-    (euclideanIsometry (ρ' (division H (Extend.inl σ hσ p₀) z.snd)) (hρ'n _)).trans
+    ((ρ' (division H (Extend.inl σ hσ p₀) z.snd)).toEuclideanIsometry (hρ'n _)).trans
       (s.toFrame ⟨z.proj, p₀⟩).frame⟩
 
 /-- The map to frames of the extension covers the identity of the base. -/
@@ -114,9 +101,11 @@ private theorem totalSpaceMk_extendToFrame (x : X) (z : Extend s.P σ hσ x) (v 
     TotalSpace.mk' F (extendToFrame s σ hσ hρ'n ⟨x, z⟩).proj
         ((extendToFrame s σ hσ hρ'n ⟨x, z⟩).frame (WithLp.toLp 2 v)) =
       TotalSpace.mk' F (s.toFrame ⟨x, (FiberBundle.homeomorphAt G s.P x).symm 1⟩).proj
-        ((s.toFrame ⟨x, (FiberBundle.homeomorphAt G s.P x).symm 1⟩).frame (WithLp.toLp 2
-          (ρ' (division H (Extend.inl σ hσ ((FiberBundle.homeomorphAt G s.P x).symm 1)) z) v))) :=
-  (rfl)
+        ((s.toFrame ⟨x, (FiberBundle.homeomorphAt G s.P x).symm 1⟩).frame
+          (WithLp.toLp 2
+            (ρ' (division H (Extend.inl σ hσ ((FiberBundle.homeomorphAt G s.P x).symm 1)) z)
+              v))) := by
+  rw [extendToFrame, LinearIsometryEquiv.trans_apply, LinearEquiv.toEuclideanIsometry_toLp]
 
 include hσρ in
 /-- The frame map of the extension sends `[p, h]` to the frame of `p` composed with `ρ' h`. -/
@@ -267,6 +256,13 @@ theorem Equiv.extend_toEquiv_mk {s t : OrthonormalFrameLift F E n G ρ} (φ : s.
   (s.extendEquivOfEquivariant_toEquiv_mk σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p h).trans
     (Extend.smul_inl σ hσ _ h)
 
+@[simp]
+theorem Equiv.extend_toEquiv_inl {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (x : X)
+    (p : s.P x) :
+    (φ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x (Extend.inl σ hσ p) =
+      Extend.inl σ hσ (φ.toEquiv x p) :=
+  s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p
+
 /-- **Extending along `σ` and then along `τ` is extending along `τ ∘ σ`**: the extension along
 `τ ∘ σ` is equivalent to the extension along `τ` of the extension along `σ`, by
 `[p, k] ↦ [[p, 1], k]`. -/
@@ -285,6 +281,29 @@ noncomputable def extendCompEquiv {K : Type w} [Group K] [TopologicalSpace K]
     ((Extend.continuous_inl _ τ hτ).comp (Extend.continuous_inl s.P σ hσ))
     (fun x p ↦ ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_extend_inl τ hτ hτρ hρ''n hρ''c x
       (Extend.inl σ hσ p)).trans (s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c x p))
+
+@[simp]
+theorem extendCompEquiv_toEquiv_mk {K : Type w} [Group K] [TopologicalSpace K]
+    [IsTopologicalGroup K] {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (τ : H →* K)
+    (hτ : Continuous τ) (hτρ : ρ''.comp τ = ρ')
+    (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
+    (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v) (x : X) (p : s.P x) (k : K) :
+    (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
+        (Extend.mk (τ.comp σ) (hτ.comp hσ) p k) =
+      Extend.mk τ hτ (Extend.inl σ hσ p) k :=
+  (s.extendEquivOfEquivariant_toEquiv_mk (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c _ _ _ _ _ x p
+    k).trans (Extend.smul_inl τ hτ _ k)
+
+@[simp]
+theorem extendCompEquiv_toEquiv_inl {K : Type w} [Group K] [TopologicalSpace K]
+    [IsTopologicalGroup K] {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (τ : H →* K)
+    (hτ : Continuous τ) (hτρ : ρ''.comp τ = ρ')
+    (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
+    (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v) (x : X) (p : s.P x) :
+    (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
+        (Extend.inl (τ.comp σ) (hτ.comp hσ) p) =
+      Extend.inl τ hτ (Extend.inl σ hσ p) :=
+  s.extendEquivOfEquivariant_toEquiv_inl (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c _ _ _ _ _ x p
 
 end Universal
 

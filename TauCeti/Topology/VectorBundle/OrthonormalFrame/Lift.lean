@@ -66,19 +66,6 @@ universe w
 
 namespace TauCeti
 
-/-- Two orthonormal frames of a bundle modelled on `EuclideanSpace ℝ (Fin n)` are equal when they
-send every coordinate vector to the same point of the total space. -/
-theorem OrthonormalFrameBundle.ext_totalSpaceMk {X : Type*} {F : Type*} {E : X → Type*}
-    [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)] {n : ℕ}
-    {q q' : OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin n))}
-    (h : ∀ v : Fin n → ℝ, TotalSpace.mk' F q.proj (q.frame (WithLp.toLp 2 v)) =
-      TotalSpace.mk' F q'.proj (q'.frame (WithLp.toLp 2 v))) : q = q' := by
-  obtain ⟨b, φ⟩ := q
-  obtain ⟨b', ψ⟩ := q'
-  obtain rfl : b = b' := congrArg TotalSpace.proj (h 0)
-  refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
-  simpa using TotalSpace.mk_inj.1 (h (WithLp.ofLp w))
-
 /-- A **lift of the orthonormal frame bundle** of a real vector bundle `E` with model fibre `F` and
 fibre inner products along a homomorphism `ρ : G →* GL(ℝⁿ)`: a principal `G`-bundle `P` over the
 base, together with a continuous map to the orthonormal frame bundle of `E` modelled on `ℝⁿ` over
