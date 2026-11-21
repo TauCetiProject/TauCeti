@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Ray
 import TauCeti.Analysis.Complex.Angle
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
@@ -263,16 +264,20 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     rw [coe_re] at hpq ⊢
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hq hpm hqm hpq.ne
     have hμ' : 0 < -μ := neg_pos.2 (neg_of_mul_neg_left hμ (sub_pos.2 hpq).le)
+    have hAm : ‖(A : ℂ) - m‖ = ρ := by rw [Complex.norm_def, hpm, Real.sqrt_sq hρ.le]
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
-      Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
-    simp
-  · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
+      Complex.angle_self_mul_right Complex.I_ne_zero]
+    simp [hAm]
+  · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle, since it lies to the
+    -- left of `q`, whose real part is at most `m + ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
+    have hqm' : ‖toComplex q - m‖ = ρ := by rw [Complex.norm_def, hqm, Real.sqrt_sq hρ.le]
+    have hxρ := hpq.trans_le (Complex.re_mem_Icc_of_norm_sub_le hqm'.le).2
+    simp only [Complex.ofReal_re] at hxρ
     rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      Complex.eq_sub_of_normSq_eq_of_lt_re hρ.le hpm hqm hpq, sub_sub_cancel_left, neg_div,
+      Complex.eq_sub_of_normSq_eq_of_ne_add hpm hxρ.ne, sub_sub_cancel_left, neg_div,
       div_self hρ.ne', Real.arccos_neg_one]
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
@@ -288,15 +293,19 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
   · rw [toComplex_inl] at hqm hpq ⊢
     rw [coe_re] at hpq ⊢
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hp hqm hpm hpq.ne'
+    have hBm : ‖(B : ℂ) - m‖ = ρ := by rw [Complex.norm_def, hqm, Real.sqrt_sq hρ.le]
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
-      Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
-    simp
-  · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
+      Complex.angle_self_mul_right Complex.I_ne_zero]
+    simp [hBm]
+  · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle, since it lies to the
+    -- right of `p`, whose real part is at least `m - ρ`
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ.le hqm hpm hpq,
+    have hpm' : ‖toComplex p - m‖ = ρ := by rw [Complex.norm_def, hpm, Real.sqrt_sq hρ.le]
+    have hxρ := (Complex.re_mem_Icc_of_norm_sub_le hpm'.le).1.trans_lt hpq
+    simp only [Complex.ofReal_re] at hxρ
+    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_ne_sub hqm hxρ.ne',
       add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
@@ -349,7 +358,8 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     rw [hCre, hCim, ← hA₂]
     linarith [mul_lt_mul'' h₁ h₁ A.im_pos.le A.im_pos.le]
   · -- `D` is on the first circle, to the left of `A`, like `p`
-    exact Complex.lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁ hp₂ hDm hpA (by rwa [coe_re])
+    exact Complex.lt_normSq_sub_of_normSq_eq (by rw [hA₁, hA₂, sub_self, sub_self])
+      (by linarith) hDm.ge hpA (by rwa [coe_re])
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
 
