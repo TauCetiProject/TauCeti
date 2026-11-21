@@ -120,15 +120,9 @@ theorem W1p.sq_norm_setAverage_closedBall_gradient_mul_le
     {z : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ} (hball : ball z t ⊆ Omega) :
     ‖⨍ y in closedBall z t, W1p.gradient u y‖ ^ 2 * volume.real (ball z t) ≤
       ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2 := by
-  rw [volume.restrict_closedBall_eq_restrict_ball z t]
-  have h := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add
-    measure_ball_lt_top.ne
-    ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball measure_ball_lt_top.ne)
-    ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball
-      measure_ball_lt_top.ne 0)
-  simp only [sub_zero] at h
-  rw [h, mul_comm]
-  exact le_add_of_nonneg_left (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity)
+  rw [volume.restrict_closedBall_eq_restrict_ball z t, mul_comm]
+  exact measureReal_mul_sq_norm_setAverage_le measure_ball_lt_top.ne
+    ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hball le_rfl))
 
 /-- **Mean oscillation from square mean oscillation.** If
 `∫_{B_r} ‖∇u - (∇u)_{B_r}‖² ≤ C V (r / R)^{n+1} (r / R)^{2κ}`, then the mean oscillation of `∇u`

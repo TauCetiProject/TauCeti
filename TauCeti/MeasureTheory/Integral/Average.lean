@@ -118,6 +118,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `TauCeti.measureReal_mul_sq_norm_setAverage_le`: consequently `μ s ‖f_s‖² ≤ ∫_s ‖f‖²` in an
+  inner product space.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
@@ -857,6 +859,17 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
     ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hf hfc]
   exact le_add_of_nonneg_right (by positivity)
+
+/-- In a real inner product space, the measure of a set `s` of finite measure times the squared
+norm of the average of `f` over `s` is at most `∫_s ‖f‖²`. -/
+theorem measureReal_mul_sq_norm_setAverage_le (hs : μ s ≠ ⊤) (hf : MemLp f 2 (μ.restrict s)) :
+    μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2 ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
+  have h := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs
+    (hf.integrableOn_of_subset one_le_two subset_rfl hs)
+    (hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs 0)
+  simp only [sub_zero] at h
+  rw [h]
+  exact le_add_of_nonneg_left (integral_nonneg fun _ => by positivity)
 
 /-- **Comparison of square mean oscillations on nested sets.** Let `s ⊆ t` with `μ t < ∞`, let `f`
 and `H` be square integrable on `t`, and suppose the square mean oscillation of `H` decays from

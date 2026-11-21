@@ -31,8 +31,8 @@ proves the decay estimates of Campanato's method at such boundary centres. If th
 `ρ ≤ θ R`:
 
 * `∫_{B_ρ⁺} ‖∇u‖² ≤ C V (ρ / R)^{n+1}`
-  (`TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith`), for every
-  `0 < γ ≤ α`;
+  (`TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith`), for all
+  `α > 0` and `γ > 0`;
 * `∫_{B_ρ⁺} ‖∇u - p_ρ‖² ≤ C V (ρ / R)^{n+1+2γ}`, where `p_ρ` is the multiple of `ν` closest to
   `∇u` in `L²(B_ρ⁺)`, for every `0 < γ < 1` with `γ ≤ α`, in the `TauCeti.PDE` namespace:
   `exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le_of_holderOnWith`.
@@ -215,11 +215,6 @@ private theorem exists_frozen_ball_inter {U H : Opens (EuclideanSpace ℝ (Fin (
     exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) measureReal_nonneg
       (by positivity) hest hX hY hF
 
-/-- A half-ball has finite volume. -/
-private theorem volume_ball_inter_ne_top (z : EuclideanSpace ℝ (Fin (n + 1))) (t : ℝ)
-    (s : Set (EuclideanSpace ℝ (Fin (n + 1)))) : volume (ball z t ∩ s) ≠ ⊤ :=
-  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
-
 /-- **Transferring decay from a comparison function on half-balls.** Let `u ∈ H¹(U)`,
 `ball z r ⊆ U` and `W ∈ H¹(B_r)`, write `B_t⁺ = B(z, t) ∩ H`, and suppose that `W` decays like
 `∫_{B_ρ⁺} ‖∇W‖² ≤ C₁ (ρ / r)^{n+1} ∫_{B_r⁺} ‖∇W‖²` and
@@ -247,7 +242,7 @@ private theorem setIntegral_ball_inter_le_add_of_le {U H : Opens (EuclideanSpace
           (4 * C₂ + 2) * ∫ x in ball z r ∩ H, ‖W1p.gradient u x - W1p.gradient W x‖ ^ 2 := by
   have hr : 0 < r := hρ.trans_le hρr
   set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hS : volume S ≠ ⊤ := volume_ball_inter_ne_top z r H
+  have hS : volume S ≠ ⊤ := measure_ball_inter_ne_top
   have hsS : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S :=
     inter_subset_inter_left _ (ball_subset_ball hρr)
   have hs : volume (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
@@ -363,35 +358,9 @@ end Comparison
 section HalfBall
 
 variable {H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {ν z : EuclideanSpace ℝ (Fin (n + 1))}
-  {c₀ : ℝ}
-
-/-- The half-space has density one half in the closed balls centred on its boundary hyperplane
-(`MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`). -/
-private theorem two_inv_mul_volume_closedBall_le (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    (hz : ⟪z, ν⟫_ℝ = c₀) (t : ℝ) :
-    (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤ volume (closedBall z t ∩ H) := by
-  have hHs : (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | ⟪y, -ν⟫_ℝ < -c₀} := by
-    ext y
-    simp only [SetLike.mem_coe, hH, mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
-  rw [hHs, inter_comm, Measure.addHaar_setOf_inner_lt_inter_closedBall volume (neg_ne_zero.2 hν)
-    (by rw [inner_neg_right, hz]), ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat,
-    ENNReal.div_eq_inv_mul]
 
 variable {U : Set (EuclideanSpace ℝ (Fin (n + 1)))}
   {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-
-/-- The `L²` mass `∫_{B_t ∩ H} ‖g‖²` is nondecreasing in the radius. -/
-private theorem monotoneOn_setIntegral_ball_inter_norm_sq (hg : MemLp g 2 (volume.restrict U))
-    {R : ℝ} (hball : ball z R ⊆ U) :
-    MonotoneOn (fun t => ∫ x in ball z t ∩ H, ‖g x‖ ^ 2) (Ioc 0 R) := by
-  intro s _ t ht hst
-  have hint := hg.integrableOn_norm_sub_sq_of_subset
-    (s := ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (inter_subset_left.trans ((ball_subset_ball ht.2).trans hball))
-    (volume_ball_inter_ne_top z t H) 0
-  simp only [sub_zero] at hint
-  exact setIntegral_mono_set hint (ae_of_all _ fun _ => by positivity)
-    (inter_subset_inter_left _ (ball_subset_ball hst)).eventuallySubset
 
 /-- The distance `∫_{B_s ∩ H} ‖g - p_s‖²` of `g` to the multiples of `ν` on a half-ball is at most
 the distance `∫_{B_t ∩ H} ‖g - c ν‖²` on a larger half-ball to any multiple of `ν`. -/
@@ -403,7 +372,7 @@ private theorem setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le
   have hsub : ball z s ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z t ∩ H :=
     inter_subset_inter_left _ (ball_subset_ball hst)
   have ht : volume (ball z t ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    volume_ball_inter_ne_top z t H
+    measure_ball_inter_ne_top
   refine (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (ne_top_of_le_ne_top ht
     (measure_mono hsub)) (hg.mono_measure (Measure.restrict_mono
       (hsub.trans (inter_subset_left.trans hball)) le_rfl)) ν c).trans ?_
@@ -443,10 +412,17 @@ private theorem exists_setIntegral_ball_inter_norm_sq_le_rpow {κ θ C₂ : ℝ}
   have hgs : ∀ s ≤ R, MemLp g 2 (volume.restrict (ball z s ∩ H)) := fun s hs =>
     hg.mono_measure (Measure.restrict_mono (inter_subset_left.trans
       ((ball_subset_ball hs).trans hball)) le_rfl)
-  refine (h (Ω := H) (g := g) (fun t _ _ => two_inv_mul_volume_closedBall_le hν hH hz t)
-    (hgs R le_rfl) hR hΦR (fun s hs hsθ => ?_) t ht htθ).trans_eq ?_
+  -- The half-space has density one half in the closed balls centred on its boundary hyperplane.
+  have hdens (t : ℝ) : (((2 : ℝ≥0)⁻¹ : ℝ≥0) : ℝ≥0∞) * volume (closedBall z t) ≤
+      volume (closedBall z t ∩ H) := by
+    rw [show (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH,
+      inter_comm, volume.addHaar_setOf_lt_inner_inter_closedBall hν hz,
+      ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ENNReal.div_eq_inv_mul]
+  refine (h (Ω := H) (g := g) (fun t _ _ => hdens t) (hgs R le_rfl) hR hΦR (fun s hs hsθ => ?_) t
+    ht htθ).trans_eq ?_
   · -- The distance to the multiples of `ν` bounds the square mean oscillation.
-    have hS := volume_ball_inter_ne_top z s (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
+    have hS : volume (ball z s ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
+      measure_ball_inter_ne_top
     refine (setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hS
       ((hgs s (hsθ.trans hθR)).integrableOn_of_subset one_le_two subset_rfl hS)
       ((hgs s (hsθ.trans hθR)).integrableOn_norm_sub_sq_of_subset subset_rfl hS _)).trans
@@ -497,7 +473,7 @@ private theorem exists_setIntegral_ball_inter_norm_gradient_sq_le_rpow {α : ℝ
     (D := fun r => r ^ (2 * (α : ℝ)) * ((KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) +
       4 * r ^ 2 * ∫ x in ball z r ∩ H, f x ^ 2) hR (div_nonneg Ka.property h.pos.le)
     (by rw [div_mul_eq_mul_div]; exact div_le_div_of_nonneg_right hM h.pos.le)
-    (monotoneOn_setIntegral_ball_inter_norm_sq (Lp.memLp _) hball)
+    (((Lp.memLp _).monotoneOn_setIntegral_ball_inter_norm_sq hball).mono Ioc_subset_Iic_self)
     (fun t _ => setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
       fun _ _ => by positivity) hΦR
     (fun r hr hrR => (hD r hr hrR).trans (mul_le_mul_of_nonneg_left
@@ -563,8 +539,8 @@ private theorem exists_setIntegral_ball_inter_norm_gradient_sub_le_rpow {α : �
       fun _ _ => by positivity)
     ((setIntegral_ball_inter_norm_sub_inner_setAverage_div_smul_sq_le hg le_rfl
       ((ball_subset_ball hθR).trans hball) 0).trans (by
-        simpa only [zero_smul, sub_zero] using (monotoneOn_setIntegral_ball_inter_norm_sq hg hball
-          ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩ hθR).trans hΦR))
+        simpa only [zero_smul, sub_zero] using
+          (hg.monotoneOn_setIntegral_ball_inter_norm_sq (H := H) hball hθR le_rfl hθR).trans hΦR))
     (fun t _ => setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
       fun _ _ => by positivity) hΦ (fun r hr hrθ => hD r hr (hrθ.trans hθR))
     fun ρ r hρ hρr hrθ => (hcomp h hz hα hν hH hzc (haK.mono (ball_subset_ball (hrθ.trans hθR)))
@@ -633,8 +609,8 @@ private theorem exists_decay_ball_inter_of_holderOnWith {α : ℝ≥0} {γ : ℝ
   · exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
       (le_add_of_nonneg_left hC₃) hV0) (by positivity)
 
-/-- **Morrey decay of the gradient at a flat boundary, for Hölder coefficients.** Let
-`0 < γ ≤ α`. There are `θ ∈ (0, 1]` and `C ≥ 0`, depending only on `n`, `α`, `γ`, `λ`, `Λ` and
+/-- **Morrey decay of the gradient at a flat boundary, for Hölder coefficients.** Let `α > 0`
+and `γ > 0`. There are `θ ∈ (0, 1]` and `C ≥ 0`, depending only on `n`, `α`, `γ`, `λ`, `Λ` and
 `M`, such that the following holds. Let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `z` lie on its
 boundary hyperplane, and write `B_t⁺ = B(z, t) ∩ H`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `U ∩ H`, that is
@@ -649,8 +625,8 @@ attached bilinear forms, where `K_a R^α ≤ M`, and let `f ∈ L²(B_R⁺)`. If
 
 So the gradient stays bounded in `L²` mean up to the flat boundary. A datum `f ∈ L^q`, `q > n + 1`,
 decays as required with `γ = min α (1 - (n + 1) / q)`, by Hölder's inequality. -/
-theorem exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith {α : ℝ≥0} {γ : ℝ}
-    (hγ : 0 < γ) (hγα : γ ≤ α) {lam Lam M : ℝ} :
+theorem exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith {α : ℝ≥0}
+    (hα : 0 < α) {γ : ℝ} (hγ : 0 < γ) {lam Lam M : ℝ} :
     ∃ θ C : ℝ, 0 < θ ∧ θ ≤ 1 ∧ 0 ≤ C ∧ ∀ {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
       {u : W1p volume U 2}
       {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -673,10 +649,12 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith {α : 
       ∫ x in ball z R ∩ H, ‖W1p.gradient u x‖ ^ 2 ≤ V →
       ∀ ρ, 0 < ρ → ρ ≤ θ * R →
         ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x‖ ^ 2 ≤ C * V * (ρ / R) ^ ((n : ℝ) + 1) := by
-  -- The data also decay with the smaller exponent `n + 1 + 2 min γ (1 / 2)`.
+  -- The data also decay with the smaller exponent `n + 1 + 2 min γ (min α (1 / 2))`.
   obtain ⟨θ, C, hθ, hθ1, hC, h⟩ := exists_decay_ball_inter_of_holderOnWith (n := n) (α := α)
-    (lt_min hγ one_half_pos) ((min_le_left _ _).trans hγα)
-    ((min_le_right _ _).trans_lt one_half_lt_one) (lam := lam) (Lam := Lam) (M := M)
+    (γ := min γ (min (α : ℝ) (1 / 2))) (lt_min hγ (lt_min (by exact_mod_cast hα) one_half_pos))
+    ((min_le_right _ _).trans (min_le_left _ _))
+    (((min_le_right _ _).trans (min_le_right _ _)).trans_lt one_half_lt_one) (lam := lam)
+    (Lam := Lam) (M := M)
   refine ⟨θ, C, hθ, hθ1, hC, ?_⟩
   intro U H u a G f s ν z c₀ R V Ka KG h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁ hR hM hD hV ρ hρ hρθ
   have hV0 : 0 ≤ V := (setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet)
@@ -684,7 +662,7 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sq_le_of_holderOnWith {α : 
   refine (h h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁ hR hM (fun r hr hrR => (hD r hr hrR).trans ?_) hV ρ
     hρ hρθ).1
   exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (by positivity)
-    ((div_le_one hR).2 hrR) (by linarith [min_le_left γ (1 / 2)])) hV0
+    ((div_le_one hR).2 hrR) (by linarith [min_le_left γ (min (α : ℝ) (1 / 2))])) hV0
 
 /-- **Campanato decay of the gradient at a flat boundary, for Hölder coefficients.** Let
 `0 < γ < 1` with `γ ≤ α`. There are `θ ∈ (0, 1]` and `C ≥ 0`, depending only on `n`, `α`, `γ`,

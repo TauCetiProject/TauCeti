@@ -79,6 +79,10 @@ gives a set of measure one.
 * `MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ball_inter`: for the
   restriction to a set `Ω`, restricting further to a closed ball is restricting to the
   intersection of `Ω` with the open ball.
+* `MeasureTheory.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
+  measure.
+* `MeasureTheory.Measure.mul_measureReal_ball_le_measureReal_ball_inter`: a lower density bound
+  for a set in a closed ball passes to the open ball of the same radius.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
   with the measure of a closed ball of the same radius, agrees with the containing closed ball up
   to a null set.
@@ -435,6 +439,27 @@ theorem _root_.MeasureTheory.Measure.restrict_restrict_closedBall_eq_restrict_ba
   rw [Measure.restrict_restrict measurableSet_closedBall]
   exact Measure.restrict_congr_set
     ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)
+
+/-- The intersection of a ball with any set has finite measure, for a measure that is finite on
+compact sets of a proper space. -/
+theorem _root_.MeasureTheory.measure_ball_inter_ne_top {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] [MeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {x : X}
+    {r : ℝ} {s : Set X} : μ (ball x r ∩ s) ≠ ⊤ :=
+  (measure_inter_lt_top_of_left_ne_top measure_ball_lt_top.ne).ne
+
+/-- If a set `Ω` has density at least `c` in a closed ball for an additive Haar measure, that is
+`c μ(closedBall x r) ≤ μ(closedBall x r ∩ Ω)`, then it has density at least `c` in the open ball
+of the same radius, since closed and open balls differ by a null set. -/
+theorem mul_measureReal_ball_le_measureReal_ball_inter
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] {Ω : Set E} {x : E} {r : ℝ} {c : NNReal}
+    (hd : (c : ENNReal) * mu (closedBall x r) ≤ mu (closedBall x r ∩ Ω)) :
+    (c : ℝ) * mu.real (ball x r) ≤ mu.real (ball x r ∩ Ω) := by
+  rw [mu.addHaar_closedBall_eq_addHaar_ball, measure_congr
+    ((mu.addHaar_closedBall_ae_eq_ball x r).inter Filter.EventuallyEqSet.rfl)] at hd
+  simpa only [measureReal_def, ENNReal.toReal_mul, ENNReal.coe_toReal] using
+    ENNReal.toReal_mono measure_ball_inter_ne_top hd
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
 of radius `r`, agrees up to a null set with the closed ball of radius `r` about `c` containing

@@ -202,22 +202,6 @@ end Comparison
 
 section Iteration
 
-/-- The square-integrable gradient is square integrable on every ball inside `Ω`. -/
-private theorem integrableOn_norm_gradient_sq {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (u : W1p volume Omega 2) {z : EuclideanSpace ℝ (Fin (n + 1))} {t : ℝ}
-    (hball : ball z t ⊆ Omega) : IntegrableOn (fun x => ‖W1p.gradient u x‖ ^ 2) (ball z t) :=
-  ((Lp.memLp (W1p.gradient u)).mono_measure
-    (Measure.restrict_mono hball le_rfl)).integrable_norm_pow two_ne_zero
-
-/-- The `L²` mass `∫_{B_t} ‖∇u‖²` of the gradient is nondecreasing in the radius. -/
-private theorem monotoneOn_setIntegral_norm_gradient_sq
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hball : ball z R ⊆ Omega) :
-    MonotoneOn (fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (Ioc 0 R) :=
-  fun _ _ t ht hst => setIntegral_mono_set
-    (integrableOn_norm_gradient_sq u ((ball_subset_ball ht.2).trans hball))
-    (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallySubset
-
 /-- **Morrey decay of the gradient.** For `α > 0` and `γ > 0` there are `θ ∈ (0, 1]` and `C`,
 depending only on `n`, `α`, `γ`, `λ`, `Λ` and `M`, such that the following holds. Let `u ∈ H¹(Ω)`
 solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `Ω ⊆ ℝ^{n+1}`, let `ball z R ⊆ Ω`, let `a(z)` be
@@ -253,11 +237,15 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
   refine ⟨θ, C, hθ, hθ1, hC, ?_⟩
   intro Omega u a G f s z R V Ka KG h hz haK hGK hu hf hball hR hM hD hΦR
   have hV0 : 0 ≤ V := (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity).trans hΦR
+  -- The `L²` mass `∫_{B_t} ‖∇u‖²` is nondecreasing in the radius.
+  have hmono : MonotoneOn (fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (Iic R) := by
+    simpa only [inter_univ] using
+      (Lp.memLp (W1p.gradient u)).monotoneOn_setIntegral_ball_inter_norm_sq (H := univ) hball
   exact hit (Φ := fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2)
     (D := fun r => r ^ (2 * (α : ℝ)) * ((KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) +
       4 * r ^ 2 * ∫ x in ball z r, f x ^ 2) hR (div_nonneg Ka.property h.pos.le)
     (by rw [div_mul_eq_mul_div]; exact div_le_div_of_nonneg_right hM h.pos.le)
-    (monotoneOn_setIntegral_norm_gradient_sq u hball)
+    (hmono.mono Ioc_subset_Iic_self)
     (fun t _ => setIntegral_nonneg measurableSet_ball fun _ _ => by positivity) hΦR
     (fun r hr hrR => (hD r hr hrR).trans (mul_le_mul_of_nonneg_left
       (Real.rpow_le_rpow_of_exponent_ge (by positivity) ((div_le_one hR).2 hrR) (by linarith))
@@ -310,6 +298,10 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
   refine ⟨C, hC, ?_⟩
   intro Omega u a G f s z R V Ka KG h hz haK hGK hu hf hball hR hM hD hΦR hΦ
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
+  -- The `L²` mass `∫_{B_t} ‖∇u‖²` is nondecreasing in the radius.
+  have hmono : MonotoneOn (fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (Iic R) := by
+    simpa only [inter_univ] using
+      (Lp.memLp (W1p.gradient u)).monotoneOn_setIntegral_ball_inter_norm_sq (H := univ) hball
   exact hit (φ := fun t =>
       ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2)
     (Φ := fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2)
@@ -321,8 +313,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
     (fun t _ => setIntegral_nonneg measurableSet_ball fun _ _ => by positivity)
     ((W1p.setIntegral_norm_gradient_sub_setAverage_sq_le u
       ((ball_subset_ball hθR).trans hball)).trans
-      ((monotoneOn_setIntegral_norm_gradient_sq u hball ⟨by positivity, hθR⟩ ⟨hR, le_rfl⟩
-        hθR).trans hΦR))
+      ((hmono hθR le_rfl hθR).trans hΦR))
     (fun t _ => setIntegral_nonneg measurableSet_ball fun _ _ => by positivity) hΦ
     (fun r hr hrθ => hD r hr (hrθ.trans hθR))
     fun ρ r hρ hρr hrθ => (hcomp h hz hα (haK.mono (ball_subset_ball (hrθ.trans hθR)))
@@ -584,8 +575,10 @@ theorem
   have havg : ∀ z ∈ S, ‖⨍ y in closedBall z (θ * R), W1p.gradient u y‖ ≤
       R ^ (β : ℝ) * Q / √(ω * θ ^ (n + 1)) := fun z hz => hωdef ▸
     W1p.norm_setAverage_closedBall_gradient_le_div u ((ball_subset_ball hθR).trans (hball z hz))
-      hθ hR hQ0 (hVR ▸ (monotoneOn_setIntegral_norm_gradient_sq u (hball z hz) ⟨by positivity, hθR⟩
-        ⟨hR, le_rfl⟩ hθR).trans (hV2 z hz))
+      hθ hR hQ0 (hVR ▸ le_trans (by
+        simpa only [inter_univ] using
+          (Lp.memLp (W1p.gradient u)).monotoneOn_setIntegral_ball_inter_norm_sq (H := univ)
+            (hball z hz) hθR le_rfl hθR) (hV2 z hz))
   have hH := TauCeti.MeasureTheory.holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le hβ
     (ρ := θ * R) (by positivity)
     (fun z hz => W1p.integrableOn_closedBall_gradient u (hball z hz) hθR) hosc havg

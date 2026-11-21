@@ -36,9 +36,13 @@ estimates, provided that `K R^α ≤ M` and the data decay like `D r ≤ V (r / 
   is an inhomogeneity of order `(r / R)^{2α+β}`, and `φ ρ ≤ C V (ρ / R)^τ` for `ρ ≤ θ R` and every
   `τ < d + 2` with `τ ≤ 2α + β` and `τ ≤ κ`.
 
-Alternating the two steps raises the decay exponent of the mean oscillation to `d + 2γ` for
-every `γ ≤ α` with `γ < 1`, since the Campanato step needs `τ < d + 2`; so for `α < 1` it reaches
-`d + 2α`. Campanato's characterization turns this into the Hölder continuity of `∇u` with
+The Morrey step alone only reaches exponents `d - γ` with `γ > 0`. Combined with the
+bounded-averages step `TauCeti.MeasureTheory.exists_setIntegral_ball_inter_norm_sq_le_mul_div_pow`
+(Campanato decay with exponent `d + γ` keeps the averages bounded, hence gives Morrey decay with
+the full exponent `d`), the two steps raise the decay exponent of the mean oscillation to `d + 2γ`
+through the chain: Morrey `d - γ`, Campanato `d + γ`, Morrey `d`, Campanato `d + 2γ`. This works
+for every `γ ≤ α` with `γ < 1`, since the Campanato step needs `τ < d + 2`; so for `α < 1` it
+reaches `d + 2α`. Campanato's characterization turns this into the Hölder continuity of `∇u` with
 exponent `γ`. The steps only use the inequalities above, so they serve the comparison on balls
 in the interior as well as the comparison on half-balls centred on a flat boundary.
 
