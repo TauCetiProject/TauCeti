@@ -123,10 +123,7 @@ theorem mem_kerDistribution_iff (hα : IsLocalContactFormFamily ξ U α t₀) {z
     v ∈ (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution
         z ↔ v ∈ ξ t₀ z := by
   rw [hα.self_of_nhds.2 z, Submodule.mem_comap]
-  have hv : mfderiv I I (Subtype.val : U → M) z v = v := by
-    rw [Manifold.mfderiv_subtype_val]
-    exact Manifold.tangentSpaceOpenEquiv_apply z v
-  exact Iff.of_eq (congrArg (· ∈ ξ t₀ z) hv)
+  exact Iff.of_eq (congrArg (· ∈ ξ t₀ z) (Manifold.mfderiv_subtype_val_apply z v))
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
@@ -204,8 +201,8 @@ theorem IsLocalContactFormFamily.grayVectorField_eq_distributionGrayVectorField
     {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t : ℝ} (hα : IsLocalContactFormFamily ξ U α t)
     (z : U) : α.grayVectorField t z = distributionGrayVectorField ξ t z := by
   have h := hα.distributionGrayVectorField_eq z.property
-  rw [Manifold.mfderiv_subtype_val] at h
-  exact (h.trans (Manifold.tangentSpaceOpenEquiv_apply z _)).symm
+  rw [Manifold.mfderiv_subtype_val_apply] at h
+  exact h.symm
 
 namespace IsContactDistributionFamily
 

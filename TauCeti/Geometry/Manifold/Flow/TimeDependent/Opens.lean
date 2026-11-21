@@ -81,8 +81,7 @@ theorem timeDependentFlowOf_restrict_opens
     have hc := hasMFDerivAt_timeDependentFlowOf hXU (hab u hu)
     refine ((contMDiff_subtypeVal.mdifferentiableAt one_ne_zero).hasMFDerivAt.comp u
       hc).congr_mfderiv (ContinuousLinearMap.ext fun r ↦ ?_)
-    rw [Manifold.mfderiv_subtype_val]
-    exact Manifold.tangentSpaceOpenEquiv_apply _ _
+    exact Manifold.mfderiv_subtype_val_apply _ _
   have hy : (timeDependentFlowOf (I := I) (M := U) (fun u z ↦ X u z) s s y : M) = y := by
     exact congrArg Subtype.val (timeDependentFlowOf_self _ s y)
   refine ⟨hy ▸ mem_timeDependentFlowDomain_of_hasMFDerivAt hγ hs ht, ?_⟩
