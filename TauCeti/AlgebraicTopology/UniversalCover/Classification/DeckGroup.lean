@@ -35,6 +35,8 @@ Taking `H = ⊥` recovers the deck group of the universal cover itself; taking `
   attached to `H` is `N(H) ⧸ H`.**
 * `TauCeti.UniversalCover.deckSubgroupQuotientProjEquivOfNormal`: for normal `H` this reads
   `π₁(X, x₀) ⧸ H`.
+* `TauCeti.UniversalCover.deckSubgroupQuotientProjKerEquivRange`: for the kernel of a
+  homomorphism `φ` out of `π₁(X, x₀)` this reads `φ.range`.
 
 ## References
 
@@ -122,5 +124,35 @@ theorem deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply [H.Normal]
     (isQuotientCoveringMap (x₀ := x₀)).deckHomOfNormal_symm_apply
       (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
       (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H) g e
+
+section Ker
+
+variable {G : Type*} [Group G] (φ : FundamentalGroup X x₀ →* G)
+
+/-- **The deck group of the cover attached to the kernel of `φ : π₁(X, x₀) →* G` is the range
+of `φ`**: the deck transformation of the class of `g` is labelled by `φ g`. -/
+def deckSubgroupQuotientProjKerEquivRange : deck (subgroupQuotientProj x₀ φ.ker) ≃* φ.range :=
+  (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker).symm.trans
+    (QuotientGroup.quotientKerEquivRange φ)
+
+/-- The deck transformation of the class of `g` is labelled by `φ g`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivRange_deckSubgroupQuotientProjEquivOfNormal_mk
+    (g : FundamentalGroup X x₀) :
+    deckSubgroupQuotientProjKerEquivRange x₀ φ
+        (deckSubgroupQuotientProjEquivOfNormal x₀ φ.ker (QuotientGroup.mk g)) =
+      φ.rangeRestrict g := by
+  simp [deckSubgroupQuotientProjKerEquivRange, Subtype.ext_iff]
+
+/-- The deck transformation labelled by `φ g` sends the class of `e` to the class of `g • e`. -/
+@[simp]
+theorem deckSubgroupQuotientProjKerEquivRange_symm_rangeRestrict_apply_mk
+    (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
+    ((deckSubgroupQuotientProjKerEquivRange x₀ φ).symm (φ.rangeRestrict g)).val
+        (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
+  rw [← deckSubgroupQuotientProjKerEquivRange_deckSubgroupQuotientProjEquivOfNormal_mk,
+    MulEquiv.symm_apply_apply, deckSubgroupQuotientProjEquivOfNormal_mk_apply]
+
+end Ker
 
 end TauCeti.UniversalCover

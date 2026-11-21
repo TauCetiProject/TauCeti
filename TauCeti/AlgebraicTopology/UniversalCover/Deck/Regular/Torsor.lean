@@ -24,6 +24,9 @@ structure keeps track of both.
 * `TauCeti.Deck.fiberTorsor`: the regular-cover specialization.
 * `TauCeti.Deck.fiber_sdiv_eq_deckEquivFiber_symm`: fibre division is the unique deck
   transformation carrying the second point to the first.
+* `TauCeti.Deck.addActionOfMulEquiv`, `TauCeti.Deck.fiberAddTorsorOfMulEquiv`: an isomorphism
+  `Multiplicative A ≃* deck p` makes the additive group `A` act on the total space, and each
+  fibre of a regular preconnected covering an `A`-torsor.
 
 ## References
 
@@ -68,6 +71,73 @@ lemma deckEquivFiber_symm_eq_sdiv [PreconnectedSpace E] (hp : IsCoveringMap p)
     letI := fiberTorsor hp hreg b
     (deckEquivFiber hp hreg e).symm e' = e' /ₛ e := by
   rw [fiber_sdiv_eq_deckEquivFiber_symm hp hreg]
+
+section OfMulEquiv
+
+variable {A : Type*} [AddGroup A]
+
+/-- An isomorphism `Multiplicative A ≃* deck p` makes the additive group `A` act on the total
+space: `a` acts by the deck transformation labelled by `a`. -/
+@[expose, reducible]
+noncomputable def addActionOfMulEquiv (φ : Multiplicative A ≃* deck p) : AddAction A E :=
+  AddAction.compHom E (MonoidHom.toAdditiveRight φ.toMonoidHom)
+
+omit [TopologicalSpace B] in
+/-- In `addActionOfMulEquiv φ`, the element `a` acts by the deck transformation `φ a`. -/
+lemma addActionOfMulEquiv_vadd (φ : Multiplicative A ≃* deck p) (a : A) (e : E) :
+    letI := addActionOfMulEquiv φ
+    a +ᵥ e = (φ (Multiplicative.ofAdd a)).val e :=
+  deck.smul_eq_apply (φ (Multiplicative.ofAdd a)) e
+
+omit [TopologicalSpace B] in
+/-- The action `addActionOfMulEquiv φ` preserves the projection. -/
+lemma proj_addActionOfMulEquiv_vadd (φ : Multiplicative A ≃* deck p) (a : A) (e : E) :
+    letI := addActionOfMulEquiv φ
+    p (a +ᵥ e) = p e :=
+  deck.proj_smul (φ (Multiplicative.ofAdd a)) e
+
+/-- An isomorphism `Multiplicative A ≃* deck p` makes each fibre of a regular preconnected
+covering a torsor for the additive group `A`: `a` acts by the deck transformation labelled by
+`a`, and `e₁ -ᵥ e₂` is the label of the unique deck transformation carrying `e₂` to `e₁`. -/
+@[expose, reducible]
+noncomputable def fiberAddTorsorOfMulEquiv [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (hreg : IsRegular p) (φ : Multiplicative A ≃* deck p) (b : B) : AddTorsor A (p ⁻¹' {b}) where
+  vadd a e := φ (Multiplicative.ofAdd a) • e
+  zero_vadd e := show φ (Multiplicative.ofAdd 0) • e = e by
+    rw [ofAdd_zero, map_one, one_smul]
+  add_vadd a a' e := show φ (Multiplicative.ofAdd (a + a')) • e =
+      φ (Multiplicative.ofAdd a) • φ (Multiplicative.ofAdd a') • e by
+    rw [ofAdd_add, map_mul, mul_smul]
+  vsub e₁ e₂ := Multiplicative.toAdd (φ.symm ((deckEquivFiber hp hreg e₂).symm e₁))
+  nonempty := hreg.nonempty_fiber b
+  vsub_vadd' e₁ e₂ := show φ (Multiplicative.ofAdd (Multiplicative.toAdd
+      (φ.symm ((deckEquivFiber hp hreg e₂).symm e₁)))) • e₂ = e₁ by
+    rw [ofAdd_toAdd, MulEquiv.apply_symm_apply, deckEquivFiber_symm_smul]
+  vadd_vsub' a e := show Multiplicative.toAdd (φ.symm ((deckEquivFiber hp hreg e).symm
+      (φ (Multiplicative.ofAdd a) • e))) = a by
+    rw [deckEquivFiber_symm_apply_smul,
+      (Equiv.symm_apply_eq _).2 (deckEquivFiber_one hp hreg e).symm, mul_one,
+      MulEquiv.symm_apply_apply, toAdd_ofAdd]
+
+/-- In `fiberAddTorsorOfMulEquiv`, the action on a fibre is the action
+`addActionOfMulEquiv φ` on the total space. -/
+lemma coe_fiberAddTorsorOfMulEquiv_vadd [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (hreg : IsRegular p) (φ : Multiplicative A ≃* deck p) (a : A) (e : p ⁻¹' {b}) :
+    letI := fiberAddTorsorOfMulEquiv hp hreg φ b
+    letI := addActionOfMulEquiv φ
+    ((a +ᵥ e : p ⁻¹' {b}) : E) = a +ᵥ (e : E) :=
+  (deck.fiber_smul_coe (φ (Multiplicative.ofAdd a)) e).trans
+    (addActionOfMulEquiv_vadd φ a e.val).symm
+
+/-- In `fiberAddTorsorOfMulEquiv`, `e₁ -ᵥ e₂` labels the deck transformation carrying `e₂` to
+`e₁`. -/
+lemma fiberAddTorsorOfMulEquiv_vsub [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (hreg : IsRegular p) (φ : Multiplicative A ≃* deck p) (e₁ e₂ : p ⁻¹' {b}) :
+    letI := fiberAddTorsorOfMulEquiv hp hreg φ b
+    e₁ -ᵥ e₂ = Multiplicative.toAdd (φ.symm ((deckEquivFiber hp hreg e₂).symm e₁)) :=
+  rfl
+
+end OfMulEquiv
 
 end Deck
 
