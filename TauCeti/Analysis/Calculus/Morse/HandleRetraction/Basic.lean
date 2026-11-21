@@ -119,7 +119,7 @@ def quadraticHandleRetraction (ε : ℝ) : C(Eᵤ × Eₛ, Eᵤ × Eₛ) where
   toFun z := (z.1, radialRetraction √(‖z.1‖ ^ 2 - ε) z.2)
   continuous_toFun := continuous_fst.prodMk
     ((by fun_prop : Continuous fun z : Eᵤ × Eₛ ↦ √(‖z.1‖ ^ 2 - ε)).radialRetraction
-      (fun _ ↦ Real.sqrt_nonneg _) continuous_snd)
+      (fun _ ↦ .inr (Real.sqrt_nonneg _)) continuous_snd)
 
 @[simp]
 theorem quadraticHandleRetraction_apply (ε : ℝ) (z : Eᵤ × Eₛ) :
@@ -156,7 +156,7 @@ def quadraticHandleDeformation (ε : ℝ) :
   continuous_toFun := by
     have hr : Continuous fun p : I × (Eᵤ × Eₛ) ↦ radialRetraction √(‖p.2.1‖ ^ 2 - ε) p.2.2 :=
       (by fun_prop : Continuous fun p : I × (Eᵤ × Eₛ) ↦ √(‖p.2.1‖ ^ 2 - ε)).radialRetraction
-        (fun _ ↦ Real.sqrt_nonneg _) (by fun_prop)
+        (fun _ ↦ .inr (Real.sqrt_nonneg _)) (by fun_prop)
     fun_prop
   map_zero_left z := by simp
   map_one_left z := by simp
