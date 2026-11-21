@@ -53,9 +53,7 @@ homotopy group at a time, along the Whitehead tower.
   (`TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_mod_two`, via
   `TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`). Hence vanishing of
   `H_q(Z; 𝔽₂)` passes to `Z⟨m + 2⟩` for any individual degree `q`
-  (`TauCeti.isZero_singularHomology_nConnectedCover_mod_two`), and in particular mod-two acyclicity
-  in all positive degrees passes to `Z⟨m + 2⟩`
-  (`TauCeti.subsingleton_singularHomology_nConnectedCover`).
+  (`TauCeti.isZero_singularHomology_nConnectedCover_mod_two`).
 * **The induction.** Replacing `Y` once by its Hausdorff CW approximation
   `Z₀ = cwApproximation (TopCat.of Y) y` preserves path-connectedness, all homotopy groups, and
   mod-two singular homology. Iterating `Z ↦ Z⟨r + 2⟩` for `r < m` (each cover remains Hausdorff)
@@ -74,9 +72,6 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
   `nConnectedCoverProj (m + 2) Z z` induces isomorphisms on mod-two homology in all degrees.
 * `TauCeti.isZero_singularHomology_nConnectedCover_mod_two`: under the same hypotheses, vanishing
   of `H_q(Z; 𝔽₂)` passes from `Z` to `nConnectedCover (m + 2) Z z`.
-* `TauCeti.subsingleton_singularHomology_nConnectedCover`: the `n`-connected cover of an
-  `(n - 1)`-connected Hausdorff space with the mod-two homology of a point has the mod-two
-  homology of a point.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two`,
   `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_int_zmod_two`, and
   `isUniquelyTwoDivisible_homotopyGroup_of_simplyConnectedSpace_of_isZero_singularHomology_mod_two`
@@ -151,7 +146,7 @@ theorem isIso_singularHomologyMap_nConnectedCoverProj_int_zmod_two
   have hm₂' := (Z.isZero_singularHomology_modTwo_iff' (m + 2)).1 hm₂
   have hm₃' := (Z.isZero_singularHomology_modTwo_iff' (m + 3)).1 hm₃
   rw [singularHomologyFunctor_obj_obj] at hm₂' hm₃'
-  exact (_root_.TopCat.isIso_singularHomologyMap_modTwo_iff' _ q).2
+  exact (TopCat.Hom.isIso_singularHomologyMap_modTwo_iff' _ q).2
     (isIso_singularHomologyMap_nConnectedCoverProj_mod_two hZ hm₂' hm₃' q)
 
 /-- **One-step preservation of mod-two homology vanishing.** If `(Z, z)` is Hausdorff,
@@ -168,26 +163,6 @@ theorem isZero_singularHomology_nConnectedCover_mod_two
   exact ModuleCat.isZero_iff_subsingleton.2
     ((subsingleton_singularChains_homology_iff_of_isIso (ZMod 2)
       (nConnectedCoverProj (m + 2) Z z) q).2 (ModuleCat.isZero_iff_subsingleton.1 hq))
-
-/-- **The `n`-connected cover of a mod-two acyclic space is mod-two acyclic.** Let `X` be a
-Hausdorff, path-connected space whose homotopy groups `πₖ` vanish for `1 ≤ k < n`, `n ≥ 2`, and
-which has the mod-two homology of a point. Then its `n`-connected cover `X⟨n⟩` has the mod-two
-homology of a point. -/
-theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space X]
-    [PathConnectedSpace X] (x : X) (m : ℕ)
-    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x))
-    (hX₂ : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1))) (i : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (nConnectedCover (m + 2) X x)).homology
-      (i + 1)) := by
-  have hConn : ∀ k < m + 2, Subsingleton (π_ k X x) := fun k hk ↦ by
-    rcases eq_or_ne k 0 with rfl | hk0
-    · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
-    · exact hX k hk0 hk
-  exact ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomology_nConnectedCover_mod_two hConn
-      (ModuleCat.isZero_iff_subsingleton.2 (hX₂ (m + 1)))
-      (ModuleCat.isZero_iff_subsingleton.2 (hX₂ (m + 2)))
-      (ModuleCat.isZero_iff_subsingleton.2 (hX₂ i))
 
 end OneStep
 
@@ -242,7 +217,7 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two
   let g := cwApproximationMap (TopCat.of Y) y
   have hg₀ : g.hom z₀ = y := cwApproximationMap_cwApproximationBasepoint (TopCat.of Y) y
   have he₁ : π_ 1 Z₀ z₀ ≃* π_ 1 Y y :=
-    HomotopyGroup.mulEquivOfBijective g.hom hg₀
+    g.hom.homotopyGroupMulEquivOfBijective hg₀
       ((HomotopyGroup.bijective_map_congr rfl rfl hg₀).1
         (bijective_homotopyGroupMap_cwApproximationMap (TopCat.of Y) y 0 z₀))
   have hπ₁Z₀ : Subsingleton (π_ 1 Z₀ z₀) := he₁.toEquiv.subsingleton_congr.2 hπ₁
@@ -262,7 +237,7 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two
       (ModuleCat.isZero_iff_subsingleton.1 (hHZ (m + 1) le_rfl))
   obtain ⟨eZ⟩ := hEquiv (m + 2) (by omega)
   have heY : π_ (m + 2) Z₀ z₀ ≃* π_ (m + 2) Y y :=
-    HomotopyGroup.mulEquivOfBijective g.hom hg₀
+    g.hom.homotopyGroupMulEquivOfBijective hg₀
       ((HomotopyGroup.bijective_map_congr rfl rfl hg₀).1
         (bijective_homotopyGroupMap_cwApproximationMap (TopCat.of Y) y (m + 1) z₀))
   exact hdivZ.of_addEquiv (eZ.trans heY).toAdditive

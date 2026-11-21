@@ -15,7 +15,7 @@ supplies the map induced by a based continuous map (postcomposition of generaliz
 `TauCeti.Topology.Homotopy.GenLoop.Map`) on homotopy classes: it respects identity and composition,
 handles constant maps and subsingleton targets, is a monoid homomorphism in positive dimensions
 (`HomotopyGroup.mapHom`), and upgrades to a multiplicative isomorphism when bijective
-(`HomotopyGroup.mulEquivOfBijective`). In dimension one it is Mathlib's induced map
+(`ContinuousMap.homotopyGroupMulEquivOfBijective`). In dimension one it is Mathlib's induced map
 `FundamentalGroup.mapOfEq` of fundamental groups, read through
 `HomotopyGroup.pi1EquivFundamentalGroup`, so in particular one is bijective exactly when the other
 is. Every homotopy group of a subsingleton space is itself a subsingleton
@@ -264,19 +264,6 @@ theorem map_inv [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
     map f hf a⁻¹ = (map f hf a)⁻¹ :=
   (mapHom f hf).map_inv a
 
-/-- In positive dimensions, a based continuous map whose induced map on homotopy groups is
-bijective induces a multiplicative isomorphism of homotopy groups. -/
-noncomputable def mulEquivOfBijective [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
-    (hbij : Function.Bijective (map (N := N) f hf)) :
-    HomotopyGroup N X x ≃* HomotopyGroup N Y y :=
-  MulEquiv.ofBijective (mapHom f hf) hbij
-
-@[simp]
-theorem mulEquivOfBijective_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
-    (hbij : Function.Bijective (map (N := N) f hf)) (a : HomotopyGroup N X x) :
-    mulEquivOfBijective f hf hbij a = map f hf a :=
-  mapHom_apply f hf a
-
 /-- In dimension one, the induced map on homotopy groups is the induced map on fundamental groups,
 under Mathlib's identification `pi1EquivFundamentalGroup` of `π_1` with the fundamental group. -/
 @[simp]
@@ -304,3 +291,23 @@ theorem bijective_map_iff_bijective_mapOfEq (f : C(X, Y)) (hf : f x = y) :
     Function.Bijective.of_comp_iff _ (Equiv.bijective _)]
 
 end HomotopyGroup
+
+namespace ContinuousMap
+
+variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
+
+/-- In positive dimensions, a based continuous map whose induced map on homotopy groups is
+bijective induces a multiplicative isomorphism of homotopy groups. -/
+noncomputable def homotopyGroupMulEquivOfBijective [DecidableEq N] [Nonempty N] (f : C(X, Y))
+    (hf : f x = y) (hbij : Function.Bijective (HomotopyGroup.map (N := N) f hf)) :
+    HomotopyGroup N X x ≃* HomotopyGroup N Y y :=
+  MulEquiv.ofBijective (HomotopyGroup.mapHom f hf) hbij
+
+@[simp]
+theorem homotopyGroupMulEquivOfBijective_apply [DecidableEq N] [Nonempty N] (f : C(X, Y))
+    (hf : f x = y) (hbij : Function.Bijective (HomotopyGroup.map (N := N) f hf))
+    (a : HomotopyGroup N X x) :
+    f.homotopyGroupMulEquivOfBijective hf hbij a = HomotopyGroup.map f hf a :=
+  HomotopyGroup.mapHom_apply f hf a
+
+end ContinuousMap

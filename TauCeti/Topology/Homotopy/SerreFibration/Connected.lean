@@ -8,8 +8,6 @@ module
 public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 
-import Mathlib.Analysis.Convex.Contractible
-
 /-!
 # Connectivity of a Serre fibration and of its fibres
 
@@ -30,15 +28,9 @@ trivial for every `k ≤ n` (for `k = 0` this says that `B` is path-connected), 
 of the fibre `p⁻¹(b) → E` is an `n`-connected map
 (`TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`). In particular, over a weakly
 contractible base the fibre inclusion is a weak homotopy equivalence
-(`TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`), so pulling back `p`
-along a map from a weakly contractible space yields a weak homotopy equivalence from each fibre
-into the pullback (`TopCat.isWeakHomotopyEquivalence_fiberPullback`). Applying this to a
-path in `B` connects the fibres over any two joined points of `B` by a zigzag of weak homotopy
-equivalences (`TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`), showing in
-particular that path-connectedness of the fibre is constant on each path component of `B`
-(`TopCat.pathConnectedSpace_fiber_iff_of_joined`). In the opposite range, where the
-base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and `π_{k+2}(B, b)` are
-trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
+(`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`). In the opposite range,
+where the base has no homotopy, the fibre inclusion is bijective: if `π_{k+1}(B, b)` and
+`π_{k+2}(B, b)` are trivial, it induces a bijection `π_{k+1}(p⁻¹(b)) → π_{k+1}(E)`
 (`TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`).
 
 ## Implementation notes
@@ -63,13 +55,8 @@ of `p` to a point `b` lifts to a point of the fibre over `b`
   weak homotopy equivalence exactly when its fibres are nonempty and weakly contractible.
 * `TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations`: over an `n`-connected base, the
   inclusion of a fibre is `n`-connected.
-* `TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`,
-  `TopCat.isWeakHomotopyEquivalence_fiberPullback`: over a weakly contractible base (or
-  pullback along a map from one), the fibre inclusion is a weak homotopy equivalence.
-* `TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`,
-  `TopCat.pathConnectedSpace_fiber_iff_of_joined`: fibres of a Serre fibration over joined
-  points are connected by a zigzag of weak homotopy equivalences and are simultaneously
-  path-connected.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations`: over a weakly
+  contractible base, the fibre inclusion is a weak homotopy equivalence.
 * `TauCeti.TopCat.bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations`: where the homotopy
   groups of the base vanish, the inclusion of a fibre is bijective on homotopy groups.
 
@@ -290,86 +277,12 @@ theorem bijective_homotopyGroupMap_fiberι_of_mem_serreFibrations (hp : serreFib
 
 end FiberInclusion
 
-end TauCeti.TopCat
-
-namespace TopCat
-
-open TauCeti.TopCat
-
-variable {E B : TopCat.{u}} {p : E ⟶ B}
-
 /-- **The fibre of a Serre fibration over a weakly contractible base is weakly homotopy equivalent
 to the total space.** If `π_k(B, b)` is trivial for every `k : ℕ`, then the inclusion
 `p⁻¹(b) → E` is a weak homotopy equivalence. -/
 theorem isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {b : B}
     (hB : ∀ k, Subsingleton (π_ k B b)) : (p.fiberι b).hom.IsWeakHomotopyEquivalence :=
   ContinuousMap.isWeakHomotopyEquivalence_iff_forall_isNConnected.2 fun _ ↦
-    TauCeti.TopCat.isNConnected_fiberι_of_mem_serreFibrations hp fun k _ ↦ hB k
+    isNConnected_fiberι_of_mem_serreFibrations hp fun k _ ↦ hB k
 
-/-! ### Fibres over joined points -/
-
-section JoinedFibers
-
-/-- **Pulling a Serre fibration back over a weakly contractible base turns every fibre map into a
-weak homotopy equivalence.** For a Serre fibration `p : E ⟶ B` and a morphism `g : C ⟶ B` from a
-space `C` whose homotopy groups at `t` vanish in every degree (for instance, a contractible
-space), the canonical map `p⁻¹(g t) ⟶ C ×_B E` is a weak homotopy equivalence. -/
-theorem isWeakHomotopyEquivalence_fiberPullback (hp : serreFibrations p) {C : TopCat.{u}}
-    (g : C ⟶ B) (t : C) (hC : ∀ k, Subsingleton (π_ k C t)) :
-    ((p.fiberPullbackFstIso g t).inv ≫ (TopCat.pullbackFst g p).fiberι t).hom
-      |>.IsWeakHomotopyEquivalence := by
-  have hι : ((TopCat.pullbackFst g p).fiberι t).hom.IsWeakHomotopyEquivalence :=
-    isWeakHomotopyEquivalence_fiberι_of_mem_serreFibrations
-      (mem_serreFibrations_pullbackFst hp g) hC
-  have he : (p.fiberPullbackFstIso g t).inv.hom.IsWeakHomotopyEquivalence :=
-    (TopCat.homeoOfIso (p.fiberPullbackFstIso g t).symm).toHomotopyEquiv
-      |>.isWeakHomotopyEquivalence
-  rw [TopCat.hom_comp]
-  exact hι.comp he
-
-/-- A path `γ` in `B` lifted to a morphism `TopCat.I ⟶ B` in `TopCat.{u}`. -/
-private def pathHom {b₀ b₁ : B} (γ : Path b₀ b₁) : TopCat.I.{u} ⟶ B :=
-  TopCat.ofHom ⟨fun t ↦ γ (TopCat.I.homeomorph t),
-    γ.continuous.comp TopCat.I.homeomorph.continuous⟩
-
-private theorem pathHom_apply {b₀ b₁ : B} (γ : Path b₀ b₁) (t : TopCat.I.{u}) :
-    pathHom γ t = γ (TopCat.I.homeomorph t) :=
-  rfl
-
-private theorem pathHom_zero {b₀ b₁ : B} (γ : Path b₀ b₁) : pathHom γ 0 = b₀ := by
-  rw [pathHom_apply, TopCat.I.homeomorph_zero, γ.source]
-
-private theorem pathHom_one {b₀ b₁ : B} (γ : Path b₀ b₁) : pathHom γ 1 = b₁ := by
-  rw [pathHom_apply, TopCat.I.homeomorph_one, γ.target]
-
-/-- **Fibres of a Serre fibration over joined points are connected by a zigzag of weak homotopy
-equivalences**, through the pullback of `p` along a path between them. -/
-theorem exists_isWeakHomotopyEquivalence_fiber_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
-    (hb : Joined b₀ b₁) :
-    ∃ (P : TopCat.{u}) (f₀ : p.fiber b₀ ⟶ P) (f₁ : p.fiber b₁ ⟶ P),
-      f₀.hom.IsWeakHomotopyEquivalence ∧ f₁.hom.IsWeakHomotopyEquivalence := by
-  let γ := hb.somePath
-  let g := pathHom γ
-  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  have : ContractibleSpace TopCat.I.{u} := TopCat.I.homeomorph.contractibleSpace
-  have h₀ := isWeakHomotopyEquivalence_fiberPullback hp g 0 fun _ ↦ inferInstance
-  have h₁ := isWeakHomotopyEquivalence_fiberPullback hp g 1 fun _ ↦ inferInstance
-  let e₀ : p.fiber b₀ ≅ p.fiber (g 0) := eqToIso (congrArg p.fiber (pathHom_zero γ).symm)
-  let e₁ : p.fiber b₁ ≅ p.fiber (g 1) := eqToIso (congrArg p.fiber (pathHom_one γ).symm)
-  refine ⟨_, e₀.hom ≫ (p.fiberPullbackFstIso g 0).inv ≫ (TopCat.pullbackFst g p).fiberι 0,
-    e₁.hom ≫ (p.fiberPullbackFstIso g 1).inv ≫ (TopCat.pullbackFst g p).fiberι 1, ?_, ?_⟩
-  · rw [TopCat.hom_comp]
-    exact h₀.comp (TopCat.homeoOfIso e₀).toHomotopyEquiv.isWeakHomotopyEquivalence
-  · rw [TopCat.hom_comp]
-    exact h₁.comp (TopCat.homeoOfIso e₁).toHomotopyEquiv.isWeakHomotopyEquivalence
-
-/-- **Fibres of a Serre fibration over points in the same path component are simultaneously
-path-connected.** -/
-theorem pathConnectedSpace_fiber_iff_of_joined (hp : serreFibrations p) {b₀ b₁ : B}
-    (hb : Joined b₀ b₁) : PathConnectedSpace (p.fiber b₀) ↔ PathConnectedSpace (p.fiber b₁) := by
-  obtain ⟨_, _, _, h₀, h₁⟩ := exists_isWeakHomotopyEquivalence_fiber_of_joined hp hb
-  exact h₀.pathConnectedSpace_iff.trans h₁.pathConnectedSpace_iff.symm
-
-end JoinedFibers
-
-end TopCat
+end TauCeti.TopCat
