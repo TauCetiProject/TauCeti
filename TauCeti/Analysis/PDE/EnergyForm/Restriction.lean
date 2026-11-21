@@ -268,7 +268,7 @@ almost everywhere and satisfy `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹�
 with drift `b` and a measurable mass coefficient `c` of either sign. Then for every open `U ⊆ Ω` of
 finite measure and every `δ > 0` the shifted restriction `u|_U + δ ∈ H¹(U)` is again a weak
 supersolution on `U`, for the same `a` and `b` and a measurable mass coefficient `c'` with
-`|c'| ≤ |c|` everywhere, namely `c' = c u⁺ / (u⁺ + δ)`, for which `c' (u + δ) = c u` on `U`. -/
+`|c'| ≤ |c|` everywhere. -/
 theorem exists_energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
     [IsFiniteMeasure (mu.restrict U)] (hc : AEStronglyMeasurable c (mu.restrict Omega))
