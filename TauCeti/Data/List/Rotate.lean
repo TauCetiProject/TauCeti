@@ -15,9 +15,9 @@ import TauCeti.Data.Fin.Basic
 /-!
 # Transporting list rotations
 
-This file records how list rotations act on their finite index types and interact with filtering
-and with powers of words, and how the permutation formed by a list interacts with mapping by an
-equivalence.
+This file records how list rotations act on their finite index types and interact with filtering,
+with powers of words and with prefix sums, and how the permutation formed by a list interacts with
+mapping by an equivalence.
 
 These lemmas transport a cyclic order, and the successor permutation it induces, across a
 renaming of indices. They are needed when comparing a combinatorial construction built from a
@@ -27,7 +27,9 @@ permutation, and renaming the entries by an equivalence conjugates that permutat
 example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
 rotated braid words. Separately, rotating a power of a word gives a power of the rotated word:
 in the combinatorics of words of Lyndon and Schützenberger, a cyclic conjugate of a power is used
-throughout as a power of a cyclic conjugate.
+throughout as a power of a cyclic conjugate. Finally, the prefix sums of a rotated list are
+computed from those of the original list, as needed when a construction indexed by the prefix
+sums of a cycle of digits is compared with the same construction for a rotated cycle.
 
 ## Main results
 
@@ -40,6 +42,8 @@ throughout as a power of a cyclic conjugate.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 * `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
   takes the same value on the products of cyclically rotated lists.
+* `List.sum_take_rotate_add_sum_take`: the prefix sums of a rotated list, computed from the
+  prefix sums of the doubled list.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 * `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
   first entry to the end is invariant under every rotation.
@@ -180,6 +184,19 @@ theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
   obtain ⟨k, rfl⟩ := h
   rw [rotate_eq_drop_append_take_mod, prod_append, hφ, ← prod_append,
     take_append_drop]
+
+/-- Prefix sums of a rotated list, read off the doubled list `l ++ l`: for `r, j ≤ l.length`, the
+sum of the first `j` entries of `l.rotate r`, plus the sum of the first `r` entries of `l`, is the
+sum of the first `r + j` entries of `l ++ l`, that is, of the first `r + j` entries of `l` plus
+the first `r + j - l.length` entries of `l`. -/
+theorem sum_take_rotate_add_sum_take {M : Type*} [AddCommMonoid M] {l : List M} {r j : ℕ}
+    (hr : r ≤ l.length) (hj : j ≤ l.length) :
+    ((l.rotate r).take j).sum + (l.take r).sum =
+      (l.take (r + j)).sum + (l.take (r + j - l.length)).sum := by
+  rw [rotate_eq_drop_append_take hr, take_append, sum_append, length_drop, take_take, take_add,
+    sum_append, min_eq_left (by omega : j - (l.length - r) ≤ r),
+    show j - (l.length - r) = r + j - l.length by omega]
+  ac_rfl
 
 /-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
 its entries by the same amount. -/
