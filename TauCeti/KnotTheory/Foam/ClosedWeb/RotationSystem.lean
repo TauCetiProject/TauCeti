@@ -53,6 +53,13 @@ def rotation : Perm W.End :=
       W.ends (v, if W.IsMerge v then (finRotate 3).symm i else finRotate 3 i) := by
   by_cases h : W.IsMerge v <;> simp [rotation, Equiv.prodCongrRight, h]
 
+/-- The inverse rotation in local slots: successor at merges, predecessor at splits. -/
+@[simp] theorem rotation_symm_ends (v : W.Vertex) (i : Fin 3) :
+    W.rotation.symm (W.ends (v, i)) =
+      W.ends (v, if W.IsMerge v then finRotate 3 i else (finRotate 3).symm i) := by
+  apply W.rotation.injective
+  by_cases h : W.IsMerge v <;> simp [h]
+
 /-- Surface rotation preserves the incident vertex. -/
 @[simp] theorem incident_rotation (d : W.End) :
     W.incident (W.rotation d) = W.incident d := by
@@ -65,16 +72,65 @@ def rotation : Perm W.End :=
   simpa using (W.incident_rotation (W.rotation.symm d)).symm
 
 /-- At a split, the surface rotation is the stored cyclic successor. -/
-theorem rotation_eq_cyclicSucc_of_isSplit {v : W.Vertex} (h : W.IsSplit v) (i : Fin 3) :
-    W.rotation (W.ends (v, i)) = W.cyclicSucc (W.ends (v, i)) := by
-  have hn := (W.not_isMerge_iff v).mpr h
-  simp [hn]
+theorem rotation_eq_cyclicSucc_of_isSplit (d : W.End) (h : W.IsSplit (W.incident d)) :
+    W.rotation d = W.cyclicSucc d := by
+  obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
+  rw [incident_ends] at h
+  simp [(W.not_isMerge_iff v).mpr h]
 
 /-- At a merge, the surface rotation is the stored cyclic predecessor. -/
-theorem rotation_eq_cyclicSucc_symm_of_isMerge {v : W.Vertex} (h : W.IsMerge v)
-    (i : Fin 3) :
-    W.rotation (W.ends (v, i)) = W.cyclicSucc.symm (W.ends (v, i)) := by
+theorem rotation_eq_cyclicSucc_symm_of_isMerge (d : W.End) (h : W.IsMerge (W.incident d)) :
+    W.rotation d = W.cyclicSucc.symm d := by
+  obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
+  rw [incident_ends] at h
   simp [h]
+
+/-- Disjoint union preserves the effective rotation on the left component. -/
+@[simp] theorem rotation_sum_apply_inl (V : ClosedWeb.{v}) (e : W.Edge) (b : Bool) :
+    (W.sum V).rotation ((Sum.inl e, b) : (W.Edge ⊕ V.Edge) × Bool) =
+      (Sum.inl (W.rotation (e, b)).1, (W.rotation (e, b)).2) := by
+  obtain ⟨⟨v, i⟩, h⟩ := W.ends.surjective (e, b)
+  have hr := (W.sum V).rotation_ends (Sum.inl v) i
+  simp only [isMerge_sum_inl] at hr
+  rwa [sum_ends_apply_inl, sum_ends_apply_inl, ← W.rotation_ends, h] at hr
+
+/-- Disjoint union preserves the effective rotation on the right component. -/
+@[simp] theorem rotation_sum_apply_inr (V : ClosedWeb.{v}) (e : V.Edge) (b : Bool) :
+    (W.sum V).rotation ((Sum.inr e, b) : (W.Edge ⊕ V.Edge) × Bool) =
+      (Sum.inr (V.rotation (e, b)).1, (V.rotation (e, b)).2) := by
+  obtain ⟨⟨v, i⟩, h⟩ := V.ends.surjective (e, b)
+  have hr := (W.sum V).rotation_ends (Sum.inr v) i
+  simp only [isMerge_sum_inr] at hr
+  rwa [sum_ends_apply_inr, sum_ends_apply_inr, ← V.rotation_ends, h] at hr
+
+/-- Mirroring replaces effective rotation by its inverse. -/
+@[simp] theorem rotation_mirror : W.mirror.rotation = W.rotation.symm := by
+  apply Equiv.ext
+  intro d
+  obtain ⟨⟨v, i⟩, rfl⟩ := W.mirror.ends.surjective d
+  rw [W.mirror.rotation_ends, mirror_ends_apply, mirror_ends_apply, W.rotation_symm_ends]
+  by_cases h : W.IsMerge v <;> simp only [isMerge_mirror, h, ite_true, ite_false] <;>
+    apply congrArg (fun j => W.ends (v, j)) <;> fin_cases i <;> decide
+
+/-- Reversal exchanges the two ends of each edge and inverts effective rotation. -/
+@[simp] theorem rotation_reverse_apply (d : W.End) :
+    W.reverse.rotation d =
+      ((W.rotation.symm (d.1, !d.2)).1, !(W.rotation.symm (d.1, !d.2)).2) := by
+  obtain ⟨⟨v, i⟩, rfl⟩ := W.reverse.ends.surjective d
+  rw [W.reverse.rotation_ends, reverse_ends_apply, reverse_ends_apply]
+  have hs : W.IsSplit v ↔ ¬W.IsMerge v := (W.not_isMerge_iff v).symm
+  by_cases h : W.IsMerge v <;> simp [hs, h]
+
+/-- In the theta web the new slot is the new edge, and the vertex determines the orientation
+of its end: on edge zero the end label is the vertex itself, and otherwise it is flipped. -/
+@[simp] theorem rotation_theta_apply (d : theta.End) :
+    theta.rotation d =
+      let v := theta.incident d
+      let i := if v then finRotate 3 d.1 else (finRotate 3).symm d.1
+      (i, if i = 0 then v else !v) := by
+  obtain ⟨⟨v, i⟩, rfl⟩ := theta.ends.surjective d
+  rw [theta.rotation_ends, incident_ends, theta_ends_apply, theta_ends_apply]
+  cases v <;> simp
 
 /-- All three ends at a vertex lie in one cycle of the surface rotation. -/
 theorem sameCycle_rotation_ends (v : W.Vertex) (i j : Fin 3) :
@@ -99,16 +155,11 @@ theorem sameCycle_rotation_iff (d e : W.End) :
 
 /-- Each vertex fibre carries exactly one cycle. -/
 theorem isCycleOn_rotation (v : W.Vertex) :
-    W.rotation.IsCycleOn (W.incident ⁻¹' {v}) := by
-  refine ⟨⟨?_, W.rotation.injective.injOn, ?_⟩, ?_⟩
-  · intro d hd
-    simpa using hd
-  · intro d hd
-    exact ⟨W.rotation.symm d, by simpa using hd, W.rotation.apply_symm_apply d⟩
-  · intro d hd e he
-    exact (W.sameCycle_rotation_iff d e).mpr (hd.trans he.symm)
+    W.rotation.IsCycleOn (W.incident ⁻¹' {v}) :=
+  W.rotation.isCycleOn_preimage_of_sameCycle_iff W.sameCycle_rotation_iff v
 
-/-- The ends of the bipartite subdivision, including two halves for each vertex-free circle. -/
+/-- Edges of the bipartite subdivision: one per end of an interval edge, and two halves
+per vertex-free circle. -/
 abbrev RibbonEdge := W.End ⊕ (W.Circle × Bool)
 
 /-- Black vertices are original vertices or auxiliary circle vertices. -/
@@ -162,83 +213,43 @@ def ribbonRotW : Perm W.RibbonEdge :=
     W.ribbonWhiteEnd (W.ribbonRotW d) = W.ribbonWhiteEnd d := by
   rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> simp [ribbonWhiteEnd]
 
-private theorem sameCycle_ribbonRotB_circle (c : W.Circle) (b b' : Bool) :
-    W.ribbonRotB.SameCycle (.inr (c, b)) (.inr (c, b')) := by
-  have h := (Perm.SameCycle.refl W.ribbonRotB (.inr (c, b))).apply_right
-  cases b <;> cases b' <;> first | exact Perm.SameCycle.refl _ _ | simpa using h
+private theorem sameCycle_prodCongr_boolNot_iff {α : Type*} (a a' : α) (b b' : Bool) :
+    Perm.SameCycle (Equiv.prodCongr (Equiv.refl α) Equiv.boolNot) (a, b) (a', b') ↔ a = a' := by
+  have h : Function.Involutive (Equiv.prodCongr (Equiv.refl α) Equiv.boolNot : Perm _) := by
+    rintro ⟨x, p⟩
+    simp
+  rw [h.sameCycle_iff]
+  cases b <;> cases b' <;> simp
 
-private theorem sameCycle_ribbonRotW_interval (e : W.Edge) (b b' : Bool) :
-    W.ribbonRotW.SameCycle (.inl (e, b)) (.inl (e, b')) := by
-  have h := (Perm.SameCycle.refl W.ribbonRotW (.inl (e, b))).apply_right
-  cases b <;> cases b' <;> first | exact Perm.SameCycle.refl _ _ | simpa using h
+/-- Two subdivision edges lie in the same black rotation cycle exactly when they have
+the same black vertex. -/
+theorem sameCycle_ribbonRotB_iff (d e : W.RibbonEdge) :
+    W.ribbonRotB.SameCycle d e ↔ W.ribbonBlackEnd d = W.ribbonBlackEnd e := by
+  rcases d with d | ⟨c, b⟩ <;> rcases e with e | ⟨c', b'⟩
+  · simp [ribbonRotB, W.sameCycle_rotation_iff]
+  · simp [ribbonRotB]
+  · simp [ribbonRotB, Perm.sameCycle_comm (x := Sum.inr (c, b))]
+  · simp [ribbonRotB, sameCycle_prodCongr_boolNot_iff]
 
-private theorem sameCycle_ribbonRotW_circle (c : W.Circle) (b b' : Bool) :
-    W.ribbonRotW.SameCycle (.inr (c, b)) (.inr (c, b')) := by
-  have h := (Perm.SameCycle.refl W.ribbonRotW (.inr (c, b))).apply_right
-  cases b <;> cases b' <;> first | exact Perm.SameCycle.refl _ _ | simpa using h
+/-- Two subdivision edges lie in the same white rotation cycle exactly when they have
+the same white vertex. -/
+theorem sameCycle_ribbonRotW_iff (d e : W.RibbonEdge) :
+    W.ribbonRotW.SameCycle d e ↔ W.ribbonWhiteEnd d = W.ribbonWhiteEnd e := by
+  rcases d with ⟨e₁, b₁⟩ | ⟨c₁, b₁⟩ <;> rcases e with ⟨e₂, b₂⟩ | ⟨c₂, b₂⟩
+  · simp [ribbonRotW, sameCycle_prodCongr_boolNot_iff]
+  · simp [ribbonRotW]
+  · simp [ribbonRotW, Perm.sameCycle_comm (x := Sum.inr (c₁, b₁))]
+  · simp [ribbonRotW, sameCycle_prodCongr_boolNot_iff]
 
 /-- Every black incidence fibre of the subdivision is a single cycle. -/
 theorem isCycleOn_ribbonRotB (v : W.Vertex ⊕ W.Circle) :
-    W.ribbonRotB.IsCycleOn (W.ribbonBlackEnd ⁻¹' {v}) := by
-  refine ⟨⟨?_, W.ribbonRotB.injective.injOn, ?_⟩, ?_⟩
-  · intro d hd
-    simpa using hd
-  · intro d hd
-    refine ⟨W.ribbonRotB.symm d, ?_, W.ribbonRotB.apply_symm_apply d⟩
-    have h := W.ribbonBlackEnd_rotB (W.ribbonRotB.symm d)
-    rw [W.ribbonRotB.apply_symm_apply] at h
-    exact h.symm.trans hd
-  · intro d hd e he
-    have h : W.ribbonBlackEnd d = W.ribbonBlackEnd e := hd.trans he.symm
-    cases d with
-    | inl d =>
-      cases e with
-      | inl e =>
-        exact ((W.sameCycle_rotation_iff d e).mpr (Sum.inl.inj h)).map
-          (fun _ => rfl)
-      | inr e => simp [ribbonBlackEnd] at h
-    | inr d =>
-      cases e with
-      | inl e => simp [ribbonBlackEnd] at h
-      | inr e =>
-        obtain ⟨c, b⟩ := d
-        obtain ⟨c', b'⟩ := e
-        have hc : c = c' := Sum.inr.inj h
-        subst c'
-        exact W.sameCycle_ribbonRotB_circle c b b'
+    W.ribbonRotB.IsCycleOn (W.ribbonBlackEnd ⁻¹' {v}) :=
+  W.ribbonRotB.isCycleOn_preimage_of_sameCycle_iff W.sameCycle_ribbonRotB_iff v
 
 /-- Every white incidence fibre of the subdivision is a single cycle. -/
 theorem isCycleOn_ribbonRotW (v : W.Edge ⊕ W.Circle) :
-    W.ribbonRotW.IsCycleOn (W.ribbonWhiteEnd ⁻¹' {v}) := by
-  refine ⟨⟨?_, W.ribbonRotW.injective.injOn, ?_⟩, ?_⟩
-  · intro d hd
-    simpa using hd
-  · intro d hd
-    refine ⟨W.ribbonRotW.symm d, ?_, W.ribbonRotW.apply_symm_apply d⟩
-    have h := W.ribbonWhiteEnd_rotW (W.ribbonRotW.symm d)
-    rw [W.ribbonRotW.apply_symm_apply] at h
-    exact h.symm.trans hd
-  · intro d hd e he
-    have h : W.ribbonWhiteEnd d = W.ribbonWhiteEnd e := hd.trans he.symm
-    cases d with
-    | inl d =>
-      cases e with
-      | inl e =>
-        obtain ⟨a, b⟩ := d
-        obtain ⟨a', b'⟩ := e
-        have ha : a = a' := Sum.inl.inj h
-        subst a'
-        exact W.sameCycle_ribbonRotW_interval a b b'
-      | inr e => simp [ribbonWhiteEnd] at h
-    | inr d =>
-      cases e with
-      | inl e => simp [ribbonWhiteEnd] at h
-      | inr e =>
-        obtain ⟨c, b⟩ := d
-        obtain ⟨c', b'⟩ := e
-        have hc : c = c' := Sum.inr.inj h
-        subst c'
-        exact W.sameCycle_ribbonRotW_circle c b b'
+    W.ribbonRotW.IsCycleOn (W.ribbonWhiteEnd ⁻¹' {v}) :=
+  W.ribbonRotW.isCycleOn_preimage_of_sameCycle_iff W.sameCycle_ribbonRotW_iff v
 
 /-- The bipartite ribbon graph of the compatible rotation system, with every interval
 subdivided once and every vertex-free circle retained as a two-edge component. -/
@@ -268,15 +279,30 @@ noncomputable abbrev ribbonGraph : BipartiteRibbonGraph where
   isCycleOn_rotB := W.isCycleOn_ribbonRotB
   isCycleOn_rotW := W.isCycleOn_ribbonRotW
 
-@[simp] theorem ribbonGraph_blackEnd (d : W.RibbonEdge) :
+@[simp] theorem blackEnd_ribbonGraph (d : W.RibbonEdge) :
     W.ribbonGraph.blackEnd d = W.ribbonBlackEnd d := (rfl)
 
-@[simp] theorem ribbonGraph_whiteEnd (d : W.RibbonEdge) :
+@[simp] theorem whiteEnd_ribbonGraph (d : W.RibbonEdge) :
     W.ribbonGraph.whiteEnd d = W.ribbonWhiteEnd d := (rfl)
 
-@[simp] theorem ribbonGraph_rotB : W.ribbonGraph.rotB = W.ribbonRotB := (rfl)
+@[simp] theorem rotB_ribbonGraph : W.ribbonGraph.rotB = W.ribbonRotB := (rfl)
 
-@[simp] theorem ribbonGraph_rotW : W.ribbonGraph.rotW = W.ribbonRotW := (rfl)
+@[simp] theorem rotW_ribbonGraph : W.ribbonGraph.rotW = W.ribbonRotW := (rfl)
+
+/-- On interval ends the face permutation is the inverse of rotation followed by edge exchange.
+On each auxiliary circle it fixes both edges. -/
+@[simp] theorem facePerm_ribbonGraph :
+    W.ribbonGraph.facePerm =
+      Equiv.sumCongr ((Equiv.prodCongr (Equiv.refl _) Equiv.boolNot) * W.rotation)⁻¹ 1 := by
+  let τ : Perm (W.Circle × Bool) := Equiv.prodCongr (Equiv.refl _) Equiv.boolNot
+  have h : τ * τ = 1 := by
+    apply Equiv.ext
+    rintro ⟨c, b⟩
+    simp [τ, Perm.mul_apply]
+  rw [BipartiteRibbonGraph.facePerm_def, rotW_ribbonGraph, rotB_ribbonGraph,
+    ribbonRotW, ribbonRotB, Perm.sumCongr_mul]
+  change (Perm.sumCongr _ (τ * τ))⁻¹ = _
+  rw [h, Perm.sumCongr_inv, inv_one]
 
 /-- The number of faces of the subdivided web. The first term counts the orbits of
 edge exchange followed by effective rotation; each vertex-free circle adds two faces. -/
@@ -286,19 +312,14 @@ theorem faceCount_ribbonGraph :
         2 * Nat.card W.Circle := by
   classical
   let : Fintype W.ribbonGraph.Face := BipartiteRibbonGraph.instFintypeFace _
-  have h : W.ribbonRotW * W.ribbonRotB =
-      Equiv.sumCongr ((Equiv.prodCongr (Equiv.refl _) Equiv.boolNot) * W.rotation)
-        (1 : Perm (W.Circle × Bool)) := by
-    ext d
-    rcases d with d | ⟨c, b⟩
-    · obtain ⟨_, _⟩ := W.rotation d
-      rfl
-    · simp [Perm.mul_apply]
-  rw [BipartiteRibbonGraph.faceCount_def, ← Nat.card_eq_fintype_card, ← orbitCount_def,
-    BipartiteRibbonGraph.facePerm_def, ribbonGraph_rotW, ribbonGraph_rotB,
-    Perm.orbitCount_inv, h, Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_prod,
-    Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, orbitCount_mul_comm]
-  omega
+  calc
+    W.ribbonGraph.faceCount = orbitCount W.ribbonGraph.facePerm := by
+      rw [BipartiteRibbonGraph.faceCount_def, ← Nat.card_eq_fintype_card, orbitCount_def]
+    _ = _ := by
+      simp only [facePerm_ribbonGraph, Perm.orbitCount_sumCongr, Perm.orbitCount_inv,
+        orbitCount_one, Nat.card_prod]
+      rw [orbitCount_mul_comm (Equiv.prodCongr (Equiv.refl _) Equiv.boolNot)]
+      simp [Nat.mul_comm]
 
 /-- Subdivision does not change the Euler count `V - E + F`; the two faces of each
 vertex-free circle are included in the native ribbon-graph face count. -/
@@ -343,12 +364,12 @@ theorem eulerChar_ribbonGraph_eq_orbitCount :
     simp only [rotation, isMerge_def]
     decide +kernel
   have hcard : Nat.card theta.End = 6 := by
-    exact (by norm_num [Nat.card_eq_fintype_card] : Nat.card (Fin 3 × Bool) = 6)
+    change Nat.card (Fin 3 × Bool) = 6
+    norm_num [Nat.card_eq_fintype_card]
   have hc := hm.two_mul_orbitCount
   rw [hcard] at hc
-  have hr : orbitCount
-      (theta.rotation * Equiv.prodCongr (Equiv.refl theta.Edge) Equiv.boolNot) = 3 := by omega
-  exact hr
+  change orbitCount (theta.rotation * Equiv.prodCongr (Equiv.refl theta.Edge) Equiv.boolNot) = 3
+  omega
 
 /-- The theta web with its compatible rotation has Euler characteristic two. -/
 @[simp] theorem eulerChar_ribbonGraph_theta : theta.ribbonGraph.eulerChar = 2 := by
@@ -372,8 +393,16 @@ variable {W : ClosedWeb.{u}} {V : ClosedWeb.{v}}
   · exact f.map_ends (v, (finRotate 3).symm i)
   · exact f.map_ends (v, finRotate 3 i)
 
-/-- A boundary-incidence isomorphism of webs induces an isomorphism of the bipartite
-subdivisions, including the auxiliary circle components. -/
+/-- Web isomorphisms intertwine the inverse effective rotations. -/
+@[simp] theorem map_rotation_symm (f : W.Iso V) (e : W.Edge) (b : Bool) :
+    V.rotation.symm (f.edge e, b) =
+      (f.edge (W.rotation.symm (e, b)).1, (W.rotation.symm (e, b)).2) := by
+  apply V.rotation.injective
+  simpa only [Equiv.apply_symm_apply, Prod.mk.eta] using
+    (f.map_rotation (W.rotation.symm (e, b)).1 (W.rotation.symm (e, b)).2).symm
+
+/-- A web isomorphism induces an isomorphism of the bipartite subdivisions,
+including the auxiliary circle components. -/
 noncomputable def ribbonGraph (f : W.Iso V) : W.ribbonGraph.Iso V.ribbonGraph where
   edge := Equiv.sumCongr (Equiv.prodCongr f.edge (Equiv.refl _))
     (Equiv.prodCongr f.circle (Equiv.refl _))
@@ -382,13 +411,12 @@ noncomputable def ribbonGraph (f : W.Iso V) : W.ribbonGraph.Iso V.ribbonGraph wh
   map_blackEnd d := by
     rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> simp [ribbonBlackEnd]
   map_whiteEnd d := by
-    rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> rfl
+    rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> simp [Equiv.sumCongr_apply, Equiv.prodCongr_apply]
   map_rotB d := by
-    rcases d with ⟨e, b⟩ | ⟨c, b⟩
-    · simp [Equiv.sumCongr_apply, Equiv.prodCongr_apply, Prod.map, map_rotation]
-    · rfl
+    rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;>
+      simp [Equiv.sumCongr_apply, Equiv.prodCongr_apply, Prod.map, map_rotation]
   map_rotW d := by
-    rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> rfl
+    rcases d with ⟨e, b⟩ | ⟨c, b⟩ <;> simp [Equiv.sumCongr_apply, Equiv.prodCongr_apply]
 
 @[simp] theorem ribbonGraph_edge (f : W.Iso V) :
     f.ribbonGraph.edge = Equiv.sumCongr (Equiv.prodCongr f.edge (Equiv.refl _))
@@ -401,5 +429,12 @@ noncomputable def ribbonGraph (f : W.Iso V) : W.ribbonGraph.Iso V.ribbonGraph wh
     f.ribbonGraph.white = Equiv.sumCongr f.edge f.circle := (rfl)
 
 end Iso
+
+/-- Relabelling transports the effective rotation along the equivalence of edge ends. -/
+@[simp] theorem rotation_relabel_apply {V E C : Type v}
+    (v : W.Vertex ≃ V) (e : W.Edge ≃ E) (c : W.Circle ≃ C) (d : E × Bool) :
+    (W.relabel v e c).rotation d =
+      (e (W.rotation (e.symm d.1, d.2)).1, (W.rotation (e.symm d.1, d.2)).2) := by
+  simpa using (W.relabelIso v e c).map_rotation (e.symm d.1) d.2
 
 end TauCeti.ClosedWeb

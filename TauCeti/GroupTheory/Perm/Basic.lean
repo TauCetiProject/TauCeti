@@ -234,6 +234,20 @@ theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
     rw [hfibre]
     exact σ.isCycleOn_setOf_sameCycle x
 
+/-- If two points lie in the same cycle exactly when their images under `f` agree,
+then the permutation is a single cycle on each fibre of `f`. Empty fibres are allowed. -/
+theorem isCycleOn_preimage_of_sameCycle_iff {β : Type*} {f : α → β}
+    (h : ∀ x y, σ.SameCycle x y ↔ f x = f y) (b : β) : σ.IsCycleOn (f ⁻¹' {b}) := by
+  rcases Set.eq_empty_or_nonempty (f ⁻¹' {b}) with he | ⟨x, hx⟩
+  · rw [he]
+    exact isCycleOn_empty
+  · have hxb : f x = b := hx
+    have hfibre : f ⁻¹' {b} = {y | σ.SameCycle x y} := by
+      ext y
+      simp [h, hxb, eq_comm]
+    rw [hfibre]
+    exact σ.isCycleOn_setOf_sameCycle x
+
 /-- A function invariant under a permutation that is a single cycle on each fibre of `g` factors
 through `g`. -/
 theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
