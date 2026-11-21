@@ -86,23 +86,24 @@ private lemma countable_and_tsum_le_of_pairwiseDisjoint (μ : Measure X) {d : �
     (hud : u.PairwiseDisjoint fun p => closedBall p.1 p.2)
     (hu : ∀ p ∈ u, 0 < p.2 ∧ closedBall p.1 p.2 ⊆ U ∧
       c * ENNReal.ofReal (2 * p.2) ^ d ≤ μ (closedBall p.1 p.2)) :
-    u.Countable ∧ ∑' p : u, ENNReal.ofReal (2 * p.1.2) ^ d ≤ μ U / c := by
+    u.Countable ∧ ∑' p : u, ENNReal.ofReal (2 * p.val.2) ^ d ≤ μ U / c := by
   -- Disjoint balls of positive measure inside `U` are countable.
   have hcount : u.Countable := by
     have := Measure.countable_meas_pos_of_disjoint_of_meas_iUnion_ne_top μ
-      (As := fun p : u => closedBall p.1.1 p.1.2) (fun _ => measurableSet_closedBall)
-      (fun p q hpq => hud p.2 q.2 (Subtype.coe_ne_coe.2 hpq))
-      (ne_top_of_le_ne_top hUtop (measure_mono (iUnion_subset fun p => (hu _ p.2).2.1)))
-    have hall : {p : u | 0 < μ (closedBall p.1.1 p.1.2)} = univ :=
+      (As := fun p : u => closedBall p.val.1 p.val.2) (fun _ => measurableSet_closedBall)
+      (fun p q hpq => hud p.property q.property (Subtype.coe_ne_coe.2 hpq))
+      (ne_top_of_le_ne_top hUtop (measure_mono (iUnion_subset fun p => (hu _ p.property).2.1)))
+    have hall : {p : u | 0 < μ (closedBall p.val.1 p.val.2)} = univ :=
       eq_univ_of_forall fun p => (ENNReal.mul_pos hc0 (ENNReal.rpow_pos
-        (ENNReal.ofReal_pos.2 (by linarith [(hu _ p.2).1])) ENNReal.ofReal_ne_top).ne').trans_le
-          (hu _ p.2).2.2
+        (ENNReal.ofReal_pos.2 (by linarith
+            [(hu _ p.property).1])) ENNReal.ofReal_ne_top).ne').trans_le
+          (hu _ p.property).2.2
     rw [hall] at this
     exact Set.countable_coe_iff.1 (countable_univ_iff.1 this)
   refine ⟨hcount, ?_⟩
   rw [ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inr hUtop), ← ENNReal.tsum_mul_right]
-  calc ∑' p : u, ENNReal.ofReal (2 * p.1.2) ^ d * c ≤ ∑' p : u, μ (closedBall p.1.1 p.1.2) :=
-        tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.2).2.2
+  calc ∑' p : u, ENNReal.ofReal (2 * p.val.2) ^ d * c ≤ ∑' p : u, μ (closedBall p.val.1 p.val.2) :=
+        tsum_le_tsum fun p => by rw [mul_comm]; exact (hu _ p.property).2.2
     _ = μ (⋃ p ∈ u, closedBall p.1 p.2) :=
         (measure_biUnion hcount hud fun _ _ => measurableSet_closedBall).symm
     _ ≤ μ U := measure_mono (iUnion₂_subset fun p hp => (hu p hp).2.1)
@@ -212,12 +213,12 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
     (ENNReal.div_pos hε.ne' h3)).exists)
   -- Cover by the balls in `F` and the threefold enlargements of the other selected balls.
   classical
-  refine ⟨u, inferInstance, fun p => p.1.1, fun p => if p ∈ F then p.1.2 else 3 * p.1.2,
+  refine ⟨u, inferInstance, fun p => p.val.1, fun p => if p ∈ F then p.val.2 else 3 * p.val.2,
     fun p => ?_, fun x hx => ?_, ?_⟩
-  · have := (huT p.2).2.2.1
+  · have := (huT p.property).2.2.1
     dsimp only
-    split_ifs <;> linarith [(huT p.2).2.1]
-  · by_cases hxF : x ∈ ⋃ p ∈ F, closedBall p.1.1 p.1.2
+    split_ifs <;> linarith [(huT p.property).2.1]
+  · by_cases hxF : x ∈ ⋃ p ∈ F, closedBall p.val.1 p.val.2
     · obtain ⟨p, hpF, hxp⟩ := mem_iUnion₂.1 hxF
       exact mem_iUnion.2 ⟨p, by simpa [hpF] using hxp⟩
     obtain ⟨r, hrT, hrF⟩ := fine x hx _ ((isClosed_biUnion_finset fun p _ =>
@@ -227,7 +228,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ}
     refine mem_iUnion.2 ⟨⟨b, hbu⟩, ?_⟩
     simp only [hbF, ↓reduceIte, mem_closedBall]
     linarith [dist_triangle x y b.1, mem_closedBall'.1 hyx, mem_closedBall.1 hyb]
-  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) d
+  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.val.2) d
       _ ≤ μ U / c + 3 ^ d * (ε / 3 ^ d) := by gcongr
       _ ≤ μ U / c + ε := by gcongr; exact ENNReal.mul_div_le
 

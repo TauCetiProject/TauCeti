@@ -195,9 +195,9 @@ theorem exists_opens_diffeomorph_euclideanSpace {x : N} (hx : I.IsInteriorPoint 
       contMDiff_invFun := ?_ }⟩⟩
   · have hu : L (c u) ∈ b.target := by
       rw [OpenPartialHomeomorph.univBall_target _ hr]
-      exact u.2.2
+      exact u.property.2
     simp only [b.right_inv hu, ContinuousLinearEquiv.symm_apply_apply]
-    exact c.left_inv u.2.1
+    exact c.left_inv u.property.1
   · simp only [c.right_inv (hbT v), ContinuousLinearEquiv.apply_symm_apply]
     exact b.left_inv (by simp [b])
   · have hf : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) n
@@ -208,7 +208,7 @@ theorem exists_opens_diffeomorph_euclideanSpace {x : N} (hx : I.IsInteriorPoint 
             rw [← extChartAt_source I]
             exact hy.1))
         fun y hy ↦ hy.2
-    exact hf.comp_contMDiff contMDiff_subtype_val fun u ↦ u.2
+    exact hf.comp_contMDiff contMDiff_subtypeVal fun u ↦ u.property
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact (contMDiffOn_extChartAt_symm x).comp_contMDiff
       (L.symm.contDiff.comp OpenPartialHomeomorph.contDiff_univBall).contMDiff hbT
