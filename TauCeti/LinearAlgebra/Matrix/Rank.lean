@@ -80,6 +80,36 @@ public section
 
 namespace Matrix
 
+/-- The difference of matrices that agree outside one column has rank at most one. -/
+theorem rank_sub_le_one_of_col_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
+    [Finite n] (A B : Matrix m n R) (j : n)
+    (h : ∀ k ≠ j, A.col k = B.col k) : (A - B).rank ≤ 1 := by
+  classical
+  have hsub : A - B = vecMulVec (fun i ↦ A i j - B i j) (fun k ↦ if k = j then 1 else 0) := by
+    ext i k
+    by_cases hk : k = j
+    · subst k
+      simp [vecMulVec_apply]
+    · have heq : A i k = B i k := congrFun (h k hk) i
+      simp [vecMulVec_apply, hk, heq]
+  rw [hsub]
+  exact rank_vecMulVec_le _ _
+
+/-- The difference of matrices that agree outside one row has rank at most one. -/
+theorem rank_sub_le_one_of_row_eq {R m n : Type*} [CommRing R] [StrongRankCondition R]
+    [Finite n] (A B : Matrix m n R) (i : m)
+    (h : ∀ k ≠ i, A.row k = B.row k) : (A - B).rank ≤ 1 := by
+  classical
+  have hsub : A - B = vecMulVec (fun k ↦ if k = i then 1 else 0) (fun j ↦ A i j - B i j) := by
+    ext k j
+    by_cases hk : k = i
+    · subst k
+      simp [vecMulVec_apply]
+    · have heq : A k j = B k j := congrFun (h k hk) j
+      simp [vecMulVec_apply, hk, heq]
+  rw [hsub]
+  exact rank_vecMulVec_le _ _
+
 section LinearIndependent
 
 variable {m n R : Type*} [Fintype m] [DecidableEq m] [Finite n]

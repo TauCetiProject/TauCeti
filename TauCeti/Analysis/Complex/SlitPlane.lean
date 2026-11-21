@@ -22,6 +22,8 @@ displacement smaller than the distance to a pole also gives a slit-plane quotien
 points in the right half-plane lies in the slit plane as well, and positive real scaling preserves
 it.
 
+For a point `z ≠ 1` of the unit circle, `-z` lies in the slit plane.
+
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
 The module also records a locally uniform lower bound for the distance from a point of the slit
@@ -43,6 +45,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 ## Main declarations
 
 * `Complex.closedBall_one_subset_slitPlane_iff`
+* `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
+* `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
@@ -61,10 +65,12 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
-* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.ne_neg_natCast_of_mem_slitPlane`
-* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`,
+  `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
@@ -206,6 +212,12 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   rw [add_re, ofReal_re]
   positivity
 
+/-- Translating a point of the slit plane on the right by a nonnegative real number keeps it in the
+slit plane. -/
+theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    z + (t : ℂ) ∈ slitPlane := by
+  simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
+
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
@@ -280,6 +292,24 @@ theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlan
   rw [add_comm (t : ℂ)]
   exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
 
+/-- On a compact subset of the slit plane, `‖z + t‖` is uniformly bounded below by a positive
+multiple of `1 + t` for all `t ≥ 0`. -/
+theorem exists_pos_forall_mem_mul_one_add_le_norm_add_of_isCompact {K : Set ℂ}
+    (hK : IsCompact K) (hsub : K ⊆ slitPlane) :
+    ∃ c > 0, ∀ z ∈ K, ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖z + (t : ℂ)‖ := by
+  choose r hr_pos hr using fun z : K ↦
+    exists_pos_forall_mem_ball_mul_one_add_le_norm_add (hsub z.property)
+  have hcov : K ⊆ ⋃ z : K, Metric.ball (z : ℂ) (r z) := fun z hz ↦
+    Set.mem_iUnion.mpr ⟨⟨z, hz⟩, Metric.mem_ball_self (hr_pos ⟨z, hz⟩)⟩
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun z : K ↦ Metric.ball (z : ℂ) (r z))
+    (fun _ ↦ Metric.isOpen_ball) hcov
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
+    exact False.elim (by simpa using hs hz)
+  · refine ⟨s.inf' hne r, (Finset.lt_inf'_iff hne).mpr fun z _ ↦ hr_pos z, fun z hz t ht ↦ ?_⟩
+    obtain ⟨w, hw, hzw⟩ := Set.mem_iUnion₂.mp (hs hz)
+    exact (mul_le_mul_of_nonneg_right (s.inf'_le r hw) (by linarith)).trans (hr w z hzw ⟨t, ht⟩)
+
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
 theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 0 < t → ‖x / ((t : ℂ) + x) * t‖ ≤ C := by
@@ -315,6 +345,31 @@ namespace Complex
 /-- A point off the slit plane is real. -/
 theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
   by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
+
+/-- Complex conjugation preserves membership in the slit plane. -/
+@[simp]
+theorem conj_mem_slitPlane {z : ℂ} : (starRingEnd ℂ) z ∈ slitPlane ↔ z ∈ slitPlane := by
+  simp [mem_slitPlane_iff]
+
+/-- A complex number lies in the slit plane if and only if no nonnegative real translate
+vanishes. -/
+theorem mem_slitPlane_iff_add_ofReal_ne_zero {z : ℂ} :
+    z ∈ slitPlane ↔ ∀ t : ℝ, 0 ≤ t → z + (t : ℂ) ≠ 0 := by
+  refine ⟨fun hz t ht ↦ slitPlane_ne_zero (TauCeti.add_ofReal_mem_slitPlane hz ht),
+    fun h ↦ by_contra fun hz ↦ ?_⟩
+  have him : z.im = 0 := im_eq_zero_of_notMem_slitPlane hz
+  have hre : z.re ≤ 0 := le_of_not_gt fun hp ↦ hz (mem_slitPlane_iff.mpr (Or.inl hp))
+  refine h (-z.re) (neg_nonneg.mpr hre) ?_
+  apply Complex.ext <;> simp [him]
+
+open scoped ComplexOrder in
+/-- A point `z ≠ 1` of the unit circle has `-z` in the slit plane: `-z` is a nonpositive real
+number only if `z` is a nonnegative real number of modulus one, that is, `z = 1`. -/
+theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    -z ∈ slitPlane := by
+  rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+  intro h
+  exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
 
 /-- Scaling `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

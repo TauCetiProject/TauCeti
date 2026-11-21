@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
 /-!
@@ -14,11 +15,16 @@ The linear map `f.coprod g : M₁ × M₂ → M`, `(a, b) ↦ f a + g b`, is bij
 and `g` are injective and their ranges are complementary submodules of `M`. This is the linear
 algebra behind recognising an internal direct sum decomposition `M = range f ⊕ range g`, and
 behind inverse-function-theorem arguments whose differential has the form `(a, b) ↦ f a + g b`.
+For two vectors `a` and `b`, the map `(s, t) ↦ s • a - t • b` out of `R × R` is injective exactly
+when `a` and `b` are linearly independent
+(`LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff`).
 -/
 
 public section
 
 namespace LinearMap
+
+section Bijective
 
 variable {R M₁ M₂ M : Type*} [Semiring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
   [Module R M₂] [AddCommGroup M] [Module R M]
@@ -45,5 +51,20 @@ theorem bijective_coprod_iff {f : M₁ →ₗ[R] M} {g : M₂ →ₗ[R] M} :
     exact Prod.ext ((injective_iff_map_eq_zero f).1 hf a hk.1)
       ((injective_iff_map_eq_zero g).1 hg b hk.2)
   · rw [← range_eq_top, range_coprod, hc.sup_eq_top]
+
+end Bijective
+
+/-- The map `(s, t) ↦ s • a - t • b` out of `R × R` is injective exactly when `a` and `b` are
+linearly independent. -/
+theorem injective_fst_smulRight_sub_snd_smulRight_iff {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] {a b : M} :
+    Function.Injective ((fst R R R).smulRight a - (snd R R R).smulRight b) ↔
+      LinearIndependent R ![a, b] := by
+  refine ⟨fun h ↦ LinearIndependent.pair_iff.2 fun s t hst ↦ ?_, fun hab ↦ ?_⟩
+  · have hp := h (a₁ := (s, -t)) (a₂ := 0) (by simpa [sub_eq_add_neg] using hst)
+    exact ⟨congrArg Prod.fst hp, neg_eq_zero.1 (congrArg Prod.snd hp)⟩
+  · refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
+    have h := LinearIndependent.pair_iff.1 hab p.1 (-p.2) (by simpa [sub_eq_add_neg] using hp)
+    exact Prod.ext h.1 (neg_eq_zero.1 h.2)
 
 end LinearMap

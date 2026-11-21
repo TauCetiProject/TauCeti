@@ -75,8 +75,9 @@ f.radius` or `A` is ultrametric and `f` is restricted at `b ^ k`.
   `PowerSeries.convergenceRadius_le_convergenceRadius_of_norm_eq`,
   `PowerSeries.convergenceRadius_eq_convergenceRadius_of_norm_eq`, and
   `PowerSeries.convergenceRadius_le_convergenceRadius_of_norm_coeff_le`: upper bound by `f.radius`,
-  vanishing and infinite criteria over complete nontrivially normed fields, invariance under
-  isometric algebra maps, and coefficient comparison.
+  vanishing and infinite criteria over complete nontrivially normed fields, monotonicity under
+  isometric algebra maps and invariance under isometric algebra equivalences, and coefficient
+  comparison.
 * `PowerSeries.radius_le_convergenceRadius_of_forall_exists_lt_norm_lt`,
   `PowerSeries.convergenceRadius_eq_radius_of_forall_exists_lt_norm_lt`,
   `PowerSeries.convergenceRadius_eq_radius_of_Ioi_subset_closure`,
@@ -251,15 +252,25 @@ end UltrametricEval
 /-- **Closed-disc evaluation bound from convergence at one point.** If `f` converges at `x`, then
 `‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f` for every `y : A` with `‖y‖ ≤ ‖x‖`. -/
 theorem norm_evalAt_le_gaussNorm_of_summable_smul_pow {R A : Type*} [NormedCommRing R]
-    [NormedRing A] [Algebra R A] [NormSMulClass R A] [NormMulClass A] [IsUltrametricDist A]
+    [SeminormedRing A] [Algebra R A] [NormSMulClass R A] [NormMulClass A] [IsUltrametricDist A]
     {f : R⟦X⟧} {x y : A} (hy : ‖y‖ ≤ ‖x‖) (h : Summable fun n ↦ coeff n f • x ^ n) :
     ‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f := by
-  rcases subsingleton_or_nontrivial A with _ | _
-  · rw [Subsingleton.elim (f.evalAt y) 0, norm_zero]
-    exact gaussNorm_nonneg norm ‖x‖ f norm_nonneg
-  · have : NormOneClass A := NormMulClass.toNormOneClass
-    exact PowerSeries.norm_evalAt_le_gaussNorm
-      (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (isRestricted_norm_of_summable h)) hy
+  have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (isRestricted_norm_of_summable h)
+  rw [evalAt_def]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (gaussNorm_nonneg norm ‖x‖ f norm_nonneg) fun n ↦ ?_
+  cases n with
+  | zero =>
+    have hmul : ‖(1 : A)‖ * ‖(1 : A)‖ = ‖(1 : A)‖ := by simpa using (norm_mul (1 : A) 1).symm
+    have h1 : ‖(1 : A)‖ ≤ 1 := by nlinarith [norm_nonneg (1 : A)]
+    calc ‖coeff 0 f • y ^ 0‖ = ‖coeff 0 f‖ * ‖(1 : A)‖ := by simp [norm_smul]
+      _ ≤ ‖coeff 0 f‖ * 1 := mul_le_mul_of_nonneg_left h1 (norm_nonneg _)
+      _ ≤ gaussNorm norm ‖x‖ f := by simpa using le_gaussNorm norm ‖x‖ f hf 0
+  | succ n =>
+    calc ‖coeff (n + 1) f • y ^ (n + 1)‖ = ‖coeff (n + 1) f‖ * ‖y‖ ^ (n + 1) :=
+        norm_coeff_smul_pow_succ f y n
+      _ ≤ ‖coeff (n + 1) f‖ * ‖x‖ ^ (n + 1) := by gcongr
+      _ ≤ gaussNorm norm ‖x‖ f := le_gaussNorm norm ‖x‖ f hf (n + 1)
 
 section ConvergenceRadiusDef
 
