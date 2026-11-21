@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.UniformOn
+import Mathlib.MeasureTheory.Measure.Portmanteau
 
 /-!
 # Empirical measures of finite families and sequences
@@ -340,6 +341,25 @@ theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasura
   refine (ProbabilityMeasure.toFiniteMeasure_isEmbedding α).continuous_iff.mpr ?_
   simpa only [Function.comp_def, toFiniteMeasure_empiricalMeasureOfFintype] using
     continuous_empiricalFiniteMeasure
+
+open Filter in
+open scoped Topology in
+/-- If empirical probability measures converge weakly, an open set with positive limiting
+mass contains a sample point eventually. The finite, nonempty sample type may vary. -/
+theorem _root_.Filter.Tendsto.eventually_exists_mem_of_empiricalMeasureOfFintype
+    {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, Nonempty (m i)]
+    [TopologicalSpace α] [OpensMeasurableSpace α] [HasOuterApproxClosed α]
+    {x : (i : ι) → m i → α} {l : Filter ι} {μ : ProbabilityMeasure α}
+    (h : Tendsto (fun i ↦ empiricalMeasureOfFintype (x i)) l (𝓝 μ))
+    {U : Set α} (hU : IsOpen U) (hpos : 0 < (μ : Measure α) U) :
+    ∀ᶠ i in l, ∃ j, x i j ∈ U := by
+  classical
+  have hlim := ProbabilityMeasure.le_liminf_measure_open_of_tendsto h hU
+  filter_upwards [eventually_lt_of_lt_liminf (hpos.trans_le hlim)] with i hi
+  rw [empiricalMeasureOfFintype_apply hU.measurableSet] at hi
+  by_contra! hz
+  simp only [Set.indicator_of_notMem (hz _), Finset.sum_const_zero, mul_zero, lt_self_iff_false]
+    at hi
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :

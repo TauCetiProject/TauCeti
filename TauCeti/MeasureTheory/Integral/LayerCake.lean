@@ -123,7 +123,8 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- The measures of the strict superlevel sets at positive integer thresholds of an
 integrable real function have finite sum, even on an infinite measure space. -/
-theorem tsum_measure_nat_succ_lt_lt_top {μ : Measure α} {g : α → ℝ} (hint : Integrable g μ) :
+theorem _root_.MeasureTheory.Integrable.tsum_measure_mem_Ioi_nat_succ_lt_top
+    {μ : Measure α} {g : α → ℝ} (hint : Integrable g μ) :
     (∑' i : ℕ, μ {x | g x ∈ Ioi ((i + 1 : ℕ) : ℝ)}) < ∞ := by
   let f := hint.aemeasurable.mk g
   calc
@@ -148,7 +149,6 @@ theorem tsum_measure_nat_succ_lt_lt_top {μ : Measure α} {g : α → ℝ} (hint
     _ < ∞ := by
       rw [← ofReal_integral_eq_lintegral_ofReal hint.norm (.of_forall fun _ ↦ norm_nonneg _)]
       exact ENNReal.ofReal_lt_top
-
 
 /-- **Two-function layer cake.** The integral of the product of two nonnegative functions is the
 double integral of the measures of the intersections of their strict superlevel sets:

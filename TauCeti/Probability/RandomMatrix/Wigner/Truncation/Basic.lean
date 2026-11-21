@@ -48,13 +48,6 @@ open Set
 
 variable {Ω : Type*} {ξ : StrictUpper → Ω → ℂ}
 
-private theorem div_lt_norm_wignerMatrix_apply_iff {n : ℕ} (ω : Ω)
-    {i j : Fin n} (hij : i ≠ j) (R : ℝ) :
-    R / Real.sqrt n < ‖wignerMatrix ξ (fun _ _ ↦ 0) n ω i j‖ ↔
-      R < ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ ω‖ := by
-  rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div,
-    div_lt_div_iff_of_pos_right (Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.zero_lt_of_lt i.isLt)))]
-
 /-- The discarded part of a zero-diagonal Wigner corner is exactly the entrywise
 hard threshold at the cutoff divided by the square root of the dimension. -/
 theorem wignerMatrix_sub_indicator_eq_hardThreshold {n : ℕ}
@@ -66,7 +59,8 @@ theorem wignerMatrix_sub_indicator_eq_hardThreshold {n : ℕ}
   by_cases hij : i = j
   · subst j
     simp [Matrix.hardThreshold_apply]
-  simp only [wignerMatrix_sub, Matrix.hardThreshold_apply, div_lt_norm_wignerMatrix_apply_iff _ hij]
+  simp only [wignerMatrix_sub, Matrix.hardThreshold_apply,
+    div_lt_norm_wignerMatrix_apply_iff _ _ _ hij]
   rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
   · simp only [wignerMatrix_apply_of_lt _ _ _ h, min_eq_left h.le, max_eq_right h.le,
       indicator_apply, mem_ofPred_eq, ← not_lt, ite_not]
@@ -100,6 +94,59 @@ theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
   funext k ω
   cases k <;> simp only [g, Function.comp_def, Sum.elim_inl, Sum.elim_inr,
     centeredTruncation_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq]
+
+end TauCeti.Probability
+
+namespace TauCeti
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
+  {X : Ω → ℂ}
+
+/-- For a centered truncated Wigner corner, the absolute entry moment of order
+`k+2` is bounded by the common second-moment bound divided by the dimension, times
+`(2 * R / √n)^k`. Here `2 * R / √n` bounds the entries after centering. -/
+theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
+    [IsProbabilityMeasure P] {n : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hLp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ M)
+    (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * (M / n) := by
+  have hupper (ij : StrictUpper) (hij : ij.val.2 < n) :
+      ∫ ω, ‖centeredTruncation (ξ ij) P R ω‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
+    exact ((hLp ij hij).integral_norm_centeredTruncation_pow_le R k).trans
+      (mul_le_mul_of_nonneg_left (hξ ij hij) (by positivity))
+  have hdiag (i : ℕ) (_ : i < n) :
+      ∫ _ : Ω, ‖(0 : ℝ)‖ ^ (k + 2) ∂P ≤ (2 * (R : ℝ)) ^ k * M := by
+    simpa only [norm_zero, zero_pow (Nat.succ_ne_zero (k + 1)), integral_zero] using
+      mul_nonneg (by positivity) hM
+  refine (integral_norm_wignerMatrix_apply_pow_le hupper hdiag i j).trans_eq ?_
+  rw [pow_add, inv_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_pow]
+  ring
+
+/-- With a common upper-entry law, the original second moment of that law bounds
+the absolute entry moments of the centered truncated Wigner corner. -/
+theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistrib
+    [IsProbabilityMeasure P] {n : ℕ}
+    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
+    (hX : MemLp X 2 P) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
+      (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂P) / n) :=
+  integral_norm_wignerMatrix_centeredTruncation_apply_pow_le (integral_nonneg fun _ ↦ sq_nonneg _)
+    (fun ij hij ↦ (hid ij hij).symm.memLp_snd hX)
+    (fun ij hij ↦ ((hid ij hij).comp
+      (by fun_prop : Measurable (fun z : ℂ ↦ ‖z‖ ^ 2))).integral_eq.le) R i j k
+
+end TauCeti
+
+namespace TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
 variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
   (hd : ∀ ij, IdentDistrib (ξ ij) X P P)

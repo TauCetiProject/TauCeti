@@ -12,7 +12,6 @@ import TauCeti.Probability.RandomMatrix.Diagonal
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.TraceWord
 import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
-import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 
 /-!
 # Reduction of Wigner edge limits to a growing trace bound
@@ -84,12 +83,14 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
       exact hi.re
     · simpa only [B, R, RCLike.re_to_complex] using htrace'
   have happrox : ∀ᵐ ω ∂P, Tendsto (fun n ↦ ‖Z n ω - B n ω‖) atTop (𝓝 0) := by
-    simpa only [B, Z, R] using ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_centeredTruncation
-      (η := fun _ _ ↦ 0) hind hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const)
+    simpa only [B, Z, R] using ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
+      (η := fun _ _ ↦ 0) (fun _ ↦
+        (hind.precomp Subtype.val_injective).wignerMatrix_row_apply_of_ne)
+      hid hξ hmean (fun _ ↦ IdentDistrib.refl aemeasurable_const)
       (memLp_const 0) ha
   have hweak := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
     hind hid (hξ.mono_exponent (by norm_num)) hmean 1 (by simpa using hvar)
-  have hdiag := ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
+  have hdiag := ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη
   filter_upwards [hnorm, happrox, hweak, hdiag] with ω hn hdiff hw hdω
   have hZnorm r (hr : 2 < r) : ∀ᶠ n in atTop, ‖Z n ω‖ < r := by
     have hgap : 0 < (r - 2) / 2 := by linarith
@@ -97,18 +98,18 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
     have htri : ‖Z n ω‖ ≤ ‖Z n ω - B n ω‖ + ‖B n ω‖ := by
       simpa only [sub_zero] using norm_sub_le_norm_sub_add_norm_sub (Z n ω) (B n ω) 0
     exact htri.trans_lt ((add_lt_add hδ hBn).trans_eq (by ring))
-  have hmax := tendsto_eigenvalues₀_bot_of_tendsto_spectralMeasure
-    (hA := fun n ↦ hZ n ω) hw (c := 2) (by simp [support_semicircleReal]) (fun r hr ↦
+  have hmax := hw.eigenvalues₀_bot_of_eventually_lt
+    (hA := fun n ↦ hZ n ω) (c := 2) (by simp [support_semicircleReal]) (fun r hr ↦
       (hZnorm r hr).mono fun n hn ↦ (Real.le_norm_self _).trans_lt
         (((hZ n ω).norm_eigenvalues₀_le_l2_opNorm ⊥).trans_lt hn))
-  have hmin := tendsto_eigenvalues₀_top_of_tendsto_spectralMeasure
-    (hA := fun n ↦ hZ n ω) hw (c := -2) (by simp [support_semicircleReal]) (fun r hr ↦
+  have hmin := hw.eigenvalues₀_top_of_eventually_gt
+    (hA := fun n ↦ hZ n ω) (c := -2) (by simp [support_semicircleReal]) (fun r hr ↦
       (hZnorm (-r) (by linarith)).mono fun n hn ↦ by
         have h := ((hZ n ω).norm_eigenvalues₀_le_l2_opNorm ⊤).trans_lt hn
         simpa only [neg_neg, Real.norm_eq_abs] using (neg_lt_neg h).trans_le (neg_abs_le _))
-  exact ⟨tendsto_eigenvalues₀_of_tendsto_norm_sub_zero
-      (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) (fun n ↦ hZ n ω) (fun _ ↦ ⊥) hdω hmax,
-    tendsto_eigenvalues₀_of_tendsto_norm_sub_zero
-      (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) (fun n ↦ hZ n ω) (fun _ ↦ ⊤) hdω hmin⟩
+  exact ⟨hmax.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
+      (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hdω,
+    hmin.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
+      (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hdω⟩
 
 end TauCeti.Probability

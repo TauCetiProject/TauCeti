@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Diagonal
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.StrongLaw
+import TauCeti.Probability.IdentDistrib
 
 /-!
 # Removing an i.i.d. diagonal without moment assumptions
@@ -19,8 +20,11 @@ required. The full-measure event works for every limiting probability measure at
 
 In particular a Wigner matrix and its zero-diagonal version have the same almost-sure weak
 spectral limits. This separates the arbitrary diagonal law from the finite-second-moment
-off-diagonal hypotheses in the semicircle law. The result concerns global spectral limits;
-individual extreme eigenvalues need not be stable under these perturbations.
+off-diagonal hypotheses in the semicircle law.
+
+With identically distributed diagonal entries of finite second moment, the Wigner diagonal
+perturbation tends to zero in Euclidean operator norm almost surely. This result requires
+no independence.
 
 ## References
 
@@ -95,8 +99,9 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_iff
 omit [IsFiniteMeasure P] in
 open scoped Matrix.Norms.L2Operator in
 /-- Removing the diagonal changes the normalized operator norm by a quantity tending
-to zero almost surely under a common finite second moment. -/
-theorem ae_tendsto_norm_wignerMatrix_sub_wignerMatrix_zero
+to zero almost surely for identically distributed diagonal entries of finite second moment.
+No independence is required. -/
+theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
     (hid : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -

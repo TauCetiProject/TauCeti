@@ -549,8 +549,8 @@ theorem exp_neg_mul_abs_isLittleO_abs_rpow_cocompact {a : ℝ} (ha : 0 < a) (s :
     (isLittleO_exp_neg_mul_rpow_atTop ha s).comp_tendsto
       (tendsto_norm_cocompact_atTop (E := ℝ))
 
-/-- If the order `k` is at least `B * log x`, the geometric factor `q^k`
-offsets the power `x^d` up to any exponent at least `d + B * log q`. -/
+/-- For `x ≥ 1` and `0 < q ≤ 1`, if `k ≥ B * log x` then `x^d * q^k` is
+at most `x^e` for any `e ≥ d + B * log q`. -/
 theorem rpow_mul_pow_le_rpow_of_log_le {x q B d e : ℝ} {k : ℕ} (hx : 1 ≤ x)
     (hq : 0 < q) (hq' : q ≤ 1) (hk : B * Real.log x ≤ k) (he : d + B * Real.log q ≤ e) :
     x ^ d * q ^ k ≤ x ^ e := by

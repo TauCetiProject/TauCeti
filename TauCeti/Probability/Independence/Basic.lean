@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
+import Mathlib.Data.Finset.Powerset
 import TauCeti.Probability.HasLaw
 
 /-!
@@ -30,12 +31,40 @@ everywhere at each index, preserving independence and identical distribution
 
 public section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Set
+open scoped ENNReal
 
 namespace TauCeti.Probability
 
 variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
-  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω} [IsProbabilityMeasure μ]
+  [∀ i, MeasurableSpace (β i)] {μ : Measure Ω}
+
+open scoped Classical in
+/-- For a finite array of events, each row consisting of independent events with measures at
+most `p`, the measure that some row contains at least `q` occurring events is bounded by
+`p ^ q` times the total number of `q`-element subsets of rows. -/
+theorem measure_exists_le_card_filter_mem_le {κ : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (κ i)] (E : (i : ι) → κ i → Set Ω) (hE : ∀ i, iIndepSet (E i) μ)
+    {p : ℝ≥0∞} (hp : ∀ i j, μ (E i j) ≤ p) (q : ℕ) :
+    μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ≤
+      ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * p ^ q := by
+  let U (i : ι) := ⋃ S ∈ (Finset.univ : Finset (κ i)).powersetCard q, ⋂ j ∈ S, E i j
+  have hcover : {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ⊆ ⋃ i, U i := by
+    rintro ω ⟨i, hi⟩
+    obtain ⟨S, hsub, hcard⟩ := Finset.exists_subset_card_eq hi
+    refine mem_iUnion.2 ⟨i, mem_iUnion₂.2 ⟨S, Finset.mem_powersetCard.2 ⟨
+      Finset.subset_univ _, hcard⟩, ?_⟩⟩
+    exact mem_iInter₂.2 fun j hj ↦ (Finset.mem_filter.1 (hsub hj)).2
+  refine ((measure_mono hcover).trans (measure_iUnion_fintype_le μ U)).trans ?_
+  refine Finset.sum_le_sum fun i _ ↦ (measure_biUnion_finset_le _ _).trans ?_
+  calc
+    _ ≤ ∑ _S ∈ (Finset.univ : Finset (κ i)).powersetCard q, p ^ q := by
+      refine Finset.sum_le_sum fun S hS ↦ ?_
+      rw [(hE i).meas_biInter, ← (Finset.mem_powersetCard.1 hS).2, ← Finset.prod_const]
+      exact Finset.prod_le_prod fun j _ ↦ hp i j
+    _ = _ := by simp [Finset.card_powersetCard, nsmul_eq_mul]
+
+variable [IsProbabilityMeasure μ]
 
 /-- A family is independent if its coordinates are almost surely constant outside a subsingleton
 set of indices. The constants and the exceptional null sets may depend on the coordinate. -/

@@ -114,36 +114,49 @@ end Normed
 
 section TruncationMean
 
-variable [NormedSpace ℝ E] {X : Ω → E} {P : Measure Ω} [IsFiniteMeasure P]
+variable [NormedSpace ℝ E] {X : Ω → E} {P : Measure Ω}
 
 /-- For a centered variable, the norm of its truncated mean is bounded by the absolute
-moment of order `k+1` divided by the `k`-th power of the cutoff. -/
+moment of order `k+1` divided by the `k`-th power of the cutoff. The measure may be infinite.
+If the original variable is nonintegrable, the retained part is nonintegrable as well,
+and its Bochner integral is zero by convention. -/
 theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_eq_zero
-    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P) (hmean : ∫ ω, X ω ∂P = 0) {r : ℝ} (hr : 0 < r) :
+    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P)
+    (hmean : ∫ ω, X ω ∂P = 0) {r : ℝ} (hr : 0 < r) :
     ‖∫ ω, {ω' | ‖X ω'‖ ≤ r}.indicator X ω ∂P‖ ≤
       (∫ ω, ‖X ω‖ ^ (k + 1) ∂P) / r ^ k := by
-  have hint := hX.integrable (by exact_mod_cast Nat.succ_pos k)
   let S := {ω | r < ‖X ω‖}
   have hS : NullMeasurableSet S P :=
     nullMeasurableSet_lt aemeasurable_const hX.aestronglyMeasurable.norm.aemeasurable
-  have hsplit : (∫ ω, Sᶜ.indicator X ω ∂P) = -(∫ ω, S.indicator X ω ∂P) := by
-    rw [integral_indicator₀ hS.compl, integral_indicator₀ hS,
-      setIntegral_compl₀ hS hint, hmean, zero_sub]
+  have hdom := (hX.integrable_norm_pow (Nat.succ_ne_zero k)).div_const (r ^ k)
+  have hbound : ∀ᵐ ω ∂P, ‖S.indicator X ω‖ ≤ ‖X ω‖ ^ (k + 1) / r ^ k := by
+    refine .of_forall fun ω ↦ ?_
+    by_cases hω : ω ∈ S
+    · rw [indicator_of_mem hω, le_div_iff₀ (pow_pos hr _), pow_succ, mul_comm]
+      simp only [S, Set.mem_ofPred_eq] at hω
+      exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr.le hω.le _) (norm_nonneg _)
+    · rw [indicator_of_notMem hω, norm_zero]
+      positivity
   have hcomp : Sᶜ = {ω | ‖X ω‖ ≤ r} := by ext ω; simp [S]
-  rw [← hcomp, hsplit, norm_neg, ← integral_div]
-  refine norm_integral_le_of_norm_le
-    ((hX.integrable_norm_pow (Nat.succ_ne_zero k)).div_const _) (.of_forall fun ω ↦ ?_)
-  by_cases hω : ω ∈ S
-  · rw [indicator_of_mem hω, le_div_iff₀ (pow_pos hr _), pow_succ, mul_comm]
-    simp only [S, Set.mem_ofPred_eq] at hω
-    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr.le hω.le _) (norm_nonneg _)
-  · rw [indicator_of_notMem hω, norm_zero]
-    positivity
+  rw [← hcomp]
+  by_cases hint : Integrable X P
+  · have hsplit : (∫ ω, Sᶜ.indicator X ω ∂P) = -(∫ ω, S.indicator X ω ∂P) := by
+      rw [integral_indicator₀ hS.compl, integral_indicator₀ hS,
+        setIntegral_compl₀ hS hint, hmean, zero_sub]
+    rw [hsplit, norm_neg, ← integral_div]
+    exact norm_integral_le_of_norm_le hdom hbound
+  · have htail := hdom.mono' (hX.aestronglyMeasurable.indicator₀ hS) hbound
+    have hretained : ¬ Integrable (Sᶜ.indicator X) P := by
+      intro h
+      exact hint (by simpa only [indicator_self_add_compl] using htail.add h)
+    rw [integral_undef hretained, norm_zero]
+    exact div_nonneg (integral_nonneg fun _ ↦ by positivity) (pow_nonneg hr.le _)
 
 /-- The weighted truncated mean tends to zero when the weight divided by the
 cutoff to the power `k` tends to zero and the centered variable has moment `k + 1`. -/
 theorem _root_.MeasureTheory.MemLp.tendsto_mul_norm_integral_indicator_norm_le_nhds_zero
-    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P) (hmean : ∫ ω, X ω ∂P = 0)
+    {k : ℕ} (hX : MemLp X (↑(k + 1 : ℕ)) P)
+    (hmean : ∫ ω, X ω ∂P = 0)
     {ι : Type*} {l : Filter ι} {R w : ι → ℝ} (hR : ∀ i, 0 < R i) (hw : ∀ i, 0 ≤ w i)
     (hlim : Tendsto (fun i ↦ w i / R i ^ k) l (𝓝 0)) :
     Tendsto (fun i ↦ w i * ‖∫ ω, {ω' | ‖X ω'‖ ≤ R i}.indicator X ω ∂P‖) l (𝓝 0) := by

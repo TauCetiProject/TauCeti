@@ -19,8 +19,8 @@ of an estimator.
 
 ## Main statements
 
-* `TauCeti.measure_ge_le_ofReal_integral_div` gives Markov's inequality for the extended
-  measure of a superlevel set of a nonnegative integrable real function.
+* `MeasureTheory.Integrable.measure_ge_le_ofReal_integral_div` gives Markov's inequality
+  for the extended measure of a superlevel set of a nonnegative integrable real function.
 * `TauCeti.meas_ge_le_integral_norm_sq_div_sq`: Chebyshev's inequality for the second moment,
   `μ {c ≤ ‖Y‖} ≤ (∫ ‖Y‖²) / c²`, for any measure and without centering.
 * `TauCeti.meas_gt_le_div_sq_of_integral_sq_le`: the uncentered Chebyshev inequality
@@ -41,8 +41,8 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Markov's inequality for the extended measure of a positive superlevel set of an
 integrable, almost everywhere nonnegative real function. -/
-theorem measure_ge_le_ofReal_integral_div {f : Ω → ℝ} (hf : Integrable f μ)
-    (hnonneg : 0 ≤ᵐ[μ] f) {c : ℝ} (hc : 0 < c) :
+theorem _root_.MeasureTheory.Integrable.measure_ge_le_ofReal_integral_div
+    {f : Ω → ℝ} (hf : Integrable f μ) (hnonneg : 0 ≤ᵐ[μ] f) {c : ℝ} (hc : 0 < c) :
     μ {ω | c ≤ f ω} ≤ ENNReal.ofReal ((∫ ω, f ω ∂μ) / c) := by
   have hsub : {ω | c ≤ f ω} ⊆ {ω | ENNReal.ofReal c ≤ ENNReal.ofReal (f ω)} :=
     fun _ hω ↦ ENNReal.ofReal_le_ofReal hω
@@ -60,7 +60,7 @@ theorem meas_ge_le_integral_norm_sq_div_sq [Norm E] {Y : Ω → E}
   have hsub : {ω | c ≤ ‖Y ω‖} ⊆ {ω | c ^ 2 ≤ ‖Y ω‖ ^ 2} :=
     fun _ hω ↦ pow_le_pow_left₀ hc.le hω 2
   refine (measure_mono hsub).trans ?_
-  exact measure_ge_le_ofReal_integral_div hY (.of_forall fun _ ↦ sq_nonneg _) (sq_pos_of_pos hc)
+  exact hY.measure_ge_le_ofReal_integral_div (.of_forall fun _ ↦ sq_nonneg _) (sq_pos_of_pos hc)
 
 /-- **The uncentered Chebyshev inequality.** If `Y²` is integrable with `∫ Y² ≤ v` and `0 < η`,
 then the set where `Y` exceeds `η` has measure at most `v / η²`. -/

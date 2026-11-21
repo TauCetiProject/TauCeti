@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Euclidean operator norms and the largest Gram eigenvalue
@@ -125,23 +127,18 @@ operator norm. -/
 theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
     (hA : A.IsHermitian) (j : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ j‖ ≤ ‖A‖ := by
   rw [hA.l2_opNorm_eq_norm_eigenvalues]
-  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
-  simpa only [IsHermitian.eigenvalues, e, Equiv.symm_apply_apply] using
-    norm_le_pi_norm hA.eigenvalues (e j)
+  simpa only [hA.eigenvalues_apply_equivOfCardEq] using
+    norm_le_pi_norm hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) j)
 
-/-- The `2*k`-th power of the Euclidean operator norm of a Hermitian matrix is bounded by
-the trace of its `2*k`-th power. The trace in this inequality is real. -/
+/-- For a nonempty Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is
+bounded by the real trace of its `2*k`-th power. -/
 theorem IsHermitian.l2_opNorm_pow_le_re_trace_pow [Nonempty n] {A : Matrix n n 𝕜}
     (hA : A.IsHermitian) (k : ℕ) : ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
-  obtain ⟨i, hi, hmax⟩ := Finset.exists_max_image Finset.univ
-    (fun i ↦ ‖hA.eigenvalues i‖) Finset.univ_nonempty
-  have hnorm : ‖A‖ ≤ ‖hA.eigenvalues i‖ := by
-    rw [hA.l2_opNorm_eq_norm_eigenvalues]
-    exact (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ hmax j (Finset.mem_univ j)
-  rw [hA.trace_pow_eq_sum_eigenvalues_pow]
+  rw [hA.l2_opNorm_eq_norm_eigenvalues, hA.trace_pow_eq_sum_eigenvalues_pow]
   simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]
-  refine (pow_le_pow_left₀ (norm_nonneg _) hnorm _).trans ?_
-  rw [Real.norm_eq_abs, pow_abs_two_mul]
-  exact Finset.single_le_sum (fun j _ ↦ (even_two_mul k).pow_nonneg (hA.eigenvalues j)) hi
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa using (Nat.one_le_cast.mpr Fintype.card_pos : (1 : ℝ) ≤ Fintype.card n)
+  · simpa only [Real.norm_eq_abs, pow_abs_two_mul] using
+      Pi.norm_pow_le_sum_norm_pow hA.eigenvalues (mul_ne_zero two_ne_zero hk)
 
 end Matrix

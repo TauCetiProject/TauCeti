@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Probability.StrongLaw
-import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Probability.IdentDistrib
 public import Mathlib.Analysis.Matrix.Normed
 
 /-!
@@ -181,7 +181,8 @@ theorem ae_tendsto_sum_strictUpperFin_div {Ω : Type*} [MeasurableSpace Ω] {P :
   simpa only [Function.comp_def, Y, h0] using hω.comp hd
 
 /-- The largest absolute entry of the zero-diagonal normalized Wigner corners vanishes
-almost surely under a common finite fourth moment. Independence is unnecessary. -/
+almost surely for identically distributed upper entries of finite fourth moment.
+Independence is unnecessary. -/
 theorem ae_eventually_norm_wignerMatrix_zero_apply_le
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {X : Ω → ℂ}

@@ -291,6 +291,15 @@ theorem norm_wignerMatrix_apply_of_ne {i j : Fin n} (h : i ≠ j) :
   · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, norm_star, hn,
       min_eq_right hij.le, max_eq_left hij.le]
 
+/-- An off-diagonal Wigner entry exceeds the normalized cutoff in norm exactly when
+its corresponding upper coordinate exceeds the unnormalized cutoff in norm. -/
+theorem div_lt_norm_wignerMatrix_apply_iff
+    {i j : Fin n} (hij : i ≠ j) (R : ℝ) :
+    R / Real.sqrt n < ‖wignerMatrix ξ η n ω i j‖ ↔
+      R < ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ ω‖ := by
+  rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div,
+    div_lt_div_iff_of_pos_right (Real.sqrt_pos.2 (Nat.cast_pos.2 (Nat.zero_lt_of_lt i.isLt)))]
+
 /-- The squared absolute value of an off-diagonal entry is the corresponding upper
 coordinate's squared absolute value divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
@@ -627,11 +636,43 @@ theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v :
   (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
     (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
 
+/-- Joint independence of the upper coordinates implies independence of the off-diagonal
+entries within each row of a Wigner corner. -/
+theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_row_apply_of_ne {n : ℕ}
+    (hindep : iIndepFun (fun ij : {ij : StrictUpper // ij.val.2 < n} ↦ ξ ij.val) P)
+    (i : Fin n) :
+    iIndepFun (fun (j : {j : Fin n // i ≠ j}) ω ↦ wignerMatrix ξ η n ω i j) P := by
+  refine iIndepFun_wignerMatrix_apply_of_ne (fun _ ↦ i) Subtype.val
+    Subtype.property ?_ hindep
+  intro j k hjk
+  rcases Sym2.eq_iff.mp hjk with h | h
+  · exact Subtype.ext h.2
+  · exact (k.property h.1).elim
+
 end IndependentEdges
 
 section Entries
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
+
+/-- A bound on the `k`th absolute moments of the entries in the `n × n` corner passes to Wigner
+entries with normalization factor `(√n)⁻ᵏ`. -/
+theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
+    (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B) (i j : Fin n) :
+    ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ k ∂P ≤ (Real.sqrt n)⁻¹ ^ k * B := by
+  have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
+    simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  rcases lt_trichotomy i.val j.val with h | h | h
+  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hc, integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (hξ _ j.isLt) (by positivity)
+  · obtain rfl := Fin.ext h
+    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
+      integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (hη _ i.isLt) (by positivity)
+  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
+      integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (hξ _ i.isLt) (by positivity)
 
 /-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
 expectation zero. -/

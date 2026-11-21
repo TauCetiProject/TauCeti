@@ -15,9 +15,10 @@ import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 /-!
 # Upper spectral bounds from growing even moments
 
-For each norm threshold, a sufficiently large multiple of `log (n + 1)` in the
-moment order offsets a polynomial prefactor in the sequence index `n`. The resulting
-norm tails are summable. The Borel–Cantelli step requires no independence across indices.
+At a norm threshold `r > s > 0`, where `s` is the exponential scale of the trace bound,
+a sufficiently large multiple of `log (n + 1)` in the moment order offsets a polynomial
+prefactor in the sequence index `n`. The resulting norm tails are summable. The
+Borel–Cantelli step requires no independence across indices.
 
 ## References
 
@@ -52,12 +53,16 @@ theorem meas_l2_opNorm_ge_le_integral_re_trace_pow
       (hω.l2_opNorm_pow_le_re_trace_pow k)
   have hsub : {ω | r ≤ ‖A ω‖} ≤ᵐ[P] {ω | r ^ (2 * k) ≤ RCLike.re ((A ω) ^ (2 * k)).trace} :=
     hA.mono fun _ hω h ↦ (pow_le_pow_left₀ hr.le h _).trans (hω.l2_opNorm_pow_le_re_trace_pow k)
-  exact (measure_mono_ae hsub).trans (measure_ge_le_ofReal_integral_div hint hnonneg (pow_pos hr _))
+  exact (measure_mono_ae hsub).trans (hint.measure_ge_le_ofReal_integral_div hnonneg (pow_pos hr _))
 
 variable {m : ℕ → Type*} [∀ n, Fintype (m n)] [∀ n, DecidableEq (m n)]
   {A : (n : ℕ) → Ω → Matrix (m n) (m n) 𝕜} {k : ℕ → ℕ}
 
-private theorem eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_le
+/-- At a threshold `r > s > 0`, an eventual even trace bound with exponential scale `s`
+and polynomial prefactor of degree `d` gives a summable eventual majorant for the norm tails.
+It suffices that the moment order is eventually at least `B * log (n + 1)` and
+`d + 1 < 2 * B * log (r / s)`. -/
+theorem eventually_meas_l2_opNorm_ge_le_of_integral_re_trace_pow_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     (hint : ∀ᶠ n in atTop, Integrable (fun ω ↦ RCLike.re ((A n ω) ^ (2 * k n)).trace) P)
     {s r : ℝ} (hs : 0 < s) (hr : s < r) {B C d : ℝ} (hB : d + 1 < 2 * B * Real.log (r / s))
@@ -118,9 +123,9 @@ theorem tsum_meas_l2_opNorm_ge_lt_top_of_integral_re_trace_pow_le {N : ℕ}
   · have hle := meas_l2_opNorm_ge_le_integral_re_trace_pow (hA n hn) _ (hint n hn) (hs.trans hr)
     exact (hle.trans_lt ENNReal.ofReal_lt_top).ne
 
-/-- A trace estimate with a sufficiently large logarithmic order for each threshold
-gives an almost-sure asymptotic upper norm bound. The moment orders and polynomial
-prefactors may depend on the threshold. -/
+/-- For each threshold `r > s > 0`, where `s` is the exponential trace scale, a trace estimate
+of sufficiently large logarithmic order gives an almost-sure eventual upper norm bound.
+The moment orders and polynomial prefactors may depend on the threshold. -/
 theorem ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le
     (hA : ∀ᶠ n in atTop, ∀ᵐ ω ∂P, (A n ω).IsHermitian)
     {s : ℝ} (hs : 0 < s)
