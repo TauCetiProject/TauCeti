@@ -35,7 +35,8 @@ alternatization is absorbed into the outer one
 * `ContinuousAlternatingMap.alternatizeUncurryFin_pairedWedgeCLM_comp_apply`: the identity for
   `v ↦ φ ∧ g v`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply`: alternatizing `v ↦ a v • ψ`
-  for a covector `a` valued in a normed real algebra gives the wedge `a ∧ ψ`.
+  for a covector `a` valued in a seminormed real algebra gives the wedge `a ∧ ψ`, paired through
+  the bounded coefficient action compatible with the real module structures.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply_eq_wedge`: the same identity
   for a real-valued form `ψ`, stated with the real wedge.
 -/
@@ -181,7 +182,7 @@ theorem alternatizeUncurryFin_pairedWedgeCLM_comp_apply (μ : F₁ →L[ℝ] F�
   congr 4 <;> funext i <;> congr 2
   exacts [(hcast₁ i).symm, (hcast₂ i).symm]
 
-/-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` with values in a normed
+/-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` with values in a seminormed
 algebra `𝕜` over `ℝ` with a bounded action on the coefficients of `ψ` gives the wedge `a ∧ ψ` of
 `a`, regarded as a one-form, with `ψ`, paired by scalar multiplication. For `𝕜 = ℝ` this identifies
 the term `dc ∧ ω` in the Leibniz rule `TauCeti.extDerivWithin_function_smul` with the paired wedge;

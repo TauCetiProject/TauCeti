@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
+public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 
 /-!
 # Comparing normed and topological interior products
@@ -24,6 +25,11 @@ A continuous alternating map of one vector is read as a continuous linear functi
 first slot and reading the result as a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a
 continuous linear map `ContinuousAlternatingMap.flatL`, an alternating bilinear map
 (`ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL`).
+
+For complex normed spaces, `ContinuousAlternatingMap.holCurry` is the output-scaled contraction
+`ι_v - I • ι_{I • v}`. It is twice the complex-linear part of ordinary currying, hence is
+complex-linear in the vector; `holCurry_apply` and `holCurry_map_smul` give its evaluation and
+complex linearity in the form.
 -/
 
 public section
@@ -120,5 +126,37 @@ theorem isAlt_toLinearMap₁₂_flatL (f : E [⋀^Fin 2]→L[𝕜] F) :
   simp [f.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one]
 
 end flatL
+
+section Holomorphic
+
+open Complex
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
+
+/-- The output-scaled contraction `φ ↦ ι_v φ - I • ι_{I • v} φ`, as a continuous
+complex-linear family in `v`. -/
+noncomputable def holCurry : E →L[ℂ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
+  (2 : ℝ) • ContinuousLinearMap.complexLinearPart (E := E)
+    (F := (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+    (curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip
+
+/-- Evaluation of the holomorphic contraction, with `I` acting on the output. -/
+theorem holCurry_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
+    holCurry v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
+  simp [holCurry, smul_smul]
+
+/-- Holomorphic contraction is complex-linear in the form. -/
+theorem holCurry_map_smul (v : E) (c : ℂ) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
+    holCurry v (c • φ) = c • holCurry v φ := by
+  ext w
+  simp [holCurry_apply, smul_sub, smul_smul, mul_comm]
+
+/-- Holomorphic contraction is complex-linear in the inserted vector. -/
+theorem holCurry_smul (c : ℂ) (v : E) :
+    holCurry (k := k) (F := F) (c • v) = c • holCurry v :=
+  map_smul holCurry c v
+
+end Holomorphic
 
 end ContinuousAlternatingMap

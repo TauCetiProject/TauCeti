@@ -82,7 +82,8 @@ differential forms on an almost complex manifold.
   derivation has no eigenvalues other than the type eigenvalues.
 * `ContinuousAlternatingMap.IsOfType.curryLeftTopological_sub_I_smul` and
   `ContinuousAlternatingMap.IsOfType.curryLeftTopological_add_I_smul`: inserting `2 v^(1,0)`,
-  respectively `2 v^(0,1)`, lowers the holomorphic, respectively antiholomorphic, degree by one.
+  respectively `2 v^(0,1)`, in the complex-multilinear extension to the complexification of `V`
+  lowers the holomorphic, respectively antiholomorphic, degree by one.
 * `ContinuousAlternatingMap.IsOfType.apply_update_eq_neg_I_smul` and
   `ContinuousAlternatingMap.IsOfType.map_update_smul_conj`: forms of type `(0,k)` are
   conjugate-linear in each argument.
@@ -706,6 +707,32 @@ private lemma interior_add_comp_alternatingDerivation {J : V →L[ℝ] V} (hJ : 
   match_scalars <;> ring_nf
   simp
 
+/-- The minus combination shifts a derivation eigenvalue by `-I`. -/
+private lemma alternatingDerivation_interior_sub_of_eq_smul {J : V →L[ℝ] V}
+    (hJ : ∀ v, J (J v) = -v) {ω : V [⋀^Fin (n + 1)]→L[ℝ] F} {c : ℂ}
+    (hω : J.alternatingDerivation ω = c • ω) (v : V) :
+    J.alternatingDerivation (ω.curryLeftTopological v - I • ω.curryLeftTopological (J v)) =
+      (c - I) • (ω.curryLeftTopological v - I • ω.curryLeftTopological (J v)) := by
+  have key := LinearMap.congr_fun
+    (interior_sub_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
+  simp only [LinearMap.comp_apply, hω, map_smul, LinearMap.add_apply,
+    Module.algebraMap_end_apply, LinearMap.sub_apply, LinearMap.smul_apply,
+    curryLeftTopologicalLinear_apply] at key
+  rw [eq_sub_of_add_eq key.symm, ← sub_smul]
+
+/-- The plus combination shifts a derivation eigenvalue by `+I`. -/
+private lemma alternatingDerivation_interior_add_of_eq_smul {J : V →L[ℝ] V}
+    (hJ : ∀ v, J (J v) = -v) {ω : V [⋀^Fin (n + 1)]→L[ℝ] F} {c : ℂ}
+    (hω : J.alternatingDerivation ω = c • ω) (v : V) :
+    J.alternatingDerivation (ω.curryLeftTopological v + I • ω.curryLeftTopological (J v)) =
+      (c + I) • (ω.curryLeftTopological v + I • ω.curryLeftTopological (J v)) := by
+  have key := LinearMap.congr_fun
+    (interior_add_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
+  simp only [LinearMap.comp_apply, hω, map_smul, LinearMap.sub_apply,
+    Module.algebraMap_end_apply, LinearMap.add_apply, LinearMap.smul_apply,
+    curryLeftTopologicalLinear_apply] at key
+  rw [eq_add_of_sub_eq key.symm, ← add_smul]
+
 end Interior
 
 section Nodal
@@ -879,14 +906,8 @@ theorem IsOfType.apply_update_eq_neg_I_smul (hJ : ∀ v, J (J v) = -v)
   have hfirst (u : Fin (n + 1) → V) : ω (Function.update u 0 (J (u 0))) = -I • ω u := by
     set γ := curryLeftTopological ω (u 0) - I • curryLeftTopological ω (J (u 0))
     have hγ : J.alternatingDerivation γ = (-((n : ℂ) + 2) * I) • γ := by
-      have h₁ := LinearMap.congr_fun
-        (ContinuousLinearMap.interior_sub_comp_alternatingDerivation (n := n) (F := F) hJ
-          (u 0)) ω
-      simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.sub_apply,
-        LinearMap.smul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
-        curryLeftTopologicalLinear_apply] at h₁
-      rw [← sub_eq_iff_eq_add] at h₁
-      rw [← h₁]
+      convert ContinuousLinearMap.alternatingDerivation_interior_sub_of_eq_smul hJ
+        h.alternatingDerivation_eq (u 0) using 1
       push_cast
       module
     have hγ0 : γ = 0 := eq_zero_of_alternatingDerivation_eq_smul hJ (fun p q hpq heq ↦ by
@@ -1058,34 +1079,28 @@ variable [ContinuousConstSMul ℝ F] {J : V →L[ℝ] V} {n p q : ℕ} {ω : V [
 
 /-- For `J² = -1`, inserting the vector `v` into a form of type `(p+1,q)` through the combination
 `ι_v - I • ι_{J v}` gives a form of type `(p,q)`. For an almost complex structure this is the
-interior product with `2 v^(1,0)`, where `v^(1,0) = (v - I • J v) / 2`. -/
+interior product with `2 v^(1,0)` in the complex-multilinear extension of `ω` to
+the complexification of `V`. In Lean, `I` acts on the output, not on `V`. -/
 theorem IsOfType.curryLeftTopological_sub_I_smul (hJ : ∀ v, J (J v) = -v)
     (h : ω.IsOfType J (p + 1) q) (v : V) :
     (ω.curryLeftTopological v - I • ω.curryLeftTopological (J v)).IsOfType J p q := by
-  have key := LinearMap.congr_fun
-    (ContinuousLinearMap.interior_sub_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
-  simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.add_apply,
-    Module.algebraMap_end_apply, LinearMap.sub_apply, LinearMap.smul_apply,
-    curryLeftTopologicalLinear_apply] at key
   refine ⟨by have := h.add_eq; omega, ?_⟩
-  rw [eq_sub_of_add_eq key.symm, ← sub_smul]
+  rw [ContinuousLinearMap.alternatingDerivation_interior_sub_of_eq_smul hJ
+    h.alternatingDerivation_eq]
   congr 1
   push_cast
   ring
 
 /-- For `J² = -1`, inserting the vector `v` into a form of type `(p,q+1)` through the combination
 `ι_v + I • ι_{J v}` gives a form of type `(p,q)`. For an almost complex structure this is the
-interior product with `2 v^(0,1)`, where `v^(0,1) = (v + I • J v) / 2`. -/
+interior product with `2 v^(0,1)` in the complex-multilinear extension of `ω` to
+the complexification of `V`. In Lean, `I` acts on the output, not on `V`. -/
 theorem IsOfType.curryLeftTopological_add_I_smul (hJ : ∀ v, J (J v) = -v)
     (h : ω.IsOfType J p (q + 1)) (v : V) :
     (ω.curryLeftTopological v + I • ω.curryLeftTopological (J v)).IsOfType J p q := by
-  have key := LinearMap.congr_fun
-    (ContinuousLinearMap.interior_add_comp_alternatingDerivation (F := F) (n := n) hJ v) ω
-  simp only [LinearMap.comp_apply, h.alternatingDerivation_eq, map_smul, LinearMap.sub_apply,
-    Module.algebraMap_end_apply, LinearMap.add_apply, LinearMap.smul_apply,
-    curryLeftTopologicalLinear_apply] at key
   refine ⟨by have := h.add_eq; omega, ?_⟩
-  rw [eq_add_of_sub_eq key.symm, ← add_smul]
+  rw [ContinuousLinearMap.alternatingDerivation_interior_add_of_eq_smul hJ
+    h.alternatingDerivation_eq]
   congr 1
   push_cast
   ring

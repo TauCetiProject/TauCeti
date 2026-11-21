@@ -8,10 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
-import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
-import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
-import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Leibniz
 import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
@@ -20,7 +16,8 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 
 A smooth form of type `(p,q+1)` on `ι → ℂ` whose Dolbeault differential vanishes on a finite
 product of planar domains has a smooth primitive of type `(p,q)` near every compact subproduct.
-Both the input and the primitive are `SmoothForm`s, with coefficients in a complex Banach space.
+Both the input and the primitive are smooth on all of `ι → ℂ`, with coefficients in a complex
+Banach space; only closedness and the primitive equation are restricted to the indicated sets.
 Exactness is asserted near the compact product, and on polydiscs on every smaller concentric
 polydisc, with no claim of exactness on the whole original domain.
 
@@ -38,7 +35,7 @@ For forms of type `(0,q+1)` the coefficients of the input are closed for the coo
 solves for the coefficients of a primitive near the compact product, and these are extended
 smoothly and assembled into a form (`SmoothForm.exists_isOfType_conjCoeff_eq`).
 
-The general case reduces to this one by induction on `p`. Inserting `2 v^(1,0)`, that is applying
+The general case reduces to this one by induction on `p`. Applying the output-scaled contraction
 `ι_v - I • ι_{I • v}`, lowers the type `(p+1,q)` to `(p,q)`
 (`ContinuousAlternatingMap.IsOfType.curryLeftTopological_sub_I_smul`), and for a constant vector
 `v` it anticommutes with `∂bar`. The contractions `η_j` of a closed form `η` of type
@@ -70,150 +67,11 @@ open SmoothAlmostComplexStructure
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-section Contraction
-
-variable {k : ℕ}
-
-/-- The interior products `φ ↦ ι_v φ - I • ι_{I • v} φ` with `2 v^(1,0)`, as a continuous
-real-linear family in `v`. -/
-private def holCurry : E →L[ℝ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
-  (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-      (n := k)).toContinuousLinearMap.flip -
-    I • (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-      (n := k)).toContinuousLinearMap.flip ∘L (I • ContinuousLinearMap.id ℝ E)
-
-private theorem holCurry_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
-    holCurry v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
-  simp [holCurry]
-
-private theorem holCurry_map_smul (v : E) (c : ℂ) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
-    holCurry v (c • φ) = c • holCurry v φ := by
-  ext w
-  simp [holCurry_apply, smul_sub, smul_smul, mul_comm]
-
-private theorem holCurry_smul (c : ℂ) (v : E) :
-    holCurry (k := k) (F := F) (c • v) = c • holCurry v := by
-  have hc : c • v = c.re • v + c.im • (I • v) := by
-    rw [← Complex.coe_smul, ← Complex.coe_smul, smul_smul, ← add_smul, Complex.re_add_im]
-  have hI : holCurry (k := k) (F := F) (I • v) = I • holCurry v := by
-    ext φ w
-    simp [holCurry_apply, smul_smul, smul_sub]
-    abel
-  rw [hc, map_add, map_smul, map_smul, hI]
-  ext φ w
-  simp only [add_apply, FunLike.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply]
-  rw [← Complex.coe_smul, ← Complex.coe_smul, smul_smul, ← add_smul, Complex.re_add_im]
-
-/-- The interior product of a smooth form on a complex vector space with the constant vector
-`2 v^(1,0)`, that is, `ι_v - I • ι_{I • v}`. -/
-private def holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    SmoothForm 𝓘(ℝ, E) E F k :=
-  ⟨fun z ↦ holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F),
-    (isSmoothForm_modelSpace_iff.mpr ((holCurry v).contDiff.comp
-      (isSmoothForm_modelSpace_iff.1 η.isSmoothForm))).mem_smoothBundleForms⟩
-
-private theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
-    (holInterior v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) :=
-  (rfl)
-
-/-- The `(1,0)`-contraction lowers the holomorphic degree. -/
-private theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 1)}
-    (hη : η.IsOfType (ofComplexManifold E E) (p + 1) q) (v : E) :
-    (holInterior v η).IsOfType (ofComplexManifold E E) p q := by
-  refine isOfType_iff_forall.2 ⟨by have := hη.add_eq; omega, fun z ↦ ?_⟩
-  let φ : E [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
-  have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ E) (p + 1) q := hη.apply_modelSpace z
-  have h := hφ.curryLeftTopological_sub_I_smul (fun w ↦ by simp [smul_smul]) v
-  simp only [smul_apply, ContinuousLinearMap.id_apply,
-    ← ContinuousAlternatingMap.curryLeft_eq_curryLeftTopological, ← holCurry_apply] at h
-  rw [toEndomorphism_ofComplexManifold]
-  -- The value of the contraction at `z` is `holCurry v φ`, read in the tangent space at `z`.
-  exact h
-
-/-- The `(1,0)`-contraction with a constant vector anticommutes with `∂bar`. -/
-private theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
-    (ofComplexManifold E E).delBar (holInterior v η) =
-      -holInterior v ((ofComplexManifold E E).delBar η) := by
-  refine Subtype.ext (funext fun z ↦ ?_)
-  let Θ : E → E [⋀^Fin (k + 1)]→L[ℝ] F := η.val
-  let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
-  have hdz : DifferentiableAt ℝ Θ z :=
-    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
-  set D := fderiv ℝ Θ z
-  set L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F := (2 : ℂ)⁻¹ • (D + I • D ∘L Jm) with hL
-  -- The coefficient field of the contraction is `holCurry v ∘ Θ`.
-  have hval : ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) = holCurry v ∘ Θ := rfl
-  have hfd : fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z = holCurry v ∘L D :=
-    (congrArg (fderiv ℝ · z) hval).trans ((holCurry v).fderiv_comp_left hdz)
-  -- The value of a negated form is the negated value, read in the model fibre.
-  have hR : (-holInterior v ((ofComplexManifold E E).delBar η)).val z =
-      -holCurry v (((ofComplexManifold E E).delBar η).val z : E [⋀^Fin (k + 2)]→L[ℝ] F) :=
-    (rfl)
-  -- `L` is the conjugate Wirtinger derivative of `Θ` at `z`, so it is conjugate-linear.
-  have hLI : L (I • v) = -I • L v := by
-    have hLw (u : E) : L u = conjWirtingerDeriv Θ z u := by
-      simp [hL, Jm, conjWirtingerDeriv_apply, D]
-    rw [hLw, hLw, map_smulₛₗ, conj_I]
-  -- `∂bar` of the contraction is the alternation of `holCurry v ∘ L`.
-  have hCL : (2 : ℂ)⁻¹ • (holCurry v ∘L D + I • (holCurry v ∘L D) ∘L Jm) = holCurry v ∘L L := by
-    ext u : 1
-    simp [hL, holCurry_map_smul]
-  have hsplit : holCurry v ∘L L =
-      (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip v ∘L L -
-      I • (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip (I • v) ∘L L := by
-    ext u : 1
-    simp [holCurry_apply]
-  have hcartan (y : E) := eq_sub_of_add_eq
-    (ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft L y)
-  have hδ : (((ofComplexManifold E E).delBar η).val z : E [⋀^Fin (k + 2)]→L[ℝ] F) =
-      ContinuousAlternatingMap.alternatizeUncurryFin L :=
-    delBar_eq_alternatizeUncurryFin η z
-  rw [hR, hδ, delBar_eq_alternatizeUncurryFin, hfd, hCL, hsplit,
-    ContinuousAlternatingMap.alternatizeUncurryFin_sub,
-    ContinuousAlternatingMap.alternatizeUncurryFin_smul, hcartan, hcartan, hLI, holCurry_apply]
-  simp only [smul_sub, smul_smul, mul_neg, I_mul_I, _root_.neg_neg, one_smul]
-  abel
-
-end Contraction
+open ContinuousAlternatingMap (holCurry)
 
 section Coordinates
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-
-/-- The holomorphic coordinate one-form `dz_i` on `ι → ℂ`. -/
-private def dz (i : ι) : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) ℂ 1 :=
-  SmoothForm.const (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i))
-
-omit [DecidableEq ι] in
-private theorem dz_val (i : ι) (z : ι → ℂ) :
-    ((dz i).val z : (ι → ℂ) [⋀^Fin 1]→L[ℝ] ℂ) = ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ)
-      ℂ (0 : Fin 1) (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) := by
-  ext v
-  rw [dz, const_apply]
-  -- `NormedSpace.fromTangentSpace` is the identity of the model space.
-  rfl
-
-omit [DecidableEq ι] in
-private theorem isOfType_dz (i : ι) : (dz i).IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 1 0 := by
-  refine isOfType_iff_forall.2 ⟨rfl, fun z ↦ ?_⟩
-  have h : (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)).IsOfType
-        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 1 0 :=
-    (ContinuousAlternatingMap.isOfType_one_zero_iff _).2 fun v ↦ by simp
-  rw [toEndomorphism_ofComplexManifold, dz_val]
-  -- The tangent space at `z` is the model space `ι → ℂ`.
-  exact h
-
-omit [DecidableEq ι] in
-private theorem delBar_dz (i : ι) : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (dz i) = 0 := by
-  have hd : mextDerivₗ 𝓘(ℝ, ι → ℂ) 1 (dz i) = 0 := Subtype.ext <| by
-    rw [mextDerivₗ_apply, ZeroMemClass.coe_zero]
-    exact (isClosed_def _).1 (isClosed_const _)
-  rw [(isOfType_dz i).delBar_eq, hd, map_zero]
 
 /-- **Euler identity for smooth forms.** If the values at `z` of the forms `β i` are those of the
 `(1,0)`-contractions of a form `η` of type `(p,q)` with the coordinate vectors, then
@@ -225,30 +83,10 @@ private theorem sum_wedgeWith_dz_apply {k p q : ℕ} {η : SmoothForm 𝓘(ℝ, 
     (∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n)
       (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (dz i) (β i))).val z =
       (2 * p : ℂ) • η.val z := by
-  let φ : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
-  -- The coordinate expansion of the contractions with the vectors `u`.
-  have hsum : ∑ i, (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
-      (holCurry (Pi.single i 1) φ) = φ.curryLeft - I • φ.curryLeft ∘L
-        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) := by
-    ext u : 1
-    have hu := congrArg (fun w ↦ holCurry (k := k) (F := F) w φ) (pi_eq_sum_univ' u)
-    simp only [map_sum, holCurry_smul, sum_apply] at hu
-    simp [← holCurry_apply, hu]
+  rw [← sum_wedgeWith_dz_holInterior_apply hη z]
   ext v
   simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,
-    coe_wedgeWith, RoughForm.wedgeWith_apply', hβ, dz_val, holInterior_val]
-  refine (Finset.sum_congr rfl fun i _ ↦
-    (ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply (E := ι → ℂ)
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) (holCurry (Pi.single i 1) φ)
-        v).symm).trans ?_
-  have hfin : ∑ i, ContinuousAlternatingMap.alternatizeUncurryFin
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
-        (holCurry (Pi.single i 1) φ)) = (2 * p : ℂ) • φ := by
-    simp only [← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, ← map_sum, hsum]
-    have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) p q := hη.apply_modelSpace z
-    exact hφ.alternatizeUncurryFin_curryLeft_sub_I_smul_comp
-  -- Evaluate `hfin` at `v`, whose entries lie in the tangent space at `z`, that is, in `ι → ℂ`.
-  exact (ContinuousAlternatingMap.sum_apply _ _).symm.trans (congrArg (fun A ↦ A v) hfin)
+    coe_wedgeWith, RoughForm.wedgeWith_apply', hβ]
 
 /-- **The inductive step.** If the `(1,0)`-contractions of a form `η` of type `(p+1,q+1)` with
 the coordinate vectors have primitives `g_i` of type `(p,q)` near a set `S`, then
@@ -343,11 +181,11 @@ private theorem IsOfType.exists_delBar_eventually_eq_of_pi_zero {q : ℕ}
   exact hy _
 
 omit [DecidableEq ι] in
-/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on product domains.** A smooth form `η`
-of type `(p,q+1)` on `ι → ℂ`, with coefficients in a complex Banach space, whose Dolbeault
-differential vanishes on a product `∏ U_i` of open subsets of `ℂ`, is Dolbeault-exact near every
-compact subproduct `∏ K_i`, `K_i ⊆ U_i`: some smooth form `f` of type `(p,q)` satisfies
-`∂bar f = η` there. -/
+/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on product domains.** Let `η` be smooth
+on all of `ι → ℂ`, of type `(p,q+1)`, with coefficients in a complex Banach space. If its
+Dolbeault differential vanishes on a product `∏ U_i` of open subsets of `ℂ`, then it is
+Dolbeault-exact near every compact subproduct `∏ K_i`, `K_i ⊆ U_i`: some form `f`, smooth on
+all of `ι → ℂ` and of type `(p,q)`, satisfies `∂bar f = η` there. -/
 theorem IsOfType.exists_delBar_eventually_eq_of_pi {k p q : ℕ}
     {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
     (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p (q + 1))
@@ -378,11 +216,11 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi {k p q : ℕ}
     exact hη.exists_delBar_eventually_eq_of_holInterior g hg hgη
 
 omit [DecidableEq ι] in
-/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on polydiscs.** A smooth form `η` of
-type `(p,q+1)` on `ι → ℂ`, with coefficients in a complex Banach space, whose Dolbeault
-differential vanishes on the polydisc `∏ B(c_i, r_i)`, is Dolbeault-exact on every concentric
-polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some smooth form `f` of type `(p,q)` satisfies
-`∂bar f = η` there. -/
+/-- **The Dolbeault–Grothendieck lemma for `(p,q)`-forms on polydiscs.** Let `η` be smooth on
+all of `ι → ℂ`, of type `(p,q+1)`, with coefficients in a complex Banach space. If its Dolbeault
+differential vanishes on `∏ B(c_i, r_i)`, then it is Dolbeault-exact on every concentric
+polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some form `f`, smooth on all of `ι → ℂ` and of type
+`(p,q)`, satisfies `∂bar f = η` there. -/
 theorem IsOfType.exists_delBar_eq_of_polydisc {k p q : ℕ}
     {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
     (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p (q + 1)) {c : ι → ℂ} {r r' : ι → ℝ}

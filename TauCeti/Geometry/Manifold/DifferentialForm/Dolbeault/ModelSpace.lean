@@ -9,6 +9,11 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifo
 public import TauCeti.Analysis.Complex.Wirtinger.Forms
 import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Data.Finset.Sort
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
+import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Dolbeault differentiation on a complex vector space
@@ -34,6 +39,12 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 
 ## Main declarations
 
+* `TauCeti.SmoothForm.holInterior`, `TauCeti.SmoothForm.isOfType_holInterior`,
+  `TauCeti.SmoothForm.delBar_holInterior`: contraction `ι_v - I • ι_{I • v}` by a constant vector,
+  its type shift, and its anticommutation with `∂bar`.
+* `TauCeti.SmoothForm.dz`, `TauCeti.SmoothForm.isOfType_dz`, `TauCeti.SmoothForm.delBar_dz`:
+  holomorphic coordinate one-forms on `ι → ℂ`.
+* `TauCeti.SmoothForm.sum_wedgeWith_dz_holInterior_apply`: the coordinate Euler identity.
 * `TauCeti.SmoothForm.delBar_apply_eq_conjWirtingerDeriv`: `∂bar` of a function.
 * `TauCeti.SmoothForm.IsOfType.apply_modelSpace`: the type equation of a form at a point.
 * `TauCeti.SmoothForm.delBar_eq_alternatizeUncurryFin`: `∂bar` as alternation of the
@@ -371,5 +382,169 @@ theorem exists_isOfType_conjCoeff_eq {u : Finset ι → (ι → ℂ) → F}
     · simp
 
 end Coefficients
+
+open ContinuousAlternatingMap (holCurry holCurry_apply holCurry_map_smul holCurry_smul)
+
+section Contraction
+
+variable {k : ℕ}
+
+/-- The holomorphic contraction of a smooth form by a constant vector: the combination
+`ι_v - I • ι_{I • v}`, with `I` acting on the output. -/
+def holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    SmoothForm 𝓘(ℝ, E) E F k := by
+  let insert (w : E) : SmoothForm 𝓘(ℝ, E) E F k :=
+    ⟨_,
+      (η.isSmoothForm.interior
+        (contMDiff_tangentBundleModelSpaceHomeomorph_symm_prodMk_const
+          𝓘(ℝ, E) w ∞)).mem_smoothBundleForms⟩
+  exact insert v - I • insert (I • v)
+
+/-- The value of a holomorphic contraction is the pointwise contraction. -/
+@[simp]
+theorem holInterior_val (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) (z : E) :
+    (holInterior v η).val z = holCurry v (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F) := by
+  calc
+    _ = (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F).curryLeft v -
+        I • (η.val z : E [⋀^Fin (k + 1)]→L[ℝ] F).curryLeft (I • v) := by
+      change RoughForm.interior (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z -
+        I • RoughForm.interior (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z = _
+      exact congrArg₂ (fun a b ↦ a - I • b)
+        (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ v) η.val z)
+        (RoughForm.interior_apply_eq_curryLeft (I := 𝓘(ℝ, E)) (F := F) (fun _ ↦ I • v) η.val z)
+    _ = _ := (holCurry_apply v _).symm
+
+/-- The `(1,0)`-contraction lowers the holomorphic degree. -/
+theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold E E) (p + 1) q) (v : E) :
+    (holInterior v η).IsOfType (ofComplexManifold E E) p q := by
+  refine isOfType_iff_forall.2 ⟨by have := hη.add_eq; omega, fun z ↦ ?_⟩
+  let φ : E [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
+  have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ E) (p + 1) q := hη.apply_modelSpace z
+  have h := hφ.curryLeftTopological_sub_I_smul (fun w ↦ by simp [smul_smul]) v
+  simp only [smul_apply, ContinuousLinearMap.id_apply,
+    ← ContinuousAlternatingMap.curryLeft_eq_curryLeftTopological, ← holCurry_apply] at h
+  rw [toEndomorphism_ofComplexManifold]
+  -- The value of the contraction at `z` is `holCurry v φ`, read in the tangent space at `z`.
+  rw [holInterior_val]
+  exact h
+
+/-- The `(1,0)`-contraction with a constant vector anticommutes with `∂bar`. -/
+theorem delBar_holInterior (v : E) (η : SmoothForm 𝓘(ℝ, E) E F (k + 1)) :
+    (ofComplexManifold E E).delBar (holInterior v η) =
+      -holInterior v ((ofComplexManifold E E).delBar η) := by
+  refine Subtype.ext (funext fun z ↦ ?_)
+  let Θ : E → E [⋀^Fin (k + 1)]→L[ℝ] F := η.val
+  let C := (holCurry (k := k) (F := F) v).complexOfMapISmul
+    (fun φ ↦ holCurry_map_smul v I φ)
+  let Jm : E →L[ℝ] E := I • ContinuousLinearMap.id ℝ E
+  let D := fderiv ℝ Θ z
+  let L : E →L[ℝ] E [⋀^Fin (k + 1)]→L[ℝ] F := (2 : ℂ)⁻¹ • (D + I • D ∘L Jm)
+  have hdz : DifferentiableAt ℝ Θ z :=
+    (isSmoothForm_modelSpace_iff.1 η.isSmoothForm).differentiable (by simp) z
+  have hval : ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) = C ∘ Θ :=
+    funext fun y ↦ by
+      simpa only [C, ContinuousLinearMap.coe_complexOfMapISmul, Function.comp_apply] using
+        holInterior_val v η y
+  have hLw (u : E) : L u = conjWirtingerDeriv Θ z u := by
+    simp [L, Jm, conjWirtingerDeriv_apply, D]
+  have hchain := conjWirtingerDeriv_comp C.differentiableAt hdz
+  have hCL : (2 : ℂ)⁻¹ •
+      (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z +
+        I • (fderiv ℝ ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z) ∘L Jm) =
+      holCurry v ∘L L := by
+    ext u : 1
+    have hc : conjWirtingerDeriv
+        ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u = holCurry v (L u) := by
+      rw [hval, hchain, C.fderiv]
+      simp only [ContinuousLinearMap.comp_apply, C,
+        ContinuousLinearMap.coe_complexOfMapISmul, hLw]
+    exact (TauCeti.conjWirtingerDeriv_apply (V := E) (W := E [⋀^Fin k]→L[ℝ] F)
+      ((holInterior v η).val : E → E [⋀^Fin k]→L[ℝ] F) z u).symm.trans hc
+  have hδ : (((ofComplexManifold E E).delBar η).val z : E [⋀^Fin (k + 2)]→L[ℝ] F) =
+      ContinuousAlternatingMap.alternatizeUncurryFin L :=
+    delBar_eq_alternatizeUncurryFin η z
+  rw [neg_toRoughForm, Pi.neg_apply, holInterior_val, hδ,
+    delBar_eq_alternatizeUncurryFin, hCL]
+  exact ContinuousAlternatingMap.alternatizeUncurryFin_holCurry_comp L
+    (fun u ↦ by rw [hLw, hLw, map_smulₛₗ, conj_I]) v
+
+end Contraction
+
+section Coordinates
+
+variable {ι : Type*} [DecidableEq ι] [Fintype ι]
+
+/-- The holomorphic coordinate one-form `dz_i` on `ι → ℂ`. -/
+def dz (i : ι) : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) ℂ 1 :=
+  SmoothForm.const (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i))
+
+omit [DecidableEq ι] in
+/-- The value of the holomorphic coordinate one-form is the coordinate covector. -/
+theorem dz_val (i : ι) (z : ι → ℂ) :
+    ((dz i).val z : (ι → ℂ) [⋀^Fin 1]→L[ℝ] ℂ) = ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ)
+      ℂ (0 : Fin 1) (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) := by
+  ext v
+  rw [dz, const_apply]
+  -- `NormedSpace.fromTangentSpace` is the identity of the model space.
+  rfl
+
+omit [DecidableEq ι] in
+/-- A holomorphic coordinate one-form has type `(1,0)`. -/
+theorem isOfType_dz (i : ι) : (dz i).IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 1 0 := by
+  refine isOfType_iff_forall.2 ⟨rfl, fun z ↦ ?_⟩
+  have h : (ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℂ) ℂ (0 : Fin 1)
+      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)).IsOfType
+        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 1 0 :=
+    (ContinuousAlternatingMap.isOfType_one_zero_iff _).2 fun v ↦ by simp
+  rw [toEndomorphism_ofComplexManifold, dz_val]
+  -- The tangent space at `z` is the model space `ι → ℂ`.
+  exact h
+
+omit [DecidableEq ι] in
+/-- Holomorphic coordinate one-forms have zero Dolbeault differential. -/
+theorem delBar_dz (i : ι) : (ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar (dz i) = 0 := by
+  have hd : mextDerivₗ 𝓘(ℝ, ι → ℂ) 1 (dz i) = 0 := Subtype.ext <| by
+    rw [mextDerivₗ_apply, ZeroMemClass.coe_zero]
+    exact (isClosed_def _).1 (isClosed_const _)
+  rw [(isOfType_dz i).delBar_eq, hd, map_zero]
+
+/-- The coordinate wedges of the holomorphic contractions of a form of type `(p,q)`
+sum to `2 p` times the form. -/
+theorem sum_wedgeWith_dz_holInterior_apply {k p q : ℕ}
+    {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F (k + 1)}
+    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) p q)
+    (z : ι → ℂ) :
+    (∑ i, LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F n)
+      (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (dz i)
+        (holInterior (Pi.single i 1) η))).val z =
+      (2 * p : ℂ) • η.val z := by
+  let φ : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
+  -- The coordinate expansion of the contractions with the vectors `u`.
+  have hsum : ∑ i, (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
+      (holCurry (Pi.single i 1) φ) = φ.curryLeft - I • φ.curryLeft ∘L
+        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) := by
+    ext u : 1
+    have hu := congrArg (fun w ↦ holCurry (k := k) (F := F) w φ) (pi_eq_sum_univ' u)
+    simp only [map_sum, holCurry_smul, sum_apply] at hu
+    simp [← holCurry_apply, hu]
+  ext v
+  simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,
+    coe_wedgeWith, RoughForm.wedgeWith_apply', dz_val, holInterior_val]
+  refine (Finset.sum_congr rfl fun i _ ↦
+    (ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply (E := ι → ℂ)
+      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) (holCurry (Pi.single i 1) φ)
+        v).symm).trans ?_
+  have hfin : ∑ i, ContinuousAlternatingMap.alternatizeUncurryFin
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
+        (holCurry (Pi.single i 1) φ)) = (2 * p : ℂ) • φ := by
+    simp only [← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, ← map_sum, hsum]
+    have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) p q := hη.apply_modelSpace z
+    exact hφ.alternatizeUncurryFin_curryLeft_sub_I_smul_comp
+  -- Evaluate `hfin` at `v`, whose entries lie in the tangent space at `z`, that is, in `ι → ℂ`.
+  exact (ContinuousAlternatingMap.sum_apply _ _).symm.trans (congrArg (fun A ↦ A v) hfin)
+
+end Coordinates
 
 end TauCeti.SmoothForm
