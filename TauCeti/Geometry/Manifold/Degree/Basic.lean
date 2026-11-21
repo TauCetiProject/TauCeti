@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Sign
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # The signed count of a fibre over a regular value
@@ -45,11 +46,19 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   `1` and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with a bijection that preserves
   orientation on the fibre does not change the degree.
+* `TauCeti.degreeAtRegularValue_eq_ncard`: where `f` preserves orientations along the fibre, the
+  degree is the number of preimages.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
   and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degree_of_isEmpty`: a map to an empty manifold has degree `0`.
+* `TauCeti.degree_eq_zero_of_not_exists`: a map with no regular value has degree `0`.
+* `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt`,
+  `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationReversingAt`,
+  `Diffeomorph.degree_comp_diffeomorph_of_isOrientationPreservingAt`,
+  `Diffeomorph.degree_comp_diffeomorph_of_isOrientationReversingAt`: precomposing with a `C^n`
+  diffeomorphism (`n ≠ 0`) preserves or negates `degreeAtRegularValue` and `degree`.
 
 ## References
 
@@ -64,7 +73,7 @@ public section
 noncomputable section
 
 open Function Set
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -87,6 +96,12 @@ manifold, this is the signed count of the preimages of `y`; elsewhere the value 
 def degreeAtRegularValue (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
     (f : M → N) (y : N) : ℤ :=
   ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x
+
+/-- Unfolding `degreeAtRegularValue`: the `finsum` of orientation signs over `f ⁻¹' {y}`. -/
+theorem degreeAtRegularValue_def (o : Manifold.Orientation I M ι)
+    (o' : Manifold.Orientation J N ι) (f : M → N) (y : N) :
+    degreeAtRegularValue o o' f y = ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x :=
+  (rfl)
 
 /-- The degree is the sum of the orientation signs over any finset enumerating the fibre. -/
 theorem degreeAtRegularValue_eq_sum {s : Finset M} (hs : ∀ x, x ∈ s ↔ f x = y) :
@@ -166,6 +181,19 @@ theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
   simpa using Finset.sum_le_sum fun x (_ : x ∈ h.toFinset) ↦
     abs_orientationSign_le_one (o := o) (o' := o') (f := f) (x := x)
 
+/-- If `f` preserves orientations at every point of the fibre over `y`, the degree at `y` is the
+number of preimages. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
+conventions. -/
+theorem degreeAtRegularValue_eq_ncard
+    (h : ∀ x ∈ f ⁻¹' {y}, IsOrientationPreservingAt o o' f x) :
+    degreeAtRegularValue o o' f y = (f ⁻¹' {y}).ncard := by
+  rw [degreeAtRegularValue, finsum_mem_congr rfl fun x hx ↦
+    orientationSign_of_isOrientationPreservingAt (h x hx)]
+  rcases (f ⁻¹' {y}).finite_or_infinite with hf | hf
+  · rw [← finsum_one, Nat.cast_finsum_mem hf, Nat.cast_one]
+  · rw [hf.ncard, Nat.cast_zero]
+    exact finsum_mem_eq_zero_of_infinite (by simpa [Function.support_const one_ne_zero] using hf)
+
 /-- Over a regular value, the degree has the parity of the number of preimages: every orientation
 sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
 conventions. -/
@@ -203,10 +231,15 @@ theorem degree_eq_degreeAtRegularValue_choose (h : ∃ y, IsRegularValue I J f y
     degree o o' f = degreeAtRegularValue o o' f h.choose :=
   dite_eq_left h
 
+/-- If `f` has no regular value, its degree is `0`. -/
+theorem degree_eq_zero_of_not_exists (h : ¬∃ y, IsRegularValue I J f y) :
+    degree o o' f = 0 :=
+  dite_eq_right h
+
 /-- A map to an empty manifold has degree `0`, since it has no regular value. -/
 @[simp]
 theorem degree_of_isEmpty [IsEmpty N] : degree o o' f = 0 :=
-  dite_eq_right (by simp)
+  degree_eq_zero_of_not_exists (by simp)
 
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]
@@ -240,3 +273,72 @@ theorem degree_const (hpos : 0 < Module.finrank ℝ E') (y₀ : N) :
   · rfl
 
 end TauCeti
+
+namespace Diffeomorph
+
+open TauCeti TauCeti.Manifold.Orientation
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- Precomposing with an orientation-preserving `C^n` diffeomorphism (`n ≠ 0`) leaves
+`degreeAtRegularValue` unchanged at every point of `N`. -/
+theorem degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt
+    (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
+    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationPreservingAt o' o Φ x)
+    (f : M → N) (y : N) :
+    degreeAtRegularValue o' oN (f ∘ Φ) y = degreeAtRegularValue o oN f y := by
+  rw [degreeAtRegularValue, degreeAtRegularValue, preimage_comp]
+  refine finsum_mem_eq_of_bijOn Φ (EquivLike.bijective Φ).bijOn_preimage fun x _ ↦ ?_
+  rw [Φ.orientationSign_comp_diffeomorph hn o' o oN f x,
+    orientationSign_of_isOrientationPreservingAt (ho x), mul_one]
+
+/-- Precomposing with an orientation-reversing `C^n` diffeomorphism (`n ≠ 0`) negates
+`degreeAtRegularValue` at every point of `N`. -/
+theorem degreeAtRegularValue_comp_diffeomorph_of_isOrientationReversingAt
+    (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
+    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationReversingAt o' o Φ x)
+    (f : M → N) (y : N) :
+    degreeAtRegularValue o' oN (f ∘ Φ) y = -degreeAtRegularValue o oN f y := by
+  have h := Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt hn
+    (o' := -o') (o := o) oN (fun x ↦ (isOrientationPreservingAt_neg_left o' o Φ x).2 (ho x)) f y
+  rwa [degreeAtRegularValue_neg_left, neg_eq_iff_eq_neg] at h
+
+/-- Precomposing with an orientation-preserving `C^n` diffeomorphism (`n ≠ 0`) preserves
+`degree`. -/
+theorem degree_comp_diffeomorph_of_isOrientationPreservingAt
+    (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
+    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationPreservingAt o' o Φ x)
+    (f : M → N) :
+    degree o' oN (f ∘ Φ) = degree o oN f := by
+  classical
+  unfold degree
+  simp_rw [Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt hn oN ho]
+  have hp : (fun y ↦ IsRegularValue I' J (f ∘ Φ) y) = fun y ↦ IsRegularValue I J f y :=
+    funext fun _ ↦ propext (Φ.isRegularValue_comp_iff hn)
+  exact congrArg
+    (fun P : N → Prop ↦ if h : ∃ y, P y then degreeAtRegularValue o oN f h.choose else 0) hp
+
+/-- Precomposing with an orientation-reversing `C^n` diffeomorphism (`n ≠ 0`) negates `degree`. -/
+theorem degree_comp_diffeomorph_of_isOrientationReversingAt
+    (Φ : M' ≃ₘ^n⟮I', I⟯ M) (hn : n ≠ 0)
+    {o' : Manifold.Orientation I' M' ι} {o : Manifold.Orientation I M ι}
+    (oN : Manifold.Orientation J N ι) (ho : ∀ x, IsOrientationReversingAt o' o Φ x)
+    (f : M → N) :
+    degree o' oN (f ∘ Φ) = -degree o oN f := by
+  have h := Φ.degree_comp_diffeomorph_of_isOrientationPreservingAt hn
+    (o' := -o') (o := o) oN (fun x ↦ (isOrientationPreservingAt_neg_left o' o Φ x).2 (ho x)) f
+  rwa [degree_neg_left, neg_eq_iff_eq_neg] at h
+
+end Diffeomorph

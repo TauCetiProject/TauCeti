@@ -89,9 +89,9 @@ private def isColimitComplPairCocone :
   · refine ⟨Classical.arbitrary ι, fun x _ ↦ ⟨x, ?_⟩⟩
     rw [hfst]
     rfl
-  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtype_val)
-      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2)
-    exact ⟨i, fun x hx ↦ ⟨⟨x.1, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
+  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtypeVal)
+      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
+    exact ⟨i, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
       Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
 
 /-- The colimit of `isColimitComplPairCocone`, with its components written as local homology
@@ -139,11 +139,11 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq
     ∃ U, ∃ hU : U ∈ 𝓝ˢ A, ∃ y : (localHomology N U k : ModuleCat.{w} Λ),
       localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = x := by
   obtain ⟨U, y, hy⟩ := exists_localHomologyRestriction_eq N k
-    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
-    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).val) (fun _ _ h ↦ h)
+    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).property)
     (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
       hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩) x
-  exact ⟨_, (OrderDual.ofDual U).2, y, hy⟩
+  exact ⟨_, (OrderDual.ofDual U).property, y, hy⟩
 
 variable {k} in
 /-- **Vanishing of local homology from larger sets.**  In a Hausdorff space, local homology
@@ -170,12 +170,12 @@ theorem exists_mem_nhdsSet_localHomologyRestriction_eq_zero {U : Set M} (hU : U 
     (hy : localHomologyRestriction N (subset_of_mem_nhdsSet hU) k y = 0) :
     ∃ V, ∃ _ : V ∈ 𝓝ˢ A, ∃ hVU : V ⊆ U, localHomologyRestriction N hVU k y = 0 := by
   obtain ⟨V, hUV, hV⟩ := exists_localHomologyRestriction_eq_zero N k
-    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).1) (fun _ _ h ↦ h)
-    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).2)
+    (K := fun U : {U : Set M // U ∈ 𝓝ˢ A}ᵒᵈ ↦ (OrderDual.ofDual U).val) (fun _ _ h ↦ h)
+    (fun U ↦ subset_of_mem_nhdsSet (OrderDual.ofDual U).property)
     (fun T hT hTA ↦ ⟨OrderDual.toDual ⟨Tᶜ,
       hT.isClosed.isOpen_compl.mem_nhdsSet.2 hTA.subset_compl_left⟩, disjoint_compl_right⟩)
     (i := OrderDual.toDual ⟨U, hU⟩) y hy
-  exact ⟨_, (OrderDual.ofDual V).2, hUV, hV⟩
+  exact ⟨_, (OrderDual.ofDual V).property, hUV, hV⟩
 
 end Nhds
 

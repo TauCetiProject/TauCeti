@@ -38,12 +38,13 @@ open MeasureTheory
 namespace Matrix
 
 /-- Matrices over a measurable field of rank at most `k` form a measurable set. -/
-theorem measurableSet_setOfPred_rank_le {m n K : Type*} [Finite m] [Fintype n]
+theorem measurableSet_setOfPred_rank_le {m n K : Type*} [Finite m] [Finite n]
     [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
     [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
     MeasurableSet {A : Matrix m n K | A.rank ≤ k} := by
   classical
   let _ := Fintype.ofFinite m
+  let _ := Fintype.ofFinite n
   simp only [Matrix.rank_le_iff_forall_det_submatrix_eq_zero, Set.ofPred_forall]
   refine MeasurableSet.iInter fun r ↦ MeasurableSet.iInter fun c ↦ ?_
   have h := (MvPolynomial.measurableSet_setOfPred_eval_eq_zero
@@ -52,7 +53,7 @@ theorem measurableSet_setOfPred_rank_le {m n K : Type*} [Finite m] [Fintype n]
   simpa only [Set.preimage_ofPred_eq, Matrix.eval_det_mvPolynomialX, Matrix.submatrix] using h
 
 /-- Matrices over a measurable field of rank exactly `k` form a measurable set. -/
-theorem measurableSet_setOfPred_rank_eq {m n K : Type*} [Finite m] [Fintype n]
+theorem measurableSet_setOfPred_rank_eq {m n K : Type*} [Finite m] [Finite n]
     [Field K] [MeasurableSpace K] [MeasurableSingletonClass K]
     [MeasurableAdd₂ K] [MeasurableMul₂ K] (k : ℕ) :
     MeasurableSet {A : Matrix m n K | A.rank = k} := by

@@ -61,8 +61,8 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_kernel
     {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N)
     [M.IsQuasicoherent] [N.IsQuasicoherent] : (kernel f).IsQuasicoherent := by
   refine (Scheme.Modules.isQuasicoherent_iff_forall_affineOpens (kernel f)).2 fun U ↦ ?_
-  let F := Scheme.Modules.restrictFunctor U.1.ι
-  exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
+  let F := Scheme.Modules.restrictFunctor U.val.ι
+  exact (SheafOfModules.isQuasicoherent U.val.toScheme.ringCatSheaf).prop_of_iso
     (PreservesKernel.iso F f).symm (isQuasicoherent_kernel_affine (F.map f))
 
 /-- Kernels of quasicoherent modules on the slice site of an open subscheme are

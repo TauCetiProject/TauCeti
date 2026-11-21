@@ -87,6 +87,14 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
 omit [Fintype n] in
+/-- The defining block form of the graph frame. -/
+theorem graphFrame_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    graphFrame A = fromBlocks 1 (-(Complex.I • 1))
+      (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
+      (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑)) :=
+  (rfl)
+
+omit [Fintype n] in
 /-- The graph frame of a symplectic direct sum is the symplectic direct sum of the graph frames:
 the graph of `A ⊕ B` is the product of the graphs of `A` and `B`, in regrouped coordinates. -/
 theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m]
@@ -297,7 +305,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The determinant of the graph frame of a symplectic matrix does not vanish. -/
 theorem det_graphFrame_ne_zero (A : GLSymplectic n ℝ) :
     (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det ≠ 0 :=
-  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2)).ne_zero
+  (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.property)).ne_zero
 
 /-- The graph frame of a symplectic matrix, as a complex-linear automorphism of `ℂ^{n ⊕ n}`. -/
 noncomputable def graphFrameEquiv (A : GLSymplectic n ℝ) :
@@ -325,7 +333,7 @@ theorem continuous_graphFrameEquiv :
       (graphFrameEquiv A : EuclideanSpace ℂ (n ⊕ n) →L[ℂ] EuclideanSpace ℂ (n ⊕ n)) := by
   simp only [graphFrameEquiv, coe_toEuclideanCLE]
   exact continuous_toEuclideanCLM.comp
-    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val))
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal))
 
 /-! ### The graph phase -/
 
@@ -346,7 +354,7 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
 `ℂ^{n ⊕ n}`. -/
 theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
     (graphPhase A : ℂ) = isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
+      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.property)) := by
   -- `graphSubspace A` is by definition the image `(graphFrame A).realImage` of the real points.
   rw [coe_graphPhase]
   exact (maslovPhase_eq_det_div_conj_det _ _ rfl).symm
@@ -355,7 +363,7 @@ theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by
   have hd : Continuous fun A : GLSymplectic n ℝ =>
       (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det :=
-    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)).matrix_det
+    (continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal)).matrix_det
   refine Continuous.subtype_mk ?_ _
   refine (hd.div (continuous_conj.comp hd) fun A => ?_).congr fun A => (coe_graphPhase A).symm
   exact (map_ne_zero _).2 (det_graphFrame_ne_zero A)

@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
-public import Mathlib.Analysis.Analytic.Order
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.RCLike.Basic
 
--- Proof-only: the identity principle
--- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero` and its analytic inputs, and
--- `SeparatingDual.exists_continuousLinearEquiv_apply_eq` for the change of coordinates.
+-- Proof-only: `HasFiniteFPowerSeriesOnBall.changeOrigin`, the identity principle
+-- `AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero`, and its analytic inputs.
+import Mathlib.Analysis.Analytic.CPolynomial
 import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
@@ -20,23 +20,21 @@ import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Convex.PathConnected
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Restrictions to lines and iterated derivatives of analytic functions
 
-A function analytic at `p` vanishes on a neighbourhood of `p` exactly when its restriction
-`t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The nontrivial
-direction is the identity principle along each line: on a ball around `p` where `f` is analytic,
-the restriction to the line through `p` and a point `y` of the ball is analytic on a disc
-containing `0` and `1`, so it vanishes at `1`, that is at `y`.
+A continuous homogeneous polynomial `v ↦ m (v, …, v)` over a nontrivially normed field that
+vanishes on a neighbourhood of a single point vanishes everywhere
+(`ContinuousMultilinearMap.apply_diag_eq_zero_of_eventuallyEq`).
 
-In several complex variables this is the first step of putting a nonzero germ in general position:
-some direction `v` has a restriction that does not vanish identically, and in linear coordinates
-whose last axis is `v` the germ becomes regular in the last variable, as Weierstrass preparation
-requires (`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`).
+Over an `RCLike` field, a function analytic at `p` vanishes on a neighbourhood of `p` exactly when
+its restriction `t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`.
+The nontrivial direction is the identity principle along each line: on a ball around `p` where `f`
+is analytic, the restriction to the line through `p` and a point `y` of the ball is analytic on a
+disc containing `0` and `1`, so it vanishes at `1`, that is at `y`.
 
 Over a characteristic-zero normed field and into a complete codomain,
 `HasFPowerSeriesOnBall.hasSum_iteratedFDeriv` expresses a germ analytic at `p` on a ball around `p`
@@ -46,14 +44,15 @@ principle extends this pointwise jet condition along any preconnected set on whi
 on neighbourhoods.
 
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
-lives.
+lives. The linear general-position corollary (generalized to finite families over any nontrivially
+normed field) lives in `TauCeti.Analysis.Analytic.SingularDirection`.
 
 ## Main declarations
 
+* `ContinuousMultilinearMap.apply_diag_eq_zero_of_eventuallyEq`: a continuous homogeneous
+  polynomial vanishing near a point vanishes identically.
 * `AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`: an analytic function
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
-* `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
-  coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
 * `AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`,
   `AnalyticAt.eventuallyEq_iff_forall_iteratedFDeriv_eq`: over a characteristic-zero field and into
   a complete space, an analytic germ is determined by its iterated Fréchet derivatives at a single
@@ -71,6 +70,35 @@ lives.
 public section
 
 open Filter Metric Topology
+
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If the homogeneous polynomial `v ↦ m (v, …, v)` associated to a continuous multilinear map
+vanishes near a point `v₀`, then it vanishes on the whole space. -/
+theorem ContinuousMultilinearMap.apply_diag_eq_zero_of_eventuallyEq {n : ℕ}
+    (m : E [×n]→L[𝕜] F) {v₀ : E} (h : (fun v ↦ m fun _ ↦ v) =ᶠ[𝓝 v₀] 0) (v : E) :
+    (m fun _ ↦ v) = 0 := by
+  let q : FormalMultilinearSeries 𝕜 E F := fun k ↦ if hk : k = n then hk ▸ m else 0
+  have hq₀ : HasFiniteFPowerSeriesOnBall (fun y ↦ m fun _ ↦ y) q 0 (n + 1) ⊤ := by
+    refine .mk' (fun k hk ↦ dite_eq_right (by omega)) ENNReal.zero_lt_top fun y _ ↦ ?_
+    rw [Finset.sum_eq_single_of_mem n (Finset.self_mem_range_succ n)
+      fun k _ hkn ↦ by simp [q, hkn]]
+    simp [q]
+  have hq : HasFPowerSeriesOnBall (fun y ↦ m fun _ ↦ y) (q.changeOrigin v₀) v₀ ⊤ := by
+    simpa using (hq₀.changeOrigin (y := v₀) ENNReal.coe_lt_top).toHasFPowerSeriesOnBall
+  have hzero : HasFPowerSeriesAt 0 (q.changeOrigin v₀) v₀ := hq.hasFPowerSeriesAt.congr h
+  have hsum : HasSum (fun k ↦ q.changeOrigin v₀ k fun _ ↦ v - v₀) 0 := by
+    convert hasSum_zero (α := F) using 1
+    ext k
+    exact hzero.apply_eq_zero k (v - v₀)
+  exact (hq.hasSum_sub (Metric.mem_eball.2 (edist_lt_top v v₀))).unique hsum
+
+end NontriviallyNormedField
+
+section RCLike
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -119,38 +147,7 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul 
       fun v ↦ (h v).mono fun t ht ↦ by simp [ht]
   exact he.mono fun y hy ↦ UniformSpace.Completion.coe_injective F (by simpa [e] using hy)
 
-/-- **General position in the last variable.** A function analytic at `p` on `E × 𝕜` that does not
-vanish near `p` becomes regular in the last variable after a linear change of coordinates: there
-are a continuous linear automorphism `L` and a point `q` with `L q = p` such that
-`t ↦ f (L (q.1, t))` has finite analytic order at `q.2`. The last axis is sent to a direction along
-which the restriction of `f` does not vanish identically. -/
-theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E × 𝕜 → F}
-    {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) (hf0 : ¬f =ᶠ[𝓝 p] 0) :
-    ∃ (L : (E × 𝕜) ≃L[𝕜] E × 𝕜) (q : E × 𝕜), L q = p ∧
-      analyticOrderAt (fun t ↦ f (L (q.1, t))) q.2 ≠ ⊤ := by
-  obtain ⟨v, hv⟩ : ∃ v, ¬(fun t : 𝕜 ↦ f (p + t • v)) =ᶠ[𝓝 0] 0 := by
-    by_contra! h
-    exact hf0 (hf.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 h)
-  rcases eq_or_ne v 0 with rfl | hv0
-  · -- The trivial direction only occurs when `f p ≠ 0`, and then any coordinates work.
-    refine ⟨.refl 𝕜 _, p, rfl, fun h ↦ hv (Eventually.of_forall fun t ↦ ?_)⟩
-    simpa using (analyticOrderAt_eq_top.1 h).self_of_nhds
-  -- Move to linear coordinates in which `v` is the last axis.
-  obtain ⟨L, hL⟩ := SeparatingDual.exists_continuousLinearEquiv_apply_eq (R := 𝕜)
-    (x := ((0 : E), (1 : 𝕜))) (by simp) hv0
-  obtain ⟨⟨x₀, w₀⟩, rfl⟩ : ∃ q, L q = p := ⟨L.symm p, L.apply_symm_apply p⟩
-  refine ⟨L, (x₀, w₀), rfl, ?_⟩
-  -- The vertical slice is the restriction of `f` to the line through `p` along `v`.
-  rw [Ne, analyticOrderAt_eq_top]
-  refine fun h ↦ hv ?_
-  have ht : Tendsto (fun t : 𝕜 ↦ w₀ + t) (𝓝 0) (𝓝 w₀) := by
-    have : Continuous fun t : 𝕜 ↦ w₀ + t := by fun_prop
-    simpa using this.tendsto 0
-  filter_upwards [ht.eventually h] with t ht
-  have hLt : L (x₀, w₀ + t) = L (x₀, w₀) + t • v := by
-    rw [← hL, ← L.map_smul, ← L.map_add]
-    simp
-  simpa [hLt] using ht
+end RCLike
 
 section IteratedFDeriv
 

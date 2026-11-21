@@ -109,10 +109,10 @@ theorem isLocalHomeomorphOn_iff (f : FiniteHolomorphicMap X Y) (s : Set X) :
       (localMultiplicity_eq_one_iff (.of_forall fun z ↦ f.holomorphic z)).1 (h x hx)
     refine ⟨interior U, isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hU),
       .of_continuous_injective_isOpenMap
-        (f.holomorphic.continuous.comp continuous_subtype_val)
+        (f.holomorphic.continuous.comp continuous_subtypeVal)
         ((hinj.mono interior_subset).injective) ?_⟩
     exact (isOpenMap_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst).comp
-      isOpen_interior.isOpenMap_subtype_val
+      isOpen_interior.isOpenMap_subtypeVal
 
 variable [CompactSpace X]
 

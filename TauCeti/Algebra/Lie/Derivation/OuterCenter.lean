@@ -61,7 +61,7 @@ theorem continuous_restrictCenter (D : continuousDerivationLieAlgebra R A) :
     Continuous (derivationLieAlgebra.restrictCenter R A (D : derivationLieAlgebra R A)) := by
   apply IsInducing.subtypeVal.continuous_iff.mpr
   simpa only [Function.comp_def, derivationLieAlgebra.coe_restrictCenter_apply] using
-    (continuous D).comp continuous_subtype_val
+    (continuous D).comp continuous_subtypeVal
 
 /-- Evaluation of the restricted derivation is continuous in the topology of pointwise
 convergence on continuous derivations. -/

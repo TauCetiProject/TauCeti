@@ -69,7 +69,7 @@ theorem exists_forall_sub_mem_map_localizationAtPrime {I : Ideal R} (hI : I ≠ 
     exact ⟨n, by rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hn]⟩
   choose n hn using hpow
   obtain ⟨a, ha⟩ := Localization.AtPrime.exists_mk_algebraMap_eq_of_isMaximal
-    (fun v : T ↦ v.1.asIdeal) (HeightOneSpectrum.asIdeal_injective.comp Subtype.val_injective)
+    (fun v : T ↦ v.val.asIdeal) (HeightOneSpectrum.asIdeal_injective.comp Subtype.val_injective)
     (fun v ↦ n v) (fun v ↦ Ideal.Quotient.mk _ (x v))
   refine ⟨a, fun v ↦ ?_⟩
   by_cases hv : v ∈ T
