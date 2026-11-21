@@ -23,12 +23,15 @@ This file sends a topological pair to the corresponding pair of singular simplic
 defines its relative singular chain complex.  The complex is the cokernel of the inclusion of the
 singular chains of the subspace into those of the ambient space.  In an abelian coefficient
 category this gives the short exact sequence of chain complexes used to construct the connecting
-morphisms in relative singular homology.  A simplex of the singular pair restricted to a subcomplex
-of the ambient simplicial set comes from the subspace exactly when its image lies in the subspace
+morphisms in relative singular homology, and an identification of the relative singular
+chain complex with the cokernel of that inclusion (`TopPair.cokernelSingularChainComplexIso`).
+A simplex of the singular pair restricted to a subcomplex of the ambient simplicial set comes
+from the subspace exactly when its image lies in the subspace
 (`TopPair.mem_range_restrict_hom_app_iff`).
 
 The quotient map on zeroth homology is an epimorphism already for preadditive coefficients with
-coproducts and homology.
+coproducts and homology. Degree equalities induce canonical isomorphisms on relative homology
+(`TopPair.singularHomologyCongrDegreeIso`).
 
 In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
 pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
@@ -326,6 +329,29 @@ lemma shortExact_singularChainComplexShortComplex :
     (P.singularChainComplexShortComplex R).ShortExact :=
   (toSSetPair.obj P).shortExact_chainComplexShortComplex R
 
+/-- The cokernel of the map of singular chains induced by the inclusion of the subspace of a pair
+`P` is the relative singular chain complex of `P`. The isomorphism is induced by the quotient map
+(`TopPair.π_cokernelSingularChainComplexIso_hom`). -/
+@[no_expose]
+noncomputable def cokernelSingularChainComplexIso :
+    cokernel (((AlgebraicTopology.singularChainComplexFunctor A).obj R).map P.map) ≅
+      P.singularChainComplex R :=
+  (colimit.isColimit _).coconePointUniqueUpToIso (P.isColimitCokernelCoforkSingularChainComplex R)
+
+/-- The identification of the cokernel with the relative singular chain complex of a pair is
+induced by the quotient map from the singular chains of the ambient space. -/
+@[reassoc]
+lemma π_cokernelSingularChainComplexIso_hom :
+    cokernel.π _ ≫ (P.cokernelSingularChainComplexIso R).hom = P.singularChainComplexπ R :=
+  IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one
+
+/-- The inverse identification of the relative singular chain complex of a pair with the cokernel
+sends the quotient map from the singular chains of the ambient space to the cokernel map. -/
+@[reassoc]
+lemma singularChainComplexπ_comp_cokernelSingularChainComplexIso_inv :
+    P.singularChainComplexπ R ≫ (P.cokernelSingularChainComplexIso R).inv = cokernel.π _ :=
+  (Iso.comp_inv_eq _).2 (π_cokernelSingularChainComplexIso_hom P R).symm
+
 end
 
 section Homology
@@ -366,6 +392,24 @@ noncomputable def singularHomologyMapIso (e : P ≅ P') (n : ℕ) :
   hom_inv_id := by rw [← singularHomologyMap_comp, e.hom_inv_id, singularHomologyMap_id]
   inv_hom_id := by rw [← singularHomologyMap_comp, e.inv_hom_id, singularHomologyMap_id]
 
+/-- The canonical isomorphism `Hₘ(X, A; R) ≅ Hₙ(X, A; R)` induced by an equality of degrees
+`m = n`. -/
+noncomputable def singularHomologyCongrDegreeIso {m n : ℕ} (h : m = n) :
+    P.singularHomology R m ≅ P.singularHomology R n :=
+  eqToIso (congrArg (P.singularHomology R) h)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_hom {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).hom =
+      eqToHom (congrArg (P.singularHomology R) h) :=
+  (rfl)
+
+@[simp]
+lemma singularHomologyCongrDegreeIso_inv {m n : ℕ} (h : m = n) :
+    (P.singularHomologyCongrDegreeIso R h).inv =
+      eqToHom (congrArg (P.singularHomology R) h).symm :=
+  (rfl)
+
 variable {P P'} in
 /-- Relative singular homology sends the map of pairs `eqToHom h` of an equation `h : P = P'` to
 `eqToHom` of the corresponding equation of homologies. -/
@@ -392,6 +436,20 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
     IsZero ((ofInclusion h).singularHomology R n) ↔
       IsZero ((ofInclusion h').singularHomology R n) := by
   subst hA hS
+  rfl
+
+/-- Two maps of pairs of subspaces acting by the same map `g` induce the same map on homology, up
+to equalities of the subspaces: one is an isomorphism exactly when the other is. -/
+lemma isIso_singularHomologyMap_ofInclusion_congr {X Y : TopCat.{w}} (g : X → Y)
+    {s t s₁ t₁ : Set X} {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h' : s' ⊆ t'} {h₁ : s₁ ⊆ t₁}
+    {h₁' : s₁' ⊆ t₁'} (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφ : ∀ x, (Hom.fst φ x).val = g x.val) (hψ : ∀ x, (Hom.fst ψ x).val = g x.val) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap φ R n) ↔ IsIso (TopPair.singularHomologyMap ψ R n) := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by
+    ext x
+    exact Subtype.ext ((hφ x).trans (hψ x).symm))
   rfl
 
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the

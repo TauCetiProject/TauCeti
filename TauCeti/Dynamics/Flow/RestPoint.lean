@@ -103,17 +103,9 @@ theorem exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn {X : ℝ → E 
     exists_contDiff_hasCompactSupport_eq hT hU hTI hx₀ hX
   -- The cut-off field has a global time-dependent flow, with `C^r` time maps.
   obtain ⟨C, hC⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hYc (hY.of_le hr') one_ne_zero
-  have hS : LipschitzWith (max 0 C) (timeDependentSuspension Y) := by
-    convert (LipschitzWith.const (1 : ℝ)).prodMk hC using 1
-    funext ⟨t, x⟩
-    simp
-  have hsm (s t : ℝ) : ContDiff ℝ r (timeDependentFlow Y hS s t) := by
-    refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
-    have hι : ContDiff ℝ m fun x : E ↦ ((s, t), x) := contDiff_const.prodMk contDiff_id
-    cases m with
-    | zero => exact contDiff_zero.2 ((continuous_timeDependentFlow Y hS).comp hι.continuous)
-    | succ m =>
-      exact (contDiff_timeDependentFlow hS m (hY.of_le (by exact_mod_cast hm))).comp hι
+  have hS : LipschitzWith C (timeDependentSuspension Y) := lipschitzWith_timeDependentSuspension hC
+  have hsm (s t : ℝ) : ContDiff ℝ r (timeDependentFlow Y hS s t) :=
+    contDiff_timeDependentFlow_apply hS hY s t
   -- Rest points of the field are rest points of the cut-off field, hence fixed by its flow.
   have hfix (y : E) (hy : ∀ t ∈ T, X t y = 0) (t : ℝ) : timeDependentFlow Y hS 0 t y = y :=
     (eq_timeDependentFlow Y hS (y := fun _ ↦ y)

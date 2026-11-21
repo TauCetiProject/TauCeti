@@ -61,6 +61,8 @@ and vanishing homology above it make cohomology vanish above that degree.
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
   `TauCeti.ChainComplex.exact_extToHomology_kronecker`: exactness at the first two places.
+* `TauCeti.ChainComplex.smul_eq_zero_of_kronecker_eq_zero`: if `r • 𝟙` on `Hⱼ(X)` factors through
+  a projective object, `r` annihilates the kernel of the Kronecker map in degree `j + 1`.
 * `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_of_add_one_eq`,
   `TauCeti.ChainComplex.kroneckerEquivOfProjectiveHomologyOfAddOneEq` and
   `TauCeti.ChainComplex.isZero_homology_linearYonedaObj_of_projective_homology_of_add_one_eq`: the
@@ -223,6 +225,18 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     (exact_boundariesHom_kronecker (k := k) (X := X) (Y := Y) hij).linearMap_ker_eq,
     extToHomology, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
     Submodule.range_liftQ]
+
+/-- **Torsion in the kernel of the Kronecker map**: in degree `i = j + 1`, if `r • 𝟙` on `Hⱼ(X)`
+factors through a projective object, then `r` annihilates every class of `Hⁱ(Hom(X, Y))` that
+evaluates to zero on homology, since such a class comes from `Ext¹(Hⱼ(X), Y)`. For abelian groups
+this applies when the torsion of `Hⱼ(X)` has exponent `r` and its torsion-free quotient is free. -/
+theorem smul_eq_zero_of_kronecker_eq_zero {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] {P : C} [Projective P] {r : k} (f : X.homology j ⟶ P)
+    (g : P ⟶ X.homology j) (hfg : f ≫ g = r • 𝟙 _) {x : (X.linearYonedaObj k Y).homology i}
+    (hx : kronecker k X Y i x = 0) :
+    r • x = 0 := by
+  obtain ⟨e, rfl⟩ := (exact_extToHomology_kronecker.{w} (k := k) (Y := Y) hij x).1 hx
+  rw [← map_smul, ext_smul_eq_zero_of_projective k f g hfg e, map_zero]
 
 end Ext
 
