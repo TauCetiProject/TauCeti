@@ -195,7 +195,9 @@ lemma twistedKronecker_twistedKroneckerSection (n : ℕ) (g : L.twistedHomology 
 a class in `Hⁿ(X; L, M)`. -/
 theorem twistedKronecker_surjective (n : ℕ) :
     Function.Surjective (L.twistedKronecker k (M := M) n) :=
-  fun g ↦ ⟨L.twistedKroneckerSection k M n g, L.twistedKronecker_twistedKroneckerSection k M n g⟩
+  by
+  rw [twistedKronecker_def]
+  exact TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono n
 
 end HereditarySingleDegree
 
@@ -264,10 +266,7 @@ from the section `TauCeti.LocalCoefficientSystem.twistedKroneckerSection` and is
 def twistedUniversalCoefficientEquiv (n : ℕ) :
     L.twistedCohomology k M (n + 1) ≃ₗ[k]
       Ext.{t} (L.twistedHomology n) M 1 × (L.twistedHomology (n + 1) ⟶ M) :=
-  ((L.exact_twistedExtToCohomology_twistedKronecker k M n).splitSurjectiveEquiv
-    (L.twistedExtToCohomology_injective k M n)
-    ⟨L.twistedKroneckerSection k M (n + 1),
-      LinearMap.ext (L.twistedKronecker_twistedKroneckerSection k M (n + 1))⟩).val
+  TauCeti.ChainComplex.universalCoefficientEquiv k L.twistedChainComplex M rfl
 
 /-- The inverse of the splitting `TauCeti.LocalCoefficientSystem.twistedUniversalCoefficientEquiv`
 restricts to the inclusion `TauCeti.LocalCoefficientSystem.twistedExtToCohomology` of the `Ext`
@@ -276,9 +275,7 @@ term on the first factor. -/
 lemma twistedUniversalCoefficientEquiv_symm_inl (n : ℕ)
     (e : Ext.{t} (L.twistedHomology n) M 1) :
     (L.twistedUniversalCoefficientEquiv k M n).symm (e, 0) = L.twistedExtToCohomology k M n e :=
-  (LinearMap.congr_fun
-    ((L.exact_twistedExtToCohomology_twistedKronecker k M n).splitSurjectiveEquiv
-      (L.twistedExtToCohomology_injective k M n) _).property.left e).symm
+  TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl rfl e
 
 /-- The second component of the splitting
 `TauCeti.LocalCoefficientSystem.twistedUniversalCoefficientEquiv` is the Kronecker map. -/
@@ -286,9 +283,9 @@ lemma twistedUniversalCoefficientEquiv_symm_inl (n : ℕ)
 lemma twistedUniversalCoefficientEquiv_apply_snd (n : ℕ)
     (x : L.twistedCohomology k M (n + 1)) :
     (L.twistedUniversalCoefficientEquiv k M n x).2 = L.twistedKronecker k (n + 1) x :=
-  (LinearMap.congr_fun
-    ((L.exact_twistedExtToCohomology_twistedKronecker k M n).splitSurjectiveEquiv
-      (L.twistedExtToCohomology_injective k M n) _).property.right x).symm
+  by
+  rw [twistedKronecker_def]
+  exact TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd rfl x
 
 end Hereditary
 
@@ -439,8 +436,9 @@ every `R`-module has projective dimension at most one, every morphism `Hₙ(X, A
 evaluation of a class in `Hⁿ(X, A; L, M)`. -/
 theorem twistedKronecker_surjective (n : ℕ) :
     Function.Surjective (P.twistedKronecker L k (M := M) n) :=
-  fun g ↦ ⟨P.twistedKroneckerSection L k M n g,
-    P.twistedKronecker_twistedKroneckerSection L k M n g⟩
+  by
+  rw [twistedKronecker_def]
+  exact TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono n
 
 end HereditarySingleDegree
 
@@ -507,10 +505,7 @@ restricts to `TopPair.twistedExtToCohomology` on the first factor
 def twistedUniversalCoefficientEquiv (n : ℕ) :
     P.twistedCohomology L k M (n + 1) ≃ₗ[k]
       Ext.{t} (P.twistedHomology L n) M 1 × (P.twistedHomology L (n + 1) ⟶ M) :=
-  ((P.exact_twistedExtToCohomology_twistedKronecker L k M n).splitSurjectiveEquiv
-    (P.twistedExtToCohomology_injective L k M n)
-    ⟨P.twistedKroneckerSection L k M (n + 1),
-      LinearMap.ext (P.twistedKronecker_twistedKroneckerSection L k M (n + 1))⟩).val
+  TauCeti.ChainComplex.universalCoefficientEquiv k (P.twistedChainComplex L) M rfl
 
 /-- The inverse of the splitting `TopPair.twistedUniversalCoefficientEquiv` restricts to the
 inclusion `TopPair.twistedExtToCohomology` of the `Ext` term on the first factor. -/
@@ -519,9 +514,7 @@ lemma twistedUniversalCoefficientEquiv_symm_inl (n : ℕ)
     (e : Ext.{t} (P.twistedHomology L n) M 1) :
     (P.twistedUniversalCoefficientEquiv L k M n).symm (e, 0) =
       P.twistedExtToCohomology L k M n e :=
-  (LinearMap.congr_fun
-    ((P.exact_twistedExtToCohomology_twistedKronecker L k M n).splitSurjectiveEquiv
-      (P.twistedExtToCohomology_injective L k M n) _).property.left e).symm
+  TauCeti.ChainComplex.universalCoefficientEquiv_symm_inl rfl e
 
 /-- The second component of the splitting `TopPair.twistedUniversalCoefficientEquiv` is the
 relative Kronecker map. -/
@@ -529,9 +522,9 @@ relative Kronecker map. -/
 lemma twistedUniversalCoefficientEquiv_apply_snd (n : ℕ)
     (x : P.twistedCohomology L k M (n + 1)) :
     (P.twistedUniversalCoefficientEquiv L k M n x).2 = P.twistedKronecker L k (n + 1) x :=
-  (LinearMap.congr_fun
-    ((P.exact_twistedExtToCohomology_twistedKronecker L k M n).splitSurjectiveEquiv
-      (P.twistedExtToCohomology_injective L k M n) _).property.right x).symm
+  by
+  rw [twistedKronecker_def]
+  exact TauCeti.ChainComplex.universalCoefficientEquiv_apply_snd rfl x
 
 end Hereditary
 
