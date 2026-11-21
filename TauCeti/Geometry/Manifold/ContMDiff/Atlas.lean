@@ -53,6 +53,11 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `OpenPartialHomeomorph.contMDiffOn_transHomeomorph_toHomeomorph`,
+  `OpenPartialHomeomorph.contMDiffOn_transHomeomorph_toHomeomorph_symm` and
+  `OpenPartialHomeomorph.transHomeomorph_toHomeomorph_symm_mem_maximalAtlas`: `C^n` regularity of a
+  maximal-atlas chart read into the model vector space via `I.toHomeomorph`, its inverse, and the
+  converse maximal-atlas membership criterion.
 -/
 
 public section
@@ -197,6 +202,43 @@ theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
     (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
   (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
     ((c.extendTrans I Ψ).open_target.mem_nhds hv)
+
+/-- A chart `e` of the maximal `C^n` atlas of a boundaryless manifold, composed with
+`I.toHomeomorph : H ≃ₜ E`, is `C^n` on its source. -/
+theorem contMDiffOn_transHomeomorph_toHomeomorph (e : OpenPartialHomeomorph M H)
+    (he : e ∈ IsManifold.maximalAtlas I n M) :
+    ContMDiffOn I 𝓘(𝕜, E) n (e.transHomeomorph I.toHomeomorph)
+      (e.transHomeomorph I.toHomeomorph).source := by
+  have hcoe : ⇑(e.transHomeomorph I.toHomeomorph) = ⇑I ∘ ⇑e :=
+    funext fun _ ↦ I.toHomeomorph_apply _
+  rw [hcoe, transHomeomorph_source]
+  simpa [extend_coe] using e.contMDiffOn_extend he
+
+/-- The inverse of `e.transHomeomorph I.toHomeomorph`, for `e` in the maximal `C^n` atlas of a
+boundaryless manifold, is `C^n` on its target. -/
+theorem contMDiffOn_transHomeomorph_toHomeomorph_symm (e : OpenPartialHomeomorph M H)
+    (he : e ∈ IsManifold.maximalAtlas I n M) :
+    ContMDiffOn 𝓘(𝕜, E) I n (e.transHomeomorph I.toHomeomorph).symm
+      (e.transHomeomorph I.toHomeomorph).target := by
+  have hcoe : ⇑(e.transHomeomorph I.toHomeomorph).symm = ⇑e.symm ∘ ⇑I.symm :=
+    funext fun v ↦ congrArg e.symm (I.toHomeomorph_symm_apply v)
+  have htarget : (e.transHomeomorph I.toHomeomorph).target = ⇑I '' e.target := by
+    rw [transHomeomorph_target, ← Homeomorph.image_eq_preimage_symm]
+    ext v; simp [I.toHomeomorph_apply]
+  rw [hcoe, htarget]
+  simpa [extend_coe_symm, extend_target'] using contMDiffOn_extend_symm he
+
+/-- An open partial homeomorphism `Θ : M → E` into the model vector space of a boundaryless `C^n`
+manifold which is `C^n` on its source with `C^n` inverse on its target pulls back along
+`I.toHomeomorph.symm` to a chart of the maximal `C^n` atlas. -/
+theorem transHomeomorph_toHomeomorph_symm_mem_maximalAtlas [IsManifold I n M]
+    (Θ : OpenPartialHomeomorph M E) (hΘ : ContMDiffOn I 𝓘(𝕜, E) n Θ Θ.source)
+    (hΘsymm : ContMDiffOn 𝓘(𝕜, E) I n Θ.symm Θ.target) :
+    Θ.transHomeomorph I.toHomeomorph.symm ∈ IsManifold.maximalAtlas I n M := by
+  have hIsymm : ContMDiff 𝓘(𝕜, E) I n I.symm :=
+    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
+  exact mem_maximalAtlas_of_contMDiffOn _
+    (hIsymm.comp_contMDiffOn hΘ) (hΘsymm.comp I.contMDiff.contMDiffOn fun _ hy ↦ hy)
 
 end OpenPartialHomeomorph
 

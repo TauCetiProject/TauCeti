@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Bundled smooth embeddings
@@ -43,6 +45,8 @@ the inputs of the tubular-neighbourhood and surgery constructions.
   `Manifold.IsSmoothEmbedding.contMDiff_iff_comp`: smoothness (within a set, at a point, on a set,
   or globally) can be tested after composition with a smooth embedding, without a separate
   continuity hypothesis.
+* `Manifold.IsSmoothEmbedding.comp`: the composition of smooth embeddings between boundaryless
+  manifolds with a finite-dimensional target model is a smooth embedding.
 * `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
   `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
@@ -111,6 +115,26 @@ theorem contMDiff_iff_comp {f : M → N} {φ : N → N'}
     ContMDiff I J n f ↔ ContMDiff I J' n (φ ∘ f) := by
   rw [ContMDiff.iff_comp_isImmersion hφ.isImmersion]
   exact ⟨And.right, fun h ↦ ⟨hφ.isEmbedding.continuous_iff.2 h.continuous, h⟩⟩
+
+/-- The composition of two `C^n` smooth embeddings (`1 ≤ n`) whose source and target are
+boundaryless manifolds, with a finite-dimensional target model, is a `C^n` smooth embedding. -/
+theorem comp {𝕜 E₁ H₁ X₁ E₂ H₂ X₂ E₃ H₃ X₃ : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁] [TopologicalSpace H₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [TopologicalSpace H₂]
+    [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃] [FiniteDimensional 𝕜 E₃] [TopologicalSpace H₃]
+    {I₁ : ModelWithCorners 𝕜 E₁ H₁} {I₂ : ModelWithCorners 𝕜 E₂ H₂} {I₃ : ModelWithCorners 𝕜 E₃ H₃}
+    [I₁.Boundaryless] [I₃.Boundaryless] [TopologicalSpace X₁] [ChartedSpace H₁ X₁]
+    [IsManifold I₁ n X₁] [TopologicalSpace X₂] [ChartedSpace H₂ X₂]
+    [TopologicalSpace X₃] [ChartedSpace H₃ X₃] [IsManifold I₃ n X₃] {f : X₁ → X₂} {g : X₂ → X₃}
+    (hg : Manifold.IsSmoothEmbedding I₂ I₃ n g) (hf : Manifold.IsSmoothEmbedding I₁ I₂ n f)
+    (hn : 1 ≤ n) : Manifold.IsSmoothEmbedding I₁ I₃ n (g ∘ f) := by
+  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
+  refine ⟨(hg.contMDiff.comp hf.contMDiff).isImmersion_of_injective_mfderiv hn fun x ↦ ?_,
+    hg.isEmbedding.comp hf.isEmbedding⟩
+  rw [mfderiv_comp x ((hg.contMDiff (f x)).mdifferentiableAt hn0)
+    ((hf.contMDiff x).mdifferentiableAt hn0)]
+  exact ((hg.isImmersion.isImmersionAt (f x)).mfderiv_injective hn0).comp
+    ((hf.isImmersion.isImmersionAt x).mfderiv_injective hn0)
 
 end Manifold.IsSmoothEmbedding
 
@@ -320,7 +344,7 @@ theorem coe_sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
 
 end SmoothEmbedding
 
-open Manifold in
+open _root_.Manifold in
 /-- **Slices of a product.** If the preferred chart of `M'` at `c` sends `c` to `0`, then the slice
 `x ↦ (x, c)` of the product `M × M'` is a smooth embedding: in product charts it is `u ↦ (u, 0)`. -/
 theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']

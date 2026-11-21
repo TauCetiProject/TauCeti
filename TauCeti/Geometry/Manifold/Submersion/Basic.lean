@@ -49,6 +49,9 @@ constant on the fibres factors through a unique `C^m` map
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
+* `Manifold.isSubmersionOfComplement_fst`, `Manifold.isSubmersion_fst`,
+  `Manifold.isSubmersionOfComplement_snd`, `Manifold.isSubmersion_snd`: the product projections are
+  submersions.
 * `Manifold.IsSubmersion.of_le`, together with its `Manifold.IsSubmersionAt`,
   `Manifold.IsSubmersionOfComplement` and `Manifold.IsSubmersionAtOfComplement` forms: lowering the
   regularity order preserves submersions.
@@ -65,6 +68,7 @@ constant on the fibres factors through a unique `C^m` map
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_section`,
+  `Manifold.IsSubmersionOfComplement.exists_contMDiffOn_section`,
   `Manifold.IsSubmersion.exists_contMDiffOn_section`, and
   `Manifold.IsSubmersion.exists_contMDiffOn_section_of_surjective`: local sections of a submersion.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`,
@@ -124,6 +128,23 @@ theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
 theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
     IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
   isSubmersionOfComplement_fst.isSubmersion
+
+/-- The second projection of a product of manifolds is a submersion, with the first model
+space as complement. -/
+theorem isSubmersionOfComplement_snd [IsManifold I n M] [IsManifold J n N] :
+    IsSubmersionOfComplement E (I.prod J) J n (@Prod.snd M N) := by
+  refine isSubmersionOfComplement_iff.mpr fun p ↦ .mk_of_continuousAt continuous_snd.continuousAt
+    (ContinuousLinearEquiv.prodComm 𝕜 E E') (chartAt (ModelProd H G) p) (chartAt G p.2)
+    (mem_chart_source _ p) (mem_chart_source _ p.2) (IsManifold.chart_mem_maximalAtlas p)
+    (IsManifold.chart_mem_maximalAtlas p.2) fun y hy ↦ ?_
+  rw [← extChartAt, ← extChartAt] at *
+  rw [extChartAt_prod] at hy ⊢
+  exact (extChartAt J p.2).right_inv hy.2
+
+/-- The second projection of a product of manifolds is a submersion. -/
+theorem isSubmersion_snd [IsManifold I n M] [IsManifold J n N] :
+    IsSubmersion (I.prod J) J n (@Prod.snd M N) :=
+  isSubmersionOfComplement_snd.isSubmersion
 
 section OfLe
 
@@ -407,6 +428,13 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
+
+/-- **Local sections of a submersion with complement through every source point.** -/
+theorem IsSubmersionOfComplement.exists_contMDiffOn_section [I.Boundaryless]
+    (h : IsSubmersionOfComplement F I J n f) (x : M) :
+    ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
+      ∀ y ∈ U, f (s y) = y :=
+  (h.isSubmersionAt x).exists_contMDiffOn_section
 
 /-- **Local sections of a submersion.** If `f` is a `C^n` submersion and the model of `M` has no
 boundary, then through every `x : M` there is a `C^n` local section `s` of `f` over an open

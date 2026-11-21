@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 /-!
 # Simplicial structure of iterated submersion fibre products
@@ -225,6 +226,57 @@ theorem degeneracy_const {m : ℕ} (i : Fin (m + 1)) (z : Y) :
 theorem baseProj_degeneracy {m : ℕ} (i : Fin (m + 1)) (y : IteratedFiberProduct π (m + 1)) :
     baseProj (degeneracy i y) = baseProj y :=
   baseProj_reindex i.predAbove y
+
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Contravariant Čech nerve action of `θ : ⦋a⦌ ⟶ ⦋b⦌` in `SimplexCategory` on
+`IteratedFiberProduct π`. -/
+def mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    IteratedFiberProduct π (b + 1) → IteratedFiberProduct π (a + 1) :=
+  reindex θ.toOrderHom
+
+/-- The underlying tuple of `mapSimplex θ y` is `y.1 ∘ θ.toOrderHom`. -/
+@[simp]
+theorem coe_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    (mapSimplex θ y : Fin (a + 1) → Y) = y.val ∘ θ.toOrderHom := (rfl)
+
+/-- Evaluating `mapSimplex θ y` at `i` evaluates `y` at `θ.toOrderHom i`. -/
+theorem eval_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1))
+    (i : Fin (a + 1)) : eval i (mapSimplex θ y) = eval (θ.toOrderHom i) y :=
+  eval_reindex θ.toOrderHom y i
+
+/-- `mapSimplex θ` preserves `baseProj`. -/
+@[simp]
+theorem baseProj_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : IteratedFiberProduct π (b + 1)) :
+    baseProj (mapSimplex θ y) = baseProj y :=
+  baseProj_reindex θ.toOrderHom y
+
+/-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
+@[simp]
+theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
+    mapSimplex (𝟙 ⦋a⦌) y = y :=
+  reindex_id_apply y
+
+/-- `mapSimplex` is contravariantly functorial on `SimplexCategory`. -/
+theorem mapSimplex_comp {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌) :
+    mapSimplex (π := π) (θ₁ ≫ θ₂) = mapSimplex θ₁ ∘ mapSimplex θ₂ := by
+  ext y i
+  simp [mapSimplex]
+
+/-- `mapSimplex` sends `SimplexCategory.δ i` to `face i`. -/
+@[simp]
+theorem mapSimplex_δ {a : ℕ} (i : Fin (a + 2)) :
+    mapSimplex (π := π) (SimplexCategory.δ i) = face i := (rfl)
+
+/-- `mapSimplex` sends `SimplexCategory.σ i` to `degeneracy i`. -/
+@[simp]
+theorem mapSimplex_σ {a : ℕ} (i : Fin (a + 1)) :
+    mapSimplex (π := π) (SimplexCategory.σ i) = degeneracy i := (rfl)
+
+end SimplexCategory
 
 /-! ### Simplicial identities -/
 
@@ -604,6 +656,35 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   exact ⟨isImmersion_degeneracy hn hπ i, IteratedFiberProduct.isEmbedding_degeneracy i⟩
+
+section
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Every simplicial Čech nerve map `mapSimplex θ` is `C^{m'}` for `m' ≤ n`. -/
+theorem contMDiff_mapSimplex {a b : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    letI := iteratedFiberProductChartedSpace hn hπ b
+    letI := iteratedFiberProductChartedSpace hn hπ a
+    ContMDiff
+      𝓘(ℝ, Fin ((b + 1) * finrank ℝ EY - b * finrank ℝ EM) → ℝ)
+      𝓘(ℝ, Fin ((a + 1) * finrank ℝ EY - a * finrank ℝ EM) → ℝ) m'
+      (IteratedFiberProduct.mapSimplex (π := π) θ) :=
+  contMDiff_reindex hn hπ hm' θ.toOrderHom
+
+end
+
+/-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
+embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
+theorem isSmoothEmbedding_const (m : ℕ) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    Manifold.IsSmoothEmbedding IY
+      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n
+      (IteratedFiberProduct.const (π := π) (m + 1)) := by
+  let := iteratedFiberProductChartedSpace hn hπ m
+  have := isManifold_iteratedFiberProduct hn hπ m
+  exact (contMDiff_const hn hπ le_rfl).isSmoothEmbedding_of_leftInverse hn
+    (contMDiff_eval hn hπ hn 0) fun y ↦ IteratedFiberProduct.eval_const 0 y
 
 end Manifold
 
