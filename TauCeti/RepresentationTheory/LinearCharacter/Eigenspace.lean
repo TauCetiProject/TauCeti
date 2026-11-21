@@ -227,7 +227,7 @@ theorem charSum_of_subsingleton [Subsingleton G] : ρ.charSum χ = 1 := by
 
 /-- **The character sum lands in the eigensubmodule**: `S_χ(v) ∈ V^χ`. -/
 theorem charSum_apply_mem (v : V) : ρ.charSum χ v ∈ ρ.charEigenspace χ := by
-  rw [charEigenspace_eq_invariants_charTwist, mem_invariants]
+  rw [charEigenspace_eq_invariants_charTwist, mem_invariants, charSum]
   exact fun g => self_norm_apply _ g v
 
 /-- On the eigensubmodule the character sum is multiplication by the order of the group. -/
