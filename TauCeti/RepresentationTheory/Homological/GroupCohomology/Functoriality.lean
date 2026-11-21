@@ -105,27 +105,6 @@ theorem map_id_nsmul {A B : Rep k G} (m : ℕ) (φ : A ⟶ B) (n : ℕ) :
     map (MonoidHom.id G) (m • φ) n = m • map (MonoidHom.id G) φ n :=
   (functor k G n).map_nsmul
 
-/-- If multiplication by `m : ℕ` is bijective on `A`, then it is bijective on `Hⁿ(G, A)` in every
-degree `n`. -/
-theorem nsmul_bijective {A : Rep k G} {m : ℕ}
-    (hA : Function.Bijective fun a : A ↦ m • a) (n : ℕ) :
-    Function.Bijective fun x : groupCohomology A n ↦ m • x := by
-  let e : A.V ≃ₗ[k] A.V := LinearEquiv.ofBijective ((m : k) • LinearMap.id)
-    (by simpa only [LinearMap.coe_smul, LinearMap.id_coe, Pi.smul_def, id_eq,
-      Nat.cast_smul_eq_nsmul] using hA)
-  let eA : A ≅ A := Rep.mkIso (.mk e fun g ↦ LinearMap.ext fun x ↦ by simp [e])
-  have heA : eA.hom = (m : k) • 𝟙 A := by
-    ext x
-    simp [eA, e, Rep.smul_hom]
-  have hmap : map (MonoidHom.id G) eA.hom n = (m : k) • 𝟙 (groupCohomology A n) := by
-    rw [heA, Nat.cast_smul_eq_nsmul, map_id_nsmul, map_id, Nat.cast_smul_eq_nsmul]
-  have hfun : (fun x : groupCohomology A n ↦ m • x) =
-      ⇑((functor k G n).mapIso eA).toLinearEquiv := by
-    ext x
-    rw [Iso.toLinearEquiv_apply, CategoryTheory.Functor.mapIso_hom, functor_map, hmap]
-    simp [Nat.cast_smul_eq_nsmul]
-  exact hfun ▸ ((functor k G n).mapIso eA).toLinearEquiv.bijective
-
 /-- The map induced on `Hⁿ(G, -)` by a scalar multiple `c • φ` of a morphism of representations is
 `c` times the map induced by `φ`. -/
 @[simp]
@@ -138,17 +117,25 @@ theorem map_id_smul {A B : Rep k G} (c : k) (φ : A ⟶ B) (n : ℕ) :
 theorem smul_bijective (c : k) (A : Rep k G)
     (hA : Function.Bijective fun a : A ↦ c • a) (n : ℕ) :
     Function.Bijective fun x : groupCohomology A n ↦ c • x := by
-  have : IsIso ((forget (Rep k G)).map (c • 𝟙 A)) :=
+  have : IsIso (c • 𝟙 A) :=
     (ConcreteCategory.isIso_iff_bijective _).2 <| by
       convert hA using 1
       ext a
       simp [Rep.smul_hom]
-  have : IsIso (c • 𝟙 A) := isIso_of_reflects_iso _ (forget (Rep k G))
   have : IsIso (c • 𝟙 (groupCohomology A n)) :=
     CategoryTheory.Functor.isIso_smul_id_obj (functor k G n) c A
   have hfun : (fun x : groupCohomology A n ↦ c • x) = ⇑(c • 𝟙 (groupCohomology A n)) :=
     funext fun x ↦ by simp
   exact hfun ▸ ConcreteCategory.bijective_of_isIso (c • 𝟙 (groupCohomology A n))
+
+/-- If multiplication by `m : ℕ` is bijective on `A`, then it is bijective on `Hⁿ(G, A)` in every
+degree `n`. -/
+theorem nsmul_bijective {A : Rep k G} {m : ℕ}
+    (hA : Function.Bijective fun a : A ↦ m • a) (n : ℕ) :
+    Function.Bijective fun x : groupCohomology A n ↦ m • x := by
+  -- Multiplication by `m` is the scalar action of `(m : k)`, on `A` and on `Hⁿ(G, A)`.
+  simpa only [Nat.cast_smul_eq_nsmul] using
+    smul_bijective (m : k) A (by simpa only [Nat.cast_smul_eq_nsmul] using hA) n
 
 end TauCeti.groupCohomology
 
