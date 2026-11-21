@@ -20,7 +20,8 @@ analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, th
 slices `y ↦ f (x, y)` with `x` near `p.1` (`AnalyticAt.eventually_analyticAt_curry_right`).
 
 Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analytic
-(`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`).
+(`TauCeti.analyticAt_sumElim`, `TauCeti.analyticOnNhd_sumElim`), as is the slice
+`ζ ↦ Sum.elim x (fun _ ↦ ζ)` fixing the first block (`TauCeti.analyticAt_sumElim_const`).
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`), and
@@ -68,6 +69,16 @@ theorem analyticOnNhd_sumElim {ι ι' : Type*} [Fintype ι] [Fintype ι']
     {s : Set ((ι → E) × (ι' → E))} :
     AnalyticOnNhd 𝕜 (fun p : (ι → E) × (ι' → E) ↦ Sum.elim p.1 p.2) s :=
   fun _ _ ↦ analyticAt_sumElim
+
+/-- Fixing the first block `x : ι → E` and varying a constant second block gives an analytic
+slice `ζ ↦ Sum.elim x (fun _ : ι' ↦ ζ)` into `ι ⊕ ι' → E`. -/
+theorem analyticAt_sumElim_const {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    (x : ι → E) (w : E) :
+    AnalyticAt 𝕜 (fun ζ : E ↦ Sum.elim x (fun _ : ι' ↦ ζ)) w :=
+  analyticAt_pi_iff.2 fun j ↦ by
+    cases j with
+    | inl _ => exact analyticAt_const
+    | inr _ => exact analyticAt_id
 
 end TauCeti
 
