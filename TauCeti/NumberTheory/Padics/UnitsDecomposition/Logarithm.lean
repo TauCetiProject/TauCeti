@@ -181,7 +181,8 @@ private noncomputable def unitsPrincipalEquivUnitFiltration :
 /-- `x / q` for `x ∈ 𝓂 ^ k`, as an element of `ℤ_[p]`. -/
 private noncomputable def divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) : ℤ_[p] :=
   ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p,
-    div_pow_padicUnitsDepth_mem_subring (TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property)⟩
+    div_pow_padicUnitsDepth_mem_subring
+      (TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.property)⟩
 
 private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) :
     (divQ x : ℚ_[p]) = ((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
