@@ -41,6 +41,8 @@ permutations of the same type.
   moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.card_image_invariantColouringEquiv_le_and_eq_iff`: an invariant colouring uses at
+  most one colour per orbit and attains the bound exactly when its orbit labels are injective.
 * `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
   cycle of `π` has each of its cycles inside a cycle of `π`.
 * `TauCeti.orbitCount_le_card_orbitRelQuotient`: a subgroup of permutations moving every point
@@ -105,6 +107,22 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 /-- The orbit count is the cardinality of the type of orbits. -/
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
+/-- Passing from cycle labels to a colouring preserves the set of colours used. -/
+@[simp] theorem _root_.Equiv.Perm.range_invariantColouringEquiv {σ : Type*}
+    (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
+    Set.range (invariantColouringEquiv π g : α → σ) = Set.range g := by
+  have h : (invariantColouringEquiv π g : α → σ) = g ∘ Quotient.mk _ :=
+    funext (invariantColouringEquiv_apply_coe π g)
+  rw [h, Quotient.mk_surjective.range_comp]
+
+/-- The induced colouring and its cycle labels use the same number of colours.
+See `Equiv.Perm.range_invariantColouringEquiv` for equality of the colour sets. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv {σ : Type*}
+    [Fintype α] [DecidableEq σ] (π : Perm α) (g : Quotient (SameCycle.setoid π) → σ) :
+    (Finset.univ.image (invariantColouringEquiv π g).val).card = Nat.card (Set.range g) := by
+  rw [← π.range_invariantColouringEquiv, ← Set.image_univ, ← Finset.coe_univ,
+    ← Finset.coe_image, Nat.card_coe_set_eq, Set.ncard_coe_finset]
 
 /-- The number of colours used is at most the number of orbits, with equality exactly when the
 cycle labels are injective. -/
