@@ -29,7 +29,10 @@ This is an analogue of the `E∞` part of Weibel's Classical Convergence Theorem
 (page `r + 1` being the homology of page `r`), in the form needed when the filtration is not
 finite. From page `r` to page `r + 1`, `spectralSequencePageXToPageX` is that map of the
 spectral sequence (`TauCeti.Algebra.Homology.SpectralObject.PageHomology`), so the graded piece
-is the direct limit of the pages along the spectral sequence's own maps.
+is the direct limit of the pages along the spectral sequence's own maps. The maps onto the graded
+pieces are natural in morphisms of filtrations: they intertwine the induced morphism of spectral
+sequences with the induced map on the graded pieces
+(`CochainComplex.filtrationSpectralSequencePageXToGraded_naturality`).
 Convergence to `H^n(K)` needs in addition hypotheses in degree `n`, which this file does not
 assume: if every element of `K^n` lies in some `F_i`, the filtration of `H^n(K)` is exhaustive
 (`CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι`), and if some stage vanishes in
@@ -65,6 +68,8 @@ filtrations.
   Classical Convergence Theorem** for filtrations bounded below and exhaustive: the kernel of the
   map onto the graded piece consists of the elements vanishing on some later page under
   `spectralSequencePageXToPageX`.
+* `CochainComplex.filtrationSpectralSequencePageXToGraded_naturality`: the maps onto the graded
+  pieces are natural.
 
 ## References
 
@@ -296,6 +301,27 @@ lemma spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded (r r'
     filtrationSpectralSequencePageXToGraded F hF r hr pq hs hrs := by
   rw [filtrationSpectralSequencePageXToGraded_def, filtrationSpectralSequencePageXToGraded_def,
     spectralSequencePageXToPageX_spectralSequencePageXToEInfty_assoc]
+
+/-- **The maps onto the graded pieces are natural.** Let `α` be a morphism between the functors of
+increasing filtrations `F` of `K` and `G` of `L` whose stages `F_s` and `G_s` vanish in degree
+`p + q + 1`. On every page `r ≥ 2` with `q - r + 2 ≤ s`, the epimorphisms
+`filtrationSpectralSequencePageXToGraded` from the objects at `(p, q)` onto the graded pieces
+`F_{q+1} H^{p+q} / F_q H^{p+q}` of the filtrations of the abutments intertwine the morphism of
+spectral sequences induced by `α` with the map it induces on these graded pieces. -/
+@[reassoc]
+lemma filtrationSpectralSequencePageXToGraded_naturality {L : CochainComplex (ModuleCat.{v} R) ℤ}
+    (G : ℤ → Subobject L) (hG : Monotone G) (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG)
+    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) {s : ℤ}
+    (hFs : IsZero ((F s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hGs : IsZero ((G s : CochainComplex (ModuleCat.{v} R) ℤ).X (pq.1 + pq.2 + 1)))
+    (hrs : pq.2 - r + 2 ≤ s) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        filtrationSpectralSequencePageXToGraded G hG r hr pq hGs hrs =
+      filtrationSpectralSequencePageXToGraded F hF r hr pq hFs hrs ≫
+        abutmentGradedMap (spectralObjectMap α) pq.2 (pq.1 + pq.2) := by
+  simp only [filtrationSpectralSequencePageXToGraded_def, spectralSequenceMap_hom,
+    spectralSequencePageMap_f]
+  rw [Category.assoc, spectralSequencePageXToEInfty_comp_EInftyIsoCokernel_hom_naturality]
 
 /-- **An analogue of Weibel's Classical Convergence Theorem for filtrations bounded below**, for
 the canonical maps `spectralSequencePageXToPageX` between pages. Let `pq = (p, q)` and
