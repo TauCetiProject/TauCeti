@@ -136,11 +136,15 @@ def _root_.ContinuousLinearEquiv.mapProjectivization (e : V ≃SL[σ] W) :
   { e.toLinearEquiv.mapProjectivization with
     continuous_toFun := e.toLinearEquiv.continuous_mapProjectivization e.continuous
     continuous_invFun := by
-      have h : e.toLinearEquiv.mapProjectivization.symm =
-          e.symm.toLinearEquiv.mapProjectivization :=
-        LinearEquiv.mapProjectivization_symm e.toLinearEquiv
-      exact (e.symm.toLinearEquiv.continuous_mapProjectivization e.symm.continuous).congr
-        fun p ↦ congrArg (fun f : ℙ L W ≃ ℙ K V ↦ f p) h.symm }
+      rw [Equiv.invFun_as_coe, LinearEquiv.mapProjectivization_symm,
+        ← ContinuousLinearEquiv.toLinearEquiv_symm]
+      exact e.symm.toLinearEquiv.continuous_mapProjectivization e.symm.continuous }
+
+/-- The underlying equivalence is the projectivization of the underlying semilinear equivalence. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.toEquiv_mapProjectivization (e : V ≃SL[σ] W) :
+    e.mapProjectivization.toEquiv = e.toLinearEquiv.mapProjectivization := by
+  simp only [ContinuousLinearEquiv.mapProjectivization]
 
 /-- The homeomorphism `ContinuousLinearEquiv.mapProjectivization` is `Projectivization.map`. -/
 theorem _root_.ContinuousLinearEquiv.coe_mapProjectivization (e : V ≃SL[σ] W) :
@@ -156,10 +160,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_mk (e : V ≃SL[σ] W) 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm (e : V ≃SL[σ] W) :
     e.mapProjectivization.symm = e.symm.mapProjectivization := by
-  apply Homeomorph.ext
-  intro p
-  exact congrFun (congrArg Equiv.toFun
-    (LinearEquiv.mapProjectivization_symm e.toLinearEquiv)) p
+  apply Homeomorph.toEquiv_injective
+  simpa only [Homeomorph.symm, ContinuousLinearEquiv.toEquiv_mapProjectivization,
+    ContinuousLinearEquiv.toLinearEquiv_symm] using
+    LinearEquiv.mapProjectivization_symm e.toLinearEquiv
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_symm_apply_apply (e : V ≃SL[σ] W)
@@ -176,10 +180,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_apply_symm_apply (e : V
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_refl :
     (ContinuousLinearEquiv.refl K V).mapProjectivization = Homeomorph.refl (ℙ K V) := by
-  apply Homeomorph.ext
-  intro p
-  exact congrFun (congrArg Equiv.toFun
-    (LinearEquiv.mapProjectivization_refl (K := K) (V := V))) p
+  apply Homeomorph.toEquiv_injective
+  simpa only [ContinuousLinearEquiv.toEquiv_mapProjectivization,
+    ContinuousLinearEquiv.refl, Homeomorph.refl] using
+    LinearEquiv.mapProjectivization_refl (K := K) (V := V)
 
 @[simp]
 theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [DivisionRing M]
@@ -188,10 +192,10 @@ theorem _root_.ContinuousLinearEquiv.mapProjectivization_trans {M U : Type*} [Di
     [RingHomInvPair ρ ρ'] [RingHomInvPair ρ' ρ] [RingHomCompTriple σ τ ρ]
     [RingHomCompTriple τ' σ' ρ'] (e₁ : V ≃SL[σ] W) (e₂ : W ≃SL[τ] U) :
     (e₁.trans e₂).mapProjectivization = e₁.mapProjectivization.trans e₂.mapProjectivization := by
-  apply Homeomorph.ext
-  intro p
-  exact congrFun (congrArg Equiv.toFun (LinearEquiv.mapProjectivization_trans e₁.toLinearEquiv
-    e₂.toLinearEquiv).symm) p
+  apply Homeomorph.toEquiv_injective
+  simpa only [Homeomorph.trans, ContinuousLinearEquiv.toEquiv_mapProjectivization,
+    ContinuousLinearEquiv.trans_toLinearEquiv] using
+    (LinearEquiv.mapProjectivization_trans e₁.toLinearEquiv e₂.toLinearEquiv).symm
 
 end MapProjectivization
 
