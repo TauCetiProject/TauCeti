@@ -52,29 +52,49 @@ abbrev RestrictedLocalH1 :=
   Πʳ i, [H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i)).KerCoeff,
     (explicitCoeff1 _ _ (ofIsogeny (φ i)).kerCoeffIncl continuous_of_discreteTopology).ker]
 
+/-- The local Tate pairing at an index, composed with the normalization into `ℚ/ℤ`. -/
+private def normalizedLocalTateKerWeilPairing (i : ι) :
+    H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i)).KerCoeff →+
+      H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i).dual).KerCoeff →+ AddCircle (1 : ℚ) :=
+  (AddMonoidHom.compHom (ZMod.toRatAddCircle (φ i).degree)).comp
+    ((φ i).localTateKerWeilPairing (hn i))
+
+@[simp]
+private theorem normalizedLocalTateKerWeilPairing_apply (i : ι)
+    (a : H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i)).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i).dual).KerCoeff) :
+    normalizedLocalTateKerWeilPairing φ hn i a b =
+      ZMod.toRatAddCircle (φ i).degree ((φ i).localTateKerWeilPairing (hn i) a b) := by
+  simp only [normalizedLocalTateKerWeilPairing, AddMonoidHom.comp_apply,
+    AddMonoidHom.compHom_apply_apply]
+
+private theorem normalizedLocalTateKerWeilPairing_eq_zero_of_mem_ker (i : ι)
+    (a : H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i)).KerCoeff)
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny (φ i)).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (b : H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i).dual).KerCoeff)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny (φ i).dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    normalizedLocalTateKerWeilPairing φ hn i a b = 0 := by
+  simp only [normalizedLocalTateKerWeilPairing_apply, localTateKerWeilPairing_apply,
+    (φ i).kerH1WeilPairing_eq_zero_of_mem_ker (hn i) ha hb, map_zero]
+
 /-- The normalized local isogeny pairings have finite support on restricted cohomology
 families. The isogeny degree may be divisible by the residue characteristic. -/
 theorem hasFiniteSupport_localTateKerWeilPairing
     (x : RestrictedLocalH1 φ) (y : RestrictedLocalH1 fun i ↦ (φ i).dual) :
     (fun i ↦ ZMod.toRatAddCircle (φ i).degree
       ((φ i).localTateKerWeilPairing (hn i) (x i) (y i))).HasFiniteSupport := by
-  apply RestrictedProduct.hasFiniteSupport_pairing
-    (p := fun i ↦ (AddMonoidHom.compHom (ZMod.toRatAddCircle (φ i).degree)).comp
-      ((φ i).localTateKerWeilPairing (hn i)))
-  intro i a ha b hb
-  simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
-    (φ i).localTateKerWeilPairing_eq_zero_of_mem_ker (hn i) ha hb, map_zero]
+  simpa only [normalizedLocalTateKerWeilPairing_apply] using
+    RestrictedProduct.hasFiniteSupport_pairing _ _ (normalizedLocalTateKerWeilPairing φ hn)
+      (normalizedLocalTateKerWeilPairing_eq_zero_of_mem_ker φ hn) x y
 
 /-- Sum of the local isogeny pairings, normalized in `ℚ/ℤ`, on restricted cohomology
 families. The sum is finite because the Selmer local conditions are orthogonal. -/
 def restrictedLocalTateKerWeilPairing :
     RestrictedLocalH1 φ →+ RestrictedLocalH1 (fun i ↦ (φ i).dual) →+ AddCircle (1 : ℚ) :=
-  RestrictedProduct.sumPairing _ _
-    (fun i ↦ (AddMonoidHom.compHom (ZMod.toRatAddCircle (φ i).degree)).comp
-      ((φ i).localTateKerWeilPairing (hn i)))
-    (fun i a ha b hb ↦ by
-      simp only [AddMonoidHom.comp_apply, AddMonoidHom.compHom_apply_apply,
-        (φ i).localTateKerWeilPairing_eq_zero_of_mem_ker (hn i) ha hb, map_zero])
+  RestrictedProduct.sumPairing _ _ (normalizedLocalTateKerWeilPairing φ hn)
+    (normalizedLocalTateKerWeilPairing_eq_zero_of_mem_ker φ hn)
 
 /-- The restricted pairing is the sum of normalized local values. -/
 theorem restrictedLocalTateKerWeilPairing_apply
@@ -82,9 +102,8 @@ theorem restrictedLocalTateKerWeilPairing_apply
     restrictedLocalTateKerWeilPairing φ hn x y =
       ∑ᶠ i, ZMod.toRatAddCircle (φ i).degree
         ((φ i).localTateKerWeilPairing (hn i) (x i) (y i)) := by
-  unfold restrictedLocalTateKerWeilPairing
-  rw [RestrictedProduct.sumPairing_apply]
-  rfl
+  simp only [restrictedLocalTateKerWeilPairing, RestrictedProduct.sumPairing_apply,
+    normalizedLocalTateKerWeilPairing_apply]
 
 /-- Pairing with a family supported at one place recovers the normalized local pairing. -/
 @[simp]
@@ -93,9 +112,8 @@ theorem restrictedLocalTateKerWeilPairing_single_right [DecidableEq ι]
     (b : H1 (AbsoluteGaloisGroup (K i)) (ofIsogeny (φ i).dual).KerCoeff) :
     restrictedLocalTateKerWeilPairing φ hn x (RestrictedProduct.single _ i b) =
       ZMod.toRatAddCircle (φ i).degree ((φ i).localTateKerWeilPairing (hn i) (x i) b) := by
-  unfold restrictedLocalTateKerWeilPairing
-  rw [RestrictedProduct.sumPairing_single_right]
-  rfl
+  simp only [restrictedLocalTateKerWeilPairing, RestrictedProduct.sumPairing_single_right,
+    normalizedLocalTateKerWeilPairing_apply]
 
 /-- A family supported at one place in the first argument also recovers the local pairing. -/
 @[simp]
@@ -104,9 +122,8 @@ theorem restrictedLocalTateKerWeilPairing_single_left [DecidableEq ι]
     (y : RestrictedLocalH1 fun i ↦ (φ i).dual) :
     restrictedLocalTateKerWeilPairing φ hn (RestrictedProduct.single _ i a) y =
       ZMod.toRatAddCircle (φ i).degree ((φ i).localTateKerWeilPairing (hn i) a (y i)) := by
-  unfold restrictedLocalTateKerWeilPairing
-  rw [RestrictedProduct.sumPairing_single_left]
-  rfl
+  simp only [restrictedLocalTateKerWeilPairing, RestrictedProduct.sumPairing_single_left,
+    normalizedLocalTateKerWeilPairing_apply]
 
 /-- The restricted pairing detects every nonzero first argument by local Tate duality. -/
 theorem restrictedLocalTateKerWeilPairing_injective :
@@ -116,9 +133,8 @@ theorem restrictedLocalTateKerWeilPairing_injective :
   apply (φ i).localTateKerWeilPairing_bijective (hn i) |>.injective
   apply AddMonoidHom.ext
   intro c
-  have := (hn i).neZero_natCast
   apply ZMod.toRatAddCircle_injective (φ i).degree
-  exact DFunLike.congr_fun hab c
+  simpa only [normalizedLocalTateKerWeilPairing_apply] using DFunLike.congr_fun hab c
 
 /-- Families satisfying the Selmer local conditions everywhere are orthogonal, even if
 they are nonzero at infinitely many indices. -/
@@ -129,8 +145,8 @@ theorem restrictedLocalTateKerWeilPairing_eq_zero_of_forall_mem_ker
     (hy : ∀ i, y i ∈ (explicitCoeff1 _ _ (ofIsogeny (φ i).dual).kerCoeffIncl
       continuous_of_discreteTopology).ker) :
     restrictedLocalTateKerWeilPairing φ hn x y = 0 := by
-  rw [restrictedLocalTateKerWeilPairing_apply]
-  exact finsum_eq_zero_of_forall_eq_zero fun i ↦ by
-    rw [(φ i).localTateKerWeilPairing_eq_zero_of_mem_ker (hn i) (hx i) (hy i), map_zero]
+  unfold restrictedLocalTateKerWeilPairing
+  exact RestrictedProduct.sumPairing_eq_zero_of_forall _ _ _ _ x y fun i ↦
+    normalizedLocalTateKerWeilPairing_eq_zero_of_mem_ker φ hn i _ (hx i) _ (hy i)
 
 end TauCeti.Isogeny

@@ -11,14 +11,14 @@ public import Mathlib.Algebra.BigOperators.Finprod
 /-!
 # Pairings on restricted products
 
-A family of biadditive pairings which vanishes on the reference subgroups induces a
+A family of biadditive pairings which vanishes on the reference additive submonoids induces a
 pairing of restricted products by summing its local values. Restrictedness makes this an
 honest finite sum, even when neither argument has finite support.
 
 Testing against elements supported at one index recovers the local pairing. Consequently
 local nondegeneracy implies nondegeneracy of the sum pairing, and the annihilator of the
-product of reference subgroups is described coordinatewise. These constructions apply to
-sums of local duality pairings with orthogonal local conditions.
+product of reference additive submonoids is described coordinatewise. These constructions apply
+to sums of local duality pairings with orthogonal local conditions.
 -/
 
 public noncomputable section
@@ -27,9 +27,10 @@ namespace RestrictedProduct
 
 open scoped RestrictedProduct
 
-variable {ι : Type*} {A B : ι → Type*} {C : Type*}
-  [∀ i, AddGroup (A i)] [∀ i, AddGroup (B i)] [AddCommMonoid C]
-  (U : ∀ i, AddSubgroup (A i)) (V : ∀ i, AddSubgroup (B i))
+variable {ι : Type*} {A B SA SB : ι → Type*} {C : Type*}
+  [∀ i, AddMonoid (A i)] [∀ i, AddMonoid (B i)] [AddCommMonoid C]
+  [∀ i, SetLike (SA i) (A i)] [∀ i, SetLike (SB i) (B i)]
+  (U : ∀ i, SA i) (V : ∀ i, SB i)
   (p : ∀ i, A i →+ B i →+ C)
   (hp : ∀ i, ∀ a ∈ U i, ∀ b ∈ V i, p i a b = 0)
 
@@ -43,7 +44,9 @@ theorem hasFiniteSupport_pairing (x : Πʳ i, [A i, U i]) (y : Πʳ i, [B i, V i
   filter_upwards [x.eventually, y.eventually] with i hx hy
   simpa only [not_not] using hp i (x i) hx (y i) hy
 
-/-- Sum of local pairings on restricted products with orthogonal reference subgroups. -/
+variable [∀ i, AddSubmonoidClass (SA i) (A i)] [∀ i, AddSubmonoidClass (SB i) (B i)]
+
+/-- Sum of local pairings on restricted products with orthogonal reference additive submonoids. -/
 def sumPairing : (Πʳ i, [A i, U i]) →+ (Πʳ i, [B i, V i]) →+ C where
   toFun x :=
     { toFun := fun y ↦ ∑ᶠ i, p i (x i) (y i)
@@ -64,7 +67,7 @@ theorem sumPairing_apply (x : Πʳ i, [A i, U i]) (y : Πʳ i, [B i, V i]) :
     sumPairing U V p hp x y = ∑ᶠ i, p i (x i) (y i) := (rfl)
 
 /-- The sum pairing can be evaluated on any finite set outside which both coordinates
-belong to the reference subgroups. -/
+belong to the reference additive submonoids. -/
 theorem sumPairing_eq_sum (x : Πʳ i, [A i, U i]) (y : Πʳ i, [B i, V i])
     (S : Finset ι) (hS : ∀ i ∉ S, x i ∈ U i ∧ y i ∈ V i) :
     sumPairing U V p hp x y = ∑ i ∈ S, p i (x i) (y i) := by
@@ -73,6 +76,12 @@ theorem sumPairing_eq_sum (x : Πʳ i, [A i, U i]) (y : Πʳ i, [B i, V i])
   intro i hi
   by_contra h
   exact hi (hp i _ (hS i h).1 _ (hS i h).2)
+
+/-- The sum pairing vanishes if every local value is zero. -/
+theorem sumPairing_eq_zero_of_forall (x : Πʳ i, [A i, U i]) (y : Πʳ i, [B i, V i])
+    (h : ∀ i, p i (x i) (y i) = 0) : sumPairing U V p hp x y = 0 := by
+  rw [sumPairing_apply]
+  exact finsum_eq_zero_of_forall_eq_zero h
 
 section Single
 
@@ -119,7 +128,7 @@ theorem sumPairing_flip_injective (hinj : ∀ i, Function.Injective (p i).flip) 
   simpa only [AddMonoidHom.flip_apply, sumPairing_single_left] using
     DFunLike.congr_fun h (single U i a)
 
-/-- Orthogonality to the full product of the reference subgroups is equivalent to local
+/-- Orthogonality to the full product of the reference additive submonoids is equivalent to local
 orthogonality at every index. No perfection assumption is needed. -/
 theorem sumPairing_structureMap_eq_zero_iff (x : Πʳ i, [A i, U i]) :
     (∀ y : ∀ i, V i, sumPairing U V p hp x
@@ -137,7 +146,6 @@ theorem sumPairing_structureMap_eq_zero_iff (x : Πʳ i, [A i, U i]) :
       · simp [y, Pi.single_eq_of_ne hj, single_eq_of_ne V b hj]
     simpa only [hy, sumPairing_single_right] using h y
   · intro h y
-    rw [sumPairing_apply]
-    exact finsum_eq_zero_of_forall_eq_zero fun i ↦ h i _ (y i).property
+    exact sumPairing_eq_zero_of_forall U V p hp x _ fun i ↦ h i _ (y i).property
 
 end RestrictedProduct
