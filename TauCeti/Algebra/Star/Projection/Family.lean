@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.BigOperators
+public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.RingTheory.Idempotents
 
 /-!
-# Complete orthogonal projection families
+# Orthogonal and complete orthogonal projection families
 
 A complete orthogonal projection family is a complete family of orthogonal idempotents whose
 members are self-adjoint. For endomorphisms of a Hilbert space, these families describe orthogonal
@@ -19,11 +20,41 @@ decompositions of the identity.
 The matched overlap `∑ i, Q i * P i` has algebraic block formulas requiring only orthogonal
 idempotents. These formulas support simultaneous intertwining of projection families, without
 requiring the spectral or polar-decomposition API here.
+
+For any finite pairwise star-orthogonal family of star projections in a non-unital star semiring,
+each summand is absorbed by the sum (`p j * ∑ k ∈ s, p k = p j`) and star-orthogonality to the sum
+is equivalent to star-orthogonality to every summand.
 -/
 
 public section
 
 namespace TauCeti
+
+section FinsetSum
+open Function
+open scoped StarRing
+variable {R ι : Type*} [NonUnitalSemiring R] [StarRing R] {s : Finset ι} {p : ι → R}
+/-- For pairwise star-orthogonal star projections on `s`, `p j * ∑ k ∈ s, p k = p j` (`j ∈ s`). -/
+theorem mul_sum_of_isStarProjection_of_pairwise_isStarOrtho
+    (hp : ∀ k ∈ s, IsStarProjection (p k)) (hortho : (s : Set ι).Pairwise (IsStarOrtho on p))
+    {j : ι} (hj : j ∈ s) : p j * ∑ k ∈ s, p k = p j := by
+  rw [Finset.mul_sum, Finset.sum_eq_single_of_mem j hj fun k hk hkj ↦
+    (hortho hj hk hkj.symm).mul_eq_zero' (hp k hk).isSelfAdjoint, (hp j hj).isIdempotentElem.eq]
+/-- For pairwise star-orthogonal star projections on `s`, `(∑ k ∈ s, p k) * p j = p j` (`j ∈ s`). -/
+theorem sum_mul_of_isStarProjection_of_pairwise_isStarOrtho
+    (hp : ∀ k ∈ s, IsStarProjection (p k)) (hortho : (s : Set ι).Pairwise (IsStarOrtho on p))
+    {j : ι} (hj : j ∈ s) : (∑ k ∈ s, p k) * p j = p j := by
+  rw [Finset.sum_mul, Finset.sum_eq_single_of_mem j hj fun k hk hkj ↦
+    (hortho hk hj hkj).mul_eq_zero' (hp j hj).isSelfAdjoint, (hp j hj).isIdempotentElem.eq]
+/-- A sum of pairwise star-orthogonal star projections is `⋆⟂ q` iff every summand is. -/
+theorem isStarOrtho_sum_left_iff (hp : ∀ k ∈ s, IsStarProjection (p k))
+    (hortho : (s : Set ι).Pairwise (IsStarOrtho on p)) {q : R} :
+    (∑ k ∈ s, p k) ⋆⟂ q ↔ ∀ j ∈ s, p j ⋆⟂ q :=
+  ⟨fun h j hj ↦ ⟨by rw [← mul_sum_of_isStarProjection_of_pairwise_isStarOrtho hp hortho hj,
+      mul_assoc, h.mul_star_eq_zero, mul_zero],
+    by rw [← sum_mul_of_isStarProjection_of_pairwise_isStarOrtho hp hortho hj,
+      ← mul_assoc, h.star_mul_eq_zero, zero_mul]⟩, IsStarOrtho.sum_left⟩
+end FinsetSum
 
 variable {R ι : Type*} [Semiring R] [Fintype ι]
 

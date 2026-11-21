@@ -7,16 +7,20 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Algebra.Star.Opposite
 
 /-!
-# Topological closure, dense inclusions and self-adjoint cores of nonunital `⋆`-subalgebras
+# Topological closure, corners, dense inclusions, and cores of nonunital `⋆`-subalgebras
 
-This file provides `@[simp]` and density lemmas for nonunital `⋆`-subalgebras and opposite
-`⋆`-algebra homomorphisms, and the self-adjoint core of a closed left ideal:
+This file provides `@[simp]`, closedness, and density lemmas for nonunital `⋆`-subalgebras and
+opposite `⋆`-algebra homomorphisms, and the self-adjoint core of a closed left ideal:
 
 * `NonUnitalStarSubalgebra.topologicalClosure_coe`: the underlying set of `s.topologicalClosure`
   is `closure (s : Set A)`, matching `StarSubalgebra.topologicalClosure_coe`.
+* `NonUnitalStarSubalgebra.isClosed_corner`, `NonUnitalStarSubalgebra.isClosed_orthoCorner`:
+  `IsClosed` instances for the fixed corner `s.corner hp` and orthogonal corner `s.orthoCorner hp`
+  of a closed nonunital `⋆`-subalgebra.
 * `NonUnitalStarAlgHom.denseRange_op`, `NonUnitalStarAlgHom.denseRange_unop`,
   `StarAlgHom.denseRange_op`, `StarAlgHom.denseRange_unop`: `@[simp]` density lemmas for opposite
   `⋆`-algebra homomorphisms.
@@ -75,6 +79,20 @@ theorem topologicalClosure_coe (s : NonUnitalStarSubalgebra R A) :
     (s.topologicalClosure : Set A) = _root_.closure (s : Set A) :=
   (rfl)
 
+section Corner
+variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [StarRing A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [T2Space A] [ContinuousMul A]
+/-- The fixed corner `s.corner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
+instance isClosed_corner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
+    {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.corner hp : Set A) :=
+  coe_corner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id) continuous_id).and
+    (isClosed_eq (continuous_id.mul continuous_const) continuous_id))
+/-- The orthogonal corner `s.orthoCorner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
+instance isClosed_orthoCorner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
+    {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.orthoCorner hp : Set A) :=
+  coe_orthoCorner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id)
+    continuous_const).and (isClosed_eq (continuous_id.mul continuous_const) continuous_const))
+end Corner
 end NonUnitalStarSubalgebra
 
 namespace NonUnitalStarSubalgebraClass

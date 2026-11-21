@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Nonunits
 public import Mathlib.RingTheory.Jacobson.Radical
+public import TauCeti.Algebra.Star.Projection.Intertwiner
 
 /-!
 # Units and the Jacobson radical of normed rings
@@ -25,6 +26,8 @@ The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ -
 Mathlib records these inverses only through asymptotic `O`-bounds such as
 `NormedRing.inverse_add_norm`; the explicit constants are needed for inductive constructions
 that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
+For nearby idempotents (`‖p - q‖ < 1`), `IsIdempotentElem.isUnit_projectionIntertwiner` shows
+Kato's intertwiner is a unit.
 
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
@@ -134,3 +137,14 @@ theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
     exact Ideal.IsMaximal.isClosed
 
 end TauCeti.Ring
+
+/-- In a normed ring with summable geometric series, `TauCeti.projectionIntertwiner p q` is
+invertible for idempotents `p, q` with `‖p - q‖ < 1`. -/
+theorem IsIdempotentElem.isUnit_projectionIntertwiner {R : Type*} [NormedRing R]
+    [HasSummableGeomSeries R] {p q : R} (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : ‖p - q‖ < 1) : IsUnit (TauCeti.projectionIntertwiner p q) := by
+  have hcomm : Commute (TauCeti.projectionIntertwiner p q) (TauCeti.projectionIntertwiner q p) :=
+    (hp.projectionIntertwiner_mul_swap hq).trans (hp.projectionIntertwiner_swap_mul_self hq).symm
+  exact (hcomm.isUnit_mul_iff.mp <| hp.projectionIntertwiner_mul_swap hq ▸
+    isUnit_one_sub_of_norm_lt_one (show ‖(p - q) ^ 2‖ < 1 by
+      rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)]))).1
