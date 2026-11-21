@@ -34,7 +34,7 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeBraided`: the inclusion into
   finite locally free sheaves is braided monoidal;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorPow` and
-  `TauCeti.AlgebraicGeometry.InvertibleSheaf.obj_tensorPow`: monoidal tensor powers of invertible
+  `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPow_obj`: monoidal tensor powers of invertible
   sheaves are invertible, and computed on underlying sheaves;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorProductIsoTensor` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoTensorUnit`: comparisons between the
@@ -146,7 +146,8 @@ theorem trivialIsoTensorUnit_inv_hom (X : Scheme.{u}) :
 
 /-- The underlying sheaf of the monoidal tensor power `L^{⊗n}` in `InvertibleSheaf X` is the
 monoidal tensor power of the underlying sheaf of `L`. -/
-theorem obj_tensorPow (L : InvertibleSheaf X) (n : ℕ) :
+@[simp]
+theorem tensorPow_obj (L : InvertibleSheaf X) (n : ℕ) :
     (TauCeti.tensorPow L n).obj = TauCeti.tensorPow L.obj n := by
   induction n with
   | zero => rfl

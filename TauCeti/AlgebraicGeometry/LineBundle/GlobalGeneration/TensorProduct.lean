@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Presentation
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
-public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 
 /-!

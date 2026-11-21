@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.TensorProduct
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 import Mathlib.Topology.Separation.Basic
 
 /-!

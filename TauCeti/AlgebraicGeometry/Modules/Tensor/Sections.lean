@@ -168,6 +168,17 @@ theorem tensorStalkEquiv_germ_tmulRight {N : X.Modules} {U : X.Opens}
   exact (TauCeti.SheafOfModules.tensorStalkEquiv_apply X.sheaf F N x _).trans
     (TauCeti.SheafOfModules.tensorStalkComparison_germ_unit_tmul X.sheaf F N x U hx s t)
 
+/-- The inverse tensor-stalk equivalence sends a tensor of germs to the germ of the
+tensor of sections. -/
+@[simp]
+theorem tensorStalkEquiv_symm_tmul_germ {N : X.Modules} {U : X.Opens}
+    (s : Γ(F, U)) (t : Γ(N, U)) {x : X} (hx : x ∈ U) :
+    (F.tensorStalkEquiv N x).symm
+        (F.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t) =
+      (F ⊗ N).presheaf.germ U x hx (tmulRight F t s) := by
+  apply (F.tensorStalkEquiv N x).injective
+  simp
+
 /-- Tensoring with `e` is linear in `e`. -/
 @[simp]
 theorem tmulRight_smul {U : X.Opens} (r : Γ(X, U)) (e : Γ(L, U)) (t : Γ(F, U)) :

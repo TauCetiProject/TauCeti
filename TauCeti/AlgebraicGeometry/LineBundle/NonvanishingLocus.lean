@@ -505,6 +505,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_pullbackSections
   exact map_ne_zero_iff _ (f.pullbackSectionsLE_injective_of_isIso _ ⊤ ⊤ hW
     (f.pullbackSections_injective_of_field _))
 
+/-- The nonvanishing locus of a pulled-back section restricted to `V` is the intersection
+of `V` with the preimage of the original nonvanishing locus. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonvanishingLocus_pullbackSectionsLE
+    {Y : Scheme.{u}} (g : Y ⟶ X) {U : X.Opens} {V : Y.Opens} (hV : V ≤ g ⁻¹ᵁ U)
+    (s : Γ(M, U)) :
+    ((pullback g).obj M).nonvanishingLocus (g.pullbackSectionsLE M U V hV s) =
+      V ⊓ g ⁻¹ᵁ M.nonvanishingLocus s := by
+  rw [Scheme.Hom.pullbackSectionsLE_apply, nonvanishingLocus_map,
+    Scheme.Hom.nonvanishingLocus_pullbackSections]
+
 end Pullback
 
 section Restrict
@@ -596,7 +607,7 @@ theorem exists_nonvanishingLocus_eq_of_mk_eq_pow
   -- `L` is isomorphic to the monoidal tensor power `L₀^{⊗k}`, whose class is `(mk L₀)ᵏ`.
   have hclass : mk L = mk (TauCeti.tensorPow L₀ k) := by rw [mk_tensorPow, hL]
   obtain ⟨e⟩ := mk_eq_mk_iff.mp hclass
-  let e' : L.obj ≅ TauCeti.tensorPow L₀.obj k := e ≪≫ eqToIso (obj_tensorPow L₀ k)
+  let e' : L.obj ≅ TauCeti.tensorPow L₀.obj k := e ≪≫ eqToIso (tensorPow_obj L₀ k)
   refine ⟨e'.inv.app U (Scheme.Modules.tensorPowSection s₀ k), ?_⟩
   rw [← Iso.symm_hom, Scheme.Modules.nonvanishingLocus_hom_app,
     Scheme.Modules.nonvanishingLocus_tensorPowSection _ hk]
