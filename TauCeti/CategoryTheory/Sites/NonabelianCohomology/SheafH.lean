@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Ext.Basic
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 

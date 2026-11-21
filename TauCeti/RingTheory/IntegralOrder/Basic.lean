@@ -43,6 +43,7 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 * `TauCeti.IntegralOrder.isOrder_iff`: `Λ` is an order iff it is finite over `R` and spans `E`.
 * `TauCeti.IntegralOrder.isOrder_op_iff`: `Λᵒᵖ` is an order in `Eᵐᵒᵖ` iff `Λ` is an order in `E`.
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
+* `TauCeti.IntegralOrder.not_isOrder_top_rat`: `ℚ` is not a `ℤ`-order in itself.
 * `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
   the integral closure of `R`.
 * `TauCeti.IntegralOrder.toSubmodule_le_dualSubmodule_regularTraceForm`: over an integrally closed
@@ -160,6 +161,15 @@ theorem isOrder_iff_isFullLattice {Λ : Subalgebra R E} :
     fun h => ⟨IsLattice.fg F _, h.span_eq_top⟩⟩
 
 end Lattice
+
+/-- The subring `ℚ ⊆ ℚ` spans `ℚ`, but it is not finitely generated over `ℤ`, so it is not an
+order: `1 / 2` would be integral over `ℤ`, hence an integer. -/
+theorem not_isOrder_top_rat : ¬IsOrder ℚ (⊤ : Subalgebra ℤ ℚ) := fun h => by
+  obtain ⟨n, hn⟩ :=
+    IsIntegrallyClosed.isIntegral_iff.1 (h.isIntegral (x := (1 / 2 : ℚ)) Algebra.mem_top)
+  have hden := congrArg Rat.den hn
+  rw [eq_intCast, Rat.den_intCast] at hden
+  norm_num at hden
 
 section Integral
 

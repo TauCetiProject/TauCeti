@@ -9,7 +9,8 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -58,8 +59,10 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is, and continuous conjugation
   `TauCeti.Complexification.conjCLE`.
-* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`, so
-  `X_ℂ` is finite-dimensional when `X` is (`TauCeti.Complexification.instFiniteDimensional`).
+* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+* `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
+  complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
+  complex dimension the real dimension of the original space.
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
@@ -349,13 +352,6 @@ instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
 
-/-- The complexification of a finite-dimensional real space is finite-dimensional. -/
-instance instFiniteDimensional [FiniteDimensional ℝ X] :
-    FiniteDimensional ℂ (Complexification X) :=
-  haveI : FiniteDimensional ℝ (Complexification X) :=
-    (equivProd X).symm.toLinearEquiv.finiteDimensional
-  Module.Finite.of_restrictScalars_finite ℝ ℂ _
-
 end Norm
 
 /-- The Taylor seminorm is a norm when the original real seminorm is a norm. -/
@@ -603,6 +599,17 @@ theorem tensorEquivComplexification_baseChange {X Y : Type*}
     (T : X →L[ℝ] Y) (u : ℂ ⊗[ℝ] X) :
     tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
       T.complexify (tensorEquivComplexification X u) := by ext <;> simp
+
+/-- The complexification of a finite-dimensional real vector space is finite-dimensional over
+`ℂ`. -/
+instance Complexification.instFiniteComplex [Module.Finite ℝ W] :
+    Module.Finite ℂ (Complexification W) :=
+  .equiv (tensorEquivComplexification W)
+
+/-- The complexification of a real vector space has complex dimension its real dimension. -/
+@[simp] theorem Complexification.finrank_complex :
+    Module.finrank ℂ (Complexification W) = Module.finrank ℝ W :=
+  (tensorEquivComplexification W).finrank_eq.symm.trans Module.finrank_baseChange
 
 end TauCeti
 
