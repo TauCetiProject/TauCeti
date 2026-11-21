@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.LKJ.Basic
 public import TauCeti.Probability.Distributions.LKJ.Determinant
 import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Determinant moments of the LKJ law
@@ -54,7 +55,7 @@ theorem integral_rpow_det_lkjMeasure (hη : 0 < η) (hq : -η < q) :
   have hlkjPDF : lkjPDF p η = fun R ↦ ENNReal.ofReal (lkjPDFReal p η R) := by
     funext R
     rw [lkjPDF_def]
-  rw [hlkjPDF, TauCeti.Probability.integral_withDensity_ofReal
+  rw [hlkjPDF, TauCeti.MeasureTheory.integral_withDensity_ofReal
     (measurable_lkjPDFReal p η).aemeasurable (ae_of_all _ (lkjPDFReal_nonneg hη))]
   rw [lkjPDFReal_eq_indicator]
   simp only [smul_eq_mul]
