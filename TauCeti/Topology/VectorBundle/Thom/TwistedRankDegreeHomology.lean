@@ -44,8 +44,8 @@ which `e` reads as `ω` (`TauCeti.VectorBundleOrientationCover.signLocalSystemPu
 Over a subset `W` of the base set this identifies `Hᵣ(E|_W, E₀|_W; o(E))` with the untwisted
 homology `Hᵣ(E|_W, E₀|_W; K)` (`TauCeti.thomPairOverSignHomologyIso`). The fibre class over `x`
 (`TauCeti.thomPairOverSignFiberClass`) is the class of the fibre pair over `x` which the
-trivialization at `x` reads as the generator `TauCeti.complZeroPairGenerator` of
-`Hᵣ(F, F ∖ {0}; K)`. Every trivialization `e'` of the atlas reads it the same way
+trivialization at `x` reads as the point class of `1` in `Hᵣ(F, F ∖ {0}; K)`
+(`TauCeti.complZeroPairPointHom`). Every trivialization `e'` of the atlas reads it the same way
 (`TauCeti.thomPairOverSignHomologyIso_hom_thomPairOverSignFiberClass`): if `e'` reads the
 orientations of `E_x` oppositely, both the trivialization of `o(E)` and the generator of the fibre
 pair change sign, and the two signs cancel. This is what makes the fibre classes, unlike the
@@ -305,14 +305,15 @@ private theorem isZero_thomPairOverSignHomology_of_subset {W : Set B} (hW : W �
 
 variable (K) in
 /-- The generator of the untwisted homology `Hᵣ(E|_{x}, E₀|_{x}; K)` of the fibre pair over `x`
-which the trivialization `e` reads as the generator `TauCeti.complZeroPairGenerator` of
-`Hᵣ(F, F ∖ {0}; K)`. -/
+which the trivialization `e` reads as the point class of `1` in `Hᵣ(F, F ∖ {0}; K)`
+(`TauCeti.complZeroPairPointHom`). -/
 noncomputable def thomPairOverFiberGenerator {x : B} (hx : x ∈ e.baseSet) :
     ((thomPairOver F E {x}).singularHomology (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) :=
   TopPair.singularHomologyMap (fiberThomPairOverMap F E (mem_singleton x)) (ModuleCat.of K K)
     (finrank ℝ F) (TopPair.singularHomologyMap
       (e.continuousLinearEquivAt ℝ x hx).complZeroPairIso.inv
-      (ModuleCat.of K K) (finrank ℝ F) (complZeroPairGenerator K F))
+      (ModuleCat.of K K) (finrank ℝ F)
+      (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)))
 
 private theorem singularHomologyMap_thomPairOverIso_thomPairOverFiberGenerator {W : Set B}
     (hW : W ⊆ e.baseSet) (x : W) :
@@ -327,7 +328,9 @@ private theorem singularHomologyMap_thomPairOverIso_thomPairOverFiberGenerator {
     ← TopPair.singularHomologyMap_comp, ← Category.assoc, fiberThomPairOverMap_comp_thomPairOverMap,
     Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ _ hW x.property,
     ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id_assoc, Subtype.coe_eta]
-  exact singularHomologyMap_prodThomPairFiberMap_complZeroPairGenerator K F x
+  exact ConcreteCategory.congr_hom
+    (complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap (ModuleCat.of K K) W F
+      (finrank ℝ F) rfl x) (1 : K)
 
 variable (F E K) in
 /-- The class of the fibre pair over `x` with coefficients in the orientation local system: read

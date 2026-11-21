@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.SpectralGap
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.DenseRange
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
@@ -63,8 +66,19 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   every test section in `L²` by `D_u`. So `D_u` is bounded below on `W^{1,2}`, `‖ξ‖ ≤ K ‖D_u ξ‖`
   (`exists_forall_norm_le_mul_norm_floerSobolevOperator_of_isNondegenerateFixedPt`), and injective
   (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`). This is
-  the injective half of the invertibility of `D_u` at a stationary cylinder; its surjectivity
-  is not proved here.
+  the injective half of the invertibility of `D_u` at a stationary cylinder.
+* In a unitary trivialization, where `V` is a complex inner product space with `ω = Im ⟪·, ·⟫` and
+  `J = i`, the range of `D_u` at the stationary cylinder is also dense: an `L²` section orthogonal
+  to `D_u ξ` for every test section `ξ` vanishes
+  (`TauCeti.Floer.ae_eq_zero_of_forall_integral_re_inner_stationaryCylinderOperator_eq_zero`). A
+  closed subspace of the Hilbert space `L²` with trivial orthogonal complement is everything, so
+  `D_u` is onto
+  (`TauCeti.SymplecticForm.range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt`) and, by
+  the open mapping theorem, an isomorphism `W^{1,2} ≃ L²`
+  (`TauCeti.SymplecticForm.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt`). This is
+  the invertible block of a stationary cylinder over a nondegenerate orbit. For a general
+  compatible `J_t(x(t))` the operator is conjugate to this model by a unitary frame along the
+  orbit; that conjugation is not treated here.
 
 The finiteness of the cokernel, hence the Fredholm property and the index, needs the same estimate
 for the formal adjoint of `D_u`.
@@ -736,5 +750,86 @@ theorem ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt
   exact ker_jetOperator_comp_subtypeL_eq_bot hM hest hL2
 
 end Stationary
+
+section Unitary
+
+/-! ### Invertibility at a nondegenerate orbit in a unitary trivialization -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+  (ω : SymplecticForm F) {H : ℝ → F → ℝ} {K : ℝ≥0}
+  (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+  (hH : ContDiff ℝ 3 (Function.uncurry H)) (hHp : Periodic H 1) {x : ℝ → F}
+  (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+
+include hH hHp hx hxp in
+/-- **The linearized Floer operator at a nondegenerate orbit is onto in a unitary trivialization.**
+Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
+`Im ⟪·, ·⟫`, and let `x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent
+Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate
+fixed point of the time-one map. At the stationary cylinder `u(s, t) = x(t)`, with the complex
+structure `i`, the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer
+operator is onto. -/
+theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ := by
+  have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
+  have hJ := ω.compatible_ofComplexModule_of_forall_eq_im_inner hω
+  obtain ⟨hM, C, T, hest⟩ := memLp_and_exists_hasSemiFredholmEstimate_floerJetCoeff_stationary ω
+    hX hH₂ hx (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) contDiff_const
+    (fun _ ↦ hJ) hnd
+  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hx hxp
+  -- The hypotheses of the dense range theorem: `S` is infinitesimally symplectic and nondegenerate.
+  have hSω (θ : AddCircle (1 : ℝ)) (v w : F) :
+      (inner ℂ (S θ v) w).im + (inner ℂ v (S θ w)).im = 0 := by
+    obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+    simpa only [← hω, hS] using ω.apply_fderiv_hamiltonianVectorField_add (H := H t) (x := x t)
+      (hH₂.comp (contDiff_prodMk_right t)).contDiffAt v w
+  have hSnd := (CircleSobolev.isInvertible_loopOperator_iff 1 S).1
+    ((isInvertible_loopOperator_iff_isNondegenerateFixedPt ω hX hH₂ hHp hx hxp hS).2 hnd)
+  -- The range is closed, and its orthogonal complement is trivial by the dense range theorem.
+  set D := ω.floerSobolevOperator
+    (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)
+  have hclosed : IsClosed (D.range : Set (Lp F 2 stripMeasure)) :=
+    isClosed_range_jetOperator_comp_subtypeL hM hest
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have : CompleteSpace D.range := hclosed.completeSpace_coe
+  rw [← Submodule.orthogonal_eq_bot_iff]
+  refine (Submodule.eq_bot_iff _).2 fun η hη ↦ Lp.eq_zero_iff_ae_eq_zero.2 ?_
+  refine Floer.ae_eq_zero_of_forall_integral_re_inner_stationaryCylinderOperator_eq_zero hS₁ hSω
+    hSnd (Lp.memLp η) fun ξ hξ ↦ ?_
+  have hmem : D ⟨jetLp (testSection F) ⟨ξ, hξ⟩, jetLp_mem_jetClosure _⟩ ∈ D.range := ⟨_, rfl⟩
+  have h₀ := Submodule.inner_right_of_mem_orthogonal hmem hη
+  rw [L2.inner_def] at h₀
+  refine (integral_congr_ae ?_).trans h₀
+  -- On test sections `D_u` is the stationary cylinder operator, and the real inner product of `F`
+  -- (`InnerProductSpace.complexToReal`) is the real part of its complex inner product.
+  filter_upwards [ω.floerSobolevOperator_jetLp_ae_eq hM ⟨ξ, hξ⟩] with z hz
+  rw [hz, floerLinearization_eq_stationaryCylinderOperator ω
+    (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) H hx, ← funext hS]
+  exact (real_inner_eq_re_inner ℂ _ _).symm
+
+include hH hHp hx hxp in
+/-- **The linearized Floer operator at a nondegenerate orbit is invertible in a unitary
+trivialization.** Under the hypotheses of
+`TauCeti.SymplecticForm.range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt`, the
+realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator at the
+stationary cylinder `u(s, t) = x(t)` is an isomorphism of Banach spaces. -/
+theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator
+      (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
+  ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
+      (hH.of_le (by norm_num)) hx (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      contDiff_const (fun _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hnd)
+    (range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hω hnd),
+    ContinuousLinearEquiv.coe_ofBijective ..⟩
+
+end Unitary
 
 end TauCeti.SymplecticForm

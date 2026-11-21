@@ -29,6 +29,11 @@ the rank degree: there `M W` is that homology over `W`, the sequence is exact on
 trivializing set since the homology vanishes below the rank, and `ψ` sends the class of a point to
 the fibre class over it.
 
+`TauCeti.isIso_thomPairOver_union_of_isIso` is the same step with the roles exchanged: there the
+target is fixed to the homology of the Thom pair with constant coefficients and the source is any
+functor. Here the source is fixed to `H₀` and the target is any family with an exact
+Mayer–Vietoris sequence, such as the homology of the Thom pair with local coefficients.
+
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,

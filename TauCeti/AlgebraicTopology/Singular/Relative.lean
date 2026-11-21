@@ -261,6 +261,30 @@ lemma singularChainComplexπ_pair_naturality
     ((SSetPair.chainComplexFunctorπ C).app M).naturality (toSSetPair.map f)
   rwa [toSSetPair_map_right] at h
 
+/-- The quotient map from ambient to relative singular chains is natural in the map of pairs of
+subsets `(X, B) ⟶ (Y, B')` induced by a continuous map `g : X ⟶ Y` carrying `B` into `B'`. -/
+lemma singularChainComplexπ_ofSubsetMap_naturality {X Y : TopCat.{w}} (g : X ⟶ Y) {B : Set X}
+    {B' : Set Y} (hB : Set.MapsTo g B B') (M : C) :
+    SSet.chainComplexMap (TopCat.toSSet.map g) M ≫ (ofSubset B').singularChainComplexπ M =
+      (ofSubset B).singularChainComplexπ M ≫ singularChainComplexMap (ofSubsetMap g hB) M := by
+  have h := singularChainComplexπ_pair_naturality (ofSubsetMap g hB) M
+  rwa [ofSubsetMap_fst] at h
+
+/-- `singularChainComplexπ_ofSubsetMap_naturality` followed by a further map `h` out of the relative
+chains. -/
+-- Stated by hand rather than by `reassoc`: the domain of `singularChainComplexπ` agrees with the
+-- codomain of `SSet.chainComplexMap` only up to unfolding `toSSetPair`, so `reassoc` cannot
+-- reassociate the left-hand side. Elaborating `singularChainComplexπ M ≫ h` on its own keeps its
+-- source in the form of the source of `singularChainComplexπ`.
+lemma singularChainComplexπ_ofSubsetMap_naturality_assoc {X Y : TopCat.{w}} (g : X ⟶ Y)
+    {B : Set X} {B' : Set Y} (hB : Set.MapsTo g B B') (M : C) {K : ChainComplex C ℕ}
+    (h : (ofSubset B').singularChainComplex M ⟶ K) :
+    SSet.chainComplexMap (TopCat.toSSet.map g) M ≫ ((ofSubset B').singularChainComplexπ M ≫ h :) =
+      (ofSubset B).singularChainComplexπ M ≫ singularChainComplexMap (ofSubsetMap g hB) M ≫ h :=
+  (Category.assoc _ _ _).symm.trans
+    ((eq_whisker (singularChainComplexπ_ofSubsetMap_naturality g hB M) h).trans
+      (Category.assoc _ _ _))
+
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
 @[reassoc]

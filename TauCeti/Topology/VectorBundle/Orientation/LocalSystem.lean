@@ -10,6 +10,8 @@ public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
+import TauCeti.Topology.Homotopy.Covering
+
 /-!
 # The orientation local system of a real vector bundle
 
@@ -35,6 +37,12 @@ chosen orientation identifies cohomology twisted by it with ordinary cohomology.
 orientability, `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor
 square with the constant coefficient system: evaluate both factors at either orientation and
 multiply.
+
+Over the base set of a trivialization of the atlas the system is trivialized without a global
+orientation: transport along a path in the base set carries the element with value `r` at the
+orientation read as a fixed orientation `ω` of the model fibre to the element with value `r` at the
+orientation read as `ω` at the end of the path
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm`).
 
 Every loop acts on a fibre of `o(E)` by `1` or by `-1`
 (`VectorBundleOrientationCover.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
@@ -95,7 +103,7 @@ system of its orientation double cover with respect to the deck involution. Its 
 the module `TauCeti.signFiber` of functions on the orientations of `E_b` that change sign under
 reversal (`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`), and transport along a
 path precomposes with path lifting in the cover. -/
-def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
+@[expose] def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
     LocalCoefficientSystem.{u, uB, max uB uE uι u} R (TopCat.of B) :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck
 
@@ -377,6 +385,47 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
 
 end Tensor
 
+/-- **Transport over a trivializing set**: along a path in the base set of a trivialization `e` of
+the atlas, transport in the orientation local system carries the element with value `r` at the
+orientation read as `ω` at the start to the element with value `r` at the orientation read as `ω`
+at the end. -/
+theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {x y : B} (γ : Path x y)
+    (hγ : ∀ t, γ t ∈ e.baseSet) (hx : x ∈ e.baseSet) (hy : y ∈ e.baseSet) (r : R) :
+    ((signLocalSystem F E R hι).map (Path.Homotopic.Quotient.mk γ)).hom
+        ((signLocalSystemFiberEquiv hι ((e.mapOrientation ι hx).symm ω)).symm r) =
+      (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).symm r := by
+  set cov := isCoveringMap_proj (F := F) (E := E) hι
+  -- Lift the reversed path through the orientation read as `ω` at `y`; it stays in that sheet.
+  let c₀ : (proj ⁻¹' {y} : Set (VectorBundleOrientationCover F E ι)) :=
+    ⟨⟨y, (e.mapOrientation ι hy).symm ω⟩, rfl⟩
+  have hc₀ : γ.symm 0 = proj c₀.val := by simp [c₀]
+  let Γ := cov.liftPath γ.symm c₀.val hc₀
+  have hΓ (t : unitInterval) : (Γ t).proj ∈ e.baseSet := by
+    rw [show (Γ t).proj = γ.symm t from congrFun (cov.liftPath_lifts γ.symm c₀.val hc₀) t]
+    exact hγ _
+  have h₀ : Γ 0 ∈ sheet e ω := by
+    rw [cov.liftPath_zero]
+    exact mem_sheet_iff.2 ⟨hy, Equiv.apply_symm_apply _ _⟩
+  let q : FundamentalGroupoid.mk (X := TopCat.of B) x ⟶ FundamentalGroupoid.mk y :=
+    Path.Homotopic.Quotient.mk γ
+  -- Transport along `q` evaluates at the endpoint of the lift of the reversed path.
+  have hm : cov.monodromy (inv q) c₀ = ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ := by
+    have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 :=
+      cov.coe_monodromy_inv_mk γ c₀
+    have hsheet := mem_sheet_of_forall_proj_mem_baseSet hι e ω hΓ h₀ 1
+    rw [← hmon] at hsheet
+    obtain ⟨hm, hω⟩ := mem_sheet_iff.1 hsheet
+    generalize cov.monodromy (inv q) c₀ = m at hm hω ⊢
+    obtain ⟨⟨x', o'⟩, hx'⟩ := m
+    obtain rfl : x' = x := hx'
+    exact Subtype.ext (VectorBundleOrientationCover.ext rfl
+      (heq_of_eq ((Equiv.eq_symm_apply _).2 hω)))
+  apply (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).injective
+  rw [LinearEquiv.apply_symm_apply, signLocalSystemFiberEquiv_apply,
+    signLocalSystemObjEquiv_map_apply, hm, ← signLocalSystemFiberEquiv_apply,
+    LinearEquiv.apply_symm_apply]
+
 end VectorBundleOrientationCover
 
 namespace VectorBundleOrientation
@@ -393,7 +442,18 @@ def signLocalSystemIso (o : VectorBundleOrientation F E ι) :
   IsCoveringMap.signLocalSystemIsoOfSection _ (hσ := VectorBundleOrientationCover.proj_comp_deck)
     VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ fun _ ↦ rfl
+    (o.coverSection hι) (o.proj_coverSection hι)
+
+/-- The trivialization of the orientation local system given by `o` is the trivialization of the
+sign local system given by the section `b ↦ (b, o b)` of the orientation double cover. -/
+theorem signLocalSystemIso_def (o : VectorBundleOrientation F E ι) :
+    signLocalSystemIso (R := R) hι o =
+      (VectorBundleOrientationCover.isCoveringMap_proj hι).signLocalSystemIsoOfSection
+        (hσ := VectorBundleOrientationCover.proj_comp_deck)
+        VectorBundleOrientationCover.deck_ne_self
+        (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
+        (o.coverSection hι) (o.proj_coverSection hι) :=
+  (rfl)
 
 @[simp]
 theorem signLocalSystemIso_hom_app_apply (o : VectorBundleOrientation F E ι) (b : B)
@@ -403,10 +463,13 @@ theorem signLocalSystemIso_hom_app_apply (o : VectorBundleOrientation F E ι) (b
         ((signLocalSystemIso hι o).hom.app (FundamentalGroupoid.mk b))) f =
       ULift.up (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b) f) := by
   rw [VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply]
-  exact IsCoveringMap.signLocalSystemIsoOfSection_hom_app_apply (X := TopCat.of B) _
+  refine (IsCoveringMap.signLocalSystemIsoOfSection_hom_app_apply (X := TopCat.of B) _
     (hσ := VectorBundleOrientationCover.proj_comp_deck) VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) f
+    (o.coverSection hι) (o.proj_coverSection hι) (FundamentalGroupoid.mk b) f).trans ?_
+  -- `signLocalSystemObjEquiv` of the orientation cover is by definition that of the covering.
+  simp only [coverSection_apply]
+  rfl
 
 /-- The inverse of the trivialization given by `o` sends `r` over `b` to the element of the fibre
 whose evaluation at the orientation `o b` is `r`. -/
@@ -417,10 +480,14 @@ theorem signLocalSystemIso_inv_app_apply (o : VectorBundleOrientation F E ι) (b
       (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).symm r := by
   apply (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).injective
   rw [LinearEquiv.apply_symm_apply, VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply]
-  exact IsCoveringMap.signLocalSystemIsoOfSection_inv_app_apply (X := TopCat.of B) _
+  refine Eq.trans ?_ (IsCoveringMap.signLocalSystemIsoOfSection_inv_app_apply (X := TopCat.of B)
+    (VectorBundleOrientationCover.isCoveringMap_proj hι)
     (hσ := VectorBundleOrientationCover.proj_comp_deck) VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) r
+    (o.coverSection hι) (o.proj_coverSection hι) (FundamentalGroupoid.mk b) r)
+  -- `signLocalSystemObjEquiv` of the orientation cover is by definition that of the covering.
+  simp only [coverSection_apply]
+  rfl
 
 /-- The trivialization of the orientation local system given by the opposite orientation is the
 negative of the one given by `o`. -/
