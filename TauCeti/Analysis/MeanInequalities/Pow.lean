@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Order.Compact
 import TauCeti.Topology.ContinuousOn.CompactDomination
@@ -51,29 +52,23 @@ theorem rpow_lt_mul_rpow_add_rpow_of_le_add_of_ne_or_lt_add (u : ℝ) {q s t : �
     (hs : 0 ≤ s) (ht : 0 ≤ t) (hu : 0 ≤ u) (hus : u ≤ s + t) (hne : s ≠ t ∨ u < s + t) :
     u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q) := by
   have hq0 : 0 < q := by linarith
-  -- The midpoint form `(s + t) ^ q = 2 ^ (q - 1) * (2 * ((s + t) / 2) ^ q)`.
-  have hmid : (s + t) ^ q = 2 ^ (q - 1) * (2 * (1 / 2 * s + 1 / 2 * t) ^ q) := by
-    rw [← mul_assoc, ← rpow_add_one two_ne_zero, sub_add_cancel,
-      ← mul_rpow zero_le_two (by positivity)]
-    congr 1
-    ring
-  rcases hne with hst | hlt
-  · have hstrict := (strictConvexOn_rpow hq).2 (Set.mem_Ici.2 hs) (Set.mem_Ici.2 ht) hst
+  rcases eq_or_ne s t with rfl | hst
+  · -- Equal inputs: then `u < s + s`, and the power mean inequality finishes.
+    calc u ^ q < (s + s) ^ q := rpow_lt_rpow hu (hne.resolve_left fun h ↦ h rfl) hq0
+      _ ≤ 2 ^ (q - 1) * (s ^ q + s ^ q) := by
+        exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow ⟨s, hs⟩ ⟨s, hs⟩ hq.le
+  · -- Distinct inputs: strict convexity at the midpoint `(s + t) / 2`.
+    have hstrict := (strictConvexOn_rpow hq).2 (Set.mem_Ici.2 hs) (Set.mem_Ici.2 ht) hst
       (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
     simp only [smul_eq_mul] at hstrict
     calc u ^ q ≤ (s + t) ^ q := rpow_le_rpow hu hus hq0.le
-      _ < 2 ^ (q - 1) * (s ^ q + t ^ q) := by
-        rw [hmid]
-        gcongr
-        linarith
-  · have hconv := (convexOn_rpow hq.le).2 (Set.mem_Ici.2 hs) (Set.mem_Ici.2 ht)
-      (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
-    simp only [smul_eq_mul] at hconv
-    calc u ^ q < (s + t) ^ q := rpow_lt_rpow hu hlt hq0
-      _ ≤ 2 ^ (q - 1) * (s ^ q + t ^ q) := by
-        rw [hmid]
-        gcongr
-        linarith
+      _ = 2 ^ q * (1 / 2 * s + 1 / 2 * t) ^ q := by
+        rw [← mul_rpow zero_le_two (by positivity)]
+        ring_nf
+      _ < 2 ^ q * (1 / 2 * s ^ q + 1 / 2 * t ^ q) := by gcongr
+      _ = 2 ^ (q - 1) * (s ^ q + t ^ q) := by
+        rw [rpow_sub_one two_ne_zero]
+        ring
 
 /-- The normalized gap behind `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: for `1 < q` and
 `0 < δ ≤ 2`, at `s = 1` and `t = r ∈ [0, 1]`, the `q`-th power of the largest admissible

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
@@ -306,7 +307,7 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_ofRight_le (N : ℕ) :
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖((c i).ofRight hci).coefficient (x, ξ)‖
         = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
             ‖((c i).ofRight hci).coefficient (x, ξ)‖) :=
-          norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
+          EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
       _ ≤ ∑ j, (A j + B j + C j + D j) * w := Finset.sum_le_sum fun j _ ↦ hj j
       _ = _ := by rw [Finset.sum_mul]
 

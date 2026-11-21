@@ -21,10 +21,10 @@ power `(1 + t ^ 2) ^ (r / 2)` times `(1 + R ^ 2) ^ (|r| / 2)` is at least `1`, s
 is at most a multiple of `(1 + t ^ 2) ^ (r / 2)` for `|t| ≤ R`. These turn homogeneous estimates
 at large frequencies, and bounds on compact sets, into symbol estimates.
 
-For a vector `x` of a normed group, with `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, one power of `‖x‖` costs
-one order of the bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`, and a linear weight `(1 + c ‖x‖) ^ i`
-with `c ≥ 0` is at most `(1 + c) ^ i ⟨x⟩ ^ i`. Bounds on `F` and on `‖v‖ ^ (2N) F` combine to a
-bound on `F` with the weight `(1 + ‖v‖ ^ 2) ^ (-N)`.
+For a vector `x` of a seminormed group, with `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`, one power of
+`‖x‖` costs one order of the bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`, and a linear weight
+`(1 + c ‖x‖) ^ i` with `c ≥ 0` is at most `(1 + c) ^ i ⟨x⟩ ^ i`. For `F ≥ 0`, bounds on `F` and
+on `‖v‖ ^ (2N) F` combine to a bound on `F` with the weight `(1 + ‖v‖ ^ 2) ^ (-N)`.
 
 ## Main results
 
@@ -37,8 +37,8 @@ bound on `F` with the weight `(1 + ‖v‖ ^ 2) ^ (-N)`.
   multiple of `(1 + t ^ 2) ^ (r / 2)`.
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.one_add_mul_norm_pow_le`: `(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
-* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: bounds on `F` and on `‖v‖ ^ (2N) F` combine to a
-  bound on `F` with the weight `((1 + ‖v‖ ^ 2) ^ N)⁻¹`.
+* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: for `F ≥ 0`, bounds on `F` and on `‖v‖ ^ (2N) F`
+  combine to a bound on `F` with the weight `((1 + ‖v‖ ^ 2) ^ N)⁻¹`.
 -/
 
 public section
@@ -108,7 +108,8 @@ namespace TauCeti
 
 /-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
 `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
-theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
+theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [SeminormedAddCommGroup E] (x : E)
+    (m : ℝ) :
     (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
   rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
   gcongr
@@ -116,19 +117,16 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
 
 /-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
 `(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
-theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
-    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
+theorem one_add_mul_norm_pow_le {E : Type*} [SeminormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c)
+    (x : E) (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
   have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
     have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
     have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
     nlinarith
-  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
-    ring_nf
-  rw [hsqrt, ← mul_pow]
+  rw [← Real.pow_sqrt_eq_rpow (by positivity) i, ← mul_pow]
   exact pow_le_pow_left₀ (by positivity) hle i
 
-/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
+/-- For `0 ≤ F`, bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
 `F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
 theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
     {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :

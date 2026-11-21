@@ -50,8 +50,6 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
-* `TauCeti.norm_pow_two_mul_succ_mul_eq_sum`: expanding one factor `‖v‖²` of `‖v‖ ^ (2 (N + 1))`
-  in the coordinates of `EuclideanSpace`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -91,13 +89,6 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
-
-/-- Expanding one factor `‖v‖²` in coordinates:
-`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
-theorem norm_pow_two_mul_succ_mul_eq_sum {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (N : ℕ) (F : ℝ) :
-    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
-  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-  ring
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 

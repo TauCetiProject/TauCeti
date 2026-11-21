@@ -37,6 +37,8 @@ Borel measurable structure on the scalar field.
 
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
+* `EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum`: expanding one factor `‖v‖²` of
+  `‖v‖ ^ (2 (N + 1))` in the coordinates of a real Euclidean vector.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
@@ -91,6 +93,13 @@ theorem dotProduct_ofLp_self {ι : Type*} [Fintype ι] (x : EuclideanSpace ℝ �
     WithLp.ofLp x ⬝ᵥ WithLp.ofLp x = ‖x‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
   simp
+
+/-- Expanding one factor `‖v‖²` in the coordinates of a real Euclidean vector:
+`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
+theorem norm_pow_two_mul_succ_mul_eq_sum {ι : Type*} [Fintype ι] (v : EuclideanSpace ℝ ι) (N : ℕ)
+    (F : ℝ) : ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
+  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
+  ring
 
 /-- The positive orthant in finite real Euclidean space is measurable. -/
 theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :

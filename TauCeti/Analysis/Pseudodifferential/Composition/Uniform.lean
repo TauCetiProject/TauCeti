@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
@@ -261,7 +262,7 @@ private theorem IsBallFamily.exists_norm_sub_pow_mul_norm_sharp_le (N : ℕ) :
     calc ‖x - z i‖ ^ (2 * (N + 1)) * ‖(p.sharp (c i) hci).coefficient (x, ξ)‖
         = ∑ j, ‖x - z i‖ ^ (2 * N) * (((x - z i) j) ^ 2 *
             ‖(p.sharp (c i) hci).coefficient (x, ξ)‖) :=
-          norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
+          EuclideanSpace.norm_pow_two_mul_succ_mul_eq_sum (x - z i) N _
       _ ≤ ∑ j, (A j + 2 * B j + C j) * w := Finset.sum_le_sum fun j _ ↦ hj j
       _ = _ := by rw [Finset.sum_mul]
 
