@@ -109,10 +109,17 @@ Morse-theoretic definitions that use them.
   scalar function `P`, times `v`.
 * `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
   derivative.
+* `TauCeti.fderiv_fderiv_add`, `TauCeti.fderiv_fderiv_sub`, `TauCeti.fderiv_fderiv_fderiv_add`,
+  `TauCeti.fderiv_fderiv_fderiv_sub` and `TauCeti.fderiv_fderiv_fderiv_const_smul`: the second and
+  third derivatives of sums, differences and constant multiples.
+* `ContinuousLinearMap.fderiv_fderiv` and `ContinuousLinearMap.fderiv_fderiv_fderiv`: the second
+  and third derivatives of a continuous linear map vanish.
 * `TauCeti.fderiv_fderiv_smul_apply`: the second-order product rule for a scalar multiple, with
   `TauCeti.fderiv_fderiv_fun_smul_apply` its form for `fun y ↦ f y • g y`, and
   `TauCeti.fderiv_fderiv_mul_apply` (and `TauCeti.fderiv_fderiv_fun_mul_apply`) its case of a
   product of maps into a commutative algebra.
+* `ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply`: the third derivative of the cube of
+  a linear functional.
 * `TauCeti.sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const` and
   `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
   the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
@@ -504,6 +511,73 @@ theorem fderiv_fderiv_sub_clm {g : E → F} {x : E} (hg : ∀ᶠ y in 𝓝 x, Di
     hg.mono fun y hy => by rw [fderiv_fun_sub hy L.differentiableAt, L.fderiv]
   rw [h.fderiv_eq, fderiv_sub_const]
 
+/-- The second derivative of a sum of maps that are `C²` at `x` is the sum of their second
+derivatives. -/
+theorem fderiv_fderiv_add {u w : E → F} {x : E} (hu : ContDiffAt 𝕜 2 u x)
+    (hw : ContDiffAt 𝕜 2 w x) :
+    fderiv 𝕜 (fderiv 𝕜 (u + w)) x = fderiv 𝕜 (fderiv 𝕜 u) x + fderiv 𝕜 (fderiv 𝕜 w) x := by
+  have h : fderiv 𝕜 (u + w) =ᶠ[𝓝 x] fderiv 𝕜 u + fderiv 𝕜 w := by
+    filter_upwards [hu.eventually (by simp), hw.eventually (by simp)] with y huy hwy
+    exact fderiv_add (huy.differentiableAt (by simp)) (hwy.differentiableAt (by simp))
+  rw [h.fderiv_eq, fderiv_add (hu.hasFDerivAt_fderiv le_rfl).differentiableAt
+    (hw.hasFDerivAt_fderiv le_rfl).differentiableAt]
+
+/-- The second derivative of a difference of maps that are `C²` at `x` is the difference of their
+second derivatives. -/
+theorem fderiv_fderiv_sub {u w : E → F} {x : E} (hu : ContDiffAt 𝕜 2 u x)
+    (hw : ContDiffAt 𝕜 2 w x) :
+    fderiv 𝕜 (fderiv 𝕜 (u - w)) x = fderiv 𝕜 (fderiv 𝕜 u) x - fderiv 𝕜 (fderiv 𝕜 w) x := by
+  have h : fderiv 𝕜 (u - w) =ᶠ[𝓝 x] fderiv 𝕜 u - fderiv 𝕜 w := by
+    filter_upwards [hu.eventually (by simp), hw.eventually (by simp)] with y huy hwy
+    exact fderiv_sub (huy.differentiableAt (by simp)) (hwy.differentiableAt (by simp))
+  rw [h.fderiv_eq, fderiv_sub (hu.hasFDerivAt_fderiv le_rfl).differentiableAt
+    (hw.hasFDerivAt_fderiv le_rfl).differentiableAt]
+
+/-- The third derivative of a sum of maps that are `C³` at `x` is the sum of their third
+derivatives. -/
+theorem fderiv_fderiv_fderiv_add {u w : E → F} {x : E} (hu : ContDiffAt 𝕜 3 u x)
+    (hw : ContDiffAt 𝕜 3 w x) :
+    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 (u + w))) x =
+      fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 u)) x + fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 w)) x := by
+  have h : fderiv 𝕜 (fderiv 𝕜 (u + w)) =ᶠ[𝓝 x] fderiv 𝕜 (fderiv 𝕜 u) + fderiv 𝕜 (fderiv 𝕜 w) := by
+    filter_upwards [(hu.of_le (m := 2) (by norm_num)).eventually (by simp),
+      (hw.of_le (m := 2) (by norm_num)).eventually (by simp)] with y huy hwy
+    exact fderiv_fderiv_add huy hwy
+  rw [h.fderiv_eq, fderiv_add
+    ((hu.fderiv_right (m := 2) (by norm_num)).hasFDerivAt_fderiv le_rfl).differentiableAt
+    ((hw.fderiv_right (m := 2) (by norm_num)).hasFDerivAt_fderiv le_rfl).differentiableAt]
+
+/-- The third derivative of a difference of maps that are `C³` at `x` is the difference of their
+third derivatives. -/
+theorem fderiv_fderiv_fderiv_sub {u w : E → F} {x : E} (hu : ContDiffAt 𝕜 3 u x)
+    (hw : ContDiffAt 𝕜 3 w x) :
+    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 (u - w))) x =
+      fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 u)) x - fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 w)) x := by
+  have h : fderiv 𝕜 (fderiv 𝕜 (u - w)) =ᶠ[𝓝 x] fderiv 𝕜 (fderiv 𝕜 u) - fderiv 𝕜 (fderiv 𝕜 w) := by
+    filter_upwards [(hu.of_le (m := 2) (by norm_num)).eventually (by simp),
+      (hw.of_le (m := 2) (by norm_num)).eventually (by simp)] with y huy hwy
+    exact fderiv_fderiv_sub huy hwy
+  rw [h.fderiv_eq, fderiv_sub
+    ((hu.fderiv_right (m := 2) (by norm_num)).hasFDerivAt_fderiv le_rfl).differentiableAt
+    ((hw.fderiv_right (m := 2) (by norm_num)).hasFDerivAt_fderiv le_rfl).differentiableAt]
+
+/-- The third derivative of a constant multiple `c • g` is `c` times the third derivative of `g`.
+No regularity is needed. -/
+theorem fderiv_fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
+    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 (c • g))) x = c • fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 g)) x := by
+  rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g),
+    fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 (fderiv 𝕜 g)), Pi.smul_apply]
+
+/-- The second derivative of a continuous linear map vanishes. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.fderiv_fderiv (L : E →L[𝕜] F) : fderiv 𝕜 (fderiv 𝕜 L) = 0 := by
+  rw [show fderiv 𝕜 L = fun _ ↦ L from funext fun _ ↦ L.fderiv, fderiv_fun_const]
+
+/-- The third derivative of a continuous linear map vanishes. -/
+theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv (L : E →L[𝕜] F) :
+    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 L)) = 0 := by
+  rw [L.fderiv_fderiv, fderiv_zero]
+
 /-- **The second-order product rule for a scalar multiple.** For a map `f` into a normed algebra
 `𝕜'` and a map `g` into a `𝕜'`-module which are `C²` at `x`,
 `D²(f • g)(v, w) = f D²g(v, w) + D²f(v, w) g + Df(v) Dg(w) + Df(w) Dg(v)`. -/
@@ -539,6 +613,34 @@ theorem fderiv_fderiv_mul_apply {𝔸' : Type*} [NormedCommRing 𝔸'] [NormedAl
       f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
         fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
   simp_rw [Pi.mul_def, ← smul_eq_mul, fderiv_fderiv_fun_smul_apply hf hg v w, smul_eq_mul]
+  ring
+
+/-- The third derivative of the cube `y ↦ ℓ y ^ 3` of a linear functional is
+`(a, b, c) ↦ 6 * ℓ a * ℓ b * ℓ c` at every point. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply (ℓ : E →L[𝕜] 𝕜)
+    (x a b c : E) :
+    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y ^ 3)) x a b c = 6 * ℓ a * ℓ b * ℓ c := by
+  set g : E → 𝕜 := fun y ↦ ℓ y ^ 3
+  have hg : ContDiff 𝕜 3 g := by fun_prop
+  have hd1 : Differentiable 𝕜 (fderiv 𝕜 g) :=
+    (hg.fderiv_right (m := 2) (by norm_num)).differentiable (by norm_num)
+  have hd2 : Differentiable 𝕜 (fderiv 𝕜 (fderiv 𝕜 g)) :=
+    ((hg.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1) (by norm_num)).differentiable
+      one_ne_zero
+  have h1 : ∀ c, (fun y ↦ fderiv 𝕜 g y c) = fun y ↦ 3 * ℓ c * ℓ y ^ 2 := fun c ↦ funext fun y ↦ by
+    rw [(ℓ.hasFDerivAt.pow 3).fderiv]
+    simp only [Nat.add_one_sub_one, nsmul_eq_mul, Nat.cast_ofNat, smul_apply, smul_eq_mul]
+    ring
+  have h2 : ∀ b c, (fun y ↦ fderiv 𝕜 (fderiv 𝕜 g) y b c) = fun y ↦ 6 * ℓ b * ℓ c * ℓ y :=
+    fun b c ↦ funext fun y ↦ by
+      rw [← fderiv_clm_apply_const_apply (hd1 y), h1, ((ℓ.hasFDerivAt.pow 2).const_mul
+        (3 * ℓ c)).fderiv]
+      simp only [Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_apply,
+        smul_eq_mul]
+      ring
+  rw [← fderiv_clm_apply_const_apply₂ (hd2 x), h2, (ℓ.hasFDerivAt.const_mul (6 * ℓ b * ℓ c)).fderiv]
+  simp only [smul_apply, smul_eq_mul]
   ring
 
 /-- **The derivative of a partition of unity by squares.** If `∑ₐ Jₐ²` is constant near `x` and
