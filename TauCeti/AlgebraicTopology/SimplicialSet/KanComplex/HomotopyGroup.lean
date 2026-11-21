@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.PtSimplex
+import TauCeti.AlgebraicTopology.Quasicategory.Core
 
 /-!
 # Homotopy groups of Kan complexes
 
 For a simplicial set `X` with a vertex `x`, `SSet.KanComplex.π n X x` is the set of homotopy
 classes, relative to `∂Δ[n]`, of morphisms `Δ[n] ⟶ X` sending `∂Δ[n]` to `x`. When `X` is a Kan
-complex and `n ≥ 1`, two such morphisms are homotopic exactly when they are related by
-`SSet.PtSimplex.RelStruct₀` (`SSet.KanComplex.π.mk_eq_mk_iff`), and `π (n + 1) X x` is a group
+complex, two such morphisms have the same class exactly when they are related by
+`SSet.PtSimplex.RelStruct₀` (`SSet.KanComplex.π.mk_eq_mk_iff`); for `n = 0` this means that the two
+vertices are joined by an edge. Moreover `π (n + 1) X x` is a group
 (`SSet.KanComplex.π.group`): `mk p * mk q = mk pq` exactly when `p`, `pq` and `q` are faces of an
 `(n + 2)`-simplex as in `SSet.PtSimplex.MulStruct` (`SSet.KanComplex.π.mul_mk_eq_iff`).
 
@@ -31,9 +33,10 @@ The definition of `π`, of its group structure and of their characterizations fo
 Mathlib pull request [mathlib4#42435](https://github.com/leanprover-community/mathlib4/pull/42435)
 (file `Mathlib/AlgebraicTopology/SimplicialSet/KanComplex/HomotopyGroup.lean`), whose names and
 shapes are kept for the declarations the two share. There the group structures in the other
-directions `i : Fin (n + 1)` are also constructed, and the characterizations cover `n = 0`; here
-`π 0 X x` is only a type with a distinguished element. The induced maps are not part of that
-pull request.
+directions `i : Fin (n + 1)` are also constructed. The degree `0` case of
+`SSet.KanComplex.π.mk_eq_mk_iff` is deduced here from the fact that edges of a Kan complex compose
+and invert (`SSet.π₀.mk_eq_mk_iff_nonempty_edge`). The induced maps are not part of that pull
+request.
 
 * J. P. May, *Simplicial Objects in Algebraic Topology*, University of Chicago Press, 1967,
   Chapter I, §3–§4.
@@ -124,10 +127,34 @@ end map
 
 variable [KanComplex X]
 
-/-- In a Kan complex, two pointed simplices of positive dimension have the same class exactly
-when they are related by `RelStruct₀`. -/
-lemma mk_eq_mk_iff {p q : X.PtSimplex (n + 1) x} :
+/-- In a Kan complex, two pointed simplices have the same class exactly when they are related by
+`RelStruct₀`. In dimension `0`, a `RelStruct₀` is an edge between the two vertices. -/
+lemma mk_eq_mk_iff {p q : X.PtSimplex n x} :
     mk p = mk q ↔ Nonempty (p.RelStruct₀ q) := by
+  obtain _ | n := n
+  · refine ⟨fun h ↦ ?_, fun ⟨h⟩ ↦ (mk_eq_mk_of_homotopy h.homotopy).symm⟩
+    -- Two homotopic vertices are joined by an edge, so they lie in the same component of `X`;
+    -- in a Kan complex, vertices of the same component are joined by an edge.
+    suffices π₀.mk (PtSimplex.equiv₀ x q) = π₀.mk (PtSimplex.equiv₀ x p) from
+      ((π₀.mk_eq_mk_iff_nonempty_edge _ _).1 this).map PtSimplex.RelStruct₀.equiv₀.symm
+    have r := Quot.eq.1 h
+    clear h
+    induction r with
+    | rel p q h =>
+      obtain ⟨h⟩ := h
+      refine (π₀.sound (PtSimplex.RelStruct₀.equiv₀ (f := q) (g := p)
+        { map := prodStdSimplex₁.ι 0 ≫ h.h
+          δ_castSucc_map := ?_
+          δ_succ_map := ?_
+          δ_map_of_lt := fun j hj ↦ absurd hj (Fin.not_lt_zero _)
+          δ_map_of_gt := fun j hj ↦ absurd hj (not_lt.2 (Fin.le_last j)) })).symm
+      · rw [prodStdSimplex₁.δ_castSucc_ι_assoc, Fin.castSucc_zero,
+          prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_zero, h.h₁]
+      · rw [prodStdSimplex₁.δ_succ_ι_assoc]
+        exact (prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_last (p := 0) =≫ h.h).trans h.h₀
+    | refl p => rfl
+    | symm _ _ _ h => exact h.symm
+    | trans _ _ _ _ _ h₁ h₂ => exact h₂.trans h₁
   refine Quot.eq.trans ⟨fun r ↦ ?_, fun ⟨h⟩ ↦ .rel _ _ ⟨h.symm.homotopy⟩⟩
   induction r with
   | rel p q h => exact ⟨PtSimplex.Homotopy.relStruct₀ h.some⟩
@@ -141,7 +168,7 @@ lemma mk_eq_mk_iff_nonempty_homotopy {p q : X.PtSimplex (n + 1) x} :
     mk p = mk q ↔ Nonempty (p.Homotopy q) :=
   mk_eq_mk_iff.trans ⟨fun ⟨h⟩ ↦ ⟨h.symm.homotopy⟩, fun ⟨h⟩ ↦ ⟨h.relStruct₀⟩⟩
 
-lemma mk_eq_one_iff (p : X.PtSimplex (n + 1) x) :
+lemma mk_eq_one_iff (p : X.PtSimplex n x) :
     mk p = 1 ↔ Nonempty (p.RelStruct₀ .const) :=
   mk_eq_mk_iff
 
