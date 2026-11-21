@@ -275,10 +275,13 @@ theorem morreyNormPow_le_eLpNorm_rpow_mul (hp : 0 < p) (hpq : p ≤ q)
           _ ≤ _ := by
               gcongr
               · exact sub_nonneg.2 (one_div_le_one_div_of_le hp hpq)
-    _ = eLpNorm f (ENNReal.ofReal q) (μ.restrict Ω) ^ p * μ (closedBall 0 1) ^ (1 - p / q) := by
+    _ = eLpNorm f (ENNReal.ofReal q) (μ.restrict Ω) ^ p * μ (closedBall 0 1) ^ (1 - p / q) *
+        (ENNReal.ofReal (r ^ (-(finrank ℝ E * (1 - p / q)))) *
+          ENNReal.ofReal (r ^ (finrank ℝ E : ℝ)) ^ (1 - p / q)) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ hp.le, ← ENNReal.rpow_mul, hexp,
-          ENNReal.mul_rpow_of_nonneg _ _ hs, ← mul_assoc, ← mul_assoc,
-          mul_right_comm _ (eLpNorm f _ _ ^ p), hone, one_mul]
+          ENNReal.mul_rpow_of_nonneg _ _ hs]
+        ring
+    _ = _ := by rw [hone, mul_one]
 
 /-- One direction of `morreyNormPow_comp_add_smul`. -/
 private theorem morreyNormPow_comp_add_smul_le (x₀ : E) {ε : ℝ} (hε : 0 < ε) :
@@ -297,11 +300,11 @@ private theorem morreyNormPow_comp_add_smul_le (x₀ : E) {ε : ℝ} (hε : 0 < 
     ← Measure.restrict_restrict measurableSet_closedBall]
   have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal |(ε ^ finrank ℝ E)⁻¹| =
       ENNReal.ofReal (ε ^ (lam - finrank ℝ E)) * ENNReal.ofReal ((ε * r) ^ (-lam)) := by
-    rw [abs_of_pos (by positivity), ← Real.rpow_natCast, ← Real.rpow_neg hε.le,
-      Real.mul_rpow hε.le hr.le, ENNReal.ofReal_mul (by positivity), ← mul_assoc,
-      ofReal_rpow_mul_ofReal_rpow hε, mul_comm]
-    congr 3
-    ring
+    rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    rw [abs_of_pos (by positivity), Real.rpow_sub hε, Real.rpow_natCast,
+      Real.mul_rpow hε.le hr.le, Real.rpow_neg hε.le]
+    field_simp
   rw [← mul_assoc, hfac, mul_assoc]
   gcongr
   exact le_morreyNormPow hx (mul_pos hε hr)
@@ -338,17 +341,12 @@ private theorem setLIntegral_closedBall_indicator_sub_le (x t : E) {r : ℝ} (hr
       ENNReal.ofReal ((2 * r) ^ lam) * morreyNormPow μ Ω 1 lam f := by
   calc ∫⁻ y in closedBall x r, ‖Ω.indicator f (y - t)‖ₑ ∂μ
       = ∫⁻ z in closedBall (x - t) r, ‖Ω.indicator f z‖ₑ ∂μ := by
-        rw [← lintegral_indicator measurableSet_closedBall,
-          ← lintegral_indicator measurableSet_closedBall,
-          ← lintegral_sub_right_eq_self
-            (fun z ↦ (closedBall (x - t) r).indicator (fun z ↦ ‖Ω.indicator f z‖ₑ) z) t]
-        congr 1
-        ext y
-        have hmem : y - t ∈ closedBall (x - t) r ↔ y ∈ closedBall x r := by
-          simp only [mem_closedBall, dist_sub_right]
-        by_cases hy : y ∈ closedBall x r
-        · rw [indicator_of_mem hy, indicator_of_mem (hmem.2 hy)]
-        · rw [indicator_of_notMem hy, indicator_of_notMem (mt hmem.1 hy)]
+        have hpre : (· - t) ⁻¹' closedBall (x - t) r = closedBall x r := by
+          ext y
+          simp only [mem_preimage, mem_closedBall, dist_sub_right]
+        rw [← hpre]
+        exact (measurePreserving_sub_right μ t).setLIntegral_comp_preimage_emb
+          (measurableEmbedding_subRight t) (fun z ↦ ‖Ω.indicator f z‖ₑ) _
     _ ≤ ∫⁻ z in closedBall (x - t) r, ‖f z‖ₑ ∂μ.restrict Ω := by
         simp only [eNorm_indicator_eq_indicator_eNorm]
         refine (lintegral_indicator_le _ _).trans_eq ?_
