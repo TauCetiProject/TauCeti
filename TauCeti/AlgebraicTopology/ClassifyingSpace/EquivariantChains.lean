@@ -172,6 +172,20 @@ theorem universalGSpaceCellularRepIso_hom_cellularChainBasis {n : ℕ}
     universalGSpaceCellularRepIso_hom_toLinearMap]
   exact universalGSpaceCellularChainLinearEquiv_cellularChainBasis k G c
 
+/-- On an ordered simplex generator with coefficient `r`, the inverse of
+`universalGSpaceCellularRepIso` yields `(r * ↑(realizationChainScale k n)⁻¹)` times the
+corresponding geometric cellular basis vector. -/
+@[simp]
+theorem universalGSpaceCellularRepIso_inv_hom_single {n : ℕ}
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (r : k) :
+    (universalGSpaceCellularRepIso k G n).inv.hom (MonoidAlgebra.single c r) =
+      (r * ↑(realizationChainScale k n)⁻¹) •
+        cellularChainBasis (univ : Set (universalGSpace G)) k n
+          ((AbstractSimplicialComplex.realizationCellEquiv _ n).symm c) := by
+  rw [← Representation.IntertwiningMap.toLinearMap_apply,
+    universalGSpaceCellularRepIso_inv_toLinearMap]
+  exact universalGSpaceCellularChainLinearEquiv_symm_single k G c r
+
 /-- Geometric and ordered cellular chains are isomorphic before forgetting the action. -/
 def universalGSpaceCellularComplexIso :
     universalGSpaceCellularComplex k G ≅ universalGSpaceChainComplex k G :=
