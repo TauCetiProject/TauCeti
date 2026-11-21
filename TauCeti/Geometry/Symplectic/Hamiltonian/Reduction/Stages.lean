@@ -22,7 +22,7 @@ Everything here lives on `Z`, before passing to the first reduced space; the des
 and the moment map property there are not proved here.
 
 * On the zero level of `μ_N`, the moment map `μ` takes values in the annihilator `𝔫⁰`
-  (`TauCeti.Lie.EmbeddedLieSubgroupData.comp_groupLieAlgebraMap_subtype_eq_zero_iff`), and this
+  (`TauCeti.Lie.comp_groupLieAlgebraMap_subtype_eq_zero_iff`), and this
   level is invariant under the normalizer of `N`
   (`TauCeti.apply_smul_mem_dualAnnihilator_groupLieSubalgebra`).
 * Through the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰`, the restriction of `μ` to the level is a map
@@ -34,9 +34,11 @@ and the moment map property there are not proved here.
   `μ_res (g • z) = [g] · μ_res z` (`TauCeti.residualMomentMapLift_smul`). If `N` acts on `Z`
   compatibly with `i`, the map is `N`-invariant
   (`TauCeti.residualMomentMapLift_subgroup_smul_eq_self`); this is the invariance needed for it
-  to descend along the projection to the first reduced space. No Lie group structure on `G ⧸ N`
-  is needed; under the identification `Lie(G ⧸ N) ≃ 𝔤 ⧸ 𝔫` of a quotient Lie group structure on
-  `G ⧸ N`, the dual action corresponds to the coadjoint action of `G ⧸ N`.
+  to descend along the projection to the first reduced space. This pulled-back equivariance is
+  what is proved here, and it uses no Lie group structure on `G ⧸ N`. When `G ⧸ N` carries a
+  quotient Lie group structure, the differential at the identity of the projection `G → G ⧸ N`
+  induces a canonical isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, and under it the dual action corresponds
+  to the coadjoint action of `G ⧸ N`; that comparison is not proved here.
 * The components of the map satisfy the moment map equation pulled back to `Z`:
   `d⟨μ_res, [ξ]⟩ = i^* (ι_{ξ_M} σ)`
   (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_residualMomentMapLift_apply_mk`). This is the

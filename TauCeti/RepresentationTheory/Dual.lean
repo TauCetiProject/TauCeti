@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.PicardGroup.Contraction
 import TauCeti.LinearAlgebra.Dual.Annihilator
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Invariants of the dual representation
@@ -191,13 +192,14 @@ theorem dualAnnihilator_le_comap_dual [CommSemiring k] [AddCommMonoid V] [Module
 
 /-- The dual of the representation `ρ.ofQuotient S` descended through a normal subgroup `S`,
 pulled back along `G → G ⧸ S`, is the dual of `ρ`:
-`(ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual`. -/
+`(ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual`. The `simp` lemma
+`Representation.dual_comp` rewrites `((ρ.ofQuotient S).comp (QuotientGroup.mk' S)).dual` to this
+left-hand side, where `Representation.ofQuotient_comp_mk'` no longer applies. -/
+@[simp]
 theorem dual_ofQuotient_comp_mk' [CommSemiring k] [AddCommMonoid V] [Module k V]
     (ρ : Representation k G V) (S : Subgroup G) [S.Normal] [IsTrivial (ρ.comp S.subtype)] :
     (ρ.ofQuotient S).dual.comp (QuotientGroup.mk' S) = ρ.dual := by
-  ext g φ v
-  rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, dual_apply, dual_apply, ← QuotientGroup.mk_inv]
-  simp only [Module.Dual.transpose_apply, LinearMap.comp_apply, ofQuotient_coe_apply]
+  rw [← dual_comp, ofQuotient_comp_mk']
 
 variable [CommRing k] [AddCommGroup V] [Module k V] {ρ : Representation k G V}
   {W : Submodule k V} {g : G}

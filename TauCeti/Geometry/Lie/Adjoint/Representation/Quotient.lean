@@ -19,9 +19,10 @@ trivially on `𝔤 ⧸ 𝔫` because `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N`
 to a representation of the quotient group `G ⧸ N` on `𝔤 ⧸ 𝔫`,
 `Subgroup.quotientAdjointRepresentation N`, by `[g] · [ξ] = [Ad_g ξ]`; its pullback to `G` is the
 quotient representation of `G` on `𝔤 ⧸ 𝔫`. No Lie group structure on `G ⧸ N` is assumed or
-constructed here. When `G ⧸ N` carries a quotient Lie group structure with `Lie(G ⧸ N) ≃ 𝔤 ⧸ 𝔫`,
-that identification intertwines this representation and its dual on `(𝔤 ⧸ 𝔫)*` with the adjoint
-and coadjoint representations of `G ⧸ N`.
+constructed here. When `G ⧸ N` carries a quotient Lie group structure, the differential at the
+identity of the projection `G → G ⧸ N` induces a canonical isomorphism `𝔤 ⧸ 𝔫 ≃ Lie(G ⧸ N)`, and
+under it this representation and its dual on `(𝔤 ⧸ 𝔫)*` correspond to the adjoint and coadjoint
+representations of `G ⧸ N`; that comparison is not proved here.
 
 Dually, the coadjoint representation of `G` preserves the annihilator `𝔫⁰ ⊆ 𝔤*`, and `N` fixes
 `𝔫⁰` pointwise. Under the identification `(𝔤 ⧸ 𝔫)* ≃ 𝔫⁰` of linear forms on the quotient with
@@ -95,14 +96,14 @@ def _root_.Subgroup.quotientAdjointRepresentation (N : Subgroup G) [N.Normal]
 
 /-- **The pullback of the adjoint representation of `G ⧸ N` to `G`** is the representation of `G`
 on `𝔤 ⧸ 𝔫` induced by the adjoint representation. -/
+@[simp]
 theorem quotientAdjointRepresentation_comp_mk' {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) :
     (N.quotientAdjointRepresentation (I := I) hN).comp (QuotientGroup.mk' N) =
       (adjointRepresentation ℝ I G).quotient _
-        groupLieSubalgebra_le_comap_adjointRepresentation :=
-  MonoidHom.ext fun g ↦ LinearMap.ext fun x ↦ by
-    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, Subgroup.quotientAdjointRepresentation,
-      Representation.ofQuotient_coe_apply]
+        groupLieSubalgebra_le_comap_adjointRepresentation := by
+  have := isTrivial_quotient_adjointRepresentation_comp_subtype (I := I) hN
+  rw [Subgroup.quotientAdjointRepresentation, Representation.ofQuotient_comp_mk']
 
 /-- The class of `g` acts on the class of `ξ` by `[g] · [ξ] = [Ad_g ξ]`. -/
 @[simp]

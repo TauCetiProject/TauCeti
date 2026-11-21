@@ -20,7 +20,7 @@ there: for a closed subgroup, `ξ ∈ 𝔨` exactly when `t ↦ exp (t ξ)` stay
 
 Its invariance under the adjoint action is in
 `TauCeti.Geometry.Lie.Adjoint.Representation.Subgroup`, and its description as the range of the
-differential of an embedded inclusion is in `TauCeti.Geometry.Lie.Subgroup.Differential`.
+differential of the inclusion is in `TauCeti.Geometry.Lie.Subgroup.Differential`.
 
 ## Main definitions
 

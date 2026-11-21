@@ -12,17 +12,25 @@ public import TauCeti.RepresentationTheory.Continuous.Transport
 /-!
 # The group adjoint representation
 
-This file bundles the group adjoint `Ad` as a continuous representation on
+The tangent-space adjoint maps `Ad_g = d(conj_g)_1` of a Lie group `G` form a representation of
+`G` on its tangent Lie algebra `𝔤 = GroupLieAlgebra I G`. Passing to left-invariant derivations
+intertwines it with the group adjoint `Ad` on left-invariant derivations.
+
+This file also bundles the group adjoint `Ad` as a continuous representation on
 left-invariant derivations. It transports operator-valued smoothness across the canonical
 isometric identification between left-invariant derivations and the tangent space at the identity,
 then derives joint smoothness of the action by evaluation.
 
 ## Main definitions
 
+* `TauCeti.Lie.adjointRepresentation`: the representation `g ↦ Ad_g` of `G` on `𝔤`.
 * `TauCeti.Lie.continuousAdjointRepresentation`: the group adjoint as a continuous representation.
 
 ## Main results
 
+* `TauCeti.Lie.tangentToLeftInvariantDerivation_adjointRepresentation_apply`: the left-invariant
+  derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint action on
+  left-invariant derivations.
 * `TauCeti.Lie.contMDiff_Ad_apply`: the joint action `(g, X) ↦ Ad g X` is smooth.
 * `TauCeti.Lie.contMDiff_continuousAdjointRepresentation`: the bounded-operator-valued
   representation is smooth.
@@ -36,6 +44,54 @@ noncomputable section
 namespace TauCeti.Lie
 
 open scoped ContDiff Manifold
+
+section Tangent
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I 1 G]
+
+variable (𝕜 I G) in
+/-- The **adjoint representation** of a Lie group `G` on its tangent Lie algebra: `g` acts by the
+differential `Ad_g` of conjugation by `g` at the identity. -/
+def adjointRepresentation : Representation 𝕜 G (GroupLieAlgebra I G) where
+  toFun g := adjointContinuousLinearMap (I := I) g
+  map_one' := by
+    ext X
+    simp
+  map_mul' g h := by
+    ext X
+    simp
+
+@[simp]
+theorem adjointRepresentation_apply (g : G) (X : GroupLieAlgebra I G) :
+    adjointRepresentation 𝕜 I G g X = adjointContinuousLinearMap (I := I) g X :=
+  (rfl)
+
+end Tangent
+
+section Intertwining
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+
+/-- The left-invariant derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint
+action `Ad g` on left-invariant derivations. -/
+theorem tangentToLeftInvariantDerivation_adjointRepresentation_apply (g : G)
+    (ξ : GroupLieAlgebra I G) :
+    tangentToLeftInvariantDerivation (adjointRepresentation ℝ I G g ξ) =
+      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
+  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+
+end Intertwining
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}

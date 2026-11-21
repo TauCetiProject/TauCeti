@@ -43,9 +43,10 @@ subgroup used in reduction in stages, and the moment map of a subtorus of a toru
 
 For a subgroup `K` with Lie algebra `𝔨 = Subgroup.groupLieSubalgebra K`, the zero level of the
 restricted moment map is where `μ` takes values in the annihilator `𝔨⁰`
-(`TauCeti.Lie.EmbeddedLieSubgroupData.comp_groupLieAlgebraMap_subtype_eq_zero_iff` for an embedded
-subgroup). The coadjoint action of the normalizer of `K` preserves `𝔨⁰`, so a coadjoint-equivariant
-`μ` maps the normalizer-translates of this level back into it
+(`TauCeti.Lie.comp_groupLieAlgebraMap_subtype_eq_zero_iff`, for any finite-dimensional Lie group
+structure on `K`). The coadjoint action of the normalizer of `K` preserves `𝔨⁰`, so the normalizer
+preserves this zero level: for a coadjoint-equivariant `μ`, if `μ x ∈ 𝔨⁰` and `g` normalizes `K`,
+then `μ` sends the translated point `g • x` into `𝔨⁰` as well
 (`TauCeti.apply_smul_mem_dualAnnihilator_groupLieSubalgebra`).
 
 ## Main results

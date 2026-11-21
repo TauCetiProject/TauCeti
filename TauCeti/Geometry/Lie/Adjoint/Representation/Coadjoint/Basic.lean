@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Basic
-public import TauCeti.Geometry.Lie.Adjoint.Derivation
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
 
 import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 import TauCeti.Geometry.Lie.Adjoint.Smooth
@@ -15,12 +15,13 @@ import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
-# The adjoint and coadjoint representations on the tangent Lie algebra
+# The coadjoint representation on the dual of the tangent Lie algebra
 
 The tangent-space adjoint maps `Ad_g = d(conj_g)_1` of a Lie group `G` form a representation of
 `G` on its tangent Lie algebra `𝔤 = GroupLieAlgebra I G`
-(`TauCeti.Lie.adjointRepresentation`). Its dual is the **coadjoint representation** of `G` on
-`𝔤* = Module.Dual 𝕜 𝔤` (`TauCeti.Lie.coadjointRepresentation`),
+(`TauCeti.Lie.adjointRepresentation`, in `TauCeti.Geometry.Lie.Adjoint.Representation.Basic`).
+Its dual is the **coadjoint representation** of `G` on `𝔤* = Module.Dual 𝕜 𝔤`
+(`TauCeti.Lie.coadjointRepresentation`),
 
 `Ad*_g ν = ν ∘ Ad_{g⁻¹}`,
 
@@ -29,16 +30,12 @@ moment maps of Hamiltonian group actions are equivariant.
 
 ## Main definitions
 
-* `TauCeti.Lie.adjointRepresentation`: the representation `g ↦ Ad_g` of `G` on `𝔤`.
 * `TauCeti.Lie.coadjointRepresentation`: the representation `g ↦ Ad*_g` of `G` on `𝔤*`.
 
 ## Main results
 
 * `TauCeti.Lie.coadjointRepresentation_eq_one`: the coadjoint action of a commutative Lie group is
   trivial.
-* `TauCeti.Lie.tangentToLeftInvariantDerivation_adjointRepresentation_apply`: the left-invariant
-  derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint action on
-  left-invariant derivations.
 * `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
   along the adjoint automorphism `Ad_g` to `ν`.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
@@ -66,23 +63,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I 1 G]
 
 variable (𝕜 I G) in
-/-- The **adjoint representation** of a Lie group `G` on its tangent Lie algebra: `g` acts by the
-differential `Ad_g` of conjugation by `g` at the identity. -/
-def adjointRepresentation : Representation 𝕜 G (GroupLieAlgebra I G) where
-  toFun g := adjointContinuousLinearMap (I := I) g
-  map_one' := by
-    ext X
-    simp
-  map_mul' g h := by
-    ext X
-    simp
-
-@[simp]
-theorem adjointRepresentation_apply (g : G) (X : GroupLieAlgebra I G) :
-    adjointRepresentation 𝕜 I G g X = adjointContinuousLinearMap (I := I) g X :=
-  (rfl)
-
-variable (𝕜 I G) in
 /-- The **coadjoint representation** of a Lie group `G` on the dual `𝔤*` of its tangent Lie
 algebra: `Ad*_g ν = ν ∘ Ad_{g⁻¹}`. -/
 def coadjointRepresentation : Representation 𝕜 G (Module.Dual 𝕜 (GroupLieAlgebra I G)) :=
@@ -96,8 +76,9 @@ theorem coadjointRepresentation_eq_dual :
 @[simp]
 theorem coadjointRepresentation_apply (g : G) (ν : Module.Dual 𝕜 (GroupLieAlgebra I G))
     (X : GroupLieAlgebra I G) :
-    coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) :=
-  (rfl)
+    coadjointRepresentation 𝕜 I G g ν X = ν (adjointContinuousLinearMap (I := I) g⁻¹ X) := by
+  rw [coadjointRepresentation_eq_dual, Representation.dual_apply, Module.Dual.transpose_apply,
+    LinearMap.comp_apply, adjointRepresentation_apply]
 
 /-- **The coadjoint action of a commutative Lie group is trivial**, since its adjoint action is
 (`TauCeti.Lie.adjointContinuousLinearMap_eq_id`). -/
@@ -134,18 +115,6 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-
-/-- The left-invariant derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint
-action `Ad g` on left-invariant derivations. -/
-theorem tangentToLeftInvariantDerivation_adjointRepresentation_apply (g : G)
-    (ξ : GroupLieAlgebra I G) :
-    tangentToLeftInvariantDerivation (adjointRepresentation ℝ I G g ξ) =
-      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
-  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
-    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
 
 /-- Each component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the coadjoint action of a smooth real Lie
 group with finite-dimensional model is smooth. -/
