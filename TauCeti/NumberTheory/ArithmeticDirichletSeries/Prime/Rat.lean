@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
@@ -14,19 +15,25 @@ import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their absolute norms
 (Mathlib's `Rat.HeightOneSpectrum.primesEquiv`, with `Rat.HeightOneSpectrum.absNorm_asIdeal`
-identifying the norm of `v` with its generator). This file transports a prime summatory function
-over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
-`Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes. In particular the number-field prime count
-`TauCeti.primeCount ℚ Set.univ` is the classical prime counting function. Both cutoffs are
-inclusive: at `x = 2` both counts are `1`.
+identifying the norm of `v` with its generator). This file transports a prime summatory function,
+finite product, finite sum, or norm-truncated `finprod` over `ℚ` whose weight depends only on the
+norm to the corresponding object over Mathlib's `Nat.primesLE`, so that results stated for the
+primes of a number field specialize to the classical sums and products over rational primes. In
+particular the number-field prime count `TauCeti.primeCount ℚ Set.univ` is the classical prime
+counting function. Both cutoffs are inclusive: at `x = 2` both counts are `1`.
 
 ## Main results
 
 * `TauCeti.image_absNorm_primesLE_rat`: the image of `primesLE ℚ x` under absolute norm is
   `Nat.primesLE ⌊x⌋₊`.
+* `TauCeti.prod_primesLE_rat_eq_prod_primesLE` and `TauCeti.sum_primesLE_rat_eq_sum_primesLE`:
+  products and sums over `primesLE ℚ x` depending only on the absolute norm agree with those over
+  `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.primeSummatory_rat_eq_sum_primesLE`: for a weight `f : ℕ → M`,
   `∑_{N𝔭 ≤ x} f (N𝔭)` over the primes of `𝓞 ℚ` is `∑_{p ∈ Nat.primesLE ⌊x⌋₊} f p`.
+* `TauCeti.finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE`: a norm-truncated
+  `finprod` over `HeightOneSpectrum (𝓞 ℚ)` depending only on the absolute norm equals the finite
+  product over `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.primeCount_rat_univ`: `primeCount ℚ Set.univ x = Nat.primeCounting ⌊x⌋₊` for every real
   `x`.
 -/
@@ -72,6 +79,32 @@ theorem image_absNorm_primesLE_rat (x : ℝ) :
       have hp2 := hp.two_le
       omega
     exact ⟨v, hv.symm ▸ (Nat.cast_le.mpr hple).trans (Nat.floor_le hx0), hv⟩
+
+/-- A product over `primesLE ℚ x` depending only on the absolute norm equals the corresponding
+product over `Nat.primesLE ⌊x⌋₊`. -/
+@[to_additive /-- A sum over `primesLE ℚ x` depending only on the absolute norm equals the
+corresponding sum over `Nat.primesLE ⌊x⌋₊`. -/]
+theorem prod_primesLE_rat_eq_prod_primesLE {M : Type*} [CommMonoid M] (f : ℕ → M) (x : ℝ) :
+    (∏ v ∈ primesLE ℚ x, f (Ideal.absNorm v.asIdeal)) = ∏ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
+  rw [← image_absNorm_primesLE_rat,
+    Finset.prod_image fun _ _ _ _ h ↦ Rat.HeightOneSpectrum.absNorm_asIdeal_injective h]
+
+/-- A `finprod` over `HeightOneSpectrum (𝓞 ℚ)` truncated at norm `x` equals the finite product over
+`Nat.primesLE ⌊x⌋₊`. -/
+theorem finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE {M : Type*} [CommMonoid M]
+    (f : ℕ → M) (x : ℝ) :
+    (∏ᶠ v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ),
+        if (Ideal.absNorm v.asIdeal : ℝ) ≤ x then f (Ideal.absNorm v.asIdeal) else 1) =
+      ∏ p ∈ Nat.primesLE ⌊x⌋₊, f p := by
+  rw [finprod_eq_prod_of_mulSupport_subset (s := primesLE ℚ x),
+    ← prod_primesLE_rat_eq_prod_primesLE]
+  · exact Finset.prod_congr rfl fun v hv ↦
+      ite_eq_left ((mem_normLE fun w : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ) ↦
+        Ideal.absNorm w.asIdeal).mp hv)
+  · intro v hv
+    rw [Finset.mem_coe, mem_normLE]
+    by_contra hvx
+    exact hv (ite_eq_right hvx)
 
 /-- The number of primes of `𝓞 ℚ` of absolute norm at most `x` is the number `π(⌊x⌋₊)` of rational
 primes `p ≤ x`. -/
