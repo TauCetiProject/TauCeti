@@ -99,7 +99,7 @@ theorem symmetricAlgebraHilbertIdeal_le_iff {J : Ideal (SymmetricAlgebra R M)} :
       ∀ p ∈ ρ.symmetricAlgebraInvariants,
         p ∈ HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) → p ∈ J := by
   rw [symmetricAlgebraHilbertIdeal, Ideal.map_le_iff_le_comap]
-  exact ⟨fun h p hp hp' ↦ h (x := ⟨p, hp⟩) hp', fun h p hp ↦ h p p.2 hp⟩
+  exact ⟨fun h p hp hp' ↦ h (x := ⟨p, hp⟩) hp', fun h p hp ↦ h p p.property hp⟩
 
 /-- An invariant with zero constant term lies in the Hilbert ideal. -/
 theorem mem_symmetricAlgebraHilbertIdeal_of_mem {p : SymmetricAlgebra R M}
@@ -141,7 +141,7 @@ theorem symmetricAlgebraHilbertIdeal_eq_span_of_surjective {ι : Type*}
     exact h
   · refine Ideal.span_le.2 ?_
     rintro _ ⟨i, rfl⟩
-    exact ρ.mem_symmetricAlgebraHilbertIdeal_of_mem (f i).2 (hf i)
+    exact ρ.mem_symmetricAlgebraHilbertIdeal_of_mem (f i).property (hf i)
 
 /-- The Hilbert ideal is contained in the irrelevant ideal. -/
 theorem symmetricAlgebraHilbertIdeal_le_irrelevant :

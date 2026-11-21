@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.Basic.ENNReal.Holder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Schur's test and Young's inequality for integral operators
@@ -50,10 +53,16 @@ and column integrals are only required almost everywhere.
 * `TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq`: Young's inequality for integral
   kernels.
 * `TauCeti.lintegral_rpow_lintegral_mul_le`: Schur's test.
+* `TauCeti.eLpNorm_lintegral_mul_le_of_le`, `TauCeti.memLp_lintegral_mul_of_le`: Young's
+  inequality as an `Lᵖ → L^q` bound and membership for `1 ≤ p ≤ q ≤ ∞` with `(p, q) ≠ (1, ∞)`.
 * `TauCeti.eLpNorm_lintegral_mul_le`: Schur's test as an `Lᵖ` bound, including `p = ∞`.
-* `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: the constant
-  `A ^ (1 - 1/p) * B ^ (1/p)` of this bound is finite for finite `A` and `B`.
+* `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: finiteness of the constant
+  `A ^ (1 - 1/p) * B ^ (1/q)` for finite `A` and `B`.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
+* `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
+  `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
+* `TauCeti.lintegral_lintegral_mul_indicator_ball_mul_le`: the bilinear form for the kernel
+  `1_{|x - y| < R}` on the real line, whose rows and columns have length `2R`.
 
 ## References
 
@@ -174,20 +183,88 @@ theorem lintegral_rpow_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β
     (by simpa only [ENNReal.rpow_one] using hB)
   rwa [mul_one_sub, mul_inv_cancel₀ (by linarith), div_self (by linarith), ENNReal.rpow_one] at h
 
-/-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is the
+/-- For finite `A` and `B`, the constant `A ^ (1 - 1/p) * B ^ (1/q)` of Young's inequality is the
 coercion of the same expression in `ℝ≥0`. -/
-theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1 ≤ p) (A B : ℝ≥0) :
-    ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
-      (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
+theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p q : ℝ≥0∞} (hp : 1 ≤ p) (A B : ℝ≥0) :
+    ((A ^ (1 - p.toReal⁻¹) * B ^ q.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
+      (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ q.toReal⁻¹ := by
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
     simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
   rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ h₀,
     ENNReal.coe_rpow_of_nonneg _ (by positivity)]
 
-/-- The constant `A ^ (1 - 1/p) * B ^ (1/p)` of Schur's test is finite for finite `A` and `B`. -/
-theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (A B : ℝ≥0) : (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ < ∞ :=
+/-- The constant `A ^ (1 - 1/p) * B ^ (1/q)` of Young's inequality is finite for finite `A`
+and `B`. -/
+theorem rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top {p q : ℝ≥0∞} (hp : 1 ≤ p)
+    (A B : ℝ≥0) : (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ q.toReal⁻¹ < ∞ :=
   coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv hp A B ▸ ENNReal.coe_lt_top
+
+/-- **Young's inequality for integral kernels** as an `Lᵖ → L^q` bound: for `1 ≤ p ≤ q ≤ ∞` with
+`p.toReal⁻¹ - q.toReal⁻¹ < 1` (excluding only `(p, q) = (1, ∞)`) and
+`r = (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹`, if the `r`-th powers of `k` have row integrals at most `A`
+almost everywhere and column integrals at most `B` almost everywhere, then
+`‖x ↦ ∫⁻ y, k x y * g y ∂ν‖_q ≤ A ^ (1 - 1/p) * B ^ (1/q) * ‖g‖_p`.
+For `q = ∞` the exponent `1/q` is `0`, so only the row bound is used. -/
+theorem eLpNorm_lintegral_mul_le_of_le [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0∞}
+    (hk : AEMeasurable (Function.uncurry k) (μ.prod ν)) {g : β → ℝ≥0∞} (hg : AEMeasurable g ν)
+    {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) (hδ : p.toReal⁻¹ - q.toReal⁻¹ < 1) {A B : ℝ≥0∞}
+    (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ^ (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹ ∂ν ≤ A)
+    (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ^ (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹ ∂μ ≤ B) :
+    eLpNorm (fun x ↦ ∫⁻ y, k x y * g y ∂ν) q μ ≤
+      A ^ (1 - p.toReal⁻¹) * B ^ q.toReal⁻¹ * eLpNorm g p ν := by
+  have hmeas : AEMeasurable (fun x ↦ ∫⁻ y, k x y * g y ∂ν) μ :=
+    (hk.mul hg.comp_snd).lintegral_prod_right'
+  rcases eq_or_ne q ∞ with rfl | hq_top
+  · rcases hp.eq_or_lt with rfl | hp1
+    · norm_num at hδ
+    have h0 : 0 ≤ 1 - p.toReal⁻¹ := by
+      simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
+    simp only [eLpNorm_exponent_top hmeas.aestronglyMeasurable, ENNReal.toReal_top, inv_zero,
+      sub_zero, ENNReal.rpow_zero, mul_one] at hA ⊢
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
+    filter_upwards [hA, Measure.ae_ae_of_ae_prod hk.ae_eq_mk] with x hx hx'
+    have hkx : AEMeasurable (k x) ν :=
+      (hk.measurable_mk.comp measurable_prodMk_left).aemeasurable.congr (hx'.mono fun _ ↦ Eq.symm)
+    rw [eNorm_eq_self]
+    exact (lintegral_mul_le_rpow_mul_eLpNorm hkx hp1).trans
+      (mul_le_mul_left (ENNReal.rpow_le_rpow hx h0) _)
+  have hp_top : p ≠ ∞ := (hpq.trans_lt hq_top.lt_top).ne
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hq0 : q ≠ 0 := (zero_lt_one.trans_le (hp.trans hpq)).ne'
+  have hp_real : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+  have hpq_real : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq_top hpq
+  have hq_pos : 0 < q.toReal := by linarith
+  have hr_eq : p.toReal⁻¹ + ((1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹)⁻¹ = 1 + q.toReal⁻¹ := by
+    rw [inv_inv]; ring
+  have hexp₁ : q.toReal * (1 - p.toReal⁻¹) * (1 / q.toReal) = 1 - p.toReal⁻¹ := by field_simp
+  have hexp₂ : q.toReal / p.toReal * (1 / q.toReal) = 1 / p.toReal := by field_simp
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq_top hmeas.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg.aestronglyMeasurable]
+  simp only [eNorm_eq_self]
+  calc (∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ q.toReal ∂μ) ^ (1 / q.toReal)
+      ≤ (A ^ (q.toReal * (1 - p.toReal⁻¹)) * B *
+          (∫⁻ y, g y ^ p.toReal ∂ν) ^ (q.toReal / p.toReal)) ^ (1 / q.toReal) := by
+        gcongr
+        exact lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq hk hg hp_real hpq_real hr_eq hA hB
+    _ = A ^ (1 - p.toReal⁻¹) * B ^ q.toReal⁻¹ *
+          (∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
+          ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+          hexp₁, hexp₂, one_div q.toReal]
+
+/-- **Young's inequality for integral kernels** as `Lᵖ → L^q` membership: for `1 ≤ p ≤ q ≤ ∞` with
+`p.toReal⁻¹ - q.toReal⁻¹ < 1`, if the `(1 - (1/p - 1/q))⁻¹`-th powers of `k` have row integrals at
+most `A < ∞` almost everywhere and column integrals at most `B < ∞` almost everywhere, then
+`x ↦ ∫⁻ y, k x y * g y ∂ν` lies in `L^q(μ)` whenever `g ∈ Lᵖ(ν)`. -/
+theorem memLp_lintegral_mul_of_le [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0∞}
+    (hk : AEMeasurable (Function.uncurry k) (μ.prod ν)) {p q : ℝ≥0∞} {g : β → ℝ≥0∞}
+    (hg : MemLp g p ν) (hp : 1 ≤ p) (hpq : p ≤ q) (hδ : p.toReal⁻¹ - q.toReal⁻¹ < 1) {A B : ℝ≥0}
+    (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ^ (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹ ∂ν ≤ A)
+    (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ^ (1 - (p.toReal⁻¹ - q.toReal⁻¹))⁻¹ ∂μ ≤ B) :
+    MemLp (fun x ↦ ∫⁻ y, k x y * g y ∂ν) q μ :=
+  (eLpNorm_lintegral_mul_le_of_le hk hg.aestronglyMeasurable.aemeasurable hp hpq hδ hA hB).trans_lt
+    (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
+      hg.eLpNorm_lt_top)
 
 /-- **Schur's test** as an `Lᵖ` bound: if the kernel `k` has row integrals `∫⁻ y, k x y ∂ν` at
 most `A` for almost every `x` and column integrals `∫⁻ x, k x y ∂μ` at most `B` for almost every
@@ -199,39 +276,10 @@ theorem eLpNorm_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β → �
     {p : ℝ≥0∞} (hp : 1 ≤ p) {A B : ℝ≥0∞} (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ∂ν ≤ A)
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ∂μ ≤ B) :
     eLpNorm (fun x ↦ ∫⁻ y, k x y * g y ∂ν) p μ ≤
-      A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm g p ν := by
-  have hmeas : AEMeasurable (fun x ↦ ∫⁻ y, k x y * g y ∂ν) μ :=
-    (hk.mul hg.comp_snd).lintegral_prod_right'
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp only [eLpNorm_exponent_top hmeas.aestronglyMeasurable,
-      eLpNorm_exponent_top hg.aestronglyMeasurable, ENNReal.toReal_top, inv_zero, sub_zero,
-      ENNReal.rpow_one, ENNReal.rpow_zero, mul_one]
-    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
-    filter_upwards [hA, Measure.ae_ae_of_ae_prod hk.ae_eq_mk] with x hx hx'
-    have hkx : AEMeasurable (k x) ν :=
-      (hk.measurable_mk.comp measurable_prodMk_left).aemeasurable.congr (hx'.mono fun _ ↦ Eq.symm)
-    calc ‖(∫⁻ y, k x y * g y ∂ν : ℝ≥0∞)‖ₑ ≤ ∫⁻ y, k x y * eLpNormEssSup g ν ∂ν := by
-          rw [eNorm_eq_self]
-          refine lintegral_mono_ae ?_
-          filter_upwards [ae_le_eLpNormEssSup (f := g) (μ := ν)] with y hy
-          gcongr
-          simpa only [eNorm_eq_self] using hy
-      _ = (∫⁻ y, k x y ∂ν) * eLpNormEssSup g ν := lintegral_mul_const'' _ hkx
-      _ ≤ A * eLpNormEssSup g ν := by gcongr
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hmeas.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hg.aestronglyMeasurable]
-  simp only [eNorm_eq_self]
-  calc (∫⁻ x, (∫⁻ y, k x y * g y ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (A ^ (p.toReal - 1) * B * ∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        gcongr
-        exact lintegral_rpow_lintegral_mul_le hk hg hr hA hB
-    _ = A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ *
-          (∫⁻ y, g y ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
-          ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div,
-          show (p.toReal - 1) * p.toReal⁻¹ = 1 - p.toReal⁻¹ by field_simp]
+      A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm g p ν :=
+  eLpNorm_lintegral_mul_le_of_le hk hg hp le_rfl (by simp)
+    (by simpa only [sub_self, sub_zero, inv_one, ENNReal.rpow_one] using hA)
+    (by simpa only [sub_self, sub_zero, inv_one, ENNReal.rpow_one] using hB)
 
 /-- **Schur's test** as `Lᵖ` membership: if the kernel `k` has row integrals `∫⁻ y, k x y ∂ν` at
 most `A < ∞` for almost every `x` and column integrals `∫⁻ x, k x y ∂μ` at most `B < ∞` for almost
@@ -245,5 +293,68 @@ theorem memLp_lintegral_mul [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0
   (eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.aemeasurable hp hA hB).trans_lt
     (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
       hg.eLpNorm_lt_top)
+
+/-- **Schur's test** for the bilinear form of a kernel: if `k` has row integrals
+`∫⁻ y, k x y ∂ν` at most `A` for almost every `x` and column integrals `∫⁻ x, k x y ∂μ` at most
+`B` for almost every `y`, then for Hölder conjugate `p` and `q`,
+`∫∫ f(x) k(x, y) g(y) ≤ A ^ (1 - 1/q) * B ^ (1/q) * ‖f‖_p * ‖g‖_q`. -/
+theorem lintegral_lintegral_mul_mul_le [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0∞}
+    (hk : AEMeasurable (Function.uncurry k) (μ.prod ν)) {f : α → ℝ≥0∞} {g : β → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hg : AEMeasurable g ν) {p q : ℝ≥0∞} [ENNReal.HolderConjugate p q]
+    {A B : ℝ≥0∞} (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ∂ν ≤ A) (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ∂μ ≤ B) :
+    ∫⁻ x, ∫⁻ y, f x * (k x y * g y) ∂ν ∂μ ≤
+      A ^ (1 - q.toReal⁻¹) * B ^ q.toReal⁻¹ * eLpNorm f p μ * eLpNorm g q ν := by
+  have hkg : AEMeasurable (Function.uncurry fun x y ↦ k x y * g y) (μ.prod ν) :=
+    hk.mul hg.comp_snd
+  set H := fun x ↦ ∫⁻ y, k x y * g y ∂ν
+  have hH : AEMeasurable H μ := hkg.lintegral_prod_right'
+  calc ∫⁻ x, ∫⁻ y, f x * (k x y * g y) ∂ν ∂μ = eLpNorm (f * H) 1 μ := by
+        rw [eLpNorm_one_eq_lintegral_eNorm (hf.mul hH).aestronglyMeasurable]
+        refine lintegral_congr_ae ?_
+        filter_upwards [hkg.prodMk_left] with x hx
+        rw [eNorm_eq_self, Pi.mul_apply]
+        exact lintegral_const_mul'' _ hx
+    _ ≤ eLpNorm f p μ * eLpNorm H q μ := eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal_of_pos one_pos
+    _ ≤ eLpNorm f p μ * (A ^ (1 - q.toReal⁻¹) * B ^ q.toReal⁻¹ * eLpNorm g q ν) := by
+        gcongr
+        exact eLpNorm_lintegral_mul_le hk hg (ENNReal.HolderConjugate.one_le (p := q) (q := p))
+          hA hB
+    _ = _ := by ring
+
+/-- The kernel `1_{dist x y < R}` is measurable. -/
+theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [MeasurableSpace γ]
+    [OpensMeasurableSpace γ] [SecondCountableTopology γ] (R : ℝ) :
+    Measurable (Function.uncurry fun x y : γ ↦ (Metric.ball x R).indicator (1 : γ → ℝ≥0∞) y) := by
+  have : (Function.uncurry fun x y : γ ↦ (Metric.ball x R).indicator (1 : γ → ℝ≥0∞) y) =
+      {p : γ × γ | dist p.2 p.1 < R}.indicator 1 := by
+    ext p
+    simp [Set.indicator, Metric.mem_ball, Function.uncurry]
+  rw [this]
+  exact measurable_one.indicator
+    (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
+
+/-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have
+length `2R`, so for Hölder conjugate `p` and `q`,
+`∫∫_{|x - y| < R} f(x) g(y) dx dy ≤ 2R ‖f‖_p ‖g‖_q`. -/
+theorem lintegral_lintegral_mul_indicator_ball_mul_le {f g : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (hg : AEMeasurable g) {p q : ℝ≥0∞} [ENNReal.HolderConjugate p q] (R : ℝ) :
+    ∫⁻ x, ∫⁻ y, f x * ((Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y * g y) ≤
+      ENNReal.ofReal (2 * R) * eLpNorm f p * eLpNorm g q := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
+  have hrow (x : ℝ) :
+      ∫⁻ y, (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y = ENNReal.ofReal (2 * R) := by
+    rw [lintegral_indicator_one measurableSet_ball, Real.volume_ball]
+  have hcol (y : ℝ) :
+      ∫⁻ x, (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y = ENNReal.ofReal (2 * R) := by
+    have : (fun x : ℝ ↦ (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y) =
+        (Metric.ball y R).indicator 1 := by
+      ext x
+      simp only [Set.indicator, Pi.one_apply, Metric.mem_ball, dist_comm]
+    rw [this, hrow]
+  have h := lintegral_lintegral_mul_mul_le (measurable_uncurry_indicator_ball R).aemeasurable
+    hf hg (p := p) (q := q) (ae_of_all _ fun x ↦ (hrow x).le) (ae_of_all _ fun y ↦ (hcol y).le)
+  rwa [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (by positivity)).ne' ENNReal.ofReal_ne_top,
+    sub_add_cancel, ENNReal.rpow_one] at h
 
 end TauCeti

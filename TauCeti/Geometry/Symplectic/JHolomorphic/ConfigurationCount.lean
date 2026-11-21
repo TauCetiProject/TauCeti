@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.RingTheory.NovikovSeries.PowerSeries
 
 /-!
@@ -122,8 +122,9 @@ intersections are inputs here; the geometric theorems supplying them are separat
   `TauCeti.apply_self_sub_apply_canonical_eq_sum_filter_of_mem_compatibleConfigurations`,
   `TauCeti.apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations`: intersection
   numbers and virtual dimension of the class of a configuration.
-* `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing in a class that is not
-  good.
+* `TauCeti.prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one`,
+  `TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`: vanishing of the weights and of the
+  count in a class that is not good.
 * `TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`: vanishing in negative
   virtual dimension.
 * `TauCeti.configurationCount_eq_of_area_lt`: candidates of area larger than `ω A` do not
@@ -182,6 +183,14 @@ theorem compatibleConfigurations_mono (h : s ⊆ t) :
     compatibleConfigurations r cls s A ⊆ compatibleConfigurations r cls t A :=
   fun _ hl ↦ ⟨hl.1.trans h, hl.2⟩
 
+/-- The configurations of the candidates of `s` satisfying `p` are the configurations of `s` all
+of whose components satisfy `p`. -/
+theorem mem_compatibleConfigurations_sep_iff {p : ι → Prop} :
+    l ∈ compatibleConfigurations r cls {c ∈ s | p c} A ↔
+      l ∈ compatibleConfigurations r cls s A ∧ ∀ c ∈ l.support, p c :=
+  ⟨fun ⟨hsub, hl⟩ ↦ ⟨⟨fun _ hc ↦ (hsub hc).1, hl⟩, fun _ hc ↦ (hsub hc).2⟩,
+    fun ⟨⟨hsub, hl⟩, hp⟩ ↦ ⟨fun c hc ↦ ⟨hsub hc, hp c hc⟩, hl⟩⟩
+
 /-- The empty configuration has class zero. -/
 theorem zero_mem_compatibleConfigurations_iff :
     0 ∈ compatibleConfigurations r cls s A ↔ A = 0 := by
@@ -199,7 +208,7 @@ multiplicity, indexed by the support. -/
 theorem sum_support_smul_eq_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) :
     ∑ c : l.support, l c • cls c = A := by
-  rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, ← Finset.sum_coe_sort l.support]
+  rw [← hl.2.2, Finsupp.linearCombination_eq_sum_coe_of_support_subset subset_rfl]
 
 section Area
 
@@ -535,6 +544,20 @@ theorem apply_self_sub_apply_canonical_nonneg_of_mem_compatibleConfigurations
 
 variable [CommSemiring R] {w : ι → ℕ → R}
 
+/-- **Configurations in a bad class have weight zero.** Let `S` be a candidate of
+self-intersection at least `-1`, such as an exceptional sphere, which every other candidate meets
+nonnegatively, and which is counted only with multiplicity one: `w S k = 0` for `k ≥ 2`. If
+`A · S < -1`, that is, if `A` is not good, then every configuration in class `A` contains `S`
+at least twice, so its weight vanishes. -/
+theorem prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
+    (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1)
+    (hl : l ∈ compatibleConfigurations r cls s A) : l.prod w = 0 := by
+  have hlS : 2 ≤ l S := not_lt.1 fun h ↦
+    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hpos hS hl (by omega))
+  rw [Finsupp.prod]
+  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
+
 /-- **Vanishing in a bad class.** Let `S` be a candidate of self-intersection at least `-1`, such
 as an exceptional sphere, which every other candidate meets nonnegatively, and which is counted
 only with multiplicity one: `w S k = 0` for `k ≥ 2`. If `A · S < -1`, that is, if `A` is not
@@ -544,11 +567,8 @@ theorem configurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
     (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1) :
     configurationCount r cls w s A = 0 := by
   rw [configurationCount_def]
-  refine finsum_mem_eq_zero_of_forall_eq_zero fun l hl ↦ ?_
-  have hlS : 2 ≤ l S := not_lt.1 fun h ↦
-    hA.not_ge (neg_one_le_apply_of_mem_compatibleConfigurations hpos hS hl (by omega))
-  rw [Finsupp.prod]
-  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (hw _ hlS)
+  exact finsum_mem_eq_zero_of_forall_eq_zero fun _ hl ↦
+    prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one hpos hS hw hA hl
 
 /-- **Vanishing in negative virtual dimension.** Suppose compatible candidates have intersection
 number zero, as for disjoint images, every candidate has nonnegative virtual dimension
@@ -594,6 +614,15 @@ section Ray
 variable [AddCommMonoid H] {r : ι → ι → Prop} {cls : ι → H} {T : Set ι} {A₀ : H}
   {m : ι → ℕ+}
 
+/-- On a ray, an assignment `l` supported in a family `T` of tori, the torus `c` having class
+`m c • A₀`, has class `(∑ c, m c * l c) • A₀`. -/
+theorem linearCombination_eq_nsmul_of_support_subset (hcls : ∀ c ∈ T, cls c = (m c : ℕ) • A₀)
+    {l : ι →₀ ℕ} (hl : ↑l.support ⊆ T) :
+    Finsupp.linearCombination ℕ cls l = (∑ c ∈ l.support, (m c : ℕ) * l c) • A₀ := by
+  rw [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_smul]
+  refine Finset.sum_congr rfl fun c hc ↦ ?_
+  rw [hcls c (hl hc), smul_smul, mul_comm]
+
 /-- On a ray, the compatible configurations in class `j • A₀` of a pairwise compatible family
 `T` of tori, the torus `c` having class `m c • A₀`, are the assignments of the weighted
 antidiagonal `s.weightedFinsuppAntidiag m j`, for every finite subfamily `s` of `T` containing
@@ -602,18 +631,12 @@ theorem compatibleConfigurations_eq_weightedFinsuppAntidiag (hT : T.Pairwise r)
     (hcls : ∀ c ∈ T, cls c = (m c : ℕ) • A₀) (hA₀ : Function.Injective fun n : ℕ ↦ n • A₀)
     {s : Finset ι} (hsT : ↑s ⊆ T) {j : ℕ} (hs : ∀ c ∈ T, (m c : ℕ) ≤ j → c ∈ s) :
     compatibleConfigurations r cls T (j • A₀) = ↑(s.weightedFinsuppAntidiag m j) := by
-  -- An assignment supported in `T` has class `(∑ c, m c * l c) • A₀`.
-  have key {l : ι →₀ ℕ} (hl : ↑l.support ⊆ T) :
-      Finsupp.linearCombination ℕ cls l = (∑ c ∈ l.support, (m c : ℕ) * l c) • A₀ := by
-    rw [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_smul]
-    refine Finset.sum_congr rfl fun c hc ↦ ?_
-    rw [hcls c (hl hc), smul_smul, mul_comm]
   ext l
   simp only [mem_compatibleConfigurations, Finset.mem_coe, Finset.mem_weightedFinsuppAntidiag]
   constructor
   · rintro ⟨hlT, -, hlA⟩
     have hsum : ∑ c ∈ l.support, (m c : ℕ) * l c = j :=
-      hA₀ ((key hlT).symm.trans hlA)
+      hA₀ ((linearCombination_eq_nsmul_of_support_subset hcls hlT).symm.trans hlA)
     have hls : l.support ⊆ s := fun c hc ↦ hs c (hlT hc) <| by
       have := Finset.single_le_sum (f := fun c ↦ (m c : ℕ) * l c) (fun _ _ ↦ Nat.zero_le _) hc
       have := Nat.le_mul_of_pos_right (m c : ℕ) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 hc))
@@ -624,7 +647,7 @@ theorem compatibleConfigurations_eq_weightedFinsuppAntidiag (hT : T.Pairwise r)
   · rintro ⟨hls, hsum⟩
     have hlT : ↑l.support ⊆ T := (Finset.coe_subset.2 hls).trans hsT
     refine ⟨hlT, hT.mono hlT, ?_⟩
-    rw [key hlT, ← hsum,
+    rw [linearCombination_eq_nsmul_of_support_subset hcls hlT, ← hsum,
       Finset.sum_subset hls fun c _ hc ↦ by simp [Finsupp.notMem_support_iff.1 hc]]
 
 variable [CommRing R] {w : ι → ℕ → R}
@@ -683,12 +706,12 @@ theorem mk_configurationCount_eq_tprod {w : ι → ℕ → ℤ} (hT : T.Pairwise
   set s := (hfin j).toFinset
   have hsT : ↑s ⊆ T := fun c hc ↦ ((hfin j).mem_toFinset.1 hc).1
   have hm : ∀ n : ℕ, {c : T | (m c : ℕ) ≤ n}.Finite := fun n ↦
-    (hfin n).preimage Subtype.val_injective.injOn |>.subset fun c hc ↦ ⟨c.2, hc⟩
+    (hfin n).preimage Subtype.val_injective.injOn |>.subset fun c hc ↦ ⟨c.property, hc⟩
   rw [coeff_mk, configurationCount_eq_coeff_rayTorusWeightSeries hT hcls hA₀ hw hsT
     fun c hc hcj ↦ (hfin j).mem_toFinset.2 ⟨hc, hcj⟩,
     coeff_tprod_expand_torusWeightSeries (m := fun c : T ↦ m c) hm (fun c ↦ σ c) (fun c ↦ i c)
       (s := s.subtype (· ∈ T))
-      fun c hcj ↦ Finset.mem_subtype.2 ((hfin j).mem_toFinset.2 ⟨c.2, hcj⟩),
+      fun c hcj ↦ Finset.mem_subtype.2 ((hfin j).mem_toFinset.2 ⟨c.property, hcj⟩),
     rayTorusWeightSeries_def, rayTorusWeightSeries_def,
     Finset.prod_subtype_eq_prod_filter (f := fun c ↦ expand (m c) (m c).ne_zero
       (torusWeightSeries (σ c) (i c))), Finset.filter_true_of_mem fun c hc ↦ hsT hc]
@@ -842,18 +865,19 @@ theorem configurationCount_eq_coeff_prod_ofPowerSeries (hs : s.Pairwise r)
     (hpos : ∀ c ∈ s, 0 < N (cls c)) (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c))
     (hf : ∀ c ∈ s, constantCoeff (f c) = 1) (T : Finset s) (A : H) :
     configurationCount r cls w (Subtype.val '' (T : Set s)) A =
-      (∏ c ∈ T, ofPowerSeries (cls c) (hpos c c.2) (f c)).coeff A := by
+      (∏ c ∈ T, ofPowerSeries (cls c) (hpos c c.property) (f c)).coeff A := by
   classical
   symm
   induction T using Finset.induction_on generalizing A with
   | empty => simp [configurationCount_empty]
   | @insert c T hc ih =>
     have hsub : insert (c : ι) (Subtype.val '' (T : Set s)) ⊆ s :=
-      Set.insert_subset c.2 (Set.image_subset_iff.2 fun e _ ↦ e.2)
+      Set.insert_subset c.property (Set.image_subset_iff.2 fun e _ ↦ e.property)
     rw [Finset.prod_insert hc, Finset.coe_insert, Set.image_insert_eq]
     exact coeff_ofPowerSeries_mul_eq_configurationCount_insert
       (fun h ↦ hc (Subtype.val_injective.mem_set_image.1 h)) (hs.mono hsub)
-      (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.2) (hf c c.2) ih A
+      (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.property)
+          (hf c c.property) ih A
 
 end CommSemiring
 
@@ -867,17 +891,18 @@ infinite product `∏_c f c (e ^ cls c)` over the candidates, in the period topo
 theorem hasProd_ofPowerSeries_configurationCountSeries (hs : s.Pairwise r)
     (hpos : ∀ c ∈ s, 0 < N (cls c)) (hfin : ∀ C : ℝ, {c ∈ s | N (cls c) ≤ C}.Finite)
     (hw : ∀ c ∈ s, ∀ k, w c k = coeff k (f c)) (hf : ∀ c ∈ s, constantCoeff (f c) = 1) :
-    HasProd (fun c : s ↦ ofPowerSeries (cls c) (hpos c c.2) (f c))
+    HasProd (fun c : s ↦ ofPowerSeries (cls c) (hpos c c.property) (f c))
       (configurationCountSeries r cls w hpos hfin) := by
   refine tendsto_nhds_iff.2 fun C ↦ ?_
   -- Below the cutoff `C`, only the candidates of period less than `C` matter.
   have hC : {c : s | N (cls c) < C}.Finite :=
-    ((hfin C).preimage Subtype.val_injective.injOn).subset fun c hc ↦ ⟨c.2, le_of_lt hc⟩
+    ((hfin C).preimage Subtype.val_injective.injOn).subset fun c hc ↦ ⟨c.property, le_of_lt hc⟩
   filter_upwards [Filter.eventually_ge_atTop hC.toFinset] with T hT A hA
   rw [← configurationCount_eq_coeff_prod_ofPowerSeries hs hpos hw hf,
     coeff_configurationCountSeries]
   refine configurationCount_eq_of_area_lt (fun c hc ↦ (hpos c hc).le)
-    (Set.image_subset_iff.2 fun c _ ↦ c.2) fun c hc hcT ↦ hA.trans_le (not_lt.1 fun hcC ↦ hcT ?_)
+    (Set.image_subset_iff.2 fun c _ ↦ c.property) fun c hc hcT ↦ hA.trans_le
+        (not_lt.1 fun hcC ↦ hcT ?_)
   exact ⟨⟨c, hc⟩, hT (hC.mem_toFinset.2 hcC), rfl⟩
 
 end Series

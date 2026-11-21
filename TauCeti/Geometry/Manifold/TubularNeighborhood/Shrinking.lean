@@ -49,7 +49,7 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection {
         fun p : M × V => f p.1 + p.2) ∧
       (∀ x v, ‖v‖ ≤ r x → f x + v ∈ O) ∧
       ∀ p : TotalSpace F (fun x => normalSubspace I f x),
-        ‖(p.2 : V)‖ ≤ r p.proj → p ∈ U := by
+        ‖(p.snd : V)‖ ≤ r p.proj → p ∈ U := by
   have : T1Space M := I.t1Space M
   have : T2Space M := hind.isEmbedding.t2Space
   obtain ⟨R, hR, hemb, hambient⟩ :=
@@ -69,6 +69,6 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection {
     exact hambient x v (hv.trans (hrR x).le)
   · intro p hp
     rw [← hWU]
-    exact hdisc p.proj (p.2 : V) (by simpa using hp)
+    exact hdisc p.proj (p.snd : V) (by simpa using hp)
 
 end TauCeti

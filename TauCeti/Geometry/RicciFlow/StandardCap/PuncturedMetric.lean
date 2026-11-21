@@ -52,7 +52,7 @@ def puncturedMetric :
         TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :=
   (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
     standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
-      (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+      (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
       (fun r ↦ (hf.apply_pos r.property).ne')
       ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top)
 
@@ -82,7 +82,7 @@ theorem scalarCurvature_puncturedMetric
         2 * n * deriv (deriv f) p.1 / f p.1 := by
   rw [puncturedMetric]
   exact scalarCurvature_warpedProdTangentSpace_real_sphere standardCapRadialDomain
-    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (hf.contDiff.contMDiff.comp contMDiff_subtypeVal)
     (fun r ↦ (hf.apply_pos r.property).ne') p
 
 /-- The punctured standard cap has nonnegative scalar curvature in every

@@ -77,12 +77,11 @@ abbrev serreSpectralSequence (C : Set B) {D : Set B} [RelCWComplex C D] (p : E �
 complex `C ⊆ B`, with coefficients in `R`: the spectral object of the filtration of the singular
 chains of `E` by the singular chains of the preimages of the skeleta. Its spectral sequence is
 `TauCeti.TopCat.serreSpectralSequence`, and its abutment in degree `-n` is `Hₙ(E; R)`
-(`TauCeti.filteredSpaceAbutmentIso`), filtered by the images of the homology of the preimages of
+(`TauCeti.chainFiltrationAbutmentIso`), filtered by the images of the homology of the preimages of
 the skeleta. -/
 abbrev serreSpectralObject (C : Set B) {D : Set B} [RelCWComplex C D] (p : E ⟶ B)
     (R : Type u) [Ring R] :=
-  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-    (monotone_singularChainFiltration (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)))
+  filteredSpaceSpectralObject (ModuleCat.of R R) (monotone_preimageSkeleton (C := C) p)
 
 end Defs
 
@@ -162,7 +161,7 @@ Serre fibration with values in a CW complex `K ⊆ B`, with no finiteness or dim
 On every page `r ≥ 2` with `b + 3 ≤ r` and `2 - a - 2b ≤ r`, the object at `pq = (a, b)` of the
 spectral sequence of the filtration of `E` by the preimages of the skeleta is the graded piece
 `F_{b+1} H / F_b H` of the induced filtration of the abutment in degree `a + b`, which is
-`H_{-(a+b)}(E; R)` by `TauCeti.filteredSpaceAbutmentIso`. -/
+`H_{-(a+b)}(E; R)` by `TauCeti.chainFiltrationAbutmentIso`. -/
 def serreSpectralSequencePageXIsoGraded (hpK : range p ⊆ K) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     (hra : pq.2 + 3 ≤ r) (hrb : 2 - pq.1 - 2 * pq.2 ≤ r) :
     ((serreSpectralSequence K p R).page r).X pq ≅

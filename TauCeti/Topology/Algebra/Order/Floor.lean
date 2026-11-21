@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Order.OrderClosed
 public import TauCeti.Algebra.Order.Floor.Ring
 
+import Mathlib.Tactic.Ring
+
 /-!
 # Neighbourhoods and the intervals between multiples of a step
 
@@ -15,10 +17,17 @@ For a step `δ > 0` in a linearly ordered field with an integer floor and an ord
 topology, the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ` through a point `x` cover a
 neighbourhood of `x`: every point near `x` shares one of these intervals with `x`.
 
+A map `G` on `X × K` which is periodic in the second coordinate near `0`, in the sense that
+`G (y, t + 1) = G (y, t)` for `t` slightly below `0`, has a periodization
+`(y, t) ↦ G (y, fract t)` which near every point `z` is a translate `(y, t) ↦ G (y, t - ⌊z.2⌋)`
+of `G`. So the periodization inherits every local property of `G`, such as smoothness.
+
 ## Main results
 
 * `TauCeti.eventually_exists_int_mem_Icc_and_mem`: every point near `x` lies in an interval
   `[δ m, δ (m + 1)]` that contains `x`.
+* `TauCeti.apply_fract_snd_eventuallyEq`: near every point, the periodization of a map which is
+  periodic near `0` is a translate of the map.
 -/
 
 public section
@@ -51,5 +60,39 @@ theorem eventually_exists_int_mem_Icc_and_mem (hδ : 0 < δ) (x : K) :
   rcases le_total x y with hxy | hyx
   · exact ⟨⌊x / δ⌋, ⟨hm₁, hm₂.le⟩, hm₁.trans hxy, hy.2.le⟩
   · exact ⟨⌈x / δ⌉ - 1, ⟨hn₁.le, hn₂⟩, hy.1.le, hyx.trans hn₂⟩
+
+/-- Near every point `z`, the periodization `(y, t) ↦ G (y, fract t)` of a map `G` which is periodic
+in its second coordinate near `0` is the translate `(y, t) ↦ G (y, t - ⌊z.2⌋)` of `G`. -/
+theorem apply_fract_snd_eventuallyEq {X M : Type*} [TopologicalSpace X] {G : X × K → M} {ε : K}
+    (hε : 0 < ε) (hG : ∀ y {t : K}, -ε < t → t < 0 → G (y, t + 1) = G (y, t)) (z : X × K) :
+    (fun w : X × K ↦ G (w.1, Int.fract w.2)) =ᶠ[𝓝 z] fun w ↦ G (w.1, w.2 - ⌊z.2⌋) := by
+  have hz₁ : z.2 < ⌊z.2⌋ + 1 := Int.lt_floor_add_one _
+  have hz₀ : (⌊z.2⌋ : K) ≤ z.2 := Int.floor_le _
+  have hδ : 0 < min ε 1 := lt_min hε one_pos
+  have hδε : min ε 1 ≤ ε := min_le_left _ _
+  have hδ₁ : min ε 1 ≤ 1 := min_le_right _ _
+  by_cases h : Int.fract z.2 = 0
+  · -- At the seam, `fract` jumps by `1`, across which `G` is periodic.
+    rw [← Int.self_sub_floor, sub_eq_zero] at h
+    filter_upwards [(isOpen_lt continuous_const continuous_snd).mem_nhds
+        (by linarith : (⌊z.2⌋ : K) - min ε 1 < z.2),
+      (isOpen_lt continuous_snd continuous_const).mem_nhds
+        (by linarith : z.2 < ⌊z.2⌋ + min ε 1)] with w hw₀ hw₁
+    rcases le_or_gt (⌊z.2⌋ : K) w.2 with hw | hw
+    · have h' : Int.fract w.2 = w.2 - ⌊z.2⌋ :=
+        Int.fract_eq_iff.2 ⟨by linarith, by linarith, ⌊z.2⌋, by ring⟩
+      rw [h']
+    · have h' : Int.fract w.2 = w.2 - ⌊z.2⌋ + 1 :=
+        Int.fract_eq_iff.2 ⟨by linarith, by linarith, ⌊z.2⌋ - 1, by push_cast; ring⟩
+      rw [h']
+      exact hG _ (by linarith) (by linarith)
+  · -- Off the seam, `fract` is a translation near `z`.
+    have hz : (⌊z.2⌋ : K) < z.2 :=
+      lt_of_le_of_ne hz₀ fun h' ↦ h (by rw [← Int.self_sub_floor]; linarith)
+    filter_upwards [(isOpen_lt continuous_const continuous_snd).mem_nhds hz,
+      (isOpen_lt continuous_snd continuous_const).mem_nhds hz₁] with w hw₀ hw₁
+    have h' : Int.fract w.2 = w.2 - ⌊z.2⌋ :=
+      Int.fract_eq_iff.2 ⟨by linarith, by linarith, ⌊z.2⌋, by ring⟩
+    rw [h']
 
 end TauCeti

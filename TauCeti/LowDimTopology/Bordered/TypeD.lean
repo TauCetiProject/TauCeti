@@ -11,6 +11,7 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+public import TauCeti.LinearAlgebra.PiTensorProduct.Dual
 import Mathlib.Tactic.Abel
 import TauCeti.Data.Fin.StrictMono
 
@@ -56,15 +57,22 @@ on matrices entrywise.
   (`TauCeti.TypeDStructure.cone`), the type `D` structure on the generators `X ⊕ X'` with
   coefficient matrix `fromBlocks δ F 0 δ'`; a morphism `fromCols G H` into it has differential
   `fromCols (∂G) (G * F + ∂H)` (`TauCeti.TypeDStructure.morphismDifferential_cone_fromCols`).
+* **Restriction.** The generators satisfying a predicate `p` span a type `D` structure with the
+  same idempotents and coefficients (`TauCeti.TypeDStructure.restrict`) when no coefficient leads
+  from a generator satisfying `p` to one that does not. This is how a box tensor product over the
+  idempotents is cut out of the one over the ground ring.
 * **Iterates of `δ¹`.** The coefficient of `z` in `δᵏ x` is the sum over the paths
   `x = r 0, …, r k = z` of `coeff (r 0) (r 1) ⊗ ⋯ ⊗ coeff (r (k-1)) (r k)` in the `k`-th tensor
   power of `A` over `R` (`TauCeti.TypeDStructure.iteratedCoeff`), with `δ⁰` the identity, `δ¹` the
   structure map and `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`. A type `D` structure is bounded when `δᵏ = 0` for
   large `k` (`TauCeti.TypeDStructure.IsBounded`), for instance when its coefficients strictly
-  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). The tensor power over
+  increase a height function (`TauCeti.TypeDStructure.isBounded_of_lt`). A finite set of
+  generators does not suffice: a generator whose only coefficient is a nonzero coefficient of
+  itself gives nonzero iterates of every length over a field
+  (`TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`). The tensor power over
   the ring of idempotents is a quotient of the one over `R`, so this boundedness implies the
   vanishing of the iterates over the idempotents. The iterates enter the box tensor product with
-  type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA`.
+  type `A` modules in `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 Over a ring of characteristic two the type `D` structure equation, the box tensor product and the
 morphism complex need no signs; this is the setting of bordered Heegaard Floer homology over `𝔽₂`.
@@ -80,6 +88,7 @@ one and so does not apply to an ungraded differential algebra.
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
 * `TauCeti.TypeDStructure.cone`: the mapping cone of a homomorphism.
+* `TauCeti.TypeDStructure.restrict`: the restriction to generators closed under `δ¹`.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
@@ -101,6 +110,10 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.iteratedCoeff_eq_zero_of_lt` and
   `TauCeti.TypeDStructure.isBounded_of_lt`: a type `D` structure whose coefficients increase a
   height function is bounded.
+* `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero` and
+  `TauCeti.TypeDStructure.not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero`: a generator whose only
+  coefficient is a coefficient of itself, with nonzero tensor powers, makes a type `D` structure
+  unbounded.
 
 ## References
 
@@ -173,6 +186,9 @@ variable (N) in
 /-- The **identity morphism**: the diagonal matrix of the idempotents of the generators. -/
 def idMorphism [DecidableEq X] : Matrix X X A :=
   Matrix.diagonal fun x => ι (N.idem x)
+
+theorem idMorphism_def [DecidableEq X] : N.idMorphism = Matrix.diagonal fun x => ι (N.idem x) :=
+  (rfl)
 
 @[simp]
 theorem idMorphism_apply [DecidableEq X] (x y : X) :
@@ -369,6 +385,47 @@ theorem morphismDifferential_cone_fromCols (G : Matrix X'' X A) (H : Matrix X'' 
     abel
 
 end Cone
+
+/-! ### Restriction to generators closed under the structure map -/
+
+section Restrict
+
+variable (N) (p : X → Prop) [DecidablePred p]
+
+/-- The **restriction** of a type `D` structure `N` to the generators satisfying `p`, when no
+coefficient of `N` leads from a generator satisfying `p` to one that does not: the generators
+`{x // p x}` span a type `D` structure with the idempotents and coefficients of `N`. The structure
+equation survives because the matrix products of `N` from such a generator to another only pass
+through generators satisfying `p`. -/
+def restrict (hp : ∀ x y, p x → ¬p y → N.coeff x y = 0) : TypeDStructure d ι {x // p x} where
+  idem x := N.idem x
+  coeff := N.coeff.submatrix Subtype.val Subtype.val
+  idem_mul_coeff x y := N.idem_mul_coeff x y
+  coeff_mul_idem x y := N.coeff_mul_idem x y
+  map_coeff_add_coeff_mul_coeff := by
+    ext x z
+    have h : (N.coeff.map d + N.coeff * N.coeff) x z = 0 := by
+      rw [N.map_coeff_add_coeff_mul_coeff, Matrix.zero_apply]
+    -- The terms of `δ * δ` through generators not satisfying `p` vanish.
+    have hout : ∑ y : {y // ¬p y}, N.coeff x y * N.coeff y z = 0 :=
+      Finset.sum_eq_zero fun y _ => by rw [hp x y x.property y.property, zero_mul]
+    rw [Matrix.add_apply, Matrix.mul_apply, ← Fintype.sum_subtype_add_sum_subtype p, hout,
+      add_zero] at h
+    simpa only [Matrix.add_apply, Matrix.map_apply, Matrix.submatrix_apply, Matrix.mul_apply,
+      Matrix.zero_apply]
+      using h
+
+variable {p} {hp : ∀ x y, p x → ¬p y → N.coeff x y = 0}
+
+@[simp]
+theorem restrict_idem (x : {x // p x}) : (N.restrict p hp).idem x = N.idem x :=
+  (rfl)
+
+@[simp]
+theorem restrict_coeff (x y : {x // p x}) : (N.restrict p hp).coeff x y = N.coeff x y :=
+  (rfl)
+
+end Restrict
 
 /-! ### The box tensor product -/
 
@@ -632,6 +689,41 @@ theorem isBounded_iff :
 /-- A type `D` structure whose coefficients strictly increase a height function is bounded. -/
 theorem isBounded_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) : N.IsBounded :=
   ⟨Finset.univ.sup h + 1, fun _ hk => N.iteratedCoeff_eq_zero_of_lt h hh hk⟩
+
+/-- If the only coefficient out of the generator `x` is the coefficient `coeff x x` of `x` itself,
+the only path from `x` stays at `x`, and `δᵏ x` has the `k`-th tensor power of `coeff x x` as its
+coefficient of `x`. -/
+theorem iteratedCoeff_self_of_coeff_eq_zero {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (k : ℕ) :
+    N.iteratedCoeff k x x = PiTensorProduct.tprod R fun _ => N.coeff x x := by
+  rw [iteratedCoeff_def, Finset.sum_eq_single_of_mem (fun _ => x) (by simp)]
+  intro r hr' hr
+  have hr₀ := (Finset.mem_filter.1 hr').2.1
+  by_contra hne
+  have hnz (t : Fin k) : N.coeff (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+    hne (MultilinearMap.map_coord_zero _ t h0)
+  -- Along a path of nonzero coefficients from `x`, every step stays at `x`.
+  have hrx (i : Fin (k + 1)) : r i = x := by
+    induction i using Fin.induction with
+    | zero => exact hr₀
+    | succ t ih => exact not_not.1 fun h => hnz t (by rw [ih]; exact hx _ h)
+  exact hr (funext hrx)
+
+/-- **A loop with no exits makes a type `D` structure unbounded.** If the only coefficient out of
+the generator `x` is its own coefficient `coeff x x`, and every tensor power of `coeff x x` is
+nonzero, then the iterates `δᵏ x` never vanish. A finite set of generators therefore does not make
+a type `D` structure bounded. -/
+theorem not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero {x : X}
+    (hx : ∀ y, y ≠ x → N.coeff x y = 0)
+    (hxx : ∀ k, (PiTensorProduct.tprod R fun _ : Fin k => N.coeff x x) ≠ 0) : ¬N.IsBounded :=
+  fun ⟨K, hK⟩ => hxx K (N.iteratedCoeff_self_of_coeff_eq_zero hx K ▸ hK K le_rfl x x)
+
+/-- Over an integral domain, with `A` projective over `R` (for instance over a field), a generator
+`x` whose only coefficient is a nonzero coefficient `coeff x x` of `x` itself makes a type `D`
+structure unbounded: `δᵏ x = (coeff x x)^{⊗ k} ⊗ x ≠ 0` for every `k`. -/
+theorem not_isBounded_of_coeff_eq_zero_of_coeff_ne_zero [IsDomain R] [Module.Projective R A]
+    {x : X} (hx : ∀ y, y ≠ x → N.coeff x y = 0) (hxx : N.coeff x x ≠ 0) : ¬N.IsBounded :=
+  N.not_isBounded_of_coeff_eq_zero_of_tprod_ne_zero hx fun _ =>
+    PiTensorProduct.tprod_ne_zero fun _ => hxx
 
 end Iterates
 

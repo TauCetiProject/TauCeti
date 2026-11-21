@@ -118,7 +118,7 @@ theorem eq_of_finrank_eq_of_not_isSeparable {K L : Type*} [Field K] [Field L] [A
       Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable (h₁ ▸ hp) hs₁ a
     obtain ⟨c₂, hc₂⟩ :=
       Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable (h₂ ▸ hp) hs₂ a
-    exact ⟨h₁ ▸ hc₁ ▸ c₁.2, h₂ ▸ hc₂ ▸ c₂.2⟩
+    exact ⟨h₁ ▸ hc₁ ▸ c₁.property, h₂ ▸ hc₂ ▸ c₂.property⟩
   -- `L` has characteristic `p`, as an inseparable extension of degree `p` of `E₁`.
   have hpL : (p : L) = 0 := by
     have := not_not.mp (mt (Algebra.isSeparable_of_finrank_prime (h₁ ▸ hp)) hs₁)
@@ -139,7 +139,7 @@ theorem eq_of_finrank_eq_of_not_isSeparable {K L : Type*} [Field K] [Field L] [A
   have hE : E = ⊤ := by
     refine IntermediateField.restrictScalars_injective K (eq_top_iff.mpr fun a _ ↦ ?_)
     obtain ⟨b, rfl⟩ := IsPurelyInseparable.surjective_algebraMap_of_isSeparable E' L a
-    exact b.2
+    exact b.property
   -- So `[L : M] ≤ p`, which forces `M = E₁` and `M = E₂`.
   have hpoly : (X ^ p - C (⟨t ^ p, hpow t⟩ : M)).Monic := monic_X_pow_sub_C _ hp.ne_zero
   have hroot : aeval t (X ^ p - C (⟨t ^ p, hpow t⟩ : M)) = 0 := by simp

@@ -958,9 +958,9 @@ theorem tangent_extDeriv_toContMDiffSection (k : ℕ) (φ : SmoothForm I M ℝ k
   cases k with
   | zero =>
     have hs : (fun i : Fin 1 ↦ s i x) = ![s 0 x] := funext fun i ↦ by fin_cases i; rfl
-    have hφ0 : ⇑((SmoothForm.toContMDiffSection φ).evalAlternating ![]) = fun y ↦ φ.1 y 0 := by
+    have hφ0 : ⇑((SmoothForm.toContMDiffSection φ).evalAlternating ![]) = fun y ↦ φ.val y 0 := by
       ext y; rw [ContMDiffSection.evalAlternating_apply, SmoothForm.toContMDiffSection_apply]
-      exact congrArg (φ.1 y) (Subsingleton.elim _ _)
+      exact congrArg (φ.val y) (Subsingleton.elim _ _)
     rw [evalAlternating_extDeriv_zero, anchorDeriv_apply, tangent_anchor_apply, hφ0,
       ContMDiffSection.evalAlternating_apply, SmoothForm.toContMDiffSection_apply, hs,
       mextDerivₗ_zero_apply]
@@ -970,7 +970,7 @@ theorem tangent_extDeriv_toContMDiffSection (k : ℕ) (φ : SmoothForm I M ℝ k
       (s i).contMDiff.mdifferentiableAt (by simp)
     have heval (i : Fin (n + 2)) :
         ⇑((SmoothForm.toContMDiffSection φ).evalAlternating (i.removeNth s)) =
-          fun y ↦ φ.1 y (i.removeNth (fun r ↦ s r y)) := by
+          fun y ↦ φ.val y (i.removeNth (fun r ↦ s r y)) := by
       ext y; rw [ContMDiffSection.evalAlternating_apply, SmoothForm.toContMDiffSection_apply]
       congr 1
     have hcons (i j : Fin (n + 1)) :
