@@ -184,7 +184,6 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformlyOn_comp (hω : 
     TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi
       fun z hz ↦ ⟨e '' K, hK.image_of_continuousOn hec, fun n ↦ mem_image_of_mem e (huK n hz)⟩
   -- The limit is read back in `K` through `e`.
-  have : Nonempty M := ⟨u 0 0⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp hec he_inj
     (fun n ↦ huK (φ n)) hGc fun z hz ↦ hconvG.tendsto_at hz
   exact ⟨φ, hφ, v, hv, hvK, hconvG.congr_right hev.symm, hpt⟩
@@ -255,7 +254,6 @@ theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp (hω : ω
     · simpa only [x, ite_eq_right hz] using hp₀
   have hxu (z : ℝ × ℝ) : (fun n ↦ u (φ n) z) =ᶠ[atTop] fun n ↦ x n z :=
     (hin z).mono fun n hn ↦ (ite_eq_left hn).symm
-  have : Nonempty M := ⟨p₀⟩
   obtain ⟨v, hv, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := univ) hec he_inj hxK
     g.continuous.continuousOn fun z _ ↦
       ((tendstoLocallyUniformlyOn_univ.2 hg).tendsto_at (mem_univ z)).congr'
