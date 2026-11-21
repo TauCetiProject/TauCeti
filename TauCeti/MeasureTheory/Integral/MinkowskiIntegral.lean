@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
@@ -49,6 +52,10 @@ the average over `s` of its pointwise `ℓʳ` norm (`TauCeti.tsum_setLAverage_rp
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
+* `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`: Minkowski's integral inequality for
+  the `Lᵖ` seminorm of a Bochner integral, `1 ≤ p < ∞`.
+* `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm`: the same for `1 ≤ p ≤ ∞`, for integrands
+  continuous in the variable of the `Lᵖ` norm.
 * `TauCeti.tsum_setLAverage_rpow_le`: Minkowski's inequality for the averages of a countable
   family.
 
@@ -226,6 +233,58 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
         refine lintegral_congr fun x ↦ ?_
         rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **Minkowski's integral inequality for Bochner integrals.** Let `1 ≤ p < ∞` and let
+`F : α → β → E` be jointly a.e. strongly measurable. Then the `Lᵖ(μ)` seminorm of
+`x ↦ ∫ y, F x y ∂ν` is at most the integral over `ν` of the `Lᵖ(μ)` seminorms of the functions
+`x ↦ F x y`. For `p = ∞` see `TauCeti.eLpNorm_integral_le_lintegral_eLpNorm`. -/
+theorem eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [SFinite μ] [SFinite ν] {F : α → β → E}
+    (hF : AEStronglyMeasurable (uncurry F) (μ.prod ν)) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
+    eLpNorm (fun x ↦ ∫ y, F x y ∂ν) p μ ≤ ∫⁻ y, eLpNorm (fun x ↦ F x y) p μ ∂ν := by
+  have hint : AEStronglyMeasurable (fun x ↦ ∫ y, F x y ∂ν) μ := hF.integral_prod_right'
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hp1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hint]
+  calc (∫⁻ x, ‖∫ y, F x y ∂ν‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
+      ≤ (∫⁻ x, (∫⁻ y, ‖F x y‖ₑ ∂ν) ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+        gcongr with x
+        exact eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ y, (∫⁻ x, ‖F x y‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ∂ν :=
+        lintegral_Lp_lintegral_le (f := fun x y ↦ ‖F x y‖ₑ) hF.eNorm hp1
+    _ ≤ _ := by
+        refine lintegral_mono fun y ↦ ?_
+        by_cases hy : AEStronglyMeasurable (fun x ↦ F x y) μ
+        · rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hy]
+        · rw [eLpNorm_of_not_aestronglyMeasurable hy]
+          exact le_top
+
+/-- **Minkowski's integral inequality for Bochner integrals.** Let `1 ≤ p ≤ ∞` and let
+`F : α → β → E` be jointly a.e. strongly measurable, and continuous in `x` for every `y`, where `μ`
+is positive on nonempty open sets. Then the `Lᵖ(μ)` seminorm of `x ↦ ∫ y, F x y ∂ν` is at most the
+integral over `ν` of the `Lᵖ(μ)` seminorms of the functions `x ↦ F x y`. Continuity is used only
+for `p = ∞`, where it turns the almost-everywhere bound `‖F x y‖ ≤ ‖F · y‖_∞` into a bound at
+every `x`, uniformly in `y`; for `p < ∞` see
+`TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top`. -/
+theorem eLpNorm_integral_le_lintegral_eLpNorm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace α] [μ.IsOpenPosMeasure] [SFinite μ] [SFinite ν]
+    {F : α → β → E} (hF : AEStronglyMeasurable (uncurry F) (μ.prod ν))
+    (hc : ∀ y, Continuous fun x ↦ F x y) {p : ℝ≥0∞} (hp : 1 ≤ p) :
+    eLpNorm (fun x ↦ ∫ y, F x y ∂ν) p μ ≤ ∫⁻ y, eLpNorm (fun x ↦ F x y) p μ ∂ν := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · have hint : AEStronglyMeasurable (fun x ↦ ∫ y, F x y ∂ν) μ := hF.integral_prod_right'
+    rw [eLpNorm_exponent_top hint]
+    refine eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall fun x ↦ ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun y ↦ ?_)
+    refine le_trans ?_ eLpNormEssSup_le_eLpNorm_top
+    -- The bound holds almost everywhere, on a closed set by continuity, hence everywhere.
+    have hcl : IsClosed {x | ‖F x y‖ₑ ≤ eLpNormEssSup (fun x ↦ F x y) μ} :=
+      isClosed_le (hc y).eNorm continuous_const
+    have hd := μ.dense_of_ae (ae_le_eLpNormEssSup (f := fun x ↦ F x y))
+    have hx : x ∈ closure {x | ‖F x y‖ₑ ≤ eLpNormEssSup (fun x ↦ F x y) μ} :=
+      hd.closure_eq ▸ Set.mem_univ x
+    rwa [hcl.closure_eq, Set.mem_ofPred_eq] at hx
+  · exact eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top hF hp hp_top
 
 /-- **Minkowski's inequality for averages.** The `ℓʳ` norm of the averages over `s` of a countable
 family of functions is at most the average over `s` of their pointwise `ℓʳ` norm:
