@@ -14,6 +14,10 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.MeanValue
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+import Mathlib.Topology.Instances.Real.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 
 /-!
@@ -42,6 +46,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `Function.Periodic.logDeriv`: the logarithmic derivative of a periodic
   function is periodic.
+* `Function.Periodic.exists_lipschitzWith`: a continuously differentiable periodic function of a
+  real variable is Lipschitz.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
   the Fréchet derivative.
 * `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
@@ -99,14 +105,29 @@ protected theorem Periodic.logDeriv {𝕜' : Type*} [NontriviallyNormedField �
     Periodic (logDeriv f) c :=
   hf.deriv.div hf
 
+/-- **A periodic `C¹` function is Lipschitz.** A continuously differentiable periodic function of
+a real variable with nonzero period is Lipschitz. -/
+theorem Periodic.exists_lipschitzWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {c : ℝ} (hf : Periodic f c) (hc : c ≠ 0) (hf₁ : ContDiff ℝ 1 f) :
+    ∃ K, LipschitzWith K f := by
+  obtain ⟨C, hC⟩ :=
+    (hf.deriv.isBounded_of_continuous hc (hf₁.continuous_deriv le_rfl)).exists_norm_le
+  refine ⟨C.toNNReal,
+    lipschitzWith_of_nnNorm_deriv_le (hf₁.differentiable one_ne_zero) fun x ↦ ?_⟩
+  rw [← NNReal.coe_le_coe, coe_nnNorm]
+  exact (hC _ (Set.mem_range_self x)).trans (Real.le_coe_toNNReal C)
+
 end Function
 
 namespace TauCeti
 
 /-- A scalar twist under translation, `f (x + c) = a • f x`, passes to the Fréchet derivative.
-For `a = 1` this is `Function.Periodic.fderiv`, and for `a = -1` it covers antiperiodic maps. -/
-theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {c : E} {a : 𝕜}
+For `a = 1` this is `Function.Periodic.fderiv`, and for `a = -1` it covers antiperiodic maps. The
+scalar `a` may lie in any division ring acting on `F` compatibly with `𝕜`, for instance a complex
+twist of a function into a complex space under its real derivative. -/
+theorem fderiv_add_eq_smul {𝕜 R E F : Type*} [NontriviallyNormedField 𝕜] [DivisionRing R]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [Module R F] [SMulCommClass 𝕜 R F] [ContinuousConstSMul R F] {f : E → F} {c : E} {a : R}
     (h : ∀ x, f (x + c) = a • f x) (x : E) : fderiv 𝕜 f (x + c) = a • fderiv 𝕜 f x := by
   have hfun : (fun y ↦ f (y + c)) = a • f := funext h
   rcases eq_or_ne a 0 with rfl | ha

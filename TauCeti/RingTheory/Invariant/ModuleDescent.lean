@@ -118,7 +118,7 @@ private theorem bijective_liftBaseChange_subtype_invariants [Finite G] [Algebra.
       have key (p : B × B) :
           p.1 ⊗ₜ[A] (Representation.ofDistribMulAction A G N).normInvariants (p.2 • φ (b ⊗ₜ m)) =
           (p.1 * ∑ g : G, g • (p.2 * b)) ⊗ₜ m := by
-        obtain ⟨a, ha, h⟩ := trace_smul_of_mem_invariants A B G N (p.2 * b) m.2
+        obtain ⟨a, ha, h⟩ := trace_smul_of_mem_invariants A B G N (p.2 * b) m.property
         simp only [φ, LinearMap.liftBaseChange_tmul, Submodule.subtype_apply, smul_smul, h,
           tmul_smul, smul_tmul', Algebra.smul_def, ← ha, mul_comm _ p.1]
       -- The dual basis identity for `B` itself, acting on itself by multiplication.
@@ -190,7 +190,7 @@ private theorem bijective_oneTmul [Fintype G] [FaithfulSMul A B] [Algebra.IsInva
   · have h' := congr_arg (Φ ∘ Subtype.val) h
     simpa [oneTmul, Φ, hr1] using h'
   · -- An invariant `z` is `(∑ g, g • c) • z = ∑ g, g • (c • z)`.
-    have hz (g : G) : g • (z : B ⊗[A] M) = z := by simpa using z.2 g
+    have hz (g : G) : g • (z : B ⊗[A] M) = z := by simpa using z.property g
     calc (oneTmul A B G M (Φ z) : B ⊗[A] M) = ∑ g : G, g • (c • (z : B ⊗[A] M)) := by
           simp [oneTmul, hΦ]
       _ = (z : B ⊗[A] M) := by

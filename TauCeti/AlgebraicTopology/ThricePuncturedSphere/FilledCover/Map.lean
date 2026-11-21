@@ -107,7 +107,7 @@ theorem fillMap_disc (i : FilledPoint p) (w : ↥(ball (0 : ℂ) 1)) :
   · subst w
     simp [degree_ne_zero hp hfin i]
   · have hw' : (w : ℂ) ≠ 0 := fun h => hw (Subtype.ext h)
-    let w' : ↥(ball (0 : ℂ) 1 \ {0}) := ⟨w, w.2, hw'⟩
+    let w' : ↥(ball (0 : ℂ) 1 \ {0}) := ⟨w, w.property, hw'⟩
     have hdisc := PunctureFilling.disc_inclusion (φ := chart p) i w'
     rw [hdisc, fillMap_incl]
     exact toOnePoint_comp_chart hp hfin i w'
@@ -120,7 +120,7 @@ theorem fillMap_disc (i : FilledPoint p) (w : ↥(ball (0 : ℂ) 1)) :
   · have h : Continuous (fun w : ↥(ball (0 : ℂ) 1) =>
         (FilledPoint.sigmaEquiv p i).1.sphereCoordInv ((w : ℂ) ^ degree p i)) :=
       ((FilledPoint.sigmaEquiv p i).1.continuous_sphereCoordInv).comp
-      (continuous_subtype_val.pow (degree p i))
+      (continuous_subtypeVal.pow (degree p i))
     exact h.congr (fun w => (fillMap_disc hp hfin i w).symm)
 
 /-- Compactness of the filled finite cover makes the extended projection proper. -/
@@ -136,7 +136,7 @@ theorem surjective_fillMap (hp : Surjective p) : Surjective (fillMap p) := by
     obtain ⟨x, hx⟩ := hp z
     let i := (FilledPoint.sigmaEquiv p).symm
       ⟨q, ConnectedComponents.mk
-        (⟨x, by simpa only [Set.mem_preimage, hx] using z.2⟩ : p ⁻¹' q.neighborhood)⟩
+        (⟨x, by simpa only [Set.mem_preimage, hx] using z.property⟩ : p ⁻¹' q.neighborhood)⟩
     exact ⟨PunctureFilling.center (chart p) i, by simp [i]⟩
   intro y
   induction y using OnePoint.rec with

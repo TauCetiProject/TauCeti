@@ -151,16 +151,16 @@ private theorem exists_linearEquiv_prod :
   -- Mathlib states no lemma for the inverse of `splitSurjectiveEquiv`: by definition it sends a
   -- splitting `e` to the section `e.1.symm ∘ₗ inr`. The properties `e.2` do not determine this
   -- section (every section of `Na` gives a splitting), so `hsymm` unfolds the definition once.
-  have hsymm : ((hFaNa.splitSurjectiveEquiv hFa).symm e).1 = e.1.symm ∘ₗ LinearMap.inr K A A' :=
+  have hsymm : ((hFaNa.splitSurjectiveEquiv hFa).symm e).val = e.val.symm ∘ₗ LinearMap.inr K A A' :=
     rfl
-  have hinr : e.1.symm ∘ₗ LinearMap.inr K A A' = s := by
+  have hinr : e.val.symm ∘ₗ LinearMap.inr K A A' = s := by
     rw [← hsymm, Equiv.symm_apply_apply]
-  have he (x v) : e.1.symm (x, v) = Fa x + s v := by
-    simp [LinearMap.congr_fun e.2.1 x, ← LinearMap.congr_fun hinr v, ← map_add]
-  refine ⟨(eΦ.symm.prodCongr (LinearEquiv.refl K A')).trans e.1.symm, fun x ↦ ?_,
+  have he (x v) : e.val.symm (x, v) = Fa x + s v := by
+    simp [LinearMap.congr_fun e.property.1 x, ← LinearMap.congr_fun hinr v, ← map_add]
+  refine ⟨(eΦ.symm.prodCongr (LinearEquiv.refl K A')).trans e.val.symm, fun x ↦ ?_,
     fun z ↦ ?_, fun x v ↦ ?_⟩
   · simp [he]
-  · simp [LinearMap.congr_fun e.2.2]
+  · simp [LinearMap.congr_fun e.property.2]
   · simp [he, s]
 
 variable [FiniteDimensional K A] [FiniteDimensional K A'] [FiniteDimensional K B]

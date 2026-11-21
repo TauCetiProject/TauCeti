@@ -31,17 +31,17 @@ namespace TauCeti.SuzukiLieIndex
 /-- The represented Suzuki Steinberg map pulls characters back by the weight map of the native
 root-datum Steinberg map. Both maps use the valid index's own field exponent. -/
 theorem isCharacterMap_steinberg_suzuki (m : ℕ) (hv : (LieTypeIndex.suzuki m).Valid) :
-    IsCharacterMap (SpStd.b2WeightTorusPoints (of m hv).1.Closure) (of m hv).steinberg
+    IsCharacterMap (SpStd.b2WeightTorusPoints (of m hv).val.Closure) (of m hv).steinberg
       (of m hv).toSuzukiReeIndex.datumSteinberg.weightMap := by
   let d := of m hv
-  have : CharP d.1.Closure 2 := by
+  have : CharP d.val.Closure 2 := by
     rw [← d.characteristic_eq_two]
     infer_instance
-  have h : IsCharacterMap (SpStd.b2WeightTorusPoints d.1.Closure) d.halfFrobenius
+  have h : IsCharacterMap (SpStd.b2WeightTorusPoints d.val.Closure) d.halfFrobenius
       DynkinType.b2SpecialIsogeny.weightMap := by
     rw [halfFrobenius_def]
     exact SpStd.isCharacterMap_specialIsogeny _
-  have hpow := h.pow d.1.fieldExponent
+  have hpow := h.pow d.val.fieldExponent
   rw [← steinberg_def] at hpow
   rw [SuzukiReeIndex.datumSteinberg_def, RootPairingIsogeny.weightMap_pow,
     SuzukiReeIndex.datumSpecialIsogeny_weightMap_suzuki]

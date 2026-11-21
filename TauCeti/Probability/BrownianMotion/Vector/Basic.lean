@@ -218,7 +218,7 @@ theorem indepFun_shift (hB : IsPreBrownianVector B P) (t₀ : ℝ≥0) :
       (fun (q : ι × Set.Iic t₀) ω ↦ B q.1 q.2 ω)) fun
     | .inl (i, t) => ⟨{(i, t₀ + t), (i, t₀)}, ContinuousLinearMap.proj ⟨(i, t₀ + t), by simp⟩ -
         ContinuousLinearMap.proj ⟨(i, t₀), by simp⟩, fun _ ↦ by simp [restrict_def]⟩
-    | .inr (j, u) => ⟨{(j, u.1)}, ContinuousLinearMap.proj ⟨(j, u.1), by simp⟩,
+    | .inr (j, u) => ⟨{(j, u.val)}, ContinuousLinearMap.proj ⟨(j, u.val), by simp⟩,
         fun _ ↦ by simp [restrict_def]⟩).indepFun_of_covariance_eq_zero
     (fun p ↦ (hB.aemeasurable p.1 (t₀ + p.2)).sub (hB.aemeasurable p.1 t₀))
     (fun q ↦ hB.aemeasurable q.1 q.2) fun ⟨i, t⟩ ⟨j, u, hu⟩ ↦ ?_).comp

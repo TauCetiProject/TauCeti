@@ -17,7 +17,8 @@ A translation orthogonal to the normal vector preserves a strict half-space. The
 closed ball `closedBall w r` lies in `{y | ⟪y, ν⟫ < c}` whenever `⟪w, ν⟫ + r * ‖ν‖ < c`
 (`TauCeti.closedBall_subset_setOf_inner_lt`) and in `{y | c < ⟪y, ν⟫}` whenever
 `c + r * ‖ν‖ < ⟪w, ν⟫` (`TauCeti.closedBall_subset_setOf_lt_inner`). The projection
-`z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}`. Relative to an
+`z - (⟪z, ν⟫ / ‖ν‖²) ν` lands in the boundary hyperplane `{z | ⟪z, ν⟫ = 0}` and does not increase
+norms. Relative to an
 orthonormal basis `(eᵢ)`, a bilinear form splits into a part along `ν` and a part along the
 projected basis vectors `eᵢ - (⟪eᵢ, ν⟫ / ‖ν‖²) ν`. In rigid coordinates
 `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a constant, so the region
@@ -88,6 +89,15 @@ theorem real_inner_sub_div_norm_sq_smul_self_eq_zero {E : Type*} [NormedAddCommG
   · simp
   rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
     div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_self]
+
+/-- The projection `z - (⟪z, ν⟫ / ‖ν‖²) ν` onto the hyperplane orthogonal to `ν` does not increase
+norms. -/
+theorem norm_sub_div_norm_sq_smul_self_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (z ν : E) : ‖z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ≤ ‖z‖ := by
+  have h := Submodule.starProjection_singleton ℝ (v := ν) z
+  simp only [RCLike.ofReal_real_eq_id, id_eq] at h
+  rw [real_inner_comm, ← h, ← Submodule.starProjection_orthogonal_val]
+  exact Submodule.norm_starProjection_apply_le _ z
 
 end TauCeti
 

@@ -409,7 +409,7 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
     else ⟨{q | q.2 < 2 / 3}, isOpen_lt continuous_snd continuous_const⟩
   let W : Bool → Set (M × ℝ) := fun b => bif b then {p | 1 / 3 < p.2} else {p | p.2 < 2 / 3}
   refine isEmbedding_of_iSup_eq_top_of_preimage_subset_range (TauCeti.stack F G) hcont
-    U ?_ (fun b => W b) (fun b => Subtype.val) (fun b => continuous_subtype_val) ?_ ?_
+    U ?_ (fun b => W b) (fun b => Subtype.val) (fun b => continuous_subtypeVal) ?_ ?_
   · rintro _ ⟨p, rfl⟩
     rw [SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup]
     rcases lt_or_ge (TauCeti.stack F G p).2 (2 / 3) with hp | hp
@@ -421,12 +421,12 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
   · rintro (_ | _)
     · have heq : TauCeti.stack F G ∘ (Subtype.val : W false → M × ℝ) =
           conjTime F 3 0 ∘ Subtype.val :=
-        funext fun p => hF.stack_eqOn_lower hG p.2
+        funext fun p => hF.stack_eqOn_lower hG p.property
       rw [heq]
       exact hF3.comp IsEmbedding.subtypeVal
     · have heq : TauCeti.stack F G ∘ (Subtype.val : W true → M × ℝ) =
           conjTime G 3 (-2) ∘ Subtype.val :=
-        funext fun p => hF.stack_eqOn_upper hG p.2
+        funext fun p => hF.stack_eqOn_upper hG p.property
       rw [heq]
       exact hG3.comp IsEmbedding.subtypeVal
 

@@ -70,9 +70,9 @@ theorem map_specialIsometryEquivFixedPoints_torus :
 @[simp]
 theorem coe_unitaryTorusHom (t : Kˣ) :
     ((d).carrierEquivSpecialLinear (unitaryTorusHom q hv t : (d).AmbientGroup) :
-        Matrix (Fin ((d).1.rank + 1)) (Fin ((d).1.rank + 1)) (d).1.Closure) =
+        Matrix (Fin ((d).val.rank + 1)) (Fin ((d).val.rank + 1)) (d).val.Closure) =
       (diagonal ![(t : K), σ (t : K) * ↑t⁻¹, σ (↑t⁻¹ : K)]).map
-        ((d).1.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
+        ((d).val.extensionGaloisFieldEmbedding 2 two_ne_zero) := by
   simpa only [unitaryTorusHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     UnitaryRankOne.coe_torusHom] using
     coe_specialIsometryEquivFixedPoints 2 q hv (UnitaryRankOne.torusHom K σ hσ t)
@@ -98,8 +98,8 @@ theorem specialIsometryEquivFixedPoints_weyl :
 theorem coe_unitaryFixedWeylRepresentative :
     ((d).carrierEquivSpecialLinear
         (unitaryFixedWeylRepresentative q hv : (d).AmbientGroup) :
-          Matrix (Fin ((d).1.rank + 1)) (Fin ((d).1.rank + 1)) (d).1.Closure) =
-      (typeAGraphConjugator 2 (d).1.Closure : Matrix (Fin 3) (Fin 3) (d).1.Closure) := by
+          Matrix (Fin ((d).val.rank + 1)) (Fin ((d).val.rank + 1)) (d).val.Closure) =
+      (typeAGraphConjugator 2 (d).val.Closure : Matrix (Fin 3) (Fin 3) (d).val.Closure) := by
   rw [unitaryFixedWeylRepresentative, coe_specialIsometryEquivFixedPoints,
     UnitaryRankOne.coe_weyl]
   -- The rank of ofTwistedA 2 q hv reduces to 2, so the matrix indices are Fin 3.

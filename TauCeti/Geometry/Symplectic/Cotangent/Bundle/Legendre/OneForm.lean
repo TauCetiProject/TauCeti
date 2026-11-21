@@ -83,18 +83,18 @@ variable [IsManifold I 1 M]
 /-- The **Lagrangian of a one-form** `α`: the function `v ↦ α(v)` on the tangent bundle, linear on
 each fibre. -/
 def oneFormLagrangian (α : SmoothForm I M ℝ 1) (v : TangentBundle I M) : ℝ :=
-  SmoothForm.degreeOneEquiv α v.proj v.2
+  SmoothForm.degreeOneEquiv α v.proj v.snd
 
 /-- The Lagrangian of a one-form evaluates the form on the tangent vector. -/
 theorem oneFormLagrangian_apply (α : SmoothForm I M ℝ 1) (v : TangentBundle I M) :
-    oneFormLagrangian α v = SmoothForm.degreeOneEquiv α v.proj v.2 :=
+    oneFormLagrangian α v = SmoothForm.degreeOneEquiv α v.proj v.snd :=
   (rfl)
 
 /-- The Lagrangian of a one-form is smooth. -/
 theorem contMDiff_oneFormLagrangian (α : SmoothForm I M ℝ 1) :
     ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (oneFormLagrangian α) := by
   -- Apply the section `α ∘ π` of the cotangent bundle to `v`, as sections of bundles over `TM`.
-  have h := ContMDiff.clm_bundle_apply (E₂ := Trivial M ℝ) (v := fun v : TangentBundle I M ↦ v.2)
+  have h := ContMDiff.clm_bundle_apply (E₂ := Trivial M ℝ) (v := fun v : TangentBundle I M ↦ v.snd)
     ((SmoothForm.degreeOneEquiv α).contMDiff.comp (contMDiff_proj (TangentSpace I)))
     contMDiff_id
   exact fun v ↦ (contMDiffAt_totalSpace_iff.1 (h v)).2
@@ -145,7 +145,7 @@ omit [IsManifold I 1 M] in
 a curve it is the time derivative of `f` along the curve. -/
 theorem oneFormLagrangian_mextDerivₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; 𝓘(ℝ, ℝ), ℝ⟯)
     (v : TangentBundle I M) :
-    oneFormLagrangian (mextDerivₗ I 0 (SmoothForm.ofFunction f)) v = mvfderiv I f v.proj v.2 := by
+    oneFormLagrangian (mextDerivₗ I 0 (SmoothForm.ofFunction f)) v = mvfderiv I f v.proj v.snd := by
   rw [oneFormLagrangian_apply, SmoothForm.degreeOneEquiv_apply_apply_vec, mextDerivₗ_zero_apply,
     SmoothForm.ofFunction_apply_zero]
 
@@ -172,7 +172,7 @@ theorem not_forall_mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_oneFormL
     [Nontrivial E] [Nonempty M] (α : SmoothForm I M ℝ 1)
     (σ : SmoothTwoForm I.tangent (TangentBundle I M)) :
     ¬∀ v : TangentBundle I M, mfderiv I.tangent I (π E (TangentSpace I)) v
-      (σ.hamiltonianVectorField (lagrangianEnergy (oneFormLagrangian α)) v) = v.2 := by
+      (σ.hamiltonianVectorField (lagrangianEnergy (oneFormLagrangian α)) v) = v.snd := by
   intro h
   obtain ⟨u, hu⟩ := exists_ne (0 : E)
   have hv := h (TotalSpace.mk' E (Classical.arbitrary M) u)
@@ -191,7 +191,7 @@ theorem cartanForm_oneFormLagrangian (α : SmoothForm I M ℝ 1)
   rw [cartanForm_apply, legendreMap_oneFormLagrangian, SmoothForm.mpullback_apply]
   -- Both sides evaluate `α` at `π v` on the image of the single vector `ξ 0` under `dπ`.
   exact (SmoothForm.degreeOneEquiv_apply_apply α v.proj _).trans
-    (congrArg (α.1 v.proj) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i]))
+    (congrArg (α.val v.proj) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i]))
 
 /-- **The Cartan two-form of a one-form**: `ω_L = -π^*dα` for the Lagrangian `L(v) = α(v)`. -/
 theorem cartanTwoForm_oneFormLagrangian (α : SmoothForm I M ℝ 1)
@@ -230,7 +230,7 @@ section Line
 
 /-- The Lagrangian `L(q, v) = v` on the real line is the Lagrangian of the exact one-form `dq`. -/
 theorem snd_eq_oneFormLagrangian_mextDerivₗ_id :
-    (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2) =
+    (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.snd) =
       oneFormLagrangian (mextDerivₗ 𝓘(ℝ, ℝ) 0
         (SmoothForm.ofFunction ContMDiffMap.id)) := by
   funext v
@@ -242,7 +242,7 @@ theorem snd_eq_oneFormLagrangian_mextDerivₗ_id :
 /-- **The Cartan two-form of `L(q, v) = v` vanishes.** Its Cartan one-form is `dq`, which is
 closed. -/
 theorem cartanTwoForm_snd_eq_zero :
-    cartanTwoForm (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2)
+    cartanTwoForm (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.snd)
       (contMDiff_snd_tangentBundle_modelSpace ℝ 𝓘(ℝ, ℝ)) = 0 := by
   -- The Cartan two-form of the Lagrangian of an exact form vanishes; transport along the equality
   -- of Lagrangians, which also moves the smoothness proof.
@@ -260,7 +260,7 @@ equation `ι_X ω_L = dE_L` does not force a second-order field: every vector fi
 theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd_eq_zero
     (σ : SmoothTwoForm 𝓘(ℝ, ℝ).tangent (TangentBundle 𝓘(ℝ, ℝ) ℝ)) (v : TangentBundle 𝓘(ℝ, ℝ) ℝ) :
     mfderiv 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ) (π ℝ (TangentSpace 𝓘(ℝ, ℝ))) v
-      (σ.hamiltonianVectorField (lagrangianEnergy fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2) v) =
+      (σ.hamiltonianVectorField (lagrangianEnergy fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.snd) v) =
       0 := by
   rw [snd_eq_oneFormLagrangian_mextDerivₗ_id,
     hamiltonianVectorField_lagrangianEnergy_oneFormLagrangian, Pi.zero_apply, map_zero]

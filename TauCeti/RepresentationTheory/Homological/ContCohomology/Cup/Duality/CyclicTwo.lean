@@ -80,19 +80,20 @@ private noncomputable def z1OfMemKerNorm [TopologicalSpace G] [DiscreteTopology 
     [TopologicalSpace M] [IsTopologicalAddGroup M] {g : G} (hg1 : g ≠ 1)
     (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) : Z1 G M :=
   open scoped Classical in
-  ⟨fun x => if x = 1 then 0 else m.1, mem_Z1_iff.mpr ⟨continuous_of_discreteTopology, fun x y => by
+  ⟨fun x => if x = 1 then 0 else m.val,
+    mem_Z1_iff.mpr ⟨continuous_of_discreteTopology, fun x y => by
     rcases (eq_or_ne x 1).imp_right (hguniq x) with rfl | hx <;>
       rcases (eq_or_ne y 1).imp_right (hguniq y) with rfl | hy
     · simp
     · simp [hy, hg1]
     · simp [hx, hg1]
     · simp only [hx, hy, hgg, hg1, ↓reduceIte]
-      exact ((add_comm (g • m.1) m.1).trans (AddMonoidHom.mem_ker.mp m.2)).symm⟩⟩
+      exact ((add_comm (g • m.val) m.val).trans (AddMonoidHom.mem_ker.mp m.property)).symm⟩⟩
 
 private theorem z1OfMemKerNorm_val_gen [TopologicalSpace G] [DiscreteTopology G]
     [TopologicalSpace M] [IsTopologicalAddGroup M] {g : G} (hg1 : g ≠ 1)
     (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgg : g * g = 1) (m : (normHom M g).ker) :
-    (z1OfMemKerNorm hg1 hguniq hgg m).val g = m.1 := by
+    (z1OfMemKerNorm hg1 hguniq hgg m).val g = m.val := by
   simp [z1OfMemKerNorm, hg1]
 
 private def evalZ1AtGen [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
@@ -136,12 +137,12 @@ private noncomputable def h1EquivKerNormQuot [TopologicalSpace G] [DiscreteTopol
 private def h0InternalHomEquivQuotHom {N : Type uN} [AddCommGroup N] [DistribMulAction G N]
     {g : G} (hguniq : ∀ x : G, x ≠ 1 → x = g) (hgN : ∀ y : N, g • y = -y) :
     H0 G (InternalHom G M N) ≃+ ((M ⧸ (normHom M g).range) →+ N) where
-  toFun φ := QuotientAddGroup.lift (normHom M g).range φ.1.toAddMonoidHom <| by
+  toFun φ := QuotientAddGroup.lift (normHom M g).range φ.val.toAddMonoidHom <| by
     rintro _ ⟨m, rfl⟩
     have hfix := InternalHom.smul_eq_self_iff.mp
-      ((FixedPoints.mem_addSubgroup G (InternalHom G M N) φ.1).mp φ.2 g) m
+      ((FixedPoints.mem_addSubgroup G (InternalHom G M N) φ.val).mp φ.property g) m
     rw [hgN] at hfix
-    exact (φ.1.toAddMonoidHom.map_add m (g • m)).trans (by rw [hfix, add_neg_cancel])
+    exact (φ.val.toAddMonoidHom.map_add m (g • m)).trans (by rw [hfix, add_neg_cancel])
   invFun ψ := ⟨InternalHom.of G (ψ.comp (QuotientAddGroup.mk' (normHom M g).range)),
     (FixedPoints.mem_addSubgroup G (InternalHom G M N) _).mpr fun x => by
       rcases (eq_or_ne x 1).imp_right (hguniq x) with rfl | hx
@@ -218,7 +219,8 @@ theorem natCard_mul_natCard_H1_of_natCard_eq_two [TopologicalSpace G] [DiscreteT
     have hsub := range_diffHom_le_ker_normHom (M := M) hgg
     have hcardSub : Nat.card ((diffHom M g).range.addSubgroupOf (normHom M g).ker) =
         Nat.card (diffHom M g).range :=
-      Nat.card_congr ⟨fun x => ⟨x.1.1, x.2⟩, fun y => ⟨⟨y.1, hsub y.2⟩, y.2⟩,
+      Nat.card_congr ⟨fun x => ⟨x.val.val, x.property⟩,
+        fun y => ⟨⟨y.val, hsub y.property⟩, y.property⟩,
         fun _ => rfl, fun _ => rfl⟩
     have hcardKer :
         Nat.card (normHom M g).ker = Nat.card (H1 G M) * Nat.card (diffHom M g).range := by
@@ -302,7 +304,7 @@ private theorem coe_cyclicTwoH2ToH0_dualityMap1_mk [DiscreteTopology G] [Fintype
   have hbot : ∀ (u : H0 G N) (hnorm : (groupNorm G N).range.addSubgroupOf (H0 G N) = ⊥),
       ((QuotientAddGroup.quotientBot
         (QuotientAddGroup.quotientAddEquivOfEq hnorm (QuotientAddGroup.mk u)) : H0 G N) : N) =
-        u.1 := fun u _ => by
+        u.val := fun u _ => by
     rw [QuotientAddGroup.quotientAddEquivOfEq_mk, ← QuotientAddGroup.quotientBot_symm_apply u,
       AddEquiv.apply_symm_apply]
   rw [AddEquiv.trans_apply, hbot]
