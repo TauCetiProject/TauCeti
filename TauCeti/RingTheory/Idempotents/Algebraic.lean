@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Defs
-public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.Algebraic.Basic
