@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
+public import TauCeti.Probability.Distributions.Semicircle.LocationScale
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.HalfPlane
@@ -14,6 +15,7 @@ import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.EMetricSpace.Lipschitz
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
+import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 
 /-!
 # The complex Burgers equation for resolvent transforms
@@ -33,7 +35,10 @@ differentiated form. Along each straight characteristic `s ↦ z - s m_0(z)`, Gr
 then shows that `m_s` is constant, equal to `m_0(z)`, as long as the characteristic stays in the
 upper half-plane. These characteristics are injective near `i ∞`, so the identity theorem and
 Stieltjes inversion recover each `μ_t` from `μ_0`. The same argument gives the Pastur
-(subordination) equation `m_t(w) = m_0(w + t m_t(w))` on the whole upper half-plane.
+(subordination) equation `m_t(w) = m_0(w + t m_t(w))` on the whole upper half-plane. The
+semicircle laws of variance `t` centred at `a` form a Burgers flow: their transforms solve
+`t m² + (z - a) m + 1 = 0`, and differentiating this quadratic in `t` and in `z` gives the
+equation. So they are the unique flow started at the point mass at `a`.
 
 ## Main definitions
 
@@ -50,6 +55,9 @@ Stieltjes inversion recover each `μ_t` from `μ_0`. The same argument gives the
   Pastur equation `m_t(w) = m_0(w + t m_t(w))`.
 * `TauCeti.Probability.IsBurgersFlow.eq`: uniqueness, a flow of probability measures is
   determined by its initial measure.
+* `TauCeti.Probability.isBurgersFlow_semicircleReal` and
+  `TauCeti.Probability.IsBurgersFlow.eq_semicircleReal`: the semicircle laws `semicircleReal a t`
+  of variance `t` form a Burgers flow, and it is the only one started at the point mass at `a`.
 
 ## References
 
@@ -450,5 +458,37 @@ theorem eq [∀ t, IsProbabilityMeasure (ν t)] (hμ : IsBurgersFlow μ) (hν : 
   rw [hν.resolventTransform_sub_mul_resolventTransform hz hzt]
 
 end IsBurgersFlow
+
+/-! ### The semicircle flow -/
+
+section Semicircle
+
+variable {a : ℝ}
+
+/-- **The semicircle flow.** The semicircle laws `semicircleReal a t` of variance `t` centred at
+`a` form a Burgers flow. -/
+theorem isBurgersFlow_semicircleReal (a : ℝ) : IsBurgersFlow fun t ↦ semicircleReal a t := by
+  intro z hz t
+  have hmc : Continuous fun s : ℝ ↦ resolventTransform (semicircleReal a s.toNNReal) z :=
+    (continuous_resolventTransform_semicircleReal hz).comp continuous_real_toNNReal
+  have hgc : Continuous fun s : ℝ ↦ resolventTransform (semicircleReal a s.toNNReal) z *
+      deriv (resolventTransform (semicircleReal a s.toNNReal)) z :=
+    hmc.mul ((continuous_deriv_resolventTransform_semicircleReal hz).comp
+      continuous_real_toNNReal)
+  refine ⟨hgc.intervalIntegrable _ _, ?_⟩
+  have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le t.coe_nonneg
+    hmc.continuousOn (fun s hs ↦ (hasDerivWithinAt_resolventTransform_semicircleReal hz
+      hs.1.le).mono Ioi_subset_Ici_self) (hgc.intervalIntegrable 0 t)
+  simp only [Real.toNNReal_coe, Real.toNNReal_zero] at hftc
+  rw [hftc]
+  ring
+
+/-- **The Burgers flow from a point mass.** A Burgers flow of probability measures started at the
+point mass at `a` is the semicircle flow `t ↦ semicircleReal a t`. -/
+theorem IsBurgersFlow.eq_semicircleReal [∀ t, IsProbabilityMeasure (μ t)]
+    (hμ : IsBurgersFlow μ) (h₀ : μ 0 = Measure.dirac a) : μ = fun t ↦ semicircleReal a t :=
+  hμ.eq (isBurgersFlow_semicircleReal a) (by rw [h₀, semicircleReal_zero_var])
+
+end Semicircle
 
 end TauCeti.Probability
