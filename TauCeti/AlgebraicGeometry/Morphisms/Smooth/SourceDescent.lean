@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import Mathlib.AlgebraicGeometry.Morphisms.SmoothFiber
-public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Stalk

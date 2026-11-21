@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange

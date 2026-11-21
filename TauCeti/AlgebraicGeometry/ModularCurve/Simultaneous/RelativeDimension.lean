@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
