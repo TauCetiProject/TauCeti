@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Parametrix
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Asymptotic summation of parameter-dependent symbols

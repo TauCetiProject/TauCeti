@@ -370,8 +370,8 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow (N : ℕ) :
         calc (1 + ‖ξ‖ ^ 2) ^ ((z.re - k) / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) :=
               Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
           _ ≤ 1 / ‖ξ‖ ^ k := by
-            simpa only [add_comm, Real.rpow_neg_natCast, zpow_neg, zpow_natCast, one_div]
-              using norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
+            simpa [add_comm, one_div] using
+              norm_sq_add_rpow_div_two_le zero_le_one hξ (neg_nonpos.2 (Nat.cast_nonneg k))
     _ = _ := by
         push_cast
         ring

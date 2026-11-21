@@ -164,7 +164,9 @@ theorem eq_zero_of_coefficient_eq_cutoffSymbol {m' : ℝ} (hm : m' < m)
     have htξ : 2 ≤ ‖t • ξ‖ := by
       rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
     have h := hbC x rfl (t • ξ)
-    have hw := Real.one_add_sq_rpow_le_two_rpow_mul_rpow (by linarith : 1 ≤ ‖t • ξ‖) m'
+    have hw := Real.one_add_sq_rpow_le_two_rpow_mul_rpow (t := ‖t • ξ‖)
+      (by rw [abs_norm]; linarith) m'
+    rw [abs_norm] at hw
     rw [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
       a.norm_homogeneous x ξ ht0] at h
     simp only [List.length_nil, Nat.cast_zero, sub_zero, norm_smul, Real.norm_of_nonneg ht0.le,

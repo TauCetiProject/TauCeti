@@ -13,7 +13,7 @@ import TauCeti.Algebra.Order.BigOperators.Group.Multiset
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.Normed.Ring.Multiset
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Vertical-strip asymptotics of archimedean gamma factors and dual gamma quotients

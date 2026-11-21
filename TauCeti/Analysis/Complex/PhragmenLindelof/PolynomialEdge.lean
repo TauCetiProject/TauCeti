@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 

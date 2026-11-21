@@ -519,42 +519,38 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   have hneg : ∀ r ≤ 0, u r = g x := fun r hr => heatCauchyPotential_of_nonpos g hr x
   have hrate : ∀ r, 0 ≤ r → dist (u r) (g x) ≤ H * Mα * r ^ β := fun r hr =>
     (dist_eq_norm _ _).trans_le (norm_heatCauchyPotential_sub_le hg hgc hr x)
+  -- Each case bounds the increment by `k H |b - a| P` with a coefficient `k ≤ 2 C₂ + 4 Mα`.
+  have hweak : ∀ {k P : ℝ}, 0 ≤ P → k ≤ 2 * C₂ + 4 * Mα →
+      ‖u b - u a‖ ≤ k * (H * (|b - a| * P)) →
+      ‖u b - u a‖ ≤ (2 * C₂ + 4 * Mα) * H * |b - a| * P := fun hP hk h ↦
+    (h.trans (mul_le_mul_of_nonneg_right hk
+      (mul_nonneg H.coe_nonneg (mul_nonneg (abs_nonneg _) hP)))).trans_eq (by ring)
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
-    have hd : 0 < -a := neg_pos.2 ha
+    refine hweak (k := Mα) (rpow_nonneg (neg_nonneg.2 ha.le) _) (by linarith) ?_
     calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
       _ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
           dist_le_mul_abs_sub_mul_rpow_of_neg_right hβ₀ hβ₁ (mul_nonneg H.coe_nonneg hMα) ha
             (fun hb ↦ by rw [hneg b hb, hneg a ha.le, dist_self])
             (fun hb ↦ by rw [hneg a ha.le]; exact hrate b hb.le)
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
-        gcongr
-        nlinarith
-      _ = _ := by ring
   rw [abs_of_pos ha]
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
     have hpos : uIcc a b ⊆ Ioi 0 := ordConnected_Ioi.uIcc_subset ha ((half_pos ha).trans_le hb)
-    have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt (u := u)
-      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ ha hb
-      (fun r hr => (hasDerivAt_heatCauchyPotential_of_ae_norm_le
-        (ae_of_all _ hM) (hpos hr) x).hasDerivWithinAt)
-      (fun r hr => hC₂ (ae_of_all _ hM) hg (hpos hr) x)
-    calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) := this
+    refine hweak (k := 2 * C₂) (rpow_nonneg ha.le _) (by linarith) ?_
+    calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) :=
+          norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt (u := u)
+            (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ ha hb
+            (fun r hr => (hasDerivAt_heatCauchyPotential_of_ae_norm_le
+              (ae_of_all _ hM) (hpos hr) x).hasDerivWithinAt)
+            (fun r hr => hC₂ (ae_of_all _ hM) hg (hpos hr) x)
       _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
-        gcongr
-        linarith
-      _ = _ := by ring
-  · calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
+  · refine hweak (k := 4 * Mα) (rpow_nonneg ha.le _) (by linarith) ?_
+    calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
       _ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
           dist_le_mul_abs_sub_mul_rpow_of_le_half ha hb.le ?_ (hrate a ha.le)
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
-      _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
-        gcongr
-        nlinarith
-      _ = _ := by ring
     -- `u b` is within `H Mα b ^ β ≤ H Mα a ^ β` of `g x`, and equals it if `b ≤ 0`.
     rcases le_or_gt b 0 with hb0 | hb0
     · rw [hneg b hb0, dist_self]

@@ -12,10 +12,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 /-!
 # Elementary bounds on real powers
 
-If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
-powers of a level confined to an interval bounded away from zero. For `0 < x` and
-`|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`: a power with a small logarithm is close to `1`.
-Likewise, for `0 < u` and any
+For `0 < x` and `|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`: a power with a small
+logarithm is close to `1`. Likewise, for `0 < u` and any
 exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates `u ^ (Re s - 1)` for all
 `u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`; and
 for `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t` raises the exponent on `(a, ∞)`.
@@ -84,7 +82,6 @@ dyadic intervals.
 
 ## Main results
 
-* `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
 * `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
   `p ∈ Set.Icc p₁ p₂`.
@@ -128,17 +125,6 @@ dyadic intervals.
 public section
 
 namespace Real
-
-/-- If both a positive base and its reciprocal are at most `R`, every real power of that
-base is bounded by `R` raised to the absolute value of the exponent. -/
-theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻¹ ≤ R)
-    (a : ℝ) : x ^ a ≤ R ^ |a| := by
-  rcases le_or_gt 0 a with ha | ha
-  · rw [abs_of_nonneg ha]
-    exact rpow_le_rpow hx.le hxR ha
-  · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
-         _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
-         _ = R ^ |a| := by rw [abs_of_neg ha]
 
 /-- For `0 < x` and `|log x · y| ≤ 1`, `|x ^ y - 1| ≤ 2 |log x · y|`. -/
 theorem abs_rpow_sub_one_le {x y : ℝ} (hx : 0 < x) (h : |log x * y| ≤ 1) :

@@ -403,7 +403,7 @@ private theorem exists_eLpNorm_fourierInv_shiftedMultiplier_le_mul [NeZero n] {p
     calc _ ≤ S * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) * ρ := hS k hk η ζ
       _ ≤ S * (‖ζ‖ ^ k)⁻¹ * ρ := by
           gcongr
-          simpa only [add_comm, Real.rpow_neg_natCast, zpow_neg, zpow_natCast] using
+          simpa [add_comm] using
             norm_sq_add_rpow_div_two_le zero_le_one hζ (neg_nonpos.2 (Nat.cast_nonneg k))
       _ = _ := by ring
   have hgrowth : (shiftedMultiplier b η).HasTemperateGrowth :=
