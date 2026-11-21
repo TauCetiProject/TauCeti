@@ -162,6 +162,14 @@ theorem apply_symm_apply (Φ : RiemannianIsometry I J M N)
     (y : N) : Φ (Φ.symm y) = y := Φ.toDiffeomorph.apply_symm_apply y
 
 @[simp]
+theorem symm_comp_self (Φ : RiemannianIsometry I J M N) : ⇑Φ.symm ∘ Φ = id :=
+  funext Φ.symm_apply_apply
+
+@[simp]
+theorem self_comp_symm (Φ : RiemannianIsometry I J M N) : ⇑Φ ∘ Φ.symm = id :=
+  funext Φ.apply_symm_apply
+
+@[simp]
 theorem symm_symm (Φ : RiemannianIsometry I J M N) :
     Φ.symm.symm = Φ := by
   ext x
