@@ -191,6 +191,8 @@ theorem mem_exactOrder_iff {N : ℕ} :
 theorem smul_mk_zsmul_point (n : ℤ) :
     C • (⟨X.curve, n • X.point⟩ : PointedWeierstrassCurve F) =
       ⟨(C • X).curve, n • (C • X).point⟩ := by
+  -- The curves agree by `smul_curve`, which `rw` cannot apply under the dependent point.
+  rw [smul_mk]
   refine mk_inj.mpr ?_
   rw [smul_point, ← coe_addEquivVariableChange_symm, map_zsmul]
 
@@ -226,6 +228,8 @@ def nsmulExactOrder (M : ℕ) [NeZero M] :
   toFun X := ⟨⟨X.val.curve, M • X.val.point⟩,
     mk_nsmul_point_mem_exactOrder_of_mem_mul X.val (NeZero.ne M) X.property⟩
   map_smul' C X := Subtype.ext <| by
+    dsimp only [id_eq]
+    rw [SubMulAction.val_smul, SubMulAction.val_smul]
     have h := smul_mk_zsmul_point C X.val M
     simp only [natCast_zsmul] at h
     exact h.symm
@@ -280,7 +284,9 @@ instance instMulActionUnitsZModExactOrder : MulAction (ZMod N)ˣ (exactOrder F N
 units act on the isomorphism classes of elliptic curves with a point of exact order `N`. -/
 instance instSMulCommClassVariableChangeUnitsZModExactOrder :
     SMulCommClass (VariableChange F) (ZMod N)ˣ (exactOrder F N) where
-  smul_comm C _ X := Subtype.ext (smul_mk_zsmul_point C X.val _)
+  smul_comm C d X := Subtype.ext <| by
+    rw [SubMulAction.val_smul, coe_units_smul, coe_units_smul, SubMulAction.val_smul]
+    exact smul_mk_zsmul_point C X.val _
 
 end Units
 

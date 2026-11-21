@@ -142,6 +142,20 @@ theorem smul_mk_weierstrassPoint_denom_div (γ : SL(2, ℤ)) (z : ℍ) :
     pointedWeierstrassCurve_def, Units.val_inv_eq_inv_val, Units.val_mk0, inv_mul_eq_div,
     div_div_cancel_left₀ (denom_ne_zero γ z), one_div]
 
+/-- If `m ≡ c` and `n ≡ d` modulo `N` for the bottom row `(c, d)` of `γ`, then `(m z + n) / N` is
+`(c z + d) / N` modulo `ℤ z + ℤ`, so both give the same point of `E_z`. -/
+private lemma weierstrassPoint_div_eq_weierstrassPoint_denom_div {γ : SL(2, ℤ)} {z : ℍ} {m n : ℤ}
+    (hm : ((γ 1 0 : ℤ) : ZMod N) = m) (hn : ((γ 1 1 : ℤ) : ZMod N) = n) :
+    z.periodPair.weierstrassPoint ((m * z + n) / N) =
+      z.periodPair.weierstrassPoint (denom γ z / N) := by
+  rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
+  convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
+    (b := ![m - γ 1 0, n - γ 1 1]) z (by ext i; fin_cases i <;> simp [hm, hn]) using 1
+  simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  push_cast
+  ring
+
 /-- If the point of `(m τ + n) / N` on `E_τ` has exact order `N`, then `gcd(m, n)` is prime to `N`:
 for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period `(m / d) τ + n / d`. -/
 private lemma coprime_gcd_of_addOrderOf_weierstrassPoint [NeZero N] {τ : ℍ} {m n : ℤ}
@@ -198,13 +212,7 @@ theorem exists_smul_pointedWeierstrassCurve_eq [NeZero N] {X : PointedWeierstras
   replace hγ₁ : ((γ 1 1 : ℤ) : ZMod N) = n := by simpa [hγ₁] using congrFun hy 1
   -- `w = (m τ + n) / N` is `(c τ + d) / N` modulo `ℤ τ + ℤ`; rescale by `(c τ + d)⁻¹`.
   have hwD : τ.periodPair.weierstrassPoint w = τ.periodPair.weierstrassPoint (denom γ τ / N) := by
-    rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff, hw]
-    convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
-      (b := ![m - γ 1 0, n - γ 1 1]) τ (by ext i; fin_cases i <;> simp [hγ₀, hγ₁]) using 1
-    simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one]
-    push_cast
-    ring
+    rw [hw, weierstrassPoint_div_eq_weierstrassPoint_denom_div hγ₀ hγ₁]
   refine ⟨γ • τ, (⟨(Units.mk0 _ (denom_ne_zero γ τ))⁻¹, 0, 0, 0⟩ * C⁻¹)⁻¹, ?_⟩
   rw [inv_smul_eq_iff, mul_smul, hQ, hwD, smul_mk_weierstrassPoint_denom_div]
 
@@ -245,13 +253,8 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
     obtain ⟨-, h₁, h₀⟩ := (Gamma1_mem N γ).mp hγ
     have hD : z.periodPair.weierstrassPoint (1 / N) =
         z.periodPair.weierstrassPoint (denom γ z / N) := by
-      rw [PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
-      convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N)
-        (b := ![-γ 1 0, 1 - γ 1 1]) z (by ext i; fin_cases i <;> simp [h₀, h₁]) using 1
-      simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-        Matrix.cons_val_fin_one]
-      push_cast
-      ring
+      simpa using weierstrassPoint_div_eq_weierstrassPoint_denom_div (z := z) (m := 0) (n := 1)
+        (by simpa using h₀) (by simpa using h₁)
     refine ⟨⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩, ?_⟩
     rw [pointedWeierstrassCurve_def z, hD, smul_mk_weierstrassPoint_denom_div]
 
@@ -267,13 +270,9 @@ theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ G
   have hD : γ 1 1 • z.periodPair.weierstrassPoint (1 / N) =
       z.periodPair.weierstrassPoint (denom γ z / N) := by
     rw [← PeriodPair.weierstrassPointHom_apply, ← map_zsmul, PeriodPair.weierstrassPointHom_apply,
-      PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
-    convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N) (b := ![-γ 1 0, 0]) z
-      (by ext i; fin_cases i <;> simp [Gamma0_mem.mp hγ]) using 1
-    simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, zsmul_eq_mul]
-    push_cast
-    ring
+      ← weierstrassPoint_div_eq_weierstrassPoint_denom_div (m := 0) (n := γ 1 1)
+        (by simpa using Gamma0_mem.mp hγ) rfl, zsmul_eq_mul, Int.cast_zero, zero_mul, zero_add,
+      mul_one_div]
   rw [hD, smul_mk_weierstrassPoint_denom_div]
 
 /-- **Lowering the level on `E_z`**: `M` times the point of `1 / (N M)` is the point of `1 / N`. -/
@@ -331,10 +330,13 @@ theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
     gamma1QuotientEquivExactOrder N ⟦(γ : SL(2, ℤ)) • z⟧ =
       ⟦(Gamma0Map N).toHomUnits γ •
         ⟨z.pointedWeierstrassCurve N, z.pointedWeierstrassCurve_mem_exactOrder⟩⟧ := by
+  rw [gamma1QuotientEquivExactOrder_mk]
   refine Quotient.sound (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr
     ⟨⟨(Units.mk0 _ (denom_ne_zero (γ : SL(2, ℤ)) z))⁻¹, 0, 0, 0⟩, Subtype.ext ?_⟩))
   rw [SubMulAction.val_smul, PointedWeierstrassCurve.coe_units_smul_of_intCast_eq
     (n := (γ : SL(2, ℤ)) 1 1) _ _ (by rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply])]
+  -- The marked point depends on the curve, so `UpperHalfPlane.pointedWeierstrassCurve_def` cannot
+  -- be rewritten here; it holds by `rfl`.
   exact UpperHalfPlane.smul_mk_zsmul_weierstrassPoint_one_div N γ.property z
 
 /-- **The moduli bijection is natural in the level**: for `M ≠ 0`, the map
@@ -353,6 +355,8 @@ theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
       MulActionHom.orbitRelQuotientMap_mk]
     refine congrArg _ (Subtype.ext ?_)
     rw [PointedWeierstrassCurve.coe_nsmulExactOrder_apply]
+    -- As above, `UpperHalfPlane.pointedWeierstrassCurve_def` holds by `rfl` but cannot be
+    -- rewritten under the dependent marked point.
     exact PointedWeierstrassCurve.mk_inj.mpr
       (UpperHalfPlane.nsmul_weierstrassPoint_one_div_mul (NeZero.ne M) z).symm
 
