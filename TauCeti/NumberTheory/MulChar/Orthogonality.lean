@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Coset.Fiber
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.MulChar.Duality
+import TauCeti.GroupTheory.OrderOfElement.Cauchy
 
 /-!
 # Orthogonality relations for multiplicative characters
@@ -36,22 +37,30 @@ the characteristic; with values in `ℂ` they are exact counts.
 
 * `Subgroup.sum_filter_mulChar_apply_eq_ite`: the values at a unit `u` of the characters trivial
   on `H` sum to the cast of `H.index` if `u ∈ H` and to zero otherwise.
+The next four results need enough roots of unity in `R` for the exponent of `Mˣ`.
+
 * `TauCeti.sum_mulChar_apply_eq_ite`: `∑ χ, χ a` is the cast of `#Mˣ` if `a = 1` and zero
   otherwise.
-* `TauCeti.sum_inv_mul_mulChar_apply_eq_ite`: for a unit `v`, `∑ χ, χ⁻¹ v * χ a` is the cast of
+* `Units.sum_inv_mul_mulChar_apply_eq_ite`: for a unit `v`, `∑ χ, χ⁻¹ v * χ a` is the cast of
   `#Mˣ` if `a = v` and zero otherwise.
-* `TauCeti.sum_filter_pow_eq_one_apply_eq_card_pow_eq`: the values at a unit `u` of the characters
-  `χ` with `χ ^ d = 1` sum to the cast of the number of `y ∈ Mˣ` with `y ^ d = u`.
 * `TauCeti.card_units_mul_apply_eq_sum_mulChar_units`: the Fourier expansion of a function `φ` on
   `Mˣ`, `#Mˣ · φ u = ∑ χ, χ u ∑_{y ∈ Mˣ} φ y χ⁻¹ y`.
-* `TauCeti.card_units_mul_apply_eq_sum_mulChar`: the same expansion for a function `φ` on `M`, with
-  the sum over all `y ∈ M`, and `TauCeti.apply_eq_inv_card_units_mul_sum_mulChar`, its normalized
-  form `φ u = #Mˣ⁻¹ ∑ χ, χ u ∑ y, φ y (χ y)⁻¹` over a field with enough roots of unity for the
-  exponent of `Mˣ`; such a field has `#Mˣ ≠ 0`.
-* `TauCeti.card_pow_eq_eq_one_add_sum`: for a finite field `F`, `d ≠ 0`, and a coefficient domain
-  with enough roots of unity for the exponent of `Fˣ ⧸ (Fˣ) ^ d`, the cast of the number of
-  solutions of `y ^ d = c` in `F` is `1 + ∑_{χ ^ d = 1, χ ≠ 1} χ c`, also at `c = 0`. It holds for
-  every finite commutative group with zero.
+* `TauCeti.card_units_mul_apply_eq_sum_mulChar`: the same expansion for a function `φ` on a finite
+  `M`, with the inner sum over all `y ∈ M`.
+
+Over a field `K` with enough roots of unity for the exponent of `Mˣ`, the cast of `#Mˣ` is nonzero,
+since the exponent is (`TauCeti.isUnit_natCard_of_isUnit_exponent`).
+
+* `TauCeti.apply_eq_inv_card_units_mul_sum_mulChar_units` and
+  `TauCeti.apply_eq_inv_card_units_mul_sum_mulChar`: the normalized expansions
+  `φ u = #Mˣ⁻¹ ∑ χ, χ u ∑ y, φ y (χ y)⁻¹`, for `φ` on `Mˣ` with `y ∈ Mˣ`, and for `φ` on a finite
+  `M` with `y ∈ M`.
+* `TauCeti.sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq`: the values at a unit `u` of the
+  characters `χ` with `χ ^ d = 1` sum to the cast of the number of `y ∈ Mˣ` with `y ^ d = u`.
+* `TauCeti.card_pow_eq_eq_one_add_sum_mulChar`: for a finite field `F`, `d ≠ 0`, and a
+  coefficient domain with enough roots of unity for the exponent of `Fˣ ⧸ (Fˣ) ^ d`, the cast of
+  the number of solutions of `y ^ d = c` in `F` is `1 + ∑_{χ ^ d = 1, χ ≠ 1} χ c`, also at
+  `c = 0`. It holds for every finite commutative group with zero.
 -/
 
 public section
@@ -95,8 +104,9 @@ section Ambient
 
 variable [HasEnoughRootsOfUnity R (Monoid.exponent Mˣ)]
 
-/-- **Orthogonality for the characters at a point.** The values at `a` of all characters of `M`
-sum to the cast of `#Mˣ` if `a = 1` and to zero otherwise. At a unit this is
+/-- **Orthogonality for the characters at a point.** With enough roots of unity in `R` for the
+exponent of `Mˣ`, the values at `a` of all characters of `M` sum to the cast of `#Mˣ` if `a = 1`
+and to zero otherwise. At a unit this is
 `CommGroup.sum_monoidHom_apply_eq_ite` for the characters of `Mˣ`; at a nonunit every term is
 zero. -/
 @[simp]
@@ -112,27 +122,23 @@ theorem sum_mulChar_apply_eq_ite (a : M) [Decidable (a = 1)] :
   · rw [ite_eq_right (by rintro rfl; exact ha isUnit_one)]
     exact sum_eq_zero fun χ _ ↦ χ.map_nonunit ha
 
-/-- **Tagged orthogonality for the characters.** For a unit `v` and `a ∈ M`, the sum
-`∑ χ, χ⁻¹ v * χ a` over all characters is the cast of `#Mˣ` if `a = v` and zero otherwise. At a
-unit `a` this is `CommGroup.sum_inv_mul_monoidHom_apply_eq_ite` for the characters of `Mˣ`; at a
-nonunit every term is zero. -/
+/-- **Tagged orthogonality for the characters.** With enough roots of unity in `R` for the
+exponent of `Mˣ`, for a unit `v` and `a ∈ M` the sum `∑ χ, χ⁻¹ v * χ a` over all characters is the
+cast of `#Mˣ` if `a = v` and zero otherwise. Each term is `χ (v⁻¹ * a)`, so this is
+`TauCeti.sum_mulChar_apply_eq_ite` at `v⁻¹ * a`. -/
 @[simp]
-theorem sum_inv_mul_mulChar_apply_eq_ite (v : Mˣ) (a : M) [Decidable (a = v)] :
+theorem _root_.Units.sum_inv_mul_mulChar_apply_eq_ite (v : Mˣ) (a : M) [Decidable (a = v)] :
     ∑ χ : MulChar M R, χ⁻¹ v * χ a = if a = v then (Nat.card Mˣ : R) else 0 := by
   classical
-  by_cases ha : IsUnit a
-  · obtain ⟨w, rfl⟩ := ha
-    rw [Fintype.sum_equiv equivToUnitHom _
-        (fun ψ : Mˣ →* Rˣ ↦ (((ψ v)⁻¹ : Rˣ) : R) * (ψ w : R)) fun χ ↦ by
-          rw [inv_apply_eq_inv, ← coe_equivToUnitHom, ← coe_equivToUnitHom, Ring.inverse_unit],
-      CommGroup.sum_inv_mul_monoidHom_apply_eq_ite]
-    simp only [Units.val_inj]
-  · rw [ite_eq_right (by rintro rfl; exact ha v.isUnit)]
-    exact sum_eq_zero fun χ _ ↦ by simp [χ.map_nonunit ha]
+  have hterm (χ : MulChar M R) : χ⁻¹ v * χ a = χ (↑v⁻¹ * a) := by
+    rw [map_mul, inv_apply_eq_inv, ← coe_equivToUnitHom, Ring.inverse_unit,
+      ← coe_equivToUnitHom, map_inv]
+  simp_rw [hterm, sum_mulChar_apply_eq_ite, Units.inv_mul_eq_one, eq_comm (a := (v : M))]
 
 omit [Finite Mˣ] in
-/-- **The Fourier expansion on `Mˣ`.** For a function `φ` on `Mˣ` and a unit `u`,
-`#Mˣ · φ u = ∑ χ, χ u ∑ y, φ y χ⁻¹ y`, with the inner sum over `y ∈ Mˣ`. This is
+/-- **The Fourier expansion on `Mˣ`.** With enough roots of unity in `R` for the exponent of
+`Mˣ`, for a function `φ` on `Mˣ` and a unit `u`, `#Mˣ · φ u = ∑ χ, χ u ∑ y, φ y χ⁻¹ y`, with the
+inner sum over `y ∈ Mˣ`. This is
 `CommGroup.sum_inv_smul_sum_smul` for the characters of `Mˣ`, reindexed by `χ ↦ χ⁻¹`. -/
 theorem card_units_mul_apply_eq_sum_mulChar_units [Fintype Mˣ] (φ : Mˣ → R) (u : Mˣ) :
     (Nat.card Mˣ : R) * φ u = ∑ χ : MulChar M R, χ u * ∑ y : Mˣ, φ y * χ⁻¹ y := by
@@ -141,51 +147,61 @@ theorem card_units_mul_apply_eq_sum_mulChar_units [Fintype Mˣ] (φ : Mˣ → R)
   simp [inv_apply_eq_inv, mul_comm]
 
 omit [Finite Mˣ] in
-/-- **The Fourier expansion on `Mˣ` of a function on `M`.** For a function `φ` on a finite
-commutative monoid `M` and a unit `u`, `#Mˣ · φ u = ∑ χ, χ u ∑ y, φ y χ⁻¹ y`, with the inner sum
-over all `y ∈ M`. The terms at nonunits `y` vanish, since `χ⁻¹ y = 0` there, so this is
-`card_units_mul_apply_eq_sum_mulChar_units` for the restriction of `φ` to `Mˣ`. -/
+/-- **The Fourier expansion on `Mˣ` of a function on `M`.** With enough roots of unity in `R` for
+the exponent of `Mˣ`, for a function `φ` on a finite commutative monoid `M` and a unit `u`,
+`#Mˣ · φ u = ∑ χ, χ u ∑ y, φ y χ⁻¹ y`, with the inner sum over all `y ∈ M`. The terms at nonunits
+`y` vanish, since `χ⁻¹ y = 0` there, so this is `card_units_mul_apply_eq_sum_mulChar_units` for
+the restriction of `φ` to `Mˣ`. -/
 theorem card_units_mul_apply_eq_sum_mulChar [Fintype M] (φ : M → R) (u : Mˣ) :
     (Nat.card Mˣ : R) * φ u = ∑ χ : MulChar M R, χ u * ∑ y, φ y * χ⁻¹ y := by
   classical
   rw [card_units_mul_apply_eq_sum_mulChar_units (fun y : Mˣ ↦ φ y) u]
   refine sum_congr rfl fun χ _ ↦ congrArg (χ u * ·) ?_
   refine Fintype.sum_of_injective _ Units.val_injective _ _ (fun y hy ↦ ?_) fun _ ↦ rfl
-  rw [χ⁻¹.map_nonunit fun h ↦ hy ⟨h.unit, rfl⟩, mul_zero]
-
-/-- A domain with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: a
-prime `p` that divides `#G` is the order of an element of `G` (Cauchy), so it divides the exponent,
-and the exponent is nonzero in the domain. -/
-private theorem natCast_card_ne_zero (G K : Type*) [CommGroup G] [Finite G] [CommRing K]
-    [IsDomain K] [HasEnoughRootsOfUnity K (Monoid.exponent G)] : (Nat.card G : K) ≠ 0 := by
-  have : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
-  have hexp := (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K
-    (Monoid.exponent G)).choose_spec.neZero'.out
-  intro h
-  rw [CharP.cast_eq_zero_iff K (ringChar K)] at h
-  rcases CharP.char_is_prime_or_zero K (ringChar K) with hp | hp
-  · have := Fact.mk hp
-    obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' (G := G) (ringChar K) h
-    exact hexp ((CharP.cast_eq_zero_iff K (ringChar K) _).2 (hg ▸ Monoid.order_dvd_exponent g))
-  · rw [hp, zero_dvd_iff] at h
-    exact Nat.card_pos.ne' h
+  rw [χ⁻¹.map_nonunit fun h ↦ hy ⟨h.unit, h.unit_spec⟩, mul_zero]
 
 end Ambient
 
+section Normalized
+
+variable {K : Type*} [Field K] [HasEnoughRootsOfUnity K (Monoid.exponent Mˣ)]
+
+/-- A field with enough roots of unity for the exponent of `Mˣ` has `#Mˣ ≠ 0`: a primitive root of
+unity of that order makes the exponent nonzero in the field, so `#Mˣ` is a unit
+(`TauCeti.isUnit_natCard_of_isUnit_exponent`). -/
+private theorem natCast_card_units_ne_zero : (Nat.card Mˣ : K) ≠ 0 := by
+  have : NeZero (Monoid.exponent Mˣ) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  exact (isUnit_natCard_of_isUnit_exponent (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K
+    (Monoid.exponent Mˣ)).choose_spec.neZero'.out.isUnit).ne_zero
+
+omit [Finite Mˣ] in
 /-- **The normalized Fourier expansion on `Mˣ`.** Over a field `K` with enough roots of unity for
-the exponent of `Mˣ`, such as `ℂ`, `φ u = #Mˣ⁻¹ ∑ χ, χ u ∑ y, φ y (χ y)⁻¹` for every unit `u`.
-Such a field has `#Mˣ ≠ 0`. -/
-theorem apply_eq_inv_card_units_mul_sum_mulChar {K : Type*} [Field K]
-    [HasEnoughRootsOfUnity K (Monoid.exponent Mˣ)] [Fintype (MulChar M K)] [Fintype M]
+the exponent of `Mˣ`, such as `ℂ`, a function `φ` on `Mˣ` satisfies
+`φ u = #Mˣ⁻¹ ∑ χ, χ u ∑ y, φ y (χ y)⁻¹` for every unit `u`, with the inner sum over `y ∈ Mˣ`. Such
+a field has `#Mˣ ≠ 0`. -/
+theorem apply_eq_inv_card_units_mul_sum_mulChar_units [Fintype (MulChar M K)] [Fintype Mˣ]
+    (φ : Mˣ → K) (u : Mˣ) :
+    φ u = (Nat.card Mˣ : K)⁻¹ * ∑ χ : MulChar M K, χ u * ∑ y : Mˣ, φ y * (χ y)⁻¹ := by
+  simp_rw [← inv_apply_eq_inv']
+  rw [← card_units_mul_apply_eq_sum_mulChar_units, inv_mul_cancel_left₀ natCast_card_units_ne_zero]
+
+omit [Finite Mˣ] in
+/-- **The normalized Fourier expansion on `Mˣ` of a function on `M`.** Over a field `K` with enough
+roots of unity for the exponent of `Mˣ`, such as `ℂ`, a function `φ` on a finite commutative monoid
+`M` satisfies `φ u = #Mˣ⁻¹ ∑ χ, χ u ∑ y, φ y (χ y)⁻¹` for every unit `u`, with the inner sum over
+all `y ∈ M`. Such a field has `#Mˣ ≠ 0`. -/
+theorem apply_eq_inv_card_units_mul_sum_mulChar [Fintype (MulChar M K)] [Fintype M]
     (φ : M → K) (u : Mˣ) :
     φ u = (Nat.card Mˣ : K)⁻¹ * ∑ χ : MulChar M K, χ u * ∑ y, φ y * (χ y)⁻¹ := by
   simp_rw [← inv_apply_eq_inv']
-  rw [← card_units_mul_apply_eq_sum_mulChar, inv_mul_cancel_left₀ (natCast_card_ne_zero Mˣ K)]
+  rw [← card_units_mul_apply_eq_sum_mulChar, inv_mul_cancel_left₀ natCast_card_units_ne_zero]
+
+end Normalized
 
 /-- **Counting `d`-th roots.** The values at a unit `u` of the characters `χ` with `χ ^ d = 1`
 sum to the cast of the number of `y ∈ Mˣ` with `y ^ d = u`. The coefficient domain needs enough
 roots of unity for the exponent of the quotient of `Mˣ` by its `d`-th powers. -/
-theorem sum_filter_pow_eq_one_apply_eq_card_pow_eq (d : ℕ)
+theorem sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq (d : ℕ)
     [HasEnoughRootsOfUnity R (Monoid.exponent (Mˣ ⧸ (powMonoidHom d : Mˣ →* Mˣ).range))]
     (u : Mˣ) [DecidablePred fun χ : MulChar M R ↦ χ ^ d = 1] :
     ∑ χ : MulChar M R with χ ^ d = 1, χ u = (Nat.card {y : Mˣ // y ^ d = u} : R) := by
@@ -217,7 +233,7 @@ roots of unity for the exponent of the quotient of `Fˣ` by its `d`-th powers. F
 every `c ∈ F`, the cast of the number of solutions is `1 + ∑ χ`, the sum over the nontrivial
 characters `χ` with `χ ^ d = 1` at `c`. At `c = 0` both sides are `1`: every character, the
 trivial one included, vanishes at `0`. -/
-theorem card_pow_eq_eq_one_add_sum {d : ℕ} (hd : d ≠ 0)
+theorem card_pow_eq_eq_one_add_sum_mulChar {d : ℕ} (hd : d ≠ 0)
     [HasEnoughRootsOfUnity R (Monoid.exponent (Fˣ ⧸ (powMonoidHom d : Fˣ →* Fˣ).range))] (c : F)
     [DecidablePred fun χ : MulChar F R ↦ χ ^ d = 1 ∧ χ ≠ 1] :
     (Nat.card {y : F // y ^ d = c} : R) = 1 + ∑ χ : MulChar F R with χ ^ d = 1 ∧ χ ≠ 1, χ c := by
@@ -232,12 +248,10 @@ theorem card_pow_eq_eq_one_add_sum {d : ℕ} (hd : d ≠ 0)
   · lift c to Fˣ using IsUnit.mk0 c hc
     have hsplit := sum_filter_add_sum_filter_not (univ.filter fun χ : MulChar F R ↦ χ ^ d = 1)
       (fun χ ↦ χ = 1) fun χ ↦ χ (c : F)
-    rw [filter_filter, filter_filter, sum_filter_pow_eq_one_apply_eq_card_pow_eq] at hsplit
-    have hone : (univ.filter fun χ : MulChar F R ↦ χ ^ d = 1 ∧ χ = 1) = {1} := by
-      ext χ
-      simp only [mem_filter, mem_univ, true_and, mem_singleton]
-      exact ⟨And.right, fun h ↦ ⟨by rw [h, one_pow], h⟩⟩
-    rw [hone, sum_singleton, one_apply_coe] at hsplit
+    rw [filter_eq' _ (1 : MulChar F R)] at hsplit
+    simp only [mem_filter, mem_univ, one_pow, and_self, ↓reduceIte, sum_singleton,
+      one_apply_coe] at hsplit
+    rw [filter_filter, sum_filter_mulChar_pow_eq_one_apply_eq_card_pow_eq] at hsplit
     -- The solutions in `F` are nonzero, so they are the solutions in `Fˣ`.
     have hne {y : F} (hy : y ^ d = c) : y ≠ 0 := fun h ↦ hc (by rw [← hy, h, zero_pow hd])
     have hcard : Nat.card {y : F // y ^ d = c} = Nat.card {y : Fˣ // y ^ d = c} :=

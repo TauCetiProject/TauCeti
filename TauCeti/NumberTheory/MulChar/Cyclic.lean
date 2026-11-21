@@ -46,34 +46,32 @@ section CommMonoidWithZero
 variable {M : Type*} [CommMonoid M] {R : Type*} [CommMonoidWithZero R]
 
 /-- Evaluation of characters at a unit `g`, as a homomorphism to `Rˣ`. -/
-private noncomputable def evalHom (g : Mˣ) : MulChar M R →* Rˣ where
-  toFun χ := equivToUnitHom χ g
-  map_one' := by ext; simp
-  map_mul' χ ψ := by ext; simp
+private noncomputable def evalHom (g : Mˣ) : MulChar M R →* Rˣ :=
+  (MonoidHom.eval g).comp mulEquivToUnitHom.toMonoidHom
+
+private theorem evalHom_apply (g : Mˣ) (χ : MulChar M R) : (evalHom g χ : R) = χ g := by
+  simp [evalHom]
 
 /-- Evaluation at a generator of `Mˣ` is injective: a character is determined by its value
 there (Mathlib's `MulChar.eq_iff`). -/
 private theorem evalHom_injective {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
-    Function.Injective (evalHom (R := R) g) := fun χ ψ h ↦
-  (eq_iff hg χ ψ).mpr (by simpa [evalHom, Units.ext_iff] using congrArg Units.val h)
+    Function.Injective (evalHom (R := R) g) := fun χ ψ h ↦ by
+  rw [eq_iff hg]
+  simpa [evalHom_apply] using congrArg Units.val h
 
 /-- If `g` generates `Mˣ`, then the value of a character at `g` has the order of the
 character. -/
-theorem orderOf_apply_eq_orderOf {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-    (χ : MulChar M R) : orderOf (χ g) = orderOf χ := by
-  rw [← orderOf_injective _ (evalHom_injective hg) χ, ← orderOf_units]
-  simp [evalHom]
+theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
+    (hg : ∀ x, x ∈ Subgroup.zpowers g) : orderOf (χ g) = orderOf χ := by
+  rw [← orderOf_injective _ (evalHom_injective hg) χ, ← orderOf_units, evalHom_apply]
 
-/-- Evaluation of characters at a unit `g`, with values in the `#Mˣ`-th roots of unity. -/
-private noncomputable def evalRootsOfUnity (g : Mˣ) :
-    MulChar M R →* rootsOfUnity (Nat.card Mˣ) R :=
-  (evalHom g).codRestrict _ fun χ ↦ by
-    rw [mem_rootsOfUnity, evalHom, MonoidHom.coe_mk, OneHom.coe_mk, ← map_pow,
-      pow_card_eq_one', map_one]
-
-private theorem evalRootsOfUnity_injective {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
-    Function.Injective (evalRootsOfUnity (R := R) g) := fun _ _ h ↦
-  evalHom_injective hg (congrArg Subtype.val h)
+/-- If `g` generates `Mˣ`, the characters are the `#Mˣ`-th roots of unity of `R`: Mathlib's
+`IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, transported along `MulChar.mulEquivToUnitHom`
+and `rootsOfUnityUnitsMulEquiv`. -/
+private noncomputable def mulEquivRootsOfUnity {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+    MulChar M R ≃* rootsOfUnity (Nat.card Mˣ) R :=
+  mulEquivToUnitHom.trans ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator hg Rˣ).trans
+    (rootsOfUnityUnitsMulEquiv R _))
 
 end CommMonoidWithZero
 
@@ -82,10 +80,11 @@ section Domain
 variable {M : Type*} [CommMonoid M] {R : Type*} [CommRing R] [IsDomain R]
 
 /-- With values in a domain, the characters of a monoid with a finite cyclic unit group form a
-cyclic group: evaluation at a generator embeds them into the cyclic group of roots of unity. -/
+cyclic group: they are the `#Mˣ`-th roots of unity of `R`, which form a cyclic group. -/
 instance isCyclic [Finite Mˣ] [IsCyclic Mˣ] : IsCyclic (MulChar M R) := by
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Mˣ)
-  exact isCyclic_of_injective _ (evalRootsOfUnity_injective (R := R) hg)
+  exact isCyclic_of_injective (mulEquivRootsOfUnity (R := R) hg).toMonoidHom
+    (mulEquivRootsOfUnity hg).injective
 
 /-- For a monoid with finitely many units and characters valued in a domain, a character `ω`
 whose order is `#Mˣ` generates the character group: every character is `ω ^ m` for exactly one
@@ -97,25 +96,22 @@ theorem existsUnique_lt_and_pow_eq [Finite Mˣ] (ω : MulChar M R) (hω : orderO
     simpa [pow_apply_coe] using congrArg (fun v : Mˣ ↦ ω v) (Monoid.pow_exponent_eq_one u)
   obtain ⟨g, hg⟩ := (IsCyclic.of_exponent_eq_card
     (Nat.dvd_antisymm Group.exponent_dvd_nat_card (hω ▸ hexp))).exists_generator
-  -- Evaluation at `g` embeds the characters into the `#Mˣ`-th roots of unity.
-  have he := evalRootsOfUnity_injective (R := R) hg
-  have : Finite (MulChar M R) := Finite.of_injective _ he
+  -- The characters are the `#Mˣ`-th roots of unity, and there are at most `#Mˣ` of these.
+  let e := mulEquivRootsOfUnity (R := R) hg
+  have : Finite (MulChar M R) := Finite.of_equiv _ e.symm.toEquiv
   have : NeZero (Nat.card Mˣ) := ⟨Nat.card_pos.ne'⟩
   have hχ : χ ∈ Submonoid.powers ω := by
     rw [mem_powers_iff_mem_zpowers, Subgroup.eq_top_of_le_card (Subgroup.zpowers ω) (by
-      rw [Nat.card_zpowers, hω]
-      exact (Nat.card_le_card_of_injective _ he).trans (card_rootsOfUnity R _))]
+      rw [Nat.card_zpowers, hω, Nat.card_congr e.toEquiv]
+      exact card_rootsOfUnity R _)]
     exact Subgroup.mem_top χ
-  -- The powers `ω ^ m` with `m < orderOf ω` list the elements of `powers ω` once each.
+  -- The powers `ω ^ m` with `m < orderOf ω` list the elements of `powers ω`, without repetition.
   have hfin : IsOfFinOrder ω := orderOf_pos_iff.mp (hω ▸ Nat.card_pos)
   obtain ⟨m, hm⟩ := (finEquivPowers hfin).surjective ⟨χ, hχ⟩
   have hm' : ω ^ (m : ℕ) = χ := by
     simpa only [finEquivPowers_apply] using congrArg Subtype.val hm
-  refine ⟨m, ⟨hω ▸ m.isLt, hm'⟩, fun j hj ↦ ?_⟩
-  have hj' : finEquivPowers hfin ⟨j, hω ▸ hj.1⟩ = finEquivPowers hfin m := by
-    rw [finEquivPowers_apply, finEquivPowers_apply]
-    exact Subtype.ext (hj.2.trans hm'.symm)
-  exact congrArg Fin.val ((finEquivPowers hfin).injective hj')
+  exact ⟨m, ⟨hω ▸ m.isLt, hm'⟩, fun j hj ↦ pow_injOn_Iio_orderOf (Set.mem_Iio.2 (hω ▸ hj.1))
+    (Set.mem_Iio.2 m.isLt) (hj.2.trans hm'.symm)⟩
 
 end Domain
 
@@ -132,14 +128,15 @@ variable {M : Type*} [CommMonoid M] [Fintype M] [DecidableEq M] {R : Type*} [Com
 theorem orderOf_ofRootOfUnity {ζ : Rˣ} (hζ : ζ ∈ rootsOfUnity (Fintype.card Mˣ) R) {g : Mˣ}
     (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     orderOf (ofRootOfUnity hζ hg) = orderOf ζ := by
-  rw [← orderOf_apply_eq_orderOf hg, ofRootOfUnity_spec, orderOf_units]
+  rw [← orderOf_apply_eq_orderOf _ hg, ofRootOfUnity_spec, orderOf_units]
 
 /-- The character that sends a generator of `Mˣ` to a primitive `#Mˣ`-th root of unity has order
 `#Mˣ`. -/
 theorem orderOf_ofRootOfUnity_of_isPrimitiveRoot {ζ : Rˣ}
-    (hζ : ζ ∈ rootsOfUnity (Fintype.card Mˣ) R) {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-    (hprim : IsPrimitiveRoot (ζ : R) (Fintype.card Mˣ)) :
-    orderOf (ofRootOfUnity hζ hg) = Fintype.card Mˣ := by
+    (hprim : IsPrimitiveRoot (ζ : R) (Fintype.card Mˣ)) {g : Mˣ}
+    (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+    orderOf (ofRootOfUnity ((mem_rootsOfUnity' _ ζ).2 hprim.pow_eq_one) hg) =
+      Fintype.card Mˣ := by
   rw [orderOf_ofRootOfUnity, (IsPrimitiveRoot.coe_units_iff.mp hprim).eq_orderOf]
 
 end TauCeti
