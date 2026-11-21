@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Topology.VectorBundle.Attachment
+public import TauCeti.Topology.VectorBundle.Thom.LineBundle
 
 /-!
 # Relative homology across the level of compact Morse–Bott submanifolds
@@ -62,9 +63,13 @@ pairs `(D_ρ(V), S_ρ(V)) ⟶ (M_{c+ε}, M_{c-ε})` which is an isomorphism on r
 homology in every degree
 (`TauCeti.exists_isIso_singularHomologyMap_sublevelPair_of_negativeDiscBundle`), so
 `Hₙ(M_{c+ε}, M_{c-ε})` is the relative homology `Hₙ(V, V₀)` of the Thom pair of `V`
-(`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`). The Thom isomorphism, which this
-file does not use, identifies the homology of the Thom pair with the homology of the base `B`,
-shifted by the rank of `V` and with coefficients twisted by the orientation of `V`.
+(`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`). The Thom isomorphism identifies
+the homology of the Thom pair with the homology of the base `B`, shifted by the rank of `V` and
+with coefficients twisted by the orientation of `V`. In index one, where `V` is a line bundle, and
+with coefficients in a ring of characteristic two, such as `ZMod 2`, the twist disappears
+(`TauCeti.thomPairSingularHomologySuccIsoSingularHomology`), so crossing the level shifts the
+homology of the base by one: `Hₙ₊₁(M_{c+ε}, M_{c-ε}; R) ≅ Hₙ(B; R)`
+(`TauCeti.nonempty_singularHomology_sublevelPair_succ_iso_singularHomology_of_finrank_eq_one`).
 
 ## Main results
 
@@ -97,6 +102,8 @@ In the namespace `TauCeti`:
   the negative disc bundle induces isomorphisms `Hₙ(D_ρ(V), S_ρ(V)) ≅ Hₙ(M_{c+ε}, M_{c-ε})`.
 * `nonempty_singularHomology_sublevelPair_iso_thomPair`: the relative homology across the
   critical level is that of the Thom pair, `Hₙ(M_{c+ε}, M_{c-ε}) ≅ Hₙ(V, V₀)`.
+* `nonempty_singularHomology_sublevelPair_succ_iso_singularHomology_of_finrank_eq_one`: in index
+  one and characteristic two, `Hₙ₊₁(M_{c+ε}, M_{c-ε}; R) ≅ Hₙ(B; R)`.
 
 ## References
 
@@ -186,7 +193,7 @@ theorem SmoothEmbedding.exists_isIso_singularHomologyMap_iUnion_negativeDiscBund
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     exists_sublevel_union_iUnion_negativeDiscBundle_deformation hn h hfs hc hd hdim g
   refine ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
-  obtain ⟨hD, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
+  obtain ⟨hD, -, r, -, ⟨G⟩⟩ := hmain ε ⟨hε, hεε₀⟩ hcompact hcrit
   -- Each disc bundle lies in the critical sublevel, since the normal Hessian is negative on the
   -- negative normal spaces.
   have hA : {y | f y ≤ c - ε} ∪
@@ -573,5 +580,50 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair
     asIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n)⟩
 
 end ThomPair
+
+section LineBundle
+
+variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {f s t : M → ℝ} {c ε : ℝ} {W : Set M}
+  {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : B → Type u} [∀ b, NormedAddCommGroup (V b)] [∀ b, NormedSpace ℝ (V b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+  {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
+
+/-- **Crossing a Morse–Bott level of index one shifts the homology of the base by one, in
+characteristic two.** Under the hypotheses of
+`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`, suppose that the vector bundle
+`V → B` parametrizing the negative disc bundle has rank one, and that its fibre norm is continuous
+on the total space. Then for every ring `R` of characteristic two, such as `ZMod 2`,
+`Hₙ₊₁({f ≤ c + ε}, {f ≤ c - ε}; R) ≅ Hₙ(B; R)` in every degree `n`, with no orientation
+hypothesis on `V`. -/
+theorem nonempty_singularHomology_sublevelPair_succ_iso_singularHomology_of_finrank_eq_one
+    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
+    (ht : ContMDiffOn I 𝓘(ℝ) ∞ t W) (hs₀ : ∀ x ∈ W, 0 ≤ s x) (ht₀ : ∀ x ∈ W, 0 ≤ t x)
+    (hf : ∀ x ∈ W, f x = c - s x + t x)
+    (hdir : ∀ x ∈ W, t x ≠ 0 → ∃ v : TangentSpace I x,
+      mfderiv I 𝓘(ℝ) s x v = 0 ∧ mfderiv I 𝓘(ℝ) t x v ≠ 0)
+    (φ : C(unitInterval × W, W)) (hφs : ∀ τ x, s (φ (τ, x)) = s x)
+    (hφt : ∀ τ x, t (φ (τ, x)) = τ ^ 2 * t x) (hφ₁ : ∀ x, φ (1, x) = x)
+    (hφ₀ : ∀ τ (x : W), t x = 0 → φ (τ, x) = x) (hε : 0 < ε)
+    (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε})
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ W)
+    (hρ : IsFiberGauge ρ)
+    (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
+    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
+    (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
+    (hnorm : Continuous fun v : TotalSpace F V ↦ ‖v.snd‖) (hF : Module.finrank ℝ F = 1)
+    (R : Type u) [Ring R] [CharP R 2] (n : ℕ) :
+    Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology
+        (ModuleCat.of R R) (n + 1) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+        (ModuleCat.of R R)).obj (TopCat.of B)) := by
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir
+    φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of R R) (n + 1)
+  exact ⟨e ≪≫ thomPairSingularHomologySuccIsoSingularHomology hnorm hF R n⟩
+
+end LineBundle
 
 end TauCeti
