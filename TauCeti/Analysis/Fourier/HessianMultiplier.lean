@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Fourier.L2Multiplier
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 
 /-!
@@ -184,13 +185,6 @@ theorem exists_norm_iteratedFDeriv_hessianSymbol_comp_le [FiniteDimensional ℝ 
   have hcomp : hessianSymbol v w ∘ e = L ∘ (lineProj ∘ e) := by
     ext ξ
     simp [L, hessianSymbol_eq_inner_lineProj]
-  -- Differentiate through the linear change of variables `e`.
-  have hright : iteratedFDeriv ℝ k (lineProj ∘ e) ξ =
-      (iteratedFDeriv ℝ k lineProj (e ξ)).compContinuousLinearMap
-        fun _ => (e : E →L[ℝ] E) := by
-    have h := e.iteratedFDerivWithin_comp_right (lineProj (E := E)) uniqueDiffOn_univ
-      (Set.mem_univ (e ξ)) k
-    simpa only [Set.preimage_univ, iteratedFDerivWithin_univ] using h
   rw [hcomp]
   calc ‖iteratedFDeriv ℝ k (L ∘ (lineProj ∘ e)) ξ‖
       ≤ ‖L‖ * ‖iteratedFDeriv ℝ k (lineProj ∘ e) ξ‖ :=
@@ -198,9 +192,7 @@ theorem exists_norm_iteratedFDeriv_hessianSymbol_comp_le [FiniteDimensional ℝ 
     _ ≤ (‖v‖ * ‖w‖) * (‖iteratedFDeriv ℝ k lineProj (e ξ)‖ *
           ‖(e : E →L[ℝ] E)‖ ^ k) := by
         gcongr
-        rw [hright]
-        refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
-        simp
+        exact (e.norm_iteratedFDeriv_comp_right_le lineProj ξ k).trans_eq (mul_comm _ _)
     _ ≤ (‖v‖ * ‖w‖) * (A₀ / (c * ‖ξ‖) ^ k * ‖(e : E →L[ℝ] E)‖ ^ k) := by
         gcongr
         exact (hA₀ k hk (e ξ) heξ).trans (by gcongr; exact he ξ)
