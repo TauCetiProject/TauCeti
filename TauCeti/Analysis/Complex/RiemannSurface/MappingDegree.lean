@@ -136,23 +136,6 @@ theorem degree_reindex_complexManifoldOrientation_of_ne (hf : MDifferentiable �
   simpa using
     (FiniteHolomorphicMap.ofMDifferentiable hf hne).degree_reindex_complexManifoldOrientation
 
-omit [T2Space X] [T2Space Y] [CompactSpace X] [PreconnectedSpace X] [PreconnectedSpace Y] in
-/-- The mapping degree of a constant map between Riemann surfaces vanishes. -/
-private theorem degree_reindex_complexManifoldOrientation_of_forall_eq
-    (hc : ∀ x x', f x = f x') :
-    TauCeti.degree ((complexManifoldOrientation ℂ X).reindex
-        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-      ((complexManifoldOrientation ℂ Y).reindex
-        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))) f =
-      0 := by
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
-  · rcases isEmpty_or_nonempty Y with hY | ⟨⟨y₀⟩⟩
-    · exact degree_of_isEmpty
-    · rw [show f = fun _ ↦ y₀ from funext hX.elim]
-      exact degree_const (by simp) y₀
-  · rw [show f = fun _ ↦ f x₀ from funext fun x ↦ hc x x₀]
-    exact degree_const (by simp) (f x₀)
-
 /-- **The mapping degree of a holomorphic map is nonnegative**, for the canonical orientations of
 a compact connected Riemann surface and a connected one. -/
 theorem degree_reindex_complexManifoldOrientation_nonneg (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
@@ -161,7 +144,7 @@ theorem degree_reindex_complexManifoldOrientation_nonneg (hf : MDifferentiable �
       ((complexManifoldOrientation ℂ Y).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))) f := by
   by_cases hc : ∀ x x', f x = f x'
-  · exact (degree_reindex_complexManifoldOrientation_of_forall_eq hc).ge
+  · exact (degree_eq_zero_of_forall_eq (by simp) hc).ge
   · push Not at hc
     rw [degree_reindex_complexManifoldOrientation_of_ne hf hc]
     exact Int.natCast_nonneg _
@@ -175,7 +158,7 @@ theorem degree_reindex_complexManifoldOrientation_eq_zero_iff
       ((complexManifoldOrientation ℂ Y).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))) f = 0 ↔
       ∀ x x', f x = f x' := by
-  refine ⟨fun h ↦ ?_, degree_reindex_complexManifoldOrientation_of_forall_eq⟩
+  refine ⟨fun h ↦ ?_, degree_eq_zero_of_forall_eq (by simp)⟩
   by_contra hc
   push Not at hc
   rw [degree_reindex_complexManifoldOrientation_of_ne hf hc, Nat.cast_eq_zero] at h
@@ -203,7 +186,7 @@ theorem degree_reindex_complexManifoldOrientation_eq_one_iff [Nonempty X]
     have hne : ∃ x x', f x ≠ f x' := by
       by_contra hc
       push Not at hc
-      rw [degree_reindex_complexManifoldOrientation_of_forall_eq hc] at h
+      rw [degree_eq_zero_of_forall_eq (by simp) hc] at h
       exact zero_ne_one h
     rw [degree_reindex_complexManifoldOrientation_of_ne hf hne, Nat.cast_eq_one] at h
     exact ⟨biholomorphOfDegreeEqOne (FiniteHolomorphicMap.ofMDifferentiable hf hne)
