@@ -18,9 +18,10 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 /-!
 # Restricting the scalars of manifold derivatives
 
-Let `𝕜'` be a normed algebra over `𝕜`, and let `E` and `E'` be normed spaces over both fields,
-compatibly. A boundaryless model `I` over `𝕜'` and its scalar restriction `I.restrictScalars 𝕜` have
-the same coordinate maps and use the same charted space. This file shows that a map which is
+Let `E` and `E'` be normed spaces over two fields `𝕜` and `𝕜'`, compatibly: for instance `𝕜'` is a
+normed algebra over `𝕜` and the actions form scalar towers. A boundaryless model `I` over `𝕜'` and
+its scalar restriction `I.restrictScalars 𝕜` have the same coordinate maps and use the same charted
+space. This file shows that a map which is
 differentiable for boundaryless models over `𝕜'` is differentiable for their scalar restrictions
 over `𝕜`, and that its derivative for the scalar restrictions is its derivative for the models over
 `𝕜'` with scalars restricted to `𝕜`. The proofs follow `ContMDiffWithinAt.restrictScalars` and its
@@ -32,8 +33,9 @@ The tangent spaces `TangentSpace I x` and `TangentSpace (I.restrictScalars 𝕜)
 space `E`, but they are distinct types carrying module structures over different fields.
 `ContinuousLinearMap.restrictScalarsTangent` turns a `𝕜'`-linear map between tangent spaces for `I`
 and `I'` into the same map, `𝕜`-linear between the tangent spaces for their scalar restrictions; the
-derivative comparisons are stated with it. Like `ContinuousLinearMap.restrictScalars`, it and its
-laws only assume `LinearMap.CompatibleSMul`, which scalar towers provide.
+derivative comparisons are stated with it. Like `ContinuousLinearMap.restrictScalars`, it, its laws
+and the derivative comparisons only assume `LinearMap.CompatibleSMul`, which scalar towers provide;
+the tangent coordinate changes at the end of the file assume a normed algebra and scalar towers.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
@@ -52,7 +54,10 @@ fields and intertwines their manifold and vector-valued derivatives.
   fibre equivalence.
 * `ContinuousLinearMap.restrictScalarsTangent`: the scalar restriction of a map between tangent
   spaces, as a map between the tangent spaces for the scalar restrictions of the models. As a
-  function it is the map (`ContinuousLinearMap.coe_restrictScalarsTangent`); it preserves
+  function it is the map (`ContinuousLinearMap.coe_restrictScalarsTangent`), it is injective in the
+  map (`ContinuousLinearMap.restrictScalarsTangent_inj`), read in the model spaces it is
+  `ContinuousLinearMap.restrictScalars`
+  (`ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp`); it preserves
   composition, identities, zero, addition, negation, subtraction and multiplication by scalars of
   the base field, and for self models it is `ContinuousLinearMap.restrictScalars`
   (`ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf`).
@@ -100,10 +105,9 @@ variable {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
 
 variable (𝕜)
 
-section TangentMap
-
-/- As for `ContinuousLinearMap.restrictScalars`, the scalar restriction of tangent maps only needs
-`𝕜`-scalars to commute with `𝕜'`-linear maps; scalar towers provide this. -/
+/- As for `ContinuousLinearMap.restrictScalars`, the scalar restriction of tangent maps and the
+derivative comparisons only need `𝕜`-scalars to commute with `𝕜'`-linear maps; scalar towers provide
+this. The derivative of a map is the same `o`-condition over either field. -/
 variable [LinearMap.CompatibleSMul E E' 𝕜 𝕜']
 
 /-- The scalar restriction to `𝕜` of a `𝕜'`-linear map between tangent spaces for boundaryless
@@ -143,6 +147,32 @@ theorem ContinuousLinearMap.injective_restrictScalarsTangent_iff {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     Function.Injective (f'.restrictScalarsTangent 𝕜) ↔ Function.Injective f' :=
   Iff.rfl
+
+/-- Restricting the scalars of maps between tangent spaces is injective. -/
+theorem ContinuousLinearMap.restrictScalarsTangent_injective {y : N} :
+    Function.Injective (restrictScalarsTangent 𝕜 :
+      (TangentSpace I x →L[𝕜'] TangentSpace I' y) →
+        TangentSpace (I.restrictScalars 𝕜) x →L[𝕜] TangentSpace (I'.restrictScalars 𝕜) y) :=
+  fun _ _ h ↦ ContinuousLinearMap.ext (DFunLike.congr_fun h :)
+
+/-- Two maps between tangent spaces have the same scalar restriction if and only if they are
+equal. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_inj {y : N}
+    (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    f'.restrictScalarsTangent 𝕜 = g'.restrictScalarsTangent 𝕜 ↔ f' = g' :=
+  (restrictScalarsTangent_injective 𝕜).eq_iff
+
+/-- Read in the model spaces through `tangentSpaceCastModel`, the scalar restriction of a map
+between tangent spaces is the ordinary scalar restriction `ContinuousLinearMap.restrictScalars` of
+the map read in the model spaces. -/
+theorem ContinuousLinearMap.tangentSpaceCastModel_comp_restrictScalarsTangent_comp {y : N}
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (tangentSpaceCastModel (I'.restrictScalars 𝕜) y : _ →L[𝕜] E') ∘L f'.restrictScalarsTangent 𝕜 ∘L
+        ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _) =
+      ((tangentSpaceCastModel I' y : _ →L[𝕜'] E') ∘L f' ∘L
+        ((tangentSpaceCastModel I x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
 
 /-- Restricting the scalars of maps between tangent spaces preserves composition. -/
 @[simp]
@@ -225,10 +255,6 @@ theorem ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf {M₀ : 
       (y := y₀) 𝕜 f' = f'.restrictScalars 𝕜 :=
   ContinuousLinearMap.ext fun _ ↦ rfl
 
-end TangentMap
-
-variable [NormedAlgebra 𝕜 𝕜'] [IsScalarTower 𝕜 𝕜' E] [IsScalarTower 𝕜 𝕜' E']
-
 /-- If `f'` is a derivative of `f` within a set at a point for boundaryless models over `𝕜'`, then
 its scalar restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` within that set at that
 point for their scalar restrictions to `𝕜`. -/
@@ -238,7 +264,7 @@ theorem HasMFDerivWithinAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] Ta
       (f'.restrictScalarsTangent 𝕜) := by
   simp only [HasMFDerivWithinAt, writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
     ModelWithCorners.coe_restrictScalars]
-  exact ⟨h.1, h.2.restrictScalars 𝕜⟩
+  exact ⟨h.1, .of_isLittleO h.2.isLittleO⟩
 
 /-- If `f'` is a derivative of `f` at a point for boundaryless models over `𝕜'`, then its scalar
 restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` at that point for their scalar
@@ -285,7 +311,7 @@ theorem HasMFDerivWithinAt.of_restrictScalars
   have hf := h.2
   simp only [writtenInExtChartAt, ModelWithCorners.extChartAt_restrictScalars,
     ModelWithCorners.coe_restrictScalars] at hf
-  exact ⟨h.1, hf.of_restrictScalars 𝕜 rfl⟩
+  exact ⟨h.1, .of_isLittleO hf.isLittleO⟩
 
 /-- If the scalar restriction `f'.restrictScalarsTangent 𝕜` of a `𝕜'`-linear map `f'` is a
 derivative of `f` at a point for the scalar restrictions to `𝕜` of boundaryless models over `𝕜'`,
