@@ -72,6 +72,11 @@ def toPath (q : MappingPathFiber f k) : Path (f q.val.1) k :=
 theorem coe_toPath (q : MappingPathFiber f k) : ⇑(toPath f k q) = q.val.2 :=
   (rfl)
 
+@[simp]
+theorem toContinuousMap_toPath (q : MappingPathFiber f k) :
+    (toPath f k q).toContinuousMap = q.val.2 :=
+  (rfl)
+
 /-- Flattening identifies the two-constraint path fibre with the literal endpoint fibre. -/
 def endpointHomeomorph :
     MappingPathFiber f k ≃ₜ {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k} where

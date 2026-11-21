@@ -65,4 +65,12 @@ theorem transLoop_val_snd (q : MappingPathFiber f k) (ℓ : Path k k) :
     (transLoop f k (q, ℓ)).val.2 = ((toPath f k q).trans ℓ).toContinuousMap :=
   (rfl)
 
+/-- The path of the concatenation, as a path from `f x` to `k`, is the path of `q` followed by
+the loop. -/
+@[simp]
+theorem toPath_transLoop (q : MappingPathFiber f k) (ℓ : Path k k) :
+    toPath f k (transLoop f k (q, ℓ)) =
+      ((toPath f k q).trans ℓ).cast (congrArg f (transLoop_val_fst f k q ℓ)) rfl :=
+  Path.ext <| by rw [coe_toPath, transLoop_val_snd, Path.cast_coe, Path.coe_toContinuousMap]
+
 end TauCeti.MappingPathFiber

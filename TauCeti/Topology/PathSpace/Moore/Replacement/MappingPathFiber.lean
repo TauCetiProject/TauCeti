@@ -242,8 +242,7 @@ def toMappingPathFiberActHomotopy :
     rw [transLoopToMappingPathFiber_apply]
     refine Prod.ext ?_ ?_
     · rw [MappingPathFiber.transLoop_val_fst, toMappingPathFiber_val]
-    · -- Unbundle the path of the homotopy at stage `0`.
-      change MoorePath.toUnitPathTransHomotopy (0, _) = _
+    · dsimp only
       rw [ContinuousMap.Homotopy.apply_zero, MoorePath.transToUnitPath_apply,
         MappingPathFiber.transLoop_val_snd]
       -- Both sides concatenate paths with the same underlying maps.
@@ -255,25 +254,22 @@ def toMappingPathFiberActHomotopy :
     apply Subtype.ext
     rw [toMappingPathFiberAct_apply, toMappingPathFiber_val]
     refine Prod.ext (point_act q.1 q.2).symm ?_
-    -- Unbundle the path of the homotopy at stage `1`.
-    change MoorePath.toUnitPathTransHomotopy (1, _) = _
+    dsimp only
     rw [ContinuousMap.Homotopy.apply_one, MoorePath.toUnitPathTrans_apply, path_act]
 
 /-- Every stage of `toMappingPathFiberActHomotopy` keeps the point of `E`. -/
 @[simp]
 theorem toMappingPathFiberActHomotopy_val_fst (τ : I) (x : Fiber p b) (ω : MooreLoopSpace B b) :
-    (toMappingPathFiberActHomotopy p b (τ, (x, ω))).val.1 = x.val.point := by
-  simp only [toMappingPathFiberActHomotopy]
-  rfl
+    (toMappingPathFiberActHomotopy p b (τ, (x, ω))).val.1 = x.val.point :=
+  (rfl)
 
 /-- The path of `toMappingPathFiberActHomotopy` at stage `τ` is
 `TauCeti.MoorePath.toUnitPathTransHomotopy` at `τ` on the path of `x` and the Moore path of `ω`. -/
 @[simp]
 theorem toMappingPathFiberActHomotopy_val_snd (τ : I) (x : Fiber p b) (ω : MooreLoopSpace B b) :
     (toMappingPathFiberActHomotopy p b (τ, (x, ω))).val.2 =
-      MoorePath.toUnitPathTransHomotopy (τ, ⟨(x.val.path, ω.toMoorePath), by simp⟩) := by
-  simp only [toMappingPathFiberActHomotopy]
-  rfl
+      MoorePath.toUnitPathTransHomotopy (τ, ⟨(x.val.path, ω.toMoorePath), by simp⟩) :=
+  (rfl)
 
 /-! ### From concatenation to the Moore action -/
 
@@ -341,8 +337,8 @@ def actOfMappingPathFiberHomotopy :
     · rw [point_act, point_ofMappingPathFiber]
     · rw [ContinuousMap.Homotopy.apply_one, Path.transMoorePath_apply, path_act]
       congr 1
-      · rw [path_ofMappingPathFiber, Path.toMoorePath_eq_ofUnitPath]
-        exact congrArg MoorePath.ofUnitPath (ContinuousMap.ext fun s ↦ by simp)
+      · rw [path_ofMappingPathFiber, Path.toMoorePath_eq_ofUnitPath,
+          MappingPathFiber.toContinuousMap_toPath]
       · exact (Path.toMoorePath_toMooreLoop ℓ).symm
 
 /-- Every stage of `actOfMappingPathFiberHomotopy` keeps the point of `E`. -/

@@ -248,11 +248,7 @@ theorem concatTime_zero_right (τ : I) (L M : ℝ≥0) : concatTime τ 0 L M = 0
 
 @[simp]
 theorem concatTime_one_right (τ : I) (L M : ℝ≥0) : concatTime τ 1 L M = L + M := by
-  have h : (2 : ℝ≥0) - 1 = 1 := by
-    rw [← one_add_one_eq_two, add_tsub_cancel_right]
-  rw [concatTime, toNNReal_one, mul_one, h, min_eq_right one_le_two]
-  simp only [mul_one]
-  rw [← add_mul, toNNReal_symm_add_toNNReal, one_mul]
+  simp [concatTime, tsub_eq_of_eq_add (one_add_one_eq_two (R := ℝ≥0)).symm, ← add_mul]
 
 theorem concatTime_zero_left (s : I) (L M : ℝ≥0) :
     concatTime 0 s L M = L * min (2 * toNNReal s) 1 + M * (2 * toNNReal s - 1) := by
@@ -306,12 +302,13 @@ interval of the unit-interval paths of `γ` and `δ`. -/
 theorem trans_apply_concatTime_zero (γ δ : MoorePath X) (h : γ.target = δ.source) (s : I) :
     γ.trans δ h (concatTime 0 s γ.length δ.length) =
       (γ.toPath.trans (δ.toPath.cast h rfl)) s := by
+  have hle : 2 * toNNReal s ≤ 1 ↔ (s : ℝ) ≤ 1 / 2 := by
+    rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_toNNReal, NNReal.coe_ofNat, NNReal.coe_one]
+    constructor <;> intro <;> linarith
   rw [concatTime_zero_left, Path.trans_apply]
   split_ifs with hs
   · -- On `[0, 1/2]` the reparametrization stays in `γ`, at double speed.
-    have h₂ : 2 * toNNReal s ≤ 1 := by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_toNNReal, NNReal.coe_ofNat, NNReal.coe_one]
-      linarith
+    have h₂ : 2 * toNNReal s ≤ 1 := hle.2 hs
     have hL : γ.length * (2 * toNNReal s) ≤ γ.length :=
       mul_le_of_le_one_right zero_le h₂
     rw [min_eq_left h₂, tsub_eq_zero_of_le h₂, mul_zero, add_zero, trans_apply_of_le _ _ _ hL,
@@ -319,9 +316,7 @@ theorem trans_apply_concatTime_zero (γ δ : MoorePath X) (h : γ.target = δ.so
     refine congrArg (fun t ↦ γ (γ.length * t)) (NNReal.eq ?_)
     simp
   · -- On `[1/2, 1]` it runs through `δ`, after the whole of `γ`.
-    have h₂ : 1 ≤ 2 * toNNReal s := by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_toNNReal, NNReal.coe_ofNat, NNReal.coe_one]
-      linarith
+    have h₂ : 1 ≤ 2 * toNNReal s := (not_le.1 (mt hle.1 hs)).le
     rw [min_eq_right h₂, mul_one, trans_apply_length_add, Path.cast_coe, toPath_apply]
     refine congrArg (fun t ↦ δ (δ.length * t)) (NNReal.eq ?_)
     simp [NNReal.coe_sub h₂]
@@ -353,9 +348,8 @@ def toUnitPathTransHomotopy :
     rw [transToUnitPath_apply, Path.coe_toContinuousMap]
     exact trans_apply_concatTime_zero _ _ _ s
   map_one_left q := ContinuousMap.ext fun s ↦ by
-    -- Unbundle the path of the homotopy at stage `1`, read at `s`.
-    change q.val.1.trans q.val.2 q.property (concatTime 1 s _ _) = _
-    rw [concatTime_one_left, toUnitPathTrans_apply, toUnitPath_apply, length_trans]
+    rw [ContinuousMap.coe_mk, concatTime_one_left, toUnitPathTrans_apply, toUnitPath_apply,
+      length_trans]
 
 /-- The path of `toUnitPathTransHomotopy` at stage `τ` reads `γ.trans δ` at `concatTime τ s`. -/
 @[simp]
