@@ -94,3 +94,35 @@ example (Z : Set ℕ) :
     ¬ComputablePred (NormalFormCode.IsValid Z) :=
   ⟨isPi_two_isValid, oneOneReducible_totality_isValid,
     not_isSigma_two_isValid, not_computablePred_isValid⟩
+
+-- Matrix-level characterizations and `QuantifierPrefix.eval_and_unpair_iff` / `eval_or_unpair_iff`.
+example (Z : Set ℕ) {nf₁ nf₂ : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+    {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity)
+    (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop) (xs₁ xs₂ xs : List ℕ) :
+    (falseCode p nf₁.arity).matrix = Code.zero ∧
+    nf₁.neg.matrix = Code.boolNot nf₁.matrix ∧
+    (nf₁.neg.MatrixHolds Z l ↔ ¬nf₁.MatrixHolds Z l) ∧
+    ((nf₁.and nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∧
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth)) ∧
+    ((nf₁.or nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∨
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth)) ∧
+    (p.Eval (fun m =>
+        R₁ ((m.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
+        R₂ ((m.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+      p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂) ∧
+    (p.Eval (fun m =>
+        R₁ ((m.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
+        R₂ ((m.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+      p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) :=
+  ⟨matrix_falseCode p nf₁.arity, matrix_neg nf₁, h₁.matrixHolds_neg hl,
+    matrixHolds_and h₁ h₂ hq ha hl, matrixHolds_or h₁ h₂ hq ha hl,
+    QuantifierPrefix.eval_and_unpair_iff p R₁ R₂ xs₁ xs₂ xs,
+    QuantifierPrefix.eval_or_unpair_iff p R₁ R₂ xs₁ xs₂ xs⟩

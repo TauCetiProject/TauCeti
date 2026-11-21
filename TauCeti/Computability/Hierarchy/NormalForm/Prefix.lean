@@ -22,7 +22,9 @@ This module provides:
   primitive-recursiveness certificates;
 * `QuantifierPrefix.Eval`, evaluating a prefix on a matrix predicate of variable lists, along with
   duality, quantifier addition with same-polarity contraction (`eval_addExists`, `eval_addForall`),
-  pulling out bound-variable-independent connectives, and dropping dummy variables;
+  simultaneous unpairing of conjunctions and disjunctions (`eval_and_unpair_iff`,
+  `eval_or_unpair_iff`), pulling out bound-variable-independent connectives, and dropping dummy
+  variables;
 * `QuantifierPrefix.IsClass`, matching each prefix to the corresponding arithmetical pointclass
   `IsSigma` or `IsPi`, together with closure under `addExists` and `addForall`.
 
@@ -704,6 +706,111 @@ theorem eval_addForall (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List
   have h := eval_addExists p.dual (fun l => ¬R l) xs
   rw [← dual_addForall, ← not_eval_iff] at h
   simpa [← not_eval_iff] using h.not
+
+-- Inductive step for `eval_and_or_unpair_aux`, peeling off the outermost paired variable `y`.
+private theorem eval_and_or_unpair_step (q : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
+    (xs₁ xs₂ xs : List ℕ) (y : ℕ)
+    (ih :
+      (q.Eval (fun l =>
+          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∧
+          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
+        q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
+      (q.Eval (fun l =>
+          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∨
+          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
+        q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂))) :
+    (q.Eval (fun l =>
+        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∧
+        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
+      q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
+    (q.Eval (fun l =>
+        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∨
+        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
+      q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂)) := by
+  have htake (bs : List ℕ) (hbs : bs.length = q.depth) (f : ℕ → ℕ) :
+      ((bs ++ y :: xs).take (q.depth + 1)).map f = bs.map f ++ [f y] := by
+    rw [← hbs, List.take_append, List.take_of_length_le (Nat.le_succ _)]
+    simp
+  have hcongr (bs : List ℕ) (hbs : bs.length = q.depth) :
+      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁ =
+        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁) ∧
+      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂ =
+        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂) := by
+    simp [htake bs hbs, List.take_left' hbs]
+  constructor
+  · refine (eval_congr_append fun bs hbs => ?_).trans ih.1
+    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
+  · refine (eval_congr_append fun bs hbs => ?_).trans ih.2
+    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
+
+-- Unpairing all `p.depth` bound variables simultaneously distributes over both `∧` and `∨`.
+private theorem eval_and_or_unpair_aux (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
+    (xs₁ xs₂ xs : List ℕ) :
+    (p.Eval (fun l =>
+        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
+        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+      p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂) ∧
+    (p.Eval (fun l =>
+        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
+        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+      p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) := by
+  classical
+  induction p using eval_induction generalizing xs₁ xs₂ xs with
+  | zero => simp
+  | sigma_zero =>
+    simp only [eval_sigma_zero, depth_sigma, Nat.zero_add,
+      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
+    constructor
+    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
+    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
+  | pi_zero =>
+    simp only [eval_pi_zero, depth_pi, Nat.zero_add,
+      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
+    constructor
+    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
+    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
+  | sigma_succ n ih =>
+    simp only [eval_sigma_succ, depth_sigma]
+    have hstep (y : ℕ) :=
+      eval_and_or_unpair_step (.pi n) R₁ R₂ xs₁ xs₂ xs y
+        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
+    simp only [depth_pi] at hstep
+    constructor
+    · refine (exists_congr fun y => (hstep y).1).trans ?_
+      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
+    · refine (exists_congr fun y => (hstep y).2).trans ?_
+      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
+  | pi_succ n ih =>
+    simp only [eval_pi_succ, depth_pi]
+    have hstep (y : ℕ) :=
+      eval_and_or_unpair_step (.sigma n) R₁ R₂ xs₁ xs₂ xs y
+        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
+    simp only [depth_sigma] at hstep
+    constructor
+    · refine (forall_congr' fun y => (hstep y).1).trans ?_
+      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
+    · refine (forall_congr' fun y => (hstep y).2).trans ?_
+      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
+
+/-- Simultaneous unpairing of bound variables distributes any quantifier prefix over conjunction
+of two matrices. -/
+theorem eval_and_unpair_iff (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
+    (xs₁ xs₂ xs : List ℕ) :
+    p.Eval (fun l =>
+      R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
+      R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+    p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂ :=
+  (eval_and_or_unpair_aux p R₁ R₂ xs₁ xs₂ xs).1
+
+/-- Simultaneous unpairing of bound variables distributes any quantifier prefix over disjunction
+of two matrices. -/
+theorem eval_or_unpair_iff (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
+    (xs₁ xs₂ xs : List ℕ) :
+    p.Eval (fun l =>
+      R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
+      R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
+    p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂ :=
+  (eval_and_or_unpair_aux p R₁ R₂ xs₁ xs₂ xs).2
 
 /-! ### Associated arithmetical pointclasses -/
 

@@ -52,6 +52,10 @@ theorem quantifiers_neg (nf : NormalFormCode) : nf.neg.quantifiers = nf.quantifi
 @[simp]
 theorem arity_neg (nf : NormalFormCode) : nf.neg.arity = nf.arity := (rfl)
 
+/-- Complementation negates the matrix program via `Code.boolNot`. -/
+@[simp]
+theorem matrix_neg (nf : NormalFormCode) : nf.neg.matrix = Code.boolNot nf.matrix := (rfl)
+
 /-- Complementation is primitive recursive on normal-form codes. -/
 theorem primrec_neg : Primrec neg :=
   primrec_mk.comp
@@ -68,20 +72,24 @@ theorem IsValid.neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z) : nf.
   rw [NormalFormCode.neg, Code.eval_boolNot Z.oracle nf.matrix (encode l) b hb]
   exact Part.mem_some _
 
+/-- Matrix semantics for complementation on variable lists of the expected length. -/
+theorem IsValid.matrixHolds_neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
+    {l : List ℕ} (hl : l.length = nf.quantifiers.depth + nf.arity) :
+    nf.neg.MatrixHolds Z l ↔ ¬nf.MatrixHolds Z l := by
+  obtain ⟨b, hb⟩ := isValid_iff.1 h l hl
+  have hnot := Code.eval_boolNot Z.oracle nf.matrix (encode l) b hb
+  have hmat := Part.eq_some_iff.2 hb
+  rw [matrixHolds_iff, matrixHolds_iff]
+  simp only [matrix_neg, hnot, hmat, Part.mem_some_iff]
+  cases b <;> simp
+
 /-- Semantic equation for complementation on lists of the expected arity. -/
 theorem evalList_neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
     {xs : List ℕ} (hxs : xs.length = nf.arity) :
     nf.neg.EvalList Z xs ↔ ¬nf.EvalList Z xs := by
   rw [evalList_iff, evalList_iff, QuantifierPrefix.not_eval_iff, quantifiers_neg]
-  refine QuantifierPrefix.eval_congr_append fun bs hbs => ?_
-  have hlen : (bs ++ xs).length = nf.quantifiers.depth + nf.arity := by
-    simp [hbs, hxs]
-  obtain ⟨b, hb⟩ := isValid_iff.1 h (bs ++ xs) hlen
-  have hnot := Code.eval_boolNot Z.oracle nf.matrix (encode (bs ++ xs)) b hb
-  have hmat := Part.eq_some_iff.2 hb
-  rw [matrixHolds_iff, matrixHolds_iff]
-  simp only [neg, hnot, hmat, Part.mem_some_iff]
-  cases b <;> simp
+  exact QuantifierPrefix.eval_congr_append fun bs hbs =>
+    h.matrixHolds_neg (by simp [hbs, hxs])
 
 /-- Semantic equation for complementation on tuples. -/
 theorem holds_neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
@@ -123,91 +131,6 @@ private noncomputable def unpairFstCode (d : ℕ) : Code :=
 
 private noncomputable def unpairSndCode (d : ℕ) : Code :=
   Code.paramCode primrec₂_unpairSnd.to_comp d
-
--- Inductive step for `eval_and_or_unpair_aux`, peeling off the outermost paired variable `y`.
-private theorem eval_and_or_unpair_step (q : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
-    (xs₁ xs₂ xs : List ℕ) (y : ℕ)
-    (ih :
-      (q.Eval (fun l =>
-          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∧
-          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
-        q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
-      (q.Eval (fun l =>
-          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∨
-          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
-        q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂))) :
-    (q.Eval (fun l =>
-        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∧
-        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
-      q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
-    (q.Eval (fun l =>
-        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∨
-        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
-      q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂)) := by
-  have htake (bs : List ℕ) (hbs : bs.length = q.depth) (f : ℕ → ℕ) :
-      ((bs ++ y :: xs).take (q.depth + 1)).map f = bs.map f ++ [f y] := by
-    rw [← hbs, List.take_append, List.take_of_length_le (Nat.le_succ _)]
-    simp
-  have hcongr (bs : List ℕ) (hbs : bs.length = q.depth) :
-      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁ =
-        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁) ∧
-      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂ =
-        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂) := by
-    simp [htake bs hbs, List.take_left' hbs]
-  constructor
-  · refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans ih.1
-    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
-  · refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans ih.2
-    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
-
--- Unpairing all `p.depth` bound variables simultaneously distributes over both `∧` and `∨`.
-private theorem eval_and_or_unpair_aux (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
-    (xs₁ xs₂ xs : List ℕ) :
-    (p.Eval (fun l =>
-        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
-        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-      p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂) ∧
-    (p.Eval (fun l =>
-        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
-        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-      p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) := by
-  classical
-  induction p using QuantifierPrefix.eval_induction generalizing xs₁ xs₂ xs with
-  | zero => simp
-  | sigma_zero =>
-    simp only [QuantifierPrefix.eval_sigma_zero, QuantifierPrefix.depth_sigma, Nat.zero_add,
-      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
-    constructor
-    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
-    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
-  | pi_zero =>
-    simp only [QuantifierPrefix.eval_pi_zero, QuantifierPrefix.depth_pi, Nat.zero_add,
-      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
-    constructor
-    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
-    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
-  | sigma_succ n ih =>
-    simp only [QuantifierPrefix.eval_sigma_succ, QuantifierPrefix.depth_sigma]
-    have hstep (y : ℕ) :=
-      eval_and_or_unpair_step (.pi n) R₁ R₂ xs₁ xs₂ xs y
-        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
-    simp only [QuantifierPrefix.depth_pi] at hstep
-    constructor
-    · refine (exists_congr fun y => (hstep y).1).trans ?_
-      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
-    · refine (exists_congr fun y => (hstep y).2).trans ?_
-      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
-  | pi_succ n ih =>
-    simp only [QuantifierPrefix.eval_pi_succ, QuantifierPrefix.depth_pi]
-    have hstep (y : ℕ) :=
-      eval_and_or_unpair_step (.sigma n) R₁ R₂ xs₁ xs₂ xs y
-        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
-    simp only [QuantifierPrefix.depth_sigma] at hstep
-    constructor
-    · refine (forall_congr' fun y => (hstep y).1).trans ?_
-      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
-    · refine (forall_congr' fun y => (hstep y).2).trans ?_
-      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
 
 /-- Effective conjunction of two normal-form codes with matching quantifier prefix and arity. -/
 noncomputable def and (nf₁ nf₂ : NormalFormCode) : NormalFormCode :=
@@ -319,29 +242,50 @@ theorem IsValid.or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
 private theorem matrixHolds_and_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
     (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
     (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
-    {bs xs : List ℕ} (hbs : bs.length = nf₁.quantifiers.depth) (hxs : xs.length = nf₁.arity) :
-    ((nf₁.and nf₂).MatrixHolds Z (bs ++ xs) ↔
-      nf₁.MatrixHolds Z (((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++ xs) ∧
-      nf₂.MatrixHolds Z (((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++ xs)) ∧
-    ((nf₁.or nf₂).MatrixHolds Z (bs ++ xs) ↔
-      nf₁.MatrixHolds Z (((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++ xs) ∨
-      nf₂.MatrixHolds Z
-        (((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++ xs)) := by
-  have hl : (bs ++ xs).length = nf₁.quantifiers.depth + nf₁.arity := by simp [hbs, hxs]
+    {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
+    ((nf₁.and nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∧
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth)) ∧
+    ((nf₁.or nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∨
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth)) := by
   obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
-  have hand := Code.eval_boolAnd Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
-  have hor := Code.eval_boolOr Z.oracle _ _ (encode (bs ++ xs)) b₁ b₂ hm₁ hm₂
-  have huf : unpairFst nf₁.quantifiers.depth (bs ++ xs) =
-      ((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++ xs := by
-    simp [unpairFst, hbs]
-  have hus : unpairSnd nf₁.quantifiers.depth (bs ++ xs) =
-      ((bs ++ xs).take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++ xs := by
-    simp [unpairSnd, hbs]
-  rw [huf] at hb₁
-  rw [hus] at hb₂
+  dsimp only [unpairFst, unpairSnd] at hb₁ hb₂
+  have hand := Code.eval_boolAnd Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
+  have hor := Code.eval_boolOr Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
   simp only [matrixHolds_iff, and, or, hand, hor, Part.eq_some_iff.2 hb₁, Part.eq_some_iff.2 hb₂,
     Part.mem_some_iff]
   cases b₁ <;> cases b₂ <;> simp
+
+/-- Matrix semantics for conjunction on variable lists of the expected length: the bound prefix of
+length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables are kept. -/
+theorem matrixHolds_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+    {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
+    (nf₁.and nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∧
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth) :=
+  (matrixHolds_and_or h₁ h₂ hq ha hl).1
+
+/-- Matrix semantics for disjunction on variable lists of the expected length: the bound prefix of
+length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables are kept. -/
+theorem matrixHolds_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
+    (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z)
+    (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity)
+    {l : List ℕ} (hl : l.length = nf₁.quantifiers.depth + nf₁.arity) :
+    (nf₁.or nf₂).MatrixHolds Z l ↔
+      nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+        l.drop nf₁.quantifiers.depth) ∨
+      nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+        l.drop nf₁.quantifiers.depth) :=
+  (matrixHolds_and_or h₁ h₂ hq ha hl).2
 
 /-- Semantic equation for conjunction on lists of the expected arity. -/
 theorem evalList_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
@@ -350,9 +294,11 @@ theorem evalList_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
     {xs : List ℕ} (hxs : xs.length = nf₁.arity) :
     (nf₁.and nf₂).EvalList Z xs ↔ nf₁.EvalList Z xs ∧ nf₂.EvalList Z xs := by
   rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_and, ← hq]
-  exact (QuantifierPrefix.eval_congr_append fun bs hbs =>
-    (matrixHolds_and_or h₁ h₂ hq ha hbs hxs).1).trans
-    (eval_and_or_unpair_aux nf₁.quantifiers (nf₁.MatrixHolds Z) (nf₂.MatrixHolds Z) xs xs xs).1
+  refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans
+    (QuantifierPrefix.eval_and_unpair_iff nf₁.quantifiers (nf₁.MatrixHolds Z)
+      (nf₂.MatrixHolds Z) xs xs xs)
+  simpa [List.take_left' hbs, List.drop_left' hbs] using
+    matrixHolds_and h₁ h₂ hq ha (l := bs ++ xs) (by simp [hbs, hxs])
 
 /-- Semantic equation for disjunction on lists of the expected arity. -/
 theorem evalList_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
@@ -361,9 +307,11 @@ theorem evalList_or {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}
     {xs : List ℕ} (hxs : xs.length = nf₁.arity) :
     (nf₁.or nf₂).EvalList Z xs ↔ nf₁.EvalList Z xs ∨ nf₂.EvalList Z xs := by
   rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_or, ← hq]
-  exact (QuantifierPrefix.eval_congr_append fun bs hbs =>
-    (matrixHolds_and_or h₁ h₂ hq ha hbs hxs).2).trans
-    (eval_and_or_unpair_aux nf₁.quantifiers (nf₁.MatrixHolds Z) (nf₂.MatrixHolds Z) xs xs xs).2
+  refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans
+    (QuantifierPrefix.eval_or_unpair_iff nf₁.quantifiers (nf₁.MatrixHolds Z)
+      (nf₂.MatrixHolds Z) xs xs xs)
+  simpa [List.take_left' hbs, List.drop_left' hbs] using
+    matrixHolds_or h₁ h₂ hq ha (l := bs ++ xs) (by simp [hbs, hxs])
 
 /-- Semantic equation for conjunction on tuples. -/
 theorem holds_and {Z : Set ℕ} {nf₁ nf₂ : NormalFormCode}

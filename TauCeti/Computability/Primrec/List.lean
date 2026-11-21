@@ -27,6 +27,10 @@ ways of choosing one entry from each list) are primitive recursive. Together the
 the tuples of a given length over a finite list of choices, which is the search space of
 bounded exhaustive searches. The product of two lists (`l₁ ×ˢ l₂`) and, when addition is
 primitive recursive, the sum of a list are primitive recursive as well.
+
+Converting finite tuples `Fin n → α` to lists (`List.ofFn`), extracting `Fin n`-indexed tuples
+from lists with a default entry (`List.getD`), and `Fin.cons` / `Fin.tail` on tuples are also
+primitive recursive.
 -/
 
 public section
@@ -77,6 +81,29 @@ theorem list_sum [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α → α �
     Primrec (List.sum : List α → α) :=
   (list_foldr .id (const 0) (hadd.comp (fst.comp snd) (snd.comp snd)).to₂).of_eq fun l => by
     induction l <;> simp_all
+
+/-- Converting a finite tuple `Fin n → α` to a list via `List.ofFn` is primitive recursive. -/
+theorem list_ofFn' {n : ℕ} : Primrec (List.ofFn : (Fin n → α) → List α) :=
+  (vector_toList.comp vector_ofFn').of_eq fun x => List.Vector.toList_ofFn x
+
+/-- Extracting the first `n` entries of a list with default `d` as a finite tuple `Fin n → α` is
+primitive recursive in the list and the default value. -/
+theorem list_getD_fin {n : ℕ} :
+    Primrec₂ fun (l : List α) (d : α) => (fun i : Fin n => l.getD i d) :=
+  fin_curry.2
+    ((option_getD.comp (list_getElem?.comp (fst.comp fst) (fin_val.comp snd))
+      (snd.comp fst)).of_eq fun p => by simp [List.getD_eq_getElem?_getD])
+
+/-- Prepending an element to a finite tuple `Fin n → α` via `Fin.cons` is primitive recursive. -/
+theorem fin_cons {n : ℕ} : Primrec₂ (@Fin.cons n (fun _ => α)) :=
+  (vector_get'.comp (vector_cons.comp fst (vector_ofFn'.comp snd))).to₂.of_eq fun _ _ =>
+    funext fun i => Fin.cases (by simp) (by simp) i
+
+/-- Dropping the first element of a finite tuple `Fin (n + 1) → α` via `Fin.tail` is primitive
+recursive. -/
+theorem fin_tail {n : ℕ} : Primrec (Fin.tail : (Fin (n + 1) → α) → Fin n → α) :=
+  (vector_get'.comp (vector_tail.comp vector_ofFn')).of_eq fun _ =>
+    funext fun _ => by simp [Fin.tail]
 
 end Primrec
 
