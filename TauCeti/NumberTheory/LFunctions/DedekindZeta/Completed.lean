@@ -228,16 +228,18 @@ theorem analyticAt_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1)
   rw [h]
   exact Finset.analyticAt_sum _ fun c _ ↦ analyticAt_completedPartialZeta (rep c) h0 h1
 
+/-- A number field has at least one infinite place. -/
+private theorem nrRealPlaces_add_nrComplexPlaces_pos : 0 < nrRealPlaces K + nrComplexPlaces K := by
+  rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
+  exact Fintype.card_pos
+
 /-- The common absolute value `2 ^ (r₁ + r₂) h R / w` of the residues of `Λ_K` is `h` times the
 residue `2 a₀` of each completed partial zeta function. -/
 private theorem classNumber_mul_two_mul_mellinConstant :
     (classNumber K * (2 * mellinConstant K) : ℂ) =
       (2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
         torsionOrder K : ℝ) := by
-  have hpos : 0 < nrRealPlaces K + nrComplexPlaces K := by
-    rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
-  rw [mellinConstant_def, ← Nat.sub_add_cancel hpos, pow_succ]
+  rw [mellinConstant_def, ← Nat.sub_add_cancel (nrRealPlaces_add_nrComplexPlaces_pos K), pow_succ]
   push_cast
   ring
 
@@ -341,6 +343,12 @@ private def invArchFactor (s : ℂ) : ℂ :=
   ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
     (Gammaℂ s)⁻¹ ^ nrComplexPlaces K
 
+/-- For `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹` as complex numbers. -/
+private theorem ofReal_cpow_neg_one_half {x : ℝ} (hx : 0 ≤ x) :
+    (x : ℂ) ^ (-1 / 2 : ℂ) = ((√x : ℝ) : ℂ)⁻¹ := by
+  rw [Real.sqrt_eq_rpow, ← ofReal_inv, ← Real.rpow_neg hx, ofReal_cpow hx]
+  norm_num
+
 /-- The reciprocal of the archimedean factor is entire. -/
 private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s := by
   have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
@@ -364,14 +372,12 @@ private theorem invArchFactor_mul {s : ℂ} (hs : 0 < s.re) :
 /-- The reciprocal of the archimedean factor vanishes at `s = 0`, where `Γ_ℝ` and `Γ_ℂ` have
 poles and `K` has at least one infinite place. -/
 private theorem invArchFactor_zero : invArchFactor K 0 = 0 := by
-  have hpos : 0 < nrRealPlaces K + nrComplexPlaces K := by
-    rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
   have hR : (Gammaℝ 0)⁻¹ = 0 := by simp [Gammaℝ_def]
   have hC : (Gammaℂ 0)⁻¹ = 0 := by simp [Gammaℂ_def]
   rw [invArchFactor, hR, hC]
   rcases Nat.eq_zero_or_pos (nrRealPlaces K) with h | h
-  · rw [zero_pow (by omega : nrComplexPlaces K ≠ 0), mul_zero]
+  · have := nrRealPlaces_add_nrComplexPlaces_pos K
+    rw [zero_pow (by omega : nrComplexPlaces K ≠ 0), mul_zero]
   · rw [zero_pow h.ne', mul_zero, zero_mul]
 
 /-- The reciprocal of the archimedean factor times `Λ_K` is meromorphic on `ℂ`. -/
@@ -451,14 +457,10 @@ theorem tendsto_sub_one_mul_dedekindZetaC :
     nhdsWithin_le_nhds).mul (tendsto_sub_one_mul_completedDedekindZeta K)
   have hres : invArchFactor K 1 * ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K *
       regulator K / torsionOrder K : ℝ) : ℂ) = (dedekindZeta_residue K : ℂ) := by
-    have hd : ((|discr K| : ℤ) : ℂ) ^ (-1 / 2 : ℂ) = ((√|(discr K : ℝ)| : ℝ) : ℂ)⁻¹ := by
-      rw [show ((|discr K| : ℤ) : ℂ) = ((|(discr K : ℝ)| : ℝ) : ℂ) by
-          rw [← Int.cast_abs, ofReal_intCast],
-        Real.sqrt_eq_rpow, ← ofReal_inv, ← Real.rpow_neg (abs_nonneg _),
-        ofReal_cpow (abs_nonneg _)]
-      push_cast
-      ring_nf
-    rw [invArchFactor, hd, Gammaℝ_one, Gammaℂ_one, one_div, inv_inv, dedekindZeta_residue_def]
+    have hd : ((|discr K| : ℤ) : ℂ) = ((|(discr K : ℝ)| : ℝ) : ℂ) := by
+      rw [← Int.cast_abs, ofReal_intCast]
+    rw [invArchFactor, hd, ofReal_cpow_neg_one_half (abs_nonneg _), Gammaℝ_one, Gammaℂ_one,
+      one_div, inv_inv, dedekindZeta_residue_def]
     push_cast
     ring
   rw [← hres]
@@ -471,8 +473,7 @@ theorem tendsto_sub_one_mul_dedekindZetaC :
 /-- `ζ_K` has a simple pole at `s = 1`. -/
 theorem meromorphicOrderAt_dedekindZetaC_one :
     meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) :=
-  (meromorphicOn_univ.mp (meromorphicNFOn_dedekindZetaC K).meromorphicOn 1)
-    |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+  (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
 
 /-- `ζ_K` is analytic at `s` if and only if `s ≠ 1`. -/
