@@ -205,7 +205,7 @@ theorem IsUniform.exists_norm_mixedDeriv_cutoff_smul_le {a : Symbol n V W m} (ha
 
 /-- The dilated cutoff `χ(ξ / t)`, `t ≥ 1`, as the scalar symbol `χ(ξ / t) id` of order `0`.
 Composing with it cuts a symbol off below the frequency radius `t`. -/
-private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
+def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
     Symbol n W W 0 where
   coefficient p :=
     χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p
@@ -215,7 +215,8 @@ private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (
       |>.exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
     exact ⟨C, hC0, fun x hx ξ => by simpa using hC t ht 0 le_rfl x hx ξ⟩
 
-private theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+/-- Composing with `dilatedCutoff χ ht` multiplies the coefficient by `χ(ξ / t)`. -/
+theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
     (ht : 1 ≤ t) {μ : ℝ} (a : Symbol n V W μ) :
     ((dilatedCutoff χ ht).comp a).coefficient = fun p => χ (t⁻¹ • p.2) • a.coefficient p :=
   funext fun p => by simp [dilatedCutoff]

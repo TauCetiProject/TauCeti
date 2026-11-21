@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Normalize
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.Constructions.SumProd
 
@@ -259,30 +258,19 @@ theorem exists_microlocalCutoff {K U F Γ : Set (CoordinateSpace n)}
   set R₁ := max R 1
   have hR₁ : 0 < R₁ := lt_max_of_lt_right one_pos
   set χ : FrequencyCutoff (CoordinateSpace n) := default
-  set d : Symbol n V V 0 := ofFrequency (fun ξ ↦ χ (R₁⁻¹ • ξ) • ContinuousLinearMap.id ℂ V)
-    ((χ.contDiff.comp (contDiff_const_smul _)).smul contDiff_const) fun k ↦ by
-      obtain ⟨C, -, hC⟩ := χ.exists_norm_iteratedFDeriv_comp_inv_smul_le k
-      simpa only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, zero_sub,
-        neg_div] using ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
-          ((ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℂ V))
-          (g := fun ξ ↦ χ (R₁⁻¹ • ξ))
-          ((χ.contDiff.comp (contDiff_const_smul _)).of_le (mod_cast le_top))
-          ⟨C, hC R₁ (le_max_right R 1)⟩
-  have hd (p : CoordinateSpace n × CoordinateSpace n) :
-      d.coefficient p = χ (R₁⁻¹ • p.2) • ContinuousLinearMap.id ℂ V :=
-      coefficient_ofFrequency _ _ p
-  refine ⟨inclusion (by norm_num) (d.comp c₀.toSymbol), fun p hp ↦ ?_, 2 * R₁ + 2,
-    fun x hx ξ hξ hR ↦ ?_⟩
-  · simp only [coefficient_inclusion, coefficient_comp, hd, ContinuousLinearMap.smul_comp,
-      ContinuousLinearMap.id_comp, ne_eq, smul_eq_zero, not_or] at hp
+  have hR₁1 : 1 ≤ R₁ := le_max_right R 1
+  have hd := coefficient_dilatedCutoff_comp χ hR₁1 c₀.toSymbol
+  refine ⟨inclusion (by norm_num) ((dilatedCutoff χ hR₁1).comp c₀.toSymbol), fun p hp ↦ ?_,
+    2 * R₁ + 2, fun x hx ξ hξ hR ↦ ?_⟩
+  · simp only [coefficient_inclusion, hd, ne_eq, smul_eq_zero, not_or] at hp
     obtain ⟨hχ, hc⟩ := hp
     obtain ⟨hL, hG, h1⟩ := hc₀0 p.1 p.2 hc
     refine ⟨hLU hL, hGΓ _ hG (norm_pos_iff.1 (one_pos.trans h1)), ?_⟩
     by_contra hlt
     exact hχ (χ.apply_inv_smul_eq_zero hR₁ ((not_le.1 hlt).le.trans (le_max_left _ _)))
-  · rw [coefficient_inclusion, coefficient_comp, hd, χ.apply_inv_smul_eq_one hR₁ (by linarith),
-      one_smul, ContinuousLinearMap.id_comp]
-    exact (hc₀ x hx ξ hξ (by linarith [le_max_right R 1])).self_of_nhds
+  · simp only [coefficient_inclusion, hd]
+    rw [χ.apply_inv_smul_eq_one hR₁ (by linarith), one_smul]
+    exact (hc₀ x hx ξ hξ (by linarith)).self_of_nhds
 
 end Symbol
 
