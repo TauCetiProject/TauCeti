@@ -30,6 +30,8 @@ normed spaces:
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
+* `TauCeti.norm_smul_add_smul_sq_le`: the Cauchy–Schwarz bound
+  `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)` for real scalars.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
 * `TauCeti.norm_smul_le_mul_norm_of_support_subset`: a multiplier bounded by `K` on a set
@@ -107,6 +109,17 @@ theorem norm_smul_sq_div_add_norm_smul_sq {𝕜 E F : Type*} [NormedDivisionRing
     ‖t • u‖ ^ 2 / (‖t • u‖ ^ 2 + ‖t • v‖ ^ 2) = ‖u‖ ^ 2 / (‖u‖ ^ 2 + ‖v‖ ^ 2) := by
   simp only [norm_smul, mul_pow, ← mul_add]
   exact mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 ht))
+
+/-- **Cauchy–Schwarz for a combination of two vectors.** For real scalars `a`, `b`,
+`‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)`. -/
+theorem norm_smul_add_smul_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (a b : ℝ) (v w : E) :
+    ‖a • v + b • w‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖w‖ ^ 2) := by
+  have h : ‖a • v + b • w‖ ≤ |a| * ‖v‖ + |b| * ‖w‖ :=
+    (norm_add_le _ _).trans (by rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs])
+  have hab : (|a| * ‖v‖ + |b| * ‖w‖) ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖w‖ ^ 2) := by
+    nlinarith [sq_nonneg (|a| * ‖w‖ - |b| * ‖v‖), sq_abs a, sq_abs b]
+  exact (pow_le_pow_left₀ (norm_nonneg _) h 2).trans hab
 
 /-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
 real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits

@@ -111,10 +111,12 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_cappedComparis
       cappedComparisonPerturbation H R (equivRealProdCLM.symm p.1) p.2 v :=
     (contDiff_cappedComparisonPerturbation_apply hH hHs v).comp
       (contDiff_const.prodMk contDiff_id)
-  exact exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base h₀
+  exact exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
     (fun z hz y ↦ by rw [cappedComparisonAlmostComplex_def]; exact (hT z hz).1 y)
-    (fun z hz y ↦ by rw [cappedComparisonPerturbation_def, (hT z hz).2 y]; rfl)
-    (fun z hz y ↦ by rw [cappedComparisonPerturbation_def, (hT z hz).2 y]; rfl)
+    (fun z hz y ↦ by
+      rw [cappedComparisonPerturbation_def, (hT z hz).2 y, zero_apply])
+    (fun z hz y ↦ by
+      rw [cappedComparisonPerturbation_def, (hT z hz).2 y, zero_apply])
     (fun z ↦ hJ'.contDiffAt) (fun z ↦ (hK' 1).contDiffAt)
     (fun z ↦ (hK' I).contDiffAt) hu fun z ↦ by
       rw [cappedComparisonAlmostComplex_def]

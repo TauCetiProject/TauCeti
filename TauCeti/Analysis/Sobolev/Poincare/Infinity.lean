@@ -8,12 +8,15 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.Complex.RealChart
-import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
-import TauCeti.MeasureTheory.Function.Jacobian.Plane
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Calculus.FDeriv.Inv
+import TauCeti.Analysis.Complex.Conformal.Area
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Sobolev.Poincare.Slab
 
 /-!
 # The Poincaré inequality at infinity in the plane
@@ -31,236 +34,142 @@ Dirichlet energy: if `χ` is `C¹`, compactly supported and vanishes on the disc
 
 (`TauCeti.integral_inv_sq_mul_norm_sq_le`). This is the Poincaré inequality on a small disc at
 the point at infinity. In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is
-supported in the disc `|z| ≤ 1 / R`, the weight `|w|⁻⁴` is the Jacobian of the inversion, so the
-left side is `∫ ‖η‖²`, and the Dirichlet energy is conformally invariant. The Poincaré inequality on
-a strip of width `4 / R` containing that disc
+supported in the disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the
+inversion, so the change of variables formula on `ℂ`
+(`TauCeti.integral_image_eq_integral_norm_deriv_sq_smul`) turns the left side into `∫ ‖η‖²`, and
+the Dirichlet energy is conformally invariant (`TauCeti.fderiv_comp_inv_apply`). The Poincaré
+inequality on a strip of width `4 / R` containing that disc
 (`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`) then gives the bound.
 
 The norm on the target is arbitrary, so the Dirichlet energy is only conformally invariant up to
-the inequality `‖a v₁ + b v₂‖² ≤ (a² + b²) (‖v₁‖² + ‖v₂‖²)`, which is enough here.
+the inequality `‖a v₁ + b v₂‖² ≤ (a² + b²) (‖v₁‖² + ‖v₂‖²)`
+(`TauCeti.norm_smul_add_smul_sq_le`), which is enough here.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Metric Set
 open scoped Topology
-open _root_.Complex (normSq normSq_apply normSq_inv normSq_mul normSq_neg normSq_pos
-  equivRealProdCLM)
-open TauCeti.Complex (realChart realChart_apply)
+open _root_.Complex (equivRealProdCLM volume_preserving_equiv_real_prod I)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The squared modulus of the complex number with real coordinates `z`. -/
-private theorem normSq_equivRealProdCLM_symm (z : ℝ × ℝ) :
-    normSq (equivRealProdCLM.symm z) = z.1 ^ 2 + z.2 ^ 2 := by
-  simp [normSq_apply, sq]
-
-/-- The squared modulus of the inverse of the complex number with real coordinates `z`. -/
-private theorem normSq_symm_realChart_inv (z : ℝ × ℝ) :
-    normSq (equivRealProdCLM.symm (realChart (·⁻¹) z)) = (z.1 ^ 2 + z.2 ^ 2)⁻¹ := by
-  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart, normSq_inv,
-    normSq_equivRealProdCLM_symm]
-
-/-- The inversion is an involution in real coordinates. -/
-private theorem realChart_inv_realChart_inv (z : ℝ × ℝ) :
-    realChart (·⁻¹) (realChart (·⁻¹) z) = z := by
-  rw [realChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply, inv_inv,
-    ContinuousLinearEquiv.apply_symm_apply]
-
-private theorem symm_ne_zero_iff (z : ℝ × ℝ) : equivRealProdCLM.symm z ≠ 0 ↔ z ≠ 0 := by
-  rw [ne_eq, ne_eq, ContinuousLinearEquiv.map_eq_zero_iff]
-
-/-- The complex derivative of the inversion at a nonzero point. -/
-private theorem hasDerivAt_inv_symm {z : ℝ × ℝ} (hz : z ≠ 0) :
-    HasDerivAt (fun y : ℂ ↦ y⁻¹) (-(equivRealProdCLM.symm z ^ 2)⁻¹) (equivRealProdCLM.symm z) :=
-  hasDerivAt_inv ((symm_ne_zero_iff z).2 hz)
-
-/-- The squared length of the derivative of the inversion, applied to a unit vector, is its
-Jacobian determinant. -/
-private theorem fst_sq_add_snd_sq_fderiv_realChart_inv {z : ℝ × ℝ} (hz : z ≠ 0) :
-    (fderiv ℝ (realChart (·⁻¹)) z (0, 1)).1 ^ 2 + (fderiv ℝ (realChart (·⁻¹)) z (0, 1)).2 ^ 2 =
-      (fderiv ℝ (realChart (·⁻¹)) z).det := by
-  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_inv_symm hz),
-    TauCeti.Complex.fderiv_realChart_apply (hasDerivAt_inv_symm hz),
-    ← normSq_equivRealProdCLM_symm, ContinuousLinearEquiv.symm_apply_apply, normSq_mul,
-    normSq_equivRealProdCLM_symm (0, 1)]
-  norm_num
-
-/-- **Cauchy–Schwarz for a vector in the image of two directions.** -/
-private theorem norm_smul_add_smul_sq_le (a b : ℝ) (v w : V) :
-    ‖a • v + b • w‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖w‖ ^ 2) := by
-  have h : ‖a • v + b • w‖ ≤ |a| * ‖v‖ + |b| * ‖w‖ :=
-    (norm_add_le _ _).trans (by rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs])
-  have h0 : 0 ≤ ‖a • v + b • w‖ := norm_nonneg _
-  have hab : (|a| * ‖v‖ + |b| * ‖w‖) ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖w‖ ^ 2) := by
-    nlinarith [sq_nonneg (|a| * ‖w‖ - |b| * ‖v‖), sq_abs a, sq_abs b]
-  exact (pow_le_pow_left₀ h0 h 2).trans hab
-
-/-- In real coordinates, the squared modulus of the inverse is the inverse of the squared
-modulus. -/
-private theorem fst_sq_add_snd_sq_realChart_inv (z : ℝ × ℝ) :
-    (realChart (·⁻¹) z).1 ^ 2 + (realChart (·⁻¹) z).2 ^ 2 = (z.1 ^ 2 + z.2 ^ 2)⁻¹ := by
-  rw [← normSq_equivRealProdCLM_symm, normSq_symm_realChart_inv]
-
-private theorem fst_sq_add_snd_sq_pos {z : ℝ × ℝ} (hz : z ≠ 0) : 0 < z.1 ^ 2 + z.2 ^ 2 := by
-  rw [← normSq_equivRealProdCLM_symm]
-  exact normSq_pos.2 ((symm_ne_zero_iff z).2 hz)
-
-private theorem realChart_inv_zero : realChart (·⁻¹) (0 : ℝ × ℝ) = 0 := by
-  simp [realChart_apply]
-
-/-- The inversion maps the punctured plane onto itself. -/
-private theorem image_realChart_inv_compl_singleton :
-    realChart (·⁻¹) '' ({0}ᶜ : Set (ℝ × ℝ)) = {0}ᶜ := by
-  have hmaps (z : ℝ × ℝ) (hz : z ≠ 0) : realChart (·⁻¹) z ≠ 0 := fun h ↦ by
-    have := fst_sq_add_snd_sq_realChart_inv z
-    rw [h] at this
-    simp only [Prod.fst_zero, Prod.snd_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
-      zero_pow, add_zero] at this
-    exact (inv_ne_zero (fst_sq_add_snd_sq_pos hz).ne') this.symm
-  ext w
-  refine ⟨?_, fun hw ↦ ⟨realChart (·⁻¹) w, hmaps w hw, realChart_inv_realChart_inv w⟩⟩
-  rintro ⟨z, hz, rfl⟩
-  exact hmaps z hz
-
-private theorem injOn_realChart_inv : InjOn (realChart (·⁻¹)) ({0}ᶜ : Set (ℝ × ℝ)) :=
-  fun x _ y _ h ↦ by
-    rw [← realChart_inv_realChart_inv x, ← realChart_inv_realChart_inv y, h]
-
-private theorem hasFDerivAt_realChart_inv {z : ℝ × ℝ} (hz : z ≠ 0) :
-    HasFDerivAt (realChart (·⁻¹)) (fderiv ℝ (realChart (·⁻¹)) z) z :=
-  (TauCeti.Complex.hasFDerivAt_realChart (hasDerivAt_inv_symm hz)).differentiableAt.hasFDerivAt
-
-/-- The Jacobian determinant of the inversion is `|z|⁻⁴`. -/
-private theorem det_fderiv_realChart_inv {z : ℝ × ℝ} (hz : z ≠ 0) :
-    (fderiv ℝ (realChart (·⁻¹)) z).det = ((z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ := by
-  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_inv_symm hz), normSq_neg, normSq_inv,
-    map_pow, normSq_equivRealProdCLM_symm]
-
 omit [NormedSpace ℝ V] in
-/-- **The weight `|w|⁻⁴` is the Jacobian of the inversion.** For a map `χ` with `χ 0 = 0`, the
-integral of `‖χ w‖² / |w|⁴` is the integral of `‖χ‖²` read in the coordinate `z = w⁻¹`. -/
-private theorem integral_inv_sq_mul_norm_sq_eq {χ : ℝ × ℝ → V} (h0 : χ 0 = 0) :
-    ∫ z, ((z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ * ‖χ z‖ ^ 2 = ∫ z, ‖χ (realChart (·⁻¹) z)‖ ^ 2 := by
-  have hs : MeasurableSet ({0}ᶜ : Set (ℝ × ℝ)) := (measurableSet_singleton 0).compl
-  have h1 := integral_image_eq_integral_of_eq_abs_det_smul (g := fun z : ℝ × ℝ ↦
-      ((z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ * ‖χ z‖ ^ 2) (f := fun z ↦ ‖χ (realChart (·⁻¹) z)‖ ^ 2) hs
-    injOn_realChart_inv (fun z hz ↦ (hasFDerivAt_realChart_inv hz).differentiableAt)
-      fun z hz ↦ by
-        have hp := (fst_sq_add_snd_sq_pos hz).ne'
-        rw [det_fderiv_realChart_inv hz, abs_of_nonneg (by positivity),
-          fst_sq_add_snd_sq_realChart_inv, smul_eq_mul]
-        field_simp
-  rw [image_realChart_inv_compl_singleton] at h1
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := {0}ᶜ) fun z hz ↦ ?_, h1,
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ ?_]
-  all_goals
-    simp only [mem_compl_iff, mem_singleton_iff, not_not] at hz
-    subst hz
-    simp [realChart_inv_zero, h0]
+/-- **The weight `|w|⁻⁴` is the Jacobian of the inversion.** The integral of `‖f w‖² / |w|⁴` over
+`ℂ` is the integral of `‖f‖²` read in the coordinate `z = w⁻¹`. -/
+private theorem integral_inv_sq_norm_sq_mul_norm_sq_eq (f : ℂ → V) :
+    ∫ w, ((‖w‖ ^ 2) ^ 2)⁻¹ * ‖f w‖ ^ 2 = ∫ z, ‖f z⁻¹‖ ^ 2 := by
+  have h := integral_image_eq_integral_norm_deriv_sq_smul (f := (·⁻¹))
+    (fun z (hz : z ∈ ({0}ᶜ : Set ℂ)) ↦ differentiableAt_inv hz)
+    (measurableSet_singleton 0).compl inv_injective.injOn fun w ↦ ‖f w⁻¹‖ ^ 2
+  rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero, restrict_compl_singleton] at h
+  rw [h]
+  congr 1
+  ext z
+  rw [deriv_inv, norm_neg, norm_inv, norm_pow, inv_pow, inv_inv, smul_eq_mul]
 
-omit [NormedSpace ℝ V] in
-/-- A map of the plane vanishing on the disc `s² + t² < R²` and outside a disc
-`s² + t² ≤ M`, read in the coordinate `z = w⁻¹`, vanishes near `0` and off the disc
-`s² + t² ≤ R⁻²`. -/
-private theorem comp_realChart_inv_eq_zero {χ : ℝ × ℝ → V} {R M : ℝ} (hR : 0 < R) (hM : 0 ≤ M)
-    (h0 : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < R ^ 2 → χ z = 0)
-    (hM' : ∀ w : ℝ × ℝ, M < w.1 ^ 2 + w.2 ^ 2 → χ w = 0) (z : ℝ × ℝ)
-    (hz : z.1 ^ 2 + z.2 ^ 2 < (M + 1)⁻¹ ∨ R⁻¹ ^ 2 < z.1 ^ 2 + z.2 ^ 2) :
-    χ (realChart (·⁻¹) z) = 0 := by
-  by_cases hz0 : z = 0
-  · rw [hz0, realChart_inv_zero]
-    exact h0 0 (by simpa using pow_pos hR 2)
-  have hp := fst_sq_add_snd_sq_pos hz0
-  rcases hz with hz | hz
-  · refine hM' _ ?_
-    rw [fst_sq_add_snd_sq_realChart_inv]
-    calc M < M + 1 := lt_add_one M
-      _ < (z.1 ^ 2 + z.2 ^ 2)⁻¹ := by rw [lt_inv_comm₀ (by linarith) hp]; exact hz
-  · refine h0 _ ?_
-    rw [fst_sq_add_snd_sq_realChart_inv]
-    calc (z.1 ^ 2 + z.2 ^ 2)⁻¹ < (R⁻¹ ^ 2)⁻¹ := inv_strictAnti₀ (by positivity) hz
-      _ = R ^ 2 := by rw [inv_pow, inv_inv]
-
-omit [NormedSpace ℝ V] in
-/-- The support of a compactly supported map lies in a disc `s² + t² ≤ M`. -/
-private theorem exists_nonneg_forall_lt_eq_zero {χ : ℝ × ℝ → V} (hc : HasCompactSupport χ) :
-    ∃ M, 0 ≤ M ∧ ∀ w : ℝ × ℝ, M < w.1 ^ 2 + w.2 ^ 2 → χ w = 0 := by
-  obtain ⟨r, hr⟩ := hc.isCompact.isBounded.subset_closedBall 0
-  refine ⟨2 * r ^ 2, by positivity, fun w hw ↦ image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_⟩
-  have hw' := mem_closedBall_zero_iff.1 (hr hmem)
-  have h1 : |w.1| ≤ r := (norm_fst_le w).trans hw'
-  have h2 : |w.2| ≤ r := (norm_snd_le w).trans hw'
-  nlinarith [sq_abs w.1, sq_abs w.2, abs_nonneg w.1, abs_nonneg w.2]
-
-/-- A map vanishing near `0` and on a punctured neighbourhood of `∞`, read in the coordinate
-`z = w⁻¹`, is `C¹` and compactly supported if it is. -/
-private theorem contDiff_comp_realChart_inv {χ : ℝ × ℝ → V} (hχ : ContDiff ℝ 1 χ)
-    (hη : (fun z ↦ χ (realChart (·⁻¹) z)) =ᶠ[𝓝 0] 0) :
-    ContDiff ℝ 1 fun z ↦ χ (realChart (·⁻¹) z) := by
-  refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-  by_cases hz : z = 0
-  · subst hz
-    exact (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq hη
-  · have hιeq : realChart (·⁻¹) = equivRealProdCLM ∘ (·⁻¹) ∘ equivRealProdCLM.symm :=
-      funext fun z ↦ realChart_apply _ z
-    have hι : ContDiffAt ℝ 1 (realChart (·⁻¹)) z := hιeq ▸
-      equivRealProdCLM.contDiff.contDiffAt.comp z
-        (((contDiffAt_inv ℂ ((symm_ne_zero_iff z).2 hz)).restrict_scalars ℝ).comp z
-          equivRealProdCLM.symm.contDiff.contDiffAt)
-    exact hχ.contDiffAt.comp z hι
-
-/-- **The Dirichlet energy does not grow under the inversion.** For a `C¹` map `χ` whose
-Dirichlet energy is integrable and which vanishes near `0`, and whose expression in the coordinate
-`z = w⁻¹` vanishes near `0`, the energy of the derivative across the strip in the coordinate `z`
-is at most the Dirichlet energy of `χ`. -/
-private theorem integral_norm_fderiv_comp_realChart_inv_sq_le {χ : ℝ × ℝ → V}
-    (hχ : ContDiff ℝ 1 χ)
-    (hE : Integrable fun w ↦ ‖fderiv ℝ χ w (1, 0)‖ ^ 2 + ‖fderiv ℝ χ w (0, 1)‖ ^ 2)
-    (hχ0 : χ =ᶠ[𝓝 0] 0) (hη : (fun z ↦ χ (realChart (·⁻¹) z)) =ᶠ[𝓝 0] 0) :
-    ∫ z, ‖fderiv ℝ (fun z ↦ χ (realChart (·⁻¹) z)) z (0, 1)‖ ^ 2 ≤
-      ∫ w, (‖fderiv ℝ χ w (1, 0)‖ ^ 2 + ‖fderiv ℝ χ w (0, 1)‖ ^ 2) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set ι : ℝ × ℝ → ℝ × ℝ := realChart (·⁻¹)
-  set E : ℝ × ℝ → ℝ := fun w ↦ ‖fderiv ℝ χ w (1, 0)‖ ^ 2 + ‖fderiv ℝ χ w (0, 1)‖ ^ 2
-  have hs : MeasurableSet ({0}ᶜ : Set (ℝ × ℝ)) := (measurableSet_singleton 0).compl
-  have hzero {F : ℝ × ℝ → ℝ} (hF : F 0 = 0) : ∫ z in ({0}ᶜ : Set (ℝ × ℝ)), F z = ∫ z, F z :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
-      simp only [mem_compl_iff, mem_singleton_iff, not_not] at hz
-      rwa [hz]
-  have hpt (z : ℝ × ℝ) (hz : z ∈ ({0}ᶜ : Set (ℝ × ℝ))) :
-      ‖fderiv ℝ (fun z ↦ χ (ι z)) z (0, 1)‖ ^ 2 ≤ |(fderiv ℝ ι z).det| • E (ι z) := by
-    have hι := hasFDerivAt_realChart_inv hz
-    rw [show (fun z ↦ χ (ι z)) = χ ∘ ι from rfl, fderiv_comp z
-      (hχ.differentiable one_ne_zero (ι z)) hι.differentiableAt, ContinuousLinearMap.comp_apply,
-      abs_of_nonneg (by rw [det_fderiv_realChart_inv hz]; positivity),
-      ← fst_sq_add_snd_sq_fderiv_realChart_inv hz, smul_eq_mul]
-    set p := fderiv ℝ ι z (0, 1)
-    have hp : fderiv ℝ χ (ι z) p =
-        p.1 • fderiv ℝ χ (ι z) (1, 0) + p.2 • fderiv ℝ χ (ι z) (0, 1) := by
-      rw [← map_smul, ← map_smul, ← map_add]
-      congr 1
-      ext <;> simp
-    rw [hp]
+/-- **The Dirichlet energy does not grow under the inversion.** For a `C¹` map `f` of `ℂ` with
+integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in the direction `i` is
+at most the Dirichlet energy of `f`. -/
+private theorem integral_norm_fderiv_comp_inv_I_sq_le {f : ℂ → V}
+    (hE : Integrable fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :
+    ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 ≤
+      ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
+  set E : ℂ → ℝ := fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2
+  have hs : MeasurableSet ({0}ᶜ : Set ℂ) := (measurableSet_singleton 0).compl
+  have hd (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) : DifferentiableAt ℂ (·⁻¹) z := differentiableAt_inv hz
+  have himage : (·⁻¹) '' ({0}ᶜ : Set ℂ) = {0}ᶜ := by
+    rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero]
+  -- Pointwise, `‖∂_i (f ∘ inv)‖² ≤ ‖(z⁻¹)'‖² E(z⁻¹)`, by Cauchy–Schwarz in the real coordinates of
+  -- the direction `-(z²)⁻¹ i`.
+  have hpt (z : ℂ) (hz : z ∈ ({0}ᶜ : Set ℂ)) :
+      ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 ≤ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹ := by
+    have ha : -(z ^ 2)⁻¹ * I = (-(z ^ 2)⁻¹ * I).re • (1 : ℂ) + (-(z ^ 2)⁻¹ * I).im • I := by
+      rw [Complex.real_smul, Complex.real_smul, mul_one, Complex.re_add_im]
+    have hn : ‖-(z ^ 2)⁻¹‖ ^ 2 = (-(z ^ 2)⁻¹ * I).re ^ 2 + (-(z ^ 2)⁻¹ * I).im ^ 2 := by
+      rw [← mul_one ‖-(z ^ 2)⁻¹‖, ← Complex.norm_I, ← norm_mul, Complex.sq_norm,
+        Complex.normSq_apply]
+      ring
+    rw [fderiv_comp_inv_apply hz, ha, map_add, map_smul, map_smul, deriv_inv, smul_eq_mul, hn]
     exact norm_smul_add_smul_sq_le _ _ _ _
-  have hEi : IntegrableOn (fun z ↦ |(fderiv ℝ ι z).det| • E (ι z)) {0}ᶜ :=
-    (integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
-      (fun z hz ↦ (hasFDerivAt_realChart_inv hz).hasFDerivWithinAt) injOn_realChart_inv E).1
-      hE.integrableOn
-  calc ∫ z, ‖fderiv ℝ (fun z ↦ χ (ι z)) z (0, 1)‖ ^ 2
-      = ∫ z in {0}ᶜ, ‖fderiv ℝ (fun z ↦ χ (ι z)) z (0, 1)‖ ^ 2 :=
-        (hzero (by simp [hη.fderiv_eq])).symm
-    _ ≤ ∫ z in {0}ᶜ, |(fderiv ℝ ι z).det| • E (ι z) :=
+  have hEi : IntegrableOn (fun z ↦ ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹) {0}ᶜ :=
+    (integrableOn_image_iff_integrableOn_norm_deriv_sq_smul hd hs inv_injective.injOn E).1
+      (himage ▸ hE.integrableOn)
+  calc ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2
+      = ∫ z in {0}ᶜ, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := by
+        rw [restrict_compl_singleton]
+    _ ≤ ∫ z in {0}ᶜ, ‖deriv (·⁻¹) z‖ ^ 2 • E z⁻¹ :=
         integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _) hEi
           ((ae_restrict_iff' hs).2 (Eventually.of_forall hpt))
-    _ = ∫ z in ι '' {0}ᶜ, E z :=
-        (integral_image_eq_integral_of_eq_abs_det_smul hs injOn_realChart_inv
-          (fun z hz ↦ (hasFDerivAt_realChart_inv hz).differentiableAt) fun _ _ ↦ rfl).symm
-    _ = ∫ z, E z := by
-        rw [image_realChart_inv_compl_singleton]
-        exact hzero (by simp [E, hχ0.fderiv_eq])
+    _ = ∫ w in (·⁻¹) '' {0}ᶜ, E w :=
+        (integral_image_eq_integral_norm_deriv_sq_smul hd hs inv_injective.injOn E).symm
+    _ = ∫ w, E w := by rw [himage, restrict_compl_singleton]
+
+/-- A compactly supported `C¹` map `f` of `ℂ` with `f 0 = 0`, read in the coordinate `z = w⁻¹`,
+is `C¹`: near `z = 0` it vanishes, because `f` vanishes near the point at infinity. -/
+private theorem contDiff_comp_inv {f : ℂ → V} (hf : ContDiff ℝ 1 f)
+    (hfc : HasCompactSupport f) (h0 : f 0 = 0) : ContDiff ℝ 1 fun z ↦ f z⁻¹ := by
+  obtain ⟨M, hM⟩ := hfc.isCompact.isBounded.subset_closedBall 0
+  have hη0 : (fun z ↦ f z⁻¹) =ᶠ[𝓝 0] 0 := by
+    refine mem_of_superset (ball_mem_nhds 0 (inv_pos.2 (by positivity : 0 < |M| + 1)))
+      fun z hz ↦ ?_
+    rcases eq_or_ne z 0 with rfl | hz0
+    · simpa using h0
+    refine image_eq_zero_of_notMem_tsupport (f := f) (x := z⁻¹) fun h ↦ ?_
+    have h1 := mem_closedBall_zero_iff.1 (hM h)
+    have h2 := (lt_inv_comm₀ (norm_pos_iff.2 hz0) (by positivity)).1 (mem_ball_zero_iff.1 hz)
+    rw [norm_inv] at h1
+    linarith [le_abs_self M]
+  refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
+  rcases eq_or_ne z 0 with rfl | hz
+  · exact contDiffAt_const.congr_of_eventuallyEq hη0
+  · exact hf.contDiffAt.comp z (contDiffAt_inv ℝ hz)
+
+/-- **The Poincaré inequality on a horizontal strip of `ℂ`.** A compactly supported `C¹` map of
+`ℂ` vanishing where `r ≤ |Im z|` satisfies `∫ ‖η‖² ≤ (2 r)² ∫ ‖∂_i η‖²`; this is
+`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd` read on `ℂ`. -/
+private theorem integral_norm_sq_le_mul_integral_norm_fderiv_I_sq {η : ℂ → V} {r : ℝ}
+    (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) (hr : ∀ z : ℂ, r ≤ |z.im| → η z = 0) :
+    ∫ z, ‖η z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ η z I‖ ^ 2 := by
+  have hT (G : ℝ × ℝ → ℝ) : ∫ w : ℂ, G (equivRealProdCLM w) = ∫ p, G p :=
+    volume_preserving_equiv_real_prod.integral_comp' G
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
+    (hη.comp equivRealProdCLM.symm.contDiff)
+    (hc.comp_homeomorph equivRealProdCLM.symm.toHomeomorph) (r := r) fun p hp ↦
+      hr _ (by rwa [Complex.equivRealProdCLM_symm_apply_im])
+  have hdη (p : ℝ × ℝ) : fderiv ℝ (η ∘ equivRealProdCLM.symm) p (0, 1) =
+      fderiv ℝ η (equivRealProdCLM.symm p) I := by
+    rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe]
+    congr 1
+  simp only [hdη, Function.comp_apply] at hpoinc
+  rw [← hT fun p ↦ ‖η (equivRealProdCLM.symm p)‖ ^ 2,
+    ← hT fun p ↦ ‖fderiv ℝ η (equivRealProdCLM.symm p) I‖ ^ 2] at hpoinc
+  simpa only [ContinuousLinearEquiv.symm_apply_apply] using hpoinc
+
+/-- **The Poincaré inequality at infinity on `ℂ`.** A compactly supported `C¹` map `f` of `ℂ`
+vanishing on the disc `‖w‖ < R` has `∫ ‖f z⁻¹‖² ≤ (4 / R)² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`. -/
+private theorem integral_norm_sq_comp_inv_le {f : ℂ → V} {R : ℝ} (hR : 0 < R)
+    (hf : ContDiff ℝ 1 f) (hfc : HasCompactSupport f) (hfR : ∀ w : ℂ, ‖w‖ < R → f w = 0) :
+    ∫ z, ‖f z⁻¹‖ ^ 2 ≤ (4 / R) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) := by
+  -- In the coordinate `z = w⁻¹` the map vanishes off the disc `|z| ≤ R⁻¹`.
+  have hηR (z : ℂ) (hz : R⁻¹ < ‖z‖) : f z⁻¹ = 0 :=
+    hfR _ (by rw [norm_inv]; exact (inv_lt_comm₀ ((inv_pos.2 hR).trans hz) hR).2 hz)
+  have hηc : HasCompactSupport fun z ↦ f z⁻¹ :=
+    HasCompactSupport.intro (isCompact_closedBall 0 R⁻¹) fun z hz ↦
+      hηR z (by simpa [mem_closedBall_zero_iff] using hz)
+  -- The Poincaré inequality on the strip `|Im z| < 2 R⁻¹` containing that disc.
+  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_I_sq
+    (contDiff_comp_inv hf hfc (hfR 0 (by simpa using hR))) hηc (r := 2 * R⁻¹) fun z hz ↦
+      hηR z (by linarith [Complex.abs_im_le_norm z, inv_pos.2 hR])
+  calc _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z I‖ ^ 2 := hpoinc
+    _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ w, (‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (integral_norm_fderiv_comp_inv_I_sq_le (integrable_norm_fderiv_sq_add hf hfc 1 I))
+          (sq_nonneg _)
+    _ = _ := by ring
 
 /-- **The Poincaré inequality at infinity in the plane.** Let `χ` be a compactly supported `C¹`
 map on `ℝ × ℝ ≅ ℂ` which vanishes on the disc `s² + t² < R²`, `R > 0`. Then
@@ -274,43 +183,25 @@ theorem integral_inv_sq_mul_norm_sq_le {χ : ℝ × ℝ → V} {R : ℝ} (hR : 0
     (h0 : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < R ^ 2 → χ z = 0) :
     ∫ z, ((z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ * ‖χ z‖ ^ 2 ≤
       (4 / R) ^ 2 * ∫ z, (‖fderiv ℝ χ z (1, 0)‖ ^ 2 + ‖fderiv ℝ χ z (0, 1)‖ ^ 2) := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  obtain ⟨M, hM0, hM⟩ := exists_nonneg_forall_lt_eq_zero hc
-  have hR2 : (0 : ℝ) < R ^ 2 := by positivity
-  have hdisc {r : ℝ} (hr : 0 < r) : {z : ℝ × ℝ | z.1 ^ 2 + z.2 ^ 2 < r} ∈ 𝓝 0 :=
-    (isOpen_lt (by fun_prop) continuous_const).mem_nhds (by simpa using hr)
-  have hχ0 : χ =ᶠ[𝓝 0] 0 := Filter.mem_of_superset (hdisc hR2) h0
-  have hη : (fun z ↦ χ (realChart (·⁻¹) z)) =ᶠ[𝓝 0] 0 :=
-    Filter.mem_of_superset (hdisc (inv_pos.2 (by linarith))) fun z hz ↦
-      comp_realChart_inv_eq_zero hR hM0 h0 hM z (Or.inl hz)
-  -- In the coordinate `z = w⁻¹` the map is supported in the disc `|z| ≤ 1 / R`.
-  have hηc : HasCompactSupport fun z ↦ χ (realChart (·⁻¹) z) := by
-    refine HasCompactSupport.intro (isCompact_closedBall (0 : ℝ × ℝ) R⁻¹) fun z hz ↦
-      comp_realChart_inv_eq_zero hR hM0 h0 hM z (Or.inr ?_)
-    rw [mem_closedBall_zero_iff, not_le, Prod.norm_def, lt_max_iff, Real.norm_eq_abs,
-      Real.norm_eq_abs] at hz
-    have hR' : 0 ≤ R⁻¹ := inv_nonneg.2 hR.le
-    rcases hz with hz | hz
-    · nlinarith [sq_abs z.1, sq_nonneg z.2]
-    · nlinarith [sq_abs z.2, sq_nonneg z.1]
-  have hpoinc := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd
-    (contDiff_comp_realChart_inv hχ hη) hηc (r := 2 * R⁻¹) fun z hz ↦
-      comp_realChart_inv_eq_zero hR hM0 h0 hM z (Or.inr (by
-        have hR' : 0 < R⁻¹ := inv_pos.2 hR
-        nlinarith [sq_abs z.2, sq_nonneg z.1, abs_nonneg z.2]))
-  have hdχ : Continuous (fderiv ℝ χ) := hχ.continuous_fderiv one_ne_zero
-  have hE : Integrable fun w ↦ ‖fderiv ℝ χ w (1, 0)‖ ^ 2 + ‖fderiv ℝ χ w (0, 1)‖ ^ 2 :=
-    ((hdχ.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hc.fderiv_apply (𝕜 := ℝ) (1, 0))).add
-    ((hdχ.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hc.fderiv_apply (𝕜 := ℝ) (0, 1)))
-  rw [integral_inv_sq_mul_norm_sq_eq (h0 0 (by simpa using hR2))]
-  calc _ ≤ (2 * (2 * R⁻¹)) ^ 2 * ∫ z, ‖fderiv ℝ (fun z ↦ χ (realChart (·⁻¹) z)) z (0, 1)‖ ^ 2 :=
-        hpoinc
-    _ ≤ (2 * (2 * R⁻¹)) ^ 2 *
-          ∫ w, (‖fderiv ℝ χ w (1, 0)‖ ^ 2 + ‖fderiv ℝ χ w (0, 1)‖ ^ 2) := by
-        exact mul_le_mul_of_nonneg_left
-          (integral_norm_fderiv_comp_realChart_inv_sq_le hχ hE hχ0 hη) (sq_nonneg _)
-    _ = _ := by ring
+  -- Read `χ` as the map `f = χ ∘ equivRealProdCLM` of `ℂ`.
+  set f : ℂ → V := χ ∘ equivRealProdCLM
+  have hT (G : ℝ × ℝ → ℝ) : ∫ w : ℂ, G (equivRealProdCLM w) = ∫ p, G p :=
+    volume_preserving_equiv_real_prod.integral_comp' G
+  have hsq (w : ℂ) : (equivRealProdCLM w).1 ^ 2 + (equivRealProdCLM w).2 ^ 2 = ‖w‖ ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply]
+    simp [sq]
+  have hdf (w v : ℂ) : fderiv ℝ f w v = fderiv ℝ χ (equivRealProdCLM w) (equivRealProdCLM v) := by
+    rw [ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe]
+  have hfw (w : ℂ) : χ (equivRealProdCLM w) = f w := (Function.comp_apply ..).symm
+  have h1 : equivRealProdCLM 1 = (1, 0) := by simp
+  have hI : equivRealProdCLM I = (0, 1) := by simp
+  rw [← hT fun p ↦ ((p.1 ^ 2 + p.2 ^ 2) ^ 2)⁻¹ * ‖χ p‖ ^ 2,
+    ← hT fun p ↦ ‖fderiv ℝ χ p (1, 0)‖ ^ 2 + ‖fderiv ℝ χ p (0, 1)‖ ^ 2]
+  simp only [hsq, hfw, ← h1, ← hI, ← hdf]
+  rw [integral_inv_sq_norm_sq_mul_norm_sq_eq f]
+  exact integral_norm_sq_comp_inv_le hR (hχ.comp equivRealProdCLM.contDiff)
+    (hc.comp_homeomorph equivRealProdCLM.toHomeomorph) fun w hw ↦
+      h0 _ (by rw [hsq]; exact pow_lt_pow_left₀ hw (norm_nonneg w) two_ne_zero)
 
 end TauCeti

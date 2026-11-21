@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Analysis.Sobolev.Poincare.Infinity
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
@@ -150,68 +152,6 @@ private theorem exists_forall_integral_norm_fderiv_sq_le_of_eq_base (h₀ : ω.C
   rw [integral_const_mul] at hup
   exact (hlow.trans_eq hid).trans hup
 
-/-- **Multiplying by a scalar function.** The linearization at `z` sends `β ξ` to
-`β(z) D ξ + (∂s β) ξ + J (∂t β) ξ`. -/
-private theorem floerLinearization_smul_cutoff {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ} {z : ℝ × ℝ}
-    (hβ : DifferentiableAt ℝ β z) (hξ : DifferentiableAt ℝ ξ z) :
-    ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-        (fun w ↦ β w • ξ w) z =
-      β z • ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u ξ z + fderiv ℝ β z stdComplexLineReal • ξ z +
-        J z (u z) (fderiv ℝ β z stdComplexLineImag • ξ z) := by
-  rw [floerLinearization_def, fderiv_fun_smul hβ hξ, floerLinearization_def]
-  simp only [add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, map_smul, map_add, map_sub,
-    LinearMap.coe_toContinuousLinearMap']
-  module
-
-/-- **The derivative of a cutoff adds a zeroth-order term.** If `‖dβ‖ ≤ B` and `‖J(z, u z)‖ ≤ N`
-at `z`, then `D(β ξ) - β D ξ` has norm at most `B (1 + N) ‖ξ‖` there. -/
-private theorem norm_floerLinearization_smul_sub_le {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ}
-    {z : ℝ × ℝ} {B N : ℝ} (hβ : DifferentiableAt ℝ β z) (hξ : DifferentiableAt ℝ ξ z)
-    (hB : ‖fderiv ℝ β z‖ ≤ B) (hN : ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤ N) :
-    ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-        (fun w ↦ β w • ξ w) z -
-      β z • ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        Ks Kt u ξ z‖ ≤ B * (1 + N) * ‖ξ z‖ := by
-  rw [floerLinearization_smul_cutoff hβ hξ, add_assoc, add_sub_cancel_left]
-  have hN0 : 0 ≤ N := (norm_nonneg _).trans hN
-  have h1 : |fderiv ℝ β z stdComplexLineReal| ≤ B :=
-    ((fderiv ℝ β z).le_opNorm _).trans (by simp [stdComplexLineReal_eq, hB])
-  have h2 : |fderiv ℝ β z stdComplexLineImag| ≤ B :=
-    ((fderiv ℝ β z).le_opNorm _).trans (by simp [stdComplexLineImag_eq, hB])
-  have h3 : ‖(J z (u z)) (fderiv ℝ β z stdComplexLineImag • ξ z)‖ ≤
-      N * (B * ‖ξ z‖) := by
-    refine (((J z (u z)).toLinearMap.toContinuousLinearMap).le_opNorm _).trans ?_
-    rw [norm_smul, Real.norm_eq_abs]
-    gcongr
-  calc _ ≤ ‖fderiv ℝ β z stdComplexLineReal • ξ z‖ +
-        ‖(J z (u z)) (fderiv ℝ β z stdComplexLineImag • ξ z)‖ := norm_add_le _ _
-    _ ≤ B * ‖ξ z‖ + N * (B * ‖ξ z‖) := by
-        rw [norm_smul, Real.norm_eq_abs]
-        gcongr
-    _ = B * (1 + N) * ‖ξ z‖ := by ring
-
-/-- The sup norm of a point of the plane is at most its Euclidean norm. -/
-private theorem norm_sq_le_fst_sq_add_snd_sq (z : ℝ × ℝ) : ‖z‖ ^ 2 ≤ z.1 ^ 2 + z.2 ^ 2 := by
-  rw [Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
-  rcases le_total |z.1| |z.2| with h | h
-  · rw [max_eq_right h, sq_abs]; nlinarith [sq_nonneg z.1]
-  · rw [max_eq_left h, sq_abs]; nlinarith [sq_nonneg z.2]
-
-omit [FiniteDimensional ℝ V] in
-/-- The Dirichlet energy of a compactly supported `C¹` map is integrable. -/
-private theorem integrable_dirichlet {ψ : ℝ × ℝ → V} (hψ : ContDiff ℝ 1 ψ)
-    (hψc : HasCompactSupport ψ) :
-    Integrable fun z ↦ ‖fderiv ℝ ψ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ψ z stdComplexLineImag‖ ^ 2 := by
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hdψ := hψ.continuous_fderiv one_ne_zero
-  exact ((hdψ.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hψc.fderiv_apply (𝕜 := ℝ) _)).add
-    ((hdψ.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
-      (hψc.fderiv_apply (𝕜 := ℝ) _))
-
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- Off the disc `‖w‖ < R` the weight `|w|⁻⁴` is at most `R⁻⁴`, and it dominates the weight
 `(1 + |w|²)⁻²` of the sphere. -/
@@ -223,7 +163,7 @@ private theorem inv_sq_mul_norm_sq_le {χ : ℝ × ℝ → V} {R : ℝ} (hR : 0 
   · simp [hχz]
   have hzR : R ^ 2 ≤ z.1 ^ 2 + z.2 ^ 2 :=
     (pow_le_pow_left₀ hR.le (not_lt.1 fun h ↦ hχz (hχR z h)) 2).trans
-      (norm_sq_le_fst_sq_add_snd_sq z)
+      (Prod.norm_sq_le_sq_add_sq z)
   have hR2 : 0 < R ^ 2 := by positivity
   constructor <;> gcongr <;> nlinarith
 
@@ -259,8 +199,10 @@ private theorem integral_le_of_eq_add {ξ ξ₁ χ : ℝ × ℝ → V} {R : ℝ}
         rw [Real.norm_of_nonneg (by simp only [f₂]; positivity)]
         exact (inv_sq_mul_norm_sq_le hR hχR z).2)
   have i₂ := hf₂.const_mul 2
-  have i₃ := (integrable_dirichlet hξ₁ hξ₁c).const_mul 2
-  have i₄ := (integrable_dirichlet hχ hχc).const_mul 2
+  have i₃ := (integrable_norm_fderiv_sq_add (μ := volume) hξ₁ hξ₁c stdComplexLineReal
+    stdComplexLineImag).const_mul 2
+  have i₄ := (integrable_norm_fderiv_sq_add (μ := volume) hχ hχc stdComplexLineReal
+    stdComplexLineImag).const_mul 2
   have hsum : 2 * (∫ z, f₁ z) + 2 * (∫ z, f₂ z) + 2 * (∫ z, f₃ z) + 2 * ∫ z, f₄ z =
       ∫ z, (2 * f₁ z + 2 * f₂ z + 2 * f₃ z + 2 * f₄ z) := by
     rw [integral_add (f := fun z ↦ 2 * f₁ z + 2 * f₂ z + 2 * f₃ z) (g := fun z ↦ 2 * f₄ z)
@@ -272,8 +214,8 @@ private theorem integral_le_of_eq_add {ξ ξ₁ χ : ℝ × ℝ → V} {R : ℝ}
   refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ by positivity)
     (((i₁.add i₂).add i₃).add i₄) (Eventually.of_forall fun z ↦ ?_)
   have hd (v : ℝ × ℝ) : fderiv ℝ ξ z v = fderiv ℝ ξ₁ z v + fderiv ℝ χ z v := by
-    rw [hsplit, fderiv_add (hξ₁.differentiable one_ne_zero z) (hχ.differentiable one_ne_zero z)]
-    rfl
+    rw [hsplit, fderiv_add (hξ₁.differentiable one_ne_zero z) (hχ.differentiable one_ne_zero z),
+      add_apply]
   have hρ1 : ((1 + z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by nlinarith)
   have hρ0 : 0 ≤ ((1 + z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ := by positivity
   have h0 := hsq (ξ₁ z) (χ z)
@@ -320,13 +262,13 @@ private theorem norm_floerLinearization_smul_sq_le {ξ : ℝ × ℝ → V} {γ :
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_left (norm_nonneg _) (hγ1 z)
   by_cases hz : z ∈ K
-  · have h := norm_floerLinearization_smul_sub_le (ω := ω) (J := J) (Ks := Ks) (Kt := Kt)
-      (u := u) (hγ z) (hξ z) (hB z) (hN z hz)
+  · have h := ω.norm_floerLinearization_fun_smul_sub_le
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ (hγ z) (hξ z) (hB z) (hN z hz)
     have h' := (norm_le_insert' _ _).trans (add_le_add hγD h)
     rw [indicator_of_mem hz]
     nlinarith [pow_le_pow_left₀ (norm_nonneg _) h' 2, sq_nonneg (‖Dξ‖ - B * (1 + N) * ‖ξ z‖)]
-  · rw [floerLinearization_smul_cutoff (hγ z) (hξ z), hγK z hz, indicator_of_notMem hz]
-    simp only [zero_apply, zero_smul, add_zero, map_zero, mul_zero]
+  · rw [floerLinearization_fun_smul _ _ _ _ _ _ (hγ z) (hξ z), hγK z hz, indicator_of_notMem hz]
+    simp only [zero_apply, zero_smul, add_zero, mul_zero]
     nlinarith [pow_le_pow_left₀ (norm_nonneg _) hγD 2, sq_nonneg ‖Dξ‖]
 
 /-- Integrating the pointwise bound of `norm_floerLinearization_smul_sq_le`. -/
@@ -473,7 +415,7 @@ private theorem integral_le_of_bump
     (mul_le_mul_of_nonneg_left hY₂ hC₂)
   have hX₂ := integral_inv_sq_mul_norm_sq_le hR (hχ.of_le one_le_two)
     (hξc.smul_left (f := fun z ↦ 1 - β z)) fun z hz ↦ hχR z
-      (lt_of_pow_lt_pow_left₀ 2 hR.le ((norm_sq_le_fst_sq_add_snd_sq z).trans_lt hz))
+      (lt_of_pow_lt_pow_left₀ 2 hR.le ((Prod.norm_sq_le_sq_add_sq z).trans_lt hz))
   simp only [← stdComplexLineReal_eq, ← stdComplexLineImag_eq] at hX₂
   have hX₁' : ∫ z, ‖ξ₁ z‖ ^ 2 ≤ IK := by
     rwa [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := K) fun z hz ↦ by
@@ -493,7 +435,6 @@ every compactly supported `C²` section `ξ` satisfies
 
 where the left side is the squared `W^{1,2}` norm of `ξ` on the sphere. -/
 theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
-    (h₀ : ω.Compatible J₀)
     (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
     (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
     (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
@@ -508,6 +449,9 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
         C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
             Ks Kt u ξ z‖ ^ 2) + ∫ z in closedBall 0 R, ‖ξ z‖ ^ 2) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  -- `J₀` is the compatible structure `J` takes at a point far out.
+  have h₀ : ω.Compatible J₀ :=
+    hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0)
   set R : ℝ := max T 1
   have hR : 0 < R := lt_of_lt_of_le one_pos (le_max_right _ _)
   -- A bump function `β`, equal to `1` on the square `‖w‖ ≤ R` and supported in `‖w‖ ≤ 2 R`.

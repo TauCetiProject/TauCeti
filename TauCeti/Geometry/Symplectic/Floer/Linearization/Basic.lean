@@ -25,7 +25,10 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
 (`floerLinearization_const_eq`). On a direction multiplied by a cutoff `β(s)` it acts as
 `β D ξ + β' ξ` (`floerLinearization_smul_fst`); in particular, conjugated by an exponential weight
-`e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). Its value at a point
+`e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`). On a direction
+multiplied by a function `f` of both variables it acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ`
+(`floerLinearization_fun_smul`), so the factor changes it only by a zeroth-order term
+(`norm_floerLinearization_fun_smul_sub_le`). Its value at a point
 depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), and
 on the Floer data only through their values at that point (`floerLinearization_congr_data`). For
 `C¹` coefficients `J` and `C²`
@@ -215,6 +218,42 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
     ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
     Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
   module
+
+/-- **Multiplying by a scalar function.** If `f` and `ξ` are differentiable at `z`, the
+linearization at `z` sends `f ξ` to `f(z) D ξ + (∂s f) ξ + (∂t f) J ξ`. -/
+theorem floerLinearization_fun_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z =
+      f z • ω.floerLinearization J Ks Kt u ξ z + fderiv ℝ f z stdComplexLineReal • ξ z +
+        fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z) := by
+  rw [floerLinearization_def, fderiv_fun_smul hf hξ, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_smul, map_add,
+    map_sub]
+  module
+
+/-- **The derivative of a scalar factor adds a zeroth-order term.** If `‖df‖ ≤ B` and
+`‖J(z, u z)‖ ≤ N` at `z`, then `D(f ξ) - f D ξ` has norm at most `B (1 + N) ‖ξ‖` there. -/
+theorem norm_floerLinearization_fun_smul_sub_le (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} {B N : ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z)
+    (hB : ‖fderiv ℝ f z‖ ≤ B) (hN : ‖J z (u z)‖ ≤ N) :
+    ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z -
+      f z • ω.floerLinearization J Ks Kt u ξ z‖ ≤ B * (1 + N) * ‖ξ z‖ := by
+  rw [floerLinearization_fun_smul ω J Ks Kt u ξ hf hξ, add_assoc, add_sub_cancel_left]
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
+  have h1 : |fderiv ℝ f z stdComplexLineReal| ≤ B :=
+    ((fderiv ℝ f z).le_opNorm _).trans (by simp [stdComplexLineReal_eq, hB])
+  have h2 : |fderiv ℝ f z stdComplexLineImag| ≤ B :=
+    ((fderiv ℝ f z).le_opNorm _).trans (by simp [stdComplexLineImag_eq, hB])
+  have h3 : ‖J z (u z) (ξ z)‖ ≤ N * ‖ξ z‖ :=
+    ((J z (u z)).le_opNorm _).trans (by gcongr)
+  calc _ ≤ ‖fderiv ℝ f z stdComplexLineReal • ξ z‖ +
+        ‖fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z)‖ := norm_add_le _ _
+    _ ≤ B * ‖ξ z‖ + B * (N * ‖ξ z‖) := by
+        rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+        gcongr
+    _ = B * (1 + N) * ‖ξ z‖ := by ring
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: this is the case

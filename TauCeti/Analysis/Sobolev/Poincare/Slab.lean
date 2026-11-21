@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 -- `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow` is imported publicly: the finite-exponent
 -- estimates below are proved as bounds between `∫⁻ ‖·‖ₑ ^ p` integrals and converted by
@@ -16,6 +17,8 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Support
+import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The Poincaré inequality on a slab
@@ -58,6 +61,9 @@ the bound `‖Du x (eᵢ)‖ ≤ ‖Du x‖`; the endpoint uses the same bound p
   `EuclideanSpace ℝ (Fin (n + 1))` for a `C¹` function supported in a slab of width `b - a`.
 * `TauCeti.eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball`: the form for a support inside a
   ball, with twice the radius as the constant.
+* `TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`: the `L²` form on the
+  plane `ℝ × ℝ`, `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`, for a compactly supported `C¹` map vanishing where
+  `r ≤ |t|`.
 
 The passage from a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals to one between the `Lᵖ` seminorms is
 generic measure theory and lives in `TauCeti.MeasureTheory.Function.Lp.LIntegralRpow`.
@@ -381,5 +387,67 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_ball
     eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab hu hslab hp
 
 end Slab
+
+section Strip
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **The Poincaré inequality on a strip, for maps vanishing outside it.** A compactly supported
+`C¹` map on the plane which vanishes wherever `r ≤ |t|` satisfies `∫ ‖u‖² ≤ (2 r)² ∫ ‖∂t u‖²`.
+Only the derivative across the strip enters, and the constant depends only on its width. -/
+theorem integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd {u : ℝ × ℝ → V} {r : ℝ}
+    (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u)
+    (hr : ∀ z : ℝ × ℝ, r ≤ |z.2| → u z = 0) :
+    ∫ z, ‖u z‖ ^ 2 ≤ (2 * r) ^ 2 * ∫ z, ‖fderiv ℝ u z (0, 1)‖ ^ 2 := by
+  rcases le_or_gt r 0 with hr0 | hr0
+  · have hu0 : ∀ z, u z = 0 := fun z ↦ hr z (hr0.trans (abs_nonneg _))
+    simp only [hu0, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+      integral_zero]
+    exact mul_nonneg (sq_nonneg _) (integral_nonneg fun _ ↦ sq_nonneg _)
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  -- Off the closed strip `|t| ≤ r` the map and its derivative vanish.
+  have hdu0 (z : ℝ × ℝ) (hz : r < |z.2|) : fderiv ℝ u z (0, 1) = 0 := by
+    have hopen : IsOpen {w : ℝ × ℝ | r < |w.2|} :=
+      isOpen_lt continuous_const (continuous_abs.comp continuous_snd)
+    have hev : u =ᶠ[nhds z] fun _ ↦ 0 :=
+      Filter.mem_of_superset (hopen.mem_nhds hz) fun w hw ↦ hr w (le_of_lt hw)
+    simp [hev.fderiv_eq]
+  have hline (s : ℝ) : (∫ t, ‖u (s, t)‖ ^ 2) ≤
+      (2 * r) ^ 2 * ∫ t, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 := by
+    have hv : ContDiff ℝ 1 (fun t ↦ u (s, t)) := hu.comp (contDiff_const.prodMk contDiff_id)
+    have hd (t : ℝ) : deriv (fun r ↦ u (s, r)) t = fderiv ℝ u (s, t) (0, 1) := by
+      have hp : HasDerivAt (fun r : ℝ ↦ ((s, r) : ℝ × ℝ)) (0, 1) t :=
+        (hasDerivAt_const t s).prodMk (hasDerivAt_id t)
+      exact ((hu.differentiable one_ne_zero (s, t)).hasFDerivAt.comp_hasDerivAt t hp).deriv
+    have hout (t : ℝ) (ht : t ∉ Icc (-r) r) : r < |t| := not_le.1 fun h ↦ ht (abs_le.1 h)
+    have hI : (∫ t, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2) =
+        ∫ t in Icc (-r) r, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 :=
+      (setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by
+        rw [hdu0 (s, t) (hout t ht), norm_zero, sq, mul_zero]).symm
+    -- On the strip, the fundamental theorem of calculus from the edge `t = -r`.
+    have hpt (t : ℝ) (ht : t ∈ Icc (-r) r) :
+        ‖u (s, t)‖ ^ 2 ≤ 2 * r * ∫ t in Icc (-r) r, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 := by
+      have h := norm_sub_sq_le_integral_norm_deriv_sq hv.contDiffOn (by linarith) ht
+      rw [hr (s, -r) (by simp [abs_of_pos hr0]), sub_zero] at h
+      simp_rw [hd] at h
+      linarith
+    rw [hI, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (-r) r) fun t ht ↦ by
+      rw [hr (s, t) (hout t ht).le, norm_zero, sq, mul_zero]]
+    calc (∫ t in Icc (-r) r, ‖u (s, t)‖ ^ 2) ≤
+        ∫ _t in Icc (-r) r, 2 * r * ∫ t in Icc (-r) r, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 :=
+          setIntegral_mono_on (hv.continuous.norm.pow 2).integrableOn_Icc
+            (integrableOn_const (by simp)) measurableSet_Icc hpt
+      _ = (2 * r) ^ 2 * ∫ t in Icc (-r) r, ‖fderiv ℝ u (s, t) (0, 1)‖ ^ 2 := by
+          rw [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul]
+          ring
+  have hi : Integrable (fun z ↦ ‖u z‖ ^ 2) (volume.prod volume) :=
+    hu.continuous.integrable_norm_sq_of_hasCompactSupport hc
+  have hdi : Integrable (fun z ↦ ‖fderiv ℝ u z (0, 1)‖ ^ 2) (volume.prod volume) :=
+    (hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
+      (hc.fderiv_apply (𝕜 := ℝ) (0, 1))
+  rw [Measure.volume_eq_prod, integral_prod _ hi, integral_prod _ hdi, ← integral_const_mul]
+  exact integral_mono hi.integral_prod_left (hdi.integral_prod_left.const_mul _) hline
+
+end Strip
 
 end TauCeti
