@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
@@ -16,9 +17,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 Connections on `V` and `W` induce a connection on the native bundle `Hom(V, W)`.
 Its evaluation rule is `((∇ A)(X)) s = ∇_X (A s) - A (∇_X s)`.
 This rule uniquely determines the induced connection on differentiable sections,
-and makes the identity endomorphism parallel. Iterating this construction supplies
-the connections on covariant tensors needed to differentiate curvature, with
-bilinear evaluation rule `CovariantDerivative.hom_hom_apply`.
+and makes the identity endomorphism parallel. Changing the connections on `V` and `W` changes
+it by their difference tensors (`CovariantDerivative.hom_apply_sub_hom_apply`). Iterating this
+construction supplies the connections on covariant tensors needed to differentiate curvature,
+with bilinear evaluation rule `CovariantDerivative.hom_hom_apply`.
 
 The source bundle has finite rank; the target bundle need not. The construction
 uses Mathlib's tensoriality criterion, rather than a choice of bundle frame.
@@ -188,6 +190,31 @@ theorem hom_eq_of_apply {A : Π x : M, V x →L[𝕜] W x} {x : M}
     (E := fun z ↦ V z →L[𝕜] V z) y (ContinuousLinearMap.id 𝕜 (V y))) x
   · simpa using hom_apply covV covV hA (mdifferentiableAt_extend I F u) v
   · simp [hom_eq_zero_of_not_mdifferentiableAt covV covV hA]
+
+section Difference
+
+variable [FiniteDimensional 𝕜 G] [ContMDiffVectorBundle 1 G W I]
+
+/-- **Changing the connections changes the induced Hom connection by the difference tensors.**
+For a differentiable Hom section `A`, replacing `covV` and `covW` by `covV'` and `covW'` changes
+`(∇_v A) u` by `Δ_W(A u, v) - A Δ_V(u, v)`, where `Δ_V` and `Δ_W` are the difference tensors
+`CovariantDerivative.difference` of the two pairs of connections. -/
+theorem hom_apply_sub_hom_apply (covV' : CovariantDerivative I F V)
+    (covW' : CovariantDerivative I G W) {A : Π x : M, V x →L[𝕜] W x} {x : M}
+    (hA : MDiffAt
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun z ↦ V z →L[𝕜] W z) y (A y)) x)
+    (v : TangentSpace I x) (u : V x) :
+    covV.hom covW A x v u - covV'.hom covW' A x v u =
+      covW.difference covW' x (A x u) v - A x (covV.difference covV' x u v) := by
+  have hs := mdifferentiableAt_extend I F u
+  have hW := covW.difference_apply covW' (hA.clm_bundle_apply hs)
+  have hV := covV.difference_apply covV' hs
+  simp only [extend_apply_self] at hW hV
+  rw [hom_apply_eq_extend covV covW hA, hom_apply_eq_extend covV' covW' hA, hW, hV, sub_apply,
+    sub_apply, map_sub]
+  abel
+
+end Difference
 
 section Iterated
 

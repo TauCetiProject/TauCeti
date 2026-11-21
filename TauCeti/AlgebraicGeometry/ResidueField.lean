@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -34,6 +36,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   it is invertible in the residue field of `Spec K`.
 * `AlgebraicGeometry.Scheme.natCast_residueField_basicOpen_ne_zero`: on the basic open `D(N)`
   where `N` is inverted, `N` is invertible in every residue field.
+* `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of the spectrum of a
+  separably closed field is separably closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -108,6 +112,12 @@ theorem Scheme.natCast_residueField_basicOpen_ne_zero (X : Scheme.{u}) (N : ℕ)
   have hx : U.ι x ∈ U := by simpa only [Scheme.Opens.ι_apply] using x.property
   refine Scheme.Hom.natCast_residueField_ne_zero U.ι ?_
   simpa only [map_natCast] using (X.evaluation_ne_zero_iff_mem_basicOpen (U.ι x) trivial _).mpr hx
+
+/-- The residue field of the spectrum of a separably closed field is separably closed: it is the
+field itself (`AlgebraicGeometry.Scheme.Spec.residueFieldIsoOfField`). -/
+instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
+    (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
+  IsSepClosed.of_ringEquiv (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
 
 section residueFieldCongr
 
