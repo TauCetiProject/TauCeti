@@ -36,18 +36,18 @@ variable (d : TitsLieIndex)
 
 /-- The Tits Steinberg endomorphism is the exceptional endomorphism itself. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  F4ShortRoot.PrimeField.specialIsogeny d.1.Closure
+  F4ShortRoot.PrimeField.specialIsogeny d.val.Closure
 
 /-- The Tits Steinberg map is the characteristic-two carrier's special isogeny. -/
 theorem steinberg_def :
-    d.steinberg = F4ShortRoot.PrimeField.specialIsogeny d.1.Closure := by rfl
+    d.steinberg = F4ShortRoot.PrimeField.specialIsogeny d.val.Closure := by rfl
 
 /-- The Tits map is the index's recorded odd iterate, whose exponent is one. -/
 theorem steinberg_eq_specialIsogeny_pow :
     d.steinberg =
       -- Keep the carrier's endomorphism monoid so powers mean composition.
-      (show Monoid.End _ from F4ShortRoot.PrimeField.specialIsogeny d.1.Closure) ^
-        d.1.fieldExponent := by
+      (show Monoid.End _ from F4ShortRoot.PrimeField.specialIsogeny d.val.Closure) ^
+        d.val.fieldExponent := by
   rw [fieldExponent_eq_one, pow_one, steinberg_def]
 
 /-- Squaring the Tits Steinberg map gives the prime-field Frobenius. -/
@@ -56,7 +56,7 @@ theorem steinberg_eq_specialIsogeny_pow :
   rw [steinberg_def, frobenius_def, F4ShortRoot.PrimeField.specialIsogeny_specialIsogeny]
 
 /-- The carrier's positive-root exponent agrees with the indexed source-root exponent. -/
-theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
+theorem isogenyExponent_inl_finCongr (i : Fin d.val.rank) :
     F4ShortRoot.isogenyExponent (.inl (finCongr d.rank_eq_four i)) =
       d.toSuzukiReeIndex.exponent i := by
   rw [exponent_eq]
@@ -66,8 +66,8 @@ theorem isogenyExponent_inl_finCongr (i : Fin d.1.rank) :
 
 /-- The Tits map exchanges the numbered simple roots, with exponent one on long roots and
 two on short roots, matching the validated index. -/
-@[simp] theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+@[simp] theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by
@@ -79,8 +79,8 @@ two on short roots, matching the validated index. -/
 /-- The Tits Steinberg map reverses negative simple roots with the indexed source-root exponent.
 The separate Tits index has the exceptional parameter `m = 0`. -/
 @[simp]
-theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem steinberg_negativeSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.negativeSimpleRootSubgroup i u) =
       d.negativeSimpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.toSuzukiReeIndex.exponent i)) := by

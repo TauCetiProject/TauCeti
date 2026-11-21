@@ -26,8 +26,8 @@ variable {α : Type*} [DecidableEq α] {m : Multiset α}
 theorem Nodup.coe_injective (h : m.Nodup) : Function.Injective fun x : m ↦ (x : α) := by
   intro x y hxy
   apply (coeEmbedding m).injective
-  have hx := x.2.2
-  have hy := y.2.2
+  have hx := x.2.isLt
+  have hy := y.2.isLt
   simp only [count_eq_one_of_mem h coe_mem] at hx hy
   simp only [coeEmbedding_apply, Prod.mk.injEq]
   exact ⟨hxy, by lia⟩

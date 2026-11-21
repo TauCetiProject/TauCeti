@@ -197,12 +197,12 @@ theorem quasiIso_cubicalChainComplexProdComparison
     · -- Points with second coordinate in `B` lie in `X × B`.
       refine Or.inl fun x hx ↦ ?_
       obtain ⟨b, hb⟩ := interior_subset hx
-      exact ⟨(x.1.1, b), Subtype.ext ((P.coe_prodSubspaceInr_apply Q _).trans (Prod.ext rfl hb))⟩
+      exact ⟨(x.val.1, b), Subtype.ext ((P.coe_prodSubspaceInr_apply Q _).trans (Prod.ext rfl hb))⟩
     · -- Points with first coordinate in `A` lie in `A × Y`.
       refine Or.inr fun x hx ↦ ?_
       obtain ⟨a, ha⟩ := interior_subset hx
       rw [prodExcisionMap_fst]
-      exact ⟨(a, x.1.2), Subtype.ext ((P.coe_prodSubspaceInl_apply Q _).trans (Prod.ext ha rfl))⟩
+      exact ⟨(a, x.val.2), Subtype.ext ((P.coe_prodSubspaceInl_apply Q _).trans (Prod.ext ha rfl))⟩
 
 /-- **The relative cubical chains of a product of pairs with open subspaces.** If `A` is open in
 `X` and `B` is open in `Y`, then the comparison map `N(P × Q) ⟶ N(X × Y, A × Y ∪ X × B)` is a
@@ -212,6 +212,6 @@ theorem quasiIso_cubicalChainComplexProdComparison_of_isOpen (hA : IsOpen (Set.r
   refine quasiIso_cubicalChainComplexProdComparison k P Q ?_
   rw [(TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA).interior_eq,
     (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB).interior_eq]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+  exact Set.eq_univ_of_forall fun x ↦ x.property
 
 end TopPair

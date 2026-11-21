@@ -17,8 +17,9 @@ algebraic multiplication maps and allow power-series calculations on multiplicat
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
 faithful (`RegularNormedAlgebra.faithfulSMul`).
-For unital algebras we also bundle the left regular representation as a unital algebra
-homomorphism and give its inverse norm bound without assuming that the identity has norm one.
+For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
+factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
+inverse norm bound without assuming that the identity has norm one.
 Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
 `exp x`, over any nontrivially normed field of characteristic zero and without completeness.
 -/
@@ -78,6 +79,25 @@ section Unital
 
 variable [SeminormedRing R] [NormedSpace 𝕜 R]
   [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+
+/-- Specializing the left factor of bounded two-sided multiplication `mulLeftRight 𝕜 R` to `1`
+gives the flipped (right-multiplication) operator `(mul 𝕜 R).flip`. -/
+@[simp]
+theorem mulLeftRight_one : mulLeftRight 𝕜 R (1 : R) = (mul 𝕜 R).flip := by
+  ext y x
+  simp
+
+/-- Specializing the left factor of `mulLeftRight 𝕜 R` to `1` gives bounded right multiplication
+by `y`. -/
+theorem mulLeftRight_one_left (y : R) : mulLeftRight 𝕜 R 1 y = (mul 𝕜 R).flip y := by
+  simp
+
+/-- Specializing the right factor of `mulLeftRight 𝕜 R` to `1` gives bounded left multiplication
+by `x`. -/
+@[simp]
+theorem mulLeftRight_one_right (x : R) : mulLeftRight 𝕜 R x 1 = mul 𝕜 R x := by
+  ext z
+  simp
 
 /-- A power of bounded left multiplication acts by the corresponding algebra power. -/
 -- Simplify before the generic operator-power rule rewrites the application as an iterate.
