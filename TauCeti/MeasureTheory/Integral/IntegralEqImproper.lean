@@ -11,7 +11,10 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Derivatives of improper tail integrals
@@ -50,6 +53,14 @@ integrable function over them converge to its integral. A nonnegative function w
 these preimages converge as the radii `r i` tend to infinity has the limit as its integral
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
+
+For improper interval integrals on a ray `[a, ∞)`,
+`MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
+any two points of `[a, ∞)`, while
+`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici` records the
+`intervalIntegral.integral_undef` collapse when local integrability fails, and
+`TauCeti.integrableOn_integral_Ioi_sub_pow_smul` / `TauCeti.integral_Ioi_integral_Ioi_sub_pow_smul`
+establish the Cauchy triangle Fubini swap on `(y, ∞)`.
 
 ## References
 
@@ -322,4 +333,168 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
       g (Ioi (c + b * a)),
     preimage_const_add_Ioi, add_sub_cancel_left]
 
+/-- If `g` fails `LocallyIntegrableOn g (Ici x) μ` for a measure without point masses, then
+`∫ t in x..R, g t ∂μ = 0` for all sufficiently large `R` by `intervalIntegral.integral_undef`,
+so `fun R ↦ ∫ t in x..R, g t ∂μ` tends to `0`. -/
+theorem tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ]
+    {x : ℝ} (hnot : ¬ LocallyIntegrableOn g (Ici x) μ) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 0) := by
+  rw [LocallyIntegrableOn] at hnot; push Not at hnot
+  obtain ⟨y, hy, hy_not⟩ := hnot
+  have hnot_Icc : ¬ IntegrableOn g (Icc x (y + 1)) μ := fun hIcc ↦ hy_not ⟨Icc x (y + 1), by
+    filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one y))] with _ h1 h2 using ⟨h1, h2.le⟩, hIcc⟩
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop (y + 1)] with R hR
+  exact (intervalIntegral.integral_undef fun hInt ↦ hnot_Icc
+    (((intervalIntegrable_iff_integrableOn_Icc_of_le (by linarith [mem_Ici.mp hy])
+      eNorm_ne_top).mp hInt).mono_set (Icc_subset_Icc_right hR))).symm
+
+section CauchyTriangle
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Triangular Cauchy kernel `(s, t) ↦ (t - s) ^ m • f t` supported on `y < s < t`. -/
+private noncomputable def cauchyTriangleKernel (f : ℝ → E) (y : ℝ) (m : ℕ) : ℝ × ℝ → E :=
+  {p : ℝ × ℝ | y < p.1 ∧ p.1 < p.2}.indicator
+    fun p ↦ (p.2 - p.1) ^ m • (Ioi y).indicator f p.2
+
+/-- Horizontal slice of `cauchyTriangleKernel` at fixed `t`. -/
+private theorem cauchyTriangleKernel_snd (f : ℝ → E) (y : ℝ) (m : ℕ) (t : ℝ) :
+    (fun s : ℝ ↦ cauchyTriangleKernel f y m (s, t)) =
+      if y < t then (Ioo y t).indicator fun s ↦ (t - s) ^ m • f t else (0 : ℝ → E) := by
+  ext s; split_ifs with ht <;> simp only [cauchyTriangleKernel, Pi.zero_apply, indicator,
+    mem_ofPred_eq, mem_Ioo, mem_Ioi]
+  · by_cases hs : y < s ∧ s < t <;> simp [hs, ht]
+  · exact ite_eq_right_iff.mpr fun h ↦ absurd (h.1.trans h.2) ht
+
+/-- Vertical slice of `cauchyTriangleKernel` at fixed `s`. -/
+private theorem cauchyTriangleKernel_fst (f : ℝ → E) (y : ℝ) (m : ℕ) (s : ℝ) :
+    (fun t : ℝ ↦ cauchyTriangleKernel f y m (s, t)) =
+      if y < s then (Ioi s).indicator fun t ↦ (t - s) ^ m • f t else (0 : ℝ → E) := by
+  ext t; split_ifs with hs <;> simp only [cauchyTriangleKernel, Pi.zero_apply, indicator,
+    mem_ofPred_eq, mem_Ioi]
+  · by_cases hst : s < t
+    · simp [hs, hst, hs.trans hst]
+    · simp [hst]
+  · exact ite_eq_right_iff.mpr fun h ↦ absurd h.1 hs
+
+/-- Vertical slice integral of `cauchyTriangleKernel` at fixed `s`. -/
+private theorem integral_cauchyTriangleKernel_fst (f : ℝ → E) (y : ℝ) (m : ℕ) (s : ℝ) :
+    (∫ t, cauchyTriangleKernel f y m (s, t)) =
+      (Ioi y).indicator (fun r ↦ ∫ t in Ioi r, (t - r) ^ m • f t) s := by
+  rw [cauchyTriangleKernel_fst]
+  split_ifs with hs
+  · rw [indicator_of_mem hs, MeasureTheory.integral_indicator measurableSet_Ioi]
+  · simp [hs]
+
+/-- Horizontal slice integral of `cauchyTriangleKernel` at fixed `t`. -/
+private theorem integral_cauchyTriangleKernel_snd [CompleteSpace E]
+    (f : ℝ → E) (y : ℝ) (m : ℕ) (t : ℝ) :
+    (∫ s, cauchyTriangleKernel f y m (s, t)) =
+      (Ioi y).indicator (fun r ↦ ((m + 1 : ℝ)⁻¹ * (r - y) ^ (m + 1)) • f r) t := by
+  rw [cauchyTriangleKernel_snd]
+  split_ifs with ht
+  · have hsub : ∫ s in y..t, (t - s) ^ m = (t - y) ^ (m + 1) / (m + 1 : ℝ) := by
+      simpa only [Real.rpow_natCast, ← Nat.cast_add_one] using
+        integral_sub_rpow (r := (m : ℝ)) (by linarith [Nat.cast_nonneg (α := ℝ) m]) y t
+    rw [indicator_of_mem ht, MeasureTheory.integral_indicator measurableSet_Ioo,
+      ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le ht.le,
+      intervalIntegral.integral_smul_const, hsub, div_eq_inv_mul]
+  · simp [ht]
+
+/-- Product integrability of `cauchyTriangleKernel` on `ℝ × ℝ` from integrability of
+`t ↦ (t - y) ^ (m + 1) • f t` on `(y, ∞)`. -/
+private theorem integrable_cauchyTriangleKernel {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hfm1 : IntegrableOn (fun t : ℝ ↦ (t - y) ^ (m + 1) • f t) (Ioi y)) :
+    Integrable (cauchyTriangleKernel f y m) (volume.prod volume) := by
+  have hS : MeasurableSet {p : ℝ × ℝ | y < p.1 ∧ p.1 < p.2} :=
+    (isOpen_lt continuous_const continuous_fst).measurableSet.inter
+      (isOpen_lt continuous_fst continuous_snd).measurableSet
+  have hf_meas : AEStronglyMeasurable f (volume.restrict (Ioi y)) := by
+    refine (((by fun_prop : Measurable fun t : ℝ ↦ ((t - y) ^ (m + 1))⁻¹).aestronglyMeasurable).smul
+      hfm1.aestronglyMeasurable).congr ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : y < t)
+    rw [Pi.smul_apply', smul_smul, inv_mul_cancel₀ (pow_ne_zero _ (sub_pos.mpr ht).ne'), one_smul]
+  have hmeas : AEStronglyMeasurable (cauchyTriangleKernel f y m) (volume.prod volume) :=
+    (((by fun_prop : Continuous fun p : ℝ × ℝ ↦ (p.2 - p.1) ^ m).aestronglyMeasurable).smul
+      (((aestronglyMeasurable_indicator_iff measurableSet_Ioi).mpr hf_meas).comp_snd)).indicator hS
+  rw [integrable_prod_iff' hmeas]
+  refine ⟨ae_of_all _ fun t ↦ ?_, ?_⟩
+  · rw [cauchyTriangleKernel_snd]
+    split_ifs
+    · rw [integrable_indicator_iff measurableSet_Ioo]
+      exact (((by fun_prop : Continuous fun s : ℝ ↦ (t - s) ^ m).integrableOn_Icc).mono_set
+        Ioo_subset_Icc_self).smul_const (f t)
+    · exact integrable_zero _ _ _
+  · have hnorm_pt (s t : ℝ) :
+        ‖cauchyTriangleKernel f y m (s, t)‖ = cauchyTriangleKernel (fun r ↦ ‖f r‖) y m (s, t) := by
+      simp only [cauchyTriangleKernel, norm_indicator_eq_indicator_norm]
+      by_cases h : y < s ∧ s < t
+      · simp [h, norm_smul, abs_of_nonneg (sub_nonneg.mpr h.2.le),
+          norm_indicator_eq_indicator_norm]
+      · simp [h]
+    simp_rw [hnorm_pt, integral_cauchyTriangleKernel_snd, smul_eq_mul]
+    rw [integrable_indicator_iff measurableSet_Ioi]
+    refine IntegrableOn.congr_fun (hfm1.norm.const_mul (m + 1 : ℝ)⁻¹) (fun t ht ↦ ?_)
+      measurableSet_Ioi
+    rw [norm_smul, Real.norm_of_nonneg (pow_nonneg (sub_nonneg.mpr (mem_Ioi.mp ht).le) _),
+      mul_assoc]
+
+/-- Integrability of the Cauchy tail transform `s ↦ ∫ t in Ioi s, (t - s) ^ m • f t` on `(y, ∞)`
+whenever `t ↦ (t - y) ^ (m + 1) • f t` is integrable on `(y, ∞)`. -/
+theorem integrableOn_integral_Ioi_sub_pow_smul {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ (m + 1) • f t) (Ioi y)) :
+    IntegrableOn (fun s : ℝ ↦ ∫ t in Ioi s, (t - s) ^ m • f t) (Ioi y) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp_rw [integral_of_not_completeSpace hE]
+    exact integrableOn_zero
+  exact (integrable_indicator_iff measurableSet_Ioi).mp
+    ((integrable_cauchyTriangleKernel hf).integral_prod_left.congr
+      (ae_of_all _ (integral_cauchyTriangleKernel_fst f y m)))
+
+/-- **Cauchy Fubini swap on `(y, ∞)`.** Whenever `t ↦ (t - y) ^ (m + 1) • f t` is integrable on
+`(y, ∞)`,
+`∫ s in Ioi y, ∫ t in Ioi s, (t - s) ^ m • f t = (m + 1)⁻¹ • ∫ t in Ioi y, (t - y) ^ (m + 1) • f t`.
+-/
+theorem integral_Ioi_integral_Ioi_sub_pow_smul {f : ℝ → E} {y : ℝ} {m : ℕ}
+    (hf : IntegrableOn (fun t : ℝ ↦ (t - y) ^ (m + 1) • f t) (Ioi y)) :
+    ∫ s in Ioi y, (∫ t in Ioi s, (t - s) ^ m • f t) =
+      ((m + 1 : ℝ)⁻¹) • ∫ t in Ioi y, (t - y) ^ (m + 1) • f t := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
+  calc
+    ∫ s in Ioi y, (∫ t in Ioi s, (t - s) ^ m • f t)
+        = ∫ s, ∫ t, cauchyTriangleKernel f y m (s, t) := by
+          rw [← MeasureTheory.integral_indicator measurableSet_Ioi]
+          exact integral_congr_ae
+            (ae_of_all _ fun s ↦ (integral_cauchyTriangleKernel_fst f y m s).symm)
+    _ = ∫ t, ∫ s, cauchyTriangleKernel f y m (s, t) :=
+          integral_integral_swap (integrable_cauchyTriangleKernel hf)
+    _ = ((m + 1 : ℝ)⁻¹) • ∫ t in Ioi y, (t - y) ^ (m + 1) • f t := by
+          rw [← MeasureTheory.integral_smul, ← MeasureTheory.integral_indicator measurableSet_Ioi]
+          refine integral_congr_ae (ae_of_all _ fun t ↦ ?_)
+          dsimp only; rw [integral_cauchyTriangleKernel_snd]
+          by_cases ht : y < t <;> simp [ht, mul_smul]
+
+end CauchyTriangle
+
 end TauCeti
+
+/-- **Basepoint shifting for improper interval integrals on `[a, ∞)`.** If `g` is locally
+integrable on `[a, ∞)` and its improper integral from `b ≥ a` converges to `L`, then for every
+`x ≥ a` its improper integral from `x` converges to `L - ∫ t in b..x, g t ∂μ`. -/
+theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} {a b x : ℝ} {L : E}
+    (hg : LocallyIntegrableOn g (Ici a) μ) (hb : a ≤ b) (hx : a ≤ x)
+    (hconv : Tendsto (fun R : ℝ ↦ ∫ t in b..R, g t ∂μ) atTop (𝓝 L)) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 (L - ∫ t in b..x, g t ∂μ)) := by
+  refine (hconv.sub_const (∫ t in b..x, g t ∂μ)).congr' ?_
+  filter_upwards [eventually_ge_atTop a] with R hR
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+      (hg.intervalIntegrable fun _ ht ↦ (le_min hb hx).trans ht.1)
+      (hg.intervalIntegrable fun _ ht ↦ (le_min hx hR).trans ht.1),
+    add_sub_cancel_left]

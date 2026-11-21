@@ -57,6 +57,8 @@ not belong to any particular application.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
   on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
   interval.
+* `MeasureTheory.LocallyIntegrableOn.intervalIntegrable`: if `f` is locally integrable on a set
+  `s` containing `[[x, y]]`, then `f` is interval integrable between `x` and `y`.
 * `TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum` and
   `TauCeti.intervalIntegral.tendsto_riemannSum`: for a Banach-space-valued function jointly
   continuous on `uIcc a b ×ˢ K` (with `K` compact), or continuous on `uIcc a b`, uniform
@@ -501,3 +503,11 @@ theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max {E : Type*
   · refine (intervalIntegrable_const (c := f c)).congr fun y hy ↦ ?_
     rw [uIoc_of_ge hx] at hy
     simp only [max_eq_right hy.2]
+
+/-- If `f` is locally integrable on a set `s` containing `[[x, y]]`, then `f` is interval
+integrable between `x` and `y`. -/
+theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} {μ : Measure ℝ} {s : Set ℝ} {x y : ℝ}
+    (hf : LocallyIntegrableOn f s μ) (hxy : uIcc x y ⊆ s) :
+    IntervalIntegrable f μ x y :=
+  (hf.integrableOn_compact_subset hxy isCompact_uIcc).intervalIntegrable
