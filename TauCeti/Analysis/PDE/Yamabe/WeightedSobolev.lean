@@ -9,7 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.PDE.Yamabe.Bubble.Moments
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -46,138 +47,6 @@ open scoped NNReal Topology
 
 namespace TauCeti.Yamabe
 
-/-- Radial critical-mass density `s ^ (n - 1) * (2 / (1 + s²)) ^ n` of the unit bubble `U_{1,0}`. -/
-def bubbleRadialWeight (n : ℕ) (s : ℝ) : ℝ := s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n
-
-/-- Unfolding lemma for `TauCeti.Yamabe.bubbleRadialWeight`. -/
-theorem bubbleRadialWeight_def (n : ℕ) (s : ℝ) :
-    bubbleRadialWeight n s = s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n := (rfl)
-
-private theorem continuous_bubbleRadialWeight (n : ℕ) : Continuous (bubbleRadialWeight n) :=
-  (continuous_pow (n - 1)).mul ((continuous_const.div
-    (continuous_const.add (continuous_pow 2)) fun _ ↦ by dsimp; positivity).pow n)
-
-private theorem bubbleRadialWeight_pos {n : ℕ} {s : ℝ} (hs : 0 < s) :
-    0 < bubbleRadialWeight n s := by
-  rw [bubbleRadialWeight_def]; positivity
-
-private theorem integrableOn_pow_mul_div_one_add_sq_pow {n k : ℕ} (hn : 0 < n)
-    (hk : k ≤ 2 * (n - 1)) :
-    IntegrableOn (fun s : ℝ ↦ s ^ k * (2 / (1 + s ^ 2)) ^ n) (Ioi 0) := by
-  have hdom : IntegrableOn (fun s : ℝ ↦ (2 : ℝ) ^ n * (1 + s ^ 2) ^ (-1 : ℝ)) (Ioi 0) :=
-    ((integrable_one_add_sq_rpow (by norm_num : (1 / 2 : ℝ) < 1)).const_mul _).integrableOn
-  have hcont : Continuous fun s : ℝ ↦ s ^ k * (2 / (1 + s ^ 2)) ^ n :=
-    (continuous_pow k).mul ((continuous_const.div
-      (continuous_const.add (continuous_pow 2)) fun _ ↦ by dsimp; positivity).pow n)
-  refine hdom.mono' hcont.aestronglyMeasurable.restrict
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_)
-  have h1s : 0 < 1 + s ^ 2 := by positivity
-  have hpow : s ^ k ≤ (1 + s ^ 2) ^ (n - 1) := by
-    rcases le_or_gt s 1 with hs1 | hs1
-    · exact (pow_le_one₀ hs.le hs1).trans (one_le_pow₀ (by linarith [sq_nonneg s]))
-    · exact (pow_le_pow_right₀ hs1.le hk).trans
-        (pow_mul s 2 (n - 1) ▸ pow_le_pow_left₀ (sq_nonneg s) (by linarith) _)
-  rw [Real.norm_of_nonneg (by positivity), div_pow, Real.rpow_neg_one]
-  refine (mul_le_mul_of_nonneg_right hpow (by positivity)).trans_eq ?_
-  have hpow_n : (1 + s ^ 2) ^ n = (1 + s ^ 2) ^ (n - 1) * (1 + s ^ 2) := by
-    rw [← pow_succ, Nat.sub_add_cancel hn]
-  rw [hpow_n]; field_simp [h1s.ne']
-
-private theorem integrableOn_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
-    IntegrableOn (bubbleRadialWeight n) (Ioi 0) :=
-  integrableOn_pow_mul_div_one_add_sq_pow hn (by omega)
-
-private theorem integrableOn_sq_mul_bubbleRadialWeight {n : ℕ} (hn : 2 < n) :
-    IntegrableOn (fun s ↦ s ^ 2 * bubbleRadialWeight n s) (Ioi 0) := by
-  have hidx : n + 1 = (n - 1) + 2 := by omega
-  exact (integrableOn_pow_mul_div_one_add_sq_pow (n := n) (k := n + 1) (by omega)
-    (by omega)).congr_fun
-    (fun s _ ↦ by simp only [bubbleRadialWeight_def, hidx, pow_add]; ring) measurableSet_Ioi
-
-private theorem integral_bubbleRadialWeight_pos {n : ℕ} (hn : 0 < n) :
-    0 < ∫ s in Ioi (0 : ℝ), bubbleRadialWeight n s := by
-  rw [setIntegral_pos_iff_support_of_nonneg_ae
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun _ hs ↦ (bubbleRadialWeight_pos hs).le)
-    (integrableOn_bubbleRadialWeight hn)]
-  exact (isOpen_Ioi.measure_pos volume ⟨1, one_pos⟩).trans_le
-    (measure_mono fun _ hs ↦ ⟨(bubbleRadialWeight_pos hs).ne', hs⟩)
-
-private theorem sub_two_mul_integral_sq_mul_bubbleRadialWeight {n : ℕ} (hn : 2 < n) :
-    ((n : ℝ) - 2) * ∫ s in Ioi (0 : ℝ), s ^ 2 * bubbleRadialWeight n s =
-      (n : ℝ) * ∫ s in Ioi (0 : ℝ), bubbleRadialWeight n s := by
-  have h₁ : IntegrableOn (fun s : ℝ ↦ s ^ (n - 1) * (2 * 1 / (1 ^ 2 + s ^ 2)) ^ n) (Ioi 0) :=
-    (integrableOn_bubbleRadialWeight (n := n) (by omega)).congr_fun
-      (fun s _ ↦ by simp [bubbleRadialWeight_def]) measurableSet_Ioi
-  have h₂ : IntegrableOn (fun s : ℝ ↦ s ^ (n - 1) * (s ^ 2 * (2 * 1 / (1 ^ 2 + s ^ 2)) ^ n))
-      (Ioi 0) :=
-    (integrableOn_sq_mul_bubbleRadialWeight hn).congr_fun
-      (fun s _ ↦ by simp only [bubbleRadialWeight_def, mul_one, one_pow]; ring) measurableSet_Ioi
-  simpa only [bubbleRadialWeight_def, mul_one, one_pow, mul_left_comm _ (_ ^ 2)] using
-    sub_two_mul_integral_radial hn h₁ h₂
-
-private theorem pow_mul_integral_Ioi_bubbleRadialWeight_le {n : ℕ} (hn : 0 < n) {s : ℝ}
-    (hs : 0 < s) : s ^ n * ∫ σ in Ioi s, bubbleRadialWeight n σ ≤ 2 ^ n := by
-  let g : ℝ → ℝ := fun σ ↦ -(2 ^ n / (n : ℝ)) * (σ ^ n)⁻¹
-  let g' : ℝ → ℝ := fun σ ↦ σ ^ (n - 1) * (2 / σ ^ 2) ^ n
-  have hg_d : ∀ σ ∈ Ici s, HasDerivAt g (g' σ) σ := fun σ hσ ↦ by
-    have hσ0 : 0 < σ := hs.trans_le hσ
-    refine (((hasDerivAt_pow n σ).inv (pow_ne_zero n hσ0.ne')).const_mul
-      (-(2 ^ n / (n : ℝ)))).congr_deriv ?_
-    have hsq : (σ ^ n) ^ 2 = (σ ^ 2) ^ n := by rw [← pow_mul, mul_comm, pow_mul]
-    simp only [g', div_pow]; rw [hsq]; field_simp [hσ0.ne']
-  have hg'_nn : ∀ σ ∈ Ioi s, 0 ≤ g' σ := fun σ hσ ↦ by have := hs.trans hσ; positivity
-  have hg_top : Tendsto g atTop (𝓝 0) := by
-    simpa [g] using ((tendsto_pow_atTop hn.ne').inv_tendsto_atTop).const_mul (-(2 ^ n / (n : ℝ)))
-  have hgi : 2 ^ n / (n : ℝ) * (s ^ n)⁻¹ = ∫ σ in Ioi s, g' σ := by
-    rw [integral_Ioi_of_hasDerivAt_of_nonneg' hg_d hg'_nn hg_top]; simp [g]
-  have hle : ∫ σ in Ioi s, bubbleRadialWeight n σ ≤ 2 ^ n / (n : ℝ) * (s ^ n)⁻¹ := by
-    rw [hgi]
-    exact setIntegral_mono_on
-      ((integrableOn_bubbleRadialWeight hn).mono_set (Ioi_subset_Ioi hs.le))
-      (integrableOn_Ioi_deriv_of_nonneg' hg_d hg'_nn hg_top) measurableSet_Ioi fun σ hσ ↦
-      have hσ0 : 0 < σ := hs.trans hσ
-      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity)
-        (div_le_div_of_nonneg_left zero_le_two (sq_pos_of_pos hσ0) (by linarith)) n)
-        (pow_nonneg hσ0.le _)
-  calc s ^ n * ∫ σ in Ioi s, bubbleRadialWeight n σ
-      ≤ s ^ n * (2 ^ n / (n : ℝ) * (s ^ n)⁻¹) := mul_le_mul_of_nonneg_left hle (by positivity)
-    _ = 2 ^ n / (n : ℝ) := by field_simp [hs.ne']
-    _ ≤ 2 ^ n := div_le_self (by positivity) (by exact_mod_cast hn)
-
-private theorem hasDerivAt_of_integral_bubbleRadialWeight_eq {n : ℕ} {I₀ : ℝ} {Ginv : ℝ → ℝ}
-    (hGinv : ∀ y ∈ Ioo 0 I₀, 0 < Ginv y ∧ (∫ σ in (0 : ℝ)..Ginv y, bubbleRadialWeight n σ) = y)
-    {y : ℝ} (hy : y ∈ Ioo 0 I₀) :
-    HasDerivAt Ginv (bubbleRadialWeight n (Ginv y))⁻¹ y := by
-  let G : ℝ → ℝ := fun s ↦ ∫ σ in (0 : ℝ)..s, bubbleRadialWeight n σ
-  have hG_deriv (s : ℝ) : HasDerivAt G (bubbleRadialWeight n s) s :=
-    ((continuous_bubbleRadialWeight n).integral_hasStrictDerivAt 0 s).hasDerivAt
-  have hG_mono : StrictMonoOn G (Ici 0) :=
-    strictMonoOn_of_deriv_pos (convex_Ici 0)
-      (continuous_iff_continuousAt.2 fun s ↦ (hG_deriv s).continuousAt).continuousOn
-      fun s hs ↦ by
-        rw [interior_Ici] at hs; rw [(hG_deriv s).deriv]; exact bubbleRadialWeight_pos hs
-  obtain ⟨hs₀, hGs₀⟩ := hGinv y hy
-  have hcont : ContinuousAt Ginv y := Metric.tendsto_nhds.2 fun ε hε ↦ by
-    set δ := min (Ginv y / 2) (ε / 2)
-    have hδ : 0 < δ := lt_min (half_pos hs₀) (half_pos hε)
-    have hsub0 : 0 ≤ Ginv y - δ := sub_nonneg.2 ((min_le_left _ _).trans (by linarith))
-    have hlo : G (Ginv y - δ) < y :=
-      (hG_mono (mem_Ici.2 hsub0) (mem_Ici.2 hs₀.le) (by linarith)).trans_eq hGs₀
-    have hhi : y < G (Ginv y + δ) :=
-      hGs₀.symm.trans_lt (hG_mono (mem_Ici.2 hs₀.le) (mem_Ici.2 (by linarith)) (by linarith))
-    filter_upwards [Ioo_mem_nhds (max_lt hy.1 hlo) (lt_min hy.2 hhi)] with z hz
-    obtain ⟨hsz, hGsz⟩ := hGinv z
-      ⟨(le_max_left _ _).trans_lt hz.1, hz.2.trans_le (min_le_left _ _)⟩
-    have h1 : Ginv y - δ < Ginv z := not_le.1 fun hle ↦ ((le_max_right _ _).trans_lt hz.1).not_ge
-      (hGsz ▸ hG_mono.monotoneOn (mem_Ici.2 hsz.le) (mem_Ici.2 hsub0) hle)
-    have h2 : Ginv z < Ginv y + δ := not_le.1 fun hle ↦ (hz.2.trans_le (min_le_right _ _)).not_ge
-      (hGsz ▸ hG_mono.monotoneOn (mem_Ici.2 (by linarith)) (mem_Ici.2 hsz.le) hle)
-    have hδe : δ ≤ ε / 2 := min_le_right _ _
-    rw [Real.dist_eq, abs_lt]; exact ⟨by linarith, by linarith⟩
-  exact HasDerivAt.of_local_left_inverse hcont (hG_deriv (Ginv y))
-    (bubbleRadialWeight_pos hs₀).ne'
-    (eventually_of_mem (Ioo_mem_nhds hy.1 hy.2) fun z hz ↦ (hGinv z hz).2)
-
 private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
     ∃ Ginv : ℝ → ℝ,
       let I₀ := ∫ s in Ioi (0 : ℝ), bubbleRadialWeight n s;
@@ -190,7 +59,7 @@ private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
   have hw := integrableOn_bubbleRadialWeight (n := n) hn
   have hI₀ : 0 < I₀ := integral_bubbleRadialWeight_pos hn
   let G : ℝ → ℝ := fun s ↦ ∫ σ in (0 : ℝ)..s, bubbleRadialWeight n σ
-  -- Stage 1: Strict monotonicity and intermediate-value invertibility of `G` on `[0, ∞)`.
+  -- Stage 1: Strict monotonicity, image `(0, I₀)`, and `OrderIso` inverse of `G` on `(0, ∞)`.
   have hG_deriv (s : ℝ) : HasDerivAt G (bubbleRadialWeight n s) s :=
     ((continuous_bubbleRadialWeight n).integral_hasStrictDerivAt 0 s).hasDerivAt
   have hG_cont : Continuous G := continuous_iff_continuousAt.2 fun s ↦ (hG_deriv s).continuousAt
@@ -199,17 +68,39 @@ private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
       rw [interior_Ici] at hs; rw [(hG_deriv s).deriv]; exact bubbleRadialWeight_pos hs
   have hG0 : G 0 = 0 := intervalIntegral.integral_same
   have hG_top : Tendsto G atTop (𝓝 I₀) := intervalIntegral_tendsto_integral_Ioi 0 hw tendsto_id
-  have hex (y : ℝ) (hy : y ∈ Ioo 0 I₀) : ∃ s > 0, G s = y := by
-    obtain ⟨M, hM⟩ := (hG_top.eventually (lt_mem_nhds hy.2)).exists_forall_of_atTop
-    obtain ⟨s, hs, hGs⟩ := intermediate_value_Icc (by positivity : 0 ≤ max M 1)
-      hG_cont.continuousOn ⟨hG0.symm ▸ hy.1.le, (hM (max M 1) (le_max_left M 1)).le⟩
-    exact ⟨s, lt_of_le_of_ne hs.1 fun h0 ↦ hy.1.ne (hG0.symm.trans (h0 ▸ hGs)), hGs⟩
-  let Ginv : ℝ → ℝ := fun y ↦ if h : y ∈ Ioo 0 I₀ then Classical.choose (hex y h) else 0
+  have hG_lt_top (s : ℝ) (hs : 0 ≤ s) : G s < I₀ :=
+    (hG_mono (mem_Ici.2 hs) (mem_Ici.2 (by linarith)) (lt_add_one s)).trans_le <|
+      ge_of_tendsto hG_top <| eventually_of_mem (Ici_mem_atTop (s + 1)) fun t (ht : s + 1 ≤ t) ↦
+        hG_mono.monotoneOn (mem_Ici.2 (by linarith)) (mem_Ici.2 (by linarith)) ht
+  have hG_image : G '' Ioi 0 = Ioo 0 I₀ := by
+    refine Subset.antisymm ?_ fun y hy ↦ ?_
+    · rintro _ ⟨s, hs : 0 < s, rfl⟩
+      exact ⟨hG0 ▸ hG_mono (mem_Ici.2 le_rfl) (mem_Ici.2 hs.le) hs, hG_lt_top s hs.le⟩
+    · obtain ⟨M, hM⟩ := (hG_top.eventually (lt_mem_nhds hy.2)).exists_forall_of_atTop
+      obtain ⟨s, hs, hGs⟩ := intermediate_value_Icc (by positivity : 0 ≤ max M 1)
+        hG_cont.continuousOn ⟨hG0.symm ▸ hy.1.le, (hM (max M 1) (le_max_left M 1)).le⟩
+      exact ⟨s, lt_of_le_of_ne hs.1 fun h0 ↦ hy.1.ne (hG0.symm.trans (h0 ▸ hGs)), hGs⟩
+  let e : Ioi (0 : ℝ) ≃o Ioo 0 I₀ :=
+    ((hG_mono.mono Ioi_subset_Ici_self).orderIso).trans (Set.orderIsoOfEq _ _ hG_image)
+  let Ginv : ℝ → ℝ := fun y ↦ if h : y ∈ Ioo 0 I₀ then (e.symm ⟨y, h⟩ : ℝ) else 0
   have hGinv (y : ℝ) (hy : y ∈ Ioo 0 I₀) :
       0 < Ginv y ∧ (∫ σ in (0 : ℝ)..Ginv y, bubbleRadialWeight n σ) = y := by
-    simpa only [Ginv, hy, ↓reduceDIte] using Classical.choose_spec (hex y hy)
-  refine ⟨Ginv, hGinv, fun y hy ↦ hasDerivAt_of_integral_bubbleRadialWeight_eq hGinv hy,
-    fun y hy ↦ ?_, Metric.tendsto_nhds.2 fun ε hε ↦ ?_, Filter.tendsto_atTop.2 fun M ↦ ?_⟩
+    simp only [Ginv, hy, ↓reduceDIte]
+    exact ⟨(e.symm ⟨y, hy⟩).property, congrArg Subtype.val (e.apply_symm_apply ⟨y, hy⟩)⟩
+  have hGinv_contOn : ContinuousOn Ginv (Ioo 0 I₀) :=
+    continuousOn_iff_continuous_domRestrict.2 <|
+      (continuous_subtypeVal.comp e.symm.continuous).congr fun y ↦ by
+        rw [Function.comp_apply, Set.domRestrict_apply]
+        dsimp only [Ginv]
+        split_ifs with h
+        · rfl
+        · exact absurd y.property h
+  refine ⟨Ginv, hGinv, fun y hy ↦ ?_, fun y hy ↦ ?_,
+    Metric.tendsto_nhds.2 fun ε hε ↦ ?_, Filter.tendsto_atTop.2 fun M ↦ ?_⟩
+  · -- Derivative of `Ginv` via `OrderIso.continuous` and `HasDerivAt.of_local_left_inverse`.
+    exact HasDerivAt.of_local_left_inverse (hGinv_contOn.continuousAt (isOpen_Ioo.mem_nhds hy))
+      (hG_deriv (Ginv y)) (bubbleRadialWeight_pos (hGinv y hy).1).ne'
+      (eventually_of_mem (Ioo_mem_nhds hy.1 hy.2) fun z hz ↦ (hGinv z hz).2)
   · -- Stage 2: Tail decay `Ginv(y)^n * (I₀ - y) ≤ 2^n`.
     set s := Ginv y
     obtain ⟨hs, hGs⟩ := hGinv y hy
@@ -231,11 +122,7 @@ private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
   · -- Stage 4: Limit `Ginv(y) → +∞` as `y → I₀⁻`.
     set M' := max M 0
     have hM'0 : 0 ≤ M' := le_max_right M 0
-    have hM'lt : G M' < I₀ :=
-      (hG_mono (mem_Ici.2 hM'0) (mem_Ici.2 (by linarith)) (lt_add_one M')).trans_le <|
-        ge_of_tendsto hG_top <| eventually_of_mem (Ici_mem_atTop (M' + 1)) fun s (hs : M' + 1 ≤ s) ↦
-          hG_mono.monotoneOn (mem_Ici.2 (by linarith)) (mem_Ici.2 (by linarith)) hs
-    filter_upwards [Ioo_mem_nhdsLT (max_lt hI₀ hM'lt)] with y hy
+    filter_upwards [Ioo_mem_nhdsLT (max_lt hI₀ (hG_lt_top M' hM'0))] with y hy
     obtain ⟨hs, hGs⟩ := hGinv y ⟨(le_max_left 0 (G M')).trans_lt hy.1, hy.2⟩
     exact (le_max_left M 0).trans <| not_lt.1 fun hlt ↦
       ((le_max_right 0 (G M')).trans_lt hy.1).not_ge (hGs ▸ hG_mono.monotoneOn hs.le hM'0 hlt.le)
@@ -299,7 +186,7 @@ private theorem subinterval_young_pointwise {n : ℕ} (hn : 2 < n) {r y s d : �
   have hn1 : 0 < (n : ℝ) - 1 := sub_pos.mpr (Nat.one_lt_cast.2 (by omega))
   have hn2 : 0 < (n : ℝ) - 2 := sub_pos.mpr (by exact_mod_cast hn)
   set A := y ^ (q - 1) * s; set B := 2 / ((n : ℝ) - 2) * (-d)
-  have hAB : 2 * A * B ≤ A ^ 2 + B ^ 2 := by nlinarith [sq_nonneg (A - B)]
+  have hAB : 2 * A * B ≤ A ^ 2 + B ^ 2 := by simpa only [mul_assoc] using two_mul_le_add_sq A B
   have hmul := mul_le_mul_of_nonneg_left hAB (by positivity : 0 ≤ ((n : ℝ) - 1) / 2 * r ^ (n - 1))
   have hA2 : (y ^ (q - 1)) ^ 2 = y ^ criticalExponent n := by
     have hexp : (q - 1) * 2 = criticalExponent n := by
@@ -668,25 +555,6 @@ private theorem exists_support_endpoint_of_antitoneOn {n : ℕ} (hn : 2 < n) {f 
     ⟨hF0 ▸ hF_strict (left_mem_Icc.2 hR₀_pos.le) (Ioo_subset_Icc_self hr) hr.1,
      hFR₀ ▸ hF_strict (Ioo_subset_Icc_self hr) (right_mem_Icc.2 hR₀_pos.le) hr.2⟩⟩
 
-private theorem integrableOn_pow_mul_deriv_sq_of_lipschitzWith {n : ℕ} {K : ℝ≥0} {f : ℝ → ℝ}
-    (hf_lip : LipschitzWith K f) {R : ℝ} (hR : 0 < R) (hfR : ∀ r ≥ R, f r = 0) :
-    IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv f r) ^ 2) (Ioi 0) := by
-  refine (((integrableOn_const (s := Ioc 0 R) (C := R ^ (n - 1) * (K : ℝ) ^ 2)
-      measure_Ioc_lt_top.ne).integrable_indicator measurableSet_Ioc).integrableOn).mono'
-    (((continuous_pow (n - 1)).measurable.mul
-      ((measurable_deriv f).pow_const 2)).aestronglyMeasurable.restrict)
-    (ae_restrict_of_forall_mem measurableSet_Ioi fun r (hr : 0 < r) ↦ ?_)
-  rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg hr.le _) (sq_nonneg _))]
-  by_cases hle : r ≤ R
-  · rw [indicator_of_mem (mem_Ioc.2 ⟨hr, hle⟩)]
-    exact mul_le_mul (pow_le_pow_left₀ hr.le hle _) (sq_le_sq.mpr (by
-      simpa only [Real.norm_eq_abs, abs_of_nonneg K.coe_nonneg] using
-        norm_deriv_le_of_lipschitz hf_lip)) (sq_nonneg _) (pow_nonneg hR.le _)
-  · rw [indicator_of_notMem (fun h ↦ hle (mem_Ioc.1 h).2)]
-    have h0 : f =ᶠ[𝓝 r] 0 :=
-      eventually_of_mem (Ioi_mem_nhds (lt_of_not_ge hle)) fun x hx ↦ hfR x hx.le
-    simp [h0.deriv_eq]
-
 /-- **Sharp one-dimensional weighted Sobolev inequality** for normalized Lipschitz profiles that are
 nonnegative and antitone on `[0, ∞)`. -/
 theorem mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral {n : ℕ} (hn : 2 < n)
@@ -704,7 +572,7 @@ theorem mul_integral_bubbleRadialWeight_le_conformalCoefficient_mul_integral {n 
   obtain ⟨R₀, hR₀, F, hfR₀, hf_pos, hF0, hFR₀, hF_deriv, hF_mem⟩ :=
     exists_support_endpoint_of_antitoneOn hn hf_lip.continuous hf_nonneg hf_anti hR hfR
       (integral_bubbleRadialWeight_pos (by omega)) hnorm
-  have hderiv_int := integrableOn_pow_mul_deriv_sq_of_lipschitzWith (n := n) hf_lip hR hfR
+  have hderiv_int := integrableOn_pow_mul_deriv_sq_of_lipschitzWith (k := n - 1) hf_lip hR.le hfR
   set q := 2 * ((n : ℝ) - 1) / ((n : ℝ) - 2)
   set D := ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2
   have hF_cont : Continuous F := continuous_iff_continuousAt.2 fun r ↦ (hF_deriv r).continuousAt

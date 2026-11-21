@@ -81,6 +81,10 @@ rearrangement, which gives the case `p = ∞`.
   finite measure.
 * `TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement`: equimeasurability of the real-valued
   rearrangement at nonnegative levels.
+* `TauCeti.exists_radius_schwarzRearrangement_eq_zero`,
+  `TauCeti.hasCompactSupport_schwarzRearrangement`,
+  `TauCeti.hasCompactSupport_toReal_schwarzRearrangement`: compact support of the rearrangement
+  when `{0 < f}` has finite measure.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -414,6 +418,41 @@ theorem addHaar_setOf_lt_toReal_schwarzRearrangement {u : E → ℝ}
         exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
 
 variable (μ)
+
+/-- If `{0 < f}` has finite Haar measure, then the Schwarz rearrangement of `f` vanishes outside
+a closed ball of positive radius. -/
+theorem exists_radius_schwarzRearrangement_eq_zero (hfin0 : μ {y | 0 < f y} ≠ ∞) :
+    ∃ R > 0, ∀ x : E, R ≤ ‖x‖ → schwarzRearrangement μ f x = 0 := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact ⟨1, one_pos, fun x hx ↦ by have := norm_of_subsingleton x; linarith⟩
+  · obtain ⟨r, -, hr⟩ := μ.exists_nonneg_addHaar_ball_eq hfin0
+    refine ⟨max 1 r, lt_of_lt_of_le one_pos (le_max_left _ _), fun x hx ↦ ?_⟩
+    have hsup : {y | 0 < schwarzRearrangement μ f y} = ball (0 : E) r := by
+      rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
+    by_contra hne
+    have hxball : x ∈ ball (0 : E) r := hsup ▸ pos_iff_ne_zero.2 hne
+    exact (mem_ball_zero_iff.1 hxball).not_ge ((le_max_right _ _).trans hx)
+
+/-- If `{0 < f}` has finite Haar measure, then the Schwarz rearrangement of `f` has compact
+support. -/
+theorem hasCompactSupport_schwarzRearrangement (hfin0 : μ {y | 0 < f y} ≠ ∞) :
+    HasCompactSupport (schwarzRearrangement μ f) := by
+  obtain ⟨R, -, hR⟩ := exists_radius_schwarzRearrangement_eq_zero μ hfin0
+  exact HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R)
+    fun x hx ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (hR x hlt.le))
+
+/-- If `{0 < u}` has finite Haar measure, then the real-valued Schwarz rearrangement of the
+positive part of `u` has compact support. -/
+theorem hasCompactSupport_toReal_schwarzRearrangement {u : E → ℝ} (hfin0 : μ {y | 0 < u y} ≠ ∞) :
+    HasCompactSupport
+      (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) := by
+  have hfin0' : μ {y | (0 : ℝ≥0∞) < ENNReal.ofReal (u y)} ≠ ∞ := by
+    convert hfin0 using 2
+    ext y
+    exact ENNReal.ofReal_pos
+  obtain ⟨R, -, hR⟩ := exists_radius_schwarzRearrangement_eq_zero μ hfin0'
+  exact HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R)
+    fun x hx ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (by simp [hR x hlt.le]))
 
 /-- The Schwarz rearrangement has the same `Lᵖ` seminorm as `f`, for every exponent
 `p ∈ [0, ∞]`. -/

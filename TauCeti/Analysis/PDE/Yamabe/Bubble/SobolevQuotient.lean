@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Energy
 public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # The Sobolev quotient of the Yamabe bubbles
@@ -32,6 +33,8 @@ identities are independent of the scale `t` and the centre `b`.
 ## Main declarations
 
 * `TauCeti.Yamabe.integral_bubble_rpow_criticalExponent_eq_roundSphereVolume`: `∫ U ^ pₙ = |Sⁿ|`.
+* `TauCeti.Yamabe.mul_integral_bubbleRadialWeight_eq_roundSphereVolume`: sphere-volume
+  normalization of `bubbleRadialWeight`.
 * `TauCeti.Yamabe.conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_roundSphereVolume`:
   `aₙ ∫ ‖dU‖² = n (n - 1) |Sⁿ|`.
 * `TauCeti.Yamabe.conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeConstant`:
@@ -51,7 +54,7 @@ noncomputable section
 
 namespace TauCeti.Yamabe
 
-open MeasureTheory Module
+open MeasureTheory Metric Module Set
 
 /-- The Yamabe constant of the round sphere as the quotient of the conformal energy
 `n (n - 1) |Sⁿ|` of a bubble by the power `2 / pₙ` of its critical mass `|Sⁿ|`. -/
@@ -71,6 +74,21 @@ theorem integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (hn₀ : 0 < 
     ∫ x, bubble t b x ^ criticalExponent (finrank ℝ E) = roundSphereVolume (finrank ℝ E) := by
   rw [integral_bubble_rpow_criticalExponent hn₀ hn ht b,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+/-- In every positive dimension `n ≠ 2`, the radial integral of `bubbleRadialWeight n` weighted by
+the unit sphere volume `n |B(0, 1)|` equals `roundSphereVolume n`. -/
+theorem mul_integral_bubbleRadialWeight_eq_roundSphereVolume (hn₀ : 0 < finrank ℝ E)
+    (hn : finrank ℝ E ≠ 2) :
+    (finrank ℝ E : ℝ) * (volume.real (ball (0 : E) 1) *
+        ∫ s in Ioi (0 : ℝ), bubbleRadialWeight (finrank ℝ E) s) =
+      roundSphereVolume (finrank ℝ E) := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) hn₀
+  have h := integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (E := E) hn₀ hn one_pos 0
+  simp_rw [bubble_rpow_criticalExponent hn one_pos, sub_zero] at h
+  rw [integral_fun_norm_addHaar volume (fun s ↦ (2 * 1 / (1 ^ 2 + s ^ 2)) ^ finrank ℝ E),
+    setIntegral_congr_fun (g := bubbleRadialWeight (finrank ℝ E)) measurableSet_Ioi fun s _ ↦ by
+      simp [bubbleRadialWeight_def, smul_eq_mul]] at h
+  simpa only [nsmul_eq_mul, smul_eq_mul, mul_assoc] using h
 
 /-- **The energy of a bubble**: in dimension `n > 2`, for Lebesgue measure,
 `aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) |Sⁿ|`. -/

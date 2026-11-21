@@ -52,6 +52,10 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
+* `TauCeti.Yamabe.bubbleRadialWeight`, `TauCeti.Yamabe.continuous_bubbleRadialWeight`,
+  `TauCeti.Yamabe.bubbleRadialWeight_pos`, `TauCeti.Yamabe.bubbleRadialWeight_norm_eq`: the
+  radial critical-mass density of the unit bubble, its regularity, positivity, and identification
+  with the polar Jacobian times the unit bubble's critical power.
 * `TauCeti.Yamabe.bubble_sq`: the square of a bubble as a power of its profile.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
@@ -148,6 +152,27 @@ theorem conformalCoefficient_nonneg (n : ℕ) : 0 ≤ conformalCoefficient n := 
   · exact (conformalCoefficient_pos hn).le
   · interval_cases n <;> norm_num [conformalCoefficient_def]
 
+/-- Radial critical-mass density `s ^ (n - 1) * (2 / (1 + s²)) ^ n` of the unit bubble `U_{1,0}`. -/
+def bubbleRadialWeight (n : ℕ) (s : ℝ) : ℝ := s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n
+
+/-- Unfolding lemma for `TauCeti.Yamabe.bubbleRadialWeight`. -/
+theorem bubbleRadialWeight_def (n : ℕ) (s : ℝ) :
+    bubbleRadialWeight n s = s ^ (n - 1) * (2 / (1 + s ^ 2)) ^ n := (rfl)
+
+/-- The radial bubble weight `bubbleRadialWeight n` is continuous on `ℝ`. -/
+@[fun_prop]
+theorem continuous_bubbleRadialWeight (n : ℕ) : Continuous (bubbleRadialWeight n) :=
+  (continuous_pow (n - 1)).mul ((continuous_const.div
+    (continuous_const.add (continuous_pow 2)) fun _ ↦ by dsimp; positivity).pow n)
+
+/-- The radial bubble weight `bubbleRadialWeight n s` is positive for `s > 0`. -/
+theorem bubbleRadialWeight_pos {n : ℕ} {s : ℝ} (hs : 0 < s) : 0 < bubbleRadialWeight n s := by
+  rw [bubbleRadialWeight_def]; positivity
+
+/-- The radial bubble weight `bubbleRadialWeight n s` is nonnegative for `s ≥ 0`. -/
+theorem bubbleRadialWeight_nonneg {n : ℕ} {s : ℝ} (hs : 0 ≤ s) : 0 ≤ bubbleRadialWeight n s := by
+  rw [bubbleRadialWeight_def]; positivity
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The **bubble** `U_{t,b}(x) = (2 t / (t² + ‖x - b‖²)) ^ ((n - 2) / 2)` of scale `t` centred at
@@ -226,6 +251,14 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≠ 2`, `bubbleRadialWeight n ‖x‖` equals the polar Jacobian `‖x‖ ^ (n - 1)`
+times the critical power `bubble 1 0 x ^ pₙ` of the standard unit bubble. -/
+theorem bubbleRadialWeight_norm_eq (hn : finrank ℝ E ≠ 2) (x : E) :
+    bubbleRadialWeight (finrank ℝ E) ‖x‖ =
+      ‖x‖ ^ (finrank ℝ E - 1) * bubble 1 0 x ^ criticalExponent (finrank ℝ E) := by
+  rw [bubbleRadialWeight_def, bubble_rpow_criticalExponent hn one_pos 0 x]
+  simp
 
 /-- In dimension `n ≥ 2`, the square of a bubble is a power of its profile:
 `U_{t,b} ^ 2 = (2 t / (t² + ‖x - b‖²)) ^ (n - 2)`. -/

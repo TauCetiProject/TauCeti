@@ -81,8 +81,12 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
-* `TauCeti.sub_two_mul_integral_radial`: an identity between two radial moments of the rescaled
-  bracket.
+* `TauCeti.integrableOn_pow_mul_div_sq_add_sq_pow`,
+  `TauCeti.integrableOn_pow_mul_div_one_add_sq_pow`: integrability on `(0, ∞)` of the radial
+  moments of the rescaled bracket.
+* `TauCeti.sub_two_mul_integral_radial`,
+  `TauCeti.sub_two_mul_integral_pow_mul_div_sq_add_sq_pow`: an identity between two radial
+  moments of the rescaled bracket.
 * `TauCeti.integral_pow_mul_div_add_sq_pow`: the radial integral of the truncated logarithmic
   moments.
 * `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow`,
@@ -412,6 +416,43 @@ theorem integrable_one_add_norm_rpow_neg_add_one {n : ℕ} :
     Integrable fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖) ^ (-((n : ℝ) + 1)) :=
   integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
 
+/-- On `(0, ∞)`, the radial weight `r ^ k * (2 * t / (t² + r²)) ^ n` is integrable whenever
+`k + 1 < 2 * n`. -/
+theorem integrableOn_pow_mul_div_sq_add_sq_pow {n k : ℕ} (hk : k + 1 < 2 * n) (t : ℝ) :
+    IntegrableOn (fun r : ℝ ↦ r ^ k * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · have hn : n ≠ 0 := by omega
+    simp [hn]
+  have h1 := ((integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure ℝ)
+    (p := (k : ℝ)) (r := 2 * (n : ℝ)) (Nat.cast_nonneg k)
+    (by rw [finrank_self]; exact_mod_cast (by omega : 1 + k < 2 * n))).comp_smul
+    (inv_ne_zero ht)).const_mul (|t| ^ k * (2 * t / t ^ 2) ^ n)
+  refine h1.integrableOn.congr_fun (fun r (hr : 0 < r) ↦ ?_) measurableSet_Ioi
+  have hpos : 0 < 1 + (|t|⁻¹ * r) ^ 2 := by positivity
+  have hnorm : ‖t⁻¹ • r‖ = |t|⁻¹ * r := by
+    rw [smul_eq_mul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hr]
+  have hrk : |t| ^ k * ‖t⁻¹ • r‖ ^ (k : ℝ) = r ^ k := by
+    rw [hnorm, Real.rpow_natCast, mul_pow, ← mul_assoc, ← mul_pow,
+      mul_inv_cancel₀ (abs_ne_zero.2 ht), one_pow, one_mul]
+  have hbr : (2 * t / t ^ 2) ^ n * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2) =
+      (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+    have hexp : -(2 * (n : ℝ)) / 2 = -(n : ℝ) := by ring
+    rw [hnorm, hexp, Real.rpow_neg hpos.le, Real.rpow_natCast, ← inv_pow, ← mul_pow]
+    congr 1
+    rw [mul_pow, inv_pow, sq_abs]
+    field_simp
+  calc |t| ^ k * (2 * t / t ^ 2) ^ n *
+        (‖t⁻¹ • r‖ ^ (k : ℝ) * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2))
+      = (|t| ^ k * ‖t⁻¹ • r‖ ^ (k : ℝ)) *
+          ((2 * t / t ^ 2) ^ n * (1 + ‖t⁻¹ • r‖ ^ 2) ^ (-(2 * (n : ℝ)) / 2)) := by ring
+    _ = r ^ k * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by rw [hrk, hbr]
+
+/-- On `(0, ∞)`, the unit-scale radial weight `r ^ k * (2 / (1 + r²)) ^ n` is integrable whenever
+`k + 1 < 2 * n`. -/
+theorem integrableOn_pow_mul_div_one_add_sq_pow {n k : ℕ} (hk : k + 1 < 2 * n) :
+    IntegrableOn (fun s : ℝ ↦ s ^ k * (2 / (1 + s ^ 2)) ^ n) (Ioi 0) := by
+  simpa using integrableOn_pow_mul_div_sq_add_sq_pow hk 1
+
 end Integrability
 
 section Moment
@@ -547,6 +588,19 @@ theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ}
     show F 0 = 0 by simp [F], sub_zero] at h
   push_cast at h ⊢
   linarith
+
+/-- For `n > 2` and any `t : ℝ`, the two radial moments of `ψ(r) = (2 t / (t² + r²)) ^ n`
+satisfy `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`. -/
+theorem sub_two_mul_integral_pow_mul_div_sq_add_sq_pow {n : ℕ} (hn : 2 < n) (t : ℝ) :
+    ((n : ℝ) - 2) * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n) =
+      n * t ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+  have h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0) :=
+    integrableOn_pow_mul_div_sq_add_sq_pow (by omega) t
+  have h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n))
+      (Ioi 0) :=
+    (integrableOn_pow_mul_div_sq_add_sq_pow (n := n) (k := (n - 1) + 2) (by omega) t).congr_fun
+      (fun r _ ↦ by dsimp only; rw [pow_add]; ring) measurableSet_Ioi
+  exact sub_two_mul_integral_radial hn h₁ h₂
 
 section TruncatedMoment
 

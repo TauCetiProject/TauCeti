@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -62,6 +63,12 @@ and the second moment of `U²`, which grow like `t⁴ log (1 / t)` as `t → 0`.
   the truncated moments of the powers of the bubble profile,
   `TauCeti.setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow` and
   `TauCeti.abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_log_le`.
+* `TauCeti.Yamabe.integrableOn_bubbleRadialWeight`,
+  `TauCeti.Yamabe.integrableOn_sq_mul_bubbleRadialWeight`,
+  `TauCeti.Yamabe.integral_bubbleRadialWeight_pos`,
+  `TauCeti.Yamabe.sub_two_mul_integral_sq_mul_bubbleRadialWeight`,
+  `TauCeti.Yamabe.pow_mul_integral_Ioi_bubbleRadialWeight_le`: integrability, positivity, second
+  moment identity, and tail decay of `bubbleRadialWeight`.
 
 ## References
 
@@ -571,5 +578,82 @@ theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank
   simpa only [hcoeff] using h
 
 end TruncatedEnergyAndSquare
+
+section RadialWeight
+
+/-- For every positive dimension `n`, `bubbleRadialWeight n` is integrable on `(0, ∞)`. -/
+theorem integrableOn_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
+    IntegrableOn (bubbleRadialWeight n) (Ioi 0) :=
+  (integrableOn_pow_mul_div_one_add_sq_pow (n := n) (k := n - 1) (by omega)).congr_fun
+    (fun s _ ↦ (bubbleRadialWeight_def n s).symm) measurableSet_Ioi
+
+/-- For `n > 2`, the second moment `s ↦ s ^ 2 * bubbleRadialWeight n s` is integrable on `(0, ∞)`.
+-/
+theorem integrableOn_sq_mul_bubbleRadialWeight {n : ℕ} (hn : 2 < n) :
+    IntegrableOn (fun s ↦ s ^ 2 * bubbleRadialWeight n s) (Ioi 0) :=
+  (integrableOn_pow_mul_div_one_add_sq_pow (n := n) (k := (n - 1) + 2) (by omega)).congr_fun
+    (fun s _ ↦ by dsimp only; rw [bubbleRadialWeight_def, pow_add]; ring) measurableSet_Ioi
+
+/-- For every positive dimension `n`, the integral of `bubbleRadialWeight n` on `(0, ∞)` is
+positive. -/
+theorem integral_bubbleRadialWeight_pos {n : ℕ} (hn : 0 < n) :
+    0 < ∫ s in Ioi (0 : ℝ), bubbleRadialWeight n s := by
+  rw [setIntegral_pos_iff_support_of_nonneg_ae
+    (ae_restrict_of_forall_mem measurableSet_Ioi fun _ hs ↦ (bubbleRadialWeight_pos hs).le)
+    (integrableOn_bubbleRadialWeight hn)]
+  exact (isOpen_Ioi.measure_pos volume ⟨1, one_pos⟩).trans_le
+    (measure_mono fun _ hs ↦ ⟨(bubbleRadialWeight_pos hs).ne', hs⟩)
+
+/-- For `n > 2`, the second moment of `bubbleRadialWeight n` on `(0, ∞)` satisfies
+`(n - 2) ∫_{s > 0} s ^ 2 * bubbleRadialWeight n s = n ∫_{s > 0} bubbleRadialWeight n s`. -/
+theorem sub_two_mul_integral_sq_mul_bubbleRadialWeight {n : ℕ} (hn : 2 < n) :
+    ((n : ℝ) - 2) * ∫ s in Ioi (0 : ℝ), s ^ 2 * bubbleRadialWeight n s =
+      (n : ℝ) * ∫ s in Ioi (0 : ℝ), bubbleRadialWeight n s := by
+  simpa only [bubbleRadialWeight_def, mul_one, one_pow, mul_left_comm _ (_ ^ 2)] using
+    sub_two_mul_integral_pow_mul_div_sq_add_sq_pow hn 1
+
+/-- Tail bound for the radial bubble weight: for `n > 0` and `s > 0`,
+`s ^ n * ∫_{σ > s} bubbleRadialWeight n σ ≤ 2 ^ n`. -/
+theorem pow_mul_integral_Ioi_bubbleRadialWeight_le {n : ℕ} (hn : 0 < n) {s : ℝ} (hs : 0 < s) :
+    s ^ n * ∫ σ in Ioi s, bubbleRadialWeight n σ ≤ 2 ^ n := by
+  have ha : -(n : ℝ) - 1 < -1 := by linarith [show (0 : ℝ) < n by exact_mod_cast hn]
+  have hdom : IntegrableOn (fun σ : ℝ ↦ (2 : ℝ) ^ n * σ ^ (-(n : ℝ) - 1)) (Ioi s) :=
+    (integrableOn_Ioi_rpow_of_lt ha hs).const_mul _
+  have hint : ∫ σ in Ioi s, (2 : ℝ) ^ n * σ ^ (-(n : ℝ) - 1) =
+      (2 : ℝ) ^ n / n * s ^ (-(n : ℝ)) := by
+    rw [integral_const_mul, integral_Ioi_rpow_of_lt ha hs]
+    have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+    have hexp : -(n : ℝ) - 1 + 1 = -(n : ℝ) := by ring
+    rw [hexp]
+    field_simp
+  have hle : ∫ σ in Ioi s, bubbleRadialWeight n σ ≤ (2 : ℝ) ^ n / n * s ^ (-(n : ℝ)) := by
+    rw [← hint]
+    refine setIntegral_mono_on
+      ((integrableOn_bubbleRadialWeight hn).mono_set (Ioi_subset_Ioi hs.le))
+      hdom measurableSet_Ioi fun σ hσ ↦ ?_
+    have hσ0 : 0 < σ := hs.trans hσ
+    have h1 : bubbleRadialWeight n σ ≤ σ ^ (n - 1) * (2 / σ ^ 2) ^ n := by
+      rw [bubbleRadialWeight_def]
+      exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity)
+        (div_le_div_of_nonneg_left zero_le_two (sq_pos_of_pos hσ0) (by linarith)) n)
+        (pow_nonneg hσ0.le _)
+    refine h1.trans_eq ?_
+    have hpow_sub : (σ : ℝ) ^ (-(n : ℝ) - 1) = σ ^ (n - 1) / (σ ^ 2) ^ n := by
+      have hexp : -(n : ℝ) - 1 = ((n - 1 : ℕ) : ℝ) - 2 * (n : ℝ) := by
+        rw [Nat.cast_sub hn, Nat.cast_one]
+        ring
+      rw [hexp, Real.rpow_sub hσ0, Real.rpow_natCast, Real.rpow_mul hσ0.le, Real.rpow_two,
+        Real.rpow_natCast]
+    rw [hpow_sub, div_pow]
+    ring
+  calc s ^ n * ∫ σ in Ioi s, bubbleRadialWeight n σ
+      ≤ s ^ n * ((2 : ℝ) ^ n / n * s ^ (-(n : ℝ))) :=
+        mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = 2 ^ n / (n : ℝ) := by
+        rw [Real.rpow_neg hs.le, Real.rpow_natCast]
+        field_simp [hs.ne']
+    _ ≤ 2 ^ n := div_le_self (by positivity) (by exact_mod_cast hn)
+
+end RadialWeight
 
 end TauCeti.Yamabe

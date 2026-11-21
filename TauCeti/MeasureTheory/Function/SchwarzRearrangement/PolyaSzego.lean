@@ -11,12 +11,15 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.Lipschitz
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
 import TauCeti.Analysis.Calculus.FDeriv.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Measurable
+import TauCeti.Analysis.Calculus.FDeriv.Norm
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Convex.Continuous
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Function.Coarea.Integral
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
 import TauCeti.MeasureTheory.Integral.ReciprocalWeight
 
@@ -52,99 +55,6 @@ section PrivateHelpers
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
-
-omit [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_eq_of_notMem_image_fderiv_eq_zero {v : E → ℝ}
-    (hanti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x) {t : ℝ}
-    (ht : t ∉ v '' {z | fderiv ℝ v z = 0}) {x y : E} (hx : v x = t) (hy : v y = t) :
-    ‖x‖ = ‖y‖ := by
-  have hnot_lt {a b : E} (ha : v a = t) (hb : v b = t) (hab : ‖a‖ < ‖b‖) : False := by
-    have hb0 : 0 < ‖b‖ := (norm_nonneg a).trans_lt hab
-    let z₀ : E := ((‖a‖ + ‖b‖) / (2 * ‖b‖)) • b
-    have hz₀_norm : ‖z₀‖ = (‖a‖ + ‖b‖) / 2 := by
-      rw [norm_smul, Real.norm_of_nonneg (by positivity)]; field_simp [hb0.ne']
-    have hz₀_mem : z₀ ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} :=
-      ⟨hz₀_norm ▸ by linarith, hz₀_norm ▸ by linarith⟩
-    have hU : {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} ∈ 𝓝 z₀ := ((isOpen_lt continuous_const
-      continuous_norm).inter (isOpen_lt continuous_norm continuous_const)).mem_nhds hz₀_mem
-    have hconst : ∀ z ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖}, v z = t := fun z hz ↦
-      le_antisymm ((hanti a z hz.1.le).trans_eq ha) (hb.symm.trans_le (hanti z b hz.2.le))
-    exact ht ⟨z₀, (EventuallyEq.fderiv_eq (eventually_of_mem hU hconst)).trans
-      (fderiv_const_apply t), hconst z₀ hz₀_mem⟩
-  exact (lt_trichotomy ‖x‖ ‖y‖).elim (fun h ↦ (hnot_lt hx hy h).elim)
-    (Or.elim · id fun h ↦ (hnot_lt hy hx h).elim)
-
-omit [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_fderiv_max_zero_le {h : E → ℝ} (hh : Continuous h) (x : E) :
-    ‖fderiv ℝ (fun y ↦ max (h y) 0) x‖ ≤ ‖fderiv ℝ h x‖ := by
-  rcases lt_trichotomy (h x) 0 with hlt | heq | hgt
-  · have h0 : fderiv ℝ (fun y ↦ max (h y) 0) x = 0 :=
-      (EventuallyEq.fderiv_eq (f := fun _ ↦ (0 : ℝ)) ((hh.continuousAt.eventually
-        (gt_mem_nhds hlt)).mono fun _ hy ↦ max_eq_right hy.le)).trans (fderiv_const_apply 0)
-    simp [h0]
-  · have h0 : fderiv ℝ (fun y ↦ max (h y) 0) x = 0 :=
-      IsLocalMin.fderiv_eq_zero (.of_forall fun _ ↦ by simp [heq])
-    simp [h0]
-  · exact le_of_eq (congrArg norm (EventuallyEq.fderiv_eq
-      ((hh.continuousAt.eventually (lt_mem_nhds hgt)).mono fun _ hy ↦ max_eq_left hy.le)))
-
-omit [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_fderiv_norm_le {u : E → ℝ} (hu : Continuous u) (x : E) :
-    ‖fderiv ℝ (fun y ↦ ‖u y‖) x‖ ≤ ‖fderiv ℝ u x‖ := by
-  rcases lt_trichotomy (u x) 0 with hlt | heq | hgt
-  · have hneg : fderiv ℝ (fun y ↦ ‖u y‖) x = -fderiv ℝ u x :=
-      (EventuallyEq.fderiv_eq (f := fun y ↦ -u y) ((hu.continuousAt.eventually
-        (gt_mem_nhds hlt)).mono fun _ hy ↦ Real.norm_of_nonpos hy.le)).trans fderiv_neg
-    rw [hneg, norm_neg]
-  · have h0 : fderiv ℝ (fun y ↦ ‖u y‖) x = 0 :=
-      IsLocalMin.fderiv_eq_zero (.of_forall fun _ ↦ by simp [heq])
-    rw [h0]; simp
-  · exact le_of_eq (congrArg norm (EventuallyEq.fderiv_eq
-      ((hu.continuousAt.eventually (lt_mem_nhds hgt)).mono fun _ hy ↦ Real.norm_of_nonneg hy.le)))
-
-omit [FiniteDimensional ℝ E] [Nontrivial E] in
-private theorem measurable_map_norm_fderiv {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ)
-    (hΦm : MonotoneOn Φ (Ici 0)) (u : E → ℝ) :
-    Measurable fun x ↦ Φ ‖fderiv ℝ u x‖ := by
-  have hcont : Continuous fun s : ℝ ↦ Φ (max s 0) := (hΦ.continuousOn_Ici_of_monotoneOn
-    hΦm).comp_continuous (continuous_id.max continuous_const) fun s ↦ le_max_right s 0
-  exact (funext fun x ↦ by rw [max_eq_left (norm_nonneg (fderiv ℝ u x))] :
-    (fun x ↦ Φ (max ‖fderiv ℝ u x‖ 0)) = _) ▸ hcont.measurable.comp (measurable_fderiv ℝ u).norm
-
-omit [Nontrivial E] in
-private theorem lintegral_map_norm_fderiv_eq_setLIntegral_Ioi {Φ : ℝ → ℝ}
-    (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
-    {u : E → ℝ} (hu0 : ∀ x, 0 ≤ u x) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) =
-      ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x in {x | fderiv ℝ u x ≠ 0} ∩ u ⁻¹' {t},
-        ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖) ∂μHE[finrank ℝ E - 1] := by
-  set R := {x : E | fderiv ℝ u x ≠ 0}
-  have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ u)
-  have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ u x) :=
-    surjective_of_ne_zero_of_finrank_eq_one (finrank_self ℝ) (f := (fderiv ℝ u x).toLinearMap)
-      ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hx)
-  let g : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖)
-  have hg : Measurable g := ENNReal.measurable_ofReal.comp
-    ((measurable_map_norm_fderiv hΦ hΦm u).div (measurable_fderiv ℝ u).norm)
-  have hlhs : ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) =
-      ∫⁻ x in R, ENNReal.ofReal (fderiv ℝ u x).adjoint.normDet * g x := by
-    rw [← lintegral_indicator hR]
-    refine lintegral_congr fun x ↦ ?_
-    by_cases hx : x ∈ R
-    · rw [indicator_of_mem hx, ContinuousLinearMap.normDet_adjoint_eq_norm,
-        ← ENNReal.ofReal_mul (norm_nonneg _), mul_div_cancel₀ _ (norm_ne_zero_iff.2 hx)]
-    · simp only [R, mem_ofPred_eq, not_not] at hx
-      rw [indicator_of_notMem (by simp [R, hx]), hx, norm_zero, hΦ0, ENNReal.ofReal_zero]
-  rw [hlhs, lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    hR.nullMeasurableSet (fun _ hx ↦ differentiableAt_of_fderiv_ne_zero hx) hsurj hg, finrank_self,
-    ← lintegral_indicator measurableSet_Ioi]
-  refine lintegral_congr fun t ↦ ?_
-  by_cases ht : 0 < t
-  · rw [indicator_of_mem ht]
-  · have hemp : R ∩ u ⁻¹' {t} = ∅ := eq_empty_of_forall_notMem fun x ⟨hxR, hxu⟩ ↦ hxR <| by
-      have hux0 : u x = 0 := le_antisymm ((mem_preimage.1 hxu).trans_le (not_lt.1 ht)) (hu0 x)
-      exact IsLocalMin.fderiv_eq_zero (.of_forall fun y ↦ hux0.symm ▸ hu0 y)
-    rw [indicator_of_notMem (s := Ioi (0 : ℝ)) ht]; simp [hemp]
 
 omit [FiniteDimensional ℝ E] [Nontrivial E] in
 private theorem setLIntegral_fiber_le_of_const_norm_fderiv {Φ : ℝ → ℝ}
@@ -209,7 +119,8 @@ private theorem setLIntegral_fiber_le_of_const_norm_fderiv {Φ : ℝ → ℝ}
         rw [← ofReal_norm, ← ofReal_norm, Real.norm_of_nonneg (inv_nonneg.2 hx.le),
           ENNReal.ofReal_inv_of_pos hx]).trans_lt (hinv.trans_lt hinv_fin)⟩
   have hΦ_int : Integrable (fun x ↦ Φ ‖fderiv ℝ h x‖ / ‖fderiv ℝ h x‖) ν_h :=
-    ⟨((measurable_map_norm_fderiv hΦ hΦm h).div (measurable_fderiv ℝ h).norm).aestronglyMeasurable,
+    ⟨((TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm) h).div
+        (measurable_fderiv ℝ h).norm).aestronglyMeasurable,
       (lintegral_congr_ae <| hg_pos.mono fun _ hx ↦ by
         rw [← ofReal_norm, Real.norm_of_nonneg (div_nonneg (hΦ_nn _ hx.le) hx.le)]).trans_lt hΦ_fin⟩
   have hM_bound : (∫ x, ‖fderiv ℝ h x‖⁻¹ ∂ν_h) ≤ M := by
@@ -223,26 +134,6 @@ private theorem setLIntegral_fiber_le_of_const_norm_fderiv {Φ : ℝ → ℝ}
     (hg_pos.mono fun _ hx ↦ div_nonneg (hΦ_nn _ hx.le) hx.le)]
   exact ENNReal.ofReal_le_ofReal
     (hΦ.mul_map_div_le_integral_div hΦm hΦ0 hg_pos hinv_int hΦ_int hP_pos.le hPν hM_bound)
-
-private theorem schwarzRearrangement_ofReal_ne_top {K : ℝ≥0} {h : E → ℝ} (hh : LipschitzWith K h)
-    (hfin : ∀ t, 0 < t → volume {x | t < h x} ≠ ∞) (x : E) :
-    schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) x ≠ ∞ := by
-  refine schwarzRearrangement_ne_top volume (K := K) (fun a b ↦ ?_) (t := ENNReal.ofReal 1)
-    (by simp) ?_ x
-  · refine (ENNReal.ofReal_le_ofReal (hh.le_add_mul a b)).trans ?_
-    rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg]
-    exact ENNReal.ofReal_add_le
-  · convert hfin 1 zero_lt_one using 2
-    ext y; exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg zero_le_one
-
-omit [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E] in
-private theorem setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero (w : E → ℝ) :
-    {x : E | DifferentiableAt ℝ w x ∧ Surjective (fderiv ℝ w x)} = {x : E | fderiv ℝ w x ≠ 0} := by
-  ext x; simp only [mem_ofPred_eq]
-  refine ⟨fun ⟨_, hs⟩ h0 ↦ ?_, fun hx ↦ ⟨differentiableAt_of_fderiv_ne_zero hx,
-    surjective_of_ne_zero_of_finrank_eq_one (finrank_self ℝ) (f := (fderiv ℝ w x).toLinearMap)
-      ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hx)⟩⟩
-  obtain ⟨y, hy⟩ := hs 1; simp [h0] at hy
 
 private theorem ae_fiber_bounds_toReal_schwarzRearrangement
     {K : ℝ≥0} {h : E → ℝ} (hh : LipschitzWith K h)
@@ -260,7 +151,7 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
   set f : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (h y)
   set v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
   have hv_lip : LipschitzWith K v := lipschitzWith_toReal_schwarzRearrangement volume hh
-  have hv_ne_top := schwarzRearrangement_ofReal_ne_top hh hfin
+  have hv_ne_top := schwarzRearrangement_ofReal_ne_top volume hh zero_le_one (hfin 1 zero_lt_one)
   have hv_level {t : ℝ} (ht : 0 < t) :
       {x | t < v x} = {x | ENNReal.ofReal t < schwarzRearrangement volume f x} :=
     Set.ext fun x ↦ (ENNReal.ofReal_lt_iff_lt_toReal ht.le (hv_ne_top x)).symm
@@ -275,9 +166,9 @@ private theorem ae_fiber_bounds_toReal_schwarzRearrangement
     hh.ae_setLIntegral_inv_enorm_fderiv_toReal_schwarzRearrangement_eq_ofReal_neg_deriv hfin]
     with t hcritt hregh hregv hperh hperv hdisth hdistv ht
   rw [finrank_self, univ_inter, univ_inter,
-    setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero h] at hregh
+    TauCeti.setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero h] at hregh
   rw [finrank_self, univ_inter, univ_inter,
-    setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero v] at hregv
+    TauCeti.setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero v] at hregv
   refine ⟨hcritt, ?_, hdistv ht ▸ hdisth ht, (hdistv ht) ▸ ENNReal.ofReal_lt_top⟩
   have hmeas_v : μHE[finrank ℝ E - 1] ({x | fderiv ℝ v x ≠ 0} ∩ v ⁻¹' {t}) =
       μHE[finrank ℝ E - 1] (v ⁻¹' {t}) := by
@@ -303,10 +194,12 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
   set f : E → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (h y)
   set v : E → ℝ := fun x ↦ (schwarzRearrangement volume f x).toReal
   have hv_lip : LipschitzWith K v := lipschitzWith_toReal_schwarzRearrangement volume hh
-  have hv_ne_top := schwarzRearrangement_ofReal_ne_top hh hfin
-  have hco_h := lintegral_map_norm_fderiv_eq_setLIntegral_Ioi hΦ hΦm hΦ0 hh0
-  rw [lintegral_map_norm_fderiv_eq_setLIntegral_Ioi hΦ hΦm hΦ0 (fun _ ↦ ENNReal.toReal_nonneg),
-    hco_h]
+  have hv_ne_top := schwarzRearrangement_ofReal_ne_top volume hh zero_le_one (hfin 1 zero_lt_one)
+  have hΦ_cont : ContinuousOn Φ (Ici 0) := hΦ.continuousOn_Ici_of_monotoneOn hΦm
+  have hco_h := lintegral_map_norm_fderiv_eq_setLIntegral_Ioi hh0
+    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont h) hΦ0
+  rw [lintegral_map_norm_fderiv_eq_setLIntegral_Ioi (fun _ ↦ ENNReal.toReal_nonneg)
+    (TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont v) hΦ0, hco_h]
   set R_v := {x : E | fderiv ℝ v x ≠ 0}; set R_h := {x : E | fderiv ℝ h x ≠ 0}
   have hRv_m : MeasurableSet R_v :=
     (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ v)
@@ -319,7 +212,7 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
       hRh_m.nullMeasurableSet
       (fun _ hx ↦ (differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
       (ENNReal.measurable_ofReal.comp
-        ((measurable_map_norm_fderiv hΦ hΦm h).div (measurable_fderiv ℝ h).norm))
+        ((TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) hΦ_cont h).div (measurable_fderiv ℝ h).norm))
     rw [finrank_self] at hmeas
     exact (ae_restrict_iff' measurableSet_Ioi).1 (ae_lt_top' hmeas.restrict (hco_h ▸ htop))
   have hrad (x y : E) (hxy : ‖x‖ = ‖y‖) : v x = v y :=
@@ -336,7 +229,7 @@ private theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonn
     (fun _ hx ↦ norm_pos_iff.2 hx.1) (fun _ hx ↦ norm_pos_iff.2 hx.1)
     (fun _ _ ↦ norm_fderiv_le_of_lipschitz ℝ hh)
     (fun _ hx _ hy ↦ norm_fderiv_eq_of_norm_eq hrad
-      (norm_eq_of_notMem_image_fderiv_eq_zero hanti hcritt hx.2 hy.2))
+      (TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero hanti hcritt hx.2 hy.2))
     hperim_le hinv_le hinv_fin (hΦt ht)
 
 omit [Nontrivial E] in
@@ -351,7 +244,8 @@ private theorem integrable_and_integral_le_of_lintegral_le {v u : E → ℝ} {Φ
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) :=
     lintegral_congr fun _ ↦ by rw [← ofReal_norm, Real.norm_of_nonneg (hΦ_nn _ (norm_nonneg _))]
   have hint_v : Integrable (fun x ↦ Φ ‖fderiv ℝ v x‖) volume :=
-    ⟨(measurable_map_norm_fderiv hΦ hΦm v).aestronglyMeasurable,
+    ⟨(TauCeti.measurable_map_norm_fderiv (𝕜 := ℝ) (hΦ.continuousOn_Ici_of_monotoneOn hΦm)
+        v).aestronglyMeasurable,
       by rw [HasFiniteIntegral, heq v]; exact hle.trans_lt (heq u ▸ hint.hasFiniteIntegral)⟩
   refine ⟨hint_v, ?_⟩
   rw [← ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ hΦ_nn _ (norm_nonneg _)),
@@ -374,18 +268,19 @@ theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le {K : ℝ≥0} {
         (fun z ↦ (schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖) ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ h x‖) := by
   let hpos : E → ℝ := fun x ↦ max (h x) 0
-  have hhpos_lip : LipschitzWith K hpos := by
-    simpa only [max_eq_left (zero_le : 0 ≤ K)] using hh.max (LipschitzWith.const (0 : ℝ))
+  have hhpos_lip : LipschitzWith K hpos := hh.max_const 0
   have hhpos_fin (t : ℝ) (ht : 0 < t) : volume {x | t < hpos x} ≠ ∞ := by
     convert hfin t ht using 2; ext x; simp [hpos, lt_max_iff, ht.not_gt]
   have hofReal : (fun y ↦ ENNReal.ofReal (h y)) = fun y ↦ ENNReal.ofReal (hpos y) := funext fun y ↦
     (le_total 0 (h y)).elim (fun hy ↦ by simp [hpos, max_eq_left hy])
       (fun hy ↦ by simp [hpos, max_eq_right hy, ENNReal.ofReal_of_nonpos hy])
   rw [hofReal]
-  exact (lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonneg hhpos_lip
-    (fun x ↦ le_max_right (h x) 0) hhpos_fin hΦ hΦm hΦ0).trans (lintegral_mono fun x ↦
-      ENNReal.ofReal_le_ofReal
-        (hΦm (norm_nonneg _) (norm_nonneg _) (norm_fderiv_max_zero_le hh.continuous x)))
+  refine (lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le_of_nonneg hhpos_lip
+    (fun x ↦ le_max_right (h x) 0) hhpos_fin hΦ hΦm hΦ0).trans (lintegral_mono_ae ?_)
+  filter_upwards [hh.ae_differentiableAt (μ := volume)] with x hx
+  refine ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_)
+  simpa only [NNReal.coe_one, one_mul, id_eq, Function.comp_def] using
+    (LipschitzWith.id.max_const (0 : ℝ)).norm_fderiv_comp_le hx
 
 /-- **Signed convex-integrand Pólya–Szegő inequality for Lipschitz functions.** -/
 theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le {K : ℝ≥0} {u : E → ℝ}
@@ -397,9 +292,12 @@ theorem lintegral_map_norm_fderiv_toReal_schwarzRearrangement_norm_le {K : ℝ�
   have hu_norm : LipschitzWith K (fun x ↦ ‖u x‖) := by
     simpa only [one_mul, Function.comp_def] using
       (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ)).comp hu
-  exact (hu_norm.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦm hΦ0).trans
-    (lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal
-      (hΦm (norm_nonneg _) (norm_nonneg _) (norm_fderiv_norm_le hu.continuous x)))
+  refine (hu_norm.lintegral_map_norm_fderiv_toReal_schwarzRearrangement_le hfin hΦ hΦm hΦ0).trans
+    (lintegral_mono_ae ?_)
+  filter_upwards [hu.ae_differentiableAt (μ := volume)] with x hx
+  refine ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_)
+  simpa only [NNReal.coe_one, one_mul, Function.comp_def] using
+    lipschitzWith_one_norm.norm_fderiv_comp_le hx
 
 /-- Integrability of `Φ ‖Dh*‖` when `Φ ‖Dh‖` is integrable. -/
 theorem integrable_map_norm_fderiv_toReal_schwarzRearrangement {K : ℝ≥0} {h : E → ℝ}

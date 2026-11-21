@@ -19,10 +19,14 @@ At a local extremum of the norm of a map, its derivative is orthogonal to its va
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
 vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
-operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). The norm itself,
-being `1`-Lipschitz, has derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`).
-In any real normed space, a curve whose derivative is a multiple `c • f a` of its value has norm
-with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
+operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). Moreover, along any
+unit ray a radial function's one-dimensional derivative is bounded in norm by the operator norm of
+its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`, `TauCeti.deriv_radial_sq_le`), and two
+points on a radially nonincreasing function's noncritical level set have equal norm
+(`TauCeti.norm_eq_of_notMem_image_fderiv_eq_zero`). The norm itself, being `1`-Lipschitz, has
+derivative of norm at most `1` everywhere (`TauCeti.norm_fderiv_norm_le`). In any real normed space,
+a curve whose derivative is a multiple `c • f a` of its value has norm with derivative
+`c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -64,6 +68,65 @@ theorem norm_fderiv_eq_of_norm_eq {v : F → E} (hrad : ∀ x y, ‖x‖ = ‖y�
   rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hcomp, Submodule.reflection_sub hxy] at h
   have hnorm := congrArg norm h
   simpa only [ContinuousLinearMap.opNorm_comp_linearIsometryEquiv] using hnorm
+
+/-- Along a unit ray `s ↦ s • e₀` at `r > 0`, the derivative of a radial function `v : F → E`
+on a real inner product space has norm bounded by `‖fderiv ℝ v (r • e₀)‖`. -/
+theorem norm_deriv_comp_smul_le {v : F → E} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
+    {e₀ : F} (he₀ : ‖e₀‖ = 1) {r : ℝ} (hr : 0 < r) :
+    ‖deriv (fun s : ℝ ↦ v (s • e₀)) r‖ ≤ ‖fderiv ℝ v (r • e₀)‖ := by
+  set g : ℝ → E := fun s ↦ v (s • e₀)
+  by_cases hg : DifferentiableAt ℝ g r
+  · have hre₀_ne : r • e₀ ≠ 0 := fun h0 ↦ by
+      have := congrArg norm h0
+      simp [norm_smul, abs_of_pos hr, he₀, hr.ne'] at this
+    have hv_eq : v = g ∘ norm := funext fun x ↦ hv_rad x (‖x‖ • e₀) (by simp [norm_smul, he₀])
+    have hnorm_r : ‖r • e₀‖ = r := by simp [norm_smul, abs_of_pos hr, he₀]
+    have hv_diff : DifferentiableAt ℝ v (r • e₀) :=
+      hv_eq ▸ (hnorm_r ▸ hg).comp (r • e₀) (differentiableAt_id.norm ℝ hre₀_ne)
+    have hray : HasDerivAt (fun s : ℝ ↦ s • e₀) e₀ r := by
+      simpa only [id_eq, one_smul, ContinuousLinearMap.smulRight_apply,
+        ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_one] using
+        ((hasDerivAt_id r).hasFDerivAt.smul_const e₀).hasDerivAt
+    have hg_deriv : HasDerivAt g (fderiv ℝ v (r • e₀) e₀) r :=
+      hv_diff.hasFDerivAt.comp_hasDerivAt r hray
+    rw [hg_deriv.deriv]
+    simpa only [he₀, mul_one] using (fderiv ℝ v (r • e₀)).le_opNorm e₀
+  · rw [deriv_zero_of_not_differentiableAt hg, norm_zero]
+    exact norm_nonneg _
+
+/-- Along a unit ray `s ↦ s • e₀` at `r > 0`, the squared derivative of a real radial function
+`v : F → ℝ` on a real inner product space is at most `‖fderiv ℝ v (r • e₀)‖ ^ 2`. -/
+theorem deriv_radial_sq_le {v : F → ℝ} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
+    {e₀ : F} (he₀ : ‖e₀‖ = 1) {r : ℝ} (hr : 0 < r) :
+    (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
+  calc (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2
+      = ‖deriv (fun s : ℝ ↦ v (s • e₀)) r‖ ^ 2 := by rw [Real.norm_eq_abs, sq_abs]
+    _ ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) (norm_deriv_comp_smul_le hv_rad he₀ hr) 2
+
+/-- On a radially nonincreasing function `v : E → ℝ`, any two points sharing a noncritical level `t`
+have equal norm: if `‖a‖ < ‖b‖`, then `v` is constant equal to `t` on the open annulus
+`{z | ‖a‖ < ‖z‖ < ‖b‖}`, which is nonempty and hence contributes a critical point. -/
+theorem norm_eq_of_notMem_image_fderiv_eq_zero {v : E → ℝ}
+    (hanti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x) {t : ℝ}
+    (ht : t ∉ v '' {z | fderiv ℝ v z = 0}) {x y : E} (hx : v x = t) (hy : v y = t) :
+    ‖x‖ = ‖y‖ := by
+  have hnot_lt {a b : E} (ha : v a = t) (hb : v b = t) (hab : ‖a‖ < ‖b‖) : False := by
+    have hb0 : 0 < ‖b‖ := (norm_nonneg a).trans_lt hab
+    let z₀ : E := ((‖a‖ + ‖b‖) / (2 * ‖b‖)) • b
+    have hz₀_norm : ‖z₀‖ = (‖a‖ + ‖b‖) / 2 := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      field_simp [hb0.ne']
+    have hz₀_mem : z₀ ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} :=
+      ⟨hz₀_norm ▸ by linarith, hz₀_norm ▸ by linarith⟩
+    have hU : {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖} ∈ 𝓝 z₀ := ((isOpen_lt continuous_const
+      continuous_norm).inter (isOpen_lt continuous_norm continuous_const)).mem_nhds hz₀_mem
+    have hconst : ∀ z ∈ {z : E | ‖a‖ < ‖z‖ ∧ ‖z‖ < ‖b‖}, v z = t := fun z hz ↦
+      le_antisymm ((hanti a z hz.1.le).trans_eq ha) (hb.symm.trans_le (hanti z b hz.2.le))
+    exact ht ⟨z₀, (Filter.EventuallyEq.fderiv_eq (Filter.eventually_of_mem hU hconst)).trans
+      (fderiv_const_apply t), hconst z₀ hz₀_mem⟩
+  exact (lt_trichotomy ‖x‖ ‖y‖).elim (fun h ↦ (hnot_lt hx hy h).elim)
+    (Or.elim · id fun h ↦ (hnot_lt hy hx h).elim)
 
 /-- The derivative of the norm has norm at most `1` at every point, including the points where the
 norm is not differentiable and its derivative is `0` by definition. -/
