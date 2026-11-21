@@ -439,16 +439,6 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
   [FiniteDimensional ℂ V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
   [FiniteDimensional ℂ W] {a : Symbol n V W m}
 
-/-- The distribution `φ ↦ T φ • w` of a complex-valued distribution `T`, complex linear in `T`. -/
-private def smulRightDistribution (w : W) :
-    𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) where
-  toFun := Distribution.mapCLM ((ContinuousLinearMap.toSpanSingleton ℂ w).restrictScalars ℝ)
-  map_add' := map_add _
-  map_smul' c T := by
-    ext φ
-    simp [mul_smul]
-  cont := (Distribution.mapCLM _).continuous
-
 /-- **A properly supported operator on distributions.** For a symbol `a` with values in
 `V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V` and `W`, whose quantization
 has kernel supported within distance `R` of the diagonal, `Op(a)` acts on all `V`-valued
@@ -467,7 +457,7 @@ orthonormal basis `(wₖ)` of `W`: the `k`-th coordinate of `Op(a) T` is the dis
 `φ ↦ ⟪Op(a)* (φ • wₖ), T⟫`. -/
 def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
     𝓓'((⊤ : Opens (CoordinateSpace n)), V) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), W) :=
-  ∑ k, smulRightDistribution (stdOrthonormalBasis ℂ W k) ∘L
+  ∑ k, Distribution.smulRightCLM (stdOrthonormalBasis ℂ W k) ∘L
     Distribution.innerPairingCLM ((adjointTestFunctionCLM ha).restrictScalars ℝ ∘L
       TestFunction.postcompCLM (𝕜 := ℝ)
         (ContinuousLinearMap.toSpanSingleton ℝ (stdOrthonormalBasis ℂ W k)))
@@ -493,7 +483,7 @@ theorem inner_quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
   rw [hw, map_sum, Distribution.innerPairing_sum_right]
   simp only [quantizeDistribution, sum_apply, inner_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp [smulRightDistribution, b, inner_smul_right, inner_conj_symm, mul_comm]
+  simp [b, inner_smul_right, inner_conj_symm, mul_comm]
 
 /-- `Op(a) T (φ)` in an orthonormal basis `(wₖ)` of `W`: its coordinates are the pairings of `T`
 with `Op(a)* (φ • wₖ)`. -/

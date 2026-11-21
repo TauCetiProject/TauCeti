@@ -44,7 +44,9 @@ This is the pairing through which an operator on vector-valued test functions ac
 vector-valued distributions by transposition, for instance a pseudodifferential operator with a
 matrix-valued symbol: `⟪w, Op(a) T (φ)⟫ = ⟪Op(a)* (φ • w), T⟫`. For a continuous real-linear map
 `h` into `V`-valued test functions, the pairings `φ ↦ ⟪h φ, T⟫` form a distribution that depends
-continuously on `T` (`Distribution.innerPairingCLM`).
+continuously on `T` (`Distribution.innerPairingCLM`); conversely a complex-valued distribution
+`T` and a vector `w` give the vector-valued distribution `φ ↦ T φ • w`
+(`Distribution.smulRightCLM`).
 
 ## Main declarations
 
@@ -52,6 +54,8 @@ continuously on `T` (`Distribution.innerPairingCLM`).
   test function.
 * `Distribution.innerPairingCLM`: for a continuous real-linear map `h` into `V`-valued test
   functions, the distribution `φ ↦ ⟪h φ, T⟫`, as a continuous complex-linear function of `T`.
+* `Distribution.smulRightCLM`: the distribution `φ ↦ T φ • w` of a complex-valued distribution
+  `T`, as a continuous complex-linear function of `T`.
 * `Distribution.innerPairing_postcompCLM_toSpanSingleton`: its value on `φ • v`, and
   `Distribution.innerPairing_eq_sum_basis`: its formula in an arbitrary real basis of `V`.
 * `Distribution.innerPairing_eq_complexPairing`: for `V = ℂ` it is `T.complexPairing (conj g)`.
@@ -265,6 +269,30 @@ def innerPairingCLM (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) : 𝓓'^{n
 theorem innerPairingCLM_apply (h : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, V)) (T : 𝓓'^{n}(Ω, V))
     (φ : 𝓓^{n}(Ω, ℝ)) : innerPairingCLM h T φ = T.innerPairing (h φ) :=
   innerPairingRealCLM_apply h T φ
+
+section smulRightCLM
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+/-- **The distribution `φ ↦ T φ • w`.** For a vector `w`, a complex-valued distribution `T` gives
+the `W`-valued distribution `φ ↦ T φ • w`, which depends continuously and complex-linearly on `T`.
+It is `Distribution.mapCLM` of `ContinuousLinearMap.toSpanSingleton ℂ w`, which Mathlib bundles only
+as a real-linear map. Together with `Distribution.innerPairingCLM` it assembles operators defined on
+vector-valued distributions by transposition from their coordinates. -/
+def smulRightCLM (w : W) : 𝓓'^{n}(Ω, ℂ) →L[ℂ] 𝓓'^{n}(Ω, W) where
+  toFun := mapCLM ((ContinuousLinearMap.toSpanSingleton ℂ w).restrictScalars ℝ)
+  map_add' := map_add _
+  map_smul' c T := by
+    ext φ
+    simp [mul_smul]
+  cont := (mapCLM _).continuous
+
+@[simp]
+theorem smulRightCLM_apply (w : W) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℝ)) :
+    smulRightCLM w T φ = T φ • w :=
+  (rfl)
+
+end smulRightCLM
 
 /-- **The pairing with a function.** On the distribution of a function `f` locally integrable on
 `Ω`, the pairing with a test function `g` is `∫ ⟪g x, f x⟫ dμ(x)`. -/
