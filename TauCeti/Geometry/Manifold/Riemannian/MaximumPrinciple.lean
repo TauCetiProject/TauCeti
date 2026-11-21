@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Otis Chodosh
 -/
 module
 
@@ -48,6 +48,9 @@ part of the curvature of large-parameter Seiberg–Witten solutions.
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
+* `TauCeti.Manifold.hessian_self_le_of_eventuallyLE_of_eq`,
+  `TauCeti.Manifold.laplaceBeltrami_le_of_eventuallyLE_of_eq`: a function touching another
+  from above has larger diagonal Hessian and Laplace–Beltrami operator at contact.
 * `TauCeti.Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax`: `Δ f + k Δ g ≤ 0` at a local
   maximum of `f + k g`.
 * `TauCeti.Manifold.exists_forall_ge_and_laplaceBeltrami_nonpos`,
@@ -68,6 +71,9 @@ part of the curvature of large-parameter Seiberg–Witten solutions.
 
 ## References
 
+* Otis Chodosh's formalization in `riccardobrasca/ColdingMinicozziTheory`,
+  `ForTauCeti/Geometry/Manifold/Riemannian/Hessian/Contact.lean`, revision
+  `d540eafdb38a37ee49e7298d601131ceaa207ced`, for the upper-contact comparisons.
 * D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Springer, 2001, Chapter 3 (the classical maximum principle).
 * J. L. Kazdan and F. W. Warner, *Curvature functions for compact 2-manifolds*, Ann. of Math. 99
@@ -145,6 +151,31 @@ theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x
     (hmin : IsLocalMin f x) : 0 ≤ laplaceBeltrami I f x := by
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
   exact Finset.sum_nonneg fun i _ ↦ hessian_self_nonneg_of_isLocalMin hf hmin _
+
+/-- If `g` touches `f` from above, its diagonal Hessian at the contact point is larger. -/
+theorem hessian_self_le_of_eventuallyLE_of_eq {g : M → ℝ}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (heq : f x = g x) (v : TangentSpace I x) : hessian I f x v v ≤ hessian I g x v v := by
+  have hmin : IsLocalMin (g - f) x := by
+    filter_upwards [hle] with y hy
+    simpa only [Pi.sub_apply, ← heq, sub_self] using sub_nonneg.mpr hy
+  have hh : 0 ≤ hessian I (g - f) x v v :=
+    hessian_self_nonneg_of_isLocalMin (hg.sub hf) hmin v
+  rw [hessian_sub_of_contMDiffAt I (f := g) (g := f) hg hf] at hh
+  exact sub_nonneg.mp hh
+
+/-- If `g` touches `f` from above, its Laplace–Beltrami operator is larger at contact. -/
+theorem laplaceBeltrami_le_of_eventuallyLE_of_eq {g : M → ℝ}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y)
+    (heq : f x = g x) : laplaceBeltrami I f x ≤ laplaceBeltrami I g x := by
+  have hmax : IsLocalMax (f - g) x := by
+    filter_upwards [hle] with y hy
+    simpa only [Pi.sub_apply, heq, sub_self] using sub_nonpos.mpr hy
+  have hsub : ContMDiffAt I 𝓘(ℝ) 2 (f - g) x := hf.sub hg
+  have hadd := laplaceBeltrami_add_of_contMDiffAt I hsub hg
+  rw [sub_add_cancel] at hadd
+  have hΔ := laplaceBeltrami_nonpos_of_isLocalMax hsub hmax
+  linarith
 
 /-- On a compact boundaryless Riemannian manifold, a `C²` function attains its maximum at a point
 where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/

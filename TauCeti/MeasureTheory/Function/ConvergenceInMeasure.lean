@@ -47,9 +47,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 
 ## Main results
 
-* `UniformContinuous.comp_tendstoInMeasure`, `MeasureTheory.tendstoInMeasure_const`, and
-  `MeasureTheory.TendstoInMeasure.{add, neg, sub, const_smul, bdd_smul}`: uniform-continuous
-  composition and algebraic closure of convergence in measure without measurability or finiteness.
+* `MeasureTheory.TendstoInMeasure.bdd_smul`: pointwise scalar multiplication by a uniformly
+  bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
 * `MeasureTheory.tendsto_measure_ge_of_ne_top`, `tendsto_measure_lintegral_enorm_add_sq`,
@@ -96,18 +95,6 @@ by Claude Fable 5 (Kitware, Inc., Apache-2.0).
 -/
 
 public section
-
-/-- Composition on the left with a uniformly continuous map preserves convergence in measure, for
-any measure and filter and with no measurability assumptions. -/
-theorem UniformContinuous.comp_tendstoInMeasure {α ι E F : Type*} {mα : MeasurableSpace α}
-    {μ : MeasureTheory.Measure α} [PseudoEMetricSpace E] [PseudoEMetricSpace F] {l : Filter ι}
-    {T : E → F} {f : ι → α → E} {g : α → E} (hT : UniformContinuous T)
-    (hf : MeasureTheory.TendstoInMeasure μ f l g) :
-    MeasureTheory.TendstoInMeasure μ (fun i x ↦ T (f i x)) l (fun x ↦ T (g x)) := fun ε hε ↦ by
-  obtain ⟨δ, hδ, hTδ⟩ := EMetric.uniformContinuous_iff.1 hT ε hε
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hf δ hδ)
-    (fun _ ↦ zero_le) fun i ↦ MeasureTheory.measure_mono fun x hx ↦
-      by_contra fun hlt ↦ hx.not_gt (hTδ (not_le.mp hlt))
 
 namespace TauCeti
 
@@ -299,6 +286,27 @@ namespace MeasureTheory
 
 open Filter Topology
 open scoped ENNReal
+
+/-- Sectionwise convergence in measure almost everywhere implies convergence in measure on a
+product of two finite measures if the distances to the limit are eventually jointly measurable. -/
+theorem tendstoInMeasure_prod_of_ae_tendstoInMeasure
+    {α β E ι : Type*} [MeasurableSpace α] [MeasurableSpace β] [EDist E]
+    {μ : Measure α} {ν : Measure β} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    {l : Filter ι} [l.IsCountablyGenerated] {f : ι → α × β → E} {g : α × β → E}
+    (hf : ∀ᶠ i in l, Measurable (fun p ↦ edist (f i p) (g p)))
+    (h : ∀ᵐ x ∂μ, TendstoInMeasure ν (fun n y ↦ f n (x, y)) l (fun y ↦ g (x, y))) :
+    TendstoInMeasure (μ.prod ν) f l g := by
+  intro ε hε
+  let s (n : ι) := {p | ε ≤ edist (f n p) (g p)}
+  have hs : ∀ᶠ i in l, MeasurableSet (s i) :=
+    hf.mono fun _ hi ↦ measurableSet_le measurable_const hi
+  refine Tendsto.congr' (hs.mono fun _ hi ↦ (Measure.prod_apply hi).symm) ?_
+  have hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ν (Prod.mk x ⁻¹' s n)) l (𝓝 0) :=
+    h.mono fun x hx ↦ hx ε hε
+  simpa only [lintegral_zero] using tendsto_lintegral_filter_of_dominated_convergence
+    (fun _ ↦ ν Set.univ) (hs.mono fun _ hi ↦ measurable_measure_prodMk_left hi)
+    (Eventually.of_forall fun _ ↦ ae_of_all _ fun _ ↦ measure_mono (Set.subset_univ _))
+    (by rw [lintegral_const]; finiteness) hlim
 
 /-- Convergence in mean square implies convergence in measure, for any measure and filter.
 Integrability of the squared deviations is needed only eventually. -/
