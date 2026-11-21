@@ -72,6 +72,9 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   through compatible algebra towers.
 * `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
   `Localization.awayMap` is compatible with the maps from `A`.
+* `TauCeti.Localization.algebraMap_away_injective`: over a commutative semiring in which
+  multiplication by any nonzero element is cancellative (no additive cancellation is required; in
+  particular any domain), localizing away from a nonzero element makes `algebraMap` injective.
 
 ## Provenance
 
@@ -107,8 +110,9 @@ proved here directly from Mathlib's `IsLocalization.injective_iff_isRegular`.
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `mk'` API.
 
-`Localization.isScalarTower_awayMap` is **also a later addition with no AINTLIB analogue**, proved
-here directly from Mathlib's `IsLocalization.map_eq`.
+`Localization.isScalarTower_awayMap` and `TauCeti.Localization.algebraMap_away_injective` are
+**also later additions with no AINTLIB analogue**, proved here directly from Mathlib's
+`IsLocalization.map_eq` and `IsLocalization.injectiveₛ`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -418,6 +422,15 @@ adic spectrum. -/
 bijective. -/
 instance isLocalizationAwayOne (R : Type*) [CommSemiring R] : IsLocalization.Away (1 : R) R :=
   IsLocalization.away_of_isUnit_of_bijective _ isUnit_one (Equiv.refl _).bijective
+
+/-- Over a commutative semiring in which multiplication by any nonzero element is cancellative (no
+additive cancellation is required; in particular any domain), localizing away from a nonzero element
+`x` yields an injective `algebraMap R S`. -/
+theorem algebraMap_away_injective {R : Type*} (S : Type*) [CommSemiring R] [IsCancelMulZero R]
+    [CommSemiring S] [Algebra R S] {x : R} [IsLocalization.Away x S] (hx : x ≠ 0) :
+    Function.Injective (algebraMap R S) :=
+  IsLocalization.injectiveₛ (M := Submonoid.powers x) S
+    fun _ ⟨k, hk⟩ ↦ hk ▸ (IsRegular.of_ne_zero hx).pow k
 
 end TauCeti.Localization
 

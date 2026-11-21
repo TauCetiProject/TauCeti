@@ -10,20 +10,21 @@ public import Mathlib.RingTheory.Localization.Defs
 /-!
 # Basic facts about localizations of commutative semirings
 
-For a localization `S` of a commutative semiring `R` at a submonoid `M`, a ring homomorphism
-`g : R →+* P` that maps `M` into the units of `P` extends to `IsLocalization.lift hg : S →+* P`.
-Complementing Mathlib's `IsLocalization.lift_injective_iff` and `IsLocalization.eq_of_eq`, this file
-records that `IsLocalization.lift hg` is injective whenever `g` is injective
-(`IsLocalization.lift_injective_of_injective`). Likewise, an injective ring homomorphism of
-commutative rings that carries `M` into a submonoid of non-zero-divisors induces an injective map
-of localizations (`IsLocalization.map_injective_of_injective_of_le_nonZeroDivisors`), with no
-domain hypothesis; for instance, one carrying non-zero-divisors to non-zero-divisors induces an
-injective map of total rings of fractions.
+For a localization `S` of a commutative semiring `R` at a submonoid `M`:
 
-It also records that a localization of a commutative semiring in which sums vanish only when
-every summand does inherits this property (`IsLocalization.subsingleton_addUnits`), and that a
-submonoid along which a semiring without zero divisors localizes to a nontrivial semiring consists
-of non-zero-divisors (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
+* `IsLocalization.subsingleton_addUnits`: a localization of a commutative semiring in which sums
+  vanish only when every summand does inherits this property.
+* `IsLocalization.lift_injective_of_injective`: if an injective ring homomorphism `g : R →+* P`
+  maps `M` into the units of `P`, then its lift `IsLocalization.lift hg : S →+* P` is injective
+  (complementing Mathlib's `IsLocalization.lift_injective_iff` and `IsLocalization.eq_of_eq`).
+* `IsLocalization.map_injective_of_injective_of_le_nonZeroDivisors`: an injective ring homomorphism
+  of commutative rings carrying `M` into a submonoid of non-zero-divisors induces an injective map
+  of localizations, with no domain hypothesis (for instance, on total rings of fractions).
+* `TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`: a submonoid along which a semiring
+  without zero divisors localizes to a nontrivial semiring consists of non-zero-divisors.
+* `TauCeti.IsLocalization.isUnit_mk'_iff` and `TauCeti.Localization.isUnit_mk_iff`: a fraction
+  `a / m` (`m ∈ M`) is a unit in `S` (or `Localization M`) if and only if `algebraMap R S a` is a
+  unit, since `m` already maps to a unit.
 -/
 
 public section
@@ -78,6 +79,8 @@ end IsLocalization
 
 namespace TauCeti.IsLocalization
 
+open _root_.IsLocalization
+
 /-- A submonoid of a commutative semiring without zero divisors along which the semiring localizes
 to a nontrivial semiring consists of non-zero-divisors. -/
 theorem le_nonZeroDivisors_of_nontrivial {R : Type*} [CommSemiring R] [NoZeroDivisors R]
@@ -86,4 +89,30 @@ theorem le_nonZeroDivisors_of_nontrivial {R : Type*} [CommSemiring R] [NoZeroDiv
   le_nonZeroDivisors_of_noZeroDivisors fun h ↦
     not_subsingleton S (_root_.IsLocalization.subsingleton h)
 
+variable {R : Type*} [CommSemiring R] {M : Submonoid R} {S : Type*} [CommSemiring S]
+  [Algebra R S] [IsLocalization M S]
+
+/-- A fraction `IsLocalization.mk' S x y` is a unit in `S` if and only if its numerator `x` maps to
+a unit in `S`. -/
+@[simp]
+theorem isUnit_mk'_iff {x : R} {y : M} :
+    IsUnit (mk' S x y) ↔ IsUnit (algebraMap R S x) :=
+  ⟨fun h ↦ mk'_spec S x y ▸ h.mul (map_units S y),
+    fun h ↦ isUnit_of_dvd_unit ⟨algebraMap R S y, (mk'_spec S x y).symm⟩ h⟩
+
 end TauCeti.IsLocalization
+
+namespace TauCeti.Localization
+
+open _root_.Localization
+
+variable {R : Type*} [CommSemiring R] {M : Submonoid R}
+
+/-- A fraction `Localization.mk x y` is a unit in `Localization M` if and only if `x` maps to a unit
+in `Localization M`. -/
+@[simp]
+theorem isUnit_mk_iff {x : R} {y : M} :
+    IsUnit (mk x y) ↔ IsUnit (algebraMap R (_root_.Localization M) x) := by
+  rw [mk_eq_mk'_apply, TauCeti.IsLocalization.isUnit_mk'_iff]
+
+end TauCeti.Localization
