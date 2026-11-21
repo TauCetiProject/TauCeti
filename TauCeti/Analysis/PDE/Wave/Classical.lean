@@ -150,10 +150,12 @@ theorem hasDerivAt_waveSolution (f g : 𝓢(E, F)) (t : ℝ) (x : E) :
   refine h.congr_deriv ?_
   rw [waveSolution_def]
   refine congrArg (fun G : E → F ↦ 𝓕⁻ G x) (funext fun ξ ↦ ?_)
-  rw [SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_smul, add_comm, mul_comm]
+  rw [SchwartzMap.fourier_laplacian_apply_eq_laplacianSymbol_smul, smul_smul,
+    mul_comm (waveSinSymbol t ξ), add_comm (waveCosSymbol t ξ • 𝓕 g ξ)]
 
 /-- The Laplacian of the wave solution with data `(f, g)` is the wave solution with data
 `(Δf, Δg)`. -/
+@[simp]
 theorem laplacian_waveSolution (f g : 𝓢(E, F)) (t : ℝ) :
     Δ (waveSolution f g t) = waveSolution (Δ f) (Δ g) t := by
   rw [waveSolution_def, laplacian_fourierInv (fun n _ ↦ integrable_pow_mul_waveIntegrand f g t n)
@@ -165,6 +167,7 @@ theorem laplacian_waveSolution (f g : 𝓢(E, F)) (t : ℝ) :
 
 /-- The time derivative of the wave solution with data `(f, g)` is the wave solution with data
 `(g, Δf)`. -/
+@[simp]
 theorem deriv_waveSolution (f g : 𝓢(E, F)) (t : ℝ) (x : E) :
     deriv (fun s ↦ waveSolution f g s x) t = waveSolution g (Δ f) t x :=
   (hasDerivAt_waveSolution f g t x).deriv
@@ -188,11 +191,6 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem spaceTimePairing_apply (v w : ℝ × E) :
     spaceTimePairing v w = -(v.1 * w.1 + inner ℝ v.2 w.2) := by
   simp [spaceTimePairing]
-
-private theorem integrable_fourierChar_smul (a : 𝓢(E, F)) {φ : E → ℝ} (hφ : Continuous φ) :
-    Integrable fun ξ ↦ 𝐞 (φ ξ) • a ξ :=
-  a.integrable.mono ((continuous_fourierChar.comp hφ).smul a.continuous).aestronglyMeasurable
-    (ae_of_all _ fun ξ ↦ by simp)
 
 /-- A half-wave `(t, x) ↦ ∫ 𝐞(σ ‖ξ‖ t + ⟪ξ, x⟫) a ξ dξ` is the Fourier integral on `ℝ × E` of the
 image of `a ξ dξ` under the cone map `ξ ↦ (σ ‖ξ‖, ξ)`. -/
@@ -245,8 +243,8 @@ private theorem contDiff_fourierInv_waveCosSymbol_smul (a : 𝓢(E, F)) :
       ((∫ ξ, 𝐞 (1 * ‖ξ‖ * p.1 + inner ℝ ξ p.2) • a ξ) +
         ∫ ξ, 𝐞 (-1 * ‖ξ‖ * p.1 + inner ℝ ξ p.2) • a ξ) := by
     funext p
-    rw [Real.fourierInv_eq, ← integral_add (integrable_fourierChar_smul a (by fun_prop))
-      (integrable_fourierChar_smul a (by fun_prop)), ← integral_smul]
+    rw [Real.fourierInv_eq, ← integral_add (a.integrable_fourierChar_smul (by fun_prop))
+      (a.integrable_fourierChar_smul (by fun_prop)), ← integral_smul]
     congr 1 with ξ
     exact fourierChar_smul_waveCosSymbol_smul p.1 ξ p.2 (a ξ)
   rw [h]
