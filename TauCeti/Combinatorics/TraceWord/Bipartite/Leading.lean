@@ -9,8 +9,9 @@ public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.Combinatorics.NoncrossingPartition.FormPerm
 import TauCeti.Combinatorics.NoncrossingPartition.Geodesic
 import TauCeti.Combinatorics.TreeWalk.Leading
-import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.Combinatorics.ChordDiagram
+import TauCeti.Data.Fin.Sum
+import TauCeti.Data.Finset.Sum
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import Mathlib.Data.Set.Card
 
 /-!
@@ -20,7 +21,11 @@ A word of half-length `k` is leading if no edge occurs just once and the word vi
 `k + 1` vertices. Each edge then occurs once in each direction. Matching the two occurrences
 gives a permutation of the `k` positions. Its cycles are the column classes, and the cycles
 of the rotation composed with its inverse are the row classes. The sum of the two cycle
-counts is maximal, so the column partition is noncrossing.
+counts is maximal, so the column partition is noncrossing. Directed-edge uniqueness uses
+`TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq`. The classification
+uses `NoncrossingPartition.orbitCount_add_orbitCount_inv_mul_finRotate_eq_iff` to recover the
+partition and `NoncrossingPartition.orbitCount_formPerm_add_orbitCount_inv_mul_finRotate` to
+verify the vertex count for a word built from a partition.
 
 ## References
 
@@ -49,95 +54,52 @@ theorem isLeadingBipartiteWord_iff {u : Fin k → α} {v : Fin k → β} :
       (∀ a, ∃ b ≠ a, bipartiteEdge u v b = bipartiteEdge u v a) ∧
         #(univ.image u) + #(univ.image v) = k + 1 := Iff.rfl
 
-private def stepIndex : Fin k ⊕ Fin k ≃ Fin (2 * k) :=
-  (Equiv.sumCongr (Equiv.prodUnique (Fin k) (Fin 1)).symm
-    (Equiv.prodUnique (Fin k) (Fin 1)).symm).trans
-    ((Equiv.prodSumDistrib (Fin k) (Fin 1) (Fin 1)).symm.trans
-    ((Equiv.prodCongr (Equiv.refl _) finSumFinEquiv).trans
-      (finProdFinEquiv.trans (finCongr (Nat.mul_comm k 2)))))
-
-private theorem stepIndex_inl_val (t : Fin k) : (stepIndex (.inl t) : ℕ) = 2 * t.val := by
-  have h : finSumFinEquiv (m := 1) (n := 1) (.inl 0) = (0 : Fin 2) := rfl
-  simp [stepIndex, finProdFinEquiv_apply_val, h]
-
-private theorem stepIndex_inr_val (t : Fin k) : (stepIndex (.inr t) : ℕ) = 2 * t.val + 1 := by
-  have h : finSumFinEquiv (m := 1) (n := 1) (.inr 0) = (1 : Fin 2) := rfl
-  simp [stepIndex, finProdFinEquiv_apply_val, h, Nat.add_comm]
-
-private theorem finRotate_stepIndex_inl (t : Fin k) :
-    finRotate (2 * k) (stepIndex (.inl t)) = stepIndex (.inr t) := by
-  have : NeZero (2 * k) := ⟨by have := t.isLt; omega⟩
-  apply Fin.ext
-  rw [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod,
-    stepIndex_inl_val, stepIndex_inr_val, Nat.mod_eq_of_lt]
-  omega
-
-private theorem finRotate_stepIndex_inr (t : Fin k) :
-    finRotate (2 * k) (stepIndex (.inr t)) = stepIndex (.inl (finRotate k t)) := by
-  have : NeZero k := t.neZero
-  have : NeZero (2 * k) := ⟨by have := t.isLt; omega⟩
-  apply Fin.ext
-  rw [stepIndex_inl_val, finRotate_apply, finRotate_apply, Fin.val_add, Fin.val_add,
-    Fin.val_one', Fin.val_one', Nat.add_mod_mod, Nat.add_mod_mod, stepIndex_inr_val]
-  by_cases ht : t.val + 1 < k
-  · rw [Nat.mod_eq_of_lt ht, Nat.mod_eq_of_lt (by omega)]
-    omega
-  · have he : t.val + 1 = k := by omega
-    rw [he, Nat.mod_self, Nat.mul_zero]
-    have hstep : 2 * t.val + 1 + 1 = 2 * k := by omega
-    rw [hstep, Nat.mod_self]
-
 /-- On each orientation of a leading bipartite word, the visited edges are distinct. -/
-theorem IsLeadingBipartiteWord.injective_bipartiteEdge {u : Fin k → α} {v : Fin k → β}
+theorem IsLeadingBipartiteWord.injective_bipartiteEdge_orientations {u : Fin k → α} {v : Fin k → β}
     (h : IsLeadingBipartiteWord u v) :
     Injective (bipartiteEdge u v ∘ Sum.inl) ∧ Injective (bipartiteEdge u v ∘ Sum.inr) := by
-  let w : Fin (2 * k) → α ⊕ β := Sum.map u v ∘ stepIndex.symm
-  have hw (a : Fin k ⊕ Fin k) : w (stepIndex a) = Sum.map u v a :=
-    congrArg (Sum.map u v) (stepIndex.symm_apply_apply a)
+  let e := interleaveIndexEquiv k
+  have hleft (t : Fin k) : finRotate (2 * k) (e (.inl t)) = e (.inr t) :=
+    finRotate_interleaveIndexEquiv_inl t
+  have hright (t : Fin k) : finRotate (2 * k) (e (.inr t)) = e (.inl (finRotate k t)) :=
+    finRotate_interleaveIndexEquiv_inr t
+  let w : Fin (2 * k) → α ⊕ β := Sum.map u v ∘ e.symm
+  have hw (a : Fin k ⊕ Fin k) : w (e a) = Sum.map u v a :=
+    congrArg (Sum.map u v) (e.symm_apply_apply a)
   have hv : univ.image w = (univ.image u).disjSum (univ.image v) := by
-    ext (x | x)
-    all_goals
-      simp only [mem_image, mem_univ, true_and, inl_mem_disjSum, inr_mem_disjSum]
-      constructor
-      · rintro ⟨i, hi⟩
-        obtain ⟨a, rfl⟩ := stepIndex.surjective i
-        rw [hw a] at hi
-        cases a <;> simp_all only [Sum.map_inl, Sum.map_inr, Sum.inl.injEq,
-          Sum.inr.injEq, Sum.inl_ne_inr, Sum.inr_ne_inl]
-        exact ⟨_, hi⟩
-      · rintro ⟨i, rfl⟩
-        first | exact ⟨stepIndex (.inl i), hw (.inl i)⟩
-              | exact ⟨stepIndex (.inr i), hw (.inr i)⟩
+    rw [show w = Sum.map u v ∘ e.symm from rfl, ← image_image, image_univ_equiv,
+      ← univ_disjSum_univ, image_sumMap_disjSum]
   have hedge (a : Fin k ⊕ Fin k) :
-      s(w (stepIndex a), w (finRotate (2 * k) (stepIndex a))) =
+      s(w (e a), w (finRotate (2 * k) (e a))) =
         s(Sum.inl (bipartiteEdge u v a).1, Sum.inr (bipartiteEdge u v a).2) := by
     cases a with
-    | inl t => simp only [finRotate_stepIndex_inl, hw, Sum.map_inl, Sum.map_inr, bipartiteEdge_inl]
-    | inr t => simp only [finRotate_stepIndex_inr, hw, Sum.map_inr, Sum.map_inl, bipartiteEdge_inr]
+    | inl t => simp only [hleft, hw, Sum.map_inl, Sum.map_inr, bipartiteEdge_inl]
+    | inr t => simp only [hright, hw, Sum.map_inr, Sum.map_inl, bipartiteEdge_inr]
                exact Sym2.eq_swap
   have hword (i : Fin (2 * k)) :
       ∃ j ≠ i, s(w j, w (finRotate (2 * k) j)) = s(w i, w (finRotate (2 * k) i)) := by
-    obtain ⟨a, rfl⟩ := stepIndex.surjective i
+    obtain ⟨a, rfl⟩ := e.surjective i
     obtain ⟨b, hba, hb⟩ := (isLeadingBipartiteWord_iff.mp h).1 a
-    exact ⟨stepIndex b, stepIndex.injective.ne hba, by rw [hedge, hedge, hb]⟩
+    exact ⟨e b, e.injective.ne hba, by rw [hedge, hedge, hb]⟩
   have hd := TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq hword
     (by rw [hv, card_disjSum]; exact (isLeadingBipartiteWord_iff.mp h).2)
   constructor
   · intro i j hij
-    apply Sum.inl_injective (β := Fin k) (stepIndex.injective (hd ?_))
-    simpa only [finRotate_stepIndex_inl, hw, Sum.map_inl, Sum.map_inr, comp_apply,
+    apply Sum.inl_injective (β := Fin k) (e.injective (hd ?_))
+    simpa only [hleft, hw, Sum.map_inl, Sum.map_inr, comp_apply,
       bipartiteEdge_inl, Prod.mk.injEq, Sum.inl.injEq, Sum.inr.injEq] using hij
   · intro i j hij
-    apply Sum.inr_injective (α := Fin k) (stepIndex.injective (hd ?_))
-    simpa only [finRotate_stepIndex_inr, hw, Sum.map_inr, Sum.map_inl, comp_apply,
+    apply Sum.inr_injective (α := Fin k) (e.injective (hd ?_))
+    simpa only [hright, hw, Sum.map_inr, Sum.map_inl, comp_apply,
       bipartiteEdge_inr, Prod.mk.injEq, Sum.inr.injEq, Sum.inl.injEq, and_comm] using hij
 
 /-- For a leading word, there is a unique permutation matching each column-to-row step
 to the row-to-column step on the same edge. -/
-theorem IsLeadingBipartiteWord.existsUnique_perm {u : Fin k → α} {v : Fin k → β}
+theorem IsLeadingBipartiteWord.existsUnique_perm_matching_bipartiteEdges
+    {u : Fin k → α} {v : Fin k → β}
     (h : IsLeadingBipartiteWord u v) :
     ∃! π : Perm (Fin k), ∀ t, bipartiteEdge u v (.inl (π t)) = bipartiteEdge u v (.inr t) := by
-  obtain ⟨hl, hr⟩ := h.injective_bipartiteEdge
+  obtain ⟨hl, hr⟩ := h.injective_bipartiteEdge_orientations
   have hmatch (t : Fin k) :
       ∃ j, bipartiteEdge u v (.inl j) = bipartiteEdge u v (.inr t) := by
     obtain ⟨i, hne, hi⟩ := (isLeadingBipartiteWord_iff.mp h).1 (.inr t)
@@ -147,15 +109,20 @@ theorem IsLeadingBipartiteWord.existsUnique_perm {u : Fin k → α} {v : Fin k �
   choose f hf using hmatch
   have hfinj : Injective f := fun i j hij ↦ hr ((hf i).symm.trans (hij ▸ hf j))
   let π := Equiv.ofBijective f (Finite.injective_iff_bijective.mp hfinj)
-  exact ⟨π, hf, fun τ hτ ↦ Equiv.ext fun t ↦ hl ((hτ t).trans (hf t).symm)⟩
+  have hπ : (π : Fin k → Fin k) = f := Equiv.coe_ofBijective _ _
+  refine ⟨π, ?_, fun τ hτ ↦ Equiv.ext fun t ↦ hl ?_⟩
+  · simpa only [hπ] using hf
+  · simpa only [hπ, comp_apply] using (hτ t).trans (hf t).symm
 
-private theorem card_image_cycleColouring (π : Perm (Fin k))
-    (f : Quotient (SameCycle.setoid π) → α) :
-    #(univ.image ((invariantColouringEquiv π f).val)) = Nat.card (Set.range f) := by
-  rw [Nat.card_coe_set_eq, ← Set.image_univ, ← Quotient.mk_surjective.range_eq,
-    ← Set.range_comp, ← Set.image_univ, ← coe_univ, ← coe_image, Set.ncard_coe_finset]
-  refine congrArg (fun h : Fin k → α ↦ #(univ.image h)) (funext fun i ↦ ?_)
-  exact invariantColouringEquiv_apply_coe π f i
+private theorem card_image_cycleColouring_le_and_eq_iff {ι γ : Type*} [Fintype ι] [DecidableEq γ]
+    (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    #(univ.image (invariantColouringEquiv π f).val) ≤ orbitCount π ∧
+      (#(univ.image (invariantColouringEquiv π f).val) = orbitCount π ↔ Injective f) := by
+  rw [card_image_invariantColouringEquiv, orbitCount_def]
+  refine ⟨Nat.card_le_card_of_surjective _ Set.rangeFactorization_surjective, ?_⟩
+  refine ⟨fun h x y hxy ↦ ?_, Nat.card_range_of_injective⟩
+  exact (Set.rangeFactorization_surjective.bijective_of_nat_card_le
+    (f := Set.rangeFactorization f) h.ge).injective (Subtype.ext hxy)
 
 private theorem exists_noncrossing_cycleColourings {u : Fin k → α} {v : Fin k → β}
     (hk : k ≠ 0) (h : IsLeadingBipartiteWord u v) :
@@ -163,7 +130,7 @@ private theorem exists_noncrossing_cycleColourings {u : Fin k → α} {v : Fin k
       ∃ (f : Quotient (SameCycle.setoid (finRotate k * π.val.formPerm⁻¹)) ↪ α)
         (g : Quotient (SameCycle.setoid π.val.formPerm) ↪ β),
         (invariantColouringEquiv _ f).val = u ∧ (invariantColouringEquiv _ g).val = v := by
-  obtain ⟨σ, hσ, _⟩ := h.existsUnique_perm
+  obtain ⟨σ, hσ, _⟩ := h.existsUnique_perm_matching_bipartiteEdges
   simp only [bipartiteEdge_inl, bipartiteEdge_inr, Prod.mk.injEq] at hσ
   let ρ := finRotate k * σ⁻¹
   have hu : u ∘ ρ = u := funext fun i ↦ by
@@ -175,28 +142,17 @@ private theorem exists_noncrossing_cycleColourings {u : Fin k → α} {v : Fin k
     congrArg Subtype.val ((invariantColouringEquiv ρ).apply_symm_apply _)
   have hg : (invariantColouringEquiv σ g).val = v :=
     congrArg Subtype.val ((invariantColouringEquiv σ).apply_symm_apply _)
-  have hcf := card_image_cycleColouring ρ f
-  have hcg := card_image_cycleColouring σ g
-  rw [hf] at hcf
-  rw [hg] at hcg
+  obtain ⟨hboundf, heqf⟩ := card_image_cycleColouring_le_and_eq_iff ρ f
+  obtain ⟨hboundg, heqg⟩ := card_image_cycleColouring_le_and_eq_iff σ g
+  rw [hf] at hboundf heqf
+  rw [hg] at hboundg heqg
   have hle : orbitCount ρ + orbitCount σ ≤ k + 1 := by
     simpa only [ρ, orbitCount_finRotate, Nat.card_fin, orbitCount_inv, ite_eq_right hk,
       Nat.add_comm] using (finRotate k).orbitCount_mul_add_orbitCount_le_orbitCount_add_card σ⁻¹
-  have hboundf : #(univ.image u) ≤ orbitCount ρ := by
-    rw [hcf, orbitCount_def]
-    exact Nat.card_le_card_of_surjective _ Set.rangeFactorization_surjective
-  have hboundg : #(univ.image v) ≤ orbitCount σ := by
-    rw [hcg, orbitCount_def]
-    exact Nat.card_le_card_of_surjective _ Set.rangeFactorization_surjective
   have hv := (isLeadingBipartiteWord_iff.mp h).2
-  have hEq : orbitCount σ + orbitCount ρ = k + 1 := by
-    omega
-  have hfinj : Injective f := fun x y hxy ↦
-    (Set.rangeFactorization_surjective.bijective_of_nat_card_le (f := Set.rangeFactorization f)
-      (by rw [← hcf, ← orbitCount_def]; omega)).injective (Subtype.ext hxy)
-  have hginj : Injective g := fun x y hxy ↦
-    (Set.rangeFactorization_surjective.bijective_of_nat_card_le (f := Set.rangeFactorization g)
-      (by rw [← hcg, ← orbitCount_def]; omega)).injective (Subtype.ext hxy)
+  have hEq : orbitCount σ + orbitCount ρ = k + 1 := by omega
+  have hfinj := heqf.mp (by omega)
+  have hginj := heqg.mp (by omega)
   dsimp only [ρ] at hEq
   rw [orbitCount_mul_comm (finRotate k)] at hEq
   obtain ⟨π, hπ⟩ :=
@@ -232,7 +188,7 @@ private theorem isLeadingBipartiteWord_cycleColouring (hk : k ≠ 0)
       obtain ⟨j, rfl⟩ := σ.surjective t
       exact ⟨.inr j, Sum.inr_ne_inl, (bipartiteEdge_cycleColouring σ f g j).symm⟩
     | inr t => exact ⟨.inl (σ t), Sum.inl_ne_inr, bipartiteEdge_cycleColouring σ f g t⟩
-  · rw [card_image_cycleColouring, card_image_cycleColouring,
+  · rw [card_image_invariantColouringEquiv, card_image_invariantColouringEquiv,
       Nat.card_range_of_injective f.injective, Nat.card_range_of_injective g.injective,
       ← orbitCount_def, ← orbitCount_def, orbitCount_mul_comm (finRotate k), Nat.add_comm]
     exact NoncrossingPartition.orbitCount_formPerm_add_orbitCount_inv_mul_finRotate hk π
@@ -254,7 +210,7 @@ noncomputable def leadingBipartiteWordEquiv (hk : k ≠ 0) :
   refine Equiv.ofBijective label ⟨?_, ?_⟩
   · rintro ⟨π, f, g⟩ ⟨τ, f', g'⟩ he
     have hw := isLeadingBipartiteWord_cycleColouring hk π f g
-    obtain ⟨σ, _, hu⟩ := hw.existsUnique_perm
+    obtain ⟨σ, _, hu⟩ := hw.existsUnique_perm_matching_bipartiteEdges
     have hfirst := hu _ (bipartiteEdge_cycleColouring _ f g)
     have hlab := congrArg Subtype.val he
     dsimp only [label] at hlab
@@ -284,8 +240,35 @@ noncomputable def leadingBipartiteWordEquiv (hk : k ≠ 0) :
     (leadingBipartiteWordEquiv hk ⟨π, f, g⟩).val =
       (fun i ↦ f (Quotient.mk _ i), fun i ↦ g (Quotient.mk _ i)) := by
   unfold leadingBipartiteWordEquiv
+  dsimp only
+  erw [Equiv.coe_ofBijective]
   exact Prod.ext (funext fun i ↦ invariantColouringEquiv_apply_coe _ f i)
     (funext fun i ↦ invariantColouringEquiv_apply_coe _ g i)
+
+/-- The inverse recovers the row and column labels on the cycles represented by each position. -/
+theorem leadingBipartiteWordEquiv_symm_apply_labels (hk : k ≠ 0)
+    (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
+    let q := (leadingBipartiteWordEquiv hk).symm w
+    q.2.1 (Quotient.mk _ i) = w.val.1 i ∧ q.2.2 (Quotient.mk _ i) = w.val.2 i := by
+  have h := congrArg Subtype.val ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
+  generalize (leadingBipartiteWordEquiv hk).symm w = q at h ⊢
+  obtain ⟨π, f, g⟩ := q
+  rw [leadingBipartiteWordEquiv_apply] at h
+  exact ⟨congrFun (congrArg Prod.fst h) i, congrFun (congrArg Prod.snd h) i⟩
+
+/-- The partition recovered by the inverse has the permutation that matches the two orientations
+of each edge in the original word. -/
+theorem leadingBipartiteWordEquiv_symm_apply_formPerm (hk : k ≠ 0)
+    (w : {w : (Fin k → α) × (Fin k → β) // IsLeadingBipartiteWord w.1 w.2}) (i : Fin k) :
+    let σ := ((leadingBipartiteWordEquiv hk).symm w).1.val.formPerm
+    bipartiteEdge w.val.1 w.val.2 (.inl (σ i)) = bipartiteEdge w.val.1 w.val.2 (.inr i) := by
+  have h := congrArg Subtype.val ((leadingBipartiteWordEquiv hk).apply_symm_apply w)
+  generalize (leadingBipartiteWordEquiv hk).symm w = q at h ⊢
+  obtain ⟨π, f, g⟩ := q
+  rw [← h]
+  simpa only [leadingBipartiteWordEquiv_apply, bipartiteEdge_inl, bipartiteEdge_inr,
+    invariantColouringEquiv_apply_coe] using
+    bipartiteEdge_cycleColouring π.val.formPerm f g i
 
 open Classical in
 /-- The contribution to the leading-word count from a noncrossing partition with `c` blocks

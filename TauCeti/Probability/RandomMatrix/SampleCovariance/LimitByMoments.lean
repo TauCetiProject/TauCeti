@@ -5,21 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.TraceWord.Bipartite.Leading
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 import TauCeti.Data.Nat.Factorial.Asymptotics
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments
 import TauCeti.Probability.Moments.WeakConvergence
 import TauCeti.Probability.RandomMatrix.SampleCovariance.RectangularMoments
+import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
 
 /-!
 # The Marchenko–Pastur moment limit for sample covariance matrices
 
-The expected spectral moments of independent centred entries with unit second absolute moment
-and uniformly bounded higher moments converge to the Marchenko–Pastur moments. For each fixed
-degree only a bound of twice that degree is needed. The row and column dimensions can vary
-independently as long as their ratio converges and the column dimension tends to infinity.
-The method of moments then gives weak convergence of the expected spectral measures.
+For almost everywhere measurable random matrices with independent centred entries of unit second
+absolute moment, the expected spectral moments converge to the Marchenko–Pastur moments when the
+column dimension tends to infinity and the aspect ratio converges. At each positive degree `k`,
+the entries must eventually lie in `L^(2k)` with a uniform bound on their absolute moments of
+order `2k`. The formula `integral_pow_marchenkoPastur` identifies the limits of the leading counts,
+and `ProbabilityMeasure.tendsto_of_tendsto_integral_pow` turns moment convergence into weak
+convergence of the expected spectral measures.
 
 ## References
 
@@ -34,63 +38,23 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
-section Integrability
-
-variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-  [Fintype p] [DecidableEq p] [Nonempty p] [Fintype n]
-  {P : Measure Ω} [IsProbabilityMeasure P] {X : Ω → Matrix p n 𝕜} {k : ℕ}
-
-/-- For sample covariance matrices, integrability of the trace power implies finiteness of
-the corresponding moment of the expected spectral measure. -/
-theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
-    (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
-    Integrable (fun x : ℝ ↦ x ^ k) (expectedCovarianceSpectralMeasure hXm : Measure ℝ) := by
-  let L (ω : Ω) : Measure ℝ := ((X ω).sampleCovariance.spectralMeasure
-    (isHermitian_sampleCovariance (X ω)) : Measure ℝ)
-  have hL : AEMeasurable L P :=
-    measurable_subtypeVal.comp_aemeasurable (measurable_spectralMeasure_sampleCovariance
-      |>.comp_aemeasurable hXm)
-  rw [toMeasure_expectedCovarianceSpectralMeasure]
-  refine ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr ?_⟩
-  rw [Measure.lintegral_bind hL (by fun_prop)]
-  have hinner (ω : Ω) :
-      ∫⁻ x, ENNReal.ofReal ‖x ^ k‖ ∂L ω =
-        ENNReal.ofReal ‖(Fintype.card p : ℝ)⁻¹ *
-          RCLike.re ((X ω).sampleCovariance ^ k).trace‖ := by
-    have hpos : ∀ᵐ x ∂L ω, 0 ≤ x ^ k :=
-      ((Matrix.posSemidef_sampleCovariance (X ω)).ae_mem_Ici_spectralMeasure).mono
-        fun _ hx ↦ pow_nonneg hx k
-    have hint : Integrable (fun x : ℝ ↦ x ^ k) (L ω) :=
-      ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr
-        ((lintegral_ofReal_norm_pow_spectralMeasure_le _ _ k).trans_lt ENNReal.ofReal_lt_top)⟩
-    have he := integral_pow_spectralMeasure (X ω).sampleCovariance
-      (isHermitian_sampleCovariance (X ω)) k
-    have hnonneg := integral_nonneg_of_ae hpos
-    simp only [Real.norm_of_nonneg (he ▸ hnonneg)]
-    rw [← he, ofReal_integral_eq_lintegral_ofReal hint hpos]
-    apply lintegral_congr_ae
-    exact hpos.mono fun x hx ↦ congrArg ENNReal.ofReal (Real.norm_of_nonneg hx)
-  simp_rw [hinner]
-  exact (hasFiniteIntegral_iff_norm _).mp
-    ((RCLike.reCLM.integrable_comp htrace).const_mul _).hasFiniteIntegral
-
-/-- The expected spectral moment, cast into the matrix scalar field, is the expected
-normalized trace power. -/
-theorem ofReal_integral_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P)
-    (htrace : Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P) :
-    ((∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure hXm : Measure ℝ) : ℝ) : 𝕜) =
-      (Fintype.card p : 𝕜)⁻¹ * ∫ ω, ((X ω).sampleCovariance ^ k).trace ∂P := by
-  rw [integral_expectedCovarianceSpectralMeasure hXm
-    (integrable_pow_expectedCovarianceSpectralMeasure hXm htrace), ← integral_ofReal]
-  simp_rw [ofReal_integral_pow_spectralMeasure]
-  exact integral_const_mul _ _
-
-end Integrability
-
 open Classical in
-private noncomputable def leadingCovarianceMoment (k p n : ℕ) : ℝ :=
+/-- The normalized leading-word contribution at degree `k), with `p` rows and `n` columns.
+Each noncrossing column partition contributes the count of its injective row and column labellings,
+weighted by `1 / (p * n^k)`. -/
+noncomputable def leadingCovarianceMoment (k p n : ℕ) : ℝ :=
   (p : ℝ)⁻¹ * (n : ℝ)⁻¹ ^ k * ∑ π : NoncrossingPartition (univ : Finset (Fin k)),
     (p.descFactorial (k + 1 - #π.val.parts) : ℝ) * n.descFactorial #π.val.parts
+
+/-- For positive degree, the falling-factorial sum is the number of leading bipartite words
+divided by the row dimension and the `k`th power of the column dimension. -/
+theorem leadingCovarianceMoment_eq_card_leadingBipartiteWord {p n : Type*}
+    [Fintype p] [Fintype n] [DecidableEq p] [DecidableEq n] {k : ℕ} (hk : k ≠ 0) :
+    leadingCovarianceMoment k (Fintype.card p) (Fintype.card n) =
+      (Fintype.card p : ℝ)⁻¹ * (Fintype.card n : ℝ)⁻¹ ^ k *
+        (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : ℝ) := by
+  rw [leadingCovarianceMoment, card_leadingBipartiteWord hk]
+  simp only [Nat.card_eq_fintype_card, Nat.cast_sum, Nat.cast_mul]
 
 private theorem leadingCovarianceMoment_summand_eq (p n k c : ℕ)
     (hp : p ≠ 0) (hc : c ≤ k) :
@@ -122,8 +86,9 @@ private theorem tendsto_leadingCovarianceMoment {ι : Type*} {l : Filter ι} {p 
   have hself : Tendsto (fun i ↦ (n i : ℝ) / n i) l (𝓝 1) := by
     refine tendsto_const_nhds.congr' ?_
     exact hnpos.mono fun _ hi ↦ (div_self (Nat.cast_ne_zero.mpr hi)).symm
-  have hr := hn.natCast_descFactorial_sub_div_pow hy 1 (k - #π.val.parts)
-  have hs := hn.natCast_descFactorial_sub_div_pow hself 0 #π.val.parts
+  have hnR : Tendsto (fun i ↦ (n i : ℝ)) l atTop := tendsto_natCast_atTop_atTop.comp hn
+  have hr := hnR.natCast_descFactorial_sub_div_pow hy 1 (k - #π.val.parts)
+  have hs := hnR.natCast_descFactorial_sub_div_pow hself 0 #π.val.parts
   simp only [Nat.sub_zero] at hs
   have ht := hr.mul hs
   rw [one_pow, mul_one] at ht
@@ -148,35 +113,42 @@ private theorem covarianceMoment_error_bound (p n k : ℕ) (hp : p ≠ 0)
 
 section Bound
 
-variable {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
-  {P : Measure Ω} [IsProbabilityMeasure P] {p n k : ℕ} [NeZero p]
-  {X : Ω → Matrix (Fin p) (Fin n) 𝕜}
+variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
+  [Fintype p] [DecidableEq p] [Nonempty p] [Fintype n]
+  {P : Measure Ω} [IsProbabilityMeasure P] {k : ℕ} {X : Ω → Matrix p n 𝕜}
 
-private theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le (hk : k ≠ 0)
+/-- For independent centred entries in `L^(2k)` with unit second absolute moment, the
+`k`th expected spectral moment differs from the normalized leading-word count by at most
+`k^(2k+1) * B * max(p/n,1)^(k-1) / n`. Here `k > 0`, the matrix is almost everywhere
+measurable, and `B` bounds the absolute entry moments of order `2k`. -/
+theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le (hk : k ≠ 0)
     (hXm : AEMeasurable X P)
-    (hindep : iIndepFun (fun ij : Fin p × Fin n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hmean : ∀ i j, ∫ ω, X ω i j ∂P = 0)
     (hLp : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P)
     (hsecond : ∀ i j, ∫ ω, ‖X ω i j‖ ^ 2 ∂P = 1) {B : ℝ≥0}
     (hB : ∀ i j, ∫ ω, ‖X ω i j‖ ^ (2 * k) ∂P ≤ B) :
     ‖(∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure hXm : Measure ℝ)) -
-        leadingCovarianceMoment k p n‖ ≤
-      ((k : ℝ) ^ (2 * k + 1) * B * max ((p : ℝ) / n) 1 ^ (k - 1)) / n := by
-  have hlead : (leadingCovarianceMoment k p n : 𝕜) = (p : 𝕜)⁻¹ * (n : 𝕜)⁻¹ ^ k *
-      (Nat.card {w : (Fin k → Fin p) × (Fin k → Fin n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜) := by
-    rw [leadingCovarianceMoment, card_leadingBipartiteWord hk]
+        leadingCovarianceMoment k (Fintype.card p) (Fintype.card n)‖ ≤
+      ((k : ℝ) ^ (2 * k + 1) * B *
+        max ((Fintype.card p : ℝ) / Fintype.card n) 1 ^ (k - 1)) / Fintype.card n := by
+  classical
+  have hlead : (leadingCovarianceMoment k (Fintype.card p) (Fintype.card n) : 𝕜) =
+      (Fintype.card p : 𝕜)⁻¹ * (Fintype.card n : 𝕜)⁻¹ ^ k *
+        (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜) := by
+    rw [@leadingCovarianceMoment_eq_card_leadingBipartiteWord p n _ _
+      inferInstance inferInstance k hk]
     push_cast
-    simp only [Nat.card_fin]
+    rfl
   rw [Real.norm_eq_abs, ← RCLike.norm_ofReal (K := 𝕜), RCLike.ofReal_sub,
     ofReal_integral_pow_expectedCovarianceSpectralMeasure hXm
-      (integrable_trace_sampleCovariance_pow hLp),
-    Fintype.card_fin, hlead, mul_assoc, ← mul_sub,
-    norm_mul, norm_inv, RCLike.norm_natCast,
-    ← covarianceMoment_error_bound p n k (NeZero.ne p) hk B]
-  have hfinite := norm_integral_trace_sampleCovariance_pow_sub_leading_le (X := X)
-    hk hindep hmean hLp hsecond hB
-  have hp : 0 ≤ (p : ℝ)⁻¹ := inv_nonneg.mpr (Nat.cast_nonneg _)
-  simpa only [Fintype.card_fin] using mul_le_mul_of_nonneg_left hfinite hp
+      (integrable_trace_sampleCovariance_pow_of_ne_zero hk hLp),
+    hlead, mul_assoc, ← mul_sub, norm_mul, norm_inv, RCLike.norm_natCast,
+    ← covarianceMoment_error_bound _ _ k Fintype.card_ne_zero hk B]
+  exact mul_le_mul_of_nonneg_left
+    (norm_integral_trace_sampleCovariance_pow_sub_leading_le (X := X)
+      hk hindep hmean hLp hsecond hB)
+    (inv_nonneg.mpr (Nat.cast_nonneg _))
 
 end Bound
 
@@ -185,67 +157,75 @@ section Limit
 variable {ι : Type*} {l : Filter ι} {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)]
   {𝕜 : Type*} [RCLike 𝕜]
   {P : (i : ι) → Measure (Ω i)} [∀ i, IsProbabilityMeasure (P i)]
-  {p n : ι → ℕ} [∀ i, NeZero (p i)] {X : (i : ι) → Ω i → Matrix (Fin (p i)) (Fin (n i)) 𝕜}
-  {y : ℝ≥0}
+  {p n : ι → Type*} [∀ i, Fintype (p i)] [∀ i, Fintype (n i)]
+  [∀ i, DecidableEq (p i)] [∀ i, Nonempty (p i)]
+  {X : (i : ι) → Ω i → Matrix (p i) (n i) 𝕜} {y : ℝ≥0}
 
 /-- If the column dimension tends to infinity and the aspect ratio tends to `y`, the
-`k`th expected spectral moment tends to the `k`th Marchenko–Pastur moment. For positive
-`k`, this uses only independence, centring, unit second absolute moments and a uniform bound
-on the entry moments of order `2k`, eventually along the filter. -/
+`k`th expected spectral moment tends to the `k`th Marchenko–Pastur moment. The matrices are
+almost everywhere measurable at every index. For positive `k`, the entries are eventually
+independent, centred and in `L^(2k)`, with unit second absolute moment and a uniform bound
+on the absolute moments of order `2k`. -/
 theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (k : ℕ)
-    (hn : Tendsto n l atTop) (hy : Tendsto (fun i ↦ (p i : ℝ) / n i) l (𝓝 (y : ℝ)))
+    (hn : Tendsto (fun i ↦ Fintype.card (n i)) l atTop)
+    (hy : Tendsto (fun i ↦ (Fintype.card (p i) : ℝ) / Fintype.card (n i)) l (𝓝 (y : ℝ)))
     (hXm : ∀ i, AEMeasurable (X i) (P i))
-    (hindep : ∀ᶠ i in l,
-      iIndepFun (fun ab : Fin (p i) × Fin (n i) ↦ fun ω ↦ X i ω ab.1 ab.2) (P i))
-    (hmean : ∀ᶠ i in l, ∀ a b, ∫ ω, X i ω a b ∂P i = 0)
-    (hLp : ∀ᶠ i in l, ∀ a b, MemLp (fun ω ↦ X i ω a b) (2 * k) (P i))
-    (hsecond : ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ 2 ∂P i = 1)
-    {B : ℝ≥0} (hB : ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ (2 * k) ∂P i ≤ B) :
+    (hindep : k ≠ 0 → ∀ᶠ i in l,
+      iIndepFun (fun ab : p i × n i ↦ fun ω ↦ X i ω ab.1 ab.2) (P i))
+    (hmean : k ≠ 0 → ∀ᶠ i in l, ∀ a b, ∫ ω, X i ω a b ∂P i = 0)
+    (hLp : k ≠ 0 → ∀ᶠ i in l, ∀ a b, MemLp (fun ω ↦ X i ω a b) (2 * k) (P i))
+    (hsecond : k ≠ 0 → ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ 2 ∂P i = 1)
+    (hB : k ≠ 0 → ∃ B : ℝ≥0, ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ (2 * k) ∂P i ≤ B) :
     Tendsto (fun i ↦ ∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure (hXm i) : Measure ℝ)) l
       (𝓝 (∫ x, x ^ k ∂marchenkoPastur y)) := by
   rcases eq_or_ne k 0 with rfl | hk
   · simpa only [pow_zero, integral_const, probReal_univ, one_smul] using
       (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℝ)) l (𝓝 1))
-  have hnR : Tendsto (fun i ↦ (n i : ℝ)) l atTop := tendsto_natCast_atTop_atTop.comp hn
-  have hmajorant : Tendsto (fun i ↦
-      ((k : ℝ) ^ (2 * k + 1) * B * max ((p i : ℝ) / n i) 1 ^ (k - 1)) / n i) l (𝓝 0) :=
+  obtain ⟨B, hBound⟩ := hB hk
+  have hnR : Tendsto (fun i ↦ (Fintype.card (n i) : ℝ)) l atTop :=
+    tendsto_natCast_atTop_atTop.comp hn
+  have hmajorant : Tendsto (fun i ↦ ((k : ℝ) ^ (2 * k + 1) * B *
+      max ((Fintype.card (p i) : ℝ) / Fintype.card (n i)) 1 ^ (k - 1)) / Fintype.card (n i))
+      l (𝓝 0) :=
     (tendsto_const_nhds.mul ((hy.max tendsto_const_nhds).pow (k - 1))).div_atTop hnR
   have herror : Tendsto (fun i ↦
       (∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure (hXm i) : Measure ℝ)) -
-        leadingCovarianceMoment k (p i) (n i)) l (𝓝 0) := by
+        leadingCovarianceMoment k (Fintype.card (p i)) (Fintype.card (n i))) l (𝓝 0) := by
     refine squeeze_zero_norm' ?_ hmajorant
-    filter_upwards [hindep, hmean, hLp, hsecond, hB] with i hI hM hL hS hBound
-    exact norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le
-      hk (hXm i) hI hM hL hS hBound
-  have hlead := tendsto_leadingCovarianceMoment hn (.of_forall fun i ↦ NeZero.ne (p i)) hy k
+    filter_upwards [hindep hk, hmean hk, hLp hk, hsecond hk, hBound] with i hI hM hL hS hBi
+    exact norm_integral_pow_expectedCovarianceSpectralMeasure_sub_le hk (hXm i) hI hM hL hS hBi
+  have hlead := tendsto_leadingCovarianceMoment hn (.of_forall fun _ ↦ Fintype.card_ne_zero) hy k
   simpa only [sub_add_cancel, zero_add] using herror.add hlead
 
-/-- **Marchenko–Pastur convergence of the expected spectral measures by moments.** Independent
-centred entries with unit second absolute moment and uniformly bounded moments of every order
-give weak convergence of the expected empirical spectral measures when the column dimension
-tends to infinity and the aspect ratio converges. Sample spaces and entry laws may vary with
-the matrix size. The limit at aspect ratio zero is the point mass at one. -/
-theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_moments
-    (hn : Tendsto n l atTop) (hy : Tendsto (fun i ↦ (p i : ℝ) / n i) l (𝓝 (y : ℝ)))
+/-- **Marchenko–Pastur convergence of the expected spectral measures by moments.** The matrices
+are almost everywhere measurable at every index, and their entries are eventually independent
+and centred with unit second absolute moment. For every positive degree `k`, the entries
+eventually lie in `L^(2k)` and have uniformly bounded absolute moments of order `2k`. The expected
+spectral measures converge weakly when the column dimension tends to infinity and the aspect
+ratio converges. Sample spaces and entry laws may vary. At aspect ratio zero the limit is the
+point mass at one. -/
+theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_uniform_entry_moment_bounds
+    (hn : Tendsto (fun i ↦ Fintype.card (n i)) l atTop)
+    (hy : Tendsto (fun i ↦ (Fintype.card (p i) : ℝ) / Fintype.card (n i)) l (𝓝 (y : ℝ)))
     (hXm : ∀ i, AEMeasurable (X i) (P i))
-    (hindep : ∀ᶠ i in l,
-      iIndepFun (fun ab : Fin (p i) × Fin (n i) ↦ fun ω ↦ X i ω ab.1 ab.2) (P i))
+    (hindep : ∀ᶠ i in l, iIndepFun (fun ab : p i × n i ↦ fun ω ↦ X i ω ab.1 ab.2) (P i))
     (hmean : ∀ᶠ i in l, ∀ a b, ∫ ω, X i ω a b ∂P i = 0)
     (hsecond : ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ 2 ∂P i = 1)
-    (hLp : ∀ k : ℕ, ∀ᶠ i in l, ∀ a b, MemLp (fun ω ↦ X i ω a b) (2 * k) (P i))
-    (hB : ∀ k : ℕ, ∃ B : ℝ≥0, ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ (2 * k) ∂P i ≤ B) :
+    (hLp : ∀ k : ℕ, k ≠ 0 → ∀ᶠ i in l, ∀ a b, MemLp (fun ω ↦ X i ω a b) (2 * k) (P i))
+    (hB : ∀ k : ℕ, k ≠ 0 → ∃ B : ℝ≥0, ∀ᶠ i in l, ∀ a b, ∫ ω, ‖X i ω a b‖ ^ (2 * k) ∂P i ≤ B) :
     Tendsto (fun i ↦ expectedCovarianceSpectralMeasure (hXm i)) l
       (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
   refine ProbabilityMeasure.tendsto_of_tendsto_integral_pow isCompact_Icc
     (ae_iff.mp (ae_mem_Icc_zero_marchenkoPastur y)) ?_ ?_
   · intro k
-    filter_upwards [hLp k] with i hi
+    rcases eq_or_ne k 0 with rfl | hk
+    · exact .of_forall fun _ ↦ by simp
+    filter_upwards [hLp k hk] with i hi
     exact integrable_pow_expectedCovarianceSpectralMeasure (hXm i)
-      (integrable_trace_sampleCovariance_pow hi)
+      (integrable_trace_sampleCovariance_pow_of_ne_zero hk hi)
   · intro k
-    obtain ⟨B, hBk⟩ := hB k
     exact tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur
-      k hn hy hXm hindep hmean (hLp k) hsecond hBk
+      k hn hy hXm (fun _ ↦ hindep) (fun _ ↦ hmean) (hLp k) (fun _ ↦ hsecond) (hB k)
 
 end Limit
 

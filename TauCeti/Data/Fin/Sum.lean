@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -65,6 +66,90 @@ theorem exists_equiv_sum_fin {α β : Type*} [Finite β] (s : α ↪ β) :
 end Function.Embedding
 
 namespace TauCeti
+
+/-- The disjoint even/odd positions for two finite coordinate blocks. -/
+def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
+  toFun := Sum.elim
+    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
+    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
+  inj' := by
+    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
+    · exact congrArg Sum.inl (Fin.ext (by omega))
+    · omega
+    · omega
+    · exact congrArg Sum.inr (Fin.ext (by omega))
+
+/-- The left block occupies the even positions. -/
+@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
+    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
+
+/-- The right block occupies the odd positions. -/
+@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
+    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
+
+/-- Equal-sized blocks exhaust the even and odd positions in `Fin (2 * k)`. -/
+def interleaveIndexEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
+  toFun a := (interleaveIndex k k a).cast (by rw [max_self])
+  invFun i := if (i : ℕ) % 2 = 0 then .inl ⟨i / 2, by have := i.isLt; omega⟩
+    else .inr ⟨i / 2, by have := i.isLt; omega⟩
+  left_inv a := by
+    cases a <;> simp [Nat.add_div]
+  right_inv i := by
+    have := i.isLt
+    apply Fin.ext
+    by_cases h : (i : ℕ) % 2 = 0 <;> simp [h] <;> omega
+
+/-- The even position of a left index. -/
+@[simp] theorem interleaveIndexEquiv_inl_val {k : ℕ} (i : Fin k) :
+    (interleaveIndexEquiv k (.inl i)).val = 2 * i.val :=
+  interleaveIndex_inl_val k k i
+
+/-- The odd position of a right index. -/
+@[simp] theorem interleaveIndexEquiv_inr_val {k : ℕ} (i : Fin k) :
+    (interleaveIndexEquiv k (.inr i)).val = 2 * i.val + 1 :=
+  interleaveIndex_inr_val k k i
+
+/-- The inverse interleaving reads an even position on the left and an odd position on the right. -/
+theorem interleaveIndexEquiv_symm_apply {k : ℕ} (i : Fin (2 * k)) :
+    (interleaveIndexEquiv k).symm i =
+      if (i : ℕ) % 2 = 0 then .inl ⟨i / 2, by have := i.isLt; omega⟩
+      else .inr ⟨i / 2, by have := i.isLt; omega⟩ := (rfl)
+
+/-- Rotating an even position advances to the odd position of the same index. -/
+theorem finRotate_interleaveIndexEquiv_inl {k : ℕ} (i : Fin k) :
+    finRotate (2 * k) (interleaveIndexEquiv k (.inl i)) = interleaveIndexEquiv k (.inr i) := by
+  cases k with
+  | zero => exact Fin.elim0 i
+  | succ k =>
+    have hi : interleaveIndexEquiv (k + 1) (.inl i) ≠ Fin.last (2 * k + 1) := by
+      simp [Fin.ext_iff]
+      omega
+    apply Fin.ext
+    have hrot := coe_finRotate_of_ne_last hi
+    change (finRotate (2 * (k + 1)) (interleaveIndexEquiv (k + 1) (.inl i)) : ℕ) = _ at hrot
+    simpa only [interleaveIndexEquiv_inl_val, interleaveIndexEquiv_inr_val] using hrot
+
+/-- Rotating an odd position advances to the even position of the next cyclic index. -/
+theorem finRotate_interleaveIndexEquiv_inr {k : ℕ} (i : Fin k) :
+    finRotate (2 * k) (interleaveIndexEquiv k (.inr i)) =
+      interleaveIndexEquiv k (.inl (finRotate k i)) := by
+  cases k with
+  | zero => exact Fin.elim0 i
+  | succ k =>
+    have hi : interleaveIndexEquiv (k + 1) (.inr i) = Fin.last (2 * k + 1) ↔
+        i = Fin.last k := by
+      simp only [Fin.ext_iff, interleaveIndexEquiv_inr_val, Fin.val_last]
+      omega
+    apply Fin.ext
+    by_cases h : i = Fin.last k
+    · have hrot : (finRotate (2 * (k + 1)) (interleaveIndexEquiv (k + 1) (.inr i)) : ℕ) = 0 :=
+        congrArg Fin.val ((congrArg (finRotate (2 * k + 1 + 1)) (hi.mpr h)).trans finRotate_last)
+      rw [hrot, interleaveIndexEquiv_inl_val, h, finRotate_last, Fin.val_zero, Nat.mul_zero]
+    · have hrot := coe_finRotate_of_ne_last (hi.not.mpr h)
+      change (finRotate (2 * (k + 1)) (interleaveIndexEquiv (k + 1) (.inr i)) : ℕ) = _ at hrot
+      rw [hrot, interleaveIndexEquiv_inl_val, coe_finRotate_of_ne_last h,
+        interleaveIndexEquiv_inr_val]
+      omega
 
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to `0` and the right to `1`.
 

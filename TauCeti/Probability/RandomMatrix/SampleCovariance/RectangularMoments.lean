@@ -10,12 +10,12 @@ public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
 import TauCeti.Combinatorics.TraceWord.Bipartite.Counting
-import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # The rectangular trace-word method for sample covariance moments
 
-For independent centred entries, the expected trace expansion has no singleton-edge terms.
+For independent centred entries, `integral_trace_sampleCovariance_pow` supplies the expected
+trace expansion with no singleton-edge terms.
 A leading word matches each entry with its conjugate, and its expectation is the product of
 the corresponding second absolute moments. The leading words are counted by noncrossing
 column partitions with injective row and column labellings. The remaining words contribute
@@ -37,21 +37,8 @@ namespace TauCeti.Probability
 variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
   {P : Measure Ω} {X : Ω → Matrix p n 𝕜} {k : ℕ}
 
-/-- The trace of the `k`th power of a sample covariance matrix is integrable when the entries lie in
-`L^(2k)`. There are no independence or centring assumptions. -/
-theorem integrable_trace_sampleCovariance_pow [Fintype p] [DecidableEq p] [Fintype n]
-    (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P)
-    [IsFiniteMeasure P] :
-    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  simp_rw [sampleCovariance_def, smul_pow, trace_smul, RCLike.real_smul_eq_coe_mul,
-    trace_mul_conjTranspose_pow_eq_sum_prod _ hk]
-  exact (integrable_finsetSum _ fun u _ ↦ integrable_finsetSum _ fun v _ ↦
-    integrable_prod_apply_mul_star_apply hk hXk u v).const_mul _
-
-/-- Each leading word contributes the product of the second absolute moments of the
-row-to-column entries it visits. -/
+/-- For independent, almost everywhere measurable entries, a leading word contributes the product
+of the second absolute moments of its row-to-column entries. -/
 theorem integral_prod_apply_mul_star_apply_of_isLeadingBipartiteWord
     [DecidableEq p] [DecidableEq n]
     (hXm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P)
@@ -59,7 +46,7 @@ theorem integral_prod_apply_mul_star_apply_of_isLeadingBipartiteWord
     {u : Fin k → p} {v : Fin k → n} (hw : IsLeadingBipartiteWord u v) :
     (∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P) =
       ∏ t, ((∫ ω, ‖X ω (u t) (v t)‖ ^ 2 ∂P : ℝ) : 𝕜) := by
-  obtain ⟨π, hπ, _⟩ := hw.existsUnique_perm
+  obtain ⟨π, hπ, _⟩ := hw.existsUnique_perm_matching_bipartiteEdges
   simp only [bipartiteEdge_inl, bipartiteEdge_inr, Prod.mk.injEq] at hπ
   have hreindex (ω : Ω) :
       (∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t))) =
@@ -70,50 +57,17 @@ theorem integral_prod_apply_mul_star_apply_of_isLeadingBipartiteWord
   simp_rw [hreindex]
   have hInj : Injective (fun t : Fin k ↦ (u t, v t)) := by
     intro i j hij
-    apply hw.injective_bipartiteEdge.1
+    apply hw.injective_bipartiteEdge_orientations.1
     simpa only [Function.comp_apply, bipartiteEdge_inl] using hij
   rw [(hindep.precomp hInj).integral_fun_prod_comp (fun t ↦ hXm (u t) (v t))
     (f := fun _ z ↦ z * star z)
       (fun _ ↦ (continuous_id.mul continuous_star).aestronglyMeasurable)]
   simp only [RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, integral_ofReal]
 
-/-- The absolute expectation along a bipartite word of half-length `k > 0` is bounded by a
-common upper bound on the absolute `2k`th entry moments. -/
-theorem norm_integral_prod_apply_mul_star_apply_le (hk : k ≠ 0)
-    (hXk : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P) {B : ℝ}
-    (hB : ∀ i j, ∫ ω, ‖X ω i j‖ ^ (2 * k) ∂P ≤ B) (u : Fin k → p) (v : Fin k → n) :
-    ‖∫ ω, ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t)) ∂P‖ ≤ B := by
-  let f : Fin k ⊕ Fin k → Ω → 𝕜 := Sum.elim (fun t ω ↦ X ω (u t) (v t))
-    (fun t ω ↦ star (X ω (u (finRotate k t)) (v t)))
-  have hcard : Fintype.card (Fin k ⊕ Fin k) = 2 * k := by
-    simp [two_mul]
-  have hentry (i j) : Integrable (fun ω ↦ ‖X ω i j‖ ^ (2 * k)) P :=
-    MemLp.integrable_norm_pow
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk i j) (by omega)
-  have hmoment (t) : Integrable (fun ω ↦ ‖f t ω‖ ^ (2 * k)) P := by
-    cases t <;> simpa [f] using hentry _ _
-  have hbound (t) : ∫ ω, ‖f t ω‖ ^ (2 * k) ∂P ≤ B := by
-    cases t <;> simpa [f] using hB _ _
-  have hprod (ω : Ω) :
-      (∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t))) = ∏ t, f t ω := by
-    simp [f, Fintype.prod_sum_type, prod_mul_distrib]
-  have : Nonempty (Fin k ⊕ Fin k) := ⟨.inl ⟨0, Nat.pos_of_ne_zero hk⟩⟩
-  simp_rw [hprod]
-  calc
-    _ ≤ ((2 * k : ℕ) : ℝ)⁻¹ * ∑ t, ∫ ω, ‖f t ω‖ ^ (2 * k) ∂P := by
-      simpa only [card_univ, hcard] using
-        norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow f univ_nonempty
-          (by simpa only [card_univ, hcard] using fun t (_ : t ∈ univ) ↦ hmoment t)
-    _ ≤ ((2 * k : ℕ) : ℝ)⁻¹ * ∑ _t : Fin k ⊕ Fin k, B :=
-      mul_le_mul_of_nonneg_left (sum_le_sum fun t _ ↦ hbound t) (by positivity)
-    _ = B := by
-      have h2k : ((2 * k : ℕ) : ℝ) ≠ 0 := by exact_mod_cast Nat.mul_ne_zero (by decide) hk
-      rw [sum_const, card_univ, hcard, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ h2k, one_mul]
-
 variable [Fintype p] [DecidableEq p] [Fintype n] [DecidableEq n]
 
 /-- The expected trace of the `k`th power of a sample covariance, for centred independent
-entries with unit second absolute moment, differs from the leading-word count times
+entries in `L^(2k)` with unit second absolute moment, differs from the leading-word count times
 `n⁻ᵏ` by at most `n⁻ᵏ p max(p,n)^(k-1) k^(2k+1) B`, where `B` bounds the `2k`th absolute entry
 moments. Here `k > 0`, and labels are counted with their row and column dimensions. -/
 theorem norm_integral_trace_sampleCovariance_pow_sub_leading_le (hk : k ≠ 0)
