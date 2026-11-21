@@ -28,12 +28,19 @@ definite `M` admits no such `δ`, since `δᵀ M δ ≤ 0`, so for a symmetric Z
 arguments for algebras attached to a graph whose form `2I - A` is not positive definite.
 
 More elementarily, over any linearly ordered commutative ring the positive and negative parts of a
-vector `x = x⁺ - x⁻` pair nonpositively under a Z-matrix `A`: `(x⁺)ᵀ A x⁻ ≤ 0`.
+vector `x = x⁺ - x⁻` pair nonpositively under a Z-matrix `A`: `(x⁺)ᵀ A x⁻ ≤ 0`. Likewise
+replacing `x` by its entrywise absolute value `|x|` does not increase the form, so for a positive
+semidefinite Z-matrix `|x|` is a null vector whenever `x` is. This is how a nonnegative null
+vector of a singular positive semidefinite generalized Cartan matrix is found.
 
 ## Main results
 
 * `Matrix.posPart_dotProduct_mulVec_negPart_nonpos`: with nonpositive off-diagonal entries, the
   positive and negative parts of a vector pair nonpositively.
+* `Matrix.abs_dotProduct_mulVec_abs_le`: the quadratic form of a Z-matrix does not increase when a
+  vector is replaced by its entrywise absolute value.
+* `Matrix.PosSemidef.mulVec_abs_eq_zero`: for a positive semidefinite Z-matrix, the entrywise
+  absolute value of a null vector is a null vector.
 * `Matrix.exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos`: a symmetric real Z-matrix
   with a nonzero vector `x` satisfying `xᵀ M x ≤ 0` has a nonzero nonnegative `δ` with `M δ ≤ 0`.
 * `Matrix.exists_nonneg_mulVec_nonpos_of_not_posDef`: the same for a symmetric real Z-matrix that
@@ -75,6 +82,35 @@ theorem posPart_dotProduct_mulVec_negPart_nonpos {R : Type*} [CommRing R]
   · calc x⁺ i * (A i j * x⁻ j) = A i j * (x⁺ i * x⁻ j) := by ring
       _ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (hoff i j hij) (mul_nonneg hp hn)
 
+/-- **Taking entrywise absolute values does not increase the quadratic form of a Z-matrix.** The
+diagonal terms are unchanged, while `x i * x j ≤ |x i| * |x j|` and the off-diagonal entries are
+nonpositive. -/
+theorem abs_dotProduct_mulVec_abs_le {R : Type*} [CommRing R] [LinearOrder R] [IsOrderedRing R]
+    {A : Matrix n n R} (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (x : n → R) :
+    (fun i ↦ |x i|) ⬝ᵥ A *ᵥ (fun i ↦ |x i|) ≤ x ⬝ᵥ A *ᵥ x := by
+  simp only [dotProduct, mulVec, mul_sum]
+  refine sum_le_sum fun i _ ↦ sum_le_sum fun j _ ↦ ?_
+  rcases eq_or_ne i j with rfl | hij
+  · have h := abs_mul_abs_self (x i)
+    exact le_of_eq (by linear_combination A i i * h)
+  · have h : x i * x j ≤ |x i| * |x j| := by
+      rw [← abs_mul]
+      exact le_abs_self _
+    calc |x i| * (A i j * |x j|) = A i j * (|x i| * |x j|) := by ring
+      _ ≤ A i j * (x i * x j) := mul_le_mul_of_nonpos_left h (hoff i j hij)
+      _ = x i * (A i j * x j) := by ring
+
+/-- **The entrywise absolute value of a null vector of a positive semidefinite Z-matrix is again a
+null vector.** Its quadratic form lies between `0` and that of the original vector, and a vector on
+which the form of a positive semidefinite matrix vanishes is a null vector. -/
+theorem PosSemidef.mulVec_abs_eq_zero {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [StarRing R] [StarOrderedRing R] {A : Matrix n n R}
+    (hA : A.PosSemidef) (hoff : ∀ i j, i ≠ j → A i j ≤ 0) {x : n → R} (hx : A *ᵥ x = 0) :
+    A *ᵥ (fun i ↦ |x i|) = 0 := by
+  rw [← hA.dotProduct_mulVec_zero_iff, star_trivial]
+  refine le_antisymm ?_ (by simpa using hA.dotProduct_mulVec_nonneg fun i ↦ |x i|)
+  simpa [hx] using abs_dotProduct_mulVec_abs_le hoff x
+
 /-- **A symmetric Z-matrix with a nonpositive value of its form is nonpositive on a nonnegative
 vector.**
 Let `M` be a symmetric real matrix with nonpositive off-diagonal entries, and suppose that
@@ -86,17 +122,8 @@ theorem exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos {M : Matrix n n 
     ∃ δ : n → ℝ, 0 ≤ δ ∧ δ ≠ 0 ∧ M *ᵥ δ ≤ 0 := by
   classical
   -- The entrywise absolute value of `x` has a form at most that of `x`.
-  have habs : (fun i ↦ |x i|) ⬝ᵥ M *ᵥ (fun i ↦ |x i|) ≤ 0 := by
-    refine le_trans ?_ hxM
-    simp only [dotProduct, mulVec, mul_sum]
-    refine sum_le_sum fun i _ ↦ sum_le_sum fun j _ ↦ ?_
-    rcases eq_or_ne i j with rfl | hij
-    · have h := abs_mul_abs_self (x i)
-      linear_combination M i i * h
-    · have h : x i * x j ≤ |x i| * |x j| := by
-        rw [← abs_mul]
-        exact le_abs_self _
-      nlinarith [hM0 i j hij]
+  have habs : (fun i ↦ |x i|) ⬝ᵥ M *ᵥ (fun i ↦ |x i|) ≤ 0 :=
+    (abs_dotProduct_mulVec_abs_le hM0 x).trans hxM
   -- Normalizing it gives a point of the standard simplex with nonpositive form.
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hx
   set s := ∑ i, |x i|
