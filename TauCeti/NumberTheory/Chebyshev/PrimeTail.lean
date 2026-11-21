@@ -19,7 +19,8 @@ Both strict and inclusive lower cutoffs are available; in particular the inclusi
 tail at `2` contains the prime `2`.
 
 The argument is the usual Stieltjes integration by parts against `t⁻²`:
-`θ(t) ≤ (log 4) t` gives a tail bounded by `2 log 4 / y`.
+`θ(t) ≤ (log 4) t` gives a tail bounded by `2 log 4 / y`. Dividing by `log 2` then bounds the
+unweighted reciprocal-square prime tail `∑_{p > y} 1 / p²` by `4 / y`.
 -/
 
 public section
@@ -280,5 +281,46 @@ theorem sum_primesLE_log_div_sq_add_tsum_gt {a b : ℝ} (ha : 0 ≤ a) (hab : a 
       simp only [mem_filter, Nat.mem_primesLE, Nat.le_floor_iff (ha.trans hab)] at hn
       split_ifs <;> grind
   linarith
+
+private theorem prime_inv_sq_gt_le_mul_log_div_sq (y : ℝ) (n : ℕ) :
+    (if n.Prime ∧ y < (n : ℝ) then ((n : ℝ) ^ 2)⁻¹ else 0) ≤
+      (Real.log 2)⁻¹ * (if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  split_ifs with hn
+  · have hle : Real.log 2 ≤ Real.log n := Real.log_le_log zero_lt_two (mod_cast hn.1.two_le)
+    have h1 : (1 : ℝ) ≤ (Real.log 2)⁻¹ * Real.log n := (le_inv_mul_iff₀ hlog2).mpr (by linarith)
+    calc ((n : ℝ) ^ 2)⁻¹ = 1 * ((n : ℝ) ^ 2)⁻¹ := (one_mul _).symm
+      _ ≤ ((Real.log 2)⁻¹ * Real.log n) * ((n : ℝ) ^ 2)⁻¹ :=
+        mul_le_mul_of_nonneg_right h1 (by positivity)
+      _ = (Real.log 2)⁻¹ * (Real.log n / (n : ℝ) ^ 2) := by ring
+  · simp
+
+/-- The series with terms `1 / p²` over primes `p > y` is summable. -/
+theorem summable_prime_inv_sq_gt (y : ℝ) :
+    Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then ((n : ℝ) ^ 2)⁻¹ else 0) :=
+  ((summable_prime_log_div_sq_gt y).mul_left (Real.log 2)⁻¹).of_nonneg_of_le
+    (fun n ↦ by split_ifs <;> positivity) (prime_inv_sq_gt_le_mul_log_div_sq y)
+
+/-- For `y > 0`, the sum of `1 / p²` over primes `p > y` is at most `4 / y`. -/
+theorem tsum_prime_inv_sq_gt_le {y : ℝ} (hy : 0 < y) :
+    (∑' n : ℕ, if n.Prime ∧ y < (n : ℝ) then ((n : ℝ) ^ 2)⁻¹ else 0) ≤ 4 / y := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  calc (∑' n : ℕ, if n.Prime ∧ y < (n : ℝ) then ((n : ℝ) ^ 2)⁻¹ else 0)
+      ≤ ∑' n : ℕ, (Real.log 2)⁻¹ *
+          (if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) :=
+        (summable_prime_inv_sq_gt y).tsum_le_tsum (prime_inv_sq_gt_le_mul_log_div_sq y)
+          ((summable_prime_log_div_sq_gt y).mul_left _)
+    _ = (Real.log 2)⁻¹ * ∑' n : ℕ,
+          (if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) := tsum_mul_left
+    _ ≤ (Real.log 2)⁻¹ * (2 * Real.log 4 / y) :=
+        mul_le_mul_of_nonneg_left (tsum_prime_log_div_sq_gt_le hy) (inv_nonneg.mpr hlog2.le)
+    _ = 4 / y := by
+        have h4 : Real.log 4 = 2 * Real.log 2 := by
+          have h22 : (4 : ℝ) = (2 : ℝ) ^ (2 : ℕ) := by norm_num
+          rw [h22, Real.log_pow]
+          ring
+        rw [h4]
+        field_simp [hlog2.ne']
+        ring
 
 end TauCeti

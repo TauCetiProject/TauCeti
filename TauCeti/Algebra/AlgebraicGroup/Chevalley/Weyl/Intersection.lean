@@ -65,11 +65,11 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
       let _ : M.IsMaximal := hM
       let _ : Field (A ⧸ M) := Ideal.Quotient.field M
       let ψ := Ideal.Quotient.mk M
-      have hproj : D.weylProjection (A ⧸ M)
-          ⟨(D.pointsPresentation A).map (D.pointsPresentation (A ⧸ M)) ψ g,
-            D.map_weylSubgroup_le ψ ⟨g, hgW, rfl⟩⟩ = 1 :=
+      have hproj : D.weylProjection (A ⧸ M) (D.weylSubgroupMap A ψ ⟨g, hgW⟩) = 1 :=
         D.weylProjection_eq_one_of_mem_borelSubgroup (A ⧸ M)
-          (D.map_borelSubgroup_le A ψ ⟨g, hgB, rfl⟩)
+          (by
+            rw [D.coe_weylSubgroupMap]
+            exact D.map_borelSubgroup_le A ψ ⟨g, hgB, rfl⟩)
       have hq : D.weylQuotientMulEquiv A (QuotientGroup.mk ⟨g, hgW⟩) = 1 := by
         rw [← D.weylQuotientMulEquiv_map ψ ⟨g, hgW⟩, D.weylQuotientMulEquiv_mk]
         exact hproj
@@ -79,6 +79,13 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
       exact (QuotientGroup.eq_one_iff (⟨g, hgW⟩ : D.weylSubgroup A)).mp hmk
     · exact le_inf (D.range_torusPoints_le_borelSubgroup A) (D.range_torusPoints_le_weylSubgroup A)
 
+/-- Over any commutative ring, the intersection of the Weyl subgroup with the Borel subgroup is
+the actual weight-lattice torus. -/
+@[simp]
+theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
+    D.weylSubgroup A ⊓ D.borelSubgroup A = (D.torusPoints A).range := by
+  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A]
+
 /-- Over any commutative ring, the positive subgroup meets the Weyl subgroup trivially. -/
 @[simp]
 theorem positivePoints_inf_weylSubgroup_eq_bot :
@@ -87,6 +94,12 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
     ← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A]
   exact le_inf inf_le_left
     (le_inf (inf_le_left.trans (D.positivePoints_le_borelSubgroup A)) inf_le_right)
+
+/-- Over any commutative ring, the Weyl subgroup meets the positive subgroup trivially. -/
+@[simp]
+theorem weylSubgroup_inf_positivePoints_eq_bot :
+    D.weylSubgroup A ⊓ D.positivePoints A = ⊥ := by
+  rw [inf_comm, D.positivePoints_inf_weylSubgroup_eq_bot A]
 
 /-- Read inside `D.weylSubgroup A`, the Borel subgroup cuts out the actual weight-lattice torus,
 over every commutative ring. -/

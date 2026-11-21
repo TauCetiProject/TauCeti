@@ -56,7 +56,7 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
         LinearMap.toMatrix' (C (g : Module.End R V)) :=
       (IsModuleTopology.continuous_of_linearMap LinearMap.toMatrix'.toLinearMap).comp
         ((IsModuleTopology.continuous_of_linearMap C).comp
-          (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val))
+          (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal))
     exact h.congr fun g ↦ by simp [E, hC]
   let D := (e.toLinearEquiv.symm.conjAlgEquiv (R := R)).toLinearMap
   have hD (A : Matrix.orthogonalGroup n R) :
@@ -65,12 +65,15 @@ def orthogonalGroupContinuousMulEquivMatrix (h2 : IsSMulRegular R (2 : R))
     simp only [D, AlgEquiv.toLinearMap_apply, E, MulEquiv.symm_trans_apply,
       _root_.QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_symm_apply,
       standardOrthogonalGroupEquiv_symm_apply, LinearEquiv.conjAlgEquiv_apply,
-      LinearEquiv.symm_symm, LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply]
+      LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply,
+      _root_.QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+      _root_.QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
+      _root_.QuadraticMap.IsometryEquiv.symm_symm]
   have hback : Continuous fun A : Matrix.orthogonalGroup n R ↦
       (E.symm A : Module.End R V) := by
     exact ((IsModuleTopology.continuous_of_linearMap D).comp
       ((IsModuleTopology.continuous_of_linearMap Matrix.toLin'.toLinearMap).comp
-        continuous_subtype_val)).congr hD
+        continuous_subtypeVal)).congr hD
   refine { E with continuous_toFun := hforward, continuous_invFun := ?_ }
   apply continuous_induced_rng.mpr
   apply continuous_linearEquiv_iff.mpr

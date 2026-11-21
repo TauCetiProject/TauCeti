@@ -164,7 +164,7 @@ theorem prod_classGroupMk0_eq_one (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hprime : ∀ p ∈ d.natAbs.primeFactors, (Q p : Ideal (𝓞 K)).IsPrime)
     (hover : ∀ p ∈ d.natAbs.primeFactors, (Q p : Ideal (𝓞 K)).LiesOver (Ideal.span {(p : ℤ)})) :
     ∏ p ∈ d.natAbs.primeFactors, ClassGroup.mk0 (Q p) = 1 := by
-  rw [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ d.natAbs.primeFactors, Q p).2,
+  rw [← map_prod, ClassGroup.mk0_eq_one_iff (∏ p ∈ d.natAbs.primeFactors, Q p).property,
     Submonoid.coe_finsetProd,
     ← span_singleton_eq_prod_primeFactors hmin hgen hsf _ hprime hover]
   exact ⟨θ, rfl⟩

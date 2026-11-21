@@ -65,6 +65,8 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   for instance an integral form read over `ℤ_p` or `ℚ`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
   `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
+* `TauCeti.BinaryQuadraticForm.formsOfDiscrim D`: the binary quadratic forms over `R` of fixed
+  discriminant `D`, as a sub-action of `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
   discriminant `-D`, as a sub-action of `SL(2, ℤ)`.
 
@@ -81,6 +83,7 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   `TauCeti.BinaryQuadraticForm.S_smul`: the action of `T ^ k`, `T` and `S` on coefficients.
 * `TauCeti.BinaryQuadraticForm.isUnit_det_of_quadratic_identity`: a coordinate change
   producing a unit discriminant has unit determinant over any commutative ring.
+* `TauCeti.BinaryQuadraticForm.mem_formsOfDiscrim`: membership in `formsOfDiscrim D`.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
 
 ## Implementation notes
@@ -528,6 +531,18 @@ theorem map_mem_stabilizer_map (φ : R →+* S) {f : BinaryQuadraticForm R} {γ 
   rw [smul_map, hγ]
 
 end Map
+
+/-- The binary quadratic forms over `R` of fixed discriminant `D`, as a sub-action of
+`SL(2, R)`. -/
+def formsOfDiscrim (D : R) : SubMulAction SL(2, R) (BinaryQuadraticForm R) where
+  carrier := {f | f.discrim = D}
+  smul_mem' γ f hf := (discrim_smul γ f).trans hf
+
+/-- A form lies in `formsOfDiscrim D` exactly when its discriminant is `D`. -/
+@[simp]
+theorem mem_formsOfDiscrim {D : R} {f : BinaryQuadraticForm R} :
+    f ∈ formsOfDiscrim D ↔ f.discrim = D :=
+  Iff.rfl
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/

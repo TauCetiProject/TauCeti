@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Finset.BooleanAlgebra
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Order.Fin.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Lattice.Fold
+import Mathlib.Data.Fintype.Card
 import TauCeti.Data.Fin.StrictAnti
 
 /-!
@@ -24,7 +27,9 @@ A strictly monotone sequence of naturals indexed by `Fin m` grows by at least th
 is deduced from its decreasing counterpart `StrictAnti.add_sub_le_nat` by reversing the indices.
 Consequently, for a strictly increasing `p : Fin r → Fin n`, the complementary gaps
 `n - r + i - p i` are antitone in `i`, and summed together with the gaps `p i - i` they give
-`r (n - r)`.
+`r (n - r)`. Moreover, the complement of the image of `p` has cardinality `k` whenever `r + k = n`,
+and any strictly increasing `p' ≤ p` with `p' ≠ p` can be strictly increased at some index
+while remaining strictly increasing and below `p`.
 
 ## Main results
 
@@ -36,6 +41,9 @@ Consequently, for a strictly increasing `p : Fin r → Fin n`, the complementary
 * `StrictMono.antitone_sub_sub`, `StrictMono.sum_sub_add_sum_sub_eq_mul`: for `p : Fin r → Fin n`
   strictly increasing, `n - r + i - p i` is antitone in `i` and
   `∑ i, (p i - i) + ∑ i, (n - r + i - p i) = r (n - r)`.
+* `StrictMono.card_compl_image_eq_of_add_eq`: when `r + k = n`, `#(univ.image p)ᶜ = k`.
+* `StrictMono.exists_update_strictMono`: strictly increasing `p'` at some index preserves
+  strict monotonicity, stays below `p`, and reduces `∑ i, (p i - p' i)`.
 
 The extension is adapted from `cameronfreer/exchangeability`, pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`.
@@ -119,5 +127,44 @@ theorem sum_sub_add_sum_sub_eq_mul (hp : StrictMono p) :
     simp only [Function.comp_apply] at h₀ h₁
     omega
   simp [← Finset.sum_add_distrib, h]
+
+/-- For a strictly increasing `p : Fin r → Fin n` with `r + k = n`, the complement of the image of
+`p` has cardinality `k`. -/
+theorem card_compl_image_eq_of_add_eq (hp : StrictMono p) {k : ℕ} (hnk : r + k = n) :
+    (Finset.univ.image p)ᶜ.card = k := by
+  rw [Finset.card_compl, Fintype.card_fin, Finset.card_image_of_injective _ hp.injective,
+    Finset.card_univ, Fintype.card_fin]
+  omega
+
+/-- Given strictly increasing `p, p' : Fin r → Fin n` with `p' ≤ p` coordinatewise and `p' ≠ p`,
+there exist an index `i₀ : Fin r` and a value `v : Fin n` with `p' i₀ < v` such that
+`Function.update p' i₀ v` is strictly increasing, bounded above by `p`, satisfies `v < p' l`
+for all `i₀ < l`, and has strictly smaller gap sum `∑ i, (p i - p' i)`. -/
+theorem exists_update_strictMono {p' : Fin r → Fin n} (hp : StrictMono p)
+    (hp' : StrictMono p') (hle : ∀ i, p' i ≤ p i) (hne : p' ≠ p) :
+    ∃ (i₀ : Fin r) (v : Fin n), p' i₀ < v ∧ StrictMono (Function.update p' i₀ v) ∧
+      (∀ i, Function.update p' i₀ v i ≤ p i) ∧ (∀ l : Fin r, i₀ < l → v < p' l) ∧
+      ∑ i, ((p i : ℕ) - Function.update p' i₀ v i) < ∑ i, ((p i : ℕ) - p' i) := by
+  obtain ⟨i₁, hi₁⟩ := Function.ne_iff.mp hne
+  have hD : ({i : Fin r | p' i < p i} : Finset (Fin r)).Nonempty :=
+    ⟨i₁, Finset.mem_filter.mpr ⟨Finset.mem_univ i₁, lt_of_le_of_ne (hle i₁) hi₁⟩⟩
+  let i₀ : Fin r := ({i : Fin r | p' i < p i} : Finset (Fin r)).max' hD
+  have hi₀ : p' i₀ < p i₀ := (Finset.mem_filter.mp (Finset.max'_mem _ hD)).2
+  let v : Fin n := ⟨(p' i₀ : ℕ) + 1, lt_of_le_of_lt (Nat.succ_le_of_lt hi₀) (p i₀).isLt⟩
+  have huv : p' i₀ < v := Fin.lt_def.mpr (Nat.lt_succ_self _)
+  have hvp : v ≤ p i₀ := Fin.le_def.mpr (Nat.succ_le_of_lt hi₀)
+  have hgt (l : Fin r) (hl : i₀ < l) : v < p' l := by
+    have hmax : p' l = p l := le_antisymm (hle l) (not_lt.mp fun hlt ↦
+      hl.not_ge (Finset.le_max' _ l (Finset.mem_filter.mpr ⟨Finset.mem_univ l, hlt⟩)))
+    exact hmax ▸ hvp.trans_lt (hp hl)
+  refine ⟨i₀, v, huv, fun a c hac ↦ ?_, fun i ↦ by by_cases hi : i = i₀ <;> simp [hi, hvp, hle i],
+    hgt, Finset.sum_lt_sum (fun i _ ↦ by by_cases hi : i = i₀ <;> simp [hi]; omega)
+      ⟨i₀, Finset.mem_univ i₀, by simp only [Function.update_self]; dsimp only [v]; omega⟩⟩
+  by_cases ha : a = i₀
+  · subst a; rw [Function.update_self, Function.update_of_ne hac.ne']; exact hgt c hac
+  · rw [Function.update_of_ne ha]
+    by_cases hc : c = i₀
+    · subst c; rw [Function.update_self]; exact (hp' hac).trans huv
+    · rw [Function.update_of_ne hc]; exact hp' hac
 
 end StrictMono
