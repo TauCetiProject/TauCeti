@@ -449,9 +449,7 @@ theorem exists_w1p_intervalRepresentativeL_eq (hx : x₀ < x₁) (hlam : 0 < lam
   set G : ℝ → ℝ := fun t => (∫ s in x₀..t, f s) + F t
   -- `G` lies in `Lᵖ`: the primitive of `f` is continuous on `[x₀, x₁]`, and `F ∈ Lᵖ`.
   have hGp : MemLp G p (volume.restrict (Ioo x₀ x₁)) :=
-    ((intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-      (left_mem_Icc.2 hx.le)).memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
-      Ioo_subset_Icc_self p).add hF
+    (intervalIntegral.memLp_primitive hf (left_mem_Icc.2 hx.le)).add hF
   have hF1 : IntegrableOn F (Ioo x₀ x₁) := hF.integrable Fact.out
   obtain ⟨u, hu, hgrad⟩ := W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq hx
     (left_mem_Icc.2 hx.le) g₀ (memLp_intervalDirichletSlope hlam g₀ g₁ ha hla hGp)
