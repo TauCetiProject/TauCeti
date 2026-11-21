@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
+import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
 # The asymptotic orbit at the end of a finite-energy PSS plane in a manifold
@@ -37,7 +38,8 @@ the end lift
 half-cylinder theorem applies on the positive plane, and on the negative plane the orbit of
 `-H(-t)` is run backwards
 (`TauCeti.SmoothTwoForm.comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff`). The
-convergence of the capped end actions on a manifold is not treated here.
+convergence of the capped end actions and the energy identity at the orbit `x` are in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Energy`.
 
 ## References
 
@@ -116,7 +118,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_positive (ω : Smooth
     ((contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable one_ne_zero z) hu
     (mdifferentiableAt_perturbation_target hH hHs _ _ 1)
     (mdifferentiableAt_perturbation_target hH hHs _ _ Complex.I)
-    (Floer.isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _)) hfloer
+    (isComplexLinearMap_fderiv_realChart (positive.hasDerivAt_cylindricalEndLift _)) hfloer
 
 /-- From `s = 2` on, where `u` is differentiable at the image of `(s, t)` under the end lift `φ`
 of the positive plane, the energy density of `u ∘ φ` at `(s, t)` for the cylindrical datum

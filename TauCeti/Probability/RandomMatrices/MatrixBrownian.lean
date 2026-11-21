@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.BrownianMotion.Basic
-public import TauCeti.Probability.RandomMatrices.GaussianEnsemble
+public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 import Mathlib.Probability.Independence.Process.Basic
 import TauCeti.Probability.Independence.Pi
 

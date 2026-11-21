@@ -7,20 +7,29 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Distance
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Gradient trajectories of the quadratic well
 
-This file computes the negative gradient flow of `f(x) = x²` on `ℝ`, for the standard metric, and
-uses it to test the convergence and decay theorems for gradient trajectories of Morse functions
+This file computes the negative gradient flow of `f(x) = x²` on `ℝ`, for the standard metric and
+for its constant multiples, and uses it to test the convergence and decay theorems for gradient
+trajectories of Morse functions
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient` and
-`TauCeti.IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient`).
+`TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient`).
 
 * **The trajectories.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
-  only critical point is `0` (`TauCeti.criticalPoints_sq_real`). The trajectory of `-grad f`
+  only critical point is `0` (`TauCeti.criticalPoints_sq_real`, `TauCeti.mfderiv_sq_real_zero`),
+  of Morse index `0` (`TauCeti.manifoldMorseIndex_sq_real_zero`); its derivative is
+  `v ↦ 2 x v` (`TauCeti.mvfderiv_sq_real_apply`). The trajectory of `-grad f`
   through `x₀` is `t ↦ x₀ exp (-2 t)`, defined for all time
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq`). For `t ≥ 0` it stays in
   `[-|x₀|, |x₀|]` (`TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_sq`) and it converges to
@@ -48,6 +57,19 @@ uses it to test the convergence and decay theorems for gradient trajectories of 
   `Γ` through `γ(1)` agrees with `s ↦ γ(1 + s)` exactly for `s ≥ -1`
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_eq_iff`). This is why those theorems compare a
   forward curve with the maximal trajectory through one of its values at a positive time.
+* **A rescaled metric.** The rate of convergence depends on the metric, through the Hessian read
+  in it. For `a > 0`, give `ℝ` the metric `a dx²` (`TauCeti.scaledLineMetric`), on the copy
+  `TauCeti.WithMetric (scaledLineMetric ha)` of `ℝ`. Then `grad x² = 2 x / a`
+  (`TauCeti.mgradient_sq_scaledLineMetric`), the trajectory through `x₀` is `t ↦ x₀ exp (-2 t / a)`
+  (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`), and it converges to `0`
+  (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`). The Riemannian
+  distance of `a dx²` is `√a |x - y|` (`TauCeti.riemannianEDist_toWithMetric_scaledLineMetric`), so
+  the trajectory is at distance `√a |x₀| exp (-2 t / a)` from `0`
+  (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`), and for
+  `x₀ ≠ 0` no rate faster than `2 / a` holds
+  (`not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric`).
+  For `a = 4` the trajectory is `x₀ exp (-t / 2)` at distance `2 |x₀| exp (-t / 2)`: the rate `2`
+  of the standard metric is not preserved under rescaling the metric.
 
 ## References
 
@@ -63,21 +85,13 @@ open scoped Bundle ContDiff ENNReal Manifold
 namespace TauCeti
 
 /-- For the standard metric on `ℝ`, the negative gradient of `x ↦ x²` at `x` is `-2 x`. -/
-private theorem neg_mgradient_sq_real_apply (x : ℝ) :
+theorem neg_mgradient_sq_real_apply (x : ℝ) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 * x) : ℝ) := by
   rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
   simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
     Nat.add_one_sub_one, pow_one]
   -- Both sides are the real number `-2 x`, read in `ℝ` and in its tangent space.
   rfl
-
-/-- The curve `t ↦ x₀ exp (-2 t)` solves `x' = -2 x`. -/
-private theorem hasDerivAt_quadraticTrajectory (x₀ t : ℝ) :
-    HasDerivAt (fun s ↦ x₀ * Real.exp (-(2 * s))) (-(2 * (x₀ * Real.exp (-(2 * t))))) t := by
-  have h : HasDerivAt (fun s : ℝ ↦ -(2 * s)) (-2) t := by
-    simpa using ((hasDerivAt_id t).const_mul 2).fun_neg
-  convert h.exp.const_mul x₀ using 1
-  ring
 
 /-- The function `x ↦ x²` on `ℝ` has the single critical point `0`. -/
 theorem criticalPoints_sq_real : criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) = {0} := by
@@ -106,6 +120,25 @@ theorem isMorse_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
   rw [hd]
   simp
 
+/-- The derivative of `x ↦ x²` on `ℝ` at `x`, applied to a tangent vector `v`, is `2 x v`. -/
+theorem mvfderiv_sq_real_apply (x v : ℝ) :
+    mvfderiv 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x v = 2 * x * v := by
+  refine (mvfderiv_eq_fderiv_apply _ x v).trans ?_
+  rw [fderiv_eq_smul_deriv]
+  simp
+  ring
+
+/-- `0` is the critical point of `x ↦ x²` on `ℝ`. -/
+theorem mfderiv_sq_real_zero : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ) (fun y : ℝ ↦ y ^ 2) 0 = 0 := by
+  refine mvfderiv_eq_zero_iff.1 (ContinuousLinearMap.ext fun v ↦ ?_)
+  simp
+
+/-- The Morse index of `x ↦ x²` at its minimum `0` is `0`. -/
+theorem manifoldMorseIndex_sq_real_zero :
+    manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
+  manifoldMorseIndex_eq_zero_of_isLocalMin (contDiff_id.pow 2).contMDiff.contMDiffAt
+    (Eventually.of_forall fun y ↦ by simp [sq_nonneg])
+
 /-! ### The trajectories -/
 
 /-- **The trajectories of the quadratic well.** For the standard metric, the trajectory of
@@ -116,7 +149,7 @@ theorem maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
   have hb : 0 < |t| + 1 := by positivity
   simpa using eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt
     (f := fun y : ℝ ↦ y ^ 2) (by fun_prop) (a := -(|t| + 1)) (b := |t| + 1) ⟨neg_lt_zero.2 hb, hb⟩
-    (fun s _ ↦ (hasDerivAt_quadraticTrajectory x₀ s).congr_deriv (by simp [gradient_eq_deriv']))
+    (fun s _ ↦ (hasDerivAt_mul_exp_neg_mul 2 x₀ s).congr_deriv (by simp [gradient_eq_deriv']))
     ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
 
 /-- The trajectories of the quadratic well, as functions of time. -/
@@ -148,7 +181,7 @@ through `x₀`, the energy `f(γ t) - f(0) = γ(t)²` is `x₀² exp (-4 t)`. -/
 theorem sq_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
     maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t ^ 2 =
       x₀ ^ 2 * Real.exp (-(4 * t)) := by
-  rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_nat_mul]
+  rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_natCast_mul]
   ring_nf
 
 /-- The length of the trajectory of `-grad x²` through `x₀` between the times `t ≤ s` is
@@ -164,7 +197,7 @@ theorem pathELength_maximalIntegralCurve_neg_mgradient_sq (x₀ : ℝ) {t s : �
     -- The unit tangent vector at `u` is the real number `1`.
     have h1 : NormedSpace.fromTangentSpace u (1 : TangentSpace 𝓘(ℝ, ℝ) u) = (1 : ℝ) := rfl
     rw [mfderiv_eq_fderiv, eNorm_tangentSpace_vectorSpace,
-      (hasDerivAt_quadraticTrajectory x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
+      (hasDerivAt_mul_exp_neg_mul 2 x₀ u).hasFDerivAt.fderiv, ← ofReal_norm]
     simp [h1]
     ring_nf
   have hcont : Continuous fun u : ℝ ↦ 2 * |x₀| * Real.exp (-(2 * u)) := by fun_prop
@@ -254,7 +287,7 @@ theorem isMIntegralCurveOn_Ici_neg_mgradient_sq (x₀ : ℝ) :
   have heq : ∀ u ∈ Ici (0 : ℝ),
       x₀ * Real.exp (-(2 * max u 0)) = x₀ * Real.exp (-(2 * u)) := fun u (hu : 0 ≤ u) ↦ by
     rw [max_eq_left hu]
-  refine ((hasDerivAt_quadraticTrajectory x₀ t).hasDerivWithinAt.congr_of_mem heq
+  refine ((hasDerivAt_mul_exp_neg_mul 2 x₀ t).hasDerivWithinAt.congr_of_mem heq
     (mem_Ici.mpr ht)).congr_deriv ?_
   dsimp only
   rw [neg_mgradient_sq_real_apply, max_eq_left ht]
@@ -299,5 +332,149 @@ theorem maximalIntegralCurve_neg_mgradient_sq_eq_iff {x₀ : ℝ} (hx₀ : x₀ 
   · intro hs
     rw [max_eq_left (by linarith : 0 ≤ 1 + s)]
     ring_nf
+
+/-! ### A rescaled metric -/
+
+section ScaledMetric
+
+open Bundle WithMetric
+
+variable {a : ℝ} (ha : 0 < a)
+
+/-- The metric `a dx²` on `ℝ`, for `a > 0`: the standard metric rescaled by the constant `a`. Its
+copy of `ℝ` is `WithMetric (scaledLineMetric ha)`. -/
+noncomputable def scaledLineMetric :
+    ContMDiffRiemannianMetric 𝓘(ℝ, ℝ) ω ℝ (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
+  (riemannianMetricVectorSpace ℝ).rescale (fun _ ↦ a) contMDiff_const fun _ ↦ ha
+
+/-- The inner products of `scaledLineMetric`: `⟪v, w⟫ₓ = a v w`. -/
+@[simp]
+theorem scaledLineMetric_inner (x v w : ℝ) : (scaledLineMetric ha).inner x v w = a * (v * w) := by
+  unfold scaledLineMetric
+  -- The tangent space of `ℝ` at `x` is `ℝ` by definition, so `v` and `w` are tangent vectors.
+  erw [ContMDiffRiemannianMetric.rescale_inner]
+  -- The standard inner product of `ℝ` is `w * v` by definition.
+  exact congrArg (a * ·) (mul_comm w v)
+
+/-- **The gradient for the metric `a dx²`.** The gradient of `x ↦ x²` at `x` is `2 x / a`. -/
+theorem mgradient_sq_scaledLineMetric (x : WithMetric (scaledLineMetric ha)) :
+    mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) x =
+      (2 / a * x.ofWithMetric : ℝ) := by
+  have hf : (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) =
+      (fun y : ℝ ↦ y ^ 2) ∘ ofWithMetric := rfl
+  -- The tangent vectors of the copy of `ℝ` are real numbers by definition; the rewrites below
+  -- see through this identification.
+  have hd (v : ℝ) :
+      mvfderiv 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) x v =
+        2 * x.ofWithMetric * v := by
+    erw [hf, mvfderiv_comp_ofWithMetric_apply, mfderiv_ofWithMetric_apply,
+      mvfderiv_eq_fderiv_apply]
+    simp only [differentiableAt_fun_id, fderiv_fun_pow, fderiv_fun_id, smul_apply,
+      ContinuousLinearMap.id_apply, smul_eq_mul]
+    ring
+  refine (eq_mgradient_iff.2 fun (v : ℝ) ↦ ?_).symm
+  erw [inner_def, mfderiv_ofWithMetric_apply, mfderiv_ofWithMetric_apply, scaledLineMetric_inner,
+    hd]
+  field_simp
+
+/-- For the metric `a dx²`, the negative gradient of `x ↦ x²` at `x` is `-2 x / a`. -/
+private theorem neg_mgradient_sq_scaledLineMetric_apply (x : WithMetric (scaledLineMetric ha)) :
+    (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2)) x =
+      (-(2 / a * x.ofWithMetric) : ℝ) := by
+  rw [Pi.neg_apply, mgradient_sq_scaledLineMetric ha]
+  -- Both sides are the real number `-2 x / a`, read in `ℝ` and in a tangent space of the copy.
+  rfl
+
+/-- For the metric `a dx²`, the curve `t ↦ x₀ exp (-2 t / a)` is a trajectory of `-grad x²`. -/
+private theorem isMIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ : ℝ) :
+    IsMIntegralCurve (fun t ↦ toWithMetric (scaledLineMetric ha) (x₀ * Real.exp (-(2 / a * t))))
+      (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2)) := by
+  intro t
+  have h := (hasMFDerivAt_toWithMetric (g := scaledLineMetric ha) _).comp t
+    (hasDerivAt_mul_exp_neg_mul (2 / a) x₀ t).hasFDerivAt.hasMFDerivAt
+  refine h.congr_mfderiv ?_
+  -- The derivative of `toWithMetric` is the identity of `ℝ`, read in the tangent spaces.
+  erw [neg_mgradient_sq_scaledLineMetric_apply]
+  exact ContinuousLinearMap.id_comp _
+
+/-- **The trajectories of the quadratic well for the metric `a dx²`.** The trajectory of `-grad x²`
+through `x₀` is `t ↦ x₀ exp (-2 t / a)`, defined for all time. For `a = 4` it is
+`t ↦ x₀ exp (-t / 2)`. -/
+theorem maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ t : ℝ) :
+    maximalIntegralCurve
+        (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2))
+        (toWithMetric _ x₀) t =
+      toWithMetric _ (x₀ * Real.exp (-(2 / a * t))) := by
+  have hb : 0 < |t| + 1 := by positivity
+  have hf : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ) 2
+      (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2) :=
+    (contDiff_id.pow 2).contMDiff.comp contMDiff_ofWithMetric
+  simpa using ((isMIntegralCurve_neg_mgradient_sq_scaledLineMetric ha x₀).isMIntegralCurveOn
+    (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve (contMDiff_neg_mgradient_one hf)
+    ⟨neg_lt_zero.2 hb, hb⟩ (by simp)
+    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+
+/-- For the metric `a dx²`, the trajectory of `-grad x²` through any `x₀` converges to the critical
+point `0`. -/
+theorem tendsto_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ : ℝ) :
+    Tendsto (maximalIntegralCurve
+        (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2))
+        (toWithMetric _ x₀)) atTop (𝓝 (toWithMetric _ 0)) := by
+  rw [funext (maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric ha x₀)]
+  refine (continuous_toWithMetric.tendsto 0).comp ?_
+  simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    (tendsto_id.const_mul_atTop (div_pos two_pos ha))).const_mul x₀
+
+/-- **The distance for the metric `a dx²`.** The Riemannian distance between `x` and `y` is
+`√a |x - y|`. -/
+theorem riemannianEDist_toWithMetric_scaledLineMetric (x y : ℝ) :
+    Manifold.riemannianEDist 𝓘(ℝ, ℝ) (toWithMetric (scaledLineMetric ha) x)
+        (toWithMetric (scaledLineMetric ha) y) =
+      ENNReal.ofReal (√a * |x - y|) := by
+  have hC : (Real.toNNReal √a : ℝ) = √a := Real.coe_toNNReal _ (Real.sqrt_nonneg a)
+  rw [riemannianEDist_toWithMetric_eq_mul (C := Real.toNNReal √a)
+      (by simpa using Real.sqrt_pos.2 ha) (fun x (v : ℝ) ↦ ?_),
+    ← IsRiemannianManifold.out, edist_dist, Real.dist_eq,
+    ENNReal.ofReal_mul (Real.sqrt_nonneg a)]
+  · -- `ENNReal.ofReal √a` is by definition the coercion of `Real.toNNReal √a`.
+    rfl
+  · -- The tangent vector `v` is a real number, whose standard tangent norm is `|v|`.
+    erw [scaledLineMetric_inner, hC, Real.sq_sqrt ha.le, norm_tangentSpace_vectorSpace]
+    rw [Real.norm_eq_abs, sq_abs, sq]
+    -- `NormedSpace.fromTangentSpace x v` is `v` itself, read in `ℝ`, by definition.
+    rfl
+
+/-- For the metric `a dx²`, the trajectory of `-grad x²` through `x₀` is at Riemannian distance
+exactly `√a |x₀| exp (-2 t / a)` from the critical point `0` at time `t`. For `a = 4` this is
+`2 |x₀| exp (-t / 2)`. -/
+theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric (x₀ t : ℝ) :
+    Manifold.riemannianEDist 𝓘(ℝ, ℝ)
+        (maximalIntegralCurve
+          (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2))
+          (toWithMetric _ x₀) t) (toWithMetric _ 0) =
+      ENNReal.ofReal (√a * |x₀| * Real.exp (-(2 / a * t))) := by
+  rw [maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric,
+    riemannianEDist_toWithMetric_scaledLineMetric, sub_zero, abs_mul, Real.abs_exp, mul_assoc]
+
+/-- **The rate `2 / a` is sharp.** For the metric `a dx²`, `x₀ ≠ 0` and `μ > 2 / a`, the distance
+from the trajectory of `-grad x²` through `x₀` to the critical point `0` is not bounded by
+`C exp (-μ t)` for large `t`, for any `C > 0`. So the rate of convergence depends on the metric:
+it is `2` for the standard metric
+(`TauCeti.not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq`) and `1 / 2`
+for `4 dx²`. -/
+theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric
+    {x₀ μ : ℝ} (hx₀ : x₀ ≠ 0) (hμ : 2 / a < μ) :
+    ¬ ∃ C > 0, ∀ᶠ t in atTop,
+      Manifold.riemannianEDist 𝓘(ℝ, ℝ)
+          (maximalIntegralCurve
+            (-mgradient 𝓘(ℝ, ℝ) (fun y : WithMetric (scaledLineMetric ha) ↦ y.ofWithMetric ^ 2))
+            (toWithMetric _ x₀) t) (toWithMetric _ 0) ≤
+        ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
+  rintro ⟨C, hC, h⟩
+  refine not_exists_ofReal_mul_exp_le_mul_exp (mul_pos (Real.sqrt_pos.2 ha) (abs_pos.2 hx₀)) hμ
+    ⟨C, hC, h.mono fun t ht ↦ ?_⟩
+  rwa [← riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_scaledLineMetric]
+
+end ScaledMetric
 
 end TauCeti

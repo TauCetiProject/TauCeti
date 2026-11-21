@@ -83,10 +83,10 @@ class of its image `I.map (mapRingEquiv e)` in `𝓞 L`. -/
 theorem classGroupEquiv_mk0 [IsDedekindDomain (𝓞 K)] [IsDedekindDomain (𝓞 L)] (e : K ≃+* L)
     (I : (Ideal (𝓞 K))⁰) :
     e.classGroupEquiv (ClassGroup.mk0 I) =
-      ClassGroup.mk0 ⟨I.1.map (RingOfIntegers.mapRingEquiv e),
+      ClassGroup.mk0 ⟨I.val.map (RingOfIntegers.mapRingEquiv e),
         mem_nonZeroDivisors_iff_ne_zero.mpr <|
           (Ideal.map_eq_bot_iff_of_injective (RingOfIntegers.mapRingEquiv e).injective).not.mpr
-            (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ := by
+            (mem_nonZeroDivisors_iff_ne_zero.mp I.property)⟩ := by
   rw [classGroupEquiv_def]
   exact ClassGroup.mulEquiv_mk0 _ I
 

@@ -161,7 +161,6 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
   rw [Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  have hζ : 0 < 1 + ‖ζ‖ ^ 2 := by positivity
   have hη : 1 ≤ 1 + ‖η‖ ^ 2 := by nlinarith [sq_nonneg ‖η‖]
   have hA0 := hA0 i
   have hB0 := hB0 (k - i)
@@ -178,7 +177,7 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
           ((1 + ‖η‖ ^ 2) ^ ((|-t| + i) / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |-t| + k) / 2)) := by ring
     _ = (k.choose i : ℝ) * A i * B (k - i) * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ ((i - k - r) / 2) := by
-        rw [← Real.rpow_add hζ, ← Real.rpow_add (by positivity), Nat.cast_sub hik]
+        rw [← one_add_norm_sq_rpow_add, ← one_add_norm_sq_rpow_add, Nat.cast_sub hik]
         congr 2 <;> ring_nf
     _ ≤ (k.choose i : ℝ) * A i * B (k - i) * (1 + ‖ζ‖ ^ 2) ^ (-(k : ℝ) / 2) *
           (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
@@ -228,7 +227,7 @@ private theorem quantizeSchwartzValue_besselPotential_sharp_eq_integral
   obtain ⟨C, -, hC⟩ := hb.exists_norm_shiftedMultiplier_le ((n : ℝ) + 1)
   have hN := hb.continuous_shiftedMultiplier
   have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 ⟪y, x⟫ : ℂ) :=
-    continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
+    continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))
   -- The integrand of the double integral is dominated by `‖𝓕 w ζ‖ C ⟨η⟩ ^ (-(n + 1))`.
   set F : CoordinateSpace n × CoordinateSpace n → W := fun q ↦
     (𝐞 ⟪q.1, x⟫ : ℂ) • (𝐞 ⟪q.2, x⟫ : ℂ) • shiftedMultiplier b q.2 q.1 (𝓕 w q.1) with hF
@@ -363,7 +362,7 @@ private theorem HasCompactSpatialSupport.exists_eLpNorm_quantizeSchwartzValue_sh
     simpa only [Function.uncurry_def] using hcont.eNorm.measurable.aemeasurable
   have hsm : AEStronglyMeasurable (fun x ↦ ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • T η x) volume := by
     have he : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, q.1⟫ : ℂ) :=
-      continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))
+      continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))
     exact (he.smul hcont).aestronglyMeasurable.integral_prod_right'
   have hTm (η : CoordinateSpace n) : AEStronglyMeasurable (T η) volume :=
     (hcont.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
@@ -588,7 +587,7 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
   have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
       ((φ.smooth ⊤).smul contDiff_const)).coefficient =
         fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_ofSpatial _ _)
+    coefficient_ofSpatial_eq _ _
   have hq : quantizeUniformCLM _ h.isUniform = SchwartzMap.smulLeftCLM V (φ : _ → ℂ) := by
     ext v x
     rw [quantizeUniformCLM_apply, hc, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]

@@ -141,7 +141,8 @@ variable [e₁.IsLinear 𝕜] [e₁'.IsLinear 𝕜] [e₂.IsLinear 𝕜] [e₂'.
 /-- Induced pretrivialization of `fun x ↦ E₁ x ⊗[𝕜] E₂ x` from trivializations `e₁` and `e₂`,
 acting on fibres by `TensorProduct.map` of `e₁.linearMapAt` and `e₂.linearMapAt`. -/
 def tensorProduct : Pretrivialization PF₁F₂ (π PF₁F₂ TE₁E₂) where
-  toFun p := ⟨p.1, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.1) (e₂.linearMapAt 𝕜 p.1) p.2⟩⟩
+  toFun p := ⟨p.proj, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.proj)
+      (e₂.linearMapAt 𝕜 p.proj) p.snd⟩⟩
   invFun p := ⟨p.1, _root_.TensorProduct.map (e₁.symmₗ 𝕜 p.1) (e₂.symmₗ 𝕜 p.1) p.2.toTensorProduct⟩
   source := TotalSpace.proj ⁻¹' (e₁.baseSet ∩ e₂.baseSet)
   target := (e₁.baseSet ∩ e₂.baseSet) ×ˢ univ
@@ -170,7 +171,8 @@ def tensorProduct : Pretrivialization PF₁F₂ (π PF₁F₂ TE₁E₂) where
 
 theorem tensorProduct_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     tensorProduct 𝕜 e₁ e₂ p =
-      ⟨p.1, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.1) (e₂.linearMapAt 𝕜 p.1) p.2⟩⟩ := (rfl)
+      ⟨p.proj, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.proj) (e₂.linearMapAt 𝕜 p.proj) p.snd⟩⟩
+          := (rfl)
 
 instance tensorProduct.isLinear : (Pretrivialization.tensorProduct 𝕜 e₁ e₂).IsLinear 𝕜 where
   linear _ _ := let inj := (TauCeti.ProjectiveTensor.linearEquiv 𝕜 F₁ F₂).injective
@@ -292,7 +294,8 @@ variable {𝕜 e₁ e₂}
 
 theorem Bundle.Trivialization.tensorProduct_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     e₁.tensorProduct 𝕜 e₂ p =
-      ⟨p.1, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.1) (e₂.linearMapAt 𝕜 p.1) p.2⟩⟩ := (rfl)
+      ⟨p.proj, ⟨_root_.TensorProduct.map (e₁.linearMapAt 𝕜 p.proj) (e₂.linearMapAt 𝕜 p.proj) p.snd⟩⟩
+          := (rfl)
 
 @[simp] theorem Bundle.Trivialization.tensorProduct_apply_mk_tmul {b : B}
     (hb : b ∈ e₁.baseSet ∩ e₂.baseSet) (v : E₁ b) (w : E₂ b) :
@@ -336,7 +339,7 @@ theorem tensorProduct_trivializationAt (x₀ : B) :
 `TensorProduct.inCoordinates`. -/
 theorem tensorProduct_trivializationAt_apply (x₀ : B) (p : TotalSpace PF₁F₂ TE₁E₂) :
     trivializationAt PF₁F₂ TE₁E₂ x₀ p =
-      ⟨p.1, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ x₀ p.1 x₀ p.1 p.2⟩ := by
+      ⟨p.proj, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ x₀ p.proj x₀ p.proj p.snd⟩ := by
   simp [tensorProduct_trivializationAt, Bundle.Trivialization.tensorProduct_apply,
     TensorProduct.inCoordinates]
 
@@ -365,8 +368,9 @@ base projection and its coordinate expression `TensorProduct.inCoordinates` are 
 `s` at `x₀`. -/
 theorem continuousWithinAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
     (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M} {x₀ : M} :
-    ContinuousWithinAt f s x₀ ↔ ContinuousWithinAt (fun x ↦ (f x).1) s x₀ ∧ ContinuousWithinAt
-      (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+    ContinuousWithinAt f s x₀ ↔ ContinuousWithinAt (fun x ↦ (f x).proj) s x₀ ∧ ContinuousWithinAt
+      (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj (f x).proj
+          (f x).snd)
       s x₀ := by
   simpa only [tensorProduct_trivializationAt_apply] using
     FiberBundle.continuousWithinAt_totalSpace (F := PF₁F₂) (E := TE₁E₂) (f := f) (s := s) (x₀ := x₀)
@@ -375,8 +379,9 @@ theorem continuousWithinAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
 projection and its coordinate expression `TensorProduct.inCoordinates` are continuous at `x₀`. -/
 theorem continuousAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
     (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
-    ContinuousAt f x₀ ↔ ContinuousAt (fun x ↦ (f x).1) x₀ ∧ ContinuousAt
-      (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+    ContinuousAt f x₀ ↔ ContinuousAt (fun x ↦ (f x).proj) x₀ ∧ ContinuousAt
+      (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj (f x).proj
+          (f x).snd)
       x₀ := by
   simpa only [← continuousWithinAt_univ] using continuousWithinAt_tensorProduct_bundle f (s := univ)
 

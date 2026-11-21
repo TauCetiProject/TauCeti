@@ -92,13 +92,13 @@ theorem isPreconnected_setOf_mapClusterPt_atTop [T2Space X] (hK : IsCompact K)
   rw [setOf_mapClusterPt_atTop_eq_iInter u a]
   refine isPreconnected_iInter_of_directed (fun T₁ T₂ => ?_) (fun T => ?_) (fun T => ?_)
   · refine ⟨⟨max (T₁ : ℝ) (T₂ : ℝ),
-      mem_Ici.mpr ((mem_Ici.mp T₁.2).trans (le_max_left _ _))⟩, ?_, ?_⟩ <;>
+      mem_Ici.mpr ((mem_Ici.mp T₁.property).trans (le_max_left _ _))⟩, ?_, ?_⟩ <;>
       exact closure_mono (image_mono (Ici_subset_Ici.mpr (by simp)))
   · exact hK.of_isClosed_subset isClosed_closure (closure_minimal
-      ((image_mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2))).trans hmaps.image_subset)
+      ((image_mono (Ici_subset_Ici.mpr (mem_Ici.mp T.property))).trans hmaps.image_subset)
       hK.isClosed)
   · exact ((isPreconnected_Ici (a := (T : ℝ))).image u
-      (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.2)))).closure
+      (hu.mono (Ici_subset_Ici.mpr (mem_Ici.mp T.property)))).closure
 
 /-- **A curve whose ω-limit points lie in a totally disconnected set converges.** If a curve,
 continuous on a half-line `[a, ∞)`, maps it into a compact set and its ω-limit set lies in a totally

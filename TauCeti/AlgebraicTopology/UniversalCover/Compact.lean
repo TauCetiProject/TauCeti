@@ -75,9 +75,9 @@ theorem isProperMap_proj [Finite (FundamentalGroup X x₀)] :
     obtain ⟨e⟩ := h
     -- A nonempty fibre is an orbit of the finite fundamental-group action.
     have hsub : (proj : UniversalCover x₀ → X) ⁻¹' {x} ⊆
-        MulAction.orbit (FundamentalGroup X x₀) e.1 :=
-      fun z hz ↦ proj_eq_iff_mem_orbit.mp (hz.trans e.2.symm)
-    exact ((Finite.finite_mulAction_orbit e.1).subset hsub).to_subtype
+        MulAction.orbit (FundamentalGroup X x₀) e.val :=
+      fun z hz ↦ proj_eq_iff_mem_orbit.mp (hz.trans e.property.symm)
+    exact ((Finite.finite_mulAction_orbit e.val).subset hsub).to_subtype
 
 /-- The universal cover of a compact space with finite fundamental group is
 compact. -/

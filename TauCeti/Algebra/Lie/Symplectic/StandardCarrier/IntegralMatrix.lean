@@ -19,8 +19,9 @@ In the enumerated basis the matrix is the single unit `E_{i,m+i}` at the final n
 difference `E_{i,i+1} - E_{m+i+1,m+i}` of two units at a nonfinal one. Those are the matrices of
 the symplectic group's long-root transvection at the terminal coordinate and of its difference
 short-root element at an adjacent pair, which is what
-`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Generation.lean` uses to identify the two point
-groups.
+`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Generation.lean` uses to identify the numbered root
+subgroups, supplying the generation input for the point-group equality in
+`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/Symplectic/Basic.lean`.
 
 ## Main results
 

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Inner products of square-integrable functions
@@ -25,7 +26,10 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
-integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
+integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared norm `‖u‖²` of an
+element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`). The `Lᵖ` seminorm of
+the pairing `x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of
+`f` (`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -54,9 +58,10 @@ to Lebesgue measure on a nonempty open subset of `ℝⁿ`, `n ≥ 1`.
 
 For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
 the real inner product on `L²(α, F)` is the real part of the complex one
-(`MeasureTheory.L2.real_inner_eq_re_inner`). For a family of inner product spaces `G i`, evaluating
-coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an `L²(α, G i)` function in
-coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
+(`MeasureTheory.L2.real_inner_eq_re_inner`), so the real adjoint of a complex-linear operator
+on `L²` is its complex adjoint (`MeasureTheory.L2.adjoint_restrictScalars`). For a family of
+inner product spaces `G i`, evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to
+placing an `L²(α, G i)` function in coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 
 On real `L²`, the squared norm of the positive part, `g ↦ ‖g⁺‖²`, is Fréchet differentiable with
 derivative `k ↦ 2 ⟪f⁺, k⟫` at `f` (`MeasureTheory.Lp.hasFDerivAt_norm_posPart_sq`). Truncation
@@ -76,9 +81,7 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  (L2.integrable_inner (𝕜 := 𝕜) (hf.toLp f) (hg.toLp g)).congr <| by
-    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
-    rw [hfx, hgx]
+  hf.integrable_inner_of_holderConjugate hg
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/
@@ -96,6 +99,22 @@ theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : 
     Integrable (fun x ↦ V x ^ 2 * ‖g x‖ ^ 2) μ :=
   hg.norm.integrable_sq.bdd_mul (hV.pow 2)
     (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
+
+/-- The `Lᵖ` seminorm of the pairing `x ↦ ⟪f x, c⟫` of a function `f` with a constant vector `c`
+is at most `‖c‖ₑ` times that of `f`. -/
+theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ ⟪f x, c⟫_𝕜) p μ ≤ ‖c‖ₑ * eLpNorm f p μ := by
+  by_cases hf : AEStronglyMeasurable f μ
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (c := ‖c‖₊) (hf.inner aestronglyMeasurable_const)
+      (.of_forall fun x ↦ (eNorm_inner_le_eNorm _ _).trans_eq (mul_comm _ _)) p
+  obtain rfl | hc := eq_or_ne c 0
+  · simp
+  simp [eLpNorm_of_not_aestronglyMeasurable hf, hc]
+
+/-- The squared norm `‖u‖²` of an element of `L²` is integrable. -/
+theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
+    Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
+  (Lp.memLp u).norm.integrable_sq
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -189,6 +208,23 @@ theorem L2.real_inner_eq_re_inner {F : Type*} [NormedAddCommGroup F] [InnerProdu
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   rw [L2.inner_def, L2.inner_def]
   exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
+
+/-- For complex inner product spaces `F` and `G` with their induced real structures, the adjoint
+of a complex-linear operator `L²(α, F) → L²(β, G)` regarded as a real-linear one is its complex
+adjoint regarded as a real-linear operator. -/
+theorem L2.adjoint_restrictScalars {β F G : Type*} [MeasurableSpace β] {ν : Measure β}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] [NormedAddCommGroup G]
+    [InnerProductSpace ℂ G] [CompleteSpace G] (T : Lp F 2 μ →L[ℂ] Lp G 2 ν) :
+    letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    letI : InnerProductSpace ℝ G := InnerProductSpace.complexToReal
+    ContinuousLinearMap.adjoint (T.restrictScalars ℝ) =
+      (ContinuousLinearMap.adjoint T).restrictScalars ℝ := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  let : InnerProductSpace ℝ G := InnerProductSpace.complexToReal
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearMap.adjoint_inner_left]
 
 /-- Evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an
 `L²(α, G i)` function in coordinate `i`. -/
