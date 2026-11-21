@@ -89,8 +89,6 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   with common difference `2` is `J (D + J)`.
 * `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
   `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
-* `Finset.sum_triple_reindex`: reindex a triple sum over `0 ≤ a ≤ r ≤ m`, `0 ≤ c ≤ m - r` by
-  `p = a + c` and `u = r - a`.
 -/
 
 public section
@@ -681,22 +679,6 @@ theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : �
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [mem_range] at hp hi
   rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
-
-/-- Reindex a triple sum over `0 ≤ a ≤ r ≤ m`, `0 ≤ c ≤ m - r` by `p = a + c` and `u = r - a`. -/
-theorem sum_triple_reindex {M : Type*} [AddCommMonoid M] (m : ℕ) (F : ℕ → ℕ → ℕ → M) :
-    (∑ r ∈ range (m + 1), ∑ a ∈ range (r + 1), ∑ c ∈ range (m - r + 1), F r a c) =
-      ∑ p ∈ range (m + 1), ∑ a ∈ range (p + 1), ∑ u ∈ range (m - p + 1), F (a + u) a (p - a) := by
-  rw [sum_sigma', sum_sigma', sum_sigma', sum_sigma']
-  refine sum_bij' (fun x _ ↦ ⟨⟨x.1.2 + x.2, x.1.2⟩, x.1.1 - x.1.2⟩)
-    (fun y _ ↦ ⟨⟨y.1.2 + y.2, y.1.2⟩, y.1.1 - y.1.2⟩) ?_ ?_ ?_ ?_ ?_
-  · rintro ⟨⟨r, a⟩, c⟩ hx; simp only [mem_sigma, mem_range] at hx ⊢; omega
-  · rintro ⟨⟨p, a⟩, u⟩ hy; simp only [mem_sigma, mem_range] at hy ⊢; omega
-  · rintro ⟨⟨r, a⟩, c⟩ hx; simp only [mem_sigma, mem_range] at hx
-    simp only [show a + (r - a) = r by omega, show a + c - a = c by omega]
-  · rintro ⟨⟨p, a⟩, u⟩ hy; simp only [mem_sigma, mem_range] at hy
-    simp only [show a + (p - a) = p by omega, show a + u - a = u by omega]
-  · rintro ⟨⟨r, a⟩, c⟩ hx; simp only [mem_sigma, mem_range] at hx
-    simp only [show a + (r - a) = r by omega, show a + c - a = c by omega]
 
 /-- **Exchanging the order of a triangular double sum.** Summing over `s ≤ n` and `k ≤ s` gives
 the same as summing over `k ≤ n` and `j ≤ n - k`, with `s = k + j`. -/

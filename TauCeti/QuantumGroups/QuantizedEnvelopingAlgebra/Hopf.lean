@@ -96,12 +96,17 @@ noncomputable def counitAlgHom : QuantizedEnvelopingAlgebra D q →ₐ[K] K :=
 @[simp] theorem counitAlgHom_normalizedF (i : ι) : counitAlgHom D q (normalizedF D q i) = 0 := by
   simp [normalizedF_def]
 
+/-- Unconditional pointwise Chevalley invariance of the counit: `ε(ω x) = ε x` for every
+`q : K`, without requiring genericity or Serre-factorial nonvanishing. See
+`counit_chevalleyInvolution` for the `Coalgebra.counit` version at generic `q`. -/
 @[simp] theorem counitAlgHom_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     counitAlgHom D q (chevalleyInvolution D q x) = counitAlgHom D q x := by
   have h : (counitAlgHom D q).comp (chevalleyInvolution D q).toAlgHom = counitAlgHom D q := by
     apply hom_ext <;> intro a <;> simp
   exact AlgHom.congr_fun h x
 
+/-- Unconditional bundled Chevalley invariance of the counit: `ε ∘ ω = ε` as algebra
+homomorphisms for every `q : K`, without requiring genericity or Serre-factorial nonvanishing. -/
 @[simp] theorem counitAlgHom_comp_chevalleyInvolution :
     (counitAlgHom D q).comp (chevalleyInvolution D q).toAlgHom = counitAlgHom D q :=
   AlgHom.ext (counitAlgHom_chevalleyInvolution D q)
@@ -628,7 +633,9 @@ theorem counit_normalizedF (i : ι) :
     Coalgebra.counit (R := K) (normalizedF D q i) = 0 := by
   rw [counit_eq, counitAlgHom_normalizedF]
 /-- Under the canonical generic `instBialgebra` instance (`[Fact (IsGenericQuantumParameter q)]`),
-the Chevalley involution preserves the counit: `ε(ω x) = ε x`. -/
+the Chevalley involution preserves the counit: `ε(ω x) = ε x`. See
+`counitAlgHom_chevalleyInvolution` and `counitAlgHom_comp_chevalleyInvolution` for the
+unconditional versions valid for every `q : K`. -/
 theorem counit_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) :
     Coalgebra.counit (R := K) (chevalleyInvolution D q x) = Coalgebra.counit (R := K) x := by
   rw [counit_eq, counit_eq, counitAlgHom_chevalleyInvolution]
@@ -716,6 +723,9 @@ theorem antipode_bijective_generic :
     Function.Bijective (HopfAlgebra.antipode K (A := QuantizedEnvelopingAlgebra D q)) :=
   antipode_bijective D q fun i j _ => quantumFactorial_serreLength_ne_zero D Fact.out i j
 
+/-- Generic inverse-antipode formula on `Eᵢ` under `instHopfAlgebra`:
+`S⁻¹(Eᵢ) = -(Eᵢ Kᵢ⁻¹)`. For the unconditional version valid without genericity or Serre
+nonvanishing, use `(antipodeLinearEquiv D q).symm` (`antipodeLinearEquiv_symm_e`). -/
 @[simp] theorem inverseAntipode_e (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective_generic D q) (e D q i) =
       -(e D q i * simpleKInv D q i) := by
@@ -723,6 +733,10 @@ theorem antipode_bijective_generic :
   rw [← h]
   apply (antipodeLinearEquiv D q).injective
   rw [LinearEquiv.apply_symm_apply, ← antipode_eq, TauCeti.HopfAlgebra.antipode_inverseAntipode]
+
+/-- Generic inverse-antipode formula on `Fᵢ` under `instHopfAlgebra`:
+`S⁻¹(Fᵢ) = -(Kᵢ Fᵢ)`. For the unconditional version valid without genericity or Serre
+nonvanishing, use `(antipodeLinearEquiv D q).symm` (`antipodeLinearEquiv_symm_f`). -/
 @[simp] theorem inverseAntipode_f (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective_generic D q) (f D q i) =
       -(simpleK D q i * f D q i) := by
@@ -730,6 +744,10 @@ theorem antipode_bijective_generic :
   rw [← h]
   apply (antipodeLinearEquiv D q).injective
   rw [LinearEquiv.apply_symm_apply, ← antipode_eq, TauCeti.HopfAlgebra.antipode_inverseAntipode]
+
+/-- Generic inverse-antipode formula on `K_y` under `instHopfAlgebra`: `S⁻¹(K_y) = K_(-y)`.
+For the unconditional version valid without genericity or Serre nonvanishing, use
+`(antipodeLinearEquiv D q).symm` (`antipodeLinearEquiv_symm_k`). -/
 @[simp] theorem inverseAntipode_k (y : Y) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective_generic D q) (k D q y) =
       k D q (-y) := by
@@ -737,10 +755,16 @@ theorem antipode_bijective_generic :
   rw [← h]
   apply (antipodeLinearEquiv D q).injective
   rw [LinearEquiv.apply_symm_apply, ← antipode_eq, TauCeti.HopfAlgebra.antipode_inverseAntipode]
+
+/-- Generic inverse-antipode formula on `Kᵢ` under `instHopfAlgebra`: `S⁻¹(Kᵢ) = Kᵢ⁻¹`.
+For the unconditional version, see `(antipodeLinearEquiv D q).symm` in `Antipode.lean`. -/
 theorem inverseAntipode_simpleK (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective_generic D q) (simpleK D q i) =
       simpleKInv D q i := by
   rw [simpleK_def, inverseAntipode_k, simpleKInv_def]
+
+/-- Generic inverse-antipode formula on `Kᵢ⁻¹` under `instHopfAlgebra`: `S⁻¹(Kᵢ⁻¹) = Kᵢ`.
+For the unconditional version, see `(antipodeLinearEquiv D q).symm` in `Antipode.lean`. -/
 theorem inverseAntipode_simpleKInv (i : ι) :
     TauCeti.HopfAlgebra.inverseAntipode (antipode_bijective_generic D q) (simpleKInv D q i) =
       simpleK D q i := by
