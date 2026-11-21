@@ -225,7 +225,7 @@ theorem isHomogeneous_quotientHomologyProdEquiv :
     LinearMap.quotientHomologyProdEquiv_mk hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom a b ha hb]
   have hab : d (a + h b) ∈ N' := by
     rw [map_add]
-    exact N'.add_mem (hNN' ha) (LinearMap.d_h_mem_of_homotopy hNN' hvN' hh hhom hb)
+    exact N'.add_mem (hNN' ha) (LinearMap.map_map_mem_of_homotopy hNN' hvN' hh hhom hb)
   simpa only [LinearMap.quotientHomologyClass_def] using
     G.quotientHomologyClass_mem_quotientHomology_piece hdG hd hN' hN'G (add_mem hap hhb) hab
 

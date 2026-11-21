@@ -228,7 +228,7 @@ variable {d : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {h v : M →ₗ[S] M} {N N' :
 include hhom hh hNN' hvN' in
 /-- If `d m ∈ N` then `d (h m) ∈ N'`, for a homotopy `h` from `v` to zero modulo `N` with
 `v m ∈ N'` for every `m`: modulo `N`, `d (h m) = v m - h (d m)`. -/
-theorem d_h_mem_of_homotopy {m : M} (hm : d m ∈ N) : d (h m) ∈ N' := by
+theorem map_map_mem_of_homotopy {m : M} (hm : d m ∈ N) : d (h m) ∈ N' := by
   have : d (h m) = (d (h m) + h (d m) - v m) - h (d m) + v m := by abel
   rw [this]
   exact N'.add_mem (N'.sub_mem (hNN' (hhom m)) (hNN' (hh _ hm))) (hvN' m)
@@ -304,14 +304,14 @@ private noncomputable def hHomology :
       obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective N q
       rw [Submodule.mk_mem_ker_mapQ_iff] at hq
       rw [Submodule.mapQ_apply, Submodule.mk_mem_ker_mapQ_iff]
-      exact d_h_mem_of_homotopy hNN' hvN' hh hhom hq) fun ⟨q, hq⟩ hqb => by
+      exact map_map_mem_of_homotopy hNN' hvN' hh hhom hq) fun ⟨q, hq⟩ hqb => by
     obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective N q
     obtain ⟨w, hw⟩ := (Submodule.mk_mem_range_mapQ_iff m).mp hqb
     exact (Submodule.mk_mem_range_mapQ_iff (h m)).mpr ⟨-h w, h_boundary hNN' hvN' hh hhom hw⟩
 
 private theorem hHomology_cls (m : M) (hm : d m ∈ N) :
     hHomology hd hN hN' hNN' hvN' hh hhom (quotientHomologyClass hd hN m hm) =
-      quotientHomologyClass hd hN' (h m) (d_h_mem_of_homotopy hNN' hvN' hh hhom hm) :=
+      quotientHomologyClass hd hN' (h m) (map_map_mem_of_homotopy hNN' hvN' hh hhom hm) :=
   (rfl)
 
 include hd hN hN'N hh hvd hreg hhom in
@@ -370,7 +370,7 @@ theorem quotientHomologyProdEquiv_mk (a b : M) (ha : d a ∈ N) (hb : d b ∈ N)
       Submodule.Quotient.mk ⟨Submodule.Quotient.mk (a + h b),
         (Submodule.mk_mem_ker_mapQ_iff _).mpr (by
         rw [map_add]
-        exact N'.add_mem (hNN' ha) (d_h_mem_of_homotopy hNN' hvN' hh hhom hb))⟩ :=
+        exact N'.add_mem (hNN' ha) (map_map_mem_of_homotopy hNN' hvN' hh hhom hb))⟩ :=
   congr($(quotientHomologyMapOfLE_quotientHomologyClass hd hN hN' hNN' a ha) +
     $(hHomology_cls hd hN hN' hNN' hvN' hh hhom b hb))
 
