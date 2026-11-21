@@ -44,12 +44,12 @@ This is the orientation counterpart of the determinant-line isomorphism
 Subspace-first orientations compose along towers. If `U' ⊆ U ⊆ V` with quotients `U / U' ≅ B`
 and `V / U ≅ A`, and the map `U → B` extends to `V`, then orienting `U` from `U'` and `B` and
 then `V` from `U` and `A` is the same as orienting `V` from `U'` and the product `[B][A]`
-(`Orientation.shortExact_shortExact`). Dually, if the quotient `W` of `0 → U → V → W → 0` is
-oriented through `0 → N → W → Q → 0`, the orientation of `V` from `U` and `W` is the one from the
-preimage `S` of `N`, oriented from `U` and `N`, and `Q` (`Orientation.shortExact_shortExact_right`).
-Consequently, when a linear equivalence carries such a
+(`Orientation.shortExact_shortExact`). Consequently, when a linear equivalence carries such a
 tower onto one that cuts out the same subspace in the opposite order, the induced orientations
-differ by `(-1) ^ (dim A · dim B)` (`Orientation.map_shortExact_shortExact`). Adjoining a further
+differ by `(-1) ^ (dim A · dim B)` (`Orientation.map_shortExact_shortExact`). Dually, if the
+quotient `W` of `0 → U → V → W → 0` is oriented through `0 → N → W → Q → 0`, the orientation of
+`V` from `U` and `W` is the one from the preimage `S` of `N`, oriented from `U` and `N`, and `Q`
+(`Orientation.shortExact_shortExact_right`). Adjoining a further
 factor `Z` to a short exact sequence after the subspace costs the sign `(-1) ^ (dim Z · dim W)`
 of moving `Z` past `W`, while adjoining it before costs nothing
 (`Orientation.shortExact_prodMap_id`, `Orientation.shortExact_id_prodMap`). These are the
@@ -655,32 +655,26 @@ theorem shortExact_shortExact_right (hf : Function.Injective f) (hfg : Function.
     shortExact hf hfg hg o (shortExact hi hiπ hπ p q hn hc) ha hW =
       reindex K V (finCongr (add_assoc a n c))
         (shortExact hj hjk hk (shortExact hf' hfg' hg' o p ha hn) q hS hc) := by
-  -- A retraction `ρ` of `i` extends `g'` to `ρ ∘ g : V → N`, and `(ρ, π)` splits `W`.
-  obtain ⟨ρ, hρ⟩ := i.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hi)
-  have hρi (x : N) : ρ (i x) = x := LinearMap.congr_fun hρ x
-  have hbij : Function.Bijective (ρ.prod π) := by
-    refine ⟨fun w₁ w₂ hw ↦ ?_, fun ⟨x, y⟩ ↦ ?_⟩
-    · simp only [LinearMap.prod_apply, Function.prod, Prod.mk.injEq] at hw
-      obtain ⟨z, hz⟩ := (hiπ (w₁ - w₂)).1 (by rw [map_sub, hw.2, sub_self])
-      have : z = 0 := by rw [← hρi z, hz, map_sub, hw.1, sub_self]
-      rw [← sub_eq_zero, ← hz, this, map_zero]
-    · obtain ⟨w, rfl⟩ := hπ y
-      refine ⟨w + i (x - ρ w), ?_⟩
-      simp [hρi, hiπ.apply_apply_eq_zero]
-  set e := LinearEquiv.ofBijective (ρ.prod π) hbij
+  -- A retraction of `i` splits `W` as `N × Q`, and the first component `ρ` of the splitting `e`
+  -- extends `g'` to `ρ ∘ g : V → N`.
+  obtain ⟨l, hl⟩ := i.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hi)
+  obtain ⟨e, hie, hπe⟩ := hiπ.splitInjectiveEquiv hπ ⟨l, hl⟩
+  set ρ := LinearMap.fst K N Q ∘ₗ e.toLinearMap
   have hhj : (ρ ∘ₗ g) ∘ₗ j = g' := by
-    rw [LinearMap.comp_assoc, hgj, ← LinearMap.comp_assoc, hρ, LinearMap.id_comp]
+    rw [LinearMap.comp_assoc, hgj, hie]
+    ext x
+    simp [ρ]
   -- Collapse the tower on the right; along `e`, the sequence `0 → U → V → W → 0` becomes the
   -- collapsed sequence `0 → U → V → N × Q → 0`, and the orientation of `W` becomes `[N][Q]`.
   rw [shortExact_shortExact hf' hfg' hg' hj hjk hk hhj o p q ha hn hc hS]
   have E := map_shortExact hf hfg hg ha hW (LinearMap.injective_comp hj hf')
     (hfg'.comp_prod hjk hhj)
     (LinearMap.surjective_prod_of_comp_eq_zero hjk.linearMap_comp_eq_zero (hhj ▸ hg') hk)
-    (LinearEquiv.refl K U) (LinearEquiv.refl K V) e (by rw [hjf]; rfl)
-    (by ext v <;> simp [e, ← hπg]) o (shortExact hi hiπ hπ p q hn hc)
+    (LinearEquiv.refl K U) (LinearEquiv.refl K V) e (by simp [hjf])
+    (by ext v <;> simp [ρ, ← hπg, hπe]) o (shortExact hi hiπ hπ p q hn hc)
   have F := map_shortExact hi hiπ hπ hn hc LinearMap.inl_injective Function.Exact.inl_snd
     LinearMap.snd_surjective (LinearEquiv.refl K N) e (LinearEquiv.refl K Q)
-    (by ext x <;> simp [e, hρi, hiπ.apply_apply_eq_zero]) (by ext; simp [e]) p q
+    (by rw [hie]; ext x <;> simp) (by rw [hπe]; ext; simp) p q
   simp only [map_refl, Equiv.refl_apply] at E F
   rw [F, shortExact_inl_snd] at E
   rw [E, reindex_finCongr_reindex_finCongr, finCongr_refl, reindex_refl, Equiv.refl_apply]

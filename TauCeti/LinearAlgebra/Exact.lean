@@ -36,7 +36,9 @@ middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.coke
 (`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), with
 `LinearMap.surjective_kerCompToKer` when `f` is onto, the exact sequence
 `0 → ker (f, g) → ker g → N → 0` of a map `(f, g) : M → N × P` onto its target
-(`LinearMap.exact_inclusion_ker_prod`, `LinearMap.surjective_comp_subtype_ker`), the dimension
+(`LinearMap.exact_inclusion_ker_prod`, `LinearMap.surjective_comp_subtype_ker`), with the
+resulting dimension counts `LinearMap.finrank_ker_comp_of_surjective` and
+`LinearMap.finrank_ker_eq_of_surjective_prod`, the dimension
 `dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of `α : X → T` and
 `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the homology of a complex of
 finite-dimensional vector spaces in terms of the two cokernels
@@ -721,6 +723,25 @@ theorem finrank_ker_coprod_neg_add {k X Y T : Type*} [DivisionRing k]
   have h' := (exact_subtype_ker_map _).finrank_eq_add (Submodule.injective_subtype _) h
   rw [finrank_prod] at h'
   exact h'.symm
+
+/-- If `f : M → N` is onto, the kernel of `g ∘ f` has dimension `dim ker f + dim ker g`, by the
+short exact sequence `0 → ker f → ker (g ∘ f) → ker g → 0`. -/
+theorem finrank_ker_comp_of_surjective {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P]
+    [FiniteDimensional k M] {f : M →ₗ[k] N} (g : N →ₗ[k] P) (hf : Function.Surjective f) :
+    finrank k (ker (g ∘ₗ f)) = finrank k (ker f) + finrank k (ker g) :=
+  (exact_inclusion_kerCompToKer f g).finrank_eq_add (Submodule.inclusion_injective _)
+    (surjective_kerCompToKer f g hf)
+
+/-- If `(f, g) : M → N × P` is onto, the kernel of `g` has dimension `dim ker (f, g) + dim N`, by
+the short exact sequence `0 → ker (f, g) → ker g → N → 0`. -/
+theorem finrank_ker_eq_of_surjective_prod {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P]
+    [FiniteDimensional k M] {f : M →ₗ[k] N} {g : M →ₗ[k] P}
+    (h : Function.Surjective (f.prod g)) :
+    finrank k (ker g) = finrank k (ker (f.prod g)) + finrank k N :=
+  (exact_inclusion_ker_prod f g).finrank_eq_add (Submodule.inclusion_injective _)
+    (surjective_comp_subtype_ker h)
 
 section ExactChain
 

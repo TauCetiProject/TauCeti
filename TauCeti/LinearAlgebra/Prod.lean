@@ -55,6 +55,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.injective_prodMap`, `LinearMap.surjective_prodMap`: a product of injective, resp.
   surjective, linear maps is injective, resp. surjective, stated for the coercion of
   `f.prodMap g`.
+* `LinearMap.surjective_of_surjective_prod_right`: the second component of a surjective map
+  `(f, g)` to a product is surjective.
 * `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
   factors to the appended family of their images.
 * `LinearMap.prodMap_comp_inl`, `LinearMap.snd_comp_prodMap`: the commuting squares of the split
@@ -259,6 +261,12 @@ theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (h
 theorem surjective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Surjective f)
     (hg : Function.Surjective g) : Function.Surjective (f.prodMap g) :=
   hf.prodMap hg
+
+/-- If `(f, g) : M₁ → M₂ × M₃` is surjective, then so is its second component `g`. -/
+theorem surjective_of_surjective_prod_right {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Surjective (f.prod g)) : Function.Surjective g :=
+  -- `g` is `snd ∘ₗ f.prod g` by definition (`LinearMap.snd_prod` is proved by `rfl`).
+  Prod.snd_surjective.comp h
 
 /-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
 family of their images. -/

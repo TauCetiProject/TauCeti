@@ -140,8 +140,7 @@ theorem prod_shortExact_eq_shortExact_ker_prodMap (hβ : Function.Surjective β)
       reindex K (L × ker β) (finCongr (add_comm ν l))
         (shortExact inr_injective (Function.Exact.inr_fst (R := K) (M := L) (N := ker β))
           fst_surjective n oL hν hl) := by
-    rw [B, reindex_units_smul, smul_smul, ← mul_pow, neg_mul_neg, one_mul, one_pow, one_smul,
-      reindex_finCongr_reindex_finCongr, finCongr_refl, reindex_refl, Equiv.refl_apply]
+    simp [B, smul_smul, ← mul_pow, reindex_finCongr_reindex_finCongr]
   rw [A', reindex_symm, finCongr_symm, B', shortExact_units_smul_left,
     shortExact_reindex_finCongr_left, D, E]
   simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr, mul_comm l ν]
@@ -171,24 +170,16 @@ theorem shortExact_ker_prodMap_comp (hA : Function.Surjective A) (hβ : Function
           (exact_inclusion_kerCompToKer A _) (surjective_kerCompToKer A _ hA) o
           (map (Fin ν) (kerEquivKerIdProdMap L β) n) hm
           ((kerEquivKerIdProdMap L β).finrank_eq.symm.trans hν))
-        (prod oL q hl hc) (by
-          have := (exact_subtype_ker_map A).finrank_eq_add (Submodule.injective_subtype _) hA
-          have := (exact_subtype_ker_map (id.prodMap β ∘ₗ A)).finrank_eq_add
-            (Submodule.injective_subtype _)
-            (surjective_comp (surjective_prodMap Function.surjective_id hβ) hA)
-          simp only [finrank_prod] at *
-          omega) (by rw [finrank_prod, hl, hc]) =
+        (prod oL q hl hc)
+        (by
+          rw [finrank_ker_comp_of_surjective _ hA, ← (kerEquivKerIdProdMap L β).finrank_eq, hm, hν])
+        (by rw [finrank_prod, hl, hc]) =
       (-1 : Kˣ) ^ (l * ν) • reindex K P (finCongr (by omega))
         (shortExact (Submodule.injective_subtype _) (exact_subtype_ker_map A) hA o
           (prod oL (shortExact (Submodule.injective_subtype _) (exact_subtype_ker_map β) hβ n q
             hν hc) hl hR) hm (by rw [finrank_prod, hl, hR])) := by
   have hG : finrank K (ker (id.prodMap β ∘ₗ A)) = m + ν := by
-    have := (exact_subtype_ker_map A).finrank_eq_add (Submodule.injective_subtype _) hA
-    have := (exact_subtype_ker_map (id.prodMap β ∘ₗ A)).finrank_eq_add
-      (Submodule.injective_subtype _)
-      (surjective_comp (surjective_prodMap Function.surjective_id hβ) hA)
-    simp only [finrank_prod] at *
-    omega
+    rw [finrank_ker_comp_of_surjective _ hA, ← (kerEquivKerIdProdMap L β).finrank_eq, hm, hν]
   -- Write `[L][R]` as `(-1) ^ (l ν) [N][L][Q]`, then pass the tower `ker A ⊆ ker G ⊆ P` through
   -- the quotient.
   rw [prod_shortExact_eq_shortExact_ker_prodMap hβ oL n q hl hν hc hR,
@@ -202,9 +193,7 @@ theorem shortExact_ker_prodMap_comp (hA : Function.Surjective A) (hβ : Function
       (surjective_comp (surjective_prodMap Function.surjective_id hβ) hA)
       (Submodule.subtype_comp_inclusion _ _ _)
       (by ext <;> simp) rfl _ _ _ hm _ _ _ hG]
-  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr, smul_smul, ← pow_add,
-    finCongr_refl, reindex_refl, Equiv.refl_apply]
-  rw [← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+  simp [reindex_finCongr_reindex_finCongr, smul_smul, ← mul_pow]
 
 end Comparison
 
@@ -223,7 +212,9 @@ map `B₁`. Then `P` oriented as `[ker G][K][Q]` is `(-1) ^ (dim ker B + 1)` tim
 
 For comparison maps of Morse trajectories, `ker A`, `ker B` and `ker G` are the tangent spaces of
 the spaces of trajectories from `p` to `r`, from `r` to `q`, and, in the limit along trajectories
-breaking at `r`, from `p` to `q`, and the line in `ker B₂` lifting `K` is the gluing direction. -/
+breaking at `r`, from `p` to `q`. The line in `ker B₂` lifting `K`, spanned by `w₀` with
+`B w₀ = (1, 0)`, is the image under `A` of the gluing direction `g ∈ ker G`, the vector with
+`A g = (0, w₀)`. -/
 theorem shortExact_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
     (hB : Function.Surjective (B₁.prod B₂)) (o₁ : Orientation K (ker A) (Fin m₁))
     (o₂ : Orientation K (ker (B₁.prod B₂)) (Fin m₂)) (oq : Orientation K Q (Fin c))
@@ -231,7 +222,7 @@ theorem shortExact_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
     (hc : finrank K Q = c) (hR : finrank K R = m₂ + (1 + c)) :
     shortExact (Submodule.injective_subtype _) (exact_subtype_ker_map _)
         (surjective_comp (surjective_prodMap Function.surjective_id
-          (snd_prod B₁ B₂ ▸ surjective_comp (snd_surjective (R := K) (M := K) (M₂ := Q)) hB)) hA)
+          (surjective_of_surjective_prod_right hB)) hA)
         (shortExact (Submodule.inclusion_injective (ker_le_ker_comp A (id.prodMap B₂)))
           (exact_inclusion_kerCompToKer A _) (surjective_kerCompToKer A _ hA) o₁
           (map (Fin (m₂ + 1)) (kerEquivKerIdProdMap K B₂)
@@ -239,18 +230,12 @@ theorem shortExact_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
               (exact_inclusion_ker_prod B₁ B₂) (surjective_comp_subtype_ker hB) o₂
               (Basis.singleton (Fin 1) K).orientation hm₂ (finrank_self K))) hm₁
           ((kerEquivKerIdProdMap K B₂).finrank_eq.symm.trans (by
-            rw [(exact_inclusion_ker_prod B₁ B₂).finrank_eq_add (Submodule.inclusion_injective _)
-              (surjective_comp_subtype_ker hB), hm₂, finrank_self])))
+            rw [finrank_ker_eq_of_surjective_prod hB, hm₂, finrank_self])))
         ((Basis.singleton (Fin 1) K).orientation.prod oq (finrank_self K) hc)
         (by
-          have := (exact_subtype_ker_map A).finrank_eq_add (Submodule.injective_subtype _) hA
-          have := (exact_subtype_ker_map (id.prodMap B₂ ∘ₗ A)).finrank_eq_add
-            (Submodule.injective_subtype _)
-            (surjective_comp (surjective_prodMap Function.surjective_id
-              (snd_prod B₁ B₂ ▸ surjective_comp (snd_surjective (R := K) (M := K) (M₂ := Q)) hB))
-              hA)
-          simp only [finrank_prod, finrank_self] at *
-          omega) (by rw [finrank_prod, finrank_self, hc]) =
+          rw [finrank_ker_comp_of_surjective _ hA, ← (kerEquivKerIdProdMap K B₂).finrank_eq,
+            finrank_ker_eq_of_surjective_prod hB, hm₁, hm₂, finrank_self])
+        (by rw [finrank_prod, finrank_self, hc]) =
       (-1 : Kˣ) ^ (m₂ + 1) • reindex K P (finCongr (by omega))
         (shortExact (Submodule.injective_subtype _) (exact_subtype_ker_map A) hA o₁
           ((Basis.singleton (Fin 1) K).orientation.prod
@@ -258,11 +243,9 @@ theorem shortExact_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
               ((Basis.singleton (Fin 1) K).orientation.prod oq (finrank_self K) hc) hm₂
               (by rw [finrank_prod, finrank_self, hc])) (finrank_self K)
             (hR.trans (by omega))) hm₁ (by rw [finrank_prod, finrank_self, hR])) := by
-  have hB₂ : Function.Surjective B₂ :=
-    snd_prod B₁ B₂ ▸ surjective_comp (snd_surjective (R := K) (M := K) (M₂ := Q)) hB
+  have hB₂ : Function.Surjective B₂ := surjective_of_surjective_prod_right hB
   have hν : finrank K (ker B₂) = m₂ + 1 := by
-    rw [(exact_inclusion_ker_prod B₁ B₂).finrank_eq_add (Submodule.inclusion_injective _)
-      (surjective_comp_subtype_ker hB), hm₂, finrank_self]
+    rw [finrank_ker_eq_of_surjective_prod hB, hm₂, finrank_self]
   set n := shortExact (Submodule.inclusion_injective ((ker_prod B₁ B₂).trans_le inf_le_right))
     (exact_inclusion_ker_prod B₁ B₂) (surjective_comp_subtype_ker hB) o₂
     (Basis.singleton (Fin 1) K).orientation hm₂ (finrank_self K)
@@ -280,7 +263,7 @@ theorem shortExact_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
       (surjective_comp_subtype_ker hB) hB₂) hm₂ (by rw [finrank_prod, finrank_self, hc])
     (Submodule.injective_subtype _) (exact_subtype_ker_map _) hB (LinearEquiv.refl K _)
     (LinearEquiv.refl K _) (LinearEquiv.refl K _)
-    (Submodule.subtype_comp_inclusion _ _ ((ker_prod B₁ B₂).trans_le inf_le_right)) rfl o₂
+    (by ext; simp) (by ext <;> simp) o₂
     ((Basis.singleton (Fin 1) K).orientation.prod oq (finrank_self K) hc)
   simp only [map_refl, Equiv.refl_apply] at T'
   rw [shortExact_ker_prodMap_comp hA hB₂ o₁ _ n oq hm₁ (finrank_self K) hν hc (by omega), T,
@@ -300,16 +283,11 @@ theorem shortExactLeft_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
     (hc : finrank K Q = c) (hR : finrank K R = m₂ + (1 + c)) :
     shortExactLeft (Submodule.injective_subtype _) (exact_subtype_ker_map _)
         (surjective_comp (surjective_prodMap Function.surjective_id
-          (snd_prod B₁ B₂ ▸ surjective_comp (snd_surjective (R := K) (M := K) (M₂ := Q)) hB)) hA)
+          (surjective_of_surjective_prod_right hB)) hA)
         (by
-          have := (exact_subtype_ker_map A).finrank_eq_add (Submodule.injective_subtype _) hA
-          have := (exact_subtype_ker_map (id.prodMap B₂ ∘ₗ A)).finrank_eq_add
-            (Submodule.injective_subtype _)
-            (surjective_comp (surjective_prodMap Function.surjective_id
-              (snd_prod B₁ B₂ ▸ surjective_comp (snd_surjective (R := K) (M := K) (M₂ := Q)) hB))
-              hA)
-          simp only [finrank_prod, finrank_self] at *
-          omega) (by rw [finrank_prod, finrank_self, hc])
+          rw [finrank_ker_comp_of_surjective _ hA, ← (kerEquivKerIdProdMap K B₂).finrank_eq,
+            finrank_ker_eq_of_surjective_prod hB, hm₁, hm₂, finrank_self])
+        (by rw [finrank_prod, finrank_self, hc])
         (reindex K P (finCongr (by omega)) op)
         ((Basis.singleton (Fin 1) K).orientation.prod oq (finrank_self K) hc) =
       (-1 : Kˣ) ^ (m₂ + 1) •
@@ -326,11 +304,11 @@ theorem shortExactLeft_ker_prodMap_comp_ker_prod (hA : Function.Surjective A)
                 ((Basis.singleton (Fin 1) K).orientation.prod oq (finrank_self K) hc))
               (Basis.singleton (Fin 1) K).orientation hm₂ (finrank_self K))) hm₁
           ((kerEquivKerIdProdMap K B₂).finrank_eq.symm.trans (by
-            rw [(exact_inclusion_ker_prod B₁ B₂).finrank_eq_add (Submodule.inclusion_injective _)
-              (surjective_comp_subtype_ker hB), hm₂, finrank_self])) := by
+            rw [finrank_ker_eq_of_surjective_prod hB, hm₂, finrank_self])) := by
   rw [shortExactLeft_eq_iff, shortExact_units_smul_left,
     shortExact_ker_prodMap_comp_ker_prod hA hB _ _ oq hm₁ hm₂ hc hR, shortExact_shortExactLeft,
-    shortExact_shortExactLeft, smul_smul, ← mul_pow, neg_mul_neg, one_mul, one_pow, one_smul]
+    shortExact_shortExactLeft]
+  simp [smul_smul, ← mul_pow]
 
 end Broken
 
