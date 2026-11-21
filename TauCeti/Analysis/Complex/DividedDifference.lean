@@ -196,8 +196,9 @@ theorem differentiable_partialDslope {f : (ι → ℂ) → E} (hf : Differentiab
   have hK : IsCompact K := isCompact_Icc.image Complex.continuous_ofReal
   let φ : ℝ → ℂ := fun t ↦ ((projIcc (0 : ℝ) 1 zero_le_one t : ℝ) : ℂ)
   have hφ : Continuous φ :=
-    Complex.continuous_ofReal.comp (continuous_subtype_val.comp continuous_projIcc)
-  have hφK : ∀ t, φ t ∈ K := fun t ↦ ⟨projIcc 0 1 zero_le_one t, (projIcc 0 1 zero_le_one t).2, rfl⟩
+    Complex.continuous_ofReal.comp (continuous_subtypeVal.comp continuous_projIcc)
+  have hφK : ∀ t, φ t ∈ K :=
+    fun t ↦ ⟨projIcc 0 1 zero_le_one t, (projIcc 0 1 zero_le_one t).property, rfl⟩
   let F : ((ι → ℂ) × ℂ) → E := fun p ↦ partialDeriv i f (update p.1 i (ζ + p.2 * (p.1 i - ζ)))
   have hFd : Differentiable ℂ F := by
     refine (differentiable_partialDeriv hf i).comp (differentiable_pi.mpr fun j ↦ ?_)
