@@ -72,8 +72,6 @@ trivialization.
   read in the trivialization.
   `Bundle.Trivialization.coordRatio_self` and `Bundle.Trivialization.coordRatio_smul_right` are
   its simp normal forms.
-* `IsLocalFrameOn.of_linearIndependent`: a `C^n` family of `finrank 𝕜 F` pointwise linearly
-  independent sections of a finite-rank vector bundle on `u` forms a `C^n` local frame on `u`.
 -/
 
 public section
@@ -382,31 +380,3 @@ theorem coordRatio_eq_of_eq_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0)
 end LineBundle
 
 end Bundle.Trivialization
-
-namespace IsLocalFrameOn
-
-/-- A `C^n` family of `finrank 𝕜 F` pointwise linearly independent sections of a finite-rank
-vector bundle on `u` forms a `C^n` local frame on `u`. -/
-theorem of_linearIndependent
-    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-    {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-    [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-    [FiberBundle F V] [VectorBundle 𝕜 F V]
-    {ι : Type*} [Fintype ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
-    (hcard : Fintype.card ι = Module.finrank 𝕜 F)
-    (hli : ∀ x ∈ u, LinearIndependent 𝕜 fun i ↦ s i x)
-    (hs : ∀ i, CMDiff[u] n (T% (s i))) :
-    IsLocalFrameOn I F n s u where
-  linearIndependent hx := hli _ hx
-  generating {x} hx := by
-    let e := (trivializationAt F V x).linearEquivAt 𝕜 x
-      (FiberBundle.mem_baseSet_trivializationAt' x)
-    have : FiniteDimensional 𝕜 (V x) := e.symm.finiteDimensional
-    exact ((hli x hx).span_eq_top_of_card_eq_finrank' (hcard.trans e.finrank_eq.symm)).ge
-  contMDiffOn := hs
-
-end IsLocalFrameOn

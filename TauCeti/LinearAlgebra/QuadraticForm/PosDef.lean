@@ -47,8 +47,8 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   positive definite exactly when all of its weights are positive.
 * `QuadraticMap.posDef_restrict_span_singleton`: a quadratic form is positive definite on the
   line spanned by a vector of positive value.
-* `TauCeti.exists_posDef_quadraticForm`: every free module over a strictly linearly ordered
-  commutative semiring with `ExistsAddOfLE` admits a positive-definite quadratic form.
+* `TauCeti.exists_posDef_quadraticForm`: every finitely generated free module over a strictly
+  linearly ordered commutative ring admits a positive-definite quadratic form.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -178,24 +178,16 @@ end LinearMap.BilinForm
 
 namespace TauCeti
 
-/-- Every free module over a strictly linearly ordered commutative semiring with `ExistsAddOfLE`
-(including every strictly linearly ordered commutative ring as well as `ℕ` and `ℝ≥0`) admits a
-positive-definite quadratic form, obtained by pulling back the finitely-supported sum of squares
-along a basis. -/
-theorem exists_posDef_quadraticForm (R W : Type*) [CommSemiring R] [LinearOrder R]
-    [IsStrictOrderedRing R] [ExistsAddOfLE R] [AddCommMonoid W] [Module R W] [Module.Free R W] :
+/-- Every finitely generated free module over a strictly linearly ordered commutative ring admits a
+positive-definite quadratic form. -/
+theorem exists_posDef_quadraticForm (R W : Type*) [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W] :
     ∃ Q₀ : QuadraticForm R W, Q₀.PosDef := by
+  classical
   let b := Module.Free.chooseBasis R W
-  let B : LinearMap.BilinForm R (Module.Free.ChooseBasisIndex R W →₀ R) :=
-    Finsupp.lsum R fun i ↦ (LinearMap.lsmul R _).flip (Finsupp.lapply i)
-  refine ⟨B.toQuadraticMap.comp b.repr.toLinearMap,
-    QuadraticMap.PosDef.comp (fun x hx ↦ ?_) _ b.repr.injective⟩
-  obtain ⟨i, hi⟩ : ∃ i, x i ≠ 0 := by rwa [Finsupp.ne_iff] at hx
-  have hB : B.toQuadraticMap x = ∑ j ∈ x.support, x j * x j := by
-    simp [B, Finsupp.sum, LinearMap.sum_apply]
-  rw [hB]
-  exact Finset.sum_pos' (fun j _ ↦ mul_self_nonneg (x j))
-    ⟨i, Finsupp.mem_support_iff.mpr hi, mul_self_pos.mpr hi⟩
+  exact ⟨_, ((QuadraticMap.posDef_weightedSumSquares_iff
+    (fun _ : Module.Free.ChooseBasisIndex R W ↦ (1 : R))).mpr fun _ ↦ zero_lt_one).comp
+    b.equivFun.toLinearMap b.equivFun.injective⟩
 
 /-- Over `ℤ` a bound on the square is a bound on the absolute value: a nonzero integer is at most
 its own square in absolute value. -/

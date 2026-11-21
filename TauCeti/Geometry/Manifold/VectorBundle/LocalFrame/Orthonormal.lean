@@ -5,28 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.Analysis.InnerProductSpace.Orthonormal
 
 /-!
-# Orthonormal local frames
+# Coefficients in orthonormal local frames
 
-Let `V → M` be a vector bundle whose fibres carry inner products.
-
-* `IsLocalFrameOn.coeff_eq_inner`: the coefficient functionals of an orthonormal local frame are
-  its metric duals. This lets local-frame connection and curvature coefficients be read as inner
-  products.
-* `IsLocalFrameOn.sum_inner_smul_eq` and `IsLocalFrameOn.sum_sq_norm_inner`: every fibre vector
-  is the sum of these inner products times the frame vectors, and its squared norm is the sum of
-  the squared norms of these inner products.
-* `IsLocalFrameOn.of_orthonormal`: a `C^n` family of `finrank 𝕜 F` pointwise orthonormal sections
-  of a finite-rank bundle on `u` forms a `C^n` local frame on `u`.
-* `IsLocalFrameOn.toOrthonormalBasisAt`: at each point `x ∈ u`, an orthonormal local frame gives
-  an `OrthonormalBasis ι 𝕜 (V x)`.
-
-## References
-
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 10.
+The coefficient functionals of an orthonormal local frame are its metric duals. This lets
+local-frame connection and curvature coefficients be read as inner products.
+Every fibre vector is the sum of these inner products times the frame vectors, and its
+squared norm is the sum of the squared norms of these inner products.
 -/
 
 public section
@@ -44,11 +32,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace 𝕜 (V x)]
   [FiberBundle F V]
-  {ι : Type*}
-
-section
-
-variable [Finite ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  {ι : Type*} [Finite ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
   (hs : IsLocalFrameOn I F n s u) {x : M}
 
 /-- The coefficients of an orthonormal local frame are its metric duals. Only orthonormality
@@ -82,31 +66,5 @@ theorem sum_sq_norm_inner [Fintype ι] (hx : x ∈ u)
   nth_rw 1 [← hs.sum_inner_smul_eq hx ho v]
   simp only [sum_inner, inner_smul_left, map_sum, RCLike.conj_mul, ← RCLike.ofReal_pow,
     RCLike.ofReal_re]
-
-end
-
-variable {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
-
-/-- A `C^n` family of `finrank 𝕜 F` pointwise orthonormal sections on `u` forms a `C^n` local
-frame on `u`. -/
-theorem of_orthonormal [VectorBundle 𝕜 F V] [FiniteDimensional 𝕜 F] [Fintype ι]
-    (hcard : Fintype.card ι = Module.finrank 𝕜 F)
-    (ho : ∀ x ∈ u, Orthonormal 𝕜 fun i ↦ s i x)
-    (hs : ∀ i, CMDiff[u] n (T% (s i))) :
-    IsLocalFrameOn I F n s u :=
-  of_linearIndependent hcard (fun x hx ↦ (ho x hx).linearIndependent) hs
-
-/-- Given an orthonormal local frame `{s i}` on `u ∋ x`, returns the orthonormal basis
-`{s i x}` of the fibre `V x`. -/
-noncomputable def toOrthonormalBasisAt [Fintype ι] (hs : IsLocalFrameOn I F n s u) {x : M}
-    (hx : x ∈ u) (ho : Orthonormal 𝕜 fun i ↦ s i x) :
-    OrthonormalBasis ι 𝕜 (V x) :=
-  OrthonormalBasis.mk ho (hs.generating hx)
-
-@[simp]
-theorem coe_toOrthonormalBasisAt [Fintype ι] (hs : IsLocalFrameOn I F n s u) {x : M}
-    (hx : x ∈ u) (ho : Orthonormal 𝕜 fun i ↦ s i x) :
-    ⇑(hs.toOrthonormalBasisAt hx ho) = fun i ↦ s i x :=
-  OrthonormalBasis.coe_mk ho (hs.generating hx)
 
 end IsLocalFrameOn
