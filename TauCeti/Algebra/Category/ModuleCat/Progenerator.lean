@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
 public import TauCeti.Algebra.Module.Generator
-public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 public import TauCeti.CategoryTheory.Preadditive.Progenerator
 
 /-!
@@ -32,7 +30,7 @@ Combining both directions yields the full characterization
 `CategoryTheory.ObjectProperty.isProgenerator_iff_moduleProjective_and_isGenerator`, which
 specializes uniformly to both `FGModuleCat R` (`TauCeti.Algebra.Category.FGModuleCat.Progenerator`)
 and `(TauCeti.finitePresentationModules R).FullSubcategory`
-(`TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Basic`).
+(`TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Progenerator`).
 
 ## Main results
 

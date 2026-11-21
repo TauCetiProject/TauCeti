@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
@@ -15,9 +14,7 @@ public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 The object property `CategoryTheory.isProjective C` of being a projective object is stable under
 retracts in any category, holds for a zero object when one exists, and is closed under binary and
-finite products in any category with zero morphisms and binary or finite biproducts. In addition,
-any biproduct of projective objects indexed by an arbitrary type is projective, removing the
-morphism-universe restriction on the index type in Mathlib's biproduct instance.
+finite products in any category with zero morphisms and binary or finite biproducts.
 
 ## Main declarations
 
@@ -26,8 +23,6 @@ morphism-universe restriction on the index type in Mathlib's biproduct instance.
 * `CategoryTheory.isClosedUnderBinaryProducts_isProjective` and
   `CategoryTheory.isClosedUnderFiniteProducts_isProjective`: projective objects are closed under
   binary and finite products in the presence of binary or finite biproducts.
-* `CategoryTheory.Projective.of_hasBiproduct`: a biproduct of projective objects over an arbitrary
-  index type is projective.
 -/
 
 public section
@@ -65,15 +60,5 @@ instance isClosedUnderFiniteProducts_isProjective [HasZeroMorphisms C] [HasFinit
   .mk'
 
 end FiniteBiproducts
-
-namespace Projective
-
-/-- A biproduct of projective objects indexed by any type is projective. Unlike Mathlib's instance
-on `⨁ f`, the index type need not live in the morphism universe of `C`. -/
-theorem of_hasBiproduct [HasZeroMorphisms C] {ι : Type*} (f : ι → C) [HasBiproduct f]
-    [∀ i, Projective (f i)] : Projective (⨁ f) :=
-  of_isColimit_cofan (biproduct.isColimit f)
-
-end Projective
 
 end CategoryTheory

@@ -187,7 +187,9 @@ theorem isCoherentRing_tfae :
   tfae_have 2 → 3 := fun _ ↦ ⟨inferInstance⟩
   tfae_have 3 → 4 := fun ⟨_⟩ ↦ inferInstance
   tfae_have 4 → 5 := fun _ ↦ hasWeakKernels_finiteProjectiveModules_of_hasKernels R
-  tfae_have 5 → 6 := fun _ ↦ inferInstance
+  tfae_have 5 → 6 := fun _ ↦
+    have : HasBinaryBiproducts (finiteProjectiveModules R).FullSubcategory := .of_hasBinaryProducts
+    inferInstance
   tfae_have 6 → 5 := fun _ ↦ hasWeakKernels_of_isClosedUnderKernels
   tfae_have 5 → 1 := fun _ ↦ isCoherentRing_of_hasWeakKernels_finiteProjectiveModules R
   tfae_finish

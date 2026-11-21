@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Exact
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
 public import TauCeti.Algebra.Module.Projective.Complement
 public import TauCeti.Algebra.Module.Submodule.Finite
 
@@ -128,61 +129,6 @@ universe u v
 
 variable (R : Type u) [Ring R]
 
-/-! ### The finitely generated projectives -/
-
-/-- The object property of being a finitely generated projective module. -/
-def finiteProjectiveModules : ObjectProperty (ModuleCat.{u} R) :=
-  fun M => Module.Finite R M ∧ Module.Projective R M
-
-variable {R}
-
-@[simp] theorem finiteProjectiveModules_iff {M : ModuleCat.{u} R} :
-    finiteProjectiveModules R M ↔ Module.Finite R M ∧ Module.Projective R M := Iff.rfl
-
-/-- The underlying module of an object of the subcategory of finitely generated projectives is
-finitely generated. -/
-instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Finite R X.obj :=
-  (finiteProjectiveModules_iff.mp X.property).1
-
-/-- The underlying module of an object of the subcategory of finitely generated projectives is
-projective. -/
-instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Projective R X.obj :=
-  (finiteProjectiveModules_iff.mp X.property).2
-
-variable (R)
-
-theorem finiteProjectiveModules_le_finiteModules :
-    finiteProjectiveModules R ≤ ModuleCat.isFG R := fun _ h =>
-  (ModuleCat.isFG_iff _).mpr (finiteProjectiveModules_iff.mp h).1
-
-/-- A direct summand of a finitely generated projective module is finitely generated and
-projective. In particular the finitely generated projective modules are closed under
-isomorphisms. -/
-instance : (finiteProjectiveModules R).IsStableUnderRetracts where
-  of_retract {M N} h hN := by
-    have : Module.Finite R N := (finiteProjectiveModules_iff.mp hN).1
-    have : Module.Projective R N := (finiteProjectiveModules_iff.mp hN).2
-    have hs : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
-      rw [← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id]
-    exact finiteProjectiveModules_iff.mpr
-      ⟨Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, congr($hs x)⟩,
-        Module.Projective.of_split h.i.hom h.r.hom hs⟩
-
-instance : (finiteProjectiveModules R).ContainsZero where
-  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
-    finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
-
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-@[expose] def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
-    ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
-
-/-- The underlying module of `TauCeti.finiteProjectiveModulesRegular R` is `R`. -/
-@[simp]
-theorem finiteProjectiveModulesRegular_obj :
-    (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
-  (rfl)
-
 /-! ### Essential smallness -/
 
 instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
@@ -201,21 +147,6 @@ theorem finiteProjectiveModules_le_isProjective :
   intro M hM
   have : Module.Projective R M := (finiteProjectiveModules_iff.mp hM).2
   exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
-
-/-- A finitely generated projective module is a projective object of `ModuleCat R`. -/
-theorem finiteProjectiveModules_le_categoryTheory_isProjective :
-    finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
-  (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
-
-instance : (finiteProjectiveModules R).IsClosedUnderBinaryProducts := by
-  refine ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN => ?_
-  have hproj := (ExactStructure.abelian_isProjective_iff (M ⊞ N)).1
-    (ExactStructure.isProjective_biprod (finiteProjectiveModules_le_isProjective R M hM)
-      (finiteProjectiveModules_le_isProjective R N hN))
-  apply finiteProjectiveModules_iff.mpr
-  exact ⟨(ModuleCat.isFG_iff _).mp ((ModuleCat.isFG R).prop_biprod_of_isClosedUnderBinaryProducts
-    (finiteProjectiveModules_le_finiteModules R M hM)
-    (finiteProjectiveModules_le_finiteModules R N hN)), inferInstance⟩
 
 /-- **The exact structure of the finitely generated modules**: the short exact sequences of
 `R`-modules all of whose terms are finitely generated. -/

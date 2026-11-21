@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Objects presented by a property of objects
@@ -21,6 +22,8 @@ quotient of an object of `P`, every object is `P`-presented.
   objects of `P`.
 * `CategoryTheory.ObjectProperty.presented_eq_top`: every object is `P`-presented when every object
   is a quotient of an object of `P`.
+* `CategoryTheory.ObjectProperty.presented_isProjective_eq_top`: in an abelian category with enough
+  projectives, every object is a cokernel of a morphism between projective objects.
 -/
 
 public section
@@ -53,5 +56,12 @@ theorem presented_eq_top [Abelian C] {P : ObjectProperty C}
     simp [S]
   have : Epi S.g := hπ
   exact .of_isColimit S.f _ hS.gIsCokernel ⟨hA, hB⟩
+
+/-- In an abelian category with enough projectives, every object is a cokernel of a morphism
+between projective objects. -/
+theorem presented_isProjective_eq_top [Abelian C] [EnoughProjectives C] :
+    (isProjective C).presented = ⊤ :=
+  presented_eq_top fun X ↦
+    ⟨Projective.over X, Projective.π X, Projective.projective_over X, Projective.π_epi X⟩
 
 end CategoryTheory.ObjectProperty

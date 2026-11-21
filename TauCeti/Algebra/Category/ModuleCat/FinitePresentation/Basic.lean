@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Progenerator
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
 
 import TauCeti.Algebra.Module.FinitePresentation
@@ -27,12 +27,9 @@ underlying abelian group of the module.
 Over any ring `R`, the object property `TauCeti.finitePresentationModules R` contains the zero
 module and is closed under finite products, cokernels and retracts; over a left Noetherian ring it
 agrees with finite generation (`TauCeti.finitePresentationModules_eq_finiteModules`). Its inclusion
-into `ModuleCat R` preserves epimorphisms, projective objects of
+into `ModuleCat R` preserves epimorphisms, and projective objects of
 `(finitePresentationModules R).FullSubcategory` are precisely the finitely presented projective
-`R`-modules (`TauCeti.projective_finitePresentationModules_iff`), and progenerators are precisely
-the finitely presented projective module-theoretic generators
-(`TauCeti.isProgenerator_finitePresentationModules_iff`), including the regular module `R`
-(`TauCeti.isProgenerator_finitePresentationModulesRegular`).
+`R`-modules (`TauCeti.projective_finitePresentationModules_iff`).
 
 ## Main definitions
 
@@ -53,10 +50,8 @@ the finitely presented projective module-theoretic generators
   `TauCeti.finitePresentationModules_le_finiteModules`, and
   `TauCeti.finitePresentationModules_eq_finiteModules`: comparison with finitely generated
   projective and finitely generated modules.
-* `TauCeti.projective_finitePresentationModules_iff`,
-  `TauCeti.isProgenerator_finitePresentationModules_iff`, and
-  `TauCeti.isProgenerator_finitePresentationModulesRegular`: characterization of projective objects
-  and progenerators in `(finitePresentationModules R).FullSubcategory`.
+* `TauCeti.projective_finitePresentationModules_iff`: characterization of projective objects in
+  `(finitePresentationModules R).FullSubcategory`.
 -/
 
 public section
@@ -211,22 +206,6 @@ theorem projective_finitePresentationModules_iff
 
 instance : Projective (finitePresentationModulesRegular R) :=
   (projective_finitePresentationModules_iff R _).mpr (inferInstanceAs (Module.Projective R R))
-
-/-- An object `P` of `(finitePresentationModules R).FullSubcategory` is a categorical progenerator
-if and only if its underlying `R`-module is projective and a generator. -/
-theorem isProgenerator_finitePresentationModules_iff
-    (P : (finitePresentationModules R).FullSubcategory) :
-    IsProgenerator P ↔ Module.Projective R P.obj ∧ TauCeti.Module.IsGenerator R P.obj :=
-  (finitePresentationModules R).isProgenerator_iff_moduleProjective_and_isGenerator
-    (finitePresentationModules_le_finiteModules R)
-    (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv P
-
-/-- Over any ring `R`, the regular module `R` is a progenerator of the category of finitely
-presented `R`-modules. -/
-theorem isProgenerator_finitePresentationModulesRegular :
-    IsProgenerator (finitePresentationModulesRegular R) :=
-  (isProgenerator_finitePresentationModules_iff R _).mpr
-    ⟨inferInstanceAs (Module.Projective R R), inferInstanceAs (TauCeti.Module.IsGenerator R R)⟩
 
 /-! ### Equivalence with `mod (proj R)` -/
 
