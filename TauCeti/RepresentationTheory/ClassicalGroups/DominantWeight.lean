@@ -219,6 +219,10 @@ theorem detShift_eq_zero_of_isEmpty (l : DominantWeight 0) : l.detShift = 0 := r
 @[simp]
 theorem detShift_succ (l : DominantWeight (n + 1)) : l.detShift = l.val (Fin.last n) := rfl
 
+/-- The determinant-twist exponent of the zero dominant weight is `0`. -/
+@[simp]
+theorem detShift_zero : (0 : DominantWeight n).detShift = 0 := by cases n <;> rfl
+
 /-- The determinant-twist exponent is the smallest entry of a dominant weight. -/
 theorem detShift_le (l : DominantWeight n) (i : Fin n) : l.detShift ≤ l.val i := by
   match n, l, i with
@@ -239,6 +243,10 @@ def IsPolynomial (l : DominantWeight n) : Prop := ∀ i, 0 ≤ l.val i
 
 /-- Unfold `IsPolynomial` to its entrywise nonnegativity condition. -/
 theorem isPolynomial_def (l : DominantWeight n) : l.IsPolynomial ↔ ∀ i, 0 ≤ l.val i := Iff.rfl
+
+/-- The zero dominant weight is polynomial. -/
+@[simp]
+theorem isPolynomial_zero : (0 : DominantWeight n).IsPolynomial := fun _ => le_rfl
 
 /-- Since a dominant weight decreases, only its last entry has to be tested for polynomiality.
 This is not a `simp` lemma: rewriting `IsPolynomial` away would put the `simp` lemmas whose
@@ -307,6 +315,10 @@ theorem weightOfShape_apply (n : ℕ) (μ : YoungDiagram) (i : Fin n) :
     (weightOfShape n μ).val i = (μ.rowLen i : ℤ) :=
   rfl
 
+/-- The dominant weight of the empty Young diagram is zero. -/
+@[simp]
+theorem weightOfShape_bot (n : ℕ) : weightOfShape n ⊥ = 0 := by ext i; simp
+
 @[simp]
 theorem isPolynomial_weightOfShape (n : ℕ) (μ : YoungDiagram) :
     (weightOfShape n μ).IsPolynomial := fun _ => Int.natCast_nonneg _
@@ -317,6 +329,11 @@ theorem shape_weightOfShape {n : ℕ} {μ : YoungDiagram} (hμ : μ.colLen 0 ≤
   rw [DominantWeight.shape]
   simp only [weightOfShape_apply, Int.toNat_natCast]
   exact YoungDiagram.ofRowLensFin_rowLen μ hμ
+
+/-- The Young diagram of the zero dominant weight is empty. -/
+@[simp]
+theorem DominantWeight.shape_zero {n : ℕ} : (0 : DominantWeight n).shape = ⊥ :=
+  weightOfShape_bot n ▸ shape_weightOfShape (by simp)
 
 @[simp]
 theorem weightOfShape_shape {n : ℕ} {l : DominantWeight n} (hl : l.IsPolynomial) :
@@ -353,6 +370,10 @@ variable {n : ℕ}
 length `λᵢ - λₙ`.  Together with `TauCeti.DominantWeight.detShift` it presents `λ` as a
 determinant twist of a polynomial weight. -/
 def detShiftShape (l : DominantWeight n) : YoungDiagram := (l.shift (-l.detShift)).shape
+
+/-- The polynomial part of the zero dominant weight is the empty diagram. -/
+@[simp]
+theorem detShiftShape_zero : (0 : DominantWeight n).detShiftShape = ⊥ := by simp [detShiftShape]
 
 @[simp]
 theorem rowLen_detShiftShape (l : DominantWeight n) (i : Fin n) :

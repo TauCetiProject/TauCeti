@@ -24,16 +24,16 @@ This file contains basic facts about finite partial sums.
 
 ## Main results
 
-* `TauCeti.prefixSum_succ`, `TauCeti.prefixSum_of_le`: the recurrence for prefix sums, and the
-  prefix sum of full length is the total sum.
+* `TauCeti.prefixSum_succ`, `TauCeti.prefixSum_of_le`, `TauCeti.sum_filter_lt_succ`: the recurrence
+  for prefix sums (and its filtered-sum form), and the prefix sum of full length is the total sum.
 * `TauCeti.sum_sub_prefixSum`: successive differences of a function of the prefix sums
   telescope.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
   over the first indices, and prefix sums of a reversed tuple are suffix sums.
-* `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
-  partial sums over `range`, capped at `n`.
+* `TauCeti.prefixSum_eq_sum_range`, `TauCeti.sum_filter_lt_eq_sum_range`: prefix sums of a sequence
+  restricted to `Fin n` are its partial sums over `range`, capped at `n`.
 * `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
   finite sums and differences of tuples, and of a tuple supported at one coordinate.
 * `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
@@ -83,6 +83,11 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
     omega
   rw [prefixSum, prefixSum, hfilter, sum_insert (by simp), add_comm]
+
+/-- Extending a filtered `Fin n` prefix sum by one index adds the value at that index. -/
+theorem sum_filter_lt_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
+    (∑ i : Fin n with i.val < k + 1, x i) = (∑ i : Fin n with i.val < k, x i) + x ⟨k, hk⟩ :=
+  prefixSum_succ hk x
 
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
@@ -150,6 +155,13 @@ theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
   congr 1
   ext i
   simp [lt_min_iff, and_comm]
+
+/-- A filtered `Fin n` prefix sum of length `k ≤ n` equals a `range k` sum when terms agree. -/
+theorem sum_filter_lt_eq_sum_range {k : ℕ} (hk : k ≤ n) (x : Fin n → M) (f : ℕ → M)
+    (h : ∀ r (hr : r < k), x ⟨r, hr.trans_le hk⟩ = f r) :
+    (∑ i : Fin n with i.val < k, x i) = ∑ r ∈ range k, f r :=
+  (sum_congr rfl fun i hi ↦ h i.val (mem_filter.1 hi).2).trans
+    (by rw [← prefixSum_def, prefixSum_eq_sum_range, min_eq_left hk])
 
 /-- Prefix sums are additive in the tuple. -/
 @[simp]
