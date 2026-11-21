@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Algebra.ZMod
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.LinearAlgebra.TensorProduct.Kernel
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.Finiteness.Defs
@@ -102,6 +107,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.OddComponentGridDiagram.finite_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.finite_alexanderChainMinusPiece`: each bigraded and each
   Alexander chain piece of `GC⁻` is finitely generated over `R`.
+* `TauCeti.OddComponentGridDiagram.finite_ker_unblockedDifferential_bigradedChainMinusPiece` and
+  `TauCeti.OddComponentGridDiagram.finite_ker_unblockedDifferential_alexanderChainMinusPiece`: over
+  any commutative ring of characteristic two, the kernel of `∂⁻` on each bigraded or Alexander
+  chain piece is finitely generated over `R`.
 * `TauCeti.OddComponentGridDiagram.coarsenGrading_bigradedChainMinusPiece_snd` and
   `TauCeti.OddComponentGridDiagram.coarsen_bigradedChainMinusGrading_snd`: projecting bidegrees to
   their Alexander coordinate coarsens the chain bigrading to the Alexander chain grading.
@@ -565,38 +574,39 @@ theorem iSupIndep_bigradedChainMinusPiece (R : Type*) [CommSemiring R] :
   exact fun e he => hcompl z e he (hc z e he)
 
 /-- **The unblocked grid chain module is bigraded**: `GC⁻` is the internal direct sum of its
-homogeneous pieces.
-
-The coefficient ring is a `CommRing` here, and not merely a `CommSemiring` as elsewhere in the
-file, because independence plus spanning gives an internal direct sum only over a ring
-(`DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`). The grid coefficient rings of
-interest, `ZMod 2` first among them, are rings. -/
-theorem isInternal_bigradedChainMinusPiece (R : Type*) [CommRing R] :
-    DirectSum.IsInternal (G.bigradedChainMinusPiece R) :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (G.iSupIndep_bigradedChainMinusPiece R) (G.iSup_bigradedChainMinusPiece_eq_top R)
+homogeneous pieces, over any commutative semiring. -/
+theorem isInternal_bigradedChainMinusPiece (R : Type*) [CommSemiring R] :
+    DirectSum.IsInternal (G.bigradedChainMinusPiece R) := by
+  let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+  have h : (fun g : ℤ × ℤ ↦ Submodule.span R
+      (b '' {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd = g})) =
+      G.bigradedChainMinusPiece R := by
+    funext g
+    exact (G.bigradedChainMinusSupported_eq_span R {g}).symm
+  rw [← h]
+  exact b.isInternal_span_image_fiber fun ix ↦ G.monomialBidegree ix.fst ix.snd
 
 /-- The internal `(O-Maslov, Alexander)` grading of the unblocked chain module `GC⁻`. -/
-noncomputable def bigradedChainMinusGrading (R : Type*) [CommRing R] :
+noncomputable def bigradedChainMinusGrading (R : Type*) [CommSemiring R] :
     InternalGrading R (GridChainMinus R n) (ℤ × ℤ) :=
   ⟨G.bigradedChainMinusPiece R, G.isInternal_bigradedChainMinusPiece R⟩
 
 /-- The pieces of the bundled chain grading are the bigraded chain pieces. -/
 @[simp]
-theorem bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
+theorem bigradedChainMinusGrading_piece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
     (G.bigradedChainMinusGrading R).piece g = G.bigradedChainMinusPiece R g := by
   rw [bigradedChainMinusGrading]
 
 /-- Each piece of the bundled `(O-Maslov, Alexander)` grading of `GC⁻` is finitely generated over
-the ground ring. -/
-instance finite_bigradedChainMinusGrading_piece (R : Type*) [CommRing R] (g : ℤ × ℤ) :
+the ground semiring. -/
+instance finite_bigradedChainMinusGrading_piece (R : Type*) [CommSemiring R] (g : ℤ × ℤ) :
     Module.Finite R ((G.bigradedChainMinusGrading R).piece g) := by
   rw [bigradedChainMinusGrading_piece]
   infer_instance
 
 /-- The unblocked grid differential is homogeneous of bidegree `(-1, 0)`. -/
 theorem isHomogeneous_unblockedDifferential_bigradedChainMinusGrading
-    (R : Type*) [CommRing R] :
+    (R : Type*) [CommSemiring R] :
     LinearMap.IsHomogeneous (G.val.unblockedDifferential R)
       (G.bigradedChainMinusGrading R).piece (G.bigradedChainMinusGrading R).piece (-(1, 0)) := by
   rw [LinearMap.isHomogeneous_def]
@@ -675,22 +685,30 @@ theorem iSupIndep_alexanderChainMinusPiece (R : Type*) [CommSemiring R] :
   exact fun e he ↦ hcompl z e he (hc z e he)
 
 /-- **The Alexander grading of `GC⁻`**: the unblocked grid chain module is the internal direct sum
-of its Alexander pieces, as a module over the coefficient ring `R`. -/
-def alexanderChainMinusGrading (R : Type*) [CommRing R] :
+of its Alexander pieces, as a module over the coefficient semiring `R`. -/
+def alexanderChainMinusGrading (R : Type*) [CommSemiring R] :
     InternalGrading R (GridChainMinus R n) ℤ where
   piece := G.alexanderChainMinusPiece R
-  isInternal := DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (G.iSupIndep_alexanderChainMinusPiece R) (G.iSup_alexanderChainMinusPiece_eq_top R)
+  isInternal := by
+    let b := Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) R
+    have h : (fun a : ℤ ↦ Submodule.span R
+        (b '' {ix : Σ _ : GridState n, Fin n →₀ ℕ |
+          (G.monomialBidegree ix.fst ix.snd).snd = a})) =
+        G.alexanderChainMinusPiece R := by
+      funext a
+      exact (G.bigradedChainMinusSupported_eq_span R {g | g.snd = a}).symm
+    rw [← h]
+    exact b.isInternal_span_image_fiber fun ix ↦ (G.monomialBidegree ix.fst ix.snd).snd
 
 /-- The degree-`a` piece of the Alexander grading of `GC⁻` is its Alexander piece. -/
 @[simp]
-theorem alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
+theorem alexanderChainMinusGrading_piece (R : Type*) [CommSemiring R] (a : ℤ) :
     (G.alexanderChainMinusGrading R).piece a = G.alexanderChainMinusPiece R a :=
   (rfl)
 
 /-- Each piece of the bundled Alexander grading of `GC⁻` is finitely generated over the ground
-ring. -/
-instance finite_alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
+semiring. -/
+instance finite_alexanderChainMinusGrading_piece (R : Type*) [CommSemiring R] (a : ℤ) :
     Module.Finite R ((G.alexanderChainMinusGrading R).piece a) := by
   rw [alexanderChainMinusGrading_piece]
   infer_instance
@@ -720,7 +738,7 @@ theorem iSup_bigradedChainMinusPiece_eq_alexanderChainMinusPiece
 /-- Projecting bidegrees to their Alexander coordinate coarsens the internal bigrading of `GC⁻`
 to its internal Alexander grading. -/
 @[simp]
-theorem coarsen_bigradedChainMinusGrading_snd (R : Type*) [CommRing R] :
+theorem coarsen_bigradedChainMinusGrading_snd (R : Type*) [CommSemiring R] :
     (G.bigradedChainMinusGrading R).coarsen Prod.snd = G.alexanderChainMinusGrading R := by
   refine InternalGrading.ext fun a ↦ ?_
   have hp : (G.bigradedChainMinusGrading R).piece = G.bigradedChainMinusPiece R :=
@@ -731,7 +749,7 @@ theorem coarsen_bigradedChainMinusGrading_snd (R : Type*) [CommRing R] :
 /-- The degree-`a` component of the Alexander grading retains exactly the monomials of
 Alexander degree `a`. -/
 @[simp]
-theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommRing R]
+theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommSemiring R]
     (a : ℤ) (c : GridChainMinus R n) (x : GridState n) (e : Fin n →₀ ℕ) :
     ((DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a :
       GridChainMinus R n) x).coeff e =
@@ -761,11 +779,163 @@ theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommRing R]
         by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
 
 /-- The unblocked grid differential is homogeneous of degree zero for the Alexander grading. -/
-theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading (R : Type*) [CommRing R] :
+theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading
+    (R : Type*) [CommSemiring R] :
     LinearMap.IsHomogeneous (G.val.unblockedDifferential R) (G.alexanderChainMinusGrading R).piece
       (G.alexanderChainMinusGrading R).piece 0 :=
   LinearMap.isHomogeneous_def.mpr fun a _ hc ↦ by
     simpa using G.unblockedDifferential_mem_alexanderChainMinusPiece hc
+
+/-! ### Finite generation of homogeneous cycle pieces in characteristic two -/
+
+section CharacteristicTwoCycles
+
+open scoped TensorProduct
+
+private noncomputable def monomialChainBasis (K : Type*) [CommSemiring K] :
+    Module.Basis (Σ _ : GridState n, Fin n →₀ ℕ) K (GridChainMinus K n) :=
+  Finsupp.basis fun _ : GridState n ↦ MvPolynomial.basisMonomials (Fin n) K
+
+private noncomputable def bigradedChainMinusSupportedBasis (K : Type*) [CommSemiring K]
+    (S : Set (ℤ × ℤ)) :
+    Module.Basis
+      {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}
+      K (G.bigradedChainMinusSupported K S) :=
+  (Module.Basis.span
+    ((monomialChainBasis (n := n) K).linearIndependent.comp
+      Subtype.val Subtype.val_injective)).map
+    (LinearEquiv.ofEq _ _ <| by
+      rw [G.bigradedChainMinusSupported_eq_span K S, Set.image_eq_range]
+      rfl)
+
+private theorem mapRange_map_unblockedDifferential {F R : Type*} [CommSemiring F]
+    [CommSemiring R] (φ : F →+* R) (c : GridChainMinus F n) :
+    (G.val.unblockedDifferential F c).mapRange (MvPolynomial.map φ) (map_zero _) =
+      G.val.unblockedDifferential R (c.mapRange (MvPolynomial.map φ) (map_zero _)) := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    rw [map_add, Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), hc, hd,
+      Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _), map_add]
+  | single x p =>
+    refine Finsupp.ext fun y ↦ ?_
+    rw [Finsupp.mapRange_apply, Finsupp.mapRange_single,
+      GridDiagram.unblockedDifferential_apply_apply, GridDiagram.unblockedDifferential_apply_apply,
+      Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp), map_mul]
+    congr 1
+    simp only [GridDiagram.unblockedCoefficient_def, map_sum,
+      GridDiagram.OMonomial_eq_prod_OColumns, map_prod, MvPolynomial.map_X]
+
+private theorem finite_ker_unblockedDifferential_bigradedChainMinusSupported
+    (R : Type*) [CommRing R] [CharP R 2] {S : Set (ℤ × ℤ)}
+    (hfin : {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd ∈ S}.Finite) :
+    Module.Finite R
+      (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
+        (G.bigradedChainMinusSupported R S).subtype)) := by
+  let _ : Algebra (ZMod 2) R := ZMod.algebra R 2
+  let T := {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}
+  have _ : Finite T := hfin
+  let bF := monomialChainBasis (n := n) (ZMod 2)
+  let bR := monomialChainBasis (n := n) R
+  let bTF : Module.Basis T (ZMod 2) (T →₀ ZMod 2) := Finsupp.basisSingleOne
+  let bSR := G.bigradedChainMinusSupportedBasis R S
+  let e₁ : R ⊗[ZMod 2] (T →₀ ZMod 2) ≃ₗ[R] G.bigradedChainMinusSupported R S :=
+    (bTF.baseChange R).equiv bSR (Equiv.refl _)
+  let e₂ : R ⊗[ZMod 2] GridChainMinus (ZMod 2) n ≃ₗ[R] GridChainMinus R n :=
+    (bF.baseChange R).equiv bR (Equiv.refl _)
+  have he₂ : ∀ c : GridChainMinus (ZMod 2) n,
+      e₂ (1 ⊗ₜ[ZMod 2] c) =
+        c.mapRange (MvPolynomial.map (algebraMap (ZMod 2) R)) (map_zero _) := by
+    intro c
+    induction c using Finsupp.induction_linear with
+    | zero => simp
+    | add c d hc hd =>
+      rw [TensorProduct.tmul_add, map_add, hc, hd,
+        Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
+    | single x p =>
+      induction p using MvPolynomial.induction_on' with
+      | add p q hp hq =>
+        rw [Finsupp.single_add, TensorProduct.tmul_add, map_add, hp, hq,
+          Finsupp.mapRange_add (hf' := fun _ _ ↦ map_add _ _ _)]
+      | monomial d a =>
+        have hsingle : (Finsupp.single x (monomial d a) : GridChainMinus (ZMod 2) n) =
+            a • bF ⟨x, d⟩ := by
+          refine Finsupp.ext fun z ↦ ?_
+          by_cases hz : z = x
+          · subst hz; simp [bF, monomialChainBasis, smul_monomial]
+          · simp [hz, bF, monomialChainBasis]
+        rw [hsingle, TensorProduct.tmul_smul, ← algebraMap_smul R a, map_smul,
+          ← Module.Basis.baseChange_apply, Module.Basis.equiv_apply, Equiv.refl_apply]
+        refine Finsupp.ext fun z ↦ ?_
+        by_cases hz : z = x
+        · subst hz
+          simp only [Finsupp.smul_apply, Finsupp.mapRange_apply, bF, bR, monomialChainBasis,
+            Finsupp.coe_basis, coe_basisMonomials, Finsupp.single_eq_same, smul_monomial,
+            smul_eq_mul, mul_one, map_monomial]
+        · simp [hz, bF, bR, monomialChainBasis]
+  let dF : (T →₀ ZMod 2) →ₗ[ZMod 2] GridChainMinus (ZMod 2) n :=
+    Finsupp.linearCombination (ZMod 2) fun i : T ↦
+      (G.val.unblockedDifferential (ZMod 2)) (bF i.val)
+  let dR : G.bigradedChainMinusSupported R S →ₗ[R] GridChainMinus R n :=
+    ((G.val.unblockedDifferential R).restrictScalars R).comp
+      (G.bigradedChainMinusSupported R S).subtype
+  have hbSR_coe : ∀ i, ((bSR i : G.bigradedChainMinusSupported R S) :
+      GridChainMinus R n) = bR i.val := fun i ↦ by
+    simp [bSR, bR, bigradedChainMinusSupportedBasis]
+  have hcomm : e₂.toLinearMap.comp (dF.baseChange R) = dR.comp e₁.toLinearMap := by
+    refine (bTF.baseChange R).ext fun i ↦ ?_
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Module.Basis.baseChange_apply,
+      LinearMap.baseChange_tmul, he₂]
+    have hdFi : dF (bTF i) = (G.val.unblockedDifferential (ZMod 2)) (bF i.val) := by
+      simp [dF, bTF]
+    have he₁i : e₁ (1 ⊗ₜ[ZMod 2] bTF i) = bSR i := by
+      rw [← Module.Basis.baseChange_apply, Module.Basis.equiv_apply, Equiv.refl_apply]
+    rw [hdFi, he₁i]
+    simp only [dR, LinearMap.comp_apply, Submodule.coe_subtype, LinearMap.restrictScalars_apply,
+      hbSR_coe]
+    rw [G.mapRange_map_unblockedDifferential]
+    congr 1
+    refine Finsupp.ext fun z ↦ ?_
+    by_cases hz : z = i.val.fst
+    · subst hz; simp [bF, bR, monomialChainBasis]
+    · simp [hz, bF, bR, monomialChainBasis]
+  have _ : Module.Finite R (LinearMap.ker (dF.baseChange R)) :=
+    LinearMap.finite_ker_baseChange dF
+  have hker : (LinearMap.ker (dF.baseChange R)).map e₁.toLinearMap = LinearMap.ker dR := by
+    have hpre : LinearMap.ker (dF.baseChange R) = (LinearMap.ker dR).comap e₁.toLinearMap := by
+      ext x
+      have hx := LinearMap.congr_fun hcomm x
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at hx
+      simp only [LinearMap.mem_ker, Submodule.mem_comap, LinearEquiv.coe_toLinearMap]
+      rw [← e₂.map_eq_zero_iff, hx]
+    rw [hpre, Submodule.map_comap_eq_of_surjective e₁.surjective]
+  exact Module.Finite.equiv ((e₁.submoduleMap _).trans (LinearEquiv.ofEq _ _ hker))
+
+/-- Over any commutative ring of characteristic two, the kernel of the unblocked differential
+restricted to a Maslov--Alexander chain piece is finitely generated over the ground ring. -/
+theorem finite_ker_unblockedDifferential_bigradedChainMinusPiece (R : Type*) [CommRing R]
+    [CharP R 2] (g : ℤ × ℤ) :
+    Module.Finite R
+      (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
+        (G.bigradedChainMinusPiece R g).subtype)) :=
+  G.finite_ker_unblockedDifferential_bigradedChainMinusSupported R <|
+    (G.finite_state_exponent_of_alexander_eq g.snd).subset
+      fun ix (hix : G.monomialBidegree _ _ = g) ↦
+        (G.monomialBidegree_snd ix.fst ix.snd).symm.trans (congrArg Prod.snd hix)
+
+/-- Over any commutative ring of characteristic two, the kernel of the unblocked differential
+restricted to an Alexander chain piece is finitely generated over the ground ring. -/
+theorem finite_ker_unblockedDifferential_alexanderChainMinusPiece (R : Type*) [CommRing R]
+    [CharP R 2] (a : ℤ) :
+    Module.Finite R
+      (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
+        (G.alexanderChainMinusPiece R a).subtype)) :=
+  G.finite_ker_unblockedDifferential_bigradedChainMinusSupported R <|
+    (G.finite_state_exponent_of_alexander_eq a).subset
+      fun ix (hix : (G.monomialBidegree _ _).snd = a) ↦
+        (G.monomialBidegree_snd ix.fst ix.snd).symm.trans hix
+
+end CharacteristicTwoCycles
 
 /-! ### Grading preservation by renamed matrix maps -/
 

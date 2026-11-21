@@ -45,9 +45,9 @@ the Alexander grading. For a knot, every variable acts as `U`; the resulting deg
   equivalence intertwining two unblocked differentials preserves the Alexander grading of chains,
   the induced equivalence of `GH⁻` preserves the Alexander grading.
 * `TauCeti.OddComponentGridDiagram.finite_alexanderHomologyGrading_piece` and
-  `TauCeti.OddComponentGridDiagram.finite_alexanderUnblockedHomologyGrading_piece`: over a
-  Noetherian commutative ring of characteristic two, every Alexander piece of `GH⁻` is finitely
-  generated over the ground ring.
+  `TauCeti.OddComponentGridDiagram.finite_alexanderUnblockedHomologyGrading_piece`: over any
+  commutative ring of characteristic two, every Alexander piece of `GH⁻` is finitely generated over
+  the ground ring.
 
 ## References
 
@@ -75,14 +75,6 @@ noncomputable def alexanderHomologyGrading :
     (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R)
     (G.val.unblockedDifferential_comp_self_eq_zero R)
 
-/-- Over a Noetherian commutative ring of characteristic two, each Alexander piece of
-`ker ∂⁻ ⧸ im ∂⁻` is finitely generated over the ground ring. -/
-instance finite_alexanderHomologyGrading_piece [IsNoetherianRing R] (a : ℤ) :
-    Module.Finite R ((G.alexanderHomologyGrading R).piece a) := by
-  let _ : AddCommGroup (GridChainMinus R n) := inferInstance
-  rw [alexanderHomologyGrading]
-  infer_instance
-
 variable {G R}
 
 /-- A class in `ker ∂⁻ ⧸ im ∂⁻` has Alexander degree `a` exactly when it is the class of a cycle of
@@ -97,6 +89,37 @@ theorem mem_alexanderHomologyGrading_piece_iff {a : ℤ}
             (G.val.unblockedDifferential_comp_self_eq_zero R) z = y := by
   rw [alexanderHomologyGrading, InternalGrading.mem_homology_piece_iff,
     alexanderChainMinusGrading_piece]
+
+variable (G R)
+
+/-- Over any commutative ring of characteristic two, each Alexander piece of `ker ∂⁻ ⧸ im ∂⁻` is
+finitely generated over the ground ring. -/
+instance finite_alexanderHomologyGrading_piece (a : ℤ) :
+    Module.Finite R ((G.alexanderHomologyGrading R).piece a) := by
+  have _ := G.finite_ker_unblockedDifferential_alexanderChainMinusPiece R a
+  let πR := ((G.val.unblockedDifferential R).homologyπ
+    (G.val.unblockedDifferential_comp_self_eq_zero R)).restrictScalars R
+  let f : LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
+      (G.alexanderChainMinusPiece R a).subtype) →ₗ[R]
+      (G.alexanderHomologyGrading R).piece a :=
+    { toFun := fun w ↦
+        ⟨πR ⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
+          (G.mem_alexanderHomologyGrading_piece_iff (a := a)).mpr
+            ⟨⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
+              w.val.property, rfl⟩⟩
+      map_add' := fun w₁ w₂ ↦ Subtype.ext <| by
+        change πR ⟨(w₁ + w₂).val.val, _⟩ = πR ⟨w₁.val.val, _⟩ + πR ⟨w₂.val.val, _⟩
+        rw [← map_add πR]
+        congr 1
+      map_smul' := fun r w ↦ Subtype.ext <| by
+        change πR ⟨(r • w).val.val, _⟩ = r • πR ⟨w.val.val, _⟩
+        rw [← map_smul πR r]
+        congr 1 }
+  refine Module.Finite.of_surjective f fun ⟨y, hy⟩ ↦ ?_
+  obtain ⟨z, hz, rfl⟩ := (G.mem_alexanderHomologyGrading_piece_iff (a := a)).mp hy
+  exact ⟨⟨⟨z.val, hz⟩, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp z.property)⟩, rfl⟩
+
+variable {G R}
 
 /-- **The variable `V_c` lowers the Alexander grading of grid homology by one.** -/
 theorem X_smul_mem_alexanderHomologyGrading_piece (i : Fin n) {a : ℤ}
@@ -119,9 +142,9 @@ noncomputable def alexanderUnblockedHomologyGrading :
   (G.alexanderHomologyGrading R).map
     ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 
-/-- Over a Noetherian commutative ring of characteristic two, each Alexander piece of `GH⁻` is
-finitely generated over the ground ring. -/
-instance finite_alexanderUnblockedHomologyGrading_piece [IsNoetherianRing R] (a : ℤ) :
+/-- Over any commutative ring of characteristic two, each Alexander piece of `GH⁻` is finitely
+generated over the ground ring. -/
+instance finite_alexanderUnblockedHomologyGrading_piece (a : ℤ) :
     Module.Finite R ((G.alexanderUnblockedHomologyGrading R).piece a) := by
   rw [alexanderUnblockedHomologyGrading]
   infer_instance

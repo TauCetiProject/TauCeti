@@ -9,7 +9,10 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.Algebra.Module.FinitePresentation
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.RingTheory.Flat.Equalizer
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # Kernels after extension of scalars
@@ -37,6 +40,8 @@ where flatness of the cokernel is its torsion-freeness.
 * `LinearMap.finite_tensorProduct_ker`: over a flat coefficient algebra, the scalar extension of
   the kernel of a surjection is finite if the extended source is finite and the extended target is
   finitely presented.
+* `LinearMap.finite_ker_baseChange`: over a field, the kernel of a scalar-extended linear map from
+  a finite-dimensional space is finitely generated over any coefficient algebra.
 
 ## References
 
@@ -99,5 +104,15 @@ theorem finite_tensorProduct_ker {S : Type*} [Ring S] [Algebra R S] [Module.Flat
   rw [ker_baseChange_of_flat] at hfg
   have : Module.Finite S ((ker f).baseChange S) := Module.Finite.iff_fg.mpr hfg
   exact Module.Finite.equiv (Submodule.toBaseChange.toLinearEquiv S (ker f)).symm
+
+/-- Over a field, the kernel of a scalar-extended linear map from a finite-dimensional space is
+finitely generated over any coefficient algebra. -/
+theorem finite_ker_baseChange {F A M N : Type*} [Field F] [Ring A] [Algebra F A]
+    [AddCommGroup M] [Module F M] [Module.Finite F M] [AddCommGroup N] [Module F N]
+    (f : M →ₗ[F] N) : Module.Finite A (ker (f.baseChange A)) := by
+  let _ : Module.Free F (N ⧸ range f) := Module.Free.of_divisionRing F _
+  let _ : Module.Flat F (N ⧸ range f) := Module.Flat.of_free
+  rw [ker_baseChange_of_flat_quotient_range A f, Submodule.baseChange]
+  exact Module.Finite.range ((ker f).subtype.baseChange A)
 
 end LinearMap

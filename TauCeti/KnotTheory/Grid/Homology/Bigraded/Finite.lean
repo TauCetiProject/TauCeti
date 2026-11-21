@@ -17,8 +17,10 @@ For a grid diagram with an odd number of link components, each Maslov--Alexander
 for the Alexander-graded homology pieces).
 
 Over a Noetherian commutative ring `R`, this finiteness passes to the homogeneous cycle pieces
-`bigradedUnblockedCyclesPiece R g` as submodules of the chain pieces, and in characteristic two to
-the homogeneous homology pieces `bigradedUnblockedHomologyPiece R g` (and the bundled pieces
+`bigradedUnblockedCyclesPiece R g` as submodules of the chain pieces. In characteristic two, over
+any commutative ring `R` (without a Noetherian hypothesis), base change from `ZMod 2` gives finite
+generation of the homogeneous cycle pieces, and hence of the homogeneous homology pieces
+`bigradedUnblockedHomologyPiece R g` (and the bundled pieces
 `(bigradedUnblockedHomologyGrading R).piece g`) as images of those cycles under
 `unblockedHomologyClass`. In particular, over any field of characteristic two, every homogeneous
 piece of `GH⁻` is finite-dimensional.
@@ -67,16 +69,26 @@ theorem bigradedUnblockedHomologyPiece_eq_map (g : ℤ × ℤ) :
   simpa only [Submodule.mem_map, mem_bigradedUnblockedCyclesPiece,
     LinearMap.restrictScalars_apply] using G.mem_bigradedUnblockedHomologyPiece_iff R
 
-variable [IsNoetherianRing R]
-
-/-- Over a Noetherian commutative ring of characteristic two, each Maslov--Alexander piece of
-`GH⁻` is finitely generated over the ground ring. -/
+/-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is
+finitely generated over the ground ring. -/
 instance finite_bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
     Module.Finite R (G.bigradedUnblockedHomologyPiece R g) := by
+  let e : LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
+      (G.bigradedChainMinusPiece R g).subtype) ≃ₗ[R] G.bigradedUnblockedCyclesPiece R g :=
+    { toFun := fun w ↦ ⟨⟨w.val.val, LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp w.property)⟩,
+        (G.mem_bigradedUnblockedCyclesPiece R).mpr w.val.property⟩
+      invFun := fun z ↦ ⟨⟨z.val.val, (G.mem_bigradedUnblockedCyclesPiece R).mp z.property⟩,
+        LinearMap.mem_ker.mpr (LinearMap.mem_ker.mp z.val.property)⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  have _ := G.finite_ker_unblockedDifferential_bigradedChainMinusPiece R g
+  have _ : Module.Finite R (G.bigradedUnblockedCyclesPiece R g) := Module.Finite.equiv e
   rw [G.bigradedUnblockedHomologyPiece_eq_map R g]
   infer_instance
 
-/-- Over a Noetherian commutative ring of characteristic two, each bundled piece of
+/-- Over any commutative ring of characteristic two, each bundled piece of
 `bigradedUnblockedHomologyGrading` is finitely generated over the ground ring. -/
 instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
     Module.Finite R ((G.bigradedUnblockedHomologyGrading R).piece g) := by

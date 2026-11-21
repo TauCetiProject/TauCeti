@@ -46,9 +46,9 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (R : Type*)
 noncomputable def alexanderUnblockedHomologyGrading : InternalGrading R (G.unblockedHomology R) ℤ :=
   (hG.toOddComponentGridDiagram).alexanderUnblockedHomologyGrading R
 
-/-- Over a Noetherian commutative ring of characteristic two, each Alexander piece of knot grid
-homology `GH⁻` is finitely generated over the ground ring. -/
-instance finite_alexanderUnblockedHomologyGrading_piece [IsNoetherianRing R] (a : ℤ) :
+/-- Over any commutative ring of characteristic two, each Alexander piece of knot grid homology
+`GH⁻` is finitely generated over the ground ring. -/
+instance finite_alexanderUnblockedHomologyGrading_piece (a : ℤ) :
     Module.Finite R ((hG.alexanderUnblockedHomologyGrading R).piece a) := by
   rw [alexanderUnblockedHomologyGrading]
   exact hG.toOddComponentGridDiagram.finite_alexanderUnblockedHomologyGrading_piece R a

@@ -144,9 +144,9 @@ theorem bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
   rw [bigradedUnblockedHomologyGrading,
     OddComponentGridDiagram.bigradedUnblockedHomologyGrading_piece]
 
-/-- Over a Noetherian commutative ring of characteristic two, each homogeneous piece of a knot
+/-- Over any commutative ring of characteristic two, each homogeneous piece of a knot
 grid's bundled bigrading on `GH⁻` is finitely generated over the ground ring. -/
-instance finite_bigradedUnblockedHomologyGrading_piece [IsNoetherianRing R] (g : ℤ × ℤ) :
+instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
     Module.Finite R ((hG.bigradedUnblockedHomologyGrading R).piece g) := by
   rw [bigradedUnblockedHomologyGrading_piece]
   exact hG.toOddComponentGridDiagram.finite_bigradedUnblockedHomologyPiece R g
