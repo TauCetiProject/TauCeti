@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
+public import TauCeti.Analysis.Holder.LowOrder
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -55,6 +55,8 @@ fields `D^m g ∘ π`, the norm of the constant time slices of `D^(k-1) g ∘ π
   `TauCeti.CkHolderSpace.mixedDerivL_succ_compSlabSpaceL`: its mixed derivatives, and
   `TauCeti.CkHolderSpace.mixedDerivHolderL_zero_compSlabSpaceL`: its top-order Hölder field is the
   order-zero lift of the Hölder field `D^k g`.
+* `TauCeti.CkHolderSpace.equivHolderSpace_compSlabSpaceL`: at order zero it is the order-zero lift
+  `TauCeti.HolderSpace.compSlabSpaceL`.
 * `TauCeti.CkHolderSpace.norm_compSlabSpaceL_le`: its operator norm is at most `2`; and
   `TauCeti.CkHolderSpace.compSlabSpaceL_injective`.
 
@@ -111,12 +113,9 @@ private theorem slabField_slabMk (g : CkHolderSpace k α E F) (r m : ℕ) (x : E
   rcases r with _ | r
   · by_cases hm : m ≤ k
     · rw [slabField_zero_apply g hm, slabField_zero_apply g hm, space_slabMk, space_slabMk]
-    · rw [slabField, dite_eq_right fun h ↦ hm h.2]
-      -- The zero field takes the value zero everywhere.
-      rfl
-  · rw [slabField_succ]
-    -- The zero field takes the value zero everywhere.
-    rfl
+    · rw [slabField, dite_eq_right fun h ↦ hm h.2, FunLike.coe_zero,
+        Pi.zero_apply, Pi.zero_apply]
+  · rw [slabField_succ, FunLike.coe_zero, Pi.zero_apply, Pi.zero_apply]
 
 /-- The norm of the field `D^m g ∘ π` is at most that of `D^m g`. -/
 private theorem norm_slabField_zero_le (g : CkHolderSpace k α E F) {m : ℕ} (hm : m ≤ k) :
@@ -234,9 +233,10 @@ private theorem sum_parabolicDerivPairs_ite_eq (G : ℕ → ℝ) :
       ∑ m ∈ Finset.range (k + 1), G m := by
   rw [← Finset.sum_filter]
   have hfilter : {p ∈ parabolicDerivPairs k | p.1 = 0} =
-      (Finset.range (k + 1)).map ⟨fun m ↦ (0, m), fun m n h ↦ (Prod.ext_iff.1 h).2⟩ := by
+      (Finset.range (k + 1)).map (Function.Embedding.sectR 0 ℕ) := by
     ext ⟨r, m⟩
-    simp only [Finset.mem_filter, mem_parabolicDerivPairs, Finset.mem_map, Finset.mem_range]
+    simp only [Finset.mem_filter, mem_parabolicDerivPairs, Finset.mem_map, Finset.mem_range,
+      Function.Embedding.sectR_apply]
     constructor
     · rintro ⟨h, rfl⟩
       exact ⟨m, by omega, rfl⟩
@@ -244,7 +244,7 @@ private theorem sum_parabolicDerivPairs_ite_eq (G : ℕ → ℝ) :
       obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
       exact ⟨by omega, rfl⟩
   rw [hfilter, Finset.sum_map]
-  rfl
+  simp only [Function.Embedding.sectR_apply]
 
 /-- The norm of `g ∘ π` is at most twice the `C^{k,α}` norm of `g`. -/
 private theorem norm_compSlabSpace_le (g : CkHolderSpace k α E F) :
@@ -325,6 +325,7 @@ theorem mixedDerivL_succ_compSlabSpaceL (g : CkHolderSpace k α E F) (r m : ℕ)
 /-- The top-order Hölder field `D_x^k` of the time-independent lift of `g` is the
 time-independent lift of the Hölder field `D^k g`, through the order-zero lift
 `HolderSpace.compSlabSpaceL`. -/
+@[simp]
 theorem mixedDerivHolderL_zero_compSlabSpaceL (g : CkHolderSpace k α E F) :
     mixedDerivHolderL 0 k (compSlabSpaceL hab g) =
       HolderSpace.compSlabSpaceL g.iteratedFDerivHolder := by
@@ -333,6 +334,17 @@ theorem mixedDerivHolderL_zero_compSlabSpaceL (g : CkHolderSpace k α E F) :
     toBoundedContinuousFunction_mixedDerivHolderL _ (by omega),
     mixedDerivL_zero_compSlabSpaceL_apply g le_rfl, HolderSpace.compSlabSpaceL_apply,
     iteratedFDerivHolder_apply]
+
+/-- At order zero the time-independent lift is the order-zero lift `HolderSpace.compSlabSpaceL`,
+through the identifications `CkHolderSpace.equivHolderSpace` and
+`ParabolicCkHolderSpace.equivHolderSpace` with the bounded Hölder spaces. -/
+@[simp]
+theorem equivHolderSpace_compSlabSpaceL (g : CkHolderSpace 0 α E F) :
+    ParabolicCkHolderSpace.equivHolderSpace (compSlabSpaceL hab g) =
+      HolderSpace.compSlabSpaceL (CkHolderSpace.equivHolderSpace g) :=
+  HolderSpace.ext fun p ↦ by
+    rw [ParabolicCkHolderSpace.equivHolderSpace_apply, compSlabSpaceL_apply,
+      HolderSpace.compSlabSpaceL_apply, CkHolderSpace.equivHolderSpace_apply]
 
 /-- **The norm of the time-independent lift.** The lift `C_b^{k,α}(E) → C_{par,b}^{k+α}` has norm
 at most `2`, for every order `k`, exponent `α` and slab. -/
