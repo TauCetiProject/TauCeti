@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Probability.Distributions.Cauchy
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Student's t distribution
@@ -263,7 +264,7 @@ theorem integrable_studentTMeasure_iff {F : Type*} [NormedAddCommGroup F] [Norme
     Integrable f (studentTMeasure ν) ↔
       Integrable (fun x : ℝ => studentTPDFReal ν x • f x) := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν))
 
 /-- An integral against a Student t law is the density-weighted Lebesgue integral. -/
@@ -271,7 +272,7 @@ theorem integral_studentTMeasure_eq {F : Type*} [NormedAddCommGroup F] [NormedSp
     (ν : ℝ) (f : ℝ → F) :
     ∫ x, f x ∂studentTMeasure ν = ∫ x, studentTPDFReal ν x • f x := by
   rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
-  exact integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
     (ae_of_all _ (studentTPDFReal_nonneg ν)) f
 
 /-- The real mass of a set under a Student t law is the integral of its real-valued density. -/

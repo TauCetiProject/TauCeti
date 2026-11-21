@@ -43,6 +43,9 @@ reversed flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet`: slice charts for `W^s(x)` and,
   for a Morse function, `W^u(x)`, onto subspaces of dimensions `n - k` and `k`.
+* `TauCeti.IsAdaptedPseudoGradient.isOpen_stableSet_of_manifoldMorseIndex_eq_zero` and
+  `TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`: `W^s(x)`
+  is open when `x` has index `0`, and `W^u(x)` when `x` has index `n`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -110,6 +113,32 @@ theorem card_fin_manifoldMorseIndex_eq_finrank :
       Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
   rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
 
+/-- The product of `ℝ` with the coordinates of negative weight has dimension one more than the
+Morse index. -/
+theorem finrank_prod_negativeWeight_fun :
+    Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) = 1 + manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+
+/-- A Morse chart at a critical point of index `n - 1` has exactly one coordinate of positive
+weight. -/
+theorem exists_weight_eq_one_of_add_one_eq_finrank
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = Module.finrank ℝ E) :
+    ∃ j, φ.weight j = 1 ∧ ∀ i, i ≠ j → φ.weight i < 0 := by
+  classical
+  set s := Finset.univ.filter fun i ↦ φ.weight i < 0
+  have hs : s.card = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+    rw [← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+  obtain ⟨j, hj⟩ := Finset.card_eq_one.1 (show sᶜ.card = 1 by
+    rw [Finset.card_compl, Fintype.card_fin]
+    omega)
+  have hmem (i : Fin (Module.finrank ℝ E)) : i ∈ sᶜ ↔ i = j := by rw [hj, Finset.mem_singleton]
+  refine ⟨j, ?_, fun i hi ↦ ?_⟩
+  · have h := (hmem j).2 rfl
+    simp only [s, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and] at h
+    exact (φ.weight_eq_neg_one_or_eq_one j).resolve_left fun h' ↦ h (by rw [h']; norm_num)
+  · by_contra h
+    exact hi ((hmem i).1 (by simpa [s] using h))
+
 /-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
 negative weight and `0` in the directions of positive weight. -/
 noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=
@@ -128,7 +157,7 @@ theorem coord_negativeExtend_of_not_weight_neg (c : {i // φ.weight i < 0} → �
     {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) : φ.coord (φ.negativeExtend c) i = 0 := by
   simp only [negativeExtend, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
     LinearEquiv.apply_symm_apply]
-  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2)
+  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.property)
 
 /-- `negativeExtend` is a right inverse of the coordinates of negative weight. -/
 @[simp]
@@ -177,7 +206,7 @@ theorem negativeCoord_eq_exp_smul_of_coord_eq {s : ℝ} {a b : E}
     φ.negativeCoord a = Real.exp s • φ.negativeCoord b := by
   funext i
   have hi : φ.weight i = -1 :=
-    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.property)
   rw [Pi.smul_apply, negativeCoord_apply, negativeCoord_apply, h, smul_eq_mul,
     φ.linearFlow_of_weight_eq_neg_one hi]
 
@@ -285,7 +314,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
   obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hp).eventually (hD.mem_nhds hxD)).exists
   refine ⟨(hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D),
-    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD), isSliceChart_iff.1 (hslice T)⟩
   rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
     hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
@@ -324,6 +353,31 @@ theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   exact ⟨L, q, by omega, hpq, hq, hs⟩
 
+/-- **The stable manifold of a critical point of index `0` is open.** Its slice charts flatten it
+onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_stableSet_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    IsOpen (hX.flow.stableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_stableSet hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
+/-- **The unstable manifold of a critical point of top index is open.** Its slice charts flatten
+it onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    IsOpen (hX.flow.unstableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth
 manifold structure modelled on a subspace of dimension `n - k`, with its subspace topology and a
@@ -342,7 +396,7 @@ theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
     (Submodule.IsCompl.isTopCompl_of_isClosed hN
       φ.stableSubspace.isClosed_of_finiteDimensional N.isClosed_of_finiteDimensional)
     fun y ↦ ?_
-  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.2
+  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.property
   exact ⟨q, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, hmem⟩
 

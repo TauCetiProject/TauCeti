@@ -64,7 +64,7 @@ private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
   have hprim : IsPrimitiveRoot (ζ : Lˣ) (localRootOfUnityOrder p L h) := by
     rw [localRootOfUnityOrder_def, ← hζ, ← Subgroup.orderOf_coe]
     exact IsPrimitiveRoot.orderOf _
-  refine ⟨ζ, ζ.2, hprim, fun ξ hξ ↦ ?_⟩
+  refine ⟨ζ, ζ.property, hprim, fun ξ hξ ↦ ?_⟩
   rw [pPowerRootsOfUnity_eq_rootsOfUnity_order p L h] at hξ
   have : NeZero (localRootOfUnityOrder p L h) := ⟨(localRootOfUnityOrder_pos p L h).ne'⟩
   obtain ⟨j, -, hj⟩ := hprim.eq_pow_of_mem_rootsOfUnity hξ
@@ -168,7 +168,7 @@ private theorem exists_surjective_pPowerTorsion_padicCompletionUnits {L : Type*}
     | H y => rw [hφ₀]; exact Submodule.smul_mem _ y ht₀
   refine ⟨φ₀.codRestrict _ hφ₀mem, fun x ↦ ?_⟩
   -- Every torsion element is the class of a power `ζ ^ j`, the image of the class of `j`.
-  have hx := (mem_pPowerTorsion_padicCompletionUnits_iff p L x.1).mp x.2
+  have hx := (mem_pPowerTorsion_padicCompletionUnits_iff p L x.val).mp x.property
   rw [torsion_padicCompletionUnits] at hx
   obtain ⟨ξ, hξ, hξx⟩ := hx
   obtain ⟨j, rfl⟩ := hgenζ ξ hξ

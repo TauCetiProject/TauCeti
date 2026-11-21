@@ -82,13 +82,13 @@ theorem exists_disjoint_power_charts
       e ∈ maximalAtlas 𝓘(ℂ) 1 X ∧ (x : X) ∈ e.source ∧ e x = 0 ∧
       e.source ⊆ O x ∩ W x ∧ ∀ z ∈ e.source,
         f z ∈ e'.source ∧ e' (f z) - e' y = e z ^ localMultiplicity f x := by
-    have hx : f x = y := x.2
+    have hx : f x = y := x.property
     simpa only [hx] using exists_chart_eq_pow_localMultiplicity (.of_forall hf) (hne x)
       he' (by rwa [hx]) (inter_mem ((hO x).2.mem_nhds (hO x).1) (hW x))
   choose e he hxe hex hsub hpow using hloc
   have hedisj : Pairwise (fun x x' : f ⁻¹' {y} ↦ Disjoint (e x).source (e x').source) := by
     intro x x' hxx'
-    exact (hdisj x.2 x'.2 (fun h ↦ hxx' (Subtype.ext h))).mono
+    exact (hdisj x.property x'.property (fun h ↦ hxx' (Subtype.ext h))).mono
       ((hsub x).trans inter_subset_left) ((hsub x').trans inter_subset_left)
   -- Compactness rules out further sheets outside a neighbourhood of the fibre.
   obtain ⟨V, hV, hVU⟩ := mem_comap.1 (hf.continuous.isClosedMap.comap_nhds_le

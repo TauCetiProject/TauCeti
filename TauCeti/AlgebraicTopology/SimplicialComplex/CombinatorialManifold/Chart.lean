@@ -81,7 +81,7 @@ theorem sphereLinkChart_target :
 
 /-- On the open star, chart radius is one minus the apex coordinate. -/
 theorem norm_sphereLinkChart (x : K.openStarRealization v) :
-    ‖K.sphereLinkChart v h x.1‖ = 1 - x.1.1 v := by
+    ‖K.sphereLinkChart v h x.val‖ = 1 - x.val.val v := by
   unfold sphereLinkChart
   rw [OpenPartialHomeomorph.lift_openEmbedding_apply]
   simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
@@ -105,7 +105,7 @@ theorem sphereLinkChart_symm_zero : (K.sphereLinkChart v h).symm 0 = vertex K v 
 /-- In the inverse chart, the apex coordinate is one minus the Euclidean radius. -/
 @[simp]
 theorem sphereLinkChart_symm_apply_apex {y : EuclideanSpace ℝ (Fin (n + 1))}
-    (hy : y ∈ ball 0 1) : ((K.sphereLinkChart v h).symm y).1 v = 1 - ‖y‖ := by
+    (hy : y ∈ ball 0 1) : ((K.sphereLinkChart v h).symm y).val v = 1 - ‖y‖ := by
   have hyt : y ∈ (K.sphereLinkChart v h).target := by simpa using hy
   have hxs : (K.sphereLinkChart v h).symm y ∈ K.openStarRealization v := by
     simpa using (K.sphereLinkChart v h).map_target hyt

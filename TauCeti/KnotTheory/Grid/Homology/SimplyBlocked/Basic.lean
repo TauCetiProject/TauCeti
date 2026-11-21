@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.KnotTheory.Grid.Chain.Complex
 public import TauCeti.KnotTheory.Grid.Diagram.Components
 import TauCeti.Algebra.Homology.SquareZero
@@ -166,7 +168,7 @@ theorem mem_range_moduleCatToCycles_simplyBlockedComplex_iff (i : Fin n)
   -- restricted to the cycles, so its underlying chain is the differential by definition.
   have hd (w : (G.simplyBlockedComplex R i).X ()) :
       G.simplyBlockedChainEquiv R i
-          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).1 =
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatToCycles w).val =
         G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
     G.simplyBlockedChainEquiv_d R i w
   constructor

@@ -7,9 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.BallAverage
 public import Mathlib.MeasureTheory.Function.UnifTight
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.MeasureTheory.Measure.TightNormed
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
 # The Fréchet--Kolmogorov compactness criterion in `Lᵖ`
@@ -66,6 +68,10 @@ is uniformly at most `η` there, and `μ K ^ (1/p) η` is made small by the choi
   `TauCeti.isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl`: the criterion for a
   family vanishing almost everywhere off a fixed bounded set, in totally bounded and in relatively
   compact form.
+* `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`: the criterion for a family of `C¹`
+  functions vanishing off a fixed bounded set, with `Lᵖ` bounds on the functions and their
+  derivatives, whose translation increments are controlled by
+  `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`.
 
 ## References
 
@@ -294,14 +300,14 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) Bₑ.toReal := fun i x => by
     rw [mem_closedBall, dist_zero_right]
     have h := (enorm_ballAverage_le (r := r) hp hp' x).trans
-      (mul_le_mul' le_rfl (hbdd _ i.2))
+      (mul_le_mul' le_rfl (hbdd _ i.property))
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.
   have hequi : UniformEquicontinuous fun i : S => ballAverage mu r ⇑(i : Lp F p mu) :=
     uniformEquicontinuous_ballAverage hp hp' (fun i => Lp.memLp (i : Lp F p mu))
       fun c hc => by
         obtain ⟨δ, hδ, hδS⟩ := htrans c hc
-        exact ⟨δ, hδ, fun i => hδS _ i.2⟩
+        exact ⟨δ, hδ, fun i => hδS _ i.property⟩
   have hsmooth : ∀ g ∈ S, eLpNorm (ballAverage mu r ⇑g - ⇑g) p mu ≤ ε₁ := by
     intro g hg
     exact eLpNorm_ballAverage_sub_le hp hp' (Lp.memLp g) hr
@@ -327,7 +333,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
   refine mem_iUnion₂.2 ⟨(j : Lp F p mu), ⟨j, hjt, rfl⟩, ?_⟩
   exact dist_lt_of_ballAverage_close_on hp hp' measurableSet_closedBall hε hη.le
-    (hsmooth f hf) (hsmooth _ j.2) (hRS f hf) (hRS _ j.2) hWη fun x hx ↦ (hmid x hx).le
+    (hsmooth f hf) (hsmooth _ j.property) (hRS f hf) (hRS _ j.property) hWη fun x hx ↦
+        (hmid x hx).le
 
 /-- **Relative compactness in `Lᵖ` under the Fréchet--Kolmogorov hypotheses**: the closure of an
 `Lᵖ`-bounded, uniformly tight family whose translation increments are uniformly small in `Lᵖ` is
@@ -358,7 +365,7 @@ theorem totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (hp' : p
   intro ε _
   refine ⟨closedBall (0 : E) R, measure_closedBall_lt_top.ne, fun f => ?_⟩
   have h0 : (closedBall (0 : E) R)ᶜ.indicator ⇑(f : Lp F p mu) =ᵐ[mu] 0 := by
-    filter_upwards [hsupp (f : Lp F p mu) f.2] with x hx
+    filter_upwards [hsupp (f : Lp F p mu) f.property] with x hx
     by_cases hxK : x ∈ (closedBall (0 : E) R)ᶜ
     · rw [Set.indicator_of_mem hxK, Pi.zero_apply, hx fun hxs => hxK (hR hxs)]
     · rw [Set.indicator_of_notMem hxK, Pi.zero_apply]
@@ -377,6 +384,45 @@ theorem isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (hp' 
     IsCompact (closure S) :=
   ((totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs hsupp hM hbdd
     htrans).closure).isCompact_of_isClosed isClosed_closure
+
+/-- **The Fréchet--Kolmogorov criterion for `C¹` functions.** A family of `Lᵖ` functions, each
+almost everywhere equal to a `C¹` function vanishing off a fixed bounded set `s`, with the `Lᵖ`
+norms of the function and of its derivative at most `M`, is totally bounded. By the translation
+estimate `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, its translation increments are at
+most `‖h‖ M`. -/
+theorem totallyBounded_of_contDiff_of_eLpNorm_fderiv_le [NormedSpace ℝ E] (hp' : p ≠ ∞)
+    {S : Set (Lp F p mu)} {s : Set E} (hs : Bornology.IsBounded s) {M : ℝ≥0∞} (hM : M ≠ ∞)
+    (hS : ∀ f ∈ S, ∃ u : E → F, ContDiff ℝ 1 u ∧ (∀ x ∉ s, u x = 0) ∧ eLpNorm u p mu ≤ M ∧
+      eLpNorm (fderiv ℝ u) p mu ≤ M ∧ f =ᵐ[mu] u) :
+    TotallyBounded S := by
+  refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl hp' hs ?_ hM ?_ ?_
+  · intro f hf
+    obtain ⟨u, -, hu, -, -, hfu⟩ := hS f hf
+    filter_upwards [hfu] with x hx hxs
+    rw [hx, hu x hxs]
+  · intro f hf
+    obtain ⟨u, -, -, hu, -, hfu⟩ := hS f hf
+    rwa [eLpNorm_congr_ae hfu]
+  · intro ε hε
+    obtain ⟨r, -, hrpos, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+    have hr : 0 < r := ENNReal.ofReal_pos.1 hrpos
+    refine ⟨r / (M.toReal + 1), by positivity, fun f hf h hh ↦ ?_⟩
+    obtain ⟨u, hu, -, -, hdu, hfu⟩ := hS f hf
+    have hae : (fun x ↦ f (x + h) - f x) =ᵐ[mu] fun x ↦ u (x + h) - u x :=
+      ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hfu).sub hfu
+    rw [eLpNorm_congr_ae hae]
+    calc _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
+          hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv Fact.out h
+      _ ≤ ENNReal.ofReal ‖h‖ * ENNReal.ofReal M.toReal := by
+          rw [ofReal_norm, ENNReal.ofReal_toReal hM]
+          gcongr
+      _ = ENNReal.ofReal (‖h‖ * M.toReal) := (ENNReal.ofReal_mul (norm_nonneg _)).symm
+      _ ≤ ENNReal.ofReal r := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          calc ‖h‖ * M.toReal ≤ r / (M.toReal + 1) * (M.toReal + 1) := by
+                gcongr; linarith
+            _ = r := div_mul_cancel₀ _ (by positivity)
+      _ ≤ ε := hrε.le
 
 end FrechetKolmogorov
 

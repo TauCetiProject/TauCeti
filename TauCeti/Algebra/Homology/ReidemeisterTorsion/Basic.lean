@@ -45,7 +45,10 @@ that of an unbounded complex, for which the alternating product is not defined.
 
 The brackets, and the chosen bases of the boundaries used to define the torsion, make sense for
 chain complexes indexed by any type with a `+ 1`; the torsion of complexes indexed by `ZMod 2` is
-`ChainComplex.parityTorsion`.
+`ChainComplex.parityTorsion`. A linear equivalence carrying the basis, the boundary basis and the
+lifts of one bracket to those of another, the lifts rescaled by a scalar `a`, multiplies the
+bracket by `a ^ q`, where `q` is the number of lifts
+(`HomologicalComplex.torsionBracket_eq_pow_mul`).
 
 For a bounded complex the alternating product does not depend on the boundary bases nor on the
 lifts (`HomologicalComplex.reidemeisterTorsion_eq_finprod`): changing the lifts does not change
@@ -107,6 +110,8 @@ homomorphisms between them.
   complexes of any shape.
 * `HomologicalComplex.torsionBracket_eq_det_append`: the bracket is the determinant of the boundary
   basis followed by the lifts.
+* `HomologicalComplex.torsionBracket_eq_pow_mul`: the transport of a bracket along a linear
+  equivalence.
 * `HomologicalComplex.boundaryBasisSemilinearMap`,
   `HomologicalComplex.torsionBracket_semilinearMap`: the boundary bases and brackets of a scalar
   extension along a homomorphism of fields.
@@ -196,6 +201,35 @@ theorem torsionBracket_eq_det_append (hn : n j = p + q) :
   ext l
   obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective l
   induction m using Fin.addCases <;> simp [bracketBasis]
+
+/-- **Transport of a bracket along a linear equivalence.** Let `e : Cⱼ ≃ Dⱼ'` be a linear
+equivalence carrying the basis `c j` to the basis `d j'`, the boundary basis `b₁` of `C` to the
+boundary basis `b₁'` of `D`, and the lifts `s` of `C`, rescaled by `a`, to the lifts `s'` of `D`.
+Then the bracket of `D` is `a ^ q` times the bracket of `C`, where `q` is the number of lifts. -/
+theorem torsionBracket_eq_pow_mul {ι' : Type*} {cs' : ComplexShape ι'}
+    {D : HomologicalComplex (ModuleCat F) cs'} {m : ι' → ℕ} {d : ∀ i, Basis (Fin (m i)) F (D.X i)}
+    {i' j' k' : ι'} (hi' : cs'.prev j' = i') (hk' : cs'.next j' = k') (h' : D.ExactAt j')
+    (b₁' : Basis (Fin p) F (LinearMap.range (D.d i' j').hom))
+    (b₀' : Basis (Fin q) F (LinearMap.range (D.d j' k').hom))
+    (s' : Fin q → D.X j') (hs' : ∀ l, (D.d j' k').hom (s' l) = b₀' l)
+    (e : C.X j ≃ₗ[F] D.X j') (hm : m j' = n j) (hd : ∀ l, d j' l = e (c j (Fin.cast hm l)))
+    (hb₁ : ∀ l, (b₁' l : D.X j') = e (b₁ l)) (a : F) (hs's : ∀ l, s' l = a • e (s l)) :
+    torsionBracket d hi' hk' h' b₁' b₀' s' hs' = a ^ q * torsionBracket c hi hk h b₁ b₀ s hs := by
+  have hn := eq_add_of_exactAt c hi hk h b₁ b₀
+  have hdc : d j' = ((c j).map e).reindex (finCongr hm.symm) :=
+    Basis.eq_of_apply_eq fun l ↦ by simp [hd]
+  -- Both brackets are determinants with respect to `c j` reindexed to `Fin (p + q)`.
+  have hdet (v : Fin (p + q) → C.X j) :
+      (c j).det (v ∘ Fin.cast hn) = ((c j).reindex (finCongr hn)).det v := by
+    simp [Basis.det_reindex, Function.comp_def]
+  rw [torsionBracket_eq_det_append d hi' hk' h' b₁' b₀' s' hs' (hm.trans hn),
+    torsionBracket_eq_det_append c hi hk h b₁ b₀ s hs hn, hdc, Basis.det_reindex, Basis.det_map]
+  have hv : e.symm ∘ ((Fin.append (fun l ↦ (b₁' l : D.X j')) s' ∘ Fin.cast (hm.trans hn)) ∘
+      finCongr hm.symm) = Fin.append (fun l ↦ (b₁ l : C.X j)) (a • s) ∘ Fin.cast hn := by
+    ext l
+    obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective l
+    induction l using Fin.addCases <;> simp [hb₁, hs's]
+  rw [hv, hdet, hdet, AlternatingMap.map_append_smul, smul_eq_mul]
 
 /-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
 the bracket. -/
@@ -326,7 +360,7 @@ def boundaryBasisSemilinearMap
     Basis (Fin p) K (LinearMap.range (D.d i j).hom) :=
   haveI : Module.Finite K (D.X i) := .of_basis (e i)
   basisOfLinearIndependentOfCardEqFinrank'
-    (fun l ↦ ⟨_, semilinearMap_mem_range_d φ hd (b l).2⟩)
+    (fun l ↦ ⟨_, semilinearMap_mem_range_d φ hd (b l).property⟩)
     (LinearIndependent.of_comp (LinearMap.range (D.d i j).hom).subtype
       ((Basis.linearIndependent_semilinearMap_comp_iff φ φ.injective (c j) (e j)).2
         (b.linearIndependent.map' _ (LinearMap.range (C.d i j).hom).ker_subtype)))

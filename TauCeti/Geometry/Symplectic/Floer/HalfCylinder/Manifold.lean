@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Complex.Tietze
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.AddCircle.PeriodicExtension
 import TauCeti.Topology.Separation.InvFunOn
@@ -42,9 +43,9 @@ isolated, then the loops `t ↦ u(s, t)` converge to a single orbit
 (`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact`). On a
 compact boundaryless manifold, for a `C²` Hamiltonian all of whose `1`-periodic orbits are
 nondegenerate, the orbits are isolated
-(`TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt` and
-`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), so the loops of a finite-energy
-half-cylinder whose derivative through `e` is bounded converge, `u(s, ·) → x`
+(`SmoothTwoForm.IsNondegenerate.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq`),
+so the loops of a finite-energy half-cylinder whose derivative through `e` is bounded converge,
+`u(s, ·) → x`
 (`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer`).
 
 Measuring the convergence needs a metric near `K`. It is measured through a `C¹` map `e : M → F`
@@ -196,7 +197,7 @@ private theorem IsNondegenerate.exists_lintegral_norm_sq_sliceDefect_comp_ne_top
   -- Extend it from `e(K)` to a continuous periodic field on `F`.
   obtain ⟨Y, hYc, hYper, hYe⟩ := hemb.exists_continuous_periodic_extension
     (f := fun t (p : K) ↦ mvfderiv I e p (ω.hamiltonianVectorField (H t) p))
-    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
+    (T := 1) (hXe.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))
     fun p t ↦ congrArg (fun h ↦ mvfderiv I e p (ω.hamiltonianVectorField h p)) (hHper t)
   have hYe' : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (ω.hamiltonianVectorField (H t) p) :=
     fun t p hp ↦ hYe t ⟨p, hp⟩
@@ -361,6 +362,38 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
   exact ⟨x, hx, hxK, hconv, fun t ↦ hK.tendsto_nhds_of_tendsto_comp he.continuous.continuousOn
     he_inj ((eventually_gt_atTop a).mono fun s hs ↦ huK s hs t) (hxK t) (hconv.tendsto_at t)⟩
 
+/-- **Convergence of a finite-energy Floer half-cylinder to an isolated orbit, from a bound on the
+strip.** The conclusion of
+`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact` holds
+when the derivative of `e ∘ u` is only bounded on the strip `(a, ∞) × [0, 1]`: by `1`-periodicity
+of the loops the bound extends to the whole half-cylinder (`TauCeti.norm_fderiv_le_of_periodic`). -/
+theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hHper : Periodic H 1) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M} {a : ℝ}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u (Ioi a ×ˢ univ))
+    (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+      c * ‖mvfderiv I e (u z) v‖ ^ 2 ≤ hω.symplecticFormAt (u z) v (J z v))
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ‖fderiv ℝ (e ∘ u) z‖ ≤ C)
+    (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) →
+      ∀ᶠ y in 𝓝 (x 0), ∀ x' ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
+        (∀ t, x' t ∈ K) → x' 0 = y → x' = x) :
+    ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) ∧
+      TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
+      ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) :=
+  hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hH hHper he hK
+    he_inj hde hu hper huK J hc hJc hfloer hE
+    (fun z hz ↦ norm_fderiv_le_of_periodic
+      (fun s hs t ↦ by simp only [comp_apply, hper s hs t]) hC hz) hiso
+
 /-- **Convergence of a finite-energy Floer half-cylinder in a closed manifold to a nondegenerate
 orbit.** Let `ω` be a nondegenerate two-form on a compact boundaryless manifold `M`, `H` a `C²`
 Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on the half-cylinder `s > a`, with
@@ -394,20 +427,12 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_f
     ∃ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       TendstoUniformly (fun s t ↦ e (u (s, t))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (s, t)) atTop (𝓝 (x t)) := by
-  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    (hH.of_le (by norm_num))
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map, so it is
-  -- isolated among the orbits.
-  have hiso (x) (hx : x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1) :
-      ∀ᶠ p in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-        y 0 = p → y = x :=
-    eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hx
-      (by simpa only [zero_add] using (hnd x hx).eventually_not_isFixedPt)
   obtain ⟨x, hx, -, h⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact
       (hH.of_le one_le_two) hHper he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu hper
       (fun _ _ _ ↦ mem_univ _) J hc hJc hfloer hE hC fun x hx _ ↦
-        (hiso x hx).mono fun _ hp y hy _ ↦ hp y hy
+        (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq hH hx
+          (hnd x hx)).mono fun _ hp y hy _ ↦ hp y hy
   exact ⟨x, hx, h⟩
 
 end SmoothTwoForm

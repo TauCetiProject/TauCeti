@@ -191,13 +191,13 @@ private theorem exists_analyticOnNhd_zeroPolynomial
       (TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j _ _ ↦ hpow_an j x hx),
     fun i ↦ ?_, fun x hx ↦ ?_⟩
   · have h := Multiset.prod_X_sub_C_coeff (Multiset.replicate d (0 : ℂ)) (k := (i : ℕ))
-      (by simp [i.2.le])
-    simpa [hZ0, coeff_X_pow, i.2.ne] using h.symm
+      (by simp [i.isLt.le])
+    simpa [hZ0, coeff_X_pow, i.isLt.ne] using h.symm
   · rw [← Polynomial.monicOfCoeff_coeff
       (monic_multiset_prod_of_monic _ _ fun α _ ↦ monic_X_sub_C α)
       ((natDegree_multiset_prod_X_sub_C_eq_card _).trans (hcard hx))]
     exact congrArg _ (funext fun i ↦ by
-      rw [Multiset.prod_X_sub_C_coeff (Z x) (by rw [hcard hx]; exact i.2.le), hcard hx])
+      rw [Multiset.prod_X_sub_C_coeff (Z x) (by rw [hcard hx]; exact i.isLt.le), hcard hx])
 
 /-- Joint analyticity at `(x₀, 0)` of the Cauchy integral against `(monicOfCoeff (c · x))⁻¹` when
 all lower coefficients `c i` vanish at `x₀`. -/
@@ -283,7 +283,7 @@ private theorem sub_mul_sum_divKernelCoeff {d : ℕ} (c : Fin d → ℂ) (ζ w :
     simp_rw [Finset.sum_mul]
     rw [Finset.sum_comm, Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← hpow i.2.le, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
+    rw [← hpow i.isLt.le, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
     exact Finset.sum_congr rfl fun k _ ↦ by split_ifs <;> ring
   have htop : (ζ - w) * ∑ k : Fin d, ζ ^ (d - 1 - (k : ℕ)) * w ^ (k : ℕ) = ζ ^ d - w ^ d := by
     simpa only [Fin.is_lt, ↓reduceIte] using hpow le_rfl

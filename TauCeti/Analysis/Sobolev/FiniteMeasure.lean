@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -45,6 +45,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the scale-invariant form
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
+* `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the same
+  bound with one constant `K` for all balls, `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, an `Lʳ(Ω)` function
@@ -69,26 +71,34 @@ namespace TauCeti
 
 section CompactSupport
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω : Set E}
 
 /-- **The Sobolev inequality on sets of finite measure, for compactly supported functions.** Let
-`n` be the dimension and `ω = μ(B(0, 1))`, and let `1 ≤ p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`.
-If `u` is `C¹` with compact support inside a measurable set `Ω`, then
+`n` be the dimension and `ω = μ(B(0, 1))`, and let `1 ≤ p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`
+(so `n ≥ 1`). If `u` is `C¹` with compact support inside a set `Ω`, then
 
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) ((1 - δ) / (1/n - δ)) ^ (1 - δ) μ(Ω) ^ (1/n - δ) ‖Du‖_{Lᵖ}`. -/
 theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω) {p q : ℝ≥0}
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω) {p q : ℝ≥0}
     (hp : 1 ≤ p) (hpq : p ≤ q) {δ : ℝ} (hδ : (p : ℝ)⁻¹ - (q : ℝ)⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) :
     eLpNorm u q μ ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ)) *
         μ Ω ^ ((finrank ℝ E : ℝ)⁻¹ - δ) * eLpNorm (fderiv ℝ u) p μ := by
+  -- `Ω` may be replaced by its measurable hull, which has the same measure.
+  wlog hΩ : MeasurableSet Ω generalizing Ω
+  · rw [← measure_toMeasurable Ω]
+    exact this (hsupp.trans (subset_toMeasurable μ Ω)) (measurableSet_toMeasurable μ Ω)
+  have hδ0 : 0 ≤ δ := hδ ▸ sub_nonneg.2 (inv_anti₀ (by positivity) (by exact_mod_cast hpq))
+  have hfin : 0 < finrank ℝ E := Nat.cast_pos.1 (inv_pos.1 (hδ0.trans_lt hδn))
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hfin
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hfin
   set n := finrank ℝ E
   set ω := μ.real (ball (0 : E) 1)
-  have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
+  have hn : (1 : ℝ) ≤ n := by exact_mod_cast hfin
   have hn0 : (n : ℝ) ≠ 0 := by positivity
   have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   have hcont := hu.continuous_fderiv one_ne_zero
@@ -102,8 +112,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
     · congr 1
       refine lintegral_congr fun y => ?_
       rw [mul_comm, show (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n by field_simp]
-    · intro y hy
-      by_contra hyΩ
+    · refine fun y hy ↦ by_contra fun hyΩ ↦ ?_
       rw [mem_support, fderiv_of_notMem_tsupport ℝ fun h => hyΩ (hsupp h)] at hy
       simp [eNorm_eq_nnNorm] at hy
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
@@ -138,15 +147,15 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The Sobolev inequality on `W^{1,p}_0(Ω)` for `Ω` of finite measure.** Let `n ≥ 1` be the
-dimension and `ω = μ(B(0, 1))`, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`. If `Ω` has finite
-measure, then every `u ∈ W^{1,p}_0(Ω)` lies in `L^q(Ω)`, with
+/-- **The Sobolev inequality on `W^{1,p}_0(Ω)` for `Ω` of finite measure.** Let `n` be the
+dimension and `ω = μ(B(0, 1))`, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n` (so `n ≥ 1`). If
+`Ω` has finite measure, then every `u ∈ W^{1,p}_0(Ω)` lies in `L^q(Ω)`, with
 
 `‖u‖_{L^q} ≤ n⁻¹ ω ^ (-1/n) ((1 - δ) / (1/n - δ)) ^ (1 - δ) μ(Ω) ^ (1/n - δ) ‖∇u‖_{Lᵖ}`.
 
 No regularity of `Ω` is assumed. -/
-theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivial E]
-    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ}
+theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
+    (hOmega : mu Omega ≠ ∞) {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ}
     (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
@@ -154,7 +163,8 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ)) *
         mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - δ) * ‖W1p.gradient u‖ₑ := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp
+  have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p :=
+    ENNReal.coe_toNNReal (ne_top_of_le_ne_top ENNReal.coe_ne_top hpq)
   set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
     mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
     ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ)) *
@@ -166,11 +176,11 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
   · rwa [ENNReal.coe_toNNReal hC] at h
   · rw [ENNReal.coe_toNNReal hC, ← hpp]
     exact eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (phi.contDiff.of_le (by simp))
-      phi.hasCompactSupport Omega.isOpen.measurableSet phi.tsupport_subset
+      phi.hasCompactSupport phi.tsupport_subset
       (by exact_mod_cast hpp ▸ hp1) (by exact_mod_cast hpp ▸ hpq)
       (by rwa [ENNReal.coe_toNNReal_eq_toReal]) hδn
 
-/-- **The Sobolev inequality on `W^{1,p}_0` of a ball.** Let `n ≥ 1` be the dimension and
+/-- **The Sobolev inequality on `W^{1,p}_0` of a ball.** Let `n` be the dimension and
 `ω = μ(B(0, 1))`, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`. If `Ω = B(x₀, R)`, then every
 `u ∈ W^{1,p}_0(Ω)` satisfies
 
@@ -178,26 +188,38 @@ theorem W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt [Nontrivi
 
 The power `R ^ (1 - n δ)` is the one dictated by scaling, so the remaining constant depends only
 on `n`, `δ` and the normalization of `μ`. -/
-theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial E]
-    (hp : p ≠ ∞) {x₀ : E} {R : ℝ} (hR : 0 < R) (hOmega : (Omega : Set E) = ball x₀ R)
+theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
+    {x₀ : E} {R : ℝ} (hOmega : (Omega : Set E) = ball x₀ R)
     {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
     (hδn : δ < (finrank ℝ E : ℝ)⁻¹) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
       ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-δ) *
         ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ) * R ^ (1 - finrank ℝ E * δ)) *
         ‖W1p.gradient u‖ₑ := by
+  -- For `R ≤ 0` the ball is empty and the left side is `0`.
+  rcases le_or_gt R 0 with hR | hR
+  · have h0 : mu.restrict (Omega : Set E) = 0 := by
+      rw [hOmega, Metric.ball_eq_empty.2 hR, Measure.restrict_empty]
+    refine (eLpNorm_mono_measure _ h0.le).trans ?_
+    rw [eLpNorm_measure_zero]
+    exact zero_le
+  -- `p ≤ q` gives `0 ≤ δ`, so `δ < 1/n` forces `n ≥ 1`.
+  have hδ0 : 0 ≤ δ := by
+    simpa only [one_div, ENNReal.coe_toReal, hδ] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
+        (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq
+  have hfin : 0 < finrank ℝ E := Nat.cast_pos.1 (inv_pos.1 (hδ0.trans_lt hδn))
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
-  have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
   have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
   have h1δ : 0 ≤ 1 - δ := by
-    have : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast finrank_pos)
+    have : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast hfin)
     linarith
   have hmeas : mu Omega = ENNReal.ofReal (R ^ n * ω) := by
     rw [hOmega, Measure.addHaar_ball_of_pos mu x₀ hR, ← ofReal_measureReal measure_ball_lt_top.ne,
       ← ENNReal.ofReal_mul (by positivity)]
-  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp
+  refine (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
     (hmeas ▸ ENNReal.ofReal_ne_top) hpq hδ hδn hu).trans_eq ?_
   rw [hmeas, ENNReal.ofReal_rpow_of_nonneg (by positivity) he,
     ← ENNReal.ofReal_mul (mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg h1δ he) _))]
@@ -209,6 +231,34 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
     rw [← Real.rpow_add hω]
     ring_nf
   linear_combination (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) * R ^ (1 - n * δ) * hω'
+
+/-- **The Sobolev inequality on `W^{1,p}_0` of balls, with a uniform constant.** Let `n ≥ 1` be
+the dimension, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`. There is `K > 0`, depending only on
+`n`, `δ` and the normalization of `μ`, such that on every ball `Ω = B(x₀, R)` every
+`u ∈ W^{1,p}_0(Ω)` satisfies `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`. This is
+`TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball` with its explicit constant
+named once for all balls, the form used by iteration arguments on families of balls. -/
+theorem W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
+    {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
+    (hδn : δ < (finrank ℝ E : ℝ)⁻¹) :
+    ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens E} {x₀ : E} {R : ℝ},
+      (Omega : Set E) = ball x₀ R → ∀ u ∈ w1p0Submodule mu Omega p,
+        eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
+          ENNReal.ofReal (K * R ^ (1 - finrank ℝ E * δ)) * ‖W1p.gradient u‖ₑ := by
+  -- `p ≤ q` gives `0 ≤ δ`, so `δ < 1/n` forces `n ≥ 1`.
+  have hδ0 : 0 ≤ δ := by
+    simpa only [one_div, ENNReal.coe_toReal, hδ] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
+        (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq
+  have hfin : 0 < finrank ℝ E := Nat.cast_pos.1 (inv_pos.1 (hδ0.trans_lt hδn))
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hfin
+  have hn : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hfin
+  have : 0 < (finrank ℝ E : ℝ)⁻¹ - δ := sub_pos.2 hδn
+  have : 0 < 1 - δ := by linarith [hδn.trans_le (inv_le_one_of_one_le₀ hn)]
+  have := Metric.measureReal_ball_pos mu (0 : E) one_pos
+  exact ⟨(finrank ℝ E : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-δ) *
+    ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ), by positivity, fun hOmega u hu =>
+    W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball hOmega hpq hδ hδn hu⟩
 
 /-- **A Sobolev inequality on `W^{1,p}_0(Ω)` with a gain of integrability.** If `Ω` has finite
 measure, `n ≥ 1` and `p < ∞`, there are an exponent `q > p` and a constant `S` such that
@@ -249,7 +299,7 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
     (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
   refine ⟨q, hpq, C.toNNReal, fun u hu ↦ ?_⟩
   rw [ENNReal.coe_toNNReal hC]
-  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp hOmega hpq.le
+  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega hpq.le
     (by rw [hq, inv_inv]; ring) hδn hu
 
 end W1p0
@@ -296,8 +346,8 @@ theorem W1p0.integrable_mul_value_of_memLp [Nontrivial E]
     ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one (zero_lt_one.trans_le hn) hr hrn
   have hmemt : MemLp (W1p.value (v : W1p mu Omega 2)) t (mu.restrict Omega) :=
     (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-      ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
-        hτn v.2).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+      hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
+        hτn v.property).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
       (ENNReal.rpow_lt_top_of_nonneg (by linarith) hOmega)) eNorm_lt_top)
   have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
     have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
@@ -329,8 +379,8 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
     ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
       (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
       W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-        ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
-        hτn v.2⟩
+        hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
+        hτn v.property⟩
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
     (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top)
   -- Hölder's inequality: `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.

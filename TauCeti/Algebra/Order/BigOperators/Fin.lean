@@ -16,6 +16,9 @@ import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 A nonnegative finite sequence in which every term is at most half of the previous one sums to at
 most twice its first term. In Roth's lemma this bounds the sum of the weights `rᵢ` by `2 r₀`.
 
+The partial products of a sequence of terms at least `1`, and the partial sums of a nonnegative
+sequence, are monotone.
+
 A nonnegative monotone sequence of length `D * k` bounds the `D`-th power of the product of `k`
 of its terms, the `j`-th of which is taken no later than position `D * j`. This converts bounds
 for vectors selected from an ordered family, such as a family of successive minima, into a bound
@@ -25,6 +28,8 @@ by the product of the whole family.
 
 * `Fin.sum_le_two_mul_of_two_mul_succ_le`: if `0 ≤ rᵢ` and `2 rᵢ₊₁ ≤ rᵢ`, then
   `∑ᵢ rᵢ ≤ 2 r₀`.
+* `Fin.monotone_partialProd`, `Fin.monotone_partialSum`: the partial products of entries at least
+  `1` (the partial sums of nonnegative entries) are monotone.
 * `Fin.prod_pow_le_prod_of_monotone`: if `c` is nonnegative and monotone on `Fin (D * k)` and
   `s j ≤ D * j`, then `(∏ⱼ c (s j)) ^ D ≤ ∏ᵢ cᵢ`.
 -/
@@ -62,7 +67,7 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
     (∏ j, c (s j)) ^ D ≤ ∏ i, c i := by
   obtain rfl | hD := D.eq_zero_or_pos
   · -- `Fin (0 * k)` is empty, so both sides are `1`.
-    have : IsEmpty (Fin (0 * k)) := ⟨fun i ↦ by simpa using i.2⟩
+    have : IsEmpty (Fin (0 * k)) := ⟨fun i ↦ by simpa using i.isLt⟩
     simp
   let e : Fin k × Fin D ≃ Fin (D * k) := finProdFinEquiv.trans (finCongr (Nat.mul_comm k D))
   have he (p : Fin k × Fin D) : (e p : ℕ) = p.2 + D * p.1 := by simp [e]
@@ -75,5 +80,13 @@ theorem prod_pow_le_prod_of_monotone {R : Type*} [CommMonoidWithZero R] [Preorde
   refine Finset.prod_le_prod_of_nonneg_of_le (fun _ _ ↦ hc0 _) fun t _ ↦ hc ?_
   rw [Fin.le_iff_val_le_val, he]
   exact (hs j).trans (Nat.le_add_left _ _)
+
+/-- The partial products of entries at least `1` are monotone. -/
+@[to_additive /-- The partial sums of nonnegative entries are monotone. -/]
+theorem monotone_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M] {n : ℕ}
+    {f : Fin n → M} (hf : ∀ i, 1 ≤ f i) : Monotone (partialProd f) :=
+  monotone_iff_le_succ.2 fun i ↦ by
+    rw [partialProd_succ]
+    exact le_mul_of_one_le_right' (hf i)
 
 end Fin

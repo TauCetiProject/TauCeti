@@ -283,7 +283,7 @@ private noncomputable def aSignlessEquivPreprojective :
   (orientationSignlessPreprojectiveAlgebraEquiv o k).trans
     (symmetrifySignlessPreprojectiveAlgebraEquiv k
       (c := fun i => diagramGraphAColoring n ((OrientedQuiver.vertexEquiv _ o).symm i))
-      fun _ _ a => (diagramGraphAColoring n).valid a.1)
+      fun _ _ a => (diagramGraphAColoring n).valid a.val)
 
 /-- **The preprojective algebra of every orientation of `Aₙ` is left self-injective** over every
 field. -/
