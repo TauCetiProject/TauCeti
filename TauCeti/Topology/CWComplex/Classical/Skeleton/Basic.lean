@@ -139,6 +139,23 @@ lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy :
   rw [Nat.cast_succ]
   exact closedCell_subset_skeletonLT n j ⟨y, mem_closedBall_zero_iff.2 hy, rfl⟩
 
+/-- The centre of an `n`-cell does not lie in `skeletonLT C n`. -/
+lemma map_zero_notMem_skeletonLT {n : ℕ} (j : cell C n) :
+    map n j 0 ∉ (skeletonLT C (n : ℕ∞) : Set X) :=
+  map_notMem_skeletonLT j (by simp)
+
+/-- On the closed unit ball, the characteristic map of an `n`-cell takes the value at the centre
+only at the centre: it is injective on the open ball, and it sends the boundary sphere into
+`skeletonLT C n`, which the centre avoids. -/
+lemma map_eq_map_zero_iff {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
+    map n j y = map n j 0 ↔ y = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  rcases hy.lt_or_eq with hy | hy
+  · exact (map n j).injOn (by rw [source_eq]; exact mem_ball_zero_iff.2 hy)
+      (by rw [source_eq]; exact mem_ball_self one_pos) h
+  · exact (map_zero_notMem_skeletonLT j (h ▸ cellFrontier_subset_skeletonLT n j
+      ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)).elim
+
 /-- A map out of a relative CW complex sends `skeletonLT C (n + 1)` into a set `T` exactly when
 it sends `skeletonLT C n` into `T` and sends every closed `n`-cell, read through its
 characteristic map, into `T`. -/
@@ -243,6 +260,12 @@ lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
 /-- The preimages of the skeleta form an increasing filtration. -/
 lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) :=
   fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
+
+/-- A map over `X` carries each stage of the skeletal filtration into the corresponding stage. -/
+lemma mapsTo_preimageSkeleton {E' : Type*} {f : E → X} {f' : E' → X} (g : E → E')
+    (hg : ∀ x, f' (g x) = f x) (q : ℤ) :
+    Set.MapsTo g (preimageSkeleton C f q) (preimageSkeleton C f' q) := fun x hx ↦ by
+  rwa [mem_preimageSkeleton_iff, hg]
 
 /-- Below degree `0` the skeletal filtration is the preimage of the base. -/
 @[simp]

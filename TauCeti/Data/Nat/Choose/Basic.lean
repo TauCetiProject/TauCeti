@@ -10,9 +10,11 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Qify
 import Mathlib.Tactic.Ring
 
 /-!
@@ -34,6 +36,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add`:
   `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
+* `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
+* `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
@@ -99,6 +103,24 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       have h2 : (n + 1).choose 2 = n.choose 1 + n.choose 2 := choose_succ_succ n 1
       rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
+
+/-- `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`, that is `i(i-1) + i(n-i) = i(n-1)`. -/
+theorem two_mul_choose_two_add_mul_sub {n i : ℕ} (hi : i ≤ n) :
+    2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Nat.le_zero.mp hi]
+  qify [hi, hn]
+  push_cast [Nat.cast_choose_two]
+  ring
+
+/-- `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`. -/
+theorem add_choose_two_add_choose_two (m i : ℕ) :
+    (m + i).choose 2 + i.choose 2 = (m + i - 1) * i + m.choose 2 := by
+  rcases Nat.eq_zero_or_pos (m + i) with h | h
+  · simp [Nat.eq_zero_of_add_eq_zero_left h, Nat.eq_zero_of_add_eq_zero_right h]
+  qify [h]
+  push_cast [Nat.cast_choose_two]
+  ring
 
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :

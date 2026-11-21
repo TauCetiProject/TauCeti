@@ -95,6 +95,15 @@ lemma ιChainComplex_map {m n : ℕ} (x : X _⦋n⦌) (f : ⦋m⦌ ⟶ ⦋n⦌) 
       X.ιChainComplex (X.map f.op x) := by
   simp [ιChainComplex]
 
+/-- A morphism out of the simplicial `n`-chains of `Y` vanishes on the chains pushed forward along
+a map `f : X ⟶ Y` exactly when it vanishes on the summand of every simplex in the image of `f`. -/
+lemma chainComplexMap_f_comp_eq_zero_iff {Y : SSet.{w}} (f : X ⟶ Y) (R : C) {n : ℕ} {T : C}
+    (c : (Y.chainComplex R).X n ⟶ T) :
+    (chainComplexMap f R).f n ≫ c = 0 ↔ ∀ x : X _⦋n⦌, Y.ιChainComplex (f.app _ x) ≫ c = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ chainComplex_hom_ext fun x ↦ ?_⟩
+  · rw [← ι_chainComplexMap_f_assoc, h, comp_zero]
+  · rw [ι_chainComplexMap_f_assoc, h, comp_zero]
+
 end
 
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with semisimple coefficients `M` are

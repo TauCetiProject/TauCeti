@@ -121,9 +121,7 @@ private theorem prop_homotopyGroup_of_add (d : ℕ) :
       isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
     -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
     let e (j : ℕ) [NeZero j] : π_ j X x₀ ≃* π_ j Z z :=
-      MulEquiv.ofBijective
-        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective j x₀))
+      cwApproximationHomotopyGroupMulEquiv (TopCat.of Z) z j
     have hX : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j X x₀) := fun j hj0 hj ↦ by
       have : NeZero j := ⟨hj0⟩
       have := hZ j hj0 hj

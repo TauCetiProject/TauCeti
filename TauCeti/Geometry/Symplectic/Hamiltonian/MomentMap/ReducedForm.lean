@@ -127,22 +127,18 @@ theorem isBasic_mpullback {K : Type*} [SMul K Z] (h : σ.IsMomentMap a μ) (hi :
     (hinv : ∀ k : K, SmoothForm.mpullback (fun z : Z ↦ k • z) (hK k)
       (SmoothForm.mpullback i hi σ) = SmoothForm.mpullback i hi σ) :
     RoughForm.IsBasic (V := ℝ) JQ p (SmoothForm.mpullback i hi σ).val := by
-  refine RoughForm.isBasic_of_mpullback_eq hp (fun k ↦ (hK k).mdifferentiable (by simp))
-    (fun k ↦ funext (hpK k)) (fun z z' hzz' ↦ .inr (hfib z z' hzz')) (fun z v j hj ↦ ?_)
+  refine SmoothTwoForm.isBasic_of_mpullback_eq_of_ker_mfderiv_le hp
+    (fun k ↦ (hK k).mdifferentiable (by simp)) (fun k ↦ funext (hpK k))
+    (fun z z' hzz' ↦ .inr (hfib z z' hzz')) (fun z u hu ↦ ?_)
     fun k ↦ by simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (hinv k)
   -- A vertical vector `u` is sent by `di` to an orbit direction `Z_M`, and `σ(Z_M, di w)` is
   -- `⟨dμ (di w), Z⟩ = 0`.
-  have hnull (u w : TangentSpace J z) (hu : mfderiv J JQ p z u = 0) :
-      SmoothBundleForm.eval₂ (SmoothForm.mpullback i hi σ) z u w = 0 := by
-    obtain ⟨Z, hZ⟩ := (a.mem_orbitTangent_iff _).1 (hker z hu)
-    rw [ContinuousLinearMap.coe_coe] at hZ
-    rw [SmoothForm.eval₂_mpullback, ← hZ, ← h.differential_apply_eq_eval₂]
-    exact LinearMap.congr_fun (hrange z ⟨w, rfl⟩) Z
-  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  rw [hv, ← SmoothBundleForm.eval₂_apply]
-  obtain rfl | rfl : j = 0 ∨ j = 1 := by fin_cases j <;> simp
-  · exact hnull _ _ hj
-  · rw [SmoothBundleForm.eval₂_swap, hnull _ _ hj, neg_zero]
+  refine LinearMap.mem_ker.2 (LinearMap.ext fun w ↦ ?_)
+  obtain ⟨Z, hZ⟩ := (a.mem_orbitTangent_iff _).1 (hker z hu)
+  rw [ContinuousLinearMap.coe_coe] at hZ
+  rw [SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback, ← hZ,
+    ← h.differential_apply_eq_eval₂, LinearMap.zero_apply]
+  exact LinearMap.congr_fun (hrange z ⟨w, rfl⟩) Z
 
 /-- **The reduced symplectic form.** Let `σ` be a symplectic form on `M` with a moment map `μ`,
 let `i : Z → M` parametrize a level `μ = c` on which the cocycle of `μ` vanishes, with tangent
