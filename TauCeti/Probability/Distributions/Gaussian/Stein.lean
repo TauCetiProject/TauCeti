@@ -8,7 +8,11 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Density
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.Probability.Moments.Covariance
 
 /-!
 # Stein's identity for the isotropic Gaussian law
@@ -71,17 +75,18 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Closed form of `multivariateGaussianPDFReal θ (v I)` for `v ≥ 0`:
 `(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is the dimension. For `v > 0` this is the
-density of `N(θ, v I)` (see `multivariateGaussian_smul_one_eq_withDensity`); at `v = 0` it is
-only an identity of real expressions under Lean's conventions `0⁻¹ = 0` and `0 ^ r`, not a
-density. -/
+density of `N(θ, v I)` (see `multivariateGaussian_smul_one_eq_withDensity`). At `v = 0` it is
+an identity of real expressions under Lean's conventions `0⁻¹ = 0` and `0 ^ r`; in positive
+dimension it is then not a density of the point mass `N(θ, 0)`, while in dimension `0` the
+expression is `1`, a density of the point mass. -/
 theorem multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 ≤ v) (θ x : EuclideanSpace ℝ ι) :
     multivariateGaussianPDFReal θ (v • (1 : Matrix ι ι ℝ)) x =
       (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-‖x - θ‖ ^ 2 / (2 * v)) := by
   have hinv : (v • (1 : Matrix ι ι ℝ))⁻¹ = v⁻¹ • 1 := by
     rcases eq_or_ne v 0 with rfl | hv0
     · simp
-    exact Matrix.inv_eq_left_inv (by rw [smul_mul_smul, Matrix.one_mul, inv_mul_cancel₀ hv0,
-      one_smul])
+    simpa [Units.smul_def] using
+      Matrix.inv_smul' (Units.mk0 v hv0) (A := (1 : Matrix ι ι ℝ)) (by simp)
   have hdet : (v • (1 : Matrix ι ι ℝ)).det ^ (-(1 : ℝ) / 2) =
       v ^ (-(Fintype.card ι : ℝ) / 2) := by
     rw [Matrix.det_smul, Matrix.det_one, mul_one, ← Real.rpow_natCast_mul hv]
@@ -98,14 +103,9 @@ covariance: `E‖X - m‖² = tr S`. -/
 theorem integral_norm_sub_sq_multivariateGaussian {S : Matrix ι ι ℝ} (hS : S.PosSemidef)
     (m : EuclideanSpace ℝ ι) :
     ∫ x, ‖x - m‖ ^ 2 ∂multivariateGaussian m S = S.trace := by
-  have hvar (i : ι) : ∫ x, (x i - m i) ^ 2 ∂multivariateGaussian m S = S i i := by
-    have h := variance_eval_multivariateGaussian (μ := m) hS i
-    rw [variance_eq_integral (by fun_prop)] at h
-    simpa using h
-  simp_rw [EuclideanSpace.real_norm_sq_eq, PiLp.sub_apply]
-  rw [integral_finsetSum _ fun i _ ↦ ((IsGaussian.memLp_dual _ (EuclideanSpace.proj i) 2
-    (by simp)).sub (memLp_const _)).integrable_sq]
-  simp [hvar, Matrix.trace]
+  rw [TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _
+    IsGaussian.memLp_two_id m, integral_id_multivariateGaussian,
+    covMatrix_multivariateGaussian m hS, sub_self, norm_zero, zero_pow two_ne_zero, zero_add]
 
 /-- The isotropic Gaussian law `N(θ, v I)`, `v > 0`, is Lebesgue measure with the density
 `(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`. -/
@@ -131,16 +131,6 @@ theorem multivariateGaussian_smul_one_of_nonpos {v : ℝ} (hv : v ≤ 0) (θ : E
       rw [le_antisymm hv h, zero_smul, multivariateGaussian_zero_right]
   · exact multivariateGaussian_of_not_posSemidef θ hS
 
-/-- The derivative of the Gaussian kernel `y ↦ exp (-‖y - θ‖² / (2v))` on a real inner product
-space: at `x` it is `y ↦ -exp (-‖x - θ‖² / (2v)) ⟪x - θ, y⟫ / v`. -/
-theorem hasFDerivAt_exp_neg_norm_sub_sq_div {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {v : ℝ} (θ x : E) :
-    HasFDerivAt (fun y : E ↦ exp (-‖y - θ‖ ^ 2 / (2 * v)))
-      (exp (-‖x - θ‖ ^ 2 / (2 * v)) • ((-(2 * v)⁻¹) • (2 • innerSL ℝ (x - θ)))) x := by
-  have h := (((hasFDerivAt_id x).sub_const θ).norm_sq.const_mul (-(2 * v)⁻¹)).exp
-  have e (y : E) : -(2 * v)⁻¹ * ‖y - θ‖ ^ 2 = -‖y - θ‖ ^ 2 / (2 * v) := by ring
-  simpa only [id, ContinuousLinearMap.comp_id, e] using h
-
 /-- **Stein's identity** for a real function under `N(θ, v I)`, `v ≥ 0`: for a differentiable `f`
 such that `f`, `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable,
 `E[(Xᵢ - θᵢ) f(X)] = v E[∂ᵢ f(X)]`. -/
@@ -165,22 +155,27 @@ theorem integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian {v : ℝ} (
   have hint (g : EuclideanSpace ℝ ι → ℝ) :
       Integrable g (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))) ↔
         Integrable (fun x ↦ φ x * g x) volume := by
-    simp only [hP, integrable_withDensity_ofReal_iff hφm hφnn, smul_eq_mul, φ, c]
-  have hφd (x : EuclideanSpace ℝ ι) : HasFDerivAt φ (c • (exp (-‖x - θ‖ ^ 2 / (2 * v)) •
-      ((-(2 * v)⁻¹) • (2 • innerSL ℝ (x - θ))))) x :=
-    (hasFDerivAt_exp_neg_norm_sub_sq_div θ x).const_mul c
+    simp only [hP, TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hφm hφnn, smul_eq_mul,
+      φ, c]
+  have hφd (x : EuclideanSpace ℝ ι) : HasFDerivAt φ
+      (c • ((-2 * (2 * v)⁻¹ * exp (-(2 * v)⁻¹ * ‖x - θ‖ ^ 2)) • innerSL ℝ (x - θ))) x := by
+    have he : φ = fun y ↦ c * exp (-(2 * v)⁻¹ * ‖y - θ‖ ^ 2) := by
+      funext y
+      simp only [hφ, neg_mul, inv_mul_eq_div, neg_div]
+    rw [he]
+    exact (TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq ((2 * v)⁻¹) θ x).const_mul c
   have hφe (x : EuclideanSpace ℝ ι) : fderiv ℝ φ x e = -(v⁻¹ * (x i - θ i)) * φ x := by
     rw [(hφd x).fderiv]
     simp only [e, smul_apply, innerSL_apply_apply, conj_trivial,
       EuclideanSpace.inner_single_right, PiLp.sub_apply, hφ, smul_eq_mul]
     field_simp
-    ring
   have hibp := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (v := e)
     (((hint _).1 hxf).const_mul (-v⁻¹) |>.congr (ae_of_all _ fun x ↦ by
       simp only [hφe]; ring))
     ((hint _).1 hdf) ((hint _).1 hfi) (fun x _ ↦ (hφd x).differentiableAt)
     (fun x _ ↦ hf x)
-  rw [hP, integral_withDensity_ofReal hφm hφnn, integral_withDensity_ofReal hφm hφnn]
+  rw [hP, TauCeti.MeasureTheory.integral_withDensity_ofReal hφm hφnn,
+    TauCeti.MeasureTheory.integral_withDensity_ofReal hφm hφnn]
   simp only [smul_eq_mul]
   rw [hibp, ← integral_neg, ← integral_const_mul]
   refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
@@ -231,12 +226,12 @@ theorem integrable_inv_norm_sq_multivariateGaussian (hι : 3 ≤ Fintype.card ι
     mul_le_of_le_one_right (by positivity) (exp_le_one_iff.2 (div_nonpos_of_nonpos_of_nonneg
       (neg_nonpos.2 (by positivity)) (by positivity)))
   have hφi : Integrable φ volume :=
-    integrable_of_eq_withDensity (multivariateGaussian_smul_one_eq_withDensity hv θ) hφm
-      (ae_of_all _ hφnn)
+    TauCeti.MeasureTheory.integrable_of_eq_withDensity
+      (multivariateGaussian_smul_one_eq_withDensity hv θ) hφm (ae_of_all _ hφnn)
   have hball : IntegrableOn (fun x : EuclideanSpace ℝ ι ↦ ‖x‖ ^ (-2 : ℝ)) (Metric.ball 0 1) :=
     TauCeti.integrableOn_norm_rpow_ball (by simp; omega)
   rw [multivariateGaussian_smul_one_eq_withDensity hv θ,
-    integrable_withDensity_ofReal_iff hφm (ae_of_all _ hφnn)]
+    TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hφm (ae_of_all _ hφnn)]
   refine Integrable.mono' (((hball.integrable_indicator measurableSet_ball).const_mul c).add
     hφi) (by fun_prop) (ae_of_all _ fun x ↦ ?_)
   rw [smul_eq_mul, Real.norm_of_nonneg (by positivity), Pi.add_apply]
