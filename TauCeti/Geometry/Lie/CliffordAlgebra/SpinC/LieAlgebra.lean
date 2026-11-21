@@ -275,14 +275,20 @@ trivially, while the Spin component carries the native Spin Lie bracket. -/
 @[simp]
 theorem lie_realSpinProdDetLinearEquiv (p q : 𝔰 × ℝ) :
     ⁅realSpinProdDetLinearEquiv n hQ p, realSpinProdDetLinearEquiv n hQ q⁆ =
-      realSpinProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
-  (congrArg₂ (⁅·, ·⁆) (realSpinProdDetLinearEquiv_apply n hQ p)
-    (realSpinProdDetLinearEquiv_apply n hQ q)).trans <| (lie_add _ _ _).trans <|
-    (congrArg (· + _) (add_lie _ _ _)).trans <|
-    (congrArg₂ (· + ·) (congrArg₂ (· + ·) ((ιS).map_lie p.1 q.1).symm
-      (realDetLieLift_lie n hQ p.2 (ιS q.1))) (lie_realDetLieLift n hQ _ q.2)).trans <|
-    (add_zero _).trans <| (congrArg (ιS ⁅p.1, q.1⁆ + ·) (map_zero _).symm).trans
-      (realSpinProdDetLinearEquiv_apply n hQ (⁅p.1, q.1⁆, 0)).symm
+      realSpinProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
+  simp only [realSpinProdDetLinearEquiv_apply, lie_add, add_lie, realDetLieLift_lie,
+    lie_realDetLieLift, LieHom.map_lie, map_zero, add_zero]
+
+/-- Transporting `realSpinProdDetLinearEquiv` along a Lie-algebra equivalence `e : L ≃ₗ⁅ℝ⁆ 𝔰` on
+the Spin factor preserves Lie brackets in the first slot and annihilates the central determinant
+parameter. -/
+theorem lie_realSpinProdDetLinearEquiv_comp_lieEquiv
+    {L : Type*} [LieRing L] [LieAlgebra ℝ L] (e : L ≃ₗ⁅ℝ⁆ 𝔰) (p q : L × ℝ) :
+    ⁅realSpinProdDetLinearEquiv n hQ (e p.1, p.2),
+        realSpinProdDetLinearEquiv n hQ (e q.1, q.2)⁆ =
+      realSpinProdDetLinearEquiv n hQ (e ⁅p.1, q.1⁆, 0) :=
+  (lie_realSpinProdDetLinearEquiv n hQ (e p.1, p.2) (e q.1, q.2)).trans <|
+    congrArg (fun X ↦ realSpinProdDetLinearEquiv n hQ (X, 0)) (e.map_lie p.1 q.1).symm
 
 /-- **Lie exponential in Spin–determinant coordinates**: `(X, a)` exponentiates to the class
 `[exp X, exp(i a / 2)]` in `Spinᶜ(n)`. -/
@@ -344,9 +350,7 @@ bracket and annihilate the determinant component. -/
 theorem lie_realQuadraticProdDetLinearEquiv
     (p q : quadraticLieSubalgebra (realCliffordForm n 0) × ℝ) :
     ⁅realQuadraticProdDetLinearEquiv n hQ p, realQuadraticProdDetLinearEquiv n hQ q⁆ =
-      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
-  rw [realQuadraticProdDetLinearEquiv_apply, realQuadraticProdDetLinearEquiv_apply,
-    realQuadraticProdDetLinearEquiv_apply, lie_realSpinProdDetLinearEquiv,
-    ← (realSpinLieEquivQuadratic n).symm.map_lie p.1 q.1]
+      realQuadraticProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) :=
+  lie_realSpinProdDetLinearEquiv_comp_lieEquiv n hQ (realSpinLieEquivQuadratic n).symm p q
 
 end CliffordAlgebra.spinCGroup
