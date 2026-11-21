@@ -11,9 +11,10 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.Analytic.ContinuousMap
@@ -27,8 +28,10 @@ import TauCeti.MeasureTheory.Integral.Circle.ContinuousMap
 For a centre `c : ℂ` and radius `R : ℝ`, `TauCeti.discAlgebra c R` is the disc algebra
 `A(closedBall c R)`: the complex subalgebra of `C(closedBall c R, ℂ)` consisting of continuous
 functions on the closed disc `closedBall c R` that are holomorphic on the open disc `ball c R`.
-Holomorphy can be tested on any ambient representative agreeing with the function on
-`closedBall c R`, and in particular on the extension by zero (`TauCeti.DiscAlgebra.extend`).
+It is defined by pulling back `TauCeti.holomorphicFunctions ⟨ball c R, isOpen_ball⟩` along
+restriction to `ball c R`. Holomorphy can be tested on any ambient representative agreeing with
+the function on `closedBall c R`, and in particular on the extension by zero
+(`TauCeti.DiscAlgebra.extend`).
 
 With the supremum norm inherited from `C(closedBall c R, ℂ)`, `discAlgebra c R` is closed
 (`TauCeti.isClosed_discAlgebra`) and hence a commutative unital Banach algebra.
@@ -42,7 +45,7 @@ With the supremum norm inherited from `C(closedBall c R, ℂ)`, `discAlgebra c R
   and canonical extension by zero outside `closedBall c R`.
 * `TauCeti.DiscAlgebra.coord`: the coordinate element `z ↦ z`.
 * `TauCeti.DiscAlgebra.dslope`: division by `z - a` after subtracting the value at an interior
-  point `a ∈ ball c R`, as a `ℂ`-linear endomorphism satisfying
+  point `a ∈ ball c R`, as a bounded `ℂ`-linear endomorphism (`ContinuousLinearMap`) satisfying
   `(coord c R - a) * dslope ha f + f(a) = f`.
 * `TauCeti.DiscAlgebra.mkD`, `TauCeti.DiscAlgebra.analyticAt_mkD_of_analyticAt`: a jointly analytic
   family `F : E × ℂ → ℂ` near `{a} × closedBall c R` (with `E` finite-dimensional over `ℂ`)
@@ -67,34 +70,18 @@ open Complex Filter Metric Set Topology
 /-- The disc algebra `A(closedBall c R)` of continuous functions on `closedBall c R` that are
 holomorphic on `ball c R`, as a complex subalgebra of `C(closedBall c R, ℂ)` with the supremum
 norm. -/
-def discAlgebra (c : ℂ) (R : ℝ) : Subalgebra ℂ C(closedBall c R, ℂ) where
-  carrier := {f | ∃ g : ℂ → ℂ, DifferentiableOn ℂ g (ball c R) ∧ ∀ z : closedBall c R, g z = f z}
-  zero_mem' := ⟨0, differentiableOn_const _, fun _ => rfl⟩
-  one_mem' := ⟨1, differentiableOn_const _, fun _ => rfl⟩
-  add_mem' := by
-    rintro f h ⟨g, hg, hgf⟩ ⟨k, hk, hkh⟩
-    exact ⟨g + k, hg.add hk, fun z => by simp [hgf, hkh]⟩
-  mul_mem' := by
-    rintro f h ⟨g, hg, hgf⟩ ⟨k, hk, hkh⟩
-    exact ⟨g * k, hg.mul hk, fun z => by simp [hgf, hkh]⟩
-  algebraMap_mem' a := ⟨fun _ => a, differentiableOn_const _, fun _ => rfl⟩
-
-/-- Membership in `discAlgebra c R` means having an ambient representative holomorphic on
-`ball c R`. -/
-theorem mem_discAlgebra_iff {c : ℂ} {R : ℝ} {f : C(closedBall c R, ℂ)} :
-    f ∈ discAlgebra c R ↔
-      ∃ g : ℂ → ℂ, DifferentiableOn ℂ g (ball c R) ∧ ∀ z : closedBall c R, g z = f z := Iff.rfl
+noncomputable def discAlgebra (c : ℂ) (R : ℝ) : Subalgebra ℂ C(closedBall c R, ℂ) :=
+  (holomorphicFunctions ⟨ball c R, isOpen_ball⟩).comap
+    (ContinuousMap.compRightAlgHom ℂ ℂ (ContinuousMap.inclusion ball_subset_closedBall))
 
 /-- Holomorphy on `ball c R` can be tested on any ambient function agreeing with `f` on
 `closedBall c R`. -/
 theorem mem_discAlgebra_iff_of_eqOn {c : ℂ} {R : ℝ} {f : C(closedBall c R, ℂ)} {g : ℂ → ℂ}
     (hgf : ∀ z : closedBall c R, g z = f z) :
     f ∈ discAlgebra c R ↔ DifferentiableOn ℂ g (ball c R) := by
-  constructor
-  · rintro ⟨k, hk, hkf⟩
-    exact hk.congr fun z hz =>
-      (hgf ⟨z, ball_subset_closedBall hz⟩).trans (hkf ⟨z, ball_subset_closedBall hz⟩).symm
-  · exact fun hg => ⟨g, hg, hgf⟩
+  rw [discAlgebra, Subalgebra.mem_comap, ContinuousMap.compRightAlgHom_apply]
+  exact mem_holomorphicFunctions_iff_of_eqOn fun z =>
+    hgf ⟨z.val, ball_subset_closedBall z.property⟩
 
 /-- Equivalently, the extension by zero outside `closedBall c R` is holomorphic on `ball c R`. -/
 theorem mem_discAlgebra_iff_extend {c : ℂ} {R : ℝ} {f : C(closedBall c R, ℂ)} :
@@ -102,20 +89,22 @@ theorem mem_discAlgebra_iff_extend {c : ℂ} {R : ℝ} {f : C(closedBall c R, �
       DifferentiableOn ℂ (Function.extend Subtype.val f (fun _ => 0)) (ball c R) :=
   mem_discAlgebra_iff_of_eqOn fun z => Subtype.val_injective.extend_apply f (fun _ => 0) z
 
-/-- The disc algebra is a closed subalgebra of `C(closedBall c R, ℂ)`: a uniform limit of functions
-holomorphic on `ball c R` is holomorphic on `ball c R`. -/
+/-- Membership in `discAlgebra c R` means having an ambient representative holomorphic on
+`ball c R`. -/
+theorem mem_discAlgebra_iff {c : ℂ} {R : ℝ} {f : C(closedBall c R, ℂ)} :
+    f ∈ discAlgebra c R ↔
+      ∃ g : ℂ → ℂ, DifferentiableOn ℂ g (ball c R) ∧ ∀ z : closedBall c R, g z = f z :=
+  ⟨fun h => ⟨_, mem_discAlgebra_iff_extend.mp h,
+      fun z => Subtype.val_injective.extend_apply f (fun _ => 0) z⟩,
+    fun ⟨_, hg, hgf⟩ => (mem_discAlgebra_iff_of_eqOn hgf).mpr hg⟩
+
+/-- The disc algebra is a closed subalgebra of `C(closedBall c R, ℂ)`: it is the preimage of the
+closed subalgebra of holomorphic functions on `ball c R` under continuous restriction. -/
 theorem isClosed_discAlgebra (c : ℂ) (R : ℝ) :
-    IsClosed (discAlgebra c R : Set C(closedBall c R, ℂ)) := by
-  refine IsSeqClosed.isClosed fun u u₀ hu hut => ?_
-  refine mem_discAlgebra_iff_extend.mpr ?_
-  have hunif : TendstoUniformlyOn
-      (fun n => Function.extend Subtype.val (u n) (fun _ => 0))
-      (Function.extend Subtype.val u₀ (fun _ => 0)) atTop (closedBall c R) := by
-    rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
-    simpa only [Function.comp_def, Subtype.val_injective.extend_apply] using
-      ContinuousMap.tendsto_iff_tendstoUniformly.mp hut
-  exact (hunif.mono ball_subset_closedBall).tendstoLocallyUniformlyOn.differentiableOn
-    (Eventually.of_forall fun n => mem_discAlgebra_iff_extend.mp (hu n)) isOpen_ball
+    IsClosed (discAlgebra c R : Set C(closedBall c R, ℂ)) :=
+  (isClosed_holomorphicFunctions ⟨ball c R, isOpen_ball⟩).preimage
+    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ
+      (ContinuousMap.inclusion ball_subset_closedBall))
 
 /-- The disc algebra is a Banach algebra with the supremum norm. -/
 instance (c : ℂ) (R : ℝ) : CompleteSpace (discAlgebra c R) :=
@@ -129,7 +118,8 @@ variable {c : ℂ} {R : ℝ}
 `closedBall c R` and holomorphic on `ball c R`. -/
 def of (c : ℂ) (R : ℝ) (g : ℂ → ℂ) (hc : ContinuousOn g (closedBall c R))
     (hd : DifferentiableOn ℂ g (ball c R)) : discAlgebra c R :=
-  ⟨⟨fun z => g z, hc.domRestrict⟩, g, hd, fun _ => rfl⟩
+  ⟨⟨fun z => g z, hc.domRestrict⟩,
+    (mem_discAlgebra_iff_of_eqOn (f := ⟨fun z => g z, hc.domRestrict⟩) fun _ => rfl).2 hd⟩
 
 /-- Evaluating `of c R g hc hd` at `z : closedBall c R` returns `g z`. -/
 @[simp]
@@ -242,9 +232,8 @@ def coord (c : ℂ) (R : ℝ) : discAlgebra c R :=
 theorem coord_apply (c : ℂ) (R : ℝ) (z : closedBall c R) :
     (coord c R : C(closedBall c R, ℂ)) z = z := (rfl)
 
-/-- The divided-difference operator `f ↦ (z ↦ (f z - f a) / (z - a))` (with value `f'(a)` at
-`a`) at an interior point `a ∈ ball c R`, as a `ℂ`-linear endomorphism of `discAlgebra c R`. -/
-noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
+/-- Underlying linear map for `DiscAlgebra.dslope`. -/
+private noncomputable def dslopeLinear {a : ℂ} (ha : a ∈ ball c R) :
     discAlgebra c R →ₗ[ℂ] discAlgebra c R where
   toFun f :=
     of c R (_root_.dslope (extend f) a)
@@ -275,6 +264,87 @@ noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
         of_apply, dslope_of_ne _ hza, slope_def_module, extend_smul, Pi.smul_apply]
       ring
 
+private theorem dslopeLinear_apply {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R)
+    (z : closedBall c R) :
+    (dslopeLinear ha f : C(closedBall c R, ℂ)) z = _root_.dslope (extend f) a z := (rfl)
+
+private theorem coord_sub_algebraMap_mul_dslopeLinear_add {a : ℂ} (ha : a ∈ ball c R)
+    (f : discAlgebra c R) :
+    (coord c R - algebraMap ℂ (discAlgebra c R) a) * dslopeLinear ha f +
+      algebraMap ℂ (discAlgebra c R) (extend f a) = f := by
+  apply Subtype.ext
+  ext z
+  have h := sub_smul_dslope (extend f) a z.val
+  rw [smul_eq_mul, extend_apply f z] at h
+  simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_sub,
+    Algebra.algebraMap_eq_smul_one, Subalgebra.coe_smul, Subalgebra.coe_one,
+    ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.sub_apply,
+    ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul, mul_one,
+    coord_apply, dslopeLinear_apply]
+  linear_combination h
+
+private theorem eq_dslopeLinear_of_coord_sub_algebraMap_mul_add {a : ℂ} (ha : a ∈ ball c R)
+    {f q : discAlgebra c R} {c₀ : ℂ}
+    (h : (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
+      algebraMap ℂ (discAlgebra c R) c₀ = f) :
+    q = dslopeLinear ha f := by
+  have heval (z : closedBall c R) :
+      (z.val - a) * (q : C(closedBall c R, ℂ)) z + c₀ = (f : C(closedBall c R, ℂ)) z := by
+    have hz := congrArg (fun g : discAlgebra c R => (g : C(closedBall c R, ℂ)) z) h
+    simpa [Algebra.algebraMap_eq_smul_one, mul_one] using hz
+  have hc₀ : c₀ = extend f a := by
+    have h0 := heval ⟨a, ball_subset_closedBall ha⟩
+    simpa [extend_apply f ⟨a, ball_subset_closedBall ha⟩] using h0
+  have hne : ∀ z : closedBall c R, z.val ≠ a →
+      (q : C(closedBall c R, ℂ)) z = (dslopeLinear ha f : C(closedBall c R, ℂ)) z := by
+    intro z hza
+    rw [dslopeLinear_apply, dslope_of_ne _ hza, slope_def_module, smul_eq_mul, extend_apply f z]
+    have hz := heval z
+    rw [hc₀] at hz
+    rw [eq_inv_mul_iff_mul_eq₀ (sub_ne_zero.2 hza)]
+    linear_combination hz
+  have hev : extend q =ᶠ[𝓝[≠] a] extend (dslopeLinear ha f) := by
+    filter_upwards [inter_mem_nhdsWithin _ (closedBall_mem_nhds_of_mem ha)] with w ⟨hw_ne, hw_cb⟩
+    rw [extend_apply q ⟨w, hw_cb⟩, extend_apply (dslopeLinear ha f) ⟨w, hw_cb⟩]
+    exact hne ⟨w, hw_cb⟩ hw_ne
+  have hqc : ContinuousAt (extend q) a :=
+    (continuousOn_extend q).continuousAt (closedBall_mem_nhds_of_mem ha)
+  have hfc : ContinuousAt (extend (dslopeLinear ha f)) a :=
+    (continuousOn_extend (dslopeLinear ha f)).continuousAt (closedBall_mem_nhds_of_mem ha)
+  have ha_eq : extend q a = extend (dslopeLinear ha f) a :=
+    (((hqc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hfc).1 hev)).self_of_nhds
+  apply Subtype.ext
+  ext z
+  by_cases hza : z.val = a
+  · have hz_eq : z = ⟨a, ball_subset_closedBall ha⟩ := Subtype.ext hza
+    subst hz_eq
+    rw [← extend_apply q ⟨a, ball_subset_closedBall ha⟩,
+      ← extend_apply (dslopeLinear ha f) ⟨a, ball_subset_closedBall ha⟩, ha_eq]
+  · exact hne z hza
+
+/-- The divided-difference operator `f ↦ (z ↦ (f z - f a) / (z - a))` (with value `f'(a)` at
+`a`) at an interior point `a ∈ ball c R`, as a bounded `ℂ`-linear endomorphism of
+`discAlgebra c R`. -/
+noncomputable def dslope {a : ℂ} (ha : a ∈ ball c R) :
+    discAlgebra c R →L[ℂ] discAlgebra c R :=
+  ContinuousLinearMap.ofIsClosedGraph (g := dslopeLinear ha) <| by
+    have hgraph : ((dslopeLinear ha).graph : Set (discAlgebra c R × discAlgebra c R)) =
+        {p : discAlgebra c R × discAlgebra c R |
+          (coord c R - algebraMap ℂ (discAlgebra c R) a) * p.2 +
+            algebraMap ℂ (discAlgebra c R)
+              ((p.1 : C(closedBall c R, ℂ)) ⟨a, ball_subset_closedBall ha⟩) = p.1} := by
+      ext ⟨f, q⟩
+      simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq,
+        ← extend_apply f ⟨a, ball_subset_closedBall ha⟩]
+      exact ⟨fun h => h ▸ coord_sub_algebraMap_mul_dslopeLinear_add ha f,
+        eq_dslopeLinear_of_coord_sub_algebraMap_mul_add ha⟩
+    rw [hgraph]
+    refine isClosed_eq ?_ continuous_fst
+    exact (continuous_const.mul continuous_snd).add
+      ((algebraMapCLM ℂ (discAlgebra c R)).continuous.comp
+        ((continuous_eval_const (⟨a, ball_subset_closedBall ha⟩ : closedBall c R)).comp
+          (continuous_subtypeVal.comp continuous_fst)))
+
 /-- Evaluating `dslope ha f` at `z : closedBall c R` returns `_root_.dslope (extend f) a z`. -/
 @[simp]
 theorem dslope_apply {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) (z : closedBall c R) :
@@ -298,17 +368,15 @@ theorem extend_dslope_self {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R)
 @[simp]
 theorem coord_sub_algebraMap_mul_dslope_add {a : ℂ} (ha : a ∈ ball c R) (f : discAlgebra c R) :
     (coord c R - algebraMap ℂ (discAlgebra c R) a) * dslope ha f +
-      algebraMap ℂ (discAlgebra c R) (extend f a) = f := by
-  apply Subtype.ext
-  ext z
-  have h := sub_smul_dslope (extend f) a z.val
-  rw [smul_eq_mul, extend_apply f z] at h
-  simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_sub,
-    Algebra.algebraMap_eq_smul_one, Subalgebra.coe_smul, Subalgebra.coe_one,
-    ContinuousMap.add_apply, ContinuousMap.mul_apply, ContinuousMap.sub_apply,
-    ContinuousMap.smul_apply, ContinuousMap.one_apply, smul_eq_mul, mul_one,
-    coord_apply, dslope_apply]
-  linear_combination h
+      algebraMap ℂ (discAlgebra c R) (extend f a) = f :=
+  coord_sub_algebraMap_mul_dslopeLinear_add ha f
+
+/-- Dividing off the value at `0 ∈ ball c R` recovers `f`:
+`coord c R * dslope ha f + f(0) = f`. -/
+@[simp]
+theorem coord_mul_dslope_add (ha : (0 : ℂ) ∈ ball c R) (f : discAlgebra c R) :
+    coord c R * dslope ha f + algebraMap ℂ (discAlgebra c R) (extend f 0) = f := by
+  simpa using coord_sub_algebraMap_mul_dslope_add ha f
 
 /-- Uniqueness of the divided-difference quotient in `discAlgebra c R`: if
 `(coord c R - a) * q + c₀ = f`, then `q = dslope ha f`. -/
@@ -316,40 +384,8 @@ theorem eq_dslope_of_coord_sub_algebraMap_mul_add {a : ℂ} (ha : a ∈ ball c R
     {f q : discAlgebra c R} {c₀ : ℂ}
     (h : (coord c R - algebraMap ℂ (discAlgebra c R) a) * q +
       algebraMap ℂ (discAlgebra c R) c₀ = f) :
-    q = dslope ha f := by
-  have heval (z : closedBall c R) :
-      (z.val - a) * (q : C(closedBall c R, ℂ)) z + c₀ = (f : C(closedBall c R, ℂ)) z := by
-    have hz := congrArg (fun g : discAlgebra c R => (g : C(closedBall c R, ℂ)) z) h
-    simpa [Algebra.algebraMap_eq_smul_one, mul_one] using hz
-  have hc₀ : c₀ = extend f a := by
-    have h0 := heval ⟨a, ball_subset_closedBall ha⟩
-    simpa [extend_apply f ⟨a, ball_subset_closedBall ha⟩] using h0
-  have hne : ∀ z : closedBall c R, z.val ≠ a →
-      (q : C(closedBall c R, ℂ)) z = (dslope ha f : C(closedBall c R, ℂ)) z := by
-    intro z hza
-    rw [dslope_apply, dslope_of_ne _ hza, slope_def_module, smul_eq_mul, extend_apply f z]
-    have hz := heval z
-    rw [hc₀] at hz
-    rw [eq_inv_mul_iff_mul_eq₀ (sub_ne_zero.2 hza)]
-    linear_combination hz
-  have hev : extend q =ᶠ[𝓝[≠] a] extend (dslope ha f) := by
-    filter_upwards [inter_mem_nhdsWithin _ (closedBall_mem_nhds_of_mem ha)] with w ⟨hw_ne, hw_cb⟩
-    rw [extend_apply q ⟨w, hw_cb⟩, extend_apply (dslope ha f) ⟨w, hw_cb⟩]
-    exact hne ⟨w, hw_cb⟩ hw_ne
-  have hqc : ContinuousAt (extend q) a :=
-    (continuousOn_extend q).continuousAt (closedBall_mem_nhds_of_mem ha)
-  have hfc : ContinuousAt (extend (dslope ha f)) a :=
-    (continuousOn_extend (dslope ha f)).continuousAt (closedBall_mem_nhds_of_mem ha)
-  have ha_eq : extend q a = extend (dslope ha f) a :=
-    (((hqc.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hfc).1 hev)).self_of_nhds
-  apply Subtype.ext
-  ext z
-  by_cases hza : z.val = a
-  · have hz_eq : z = ⟨a, ball_subset_closedBall ha⟩ := Subtype.ext hza
-    subst hz_eq
-    rw [← extend_apply q ⟨a, ball_subset_closedBall ha⟩,
-      ← extend_apply (dslope ha f) ⟨a, ball_subset_closedBall ha⟩, ha_eq]
-  · exact hne z hza
+    q = dslope ha f :=
+  eq_dslopeLinear_of_coord_sub_algebraMap_mul_add ha h
 
 /-- Characterization of `dslope ha f` via the division identity
 `(coord c R - a) * q + f(a) = f`. -/
