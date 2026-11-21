@@ -13,14 +13,14 @@ import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
 
 /-!
-# Power series and circle integrals for `Complex.besselJ`
+# Power series, circle integrals and plane integrals for `Complex.besselJ`
 
 Mathlib defines the Bessel function of the first kind `Complex.besselJ ν z` through the regularized
 hypergeometric function `₀F₁`, establishes its parity and `J_{-n}(z) = (-1)^n J_n(z)` for integer
 orders, and proves analyticity on `Complex.slitPlane` (and on all of `ℂ` for integer orders).
 
-This file develops the power series and full-period circle integrals of `Complex.besselJ`,
-paralleling the real modified-Bessel development in
+This file develops the power series, full-period circle integrals and polar plane integrals of
+`Complex.besselJ`, paralleling the real modified-Bessel development in
 `TauCeti/Analysis/SpecialFunctions/Bessel/I.lean`:
 
 * Power series: `Complex.hasSum_besselJ` expresses `J_ν(z)` as its alternating power series
