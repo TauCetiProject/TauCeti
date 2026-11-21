@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Independence.Integration
 public import TauCeti.Combinatorics.TreeWalk.Product
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 
 /-!
 # Trace words of Wigner matrices

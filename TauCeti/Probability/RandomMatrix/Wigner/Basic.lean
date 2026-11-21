@@ -661,18 +661,15 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
     (hη : ∀ i < n, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B) (i j : Fin n) :
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ k ∂P ≤ (Real.sqrt n)⁻¹ ^ k * B := by
-  have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
-    simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hc, integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ _ j.isLt) (by positivity)
-  · obtain rfl := Fin.ext h
+  by_cases h : i = j
+  · subst j
+    have hc : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
+      simp [Real.norm_of_nonneg (Real.sqrt_nonneg _)]
     simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hc, Complex.norm_real,
       integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hη _ i.isLt) (by positivity)
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hc,
-      integral_const_mul]
-    exact mul_le_mul_of_nonneg_left (hξ _ i.isLt) (by positivity)
+  · simp only [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (hξ _ (max_lt i.isLt j.isLt)) (by positivity)
 
 /-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
 expectation zero. -/

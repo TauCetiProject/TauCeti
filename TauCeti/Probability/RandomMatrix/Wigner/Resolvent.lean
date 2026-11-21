@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
 public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform

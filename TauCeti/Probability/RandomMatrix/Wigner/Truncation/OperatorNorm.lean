@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
+import TauCeti.Probability.RandomMatrix.Wigner.EntryMax
 public import TauCeti.Probability.Moments.CenteredTruncation
 import TauCeti.Probability.Independence.Basic
-import TauCeti.Probability.RandomMatrix.Diagonal
-import TauCeti.Probability.Moments.Chebyshev
-import TauCeti.Probability.RandomMatrix.Centering
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
+import TauCeti.Probability.RandomMatrix.Wigner.Centering.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Truncation.Basic
 import Mathlib.Analysis.PSeries
 
@@ -42,8 +43,8 @@ open scoped Topology ENNReal NNReal Matrix.Norms.L2Operator
 
 namespace TauCeti.Probability
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-  {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω → ℂ}
+variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+  {P : Measure Ω} {Q : Measure Ω'} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {X : Ω' → ℂ}
 
 /-- The probability that some row has at least `q` entries above the normalized cutoff
 is at most `n^(q+1)` times the `q`-th power of a uniform bound on the unnormalized tail
@@ -96,21 +97,25 @@ theorem measure_exists_row_with_large_wigner_entries_le {n q : ℕ}
       exact_mod_cast (Nat.choose_le_pow _ _).trans (Nat.pow_le_pow_left hc q)
     _ = _ := by simp [nsmul_eq_mul, pow_succ', mul_assoc]
 
-private theorem measure_exists_row_with_large_wigner_entries_rpow_le (a : ℝ) (n q : ℕ)
+/-- For a common upper-entry law of finite fourth moment and independence within each
+off-diagonal row, the probability that some row has at least `q` entries above cutoff
+`(n+1)^a / √(n+1)` is bounded by the `q`-th power of that moment times
+`(n+1)^(q+1-4*a*q)`. -/
+theorem measure_exists_row_with_large_wigner_entries_rpow_le (a : ℝ) (n q : ℕ)
     (hind : ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
-    (hid : ∀ ij, IdentDistrib (ξ ij) X P P) (hX : MemLp X 4 P) :
+    (hid : ∀ ij, IdentDistrib (ξ ij) X P Q) (hX : MemLp X 4 Q) :
     P {ω | ∃ i : Fin (n + 1), q ≤ (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card} ≤
-      ENNReal.ofReal ((∫ ω, ‖X ω‖ ^ 4 ∂P) ^ q *
+      ENNReal.ofReal ((∫ ω, ‖X ω‖ ^ 4 ∂Q) ^ q *
         ((n + 1 : ℕ) : ℝ) ^ ((q : ℝ) + 1 - a * (4 * q))) := by
-  let C : ℝ := ∫ ω, ‖X ω‖ ^ 4 ∂P
+  let C : ℝ := ∫ ω, ‖X ω‖ ^ 4 ∂Q
   have hC : 0 ≤ C := integral_nonneg fun _ ↦ by positivity
   let N : ℝ := (n + 1 : ℕ)
   have hN : 0 < N := by dsimp only [N]; positivity
   have hr : 0 < N ^ a := Real.rpow_pos_of_pos hN _
-  have htail : P {ω | N ^ a < ‖X ω‖} ≤ ENNReal.ofReal (C / (N ^ a) ^ 4) := by
+  have htail : Q {ω | N ^ a < ‖X ω‖} ≤ ENNReal.ofReal (C / (N ^ a) ^ 4) := by
     have hsub : {ω | N ^ a < ‖X ω‖} ⊆ {ω | (N ^ a) ^ 4 ≤ ‖X ω‖ ^ 4} :=
       fun _ hω ↦ pow_le_pow_left₀ hr.le hω.le 4
     have hi := hX.integrable_norm_pow (by decide)
@@ -123,7 +128,7 @@ private theorem measure_exists_row_with_large_wigner_entries_rpow_le (a : ℝ) (
     push_cast
     ring
   calc
-    _ ≤ ((n + 1 : ℕ) : ℝ≥0∞) ^ (q + 1) * P {ω | N ^ a < ‖X ω‖} ^ q :=
+    _ ≤ ((n + 1 : ℕ) : ℝ≥0∞) ^ (q + 1) * Q {ω | N ^ a < ‖X ω‖} ^ q :=
       measure_exists_row_with_large_wigner_entries_le hind
         hr.le fun ij _ ↦ ((hid ij).comp measurable_norm).measure_mem_eq measurableSet_Ioi |>.le
     _ ≤ ENNReal.ofReal (N ^ (q + 1) * (C / (N ^ a) ^ 4) ^ q) := by
@@ -138,12 +143,12 @@ The upper entries are identically distributed with finite fourth moment, and the
 entries of each row are independent. -/
 theorem tsum_measure_exists_row_with_large_wigner_entries_lt_top
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
-      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P)
-    (hX : MemLp X 4 P) {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
+      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
+    (hX : MemLp X 4 Q) {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
     (∑' n : ℕ, P {ω | ∃ i : Fin (n + 1), q ≤ (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card}) < ∞ := by
-  let C : ℝ := ∫ ω, ‖X ω‖ ^ 4 ∂P
+  let C : ℝ := ∫ ω, ‖X ω‖ ^ 4 ∂Q
   let E (n : ℕ) := {ω | ∃ i : Fin (n + 1), q ≤ (Finset.univ.filter fun j ↦
     ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
       ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card}
@@ -157,8 +162,8 @@ theorem tsum_measure_exists_row_with_large_wigner_entries_lt_top
 
 private theorem ae_eventually_card_row_large_wigner_entries_lt
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
-      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P)
-    (hX : MemLp X 4 P) {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
+      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
+    (hX : MemLp X 4 Q) {a : ℝ} {q : ℕ} (hq : 2 < q * (4 * a - 1)) :
     ∀ᵐ ω ∂P, ∀ᶠ n : ℕ in atTop, ∀ i : Fin (n + 1), (Finset.univ.filter fun j ↦
       ((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ) <
         ‖wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j‖).card < q := by
@@ -168,8 +173,8 @@ private theorem ae_eventually_card_row_large_wigner_entries_lt
 
 private theorem ae_tendsto_norm_wignerMatrix_hardThreshold
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
-      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P P)
-    (hX : MemLp X 4 P) {a : ℝ} (ha : 1 / 4 < a) :
+      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
+    (hX : MemLp X 4 Q) {a : ℝ} (ha : 1 / 4 < a) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖(wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).hardThreshold
       (((n + 1 : ℕ) : ℝ) ^ a / Real.sqrt (n + 1 : ℕ))‖) atTop (𝓝 0) := by
   have hgap : 0 < 4 * a - 1 := by linarith
@@ -196,14 +201,13 @@ entries within each row. -/
 theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
     (hind : ∀ n : ℕ, ∀ i : Fin (n + 1), iIndepFun (fun (j : {j : Fin (n + 1) // i ≠ j}) ω ↦
       wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω i j) P)
-    (hid : ∀ ij, IdentDistrib (ξ ij) X P P) (hX : MemLp X 4 P)
-    (hmean : ∫ ω, X ω ∂P = 0) (hd : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P)
+    (hid : ∀ ij, IdentDistrib (ξ ij) X P Q) (hX : MemLp X 4 Q)
+    (hmean : ∫ ω, X ω ∂Q = 0) (hd : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P)
     {a : ℝ} (ha : 1 / 4 < a) :
     ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P
         ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
         (fun _ _ ↦ 0) (n + 1) ω‖) atTop (𝓝 0) := by
-  have : IsProbabilityMeasure P := (hind 0 0).isProbabilityMeasure
   filter_upwards [ae_tendsto_norm_wignerMatrix_hardThreshold hind hid hX ha,
     ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero (ξ := ξ) hd hη] with ω htail hdiag
   have hquot : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) / ((((n + 1 : ℕ) : ℝ) ^ a) ^ 3))
@@ -225,7 +229,7 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
   let Z := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
   let T := wignerMatrix (fun ij ↦ {ω' | ‖ξ ij ω'‖ ≤ R}.indicator (ξ ij)) (fun _ _ ↦ 0) (n + 1) ω
   let B := wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) (n + 1) ω
-  let c := ∫ ω', {ω'' | ‖X ω''‖ ≤ R}.indicator X ω' ∂P
+  let c := ∫ ω', {ω'' | ‖X ω''‖ ≤ R}.indicator X ω' ∂Q
   have hcenter : (fun ij ω' ↦ {x | ‖ξ ij x‖ ≤ R}.indicator (ξ ij) ω' - c) =
       (fun ij ↦ centeredTruncation (ξ ij) P R) := by
     funext ij

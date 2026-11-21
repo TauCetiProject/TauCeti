@@ -44,6 +44,21 @@ namespace TauCeti.MeasureTheory
 
 variable {α F : Type*} [FunLike F (Set α) ℝ≥0∞] [OuterMeasureClass F α] {μ : F}
 
+/-- If the outer measures of a sequence of sets are eventually bounded by a series with
+finite sum, then almost every point eventually lies outside the sets. -/
+theorem ae_eventually_notMem_of_eventually_measure_le {s : ℕ → Set α} {b : ℕ → ℝ≥0∞}
+    (hb : (∑' n, b n) < ∞) (h : ∀ᶠ n in atTop, μ (s n) ≤ b n) :
+    ∀ᵐ x ∂μ, ∀ᶠ n in atTop, x ∉ s n := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 h
+  let t (n : ℕ) : Set α := if N ≤ n then s n else ∅
+  have ht : (∑' n, μ (t n)) < ∞ := (tsum_le_tsum fun n ↦ by
+    by_cases hn : N ≤ n
+    · simpa only [t, ite_eq_left hn] using hN n hn
+    · simp only [t, ite_eq_right hn, measure_empty, zero_le]).trans_lt hb
+  filter_upwards [ae_eventually_notMem ht.ne] with x hx
+  filter_upwards [hx, eventually_ge_atTop N] with n hn hn'
+  simpa only [t, ite_eq_left hn'] using hn
+
 /-- If consecutive sets of a sequence differ by sets of summable measure, then for almost every
 point, membership in the sets is eventually the same as membership in their `liminf`. -/
 theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}

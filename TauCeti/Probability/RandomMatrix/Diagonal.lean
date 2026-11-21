@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Diagonal
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Probability.StrongLaw
-import TauCeti.Probability.IdentDistrib
 
 /-!
 # Removing an i.i.d. diagonal without moment assumptions
@@ -21,10 +20,6 @@ required. The full-measure event works for every limiting probability measure at
 In particular a Wigner matrix and its zero-diagonal version have the same almost-sure weak
 spectral limits. This separates the arbitrary diagonal law from the finite-second-moment
 off-diagonal hypotheses in the semicircle law.
-
-With identically distributed diagonal entries of finite second moment, the Wigner diagonal
-perturbation tends to zero in Euclidean operator norm almost surely. This result requires
-no independence.
 
 ## References
 
@@ -95,30 +90,5 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_iff
   filter_upwards [h] with ω hω
   simpa only [wignerMatrix_eq_add_diagonal ξ η, RCLike.ofReal_eq_complex_ofReal] using
     fun μ ↦ (hω μ).symm
-
-omit [IsFiniteMeasure P] in
-open scoped Matrix.Norms.L2Operator in
-/-- Removing the diagonal changes the normalized operator norm by a quantity tending
-to zero almost surely for identically distributed diagonal entries of finite second moment.
-No independence is required. -/
-theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_zero
-    {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
-    (hid : ∀ i, IdentDistrib (η i) (η 0) P P) (hη : MemLp (η 0) 2 P) :
-    ∀ᵐ ω ∂P, Tendsto (fun n : ℕ ↦ ‖wignerMatrix ξ η (n + 1) ω -
-      wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω‖) atTop (𝓝 0) := by
-  have hs : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ)) atTop atTop :=
-    Real.tendsto_sqrt_atTop.comp (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
-  have hm : ∀ᶠ n : ℕ in atTop, ((n + 1 : ℕ) : ℝ) ≤ Real.sqrt (n + 1 : ℕ) ^ 2 :=
-    .of_forall fun n ↦ (Real.sq_sqrt (Nat.cast_nonneg (n + 1))).ge
-  filter_upwards [ae_eventually_forall_lt_norm_le_mul_of_identDistrib hid
-    hη hs hm] with ω hω
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ eventually_atTop.1 ?_
-  filter_upwards [hω (ε / 2) (half_pos hε)] with n hn
-  rw [dist_zero_right, Real.norm_of_nonneg (norm_nonneg _),
-    wignerMatrix_eq_add_diagonal ξ η, add_sub_cancel_left, l2_opNorm_diagonal]
-  refine ((pi_norm_le_iff_of_nonneg (half_pos hε).le).2 fun i ↦ ?_).trans_lt (half_lt_self hε)
-  rw [Complex.norm_real, norm_div, Real.norm_of_nonneg (Real.sqrt_nonneg _),
-    div_le_iff₀ (Real.sqrt_pos.2 (by positivity))]
-  exact hn _ i.isLt
 
 end TauCeti.Probability

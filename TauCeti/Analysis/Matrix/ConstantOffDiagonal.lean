@@ -116,12 +116,11 @@ open scoped Matrix.Norms.L2Operator in
 at most the dimension times the absolute value of the coefficient. -/
 theorem l2_opNorm_hermitianOffDiagonal_le [RCLike 𝕜] (c : 𝕜) (n : ℕ) :
     ‖hermitianOffDiagonal c n‖ ≤ n * ‖c‖ := by
-  apply (isHermitian_hermitianOffDiagonal c n).l2_opNorm_le_of_row_sum_le (by positivity)
-  intro i
-  calc
-    _ ≤ ∑ _j : Fin n, ‖c‖ :=
-      Finset.sum_le_sum fun j _ ↦ norm_hermitianOffDiagonal_apply_le c n i j
-    _ = _ := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  rw [Matrix.l2_opNorm_def]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
+  simpa only [LinearEquiv.trans_apply, LinearMap.coe_toContinuousLinearMap', Fintype.card_fin]
+    using Matrix.norm_toEuclideanLin_le_of_entry_le_square
+      (norm_hermitianOffDiagonal_apply_le c n) x
 
 variable [RCLike 𝕜]
 

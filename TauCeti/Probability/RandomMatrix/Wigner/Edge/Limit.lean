@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Probability.RandomMatrix.Wigner.Truncation.OperatorNorm
 import TauCeti.Probability.RandomMatrix.Wigner.SemicircleLaw
-import TauCeti.Probability.RandomMatrix.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
 import TauCeti.Probability.RandomMatrix.TraceWord
 import TauCeti.Analysis.Matrix.SpectralMeasure.Extremes
@@ -32,10 +32,10 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Matrix ProbabilityTheory
+open Filter MeasureTheory Matrix TauCeti TauCeti.Probability
 open scoped Topology ENNReal NNReal Matrix.Norms.L2Operator
 
-namespace TauCeti.Probability
+namespace ProbabilityTheory.iIndepFun
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
@@ -47,7 +47,7 @@ expected real trace of the `2*k`-th powers of the zero-diagonal centered truncat
 `(n+1)^a`, with `a > 1/4`, by a polynomial in the sequence index times `4^k`. At each threshold
 `r > 2`, the order may depend on `r` and `n`, with `k n ≥ B * log (n + 1)` eventually and
 `2 * B * log (r/2) > d+1` for the polynomial exponent `d`. -/
-theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_le
+theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_two_mul_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) (ξ e₀) P P)
     (hξ : MemLp (ξ e₀) 4 P) (hmean : ∫ ω, ξ e₀ ω ∂P = 0)
     (hvar : ∫ ω, ‖ξ e₀ ω‖ ^ 2 ∂P = 1)
@@ -55,8 +55,9 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
     {a : ℝ} (ha : 1 / 4 < a)
     (htrace : ∀ r > (2 : ℝ), ∃ (B C d : ℝ) (k : ℕ → ℕ), d + 1 < 2 * B * Real.log (r / 2) ∧
       (∀ᶠ n : ℕ in atTop, B * Real.log (n + 1) ≤ (k n : ℝ)) ∧
-      (∀ᶠ n : ℕ in atTop, (∫ ω, ((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P
-        ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
+      (∀ᶠ n : ℕ in atTop, (∫ ω, ((wignerMatrix (fun ij ↦
+        TauCeti.Probability.centeredTruncation (ξ ij) P
+          ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩)
         (fun _ _ ↦ 0) (n + 1) ω ^ (2 * k n)).trace).re ∂P) ≤
         C * (n + 1 : ℝ) ^ d * (2 : ℝ) ^ (2 * k n))) :
     ∀ᵐ ω ∂P,
@@ -66,13 +67,14 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
         atTop (𝓝 (-2)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let R (n : ℕ) : ℝ≥0 := ⟨((n + 1 : ℕ) : ℝ) ^ a, Real.rpow_nonneg (by positivity) _⟩
-  let B (n : ℕ) (ω : Ω) := wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P (R n))
-    (fun _ _ ↦ 0) (n + 1) ω
+  let B (n : ℕ) (ω : Ω) :=
+    wignerMatrix (fun ij ↦ TauCeti.Probability.centeredTruncation (ξ ij) P (R n))
+      (fun _ _ ↦ 0) (n + 1) ω
   let Z (n : ℕ) (ω : Ω) := wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω
   have hB n ω : (B n ω).IsHermitian := wignerMatrix_isHermitian _ _ _ _
   have hZ n ω : (Z n ω).IsHermitian := wignerMatrix_isHermitian _ _ _ _
   have hnorm : ∀ᵐ ω ∂P, ∀ r > (2 : ℝ), ∀ᶠ n in atTop, ‖B n ω‖ < r := by
-    apply ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_le
+    apply ae_eventually_l2_opNorm_lt_of_integral_re_trace_pow_two_mul_le
       (.of_forall fun n ↦ .of_forall (hB n)) (by norm_num)
     intro r hr
     obtain ⟨b, C, d, k, hb, hk, htrace'⟩ := htrace r hr
@@ -112,4 +114,4 @@ theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_
     hmin.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
       (fun n ↦ wignerMatrix_isHermitian ξ η ω (n + 1)) hdω⟩
 
-end TauCeti.Probability
+end ProbabilityTheory.iIndepFun

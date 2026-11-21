@@ -48,9 +48,8 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
 
 /-- A series of finite extended nonnegative reals has finite sum if it is eventually
 bounded by a series with finite sum. -/
-theorem ENNReal.tsum_lt_top_of_eventually_le {f b : ℕ → ℝ≥0∞}
-    (hf : ∀ n, f n ≠ ∞) (hb : (∑' n, b n) < ∞)
-    (h : ∀ᶠ n in atTop, f n ≤ b n) : (∑' n, f n) < ∞ := by
+theorem Filter.EventuallyLE.ennreal_tsum_lt_top {f b : ℕ → ℝ≥0∞} (h : f ≤ᶠ[atTop] b)
+    (hf : ∀ n, f n ≠ ∞) (hb : (∑' n, b n) < ∞) : (∑' n, f n) < ∞ := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 h
   rw [← sum_add_tsum_compl (Finset.range N) f]
   refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun n _ ↦ (hf n).lt_top, ?_⟩

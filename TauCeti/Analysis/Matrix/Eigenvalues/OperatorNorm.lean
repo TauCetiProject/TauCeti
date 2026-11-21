@@ -132,7 +132,7 @@ theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
 
 /-- For a nonempty Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is
 bounded by the real trace of its `2*k`-th power. -/
-theorem IsHermitian.l2_opNorm_pow_le_re_trace_pow [Nonempty n] {A : Matrix n n 𝕜}
+theorem IsHermitian.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul [Nonempty n] {A : Matrix n n 𝕜}
     (hA : A.IsHermitian) (k : ℕ) : ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
   rw [hA.l2_opNorm_eq_norm_eigenvalues, hA.trace_pow_eq_sum_eigenvalues_pow]
   simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]

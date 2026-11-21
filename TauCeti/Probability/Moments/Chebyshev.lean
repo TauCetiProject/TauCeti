@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
 # Chebyshev's inequality for the second moment
@@ -19,8 +19,6 @@ of an estimator.
 
 ## Main statements
 
-* `MeasureTheory.Integrable.measure_ge_le_ofReal_integral_div` gives Markov's inequality
-  for the extended measure of a superlevel set of a nonnegative integrable real function.
 * `TauCeti.meas_ge_le_integral_norm_sq_div_sq`: Chebyshev's inequality for the second moment,
   `μ {c ≤ ‖Y‖} ≤ (∫ ‖Y‖²) / c²`, for any measure and without centering.
 * `TauCeti.meas_gt_le_div_sq_of_integral_sq_le`: the uncentered Chebyshev inequality
@@ -38,18 +36,6 @@ open MeasureTheory
 namespace TauCeti
 
 variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-/-- Markov's inequality for the extended measure of a positive superlevel set of an
-integrable, almost everywhere nonnegative real function. -/
-theorem _root_.MeasureTheory.Integrable.measure_ge_le_ofReal_integral_div
-    {f : Ω → ℝ} (hf : Integrable f μ) (hnonneg : 0 ≤ᵐ[μ] f) {c : ℝ} (hc : 0 < c) :
-    μ {ω | c ≤ f ω} ≤ ENNReal.ofReal ((∫ ω, f ω ∂μ) / c) := by
-  have hsub : {ω | c ≤ f ω} ⊆ {ω | ENNReal.ofReal c ≤ ENNReal.ofReal (f ω)} :=
-    fun _ hω ↦ ENNReal.ofReal_le_ofReal hω
-  refine (measure_mono hsub).trans ?_
-  refine (meas_ge_le_lintegral_div hf.aemeasurable.ennreal_ofReal
-    (ENNReal.ofReal_pos.2 hc).ne' ENNReal.ofReal_ne_top).trans_eq ?_
-  rw [← ofReal_integral_eq_lintegral_ofReal hf hnonneg, ENNReal.ofReal_div_of_pos hc]
 
 /-- **Chebyshev's inequality for the second moment.** For any measure, if `‖Y‖²` is integrable
 and `0 < c`, the set where `‖Y‖` is at least `c` has measure at most `(∫ ‖Y‖²) / c²`. Unlike

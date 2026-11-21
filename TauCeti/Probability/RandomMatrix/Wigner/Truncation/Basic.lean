@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.HardThreshold
-public import TauCeti.Probability.RandomMatrix.Wigner
-public import TauCeti.Probability.RandomMatrix.Perturbation
+public import TauCeti.Probability.RandomMatrix.Wigner.Basic
 public import TauCeti.Probability.Moments.CenteredTruncation
 
 /-!
@@ -15,9 +14,7 @@ public import TauCeti.Probability.Moments.CenteredTruncation
 
 Replacing the upper entries by their centered truncations gives bounded centered entries
 without changing their independence or identical distribution. The expected normalized squared
-Frobenius error is at most the discarded second absolute moment of one entry. Consequently,
-the difference of Lipschitz spectral statistics tends to zero in mean square and in probability
-as the cutoff grows, uniformly over every positive matrix size.
+Frobenius error is at most the discarded second absolute moment of one entry.
 
 The diagonal is kept unchanged: it needs no moment assumption and may depend on the upper
 entries. Independence is needed only to assert independence of the approximating coordinates,
@@ -102,11 +99,23 @@ namespace TauCeti
 open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ}
-  {X : Ω → ℂ}
 
-/-- For a centered truncated Wigner corner, the absolute entry moment of order
-`k+2` is bounded by the common second-moment bound divided by the dimension, times
-`(2 * R / √n)^k`. Here `2 * R / √n` bounds the entries after centering. -/
+/-- Every normalized entry of a zero-diagonal centered truncated Wigner corner on a
+probability space has norm at most twice the cutoff divided by the square root of the dimension. -/
+theorem norm_wignerMatrix_centeredTruncation_apply_le [IsProbabilityMeasure P] {n : ℕ}
+    (R : ℝ≥0) (ω : Ω) (i j : Fin n) :
+    ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) (fun _ _ ↦ 0) n ω i j‖ ≤
+      2 * (R : ℝ) / Real.sqrt n := by
+  by_cases h : i = j
+  · subst j
+    simpa only [wignerMatrix_apply_self, Complex.ofReal_zero, mul_zero, norm_zero] using
+      (by positivity : 0 ≤ 2 * (R : ℝ) / Real.sqrt n)
+  · rw [norm_wignerMatrix_apply_of_ne _ _ _ h, ← div_eq_inv_mul]
+    exact div_le_div_of_nonneg_right (norm_centeredTruncation_le R ω) (Real.sqrt_nonneg _)
+
+/-- In a zero-diagonal centered truncated Wigner corner on a probability space with
+square-integrable upper entries, the absolute entry moment of order `k+2` is bounded
+by the upper-entry second-moment bound divided by the dimension, times `(2 * R / √n)^k`. -/
 theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
     [IsProbabilityMeasure P] {n : ℕ} {M : ℝ} (hM : 0 ≤ M)
     (hLp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
@@ -127,15 +136,17 @@ theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le
   rw [pow_add, inv_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_pow]
   ring
 
-/-- With a common upper-entry law, the original second moment of that law bounds
-the absolute entry moments of the centered truncated Wigner corner. -/
+/-- In a zero-diagonal centered truncated Wigner corner on a probability space, if the upper
+entries share a square-integrable law, the absolute entry moment of order `k+2` is bounded by
+`(2 * R / √n)^k` times the common second moment divided by the dimension. -/
 theorem integral_norm_wignerMatrix_centeredTruncation_apply_pow_le_of_identDistrib
+    {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} {X : Ω' → ℂ}
     [IsProbabilityMeasure P] {n : ℕ}
-    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P P)
-    (hX : MemLp X 2 P) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
+    (hid : ∀ ij : StrictUpper, ij.val.2 < n → IdentDistrib (ξ ij) X P Q)
+    (hX : MemLp X 2 Q) (R : ℝ≥0) (i j : Fin n) (k : ℕ) :
     ∫ ω, ‖wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R)
       (fun _ _ ↦ 0) n ω i j‖ ^ (k + 2) ∂P ≤
-      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂P) / n) :=
+      (2 * (R : ℝ) / Real.sqrt n) ^ k * ((∫ ω, ‖X ω‖ ^ 2 ∂Q) / n) :=
   integral_norm_wignerMatrix_centeredTruncation_apply_pow_le (integral_nonneg fun _ ↦ sq_nonneg _)
     (fun ij hij ↦ (hid ij hij).symm.memLp_snd hX)
     (fun ij hij ↦ ((hid ij hij).comp
@@ -188,69 +199,5 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
       simpa only [div_eq_inv_mul, mul_assoc, Function.comp_def] using
         mul_le_of_le_one_left he hc
     _ ≤ _ := hX.integral_norm_sub_centeredTruncation_sq_le hmean R
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- Mean-square control of a Lipschitz spectral statistic, uniformly in positive dimension. -/
-theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
-    {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f)
-    (hη : ∀ i, AEMeasurable (η i) P) (R : ℝ≥0) (n : ℕ) :
-    ∫ ω, ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
-      ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
-        (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖ ^ 2 ∂P ≤
-      (K : ℝ) ^ 2 * ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
-  refine (integral_norm_integral_spectralMeasure_sub_sq_le _ _
-    (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
-    (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
-    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf
-    (aemeasurable_wignerMatrix (fun ij _ ↦ (hd ij).aemeasurable_fst) fun i _ ↦ hη i)
-    (aemeasurable_wignerMatrix (fun ij _ ↦
-      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.centeredTruncation R).aemeasurable)
-      fun i _ ↦ hη i)).trans ?_
-  simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc] using
-    mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
-      (sq_nonneg (K : ℝ))
-
-/-- A spectral-statistic approximation probability bound uniform over all positive dimensions. -/
-theorem measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
-    {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε)
-    (R : ℝ≥0) (n : ℕ) :
-    P {ω | ε ≤ ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
-      ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
-        (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖} ≤
-      ENNReal.ofReal ((K : ℝ) ^ 2 / ε ^ 2 *
-        ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P) := by
-  refine (measure_norm_integral_spectralMeasure_sub_ge_le _ _
-    (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
-    (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
-    (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf hε).trans ?_
-  apply ENNReal.ofReal_le_ofReal
-  simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv,
-    mul_inv, mul_assoc, mul_left_comm, mul_comm] using mul_le_mul_of_nonneg_left
-      (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)
-      (by positivity : 0 ≤ (K : ℝ) ^ 2 / ε ^ 2)
-
-/-- Bounded centered off-diagonal approximation is valid in probability, uniformly over
-all positive matrix sizes, for every Lipschitz spectral statistic. -/
-theorem tendsto_iSup_measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation
-    {K : ℝ≥0} {f : ℝ → E} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :
-    Tendsto (fun R : ℝ≥0 ↦ ⨆ n : ℕ,
-      P {ω | ε ≤ ‖(∫ x, f x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian ξ η ω _) : Measure ℝ)) -
-        ∫ x, f x ∂((wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η
-          (n + 1) ω).spectralMeasure (wignerMatrix_isHermitian _ η ω _) : Measure ℝ)‖})
-      atTop (𝓝 0) := by
-  have ht : Tendsto (fun R : ℝ≥0 ↦ ENNReal.ofReal ((K : ℝ) ^ 2 / ε ^ 2 *
-      ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P))
-      atTop (𝓝 0) := by
-    simpa only [mul_zero, ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal
-      (hX.tendsto_integral_indicator_norm_sq.const_mul ((K : ℝ) ^ 2 / ε ^ 2))
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht
-    (fun _ ↦ bot_le) (fun R ↦ iSup_le fun n ↦
-      measure_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_ge_le
-        hX hmean hd hf hε R n)
 
 end TauCeti.Probability
