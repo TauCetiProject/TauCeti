@@ -337,6 +337,13 @@ theorem mem_subgroup_iff {g : π₁ 𝔸 v₀} : g ∈ B.subgroup ↔
   · rintro ⟨p, rfl⟩
     exact ⟨π₁.mk p, B.π₁Hom_mk p⟩
 
+/-- The vertex group `B_{u₀}` at the base vertex, read in `π₁(𝔸, v₀)` through `[u₀] = v₀`, lies in
+`L(B, u₀)`. -/
+theorem cast_vertexHom_nil_mem_subgroup {b : 𝔸.vertexGroup (B.typ.mapV B.base)}
+    (hb : b ∈ B.grp B.base) :
+    MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil b) ∈ B.subgroup :=
+  B.mem_subgroup_iff.2 ⟨Path.ofVertex ⟨b, hb⟩, by simp⟩
+
 /-- The induction behind `subgroup_eq_sup`: for a `𝔹`-path `p` from `u₀` to `x`, the element
 `γ_{u₀} p γ_x⁻¹` of `π₁(𝔹, u₀)` lies in every subgroup containing the generators. -/
 private theorem mk_conj_mem (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B.base⟩ ⟨u⟩)
@@ -416,6 +423,13 @@ theorem mem_grpTgt {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))
       MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) c ∈ B.grp (B.graph.tgt f) :=
   Iff.rfl
 
+/-- Membership in a vertex group, read through equal vertices. -/
+theorem cast_mem_grp {z z' : B.graph.V} (h : z = z') {T : Type w} {c : T}
+    {h₁ : T = 𝔸.vertexGroup (B.typ.mapV z)} {h₂ : T = 𝔸.vertexGroup (B.typ.mapV z')}
+    (hc : cast h₁ c ∈ B.grp z) : cast h₂ c ∈ B.grp z' := by
+  subst h
+  exact hc
+
 /-- A folded `𝔸`-graph. Two darts `f₁`, `f₂` issuing from the same vertex `z`, with the same type
 `e` and with `(f₂)_α = a' (f₁)_α α_e(c)` for some `a' ∈ B_z` and `c ∈ A_e`, are equal; and for
 every dart `f` with label `(a, e, b)` the vertex groups `B_{o(f)}` and `B_{t(f)}` cut out the same
@@ -467,6 +481,19 @@ theorem rankGrp_eq (z : B.graph.V) [Group.FG (B.grp z)] : B.rankGrp z = Group.ra
 
 theorem rankGrp_of_not_fg {z : B.graph.V} (h : ¬ (B.grp z).FG) : B.rankGrp z = 0 := by
   simp [rankGrp, h]
+
+variable {B} in
+/-- The rank of a vertex group depends only on its isomorphism type. -/
+theorem rankGrp_congr {Γ' : SerreGraph} {𝔸' : GraphOfGroups Γ'} {v₀' : Γ'.V} {B' : AGraph 𝔸' v₀'}
+    {z : B.graph.V} {z' : B'.graph.V} (e : B.grp z ≃* B'.grp z') :
+    B.rankGrp z = B'.rankGrp z' := by
+  by_cases h : (B.grp z).FG
+  · have : Group.FG (B.grp z) := (Group.fg_iff_subgroup_fg _).2 h
+    have : Group.FG (B'.grp z') := (isMulFG_congr e).1 this
+    rw [rankGrp_eq, rankGrp_eq, Group.rank_congr e]
+  · have h' : ¬ (B'.grp z').FG := fun h' => h ((Group.fg_iff_subgroup_fg _).1
+      ((isMulFG_congr e).2 ((Group.fg_iff_subgroup_fg _).2 h')))
+    rw [rankGrp_of_not_fg _ h, rankGrp_of_not_fg _ h']
 
 /-- The complexity of an `𝔸`-graph: the rank `#E - #V + 1` of its underlying graph, for a finite
 connected graph with `#E` geometric edges and `#V` vertices, plus the sum of the ranks of its vertex
