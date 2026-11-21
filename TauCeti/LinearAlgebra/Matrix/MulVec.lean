@@ -18,8 +18,8 @@ square-zero matrix annihilates every vector in two steps. This is the form in wh
 of a root operator reaches the vector it acts on.
 
 Over an ordered semiring, multiplication by an entrywise nonnegative matrix is monotone and
-preserves nonnegativity, and an entrywise strictly positive matrix sends a nonzero nonnegative
-vector to a strictly positive one.
+preserves nonnegativity, and a matrix whose row `i` is strictly positive sends a nonzero
+nonnegative vector to one whose coordinate `i` is strictly positive.
 
 When row `i` of a matrix vanishes off the diagonal, coordinate `i` of a product with a vector only
 sees coordinate `i` of that vector. In particular such a matrix maps the coordinate hyperplane
@@ -53,8 +53,8 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
-* `Matrix.mulVec_pos`: a strictly positive matrix sends a nonzero nonnegative vector to a strictly
-  positive one.
+* `Matrix.mulVec_pos`: if row `i` of `A` is strictly positive, then `A` sends a nonzero
+  nonnegative vector to one whose coordinate `i` is strictly positive.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
@@ -163,13 +163,13 @@ section StrictOrderedSemiring
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix m n R}
   {y : n → R}
 
-/-- A strictly positive matrix sends a nonzero nonnegative vector to a vector all of whose entries
-are strictly positive. -/
-theorem mulVec_pos (hA : ∀ i j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) (i : m) :
+/-- If row `i` of `A` is strictly positive, then for a nonzero nonnegative vector `y` the
+coordinate `i` of `A *ᵥ y` is strictly positive. -/
+theorem mulVec_pos {i : m} (hA : ∀ j, 0 < A i j) (hy : 0 ≤ y) (hy0 : y ≠ 0) :
     0 < (A *ᵥ y) i := by
   obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  exact Finset.sum_pos' (fun k _ => mul_nonneg (hA i k).le (hy k))
-    ⟨j, Finset.mem_univ j, mul_pos (hA i j) ((hy j).lt_of_ne' hj)⟩
+  exact Finset.sum_pos' (fun k _ => mul_nonneg (hA k).le (hy k))
+    ⟨j, Finset.mem_univ j, mul_pos (hA j) ((hy j).lt_of_ne' hj)⟩
 
 end StrictOrderedSemiring
 
