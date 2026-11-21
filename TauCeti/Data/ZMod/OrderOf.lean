@@ -63,7 +63,8 @@ decides which `q ^ k + 1` are divisible by `p`.
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
   primitive root modulo every `p ^ e`.
-* `ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is `f`.
+* `TauCeti.ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is
+  `f`.
 * `Nat.Prime.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul`: if `a / b` has order `2 * m ≠ 0` modulo
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
@@ -283,34 +284,22 @@ theorem orderOf_natCast_prime_pow_eq_totient {p g : ℕ} (hp : p.Prime) (hp2 : p
   rw [orderOf_pow_of_dvd hp1 hdvd] at hpow
   rw [Nat.totient_prime_pow_succ hp, ← hpow, Nat.div_mul_cancel hdvd]
 
-/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`: the modulus divides `p ^ f - 1`, and
-for `0 < j < f` the number `p ^ j - 1` is positive and smaller than the modulus. At `f = 0` the
-modulus is `0`, and `p` has order `0` in `ZMod 0 = ℤ`. -/
+end ZMod
+
+namespace TauCeti.ZMod
+
+/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`. At `f = 0` the modulus is `0`, and
+the order `0` in `ZMod 0 = ℤ` means that `p` has infinite multiplicative order. -/
+@[simp]
 theorem orderOf_natCast_pow_sub_one {p : ℕ} (hp : 1 < p) (f : ℕ) :
     orderOf (p : ZMod (p ^ f - 1)) = f := by
-  have hdvd := (dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1 dvd_rfl
-  set o := orderOf (p : ZMod (p ^ f - 1))
-  have ho := (dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega) o).2
+  have hdvd := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1
     dvd_rfl
-  rcases Nat.eq_zero_or_pos o with h0 | h0
-  · rw [h0, zero_dvd_iff] at hdvd
-    exact h0.trans hdvd.symm
-  have h1 : 1 < p ^ o := Nat.one_lt_pow h0.ne' hp
-  -- `p ^ f - 1` divides the positive number `p ^ o - 1`, so `p ^ f ≤ p ^ o`.
-  have hle : p ^ f ≤ p ^ o := by
-    have := Nat.le_of_dvd (by omega) ho
-    generalize p ^ f = x at this
-    generalize p ^ o = y at this h1
-    omega
-  have hf : 0 < f := by
-    rcases Nat.eq_zero_or_pos f with rfl | hf
-    · rw [pow_zero, Nat.sub_self, zero_dvd_iff] at ho
-      generalize p ^ o = y at ho h1
-      omega
-    · exact hf
-  exact le_antisymm (Nat.le_of_dvd hf hdvd) ((Nat.pow_le_pow_iff_right hp).1 hle)
+  have ho := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega)
+    (orderOf (p : ZMod (p ^ f - 1)))).2 dvd_rfl
+  exact Nat.dvd_antisymm hdvd ((Nat.pow_sub_one_dvd_pow_sub_one_iff hp).mp ho)
 
-end ZMod
+end TauCeti.ZMod
 
 /-! ### Divisibility of `a ^ k + b ^ k` -/
 
