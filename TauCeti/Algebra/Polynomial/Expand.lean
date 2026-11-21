@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.HasseDeriv
-public import Mathlib.FieldTheory.Finite.Basic
 
 import Mathlib.Data.ZMod.Basic
 
@@ -24,11 +23,10 @@ The statements hold over commutative semirings, including rings with zero diviso
 include `e = 0`, when the only permitted order in the multiplication identity is zero.
 Unlike ordinary differentiation, these identities also control orders between `p` and `p^e`.
 
-Since `f ^ p^e` is an expanded polynomial (Mathlib's `Polynomial.map_iterateFrobenius_expand`),
-its Hasse derivatives also vanish at every order not divisible by `p^e`
-(`Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`). Over a finite field with `q` elements, this
-says that the Hasse derivatives of `f ^ q` of order `0 < k < q` vanish
-(`Polynomial.hasseDeriv_pow_card_eq_zero`).
+The power `f ^ p^e` is the expansion of the polynomial whose coefficients are the
+`p^e`-th powers of the coefficients of `f` (Mathlib's `Polynomial.map_iterateFrobenius_expand`).
+So its Hasse derivatives also vanish at every order not divisible by `p^e`
+(`Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`).
 
 The binomial-coefficient argument is the one underlying Iwaniec–Kowalski,
 *Analytic Number Theory*, §11.6, Lemma 11.17. We use Mathlib's `Polynomial.expand`
@@ -59,21 +57,11 @@ theorem hasseDeriv_expand_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k)
       monomial_zero_right]
 
 /-- A Hasse derivative of order not divisible by `p^e` annihilates every `p^e`-th power, over any
-commutative semiring of exponential characteristic `p`: by Mathlib's
-`Polynomial.map_iterateFrobenius_expand`, `f ^ p^e` is an expanded polynomial. -/
+commutative semiring of exponential characteristic `p`. -/
+@[simp]
 theorem hasseDeriv_pow_expChar_pow_eq_zero {e k : ℕ} (hk : ¬p ^ e ∣ k) (f : R[X]) :
     hasseDeriv k (f ^ p ^ e) = 0 := by
   rw [← map_iterateFrobenius_expand p f e, map_expand, hasseDeriv_expand_eq_zero hk]
-
-/-- Over a finite field with `q` elements, the Hasse derivatives of `f ^ q` of every order `k`
-with `0 < k < q` vanish. -/
-theorem hasseDeriv_pow_card_eq_zero {K : Type*} [Field K] [Finite K] {k : ℕ} (hk₀ : 0 < k)
-    (hk : k < Nat.card K) (f : K[X]) : hasseDeriv k (f ^ Nat.card K) = 0 := by
-  have := Fintype.ofFinite K
-  obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
-  have : Fact p.Prime := ⟨hp⟩
-  rw [Nat.card_eq_fintype_card, hcard] at hk ⊢
-  exact hasseDeriv_pow_expChar_pow_eq_zero (Nat.not_dvd_of_pos_of_lt hk₀ hk) f
 
 /-- Hasse differentiation of order below `p^e` is linear over polynomials in `X^(p^e)`:
 an expanded factor can be pulled outside the derivative. No factorial is inverted. -/

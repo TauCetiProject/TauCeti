@@ -20,8 +20,8 @@ We also count the root zero: it occurs in `f.roots` with multiplicity the order 
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
 `f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
-(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`. So if every point of a
-finite set `s` is a root of multiplicity at least `k`, then `k * #s ≤ f.natDegree`
+(`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`. So if
+`k ≤ f.rootMultiplicity a` for every `a` in a finite set `s`, then `k * #s ≤ f.natDegree`
 (`Polynomial.mul_card_le_natDegree_of_le_rootMultiplicity`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
@@ -89,8 +89,8 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
 
-/-- **The root-count inequality.** Over a domain, if every point of a finite set `s` is a root
-of `f` of multiplicity at least `k`, then `k * #s ≤ f.natDegree`. -/
+/-- **The root-count inequality.** Over a domain, if `k ≤ f.rootMultiplicity a` for every `a` in
+a finite set `s`, then `k * #s ≤ f.natDegree`. -/
 theorem mul_card_le_natDegree_of_le_rootMultiplicity {f : R[X]} {s : Finset R} {k : ℕ}
     (h : ∀ a ∈ s, k ≤ f.rootMultiplicity a) : k * s.card ≤ f.natDegree := by
   rw [mul_comm, ← smul_eq_mul]
