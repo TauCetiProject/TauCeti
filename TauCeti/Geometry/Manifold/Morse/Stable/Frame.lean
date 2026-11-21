@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 
@@ -49,6 +50,15 @@ stable and unstable manifolds
 (`TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`), in which these manifolds
 are the coordinate subspaces of the Morse chart.
 
+One time serves a whole neighbourhood: a point of `W^s(x)` has a neighbourhood whose points on
+`W^s(x)` share a time of linear forward flow
+(`TauCeti.IsAdaptedPseudoGradient.exists_eventually_mem_linearForwardTimes`), and likewise for
+`W^u(x)` and backward times. With the time fixed, the frame is read in the single chart
+`φ ∘ Φ_{-T}`, so it varies continuously along `W^u(x)`: for a function `g`, `C¹` at `y₀`, the
+derivative of `g` along the frame, `y ↦ dg_y ∘ F_y`, a map between fixed spaces, is continuous at
+`y₀` within `W^u(x)`
+(`TauCeti.IsAdaptedPseudoGradient.continuousWithinAt_mvfderiv_comp_unstableFrame`).
+
 ## Main definitions
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -62,7 +72,12 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `eventually_mem_linearForwardTimes`, `eventually_mem_linearBackwardTimes`: points of the
   stable, respectively unstable, manifold have admissible times.
+* `exists_eventually_mem_linearForwardTimes`, `exists_eventually_mem_linearBackwardTimes`: one
+  admissible time serves all nearby points of the stable, respectively unstable, manifold.
 * `stableNormal_apply`, `mfderiv_unstableFrame`: the two maps read at any admissible time.
+* `zero_mem_linearForwardTimes_self`, `zero_mem_linearBackwardTimes_self`,
+  `stableNormal_unstableFrame_self`: at the centre of the chart the time `0` is admissible, and the
+  normal coordinates invert the unstable frame.
 * `eventually_span_mtangentConeAt_stableSet_eq_comap`: for all large times `T`, the tangent space
   of the stable manifold is read off the derivative of `φ ∘ Φ_T`.
 * `stableNormal_eq_zero_iff`, `surjective_stableNormal`: the normal coordinates vanish exactly on
@@ -88,6 +103,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `eventually_mem_unstableSet_and_unstableFrame_eq`: on the unstable axis of a Morse chart, the
   unstable frame of the coordinates is the velocity.
 * `eventually_mem_unstableSet_and_unstableFrame_eq_and_neg`: the same at `c` and at `-c`.
+* `continuousWithinAt_mvfderiv_comp_unstableFrame`: the derivative of a `C¹` function along the
+  unstable frame is continuous along the unstable manifold.
 
 ## References
 
@@ -170,7 +187,8 @@ orbit lies in the chart at time `T` is invertible. -/
 theorem isInvertible_mfderiv_toChart_comp_flow {y : M} {T : ℝ}
     (hT : hX.flow T y ∈ φ.toChart.source) :
     (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y).IsInvertible := by
-  have hq := (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
+  have hq := (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+    φ.mem_maximalAtlas
   have hcoe : ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph φ.toChart :
       M → E) = φ.toChart ∘ hX.flow T := by
     funext z
@@ -213,6 +231,22 @@ private theorem mfderiv_toChart_comp_flow_mfderiv_flow {y : M} {s t : ℝ}
     simp [Flow.map_add]
   rw [Flow.map_add] at hs
   rw [hcomp, mfderiv_comp_apply y ((φ.mdifferentiableAt_toChart hs).comp _ (hd s _)) (hd t y)]
+
+/-- The linear forward orbit of the centre of a Morse chart is the centre, so `0` is a time of
+linear forward flow of the centre. -/
+theorem zero_mem_linearForwardTimes_self : (0 : ℝ) ∈ hX.linearForwardTimes φ x := by
+  refine (hX.mem_linearForwardTimes φ).2 ⟨by simp, fun t _ ↦ ?_⟩
+  have h0 : φ.linearFlow t 0 = 0 := funext fun i ↦ by simp
+  rw [Flow.map_zero_apply, φ.apply_self, map_zero, h0, map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
+
+/-- The linear backward orbit of the centre of a Morse chart is the centre, so `0` is a time of
+linear backward flow of the centre. -/
+theorem zero_mem_linearBackwardTimes_self : (0 : ℝ) ∈ hX.linearBackwardTimes φ x := by
+  refine (hX.mem_linearBackwardTimes φ).2 ⟨by simp, fun t _ ↦ ?_⟩
+  have h0 : φ.linearFlow t 0 = 0 := funext fun i ↦ by simp
+  rw [neg_zero, Flow.map_zero_apply, φ.apply_self, map_zero, h0, map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
 
 variable (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
   fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -274,24 +308,24 @@ theorem add_mem_linearBackwardTimes {y : M} {T s : ℝ} (hT : T ∈ hX.linearBac
 
 /-! ### The normal coordinates of the stable manifold -/
 
-/-- Near `x`, the orbit of a point of `W^s(x)` eventually enters the part of the Morse chart where
-the flow stays linear: all large times are times of linear forward flow. -/
-theorem eventually_mem_linearForwardTimes {y : M}
-    (hy : y ∈ hX.flow.stableSet x) : ∀ᶠ T in atTop, T ∈ hX.linearForwardTimes φ y := by
+/-- Near the centre of the Morse chart, the points of `W^s(x)` already lie in the part of the chart
+where the forward flow stays linear: there is an open neighbourhood `S` of `x` such that `0` is a
+time of linear forward flow of every point of `S` on `W^s(x)`. -/
+theorem exists_isOpen_forall_zero_mem_linearForwardTimes :
+    ∃ S : Set M, IsOpen S ∧ x ∈ S ∧
+      ∀ z ∈ S, z ∈ hX.flow.stableSet x → 0 ∈ hX.linearForwardTimes φ z := by
   obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) x :=
-    φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
-  have hnear : ∀ᶠ z in 𝓝 x, z ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart z)‖ < min ε r :=
-    (φ.toChart.open_source.eventually_mem φ.mem_source).and
-      (hc.eventually (gt_mem_nhds (by simp [hε, hr])))
-  filter_upwards [(Flow.mem_stableSet.1 hy).eventually hnear] with T hT
+  refine ⟨φ.toChart.source ∩ (fun z ↦ ‖φ.coord (φ.toChart z)‖) ⁻¹' Iio (min ε r),
+    (φ.continuous_coord.norm.comp_continuousOn φ.toChart.continuousOn).isOpen_inter_preimage
+      φ.toChart.open_source isOpen_Iio, ⟨φ.mem_source, by simp [hε, hr]⟩, fun z hz hzs ↦ ?_⟩
+  have hzc : ‖φ.coord (φ.toChart z)‖ < min ε r := hz.2
   -- The coordinates of negative weight vanish on the local stable set, so the linear forward
   -- orbit is the contraction `e^{-t} c`.
-  have hu := (hloc _ hT.1 (hT.2.trans_le (min_le_left _ _))).1
-    ((Flow.apply_mem_stableSet_iff hX.flow T).2 hy)
-  set c := φ.coord (φ.toChart (hX.flow T y))
-  refine ⟨hT.1, fun t ht ↦ hrT _ ?_⟩
+  have hu := (hloc z hz.1 (hzc.trans_le (min_le_left _ _))).1 hzs
+  rw [mem_linearForwardTimes, Flow.map_zero_apply]
+  set c := φ.coord (φ.toChart z)
+  refine ⟨hz.1, fun t ht ↦ hrT _ ?_⟩
   have hlin : φ.linearFlow t c = Real.exp (-t) • c := by
     funext i
     rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
@@ -301,7 +335,28 @@ theorem eventually_mem_linearForwardTimes {y : M}
   rw [hlin, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
   calc Real.exp (-t) * ‖c‖ ≤ ‖c‖ :=
         mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 (neg_nonpos.2 ht))
-    _ < r := hT.2.trans_le (min_le_right _ _)
+    _ < r := hzc.trans_le (min_le_right _ _)
+
+/-- Near `x`, the orbit of a point of `W^s(x)` eventually enters the part of the Morse chart where
+the flow stays linear: all large times are times of linear forward flow. -/
+theorem eventually_mem_linearForwardTimes {y : M}
+    (hy : y ∈ hX.flow.stableSet x) : ∀ᶠ T in atTop, T ∈ hX.linearForwardTimes φ y := by
+  obtain ⟨S, hS, hxS, hS0⟩ := hX.exists_isOpen_forall_zero_mem_linearForwardTimes hφ
+  filter_upwards [(Flow.mem_stableSet.1 hy).eventually (hS.mem_nhds hxS)] with T hT
+  simpa using mem_linearForwardTimes_flow.1
+    (hS0 _ hT ((Flow.apply_mem_stableSet_iff hX.flow T).2 hy))
+
+/-- **Uniform times of linear forward flow.** A point `y₀` of `W^s(x)` has a neighbourhood with a
+common time of linear forward flow `T` for all of its points on `W^s(x)`. -/
+theorem exists_eventually_mem_linearForwardTimes {y₀ : M} (hy₀ : y₀ ∈ hX.flow.stableSet x) :
+    ∃ T, ∀ᶠ y in 𝓝 y₀, y ∈ hX.flow.stableSet x → T ∈ hX.linearForwardTimes φ y := by
+  obtain ⟨S, hS, hxS, hS0⟩ := hX.exists_isOpen_forall_zero_mem_linearForwardTimes hφ
+  obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hy₀).eventually (hS.mem_nhds hxS)).exists
+  refine ⟨T, ?_⟩
+  filter_upwards [(hX.flow.continuous continuous_const continuous_id).continuousAt.preimage_mem_nhds
+    (hS.mem_nhds hT)] with y hy hys
+  simpa using mem_linearForwardTimes_flow.1
+    (hS0 _ hy ((Flow.apply_mem_stableSet_iff hX.flow T).2 hys))
 
 /-- Waiting for a time `s ≥ 0` multiplies the coordinates of negative weight of the derivative
 of `φ ∘ Φ_T` by `e^{s}`, so `e^{-T}` times these coordinates does not change. -/
@@ -350,7 +405,7 @@ theorem eventually_span_mtangentConeAt_stableSet_eq_comap {y : M}
   -- `φ ∘ Φ_T`, restricted to the preimage of `D`, is a slice chart of `W^s(x)` at `y`.
   set q := (hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D)
   have hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+    (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD)
   have hyq : y ∈ q.source := by simpa [q, hD.interior_eq] using ⟨hDs hTD, hTD⟩
   have hqf : (q : M → E) = φ.toChart ∘ hX.flow T := by
@@ -425,6 +480,17 @@ theorem eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
   rw [hX.unstableSet_eq_stableSet_neg hf] at hy
   simpa only [neg_linearForwardTimes (hX := hX) hf h] using
     (hX.neg hf).eventually_mem_linearForwardTimes (φ.coord_mfderiv_neg hφ h) hy
+
+/-- **Uniform times of linear backward flow.** A point `y₀` of `W^u(x)` has a neighbourhood with a
+common time of linear backward flow `T` for all of its points on `W^u(x)`. -/
+theorem exists_eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y₀ : M}
+    (hy₀ : y₀ ∈ hX.flow.unstableSet x) :
+    ∃ T, ∀ᶠ y in 𝓝 y₀, y ∈ hX.flow.unstableSet x → T ∈ hX.linearBackwardTimes φ y := by
+  have h := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (hX.mfderiv_eq_zero_of_mem_unstableSet hy₀)
+  rw [hX.unstableSet_eq_stableSet_neg hf] at hy₀ ⊢
+  simpa only [neg_linearForwardTimes (hX := hX) hf h] using
+    (hX.neg hf).exists_eventually_mem_linearForwardTimes (φ.coord_mfderiv_neg hφ h) hy₀
 
 /-- Waiting for a further time `s ≥ 0` backwards multiplies a vector of negative weight in the
 derivative of `φ ∘ Φ_{-T}` by `e^{-s}`. -/
@@ -709,6 +775,18 @@ theorem flow_log_eq_of_exp_smul_negativeCoord_eq (hf : IsMorse 𝓘(ℝ, E) f) {
   rwa [← Flow.map_add, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply,
     show S + Real.log μ + -S = Real.log μ by ring] at this
 
+/-- **At the centre of a Morse chart, the normal coordinates invert the unstable frame.** At the
+critical point `x` itself, both maps are read off the derivative of the chart: the frame sends `c`
+to the vector with coordinates `c` in the directions of negative weight and `0` elsewhere, and the
+normal coordinates read the coordinates of negative weight. -/
+@[simp]
+theorem stableNormal_unstableFrame_self (c : {i // φ.weight i < 0} → ℝ) :
+    hX.stableNormal φ x (hX.unstableFrame φ x c) = c := by
+  have h := hX.mfderiv_unstableFrame hφ zero_mem_linearBackwardTimes_self c
+  rw [hX.stableNormal_apply hφ zero_mem_linearForwardTimes_self]
+  rw [neg_zero, Flow.map_zero, comp_id, Real.exp_zero, one_smul] at h ⊢
+  rw [h, φ.negativeCoord_negativeExtend]
+
 /-- A point of the unstable axis whose linear backward orbit stays in the chart lies on the
 unstable manifold: for `t ≤ 0` its flow is the linear flow, which tends to the centre. -/
 private theorem toChart_symm_negativeExtend_mem_unstableSet {c : {i // φ.weight i < 0} → ℝ}
@@ -802,6 +880,78 @@ theorem eventually_mem_unstableSet_and_unstableFrame_eq_and_neg :
             X (φ.toChart.symm (φ.negativeExtend (-c)))) :=
   have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
   h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h)
+
+/-! ### Continuity of the frame along the unstable manifold -/
+
+/-- **The unstable frame read in a chart.** At a point `y` with a time `T` of linear backward flow,
+let `e` be the chart `φ ∘ Φ_{-T}`. The derivative at `y` of a function `g` along the unstable frame
+is `e^{-T}` times the derivative of `g ∘ e⁻¹` at `e y` along the coordinates of negative weight. -/
+private theorem mvfderiv_comp_unstableFrame_eq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {g : M → F} {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y)
+    (hg : DifferentiableAt ℝ
+      (g ∘ ((hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart).symm)
+      (φ.toChart (hX.flow (-T) y))) :
+    (mvfderiv 𝓘(ℝ, E) g y).comp (hX.unstableFrame φ y) = Real.exp (-T) •
+      (fderiv ℝ (g ∘ ((hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph
+        φ.toChart).symm) (φ.toChart (hX.flow (-T) y))).comp
+        (LinearMap.toContinuousLinearMap φ.negativeExtend) := by
+  set e := (hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart
+  have hecoe : (e : M → E) = φ.toChart ∘ hX.flow (-T) := by
+    funext z
+    simp [e]
+  have hye : y ∈ e.source := by simpa [e] using hT.1
+  have hloc : g =ᶠ[𝓝 y] (g ∘ e.symm) ∘ e := by
+    filter_upwards [e.open_source.mem_nhds hye] with z hz
+    simp [e.left_inv hz]
+  have hd : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) e y := by
+    rw [hecoe]
+    exact (φ.mdifferentiableAt_toChart hT.1).comp _
+      ((hX.contMDiff_flow_apply (-T)).mdifferentiable (by simp) y)
+  have hey : e y = φ.toChart (hX.flow (-T) y) := by rw [hecoe, Function.comp_apply]
+  have hg' : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, F) (g ∘ e.symm) (e y) :=
+    mdifferentiableAt_iff_differentiableAt.2 (hey ▸ hg)
+  ext c : 1
+  have hL : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (hX.unstableFrame φ y c) =
+      Real.exp (-T) • φ.negativeExtend c := by
+    rw [hecoe]
+    exact hX.mfderiv_unstableFrame hφ hT c
+  rw [ContinuousLinearMap.comp_apply, hloc.mvfderiv_eq, mvfderiv_comp_apply y hg' hd,
+    mvfderiv_eq_fderiv_apply, hL, hey]
+  exact (fderiv ℝ (g ∘ e.symm) _).map_smul _ _
+
+/-- **The unstable frame is continuous along the unstable manifold.** For a function `g` which is
+`C¹` at a point `y₀` of `W^u(x)`, the derivative of `g` along the unstable frame,
+`y ↦ dg_y ∘ F_y`, is continuous at `y₀` within `W^u(x)`. The frame `F_y` maps the fixed space of
+coordinates of negative weight of `φ` to the tangent space at `y`, so its composite with `dg_y` is
+a map between fixed spaces, and this expresses the continuity of the frame. -/
+theorem continuousWithinAt_mvfderiv_comp_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {g : M → F} {y₀ : M}
+    (hg : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 1 g y₀) (hy₀ : y₀ ∈ hX.flow.unstableSet x) :
+    ContinuousWithinAt (fun y ↦ (mvfderiv 𝓘(ℝ, E) g y).comp (hX.unstableFrame φ y))
+      (hX.flow.unstableSet x) y₀ := by
+  obtain ⟨T, hT⟩ := hX.exists_eventually_mem_linearBackwardTimes hφ hf hy₀
+  set e := (hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
+    (hX.flowDiffeomorph (-T)).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+      φ.mem_maximalAtlas
+  have hecoe (z : M) : e z = φ.toChart (hX.flow (-T) z) := by simp [e]
+  have hT₀ := hT.self_of_nhds hy₀
+  have hy₀e : y₀ ∈ e.source := by simpa [e] using hT₀.1
+  -- In the chart `e = φ ∘ Φ_{-T}`, the function `g` is `C¹` near `e y₀`.
+  have hge : ContDiffAt ℝ 1 (g ∘ e.symm) (e y₀) := by
+    rw [← contMDiffAt_iff_contDiffAt]
+    exact hg.comp_of_eq ((contMDiffAt_symm_of_mem_maximalAtlas he (e.map_source hy₀e)).of_le
+      (by norm_cast)) (e.left_inv hy₀e)
+  have hK : ContinuousAt (fun y ↦ Real.exp (-T) • (fderiv ℝ (g ∘ e.symm) (e y)).comp
+      (LinearMap.toContinuousLinearMap φ.negativeExtend)) y₀ :=
+    (((hge.continuousAt_fderiv one_ne_zero).comp (e.continuousAt hy₀e)).clm_comp
+      continuousAt_const).tendsto.const_smul _
+  have hdiff : ∀ᶠ y in 𝓝 y₀, DifferentiableAt ℝ (g ∘ e.symm) (e y) :=
+    (e.continuousAt hy₀e).eventually ((hge.eventually (by simp)).mono fun z hz ↦
+      hz.differentiableAt one_ne_zero)
+  refine hK.continuousWithinAt.congr_of_eventuallyEq_of_mem ?_ hy₀
+  filter_upwards [nhdsWithin_le_nhds (hT.and hdiff), self_mem_nhdsWithin] with y ⟨hyT, hyd⟩ hy
+  rw [mvfderiv_comp_unstableFrame_eq hφ (hyT hy) (hecoe y ▸ hyd), hecoe]
 
 end IsAdaptedPseudoGradient
 

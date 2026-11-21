@@ -389,6 +389,14 @@ lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
     _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
     _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
 
+/-- Subtracting two pointwise bilinear upper bounds adds the constants. -/
+lemma abs_dotProduct_sub_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((A - B) *ᵥ ξ)| ≤ (Lam + Mu) * ‖η‖ * ‖ξ‖ := by
+  rw [Matrix.sub_mulVec, dotProduct_sub]
+  linarith [abs_sub (η ⬝ᵥ (A *ᵥ ξ)) (η ⬝ᵥ (B *ᵥ ξ)), hA η ξ, hB η ξ]
+
 /-- The symmetric part of a pointwise bounded coefficient matrix satisfies the same bilinear
 upper bound. -/
 lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {Lam : ℝ}
