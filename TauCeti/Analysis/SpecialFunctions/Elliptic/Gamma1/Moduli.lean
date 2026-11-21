@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
@@ -41,6 +43,13 @@ input that identifies `Γ₁(N) \ ℍ` with the complex points of the modular cu
   `1 / N` to `u / N`, which is `1 / N` modulo `ℤ z' + ℤ` exactly when `c ≡ 0` and `d ≡ 1 mod N`,
   that is, when `γ ∈ Γ₁(N)`.
 
+The bijection is natural. For `γ ∈ Γ₀(N)` with lower-right entry `d`, the point `(c z + d) / N`
+is `d / N` modulo `ℤ z + ℤ`, so the class of `γ z` corresponds to `(E_z, d • P_z)`: the diamond
+operator `⟨d⟩` multiplies the marked point by `d`, that is, it precomposes the embedding
+`μ_N ↪ E[N]` with multiplication by `d`. For `M ≠ 0`, the map `Γ₁(N M) \ ℍ → Γ₁(N) \ ℍ`
+corresponds to multiplying the marked point by `M`, since `M / (N M) = 1 / N`: it restricts an
+embedding `μ_{NM} ↪ E[NM]` to `μ_N`.
+
 ## Main definitions
 
 * `UpperHalfPlane.pointedWeierstrassCurve N z`: the curve `E_z` with the point given by `1 / N`.
@@ -56,6 +65,12 @@ input that identifies `Γ₁(N) \ ℍ` with the complex points of the modular cu
   point of exact order `N` is isomorphic to some `(E_z, P_z)`.
 * `UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq_iff`: `(E_z, P_z)` and `(E_{z'}, P_{z'})`
   are isomorphic exactly when `z' ∈ Γ₁(N) z`.
+* `UpperHalfPlane.smul_mk_zsmul_weierstrassPoint_one_div`: for `γ ∈ Γ₀(N)` with lower-right
+  entry `d`, rescaling by `(c z + d)⁻¹` carries `(E_z, d • P_z)` to `(E_{γ z}, P_{γ z})`.
+* `TauCeti.gamma1QuotientEquivExactOrder_mk_smul`: the moduli bijection carries the diamond
+  operator `⟨d⟩` to multiplication of the marked point by `d`.
+* `TauCeti.gamma1QuotientEquivExactOrder_map_of_le`: the moduli bijection carries the map
+  `Γ₁(N M) \ ℍ → Γ₁(N) \ ℍ` to multiplication of the marked point by `M`.
 
 ## References
 
@@ -240,6 +255,34 @@ theorem exists_smul_pointedWeierstrassCurve_eq_iff [NeZero N] {z z' : ℍ} :
     refine ⟨⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩, ?_⟩
     rw [pointedWeierstrassCurve_def z, hD, smul_mk_weierstrassPoint_denom_div]
 
+variable (N) in
+/-- **Diamond operators on `(E_z, P_z)`**: for `γ ∈ Γ₀(N)` with lower-right entry `d`, rescaling
+by `(c z + d)⁻¹` carries `E_z` with the point `d • P_z` to `(E_{γ z}, P_{γ z})`. Indeed
+`(c z + d) / N` is `d / N` modulo `ℤ z + ℤ`, since `N ∣ c`. -/
+theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (z : ℍ) :
+    (⟨(Units.mk0 _ (denom_ne_zero γ z))⁻¹, 0, 0, 0⟩ : VariableChange ℂ) •
+        (⟨z.periodPair.weierstrassCurve, γ 1 1 • z.periodPair.weierstrassPoint (1 / N)⟩ :
+          PointedWeierstrassCurve ℂ) =
+      (γ • z).pointedWeierstrassCurve N := by
+  have hD : γ 1 1 • z.periodPair.weierstrassPoint (1 / N) =
+      z.periodPair.weierstrassPoint (denom γ z / N) := by
+    rw [← PeriodPair.weierstrassPointHom_apply, ← map_zsmul, PeriodPair.weierstrassPointHom_apply,
+      PeriodPair.weierstrassPoint_eq_weierstrassPoint_iff]
+    convert div_mem_lattice_periodPair_of_intCast_comp_eq_zero (N := N) (b := ![-γ 1 0, 0]) z
+      (by ext i; fin_cases i <;> simp [Gamma0_mem.mp hγ]) using 1
+    simp only [ModularGroup.denom_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one, zsmul_eq_mul]
+    push_cast
+    ring
+  rw [hD, smul_mk_weierstrassPoint_denom_div]
+
+/-- **Lowering the level on `E_z`**: `M` times the point of `1 / (N M)` is the point of `1 / N`. -/
+theorem nsmul_weierstrassPoint_one_div_mul {M : ℕ} (hM : M ≠ 0) (z : ℍ) :
+    M • z.periodPair.weierstrassPoint (1 / (N * M : ℕ)) =
+      z.periodPair.weierstrassPoint (1 / N) := by
+  rw [PeriodPair.nsmul_weierstrassPoint, Nat.cast_mul, one_div, mul_inv, mul_comm (N : ℂ)⁻¹,
+    mul_inv_cancel_left₀ (Nat.cast_ne_zero.mpr hM), one_div]
+
 end UpperHalfPlane
 
 namespace TauCeti
@@ -277,5 +320,38 @@ theorem gamma1QuotientEquivExactOrder_mk (z : ℍ) :
     gamma1QuotientEquivExactOrder N ⟦z⟧ =
       ⟦⟨z.pointedWeierstrassCurve N, z.pointedWeierstrassCurve_mem_exactOrder⟩⟧ :=
   (rfl)
+
+/-- **The moduli bijection commutes with the diamond operators**: for `γ ∈ Γ₀(N)` with
+lower-right entry `d`, the class of `γ z` corresponds to `(E_z, d • P_z)`. In terms of the
+embeddings `α : μ_N ↪ E[N]`, the diamond operator `⟨d⟩` precomposes `α` with multiplication by
+`d` on `μ_N`. -/
+theorem gamma1QuotientEquivExactOrder_mk_smul (γ : Gamma0 N) (z : ℍ) :
+    gamma1QuotientEquivExactOrder N ⟦(γ : SL(2, ℤ)) • z⟧ =
+      ⟦(Gamma0Map N).toHomUnits γ •
+        ⟨z.pointedWeierstrassCurve N, z.pointedWeierstrassCurve_mem_exactOrder⟩⟧ := by
+  refine Quotient.sound (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr
+    ⟨⟨(Units.mk0 _ (denom_ne_zero (γ : SL(2, ℤ)) z))⁻¹, 0, 0, 0⟩, Subtype.ext ?_⟩))
+  rw [SubMulAction.val_smul, PointedWeierstrassCurve.coe_units_smul_of_intCast_eq
+    (n := (γ : SL(2, ℤ)) 1 1) _ _ (by rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply])]
+  exact UpperHalfPlane.smul_mk_zsmul_weierstrassPoint_one_div N γ.property z
+
+/-- **The moduli bijection is natural in the level**: for `M ≠ 0`, the map
+`Γ₁(N M) \ ℍ → Γ₁(N) \ ℍ` induced by `Γ₁(N M) ≤ Γ₁(N)` corresponds to multiplying the point of
+exact order `N M` by `M`. In terms of the embeddings `α : μ_{NM} ↪ E[NM]`, it restricts `α` to
+`μ_N`, forgetting the auxiliary marking. -/
+theorem gamma1QuotientEquivExactOrder_map_of_le (M : ℕ) [NeZero M]
+    (q : MulAction.orbitRel.Quotient (Gamma1 (N * M)) ℍ) :
+    gamma1QuotientEquivExactOrder N (Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le
+        (Gamma1_le_Gamma1_of_dvd (dvd_mul_right N M))) q) =
+      (PointedWeierstrassCurve.nsmulExactOrder N M).orbitRelQuotientMap
+        (gamma1QuotientEquivExactOrder (N * M) q) := by
+  induction q using Quotient.inductionOn with
+  | h z =>
+    rw [Setoid.map_of_le_mk, gamma1QuotientEquivExactOrder_mk, gamma1QuotientEquivExactOrder_mk,
+      MulActionHom.orbitRelQuotientMap_mk]
+    refine congrArg _ (Subtype.ext ?_)
+    rw [PointedWeierstrassCurve.coe_nsmulExactOrder_apply]
+    exact PointedWeierstrassCurve.mk_inj.mpr
+      (UpperHalfPlane.nsmul_weierstrassPoint_one_div_mul (NeZero.ne M) z).symm
 
 end TauCeti

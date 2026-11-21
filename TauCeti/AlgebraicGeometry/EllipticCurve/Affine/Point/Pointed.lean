@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Units
+public import Mathlib.Data.ZMod.ValMinAbs
+public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
@@ -26,6 +29,10 @@ isomorphism, so they also preserve the order of the marked point. The pointed el
 marked point has exact order `N` therefore form a sub-action
 (`TauCeti.PointedWeierstrassCurve.exactOrder`); its orbits are the isomorphism classes of elliptic
 curves with a point of exact order `N`, the moduli problem of the congruence subgroup `Γ₁(N)`.
+Multiplying the marked point by an integer commutes with changes of variables. This gives the two
+operations on that moduli problem: the units `d` modulo `N` act by `P ↦ d • P`, which is the action
+of the diamond operators, and for `M ≠ 0` the map `P ↦ M • P` lowers the exact order from `N * M`
+to `N`, which corresponds to the inclusion `Γ₁(N M) ≤ Γ₁(N)`.
 
 ## Main definitions
 
@@ -33,6 +40,10 @@ curves with a point of exact order `N`, the moduli problem of the congruence sub
 * `TauCeti.PointedWeierstrassCurve.instMulActionVariableChange`: the action of changes of variables.
 * `TauCeti.PointedWeierstrassCurve.exactOrder F N`: over a field `F`, the elliptic curves with a
   marked point of exact order `N`, as a sub-action.
+* `TauCeti.PointedWeierstrassCurve.instMulActionUnitsZModExactOrder`: the action of `(ℤ/Nℤ)ˣ` on
+  these by multiplying the marked point, commuting with changes of variables.
+* `TauCeti.PointedWeierstrassCurve.nsmulExactOrder N M`: multiplying the marked point by `M`, as
+  an equivariant map from exact order `N * M` to exact order `N`.
 
 ## Main results
 
@@ -42,6 +53,10 @@ curves with a point of exact order `N`, the moduli problem of the congruence sub
   affine pointed curves, in coordinates.
 * `TauCeti.PointedWeierstrassCurve.addOrderOf_smul_point`: over a field, changes of variables
   preserve the order of the marked point.
+* `TauCeti.PointedWeierstrassCurve.smul_mk_zsmul_point`: over a field, changes of variables
+  commute with multiplying the marked point by `n`.
+* `TauCeti.PointedWeierstrassCurve.coe_units_smul_of_intCast_eq`: a unit modulo `N` multiplies the
+  marked point by any integer representative.
 -/
 
 public section
@@ -171,6 +186,103 @@ def exactOrder (N : ℕ) : SubMulAction (VariableChange F) (PointedWeierstrassCu
 theorem mem_exactOrder_iff {N : ℕ} :
     X ∈ exactOrder F N ↔ X.curve.IsElliptic ∧ addOrderOf X.point = N :=
   Iff.rfl
+
+/-- Over a field, a change of variables commutes with multiplying the marked point by `n`. -/
+theorem smul_mk_zsmul_point (n : ℤ) :
+    C • (⟨X.curve, n • X.point⟩ : PointedWeierstrassCurve F) =
+      ⟨(C • X).curve, n • (C • X).point⟩ := by
+  refine mk_inj.mpr ?_
+  rw [smul_point, ← coe_addEquivVariableChange_symm, map_zsmul]
+
+variable {N : ℕ}
+
+/-- Multiplying a marked point of exact order `N` by an integer `n` that is a unit modulo `N`
+gives a point of exact order `N`. -/
+theorem mk_zsmul_point_mem_exactOrder (hX : X ∈ exactOrder F N) {n : ℤ}
+    (hn : IsUnit (n : ZMod N)) :
+    (⟨X.curve, n • X.point⟩ : PointedWeierstrassCurve F) ∈ exactOrder F N := by
+  obtain ⟨hE, hN⟩ := (mem_exactOrder_iff X).mp hX
+  refine (mem_exactOrder_iff _).mpr ⟨hE, ?_⟩
+  rw [← addOrderOf_nsmul_natAbs, Nat.Coprime.addOrderOf_nsmul, hN]
+  rw [hN]
+  exact Int.isCoprime_iff_gcd_eq_one.mp ((ZMod.isUnit_intCast_iff_isCoprime n N).mp hn)
+
+/-- Multiplying a marked point of exact order `N * M` by `M ≠ 0` gives a point of exact order
+`N`. -/
+theorem mk_nsmul_point_mem_exactOrder_of_mem_mul {M : ℕ} (hM : M ≠ 0)
+    (hX : X ∈ exactOrder F (N * M)) :
+    (⟨X.curve, M • X.point⟩ : PointedWeierstrassCurve F) ∈ exactOrder F N := by
+  obtain ⟨hE, hN⟩ := (mem_exactOrder_iff X).mp hX
+  refine (mem_exactOrder_iff _).mpr ⟨hE, ?_⟩
+  rw [addOrderOf_nsmul_of_dvd hM (hN ▸ dvd_mul_left M N), hN, Nat.mul_div_cancel _ (by omega)]
+
+variable (N) in
+/-- **Lowering the level**: for `M ≠ 0`, multiplying the marked point by `M` sends an elliptic
+curve with a point of exact order `N * M` to one with a point of exact order `N`. In terms of
+embeddings `α : μ_{NM} ↪ E[NM]`, this restricts `α` to `μ_N`. It commutes with changes of
+variables, so it induces the map of moduli problems underlying `Γ₁(N M) ≤ Γ₁(N)`. -/
+def nsmulExactOrder (M : ℕ) [NeZero M] :
+    exactOrder F (N * M) →[VariableChange F] exactOrder F N where
+  toFun X := ⟨⟨X.val.curve, M • X.val.point⟩,
+    mk_nsmul_point_mem_exactOrder_of_mem_mul X.val (NeZero.ne M) X.property⟩
+  map_smul' C X := Subtype.ext <| by
+    have h := smul_mk_zsmul_point C X.val M
+    simp only [natCast_zsmul] at h
+    exact h.symm
+
+@[simp]
+theorem coe_nsmulExactOrder_apply (M : ℕ) [NeZero M] (X : exactOrder F (N * M)) :
+    (nsmulExactOrder N M X : PointedWeierstrassCurve F) =
+      ⟨X.val.curve, M • X.val.point⟩ :=
+  (rfl)
+
+section Units
+
+/-- On a point of exact order `N`, multiplication by `n : ℤ` only depends on `n` modulo `N`. -/
+private theorem zsmul_point_eq_of_intCast_eq (hX : X ∈ exactOrder F N) {m n : ℤ}
+    (h : (m : ZMod N) = n) : m • X.point = n • X.point := by
+  rw [zsmul_eq_zsmul_iff_modEq, ((mem_exactOrder_iff X).mp hX).2, ← ZMod.intCast_eq_intCast_iff,
+    h]
+
+/-- **Multiplying the marked point by a unit modulo `N`**: `d ∈ (ℤ/Nℤ)ˣ` sends an elliptic
+curve `E` with a point `P` of exact order `N` to `(E, d • P)`, where `d` acts on `P` through any
+integer representative (`TauCeti.PointedWeierstrassCurve.coe_units_smul_of_intCast_eq`). In terms
+of the embeddings `α : μ_N ↪ E[N]` with `α(ζ) = P`, this is `α ↦ α ∘ [d]`, the action of the
+diamond operator `⟨d⟩` on the moduli problem of `Γ₁(N)`. -/
+instance instSMulUnitsZModExactOrder : SMul (ZMod N)ˣ (exactOrder F N) where
+  smul d X := ⟨⟨X.val.curve, (d : ZMod N).valMinAbs • X.val.point⟩,
+    mk_zsmul_point_mem_exactOrder X.val X.property (by rw [ZMod.coe_valMinAbs]; exact d.isUnit)⟩
+
+variable (d : (ZMod N)ˣ) (Y : exactOrder F N)
+
+/-- The unit `d` multiplies the marked point by the representative `(d : ZMod N).valMinAbs`. -/
+theorem coe_units_smul :
+    ((d • Y : exactOrder F N) : PointedWeierstrassCurve F) =
+      ⟨Y.val.curve, (d : ZMod N).valMinAbs • Y.val.point⟩ :=
+  (rfl)
+
+/-- The unit `d` multiplies the marked point by any integer representative of `d`. -/
+theorem coe_units_smul_of_intCast_eq {n : ℤ} (hn : (n : ZMod N) = d) :
+    ((d • Y : exactOrder F N) : PointedWeierstrassCurve F) = ⟨Y.val.curve, n • Y.val.point⟩ :=
+  mk_inj.mpr (zsmul_point_eq_of_intCast_eq Y.val Y.property (by rw [ZMod.coe_valMinAbs, hn]))
+
+/-- The units modulo `N` act on the elliptic curves with a point of exact order `N` by
+multiplying the marked point. -/
+instance instMulActionUnitsZModExactOrder : MulAction (ZMod N)ˣ (exactOrder F N) where
+  one_smul X := Subtype.ext <| by
+    rw [coe_units_smul_of_intCast_eq 1 X (n := 1) (by simp), one_zsmul]
+  mul_smul d e X := Subtype.ext <| by
+    have h : (((d : ZMod N).valMinAbs * (e : ZMod N).valMinAbs : ℤ) : ZMod N) = (d * e : _) := by
+      rw [Int.cast_mul, ZMod.coe_valMinAbs, ZMod.coe_valMinAbs, Units.val_mul]
+    rw [coe_units_smul_of_intCast_eq (d * e) X h, coe_units_smul d, coe_units_smul e, mul_zsmul]
+
+/-- Changes of variables commute with multiplying the marked point by a unit modulo `N`, so the
+units act on the isomorphism classes of elliptic curves with a point of exact order `N`. -/
+instance instSMulCommClassVariableChangeUnitsZModExactOrder :
+    SMulCommClass (VariableChange F) (ZMod N)ˣ (exactOrder F N) where
+  smul_comm C _ X := Subtype.ext (smul_mk_zsmul_point C X.val _)
+
+end Units
 
 end Field
 
