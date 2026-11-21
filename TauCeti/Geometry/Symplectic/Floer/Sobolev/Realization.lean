@@ -58,7 +58,7 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   closed range (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator_of_cylindrical`). For a
   Floer trajectory these are `TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`
   and `TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`. All of these are the case
-  `c = 0` of the weighted results below; the estimate is derived from its weighted version.
+  `c = 0` of the weighted results below.
 * At the stationary cylinder `u(s, t) = x(t)` over a nondegenerate orbit `x`, `D_u` is the
   translation-invariant operator `∂s + J_t(x(t)) (∂t - dX_{H_t}(x(t)))`, and the spectral gap
   estimate `TauCeti.Floer.exists_setIntegral_le_mul_setIntegral_stationaryCylinderOperator` bounds
@@ -679,9 +679,7 @@ theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H :
 by Peetre's argument on the cylinder: under the hypotheses of
 `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`,
 the coefficient field of the linearized Floer operator on jets satisfies
-`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`. This is the case `c = 0` of
-`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical`.
--/
+`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`. -/
 theorem exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (ω : SymplecticForm V)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
@@ -709,17 +707,12 @@ theorem exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (ω : Symple
         (Icc 0 1)) :
     ∃ C T : ℝ, HasSemiFredholmEstimate
       (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u) C T := by
-  obtain ⟨C, T, hest⟩ :=
-    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst_of_cylindrical (c := 0)
-      hcyl hu hJu continuous_const (δm := 0) (δp := 0)
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm
-      (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
-      hJm hJxm (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXm hHm hxm hndm _) huxm hδm hHp
-      (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJp hJxp
-      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
-        hXp hHp hxp hndp _) huxp hδp
-  exact ⟨C, T, by simpa only [Pi.zero_apply, zero_smul, sub_zero] using hest⟩
+  obtain ⟨C, -, T, hest⟩ :=
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical hcyl hu
+      hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
+  simpa only [floerJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
+    hest hξ hper hab hvan
 
 /-- **The linearized Floer operator for data cylindrical near the ends has finite-dimensional
 kernel on `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
