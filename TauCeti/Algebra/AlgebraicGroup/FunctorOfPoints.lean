@@ -217,6 +217,12 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
   rw [MonoidHom.comp_apply, mapValue_apply, mapValue_apply, mapValue_apply, toConv_ofConv,
     AlgHom.comp_assoc]
 
+/-- Extending a base-valued point to `A` and then mapping it along `φ : A →ₐ[R] B` extends it to
+`B`. -/
+lemma mapValue_mapValue_ofId (φ : A →ₐ[R] B) (g : WithConv (H →ₐ[R] R)) :
+    mapValue φ (mapValue (Algebra.ofId R A) g) = mapValue (Algebra.ofId R B) g := by
+  rw [← MonoidHom.comp_apply, ← mapValue_comp, Algebra.comp_ofId]
+
 end Bialgebra
 
 section BialgebraConstantPoint
