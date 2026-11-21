@@ -48,6 +48,10 @@ of the regraded complex is the homology of `K` in degree `n - k`.
 * `ChainComplex.regradeIsoShift`: the regrading is isomorphic to the composite of Mathlib's
   `cochainComplexEquivalence` with the shift by `-n`, through the signs `(-1)^(n k)`
   (`regradeIsoShift_hom_app_f`, `regradeIsoShift_inv_app_f`).
+* `CochainComplex.restrictionDownIntUpIntCyclesIso`,
+  `CochainComplex.restrictionDownIntUpIntHomologyIso`: the cycles and homology in degree `i` of
+  the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ` of Mathlib's `ChainComplex.cochainComplexEquivalence`
+  are those of the cochain complex `K` in degree `-i`.
 
 ## References
 
@@ -326,3 +330,99 @@ theorem regradeIsoShift_inv_app_f (K : ChainComplex C ℤ) (k : ℤ) :
 end Preadditive
 
 end ChainComplex
+
+namespace CochainComplex
+
+open HomologicalComplex ComplexShape
+
+/-! ### Restriction of a cochain complex along `n ↦ -n`
+
+The inverse of Mathlib's `ChainComplex.cochainComplexEquivalence` reads a cochain complex `K` as
+the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ`, the restriction of `K` along
+`ComplexShape.embeddingDownIntUpInt`. Its cycles and homology in degree `i` are those of `K` in
+degree `-i`. -/
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] (K : CochainComplex C ℤ)
+
+section Homology
+
+variable (i j : ℤ) (h : i + j = 0)
+  [K.HasHomology j] [(K.restriction embeddingDownIntUpInt).HasHomology i]
+
+/-- The cycles of the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ` in degree `i` are those of the cochain
+complex `K` in degree `j = -i`. -/
+noncomputable def restrictionDownIntUpIntCyclesIso :
+    (K.restriction embeddingDownIntUpInt).cycles i ≅ K.cycles j :=
+  K.restrictionCyclesIso embeddingDownIntUpInt i (i - 1) ((down ℤ).next_eq' (by simp))
+    (j' := j) (k' := j + 1) (by simp; omega) (by simp; omega) ((up ℤ).next_eq' (by simp))
+
+/-- `CochainComplex.restrictionDownIntUpIntCyclesIso` is compatible with the inclusions of the
+cycles. -/
+@[reassoc (attr := simp)]
+lemma restrictionDownIntUpIntCyclesIso_hom_iCycles :
+    (K.restrictionDownIntUpIntCyclesIso i j h).hom ≫ K.iCycles j =
+      (K.restriction embeddingDownIntUpInt).iCycles i ≫
+        (K.restrictionXIso embeddingDownIntUpInt
+          (show embeddingDownIntUpInt.f i = j by simp; omega)).hom :=
+  K.restrictionCyclesIso_hom_iCycles ..
+
+/-- The inverse of `CochainComplex.restrictionDownIntUpIntCyclesIso` is compatible with the
+inclusions of the cycles. -/
+@[reassoc (attr := simp)]
+lemma restrictionDownIntUpIntCyclesIso_inv_iCycles :
+    (K.restrictionDownIntUpIntCyclesIso i j h).inv ≫
+        (K.restriction embeddingDownIntUpInt).iCycles i =
+      K.iCycles j ≫ (K.restrictionXIso embeddingDownIntUpInt
+          (show embeddingDownIntUpInt.f i = j by simp; omega)).inv :=
+  K.restrictionCyclesIso_inv_iCycles ..
+
+/-- The homology of the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ` in degree `i` is that of the cochain
+complex `K` in degree `j = -i`. -/
+noncomputable def restrictionDownIntUpIntHomologyIso :
+    (K.restriction embeddingDownIntUpInt).homology i ≅ K.homology j :=
+  K.restrictionHomologyIso embeddingDownIntUpInt (i + 1) i (i - 1)
+    ((down ℤ).prev_eq' (by simp)) ((down ℤ).next_eq' (by simp))
+    (i' := j - 1) (k' := j + 1) (by simp; omega) (by simp; omega) (by simp; omega)
+    ((up ℤ).prev_eq' (by simp)) ((up ℤ).next_eq' (by simp))
+
+/-- Under `CochainComplex.restrictionDownIntUpIntHomologyIso`, the homology class of a cycle of
+`K⁻` is the homology class of the corresponding cycle of `K`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_restrictionDownIntUpIntHomologyIso_hom :
+    (K.restriction embeddingDownIntUpInt).homologyπ i ≫
+        (K.restrictionDownIntUpIntHomologyIso i j h).hom =
+      (K.restrictionDownIntUpIntCyclesIso i j h).hom ≫ K.homologyπ j :=
+  K.homologyπ_restrictionHomologyIso_hom ..
+
+/-- The inverse of `CochainComplex.restrictionDownIntUpIntHomologyIso` sends the homology class of
+a cycle of `K` to the homology class of the corresponding cycle of `K⁻`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_restrictionDownIntUpIntHomologyIso_inv :
+    K.homologyπ j ≫ (K.restrictionDownIntUpIntHomologyIso i j h).inv =
+      (K.restrictionDownIntUpIntCyclesIso i j h).inv ≫
+        (K.restriction embeddingDownIntUpInt).homologyπ i :=
+  K.homologyπ_restrictionHomologyIso_inv ..
+
+include h in
+/-- If the cycles of `K` split off in degree `j = -i`, then those of `K⁻` split off in degree
+`i`. -/
+lemma isSplitMono_restrictionDownIntUpInt_iCycles [IsSplitMono (K.iCycles j)] :
+    IsSplitMono ((K.restriction embeddingDownIntUpInt).iCycles i) :=
+  IsSplitMono.mk'
+    { retraction := (K.restrictionXIso embeddingDownIntUpInt
+        (show embeddingDownIntUpInt.f i = j by simp; omega)).hom ≫
+          retraction (K.iCycles j) ≫ (K.restrictionDownIntUpIntCyclesIso i j h).inv
+      id := by
+        rw [← restrictionDownIntUpIntCyclesIso_hom_iCycles_assoc K i j h, IsSplitMono.id_assoc,
+          Iso.hom_inv_id] }
+
+include h in
+/-- If the cycles of `K` are projective in degree `j = -i`, then so are those of `K⁻` in degree
+`i`. -/
+lemma projective_restrictionDownIntUpInt_cycles [Projective (K.cycles j)] :
+    Projective ((K.restriction embeddingDownIntUpInt).cycles i) :=
+  Projective.of_iso (K.restrictionDownIntUpIntCyclesIso i j h).symm inferInstance
+
+end Homology
+
+end CochainComplex
