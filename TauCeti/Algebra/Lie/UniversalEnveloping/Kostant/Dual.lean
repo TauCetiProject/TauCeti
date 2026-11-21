@@ -19,7 +19,7 @@ algebra: root divided powers and Cartan binomials must all preserve the lattice.
 
 The statement applies both to an arbitrary enveloping-algebra representation and
 to the native dual Lie module. If the original submodule is a full lattice, its
-integral dual is a full lattice by `Submodule.isLattice_dualLattice`; its freeness
+integral dual is a full lattice by `Submodule.isFullLattice_dualLattice`; its freeness
 and finite generation follow over the integers. Thus dualizing supplies another
 admissible integral module without choosing a bilinear form or identifying the
 representation with its dual. This is useful when building integral matrix

@@ -151,7 +151,7 @@ noncomputable def torusFamilyLogTwistEquiv (μ : Λ) :
       {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :
     (torusFamilyLogTwistEquiv φ P μ y :
         letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) =
-      torusFamilyLogTwistMap φ P μ y.1 := (rfl)
+      torusFamilyLogTwistMap φ P μ y.val := (rfl)
 
 /-- The punctured logarithmic twist for `0 : Λ` is the identity. -/
 @[simp] theorem torusFamilyLogTwistEquiv_zero :
@@ -165,7 +165,7 @@ noncomputable def torusFamilyLogTwistEquiv (μ : Λ) :
       torusFamilyLogTwistEquiv φ P (μ₁ + μ₂) := by
   ext y
   simp only [Equiv.trans_apply, coe_torusFamilyLogTwistEquiv]
-  exact congrFun (congrArg DFunLike.coe (torusFamilyLogTwistMap_trans φ P μ₁ μ₂)) y.1
+  exact congrFun (congrArg DFunLike.coe (torusFamilyLogTwistMap_trans φ P μ₁ μ₂)) y.val
 
 /-- The inverse of a punctured logarithmic twist negates its period parameter. -/
 @[simp] theorem torusFamilyLogTwistEquiv_symm (μ : Λ) :
@@ -178,9 +178,9 @@ noncomputable def torusFamilyLogTwistEquiv (μ : Λ) :
 theorem torusFamilyProjection_torusFamilyLogTwistEquiv (μ : Λ)
     (y : letI := periodAddAction P
       {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :
-    torusFamilyProjection P (torusFamilyLogTwistEquiv φ P μ y).1 =
-      torusFamilyProjection P y.1 :=
-  torusFamilyProjection_torusFamilyLogTwistMap φ P μ y.1
+    torusFamilyProjection P (torusFamilyLogTwistEquiv φ P μ y).val =
+      torusFamilyProjection P y.val :=
+  torusFamilyProjection_torusFamilyLogTwistMap φ P μ y.val
 
 end LogTwist
 
@@ -255,7 +255,7 @@ private theorem contMDiff_torusFamilyLogTwistEquiv (μ : Λ) :
     funext fun z ↦ coe_torusFamilyLogTwistEquiv φ P μ z
   rw [hcomp]
   exact (contMDiffAt_subtype_iff (U := U) (x := y)).2
-    (contMDiffAt_torusFamilyLogTwistMap φ P hinj hφ hP μ y.2)
+    (contMDiffAt_torusFamilyLogTwistMap φ P hinj hφ hP μ y.property)
 
 /-- **The logarithmic twist diffeomorphism.** For a `C^n` period family `P` over `Y` and a `C^n`
 function `φ : Y → ℂ`, each lattice element `μ : Λ` defines a `C^n` automorphism
@@ -363,8 +363,8 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
 theorem torusFamilyProjection_torusFamilyLogTwistDiffeomorph (μ : Λ)
     (y : letI := periodAddAction P
       {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :
-    torusFamilyProjection P (torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ y).1 =
-      torusFamilyProjection P y.1 :=
+    torusFamilyProjection P (torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ y).val =
+      torusFamilyProjection P y.val :=
   torusFamilyProjection_torusFamilyLogTwistEquiv φ P μ y
 
 end LogTwistDiffeomorph
@@ -383,8 +383,8 @@ theorem logTranslationSection_add_nsmul (l μ : Λ) (ζ : rootsOfUnity m ℂ)
     logTranslationSection P (l + m • μ) ζ z = logTranslationSection P l ζ z := by
   let _ := periodAddAction (powPullbackPeriod m r P)
   have hexp : Complex.exp ((m : ℂ) * log ((ζ : ℂˣ) : ℂ)) = Complex.exp 0 := by
-    rw [Complex.exp_nat_mul, Complex.exp_log (ζ : ℂˣ).ne_zero, Complex.exp_zero]
-    have hpow : (ζ : ℂˣ) ^ m = 1 := (_root_.mem_rootsOfUnity m (ζ : ℂˣ)).1 ζ.2
+    rw [Complex.exp_natCast_mul, Complex.exp_log (ζ : ℂˣ).ne_zero, Complex.exp_zero]
+    have hpow : (ζ : ℂˣ) ^ m = 1 := (_root_.mem_rootsOfUnity m (ζ : ℂˣ)).1 ζ.property
     simpa only [Units.val_pow_eq_pow_val, Units.val_one] using congrArg Units.val hpow
   obtain ⟨k, hk⟩ := exists_div_two_pi_I_smul_eq_add_zsmul hexp (powPullbackPeriod m r P z μ)
   rw [zero_div, zero_smul, zero_add] at hk
@@ -415,7 +415,7 @@ theorem torusFamilyLogGauge_add_nsmul (l μ : Λ)
   obtain ⟨⟨z, e⟩, rfl⟩ := Quotient.exists_rep x
   have hz : (z : ℂ) ≠ 0 := by rwa [torusFamilyProjection_mk] at hx
   have hexp : exp ((m : ℂ) * log (z : ℂ)) = (rootsOfUnityBall.powMap m r z : ℂ) := by
-    rw [Complex.exp_nat_mul, Complex.exp_log hz, rootsOfUnityBall.coe_powMap]
+    rw [Complex.exp_natCast_mul, Complex.exp_log hz, rootsOfUnityBall.coe_powMap]
   rw [torusFamilyLogGauge_mk, torusFamilyLogGauge_mk,
     torusFamilyLogTwistMap_mk_of_exp_eq Subtype.val P (-μ) hexp]
   congr 2
@@ -586,7 +586,7 @@ noncomputable def logTranslationQuotientAddNsmulDiffeomorph (l μ : Λ)
       (torusFamilyProjection_logTranslationSection P (l + m • μ))
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P (l + m • μ))
       (fun _ ↦ contMDiff_snd)
-      (fun ζ ↦ contMDiff_logTranslationSection P hinj hP (l + m • μ) ζ)
+      (fun ζ ↦ contMDiff_logTranslationSection P hP hinj (l + m • μ) ζ)
       (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree)
   have hmk₂ : IsLocalDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (letI := logTranslationMulAction P l;
@@ -599,7 +599,7 @@ noncomputable def logTranslationQuotientAddNsmulDiffeomorph (l μ : Λ)
       (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
-      (fun _ ↦ contMDiff_snd) (fun ζ ↦ contMDiff_logTranslationSection P hinj hP l ζ) hfree
+      (fun _ ↦ contMDiff_snd) (fun ζ ↦ contMDiff_logTranslationSection P hP hinj l ζ) hfree
   exact
     { toEquiv := logTranslationQuotientAddNsmulEquiv P l μ
       contMDiff_toFun :=
@@ -638,7 +638,7 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
     letI := torusFamilyChartedSpace (H := ℂ) P (fun l' ↦ (hP l').continuous) hinj
     letI := TopologicalSpace.Opens.instChartedSpace (H := ModelProd ℂ E)
       (⟨{y | ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0},
-        isOpen_ne_fun (continuous_subtype_val.comp (continuous_torusFamilyProjection P))
+        isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection P))
           continuous_const⟩ : TopologicalSpace.Opens _)
     letI := periodAddAction (powPullbackPeriod m r P)
     letI : ChartedSpace (ModelProd ℂ E)
@@ -679,21 +679,21 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
           continuous_const⟩
     letI := TopologicalSpace.Opens.instChartedSpace (H := ModelProd ℂ E) UQ'
     letI := TopologicalSpace.Opens.instChartedSpace (H := ModelProd ℂ E) UQ
-    torusFamilyLogGaugeDiffeomorph P hinj hP (l + m • μ) hr
+    torusFamilyLogGaugeDiffeomorph P (l + m • μ) hr hP hinj
         (isCancelSMul_logTranslationMulAction_add_nsmul P l μ hfree) =
       ((logTranslationQuotientAddNsmulDiffeomorph P hinj hP l μ hfree).subtype
           (U := UQ') (V := UQ) fun q ↦ by
             simp only [UQ', UQ, TopologicalSpace.Opens.mem_mk, Set.mem_ofPred_eq]
             exact (torusFamilyCyclicQuotientProjection_logTranslationQuotientAddNsmulEquiv
               P l μ q).symm ▸ Iff.rfl).trans
-        ((torusFamilyLogGaugeDiffeomorph P hinj hP l hr hfree).trans
+        ((torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree).trans
           (torusFamilyLogTwistDiffeomorph Subtype.val P hinj
             contMDiff_subtypeVal_ball hP (-μ))) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l' ↦ (hP l').continuous) hinj
   let _ := TopologicalSpace.Opens.instChartedSpace (H := ModelProd ℂ E)
     (⟨{y | ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0},
-      isOpen_ne_fun (continuous_subtype_val.comp (continuous_torusFamilyProjection P))
+      isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection P))
         continuous_const⟩ : TopologicalSpace.Opens _)
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ : ChartedSpace (ModelProd ℂ E)
@@ -739,8 +739,8 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
   have h := Equiv.congr_fun (torusFamilyLogGaugeEquiv_add_nsmul P l μ hr) q
   rw [Diffeomorph.coe_trans, Diffeomorph.coe_trans, Function.comp_apply, Function.comp_apply,
     coe_torusFamilyLogTwistDiffeomorph,
-    coe_torusFamilyLogGaugeDiffeomorph P hinj hP (l + m • μ) hr,
-    coe_torusFamilyLogGaugeDiffeomorph P hinj hP l hr hfree,
+    coe_torusFamilyLogGaugeDiffeomorph P (l + m • μ) hr hP hinj,
+    coe_torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree,
     h, Equiv.trans_apply, Equiv.trans_apply]
   congr 2
   apply Subtype.ext

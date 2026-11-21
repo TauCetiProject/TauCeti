@@ -129,7 +129,7 @@ modulus at most `C`. -/
 theorem house_le_iff {x : F} {C : ℝ} (hC : 0 ≤ C) :
     house x ≤ C ↔ ∀ z ∈ (minpoly ℚ x).rootSet ℂ, ‖z‖ ≤ C :=
   ⟨fun h _ hz ↦ (norm_le_house_of_mem_rootSet hz).trans h,
-    fun h ↦ Real.iSup_le (fun z ↦ h z z.2) hC⟩
+    fun h ↦ Real.iSup_le (fun z ↦ h z z.property) hC⟩
 
 /-- The house of an algebraic element is attained: it is the modulus of some complex conjugate. -/
 theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
@@ -139,7 +139,7 @@ theorem exists_mem_rootSet_norm_eq_house {x : F} (hx : IsAlgebraic ℚ x) :
   have : Nonempty ((minpoly ℚ x).rootSet ℂ) :=
     ⟨⟨z, (mem_rootSet_of_ne (minpoly.ne_zero hint)).2 hz⟩⟩
   obtain ⟨w, hw⟩ := exists_eq_ciSup_of_finite (f := fun z : (minpoly ℚ x).rootSet ℂ ↦ ‖(z : ℂ)‖)
-  exact ⟨w, w.2, hw⟩
+  exact ⟨w, w.property, hw⟩
 
 /-- On a number field, the house is Mathlib's `NumberField.house`: the largest modulus of the
 image of `x` under a complex embedding. -/
@@ -282,7 +282,7 @@ theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimen
     ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
   have : NumberField L := ⟨⟩
   obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
-    fun h ↦ h0 congr($h.1)
+    fun h ↦ h0 congr(Subtype.val $h)
   refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
   -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
   have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
@@ -422,7 +422,7 @@ theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [F
     rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
   have hlt :
       Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_natCast_mul, ← Real.exp_add]
     exact Real.exp_lt_one_iff.2 (by linarith)
   refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
   exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
