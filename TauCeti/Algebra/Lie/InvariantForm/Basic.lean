@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Lie.Dual
 
 A bilinear form `Φ` on a Lie module `M` is invariant when `Φ ⁅x, y⁆ z = -Φ y ⁅x, z⁆`
 (`LinearMap.BilinForm.lieInvariant`). On a Lie algebra, a symmetric invariant form satisfies the
-cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. This file collects the invariant symmetric forms into the
+cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`, and for commuting `p` and `X` any invariant form makes
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` symmetric. This file collects the invariant symmetric forms into the
 submodule `TauCeti.LieModule.invariantForms R L M` and shows that on a finite-dimensional
 irreducible module over an algebraically closed field there is at most one invariant form up to
 scalars.
@@ -47,6 +48,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `LinearMap.BilinForm.lieInvariant.lie_apply_eq`: an invariant form intertwines a Lie module with
   its dual, `⁅x, Φ y⁆ = Φ ⁅x, y⁆`.
+* `LinearMap.BilinForm.lieInvariant.mem_lieAnnihilator_iff`: `x` stabilizes `Φ y` exactly when
+  `Φ ⁅x, y⁆ = 0`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -102,6 +105,20 @@ theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
 
+/-- For an invariant form on a Lie algebra and commuting `p` and `X`, the form
+`(A, C) ↦ Φ ⁅A, p⁆ ⁅C, X⁆` is symmetric. No symmetry of `Φ` is needed. -/
+theorem apply_lie_lie_comm (hΦ : Φ.lieInvariant L) {p X : L} (hXp : ⁅X, p⁆ = 0) (A C : L) :
+    Φ ⁅A, p⁆ ⁅C, X⁆ = Φ ⁅C, p⁆ ⁅A, X⁆ := by
+  -- By invariance and the Jacobi identity the difference is `Φ ⁅⁅C, A⁆, p⁆ X = -Φ ⁅X, p⁆ ⁅C, A⁆`.
+  have h₁ := hΦ C ⁅A, p⁆ X
+  have h₂ := hΦ A ⁅C, p⁆ X
+  have h₃ := hΦ ⁅C, A⁆ p X
+  have h₄ := hΦ X p ⁅C, A⁆
+  rw [leibniz_lie, map_add, LinearMap.add_apply] at h₁
+  rw [← lie_skew ⁅C, A⁆ X, map_neg] at h₃
+  rw [hXp, map_zero, LinearMap.zero_apply] at h₄
+  linear_combination h₁ - h₂ - h₃ - h₄
+
 end LinearMap.BilinForm.lieInvariant
 
 /-! ### Invariant forms intertwine a module with its dual -/
@@ -119,6 +136,12 @@ for a nondegenerate form on a finite-dimensional module this is the bracket comp
 theorem lie_apply_eq (hΦ : Φ.lieInvariant L) (x : L) (y : M) : ⁅x, Φ y⁆ = Φ ⁅x, y⁆ := by
   ext z
   rw [Module.Dual.lie_apply, hΦ]
+
+/-- For an invariant form, `x` stabilizes `Φ y` under the dual action exactly when
+`Φ ⁅x, y⁆ = 0`. -/
+theorem mem_lieAnnihilator_iff (hΦ : Φ.lieInvariant L) {x : L} {y : M} :
+    x ∈ TauCeti.lieAnnihilator R L (Φ y) ↔ Φ ⁅x, y⁆ = 0 := by
+  rw [TauCeti.mem_lieAnnihilator, hΦ.lie_apply_eq]
 
 end LinearMap.BilinForm.lieInvariant
 
