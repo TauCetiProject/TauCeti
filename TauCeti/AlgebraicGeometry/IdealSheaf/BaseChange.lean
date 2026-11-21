@@ -120,12 +120,6 @@ theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P �
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
 
-/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) :
-    f.ker.comap f = ⊥ :=
-  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
-
 /-- Pushing an ideal sheaf forward along a closed immersion `j` and pulling back along `j` recovers
 the original ideal sheaf, since `j` is a monomorphism so the closed subscheme of `I` is the base
 change along `j` of its image in the target. -/
