@@ -7,8 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.VectorBundle.Associated.Bilinear
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
 
@@ -31,7 +33,9 @@ The half-spin representation `[s, z] ↦ z ρ(s)` of `Spinᶜ(4)` on the `ε`-ei
 chirality operator, compared with the coordinate group through `b`
 (`Orientation.realSpinCHalfSpinSmoothHom`), is continuous and unitary, so the associated bundle
 `W^ε = P ×_{Spinᶜ(4)} S^ε` (`TauCeti.SpinCStructure.halfSpinorBundle`) is a Hermitian vector bundle.
-For `ε = 1` and `ε = -1` these are the positive and negative half-spinor bundles `W⁺` and `W⁻`.
+When `b` is positively oriented for `o` (`b.toBasis.orientation = o`), the bundles for `ε = 1` and
+`ε = -1` are the positive and negative half-spinor bundles `W⁺` and `W⁻` for the orientation of `E`
+chosen by `s`; when `b` is negatively oriented for `o`, the two labels are exchanged.
 The central circle acts on them with weight one. Each point `p` of `P` over `x` is a unitary frame
 `S^ε ≃ W^ε_x`, and changing `p` acts by the half-spin representation.
 
@@ -46,11 +50,13 @@ satisfies the Clifford relation `c(v) c(v) = -‖v‖²` and `c(v)* = -c(v)`.
 
 **The determinant of the half-spinor bundles.** When `S^ε` has complex dimension two, a nonzero
 alternating form `ω` on `S^ε` transforms under `[s, z]` by the determinant `z²` of the half-spin
-representation. Read in a frame `p`, it gives an alternating map `W^ε_x × W^ε_x → L_x`
-independent of `p` (`TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`), which induces a linear
-isomorphism `⋀² W^ε_x ≃ L_x` (`TauCeti.SpinCStructure.exteriorPowerHalfSpinorEquiv`). Thus
-`det W⁺ ≃ L ≃ det W⁻` on every fibre, the determinant line of the half-spinors being the square
-of the twisting circle.
+representation, so the model pairing `(ψ₁, ψ₂) ↦ ω(ψ₁, ψ₂)` with values in the determinant model
+(`TauCeti.SpinCStructure.halfSpinorDetPairing`) is equivariant. It descends
+(`TauCeti.AssociatedBundle.bilinearMap`) to an alternating map `W^ε_x × W^ε_x → L_x`, given by `ω`
+in every frame `p` (`TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`), which induces a linear
+isomorphism `⋀² W^ε_x ≃ L_x` (`TauCeti.SpinCStructure.exteriorPowerHalfSpinorEquiv`). Thus, for `b`
+positively oriented for `o`, `det W⁺ ≃ L ≃ det W⁻` on every fibre, the determinant line of the
+half-spinors being the square of the twisting circle.
 
 ## Main definitions
 
@@ -61,6 +67,8 @@ of the twisting circle.
   of rank four.
 * `TauCeti.SpinCStructure.vectorFrame`: the linear isometry `κ_p : E x ≃ V` of a frame `p`.
 * `TauCeti.SpinCStructure.cliffordMul`: Clifford multiplication `E x → Hom(W^ε_x, W^{ε'}_x)`.
+* `TauCeti.SpinCStructure.halfSpinorDetPairing`: an alternating form on `S^ε` as a bilinear map to
+  the determinant model.
 * `TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`,
   `TauCeti.SpinCStructure.exteriorPowerHalfSpinorEquiv`: the isomorphism `⋀² W^ε_x ≃ L_x`.
 
@@ -154,9 +162,8 @@ theorem toEigenspace_smul (x : SpinC) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
 theorem ofCircle_smul (z : Circle) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
     spinCGroup.ofCircle _ hpos z • ψ = (z : ℂ) • ψ :=
   toEigenspace.injective (by
-    rw [toEigenspace_smul, realSpinCHalfSpinSmoothHom_ofCircle]
-    -- The scalar action on the model is that of the eigenspace.
-    rfl)
+    rw [toEigenspace_smul, realSpinCHalfSpinSmoothHom_ofCircle, smul_apply,
+      one_apply_eq_self, map_smul])
 
 instance instSMulCommClass : SMulCommClass SpinC ℂ (HalfSpinModel o hQ b ρ hρ ε) where
   smul_comm x c ψ := (realSpinCHalfSpinSmoothHom o hQ b ρ ε x).map_smul c (toEigenspace ψ)
@@ -179,30 +186,24 @@ instance instIsIsometricSMul : IsIsometricSMul SpinC (HalfSpinModel o hQ b ρ h�
 `ε' = -ε`: the restriction of the Clifford action, `TauCeti.CliffordAlgebra.halfSpinCliffordMul`
 read in the `ε'`-eigenspace. -/
 def cliffordMul {ε' : ℂ} (hε : ε' = -ε) :
-    V →ₗ[ℝ] HalfSpinModel o hQ b ρ hρ ε →ₗ[ℂ] HalfSpinModel o hQ b ρ hρ ε' where
-  toFun v := (ρ (ι Q v)).restrict fun _ hψ ↦ hε ▸ map_ι_apply_mem_eigenspace_chirality_neg o hψ v
-  -- The linear structure of the model is that of the eigenspace, a submodule of `W`.
-  map_add' v w := LinearMap.ext fun ψ ↦ Subtype.ext (show ρ (ι Q (v + w)) ψ.val =
-    ρ (ι Q v) ψ.val + ρ (ι Q w) ψ.val by simp)
-  map_smul' r v := LinearMap.ext fun ψ ↦ Subtype.ext (show ρ (ι Q (r • v)) ψ.val =
-    (r : ℂ) • ρ (ι Q v) ψ.val by simp)
+    V →ₗ[ℝ] HalfSpinModel o hQ b ρ hρ ε →ₗ[ℂ] HalfSpinModel o hQ b ρ hρ ε' :=
+  LinearMap.compRight ℝ (LinearEquiv.ofEq _ _ (by rw [hε])).toLinearMap ∘ₗ
+    halfSpinCliffordMul o ρ ε
+
+/-- Model Clifford multiplication is `TauCeti.CliffordAlgebra.halfSpinCliffordMul`, read in the
+`ε'`-eigenspace. -/
+theorem toEigenspace_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (v : V)
+    (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    toEigenspace (cliffordMul hε v ψ) =
+      LinearEquiv.ofEq _ _ (by rw [hε]) (halfSpinCliffordMul o ρ ε v (toEigenspace ψ)) :=
+  (rfl)
 
 /-- Model Clifford multiplication is the Clifford action on the underlying vectors of `W`. -/
 @[simp]
 theorem coe_toEigenspace_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (v : V)
     (ψ : HalfSpinModel o hQ b ρ hρ ε) :
-    (toEigenspace (cliffordMul hε v ψ) : W) = ρ (ι Q v) (toEigenspace ψ : W) :=
-  (rfl)
-
-/-- The action of `[s, z]` on the underlying vectors of `W` does not depend on the eigenspace: it
-is `z ρ(s)` on each of them. -/
-private theorem coe_realSpinCHalfSpinSmoothHom_apply_eq {ε' : ℂ} (x : SpinC)
-    (ψ : eigenspace (ρ (chirality Q o)) ε) (ψ' : eigenspace (ρ (chirality Q o)) ε')
-    (h : (ψ : W) = ψ') :
-    (realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ : W) =
-      realSpinCHalfSpinSmoothHom o hQ b ρ ε' x ψ' := by
-  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ hpos x
-  simp [h]
+    (toEigenspace (cliffordMul hε v ψ) : W) = ρ (ι Q v) (toEigenspace ψ : W) := by
+  rw [toEigenspace_cliffordMul, LinearEquiv.coe_ofEq_apply, coe_halfSpinCliffordMul_apply_apply]
 
 /-- **Clifford equivariance of the model half-spinors**: Clifford multiplication intertwines the
 actions of `Spinᶜ(4)` when it acts on vectors through its rotation, compared with `V` through `b`:
@@ -213,15 +214,10 @@ theorem smul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (x : SpinC) (v : Fin (4 +
       cliffordMul hε (b.negRealCliffordFormIsometryEquiv hQ
         ((spinCGroup.toSpecialOrthogonal _ hpos x :
           (Fin (4 + 0) → ℝ) ≃ₗ[ℝ] (Fin (4 + 0) → ℝ)) v)) (x • ψ) := by
-  have h := LinearMap.congr_fun
+  subst hε
+  apply toEigenspace.injective
+  simpa [toEigenspace_cliffordMul] using LinearMap.congr_fun
     (realSpinCHalfSpinSmoothHom_comp_halfSpinCliffordMul o hQ b ρ ε x v) (toEigenspace ψ)
-  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at h
-  apply (toEigenspace (o := o) (hQ := hQ) (b := b) (ρ := ρ) (hρ := hρ) (ε := ε')).injective
-  apply Subtype.ext
-  rw [toEigenspace_smul, coe_toEigenspace_cliffordMul, toEigenspace_smul,
-    ← coe_halfSpinCliffordMul_apply_apply, ← h]
-  exact coe_realSpinCHalfSpinSmoothHom_apply_eq x _ _
-    (by rw [coe_toEigenspace_cliffordMul, coe_halfSpinCliffordMul_apply_apply])
 
 /-- **The Clifford relation** on the model half-spinors: `c(v) c(v) = -‖v‖²`. -/
 theorem cliffordMul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (hε' : ε = -ε') (v : V)
@@ -229,23 +225,24 @@ theorem cliffordMul_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (hε' : ε = -ε')
     cliffordMul hε' v (cliffordMul hε v ψ) = ((-‖v‖ ^ 2 : ℝ) : ℂ) • ψ := by
   apply (toEigenspace (o := o) (hQ := hQ) (b := b) (ρ := ρ) (hρ := hρ) (ε := ε)).injective
   apply Subtype.ext
-  rw [coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, map_ι_apply_map_ι_apply, hQ]
-  -- The scalar action on the model is that of the eigenspace, a submodule of `W`.
-  rfl
+  rw [coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, map_ι_apply_map_ι_apply, hQ,
+    map_smul, Submodule.coe_smul]
 
 /-- **Model Clifford multiplication is skew-adjoint**: `⟪c(v) ψ, φ⟫ = -⟪ψ, c(v) φ⟫`. -/
 theorem inner_cliffordMul_left {ε' : ℂ} (hε : ε' = -ε) (hε' : ε = -ε') (v : V)
     (ψ : HalfSpinModel o hQ b ρ hρ ε) (φ : HalfSpinModel o hQ b ρ hρ ε') :
     ⟪cliffordMul hε v ψ, φ⟫_ℂ = -⟪ψ, cliffordMul hε' v φ⟫_ℂ := by
-  -- The inner product of the model is that of the eigenspace, the restriction of that of `W`.
-  change ⟪ρ (ι Q v) (toEigenspace ψ : W), (toEigenspace φ : W)⟫_ℂ =
-    -⟪(toEigenspace ψ : W), ρ (ι Q v) (toEigenspace φ : W)⟫_ℂ
-  rw [← LinearMap.adjoint_inner_right, hρ, LinearMap.neg_apply, inner_neg_right]
+  rw [← LinearIsometryEquiv.inner_map_map toEigenspace (cliffordMul hε v ψ),
+    ← LinearIsometryEquiv.inner_map_map toEigenspace ψ, Submodule.coe_inner, Submodule.coe_inner,
+    coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, ← LinearMap.adjoint_inner_right,
+    hρ, LinearMap.neg_apply, inner_neg_right]
 
 /-- Model Clifford multiplication scales norms by `‖v‖`: `‖c(v) ψ‖ = ‖v‖ ‖ψ‖`. -/
 theorem norm_cliffordMul {ε' : ℂ} (hε : ε' = -ε) (v : V) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
-    ‖cliffordMul hε v ψ‖ = ‖v‖ * ‖ψ‖ :=
-  norm_map_ι_apply hQ hρ v (toEigenspace ψ : W)
+    ‖cliffordMul hε v ψ‖ = ‖v‖ * ‖ψ‖ := by
+  rw [← LinearIsometryEquiv.norm_map toEigenspace (cliffordMul hε v ψ),
+    ← LinearIsometryEquiv.norm_map toEigenspace ψ, ← Submodule.norm_coe, ← Submodule.norm_coe,
+    coe_toEigenspace_cliffordMul, norm_map_ι_apply hQ hρ]
 
 /-- **`Spinᶜ(4)` scales top-degree alternating forms by its determinant character**: in complex
 dimension two, `ω(x • ψ₁, x • ψ₂) = z² ω(ψ₁, ψ₂)` for `x = [s, z]`, since the half-spin
@@ -258,13 +255,15 @@ theorem alternatingMap_smul {N : Type*} [AddCommGroup N] [Module ℂ N]
   let e := Module.finBasisOfFinrankEq ℂ (HalfSpinModel o hQ b ρ hρ ε)
     ((toEigenspace (o := o) (hQ := hQ) (b := b) (ρ := ρ) (hρ := hρ)).toLinearEquiv.finrank_eq.trans
       h₂)
+  -- Through `toEigenspace`, the action of `x` is `realSpinCHalfSpinSmoothHom x`.
+  have hconj : (toEigenspace.toLinearEquiv : HalfSpinModel o hQ b ρ hρ ε ≃ₗ[ℂ] _).toLinearMap ∘ₗ
+      DistribSMul.toLinearMap ℂ (HalfSpinModel o hQ b ρ hρ ε) x ∘ₗ
+        toEigenspace.toLinearEquiv.symm.toLinearMap =
+      (realSpinCHalfSpinSmoothHom o hQ b ρ ε x).toLinearMap :=
+    LinearMap.ext fun ψ ↦ by simp
   have hdet : LinearMap.det (DistribSMul.toLinearMap ℂ (HalfSpinModel o hQ b ρ hρ ε) x) =
       (spinCGroup.det _ hpos x : ℂ) := by
-    rw [← det_realSpinCHalfSpinSmoothHom o hQ b ρ ε h₂ x,
-      ← LinearMap.det_conj _ (toEigenspace (o := o) (hQ := hQ) (b := b) (ρ := ρ) (hρ := hρ)
-        (ε := ε)).toLinearEquiv]
-    -- Through the identity `toEigenspace`, the action of `x` is `realSpinCHalfSpinSmoothHom x`.
-    rfl
+    rw [← det_realSpinCHalfSpinSmoothHom o hQ b ρ ε h₂ x, ← hconj, LinearMap.det_conj]
   simpa [hdet] using
     congrArg (· ψ) (AlternatingMap.compLinearMap_eq_det_smul e ω
       (DistribSMul.toLinearMap ℂ _ x))
@@ -330,9 +329,7 @@ theorem smul_toComplex_symm (x : spinCGroup (realCliffordForm n 0) hQn) (c : ℂ
 theorem ofCircle_smul (z : Circle) (w : DeterminantModel n) :
     spinCGroup.ofCircle _ hQn z • w = ((z : ℂ) ^ 2) • w :=
   toComplex.injective (by
-    rw [toComplex_smul, spinCGroup.det_ofCircle, Circle.coe_pow]
-    -- The scalar action on the model is multiplication in `ℂ`.
-    rfl)
+    rw [toComplex_smul, spinCGroup.det_ofCircle, Circle.coe_pow, map_smul, smul_eq_mul])
 
 instance instSMulCommClass :
     SMulCommClass (spinCGroup (realCliffordForm n 0) hQn) ℂ (DeterminantModel n) where
@@ -401,7 +398,8 @@ local notation "SpinC" => spinCGroup (realCliffordForm 4 0) hpos
 /-- The **half-spinor bundle** `W^ε = P ×_{Spinᶜ(4)} S^ε` of a `Spinᶜ` structure of rank four: the
 Hermitian vector bundle associated to its principal `Spinᶜ(4)`-bundle by the half-spin
 representation on the `ε`-eigenspace `S^ε` of the chirality operator of a model Hermitian Clifford
-module (`Orientation.HalfSpinModel`). For `ε = 1` and `ε = -1` these are `W⁺` and `W⁻`. -/
+module (`Orientation.HalfSpinModel`). For `ε = 1` and `ε = -1` these are `W⁺` and `W⁻` when `b` is
+positively oriented for `o` (`b.toBasis.orientation = o`), and `W⁻` and `W⁺` otherwise. -/
 abbrev halfSpinorBundle (s : SpinCStructure F E 4) : X → Type _ :=
   AssociatedBundle SpinC s.P (o.HalfSpinModel hQ b ρ hρ ε)
 
@@ -456,8 +454,8 @@ theorem vectorFrame_smul (s : SpinCStructure F E 4) {x : X} (p : s.P x) (g : Spi
   -- coordinates of `v` in the frame `p` are the rotated coordinates `u` in the frame `p • g`.
   have h := s.frameAt_smul p g u
   rw [WithLp.toLp_ofLp, LinearIsometryEquiv.apply_symm_apply] at h
-  rw [h, LinearIsometryEquiv.symm_apply_apply, WithLp.ofLp_toLp]
-  rfl
+  rw [h, LinearIsometryEquiv.symm_apply_apply, WithLp.ofLp_toLp, MonoidHom.comp_apply,
+    Subgroup.coe_subtype]
 
 /-- **Clifford multiplication** `c(v) : W^ε_x → W^{ε'}_x` on the half-spinor bundles of a `Spinᶜ`
 structure of rank four, for `v ∈ E x` and `ε' = -ε`: in a frame `p` it is model Clifford
@@ -524,48 +522,70 @@ theorem norm_cliffordMul (s : SpinCStructure F E 4) {ε' : ℂ} (hε : ε' = -ε
 
 /-! ### The determinant of the half-spinors -/
 
-/-- The alternating map `W^ε_x × W^ε_x → L_x` induced by an alternating form `ω` on the model
-half-spinors: in a frame `p` it sends `([p, ψ₁], [p, ψ₂])` to `[p, ω(ψ₁, ψ₂)]`
-(`TauCeti.SpinCStructure.halfSpinorDetAlternatingMap_mk`), which does not depend on `p` when
-`S^ε` has complex dimension two. It is defined in a chosen frame. -/
-def halfSpinorDetAlternatingMap (s : SpinCStructure F E 4)
-    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) (x : X) :
-    s.halfSpinorBundle o hQ b ρ hρ ε x [⋀^Fin 2]→ₗ[ℂ] s.determinantLine x :=
-  let p : s.P x := Classical.arbitrary _
-  (DeterminantModel.toComplex.symm.trans (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p)
-    ).toLinearEquiv.toLinearMap.compAlternatingMap
-    (ω.compLinearMap
-      (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p).symm.toLinearEquiv.toLinearMap)
+/-- The **model determinant pairing** of an alternating form `ω` on the model half-spinors: the
+continuous bilinear map `(ψ₁, ψ₂) ↦ ω(ψ₁, ψ₂)` with values in the determinant model. -/
+def halfSpinorDetPairing (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) :
+    o.HalfSpinModel hQ b ρ hρ ε →L[ℂ] o.HalfSpinModel hQ b ρ hρ ε →L[ℂ] DeterminantModel 4 :=
+  LinearMap.toContinuousLinearMap (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
+    (DeterminantModel.toComplex.symm.toLinearEquiv.toLinearMap.compAlternatingMap
+      ω).toMultilinearMap.toBilinMap)
 
-/-- The determinant pairing in the chosen frame. -/
-private theorem halfSpinorDetAlternatingMap_apply (s : SpinCStructure F E 4)
-    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) (x : X)
-    (ψ : Fin 2 → s.halfSpinorBundle o hQ b ρ hρ ε x) :
-    s.halfSpinorDetAlternatingMap ω x ψ =
-      AssociatedBundle.mk SpinC (Classical.arbitrary (s.P x)) (DeterminantModel.toComplex.symm
-        (ω fun i ↦ (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC
-          (Classical.arbitrary (s.P x))).symm (ψ i))) := by
-  simp only [halfSpinorDetAlternatingMap, LinearMap.compAlternatingMap_apply,
-    AlternatingMap.compLinearMap_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-    LinearIsometryEquiv.trans_apply, AssociatedBundle.mkLinearIsometryEquiv_apply]
+/-- The model determinant pairing is `ω` read in the determinant model. -/
+@[simp]
+theorem halfSpinorDetPairing_apply (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ)
+    (ψ₁ ψ₂ : o.HalfSpinModel hQ b ρ hρ ε) :
+    halfSpinorDetPairing ω ψ₁ ψ₂ = DeterminantModel.toComplex.symm (ω ![ψ₁, ψ₂]) := by
+  simp [halfSpinorDetPairing]
+
+/-- **The model determinant pairing is equivariant** when `S^ε` has complex dimension two, since
+`Spinᶜ(4)` scales `ω` by its determinant character. -/
+theorem halfSpinorDetPairing_smul_smul
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) (g : SpinC)
+    (ψ₁ ψ₂ : o.HalfSpinModel hQ b ρ hρ ε) :
+    halfSpinorDetPairing ω (g • ψ₁) (g • ψ₂) = g • halfSpinorDetPairing ω ψ₁ ψ₂ := by
+  have h := Orientation.HalfSpinModel.alternatingMap_smul h₂ ω g ![ψ₁, ψ₂]
+  rw [halfSpinorDetPairing_apply, halfSpinorDetPairing_apply,
+    DeterminantModel.smul_toComplex_symm, ← smul_eq_mul, ← h]
+  congr 2
+  ext i
+  fin_cases i <;> simp
+
+/-- The fibrewise descent of the model determinant pairing (`TauCeti.AssociatedBundle.bilinearMap`)
+is alternating, since `ω` is. -/
+theorem isAlt_bilinearMap_halfSpinorDetPairing
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
+    (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) (x : X) :
+    (AssociatedBundle.bilinearMap (P := s.P) (halfSpinorDetPairing ω)
+      (halfSpinorDetPairing_smul_smul h₂ ω) x).toLinearMap₁₂.IsAlt := by
+  intro ψ
+  obtain ⟨p, φ, rfl⟩ := AssociatedBundle.exists_mk ψ
+  rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, AssociatedBundle.bilinearMap_mk,
+    halfSpinorDetPairing_apply, ω.map_eq_zero_of_eq ![φ, φ] (i := 0) (j := 1) rfl zero_ne_one,
+    map_zero, AssociatedBundle.mk_zero]
+
+/-- The alternating map `W^ε_x × W^ε_x → L_x` induced by an alternating form `ω` on the model
+half-spinors of complex dimension two: the fibrewise descent of the model determinant pairing
+(`TauCeti.AssociatedBundle.bilinearMap`), sending `([p, ψ₁], [p, ψ₂])` to `[p, ω(ψ₁, ψ₂)]` in every
+frame `p` (`TauCeti.SpinCStructure.halfSpinorDetAlternatingMap_mk`). -/
+def halfSpinorDetAlternatingMap (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
+    (s : SpinCStructure F E 4) (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) (x : X) :
+    s.halfSpinorBundle o hQ b ρ hρ ε x [⋀^Fin 2]→ₗ[ℂ] s.determinantLine x :=
+  (isAlt_bilinearMap_halfSpinorDetPairing h₂ s ω x).toAlternatingMap
 
 /-- **The determinant pairing in a frame**: `([p, ψ₁], [p, ψ₂]) ↦ [p, ω(ψ₁, ψ₂)]` for every point
-`p` of the principal bundle over `x`, when `S^ε` has complex dimension two. -/
+`p` of the principal bundle over `x`. -/
 theorem halfSpinorDetAlternatingMap_mk (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
     (s : SpinCStructure F E 4) (ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ) {x : X}
     (p : s.P x) (ψ : Fin 2 → o.HalfSpinModel hQ b ρ hρ ε) :
-    s.halfSpinorDetAlternatingMap ω x (fun i ↦ AssociatedBundle.mk SpinC p (ψ i)) =
+    s.halfSpinorDetAlternatingMap h₂ ω x (fun i ↦ AssociatedBundle.mk SpinC p (ψ i)) =
       AssociatedBundle.mk SpinC p (DeterminantModel.toComplex.symm (ω ψ)) := by
-  rw [halfSpinorDetAlternatingMap_apply]
-  -- Compare the chosen frame `p₀` with `p = p₀ • g`.
-  generalize (Classical.arbitrary (s.P x)) = p₀
-  set g := PrincipalBundle.division SpinC p₀ p
-  have hp : op g • p₀ = p := PrincipalBundle.smul_division p₀ p
-  have hψ : (fun i ↦ (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC p₀).symm
-      (AssociatedBundle.mk SpinC p (ψ i))) = fun i ↦ g • ψ i :=
-    funext fun i ↦ AssociatedBundle.mkLinearIsometryEquiv_symm_apply_mk p₀ p (ψ i)
-  rw [hψ, Orientation.HalfSpinModel.alternatingMap_smul h₂, ← hp, AssociatedBundle.mk_smul,
-    DeterminantModel.smul_toComplex_symm, smul_eq_mul]
+  rw [halfSpinorDetAlternatingMap, LinearMap.IsAlt.toAlternatingMap_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, AssociatedBundle.bilinearMap_mk,
+    halfSpinorDetPairing_apply]
+  congr 3
+  ext i
+  fin_cases i <;> simp
 
 /-- For a nonzero `ω` and `S^ε` of complex dimension two, the linear map `⋀² W^ε_x → L_x` induced
 by the determinant pairing is bijective: it is onto the line `L_x`, and both sides are lines. -/
@@ -573,7 +593,7 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
     (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (s : SpinCStructure F E 4)
     {ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ} (hω : ω ≠ 0) (x : X) :
     Function.Bijective
-      (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap ω x)) := by
+      (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
   obtain ⟨p⟩ := s.nonempty_P x
   have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
     (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC
@@ -583,7 +603,7 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
       (F := DeterminantModel 4) p).toLinearEquiv.finiteDimensional
   -- Every `[p, w]` is a multiple of the image of `[p, ψ₁] ∧ [p, ψ₂]`, for `ω(ψ₁, ψ₂) ≠ 0`.
   have hsurj : Function.Surjective
-      (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap ω x)) := by
+      (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
     obtain ⟨ψ, hψ⟩ : ∃ ψ, ω ψ ≠ 0 := by
       by_contra! h
       exact hω (AlternatingMap.ext h)
@@ -602,8 +622,8 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
 
 /-- **The determinant of the half-spinors is the determinant line**: for a nonzero alternating form
 `ω` on the model half-spinors of complex dimension two, the linear isomorphism
-`⋀² W^ε_x ≃ L_x` sending `[p, ψ₁] ∧ [p, ψ₂]` to `[p, ω(ψ₁, ψ₂)]`. For `ε = ±1` this identifies
-`det W⁺ ≃ L ≃ det W⁻` on every fibre. -/
+`⋀² W^ε_x ≃ L_x` sending `[p, ψ₁] ∧ [p, ψ₂]` to `[p, ω(ψ₁, ψ₂)]`. For `ε = ±1` and `b` positively
+oriented for `o` this identifies `det W⁺ ≃ L ≃ det W⁻` on every fibre. -/
 def exteriorPowerHalfSpinorEquiv (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
     (s : SpinCStructure F E 4) {ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ} (hω : ω ≠ 0)
     (x : X) : ⋀[ℂ]^2 (s.halfSpinorBundle o hQ b ρ hρ ε x) ≃ₗ[ℂ] s.determinantLine x :=
@@ -617,7 +637,7 @@ theorem exteriorPowerHalfSpinorEquiv_ιMulti
     {ω : o.HalfSpinModel hQ b ρ hρ ε [⋀^Fin 2]→ₗ[ℂ] ℂ} (hω : ω ≠ 0) {x : X}
     (ψ : Fin 2 → s.halfSpinorBundle o hQ b ρ hρ ε x) :
     s.exteriorPowerHalfSpinorEquiv h₂ hω x (exteriorPower.ιMulti ℂ 2 ψ) =
-      s.halfSpinorDetAlternatingMap ω x ψ :=
+      s.halfSpinorDetAlternatingMap h₂ ω x ψ :=
   exteriorPower.alternatingMapLinearEquiv_apply_ιMulti _ ψ
 
 end HalfSpinor
