@@ -126,6 +126,20 @@ theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F 
     ∀ᵐ x ∂μ, ofCompactlySupported 𝕜 I p μ s x = s.val x :=
   coeFn_mk _ _
 
+/-- The class of a compactly supported `C^n` section is the class `mk` of the section. -/
+theorem ofCompactlySupported_apply (s : ContMDiffSection.compactlySupported I F n E) :
+    ofCompactlySupported 𝕜 I p μ s = mk (s : ∀ x, E x)
+      s.val.contMDiff.continuous.aestronglyMeasurableSection
+      (ContMDiffSection.memLp_norm_of_mem_compactlySupported s.property) :=
+  (rfl)
+
+/-- The `Lᵖ` norm of the class of a compactly supported `C^n` section is the `Lᵖ` norm of its
+fibre norm. -/
+@[simp]
+theorem norm_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F n E) :
+    ‖ofCompactlySupported 𝕜 I p μ s‖ = (eLpNorm (fun x ↦ ‖s.val x‖) p μ).toReal := by
+  rw [ofCompactlySupported_apply, norm_mk]
+
 /-- `ofCompactlySupported` is compatible with multiplication by real scalars. -/
 theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ)
     (s : ContMDiffSection.compactlySupported I F n E) :
@@ -327,12 +341,7 @@ theorem denseRange_ofCompactlySupported (hp : p ≠ ⊤) :
       _ = ENNReal.ofReal (r / 2) := ENNReal.add_halves _
   have hrep : ‖f - ofCompactlySupported 𝕜 I p μ ⟨t, ht⟩‖ =
       (eLpNorm (fun x ↦ ‖f x - t x‖) p μ).toReal := by
-    rw [norm_def]
-    congr 1
-    refine eLpNorm_congr_ae ?_
-    filter_upwards [coeFn_sub f (ofCompactlySupported 𝕜 I p μ ⟨t, ht⟩),
-      coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) ⟨t, ht⟩] with x h1 h2
-    rw [h1, h2]
+    conv_lhs => rw [← mk_coeFn f, ofCompactlySupported_apply, mk_sub, norm_mk]
   rw [dist_eq_norm, hrep]
   calc _ ≤ (ENNReal.ofReal (r / 2)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
     _ = r / 2 := ENNReal.toReal_ofReal (half_pos hr).le
