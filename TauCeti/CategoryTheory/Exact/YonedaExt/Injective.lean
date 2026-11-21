@@ -63,9 +63,20 @@ namespace ExactStructure
 variable {E : ExactStructure C} {W X Y Z : C}
 
 /-- An injective presentation `X ⟶ I ⟶ K` as an extension of `K` by `X`. -/
-@[expose, simps]
 def InjectivePresentation.extension (P : E.InjectivePresentation X) : E.Extension P.K X :=
   ⟨P.I, P.i, P.p, P.zero, P.conflation⟩
+
+/-- The middle term of the extension of an injective presentation `X ⟶ I ⟶ K` is `I`. -/
+@[simp]
+theorem InjectivePresentation.extension_obj (P : E.InjectivePresentation X) :
+    P.extension.obj = P.I :=
+  (rfl)
+
+/-- The short complex of the extension of an injective presentation is `X ⟶ I ⟶ K`. -/
+@[simp]
+theorem InjectivePresentation.extension_shortComplex (P : E.InjectivePresentation X) :
+    P.extension.shortComplex = ShortComplex.mk P.i P.p P.zero :=
+  (rfl)
 
 /-- The middle term of the extension of an injective presentation is relatively injective. -/
 theorem InjectivePresentation.isInjective_extension_obj (P : E.InjectivePresentation X) :
