@@ -59,6 +59,8 @@ such a sum is contained in that of `T`
 * `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
   `Distribution.mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta`: the components of a complex
   distribution, of a complex multiple and of a point mass.
+* `Distribution.mapCLM_restrictScalars_id`, `Distribution.mapCLM_restrictScalars_symm_mapCLM`: the
+  identity of the values acts trivially, and an isomorphism of the values is undone by its inverse.
 
 ## References
 
@@ -115,6 +117,13 @@ theorem mapCLM_restrictScalars_eq_smul (ℓ : ℂ →L[ℂ] ℂ) (T : 𝓓'(Ω, 
   ext φ
   simpa [mul_comm] using ℓ.map_smul (T φ) (1 : ℂ)
 
+/-- The identity of the values acts trivially on `T`. -/
+@[simp]
+theorem mapCLM_restrictScalars_id (T : 𝓓'(Ω, F)) :
+    mapCLM ((ContinuousLinearMap.id ℂ F).restrictScalars ℝ) T = T := by
+  ext φ
+  simp
+
 /-- For a complex distribution the wave front set of `T` as a vector-valued distribution is its
 wave front set: every component is a scalar multiple of `T`. -/
 @[simp]
@@ -123,10 +132,7 @@ theorem vectorWaveFrontSet_eq_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
   · rw [mapCLM_restrictScalars_eq_smul]
     exact waveFrontSet_smul_subset _ T
-  · have h : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T := by
-      ext φ
-      simp
-    exact h ▸ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
+  · exact mapCLM_restrictScalars_id T ▸ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (.id ℂ ℂ) T
 
 /-! ### Linear maps of the values -/
 
@@ -135,17 +141,21 @@ theorem vectorWaveFrontSet_mapCLM_subset (A : F →L[ℂ] F') (T : 𝓓'(Ω, F))
     (mapCLM (A.restrictScalars ℝ) T).vectorWaveFrontSet ⊆ T.vectorWaveFrontSet :=
   iUnion_subset fun ℓ ↦ waveFrontSet_mapCLM_subset_vectorWaveFrontSet (ℓ.comp A) T
 
+/-- Applying an isomorphism `A` of the values and then its inverse gives back `T`. -/
+@[simp]
+theorem mapCLM_restrictScalars_symm_mapCLM (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) :
+    mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
+      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
+  ext φ
+  simp
+
 /-- An isomorphism of the values preserves the wave front set. -/
 @[simp]
 theorem vectorWaveFrontSet_mapCLM_equiv (A : F ≃L[ℂ] F') (T : 𝓓'(Ω, F)) :
     (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T).vectorWaveFrontSet =
       T.vectorWaveFrontSet := by
   refine (vectorWaveFrontSet_mapCLM_subset _ T).antisymm ?_
-  have h : mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
-      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
-    ext φ
-    simp
-  conv_lhs => rw [← h]
+  conv_lhs => rw [← mapCLM_restrictScalars_symm_mapCLM A T]
   exact vectorWaveFrontSet_mapCLM_subset _ _
 
 /-! ### Scalar multiples -/
@@ -264,11 +274,7 @@ the wave front set of `T` lying over `Ω'`. -/
 theorem vectorWaveFrontSet_restrictCLM (h : Ω' ≤ Ω) (T : 𝓓'(Ω, F)) :
     (restrictCLM T : 𝓓'(Ω', F)).vectorWaveFrontSet =
       T.vectorWaveFrontSet ∩ (Ω' : Set E) ×ˢ univ := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (restrictCLM T : 𝓓'(Ω', F)) =
-      restrictCLM (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorWaveFrontSet, hc, waveFrontSet_restrictCLM h, iUnion_inter]
+  simp only [vectorWaveFrontSet, mapCLM_restrictCLM, waveFrontSet_restrictCLM h, iUnion_inter]
 
 end Restriction
 
@@ -283,12 +289,8 @@ theorem vectorWaveFrontSet_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (h
     (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, F)) :
     (compCLMOfContinuousLinearEquiv e hVO T).vectorWaveFrontSet =
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.vectorWaveFrontSet := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (compCLMOfContinuousLinearEquiv e hVO T) =
-      compCLMOfContinuousLinearEquiv e hVO (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorWaveFrontSet, hc, waveFrontSet_compCLMOfContinuousLinearEquiv e hVO hOV,
-    preimage_iUnion]
+  simp only [vectorWaveFrontSet, mapCLM_compCLMOfContinuousLinearEquiv,
+    waveFrontSet_compCLMOfContinuousLinearEquiv e hVO hOV, preimage_iUnion]
 
 end LinearEquiv
 

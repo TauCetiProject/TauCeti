@@ -57,9 +57,12 @@ finite Sobolev order near every compact set
   `Distribution.vectorSobolevSingularSupport_sum_mapCLM_smulLeftCLM_subset`: smooth changes of
   frame.
 * `Distribution.exists_disjoint_vectorSobolevSingularSupport`: the local finite Sobolev order.
+* `Distribution.vectorSobolevWaveFrontSet_mapCLM_toSpanSingleton_delta_eq_empty`,
+  `Distribution.vectorSobolevSingularSupport_mapCLM_toSpanSingleton_delta_eq_empty`: in dimension
+  `d`, the point mass `δ_{x₀} v` is `H^s` for `s < -d / 2`.
 * `Distribution.vectorSobolevWaveFrontSet_mapCLM_toSpanSingleton_delta`,
-  `Distribution.vectorSobolevSingularSupport_mapCLM_toSpanSingleton_delta`: the point mass
-  `δ_{x₀} v` with `v ≠ 0` in dimension `d` is not `H^s` at `x₀` exactly when `s ≥ -d / 2`.
+  `Distribution.vectorSobolevSingularSupport_mapCLM_toSpanSingleton_delta`: in dimension `d > 0`,
+  the point mass `δ_{x₀} v` at `x₀ ∈ Ω` with `v ≠ 0` is not `H^s` at `x₀` for `s ≥ -d / 2`.
 
 ## References
 
@@ -139,10 +142,8 @@ theorem vectorSobolevWaveFrontSet_eq_sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω
   refine (iUnion_subset fun ℓ ↦ ?_).antisymm ?_
   · rw [mapCLM_restrictScalars_eq_smul]
     exact sobolevWaveFrontSet_smul_subset s _ T
-  · have h : mapCLM ((ContinuousLinearMap.id ℂ ℂ).restrictScalars ℝ) T = T := by
-      ext φ
-      simp
-    exact h ▸ sobolevWaveFrontSet_mapCLM_subset_vectorSobolevWaveFrontSet s (.id ℂ ℂ) T
+  · exact mapCLM_restrictScalars_id T ▸
+      sobolevWaveFrontSet_mapCLM_subset_vectorSobolevWaveFrontSet s (.id ℂ ℂ) T
 
 /-! #### Linear maps of the values and scalar multiples -/
 
@@ -158,11 +159,7 @@ theorem vectorSobolevWaveFrontSet_mapCLM_equiv (s : ℝ) (A : F ≃L[ℂ] F') (T
     (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T).vectorSobolevWaveFrontSet s =
       T.vectorSobolevWaveFrontSet s := by
   refine (vectorSobolevWaveFrontSet_mapCLM_subset s _ T).antisymm ?_
-  have h : mapCLM ((A.symm : F' →L[ℂ] F).restrictScalars ℝ)
-      (mapCLM ((A : F →L[ℂ] F').restrictScalars ℝ) T) = T := by
-    ext φ
-    simp
-  conv_lhs => rw [← h]
+  conv_lhs => rw [← mapCLM_restrictScalars_symm_mapCLM A T]
   exact vectorSobolevWaveFrontSet_mapCLM_subset s _ _
 
 /-- A scalar multiple of `T` has `H^s` wave front set contained in that of `T`. -/
@@ -275,11 +272,8 @@ of the `H^s` wave front set of `T` lying over `Ω'`. -/
 theorem vectorSobolevWaveFrontSet_restrictCLM (h : Ω' ≤ Ω) (s : ℝ) (T : 𝓓'(Ω, F)) :
     (restrictCLM T : 𝓓'(Ω', F)).vectorSobolevWaveFrontSet s =
       T.vectorSobolevWaveFrontSet s ∩ (Ω' : Set E) ×ˢ univ := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (restrictCLM T : 𝓓'(Ω', F)) =
-      restrictCLM (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorSobolevWaveFrontSet, hc, sobolevWaveFrontSet_restrictCLM h, iUnion_inter]
+  simp only [vectorSobolevWaveFrontSet, mapCLM_restrictCLM, sobolevWaveFrontSet_restrictCLM h,
+    iUnion_inter]
 
 end Restriction
 
@@ -294,11 +288,7 @@ theorem vectorSobolevWaveFrontSet_compCLMOfContinuousLinearEquiv (s : ℝ) (e : 
     (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, F)) :
     (compCLMOfContinuousLinearEquiv e hVO T).vectorSobolevWaveFrontSet s =
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.vectorSobolevWaveFrontSet s := by
-  have hc (ℓ : F →L[ℂ] ℂ) : mapCLM (ℓ.restrictScalars ℝ) (compCLMOfContinuousLinearEquiv e hVO T) =
-      compCLMOfContinuousLinearEquiv e hVO (mapCLM (ℓ.restrictScalars ℝ) T) := by
-    ext φ
-    simp
-  simp only [vectorSobolevWaveFrontSet, hc,
+  simp only [vectorSobolevWaveFrontSet, mapCLM_compCLMOfContinuousLinearEquiv,
     sobolevWaveFrontSet_compCLMOfContinuousLinearEquiv s e hVO hOV, preimage_iUnion]
 
 end LinearEquiv
@@ -382,6 +372,30 @@ theorem vectorSobolevSingularSupport_mapCLM_equiv (s : ℝ) (A : F ≃L[ℂ] F')
       T.vectorSobolevSingularSupport s := by
   simp only [← fst_image_vectorSobolevWaveFrontSet, vectorSobolevWaveFrontSet_mapCLM_equiv]
 
+/-- A scalar multiple of `T` has `H^s` singular support contained in that of `T`. -/
+theorem vectorSobolevSingularSupport_smul_subset (s : ℝ) (c : ℂ) (T : 𝓓'(Ω, F)) :
+    (c • T).vectorSobolevSingularSupport s ⊆ T.vectorSobolevSingularSupport s := by
+  simp only [← fst_image_vectorSobolevWaveFrontSet]
+  exact image_mono (vectorSobolevWaveFrontSet_smul_subset s c T)
+
+/-- A nonzero scalar multiple of `T` has the same `H^s` singular support as `T`. -/
+@[simp]
+theorem vectorSobolevSingularSupport_smul (s : ℝ) {c : ℂ} (hc : c ≠ 0) (T : 𝓓'(Ω, F)) :
+    (c • T).vectorSobolevSingularSupport s = T.vectorSobolevSingularSupport s := by
+  simp only [← fst_image_vectorSobolevWaveFrontSet, vectorSobolevWaveFrontSet_smul s hc]
+
+/-- The negative of `T` has the same `H^s` singular support as `T`. -/
+@[simp]
+theorem vectorSobolevSingularSupport_neg (s : ℝ) (T : 𝓓'(Ω, F)) :
+    (-T).vectorSobolevSingularSupport s = T.vectorSobolevSingularSupport s := by
+  simp only [← fst_image_vectorSobolevWaveFrontSet, vectorSobolevWaveFrontSet_neg]
+
+/-- The zero distribution has empty `H^s` singular support. -/
+@[simp]
+theorem vectorSobolevSingularSupport_zero (s : ℝ) :
+    (0 : 𝓓'(Ω, F)).vectorSobolevSingularSupport s = ∅ := by
+  simp [← fst_image_vectorSobolevWaveFrontSet]
+
 /-- The `H^s` singular support of a sum lies in the union of the `H^s` singular supports. -/
 theorem vectorSobolevSingularSupport_add_subset (s : ℝ) (S T : 𝓓'(Ω, F)) :
     (S + T).vectorSobolevSingularSupport s ⊆
@@ -398,6 +412,14 @@ theorem vectorSobolevSingularSupport_sum_subset (s : ℝ) {ι : Type*} (t : Fins
   simp only [← fst_image_vectorSobolevWaveFrontSet, ← image_iUnion₂]
   exact image_mono (vectorSobolevWaveFrontSet_sum_subset s t T)
 
+/-- The `H^s` singular support of a difference lies in the union of the `H^s` singular
+supports. -/
+theorem vectorSobolevSingularSupport_sub_subset (s : ℝ) (S T : 𝓓'(Ω, F)) :
+    (S - T).vectorSobolevSingularSupport s ⊆
+      S.vectorSobolevSingularSupport s ∪ T.vectorSobolevSingularSupport s := by
+  simp only [← fst_image_vectorSobolevWaveFrontSet, ← image_union]
+  exact image_mono (vectorSobolevWaveFrontSet_sub_subset s S T)
+
 /-- The `H^s` singular support of a smooth multiple `g T` lies in that of `T`, over the support of
 `g`. -/
 theorem vectorSobolevSingularSupport_smulLeftCLM_subset (s : ℝ) (T : 𝓓'(Ω, F)) {g : E → ℝ}
@@ -407,6 +429,14 @@ theorem vectorSobolevSingularSupport_smulLeftCLM_subset (s : ℝ) (T : 𝓓'(Ω,
   rw [← fst_image_vectorSobolevWaveFrontSet, ← fst_image_vectorSobolevWaveFrontSet,
     ← image_inter_preimage, ← prod_univ]
   exact image_mono (vectorSobolevWaveFrontSet_smulLeftCLM_subset s T hg)
+
+/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the `H^s`
+singular support. -/
+theorem vectorSobolevSingularSupport_smulLeftCLM_of_ne_zero (s : ℝ) (T : 𝓓'(Ω, F)) {g : E → ℝ}
+    (hg : ContDiff ℝ ∞ g) (hg0 : ∀ x ∈ Ω, g x ≠ 0) :
+    (smulLeftCLM hg T).vectorSobolevSingularSupport s = T.vectorSobolevSingularSupport s := by
+  simp only [← fst_image_vectorSobolevWaveFrontSet,
+    vectorSobolevWaveFrontSet_smulLeftCLM_of_ne_zero s T hg hg0]
 
 /-- **Smooth changes of frame.** For smooth real functions `gᵢ` and complex-linear maps
 `Aᵢ : F →L[ℂ] F'`, the distribution `∑ᵢ Aᵢ (gᵢ T)` has `H^s` singular support contained in that
@@ -585,6 +615,15 @@ theorem vectorSobolevWaveFrontSet_mapCLM_toSpanSingleton_delta_eq_empty {s : ℝ
   rw [mapCLM_restrictScalars_mapCLM_toSpanSingleton_delta,
     ← sobolevWaveFrontSet_delta_eq_empty hs x₀]
   exact sobolevWaveFrontSet_smul_subset s _ _
+
+/-- **Point masses are `H^s` below the critical order.** In dimension `d`, the point mass
+`δ_{x₀} v : φ ↦ φ x₀ • v` has empty `H^s` singular support for `s < -d / 2`. -/
+theorem vectorSobolevSingularSupport_mapCLM_toSpanSingleton_delta_eq_empty {s : ℝ}
+    (hs : (finrank ℝ E : ℝ) < -2 * s) (x₀ : E) (v : F) :
+    (mapCLM (ContinuousLinearMap.toSpanSingleton ℝ v)
+      (delta x₀ : 𝓓'(Ω, ℝ))).vectorSobolevSingularSupport s = ∅ :=
+  vectorSobolevSingularSupport_eq_empty_iff.2
+    (vectorSobolevWaveFrontSet_mapCLM_toSpanSingleton_delta_eq_empty hs x₀ v)
 
 /-- **The `H^s` wave front set of a point mass.** In dimension `d`, the point mass
 `δ_{x₀} v : φ ↦ φ x₀ • v` at `x₀ ∈ Ω` with value `v ≠ 0` has `H^s` wave front set
