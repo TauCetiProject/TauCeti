@@ -215,7 +215,7 @@ theorem exists_isInternal_isRootPlane (hB : B.IsSymm) (hpos : ∀ x, x ≠ 0 →
   refine ⟨r, α, fun k ↦ Submodule.span ℝ {q k, p k}, fun k ↦ (quarterTurn B (q k) (p k)).restrict
     fun v _ ↦ quarterTurn_mem_span _ _ v, hint, fun k ↦ ⟨fun v ↦ ?_,
     fun v w ↦ apply_quarterTurn hB _ _ v w, fun H v ↦ ?_⟩, hne,
-    fun k ↦ B.finrank_span_pair_eq_two (hqq k) (hqp k) (hpq k) (hpp k),
+    fun k ↦ B.finrank_span_pair_eq_two (by simp [hqq k]) (hqp k) (by simp [hpp k]),
     fun k v hv c hc ↦ horth (some k) none (by simp) v hv c hc,
     fun k l hkl v hv w hw ↦ horth (some k) (some l) (by simpa using hkl) v hv w hw⟩
   · exact Subtype.ext (quarterTurn_quarterTurn (hqq k) (hqp k) (hpq k) (hpp k) v.property)

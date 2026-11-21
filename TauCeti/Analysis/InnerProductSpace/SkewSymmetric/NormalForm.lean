@@ -303,17 +303,16 @@ theorem pairwise_isOrtho_planeDecomposition (hon : Orthonormal ℝ (Sum.elim q p
     · exact hon.2 (i := .inr k) (j := .inl l) (by simp)
     · exact hon.2 (i := .inr k) (j := .inr l) (by simpa using hkl)
 
-/-- For an orthonormal family `Sum.elim q p` in a finite-dimensional real inner product space, the
-space is the internal direct sum of the planes `span(q k, p k)` and the orthogonal complement of
-their span. -/
-theorem isInternal_planeDecomposition [FiniteDimensional ℝ E]
-    (hon : Orthonormal ℝ (Sum.elim q p)) : DirectSum.IsInternal (planeDecomposition q p) := by
-  classical
-  refine (OrthogonalFamily.isInternal_iff
-    (orthogonalFamily_iff_pairwise.2 (pairwise_isOrtho_planeDecomposition hon))).2 ?_
-  rw [Submodule.orthogonal_eq_bot_iff, eq_top_iff,
-    ← Submodule.sup_orthogonal_of_hasOrthogonalProjection
-      (K := Submodule.span ℝ (Set.range (Sum.elim q p)))]
+/-- For an orthonormal family `Sum.elim q p` in a real inner product space, the space is the
+internal direct sum of the planes `span(q k, p k)` and the orthogonal complement of their span. -/
+theorem isInternal_planeDecomposition (hon : Orthonormal ℝ (Sum.elim q p)) :
+    DirectSum.IsInternal (planeDecomposition q p) := by
+  refine (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).2
+    ⟨(orthogonalFamily_iff_pairwise.2 (pairwise_isOrtho_planeDecomposition hon)).independent, ?_⟩
+  -- The span of the finite family is finite-dimensional, so it has an orthogonal projection.
+  have := FiniteDimensional.span_of_finite ℝ (Set.finite_range (Sum.elim q p))
+  rw [eq_top_iff, ← Submodule.sup_orthogonal_of_hasOrthogonalProjection
+    (K := Submodule.span ℝ (Set.range (Sum.elim q p)))]
   refine sup_le (Submodule.span_le.2 ?_) (le_iSup (planeDecomposition q p) none)
   rintro _ ⟨k | k, rfl⟩ <;>
     exact le_iSup (planeDecomposition q p) (some k) (Submodule.subset_span (by simp))
