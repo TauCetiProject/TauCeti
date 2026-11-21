@@ -45,6 +45,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   semiring is unimodular if and only if `∑ i, v i * b i = 1` for some `b`.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
+* `Module.IsUnimodular.ringHom_comp`: applying a ring homomorphism to the coordinates preserves
+  unimodularity.
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
 -/
@@ -193,6 +195,15 @@ theorem isUnimodular_iff_exists_isUnit {R ι : Type*} [Semiring R] [IsLocalRing 
   exact ⟨i, isUnit_of_mul_isUnit_left hi⟩
 
 end TauCeti.Module
+
+/-- Applying a ring homomorphism to the coordinates of a unimodular vector gives a unimodular
+vector. -/
+theorem Module.IsUnimodular.ringHom_comp {R S ι : Type*} [Semiring R] [Semiring S] [Finite ι]
+    (f : R →+* S) {v : ι → R} (hv : Module.IsUnimodular R v) :
+    Module.IsUnimodular S (f ∘ v) := by
+  have := Fintype.ofFinite ι
+  obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hv
+  exact TauCeti.Module.isUnimodular_pi_iff.mpr ⟨f ∘ b, by simp [← map_mul, ← map_sum, hb]⟩
 
 namespace TauCeti
 
