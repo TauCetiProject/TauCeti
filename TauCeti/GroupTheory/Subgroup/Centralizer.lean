@@ -30,6 +30,8 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 * `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
 * `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
   centralizer of its image.
+* `MulEquiv.centralizer_image_eq_map`: a description `C_G(f(s)) = f(C_K(s))` of a centralizer is
+  carried along an isomorphism and a homomorphism intertwining `f` with another homomorphism.
 -/
 
 public section
@@ -107,5 +109,23 @@ theorem centralizerMap_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e
 theorem centralizerMap_symm_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
     (c : centralizer t) : ((e.centralizerMap h).symm c : G) = e.symm c :=
   (rfl)
+
+/-- Let `f : K →* G` and `f' : K' →* G'` be intertwined by an isomorphism `e : G ≃* G'` and a
+homomorphism `e₁ : K →* K'`, that is `e ∘ f = f' ∘ e₁`. If the centralizer of the image `f(s)` of a
+set `s` is the image under `f` of the centralizer of `s`, then the centralizer of `f'(e₁(s))` is the
+image under `f'` of the centralizer of `e₁(s)`. -/
+@[to_additive /-- Let `f : K →+ G` and `f' : K' →+ G'` be intertwined by an isomorphism
+`e : G ≃+ G'` and a homomorphism `e₁ : K →+ K'`, that is `e ∘ f = f' ∘ e₁`. If the centralizer of
+the image `f(s)` of a set `s` is the image under `f` of the centralizer of `s`, then the centralizer
+of `f'(e₁(s))` is the image under `f'` of the centralizer of `e₁(s)`. -/]
+theorem centralizer_image_eq_map {K K' : Type*} [Group K] [Group K'] (e : G ≃* G')
+    (e₁ : K →* K') {f : K →* G} {f' : K' →* G'} (hf : ∀ k, e (f k) = f' (e₁ k)) {s : Set K}
+    (h : centralizer (f '' s) = (centralizer s).map f) :
+    centralizer (f' '' (e₁ '' s)) = (centralizer (e₁ '' s)).map f' := by
+  have hs : f' '' (e₁ '' s) = e '' (f '' s) := by simp only [Set.image_image, hf]
+  have hf' : (e : G →* G').comp f = f'.comp e₁ := MonoidHom.ext hf
+  refine le_antisymm ?_ (map_centralizer_le_centralizer_image _ f')
+  rw [hs, ← e.map_centralizer, h, map_map, hf', ← map_map]
+  exact map_mono (map_centralizer_le_centralizer_image s e₁)
 
 end MulEquiv
