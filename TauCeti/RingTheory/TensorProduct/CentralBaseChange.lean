@@ -45,6 +45,8 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 
 * `TauCeti.CentralBaseChange.lsmul`: the action of `S ⊗[A] Λ` on `S ⊗[A] M`, as an `S`-algebra map.
 * `TauCeti.CentralBaseChange.module`: the resulting `S ⊗[A] Λ`-module structure on `S ⊗[A] M`.
+* `TauCeti.CentralBaseChange.includeRight`: the map `m ↦ 1 ⊗ m`, semilinear along
+  `Λ → S ⊗[A] Λ`.
 * `TauCeti.CentralBaseChange.map`: the `S ⊗[A] Λ`-linear map `S ⊗[A] M → S ⊗[A] N` induced by a
   `Λ`-linear map `M → N`, and `TauCeti.CentralBaseChange.mapHom`, the same as an `A`-linear map
   of `Hom` modules.
@@ -138,6 +140,18 @@ instance : SMulCommClass (S ⊗[A] Λ) S (S ⊗[A] M) where
 /-- `A` acts centrally, so `S ⊗[A] Λ`-linear maps between such modules form an `A`-module. -/
 instance : SMulCommClass (S ⊗[A] Λ) A (S ⊗[A] M) where
   smul_comm t a x := by rw [← algebraMap_smul S a x, smul_comm, algebraMap_smul]
+
+variable (A S Λ M) in
+/-- The map `m ↦ 1 ⊗ m`, semilinear along the inclusion `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
+noncomputable def includeRight :
+    M →ₛₗ[RingHomClass.toRingHom (Algebra.TensorProduct.includeRight : Λ →ₐ[A] S ⊗[A] Λ)]
+      S ⊗[A] M where
+  toFun m := 1 ⊗ₜ[A] m
+  map_add' := TensorProduct.tmul_add _
+  map_smul' l m := by simp
+
+@[simp]
+theorem includeRight_apply (m : M) : includeRight A S Λ M m = (1 : S) ⊗ₜ[A] m := (rfl)
 
 /-- An `S ⊗[A] Λ`-linear map out of `S ⊗[A] M` is determined by its values on the tensors
 `1 ⊗ m`. -/

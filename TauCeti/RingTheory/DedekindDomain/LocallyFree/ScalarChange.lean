@@ -1,0 +1,62 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.CentralBaseChange
+public import TauCeti.RingTheory.DedekindDomain.LocallyFree.Basic
+
+/-!
+# Extension of locally free lattices
+
+Extension of scalars along a morphism `Λ →ₐ[A] Γ` of algebras over a Dedekind domain preserves
+local freeness and its rank, provided the destination algebra `Γ` is finite over `A`; the source
+algebra need not be. At each height-one prime, balanced extension commutes with central
+completion, and extending a completed free basis gives a free basis of the same rank over the
+completed destination algebra.
+
+The induced map of locally free class groups is `TauCeti.LocallyFree.classGroupMap`, in
+`TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup`.
+
+## References
+
+* A. Fröhlich, *Arithmetic and Galois module structure for tame extensions*, Appendix VI,
+  Proposition 2, and Appendix VII, Proposition 1.
+-/
+
+public section
+
+open scoped TensorProduct
+
+attribute [local instance low] TauCeti.CentralBaseChange.module
+  TauCeti.BalancedExtension.moduleBase
+
+namespace TauCeti.LocallyFree
+
+variable {A : Type*} [CommRing A] [IsDedekindDomain A] {K : Type*} [Field K] [Algebra A K]
+  [IsFractionRing A K] {Λ Γ : Type*} [Ring Λ] [Ring Γ] [Algebra A Λ] [Algebra A Γ]
+  {M : Type*} [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M] {n : ℕ}
+
+/-- Extension along a morphism of algebras over the central Dedekind base, whose destination
+algebra is finite over the base, preserves locally free lattices and their rank. -/
+theorem IsLocallyFreeOfRank.extendScalars [Module.Finite A Γ]
+    (h : IsLocallyFreeOfRank A K Λ M n) (f : Λ →ₐ[A] Γ)
+    [Module A (BalancedExtension (RingHomClass.toRingHom f) M)]
+    [IsScalarTower A Γ (BalancedExtension (RingHomClass.toRingHom f) M)] :
+    IsLocallyFreeOfRank A K Γ (BalancedExtension (RingHomClass.toRingHom f) M) n where
+  finite := by
+    have := h.finite
+    have := Module.Finite.of_restrictScalars_finite A Λ M
+    exact Module.Finite.trans Γ (BalancedExtension (RingHomClass.toRingHom f) M)
+  nonempty_linearEquiv v := by
+    let S := v.adicCompletionIntegers K
+    let g := (RingHomClass.toRingHom (Algebra.TensorProduct.map (AlgHom.id A S) f))
+    exact ⟨(BalancedExtension.baseChangeEquiv A S Λ M f).symm.trans <|
+      (BalancedExtension.congr g (h.nonempty_linearEquiv v).some).trans <|
+        (BalancedExtension.congr g (CentralBaseChange.piRight A S Λ (Fin n))).trans <|
+          (BalancedExtension.piScalarRight g (Fin n)).trans
+            (CentralBaseChange.piRight A S Γ (Fin n)).symm⟩
+
+end TauCeti.LocallyFree
