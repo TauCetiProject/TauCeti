@@ -28,8 +28,8 @@ This file builds the corresponding presentation isomorphism
 complement automorphism `TauCeti.InfiniteTypeAHeckeAlgebra.complementEquiv`, proves the generator
 and stage comparisons between the two conventions, and shows that a Markov trace with native
 projection parameter `η` multiplies by `1 - η` when Wenzl's projection `e_n^W` is appended. It
-also records how the index and sign characters correspond to the two scalar characters `e i ↦ 1`
-and `e i ↦ 0` in each convention.
+also records how the index and sign characters correspond to the two scalar characters `e i ↦ 0`
+and `e i ↦ 1` in Wenzl's convention.
 
 ## Main definitions
 
@@ -176,29 +176,7 @@ theorem wenzlHeckeEquiv_mem_stage_iff {n : ℕ} {w : BalancedProjectionAlgebra R
   rw [wenzlHeckeEquiv_apply, InfiniteTypeAHeckeAlgebra.complementEquiv_mem_stage_iff,
     heckeEquiv_mem_stage_iff]
 
-/-! ### Scalar characters in the two projection conventions -/
-
-/-- Under the native isomorphism `heckeEquiv`, the index character `T i ↦ q` corresponds to the
-scalar character `e i ↦ 1`. -/
-@[simp]
-theorem indexCharacter_heckeEquiv (w : BalancedProjectionAlgebra R τ) :
-    indexCharacter R q (heckeEquiv q hτ w) = character 1 .one w := by
-  have h : (indexCharacter R q).comp (heckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
-      character 1 .one := hom_ext fun i ↦ by
-    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, heckeEquiv_e, map_smul, map_add,
-      InfiniteTypeAHeckeAlgebra.indexCharacter_T, AlgHom.commutes, Algebra.algebraMap_self,
-      RingHom.id_apply, smul_eq_mul, character_e]
-    linear_combination hτ
-  exact DFunLike.congr_fun h w
-
-/-- Under the native isomorphism `heckeEquiv`, the sign character `T i ↦ -q⁻¹` corresponds to the
-scalar character `e i ↦ 0`. -/
-@[simp]
-theorem signCharacter_heckeEquiv (w : BalancedProjectionAlgebra R τ) :
-    signCharacter R q (heckeEquiv q hτ w) = character 0 .zero w := by
-  have h : (signCharacter R q).comp (heckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
-      character 0 .zero := hom_ext fun i ↦ by simp [heckeEquiv_e]
-  exact DFunLike.congr_fun h w
+/-! ### Scalar characters in Wenzl's projection convention -/
 
 /-- Under Wenzl's isomorphism `wenzlHeckeEquiv`, the index character `T i ↦ q` (`g i ↦ q ^ 2`)
 corresponds to the scalar character `e i ↦ 0`. -/

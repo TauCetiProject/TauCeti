@@ -206,8 +206,9 @@ theorem hyperbolicWenzlProjParam_zero_right (α : ℂ) : hyperbolicWenzlProjPara
 /-- Hyperbolic-cosine form `hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ)` when
 `cosh α * cosh θ ≠ 0`. -/
 theorem hyperbolicProjParam_eq_cosh_sub_div {α θ : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
-    hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ) :=
-  (cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ).symm
+    hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ) := by
+  rw [hyperbolicProjParam_def]
+  exact (cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ).symm
 
 /-- Hyperbolic-cosine form `hyperbolicWenzlProjParam α θ = cosh (α + θ) / (2 * cosh α * cosh θ)`
 when `cosh α * cosh θ ≠ 0`. -/

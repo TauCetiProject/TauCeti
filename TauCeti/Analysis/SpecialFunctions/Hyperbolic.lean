@@ -247,7 +247,8 @@ theorem one_add_tanh_div_two (x : ℝ) :
     (1 + tanh x) / 2 = 1 / (1 + exp (-2 * x)) := by
   have h : (1 + tanh x) / 2 = 1 - (1 - tanh x) / 2 := by ring
   rw [h, one_sub_tanh_div_two]
-  field_simp [show 1 + exp (-2 * x) ≠ 0 by positivity]
+  have hden : 1 + exp (-2 * x) ≠ 0 := by positivity
+  field_simp [hden]
   ring
 
 /-- The hyperbolic tangent approaches `-1` exponentially fast:
@@ -441,13 +442,13 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
 
 /-- Quarter-period imaginary shift for `Complex.sinh`: `sinh (z + π * I / 2) = I * cosh z`. -/
 theorem sinh_add_pi_mul_I_div_two (z : ℂ) : sinh (z + π * I / 2) = I * cosh z := by
-  rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, sinh_add, cosh_mul_I, sinh_mul_I,
+  rw [← div_mul_eq_mul_div, sinh_add, cosh_mul_I, sinh_mul_I,
     cos_pi_div_two, sin_pi_div_two]
   ring
 
 /-- Quarter-period imaginary shift for `Complex.cosh`: `cosh (z + π * I / 2) = I * sinh z`. -/
 theorem cosh_add_pi_mul_I_div_two (z : ℂ) : cosh (z + π * I / 2) = I * sinh z := by
-  rw [show π * I / 2 = (π / 2 : ℂ) * I by ring, cosh_add, cosh_mul_I, sinh_mul_I,
+  rw [← div_mul_eq_mul_div, cosh_add, cosh_mul_I, sinh_mul_I,
     cos_pi_div_two, sin_pi_div_two]
   ring
 
