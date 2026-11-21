@@ -519,7 +519,7 @@ theorem ideleSumLocalInv_artinCharacterCup
     ⟨(ideleCoeffEquivIdeleFormation K).symm a', (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦
       (ideleCoeffEquivIdeleFormation K).injective <| by
         rw [ideleCoeffEquivIdeleFormation_smul, AddEquiv.apply_symm_apply]
-        exact (Formation.mem_level _).1 a'.2 g (by simp)⟩
+        exact (Formation.mem_level _).1 a'.property g (by simp)⟩
   rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχ' a' hχ a
     ((ideleCoeffEquivIdeleFormation K).apply_symm_apply _)]
   exact sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum χ hχ a τ b σ τ' b' σ' hb hσ

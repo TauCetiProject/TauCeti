@@ -36,8 +36,11 @@ open scoped ENNReal
 
 namespace TauCeti.BergmanSpace
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-variable {U V W : Opens ℂ}
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+section Complete
+
+variable [CompleteSpace F] {U V W : Opens ℂ}
 
 private def restrictBoundedAux (hV : IsCompact (closure (V : Set ℂ)))
     (hVU : closure (V : Set ℂ) ⊆ U) (u : bergmanSpace F U) :
@@ -97,6 +100,12 @@ theorem restrict_comp_restrictBounded (hW : IsCompact (closure (W : Set ℂ)))
     (restrictBounded hW hWU u) x).trans ((restrictBounded_apply hW hWU u _).trans
       (restrictBounded_apply hV _ u x).symm)
 
+end Complete
+
+section Inclusion
+
+variable {U V W : Opens ℂ}
+
 /-- For proper (in particular, finite-dimensional) values, Bergman restriction to a
 relatively compact open set is compact. -/
 theorem isCompactOperator_restrictBounded [ProperSpace F]
@@ -114,10 +123,6 @@ theorem isCompactOperator_restrictBounded [ProperSpace F]
   have heq := restrict_comp_restrictBounded (F := F) hW hWU hV hVW
   rw [← heq]
   exact hcompact.comp_clm (restrictBounded hW hWU)
-
-section Inclusion
-
-omit [CompleteSpace F]
 
 /-- On a finite-measure open set, bounded holomorphic functions define native Bergman classes. -/
 def ofBounded [IsFiniteMeasure (volume.restrict (V : Set ℂ))] :
@@ -260,6 +265,10 @@ theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
 
 end Inclusion
 
+section Complete
+
+variable [CompleteSpace F] {U V : Opens ℂ}
+
 /-- Relatively compact Bergman restriction factors through the native bounded-holomorphic
 stage, identifying the analytic bonding map used in the compactness argument. -/
 theorem ofBounded_comp_restrictBounded (hV : IsCompact (closure (V : Set ℂ)))
@@ -278,8 +287,10 @@ theorem ofBounded_comp_restrictBounded (hV : IsCompact (closure (V : Set ℂ)))
   rw [h1, h2, representative_restrict _ _ hx,
     BoundedHolomorphicFunctions.extend_apply _ ⟨x, hx⟩, restrictBounded_apply]
 
+end Complete
+
 /-- Bergman restriction is compact for proper, in particular finite-dimensional, values. -/
-theorem isCompactOperator_restrict [ProperSpace F]
+theorem isCompactOperator_restrict {U V : Opens ℂ} [ProperSpace F]
     (hV : IsCompact (closure (V : Set ℂ))) (hVU : closure (V : Set ℂ) ⊆ U) :
     IsCompactOperator
       (restrict (F := F) (SetLike.coe_subset_coe.mp (subset_closure.trans hVU))) := by
@@ -291,8 +302,6 @@ theorem isCompactOperator_restrict [ProperSpace F]
 /-! ### Componentwise restriction of families of Bergman classes -/
 
 section Pi
-
-omit [CompleteSpace F]
 
 variable {ι : Type*} {U V W : ι → Opens ℂ}
 
@@ -331,8 +340,6 @@ theorem isCompactOperator_restrictPi [Finite ι] [ProperSpace F]
 end Pi
 
 section Pi₂
-
-omit [CompleteSpace F]
 
 variable {ι κ : Type*} {U V W : ι → κ → Opens ℂ}
 

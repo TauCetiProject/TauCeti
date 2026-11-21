@@ -425,7 +425,7 @@ private theorem coeFn_inclusionLp_expTwo (u : H^{2}(ℂ)) :
     ⇑(inclusionLp zero_le_two (expTwo u)) =ᵐ[volume]
       fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 := by
   filter_upwards [coeFn_inclusionLp_expSubOne finrank_lt zero_le_two ((2 : ℂ) • u),
-    coeFn_inclusionLp_smul zero_le_two (2 : ℂ) u] with z h₁ h₂
+    coeFn_inclusionLp_smul_ae_eq zero_le_two (2 : ℂ) (u := u) .rfl] with z h₁ h₂
   rw [expTwo, h₁, h₂, smul_eq_mul]
 
 /-- Multiplication of `L²(ℂ)` by the background weight `h_c = 1 - φ_c`. -/
@@ -540,7 +540,8 @@ theorem coeFn_reducedLinearization (c : Fin m → ℂ) (u v : H^{2}(ℂ)) :
   set W := mulCLM finrank_lt (expTwo u) v + v
   have hW : ⇑(inclusionLp zero_le_two W) =ᵐ[volume] fun z ↦
       Complex.exp (2 * inclusionLp zero_le_two u z) * inclusionLp zero_le_two v z := by
-    filter_upwards [coeFn_inclusionLp_add zero_le_two (mulCLM finrank_lt (expTwo u) v) v,
+    filter_upwards [coeFn_inclusionLp_add_ae_eq zero_le_two (u := mulCLM finrank_lt (expTwo u) v)
+        (v := v) .rfl .rfl,
       coeFn_inclusionLp_mulCLM finrank_lt zero_le_two (expTwo u) v, coeFn_inclusionLp_expTwo u]
       with z h₁ h₂ h₃
     rw [h₁, h₂, h₃]

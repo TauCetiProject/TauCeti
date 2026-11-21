@@ -62,10 +62,10 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- Where `K = H_q(t) dt` on the end `q` and the Hamiltonians `H_q(t)` are `C²`, the Hamiltonian
 vector fields of the components of `K` at the point `φ'_q(ζ)` of the end are differentiable. -/
 theorem differentiableAt_hamiltonianVectorField_perturbation_positiveEndChart
-    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
+    (hHs : ∀ t, ContDiff ℝ 2 (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
     (y : V) :
     DifferentiableAt ℝ (ω.hamiltonianVectorField
       (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v)) y := by
@@ -109,8 +109,8 @@ theorem floerLinearization_comp_positiveEndChart (ω : SymplecticForm V)
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             u ξ (positiveEndChart q ζ)) := by
   -- Beyond the height `2` the perturbation is `H_q(t) dt` on the end `q`.
-  have hKH (r : Puncture) (w : ℂ) (x : V) (hw : 2 ≤ r.endSign * (r.endCoord w).re) :
-      pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w :=
+  have hKH (w : ℂ) (x : V) (hw : 2 ≤ q.endSign * (q.endCoord w).re) :
+      pairOfPantsPerturbation H w x = H q (q.endCoord w).im x • q.endAngularForm w :=
     pairOfPantsPerturbation_eq_smul_endAngularForm hw x
   have hK (v : ℂ) := Eventually.of_forall (f := 𝓝 (u (positiveEndChart q ζ)))
     (differentiableAt_perturbation_positiveEndChart hKH
@@ -126,6 +126,6 @@ theorem floerLinearization_comp_positiveEndChart (ω : SymplecticForm V)
     (hX Complex.I) ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl))
   rw [floerLinearization_def, floerLinearization_def,
     funext (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ),
-    funext (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH hζ)]
+    funext (perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH (hH q) hζ)]
 
 end TauCeti.SymplecticForm

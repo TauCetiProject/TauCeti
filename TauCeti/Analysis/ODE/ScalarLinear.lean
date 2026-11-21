@@ -128,7 +128,7 @@ theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.Ord
   have hle : s ⊓ t ≤ s ⊔ t := inf_le_sup
   set g' : ℝ → ℝ := fun u ↦ g (projIcc (s ⊓ t) (s ⊔ t) hle u)
   have hg' : Continuous g' :=
-    (hg.mono hsub).comp_continuous (continuous_subtype_val.comp continuous_projIcc)
+    (hg.mono hsub).comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
       fun u ↦ Subtype.mem _
   have hgg' (u : ℝ) (hu : u ∈ uIcc s t) : g' u = g u := by
     simp only [g', projIcc_of_mem hle hu]

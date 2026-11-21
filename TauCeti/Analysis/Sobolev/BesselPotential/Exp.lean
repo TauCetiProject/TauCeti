@@ -126,7 +126,7 @@ private theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
     refine inclusionLp_injective h (Lp.ext ?_)
     rw [← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h hrs rfl]
     filter_upwards [hr, coeFn_inclusionLp_expSubOne hs h v,
-      coeFn_inclusionLp_sub h (expSubOne hs v) v] with x hx he hsub
+      coeFn_inclusionLp_sub_ae_eq h (u := expSubOne hs v) (v := v) .rfl .rfl] with x hx he hsub
     rw [hsub, he]
     have hexp := Complex.hasSum_exp_sub_one (inclusionLp h v x)
     rw [← hasSum_nat_add_iff' 1] at hexp
@@ -159,12 +159,15 @@ private theorem expSubOne_add_sub (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) 
   refine inclusionLp_injective h (Lp.ext ?_)
   set U := expSubOne hs u
   set V := expSubOne hs v
-  filter_upwards [coeFn_inclusionLp_sub h (expSubOne hs (u + v) - U) (mulCLM hs U v + v),
-    coeFn_inclusionLp_sub h (expSubOne hs (u + v)) U, coeFn_inclusionLp_add h (mulCLM hs U v) v,
-    coeFn_inclusionLp_add h (mulCLM hs U (V - v)) (V - v), coeFn_inclusionLp_sub h V v,
+  filter_upwards [coeFn_inclusionLp_sub_ae_eq h (u := expSubOne hs (u + v) - U)
+      (v := mulCLM hs U v + v) .rfl .rfl,
+    coeFn_inclusionLp_sub_ae_eq h (u := expSubOne hs (u + v)) (v := U) .rfl .rfl,
+    coeFn_inclusionLp_add_ae_eq h (u := mulCLM hs U v) (v := v) .rfl .rfl,
+    coeFn_inclusionLp_add_ae_eq h (u := mulCLM hs U (V - v)) (v := V - v) .rfl .rfl,
+    coeFn_inclusionLp_sub_ae_eq h (u := V) (v := v) .rfl .rfl,
     coeFn_inclusionLp_mulCLM hs h U v, coeFn_inclusionLp_mulCLM hs h U (V - v),
     coeFn_inclusionLp_expSubOne hs h (u + v), coeFn_inclusionLp_expSubOne hs h u,
-    coeFn_inclusionLp_expSubOne hs h v, coeFn_inclusionLp_add h u v]
+    coeFn_inclusionLp_expSubOne hs h v, coeFn_inclusionLp_add_ae_eq h (u := u) (v := v) .rfl .rfl]
     with x h₁ h₂ h₃ h₄ h₅ h₆ h₇ e₁ e₂ e₃ h₈
   rw [h₁, h₂, h₃, h₄, h₆, h₇, h₅, e₁, e₂, e₃, h₈, Complex.exp_add]
   ring
