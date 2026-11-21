@@ -17,6 +17,8 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
 import Mathlib.LinearAlgebra.Matrix.Trace
+import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 
 /-!
 # Empirical spectral measures of matrices
@@ -448,6 +450,26 @@ theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermit
   rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
     Complex.real_smul]
   simp [resolvent, Ring.inverse_eq_inv']
+
+/-- The spectral resolvent transform of an a.e.-measurable Hermitian matrix family is
+integrable over a finite measure at any nonreal parameter. -/
+theorem integrable_resolventTransform_spectralMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] {A : Ω → Matrix n n ℂ}
+    (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
+      P := by
+  have ht : Measurable (fun B : Matrix n n ℂ ↦ (Fintype.card n : ℂ)⁻¹ *
+      ((B - z • 1)⁻¹).trace) := by
+    simp only [Matrix.trace, Matrix.diag]
+    fun_prop
+  have hm : AEMeasurable (fun ω ↦
+      resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z) P := by
+    simp_rw [fun ω ↦ resolventTransform_spectralMeasure (A ω) (hHerm ω)
+      ((hHerm ω).notMem_spectrum_of_im_ne_zero hz)]
+    exact ht.comp_aemeasurable hA
+  refine Integrable.of_bound hm.aestronglyMeasurable |z.im|⁻¹ (.of_forall fun ω ↦ ?_)
+  simpa only [probReal_univ, mul_one] using
+    norm_resolventTransform_le (μ := ((A ω).spectralMeasure (hHerm ω) : Measure ℝ)) hz
 
 section CharpolyXPowMul
 

@@ -10,14 +10,15 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Probability.Independence.Integration
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Integrability and expectations of products and quadratic forms under independence
 
 A finite product of independent integrable variables is integrable
 (`ProbabilityTheory.iIndepFun.integrable_fun_prod`).
-The product of two independent square-integrable real random variables is square integrable
-(`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family `W : ι → Ω → 𝕜` with
+The product of two independent square-integrable `RCLike`-valued random variables is square
+integrable (`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family `W : ι → Ω → 𝕜` with
 `RCLike 𝕜`, integrable squared norms, and integrable, vanishing mixed second moments
 (or pairwise independent mean-zero square-integrable coordinates), and `A : Matrix ι ι 𝕜`,
 `star W ⬝ᵥ A *ᵥ W` is integrable with expectation `∑ i, A i i * E[‖W i‖ ^ 2]`
@@ -79,15 +80,60 @@ end ProbabilityTheory.iIndepFun
 
 namespace ProbabilityTheory.IndepFun
 
-/-- The product of independent square-integrable real random variables is square integrable. -/
-theorem memLp_two_mul {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    {X Y : Ω → ℝ} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+private theorem indepFun_norm_sq {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
+    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P) :
+    IndepFun (fun ω ↦ ‖X ω‖ ^ 2) (fun ω ↦ ‖Y ω‖ ^ 2) P :=
+  h.comp (φ := fun z ↦ ‖z‖ ^ 2) (ψ := fun z ↦ ‖z‖ ^ 2) (by fun_prop) (by fun_prop)
+
+/-- The product of independent square-integrable variables is square integrable. -/
+theorem memLp_two_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
+    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P) (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
     MemLp (X * Y) 2 P := by
-  refine (memLp_two_iff_integrable_sq
+  refine (memLp_two_iff_integrable_sq_norm
     (hX.aestronglyMeasurable.mul hY.aestronglyMeasurable)).2 ?_
-  simpa only [Pi.mul_def, mul_pow, Function.comp_def, id_eq] using
-    (h.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
-      hX.integrable_sq hY.integrable_sq
+  have hx := (memLp_two_iff_integrable_sq_norm hX.aestronglyMeasurable).1 hX
+  have hy := (memLp_two_iff_integrable_sq_norm hY.aestronglyMeasurable).1 hY
+  simpa only [Pi.mul_apply, norm_mul, mul_pow] using
+    ((indepFun_norm_sq h).integrable_mul hx hy).congr (.of_forall fun x ↦ Pi.mul_apply _ _ x)
+
+/-- The second absolute moment of a product of independent variables is the product
+of their second absolute moments. -/
+theorem integral_norm_sq_mul {Ω 𝕜 : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
+    {P : Measure Ω} {X Y : Ω → 𝕜} (h : IndepFun X Y P)
+    (hX : AEMeasurable X P) (hY : AEMeasurable Y P) :
+    (∫ ω, ‖X ω * Y ω‖ ^ 2 ∂P) =
+      (∫ ω, ‖X ω‖ ^ 2 ∂P) * (∫ ω, ‖Y ω‖ ^ 2 ∂P) := by
+  simp_rw [norm_mul, mul_pow]
+  exact (indepFun_norm_sq h).integral_fun_mul_eq_mul_integral
+    (hX.norm.pow_const 2).aestronglyMeasurable (hY.norm.pow_const 2).aestronglyMeasurable
+
+/-- An integrable bound for the mean norms of sections also bounds the mean norm of the
+joint evaluation at independent variables. -/
+theorem integral_norm_comp_prodMk_le_of_sections {Ω α β E : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hind : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {f : α × β → E} (hf : Measurable f) {g : α → ℝ} (hg : Integrable g (P.map X))
+    (hsection : ∀ᵐ x ∂P.map X, Integrable (fun ω ↦ f (x, Y ω)) P ∧
+      (∫ ω, ‖f (x, Y ω)‖ ∂P) ≤ g x) :
+    Integrable (fun ω ↦ f (X ω, Y ω)) P ∧
+      (∫ ω, ‖f (X ω, Y ω)‖ ∂P) ≤ ∫ x, g x ∂P.map X := by
+  have hmap := hind.map_prod_eq_prod_map_map hX hY
+  have hnorm (x : α) : (∫ y, ‖f (x, y)‖ ∂P.map Y) = ∫ ω, ‖f (x, Y ω)‖ ∂P :=
+    integral_map hY (hf.norm.comp measurable_prodMk_left).aestronglyMeasurable
+  have hsection' : ∀ᵐ x ∂P.map X, Integrable (fun y ↦ f (x, y)) (P.map Y) ∧
+      (∫ y, ‖f (x, y)‖ ∂P.map Y) ≤ g x := hsection.mono fun x hx ↦
+    ⟨(integrable_map_measure (hf.comp measurable_prodMk_left).aestronglyMeasurable hY).2 hx.1,
+      (hnorm x).trans_le hx.2⟩
+  have hm : AEStronglyMeasurable f ((P.map X).prod (P.map Y)) := hf.aestronglyMeasurable
+  have hg' := hg.mono' hm.norm.integral_prod_right' (hsection'.mono fun x hx ↦ by
+    simpa only [Real.norm_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)] using hx.2)
+  have hi := (integrable_prod_iff hm).2 ⟨hsection'.mono fun _ hx ↦ hx.1, hg'⟩
+  refine ⟨(integrable_map_measure hf.aestronglyMeasurable (hX.prodMk hY)).1
+    (hmap ▸ hi), ?_⟩
+  rw [← integral_map (hX.prodMk hY) hf.norm.aestronglyMeasurable, hmap, integral_prod _ hi.norm]
+  exact integral_mono_ae hg' hg (hsection'.mono fun _ hx ↦ hx.2)
 
 /-- Bound an event of two independent random variables by an almost-everywhere bound on its
 sections. The section is measured under the law of the second variable. -/
@@ -183,6 +229,28 @@ theorem integral_fun_prod_comp_fiberwise {Ω κ ι β 𝕜 : Type*} [MeasurableS
     ∫ ω, ∏ i, φ i (Y (e i) ω) ∂P = ∏ j, ∫ ω, ∏ i with e i = j, φ i (Y j ω) ∂P :=
   hY.integral_fun_prod_comp_fiberwise_of_maps_to (fun _ _ ↦ Finset.mem_univ _)
     (fun j _ ↦ mY j) (fun i _ ↦ hφ i)
+
+/-- A finite product of functions of independent variables has integral zero when one variable
+is read exactly once and its sole factor has integral zero. For an integrable product this
+gives expectation zero. The argument comes from the sample-covariance trace-word cancellation
+in `TauCeti.Probability.integral_prod_apply_mul_star_apply_eq_zero`. -/
+theorem integral_fun_prod_comp_eq_zero_of_singleton_fiber
+    {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [RCLike 𝕜] [DecidableEq κ]
+    {P : Measure Ω} {Y : κ → Ω → β} (hY : iIndepFun Y P)
+    (s : Finset ι) (e : ι → κ) (mY : ∀ j ∈ s.image e, AEMeasurable (Y j) P)
+    {φ : ι → β → 𝕜} (hφ : ∀ i ∈ s, AEStronglyMeasurable (φ i) (P.map (Y (e i))))
+    {a : ι} (has : a ∈ s) (ha : ∀ b ∈ s, e b = e a → b = a)
+    (hzero : ∫ ω, φ a (Y (e a) ω) ∂P = 0) :
+    (∫ ω, ∏ i ∈ s, φ i (Y (e i) ω) ∂P) = 0 := by
+  classical
+  rw [hY.integral_fun_prod_comp_fiberwise_of_maps_to
+    (t := s.image e) (fun i hi ↦ Finset.mem_image_of_mem e hi) mY hφ]
+  refine Finset.prod_eq_zero (Finset.mem_image_of_mem e has) ?_
+  have hfiber : (s.filter fun b ↦ e b = e a) = {a} := by
+    ext b
+    simp only [Finset.mem_filter, Finset.mem_singleton]
+    exact ⟨fun h ↦ ha b h.1 h.2, fun h ↦ by subst b; exact ⟨has, rfl⟩⟩
+  simp only [hfiber, Finset.prod_singleton, hzero]
 
 end ProbabilityTheory.iIndepFun
 

@@ -30,7 +30,28 @@ public section
 noncomputable section
 
 open MeasureTheory Matrix
-open scoped Matrix.Norms.L2Operator
+open scoped NNReal Matrix.Norms.L2Operator
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The quadratic form of column `i` against the minor resolvent minus the minor trace
+times the variance `v / Fintype.card n`. -/
+def minorQuadraticError (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) : ℂ :=
+  let a : {j // j ≠ i} → ℂ := fun j ↦ A j i
+  star a ⬝ᵥ A.minorResolvent i z *ᵥ a -
+    ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace
+
+/-- The defining formula for the variance-centered minor quadratic form. -/
+theorem minorQuadraticError_def (A : Matrix n n ℂ) (i : n) (z : ℂ) (v : ℝ≥0) :
+    A.minorQuadraticError i z v =
+      star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
+        A.minorResolvent i z *ᵥ (fun j : {j // j ≠ i} ↦ A j i) -
+        ((v : ℂ) / (Fintype.card n : ℂ)) * (A.minorResolvent i z).trace := by
+  rw [minorQuadraticError]
+
+end Matrix
 
 namespace Matrix.IsHermitian
 
@@ -41,7 +62,7 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {A : Matrix n n ℂ}
 theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
     (i : n) {z : ℂ} (hz : z.im ≠ 0) :
     ‖(A - z • 1)⁻¹.trace -
-      ((A.submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ) - z • 1)⁻¹.trace‖ ≤
+      (A.minorResolvent i z).trace‖ ≤
       3 / |z.im| := by
   let e := Equiv.sumCompl (· = i)
   let B : Matrix {j // j ≠ i} {j // j ≠ i} ℂ := A.submatrix (↑) (↑)
@@ -76,6 +97,7 @@ theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
     rw [← hshift, inv_submatrix_equiv]
     exact trace_reindex_self e.symm _
   rw [hreindex, htrace] at h
+  rw [minorResolvent_def]
   calc
     _ ≤ ‖(A - z • 1)⁻¹.trace - ((-z)⁻¹ + (B - z • 1)⁻¹.trace)‖ + ‖(-z)⁻¹‖ := by
       simpa only [add_sub_cancel_right, norm_neg] using
@@ -88,6 +110,18 @@ theorem norm_trace_inv_sub_smul_one_sub_trace_submatrix_le (hA : A.IsHermitian)
       exact inv_anti₀ (abs_pos.mpr hz) (Complex.abs_im_le_norm _)
     _ = _ := by ring
 
+/-- Normalizing the principal-minor trace by the original dimension bounds its difference
+from the original spectral transform by `3 / (card n * |Im z|)`. -/
+theorem norm_normalized_minor_trace_sub_resolventTransform_le [Nonempty n]
+    (hA : A.IsHermitian) {z : ℂ} (hz : z.im ≠ 0) (i : n) :
+    ‖(Fintype.card n : ℂ)⁻¹ * (A.minorResolvent i z).trace -
+      resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
+      3 / ((Fintype.card n : ℝ) * |z.im|) := by
+  rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
+    ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast, norm_sub_rev]
+  exact (mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_trace_submatrix_le i hz)
+    (by positivity)).trans_eq (by ring)
+
 /-- The quadratic residual of a normalized Hermitian resolvent trace is bounded by its
 mean absolute leave-one-out error divided by `Im z`. -/
 theorem norm_resolventTransform_spectralMeasure_quadratic_le [Nonempty n]
@@ -95,8 +129,7 @@ theorem norm_resolventTransform_spectralMeasure_quadratic_le [Nonempty n]
     let m := resolventTransform (A.spectralMeasure hA : Measure ℝ) z
     ‖v * (m * m) + z * m + 1‖ ≤ (z.im * Fintype.card n)⁻¹ * ∑ i,
       ‖A i i + v * m - star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
-        (((A.submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ) - z • 1)⁻¹ *ᵥ
-          fun j : {j // j ≠ i} ↦ A j i)‖ := by
+        (A.minorResolvent i z *ᵥ fun j : {j // j ≠ i} ↦ A j i)‖ := by
   classical
   intro m
   let R := (A - z • 1)⁻¹
@@ -115,16 +148,14 @@ theorem norm_resolventTransform_spectralMeasure_quadratic_le [Nonempty n]
       mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
     _ ≤ (Fintype.card n : ℝ)⁻¹ * ∑ i, (z.im)⁻¹ *
         ‖A i i + v * m - star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
-          (((A.submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ) - z • 1)⁻¹ *ᵥ
-            fun j : {j // j ≠ i} ↦ A j i)‖ := by
+          (A.minorResolvent i z *ᵥ fun j : {j // j ≠ i} ↦ A j i)‖ := by
       gcongr with i _
       have hmul := mul_inv_cancel₀ (ne_of_apply_ne Complex.im
         (by simpa using (hA.im_inv_sub_smul_one_apply_self_pos hz i).ne') : R i i ≠ 0)
       rw [hA.inv_inv_sub_smul_one_apply_self hz.ne' i] at hmul
       have hid : 1 + R i i * (z + v * m) = R i i *
           (A i i + v * m - star (fun j : {j // j ≠ i} ↦ A j i) ⬝ᵥ
-            (((A.submatrix (↑) (↑) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ) - z • 1)⁻¹ *ᵥ
-              fun j : {j // j ≠ i} ↦ A j i)) := by
+            (A.minorResolvent i z *ᵥ fun j : {j // j ≠ i} ↦ A j i)) := by
         linear_combination -hmul
       rw [hid, norm_mul]
       refine mul_le_mul_of_nonneg_right

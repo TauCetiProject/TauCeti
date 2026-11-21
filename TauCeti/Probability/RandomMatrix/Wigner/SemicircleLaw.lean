@@ -240,9 +240,7 @@ theorem wigner_semicircle_ae (η : ℕ → Ω → ℝ)
       (𝓝 (⟨semicircleReal 0 1, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let c := ∫ ω, ξ e₀ ω ∂P
-  have hint : Integrable (fun ω ↦ ‖ξ e₀ ω - c‖ ^ 2) P := by
-    by_contra h
-    exact zero_ne_one ((integral_undef h).symm.trans hv)
+  have hint : Integrable (fun ω ↦ ‖ξ e₀ ω - c‖ ^ 2) P := integrable_of_integral_eq_one hv
   have hξc : MemLp (fun ω ↦ ξ e₀ ω - c) 2 P :=
     (memLp_two_iff_integrable_sq_norm
       ((hid e₀).aemeasurable_fst.sub_const c).aestronglyMeasurable).2 hint
