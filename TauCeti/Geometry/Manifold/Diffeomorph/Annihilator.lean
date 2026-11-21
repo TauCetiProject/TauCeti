@@ -25,7 +25,9 @@ file restricts the cotangent lift to the annihilators:
   `Diffeomorph.cotangent` (`Diffeomorph.annihilatorInclusion_annihilatorMap`). It respects the
   pairing of covectors with tangent vectors, preserves the zero section and its complement, and
   is functorial: the lifts of the identity, of a composite and of the inverse are the identity, the
-  composite and the inverse.
+  composite and the inverse. It is linear on fibres (`Diffeomorph.annihilatorMap_mk_smul`), and the
+  cotangent lift carries the annihilator of `D` exactly onto that of `D'`
+  (`Diffeomorph.cotangent_snd_mem_annihilatorSpace_iff`).
 * For smooth distributions of the same corank `r` on finite-dimensional manifolds, whose
   annihilators are smooth vector bundles of rank `r`
   (`TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`), the map is a smooth diffeomorphism
@@ -142,6 +144,21 @@ theorem annihilatorInclusion_annihilatorMap [IsManifold I 2 M] [IsManifold J 2 N
   rw [annihilatorInclusion_apply, annihilatorInclusion_apply, cotangent_apply]
   rfl
 
+include hDD' in
+/-- **Cotangent lifts preserve annihilators.** If the differential of `h` carries `D` onto `D'`,
+the cotangent lift of `h` sends a covector into the annihilator of `D'` exactly when the covector
+lies in the annihilator of `D`. -/
+theorem cotangent_snd_mem_annihilatorSpace_iff [IsManifold I 2 M] [IsManifold J 2 N]
+    {z : CotangentBundle I M} :
+    (h.cotangent z).snd ∈ annihilatorSpace J D' (h z.proj) ↔
+      z.snd ∈ annihilatorSpace I D z.proj := by
+  refine ⟨fun hz ↦ mem_annihilatorSpace_iff.2 fun v hv ↦ ?_,
+    fun hz ↦ mem_annihilatorSpace_iff.2 fun w hw ↦ ?_⟩
+  · exact (cotangent_snd_apply_mfderiv h z v).symm.trans
+      (mem_annihilatorSpace_iff.1 hz _ ((hDD' _ v).1 hv))
+  · exact (cotangent_snd_apply h z w).trans
+      (mem_annihilatorSpace_iff.1 (h.comp_mfderiv_symm_mem_annihilatorSpace hDD' hz) w hw)
+
 /-- The lifted covector is zero exactly when the original covector is zero. -/
 @[simp]
 theorem annihilatorMap_snd_eq_zero_iff {z : TotalSpace P fun x ↦ annihilatorSpace I D x} :
@@ -159,6 +176,13 @@ theorem annihilatorMap_snd_eq_zero_iff {z : TotalSpace P fun x ↦ annihilatorSp
 theorem annihilatorMap_zeroSection (x : M) :
     h.annihilatorMap P hDD' (zeroSection P (fun x ↦ annihilatorSpace I D x) x) =
       zeroSection P (fun y ↦ annihilatorSpace J D' y) (h x) :=
+  totalSpace_annihilatorSpace_ext rfl fun _ ↦ rfl
+
+/-- **The lift to annihilators is linear on fibres:** rescaling a covector before lifting it
+rescales the lifted covector by the same scalar. -/
+theorem annihilatorMap_mk_smul (z : TotalSpace P fun x ↦ annihilatorSpace I D x) (c : 𝕜) :
+    h.annihilatorMap P hDD' (TotalSpace.mk' P z.proj (c • z.snd)) =
+      TotalSpace.mk' P (h.annihilatorMap P hDD' z).proj (c • (h.annihilatorMap P hDD' z).snd) :=
   totalSpace_annihilatorSpace_ext rfl fun _ ↦ rfl
 
 /-- Lifting `h` and then `h⁻¹` to annihilators returns the original covector. -/
@@ -294,6 +318,40 @@ theorem annihilatorLift_symm :
   letI := hD.annihilatorFiberBundle hk
   letI := hD'.annihilatorFiberBundle hk'
   Diffeomorph.ext fun _ ↦ rfl
+
+/-- The lift of the identity diffeomorphism to annihilator bundles is the identity
+diffeomorphism. -/
+@[simp]
+theorem annihilatorLift_refl
+    (hDD : ∀ x v, v ∈ D x ↔ mfderiv I I (Diffeomorph.refl I M ∞) x v ∈ D x) :
+    letI := hD.annihilatorFiberBundle hk
+    (Diffeomorph.refl I M ∞).annihilatorLift hDD hD hD hk hk =
+      Diffeomorph.refl (I.prod 𝓘(𝕜, Fin r → 𝕜)) _ ∞ :=
+  letI := hD.annihilatorFiberBundle hk
+  Diffeomorph.ext (annihilatorMap_refl (Fin r → 𝕜) hDD)
+
+variable [FiniteDimensional 𝕜 G] [IsManifold K ∞ X] {k'' : ℕ}
+
+/-- `C^(∞ + 1)` charts on a third manifold, as for the source. -/
+local instance instIsManifoldAnnihilatorLiftThird : IsManifold K ((∞ : WithTop ℕ∞) + 1) X :=
+  IsManifold.of_le (n := ∞) (by simp)
+
+/-- **Lifts to annihilator bundles commute with composition** of smooth diffeomorphisms. -/
+-- Not `@[simp]`: the intermediate distribution `D'`, its rank and smoothness, and `hDD'`, `hD'D''`
+-- occur only on the right-hand side, so `simp` could not instantiate them.
+theorem annihilatorLift_trans (g : N ≃ₘ⟮J, K⟯ X)
+    (hD'D'' : ∀ y w, w ∈ D' y ↔ mfderiv J K g y w ∈ D'' (g y))
+    (hD'' : IsContMDiffDistribution K ∞ k'' D'') (hk'' : k'' + r = finrank 𝕜 G) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    letI := hD''.annihilatorFiberBundle hk''
+    (h.trans g).annihilatorLift (h.mem_iff_mfderiv_trans_apply_mem g (by simp) hDD' hD'D'') hD
+        hD'' hk hk'' =
+      (h.annihilatorLift hDD' hD hD' hk hk').trans (g.annihilatorLift hD'D'' hD' hD'' hk' hk'') :=
+  letI := hD.annihilatorFiberBundle hk
+  letI := hD'.annihilatorFiberBundle hk'
+  letI := hD''.annihilatorFiberBundle hk''
+  Diffeomorph.ext (h.annihilatorMap_trans (Fin r → 𝕜) hDD' g hD'D'')
 
 end Lift
 
