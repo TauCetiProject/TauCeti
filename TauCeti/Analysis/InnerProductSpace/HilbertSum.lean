@@ -32,6 +32,7 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
 * `lp.inner_ampliation_apply`, `lp.adjoint_ampliation`: matrix coefficients and adjoints of
   ampliations.
+* `lp.ampliationStarAlgHom`: the ampliation as a star algebra homomorphism.
 * `lp.exists_inner_ampliation_apply_eq_sum`: a finite sum of matrix coefficients of ampliations
   to `ℓ²(ℕ, ·)` is a single matrix coefficient of the ampliation.
 
