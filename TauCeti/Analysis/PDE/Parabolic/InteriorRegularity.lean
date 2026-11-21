@@ -27,11 +27,6 @@ where `a` is Lipschitz: on every ball `B(x₀, r)` with `B(x₀, 2 r) ⊆ Ω` on
 boundedness of `Ω` and no sign condition on `c` is needed, and `a` need not be Lipschitz away from
 the ball.
 
-As for elliptic equations, the Lipschitz hypothesis on `a` cannot be dropped: a time-independent
-weak solution of the elliptic equation `L w = f` is a weak solution of the parabolic equation with
-`F = f`, and for the discontinuous coefficient `TauCeti.PDE.jumpCoefficient` such solutions need not
-lie in `H²` near the jump.
-
 ## The argument
 
 For almost every `t`, the weak equation says that `u(t)` is a weak solution of the elliptic
@@ -180,9 +175,8 @@ theorem exists_memLp_lowerOrder_eq_restrictL_ball_of_isSymm [DecidableEq ι]
       (w1p0Submodule mu Omega 2).toSubmodule.subtypeL)).continuous.comp_aestronglyMeasurable
         hu.aestronglyMeasurable) ?_
     filter_upwards [hU] with t ht
-    rw [Wkp.value_succ, ht.1, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      W1p.valueL_apply, Submodule.subtypeL_apply]
-    exact Wkp.value_one (mu := mu) (Omega := B) (p := 2) _
+    rw [Wkp.value_succ, ht.1]
+    exact (Wkp.value_one (mu := mu) (Omega := B) (p := 2) _).trans (by simp)
 
 end PDE
 

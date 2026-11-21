@@ -1379,11 +1379,10 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_ball_and_norm_le [Dec
   -- Each entry is bounded by the norms of the data on `Ω`.
   have hentry : ∀ i j, ‖G i j‖ ≤ (‖f‖ + (β + 2 * K + C * Lam / r) * ‖u‖ +
       (γ + C * K / r + C * Lam / r ^ 2) * ‖u‖) / lam := fun i j => by
-    have hf := (Lp.toReal_eLpNorm_restrict_mono f hΩ subset_rfl).trans_eq (Lp.norm_def f).symm
-    have hg := ((Lp.toReal_eLpNorm_restrict_mono (W1p.gradient u) hΩ subset_rfl).trans_eq
-      (Lp.norm_def _).symm).trans (W1p.norm_gradient_le u)
-    have hv := ((Lp.toReal_eLpNorm_restrict_mono (W1p.value u) hΩ subset_rfl).trans_eq
-      (Lp.norm_def _).symm).trans (W1p.norm_value_le u)
+    have hf := Lp.toReal_eLpNorm_restrict_le_norm f hΩ
+    have hg := (Lp.toReal_eLpNorm_restrict_le_norm (W1p.gradient u) hΩ).trans
+      (W1p.norm_gradient_le u)
+    have hv := (Lp.toReal_eLpNorm_restrict_le_norm (W1p.value u) hΩ).trans (W1p.norm_value_le u)
     have hlam := ha.pos.le
     have hLam := ha.upper_nonneg
     refine (hGle i j).trans ?_
