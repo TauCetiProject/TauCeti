@@ -28,6 +28,9 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
   the power coordinate `I * w ^ (1 / β)`.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
+* `TauCeti.cos_mul_norm_rpow_le_re_cpow` bounds the real part of `z ^ y` below by
+  `cos (y π) ‖z‖ ^ y` on the whole plane, for `|y| ≤ 1`; for the principal fourth root,
+  `TauCeti.norm_rpow_le_two_mul_re_cpow_quarter` gives `‖z‖ ^ (1/4) ≤ 2 Re (z ^ (1/4))`.
 -/
 
 public section
@@ -138,6 +141,28 @@ theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 ≤ β) (h
     ring
   rw [hre]
   simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
+
+/-- For `|y| ≤ 1`, the principal power `z ^ y` has real part at least `cos (y π) ‖z‖ ^ y`: its
+argument `y arg z` has modulus at most `|y| π ≤ π`. -/
+theorem cos_mul_norm_rpow_le_re_cpow {z : ℂ} {y : ℝ} (hy : |y| ≤ 1) :
+    Real.cos (y * Real.pi) * ‖z‖ ^ y ≤ (z ^ (y : ℂ)).re := by
+  rw [cpow_ofReal_re, mul_comm (Real.cos _)]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg (norm_nonneg z) y)
+  rw [← Real.cos_abs (y * Real.pi), ← Real.cos_abs (arg z * y), abs_mul, abs_mul,
+    abs_of_pos Real.pi_pos]
+  refine Real.cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [Real.pi_pos]) ?_
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_left (abs_arg_le_pi z) (abs_nonneg y)
+
+/-- The real part of the principal fourth root is at least half its modulus:
+`‖z‖ ^ (1/4) ≤ 2 Re (z ^ (1/4))`, since `cos (π/4) = √2/2 > 1/2`. -/
+theorem norm_rpow_le_two_mul_re_cpow_quarter {z : ℂ} :
+    ‖z‖ ^ (1 / 4 : ℝ) ≤ 2 * (z ^ (1 / 4 : ℂ)).re := by
+  have h := cos_mul_norm_rpow_le_re_cpow (z := z) (y := 1 / 4)
+    (by rw [abs_of_pos (by norm_num)]; norm_num)
+  rw [one_div_mul_eq_div, Real.cos_pi_div_four] at h
+  push_cast at h
+  nlinarith [Real.one_lt_sqrt_two, Real.rpow_nonneg (norm_nonneg z) (1 / 4 : ℝ)]
 
 end TauCeti
 
