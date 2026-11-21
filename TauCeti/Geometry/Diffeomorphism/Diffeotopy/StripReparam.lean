@@ -83,7 +83,7 @@ theorem stripReparam_apply (p : I × (M × M)) :
 /-- The inverse of the underlying diffeomorphism composes `F` with the reparametrization of
 `F.symm`. -/
 @[simp]
-theorem toDiffeomorph_stripReparam_symm_apply (p : I × (M × M)) :
+theorem stripReparam_toDiffeomorph_symm_apply (p : I × (M × M)) :
     (stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).toDiffeomorph.symm p =
       (p.1, F (TauCeti.stripReparam U (ρ p.1) F.symm p.2)) :=
   (rfl)
@@ -92,7 +92,7 @@ theorem toDiffeomorph_stripReparam_symm_apply (p : I × (M × M)) :
 theorem symm_stripReparam_apply (p : I × (M × M)) :
     (stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).symm p =
       F (TauCeti.stripReparam U (ρ p.1) F.symm p.2) := by
-  rw [symm_apply, toDiffeomorph_stripReparam_symm_apply]
+  rw [symm_apply, stripReparam_toDiffeomorph_symm_apply]
 
 /-- The diffeotopy at time `t` composed with `F` is the reparametrization of `F` by `ρ t`; in
 particular it connects `F`, at time `0`, to its reparametrization by `ρ 1`. -/

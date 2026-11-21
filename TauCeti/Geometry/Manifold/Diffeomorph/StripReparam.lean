@@ -323,7 +323,7 @@ diffeomorphism of `M × M` which, together with its inverse, preserves the strip
 If `ρ` is a `C^n` self-map of `M` mapping `U` into itself and fixing every point outside a closed
 subset `K ⊆ U`, then the reparametrization of `F` by `ρ` is a `C^n` diffeomorphism
 (`Diffeomorph.coe_stripReparam`), whose inverse is the reparametrization of `F.symm`
-(`Diffeomorph.symm_stripReparam`). -/
+(`Diffeomorph.stripReparam_symm`). -/
 noncomputable def stripReparam (F : (M × M) ≃ₘ^n⟮I.prod I, I.prod I⟯ (M × M))
     (hF : PreservesStripLeaves U F) (hF' : PreservesStripLeaves U F.symm) (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (hρ : ContMDiff I I n ρ) (hρK : ∀ x ∉ K, ρ x = x)
@@ -347,7 +347,7 @@ theorem coe_stripReparam :
 /-- The inverse of the strip reparametrization of a diffeomorphism is the strip
 reparametrization of its inverse. -/
 @[simp]
-theorem symm_stripReparam :
+theorem stripReparam_symm :
     (F.stripReparam hF hF' hU hK hKU hρ hρK hρU).symm =
       F.symm.stripReparam hF' hF hU hK hKU hρ hρK hρU :=
   (rfl)
