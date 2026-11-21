@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Isogeny.Based
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 
 /-!
 # The non-based `A₁` reflection isogeny
