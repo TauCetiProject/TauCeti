@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import Mathlib.Analysis.Convolution
-import TauCeti.Analysis.Convolution.CompactSupport
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+public import TauCeti.Analysis.PDE.FundamentalSolution.Sobolev
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
-import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.WeakSolution
-import TauCeti.Analysis.PDE.Regularity.Hessian.Poisson
 
 /-!
 # The Newtonian potential of `Lᵖ` data lies in `W^{2,p}_loc`
@@ -25,14 +21,15 @@ trace of its weak Hessian being `-f` almost everywhere in `U`
 (`TauCeti.exists_wkp_two_value_ae_eq_newtonianKernel_convolution`). This is the regularity half
 of the constant-coefficient Calderón–Zygmund theory of the Laplacian.
 
-The potential is weakly differentiable with gradient `∇Gₙ ⋆ f`
-(`TauCeti.hasWeakFDerivOn_newtonianKernel_convolution`), and both it and its gradient lie in `Lᵖ`
-on bounded sets by Young's inequality, since `Gₙ` and `∇Gₙ` are locally integrable
-(`HasCompactSupport.memLp_convolution_right_of_isBounded`). So it lies in `W^{1,p}` of a ball
-containing `U`, where it solves `-Δ(Gₙ ⋆ f) = f` in the sense of distributions
-(`TauCeti.integral_laplacian_mul_newtonianKernel_convolution`). Interior `W^{2,p}` regularity for
-Poisson's equation (`TauCeti.W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq`)
-then gives the second derivatives on `U`.
+This is the case `K = Gₙ` of `TauCeti.exists_wkp_two_value_ae_eq_convolution`, which applies to
+every locally integrable fundamental solution of `-Δ` with a locally integrable weak derivative.
+The kernel `Gₙ` and its derivative are locally integrable
+(`TauCeti.locallyIntegrable_newtonianKernel`, `TauCeti.locallyIntegrable_fderiv_newtonianKernel`),
+integration by parts against it holds across the pole
+(`TauCeti.integral_fderiv_mul_newtonianKernel_sub`), and `-ΔGₙ = δ`
+(`TauCeti.integral_laplacian_mul_newtonianKernel_sub`). The planar counterpart, with the
+logarithmic kernel on `ℂ`, is
+`TauCeti.exists_wkp_two_value_ae_eq_planarNewtonianKernel_convolution`.
 
 ## References
 
@@ -48,8 +45,8 @@ noncomputable section
 
 namespace TauCeti
 
-open InnerProductSpace MeasureTheory Metric Set TopologicalSpace
-open scoped Convolution Distributions Laplacian
+open MeasureTheory TopologicalSpace
+open scoped Convolution
 
 variable {n : ℕ} {f : EuclideanSpace ℝ (Fin n) → ℝ}
 
@@ -66,42 +63,11 @@ theorem exists_wkp_two_value_ae_eq_newtonianKernel_convolution (hn : n ≠ 2) (h
       (Wkp.value 2 w : EuclideanSpace ℝ (Fin n) → ℝ) =ᵐ[volume.restrict U]
         newtonianKernel n ⋆ f ∧
       (fun x ↦ LinearMap.trace ℝ (EuclideanSpace ℝ (Fin n)) (Wkp.iteratedGradient 1 w x))
-        =ᵐ[volume.restrict U] -f := by
-  -- Work on a ball `Ω` whose interior contains the closure of `U`.
-  obtain ⟨R, hR⟩ := hU.subset_closedBall 0
-  let Ω : Opens (EuclideanSpace ℝ (Fin n)) := ⟨ball 0 (R + 1), isOpen_ball⟩
-  have hUΩ : closure (U : Set (EuclideanSpace ℝ (Fin n))) ⊆ Ω :=
-    (closure_minimal hR isClosed_closedBall).trans (closedBall_subset_ball (by linarith))
-  have hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin n))) := isBounded_ball
-  -- `f` is integrable, being `Lᵖ` on the compact set carrying it.
-  have hfi : Integrable f := (integrableOn_iff_integrable_of_support_subset (subset_tsupport f)).1
-    ((hf.locallyIntegrable hp.le).integrableOn_isCompact hfc.isCompact)
-  -- The potential lies in `W^{1,p}(Ω)`, with weak gradient `∇Gₙ ⋆ f`.
-  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn
-    (hfc.memLp_convolution_right_of_isBounded _ (locallyIntegrable_newtonianKernel n) hf hp.le hΩ)
-    (hfc.memLp_convolution_right_of_isBounded _ (locallyIntegrable_fderiv_newtonianKernel n) hf
-      hp.le hΩ)
-    (hasWeakFDerivOn_newtonianKernel_convolution hfi hfc Ω)
-  -- It solves `Δu = -f` against the test functions on `Ω`.
-  have heq : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • W1p.value u x =
-      ∫ x, (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • (-f) x := fun φ ↦ by
-    have hu' := (ae_restrict_iff' Ω.isOpen.measurableSet).1 hu
-    calc ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • W1p.value u x
-        = ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x * (newtonianKernel n ⋆ f) x := by
-          refine integral_congr_ae (hu'.mono fun x hx ↦ ?_)
-          by_cases hxΩ : x ∈ (Ω : Set (EuclideanSpace ℝ (Fin n)))
-          · simp only [smul_eq_mul, hx hxΩ]
-          · have hΔ : Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x = 0 :=
-              laplacian_of_notMem_tsupport fun h ↦ hxΩ (φ.tsupport_subset h)
-            simp [hΔ]
-      _ = -∫ x, (φ : EuclideanSpace ℝ (Fin n) → ℝ) x * f x :=
-          integral_laplacian_mul_newtonianKernel_convolution hn hn0 hfi hfc
-            (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-      _ = ∫ x, (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • (-f) x := by
-          simp [← integral_neg]
-  obtain ⟨w, hwv, hwtr⟩ := W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq hp
-    hp_top (hU.isCompact_closure) hUΩ u (hf.neg.restrict _) heq
-  exact ⟨w, hwv.trans (ae_restrict_of_ae_restrict_of_subset
-    (subset_closure.trans hUΩ) hu), hwtr⟩
+        =ᵐ[volume.restrict U] -f :=
+  exists_wkp_two_value_ae_eq_convolution (locallyIntegrable_newtonianKernel n)
+    (locallyIntegrable_fderiv_newtonianKernel n)
+    (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub hg hgc v t)
+    (fun _ hφ hφc t ↦ integral_laplacian_mul_newtonianKernel_sub hn hn0 (hφ.of_le (by simp)) hφc t)
+    hp hp_top hf hfc hU
 
 end TauCeti
