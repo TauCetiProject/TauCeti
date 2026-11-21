@@ -6,30 +6,37 @@ Authors: Tau Ceti
 module
 
 public import TauCeti.RingTheory.Polynomial.Eulerian
+public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Shifted Euler operator on `(1 - z)⁻¹` and nonpositive rational forms
 
 Iterating the shifted Euler differential operator `f ↦ (w ↦ w * deriv f w + c * f w)` on
-`w ↦ (1 - w)⁻¹` produces the rational functions `(lerchNegNatPoly c m).eval z / (1 - z) ^ (m + 1)`.
-Because `lerchNegNatPoly c m` evaluates to `m!` at `z = 1` independently of `c`, removing the pole
-factor `(1 - z) ^ (m + 1)` yields the nonzero limit `m!` as `z → 1`, so no totalized iterate is
-continuous at `1` and the rational identity holds for all `z, c : ℂ` including at the pole `z = 1`.
+`w ↦ (1 - w)⁻¹` produces the rational functions
+`(shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1)`.
+Because `shiftedEulerianPolynomial c m` evaluates to `m!` at `z = 1` independently of `c`,
+removing the pole factor `(1 - z) ^ (m + 1)` yields the nonzero limit `m!` as `z → 1`, so no
+totalized iterate is continuous at `1` and the rational identity holds for all `z, c : ℂ` including
+at the pole `z = 1`. Moreover, the rational function `(z, c) ↦ P_m(z; c) / (1 - z) ^ (m + 1)` is
+jointly analytic on `{p : ℂ × ℂ | p.1 ≠ 1}`.
 
 ## Main declarations
 
-* `TauCeti.iterate_mul_deriv_add_mul_eq_div_of_ne_one`: rational formula for `z ≠ 1`.
 * `TauCeti.tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one`:
   punctured pole limit `(1 - z) ^ (m + 1) * F_m(z) → m!` as `z → 1` (`z ≠ 1`).
 * `TauCeti.iterate_mul_deriv_add_mul_inv_one_sub`: rational formula for all `z, c : ℂ`, including
   the totalized pole `z = 1`.
+* `TauCeti.analyticOnNhd_shiftedEulerianPolynomial_div`: joint analyticity of
+  `(z, c) ↦ (shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1)` on `{p | p.1 ≠ 1}`.
 
 ## References
 
@@ -49,21 +56,22 @@ namespace TauCeti
 
 /-- Rational formula for the `m`-fold shifted Euler derivative of `(1 - w)⁻¹` away from `z = 1`.
 -/
-theorem iterate_mul_deriv_add_mul_eq_div_of_ne_one (m : ℕ) {z : ℂ} (hz : z ≠ 1) (c : ℂ) :
+private theorem iterate_mul_deriv_add_mul_inv_one_sub_of_ne_one (m : ℕ) {z : ℂ} (hz : z ≠ 1)
+    (c : ℂ) :
     ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z =
-      (lerchNegNatPoly c m).eval z / (1 - z) ^ (m + 1) := by
+      (shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1) := by
   induction m generalizing z with
   | zero => simp [div_eq_mul_inv]
   | succ m ih =>
     have hne : 1 - z ≠ 0 := sub_ne_zero.mpr hz.symm
     have hloc : (((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m])
         (fun w => (1 - w)⁻¹)) =ᶠ[𝓝 z]
-        fun w => (lerchNegNatPoly c m).eval w / (1 - w) ^ (m + 1) := by
+        fun w => (shiftedEulerianPolynomial c m).eval w / (1 - w) ^ (m + 1) := by
       filter_upwards [isOpen_ne.mem_nhds hz] with w hw; exact ih hw
-    have hd := ((lerchNegNatPoly c m).hasDerivAt z).div
+    have hd := ((shiftedEulerianPolynomial c m).hasDerivAt z).div
       (((hasDerivAt_const z (1 : ℂ)).sub (hasDerivAt_id z)).pow (m + 1)) (pow_ne_zero (m + 1) hne)
     rw [Function.iterate_succ_apply', (hd.congr_of_eventuallyEq hloc).deriv, ih hz]
-    simp [lerchNegNatPoly_succ, pow_succ]
+    simp [shiftedEulerianPolynomial_succ, pow_succ]
     field_simp; ring
 
 /-- Removing the pole `(1 - z) ^ (m + 1)` at `z = 1` of the `m`-th iterated shifted Euler
@@ -72,14 +80,16 @@ theorem tendsto_one_sub_pow_mul_iterate_mul_deriv_add_mul_inv_one_sub_nhdsNE_one
     Tendsto (fun z : ℂ => (1 - z) ^ (m + 1) *
         (((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z))
       (𝓝[≠] 1) (𝓝 (m.factorial : ℂ)) := by
-  have h : Tendsto (fun z : ℂ => (lerchNegNatPoly c m).eval z) (𝓝[≠] 1) (𝓝 (m.factorial : ℂ)) := by
-    simpa only [lerchNegNatPoly_eval_one] using (lerchNegNatPoly c m).continuous.continuousAt
-      |>.tendsto.mono_left (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
+  have h : Tendsto (fun z : ℂ => (shiftedEulerianPolynomial c m).eval z)
+      (𝓝[≠] 1) (𝓝 (m.factorial : ℂ)) := by
+    simpa only [shiftedEulerianPolynomial_eval_one] using
+      (shiftedEulerianPolynomial c m).continuous.continuousAt
+        |>.tendsto.mono_left (nhdsWithin_le_nhds (a := (1 : ℂ)) (s := {1}ᶜ))
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with z hz
   have hne : z ≠ 1 := by simpa using hz
   have : 1 - z ≠ 0 := sub_ne_zero.mpr hne.symm
-  rw [iterate_mul_deriv_add_mul_eq_div_of_ne_one m hne c]; field_simp
+  rw [iterate_mul_deriv_add_mul_inv_one_sub_of_ne_one m hne c]; field_simp
 
 private theorem not_continuousAt_iterate_mul_deriv_add_mul_inv_one_sub_one (m : ℕ) (c : ℂ) :
     ¬ ContinuousAt
@@ -100,7 +110,7 @@ private theorem not_continuousAt_iterate_mul_deriv_add_mul_inv_one_sub_one (m : 
 including at the totalized pole `z = 1` where both sides vanish. -/
 theorem iterate_mul_deriv_add_mul_inv_one_sub (m : ℕ) (z c : ℂ) :
     ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + c * f w)^[m]) (fun w => (1 - w)⁻¹) z =
-      (lerchNegNatPoly c m).eval z / (1 - z) ^ (m + 1) := by
+      (shiftedEulerianPolynomial c m).eval z / (1 - z) ^ (m + 1) := by
   by_cases hz : z = 1
   · subst z
     induction m with
@@ -110,6 +120,35 @@ theorem iterate_mul_deriv_add_mul_inv_one_sub (m : ℕ) (z c : ℂ) :
         (mt DifferentiableAt.continuousAt
           (not_continuousAt_iterate_mul_deriv_add_mul_inv_one_sub_one m c)), ih]
       simp
-  · exact iterate_mul_deriv_add_mul_eq_div_of_ne_one m hz c
+  · exact iterate_mul_deriv_add_mul_inv_one_sub_of_ne_one m hz c
+
+/-- The rational nonpositive-integer continuation `(z, c) ↦ P_m(z; c) / (1 - z) ^ (m + 1)` is
+jointly analytic on `{p : ℂ × ℂ | p.1 ≠ 1}` across all `c ∈ ℂ`. -/
+theorem analyticOnNhd_shiftedEulerianPolynomial_div (m : ℕ) :
+    AnalyticOnNhd ℂ
+      (fun p : ℂ × ℂ => (shiftedEulerianPolynomial p.2 m).eval p.1 / (1 - p.1) ^ (m + 1))
+      {p : ℂ × ℂ | p.1 ≠ 1} := by
+  let F : ℕ → ℂ × ℂ → ℂ := fun k p =>
+    ((fun (f : ℂ → ℂ) (w : ℂ) => w * deriv f w + p.2 * f w)^[k]) (fun w => (1 - w)⁻¹) p.1
+  have hUo : IsOpen {p : ℂ × ℂ | p.1 ≠ 1} := isOpen_ne.preimage continuous_fst
+  suffices hF : AnalyticOnNhd ℂ (F m) {p : ℂ × ℂ | p.1 ≠ 1} by
+    exact hF.congr hUo fun p _ => iterate_mul_deriv_add_mul_inv_one_sub m p.1 p.2
+  induction m with
+  | zero =>
+    exact DifferentiableOn.analyticOnNhd_of_finiteDimensional
+      (((differentiableOn_const (1 : ℂ)).sub differentiable_fst.differentiableOn).inv
+        fun p hp => sub_ne_zero.mpr (Ne.symm hp)) hUo
+  | succ m ih =>
+    refine DifferentiableOn.analyticOnNhd_of_finiteDimensional (fun p hp => ?_) hUo
+    let L : (ℂ × ℂ →L[ℂ] ℂ) →L[ℂ] ℂ := ContinuousLinearMap.apply ℂ ℂ (1, 0)
+    refine (((differentiableAt_fst.mul
+      (L.differentiableAt.comp p (ih p hp).fderiv.differentiableAt))
+      |>.add (differentiableAt_snd.mul (ih p hp).differentiableAt)).congr_of_eventuallyEq
+      ?_).differentiableWithinAt
+    filter_upwards [hUo.mem_nhds hp] with q hq
+    have hd : deriv (fun w : ℂ => F m (w, q.2)) q.1 = L (fderiv ℂ (F m) q) := by
+      simpa [L, Function.comp_def] using ((ih q hq).differentiableAt.hasFDerivAt.comp_hasDerivAt q.1
+        ((hasDerivAt_id q.1).prodMk (hasDerivAt_const q.1 q.2))).deriv
+    dsimp only [F]; rw [Function.iterate_succ_apply', hd]; rfl
 
 end TauCeti

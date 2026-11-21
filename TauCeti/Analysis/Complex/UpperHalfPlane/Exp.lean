@@ -17,7 +17,6 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
 ## Main results
 
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
-* `TauCeti.UpperHalfPlane.exp_two_pi_I_mul_pow`: `(e^{2π i a})ⁿ = e^{2π i n a}`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul`: `|q| = e^{-2π Im τ}`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_add`: `‖e^{2π i (x τ + y)}‖ = |q|^x`.
 * `TauCeti.UpperHalfPlane.tendsto_exp_two_pi_I_mul_add`: for `x > 0`,
@@ -49,13 +48,6 @@ theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (
   rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
-  ring
-
-/-- Raising `e^{2π i a}` to a natural power `n` multiplies the exponent by `n`. -/
-theorem exp_two_pi_I_mul_pow (a : ℂ) (n : ℕ) :
-    cexp (2 * π * I * a) ^ n = cexp (2 * π * I * n * a) := by
-  rw [← Complex.exp_natCast_mul]
-  congr 1
   ring
 
 /-- `|q| = e^{-2π Im τ}` for `q = e^{2π i τ}`. -/

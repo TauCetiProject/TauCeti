@@ -31,9 +31,11 @@ When `q = k` is a natural number, `Γ(k + 1) = k!` yields the real-exponent eval
   interval integrability on any interval `a..b` and unit-interval evaluation for the natural
   logarithmic power cases `(-log t) ^ k` and `(log t) ^ k`.
 * `TauCeti.intervalIntegrable_pow_mul_neg_log_pow`, `TauCeti.integral_pow_mul_neg_log_pow`,
-  `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
+ * `TauCeti.intervalIntegrable_pow_mul_log_pow`, and `TauCeti.integral_pow_mul_log_pow`:
   interval integrability on any interval `a..b` and unit-interval evaluation for the natural
   polynomial-moment specializations `t ^ j * (-log t) ^ k` and `t ^ j * (log t) ^ k`.
+* `Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi`:
+  integrability of `t ↦ |log t| ^ k * t ^ s * exp (-b * t)` on `(0, ∞)` for `s > -1` and `b > 0`.
 -/
 
 public section
@@ -175,3 +177,51 @@ theorem integral_pow_mul_log_pow (j k : ℕ) :
     integral_rpow_mul_log_pow (r := j) (by linarith [Nat.cast_nonneg (α := ℝ) j]) k
 
 end TauCeti
+
+/-- For `s > -1`, `b > 0`, and any natural power `k`, `t ↦ |log t|^k t^s e^{-bt}` is integrable
+on `(0, ∞)`. -/
+theorem Real.integrableOn_abs_log_pow_mul_rpow_mul_exp_neg_mul_Ioi {s b : ℝ} (hs : -1 < s)
+    (hb : 0 < b) (k : ℕ) :
+    MeasureTheory.IntegrableOn
+      (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Set.Ioi 0) := by
+  open MeasureTheory Set in
+  have hm : AEStronglyMeasurable (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t))
+      volume := (Measurable.aestronglyMeasurable (by fun_prop))
+  have hIoo :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioo 0 1) := by
+    refine (TauCeti.integrableOn_Ioo_rpow_mul_neg_log_rpow hs
+      (by linarith [Nat.cast_nonneg (α := ℝ) k] : (-1 : ℝ) < k)).mono' hm.restrict ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
+    have ht0 : 0 < t := ht.1
+    have hlog : Real.log t < 0 := Real.log_neg ht.1 ht.2
+    have hlog_nn : 0 ≤ -Real.log t := neg_nonneg.mpr hlog.le
+    have hexp : Real.exp (-b * t) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith)
+    rw [Real.norm_of_nonneg (by positivity), abs_of_neg hlog, ← Real.rpow_natCast (-Real.log t) k]
+    calc (-Real.log t) ^ (k : ℝ) * t ^ s * Real.exp (-b * t)
+        ≤ (-Real.log t) ^ (k : ℝ) * t ^ s * 1 := by gcongr
+      _ = t ^ s * (-Real.log t) ^ (k : ℝ) := by ring
+  have hIoc :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioc 0 1) :=
+    hIoo.congr_set_ae Ioo_ae_eq_Ioc.symm
+  have hIoi :
+      IntegrableOn (fun t : ℝ => |Real.log t| ^ k * t ^ s * Real.exp (-b * t)) (Ioi 1) := by
+    have hsk : -1 < s + k := by linarith [Nat.cast_nonneg (α := ℝ) k]
+    have hdom : IntegrableOn (fun t : ℝ => t ^ (s + k) * Real.exp (-b * t ^ (1 : ℝ))) (Ioi 1) :=
+      (integrableOn_rpow_mul_exp_neg_mul_rpow hsk one_pos hb).mono_set (Ioi_subset_Ioi zero_le_one)
+    refine hdom.mono' hm.restrict ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    have ht1 : 1 ≤ t := le_of_lt ht
+    have ht0 : 0 < t := zero_lt_one.trans_le ht1
+    have hlog_nn : 0 ≤ Real.log t := Real.log_nonneg ht1
+    have hlog_le : |Real.log t| ^ k ≤ t ^ k := by
+      rw [abs_of_nonneg hlog_nn]
+      exact pow_le_pow_left₀ hlog_nn (Real.log_le_self ht0.le) k
+    rw [Real.norm_of_nonneg (by positivity), Real.rpow_one]
+    calc |Real.log t| ^ k * t ^ s * Real.exp (-b * t)
+        ≤ t ^ k * t ^ s * Real.exp (-b * t) := by gcongr
+      _ = t ^ (s + k) * Real.exp (-b * t) := by
+          rw [← Real.rpow_natCast t k, ← Real.rpow_add ht0, add_comm (k : ℝ) s]
+  exact (hIoc.union hIoi).mono_set fun t ht => by
+    rcases le_or_gt t 1 with ht1 | ht1
+    · exact Or.inl ⟨ht, ht1⟩
+    · exact Or.inr ht1

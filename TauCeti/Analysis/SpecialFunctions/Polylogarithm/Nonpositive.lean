@@ -49,13 +49,12 @@ private theorem polylog_neg_nat_eq_mul_iterate_of_ne_one (r : ℕ) {z : ℂ} (hz
     have hlocal : polylog (-(r : ℤ)) =ᶠ[𝓝 z] fun w : ℂ => w * F r w := by
       filter_upwards [isOpen_ne.mem_nhds hz] with w hw
       exact ih hw
-    have hF_local : F r =ᶠ[𝓝 z] fun w : ℂ => (lerchNegNatPoly (1 : ℂ) r).eval w /
-        (1 - w) ^ (r + 1) := by
-      filter_upwards [isOpen_ne.mem_nhds hz] with w hw
-      exact iterate_mul_deriv_add_mul_eq_div_of_ne_one r hw 1
+    have hF_local : F r =ᶠ[𝓝 z] fun w : ℂ => (shiftedEulerianPolynomial (1 : ℂ) r).eval w /
+        (1 - w) ^ (r + 1) :=
+      Eventually.of_forall fun w => iterate_mul_deriv_add_mul_inv_one_sub r w 1
     have hne : 1 - z ≠ 0 := sub_ne_zero.mpr hz.symm
     have hF_diff : HasDerivAt (F r) (deriv (F r) z) z := by
-      have hd := ((lerchNegNatPoly (1 : ℂ) r).hasDerivAt z).div
+      have hd := ((shiftedEulerianPolynomial (1 : ℂ) r).hasDerivAt z).div
         (((hasDerivAt_const z (1 : ℂ)).sub (hasDerivAt_id z)).pow (r + 1)) (pow_ne_zero (r + 1) hne)
       exact (hd.congr_of_eventuallyEq hF_local).differentiableAt.hasDerivAt
     have hmul := (hasDerivAt_id z).mul hF_diff
@@ -112,7 +111,7 @@ theorem polylog_neg_nat_eq_div (r : ℕ) (z : ℂ) :
       simp
   · have hmap : Int.castRingHom ℂ = algebraMap ℤ ℂ := Subsingleton.elim _ _
     rw [polylog_neg_nat_eq_mul_iterate_of_ne_one r hz,
-      iterate_mul_deriv_add_mul_eq_div_of_ne_one r hz 1, lerchNegNatPoly_one_left,
+      iterate_mul_deriv_add_mul_inv_one_sub r z 1, shiftedEulerianPolynomial_one_left,
       Polynomial.eval_map, Polynomial.aeval_def, hmap, mul_div_assoc]
 
 /-- In weight minus two the rational numerator is `z(1 + z)`.

@@ -340,7 +340,7 @@ theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod_prod
   let e : (Fin 3 → ℂ) ≃L[ℂ] ℂ × ℂ × ℂ :=
     (Fin.consEquivL ℂ (fun _ : Fin 3 => ℂ)).symm.trans
       ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr (ContinuousLinearEquiv.finTwoArrow ℂ ℂ))
-  have he : ∀ v, e v = (v 0, v 1, v 2) := fun _ => rfl
+  have he : ∀ v, e v = (v 0, v 1, v 2) := fun v => by simp [e, Fin.tail_def]
   have han : AnalyticOnNhd ℂ (f ∘ e) (e ⁻¹' s) := by
     refine (hc.comp e.continuous.continuousOn (mapsTo_preimage _ _))
       |>.analyticOnNhd_of_differentiableAt_update (hs.preimage e.continuous) fun v hv i => ?_

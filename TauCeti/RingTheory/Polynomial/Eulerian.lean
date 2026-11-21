@@ -10,17 +10,17 @@ public import Mathlib.Algebra.Polynomial.Derivative
 /-!
 # Eulerian polynomials
 
-The Eulerian polynomials `Aᵣ = TauCeti.eulerianPolynomial r` use the convention
-`A₀ = A₁ = 1` and `A₂ = 1 + X`. They satisfy the differential recurrence
-`Aᵣ₊₁ = (1 + rX) Aᵣ + X (1 - X) Aᵣ′` and the normalization `Aᵣ(1) = r!`.
-They are the reduced polynomial factors in the rational expression
-`Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)` for nonpositive polylogarithms.
-
-The shifted Eulerian polynomials `P_m(X; c) = TauCeti.lerchNegNatPoly c m` over any commutative
-ring `R` satisfy `P_0(X; c) = 1`, `P_{m+1}(X; c) = (c (1 - X) + (m + 1) X) P_m + X (1 - X) P_m'`,
-`P_m(0; c) = c^m`, `P_m(1; c) = m!`, and specialize at `c = 1` to `(eulerianPolynomial m).map
-(Int.castRingHom R)`. They give the rational numerators of nonpositive-integer Lerch transcendents
+The shifted Eulerian polynomials `P_m(X; c) = TauCeti.shiftedEulerianPolynomial c m` over any
+commutative ring `R` satisfy `P_0(X; c) = 1`,
+`P_{m+1}(X; c) = (c (1 - X) + (m + 1) X) P_m + X (1 - X) P_m'`, `P_m(0; c) = c^m`,
+`P_m(1; c) = m!`, and give the rational numerators of nonpositive-integer Lerch transcendents
 `Φ(z, -m, c) = P_m(z; c) / (1 - z)^(m+1)`.
+
+The Eulerian polynomials `Aᵣ = TauCeti.eulerianPolynomial r` are the specialization
+`shiftedEulerianPolynomial (1 : ℤ) r`, with `A₀ = A₁ = 1`, `A₂ = 1 + X`, differential recurrence
+`Aᵣ₊₁ = (1 + rX) Aᵣ + X (1 - X) Aᵣ′`, and normalization `Aᵣ(1) = r!`. They are the reduced
+polynomial factors in the rational expression `Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)` for nonpositive
+polylogarithms.
 
 ## References
 
@@ -37,25 +37,80 @@ open Polynomial
 
 namespace TauCeti
 
-/-- The Eulerian polynomial `Aᵣ = eulerianPolynomial r`, with `A₀ = 1`.
-It is the reduced factor after factoring out `z` in
-`Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)`. -/
-noncomputable def eulerianPolynomial : ℕ → ℤ[X]
+/-- Shifted Eulerian numerator polynomial `P_m(X; c)` over a commutative ring `R`, induced by the
+shifted Euler operator `X ∂_X + c` on `(1 - X)⁻¹`. At `c = 1` this specializes to
+`TauCeti.eulerianPolynomial m`. -/
+noncomputable def shiftedEulerianPolynomial {R : Type*} [CommRing R] (c : R) : ℕ → R[X]
   | 0 => 1
-  | r + 1 => (1 + C (r : ℤ) * X) * eulerianPolynomial r +
-      X * (1 - X) * (eulerianPolynomial r).derivative
+  | m + 1 => (C c * (1 - X) + C (m + 1 : R) * X) * shiftedEulerianPolynomial c m +
+      X * (1 - X) * (shiftedEulerianPolynomial c m).derivative
+
+/-- Base case `shiftedEulerianPolynomial c 0 = 1`. -/
+@[simp]
+theorem shiftedEulerianPolynomial_zero {R : Type*} [CommRing R] (c : R) :
+    shiftedEulerianPolynomial c 0 = 1 := by rfl
+
+/-- Differential recurrence for `shiftedEulerianPolynomial c (m + 1)` induced by `X ∂_X + c`. -/
+theorem shiftedEulerianPolynomial_succ {R : Type*} [CommRing R] (c : R) (m : ℕ) :
+    shiftedEulerianPolynomial c (m + 1) =
+      (C c * (1 - X) + C (m + 1 : R) * X) * shiftedEulerianPolynomial c m +
+        X * (1 - X) * (shiftedEulerianPolynomial c m).derivative := by rfl
+
+/-- First shifted Eulerian polynomial `shiftedEulerianPolynomial c 1 = c (1 - X) + X`. -/
+@[simp]
+theorem shiftedEulerianPolynomial_one {R : Type*} [CommRing R] (c : R) :
+    shiftedEulerianPolynomial c 1 = C c * (1 - X) + X := by
+  simp [shiftedEulerianPolynomial_succ]
+
+/-- Evaluating `shiftedEulerianPolynomial c m` at `0` gives `c ^ m`. -/
+@[simp]
+theorem shiftedEulerianPolynomial_eval_zero {R : Type*} [CommRing R] (c : R) (m : ℕ) :
+    (shiftedEulerianPolynomial c m).eval 0 = c ^ m := by
+  induction m with
+  | zero => simp
+  | succ m ih => simp [shiftedEulerianPolynomial_succ, ih, pow_succ']
+
+/-- Evaluating `shiftedEulerianPolynomial c m` at `1` gives `m!` independently of the shift `c`.
+-/
+@[simp]
+theorem shiftedEulerianPolynomial_eval_one {R : Type*} [CommRing R] (c : R) (m : ℕ) :
+    (shiftedEulerianPolynomial c m).eval 1 = (m.factorial : R) := by
+  induction m with
+  | zero => simp
+  | succ m ih => simp [shiftedEulerianPolynomial_succ, ih, Nat.factorial_succ]
+
+/-- Ring-homomorphism naturality of `shiftedEulerianPolynomial`: mapping coefficients along
+`f : R →+* S` sends `shiftedEulerianPolynomial c m` to `shiftedEulerianPolynomial (f c) m`. -/
+@[simp]
+theorem map_shiftedEulerianPolynomial {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (c : R) (m : ℕ) :
+    (shiftedEulerianPolynomial c m).map f = shiftedEulerianPolynomial (f c) m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    simp [shiftedEulerianPolynomial_succ, ← Polynomial.derivative_map, ih]
+
+/-- The Eulerian polynomial `Aᵣ = eulerianPolynomial r`, defined as the `c = 1` specialization
+`shiftedEulerianPolynomial (1 : ℤ) r` with `A₀ = 1`. It is the reduced factor after factoring out
+`z` in `Li₋ᵣ(z) = z Aᵣ(z) / (1 - z)^(r+1)`. -/
+noncomputable def eulerianPolynomial (r : ℕ) : ℤ[X] :=
+  shiftedEulerianPolynomial (1 : ℤ) r
 
 /-- The zeroth Eulerian polynomial is 1. -/
-@[simp] theorem eulerianPolynomial_zero : eulerianPolynomial 0 = 1 := (rfl)
+@[simp] theorem eulerianPolynomial_zero : eulerianPolynomial 0 = 1 :=
+  shiftedEulerianPolynomial_zero 1
 
 /-- The Eulerian polynomial recurrence induced by Euler differentiation. -/
 theorem eulerianPolynomial_succ (r : ℕ) :
     eulerianPolynomial (r + 1) = (1 + C (r : ℤ) * X) * eulerianPolynomial r +
-      X * (1 - X) * (eulerianPolynomial r).derivative := (rfl)
+      X * (1 - X) * (eulerianPolynomial r).derivative := by
+  rw [eulerianPolynomial, shiftedEulerianPolynomial_succ]
+  simp only [eulerianPolynomial, map_one, one_mul, map_add, map_natCast]
+  ring
 
 /-- The first Eulerian polynomial is also 1. -/
 @[simp] theorem eulerianPolynomial_one : eulerianPolynomial 1 = 1 := by
-  simp [eulerianPolynomial_succ]
+  simp [eulerianPolynomial]
 
 /-- The second Eulerian polynomial is `1 + X`. -/
 @[simp] theorem eulerianPolynomial_two : eulerianPolynomial 2 = 1 + X := by
@@ -64,17 +119,12 @@ theorem eulerianPolynomial_succ (r : ℕ) :
 /-- Evaluating `eulerianPolynomial r` at `0` gives `1`. -/
 @[simp] theorem eulerianPolynomial_eval_zero (r : ℕ) :
     (eulerianPolynomial r).eval 0 = 1 := by
-  induction r with
-  | zero => simp
-  | succ r ih => simp [eulerianPolynomial_succ, ih]
+  simp [eulerianPolynomial]
 
 /-- Evaluating `eulerianPolynomial r` at `1` gives `r!`. -/
 @[simp] theorem eulerianPolynomial_eval_one (r : ℕ) :
-    (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    simp [eulerianPolynomial_succ, ih, Nat.factorial_succ, add_comm]
+    (eulerianPolynomial r).eval 1 = (r.factorial : ℤ) :=
+  shiftedEulerianPolynomial_eval_one (1 : ℤ) r
 
 /-- No Eulerian polynomial vanishes at 1. -/
 theorem eulerianPolynomial_eval_one_ne_zero (r : ℕ) :
@@ -82,71 +132,10 @@ theorem eulerianPolynomial_eval_one_ne_zero (r : ℕ) :
   rw [eulerianPolynomial_eval_one]
   exact_mod_cast Nat.factorial_ne_zero r
 
-/-- Shifted Eulerian numerator polynomial `P_m(X; c)` over a commutative ring `R`, induced by the
-shifted Euler operator `X ∂_X + c` on `(1 - X)⁻¹`. At `c = 1` this recovers
-`TauCeti.eulerianPolynomial m`. -/
-noncomputable def lerchNegNatPoly {R : Type*} [CommRing R] (c : R) : ℕ → R[X]
-  | 0 => 1
-  | m + 1 => (C c * (1 - X) + C (m + 1 : R) * X) * lerchNegNatPoly c m +
-      X * (1 - X) * (lerchNegNatPoly c m).derivative
-
-/-- Base case `lerchNegNatPoly c 0 = 1`. -/
-@[simp]
-theorem lerchNegNatPoly_zero {R : Type*} [CommRing R] (c : R) :
-    lerchNegNatPoly c 0 = 1 := by rfl
-
-/-- Differential recurrence for `lerchNegNatPoly c (m + 1)` induced by `X ∂_X + c`. -/
-theorem lerchNegNatPoly_succ {R : Type*} [CommRing R] (c : R) (m : ℕ) :
-    lerchNegNatPoly c (m + 1) =
-      (C c * (1 - X) + C (m + 1 : R) * X) * lerchNegNatPoly c m +
-        X * (1 - X) * (lerchNegNatPoly c m).derivative := by rfl
-
-/-- First shifted Eulerian polynomial `lerchNegNatPoly c 1 = c (1 - X) + X`. -/
-@[simp]
-theorem lerchNegNatPoly_one {R : Type*} [CommRing R] (c : R) :
-    lerchNegNatPoly c 1 = C c * (1 - X) + X := by
-  simp [lerchNegNatPoly_succ]
-
-/-- Evaluating `lerchNegNatPoly c m` at `0` gives `c ^ m`. -/
-@[simp]
-theorem lerchNegNatPoly_eval_zero {R : Type*} [CommRing R] (c : R) (m : ℕ) :
-    (lerchNegNatPoly c m).eval 0 = c ^ m := by
-  induction m with
-  | zero => simp
-  | succ m ih => simp [lerchNegNatPoly_succ, ih, pow_succ']
-
-/-- Evaluating `lerchNegNatPoly c m` at `1` gives `m!` independently of the shift `c`. -/
-@[simp]
-theorem lerchNegNatPoly_eval_one {R : Type*} [CommRing R] (c : R) (m : ℕ) :
-    (lerchNegNatPoly c m).eval 1 = (m.factorial : R) := by
-  induction m with
-  | zero => simp
-  | succ m ih => simp [lerchNegNatPoly_succ, ih, Nat.factorial_succ]
-
-/-- Ring-homomorphism naturality of `lerchNegNatPoly`: mapping coefficients along `f : R →+* S`
-sends `lerchNegNatPoly c m` to `lerchNegNatPoly (f c) m`. -/
-@[simp]
-theorem map_lerchNegNatPoly {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (c : R) (m : ℕ) :
-    (lerchNegNatPoly c m).map f = lerchNegNatPoly (f c) m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    simp [lerchNegNatPoly_succ, ← Polynomial.derivative_map, ih]
-
-/-- At shift `c = 1 : ℤ`, `lerchNegNatPoly` coincides with `TauCeti.eulerianPolynomial`. -/
-@[simp]
-theorem lerchNegNatPoly_one_left_eq_eulerianPolynomial (m : ℕ) :
-    lerchNegNatPoly (1 : ℤ) m = eulerianPolynomial m := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    simp only [lerchNegNatPoly_succ, eulerianPolynomial_succ, ih, map_add, map_one]
-    ring
-
-/-- At shift `c = 1` in any commutative ring `R`, `lerchNegNatPoly (1 : R) m` is the image of
-`TauCeti.eulerianPolynomial m` under `Int.castRingHom R`. -/
-theorem lerchNegNatPoly_one_left {R : Type*} [CommRing R] (m : ℕ) :
-    lerchNegNatPoly (1 : R) m = (eulerianPolynomial m).map (Int.castRingHom R) := by
-  rw [← lerchNegNatPoly_one_left_eq_eulerianPolynomial, map_lerchNegNatPoly, map_one]
+/-- At shift `c = 1` in any commutative ring `R`, `shiftedEulerianPolynomial (1 : R) m` is the
+image of `TauCeti.eulerianPolynomial m` under `Int.castRingHom R`. -/
+theorem shiftedEulerianPolynomial_one_left {R : Type*} [CommRing R] (m : ℕ) :
+    shiftedEulerianPolynomial (1 : R) m = (eulerianPolynomial m).map (Int.castRingHom R) := by
+  rw [eulerianPolynomial, map_shiftedEulerianPolynomial, map_one]
 
 end TauCeti

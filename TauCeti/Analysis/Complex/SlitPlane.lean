@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
-public import Mathlib.Analysis.Complex.Exponential
 
 /-!
 # Geometry of the complex slit plane
@@ -49,8 +48,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
 * `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
-  `IsCompact.exists_le_norm_one_sub_ofReal_mul`, `IsCompact.exists_le_norm_one_sub_mul_exp_neg`,
-  `Complex.one_sub_mul_exp_neg_mem_slitPlane`, `Complex.one_sub_mul_exp_neg_ne_zero`
+  `IsCompact.exists_le_norm_one_sub_ofReal_mul`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -405,29 +403,6 @@ theorem _root_.IsCompact.exists_le_norm_one_sub_ofReal_mul {K : Set ℂ} (hK : I
     norm_pos_iff.2 (slitPlane_ne_zero (one_sub_ofReal_mul_mem_slitPlane (hKΩ hp.2) hp.1))
   obtain ⟨δ, hδ, h⟩ := (isCompact_Icc.prod hK).exists_forall_le' (by fun_prop) hpos
   exact ⟨δ, hδ, fun z hz t ht => h (t, z) ⟨ht, hz⟩⟩
-
-/-- On a compact subset `K` of `{z : ℂ | 1 - z ∈ Complex.slitPlane}`, the denominator
-`1 - z * exp (-t)` is bounded away from zero uniformly for all `t ≥ 0`. -/
-theorem _root_.IsCompact.exists_le_norm_one_sub_mul_exp_neg {K : Set ℂ} (hK : IsCompact K)
-    (hKΩ : K ⊆ {z : ℂ | 1 - z ∈ slitPlane}) :
-    ∃ δ > 0, ∀ z ∈ K, ∀ t ≥ (0 : ℝ), δ ≤ ‖1 - z * Complex.exp (-t)‖ := by
-  obtain ⟨δ, hδ, h⟩ := hK.exists_le_norm_one_sub_ofReal_mul hKΩ
-  refine ⟨δ, hδ, fun z hz t ht => ?_⟩
-  simpa [Complex.ofReal_exp, mul_comm z] using
-    h z hz (Real.exp (-t)) ⟨(Real.exp_pos _).le, Real.exp_le_one_iff.mpr (by linarith)⟩
-
-/-- For `1 - z ∈ Complex.slitPlane` and `t ≥ 0`, the denominator `1 - z * exp (-t)` lies in
-`Complex.slitPlane`. -/
-theorem one_sub_mul_exp_neg_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane) {t : ℝ}
-    (ht : 0 ≤ t) : 1 - z * Complex.exp (-t) ∈ slitPlane := by
-  simpa [Complex.ofReal_exp] using
-    one_sub_mul_ofReal_mem_slitPlane hz
-      ⟨(Real.exp_pos (-t)).le, Real.exp_le_one_iff.mpr (by linarith)⟩
-
-/-- For `1 - z ∈ Complex.slitPlane` and `t ≥ 0`, the denominator `1 - z * exp (-t)` is nonzero. -/
-theorem one_sub_mul_exp_neg_ne_zero {z : ℂ} (hz : 1 - z ∈ slitPlane) {t : ℝ}
-    (ht : 0 ≤ t) : 1 - z * Complex.exp (-t) ≠ 0 :=
-  slitPlane_ne_zero (one_sub_mul_exp_neg_mem_slitPlane hz ht)
 
 /-- The principal cut plane `{z : ℂ | 1 - z ∈ slitPlane}` is open. -/
 theorem isOpen_setOf_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ slitPlane} :=
