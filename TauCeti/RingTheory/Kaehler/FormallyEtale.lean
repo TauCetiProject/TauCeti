@@ -127,14 +127,10 @@ theorem finrank_kaehlerDifferential_of_isStandardSmoothOfRelativeDimension
   have : Nontrivial S := (algebraMap S F).domain_nontrivial
   have : Algebra.IsStandardSmooth R S :=
     Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
-  let b := Module.Free.chooseBasis S Ω[S⁄R]
-  have hcard : Cardinal.mk (Module.Free.ChooseBasisIndex S Ω[S⁄R]) = n :=
-    b.mk_eq_rank''.trans (Algebra.IsStandardSmoothOfRelativeDimension.rank_kaehlerDifferential n)
-  have : Finite (Module.Free.ChooseBasisIndex S Ω[S⁄R]) :=
-    Cardinal.lt_aleph0_iff_finite.mp (hcard ▸ Cardinal.natCast_lt_aleph0)
-  let _ := Fintype.ofFinite (Module.Free.ChooseBasisIndex S Ω[S⁄R])
-  rw [Module.finrank_eq_card_basis (kaehlerBasisOfFormallyEtale R S F b)]
-  exact_mod_cast (Cardinal.mk_fintype _).symm.trans hcard
+  rw [← (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R S F).finrank_eq,
+    Module.finrank_baseChange,
+    Module.finrank_eq_of_rank_eq
+      (Algebra.IsStandardSmoothOfRelativeDimension.rank_kaehlerDifferential n)]
 
 variable {R S T}
 

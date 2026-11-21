@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.LinearAlgebra.Dimension.BaseChange
 
 import Mathlib.Algebra.MvPolynomial.Equiv
-import Mathlib.RingTheory.Localization.Integer
+import Mathlib.RingTheory.MvPolynomial.Localization
 
 /-!
 # Basic lemmas for multivariate polynomial rings
@@ -63,19 +63,13 @@ theorem exists_map_eq_smul_of_isLocalization {R K ι : Type*}
     (f : MvPolynomial ι K) :
     ∃ (d : M) (f₁ : MvPolynomial ι R),
       MvPolynomial.map (algebraMap R K) f₁ = algebraMap R K d • f := by
-  classical
-  obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finset M (f.support.image f.coeff)
-  have hmem (m : ι →₀ ℕ) : (d : R) • f.coeff m ∈ Set.range (algebraMap R K) := by
-    by_cases hm : m ∈ f.support
-    · exact hd _ (Finset.mem_image_of_mem f.coeff hm)
-    · rw [MvPolynomial.notMem_support_iff.mp hm, smul_zero]
-      exact ⟨0, map_zero _⟩
-  choose c hc using hmem
-  refine ⟨d, ∑ m ∈ f.support, MvPolynomial.monomial m (c m), ?_⟩
-  ext m
-  by_cases hm : m ∈ f.support
-  · simp [MvPolynomial.coeff_monomial, hm, hc m, Algebra.smul_def]
-  · simp [MvPolynomial.coeff_monomial, hm, MvPolynomial.notMem_support_iff.mp hm]
+  let := MvPolynomial.algebraMvPolynomial (R := R) (S := K) (σ := ι)
+  obtain ⟨⟨f₁, _, d, hd, rfl⟩, h⟩ := IsLocalization.surj (M.map (MvPolynomial.C (σ := ι))) f
+  refine ⟨⟨d, hd⟩, f₁, ?_⟩
+  change f * MvPolynomial.map (algebraMap R K) (MvPolynomial.C d) =
+    MvPolynomial.map (algebraMap R K) f₁ at h
+  rw [MvPolynomial.map_C, mul_comm, ← MvPolynomial.smul_eq_C_mul] at h
+  exact h.symm
 
 end MvPolynomial
 

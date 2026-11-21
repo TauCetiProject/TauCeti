@@ -69,35 +69,18 @@ theorem of_quasiFiniteAt_quotient {J : Ideal S} {q : Ideal S} [q.IsPrime]
     [Algebra.QuasiFiniteAt R p] (hp : p.comap (Ideal.Quotient.mk J) = q) :
     Algebra.QuasiFiniteAt R q := by
   have : Algebra.WeaklyQuasiFiniteAt R q := by
-    rw [Algebra.weaklyQuasiFiniteAt_iff]
-    let Sq := Localization.AtPrime q
-    let I := (q.under R).map (algebraMap R Sq)
-    let f : S →ₐ[R] Sq ⧸ I := IsScalarTower.toAlgHom R S (Sq ⧸ I)
-    have hfJ : ∀ s ∈ J, f s = 0 := fun s hs ↦ by
-      have hI : I = ((q.under R).map (algebraMap R S)).map (algebraMap S Sq) := by
-        simp [I, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
-      rw [IsScalarTower.toAlgHom_apply, IsScalarTower.algebraMap_apply S Sq (Sq ⧸ I),
-        Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem, hI]
-      exact Ideal.mem_map_of_mem _ (hJ hs)
-    let φ₀ : S ⧸ J →ₐ[R] Sq ⧸ I := Ideal.Quotient.liftₐ J f hfJ
-    let φ : Localization.AtPrime p →ₐ[R] Sq ⧸ I :=
-      IsLocalization.liftAlgHom (M := p.primeCompl) (f := φ₀) <| by
-        rintro ⟨y, hy⟩
-        obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-        have hsq : s ∉ q := by simpa [← hp] using hy
-        exact (IsLocalization.map_units Sq (⟨s, hsq⟩ : q.primeCompl)).map (Ideal.Quotient.mk I)
-    refine .of_surjective_algHom φ fun z ↦ ?_
-    obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective z
-    obtain ⟨x, ⟨s, hs⟩, rfl⟩ := IsLocalization.exists_mk'_eq q.primeCompl z
-    have hsp : Ideal.Quotient.mk J s ∈ p.primeCompl := by simpa [← hp] using hs
-    have hφ₀ (a : S) : φ₀ (Ideal.Quotient.mk J a) = Ideal.Quotient.mk I (algebraMap S Sq a) := by
-      have h := AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp J f hfJ) a
-      simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, f, IsScalarTower.toAlgHom_apply,
-        IsScalarTower.algebraMap_apply S Sq (Sq ⧸ I), Ideal.Quotient.algebraMap_eq] using h
-    refine ⟨IsLocalization.mk' (Localization.AtPrime p) (Ideal.Quotient.mk J x) ⟨_, hsp⟩, ?_⟩
-    simp only [φ, IsLocalization.liftAlgHom_apply, IsLocalization.lift_mk'_spec,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hφ₀]
-    rw [← map_mul, IsLocalization.mk'_spec' (Localization.AtPrime q) x ⟨s, hs⟩]
+    delta Algebra.WeaklyQuasiFiniteAt
+    have : (q.map (Ideal.Quotient.mk ((q.under R).map (algebraMap R S)))).IsPrime :=
+      Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective
+        (by rw [Ideal.mk_ker]; exact Ideal.map_comap_le)
+    refine .of_surjectiveOnStalks p (Ideal.Quotient.factorₐ R hJ)
+      (RingHom.surjectiveOnStalks_of_surjective (Ideal.Quotient.factor_surjective hJ)) _ ?_
+    apply Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective
+    have hfac : (Ideal.Quotient.factorₐ R hJ).toRingHom.comp (Ideal.Quotient.mk J) =
+        Ideal.Quotient.mk ((q.under R).map (algebraMap R S)) := rfl
+    rw [hp, Ideal.comap_comap, hfac,
+      Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
+      ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.mpr Ideal.map_comap_le]
   exact .of_weaklyQuasiFiniteAt q
 
 end Algebra.QuasiFiniteAt

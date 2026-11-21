@@ -67,23 +67,11 @@ localization of `A ⧸ I` at the image of `M`. -/
 theorem IsLocalization.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
     (M : Submonoid A) [IsLocalization M B] (I : Ideal A) [Algebra (A ⧸ I) B]
     [IsScalarTower A (A ⧸ I) B] :
-    IsLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M) B := by
-  refine ⟨⟨?_, ?_, ?_⟩⟩
-  · rintro ⟨_, m, hm, rfl⟩
-    rw [← IsScalarTower.algebraMap_apply A (A ⧸ I) B]
-    exact IsLocalization.map_units B ⟨m, hm⟩
-  · intro b
-    obtain ⟨⟨a, m⟩, ha⟩ := IsLocalization.surj M b
-    refine ⟨⟨algebraMap A (A ⧸ I) a, algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
-    simpa only [← IsScalarTower.algebraMap_apply A (A ⧸ I) B] using ha
-  · intro x y hxy
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply A (A ⧸ I) B,
-      ← IsScalarTower.algebraMap_apply A (A ⧸ I) B] at hxy
-    obtain ⟨m, hm⟩ := IsLocalization.exists_of_eq (M := M) hxy
-    refine ⟨⟨algebraMap A (A ⧸ I) m, m, m.property, rfl⟩, ?_⟩
-    simpa only [← map_mul, Ideal.Quotient.algebraMap_eq] using congrArg (Ideal.Quotient.mk I) hm
+    IsLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M) B :=
+  IsLocalization.of_surjective M B (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+    (RingHom.id B) Function.surjective_id
+    (RingHom.ext fun a ↦ IsScalarTower.algebraMap_apply A (A ⧸ I) B a)
+    (by intro x hx; rw [RingHom.mem_ker, RingHom.id_apply] at hx; exact hx.symm ▸ Ideal.zero_mem _)
 
 /-- If `B` is a localization of `A` away from `r` and `A → B` factors through `A ⧸ I`, then `B` is
 a localization of `A ⧸ I` away from the image of `r`. -/

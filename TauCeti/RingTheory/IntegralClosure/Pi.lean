@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
 import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 import Mathlib.RingTheory.Noetherian.Basic
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 
 /-!
 # Integral closure in a finite product
@@ -93,16 +94,19 @@ theorem finite_integralClosure_of_isReduced_of_forall_minimalPrimes {P B : Type*
     Module.Finite.equiv (integralClosurePiAlgEquiv P F).toLinearEquiv.symm
   let ψ : B →ₐ[P] ∀ i : minimalPrimes B, F i :=
     AlgHom.pi fun i ↦ IsScalarTower.toAlgHom P B (F i)
-  refine Module.Finite.of_injective ψ.mapIntegralClosure.toLinearMap fun u v huv ↦ Subtype.ext ?_
-  rw [← sub_eq_zero, ← Ideal.mem_bot (R := B), ← Ideal.zero_eq_bot, ← nilradical_eq_zero,
-    nilradical, Ideal.zero_eq_bot, ← Ideal.sInf_minimalPrimes, Ideal.mem_sInf]
-  intro Q hQ
-  have : Q.IsPrime := hQ.1.1
-  have hi : algebraMap B Q.ResidueField (u.val - v.val) = 0 := by
-    rw [map_sub, sub_eq_zero]
-    exact congrFun (congrArg Subtype.val huv) ⟨Q, hQ⟩
-  rwa [IsScalarTower.algebraMap_apply B (B ⧸ Q) Q.ResidueField,
-    (IsFractionRing.injective (B ⧸ Q) Q.ResidueField).eq_iff' (map_zero _),
-    Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem] at hi
+  have hψ_inj : Function.Injective ψ := by
+    let φ₁ : B →+* ∀ i : minimalPrimes B, B ⧸ i.val :=
+      RingHom.pi fun i ↦ Ideal.Quotient.mk i.val
+    let φ₂ : (∀ i : minimalPrimes B, B ⧸ i.val) → ∀ i : minimalPrimes B, F i :=
+      fun g i ↦ algebraMap (B ⧸ i.val) (F i) (g i)
+    have hcomp : (ψ : B → ∀ i : minimalPrimes B, F i) = φ₂ ∘ φ₁ := by
+      ext x i
+      exact IsScalarTower.algebraMap_apply B (B ⧸ i.val) (F i) x
+    have hφ₂ : Function.Injective φ₂ := fun u v huv ↦ funext fun i ↦ by
+      have := i.property.1.1
+      exact IsFractionRing.injective (B ⧸ i.val) (F i) (congrFun huv i)
+    exact hcomp ▸ hφ₂.comp (Ideal.injective_pi_quotient_mk_minimalPrimes B)
+  exact Module.Finite.of_injective ψ.mapIntegralClosure.toLinearMap
+    fun _ _ h ↦ Subtype.ext (hψ_inj (congrArg Subtype.val h))
 
 end TauCeti

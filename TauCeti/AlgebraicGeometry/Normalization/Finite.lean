@@ -191,18 +191,12 @@ theorem isFinite_fromNormalization_of_isPullback
   let : Algebra K Γ(C, g ⁻¹ᵁ U) :=
     ((C.baseRingToStructurePresheaf K).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
   let : Algebra Γ(X, U) Γ(C, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R K))
-      (CommRingCat.ofHom (algebraMap R Γ(X, U)))
-      (CommRingCat.ofHom (algebraMap K Γ(C, g ⁻¹ᵁ U)))
-      (CommRingCat.ofHom (algebraMap Γ(X, U) Γ(C, g ⁻¹ᵁ U))) :=
-    Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU
-  let : Algebra R Γ(C, g ⁻¹ᵁ U) := ((algebraMap K Γ(C, g ⁻¹ᵁ U)).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(X, U) Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+  let : Algebra R Γ(C, g ⁻¹ᵁ U) := ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+  have : IsScalarTower R Γ(X, U) Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R K Γ(C, g ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
   have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) :=
-    Algebra.IsPushout.symm (CommRingCat.isPushout_iff_isPushout.mp hpush)
+    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU).symm
   have : Algebra.FiniteType R Γ(X, U) := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have hsm : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (toK.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom :=

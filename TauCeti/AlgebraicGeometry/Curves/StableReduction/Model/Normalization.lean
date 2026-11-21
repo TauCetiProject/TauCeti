@@ -228,19 +228,15 @@ theorem isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalSche
   let : Algebra K Γ(C, M.genericι ⁻¹ᵁ U) :=
     ((C.baseRingToStructurePresheaf K).app (op (M.genericι ⁻¹ᵁ U))).hom.toAlgebra
   let : Algebra Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := (M.genericι.app U).hom.toAlgebra
-  have hpush : IsPushout (CommRingCat.ofHom (algebraMap R K))
-      (CommRingCat.ofHom (algebraMap R Γ(M.total, U)))
-      (CommRingCat.ofHom (algebraMap K Γ(C, M.genericι ⁻¹ᵁ U)))
-      (CommRingCat.ofHom (algebraMap Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U))) :=
-    Scheme.isPushout_baseRingToStructurePresheaf_of_isAffineOpen M.isPullback_genericι hU
   let : Algebra R Γ(C, M.genericι ⁻¹ᵁ U) :=
-    ((algebraMap K Γ(C, M.genericι ⁻¹ᵁ U)).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have hw := congrArg CommRingCat.Hom.hom hpush.w
-  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at hw
-  have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' hw
+    ((M.genericι.app U).hom.comp (algebraMap R Γ(M.total, U))).toAlgebra
+  have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app M.genericι U
+      M.isPullback_genericι.toCommSq
   have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    Algebra.IsPushout.symm (CommRingCat.isPushout_iff_isPushout.mp hpush)
+    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
+      M.isPullback_genericι hU).symm
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   have : IsLocalization.Away π K := hπ.isLocalizationAway_fractionRing
   have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by

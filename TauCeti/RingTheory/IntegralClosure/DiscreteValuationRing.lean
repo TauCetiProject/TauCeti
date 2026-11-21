@@ -292,13 +292,15 @@ theorem finite_integralClosure_of_exists_isStandardSmoothOfRelativeDimension_one
   have : Algebra.FiniteType K B :=
     .of_surjective (Algebra.IsPushout.equiv R K A B).toAlgHom
       (Algebra.IsPushout.equiv R K A B).surjective
-  have : IsReduced B := by
-    refine ⟨fun x hx ↦ Module.eq_zero_of_isLocalized_span s hspan
-      (fun r : s ↦ Localization.Away r.val)
-      (fun r : s ↦ Algebra.linearMap B (Localization.Away r.val)) x fun r ↦ ?_⟩
-    have := (hsmooth r.val r.property).isStandardSmooth
-    have := isReduced_of_smooth K (Localization.Away r.val)
-    exact (hx.map (algebraMap B (Localization.Away r.val))).eq_zero
+  have : Algebra.FinitePresentation K B := Algebra.FinitePresentation.of_finiteType.mp ‹_›
+  have : Algebra.FormallySmooth K B := by
+    rw [← Algebra.smoothLocus_eq_univ_iff, ← Set.univ_subset_iff,
+      ← TopologicalSpace.Opens.coe_top, ← PrimeSpectrum.iSup_basicOpen_eq_top_iff'.mpr hspan]
+    simp only [TopologicalSpace.Opens.coe_iSup, Set.iUnion_subset_iff,
+      Algebra.basicOpen_subset_smoothLocus_iff]
+    exact fun r hr ↦ have := (hsmooth r hr).isStandardSmooth; inferInstance
+  have : Algebra.Smooth K B := ⟨‹_›, ‹_›⟩
+  have : IsReduced B := isReduced_of_smooth K B
   have hboth : ∀ (P : Ideal B) (hP : P ∈ minimalPrimes B), haveI := hP.1.1;
       IsFunctionField K P.ResidueField ∧ Module.finrank P.ResidueField Ω[P.ResidueField⁄K] = 1 := by
     intro P hP

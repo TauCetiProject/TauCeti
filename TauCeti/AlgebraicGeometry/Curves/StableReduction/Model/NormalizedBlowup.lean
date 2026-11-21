@@ -28,9 +28,9 @@ This file establishes the basic properties of a single normalized-blowup step:
   the morphism, integrality of the source, or a support restriction;
 * consequently, the centre `I` pulls back to an effective Cartier divisor on the normalized blowup
   (`TauCeti.Model.isEffectiveCartier_comap_normalizedBlowupHom`);
-* the normalized blowup preserves properness (`TauCeti.Model.isProper_normalizedBlowup`) and has
-  normal total space when `C` is smooth over `K`
-  (`TauCeti.Model.isNormalScheme_normalizedBlowup_total`);
+* as an abbreviation for `(M.blowup I hC).normalization`, the normalized blowup preserves
+  properness via `TauCeti.Model.isProper_normalization` and has normal total space when `C` is
+  smooth over `K` via `TauCeti.Model.isNormalScheme_normalization_of_smooth`;
 * when `M.total` is already normal, `M.normalizedBlowupHom I hC` is an isomorphism if and only if
   `I` is already an effective Cartier divisor on `M.total`
   (`TauCeti.Model.isIso_normalizedBlowupHom_iff`).
@@ -109,38 +109,6 @@ abbrev normalizedBlowup : Model R K C toK :=
 /-- **The normalized-blowup morphism of models** `M.normalizedBlowup I hC ⟶ M`. -/
 def normalizedBlowupHom : M.normalizedBlowup I hC ⟶ M :=
   (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC
-
-/-- The total space of `M.normalizedBlowup I hC` is the normalization of `I.blowup` in `C`. -/
-@[simp]
-lemma normalizedBlowup_total :
-    (M.normalizedBlowup I hC).total = (M.blowup I hC).genericι.normalization :=
-  rfl
-
-/-- The structure morphism of `M.normalizedBlowup I hC` factors through the normalization and
-blowup morphisms. -/
-@[simp]
-lemma normalizedBlowup_toBase :
-    (M.normalizedBlowup I hC).toBase =
-      (M.blowup I hC).genericι.fromNormalization ≫ I.blowupToBase ≫ M.toBase :=
-  rfl
-
-/-- The underlying scheme morphism of `M.normalizedBlowupHom I hC` is the composite of the
-normalization morphism and `I.blowupToBase`. -/
-@[simp]
-lemma normalizedBlowupHom_hom :
-    (M.normalizedBlowupHom I hC).hom =
-      (M.blowup I hC).genericι.fromNormalization ≫ I.blowupToBase := by
-  simp [normalizedBlowupHom]
-
-/-- The normalized blowup of a proper model is a proper model. -/
-lemma isProper_normalizedBlowup [M.IsProper] : (M.normalizedBlowup I hC).IsProper := by
-  have := M.isProper_blowup I hC
-  exact (M.blowup I hC).isProper_normalization
-
-/-- When the generic fibre is smooth over `K`, the normalized blowup has normal total space. -/
-instance isNormalScheme_normalizedBlowup_total [Smooth toK] :
-    TauCeti.AlgebraicGeometry.IsNormalScheme (M.normalizedBlowup I hC).total :=
-  (M.blowup I hC).isNormalScheme_normalization_of_smooth
 
 /-- The centre `I` pulls back to an effective Cartier divisor on the normalized blowup. -/
 theorem isEffectiveCartier_comap_normalizedBlowupHom :
