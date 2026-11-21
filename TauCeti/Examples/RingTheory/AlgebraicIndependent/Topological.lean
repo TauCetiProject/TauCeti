@@ -47,9 +47,8 @@ example {K L : Type*} [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [Di
 -- The algebraic closure of `ℚ_p` is dense in `ℂ_p`, so `ℂ_p` has topological transcendence degree
 -- zero over `ℚ_p`. A definition through the transcendence degree of `ℂ_p` itself fails this test.
 example (p : ℕ) [Fact p.Prime] : topologicalTrdeg ℚ_[p] ℂ_[p] = 0 :=
-  nonpos_iff_eq_zero.mp <|
-    (topologicalTrdeg_le_of_denseRange (IsScalarTower.toAlgHom ℚ_[p] (PadicAlgCl p) ℂ_[p])
-      UniformSpace.Completion.denseRange_coe).trans_eq <| by simp [trdeg_eq_zero]
+  topologicalTrdeg_eq_zero_of_denseRange (IsScalarTower.toAlgHom ℚ_[p] (PadicAlgCl p) ℂ_[p])
+    UniformSpace.Completion.denseRange_coe
 
 -- Over a complete algebraically closed normed field `K` embedded isometrically in a normed field
 -- `L`, the value is zero exactly when the embedding is surjective; `L` need be neither complete

@@ -38,7 +38,7 @@ degree of `ℂ_p` over `ℚ_p` is zero, although `ℂ_p` has infinite transcende
   intermediate field is algebraic over `K`.
 * `TauCeti.topologicalTrdeg_le_of_continuous_of_denseRange`: a continuous `K`-algebra map with
   dense range does not increase the invariant; in particular it is invariant under continuous
-  `K`-algebra isomorphisms (`TauCeti.topologicalTrdeg_congr`).
+  `K`-algebra isomorphisms (`ContinuousAlgEquiv.topologicalTrdeg_eq`).
 * `TauCeti.topologicalTrdeg_of_discreteTopology`: for the discrete topology the invariant is the
   transcendence degree.
 * `TauCeti.topologicalTrdeg_eq_zero_iff_surjective`: over an algebraically closed field whose
@@ -150,11 +150,17 @@ theorem topologicalTrdeg_le_toENat_trdeg :
     topologicalTrdeg K L ≤ toENat (Algebra.trdeg K L) :=
   topologicalTrdeg_le_of_denseRange (AlgHom.id K L) denseRange_id
 
+/-- A `K`-algebra map with dense range from a field `E` algebraic over `K` forces the topological
+transcendence degree to vanish. -/
+theorem topologicalTrdeg_eq_zero_of_denseRange {E : Type w} [Field E] [Algebra K E]
+    [Algebra.IsAlgebraic K E] (f : E →ₐ[K] L) (hf : DenseRange f) : topologicalTrdeg K L = 0 :=
+  nonpos_iff_eq_zero.mp <| (topologicalTrdeg_le_of_denseRange f hf).trans_eq <| by
+    simp [trdeg_eq_zero]
+
 /-- An algebraic extension has topological transcendence degree zero, for every topology. -/
 theorem topologicalTrdeg_eq_zero_of_isAlgebraic [Algebra.IsAlgebraic K L] :
     topologicalTrdeg K L = 0 :=
-  nonpos_iff_eq_zero.mp <| topologicalTrdeg_le_toENat_trdeg.trans_eq <| by
-    simp [trdeg_eq_zero]
+  topologicalTrdeg_eq_zero_of_denseRange (AlgHom.id K L) denseRange_id
 
 /-- A field has topological transcendence degree zero over itself, for every topology. -/
 @[simp]
@@ -169,15 +175,13 @@ theorem topologicalTrdeg_le_of_continuous_of_denseRange {L' : Type w} [Field L']
     [TopologicalSpace L'] (f : L →ₐ[K] L') (hc : Continuous f) (hd : DenseRange f) :
     topologicalTrdeg K L' ≤ topologicalTrdeg K L := by
   obtain ⟨A, hA, hAeq⟩ := exists_dense_toENat_trdeg_eq_topologicalTrdeg (K := K) (L := L)
-  refine hAeq ▸ (topologicalTrdeg_le_of_dense (A.map f) ?_).trans_eq ?_
-  · rw [IntermediateField.coe_map]
-    exact hd.dense_image hc hA
-  · simpa using congrArg toENat (A.equivMap f).lift_trdeg_eq.symm
+  exact hAeq ▸
+    topologicalTrdeg_le_of_denseRange (f.comp A.val) (hd.comp hA.denseRange_subtypeVal hc)
 
 /-- The topological transcendence degree is invariant under continuous `K`-algebra isomorphisms
 with continuous inverse. -/
-theorem topologicalTrdeg_congr {L' : Type w} [Field L'] [Algebra K L'] [TopologicalSpace L']
-    (e : L ≃A[K] L') : topologicalTrdeg K L = topologicalTrdeg K L' :=
+theorem _root_.ContinuousAlgEquiv.topologicalTrdeg_eq {L' : Type w} [Field L'] [Algebra K L']
+    [TopologicalSpace L'] (e : L ≃A[K] L') : topologicalTrdeg K L = topologicalTrdeg K L' :=
   le_antisymm
     (topologicalTrdeg_le_of_continuous_of_denseRange (e.symm : L' ≃ₐ[K] L).toAlgHom
       e.symm.continuous e.symm.surjective.denseRange)
@@ -197,9 +201,7 @@ theorem topologicalTrdeg_of_discreteTopology [DiscreteTopology L] :
 only if the image of `K` is dense: a dense intermediate field algebraic over `K` is `K` itself. -/
 theorem topologicalTrdeg_eq_zero_iff_denseRange [IsAlgClosed K] :
     topologicalTrdeg K L = 0 ↔ DenseRange (algebraMap K L) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ nonpos_iff_eq_zero.mp <|
-    (topologicalTrdeg_le_of_denseRange (Algebra.ofId K L) h).trans_eq <| by
-      simp [trdeg_eq_zero]⟩
+  refine ⟨fun h ↦ ?_, topologicalTrdeg_eq_zero_of_denseRange (Algebra.ofId K L)⟩
   obtain ⟨A, hA, hAlg⟩ := topologicalTrdeg_eq_zero_iff.mp h
   rwa [IntermediateField.eq_bot_of_isAlgClosed_of_isAlgebraic A, IntermediateField.coe_bot]
     at hA
