@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
@@ -12,6 +13,7 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Algebraic Belyi pairs
@@ -66,6 +68,11 @@ automorphism of `k(t)` permutes the three marked places
 * `TauCeti.isAlgebraicBelyiPair_iff_of_isScalarTower`: for a tower `k(t) ⊆ E ⊆ F`, the branch
   places of `E / k(t)` and the places below the branch places of `F / E` are all marked exactly
   when `F` is an algebraic Belyi pair with constant field `k`.
+* `TauCeti.IsAlgebraicBelyiPair.tower_bot`, `TauCeti.IsAlgebraicBelyiPair.of_le`: subextensions of
+  algebraic Belyi pairs are algebraic Belyi pairs.
+* `TauCeti.isAlgebraicBelyiPair_iff_of_isAlgClosed`, `TauCeti.isAlgebraicBelyiPair_sup_iff`,
+  `TauCeti.isAlgebraicBelyiPair_iSup_iff`, `TauCeti.isAlgebraicBelyiPair_normalClosure_iff`:
+  lattice and Galois-closure stability over an algebraically closed constant field.
 
 ## References
 
@@ -293,5 +300,81 @@ theorem isAlgebraicBelyiPair_iff_of_isScalarTower :
   rw [isAlgebraicBelyiPair_iff_branchPlaces_subset, Place.branchPlaces_eq_image_union
     (k₁ := k) (F₁ := E) (isFunctionField_iff_functionField.mpr inferInstance), Set.union_subset_iff,
     and_comm (a := _ '' _ ⊆ _)]
+
+/-! ### Subextensions, composita, and Galois closures of algebraic Belyi pairs -/
+
+section Subextensions
+
+omit [IsScalarTower k E F] in
+/-- **A subextension of an algebraic Belyi pair is an algebraic Belyi pair**: in a tower
+`k(t) ⊆ E ⊆ F` of finite extensions, `IsAlgebraicBelyiPair k F` descends to `E`. -/
+theorem IsAlgebraicBelyiPair.tower_bot (h : IsAlgebraicBelyiPair k F) :
+    IsAlgebraicBelyiPair k E := by
+  have := IsScalarTower.to₁₃₄ k (RatFunc k) E F
+  obtain ⟨hF, hbr, -⟩ := (isAlgebraicBelyiPair_iff_of_isScalarTower (E := E) (F := F)).mp h
+  exact isAlgebraicBelyiPair_iff_branchPlaces_subset.mpr
+    ⟨(IsScalarTower.toAlgHom k E F).isIntegrallyClosedIn (algebraMap E F).injective hF, hbr⟩
+
+/-- Over an algebraically closed field `k`, a finite extension `F / k(t)` is an algebraic Belyi
+pair iff every place of `k(t)` outside `0`, `1` and `∞` is unramified in `F`. -/
+theorem isAlgebraicBelyiPair_iff_of_isAlgClosed [IsAlgClosed k] :
+    IsAlgebraicBelyiPair k F ↔
+      ∀ P ∉ Place.zeroOneInfty k, P.IsUnramified (k' := k) (F' := F) := by
+  rw [isAlgebraicBelyiPair_iff, and_iff_right isIntegrallyClosedIn_of_isAlgClosed]
+
+variable {M : Type*} [Field M] [Algebra k M] [Algebra (RatFunc k) M]
+  [IsScalarTower k (RatFunc k) M]
+
+variable (k M) in
+/-- The bottom intermediate field `⊥` of `M / k(t)` is an algebraic Belyi pair over `k`. -/
+theorem isAlgebraicBelyiPair_bot : IsAlgebraicBelyiPair k ↥(⊥ : IntermediateField (RatFunc k) M) :=
+  (isAlgebraicBelyiPair_ratFunc k).of_algEquiv (IntermediateField.botEquiv (RatFunc k) M).symm
+
+/-- An intermediate field below a finite algebraic Belyi subextension is an algebraic Belyi pair. -/
+theorem IsAlgebraicBelyiPair.of_le {E₁ E₂ : IntermediateField (RatFunc k) M}
+    [FiniteDimensional (RatFunc k) E₁] [FiniteDimensional (RatFunc k) E₂]
+    (hle : E₁ ≤ E₂) (hE₂ : IsAlgebraicBelyiPair k E₂) : IsAlgebraicBelyiPair k E₁ :=
+  letI : Algebra E₁ E₂ := (IntermediateField.inclusion hle).toRingHom.toAlgebra
+  haveI : IsScalarTower (RatFunc k) E₁ E₂ := .of_algebraMap_eq' rfl
+  hE₂.tower_bot
+
+section IsAlgClosed
+
+variable [IsAlgClosed k]
+
+/-- Over algebraically closed `k`, `E₁ ⊔ E₂` is an algebraic Belyi pair iff `E₁` and `E₂` are. -/
+@[simp]
+theorem isAlgebraicBelyiPair_sup_iff (E₁ E₂ : IntermediateField (RatFunc k) M)
+    [FiniteDimensional (RatFunc k) E₁] [FiniteDimensional (RatFunc k) E₂] :
+    IsAlgebraicBelyiPair k ↥(E₁ ⊔ E₂) ↔ IsAlgebraicBelyiPair k E₁ ∧ IsAlgebraicBelyiPair k E₂ := by
+  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
+  simp only [isAlgebraicBelyiPair_iff_of_isAlgClosed,
+    Place.isUnramified_sup_iff (IsFunctionField.ratFunc k), forall_and]
+
+/-- Over algebraically closed `k`, a finite supremum `⨆ i, t i` is an algebraic Belyi pair iff each
+`t i` is. -/
+@[simp]
+theorem isAlgebraicBelyiPair_iSup_iff {ι : Type*} [Finite ι]
+    (t : ι → IntermediateField (RatFunc k) M) [∀ i, FiniteDimensional (RatFunc k) (t i)] :
+    IsAlgebraicBelyiPair k ↥(⨆ i, t i) ↔ ∀ i, IsAlgebraicBelyiPair k (t i) := by
+  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
+  simp only [isAlgebraicBelyiPair_iff_of_isAlgClosed,
+    Place.isUnramified_iSup_iff (IsFunctionField.ratFunc k)]
+  exact ⟨fun h i P hP ↦ h P hP i, fun h P hP i ↦ h i P hP⟩
+
+/-- Over algebraically closed `k`, `normalClosure (RatFunc k) E M` is an algebraic Belyi pair iff
+`E` is. -/
+@[simp]
+theorem isAlgebraicBelyiPair_normalClosure_iff (E : IntermediateField (RatFunc k) M)
+    [FiniteDimensional (RatFunc k) E] :
+    IsAlgebraicBelyiPair k (IntermediateField.normalClosure (RatFunc k) E M) ↔
+      IsAlgebraicBelyiPair k E := by
+  have : CharZero (RatFunc k) := charZero_of_injective_algebraMap (algebraMap k _).injective
+  simp only [isAlgebraicBelyiPair_iff_of_isAlgClosed,
+    Place.isUnramified_normalClosure_iff (IsFunctionField.ratFunc k)]
+
+end IsAlgClosed
+
+end Subextensions
 
 end TauCeti

@@ -44,6 +44,8 @@ restriction, and conjugation transport properties.
   embeddings of a normal extension all have the same image and differ by automorphisms.
 * `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
   restriction is surjective, and its kernel is the subgroup fixing the image of `f`.
+* `AlgHom.restrictNormalHom_eq_autCongr`: restriction along `f` is restriction to `f.fieldRange`
+  conjugated by `f.equivFieldRange.symm`.
 * `IntermediateField.fixingSubgroup_normal`: the fixing subgroup of a normal intermediate field is
   a normal subgroup.
 * `AlgHom.normal_fieldRange`: the image of a normal extension is normal.
@@ -130,6 +132,19 @@ theorem _root_.AlgHom.ker_restrictNormalHom (f : M →ₐ[F] K) [Normal F M] :
     f.restrictNormalHom.ker = f.fieldRange.fixingSubgroup := by
   ext σ
   simp [f.restrictNormalHom_eq_iff]
+
+/-- **Restriction along an embedding factors through restriction to its image**: restricting `σ`
+along `f : M →ₐ[F] K` is restricting `σ` to `f.fieldRange` conjugated by
+`f.equivFieldRange.symm`. -/
+theorem _root_.AlgHom.restrictNormalHom_eq_autCongr (f : M →ₐ[F] K) [Normal F M] (σ : Gal(K/F)) :
+    f.equivFieldRange.symm.autCongr (AlgEquiv.restrictNormalHom f.fieldRange σ) =
+      f.restrictNormalHom σ := by
+  symm
+  refine f.restrictNormalHom_eq_iff.2 fun x ↦ ?_
+  simp only [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm]
+  symm
+  rw [← AlgHom.equivFieldRange_apply_coe, AlgEquiv.apply_symm_apply,
+    AlgEquiv.restrictNormalHom_apply, ← AlgHom.equivFieldRange_apply_coe]
 
 /-- **The fixing subgroup of a normal intermediate field is normal**, being the kernel of
 restriction. Neither separability nor normality of the ambient extension `K/F` is used. -/

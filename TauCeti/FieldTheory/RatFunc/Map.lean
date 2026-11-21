@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
@@ -21,6 +22,8 @@ absolute Galois group, acts on the rational function field.
 
 * `TauCeti.RatFunc.mapRingEquiv`: the coefficient map `K(X) ≃+* L(X)` of `σ : K ≃+* L`.
 * `TauCeti.ratFuncMapRingHom`: the coefficient map `K(X) →+* L(X)` along `[Algebra K L]`.
+* `TauCeti.RatFunc.mapAlgebra`: the `F(X)`-algebra structure on `K(X)` induced by `F → K` fixing
+  `X`.
 
 ## Main results
 
@@ -44,6 +47,9 @@ absolute Galois group, acts on the rational function field.
   coefficient map of an automorphism of `L` fixing the image of `K` fixes the image of `K(X)`.
 * `RatFunc.mapRingHom_algebraMap`: Mathlib's `RatFunc.mapRingHom φ` restricts to `φ` on
   polynomials.
+* `TauCeti.RatFunc.algebraMap_mapAlgebra`, `TauCeti.RatFunc.isScalarTower_mapAlgebra`,
+  `TauCeti.RatFunc.algebraMap_mapAlgebra_X`, `TauCeti.RatFunc.adjoin_range_algebraMap_eq_top`:
+  basic properties of `mapAlgebra` and generation of `K(X)` over `F(X)` by `K`.
 -/
 
 public section
@@ -305,3 +311,71 @@ theorem mapRingEquiv_algebraMap_ratFunc
   exact congr($h w)
 
 end RatFunc
+
+namespace TauCeti.RatFunc
+
+open _root_.RatFunc
+open scoped Polynomial
+
+section MapAlgebra
+
+variable (F K : Type*) [Field F] [Field K] [Algebra F K]
+
+/-- The `RatFunc F`-algebra structure on `RatFunc K` induced by `algebraMap F K` on coefficients
+and fixing `X`. Not a global instance because for `K = F` it competes with `Algebra.id`; install
+locally together with `isScalarTower_mapAlgebra` and `algebraMap_mapAlgebra_X`. -/
+@[instance_reducible]
+noncomputable def mapAlgebra : Algebra (RatFunc F) (RatFunc K) :=
+  (TauCeti.ratFuncMapRingHom F K).toAlgebra
+
+/-- Under `mapAlgebra F K`, `algebraMap (RatFunc F) (RatFunc K)` is `RatFunc.mapRingHom` of
+`Polynomial.mapRingHom (algebraMap F K)`. -/
+theorem algebraMap_mapAlgebra :
+    letI := mapAlgebra F K
+    algebraMap (RatFunc F) (RatFunc K) =
+      mapRingHom (Polynomial.mapRingHom (algebraMap F K))
+        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
+          (Polynomial.map_injective _ (algebraMap F K).injective)) :=
+  letI := mapAlgebra F K; RingHom.algebraMap_toAlgebra _
+
+theorem algebraMap_mapAlgebra_algebraMap (p : F[X]) :
+    letI := mapAlgebra F K
+    algebraMap (RatFunc F) (RatFunc K) (algebraMap F[X] (RatFunc F) p) =
+      algebraMap K[X] (RatFunc K) (p.map (algebraMap F K)) := by
+  let _ := mapAlgebra F K
+  rw [algebraMap_mapAlgebra, mapRingHom_algebraMap, Polynomial.coe_mapRingHom]
+
+@[simp]
+theorem algebraMap_mapAlgebra_C (c : F) :
+    letI := mapAlgebra F K
+    algebraMap (RatFunc F) (RatFunc K) (C c) = C (algebraMap F K c) := by
+  let _ := mapAlgebra F K
+  rw [← algebraMap_C, ← algebraMap_C, algebraMap_mapAlgebra_algebraMap, Polynomial.map_C]
+
+theorem isScalarTower_mapAlgebra :
+    letI := mapAlgebra F K
+    IsScalarTower F (RatFunc F) (RatFunc K) :=
+  letI := mapAlgebra F K
+  isScalarTower_of_algebraMap_C (F := F) (K := K) (algebraMap_mapAlgebra_C F K)
+
+@[simp]
+theorem algebraMap_mapAlgebra_X :
+    letI := mapAlgebra F K
+    algebraMap (RatFunc F) (RatFunc K) X = X := by
+  let _ := mapAlgebra F K
+  rw [← algebraMap_X, algebraMap_mapAlgebra_algebraMap, Polynomial.map_X, algebraMap_X]
+
+end MapAlgebra
+
+/-- For any `F(X)`-algebra structure on `K(X)` fixing `X`, `K` generates `K(X)` over `F(X)`. -/
+theorem adjoin_range_algebraMap_eq_top {F K : Type*} [Field F] [Field K]
+    [Algebra (RatFunc F) (RatFunc K)] (hX : algebraMap (RatFunc F) (RatFunc K) X = X) :
+    IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K))) = ⊤ := by
+  set S := IntermediateField.adjoin (RatFunc F) (Set.range (algebraMap K (RatFunc K)))
+  let E : IntermediateField K (RatFunc K) :=
+    S.toSubfield.toIntermediateField fun c ↦ IntermediateField.subset_adjoin _ _ ⟨c, rfl⟩
+  have hE : E = ⊤ := eq_top_iff.mpr <| _root_.RatFunc.adjoin_X.symm.le.trans
+    (IntermediateField.adjoin_simple_le_iff.mpr (hX ▸ S.algebraMap_mem X))
+  exact eq_top_iff.mpr fun f _ ↦ (hE ▸ IntermediateField.mem_top : f ∈ E)
+
+end TauCeti.RatFunc

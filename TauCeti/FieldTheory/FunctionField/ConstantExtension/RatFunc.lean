@@ -90,7 +90,7 @@ structure on `k'(X)` sending `X` to `X`. -/
 theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
     constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
-  constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
+  (constantCompositum_def _ _ _).trans (RatFunc.adjoin_range_algebraMap_eq_top hX)
 
 section AdjoinSimple
 
