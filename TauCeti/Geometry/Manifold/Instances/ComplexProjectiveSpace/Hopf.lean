@@ -133,7 +133,7 @@ theorem surjective_mfderiv_mk (w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1)))
   have hcomp : mk n ∘ s = (affineChart k).symm := by
     funext z
     rw [comp_apply, affineChart_symm_apply, affineParam_def]
-    exact (mk_eq_mk_iff_exists_circle_smul n _ _).2 ⟨c, rfl⟩
+    exact mk_circle_smul n c _
   -- The derivative of the inverse of a chart of the maximal atlas is invertible.
   have hchart := (isInvertible_mfderivWithin_extend_symm
     (affineChart_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → ℂ)) (r := 1) k) (y := z₀)
