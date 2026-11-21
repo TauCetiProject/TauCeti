@@ -182,11 +182,7 @@ end Iso
 
 namespace EarDecomposition
 
-/-- Transport all stages and ears of a directed ear decomposition.
-
-Reducibility lets the dependent `Fin` indices of stages and ears be used unchanged in a client:
-transport preserves the length definitionally, not just up to an index cast. -/
-@[expose, reducible]
+/-- Transport all stages and ears of a directed ear decomposition, preserving its length. -/
 def map (D : EarDecomposition T) (e : N ≃ₙ N') :
     EarDecomposition (e.subnetworkOrderIso T) where
   length := D.length
@@ -207,41 +203,55 @@ theorem map_initialVertex (D : EarDecomposition T) (e : N ≃ₙ N') :
 
 /-- Every prefix subnetwork is relabelled by the subnetwork order isomorphism. -/
 @[simp]
-theorem map_stage (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin (D.length + 1)) :
-    (D.map e).stage i = e.subnetworkOrderIso (D.stage i) := (rfl)
+theorem map_stage (D : EarDecomposition T) (e : N ≃ₙ N')
+    (i : Fin ((D.map e).length + 1)) :
+    (D.map e).stage i =
+      e.subnetworkOrderIso (D.stage (i.cast (congrArg (· + 1) (D.map_length e)))) := (rfl)
 
-/-- Each displayed ear is the relabelled original ear. -/
+/-- Each displayed ear is the relabelled original ear, reindexed along `map_stage`. -/
 @[simp]
-theorem map_ear (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin D.length) :
-    (D.map e).ear i = (D.ear i).map e := (rfl)
+theorem map_ear (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin (D.map e).length) :
+    (D.map e).ear i =
+      ((D.ear (i.cast (D.map_length e))).map e).copy (D.map_stage e i.castSucc).symm :=
+  (Ear.copy_rfl _).symm
 
 /-- Every ear keeps its kind under relabelling. -/
 @[simp]
-theorem kindAt_map (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin D.length) :
-    (D.map e).kindAt i = D.kindAt i := by simp [kindAt_def]
+theorem kindAt_map (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin (D.map e).length) :
+    (D.map e).kindAt i = D.kindAt (i.cast (D.map_length e)) := by simp [kindAt_def]
 
 /-- Every ear keeps its full walk with vertices and arrow identities relabelled. -/
 @[simp]
-theorem walkAt_map (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin D.length) :
-    (D.map e).walkAt i = e.totalPathEquiv (D.walkAt i) := by simp [walkAt_def]
+theorem walkAt_map (D : EarDecomposition T) (e : N ≃ₙ N') (i : Fin (D.map e).length) :
+    (D.map e).walkAt i = e.totalPathEquiv (D.walkAt (i.cast (D.map_length e))) := by
+  simp only [walkAt_def, map_ear, Ear.toWalk_copy, Ear.toWalk_map]
+
+private theorem map_copy_map_copy {U : N'.Subnetwork} (D : EarDecomposition T)
+    (e : N ≃ₙ N') (f : N' ≃ₙ N) (h : e.subnetworkOrderIso T = U) (h' : f.subnetworkOrderIso U = T)
+    (hf : f.totalPathEquiv = e.totalPathEquiv.symm) :
+    (((D.map e).copy h).map f).copy h' = D := by
+  refine ext_walkAt (by simp) ?_
+  intro i
+  -- Use indices of the copied decompositions so rewriting does not have to unfold `copy`.
+  have hwalk (j : Fin ((D.map e).copy h).length) :
+      ((D.map e).copy h).walkAt j = (D.map e).walkAt (j.cast (copy_length _ h)) :=
+    copy_walkAt _ h _
+  refine (copy_walkAt _ h' (i.cast (copy_length _ h'))).trans ?_
+  simp only [walkAt_map, hwalk, hf, Equiv.symm_apply_apply, Fin.cast_cast]
 
 /-- Transport followed by inverse transport recovers every stage and every ear. -/
 @[simp]
 theorem map_symm_map (D : EarDecomposition T) (e : N ≃ₙ N') :
     ((D.map e).map e.symm).copy (by simp) = D := by
-  refine ext_walkAt (D := ((D.map e).map e.symm).copy (by simp)) (E := D)
-    (by rfl) ?_
-  intro i
-  rw [copy_walkAt ((D.map e).map e.symm) _ i, walkAt_map (D.map e) e.symm i,
-    walkAt_map D e i]
-  simp only [Iso.totalPathEquiv_symm, Equiv.symm_apply_apply]
-  rfl
+  simpa only [copy_rfl] using D.map_copy_map_copy e e.symm rfl (by simp) e.totalPathEquiv_symm
 
-/-- Transport commutes with taking a prefix decomposition. -/
+/-- Transport commutes with taking a prefix decomposition, up to reindexing its final stage. -/
 @[simp]
 theorem prefixDecomposition_map (D : EarDecomposition T) (e : N ≃ₙ N')
-    (k : Fin (D.length + 1)) :
-    (D.map e).prefixDecomposition k = (D.prefixDecomposition k).map e := (rfl)
+    (k : Fin ((D.map e).length + 1)) :
+    (D.map e).prefixDecomposition k =
+      ((D.prefixDecomposition (k.cast (congrArg (· + 1) (D.map_length e)))).map e).copy
+        (D.map_stage e k).symm := (rfl)
 
 end EarDecomposition
 
@@ -255,14 +265,8 @@ def earDecompositionEquiv (e : N ≃ₙ N') (T : N.Subnetwork) :
   invFun D := (D.map e.symm).copy (by simp)
   left_inv D := D.map_symm_map e
   right_inv D := by
-    refine EarDecomposition.ext_walkAt
-      (D := ((D.map e.symm).copy (by simp)).map e) (E := D) (by rfl) ?_
-    intro i
-    rw [EarDecomposition.walkAt_map ((D.map e.symm).copy _) e i,
-      EarDecomposition.copy_walkAt (D.map e.symm) _ i,
-      EarDecomposition.walkAt_map D e.symm i]
-    simp only [totalPathEquiv_symm, Equiv.apply_symm_apply]
-    rfl
+    simpa only [EarDecomposition.copy_rfl] using
+      D.map_copy_map_copy e.symm e (by simp) rfl (by simp)
 
 @[simp]
 theorem earDecompositionEquiv_apply (e : N ≃ₙ N') (T : N.Subnetwork)
