@@ -44,11 +44,12 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   `DifferentiableOn.torusIntegral_prod_sub_inv_smul` is the case of a jointly differentiable `f`.
 * `ContinuousOn.analyticAt_of_differentiableAt_update`,
   `ContinuousOn.analyticOnNhd_of_differentiableAt_update`,
-  `ContinuousOn.analyticAt_of_differentiableAt_prod`,
-  `ContinuousOn.analyticOnNhd_of_differentiableAt_prod`: **Osgood's lemma.** A function on
-  `ι → ℂ` (for a finite type `ι`) or a product `V₁ × V₂` of finite-dimensional complex normed
-  spaces which is continuous on an open set and complex differentiable in each variable or factor
-  separately there is analytic on it.
+  `ContinuousOn.analyticAt_of_separately_differentiableAt`,
+  `ContinuousOn.analyticOnNhd_of_separately_differentiableAt`: **Osgood's lemma.** For a complete
+  complex normed codomain `E`, a function `f : (ι → ℂ) → E` (for a finite type `ι`) or
+  `f : V₁ × V₂ → E` (on a product of finite-dimensional complex normed spaces) which is continuous
+  on an open set and complex differentiable in each variable or factor separately there is analytic
+  on it.
 * `TauCeti.analyticOnNhd_iff_continuousOn_and_differentiableAt_update`: on an open subset of
   `ι → ℂ`, analyticity is equivalent to continuity together with separate complex
   differentiability.
@@ -330,10 +331,11 @@ theorem analyticOnNhd_iff_continuousOn_and_differentiableAt_update (hs : IsOpen 
   ⟨fun h => ⟨h.continuousOn, fun y hy i => (h y hy).differentiableAt.comp_update i⟩,
     fun h => h.1.analyticOnNhd_of_differentiableAt_update hs h.2⟩
 
-/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function on
-`V₁ × V₂` which is continuous on a neighbourhood of a point and complex differentiable in each
-factor separately on that neighbourhood is analytic at the point. -/
-theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_prod
+/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function
+`f : V₁ × V₂ → E` into a complete complex normed space `E` which is continuous on a neighbourhood
+of a point and complex differentiable in each factor separately on that neighbourhood is analytic at
+the point. -/
+theorem _root_.ContinuousOn.analyticAt_of_separately_differentiableAt
     {V₁ V₂ : Type*} [NormedAddCommGroup V₁] [NormedSpace ℂ V₁] [FiniteDimensional ℂ V₁]
     [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [FiniteDimensional ℂ V₂]
     {f : V₁ × V₂ → E} {s : Set (V₁ × V₂)} {p : V₁ × V₂}
@@ -359,36 +361,30 @@ theorem _root_.ContinuousOn.analyticAt_of_differentiableAt_prod
       have hcomp : (fun x => (f ∘ M.symm) (update w (Sum.inl j) x)) =
           fun x => f (e₁.symm (update (w ∘ Sum.inl) j x), e₂.symm (w ∘ Sum.inr)) := by
         ext x
-        simp only [Function.comp_apply, hM]
-        refine congrArg f (Prod.ext (congrArg e₁.symm ?_) (congrArg e₂.symm ?_))
-        · ext k; simp [Function.update_apply]
-        · ext k; simp
+        simp only [Function.comp_apply, hM, Sum.update_inl_comp_inl, Sum.update_inl_comp_inr]
       rw [hcomp]
       exact ((hd₁ (M.symm w) hw).comp (w ∘ Sum.inl) e₁.symm.differentiableAt).comp_update j
     | inr j =>
       have hcomp : (fun x => (f ∘ M.symm) (update w (Sum.inr j) x)) =
           fun x => f (e₁.symm (w ∘ Sum.inl), e₂.symm (update (w ∘ Sum.inr) j x)) := by
         ext x
-        simp only [Function.comp_apply, hM]
-        refine congrArg f (Prod.ext (congrArg e₁.symm ?_) (congrArg e₂.symm ?_))
-        · ext k; simp
-        · ext k; simp [Function.update_apply]
+        simp only [Function.comp_apply, hM, Sum.update_inr_comp_inl, Sum.update_inr_comp_inr]
       rw [hcomp]
       exact ((hd₂ (M.symm w) hw).comp (w ∘ Sum.inr) e₂.symm.differentiableAt).comp_update j
   have hf : (f ∘ M.symm) ∘ M = f := funext fun q => congrArg f (M.symm_apply_apply q)
   exact hf ▸ han.comp (M.analyticAt p)
 
-/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function on
-`V₁ × V₂` which is continuous on an open set and complex differentiable in each factor separately
-on it is analytic on it. -/
-theorem _root_.ContinuousOn.analyticOnNhd_of_differentiableAt_prod
+/-- **Osgood's lemma on a product of finite-dimensional complex normed spaces.** A function
+`f : V₁ × V₂ → E` into a complete complex normed space `E` which is continuous on an open set and
+complex differentiable in each factor separately on it is analytic on it. -/
+theorem _root_.ContinuousOn.analyticOnNhd_of_separately_differentiableAt
     {V₁ V₂ : Type*} [NormedAddCommGroup V₁] [NormedSpace ℂ V₁] [FiniteDimensional ℂ V₁]
     [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [FiniteDimensional ℂ V₂]
     {f : V₁ × V₂ → E} {s : Set (V₁ × V₂)} (hc : ContinuousOn f s) (hs : IsOpen s)
     (hd₁ : ∀ q ∈ s, DifferentiableAt ℂ (fun x => f (x, q.2)) q.1)
     (hd₂ : ∀ q ∈ s, DifferentiableAt ℂ (fun y => f (q.1, y)) q.2) :
     AnalyticOnNhd ℂ f s :=
-  fun _p hp => hc.analyticAt_of_differentiableAt_prod (hs.mem_nhds hp) hd₁ hd₂
+  fun _p hp => hc.analyticAt_of_separately_differentiableAt (hs.mem_nhds hp) hd₁ hd₂
 
 end Osgood
 

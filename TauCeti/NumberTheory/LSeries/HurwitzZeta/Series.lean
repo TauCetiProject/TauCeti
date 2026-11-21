@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 
 /-!
 # The complex-parameter Hurwitz zeta series
@@ -14,8 +15,13 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 For a complex shift parameter `c : ℂ` and exponent `s : ℂ` with `1 < s.re`, the complex Hurwitz
 series
 `complexHurwitzSeries s c = ∑' n : ℕ, exp (-s * log (n + c))`
-converges absolutely; away from the nonpositive integers `c = -n` (`n : ℕ`), each term coincides
-with the principal complex power `(n + c) ^ (-s)`.
+converges absolutely for every `c : ℂ`. The genuine Hurwitz domain consists of non-singular shifts
+`c ∉ -ℕ` (and `0 < c.re` for the meromorphic continuation in `Continuation.lean`), where every
+base `n + c` is nonzero and each summand coincides with the principal complex power
+`(n + c) ^ (-s)`. At a nonpositive integer shift `c = -n` (`n : ℕ`), the defining summand at
+index `n` is `exp (-s * log 0) = exp 0 = 1` (by Lean's `Complex.log 0 = 0`), whereas the
+corresponding principal-power summand `0 ^ (-s)` is `0` for `1 < s.re`; thus convergence at `c ∈ -ℕ`
+is purely formal under totalization and does not represent a genuine Hurwitz zeta value.
 
 Shifting `c ≠ 0` by `1` subtracts the initial `n = 0` term `c ^ (-s)`. Along the real interval
 `(0, 1]`, `complexHurwitzSeries s x` agrees with Mathlib's circle-parametrized Hurwitz zeta
@@ -25,9 +31,10 @@ and at `c = 1 / 2` the odd-integer sum yields `((2 : ℂ) ^ s - 1) * riemannZeta
 ## Main definitions and results
 
 * `TauCeti.complexHurwitzSeries`: the Dirichlet-type series `∑' n : ℕ, exp (-s * log (n + c))`.
-* `TauCeti.summable_norm_complexHurwitzSeries_term`, `TauCeti.hasSum_complexHurwitzSeries`, and
-  `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`: absolute convergence on `1 < s.re` for
-  arbitrary `c : ℂ` and principal-power form away from `-ℕ`.
+* `TauCeti.summable_norm_complexHurwitzSeries_term`, `TauCeti.summable_complexHurwitzSeries_term`,
+  `TauCeti.hasSum_complexHurwitzSeries`, and `TauCeti.hasSum_complexHurwitzSeries_of_re_pos`:
+  formal absolute convergence on `1 < s.re` for arbitrary `c : ℂ`, and principal-power convergence
+  on the genuine shift domain `c ∉ -ℕ` (in particular `0 < c.re`).
 * `TauCeti.complexHurwitzSeries_add_one_right`: shift identity
   `complexHurwitzSeries s (c + 1) = complexHurwitzSeries s c - c ^ (-s)` for `c ≠ 0`.
 * `TauCeti.complexHurwitzSeries_ofReal_eq_hurwitzZeta`: agreement with `HurwitzZeta.hurwitzZeta`
@@ -50,8 +57,11 @@ open scoped Topology
 namespace TauCeti
 
 /-- The complex-parameter Hurwitz zeta series `∑' n : ℕ, exp (-s * log (n + c))`, using the
-principal complex logarithm. On `1 < s.re`, the series converges absolutely for every `c : ℂ`,
-and away from `c = -n` (`n : ℕ`) each summand equals `(n + c) ^ (-s)`. -/
+principal complex logarithm. The genuine Hurwitz domain is `1 < s.re` and `c ∉ -ℕ`, where every
+base `n + c` is nonzero and each summand equals `(n + c) ^ (-s)`. On `1 < s.re`, the series also
+converges formally for `c = -n` (`n : ℕ`) under totalization: at index `n` the defining summand is
+`exp (-s * log 0) = 1` (whereas the totalized principal power `0 ^ (-s)` is `0`), so values at
+`c ∈ -ℕ` are totalized artifacts rather than genuine Hurwitz values. -/
 noncomputable def complexHurwitzSeries (s c : ℂ) : ℂ :=
   ∑' n : ℕ, Complex.exp (-s * Complex.log (n + c))
 
@@ -67,50 +77,27 @@ theorem complexHurwitzSeries_eq_tsum_cpow {c : ℂ} (hc : ∀ n : ℕ, c ≠ -(n
   have hne : (n : ℂ) + c ≠ 0 := fun h => hc n (eq_neg_of_add_eq_zero_right h)
   rw [cpow_def_of_ne_zero hne, mul_comm]
 
-private theorem re_natCast_add_floor_add_one_pos (c : ℂ) (n : ℕ) :
-    0 < (((n + (⌊1 - c.re⌋₊ + 1) : ℕ) : ℂ) + c).re := by
-  have hlt : 1 - c.re < (⌊1 - c.re⌋₊ : ℝ) + 1 := Nat.lt_floor_add_one _
-  simp only [add_re, natCast_re, Nat.cast_add, Nat.cast_one, one_re]
-  linarith [Nat.cast_nonneg (α := ℝ) n]
-
-/-- For `1 < s.re` and any `c : ℂ`, the principal-power series `∑' n : ℕ, ‖(n + c) ^ (-s)‖` is
-summable. -/
-theorem summable_norm_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
-    Summable (fun n : ℕ => ‖((n : ℂ) + c) ^ (-s)‖) := by
-  set N : ℕ := ⌊1 - c.re⌋₊ + 1
-  have hN : (N : ℂ) + c ∈ slitPlane :=
-    mem_slitPlane_iff.mpr (Or.inl (by simpa [N] using re_natCast_add_floor_add_one_pos c 0))
-  obtain ⟨U, hU, -, C, -, hbound⟩ :=
-    exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hN (-s)
-  have hp : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ (-s.re)) :=
-    ((summable_nat_add_iff 1).mpr
-      ((Real.summable_nat_rpow (p := -s.re)).mpr (by linarith))).congr
-      fun n => by push_cast; rw [add_comm]
-  refine (summable_nat_add_iff N).mp ?_
-  refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_) (hp.mul_left C)
-  have h := hbound ((N : ℂ) + c) (mem_of_mem_nhds hU) (n : ℝ) (Nat.cast_nonneg n)
-  simpa only [ofReal_natCast, neg_re, Nat.cast_add, add_assoc] using h
-
-/-- For `1 < s.re` and any `c : ℂ`, the complex Hurwitz series converges absolutely. -/
+/-- For `1 < s.re` and any `c : ℂ`, the defining terms `exp (-s * log (n + c))` are absolutely
+summable. Away from `c ∈ -ℕ` this is absolute convergence of the genuine Hurwitz series
+`∑' n, (n + c) ^ (-s)`; at `c = -n` (`n : ℕ`), the `n`-th summand is totalized to `exp 0 = 1`
+(unlike `0 ^ (-s) = 0`), so summability holds formally there as well. -/
 theorem summable_norm_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => ‖Complex.exp (-s * Complex.log (n + c))‖) := by
-  set N : ℕ := ⌊1 - c.re⌋₊ + 1
+  obtain ⟨N, hN⟩ := exists_nat_gt (-c.re)
   refine (summable_nat_add_iff N).mp
     (((summable_nat_add_iff N).mpr (summable_norm_natCast_add_cpow_neg hs c)).congr fun n => ?_)
-  have hne : (((n + N : ℕ) : ℂ) + c) ≠ 0 := fun h0 =>
-    (re_natCast_add_floor_add_one_pos c n).ne' (by rw [h0, zero_re])
+  have hne : (((n + N : ℕ) : ℂ) + c) ≠ 0 := fun h0 => by
+    have hre := congrArg Complex.re h0
+    simp only [add_re, natCast_re, Nat.cast_add, zero_re] at hre
+    linarith [Nat.cast_nonneg (α := ℝ) n]
   rw [cpow_def_of_ne_zero hne, mul_comm]
 
 /-- For `1 < s.re` and any `c : ℂ`, the defining terms of `complexHurwitzSeries s c` are
-summable. -/
+summable (formal totalized convergence at `c = -n` with `n`-th term `exp 0 = 1`; genuine
+principal-power convergence away from `c ∈ -ℕ`). -/
 theorem summable_complexHurwitzSeries_term {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => Complex.exp (-s * Complex.log (n + c))) :=
   (summable_norm_complexHurwitzSeries_term hs c).of_norm
-
-/-- For `1 < s.re` and any `c : ℂ`, `n ↦ (n + c) ^ (-s)` is summable. -/
-theorem summable_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
-    Summable (fun n : ℕ => ((n : ℂ) + c) ^ (-s)) :=
-  (summable_norm_natCast_add_cpow_neg hs c).of_norm
 
 /-- On `1 < s.re` and away from `c = -n` (`n : ℕ`), `n ↦ (n + c) ^ (-s)` has sum
 `complexHurwitzSeries s c`. -/
