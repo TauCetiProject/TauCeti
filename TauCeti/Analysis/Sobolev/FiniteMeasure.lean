@@ -45,6 +45,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the scale-invariant form
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
+* `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the same
+  bound with one constant `K` for all balls, `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`.
 * `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
   exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.integrable_mul_value_of_memLp`: for `r > max 1 (2n/(n+2))`, an `Lʳ(Ω)` function
@@ -229,6 +231,34 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
     rw [← Real.rpow_add hω]
     ring_nf
   linear_combination (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) * R ^ (1 - n * δ) * hω'
+
+/-- **The Sobolev inequality on `W^{1,p}_0` of balls, with a uniform constant.** Let `n ≥ 1` be
+the dimension, and let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`. There is `K > 0`, depending only on
+`n`, `δ` and the normalization of `μ`, such that on every ball `Ω = B(x₀, R)` every
+`u ∈ W^{1,p}_0(Ω)` satisfies `‖u‖_{L^q} ≤ K R ^ (1 - n δ) ‖∇u‖_{Lᵖ}`. This is
+`TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball` with its explicit constant
+named once for all balls, the form used by iteration arguments on families of balls. -/
+theorem W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball
+    {q : ℝ≥0} (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ)
+    (hδn : δ < (finrank ℝ E : ℝ)⁻¹) :
+    ∃ K : ℝ, 0 < K ∧ ∀ {Omega : Opens E} {x₀ : E} {R : ℝ},
+      (Omega : Set E) = ball x₀ R → ∀ u ∈ w1p0Submodule mu Omega p,
+        eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤
+          ENNReal.ofReal (K * R ^ (1 - finrank ℝ E * δ)) * ‖W1p.gradient u‖ₑ := by
+  -- `p ≤ q` gives `0 ≤ δ`, so `δ < 1/n` forces `n ≥ 1`.
+  have hδ0 : 0 ≤ δ := by
+    simpa only [one_div, ENNReal.coe_toReal, hδ] using
+      ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
+        (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq
+  have hfin : 0 < finrank ℝ E := Nat.cast_pos.1 (inv_pos.1 (hδ0.trans_lt hδn))
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos hfin
+  have hn : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hfin
+  have : 0 < (finrank ℝ E : ℝ)⁻¹ - δ := sub_pos.2 hδn
+  have : 0 < 1 - δ := by linarith [hδn.trans_le (inv_le_one_of_one_le₀ hn)]
+  have := Metric.measureReal_ball_pos mu (0 : E) one_pos
+  exact ⟨(finrank ℝ E : ℝ)⁻¹ * mu.real (ball 0 1) ^ (-δ) *
+    ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ), by positivity, fun hOmega u hu =>
+    W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball hOmega hpq hδ hδn hu⟩
 
 /-- **A Sobolev inequality on `W^{1,p}_0(Ω)` with a gain of integrability.** If `Ω` has finite
 measure, `n ≥ 1` and `p < ∞`, there are an exponent `q > p` and a constant `S` such that

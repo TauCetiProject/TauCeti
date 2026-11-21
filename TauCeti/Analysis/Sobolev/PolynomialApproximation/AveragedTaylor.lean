@@ -262,13 +262,14 @@ private theorem averagedTaylorKernel_eq_sum_monomial {φ : EuclideanSpace ℝ ι
   have hlen : ((coordDirections I).length : ℕ∞ω) ≤ m := by
     rw [length_coordDirections]; exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
   have hdecomp : kernelTestTerm φ x I =
-      fun z ↦ ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset, F S z := by
+      ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset, F S := by
     ext z
-    simp_rw [kernelTestTerm, sub_eq_add_neg]
+    simp_rw [Finset.sum_apply, kernelTestTerm, sub_eq_add_neg]
     rw [Finset.prod_add (fun l ↦ x (I l)) (fun l ↦ -z (I l)) Finset.univ, Finset.sum_mul]
     simp [F, mul_assoc]
   rw [hdecomp, congrFun (iteratedFDerivAlong_sum (f := F) _
-    (fun S _ ↦ (hcont S).const_smul (∏ l ∈ S, x (I l))) (coordDirections I) hlen) y]
+    (fun S _ ↦ (hcont S).const_smul (∏ l ∈ S, x (I l))) (coordDirections I) hlen) y,
+    Finset.sum_apply]
   exact Finset.sum_congr rfl fun S _ ↦ by
     simpa [F, kernelMonomialWeight] using congrFun
       (iteratedFDerivAlong_const_smul (hcont S) (∏ l ∈ S, x (I l)) (coordDirections I) hlen) y
