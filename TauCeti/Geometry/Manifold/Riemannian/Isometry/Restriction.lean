@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
@@ -34,8 +35,12 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
 
 ## Main results
 
-* `TauCeti.IsLocalRiemannianIsometry.subtype_val`: the inclusion of an open submanifold equipped
-  with `TauCeti.Manifold.instRiemannianBundleOpen` is a local Riemannian isometry.
+* `TauCeti.IsLocalRiemannianIsometry.subtype_val` and
+  `TauCeti.IsLocalRiemannianIsometry.inclusion`: the inclusions of open submanifolds equipped
+  with `TauCeti.Manifold.instRiemannianBundleOpen` are local Riemannian isometries.
+* `TauCeti.RiemannianIsometry.inner_mfderiv_liftOpens`: reading a smooth Riemannian isometry
+  between open submanifolds as an ambient partial diffeomorphism preserves tangent-space inner
+  products on the domain open set.
 * `TauCeti.exists_riemannianIsometry_ball_of_inner_mfderiv_eq`: a smooth map into an inner-product
   space `F` whose differential is a linear isometry near an interior point restricts to a smooth
   `RiemannianIsometry` from an open submanifold onto an open ball around `0 : F`.
@@ -90,6 +95,74 @@ theorem IsLocalRiemannianIsometry.subtype_val
       ContinuousLinearEquiv.coe_coe]
     -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
     rfl
+
+/-- The inclusion `Opens.inclusion h : U → V` between nested open submanifolds, each equipped with
+the restricted Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen`, is a local
+Riemannian isometry. -/
+theorem IsLocalRiemannianIsometry.inclusion
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {U V : Opens M} (h : U ≤ V) :
+    IsLocalRiemannianIsometry I I (Opens.inclusion h) where
+  contMDiff := contMDiff_inclusion h
+  isInvertible_mfderiv x :=
+    ⟨(Manifold.tangentSpaceOpenEquiv (I := I) x).trans
+      (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).symm, by
+      ext v
+      apply (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).injective
+      simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.apply_symm_apply] using
+        (Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply h x v).symm⟩
+  inner_mfderiv x v w := by
+    rw [Manifold.inner_tangentSpace_open V, Manifold.inner_tangentSpace_open U,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply]
+
+/-- Reading a smooth Riemannian isometry `Ψ : U → V` between open submanifolds as an ambient
+partial diffeomorphism (`PartialDiffeomorph.liftOpens`) preserves tangent-space inner products at
+every point of `U`. -/
+theorem RiemannianIsometry.inner_mfderiv_liftOpens
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+    {U : Opens M} {V : Opens N} (Ψ : RiemannianIsometry I J U V) (hU : Nonempty U)
+    (hV : Nonempty V) {y : M} (hy : y ∈ U) (u v : TangentSpace I y) :
+    inner ℝ (mfderiv I J (Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV) y u)
+      (mfderiv I J (Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV) y v) =
+        inner ℝ u v := by
+  let e := Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV
+  let yU : U := ⟨y, hy⟩
+  have hιU := IsLocalRiemannianIsometry.subtype_val (I := I) U
+  have hιV := IsLocalRiemannianIsometry.subtype_val (I := J) V
+  have he_apply (x : U) : e x = (Ψ x : N) := by
+    simp [e, Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hy_src : y ∈ e.source := by
+    rw [PartialDiffeomorph.liftOpens_source]
+    exact ⟨yU, by simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv], rfl⟩
+  have he_diff : MDifferentiableAt I J e y :=
+    (e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hy_src)).mdifferentiableAt (by simp)
+  have he_comp : (e : M → N) ∘ (Subtype.val : U → M) = (Subtype.val : V → N) ∘ Ψ :=
+    funext he_apply
+  have he_val : e y = (Ψ yU : N) := he_apply yU
+  have hmf (w : TangentSpace I yU) :
+      ((mfderiv I J e y (mfderiv I I (Subtype.val : U → M) yU w) : TangentSpace J (e y)) : F) =
+        ((mfderiv J J (Subtype.val : V → N) (Ψ yU) (mfderiv I J Ψ yU w) :
+          TangentSpace J (Ψ yU : N)) : F) := by
+    have h₁ := mfderiv_comp_apply yU he_diff (hιU.mdifferentiableAt yU) w
+    have h₂ := mfderiv_comp_apply yU (hιV.mdifferentiableAt (Ψ yU)) (Ψ.mdifferentiableAt yU) w
+    have h₃ := DFunLike.congr_fun (mfderiv_congr (I := I) (I' := J) (x := yU) he_comp) w
+    exact h₁.symm.trans (h₃.trans h₂)
+  let u' : TangentSpace I yU := (Manifold.tangentSpaceOpenEquiv (I := I) yU).symm u
+  let v' : TangentSpace I yU := (Manifold.tangentSpaceOpenEquiv (I := I) yU).symm v
+  have hu : mfderiv I I (Subtype.val : U → M) yU u' = u := by
+    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hv : mfderiv I I (Subtype.val : U → M) yU v' = v := by
+    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  rw [← hu, ← hv,
+    inner_tangentSpace_congr (I := J) he_val (hmf u') (hmf v'),
+    hιV.inner_mfderiv (Ψ yU), Ψ.inner_mfderiv yU, ← hιU.inner_mfderiv yU]
 
 /-- If a smooth map `Φ : M → F` sends an interior point `x₀` to `0`, has differential `L` at `x₀`
 for a linear isometric equivalence `L : TangentSpace I x₀ ≃ₗᵢ[ℝ] F`, and preserves inner products on

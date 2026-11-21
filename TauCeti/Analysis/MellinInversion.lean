@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import TauCeti.Analysis.Contour.Residue.Basic
+import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.MellinTransform
@@ -54,11 +55,20 @@ that project's contour argument.
   `x ≥ 0` on every line avoiding the two poles.
 * `TauCeti.integral_cpow_div_mul_add_one`: its integral is `2π * max (1 - 1/x) 0` for
   positive `x` and `c`. At the cutoff `x = 1` this value is zero.
+* `TauCeti.mellinInv_isLittleO_nhdsGT_zero`, `TauCeti.mellinInv_isLittleO_atTop`: the
+  Riemann–Lebesgue estimates `mellinInv σ G x = o(x^{-σ})` as `x → 0+` (DLMF 2.5.7) and as
+  `x → +∞`, both from `TauCeti.mellinInv_isLittleO_of_tendsto_log`. Mathlib writes
+  `mellinInv σ G x` as `x^{-σ}` times a Fourier transform of `G` on the line `Re z = σ`,
+  evaluated at `log x`, and the Riemann–Lebesgue lemma applies to it.
 
 ## References
 
 * E. C. Titchmarsh, *The Theory of Functions*, §9.5.
 * H. Iwaniec, E. Kowalski, *Analytic Number Theory*, §5.9.
+
+The Riemann–Lebesgue estimates follow the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/AsymptoticApproximations/Mellin/Transforms.lean`.
 -/
 
 public section
@@ -276,5 +286,49 @@ theorem integral_cpow_div_mul_add_one {c x : ℝ} (hc : 0 < c) (hx : 0 < x) :
   have hπ : ((2 * π : ℝ) : ℂ) ≠ 0 := by exact_mod_cast mul_ne_zero two_ne_zero pi_ne_zero
   apply (inv_mul_eq_iff_eq_mul₀ hπ).mp
   simpa only [Complex.real_smul, one_div, Complex.ofReal_inv] using h
+
+section RiemannLebesgue
+
+open Asymptotics
+open scoped FourierTransform
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **The Riemann–Lebesgue estimate for Mellin inversion.** Along any filter on which `x > 0`
+eventually and `log x` leaves every compact set, `mellinInv σ G x = o(x^{-σ})`. No hypothesis on
+`G` is needed: if `G` is not integrable on the line `Re z = σ`, then `mellinInv σ G x = 0` for
+every `x > 0`, so the estimate holds trivially. -/
+theorem mellinInv_isLittleO_of_tendsto_log (G : ℂ → E) (σ : ℝ) {l : Filter ℝ}
+    (hpos : ∀ᶠ x in l, 0 < x) (hlog : Tendsto Real.log l (cocompact ℝ)) :
+    (fun x => mellinInv σ G x) =o[l] fun x => x ^ (-σ) := by
+  set g : ℝ → E := fun y => G (σ + 2 * π * y * I)
+  have hu : Tendsto (fun x => 𝓕 g (Real.log x)) l (𝓝 0) :=
+    (Real.zero_at_infty_fourier g).comp hlog
+  have heq : (fun x => mellinInv σ G x) =ᶠ[l]
+      fun x => ((x ^ (-σ) : ℝ) : ℂ) • 𝓕 g (Real.log x) := by
+    filter_upwards [hpos] with x hx
+    rw [mellinInv_eq_fourierInv σ G hx, Real.fourierInv_eq_fourier_neg, neg_neg, ofReal_cpow hx.le,
+      ofReal_neg]
+  have h : (fun x => mellinInv σ G x) =o[l] fun x => ((x ^ (-σ) : ℝ) : ℂ) := by
+    refine IsLittleO.congr' ?_ heq.symm EventuallyEq.rfl
+    simpa using (isBigO_refl (fun x : ℝ => ((x ^ (-σ) : ℝ) : ℂ)) l).smul_isLittleO
+      ((isLittleO_one_iff ℂ).2 hu)
+  refine isLittleO_norm_right.mp ?_
+  simpa only [norm_real] using isLittleO_norm_right.mpr h
+
+/-- DLMF 2.5.7: `mellinInv σ G x = o(x^{-σ})` as `x → 0+`. -/
+theorem mellinInv_isLittleO_nhdsGT_zero (G : ℂ → E) (σ : ℝ) :
+    (fun x => mellinInv σ G x) =o[𝓝[>] 0] fun x => x ^ (-σ) :=
+  mellinInv_isLittleO_of_tendsto_log G σ self_mem_nhdsWithin
+    (Real.tendsto_log_nhdsGT_zero.mono_right atBot_le_cocompact)
+
+/-- `mellinInv σ G x = o(x^{-σ})` as `x → +∞`, the estimate after a shift of the line of Mellin
+inversion to the right. -/
+theorem mellinInv_isLittleO_atTop (G : ℂ → E) (σ : ℝ) :
+    (fun x => mellinInv σ G x) =o[atTop] fun x => x ^ (-σ) :=
+  mellinInv_isLittleO_of_tendsto_log G σ (eventually_gt_atTop 0)
+    (Real.tendsto_log_atTop.mono_right atTop_le_cocompact)
+
+end RiemannLebesgue
 
 end TauCeti

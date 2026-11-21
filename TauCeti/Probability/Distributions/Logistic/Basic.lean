@@ -47,8 +47,9 @@ in its parameters with no case split.
 * `logisticMeasure_eq_withDensity`, `hasPDF_of_hasLaw_logisticMeasure`,
   `pdf_eq_logisticPDF_of_hasLaw_logisticMeasure` and `rnDeriv_logisticMeasure` — the density;
 * `quantile_logisticMeasure` — the quantile is `m + s * log (u / (1 - u))`;
-* `map_affine_logisticMeasure` — the affine image `a + b X` of a logistic variable `X` with
-  `b ≠ 0` is logistic with location `a + b * m` and scale `|b| * s`;
+* `map_affine_logisticMeasure` and `hasLaw_affine_logisticMeasure` — the affine image `a + b X`
+  of a logistic variable `X` with `b ≠ 0` is logistic with location `a + b * m` and scale
+  `|b| * s`;
 * `measurable_logisticMeasure` — the family is measurable in its two parameters.
 
 ## Implementation
@@ -405,6 +406,13 @@ theorem map_affine_logisticMeasure (m s : ℝ) {a b : ℝ} (hb : b ≠ 0) :
       ring
     rw [hy, abs_of_pos hb']
     field_simp
+
+/-- Affine transport of a logistic random variable. For a nonzero slope, the location transforms
+to `a + b * m` and the scale to `|b| * s`. -/
+theorem hasLaw_affine_logisticMeasure {a b : ℝ} (hb : b ≠ 0)
+    (hX : HasLaw X (logisticMeasure m s) P) :
+    HasLaw (fun ω ↦ a + b * X ω) (logisticMeasure (a + b * m) (|b| * s)) P :=
+  (HasLaw.mk (by fun_prop) (map_affine_logisticMeasure m s hb)).fun_comp hX
 
 /-- **The logistic family is measurable in its parameters**, so it can be packaged as a
 kernel. -/
