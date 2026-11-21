@@ -168,6 +168,16 @@ theorem toPath_ofPathEqZero (g : C(I, A)) (hg0 : g 0 = 0) : toPath (ofPathEqZero
       ht0 ((notMem_range_iocToUnitInterval_iff t).mp hx)
     rw [toPath_apply_ioc, ofPathEqZero_apply]
 
+@[simp]
+theorem ofPathEqZero_toPath (f : CStarCone A) :
+    ofPathEqZero (toPath f) (toPath_apply_zero f) = f :=
+  toPath_injective (toPath_ofPathEqZero _ _)
+
+theorem mem_range_toPath_iff {g : C(I, A)} :
+    g ∈ range (toPath (A := A)) ↔ g 0 = 0 :=
+  ⟨fun ⟨f, hf⟩ => hf ▸ toPath_apply_zero f,
+    fun hg0 => ⟨ofPathEqZero g hg0, toPath_ofPathEqZero g hg0⟩⟩
+
 /-- Linear cone element `t ↦ (t : ℝ) • a` in `CStarCone A`. -/
 noncomputable def linearPath (a : A) : CStarCone A :=
   ofPathEqZero ⟨fun t : I => (t : ℝ) • a, continuous_subtypeVal.smul continuous_const⟩ (by simp)
@@ -368,6 +378,11 @@ theorem toCone_ofConeEqZero (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0) :
 theorem ofConeEqZero_toCone (g : CStarSuspension A) :
     ofConeEqZero (toCone g) (toCone_apply_one g) = g :=
   toCone_injective (toCone_ofConeEqZero _ _)
+
+theorem mem_range_toCone_iff {f : CStarCone A} :
+    f ∈ range (toCone (A := A)) ↔ CStarCone.evalOne f = 0 :=
+  ⟨fun ⟨g, hg⟩ => hg ▸ toCone_apply_one g,
+    fun hf1 => ⟨ofConeEqZero f hf1, toCone_ofConeEqZero f hf1⟩⟩
 
 /-- Orientation-preserving `⋆`-isomorphism `CStarSuspension A ≃⋆ₐ[ℂ] C₀(ℝ, A)` induced by
 `iooZeroOneHomeomorphReal`. -/

@@ -317,6 +317,14 @@ theorem inl_injective (φ : A →⋆ₙₐ[ℂ] B) : Function.Injective (inl φ)
 theorem isometry_inl (φ : A →⋆ₙₐ[ℂ] B) : Isometry (inl φ) :=
   NonUnitalStarAlgHom.isometry (inl φ) (inl_injective φ)
 
+theorem mem_range_inl_iff (φ : A →⋆ₙₐ[ℂ] B) {x : MappingCone φ} :
+    x ∈ range (inl φ) ↔ fstHom φ x = 0 :=
+  ⟨fun ⟨g, hg⟩ => hg ▸ fst_inl_apply φ g,
+    fun hx =>
+      ⟨CStarSuspension.ofConeEqZero x.snd
+          (by rw [← x.eq_evalOne, ← fstHom_apply φ x, hx, map_zero]),
+        ext (fstHom_apply φ x ▸ hx.symm) (CStarSuspension.toCone_ofConeEqZero _ _)⟩⟩
+
 /-- `CStarSuspension B` is `⋆`-isomorphic to the kernel ideal of
 `fstHom φ : MappingCone φ →⋆ₙₐ[ℂ] A`. -/
 def equivKerFstHom (φ : A →⋆ₙₐ[ℂ] B) :
@@ -345,7 +353,7 @@ theorem equivKerFstHom_symm_apply (φ : A →⋆ₙₐ[ℂ] B) (x : TwoSidedIdea
   CStarSuspension.ofConeEqZero_apply x.val.snd _ t
 
 /-- Linear section `a ↦ (a, t ↦ t • φ a)` of `fstHom φ`, bundled as a `ℂ`-linear map. -/
-def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] MappingCone φ where
+private def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] MappingCone φ where
   toFun a := mk φ a (CStarCone.linearPath (φ a)) (CStarCone.evalOne_linearPath (φ a)).symm
   map_add' a₁ a₂ := by refine ext rfl ?_; ext t; simp [map_add, smul_add]
   map_smul' c a := by
@@ -354,19 +362,19 @@ def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] MappingCone φ
       ← Complex.coe_smul]
     exact (smul_comm c ((t : ℝ) : ℂ) (φ a)).symm
 
-@[simp] theorem fst_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
+@[simp] private theorem fst_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionLinearMap φ a).fst = a := (rfl)
 
-@[simp] theorem snd_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
+@[simp] private theorem snd_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     (sectionLinearMap φ a).snd = CStarCone.linearPath (φ a) := (rfl)
 
 @[simp]
-theorem norm_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
+private theorem norm_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     ‖sectionLinearMap φ a‖ = ‖a‖ := by
   rw [norm_eq, fst_sectionLinearMap_apply, snd_sectionLinearMap_apply, CStarCone.norm_linearPath]
   exact max_eq_left (NonUnitalStarAlgHom.norm_apply_le φ a)
 
-theorem isometry_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : Isometry (sectionLinearMap φ) :=
+private theorem isometry_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : Isometry (sectionLinearMap φ) :=
   AddMonoidHomClass.isometry_of_norm (sectionLinearMap φ) (norm_sectionLinearMap_apply φ)
 
 /-- Isometric continuous linear section `a ↦ (a, t ↦ t • φ a)` of `fstHom φ`. -/
@@ -444,16 +452,16 @@ private theorem map_star_mul_self_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) 
 `a ↦ (a, t ↦ t • φ a)` of `fstHom φ : MappingCone φ →⋆ₙₐ[ℂ] A`. -/
 def sectionCP [PartialOrder A] [StarOrderedRing A] (φ : A →⋆ₙₐ[ℂ] B) :
     A →CP MappingCone φ where
-  toLinearMap := sectionLinearMap φ
+  toLinearMap := (sectionCLM φ).toLinearMap
   map_cstarMatrix_nonneg' k M hM := by
     have hmem := StarOrderedRing.nonneg_iff.mp hM
     have hmapₗ (X : CStarMatrix (Fin k) (Fin k) A) :
-        X.map (sectionLinearMap φ) = CStarMatrix.mapₗ (sectionLinearMap φ) X := rfl
+        X.map (sectionCLM φ).toLinearMap = CStarMatrix.mapₗ (sectionCLM φ).toLinearMap X := rfl
     rw [hmapₗ]
     refine AddSubmonoid.closure_induction (hx := hmem) ?_ ?_ ?_
     · rintro _ ⟨R, rfl⟩
-      rw [← hmapₗ, map_star_mul_self_sectionLinearMap φ R]
-      exact star_mul_self_nonneg _
+      rw [← hmapₗ]
+      exact (map_star_mul_self_sectionLinearMap φ R).symm ▸ star_mul_self_nonneg _
     · rw [map_zero]
     · intro X Y _ _ hX hY; rw [map_add]; exact add_nonneg hX hY
 
