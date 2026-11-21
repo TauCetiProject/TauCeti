@@ -357,4 +357,25 @@ theorem path_actOfMappingPathFiberHomotopy (τ : I) (y : MappingPathFiber p b) (
   rw [val_eq_subtypeVal]
   exact path_mk _ _ _
 
+/-! ### The compatibilities up to homotopy -/
+
+/-- The comparison followed by concatenation is homotopic to the Moore action followed by the
+comparison (`toMappingPathFiberActHomotopy`). -/
+theorem homotopic_transLoopToMappingPathFiber_toMappingPathFiberAct :
+    (transLoopToMappingPathFiber p b).Homotopic (toMappingPathFiberAct p b) :=
+  ⟨toMappingPathFiberActHomotopy p b⟩
+
+/-- Concatenation followed by the comparison is homotopic to the comparison followed by the Moore
+action (`actOfMappingPathFiberHomotopy`). -/
+theorem homotopic_ofMappingPathFiberTransLoop_actOfMappingPathFiber :
+    (ofMappingPathFiberTransLoop p b).Homotopic (actOfMappingPathFiber p b) :=
+  ⟨actOfMappingPathFiberHomotopy p b⟩
+
+/-- The Moore path of the path of a point `(e, γ)` of the mapping-path fibre is
+`MoorePath.ofUnitPath γ`. -/
+@[simp]
+theorem _root_.TauCeti.MappingPathFiber.toMoorePath_toPath (y : MappingPathFiber p b) :
+    (MappingPathFiber.toPath p b y).toMoorePath = MoorePath.ofUnitPath y.val.2 := by
+  rw [Path.toMoorePath_eq_ofUnitPath, MappingPathFiber.toContinuousMap_toPath]
+
 end TauCeti.MooreReplacement.Fiber
