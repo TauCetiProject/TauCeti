@@ -56,6 +56,7 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   continuous bilinear map with this property.
 * `BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing`: the distribution `u` acts on a
   scalar Schwartz function `ψ` by `u ψ = ⟨u, ψ⟩`.
+* `BesselPotentialSpace.norm_toDistr_apply_le`: hence `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`.
 * `BesselPotentialSpace.dualEquiv`: the isometric isomorphism
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
@@ -63,6 +64,8 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
 * `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`,
   `SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`: the `L²` pairing
   of `H^{-r}` and `H^r` on Schwartz functions, and `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`: conversely, a bound
+  `|∫ ⟪a, v⟫| ≤ C ‖v‖_{H^r}` for all Schwartz `v` gives `‖a‖_{H^{-r}} ≤ C`.
 * `SchwartzMap.inner_toLp_besselPotentialCLM_left`: the Bessel potentials `J^a` of real order are
   symmetric for the `L²` inner product of Schwartz functions.
 * `BesselPotentialSpace.inner_inclusion_toBesselPotentialSpaceCLM`,
@@ -188,6 +191,18 @@ theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (
   filter_upwards [SchwartzMap.coeFn_toLp_toBesselPotentialSpaceCLM (s := -s) (p := q) ψ] with x hx
   rw [hx]
   simp
+
+variable (q) in
+/-- The distribution underlying `u ∈ H^{s,p}(E, F)` is bounded on scalar Schwartz functions by the
+dual norm: `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`. -/
+theorem norm_toDistr_apply_le {s : ℝ} (u : H^{s, p}(E, F)) (ψ : 𝓢(E, ℂ)) :
+    ‖u.toDistr ψ‖ ≤ ‖u‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ‖ := by
+  rw [toDistr_apply_eq_besselPotentialPairing q]
+  refine (ContinuousLinearMap.norm_besselPotentialPairing_le _ s u _).trans ?_
+  rw [mul_assoc]
+  refine mul_le_of_le_one_left (by positivity) ?_
+  rw [ContinuousLinearMap.opNorm_flip]
+  exact ContinuousLinearMap.opNorm_lsmul_le
 
 end Distribution
 
@@ -330,6 +345,35 @@ theorem norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (r : ℝ)
   rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, ← BesselPotentialSpace.norm_toLp_eq,
     ← BesselPotentialSpace.norm_toLp_eq (toBesselPotentialSpaceCLM r 2 b)]
   exact norm_inner_le_norm _ _
+
+/-- **The `H^{-r}` norm by duality.** If `‖∫ ⟪a, v⟫‖ ≤ C ‖v‖_{H^r}` for every Schwartz function
+`v`, then `‖a‖_{H^{-r}} ≤ C`: the bound is attained at `v = J^{-2r} a`. -/
+theorem norm_toBesselPotentialSpaceCLM_neg_le_of_forall (r : ℝ) (a : 𝓢(E, F)) {C : ℝ}
+    (hC : 0 ≤ C)
+    (h : ∀ v : 𝓢(E, F), ‖∫ x, ⟪a x, v x⟫_ℂ‖ ≤ C * ‖toBesselPotentialSpaceCLM r 2 v‖) :
+    ‖toBesselPotentialSpaceCLM (-r) 2 a‖ ≤ C := by
+  -- Test against `v = J^{-2r} a`, which realizes the `H^{-r}` norm of `a` in the pairing.
+  set v := besselPotentialCLM ((-2 * r : ℝ) : ℂ) a
+  set N := ‖toBesselPotentialSpaceCLM (-r) 2 a‖
+  have hvN : ‖toBesselPotentialSpaceCLM r 2 v‖ = N := by
+    rw [norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
+      show r + -2 * r = -r by ring]
+  have hvL : (toBesselPotentialSpaceCLM r 2 v).toLp =
+      (toBesselPotentialSpaceCLM (-r) 2 a).toLp := by
+    rw [toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+      toLp_toBesselPotentialSpaceCLM_eq_besselPotentialCLM,
+      besselPotentialCLM_besselPotentialCLM_apply,
+      show ((-2 * r : ℝ) : ℂ) + (r : ℂ) = ((-r : ℝ) : ℂ) by push_cast; ring]
+  have hpair : ∫ x, ⟪a x, v x⟫_ℂ = ((N ^ 2 : ℝ) : ℂ) := by
+    rw [← inner_toLp_toBesselPotentialSpaceCLM_neg r, hvL, inner_self_eq_norm_sq_to_K,
+      BesselPotentialSpace.norm_toLp_eq]
+    norm_cast
+  have hv := h v
+  rw [hpair, hvN, Complex.norm_real, Real.norm_of_nonneg (by positivity)] at hv
+  -- `N ^ 2 ≤ C N`, so `N ≤ C`.
+  rcases (norm_nonneg _ : 0 ≤ N).eq_or_lt with h0 | h0
+  · exact (show N = 0 from h0.symm) ▸ hC
+  · nlinarith
 
 /-- Bessel potentials of real order are symmetric for the `L²` inner product of Schwartz
 functions: `⟪J^a X, Y⟫_{L²} = ⟪X, J^a Y⟫_{L²}`. -/

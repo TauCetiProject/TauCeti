@@ -37,7 +37,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.mfderiv_flow_ne_zero`: so the orbit of a regular point consists
   of regular points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
-  orbit.
+  orbit, and `TauCeti.IsAdaptedPseudoGradient.eqOn_flow_of_isMIntegralCurveOn`: so is every
+  integral curve on an open interval, on that interval.
 * `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_of_isMIntegralCurve`: an
   integral curve from `p` to `q` is the orbit of a point of `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
@@ -164,6 +165,16 @@ theorem flow_apply_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCur
     hX.flow t (γ 0) = γ t :=
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField hγ t
 
+/-- **Integral curves on an open interval are orbits.** An integral curve of an adapted
+pseudo-gradient on an open interval is, on that interval, the orbit of its value at any time
+`t₀` of the interval, shifted by `t₀`. -/
+theorem eqOn_flow_of_isMIntegralCurveOn {γ : ℝ → M} {a b t₀ : ℝ}
+    (hγ : IsMIntegralCurveOn γ X (Ioo a b)) (ht₀ : t₀ ∈ Ioo a b) :
+    EqOn γ (fun t ↦ hX.flow (t - t₀) (γ t₀)) (Ioo a b) :=
+  isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless ht₀ (hX.contMDiff.of_le (by simp)) hγ
+    ((((hX.isMIntegralCurve_flow (γ t₀)).comp_add (-t₀)).isMIntegralCurveOn _).congr fun t _ ↦ by
+      simp [sub_eq_add_neg]) (by simp)
+
 /-- An integral curve of an adapted pseudo-gradient from `p` to `q` is the orbit of a point of
 `W^u(p) ∩ W^s(q)`. -/
 theorem mem_unstableSet_inter_stableSet_of_isMIntegralCurve {γ : ℝ → M} {p q : M}
@@ -259,6 +270,15 @@ theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 
     x ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x :=
   ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
     Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
+
+/-- **A critical point lies only on its own unstable manifold.** If `x` is a critical point of `f`
+and `x ∈ W^u(p)`, then `x = p`: the flow fixes `x`, so `x ∈ W^u(x)`, and unstable sets of distinct
+points are disjoint. -/
+theorem eq_of_mem_unstableSet_of_mfderiv_eq_zero {x p : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (h : x ∈ hX.flow.unstableSet p) : x = p := by
+  by_contra hxp
+  exact disjoint_left.1 (Flow.disjoint_unstableSet hxp)
+    (hX.mem_unstableSet_inter_stableSet_self hx).1 h
 
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
