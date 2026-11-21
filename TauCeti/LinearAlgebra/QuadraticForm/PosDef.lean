@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+import TauCeti.LinearAlgebra.QuadraticForm.Even
 
 /-!
 # Positive definite quadratic maps
@@ -205,18 +206,15 @@ theorem finite_setOf_apply_le {q : QuadraticForm ℤ M} (hq : q.PosDef) (n : ℤ
   -- The Gram matrix of the polar form in `b` is a positive definite integer matrix, because the
   -- diagonal of the polar form is `2 • q`.
   have hA : (LinearMap.BilinForm.toMatrix b q.polarBilin).PosDef := by
-    refine (LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _
-      (LinearMap.BilinForm.isSymm_def.mpr fun x y ↦ QuadraticMap.polar_comm q x y)).mp ?_
+    refine (LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ q.isSymm_polarBilin).mp ?_
     rw [QuadraticMap.toQuadraticMap_polarBilin]
     exact hq.smul zero_lt_two
   -- In the coordinates `b.repr x`, the bound `q x ≤ n` reads `B x x ≤ 2 * n` for the Gram
   -- matrix of the polar form `B`, whose sublevel sets are finite.
   refine ((hA.finite_setOfPred_dotProduct_mulVec_le (2 * n)).preimage
     b.equivFun.injective.injOn).subset fun x (hx : q x ≤ n) ↦ ?_
-  have hself : q.polarBilin x x = 2 * q x := by
-    rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, two_nsmul, two_mul]
   rw [Set.mem_preimage, Set.mem_ofPred_eq, b.equivFun_apply,
-    ← LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec, hself]
+    ← LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec, q.polarBilin_self x]
   omega
 
 /-- **A positive definite integral quadratic form takes each value finitely often.** For a
