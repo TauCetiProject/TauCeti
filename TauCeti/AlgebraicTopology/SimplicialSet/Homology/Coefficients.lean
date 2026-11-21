@@ -8,9 +8,12 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Descent
-public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Rat
 
@@ -31,6 +34,13 @@ naturally in the simplicial set (`SSet.homologyExtendScalarsIso_hom_naturality`)
 `ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`, supplies the exactness for the flat
 map `ℤ → ℚ`, which compares integral and rational homology.
 
+For preadditive `[CategoryWithHomology]` categories with `w`-coproducts, this file also supplies
+coefficient-change functoriality (`SSet.homologyNatTransOfCoefficients`,
+`SSet.homologyNatIsoOfCoefficientsIso`, `SSet.homologyIsoOfCoefficientsIso`), exact-functor
+comparisons (`SSet.homologyFunctorObjCompIso`, `SSet.homologyObjIso`), and
+`RingHom.simplicialHomologyFunctorExtendScalarsIso` (built via `Functor.Monoidal.εIso`), feeding
+relative simplicial, singular, and local homology coefficient change.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.A, change of coefficients.
@@ -41,7 +51,7 @@ public noncomputable section
 open CategoryTheory Limits
 open scoped Simplicial
 
-universe w v u
+universe w v v' u u'
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
@@ -73,6 +83,96 @@ instance preservesFiniteLimits_extendScalars_intCastRat :
 end ModuleCat
 
 namespace SSet
+section Coefficients
+open CategoryTheory.Functor (whiskerRight isoWhiskerLeft isoWhiskerRight)
+open HomologicalComplex (homologyMap)
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  [CategoryWithHomology C] {R R' R'' : C}
+/-- A coefficient morphism `φ : R ⟶ R'` induces a natural transformation on simplicial homology. -/
+def homologyNatTransOfCoefficients (φ : R ⟶ R') (n : ℕ) :
+    homologyFunctor.{w} R n ⟶ homologyFunctor.{w} R' n :=
+  whiskerRight ((chainComplexFunctor C).map φ) (HomologicalComplex.homologyFunctor C _ n)
+@[simp] lemma homologyNatTransOfCoefficients_app (φ : R ⟶ R') (n : ℕ) (X : SSet.{w}) :
+    (homologyNatTransOfCoefficients φ n).app X =
+      homologyMap (((chainComplexFunctor C).map φ).app X) n := (rfl)
+@[simp] lemma homologyNatTransOfCoefficients_id (R : C) (n : ℕ) :
+    homologyNatTransOfCoefficients.{w} (𝟙 R) n = 𝟙 _ :=
+  (congrArg (whiskerRight · _) ((chainComplexFunctor C).map_id R)).trans (Functor.whiskerRight_id _)
+@[simp] lemma homologyNatTransOfCoefficients_comp (φ : R ⟶ R') (ψ : R' ⟶ R'') (n : ℕ) :
+    homologyNatTransOfCoefficients.{w} (φ ≫ ψ) n =
+      homologyNatTransOfCoefficients φ n ≫ homologyNatTransOfCoefficients ψ n :=
+  (congrArg (whiskerRight · _) ((chainComplexFunctor C).map_comp φ ψ)).trans
+    (Functor.whiskerRight_comp _ _ _)
+variable (e : R ≅ R')
+/-- A coefficient iso `e : R ≅ R'` induces a natural isomorphism on simplicial homology. -/
+def homologyNatIsoOfCoefficientsIso (n : ℕ) : homologyFunctor.{w} R n ≅ homologyFunctor.{w} R' n :=
+  isoWhiskerRight ((chainComplexFunctor C).mapIso e) (HomologicalComplex.homologyFunctor C _ n)
+@[simp] lemma homologyNatIsoOfCoefficientsIso_hom (n : ℕ) :
+    (homologyNatIsoOfCoefficientsIso.{w} e n).hom = homologyNatTransOfCoefficients e.hom n := (rfl)
+@[simp] lemma homologyNatIsoOfCoefficientsIso_inv (n : ℕ) :
+    (homologyNatIsoOfCoefficientsIso.{w} e n).inv = homologyNatTransOfCoefficients e.inv n := (rfl)
+@[simp] lemma homologyNatIsoOfCoefficientsIso_refl (R : C) (n : ℕ) :
+    homologyNatIsoOfCoefficientsIso.{w} (Iso.refl R) n = Iso.refl _ :=
+  Iso.ext (homologyNatTransOfCoefficients_id R n)
+@[simp] lemma homologyNatIsoOfCoefficientsIso_symm (n : ℕ) : homologyNatIsoOfCoefficientsIso.{w}
+    e.symm n = (homologyNatIsoOfCoefficientsIso e n).symm := Iso.ext rfl
+@[simp] lemma homologyNatIsoOfCoefficientsIso_trans (e₁ : R ≅ R') (e₂ : R' ≅ R'') (n : ℕ) :
+    homologyNatIsoOfCoefficientsIso.{w} (e₁ ≪≫ e₂) n =
+      homologyNatIsoOfCoefficientsIso e₁ n ≪≫ homologyNatIsoOfCoefficientsIso e₂ n :=
+  Iso.ext (homologyNatTransOfCoefficients_comp e₁.hom e₂.hom n)
+section
+variable (X : SSet.{w}) (n : ℕ)
+/-- An iso `e : R ≅ R'` of coefficient objects induces an isomorphism on `Hₙ(X; R)`. -/
+def homologyIsoOfCoefficientsIso : X.homology R n ≅ X.homology R' n :=
+  (homologyNatIsoOfCoefficientsIso e n).app X
+@[simp] lemma homologyIsoOfCoefficientsIso_hom : (homologyIsoOfCoefficientsIso e X n).hom =
+    (homologyNatTransOfCoefficients e.hom n).app X := (rfl)
+@[simp] lemma homologyIsoOfCoefficientsIso_inv : (homologyIsoOfCoefficientsIso e X n).inv =
+    (homologyNatTransOfCoefficients e.inv n).app X := (rfl)
+@[simp] lemma homologyIsoOfCoefficientsIso_symm :
+    homologyIsoOfCoefficientsIso e.symm X n = (homologyIsoOfCoefficientsIso e X n).symm :=
+  Iso.ext rfl
+end
+@[simp] lemma homologyIsoOfCoefficientsIso_refl (R : C) (X : SSet.{w}) (n : ℕ) :
+    homologyIsoOfCoefficientsIso (Iso.refl R) X n = Iso.refl _ :=
+  Iso.ext (congrArg (·.app X) (homologyNatTransOfCoefficients_id R n))
+@[simp] lemma homologyIsoOfCoefficientsIso_trans (e₁ : R ≅ R') (e₂ : R' ≅ R'') (X : SSet.{w})
+    (n : ℕ) : homologyIsoOfCoefficientsIso (e₁ ≪≫ e₂) X n =
+      homologyIsoOfCoefficientsIso e₁ X n ≪≫ homologyIsoOfCoefficientsIso e₂ X n :=
+  Iso.ext (congrArg (·.app X) (homologyNatTransOfCoefficients_comp e₁.hom e₂.hom n))
+@[reassoc] lemma homologyMap_comp_homologyIsoOfCoefficientsIso_hom {X Y : SSet.{w}} (g : X ⟶ Y)
+    (n : ℕ) : SSet.homologyMap g R n ≫ (homologyIsoOfCoefficientsIso e Y n).hom =
+      (homologyIsoOfCoefficientsIso e X n).hom ≫ SSet.homologyMap g R' n :=
+  (homologyNatIsoOfCoefficientsIso e n).hom.naturality g
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasCoproducts.{w} D]
+  [CategoryWithHomology D] (F : C ⥤ D) [F.Additive]
+  [∀ T : Type w, PreservesColimitsOfShape (Discrete T) F] [F.PreservesHomology] (R : C)
+/-- **Simplicial homology commutes with exact coproduct-preserving `F`**: `F Hₙ ≅ Hₙ F`. -/
+def homologyFunctorObjCompIso (n : ℕ) :
+    homologyFunctor.{w} R n ⋙ F ≅ homologyFunctor.{w} (F.obj R) n :=
+  isoWhiskerLeft ((chainComplexFunctor C).obj R)
+    (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).symm ≪≫
+  isoWhiskerRight (chainComplexFunctorObjCompMapIso F R) (HomologicalComplex.homologyFunctor _ _ n)
+lemma homologyFunctorObjCompIso_hom_app (n : ℕ) (X : SSet.{w}) :
+    (homologyFunctorObjCompIso F R n).hom.app X =
+      (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).inv.app (X.chainComplex R) ≫
+        homologyMap ((chainComplexFunctorObjCompMapIso F R).hom.app X) n := (rfl)
+lemma homologyFunctorObjCompIso_inv_app (n : ℕ) (X : SSet.{w}) :
+    (homologyFunctorObjCompIso F R n).inv.app X =
+      homologyMap ((chainComplexFunctorObjCompMapIso F R).inv.app X) n ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso _ n).hom.app (X.chainComplex R) := (rfl)
+/-- **Simplicial homology of `X` commutes with exact coproduct-preserving `F`**: `F Hₙ ≅ Hₙ F`. -/
+def homologyObjIso (X : SSet.{w}) (n : ℕ) : F.obj (X.homology R n) ≅ X.homology (F.obj R) n :=
+  (homologyFunctorObjCompIso F R n).app X
+lemma homologyObjIso_hom (X : SSet.{w}) (n : ℕ) :
+    (homologyObjIso F R X n).hom = (homologyFunctorObjCompIso F R n).hom.app X := (rfl)
+lemma homologyObjIso_inv (X : SSet.{w}) (n : ℕ) :
+    (homologyObjIso F R X n).inv = (homologyFunctorObjCompIso F R n).inv.app X := (rfl)
+@[reassoc] lemma map_homologyMap_comp_homologyObjIso_hom {X Y : SSet.{w}} (g : X ⟶ Y) (n : ℕ) :
+    F.map (SSet.homologyMap g R n) ≫ (homologyObjIso F R Y n).hom =
+      (homologyObjIso F R X n).hom ≫ SSet.homologyMap g (F.obj R) n :=
+  (homologyFunctorObjCompIso F R n).hom.naturality g
+end Coefficients
 
 /-- **Extension of scalars commutes with simplicial homology** along a ring map `f : R →+* S` whose
 extension of scalars is exact, for instance a flat one
@@ -80,7 +180,7 @@ extension of scalars is exact, for instance a flat one
 coefficients in `R` gives the homology with coefficients in `S`. The `R`-coefficient object is the
 native `ULift R`; the `S`-coefficient object is `S`. -/
 def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
-    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u} f)] (n : ℕ) :
     (ModuleCat.extendScalars f).obj (X.homology (ModuleCat.of R (ULift.{u} R)) n) ≅
       X.homology (ModuleCat.of S S) n := by
   let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
@@ -143,5 +243,25 @@ theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [Com
   -- The squares name the same objects in different unfolded forms, so they are chained explicitly.
   exact ((reassoc_of% h₁) _).trans <| congrArg (_ ≫ ·) <| ((reassoc_of% h₂) _).trans <|
     congrArg (_ ≫ ·) h₃
-
 end SSet
+namespace RingHom
+open ModuleCat (extendScalars of)
+open CategoryTheory.Functor.Monoidal (εIso)
+open SSet (homologyFunctor homologyFunctorObjCompIso homologyNatIsoOfCoefficientsIso
+  homologyObjIso homologyIsoOfCoefficientsIso)
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+  [PreservesFiniteLimits (extendScalars.{u} f)]
+/-- **Extension of scalars commutes with simplicial homology**, naturally in `X : SSet`. -/
+def simplicialHomologyFunctorExtendScalarsIso (n : ℕ) :
+    homologyFunctor.{u} (of R R) n ⋙ extendScalars.{u} f ≅ homologyFunctor.{u} (of S S) n :=
+  homologyFunctorObjCompIso (extendScalars.{u} f) (of R R) n ≪≫
+    homologyNatIsoOfCoefficientsIso (εIso (extendScalars.{u} f)).symm n
+lemma simplicialHomologyFunctorExtendScalarsIso_hom_app (X : SSet.{u}) (n : ℕ) :
+    (f.simplicialHomologyFunctorExtendScalarsIso n).hom.app X =
+      (homologyObjIso (extendScalars.{u} f) (of R R) X n).hom ≫
+        (homologyIsoOfCoefficientsIso (εIso _).symm X n).hom := (rfl)
+lemma simplicialHomologyFunctorExtendScalarsIso_inv_app (X : SSet.{u}) (n : ℕ) :
+    (f.simplicialHomologyFunctorExtendScalarsIso n).inv.app X =
+      (homologyIsoOfCoefficientsIso (εIso _).symm X n).inv ≫
+        (homologyObjIso (extendScalars.{u} f) (of R R) X n).inv := (rfl)
+end RingHom

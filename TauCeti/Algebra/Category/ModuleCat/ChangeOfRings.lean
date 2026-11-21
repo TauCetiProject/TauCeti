@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Descent
+public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
@@ -19,9 +20,12 @@ import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 The counit of restriction of scalars along a ring equivalence, and its inverse, act as the
 identity on the underlying elements.
 
-It also records three facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
+It also records facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
 * Extension of scalars is additive.
+* Extension of scalars out of a field preserves finite limits
+  (`preservesFiniteLimits_extendScalars_of_isField`, `_of_field`).
+* A commuting square intertwines pure tensors `s ⊗ₜ x` (`ExtendScalars.apply_tmul_of_comm`).
 * Extension of scalars carries multiplication by a scalar to multiplication by its image
   (`ModuleCat.extendScalars_map_smul_id`). This transports the curvature equations of a
   matrix factorization when its components are extended along a ring map, so the resulting
@@ -332,7 +336,28 @@ theorem ExtendScalars.span_singleton_one_tmul_eq_top
   obtain ⟨s, rfl⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top h x
   exact ⟨s, key s⟩
 
+/-- A commuting square `(extendScalars f).map φ ≫ iQ = iP ≫ ψ` intertwines pure tensors. -/
+theorem ExtendScalars.apply_tmul_of_comm {P Q : ModuleCat.{w} R} {P' Q' : ModuleCat.{max v w} S}
+    {iP : (extendScalars f).obj P ⟶ P'} {iQ : (extendScalars f).obj Q ⟶ Q'} {φ : P ⟶ Q}
+    {ψ : P' ⟶ Q'} (hcomm : (extendScalars f).map φ ≫ iQ = iP ≫ ψ) (s : S) (x : P) :
+    ψ (iP (s ⊗ₜ[R, f] x)) = iQ (s ⊗ₜ[R, f] φ x) :=
+  ((comp_apply iP ψ _).symm.trans (ConcreteCategory.congr_hom hcomm.symm _)).trans
+    ((comp_apply _ iQ _).trans (congrArg iQ (ExtendScalars.map_tmul f φ s x)))
 end Cyclic
+
+section Flat
+
+/-- Extension of scalars along a ring map out of an `IsField` ring preserves finite limits. -/
+theorem preservesFiniteLimits_extendScalars_of_isField {K S : Type u} [CommRing K] [CommRing S]
+    (hK : IsField K) (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
+  preservesFiniteLimits_extendScalars_of_flat (RingHom.Flat.of_isField hK f)
+
+/-- Extension of scalars along a ring map out of a field preserves finite limits. -/
+instance preservesFiniteLimits_extendScalars_of_field {K S : Type u} [Field K] [CommRing S]
+    (f : K →+* S) : Limits.PreservesFiniteLimits (extendScalars.{u, u, u} f) :=
+  preservesFiniteLimits_extendScalars_of_isField (Field.toIsField K) f
+
+end Flat
 
 section Semilinear
 
