@@ -14,8 +14,8 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 
 Mathlib equips square matrices `CStarMatrix n n A` over a C⋆-algebra `A` with a C⋆-algebra
 structure and rectangular matrices `CStarMatrix m n A` with the operator norm of the row-action
-operator `CStarMatrix.toCLM M` (`v ↦ v ᵥ* M`) from the Hilbert `A`-module `m → A` to `n → A`
-(which reverses composition order on products: `toCLM (M * N) = (toCLM N).comp (toCLM M)`).
+operator `CStarMatrix.toCLM M` (`v ↦ v ᵥ* M`) from the left Hilbert `A`-module `m → A` to
+`n → A` (which reverses composition order on products: `toCLM (M * N) = (toCLM N).comp (toCLM M)`).
 Comparing projections across different matrix sizes via rectangular partial isometries, block
 decompositions, and coordinate equivalences `e : m ≃ n` requires rectangular multiplication,
 conjugate transposition, and reindexing to interact cleanly with that operator norm. This file
@@ -168,16 +168,18 @@ theorem reindexₗ_conjTranspose [Semiring R] [AddCommMonoid A] [Module R A] [St
 
 section ProperStar
 
-variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
 
-/-- Over a star-ordered ring with proper star, `Mᴴ * M = 0` iff `M = 0`. -/
+/-- Over a star-ordered semiring with proper star, `Mᴴ * M = 0` iff `M = 0`. -/
 @[simp] theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
     M.conjTranspose * M = 0 ↔ M = 0 := by
-  simpa only [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
-    of_zero.symm, Equiv.symm_apply_apply] using
-    Matrix.conjTranspose_mul_self_eq_zero (A := ofMatrix.symm M)
+  refine ⟨fun h ↦ ext fun i j ↦ ?_, fun h ↦ by rw [h, CStarMatrix.mul_zero]⟩
+  have hjj : ∑ k : m, star (M k j) * M k j = 0 := by
+    simpa [mul_apply] using congrFun (congrFun h j) j
+  rw [Finset.sum_eq_zero_iff_of_nonneg (fun k _ ↦ star_mul_self_nonneg (M k j))] at hjj
+  exact star_mul_self_eq_zero.mp (hjj i (Finset.mem_univ i))
 
-/-- Over a star-ordered ring with proper star, `M * Mᴴ = 0` iff `M = 0`. -/
+/-- Over a star-ordered semiring with proper star, `M * Mᴴ = 0` iff `M = 0`. -/
 @[simp] theorem self_mul_conjTranspose_eq_zero [Fintype n] {M : CStarMatrix m n A} :
     M * M.conjTranspose = 0 ↔ M = 0 := by
   simpa using conjTranspose_mul_self_eq_zero (M := M.conjTranspose)
@@ -186,9 +188,10 @@ variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [Is
 theorem conjTranspose_mul_self_mul_eq_zero [Fintype m] [Fintype n]
     (M : CStarMatrix m n A) (N : CStarMatrix n p A) :
     (M.conjTranspose * M) * N = 0 ↔ M * N = 0 := by
-  simpa only [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
-    of_zero.symm, Equiv.symm_apply_apply] using
-    Matrix.conjTranspose_mul_self_mul_eq_zero (ofMatrix.symm M) (ofMatrix.symm N)
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [mul_assoc_rectangular, h, CStarMatrix.mul_zero]⟩
+  apply_fun (N.conjTranspose * ·) at h
+  rwa [CStarMatrix.mul_zero, ← mul_assoc_rectangular, ← mul_assoc_rectangular,
+    ← conjTranspose_mul, mul_assoc_rectangular, conjTranspose_mul_self_eq_zero] at h
 
 /-- Left cancellation of `M` from `(M * M.conjTranspose) * N = 0`. -/
 theorem self_mul_conjTranspose_mul_eq_zero [Fintype m] [Fintype n]
@@ -219,8 +222,8 @@ section RectangularNorm
 
 variable {l m n o R A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- Acting on right Hilbert modules by `M * N` composes the operators in reverse order, because
-`toCLM` acts on rows from the right. -/
+/-- `toCLM` acts by right multiplication on rows in the left Hilbert `A`-module, so `M * N`
+composes the operators in reverse order. -/
 theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     toCLM (M * N) = (toCLM N).comp (toCLM M) := by
   ext v k
