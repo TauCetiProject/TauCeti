@@ -344,6 +344,14 @@ theorem neg (h : σ.IsEquivariantMomentMap μ) : (-σ).IsEquivariantMomentMap fu
   toIsMomentMap := h.toIsMomentMap.neg
   apply_smul g x := by rw [h.apply_smul, map_neg]
 
+/-- Shifting a group-level moment map by a coadjoint-invariant constant `ν ∈ 𝔤*` gives a
+group-level moment map. -/
+theorem add_const (h : σ.IsEquivariantMomentMap μ) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hν : ∀ g : G, Lie.coadjointRepresentation ℝ I G g ν = ν) :
+    σ.IsEquivariantMomentMap (fun x ↦ μ x + ν) where
+  toIsMomentMap := h.toIsMomentMap.add_const ν
+  apply_smul g x := by rw [h.apply_smul, map_add, hν]
+
 /-- **Equivariant shifts.** Shifting a group-level moment map on a nonempty manifold by a constant
 `ν ∈ 𝔤*` gives a group-level moment map exactly when `ν` is coadjoint-invariant. -/
 theorem add_const_iff [Nonempty M] (h : σ.IsEquivariantMomentMap μ)
@@ -579,6 +587,18 @@ theorem differential_surjective_of_apply_eq (h : σ.IsEquivariantMomentMap μ)
     rw [h.apply_smul, hx, Representation.inv_self_apply]
   have hx' := (h.differential_surjective_smul_iff g (g⁻¹ • x)).2 (hreg _ hy)
   rwa [smul_inv_smul] at hx'
+
+/-- **Shifts preserve regular points.** The shift `μ + ν` of a group-level moment map by a
+coadjoint-invariant `ν` has the same differential as `μ`, so `d(μ + ν)_x` is surjective when
+`dμ_x` is. -/
+theorem differential_surjective_add_const (h : σ.IsEquivariantMomentMap μ)
+    {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hν : ∀ g : G, Lie.coadjointRepresentation ℝ I G g ν = ν) {x : M}
+    (hx : Function.Surjective (h.toIsMomentMap.differential x)) :
+    Function.Surjective ((h.add_const hν).toIsMomentMap.differential x) := by
+  convert hx using 1
+  ext v ξ
+  rw [IsMomentMap.differential_apply_eq_eval₂, IsMomentMap.differential_apply_eq_eval₂]
 
 end IsEquivariantMomentMap
 
