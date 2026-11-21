@@ -44,14 +44,33 @@ radicals correspond (`comap_traceRadical_signEquiv`), inducing algebra isomorphi
 `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv` between the trace-radical quotients that
 intertwine the quotient strand inclusions.
 
+To avoid transporting types along `-(-δ) = δ` or `(↑(-δ) : ℂ) = -(↑δ : ℂ)`, the construction is
+carried out for any pair of loop parameters with `δ + δ' = 0`
+(`TauCeti.TemperleyLieb.signEquivOfAddEqZero`), whose inverse is definitionally the same
+construction with `δ` and `δ'` swapped; `signEquiv` is its specialization to `δ' = -δ`. The
+compatibilities above hold for `signEquivOfAddEqZero` as well, together with the induced
+`⋆`-algebra equivalences `TauCeti.TemperleyLieb.signStarAlgEquivOfAddEqZero` and
+`TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignStarAlgEquivOfAddEqZero` on the algebras and on
+their star-stable trace-radical quotients.
+
 ## Main definitions
 
+* `TauCeti.TemperleyLieb.signEquivOfAddEqZero`: the algebra isomorphism
+  `TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R δ' n` sending `e δ i` to `-e δ' i` when `δ + δ' = 0`.
 * `TauCeti.TemperleyLieb.signEquiv δ n`: the algebra isomorphism
   `TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R (-δ) n` sending `e δ i` to `-e (-δ) i`.
 * `TauCeti.TemperleyLieb.signStarAlgEquiv δ n`: `signEquiv` bundled as a star-algebra isomorphism
   `TemperleyLieb R δ n ≃⋆ₐ[R] TemperleyLieb R (-δ) n` for self-adjoint `δ` and `-δ`.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv`: the induced algebra isomorphism between
-  the trace-radical quotients at `δ` and `-δ`.
+* `TauCeti.TemperleyLieb.signStarAlgEquivOfAddEqZero`: `signEquivOfAddEqZero` bundled as a
+  star-algebra isomorphism for self-adjoint `δ` and `δ'`.
+* `TauCeti.TemperleyLieb.signTraceOfAddEqZero`: the signed transport of trace families, a linear
+  equivalence preserving Markov traces.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquivOfAddEqZero`: the induced algebra
+  isomorphisms between the trace-radical quotients at `δ` and `-δ` (respectively `δ'`).
+* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignStarAlgEquiv`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignStarAlgEquivOfAddEqZero`: the induced
+  `⋆`-algebra isomorphisms between star-stable trace-radical quotients.
 
 ## Main results
 
@@ -62,6 +81,12 @@ intertwine the quotient strand inclusions.
 * `TauCeti.TemperleyLieb.signEquiv_strandIncl`, `TauCeti.TemperleyLieb.aug_signEquiv`,
   `TauCeti.TemperleyLieb.signEquiv_jonesWenzl`, `TauCeti.TemperleyLieb.signEquiv_star`:
   compatibility with strand inclusion, augmentation, Jones–Wenzl projections, and the adjoint.
+* `TauCeti.TemperleyLieb.algEquivOfLeOne_signEquiv`, `TauCeti.TemperleyLieb.signEquiv_crossing`:
+  compatibility with the identification with `R` on at most one strand, and negation of the
+  `e`-coefficient of a Kauffman crossing.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.map_signEquivOfAddEqZero`,
+  `TauCeti.TemperleyLieb.IsMarkovTrace.inverse_pow_mul_map_signEquivOfAddEqZero`: the trace
+  transformation laws for `signEquivOfAddEqZero`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_signEquiv`,
   `TauCeti.TemperleyLieb.markovTrace_signEquiv`,
   `TauCeti.TemperleyLieb.markovTrace_neg_signEquiv`: Markov traces transform by `(-1) ^ n`.
@@ -87,44 +112,71 @@ section Algebra
 
 variable {R : Type*} [CommRing R]
 
-/-- Auxiliary sign-reversing algebra map between fibers whose loop parameters are negatives of one
-another, avoiding definitional reliance on `-(-δ) = δ` when constructing the inverse. -/
-private def signHomAux {δ δ' : R} (h : δ' = -δ) (n : ℕ) :
+/-- Auxiliary `R`-algebra map sending each generator `e δ i` to `-e δ' i` when `δ + δ' = 0`. -/
+private def signHomOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) (n : ℕ) :
     TemperleyLieb R δ n →ₐ[R] TemperleyLieb R δ' n :=
   lift (fun i ↦ -e δ' i)
-    (fun i ↦ by rw [neg_mul_neg, e_mul_self, h, neg_smul, ← smul_neg])
+    (fun i ↦ by
+      rw [neg_mul_neg, e_mul_self, smul_neg, eq_neg_of_add_eq_zero_left h, neg_smul, neg_neg])
     (fun hadj ↦ by
       rw [neg_mul_neg, mul_neg, e_mul_e_mul_e hadj])
     (fun hdist ↦ by
       rw [neg_mul_neg, neg_mul_neg, (commute_e hdist).eq])
 
-private theorem signHomAux_e {δ δ' : R} (h : δ' = -δ) {n : ℕ} (i : Fin (n - 1)) :
-    signHomAux h n (e δ i) = -e δ' i :=
-  lift_e _ _ _ _ i
+/-- The **sign isomorphism** between Temperley–Lieb algebras at opposite loop parameters
+`δ + δ' = 0`: the `R`-algebra equivalence sending every generator `e δ i` to `-e δ' i`. -/
+def signEquivOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) (n : ℕ) :
+    TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R δ' n :=
+  AlgEquiv.ofAlgHom (signHomOfAddEqZero h n) (signHomOfAddEqZero (by rwa [add_comm]) n)
+    (hom_ext fun i ↦ by simp [signHomOfAddEqZero])
+    (hom_ext fun i ↦ by simp [signHomOfAddEqZero])
 
-private theorem signHomAux_comp_signHomAux {δ δ' : R} (h : δ' = -δ) (h' : δ = -δ') (n : ℕ) :
-    (signHomAux h' n).comp (signHomAux h n) = AlgHom.id R (TemperleyLieb R δ n) :=
-  hom_ext fun i ↦ by simp [signHomAux_e]
+/-- `signEquivOfAddEqZero` sends each generator `e δ i` to `-e δ' i`. -/
+@[simp]
+theorem signEquivOfAddEqZero_e {δ δ' : R} (h : δ + δ' = 0) {n : ℕ} (i : Fin (n - 1)) :
+    signEquivOfAddEqZero h n (e δ i) = -e δ' i := by
+  simp [signEquivOfAddEqZero, signHomOfAddEqZero]
+
+/-- The inverse of `signEquivOfAddEqZero` is `signEquivOfAddEqZero` with the parameters swapped. -/
+theorem signEquivOfAddEqZero_symm {δ δ' : R} (h : δ + δ' = 0) (n : ℕ) :
+    (signEquivOfAddEqZero h n).symm = signEquivOfAddEqZero (by rwa [add_comm]) n :=
+  (rfl)
+
+/-- `(signEquivOfAddEqZero h n).symm` sends each generator `e δ' i` to `-e δ i`. -/
+@[simp]
+theorem signEquivOfAddEqZero_symm_e {δ δ' : R} (h : δ + δ' = 0) {n : ℕ} (i : Fin (n - 1)) :
+    (signEquivOfAddEqZero h n).symm (e δ' i) = -e δ i :=
+  signEquivOfAddEqZero_e (by rwa [add_comm]) i
+
+/-- Applying `signEquivOfAddEqZero` across opposite fibers and back is the identity. -/
+@[simp]
+theorem signEquivOfAddEqZero_apply_self {δ δ' : R} (h₁ : δ + δ' = 0) (h₂ : δ' + δ = 0)
+    {n : ℕ} (x : TemperleyLieb R δ n) :
+    signEquivOfAddEqZero h₂ n (signEquivOfAddEqZero h₁ n x) = x :=
+  (signEquivOfAddEqZero h₁ n).symm_apply_apply x
 
 /-- The **sign isomorphism** of Temperley–Lieb algebras: negating every generator
 `e δ i ↦ -e (-δ) i` identifies the Temperley–Lieb algebra at loop parameter `δ` with that
 at `-δ`. -/
 def signEquiv (δ : R) (n : ℕ) : TemperleyLieb R δ n ≃ₐ[R] TemperleyLieb R (-δ) n :=
-  AlgEquiv.ofAlgHom (signHomAux rfl n) (signHomAux (neg_neg δ).symm n)
-    (signHomAux_comp_signHomAux (neg_neg δ).symm rfl n)
-    (signHomAux_comp_signHomAux rfl (neg_neg δ).symm n)
+  signEquivOfAddEqZero (add_neg_cancel δ) n
+
+/-- Unfolding `signEquiv` as `signEquivOfAddEqZero (add_neg_cancel δ)`. -/
+theorem signEquiv_def (δ : R) (n : ℕ) :
+    signEquiv δ n = signEquivOfAddEqZero (add_neg_cancel δ) n :=
+  (rfl)
 
 /-- The sign isomorphism sends each generator `e δ i` to `-e (-δ) i`. -/
 @[simp]
 theorem signEquiv_e (δ : R) {n : ℕ} (i : Fin (n - 1)) :
-    signEquiv δ n (e δ i) = -e (-δ) i := by
-  rw [signEquiv, AlgEquiv.ofAlgHom_apply, signHomAux_e]
+    signEquiv δ n (e δ i) = -e (-δ) i :=
+  signEquivOfAddEqZero_e (add_neg_cancel δ) i
 
 /-- The inverse sign isomorphism sends each generator `e (-δ) i` to `-e δ i`. -/
 @[simp]
 theorem signEquiv_symm_e (δ : R) {n : ℕ} (i : Fin (n - 1)) :
-    (signEquiv δ n).symm (e (-δ) i) = -e δ i := by
-  rw [signEquiv, AlgEquiv.ofAlgHom_symm, AlgEquiv.ofAlgHom_apply, signHomAux_e]
+    (signEquiv δ n).symm (e (-δ) i) = -e δ i :=
+  signEquivOfAddEqZero_symm_e (add_neg_cancel δ) i
 
 /-- The sign isomorphism is the unique `R`-algebra homomorphism negating every generator. -/
 theorem eq_signEquiv_of_map_e {δ : R} {n : ℕ}
@@ -215,6 +267,57 @@ theorem signEquiv_symm_jonesWenzl (δ : R) (n : ℕ) :
     (signEquiv δ n).symm (jonesWenzl (-δ) n) = jonesWenzl δ n :=
   (signEquiv δ n).symm_apply_eq.2 (signEquiv_jonesWenzl δ n).symm
 
+/-- On at most one strand, `signEquiv` commutes with the identification with `R`. -/
+theorem algEquivOfLeOne_signEquiv (δ : R) {n : ℕ} (hn : n ≤ 1) (x : TemperleyLieb R δ n) :
+    algEquivOfLeOne (-δ) hn (signEquiv δ n x) = algEquivOfLeOne δ hn x := by
+  simp
+
+/-- `signEquiv` negates the second coefficient of a Kauffman crossing. -/
+theorem signEquiv_crossing (δ α β : R) {n : ℕ} (i : Fin (n - 1)) :
+    signEquiv δ n (crossing δ α β i) = crossing (-δ) α (-β) i := by
+  simp [crossing_def]
+
+/-! #### Opposite loop parameters `δ + δ' = 0` -/
+
+/-- `signEquivOfAddEqZero` commutes with adding a straight strand. -/
+@[simp]
+theorem signEquivOfAddEqZero_strandIncl {δ δ' : R} (h : δ + δ' = 0) {n : ℕ}
+    (x : TemperleyLieb R δ (n + 1)) :
+    signEquivOfAddEqZero h (n + 2) (strandIncl x) =
+      strandIncl (signEquivOfAddEqZero h (n + 1) x) := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact signEquiv_strandIncl δ x
+
+/-- `signEquivOfAddEqZero` preserves the augmentation. -/
+@[simp]
+theorem aug_signEquivOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) {n : ℕ}
+    (x : TemperleyLieb R δ n) :
+    aug (signEquivOfAddEqZero h n x) = aug x := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact aug_signEquiv δ x
+
+/-- On at most one strand, `signEquivOfAddEqZero` commutes with the identification with `R`. -/
+theorem algEquivOfLeOne_signEquivOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) {n : ℕ} (hn : n ≤ 1)
+    (x : TemperleyLieb R δ n) :
+    algEquivOfLeOne δ' hn (signEquivOfAddEqZero h n x) = algEquivOfLeOne δ hn x := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact algEquivOfLeOne_signEquiv δ hn x
+
+/-- `signEquivOfAddEqZero` negates the second coefficient of a Kauffman crossing. -/
+theorem signEquivOfAddEqZero_crossing {δ δ' : R} (h : δ + δ' = 0) (α β : R) {n : ℕ}
+    (i : Fin (n - 1)) :
+    signEquivOfAddEqZero h n (crossing δ α β i) = crossing δ' α (-β) i := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact signEquiv_crossing δ α β i
+
+/-- `signEquivOfAddEqZero` carries the Jones–Wenzl projection at `δ` to the Jones–Wenzl projection
+at `δ'`, with no invertibility assumption on the quantum integers. -/
+@[simp]
+theorem signEquivOfAddEqZero_jonesWenzl {δ δ' : R} (h : δ + δ' = 0) (n : ℕ) :
+    signEquivOfAddEqZero h n (jonesWenzl δ n) = jonesWenzl δ' n := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact signEquiv_jonesWenzl δ n
+
 end Algebra
 
 section Star
@@ -268,6 +371,81 @@ theorem toAlgEquiv_signStarAlgEquiv (n : ℕ) :
 end Apply
 
 end Star
+
+section StarAddEqZero
+
+variable {R : Type*} [CommRing R] [StarRing R] {δ δ' : R}
+  [Fact (IsSelfAdjoint δ)] [Fact (IsSelfAdjoint δ')]
+
+/-- At self-adjoint opposite loop parameters `δ + δ' = 0`, `signEquivOfAddEqZero` commutes with
+the analytic adjoint. -/
+@[simp]
+theorem signEquivOfAddEqZero_star (h : δ + δ' = 0) {n : ℕ} (x : TemperleyLieb R δ n) :
+    signEquivOfAddEqZero h n (star x) = star (signEquivOfAddEqZero h n x) := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact signEquiv_star x
+
+/-- The **sign `⋆`-algebra isomorphism** between Temperley–Lieb algebras at self-adjoint opposite
+loop parameters `δ + δ' = 0`. -/
+def signStarAlgEquivOfAddEqZero (h : δ + δ' = 0) (n : ℕ) :
+    TemperleyLieb R δ n ≃⋆ₐ[R] TemperleyLieb R δ' n :=
+  StarAlgEquiv.ofAlgEquiv (signEquivOfAddEqZero h n) (signEquivOfAddEqZero_star h)
+
+/-- Coercing `signStarAlgEquivOfAddEqZero` to an algebra equivalence recovers
+`signEquivOfAddEqZero`. -/
+@[simp]
+theorem toAlgEquiv_signStarAlgEquivOfAddEqZero (h : δ + δ' = 0) (n : ℕ) :
+    (signStarAlgEquivOfAddEqZero h n).toAlgEquiv = signEquivOfAddEqZero h n :=
+  (rfl)
+
+/-- Evaluation of `signStarAlgEquivOfAddEqZero` agrees with `signEquivOfAddEqZero`. -/
+@[simp]
+theorem signStarAlgEquivOfAddEqZero_apply (h : δ + δ' = 0) (n : ℕ) (x : TemperleyLieb R δ n) :
+    signStarAlgEquivOfAddEqZero h n x = signEquivOfAddEqZero h n x :=
+  (rfl)
+
+/-- The inverse of `signStarAlgEquivOfAddEqZero` is `signStarAlgEquivOfAddEqZero` with the
+parameters swapped. -/
+theorem signStarAlgEquivOfAddEqZero_symm (h : δ + δ' = 0) (n : ℕ) :
+    (signStarAlgEquivOfAddEqZero h n).symm =
+      signStarAlgEquivOfAddEqZero (by rwa [add_comm]) n :=
+  (rfl)
+
+end StarAddEqZero
+
+section SignTrace
+
+variable {R : Type*} [CommRing R]
+
+/-- The **signed transport of trace families** between opposite loop parameters `δ + δ' = 0`: the
+linear equivalence sending a family `tr'` at `δ'` to `n ↦ (-1) ^ n • (tr' n ∘ s)`, where `s` is
+`signEquivOfAddEqZero h n`. It carries Markov traces to Markov traces
+(`IsMarkovTrace.signTraceOfAddEqZero`). -/
+def signTraceOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) :
+    (∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R) ≃ₗ[R] (∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R) where
+  toFun tr n := (-1 : R) ^ n • (tr n ∘ₗ (signEquivOfAddEqZero h n).toLinearMap)
+  invFun tr n := (-1 : R) ^ n • (tr n ∘ₗ (signEquivOfAddEqZero h n).symm.toLinearMap)
+  left_inv tr := by ext n x; simp [← mul_assoc, ← mul_pow]
+  right_inv tr := by ext n x; simp [← mul_assoc, ← mul_pow]
+  map_add' tr₁ tr₂ := by ext n x; simp [mul_add]
+  map_smul' r tr := by ext n x; simp [mul_left_comm]
+
+/-- Evaluation of the signed transport of a trace family. -/
+@[simp]
+theorem signTraceOfAddEqZero_apply {δ δ' : R} (h : δ + δ' = 0)
+    (tr : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R) {n : ℕ} (x : TemperleyLieb R δ n) :
+    signTraceOfAddEqZero h tr n x = (-1 : R) ^ n * tr n (signEquivOfAddEqZero h n x) :=
+  (rfl)
+
+/-- Evaluation of the inverse signed transport of a trace family. -/
+@[simp]
+theorem signTraceOfAddEqZero_symm_apply {δ δ' : R} (h : δ + δ' = 0)
+    (tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R) {n : ℕ} (x : TemperleyLieb R δ' n) :
+    (signTraceOfAddEqZero h).symm tr n x =
+      (-1 : R) ^ n * tr n ((signEquivOfAddEqZero h n).symm x) :=
+  (rfl)
+
+end SignTrace
 
 namespace IsMarkovTrace
 
@@ -478,6 +656,200 @@ theorem inverse_pow_mul_quotientTrace_quotientSignEquiv (n : ℕ)
 
 end Radical
 
+section AddEqZero
+
+/-! #### Opposite loop parameters `δ + δ' = 0` -/
+
+variable {R : Type*} [CommRing R] {δ δ' : R}
+  {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+  {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
+
+/-- Pulling a Markov trace at `δ'` back along `signEquivOfAddEqZero` with the levelwise sign
+`(-1) ^ n` gives a Markov trace at `δ` whenever `δ + δ' = 0`. -/
+theorem neg_one_pow_smul_comp_signEquivOfAddEqZero (htr' : IsMarkovTrace R δ' tr')
+    (h : δ + δ' = 0) :
+    IsMarkovTrace R δ
+      (fun n ↦ (-1 : R) ^ n • (tr' n).comp (signEquivOfAddEqZero h n).toLinearMap) := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact htr'.neg_one_pow_smul_comp_signEquiv
+
+/-- The signed transport `signTraceOfAddEqZero` of a Markov trace family is again a Markov trace
+family, including at zero loop parameter. -/
+theorem signTraceOfAddEqZero (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) :
+    IsMarkovTrace R δ (TemperleyLieb.signTraceOfAddEqZero h tr') :=
+  htr'.neg_one_pow_smul_comp_signEquivOfAddEqZero h
+
+/-- **Sign transformation of Markov traces.** If `tr` and `tr'` are Markov traces at opposite loop
+parameters `δ + δ' = 0`, then `tr' n (signEquivOfAddEqZero h n x) = (-1) ^ n * tr n x`. -/
+theorem map_signEquivOfAddEqZero (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr')
+    (h : δ + δ' = 0) {n : ℕ} (x : TemperleyLieb R δ n) :
+    tr' n (signEquivOfAddEqZero h n x) = (-1) ^ n * tr n x := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact htr.map_signEquiv htr' x
+
+/-- **Invariance of the normalized Markov trace** under `signEquivOfAddEqZero`, over every
+commutative ring and with no invertibility assumption on `δ`. -/
+theorem inverse_pow_mul_map_signEquivOfAddEqZero (htr : IsMarkovTrace R δ tr)
+    (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) {n : ℕ} (x : TemperleyLieb R δ n) :
+    Ring.inverse (δ' ^ n) * tr' n (signEquivOfAddEqZero h n x) =
+      Ring.inverse (δ ^ n) * tr n x := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact htr.inverse_pow_mul_map_signEquiv htr' x
+
+/-- **Invariance of the normalized Hermitian trace form** under `signEquivOfAddEqZero`. -/
+theorem inverse_pow_mul_map_star_signEquivOfAddEqZero_mul_signEquivOfAddEqZero [StarRing R]
+    [Fact (IsSelfAdjoint δ)] [Fact (IsSelfAdjoint δ')]
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) {n : ℕ}
+    (x : TemperleyLieb R δ n) :
+    Ring.inverse (δ' ^ n) *
+        tr' n (star (signEquivOfAddEqZero h n x) * signEquivOfAddEqZero h n x) =
+      Ring.inverse (δ ^ n) * tr n (star x * x) := by
+  rw [← signEquivOfAddEqZero_star, ← map_mul, htr.inverse_pow_mul_map_signEquivOfAddEqZero htr' h]
+
+variable (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0)
+
+/-- `signEquivOfAddEqZero` preserves and reflects membership in the trace radical. -/
+theorem signEquivOfAddEqZero_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ n) :
+    signEquivOfAddEqZero h n x ∈ (tr' n).traceRadical (htr'.map_mul_comm n) ↔
+      x ∈ (tr n).traceRadical (htr.map_mul_comm n) := by
+  obtain rfl := eq_neg_of_add_eq_zero_right h
+  exact htr.signEquiv_mem_traceRadical_iff htr' x
+
+/-- Pulling back the trace radical at `δ'` along `signEquivOfAddEqZero` gives the trace radical at
+`δ`. -/
+theorem comap_traceRadical_signEquivOfAddEqZero (n : ℕ) :
+    Ideal.comap (signEquivOfAddEqZero h n : TemperleyLieb R δ n →+* TemperleyLieb R δ' n)
+        ((tr' n).traceRadical (htr'.map_mul_comm n)) =
+      (tr n).traceRadical (htr.map_mul_comm n) :=
+  Ideal.ext fun x ↦ htr.signEquivOfAddEqZero_mem_traceRadical_iff htr' h x
+
+/-- Pushing forward the trace radical at `δ` along `signEquivOfAddEqZero` gives the trace radical
+at `δ'`. -/
+theorem map_traceRadical_signEquivOfAddEqZero (n : ℕ) :
+    Ideal.map (signEquivOfAddEqZero h n : TemperleyLieb R δ n →+* TemperleyLieb R δ' n)
+        ((tr n).traceRadical (htr.map_mul_comm n)) =
+      (tr' n).traceRadical (htr'.map_mul_comm n) := by
+  rw [← htr.comap_traceRadical_signEquivOfAddEqZero htr' h n]
+  exact Ideal.map_comap_of_surjective _ (signEquivOfAddEqZero h n).surjective _
+
+/-- The **sign isomorphism on trace-radical quotients** for opposite loop parameters
+`δ + δ' = 0`. -/
+def quotientSignEquivOfAddEqZero (n : ℕ) :
+    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃ₐ[R]
+      (TemperleyLieb R δ' n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+  Ideal.quotientEquivAlg _ _ (signEquivOfAddEqZero h n)
+    (htr.map_traceRadical_signEquivOfAddEqZero htr' h n).symm
+
+/-- `quotientSignEquivOfAddEqZero` acts on quotient classes via `signEquivOfAddEqZero`. -/
+@[simp]
+theorem quotientSignEquivOfAddEqZero_mk (n : ℕ) (x : TemperleyLieb R δ n) :
+    htr.quotientSignEquivOfAddEqZero htr' h n
+        (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) =
+      Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n))
+        (signEquivOfAddEqZero h n x) := by
+  rw [quotientSignEquivOfAddEqZero, Ideal.quotientEquivAlg_mk]
+
+/-- `quotientSignEquivOfAddEqZero` intertwines the quotient strand inclusions
+`quotientStrandIncl`. -/
+@[simp]
+theorem quotientSignEquivOfAddEqZero_quotientStrandIncl (n : ℕ)
+    (q : TemperleyLieb R δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
+    htr.quotientSignEquivOfAddEqZero htr' h (n + 2) (htr.quotientStrandIncl n q) =
+      htr'.quotientStrandIncl n (htr.quotientSignEquivOfAddEqZero htr' h (n + 1) q) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
+
+/-- `quotientSignEquivOfAddEqZero` scales `quotientTrace` by `(-1) ^ n`. -/
+@[simp]
+theorem quotientTrace_quotientSignEquivOfAddEqZero (n : ℕ)
+    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    (tr' n).quotientTrace (htr'.map_mul_comm n) (htr.quotientSignEquivOfAddEqZero htr' h n q) =
+      (-1) ^ n * (tr n).quotientTrace (htr.map_mul_comm n) q := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp [htr.map_signEquivOfAddEqZero htr' h]
+
+end AddEqZero
+
+section QuotientStar
+
+variable {R : Type*} [CommRing R] [StarRing R]
+
+/-- The **sign `⋆`-algebra isomorphism on trace-radical quotients** for self-adjoint opposite loop
+parameters `δ + δ' = 0`. -/
+def quotientSignStarAlgEquivOfAddEqZero {δ δ' : R} [Fact (IsSelfAdjoint δ)]
+    [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃⋆ₐ[R]
+      (TemperleyLieb R δ' n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+  Ideal.quotientEquivStarAlg _ _ (signStarAlgEquivOfAddEqZero h n)
+    (htr.map_traceRadical_signEquivOfAddEqZero htr' h n).symm
+
+/-- Forgetting the star structure on `quotientSignStarAlgEquivOfAddEqZero` recovers
+`quotientSignEquivOfAddEqZero`. -/
+@[simp]
+theorem toAlgEquiv_quotientSignStarAlgEquivOfAddEqZero {δ δ' : R} [Fact (IsSelfAdjoint δ)]
+    [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    (htr.quotientSignStarAlgEquivOfAddEqZero htr' h n).toAlgEquiv =
+      htr.quotientSignEquivOfAddEqZero htr' h n :=
+  Ideal.toAlgEquiv_quotientEquivStarAlg _ _ _ _
+
+/-- Evaluation of `quotientSignStarAlgEquivOfAddEqZero` agrees with
+`quotientSignEquivOfAddEqZero`. -/
+@[simp]
+theorem quotientSignStarAlgEquivOfAddEqZero_apply {δ δ' : R} [Fact (IsSelfAdjoint δ)]
+    [Fact (IsSelfAdjoint δ')] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar]
+    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    htr.quotientSignStarAlgEquivOfAddEqZero htr' h n q =
+      htr.quotientSignEquivOfAddEqZero htr' h n q :=
+  Ideal.quotientEquivStarAlg_apply _ _ _ _ q
+
+/-- The **sign `⋆`-algebra isomorphism on trace-radical quotients** between `δ` and `-δ`. -/
+def quotientSignStarAlgEquiv {δ : R} [Fact (IsSelfAdjoint δ)] [Fact (IsSelfAdjoint (-δ))]
+    {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    (TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) ≃⋆ₐ[R]
+      (TemperleyLieb R (-δ) n ⧸ (tr' n).traceRadical (htr'.map_mul_comm n)) :=
+  htr.quotientSignStarAlgEquivOfAddEqZero htr' (add_neg_cancel δ) n
+
+/-- Forgetting the star structure on `quotientSignStarAlgEquiv` recovers `quotientSignEquiv`. -/
+@[simp]
+theorem toAlgEquiv_quotientSignStarAlgEquiv {δ : R} [Fact (IsSelfAdjoint δ)]
+    [Fact (IsSelfAdjoint (-δ))] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar] :
+    (htr.quotientSignStarAlgEquiv htr' n).toAlgEquiv = htr.quotientSignEquiv htr' n :=
+  htr.toAlgEquiv_quotientSignStarAlgEquivOfAddEqZero htr' (add_neg_cancel δ) n
+
+/-- Evaluation of `quotientSignStarAlgEquiv` agrees with `quotientSignEquiv`. -/
+@[simp]
+theorem quotientSignStarAlgEquiv_apply {δ : R} [Fact (IsSelfAdjoint δ)]
+    [Fact (IsSelfAdjoint (-δ))] {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    {tr' : ∀ n : ℕ, TemperleyLieb R (-δ) n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R (-δ) tr') (n : ℕ)
+    [((tr n).traceRadical (htr.map_mul_comm n)).IsStar]
+    [((tr' n).traceRadical (htr'.map_mul_comm n)).IsStar]
+    (q : TemperleyLieb R δ n ⧸ (tr n).traceRadical (htr.map_mul_comm n)) :
+    htr.quotientSignStarAlgEquiv htr' n q = htr.quotientSignEquiv htr' n q :=
+  htr.quotientSignStarAlgEquivOfAddEqZero_apply htr' (add_neg_cancel δ) n q
+
+end QuotientStar
+
 end IsMarkovTrace
 
 section SpinMarkovTrace
@@ -508,6 +880,24 @@ theorem markovTrace_neg_signEquiv (q : Rˣ)
     markovTrace (-q) (neg_eq_neg_unit_add_inv hq) (signEquiv δ n x) =
       (-1) ^ n * markovTrace q hq x :=
   markovTrace_signEquiv q (-q) hq (neg_eq_neg_unit_add_inv hq) x
+
+/-- **Sign transformation of the spin-model Markov trace** for opposite loop parameters
+`δ + δ' = 0` and any units `q`, `q'` realizing them. -/
+theorem markovTrace_signEquivOfAddEqZero {δ' : R} (h : δ + δ' = 0) (q q' : Rˣ)
+    (hq : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) (hq' : δ' = -((q' : R) + ((q'⁻¹ : Rˣ) : R)))
+    {n : ℕ} (x : TemperleyLieb R δ n) :
+    markovTrace q' hq' (signEquivOfAddEqZero h n x) = (-1) ^ n * markovTrace q hq x :=
+  (isMarkovTrace_markovTrace q hq).map_signEquivOfAddEqZero (isMarkovTrace_markovTrace q' hq') h x
+
+/-- **Invariance of the normalized spin-model Markov trace** under `signEquiv`. -/
+theorem inverse_pow_mul_markovTrace_signEquiv (q q' : Rˣ)
+    (hq : δ = -((q : R) + ((q⁻¹ : Rˣ) : R)))
+    (hq' : -δ = -((q' : R) + ((q'⁻¹ : Rˣ) : R))) {n : ℕ}
+    (x : TemperleyLieb R δ n) :
+    Ring.inverse ((-δ) ^ n) * markovTrace q' hq' (signEquiv δ n x) =
+      Ring.inverse (δ ^ n) * markovTrace q hq x :=
+  (isMarkovTrace_markovTrace q hq).inverse_pow_mul_map_signEquiv
+    (isMarkovTrace_markovTrace q' hq') x
 
 end SpinMarkovTrace
 

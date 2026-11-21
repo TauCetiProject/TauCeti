@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
-import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.LpSeminorm.PowSign
 import TauCeti.MeasureTheory.Function.Lp.Operator.Extension
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
@@ -88,37 +88,6 @@ variable {α β γ ι : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace
   {mγ : MeasurableSpace γ} {μ : Measure α} {ν : Measure β} {ρ : Measure γ}
 
 namespace RieszThorin
-
-/-- `powSign w c = (c / |c|) |c| ^ w`, with `powSign w 0 = 0`. -/
-private noncomputable def powSign (w c : ℂ) : ℂ := c / (‖c‖ : ℂ) * exp (w * (Real.log ‖c‖ : ℂ))
-
-private theorem powSign_one (c : ℂ) : powSign 1 c = c := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, one_mul, ← ofReal_exp, Real.exp_log hpos,
-      div_mul_cancel₀ _ (ofReal_ne_zero.2 hpos.ne')]
-
-private theorem powSign_zero_right (w : ℂ) : powSign w 0 = 0 := by simp [powSign]
-
-private theorem norm_powSign_le (w c : ℂ) : ‖powSign w c‖ ≤ ‖c‖ ^ w.re := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign_zero_right, Real.rpow_nonneg]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, norm_mul, norm_div, norm_exp, norm_real, Real.norm_of_nonneg hpos.le,
-      div_self hpos.ne', one_mul, Real.rpow_def_of_pos hpos]
-    simp [mul_comm]
-
-private theorem norm_powSign_le_exp (w c : ℂ) :
-    ‖powSign w c‖ ≤ Real.exp (|w.re| * |Real.log ‖c‖|) := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp [powSign_zero_right]
-  · have hpos : 0 < ‖c‖ := norm_pos_iff.2 hc
-    rw [powSign, norm_mul, norm_div, norm_exp, norm_real, Real.norm_of_nonneg hpos.le,
-      div_self hpos.ne', one_mul]
-    gcongr
-    simp only [mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
-    exact (le_abs_self _).trans (abs_mul _ _).le
 
 /-- The exponent of the analytic family, `1 + (z - θ) κ`. It equals `1` at `z = θ`; for the slope
 `κ` of `TauCeti.exists_slope_of_inv_eq`, its real part moves the interpolated exponent to the
@@ -211,21 +180,11 @@ private theorem integral_map_powSign_eq_sum (T : SimpleFunc α ℂ →ₗ[ℂ] (
         rw [integral_finsetSum _ fun d hd => hterm c hc d hd]
         exact Finset.sum_congr rfl fun d _ => integral_const_mul _ _
 
-/-- The member `u_w = sgn(u) |u| ^ w` of the analytic family through `u` has `Lᵗ` norm at most
-one, where `1 / t = Re w / s`, whenever `u` has `Lˢ` norm at most one. -/
-private theorem eLpNorm_map_powSign_le_one (u : SimpleFunc γ ℂ) {s t : ℝ≥0∞} {w : ℂ}
-    (hw : 0 ≤ w.re) (ht : t⁻¹ = ENNReal.ofReal w.re * s⁻¹) (hu : eLpNorm u s ρ ≤ 1) :
-    eLpNorm (u.map (powSign w)) t ρ ≤ 1 :=
-  (eLpNorm_le_eLpNorm_rpow hw (u.map _).aestronglyMeasurable ht
-    (ae_of_all _ fun x => norm_powSign_le w (u x))).trans (ENNReal.rpow_le_one hu hw)
-
 /-- A fibre indicator of a simple function is in `Lᵗ` as soon as some member `u_w` of the
 analytic family through `u` is. -/
 private theorem memLp_fiberInd (u : SimpleFunc γ ℂ) {t : ℝ≥0∞} {w c : ℂ} (hc : c ≠ 0)
     (hu : MemLp (u.map (powSign w)) t ρ) : MemLp (fiberInd u c) t ρ := by
-  have hne : powSign w c ≠ 0 := by
-    have : (c / (‖c‖ : ℂ)) ≠ 0 := div_ne_zero hc (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hc))
-    simpa [powSign] using this
+  have hne : powSign w c ≠ 0 := powSign_ne_zero w hc
   refine hu.of_le_mul (fiberInd u c).aestronglyMeasurable (c := ‖powSign w c‖⁻¹)
     (ae_of_all _ fun x => ?_)
   rw [fiberInd_apply, SimpleFunc.map_apply]
@@ -244,7 +203,7 @@ private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_zero (u : SimpleFunc γ
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 0) :
     eLpNorm (u.map (powSign (expo θ κ z))) s₀ ρ ≤ 1 := by
   obtain ⟨hβ, hs⟩ := hκ 0 ⟨le_rfl, zero_le_one⟩
-  refine eLpNorm_map_powSign_le_one u (by rwa [re_expo, hz]) ?_ hu
+  refine u.eLpNorm_map_powSign_le_one (by rwa [re_expo, hz]) ?_ hu
   rw [re_expo, hz, hs]
   simp
 
@@ -258,7 +217,7 @@ private theorem eLpNorm_map_powSign_expo_le_one_of_re_eq_one (u : SimpleFunc γ 
     (hu : eLpNorm u s ρ ≤ 1) {z : ℂ} (hz : z.re = 1) :
     eLpNorm (u.map (powSign (expo θ κ z))) s₁ ρ ≤ 1 := by
   obtain ⟨hβ, hs⟩ := hκ 1 ⟨zero_le_one, le_rfl⟩
-  refine eLpNorm_map_powSign_le_one u (by rwa [re_expo, hz]) ?_ hu
+  refine u.eLpNorm_map_powSign_le_one (by rwa [re_expo, hz]) ?_ hu
   rw [re_expo, hz, hs]
   simp
 
@@ -335,7 +294,7 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   have hΦ : ∀ z, Φ z = ∫ y, T (f.map (powSign (P z))) y * g.map (powSign (Q z)) y ∂ν :=
     fun z => (integral_map_powSign_eq_sum T f g _ _ hint).symm
   have hdiff : Differentiable ℂ Φ := by
-    simp only [hΦ_def, hP, hQ, expo, powSign]
+    simp only [hΦ_def, hP, hQ, expo, powSign_def]
     fun_prop
   have hbdd : BddAbove ((norm ∘ Φ) '' Complex.HadamardThreeLines.verticalClosedStrip 0 1) := by
     refine ⟨∑ c ∈ f.range, ∑ d ∈ g.range,
@@ -561,15 +520,16 @@ private theorem exists_linearMap_eq_toLp (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν)
       zero_mem' := MemLp.zero
       smul_mem' := fun c _ hs ↦ hs.const_smul c }
   let T₀ : S →ₗ[ℂ] (β →ₘ[ν] ℂ) :=
-    { toFun := fun s ↦ (T (s.2.toLp s) : β →ₘ[ν] ℂ)
+    { toFun := fun s ↦ (T (s.property.toLp s) : β →ₘ[ν] ℂ)
       map_add' := fun a b ↦ by
-        have h : T ((a + b).2.toLp (↑(a + b) : SimpleFunc α ℂ)) =
-            T (a.2.toLp a) + T (b.2.toLp b) := by
+        have h : T ((a + b).property.toLp (↑(a + b) : SimpleFunc α ℂ)) =
+            T (a.property.toLp a) + T (b.property.toLp b) := by
           rw [← map_add, ← MemLp.toLp_add]
           exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h
       map_smul' := fun c a ↦ by
-        have h : T ((c • a).2.toLp (↑(c • a) : SimpleFunc α ℂ)) = c • T (a.2.toLp a) := by
+        have h : T ((c • a).property.toLp (↑(c • a) : SimpleFunc α ℂ)) = c • T (a.property.toLp a)
+            := by
           rw [← map_smul, ← MemLp.toLp_const_smul]
           exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h }

@@ -154,14 +154,14 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
   -- By complete reducibility of unitary comodules, `bE j` lies in the span of atomic subcomodules.
   have hatoms : sSup {W : Subcomodule ℂ A E | IsAtom W} = ⊤ :=
     isCompletelyReducible_iff_sSup_atoms_eq_top.mp hUnit.isCompletelyReducible
-  have hv : bE.toBasis j ∈ ⨆ W : {W : Subcomodule ℂ A E | IsAtom W}, W.1.toSubmodule := by
+  have hv : bE.toBasis j ∈ ⨆ W : {W : Subcomodule ℂ A E | IsAtom W}, W.val.toSubmodule := by
     simp [← Subcomodule.sSup_toSubmodule, hatoms]
   have himg := Submodule.mem_map_of_mem
     (f := matrixCoefficientLinear (R := ℂ) (C := A) (bE.toBasis.coord i)) hv
   rw [Submodule.map_iSup] at himg
   rw [← hbE_mat, coefficientMatrix_apply, ← matrixCoefficientLinear_apply]
   -- Map through `matrixCoefficientLinear (bE.coord i)`: each atomic piece lands in `sSup`.
-  suffices (⨆ W : {W : Subcomodule ℂ A E | IsAtom W}, W.1.toSubmodule.map
+  suffices (⨆ W : {W : Subcomodule ℂ A E | IsAtom W}, W.val.toSubmodule.map
       (matrixCoefficientLinear (R := ℂ) (C := A) (bE.toBasis.coord i))) ≤
       sSup (simpleUnitaryCoefficientSubmodules A) from this himg
   refine iSup_le fun ⟨W, hW⟩ ↦
@@ -231,7 +231,7 @@ theorem nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top
   refine ⟨AlgebraicHaar.ofIsRightInvariantIntegral h h1 hr fun a ↦ ?_⟩
   obtain ⟨d, rfl⟩ :=
     (Comodule.isInternal_of_sSup_simpleCoefficientSubmodules_eq_top hSimpleSpan).2 a
-  have ha : DirectSum.coeAddMonoidHom (fun P : simpleCoefficientSubmodules ℂ A ↦ P.1) d =
+  have ha : DirectSum.coeAddMonoidHom (fun P : simpleCoefficientSubmodules ℂ A ↦ P.val) d =
       ∑ P ∈ d.support, (d P : A) := by
     conv_lhs => rw [← DirectSum.sum_support_of d]
     simp [map_sum]
@@ -240,9 +240,10 @@ theorem nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top
   refine Finset.sum_nonneg fun P _ ↦ ?_
   rw [Finset.sum_eq_single P
     (fun Q _ hQP ↦ map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules_ne hSU_span hr
-      P.2 Q.2 (Subtype.coe_ne_coe.mpr hQP.symm) (d P).2 (d Q).2)
+      P.property Q.property (Subtype.coe_ne_coe.mpr hQP.symm) (d P).property (d Q).property)
     (fun hPnot ↦ by simp [DFinsupp.notMem_support_iff.mp hPnot])]
-  exact map_star_mul_self_nonneg_of_mem_simpleCoefficientSubmodules hSU_span hr h1 P.2 (d P).2
+  exact map_star_mul_self_nonneg_of_mem_simpleCoefficientSubmodules hSU_span hr h1 P.property
+      (d P).property
 
 /-- **Dijkhuizen–Koornwinder compact-type equivalence.** A complex Hopf star algebra admits an
 algebraic Haar functional if and only if the matrix entries of its finite-dimensional unitary

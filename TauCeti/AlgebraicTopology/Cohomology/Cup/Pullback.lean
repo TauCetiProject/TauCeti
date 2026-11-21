@@ -214,7 +214,7 @@ theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : �
       (ContinuousMap.inclusion (Set.preimage_mono hST)) fun _ hx ↦ ⟨hST hx.1, hx.2⟩) ≫
         ofHom (π.hom.restrictPreimage T) =
       ofHom (π.hom.restrictPreimage S) ≫ ofHom (ContinuousMap.inclusion hST) :=
-    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.1)
+    TopCat.ext fun x ↦ Subtype.ext (congrArg (fun y : ↥(π ⁻¹' T) ↦ π y.val)
       (TopPair.ofInclusionMap_fst_apply _ _ x))
   rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
     ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,
@@ -227,8 +227,8 @@ theorem bijective_pullbackCupRestrict_empty {n p m : ℕ} (h : p + n = m)
     (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     Function.Bijective (pullbackCupRestrict π Z M (∅ : Set Y) n p m h u) := by
   let P := TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' (∅ : Set Y) ∩ Z ⊆ π ⁻¹' (∅ : Set Y))
-  have : IsEmpty P.fst := ⟨fun x ↦ x.2⟩
-  have : IsEmpty P.snd := ⟨fun x ↦ x.2.1⟩
+  have : IsEmpty P.fst := ⟨fun x ↦ x.property⟩
+  have : IsEmpty P.snd := ⟨fun x ↦ x.property.1⟩
   have : Subsingleton ((of (∅ : Set Y)).singularCohomology (ModuleCat.of K K) K M p) :=
     ModuleCat.subsingleton_of_isZero
       (TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M (of (∅ : Set Y)) p)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Frobenius
 
