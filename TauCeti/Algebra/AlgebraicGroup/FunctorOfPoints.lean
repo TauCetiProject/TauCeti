@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 
 /-!
@@ -50,6 +51,10 @@ the inverse.
 * `AlgHom.mem_mrange_mapValue_iff_mapValue_eq`: when the image of an injective `φ` is the fixed
   ring of an endomorphism `τ`, the points coming from the source of `φ` are those fixed by
   `mapValue τ`.
+* `AlgEquiv.mapValueMulEquiv`: an `R`-algebra isomorphism `A ≃ₐ[R] B` induces a multiplicative
+  equivalence of convolution monoids of points by post-composition.
+* `AlgHom.piPointsMulEquiv`: points with values in an indexed product `∀ i, A i` form the product
+  of the convolution monoids `∀ i, WithConv (H →ₐ[R] A i)`.
 * `WithConv.mapValue_algebraOfId`: mapping a base-valued point through an algebra-valued point
   gives the corresponding constant point.
 
@@ -218,6 +223,79 @@ lemma mapValue_comp (ψ : B →ₐ[R] C) (φ : A →ₐ[R] B) :
     AlgHom.comp_assoc]
 
 end Bialgebra
+
+section BialgebraValueEquiv
+
+variable [Semiring H] [_root_.Bialgebra R H] [CommSemiring A] [Algebra R A]
+variable {B : Type*} [CommSemiring B] [Algebra R B]
+
+/-- An `R`-algebra isomorphism `e : A ≃ₐ[R] B` induces a multiplicative equivalence of the
+convolution monoids of points by post-composition, upgrading `AlgHom.mapValue`. When `H` is a Hopf
+algebra, these convolution monoids are groups, so this is a group isomorphism. -/
+noncomputable def _root_.AlgEquiv.mapValueMulEquiv (e : A ≃ₐ[R] B) :
+    WithConv (H →ₐ[R] A) ≃* WithConv (H →ₐ[R] B) where
+  toFun := mapValue (H := H) (e : A →ₐ[R] B)
+  invFun := mapValue (H := H) (e.symm : B →ₐ[R] A)
+  map_mul' := map_mul _
+  left_inv f := by
+    have h : (mapValue (H := H) (e.symm : B →ₐ[R] A)).comp
+        (mapValue (H := H) (e : A →ₐ[R] B)) = MonoidHom.id _ := by
+      rw [← mapValue_comp, e.symm_comp, mapValue_id]
+    exact DFunLike.congr_fun h f
+  right_inv f := by
+    have h : (mapValue (H := H) (e : A →ₐ[R] B)).comp
+        (mapValue (H := H) (e.symm : B →ₐ[R] A)) = MonoidHom.id _ := by
+      rw [← mapValue_comp, e.comp_symm, mapValue_id]
+    exact DFunLike.congr_fun h f
+
+/-- `AlgEquiv.mapValueMulEquiv` acts by `AlgHom.mapValue` in the forward direction. -/
+@[simp]
+lemma _root_.AlgEquiv.mapValueMulEquiv_apply (e : A ≃ₐ[R] B) (f : WithConv (H →ₐ[R] A)) :
+    e.mapValueMulEquiv f = mapValue (e : A →ₐ[R] B) f := (rfl)
+
+/-- Inverting `AlgEquiv.mapValueMulEquiv` is `mapValueMulEquiv` of the inverse algebra
+equivalence. -/
+@[simp]
+lemma _root_.AlgEquiv.mapValueMulEquiv_symm (e : A ≃ₐ[R] B) :
+    (e.mapValueMulEquiv (H := H)).symm = e.symm.mapValueMulEquiv :=
+  MulEquiv.ext fun _ ↦ rfl
+
+/-- The monoid homomorphism underlying `AlgEquiv.mapValueMulEquiv` is `AlgHom.mapValue`. -/
+@[simp]
+lemma _root_.AlgEquiv.toMonoidHom_mapValueMulEquiv (e : A ≃ₐ[R] B) :
+    (e.mapValueMulEquiv (H := H) : WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B)) =
+      mapValue (e : A →ₐ[R] B) := (rfl)
+
+end BialgebraValueEquiv
+
+section BialgebraPi
+
+variable [Semiring H] [_root_.Bialgebra R H]
+variable {ι : Type*} (A : ι → Type*) [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)]
+
+/-- Points of a bialgebra with values in an indexed product `∀ i, A i` form the product of the
+factor convolution monoids `∀ i, WithConv (H →ₐ[R] A i)`, by coordinate projection. -/
+noncomputable def piPointsMulEquiv :
+    WithConv (H →ₐ[R] ∀ i, A i) ≃* ∀ i, WithConv (H →ₐ[R] A i) where
+  toFun f i := mapValue (Pi.evalAlgHom R A i) f
+  invFun g := toConv (AlgHom.pi fun i ↦ (g i).ofConv)
+  left_inv _ := WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ rfl
+  right_inv _ := funext fun _ ↦ WithConv.ofConv_injective <| AlgHom.ext fun _ ↦ rfl
+  map_mul' f g := funext fun i ↦ map_mul (mapValue (Pi.evalAlgHom R A i)) f g
+
+variable {A} in
+/-- The `i`-th coordinate of `AlgHom.piPointsMulEquiv` projects along `Pi.evalAlgHom`. -/
+@[simp]
+lemma piPointsMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, A i)) (i : ι) :
+    piPointsMulEquiv A f i = mapValue (Pi.evalAlgHom R A i) f := (rfl)
+
+variable {A} in
+/-- The inverse of `AlgHom.piPointsMulEquiv` assembles a family of points via `AlgHom.pi`. -/
+@[simp]
+lemma ofConv_piPointsMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[R] A i)) :
+    ((piPointsMulEquiv A).symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv := (rfl)
+
+end BialgebraPi
 
 section BialgebraConstantPoint
 
