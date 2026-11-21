@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Classes
 
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.LinearMap.Ker
 import TauCeti.NumberTheory.Height.Northcott
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
@@ -147,19 +148,6 @@ theorem exists_forall_approxProd_le_imp (Sinf : Finset (InfinitePlace K))
   rw [mul_smul, ← hH]
   exact hmem
 
-omit [NumberField K] [Fintype ι] in
-/-- The kernels of a finite family of nonzero linear forms are proper subspaces covering every
-point at which one of the forms vanishes. -/
-private lemma exists_finset_ker_cover [Finite ι] {P : Type*} (s : Finset P)
-    (f : P → ι → Dual K (ι → K)) (hf : ∀ v ∈ s, ∀ i, f v i ≠ 0) :
-    ∃ U : Finset (Submodule K (ι → K)), (∀ W ∈ U, W ≠ ⊤) ∧
-      ∀ x : ι → K, ∀ v ∈ s, ∀ i, f v i x = 0 → ∃ W ∈ U, x ∈ W := by
-  classical
-  have := Fintype.ofFinite ι
-  exact ⟨image₂ (fun v i ↦ LinearMap.ker (f v i)) s univ,
-    forall_mem_image₂.mpr fun v hv i _ ↦ LinearMap.ker_eq_top.not.mpr (hf v hv i),
-    fun x v hv i hx ↦ ⟨_, mem_image₂_of_mem hv (mem_univ i), LinearMap.mem_ker.mpr hx⟩⟩
-
 /-- **Reduction of the Subspace Theorem to approximation domains, with the remaining solutions
 covered by subspaces** (Bombieri–Gubler, Theorem 7.2.6 and 7.5.6). Let `ι` have at least two
 elements, let `L v i` be linear forms, linearly independent at each place of `Sinf` and `Sfin`,
@@ -197,10 +185,12 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
     by_cases hv' : v ∈ Sfin
     · exact hfin v hv' ▸ hLFin v hv'
     · exact (funext (hfin' v hv hv')).symm ▸ Module.Dual.linearIndependent_proj K ι
-  obtain ⟨UInf, hUInf, hcovInf⟩ := exists_finset_ker_cover (univ : Finset (InfinitePlace K))
-    (fun v ↦ L' v.val) fun v _ ↦ (hindInf v).ne_zero
-  obtain ⟨UFin, hUFin, hcovFin⟩ := exists_finset_ker_cover S₀ (fun v : FinitePlace K ↦ L' v.val)
-    fun v hv ↦ (hindFin v hv).ne_zero
+  obtain ⟨UInf, hUInf, hcovInf⟩ := LinearMap.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+    (univ : Finset (InfinitePlace K × ι)) (fun p ↦ L' p.1.val p.2)
+    fun p _ ↦ (hindInf p.1).ne_zero p.2
+  obtain ⟨UFin, hUFin, hcovFin⟩ := LinearMap.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+    (S₀ ×ˢ univ) (fun p : FinitePlace K × ι ↦ L' p.1.val p.2)
+    fun p hp ↦ (hindFin p.1 (mem_product.mp hp).1).ne_zero p.2
   refine ⟨S₀, L', T, hindInf, hindFin, hT, fun Q₀ ↦ ?_⟩
   -- the lines through the points of height at most `max Q₀ Q₁`, and the kernels of the forms at
   -- the infinite places and the places of `S₀`
@@ -221,11 +211,11 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
   rw [not_le, max_lt_iff] at hQ
   by_cases hInf : ∃ (v : InfinitePlace K) (i : ι), L' v.val i x = 0
   · obtain ⟨v, i, hvi⟩ := hInf
-    obtain ⟨W, hW, hxW⟩ := hcovInf x v (mem_univ v) i hvi
+    obtain ⟨W, hW, hxW⟩ := hcovInf x (v, i) (mem_univ _) hvi
     exact Or.inl ⟨W, mem_union_left _ (mem_union_right _ hW), hxW⟩
   by_cases hFin : ∃ v ∈ S₀, ∃ i : ι, L' v.val i x = 0
   · obtain ⟨v, hv, i, hvi⟩ := hFin
-    obtain ⟨W, hW, hxW⟩ := hcovFin x v hv i hvi
+    obtain ⟨W, hW, hxW⟩ := hcovFin x (v, i) (mem_product.mpr ⟨hv, mem_univ i⟩) hvi
     exact Or.inl ⟨W, mem_union_right _ hW, hxW⟩
   push Not at hInf hFin
   exact Or.inr ⟨hQ.1.le, hsol x hx hQ.2.le hInf hFin happrox⟩

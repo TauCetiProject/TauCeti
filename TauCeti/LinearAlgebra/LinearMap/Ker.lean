@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Ker
+public import Mathlib.Data.Finset.Image
 
 /-!
 # Kernels in commuting squares
@@ -16,7 +17,9 @@ semilinear horizontal maps, `f` sends the kernel of `d` into the kernel of `e`; 
 this is how a chain map acts on cycles. If moreover `e ∘ e' = 0` and `f'` is injective, then
 `e' c = f a` forces `d a = 0`. In a commuting square `g ∘ e₁ = e₂ ∘ f` whose source side `e₁`
 is surjective and whose target side `e₂` is injective, `e₁` carries the kernel of `f` onto the
-kernel of `g`. The restriction of an injective linear map to submodules is injective.
+kernel of `g`. The restriction of an injective linear map to submodules is injective. The kernels
+of finitely many nonzero linear maps are finitely many proper submodules covering every point at
+which one of the maps vanishes.
 -/
 
 public section
@@ -67,5 +70,15 @@ theorem map_ker_eq_ker_of_comp_eq (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} {e�
 theorem injective_restrict {f : M →ₗ[R] N} {p : Submodule R M} {q : Submodule R N}
     (hf : Function.Injective f) (h : ∀ x ∈ p, f x ∈ q) : Function.Injective (f.restrict h) :=
   fun _ _ hxy ↦ Subtype.ext (hf (congrArg Subtype.val hxy))
+
+/-- The kernels of finitely many nonzero linear maps are finitely many proper submodules covering
+every point at which one of the maps vanishes. -/
+theorem exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero {P : Type*} (s : Finset P)
+    (f : P → M →ₗ[R] N) (hf : ∀ p ∈ s, f p ≠ 0) :
+    ∃ U : Finset (Submodule R M), (∀ W ∈ U, W ≠ ⊤) ∧
+      ∀ x : M, ∀ p ∈ s, f p x = 0 → ∃ W ∈ U, x ∈ W := by
+  classical
+  exact ⟨s.image fun p ↦ ker (f p), Finset.forall_mem_image.mpr fun p hp ↦
+    ker_eq_top.not.mpr (hf p hp), fun x p hp hx ↦ ⟨_, Finset.mem_image_of_mem _ hp, mem_ker.mpr hx⟩⟩
 
 end LinearMap
