@@ -91,17 +91,6 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
 
-/-- The finite coordinate of the diagonal finite idele of `x : Kˣ` at `v` is the local image
-of `x` in `(v.adicCompletion K)ˣ`. -/
-theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding
-    (v : HeightOneSpectrum R) (x : Kˣ) :
-    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
-  rw [← HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v x]
-  refine Units.ext ?_
-  simp only [HeightOneSpectrum.coe_ideleFiniteCoord, ← IdeleGroup.coe_toFiniteIdele,
-    IdeleGroup.toFiniteIdele_ofFiniteIdele, IdeleGroup.toFiniteIdele_unitEmbedding]
-
 /-- The distance from one of the coordinate at `v` of a principal idele is measured by the
 `v`-adic valuation of `x - 1`. -/
 theorem IsDedekindDomain.HeightOneSpectrum.valued_ideleFiniteCoord_unitEmbedding_sub_one

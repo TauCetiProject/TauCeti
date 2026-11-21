@@ -204,6 +204,16 @@ theorem IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord
     (v.ideleFiniteCoord x : v.adicCompletion K) = (x : AdeleRing R K).2 v :=
   (rfl)
 
+/-- The finite coordinate of the diagonal finite idele of `x : Kˣ` at `v` is the local image
+of `x` in `(v.adicCompletion K)ˣ`. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
+  Units.ext <| by
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+    rfl
+
 @[simp]
 theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
     (w : InfinitePlace K) (x : IdeleGroup R K) :

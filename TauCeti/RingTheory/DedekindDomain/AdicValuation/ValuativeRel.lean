@@ -330,13 +330,6 @@ theorem mem_unitFiltration_zero_adicCompletion_iff
   refine ⟨And.left, fun hu ↦ ⟨hu, (Valuation.map_sub _ _ _).trans ?_⟩⟩
   rw [hu, map_one, max_self]
 
-/-- The valuation on the `v`-adic completion of `K` restricts along `algebraMap` to
-`v.valuation K`. -/
-theorem valued_algebraMap_adicCompletion (x : K) :
-    Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x := by
-  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-    Algebra.algebraMap_self_apply]
-
 /-- **Units of `K` of valuation one in the completion.** The image in `K_v` of a unit `a` of `K`
 lies in the depth-zero step `U(K_v, 0)` of the unit filtration exactly when `a` has `v`-adic
 valuation one. -/
@@ -382,19 +375,6 @@ theorem mul_inv_mem_unitFiltration_of_sub_lt
   exact (mem_unitFiltration_adicCompletion_iff v).mpr
     ⟨(Valuation.map_eq_of_sub_lt (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) hle1).trans
       (map_one _), hlt.le⟩
-
-/-- Density of `K` in `K_v` produces a global element strictly within `exp (-n)` of any local
-element `z : K_v`. -/
-theorem exists_algebraMap_adicCompletion_sub_lt (z : v.adicCompletion K) (n : ℕ) :
-    ∃ a : K, Valued.v (algebraMap K (v.adicCompletion K) a - z) < WithZero.exp (-(n : ℤ)) := by
-  let r₀ : WithZero (Multiplicative ℤ) := WithZero.exp (-(n : ℤ) - 1)
-  have hball : {y : v.adicCompletion K | Valued.v (y - z) ≤ r₀} ∈ nhds z := by
-    have hopen : IsOpen ((fun y : v.adicCompletion K ↦ y - z) ⁻¹'
-        {y : v.adicCompletion K | Valued.v y ≤ r₀}) :=
-      (v.isOpen_setOf_valued_le WithZero.exp_ne_zero).preimage (continuous_sub_right _)
-    exact hopen.mem_nhds (by simp [r₀])
-  obtain ⟨-, ⟨a, rfl⟩, ha⟩ := (v.denseRange_algebraMap K).inter_nhds_nonempty hball
-  exact ⟨a, lt_of_le_of_lt ha (WithZero.exp_lt_exp.mpr (by omega))⟩
 
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/

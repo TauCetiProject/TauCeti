@@ -322,8 +322,9 @@ theorem exists_primeToSubgroup_div_eq {𝔪 : Modulus K} (x : primeToSubgroup �
     exact ⟨a, b, ⟨xa_u, hxeq ▸ mul_mem hxb x.property⟩, ⟨xb_u, hxb⟩, rfl, rfl, Subtype.ext hxeq⟩
 
 /-- Given a prime `v₀ ∈ 𝔪.support` and a local unit `z ∈ U(K_{v₀}, k)` with `k ≤ 𝔪.exponent v₀`,
-there is a global unit `x ∈ primeToSubgroup 𝔪` approximating `z` to level `𝔪.exponent v₀` at `v₀`
-and `1` to level `𝔪.exponent v` at every other `v ∈ 𝔪.support`. -/
+there is a nonzero global element `x ∈ primeToSubgroup 𝔪`, a local unit at every prime dividing
+`𝔪`, approximating `z` to level `𝔪.exponent v₀` at `v₀` and `1` to level `𝔪.exponent v` at every
+other `v ∈ 𝔪.support`. -/
 theorem exists_primeToSubgroup_approx_localUnit {𝔪 : Modulus K} {v₀ : HeightOneSpectrum (𝓞 K)}
     (hv₀ : v₀ ∈ 𝔪.support) {k : ℕ} (hk : k ≤ 𝔪.exponent v₀)
     (z : (v₀.adicCompletion K)ˣ)

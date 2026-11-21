@@ -30,9 +30,11 @@ Gauss sums of `χ` do not evaluate the ideal values `χ_u((a)) N(a) ^ σ` direct
 
 Here `χ_∞(a)` is the **archimedean value** `Grossencharacter.archimedeanValue`: the product of the
 components of the presented Hecke character at the infinite places, evaluated at `a`. This is the
-idelic archimedean component, which by Neukirch VII (6.13) is the inverse of the classical infinity
-character in `χ((a)) = χ_f(a) χ_∞(a)⁻¹` (see `Grossencharacter.compatibility`), so Neukirch's
-`χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the archimedean value. It is the monomial
+idelic archimedean component, which is the inverse of the classical infinity character `χ_∞'` in
+`χ((a)) = χ_f(a) χ_∞'(a)` (Neukirch VII §6, (6.1); see `Grossencharacter.compatibility`). Thus
+in terms of the idelic archimedean value we have `χ((a)) = χ_f(a) χ_∞(a)⁻¹`, and the classical
+rearrangement `χ_f(a) = χ((a)) χ_∞'(a)⁻¹` becomes multiplication `χ_f(a) = χ((a)) χ_∞(a)`. It is
+the monomial
 `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
 (`Grossencharacter.archimedeanValue_eq_embeddingCharacter`), and differs from it by a sign at a
 real place of `𝔪` where the parity of the Hecke character differs from that of `n`. With the
@@ -194,6 +196,25 @@ theorem finiteCharacterK_apply (χ : Grossencharacter K 𝔪) (x : primeToSubgro
       χ.archimedeanValue x :=
   (rfl)
 
+/-- Reduce the product of local finite components over `𝔪.support` to the support of the
+finite conductor of `χ.toHeckeCharacter`. -/
+private theorem prod_finiteComponent_eq_finiteConductor_support (χ : Grossencharacter K 𝔪)
+    (x : primeToSubgroup 𝔪) :
+    (∏ v ∈ 𝔪.support,
+        χ.toHeckeCharacter.finiteComponent v
+          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ))) =
+      ∏ v ∈ (⟨χ.toHeckeCharacter.finiteConductor,
+          χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ : Modulus K).support,
+        χ.toHeckeCharacter.finiteComponent v
+          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)) := by
+  classical
+  set ψ := χ.toHeckeCharacter
+  set 𝔣 : Modulus K := ⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩
+  exact ψ.prod_finiteComponent_eq_of_subset (Modulus.support_mono χ.mk_finiteConductor_dvd)
+    (fun v _ hv𝔣 ↦ not_not.mp ((ψ.dvd_finiteConductor_iff v).not.mp
+      fun hdvd ↦ hv𝔣 ((𝔣.mem_support_iff v).mpr hdvd)))
+    (fun v hv𝔪 ↦ mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv𝔪))
+
 /-- **Idelic formula for `finiteCharacterK`.** For `x ∈ primeToSubgroup 𝔪`, `χ.finiteCharacterK x`
 equals the inverse product of the local finite components of `χ.toHeckeCharacter` at the primes
 dividing `𝔪`. -/
@@ -239,10 +260,7 @@ theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K �
     simp only [ψ, HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
       InfinitePlace.ideleInfiniteCoord_unitEmbedding]
   rw [hinf] at hsplit
-  have hprod_eq := ψ.prod_finiteComponent_eq_of_subset (Modulus.support_mono h𝔣)
-    (fun v _ hv𝔣 ↦ not_not.mp ((ψ.dvd_finiteConductor_iff v).not.mp
-      fun hdvd ↦ hv𝔣 ((𝔣.mem_support_iff v).mpr hdvd)))
-    (fun v hv𝔪 ↦ mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv𝔪))
+  have hprod_eq := χ.prod_finiteComponent_eq_finiteConductor_support x
   rw [finiteCharacterK_apply, ← hyideal, ψ.idealCharacter_apply_toIdealsAway y]
   simp only [y, HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding]
   rw [← hprod_eq]
@@ -467,28 +485,26 @@ private theorem residueCharacter_eq_one_of_finiteConductor_dvd (χ : Grossenchar
         (mem_primeToSubgroup.mp x.property v ((𝔪.mem_support_iff v).mp hv))
   rw [hprod, inv_one, Units.val_one]
 
-/-- Converse direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
-private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
-    {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
+/-- Local conductor-exponent bound from residue-kernel triviality modulo `𝔫.finitePart`:
+for each finite place `v`, `χ.toHeckeCharacter.conductorExponent v ≤ 𝔫.exponent v`. -/
+private theorem conductorExponent_le_exponent_of_residueCharacter_eq_one
+    (χ : Grossencharacter K 𝔪) {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
     (htriv : ∀ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
       Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 →
-        χ.residueCharacter u = 1) :
-    χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart := by
+        χ.residueCharacter u = 1)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    χ.toHeckeCharacter.conductorExponent v ≤ 𝔫.exponent v := by
   classical
-  rw [Ideal.dvd_iff_le]
-  refine (le_iInf fun v ↦ ?_).trans
-    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le
-  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
-  refine (Ideal.dvd_iff_le.mp (𝔫.pow_exponent_dvd_finitePart v)).trans
-    (Ideal.pow_le_pow_right ?_)
   by_cases hv : v ∈ 𝔪.support
   · rw [χ.toHeckeCharacter.conductorExponent_le_iff]
     intro z hz
+    -- Approximate `z` at `v` and `1` at all other primes of `𝔪.support` by a global element `x`.
     have hle_exp (w : HeightOneSpectrum (𝓞 K)) : 𝔫.exponent w ≤ 𝔪.exponent w := by
       rw [Modulus.exponent_def (m := 𝔪),
         w.le_count_associates_iff_le_pow 𝔪.finitePart_ne_bot, ← Ideal.dvd_iff_le]
       exact (𝔫.pow_exponent_dvd_finitePart w).trans hdvd
     obtain ⟨x, hxz, hother, hxv⟩ := exists_primeToSubgroup_approx_localUnit hv (hle_exp v) z hz
+    -- Show `x` reduces to `1` modulo `𝔫.finitePart`, so `χ.residueCharacter (residueHom 𝔪 x) = 1`.
     have hres𝔫 : residue 𝔫 (Subgroup.inclusion (primeToSubgroup_le_of_dvd hdvd) x) = 1 := by
       rw [residue_eq_one_iff]
       intro w hwI
@@ -512,6 +528,7 @@ private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossenchar
         χ.toHeckeCharacter.finiteComponent w
           (Units.map (algebraMap K (w.adicCompletion K)).toMonoidHom (x : Kˣ))) = 1 :=
       inv_eq_one.mp (Units.ext h1)
+    -- Isolate the `v`-component: all other components in `𝔪.support` vanish by `hother`.
     have hprod_single :
         (∏ w ∈ 𝔪.support,
           χ.toHeckeCharacter.finiteComponent w
@@ -522,6 +539,7 @@ private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossenchar
       exact χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
         (TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent w) (hother w hw hne))
     rw [hprod_single] at h1'
+    -- Transfer triviality from `x` to `z` using `x * z⁻¹ ∈ U(K_v, 𝔪.exponent v)`.
     have hdiff : χ.toHeckeCharacter.finiteComponent v
         (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ) * z⁻¹) = 1 :=
       χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
@@ -531,6 +549,21 @@ private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossenchar
   · have h0 : 𝔪.exponent v = 0 :=
       not_not.mp ((Modulus.mem_support_iff_exponent_ne_zero 𝔪 v).not.mp hv)
     exact (Nat.le_zero.mp (h0 ▸ χ.conductorExponent_le_exponent v)).le.trans (Nat.zero_le _)
+
+/-- Converse direction of `finiteConductor_dvd_iff_residueCharacter_eq_one`. -/
+private theorem finiteConductor_dvd_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
+    {𝔫 : Modulus K} (hdvd : 𝔫.finitePart ∣ 𝔪.finitePart)
+    (htriv : ∀ u : (𝓞 K ⧸ 𝔪.finitePart)ˣ,
+      Ideal.Quotient.factor (Ideal.le_of_dvd hdvd) (u : 𝓞 K ⧸ 𝔪.finitePart) = 1 →
+        χ.residueCharacter u = 1) :
+    χ.toHeckeCharacter.finiteConductor ∣ 𝔫.finitePart := by
+  rw [Ideal.dvd_iff_le]
+  refine (le_iInf fun v ↦ ?_).trans
+    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le
+  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
+  exact (Ideal.dvd_iff_le.mp (𝔫.pow_exponent_dvd_finitePart v)).trans
+    (Ideal.pow_le_pow_right
+      (χ.conductorExponent_le_exponent_of_residueCharacter_eq_one hdvd htriv v))
 
 /-- **Finite-conductor criterion for `residueCharacter`.** For an ideal `I ∣ 𝔪.finitePart`, the
 finite conductor of `χ.toHeckeCharacter` divides `I` if and only if `χ.residueCharacter` is
@@ -714,30 +747,14 @@ theorem finiteCharacter_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
   obtain ⟨x𝔪, hx𝔪⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp h𝔪
   obtain ⟨x𝔫, hx𝔫⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp h𝔫
   have hx : (x𝔪 : Kˣ) = (x𝔫 : Kˣ) := Units.ext (hx𝔪.trans hx𝔫.symm)
-  set 𝔣 : Modulus K :=
-    ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩
-  have hprod (𝔮 : Modulus K) (θ : Grossencharacter K 𝔮)
-      (hθ : θ.toHeckeCharacter = χ.toHeckeCharacter) (y : primeToSubgroup 𝔮) :
-      (∏ v ∈ 𝔮.support,
-        θ.toHeckeCharacter.finiteComponent v
-          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (y : Kˣ))) =
-      ∏ v ∈ 𝔣.support,
-        χ.toHeckeCharacter.finiteComponent v
-          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (y : Kˣ)) := by
-    have hdiv : χ.toHeckeCharacter.finiteConductor ∣ 𝔮.finitePart :=
-      hθ ▸ θ.finiteConductor_dvd_finitePart
-    have hsub : 𝔣.support ⊆ 𝔮.support := fun v hv ↦
-      (𝔮.mem_support_iff v).mpr (((𝔣.mem_support_iff v).mp hv).trans hdiv)
-    rw [hθ]
-    exact χ.toHeckeCharacter.prod_finiteComponent_eq_of_subset hsub
-      (fun v _ hv𝔣 ↦ not_not.mp ((χ.toHeckeCharacter.dvd_finiteConductor_iff v).not.mp
-        fun hdvd ↦ hv𝔣 ((𝔣.mem_support_iff v).mpr hdvd)))
-      (fun v hv𝔮 ↦ mem_primeToSubgroup.mp y.property v ((𝔮.mem_support_iff v).mp hv𝔮))
   rw [χ.finiteCharacter_eq_finiteCharacterK x𝔪 hx𝔪.symm,
     ψ.finiteCharacter_eq_finiteCharacterK x𝔫 hx𝔫.symm,
     χ.finiteCharacterK_eq_prod_finiteComponent_inv x𝔪,
     ψ.finiteCharacterK_eq_prod_finiteComponent_inv x𝔫,
-    hprod 𝔪 χ rfl x𝔪, hprod 𝔫 ψ h.symm x𝔫, hx]
+    χ.prod_finiteComponent_eq_finiteConductor_support x𝔪,
+    ψ.prod_finiteComponent_eq_finiteConductor_support x𝔫,
+    hx]
+  simp [h]
 
 /-- **The residue character is determined by the finite character**: it is the unique character
 of `𝓞 K ⧸ 𝔪₀` whose value at the class of every nonzero integer `a` is `χ_f(a)`. Every class has a
