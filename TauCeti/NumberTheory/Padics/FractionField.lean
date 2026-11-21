@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
 # Ring homomorphisms out of `ℤ_[p]` and its fraction field `ℚ_[p]`
@@ -14,8 +15,10 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 power of `p`. Hence a ring homomorphism `f : ℤ_[p] →+* A` to a commutative ring sends every
 nonzero element to a unit as soon as `p` is a unit of `A`
 (`PadicInt.isUnit_map_of_ne_zero`), and `IsLocalization.lift` then extends `f` uniquely to
-`ℚ_[p]`. The ring `ℤ_[p]` is an open subring of `ℚ_[p]`, so an additive map out of `ℚ_[p]`
-is continuous exactly when its restriction to `ℤ_[p]` is
+`ℚ_[p]`. The topology of `ℤ_[p]` is `(p)`-adic, so every ring homomorphism out of it is continuous
+for a `J`-adic topology on the target with `p ∈ J` (`PadicInt.continuous_of_isAdic`). The ring
+`ℤ_[p]` is an open subring of `ℚ_[p]`, so an additive map out of `ℚ_[p]` is continuous exactly
+when its restriction to `ℤ_[p]` is
 (`Padic.continuous_iff_continuous_comp_coe`); in particular the extension of a continuous `f` is
 continuous. Finally `ℤ` is dense in `ℤ_[p]` and `ℚ` is dense in `ℚ_[p]`, so a Hausdorff ring
 receives at most one continuous ring homomorphism from each of them
@@ -29,6 +32,8 @@ The interval rings `B^I` of the period domain of the Fargues–Fontaine curve ar
 
 * `PadicInt.isUnit_map_of_ne_zero`: a ring homomorphism out of `ℤ_[p]` inverting `p` inverts
   every nonzero element.
+* `PadicInt.continuous_of_isAdic`: a ring homomorphism out of `ℤ_[p]` is continuous for every
+  `J`-adic topology on the target with `p ∈ J`.
 * `Padic.continuous_iff_continuous_comp_coe`: an additive map out of `ℚ_[p]` is continuous exactly
   when its restriction to `ℤ_[p]` is.
 * `PadicInt.ringHom_ext_of_continuous`, `Padic.ringHom_ext_of_continuous`: continuous ring
@@ -47,6 +52,16 @@ theorem isUnit_map_of_ne_zero [Semiring A] (f : ℤ_[p] →+* A) (hp : IsUnit (p
     (hx : x ≠ 0) : IsUnit (f x) := by
   rw [unitCoeff_spec hx, map_mul, map_pow, map_natCast]
   exact ((unitCoeff hx).isUnit.map f).mul (hp.pow _)
+
+/-- **Ring homomorphisms out of `ℤ_[p]` are continuous for adic topologies containing `p`**: the
+topology of `ℤ_[p]` is the `(p)`-adic one, and `f` maps `(p)` into `J`. -/
+theorem continuous_of_isAdic [CommRing A] [TopologicalSpace A] {J : Ideal A} (hJ : IsAdic J)
+    (hp : (p : A) ∈ J) (f : ℤ_[p] →+* A) : Continuous f :=
+  TauCeti.Huber.PadicInt.isAdic_maximalIdeal.continuous_of_map_le_radical hJ
+    (IsNoetherian.noetherian _) <| by
+      rw [maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, map_natCast,
+        Ideal.span_singleton_le_iff_mem]
+      exact Ideal.le_radical hp
 
 /-- **Continuous ring homomorphisms out of `ℤ_[p]` are unique**: they agree on the dense subring
 `ℤ`, so two continuous ring homomorphisms into a Hausdorff ring are equal. -/

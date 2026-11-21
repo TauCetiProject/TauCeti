@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.WittVector.Compare
 public import Mathlib.RingTheory.WittVector.Frobenius
-public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.NumberTheory.Padics.FractionField
 
 /-!
 # The map `ℤ_p → 𝕎 R` for a ring `R` of characteristic `p`
@@ -81,21 +81,10 @@ theorem frobenius_comp_padicIntHom : frobenius.comp (padicIntHom p R) = padicInt
   rw [frobenius_eq_map_frobenius, map_comp_padicIntHom]
 
 /-- **The structure map `ℤ_[p] → 𝕎 R` is continuous** for the `J`-adic topology on `𝕎 R`, for every
-ideal `J` containing `p`: it carries `pⁿ ℤ_[p]` into `pⁿ 𝕎 R ⊆ Jⁿ`. This applies to the
+ideal `J` containing `p`, like every ring homomorphism out of `ℤ_[p]`. This applies to the
 `(p, [ϖ])`-adic topology of `A_inf`. -/
 theorem continuous_padicIntHom [TopologicalSpace (𝕎 R)] {J : Ideal (𝕎 R)} (hJ : IsAdic J)
-    (hp : (p : 𝕎 R) ∈ J) : Continuous (padicIntHom p R) := by
-  have : IsTopologicalRing (𝕎 R) := hJ ▸ J.nonarchimedean.toIsTopologicalRing
-  refine continuous_of_continuousAt_zero _ fun s hs ↦ ?_
-  rw [map_zero] at hs
-  obtain ⟨n, hn⟩ := (isAdic_iff.mp hJ).2 s hs
-  have hball : Metric.closedBall (0 : ℤ_[p]) ((p : ℝ) ^ (-(n : ℤ))) ∈ nhds 0 :=
-    Metric.closedBall_mem_nhds _ (zpow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _)
-  refine Filter.mem_map.mpr <| Filter.mem_of_superset hball fun x hx ↦ hn ?_
-  rw [Metric.mem_closedBall, dist_zero_right, PadicInt.norm_le_pow_iff_mem_span_pow,
-    Ideal.mem_span_singleton] at hx
-  obtain ⟨y, rfl⟩ := hx
-  rw [SetLike.mem_coe, map_mul, map_pow, map_natCast]
-  exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hp n)
+    (hp : (p : 𝕎 R) ∈ J) : Continuous (padicIntHom p R) :=
+  PadicInt.continuous_of_isAdic hJ hp _
 
 end TauCeti.WittVector
