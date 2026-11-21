@@ -20,12 +20,10 @@ section criterion shows that evaluating a `C^n` covector field along `b : M → 
 field along `b` produces a `C^n` scalar function (`ContMDiffWithinAt.dual_bundle_apply` and its
 pointwise, setwise, and global variants).
 
-More generally, fibrewise precomposition `ContinuousLinearMap.precomp` with a `C^n` Hom-bundle
-section `A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)` into any third vector bundle `V₃` is a `C^n` section of
-the induced Hom bundle `(V₂ · →L V₃ ·) →L (V₁ · →L V₃ ·)` (`ContMDiffWithinAt.clm_bundle_precomp`),
-without finite-rank or scalar-completeness assumptions. Specializing `V₃` to the trivial scalar
-bundle gives `C^n` regularity of the fibrewise dual (transpose) map
-`StrongDual 𝕜 (V₂ (b y)) →L[𝕜] StrongDual 𝕜 (V₁ (b y))` (`ContMDiffWithinAt.clm_bundle_dualMap`).
+More generally, specializing fibrewise precomposition `ContMDiffWithinAt.clm_bundle_precomp` to
+the trivial scalar bundle gives `C^n` regularity of the fibrewise dual (transpose) map
+`StrongDual 𝕜 (V₂ (b y)) →L[𝕜] StrongDual 𝕜 (V₁ (b y))` (`ContMDiffWithinAt.clm_bundle_dualMap`),
+without finite-rank or scalar-completeness assumptions.
 When `𝕜` is complete and the target model fibre `F₂` is finite-dimensional, model-fibre double-dual
 evaluation upgrades this to an equivalence (`TauCeti.contMDiffWithinAt_clm_bundle_dualMap_iff`,
 `TauCeti.contMDiff_clm_bundle_dualMap_iff`); when `F₁` is also finite-dimensional, this yields the
@@ -45,7 +43,7 @@ noncomputable section
 open Bundle FiberBundle Set
 open scoped Manifold ContDiff Topology
 
-section DualApply
+section
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
@@ -53,13 +51,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
   {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
   {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace M] [ChartedSpace HM M] {n : ℕ∞ω}
+
+section DualApply
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {b : M → B} {α : ∀ y, StrongDual 𝕜 (V (b y))} {v : ∀ y, V (b y)}
-  {s : Set M} {x : M} {n : ℕ∞ω}
+  {b : M → B} {α : ∀ y, StrongDual 𝕜 (V (b y))} {v : ∀ y, V (b y)} {s : Set M} {x : M}
 
 /-- Evaluating a `C^n` dual-bundle section along `b` on a `C^n` section of `V` along `b` gives a
 `C^n` scalar function within `s` at `x`. -/
@@ -109,17 +109,8 @@ end DualApply
 
 section Precomp
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
-  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
-  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {F₁ F₂ F₃ : Type*}
-  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
-  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
   {V₁ V₂ : B → Type*}
   [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
   [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
@@ -127,42 +118,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
   [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
   [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
-  {b : M → B} {s : Set M} {x : M} {n : ℕ∞ω}
-  {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
-/-- Fibrewise precomposition with a `C^n` Hom-bundle section into any vector bundle `V₃` is `C^n`
-within `s` at `x`. Neither finite rank nor completeness of `𝕜` is required. -/
-theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*)
-    [∀ x, AddCommGroup (V₃ x)] [∀ x, Module 𝕜 (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
-    [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul 𝕜 (V₃ x)]
-    [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
-    (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
-      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
-    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, (F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)) n
-      (fun y ↦ TotalSpace.mk' ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃)
-        (E := fun z ↦ (V₂ z →L[𝕜] V₃ z) →L[𝕜] V₁ z →L[𝕜] V₃ z)
-        (b y) (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) s x := by
-  let _ : NormedAddCommGroup ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
-  let _ : NormedSpace 𝕜 ((F₂ →L[𝕜] F₃) →L[𝕜] F₁ →L[𝕜] F₃) := inferInstance
-  rw [contMDiffWithinAt_hom_bundle] at hA ⊢
-  refine ⟨hA.1, ?_⟩
-  have hnear := hA.1.insert.continuousWithinAt.preimage_mem_nhdsWithin <|
-    (((trivializationAt F₁ V₁ (b x)).open_baseSet.inter
-      (trivializationAt F₂ V₂ (b x)).open_baseSet).inter
-      (trivializationAt F₃ V₃ (b x)).open_baseSet).mem_nhds
-        ⟨⟨mem_baseSet_trivializationAt' (b x), mem_baseSet_trivializationAt' (b x)⟩,
-          mem_baseSet_trivializationAt' (b x)⟩
-  let L := (ContinuousLinearMap.compL 𝕜 F₁ F₂ F₃).flip
-  have hL := L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hA.2
-  have heq : (fun y ↦ ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
-      (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) (b x) (b y) (b x) (b y)
-        (ContinuousLinearMap.precomp (V₃ (b y)) (A y))) =ᶠ[𝓝[insert x s] x]
-      fun y ↦ L
-        (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
-    filter_upwards [hnear] with y hy
-    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy.1.1 hy.1.2 hy.2
-  exact hL.congr_of_eventuallyEq (heq.filter_mono (nhdsWithin_mono _ (subset_insert x s)))
-    (heq.self_of_nhdsWithin (mem_insert x s))
+section
+
+variable {b : M → B} {s : Set M} {x : M} {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
 /-- Fibrewise dual (transpose) of a `C^n` Hom-bundle section is `C^n` within `s` at `x`. -/
 theorem ContMDiffWithinAt.clm_bundle_dualMap
@@ -204,28 +163,13 @@ theorem ContMDiff.clm_bundle_dualMap
         (b y) (ContinuousLinearMap.precomp 𝕜 (A y))) :=
   fun y ↦ (hA y).clm_bundle_dualMap
 
-end Precomp
+end
 
 namespace TauCeti
 
 section FiniteRankDual
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {EB EM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
-  {HB HM : Type*} [TopologicalSpace HB] [TopologicalSpace HM]
-  {IB : ModelWithCorners 𝕜 EB HB} {IM : ModelWithCorners 𝕜 EM HM}
-  {B M : Type*} [TopologicalSpace B] [ChartedSpace HB B]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [FiniteDimensional 𝕜 F₂]
-  {V₁ V₂ : B → Type*}
-  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
-  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
-  [TopologicalSpace (TotalSpace F₁ V₁)] [TopologicalSpace (TotalSpace F₂ V₂)]
-  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁] [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
-  {n : ℕ∞ω}
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₂]
 
 /-- Over a complete field with finite-dimensional target model fibre `F₂`, a Hom-bundle section
 along `b` is `C^n` within `s` at `x` if and only if its fibrewise dual (transpose) section is. -/
@@ -291,9 +235,9 @@ theorem contMDiff_totalSpaceMap_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ 
     ContMDiff (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂)) (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)) n
         (fun p : TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ↦
           TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun x ↦ StrongDual 𝕜 (V₁ x)) p.proj
-            (ContinuousLinearMap.precomp 𝕜 (ψ p.proj) p.2)) ↔
+            (ContinuousLinearMap.precomp 𝕜 (ψ p.proj) p.snd)) ↔
       ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-        (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.2)) := by
+        (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd)) := by
   rw [← contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ ContinuousLinearMap.precomp 𝕜 (ψ x)),
     ← contMDiff_hom_bundle_iff (IB := IB) ψ]
   exact contMDiff_clm_bundle_dualMap_iff (b := id)
@@ -302,7 +246,7 @@ theorem contMDiff_totalSpaceMap_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ 
 equivalences with `C^n` total-space map. -/
 def bundleDualDiffeomorph (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
     (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-      (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
+      (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
     TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ≃ₘ^n⟮
       IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂), IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
       TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x)) :=
@@ -313,10 +257,10 @@ def bundleDualDiffeomorph (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
 @[simp]
 theorem bundleDualDiffeomorph_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
     (he : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
-      (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
+      (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
     (p : TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x))) :
     bundleDualDiffeomorph e he p =
-      ⟨p.proj, ContinuousLinearMap.precomp 𝕜 (e p.proj).toContinuousLinearMap p.2⟩ := by
+      ⟨p.proj, ContinuousLinearMap.precomp 𝕜 (e p.proj).toContinuousLinearMap p.snd⟩ := by
   simp [bundleDualDiffeomorph]
 
 /-- In finite dimensions over a complete field, the fibrewise dual of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x`
@@ -327,15 +271,19 @@ theorem exists_bundleDiffeomorph_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂
         IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂), IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
         TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x)),
         ⇑Φ = fun p ↦ TotalSpace.mk' (StrongDual 𝕜 F₁) (E := fun x ↦ StrongDual 𝕜 (V₁ x))
-          p.proj (ContinuousLinearMap.precomp 𝕜 (ψ p.proj) p.2)) ↔
+          p.proj (ContinuousLinearMap.precomp 𝕜 (ψ p.proj) p.snd)) ↔
       ∃ Ψ : TotalSpace F₁ V₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ V₂,
-        ⇑Ψ = fun p ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.2) := by
+        ⇑Ψ = fun p ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd) := by
   rw [exists_bundleDiffeomorph_iff (fun x ↦ (ContinuousLinearMap.precomp 𝕜 (ψ x) :
       StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x))),
     exists_bundleDiffeomorph_iff ψ, contMDiff_totalSpaceMap_dualMap_iff]
   exact and_congr_right fun _ ↦ forall_congr' fun x ↦
-    bijective_precomp_dual_iff (F₁ := F₁) (F₂ := F₂) (ψ x)
+    (ψ x).bijective_precomp_dual_iff (F₁ := F₁) (F₂ := F₂)
 
 end FiniteRankDual
 
 end TauCeti
+
+end Precomp
+
+end

@@ -20,7 +20,7 @@ This follows from Mathlib's hom-bundle chart formula and its inverse law.
 A family of fibrewise continuous linear equivalences induces a family of fibrewise dual continuous
 linear equivalences (`TauCeti.bundleDualEquiv`). In finite dimensions over a complete field, the
 fibrewise dual map `ContinuousLinearMap.precomp 𝕜 A` between strong dual fibres is bijective if and
-only if `A` is bijective (`TauCeti.bijective_precomp_dual_iff`).
+only if `A` is bijective (`ContinuousLinearMap.bijective_precomp_dual_iff`).
 -/
 
 public section
@@ -102,7 +102,7 @@ variable {𝕜 B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [CompleteSpac
 include F₁ F₂ in
 /-- In finite dimensions over a complete field, the fibrewise dual `ContinuousLinearMap.precomp 𝕜 A`
 between continuous dual fibres is bijective if and only if `A` is bijective. -/
-theorem bijective_precomp_dual_iff {x : B} (A : V₁ x →L[𝕜] V₂ x) :
+theorem _root_.ContinuousLinearMap.bijective_precomp_dual_iff {x : B} (A : V₁ x →L[𝕜] V₂ x) :
     Function.Bijective
         (ContinuousLinearMap.precomp 𝕜 A : StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) ↔
       Function.Bijective A := by

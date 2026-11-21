@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Quotient.BundleMap
+public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Determinant
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 
 /-!
 # Compatibility of quotient bundle descent with determinants and top-degree forms
@@ -134,7 +136,7 @@ theorem exists_bundleDiffeomorph_orbitRelQuotientRec_iff_det_ne_zero [FiniteDime
     {hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x} (hm : m ≤ n) :
     (∃ Φ : TotalSpace F V ≃ₘ^m⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯ TotalSpace F V,
         ⇑Φ = fun p ↦ TotalSpace.mk' F p.proj
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] V q) φ hφ p.proj p.2)) ↔
+          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] V q) φ hφ p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] F)) m
           (fun x ↦ (TotalSpace.mk' (F →L[𝕜] F) x (φ x) :
             TotalSpace (F →L[𝕜] F)

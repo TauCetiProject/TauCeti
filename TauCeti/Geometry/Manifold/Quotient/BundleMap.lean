@@ -67,13 +67,13 @@ theorem lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec
           (MulAction.orbitRelQuotientRec
             (V := fun q' ↦ (ψ.orbitRelQuotientMap *ᵖ V) q' →L[𝕜] (ψ.orbitRelQuotientMap *ᵖ W) q')
             (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-            (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2)) =
+            (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd)) =
       TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj)
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ
-          (ψ.orbitRelQuotientMap p.proj) p.2) :=
+          (ψ.orbitRelQuotientMap p.proj) p.snd) :=
   congrArg
     (fun T : V (ψ.orbitRelQuotientMap p.proj) →L[𝕜] W (ψ.orbitRelQuotientMap p.proj) ↦
-      TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj) (T p.2))
+      TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj) (T p.snd))
     (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
 
 end AlgebraicPullback
@@ -102,7 +102,7 @@ transition functions is needed for this comparison of the two regularity predica
 theorem contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
     ContMDiff (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₂)) m
         (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.2)) ↔
+          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
         (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
           TotalSpace (F₁ →L[𝕜] F₂)
@@ -118,7 +118,7 @@ it is the pullback of a unique family inducing a `C^m` map of total spaces downs
 theorem existsUnique_contMDiff_bundleMap_iff (hm : m ≤ n) :
     (∃! ψ : ∀ q, V q →L[𝕜] W q,
       ContMDiff (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₂)) m
-          (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.2)) ∧
+          (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd)) ∧
         ∀ x : M, ψ (Quotient.mk (MulAction.orbitRel G M) x) = φ x) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
         (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
@@ -143,7 +143,7 @@ the inverse downstairs follows automatically. -/
 theorem exists_bundleDiffeomorph_orbitRelQuotientRec_iff (hm : m ≤ n) :
     (∃ Φ : TotalSpace F₁ V ≃ₘ^m⟮I.prod 𝓘(𝕜, F₁), I.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ W,
       ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj
-        (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.2)) ↔
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
           (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
             TotalSpace (F₁ →L[𝕜] F₂)
@@ -181,14 +181,15 @@ theorem _root_.ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec 
         (MulAction.orbitRelQuotientRec
           (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
           (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-          (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2)) := by
+          (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd)) := by
   intro f
   have hdown := (contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hφ := hφ) hm).2 hφ_smooth
   refine (Bundle.Pullback.contMDiff_fiberwise
     (fun q v ↦ MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q v)
     hdown f (contMDiff_orbitRelQuotientMap hm hψ)).congr fun p ↦
       congrArg (fun T : V (f p.proj) →L[𝕜] W (f p.proj) ↦ TotalSpace.mk' F₂ (E := ⇑f *ᵖ W) p.proj
-        (T p.2)) (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
+        (T p.snd))
+        (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
 
 /-- If a `G`-invariant linear family `φ` satisfies the upstairs `C^m` bundle-diffeomorphism
 criterion over `M`, its equivariant pullback along a `C^m` map `ψ : M' →ₑ[σ] M` (`m ≤ n`) descends
@@ -208,7 +209,7 @@ theorem exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec {ψ : 
         (MulAction.orbitRelQuotientRec
           (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
           (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-          (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.2) := by
+          (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd) := by
   intro f
   rw [exists_bundleDiffeomorph_iff (IB := I') (fun q' ↦ MulAction.orbitRelQuotientRec
     (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
