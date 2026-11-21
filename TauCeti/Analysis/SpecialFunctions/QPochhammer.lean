@@ -89,6 +89,13 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
   so is this product.
+* `TauCeti.qPochhammerFun`: the shifted `q`-Pochhammer product `∏_{n ≥ 0} (1 - w z^{N n + c})`,
+  together with its convergence (`TauCeti.multipliable_qPochhammerFun`), reindexing and shift
+  identities (`TauCeti.tprod_one_sub_pow_succ_mul_eq_qPochhammerFun`,
+  `TauCeti.tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun`,
+  `TauCeti.qPochhammerFun_eq_one_sub_mul_tprod`, `TauCeti.qPochhammerFun_eq_one_sub_mul`),
+  asymptotics near `0` (`TauCeti.isBigO_qPochhammerFun_sub_one`), and holomorphy on the open
+  unit disc (`TauCeti.differentiableOn_qPochhammerFun`, `TauCeti.analyticAt_qPochhammerFun`).
 -/
 
 public section
@@ -657,5 +664,127 @@ theorem hasDerivAt_qTheta_exp_zero (hq : ‖q‖ < 1) :
     ring
 
 end Holomorphic
+
+section ShiftedQPochhammer
+
+/-- The shifted `q`-Pochhammer infinite product `∏_{n ≥ 0} (1 - w z^{N n + c})`. For `0 < N` and
+`‖z‖ < 1` in a complete normed field, the product converges absolutely. -/
+noncomputable def qPochhammerFun {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    (N c : ℕ) (w z : 𝕜) : 𝕜 :=
+  ∏' n : ℕ, (1 - w * z ^ (N * n + c))
+
+/-- The defining infinite product of `qPochhammerFun`. -/
+theorem qPochhammerFun_def {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜] (N c : ℕ) (w z : 𝕜) :
+    qPochhammerFun N c w z = ∏' n : ℕ, (1 - w * z ^ (N * n + c)) := (rfl)
+
+/-- At `w = 0`, `qPochhammerFun N c 0 z = 1`. -/
+@[simp]
+theorem qPochhammerFun_zero_left {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜] (N c : ℕ) (z : 𝕜) :
+    qPochhammerFun N c (0 : 𝕜) z = 1 := by simp [qPochhammerFun_def]
+
+/-- For `0 < c`, `qPochhammerFun N c w 0 = 1`. -/
+@[simp]
+theorem qPochhammerFun_zero_right {𝕜 : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    {N c : ℕ} (hc : 0 < c) (w : 𝕜) : qPochhammerFun N c w (0 : 𝕜) = 1 := by
+  simp only [qPochhammerFun_def, zero_pow ((by omega : ∀ n, N * n + c ≠ 0) _), mul_zero, sub_zero,
+    tprod_one]
+
+/-- For `0 < N` and `‖z‖ < 1` in a complete normed field, the shifted `q`-Pochhammer product
+`∏_{n ≥ 0} (1 - w z^{N n + c})` converges. -/
+theorem multipliable_qPochhammerFun {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
+    Multipliable fun n : ℕ ↦ 1 - w * z ^ (N * n + c) :=
+  multipliable_one_sub_of_summable <|
+    ((summable_geometric_of_lt_one (pow_nonneg (norm_nonneg z) N)
+      (by simpa [norm_pow] using norm_pow_lt_one hz hN.ne')).mul_left
+      (‖w‖ * ‖z‖ ^ c)).congr fun n ↦ by simp only [norm_mul, norm_pow, pow_add, pow_mul]; ring
+
+/-- **Shift identity for `qPochhammerFun`**: for `0 < N` and `‖z‖ < 1`,
+`qPochhammerFun N c w z = (1 - w z^c) * qPochhammerFun N (N + c) w z`. -/
+theorem qPochhammerFun_eq_one_sub_mul {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
+    qPochhammerFun N c w z = (1 - w * z ^ c) * qPochhammerFun N (N + c) w z := by
+  have hm : Multipliable fun k : ℕ ↦ 1 - w * z ^ (N * (k + 1) + c) :=
+    (multipliable_qPochhammerFun hN (N + c) w hz).congr fun k ↦ by congr 2; ring
+  rw [qPochhammerFun_def, tprod_eq_zero_mul' (f := fun n : ℕ ↦ 1 - w * z ^ (N * n + c)) hm,
+    qPochhammerFun_def, mul_zero, zero_add]
+  exact congrArg _ (tprod_congr fun k ↦ by congr 2; ring)
+
+/-- Reindexing `∏_{n ≥ 1} (1 - (z^N)^n (w z^c))` as the shifted `q`-Pochhammer product
+`qPochhammerFun N (N + c) w z`. -/
+theorem tprod_one_sub_pow_succ_mul_eq_qPochhammerFun {𝕜 : Type*} [CommRing 𝕜]
+    [TopologicalSpace 𝕜] (N c : ℕ) (w z : 𝕜) :
+    (∏' n : ℕ, (1 - (z ^ N) ^ (n + 1) * (w * z ^ c))) = qPochhammerFun N (N + c) w z := by
+  rw [qPochhammerFun_def]
+  refine tprod_congr fun n ↦ ?_
+  congr 1; rw [← pow_mul, mul_left_comm, ← pow_add]
+  exact congrArg (fun k ↦ w * z ^ k) (by ring)
+
+/-- For `c ≤ N` and `z ≠ 0`, reindexing `∏_{n ≥ 1} (1 - (z^N)^n (w z^c)⁻¹)` as the shifted
+`q`-Pochhammer product `qPochhammerFun N (N - c) w⁻¹ z`. -/
+theorem tprod_one_sub_pow_succ_mul_inv_eq_qPochhammerFun {𝕜 : Type*} [Field 𝕜]
+    [TopologicalSpace 𝕜] {N c : ℕ} (hc : c ≤ N) (w : 𝕜) {z : 𝕜} (hz : z ≠ 0) :
+    (∏' n : ℕ, (1 - (z ^ N) ^ (n + 1) * (w * z ^ c)⁻¹)) = qPochhammerFun N (N - c) w⁻¹ z := by
+  rw [qPochhammerFun_def]
+  refine tprod_congr fun n ↦ ?_
+  rw [mul_inv]; congr 1; rw [mul_left_comm]; congr 1
+  refine (mul_inv_eq_iff_eq_mul₀ (pow_ne_zero c hz)).mpr ?_
+  rw [← pow_mul, ← pow_add, add_assoc, Nat.sub_add_cancel hc]
+  exact congrArg (z ^ ·) (by ring)
+
+/-- For `0 < N` and `‖z‖ < 1`, splitting off the `n = 0` factor expresses `qPochhammerFun N c w z`
+in terms of the standard `q`-Pochhammer product `∏_{k ≥ 1} (1 - (z^N)^k (w z^c))`. -/
+theorem qPochhammerFun_eq_one_sub_mul_tprod {𝕜 : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    {N : ℕ} (hN : 0 < N) (c : ℕ) (w : 𝕜) {z : 𝕜} (hz : ‖z‖ < 1) :
+    qPochhammerFun N c w z =
+      (1 - w * z ^ c) * ∏' k : ℕ, (1 - (z ^ N) ^ (k + 1) * (w * z ^ c)) := by
+  rw [qPochhammerFun_eq_one_sub_mul hN c w hz, tprod_one_sub_pow_succ_mul_eq_qPochhammerFun]
+
+open Asymptotics Filter Topology in
+/-- For `0 < N` and `0 < c`, `qPochhammerFun N c w z - 1 = O(‖z‖ ^ c)` as `z → 0`. -/
+theorem isBigO_qPochhammerFun_sub_one {𝕜 : Type*} [NormedField 𝕜]
+    {N c : ℕ} (hN : 0 < N) (hc : 0 < c) (w : 𝕜) :
+    (fun z : 𝕜 ↦ qPochhammerFun N c w z - 1) =O[𝓝 0] fun z : 𝕜 ↦ ‖z‖ ^ c := by
+  set y : 𝕜 → ℝ := fun z ↦ ‖w‖ * ‖z‖ ^ c / (1 - ‖z‖ ^ N)
+  have hden : ContinuousAt (fun z : 𝕜 ↦ 1 - ‖z‖ ^ N) 0 :=
+    continuousAt_const.sub ((continuous_norm (E := 𝕜)).pow N).continuousAt
+  have hden0 : (1 : ℝ) - ‖(0 : 𝕜)‖ ^ N ≠ 0 := by simp [zero_pow hN.ne']
+  have hy0 : Tendsto y (𝓝 0) (𝓝 0) := by
+    simpa [y, Pi.div_def, zero_pow hc.ne', zero_pow hN.ne'] using
+      ((((continuous_norm (E := 𝕜)).pow c).tendsto (0 : 𝕜)).const_mul ‖w‖).div hden.tendsto hden0
+  have hexp : (fun z : 𝕜 ↦ Real.exp (y z) - 1) =O[𝓝 0] y := by
+    simpa [Function.comp_def, Real.exp_zero] using
+      (Real.differentiableAt_exp (x := 0)).isBigO_sub.comp_tendsto hy0
+  have hyO : y =O[𝓝 0] fun z : 𝕜 ↦ ‖z‖ ^ c :=
+    (((continuousAt_const (y := ‖w‖)).div hden hden0).norm.isBoundedUnder_le.isBigO_one ℝ).mul
+      (isBigO_refl (fun z : 𝕜 ↦ ‖z‖ ^ c) _) |>.congr'
+      (Eventually.of_forall fun z ↦ by dsimp only [y, Pi.mul_apply, Pi.div_apply]; ring)
+      (Eventually.of_forall fun _ ↦ by simp)
+  refine (isBigO_iff.mpr ⟨1, ?_⟩).trans (hexp.trans hyO)
+  filter_upwards [Metric.ball_mem_nhds (0 : 𝕜) (by positivity : (0 : ℝ) < 1 / 2)] with z hz
+  have hz1 : ‖z‖ < 1 := (mem_ball_zero_iff.mp hz).trans (by norm_num)
+  have hsum : HasSum (fun n : ℕ ↦ ‖-(w * z ^ (N * n + c))‖) (y z) := by
+    simpa [y, norm_mul, norm_pow, pow_add, pow_mul, ← mul_assoc, mul_comm, mul_left_comm,
+      div_eq_mul_inv] using (hasSum_geometric_of_lt_one (pow_nonneg (norm_nonneg z) N)
+        (by simpa [norm_pow] using norm_pow_lt_one hz1 hN.ne')).mul_left (‖w‖ * ‖z‖ ^ c)
+  have hle := norm_tprod_one_add_sub_one_le hsum.summable
+  simp only [← sub_eq_add_neg, hsum.tsum_eq] at hle
+  simpa [qPochhammerFun_def] using hle.trans (le_abs_self _)
+
+/-- For `0 < N`, `z ↦ qPochhammerFun N c w z` is holomorphic on the open unit disc. -/
+theorem differentiableOn_qPochhammerFun {N : ℕ} (hN : 0 < N) (c : ℕ) (w : ℂ) :
+    DifferentiableOn ℂ (qPochhammerFun N c w) (Metric.ball 0 1) :=
+  ((DifferentiableOn.sub (differentiableOn_const 1) (by fun_prop)).mul
+    (differentiableOn_tprod_one_sub_pow_mul Metric.isOpen_ball (by fun_prop)
+      (fun _ hz ↦ norm_pow_lt_one (mem_ball_zero_iff.mp hz) hN.ne') (by fun_prop))).congr
+    fun _ hz ↦ qPochhammerFun_eq_one_sub_mul_tprod hN c w (mem_ball_zero_iff.mp hz)
+
+/-- For `0 < N`, `z ↦ qPochhammerFun N c w z` is analytic at `0`. -/
+theorem analyticAt_qPochhammerFun {N : ℕ} (hN : 0 < N) (c : ℕ) (w : ℂ) :
+    AnalyticAt ℂ (qPochhammerFun N c w) 0 :=
+  (differentiableOn_qPochhammerFun hN c w).analyticOnNhd Metric.isOpen_ball 0
+    (Metric.mem_ball_self zero_lt_one)
+
+end ShiftedQPochhammer
 
 end TauCeti

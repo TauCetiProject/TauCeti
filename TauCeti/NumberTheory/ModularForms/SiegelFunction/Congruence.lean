@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Transform
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Data.ZMod.Divisibility
 import TauCeti.Data.ZMod.Two
 import TauCeti.LinearAlgebra.Matrix.RationalVector
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
@@ -20,7 +22,8 @@ For a row vector `r = a / N` with integral numerator, the power
 `g_r ^ (12 * N / gcd(6, N))` is invariant under the principal congruence subgroup
 `Γ(N)`. More generally, twelfth powers transform by the right matrix action on
 `r`, and `g_r ^ (12 * k)` is unchanged by integral translations of `r` whenever
-both coordinates of `6 * k * r` are integers.
+both coordinates of `6 * k * r` are integers; thus when `N ∣ 6 * k`, `g_{a/N}^{12 k}` depends
+only on `a mod N` and transforms via `a ↦ (a γ) mod N` under `γ ∈ SL₂(ℤ)`.
 
 The second part of the file proves the Kubert–Lang criterion for a finite product
 `∏ g_{aᵢ/N}^{mᵢ}` with integral numerators `aᵢ` and integral exponents `mᵢ`. Suppose that
@@ -45,6 +48,11 @@ For modular units one additionally excludes integral parameters.
 
 * `TauCeti.ModularForm.siegelFunction_div_pow_smul_of_mem_Gamma`: `g_{a/N}^{12N / gcd(6, N)}`
   is invariant under `Γ(N)`.
+* `TauCeti.ModularForm.siegelFunction_div_pow_twelve_mul_congr`,
+  `siegelFunction_div_pow_twelve_mul_eq_zmod`, `siegelFunction_div_pow_twelve_mul_smul_eq_zmod`,
+  `siegelFunction_zmod_pow_twelve_mul_smul`: congruence modulo `N` and `SL₂(ℤ)`-action on
+  `g_{a/N}^{12 k}` and `g_{v/N}^{12 k}` for `N ∣ 6 * k`.
+* `TauCeti.ModularForm.siegelFunction_div_eq_zero_iff`: for `0 < N`, `g_{a/N}(τ) = 0 ↔ a ∈ N ℤ²`.
 * `TauCeti.ModularForm.prod_siegelFunction_div_zpow_smul_eq_zpow_mul`: under the quadratic
   relations, `∏ g_{aᵢ/N}^{mᵢ}` is multiplied by `ε ^ ∑ mᵢ` under `γ ∈ Γ(N)`.
 * `TauCeti.ModularForm.pow_twelve_div_gcd_eq_one_of_mem_Gamma`: the multiplier of `γ ∈ Γ(N)`
@@ -140,6 +148,74 @@ theorem siegelFunction_div_pow_smul_of_mem_Gamma {N : ℕ}
       congrArg (· * (N / Nat.gcd 6 N)) hm
     _ = (Nat.gcd 6 N * (N / Nat.gcd 6 N)) * m := by ring
     _ = N * m := by rw [Nat.mul_div_cancel' hg]
+
+/-- **Congruence modulo `N` of `(12 k)`-th powers.** If `N ∣ 6 * k` and `a ≡ b [ZMOD N]`
+coordinatewise, then `g_{a/N}(τ)^{12 k} = g_{b/N}(τ)^{12 k}` on the upper half-plane. -/
+theorem siegelFunction_div_pow_twelve_mul_congr {N k : ℕ} (hk : N ∣ 6 * k) {a b : Fin 2 → ℤ}
+    (hab : ∀ i, a i ≡ b i [ZMOD N]) {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction (fun i ↦ (a i : ℝ) / N) τ ^ (12 * k) =
+      siegelFunction (fun i ↦ (b i : ℝ) / N) τ ^ (12 * k) := by
+  rcases eq_or_ne N 0 with rfl | hN; · simp
+  choose s hs using fun i : Fin 2 ↦ Int.modEq_iff_dvd.mp (hab i).symm
+  have hN' : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hN
+  have hadd : (fun i ↦ (a i : ℝ) / N) = (fun i ↦ (b i : ℝ) / N) + fun i ↦ (s i : ℝ) := by
+    ext i; have hi : (a i : ℝ) - b i = N * s i := by exact_mod_cast hs i
+    simp only [Pi.add_apply]; field_simp; linarith
+  obtain ⟨m, hm⟩ := hk
+  have hm' : (6 * k : ℝ) = N * m := by exact_mod_cast hm
+  rw [hadd]
+  exact siegelFunction_add_intCast_pow_twelve_mul _ s k
+    (fun i ↦ ⟨(m : ℤ) * b i, by rw [hm']; push_cast; field_simp⟩) hτ
+
+/-- On the upper half-plane, if `N ∣ 6 * k`, then `g_{a/N}(τ)^{12 k}` agrees with
+`g_{((a mod N)/N)}(τ)^{12 k}`. -/
+theorem siegelFunction_div_pow_twelve_mul_eq_zmod {N k : ℕ} (hk : N ∣ 6 * k) (a : Fin 2 → ℤ)
+    {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction (fun i ↦ (a i : ℝ) / N) τ ^ (12 * k) =
+      siegelFunction (fun i ↦ ((a i : ZMod N).val : ℝ) / N) τ ^ (12 * k) := by
+  rcases eq_or_ne N 0 with rfl | hN; · simp
+  have : NeZero N := ⟨hN⟩
+  exact siegelFunction_div_pow_twelve_mul_congr hk (b := fun i ↦ ((a i : ZMod N).val : ℤ))
+    (fun i ↦ by rw [ZMod.val_intCast]; exact (Int.mod_modEq (a i) N).symm) hτ
+
+/-- On the upper half-plane, if `N ∣ 6 * k`, then `g_{a/N}(γ • τ)^{12 k}` agrees with
+`g_{((a γ mod N)/N)}(τ)^{12 k}` for every `γ ∈ SL₂(ℤ)`. -/
+theorem siegelFunction_div_pow_twelve_mul_smul_eq_zmod {N k : ℕ} (hk : N ∣ 6 * k)
+    (a : Fin 2 → ℤ) (γ : SL(2, ℤ)) (τ : ℍ) :
+    siegelFunction (fun i ↦ (a i : ℝ) / N) ↑(γ • τ) ^ (12 * k) =
+      siegelFunction (fun i ↦
+        (((a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) i : ZMod N).val : ℝ) / N) τ ^ (12 * k) := by
+  rw [siegelFunction_pow_twelve_mul_smul, Matrix.vecMul_div_map_intCast,
+    siegelFunction_div_pow_twelve_mul_eq_zmod hk _ τ.im_pos]
+
+/-- For `[NeZero N]` and `N ∣ 6 * k`, the `(12 * k)`-th power of `g_{v/N}` transforms under
+`γ ∈ SL₂(ℤ)` via the right row-vector action of `γ mod N` on `Fin 2 → ZMod N`. -/
+theorem siegelFunction_zmod_pow_twelve_mul_smul {N k : ℕ} [NeZero N] (hk : N ∣ 6 * k)
+    (v : Fin 2 → ZMod N) (γ : SL(2, ℤ)) (τ : ℍ) :
+    siegelFunction (fun i ↦ ((v i).val : ℝ) / N) ↑(γ • τ) ^ (12 * k) =
+      siegelFunction (fun i ↦
+        (((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv v i).val :
+          ℝ) / N) τ ^ (12 * k) := by
+  set a : Fin 2 → ℤ := fun i ↦ (v i).val
+  have ha : (fun i ↦ ((v i).val : ℝ) / N) = fun i ↦ (a i : ℝ) / N := by ext i; simp [a]
+  rw [ha, siegelFunction_div_pow_twelve_mul_smul_eq_zmod hk a γ τ]
+  have hvec : (fun j ↦ (((a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) j : ℤ) : ZMod N)) =
+      (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ).vecMulEquiv v := by
+    ext j
+    simpa [a, Matrix.SpecialLinearGroup.vecMulEquiv_apply, Function.comp_def, eq_intCast,
+      Int.cast_natCast, ZMod.natCast_zmod_val] using
+      ((Int.castRingHom (ZMod N)).map_vecMul (γ : Matrix (Fin 2) (Fin 2) ℤ) a j)
+  congr 3
+  funext j
+  exact congrArg (fun x : ZMod N ↦ ((x.val : ℝ) / N)) (congrFun hvec j)
+
+/-- For `[NeZero N]` and `τ` in the upper half-plane, `g_{a/N}(τ) = 0` if and only if
+`a ≡ 0 (mod N)`. -/
+theorem siegelFunction_div_eq_zero_iff {N : ℕ} [NeZero N] (a : Fin 2 → ℤ)
+    {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction (fun i ↦ (a i : ℝ) / N) τ = 0 ↔ (fun i ↦ (a i : ZMod N)) = 0 := by
+  rw [siegelFunction_eq_zero_iff hτ,
+    TauCeti.exists_div_eq_intCast_iff_zmod_eq_zero (K := ℝ) (NeZero.ne N) a]
 
 /-! ### Products of Siegel functions and the quadratic relations -/
 

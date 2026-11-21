@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.RingTheory.ZMod.UnitsCyclic
+import Mathlib.FieldTheory.Galois.Basic
+import TauCeti.NumberTheory.Cyclotomic.Adjoin
 
 /-!
 # Order and cyclicity of a cyclotomic Galois group, and embeddings of cyclotomic extensions
@@ -16,7 +18,9 @@ For an `n`-th cyclotomic extension `L / K` whose cyclotomic polynomial `Φ_n` is
 group `(ZMod n)ˣ` through the action on a primitive `n`-th root of unity, so it is cyclic whenever
 `(ZMod n)ˣ` is — for instance whenever `n` is a power of an odd prime. When `Φ_n` is irreducible, a
 primitive `n`-th root of unity in `L` is sent to any primitive `n`-th root of unity in a domain
-containing `K` by exactly one `K`-algebra map.
+containing `K` by exactly one `K`-algebra map. Over `ℚ`, an integer polynomial evaluated at a
+primitive `N`-th root of unity whose value is fixed by `ζ ↦ ζ ^ u` for all `u ∈ (ZMod N)ˣ` lies
+in `ℤ`.
 
 ## Main results
 
@@ -25,6 +29,7 @@ containing `K` by exactly one `K`-algebra map.
 * `IsCyclotomicExtension.neZero_of_nontrivial_aut`: a nontrivial Galois group forces `n ≠ 0`.
 * `IsPrimitiveRoot.existsUnique_algHom_apply_eq`: exactly one `K`-algebra map sends a given
   primitive root to any other when `Φ_n` is irreducible.
+* `IsPrimitiveRoot.aeval_mem_range_intCast`: cyclotomic Galois descent to `ℤ`.
 
 ## Implementation notes
 
@@ -102,5 +107,42 @@ theorem existsUnique_algHom_apply_eq (hζ : IsPrimitiveRoot ζ n)
   simpa only [Subtype.ext_iff, embeddingsEquivPrimitiveRoots_apply_coe] using
     (hζ.embeddingsEquivPrimitiveRoots C hirr).bijective.existsUnique
       ⟨ω, (mem_primitiveRoots (NeZero.pos n)).mpr hω⟩
+
+/-- **Cyclotomic Galois descent to `ℤ`.** If `ζ` is a primitive `N`-th root of unity in a
+characteristic-zero field `L` and `P ∈ ℤ[X]` satisfies `P(ζ ^ u) = P(ζ)` for every
+`u ∈ (ℤ/Nℤ)ˣ`, then `P(ζ)` lies in the image of `ℤ`. -/
+theorem aeval_mem_range_intCast {L : Type*} [Field L] [CharZero L]
+    {N : ℕ} [NeZero N] {ζ : L} (hζ : IsPrimitiveRoot ζ N) (P : ℤ[X])
+    (hP : ∀ u : (ZMod N)ˣ,
+      Polynomial.aeval (ζ ^ (u : ZMod N).val) P = Polynomial.aeval ζ P) :
+    Polynomial.aeval ζ P ∈ (Int.castRingHom L).range := by
+  let K := IntermediateField.adjoin ℚ ({ζ} : Set L)
+  have : IsCyclotomicExtension {N} ℚ K := hζ.isCyclotomicExtension_adjoin_singleton
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois (S := {N}) (K := ℚ) (L := K)
+  have : FiniteDimensional ℚ K := IsCyclotomicExtension.finiteDimensional (S := {N}) (K := ℚ) K
+  let ζK : K := ⟨ζ, IntermediateField.mem_adjoin_simple_self ℚ ζ⟩
+  have hζK : IsPrimitiveRoot ζK N := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
+  let x : K := Polynomial.aeval ζK P
+  have hx_val : (x : L) = Polynomial.aeval ζ P := by
+    simpa [x, ζK] using (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom ζK P).symm
+  have hfix (σ : K ≃ₐ[ℚ] K) : σ x = x := by
+    have hσ : σ x = Polynomial.aeval (σ ζK) P := by
+      simpa [x] using (Polynomial.aeval_algHom_apply (σ : K →+* K).toIntAlgHom ζK P).symm
+    rw [hσ, ← hζK.autToPow_spec ℚ σ]
+    apply Subtype.ext
+    have hval := (Polynomial.aeval_algHom_apply (K.val : K →+* L).toIntAlgHom
+      (ζK ^ (hζK.autToPow ℚ σ : ZMod N).val) P).symm
+    simpa [ζK, hx_val, hP (hζK.autToPow ℚ σ), -IsPrimitiveRoot.autToPow_spec] using hval
+  obtain ⟨q, hq⟩ := IntermediateField.mem_bot.mp ((IsGalois.mem_bot_iff_fixed x).mpr hfix)
+  have hqL : algebraMap ℚ L q = Polynomial.aeval ζ P := by
+    rw [IsScalarTower.algebraMap_apply ℚ K L, IntermediateField.algebraMap_apply, hq, hx_val]
+  have hintL : IsIntegral ℤ (Polynomial.aeval ζ P) := by
+    rw [Polynomial.aeval_def, Polynomial.eval₂_eq_sum, Polynomial.sum_def]
+    exact IsIntegral.sum _ fun i _ ↦
+      (isIntegral_intCast _).mul ((hζ.isIntegral (NeZero.pos N)).pow i)
+  let _ : IsIntegrallyClosed ℤ := GCDMonoid.toIsIntegrallyClosed
+  obtain ⟨m, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp <|
+    (isIntegral_algebraMap_iff (R := ℤ) (A := ℚ) (B := L)).mp (hqL.symm ▸ hintL)
+  exact ⟨m, by simpa using hqL⟩
 
 end IsPrimitiveRoot

@@ -45,8 +45,9 @@ up to roots of unity.
 * `TauCeti.ModularForm.differentiableOn_siegelFunction`,
   `TauCeti.ModularForm.mdifferentiable_siegelFunction`: `g_r` is holomorphic on the upper
   half-plane, as a function on `upperHalfPlaneSet` and as a function on `ℍ`.
-* `TauCeti.ModularForm.siegelFunction_ne_zero`: for `r ∉ ℤ²`, `g_r` has no zero on the upper
-  half-plane.
+* `TauCeti.ModularForm.siegelFunction_ne_zero`, `TauCeti.ModularForm.siegelFunction_intCast`,
+  `TauCeti.ModularForm.siegelFunction_eq_zero_iff`: on the upper half-plane, `g_r` vanishes
+  precisely when `r ∈ ℤ²`.
 * `TauCeti.ModularForm.siegelFunction_add_intCast`: for `s ∈ ℤ²`,
   `g_{r + s} = (-1)^{s₁ s₂ + s₁ + s₂} e^{-π i (s₁ r₂ - s₂ r₁)} g_r`.
 * `TauCeti.ModularForm.siegelFunction_apply_add_one`:
@@ -322,6 +323,39 @@ theorem siegelFunction_add_intCast (r : Fin 2 → ℝ) (s : Fin 2 → ℤ) {τ :
     ring
   rw [hpow]
   linear_combination ((-1) ^ s 0 * (-1) ^ s 1 * siegelFunction r τ) * hexp
+
+/-- The Siegel function at `r = 0` vanishes identically. -/
+@[simp]
+theorem siegelFunction_zero (τ : ℂ) : siegelFunction 0 τ = 0 := by
+  simp [siegelFunction_eq_qTheta]
+
+/-- **The Siegel function vanishes at every integral vector** `s ∈ ℤ²`. -/
+@[simp]
+theorem siegelFunction_intCast (s : Fin 2 → ℤ) (τ : ℂ) :
+    siegelFunction (fun i ↦ (s i : ℝ)) τ = 0 := by
+  rw [siegelFunction_def]
+  rcases lt_trichotomy (s 0) 0 with hs | hs | hs
+  · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt (neg_pos.mpr hs)
+    rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
+    have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (2 * π * I * ((s 0 : ℂ) * τ + s 1)) = 1 := by
+      rw [← Complex.exp_natCast_mul, ← Complex.exp_add, show s 0 = -((m + 1 : ℕ) : ℤ) by omega,
+        ← Complex.exp_int_mul_two_pi_mul_I (s 1)]
+      congr 1; push_cast; ring
+    simp [h1]
+  · simp [hs, ← Complex.exp_int_mul_two_pi_mul_I (s 1), mul_comm (s 1 : ℂ)]
+  · obtain ⟨m, hm⟩ := Int.eq_succ_of_zero_lt hs
+    rw [tprod_of_exists_eq_zero ⟨m, ?_⟩, mul_zero]
+    have h1 : cexp (2 * π * I * τ) ^ (m + 1) * cexp (-(2 * π * I * ((s 0 : ℂ) * τ + s 1))) = 1 := by
+      rw [← Complex.exp_natCast_mul, ← Complex.exp_add, hm,
+        ← Complex.exp_int_mul_two_pi_mul_I (-s 1)]
+      congr 1; push_cast; ring
+    simp [h1]
+
+/-- On the upper half-plane, `g_r(τ) = 0` if and only if `r ∈ ℤ²`. -/
+theorem siegelFunction_eq_zero_iff {r : Fin 2 → ℝ} {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction r τ = 0 ↔ ∃ s : Fin 2 → ℤ, r = fun i ↦ (s i : ℝ) :=
+  ⟨fun h ↦ by by_contra! hr; exact siegelFunction_ne_zero hr hτ h,
+    fun ⟨s, hs⟩ ↦ hs ▸ siegelFunction_intCast s τ⟩
 
 /-- **The translation `τ ↦ τ + 1`**: `g_r(τ + 1) = e^{π i / 6} g_{r T}(τ)`, where
 `r T = (r₁, r₁ + r₂)` is the row vector `r` multiplied on the right by `T = [[1, 1], [0, 1]]`. -/

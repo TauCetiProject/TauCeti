@@ -41,6 +41,8 @@ its slash action gives the weight-parity sign under translation.
   shift in the group gives translation by the weight-parity sign.
 * `TauCeti.natCast_mem_strictPeriods_conjAct_of_Gamma_le`: a level `N` with `Γ(N) ≤ Γ` is a
   strict period of `Γ` at every cusp.
+* `TauCeti.periodic_smul_comp_ofComplex_of_Gamma_invariant`: a `Γ(N)`-invariant function on `ℍ`
+  precomposed with `γ ∈ SL₂(ℤ)` is `N`-periodic via `UpperHalfPlane.ofComplex`.
 
 ## References
 
@@ -288,6 +290,33 @@ theorem natCast_mem_strictPeriods_conjAct_of_Gamma_le {Γ : Subgroup (GL (Fin 2)
     simpa using CongruenceSubgroup.ModularGroup_T_pow_mem_Gamma N N dvd_rfl
   simpa [mem_strictPeriods_iff, mem_pointwise_smul_iff_inv_smul_mem, ConjAct.toConjAct_smul]
     using hΓ (mem_map_of_mem _ ((CongruenceSubgroup.Gamma_normal N).conj_mem _ hT γ))
+
+/-- Any `Γ(N)`-invariant function `F : ℍ → α`, precomposed with the action of `γ ∈ SL₂(ℤ)`, is
+`N`-periodic when read on `ℂ` via `UpperHalfPlane.ofComplex`. -/
+theorem periodic_smul_comp_ofComplex_of_Gamma_invariant {α : Type*} {N : ℕ} {F : ℍ → α}
+    (hinv : ∀ δ ∈ CongruenceSubgroup.Gamma N, ∀ τ : ℍ, F (δ • τ) = F τ) (γ : SL(2, ℤ)) :
+    Function.Periodic ((fun τ : ℍ ↦ F (γ • τ)) ∘ UpperHalfPlane.ofComplex) N := by
+  intro z
+  dsimp only [Function.comp]
+  have him : (z + (N : ℂ)).im = z.im := by simp
+  by_cases hz : 0 < z.im
+  · have hTN : ModularGroup.T ^ (N : ℤ) ∈ CongruenceSubgroup.Gamma N := by
+      simpa using CongruenceSubgroup.ModularGroup_T_pow_mem_Gamma N N dvd_rfl
+    have hconj : γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹ ∈ CongruenceSubgroup.Gamma N := by
+      simpa using (CongruenceSubgroup.Gamma_normal N).conj_mem _ hTN γ
+    have hof : UpperHalfPlane.ofComplex (z + (N : ℂ)) =
+        (ModularGroup.T ^ (N : ℤ)) • UpperHalfPlane.ofComplex z := by
+      rw [UpperHalfPlane.ofComplex_apply_of_im_pos (by linarith),
+        UpperHalfPlane.ofComplex_apply_of_im_pos hz]
+      apply UpperHalfPlane.ext
+      rw [UpperHalfPlane.modular_T_zpow_smul]
+      simp [add_comm]
+    have hconj_eq : γ * ModularGroup.T ^ (N : ℤ) = (γ * ModularGroup.T ^ (N : ℤ) * γ⁻¹) * γ := by
+      group
+    rw [hof, ← mul_smul, hconj_eq, mul_smul]
+    exact hinv _ hconj _
+  · rw [UpperHalfPlane.ofComplex_apply_of_im_nonpos (by linarith),
+      UpperHalfPlane.ofComplex_apply_of_im_nonpos (not_lt.mp hz)]
 
 end TauCeti
 

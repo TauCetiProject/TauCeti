@@ -56,6 +56,8 @@ The sum of the lower bounds bounds the support of the product
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
 of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+`HahnSeries.orderTop_prod` and `HahnSeries.leadingCoeff_prod` extend the order and leading
+coefficient formulas from binary products to `Finset.prod`.
 -/
 
 public section
@@ -233,5 +235,29 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
   | succ n ih =>
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
+
+section Prod
+
+variable {Γ R ι : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommSemiring R] [NoZeroDivisors R]
+
+/-- The order of a finite product of Hahn series is the sum of their orders. -/
+@[simp]
+theorem orderTop_prod [Nontrivial R] (s : Finset ι) (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).orderTop = ∑ i ∈ s, (f i).orderTop := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => simp [Finset.prod_cons, Finset.sum_cons, ih]
+
+/-- The leading coefficient of a finite product of Hahn series is the product of their leading
+coefficients. -/
+@[simp]
+theorem leadingCoeff_prod (s : Finset ι) (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => simp [Finset.prod_cons, ih]
+
+end Prod
 
 end HahnSeries

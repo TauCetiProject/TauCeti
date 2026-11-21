@@ -57,8 +57,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
-* `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
-  by `g` is inverted by `g⁻¹`.
+* `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv` and
+  `Matrix.SpecialLinearGroup.vecMulEquiv`: right multiplication of row vectors by `g` is inverted
+  by `g⁻¹` and defines an equivalence on `n → R`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
   leaves sums over all row vectors unchanged.
 * `Matrix.SpecialLinearGroup.vecMul_map_mul` and
@@ -187,18 +188,56 @@ theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintyp
   · rintro rfl
     rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
 
+/-- Right multiplication of row vectors by `g ∈ SL(n, R)` as a permutation of `n → R`. -/
+def vecMulEquiv {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g : SpecialLinearGroup n R) : (n → R) ≃ (n → R) where
+  toFun a := a ᵥ* (g : Matrix n n R)
+  invFun y := y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)
+  left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
+  right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl
+
+/-- Applying `g.vecMulEquiv` to a row vector multiplies it on the right by `g`. -/
+@[simp]
+theorem vecMulEquiv_apply {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g : SpecialLinearGroup n R) (a : n → R) :
+    g.vecMulEquiv a = a ᵥ* (g : Matrix n n R) := (rfl)
+
+/-- The inverse of `g.vecMulEquiv` is `g⁻¹.vecMulEquiv`. -/
+@[simp]
+theorem vecMulEquiv_symm {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g : SpecialLinearGroup n R) : g.vecMulEquiv.symm = g⁻¹.vecMulEquiv := by
+  ext y i
+  rfl
+
+/-- Right multiplication by `g ∈ SL(n, R)` fixes the zero row vector. -/
+-- Not `@[simp]`: `simpNF` rejects it because `@[simp] vecMulEquiv_apply` and Mathlib's
+-- `@[simp] Matrix.zero_vecMul` already simplify `g.vecMulEquiv 0` to `0`.
+theorem vecMulEquiv_zero {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g : SpecialLinearGroup n R) : g.vecMulEquiv 0 = 0 := by
+  simp
+
+/-- Right multiplication by `1 ∈ SL(n, R)` is the identity permutation on `n → R`. -/
+@[simp]
+theorem vecMulEquiv_one {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n] :
+    (1 : SpecialLinearGroup n R).vecMulEquiv = Equiv.refl (n → R) := by
+  ext a i
+  simp
+
+/-- Right multiplication by `g * h ∈ SL(n, R)` composes in right-action order:
+`(g * h).vecMulEquiv = g.vecMulEquiv.trans h.vecMulEquiv`. -/
+theorem vecMulEquiv_mul {R : Type*} [CommRing R] {n : Type*} [Fintype n] [DecidableEq n]
+    (g h : SpecialLinearGroup n R) :
+    (g * h).vecMulEquiv = g.vecMulEquiv.trans h.vecMulEquiv := by
+  ext a i
+  simp [Matrix.vecMul_vecMul]
+
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
 a sum over all row vectors when `R` is finite. -/
 theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintype n]
     [DecidableEq n] {M : Type*} [AddCommMonoid M] (F : (n → R) → M)
     (g : SpecialLinearGroup n R) :
     ∑ a, F (a ᵥ* (g : Matrix n n R)) = ∑ a, F a :=
-  Fintype.sum_equiv
-    { toFun a := a ᵥ* (g : Matrix n n R)
-      invFun y := y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)
-      left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
-      right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
-    _ _ fun _ ↦ rfl
+  Fintype.sum_equiv g.vecMulEquiv _ _ fun _ ↦ rfl
 
 /-- The right action of a special linear group on row vectors, through a ring homomorphism of the
 entries, composes as a right action: `r (g h) = (r g) h`. -/

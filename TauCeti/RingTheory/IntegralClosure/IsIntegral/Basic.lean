@@ -46,6 +46,10 @@ other.
   `b ≠ 0`, then `x` is integral over `ℚ`.
 * `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
   with integral coefficients.
+* `TauCeti.isIntegral_of_eval_map_aeval_eq_zero`: integrality of a root of a monic polynomial
+  over `S[X]` evaluated at an integral element `z`.
+* `IsIntegral.map_of_adjoin_singleton`: transporting integrality over `S[g]`
+  along a ring homomorphism sending `g` to an integral element.
 * `Algebra.IsIntegral.of_finrank_pos`: a free algebra of positive finite rank over a commutative
   ring with the strong rank condition is integral.
 -/
@@ -206,7 +210,44 @@ theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRin
         Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
   exact isIntegral_trans g (hpow.of_pow hn)
 
+/-- If `Φ ∈ (S[X])[X]` is monic, `z ∈ A` is integral over `R`, and `x ∈ A` is a root of the
+polynomial obtained by evaluating the coefficients of `Φ` at `z`, then `x` is integral over `R`. -/
+theorem isIntegral_of_eval_map_aeval_eq_zero {S R A : Type*} [CommRing S] [CommRing R]
+    [CommRing A] [Algebra S R] [Algebra R A] [Algebra S A] [IsScalarTower S R A]
+    {Φ : Polynomial (Polynomial S)} (hmon : Φ.Monic) {z x : A} (hz : IsIntegral R z)
+    (hx : (Φ.map (Polynomial.aeval (R := S) z).toRingHom).eval x = 0) : IsIntegral R x := by
+  let ψ : Polynomial S →+* integralClosure R A := Polynomial.eval₂RingHom
+    ((algebraMap R (integralClosure R A)).comp (algebraMap S R)) ⟨z, hz⟩
+  have hcomp :
+      (algebraMap (integralClosure R A) A).comp ψ = (Polynomial.aeval (R := S) z).toRingHom :=
+    Polynomial.ringHom_ext' (by ext s; simp [ψ, IsScalarTower.algebraMap_apply S R A])
+      (by simp [ψ])
+  exact isIntegral_trans x
+    ⟨Φ.map ψ, hmon.map _, by rw [Polynomial.eval₂_map, hcomp, ← Polynomial.eval_map, hx]⟩
+
 end TauCeti
+
+/-- If `f ∈ A` is integral over `S[g]` and a ring homomorphism `φ : A →+* B` compatible with
+`S → R → B` sends `g` to an element integral over `R`, then `φ f` is integral over `R`. -/
+theorem IsIntegral.map_of_adjoin_singleton {S R A B : Type*} [CommRing S] [CommRing R]
+    [CommRing A] [CommRing B] [Algebra S A] [Algebra S R] [Algebra R B] [Algebra S B]
+    [IsScalarTower S R B] {g f : A} (hf : IsIntegral (Algebra.adjoin S ({g} : Set A)) f)
+    (φ : A →+* B) (hφ : φ.comp (algebraMap S A) = algebraMap S B) (hg : IsIntegral R (φ g)) :
+    IsIntegral R (φ f) := by
+  let _ : Algebra (Algebra.adjoin S ({g} : Set A)) B :=
+    (φ.comp (algebraMap (Algebra.adjoin S ({g} : Set A)) A)).toAlgebra
+  have hmem (y : Algebra.adjoin S ({g} : Set A)) : IsIntegral R (φ y.val) :=
+    Algebra.adjoin_induction (p := fun a _ ↦ IsIntegral R (φ a))
+      (fun _ hx ↦ by rwa [Set.mem_singleton_iff.mp hx])
+      (fun s ↦ by
+        rw [← RingHom.comp_apply, hφ, IsScalarTower.algebraMap_apply S R B]
+        exact isIntegral_algebraMap)
+      (fun _ _ _ _ ha hb ↦ by rw [map_add]; exact ha.add hb)
+      (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact ha.mul hb) y.property
+  obtain ⟨p, hp, hpf⟩ := hf
+  exact TauCeti.isIntegral_trans_common (P := Algebra.adjoin S ({g} : Set A))
+    (fun y ↦ by simpa [RingHom.algebraMap_toAlgebra] using hmem y)
+    ⟨p, hp, by rw [RingHom.algebraMap_toAlgebra, ← Polynomial.hom_eval₂, hpf, map_zero]⟩
 
 /-- **A positive finite rank forces integrality**: if `0 < Module.finrank K L` for a commutative
 ring `K` with the strong rank condition (for example a nontrivial commutative ring) and a free
