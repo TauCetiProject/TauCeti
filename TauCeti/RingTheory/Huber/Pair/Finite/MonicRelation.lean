@@ -247,11 +247,7 @@ private theorem exists_pairOfDefinition_coeffs_subset {p : Fin n → A[X]}
     S.isRingOfIntegralElements.isOpen hcS
   refine ⟨P, hPS, fun i x hx ↦ hcP (Subring.subset_closure ?_), ?_⟩
   · exact Finset.mem_coe.mpr (Finset.mem_biUnion.mpr ⟨i, Finset.mem_univ _, hx⟩)
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  obtain ⟨K, hK⟩ := Filter.eventually_atTop.mp
-    (hϖ.isTopologicallyNilpotent.eventually_mem (P.isOpen_ringOfDefinition.mem_nhds (zero_mem _)))
-  exact ⟨⟨ϖ ^ (K + 1), hK (K + 1) K.le_succ⟩, isPseudoUniformizer_iff.mpr
-    ⟨hϖ.isUnit.pow _, hϖ.isTopologicallyNilpotent.pow K.succ_ne_zero⟩⟩
+  exact P.exists_isPseudoUniformizer
 
 /-- **The monic relations give an open subring of `B` finite over a ring of definition.** If each
 `tᵢ = π(Tᵢ)` has a monic `pᵢ ∈ A⁺[X]` with `pᵢ(tᵢ)` topologically nilpotent, there is an open

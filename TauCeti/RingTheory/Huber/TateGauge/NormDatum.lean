@@ -126,16 +126,14 @@ end TateNormDatum
 /-- Every Tate ring has a norm datum. A pseudouniformiser need not lie in a given ring of
 definition, but a high enough power of it does. -/
 instance [IsTopologicalRing A] [IsTateRing A] : Nonempty (TateNormDatum A) := by
-  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
-  obtain ⟨N, hN⟩ := eventually_atTop.mp (hϖ.eventually_pow_mem_ringOfDefinition P)
+  obtain ⟨ϖ, hϖ⟩ := P.exists_isPseudoUniformizer
   exact ⟨{ ringOfDefinition := P.ringOfDefinition
            isOpen_ringOfDefinition := P.isOpen_ringOfDefinition
            isBounded_ringOfDefinition := P.isBounded_ringOfDefinition
-           pseudoUniformizer := hϖ.isUnit.unit ^ (N + 1)
-           isTopologicallyNilpotent_pseudoUniformizer := by
-             simpa using hϖ.isTopologicallyNilpotent.pow N.succ_ne_zero
-           pseudoUniformizer_mem := by simpa using hN _ N.le_succ
+           pseudoUniformizer := hϖ.isUnit.unit
+           isTopologicallyNilpotent_pseudoUniformizer := hϖ.isTopologicallyNilpotent
+           pseudoUniformizer_mem := ϖ.2
            radius := 1 / 2
            radius_pos := by norm_num
            radius_lt_one := by norm_num }⟩
