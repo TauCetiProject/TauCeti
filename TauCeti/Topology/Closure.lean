@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.NhdsWithin
-public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Closures and neighbourhoods
@@ -41,8 +40,6 @@ into it.
   non-isolated point has that point in its closure.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
-* `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
-  nonempty open interval of a densely ordered space takes a value in it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
   set contained in the closure of its range are dense in that set.
 -/
@@ -98,15 +95,6 @@ theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] 
     (hv : ∀ s ∈ S, Filter.Tendsto (fun m ↦ u m s) l (𝓝 (v s))) :
     MapsTo v S L :=
   fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
-
-/-- A family whose values are dense in a nonempty open interval of a densely ordered space takes a
-value in that interval. -/
-theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder α] [DenselyOrdered α]
-    [TopologicalSpace α] [OrderClosedTopology α] {c : ι → α} {a b : α} (hab : a < b)
-    (h : Ioo a b ⊆ closure (range c)) : ∃ i, c i ∈ Ioo a b := by
-  obtain ⟨y, hy⟩ := nonempty_Ioo.2 hab
-  obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
-  exact ⟨i, hy'⟩
 
 /-- When an open set `s` lies in the closure of the values of `c`, the values of `c` lying in `s`
 are dense in `s`. -/

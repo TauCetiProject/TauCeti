@@ -13,6 +13,7 @@ import TauCeti.Data.Fin.Basic
 import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.Stable.Stratum
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Broken trajectories parametrized by the values of `f`
