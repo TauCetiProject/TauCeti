@@ -257,13 +257,8 @@ theorem quantizeTempered_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
   have key : transposeUniformCLM (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ)
       ((φ.smooth ⊤).smul contDiff_const)) h = SchwartzMap.smulLeftCLM ℂ φ := by
     refine (eq_transposeUniformCLM fun u ψ ↦ integral_congr_ae (.of_forall fun x ↦ ?_)).symm
-    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ)
-        ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-          fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ ℂ :=
-      funext (coefficient_ofSpatial _ _)
     dsimp only
-    rw [quantizeUniformCLM_apply, hc,
-      quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ ℂ),
+    rw [quantizeUniformCLM_ofSpatial_apply _ h u x,
       SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]
     simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
     ring
