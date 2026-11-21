@@ -21,14 +21,15 @@ import TauCeti.Order.Partition.Finpartition
 # Strong regular approximation of pair-color systems
 
 Given a pair-color system `S` with a finite palette `κ`, an equitable vertex partition `P₀`, an
-edit tolerance `α > 0`, and a positive error schedule `F : ℕ → ℝ`, this file constructs an
-exact equitable refinement `P ≤ P₀` of bounded size together with a recolored pair-color system
-`T` over `Option κ` such that the lower skeleton `⟨P, T⟩` is `F`-regular at its own lower
-complexity, off-diagonal coarse block densities are preserved within `F (#P.parts + card κ + 1) / 2`
-(with zero density for the fresh diagonal color), and `T` disagrees with `some ∘ S.color` on at
-most `α |V|²` ordered distinct pairs. It also provides the same-palette off-diagonal strong regular
-approximation `PairColorSystem.exists_refining_equipartition_regular_offDiag` (preserving `S.rev`
-and all within-cell colors) and unseeded versions starting from a minimum part count `l`.
+edit tolerance `α > 0`, and an error schedule `F : ℕ → ℝ` positive from `card κ + 1` onward, this
+file constructs an exact equitable refinement `P ≤ P₀` of bounded size together with a recolored
+pair-color system `T` over `Option κ` such that the lower skeleton `⟨P, T⟩` is `F`-regular at its
+own lower complexity, off-diagonal coarse block densities are preserved within
+`F (#P.parts + card κ + 1) / 2` (with zero density for the fresh diagonal color), and `T` disagrees
+with `some ∘ S.color` on at most `α |V|²` ordered distinct pairs. It also provides the same-palette
+off-diagonal strong regular approximation
+`PairColorSystem.exists_refining_equipartition_regular_offDiag` (preserving `S.rev` and all
+within-cell colors) and unseeded versions starting from a minimum part count `l`.
 
 Unlike single-scale cleanup (`PairColorSystem.exists_recoloring_isPairColorRegular`), which takes
 a constant tolerance `ε` and cannot refine `P` without shrinking `F (#P.parts + card κ + 1)`,
@@ -142,8 +143,8 @@ theorem le_pairOffDiagPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {G : ℕ �
     l₀ ≤ pairOffDiagPartsBound q α G l₀ :=
   le_strongPairColorRegularityBound _ (fun t ↦ pairOffDiagTolerance_pos q hα (hG t)) l₀
 
-/-- Minimum host size `|V|` for off-diagonal strong regular approximation starting from `l₀`
-cells. -/
+/-- Sufficient host-size threshold on `|V|` for off-diagonal strong regular approximation starting
+from `l₀` cells. -/
 noncomputable def pairOffDiagBound (q : ℕ) (α : ℝ) (G : ℕ → ℝ) (l₀ : ℕ) : ℕ :=
   let M := pairOffDiagPartsBound q α G l₀
   max 1 (strongPairColorStepBound (pairOffDiagTolerance q α G) M) *
@@ -229,24 +230,25 @@ theorem pairApproximationPartsBound_mono (q : ℕ) (α : ℝ) (F : ℕ → ℝ) 
     Monotone (pairApproximationPartsBound q α F) := fun _ _ h ↦
   strongPairColorRegularityBound_mono _ _ (Nat.mul_le_mul_left _ h)
 
-/-- For positive parameters, `pairApproximationPartsBound` is at least
+/-- For `α > 0` and `F` positive from `q + 1` onward, `pairApproximationPartsBound` is at least
 `max 1 ⌈4 / α⌉₊ * l₀`. -/
 theorem mul_le_pairApproximationPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ}
-    (hF : ∀ n, 0 < F n) (l₀ : ℕ) :
+    (hF : ∀ t, 0 < F (t + q + 1)) (l₀ : ℕ) :
     max 1 ⌈4 / α⌉₊ * l₀ ≤ pairApproximationPartsBound q α F l₀ :=
   le_strongPairColorRegularityBound _
-    (fun t ↦ pairApproximationTolerance_pos q hα (hF (t + q + 1))) _
+    (fun t ↦ pairApproximationTolerance_pos q hα (hF t)) _
 
-/-- For positive parameters, `pairApproximationPartsBound` is at least `l₀`. -/
+/-- For `α > 0` and `F` positive from `q + 1` onward, `pairApproximationPartsBound` is at least
+`l₀`. -/
 theorem le_pairApproximationPartsBound (q : ℕ) {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ}
-    (hF : ∀ n, 0 < F n) (l₀ : ℕ) :
+    (hF : ∀ t, 0 < F (t + q + 1)) (l₀ : ℕ) :
     l₀ ≤ pairApproximationPartsBound q α F l₀ :=
   (Nat.le_mul_of_pos_left l₀ (lt_of_lt_of_le Nat.zero_lt_one (le_max_left _ _))).trans
     (mul_le_pairApproximationPartsBound q hα hF l₀)
 
-/-- Minimum host size `|V|` above which strong pair-color approximation succeeds: each cell of
-the fine equipartition contains enough vertices for the union bound over subrectangles to beat
-one. -/
+/-- Sufficient host-size threshold on `|V|` for strong pair-color approximation: above this size,
+each cell of the fine equipartition contains enough vertices for the union bound over subrectangles
+to beat one. -/
 noncomputable def pairApproximationBound (q : ℕ) (α : ℝ) (F : ℕ → ℝ) (l₀ : ℕ) : ℕ :=
   let M := pairApproximationPartsBound q α F l₀
   max 1 (strongPairColorStepBound (pairApproximationTolerance q α F) M) *
@@ -272,11 +274,12 @@ theorem pairApproximationBound_mono (q : ℕ) (α : ℝ) (F : ℕ → ℝ) :
     Monotone (pairApproximationBound q α F) := fun _ _ h ↦
   pairOffDiagBound_mono q α (fun t ↦ F (t + q + 1)) (Nat.mul_le_mul_left _ h)
 
-/-- For positive parameters, `pairApproximationBound` bounds `pairApproximationPartsBound`. -/
+/-- For `α > 0` and `F` positive from `q + 1` onward, `pairApproximationBound` bounds
+`pairApproximationPartsBound`. -/
 theorem pairApproximationPartsBound_le_pairApproximationBound (q : ℕ) {α : ℝ} (hα : 0 < α)
-    {F : ℕ → ℝ} (hF : ∀ n, 0 < F n) (l₀ : ℕ) :
+    {F : ℕ → ℝ} (hF : ∀ t, 0 < F (t + q + 1)) (l₀ : ℕ) :
     pairApproximationPartsBound q α F l₀ ≤ pairApproximationBound q α F l₀ :=
-  pairOffDiagPartsBound_le_pairOffDiagBound q hα (fun _ ↦ hF _) (max 1 ⌈4 / α⌉₊ * l₀)
+  pairOffDiagPartsBound_le_pairOffDiagBound q hα hF (max 1 ⌈4 / α⌉₊ * l₀)
 
 namespace PairColorSystem
 
@@ -938,18 +941,18 @@ theorem exists_equipartition_regular_offDiag {κ V : Type*}
 
 open Classical in
 /-- **Strong regular approximation of a pair-color system with off-diagonal density preservation.**
-Given an equitable partition `P₀`, an edit budget `α > 0`, and a positive error schedule `F`, if
-`V` has at least `pairApproximationBound (card κ) α F #P₀.parts` vertices, there exist an
-equitable refinement `P ≤ P₀` with at most `pairApproximationPartsBound (card κ) α F #P₀.parts`
-cells and a pair-color system `T` over `Option κ` with `T.rev = Option.map S.rev` such that
-`⟨P, T⟩` is `F`-regular at its lower complexity, every off-diagonal coarse block `(A, B)` preserves
-each original color's density within `F (#P.parts + card κ + 1) / 2` while assigning density zero
-to the fresh diagonal color `none`, and `T` differs from `some ∘ S.color` on at most `α |V|²`
-ordered distinct pairs. -/
+Given an equitable partition `P₀`, an edit budget `α > 0`, and an error schedule `F` positive from
+`card κ + 1` onward, if `V` has at least `pairApproximationBound (card κ) α F #P₀.parts` vertices,
+there exist an equitable refinement `P ≤ P₀` with at most
+`pairApproximationPartsBound (card κ) α F #P₀.parts` cells and a pair-color system `T` over
+`Option κ` with `T.rev = Option.map S.rev` such that `⟨P, T⟩` is `F`-regular at its lower
+complexity, every off-diagonal coarse block `(A, B)` preserves each original color's density within
+`F (#P.parts + card κ + 1) / 2` while assigning density zero to the fresh diagonal color `none`, and
+`T` differs from `some ∘ S.color` on at most `α |V|²` ordered distinct pairs. -/
 theorem exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le
     {κ V : Type*} [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V)
     (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition) {α : ℝ} (hα : 0 < α)
-    {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
+    {F : ℕ → ℝ} (hF : ∀ t, 0 < F (t + Fintype.card κ + 1))
     (hV : pairApproximationBound (Fintype.card κ) α F #P₀.parts ≤ Fintype.card V) :
     ∃ (P : Finpartition (univ : Finset V)) (T : PairColorSystem (Option κ) V),
       P ≤ P₀ ∧ P.IsEquipartition ∧
@@ -977,7 +980,7 @@ theorem exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_
     hP₀.exists_refining_equipartition_card_eq_mul P₀ le_rfl ha₀ ha₀P₀
   obtain ⟨P, T_off, hPP₁, hP, hPcard', hrev_off, -, hdiag, hoff, hedit_off⟩ :=
     S.exists_refining_equipartition_regular_offDiag_aux P₁ hP₁ hα (G := fun t ↦ F (t + q + 1))
-      (fun _ ↦ hF _) (by rw [hP₁card]; exact hV)
+      hF (by rw [hP₁card]; exact hV)
   have hPcard : #P.parts ≤ pairApproximationPartsBound q α F #P₀.parts := by
     rw [hP₁card] at hPcard'; exact hPcard'
   set T : PairColorSystem (Option κ) V := T_off.fillDiagonal P
@@ -1014,14 +1017,15 @@ theorem exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_
 
 open Classical in
 /-- **Strong regular approximation of a pair-color system**, unseeded form. For an edit budget
-`α > 0`, a positive error schedule `F`, and a minimum part count `l`, if `V` has at least
-`pairApproximationBound (card κ) α F (max l 1)` vertices, there exist an equipartition `P` with
-`l ≤ #P.parts ≤ pairApproximationPartsBound (card κ) α F (max l 1)` and a pair-color system `T`
-over `Option κ` with `T.rev = Option.map S.rev` such that `⟨P, T⟩` is `F`-regular at its lower
-complexity and `T` differs from `some ∘ S.color` on at most `α |V|²` ordered distinct pairs. -/
+`α > 0`, an error schedule `F` positive from `card κ + 1` onward, and a minimum part count `l`, if
+`V` has at least `pairApproximationBound (card κ) α F (max l 1)` vertices, there exist an
+equipartition `P` with `l ≤ #P.parts ≤ pairApproximationPartsBound (card κ) α F (max l 1)` and a
+pair-color system `T` over `Option κ` with `T.rev = Option.map S.rev` such that `⟨P, T⟩` is
+`F`-regular at its lower complexity and `T` differs from `some ∘ S.color` on at most `α |V|²`
+ordered distinct pairs. -/
 theorem exists_equipartition_lowerSkeletonRegular {κ V : Type*}
     [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V) {l : ℕ}
-    {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
+    {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ} (hF : ∀ t, 0 < F (t + Fintype.card κ + 1))
     (hV : pairApproximationBound (Fintype.card κ) α F (max l 1) ≤ Fintype.card V) :
     ∃ (P : Finpartition (univ : Finset V)) (T : PairColorSystem (Option κ) V),
       P.IsEquipartition ∧ l ≤ #P.parts ∧
@@ -1049,9 +1053,9 @@ namespace PairSkeleton3
 
 /-- **Strong regular approximation of a lower skeleton at a scheduled tolerance.**
 Given `S : PairSkeleton3 κ V` whose vertex partition is an equipartition, a minimum cell count
-`t₀`, a pair-edit budget `α > 0`, and a positive schedule `F : ℕ → ℝ`, once
-`pairApproximationBound (card κ) α F (max 1 t₀ * #S.vertexPart.parts) ≤ |V|` there exist a lower
-skeleton `T : PairSkeleton3 (Fin (card κ + 1)) V` and a palette embedding
+`t₀`, a pair-edit budget `α > 0`, and an error schedule `F : ℕ → ℝ` positive from `card κ + 1`
+onward, once `pairApproximationBound (card κ) α F (max 1 t₀ * #S.vertexPart.parts) ≤ |V|` there
+exist a lower skeleton `T : PairSkeleton3 (Fin (card κ + 1)) V` and a palette embedding
 `g : κ ↪ Fin (card κ + 1)` such that:
 
 * `T.vertexPart ≤ S.vertexPart`, `T.vertexPart.IsEquipartition`, and
@@ -1066,7 +1070,7 @@ skeleton `T : PairSkeleton3 (Fin (card κ + 1)) V` and a palette embedding
   pairs `p`. -/
 theorem exists_refining_lowerSkeletonRegular {κ V : Type*} [Fintype V] [DecidableEq V]
     [Fintype κ] (S : PairSkeleton3 κ V) (hS : S.vertexPart.IsEquipartition) (t₀ : ℕ)
-    {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
+    {α : ℝ} (hα : 0 < α) {F : ℕ → ℝ} (hF : ∀ t, 0 < F (t + Fintype.card κ + 1))
     (hV : pairApproximationBound (Fintype.card κ) α F (max 1 t₀ * #S.vertexPart.parts) ≤
       Fintype.card V) :
     ∃ (T : PairSkeleton3 (Fin (Fintype.card κ + 1)) V) (g : κ ↪ Fin (Fintype.card κ + 1)),

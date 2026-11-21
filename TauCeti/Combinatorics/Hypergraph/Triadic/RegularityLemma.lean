@@ -150,15 +150,15 @@ private theorem exists_regularization (P : Finpartition (univ : Finset V))
       H.polyadEnergy ⟨P, X⟩ ≤ H.polyadEnergy C.skeleton + g / 2 := by
   have hα : 0 < g / 24 := by positivity
   obtain ⟨P', T, hP'P, hP', hcard, -, hreg, -, -, hedit⟩ :=
-    X.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le P hP hα hF
-      (by rwa [Fintype.card_fin])
+    X.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le P hP hα
+      (fun _ ↦ hF _) (by rwa [Fintype.card_fin])
   rw [Fintype.card_fin] at hcard
   let e := Fintype.equivFin (Option (Fin m))
   let S : PairSkeleton3 (Option (Fin m)) V := ⟨P', T⟩
   let C : TriadicComplex3 V := ⟨_, S.relabel e, univ⟩
   have hCV : C.skeleton.vertexPart = P' := S.relabel_vertexPart e
   refine ⟨C, hCV ▸ hP'P, hCV ▸ hP', hreg.relabel e, rfl, hCV ▸ hcard.trans
-    (pairApproximationPartsBound_le_pairApproximationBound _ hα hF _), by simp [C], ?_⟩
+    (pairApproximationPartsBound_le_pairApproximationBound _ hα (fun _ ↦ hF _) _), by simp [C], ?_⟩
   -- Refining the cells of `⟨P, X⟩` to those of `S` does not lower the energy, recoloring the
   -- few edited pairs lowers it by at most `g / 2`, and renaming the palette changes nothing.
   have hrefine : H.polyadEnergy ⟨P, X⟩ ≤ H.polyadEnergy ⟨P', X⟩ :=
