@@ -332,13 +332,13 @@ theorem abs_le_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M 
 /-- Only finitely many matrices of trace `t` and determinant `n` have nonzero weight: their
 entries are at most `2 n` in absolute value (`abs_le_of_weight_ne_zero`). -/
 theorem finite_support_weight_traceDetFiber (t n : ℤ) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ weight M.1).Finite := by
+    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ weight M.val).Finite := by
   refine ((FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).preimage
     (f := fun M : traceDetFiber (Fin 2) t n ↦
-      (⟨M.1, (mem_traceDetFiber.mp M.2).2⟩ : FixedDetMatrix (Fin 2) ℤ n))
+      (⟨M.val, (mem_traceDetFiber.mp M.property).2⟩ : FixedDetMatrix (Fin 2) ℤ n))
     fun M _ N _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)).subset fun M hM i j ↦ ?_
   have := abs_le_of_weight_ne_zero hM i j
-  rwa [(mem_traceDetFiber.mp M.2).2] at this
+  rwa [(mem_traceDetFiber.mp M.property).2] at this
 
 /-- Every matrix `M = (a b; c d)` of nonzero weight has `c > 0`, or `c = 0 < a`. -/
 theorem pos_or_eq_zero_and_pos_of_weight_ne_zero {M : Matrix (Fin 2) (Fin 2) ℤ} (h : weight M ≠ 0) :
@@ -370,8 +370,8 @@ determinant-`n` matrix whose weight is nonzero in `k` has entries at most `2 n` 
 (Popa–Zagier, Lemma 4(a)). -/
 theorem abs_le_of_intCast_ne_zero [AddGroupWithOne k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
     (hw : ∀ M, w M ≠ 0 → PopaZagier.weight M ≠ 0) (A : TraceFormulaMatrix n)
-    (h : (w A.1 : k) ≠ 0) (i j : Fin 2) : |A.1 i j| ≤ 2 * n := by
-  simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero
+    (h : (w A.val : k) ≠ 0) (i j : Fin 2) : |A.val i j| ≤ 2 * n := by
+  simpa [A.property] using PopaZagier.abs_le_of_weight_ne_zero
     (hw _ (ne_zero_of_map (f := Int.castAddHom k) h)) i j
 
 section DivisionRing
@@ -399,15 +399,15 @@ theorem popaZagierElement_eq_inv_smul_ofWeight :
 @[simp]
 theorem coeff_popaZagierElement_mk (A : TraceFormulaMatrix n) :
     (popaZagierElement k n).coeff (mk A) =
-      ((PopaZagier.weight A.1 : k) + PopaZagier.weight (-A.1)) / 12 := by
+      ((PopaZagier.weight A.val : k) + PopaZagier.weight (-A.val)) / 12 := by
   simpa [popaZagierElement, div_eq_mul_inv] using Eq.symm <|
-    Int.cast_comm (PopaZagier.weight A.1 + PopaZagier.weight (-A.1)) (12⁻¹ : k)
+    Int.cast_comm (PopaZagier.weight A.val + PopaZagier.weight (-A.val)) (12⁻¹ : k)
 
 /-- With Popa–Zagier's representatives, `c > 0` or `c = 0 < a`, the coefficient of the class of
 `A = (a b; c d)` is `weight A / 12`. -/
 theorem coeff_popaZagierElement_mk_of_pos (A : TraceFormulaMatrix n)
-    (hA : 0 < A.1 1 0 ∨ A.1 1 0 = 0 ∧ 0 < A.1 0 0) :
-    (popaZagierElement k n).coeff (mk A) = PopaZagier.weight A.1 / 12 := by
+    (hA : 0 < A.val 1 0 ∨ A.val 1 0 = 0 ∧ 0 < A.val 0 0) :
+    (popaZagierElement k n).coeff (mk A) = PopaZagier.weight A.val / 12 := by
   simp [hA]
 
 end DivisionRing

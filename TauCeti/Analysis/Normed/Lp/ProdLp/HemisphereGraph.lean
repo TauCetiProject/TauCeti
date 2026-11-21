@@ -77,7 +77,7 @@ theorem prodHemisphereGraphPoint_snd (c : ℝ) (u : E) :
 on the unit sphere. -/
 theorem prodHemisphereGraphPoint_mem_sphere {c : ℝ} (hc : c ^ 2 = 1) (u : closedBall (0 : E) 1) :
     prodHemisphereGraphPoint c (u : E) ∈ sphere (0 : WithLp 2 (E × ℝ)) 1 := by
-  have hu : ‖(u : E)‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.mp u.2)
+  have hu : ‖(u : E)‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.mp u.property)
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     WithLp.prod_norm_sq_eq_of_L2, prodHemisphereGraphPoint_fst, prodHemisphereGraphPoint_snd,
     Real.norm_eq_abs, sq_abs, mul_pow, hc, one_mul, Real.sq_sqrt (sub_nonneg.mpr hu)]
@@ -134,7 +134,7 @@ theorem norm_eq_one_of_prodHemisphereGraph_eq {c c' : ℝ} {hc : c ^ 2 = 1} {hc'
     (mul_eq_zero.mp (by linarith : (c - c') * √(1 - ‖(u : E)‖ ^ 2) = 0)).resolve_left
       (sub_ne_zero.mpr hcc')
   rw [Real.sqrt_eq_zero', sub_nonpos] at hs
-  exact le_antisymm (mem_closedBall_zero_iff.mp u.2) ((one_le_sq_iff₀ (norm_nonneg _)).mp hs)
+  exact le_antisymm (mem_closedBall_zero_iff.mp u.property) ((one_le_sq_iff₀ (norm_nonneg _)).mp hs)
 
 /-- Every point `x` of the unit sphere of `WithLp 2 (E × ℝ)` with `0 ≤ c x.snd` lies on the
 hemisphere of sign `c`, over the point `x.fst` of the ball. -/

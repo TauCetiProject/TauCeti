@@ -76,8 +76,8 @@ differentiable within `s` at `t`, `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / 
 at `t`. -/
 theorem IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     HasDerivWithinAt (fun r ↦ g (γ r) (V r) (W r))
       (g (γ t) (alongCurveWithin cov γ V s t) (W t) +
         g (γ t) (V t) (alongCurveWithin cov γ W s t)) s t :=
@@ -89,8 +89,8 @@ theorem IsMetricCompatible.hasDerivWithinAt_apply_alongCurveWithin (h : g.IsMetr
 readings are differentiable within `s` at `t`, is differentiable within `s` at `t`. -/
 theorem IsMetricCompatible.differentiableWithinAt_apply (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     DifferentiableWithinAt ℝ (fun r ↦ g (γ r) (V r) (W r)) s t :=
   (h.hasDerivWithinAt_apply_alongCurveWithin hγ hV hW).differentiableWithinAt
 
@@ -98,8 +98,8 @@ theorem IsMetricCompatible.differentiableWithinAt_apply (h : g.IsMetricCompatibl
 metric, as an identity for `derivWithin`. -/
 theorem IsMetricCompatible.derivWithin_apply_alongCurveWithin (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
-    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    (hV : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t) :
     derivWithin (fun r ↦ g (γ r) (V r) (W r)) s t =
       g (γ t) (alongCurveWithin cov γ V s t) (W t) +
         g (γ t) (V t) (alongCurveWithin cov γ W s t) := by
@@ -112,8 +112,8 @@ theorem IsMetricCompatible.derivWithin_apply_alongCurveWithin (h : g.IsMetricCom
 metric, with unrestricted derivatives: `(d/dt) g(V, W) = g(D V / dt, W) + g(V, D W / dt)`. -/
 theorem IsMetricCompatible.hasDerivAt_apply_alongCurve (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     HasDerivAt (fun r ↦ g (γ r) (V r) (W r))
       (g (γ t) (alongCurve cov γ V t) (W t) + g (γ t) (V t) (alongCurve cov γ W t)) t := by
   apply hasDerivWithinAt_univ.mp
@@ -125,8 +125,8 @@ theorem IsMetricCompatible.hasDerivAt_apply_alongCurve (h : g.IsMetricCompatible
 readings are differentiable at `t`, is differentiable at `t`. -/
 theorem IsMetricCompatible.differentiableAt_apply (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     DifferentiableAt ℝ (fun r ↦ g (γ r) (V r) (W r)) t :=
   (h.hasDerivAt_apply_alongCurve hγ hV hW).differentiableAt
 
@@ -134,8 +134,8 @@ theorem IsMetricCompatible.differentiableAt_apply (h : g.IsMetricCompatible cov)
 metric, as an identity for `deriv`. -/
 theorem IsMetricCompatible.deriv_apply_alongCurve (h : g.IsMetricCompatible cov)
     (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
-    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    (hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t) :
     deriv (fun r ↦ g (γ r) (V r) (W r)) t =
       g (γ t) (alongCurve cov γ V t) (W t) + g (γ t) (V t) (alongCurve cov γ W t) :=
   (h.hasDerivAt_apply_alongCurve hγ hV hW).deriv
@@ -146,8 +146,8 @@ have differentiable coordinate readings and are parallel, `D V / dt = D W / dt =
 the same pairing `g(V, W)` at every two parameters of `s`. -/
 theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricCompatible cov)
     (hconn : IsPreconnected s) (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s)
-    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
-    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) s t)
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
     g (γ a) (V a) (W a) = g (γ b) (V b) (W b) := by
@@ -169,7 +169,7 @@ theorem IsMetricCompatible.apply_curveVelocityWithin_self_eq_of_accelerationWith
       g (γ b) (curveVelocityWithin I γ s b) (curveVelocityWithin I γ s b) := by
   have hcoord (t : ℝ) (ht : t ∈ s) :
       DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
+        (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ s) (γ t)) s t :=
     differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
   have hpar (t : ℝ) (ht : t ∈ s) :

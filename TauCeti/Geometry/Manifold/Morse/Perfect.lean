@@ -131,7 +131,9 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
     ModuleCat.finrank_of_self, mul_one,
     ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+end Compact
+
+variable [I.Boundaryless] [CompactSpace M] {k : Type u} [DivisionRing k] in
 /-- **A perfect Morse function forces nonzero top homology.** If a nonempty compact manifold of
 dimension `m` carries a perfect Morse function with coefficients in `k`, then `Hₘ(M; k) ≠ 0`:
 the maximum is a critical point of index `m`. -/
@@ -142,8 +144,6 @@ theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
   have h := hf.isMorse.criticalCount_finrank_ne_zero
   rw [hf.criticalCount_eq] at h
   exact_mod_cast h
-
-end Compact
 
 /-! ### Projective spaces -/
 
