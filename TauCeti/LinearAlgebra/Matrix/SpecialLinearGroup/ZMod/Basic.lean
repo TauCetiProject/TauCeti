@@ -377,20 +377,13 @@ open _root_.Matrix.SpecialLinearGroup
 /-- When `N ∣ 2` (`N = 1` or `N = 2`), `{±I} ≤ SL₂(ℤ/Nℤ)` is trivial of order `1`. -/
 theorem card_negOneSubgroup_zmod_eq_one_of_dvd_two {N : ℕ} (h : N ∣ 2) :
     Nat.card (negOneSubgroup (Fin 2) (ZMod N)) = 1 := by
-  rw [Subgroup.card_eq_one, Subgroup.eq_bot_iff_forall]
-  intro g hg
-  rcases mem_negOneSubgroup_iff.mp hg with rfl | rfl
-  · rfl
-  · exact neg_one_eq_one_zmod_iff.mpr h
+  rw [negOneSubgroup_def, Nat.card_zpowers, neg_one_eq_one_zmod_iff.mpr h, orderOf_one]
 
 /-- When `¬ (N ∣ 2)`, `{±I} ≤ SL₂(ℤ/Nℤ)` has order `2`. -/
 theorem card_negOneSubgroup_zmod_eq_two {N : ℕ} (h : ¬ N ∣ 2) :
     Nat.card (negOneSubgroup (Fin 2) (ZMod N)) = 2 := by
-  have hcard : Nat.card (negOneSubgroup (Fin 2) (ZMod N)) =
-      Nat.card ({1, -1} : Set SL(2, ZMod N)) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by simp)
-  rw [hcard, Nat.card_coe_set_eq]
-  exact Set.ncard_pair fun heq ↦ h (neg_one_eq_one_zmod_iff.mp heq.symm)
+  rw [negOneSubgroup_def, Nat.card_zpowers]
+  exact orderOf_eq_prime neg_one_sq fun heq ↦ h (neg_one_eq_one_zmod_iff.mp heq)
 
 end TauCeti.Matrix.SpecialLinearGroup
 

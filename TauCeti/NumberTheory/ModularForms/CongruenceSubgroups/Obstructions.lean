@@ -83,10 +83,10 @@ theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, �
 
 /-- The canonical reduction homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore` is surjective. -/
 theorem slZModToQuotientNormalCore_surjective {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
-    Function.Surjective (slZModToQuotientNormalCore h) := fun x ↦ by
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective x
-  exact ⟨Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ,
-    slZModToQuotientNormalCore_map_intCast h γ⟩
+    Function.Surjective (slZModToQuotientNormalCore h) :=
+  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
+    (QuotientGroup.mk'_surjective _) (Subgroup.normal_le_normalCore.mpr h)).comp
+    (quotientGammaEquiv N).symm.surjective
 
 /-- **Order obstruction in `SL₂(ℤ)`:** if `Γ(N) ≤ Δ`, then
 `|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|`. -/
@@ -164,9 +164,11 @@ theorem signedQuotientToQuotientNormalCore_psl2zToSignedQuotient {N : ℕ} {Γ :
 /-- The canonical homomorphism `SL₂(ℤ/Nℤ) ⧸ {±I} →* PSL₂(ℤ) ⧸ Γ.normalCore` is surjective. -/
 theorem signedQuotientToQuotientNormalCore_surjective {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
-    Function.Surjective (signedQuotientToQuotientNormalCore h) := fun y ↦ by
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective y
-  exact ⟨psl2zToSignedQuotient N x, signedQuotientToQuotientNormalCore_psl2zToSignedQuotient h x⟩
+    Function.Surjective (signedQuotientToQuotientNormalCore h) :=
+  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
+    (QuotientGroup.mk'_surjective _)
+    (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
+    (quotientGammaProjectiveEquiv N).symm.surjective
 
 /-- **Order obstruction on the monodromy / normal-core quotient in `PSL₂(ℤ)`:** if
 `Γ(N) ≤ Γ.liftSL`, then `|PSL₂(ℤ) ⧸ Γ.normalCore| ∣ |SL₂(ℤ/Nℤ) ⧸ {±I}|`

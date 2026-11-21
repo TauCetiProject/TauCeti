@@ -70,9 +70,9 @@ canonically isomorphic to `H ⧸ K.subgroupOf H`. -/
 noncomputable def _root_.MonoidHom.comapSubquotientEquivOfSurjective (f : G →* Q)
     (hf : Function.Surjective f) (K H : Subgroup Q) [(K.subgroupOf H).Normal] :
     ((H.comap f) ⧸ (K.comap f).subgroupOf (H.comap f)) ≃* (H ⧸ K.subgroupOf H) :=
-  (QuotientGroup.quotientMulEquivOfEq (f.ker_mk'_comp_subgroupComap K H).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _
-      ((QuotientGroup.mk'_surjective _).comp (f.subgroupComap_surjective H hf)))
+  QuotientGroup.liftEquiv ((K.comap f).subgroupOf (H.comap f))
+    ((QuotientGroup.mk'_surjective _).comp (f.subgroupComap_surjective H hf))
+    (f.ker_mk'_comp_subgroupComap K H).symm
 
 /-- Evaluation of `MonoidHom.comapSubquotientEquivOfSurjective` on coset representatives. -/
 @[to_additive (attr := simp) /-- Evaluation of
@@ -81,8 +81,8 @@ theorem _root_.MonoidHom.comapSubquotientEquivOfSurjective_mk (f : G →* Q)
     (hf : Function.Surjective f) (K H : Subgroup Q) [(K.subgroupOf H).Normal]
     (x : H.comap f) :
     f.comapSubquotientEquivOfSurjective hf K H (QuotientGroup.mk x) =
-      QuotientGroup.mk (f.subgroupComap H x) := by
-  rw [MonoidHom.comapSubquotientEquivOfSurjective]; rfl
+      QuotientGroup.mk (f.subgroupComap H x) :=
+  QuotientGroup.liftEquiv_mk _ _ _ x
 
 /-- Pushing forward `K.subgroupOf H` along `H.equivMapOfInjective M.subtype M.subtype_injective`
 yields `(K.map M.subtype).subgroupOf (H.map M.subtype)`. -/
@@ -138,16 +138,15 @@ theorem mapSubtypeSubquotientEquiv_mk {M : Subgroup G} (K H : Subgroup M)
 canonically isomorphic to `G`. -/]
 noncomputable def subquotientEquivOfEqTopOfEqBot {H K : Subgroup G} [(K.subgroupOf H).Normal]
     (hH : H = ⊤) (hK : K = ⊥) : (H ⧸ K.subgroupOf H) ≃* G :=
-  have hker : H.subtype.ker = K.subgroupOf H := by ext x; simp [hK]
-  (QuotientGroup.quotientMulEquivOfEq hker.symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective H.subtype fun g ↦ ⟨⟨g, hH.symm ▸ mem_top g⟩, rfl⟩)
+  QuotientGroup.liftEquiv (K.subgroupOf H) (φ := H.subtype)
+    (fun g ↦ ⟨⟨g, hH.symm ▸ mem_top g⟩, rfl⟩) (by ext x; simp [hK])
 
 /-- Evaluation of `Subgroup.subquotientEquivOfEqTopOfEqBot` on coset representatives. -/
 @[to_additive (attr := simp) /-- Evaluation of `AddSubgroup.subquotientEquivOfEqTopOfEqBot` on
 coset representatives. -/]
 theorem subquotientEquivOfEqTopOfEqBot_mk {H K : Subgroup G} [(K.subgroupOf H).Normal]
     (hH : H = ⊤) (hK : K = ⊥) (x : H) :
-    subquotientEquivOfEqTopOfEqBot hH hK (QuotientGroup.mk x) = (x : G) := by
-  rw [subquotientEquivOfEqTopOfEqBot]; rfl
+    subquotientEquivOfEqTopOfEqBot hH hK (QuotientGroup.mk x) = (x : G) :=
+  QuotientGroup.liftEquiv_mk (K.subgroupOf H) (φ := H.subtype) _ _ x
 
 end Subgroup

@@ -76,9 +76,9 @@ theorem eq_bot_of_nontrivial_quotient [IsSimpleGroup G] (hH : H.IsSubnormal) (hK
   rcases (IsSubnormal.trans hKH hKN.isSubnormal hH).eq_bot_or_top_of_isSimpleGroup ‹_› with h | rfl
   · exact h
   · obtain rfl := hH.eq_top_of_nontrivial_quotient ⊤
-    have : Subsingleton ((⊤ : Subgroup G) ⧸ (⊤ : Subgroup G).subgroupOf ⊤) :=
-      ⟨fun x y ↦ QuotientGroup.induction_on x fun _ ↦
-        QuotientGroup.induction_on y fun _ ↦ QuotientGroup.eq.mpr trivial⟩
+    have : Subsingleton ((⊤ : Subgroup G) ⧸ (⊤ : Subgroup G).subgroupOf ⊤) := by
+      rw [Subgroup.top_subgroupOf]
+      exact QuotientGroup.subsingleton_quotient_top
     exact absurd this (not_subsingleton _)
 
 /-- **A nontrivial subnormal section of a simple group is the group itself.** -/
@@ -204,8 +204,8 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
   have hφ_ker : φ.ker = K.subgroupOf H := by
     rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', hcomap]
   exact ⟨H.map πN, K.map πN, hH.quotient, map_mono hKH, hK'N,
-    ⟨(QuotientGroup.quotientKerEquivOfSurjective φ ((QuotientGroup.mk'_surjective _).comp
-      hψ_surj)).symm.trans <| (QuotientGroup.quotientMulEquivOfEq hφ_ker).trans e⟩⟩
+    ⟨(QuotientGroup.liftEquiv (K.subgroupOf H) (φ := φ)
+      ((QuotientGroup.mk'_surjective _).comp hψ_surj) hφ_ker.symm).symm.trans e⟩⟩
 
 /-- When `(N ∩ H)` surjects onto `H ⧸ K.subgroupOf H`, the section is realized inside `N` via
 `H.subgroupOf N` and `K.subgroupOf N`. -/
@@ -222,8 +222,7 @@ private theorem of_normal_map_eq_top {H K N : Subgroup G} (hH : H.IsSubnormal)
     ext x; exact QuotientGroup.eq_one_iff _
   have hKNN : ((K.subgroupOf N).subgroupOf (H.subgroupOf N)).Normal := hker ▸ ω.normal_ker
   exact ⟨H.subgroupOf N, K.subgroupOf N, hH.subgroupOf, subgroupOf_mono N hKH, hKNN,
-    ⟨(QuotientGroup.quotientMulEquivOfEq hker.symm).trans <|
-      (QuotientGroup.quotientKerEquivOfSurjective ω hω_surj).trans e⟩⟩
+    ⟨(QuotientGroup.liftEquiv _ (φ := ω) hω_surj hker.symm).trans e⟩⟩
 
 /-- **Schreier–Jordan–Hölder dichotomy across a normal subgroup.** Let `N` be a normal subgroup of
 `G` and `S` a simple group. Every subnormal section of `G` isomorphic to `S` arises either as a

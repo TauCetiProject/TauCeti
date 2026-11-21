@@ -98,14 +98,14 @@ theorem ker_gamma1UpperRightHom (N : ℕ) :
 /-- **Canonical isomorphism `(Γ₁(N) ⧸ Γ(N)) ≃* Multiplicative (ZMod N)`.** -/
 noncomputable def gamma1QuotientGammaEquiv (N : ℕ) :
     (Gamma1 N ⧸ (Gamma N).subgroupOf (Gamma1 N)) ≃* Multiplicative (ZMod N) :=
-  (QuotientGroup.quotientMulEquivOfEq (ker_gamma1UpperRightHom N).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (gamma1UpperRightHom N)
-      (gamma1UpperRightHom_surjective N))
+  QuotientGroup.liftEquiv ((Gamma N).subgroupOf (Gamma1 N))
+    (gamma1UpperRightHom_surjective N) (ker_gamma1UpperRightHom N).symm
 
 /-- `gamma1QuotientGammaEquiv N` evaluates on coset representatives via `gamma1UpperRightHom N`. -/
 @[simp]
 theorem gamma1QuotientGammaEquiv_mk (N : ℕ) (g : Gamma1 N) :
-    gamma1QuotientGammaEquiv N (QuotientGroup.mk g) = gamma1UpperRightHom N g := (rfl)
+    gamma1QuotientGammaEquiv N (QuotientGroup.mk g) = gamma1UpperRightHom N g :=
+  QuotientGroup.liftEquiv_mk _ _ _ g
 
 /-! ### Relative and global index formulas for `Γ(N)` -/
 
