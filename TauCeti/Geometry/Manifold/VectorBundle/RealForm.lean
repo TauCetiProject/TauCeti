@@ -331,8 +331,15 @@ variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace 
 local instance realFormAmbientVectorBundleReal' : VectorBundle ℝ G' V' :=
   VectorBundle.restrictScalars ℝ ℂ G' V'
 
-/-- A complex-linear map carrying one real inclusion to another intertwines the actual smooth
-conjugations, even for different source and ambient bundles. -/
+omit [∀ x, TopologicalSpace (ℂ ⊗[ℝ] W x)] [∀ x, IsComplexificationTopology (W x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousConstSMul ℂ (V x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [∀ x, ContinuousSMul ℝ (V x)] in
+/-- A complex-linear map `A` between the fibers over one base point `x` intertwines the fiber
+conjugation of the source real form with the actual smooth conjugation of the target one, even
+for different source and ambient bundles, as soon as it carries the range of one real inclusion
+into the range of the other. No map on the other fibers, no map between the real carriers and no
+smoothness of the source inclusion is needed. -/
 theorem maximalRealFormConjugationDiffeomorph_natural
     (j : ∀ x, W' x →L[ℝ] V' x)
     (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G')) n
@@ -340,21 +347,14 @@ theorem maximalRealFormConjugationDiffeomorph_natural
     (hjinj : ∀ x, Injective (j x))
     (hjmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V' x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
-    (A : ∀ x, V x →ₗ[ℂ] V' x) (b : ∀ x, W x →ₗ[ℝ] W' x)
-    (hreal : ∀ x w, A x (i x w) = j x (b x w)) (p : TotalSpace G V) :
-    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨p.proj, A p.proj p.snd⟩ =
-      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
-        (maximalRealFormConjugationDiffeomorph i hi hinj hmax p) := by
-  calc
-    _ = ⟨p.proj, A p.proj ((i p.proj).toLinearMap.conjugationOfMaximalTotallyReal
-        (hinj p.proj) (hmax p.proj) p.snd)⟩ := by
-      rw [maximalRealFormConjugationDiffeomorph_apply,
-        (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
-          (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
-          (A p.proj) (b p.proj) (hreal p.proj)]
-    _ = _ := (congrArg
-      (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
-      (maximalRealFormConjugationDiffeomorph_apply i hi hinj hmax p)).symm
+    (x : B) (A : V x →ₗ[ℂ] V' x)
+    (hA : Set.MapsTo A ((i x).toLinearMap.range : Set (V x)) ((j x).toLinearMap.range : Set (V' x)))
+    (v : V x) :
+    maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨x, A v⟩ =
+      ⟨x, A ((i x).toLinearMap.conjugationOfMaximalTotallyReal (hinj x) (hmax x) v)⟩ := by
+  rw [maximalRealFormConjugationDiffeomorph_apply,
+    (i x).toLinearMap.conjugationOfMaximalTotallyReal_natural
+      (hinj x) (hmax x) (j x).toLinearMap (hjinj x) (hjmax x) A hA]
 
 end SmoothEquivalence
 

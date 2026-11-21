@@ -275,8 +275,9 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_congr_range
   rw [hrange]
   exact ⟨w, rfl⟩
 
-/-- A complex-linear map carrying one maximal real form to another intertwines their canonical
-conjugations. Neither map is required to be invertible. -/
+/-- A complex-linear map carrying one maximal real form into another intertwines their canonical
+conjugations. Neither map is required to be invertible, and no map between the real carriers is
+needed. -/
 theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     {W W' E' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
     [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
@@ -284,13 +285,14 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
     (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
     (g : W' →ₗ[ℝ] E') (hg : Function.Injective g)
     (hmax' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) g.range)
-    (A : E →ₗ[ℂ] E') (b : W →ₗ[ℝ] W') (hreal : ∀ w, A (f w) = g (b w)) (v : E) :
+    (A : E →ₗ[ℂ] E') (hA : Set.MapsTo A (f.range : Set E) (g.range : Set E')) (v : E) :
     g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
       A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
   unfold LinearMap.conjugationOfMaximalTotallyReal
-  apply LinearEquiv.conjugationOfComplexification_natural _ _ A b
+  apply LinearEquiv.conjugationOfComplexification_natural _ _ A
   intro w
-  simpa only [IsBaseChange.equiv_tmul, one_smul] using hreal w
+  obtain ⟨w', hw'⟩ := hA (f.mem_range_self w)
+  exact ⟨w', by simpa only [IsBaseChange.equiv_tmul, one_smul] using hw'.symm⟩
 
 namespace IsMaximalTotallyReal
 
