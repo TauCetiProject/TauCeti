@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.CompactSupport
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.PDE.Regularity.Hessian.Poisson
 import TauCeti.Analysis.Sobolev.WeakDeriv.Convolution
 
@@ -45,8 +45,8 @@ The potential is weakly differentiable with gradient `K' ⋆ f`
 gradient lie in `Lᵖ` on bounded sets by Young's inequality
 (`HasCompactSupport.memLp_convolution_right_of_isBounded`). So it lies in `W^{1,p}` of a ball
 containing `U`. Pairing it with `Δφ` and exchanging the integrals
-(`MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`) moves the
-Laplacian onto the kernel, where `-ΔK = δ` gives `-Δ(K ⋆ f) = f` in the sense of distributions.
+moves the Laplacian onto the kernel, where `-ΔK = δ` gives `-Δ(K ⋆ f) = f` in the sense of
+distributions (`TauCeti.integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub`).
 Interior `W^{2,p}` regularity for Poisson's equation
 (`TauCeti.W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq`) then gives the second
 derivatives on `U`.
@@ -114,12 +114,11 @@ theorem exists_wkp_two_value_ae_eq_convolution {K : E → ℝ} {K' : E → E →
           · have hΔφ : Δ (φ : E → ℝ) x = 0 :=
               laplacian_of_notMem_tsupport fun h ↦ hxΩ (φ.tsupport_subset h)
             simp [hΔφ]
-      _ = ∫ t, f t * -(φ : E → ℝ) t := by
-          rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub
-            hφ.continuous_laplacian φ.hasCompactSupport.laplacian hK hfi hfc]
-          simp_rw [hΔ _ φ.contDiff φ.hasCompactSupport]
+      _ = -∫ x, (φ : E → ℝ) x * f x :=
+          integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub hK hφ
+            φ.hasCompactSupport (hΔ _ φ.contDiff φ.hasCompactSupport) hfi hfc
       _ = ∫ x, (φ : E → ℝ) x • (-f) x := by
-          simp [mul_comm]
+          simp [integral_neg]
   obtain ⟨w, hwv, hwtr⟩ := W1p.exists_wkp_two_value_ae_eq_of_integral_laplacian_smul_eq hp
     hp_top hU.isCompact_closure hUΩ u (hf.neg.restrict _) heq
   exact ⟨w, hwv.trans (ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hUΩ) hu), hwtr⟩
