@@ -57,6 +57,8 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.neg_integral_smul_neg_add_eq`: the integral of a test function against the
   right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
 
+* `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
+
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
 
@@ -83,7 +85,7 @@ def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
   continuous_toFun := by fun_prop
   hasCompactSupport' := by
     refine HasCompactSupport.intro' (K := ((↑) : Ω → E) ⁻¹' tsupport φ) ?_
-      ((isClosed_tsupport _).preimage continuous_subtype_val)
+      ((isClosed_tsupport _).preimage continuous_subtypeVal)
       fun x hx => image_eq_zero_of_notMem_tsupport hx
     exact Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage'
       φ.hasCompactSupport.isCompact (by simpa using φ.tsupport_subset)
@@ -162,6 +164,15 @@ theorem neg_integral_smul_neg_add_eq [OpensMeasurableSpace E] {κ κ' : Type*} [
     simp only [smul_eq_mul, mul_comm]
   · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
 
+/-- Integrating against a test function on `Ω` only sees the integrand on `Ω`: if `g₁ = g₂` on `Ω`,
+then `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ`. -/
+theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g₁ g₂ : E → F}
+    (h : Set.EqOn g₁ g₂ Ω) : ∫ x, (φ : E → ℝ) x • g₁ x ∂μ = ∫ x, (φ : E → ℝ) x • g₂ x ∂μ := by
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simp only [h hx]
+  · simp [φ.zero_on_compl hx]
+
 section InnerPairing
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
@@ -179,8 +190,8 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
     {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
     ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
-  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
-    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
+  rw [withDensity_apply _ (hU.preimage measurable_subtypeVal),
+    ← lintegral_indicator (hU.preimage measurable_subtypeVal)]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]

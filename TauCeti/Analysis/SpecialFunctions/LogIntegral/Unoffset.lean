@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.NumberTheory.Harmonic.GammaDeriv
 
 /-!

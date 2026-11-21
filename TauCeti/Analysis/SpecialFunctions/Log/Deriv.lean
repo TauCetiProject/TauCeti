@@ -15,7 +15,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 For `x ≠ 0`, a function `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at
 `log x`, by evenness of `v ∘ log` for `x < 0`.
 The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, together with its
-real-exponent analogue `x / log x ^ k` wherever `log x > 0`.
+real-exponent analogue `x / log x ^ k` wherever `log x > 0`, and that of `r ↦ log (c / r)`
+wherever `c ≠ 0` and `r ≠ 0`.
 
 ## Main results
 
@@ -26,6 +27,7 @@ real-exponent analogue `x / log x ^ k` wherever `log x > 0`.
   exponent, assuming `log x ≠ 0`.
 * `Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
   exponent, assuming `log x > 0`.
+* `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -126,5 +128,14 @@ theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 0 < log t) :
   have hlne : log t ≠ 0 := ht.ne'
   field_simp [ht₀, hrpow_pos.ne', hlne]
   linear_combination -k * hsub
+
+/-- The derivative of `r ↦ log (c / r)` is `-r⁻¹`, for `c ≠ 0` and `r ≠ 0`. -/
+theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
+    HasDerivAt (fun s : ℝ => log (c / s)) (-r⁻¹) r := by
+  have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
+    simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using
+      (hasDerivAt_inv hr).const_mul c
+  refine (hdiv.log (div_ne_zero hc hr)).congr_deriv ?_
+  field_simp
 
 end Real
