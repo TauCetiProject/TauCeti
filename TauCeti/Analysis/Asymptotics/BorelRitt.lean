@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.RCLike
 import TauCeti.Analysis.Complex.SectorBounds
-import TauCeti.Analysis.SpecialFunctions.Exp.CpowQuarter
+import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -34,7 +34,7 @@ second function with the same expansion.
 ## Main results
 
 * `Asymptotics.hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter`: `exp(-c z^{1/4})` has the
-  zero expansion, from the decay estimates of `TauCeti.Analysis.SpecialFunctions.Exp.CpowQuarter`.
+  zero expansion, from the decay estimate `TauCeti.isBigO_cexp_neg_mul_cpow_quarter`.
 * `Asymptotics.exists_hasAsymptoticExpansion_cobounded`: Borel–Ritt along `cobounded ℂ`.
 * `Asymptotics.exists_hasAsymptoticExpansion_sector`: Borel–Ritt in a closed sector.
 * `Asymptotics.exists_ne_hasAsymptoticExpansion_sector`: two functions that differ everywhere
@@ -235,8 +235,9 @@ theorem exists_ne_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (h�
   have he := (hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter one_pos).mono
     (inf_le_left : cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ} ≤ _)
   refine ⟨f, fun z => f z + cexp (-((1 : ℝ) * z ^ (1 / 4 : ℂ))), hfd,
-    hfd.add (TauCeti.differentiableOn_cexp_neg_mul_cpow_quarter.mono fun z hz =>
-      mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1]))),
+    hfd.add fun z hz => (((differentiableAt_id.cpow_const (mem_slitPlane_of_abs_arg_lt (s := z)
+      (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1])))).const_mul _).neg.cexp
+      ).differentiableWithinAt,
     fun z h => ?_, hf, (hf.add he).congr_coeff fun n => add_zero _⟩
   exact Complex.exp_ne_zero _ (by linear_combination -h)
 
