@@ -14,6 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -60,6 +61,10 @@ convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_norme
 
 * `TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`: the weak equation holds
   against bounded compactly supported Sobolev test fields.
+* `TauCeti.HasWeakFDerivOn.setIntegral_inner_apply_comm`: by the same mollification, the mixed
+  weak derivatives of a field `ξ ∈ W^{1,q}_loc` commute when tested against a compactly supported
+  Sobolev field, `∫ ⟪∂_v ψ, ∂_w ξ⟫ = ∫ ⟪∂_w ψ, ∂_v ξ⟫`;
+  `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_apply_comm` is the case of a test function.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`: for `p > 2` a `W^{1,p}_loc` coefficient
   `J` is locally bounded.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one`: order-zero interior regularity.
@@ -187,6 +192,74 @@ private theorem integral_inner_eq_of_setIntegral_eq (hψ : HasWeakFDerivOn volum
     setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hΩm hK'Ω hψη0, ← hkey,
     integral_add _ h4, integral_sub _ h3, integral_sub _ h2, integral_neg]
   exacts [h1.neg, h1.neg.sub h2, (h1.neg.sub h2).sub h3]
+
+omit [CompleteSpace V] in
+/-- **Mixed weak derivatives commute against test functions.** If `ξ` has a weak derivative `Dξ`
+on `Ω`, then for every test function `φ` and all directions `v` and `w`,
+`∫ ⟪∂_v φ, ∂_w ξ⟫ = ∫ ⟪∂_w φ, ∂_v ξ⟫`: both sides are `-∫ ⟪∂_w ∂_v φ, ξ⟫`. -/
+theorem HasWeakFDerivOn.integral_inner_fderiv_apply_comm [FiniteDimensional ℝ V]
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (φ : 𝓓(Ω, V)) (v w : ℂ) :
+    ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z v, Dξ z w⟫_ℝ = ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z w, Dξ z v⟫_ℝ := by
+  have h1 := (hξ.hasWeakLineDerivOn w).integral_inner_lineDeriv_eq_neg (∂_{v} φ)
+  have h2 := (hξ.hasWeakLineDerivOn v).integral_inner_lineDeriv_eq_neg (∂_{w} φ)
+  have h3 : (fun z => ⟪lineDeriv ℝ ((∂_{v} φ : 𝓓(Ω, V)) : ℂ → V) z w, ξ z⟫_ℝ) =
+      fun z => ⟪lineDeriv ℝ ((∂_{w} φ : 𝓓(Ω, V)) : ℂ → V) z v, ξ z⟫_ℝ :=
+    funext fun z => by rw [TestFunction.lineDeriv_lineDerivOp_comm]
+  rw [h3, h2] at h1
+  simpa only [TestFunction.lineDerivOp_apply_eq_fderiv, neg_inj] using h1.symm
+
+omit [CompleteSpace V] in
+/-- **Mixed weak derivatives commute against Sobolev test fields.** Let `ξ` have a weak derivative
+`Dξ ∈ L^q_loc(Ω)`. Let `ψ` be compactly supported in `Ω`, with a weak derivative `Dψ ∈ Lˢ(Ω)`,
+where `1/s + 1/q ≤ 1`. Then for all directions `v` and `w`,
+
+`∫_Ω ⟪∂_v ψ, ∂_w ξ⟫ = ∫_Ω ⟪∂_w ψ, ∂_v ξ⟫`.
+
+For a test function `ψ` both sides are `-∫ ⟪∂_w ∂_v ψ, ξ⟫`; no second derivative of `ξ` or `ψ`
+is assumed to exist. -/
+theorem HasWeakFDerivOn.setIntegral_inner_apply_comm [FiniteDimensional ℝ V]
+    {Dξ : ℂ → ℂ →L[ℝ] V} (hξ : HasWeakFDerivOn volume Ω ξ Dξ) (hDξ : MemLpLoc q Ω Dξ)
+    (hψ : HasWeakFDerivOn volume Ω ψ Dψ) (hψc : HasCompactSupport ψ) (hψΩ : tsupport ψ ⊆ Ω)
+    (hDψ : MemLp Dψ s (volume.restrict Ω)) (hsq : s⁻¹ + q⁻¹ ≤ 1)
+    (v w : ℂ) :
+    ∫ z in Ω, ⟪Dψ z v, Dξ z w⟫_ℝ = ∫ z in Ω, ⟪Dψ z w, Dξ z v⟫_ℝ := by
+  -- A compact neighbourhood `K'` of the support of `ψ` whose `δ`-balls stay in `Ω`.
+  obtain ⟨δ, hδ, hball⟩ := hψc.isCompact.exists_forall_closedBall_subset_of_isOpen Ω.isOpen hψΩ
+  set K' := cthickening δ (tsupport ψ)
+  have hK'c : IsCompact K' := hψc.isCompact.cthickening
+  have hK'm : MeasurableSet K' := isClosed_cthickening.measurableSet
+  have hK'Ω : K' ⊆ Ω := fun z hz => hball z hz (mem_closedBall_self hδ.le)
+  have hs1 : 1 ≤ s := ENNReal.inv_le_one.1 (le_self_add.trans hsq)
+  have : Fact (1 ≤ s) := ⟨hs1⟩
+  have : IsFiniteMeasure (volume.restrict K') :=
+    isFiniteMeasure_restrict.2 hK'c.measure_lt_top.ne
+  have hDξK (c : ℂ) : MemLp (fun z => Dξ z c) s.conjExponent (volume.restrict K') :=
+    (memLpLoc_iff.1 (hDξ.clm_comp (ContinuousLinearMap.apply ℝ V c)) K' hK'Ω hK'c).mono_exponent
+      (ENNReal.conjExponent_le_of_inv_add_inv_le_one hsq)
+  -- Test functions approximating `ψ` by mollification; `ψ` is integrable, being locally
+  -- integrable on `Ω` and supported in a compact subset of `Ω`.
+  have hψ1 : MemLp ψ 1 := memLp_one_iff_integrable.2 <|
+    (integrableOn_iff_integrable_of_support_subset (subset_tsupport ψ)).1
+      (hψ.locallyIntegrableOn.integrableOn_compact_subset hψΩ hψc.isCompact)
+  choose φ _ hφs hderiv using fun n => hψ.exists_testFunction_convolution_normed hψc hψ1 hDψ
+    le_rfl hs1 hball (ContDiffBump.shrinking hδ n) ((ContDiffBump.rOut_shrinking hδ n).trans_le
+      (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
+  have hρ := ContDiffBump.tendsto_rOut_shrinking (c := (0 : ℂ)) hδ
+  have hK' : ∫ z in K', ⟪Dψ z v, Dξ z w⟫_ℝ = ∫ z in K', ⟪Dψ z w, Dξ z v⟫_ℝ :=
+    tendsto_nhds_unique (tendsto_integral_inner_fderiv_mollify hK'm hK'Ω hρ hφs hderiv hDψ v
+      (hDξK w)) ((tendsto_integral_inner_fderiv_mollify hK'm hK'Ω hρ hφs hderiv hDψ w
+        (hDξK v)).congr fun n => (hξ.integral_inner_fderiv_apply_comm (φ n) v w).symm)
+  -- The weak derivative of `ψ` vanishes almost everywhere on `Ω` off the support of `ψ`.
+  have hDψ0 (c : ℂ) : ∀ᵐ z ∂volume, z ∈ (Ω : Set ℂ) \ K' → Dψ z c = 0 := by
+    have h := (hψ.hasWeakLineDerivOn c).ae_eq_zero_of_isOpen (isClosed_tsupport ψ).isOpen_compl
+      (.of_forall fun z hz => image_eq_zero_of_notMem_tsupport hz)
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 h] with z hz hzΩ
+    exact hz hzΩ.1 fun h' => hzΩ.2 (self_subset_cthickening _ h')
+  have hΩm : NullMeasurableSet (Ω : Set ℂ) := Ω.isOpen.measurableSet.nullMeasurableSet
+  rw [setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hΩm hK'Ω
+      ((hDψ0 v).mono fun z hz hzΩ => by simp [hz hzΩ]),
+    setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hΩm hK'Ω
+      ((hDψ0 w).mono fun z hz hzΩ => by simp [hz hzΩ]), hK']
 
 end Mollify
 
