@@ -521,7 +521,7 @@ theorem exists_commonRefinement {L₁ L₂ : NormalLayer G} (h : L₁.ground = L
   have hv' : (v : G) ∈ L₁.top ∧ (v : G) ∈ L₂.top :=
     OpenSubgroup.mem_inf.1 (Subgroup.mem_subgroupOf.1 hv)
   exact OpenSubgroup.mem_inf.2
-    ⟨L₁.conj_mem_top u.2 hv'.1, L₂.conj_mem_top (h ▸ u.2) hv'.2⟩
+    ⟨L₁.conj_mem_top u.property hv'.1, L₂.conj_mem_top (h ▸ u.property) hv'.2⟩
 
 end LayerRefinement
 

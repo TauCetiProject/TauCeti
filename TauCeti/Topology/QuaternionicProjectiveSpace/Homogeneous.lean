@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Quaternion.UnitaryMatrix
-public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.CornerBlock
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Basic
 import TauCeti.Topology.Algebra.GroupAction.Transitive
@@ -20,7 +19,7 @@ on quaternionic projective space `HPⁿ` by `A • [x] = [A x]`
 sphere `S⁴ⁿ⁺³` of `ℍⁿ⁺¹` to itself and commutes with unit quaternions acting on the right, so it
 descends to the quotient by right multiplication. The action is continuous, and it is
 transitive, because `Sp(n + 1)` already acts transitively on the unit sphere
-(`TauCeti.exists_quaternionUnitaryIsometry_apply_single_eq`).
+(`TauCeti.instIsPretransitiveUnitaryMatrixQuaternionSphere`).
 
 The stabilizer of the base point `[e₀]` consists of the unitary matrices whose column `0` is a
 unit quaternion multiple of `e₀`; these are exactly the block-diagonal matrices `diag(q, B)` with
@@ -76,29 +75,18 @@ namespace QuaternionicProjectiveSpace
 
 variable {n : ℕ}
 
-/-- A quaternionic unitary matrix commutes with unit quaternions acting on the right of the unit
-sphere. -/
-private theorem quaternionUnitaryIsometry_smul_op_smul
-    (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (q : sphere (0 : ℍ) 1)
-    (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    quaternionUnitaryIsometry _ A • (x <• q) = (quaternionUnitaryIsometry _ A • x) <• q :=
-  Subtype.ext <| by
-    simp only [LinearIsometryEquiv.coe_smul_unitSphere, Sphere.coe_op_sphere_smul, unop_op,
-      quaternionUnitaryIsometry_op_smul]
-
 /-- A quaternionic unitary matrix acts on `HPⁿ` by `A • [x] = [A x]`. -/
 instance instSMulUnitary :
     SMul (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (QuaternionicProjectiveSpace n) where
-  smul A := QuaternionicProjectiveSpace.lift n
-    (fun x ↦ mk n (quaternionUnitaryIsometry _ A • x)) fun q x ↦ by
-      rw [quaternionUnitaryIsometry_smul_op_smul, mk_op_smul]
+  smul A := QuaternionicProjectiveSpace.lift n (fun x ↦ mk n (A • x)) fun q x ↦ by
+    rw [smul_comm, mk_op_smul]
 
 /-- A quaternionic unitary matrix acts on `HPⁿ` by acting on representatives in the unit
 sphere. -/
 @[simp]
 theorem smul_mk (A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ))
     (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    A • mk n x = mk n (quaternionUnitaryIsometry _ A • x) :=
+    A • mk n x = mk n (A • x) :=
   QuaternionicProjectiveSpace.lift_mk n _ _ x
 
 /-- **The compact symplectic group `Sp(n + 1)` acts on `HPⁿ`** by `A • [x] = [A x]`. -/
@@ -106,10 +94,10 @@ instance instMulActionUnitary :
     MulAction (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (QuaternionicProjectiveSpace n) where
   one_smul p := by
     induction p using QuaternionicProjectiveSpace.inductionOn with
-    | h x => rw [smul_mk, map_one, one_smul]
+    | h x => rw [smul_mk, one_smul]
   mul_smul A B p := by
     induction p using QuaternionicProjectiveSpace.inductionOn with
-    | h x => rw [smul_mk, smul_mk, smul_mk, map_mul, mul_smul]
+    | h x => rw [smul_mk, smul_mk, smul_mk, mul_smul]
 
 /-- The action of `Sp(n + 1)` on `HPⁿ` is continuous. -/
 instance instContinuousSMulUnitary :
@@ -122,12 +110,7 @@ instance instContinuousSMulUnitary :
       (X := unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ))).prodMap
         (isOpenQuotientMap_mk n)).isQuotientMap
     rw [hq.continuous_iff]
-    have hsphere : Continuous fun p : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ) ×
-        sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦ quaternionUnitaryIsometry _ p.1 • p.2 :=
-      continuous_induced_rng.2 <| (continuous_quaternionUnitaryIsometry_apply.comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ by
-          simp
-    exact ((continuous_mk n).comp hsphere).congr fun p ↦ (smul_mk p.1 p.2).symm
+    exact ((continuous_mk n).comp continuous_smul).congr fun p ↦ (smul_mk p.1 p.2).symm
 
 variable (n) in
 /-- The **base point** `[e₀]` of `HPⁿ`, the quaternionic line spanned by the first standard
@@ -148,33 +131,32 @@ instance instIsPretransitiveUnitary :
   refine .of_orbit (x₀ := basePoint n) fun p ↦ ?_
   induction p using QuaternionicProjectiveSpace.inductionOn with
   | h x =>
-    obtain ⟨A, hA⟩ := exists_quaternionUnitaryIsometry_apply_single_eq 0
-      (mem_sphere_zero_iff_norm.1 x.2)
-    refine ⟨A, ?_⟩
-    rw [basePoint_def, smul_mk]
-    exact congrArg (mk n) (Subtype.ext ((LinearIsometryEquiv.coe_smul_unitSphere _ _).trans hA))
+    obtain ⟨A, hA⟩ := MulAction.exists_smul_eq
+      (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ))
+      ⟨WithLp.toLp 2 (Pi.single 0 1), by simp⟩ x
+    exact ⟨A, by rw [basePoint_def, smul_mk, hA]⟩
 
 /-- **The stabilizer of `[e₀]`**: a quaternionic unitary matrix fixes the base point of `HPⁿ`
 exactly when its column `0` vanishes below the corner, that is, when it maps `e₀` to a
 quaternionic multiple of `e₀`. -/
 theorem mem_stabilizer_basePoint_iff {A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)} :
     A ∈ MulAction.stabilizer (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (basePoint n) ↔
-      ∀ i : Fin n, A.1 i.succ 0 = 0 := by
+      ∀ i : Fin n, A.val i.succ 0 = 0 := by
   rw [MulAction.mem_stabilizer_iff, basePoint_def, smul_mk, mk_eq_mk_iff]
   constructor
   · rintro ⟨q, hq⟩ i
     have h := congrArg (fun v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦
       WithLp.ofLp (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) i.succ) hq
-    simp only [Sphere.coe_op_sphere_smul, LinearIsometryEquiv.coe_smul_unitSphere,
+    simp only [Sphere.coe_op_sphere_smul, coe_quaternionUnitary_smul_sphere,
       quaternionUnitaryIsometry_apply, WithLp.ofLp_smul, WithLp.ofLp_toLp,
       Matrix.mulVec_single_one] at h
     simpa [Fin.succ_ne_zero] using h.symm
   · intro hA
     -- The image of `e₀` is its column `0`, the multiple `e₀ A₀₀`, and `A₀₀` is a unit quaternion.
     obtain ⟨⟨q, B⟩, hqB⟩ := Matrix.mem_range_unitaryProdBlockSucc_iff.2 hA
-    refine ⟨⟨q, by simp [CStarRing.norm_of_mem_unitary q.2]⟩, Subtype.ext ?_⟩
+    refine ⟨⟨q, by simp [CStarRing.norm_of_mem_unitary q.property]⟩, Subtype.ext ?_⟩
     refine PiLp.ext fun i ↦ ?_
-    simp only [Sphere.coe_op_sphere_smul, LinearIsometryEquiv.coe_smul_unitSphere,
+    simp only [Sphere.coe_op_sphere_smul, coe_quaternionUnitary_smul_sphere,
       quaternionUnitaryIsometry_apply, WithLp.ofLp_smul, WithLp.ofLp_toLp,
       Matrix.mulVec_single_one, unop_op]
     refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [← hqB, Fin.succ_ne_zero]

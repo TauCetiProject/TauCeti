@@ -170,12 +170,8 @@ private lemma intersection_eq_zero_of_leaf (hc : T.IsSelfIntersectionMinusTwoCha
     (hc.intersection_self r (by omega)) (hc.intersection_self (r + 1) (by omega))
     (hc.intersection_self (r + 2) (by omega)) hx_self hy_self
     (hc.ne (by omega) (by omega) (by omega)) (hc.ne (by omega) (by omega) (by omega))
-    (hc.ne (by omega) (by omega) (by omega)) (hx_ne _ (by omega)).symm
-    (hy_ne _ (by omega)).symm (hc.ne (by omega) (by omega) (by omega))
-    (hc.ne (by omega) (by omega) (by omega)) (hx_ne _ (by omega)).symm
-    (hy_ne _ (by omega)).symm (hc.ne (by omega) (by omega) (by omega))
-    (hy_ne _ (by omega)).symm (hx_ne _ (by omega)).symm (hy_ne _ (by omega)).symm
-    (hx_ne _ (by omega)).symm (hy_ne _ (by omega)).symm hxy
+    (hx_ne _ (by omega)).symm (hc.ne (by omega) (by omega) (by omega))
+    (hy_ne _ (by omega)).symm (hx_ne _ (by omega)).symm hxy
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega))
     (hc.intersection_pos (by omega) (by omega)) (hc.intersection_pos (by omega) (by omega)) hx
 
@@ -545,7 +541,7 @@ theorem exists_chain_or_fork_or_exceptional {S : Finset T.Component}
   have ht : 0 < t := by
     by_contra ht
     obtain ⟨x, hx⟩ : S.Nonempty := by
-      rw [nonempty_iff_ne_empty]
+      rw [← ne_empty_iff_nonempty]
       rintro rfl
       exact hAS (subset_empty.mp hAsub)
     have := hmax 1 (fun _ ↦ x) ⟨by omega, fun _ _ ↦ hS x hx, by omega⟩ fun _ _ ↦ hx

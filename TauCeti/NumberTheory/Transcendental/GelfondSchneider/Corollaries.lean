@@ -105,7 +105,8 @@ theorem linearIndependent_integralClosure_iff_of_mem_algebraicLogs {l₁ l₂ : 
     LinearIndependent (integralClosure ℚ ℂ) ![l₁, l₂] ↔ LinearIndependent ℚ ![l₁, l₂] := by
   refine ⟨fun h ↦ h.restrict_scalars' ℚ, fun h ↦ LinearIndependent.pair_iff.2 fun s t hst ↦ ?_⟩
   by_contra hne
-  refine mul_add_mul_ne_zero_of_linearIndependent hl₁ hl₂ h s.2.isAlgebraic t.2.isAlgebraic ?_ ?_
+  refine mul_add_mul_ne_zero_of_linearIndependent hl₁ hl₂ h s.property.isAlgebraic
+      t.property.isAlgebraic ?_ ?_
   · simpa [or_iff_not_imp_left] using hne
   · simpa [Subalgebra.smul_def] using hst
 

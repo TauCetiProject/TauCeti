@@ -311,9 +311,9 @@ theorem linearEquivFunOnFinite_rowFiniteSignedMap [Fintype P] [Finite Q]
     induction a using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | @homogeneous q a =>
-      rw [rowFiniteSignedMap_single h x a.2, Finsupp.linearEquivFunOnFinite_single]
+      rw [rowFiniteSignedMap_single h x a.property, Finsupp.linearEquivFunOnFinite_single]
       ext y
-      simp [homotopyMap_single_apply _ x a.2, MulOpposite.smul_eq_mul_unop]
+      simp [homotopyMap_single_apply _ x a.property, MulOpposite.smul_eq_mul_unop]
     | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
 
 namespace ParametrizedCocycle

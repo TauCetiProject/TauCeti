@@ -73,7 +73,7 @@ theorem setIntegral_setOf_inner_lt_fderiv_apply (hν : ‖ν‖ = 1) (c : ℝ) {
     simp [e, LinearIsometryEquiv.symm_apply_eq, LinearIsometryEquiv.coe_refl]
   have hfst (x : F) : (e x).fst = -⟪x, ν⟫ := by
     have hy : ⟪((e x).snd : F), ν⟫ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e x).snd.2
+      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e x).snd.property
     have hx : x = (-(e x).fst) • ν + ((e x).snd : F) := by
       rw [← he, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta, WithLp.toLp_ofLp,
         e.symm_apply_apply]

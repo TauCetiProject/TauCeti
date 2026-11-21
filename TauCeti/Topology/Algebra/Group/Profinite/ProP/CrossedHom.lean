@@ -155,11 +155,11 @@ theorem pow_dvd_apply_of_mem_pLowerCentralSeries {k : ℕ} {g : G}
 
 /-- The quotient `f g / p ^ k` for `g ∈ λ_k(G)`. -/
 private noncomputable def gradedQuot (k : ℕ) (g : pLowerCentralSeries p G k) : ℤ_[p] :=
-  (dvd_def.1 (hf.pow_dvd_apply_of_mem_pLowerCentralSeries hχ hfc g.2)).choose
+  (dvd_def.1 (hf.pow_dvd_apply_of_mem_pLowerCentralSeries hχ hfc g.property)).choose
 
 private theorem apply_eq_pow_mul_gradedQuot (k : ℕ) (g : pLowerCentralSeries p G k) :
     f g = (p : ℤ_[p]) ^ k * gradedQuot hf hχ hfc k g :=
-  (dvd_def.1 (hf.pow_dvd_apply_of_mem_pLowerCentralSeries hχ hfc g.2)).choose_spec
+  (dvd_def.1 (hf.pow_dvd_apply_of_mem_pLowerCentralSeries hχ hfc g.property)).choose_spec
 
 private theorem gradedQuot_eq (k : ℕ) (g : pLowerCentralSeries p G k) {c : ℤ_[p]}
     (hc : f g = (p : ℤ_[p]) ^ k * c) : gradedQuot hf hχ hfc k g = c :=

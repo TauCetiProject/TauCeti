@@ -211,7 +211,7 @@ private theorem exists_mem_integerPoints_of_mem_integerLattice {W : Submodule K 
     ext1 i; simp [hz i]
   refine ⟨z, ?_, hwz⟩
   rw [mem_integerPoints, ← toLp_mem_euclideanSpan_iff, ← hwz]
-  exact w.2
+  exact w.property
 
 open Classical in
 /-- The `ℤ`-linear map sending an integral point of `W` to the corresponding point of
@@ -220,7 +220,7 @@ private def integerPointsToIntegerLattice (W : Submodule K (ι → K)) :
     W.integerPoints →ₗ[ℤ] W.integerLattice where
   toFun z := ⟨⟨WithLp.toLp 2 fun i ↦
       (euclidean.toMixed K).symm (mixedEmbedding K ((z : ι → 𝓞 K) i)),
-    toLp_mem_euclideanSpan (mem_integerPoints.mp z.2)⟩, fun i ↦ ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
+    toLp_mem_euclideanSpan (mem_integerPoints.mp z.property)⟩, fun i ↦ ⟨(z : ι → 𝓞 K) i, by simp⟩⟩
   map_add' _ _ := by ext1; ext1; ext1 i; simp
   map_smul' c z := by
     ext1; ext1; ext1 i
@@ -239,7 +239,7 @@ private theorem bijective_integerPointsToIntegerLattice (W : Submodule K (ι →
     simp only [integerPointsToIntegerLattice, LinearMap.coe_mk, AddHom.coe_mk,
       WithLp.ofLp_toLp, ContinuousLinearEquiv.apply_symm_apply] at hi
     exact mixedEmbedding_injective K hi
-  · obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice w.2
+  · obtain ⟨z, hzW, hwz⟩ := exists_mem_integerPoints_of_mem_integerLattice w.property
     exact ⟨⟨z, hzW⟩, Subtype.ext (Subtype.ext hwz.symm)⟩
 
 /-- The `ℤ`-linear equivalence between `W.integerPoints` and `W.integerLattice`. -/
@@ -351,7 +351,7 @@ private theorem span_range_pseudoBasisVec [Finite κ] :
   refine le_antisymm (span_le.2 ?_) (euclideanSpan_le_iff.2 fun v hv ↦ ?_)
   · rintro _ ⟨⟨k, ν⟩, rfl⟩
     simpa [pseudoBasisVec, Algebra.smul_def] using
-      toLp_mem_euclideanSpan (W.smul_mem ((J k).mixedBasisElem (hJ k) ν) (b k).2)
+      toLp_mem_euclideanSpan (W.smul_mem ((J k).mixedBasisElem (hJ k) ν) (b k).property)
   · rw [toLp_eq_sum_repr_smul_pseudoBasisVec b hJ hv]
     exact sum_mem fun p _ ↦ smul_mem _ _ (subset_span ⟨p, rfl⟩)
 
@@ -515,13 +515,13 @@ def integerPointsEquivIntPoints (V : Submodule ℚ (ι → ℚ)) :
     V.integerPoints ≃ₗ[ℤ] V.intPoints where
   toFun z := ⟨fun i ↦ Rat.ringOfIntegersEquiv ((z : ι → 𝓞 ℚ) i), by
     rw [mem_intPoints]
-    convert mem_integerPoints.mp z.2 with i
+    convert mem_integerPoints.mp z.property with i
     exact (Rat.ringOfIntegersEquiv_apply_coe _).trans (RingOfIntegers.coe_eq_algebraMap _).symm⟩
   map_add' _ _ := by ext i; simp
   map_smul' _ _ := by ext i; simp
   invFun z := ⟨fun i ↦ Rat.ringOfIntegersEquiv.symm ((z : ι → ℤ) i), by
     rw [mem_integerPoints]
-    convert mem_intPoints.mp z.2 with i
+    convert mem_intPoints.mp z.property with i
     exact (RingOfIntegers.coe_eq_algebraMap _).trans (Rat.ringOfIntegersEquiv_symm_apply_coe _)⟩
   left_inv z := by ext i; simp
   right_inv z := by ext i; simp

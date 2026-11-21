@@ -170,7 +170,7 @@ theorem isPretransitive_rootSet_of_irreducible {q : F[X]} (hq : Irreducible q) :
     IsPretransitive (M ≃ₐ[F] M) (q.rootSet M) where
   exists_smul_eq x y := by
     obtain ⟨g, hg⟩ := mem_orbit_iff.mp
-      ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq x.2) y).mp y.2)
+      ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq x.property) y).mp y.property)
     exact ⟨g, Subtype.ext hg⟩
 
 /-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets

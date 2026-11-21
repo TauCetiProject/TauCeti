@@ -19,6 +19,8 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
 
 * `BesselPotentialSpace.toDistrCLM`: the inclusion `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)`.
 * `BesselPotentialSpace.toDistrCLM_injective`: it is injective.
+* `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
+  element along an equality of orders `s = s'`.
 -/
 
 public section
@@ -49,5 +51,16 @@ theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, 
 theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Function.Injective (toDistrCLM E F s p) := fun u v h ↦
   ext (by simpa using h)
+
+/-- Transferring an element of `H^{s,p}` to `H^{s',p}` along `s = s'` keeps its norm. -/
+@[simp]
+theorem norm_copy {s s' : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) (hs : s = s') :
+    ‖u.copy s' hs‖ = ‖u‖ := by
+  rw [← norm_toLp_eq, toLp_copy _ hs, norm_toLp_eq]
+
+/-- The tempered distribution of an element of `H^{t,p}` lies in `H^{s,p}` when `t = s`. -/
+theorem memSobolev_toDistr_of_eq {s t : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{t, p}(E, F))
+    (h : t = s) : MemSobolev s p u.toDistr :=
+  h ▸ u.memSobolev_toDistr
 
 end BesselPotentialSpace

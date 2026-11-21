@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
+import Mathlib.RingTheory.IntegralClosure.GoingDown
 
 import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 import Mathlib.RingTheory.Ideal.Operations
@@ -33,9 +34,8 @@ For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`,
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
 polynomials at `I` are closed under finite products, including the empty product `1`, are monotone
 in `I`, and—when `I` is radical—are closed under taking monic factors
-(`Polynomial.IsDistinguishedAt.of_dvd`). The monic-factor closure reduces modulo every prime ideal
-containing `I` to the fact that a monic divisor of `X ^ n` over a ring without zero divisors is a
-power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
+(`Polynomial.IsDistinguishedAt.of_dvd`). Over a semiring without zero divisors, any monic divisor
+of `X ^ n` is a power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
 
 ## Main results
 
@@ -50,10 +50,10 @@ power of `X` (`Polynomial.Monic.eq_X_pow_of_dvd_X_pow`).
   ideal.
 * `Polynomial.Monic.isDistinguishedAt_iff_map_eq_X_pow`: a monic polynomial is distinguished at `I`
   if and only if its reduction modulo `I` is `X ^ f.natDegree`.
-* `Polynomial.IsDistinguishedAt.of_dvd`: a monic factor of a polynomial distinguished at a radical
-  ideal `I` is distinguished at `I`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
+* `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a radical
+  ideal is distinguished at that ideal.
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
@@ -147,21 +147,6 @@ theorem Monic.isDistinguishedAt_iff_map_eq_X_pow {f : R[X]} (hf : f.Monic) :
   refine ⟨IsDistinguishedAt.map_eq_X_pow, fun hmap ↦ ⟨⟨fun {n} hn ↦ ?_⟩, hf⟩⟩
   rw [← Ideal.Quotient.eq_zero_iff_mem, ← coeff_map, hmap, coeff_X_pow, ite_eq_right hn.ne]
 
-/-- A monic factor of a polynomial distinguished at a radical ideal is again distinguished at that
-ideal. -/
-theorem IsDistinguishedAt.of_dvd {f g : R[X]} (hf : f.IsDistinguishedAt I) (hI : I.IsRadical)
-    (hg : g.Monic) (hfg : g ∣ f) : g.IsDistinguishedAt I := by
-  refine ⟨⟨fun {n} hn ↦ ?_⟩, hg⟩
-  rw [← hI.radical, Ideal.radical_eq_sInf, Ideal.mem_sInf]
-  rintro P ⟨hIP, hP⟩
-  have : P.IsPrime := hP
-  have : Nontrivial (R ⧸ P) := Ideal.Quotient.nontrivial_iff.mpr hP.ne_top
-  have hmap_f : f.map (Ideal.Quotient.mk P) = X ^ f.natDegree := (hf.mono hIP).map_eq_X_pow
-  have hmap_g : g.map (Ideal.Quotient.mk P) = X ^ g.natDegree := by
-    rw [← hg.natDegree_map (Ideal.Quotient.mk P)]
-    exact (hg.map (Ideal.Quotient.mk P)).eq_X_pow_of_dvd_X_pow (hmap_f ▸ Polynomial.map_dvd _ hfg)
-  exact (hg.isDistinguishedAt_iff_map_eq_X_pow.2 hmap_g).mem hn
-
 /-- The constant polynomial `1` is distinguished at every ideal. -/
 theorem isDistinguishedAt_one : (1 : R[X]).IsDistinguishedAt I :=
   ⟨⟨fun hn ↦ by simp at hn⟩, monic_one⟩
@@ -196,5 +181,14 @@ theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
     rw [pow_mul]
     exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
   rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
+
+/-- A monic divisor of a polynomial distinguished at a radical ideal is distinguished at that
+ideal. Follows from Mathlib's `Polynomial.coeff_mem_radical_span_coeff_of_dvd`. -/
+theorem of_dvd {P : Ideal O} (hP : P.IsRadical) {f g : O[X]} (hg : g.IsDistinguishedAt P)
+    (hf : f.Monic) (hfg : f ∣ g) : f.IsDistinguishedAt P := by
+  refine ⟨⟨fun {i} hi ↦ ?_⟩, hf⟩
+  have hle : (Ideal.span { g.coeff j | j < g.natDegree }).radical ≤ P :=
+    hP.radical_le_iff.2 (Ideal.span_le.2 (by rintro _ ⟨_, hj, rfl⟩; exact hg.mem hj))
+  exact hle (coeff_mem_radical_span_coeff_of_dvd g f hg.monic hf hfg i hi.ne)
 
 end Polynomial.IsDistinguishedAt

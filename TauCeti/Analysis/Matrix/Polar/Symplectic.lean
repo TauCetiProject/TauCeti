@@ -111,7 +111,8 @@ theorem polarUnitary_mem {A : GL (l ⊕ l) 𝕜}
     rw [star_eq_conjTranspose (U : Matrix (l ⊕ l) (l ⊕ l) 𝕜), conjTranspose_transpose,
       ← UnitaryGroup.map_star_coe, ← h]
     simp [coe_unitaryJ]
-  exact mem_of_J_conj_eq_transpose (Unitary.star_mul_self_of_mem U.2) (by rwa [J_inv, ← star_J])
+  exact mem_of_J_conj_eq_transpose (Unitary.star_mul_self_of_mem U.property) (by rwa [J_inv,
+      ← star_J])
 
 /-- **The positive polar factor of a symplectic matrix is symplectic.** If `A` is symplectic over
 `ℝ` or `ℂ`, then so is `√(A Aᴴ)`. -/
