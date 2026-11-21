@@ -55,9 +55,11 @@ coefficient gives a nonzero class (`TauCeti.singularHomology₀Section_apply_ne_
 With coefficients in a ring the class of a point spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
-(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
-With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
-the number of path components other than that of the point
+(`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`), and with coefficients in a
+ring with the strong rank condition that homology has rank one
+(`TauCeti.finrank_singularHomology₀_eq_one`).
+With coefficients in a ring with the strong rank condition, such as a field, the rank of reduced
+zeroth homology is therefore the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
 nonempty space with vanishing reduced zeroth homology is path-connected.
 
@@ -154,6 +156,15 @@ lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [Path
     (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
   rw [← cancel_mono (X.singularHomology₀ε R), singularHomologyMap_singularHomology₀ε,
     Category.id_comp]
+
+/-- With coefficients in a ring `k` with the strong rank condition, such as a division ring, the
+zeroth homology of a path-connected space has rank one: the augmentation identifies it with `k`. -/
+theorem finrank_singularHomology₀_eq_one {k : Type w} [Ring k] [StrongRankCondition k]
+    (X : TopCat.{w}) [PathConnectedSpace X] :
+    Module.finrank k
+      (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj (ModuleCat.of k k)).obj X) = 1 := by
+  rw [(asIso (X.singularHomology₀ε (ModuleCat.of k k))).toLinearEquiv.finrank_eq]
+  exact Module.finrank_self k
 
 /-- A map out of a path-connected space is injective on zeroth homology: the augmentation of the
 source factors through it and is an isomorphism. -/
