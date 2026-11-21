@@ -19,7 +19,7 @@ import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Sign
 
 For every `ε > 0` there is a constant `c > 0` such that `L(1, χ) ≥ c N ^ (-ε)` for every
 nonprincipal quadratic Dirichlet character `χ` of level `N`
-(`DirichletCharacter.quadratic_LFunction_siegel`). For a primitive character the level is the
+(`TauCeti.Multiquadratic.quadratic_LFunction_siegel`). For a primitive character the level is the
 conductor, so this is Siegel's lower bound in its usual form; the level form also covers imprimitive
 characters. The constant is ineffective: the proof does not say how to compute it.
 
@@ -50,9 +50,10 @@ factors removed by raising the level.
 * `DirichletCharacter.le_re_LFunction_one_mul_of_re_pair_nonpos`: Goldfeld's lower bound for the
   residue `L(1, χ) L(1, ψ) L(1, χ.mul ψ)` when `F(β) ≤ 0`.
 * `DirichletCharacter.exists_pos_mul_rpow_le_LFunction_one_re_of_LFunction_eq_zero`,
-  `DirichletCharacter.exists_pos_mul_rpow_le_LFunction_one_re_of_forall_LFunction_ne_zero`: the two
-  alternatives, each giving `L(1, ψ) ≥ c N ^ (-16 (1 - β))` for every nonprincipal quadratic `ψ`.
-* `DirichletCharacter.quadratic_LFunction_siegel`: Siegel's theorem.
+  `TauCeti.Multiquadratic.exists_pos_mul_rpow_le_LFunction_one_re_of_forall_LFunction_ne_zero`: the
+  two alternatives, each giving `L(1, ψ) ≥ c N ^ (-16 (1 - β))` for every nonprincipal quadratic
+  `ψ`.
+* `TauCeti.Multiquadratic.quadratic_LFunction_siegel`: Siegel's theorem.
 
 ## References
 
@@ -286,6 +287,12 @@ theorem exists_pos_mul_rpow_le_LFunction_one_re_of_LFunction_eq_zero {χ : Diric
   exists_pos_mul_rpow_le_LFunction_one_re_of_re_pair_nonpos hχ hχ₁ hβ₀ hβ₁
     fun _ _ _ _ _ _ ↦ by simp [hβ]
 
+end DirichletCharacter
+
+namespace TauCeti.Multiquadratic
+
+open DirichletCharacter
+
 /-- **Siegel's zero-free alternative.** If no nonprincipal quadratic character of any nonzero level
 has a real zero in `(β, 1)`, where `3 / 4 ≤ β < 1`, then there is `c > 0` such that
 `c N ^ (-16 (1 - β)) ≤ Re L(1, ψ)` for every nonprincipal quadratic character `ψ` of every nonzero
@@ -336,4 +343,4 @@ theorem quadratic_LFunction_siegel {ε : ℝ} (hε : 0 < ε) :
     exact hmono (by linarith) (exists_pos_mul_rpow_le_LFunction_one_re_of_forall_LFunction_ne_zero
       (by linarith) (by linarith) fun M _ χ hχ hχ₁ σ hσ ↦ hz M inferInstance χ hχ hχ₁ σ hσ)
 
-end DirichletCharacter
+end TauCeti.Multiquadratic

@@ -17,8 +17,8 @@ import TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta
 For every `ε > 0` there is `C > 0` such that every imaginary quadratic field `K` has class number
 `h(K) ≥ C |disc K| ^ (1 / 2 - ε)` (`TauCeti.NumberField.imaginary_classNumber_lower_bound`). This
 combines Siegel's theorem `L(1, χ_D) ≥ c |D| ^ (-ε)`
-(`DirichletCharacter.quadratic_LFunction_siegel`), applied to the quadratic character `χ_D` of the
-discriminant `D` of `K` at its level `|D|`, with the class number formula in the form
+(`TauCeti.Multiquadratic.quadratic_LFunction_siegel`), applied to the quadratic character `χ_D` of
+the discriminant `D` of `K` at its level `|D|`, with the class number formula in the form
 `h ≥ √|D| L(1, χ_D) / π` (`TauCeti.NumberField.sqrt_mul_LFunction_one_re_div_le_classNumber`).
 
 Taking `ε = 1 / 4` bounds the discriminant of an imaginary quadratic field in terms of its class
@@ -50,7 +50,7 @@ ineffective. -/
 theorem imaginary_classNumber_lower_bound {ε : ℝ} (hε : 0 < ε) :
     ∃ C > 0, ∀ (K : Type u) [Field K] [NumberField K] [IsTotallyComplex K], finrank ℚ K = 2 →
       C * |(discr K : ℝ)| ^ (1 / 2 - ε) ≤ classNumber K := by
-  obtain ⟨c, hc, hS⟩ := DirichletCharacter.quadratic_LFunction_siegel hε
+  obtain ⟨c, hc, hS⟩ := quadratic_LFunction_siegel hε
   refine ⟨c / Real.pi, div_pos hc Real.pi_pos, fun K _ _ _ hK ↦ ?_⟩
   have hfd := isFundamentalDiscr_discr hK
   have := hfd.neZero_natAbs
