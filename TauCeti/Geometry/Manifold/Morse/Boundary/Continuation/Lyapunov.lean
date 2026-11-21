@@ -25,9 +25,10 @@ constructs a function on the slab that strictly increases along every trajectory
 it, so that `V` is gradient-like on the open slab, as `X₀` and `X₁` are for `-f₀` and `-f₁`.
 
 Let `F` be a `C¹` function on `M × ℝ` interpolating between the two functions in time: equal to
-`f₀ (x)` near `t = 0` and to `f₁ (x)` near `t = 1`, uniformly in `x`. Such an interpolation always
-exists, for instance `f₀ (x) + ρ (3 t - 1) (f₁ (x) - f₀ (x))` with `ρ` a smooth transition from `0`
-to `1`. For a large constant `K` the function
+`f₀ (x)` near `t = 0` and to `f₁ (x)` near `t = 1`, uniformly in `x`. When `f₀` and `f₁` are `C¹`,
+such an interpolation exists, for instance `f₀ (x) + ρ (3 t - 1) (f₁ (x) - f₀ (x))` with `ρ` a
+smooth transition from `0` to `1` (`TauCeti.IsContinuationField.exists_strictMono_mul_snd_sub`).
+For a large constant `K` the function
 
 `L (x, t) = K t - F (x, t)`
 
@@ -55,8 +56,9 @@ In the namespace `TauCeti.IsContinuationField`:
 * `eventually_mul_snd_sub_mem_Ioo`: along a trajectory from `(p, 0)` to `(q, 1)`, the values of `L`
   lie strictly between its limits `-f₀ (p)` and `K - f₁ (q)`.
 * `exists_strictMono_mul_snd_sub`: for `C¹` functions `f₀` and `f₁` there is a `C¹` function `F`,
-  equal to `f₀` for `t ≤ 1 / 3` and to `f₁` for `t ≥ 2 / 3`, and a constant `K` for which
-  `K t - F` strictly increases along every trajectory of `V` through the slab.
+  equal to `f₀` for `t ≤ 1 / 3` and to `f₁` for `t ≥ 2 / 3`, such that for all large `K` the
+  function `K t - F` strictly increases along every trajectory of `V` through the slab and stays
+  strictly between its limits along every trajectory from `(p, 0)` to `(q, 1)`.
 
 ## References
 
@@ -201,9 +203,11 @@ end IsContinuationField
 
 /-- **Existence of a strict Lyapunov function for a continuation field.** Let `V` be a continuous
 continuation field from `X₀` to `X₁` at rate `C > 0`, and let `f₀` and `f₁` be `C¹` functions
-that do not increase along `X₀` and `X₁`. Then there are a `C¹` function `F` on `M × ℝ`, equal to
-`f₀` for `t ≤ 1 / 3` and to `f₁` for `t ≥ 2 / 3`, and a constant `K` such that `K t - F (x, t)`
-strictly increases along every integral curve of `V` meeting the open slab. -/
+that do not increase along `X₀` and `X₁`. Then there is a `C¹` function `F` on `M × ℝ`, equal to
+`f₀` for `t ≤ 1 / 3` and to `f₁` for `t ≥ 2 / 3`, such that for all large `K` the function
+`K t - F (x, t)` strictly increases along every integral curve of `V` meeting the open slab, and
+along every integral curve from `(p, 0)` at `-∞` to `(q, 1)` at `+∞` takes values strictly between
+`-f₀ (p)` and `K - f₁ (q)`. -/
 theorem IsContinuationField.exists_strictMono_mul_snd_sub [IsManifold 𝓘(ℝ, E) 1 M]
     [CompactSpace M] {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x} {C : ℝ}
     {V : (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z} (hV : IsContinuationField X₀ X₁ C V)
@@ -211,10 +215,14 @@ theorem IsContinuationField.exists_strictMono_mul_snd_sub [IsManifold 𝓘(ℝ, 
     (hVc : Continuous fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
     (hf₀ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 1 f₀) (hf₁ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 1 f₁)
     (hX₀ : ∀ x, mvfderiv 𝓘(ℝ, E) f₀ x (X₀ x) ≤ 0) (hX₁ : ∀ x, mvfderiv 𝓘(ℝ, E) f₁ x (X₁ x) ≤ 0) :
-    ∃ (F : M × ℝ → ℝ) (K : ℝ), ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ) 1 F ∧
+    ∃ F : M × ℝ → ℝ, ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ) 1 F ∧
       (∀ x t, t ≤ 1 / 3 → F (x, t) = f₀ x) ∧ (∀ x t, 2 / 3 ≤ t → F (x, t) = f₁ x) ∧
-      ∀ γ : ℝ → M × ℝ, IsMIntegralCurve γ V → ∀ s₀, (γ s₀).2 ∈ Ioo 0 1 →
-        StrictMono fun s ↦ K * (γ s).2 - F (γ s) := by
+      ∀ᶠ K in atTop,
+        (∀ γ : ℝ → M × ℝ, IsMIntegralCurve γ V → ∀ s₀, (γ s₀).2 ∈ Ioo 0 1 →
+          StrictMono fun s ↦ K * (γ s).2 - F (γ s)) ∧
+        ∀ {p q : M} (γ : ℝ → M × ℝ), IsMIntegralCurve γ V →
+          Tendsto γ atBot (𝓝 (p, 0)) → Tendsto γ atTop (𝓝 (q, 1)) →
+            ∀ s, K * (γ s).2 - F (γ s) ∈ Ioo (-f₀ p) (K - f₁ q) := by
   -- Interpolate: `F (x, t) = f₀ x + ρ (3 t - 1) (f₁ x - f₀ x)` for the smooth transition `ρ`
   -- from `0` to `1`.
   set Φ : ℝ × ℝ × ℝ → ℝ := fun w ↦ w.1 + Real.smoothTransition (3 * w.2.2 - 1) * (w.2.1 - w.1)
@@ -236,7 +244,7 @@ theorem IsContinuationField.exists_strictMono_mul_snd_sub [IsManifold 𝓘(ℝ, 
   have hF₁' : ∀ᶠ t in 𝓝[<] (1 : ℝ), ∀ x, F (x, t) = f₁ x :=
     eventually_nhdsWithin_of_eventually_nhds
       ((lt_mem_nhds (by norm_num : (2 / 3 : ℝ) < 1)).mono fun t ht x ↦ hF₁ x t ht.le)
-  obtain ⟨K, hK⟩ := (hV.eventually_strictMono_mul_snd_sub hC hVc hF hF₀' hF₁' hX₀ hX₁).exists
-  exact ⟨F, K, hF, hF₀, hF₁, hK⟩
+  exact ⟨F, hF, hF₀, hF₁, (hV.eventually_strictMono_mul_snd_sub hC hVc hF hF₀' hF₁' hX₀ hX₁).and
+    (hV.eventually_mul_snd_sub_mem_Ioo hC hVc hF hF₀' hF₁' hX₀ hX₁)⟩
 
 end TauCeti
