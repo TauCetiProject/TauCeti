@@ -88,6 +88,7 @@ noncomputable def stableToSingularityCompMapSingularityCategoryIso :
 
 /-- On the class of an object `A`, the comparison is the comparison of `mapSingularityCategory`
 with placing `A` in degree zero. -/
+@[simp]
 theorem stableToSingularityCompMapSingularityCategoryIso_hom_app (A : C) :
     (hF.stableToSingularityCompMapSingularityCategoryIso hE).hom.app
         (E.projectiveStableFunctor.obj A) =
@@ -99,6 +100,23 @@ theorem stableToSingularityCompMapSingularityCategoryIso_hom_app (A : C) :
         (hF.stableFunctor_obj_projectiveStableFunctor_obj hE A)).trans
           (E'.stableToSingularity_obj_projectiveStableFunctor_obj (F.obj A))).symm :=
   (rfl)
+
+/-- On the class of an object `A`, the inverse comparison is the inverse comparison of
+`mapSingularityCategory` with placing `A` in degree zero. -/
+@[simp]
+theorem stableToSingularityCompMapSingularityCategoryIso_inv_app (A : C) :
+    (hF.stableToSingularityCompMapSingularityCategoryIso hE).inv.app
+        (E.projectiveStableFunctor.obj A) =
+      eqToHom ((congrArg E'.stableToSingularity.obj
+        (hF.stableFunctor_obj_projectiveStableFunctor_obj hE A)).trans
+          (E'.stableToSingularity_obj_projectiveStableFunctor_obj (F.obj A))) ≫
+      (hF.isConflationExact.singleToSingularityCompMapSingularityCategoryIso
+        (hF.map_isProjective hE)).inv.app A ≫
+      eqToHom (congrArg (hF.isConflationExact.mapSingularityCategory _).obj
+        (E.stableToSingularity_obj_projectiveStableFunctor_obj A)).symm := by
+  rw [← cancel_epi ((hF.stableToSingularityCompMapSingularityCategoryIso hE).hom.app _),
+    Iso.hom_inv_id_app, stableToSingularityCompMapSingularityCategoryIso_hom_app]
+  simp
 
 variable (hE' : E'.IsFrobenius)
 

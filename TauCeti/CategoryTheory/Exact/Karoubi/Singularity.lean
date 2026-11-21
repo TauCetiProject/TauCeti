@@ -85,6 +85,14 @@ noncomputable def stableToSingularityCompKaroubiSingularityFunctorIso :
       hE.karoubiStableFunctor ⋙ E.karoubi.stableToSingularity :=
   E.stableConflationExact_toKaroubi.stableToSingularityCompMapSingularityCategoryIso hE
 
+/-- The comparison with the idempotent completion is the comparison of
+`TauCeti.StableConflationExact.stableToSingularityCompMapSingularityCategoryIso` for `toKaroubi`,
+whose component lemmas describe it on objects. -/
+theorem stableToSingularityCompKaroubiSingularityFunctorIso_eq :
+    hE.stableToSingularityCompKaroubiSingularityFunctorIso =
+      E.stableConflationExact_toKaroubi.stableToSingularityCompMapSingularityCategoryIso hE :=
+  (rfl)
+
 /-- **The comparison square with the idempotent completion commutes up to an isomorphism of
 triangle functors.** -/
 theorem stableToSingularityCompKaroubiSingularityFunctorIso_commShift :
