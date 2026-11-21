@@ -263,49 +263,66 @@ theorem Equiv.extend_toEquiv_inl {s t : OrthonormalFrameLift F E n G ρ} (φ : s
       Extend.inl σ hσ (φ.toEquiv x p) :=
   s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p
 
+end Universal
+
+/-! ### Composition -/
+
+section Comp
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
+  [ContinuousMul H] {K : Type w} [Group K] [TopologicalSpace K] [ContinuousMul K]
+  {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (s : OrthonormalFrameLift F E n G ρ) (σ : G →* H)
+  (hσ : Continuous σ) (hσρ : ρ'.comp σ = ρ)
+  (hρ'n : ∀ h v, ‖WithLp.toLp 2 (ρ' h v)‖ = ‖WithLp.toLp 2 v‖)
+  (hρ'c : ∀ v, Continuous fun h ↦ ρ' h v) (τ : H →* K) (hτ : Continuous τ)
+  (hτρ : ρ''.comp τ = ρ') (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
+  (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v)
+
 /-- **Extending along `σ` and then along `τ` is extending along `τ ∘ σ`**: the extension along
 `τ ∘ σ` is equivalent to the extension along `τ` of the extension along `σ`, by
-`[p, k] ↦ [[p, 1], k]`. -/
-noncomputable def extendCompEquiv {K : Type w} [Group K] [TopologicalSpace K]
-    [IsTopologicalGroup K] {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (τ : H →* K)
-    (hτ : Continuous τ) (hτρ : ρ''.comp τ = ρ')
-    (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
-    (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v) :
+`[p, k] ↦ [[p, 1], k]`. On principal bundles this is the inverse of
+`TauCeti.PrincipalBundle.Extend.compEquiv`, so its values are given by
+`TauCeti.PrincipalBundle.Extend.compEquiv_symm_mk` and `compEquiv_symm_inl`. -/
+noncomputable def extendCompEquiv :
     (s.extend (τ.comp σ) (hτ.comp hσ) (by rw [← MonoidHom.comp_assoc, hτρ, hσρ]) hρ''n
         hρ''c).Equiv
-      ((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c) :=
-  s.extendEquivOfEquivariant (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c _
-    (fun _ p ↦ Extend.inl τ hτ (Extend.inl σ hσ p))
-    (fun _ p g ↦ (congrArg (Extend.inl τ hτ) (Extend.inl_smul σ hσ p g)).trans
-      (Extend.inl_smul τ hτ _ (σ g)))
-    ((Extend.continuous_inl _ τ hτ).comp (Extend.continuous_inl s.P σ hσ))
-    (fun x p ↦ ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_extend_inl τ hτ hτρ hρ''n hρ''c x
-      (Extend.inl σ hσ p)).trans (s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c x p))
+      ((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c) where
+  toEquiv x := (Extend.compEquiv σ hσ τ hτ x).symm
+  continuous_toFun := (Extend.compHomeomorph σ hσ τ hτ).symm.continuous.congr
+    (Extend.compHomeomorph_symm_apply σ hσ τ hτ)
+  continuous_invFun := (Extend.compHomeomorph σ hσ τ hτ).continuous.congr
+    (Extend.compHomeomorph_apply σ hσ τ hτ)
+  map_smul x z k := Extend.compEquiv_symm_smul σ hσ τ hτ x k z
+  toFrame_map x z := by
+    obtain ⟨p, k, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := τ.comp σ) (hρ := hτ.comp hσ) (b := x) z
+    refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
+    -- `rw` cannot see through the fibre `(s.extend …).P x = Extend s.P (τ.comp σ) _ x`, so the
+    -- value of the comparison map at `[p, k]` is substituted by `congrArg`.
+    refine (congrArg (fun q : Extend (Extend s.P σ hσ) τ hτ x ↦
+      TotalSpace.mk' F (((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c).toFrame
+        ⟨x, q⟩).proj ((((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c).toFrame
+          ⟨x, q⟩).frame (WithLp.toLp 2 v)))
+        (Extend.compEquiv_symm_mk σ hσ τ hτ p k)).trans ?_
+    refine ((s.extend σ hσ hσρ hρ'n hρ'c).toFrame_extend_mk τ hτ hτρ hρ''n hρ''c x
+      (Extend.inl σ hσ p) k v).trans ?_
+    rw [toFrame_extend_inl]
+    exact (s.toFrame_extend_mk (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c x p k v).symm
 
 @[simp]
-theorem extendCompEquiv_toEquiv_mk {K : Type w} [Group K] [TopologicalSpace K]
-    [IsTopologicalGroup K] {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (τ : H →* K)
-    (hτ : Continuous τ) (hτρ : ρ''.comp τ = ρ')
-    (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
-    (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v) (x : X) (p : s.P x) (k : K) :
+theorem extendCompEquiv_toEquiv_mk (x : X) (p : s.P x) (k : K) :
     (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
         (Extend.mk (τ.comp σ) (hτ.comp hσ) p k) =
       Extend.mk τ hτ (Extend.inl σ hσ p) k :=
-  (s.extendEquivOfEquivariant_toEquiv_mk (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c _ _ _ _ _ x p
-    k).trans (Extend.smul_inl τ hτ _ k)
+  Extend.compEquiv_symm_mk σ hσ τ hτ p k
 
 @[simp]
-theorem extendCompEquiv_toEquiv_inl {K : Type w} [Group K] [TopologicalSpace K]
-    [IsTopologicalGroup K] {ρ'' : K →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (τ : H →* K)
-    (hτ : Continuous τ) (hτρ : ρ''.comp τ = ρ')
-    (hρ''n : ∀ k v, ‖WithLp.toLp 2 (ρ'' k v)‖ = ‖WithLp.toLp 2 v‖)
-    (hρ''c : ∀ v, Continuous fun k ↦ ρ'' k v) (x : X) (p : s.P x) :
+theorem extendCompEquiv_toEquiv_inl (x : X) (p : s.P x) :
     (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).toEquiv x
         (Extend.inl (τ.comp σ) (hτ.comp hσ) p) =
       Extend.inl τ hτ (Extend.inl σ hσ p) :=
-  s.extendEquivOfEquivariant_toEquiv_inl (τ.comp σ) (hτ.comp hσ) _ hρ''n hρ''c _ _ _ _ _ x p
+  Extend.compEquiv_symm_inl σ hσ τ hτ p
 
-end Universal
+end Comp
 
 end OrthonormalFrameLift
 
