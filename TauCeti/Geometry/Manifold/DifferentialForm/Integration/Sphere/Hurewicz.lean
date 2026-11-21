@@ -73,9 +73,9 @@ theorem homologySphereIntegralHom_hurewiczIntHom (hφ : IsSmoothForm I 1 φ)
   let γ : Path x (Classical.arbitrary M) := PathConnectedSpace.somePath _ _
   rw [← ofMul_toMul a, ← hurewiczIntHom_homotopyGroupTransport γ a.toMul,
     ← hurewiczAddEquiv_apply_eq_hurewiczIntHom (n := 0)
-      fun _ ↦ subsingleton_homotopyGroup_of_lt_two _,
-    homologySphereIntegralHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    AddEquiv.symm_apply_apply, sphereIntegralHom_apply, sphereIntegralHom_apply, toMul_ofMul,
-    toMul_ofMul, sphereIntegral_homotopyGroupTransport hφ hdφ]
+      fun _ ↦ subsingleton_homotopyGroup_of_lt_two _]
+  -- Keep `hurewiczAddEquiv` folded, so that it cancels against its inverse.
+  simp [homologySphereIntegralHom, -hurewiczAddEquiv_apply,
+    sphereIntegral_homotopyGroupTransport hφ hdφ]
 
 end TauCeti

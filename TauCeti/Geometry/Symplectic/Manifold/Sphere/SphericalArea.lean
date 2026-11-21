@@ -159,8 +159,10 @@ private theorem horizontalFactor_sq_add_deriv {a : ℝ} (ha : -1 < a) :
       horizontalFactor_sq_mul_add_heightProfile_sq hx
   have := (((hA.pow 2).mul (hasDerivAt_id a)).add (hB.pow 2)).unique
     ((hasDerivAt_const a (1 : ℝ)).congr_of_eventuallyEq hc)
-  simp at this
-  linear_combination this
+  have h : 2 * horizontalFactor a * deriv horizontalFactor a * a + horizontalFactor a ^ 2 +
+      2 * heightProfile a * deriv heightProfile a = 0 := by
+    simpa using this
+  linear_combination h
 
 private theorem deriv_heightProfile_of_one_lt {a : ℝ} (ha : 1 < a) : deriv heightProfile a = 0 := by
   have h : heightProfile =ᶠ[nhds a] fun _ ↦ 1 := by
@@ -254,7 +256,9 @@ private theorem fderiv_collapseVec_apply (p v : ℝ × ℝ) :
   ext i
   fin_cases i <;> [refine (key 0 _ (hA.mul hasFDerivAt_fst)).trans ?_;
     refine (key 1 _ (hA.mul hasFDerivAt_snd)).trans ?_; refine (key 2 _ hB).trans ?_] <;>
-    simp <;> ring
+    simp only [Function.comp_apply, add_apply, smul_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.coe_snd', smul_eq_mul, Fin.reduceFinMk, Matrix.cons_val] <;>
+    ring
 
 /-- The triple product of the collapse map with two of its derivatives: `Φ` pulls the area form
 back to `-2 B'(a) dp₁ ∧ dp₂`. -/
