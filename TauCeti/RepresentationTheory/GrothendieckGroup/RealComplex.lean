@@ -14,14 +14,15 @@ public import TauCeti.RepresentationTheory.GrothendieckGroup.EulerDuality
 
 For the real algebra `ℂ`, the regular module is both simple and projective. Its composition
 multiplicity in itself is one, whereas its endomorphism algebra has real dimension two.
-Consequently the Cartan matrix is `[1]`, the integral multiplicity pairing has entry `1`, and
-both the projective Hom pairing and the Ext-Euler matrix have entry `2`.
+The Cartan matrix is `[1]` and the integral multiplicity pairing has entry `1`, whereas
+`TauCeti.RealComplex.projectiveExtEuler_of_of_eq_two` evaluates the projective Ext-Euler pairing
+on the two generator classes to `2`. This pairing is not perfect over `ℤ`.
 
-This file computes these values using the categorical Cartan and Euler constructions. In
-particular, `cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal` verifies `Cᵀ E = D = [2]`,
-rather than the incorrect split-field identity `Cᵀ E = I`. Euler admissibility is proved for all
-finitely generated
-complex modules: they are projective and their Hom spaces are finite-dimensional over `ℝ`.
+The ordinary Ext-Euler matrix in the simple-class basis is `[2]`.
+`TauCeti.RealComplex.diagonal_finrank_end_eq_two` computes `D = [2]`, and
+`TauCeti.RealComplex.cartanMatrix_transpose_mul_extEulerMatrix_eq_two` verifies `Cᵀ E = [2]`,
+not the identity matrix. Every pair of finitely generated complex modules is Euler-admissible
+because these modules are projective and their Hom spaces are finite-dimensional over `ℝ`.
 This is an ungraded example; no graded/ungraded Ext comparison is asserted.
 
 ## References
@@ -47,96 +48,131 @@ abbrev projectives (_ : Unit) : (finiteProjectiveModules ℂ).FullSubcategory :=
   ⟨ModuleCat.of ℂ ℂ, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
 
 /-- The regular complex module is the only simple complex module, up to isomorphism. -/
-theorem simples_exhaustive : IsExhaustiveSimpleFamily simples :=
+theorem isExhaustiveSimpleFamily_simples : IsExhaustiveSimpleFamily simples :=
   isExhaustiveSimpleFamily_of_isLocalRing (simples ())
 
 /-- The regular complex module is the only indecomposable finitely generated projective complex
 module, up to isomorphism. -/
-theorem projectives_exhaustive : IsExhaustiveIndecomposableProjectiveFamily projectives :=
+theorem isExhaustiveIndecomposableProjectiveFamily_projectives :
+    IsExhaustiveIndecomposableProjectiveFamily projectives :=
   isExhaustiveIndecomposableProjectiveFamily_of_isLocalRing (projectives ()) (LinearEquiv.refl _ _)
 
 /-- Every pair of finitely generated complex modules is Euler-admissible over `ℝ`. -/
-theorem isEulerAdmissibleOn :
-    IsEulerAdmissibleOn.{0} ℝ (ModuleCat.isFG ℂ) (ModuleCat.isFG ℂ) := by
-  refine isEulerAdmissibleOn_of_projective ℝ (fun _ _ ↦ inferInstance) ?_
-  intro X Y hX hY
-  have : Module.Finite ℂ X := (ModuleCat.isFG_iff X).mp hX
-  have : Module.Finite ℂ Y := (ModuleCat.isFG_iff Y).mp hY
-  have : Module.Finite ℝ Y := Module.Finite.trans ℂ Y
-  infer_instance
+theorem isEulerAdmissibleOn_isFG :
+    IsEulerAdmissibleOn.{0} ℝ (ModuleCat.isFG ℂ) (ModuleCat.isFG ℂ) :=
+  TauCeti.isEulerAdmissibleOn_isFG ℝ (finiteModules_le_admitsFiniteResolution ℂ)
 
-/-- Endomorphisms of the simple complex module have real dimension two, not one. -/
-@[simp] theorem finrank_end : Module.finrank ℝ (Module.End ℂ (simples ()).obj) = 2 := by
+/-- Endomorphisms of the regular complex module have real dimension two with the scalar
+restriction used by the categorical Euler form. -/
+@[simp] theorem finrank_end :
+    letI : Module ℝ ℂ := Module.restrictScalars ℝ ℂ ℂ
+    Module.finrank ℝ (Module.End ℂ ℂ) = 2 := by
   rw [Module.finrank_linearMap, Module.finrank_self, one_mul, Complex.finrank_real_complex]
 
-/-- The raw Hom dimension of the regular complex module over the reals is two. -/
+/-- The categorical Hom space from the regular complex module to itself has real dimension two. -/
 @[simp] theorem finrank_hom :
-    Module.finrank ℝ ((projectives ()).obj ⟶ (simples ()).obj) = 2 := by
+    Module.finrank ℝ (ModuleCat.of ℂ ℂ ⟶ ModuleCat.of ℂ ℂ) = 2 := by
   rw [ModuleCat.homLinearEquiv.finrank_eq]
   exact finrank_end
 
-/-- The ordinary Ext-Euler value of the simple complex module over the reals is two. -/
-@[simp] theorem extEuler_eq_two :
-    extEuler ℝ (isEulerAdmissibleOn.isEulerAdmissible (simples ()).property
-      (simples ()).property) = 2 := by
+/-- The ordinary Ext-Euler value of the simple complex module over the reals is two, independently
+of the chosen Ext universe and admissibility witness. -/
+@[simp] theorem extEuler_eq_two [HasExt.{w} (ModuleCat.{0} ℂ)]
+    (h : IsEulerAdmissible.{w} ℝ (ModuleCat.of ℂ ℂ) (ModuleCat.of ℂ ℂ)) :
+    extEuler ℝ h = 2 := by
   rw [extEuler_projective, finrank_hom]
   norm_num
 
 /-- The Cartan matrix for `ℂ` is the one-by-one identity matrix. -/
 @[simp] theorem cartanMatrix_eq_one :
     cartanMatrix projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
-      Subsingleton.pairwise projectives_exhaustive Subsingleton.pairwise
-        simples_exhaustive = 1 := by
+      Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+        Subsingleton.pairwise isExhaustiveSimpleFamily_simples = 1 := by
   ext i j
   simp only [cartanMatrix_apply, Matrix.one_apply, Subsingleton.elim i j, ↓reduceIte]
   exact_mod_cast jordanHolderMultiplicity_eq_one_of_isSimpleModule_of_linearEquiv ℂ
     (LinearEquiv.refl ℂ ℂ)
 
-/-- The integral projective/simple multiplicity pairing has entry one, even though the raw Hom
-and Ext-Euler pairings have entry two. -/
-theorem projectiveSimplePairing_eq_one :
+/-- The integral projective/simple multiplicity pairing has entry one on the two generator
+classes. -/
+theorem projectiveSimplePairing_of_of_eq_one :
     projectiveSimplePairing projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
-      Subsingleton.pairwise projectives_exhaustive Subsingleton.pairwise simples_exhaustive
+      Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+      Subsingleton.pairwise isExhaustiveSimpleFamily_simples
       (ExactK0.of (projectives ())) (ExactK0.of (simples ())) = 1 := by
+  simp
+
+/-- The projective Ext-Euler pairing has entry two on the two generator classes. -/
+theorem projectiveExtEuler_of_of_eq_two :
+    projectiveExtEuler ℝ ℂ (ExactK0.of (projectives ())) (ExactK0.of (simples ())) = 2 := by
   simp
 
 /-- In the simple-class basis, the categorical Ext-Euler matrix over `ℝ` is `[2]`. -/
 @[simp] theorem extEulerMatrix_eq_two :
-    let b := (simpleClassBasis simples Subsingleton.pairwise simples_exhaustive).map
+    let b := (simpleClassBasis simples Subsingleton.pairwise isExhaustiveSimpleFamily_simples).map
       (finiteModulesExactK0Equiv ℂ).toIntLinearEquiv
     extEulerMatrix (ModuleCat.isFG ℂ) (ModuleCat.isFG ℂ)
       (isExtensionClosed_finiteModules ℂ) (isExtensionClosed_finiteModules ℂ)
-      isEulerAdmissibleOn b b = 2 := by
+      isEulerAdmissibleOn_isFG b b = 2 := by
   dsimp only
   ext i j
   rw [extEulerMatrix_of_of (X := simples i) (Y := simples j) (hi := by simp) (hj := by simp)]
   simp [Matrix.ofNat_apply, Subsingleton.elim i j]
 
-/-- The general-field identity specializes to `Cᵀ E = [2] = D`, not `Cᵀ E = I`. -/
-theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal :
-    let b := (simpleClassBasis simples Subsingleton.pairwise simples_exhaustive).map
+/-- The diagonal matrix of simple endomorphism dimensions over `ℝ` is `[2]`. -/
+theorem diagonal_finrank_end_eq_two :
+    Matrix.diagonal (fun i : Unit ↦ (Module.finrank ℝ (Module.End ℂ (simples i).obj) : ℤ)) = 2 := by
+  simp only [finrank_end, Nat.cast_ofNat]
+  exact Matrix.diagonal_natCast 2
+
+/-- For `ℂ` over `ℝ`, the Cartan/Ext-Euler product `Cᵀ E` equals the diagonal `[2]`. -/
+theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_two :
+    let b := (simpleClassBasis simples Subsingleton.pairwise isExhaustiveSimpleFamily_simples).map
       (finiteModulesExactK0Equiv ℂ).toIntLinearEquiv
     (cartanMatrix projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
-      Subsingleton.pairwise projectives_exhaustive Subsingleton.pairwise simples_exhaustive)ᵀ *
+      Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+      Subsingleton.pairwise isExhaustiveSimpleFamily_simples)ᵀ *
       extEulerMatrix (ModuleCat.isFG ℂ) (ModuleCat.isFG ℂ)
         (isExtensionClosed_finiteModules ℂ) (isExtensionClosed_finiteModules ℂ)
-        isEulerAdmissibleOn b b =
-      Matrix.diagonal (fun _ : Unit ↦ (Module.finrank ℝ (Module.End ℂ (simples ()).obj) : ℤ)) := by
+        isEulerAdmissibleOn_isFG b b = 2 := by
   dsimp only
-  rw [cartanMatrix_eq_one, Matrix.transpose_one, Matrix.one_mul, extEulerMatrix_eq_two, finrank_end]
-  ext i j
-  simp [Matrix.ofNat_apply, Subsingleton.elim i j]
+  rw [cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal _ _ _ _ _ _ _
+    (f := fun _ ↦ LinearMap.id) (fun _ ↦ isProjectiveCover_id)]
+  exact diagonal_finrank_end_eq_two
 
-/-- The raw projective Ext-Euler pairing is not the integral multiplicity pairing for this
-nonsplit real algebra. -/
+/-- The unweighted Cartan/Ext-Euler identity `Cᵀ E = I` fails for `ℂ` over `ℝ`. -/
+theorem cartanMatrix_transpose_mul_extEulerMatrix_ne_one :
+    let b := (simpleClassBasis simples Subsingleton.pairwise isExhaustiveSimpleFamily_simples).map
+      (finiteModulesExactK0Equiv ℂ).toIntLinearEquiv
+    (cartanMatrix projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
+      Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+      Subsingleton.pairwise isExhaustiveSimpleFamily_simples)ᵀ *
+      extEulerMatrix (ModuleCat.isFG ℂ) (ModuleCat.isFG ℂ)
+        (isExtensionClosed_finiteModules ℂ) (isExtensionClosed_finiteModules ℂ)
+        isEulerAdmissibleOn_isFG b b ≠ 1 := by
+  dsimp only
+  rw [cartanMatrix_transpose_mul_extEulerMatrix_eq_two]
+  intro h
+  have hentry := congrArg (fun M : Matrix Unit Unit ℤ ↦ M () ()) h
+  norm_num [Matrix.ofNat_apply, Matrix.one_apply] at hentry
+
+/-- The projective Ext-Euler pairing is not the integral multiplicity pairing for this nonsplit
+real algebra. -/
 theorem projectiveExtEuler_ne_projectiveSimplePairing :
     projectiveExtEuler ℝ ℂ ≠
       projectiveSimplePairing projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
-        Subsingleton.pairwise projectives_exhaustive Subsingleton.pairwise simples_exhaustive := by
-  intro h
-  have he := LinearMap.congr_fun₂ h (ExactK0.of (projectives ())) (ExactK0.of (simples ()))
-  rw [projectiveExtEuler_of_of, projectiveSimplePairing_eq_one] at he
-  rw [finrank_end] at he
-  norm_num at he
+        Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+        Subsingleton.pairwise isExhaustiveSimpleFamily_simples := by
+  rw [ne_eq, projectiveExtEuler_eq_projectiveSimplePairing_iff _ _ _ _ _ _ _
+    (f := fun _ ↦ LinearMap.id) (fun _ ↦ isProjectiveCover_id)]
+  simp
+
+/-- The projective Ext-Euler pairing for `ℂ` over `ℝ` is not perfect over `ℤ`. -/
+theorem not_isPerfPair_projectiveExtEuler : ¬ (projectiveExtEuler ℝ ℂ).IsPerfPair := by
+  rw [projectiveExtEuler_isPerfPair_iff projectives simples (fun _ ↦ isIndecomposableModule_self ℂ)
+    Subsingleton.pairwise isExhaustiveIndecomposableProjectiveFamily_projectives
+    Subsingleton.pairwise isExhaustiveSimpleFamily_simples
+    (f := fun _ ↦ LinearMap.id) (fun _ ↦ isProjectiveCover_id)]
+  simp
 
 end TauCeti.RealComplex
