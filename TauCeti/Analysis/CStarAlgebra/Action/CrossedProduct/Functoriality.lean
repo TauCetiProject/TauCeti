@@ -47,7 +47,7 @@ open MeasureTheory UniformSpace
 
 namespace TauCeti.CStarAction
 
-universe u v
+universe u v w
 
 variable {G : Type u} {A B C : Type v} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
@@ -97,6 +97,31 @@ theorem fullCrossedProductMap_comp (ψ : Hom β γ) :
   ext f
   simp
 
+/-- An equivariant homomorphism that vanishes everywhere induces the zero homomorphism on full
+crossed products. -/
+theorem fullCrossedProductMap_eq_zero_of_forall_eq_zero (hφ : ∀ a, φ a = 0) :
+    φ.fullCrossedProductMap μ = 0 := by
+  refine FullCrossedProduct.starAlgHom_ext <| NonUnitalStarAlgHom.ext fun f => ?_
+  have hconv : φ.convolutionMap μ f = 0 := by
+    ext s
+    simpa using hφ (f.ofConv s)
+  simp [hconv]
+
+/-- If the composite of two equivariant homomorphisms vanishes on coefficients, then the composite
+of their induced full crossed-product maps is zero. -/
+theorem fullCrossedProductMap_comp_fullCrossedProductMap_eq_zero (ψ : Hom β γ)
+    (h : ∀ a, ψ (φ a) = 0) :
+    (ψ.fullCrossedProductMap μ).comp (φ.fullCrossedProductMap μ) = 0 := by
+  rw [← φ.fullCrossedProductMap_comp μ ψ]
+  exact (ψ.comp φ).fullCrossedProductMap_eq_zero_of_forall_eq_zero μ
+    fun a => (ψ.comp_apply φ a).trans (h a)
+
+/-- Pointwise form of `fullCrossedProductMap_comp_fullCrossedProductMap_eq_zero`. -/
+theorem fullCrossedProductMap_fullCrossedProductMap_eq_zero (ψ : Hom β γ)
+    (h : ∀ a, ψ (φ a) = 0) (x : FullCrossedProduct α μ) :
+    ψ.fullCrossedProductMap μ (φ.fullCrossedProductMap μ x) = 0 :=
+  DFunLike.congr_fun (φ.fullCrossedProductMap_comp_fullCrossedProductMap_eq_zero μ ψ h) x
+
 open scoped CStarAlgebra in
 /-- A closed nonunital star subalgebra of `FullCrossedProduct β μ` contains the range of
 `φ.fullCrossedProductMap μ` precisely when it contains the image of every compactly supported
@@ -129,7 +154,7 @@ end Hom
 
 namespace CovariantRepresentation
 
-variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+variable {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] (P : CovariantRepresentation β H) (φ : Hom α β)
 
 /-- Pulling back a covariant pair commutes with integrating it on the full crossed product. -/

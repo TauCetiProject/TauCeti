@@ -73,16 +73,18 @@ theorem ker (f : CStarAction.Hom α β) :
   rw [SetLike.mem_coe, TwoSidedIdeal.mem_ker, CStarAction.Hom.coe_toNonUnitalStarAlgHom] at ha ⊢
   rw [f.map_action, ha, map_zero]
 
-private theorem isInvariant_toNonUnitalStarSubalgebra {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
-    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
-    _root_.IsInvariant (fun g a => α g a) (I.toNonUnitalStarSubalgebra : Set A) :=
-  fun g _ ha => I.mem_toNonUnitalStarSubalgebra.mpr (hI g (I.mem_toNonUnitalStarSubalgebra.mp ha))
+/-- Viewing a closed invariant two-sided ideal of a C⋆-algebra as a nonunital `⋆`-subalgebra
+preserves invariance. -/
+theorem toNonUnitalStarSubalgebra {τ : Type*} {ϕ : τ → A → A}
+    {I : TwoSidedIdeal A} [IsClosed (I : Set A)] (hI : _root_.IsInvariant ϕ (I : Set A)) :
+    _root_.IsInvariant ϕ (I.toNonUnitalStarSubalgebra : Set A) := by
+  rwa [I.coe_toNonUnitalStarSubalgebra]
 
 /-- Restrict an automorphism from an action to a closed invariant two-sided ideal. -/
 def restrictIdealEquiv {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) (g : G) : I ≃⋆ₐ[ℂ] I :=
   I.toNonUnitalStarSubalgebraEquiv.trans
-    (((isInvariant_toNonUnitalStarSubalgebra hI).restrictEquiv g).trans
+    ((hI.toNonUnitalStarSubalgebra.restrictEquiv g).trans
       I.toNonUnitalStarSubalgebraEquiv.symm)
 
 @[simp]
@@ -94,7 +96,7 @@ theorem restrictIdealEquiv_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 /-- Restrict a C⋆-action to a closed invariant two-sided ideal. -/
 def restrictIdeal {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) : CStarAction G I :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).restrict.conjugate
+  hI.toNonUnitalStarSubalgebra.restrict.conjugate
     I.toNonUnitalStarSubalgebraEquiv.symm
 
 @[simp]
@@ -109,24 +111,56 @@ theorem coe_restrictIdeal_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     ((hI.restrictIdeal g x : I) : A) = α g x := by
   rw [restrictIdeal_apply]
 
+/-- The canonical `⋆`-isomorphism `I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra` bundled as an equivariant
+homomorphism from `hI.restrictIdeal` to `hI.toNonUnitalStarSubalgebra.restrict`. -/
+def idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    CStarAction.Hom hI.restrictIdeal hI.toNonUnitalStarSubalgebra.restrict where
+  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom
+  map_action' g x := Subtype.ext <| by simp
+
+/-- The inverse `⋆`-isomorphism `I.toNonUnitalStarSubalgebra ≃⋆ₐ[ℂ] I` bundled as an equivariant
+homomorphism from `hI.toNonUnitalStarSubalgebra.restrict` to `hI.restrictIdeal`. -/
+def subalgebraToIdealHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    CStarAction.Hom hI.toNonUnitalStarSubalgebra.restrict hI.restrictIdeal where
+  toNonUnitalStarAlgHom := I.toNonUnitalStarSubalgebraEquiv.symm.toNonUnitalStarAlgHom
+  map_action' g x := Subtype.ext <| by simp
+
+@[simp]
+theorem subalgebraToIdealHom_comp_idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.subalgebraToIdealHom.comp hI.idealToSubalgebraHom = CStarAction.Hom.id hI.restrictIdeal := by
+  ext x
+  simp [subalgebraToIdealHom, idealToSubalgebraHom]
+
+@[simp]
+theorem idealToSubalgebraHom_comp_subalgebraToIdealHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.idealToSubalgebraHom.comp hI.subalgebraToIdealHom =
+      CStarAction.Hom.id hI.toNonUnitalStarSubalgebra.restrict := by
+  ext x
+  simp [subalgebraToIdealHom, idealToSubalgebraHom]
+
 /-- The canonical isometric inclusion `I →⋆ₙₐ[ℂ] A` of a closed invariant two-sided ideal is an
 equivariant homomorphism. -/
 def idealSubtypeHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     CStarAction.Hom hI.restrictIdeal α :=
-  (isInvariant_toNonUnitalStarSubalgebra hI).subtypeHom.comp
-    ⟨I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom,
-      (I.toNonUnitalStarSubalgebraEquiv.symm.isEquivariant_symm
-        (CStarAction.IsEquivariant.conjugate
-          (isInvariant_toNonUnitalStarSubalgebra hI).restrict
-          I.toNonUnitalStarSubalgebraEquiv.symm)).apply⟩
+  hI.toNonUnitalStarSubalgebra.subtypeHom.comp hI.idealToSubalgebraHom
+
+@[simp]
+theorem subtypeHom_comp_idealToSubalgebraHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
+    hI.toNonUnitalStarSubalgebra.subtypeHom.comp hI.idealToSubalgebraHom = hI.idealSubtypeHom :=
+  (rfl)
 
 @[simp]
 theorem idealSubtypeHom_toNonUnitalStarAlgHom {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A)) :
     hI.idealSubtypeHom.toNonUnitalStarAlgHom = I.starAlgHom := by
   ext x
-  simp [idealSubtypeHom]
+  simp [idealSubtypeHom, idealToSubalgebraHom]
 
 @[simp]
 theorem idealSubtypeHom_apply {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
@@ -330,6 +364,68 @@ theorem conjugate_quotientKerEquivOfSurjective (f : Hom α β) (hf : Function.Su
       (NonUnitalStarAlgHom.quotientKerEquivOfSurjective (φ := f.toNonUnitalStarAlgHom) hf) = β :=
   (StarAlgEquiv.isEquivariant_iff_conjugate_eq _).mp
     (f.isEquivariant_quotientKerEquivOfSurjective hf)
+
+/-- Restrict the codomain of an equivariant homomorphism `f : Hom α β` to its closed invariant
+`⋆`-subalgebra range. -/
+def rangeRestrict (f : Hom α β) : Hom α (IsInvariant.range f).restrict where
+  toNonUnitalStarAlgHom := f.toNonUnitalStarAlgHom.rangeRestrict
+  map_action' g a := Subtype.ext <| by simp
+
+@[simp]
+theorem rangeRestrict_toNonUnitalStarAlgHom (f : Hom α β) :
+    f.rangeRestrict.toNonUnitalStarAlgHom = f.toNonUnitalStarAlgHom.rangeRestrict :=
+  (rfl)
+
+@[simp]
+theorem coe_rangeRestrict_apply (f : Hom α β) (a : A) : (f.rangeRestrict a : B) = f a :=
+  (rfl)
+
+@[simp]
+theorem subtypeHom_comp_rangeRestrict (f : Hom α β) :
+    (IsInvariant.range f).subtypeHom.comp f.rangeRestrict = f := by
+  ext a
+  simp
+
+theorem rangeRestrict_surjective (f : Hom α β) : Function.Surjective f.rangeRestrict :=
+  f.toNonUnitalStarAlgHom.rangeRestrict_surjective
+
+/-- For an injective equivariant homomorphism `f : Hom α β`, the inverse `⋆`-isomorphism from its
+closed invariant range back to `A` is equivariant. -/
+def rangeRestrictInv (f : Hom α β) (hf : Function.Injective f) :
+    Hom (IsInvariant.range f).restrict α where
+  toNonUnitalStarAlgHom :=
+    (StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf).symm.toNonUnitalStarAlgHom
+  map_action' g x := by
+    obtain ⟨a, rfl⟩ := f.rangeRestrict_surjective x
+    let e := StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf
+    have he : ∀ z : A, e z = f.rangeRestrict z :=
+      fun z => Subtype.ext (StarAlgEquiv.ofInjective'_apply _ hf z)
+    have happ : ∀ z : A, e.symm (f.rangeRestrict z) = z :=
+      fun z => he z ▸ e.symm_apply_apply z
+    have hact : (IsInvariant.range f).restrict g (f.rangeRestrict a) =
+        f.rangeRestrict (α g a) := Subtype.ext <| by simp
+    rw [hact]
+    exact (happ (α g a)).trans (congrArg (α g) (happ a).symm)
+
+@[simp]
+theorem rangeRestrictInv_rangeRestrict_apply (f : Hom α β) (hf : Function.Injective f) (a : A) :
+    f.rangeRestrictInv hf (f.rangeRestrict a) = a := by
+  let e := StarAlgEquiv.ofInjective' f.toNonUnitalStarAlgHom hf
+  have he : e a = f.rangeRestrict a := Subtype.ext (StarAlgEquiv.ofInjective'_apply _ hf a)
+  exact he ▸ e.symm_apply_apply a
+
+@[simp]
+theorem rangeRestrictInv_comp_rangeRestrict (f : Hom α β) (hf : Function.Injective f) :
+    (f.rangeRestrictInv hf).comp f.rangeRestrict = Hom.id α := by
+  ext a
+  simp
+
+@[simp]
+theorem rangeRestrict_comp_rangeRestrictInv (f : Hom α β) (hf : Function.Injective f) :
+    f.rangeRestrict.comp (f.rangeRestrictInv hf) = Hom.id (IsInvariant.range f).restrict := by
+  ext x
+  obtain ⟨a, rfl⟩ := f.rangeRestrict_surjective x
+  simp
 
 end Hom
 
