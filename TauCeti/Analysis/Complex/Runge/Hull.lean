@@ -254,6 +254,19 @@ theorem exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull {Ω K :
   · rw [hnorm, one_lt_div (by positivity)]
     linarith
 
+/-- A subset `K ⊆ Ω` equals its `Ω`-holomorphic hull if and only if every point of `Ω \ K` is
+strictly separated from `K` by an `Ω`-holomorphic function of modulus `< 1` on `K` and `> 1` at
+the point. -/
+theorem holomorphicHull_eq_self_iff_forall_notMem_exists_differentiableOn_norm_lt_one_lt
+    {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
+    holomorphicHull Ω K = K ↔
+      ∀ z ∈ Ω \ K, ∃ f : ℂ → ℂ, DifferentiableOn ℂ f Ω ∧ (∀ w ∈ K, ‖f w‖ < 1) ∧ 1 < ‖f z‖ := by
+  refine ⟨fun h z hz ↦ exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull hz.1
+    (h.symm ▸ hz.2), fun h ↦ Subset.antisymm (fun z hz ↦ by_contra fun hzK ↦ ?_)
+    (subset_holomorphicHull hKΩ)⟩
+  obtain ⟨f, hf, hfK, hfz⟩ := h z ⟨holomorphicHull_subset_left Ω K hz, hzK⟩
+  exact (norm_le_of_mem_holomorphicHull hz hf fun w hw ↦ (hfK w hw).le).not_gt hfz
+
 /-- For compact `K ⊆ Ω`, membership in `holomorphicHull Ω K` is equivalent to the supremum bound
 `‖f z‖ ≤ sSup ((‖f ·‖) '' K)` for every `Ω`-holomorphic `f` (including `K = ∅`, where `sSup ∅ = 0`).
 -/

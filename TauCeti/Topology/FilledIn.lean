@@ -184,6 +184,30 @@ section MetricSpace
 
 variable {X : Type*} [PseudoMetricSpace X] [ProperSpace X] [LocallyConnectedSpace X] {K Ω : Set X}
 
+/-- If a closed set `K ⊆ Ω` is filled in `Ω`, then no bounded connected component of `Kᶜ` is
+contained in `Ω` (without requiring `Ω` to be open). -/
+theorem IsFilledIn.not_connectedComponentIn_subset (hfill : IsFilledIn K Ω) (hK : IsClosed K)
+    (hKΩ : K ⊆ Ω) {x : X} (hxH : x ∈ filledHull K) (hxK : x ∉ K) :
+    ¬ connectedComponentIn Kᶜ x ⊆ Ω := by
+  intro hDΩ
+  have hCD : connectedComponentIn (Ω \ K) x ⊆ connectedComponentIn Kᶜ x :=
+    connectedComponentIn_mono x (sdiff_subset_compl _ _)
+  have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := by
+    rw [closure_eq_self_union_frontier]
+    exact union_subset hDΩ <| (frontier_connectedComponentIn_subset_compl hK.isOpen_compl x).trans
+      (by rwa [compl_compl])
+  exact hfill x ⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩
+    ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
+      (closure_mono hCD), (closure_mono hCD).trans hclD⟩
+
+/-- If a closed set `K ⊆ Ω` is filled in `Ω`, then every bounded connected component of `Kᶜ`
+meets `Ωᶜ` (without requiring `Ω` to be open). -/
+theorem IsFilledIn.compl_inter_connectedComponentIn_nonempty (hfill : IsFilledIn K Ω)
+    (hK : IsClosed K) (hKΩ : K ⊆ Ω) {x : X} (hx : x ∈ filledHull K \ K) :
+    (Ωᶜ ∩ connectedComponentIn Kᶜ x).Nonempty :=
+  (not_subset.mp (hfill.not_connectedComponentIn_subset hK hKΩ hx.1 hx.2)).imp fun _ h =>
+    ⟨h.2, h.1⟩
+
 /-- **Filledness through the filled hull.** For a closed set `K` inside an open set `Ω` of a proper,
 locally connected metric space, `K` is filled in `Ω` exactly when no bounded connected component
 of `Kᶜ` lies in `Ω`, i.e. every bounded component of `Kᶜ` meets `Ωᶜ`. -/
@@ -191,18 +215,7 @@ theorem isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subs
     (hK : IsClosed K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω) :
     IsFilledIn K Ω ↔ ∀ x ∈ filledHull K \ K, ¬ connectedComponentIn Kᶜ x ⊆ Ω := by
   constructor
-  · -- The component `C` of `x` in `Ω \ K` lies in the component `D` of `x` in `Kᶜ`, whose closure
-    -- is compact and adds to `D` only points of `K ⊆ Ω`.
-    rintro h x ⟨hxH, hxK⟩ hDΩ
-    have hCD : connectedComponentIn (Ω \ K) x ⊆ connectedComponentIn Kᶜ x :=
-      connectedComponentIn_mono x (sdiff_subset_compl _ _)
-    have hclD : closure (connectedComponentIn Kᶜ x) ⊆ Ω := by
-      rw [closure_eq_self_union_frontier]
-      exact union_subset hDΩ <| (frontier_connectedComponentIn_subset_compl hK.isOpen_compl x).trans
-        (by rwa [compl_compl])
-    exact h x ⟨hDΩ (mem_connectedComponentIn hxK), hxK⟩
-      ⟨(mem_filledHull_iff.mp hxH).isCompact_closure.of_isClosed_subset isClosed_closure
-        (closure_mono hCD), (closure_mono hCD).trans hclD⟩
+  · exact fun h _ hx => h.not_connectedComponentIn_subset hK hKΩ hx.1 hx.2
   · -- A relatively compact component of `Ω \ K` equals the component of `x` in `Kᶜ`.
     rintro h x hx ⟨hcpt, hsub⟩
     have hD : connectedComponentIn (Ω \ K) x = connectedComponentIn Kᶜ x :=
