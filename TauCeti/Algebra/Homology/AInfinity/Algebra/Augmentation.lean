@@ -401,6 +401,22 @@ theorem splitLinearEquiv_symm_apply (ε : 𝒜.Augmentation)
   · rw [coe_reducedPart]
     simp [hx]
 
+/-- The reduced-part projection intertwines the differential with that of the reduced `A∞`
+algebra. -/
+theorem reducedPart_differential (ε : 𝒜.Augmentation) (x : A) :
+    ε.reducedPart (𝒜.differential x) = ε.reducedAlgebra.differential (ε.reducedPart x) := by
+  have hx : x = ε x • ε.unit + (ε.reducedPart x : A) := by
+    rw [coe_reducedPart, add_sub_cancel]
+  have hd : 𝒜.differential x = (ε.reducedAlgebra.differential (ε.reducedPart x) : A) := by
+    conv_lhs => rw [hx]
+    rw [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, zero_add,
+      differential_apply, differential_apply, reducedAlgebra_m, coe_reducedOperation]
+    congr 1
+    funext i
+    fin_cases i
+    rfl
+  rw [hd, ε.reducedPart_coe]
+
 end Augmentation
 
 end AInfinityAlgebra
