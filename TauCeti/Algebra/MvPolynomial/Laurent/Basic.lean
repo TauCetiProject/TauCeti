@@ -104,6 +104,12 @@ noncomputable def X (i : K) : LaurentRing R K :=
 theorem X_def (i : K) : (X i : LaurentRing R K) = single (Finsupp.single i 1) 1 :=
   (rfl)
 
+/-- The coefficient family of a Laurent variable is its standard-basis singleton. -/
+@[simp]
+theorem coeff_X (i : K) : (X i : LaurentRing R K).coeff =
+    Finsupp.single (Finsupp.single i 1) 1 := by
+  rw [X_def, coeff_single]
+
 /-- The variable of the Laurent ring indexed by `i`, as a unit. Its inverse is the monomial
 whose exponent is the negative of the `i`-th standard basis vector. -/
 noncomputable def unitX (i : K) : (LaurentRing R K)ˣ :=
