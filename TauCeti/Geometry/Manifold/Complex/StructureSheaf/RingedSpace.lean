@@ -36,8 +36,11 @@ maps:
   4. `φ.stalkMap x ≫ evalHom I X x = evalHom J Y (φ.base x)` at every point `x : X`.
 * Any presheafed-space morphism satisfying these equivalent conditions automatically induces local
   homomorphisms on all stalks (`isLocalHom_stalkMap_of_c_app_top_algebraMap`) and acts on sections
-  by pointwise precomposition with `φ.base` (`c_app_apply_of_c_app_top_algebraMap`). Whenever
-  `φ.base` is complex analytic (globally or near `x`), `φ` agrees with `locallyRingedSpaceMap`
+  by pointwise precomposition with `φ.base` (`c_app_apply_of_c_app_top_algebraMap`); consequently
+  two `ℂ`-linear morphisms with the same base map are equal
+  (`toPresheafedSpace_hom_ext_of_c_app_top_algebraMap`,
+  `locallyRingedSpace_hom_ext_of_c_app_top_algebraMap`). Whenever `φ.base` is complex analytic
+  (globally or near `x`), `φ` agrees with `locallyRingedSpaceMap`
   (`locallyRingedSpaceMap_base_toHom_of_c_app_top_algebraMap`,
   `locallyRingedSpaceMap_base_of_c_app_top_algebraMap`) and its `ℂ`-algebra stalk map agrees with
   `stalkPullbackAlgHom` (`stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom`). The
@@ -623,6 +626,38 @@ theorem stalkAlgHomOfCAppTopAlgebraMap_eq_stalkPullbackAlgHom (x : X)
     (c_app_apply_of_c_app_top_algebraMap φ hφ U g w).trans (hgExt ⟨φ.base w.val, w.property⟩)
 
 end TopAlgebraMap
+
+/-- **Base-map extensionality for `ℂ`-linear presheafed-space morphisms.** Two morphisms of
+holomorphic presheafed spaces whose global section maps fix the complex constants are equal if
+their underlying continuous maps are equal. -/
+theorem toPresheafedSpace_hom_ext_of_c_app_top_algebraMap
+    {α β : (locallyRingedSpace I X).toPresheafedSpace ⟶
+      (locallyRingedSpace J Y).toPresheafedSpace}
+    (w : α.base = β.base)
+    (hα : ∀ c : ℂ, (α.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map α.base).obj ⊤))) c)
+    (hβ : ∀ c : ℂ, (β.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map β.base).obj ⊤))) c) :
+    α = β :=
+  toPresheafedSpace_hom_ext w fun U g x ↦
+    (c_app_apply_of_c_app_top_algebraMap α hα U g
+      ⟨x.val, Eq.mpr congr(x.val ∈ (Opens.map $w).obj U) x.property⟩).trans <|
+      (congrArg (fun z : U ↦ toFun J Y (op U) g z)
+        (Subtype.ext (ConcreteCategory.congr_hom w x.val))).trans
+        (c_app_apply_of_c_app_top_algebraMap β hβ U g x).symm
+
+/-- **Base-map extensionality for `ℂ`-linear locally ringed-space morphisms.** Two morphisms of
+holomorphic locally ringed spaces whose global section maps fix the complex constants are equal if
+their underlying continuous maps are equal. -/
+theorem locallyRingedSpace_hom_ext_of_c_app_top_algebraMap
+    {α β : locallyRingedSpace I X ⟶ locallyRingedSpace J Y}
+    (w : α.base = β.base)
+    (hα : ∀ c : ℂ, (α.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map α.base).obj ⊤))) c)
+    (hβ : ∀ c : ℂ, (β.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map β.base).obj ⊤))) c) :
+    α = β :=
+  LocallyRingedSpace.Hom.ext' (toPresheafedSpace_hom_ext_of_c_app_top_algebraMap w hα hβ)
 
 /-- If the base map of a `ℂ`-linear morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y`
 is complex analytic, then `φ` equals `locallyRingedSpaceMap φ.base hf` on both points and

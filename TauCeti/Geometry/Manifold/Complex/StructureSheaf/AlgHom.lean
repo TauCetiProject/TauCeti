@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
@@ -299,14 +300,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'} [J.Boundaryless]
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y] [IsManifold J 1 Y]
 
-variable (J) in
-private theorem eventually_contMDiffAt_comp_extChartAt {V : Type} [NormedAddCommGroup V]
-    [NormedSpace ℂ V] (y : Y) (L : E' ≃L[ℂ] V) :
-    ∀ᶠ v in 𝓝 y, ContMDiffAt J 𝓘(ℂ, V) ω (L ∘ extChartAt J y) v := by
-  have : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  exact ((chartAt H' y).open_source.eventually_mem (mem_chart_source H' y)).mono fun _ hv ↦
-    L.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hv)
-
 /-- Two locally analytic maps from `(X, x)` into a finite-dimensional boundaryless complex manifold
 `(Y, y)` induce the same `ℂ`-algebra homomorphism on holomorphic stalks if and only if they agree
 on a neighbourhood of `x`. No manifold assumption on `X` is required. -/
@@ -315,9 +308,10 @@ theorem stalkPullbackAt_eq_iff_eventuallyEq {x : X} {y : Y} {f₁ f₂ : X → Y
     (hf₂ : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f₂ w) (hfx₂ : f₂ x = y) :
     stalkPullbackAt hf₁ hfx₁ = stalkPullbackAt hf₂ hfx₂ ↔ f₁ =ᶠ[𝓝 x] f₂ := by
   refine ⟨fun heq ↦ ?_, stalkPullbackAt_congr hf₁ hfx₁ hf₂ hfx₂⟩
+  have : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
   let V : Type := Fin (Module.finrank ℂ E') → ℂ
   let L : E' ≃L[ℂ] V := LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E').equivFun
-  have hΦ := eventually_contMDiffAt_comp_extChartAt J y L
+  have hΦ := eventually_contMDiffAt_comp_extChartAt (I := J) (n := ω) y L.contDiff
   have hcomp :
       stalkPullbackAt (eventually_contMDiffAt_comp hΦ hf₁ hfx₁)
         (congrArg (L ∘ extChartAt J y) hfx₁) =
@@ -350,7 +344,7 @@ theorem exists_stalkPullbackAt_eq (x : X) (y : Y)
   let V : Type := Fin (Module.finrank ℂ E') → ℂ
   let L : E' ≃L[ℂ] V := LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E').equivFun
   let Φ : Y → V := L ∘ extChartAt J y
-  have hΦ := eventually_contMDiffAt_comp_extChartAt J y L
+  have hΦ := eventually_contMDiffAt_comp_extChartAt (I := J) (n := ω) y L.contDiff
   obtain ⟨g, hg, hgx, hgψ⟩ := (OpenPartialHomeomorph.refl V).exists_stalkPullbackAt_eq
     (contDiffGroupoid ω 𝓘(ℂ, V)).id_mem_maximalAtlas (Set.mem_univ (Φ y))
     (ψ.comp (stalkPullbackAlgHom hΦ))

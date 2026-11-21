@@ -53,6 +53,10 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `TauCeti.eventually_contMDiffAt_extChartAt` and
+  `TauCeti.eventually_contMDiffAt_comp_extChartAt`: on a `C^n` manifold, the extended chart at a
+  point (and its composition with a `C^n` map between normed spaces) is `C^n` on a neighbourhood
+  of that point.
 -/
 
 public section
@@ -311,5 +315,26 @@ theorem coe_extChartAtDiffeomorph_symm_apply [I.Boundaryless] [IsManifold I n M]
     (z : extChartTargetOpens I x) :
     ((extChartAtDiffeomorph (I := I) n x).symm z : M) = (extChartAt I x).symm z :=
   (rfl)
+
+section
+
+open scoped Topology
+
+/-- On a `C^n` manifold, the extended chart at `x` is `C^n` on a neighbourhood of `x`. -/
+theorem eventually_contMDiffAt_extChartAt [IsManifold I n M] (x : M) :
+    ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(𝕜, E) n (extChartAt I x) y :=
+  ((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
+    contMDiffAt_extChartAt' hy
+
+/-- On a `C^n` manifold, composing the extended chart at `x` with a `C^n` map `g : E → V`
+between normed spaces is `C^n` on a neighbourhood of `x`. -/
+theorem eventually_contMDiffAt_comp_extChartAt [IsManifold I n M]
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] (x : M) {g : E → V}
+    (hg : ContDiff 𝕜 n g) :
+    ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(𝕜, V) n (g ∘ extChartAt I x) y :=
+  (eventually_contMDiffAt_extChartAt (I := I) (n := n) x).mono fun _ hy ↦
+    hg.contMDiff.contMDiffAt.comp _ hy
+
+end
 
 end TauCeti
