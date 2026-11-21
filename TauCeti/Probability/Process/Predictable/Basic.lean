@@ -457,13 +457,6 @@ theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator {ι Ω 
   · convert hI ((f n).measurableSet_fiber c) using 1
     ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, Ne.symm hc]
 
-/-- Extending an `ℱ s`-strongly measurable function by zero outside `(s, t]` is predictable. -/
-theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator_Ioc {ι Ω E : Type*}
-    [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
-    {ℱ : Filtration ι m} {s : ι} (t : ι) {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    IsStronglyPredictable ℱ (fun u ω ↦ (Ioc s t).indicator (fun _ ↦ ξ ω) u) :=
-  hξ.isStronglyPredictable_indicator fun _ hA ↦ measurableSet_predictable_Ioc_prod s t hA
-
 /-- Extending an `ℱ s`-strongly measurable function by zero outside `(s, ∞)` is predictable. -/
 theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator_Ioi {ι Ω E : Type*}
     [LinearOrder ι] [OrderBot ι] {m : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]

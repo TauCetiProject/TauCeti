@@ -26,10 +26,9 @@ thus boundedness and Lᵖ control survive refinement without additional moment a
 strategies on monotone grids, subtracting both their holdings and their gains.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
-particular, `exists_simpleHolding_simpleGains_sub` clips two finite-grid strategies to `[⊥, t]` and
-represents their difference on one common nondecreasing grid starting at `⊥` and bounded by `t`,
-preserving height norm bounds before applying an isometry or energy estimate. All equalities are
-pointwise, including at trading dates, with no regularity assumption on the price path.
+particular, differences of elementary stochastic-integral approximants can be evaluated on one
+common grid before applying an isometry or energy estimate. All equalities are pointwise,
+including at trading dates, with no regularity assumption on the price path.
 
 ## References
 
@@ -175,92 +174,6 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
       rw [← (hL i hi).2, ← (hU i hi).2]
       exact hτ.le_iff_le (hL i hi).1 (hU i hi).1 |>.symm
     simp only [horder, (hL i hi).2, (hU i hi).2]
-
-/-- Clipping a finite-grid strategy's trading dates to `t` and zeroing out positions starting at or
-after `t` leaves its holdings unchanged at every time `s ≤ t`. -/
-theorem simpleHolding_min_ite_lt_of_le {g : ℕ → ι} {N : ℕ} {b : ℕ → Ω → ℝ} {s t : ι}
-    (hs : s ≤ t) (ω : Ω) :
-    simpleHolding (fun j ↦ min (g j) t) N (fun j ↦ if g j < t then b j else 0) s ω =
-      simpleHolding g N b s ω := by
-  rw [simpleHolding_def, simpleHolding_def]; refine sum_congr rfl fun j _ ↦ ?_
-  by_cases h : g j < t
-  · simp [h, min_eq_left h.le, Set.indicator_apply, Set.mem_Ioc, hs]
-  · simp [h, Set.mem_Ioc, (hs.trans (not_lt.1 h)).not_gt]
-
-/-- For a nondecreasing grid, summing the `min · t`-clipped increments against positions zeroed at
-or after `t` recovers `simpleGains` at `t`. -/
-theorem sum_ite_lt_mul_sub_min_eq_simpleGains {g : ℕ → ι} {N : ℕ} {b : ℕ → Ω → ℝ}
-    (hg : MonotoneOn g (Set.Iic N)) (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
-    (∑ j ∈ range N, (if g j < t then b j else 0) ω *
-        (X (min (g (j + 1)) t) ω - X (min (g j) t) ω)) = simpleGains g N b X t ω := by
-  rw [simpleGains_def]; refine sum_congr rfl fun j hj ↦ ?_
-  by_cases h : g j < t
-  · simp [h]
-  · simp [h, min_eq_right (not_lt.1 h), min_eq_right ((not_lt.1 h).trans
-      (hg (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j)))]
-
-/-- Clip two left-measurable finite-grid strategies to `[⊥, t]` and represent their difference on a
-single nondecreasing deterministic grid starting at `⊥` and bounded by `t`, with heights bounded
-pointwise by the sum of the input absolute heights. -/
-theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ι mΩ) (t : ι) {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁)) (ha₁ : ∀ j < n₁, StronglyMeasurable[ℱ (τ₁ j)] (a₁ j))
-    (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂)) (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
-    ∃ (N : ℕ) (grid : ℕ → ι) (height : ℕ → Ω → ℝ),
-      grid 0 = ⊥ ∧ MonotoneOn grid (Set.Iic N) ∧ (∀ j ≤ N, grid j ≤ t) ∧
-      (∀ j < N, StronglyMeasurable[ℱ (grid j)] (height j)) ∧
-      (∀ j < N, ∀ ω, ‖height j ω‖ ≤ (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ i ∈ range n₂, ‖a₂ i ω‖) ∧
-      (∀ s ≤ t, ∀ ω, simpleHolding grid N height s ω =
-        simpleHolding τ₁ n₁ a₁ s ω - simpleHolding τ₂ n₂ a₂ s ω) ∧
-      ∀ (X : ι → Ω → ℝ) ω,
-        (∑ j ∈ range N, height j ω * (X (grid (j + 1)) ω - X (grid j) ω)) =
-          simpleGains τ₁ n₁ a₁ X t ω - simpleGains τ₂ n₂ a₂ X t ω := by
-  let l : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ min (τ₁ i) t) (fun i ↦ min (τ₂ i) t)
-  let u : Fin n₁ ⊕ Fin n₂ → ι :=
-    Sum.elim (fun i ↦ min (τ₁ (i + 1)) t) (fun i ↦ min (τ₂ (i + 1)) t)
-  let c : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim
-    (fun i ↦ if τ₁ i < t then a₁ i else 0) (fun i ↦ if τ₂ i < t then (-a₂) i else 0)
-  have hc : ∀ k ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l k)] (c k) := by
-    rintro (i | i) _ <;> dsimp only [c, Sum.elim_inl, Sum.elim_inr] <;> split_ifs with h
-    · have hl : l (.inl i) = τ₁ i := min_eq_left h.le; exact hl ▸ ha₁ i i.isLt
-    · exact stronglyMeasurable_zero
-    · have hl : l (.inr i) = τ₂ i := min_eq_left h.le; exact hl ▸ (ha₂ i i.isLt).neg
-    · exact stronglyMeasurable_zero
-  obtain ⟨N, g, b, hg0, hg, hb, hb_norm, hhold, hgains⟩ :=
-    exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
-  let grid (j : ℕ) : ι := min (g j) t
-  let height (j : ℕ) : Ω → ℝ := if g j < t then b j else 0
-  have hlu : ∀ k : Fin n₁ ⊕ Fin n₂, l k ≤ u k
-    | .inl i => min_le_min_right t (hτ₁ i.isLt.le i.isLt (Nat.le_succ i))
-    | .inr i => min_le_min_right t (hτ₂ i.isLt.le i.isLt (Nat.le_succ i))
-  have hut : ∀ k : Fin n₁ ⊕ Fin n₂, u k ≤ t := by rintro (i | i) <;> exact min_le_right _ _
-  refine ⟨N, grid, height, by simp [grid, hg0],
-    fun i hi j hj hij ↦ min_le_min_right t (hg.monotoneOn hi hj hij),
-    fun _ _ ↦ min_le_right _ _, fun j hj ↦ ?_, fun j hj ω ↦ ?_, fun s hs ω ↦ ?_, fun X ω ↦ ?_⟩
-  · dsimp only [height]; split_ifs with h
-    · have hg_eq : grid j = g j := min_eq_left h.le; exact hg_eq ▸ hb j hj
-    · exact stronglyMeasurable_zero
-  · have hsum_c : (∑ k : Fin n₁ ⊕ Fin n₂, ‖c k ω‖) ≤
-        (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ i ∈ range n₂, ‖a₂ i ω‖ := by
-      rw [Fintype.sum_sum_type, ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-      exact add_le_add (sum_le_sum fun _ _ ↦ by dsimp [c]; split_ifs <;> simp)
-        (sum_le_sum fun _ _ ↦ by dsimp [c]; split_ifs <;> simp)
-    dsimp only [height]; split_ifs
-    · exact (hb_norm j hj ω).trans hsum_c
-    · simp only [Pi.zero_apply, norm_zero]
-      exact add_nonneg (sum_nonneg fun _ _ ↦ norm_nonneg _) (sum_nonneg fun _ _ ↦ norm_nonneg _)
-  · rw [simpleHolding_min_ite_lt_of_le hs ω, hhold, Fintype.sum_sum_type]
-    dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
-    have h₁ := simpleHolding_min_ite_lt_of_le (g := τ₁) (N := n₁) (b := a₁) hs ω
-    have h₂ := simpleHolding_min_ite_lt_of_le (g := τ₂) (N := n₂) (b := -a₂) hs ω
-    rw [simpleHolding_def, ← Fin.sum_univ_eq_sum_range] at h₁ h₂
-    rw [h₁, h₂, simpleHolding_neg, sub_eq_add_neg]
-  · rw [sum_ite_lt_mul_sub_min_eq_simpleGains hg.monotoneOn X t ω, hgains, Fintype.sum_sum_type]
-    simp only [hlu, ↓reduceIte, min_eq_left (hut _), min_eq_left ((hlu _).trans (hut _))]
-    dsimp only [l, u, c, Sum.elim_inl, Sum.elim_inr]
-    rw [sub_eq_add_neg, ← simpleGains_neg, ← sum_ite_lt_mul_sub_min_eq_simpleGains hτ₁ X t ω,
-      ← sum_ite_lt_mul_sub_min_eq_simpleGains (b := -a₂) hτ₂ X t ω,
-      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
 
 /-- The difference of two simple strategies is one simple strategy on a strictly increasing
 common grid starting at the bottom time, with heights still chosen at the left endpoints of

@@ -15,7 +15,6 @@ public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
-import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.ContinuousAE
 import TauCeti.Probability.Process.Predictable.Basic
@@ -89,67 +88,49 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
 
-/-- Two sequences of predictable processes approximating the same predictable process in
-square energy in probability on `(0,t]` approximate each other there. -/
-private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ H)
-    {K L : ℕ → ℝ≥0 → Ω → ℝ} (hK : ∀ k, IsStronglyPredictable ℱ (K k)) (t : ℝ≥0)
-    (hKH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖K k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
-    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-      ∫⁻ s, ‖L k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
-    (ε : ℝ≥0∞) (hε : 0 < ε) :
-    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖K k s ω - L k s ω‖ₑ ^ 2 ∂timeMeasure t})
-      atTop (𝓝 0) := by
-  set η := ε / 4
-  have hη : 0 < η := ENNReal.div_pos hε.ne' (by norm_num)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [add_zero] using (hKH η hη).add (hLH η hη)) (fun _ ↦ bot_le) fun k ↦ ?_
-  refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
-  simp only [mem_ofPred_eq, mem_union] at hω ⊢
-  by_contra hcon
-  simp only [not_or, not_le] at hcon
-  have hmeas : Measurable fun s ↦ ‖K k s ω - H s ω‖ₑ ^ 2 :=
-    ((((hK k).sub hH).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).comp
-      (measurable_id.prodMk measurable_const)
-  have hlt := ENNReal.add_lt_add hcon.1 hcon.2
-  refine (hω.trans (lintegral_enorm_sub_sq_le_two_mul hmeas.aemeasurable)).not_gt ?_
-  calc
-    _ < 2 * (η + η) := by
-      rw [two_mul, two_mul]
-      exact ENNReal.add_lt_add hlt hlt
-    _ = 4 * (ε / 4) := by ring
-    _ ≤ ε := ENNReal.mul_div_le
+/-- Against a filtered pre-Brownian motion, **every** family of left-measurable simple holdings
+whose pathwise square-energy error on `(0, t]` tends to zero in probability along `l` has
+elementary gains at `t` converging in probability along `l` to `I t`. -/
+theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {ι : Type*} {l : Filter ι} {t : ℝ≥0}
+    {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
+    (hτ : ∀ i, MonotoneOn (τ i) (Iic (n i)))
+    (ha : ∀ i j, j < n i → StronglyMeasurable[ℱ (τ i j)] (a i j))
+    (hE : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
+        ∂timeMeasure t}) l (𝓝 0)) :
+    TendstoInMeasure P (fun i ↦ Finance.simpleGains (τ i) (n i) (a i) W t) l (I t) := by
+  obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hG₂⟩ := hI.exists_approx t
+  choose N ρ c _ hρ hc hhold hgains using fun p : ι × ℕ ↦
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ p.1) (hτ₂ p.2) (ha p.1) (ha₂ p.2)
+  let lp : Filter (ι × ℕ) := l ×ˢ (atTop : Filter ℕ)
+  have henergy : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun p : ι × ℕ ↦ P {ω | δ ≤
+      ∫⁻ s, ‖Finance.simpleHolding (ρ p) (N p) (c p) s ω‖ₑ ^ 2 ∂timeMeasure t}) lp (𝓝 0) := by
+    simp_rw [hhold]
+    exact fun _ hδ ↦ tendsto_measure_lintegral_enorm_sub_sq (l := lp)
+      (f := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
+      (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
+      (.of_forall fun p ↦ .of_forall fun ω ↦
+        (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path
+          ω).sub (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
+          |>.aemeasurable)
+      (fun _ hε ↦ (hE _ hε).comp tendsto_fst) (fun _ hε ↦ (hE₂ _ hε).comp tendsto_snd) hδ
+  have htot : TendstoInMeasure P
+      (fun p : ι × ℕ ↦ Finance.simpleGains (τ p.1) (n p.1) (a p.1) W t) lp (I t) := by
+    simpa only [sub_add_cancel, zero_add] using
+      ((hW.tendstoInMeasure_simpleGains_of_energy (fun p ↦ (hρ p).monotoneOn) hc t
+        henergy).congr_left fun p ↦ .of_forall fun ω ↦ hgains p W t ω).add
+        (fun ε hε ↦ (hG₂ ε hε).comp tendsto_snd : TendstoInMeasure P _ lp (I t))
+  intro ε hε; rw [← Filter.map_fst_prod l (atTop : Filter ℕ), tendsto_map'_iff]; exact htot ε hε
 
 /-- **Uniqueness of the Itô integral.** Against a pre-Brownian motion relative to the
 filtration, two Itô integrals of the same integrand are indistinguishable. Neither path
 continuity of the integrator nor usual conditions on the filtration are needed. -/
 theorem isItoIntegral_unique (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J := by
-  refine indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
-  obtain ⟨n, τ, a, hτ, ha, hKH, hKI⟩ := hI.exists_approx t
-  obtain ⟨m, σ, b, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
-  choose N ρ c _ hρ hc hhold hgain using fun k ↦
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ k) (hσ k) (ha k) (hb k)
-  -- On a common grid, the difference of the approximations has vanishing elementary integral.
-  have hdiff : TendstoInMeasure P (fun k ω ↦ Finance.simpleGains (τ k) (n k) (a k) W t ω -
-      Finance.simpleGains (σ k) (m k) (b k) W t ω) atTop (fun _ ↦ 0) := by
-    have henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-        ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
-          atTop (𝓝 0) := by
-      simp_rw [hhold]
-      exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
-        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) t hKH hLH
-    exact (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
-      henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
-  -- Compare almost surely convergent subsequences of the three sequences.
-  obtain ⟨ns, hns, hK⟩ := hKI.exists_seq_tendsto_ae
-  obtain ⟨ns', hns', hL⟩ := (hLJ.comp hns.tendsto_atTop).exists_seq_tendsto_ae
-  obtain ⟨ns'', hns'', hD⟩ :=
-    ((hdiff.comp hns.tendsto_atTop).comp hns'.tendsto_atTop).exists_seq_tendsto_ae
-  filter_upwards [hK, hL, hD] with ω hKω hLω hDω
-  have hsub := (hKω.comp (hns'.tendsto_atTop.comp hns''.tendsto_atTop)).sub
-    (hLω.comp hns''.tendsto_atTop)
-  exact sub_eq_zero.mp (tendsto_nhds_unique hsub hDω)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J :=
+  indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦
+    let ⟨_, _, _, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
+    tendstoInMeasure_ae_unique (hI.tendstoInMeasure_simpleGains hW hσ hb hLH) hLJ
 
 /-- An Itô integral may be replaced by any indistinguishable process. -/
 theorem IsItoIntegral.congr (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] J) :
@@ -311,10 +292,10 @@ theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
     by filter_upwards [hI.ae_continuous, hJ.ae_continuous] with _ h₁ h₂ using h₁.add h₂, fun t ↦ ?_⟩
   obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hG₁⟩ := hI.exists_approx t
   obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hG₂⟩ := hJ.exists_approx t
-  choose N grid height _ hgrid hgrid_le hheight _ hhold hgains using fun m ↦
-    Finance.exists_simpleHolding_simpleGains_sub ℱ t (a₂ := -(a₂ m)) (hτ₁ m) (ha₁ m) (hτ₂ m)
+  choose N grid height _ hgrid hheight hhold hgains using fun m ↦
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (b := -(a₂ m)) (hτ₁ m) (hτ₂ m) (ha₁ m)
       (fun j hj ↦ (ha₂ m j hj).neg)
-  refine ⟨N, grid, height, hgrid, hheight, fun ε hε ↦
+  refine ⟨N, grid, height, fun m ↦ (hgrid m).monotoneOn, hheight, fun ε hε ↦
     (tendsto_measure_lintegral_enorm_sub_sq
       (f := fun m s ω ↦ Finance.simpleHolding (τ₁ m) (n₁ m) (a₁ m) s ω - H s ω)
       (g := fun m s ω ↦ K s ω - Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m) s ω)
@@ -326,12 +307,10 @@ theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
       (fun _ hδ ↦ by simpa only [sub_zero] using hE₁ _ hδ)
       (fun _ hδ ↦ by simpa only [sub_zero, eNorm_sub_rev (K _ _)] using hE₂ _ hδ) hε).congr
       fun m ↦ congrArg P <| Set.ext fun ω ↦ iff_of_eq <| congrArg (ε ≤ ·) <|
-        lintegral_congr_ae <| (ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ by
-          rw [hhold m s hs.2 ω, Finance.simpleHolding_neg]; simp only [Pi.add_apply]; ring_nf,
+        lintegral_congr_ae <| .of_forall fun s ↦ by
+          rw [hhold m s ω, Finance.simpleHolding_neg]; simp only [Pi.add_apply]; ring_nf,
     (hG₁.add hG₂).congr_left fun m ↦ .of_forall fun ω ↦ by
-      rw [Finance.simpleGains_of_ge (a := height m) (hgrid m) (hgrid_le m (N m) le_rfl) W ω,
-        Finance.simpleGains_apply_eq_sum (a := height m) (hgrid m) le_rfl W ω, hgains m W ω,
-        Finance.simpleGains_neg, sub_neg_eq_add]⟩
+      rw [hgains m W t ω, Finance.simpleGains_neg, sub_neg_eq_add]⟩
 
 /-- The difference of two Itô integrals is an Itô integral of the difference of their integrands. -/
 theorem sub (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
@@ -381,50 +360,6 @@ theorem of_seq {H_seq : ℕ → ℝ≥0 → Ω → ℝ} {U_seq : ℕ → ℝ≥0
         fun k ↦ (measure_mono fun _ hω ↦ by
           rw [mem_ofPred_eq, Pi.zero_apply, dist_zero_right] at hω; exact hω.le).trans
           (hG_diag k))).add (hG t)
-
-/-- Against a filtered pre-Brownian motion, **every** family of left-measurable simple holdings
-whose pathwise square-energy error on `(0, t]` tends to zero in probability along `l` has
-elementary gains at `t` converging in probability along `l` to `I t`. -/
-theorem tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) {ι : Type*} {l : Filter ι} {t : ℝ≥0}
-    {n : ι → ℕ} {τ : ι → ℕ → ℝ≥0} {a : ι → ℕ → Ω → ℝ}
-    (hτ : ∀ i, MonotoneOn (τ i) (Iic (n i)))
-    (ha : ∀ i j, j < n i → StronglyMeasurable[ℱ (τ i j)] (a i j))
-    (hE : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ P {ω | ε ≤
-      ∫⁻ s, ‖Finance.simpleHolding (τ i) (n i) (a i) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure t}) l (𝓝 0)) :
-    TendstoInMeasure P (fun i ↦ Finance.simpleGains (τ i) (n i) (a i) W t) l (I t) := by
-  obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hG₂⟩ := hI.exists_approx t
-  choose N grid height _ hgrid hgrid_le hheight _ hhold hgains using fun p : ι × ℕ ↦
-    Finance.exists_simpleHolding_simpleGains_sub ℱ t (hτ p.1) (ha p.1) (hτ₂ p.2) (ha₂ p.2)
-  let lp : Filter (ι × ℕ) := l ×ˢ (atTop : Filter ℕ)
-  have henergy : TendstoInMeasure P
-      (fun p : ι × ℕ ↦ elementaryEnergy (grid p) (height p) (N p)) lp (fun _ ↦ 0) :=
-    tendstoInMeasure_iff_norm.2 fun δ hδ ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le
-      tendsto_const_nhds (tendsto_measure_lintegral_enorm_sub_sq (l := lp)
-        (f := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
-        (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
-        (.of_forall fun p ↦ .of_forall fun ω ↦
-          (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path
-            ω).sub (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
-            |>.aemeasurable)
-        (fun _ hε ↦ (hE _ hε).comp tendsto_fst) (fun _ hε ↦ (hE₂ _ hε).comp tendsto_snd)
-        (ENNReal.ofReal_pos.2 hδ))
-      (fun _ ↦ zero_le) fun p ↦ measure_mono fun ω hω ↦ by
-        simp only [mem_ofPred_eq, sub_zero, Real.norm_eq_abs,
-          abs_of_nonneg (elementaryEnergy_nonneg (hgrid p) ω)] at hω ⊢
-        exact (ENNReal.ofReal_le_ofReal hω).trans_eq <|
-          (lintegral_enorm_sq_simpleHolding_eq_ofReal_elementaryEnergy (hgrid p)
-            (hgrid_le p _ le_rfl) ω).symm.trans <|
-            lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ by
-              dsimp only; rw [hhold p s hs.2 ω])
-  have htot : TendstoInMeasure P
-      (fun p : ι × ℕ ↦ Finance.simpleGains (τ p.1) (n p.1) (a p.1) W t) lp (I t) := by
-    simpa only [sub_add_cancel, zero_add] using
-      ((hW.tendstoInMeasure_sum_mul_sub_of_energy hgrid hheight henergy).congr_left
-        fun p ↦ .of_forall (hgains p W)).add
-        (fun ε hε ↦ (hG₂ ε hε).comp tendsto_snd : TendstoInMeasure P _ lp (I t))
-  intro ε hε; rw [← Filter.map_fst_prod l (atTop : Filter ℕ), tendsto_map'_iff]; exact htot ε hε
 
 /-- Against a filtered pre-Brownian motion, elementary holdings whose pathwise square-energy error
 on `(0, T]` tends to zero in probability along `l` have gains converging in probability at every
