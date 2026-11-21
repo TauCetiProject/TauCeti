@@ -66,8 +66,8 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
   `TauCeti.SmoothForm.contMDiffAt_reebVectorField`: the same at a single contact point, and
   smoothness of the Reeb vector field near points where the form is contact, for one-forms that
   are contact only on an open set.
-* `TauCeti.SmoothForm.contMDiffAt_sectionAlong_reebVectorField`: the Reeb vector fields of a smooth
-  family of contact forms depend smoothly on the parameter.
+* `TauCeti.SmoothForm.contMDiffAt_sectionAlong_reebVectorField`: the Reeb vectors of a smooth
+  family of one-forms, along points where they are contact, depend smoothly on the parameter.
 
 ## References
 
@@ -225,17 +225,6 @@ theorem reebVectorField_eq_inverse_contactFlat_of_isContactFormAt [FiniteDimensi
     (isInvertible_contactFlat_of_isContactFormAt h).inverse_apply_self,
     characteristicVectorField_mextDerivₗ]
 
-/-- **The Reeb vector field is smooth where the form is contact.** If `α` is a contact form at
-every point near `x`, its Reeb vector field is smooth at `x`. -/
-theorem contMDiffAt_reebVectorField [FiniteDimensional ℝ E] {x : M}
-    (h : ∀ᶠ y in 𝓝 x, IsContactFormAt α.val y) : CMDiffAt ∞ (T% α.reebVectorField) x :=
-  (((contMDiff_contactFlat α x).clm_bundle_inverse
-    (isInvertible_contactFlat_of_isContactFormAt h.self_of_nhds)).clm_bundle_apply
-      ((degreeOneEquiv α).contMDiff x)).congr_of_eventuallyEq
-    (h.mono fun _ hy ↦ by
-      dsimp only
-      rw [reebVectorField_eq_inverse_contactFlat_of_isContactFormAt hy])
-
 /-! ### Contact flat maps of contact forms -/
 
 namespace IsContactForm
@@ -355,14 +344,15 @@ theorem IsContactForm.contMDiff_reebVectorField [FiniteDimensional ℝ E] (hα :
   exact (hα.contactFlatEquiv.symm α).contMDiff
 
 /-- **Reeb vector fields of a smooth family of contact forms.** Let `α m` be one-forms on `M`
-depending on a parameter `m ∈ N` which are contact forms for `m` near `m₀`, and let `b : N → M`.
-If the values `(α m)_(b m)` and the exterior derivatives `(dα m)_(b m)` depend `C^n` on `m`, as
-sections along `b`, then so do the Reeb vectors `R_(α m)(b m)`, as a map to the tangent bundle. -/
+depending on a parameter `m ∈ N`, let `b : N → M`, and suppose that `α m` is a contact form at
+`b m` for `m` near `m₀`. If the values `(α m)_(b m)` and the exterior derivatives `(dα m)_(b m)`
+depend `C^n` on `m`, as sections along `b`, then so do the Reeb vectors `R_(α m)(b m)`, as a map
+to the tangent bundle. -/
 theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN HN N : Type*}
     [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
     {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] {n : WithTop ℕ∞}
     {b : N → M} {α : N → SmoothForm I M ℝ 1} {m₀ : N}
-    (hc : ∀ᶠ m in 𝓝 m₀, (α m).IsContactForm)
+    (hc : ∀ᶠ m in 𝓝 m₀, IsContactFormAt (α m).val (b m))
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).val
@@ -375,11 +365,18 @@ theorem contMDiffAt_sectionAlong_reebVectorField [FiniteDimensional ℝ E] {EN H
       (fun m ↦ (⟨b m, (α m).reebVectorField (b m)⟩ : TangentBundle I M)) m₀ := by
   have h := (ContMDiffAt.clm_bundle_inverse (x := m₀) (ϕ := fun m ↦ (α m).contactFlat (b m))
     (contMDiffAt_sectionAlong_contactFlat hα hdα)
-    (hc.self_of_nhds.isInvertible_contactFlat (b m₀))).clm_bundle_apply
+    (isInvertible_contactFlat_of_isContactFormAt hc.self_of_nhds)).clm_bundle_apply
       (contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα)
   refine h.congr_of_eventuallyEq ?_
   filter_upwards [hc] with m hm
-  rw [hm.reebVectorField_eq_inverse_contactFlat]
+  rw [reebVectorField_eq_inverse_contactFlat_of_isContactFormAt hm]
+
+/-- **The Reeb vector field is smooth where the form is contact.** If `α` is a contact form at
+every point near `x`, its Reeb vector field is smooth at `x`. -/
+theorem contMDiffAt_reebVectorField [FiniteDimensional ℝ E] {x : M}
+    (h : ∀ᶠ y in 𝓝 x, IsContactFormAt α.val y) : CMDiffAt ∞ (T% α.reebVectorField) x :=
+  contMDiffAt_sectionAlong_reebVectorField (b := id) (α := fun _ ↦ α) h (α.contMDiff x)
+    (contMDiff_mextDeriv α x)
 
 end SmoothForm
 
