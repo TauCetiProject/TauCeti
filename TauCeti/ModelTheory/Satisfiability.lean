@@ -57,12 +57,6 @@ theorem ModelsBoundedFormula.onTheory {φ : L.BoundedFormula α n} (h : T ⊨ᵇ
   have : M ⊨ T := (g.onTheory_model T).1 M.is_model
   exact (g.realize_onBoundedFormula φ).2 (h.realize_boundedFormula M)
 
-/-- **Language maps preserve formula entailment.** If `T ⊨ᵇ φ` for a formula `φ`, then
-`g.onTheory T ⊨ᵇ g.onFormula φ`. -/
-theorem ModelsBoundedFormula.onFormula {φ : L.Formula α} (h : T ⊨ᵇ φ) (g : L →ᴸ L') :
-    g.onTheory T ⊨ᵇ g.onFormula φ :=
-  h.onTheory g
-
 /-- **Language maps preserve sentence entailment.** If `T ⊨ᵇ φ` for a sentence `φ`, then
 `g.onTheory T ⊨ᵇ g.onSentence φ`. -/
 theorem ModelsBoundedFormula.onSentence {φ : L.Sentence} (h : T ⊨ᵇ φ) (g : L →ᴸ L') :
@@ -81,11 +75,6 @@ theorem modelsBoundedFormula_onTheory_iff {g : L →ᴸ L'} (hg : g.Injective)
   have : g.IsExpansionOn M := hg.isExpansionOn_default M
   have : M ⊨ g.onTheory T := (g.onTheory_model T).2 M.is_model
   exact (g.realize_onBoundedFormula φ).1 (h.realize_boundedFormula M)
-
-/-- **Injective language maps preserve and reflect formula entailment.** -/
-theorem models_onFormula_onTheory_iff {g : L →ᴸ L'} (hg : g.Injective) {φ : L.Formula α} :
-    g.onTheory T ⊨ᵇ g.onFormula φ ↔ T ⊨ᵇ φ :=
-  modelsBoundedFormula_onTheory_iff hg
 
 /-- **Injective language maps preserve and reflect sentence entailment.** -/
 theorem models_onSentence_onTheory_iff {g : L →ᴸ L'} (hg : g.Injective) {φ : L.Sentence} :
@@ -119,12 +108,6 @@ theorem isSatisfiable_onTheory_iff : (e.toLHom.onTheory T).IsSatisfiable ↔ T.I
 theorem modelsBoundedFormula_onTheory_iff {φ : L.BoundedFormula α n} :
     e.toLHom.onTheory T ⊨ᵇ e.toLHom.onBoundedFormula φ ↔ T ⊨ᵇ φ :=
   Theory.modelsBoundedFormula_onTheory_iff e.toLHom_injective
-
-/-- A language equivalence preserves and reflects semantic entailment of formulas. -/
-@[simp]
-theorem models_onFormula_onTheory_iff {φ : L.Formula α} :
-    e.toLHom.onTheory T ⊨ᵇ e.toLHom.onFormula φ ↔ T ⊨ᵇ φ :=
-  Theory.models_onFormula_onTheory_iff e.toLHom_injective
 
 /-- A language equivalence preserves and reflects semantic entailment of sentences. -/
 @[simp]
