@@ -83,7 +83,6 @@ automorphisms of level `m` over `K⸨X⸩` fixing level `n` are the Kummer autom
 theorem fixingSubgroup_restrict_level (h : n ∣ m) [HasEnoughRootsOfUnity K ((m : ℕ) / n)] :
     fixingSubgroup (restrict (level_le_level_of_dvd K h)) =
       (rootsOfUnityPowOfDvd (M := K) (PNat.dvd_iff.mp h)).ker.map (levelKummer K m) := by
-  have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
   rw [← fixedField_map_ker_levelKummer h, fixingSubgroup_fixedField]
 
 section Galois
@@ -108,7 +107,6 @@ over `K⸨X⸩` is a level `n` with `n ∣ m`, namely the level of its degree. -
 theorem _root_.IntermediateField.exists_eq_restrict_level
     (E : IntermediateField K⸨X⸩ (level K m)) :
     ∃ (n : ℕ+) (h : n ∣ m), E = restrict (level_le_level_of_dvd K h) := by
-  have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
   have hdvd : finrank K⸨X⸩ E ∣ m := by
     rw [← level_finrank K m, ← finrank_mul_finrank K⸨X⸩ E (level K m)]
     exact dvd_mul_right _ _

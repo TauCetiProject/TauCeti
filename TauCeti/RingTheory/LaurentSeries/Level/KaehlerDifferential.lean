@@ -31,9 +31,7 @@ and the trace of `L/F` acts on the first factor. This gives the trace of one-for
 `Res_L (g du)` is the coefficient of `u⁻¹` in `g`.
 
 When the characteristic of `K` divides `d`, the form `dt` vanishes on `L`, so the pullback is
-zero (`Level.ContinuousKaehlerDifferential.map_eq_zero_iff`). The file also defines the
-level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d` (`d/du` on
-`Level K d`).
+zero (`Level.ContinuousKaehlerDifferential.map_eq_zero_iff`).
 
 ## Main definitions
 
@@ -51,11 +49,10 @@ level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d`
   `K`, the `L`-linear equivalence `L ⊗_F Ω¹_cont(F/K) ≃ Ω¹_cont(L/K)`.
 * `Level.ContinuousKaehlerDifferential.trace K d`: for `d` nonzero in `K`,
   the trace `Ω¹_cont(L/K) → Ω¹_cont(F/K)`.
-* `TauCeti.LaurentSeries.Level.parameterDerivation K d`: the formal derivative `d/du` on
-  `Level K d` in its level parameter `u`.
 
 ## Main results
 
+* `TauCeti.LaurentSeries.Level.derivation_parameter`: `d/du (u) = 1`.
 * `Level.ContinuousKaehlerDifferential.map_D`: the pullback of `d f` is `d_u (f (u ^ d))`.
 * `Level.ContinuousKaehlerDifferential.equivLevel_map`: the pullback of `f dt` is
   `f (u ^ d) d u ^ (d - 1) du`.
@@ -67,6 +64,7 @@ level-parameter derivation `TauCeti.LaurentSeries.Level.parameterDerivation K d`
   `Tr_{L/F} (g ω) = Tr_{L/F} (g) ω` for `ω` a one-form on `F`.
 * `Level.ContinuousKaehlerDifferential.trace_map`: the trace of a pulled
   back one-form is `d` times the form.
+* `Level.ContinuousKaehlerDifferential.trace_D`: `Tr_{L/F} (d_u x) = d (Tr_{L/F} x)`.
 * `Level.ContinuousKaehlerDifferential.coeff_neg_one_equivLaurentSeries_trace`:
   `Res_F (Tr_{L/F} ω) = Res_L ω`.
 
@@ -100,6 +98,13 @@ theorem ringEquivLaurentSeries_derivation {K : Type*} [Field K] {d : ℕ+} (x : 
       derivative K (ringEquivLaurentSeries K d x) := by
   obtain ⟨y, rfl⟩ := (algEquivLaurentSeries K d).symm.surjective x
   rw [Level.derivation, Derivation.liftOfRightInverse_apply]
+  simp
+
+/-- The level derivation sends the level parameter `u` to `1`. -/
+@[simp]
+theorem derivation_parameter :
+    Level.derivation K d (parameter K d) = 1 := by
+  apply (ringEquivLaurentSeries K d).injective
   simp
 
 /-- The **continuous one-forms** `Ω¹_cont(L/K)` of the ramified level `L = K⸨u⸩`, `u ^ d = t`:
@@ -396,6 +401,25 @@ theorem equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) 
     smul_eq_mul]
   simp
 
+/-- The trace of `d_u x` is the base differential `d(Tr_{L/F} x)`. -/
+@[simp]
+theorem trace_D (x : Level K d) :
+    trace K d (D K d x) =
+      TauCeti.ContinuousKaehlerDifferential.D K (Algebra.trace K⸨X⸩ (Level K d) x) := by
+  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
+  rw [equivLaurentSeries_trace, equivLevel_D,
+    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D]
+  ext j
+  have hd : ((d : ℕ) : K) ≠ 0 := NeZero.ne _
+  have h1 : (d : ℤ) * j - -((d : ℤ) - 1) = (d : ℤ) * (j + 1) - 1 := by ring
+  have hd1 : derivative K (single (d : ℤ) (1 : K)) = single ((d : ℤ) - 1) ((d : ℕ) : K) := by
+    simp [derivative_apply]
+  rw [← map_div₀, coeff_trace, RingEquiv.apply_symm_apply, hd1, div_eq_mul_inv,
+    HahnSeries.inv_single, coeff_mul_single, h1, coeff_derivative_sub_one, coeff_derivative,
+    coeff_trace]
+  simp only [zsmul_eq_mul, Int.cast_mul, Int.cast_natCast, nsmul_eq_mul]
+  field_simp [hd]
+
 /-- **The trace preserves residues.** When `d` is nonzero in `K`, for every one-form `ω = g du`
 on the level `L = K⸨u⸩`, the residue of `Tr_{L/F} ω` at `t` is the residue of `ω` at `u`:
 `Res_F (Tr_{L/F} ω) = Res_L ω`. -/
@@ -408,48 +432,5 @@ theorem coeff_neg_one_equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDiff
 end Separable
 
 end ContinuousKaehlerDifferential
-
-/-! ### The level-parameter derivation -/
-
-section ParameterDerivation
-
-/-- The formal derivative `d/du` on `Level K d` with respect to its level parameter `u`, obtained
-by transporting `laurentSeriesDerivation K` along `Level.ringEquivLaurentSeries K d`. -/
-noncomputable def parameterDerivation :
-    Derivation K (Level K d) (Level K d) where
-  toFun y := (ringEquivLaurentSeries K d).symm
-    (derivative K (ringEquivLaurentSeries K d y))
-  map_add' y z := by simp only [map_add]
-  map_smul' c y := by
-    apply (ringEquivLaurentSeries K d).injective
-    simp [Algebra.smul_def, laurentSeries_algebraMap_mul_eq_smul]
-  map_one_eq_zero' := by
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, map_one, ← laurentSeriesDerivation_apply,
-      Derivation.map_one_eq_zero, map_zero]
-  leibniz' y z := by
-    apply (ringEquivLaurentSeries K d).injective
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, RingEquiv.apply_symm_apply, map_mul, map_add,
-      smul_eq_mul, derivative_mul]
-    ring
-
-variable {K d}
-
-/-- On underlying Laurent series, `parameterDerivation K d` is `LaurentSeries.derivative K`. -/
-@[simp]
-theorem ringEquivLaurentSeries_parameterDerivation (y : Level K d) :
-    ringEquivLaurentSeries K d (parameterDerivation K d y) =
-      derivative K (ringEquivLaurentSeries K d y) :=
-  RingEquiv.apply_symm_apply _ _
-
-variable (K d)
-
-/-- The level-parameter derivation sends the level parameter `u` to `1`. -/
-@[simp]
-theorem parameterDerivation_parameter :
-    parameterDerivation K d (parameter K d) = 1 := by
-  apply (ringEquivLaurentSeries K d).injective
-  simp
-
-end ParameterDerivation
 
 end TauCeti.LaurentSeries.Level

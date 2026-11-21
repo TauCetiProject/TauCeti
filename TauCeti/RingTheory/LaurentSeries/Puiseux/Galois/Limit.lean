@@ -66,7 +66,7 @@ variable (K) in
 @[expose] noncomputable def levelFiniteGalois (n : ℕ+) [HasEnoughRootsOfUnity K n] :
     FiniteGaloisIntermediateField K⸨X⸩ (puiseuxField K) where
   toIntermediateField := level K n
-  finiteDimensional := (levelPowerBasis K n).finite
+  finiteDimensional := inferInstance
 
 /-- The underlying intermediate field of `levelFiniteGalois K n` is level `n`. -/
 @[simp]

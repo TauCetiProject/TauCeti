@@ -393,7 +393,6 @@ theorem fixingSubgroup_restrict_eq_zpowers_levelKummer (h : n ∣ m) {ω : roots
     (hω : IsPrimitiveRoot (ω : Kˣ) ((m : ℕ) / n)) :
     (IntermediateField.restrict (level_le_level_of_dvd K h)).fixingSubgroup =
       Subgroup.zpowers (levelKummer K m ω) := by
-  have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
   rw [← fixedField_zpowers_levelKummer h hω, IntermediateField.fixingSubgroup_fixedField]
 
 end FixedField
@@ -439,7 +438,6 @@ intermediate field of level `d` of degree `e` over `K⸨X⸩` is level `e`: the 
 theorem eq_restrict_level_of_finrank_eq {e : ℕ+} {E : IntermediateField K⸨X⸩ (level K d)}
     (he : e ∣ d) (h : Module.finrank K⸨X⸩ E = e) :
     E = IntermediateField.restrict (level_le_level_of_dvd K he) := by
-  have : FiniteDimensional K⸨X⸩ (level K d) := (levelPowerBasis K d).finite
   have : IsCyclic Gal(level K d/K⸨X⸩) :=
     (levelGalEquivRootsOfUnity K d).isCyclic.mpr inferInstance
   refine IntermediateField.eq_of_finrank_eq_of_isCyclic ?_

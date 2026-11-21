@@ -183,12 +183,10 @@ theorem equivLevel_equivLevelContinuousKaehlerDifferential
 theorem equivLevelContinuousKaehlerDifferential_D (x : Level K d) :
     equivLevelContinuousKaehlerDifferential K d (D K (Level K d) x) =
       Level.ContinuousKaehlerDifferential.D K d x := by
-  apply (Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential K d).injective
-  apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
-  rw [Level.ContinuousKaehlerDifferential.addEquivContinuousKaehlerDifferential_D,
-    TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
-    ← Level.ContinuousKaehlerDifferential.ringEquivLaurentSeries_equivLevel,
-    equivLevel_equivLevelContinuousKaehlerDifferential, equivSelf_D, map_mul,
+  apply (Level.ContinuousKaehlerDifferential.equivLevel K d).injective
+  apply (Level.ringEquivLaurentSeries K d).injective
+  rw [equivLevel_equivLevelContinuousKaehlerDifferential, equivSelf_D,
+    Level.ContinuousKaehlerDifferential.equivLevel_D, map_mul, RingEquiv.apply_symm_apply,
     RingEquiv.apply_symm_apply, ringEquivLaurentSeries_derivation_level,
     div_mul_cancel₀ _ _root_.LaurentSeries.derivative_single_natCast_one_ne_zero]
 
@@ -433,9 +431,9 @@ theorem laurentDifferentialEquiv_symm_laurentDifferentialTensorEquiv
 theorem laurentDifferentialEquiv_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : L)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     e.laurentDifferentialEquiv (x • ω) = e x • e.laurentDifferentialEquiv ω := by
-  rw [laurentDifferentialEquiv_apply, laurentDifferentialEquiv_apply,
-    Extension.ContinuousKaehlerDifferential.mapSemilinear_smul, AlgEquiv.coe_toAlgHom,
-    ContinuousLinearEquiv.map_smul]
+  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
+  rw [← LinearEquiv.map_smul, laurentDifferentialEquiv_tensorEquiv,
+    laurentDifferentialEquiv_tensorEquiv, laurentDifferentialTensorEquiv_smul]
 
 @[simp]
 theorem laurentDifferentialEquiv_symm_smul (e : L ≃ₐ[K⸨X⸩] Level K d) (x : Level K d)
@@ -468,9 +466,9 @@ theorem trace_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level K d)
     (ω : Extension.ContinuousKaehlerDifferential K L) :
     Level.ContinuousKaehlerDifferential.trace K d (e.laurentDifferentialEquiv ω) =
       Extension.ContinuousKaehlerDifferential.trace K L ω := by
-  rw [laurentDifferentialEquiv_apply,
-    Extension.ContinuousKaehlerDifferential.trace_equivLevelContinuousKaehlerDifferential,
-    Extension.ContinuousKaehlerDifferential.trace_mapSemilinear_algEquiv]
+  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
+  rw [laurentDifferentialEquiv_tensorEquiv, trace_laurentDifferentialTensorEquiv,
+    Extension.ContinuousKaehlerDifferential.trace_tensorEquiv]
 
 @[simp]
 theorem trace_laurentDifferentialEquiv_symm (e : L ≃ₐ[K⸨X⸩] Level K d)
@@ -488,8 +486,9 @@ theorem residue_eq_coeff_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level 
       (Level.ringEquivLaurentSeries K d
         (Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialEquiv ω))).coeff (-1) := by
-  rw [Extension.ContinuousKaehlerDifferential.residue_apply, ← trace_laurentDifferentialEquiv e,
-    coeff_neg_one_equivLaurentSeries_trace]
+  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
+  rw [Extension.ContinuousKaehlerDifferential.residue_tensorEquiv,
+    laurentDifferentialEquiv_tensorEquiv, residueBaseChange_eq_coeff e]
 
 /-- **Chart-independence of residues on intrinsic continuous one-forms.** Any two separable level
 charts yield the same coefficient residue on `Ω¹_cont(L/K)`. -/
@@ -502,8 +501,9 @@ theorem coeff_laurentDifferentialEquiv_eq {n : ℕ+} [NeZero ((n : ℕ) : K)]
     (Level.ringEquivLaurentSeries K n
       (Level.ContinuousKaehlerDifferential.equivLevel K n
         (e'.laurentDifferentialEquiv ω))).coeff (-1) := by
-  rw [← residue_eq_coeff_laurentDifferentialEquiv e,
-    ← residue_eq_coeff_laurentDifferentialEquiv e']
+  obtain ⟨η, rfl⟩ := (Extension.ContinuousKaehlerDifferential.tensorEquiv K L).surjective ω
+  simpa only [laurentDifferentialEquiv_tensorEquiv] using
+    coeff_laurentDifferentialTensorEquiv_eq e e' η
 
 /-- When `L` carries the `K⸨X⸩`-module topology, `e.laurentDifferentialEquiv` upgrades to a
 continuous `K⸨X⸩`-linear equivalence with the valuation-topologized level one-forms. -/

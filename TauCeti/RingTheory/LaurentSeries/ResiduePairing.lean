@@ -232,6 +232,8 @@ variable (K : Type*) [Field K] [TopologicalSpace K]
 topology on the coefficient field. -/
 theorem continuous_residuePairing :
     Continuous (fun p : K⸨X⸩ × K⸨X⸩ ↦ residuePairing K p.1 p.2) :=
-  (continuous_coeff (-1)).comp (continuous_fst.mul (continuous_derivative.comp continuous_snd))
+  ((continuous_coeff (-1)).comp
+    (continuous_fst.mul (continuous_derivative.comp continuous_snd))).congr
+    fun p ↦ (residuePairing_apply K p.1 p.2).symm
 
 end LaurentSeries

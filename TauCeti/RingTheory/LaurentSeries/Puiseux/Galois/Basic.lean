@@ -182,8 +182,6 @@ private theorem kummer_toTateModule (σ : Gal(puiseuxField K/K⸨X⸩)) :
 a finite level, whose Galois group is discrete. -/
 private theorem continuous_toTateModule : Continuous (toTateModule (K := K)) := by
   refine continuous_iff.2 fun m ↦ ?_
-  have : FiniteDimensional K⸨X⸩ (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1))) :=
-    (levelPowerBasis K _).finite
   -- As in `proj_toTateModule`, the component is computed by `proj_lift` up to unfolding.
   have h : (fun σ ↦ proj m (toTateModule σ)) = fun σ ↦ levelGalEquivRootsOfUnity K _
       (AlgEquiv.restrictNormalHom (level K ((m : ℕ).toPNat (Nat.pos_of_ne_zero m.property.1))) σ) :=

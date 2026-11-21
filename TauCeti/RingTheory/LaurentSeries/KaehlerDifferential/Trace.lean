@@ -347,9 +347,9 @@ is continuous for every topology on `K`. -/
 @[fun_prop]
 theorem continuous_residue [TopologicalSpace K] [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
     Continuous (residue K L) :=
-  (_root_.LaurentSeries.continuous_coeff (-1)).comp
+  ((_root_.LaurentSeries.continuous_coeff (-1)).comp
     ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).continuous.comp
-      (continuous_trace K L))
+      (continuous_trace K L))).congr fun ω ↦ (residue_apply ω).symm
 
 end TraceAndResidue
 
@@ -421,16 +421,24 @@ theorem residue_traceTower [Module.Free M L] (ω : ContinuousKaehlerDifferential
     residue K M (traceTower K M L ω) = residue K L ω := by
   rw [residue_apply, residue_apply, trace_traceTower]
 
-/-- On a tower `K⸨X⸩ → M → L` where `L` is finite over `K⸨X⸩` with the `K⸨X⸩`-module topology and
-scalar multiplication by `K⸨X⸩` on `M` is continuous, the relative differential trace is
-continuous. -/
+/-- On a tower `K⸨X⸩ → M → L` where `L` carries the `K⸨X⸩`-module topology with continuous
+multiplication and scalar multiplication by `K⸨X⸩` on `M` is continuous, the relative differential
+trace is continuous. -/
 @[fun_prop]
 theorem continuous_traceTower [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
-    [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] [Module.Finite K⸨X⸩ L] :
+    [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] [ContinuousMul L] :
     Continuous (traceTower K M L) := by
+  let _ : IsTopologicalAddGroup L := IsModuleTopology.isTopologicalAddGroup K⸨X⸩ L
+  have : IsTopologicalSemiring L :=
+    { toContinuousAdd := inferInstance, toContinuousMul := inferInstance }
   have : ContinuousSMul K⸨X⸩ (ContinuousKaehlerDifferential K M) :=
     IsScalarTower.continuousSMul M
-  exact IsModuleTopology.continuous_of_linearMap ((traceTower K M L).restrictScalars K⸨X⸩)
+  have hlin : Continuous
+      (((equivSelf K M).symm.toLinearMap ∘ₗ Algebra.trace M L).restrictScalars K⸨X⸩) :=
+    IsModuleTopology.continuous_of_linearMap _
+  refine (hlin.comp continuous_equivSelf).congr fun ω ↦ ?_
+  simp only [Function.comp_apply, LinearMap.coe_restrictScalars, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, ← equivSelf_traceTower ω, LinearEquiv.symm_apply_apply]
 
 end Tower
 
