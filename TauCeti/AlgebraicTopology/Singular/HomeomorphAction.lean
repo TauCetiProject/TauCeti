@@ -85,6 +85,7 @@ def singularHomologyAction :
     simp [h]
 
 /-- The action of `φ` on `Hₘ(X; R)` is the map induced by `φ` as a morphism of `TopCat`. -/
+@[simp]
 theorem singularHomologyAction_apply (φ : X ≃ₜ X)
     (x : ((singularHomologyFunctor (ModuleCat.{u} k) m).obj R).obj (TopCat.of X)) :
     singularHomologyAction R m φ x =

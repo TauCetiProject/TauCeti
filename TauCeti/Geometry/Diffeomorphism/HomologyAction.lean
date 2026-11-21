@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.AlgebraicTopology.Singular.HomeomorphAction
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
-public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Geometry.Diffeomorphism.Evaluation
+public import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -40,9 +39,8 @@ path component of the stabilizer
 in it: for a compact connected oriented manifold `M` of positive dimension `n`, the swap of
 `M × M` exchanges the images of the fundamental class `[M]` under the inclusions of the two factors,
 which differ in `Hₙ(M × M; ℤ)`
-(`TauCeti.HomologicalOrientation.prodComm_notMem_homologicallyTrivialStabilizer`). For `S² × S²`
-it exchanges `A` and `B`
-(`TauCeti.SmoothForm.prodComm_sphere_notMem_homologicallyTrivialStabilizer`).
+(`TauCeti.HomologicalOrientation.prodComm_notMem_homologicallyTrivialStabilizer`). The case
+`S² × S²` is in `TauCeti.Geometry.Diffeomorphism.Sphere.HomologyAction`.
 
 ## Main definitions
 
@@ -59,9 +57,8 @@ it exchanges `A` and `B`
 * `TauCeti.SmoothForm.coe_mem_homologicallyTrivialStabilizer_of_joined`: the identity component
   of the stabilizer of `σ` acts trivially on homology.
 * `TauCeti.SmoothForm.prodComm_notMem_homologicallyTrivialStabilizer`,
-  `TauCeti.HomologicalOrientation.prodComm_notMem_homologicallyTrivialStabilizer`,
-  `TauCeti.SmoothForm.prodComm_sphere_notMem_homologicallyTrivialStabilizer`: the factor swap acts
-  nontrivially on homology, in particular on `H₂(S² × S²; ℤ)`.
+  `TauCeti.HomologicalOrientation.prodComm_notMem_homologicallyTrivialStabilizer`: the factor swap
+  acts nontrivially on homology.
 
 ## References
 
@@ -84,14 +81,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
   {k : Type u} [Ring k] {R : ModuleCat.{u} k} {m : ℕ}
-
-/-- The homeomorphism underlying the factor swap `M × N ≃ N × M` is the factor swap. -/
-@[simp]
-theorem toHomeomorph_prodComm {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} {N : Type*}
-    [TopologicalSpace N] [ChartedSpace H' N] :
-    (Diffeomorph.prodComm I J M N n).toHomeomorph = Homeomorph.prodComm M N :=
-  Homeomorph.ext fun _ ↦ rfl
 
 /-- **The factor swap acts nontrivially on homology.** If `M` is nonempty and has nontrivial
 singular homology `Hₘ(M; R)` in a positive degree `m`, the factor swap of `M × M` acts
@@ -156,6 +145,7 @@ variable {σ : SmoothForm I M F j}
 
 /-- A diffeomorphism lies in the homologically trivial stabilizer of `σ` exactly when it preserves
 `σ` and acts trivially on `Hₘ(M; R)`. -/
+@[simp]
 theorem mem_homologicallyTrivialStabilizer {φ : M ≃ₘ⟮I, I⟯ M} :
     φ ∈ σ.homologicallyTrivialStabilizer R m ↔
       φ ∈ diffeomorphStabilizer σ ∧
@@ -206,11 +196,11 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
   [CompactSpace M] [ConnectedSpace M] {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {j : ℕ}
 
-/-- **The factor swap of the square of a closed oriented manifold acts nontrivially on top
-homology.** For a compact connected oriented manifold `M` of positive dimension `n` and every
-smooth form `σ` on `M × M`, the swap `(x, y) ↦ (y, x)` does not lie in the homologically trivial
-stabilizer of `σ` for `Hₙ(M × M; ℤ)`: it exchanges the images of the fundamental class `[M]`
-under the inclusions of the two factors. -/
+/-- **The factor swap of the square of a closed oriented manifold acts nontrivially on
+`Hₙ(M × M; ℤ)`, `n = dim M`.** For a compact connected oriented manifold `M` of positive
+dimension `n` and every smooth form `σ` on `M × M`, the swap `(x, y) ↦ (y, x)` does not lie in the
+homologically trivial stabilizer of `σ` for `Hₙ(M × M; ℤ)`: it exchanges the images of the
+fundamental class `[M]` under the inclusions of the two factors. -/
 theorem prodComm_notMem_homologicallyTrivialStabilizer (o : HomologicalOrientation M E n)
     (hn : Module.finrank ℝ E = n) (hn0 : n ≠ 0)
     (σ : SmoothForm (𝓘(ℝ, E).prod 𝓘(ℝ, E)) (M × M) F j) :
@@ -222,25 +212,3 @@ theorem prodComm_notMem_homologicallyTrivialStabilizer (o : HomologicalOrientati
   SmoothForm.prodComm_notMem_homologicallyTrivialStabilizer hn0 σ
 
 end TauCeti.HomologicalOrientation
-
-namespace TauCeti.SmoothForm
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {j : ℕ}
-
-/-- **The swap of `S² × S²` is not homologically trivial.** For every smooth form `σ` on
-`S² × S²`, such as the product of two area forms of equal area, the factor swap does not lie in
-the homologically trivial stabilizer of `σ` for `H₂(S² × S²; ℤ)`: it exchanges the classes
-`A = [S² × pt]` and `B = [pt × S²]` of the two rulings. -/
-theorem prodComm_sphere_notMem_homologicallyTrivialStabilizer
-    (σ : SmoothForm ((𝓡 2).prod (𝓡 2))
-      (Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 ×
-        Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) F j) :
-    Diffeomorph.prodComm (𝓡 2) (𝓡 2) (Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)
-        (Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) ∞ ∉
-      σ.homologicallyTrivialStabilizer (ModuleCat.of ℤ (ULift.{0} ℤ)) 2 := by
-  have := simplyConnectedSpace_sphere_euclideanSpace (n := 2) le_rfl
-  obtain ⟨o⟩ := HomologicalOrientation.nonempty_of_simplyConnectedSpace
-    (M := Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) (finrank_euclideanSpace_fin (n := 2))
-  exact o.prodComm_notMem_homologicallyTrivialStabilizer finrank_euclideanSpace_fin two_ne_zero σ
-
-end TauCeti.SmoothForm
