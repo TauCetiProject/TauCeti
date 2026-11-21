@@ -10,20 +10,15 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 /-!
 # Generalized Cartan matrices
 
-A *generalized Cartan matrix* on an index type `I` is an integral matrix `M` with diagonal entries
-`2`, nonpositive off-diagonal entries, and vanishing entries in symmetric positions:
-`M i j = 0 ↔ M j i = 0`. No finiteness assumption on `I` and no symmetrizability assumption on `M`
-is imposed.
+API lemmas and instances for Mathlib's `Matrix.IsGeneralizedCartan`, the predicate that an
+integral square matrix `M` on an index type `I` has diagonal entries `2`, nonpositive off-diagonal
+entries, and vanishing entries in symmetric positions: `M i j = 0 ↔ M j i = 0`. No finiteness
+assumption on `I` and no symmetrizability assumption on `M` is imposed.
 
 These three axioms are the exact matrix hypotheses needed for the triangular decomposition of the
 Serre-presented Kac–Moody algebra of a realization (`TauCeti.KacMoody.PresentedLieAlgebra`) and for
 the injectivity of its Cartan map, whereas constructing an invariant bilinear form additionally uses
 a symmetrizer (`TauCeti.SymmetrizableDatum`).
-
-## Main definitions
-
-* `Matrix.IsGeneralizedCartan`: the predicate that an integral square matrix is a generalized
-  Cartan matrix.
 
 ## Main results
 
@@ -31,9 +26,8 @@ a symmetrizer (`TauCeti.SymmetrizableDatum`).
 * `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_reindex`,
   `Matrix.IsGeneralizedCartan.fromBlocks`: closure under principal submatrices along an embedding,
   reindexing along an equivalence, and block-diagonal direct sums.
-* `Matrix.IsFiniteCartan.isGeneralizedCartan` and
-  `TauCeti.SymmetrizableDatum.isGeneralizedCartan`: finite-type Cartan matrices and symmetrizable
-  Cartan data have generalized Cartan underlying matrices.
+* `TauCeti.SymmetrizableDatum.isGeneralizedCartan`: symmetrizable Cartan data have generalized
+  Cartan underlying matrices.
 
 ## References
 
@@ -45,20 +39,10 @@ public section
 
 namespace Matrix
 
-/-- An integral square matrix `M` is a *generalized Cartan matrix* if its diagonal entries are `2`,
-its off-diagonal entries are nonpositive, and an entry vanishes if and only if the entry in the
-transposed position vanishes. -/
-structure IsGeneralizedCartan {I : Type*} (M : Matrix I I ℤ) : Prop where
-  /-- Every diagonal entry is `2`. -/
-  diag : ∀ i, M i i = 2
-  /-- Every off-diagonal entry is nonpositive. -/
-  offDiag_nonpos : ∀ i j, i ≠ j → M i j ≤ 0
-  /-- Vanishing of entries is symmetric. -/
-  zero_comm : ∀ i j, M i j = 0 ↔ M j i = 0
-
-instance {I : Type*} [Fintype I] [DecidableEq I] : DecidablePred (IsGeneralizedCartan (I := I)) :=
+instance instDecidablePredIsGeneralizedCartan {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    DecidablePred (IsGeneralizedCartan (ι := ι)) :=
   fun M =>
-    let m : I → I → ℤ := Matrix.of.symm M
+    let m : ι → ι → ℤ := Matrix.of.symm M
     decidable_of_iff
       ((∀ i, m i i = 2) ∧ (∀ i j, i ≠ j → m i j ≤ 0) ∧ ∀ i j, m i j = 0 ↔ m j i = 0)
       ⟨fun ⟨h₁, h₂, h₃⟩ => ⟨h₁, h₂, h₃⟩, fun ⟨h₁, h₂, h₃⟩ => ⟨h₁, h₂, h₃⟩⟩
@@ -118,13 +102,6 @@ property. -/
 theorem isGeneralizedCartan_reindex {I I' : Type*} {M : Matrix I I ℤ} (e : I ≃ I') :
     (M.reindex e e).IsGeneralizedCartan ↔ M.IsGeneralizedCartan :=
   ⟨fun h => by simpa using h.reindex e.symm, fun h => h.reindex e⟩
-
-/-- Every finite-type Cartan matrix is a generalized Cartan matrix. -/
-theorem IsFiniteCartan.isGeneralizedCartan {I : Type*} [Fintype I] [DecidableEq I]
-    {M : Matrix I I ℤ} (hM : M.IsFiniteCartan) : M.IsGeneralizedCartan where
-  diag := hM.diag
-  offDiag_nonpos := hM.offDiag_nonpos
-  zero_comm := hM.zero_comm
 
 end Matrix
 
