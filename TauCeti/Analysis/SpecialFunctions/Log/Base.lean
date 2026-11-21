@@ -81,18 +81,10 @@ theorem lt_pow_natFloor_logb_add_one (hb : 1 < b) (hx : 0 < x) :
 This extends `Real.natFloor_logb_natCast` from natural numbers to nonnegative reals. -/
 theorem natFloor_logb_eq_natLog_natFloor (b : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     ⌊logb b x⌋₊ = Nat.log b ⌊x⌋₊ := by
-  obtain _ | _ | b := b
-  · simp [logb]
-  · simp [logb]
-  rcases lt_or_ge x 1 with hx1 | hx1
-  · rw [Nat.floor_eq_zero.mpr hx1, Nat.log_zero_right]
-    rcases hx.eq_or_lt with rfl | hx0
-    · simp
-    · exact Nat.floor_of_nonpos
-        (logb_neg (by exact_mod_cast Nat.succ_lt_succ (Nat.succ_pos b)) hx0 hx1).le
-  · apply Nat.cast_injective (R := ℤ)
-    rw [Int.natCast_floor_eq_floor
-        (logb_nonneg (by exact_mod_cast Nat.succ_lt_succ (Nat.succ_pos b)) hx1),
-      floor_logb_natCast hx, Int.log_of_one_le_right _ hx1]
+  rw [← Int.floor_toNat, floor_logb_natCast hx]
+  rcases le_or_gt 1 x with hx1 | hx1
+  · rw [Int.log_of_one_le_right b hx1, Int.toNat_natCast]
+  · rw [Int.log_of_right_le_one b hx1.le, Int.toNat_of_nonpos (by simp),
+      Nat.floor_eq_zero.mpr hx1, Nat.log_zero_right]
 
 end Real

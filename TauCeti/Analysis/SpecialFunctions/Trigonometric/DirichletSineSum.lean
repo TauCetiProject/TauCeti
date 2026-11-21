@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Algebra.BigOperators.Module
-import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 
@@ -52,15 +50,19 @@ open Real Finset
 
 namespace TauCeti
 
+private theorem sum_range_succ_sin_eq_sum_Icc (θ : ℝ) (n : ℕ) :
+    ∑ i ∈ range (n + 1), sin (i * θ) = ∑ j ∈ Icc 1 n, sin (j * θ) := by
+  rw [sum_range_eq_add_Ico _ n.succ_pos]
+  simp [Ico_add_one_right_eq_Icc]
+
 /-- For `0 < θ < 2 * π`, the unweighted sine sum `∑ j ∈ Icc 1 n, sin (j * θ)` is bounded in
 absolute value by `(sin (θ / 2))⁻¹`. -/
 theorem abs_sum_Icc_sin_le_inv_sin_half {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ < 2 * π) (n : ℕ) :
     |∑ j ∈ Icc 1 n, sin (j * θ)| ≤ (sin (θ / 2))⁻¹ := by
   have hsin_pos : 0 < sin (θ / 2) := sin_pos_of_pos_of_lt_pi (by linarith) (by linarith)
   have hsum : ∑ i ∈ range (n + 1), sin (θ * i + 0) = ∑ j ∈ Icc 1 n, sin (j * θ) := by
-    rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot n.succ_pos, Nat.succ_eq_add_one,
-      Ico_add_one_right_eq_Icc]
-    simp [mul_comm]
+    simp only [add_zero, mul_comm θ]
+    exact sum_range_succ_sin_eq_sum_Icc θ n
   have hmul : sin (θ / 2) * ∑ j ∈ Icc 1 n, sin (j * θ) =
       sin ((n + 1 : ℕ) * θ / 2) * sin (((n + 1 : ℕ) - 1) * θ / 2 + 0) := by
     rw [← hsum, sin_mul_sum_sin]
@@ -100,11 +102,7 @@ theorem abs_sum_Ioc_sin_div_le {θ : ℝ} (hθ0 : 0 < θ) (hθ : θ ≤ π) (K m
       simp only [range_zero, sum_empty, abs_zero]
       positivity
     | succ n =>
-      have hsum : ∑ i ∈ range (n + 1), sin (i * θ) = ∑ j ∈ Icc 1 n, sin (j * θ) := by
-        rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot n.succ_pos, Nat.succ_eq_add_one,
-          Ico_add_one_right_eq_Icc]
-        simp
-      rw [hsum]
+      rw [sum_range_succ_sin_eq_sum_Icc]
       exact abs_sum_Icc_sin_le_pi_div hθ0 hθ n
   have hparts := sum_Ioc_by_parts (f := fun j : ℕ ↦ (j : ℝ)⁻¹)
     (g := fun j : ℕ ↦ sin (j * θ)) hKm
@@ -160,9 +158,8 @@ private theorem abs_sum_Icc_sin_div_le_of_pos_of_le_pi (m : ℕ) {θ : ℝ} (hθ
   set K := min m ⌊1 / θ⌋₊
   have hsplit : ∑ j ∈ Icc 1 m, sin (j * θ) / j =
       (∑ j ∈ Icc 1 K, sin (j * θ) / j) + ∑ j ∈ Ioc K m, sin (j * θ) / j := by
-    have h1 : Icc 1 m = Ioc 0 m := rfl
-    have h2 : Icc 1 K = Ioc 0 K := rfl
-    rw [h1, h2, sum_Ioc_consecutive _ (Nat.zero_le K) (min_le_left m _)]
+    rw [← zero_add 1, Icc_add_one_left_eq_Ioc, Icc_add_one_left_eq_Ioc,
+      sum_Ioc_consecutive _ (Nat.zero_le K) (min_le_left m _)]
   rw [hsplit]
   have hhead : |∑ j ∈ Icc 1 K, sin (j * θ) / j| ≤ 1 := by
     calc |∑ j ∈ Icc 1 K, sin (j * θ) / j|
@@ -205,25 +202,13 @@ private theorem abs_sum_Icc_sin_div_le_of_pos_of_le_pi (m : ℕ) {θ : ℝ} (hθ
 `|∑ j ∈ Finset.Icc 1 m, sin (j * θ) / j| ≤ 1 + 2 * π`. -/
 theorem abs_sum_Icc_sin_div_le (m : ℕ) (θ : ℝ) :
     |∑ j ∈ Icc 1 m, sin (j * θ) / j| ≤ 1 + 2 * π := by
-  -- Shift `θ` by an integer multiple of `2 * π` into `[-π, π]`.
-  set k : ℤ := round (θ / (2 * π))
-  set θ' : ℝ := θ - k * (2 * π)
-  have hshift : ∑ j ∈ Icc 1 m, sin (j * θ) / j = ∑ j ∈ Icc 1 m, sin (j * θ') / j := by
+  -- Shift `θ` by periodicity into `[-π, π)`.
+  have hper : Function.Periodic (fun x : ℝ ↦ ∑ j ∈ Icc 1 m, sin (j * x) / j) (2 * π) := by
+    intro x
     refine sum_congr rfl fun j _ ↦ ?_
-    congr 1
-    have harg : (j : ℝ) * θ = (j : ℝ) * θ' + ((j : ℤ) * k : ℤ) * (2 * π) := by
-      simp only [θ', Int.cast_mul, Int.cast_natCast]
-      ring
-    rw [harg, sin_add_int_mul_two_pi]
-  have habs : |θ'| ≤ π := by
-    have h2pi : (0 : ℝ) < 2 * π := by positivity
-    have hfac : θ' = (2 * π) * (θ / (2 * π) - k) := by
-      simp only [θ']
-      field_simp
-    rw [hfac, abs_mul, abs_of_pos h2pi]
-    calc (2 * π) * |θ / (2 * π) - k|
-        ≤ (2 * π) * (1 / 2) := by gcongr; exact abs_sub_round _
-      _ = π := by ring
+    rw [mul_add, (sin_periodic.nat_mul j) (j * x)]
+  obtain ⟨θ', hmem, hshift⟩ := hper.exists_mem_Ico two_pi_pos θ (-π)
+  have habs : |θ'| ≤ π := abs_le.mpr ⟨hmem.1, by linarith [hmem.2]⟩
   rw [hshift]
   rcases lt_trichotomy θ' 0 with hneg | hzero | hpos
   · have hneg_sum : ∑ j ∈ Icc 1 m, sin (j * θ') / j =

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.NumberTheory.Harmonic.Defs
@@ -15,7 +14,6 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Normed.Group.FunctionSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.DirichletSineSum
 
@@ -131,6 +129,14 @@ theorem abs_fejerPolyCoeff_le_one (m n : ℕ) : |fejerPolyCoeff m n| ≤ 1 := by
     exact inv_le_one_of_one_le₀ hpos
   · simp
 
+private theorem sum_range_eq_sum_Icc_sub {α : Type*} [AddCommMonoid α] (f : ℕ → α) (m : ℕ) :
+    ∑ n ∈ range m, f n = ∑ j ∈ Icc 1 m, f (m - j) := by
+  have href := sum_Ico_reflect (fun j ↦ f (m - j)) 0 (by omega : m ≤ m + 1)
+  simp only [Nat.add_sub_cancel_left, tsub_zero, Nat.Ico_zero_eq_range,
+    Ico_add_one_right_eq_Icc] at href
+  rw [← href]
+  exact sum_congr rfl fun n hn ↦ congrArg f (Nat.sub_sub_self (mem_range.mp hn).le).symm
+
 /-- Power-series expansion of `fejerPoly m w` in terms of `fejerPolyCoeff m`. -/
 theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
     fejerPoly m w = ∑ n ∈ range (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n := by
@@ -138,59 +144,28 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
   have hsplit : ∑ n ∈ range (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n =
       (∑ n ∈ range m, (fejerPolyCoeff m n : ℂ) * w ^ n) +
       (fejerPolyCoeff m m : ℂ) * w ^ m +
-      ∑ n ∈ Icc (m + 1) (2 * m), (fejerPolyCoeff m n : ℂ) * w ^ n := by
-    have h1 : range (2 * m + 1) = range (m + 1) ∪ Icc (m + 1) (2 * m) := by
-      ext n
-      simp only [mem_range, mem_union, mem_Icc]
-      omega
-    have hdisj : Disjoint (range (m + 1)) (Icc (m + 1) (2 * m)) := by
-      rw [disjoint_left]
-      intro n hn1 hn2
-      simp only [mem_range, mem_Icc] at hn1 hn2
-      omega
-    rw [h1, sum_union hdisj, sum_range_succ]
+      ∑ n ∈ Ico (m + 1) (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n := by
+    rw [← sum_range_add_sum_Ico _ (by omega : m + 1 ≤ 2 * m + 1), sum_range_succ]
   rw [hsplit, fejerPolyCoeff_self, ofReal_zero, zero_mul, add_zero]
   -- Match the lower half `n < m` with `j = m - n ∈ Icc 1 m`.
   have hlo : ∑ n ∈ range m, (fejerPolyCoeff m n : ℂ) * w ^ n =
       ∑ j ∈ Icc 1 m, w ^ (m - j) / (j : ℂ) := by
-    refine sum_nbij' (fun n ↦ m - n) (fun j ↦ m - j) ?_ ?_ ?_ ?_ ?_
-    · intro n hn
-      simp only [mem_range, mem_Icc] at hn ⊢
-      omega
-    · intro j hj
-      simp only [mem_Icc, mem_range] at hj ⊢
-      omega
-    · intro n hn
-      simp only [mem_range] at hn
-      omega
-    · intro j hj
-      simp only [mem_Icc] at hj
-      omega
-    · intro n hn
-      have hlt : n < m := mem_range.mp hn
-      rw [fejerPolyCoeff_of_lt hlt, ofReal_inv, ofReal_natCast, div_eq_inv_mul,
-        Nat.sub_sub_self hlt.le]
-  -- Match the upper half `m + 1 ≤ n ≤ 2 * m` with `j = n - m ∈ Icc 1 m`.
-  have hhi : ∑ n ∈ Icc (m + 1) (2 * m), (fejerPolyCoeff m n : ℂ) * w ^ n =
+    rw [sum_range_eq_sum_Icc_sub]
+    refine sum_congr rfl fun j hj ↦ ?_
+    have hmem := mem_Icc.mp hj
+    rw [fejerPolyCoeff_of_lt (by omega : m - j < m), Nat.sub_sub_self hmem.2,
+      ofReal_inv, ofReal_natCast, div_eq_inv_mul]
+  -- Match the upper half `m + 1 ≤ n ≤ 2 * m` with `j = n - m ∈ Icc 1 m` via `sum_Ico_add`.
+  have hhi : ∑ n ∈ Ico (m + 1) (2 * m + 1), (fejerPolyCoeff m n : ℂ) * w ^ n =
       -∑ j ∈ Icc 1 m, w ^ (m + j) / (j : ℂ) := by
-    rw [← sum_neg_distrib]
-    refine sum_nbij' (fun n ↦ n - m) (fun j ↦ m + j) ?_ ?_ ?_ ?_ ?_
-    · intro n hn
-      simp only [mem_Icc] at hn ⊢
-      omega
-    · intro j hj
-      simp only [mem_Icc] at hj ⊢
-      omega
-    · intro n hn
-      simp only [mem_Icc] at hn
-      omega
-    · intro j _
-      omega
-    · intro n hn
-      have hmem := mem_Icc.mp hn
-      rw [fejerPolyCoeff_of_gt_of_le (by omega) hmem.2, ofReal_neg, ofReal_inv, ofReal_natCast,
-        Nat.add_sub_of_le (by omega : m ≤ n)]
-      ring
+    have hshift := (sum_Ico_add (fun n ↦ (fejerPolyCoeff m n : ℂ) * w ^ n) 1 (m + 1) m).symm
+    rw [add_comm 1 m, show m + 1 + m = 2 * m + 1 by ring] at hshift
+    rw [hshift, Ico_add_one_right_eq_Icc, ← sum_neg_distrib]
+    refine sum_congr rfl fun j hj ↦ ?_
+    have hmem := mem_Icc.mp hj
+    rw [fejerPolyCoeff_of_gt_of_le (by omega) (by omega), ofReal_neg, ofReal_inv, ofReal_natCast,
+      Nat.add_sub_cancel_left]
+    ring
   rw [hlo, hhi, ← sub_eq_add_neg, ← sum_sub_distrib, fejerPoly]
   refine sum_congr rfl fun j _ ↦ ?_
   ring
@@ -198,23 +173,11 @@ theorem fejerPoly_eq_sum_range (m : ℕ) (w : ℂ) :
 /-- The sum of the first `m` coefficients of `fejerPoly m` equals the `m`-th harmonic number. -/
 theorem sum_range_fejerPolyCoeff (m : ℕ) :
     ∑ n ∈ range m, fejerPolyCoeff m n = (harmonic m : ℝ) := by
-  rw [harmonic_eq_sum_Icc]
+  rw [harmonic_eq_sum_Icc, sum_range_eq_sum_Icc_sub]
   simp only [Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
-  refine sum_nbij' (fun n ↦ m - n) (fun j ↦ m - j) ?_ ?_ ?_ ?_ ?_
-  · intro n hn
-    simp only [mem_range, mem_Icc] at hn ⊢
-    omega
-  · intro j hj
-    simp only [mem_Icc, mem_range] at hj ⊢
-    omega
-  · intro n hn
-    simp only [mem_range] at hn
-    omega
-  · intro j hj
-    simp only [mem_Icc] at hj
-    omega
-  · intro n hn
-    exact fejerPolyCoeff_of_lt (mem_range.mp hn)
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hmem := mem_Icc.mp hj
+  rw [fejerPolyCoeff_of_lt (by omega : m - j < m), Nat.sub_sub_self hmem.2]
 
 /-- The sum of all coefficients of `fejerPoly m` vanishes. -/
 theorem sum_range_two_mul_add_one_fejerPolyCoeff (m : ℕ) :
@@ -300,29 +263,6 @@ private theorem fejerStart_strictMono : StrictMono fejerStart :=
     simp only [fejerStart]
     omega
 
-private theorem le_fejerStart (k : ℕ) : k ≤ fejerStart k := by
-  induction k with
-  | zero => exact le_rfl
-  | succ k ih =>
-    simp only [fejerStart]
-    omega
-
-private theorem exists_fejerBlock (n : ℕ) :
-    ∃ k : ℕ, fejerStart k ≤ n ∧ n < fejerStart (k + 1) := by
-  induction n with
-  | zero =>
-    refine ⟨0, le_rfl, ?_⟩
-    simp only [fejerStart]
-    omega
-  | succ n ih =>
-    rcases ih with ⟨k, hk1, hk2⟩
-    by_cases hlt : n + 1 < fejerStart (k + 1)
-    · exact ⟨k, by omega, hlt⟩
-    · refine ⟨k + 1, by omega, ?_⟩
-      have hsucc : fejerStart (k + 1) < fejerStart (k + 1 + 1) :=
-        fejerStart_strictMono (lt_add_one (k + 1))
-      omega
-
 /-- The `n`-th Taylor coefficient of Fejér's superposed series: on the unique block
 `[fejerStart k, fejerStart (k + 1))` containing `n`, it equals
 `(2⁻¹) ^ k * fejerPolyCoeff (fejerDeg k) (n - fejerStart k)`. -/
@@ -351,10 +291,11 @@ private theorem fejerSeriesCoeff_eq_of_mem_Ico {k n : ℕ}
     simp [hnot]
   · intro hk
     exfalso
-    exact hk (mem_range.mpr (Nat.lt_succ_of_le ((le_fejerStart k).trans h1)))
+    exact hk (mem_range.mpr (Nat.lt_succ_of_le ((fejerStart_strictMono.id_le k).trans h1)))
 
 private theorem abs_fejerSeriesCoeff_le_one (n : ℕ) : |fejerSeriesCoeff n| ≤ 1 := by
-  rcases exists_fejerBlock n with ⟨k, h1, h2⟩
+  obtain ⟨k, -, h1, h2⟩ :=
+    fejerStart_strictMono.tendsto_atTop.exists_le_lt_succ (a := 0) (Nat.zero_le n)
   rw [fejerSeriesCoeff_eq_of_mem_Ico h1 h2, abs_mul, abs_of_nonneg (by positivity)]
   have hpow : (2 : ℝ)⁻¹ ^ k ≤ 1 := pow_le_one₀ (by positivity) (by norm_num)
   exact (mul_le_mul hpow (abs_fejerPolyCoeff_le_one _ _) (abs_nonneg _) zero_le_one).trans_eq
@@ -366,7 +307,8 @@ private theorem tendsto_fejerSeriesCoeff_zero :
   intro ε hε
   obtain ⟨K, hK⟩ := exists_pow_lt_of_lt_one hε (by norm_num : (2 : ℝ)⁻¹ < 1)
   refine ⟨fejerStart K, fun n hn ↦ ?_⟩
-  rcases exists_fejerBlock n with ⟨k, h1, h2⟩
+  obtain ⟨k, -, h1, h2⟩ :=
+    fejerStart_strictMono.tendsto_atTop.exists_le_lt_succ (a := 0) (Nat.zero_le n)
   have hKk : K ≤ k := by
     by_contra hlt
     have hle : fejerStart (k + 1) ≤ fejerStart K :=

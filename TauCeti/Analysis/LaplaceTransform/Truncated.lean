@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.ExpDecay
-import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.MeasureTheory.Integral.Exp.Complex
 
@@ -31,14 +30,7 @@ transform `∫ t in log u..log v, exp (-z t)` of the constant function `1`
 (`intervalIntegral_ofReal_cpow_neg_sub_one`); this links Dirichlet series, via integrals against
 `x ^ (-z - 1)`, to Laplace transforms of step functions `t ↦ a ⌊exp t⌋₊`.
 
-For a uniform step function `t ↦ c ⌊t / h⌋₊` of step length `h > 0`, the truncated Laplace
-transform over `[0, N * h]` (`intervalIntegral_floor_div_mul_cexp_neg_mul`) and, for bounded `c`
-and `0 < re z`, the full Laplace transform on `[0, ∞)` (`integral_floor_div_mul_cexp_neg_mul`)
-factor as the entire single-step integral `∫ u in 0..h, exp (-z u)` times the power series of `c`
-evaluated at `exp (-h z)`.
-
-These are the analytic inputs of Newman's contour argument for his Tauberian theorem and of its
-boundary sharpness constructions.
+These are the analytic inputs of Newman's contour argument for his Tauberian theorem.
 -/
 
 public section
@@ -207,81 +199,5 @@ theorem differentiableOn_integral_mul_cexp_neg_mul
   · simpa only [IntegrableOn, smul_eq_mul, mul_comm (cexp _) (f _)] using
       integrableOn_mul_cexp_neg_mul hf hbound hz
   · simp only [smul_eq_mul, mul_comm (cexp _) (f _)]
-
-/-- **Truncated Laplace transform of a uniform step function.** For `h > 0`, `c : ℕ → ℂ`,
-`N : ℕ`, and `z : ℂ`, the Laplace integral of `t ↦ c ⌊t / h⌋₊` over `[0, N * h]` factors as the
-single-step integral `∫ u in 0..h, exp (-z * u)` times the `N`-th partial sum of the power series
-`∑ c n * exp (-h * z) ^ n`. -/
-theorem intervalIntegral_floor_div_mul_cexp_neg_mul (c : ℕ → ℂ) {h : ℝ} (hh : 0 < h)
-    (N : ℕ) (z : ℂ) :
-    ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
-      (∫ u in (0 : ℝ)..h, cexp (-z * u)) * ∑ n ∈ Finset.range N, c n * cexp (-(h : ℂ) * z) ^ n := by
-  have hfloor {n : ℕ} {t : ℝ} (ht : t ∈ Ioo ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h)) :
-      ⌊t / h⌋₊ = n := by
-    have h1 : (n : ℝ) < t / h := (lt_div_iff₀ hh).mpr ht.1
-    have h2 : t / h < (n : ℝ) + 1 :=
-      (div_lt_iff₀ hh).mpr (by simpa only [Nat.cast_add, Nat.cast_one] using ht.2)
-    exact (Nat.floor_eq_iff ((Nat.cast_nonneg n).trans h1.le)).mpr ⟨h1.le, h2⟩
-  have hle (n : ℕ) : (n : ℝ) * h ≤ ((n + 1 : ℕ) : ℝ) * h := by
-    gcongr
-    exact_mod_cast Nat.le_succ n
-  have hint (n : ℕ) : IntervalIntegrable (fun t : ℝ ↦ c ⌊t / h⌋₊ * cexp (-z * t)) volume
-      ((n : ℝ) * h) (((n + 1 : ℕ) : ℝ) * h) := by
-    refine ((by fun_prop : Continuous fun t : ℝ ↦ c n * cexp (-z * t)).intervalIntegrable
-      _ _).congr_uIoo fun t ht ↦ ?_
-    rw [uIoo_of_le (hle n)] at ht
-    simp only [hfloor ht]
-  have hsum := intervalIntegral.sum_integral_adjacent_intervals
-    (f := fun t : ℝ ↦ c ⌊t / h⌋₊ * cexp (-z * t)) (μ := volume)
-    (a := fun k : ℕ ↦ (k : ℝ) * h) (n := N) fun k _ ↦ hint k
-  simp only [Nat.cast_zero, zero_mul] at hsum
-  rw [← hsum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  have hcongr : ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t) =
-      ∫ t in ((n : ℝ) * h)..(((n + 1 : ℕ) : ℝ) * h), c n * cexp (-z * t) :=
-    intervalIntegral.integral_congr_Ioo_of_le (hle n) fun t ht ↦ by rw [hfloor ht]
-  rw [hcongr, intervalIntegral.integral_const_mul]
-  have hshift := intervalIntegral.integral_comp_add_left (f := fun t : ℝ ↦ cexp (-z * t))
-    ((n : ℝ) * h) (a := (0 : ℝ)) (b := h)
-  have hhi : (n : ℝ) * h + h = ((n + 1 : ℕ) : ℝ) * h := by push_cast; ring
-  rw [add_zero, hhi] at hshift
-  rw [← hshift]
-  have hexp (u : ℝ) : cexp (-z * ((n : ℝ) * h + u : ℝ)) =
-      cexp (-(h : ℂ) * z) ^ n * cexp (-z * u) := by
-    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
-  simp_rw [hexp, intervalIntegral.integral_const_mul]
-  ring
-
-/-- **Laplace transform of a bounded uniform step function.** For `h > 0`, a bounded sequence
-`c : ℕ → ℂ`, and `0 < re z`, the Laplace transform of `t ↦ c ⌊t / h⌋₊` on `[0, ∞)` factors as
-`(∫ u in 0..h, exp (-z * u)) * ∑' n, c n * exp (-h * z) ^ n`. -/
-theorem integral_floor_div_mul_cexp_neg_mul {c : ℕ → ℂ} (hbound : ∀ n, ‖c n‖ ≤ M) {h : ℝ}
-    (hh : 0 < h) {z : ℂ} (hz : 0 < z.re) :
-    ∫ t in Ici (0 : ℝ), c ⌊t / h⌋₊ * cexp (-z * t) =
-      (∫ u in (0 : ℝ)..h, cexp (-z * u)) * ∑' n, c n * cexp (-(h : ℂ) * z) ^ n := by
-  have hmeas : AEStronglyMeasurable (fun t : ℝ ↦ c ⌊t / h⌋₊) (volume.restrict (Ici 0)) :=
-    (measurable_from_nat.comp (measurable_id.div_const h).nat_floor).aestronglyMeasurable
-  have hint := integrableOn_mul_cexp_neg_mul hmeas (fun t _ ↦ hbound _) hz
-  have hnorm_lt : ‖cexp (-(h : ℂ) * z)‖ < 1 := by
-    rw [Complex.norm_exp, ← Complex.ofReal_neg, Complex.re_ofReal_mul]
-    exact Real.exp_lt_one_iff.mpr (by nlinarith)
-  have hsumm : Summable fun n : ℕ ↦ c n * cexp (-(h : ℂ) * z) ^ n := by
-    refine Summable.of_norm_bounded
-      ((summable_geometric_of_lt_one (norm_nonneg _) hnorm_lt).mul_left M) fun n ↦ ?_
-    rw [norm_mul, norm_pow]
-    exact mul_le_mul_of_nonneg_right (hbound n) (by positivity)
-  have hlim1 : Tendsto (fun N : ℕ ↦ ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t))
-      atTop (𝓝 (∫ t in Ici (0 : ℝ), c ⌊t / h⌋₊ * cexp (-z * t))) := by
-    rw [integral_Ici_eq_integral_Ioi]
-    exact intervalIntegral_tendsto_integral_Ioi 0 ((integrableOn_Ici_iff_integrableOn_Ioi).mp hint)
-      (tendsto_natCast_atTop_atTop.atTop_mul_const hh)
-  have hlim2 : Tendsto (fun N : ℕ ↦ ∫ t in (0 : ℝ)..((N : ℝ) * h), c ⌊t / h⌋₊ * cexp (-z * t))
-      atTop (𝓝 ((∫ u in (0 : ℝ)..h, cexp (-z * u)) * ∑' n, c n * cexp (-(h : ℂ) * z) ^ n)) := by
-    simp_rw [intervalIntegral_floor_div_mul_cexp_neg_mul c hh]
-    exact hsumm.hasSum.tendsto_sum_nat.const_mul _
-  exact tendsto_nhds_unique hlim1 hlim2
 
 end TauCeti
