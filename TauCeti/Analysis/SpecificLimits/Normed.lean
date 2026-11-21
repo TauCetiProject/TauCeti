@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Tactic.Ring
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
 /-!
@@ -16,7 +17,8 @@ The norms of the powers of an element in the open unit ball form a summable seri
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
 Completeness then gives summability in the ring itself. In a complete seminormed group, a
 sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
-test.
+test. The bilateral geometric series `ρ ^ |m|` and `C * ρ ^ |m|` are summable over `ℤ` for
+`0 ≤ ρ < 1`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -87,6 +89,18 @@ theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] 
     refine Summable.of_norm_bounded_eventually_nat (g := fun _ ↦ 0) summable_zero ?_
     filter_upwards [Filter.eventually_ge_atTop 2] with n hn
     simpa [add_tsub_cancel_of_le (hj2.trans hn)] using hzero j hj (n - j)
+
+/-- The bilateral geometric series `m ↦ ρ ^ |m|` is summable over `ℤ` for `0 ≤ ρ < 1`. -/
+theorem summable_pow_natAbs {ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ1 : ρ < 1) :
+    Summable fun m : ℤ ↦ ρ ^ m.natAbs :=
+  summable_int_iff_summable_nat_and_neg.2
+    ⟨by simpa using summable_geometric_of_lt_one hρ0 hρ1,
+      by simpa using summable_geometric_of_lt_one hρ0 hρ1⟩
+
+/-- The bilateral geometric majorant `m ↦ C * ρ ^ |m|` is summable over `ℤ` for `0 ≤ ρ < 1`. -/
+theorem summable_mul_pow_natAbs {C ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ1 : ρ < 1) :
+    Summable fun m : ℤ ↦ C * ρ ^ m.natAbs :=
+  (summable_pow_natAbs hρ0 hρ1).mul_left C
 
 variable {K : Type*} [NormedField K]
 

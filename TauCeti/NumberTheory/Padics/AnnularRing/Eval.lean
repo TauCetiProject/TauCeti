@@ -10,9 +10,10 @@ public import TauCeti.NumberTheory.Padics.AnnularRing.Gauge
 public import TauCeti.NumberTheory.Padics.Basic
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Analysis.Normed.Group.NullFamily
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.Padics.Complex.Valuation
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Annulus evaluations on `ℤ_p⟦T, p/T⟧` and `H[1/T]`
@@ -116,15 +117,13 @@ private theorem isUnit_ringHomToCenter_T (g : AnnularRing p →+* K) (hg : IsUni
   have hinv_mem : ((hg.unit⁻¹ : Kˣ) : K) ∈ Subring.centralizer (Set.range g) :=
     Subring.mem_centralizer_iff.mpr fun _ ⟨b, hb⟩ ↦ by
       have hcomm : Commute (g b) (hg.unit : K) := by
-        change g b * (hg.unit : K) = (hg.unit : K) * g b
-        rw [IsUnit.unit_spec, ← map_mul, mul_comm b T, map_mul]
+        rw [commute_iff_eq, IsUnit.unit_spec, ← map_mul, mul_comm b T, map_mul]
       rw [← hb]
       exact hcomm.units_inv_right.eq
   refine ⟨⟨ringHomToCenter g T, ⟨⟨((hg.unit⁻¹ : Kˣ) : K), hinv_mem⟩,
       Subring.mem_center_iff.mpr fun ⟨c, hc⟩ ↦ Subtype.ext <| by
         have hcomm : Commute (hg.unit : K) c := by
-          change (hg.unit : K) * c = c * (hg.unit : K)
-          rw [IsUnit.unit_spec]
+          rw [commute_iff_eq, IsUnit.unit_spec]
           exact Subring.mem_centralizer_iff.mp hc (g T) ⟨T, rfl⟩
         exact hcomm.units_inv_left.eq.symm⟩,
     Subtype.ext (Subtype.ext hg.mul_val_inv), Subtype.ext (Subtype.ext hg.val_inv_mul)⟩, rfl⟩
@@ -201,14 +200,6 @@ private theorem norm_term_le {K : Type*} [SeminormedRing K] {f : ℤ_[p] →+* K
       _ = C * ‖(t : K)‖ ^ n := by rw [mul_one]
       _ ≤ C * ρ ^ m.natAbs := by rw [habs]; gcongr; exact le_max_left _ _
 
-/-- The bilateral geometric majorant `m ↦ C * ρ ^ |m|` is summable over `ℤ` for `0 ≤ ρ < 1`. -/
-private theorem summable_mul_pow_natAbs {C ρ : ℝ} (hρ0 : 0 ≤ ρ) (hρ1 : ρ < 1) :
-    Summable fun m : ℤ ↦ C * ρ ^ m.natAbs := by
-  have hnat : Summable fun n : ℕ ↦ ρ ^ n := summable_geometric_of_lt_one hρ0 hρ1
-  have hint : Summable fun m : ℤ ↦ ρ ^ m.natAbs :=
-    summable_int_iff_summable_nat_and_neg.2 ⟨by simpa using hnat, by simpa using hnat⟩
-  exact hint.mul_left C
-
 /-- The norms `‖f(x.coeff m) * t ^ m‖` are summable over `ℤ` whenever `f` is bounded and
 `‖t‖ < 1`, `‖t⁻¹‖ < p`. -/
 theorem summable_norm_eval₂ {K : Type*} [SeminormedRing K] (f : ℤ_[p] →+* K)
@@ -230,31 +221,7 @@ theorem summable_eval₂ {K : Type*} [SeminormedRing K] [CompleteSpace K] (f : �
     Summable fun m : ℤ ↦ f (x.coeff m) * ((t ^ m : Kˣ) : K) :=
   (summable_norm_eval₂ f hf t ht htinv x).of_norm
 
-variable {K : Type*} [NormedRing K]
-
-/-- Every continuous ring homomorphism `ℤ_[p] →+* K` into a Hausdorff normed ring takes values in
-the center of `K`, because `ℕ` is dense in `ℤ_[p]` and central in `K`. -/
-private theorem commute_of_norm_le {f : ℤ_[p] →+* K}
-    (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖f a‖ ≤ C * ‖a‖) (a : ℤ_[p]) (y : K) :
-    Commute (f a) y := by
-  obtain ⟨C, hC⟩ := hf
-  have hcont : Continuous f := AddMonoidHomClass.continuous_of_bound f C hC
-  have happr : Tendsto (fun n : ℕ ↦ (a.appr n : ℤ_[p])) atTop (𝓝 a) := by
-    refine tendsto_iff_norm_sub_tendsto_zero.mpr <|
-      squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-        (tendsto_pow_atTop_nhds_zero_of_lt_one (inv_nonneg.2 (p_pos (p := p)).le)
-          (inv_lt_one_of_one_lt₀ (one_lt_p (p := p))))
-    rw [norm_sub_rev, inv_pow, ← zpow_natCast, ← zpow_neg, PadicInt.norm_le_pow_iff_mem_span_pow]
-    exact PadicInt.appr_spec n a
-  have hleft : Tendsto (fun n : ℕ ↦ f (a.appr n : ℤ_[p]) * y) atTop (𝓝 (f a * y)) :=
-    ((hcont.tendsto a).comp happr).mul_const y
-  have hright : Tendsto (fun n : ℕ ↦ y * f (a.appr n : ℤ_[p])) atTop (𝓝 (y * f a)) :=
-    ((hcont.tendsto a).comp happr).const_mul y
-  have heq : (fun n : ℕ ↦ f (a.appr n : ℤ_[p]) * y) = fun n : ℕ ↦ y * f (a.appr n : ℤ_[p]) :=
-    funext fun n ↦ by simp only [map_natCast, Nat.cast_comm]
-  exact tendsto_nhds_unique (heq ▸ hleft) hright
-
-variable [CompleteSpace K]
+variable {K : Type*} [NormedRing K] [CompleteSpace K]
 
 /-- Multiplicativity of the bilateral evaluation series on `AnnularRing p`. -/
 private theorem eval₂_mul (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖f a‖ ≤ C * ‖a‖)
@@ -280,18 +247,20 @@ private theorem eval₂_mul (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ
   rw [hprod.tsum_prod' (fun m ↦ hprod.comp_injective fun _ _ h ↦ (Prod.mk.inj h).2)]
   refine tsum_congr fun m ↦ ?_
   let g : ℤ_[p] →+ K := (AddMonoidHom.mulRight ((t ^ m : Kˣ) : K)).comp f.toAddMonoidHom
-  have hg : Continuous g :=
-    (continuous_mul_const ((t ^ m : Kˣ) : K)).comp (AddMonoidHomClass.continuous_of_bound f C hC)
+  have hf_cont : Continuous f := AddMonoidHomClass.continuous_of_bound f C hC
+  have hg : Continuous g := (continuous_mul_const ((t ^ m : Kˣ) : K)).comp hf_cont
+  have hg_apply (a : ℤ_[p]) : g a = f a * ((t ^ m : Kˣ) : K) := by
+    simp [g]
   have hsum : HasSum (fun i : ℤ ↦ g (x.coeff i * y.coeff (m - i))) (g ((x * y).coeff m)) :=
     (hasSum_coeff_mul x y m).map g hg
+  rw [← hg_apply]
   refine (hsum.congr_fun fun i ↦ ?_).tsum_eq.symm
-  change (f (x.coeff i) * ((t ^ i : Kˣ) : K)) * (f (y.coeff (m - i)) * ((t ^ (m - i) : Kˣ) : K)) =
-    f (x.coeff i * y.coeff (m - i)) * ((t ^ m : Kˣ) : K)
+  rw [hg_apply]
   have ht_add : ((t ^ i : Kˣ) : K) * ((t ^ (m - i) : Kˣ) : K) = ((t ^ m : Kˣ) : K) := by
     rw [← Units.val_mul, ← zpow_add, add_sub_cancel]
   have hcomm : ((t ^ i : Kˣ) : K) * f (y.coeff (m - i)) =
       f (y.coeff (m - i)) * ((t ^ i : Kˣ) : K) :=
-    (commute_of_norm_le ⟨C, hC⟩ (y.coeff (m - i)) ((t ^ i : Kˣ) : K)).symm
+    (PadicInt.commute_ringHom_of_continuous hf_cont (y.coeff (m - i)) ((t ^ i : Kˣ) : K)).symm
   rw [map_mul, ← ht_add, mul_assoc, ← mul_assoc ((t ^ i : Kˣ) : K), hcomm, mul_assoc, mul_assoc]
 
 /-- The evaluation ring homomorphism `H = ℤ_p⟦T, p/T⟧ →+* K` sending `∑ d_m T ^ m` to
@@ -562,12 +531,10 @@ def localizedEvalAlgHom {A : Type*} [CommRing A] [Algebra (AnnularRing p) A]
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) : A →ₐ[ℤ_[p]] K :=
   { localizedEval₂ (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv with
     commutes' := fun c ↦ by
-      change localizedEval₂ (algebraMap ℤ_[p] K) exists_norm_algebraMap_le t ht htinv
-          (algebraMap ℤ_[p] A c) = algebraMap ℤ_[p] K c
       have hmap : algebraMap ℤ_[p] A c =
           algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c) :=
         DFunLike.congr_fun (ringHom_padicInt_eq (algebraMap ℤ_[p] A)) c
-      rw [hmap, localizedEval₂_algebraMap, eval₂_algebraMap] }
+      rw [RingHom.toFun_eq_coe, hmap, localizedEval₂_algebraMap, eval₂_algebraMap] }
 
 @[simp] theorem localizedEvalAlgHom_algebraMap {A : Type*} [CommRing A] [Algebra (AnnularRing p) A]
     [IsLocalization.Away (T : AnnularRing p) A] [Algebra ℤ_[p] A]

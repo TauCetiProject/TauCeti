@@ -104,6 +104,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   finite of cardinality `p`.
 * `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
   endomorphism of `ℤ_[p]`.
+* `PadicInt.commute_ringHom_of_continuous`: every continuous ring homomorphism from `ℤ_[p]` into a
+  Hausdorff topological semiring takes values in the center.
 -/
 
 public section
@@ -584,6 +586,14 @@ theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := 
 noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
   default := RingHom.id ℤ_[p]
   uniq := ringHom_eq_id
+
+/-- Every continuous ring homomorphism `ℤ_[p] →+* K` into a Hausdorff topological semiring takes
+values in the center of `K`, because `ℕ` is dense in `ℤ_[p]` and central in `K`. -/
+theorem commute_ringHom_of_continuous {K : Type*} [Semiring K] [TopologicalSpace K] [T2Space K]
+    [ContinuousMul K] {f : ℤ_[p] →+* K} (hf : Continuous f) (a : ℤ_[p]) (y : K) :
+    Commute (f a) y :=
+  congrFun (denseRange_natCast.equalizer (hf.mul_const y) (hf.const_mul y)
+    (funext fun n ↦ by simp [map_natCast, Nat.cast_comm])) a
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

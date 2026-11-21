@@ -68,22 +68,6 @@ open Filter Topology
 
 namespace TauCeti.AnnularRing
 
-/-- If `x ∈ ϖ ^ n A₀` and `x ∉ ϖ ^ (n + 1) A₀`, then its Tate gauge is exactly `r ^ n`. -/
-private theorem tateNorm_eq_zpow_of_mem_of_not_mem {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] (d : Huber.TateNormDatum A) {x : A} {n : ℤ}
-    (hmem : ((d.pseudoUniformizer ^ (-n) : Aˣ) : A) * x ∈ d.ringOfDefinition)
-    (hnot : ((d.pseudoUniformizer ^ (-(n + 1)) : Aˣ) : A) * x ∉ d.ringOfDefinition) :
-    Huber.tateNorm d x = d.radius ^ n := by
-  refine le_antisymm ((Huber.tateNorm_le_zpow_iff d).2 hmem) (le_of_not_gt fun hlt ↦ hnot ?_)
-  rw [Huber.tateNorm_apply,
-    Huber.tateGauge_lt_iff (zero_le_one.trans d.one_lt_radius_inv.le) (d.exists_zpow_mul_mem x)]
-    at hlt
-  obtain ⟨m, hm, hmn⟩ := hlt
-  have hlt' : (d.radius⁻¹) ^ (-m) < (d.radius⁻¹) ^ (-n) := by
-    simpa only [inv_zpow', neg_neg] using hmn
-  rw [zpow_lt_zpow_iff_right₀ d.one_lt_radius_inv] at hlt'
-  exact Huber.zpow_neg_mul_mem_of_le d.pseudoUniformizer_mem (by omega) hm
-
 /-! ### The `T`-adic Tate gauge for any topology with basis `T ^ n H` -/
 
 section HasBasis
@@ -204,7 +188,7 @@ theorem tateNorm_U_pow {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (j : ℕ) 
       T_zpow_neg_mul_mem_range_iff] at h
     exact T_not_dvd_U_pow j <| T_dvd_iff.mpr fun m ↦ by
       simpa only [localizedCoeff_algebraMap] using h m
-  simpa using tateNorm_eq_zpow_of_mem_of_not_mem (tateNormDatum hb hα₀ hα₁) hmem hnot
+  simpa using Huber.tateNorm_eq_zpow_of_mem_of_not_mem (tateNormDatum hb hα₀ hα₁) hmem hnot
 
 /-- The element `U = p / T` has norm `1` for the `T`-gauge of any radius `α ∈ (0, 1)`. -/
 theorem tateNorm_U {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) :
