@@ -63,15 +63,6 @@ namespace TauCeti.ValuationSpectrum
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
 
-/-- Pulling back a subset of `Spa (A, A⁺)` cut out by a condition `S`: the points of
-`Spa (B, B⁺)` whose pullback lies in `Spa (A, A⁺) ∩ S` are those whose pullback lies in `S`. -/
-private theorem comap_preimage_spa_inter_inter_spa {B : Type*} [CommRing B] [TopologicalSpace B]
-    {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A} {Bplus : Subring B}
-    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (S : Set (Spv A)) :
-    comap φ ⁻¹' (spa Aplus ∩ S) ∩ spa Bplus = spa Bplus ∩ comap φ ⁻¹' S := by
-  ext v
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
-
 /-! ### Closed discs -/
 
 /-- **The closed disc `𝔻(A⁺, T, b)`**: the points `v` of `Spa (A, A⁺)` with `v(T) ≤ v(b)`. For a
@@ -365,6 +356,11 @@ theorem strictAnnulus_def (Aplus : Subring A) (T a b : A) :
 theorem mem_strictAnnulus_iff (Aplus : Subring A) (T a b : A) (v : Spv A) :
     v ∈ strictAnnulus Aplus T a b ↔
       v ∈ spa Aplus ∧ v.toValuativeRel.vlt a T ∧ v.toValuativeRel.vlt T b := Iff.rfl
+
+/-- Every strict annulus lies in the adic spectrum. -/
+theorem strictAnnulus_subset_spa (Aplus : Subring A) (T a b : A) :
+    strictAnnulus Aplus T a b ⊆ spa Aplus :=
+  Set.inter_subset_left
 
 /-- At a point of a strict annulus the coordinate is outside the support. -/
 theorem not_vle_zero_of_mem_strictAnnulus {Aplus : Subring A} {T a b : A} {v : Spv A}
