@@ -334,6 +334,20 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
   ext v Z
   simp [h.differential_apply_eq_eval₂]
 
+/-- Two moment maps of the same action have the same differential, since both differentials are
+computed by the moment-map identity `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. -/
+theorem differential_eq_differential (h : σ.IsMomentMap a μ) (h' : σ.IsMomentMap a μ') :
+    h.differential = h'.differential := by
+  funext x
+  ext v Z
+  rw [h.differential_apply_eq_eval₂, h'.differential_apply_eq_eval₂]
+
+/-- Shifting a moment map by a constant `ν ∈ 𝔤*` does not change its differential. -/
+@[simp]
+theorem differential_add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
+    (h.add_const ν).differential = h.differential :=
+  (h.add_const ν).differential_eq_differential h
+
 /-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
 homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
 @[simp]

@@ -382,7 +382,7 @@ theorem exists_diffeomorph_mpullback_eq_of_map_smul (h : σ.IsEquivariantMomentM
               (h₂.levelSubMulAction c),
           SmoothForm.mpullback Φ Φ.contMDiff η₂ = η := fun η η₂ hη hη₂ ↦
   ⟨h.orbitRelQuotientDiffeomorph h₂ hreg hn hreg₂ hn₂ φ (fun x ↦ by rw [hμ]) d d
-      (MulEquiv.refl _) (fun k x ↦ hφG k x),
+      (MulEquiv.refl _) (fun k x ↦ by simp [Subgroup.smul_def, hφG]),
     h.mpullback_orbitRelQuotientDiffeomorph h₂ hreg hn hreg₂ hn₂ φ _ d d _ _ hσ η η₂ hη hη₂⟩
 
 end Equivariant
@@ -460,9 +460,10 @@ theorem exists_diffeomorph_mpullback_eq_coadjointRepresentation (h : σ.IsEquiva
       congrArg (Lie.coadjointRepresentation ℝ I G g⁻¹) hx
   have hψ : ∀ (k : (Lie.coadjointRepresentation ℝ I G).stabilizer c) (x : M),
       Diffeomorph.smul I I' ∞ g (k • x) = ψ k • Diffeomorph.smul I I' ∞ g x := fun k x ↦ by
-    simp only [ψ, Diffeomorph.smul_apply, Subgroup.smul_def, smul_smul, MulEquiv.trans_apply,
-      MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply, MulAut.conj_apply,
-      inv_mul_cancel_right]
+    simp [ψ, Subgroup.smul_def, smul_smul]
+  -- `mpullback` takes the smoothness proof as a dependent argument, so `hg` cannot be rewritten
+  -- into this form; it is accepted as is because `⇑(Diffeomorph.smul I I' ∞ g)` unfolds to
+  -- `fun x ↦ g • x` and any two smoothness proofs are equal.
   have hσ : SmoothForm.mpullback _ (Diffeomorph.smul I I' ∞ g).contMDiff σ = σ := hg
   exact ⟨h.orbitRelQuotientDiffeomorph h hreg hn hreg' hn _ hφ d d' ψ hψ,
     h.mpullback_orbitRelQuotientDiffeomorph h hreg hn hreg' hn _ hφ d d' ψ hψ hσ η η' hη hη'⟩
@@ -493,8 +494,8 @@ theorem exists_diffeomorph_mpullback_eq_add_const (h : σ.IsEquivariantMomentMap
       ((Lie.coadjointRepresentation ℝ I G).stabilizer c') F) :
     -- `c'` is a regular value of `μ + ν`, as `c` is one of `μ`.
     let hreg' : ∀ x, μ x + ν = c' → Function.Surjective ((h.add_const hν).differential x) :=
-      fun x hx ↦ h.differential_surjective_add_const hν
-        (hreg x (add_right_cancel (hx.trans hc'.symm)))
+      fun x hx ↦ (h.toIsMomentMap.differential_eq_differential (h.add_const hν).toIsMomentMap) ▸
+        hreg x (add_right_cancel (hx.trans hc'.symm))
     letI := h.levelSubMulActionChartedSpace c hreg hn
     letI := (h.add_const hν).levelSubMulActionChartedSpace c' hreg' hn
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
