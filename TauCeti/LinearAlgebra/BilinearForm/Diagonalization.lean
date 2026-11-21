@@ -53,6 +53,8 @@ bilinear forms, which is the input to the normal forms of one-relator pro-`2` gr
 
 * `LinearMap.BilinForm.iIsOrtho.toMatrix_eq_diagonal`: the Gram matrix in an orthogonal basis
   is the diagonal matrix of its self-pairings.
+* `LinearMap.BilinForm.iIsOrtho.toMatrix_span_of_smul_eq`: the Gram matrix of a scaled
+  restriction to the span of a subfamily of an orthogonal basis is diagonal.
 * `LinearMap.BilinForm.iIsOrtho.equivalent_weightedSumSquares`: an orthogonal basis
   identifies the associated quadratic form with a weighted sum of squares.
 * `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
@@ -120,6 +122,31 @@ theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoi
     {b : Module.Basis ι R M} (hb : B.iIsOrtho b) (hbu : ∀ i, IsUnit (B (b i) (b i))) :
     IsUnit (B.toMatrix b).det :=
   hb.det_toMatrix ▸ IsUnit.prod_univ_iff.mpr hbu
+
+/-- If `c • U` restricts `B` to the span of an injective sub-family `b ∘ f` of an orthogonal basis
+`b`, with `c` left-regular and `B (b (f j)) (b (f j)) = c * d j`, then the Gram matrix of `U` in
+the spanned basis is `Matrix.diagonal d`. -/
+theorem iIsOrtho.toMatrix_span_of_smul_eq {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Fintype κ] [DecidableEq κ] {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
+    (hb : B.iIsOrtho b) {f : κ → ι} (hf : Function.Injective f) {c : R} (hc : IsLeftRegular c)
+    {d : κ → R} (hbd : ∀ j, B (b (f j)) (b (f j)) = c * d j)
+    {U : LinearMap.BilinForm R (Submodule.span R (Set.range fun j ↦ b (f j)))}
+    (hU : c • U = B.restrict _) :
+    U.toMatrix (Module.Basis.span (b.linearIndependent.comp f hf)) = Matrix.diagonal d := by
+  let bm := Module.Basis.span (b.linearIndependent.comp f hf)
+  ext j j'
+  rw [toMatrix_apply]
+  refine hc ?_
+  dsimp only
+  have hU_app : c * U (bm j) (bm j') = (B.restrict _) (bm j) (bm j') := by
+    simpa [smul_eq_mul] using LinearMap.congr_fun₂ hU (bm j) (bm j')
+  rw [hU_app, restrict_apply, domRestrict_apply, Module.Basis.coe_span_apply,
+    Module.Basis.coe_span_apply]
+  by_cases hjj' : j = j'
+  · subst hjj'
+    rw [Matrix.diagonal_apply_eq, Function.comp_apply, hbd j]
+  · rw [Matrix.diagonal_apply_ne _ hjj', mul_zero, Function.comp_apply, Function.comp_apply,
+      iIsOrtho_def.mp hb _ _ (hf.ne hjj')]
 
 /-- The quadratic form of a bilinear form in an orthogonal basis is isometric to the diagonal
 form of its self-pairings. -/

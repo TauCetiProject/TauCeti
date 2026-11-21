@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fintype.Fiber
 public import TauCeti.LinearAlgebra.BilinearForm.ValuationRing
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Henselian
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Diagonalizing an integral lattice at an odd prime
@@ -27,6 +32,12 @@ and the unit determinant of each constituent are read off the diagonal.
   localized integral form of a lattice has an orthogonal basis.
 * `TauCeti.IntegralLattice.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow`: for a
   nondegenerate lattice the diagonal entries are units times powers of `p`.
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_forall_occCount_eq_and_isSquare`: two
+  diagonal Jordan forms at an odd prime are integrally isometric if and only if they have the same
+  rank and the same unit determinant square class at every scale `p^m`, `m ≥ 0`.
+* `TauCeti.IntegralLattice.exists_unit_determinant_eq_sq_mul_prod`: relation between the signed
+  determinant in `ℤ_p` and the diagonal Jordan entries.
+
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §91C and 92:1.
@@ -35,16 +46,17 @@ and the unit determinant of each constituent are read off the diagonal.
 
 public section
 
-open Module
+open Function Module
 
 namespace TauCeti
 
-universe u
-
-variable {V : Type u} [AddCommGroup V] [Module ℚ V]
+universe u v
 
 namespace IntegralLattice
 
+section
+
+variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 variable (L : IntegralLattice V) {p : ℕ} [Fact p.Prime]
 
 /-- **Diagonalization at an odd prime.** For an odd prime `p` the localized integral form of an
@@ -70,6 +82,50 @@ theorem exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow (hp : p ≠ 2)
   exact ⟨b, fun i ↦ _root_.PadicInt.unitCoeff (hne i),
     fun i ↦ (L.localIntegralForm p (b i) (b i)).valuation, hb,
     fun i ↦ _root_.PadicInt.unitCoeff_spec (hne i)⟩
+
+/-- The signed determinant of `L` in `ℤ_p` differs from the diagonal Jordan Gram determinant
+`(∏ i, u i) · p ^ (∑ i, k i)` by the square of the change-of-basis unit. -/
+theorem exists_unit_determinant_eq_sq_mul_prod
+    {b : Basis (Fin (finrank ℤ_[p] (L.LocalCarrier p))) ℤ_[p] (L.LocalCarrier p)}
+    {u : Fin (finrank ℤ_[p] (L.LocalCarrier p)) → ℤ_[p]ˣ}
+    {k : Fin (finrank ℤ_[p] (L.LocalCarrier p)) → ℕ}
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i) :
+    ∃ d : ℤ_[p]ˣ,
+      (L.determinant : ℤ_[p]) =
+        (d : ℤ_[p]) ^ 2 * ((∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i) := by
+  have hfin : finrank ℤ_[p] (L.LocalCarrier p) = finrank ℤ L := Module.finrank_baseChange
+  let b₀ := ((Module.finBasis ℤ L).baseChange ℤ_[p]).reindex (finCongr hfin.symm)
+  obtain ⟨d, hd⟩ := (LinearMap.BilinForm.Equivalent.refl _).exists_det_eq_unit_sq_mul_det b₀ b
+  rw [LinearMap.BilinForm.det_toMatrix_reindex, L.det_toMatrix_localIntegralForm,
+    hb.det_toMatrix] at hd
+  simp_rw [hbu, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum] at hd
+  exact ⟨d, hd⟩
+
+end
+
+/-- **Classification of diagonal Jordan forms at an odd prime.** Let `p` be an odd prime and let
+`b` and `c` be orthogonal bases of the localizations `L_p` and `M_p` of two integral lattices, with
+`B(bᵢ, bᵢ) = uᵢ pᵏⁱ` and `B(cⱼ, cⱼ) = vⱼ pˡʲ` for units `uᵢ, vⱼ ∈ ℤ_pˣ`. Then `L_p` and `M_p` are
+integrally isometric if and only if, at every scale `m ≥ 0` (including the unimodular scale
+`m = 0`), they have the same number of summands of scale `p^m` and the products of the unit parts at
+scale `p^m` agree modulo squares in `ℤ_pˣ`. -/
+theorem localIntegralForm_equivalent_iff_forall_occCount_eq_and_isSquare
+    {V : Type u} {W : Type v} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W}
+    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {b : Basis ι ℤ_[p] (L.LocalCarrier p)} {c : Basis κ ℤ_[p] (M.LocalCarrier p)}
+    {u : ι → ℤ_[p]ˣ} {v : κ → ℤ_[p]ˣ} {k : ι → ℕ} {l : κ → ℕ}
+    (hb : (L.localIntegralForm p).iIsOrtho b)
+    (hbu : ∀ i, L.localIntegralForm p (b i) (b i) = u i * (p : ℤ_[p]) ^ k i)
+    (hc : (M.localIntegralForm p).iIsOrtho c)
+    (hcv : ∀ j, M.localIntegralForm p (c j) (c j) = v j * (p : ℤ_[p]) ^ l j) :
+    (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
+      ∀ m : ℕ, occCount k m = occCount l m ∧
+        IsSquare ((∏ i : {i // k i = m}, u i) * ∏ j : {j // l j = m}, v j) :=
+  hb.equivalent_iff_forall_occCount_eq_and_isSquare hc (PadicInt.isUnit_two hp)
+    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+    (PadicInt.not_isUnit_iff_dvd.mpr dvd_rfl) hbu hcv
 
 end IntegralLattice
 

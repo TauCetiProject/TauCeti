@@ -200,17 +200,31 @@ private theorem relIndex_evenSublattice_eq_natCard_range_normParity :
     AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
     AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
 
+open Classical in
+/-- **The index of the even sublattice is `1` when the lattice is even and `2` when it is odd.** -/
+theorem relIndex_evenSublattice :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup =
+      if L.IsEven then 1 else 2 := by
+  rw [L.relIndex_evenSublattice_eq_natCard_range_normParity]
+  split_ifs with hL
+  · have hbot : L.normParity.range = ⊥ := eq_bot_iff.mpr fun _ ⟨x, hx⟩ ↦ hx ▸ by
+      simpa [normParity_apply, ZMod.intCast_eq_zero_iff_even, L.even_integralNorm_iff] using
+        L.isEven_iff_forall_norm.mp hL x
+    simp [hbot]
+  · have htop : L.normParity.range = ⊤ :=
+      AddMonoidHom.range_eq_top.mpr (L.normParity_surjective_of_not_isEven hL)
+    rw [htop]
+    exact (Nat.card_congr AddSubgroup.topEquiv.toEquiv).trans (Nat.card_zmod 2)
+
 /-- The index of the even sublattice in the lattice is positive. -/
 theorem relIndex_evenSublattice_pos :
     0 < L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup := by
-  rw [L.relIndex_evenSublattice_eq_natCard_range_normParity]
-  exact Nat.card_pos
+  rw [L.relIndex_evenSublattice]; split_ifs <;> decide
 
 /-- The even sublattice has index at most two in the lattice: it is the kernel of norm parity. -/
 theorem relIndex_evenSublattice_le_two :
     L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup ≤ 2 := by
-  rw [L.relIndex_evenSublattice_eq_natCard_range_normParity]
-  exact (Nat.card_le_card_of_injective _ Subtype.coe_injective).trans (Nat.card_zmod 2).le
+  rw [L.relIndex_evenSublattice]; split_ifs <;> decide
 
 /-- No odd prime divides the index of the even sublattice in the lattice. -/
 theorem not_dvd_relIndex_evenSublattice_of_ne_two {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :

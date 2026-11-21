@@ -147,12 +147,9 @@ product over all indices. -/
 theorem prod_fiber_subtype [Fintype X] [DecidableEq S] {K : Type*} [CommMonoid K]
     (f : X → S) {T : Finset S} (hT : ∀ x, f x ∈ T) (w : X → K) :
     ∏ y ∈ T, ∏ x : {x // f x = y}, w x.val = ∏ x, w x := by
-  have hfib := Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (t := T) (g := f)
-    (fun x _ => hT x) w
-  have hsub (y : S) : (∏ x with f x = y, w x) = ∏ x : {x // f x = y}, w x.val :=
-    Finset.prod_subtype (p := fun x => f x = y) (Finset.univ.filter (fun x => f x = y))
-      (by simp) w
-  simpa only [hsub] using hfib
+  simpa only [fun y => Finset.prod_subtype (p := (f · = y)) (Finset.univ.filter (f · = y))
+    (by simp) w] using
+    Finset.prod_fiberwise_of_maps_to (s := Finset.univ) (t := T) (g := f) (fun x _ => hT x) w
 
 /-- Raising each weight to its occurrence count gives the product over all indices. -/
 @[to_additive
@@ -237,13 +234,9 @@ private theorem exists_finset_mem_and_forall_mem {Y : Type*} [Finite X] [Finite 
     (u : X → S) (v : Y → S) (z : S) :
     ∃ T : Finset S, z ∈ T ∧ (∀ x, u x ∈ T) ∧ ∀ y, v y ∈ T := by
   classical
-  let _ := Fintype.ofFinite X
-  let _ := Fintype.ofFinite Y
+  let _ := Fintype.ofFinite X; let _ := Fintype.ofFinite Y
   exact ⟨insert z (Finset.univ.image u ∪ Finset.univ.image v), Finset.mem_insert_self z _,
-    fun x => Finset.mem_insert_of_mem
-      (Finset.mem_union_left _ (Finset.mem_image_of_mem u (Finset.mem_univ x))),
-    fun y => Finset.mem_insert_of_mem
-      (Finset.mem_union_right _ (Finset.mem_image_of_mem v (Finset.mem_univ y)))⟩
+    fun x => by simp, fun y => by simp⟩
 
 /-- Two finite families on index types of the same cardinality with equal occurrence counts away
 from `z` also have equal occurrence count at `z`. -/
@@ -252,8 +245,7 @@ theorem occCount_eq_of_forall_ne {Y : Type*} [Finite X] [Finite Y] {u : X → S}
     occCount u z = occCount v z := by
   classical
   obtain ⟨T, hzT, huT, hvT⟩ := exists_finset_mem_and_forall_mem u v z
-  have hsumu := sum_occCount_eq_card u huT
-  have hsumv := sum_occCount_eq_card v hvT
+  have hsumu := sum_occCount_eq_card u huT; have hsumv := sum_occCount_eq_card v hvT
   rw [← Finset.add_sum_erase _ _ hzT] at hsumu hsumv
   have herase : ∑ a ∈ T.erase z, occCount u a = ∑ a ∈ T.erase z, occCount v a :=
     Finset.sum_congr rfl fun a ha => h a (Finset.mem_erase.mp ha).1
@@ -278,10 +270,9 @@ theorem isSquare_prod_fiber_subtype_mul_of_forall_ne {Y G : Type*} [Fintype X] [
       prod_fiber_subtype u huT f,
       Finset.mul_prod_erase T (fun a => ∏ y : {y // v y = a}, g y.val) hzT,
       prod_fiber_subtype v hvT g]
-  have hsq : IsSquare
-      (∏ a ∈ T.erase z, ((∏ x : {x // u x = a}, f x.val) * ∏ y : {y // v y = a}, g y.val)) :=
-    Finset.prod_induction _ IsSquare (fun _ _ => IsSquare.mul) IsSquare.one fun a ha =>
-      hne a (Finset.mem_erase.mp ha).1
+  have hsq : IsSquare (∏ a ∈ T.erase z, _) :=
+    Finset.prod_induction _ IsSquare (fun _ _ => IsSquare.mul) IsSquare.one
+      fun a ha => hne a (Finset.mem_erase.mp ha).1
   simpa only [← hmul, mul_div_cancel_right] using hall.div hsq
 
 /-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/

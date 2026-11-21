@@ -11,22 +11,19 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 /-!
 # Gauss sums and primary decomposition of finite quadratic modules
 
-Because a finite quadratic module is canonically isometric to the orthogonal product of its
-prime-primary components (`TauCeti.FiniteQuadraticModule.primaryDecomposition`), its scaled and
-unscaled Gauss sums factor as the products of those of its prime-primary restrictions, and — when
-it is nondegenerate — its `ZMod 8`-valued Gauss-sum invariant `gaussSign` splits as the sum of
-their `gaussSign` invariants. Primes not dividing `#A` contribute trivial primary components whose
-`gaussSign` is zero, so the sum may be indexed by any finite set of primes containing the prime
-factors of `#A`.
+By primary decomposition (`TauCeti.FiniteQuadraticModule.primaryDecomposition`), the scaled and
+unscaled Gauss sums factor over `p ∈ (#A).primeFactors`, and for nondegenerate `A` the
+`ZMod 8`-valued `gaussSign` splits as the sum over `p ∈ (#A).primeFactors` (or any superset of
+primes, since coprime primes give trivial primary components).
 
 ## Main results
 
-* `TauCeti.FiniteQuadraticModule.scaledGaussSum_eq_prod_primeFactors`: the scaled Gauss sum of `A`
-  is the product over `p ∈ (#A).primeFactors` of the scaled Gauss sums of `A[p^∞]`.
-* `TauCeti.FiniteQuadraticModule.gaussSum_eq_prod_primeFactors`: the Gauss sum of `A` is the
-  product over `p ∈ (#A).primeFactors` of the Gauss sums of `A[p^∞]`.
-* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primeFactors`: for nondegenerate `A`,
-  `A.gaussSign` is the sum over `p ∈ (#A).primeFactors` of the `gaussSign` invariants of `A[p^∞]`.
+* `TauCeti.FiniteQuadraticModule.scaledGaussSum_eq_prod_primeFactors`: scaled Gauss sum factors
+  over `(#A).primeFactors`.
+* `TauCeti.FiniteQuadraticModule.gaussSum_eq_prod_primeFactors`: Gauss sum factors over
+  `(#A).primeFactors`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_primeFactors`: `gaussSign` splits over
+  `(#A).primeFactors`.
 * `TauCeti.FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset`: the same sum over any
   finite set of primes containing `(#A).primeFactors`.
 
@@ -46,17 +43,14 @@ namespace TauCeti.FiniteQuadraticModule
 module is the product of the scaled Gauss sums of its prime-primary components. -/
 theorem scaledGaussSum_eq_prod_primeFactors (A : FiniteQuadraticModule) (n : ℕ) :
     A.scaledGaussSum n =
-      ∏ p ∈ (Nat.card A).primeFactors,
-        (A.restrict (primaryComponent A p)).scaledGaussSum n := by
-  rw [← A.primaryDecomposition.scaledGaussSum_eq, primaryComponents, scaledGaussSum_pi]
-  exact Finset.prod_coe_sort (Nat.card A).primeFactors
-    (fun p ↦ (A.restrict (primaryComponent A p)).scaledGaussSum n)
+      ∏ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).scaledGaussSum n := by
+  rw [← A.primaryDecomposition.scaledGaussSum_eq, primaryComponents_eq_pi, scaledGaussSum_pi]
+  exact Finset.prod_coe_sort _ (fun p ↦ (A.restrict (primaryComponent A p)).scaledGaussSum n)
 
 /-- **Primary factorization of the Gauss sum.** The Gauss sum of a finite quadratic module is the
 product of the Gauss sums of its prime-primary components. -/
 theorem gaussSum_eq_prod_primeFactors (A : FiniteQuadraticModule) :
-    A.gaussSum =
-      ∏ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).gaussSum := by
+    A.gaussSum = ∏ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).gaussSum := by
   simpa only [scaledGaussSum_one] using A.scaledGaussSum_eq_prod_primeFactors 1
 
 /-- **Primary decomposition of the Gauss-sum invariant.** The Gauss-sum invariant of a
@@ -65,11 +59,9 @@ components. -/
 theorem gaussSign_eq_sum_primeFactors {A : FiniteQuadraticModule} (hA : A.IsNondegenerate) :
     A.gaussSign =
       ∑ p ∈ (Nat.card A).primeFactors, (A.restrict (primaryComponent A p)).gaussSign := by
-  rw [← A.primaryDecomposition.gaussSign_eq, primaryComponents,
-    gaussSign_pi _ fun p ↦
-      A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.property)]
-  exact Finset.sum_coe_sort (Nat.card A).primeFactors
-    (fun p ↦ (A.restrict (primaryComponent A p)).gaussSign)
+  rw [← A.primaryDecomposition.gaussSign_eq, primaryComponents_eq_pi, gaussSign_pi _ fun p ↦
+    A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.property)]
+  exact Finset.sum_coe_sort _ (fun p ↦ (A.restrict (primaryComponent A p)).gaussSign)
 
 /-- For any finite set `S` of primes containing the prime factors of `#A`, the Gauss-sum invariant
 of a nondegenerate finite quadratic module `A` is the sum over `p ∈ S` of the Gauss-sum invariants
@@ -80,14 +72,11 @@ theorem gaussSign_eq_sum_of_primeFactors_subset {A : FiniteQuadraticModule}
     A.gaussSign = ∑ p ∈ S, (A.restrict (primaryComponent A p)).gaussSign := by
   rw [gaussSign_eq_sum_primeFactors hA]
   refine Finset.sum_subset hS fun p hpS hpnot ↦ ?_
-  have hp : p.Prime := hS_prime p hpS
-  have hndvd : ¬ p ∣ Nat.card A := fun hdvd ↦
-    hpnot (hp.mem_primeFactors hdvd Nat.card_pos.ne')
-  have hcard1 : Nat.card (A.restrict (primaryComponent A p)) = 1 := by
-    rw [A.natCard_restrict, TauCeti.AddCommGroup.natCard_primaryComponent A hp,
-      Nat.factorization_eq_zero_of_not_dvd hndvd, pow_zero]
-  have : Subsingleton (A.restrict (primaryComponent A p)) :=
-    Finite.card_le_one_iff_subsingleton.mp hcard1.le
+  have hp := hS_prime p hpS
+  have : Subsingleton (A.restrict (primaryComponent A p)) := Finite.card_le_one_iff_subsingleton.mp
+    (by rw [A.natCard_restrict, TauCeti.AddCommGroup.natCard_primaryComponent A hp,
+      Nat.factorization_eq_zero_of_not_dvd fun h ↦ hpnot (hp.mem_primeFactors h Nat.card_pos.ne'),
+      pow_zero])
   exact gaussSign_eq_zero_of_subsingleton _
 
 end TauCeti.FiniteQuadraticModule

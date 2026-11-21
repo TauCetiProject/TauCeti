@@ -14,22 +14,16 @@ import TauCeti.RingTheory.Henselian.SquareClasses
 /-!
 # Square classes of odd-prime `p`-adic units via the Legendre symbol
 
-At an odd prime `p`, Hensel's lemma identifies the square classes of `p`-adic units `ℤ_[p]ˣ` with
-the square classes of `(ℤ/pℤ)ˣ`, and hence with the Legendre symbol. An integer `t` congruent
-modulo `p` to a unit `u ∈ ℤ_[p]ˣ` has `(t / p) = 1` if and only if `u` is a square in `ℤ_[p]ˣ`, and
-two finite products of `p`-adic units agree modulo squares if and only if the products of the
-Legendre symbols of any integer representatives modulo `p` agree.
-
-The Hensel lifting uses `TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare` together with
-`PadicInt.toZMod_eq_residueField_comp_residue` and Mathlib's `legendreSym.eq_one_iff`.
+For an odd prime `p`, Hensel's lemma (`TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare`)
+together with `PadicInt.toZMod_eq_residueField_comp_residue` and `legendreSym.eq_one_iff` reduces
+squares in `ℤ_[p]ˣ` to `legendreSym p t = 1`.
 
 ## Main results
 
-* `PadicInt.isSquare_iff_legendreSym_eq_one`: for odd `p`, a unit `u ∈ ℤ_[p]ˣ` congruent to an
-  integer `t` modulo `p` is a square if and only if `legendreSym p t = 1`.
-* `PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq`: for odd `p`, two finite products of
-  units of `ℤ_[p]` agree modulo squares if and only if the products of the Legendre symbols of any
-  integer representatives modulo `p` are equal.
+* `PadicInt.isSquare_iff_legendreSym_eq_one`: `u ∈ ℤ_[p]ˣ` congruent to `t` mod `p` is a square iff
+  `legendreSym p t = 1`.
+* `PadicInt.isSquare_prod_mul_prod_iff_prod_legendreSym_eq`: two finite products of units agree
+  modulo squares iff the products of the Legendre symbols of integer representatives agree.
 
 ## References
 
@@ -46,9 +40,7 @@ theorem isSquare_iff_legendreSym_eq_one {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
     {u : ℤ_[p]ˣ} {t : ℤ} (ht : (p : ℤ_[p]) ∣ u - t) :
     IsSquare u ↔ legendreSym p t = 1 := by
   have htoZMod : toZMod (u : ℤ_[p]) = (t : ZMod p) := toZMod_eq_intCast_of_dvd ht
-  have ht0 : (t : ZMod p) ≠ 0 := by
-    rw [← htoZMod]
-    exact (u.isUnit.map toZMod).ne_zero
+  have ht0 : (t : ZMod p) ≠ 0 := htoZMod ▸ (u.isUnit.map toZMod).ne_zero
   have hres : IsSquare (IsLocalRing.residue ℤ_[p] (u : ℤ_[p])) ↔
       IsSquare (toZMod (u : ℤ_[p])) := by
     simp only [toZMod_eq_residueField_comp_residue, RingHom.comp_apply,
@@ -70,9 +62,7 @@ theorem isSquare_prod_mul_prod_iff_prod_legendreSym_eq {p : ℕ} [Fact p.Prime] 
   set Θ : ℤ := (∏ i, θ i) * ∏ j, η j with hΘ
   have hUΘ : (p : ℤ_[p]) ∣ U - Θ := by
     rw [← toZMod_eq_iff_dvd_sub, map_intCast]
-    simp only [U, hΘ]
-    push_cast
-    rw [map_mul, map_prod, map_prod]
+    simp only [U, hΘ]; push_cast; rw [map_mul, map_prod, map_prod]
     congr 1
     · exact Finset.prod_congr rfl fun i _ ↦ (toZMod_eq_intCast_of_dvd (hθ i)).symm
     · exact Finset.prod_congr rfl fun j _ ↦ (toZMod_eq_intCast_of_dvd (hη j)).symm
@@ -83,13 +73,8 @@ theorem isSquare_prod_mul_prod_iff_prod_legendreSym_eq {p : ℕ} [Fact p.Prime] 
     refine Finset.prod_eq_one fun j _ ↦ ?_
     simpa only [pow_two] using legendreSym.sq_one p
       ((ZMod.isUnit_intCast_iff_isCoprime (η j) p).mpr (isCoprime_of_dvd_unit_sub (hη j))).ne_zero
-  constructor
-  · intro h
-    calc ∏ i, legendreSym p (θ i)
-        = (∏ i, legendreSym p (θ i)) * ((∏ j, legendreSym p (η j)) * ∏ j, legendreSym p (η j)) := by
-          rw [hηsq, mul_one]
-      _ = ∏ j, legendreSym p (η j) := by rw [← mul_assoc, h, one_mul]
-  · intro h
-    rw [h, hηsq]
+  exact ⟨fun h ↦ by
+      rw [← mul_one (∏ i, legendreSym p (θ i)), ← hηsq, ← mul_assoc, h, one_mul],
+    fun h ↦ by rw [h, hηsq]⟩
 
 end PadicInt

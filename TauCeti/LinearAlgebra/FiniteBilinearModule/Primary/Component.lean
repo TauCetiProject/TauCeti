@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Torsion
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.Data.Nat.Factorization.Basic
@@ -15,7 +16,8 @@ import TauCeti.Algebra.Group.Primary.Card
 
 The primary components of a finite abelian group are already defined by Mathlib as
 `AddCommGroup.primaryComponent`. This file proves the form-theoretic fact needed to decompose
-finite bilinear and quadratic modules: components belonging to distinct primes are orthogonal.
+finite bilinear and quadratic modules: components belonging to distinct primes are orthogonal, and
+isometries restrict to each primary component.
 
 For a bilinear module, orthogonality follows because the value of the pairing on a `p`-primary and
 a `q`-primary element is annihilated by powers of both `p` and `q`.  Those powers are coprime when
@@ -31,6 +33,9 @@ in pairwise distinct primary components.
   corresponding inclusion of additive subgroups.
 * `TauCeti.FiniteBilinearModule.isNondegenerate_restrict_primaryComponent`: a nondegenerate
   pairing restricts nondegenerately to each prime-primary component.
+* `TauCeti.FiniteBilinearModule.Isometry.restrictPrimaryComponent` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrictPrimaryComponent`: an isometry restricts to each
+  `n`-primary component.
 * `TauCeti.FiniteQuadraticModule.odd_natCard_restrict_primaryComponent`: for an odd prime `p`, the
   `p`-primary restriction has odd cardinality.
 * `TauCeti.FiniteBilinearModule.pairing_sum_eq_sum_pairing_of_mem_primaryComponent`: a bilinear
@@ -48,7 +53,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 private theorem eq_zero_of_coprime_nsmul_eq_zero {M : Type*} [AddMonoid M] {m n : ℕ} {x : M}
     (hmn : m.Coprime n) (hm : m • x = 0) (hn : n • x = 0) : x = 0 := by
@@ -160,6 +165,61 @@ theorem pairing_sum_eq_sum_pairing_of_mem_primaryComponent {ι : Type*}
       (hdistinct i hi j hj hji.symm) (hx i hi) (hy j hj)
   rw [Finset.sum_eq_single i hoff (fun hnot ↦ (hnot hi).elim), A.toBilin_apply]
 
+/-! ## Restricting isometries to primary components -/
+
+/-- An isometry of finite bilinear modules restricts to each `n`-primary component. -/
+def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : FiniteBilinearModule.{v}}
+    (f : Isometry A B) (n : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A n))
+      (B.restrict (AddCommGroup.primaryComponent B n)) where
+  toAddEquiv := f.toAddEquiv.primaryComponent n
+  map_pairing' x y := by
+    rw [restrict_pairing, restrict_pairing, AddEquiv.coe_primaryComponent_apply,
+      AddEquiv.coe_primaryComponent_apply, Isometry.coe_toAddEquiv]
+    exact f.map_pairing x y
+
+/-- Restricting a bilinear isometry to `n`-primary components commutes with coercion to the
+ambient module. -/
+@[simp]
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
+    (x : AddCommGroup.primaryComponent A n) : (f.restrictPrimaryComponent n x : B) = f x :=
+  f.toAddEquiv.coe_primaryComponent_apply n x
+
+/-- The additive equivalence underlying a restricted bilinear isometry is the restricted additive
+equivalence. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toAddEquiv {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toAddEquiv = f.toAddEquiv.primaryComponent n :=
+  (rfl)
+
+/-- Restricting the identity bilinear isometry to an `n`-primary component gives the identity
+bilinear isometry. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (A : FiniteBilinearModule.{u}) (n : ℕ) :
+    (Isometry.refl A).restrictPrimaryComponent n =
+      Isometry.refl (A.restrict (AddCommGroup.primaryComponent A n)) :=
+  Isometry.toAddEquiv_injective (by simp)
+
+/-- Restricting the inverse bilinear isometry to `n`-primary components gives the inverse of the
+restricted isometry. -/
+@[simp]
+theorem Isometry.symm_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ) :
+    f.symm.restrictPrimaryComponent n = (f.restrictPrimaryComponent n).symm :=
+  Isometry.toAddEquiv_injective (by simp)
+
+/-- Restricting a composite bilinear isometry to `n`-primary components gives the composite of the
+restricted isometries. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {A : FiniteBilinearModule.{u}}
+    {B : FiniteBilinearModule.{v}} {C : FiniteBilinearModule.{w}}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    (f.trans g).restrictPrimaryComponent n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
+  Isometry.toAddEquiv_injective (by simp)
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -202,24 +262,91 @@ theorem quadratic_sum_of_mem_primaryComponent {ι : Type*}
   induction s using Finset.induction_on with
   | empty => simp
   | @insert i s hi ih =>
-      have hiprime : (p i).Prime := hprime i (Finset.mem_insert_self i s)
-      have hisum :
-          A.toFiniteBilinearModule.pairing (x i) (∑ j ∈ s, x j) = 0 := by
+      have hisum : A.toFiniteBilinearModule.pairing (x i) (∑ j ∈ s, x j) = 0 := by
         rw [map_sum]
-        apply Finset.sum_eq_zero
-        intro j hj
-        exact A.toFiniteBilinearModule.pairing_eq_zero_of_mem_primaryComponent hiprime
-          (hprime j (Finset.mem_insert_of_mem hj))
-          (hdistinct i (Finset.mem_insert_self i s) j (Finset.mem_insert_of_mem hj)
-            (Ne.symm (ne_of_mem_of_not_mem hj hi)))
-          (hx i (Finset.mem_insert_self i s)) (hx j (Finset.mem_insert_of_mem hj))
+        exact Finset.sum_eq_zero fun j hj ↦
+          A.toFiniteBilinearModule.pairing_eq_zero_of_mem_primaryComponent
+            (hprime i (Finset.mem_insert_self i s)) (hprime j (Finset.mem_insert_of_mem hj))
+            (hdistinct i (Finset.mem_insert_self i s) j (Finset.mem_insert_of_mem hj)
+              (Ne.symm (ne_of_mem_of_not_mem hj hi)))
+            (hx i (Finset.mem_insert_self i s)) (hx j (Finset.mem_insert_of_mem hj))
       rw [Finset.sum_insert hi, QuadraticMap.map_add A.quadratic, A.polar_eq_pairing, hisum,
         add_zero, Finset.sum_insert hi]
       exact congrArg (A.quadratic (x i) + ·) <| ih
         (fun j hj ↦ hprime j (Finset.mem_insert_of_mem hj))
-        (fun j hj k hk hjk ↦ hdistinct j (Finset.mem_insert_of_mem hj) k
-          (Finset.mem_insert_of_mem hk) hjk)
+        (fun j hj k hk ↦ hdistinct j (Finset.mem_insert_of_mem hj) k (Finset.mem_insert_of_mem hk))
         (fun j hj ↦ hx j (Finset.mem_insert_of_mem hj))
+
+/-! ## Restricting isometries to primary components -/
+
+/-- An isometry of finite quadratic modules restricts to each `n`-primary component. -/
+def Isometry.restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    Isometry (A.restrict (AddCommGroup.primaryComponent A n))
+      (B.restrict (AddCommGroup.primaryComponent B n)) where
+  toLinearEquiv := (f.toAddEquiv.primaryComponent n).toIntLinearEquiv
+  map_app' x :=
+    (congrArg B.quadratic (f.toAddEquiv.coe_primaryComponent_apply n x)).trans (f.map_app x.val)
+
+/-- Restricting a quadratic isometry to `n`-primary components commutes with coercion to the
+ambient module. -/
+@[simp]
+theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
+    (x : A.restrict (AddCommGroup.primaryComponent A n)) :
+    (f.restrictPrimaryComponent n x).val = f x.val :=
+  f.toAddEquiv.coe_primaryComponent_apply n x
+
+/-- The additive equivalence underlying a restricted quadratic isometry is the restricted additive
+equivalence. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toAddEquiv {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toAddEquiv = f.toAddEquiv.primaryComponent n :=
+  (rfl)
+
+/-- Restricting the identity quadratic isometry to an `n`-primary component gives the identity
+quadratic isometry. -/
+@[simp]
+theorem Isometry.refl_restrictPrimaryComponent (A : FiniteQuadraticModule.{u}) (n : ℕ) :
+    Isometry.restrictPrimaryComponent (A := A) (B := A)
+      (QuadraticMap.IsometryEquiv.refl A.quadratic) n =
+      QuadraticMap.IsometryEquiv.refl
+        (A.restrict (AddCommGroup.primaryComponent A n)).quadratic :=
+  DFunLike.ext _ _ fun _ ↦ by
+    apply Subtype.ext; rw [Isometry.coe_restrictPrimaryComponent_apply]; rfl
+
+/-- Restricting the inverse quadratic isometry to `n`-primary components gives the inverse of the
+restricted isometry. -/
+@[simp]
+theorem Isometry.symm_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    Isometry.restrictPrimaryComponent f.symm n = (f.restrictPrimaryComponent n).symm :=
+  DFunLike.ext _ _ fun y ↦ by
+    apply EquivLike.injective (f.restrictPrimaryComponent n)
+    rw [QuadraticMap.IsometryEquiv.apply_symm_apply]; exact Subtype.ext (by simp)
+
+/-- Restricting a composite quadratic isometry to `n`-primary components gives the composite of the
+restricted isometries. -/
+@[simp]
+theorem Isometry.trans_restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} {C : FiniteQuadraticModule.{w}}
+    (f : Isometry A B) (g : Isometry B C) (n : ℕ) :
+    Isometry.restrictPrimaryComponent (A := A) (B := C) (f.trans g) n =
+      (f.restrictPrimaryComponent n).trans (g.restrictPrimaryComponent n) :=
+  DFunLike.ext _ _ fun _ ↦ by apply Subtype.ext; simp
+
+/-- Forgetting the quadratic structure of a restricted quadratic isometry gives the restricted
+polar bilinear isometry. -/
+@[simp]
+theorem Isometry.restrictPrimaryComponent_toFiniteBilinearModule {A : FiniteQuadraticModule.{u}}
+    {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ) :
+    (f.restrictPrimaryComponent n).toFiniteBilinearModule =
+      f.toFiniteBilinearModule.restrictPrimaryComponent n := by
+  apply FiniteBilinearModule.Isometry.toAddEquiv_injective
+  rw [Isometry.toFiniteBilinearModule_toAddEquiv, Isometry.restrictPrimaryComponent_toAddEquiv,
+    FiniteBilinearModule.Isometry.restrictPrimaryComponent_toAddEquiv,
+    Isometry.toFiniteBilinearModule_toAddEquiv]
 
 end FiniteQuadraticModule
 

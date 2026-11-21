@@ -48,7 +48,7 @@ public section
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 namespace FiniteBilinearModule
 
@@ -139,16 +139,32 @@ the original bilinear morphism. -/
 theorem homOfBilinearHomOfOdd_toFiniteBilinearModule (hA : Odd (Nat.card A))
     (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
     (homOfBilinearHomOfOdd hA f).toFiniteBilinearModule = f := by
-  ext x
-  rw [Hom.toFiniteBilinearModule_apply, homOfBilinearHomOfOdd_apply]
+  ext x; simp
 
 /-- Upgrading the polar bilinear morphism of a quadratic morphism at odd order recovers the
 quadratic morphism. -/
 @[simp]
 theorem toFiniteBilinearModule_homOfBilinearHomOfOdd (hA : Odd (Nat.card A)) (g : Hom A B) :
     homOfBilinearHomOfOdd hA g.toFiniteBilinearModule = g := by
-  ext x
-  rw [homOfBilinearHomOfOdd_apply, Hom.toFiniteBilinearModule_apply]
+  ext x; simp
+
+/-- Upgrading the identity bilinear morphism at odd order gives the identity quadratic morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_id (A : FiniteQuadraticModule.{u}) (hA : Odd (Nat.card A)) :
+    homOfBilinearHomOfOdd hA (FiniteBilinearModule.Hom.id A.toFiniteBilinearModule) =
+      Hom.id A := by
+  ext x; simp
+
+/-- Upgrading a composite bilinear morphism at odd order gives the composite upgraded quadratic
+morphism. -/
+@[simp]
+theorem homOfBilinearHomOfOdd_comp {C : FiniteQuadraticModule.{w}} (hA : Odd (Nat.card A))
+    (hB : Odd (Nat.card B))
+    (g : FiniteBilinearModule.Hom B.toFiniteBilinearModule C.toFiniteBilinearModule)
+    (f : FiniteBilinearModule.Hom A.toFiniteBilinearModule B.toFiniteBilinearModule) :
+    (homOfBilinearHomOfOdd hB g).comp (homOfBilinearHomOfOdd hA f) =
+      homOfBilinearHomOfOdd hA (g.comp f) := by
+  ext x; simp
 
 /-- A bilinear isometry between finite quadratic modules of odd order preserves the quadratic
 maps. -/
@@ -226,6 +242,26 @@ theorem isometryOfBilinearIsometryOfOdd_toFiniteBilinearModule (hA : Odd (Nat.ca
   DFunLike.ext _ _ fun x ↦
     (isometryOfBilinearIsometryOfOdd_apply hA f.toFiniteBilinearModule x).trans
       (DFunLike.congr_fun (Isometry.toFiniteBilinearModule_toAddEquiv f) x)
+
+/-- Upgrading the identity bilinear isometry at odd order gives the identity quadratic isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_refl (A : FiniteQuadraticModule.{u})
+    (hA : Odd (Nat.card A)) :
+    isometryOfBilinearIsometryOfOdd hA
+        (FiniteBilinearModule.Isometry.refl A.toFiniteBilinearModule) =
+      QuadraticMap.IsometryEquiv.refl A.quadratic :=
+  DFunLike.ext _ _ fun x ↦ by simp; rfl
+
+/-- Upgrading a composite bilinear isometry at odd order gives the composite upgraded quadratic
+isometry. -/
+@[simp]
+theorem isometryOfBilinearIsometryOfOdd_trans {C : FiniteQuadraticModule.{w}}
+    (hA : Odd (Nat.card A)) (hB : Odd (Nat.card B))
+    (f : FiniteBilinearModule.Isometry A.toFiniteBilinearModule B.toFiniteBilinearModule)
+    (g : FiniteBilinearModule.Isometry B.toFiniteBilinearModule C.toFiniteBilinearModule) :
+    (isometryOfBilinearIsometryOfOdd hA f).trans (isometryOfBilinearIsometryOfOdd hB g) =
+      isometryOfBilinearIsometryOfOdd hA (f.trans g) :=
+  DFunLike.ext _ _ fun x ↦ by simp
 
 /-- Finite quadratic modules of odd order are isometric exactly when their bilinear modules are.
 In odd order no Gauss-sum condition is needed, unlike Nikulin's comparison theorem

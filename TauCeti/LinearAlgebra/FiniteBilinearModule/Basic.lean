@@ -461,6 +461,11 @@ abbrev restrict (H : AddSubgroup A) : FiniteBilinearModule where
 theorem restrict_pairing (H : AddSubgroup A) (x y : H) :
     (restrict A H).pairing x y = A.pairing x.val y.val := (rfl)
 
+/-- The cardinality of a restricted finite bilinear module is the cardinality of the subgroup. -/
+@[simp]
+theorem natCard_restrict (H : AddSubgroup A) : Nat.card (A.restrict H) = Nat.card H :=
+  (rfl)
+
 /-- The inclusion of a restricted finite bilinear module into the original module. -/
 def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
   toAddMonoidHom := H.subtype

@@ -62,16 +62,13 @@ private theorem half_characteristic_mem_dual {w : L} (hw : L.IsCharacteristicVec
   rw [LinearMap.BilinForm.mem_dualSubmodule]
   intro y hy
   let yL : L := ⟨y, L.evenSublattice_carrier_le hy⟩
-  have he : Even (L.integralNorm yL) := (L.mem_evenSublattice_carrier_iff yL).mp hy
-  have hp := (L.isCharacteristicVector_iff w).mp hw yL
-  have hb : 2 ∣ L.integralForm w yL := Int.modEq_zero_iff_dvd.mp
-    (hp.trans (Int.modEq_zero_iff_dvd.mpr (even_iff_two_dvd.mp he)))
-  obtain ⟨k, hk⟩ := hb
+  obtain ⟨k, hk⟩ := Int.modEq_zero_iff_dvd.mp (((L.isCharacteristicVector_iff w).mp hw yL).trans
+    (Int.modEq_zero_iff_dvd.mpr
+      (even_iff_two_dvd.mp ((L.mem_evenSublattice_carrier_iff yL).mp hy))))
   refine Submodule.mem_one.mpr ⟨k, ?_⟩
   rw [eq_intCast, L.evenSublattice_form, map_smul, LinearMap.smul_apply, smul_eq_mul,
     ← L.integralForm_cast w yL, hk]
-  push_cast
-  ring
+  push_cast; ring
 
 private def halfCharacteristicDual {w : L} (hw : L.IsCharacteristicVector w) :
     L.evenSublattice.dualCarrier :=
@@ -83,15 +80,11 @@ private theorem quadratic_halfCharacteristicDual {w : L} (hw : L.IsCharacteristi
       ZMod.toRatAddCircle 8 (L.integralNorm w : ZMod 8) := by
   rw [discriminantQuadraticMap_mk, L.evenSublattice_form, ZMod.toRatAddCircle_intCast,
     L.integralNorm_cast, L.norm_apply]
-  simp only [halfCharacteristicDual, Subtype.coe_mk, map_smul, LinearMap.smul_apply,
-    smul_eq_mul]
-  congr 1
-  ring
+  simp only [halfCharacteristicDual, Subtype.coe_mk, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  congr 1; ring
 
-private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVector w)
-    (y : L) :
-    ∃ k : ℤ, L.form ((1 / 2 : ℚ) • (w : V) + y)
-        ((1 / 2 : ℚ) • (w : V) + y) / 2 =
+private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVector w) (y : L) :
+    ∃ k : ℤ, L.form ((1 / 2 : ℚ) • (w : V) + y) ((1 / 2 : ℚ) • (w : V) + y) / 2 =
       L.form ((1 / 2 : ℚ) • (w : V)) ((1 / 2 : ℚ) • (w : V)) / 2 + k := by
   obtain ⟨k, hk⟩ := Int.modEq_iff_dvd.mp ((L.isCharacteristicVector_iff w).mp hw y)
   refine ⟨L.integralForm w y + k, ?_⟩
@@ -99,11 +92,9 @@ private theorem halfNorm_add_lattice_vector {w : L} (hw : L.IsCharacteristicVect
   simp only [L.norm_smul, map_smul, LinearMap.smul_apply, smul_eq_mul]
   rw [← L.integralForm_cast w y, ← L.integralNorm_cast y]
   have hkq : (L.integralNorm y : ℚ) - L.integralForm w y = 2 * k := by exact_mod_cast hk
-  push_cast
-  linarith
+  push_cast; linarith
 
-private theorem quadratic_halfCharacteristicDual_add {w : L}
-    (hw : L.IsCharacteristicVector w)
+private theorem quadratic_halfCharacteristicDual_add {w : L} (hw : L.IsCharacteristicVector w)
     (h : L.evenSublattice.discriminantSubgroup
       (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)) :
     L.evenSublattice.discriminantQuadraticMap L.isEven_evenSublattice
@@ -115,9 +106,8 @@ private theorem quadratic_halfCharacteristicDual_add {w : L}
   induction x using Submodule.Quotient.induction_on with
   | _ y =>
     have hy : (y : V) ∈ L.carrier := by
-      have := (L.evenSublattice.mk_mem_discriminantSubgroup_iff
+      simpa using (L.evenSublattice.mk_mem_discriminantSubgroup_iff
         (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le) y).mp hx
-      rwa [coe_toIntermediateCarrier] at this
     obtain ⟨k, hk⟩ := halfNorm_add_lattice_vector L hw ⟨y, hy⟩
     rw [← Submodule.Quotient.mk_add, discriminantQuadraticMap_mk,
       discriminantQuadraticMap_mk, L.evenSublattice_form]
@@ -131,40 +121,32 @@ private theorem halfCharacteristicDual_mem_primaryComponent_two [L.IsNondegenera
       AddCommGroup.primaryComponent
         (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2 := by
   refine AddCommGroup.mem_primaryComponent.mpr ⟨2, ?_⟩
-  have h0 : (2 ^ 2) • (Submodule.Quotient.mk (halfCharacteristicDual L hw) :
-      L.evenSublattice.DiscriminantGroup) = 0 := by
-    rw [← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
-      L.evenSublattice.discriminantGroup_mk_eq_zero_iff, L.evenSublattice_carrier]
-    refine ⟨(2 : ℤ) • w, L.two_smul_mem_evenSubmodule w, ?_⟩
-    rw [map_smul, Submodule.coe_subtype, Submodule.coe_smul, halfCharacteristicDual]
-    simp only [Nat.cast_pow, Nat.cast_ofNat, ← Int.cast_smul_eq_zsmul ℚ, smul_smul]
-    norm_num
-  -- Both `discriminantQuadraticModule` and `discriminantBilinearModule` are `@[expose]` with
-  -- carrier `DiscriminantGroup`, and their `AddCommGroup` field is `DiscriminantGroup`'s instance.
-  exact h0
+  suffices (2 ^ 2) • (Submodule.Quotient.mk (halfCharacteristicDual L hw) :
+      L.evenSublattice.DiscriminantGroup) = 0 from this
+  rw [← Nat.cast_smul_eq_nsmul ℤ, ← Submodule.Quotient.mk_smul,
+    L.evenSublattice.discriminantGroup_mk_eq_zero_iff, L.evenSublattice_carrier]
+  refine ⟨(2 : ℤ) • w, L.two_smul_mem_evenSubmodule w, ?_⟩
+  rw [map_smul, Submodule.coe_subtype, Submodule.coe_smul, halfCharacteristicDual]
+  simp only [Nat.cast_pow, Nat.cast_ofNat, ← Int.cast_smul_eq_zsmul ℚ, smul_smul]; norm_num
 
 private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondegenerate]
     (hodd : Odd L.discriminant) :
     let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-    let P := AddCommGroup.primaryComponent A 2
     let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
       (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
-    Nat.card (H.comap P.subtype) ^ 2 = Nat.card (A.restrict P) := by
+    Nat.card (H.comap (AddCommGroup.primaryComponent A 2).subtype) ^ 2 =
+      Nat.card (A.restrict (AddCommGroup.primaryComponent A 2)) := by
   dsimp only
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
   let P := AddCommGroup.primaryComponent A 2
   let I := L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le
   let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup I
   let idx := L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup
-  have hidx : IntermediateCarrier.index I = idx := by
-    simp [IntermediateCarrier.index_def, I, idx]
   have hcardH : Nat.card H = idx :=
-    (IntermediateCarrier.index_eq_natCard_discriminantSubgroup I).symm.trans hidx
+    (IntermediateCarrier.index_eq_natCard_discriminantSubgroup I).symm.trans
+      (by simp [IntermediateCarrier.index_def, I, idx])
   have hidx_cases : idx = 1 ∨ idx = 2 := by
-    have := L.relIndex_evenSublattice_pos
-    have := L.relIndex_evenSublattice_le_two
-    omega
-  -- Since `[L : N] ∈ {1, 2}`, every element of `H = L / N` has order dividing `2`, so `H ≤ P`.
+    by_cases hL : L.IsEven <;> simp [idx, L.relIndex_evenSublattice, hL]
   have hHP : H ≤ P := fun x hx ↦ by
     have hx0 : idx • x = 0 :=
       hcardH ▸ congrArg Subtype.val (card_nsmul_eq_zero' (x := (⟨x, hx⟩ : H)))
@@ -173,7 +155,6 @@ private theorem natCard_comap_primaryComponent_two_evenSublattice_sq [L.IsNondeg
     · exact AddCommGroup.mem_primaryComponent.mpr ⟨1, by simpa [h2] using hx0⟩
   have hcardH₂ : Nat.card (H.comap P.subtype) = idx :=
     (Nat.card_congr (H.addSubgroupOfEquivOfLe hHP).toEquiv).trans hcardH
-  -- Compare `|H|² = [L : N]²` with the `2`-part of `|A| = disc(L) · [L : N]²`.
   have hcardA : Nat.card A = L.discriminant * idx ^ 2 := by
     rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
       L.evenSublattice.natCard_discriminantGroup,
@@ -203,17 +184,14 @@ private theorem isLagrangian_comap_primaryComponent_two_evenSublattice [L.IsNond
   let I := L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le
   let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup I
   have hsq := natCard_comap_primaryComponent_two_evenSublattice_sq L hodd
-  have hI := L.isIntegral_toIntermediateCarrier L.evenSublattice_form.symm
-    L.evenSublattice_carrier_le
-  have hH_iso : L.evenSublattice.discriminantBilinearModule.IsIsotropic H :=
-    (IntermediateCarrier.isIntegral_iff_isIsotropic_discriminantSubgroup I).mp hI
   have hpart : H.comap P.subtype = AddSubgroup.primaryPart H 2 :=
     AddSubgroup.ext fun x ↦ (AddSubgroup.mem_primaryPart_iff H 2 x).symm
   have hH₂_iso : (A.restrict P).toFiniteBilinearModule.IsIsotropic (H.comap P.subtype) :=
     hpart.symm ▸ (L.evenSublattice.discriminantBilinearModule.isIsotropic_iff_primaryPart H).mp
-      hH_iso 2 Nat.prime_two
-  exact ⟨FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq
-    (A.restrict P).toFiniteBilinearModule hH₂_iso
+      ((IntermediateCarrier.isIntegral_iff_isIsotropic_discriminantSubgroup I).mp
+        (L.isIntegral_toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le))
+      2 Nat.prime_two
+  exact ⟨FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq _ hH₂_iso
     (A.isNondegenerate_restrict_primaryComponent
       (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
       Nat.prime_two) hsq, hsq⟩
@@ -228,8 +206,7 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
         (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) 2)).gaussSign =
       (L.integralNorm w : ZMod 8) := by
   let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-  let P := AddCommGroup.primaryComponent A 2
-  let A₂ := A.restrict P
+  let P := AddCommGroup.primaryComponent A 2; let A₂ := A.restrict P
   let H : AddSubgroup A := L.evenSublattice.discriminantSubgroup
     (L.toIntermediateCarrier L.evenSublattice_form.symm L.evenSublattice_carrier_le)
   let H₂ : AddSubgroup A₂ := H.comap P.subtype
@@ -238,8 +215,7 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
     halfCharacteristicDual_mem_primaryComponent_two L hw⟩
   have ha₂ (h : H₂) : A₂.quadratic (a₂ + h) = A₂.quadratic a₂ :=
     (A.restrict_quadratic P (a₂ + (h : A₂))).trans <|
-      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
-        (a₂ + (h : A₂)).val).trans <|
+      (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).trans <|
         (quadratic_halfCharacteristicDual_add L hw ⟨h.val.val, h.property⟩).trans <|
           (L.evenSublattice.discriminantQuadraticModule_quadratic L.isEven_evenSublattice
             a₂.val).symm.trans (A.restrict_quadratic P a₂).symm
@@ -253,6 +229,17 @@ theorem gaussSign_restrict_primaryComponent_two_evenSublattice [L.IsNondegenerat
     hH₂_lag ha₂, hqa₂, ← hsq', Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg _),
     Complex.ofReal_natCast]
 
+/-- Milgram's theorem applied to `L.evenSublattice` expresses its Gauss-sum invariant as the
+signature difference of `L` modulo eight. -/
+theorem gaussSign_evenSublattice_eq_sigPos_sub_sigNeg [L.IsNondegenerate] :
+    (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).gaussSign =
+      (L.sigPos : ZMod 8) - L.sigNeg := by
+  have hm := L.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
+    L.isEven_evenSublattice
+  have hs := L.evenSublattice_signature
+  simp only [signature, Prod.mk.injEq] at hs
+  rwa [hs.1, hs.2.2] at hm
+
 /-- **Van der Blij's congruence:** the signature difference of a unimodular
 integral lattice is congruent modulo eight to the norm of any characteristic vector. -/
 theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
@@ -260,8 +247,8 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     ((L.sigPos : ℤ) - L.sigNeg) ≡ L.integralNorm w [ZMOD 8] := by
   have : L.IsNondegenerate := ⟨hL.nondegenerate⟩
   have hdisc : L.discriminant = 1 := L.isUnimodular_iff_discriminant_eq_one.mp hL
-  let A := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-  have hsub : (Nat.card A).primeFactors ⊆ ({2} : Finset ℕ) := by
+  have hsub : (Nat.card (L.evenSublattice.discriminantQuadraticModule
+      L.isEven_evenSublattice)).primeFactors ⊆ ({2} : Finset ℕ) := by
     rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
       L.evenSublattice.natCard_discriminantGroup]
     simpa [hdisc] using L.primeFactors_discriminant_evenSublattice_subset
@@ -270,12 +257,8 @@ theorem vanDerBlij (hL : L.IsUnimodular) {w : L}
     (fun p hp ↦ Finset.mem_singleton.mp hp ▸ Nat.prime_two) hsub
   rw [Finset.sum_singleton,
     L.gaussSign_restrict_primaryComponent_two_evenSublattice (hdisc ▸ odd_one) hw] at hg
-  have hm := L.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
-    L.isEven_evenSublattice
-  have hs := L.evenSublattice_signature
-  simp only [signature, Prod.mk.injEq] at hs
-  rw [hs.1, hs.2.2] at hm
   apply (ZMod.intCast_eq_intCast_iff _ _ 8).mp
-  simpa only [Int.cast_sub, Int.cast_natCast] using hm.symm.trans hg
+  simpa only [Int.cast_sub, Int.cast_natCast] using
+    L.gaussSign_evenSublattice_eq_sigPos_sub_sigNeg.symm.trans hg
 
 end TauCeti.IntegralLattice

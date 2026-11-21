@@ -5,70 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.NumberTheory.IntegralLattice.Genus
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Comparison
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
-import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
-import TauCeti.LinearAlgebra.IntegralLattice.Characteristic.VanDerBlij
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
+import TauCeti.NumberTheory.IntegralLattice.Dyadic.Oddity
 import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.OddPrime
-import TauCeti.NumberTheory.IntegralLattice.Localization.Sublattice
 
 /-!
 # The genus and discriminant forms
 
-Lattices in the same genus share their real signature, their dyadic localization `L_2`, and their
-discriminant bilinear form `b_L`
-(`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`), or their
-discriminant quadratic form `q_L` when they are even
-(`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`). Because
-signature and discriminant-group order determine the signed determinant
-(`TauCeti.IntegralLattice.determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq`), and the
-`p`-primary discriminant bilinear form classifies `L_p` at every odd prime `p`
-(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`), those
-invariants conversely decide the genus of any nondegenerate integral lattice: all odd-prime local
-conditions are absorbed into `b_L` (or `q_L`), leaving only the dyadic localization `L_2`.
-
-When `L` has odd discriminant — equivalently, when its signed determinant is a unit in `ℤ_2`
-(`TauCeti.IntegralLattice.isUnit_determinant_two_iff_odd_discriminant`) — the dyadic localization
-`L_2` is unimodular and is itself determined by the remaining invariants:
-
-* For even lattices of odd discriminant, rank and determinant square class already classify `L_2`
-  (`TauCeti.IntegralLattice.localIntegralForm_two_equivalent_iff_of_isEven`), and `q_L` has odd
-  order so its isometry class coincides with that of `b_L`
-  (`TauCeti.FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd`). Thus two even
-  nondegenerate lattices of odd discriminant lie in one genus if and only if they have the same
-  signature and isometric discriminant quadratic forms (the odd-discriminant case of Nikulin's
-  Corollary 1.9.4).
-* For general nondegenerate lattices of odd discriminant (even or odd), `L` admits an integral
-  characteristic vector `w` (`TauCeti.IntegralLattice.exists_isCharacteristicVector`), and the
-  oddity `w² mod 8` is pinned down by `sigPos L - sigNeg L mod 8` together with the odd primary
-  components of `b_L`: passing to the canonical even sublattice `N` leaves all odd-prime
-  localizations unchanged (`[L : N] ≤ 2`), while Milgram's theorem on `q_N` equates
-  `sigPos L - sigNeg L` modulo `8` with `(w² mod 8)` plus the odd-prime Gauss-sum invariants
-  determined by `b_L`. Consequently two nondegenerate lattices of odd discriminant lie in one genus
-  if and only if they have the same signature, the same parity, and isometric discriminant bilinear
-  forms (the odd-discriminant case of Nikulin's Corollary 1.16.3).
+Lattices in one genus share their signature, dyadic localization `L_2`, and discriminant bilinear
+form `b_L` (`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`), or
+discriminant quadratic form `q_L` when even
+(`TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`). Conversely,
+`b_L` fixes the discriminant
+(`TauCeti.IntegralLattice.discriminant_eq_of_isometry_discriminantBilinearModule`), signature and
+discriminant fix the signed determinant
+(`TauCeti.IntegralLattice.determinant_eq_of_signature_eq_of_discriminant_eq`), and `b_L[p^∞]`
+classifies `L_p` at every odd prime `p`
+(`TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_primaryDiscriminantBilinear`), reducing
+the genus to `L_2`. For odd discriminant (`L_2` unimodular), `b_L` and signature even fix the
+parity-dependent oddity (`TauCeti.IntegralLattice.integralNorm_modEq_eight_of_odd_discriminant`),
+proving the odd-discriminant cases of Nikulin's Corollaries 1.9.4 and 1.16.3.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule` and
+  `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`: discriminant
+  bilinear and quadratic forms are genus invariants.
 * `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_two_and_discriminantBilinear` and
   `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_two_and_discriminantQuadratic`: dyadic
   reduction of the genus of nondegenerate lattices via the discriminant form.
-* `TauCeti.IntegralLattice.integralNorm_modEq_eight_of_odd_discriminant`: for nondegenerate
-  lattices of odd discriminant whose signature differences `sigPos - sigNeg` agree modulo eight and
-  whose discriminant bilinear modules are isometric, characteristic vectors have congruent norms
-  modulo eight.
 * `TauCeti.IntegralLattice.sameGenus_iff_discriminantBilinear_of_odd_discriminant`: nondegenerate
-  lattices of odd discriminant lie in one genus if and only if their signatures, parities, and
-  discriminant bilinear forms agree.
+  lattices of odd discriminant lie in one genus iff signatures, parities, and `b_L` agree.
 * `TauCeti.IntegralLattice.sameGenus_iff_discriminantQuadratic_of_isEven_of_odd_discriminant`: even
-  nondegenerate lattices of odd discriminant lie in one genus if and only if their signatures and
-  discriminant quadratic forms agree.
+  nondegenerate lattices of odd discriminant lie in one genus iff signatures and `q_L` agree.
 
 ## References
 
@@ -85,6 +61,35 @@ namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
+/-! ### Discriminant forms are genus invariants -/
+
+namespace SameGenus
+
+/-- **Lattices in one genus have isometric discriminant bilinear forms.** This is the easy half of
+Nikulin's Corollary 1.16.3: the genus of a nondegenerate lattice determines its discriminant
+bilinear form `b_L`. -/
+theorem nonempty_isometry_discriminantBilinearModule {L : IntegralLattice V}
+    {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate] (h : L.SameGenus M) :
+    Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
+      M.discriminantBilinearModule) :=
+  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
+
+/-- **Even lattices in one genus have isometric discriminant quadratic forms.** This is the easy
+half of Nikulin's Corollary 1.9.4: the genus of an even nondegenerate lattice determines its
+discriminant quadratic form `q_L`. -/
+theorem nonempty_isometry_discriminantQuadraticModule {L : IntegralLattice V}
+    {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate] (h : L.SameGenus M)
+    (hL : L.IsEven) :
+    Nonempty (FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
+      (M.discriminantQuadraticModule (h.isEven_iff.mp hL))) :=
+  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map (primaryDiscriminantQuadraticIsometry _ _)
+
+end SameGenus
+
 /-! ### Dyadic reduction of the genus -/
 
 /-- **Dyadic reduction of the genus via the discriminant bilinear form.** Two nondegenerate
@@ -98,18 +103,12 @@ theorem sameGenus_iff_localIntegralForm_two_and_discriminantBilinear
         Nonempty (FiniteBilinearModule.Isometry
           L.discriminantBilinearModule M.discriminantBilinearModule) := by
   refine ⟨fun h ↦ ⟨h.signature_eq, h.localIntegralForm_equivalent 2,
-    h.nonempty_isometry_discriminantBilinearModule⟩, ?_⟩
-  rintro ⟨hsig, htwo, ⟨e⟩⟩
-  have hdet : L.determinant = M.determinant :=
-    determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq hsig
-      (Nat.card_congr e.toAddEquiv.toEquiv)
-  have hrank : finrank ℤ L = finrank ℤ M := L.finrank_eq_of_signature_eq hsig
-  refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ ?_⟩
-  by_cases hp : p = 2
-  · subst hp
-    exact htwo
-  · exact (localIntegralForm_equivalent_iff_primaryDiscriminantBilinear_of_determinant_eq
-      L M hp hdet).mpr ⟨hrank, ⟨e.restrictPrimaryComponent p⟩⟩
+    h.nonempty_isometry_discriminantBilinearModule⟩, fun ⟨hsig, htwo, ⟨e⟩⟩ ↦ ?_⟩
+  have hdet := determinant_eq_of_signature_eq_of_discriminant_eq hsig
+    (discriminant_eq_of_isometry_discriminantBilinearModule e)
+  refine (sameGenus_iff L M).mpr ⟨hsig, fun p ↦ if hp : p = 2 then hp ▸ htwo else
+    (localIntegralForm_equivalent_iff_primaryDiscriminantBilinear_of_determinant_eq
+      L M hp hdet).mpr ⟨L.finrank_eq_of_signature_eq hsig, ⟨e.restrictPrimaryComponent p⟩⟩⟩
 
 /-- **Dyadic reduction of the genus for even lattices via the discriminant quadratic form.** Two
 even nondegenerate integral lattices lie in one genus if and only if their real signatures agree,
@@ -122,123 +121,13 @@ theorem sameGenus_iff_localIntegralForm_two_and_discriminantQuadratic
       L.signature = M.signature ∧
         (L.localIntegralForm 2).Equivalent (M.localIntegralForm 2) ∧
         Nonempty (FiniteQuadraticModule.Isometry
-          (L.discriminantQuadraticModule hL) (M.discriminantQuadraticModule hM)) := by
-  refine ⟨fun h ↦ ⟨h.signature_eq, h.localIntegralForm_equivalent 2,
-    h.nonempty_isometry_discriminantQuadraticModule hL⟩, ?_⟩
-  rintro ⟨hsig, htwo, ⟨e⟩⟩
-  exact (sameGenus_iff_localIntegralForm_two_and_discriminantBilinear L M).mpr
-    ⟨hsig, htwo, ⟨e.toFiniteBilinearModule⟩⟩
+          (L.discriminantQuadraticModule hL) (M.discriminantQuadraticModule hM)) :=
+  ⟨fun h ↦ ⟨h.signature_eq, h.localIntegralForm_equivalent 2,
+      h.nonempty_isometry_discriminantQuadraticModule hL⟩,
+    fun ⟨hsig, htwo, ⟨e⟩⟩ ↦ (sameGenus_iff_localIntegralForm_two_and_discriminantBilinear L M).mpr
+      ⟨hsig, htwo, ⟨e.toFiniteBilinearModule⟩⟩⟩
 
-/-! ### Oddity invariance and odd-discriminant genera -/
-
-/-- At any odd prime `p`, an isometry between the `p`-primary discriminant bilinear modules of `L`
-and `M` forces the `p`-primary discriminant quadratic modules of `L.evenSublattice` and
-`M.evenSublattice` to have the same Gauss-sum invariant. -/
-private theorem gaussSign_restrict_primaryComponent_evenSublattice_eq_of_odd
-    (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
-    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    (e : FiniteBilinearModule.Isometry
-      (L.discriminantBilinearModule.restrict (primaryComponent L.discriminantBilinearModule p))
-      (M.discriminantBilinearModule.restrict (primaryComponent M.discriminantBilinearModule p))) :
-    ((L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice).restrict
-      (primaryComponent
-        (L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice) p)).gaussSign =
-    ((M.evenSublattice.discriminantQuadraticModule M.isEven_evenSublattice).restrict
-      (primaryComponent
-        (M.evenSublattice.discriminantQuadraticModule M.isEven_evenSublattice) p)).gaussSign := by
-  let eL := primaryDiscriminantBilinearIsometry
-    (L.evenSublattice.localInclusionIsometryEquiv L p
-      L.evenSublattice_form L.evenSublattice_carrier_le
-      (L.not_dvd_relIndex_evenSublattice_of_ne_two Fact.out hp))
-  let eM := primaryDiscriminantBilinearIsometry
-    (M.evenSublattice.localInclusionIsometryEquiv M p
-      M.evenSublattice_form M.evenSublattice_carrier_le
-      (M.not_dvd_relIndex_evenSublattice_of_ne_two Fact.out hp))
-  have hodd := (L.evenSublattice.discriminantQuadraticModule
-    L.isEven_evenSublattice).odd_natCard_restrict_primaryComponent Fact.out hp
-  exact FiniteQuadraticModule.gaussSign_eq_of_bilinear_isometry_of_odd hodd
-    (eL.trans (e.trans eM.symm))
-
-private theorem discriminant_eq_of_isometry_discriminantBilinearModule
-    {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
-    (e : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule) :
-    L.discriminant = M.discriminant := by
-  have hcard : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup :=
-    Nat.card_congr e.toAddEquiv.toEquiv
-  rwa [L.natCard_discriminantGroup, M.natCard_discriminantGroup] at hcard
-
-/-- Milgram's theorem applied to `K.evenSublattice` expresses its Gauss-sum invariant as the
-signature difference of `K` modulo eight. -/
-private theorem gaussSign_evenSublattice_eq_sigPos_sub_sigNeg
-    (K : IntegralLattice V) [K.IsNondegenerate] :
-    (K.evenSublattice.discriminantQuadraticModule K.isEven_evenSublattice).gaussSign =
-      (K.sigPos : ZMod 8) - K.sigNeg := by
-  have hmil := K.evenSublattice.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg
-    K.isEven_evenSublattice
-  have hsig := K.evenSublattice_signature
-  simp only [signature, Prod.mk.injEq] at hsig
-  rwa [hsig.1, hsig.2.2] at hmil
-
-/-- **Oddity invariance for odd discriminant.** If two nondegenerate integral lattices `L` and `M`
-with `L.discriminant` odd have signature differences `sigPos - sigNeg` congruent modulo eight and
-isometric discriminant bilinear modules, then any characteristic vectors `w` of `L` and `w'` of `M`
-have equal integral norms modulo eight. -/
-theorem integralNorm_modEq_eight_of_odd_discriminant
-    {L : IntegralLattice V} {M : IntegralLattice W} [L.IsNondegenerate] [M.IsNondegenerate]
-    (hL : Odd L.discriminant)
-    (hsig : ((L.sigPos : ℤ) - L.sigNeg) ≡ ((M.sigPos : ℤ) - M.sigNeg) [ZMOD 8])
-    (e : FiniteBilinearModule.Isometry L.discriminantBilinearModule M.discriminantBilinearModule)
-    {w : L} {w' : M} (hw : L.IsCharacteristicVector w) (hw' : M.IsCharacteristicVector w') :
-    L.integralNorm w ≡ M.integralNorm w' [ZMOD 8] := by
-  classical
-  have hdisc_eq : L.discriminant = M.discriminant :=
-    discriminant_eq_of_isometry_discriminantBilinearModule e
-  have hM : Odd M.discriminant := hdisc_eq ▸ hL
-  -- Step 1: Decompose `gaussSign` of both even sublattices over `insert 2 P`, where `P` is the set
-  -- of odd prime factors of the common discriminant.
-  let P : Finset ℕ := L.discriminant.primeFactors
-  have h2P : 2 ∉ P := fun hmem ↦ hL.not_two_dvd_nat (Nat.dvd_of_mem_primeFactors hmem)
-  have hP_prime (p : ℕ) (hp : p ∈ insert 2 P) : p.Prime := by
-    rcases Finset.mem_insert.mp hp with rfl | hp'
-    · exact Nat.prime_two
-    · exact Nat.prime_of_mem_primeFactors hp'
-  let AL := L.evenSublattice.discriminantQuadraticModule L.isEven_evenSublattice
-  let AM := M.evenSublattice.discriminantQuadraticModule M.isEven_evenSublattice
-  have hsubL : (Nat.card AL).primeFactors ⊆ insert 2 P := by
-    rw [L.evenSublattice.natCard_discriminantQuadraticModule L.isEven_evenSublattice,
-      L.evenSublattice.natCard_discriminantGroup]
-    exact L.primeFactors_discriminant_evenSublattice_subset
-  have hsubM : (Nat.card AM).primeFactors ⊆ insert 2 P := by
-    rw [M.evenSublattice.natCard_discriminantQuadraticModule M.isEven_evenSublattice,
-      M.evenSublattice.natCard_discriminantGroup]
-    simpa only [P, hdisc_eq] using M.primeFactors_discriminant_evenSublattice_subset
-  have hsumL := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
-    (L.evenSublattice.isNondegenerate_discriminantQuadraticModule L.isEven_evenSublattice)
-    hP_prime hsubL
-  have hsumM := FiniteQuadraticModule.gaussSign_eq_sum_of_primeFactors_subset
-    (M.evenSublattice.isNondegenerate_discriminantQuadraticModule M.isEven_evenSublattice)
-    hP_prime hsubM
-  -- Step 2: Evaluate the `2`-primary terms as `w²` and `w'²` modulo `8`.
-  rw [Finset.sum_insert h2P,
-    L.gaussSign_restrict_primaryComponent_two_evenSublattice hL hw] at hsumL
-  rw [Finset.sum_insert h2P,
-    M.gaussSign_restrict_primaryComponent_two_evenSublattice hM hw'] at hsumM
-  -- Step 3: Match the total `gaussSign` values via Milgram's theorem and the signature congruence.
-  have hAL_eq_AM : AL.gaussSign = AM.gaussSign := by
-    rw [gaussSign_evenSublattice_eq_sigPos_sub_sigNeg L,
-      gaussSign_evenSublattice_eq_sigPos_sub_sigNeg M]
-    simpa only [Int.cast_sub, Int.cast_natCast] using
-      (ZMod.intCast_eq_intCast_iff _ _ 8).mpr hsig
-  -- Step 4: Match the odd-primary sums termwise using `e.restrictPrimaryComponent p`, then cancel.
-  have hodd_sum : ∑ p ∈ P, (AL.restrict (primaryComponent AL p)).gaussSign =
-      ∑ p ∈ P, (AM.restrict (primaryComponent AM p)).gaussSign := by
-    refine Finset.sum_congr rfl fun p hp ↦ ?_
-    have hp_prime : Fact p.Prime := ⟨Nat.prime_of_mem_primeFactors hp⟩
-    exact gaussSign_restrict_primaryComponent_evenSublattice_eq_of_odd L M
-      (fun h2 ↦ h2P (h2 ▸ hp)) (e.restrictPrimaryComponent p)
-  have h := (hsumL.symm.trans hAL_eq_AM).trans hsumM
-  rw [hodd_sum] at h
-  exact (ZMod.intCast_eq_intCast_iff _ _ 8).mp (add_right_cancel h)
+/-! ### Odd-discriminant genera -/
 
 /-- **The genus of lattices of odd discriminant (Nikulin, Corollary 1.16.3, odd-discriminant
 case).** Let `L` and `M` be nondegenerate integral lattices with `L.discriminant` odd. Then `L` and
@@ -252,25 +141,18 @@ theorem sameGenus_iff_discriminantBilinear_of_odd_discriminant
         Nonempty (FiniteBilinearModule.Isometry
           L.discriminantBilinearModule M.discriminantBilinearModule) := by
   refine ⟨fun h ↦ ⟨h.signature_eq, h.isEven_iff, h.nonempty_isometry_discriminantBilinearModule⟩,
-    ?_⟩
-  rintro ⟨hsig, heven, ⟨e⟩⟩
-  have hM : Odd M.discriminant :=
-    discriminant_eq_of_isometry_discriminantBilinearModule e ▸ hL
-  have hdet : L.determinant = M.determinant :=
-    determinant_eq_of_signature_eq_of_natCard_discriminantGroup_eq hsig
-      (Nat.card_congr e.toAddEquiv.toEquiv)
-  have hsig8 : ((L.sigPos : ℤ) - L.sigNeg) ≡ ((M.sigPos : ℤ) - M.sigNeg) [ZMOD 8] := by
-    have h : ((L.sigPos : ℤ) - L.sigNeg) = ((M.sigPos : ℤ) - M.sigNeg) :=
-      congrArg (fun s : ℕ × ℕ × ℕ ↦ (s.1 : ℤ) - s.2.2) hsig
-    rw [h]
+    fun ⟨hsig, heven, ⟨e⟩⟩ ↦ ?_⟩
+  have hdisc := discriminant_eq_of_isometry_discriminantBilinearModule e
   obtain ⟨w, hw⟩ := L.exists_isCharacteristicVector
   obtain ⟨w', hw'⟩ := M.exists_isCharacteristicVector
   refine (sameGenus_iff_localIntegralForm_two_and_discriminantBilinear L M).mpr ⟨hsig, ?_, ⟨e⟩⟩
   exact (L.localIntegralForm_two_equivalent_iff_of_isCharacteristicVector M
     (L.isUnit_determinant_two_iff_odd_discriminant.mpr hL)
-    (M.isUnit_determinant_two_iff_odd_discriminant.mpr hM) hw hw').mpr
-    ⟨L.finrank_eq_of_signature_eq hsig, heven, hdet ▸ IsSquare.mul_self _,
-      integralNorm_modEq_eight_of_odd_discriminant hL hsig8 e hw hw'⟩
+    (M.isUnit_determinant_two_iff_odd_discriminant.mpr (hdisc ▸ hL)) hw hw').mpr
+    ⟨L.finrank_eq_of_signature_eq hsig, heven,
+      determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc ▸ IsSquare.mul_self _,
+      integralNorm_modEq_eight_of_odd_discriminant hL
+        (congrArg (fun s : ℕ × ℕ × ℕ ↦ (s.1 : ℤ) - s.2.2) hsig ▸ .rfl) e hw hw'⟩
 
 /-- **The genus of even lattices of odd discriminant (Nikulin, Corollary 1.9.4, odd-discriminant
 case).** Let `L` and `M` be even nondegenerate integral lattices with `L.discriminant` odd. Then
@@ -279,16 +161,14 @@ discriminant quadratic modules are isometric. -/
 theorem sameGenus_iff_discriminantQuadratic_of_isEven_of_odd_discriminant
     (L : IntegralLattice V) (M : IntegralLattice W) [L.IsNondegenerate] [M.IsNondegenerate]
     (hLe : L.IsEven) (hMe : M.IsEven) (hL : Odd L.discriminant) :
-    L.SameGenus M ↔
-      L.signature = M.signature ∧
-        Nonempty (FiniteQuadraticModule.Isometry
-          (L.discriminantQuadraticModule hLe) (M.discriminantQuadraticModule hMe)) := by
-  have hoddA : Odd (Nat.card (L.discriminantQuadraticModule hLe)) := by
-    rwa [L.natCard_discriminantQuadraticModule hLe, L.natCard_discriminantGroup]
+    L.SameGenus M ↔ L.signature = M.signature ∧
+      Nonempty (FiniteQuadraticModule.Isometry
+        (L.discriminantQuadraticModule hLe) (M.discriminantQuadraticModule hMe)) := by
   rw [sameGenus_iff_discriminantBilinear_of_odd_discriminant L M hL,
     ← L.discriminantQuadraticModule_toFiniteBilinearModule hLe,
     ← M.discriminantQuadraticModule_toFiniteBilinearModule hMe,
-    ← FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hoddA]
+    ← FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd
+      (by rwa [L.natCard_discriminantQuadraticModule hLe, L.natCard_discriminantGroup])]
   simp [hLe, hMe]
 
 end TauCeti.IntegralLattice

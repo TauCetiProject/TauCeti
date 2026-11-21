@@ -7,14 +7,13 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Decomposition
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
-public import TauCeti.NumberTheory.IntegralLattice.Genus
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
-# Discriminant forms are local, and invariants of the genus
+# Discriminant forms are local
 
 Let `L` be a nondegenerate integral lattice with discriminant group `A_L = Lᵛ / L` and discriminant
 pairing `b_L(x, y) = B(x, y) mod ℤ`, and let `p` be a prime. The `p`-primary component of `A_L` is
@@ -33,13 +32,6 @@ power of `p`, and a rational number with `p`-power denominator that lies in `ℤ
 (`Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`). So `b_M(x', y') = b_L(x, y)`; the same
 argument applies to the half-norms when the lattices are even.
 
-Lattices in one genus have isometric localizations at every prime, so their discriminant forms are
-isometric prime by prime, and hence isometric
-(`TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent`). This is the easy
-half of Nikulin's description of the genus of an even lattice by its signature and its
-discriminant quadratic form, Corollary 1.9.4, and of its odd analogue, Corollary 1.16.3, where the
-discriminant bilinear form replaces the quadratic one.
-
 ## Main declarations
 
 * `TauCeti.IntegralLattice.exists_one_tmul_eq_add_localCarrierToDual` and
@@ -50,10 +42,6 @@ discriminant bilinear form replaces the quadratic one.
   an isometry of the `p`-primary components of the discriminant bilinear modules.
 * `TauCeti.IntegralLattice.primaryDiscriminantQuadraticIsometry`: for even lattices, it induces an
   isometry of the `p`-primary components of the discriminant quadratic modules.
-* `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantBilinearModule`: lattices in one
-  genus have isometric discriminant bilinear modules.
-* `TauCeti.IntegralLattice.SameGenus.nonempty_isometry_discriminantQuadraticModule`: even lattices
-  in one genus have isometric discriminant quadratic modules.
 
 ## References
 
@@ -411,32 +399,5 @@ theorem primaryDiscriminantQuadraticIsometry_apply (hL : L.IsEven) (hM : M.IsEve
     (primaryDiscriminantQuadraticIsometry hL hM φ a).val =
       (primaryDiscriminantBilinearIsometry φ a).val :=
   (rfl)
-
-/-! ### Discriminant forms are genus invariants -/
-
-namespace SameGenus
-
-/-- **Lattices in one genus have isometric discriminant bilinear forms.** This is the easy half of
-Nikulin's Corollary 1.16.3: the genus of a nondegenerate lattice determines its discriminant
-bilinear form `b_L`. -/
-theorem nonempty_isometry_discriminantBilinearModule (h : L.SameGenus M) :
-    Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
-      M.discriminantBilinearModule) :=
-  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
-    have : Fact p.Prime := ⟨hp⟩
-    (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
-
-/-- **Even lattices in one genus have isometric discriminant quadratic forms.** This is the easy
-half of Nikulin's Corollary 1.9.4: the genus of an even nondegenerate lattice determines its
-discriminant quadratic form `q_L`. -/
-theorem nonempty_isometry_discriminantQuadraticModule (h : L.SameGenus M) (hL : L.IsEven) :
-    Nonempty (FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
-      (M.discriminantQuadraticModule (h.isEven_iff.mp hL))) :=
-  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
-    have : Fact p.Prime := ⟨hp⟩
-    (h.localIntegralForm_equivalent p).map
-      (primaryDiscriminantQuadraticIsometry hL (h.isEven_iff.mp hL))
-
-end SameGenus
 
 end TauCeti.IntegralLattice

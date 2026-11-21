@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
-import TauCeti.LinearAlgebra.IntegralLattice.Signature
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -66,10 +65,7 @@ divide the lattice discriminant. -/
 theorem isUnit_determinant_iff_not_dvd_discriminant (L : IntegralLattice V) (p : ℕ)
     [Fact p.Prime] :
     IsUnit (L.determinant : ℤ_[p]) ↔ ¬ p ∣ L.discriminant := by
-  rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, Int.cast_mul, Int.cast_pow,
-    Int.cast_neg, Int.cast_one, Int.cast_natCast,
-    IsUnit.mul_iff, and_iff_right ((isUnit_one.neg).pow L.sigNeg),
-    PadicInt.isUnit_natCast_iff]
+  rw [PadicInt.isUnit_intCast_iff, discriminant_def, Int.natCast_dvd]
 
 /-- The signed determinant of an integral lattice is a unit in `ℤ_[2]` if and only if the lattice
 discriminant is odd. -/
