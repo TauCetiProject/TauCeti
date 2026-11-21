@@ -26,8 +26,6 @@ and `F` has derivative `F'` at `g(z) / f(z)`, then `F(g / f) / 𝒲` has derivat
 
 ## Main results
 
-* `TauCeti.hasDerivAt_deriv_of_airy_ode`: the derivative of an entire solution `w` has
-  derivative `z w(z)`;
 * `TauCeti.hasDerivAt_antiderivative_mul_of_airy_ode`: `-f' g' + z f g` is an antiderivative
   of `f g` (DLMF 9.11.5);
 * `TauCeti.hasDerivAt_antiderivative_mul_deriv_of_airy_ode`: `(f g + 𝒲 z) / 2` is an
@@ -58,12 +56,6 @@ public section
 namespace TauCeti
 
 variable {f g : ℂ → ℂ}
-
-/-- For an entire solution `w` of Airy's equation, `w'` has derivative `z w(z)` at `z`. -/
-theorem hasDerivAt_deriv_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
-    (hw' : ∀ z, deriv^[2] w z = z * w z) (z : ℂ) : HasDerivAt (deriv w) (z * w z) z := by
-  rw [← hw' z, Function.iterate_succ_apply, Function.iterate_one]
-  exact (hw.deriv z).hasDerivAt
 
 /-- For entire solutions `f`, `g` of Airy's equation, `-f' g' + z f g` is an antiderivative of
 `f g` (DLMF 9.11.5). -/
