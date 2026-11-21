@@ -497,6 +497,7 @@ theorem scaledGaussSum_dyadicV_pow_add (j e : ℕ) :
 /-- The rank-two dyadic generators `u^{(2)}(2^k)` and `v^{(2)}(2^k)` are quadratically isometric if
 and only if `k = 0` (when both are trivial). For `k = j + 1 > 0`, their `2^j`-scaled Gauss sums
 have opposite signs `±2^(2j + 1)`. -/
+@[simp]
 theorem nonempty_isometry_dyadicU_dyadicV_iff (k : ℕ) :
     Nonempty ((dyadicU k).Isometry (dyadicV k)) ↔ k = 0 := by
   constructor

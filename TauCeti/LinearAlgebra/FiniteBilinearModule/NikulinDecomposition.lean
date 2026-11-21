@@ -54,7 +54,7 @@ admissible generators are not unique; explicit distinct decompositions of `dyadi
   component with the filtered sublist.
 * `TauCeti.FiniteQuadraticModule.NikulinDecomposition`: bundled admissible generator decomposition,
   with `NikulinDecomposition.zero`, `NikulinDecomposition.singleton`,
-  `NikulinDecomposition.ofIsometry`, `NikulinDecomposition.prod`,
+  `NikulinDecomposition.ofIsometry`, `NikulinDecomposition.prod`, `NikulinDecomposition.ofPi`,
   `NikulinDecomposition.ofIsNondegenerate`, and `nonempty_nikulinDecomposition_iff`.
 * `TauCeti.FiniteQuadraticModule.HasCyclicTwoSummand`: existence of an orthogonal summand
   `q_θ^{(2)}(2)` with `θ` odd (the dyadic alternative in Nikulin, Theorem 1.10.1(4)).
@@ -281,6 +281,10 @@ theorem realizationUnit_dyadicU (k : ℕ) : (dyadicU k).realizationUnit = -1 := 
 theorem realizationUnit_dyadicV (k : ℕ) : (dyadicV k).realizationUnit = 3 := by
   rfl
 
+private theorem two_pow_mul_two_pow (k : ℕ) : 2 ^ k * 2 ^ k = 4 ^ k := by
+  rw [← mul_pow]
+  norm_num
+
 /-- The formal determinant expression `g.realizationDet` factors as `g.realizationUnit` times the
 order of `g.toFiniteQuadraticModule`. For admissible labels, this separates the `p`-adic unit part
 of the standard label-dependent minimal realization determinant from the primary group order. -/
@@ -293,21 +297,9 @@ theorem realizationDet_eq_realizationUnit_mul_natCard (g : NikulinGenerator) :
       let _ : NeZero k := ⟨hk.ne'⟩
       simp [natCard_dyadicCyclic]
   | dyadicU k =>
-      have h4 : (4 : ℤ) ^ k = (2 : ℤ) ^ k * (2 : ℤ) ^ k := by
-        rw [← mul_pow]
-        norm_num
-      simp only [realizationDet_dyadicU, realizationUnit_dyadicU, toFiniteQuadraticModule_dyadicU,
-        natCard_dyadicU, h4]
-      push_cast
-      ring
+      simp [natCard_dyadicU, two_pow_mul_two_pow]
   | dyadicV k =>
-      have h4 : (4 : ℤ) ^ k = (2 : ℤ) ^ k * (2 : ℤ) ^ k := by
-        rw [← mul_pow]
-        norm_num
-      simp only [realizationDet_dyadicV, realizationUnit_dyadicV, toFiniteQuadraticModule_dyadicV,
-        natCard_dyadicV, h4]
-      push_cast
-      ring
+      simp [natCard_dyadicV, two_pow_mul_two_pow]
 
 /-- Every generator's finite quadratic module is an additive `g.prime`-group. -/
 theorem isAddPGroup_toFiniteQuadraticModule (g : NikulinGenerator) :
@@ -355,16 +347,14 @@ theorem isAdmissible_iff (g : NikulinGenerator) :
   | dyadicU k =>
       rw [isAdmissible_dyadicU, toFiniteQuadraticModule_dyadicU,
         and_iff_right (isNondegenerate_dyadicU k), ← Finite.one_lt_card_iff_nontrivial,
-        natCard_dyadicU]
-      exact ⟨fun hk ↦ one_lt_mul_of_lt_of_le (Nat.one_lt_pow hk.ne' Nat.one_lt_two)
-        (Nat.one_le_pow k 2 Nat.zero_lt_two),
+        natCard_dyadicU, two_pow_mul_two_pow]
+      exact ⟨fun hk ↦ Nat.one_lt_pow hk.ne' (by norm_num),
         fun h ↦ Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at h⟩
   | dyadicV k =>
       rw [isAdmissible_dyadicV, toFiniteQuadraticModule_dyadicV,
         and_iff_right (isNondegenerate_dyadicV k), ← Finite.one_lt_card_iff_nontrivial,
-        natCard_dyadicV]
-      exact ⟨fun hk ↦ one_lt_mul_of_lt_of_le (Nat.one_lt_pow hk.ne' Nat.one_lt_two)
-        (Nat.one_le_pow k 2 Nat.zero_lt_two),
+        natCard_dyadicV, two_pow_mul_two_pow]
+      exact ⟨fun hk ↦ Nat.one_lt_pow hk.ne' (by norm_num),
         fun h ↦ Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at h⟩
 
 theorem IsAdmissible.isNondegenerate {g : NikulinGenerator} (hg : g.IsAdmissible) :
@@ -684,7 +674,9 @@ private noncomputable def piNikulinGeneratorsIsometry :
           (Isometry.ofEq
             (congrArg orthogonalSumNikulinGenerators (List.ofFn_succ (f := g)).symm)))
 
-private noncomputable def NikulinDecomposition.ofPi {n : ℕ} (g : Fin n → NikulinGenerator)
+/-- Bundle a `Fin n`-indexed orthogonal sum of admissible `NikulinGenerator`s as a
+`NikulinDecomposition`. -/
+noncomputable def NikulinDecomposition.ofPi {n : ℕ} (g : Fin n → NikulinGenerator)
     (hg : ∀ i, (g i).IsAdmissible) :
     NikulinDecomposition (pi fun i ↦ (g i).toFiniteQuadraticModule) where
   generators := List.ofFn g
@@ -692,6 +684,13 @@ private noncomputable def NikulinDecomposition.ofPi {n : ℕ} (g : Fin n → Nik
     obtain ⟨i, rfl⟩ := List.mem_ofFn.mp hg'
     exact hg i
   isometry := piNikulinGeneratorsIsometry g
+
+/-- The generator list of `NikulinDecomposition.ofPi` is `List.ofFn g`. -/
+@[simp]
+theorem NikulinDecomposition.ofPi_generators {n : ℕ} (g : Fin n → NikulinGenerator)
+    (hg : ∀ i, (g i).IsAdmissible) :
+    (NikulinDecomposition.ofPi g hg).generators = List.ofFn g := by
+  rfl
 
 private theorem exists_oddCyclic_nikulinGenerator {m : ℕ} (hm : Odd m) {θ : ℤ}
     (hmθ : IsPrimePow m ∧ IsCoprime (m : ℤ) θ) :
@@ -893,17 +892,66 @@ theorem NikulinDecomposition.hasCyclicTwoSummand_of_mem {A : FiniteQuadraticModu
           (dyadicCyclic 1 θ).quadratic
           (orthogonalSumNikulinGenerators gs₂).quadratic)))
 
+/-- A finite quadratic module has a cyclic order-two dyadic summand if and only if it contains an
+element `x` with `2 • x = 0` and `q(x) + q(x) ≠ 0`. -/
+theorem hasCyclicTwoSummand_iff_exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero
+    (A : FiniteQuadraticModule.{u}) :
+    HasCyclicTwoSummand A ↔ ∃ x : A, 2 • x = 0 ∧ A.quadratic x + A.quadratic x ≠ 0 := by
+  constructor
+  · rintro ⟨θ, A', hθ, ⟨f⟩⟩
+    let e : dyadicCyclic 1 θ := (1 : ZMod (2 ^ 1))
+    have h2 : (2 : ℕ) • (e, (0 : A')) = 0 := Prod.ext (ZMod.natCast_self 2) (nsmul_zero 2)
+    refine ⟨f.symm (e, 0), by rw [← map_nsmul, h2, map_zero], ?_⟩
+    rw [f.symm.map_app, prod_quadratic, map_zero, add_zero]
+    exact dyadicCyclic_one_quadratic_add_self_ne_zero hθ
+  · rintro ⟨x, hx, hq⟩
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      simp at hq
+    have hordx : addOrderOf x = 2 := by
+      simpa using addOrderOf_eq_prime_pow (p := 2) (n := 0) (hp := ⟨Nat.prime_two⟩)
+        (by simpa using hx0) (by simpa using hx)
+    have hpair : A.toFiniteBilinearModule.pairing x x = -(A.quadratic x + A.quadratic x) := by
+      rw [← A.polar_eq_pairing, QuadraticMap.polar, ← two_nsmul, hx, map_zero]
+      abel
+    have hpair0 : A.toFiniteBilinearModule.pairing x x ≠ 0 := by
+      rw [hpair]
+      exact neg_ne_zero.mpr hq
+    have h2pair : 2 • A.toFiniteBilinearModule.pairing x x = 0 := by
+      rw [← map_nsmul, hx, map_zero]
+    have hordp : addOrderOf (A.toFiniteBilinearModule.pairing x x) = 2 := by
+      simpa using addOrderOf_eq_prime_pow (p := 2) (n := 0) (hp := ⟨Nat.prime_two⟩)
+        (by simpa using hpair0) (by simpa using h2pair)
+    let H := AddSubgroup.zmultiples x
+    have hHnd : (A.restrict H).IsNondegenerate := by
+      rw [IsNondegenerate, restrict_toFiniteBilinearModule]
+      exact (A.toFiniteBilinearModule.isNondegenerate_restrict_zmultiples_iff x).mpr
+        (hordp.trans hordx.symm)
+    have hcardH : Nat.card (A.restrict H) = 2 ^ 1 := by
+      simpa [H] using (Nat.card_zmultiples x).trans hordx
+    have _ : IsAddCyclic (A.restrict H) := inferInstanceAs (IsAddCyclic H)
+    obtain ⟨θ, hθ, ⟨fH⟩⟩ := exists_dyadicCyclic_isometry (A.restrict H) (k := 1) hcardH hHnd
+    let B := A.restrict (A.toFiniteBilinearModule.orthogonalComplement H)
+    obtain ⟨n, ⟨eB⟩⟩ := Finite.exists_equiv_fin B
+    have _ : Small.{0} B := small_of_injective eB.injective
+    let e : Shrink.{0} B ≃ B := (equivShrink B).symm
+    let _ : AddCommGroup (Shrink.{0} B) := e.addCommGroup
+    let _ : Finite (Shrink.{0} B) := e.finite_iff.mpr inferInstance
+    let eAdd : Shrink.{0} B ≃+ B := e.addEquiv
+    let A' : FiniteQuadraticModule.{0} :=
+      ofQuadraticMap (B.quadratic.comp eAdd.toIntLinearEquiv.toLinearMap)
+    have fB : Isometry A' B :=
+      { toLinearEquiv := eAdd.toIntLinearEquiv
+        map_app' := fun _ ↦ rfl }
+    exact ⟨θ, A', hθ,
+      ⟨((fH.prod fB).trans (A.restrictProdOrthogonalComplementIsometry hHnd)).symm⟩⟩
+
 /-- A module with a cyclic order-two dyadic summand has an element `x` with `2 • x = 0` and
 `q(x) + q(x) ≠ 0`. -/
 theorem HasCyclicTwoSummand.exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero
     {A : FiniteQuadraticModule.{u}} (hA : HasCyclicTwoSummand A) :
-    ∃ x : A, 2 • x = 0 ∧ A.quadratic x + A.quadratic x ≠ 0 := by
-  obtain ⟨θ, A', hθ, ⟨f⟩⟩ := hA
-  let e : dyadicCyclic 1 θ := (1 : ZMod (2 ^ 1))
-  have h2 : (2 : ℕ) • (e, (0 : A')) = 0 := Prod.ext (ZMod.natCast_self 2) (nsmul_zero 2)
-  refine ⟨f.symm (e, 0), by rw [← map_nsmul, h2, map_zero], ?_⟩
-  rw [f.symm.map_app, prod_quadratic, map_zero, add_zero]
-  exact dyadicCyclic_one_quadratic_add_self_ne_zero hθ
+    ∃ x : A, 2 • x = 0 ∧ A.quadratic x + A.quadratic x ≠ 0 :=
+  (hasCyclicTwoSummand_iff_exists_two_nsmul_eq_zero_and_quadratic_add_self_ne_zero A).mp hA
 
 /-- Every nondegenerate `q_θ^{(2)}(2)` (`θ` odd) has a cyclic order-two dyadic summand. -/
 theorem hasCyclicTwoSummand_dyadicCyclic_one {θ : ℤ} (hθ : Odd θ) :
@@ -948,8 +996,9 @@ theorem nikulinDecompositionDyadicCyclicOne_generators {θ : ℤ} (hθ : Odd θ)
 via Nikulin's relation `q_θ^{(2)}(2) ≅ q_{5θ}^{(2)}(2)` (`dyadicCyclicOneIsometryFiveMul`). -/
 noncomputable def nikulinDecompositionDyadicCyclicOneFive {θ : ℤ} (hθ : Odd θ) :
     NikulinDecomposition (dyadicCyclic 1 θ) :=
+  have h5 : Odd (5 : ℤ) := by norm_num [Int.odd_iff]
   NikulinDecomposition.ofIsometry (dyadicCyclicOneIsometryFiveMul θ)
-    (nikulinDecompositionDyadicCyclicOne ((show Odd (5 : ℤ) from ⟨2, by ring⟩).mul hθ))
+    (nikulinDecompositionDyadicCyclicOne (h5.mul hθ))
 
 /-- The generator list of `nikulinDecompositionDyadicCyclicOneFive` is
 `[.dyadicCyclic 1 Nat.one_pos (5 * θ)]`. -/

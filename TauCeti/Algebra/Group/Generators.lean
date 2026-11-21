@@ -169,6 +169,14 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
   simp_rw [AddGroup.rank_eq_spanFinrank_top]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
 
+private def prodAddEquivPiBool.{u} (F : Bool → Type u) [∀ b, AddCommGroup (F b)] :
+    (F true × F false) ≃+ ∀ b, F b where
+  toFun p b := match b with | true => p.1 | false => p.2
+  invFun f := (f true, f false)
+  left_inv _ := rfl
+  right_inv f := funext fun b ↦ by cases b <;> rfl
+  map_add' _ _ := funext fun b ↦ by cases b <;> rfl
+
 private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
     [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
     (hcop : (Nat.card M).Coprime (Nat.card N)) :
@@ -183,13 +191,7 @@ private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
     · exact hcop.symm
     · exact hcop
     · exact (hij rfl).elim
-  let e : (M × N) ≃+ ∀ b, F b :=
-    { toFun := fun p b ↦ match b with | true => p.1 | false => p.2
-      invFun := fun f ↦ (f true, f false)
-      left_inv := fun ⟨_, _⟩ ↦ rfl
-      right_inv := fun f ↦ funext fun b ↦ by cases b <;> rfl
-      map_add' := fun _ _ ↦ funext fun b ↦ by cases b <;> rfl }
-  rw [AddGroup.rank_congr e, rank_pi_eq_sup_of_coprime_card F hF]
+  rw [AddGroup.rank_congr (prodAddEquivPiBool F), rank_pi_eq_sup_of_coprime_card F hF]
   have huniv : (Finset.univ : Finset Bool) = {true, false} := by decide
   rw [huniv, Finset.sup_insert, Finset.sup_singleton]
 
@@ -221,29 +223,14 @@ theorem rank_prod_zmod (m n : ℕ) :
     rw [rank_prod_eq_max_of_coprime_card (ZMod m) (ZMod n) hcard,
       AddGroup.rank_zmod, AddGroup.rank_zmod]
     split_ifs <;> simp_all
-  · have hgcd : Nat.gcd m n ≠ 1 := hcop
-    have hp : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac).Prime := by
-      split_ifs with h0
-      · exact Nat.prime_two
-      · exact Nat.minFac_prime hgcd
-    have hdvd_m : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac) ∣ m := by
-      split_ifs with h0
-      · rw [(Nat.gcd_eq_zero_iff.mp h0).1]
-        exact dvd_zero 2
-      · exact (Nat.minFac_dvd _).trans (Nat.gcd_dvd_left m n)
-    have hdvd_n : (if Nat.gcd m n = 0 then 2 else (Nat.gcd m n).minFac) ∣ n := by
-      split_ifs with h0
-      · rw [(Nat.gcd_eq_zero_iff.mp h0).2]
-        exact dvd_zero 2
-      · exact (Nat.minFac_dvd _).trans (Nat.gcd_dvd_right m n)
-    let e : (ZMod m × ZMod n) ≃+ ∀ b : Bool, ZMod (cond b m n) :=
-      { toFun := fun x b ↦ match b with | true => x.1 | false => x.2
-        invFun := fun f ↦ (f true, f false)
-        left_inv := fun ⟨_, _⟩ ↦ rfl
-        right_inv := fun f ↦ funext fun b ↦ by cases b <;> rfl
-        map_add' := fun _ _ ↦ funext fun b ↦ by cases b <;> rfl }
-    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod_of_dvd hp (by rintro (_ | _) <;> assumption),
-      Fintype.card_bool]
+  · obtain ⟨p, hp, hp_dvd⟩ := Nat.exists_prime_and_dvd hcop
+    have hdvd : ∀ b : Bool, p ∣ cond b m n := by
+      rintro (_ | _)
+      · exact hp_dvd.trans (Nat.gcd_dvd_right m n)
+      · exact hp_dvd.trans (Nat.gcd_dvd_left m n)
+    have e : (ZMod m × ZMod n) ≃+ ∀ b : Bool, ZMod (cond b m n) :=
+      prodAddEquivPiBool (fun b : Bool ↦ ZMod (cond b m n))
+    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod_of_dvd hp hdvd, Fintype.card_bool]
 
 /-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
 theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :

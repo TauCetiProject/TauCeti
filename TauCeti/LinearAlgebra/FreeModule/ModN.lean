@@ -19,6 +19,8 @@ products of additive commutative groups.
 ## Main definitions and statements
 
 * `ModN.basis_repr_mkQ`, `ModN.basis_repr_mk`: `(ModN.basis b).repr [v] i = (b.repr v i : ℤ / n)`.
+* `ModN.range_lsmul_toAddSubgroup_eq_range_nsmul`, `ModN.quotientRangeNSMulAddEquiv`:
+  identification of `ModN G n` with `G ⧸ (nsmulAddMonoidHom n).range`.
 * `ModN.prodLinearEquiv`: `ModN (G × H) n ≃ₗ[ZMod n] ModN G n × ModN H n`.
 * `ModN.piLinearEquiv`: `ModN (∀ i, G i) n ≃ₗ[ZMod n] ∀ i, ModN (G i) n`.
 -/
@@ -70,36 +72,65 @@ theorem mkQ_surjective {G : Type*} [AddCommGroup G] (n : ℕ) :
     Function.Surjective (mkQ (G := G) n) :=
   Submodule.mkQ_surjective _
 
-private theorem range_lsmul_toAddSubgroup_eq_range_nsmul (G : Type*) [AddCommGroup G] (n : ℕ) :
+/-- The `ℤ`-linear multiplication-by-`n` range equals the additive range of
+`nsmulAddMonoidHom n`. -/
+theorem range_lsmul_toAddSubgroup_eq_range_nsmul (G : Type*) [AddCommGroup G] (n : ℕ) :
     (LinearMap.range (LinearMap.lsmul ℤ G (n : ℤ))).toAddSubgroup =
       (nsmulAddMonoidHom (α := G) n).range := by
   ext x
   simp [natCast_zsmul]
 
-private noncomputable def bridgeModRangeNSMul (G : Type*) [AddCommGroup G] (n : ℕ) :
+/-- Canonical additive equivalence identifying `ModN G n` with
+`G ⧸ (nsmulAddMonoidHom (α := G) n).range`. -/
+noncomputable def quotientRangeNSMulAddEquiv (G : Type*) [AddCommGroup G] (n : ℕ) :
     ModN G n ≃+ G ⧸ (nsmulAddMonoidHom (α := G) n).range :=
   QuotientAddGroup.quotientAddEquivOfEq (range_lsmul_toAddSubgroup_eq_range_nsmul G n)
 
-private theorem bridgeModRangeNSMul_mk (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
-    bridgeModRangeNSMul G n (mkQ n x) = (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) := by
+/-- `ModN.quotientRangeNSMulAddEquiv` maps `mkQ n x` to the quotient class of `x`. -/
+@[simp]
+theorem quotientRangeNSMulAddEquiv_mkQ (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
+    quotientRangeNSMulAddEquiv G n (mkQ n x) =
+      (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) := by
   rw [mkQ_apply]
   exact QuotientAddGroup.quotientAddEquivOfEq_mk (range_lsmul_toAddSubgroup_eq_range_nsmul G n) x
 
-private theorem bridgeModRangeNSMul_symm_mk (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
-    (bridgeModRangeNSMul G n).symm (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) = mkQ n x := by
-  rw [AddEquiv.symm_apply_eq, bridgeModRangeNSMul_mk]
+/-- The inverse of `ModN.quotientRangeNSMulAddEquiv` maps the quotient class of `x` to
+`mkQ n x`. -/
+@[simp]
+theorem quotientRangeNSMulAddEquiv_symm_mk (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
+    (quotientRangeNSMulAddEquiv G n).symm
+        (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) =
+      mkQ n x := by
+  rw [AddEquiv.symm_apply_eq, quotientRangeNSMulAddEquiv_mkQ]
+
+private theorem range_nsmulAddMonoidHom_prod (G H : Type*) [AddCommGroup G] [AddCommGroup H]
+    (n : ℕ) :
+    (nsmulAddMonoidHom (α := G × H) n).range =
+      (nsmulAddMonoidHom (α := G) n).range.prod (nsmulAddMonoidHom (α := H) n).range := by
+  have h : nsmulAddMonoidHom (α := G × H) n =
+      (nsmulAddMonoidHom (α := G) n).prodMap (nsmulAddMonoidHom (α := H) n) := by
+    ext x <;> simp
+  rw [h, AddMonoidHom.range_prodMap]
+
+private theorem quotientAddGroup_prodAddEquiv_mk {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+    (A : AddSubgroup G) (B : AddSubgroup H) (x : G × H) :
+    QuotientAddGroup.prodAddEquiv A B (x : (G × H) ⧸ A.prod B) =
+      ((x.1 : G ⧸ A), (x.2 : H ⧸ B)) := by
+  rw [QuotientAddGroup.prodAddEquiv_apply]
+  rfl
+
+private theorem addEquiv_prodCongr_apply {M₁ M₂ N₁ N₂ : Type*}
+    [AddZeroClass M₁] [AddZeroClass M₂] [AddZeroClass N₁] [AddZeroClass N₂]
+    (e₁ : M₁ ≃+ N₁) (e₂ : M₂ ≃+ N₂) (x : M₁ × M₂) :
+    (e₁.prodCongr e₂) x = (e₁ x.1, e₂ x.2) :=
+  rfl
 
 private noncomputable def prodAddEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
     ModN (G × H) n ≃+ ModN G n × ModN H n :=
-  (bridgeModRangeNSMul (G × H) n).trans <|
-    (QuotientAddGroup.quotientAddEquivOfEq (by
-      rw [show nsmulAddMonoidHom (α := G × H) n =
-          (nsmulAddMonoidHom (α := G) n).prodMap (nsmulAddMonoidHom (α := H) n) by
-        ext x <;> simp]
-      exact AddMonoidHom.range_prodMap (nsmulAddMonoidHom (α := G) n)
-        (nsmulAddMonoidHom (α := H) n))).trans <|
+  (quotientRangeNSMulAddEquiv (G × H) n).trans <|
+    (QuotientAddGroup.quotientAddEquivOfEq (range_nsmulAddMonoidHom_prod G H n)).trans <|
       (QuotientAddGroup.prodAddEquiv _ _).trans
-        ((bridgeModRangeNSMul G n).symm.prodCongr (bridgeModRangeNSMul H n).symm)
+        ((quotientRangeNSMulAddEquiv G n).symm.prodCongr (quotientRangeNSMulAddEquiv H n).symm)
 
 /-- `ModN · n` distributes `ZMod n`-linearly over binary products of additive commutative groups. -/
 noncomputable def prodLinearEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
@@ -107,16 +138,19 @@ noncomputable def prodLinearEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H
   { prodAddEquiv G H n with
     map_smul' := fun c x ↦ ZMod.map_smul (prodAddEquiv G H n) c x }
 
+private theorem prodLinearEquiv_apply (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ)
+    (x : ModN (G × H) n) :
+    prodLinearEquiv G H n x = prodAddEquiv G H n x :=
+  rfl
+
 /-- `ModN.prodLinearEquiv` sends the class of `x` to `(mkQ n x.1, mkQ n x.2)`. -/
 @[simp]
 theorem prodLinearEquiv_mkQ (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) (x : G × H) :
     prodLinearEquiv G H n (mkQ n x) = (mkQ n x.1, mkQ n x.2) := by
-  change prodAddEquiv G H n (mkQ n x) = _
-  rw [prodAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    bridgeModRangeNSMul_mk, QuotientAddGroup.quotientAddEquivOfEq_mk,
-    QuotientAddGroup.prodAddEquiv_apply]
-  simp only [Quotient.liftOn'_mk'', AddEquiv.prodCongr, AddEquiv.coe_mk, Equiv.prodCongr_apply,
-    Prod.map_apply, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe, bridgeModRangeNSMul_symm_mk]
+  rw [prodLinearEquiv_apply, prodAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    AddEquiv.trans_apply, quotientRangeNSMulAddEquiv_mkQ, QuotientAddGroup.quotientAddEquivOfEq_mk,
+    quotientAddGroup_prodAddEquiv_mk, addEquiv_prodCongr_apply,
+    quotientRangeNSMulAddEquiv_symm_mk, quotientRangeNSMulAddEquiv_symm_mk]
 
 /-- The inverse of `ModN.prodLinearEquiv` sends `(mkQ n x, mkQ n y)` to `mkQ n (x, y)`. -/
 @[simp]
@@ -128,9 +162,9 @@ theorem prodLinearEquiv_symm_mkQ (G H : Type*) [AddCommGroup G] [AddCommGroup H]
 private noncomputable def piAddEquiv {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)]
     (n : ℕ) :
     ModN (∀ i, G i) n ≃+ ∀ i, ModN (G i) n :=
-  (bridgeModRangeNSMul (∀ i, G i) n).trans <|
+  (quotientRangeNSMulAddEquiv (∀ i, G i) n).trans <|
     (QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom G n).trans
-      (AddEquiv.piCongrRight fun i ↦ (bridgeModRangeNSMul (G i) n).symm)
+      (AddEquiv.piCongrRight fun i ↦ (quotientRangeNSMulAddEquiv (G i) n).symm)
 
 /-- `ModN · n` distributes `ZMod n`-linearly over indexed products of additive commutative
 groups. -/
@@ -139,16 +173,20 @@ noncomputable def piLinearEquiv {ι : Type*} (G : ι → Type*) [∀ i, AddCommG
   { piAddEquiv G n with
     map_smul' := fun c x ↦ ZMod.map_smul (piAddEquiv G n) c x }
 
+private theorem piLinearEquiv_apply {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)] (n : ℕ)
+    (x : ModN (∀ i, G i) n) :
+    piLinearEquiv G n x = piAddEquiv G n x :=
+  rfl
+
 /-- `ModN.piLinearEquiv` sends the class of `x` to `fun i ↦ mkQ n (x i)`. -/
 @[simp]
 theorem piLinearEquiv_mkQ {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)] (n : ℕ)
     (x : ∀ i, G i) :
     piLinearEquiv G n (mkQ n x) = fun i ↦ mkQ n (x i) := by
-  change piAddEquiv G n (mkQ n x) = _
-  rw [piAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, bridgeModRangeNSMul_mk,
-    QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom_apply]
+  rw [piLinearEquiv_apply, piAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    quotientRangeNSMulAddEquiv_mkQ, QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom_apply]
   ext i
-  exact bridgeModRangeNSMul_symm_mk (G i) n (x i)
+  exact quotientRangeNSMulAddEquiv_symm_mk (G i) n (x i)
 
 /-- The inverse of `ModN.piLinearEquiv` sends `fun i ↦ mkQ n (x i)` to `mkQ n x`. -/
 @[simp]

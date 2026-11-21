@@ -22,6 +22,8 @@ abelian `p`-groups, and hence on `p`-primary components of binary products of fi
 
 ## Main definitions and statements
 
+* `IsAddPGroup.eq_top_of_map_mkQ_eq_top`: a subgroup of a finite abelian `p`-group is `⊤` if
+  its image in `ModN G p` is `⊤`.
 * `IsAddPGroup.rank_eq_finrank_modN`: `AddGroup.rank G = finrank (ZMod p) (ModN G p)` for a finite
   abelian `p`-group `G`.
 * `IsAddPGroup.rank_prod`, `IsAddPGroup.rank_pi`: generator rank is additive on products of finite
@@ -38,26 +40,11 @@ public section
 
 namespace IsAddPGroup
 
-/-- **Burnside basis theorem for finite abelian `p`-groups**: for prime `p`, the minimal number of
-generators `AddGroup.rank G` of a finite abelian `p`-group `G` equals
-`finrank (ZMod p) (ModN G p)`. -/
-theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup G] [Finite G]
-    (hG : IsAddPGroup p G) :
-    AddGroup.rank G = Module.finrank (ZMod p) (ModN G p) := by
-  classical
-  have : Fact p.Prime := ⟨hp⟩
-  have hsurj : Function.Surjective (ModN.mkQ (G := G) p) := ModN.mkQ_surjective p
-  rw [← AddGroup.rank_eq_finrank_zmod (ModN G p)]
-  refine le_antisymm ?_ (AddGroup.rank_le_of_surjective (ModN.mkQ p) hsurj)
-  -- Any lift of a generating set of `G / pG` generates `G` modulo `p • G`, hence modulo `p ^ k • G`
-  -- for every `k`, and `p ^ k • G = 0` for large `k`.
-  obtain ⟨S, hScard, hS⟩ := AddGroup.rank_spec (ModN G p)
-  let T : Finset G := S.image (Function.surjInv hsurj)
-  let H : AddSubgroup G := AddSubgroup.closure (T : Set G)
-  have hmap : H.map (ModN.mkQ p) = ⊤ := by
-    dsimp only [H, T]
-    rw [AddMonoidHom.map_closure, Finset.coe_image, ← Set.image_comp,
-      Function.comp_surjInv hsurj, Set.image_id, hS]
+/-- An additive subgroup of a finite abelian `p`-group is `⊤` if its image under `ModN.mkQ p` is
+`⊤`. -/
+theorem eq_top_of_map_mkQ_eq_top {p : ℕ} {G : Type*} [AddCommGroup G] [Finite G]
+    (hG : IsAddPGroup p G) {H : AddSubgroup G} (hmap : H.map (ModN.mkQ p) = ⊤) :
+    H = ⊤ := by
   have hstep (g : G) : ∃ h ∈ H, ∃ g' : G, g = h + p • g' := by
     have hmem : ModN.mkQ p g ∈ H.map (ModN.mkQ p) := hmap ▸ trivial
     obtain ⟨h, hh, hgh⟩ := hmem
@@ -81,11 +68,31 @@ theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup 
         refine ⟨h₁ + p ^ k • h₂, H.add_mem hh₁ (H.nsmul_mem hh₂ _), g₂, ?_⟩
         rw [nsmul_add, add_assoc, smul_smul, ← pow_succ]
   obtain ⟨K, hkill⟩ := isAddPGroup_iff_exists_pow_nsmul_eq_zero.mp hG
-  have htop : H = ⊤ := by
-    refine eq_top_iff.mpr fun x _ ↦ ?_
-    obtain ⟨h, hh, g', rfl⟩ := hiter K x
-    simpa [hkill g'] using hh
-  exact (AddGroup.rank_le (S := T) htop).trans (Finset.card_image_le.trans_eq hScard)
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨h, hh, g', rfl⟩ := hiter K x
+  simpa [hkill g'] using hh
+
+/-- **Burnside basis theorem for finite abelian `p`-groups**: for prime `p`, the minimal number of
+generators `AddGroup.rank G` of a finite abelian `p`-group `G` equals
+`finrank (ZMod p) (ModN G p)`. -/
+theorem rank_eq_finrank_modN {p : ℕ} (hp : p.Prime) {G : Type*} [AddCommGroup G] [Finite G]
+    (hG : IsAddPGroup p G) :
+    AddGroup.rank G = Module.finrank (ZMod p) (ModN G p) := by
+  classical
+  have : Fact p.Prime := ⟨hp⟩
+  have hsurj : Function.Surjective (ModN.mkQ (G := G) p) := ModN.mkQ_surjective p
+  rw [← AddGroup.rank_eq_finrank_zmod (ModN G p)]
+  refine le_antisymm ?_ (AddGroup.rank_le_of_surjective (ModN.mkQ p) hsurj)
+  -- Any lift of a generating set of `G / pG` generates `G` modulo `p • G`, hence modulo `p ^ k • G`
+  -- for every `k`, and `p ^ k • G = 0` for large `k`.
+  obtain ⟨S, hScard, hS⟩ := AddGroup.rank_spec (ModN G p)
+  let T : Finset G := S.image (Function.surjInv hsurj)
+  have hmap : (AddSubgroup.closure (T : Set G)).map (ModN.mkQ p) = ⊤ := by
+    dsimp only [T]
+    rw [AddMonoidHom.map_closure, Finset.coe_image, ← Set.image_comp,
+      Function.comp_surjInv hsurj, Set.image_id, hS]
+  exact (AddGroup.rank_le (S := T) (hG.eq_top_of_map_mkQ_eq_top hmap)).trans
+    (Finset.card_image_le.trans_eq hScard)
 
 /-- Generator rank is additive on binary products of finite abelian `p`-groups. -/
 theorem rank_prod {p : ℕ} (hp : p.Prime) {G H : Type*} [AddCommGroup G] [AddCommGroup H]

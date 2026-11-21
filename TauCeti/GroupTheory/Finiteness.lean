@@ -117,10 +117,8 @@ public section
 @[to_additive /-- Every cyclic additive group is finitely generated. -/]
 instance (priority := 100) Group.instFGOfIsCyclic (G : Type*) [Group G] [IsCyclic G] :
     Group.FG G := by
-  obtain ⟨g, hg⟩ := exists_zpow_surjective G
-  refine Group.fg_iff.mpr ⟨{g}, eq_top_iff.mpr fun x _ ↦ ?_, Set.finite_singleton g⟩
-  obtain ⟨k, rfl⟩ := hg x
-  exact zpow_mem (Subgroup.subset_closure (Set.mem_singleton g)) k
+  obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
+  exact Group.fg_iff.mpr ⟨{g}, Subgroup.zpowers_eq_closure g ▸ hg, Set.finite_singleton g⟩
 
 /-- **A subgroup of a finitely generated additive commutative group is finitely generated.** The
 additive form of `Subgroup.fg_of_commGroup`. -/
