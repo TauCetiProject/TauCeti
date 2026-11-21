@@ -22,9 +22,10 @@ charts of the unit sphere (`EuclideanSpace.instChartedSpaceSphere`), transported
 `Homeomorph.ulift` and recharted to the model in `Type u` along the equality of dimensions
 (`ChartedSpace.ofFinrankEq`).
 
-The sphere is also Hausdorff and compact (`TauCeti.TopCat.t2Space_sphere`,
-`TauCeti.TopCat.compactSpace_sphere`), being the boundary of a disk, and in positive dimension it is
-connected (`TauCeti.TopCat.pathConnectedSpace_sphere`), so it is a closed connected manifold.
+Together with the instances of `TauCeti.AlgebraicTopology.Disk`, which make the sphere Hausdorff
+and compact (`TauCeti.TopCat.t2Space_sphere`, `TauCeti.TopCat.compactSpace_sphere`) and in positive
+dimension connected (`TauCeti.TopCat.pathConnectedSpace_sphere`), this makes it a closed connected
+manifold.
 -/
 
 public section
@@ -34,14 +35,6 @@ noncomputable section
 universe u
 
 namespace TauCeti.TopCat
-
-/-- The `n`-sphere is Hausdorff, being the boundary of the `(n + 1)`-disk. -/
-instance t2Space_sphere (n : ℕ) : T2Space (TopCat.sphere.{u} n) :=
-  inferInstanceAs (T2Space (TopCat.diskBoundary.{u} (n + 1)))
-
-/-- The `n`-sphere is compact, being the boundary of the `(n + 1)`-disk. -/
-instance compactSpace_sphere (n : ℕ) : CompactSpace (TopCat.sphere.{u} n) :=
-  inferInstanceAs (CompactSpace (TopCat.diskBoundary.{u} (n + 1)))
 
 /-- The `n`-sphere `TopCat.sphere n`, the lift of the unit sphere of `ℝⁿ⁺¹`, is a charted space
 modelled on `ULift (Fin n) → ℝ`, by the stereographic charts of the unit sphere. -/

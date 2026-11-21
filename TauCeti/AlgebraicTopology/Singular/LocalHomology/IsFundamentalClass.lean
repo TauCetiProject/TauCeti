@@ -156,17 +156,17 @@ theorem isFundamentalClass_singularHomologyFunctor_map_app_iff (e : N ≅ N')
   let P := TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))
   let L := asIso (HomologicalComplex.homologyMap
     (((SSetPair.chainComplexFunctor (ModuleCat.{w} R)).map e.hom).app P) n)
-  have h := ConcreteCategory.congr_hom (SSetPair.homologyπ_coefficient_naturality P e.hom n) μ
+  have h := congrArg (fun φ ↦ φ.hom μ) (SSetPair.homologyπ_coefficient_naturality P e.hom n)
   have key : singularHomologyToLocalHomology N' x n
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) n).map e.hom).app
         (TopCat.of M) μ) = L.toLinearEquiv (singularHomologyToLocalHomology N x n μ) := by
-    -- `singularHomologyFunctor` and `SSet.homology` present the homology of `M` differently, and
-    -- they agree only up to unfolding, so the rewrites across them use `erw`.
-    erw [singularHomologyToLocalHomology_eq_singularHomologyπ,
+    rw [singularHomologyFunctor_map_app_hom_apply,
+      singularHomologyToLocalHomology_eq_singularHomologyπ,
       singularHomologyToLocalHomology_eq_singularHomologyπ]
-    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+    -- `TopPair.singularHomologyπ` is an abbreviation for `SSetPair.homologyπ` of `P`, and the
+    -- composites in `h` are applied to `μ`, so `h` closes the goal as stated.
     exact h
-  erw [key]
+  rw [key]
   exact L.toLinearEquiv.span_singleton_apply_eq_top_iff
 
 end Coefficients
