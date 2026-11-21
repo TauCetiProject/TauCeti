@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CliffordExteriorSquare
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # The quadratic realization of a skew-adjoint Lie algebra
