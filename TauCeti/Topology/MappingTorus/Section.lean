@@ -134,13 +134,6 @@ open MappingTorus
 private theorem mk_apply_coe_one (x : F) : mk φ (φ x) ((1 : I) : ℝ) = mk φ x ((0 : I) : ℝ) := by
   rw [(by simp : ((1 : I) : ℝ) = ((0 : I) : ℝ) + 1), mk_apply_add_one]
 
-/-- The point `t` of the unit interval, as a point of the circle `UnitAddCircle`, corresponds to
-`unitToCircle t` under `AddCircle.homeomorphCircle`. -/
-private theorem homeomorphCircle_symm_unitToCircle (t : I) :
-    (AddCircle.homeomorphCircle one_ne_zero).symm (unitToCircle t) = ((t : ℝ) : UnitAddCircle) := by
-  rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_apply_mk,
-    unitToCircle_apply, div_one]
-
 /-- The curve in the mapping torus traced by a seamed path, before passing to the circle. -/
 private def sweep (γ : SeamedPath φ) : C(I, MappingTorus φ) :=
   ⟨fun t ↦ mk φ (γ.val t) t, (continuous_mk φ).comp (γ.val.continuous.prodMk continuous_subtypeVal)⟩
@@ -200,17 +193,9 @@ private def sweepHomeomorph : SeamedPath φ ≃ₜ Sweep φ where
   continuous_toFun := ((continuous_sweep φ).subtype_mk _).subtype_mk _
   continuous_invFun := (continuous_unsweep φ).subtype_mk _
 
-/-- Maps from the circle `UnitAddCircle` to the mapping torus are its closed unit-interval paths:
-`circleMapHomeomorphClosedUnitPath` after identifying `UnitAddCircle` with `Circle`. -/
-private def closedUnitPathHomeomorph : C(UnitAddCircle, MappingTorus φ) ≃ₜ
-    ClosedUnitPath (MappingTorus φ) :=
-  ((AddCircle.homeomorphCircle one_ne_zero).arrowCongr (Homeomorph.refl _)).trans
-    circleMapHomeomorphClosedUnitPath
-
-private theorem closedUnitPathHomeomorph_apply (s : C(UnitAddCircle, MappingTorus φ)) (t : I) :
-    (closedUnitPathHomeomorph φ s).val t = s ((t : ℝ) : UnitAddCircle) := by
-  rw [closedUnitPathHomeomorph, Homeomorph.trans_apply, circleMapHomeomorphClosedUnitPath_apply]
-  exact congrArg s (homeomorphCircle_symm_unitToCircle t)
+private theorem sweepHomeomorph_apply (γ : SeamedPath φ) (t : I) :
+    (sweepHomeomorph φ γ).val.val t = sweep φ γ t :=
+  (rfl)
 
 /-- **Seamed paths are sections of the mapping torus.** A `φ`-seamed path `γ` gives the section
 `(t : UnitAddCircle) ↦ mk φ (γ t) t` of the projection of the mapping torus to the circle, and
@@ -218,8 +203,8 @@ every continuous section arises from a unique seamed path, its fibre coordinates
 def sectionHomeomorph :
     SeamedPath φ ≃ₜ {s : C(UnitAddCircle, MappingTorus φ) // ∀ θ, proj φ (s θ) = θ} :=
   (sweepHomeomorph φ).trans
-    (Homeomorph.subtype (closedUnitPathHomeomorph φ) fun s ↦ by
-      simp only [closedUnitPathHomeomorph_apply]
+    (Homeomorph.subtype unitAddCircleMapHomeomorphClosedUnitPath fun s ↦ by
+      simp only [unitAddCircleMapHomeomorphClosedUnitPath_apply]
       exact ⟨fun h t ↦ h _, fun h θ ↦ by
         obtain ⟨t, ht⟩ := unitToCircle_surjective (AddCircle.homeomorphCircle one_ne_zero θ)
         rw [← (AddCircle.homeomorphCircle one_ne_zero).symm_apply_apply θ, ← ht,
@@ -230,9 +215,9 @@ def sectionHomeomorph :
 @[simp]
 theorem sectionHomeomorph_apply (γ : SeamedPath φ) (t : I) :
     (sectionHomeomorph φ γ).val (t : ℝ) = mk φ (γ.val t) t := by
-  rw [← closedUnitPathHomeomorph_apply, sectionHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.subtype_symm_apply_coe, Homeomorph.apply_symm_apply]
-  rfl
+  rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, sectionHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.subtype_symm_apply_coe, Homeomorph.apply_symm_apply, sweepHomeomorph_apply,
+    sweep_apply]
 
 /-- The seamed path of a section consists of the fibre coordinates of the section. -/
 @[simp]
