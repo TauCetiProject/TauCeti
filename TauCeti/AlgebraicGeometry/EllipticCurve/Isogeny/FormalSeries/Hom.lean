@@ -531,6 +531,18 @@ theorem formalGroupHom_inj {f g : Hom W₁.toAffine W₂.toAffine} :
   formalGroupHom_injective.eq_iff
 
 @[simp]
+theorem formalGroupHom_zero : (0 : Hom W₁.toAffine W₂.toAffine).formalGroupHom = 0 := by
+  ext : 1
+  simp
+
+/-- A morphism to an elliptic curve induces the zero formal-group homomorphism if and only if it is
+the zero morphism. -/
+@[simp]
+theorem formalGroupHom_eq_zero_iff {f : Hom W₁.toAffine W₂.toAffine} :
+    f.formalGroupHom = 0 ↔ f = 0 := by
+  rw [← formalGroupHom_zero, formalGroupHom_inj]
+
+@[simp]
 theorem formalGroupHom_ofIsogeny (φ : Isogeny W₁.toAffine W₂.toAffine) :
     (ofIsogeny φ).formalGroupHom = φ.formalGroupHom := by
   ext : 1
@@ -573,12 +585,27 @@ theorem formalGroupHom_zsmul (n : ℤ) (f : Hom W₁.toAffine W₂.toAffine) :
   ext : 1
   simp [formalSeries_zsmul]
 
+-- Not `@[simp]`: `simp` already reduces the left-hand side via `formalGroupHom_zero` and
+-- `FormalGroupHom.zero_applyPoint`.
 /-- The zero morphism acts as zero on every formal power-series point. -/
-@[simp]
 theorem formalGroupHom_zero_applyPoint {σ : Type*} (x : (formalGroup W₁).Point σ) :
     (0 : Hom W₁.toAffine W₂.toAffine).formalGroupHom.applyPoint x = 0 := by
+  simp
+
+/-- Evaluating `f.formalGroupHom` at `formalPointAddHom g` gives `formalPointAddHom (f.comp g)`. -/
+@[simp]
+theorem formalGroupHom_applyPoint_formalPointAddHom {W₀ : WeierstrassCurve K} [W₁.IsElliptic]
+    (f : Hom W₁.toAffine W₂.toAffine) (g : Hom W₀.toAffine W₁.toAffine) :
+    f.formalGroupHom.applyPoint (formalPointAddHom g) = formalPointAddHom (f.comp g) := by
   apply Subtype.ext
-  simp [FormalGroup.zero_apply]
+  simp
+
+/-- Evaluating `f.formalGroupHom` at the tautological point gives `formalPointAddHom f`. -/
+@[simp]
+theorem formalGroupHom_applyPoint_tautologicalPoint [W₁.IsElliptic]
+    (f : Hom W₁.toAffine W₂.toAffine) :
+    f.formalGroupHom.applyPoint (formalGroup W₁).tautologicalPoint = formalPointAddHom f := by
+  rw [← formalPointAddHom_id, formalGroupHom_applyPoint_formalPointAddHom, comp_id]
 
 /-- **A sum of morphisms acts on formal power-series points by addition in
 `formalGroup W₂`.** -/

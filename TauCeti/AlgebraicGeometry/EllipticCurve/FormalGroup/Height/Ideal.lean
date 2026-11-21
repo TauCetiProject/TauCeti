@@ -100,15 +100,10 @@ theorem heightIdeal_formalGroup_two_eq_top_iff (hp : p.Prime) :
     (formalGroup W).heightIdeal p 2 = ⊤ ↔
       IsUnit (Ideal.Quotient.mk (Ideal.span {(p : R)})
         (PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential)) := by
-  set A := PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential
-  set I := Ideal.span {(p : R)}
-  -- `(p, A)` is the preimage of the ideal `(A)` of `R ⧸ (p)`
-  have h : Ideal.span {(p : R), A} = (Ideal.span {Ideal.Quotient.mk I A}).comap
-      (Ideal.Quotient.mk I) := by
-    rw [← Set.image_singleton (f := Ideal.Quotient.mk I), ← Ideal.map_span,
-      Ideal.comap_map_of_surjective'
-      _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, Ideal.span_insert, sup_comm]
-  rw [heightIdeal_formalGroup_two W hp, h, ← Ideal.span_singleton_eq_top, Ideal.comap_eq_top_iff]
+  rw [← (formalGroup W).heightIdeal_one hp]
+  refine ((formalGroup W).isUnit_mk_heightIdeal_iff_of_sub_mem hp ?_).symm
+  rw [(formalGroup W).heightIdeal_one hp, pow_one, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
+  exact W.natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferential hp
 
 /-- **Landweber's conditions in heights `0` and `1` through the Hasse invariant.** For a prime
 `p` and an `R`-module `M`, the sequence `(p, v₁)` of the formal group of a Weierstrass curve is

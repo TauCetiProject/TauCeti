@@ -577,6 +577,43 @@ theorem comp_applyPoint (g : FormalGroupHom G H) (f : FormalGroupHom F G) {σ : 
   simp only [applyPoint_val, comp_toPowerSeries,
     PowerSeries.subst_comp_subst_apply f.hasSubst x.prop]
 
+/-- The zero homomorphism between formal group laws has underlying series `0`. -/
+noncomputable instance : Zero (FormalGroupHom F G) where
+  zero := ofHomDefectEqZero PowerSeries.constantCoeff_zero FormalGroup.homDefect_zero
+
+@[simp]
+theorem zero_toPowerSeries : (0 : FormalGroupHom F G).toPowerSeries = 0 := (rfl)
+
+@[simp]
+theorem zero_comp (f : FormalGroupHom F G) : (0 : FormalGroupHom G H).comp f = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem comp_zero (g : FormalGroupHom G H) : g.comp (0 : FormalGroupHom F G) = 0 := by
+  ext
+  simp [PowerSeries.subst_zero_of_constantCoeff_zero g.zero_constantCoeff]
+
+@[simp]
+theorem zero_applyPoint {σ : Type*} (x : F.Point σ) :
+    (0 : FormalGroupHom F G).applyPoint x = 0 := by
+  apply Subtype.ext
+  simp
+
+/-- The zero homomorphism induces the zero additive homomorphism on points. -/
+@[simp]
+theorem zero_toAddMonoidHom (σ : Type*) :
+    (0 : FormalGroupHom F G).toAddMonoidHom σ = 0 := by
+  ext x
+  simp
+
+/-- Transporting the zero homomorphism along an equality of source formal groups yields zero. -/
+@[simp]
+theorem ofSourceEq_zero {F' : FormalGroup R} (e : F = F') :
+    ofSourceEq e (0 : FormalGroupHom F G) = 0 := by
+  ext
+  simp
+
 end FormalGroupHom
 
 /-- An isomorphism of formal group laws with specified mutually inverse homomorphisms.
@@ -877,6 +914,12 @@ theorem map_toPowerSeries (f : FormalGroupHom F G) (φ : R →+* S) :
 /-- Base change sends the identity homomorphism to the identity homomorphism. -/
 @[simp]
 theorem map_id (φ : R →+* S) : (id F).map φ = id (F.map φ) := by
+  ext : 1
+  simp
+
+/-- Base change sends the zero homomorphism to the zero homomorphism. -/
+@[simp]
+protected theorem map_zero (φ : R →+* S) : (0 : FormalGroupHom F G).map φ = 0 := by
   ext : 1
   simp
 
