@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
-public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
-import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 /-!
@@ -24,8 +20,7 @@ and simple poles at `0` and `1` (Iwaniec--Kowalski §5.1; Neukirch VII §5).
 It proves that `dedekindZetaData K` is self-dual, satisfies `HasAverageCoefficientGrowth`,
 `HasDirichletAgreement`, `HasMeromorphicContinuation`, and `HasFunctionalEquation`, and is
 recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compares
-`completedDedekindZeta ℚ` and `dedekindZetaData ℚ` with Mathlib's `completedRiemannZeta` and
-`TauCeti.LFunctions.riemannZetaData`.
+`dedekindZetaData ℚ` with `TauCeti.LFunctions.riemannZetaData`.
 
 ## Main definitions
 
@@ -41,9 +36,7 @@ recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compa
   `TauCeti.LFunctions.dedekindZetaData_hasFunctionalEquation`: the four analytic predicates.
 * `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact recovery by
   `AnalyticLFunctionData.ofSeries`.
-* `TauCeti.LFunctions.completedDedekindZeta_rat_eq`,
-  `TauCeti.LFunctions.dedekindZetaData_rat_eqOffZero`: comparison over `ℚ` with the completed
-  Riemann zeta function and `riemannZetaData`.
+* `TauCeti.LFunctions.dedekindZetaData_rat_eqOffZero`: comparison over `ℚ` with `riemannZetaData`.
 
 ## References
 
@@ -119,7 +112,7 @@ theorem dedekindZetaData_dual : (dedekindZetaData K).dual = dedekindZetaData K :
   · simp
   · simp
   · simp
-  · simp [completedDedekindZeta_conj]
+  · simp
   · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
       map_eq_one_iff _ (starRingEnd ℂ).injective]
 
@@ -129,25 +122,20 @@ theorem dedekindZetaData_hasAverageCoefficientGrowth :
   rw [AnalyticLFunctionData.hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le]
   exact le_of_eq (abscissaOfAbsConv_dedekindZetaCoeff K)
 
-/-- The unit ideal is the unique integral ideal of absolute norm `1`. -/
-private theorem dedekindZetaCoeff_one : dedekindZetaCoeff K 1 = 1 := by
-  rw [← card_normFiber_eq_dedekindZetaCoeff K one_ne_zero, normFiber_one, Finset.card_singleton]
-
 /-- On `Re s > 1`, `completedDedekindZeta K` agrees with the completed Dirichlet series of
 `dedekindZetaCoeff K`. -/
 theorem dedekindZetaData_hasDirichletAgreement :
     (dedekindZetaData K).HasDirichletAgreement where
-  coeff_one := by simp [dedekindZetaCoeff_one]
-  degree_pos := by
-    rw [dedekindZetaData_degree]
-    exact Module.finrank_pos
+  coeff_one := by simp
+  degree_pos := by simp [Module.finrank_pos]
   completed_eq s hs := by
-    have hdiscr : (((discr K).natAbs : ℕ) : ℂ) = ((|discr K| : ℤ) : ℂ) := by
-      rw [← Int.cast_natCast, Int.natCast_natAbs]
-    have hcoeff : (dedekindZetaData K).coeff = fun n ↦ (dedekindZetaCoeff K n : ℂ) := rfl
-    rw [dedekindZetaData_completed, dedekindZetaData_conductor, PNat.mk_coe, hdiscr,
-      dedekindZetaData_gammaFactor, hcoeff, completedDedekindZeta_eq hs,
-      dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+    have hdiscr : (((dedekindZetaData K).conductor : ℕ) : ℂ) = ((|discr K| : ℤ) : ℂ) := by
+      rw [dedekindZetaData_conductor, PNat.mk_coe, ← Int.cast_natCast, Int.natCast_natAbs]
+    have hL : LSeries (dedekindZetaData K).coeff s = dedekindZeta K s := by
+      rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+      exact congrArg (LSeries · s) (funext (dedekindZetaData_coeff K))
+    rw [dedekindZetaData_completed, dedekindZetaData_gammaFactor, hdiscr, hL,
+      completedDedekindZeta_eq hs]
     ring
 
 /-- The completed Dedekind zeta function is meromorphic, with simple poles at `0` and `1` and no
@@ -181,8 +169,7 @@ theorem dedekindZetaData_hasFunctionalEquation :
     simp only [dedekindZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply, e0, e1]
     rw [add_comm]
   completed_eq s _ _ := by
-    rw [dedekindZetaData_dual, dedekindZetaData_rootNumber, one_mul, dedekindZetaData_completed,
-      completedDedekindZeta_one_sub]
+    simp [completedDedekindZeta_one_sub]
 
 /-- Constructing the Dedekind-zeta card from its Dirichlet series recovers `dedekindZetaData K`
 verbatim, because `completedDedekindZeta K` is already in meromorphic normal form. In particular,
@@ -205,31 +192,6 @@ theorem ofSeries_dedekindZetaData :
     (dedekindZeta_ne_zero_of_one_lt_re (by norm_num))
 
 /-! ### Comparison over `ℚ` with the Riemann zeta function -/
-
-/-- Over `ℚ`, `completedDedekindZeta ℚ` is the meromorphic normal form of
-`completedRiemannZeta`. -/
-theorem completedDedekindZeta_rat_eq_toMeromorphicNFOn :
-    completedDedekindZeta ℚ = toMeromorphicNFOn completedRiemannZeta univ := by
-  refine eq_of_meromorphicNFOn_of_eqOn_halfPlane (meromorphicNFOn_completedDedekindZeta ℚ)
-    (meromorphicNFOn_toMeromorphicNFOn _ _) fun s (hs : 1 < s.re) ↦ ?_
-  have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
-  have hGℝ : Gammaℝ s ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by linarith)
-  rw [toMeromorphicNFOn_apply_of_analyticAt meromorphic_completedRiemannZeta
-      (analyticAt_completedRiemannZeta h0 h1),
-    completedDedekindZeta_eq hs, discr_rat,
-    nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
-    nrComplexPlaces_eq_zero_of_finrank_eq_one (Module.finrank_self ℚ),
-    dedekindZeta_rat_eq_riemannZeta hs, riemannZeta_def_of_ne_zero h0]
-  simp [field]
-
-/-- Over `ℚ`, `completedDedekindZeta ℚ` agrees with Mathlib's `completedRiemannZeta` away from
-its poles `0` and `1`. -/
-theorem completedDedekindZeta_rat_eq {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
-    completedDedekindZeta ℚ s = completedRiemannZeta s := by
-  rw [completedDedekindZeta_rat_eq_toMeromorphicNFOn]
-  exact toMeromorphicNFOn_apply_of_analyticAt meromorphic_completedRiemannZeta
-    (analyticAt_completedRiemannZeta h0 h1)
 
 /-- Over `ℚ`, `dedekindZetaData ℚ` agrees off index zero with the normal-form version of
 `riemannZetaData`. The two differ at index zero because `dedekindZetaCoeff ℚ 0 = 1` whereas

@@ -334,6 +334,20 @@ theorem sum_LSeries_rayClassCoeff_one [Fintype (RayClassGroup (Modulus.one K))] 
       dedekindZeta K s := by
   rw [sum_LSeries_rayClassCoeff _ hs, finiteEulerCorrection_one, mul_one]
 
+/-- Summing the trivial-modulus partial zeta series over the class group gives `dedekindZeta K` on
+`Re s > 1`. -/
+theorem sum_LSeries_rayClassCoeff_classGroup [Fintype (ClassGroup (𝓞 K))] {s : ℂ}
+    (hs : 1 < s.re) :
+    ∑ c : ClassGroup (𝓞 K),
+        LSeries (normCoeff K (rayClassCoeff (Modulus.one K) (oneEquivClassGroup.symm c⁻¹))) s =
+      dedekindZeta K s := by
+  let _ : Fintype (RayClassGroup (Modulus.one K)) :=
+    Fintype.ofEquiv (ClassGroup (𝓞 K)) oneEquivClassGroup.symm.toEquiv
+  rw [← sum_LSeries_rayClassCoeff_one hs]
+  let e : ClassGroup (𝓞 K) ≃ RayClassGroup (Modulus.one K) :=
+    (Equiv.inv (ClassGroup (𝓞 K))).trans oneEquivClassGroup.symm.toEquiv
+  exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
+
 /-- **The sum over the ray classes is `ζ_K` only for a trivial finite part.** At a real `s > 1`
 the Dirichlet series of the ray classes of `𝔪` sum to `ζ_K(s)` exactly when `𝔪.support` is
 empty; one prime dividing the finite part of `𝔪` already breaks the equality. -/
