@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Measure.AE
-public import Mathlib.MeasureTheory.Measure.WithDensity
+public import TauCeti.Geometry.Manifold.Measure.Chart
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import Mathlib.MeasureTheory.Measure.OpenPos
-import TauCeti.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!
 # Positive continuous density measures on a manifold
@@ -24,9 +23,13 @@ and no orientation enters the definition.
 
 These measures are the integration measures of first-order analysis on manifolds without a
 preferred metric. They are interchangeable for every local question: they are locally finite and
-positive on nonempty open sets, and their null sets are exactly the chartwise null sets
-`TauCeti.IsNullSet`. Thus their almost-everywhere filters all agree with
-`TauCeti.Manifold.ae I M`. Any two of them differ by a strictly positive continuous weight.
+positive on nonempty open sets. On a Lindelöf manifold their null sets are exactly the chartwise
+null sets `TauCeti.IsNullSet`, so their almost-everywhere filters all agree with
+`TauCeti.Manifold.ae I M`. On a second countable manifold any two of them differ by a strictly
+positive continuous weight.
+
+The general facts about chart pushforwards used here are in
+`TauCeti.Geometry.Manifold.Measure.Chart`.
 
 Like `TauCeti.IsNullSet`, the definition asks for a density with respect to every additive Haar
 measure on the model. One Haar measure suffices
@@ -86,24 +89,6 @@ def IsPositiveDensityMeasure (μ : Measure M) : Prop :=
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
       (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y)
 
-/-- The chartwise characterization of `IsPositiveDensityMeasure`. -/
-theorem isPositiveDensityMeasure_iff :
-    IsPositiveDensityMeasure I μ ↔ ∀ x : M, ∀ (ν : Measure E) [ν.IsAddHaarMeasure], ∃ w : E → ℝ,
-      ContinuousOn w (extChartAt I x).target ∧ (∀ y ∈ (extChartAt I x).target, 0 < w y) ∧
-      (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
-        (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
-  Iff.rfl
-
-/-- The chart density of a positive continuous density measure at a point, for a Haar measure on
-the model. -/
-theorem IsPositiveDensityMeasure.exists_density (hμ : IsPositiveDensityMeasure I μ) (x : M)
-    (ν : Measure E) [ν.IsAddHaarMeasure] :
-    ∃ w : E → ℝ, ContinuousOn w (extChartAt I x).target ∧
-      (∀ y ∈ (extChartAt I x).target, 0 < w y) ∧
-      (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
-        (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y) :=
-  hμ x ν
-
 /-- **Haar independence.** A measure on a manifold with a finite-dimensional model is a positive
 continuous density measure as soon as it has strictly positive continuous chart densities with
 respect to one additive Haar measure on the model. -/
@@ -129,23 +114,6 @@ theorem isPositiveDensityMeasure_iff_of_isAddHaarMeasure [BorelSpace E] [FiniteD
 variable [BorelSpace M] [BorelSpace E]
 
 /-! ### Charts and null sets -/
-
-/-- The pushforward of `μ` restricted to a chart source gives a measurable set of the model the
-measure of its preimage in the chart source. -/
-theorem map_restrict_extChartAt_source_apply (x : M) {A : Set E} (hA : MeasurableSet A) :
-    (μ.restrict (extChartAt I x).source).map (extChartAt I x) A =
-      μ ((extChartAt I x) ⁻¹' A ∩ (extChartAt I x).source) := by
-  have hsrc : MeasurableSet (extChartAt I x).source := (isOpen_extChartAt_source x).measurableSet
-  rw [Measure.map_apply_of_aemeasurable ((continuousOn_extChartAt x).aemeasurable hsrc) hA,
-    Measure.restrict_apply' hsrc]
-
-/-- The pushforward of `μ` restricted to a chart source gives the coordinate image of a measurable
-subset of the source the measure that `μ` gives the subset. -/
-theorem map_restrict_extChartAt_source_apply_image {x : M} {s : Set M} (hs : MeasurableSet s)
-    (hsub : s ⊆ (extChartAt I x).source) :
-    (μ.restrict (extChartAt I x).source).map (extChartAt I x) ((extChartAt I x) '' s) = μ s := by
-  rw [map_restrict_extChartAt_source_apply x (hs.image_extChartAt x hsub),
-    (extChartAt I x).injOn.preimage_image_inter hsub]
 
 /-- A subset of the source of a preferred chart is null for a positive continuous density measure
 exactly when its image in the chart is null for an additive Haar measure. The set need not be
@@ -229,99 +197,25 @@ theorem IsPositiveDensityMeasure.isOpenPosMeasure [FiniteDimensional ℝ E]
     (hμ : IsPositiveDensityMeasure I μ) : μ.IsOpenPosMeasure where
   open_pos U hU hne := by
     obtain ⟨x, hx⟩ := hne
-    let e := extChartAt I x
-    have hsub : U ∩ e.source ⊆ e.source := inter_subset_right
-    refine (measure_mono_null (inter_subset_left : U ∩ e.source ⊆ U)).mt ?_
-    rw [hμ.measure_eq_zero_iff_image_of_subset hsub Measure.addHaar, inter_comm U,
-      e.image_source_inter_eq', inter_comm]
-    -- The chart image of `U ∩ e.source` contains `e x` in the closure of its interior.
-    refine (Measure.measure_pos_of_nonempty_interior _
-      (Nonempty.of_closure ⟨e x, ?_⟩)).ne'
-    exact extChartAt_mem_closure_interior (I := I) (x₀ := x)
-      (subset_closure (mem_interior_iff_mem_nhds.2 (hU.mem_nhds hx))) (mem_extChartAt_source x)
+    refine (measure_mono_null (inter_subset_left : U ∩ (extChartAt I x).source ⊆ U)).mt ?_
+    rw [hμ.measure_eq_zero_iff_image_of_subset inter_subset_right Measure.addHaar]
+    exact (measure_image_extChartAt_inter_source_pos hU hx _).ne'
 
 /-- A positive continuous density measure is locally finite: near a point, its chart density is
 bounded, so a small neighbourhood has finite measure. -/
 theorem IsPositiveDensityMeasure.isLocallyFiniteMeasure [FiniteDimensional ℝ E]
     (hμ : IsPositiveDensityMeasure I μ) : IsLocallyFiniteMeasure μ := by
   refine ⟨fun x ↦ ?_⟩
-  let e := extChartAt I x
-  have hxe : x ∈ e.source := mem_extChartAt_source x
   obtain ⟨w, hwc, -, hw⟩ := hμ x Measure.addHaar
-  -- Near `e x` in the model, the density stays below `w (e x) + 1`.
-  let V := {y | w y < w (e x) + 1} ∩ Metric.ball (e x) 1
-  have hV : V ∈ 𝓝[range I] (e x) := by
-    refine Filter.inter_mem ?_ (mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds _ one_pos))
-    rw [← nhdsWithin_extChartAt_target_eq' hxe]
-    exact (hwc (e x) (e.map_source hxe)).eventually_lt_const (lt_add_one _)
-  let U := interior (e.source ∩ e ⁻¹' V)
-  have hU : U ∈ 𝓝 x := interior_mem_nhds.2 (Filter.inter_mem (extChartAt_source_mem_nhds' hxe)
-    (extChartAt_preimage_mem_nhds_of_mem_nhdsWithin hxe hV))
-  have hUsub : U ⊆ e.source := interior_subset.trans inter_subset_left
-  have hUV : e '' U ⊆ V ∩ e.target := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact ⟨(interior_subset hz).2, e.map_source (hUsub hz)⟩
-  have hUm : MeasurableSet (e '' U) := isOpen_interior.measurableSet.image_extChartAt x hUsub
-  refine ⟨U, hU, ?_⟩
-  rw [← map_restrict_extChartAt_source_apply_image isOpen_interior.measurableSet hUsub, hw,
+  obtain ⟨U, hUo, hxU, hUsub, hU⟩ :=
+    exists_isOpen_setLIntegral_image_extChartAt_lt_top hwc (Measure.addHaar : Measure E)
+  have hUm : MeasurableSet (extChartAt I x '' U) := hUo.measurableSet.image_extChartAt x hUsub
+  refine ⟨U, hUo.mem_nhds hxU, ?_⟩
+  rwa [← map_restrict_extChartAt_source_apply_image hUo.measurableSet hUsub, hw,
     withDensity_apply _ hUm, Measure.restrict_restrict hUm,
-    inter_eq_left.2 (hUV.trans inter_subset_right)]
-  calc ∫⁻ y in e '' U, ENNReal.ofReal (w y) ∂Measure.addHaar
-      ≤ ∫⁻ _ in e '' U, ENNReal.ofReal (w (e x) + 1) ∂Measure.addHaar :=
-        setLIntegral_mono measurable_const fun y hy ↦
-          ENNReal.ofReal_le_ofReal (hUV hy).1.1.le
-    _ ≤ ENNReal.ofReal (w (e x) + 1) * Measure.addHaar (Metric.ball (e x) 1) := by
-        rw [setLIntegral_const]
-        gcongr
-        exact fun y hy ↦ (hUV hy).1.2
-    _ < ∞ := ENNReal.mul_lt_top ENNReal.ofReal_lt_top measure_ball_lt_top
+    inter_eq_left.2 ((image_mono hUsub).trans (extChartAt I x).image_source_eq_target.subset)]
 
 /-! ### Comparison of density measures -/
-
-/-- In a chart where `μ` has a continuous density `w`, reweighting `μ` by a nonnegative continuous
-function `h` read in the chart multiplies the chart density by `h`. -/
-theorem map_withDensity_restrict_extChartAt_source {x : M} {ν : Measure E}
-    {w h : E → ℝ} (hwc : ContinuousOn w (extChartAt I x).target)
-    (hhc : ContinuousOn h (extChartAt I x).target) (hh : ∀ y ∈ (extChartAt I x).target, 0 ≤ h y)
-    (hw : (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
-      (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y)) :
-    ((μ.restrict (extChartAt I x).source).withDensity
-        fun z ↦ ENNReal.ofReal (h (extChartAt I x z))).map (extChartAt I x) =
-      (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (h y * w y) := by
-  let e := extChartAt I x
-  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
-  have htgt : MeasurableSet e.target := measurableSet_extChartAt_target x
-  -- The weight `h`, extended measurably by zero off the target.
-  classical
-  let g : E → ℝ≥0∞ := e.target.piecewise (fun y ↦ ENNReal.ofReal (h y)) 0
-  have hg : Measurable g :=
-    (ENNReal.continuous_ofReal.comp_continuousOn hhc).measurable_piecewise continuousOn_const htgt
-  have hae : AEMeasurable e (μ.restrict e.source) := (continuousOn_extChartAt x).aemeasurable hsrc
-  have hcomp : (fun z ↦ ENNReal.ofReal (h (e z))) =ᵐ[μ.restrict e.source] g ∘ hae.mk e := by
-    refine Filter.EventuallyEq.trans ?_ (hae.ae_eq_mk.fun_comp g)
-    filter_upwards [ae_restrict_mem hsrc] with z hz
-    have hgz : g (e z) = ENNReal.ofReal (h (e z)) := piecewise_eq_of_mem _ _ _ (e.map_source hz)
-    rw [Function.comp_apply, hgz]
-  rw [withDensity_congr_ae hcomp,
-    Measure.map_congr ((withDensity_absolutelyContinuous _ _).ae_le hae.ae_eq_mk),
-    Measure.map_withDensity_comp hae.measurable_mk hg, ← Measure.map_congr hae.ae_eq_mk, hw,
-    ← withDensity_mul₀ (f := fun y ↦ ENNReal.ofReal (w y))
-      ((ENNReal.continuous_ofReal.comp_continuousOn hwc).aemeasurable htgt) hg.aemeasurable]
-  refine withDensity_congr_ae ?_
-  filter_upwards [ae_restrict_mem htgt] with y hy
-  have hgy : g y = ENNReal.ofReal (h y) := piecewise_eq_of_mem _ _ _ hy
-  rw [Pi.mul_apply, hgy, mul_comm, ENNReal.ofReal_mul (hh y hy)]
-
-/-- Two measures with the same pushforward from a chart source agree on that source. -/
-theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}
-    (h : (α.restrict (extChartAt I x).source).map (extChartAt I x) =
-      (β.restrict (extChartAt I x).source).map (extChartAt I x)) :
-    α.restrict (extChartAt I x).source = β.restrict (extChartAt I x).source := by
-  have hsrc : MeasurableSet (extChartAt I x).source := (isOpen_extChartAt_source x).measurableSet
-  ext B hB
-  rw [Measure.restrict_apply hB, Measure.restrict_apply hB,
-    ← map_restrict_extChartAt_source_apply_image (hB.inter hsrc) inter_subset_right, h,
-    map_restrict_extChartAt_source_apply_image (hB.inter hsrc) inter_subset_right]
 
 /-- **Reweighting.** A positive continuous density measure multiplied by a strictly positive
 continuous function on the manifold is again a positive continuous density measure: in a chart,

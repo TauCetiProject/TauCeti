@@ -53,10 +53,7 @@ section Null
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- The Riemannian volume of a continuous metric is a positive continuous density measure: in the
-preferred chart at `x`, its density with respect to the Haar measure of the basis
-`Module.finBasis ℝ E` is the chart volume density `TauCeti.chartVolumeDensity x` read in the
-chart. -/
+/-- The Riemannian volume of a continuous metric is a positive continuous density measure. -/
 theorem isPositiveDensityMeasure_riemannianVolume :
     IsPositiveDensityMeasure I (riemannianVolume I M) := by
   obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := BorelSpace.measurable_eq
