@@ -24,9 +24,9 @@ When `Γ` is a group, a crossed cocycle is the same thing as a splitting `γ ↦
 semidirect product extension `H → H ⋊[α] Γ → Γ`, with inverse the first coordinate; gauge by `h`
 becomes conjugation of the splitting by `SemidirectProduct.inl h`, so gauge orbits are the
 `H`-conjugacy classes of splittings. This is the form in which a Langlands parameter with values
-in an L-group `Ĥ ⋊ Γ` is a crossed cocycle with values in the dual group `Ĥ`.
+in an L-group `H^∨ ⋊ Γ` is a crossed cocycle with values in the dual group `H^∨`.
 
-No topology is involved: the coefficient groups that occur are the groups of points `Ĥ(B)` of a
+No topology is involved: the coefficient groups that occur are the groups of points `H^∨(B)` of a
 group scheme on arbitrary coefficient algebras `B`, and the action is part of the data of the
 semidirect product, so it is given as a homomorphism to `MulAut H`. For topological `Γ` and `H`,
 continuous crossed cocycles with gauge are compared with `TauCeti.NonabelianH1` in
