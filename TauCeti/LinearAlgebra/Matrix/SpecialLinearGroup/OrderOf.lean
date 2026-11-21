@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import Mathlib.LinearAlgebra.Matrix.CharP
-import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -41,8 +40,6 @@ square roots of `-1` and elements of order two:
 
 ## Main results
 
-* `Matrix.SpecialLinearGroup.neg_one_eq_one_iff`, `Matrix.SpecialLinearGroup.neg_one_ne_one`:
-  for nonempty even `n`, `-1 = 1` in `SL(n, R)` holds if and only if `(2 : R) = 0`.
 * `Matrix.SpecialLinearGroup.sq_eq_neg_one_iff_trace_eq_zero`: `g ^ 2 = -1 ↔ trace g = 0`.
 * `Matrix.SpecialLinearGroup.sq_eq_one_iff`: `g ^ 2 = 1 ↔ g = 1 ∨ g = -1`.
 * `Matrix.SpecialLinearGroup.orderOf_eq_two_iff`: `orderOf g = 2 ↔ g = -1`.
@@ -64,35 +61,12 @@ namespace Matrix.SpecialLinearGroup
 
 variable {R : Type*} [CommRing R]
 
-/-- In `SL(n, R)` for nonempty even `n`, `-1 = 1` holds if and only if `(2 : R) = 0`. -/
-@[simp]
-theorem neg_one_eq_one_iff {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
-    [Fact (Even (Fintype.card n))] :
-    (-1 : SpecialLinearGroup n R) = 1 ↔ (2 : R) = 0 := by
-  constructor
-  · intro h
-    obtain ⟨i⟩ := ‹Nonempty n›
-    have hi := congrArg (fun g : SpecialLinearGroup n R ↦ (g : Matrix n n R) i i) h
-    simp only [coe_neg, coe_one, Matrix.neg_apply, Matrix.one_apply_eq] at hi
-    linear_combination -hi
-  · intro h2
-    apply Subtype.ext
-    ext i j
-    simp only [coe_neg, coe_one, Matrix.neg_apply]
-    linear_combination -((1 : Matrix n n R) i j) * h2
-
-/-- In `SL(n, R)` for nonempty even `n`, `-1 ≠ 1` whenever `(2 : R) ≠ 0`. -/
-theorem neg_one_ne_one {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
-    [Fact (Even (Fintype.card n))] [NeZero (2 : R)] :
-    (-1 : SpecialLinearGroup n R) ≠ 1 :=
-  neg_one_eq_one_iff.not.mpr (NeZero.ne 2)
-
 /-- **Square roots of `-1` in `SL(2, R)` are the traceless matrices**: over any commutative ring,
 `g ^ 2 = -1` holds if and only if `trace g = 0`, by the `2 × 2` Cayley–Hamilton identity
 `g ^ 2 = (trace g) • g - 1`. -/
 theorem sq_eq_neg_one_iff_trace_eq_zero (g : SL(2, R)) :
     g ^ 2 = -1 ↔ (g : Matrix (Fin 2) (Fin 2) R).trace = 0 := by
-  set A : Matrix (Fin 2) (Fin 2) R := g.1
+  set A : Matrix (Fin 2) (Fin 2) R := g.val
   have hch : A ^ 2 = A.trace • A - 1 := by
     simpa [A, g.det_coe] using Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two A
   constructor
@@ -118,7 +92,7 @@ and over `ZMod 15`, `!![4, 0; 0, 4]` squares to `1`. -/
 theorem sq_eq_one_iff [NoZeroDivisors R] [NeZero (2 : R)] (g : SL(2, R)) :
     g ^ 2 = 1 ↔ g = 1 ∨ g = -1 := by
   refine ⟨fun hsq ↦ ?_, by rintro (rfl | rfl) <;> simp⟩
-  set A : Matrix (Fin 2) (Fin 2) R := g.1
+  set A : Matrix (Fin 2) (Fin 2) R := g.val
   have hch : A ^ 2 = A.trace • A - 1 := by
     simpa [A, g.det_coe] using Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two A
   have hmat : A ^ 2 = 1 := by simpa [A, coe_pow] using congrArg Subtype.val hsq
@@ -176,7 +150,7 @@ theorem neg_one_mem_of_two_dvd_card [NoZeroDivisors R]
     obtain ⟨x, hx⟩ := exists_prime_orderOf_dvd_card' 2 h
     have hcoe : orderOf (x : SL(2, R)) = 2 := (Subgroup.orderOf_coe x).trans hx
     rw [orderOf_eq_two_iff] at hcoe
-    exact hcoe ▸ x.2
+    exact hcoe ▸ x.property
 
 /-- **Every finite subgroup of `SL(2, R)` of even order contains the center `{±1}`** over any
 commutative ring without zero divisors. -/
@@ -193,7 +167,7 @@ in `SL(2, R)` and has cube `1`, but its trace is `2 + ε² ≠ 2`. -/
 theorem trace_eq_two_of_pow_expChar_pow_eq_one [IsReduced R] {p : ℕ} [ExpChar R p] {k : ℕ}
     {g : SL(2, R)} (hg : g ^ p ^ k = 1) :
     (g : Matrix (Fin 2) (Fin 2) R).trace = 2 := by
-  set A : Matrix (Fin 2) (Fin 2) R := g.1
+  set A : Matrix (Fin 2) (Fin 2) R := g.val
   have hApow : A ^ p ^ k = 1 := by simpa [A, coe_pow] using congrArg Subtype.val hg
   have hsub : (1 - A) ^ p ^ k = 0 := by
     rw [sub_pow_expChar_pow_of_commute p k (Commute.one_left A), one_pow, hApow, sub_self]
@@ -215,8 +189,8 @@ theorem eq_one_of_commute_of_trace_eq_two_of_trace_eq_zero [IsReduced R]
     (h2 : IsLeftRegular (2 : R)) {a b : SL(2, R)} (hcomm : Commute a b)
     (ha : (a : Matrix (Fin 2) (Fin 2) R).trace = 2)
     (hb : (b : Matrix (Fin 2) (Fin 2) R).trace = 0) : a = 1 := by
-  set A : Matrix (Fin 2) (Fin 2) R := a.1
-  set B : Matrix (Fin 2) (Fin 2) R := b.1
+  set A : Matrix (Fin 2) (Fin 2) R := a.val
+  set B : Matrix (Fin 2) (Fin 2) R := b.val
   set N : Matrix (Fin 2) (Fin 2) R := A - 1
   have hNtr : N.trace = 0 := by simp [N, A, ha]
   have hNdet : N.det = 0 := by
