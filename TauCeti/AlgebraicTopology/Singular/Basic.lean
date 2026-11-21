@@ -10,9 +10,13 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Singular chain complexes
+
+Facet restriction is `ContinuousMap.simplexFace`; `TopCat.toSSetObjEquiv_symm_δ` identifies it
+with the actual simplicial face.
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
@@ -25,6 +29,8 @@ a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`),
 and the vanishing of the singular homology of the empty space
 (`TauCeti.isZero_singularHomology_of_isEmpty`).
+Applied to a class, the homology map induced by a composite of continuous maps is the composite of
+the homology maps (`ContinuousMap.homologyMap_comp_apply`).
 A commuting square of continuous maps gives a commuting square of homology maps
 (`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
@@ -37,6 +43,32 @@ open CategoryTheory Limits
 open scoped Simplicial
 
 universe w v u
+
+namespace ContinuousMap
+
+open Convexity
+
+/-- Restrict a continuous singular simplex to its `j`-th facet. -/
+def simplexFace {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2)) :
+    C(StdSimplex ℝ (Fin (n + 1)), Y) :=
+  s.comp ⟨StdSimplex.map j.succAbove, by fun_prop⟩
+
+/-- The facet restriction evaluates by the native simplex vertex map. -/
+@[simp]
+lemma simplexFace_apply {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2))
+    (x : StdSimplex ℝ (Fin (n + 1))) : s.simplexFace j x = s (x.map j.succAbove) := by
+  rfl
+
+/-- Facet restriction commutes with postcomposition of continuous maps. -/
+@[simp]
+lemma simplexFace_comp {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {n : ℕ}
+    (f : C(X, Y)) (s : C(Convexity.StdSimplex ℝ (Fin (n + 2)), X)) (j : Fin (n + 2)) :
+    (f.comp s).simplexFace j = f.comp (s.simplexFace j) := by
+  rfl
+
+end ContinuousMap
 
 namespace TauCeti
 
@@ -132,7 +164,34 @@ theorem isZero_singularHomology_of_isEmpty [CategoryWithHomology C] (X : TopCat.
 
 end TauCeti
 
+namespace ContinuousMap
+
+variable {X Y Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- The map induced by a composite on singular homology, in the form
+`SSet.homologyMap (TopCat.toSSet.map _)`, applied to a class with coefficients in a module. -/
+theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ]
+    (R : ModuleCat.{w} Λ) (n : ℕ)
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology R n : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f))) R n).hom x =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n).hom x) := by
+  rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
+
+end ContinuousMap
+
 namespace TopCat
+
+/-- Singular-simplex identification carries the native simplicial face to facet restriction.
+Use this general form explicitly; affine simplices retain their existing vertex-map simp form. -/
+lemma toSSetObjEquiv_symm_δ {X : TopCat.{w}} {n : ℕ}
+    (s : C(Convexity.StdSimplex ℝ (Fin (n + 2)), X)) (j : Fin (n + 2)) :
+    (TopCat.toSSet.obj X).δ j ((X.toSSetObjEquiv _).symm s) =
+      (X.toSSetObjEquiv _).symm (s.simplexFace j) := by
+  -- Native `δ` is the simplicial map of `SimplexCategory.δ`; naturality identifies its map.
+  change (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op _ = _
+  simpa only [ContinuousMap.simplexFace, SimplexCategory.coe_δ] using
+    (TopCat.toSSetObjEquiv_symm_naturality (SimplexCategory.δ j) s)
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   {R : C} {X : TopCat.{w}}
