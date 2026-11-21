@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.Exp
 
 /-!
 # Hasse derivatives of power series
@@ -47,6 +48,8 @@ from Mathlib's polynomial Leibniz rule `Polynomial.hasseDeriv_mul`.
   commutative semiring, `D⁽¹⁾ = d/dX` and `k! • D⁽ᵏ⁾ = (d/dX)^[k]`.
 * `PowerSeries.hasseDeriv_rescale`: the chain rule `D⁽ᵏ⁾ (f(a X)) = a ^ k * (D⁽ᵏ⁾ f)(a X)` for
   rescaling.
+* `PowerSeries.hasseDeriv_exp` and `PowerSeries.hasseDeriv_rescale_exp`: over a `ℚ`-algebra,
+  `D⁽ᵏ⁾ exp = exp / k!` and `D⁽ᵏ⁾ exp(a X) = (a ^ k / k!) exp(a X)`.
 
 ## References
 
@@ -232,5 +235,33 @@ theorem hasseDeriv_rescale (k : ℕ) (a : R) (f : R⟦X⟧) :
   ring
 
 end CommSemiring
+
+section Exp
+
+/-- The exponential series is an eigenvector of every Hasse derivative: `D⁽ᵏ⁾ exp = exp / k!`. -/
+@[simp]
+theorem hasseDeriv_exp {A : Type*} [Ring A] [Algebra ℚ A] (k : ℕ) :
+    hasseDeriv k (exp A) = (k ! : ℚ)⁻¹ • exp A := by
+  ext n
+  rw [coeff_hasseDeriv, coeff_exp, coeff_smul, coeff_exp, ← map_natCast (algebraMap ℚ A),
+    ← map_mul, Algebra.smul_def, ← map_mul]
+  congr 1
+  have h : ((n + k).choose k : ℚ) * n ! * k ! = (n + k)! := by
+    exact_mod_cast Nat.add_choose_mul_factorial_mul_factorial n k
+  field_simp
+  rw [← h]
+  ring
+
+/-- The Hasse derivatives of a rescaled exponential: `D⁽ᵏ⁾ exp(a X) = (a ^ k / k!) exp(a X)`. -/
+@[simp]
+theorem hasseDeriv_rescale_exp {A : Type*} [CommRing A] [Algebra ℚ A] (k : ℕ) (a : A) :
+    hasseDeriv k (rescale a (exp A)) =
+      (algebraMap ℚ A (k ! : ℚ)⁻¹ * a ^ k) • rescale a (exp A) := by
+  ext n
+  rw [hasseDeriv_rescale, hasseDeriv_exp, coeff_C_mul, coeff_rescale, coeff_smul, coeff_smul,
+    coeff_rescale, Algebra.smul_def, smul_eq_mul]
+  ring
+
+end Exp
 
 end PowerSeries
