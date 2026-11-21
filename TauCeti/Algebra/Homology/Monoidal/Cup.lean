@@ -235,7 +235,7 @@ private def cupHomologyLeft (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaOb
     (ModuleCat.ofHom (cupCycles k D μ p q n h a) ≫ (E.linearYonedaObj k P).homologyπ n)
     (by
       ext x
-      exact homologyπ_cupCycles_toCycles_right D μ p q n h a _ x)).1
+      exact homologyπ_cupCycles_toCycles_right D μ p q n h a _ x)).val
 
 private lemma cupHomologyLeft_homologyπ (p q n : ℕ) (h : p + q = n)
     (a : (A.linearYonedaObj k M).cycles p) (b : (B.linearYonedaObj k N).cycles q) :
@@ -244,7 +244,8 @@ private lemma cupHomologyLeft_homologyπ (p q n : ℕ) (h : p + q = n)
   unfold cupHomologyLeft
   exact ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((B.linearYonedaObj k N).homologyIsCokernel _ q rfl)
-    (ModuleCat.ofHom (cupCycles k D μ p q n h a) ≫ (E.linearYonedaObj k P).homologyπ n) _).2 b
+    (ModuleCat.ofHom (cupCycles k D μ p q n h a) ≫ (E.linearYonedaObj k P).homologyπ n) _).property
+        b
 
 variable (k) in
 /-- Cupping with a fixed cocycle on the left, as a linear function of that cocycle. -/
@@ -279,7 +280,7 @@ def cup (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (B.linearYonedaObj k N).homology q →ₗ[k]
       (E.linearYonedaObj k P).homology n :=
   (CokernelCofork.IsColimit.desc' ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl)
-    (cupCyclesHomology k D μ p q n h) (toCycles_comp_cupCyclesHomology D μ p q n h)).1.hom
+    (cupCyclesHomology k D μ p q n h) (toCycles_comp_cupCyclesHomology D μ p q n h)).val.hom
 
 /-- **The cup product on classes**: the cup product of the classes of two cocycles is the class of
 their cup product. -/
@@ -291,7 +292,7 @@ lemma cup_homologyπ (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).
       (E.linearYonedaObj k P).homologyπ n (cupCycles k D μ p q n h a b) := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (cupCyclesHomology k D μ p q n h)
-    (toCycles_comp_cupCyclesHomology D μ p q n h)).2 a
+    (toCycles_comp_cupCyclesHomology D μ p q n h)).property a
   rw [cup, ← cupHomologyLeft_homologyπ]
   exact LinearMap.congr_fun hfac _
 

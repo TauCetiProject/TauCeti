@@ -10,9 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.FieldTheory.FunctionField.ConstantField
-import TauCeti.FieldTheory.FunctionField.Place.Adic
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
-import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 
 /-!
 # Existence of extensions of places
@@ -41,10 +39,9 @@ place whose restriction is the original place.
   algebraic extension of function fields is positive, since some place lies above it; the
   constants may grow by an integral extension.
 * `TauCeti.Place.isIntegral_integers_algebraMap`: constants are integral over `𝒪_P`.
-* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers` and
-  `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional`: the integral
-  closure of the valuation ring `𝒪_P` in the larger field is the intersection of the valuation
-  rings of the places above `P` (Stichtenoth, Section III.2).
+* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
+  valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
+  places above `P` (Stichtenoth, Section III.2).
 
 ## References
 
@@ -152,7 +149,7 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
     IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
   refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
   · subst hP'
-    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
+    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.property
   by_contra hx
   have hxB : x ∉ (integralClosure P.integers F').toSubring := hx
   obtain ⟨V, hBV, hxV⟩ := Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn hxB
@@ -164,43 +161,6 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
     exact hBV (isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers)))
   exact hxV (integers_ofValuationSubring hF' hk'V hV ▸ h _ hP')
 end Integral
-
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
-variable (k') in
-/-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`** for any
-finite extension `F' / F` with `k' / k` integral, with no function-field or separability
-hypothesis: an element `x ∈ F'` is integral over `𝒪_P` if and only if `x ∈ 𝒪_{P'}` for every
-place `P'` of `F' / k'` lying over `P`. Compare
-`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`, which weakens finiteness of `F' / F`
-to integrality in favour of `IsFunctionField k' F'`. -/
-theorem isIntegral_iff_forall_restrict_eq_mem_integers_of_finiteDimensional
-    [Algebra.IsIntegral k k'] [FiniteDimensional F F'] (P : Place k F) {x : F'} :
-    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
-  have := Algebra.IsIntegral.of_finite F F'
-  refine ⟨fun hx P' hP' ↦ ?_, fun h ↦ ?_⟩
-  · subst hP'
-    simpa [Subalgebra.algebraMap_apply] using
-      algebraMap_mem_integers_of_mem_integralClosure k F P' ⟨x, hx⟩
-  let S := integralClosure P.integers F'
-  have : IsDedekindDomain S := TauCeti.integralClosure.isDedekindDomain P.integers F F'
-  have : IsFractionRing S F' := integralClosure.isFractionRing_of_finite_extension F F'
-  let _ : Algebra k' S :=
-    ((algebraMap k' F').codRestrict S.toSubring fun c ↦
-      Subalgebra.mem_toSubring.mpr ((mem_integralClosure_iff _ _).mpr
-        (isIntegral_integers_algebraMap P c))).toAlgebra
-  have : IsScalarTower k' S F' := .of_algebraMap_eq fun c ↦ by
-    rw [Subalgebra.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
-  have hxS : x ∈ Set.range (algebraMap S F') := by
-    refine IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one (R := S) F' x
-      fun 𝔓 ↦ ?_
-    have hP' : (ofPrime k' F' 𝔓).restrict k F = P := by
-      refine (restrict_eq_iff_integers_le k F _ P).mpr fun f hf ↦ ?_
-      have hmem := algebraMap_mem_integers_ofPrime k' F' 𝔓 (algebraMap P.integers S ⟨f, hf⟩)
-      rwa [← IsScalarTower.algebraMap_apply P.integers S F',
-        IsScalarTower.algebraMap_apply P.integers F F',
-        ValuationSubring.algebraMap_apply] at hmem
-    simpa [valuation_ofPrime] using (ofPrime k' F' 𝔓).mem_integers_iff.mp (h _ hP')
-  exact IsIntegralClosure.isIntegral_iff.mpr hxS
 
 /-- **Existence of extensions of places for an extension of function fields** (Stichtenoth,
 Proposition 3.1.7): every place of `F / k` is the restriction of a place of `F' / k'`.

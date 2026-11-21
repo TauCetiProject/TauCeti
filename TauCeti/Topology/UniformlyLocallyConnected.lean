@@ -251,7 +251,7 @@ theorem IsUniformlyLocallyConnected.locallyConnectedSpace (h : IsUniformlyLocall
   · -- The union contains the ball of radius `δ` about `x`, hence is a neighbourhood of `x`.
     refine Filter.mem_of_superset (ball_mem_nhds x hδ) fun y hy => ?_
     obtain ⟨C, hCs, hCconn, hCx, hCy, hCsmall⟩ :=
-      hjoin x x.2 y y.2 (by rw [dist_comm, ← Subtype.dist_eq]; exact mem_ball.mp hy)
+      hjoin x x.property y y.property (by rw [dist_comm, ← Subtype.dist_eq]; exact mem_ball.mp hy)
     -- Pull the joining set back to the subspace; it stays preconnected because it already lies
     -- in `s` and the inclusion is inducing.
     refine ⟨(Subtype.val ⁻¹' C : Set s),

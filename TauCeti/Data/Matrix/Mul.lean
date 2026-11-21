@@ -19,6 +19,11 @@ matrix.
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero.
 
+Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+
+A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
+out to the left without any commutativity, since the left factor has entries `0` and `1` only.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -26,6 +31,10 @@ zero.
 * `Matrix.nonempty_of_mul_ne_zero`, `Matrix.left_ne_zero_of_mul_ne_zero`,
   `Matrix.right_ne_zero_of_mul_ne_zero`: if a matrix product is nonzero, then the inner index type
   is nonempty and neither factor is zero.
+* `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
+  (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
+* `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
+  reindexed vectors.
 -/
 
 public section
@@ -81,5 +90,30 @@ theorem right_ne_zero_of_mul_ne_zero {A : Matrix m n K} {B : Matrix n p K} (h : 
     B ≠ 0 := fun hB ↦ h (by simp [hB])
 
 end NonUnitalNonAssocSemiring
+
+section MulZeroOneClass
+
+variable {α R m p : Type*} [MulZeroOneClass α] [SMulZeroClass R α] [DecidableEq m]
+
+/-- A scalar on the right factor of an outer product with `Pi.single i 1` may be pulled out to the
+left. Unlike `Matrix.vecMulVec_smul`, this needs no `SMulCommClass R α α`, because the entries of
+`Pi.single i 1` are `0` and `1`; so it applies, for instance, to left multiplication in a
+noncommutative ring. -/
+@[simp]
+theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
+    vecMulVec (Pi.single i (1 : α)) (r • v) = r • vecMulVec (Pi.single i (1 : α)) v := by
+  ext a b
+  rcases eq_or_ne a i with rfl | h
+  · simp [vecMulVec_apply]
+  · simp [vecMulVec_apply, h]
+
+end MulZeroOneClass
+
+/-- A submatrix of an outer product is the outer product of the reindexed vectors. -/
+@[simp]
+theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n → α) (f : l → m)
+    (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
+  ext
+  simp [vecMulVec_apply]
 
 end Matrix
