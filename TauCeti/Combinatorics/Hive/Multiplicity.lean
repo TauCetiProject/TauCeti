@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.Combinatorics.Hive.GelfandTsetlin
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
 import TauCeti.RepresentationTheory.FDRep.DirectSum
@@ -38,7 +39,7 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
   hiveCount (productBoundary μ λ γ)`, read directly from the braiding of `FDRep ℂ (GL (Fin n) ℂ)`.
 * **Trilinear invariants** (`TauCeti.Hive.finrank_invariants_eq_hiveCount`): for arbitrary signed
   dominant weights `λ, μ, ν` of `GL n ℂ`, the invariant dimension
-  `dim_ℂ Hom(𝟙_, V_λ ⊗ V_μ ⊗ V_ν)` equals the cyclic hive count `hiveCount ![λ.1, μ.1, ν.1]`.
+  `dim_ℂ Hom(𝟙_, V_λ ⊗ V_μ ⊗ V_ν)` equals the cyclic hive count `hiveCount ![λ.val, μ.val, ν.val]`.
 
 ## Main results
 
@@ -48,7 +49,7 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
   `hiveCount (productBoundary lam μ γ)`.
 * `TauCeti.Hive.hiveCount_comm`: symmetry of `hiveCount (productBoundary l m p)` in `l` and `m`.
 * `TauCeti.Hive.finrank_invariants_eq_hiveCount`: dimension of `GL n ℂ`-invariants in
-  `V_lam ⊗ V_μ ⊗ V_ν` equals `hiveCount ![lam.1, μ.1, ν.1]`.
+  `V_lam ⊗ V_μ ⊗ V_ν` equals `hiveCount ![lam.val, μ.val, ν.val]`.
 * `TauCeti.Hive.finrank_hom_two_std_std`, `TauCeti.Hive.finrank_invariants_two_std_checks`,
   `TauCeti.Hive.finrank_hom_one`, `TauCeti.Hive.finrank_hom_zero`, and
   `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`: concrete rank-`0`, rank-`1`, and
@@ -83,12 +84,12 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
           diagramSchurPoly n R γ.shape := by
   classical
   let Sub := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
-  let emb : Sub → DominantWeight n := fun ν => weightOfShape n (ofPartition ν.1)
+  let emb : Sub → DominantWeight n := fun ν => weightOfShape n (ofPartition ν.val)
   have hemb_inj : Function.Injective emb := fun ν₁ ν₂ h => Subtype.ext <|
     YoungDiagram.ofPartition_injective <|
-      calc ofPartition ν₁.1 = (emb ν₁).shape := (shape_weightOfShape ν₁.2).symm
+      calc ofPartition ν₁.val = (emb ν₁).shape := (shape_weightOfShape ν₁.property).symm
         _ = (emb ν₂).shape := congrArg DominantWeight.shape h
-        _ = ofPartition ν₂.1 := shape_weightOfShape ν₂.2
+        _ = ofPartition ν₂.val := shape_weightOfShape ν₂.property
   have hsupp : Function.support
       (fun γ : DominantWeight n =>
         (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) ⊆
@@ -111,8 +112,8 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
     sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
   refine Finset.sum_congr rfl fun ν _ => ?_
-  have hsh : (emb ν).shape = ofPartition ν.1 := shape_weightOfShape ν.2
-  have hpol : (emb ν).IsPolynomial := isPolynomial_weightOfShape n (ofPartition ν.1)
+  have hsh : (emb ν).shape = ofPartition ν.val := shape_weightOfShape ν.property
+  have hpol : (emb ν).IsPolynomial := isPolynomial_weightOfShape n (ofPartition ν.val)
   rw [hiveCount_productBoundary_of_isPolynomial hl hm]
   simp only [hpol, ↓reduceIte, hsh, Nat.cast_smul_eq_nsmul]
 
@@ -123,13 +124,13 @@ open scoped Classical in
 private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
     (∑ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
         (ofPartition ν).colLen 0 ≤ n},
-      if γ = (weightOfShape n (ofPartition ν.1)).shift (lam.detShift + μ.detShift) then
-        Nat.card (LRTableau lam.detShiftShape (ofPartition ν.1) μ.detShiftShape)
+      if γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) then
+        Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
       else 0) = hiveCount (productBoundary lam μ γ) := by
   let Sub := {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
     (ofPartition ν).colLen 0 ≤ n}
   let w (ν : Sub) : DominantWeight n :=
-    (weightOfShape n (ofPartition ν.1)).shift (lam.detShift + μ.detShift)
+    (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift)
   rw [hiveCount_productBoundary]
   split_ifs with hdet
   · set γ' := γ.shift (-(lam.detShift + μ.detShift))
@@ -138,12 +139,12 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
       cases n with
       | zero => simp
       | succ m => rw [DominantWeight.detShift_shift]; omega
-    have heq_iff (ν : Sub) : γ = w ν ↔ γ'.shape = ofPartition ν.1 :=
+    have heq_iff (ν : Sub) : γ = w ν ↔ γ'.shape = ofPartition ν.val :=
       ⟨fun h => by
-        have h' : γ' = weightOfShape n (ofPartition ν.1) := by simp [γ', h, w]
-        rw [h', shape_weightOfShape ν.2],
+        have h' : γ' = weightOfShape n (ofPartition ν.val) := by simp [γ', h, w]
+        rw [h', shape_weightOfShape ν.property],
       fun h => by
-        have h' : weightOfShape n (ofPartition ν.1) = γ' := by rw [← h, weightOfShape_shape hγ']
+        have h' : weightOfShape n (ofPartition ν.val) = γ' := by rw [← h, weightOfShape_shape hγ']
         simp [w, h', γ']⟩
     by_cases hcard : γ'.shape.card = lam.detShiftShape.card + μ.detShiftShape.card
     · let ν₀ : Sub := ⟨γ'.shape.toPartition hcard, by simp⟩
@@ -167,7 +168,7 @@ private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : 
       | zero => simp
       | succ m =>
         have h0 := (DominantWeight.isPolynomial_iff_zero_le_detShift _).mp
-          (isPolynomial_weightOfShape (m + 1) (ofPartition ν.1))
+          (isPolynomial_weightOfShape (m + 1) (ofPartition ν.val))
         rw [h, DominantWeight.detShift_shift]; omega
     dsimp only [w] at hne'; simp only [hne', ↓reduceIte]
 
@@ -179,10 +180,10 @@ private theorem nonempty_equiv_fdrep_tensor_rationalWeyl {n : ℕ} (lam μ : Dom
           Σ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
               (ofPartition ν).colLen 0 ≤ n},
             {T : BoundedSSYT n μ.detShiftShape //
-              T.1.IsYamanouchi lam.detShiftShape ∧
-                ∀ i, lam.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i} =>
+              T.val.IsYamanouchi lam.detShiftShape ∧
+                ∀ i, lam.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i} =>
         (rationalWeylFDRep ℂ n
-          ((weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift))).ρ)) :=
+          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift))).ρ)) :=
   let ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
   ⟨(FDRep.tprodEquiv _ _).trans e⟩
 
@@ -199,7 +200,7 @@ theorem finrank_hom_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
     ← sum_natCard_lrTableau_shift_eq_hiveCount lam μ γ]
   refine Finset.sum_congr rfl fun ν _ => ?_
   simp only [finrank_hom_rationalWeylFDRep, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-    mul_boole, card_boundedYamanouchi_eq_natCard_lrTableau ν.2]
+    mul_boole, card_boundedYamanouchi_eq_natCard_lrTableau ν.property]
 
 /-- **Symmetry of hive counts in the two inputs**: `c^p_{l, m} = c^p_{m, l}` for all dominant
 weights `l, m, p` of `GL n`. -/
@@ -212,12 +213,12 @@ theorem hiveCount_comm {n : ℕ} (l m p : DominantWeight n) :
 /-- **The invariant form of the hive model for `GL n ℂ`**: for all dominant weights `λ, μ, ν` of
 `GL n ℂ`, the complex dimension of the space of `GL n ℂ`-invariants
 `𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶ V_λ ⊗ V_μ ⊗ V_ν` equals the number of integer hives with cyclic
-boundary `![λ.1, μ.1, ν.1]`. -/
+boundary `![λ.val, μ.val, ν.val]`. -/
 theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n) :
     Module.finrank ℂ (𝟙_ (FDRep ℂ (GL (Fin n) ℂ)) ⟶
         rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ ⊗
           rationalWeylFDRep ℂ n ν) =
-      hiveCount ![lam.1, μ.1, ν.1] := by
+      hiveCount ![lam.val, μ.val, ν.val] := by
   classical
   obtain ⟨i₀⟩ := nonempty_iso_tensorUnit_rationalWeylFDRep_zero ℂ n
   rw [(Linear.homCongr ℂ i₀ (α_ _ _ _).symm).finrank_eq]
@@ -227,14 +228,14 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
     (he₁₂.tprod (.refl _)).trans <| (Representation.tprodDirectSumLeftEquiv _ _).trans <|
       Representation.directSumEquivCongr fun p =>
         (FDRep.tprodEquiv (rationalWeylFDRep ℂ n
-          ((weightOfShape n (ofPartition p.1.1)).shift (lam.detShift + μ.detShift)))
+          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift)))
           (rationalWeylFDRep ℂ n ν)).symm
   have hrot (σ : DominantWeight n) :
       hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
     have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
       ext s i; fin_cases s <;> simp
     rw [hb, hiveCount_rotate, hiveCount_productBoundary_zero_left]
-  have hdual : productBoundary lam μ ν.dual = ![lam.1, μ.1, ν.1] := by
+  have hdual : productBoundary lam μ ν.dual = ![lam.val, μ.val, ν.val] := by
     ext s i; fin_cases s <;> simp
   rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he₃]
   simp only [finrank_hom_eq_hiveCount, hrot, ← finrank_hom_rationalWeylFDRep ℂ]
@@ -262,6 +263,9 @@ theorem finrank_hom_one (a b g : DominantWeight 1) :
         rationalWeylFDRep ℂ 1 a ⊗ rationalWeylFDRep ℂ 1 b) =
       if g = a + b then 1 else 0 := by
   rw [finrank_hom_eq_hiveCount, hiveCount_one_productBoundary]
+  refine if_congr ⟨fun h => ?_, fun h => ?_⟩ rfl rfl
+  · ext i; rw [Fin.fin_one_eq_zero i]; simp [← h]
+  · subst h; rfl
 
 /-- Rank-`2` hive classification for `λ = μ = (1, 0)`: `hiveCount (productBoundary λ μ γ)` is `1`
 for `γ = (2, 0)` and `γ = (1, 1)`, and `0` for every other dominant weight `γ`. -/
@@ -284,11 +288,11 @@ theorem hiveCount_two_std_std_eq (γ : DominantWeight 2) :
       simp only [hne₂, hne₁, or_self, ↓reduceIte]
       refine hiveCount_eq_zero_iff.mpr ⟨fun ⟨h, hb⟩ => ?_⟩
       have hpol : γ.IsPolynomial := isPolynomial_of_productBoundary hb hstd hstd
-      have h0 : 0 ≤ γ.1 1 := (DominantWeight.isPolynomial_def γ).mp hpol 1
-      have hanti : γ.1 1 ≤ γ.1 0 := γ.antitone (by decide)
+      have h0 : 0 ≤ γ.val 1 := (DominantWeight.isPolynomial_def γ).mp hpol 1
+      have hanti : γ.val 1 ≤ γ.val 0 := γ.antitone (by decide)
       have hsum := sum_eq_of_productBoundary hb
       simp only [Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] at hsum
-      rcases (by omega : (γ.1 0 = 2 ∧ γ.1 1 = 0) ∨ (γ.1 0 = 1 ∧ γ.1 1 = 1)) with
+      rcases (by omega : (γ.val 0 = 2 ∧ γ.val 1 = 0) ∨ (γ.val 0 = 1 ∧ γ.val 1 = 1)) with
         ⟨ha, hb'⟩ | ⟨ha, hb'⟩
       · exact hne₂ (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
       · exact hne₁ (Subtype.ext (funext fun i => by fin_cases i <;> assumption))
@@ -317,9 +321,9 @@ theorem finrank_invariants_two_std_checks :
           rationalWeylFDRep ℂ 2 ⟨![0, 0], by decide⟩) = 0 := by
   rw [finrank_invariants_eq_hiveCount, finrank_invariants_eq_hiveCount]
   constructor
-  · have hb : ![(⟨![1, 0], by decide⟩ : DominantWeight 2).1,
-        (⟨![1, 0], by decide⟩ : DominantWeight 2).1,
-        (⟨![-1, -1], by decide⟩ : DominantWeight 2).1] =
+  · have hb : ![(⟨![1, 0], by decide⟩ : DominantWeight 2).val,
+        (⟨![1, 0], by decide⟩ : DominantWeight 2).val,
+        (⟨![-1, -1], by decide⟩ : DominantWeight 2).val] =
         productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
       ext s i; fin_cases s <;> fin_cases i <;> simp
     rw [hb]
@@ -328,7 +332,7 @@ theorem finrank_invariants_two_std_checks :
     simp [Fin.sum_univ_three, Fin.sum_univ_two]
 
 private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
-    (h0 : w₁.1 0 = w₂.1 0) (h1 : w₂.1 1 = 0) : w₁.shape = w₂.shape := by
+    (h0 : w₁.val 0 = w₂.val 0) (h1 : w₂.val 1 = 0) : w₁.shape = w₂.shape := by
   refine YoungDiagram.rowLen_injective (funext fun i => ?_)
   match i with
   | 0 =>
@@ -359,7 +363,10 @@ theorem schur_mul_two_vars_ne_finsum_hiveCount_one :
     rw [finsum_eq_single _ (ω + ω)]
     · rw [shape_eq_of_one_two (ω + ω) sym₂ rfl rfl]
       simp [hiveCount_one_productBoundary]
-    · intro γ hγ; simp [hiveCount_one_productBoundary, hγ]
+    · intro γ hγ
+      have hne : ω.val 0 + ω.val 0 ≠ γ.val 0 := fun h => hγ <| by
+        ext i; rw [Fin.fin_one_eq_zero i]; simp [← h]
+      simp [hiveCount_one_productBoundary, hne]
   have hsupp₂ : Function.support
       (fun δ : DominantWeight 2 =>
         (hiveCount (productBoundary std₂ std₂ δ) : ℤ) • diagramSchurPoly 2 ℤ δ.shape) ⊆

@@ -28,7 +28,7 @@ The two curves meet transversally in the `p` points `x_j = (j / p, 0)`, `j ∈ Z
 `α` the point after `x_j` is `x_{j+1}`; going along `β` it is `x_{j+q}`. Cutting the torus along
 `α` leaves an annulus that the `p` arcs of `β` cut into `p` parallelograms; the region `R_j` is
 the one whose bottom edge is the `α`-arc from `x_j` to `x_{j+1}`, its top edge is the `α`-arc from
-`x_{j-q}` to `x_{j-q+1}`, and its two sides are the `β`-arcs starting at `x_j` and `x_{j+1}`.
+`x_{j+q}` to `x_{j+q+1}`, and its two sides are the `β`-arcs starting at `x_j` and `x_{j+1}`.
 
 `TauCeti.HeegaardRegionSystem.lensSpace p q r` records this incidence data, with points and
 regions both indexed by `ZMod p` and the basepoint in the region `R_r`. Each point is a generator
@@ -112,7 +112,7 @@ def lensSpace (r : ZMod p) : HeegaardRegionSystem 1 (ZMod p) (ZMod p) Unit where
   betaLeft j := j - 1
   betaRight j := j
   regionNonempty := inferInstance
-  crossingCompatible j := Or.inl ⟨by simp [sub_eq_add_neg],
+  crossingCompatible j := isCrossingCompatible_iff.mpr <| Or.inl ⟨by simp [sub_eq_add_neg],
     by simp [sub_eq_add_neg, add_right_comm], rfl, by simp [sub_eq_add_neg]⟩
   regionCovered s := Or.inl ⟨s, Or.inl rfl⟩
   basepoint _ := r
@@ -295,7 +295,7 @@ noncomputable def lensSpaceCurveHomologyEquiv : (lensSpace p q r).CurveHomology 
     ⟨(injective_iff_map_eq_zero _).mpr fun x hx => by
       obtain ⟨c, rfl⟩ := CurveHomology.mk_surjective _ x
       exact (CurveHomology.mk_eq_zero_iff _).mpr
-        (mem_arcRelations_of_betaWinding_eq_zero c.2
+        (mem_arcRelations_of_betaWinding_eq_zero c.property
           (by rwa [windingHom_mk, ← betaWinding_apply] at hx)),
     fun a => ⟨_, (windingHom_epsilon 0 a).trans (sub_zero a)⟩⟩
 

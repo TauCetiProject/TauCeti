@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
@@ -242,7 +242,7 @@ theorem normTwoShellCongr_graphPermA_typeAPairRoot {p q : Fin (r + 1)} (hpq : p 
 `(p, q)`, in simple-coroot coordinates; the Cartan matrix being symmetric, this is also the root
 `ε_p - ε_q` in simple-root coordinates. -/
 theorem typeAPairRoot_eq_coroot (p : DynkinType.TypeAIndex r) :
-    typeAPairRoot r p.1.1 p.1.2 =
+    typeAPairRoot r p.val.1 p.val.2 =
       (DynkinType.typeASimplyConnectedRootDatum r).coroot (DynkinType.typeAIndexEquiv r p) := by
   ext k
   rw [DynkinType.coroot_typeAIndexEquiv, typeAPairRoot_apply]
@@ -271,17 +271,17 @@ root (`TauCeti.typeAPairRoot_eq_coroot`). -/
 noncomputable def typeANormTwoShellEquiv :
     DynkinType.TypeAIndex r ≃ (CartanMatrix.A r).normTwoShell :=
   Equiv.ofBijective
-    (fun p ↦ ⟨typeAPairRoot r p.1.1 p.1.2, typeAPairRoot_mem_normTwoShell r p.2⟩)
+    (fun p ↦ ⟨typeAPairRoot r p.val.1 p.val.2, typeAPairRoot_mem_normTwoShell r p.property⟩)
     ⟨fun p p' h ↦ by
-      obtain ⟨h₁, h₂⟩ := (typeAPairRoot_inj r p.2).mp (congrArg Subtype.val h)
+      obtain ⟨h₁, h₂⟩ := (typeAPairRoot_inj r p.property).mp (congrArg Subtype.val h)
       exact Subtype.ext (Prod.ext h₁ h₂),
     fun a ↦ by
-      obtain ⟨p, q, hpq, h⟩ := exists_typeAPairRoot_eq_of_mem_normTwoShell r a.2
+      obtain ⟨p, q, hpq, h⟩ := exists_typeAPairRoot_eq_of_mem_normTwoShell r a.property
       exact ⟨⟨(p, q), hpq⟩, Subtype.ext h⟩⟩
 
 @[simp]
 theorem coe_typeANormTwoShellEquiv_apply (p : DynkinType.TypeAIndex r) :
-    (typeANormTwoShellEquiv r p : Fin r → ℤ) = typeAPairRoot r p.1.1 p.1.2 :=
+    (typeANormTwoShellEquiv r p : Fin r → ℤ) = typeAPairRoot r p.val.1 p.val.2 :=
   (rfl)
 
 /-- The root of the pair `(p, q)` is `ε_p - ε_q`. -/
@@ -343,7 +343,7 @@ private theorem orderedSignForm_typeAStep (x y : Fin (r + 1)) :
     Finset.mem_Ico]
   constructor
   · rintro ⟨j, h, rfl⟩
-    exact ⟨h, j.2⟩
+    exact ⟨h, j.isLt⟩
   · rintro ⟨h, hi⟩
     exact ⟨⟨i, hi⟩, h, rfl⟩
 

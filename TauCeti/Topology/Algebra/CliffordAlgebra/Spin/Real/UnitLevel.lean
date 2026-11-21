@@ -48,7 +48,7 @@ def realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n) :
   ⟨-x, by
     apply (mem_realCliffordUnitLevel n _).2
     rw [QuadraticMap.map_neg]
-    exact (mem_realCliffordUnitLevel n _).1 x.2⟩
+    exact (mem_realCliffordUnitLevel n _).1 x.property⟩
 
 /-- The compact real Clifford unit-level antipode is negation on the underlying vector. -/
 @[simp]
@@ -70,7 +70,7 @@ theorem ne_realCliffordUnitLevelAntipode {n : ℕ} (x : realCliffordUnitLevel n)
   intro h
   have hx : (x : Fin n → ℝ) = -x := congrArg Subtype.val h
   have hx0 : (x : Fin n → ℝ) = 0 := self_eq_neg.mp hx
-  have hxone := (mem_realCliffordUnitLevel n _).1 x.2
+  have hxone := (mem_realCliffordUnitLevel n _).1 x.property
   rw [hx0, map_zero] at hxone
   exact zero_ne_one hxone
 
@@ -130,7 +130,7 @@ conversion. -/
 theorem coe_realCliffordUnitLevelHomeomorphSphere_apply (n : ℕ)
     (x : realCliffordUnitLevel n) :
     (realCliffordUnitLevelHomeomorphSphere n x : EuclideanSpace ℝ (Fin n)) =
-      (EuclideanSpace.equiv (Fin n) ℝ).symm x.1 :=
+      (EuclideanSpace.equiv (Fin n) ℝ).symm x.val :=
   (rfl)
 
 /-- The inverse map of `realCliffordUnitLevelHomeomorphSphere` returns function coordinates. -/

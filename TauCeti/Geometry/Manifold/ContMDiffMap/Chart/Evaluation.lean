@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
 public import Mathlib.Topology.UniformSpace.UniformConvergence
@@ -95,10 +96,6 @@ private theorem eventually_mem_source_and_iteratedFDerivWithin_mem {f₀ : C^n�
           (extChartAt I x).target p.2 ∈ V := by
   set φ := extChartAt I x
   set ψ := extChartAt J y
-  let : LocallyCompactSpace φ.target := by
-    rw [extChartAt_target]
-    exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
-      I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
   obtain ⟨W, hWV, hW, hW₀⟩ := mem_nhds_iff.mp hV
   -- Near `w₀`, the map `f₀` passes the test with the open set `W`.
   have hA : {v | f₀ (φ.symm v) ∈ ψ.source ∧
@@ -113,7 +110,7 @@ private theorem eventually_mem_source_and_iteratedFDerivWithin_mem {f₀ : C^n�
     (isOpen_chartJetSet x y m hm hCc hW).mem_nhds (mem_chartJetSet.mpr fun z hz ↦ hCA hz)
   have hC' : Subtype.val '' C ∈ 𝓝[φ.target] w₀ := by
     have h := image_mem_map (m := Subtype.val) hC
-    rwa [map_nhds_subtype_val] at h
+    rwa [map_nhds_subtypeVal] at h
   filter_upwards [prod_mem_prod hT hC'] with ⟨f, v⟩ ⟨hf, z, hz, hzv⟩
   obtain rfl := hzv
   obtain ⟨h₁, h₂⟩ := mem_chartJetSet.mp hf z hz

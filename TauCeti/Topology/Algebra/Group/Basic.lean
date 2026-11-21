@@ -12,7 +12,8 @@ public import Mathlib.Topology.Algebra.Group.Basic
 
 A subgroup inherits continuous or separately continuous multiplication for the subspace topology.
 Mathlib provides these instances for submonoids, but instance search does not see a subgroup as a
-submonoid, so the subgroup instances are registered separately.
+submonoid, so the subgroup instances are registered separately. Likewise, every `SubgroupClass`
+subobject of a topological group inherits `IsTopologicalGroup`.
 
 In a Hausdorff magma with separately continuous multiplication the center is closed, next to
 Mathlib's `Set.isClosed_centralizer`: each defining identity of a central element is an
@@ -26,6 +27,9 @@ every identity neighbourhood `U`, a smaller identity neighbourhood `V` satisfies
 
 * `Subgroup.separatelyContinuousMul`: a subgroup inherits `SeparatelyContinuousMul`.
 * `Subgroup.continuousMul`: a subgroup inherits `ContinuousMul`, without continuity of inversion.
+* `SubgroupClass.isTopologicalGroup` / `AddSubgroupClass.isTopologicalAddGroup`: every
+  `SubgroupClass` (or `AddSubgroupClass`) subobject of a topological group inherits
+  `IsTopologicalGroup` (or `IsTopologicalAddGroup`).
 * `Set.isClosed_center`: the center of a Hausdorff magma with separately continuous
   multiplication is closed.
 * `IsCompact.exists_nhds_one_conj_subset` / `IsCompact.exists_nhds_zero_conj_subset`:
@@ -55,6 +59,16 @@ separately continuous addition. -/]
 instance Subgroup.separatelyContinuousMul {G : Type*} [TopologicalSpace G] [Group G]
     [SeparatelyContinuousMul G] (S : Subgroup G) : SeparatelyContinuousMul S :=
   S.toSubmonoid.separatelyContinuousMul
+
+-- Prefer subclasses of `IsTopologicalGroup` over `SubgroupClass`, matching `SubgroupClass.toGroup`.
+/-- Every subgroup-like subobject of a topological group is a topological group for the subspace
+topology. -/
+@[to_additive /-- Every additive-subgroup-like subobject of a topological additive group is a
+topological additive group for the subspace topology. -/]
+instance (priority := 75) SubgroupClass.isTopologicalGroup {G S : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [SetLike S G] [SubgroupClass S G] (s : S) :
+    IsTopologicalGroup s :=
+  Topology.IsInducing.subtypeVal.isTopologicalGroup (SubmonoidClass.subtype s)
 
 section
 

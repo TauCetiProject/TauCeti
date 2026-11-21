@@ -30,6 +30,10 @@ can impose it without introducing a separate bundled category of connected objec
   idempotent form.
 * `TauCeti.geometricallyConnectedCommHopfAlgProperty.of_injective`: it descends along injective
   algebra homomorphisms of coordinate rings.
+* `TauCeti.geometricallyConnectedCommHopfAlgProperty.connectedSpace`: the coordinate ring itself
+  has connected prime spectrum.
+* `TauCeti.geometricallyConnectedCommHopfAlgProperty.connectedSpace_algebraicClosureBaseChange`:
+  the geometric fibre `AlgebraicClosure k ⊗[k] H` has connected prime spectrum.
 
 ## References
 
@@ -72,7 +76,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff
 
 /-- A geometrically connected commutative Hopf algebra has connected prime spectrum. -/
 theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
     (h : geometricallyConnectedCommHopfAlgProperty k H) :
     ConnectedSpace (PrimeSpectrum (H : Type v)) :=
   (PrimeSpectrum.homeomorphOfRingEquiv

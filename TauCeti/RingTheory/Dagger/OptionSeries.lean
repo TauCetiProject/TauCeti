@@ -62,7 +62,7 @@ theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
   refine mem_washnitzerAlgebra.mpr ⟨ρ, hρ, ?_⟩
   have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
     simp [g]
-  exact hg ▸ g.2
+  exact hg ▸ g.property
 
 namespace washnitzerAlgebra
 
@@ -75,7 +75,7 @@ theorem map_val_injective : Function.Injective
 /-- The coefficientwise separation of `Y = X none` underlying `optionSeries`. -/
 private noncomputable def optionSeriesFun (f : washnitzerAlgebra (Option σ) R) :
     PowerSeries (washnitzerAlgebra σ R) :=
-  PowerSeries.mk fun m ↦ ⟨_, coeff_optionEquivLeft_mem_washnitzerAlgebra f.2 m⟩
+  PowerSeries.mk fun m ↦ ⟨_, coeff_optionEquivLeft_mem_washnitzerAlgebra f.property m⟩
 
 private theorem coe_coeff_optionSeriesFun (f : washnitzerAlgebra (Option σ) R) (m : ℕ) :
     (PowerSeries.coeff (R := washnitzerAlgebra σ R) m (optionSeriesFun f) : MvPowerSeries σ R) =
@@ -152,7 +152,7 @@ noncomputable def optionC : washnitzerAlgebra σ R →ₐ[R] washnitzerAlgebra (
     ((IsScalarTower.toAlgHom R (MvPowerSeries σ R) (PowerSeries (MvPowerSeries σ R))).comp
       (washnitzerAlgebra σ R).val)).codRestrict _ fun f ↦ by
     simpa [PowerSeries.algebraMap_apply] using
-      optionEquivLeft_symm_C_mem_washnitzerAlgebra f.2
+      optionEquivLeft_symm_C_mem_washnitzerAlgebra f.property
 
 /-- The series underlying `optionC f` is `f`, constant in the separated variable. -/
 @[simp]
