@@ -97,6 +97,7 @@ theorem e_ne_zero [Nontrivial R] (i : Fin (n - 1)) : e R δ i ≠ 0 := fun h =>
 
 /-- **The quadratic relation** `e i * e i = δ • e i`: stacking a generator on itself closes a
 circle, which evaluates to `δ`. -/
+@[simp]
 theorem e_mul_self (i : Fin (n - 1)) : e R δ i * e R δ i = δ • e R δ i := by
   rw [e, ← End.of_comp, ← Functor.map_comp, TLDiagCat.e_comp_e_self, ← End.of_smul]
   simp [TLCat.linearize_map]
