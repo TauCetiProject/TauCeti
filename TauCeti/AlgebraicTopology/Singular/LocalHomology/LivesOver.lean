@@ -80,6 +80,10 @@ needed for the statements below.
   `s` of `p` the class `s_*[M]` lives over the fundamental class
   (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_mapFundamentalClass_of_section`), as
   for the constant spheres in the evaluation fibration `Map(S², Q) → Q` of the source's §6.3.
+* **Removing the part carried by a section.** For a section `s` of `p`, the class
+  `α - s_* p_* α` has image zero in `Hₖ(M)` (`TauCeti.homologyMap_sub_homologyMap_section`), and
+  its localization at the fibre over `b` is that of `α` minus the image under `s` of the local
+  homology class of `p_* α` at `b` (`TauCeti.fiberLocalization_sub_homologyMap_section`).
 
 ## References
 
@@ -123,15 +127,8 @@ theorem homologyMap_comp_fiberLocalization (σ : C(E, E')) {p : E → M} {p' : E
     (h : p' ∘ σ = p) (b : M) (k : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k ≫ fiberLocalization R p' b k =
       fiberLocalization R p b k ≫
-        localHomologyMap R σ (by rw [← preimage_comp, h]) k := by
-  have hσ : σ ⁻¹' (p' ⁻¹' {b}) ⊆ p ⁻¹' {b} := by rw [← preimage_comp, h]
-  have h' := TopPair.singularHomologyπ_naturality
-    (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of E') (B := (p ⁻¹' {b})ᶜ)
-      (B' := (p' ⁻¹' {b})ᶜ) (TopCat.ofHom σ) ((mapsTo_preimage _ _).mono_left
-        (compl_subset_compl.2 hσ))) R k
-  simp only [TopPair.ofSubsetMap_fst] at h'
-  rw [localHomologyMap_def]
-  exact h'
+        localHomologyMap R σ (by rw [← preimage_comp, h]) k :=
+  homologyMap_comp_singularHomologyπ_ofSubset R σ _ k
 
 /-- For the identity of `M`, the localization at the fibre over `b` is the quotient map to
 `Hₖ(M, M ∖ M)` followed by restriction to the local homology `Hₖ(M, M ∖ {b})` at `b`. -/
@@ -190,6 +187,16 @@ theorem livesOverFundamentalClass_iff (p : E → M) (b : M) {k : ℕ}
     LivesOverFundamentalClass R p b α ↔ (fiberLocalization R p b k).hom α ≠ 0 :=
   Iff.rfl
 
+/-- Living over the fundamental class only depends on the fibre: for maps `p : E → M` and
+`p' : E → M'` with `p⁻¹(b) = p'⁻¹(b')`, a class lives over the fundamental class at `b` for `p`
+exactly when it does at `b'` for `p'`. -/
+theorem livesOverFundamentalClass_congr {M' : Type w} {p : E → M} {p' : E → M'} {b : M} {b' : M'}
+    (h : p ⁻¹' {b} = p' ⁻¹' {b'}) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    LivesOverFundamentalClass R p b α ↔ LivesOverFundamentalClass R p' b' α := by
+  rw [livesOverFundamentalClass_iff, livesOverFundamentalClass_iff, fiberLocalization,
+    fiberLocalization, h]
+
 /-- The zero class does not live over the fundamental class. -/
 @[simp]
 theorem not_livesOverFundamentalClass_zero (p : E → M) (b : M) (k : ℕ) :
@@ -242,8 +249,7 @@ theorem livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (σ : C(E, E')) 
   -- `τ_* σ_* α = α`, so `α` is the image of `σ_* α` under a map over `M`.
   have key : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom τ)) R k).hom
       ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom σ)) R k).hom α) = α := by
-    simp [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
-      ← TopCat.ofHom_comp, hτ]
+    simp [← ContinuousMap.homologyMap_comp_apply, hτ]
   exact LivesOverFundamentalClass.of_homologyMap R τ h' (by rwa [key])
 
 /-- **Living over the fundamental class does not depend on the coefficients up to
@@ -265,6 +271,40 @@ theorem livesOverFundamentalClass_homologyMap_coefficient_iff {R' : ModuleCat.{w
   rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hc
   rw [livesOverFundamentalClass_iff, livesOverFundamentalClass_iff, hc]
   exact (map_ne_zero_iff _ hinj)
+
+section Section
+
+variable [TopologicalSpace M] (p : C(E, M)) (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M)
+include hs
+
+/-- **Removing the part of a class carried by a section.** For a section `s` of `p : E → M`, the
+class `α - s_* p_* α` has image zero in `Hₖ(M)`. -/
+theorem homologyMap_sub_homologyMap_section {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) = 0 := by
+  rw [map_sub, ← ContinuousMap.homologyMap_comp_apply, hs]
+  simp
+
+/-- **Localizing a class with the part carried by a section removed.** For a section `s` of
+`p : E → M`, the localization at the fibre over `b` of `α - s_* p_* α` is that of `α` minus the
+image under `s` of the local homology class of `p_* α` at `b`. -/
+theorem fiberLocalization_sub_homologyMap_section (b : M) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R p b k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) =
+      (fiberLocalization R p b k).hom α -
+        (localHomologyMap R s
+            (by rw [← preimage_comp, ← ContinuousMap.coe_comp, hs, ContinuousMap.coe_id]) k).hom
+          ((fiberLocalization R id b k).hom
+            ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) := by
+  rw [map_sub, ← ModuleCat.comp_apply (fiberLocalization R id b k),
+    ← homologyMap_comp_fiberLocalization R s (p := id) (p' := p)
+      (by rw [← ContinuousMap.coe_comp, hs, ContinuousMap.coe_id]) b k, ModuleCat.comp_apply]
+
+end Section
 
 end LivesOver
 

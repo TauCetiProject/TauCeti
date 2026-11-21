@@ -20,6 +20,7 @@ import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # The inhomogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -35,8 +36,8 @@ so that `Δ₀ u` carries the frequencies of `u` in the ball of radius `φ.rOut`
 the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. Their partial sums are the low-pass truncations
 `∑_{j ≤ N} Δⱼ u = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 u)`, and these converge to `u`: every tempered
 distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. This
-is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) • f → f` of Schwartz
-functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
+is deduced, by duality, from the convergence of the truncations `φ (R⁻¹ ·) • f → f` of Schwartz
+functions as `R → ∞` (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump`).
 
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
 `|j - k| ≥ L`. The same holds between the blocks `Δⱼ` and `Δ'ₖ` built from two bump functions
@@ -83,6 +84,8 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock`: the Littlewood–Paley block `Δⱼ`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
+* `TemperedDistribution.tendsto_fourierMultiplierCLM_contDiffBump`: the low-pass truncations
+  `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 u)` converge to `u` as `R → ∞`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
@@ -103,38 +106,59 @@ blocks `Δⱼ u`.
   whose terms have `Δₖ uⱼ = 0` unless `k - L ≤ j < k + L` is the finite sum over that window.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality, also
   between the blocks of two bump functions, and
-  `TemperedDistribution.exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock`, its form for the
-  low-pass truncations.
+  `TemperedDistribution.exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock`,
+  `TemperedDistribution.exists_littlewoodPaleyBlock_sub_sum_range_eq`: its forms for the low-pass
+  truncations and their remainders.
+* `TemperedDistribution.enlargedLittlewoodPaleyBlock`: the enlarged multiplier `Δ'ⱼ` by the cutoff
+  `ContDiffBump.enlargedLittlewoodPaley L j`, equal to `∑_{j + 1 - L ≤ m < j + L} Δₘ`
+  (`TemperedDistribution.enlargedLittlewoodPaleyBlock_eq_sum_Ico`), fixing `Δⱼ`
+  (`TemperedDistribution.enlargedLittlewoodPaleyBlock_compL_littlewoodPaleyBlock`) and annihilated
+  by distant blocks
+  (`TemperedDistribution.littlewoodPaleyBlock_compL_enlargedLittlewoodPaleyBlock_eq_zero`).
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`: each block of one bump function
   is a sum of boundedly many blocks of another, composed with it.
-* `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
-  Bessel potentials.
+* `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`,
+  `TemperedDistribution.littlewoodPaleyBlock_postcomp`,
+  `TemperedDistribution.littlewoodPaleyBlock_postcomp_eq_compLp`: the blocks commute with the
+  Bessel potentials and with post-composition by continuous linear maps on the fiber.
+* `TemperedDistribution.littlewoodPaleyBlock_apply_apply`: the blocks are symmetric for the
+  pairing with Schwartz functions, `(Δⱼ u) f = u (Δⱼ f)`.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm, and
-  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
-  `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`:
-  each kernel `𝓕⁻ ψⱼ` is nonzero in every `Lʳ`.
+  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`,
+  `ContDiffBump.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ`,
+  `ContDiffBump.rpow_mul_norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ`: their
+  `Lʳ` norms grow like `2^{j n (1 - 1/r)}`;
+  `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`,
+  `ContDiffBump.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_pos`: each kernel `𝓕⁻ ψⱼ`
+  is nonzero in every `Lʳ`.
+* `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
+  `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
+  `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
 * `ContDiffBump.integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the
   moments of real order `s` of the kernels `𝓕⁻ ψ_{j+1}` are `2^{-js}` times those of `𝓕⁻ ψ₁`.
 * `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ_smul_apply_eq_zero`: the
   kernels `𝓕⁻ ψ_{j+1}` annihilate every homogeneous polynomial, since `ψ_{j+1}` vanishes near the
   origin.
-* `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
-  `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
-  `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
 * `exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`,
   in the namespace `ContDiffBump`: the moments of real order `α ≥ 0` of the kernels `𝓕⁻ ψⱼ` are
   `O(2^{-jα})`.
 * `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the kernels `𝓕⁻ ψⱼ`,
   `j ≥ 1`, have integral zero.
-* `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: the blocks of the Dirac mass `δ₀` are
-  the kernels `𝓕⁻ ψⱼ`.
-* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
-  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass truncations, uniformly in `N`, by
-  `‖𝓕⁻ φ‖₁` (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
+* `ContDiffBump.fourierInv_inhomogeneousLittlewoodPaley_neg`: the kernels `𝓕⁻ ψⱼ` are even.
+* `TemperedDistribution.littlewoodPaleyBlock_delta_zero` and
+  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`: the blocks of the Dirac mass `δ₀`
+  are the kernels `𝓕⁻ ψⱼ`.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le` and
+  `TemperedDistribution.exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le`: the blocks and
+  enlarged blocks are bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass
+  truncations `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 ·)`, uniformly in the scale `R ≠ 0`, by `‖𝓕⁻ φ‖₁`
+  (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`), in particular the
+  partial sums `∑_{j ≤ N} Δⱼ`
+  (`TemperedDistribution.exists_sum_littlewoodPaleyBlock_eq_and_norm_le`).
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -305,6 +329,13 @@ theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
   rw [h0, φ.inhomogeneousLittlewoodPaley_succ_apply]
   simp
 
+/-- The kernels `𝓕⁻ ψⱼ` are even, since the symbols `ψⱼ` are. -/
+theorem fourierInv_inhomogeneousLittlewoodPaley_neg (j : ℕ) (x : E) :
+    𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (-x) =
+      𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x := by
+  rw [Real.fourierInv_eq_fourier_neg, neg_neg, Real.fourierInv_eq_fourier_comp_neg]
+  simp only [φ.inhomogeneousLittlewoodPaley_neg]
+
 open MeasureTheory in
 /-- **The `Lʳ` norms of the dyadic kernels.** Since `𝓕⁻ ψ_{j+1} = 2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in
 dimension `n`, the `Lʳ` norm of `𝓕⁻ ψ_{j+1}` is `(2^j)^{n - n/r}` times that of `𝓕⁻ ψ₁`, where
@@ -317,6 +348,39 @@ theorem eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) (r : ENNR
   simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
   exact TauCeti.eLpNorm_fourierInv_comp_inv_smul
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (pow_pos two_pos j) r
+
+open MeasureTheory in
+/-- **The `Lʳ` norms of the Schwartz dyadic kernels.** In dimension `n`, the `Lʳ` norm of
+`𝓕⁻ ψ_{j+1}` is `2^{n (1 - 1/r) j}` times that of `𝓕⁻ ψ₁`, where `1/∞ = 0`. -/
+theorem norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ (j : ℕ) (r : ENNReal) :
+    ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).toLp r (volume : Measure E)‖ =
+      (2 : ℝ) ^ ((Module.finrank ℝ E * (1 - r.toReal⁻¹)) * j) *
+        ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp r (volume : Measure E)‖ := by
+  simp only [SchwartzMap.norm_toLp, SchwartzMap.fourierInv_coe,
+    φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  rw [φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
+  congr 2
+  rw [div_eq_mul_inv]
+  ring
+
+open MeasureTheory in
+/-- **Geometric-sequence law for weighted dyadic kernel norms.** For every `s : ℝ` and
+`r : ℝ≥0∞`, `2^{s (j+1)} ‖𝓕⁻ ψ_{j+1}‖_r = (2^s ‖𝓕⁻ ψ₁‖_r) (2^{s + n (1 - 1/r)})^j`. -/
+theorem rpow_mul_norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ (s : ℝ) (j : ℕ)
+    (r : ENNReal) :
+    (2 : ℝ) ^ (s * (j + 1 : ℕ)) *
+        ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1))).toLp r (volume : Measure E)‖ =
+      2 ^ s * ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp r (volume : Measure E)‖ *
+        (2 ^ (s + Module.finrank ℝ E * (1 - r.toReal⁻¹))) ^ j := by
+  set m : ℝ := Module.finrank ℝ E * (1 - r.toReal⁻¹)
+  set c : ℝ := ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp r (volume : Measure E)‖
+  rw [φ.norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_succ,
+    ← Real.rpow_mul_natCast zero_le_two]
+  calc (2 : ℝ) ^ (s * (j + 1 : ℕ)) * (2 ^ (m * j) * c)
+      = 2 ^ (s * (j + 1 : ℕ) + m * j) * c := by rw [Real.rpow_add two_pos]; ring
+    _ = 2 ^ (s + (s + m) * j) * c := by push_cast; ring_nf
+    _ = 2 ^ s * c * 2 ^ ((s + m) * j) := by rw [Real.rpow_add two_pos]; ring
 
 open MeasureTheory in
 /-- **The kernels are nonzero.** On a nontrivial space, each `𝓕⁻ ψⱼ` has nonzero `Lʳ` norm for
@@ -347,6 +411,17 @@ theorem two_mul_rOut_div_rIn_mul (k : ℕ) :
   field_simp [φ.rIn_pos.ne']
   ring
 
+open MeasureTheory in
+/-- On a nontrivial space, each Schwartz dyadic kernel `𝓕⁻ ψⱼ` has strictly positive `Lʳ` norm
+for every `r ≠ 0`. -/
+theorem norm_toLp_fourierInv_inhomogeneousLittlewoodPaleySchwartz_pos [Nontrivial E] (j : ℕ)
+    {r : ENNReal} (hr : r ≠ 0) :
+    0 < ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp r (volume : Measure E)‖ := by
+  rw [SchwartzMap.norm_toLp]
+  refine ENNReal.toReal_pos ?_ (SchwartzMap.eLpNorm_lt_top _ r volume).ne
+  rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero j hr
+
 end ContDiffBump
 
 namespace TemperedDistribution
@@ -375,19 +450,14 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
 
 /-- **The Littlewood–Paley blocks are symmetric.** For a tempered distribution `u` and a Schwartz
 function `f`, `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier multiplier by `ψⱼ` on
-Schwartz functions. This holds because `ψⱼ` is even. -/
+Schwartz functions. This holds because `ψⱼ` is even
+(`ContDiffBump.inhomogeneousLittlewoodPaley_neg`). -/
 theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
     littlewoodPaleyBlock F φ j u f =
       u (SchwartzMap.fourierMultiplierCLM ℂ
-        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
-  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
-    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
-  congr 3
-  funext ξ
-  rcases j with _ | j
-  · simp [φ.neg]
-  · simp [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) :=
+  fourierMultiplierCLM_apply_apply_of_even
+    (fun ξ ↦ by simp only [φ.inhomogeneousLittlewoodPaley_neg]) u f
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
@@ -399,18 +469,26 @@ theorem sum_littlewoodPaleyBlock_range (N : ℕ) :
     fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
 
+/-- **Convergence of the low-pass truncations.** For every tempered distribution `u`, the
+truncations `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 u)` converge to `u` along any family of scales `R → ∞`. -/
+theorem tendsto_fourierMultiplierCLM_contDiffBump {α : Type*} {l : Filter α} {R : α → ℝ}
+    (hR : Tendsto R l atTop) (u : 𝓢'(E, F)) :
+    Tendsto (fun a ↦ fourierMultiplierCLM F (fun ξ ↦ (φ ((R a)⁻¹ • ξ) : ℂ)) u) l (𝓝 u) := by
+  refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun f ↦ ?_
+  simp only [fourierMultiplierCLM_apply_apply]
+  have h := ((map_continuous u).tendsto _).comp <|
+    ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp
+      (SchwartzMap.tendsto_smulLeftCLM_contDiffBump hR φ (𝓕⁻ f))
+  rwa [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
+
 /-- **Littlewood–Paley reconstruction.** Every tempered distribution is the limit in `𝓢'(E, F)`
 of the partial sums of its Littlewood–Paley blocks: `u = ∑ⱼ Δⱼ u`. -/
 theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     Tendsto (fun N ↦ ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u) atTop (𝓝 u) := by
   rw [← tendsto_add_atTop_iff_nat 1]
   simp_rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
-  refine PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.2 fun f ↦ ?_
-  simp only [fourierMultiplierCLM_apply_apply]
-  have h := ((map_continuous u).tendsto _).comp <|
-    ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp
-      (SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕⁻ f))
-  rwa [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
+  exact tendsto_fourierMultiplierCLM_contDiffBump φ
+    (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) u
 
 /-- A tempered distribution is determined by its Littlewood–Paley blocks. -/
 theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
@@ -596,6 +674,104 @@ theorem exists_littlewoodPaleyBlock_compL_eq_zero (φ' : ContDiffBump (0 : E)) :
       mul_comm _ (φ.inhomogeneousLittlewoodPaley j _), hL j k hjk, Complex.ofReal_zero,
       fourierMultiplierCLM_const, zero_smul]
 
+variable (F) in
+/-- The **enlarged Littlewood–Paley block** `Δ'ⱼ u = 𝓕⁻ (Ψⱼ • 𝓕 u)` of width `L`, the Fourier
+multiplier by the enlarged cutoff `ContDiffBump.enlargedLittlewoodPaley L j`, i.e., the sum
+`∑_{j + 1 - L ≤ m < j + L} Δₘ` (`enlargedLittlewoodPaleyBlock_eq_sum_Ico`). When pieces of `φ` at
+index distance at least `L` have disjoint supports (for instance `L = φ.littlewoodPaleyOverlap φ`),
+it fixes `Δⱼ` (`enlargedLittlewoodPaleyBlock_compL_littlewoodPaleyBlock`) and is annihilated by
+distant blocks (`littlewoodPaleyBlock_compL_enlargedLittlewoodPaleyBlock_eq_zero`). -/
+noncomputable def enlargedLittlewoodPaleyBlock (L j : ℕ) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
+  fourierMultiplierCLM F fun ξ ↦ (φ.enlargedLittlewoodPaley L j ξ : ℂ)
+
+/-- Unfolding `TemperedDistribution.enlargedLittlewoodPaleyBlock`. -/
+theorem enlargedLittlewoodPaleyBlock_eq_fourierMultiplierCLM (L j : ℕ) :
+    enlargedLittlewoodPaleyBlock F φ L j =
+      fourierMultiplierCLM F fun ξ ↦ (φ.enlargedLittlewoodPaley L j ξ : ℂ) :=
+  (rfl)
+
+/-- Unfolding `TemperedDistribution.enlargedLittlewoodPaleyBlock` on a tempered distribution. -/
+theorem enlargedLittlewoodPaleyBlock_apply (L j : ℕ) (u : 𝓢'(E, F)) :
+    enlargedLittlewoodPaleyBlock F φ L j u =
+      fourierMultiplierCLM F (fun ξ ↦ (φ.enlargedLittlewoodPaley L j ξ : ℂ)) u :=
+  (rfl)
+
+/-- The enlarged Littlewood–Paley block is the finite sum of the blocks of index in
+`[j + 1 - L, j + L)`. -/
+theorem enlargedLittlewoodPaleyBlock_eq_sum_Ico (L j : ℕ) :
+    enlargedLittlewoodPaleyBlock F φ L j =
+      ∑ m ∈ Finset.Ico (j + 1 - L) (j + L), littlewoodPaleyBlock F φ m := by
+  rw [enlargedLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
+  simp_rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM]
+  rw [← fourierMultiplierCLM_sum F
+    fun m _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley m]
+  congr 1
+  funext ξ
+  rw [φ.enlargedLittlewoodPaley_apply, Complex.ofReal_sum]
+
+/-- **The enlarged block fixes the corresponding Littlewood–Paley block.** If pieces of `φ` whose
+indices differ by at least `L` have disjoint supports (for instance `L = φ.littlewoodPaleyOverlap φ`
+via `ContDiffBump.inhomogeneousLittlewoodPaley_mul_eq_zero`), then `Δ'ⱼ ∘ Δⱼ = Δⱼ`. -/
+theorem enlargedLittlewoodPaleyBlock_compL_littlewoodPaleyBlock {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (j : ℕ) :
+    enlargedLittlewoodPaleyBlock F φ L j ∘L littlewoodPaleyBlock F φ j =
+      littlewoodPaleyBlock F φ j := by
+  rw [enlargedLittlewoodPaleyBlock_eq_fourierMultiplierCLM,
+    littlewoodPaleyBlock_eq_fourierMultiplierCLM,
+    fourierMultiplierCLM_compL_fourierMultiplierCLM
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)
+      (φ.hasTemperateGrowth_ofReal_enlargedLittlewoodPaley L j)]
+  congr 1
+  funext ξ
+  rw [Pi.mul_apply, ← Complex.ofReal_mul, mul_comm,
+    φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+
+/-- Applied form of `enlargedLittlewoodPaleyBlock_compL_littlewoodPaleyBlock`:
+`Δ'ⱼ (Δⱼ u) = Δⱼ u`. -/
+theorem enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (j : ℕ) (u : 𝓢'(E, F)) :
+    enlargedLittlewoodPaleyBlock F φ L j (littlewoodPaleyBlock F φ j u) =
+      littlewoodPaleyBlock F φ j u :=
+  congr($(enlargedLittlewoodPaleyBlock_compL_littlewoodPaleyBlock (F := F) φ hL j) u)
+
+/-- **Almost orthogonality of single and enlarged blocks.** If pieces of `φ` whose indices differ
+by at least `L'` have disjoint supports (for instance `L' = φ.littlewoodPaleyOverlap φ`), then
+`Δₖ ∘ Δ'ⱼ = 0` whenever `|k - j| ≥ L + L'`, where `Δ'ⱼ` has width `L`. -/
+theorem littlewoodPaleyBlock_compL_enlargedLittlewoodPaleyBlock_eq_zero {L L' : ℕ}
+    (hL' : ∀ j k : ℕ, j + L' ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    {j k : ℕ} (hjk : k + (L + L') ≤ j ∨ j + (L + L') ≤ k) :
+    littlewoodPaleyBlock F φ k ∘L enlargedLittlewoodPaleyBlock F φ L j = 0 := by
+  rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM,
+    enlargedLittlewoodPaleyBlock_eq_fourierMultiplierCLM,
+    fourierMultiplierCLM_compL_fourierMultiplierCLM
+      (φ.hasTemperateGrowth_ofReal_enlargedLittlewoodPaley L j)
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)]
+  have hfn : ((fun ξ ↦ (φ.enlargedLittlewoodPaley L j ξ : ℂ)) *
+      fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) = fun _ ↦ 0 := by
+    funext ξ
+    rw [Pi.mul_apply, ← Complex.ofReal_mul, φ.enlargedLittlewoodPaley_apply, Finset.sum_mul,
+      Finset.sum_eq_zero fun m hm ↦ ?_, Complex.ofReal_zero]
+    rw [Finset.mem_Ico] at hm
+    rcases hjk with hjk | hjk
+    · rw [mul_comm]
+      exact hL' k m (by omega) ξ
+    · exact hL' m k (by omega) ξ
+  rw [hfn, fourierMultiplierCLM_const, zero_smul]
+
+/-- Applied form of `littlewoodPaleyBlock_compL_enlargedLittlewoodPaleyBlock_eq_zero`:
+`Δₖ (Δ'ⱼ u) = 0` whenever `|k - j| ≥ L + L'`. -/
+theorem littlewoodPaleyBlock_enlargedLittlewoodPaleyBlock_eq_zero {L L' : ℕ}
+    (hL' : ∀ j k : ℕ, j + L' ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    {j k : ℕ} (hjk : k + (L + L') ≤ j ∨ j + (L + L') ≤ k) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock F φ k (enlargedLittlewoodPaleyBlock F φ L j u) = 0 :=
+  congr($(littlewoodPaleyBlock_compL_enlargedLittlewoodPaleyBlock_eq_zero (F := F) φ hL' hjk) u)
+
 /-- **Change of bump function.** The blocks `Δⱼ` and `Δ'ₖ` built from two bump functions `φ` and
 `φ'` interact only at nearby indices: there is `L`, depending only on `φ` and `φ'`, such that
 `Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u` for every `j` and every tempered distribution `u`. -/
@@ -644,6 +820,46 @@ theorem exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock :
       omega
     simpa using DFunLike.congr_fun (hL j k hjk).2 u
 
+/-- **Window-sum formula for low-pass truncation remainders.** There is `L`, depending only on `φ`,
+such that for every `k` and `N`, the block `Δₖ (u - ∑_{j < N} Δⱼ u)` is the finite window sum of
+`Δₖ Δⱼ u` over `k - L ≤ j < k + L` with `N ≤ j`. -/
+theorem exists_littlewoodPaleyBlock_sub_sum_range_eq :
+    ∃ L : ℕ, ∀ (N k : ℕ) (u : 𝓢'(E, F)),
+      littlewoodPaleyBlock F φ k (u - ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u) =
+        ∑ j ∈ Finset.Ico (k - L) (k + L),
+          if N ≤ j then littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) else 0 := by
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ
+  refine ⟨L, fun N k u ↦ ?_⟩
+  have hvanish {j : ℕ} (hj : j ∉ Finset.Ico (k - L) (k + L)) :
+      littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) = 0 := by
+    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hj
+    rcases hj with hj | hj
+    · exact congr($((hL j k (by omega)).2) u)
+    · exact congr($((hL k j (by omega)).1) u)
+  have hfull : littlewoodPaleyBlock F φ k u =
+      ∑ j ∈ Finset.Ico (k - L) (k + L),
+        littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) := by
+    refine tendsto_nhds_unique
+      (((map_continuous (littlewoodPaleyBlock F φ k)).tendsto u).comp
+        (tendsto_sum_littlewoodPaleyBlock φ u))
+      (tendsto_const_nhds.congr' ?_)
+    filter_upwards [eventually_ge_atTop (k + L)] with M hM
+    simp only [Function.comp_apply, map_sum]
+    exact Finset.sum_subset (fun j hj ↦ Finset.mem_range.2 ((Finset.mem_Ico.1 hj).2.trans_le hM))
+      fun j _ hj ↦ hvanish hj
+  have hpart : littlewoodPaleyBlock F φ k (∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u) =
+      ∑ j ∈ Finset.Ico (k - L) (k + L),
+        if j < N then littlewoodPaleyBlock F φ k (littlewoodPaleyBlock F φ j u) else 0 := by
+    rw [map_sum, ← Finset.sum_filter]
+    refine (Finset.sum_subset (fun j hj ↦ Finset.mem_range.2 (Finset.mem_filter.1 hj).2)
+      fun j hj hj' ↦ hvanish fun hIco ↦
+        hj' (Finset.mem_filter.2 ⟨hIco, Finset.mem_range.1 hj⟩)).symm
+  rw [map_sub, hfull, hpart, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rcases lt_or_ge j N with hj | hj
+  · simp [hj, not_le.2 hj]
+  · simp [hj, not_lt.2 hj]
+
 /-- The Littlewood–Paley blocks commute with every Fourier multiplier of temperate growth. -/
 theorem littlewoodPaleyBlock_fourierMultiplierCLM_comm {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (j : ℕ) (u : 𝓢'(E, F)) :
@@ -669,6 +885,16 @@ theorem littlewoodPaleyBlock_besselPotential_comm (s : ℝ) (j : ℕ) (u : 𝓢'
       besselPotential E F s (littlewoodPaleyBlock F φ j u) := by
   simp only [besselPotential]
   exact littlewoodPaleyBlock_fourierMultiplierCLM_comm φ (by fun_prop) j u
+
+/-- Littlewood–Paley blocks commute with post-composition by a continuous linear map on the fiber:
+`Δⱼ` acts on test functions, whereas `L` acts on values. -/
+theorem littlewoodPaleyBlock_postcomp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    (j : ℕ) (L : F →L[ℂ] G) (u : 𝓢'(E, F)) :
+    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
+      PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L (littlewoodPaleyBlock F φ j u) := by
+  ext ψ
+  simp only [littlewoodPaleyBlock_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
+    fourierMultiplierCLM_apply_apply]
 
 /-- On a Schwartz function, the Littlewood–Paley block is the Schwartz Fourier multiplier
 by `ψⱼ`. -/
@@ -720,6 +946,26 @@ section Lp
 open MeasureTheory
 open scoped ENNReal NNReal
 
+/-- For every `1 ≤ p ≤ ∞`, the block `Δⱼ δ₀` is the `Lᵖ` function `𝓕⁻ ψⱼ`. -/
+theorem littlewoodPaleyBlock_delta_zero_eq_toLp (j : ℕ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    littlewoodPaleyBlock ℂ φ j (delta 0) =
+      ((𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p (volume : Measure E) :
+        𝓢'(E, ℂ)) := by
+  rw [Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_delta_zero]
+
+variable {φ} in
+/-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of
+`L ∘ u` is `L.compLp f`. -/
+theorem littlewoodPaleyBlock_postcomp_eq_compLp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [CompleteSpace F] [CompleteSpace G] {j : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (L : F →L[ℂ] G) {u : 𝓢'(E, F)} {f : Lp F p (volume : Measure E)}
+    (hf : littlewoodPaleyBlock F φ j u = f) :
+    littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u) =
+      (L.compLp f : 𝓢'(E, G)) := by
+  rw [littlewoodPaleyBlock_postcomp, hf]
+  ext ψ
+  rw [PointwiseConvergenceCLM.postcomp_apply_apply, Lp.toTemperedDistribution_compLp_apply]
+
 /-- **The Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in `j`.** There is `C`, depending
 only on `φ`, such that for every `1 ≤ p ≤ ∞`, every `j` and every `f ∈ Lᵖ`, the block `Δⱼ f` is a
 function in `Lᵖ` with `‖Δⱼ f‖_p ≤ C ‖f‖_p`. -/
@@ -737,26 +983,56 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
   rw [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
 
-/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** For every `1 ≤ p ≤ ∞`,
-every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function in `Lᵖ` with
-`‖S_N f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. The truncation is the Fourier multiplier by `φ (2^{-N} ·)`, whose
-kernel is an `L¹`-normalised dilate of `𝓕⁻ φ`. -/
+/-- **The enlarged Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in `j` and `p`.** For
+every width `L`, there is `C ≥ 0`, depending only on `φ` and `L`, such that for every `1 ≤ p ≤ ∞`,
+every `j`, and every `f ∈ Lᵖ`, the enlarged block `Δ'ⱼ f` is a function in `Lᵖ` with
+`‖Δ'ⱼ f‖_p ≤ C ‖f‖_p`. -/
+theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
+      ∃ g : Lp F p (volume : Measure E),
+        enlargedLittlewoodPaleyBlock F φ L j (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+  obtain ⟨C₀, hC₀⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  refine ⟨2 * L * max C₀ 0, by positivity, fun {p} _ j f ↦ ?_⟩
+  choose g hg hgC using fun m ↦ hC₀ (p := p) m f
+  refine ⟨∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m, ?_, ?_⟩
+  · rw [enlargedLittlewoodPaleyBlock_eq_sum_Ico, _root_.sum_apply, Lp.toTemperedDistribution_sum]
+    exact Finset.sum_congr rfl fun m _ ↦ hg m
+  · calc ‖∑ m ∈ Finset.Ico (j + 1 - L) (j + L), g m‖
+        ≤ ∑ _ ∈ Finset.Ico (j + 1 - L) (j + L), max C₀ 0 * ‖f‖ :=
+          (norm_sum_le _ _).trans (Finset.sum_le_sum fun m _ ↦
+            (hgC m).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg f)))
+      _ = (Finset.Ico (j + 1 - L) (j + L)).card * (max C₀ 0 * ‖f‖) := by
+          rw [Finset.sum_const, nsmul_eq_mul]
+      _ ≤ 2 * L * (max C₀ 0 * ‖f‖) := by
+          gcongr
+          rw [Nat.card_Ico]
+          exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+      _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
+
+/-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
+`1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a
+function in `Lᵖ` with norm at most `‖𝓕⁻ φ‖₁ ‖f‖_p`: its kernel is an `L¹`-normalised dilate of
+`𝓕⁻ φ`. -/
+theorem exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {R : ℝ} (hR : R ≠ 0) (f : Lp F p (volume : Measure E)) :
+    ∃ g : Lp F p (volume : Measure E),
+      fourierMultiplierCLM F (fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ)) (f : 𝓢'(E, F)) = g ∧
+        ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le (φ.lowPassSchwartz hR) f
+  rw [φ.coe_lowPassSchwartz, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ))
+    (inv_ne_zero hR)] at hgf
+  exact ⟨g, by rw [← hg, φ.coe_lowPassSchwartz], hgf⟩
+
+/-- **The partial sums of the blocks are bounded on `Lᵖ` uniformly in `N`.** For every
+`1 ≤ p ≤ ∞`, every `N` and every `f ∈ Lᵖ`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` is a function
+in `Lᵖ` with `‖S_N f‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p`. -/
 theorem exists_sum_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (N : ℕ) (f : Lp F p (volume : Measure E)) :
     ∃ g : Lp F p (volume : Measure E),
       ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧
         ‖g‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
-  have hc : ((2 : ℝ) ^ N)⁻¹ ≠ 0 := by positivity
-  -- The symbol `φ (2^{-N} ·) = ∑_{j ≤ N} ψⱼ` is a sum of the Schwartz pieces of the partition.
-  set σ : 𝓢(E, ℂ) := ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaleySchwartz j
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
-    ext ξ
-    simp [σ, ← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  rw [hσ_coe] at hg hgf
-  refine ⟨g, ?_, ?_⟩
-  · rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range, hg]
-  · rwa [TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ)) hc] at hgf
+  rw [← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  exact exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le φ (by positivity) f
 
 open ContinuousLinearMap in
 open scoped Convolution in

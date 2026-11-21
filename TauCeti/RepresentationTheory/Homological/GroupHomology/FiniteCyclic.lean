@@ -111,7 +111,7 @@ private theorem groupHomologyTrivialπOdd_surjective (i : ℕ) (hi : Odd i) :
     Function.Surjective (groupHomologyTrivialπOdd k A g hg i hi) := by
   intro y
   obtain ⟨x, rfl⟩ := groupHomologyπOdd_surjective (Rep.trivial k G A) g hg i hi y
-  exact ⟨x.1, rfl⟩
+  exact ⟨x.val, rfl⟩
 
 private theorem ker_groupHomologyTrivialπOdd (i : ℕ) (hi : Odd i) :
     LinearMap.ker (groupHomologyTrivialπOdd k A g hg i hi) =
@@ -197,7 +197,7 @@ theorem groupHomologyTrivialLinearEquivEven_symm_apply (i : ℕ) [NeZero i] (hi 
     (x : Submodule.torsionBy k A (Nat.card G : k)) :
     (groupHomologyTrivialLinearEquivEven k A g hg i hi).symm x =
       groupHomologyπEven (Rep.trivial k G A) g hg i hi
-        ⟨x, by simpa [Submodule.mem_torsionBy_iff] using x.2⟩ :=
+        ⟨x, by simpa [Submodule.mem_torsionBy_iff] using x.property⟩ :=
   (LinearEquiv.symm_apply_eq _).2 (Subtype.ext
     (coe_groupHomologyTrivialLinearEquivEven_groupHomologyπEven k A g hg i hi ⟨x, _⟩).symm)
 

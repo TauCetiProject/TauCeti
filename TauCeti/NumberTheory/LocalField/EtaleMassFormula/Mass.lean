@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.GaloisSet.Basic
+public import TauCeti.FieldTheory.Galois.GaloisSet.Sum
 public import TauCeti.NumberTheory.LocalField.EtaleMassFormula.OrbitWeight
 
 /-!
@@ -31,7 +31,9 @@ mass is valued in `ℝ≥0∞`.
 ## Main definitions and results
 
 * `TauCeti.GaloisSet.discriminantExponent`: the discriminant exponent of a labelled Galois set.
-* `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv`: invariance under equivariant relabelling.
+* `TauCeti.GaloisSet.discriminantExponent_eq_of_equiv` and
+  `TauCeti.GaloisSet.discriminantExponent_sigma`: invariance under equivariant relabelling and
+  additivity on disjoint unions, with `TauCeti.GaloisSet.discriminantExponent_sum` for binary ones.
 * `TauCeti.etaleMass`: the étale mass `M_n(K)`.
 * `TauCeti.GaloisSet.discriminantExponent_of_isTransitive`: the transitive case.
 * `TauCeti.tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent`: the
@@ -107,6 +109,32 @@ theorem discriminantExponent_of_subsingleton [Subsingleton (Fin n)] (ρ : Galois
   let := ρ.mulAction
   exact orbitDiscriminantExponent_of_subsingleton K
 
+/-- The discriminant exponent of a disjoint union of Galois sets is the sum of their
+discriminant exponents. -/
+@[simp]
+theorem discriminantExponent_sigma {ι : Type*} [Fintype ι] {d : ι → ℕ}
+    (b : Fin n ≃ Σ i, Fin (d i)) (ρ : ∀ i, GaloisSet K (d i)) :
+    (sigma b ρ).discriminantExponent = ∑ i, (ρ i).discriminantExponent := by
+  let : ∀ i, MulAction Gal(SeparableClosure K/K) (Fin (d i)) := fun i ↦ (ρ i).mulAction
+  let := (sigma b ρ).mulAction
+  rw [discriminantExponent_def,
+    orbitDiscriminantExponent_eq_of_equiv K b (apply_smul_sigma b ρ),
+    orbitDiscriminantExponent_sigma K]
+  exact Finset.sum_congr rfl fun i _ ↦ (ρ i).discriminantExponent_def.symm
+
+/-- The discriminant exponent of a disjoint union of two labelled Galois sets is the sum of their
+discriminant exponents. -/
+@[simp]
+theorem discriminantExponent_sum {m l : ℕ} (ρ₁ : GaloisSet K m) (ρ₂ : GaloisSet K l)
+    (e : Fin m ⊕ Fin l ≃ Fin n) :
+    (sum ρ₁ ρ₂ e).discriminantExponent = ρ₁.discriminantExponent + ρ₂.discriminantExponent := by
+  let := ρ₁.mulAction
+  let := ρ₂.mulAction
+  let := (sum ρ₁ ρ₂ e).mulAction
+  rw [discriminantExponent_def, ← orbitDiscriminantExponent_eq_of_equiv K e
+    (fun σ x ↦ by rcases x with i | j <;> simp)]
+  exact orbitDiscriminantExponent_sum K
+
 end GaloisSet
 
 variable (K) in
@@ -144,12 +172,12 @@ positive size `n`, the weights `q ^ (-d(ρ))` are `(n - 1)!` times the sum of `q
 the subextensions `L` of `SeparableClosure K` of degree `n`. -/
 theorem tsum_isTransitive_one_div_natCard_residueField_pow_discriminantExponent (hn : 0 < n) :
     ∑' ρ : {ρ : GaloisSet K n // ρ.IsTransitive},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent =
       ((n - 1).factorial : ℝ≥0∞) *
         ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = n},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent := by
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent := by
   refine (tsum_congr fun ρ ↦ ?_).trans (GaloisSet.tsum_isTransitive ⟨0, hn⟩
     fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent)
-  rw [ρ.1.discriminantExponent_of_isTransitive ρ.2 ⟨0, hn⟩]
+  rw [ρ.val.discriminantExponent_of_isTransitive ρ.property ⟨0, hn⟩]
 
 end TauCeti

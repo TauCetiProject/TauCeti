@@ -9,16 +9,20 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Wirtinger derivatives
@@ -69,12 +73,16 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
   commute with complex scalar multiplication.
+* `TauCeti.wirtingerDeriv_apply_one_ofReal_im`, `TauCeti.conjWirtingerDeriv_apply_one_ofReal_im`:
+  the Wirtinger derivatives of the imaginary part are `∂ Im = -i/2` and `\bar∂ Im = i/2`.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
   pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
-  holomorphic map `φ`.
+  holomorphic map `φ`, and `TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv`, the chain rule
+  `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)` before a holomorphic map `g`; in one variable
+  `TauCeti.conjWirtingerDeriv_comp_eq_conj_smul` writes it as `\bar∂(φ ∘ g) = \bar{g'} \bar∂φ`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
@@ -83,6 +91,11 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
+* `TauCeti.wirtingerDeriv_cexp_mul_sub_conj_mul_conj`,
+  `TauCeti.conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj`: the twisted exponential
+  `exp (a z - conj a conj z)` has `∂ = a ·` and `\bar∂ = -conj a ·`.
+  Translation by `w` multiplies it by `exp (2πiθ)` when `Im (a w) = π (k + θ)` for an integer `k`
+  (`TauCeti.cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq`).
 * `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
   real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines; the
   Wirtinger parts of `wirtingerPartsCLM a b` are `a` and `b`
@@ -319,6 +332,12 @@ theorem _root_.ContDiff.continuous_conjWirtingerDeriv_apply {g : V → W} (hg : 
   continuous_iff_continuousAt.2 fun x ↦
     (hg.contDiffAt.conjWirtingerDeriv_apply (m := 0) (by simp) v).continuousAt
 
+/-- The Wirtinger derivative of a `C¹` map, evaluated on a fixed vector, is continuous. -/
+theorem _root_.ContDiff.continuous_wirtingerDeriv_apply {g : V → W} (hg : ContDiff ℝ 1 g)
+    (v : V) : Continuous fun z ↦ wirtingerDeriv g z v :=
+  continuous_iff_continuousAt.2 fun x ↦
+    (hg.contDiffAt.wirtingerDeriv_apply (m := 0) (by simp) v).continuousAt
+
 /-- The conjugate Wirtinger derivative vanishes off the topological support. -/
 theorem conjWirtingerDeriv_of_notMem_tsupport {g : V → W} {x : V} (hx : x ∉ tsupport g) :
     conjWirtingerDeriv g x = 0 := by
@@ -350,6 +369,34 @@ theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMa
 /-- The conjugate Wirtinger derivative of the identity vanishes: `\bar∂z = 0`. -/
 theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
   (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
+
+/-- Adding a complex differentiable map does not change the conjugate Wirtinger derivative:
+`\bar∂(g + f) = \bar∂f`. Where `f` is not real-differentiable, neither is `g + f`, and both sides
+vanish. -/
+theorem _root_.DifferentiableAt.conjWirtingerDeriv_add_left {g f : V → W} {y : V}
+    (hg : DifferentiableAt ℂ g y) :
+    conjWirtingerDeriv (fun z ↦ g z + f z) y = conjWirtingerDeriv f y := by
+  have hgR : DifferentiableAt ℝ g y := hg.restrictScalars ℝ
+  by_cases hf : DifferentiableAt ℝ f y
+  · exact (conjWirtingerDeriv_add hgR hf).trans (by rw [hg.conjWirtingerDeriv_eq_zero, zero_add])
+  · have hf' : ¬DifferentiableAt ℝ (fun z ↦ g z + f z) y := fun h ↦
+      hf (by simpa using h.fun_sub hgR)
+    ext v
+    simp only [conjWirtingerDeriv_apply, fderiv_zero_of_not_differentiableAt hf,
+      fderiv_zero_of_not_differentiableAt hf']
+
+/-- Adding the identity does not change the conjugate Wirtinger derivative:
+`\bar∂(z + f) = \bar∂f`. -/
+@[simp]
+theorem conjWirtingerDeriv_id_add (f : V → V) (y : V) :
+    conjWirtingerDeriv (fun z ↦ z + f z) y = conjWirtingerDeriv f y :=
+  (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_add_left
+
+/-- Adding the identity adds the identity to the Wirtinger derivative of a real-differentiable
+function: `∂(z + f) = 1 + ∂f`. -/
+theorem wirtingerDeriv_id_add {f : V → V} {y : V} (hf : DifferentiableAt ℝ f y) :
+    wirtingerDeriv (fun z ↦ z + f z) y = ContinuousLinearMap.id ℂ V + wirtingerDeriv f y :=
+  (wirtingerDeriv_add differentiableAt_id hf).trans (by rw [wirtingerDeriv_id])
 
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
@@ -443,6 +490,40 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
     fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
     ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
 
+/-- **The chain rule for the conjugate Wirtinger derivative** before a complex-linear change of
+variables: `\bar∂(g ∘ e) = \bar∂g(e x) ∘ e`. No differentiability is needed, since `e` is an
+isomorphism. -/
+theorem conjWirtingerDeriv_comp_continuousLinearEquiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] (e : X ≃L[ℂ] V) (g : V → W) (x : X) :
+    conjWirtingerDeriv (g ∘ e) x = (conjWirtingerDeriv g (e x)).comp (e : X →L[ℂ] V) := by
+  have h := (e.restrictScalars' ℝ).comp_right_fderiv (f := g) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars'] at h
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart, h,
+    ← ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+  -- The real map underlying `e.restrictScalars' ℝ` is `e` with scalars restricted.
+  congr 2
+  ext
+  simp
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a holomorphic map: if `g` is
+complex differentiable at `x`, then `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)`. -/
+theorem conjWirtingerDeriv_comp_eq_comp_fderiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] {φ : W → X} {g : V → W} {x : V} (hφ : DifferentiableAt ℝ φ (g x))
+    (hg : DifferentiableAt ℂ g x) :
+    conjWirtingerDeriv (φ ∘ g) x = (conjWirtingerDeriv φ (g x)).comp (fderiv ℂ g x) := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
+    fderiv_comp x hφ (hg.restrictScalars ℝ), hg.fderiv_restrictScalars ℝ,
+    ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a holomorphic function of one
+variable: if `g` has complex derivative `a` at `x`, then `\bar∂(φ ∘ g)(x) = \bar a \bar∂φ(g x)`. -/
+theorem conjWirtingerDeriv_comp_eq_conj_smul {φ : ℂ → W} {g : ℂ → ℂ} {x a : ℂ}
+    (hφ : DifferentiableAt ℝ φ (g x)) (hg : HasDerivAt g a x) :
+    conjWirtingerDeriv (φ ∘ g) x = conj a • conjWirtingerDeriv φ (g x) := by
+  ext v
+  rw [conjWirtingerDeriv_comp_eq_comp_fderiv hφ hg.differentiableAt, hg.hasFDerivAt.fderiv]
+  simpa [mul_comm] using map_smulₛₗ (conjWirtingerDeriv φ (g x)) a v
+
 section Mul
 
 variable {f g : V → ℂ} {x : V}
@@ -524,6 +605,89 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
   · intro h
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
+/-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
+@[simp]
+theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
+  rw [wirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
+
+/-- The conjugate Wirtinger derivative of the imaginary part: `\bar∂ Im = i/2`. -/
+@[simp]
+theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
+  rw [conjWirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
+
+/-! ### The twisted exponentials `exp (a z - conj a conj z)` -/
+
+section TwistedExp
+
+variable (a : ℂ)
+
+/-- The derivative of the twisted exponential `z ↦ exp (a z - conj a conj z) = exp (2i Im (a z))`,
+of modulus one. -/
+theorem hasFDerivAt_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    HasFDerivAt (fun z ↦ cexp (a * z - conj a * conj z))
+      (cexp (a * z - conj a * conj z) •
+        (a • ContinuousLinearMap.id ℝ ℂ - conj a • (conjCLE : ℂ →L[ℝ] ℂ))) z :=
+  (((hasFDerivAt_id z).const_mul a).sub
+    ((conjCLE : ℂ →L[ℝ] ℂ).hasFDerivAt.const_mul (conj a))).cexp
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is smooth. -/
+theorem contDiff_cexp_mul_sub_conj_mul_conj {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun z ↦ cexp (a * z - conj a * conj z) :=
+  ((contDiff_const.mul contDiff_id).sub
+    (contDiff_const.mul (conjCLE : ℂ →L[ℝ] ℂ).contDiff)).cexp
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is an eigenfunction of `∂` with
+eigenvalue `a`. -/
+@[simp]
+theorem wirtingerDeriv_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    wirtingerDeriv (fun z ↦ cexp (a * z - conj a * conj z)) z 1 =
+      a * cexp (a * z - conj a * conj z) := by
+  rw [wirtingerDeriv_apply, (hasFDerivAt_cexp_mul_sub_conj_mul_conj a z).fderiv]
+  simp only [smul_apply, sub_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul,
+    map_one, mul_one, conj_I]
+  linear_combination (-(cexp (a * z - conj a * conj z) * (a + conj a) / 2)) * I_sq
+
+/-- The twisted exponential `exp (a z - conj a conj z)` is an eigenfunction of `\bar∂` with
+eigenvalue `-conj a`. -/
+@[simp]
+theorem conjWirtingerDeriv_cexp_mul_sub_conj_mul_conj (z : ℂ) :
+    conjWirtingerDeriv (fun z ↦ cexp (a * z - conj a * conj z)) z 1 =
+      -conj a * cexp (a * z - conj a * conj z) := by
+  rw [conjWirtingerDeriv_apply, (hasFDerivAt_cexp_mul_sub_conj_mul_conj a z).fderiv]
+  simp only [smul_apply, sub_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply, smul_eq_mul,
+    map_one, mul_one, conj_I]
+  linear_combination (cexp (a * z - conj a * conj z) * (a + conj a) / 2) * I_sq
+
+/-- Under translation by `w`, the twisted exponential `exp (a z - conj a conj z)` is multiplied by
+the unit complex number `exp (2i Im (a w))`. -/
+theorem cexp_mul_add_sub_conj_mul_conj_add (z w : ℂ) :
+    cexp (a * (z + w) - conj a * conj (z + w)) =
+      cexp (((2 * (a * w).im : ℝ) : ℂ) * I) * cexp (a * z - conj a * conj z) := by
+  rw [← sub_conj, map_mul, ← Complex.exp_add, map_add]
+  ring_nf
+
+open scoped Real in
+/-- If `Im (a w) = π (k + θ)` for an integer `k`, then under translation by `w` the twisted
+exponential `exp (a z - conj a conj z)` is multiplied by `exp (2πiθ)`. In particular it is a
+section of the flat line with holonomy `exp (2πiθ)` along `w`. -/
+theorem cexp_mul_add_sub_conj_mul_conj_add_of_im_mul_eq {w : ℂ} {θ : ℝ} {k : ℤ}
+    (h : (a * w).im = π * (k + θ)) (z : ℂ) :
+    cexp (a * (z + w) - conj a * conj (z + w)) =
+      cexp (2 * π * θ * I) * cexp (a * z - conj a * conj z) := by
+  rw [cexp_mul_add_sub_conj_mul_conj_add, h]
+  congr 1
+  push_cast
+  rw [show (2 * (π * (k + θ)) * I : ℂ) = k * (2 * π * I) + 2 * π * θ * I by ring, Complex.exp_add,
+    exp_int_mul_two_pi_mul_I, one_mul]
+
+end TwistedExp
 
 /-! ### Real-linear maps through their Wirtinger parts -/
 

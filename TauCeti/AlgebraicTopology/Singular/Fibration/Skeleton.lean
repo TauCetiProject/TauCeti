@@ -84,16 +84,16 @@ theorem isZero_singularHomology_preimage_of_relHomotopyGroup (hp : serreFibratio
   isZero_singularHomology_ofSubset_of_relHomotopyGroup
     (exists_joined_preimage_of_mem_serreFibrations hp h₀)
     (fun k hk e ↦ subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations hp e
-      (h k hk ⟨p e, e.2⟩)) M hm
+      (h k hk ⟨p e, e.property⟩)) M hm
 
 /-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
 fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
-values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); R) = 0` in every degree `m`. -/
+values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); M) = 0` in every degree `m` and for every module `M`. -/
 theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p) {A S : Set B}
     (hAS : A ⊆ S) {g : C(S, S)} (H : (ContinuousMap.id S).HomotopyRel g (Subtype.val ⁻¹' A))
-    (hg : ∀ x, (g x : B) ∈ A) (R : Type u) [Ring R] (m : ℕ) :
+    (hg : ∀ x, (g x : B) ∈ A) {R : Type*} [Ring R] (M : ModuleCat.{u} R) (m : ℕ) :
     IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hAS)).singularHomology
-      (ModuleCat.of R R) m) := by
+      M m) := by
   let A' : Set (_root_.TopCat.of S) := Subtype.val ⁻¹' A
   have h₀ (b : _root_.TopCat.of S) : ∃ a ∈ A', Joined b a :=
     ⟨g b, hg b, ⟨{ toFun t := H (t, b), source' := by simp, target' := by simp }⟩⟩
@@ -105,11 +105,10 @@ theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p)
     · rw [TopPair.range_ofSubset_map]
       exact hg x
   have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
-    (mem_serreFibrations_restrictPreimage hp S) h₀ h (ModuleCat.of R R) (Nat.lt_succ_self m)
+    (mem_serreFibrations_restrictPreimage hp S) h₀ h M (Nat.lt_succ_self m)
   -- The preimage pair of the restriction of `p` over `S` is the pair `(p⁻¹(S), p⁻¹(A))`.
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
-    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom
-    (ModuleCat.of R R) m)).symm
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom M m)).symm
 
 variable [T2Space B] {C D : Set B} [RelCWComplex C D]
 
@@ -131,17 +130,19 @@ theorem isZero_singularHomology_preimage_skeletonLT (hp : serreFibrations p) (R 
   let A : Set (_root_.TopCat.of t) := Subtype.val ⁻¹' s
   have h₀ (b : _root_.TopCat.of t) : ∃ a ∈ A, Joined b a := by
     obtain ⟨a, ha⟩ := exists_joined_skeletonLT hts hst b
-    exact ⟨inclusion hst a, a.2, ha.symm⟩
+    exact ⟨inclusion hst a, a.property, ha.symm⟩
   have h (j : ℕ) (hj : j + 1 < i + 1) (a : A) :
       Subsingleton (RelHomotopyGroup (Fin j) ⟨TopPair.ofSubset A, a⟩) := by
     have := subsingleton_relHomotopyGroup_skeletonLT (N := Fin j) (by simpa using hj) hts hst
-      ⟨a.1.1, a.2⟩
+      ⟨a.val.val, a.property⟩
     -- The pairs `(t, A)` and `(t, s)` are isomorphic, by a basepoint-preserving isomorphism.
     let e := TopPair.ofSubsetPreimageValIso hst
-    let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ :=
+    let f : (⟨TopPair.ofSubset A, a⟩ : BasedTopPair) ⟶ ⟨TopPair.ofInclusion hst, ⟨a.val.val,
+        a.property⟩⟩ :=
       ⟨e.hom, Subtype.ext (TopPair.ofSubsetPreimageValIso_hom_snd_apply a)⟩
-    let g : (⟨TopPair.ofInclusion hst, ⟨a.1.1, a.2⟩⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, a⟩ :=
-      ⟨e.inv, Subtype.ext (TopPair.ofSubsetPreimageValIso_inv_snd_apply ⟨a.1.1, a.2⟩)⟩
+    let g : (⟨TopPair.ofInclusion hst, ⟨a.val.val, a.property⟩⟩ : BasedTopPair) ⟶
+        ⟨TopPair.ofSubset A, a⟩ :=
+      ⟨e.inv, Subtype.ext (TopPair.ofSubsetPreimageValIso_inv_snd_apply ⟨a.val.val, a.property⟩)⟩
     exact RelHomotopyGroup.subsingleton_of_comp_eq_id (f := f) (g := g)
       (BasedTopPair.hom_ext e.hom_inv_id)
   -- The restriction of `p` over `t` is a Serre fibration, so its preimage pair has vanishing

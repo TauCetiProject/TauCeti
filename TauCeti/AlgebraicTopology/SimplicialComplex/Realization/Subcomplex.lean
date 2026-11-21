@@ -45,13 +45,13 @@ face of that subcomplex. -/
 -- Normalize to carrier membership before `Set.mem_range` expands the existential.
 @[simp 1100]
 theorem mem_range_realizationMap (h : K ≤ L) (x : Realization L) :
-    x ∈ range (realizationMap h) ↔ x.1.support ∈ K := by
+    x ∈ range (realizationMap h) ↔ x.val.support ∈ K := by
   constructor
   · rintro ⟨y, rfl⟩
     simpa only [realizationMap_val] using support_mem K y
   · intro hx
-    refine ⟨⟨x.1, mem_realization_iff.mpr
-      ⟨x.1.support, hx, by simpa only [carrier_val] using mem_convexHull_carrier L x⟩⟩, ?_⟩
+    refine ⟨⟨x.val, mem_realization_iff.mpr
+      ⟨x.val.support, hx, by simpa only [carrier_val] using mem_convexHull_carrier L x⟩⟩, ?_⟩
     exact Subtype.ext (realizationMap_val h _)
 
 /-- If every point of `s` is carried by a precomplex `P`, closedness of `s` can be tested
@@ -59,57 +59,57 @@ only on the faces of `P`. Unlike an abstract complex, `P` need not contain every
 vertex; in particular, this applies to links, closed stars, and deletions. -/
 theorem isClosed_of_faceInclusion {P : PreAbstractSimplicialComplex ι}
     (hP : P ≤ L.toPreAbstractSimplicialComplex) {s : Set (Realization L)}
-    (hsupp : ∀ x ∈ s, x.1.support ∈ P)
+    (hsupp : ∀ x ∈ s, x.val.support ∈ P)
     (hs : ∀ (σ : Finset ι) (hσ : σ ∈ P),
       IsClosed (faceInclusion L ⟨σ, hP hσ⟩ ⁻¹' s)) : IsClosed s := by
   classical
   apply isClosed_iff_faceInclusion.mpr
   intro τ
   -- Only the finitely many subfaces of `τ` can contribute to this inverse image.
-  let A := {σ : Finset ι | σ ⊆ τ.1 ∧ σ ∈ P}
-  have hAfin : A.Finite := τ.1.powerset.finite_toSet.subset fun σ hσ =>
+  let A := {σ : Finset ι | σ ⊆ τ.val ∧ σ ∈ P}
+  have hAfin : A.Finite := τ.val.powerset.finite_toSet.subset fun σ hσ =>
     Finset.mem_powerset.mpr hσ.1
-  let j (σ : A) : StandardSimplex σ.1 → StandardSimplex τ.1 :=
+  let j (σ : A) : StandardSimplex σ.val → StandardSimplex τ.val :=
     Set.inclusion (convexHull_mono
-      (Finset.coe_subset.mpr (Finset.image_mono _ σ.2.1)))
+      (Finset.coe_subset.mpr (Finset.image_mono _ σ.property.1)))
   have hjc (σ : A) : Continuous (j σ) := by
     apply continuous_induced_rng.mpr
     exact continuous_induced_dom
   have hjclosed (σ : A) : IsClosedMap (j σ) := by
-    let : CompactSpace (StandardSimplex σ.1) :=
-      (Finset.standardSimplexHomeomorph σ.1).symm.compactSpace
-    have ht : IsEmbedding (fun x : StandardSimplex τ.1 => (x.1 : ι → ℝ)) :=
+    let : CompactSpace (StandardSimplex σ.val) :=
+      (Finset.standardSimplexHomeomorph σ.val).symm.compactSpace
+    have ht : IsEmbedding (fun x : StandardSimplex τ.val => (x.val : ι → ℝ)) :=
       .induced (fun x y hxy => Subtype.ext (Finsupp.ext fun v => congrFun hxy v))
-    let : T2Space (StandardSimplex τ.1) := ht.t2Space
+    let : T2Space (StandardSimplex τ.val) := ht.t2Space
     exact (hjc σ).isClosedMap
   have heq : faceInclusion L τ ⁻¹' s =
-      ⋃ σ : A, j σ '' (faceInclusion L ⟨σ.1, hP σ.2.2⟩ ⁻¹' s) := by
+      ⋃ σ : A, j σ '' (faceInclusion L ⟨σ.val, hP σ.property.2⟩ ⁻¹' s) := by
     ext x
     constructor
     · intro hx
-      let σ : A := ⟨x.1.support, StandardSimplex.support_subset x, by
+      let σ : A := ⟨x.val.support, StandardSimplex.support_subset x, by
         simpa only [faceInclusion_val] using hsupp _ hx⟩
-      let z : StandardSimplex σ.1 := ⟨x.1, StandardSimplex.mem_convexHull_support x⟩
+      let z : StandardSimplex σ.val := ⟨x.val, StandardSimplex.mem_convexHull_support x⟩
       refine mem_iUnion.mpr ⟨σ, z, ?_, ?_⟩
-      · have hz : faceInclusion L ⟨σ.1, hP σ.2.2⟩ z = faceInclusion L τ x :=
+      · have hz : faceInclusion L ⟨σ.val, hP σ.property.2⟩ z = faceInclusion L τ x :=
           Subtype.ext (by simp only [faceInclusion_val]; rfl)
         simpa only [mem_preimage, hz] using hx
       · exact Subtype.ext rfl
     · intro hx
       obtain ⟨σ, z, hz, hzx⟩ := mem_iUnion.mp hx
-      have he : faceInclusion L ⟨σ.1, hP σ.2.2⟩ z = faceInclusion L τ x := by
+      have he : faceInclusion L ⟨σ.val, hP σ.property.2⟩ z = faceInclusion L τ x := by
         apply Subtype.ext
         simpa only [faceInclusion_val] using congrArg Subtype.val hzx
       simpa only [mem_preimage, he] using hz
   rw [heq]
   let : Finite A := hAfin.to_subtype
-  exact isClosed_iUnion_of_finite fun σ => hjclosed σ _ (hs σ.1 σ.2.2)
+  exact isClosed_iUnion_of_finite fun σ => hjclosed σ _ (hs σ.val σ.property.2)
 
 /-- The support of every point of a face of a precomplex is itself a face of that
 precomplex, even when the precomplex omits ambient vertices. -/
 theorem support_faceInclusion_mem {P : PreAbstractSimplicialComplex ι}
     (hP : P ≤ L.toPreAbstractSimplicialComplex) {σ : Finset ι} (hσ : σ ∈ P)
-    (x : StandardSimplex σ) : (faceInclusion L ⟨σ, hP hσ⟩ x).1.support ∈ P := by
+    (x : StandardSimplex σ) : (faceInclusion L ⟨σ, hP hσ⟩ x).val.support ∈ P := by
   rw [faceInclusion_val]
   exact P.isRelLowerSet_faces.mem_of_le hσ (StandardSimplex.support_subset x)
     (by simpa only [faceInclusion_val] using
@@ -119,11 +119,11 @@ theorem support_faceInclusion_mem {P : PreAbstractSimplicialComplex ι}
 precomplex omits ambient vertices or has no faces. -/
 theorem isClosed_setOf_support_mem {P : PreAbstractSimplicialComplex ι}
     (hP : P ≤ L.toPreAbstractSimplicialComplex) :
-    IsClosed {x : Realization L | x.1.support ∈ P} := by
+    IsClosed {x : Realization L | x.val.support ∈ P} := by
   apply isClosed_of_faceInclusion hP (fun _ hx => hx)
   intro σ hσ
   have heq : faceInclusion L ⟨σ, hP hσ⟩ ⁻¹'
-      {x : Realization L | x.1.support ∈ P} = univ := by
+      {x : Realization L | x.val.support ∈ P} = univ := by
     ext x
     exact iff_true_intro (support_faceInclusion_mem hP hσ x)
   exact heq.symm ▸ isClosed_univ
@@ -133,7 +133,7 @@ with each canonical face map into that polyhedron is continuous. The domain carr
 subspace topology of the ambient weak realization, without any finiteness assumption. -/
 theorem continuous_subtype_iff_faceInclusion {X : Type*} [TopologicalSpace X]
     {P : PreAbstractSimplicialComplex ι} (hP : P ≤ L.toPreAbstractSimplicialComplex)
-    {g : {x : Realization L // x.1.support ∈ P} → X} :
+    {g : {x : Realization L // x.val.support ∈ P} → X} :
     Continuous g ↔ ∀ (σ : Finset ι) (hσ : σ ∈ P),
       Continuous (g ∘ fun x : StandardSimplex σ =>
         ⟨faceInclusion L ⟨σ, hP hσ⟩ x, support_faceInclusion_mem hP hσ x⟩) := by
@@ -147,7 +147,7 @@ theorem continuous_subtype_iff_faceInclusion {X : Type*} [TopologicalSpace X]
     rw [(isClosed_setOf_support_mem hP).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed]
     apply isClosed_of_faceInclusion hP
     · rintro x ⟨y, _, rfl⟩
-      exact y.2
+      exact y.property
     · intro σ hσ
       convert ht.preimage (hg σ hσ) using 1
       ext x
@@ -164,7 +164,7 @@ topology inherited from the ambient weak realization. The subcomplex may omit ve
 theorem continuousOn_iff_faceInclusion {X : Type*} [TopologicalSpace X]
     {P : PreAbstractSimplicialComplex ι} (hP : P ≤ L.toPreAbstractSimplicialComplex)
     {f : Realization L → X} :
-    ContinuousOn f {x | x.1.support ∈ P} ↔
+    ContinuousOn f {x | x.val.support ∈ P} ↔
       ∀ (σ : Finset ι) (hσ : σ ∈ P), Continuous (f ∘ faceInclusion L ⟨σ, hP hσ⟩) := by
   rw [continuousOn_iff_continuous_domRestrict]
   exact continuous_subtype_iff_faceInclusion hP

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.TypeA
+public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
@@ -15,8 +15,8 @@ Bordered Heegaard Floer homology attaches to a three-manifold with two parametri
 components a type `DA` bimodule, and gluing along one boundary component is a box tensor product.
 This file sets up type `DA` bimodules over ungraded differential algebras
 (`TauCeti.IsUngradedDGAlgebra`) over a ring of characteristic two, their box tensor products with
-differential modules on one side and with type `D` structures on the other, and the associativity
-`(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` relating the two.
+differential modules on one side and with type `D` structures on the other, the latter also over
+the idempotents, and the associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` relating the two.
 
 A type `DA` bimodule `P = ^B P_A`, of type `D` over `(B, dB)` on the left and of type `A` over
 `(A, dA)` on the right, has operations `δ¹_{n+1} : P ⊗ A^{⊗ n} → B ⊗ P` for every `n ≥ 0`. As for
@@ -29,8 +29,10 @@ multilinear in the inputs (`TauCeti.TypeDAStructure`). The structure relation of
 `  + ∑_l δₙ(a₁, …, dA aₗ, …, aₙ) + ∑_l δₙ₋₁(a₁, …, aₗ aₗ₊₁, …, aₙ) = 0`,
 
 the matrix form of `(μ₂ ⊗ 1) ∘ (1 ⊗ δ¹) ∘ δ¹ + (μ₁ ⊗ 1) ∘ δ¹ + δ¹ ∘ (1 ⊗ d) + δ¹ ∘ (1 ⊗ μ₂) = 0`,
-with no signs over a ring of characteristic two. Only the idempotents of `B` are recorded; the
-idempotents of `A` at the generators, and strict unitality, are not needed below.
+with no signs over a ring of characteristic two. Only the idempotents of `B` are recorded in the
+structure. The idempotents of `A` at the generators enter through the predicate
+`TauCeti.TypeDAStructure.IsRightIdemCompatible`, for the box tensor product over the idempotents
+below; strict unitality is not needed.
 
 * **The type `A` module `M ⊠ P`.** For a differential right `B`-module `(M, dM)`, the row vectors
   `Y → M`, standing for `∑ y, ψ y ⊗ y`, form an `A∞` right module over `A`
@@ -51,19 +53,32 @@ idempotents of `A` at the generators, and strict unitality, are not needed below
   equation of `P ⊠ N` is proved: for `M = B`, the row of `dB δ + δ * δ` at a generator `p` is the
   square of the box tensor differential at `1 ⊗ p`, which vanishes because the box tensor
   differential of the type `A` module `B ⊠ P` with `N` squares to zero.
+* **The box tensor product over the idempotents.** If each generator `y` of `P` carries a right
+  idempotent `ιA (idemA y)` of `A` for which the operations are right linear
+  (`TauCeti.TypeDAStructure.IsRightIdemCompatible`), and the idempotents of `A` are orthogonal,
+  then `δ¹` of `P ⊠ N` never leads from a generator `(y, x)` with `idemA y = idem x` to one with
+  `idemA y' ≠ idem x'` (`TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_isRightIdemCompatible`). The
+  elementary tensors of the second kind vanish over the idempotents, so restricting `P ⊠ N` to the
+  matching generators gives the box tensor product `P ⊠_I N` over the idempotents, a type `D`
+  structure over `B` (`TauCeti.TypeDAStructure.boxTensorTypeD`).
 * **The identity bimodule.** When the idempotents `ι s` of `A` are cycles summing to `1`, the
   identity bimodule `[I]` (`TauCeti.TypeDAStructure.identity`) has one generator at each
   idempotent and the single operation `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t`. If the idempotents are
   moreover orthogonal, the coefficients of `[I] ⊠ N` restricted to the generators `(idem x, x)` are
   those of `N`, and the other generators carry zero coefficients
-  (`TauCeti.TypeDAStructure.boxCoeff_identity`).
+  (`TauCeti.TypeDAStructure.boxCoeff_identity`). The identity bimodule is compatible with the
+  right idempotents `s ↦ s` (`TauCeti.TypeDAStructure.isRightIdemCompatible_identity`), and
+  `[I] ⊠_I N` is `N`: its generators are the pairs `(idem x, x)`, with the idempotents and the
+  coefficients of `N` (`TauCeti.TypeDAStructure.boxTensorTypeD_identity_idem`,
+  `TauCeti.TypeDAStructure.boxTensorTypeD_identity_coeff`).
 
-The tensor products here are taken over `R` on the generators, as for the box tensor differential
-of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose idempotents do not
-match are among the generators of `P ⊠ N`, and they vanish in the tensor product over the
-idempotents. The type `A` module `M ⊠ P` is built here from a differential module `M`; the box
-tensor product of a general `A∞` module with a type `DA` bimodule, and the associativity for it,
-are not treated.
+The tensor products in `M ⊠ P` and `P ⊠ N` are taken over `R` on the generators, as for the box
+tensor differential of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose
+idempotents do not match are among the generators of `P ⊠ N`, and they vanish in the tensor product
+over the idempotents, which `P ⊠_I N` discards. The type `A` module `M ⊠ P` is built here from a
+differential module `M`; for a general `A∞` module `M` whose operations vanish from some arity on it
+is `TauCeti.TypeDAStructure.typeABoxModule`, in `TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA`.
+The associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is not treated.
 
 ## Main definitions
 
@@ -72,6 +87,9 @@ are not treated.
 * `TauCeti.TypeDAStructure.boxModule`: the type `A` module `M ⊠ P`.
 * `TauCeti.TypeDAStructure.boxCoeff` and `TauCeti.TypeDAStructure.boxTypeD`: the coefficient
   matrix of `P ⊠ N`, and `P ⊠ N` as a type `D` structure.
+* `TauCeti.TypeDAStructure.IsRightIdemCompatible`: the operations of `P` are right linear over
+  idempotents of `A` attached to its generators.
+* `TauCeti.TypeDAStructure.boxTensorTypeD`: the box tensor product `P ⊠_I N` over the idempotents.
 * `TauCeti.TypeDAStructure.identity`: the identity bimodule `[I]`.
 
 ## Main results
@@ -81,8 +99,12 @@ are not treated.
 * `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply` and
   `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
   `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`, on row vectors and through the type `D` structure `P ⊠ N`.
+* `TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_isRightIdemCompatible`: `δ¹` of `P ⊠ N` does not
+  lead from a generator with matching idempotents to one without.
 * `TauCeti.TypeDAStructure.boxCoeff_identity`: the coefficients of `[I] ⊠ N` are those of `N` on
   the generators `(idem x, x)` and zero on the others.
+* `TauCeti.TypeDAStructure.boxTensorTypeD_identity_coeff` and
+  `TauCeti.TypeDAStructure.boxTensorTypeD_identity_idem`: `[I] ⊠_I N` is `N`.
 
 ## References
 
@@ -196,7 +218,7 @@ private theorem boxAct_apply_of_ne_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n �
   rw [boxAct_apply, ite_eq_right hn, zero_add]
 
 /-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
-private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+theorem coeff_congr {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
     (hab : ∀ l, b l = a (Fin.cast h l)) : P.coeff m b = P.coeff n a := by
   subst h
   congr 1
@@ -228,7 +250,7 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       fun y => dM (P.boxAct dM n a φ y) := by
     rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => ite_eq_right (by
       have := Fin.val_lt_last hk; omega)) (by simp),
-      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_eq_of_eq (Fin.val_last n),
+      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_congr (Fin.val_last n),
       Fin.val_last]
     exact fun l => congrArg a (Fin.ext (by simp))
   -- Only the first composite has `m₁` inside.
@@ -238,7 +260,7 @@ private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngrade
       continuationMap R M (P.coeff n a) (fun y => dM (φ y)) := by
     rw [Finset.sum_eq_single 0 (fun k _ hk => by
       rw [ite_eq_right (Fin.val_ne_zero_iff.mpr hk), map_zero]) (by simp),
-      ite_eq_left (Fin.val_zero _), P.coeff_eq_of_eq (n := n) (by simp)]
+      ite_eq_left (Fin.val_zero _), P.coeff_congr (n := n) (by simp)]
     exact fun l => congrArg a (Fin.ext (by rw [Fin.val_cast]; simp))
   -- The Leibniz rule for `dM (ψ ⬝ δₙ)`.
   have hdM : (fun y => dM (P.boxAct dM n a φ y)) =
@@ -528,6 +550,93 @@ theorem typeABoxDifferential_boxModule (hM : IsUngradedDGRightModule dB dM)
 
 end Associativity
 
+/-! ### The box tensor product over the idempotents -/
+
+section BoxTensor
+
+variable {T : Type*} (P : TypeDAStructure dA dB ιB Y) (ιA : T → A)
+
+/-- A type `DA` bimodule `^B P_A` is **compatible with right idempotents** `idemA` when each
+generator `y` lies, on the right, in the summand of the idempotent `ιA (idemA y)` of `A`, and the
+operations are right linear over the idempotents:
+`δ¹_{k+1}(y, a₁, …, aₖ ι) = δ¹_{k+1}(y, a₁, …, aₖ) ι` for an idempotent `ι` of `A`, and
+`δ¹₁(y ι) = δ¹₁(y) ι`. In terms of the coefficient matrices, for orthogonal idempotents: the
+coefficient of `δ¹₁` from `y` to `y'` vanishes unless `y` and `y'` have the same idempotent, and
+the coefficient of `δ¹_{k+1}` to `y'` only sees the last input through its summand
+`aₖ * ιA (idemA y')`. -/
+structure IsRightIdemCompatible (idemA : Y → T) : Prop where
+  /-- `δ¹₁` preserves the right idempotents of the generators. -/
+  coeff_zero_eq_zero (a : Fin 0 → A) {y y' : Y} (h : idemA y ≠ idemA y') : P.coeff 0 a y y' = 0
+  /-- The coefficient to `y'` of `δ¹_{k+1}` only sees the summand `aₖ * ιA (idemA y')` of its
+  last input. -/
+  coeff_update_last_mul (n : ℕ) (a : Fin (n + 1) → A) (y y' : Y) :
+    P.coeff (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ιA (idemA y'))) y y' =
+      P.coeff (n + 1) a y y'
+
+variable {ιA} {X : Type*} [Fintype X] [DecidableEq X] (N : TypeDStructure dA ιA X) {idemA : Y → T}
+
+/-- **The generators of `P ⊠ N` over the idempotents are closed under `δ¹`.** If `P` is compatible
+with right idempotents `idemA` and the idempotents of `A` are orthogonal, the coefficient of
+`P ⊠ N` from a generator `(y, x)` with `idemA y = idem x` to a generator `(y', x')` with
+`idemA y' ≠ idem x'` vanishes: these elementary tensors `y' ⊗ x'` are zero over the idempotents,
+and `δ¹` of `y ⊗ x` does not reach them. -/
+theorem boxCoeff_eq_zero_of_isRightIdemCompatible (hP : P.IsRightIdemCompatible ιA idemA)
+    (hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0) {p q : Y × X} (hp : idemA p.1 = N.idem p.2)
+    (hq : idemA q.1 ≠ N.idem q.2) : P.boxCoeff N p q = 0 := by
+  refine finsum_eq_zero_of_forall_eq_zero fun k => ?_
+  cases k with
+  | zero =>
+    -- `δ⁰` is the identity, and `δ¹₁` preserves right idempotents.
+    rw [N.iteratedCoeff_zero]
+    split_ifs with hx
+    · rw [PiTensorProduct.lift.tprod]
+      exact hP.coeff_zero_eq_zero _ fun h' => hq (h'.symm.trans (hp.trans (congrArg N.idem hx)))
+    · rw [map_zero, Matrix.zero_apply]
+  | succ n =>
+    -- The last coefficient of each path ends at `x'`, so it lies in `A * ιA (idem x')`, which
+    -- `ιA (idemA y')` annihilates on the right.
+    rw [N.lift_iteratedCoeff, Matrix.sum_apply]
+    refine Finset.sum_eq_zero fun r hr => ?_
+    rw [Finset.mem_filter] at hr
+    rw [← hP.coeff_update_last_mul, MultilinearMap.map_coord_zero _ (Fin.last n),
+      Matrix.zero_apply]
+    simp only [Function.update_self, Fin.succ_last, hr.2.2]
+    rw [← N.coeff_mul_idem, mul_assoc, hιA _ _ (Ne.symm hq), mul_zero]
+
+variable [DecidableEq T] [CharP R 2]
+
+/-- **The box tensor product over the idempotents** `P ⊠_I N` of a type `DA` bimodule compatible
+with right idempotents `idemA` and a type `D` structure `N` over `A` with orthogonal idempotents:
+the type `D` structure over `B` on the generators `y ⊗ x` with matching idempotents
+`idemA y = idem x`, with the coefficients of `P ⊠ N`
+(`TauCeti.TypeDAStructure.boxTypeD`). The other elementary tensors vanish in the tensor product
+over the idempotents, and `δ¹` of `P ⊠ N` does not reach them from the matching ones
+(`TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_isRightIdemCompatible`). It is defined when `N` is
+bounded or the operations of `P` vanish from some arity on, over a ring of characteristic two. -/
+noncomputable def boxTensorTypeD (hP : P.IsRightIdemCompatible ιA idemA)
+    (hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0) (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) :
+    TypeDStructure dB ιB {p : Y × X // idemA p.1 = N.idem p.2} :=
+  (P.boxTypeD N hdB h).restrict (fun p => idemA p.1 = N.idem p.2)
+    fun _ _ hp hq => by
+      rw [boxTypeD_coeff]
+      exact P.boxCoeff_eq_zero_of_isRightIdemCompatible N hP hιA hp hq
+
+variable {hP : P.IsRightIdemCompatible ιA idemA} {hιA : ∀ s t, s ≠ t → ιA s * ιA t = 0}
+  {hdB : IsUngradedDGAlgebra dB} {h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0}
+
+@[simp]
+theorem boxTensorTypeD_idem (p : {p : Y × X // idemA p.1 = N.idem p.2}) :
+    (P.boxTensorTypeD N hP hιA hdB h).idem p = P.idem p.val.1 := by
+  rw [boxTensorTypeD, TypeDStructure.restrict_idem, boxTypeD_idem]
+
+@[simp]
+theorem boxTensorTypeD_coeff (p q : {p : Y × X // idemA p.1 = N.idem p.2}) :
+    (P.boxTensorTypeD N hP hιA hdB h).coeff p q = P.boxCoeff N p q := by
+  rw [boxTensorTypeD, TypeDStructure.restrict_coeff, boxTypeD_coeff]
+
+end BoxTensor
+
 /-! ### The identity bimodule -/
 
 section Identity
@@ -668,6 +777,13 @@ theorem identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι 
     (identity ι hd hι hιι hsum).coeff n = 0 :=
   identityCoeff_eq_zero hn
 
+/-- The operations of the identity bimodule vanish from arity two on, so it can be boxed with any
+type `D` structure (`TauCeti.TypeDAStructure.boxTypeD`). -/
+theorem exists_forall_ge_identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d)
+    (hι : ∀ s, d (ι s) = 0) (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) :
+    ∃ K, ∀ k, K ≤ k → (identity ι hd hι hιι hsum).coeff k = 0 :=
+  ⟨2, fun _ hk => identity_coeff_eq_zero hd hι hιι hsum (by omega)⟩
+
 /-- **The coefficients of `[I] ⊠ N`.** If moreover the idempotents are orthogonal, the coefficient
 of `[I] ⊠ N` from `(s, x)` to `(t, x')` is the coefficient of `N` from `x` to `x'` when `s` and `t`
 are the idempotents of `x` and `x'`, and zero otherwise. So the coefficients restricted to the
@@ -695,6 +811,48 @@ theorem boxCoeff_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 
   · -- `δ = ι (idem x) * δ` and `ι s * ι (idem x) = 0`.
     rw [ite_eq_right fun h => h₁ h.1, ← N.idem_mul_coeff]
     simp only [← mul_assoc, hιo _ _ h₁, zero_mul]
+
+/-- The identity bimodule is compatible with right idempotents, the generator `s` lying on the
+right in the summand of `ι s`: its only operation `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t` sees `a`
+through `a * ι t` in its coefficient to `t`. -/
+theorem isRightIdemCompatible_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) :
+    (identity ι hd hι hιι hsum).IsRightIdemCompatible ι id where
+  coeff_zero_eq_zero a s t _ := by
+    rw [identity_coeff_eq_zero hd hι hιι hsum zero_ne_one, zero_apply, Matrix.zero_apply]
+  coeff_update_last_mul n a s t := by
+    match n with
+    | 0 => simp [identity_coeff_one_apply, mul_assoc, hιι]
+    | n + 1 =>
+      simp [identity_coeff_eq_zero hd hι hιι hsum (show n + 1 + 1 ≠ 1 by omega)]
+
+variable [DecidableEq S] {X : Type*} [Fintype X] [DecidableEq X]
+
+/-- **`[I] ⊠ N` is `N` over the idempotents.** If the idempotents are moreover orthogonal, the
+generators of the box tensor product over the idempotents of the identity bimodule with `N` are
+the pairs `(idem x, x)`, identified with the generators `x` of `N` by `p ↦ p.1.2`, and this
+identification carries the coefficients of `[I] ⊠_I N` to those of `N`. It also carries the
+idempotents (`TauCeti.TypeDAStructure.boxTensorTypeD_identity_idem`), so it is an isomorphism of
+type `D` structures. -/
+theorem boxTensorTypeD_identity_coeff (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
+    (N : TypeDStructure d ι X) (p q : {p : S × X // p.1 = N.idem p.2}) :
+    ((identity ι hd hι hιι hsum).boxTensorTypeD N (isRightIdemCompatible_identity hd hι hιι hsum)
+        hιo hd (Or.inr (exists_forall_ge_identity_coeff_eq_zero hd hι hιι hsum))).coeff
+        p q =
+      N.coeff p.val.2 q.val.2 := by
+  rw [boxTensorTypeD_coeff, boxCoeff_identity hd hι hιι hsum hιo,
+    ite_eq_left ⟨p.property, q.property⟩]
+
+/-- The idempotent of a generator `(idem x, x)` of `[I] ⊠_I N` is the idempotent of `x`. -/
+theorem boxTensorTypeD_identity_idem (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
+    (N : TypeDStructure d ι X) (p : {p : S × X // p.1 = N.idem p.2}) :
+    ((identity ι hd hι hιι hsum).boxTensorTypeD N (isRightIdemCompatible_identity hd hι hιι hsum)
+        hιo hd (Or.inr (exists_forall_ge_identity_coeff_eq_zero hd hι hιι hsum))).idem
+        p =
+      N.idem p.val.2 := by
+  rw [boxTensorTypeD_idem, identity_idem, p.property]
 
 end Identity
 

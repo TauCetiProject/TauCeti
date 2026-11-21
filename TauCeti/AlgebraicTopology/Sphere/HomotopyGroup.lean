@@ -18,6 +18,8 @@ public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
+import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # Homotopy groups of spheres up to their dimension
@@ -50,7 +52,9 @@ The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12.
 `(n - 1)`-skeleton is a single point. The inclusion of that skeleton is surjective on `πₖ` for
 `k ≤ n - 1` (`TauCeti.surjective_homotopyGroupMap_skeletonLT`), so `πₖ(Sⁿ)` is trivial at the
 `0`-cell, and hence at every base point since `Sⁿ` is path connected. Spheres of normed spaces are
-reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`.
+reduced to Euclidean ones through `TauCeti.sphereHomeomorphOfFinrankEq`. A punctured space
+`E ∖ {y}` is homotopy equivalent to the unit sphere, so it is `(n - 1)`-connected as well
+(`TauCeti.subsingleton_homotopyGroup_compl_singleton_of_lt`).
 
 In particular the unit sphere `S^{4k-1}` of the quaternionic coordinate space `ℍᵏ` is
 `(4k - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`), and the unit
@@ -64,6 +68,8 @@ basis, so its sign depends on the orientation of that basis.
 ## Main declarations
 
 * `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`: `πₖ(Sⁿ, x)` is trivial for `k < n`.
+* `TauCeti.subsingleton_homotopyGroup_compl_singleton_of_lt`: `πₖ(E ∖ {y}, x)` is trivial for
+  `k < n`, for an `(n + 1)`-dimensional real normed space `E`.
 * `TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`: `πₖ(ΩSⁿ)` is trivial for
   `k + 1 < n`.
 * `TauCeti.pathConnectedSpace_loopSpace_sphere`: `ΩSⁿ` is path connected for `n ≥ 2`.
@@ -131,6 +137,23 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
     finrank ℝ E = finrank ℝ F)
   exact (HomotopyGroup.homeomorphEquiv (N := N) h x).subsingleton_congr.mpr
     (subsingleton_homotopyGroup_of_pathConnectedSpace hpole)
+
+/-- **Punctured spaces are `(n - 1)`-connected.** For an `(n + 1)`-dimensional real normed space
+`E` and any point `y : E`, the homotopy set `πₖ(E ∖ {y}, x)` is trivial for every
+`k = Nat.card N < n`, since `E ∖ {y}` is homotopy equivalent to the unit sphere `Sⁿ`
+(`TauCeti.complSingletonHomotopyEquivSphere`). -/
+theorem subsingleton_homotopyGroup_compl_singleton_of_lt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (y : E)
+    {N : Type*} (hN : Nat.card N < n) (x : ({y}ᶜ : Set E)) :
+    Subsingleton (HomotopyGroup N ({y}ᶜ : Set E) x) := by
+  by_cases hfin : Finite N
+  swap
+  · -- for an infinite index set every homotopy set is trivial
+    have := not_finite_iff_infinite.1 hfin
+    infer_instance
+  let e := complSingletonHomotopyEquivSphere y
+  have := subsingleton_homotopyGroup_sphere_of_lt hE hN (e.toFun x)
+  exact (HomotopyGroup.equivOfHomotopyEquiv e x).subsingleton
 
 /-- **The loop space of `Sⁿ` is `(n - 2)`-connected.** For the unit sphere `Sⁿ` of an
 `(n + 1)`-dimensional real normed space, `πₖ(ΩSⁿ)` is trivial for every `k + 1 < n`. -/

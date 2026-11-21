@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.ProperSupport
+public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Basic
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 
 /-!
 # Composition with a properly supported operator
@@ -91,18 +91,16 @@ private def bump (r : ℝ) (x : CoordinateSpace n) : ContDiffBump x :=
 
 /-- The localization `ψ(y) b(y, ξ)` of `b` by the bump function `ψ = bump r x`. -/
 private def localize (r : ℝ) (x : CoordinateSpace n) (b : Symbol n V W m) : Symbol n V W m :=
-  inclusion (by simp) ((ofSpatial (fun y ↦ bump r x y • ContinuousLinearMap.id ℂ W)
-    ((bump r x).contDiff.smul contDiff_const)).comp b)
+  smulLeft (Complex.ofRealCLM.contDiff.comp (bump r x).contDiff) b
 
 private theorem hasCompactSpatialSupport_localize (r : ℝ) (x : CoordinateSpace n)
     (b : Symbol n V W m) : (localize r x b).HasCompactSpatialSupport :=
-  (((hasCompactSpatialSupport_ofSpatial_iff _).2
-    (bump r x).hasCompactSupport.smul_right).comp_right b).inclusion _
+  hasCompactSpatialSupport_smulLeft _ ((bump r x).hasCompactSupport.comp_left Complex.ofReal_zero) b
 
 private theorem coefficient_localize {r : ℝ} {x y : CoordinateSpace n} (hy : dist y x ≤ max r 1)
     (b : Symbol n V W m) (ξ : CoordinateSpace n) :
     (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) := by
-  simp [localize, coefficient_comp, coefficient_ofSpatial, (bump r x).one_of_mem_closedBall hy]
+  simp [localize, (bump r x).one_of_mem_closedBall hy]
 
 private theorem coefficient_localize_of_mem_ball {r : ℝ} {x y : CoordinateSpace n}
     (hy : y ∈ ball x r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :
@@ -261,7 +259,7 @@ theorem isAsymptoticSum_properSharp (b : Symbol n V W m) :
     exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  simp only [coefficient_sharpTerm, mixedDeriv_congr_of_eventually hev]
+  exact coefficient_sharpTerm_congr_of_eventually hev a k η
 
 end Symbol
 

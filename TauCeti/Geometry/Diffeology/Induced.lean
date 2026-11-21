@@ -17,8 +17,10 @@ plots, and a map into `Y` is smooth exactly when its composite with `f` is smoot
 along a composite is inducing twice.
 
 Inducing along `Subtype.val` gives the subspace diffeology on a subtype, the diffeological
-counterpart of Mathlib's subspace topology `instTopologicalSpaceSubtype`. It is used to restrict
-smooth spaces, such as the coarse spaces of finite quotient charts, to open subsets:
+counterpart of Mathlib's subspace topology `instTopologicalSpaceSubtype`. In particular, a map from
+a Cartesian space is a local plot on a subset `u` precisely when its restriction `u.domRestrict p`
+is smooth (`TauCeti.Diffeology.isPlotOn_iff_dSmooth_domRestrict`). Subspace diffeologies are used
+to restrict smooth spaces, such as the coarse spaces of finite quotient charts, to open subsets:
 
 * On a subset that is open for the D-topology, the D-topology of the subspace diffeology is the
   subspace topology of the D-topology (`TauCeti.Diffeology.dTopology_subtype_of_isOpen`). Hence
@@ -131,6 +133,14 @@ theorem _root_.Diffeology.DSmooth.subtype_mk [DiffeologicalSpace Y] {f : Y → X
     _root_.Diffeology.DSmooth fun y ↦ (⟨f y, hP y⟩ : Subtype P) :=
   (dSmooth_inducedDiffeology_rng Subtype.val _).mpr hf
 
+/-- A map from a Cartesian space is a local plot on a subset `u` if and only if its restriction to
+`u` is smooth for the subspace diffeology. -/
+theorem isPlotOn_iff_dSmooth_domRestrict {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → X} :
+    IsPlotOn u p ↔ _root_.Diffeology.DSmooth (u.domRestrict p) :=
+  ⟨fun hp _ q hq ↦ hp.isPlot_comp (fun z _ ↦ (q z).property) (isPlot_subtype_iff.mp hq).contDiff,
+    fun hp ↦ isPlotOn_iff.mpr fun f hfu hf ↦
+      hp _ (fun z ↦ ⟨f z, hfu (mem_univ z)⟩) (isPlot_subtype_iff.mpr hf.isPlot)⟩
+
 /-! ### D-topologies of open subspaces -/
 
 /-- On a subset that is open for the D-topology, the D-topology of the subspace diffeology is the
@@ -153,8 +163,8 @@ theorem dTopology_subtype_of_isOpen {U : Set X} (hU : IsOpen[_root_.Diffeology.d
   have hp' : EqOn p (Subtype.val ∘ p') (p ⁻¹' U) := fun y hy ↦ by
     simp [p', show p y ∈ U from hy]
   have hplot : IsPlotOn (p ⁻¹' U) p' :=
-    isPlotOn_subtype_iff.mpr ((isPlotOn_of_isPlot hp _).congr hp')
-  have hzU : p z ∈ U := hx ▸ x.2
+    isPlotOn_subtype_iff.mpr ((hp.isPlotOn _).congr hp')
+  have hzU : p z ∈ U := hx ▸ x.property
   let : TopologicalSpace U := _root_.Diffeology.dTopology
   refine ⟨p ⁻¹' U ∩ p' ⁻¹' W, fun y ⟨hyU, hyW⟩ ↦ ⟨p' y, hyW, (hp' hyU).symm⟩,
     (hplot.continuousOn ho).isOpen_inter_preimage ho hW, hzU, ?_⟩
@@ -215,7 +225,7 @@ theorem IsSubduction.restrictPreimage [DiffeologicalSpace Q] {q : X → Q} (hq :
     -- On `v`, the lift lands in the preimage of `t`, since its image under `q` is `p`.
     have hmem : ∀ y ∈ v, lift y ∈ q ⁻¹' t := fun y hy ↦ by
       rw [mem_preimage, ← comp_apply (f := q), hq' hy]
-      exact (p y).2
+      exact (p y).property
     let lift' : 𝔼ⁿ → q ⁻¹' t := fun y ↦ if h : lift y ∈ q ⁻¹' t then ⟨lift y, h⟩
       else ⟨lift z, hmem z hzv⟩
     have hlift' : ∀ y (hy : y ∈ v), lift' y = ⟨lift y, hmem y hy⟩ := fun y hy ↦ by

@@ -51,6 +51,9 @@ No enough projectives or injectives are assumed, and `R` need not be Artinian.
 
 * `TauCeti.ExactStructure.stablePairing φ B` and `TauCeti.ExactStructure.costablePairing φ X`: the
   two pairings induced by a linear form `φ : Ext¹_E(A, T) → Q`.
+* `TauCeti.ExactStructure.stableIsoOfBijective` and
+  `TauCeti.ExactStructure.costableIsoOfBijective`: objects representing `D Ext¹_E(-, T)` on `E/𝒫`,
+  resp. `D Ext¹_E(A, -)` on `E/ℐ`, are isomorphic there.
 
 ## Main results
 
@@ -209,6 +212,156 @@ theorem costablePairing_map (φ : E.Ext1 A T →ₗ[R] Q) {X : C} (a : X ⟶ T) 
     costablePairing φ X (E.injectivelyTrivialIdeal.quotientFunctor.map a) ξ = φ (ξ.pushout a) := by
   simp [costablePairing]
 
+@[simp]
+theorem stablePairing_id (φ : E.Ext1 A T →ₗ[R] Q) :
+    stablePairing φ A (𝟙 (E.projectivelyTrivialIdeal.quotientFunctor.obj A)) = φ := by
+  ext η
+  rw [← E.projectivelyTrivialIdeal.quotientFunctor.map_id, stablePairing_map, Ext1.pullback_id]
+
+/-- The stable pairing of a composite `x ≫ y` is that of `y` with the form `x` induces. -/
+theorem stablePairing_comp (φ : E.Ext1 A T →ₗ[R] Q) {B B' : C}
+    (x : E.projectivelyTrivialIdeal.quotientFunctor.obj A ⟶
+      E.projectivelyTrivialIdeal.quotientFunctor.obj B)
+    (y : E.projectivelyTrivialIdeal.quotientFunctor.obj B ⟶
+      E.projectivelyTrivialIdeal.quotientFunctor.obj B') :
+    stablePairing φ B' (x ≫ y) = stablePairing (stablePairing φ B x) B' y := by
+  obtain ⟨c, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective x
+  obtain ⟨d, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective y
+  ext η
+  rw [← Functor.map_comp, stablePairing_map, stablePairing_map, stablePairing_map,
+    Ext1.pullback_pullback]
+
+@[simp]
+theorem costablePairing_id (φ : E.Ext1 A T →ₗ[R] Q) :
+    costablePairing φ T (𝟙 (E.injectivelyTrivialIdeal.quotientFunctor.obj T)) = φ := by
+  ext ξ
+  rw [← E.injectivelyTrivialIdeal.quotientFunctor.map_id, costablePairing_map, Ext1.pushout_id]
+
+/-- The costable pairing of a composite `x ≫ y` is that of `x` with the form `y` induces. -/
+theorem costablePairing_comp (φ : E.Ext1 A T →ₗ[R] Q) {X Y : C}
+    (x : E.injectivelyTrivialIdeal.quotientFunctor.obj X ⟶
+      E.injectivelyTrivialIdeal.quotientFunctor.obj Y)
+    (y : E.injectivelyTrivialIdeal.quotientFunctor.obj Y ⟶
+      E.injectivelyTrivialIdeal.quotientFunctor.obj T) :
+    costablePairing φ X (x ≫ y) = costablePairing (costablePairing φ Y y) X x := by
+  obtain ⟨a, rfl⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective x
+  obtain ⟨b, rfl⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective y
+  ext ξ
+  rw [← Functor.map_comp, costablePairing_map, costablePairing_map, costablePairing_map,
+    Ext1.pushout_pushout]
+
+/-- **Representing objects are unique in `E/𝒫`.** If `A` and `A'` both represent
+`D Ext¹_E(-, T)` on `E/𝒫`, with universal elements `φ` and `φ'`, they are isomorphic in `E/𝒫`,
+by the isomorphism whose stable pairing with `φ` is `φ'`. -/
+noncomputable def stableIsoOfBijective {A' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A' T →ₗ[R] Q} (h : ∀ B, Function.Bijective (stablePairing φ B))
+    (h' : ∀ B, Function.Bijective (stablePairing φ' B)) :
+    E.projectivelyTrivialIdeal.quotientFunctor.obj A ≅
+      E.projectivelyTrivialIdeal.quotientFunctor.obj A' where
+  hom := Function.surjInv (h A').2 φ'
+  inv := Function.surjInv (h' A).2 φ
+  hom_inv_id := (h A).1 <| by
+    rw [stablePairing_comp, Function.surjInv_eq (f := stablePairing φ A') (h A').2,
+      Function.surjInv_eq (f := stablePairing φ' A) (h' A).2, stablePairing_id]
+  inv_hom_id := (h' A').1 <| by
+    rw [stablePairing_comp, Function.surjInv_eq (f := stablePairing φ' A) (h' A).2,
+      Function.surjInv_eq (f := stablePairing φ A') (h A').2, stablePairing_id]
+
+@[simp]
+theorem stablePairing_stableIsoOfBijective_hom {A' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A' T →ₗ[R] Q} (h : ∀ B, Function.Bijective (stablePairing φ B))
+    (h' : ∀ B, Function.Bijective (stablePairing φ' B)) :
+    stablePairing φ A' (stableIsoOfBijective h h').hom = φ' :=
+  Function.surjInv_eq (f := stablePairing φ A') (h A').2 φ'
+
+@[simp]
+theorem stablePairing_stableIsoOfBijective_inv {A' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A' T →ₗ[R] Q} (h : ∀ B, Function.Bijective (stablePairing φ B))
+    (h' : ∀ B, Function.Bijective (stablePairing φ' B)) :
+    stablePairing φ' A (stableIsoOfBijective h h').inv = φ :=
+  Function.surjInv_eq (f := stablePairing φ' A) (h' A).2 φ
+
+@[simp]
+theorem stableIsoOfBijective_symm {A' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A' T →ₗ[R] Q} (h : ∀ B, Function.Bijective (stablePairing φ B))
+    (h' : ∀ B, Function.Bijective (stablePairing φ' B)) :
+    (stableIsoOfBijective h h').symm = stableIsoOfBijective h' h :=
+  Iso.ext <| (h' A).1 <| by
+    rw [Iso.symm_hom, stablePairing_stableIsoOfBijective_inv,
+      stablePairing_stableIsoOfBijective_hom]
+
+/-- **Representing objects are unique in `E/ℐ`.** If `T` and `T'` both represent
+`D Ext¹_E(A, -)` on `E/ℐ`, with universal elements `φ` and `φ'`, they are isomorphic in `E/ℐ`,
+by the isomorphism whose costable pairing with `φ'` is `φ`. -/
+noncomputable def costableIsoOfBijective {T' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A T' →ₗ[R] Q} (h : ∀ X, Function.Bijective (costablePairing φ X))
+    (h' : ∀ X, Function.Bijective (costablePairing φ' X)) :
+    E.injectivelyTrivialIdeal.quotientFunctor.obj T ≅
+      E.injectivelyTrivialIdeal.quotientFunctor.obj T' where
+  hom := Function.surjInv (h' T).2 φ
+  inv := Function.surjInv (h T').2 φ'
+  hom_inv_id := (h T).1 <| by
+    rw [costablePairing_comp, Function.surjInv_eq (f := costablePairing φ T') (h T').2,
+      Function.surjInv_eq (f := costablePairing φ' T) (h' T).2, costablePairing_id]
+  inv_hom_id := (h' T').1 <| by
+    rw [costablePairing_comp, Function.surjInv_eq (f := costablePairing φ' T) (h' T).2,
+      Function.surjInv_eq (f := costablePairing φ T') (h T').2, costablePairing_id]
+
+@[simp]
+theorem costablePairing_costableIsoOfBijective_hom {T' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A T' →ₗ[R] Q} (h : ∀ X, Function.Bijective (costablePairing φ X))
+    (h' : ∀ X, Function.Bijective (costablePairing φ' X)) :
+    costablePairing φ' T (costableIsoOfBijective h h').hom = φ :=
+  Function.surjInv_eq (f := costablePairing φ' T) (h' T).2 φ
+
+@[simp]
+theorem costablePairing_costableIsoOfBijective_inv {T' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A T' →ₗ[R] Q} (h : ∀ X, Function.Bijective (costablePairing φ X))
+    (h' : ∀ X, Function.Bijective (costablePairing φ' X)) :
+    costablePairing φ T' (costableIsoOfBijective h h').inv = φ' :=
+  Function.surjInv_eq (f := costablePairing φ T') (h T').2 φ'
+
+@[simp]
+theorem costableIsoOfBijective_symm {T' : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    {φ' : E.Ext1 A T' →ₗ[R] Q} (h : ∀ X, Function.Bijective (costablePairing φ X))
+    (h' : ∀ X, Function.Bijective (costablePairing φ' X)) :
+    (costableIsoOfBijective h h').symm = costableIsoOfBijective h' h :=
+  Iso.ext <| (h T').1 <| by
+    rw [Iso.symm_hom, costablePairing_costableIsoOfBijective_inv,
+      costablePairing_costableIsoOfBijective_hom]
+
+/-- **Transport of a representing object along an isomorphism of `E/ℐ`.** If
+`costablePairing φ X` is bijective and `b : T' ⟶ T` becomes invertible in `E/ℐ`, then the costable
+pairing of `ξ ↦ φ(b_* ξ)` at `X` is bijective. -/
+theorem bijective_costablePairing_comp_pushout {T' X : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    (h : Function.Bijective (costablePairing φ X)) {b : T' ⟶ T}
+    (hb : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b)) :
+    Function.Bijective (costablePairing (φ ∘ₗ Ext1.pushoutLinearMap R b) X) := by
+  have : ⇑(costablePairing (φ ∘ₗ Ext1.pushoutLinearMap R b) X) = ⇑(costablePairing φ X) ∘
+      ⇑((Iso.refl _).homCongr (asIso (E.injectivelyTrivialIdeal.quotientFunctor.map b))) := by
+    funext x
+    obtain ⟨a, rfl⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective x
+    ext ξ
+    simp [Iso.homCongr_apply, ← Functor.map_comp]
+  rw [this]
+  exact h.comp (Equiv.bijective _)
+
+/-- **Transport of a representing object along an isomorphism of `E/𝒫`.** If
+`stablePairing φ B` is bijective and `c : A ⟶ A'` becomes invertible in `E/𝒫`, then the stable
+pairing of `η ↦ φ(c^* η)` at `B` is bijective. -/
+theorem bijective_stablePairing_comp_pullback {A' B : C} {φ : E.Ext1 A T →ₗ[R] Q}
+    (h : Function.Bijective (stablePairing φ B)) {c : A ⟶ A'}
+    (hc : IsIso (E.projectivelyTrivialIdeal.quotientFunctor.map c)) :
+    Function.Bijective (stablePairing (φ ∘ₗ Ext1.pullbackLinearMap R c) B) := by
+  have : ⇑(stablePairing (φ ∘ₗ Ext1.pullbackLinearMap R c) B) = ⇑(stablePairing φ B) ∘
+      ⇑((asIso (E.projectivelyTrivialIdeal.quotientFunctor.map c)).symm.homCongr (Iso.refl _)) := by
+    funext x
+    obtain ⟨d, rfl⟩ := E.projectivelyTrivialIdeal.quotientFunctor.map_surjective x
+    ext η
+    simp [Iso.homCongr_apply, ← Functor.map_comp]
+  rw [this]
+  exact h.comp (Equiv.bijective _)
+
 end Pairing
 
 /-! ### The local theorem -/
@@ -218,6 +371,13 @@ section Duality
 variable {R : Type*} [CommRing R] [Linear R C] {Q : Type w} [AddCommGroup Q] [Module R Q]
   [Module.Injective R Q] [Small.{w} R]
   (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1)
+
+/-- Some linear form does not vanish on the class of an almost-split conflation. -/
+theorem exists_apply_mk_ne_zero_of_isAlmostSplit
+    (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] Q)) (e : E.Extension A T)
+    (he : e.shortComplex.IsAlmostSplit) : ∃ φ : E.Ext1 A T →ₗ[R] Q, φ (Ext1.mk e) ≠ 0 :=
+  exists_apply_ne_zero_of_forall_isMaximal hQ fun h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he
+
 include hQ
 
 /-- **An almost-split class makes the stable pairing perfect.** If `e : T ⟶ Y ⟶ A` is almost
@@ -336,14 +496,13 @@ theorem tfae_exists_isAlmostSplit [IsLocalRing (End A)] [IsLocalRing (End T)]
     List.TFAE [∃ e : E.Extension A T, e.shortComplex.IsAlmostSplit,
       ∃ φ : E.Ext1 A T →ₗ[R] Q, ∀ B, Function.Bijective (stablePairing φ B),
       ∃ φ : E.Ext1 A T →ₗ[R] Q, ∀ X, Function.Bijective (costablePairing φ X)] := by
-  have hne : ∀ e : E.Extension A T, e.shortComplex.IsAlmostSplit → Ext1.mk e ≠ 0 :=
-    fun e he h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he
-  have hsep := nontrivial_linearMap_of_isMaximal hQ
   tfae_have 1 → 2 := fun ⟨e, he⟩ ↦
-    have ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal hsep (hne e he)
+    have ⟨φ, hφ⟩ := exists_apply_mk_ne_zero_of_isAlmostSplit
+      (nontrivial_linearMap_of_isMaximal hQ) e he
     ⟨φ, fun B ↦ (bijective_stablePairing_of_isAlmostSplit hQ e he hφ (hB B)).1⟩
   tfae_have 1 → 3 := fun ⟨e, he⟩ ↦
-    have ⟨φ, hφ⟩ := exists_apply_ne_zero_of_forall_isMaximal hsep (hne e he)
+    have ⟨φ, hφ⟩ := exists_apply_mk_ne_zero_of_isAlmostSplit
+      (nontrivial_linearMap_of_isMaximal hQ) e he
     ⟨φ, fun X ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he hφ (hX X)).1⟩
   tfae_have 2 → 1 := fun ⟨_, hφ⟩ ↦
     exists_isAlmostSplit_of_bijective_stablePairing hQ hA (hB A) hφ

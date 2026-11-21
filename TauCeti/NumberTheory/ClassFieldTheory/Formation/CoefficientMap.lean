@@ -95,7 +95,7 @@ zero. -/
 theorem repMap_comp_eq_zero {φ : F.toRep ⟶ F'.toRep} {ψ : F'.toRep ⟶ F''.toRep}
     (hφψ : Function.Exact φ.hom ψ.hom) : L.repMap φ ≫ L.repMap ψ = 0 := by
   ext x
-  exact hφψ.apply_apply_eq_zero x.1
+  exact hφψ.apply_apply_eq_zero x.val
 
 /-- **A short exact sequence of coefficient modules stays short exact on a layer** `V ◁ U` once
 every `V`-invariant element of the third module lifts to a `V`-invariant element of the second.
@@ -113,11 +113,11 @@ theorem shortExact_repMap {φ : F.toRep ⟶ F'.toRep} {ψ : F'.toRep ⟶ F''.toR
       have hx' : ψ.hom (x : F'.toRep.V) = 0 := congrArg Subtype.val hx
       obtain ⟨a, ha⟩ := (hφψ (x : F'.toRep.V)).1 hx'
       have hmem : a ∈ F.level L.top := F.mem_level.2 fun v hv ↦ hφ <| by
-        rw [Rep.hom_comm_apply φ, ha, F'.mem_level.1 x.2 v hv]
+        rw [Rep.hom_comm_apply φ, ha, F'.mem_level.1 x.property v hv]
       exact ⟨⟨a, hmem⟩, Subtype.ext ha⟩
   mono_f := (Rep.mono_iff_injective _).2 fun _ _ h ↦ Subtype.ext (hφ (congrArg Subtype.val h))
   epi_g := (Rep.epi_iff_surjective _).2 fun y ↦ by
-    obtain ⟨x, hx, hxy⟩ := hψ y y.2
+    obtain ⟨x, hx, hxy⟩ := hψ y y.property
     exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
 
 end NormalLayer

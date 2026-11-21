@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
@@ -35,6 +36,10 @@ not belong to any particular application.
   as the sum of integrals over the `N + 1` uniform affine subintervals.
 * `TauCeti.intervalIntegral.norm_riemannSum_sub_integral_le`: quantitative error bound for
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
+* `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
+  everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
+  function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -256,9 +261,9 @@ theorem tendstoUniformlyOn_riemannSum {α E : Type*} [TopologicalSpace α] [Norm
   have : CompactSpace (uIcc a b) := isCompact_iff_compactSpace.mp isCompact_uIcc
   have hEq : Equicontinuous fun (x : K) (t : uIcc a b) ↦ f t x := fun t ↦
     Metric.equicontinuousAt_iff_right.mpr fun η hη ↦ by
-      obtain ⟨v, hv, hvf⟩ := hK.mem_uniformity_of_prod hf t.2 (Metric.dist_mem_uniformity hη)
-      filter_upwards [nhdsWithin_eq_map_subtype_coe t.2 ▸ hv] with s hs x
-      exact dist_comm (f s x) (f t x) ▸ hvf s hs x x.2
+      obtain ⟨v, hv, hvf⟩ := hK.mem_uniformity_of_prod hf t.property (Metric.dist_mem_uniformity hη)
+      filter_upwards [nhdsWithin_eq_map_subtypeVal t.property ▸ hv] with s hs x
+      exact dist_comm (f s x) (f t x) ▸ hvf s hs x x.property
   obtain ⟨δ, hδ, hδF⟩ := Metric.uniformEquicontinuous_iff.mp
     (CompactSpace.uniformEquicontinuous_of_equicontinuous hEq) (ε / (2 * |b - a|)) (by positivity)
   obtain ⟨N₀, hN₀⟩ := exists_nat_gt (|b - a| / δ)
@@ -325,6 +330,21 @@ theorem tendsto_riemannSum_zero_one {E : Type*} [NormedAddCommGroup E] [NormedSp
   have h := tendsto_riemannSum (a := 0) (b := 1) (by rwa [uIcc_of_le zero_le_one])
   simpa [one_div, AffineMap.lineMap_apply_module] using h
 
+open Filter Topology Interval in
+/-- If `‖F i x‖ ≤ B i` almost everywhere on `Ι a b` eventually along `l` and `B i → 0`, then for
+any locally finite measure `μ` the interval integrals `∫ x in a..b, F i x ∂μ` tend to `0` along
+`l`. -/
+theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {l : Filter ι} {F : ι → ℝ → E}
+    {B : ι → ℝ} {a b : ℝ} (hB : Tendsto B l (𝓝 0))
+    (hF : ∀ᶠ i in l, ∀ᵐ x ∂μ, x ∈ Ι a b → ‖F i x‖ ≤ B i) :
+    Tendsto (fun i ↦ ∫ x in a..b, F i x ∂μ) l (𝓝 0) := by
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
+      (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
+  rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
+  exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
+
 end intervalIntegral
 
 /-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
@@ -359,6 +379,15 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
   simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
   rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+/-- Subtracting its average over `a..b` from a function leaves a function of integral zero over
+`a..b`. -/
+theorem intervalIntegral_sub_intervalAverage {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) (a b : ℝ) :
+    ∫ t in a..b, (f t - ⨍ t in a..b, f t) = 0 := by
+  have : IsFiniteMeasure (volume.restrict (uIoc a b)) :=
+    isFiniteMeasure_restrict.2 measure_Ioc_lt_top.ne
+  rw [_root_.intervalIntegral.intervalIntegral_eq_integral_uIoc, integral_sub_average, smul_zero]
 
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below

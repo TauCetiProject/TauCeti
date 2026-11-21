@@ -123,7 +123,7 @@ theorem exists_finsupp_sub_sum_mem_weightFiltrationLT
   rw [heq]
   refine add_mem (mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
     (Submodule.sum_mem _ fun j _ ↦ mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent] at hx
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent] at hx
     have hxn : Finsupp.weight d x ≠ n := fun h ↦ hx (by simp [h])
     have hxP : x ∈ P.support := mem_support_iff.2 fun h ↦ hx (by simp [h])
     exact lt_of_le_of_ne (mem_weightFiltration_iff.1 hP x hxP) hxn

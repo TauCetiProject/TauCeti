@@ -204,7 +204,7 @@ private theorem isSmoothSphere_discSphere (hD : IsSmoothDisc I γ D)
     · exact Or.inr (Icc.coe_eq_one.mpr (collaredSmoothTransitionUnit_eq_one_of_ge (by linarith)))
   simp only [mem_prod, not_and_or] at hz
   rcases hz with hz | hz
-  · exact discGlue_apply_end hD hD' (hvert hz) (collaredSmoothTransitionUnit _).2
+  · exact discGlue_apply_end hD hD' (hvert hz) (collaredSmoothTransitionUnit _).property
   · exact discGlue_apply_seam hD hD' _ (hvert hz)
 
 /-- Reparametrizing the glued map by the profile `τ` does not change its integral. -/
@@ -224,7 +224,7 @@ private theorem rectangleIntegral_discSphere [IsManifold I 2 M]
       fun_prop))).of_le (by norm_cast)
   have hmem {r c : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) (hc : c ∈ Icc (0 : ℝ) 1) :
       (1 - c) * r + c * collaredSmoothTransitionUnit r ∈ Icc (0 : ℝ) 1 :=
-    (Icc.convexComb ⟨r, hr⟩ (collaredSmoothTransitionUnit r) ⟨c, hc⟩).2
+    (Icc.convexComb ⟨r, hr⟩ (collaredSmoothTransitionUnit r) ⟨c, hc⟩).property
   have h0 (c : ℝ) : (1 - c) * 0 + c * collaredSmoothTransitionUnit 0 = 0 := by
     rw [collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)]; simp
   have h1 (c : ℝ) : (1 - c) * 1 + c * collaredSmoothTransitionUnit 1 = 1 := by

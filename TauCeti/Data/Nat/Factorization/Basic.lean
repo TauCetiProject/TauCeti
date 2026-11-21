@@ -12,16 +12,18 @@ public import Mathlib.Data.Nat.Factorization.Basic
 
 The least prime belongs to the prime factors of a natural number greater than one, and removing
 its full multiplicity gives a smaller number. Removing the `p`-part erases `p` from the prime
-factors, and a natural number has no prime divisor distinct from a prime `p` if and only if it is
-a power of `p`. These facts support induction by successively removing prime-power blocks. For a
+factors; coprimality excludes prime factors of one number from dividing the other, and a natural
+number has no prime divisor distinct from a prime `p` if and only if it is a power of `p`. These
+facts support induction by successively removing prime-power blocks. For a
 divisor `n ∣ m`, the `p`-free parts are related by `m / n * ordCompl[p] n =
 ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map `x ↦ x ^ (m / n)` between groups
 of roots of unity acts on their `p`-primary parts. For a prime `p`, a divisor of `p * k` with the
-same `p`-free part as `k` either divides `k` or is `p * k`. The product of any set of prime
-factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the prime
-factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family of
-primes (or fixed positive powers of their casts in characteristic zero) are injective on finitely
-supported exponent tuples.
+same `p`-free part as `k` either divides `k` or is `p * k`, and a divisor of `n` that does not
+divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`. The product of any set of
+prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to the product of all the
+prime factors of `n` exactly when it is coprime to `n`. Monomial products of an injective family
+of primes (or fixed positive powers of their casts in characteristic zero) are injective on
+finitely supported exponent tuples.
 
 ## Provenance
 
@@ -105,6 +107,17 @@ theorem Prime.eq_mul_of_dvd_mul_of_not_dvd_of_ordCompl_eq {p d k : ℕ} (hp : p.
     ordCompl_mul, hpk, show d.factorization p = k.factorization p + 1 by omega]
   simp [hp.factorization_self, Nat.div_self hp.pos]
 
+/-- For a prime `p`, a divisor `d` of `n` that does not divide `n / p` is divisible by
+`p ^ v_p(n)`. -/
+theorem Prime.pow_multiplicity_dvd_of_dvd_of_not_dvd_div {p n d : ℕ} (hp : p.Prime) (hd : d ∣ n)
+    (hdp : ¬d ∣ n / p) : p ^ multiplicity p n ∣ d := by
+  obtain ⟨c, rfl⟩ := hd
+  have hc : ¬p ∣ c := by
+    rintro ⟨c', rfl⟩
+    exact hdp ⟨c', by rw [mul_left_comm, Nat.mul_div_cancel_left _ hp.pos]⟩
+  exact (Nat.Coprime.pow_left _ ((Nat.Prime.coprime_iff_not_dvd hp).2 hc)).dvd_of_dvd_mul_right
+    (pow_multiplicity_dvd p (d * c))
+
 /-- A natural number has no prime divisor distinct from a prime `p` if and only if it is a power of
 `p`. -/
 theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prime) :
@@ -118,6 +131,18 @@ theorem Prime.forall_prime_ne_not_dvd_iff_exists_pow_eq {p k : ℕ} (hp : p.Prim
   · exact ⟨_, (Nat.eq_prime_pow_of_unique_prime_dvd hk fun {q} hq hqk ↦ by
       by_contra hqp
       exact hno q hq hqp hqk).symm⟩
+
+/-- No prime factor of `n` divides `p` when `n` and `p` are coprime. -/
+theorem Coprime.not_dvd_of_mem_primeFactors {n p q : ℕ} (hcop : n.Coprime p)
+    (hq : q ∈ n.primeFactors) : ¬ q ∣ p :=
+  (prime_of_mem_primeFactors hq).coprime_iff_not_dvd.mp
+    (hcop.coprime_dvd_left (dvd_of_mem_primeFactors hq))
+
+/-- A natural number `n > 1` coprime to `p` has a prime factor not dividing `p`. -/
+theorem Coprime.exists_mem_primeFactors_not_dvd {n p : ℕ} (hcop : n.Coprime p) (hn : 1 < n) :
+    ∃ q ∈ n.primeFactors, ¬ q ∣ p :=
+  ⟨n.minFac, minFac_mem_primeFactors hn,
+    hcop.not_dvd_of_mem_primeFactors (minFac_mem_primeFactors hn)⟩
 
 end Nat
 

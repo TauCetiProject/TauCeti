@@ -217,7 +217,7 @@ theorem comp_symm_mem_of_mem_permutationAut {C : AddSubgroup (ι → A)} {e : Eq
 /-- Permutation automorphisms act additively on the codewords. -/
 instance instSMulPermutationAut (C : AddSubgroup (ι → A)) : SMul (permutationAut C) C where
   smul e x := ⟨(x : ι → A) ∘ (e : Equiv.Perm ι).symm,
-    comp_symm_mem_of_mem_permutationAut e.2 x.2⟩
+    comp_symm_mem_of_mem_permutationAut e.property x.property⟩
 
 /-- The action on codewords is the underlying coordinate permutation. -/
 @[simp]
@@ -352,7 +352,7 @@ noncomputable def permutationAutToAddSubgroupMulEquiv (C : Submodule R (ι → R
     permutationAut C.toAddSubgroup ≃* TauCeti.permutationAut C :=
   MulEquiv.ofBijective
     ({ toFun := fun e ↦ ⟨LinearEquiv.funCongrLeft R R (e : Equiv.Perm ι).symm,
-         (mem_permutationAut_toAddSubgroup_iff C e).mp e.2⟩
+         (mem_permutationAut_toAddSubgroup_iff C e).mp e.property⟩
        map_one' := by ext; simp [Equiv.Perm.one_def]
        map_mul' := fun _ _ ↦ by ext; simp [Equiv.Perm.mul_def] } :
       permutationAut C.toAddSubgroup →* TauCeti.permutationAut C)
@@ -360,8 +360,9 @@ noncomputable def permutationAutToAddSubgroupMulEquiv (C : Submodule R (ι → R
         ((LinearEquiv.funCongrLeft_injective R R).comp Equiv.symm_bijective.injective)
           (congrArg Subtype.val h),
       fun f ↦ by
-        obtain ⟨e, he⟩ := TauCeti.mem_permutationGroup.mp (TauCeti.mem_permutationAut.mp f.2).1
-        exact ⟨⟨e, (mem_permutationAut_toAddSubgroup_iff C e).mpr (he.symm ▸ f.2)⟩,
+        obtain ⟨e, he⟩ := TauCeti.mem_permutationGroup.mp (TauCeti.mem_permutationAut.mp
+            f.property).1
+        exact ⟨⟨e, (mem_permutationAut_toAddSubgroup_iff C e).mpr (he.symm ▸ f.property)⟩,
           Subtype.ext he⟩⟩
 
 /-- `permutationAutToAddSubgroupMulEquiv` sends a coordinate permutation `e` to the linear

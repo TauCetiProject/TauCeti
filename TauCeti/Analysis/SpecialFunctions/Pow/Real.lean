@@ -16,7 +16,8 @@ The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x
 Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both sides vanish: the
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
-For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling.
+For `0 ≤ t`, its natural powers are `(√t)⁻¹ ^ n = t ^ (-n/2)`, the factor of a parabolic scaling,
+and likewise its real powers are `(√t)⁻¹ ^ x = t ^ (-x/2)`.
 Splitting `1 - x² = (1 - x) (1 + x)` gives `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`,
 again for every real `x`.
 
@@ -69,6 +70,8 @@ A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 
 norms, as for the monomials of a weighted Sobolev algebra.
 Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`; this is how a
 power-law exponent is read off from testing an inequality on `n` copies of one vector.
+If `c ^ e` is bounded for all `c > 0`, then `e = 0`; this is how a scaling argument pins an
+exponent.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -96,6 +99,7 @@ with the corresponding integral of `q`-th powers.
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-1 / 2)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
+* `Real.inv_sqrt_rpow_eq_rpow`: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t` and real `x`.
 * `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
   `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
@@ -122,11 +126,14 @@ with the corresponding integral of `q`-th powers.
   the natural number `k` lies in the window `j - L ≤ k < j + L`.
 * `Real.rpow_neg_pow_mul_rpow_mul_natCast_add`: `(b ^ (-s)) ^ d b ^ (s (d + k)) = b ^ (s k)` for
   `0 < b` and natural numbers `d`, `k`.
+* `Real.le_mul_rpow_neg_pow_of_rpow_mul_le`: `x ≤ K (b ^ (-s)) ^ j` when `b ^ (s j) x ≤ K` and
+  `0 < b`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
+* `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -174,6 +181,13 @@ theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-1 / 2 : ℝ) := by
 `0 ≤ t`. This is the factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` in dimension `n`. -/
 theorem inv_sqrt_pow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (n : ℕ) : (√t)⁻¹ ^ n = t ^ (-(n : ℝ) / 2) := by
   rw [rpow_div_two_eq_sqrt _ ht, rpow_neg (sqrt_nonneg t), rpow_natCast, inv_pow]
+
+/-- A real power of the inverse square root: `(√t)⁻¹ ^ x = t ^ (-x/2)` for `0 ≤ t`. This is the
+factor of a parabolic scaling `x ↦ (√t)⁻¹ • x` on an `Lᵖ` norm. -/
+theorem inv_sqrt_rpow_eq_rpow {t : ℝ} (ht : 0 ≤ t) (x : ℝ) : (√t)⁻¹ ^ x = t ^ (-x / 2) := by
+  rw [sqrt_eq_rpow, ← rpow_neg ht, ← rpow_mul ht]
+  congr 1
+  ring
 
 /-- For every real `x`, `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)`. For `|x| > 1` both
 sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y ≠ 0` and
@@ -296,6 +310,16 @@ theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (
   push_cast
   ring_nf
 
+/-- For `0 < b`, a weighted bound `b ^ (s j) x ≤ K` gives the geometric bound
+`x ≤ K (b ^ (-s)) ^ j`. -/
+theorem le_mul_rpow_neg_pow_of_rpow_mul_le {b : ℝ} (hb : 0 < b) {s x K : ℝ} {j : ℕ}
+    (h : b ^ (s * j) * x ≤ K) : x ≤ K * (b ^ (-s)) ^ j := by
+  have hj : (b ^ (-s)) ^ j * b ^ (s * j) = 1 := by
+    simpa using rpow_neg_pow_mul_rpow_mul_natCast_add hb s j 0
+  calc x = (b ^ (-s)) ^ j * (b ^ (s * j) * x) := by rw [← mul_assoc, hj, one_mul]
+    _ ≤ (b ^ (-s)) ^ j * K := by gcongr
+    _ = K * (b ^ (-s)) ^ j := mul_comm _ _
+
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
 theorem rpow_le_one_add {x y : ℝ} (hx : 0 ≤ x) (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) : x ^ y ≤ 1 + x := by
@@ -343,6 +367,18 @@ theorem le_of_forall_natCast_rpow_le_mul_rpow {a b C : ℝ}
   have hpos := rpow_pos_of_pos hn' a
   simp only [Function.comp_apply] at hCn
   nlinarith
+
+/-- If `c ^ e` is bounded on `(0, ∞)`, then `e = 0`: otherwise `c = (K + 1) ^ e⁻¹` gives
+`c ^ e = K + 1`. This is how a scaling argument pins an exponent. -/
+theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e ≤ K) : e = 0 := by
+  by_contra he
+  have hK : 0 < K + 1 := by
+    have := h 1 one_pos
+    rw [one_rpow] at this
+    linarith
+  have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
+  rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
+  linarith
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :

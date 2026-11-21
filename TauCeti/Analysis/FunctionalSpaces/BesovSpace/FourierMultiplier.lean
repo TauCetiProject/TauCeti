@@ -190,25 +190,27 @@ isomorphism of normed spaces `B^s_{p,q} ≃L[ℂ] B^{s'}_{p,q}` for `s' = s - t`
 `J^{-t}`. -/
 def besselPotentialEquiv (t : ℝ) {s s' : ℝ} (hs : s' = s - t) :
     BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ s' p q :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow (t / 2))
       (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le t) hs)
     (fourierMultiplierCLM F φ p q (contDiff_ofReal_one_add_norm_sq_rpow (-t / 2))
       (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (-t)) (by rw [hs]; ring))
-    (fun u ↦ ext <| by
-      rw [toDistr_fourierMultiplierCLM, toDistr_fourierMultiplierCLM, ← besselPotential,
-        ← besselPotential, besselPotential_besselPotential_apply, add_neg_cancel,
-        besselPotential_zero, ContinuousLinearMap.id_apply])
-    (fun v ↦ ext <| by
-      rw [toDistr_fourierMultiplierCLM, toDistr_fourierMultiplierCLM, ← besselPotential,
+    (ContinuousLinearMap.ext fun v ↦ ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        toDistr_fourierMultiplierCLM, toDistr_fourierMultiplierCLM, ← besselPotential,
         ← besselPotential, besselPotential_besselPotential_apply, neg_add_cancel,
+        besselPotential_zero, ContinuousLinearMap.id_apply])
+    (ContinuousLinearMap.ext fun u ↦ ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        toDistr_fourierMultiplierCLM, toDistr_fourierMultiplierCLM, ← besselPotential,
+        ← besselPotential, besselPotential_besselPotential_apply, add_neg_cancel,
         besselPotential_zero, ContinuousLinearMap.id_apply])
 
 @[simp]
 theorem toDistr_besselPotentialEquiv (t : ℝ) {s' : ℝ} (hs : s' = s - t)
     (u : BesovSpace F φ s p q) :
     (besselPotentialEquiv F φ p q t hs u).toDistr = besselPotential E F t u.toDistr := by
-  rw [besselPotentialEquiv, ContinuousLinearEquiv.equivOfInverse_apply,
+  rw [besselPotentialEquiv, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
     toDistr_fourierMultiplierCLM, besselPotential]
 
 /-- The inverse of the lifting isomorphism `J^t` is the lifting isomorphism `J^{-t}`. -/
@@ -218,7 +220,8 @@ theorem besselPotentialEquiv_symm (t : ℝ) {s' : ℝ} (hs : s' = s - t) :
       besselPotentialEquiv F φ p q (-t) (by rw [hs, sub_neg_eq_add, sub_add_cancel]) :=
   ContinuousLinearEquiv.ext <| funext fun v ↦ ext <| by
     rw [toDistr_besselPotentialEquiv, besselPotentialEquiv,
-      ContinuousLinearEquiv.symm_equivOfInverse,
-      ContinuousLinearEquiv.equivOfInverse_apply, toDistr_fourierMultiplierCLM, besselPotential]
+      ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+      ContinuousLinearEquiv.coe_ofContinuousLinearMap, toDistr_fourierMultiplierCLM,
+      besselPotential]
 
 end TauCeti.BesovSpace

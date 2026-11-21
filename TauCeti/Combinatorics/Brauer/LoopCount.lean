@@ -171,7 +171,7 @@ theorem mk_middleAdj_eq_mk_iff (D₁ D₂ : BrauerDiagram k) {a b : Fin k} :
     Quot.mk (MiddleAdj D₁ D₂) a = Quot.mk (MiddleAdj D₁ D₂) b ↔
       Relation.ReflTransGen (MiddleAdj D₁ D₂) a b := by
   have : Std.Symm (MiddleAdj D₁ D₂) := ⟨fun _ _ h => MiddleAdj.symm h⟩
-  rw [Quot.eq, Relation.EqvGen.eqvGen_eq_reflTransGen]
+  rw [Quot.eq, Relation.eqvGen_eq_reflTransGen]
 
 /-- A cap of `D₁` at the bottom middle point `a` lands at the middle point read off its far
 end, the point `BrauerDiagram.capMatching` pairs `a` with. -/

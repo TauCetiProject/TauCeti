@@ -121,8 +121,8 @@ private theorem exists_sq_add_mul_add_eq_zero :
   have hdegR : (minpoly R Y).natDegree = 2 := by
     rw [← hdeg, hmap, Polynomial.natDegree_map_eq_of_injective
       (FaithfulSMul.algebraMap_injective R F⟮X⟯)]
-  obtain ⟨p, hp⟩ := Algebra.adjoin_mem_exists_aeval F X ((minpoly R Y).coeff 1).2
-  obtain ⟨q, hq⟩ := Algebra.adjoin_mem_exists_aeval F X ((minpoly R Y).coeff 0).2
+  obtain ⟨p, hp⟩ := Algebra.adjoin_mem_exists_aeval F X ((minpoly R Y).coeff 1).property
+  obtain ⟨q, hq⟩ := Algebra.adjoin_mem_exists_aeval F X ((minpoly R Y).coeff 0).property
   refine ⟨p, q, ?_⟩
   have h := minpoly.aeval R Y
   rw [Polynomial.aeval_eq_sum_range, hdegR] at h

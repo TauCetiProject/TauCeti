@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.Basic
+public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
 public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -22,10 +22,18 @@ for the virtual fundamental class.
 * **The atlas `s(x) = xᵐ` on a point** (`TauCeti.ImplicitAtlas.powAtlas`, Pardon, Example 2.3.2).
   The point `X = {0}` of virtual dimension `0`, with one index `α`, trivial group `Γ_α`, obstruction
   space `E_α = ℝ`, thickening `X_α = ℝ` and Kuranishi map `s_α(x) = xᵐ`, `m ≥ 1`. The regular locus
-  of `X_∅ = X` is empty, while `X_α` is regular. The zero set `Z_∅α = {0}`
-  (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the footprint
-  `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not cut out
-  transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+  of `X_∅ = X` is empty, so the footprint `V_∅` is empty
+  (`TauCeti.ImplicitAtlas.footprint_powAtlas_empty`), while `X_α` is regular. The zero set
+  `Z_∅α = {0}` (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the
+  footprint `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not
+  cut out transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+
+For the atlas `s(x) = xᵐ`, whose regular locus `X_∅^reg` is empty, the deformation space
+`D_(∅,α,α)` is empty (`TauCeti.ImplicitAtlas.deformationSpace_powAtlas_empty`), and
+`D_(α,α,α)` is `{(e, t, x) | t > 0, xᵐ = t e}`
+(`TauCeti.ImplicitAtlas.mem_deformationSpace_powAtlas_iff`): the points with `t = 0` are missing
+because `X_∅^reg = ∅`. Its support `Z_X` is the half-line `x = 0, e = 0, t > 0`, without its
+endpoint (`TauCeti.ImplicitAtlas.mem_deformationSupport_powAtlas_iff`).
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -58,18 +66,18 @@ dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regu
 noncomputable def ofChartedSpace :
     ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
   baseHomeomorph := Homeomorph.refl X
-  kuranishi _ α _ := (IsEmpty.false α.1).elim
-  continuous_kuranishi _ α := (IsEmpty.false α.1).elim
-  kuranishi_act _ α := (IsEmpty.false α.1).elim
+  kuranishi _ α _ := (IsEmpty.false α.val).elim
+  continuous_kuranishi _ α := (IsEmpty.false α.val).elim
+  kuranishi_act _ α := (IsEmpty.false α.val).elim
   regLocus _ := univ
   isOpen_regLocus _ := isOpen_univ
   act_mem_regLocus _ _ _ _ := mem_univ _
-  footprintMap _ _ _ x := x.1
-  continuous_footprintMap _ _ _ := continuous_subtype_val
+  footprintMap _ _ _ x := x.val
+  continuous_footprintMap _ _ _ := continuous_subtypeVal
   footprintMap_act _ _ _ _ _ _ := rfl
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
-  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
+  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.val).elim
   isOpen_range_footprintMap _ _ _ := by
     rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
@@ -79,18 +87,18 @@ noncomputable def ofChartedSpace :
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
   isQuotientMap_footprintMap I J _ :=
     IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp⟩)
-      (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
+      (f := fun y ↦ ⟨y.val, by simp⟩)
+      (continuous_subtypeVal.subtype_mk _) continuous_subtypeVal.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
-  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
+  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.val).elim
   exists_openPartialHomeomorph I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
     refine ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
-      (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
-      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
+      (chartAt (EuclideanSpace ℝ (Fin n)) x.val).transHomeomorph (Homeomorph.prodUnique _ _).symm,
+      by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.val).elim⟩
   exists_footprintMap_eq y :=
     ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
@@ -137,24 +145,25 @@ theorem kuranishiZeroSet_powKuranishi_empty (hm : m ≠ 0) (J : Finset Unit) :
   ext x
   refine ⟨fun hx ↦ ?_, fun hx ↦ mem_kuranishiZeroSet.2 fun _ _ ↦ by simp [hx.out, zero_pow hm]⟩
   by_cases hJ : J = ∅
-  · exact x.2 hJ
-  · obtain ⟨α, hα⟩ := Finset.nonempty_iff_ne_empty.2 hJ
+  · exact x.property hJ
+  · obtain ⟨α, hα⟩ := Finset.ne_empty_iff_nonempty.1 hJ
     exact pow_eq_zero_iff hm |>.1 <| mem_kuranishiZeroSet.1 hx ⟨α, hα⟩ (Finset.notMem_empty α)
 
 /-- The footprint map of `TauCeti.ImplicitAtlas.powAtlas` keeps the real coordinate. -/
 private def powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (_ : I ⊆ J)
     (x : kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) I J) : PowThickening I :=
-  ⟨x.1.1, fun hI ↦ (kuranishiZeroSet_powKuranishi_empty hm J).subset (hI ▸ x.2)⟩
+  ⟨x.val.val, fun hI ↦ (kuranishiZeroSet_powKuranishi_empty hm J).subset (hI ▸ x.property)⟩
 
 /-- A continuous section of `powFootprintMap`, so that it is onto and a quotient map. -/
 private def powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) (y : PowThickening I) :
     kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) I J :=
-  ⟨⟨y.1, fun hJ ↦ y.2 (Finset.subset_empty.1 (hJ ▸ h))⟩, mem_kuranishiZeroSet.2 fun _ hα ↦ by
-    simp [y.2 (eq_empty_of_notMem hα), zero_pow hm]⟩
+  ⟨⟨y.val, fun hJ ↦ y.property (Finset.subset_empty.1 (hJ ▸ h))⟩, mem_kuranishiZeroSet.2 fun _ hα ↦
+      by
+    simp [y.property (eq_empty_of_notMem hα), zero_pow hm]⟩
 
 private theorem continuous_powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) :
     Continuous (powSection hm h) :=
-  (continuous_subtype_val.subtype_mk _).subtype_mk _
+  (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 private theorem powFootprintMap_powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J)
     (y : PowThickening I) : powFootprintMap hm h (powSection hm h y) = y :=
@@ -170,7 +179,7 @@ private def powThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) : PowThi
   invFun x := ⟨x, fun h ↦ (hJ.ne_empty h).elim⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val
+  continuous_toFun := continuous_subtypeVal
   continuous_invFun := continuous_id.subtype_mk _
 
 /-- **Pardon's Example 2.3.2.** The implicit atlas of virtual dimension `0` on the point
@@ -182,14 +191,14 @@ noncomputable def powAtlas (hm : m ≠ 0) :
       PowThickening (fun _ ↦ 1) (PowThickening ∅) 0 where
   baseHomeomorph := Homeomorph.refl _
   kuranishi := powKuranishi m
-  continuous_kuranishi _ _ := continuous_subtype_val.pow m
+  continuous_kuranishi _ _ := continuous_subtypeVal.pow m
   kuranishi_act _ _ _ _ := by simp
   regLocus I := {_x | I.Nonempty}
   isOpen_regLocus _ := isOpen_const
   act_mem_regLocus _ _ _ h := h
   footprintMap _ _ := powFootprintMap hm
   continuous_footprintMap _ _ _ :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   footprintMap_act _ _ _ _ _ _ := by ext; simp [powFootprintMap]
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
@@ -200,10 +209,10 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   range_footprintMap_inter _ _ _ _ _ := by simp only [range_powFootprintMap, inter_self]
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp only [range_powFootprintMap, mem_univ]
   isQuotientMap_footprintMap _ _ h :=
-    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.1)
-      ((continuous_powSection hm h).comp continuous_subtype_val)
-      (((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).rangeFactorization)
-      fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.1)
+    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.val)
+      ((continuous_powSection hm h).comp continuous_subtypeVal)
+      (((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).rangeFactorization)
+      fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.val)
   footprintMap_eq_footprintMap_iff _ _ _ x y := by
     simp only [powFootprintMap, Subtype.mk.injEq, MonoidHom.one_apply, Homeomorph.one_apply]
     exact ⟨fun h ↦ ⟨1, Subsingleton.elim _ _, Subtype.ext h⟩, fun ⟨_, _, h⟩ ↦ congrArg _ h⟩
@@ -212,7 +221,8 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   exists_openPartialHomeomorph I J h x hx := by
     have hJ : J.Nonempty := Finset.Nonempty.mono h hx
     obtain rfl : I = Finset.univ := hx.eq_univ
-    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
+    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.property).2
+        (Finset.mem_univ _)⟩
     refine ⟨1, by simp, ((powThickeningHomeomorph hJ).trans <|
       ((Homeomorph.funUnique (Fin 1) ℝ).symm.trans
         (EuclideanSpace.equiv (Fin 1) ℝ).symm.toHomeomorph).trans
@@ -244,12 +254,74 @@ theorem coe_footprintMap_powAtlas (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ 
 theorem regLocus_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).regLocus ∅ = ∅ := by
   simp [regLocus_powAtlas]
 
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.powAtlas` is empty, since the regular locus of
+`X_∅` is. So the footprints of the subsets of the empty set of indices do not cover the point. -/
+@[simp]
+theorem footprint_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).footprint ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hy ↦ by
+    obtain ⟨x, hx, -⟩ := (powAtlas hm).mem_footprint.1 hy
+    simp at hx
+
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.powAtlas` is the whole point. -/
 @[simp]
 theorem footprint_powAtlas_singleton (hm : m ≠ 0) : (powAtlas hm).footprint {()} = univ :=
   eq_univ_of_forall fun y ↦ (powAtlas hm).mem_footprint.2
     ⟨powSection hm (Finset.empty_subset _) y, by simp [regLocus_powAtlas],
       Subtype.ext (coe_footprintMap_powAtlas hm (Finset.empty_subset _) _)⟩
+
+/-! #### Deformation spaces -/
+
+/-- For the atlas `s(x) = xᵐ` on a point, whose `X_∅^reg` is empty, the deformation space
+`D_(∅,α,α)` is empty. -/
+theorem deformationSpace_powAtlas_empty (hm : m ≠ 0) :
+    (powAtlas hm).deformationSpace ∅ (subset_refl (Finset.univ : Finset Unit)) = ∅ :=
+  deformationSpace_eq_empty fun S hS ↦ by
+    rw [Finset.subset_empty.1 hS, regLocus_powAtlas_empty]
+
+/-- For the atlas `s(x) = xᵐ` on a point, the deformation space `D_(α,α,α)` is
+`{(e, t, x) | t > 0, xᵐ = t e}`. The points with `t = 0` are missing because `X_∅^reg = ∅`. -/
+theorem mem_deformationSpace_powAtlas_iff (hm : m ≠ 0)
+    {p : ((α : (Finset.univ : Finset Unit)) → ℝ) × (↥(Finset.univ : Finset Unit) → ℝ) ×
+      PowThickening Finset.univ} :
+    p ∈ (powAtlas hm).deformationSpace Finset.univ (subset_refl (Finset.univ : Finset Unit)) ↔
+      0 < p.2.1 ⟨(), Finset.mem_univ _⟩ ∧
+        (p.2.2 : ℝ) ^ m = p.2.1 ⟨(), Finset.mem_univ _⟩ * p.1 ⟨(), Finset.mem_univ _⟩ := by
+  rw [mem_deformationSpace]
+  constructor
+  · rintro ⟨-, -, hs, h, hx, hreg⟩
+    refine ⟨?_, by simpa using hs ⟨(), Finset.mem_univ _⟩⟩
+    rw [regLocus_powAtlas] at hreg
+    obtain ⟨α, hα⟩ := hreg
+    exact (mem_positiveIndices.1 hα).2
+  · rintro ⟨hpos, hs⟩
+    have hT : positiveIndices p.2.1 = Finset.univ :=
+      Finset.eq_univ_of_forall fun _ ↦ mem_positiveIndices.2 ⟨Finset.mem_univ _, hpos⟩
+    refine ⟨fun ⟨(), _⟩ ↦ hpos.le, fun α hα ↦ (hα (Finset.mem_univ _)).elim,
+      fun ⟨(), _⟩ ↦ by simpa using hs, ?_⟩
+    rw [hT]
+    refine ⟨subset_refl _, mem_kuranishiZeroSet_self _ _, ?_⟩
+    rw [regLocus_powAtlas]
+    exact Finset.univ_nonempty
+
+/-- For the atlas `s(x) = xᵐ` on a point, the support `Z_X ⊆ D_(α,α,α)` is the half-line
+`x = 0`, `e = 0`, `t > 0`, which does not contain its endpoint `t = 0`. -/
+theorem mem_deformationSupport_powAtlas_iff (hm : m ≠ 0)
+    {p : (powAtlas hm).deformationSpace Finset.univ (subset_refl (Finset.univ : Finset Unit))} :
+    p ∈ (powAtlas hm).deformationSupport Finset.univ (subset_refl (Finset.univ : Finset Unit))
+        univ ↔
+      (p.val.2.2 : ℝ) = 0 := by
+  obtain ⟨hpos, hs⟩ := (mem_deformationSpace_powAtlas_iff hm).1 p.property
+  rw [mem_deformationSupport]
+  constructor
+  · rintro ⟨he, -⟩
+    rw [he, Pi.zero_apply, mul_zero] at hs
+    exact (pow_eq_zero_iff hm).1 hs
+  · intro hx
+    rw [hx, zero_pow hm] at hs
+    have he : p.val.1 = 0 := funext fun ⟨(), _⟩ ↦
+      (mul_eq_zero.1 hs.symm).resolve_left hpos.ne'
+    exact ⟨he, mem_kuranishiZeroSet_empty_of_eq_zero p.property he, mem_univ _⟩
+
 
 end Pow
 
