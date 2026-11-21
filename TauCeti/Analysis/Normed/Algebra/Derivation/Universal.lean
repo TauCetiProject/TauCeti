@@ -41,6 +41,8 @@ namespace TauCeti
 
 open CompletedProjectiveTensor
 
+section Unital
+
 variable (𝕜 B : Type*) [NontriviallyNormedField 𝕜] [NormedRing B]
   [NormedAlgebra 𝕜 B] [CompleteSpace B]
 
@@ -249,6 +251,12 @@ theorem existsUnique_lift :
     lift_rightAction L R D hL hLR hD⟩, fun f hf ↦ lift_unique L D f hf.2.1 hf.1⟩
 
 end Lift
+
+end CompletedUniversalOneForms
+
+end Unital
+
+namespace CompletedUniversalOneForms
 
 section NonUnital
 

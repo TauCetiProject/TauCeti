@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
+public import TauCeti.Probability.BrownianMotion.Integral.Simple
 public import TauCeti.Probability.BrownianMotion.Integral.Wiener
 public import Mathlib.Probability.Martingale.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
@@ -15,6 +16,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.ContinuousLimit
 
 /-!
@@ -169,7 +171,8 @@ theorem BrownianIntegrable.exists_isItoIntegral (hW : Probability.IsFilteredPreB
   have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
     .of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m) (.of_forall (hb m j hj))
   have hmem (m : ℕ) (t : ℝ≥0) : MemLp (Finance.simpleGains (τ m) (n m) (a m) W t) 2 P :=
-    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ m).monotoneOn (ha m) (ha₂ m) t)
+    (Lp.memLp _).ae_eq (hW.coeFn_l2Integral_simpleHolding (hτ m).monotoneOn (ha m) t
+      (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) t))
   obtain ⟨I, hImart, hIpred, hIlim, _, _, _, hIpath⟩ := exists_continuous_martingale_of_cauchySeq_Lp
     (p := 2) (fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩)

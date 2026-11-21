@@ -26,13 +26,16 @@ compact topological group (`OpenSubgroup.locallyCompactSpace`), and its inclusio
 an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H` via
 `μ.comap ((↑) : H → G)` turns ambient analysis on `G` into subgroup analysis on `H`:
 
-* **Haar measures, regularity, and modular character:** When `H` is an open subgroup of a Borel
-  group `G`, `μ.comap ((↑) : H → G)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`, `Regular`, and
-  `InnerRegular` (left and right multiplication invariance hold for every subgroup, by the instances
-  `Measure.isMulLeftInvariant_comap_subtype` and `Measure.isMulRightInvariant_comap_subtype`); if
-  `H` is moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on
-  a non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and
-  the modular character of `H` agrees with the restriction of the modular character of `G`
+* **Haar measures, regularity, compactness, and modular character:** When `H` is an open subgroup
+  of a Borel group `G`, `μ.comap ((↑) : H → G)` inherits `IsOpenPosMeasure`, `IsHaarMeasure`,
+  `Regular`, and `InnerRegular` (left and right multiplication invariance hold for every subgroup,
+  by the instances `Measure.isMulLeftInvariant_comap_subtype` and
+  `Measure.isMulRightInvariant_comap_subtype`); if `G` is a weakly locally compact topological
+  group and `μ` is left-invariant and open-positive with `μ H ≠ ∞`, then `H` is automatically
+  compact (`MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant`); if `H` is
+  moreover σ-compact and `μ` has `InnerRegularCompactLTTop` (as any regular Haar measure on a
+  non-σ-compact group does), then `μ.comap (↑)` is both σ-finite and inner regular on `H`, and the
+  modular character of `H` agrees with the restriction of the modular character of `G`
   (`OpenSubgroup.modularCharacter_eq`).
 * **Translated-coset calculations:** For a measurable subgroup `H`, left translation `u ↦ g * u`
   from `(H, μ.comap (↑))` onto `(G, μ.restrict (g • H))` is a measure-preserving measurable
@@ -51,6 +54,10 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 * `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
   `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
   Haar, regularity, and modular-character inheritance on open subgroups.
+* `MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant`: an open subgroup of
+  a weakly locally compact topological group with finite left-invariant open-positive Borel measure
+  is compact (with additive counterpart
+  `MeasureTheory.isCompact_of_isOpen_of_measure_ne_top_of_isAddLeftInvariant`).
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
@@ -161,9 +168,35 @@ end ModularCharacter
 
 end OpenSubgroup
 
-/-! ### Translated-coset calculations -/
-
 namespace MeasureTheory
+
+/-- **Open subgroups of finite invariant measure are compact.** An open subgroup of a weakly
+locally compact topological group that has finite mass for a left-invariant open-positive Borel
+measure is compact. -/
+@[to_additive
+/-- **Open additive subgroups of finite invariant measure are compact.** An open additive subgroup
+of a weakly locally compact topological additive group that has finite mass for a left-invariant
+open-positive Borel measure is compact. -/]
+theorem isCompact_of_isOpen_of_measure_ne_top_of_isMulLeftInvariant {G S : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G] [MeasurableSpace G]
+    [BorelSpace G] [SetLike S G] [SubgroupClass S G] {H : S} (hHopen : IsOpen (H : Set G))
+    (μ : Measure G) [μ.IsOpenPosMeasure] [μ.IsMulLeftInvariant] (hμ : μ H ≠ ∞) :
+    IsCompact (H : Set G) := by
+  have hemb : IsOpenEmbedding ((↑) : H → G) := hHopen.isOpenEmbedding_subtypeVal
+  have hHclosed : IsClosed (H : Set G) := Subgroup.isClosed_of_isOpen (Subgroup.ofClass H) hHopen
+  have : WeaklyLocallyCompactSpace H := hHclosed.weaklyLocallyCompactSpace
+  have : IsTopologicalGroup H :=
+    Topology.IsInducing.subtypeVal.isTopologicalGroup (SubgroupClass.subtype H)
+  have : (μ.comap ((↑) : H → G)).IsOpenPosMeasure := Measure.IsOpenPosMeasure.comap μ hemb
+  have hfin : μ.comap ((↑) : H → G) Set.univ ≠ ∞ := by
+    rw [hemb.measurableEmbedding.comap_apply, image_univ, Subtype.range_coe_subtype]
+    exact hμ
+  rw [isCompact_iff_compactSpace]
+  by_contra hnc
+  have : NoncompactSpace H := not_compactSpace_iff.mp hnc
+  exact hfin (measure_univ_of_isMulLeftInvariant (μ.comap ((↑) : H → G)))
+
+/-! ### Translated-coset calculations -/
 
 section LeftCosets
 

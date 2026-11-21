@@ -497,8 +497,8 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V)
   rw [abs_det_mul_fderiv_truncation_wedge_endChart hT hζ, hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 
 /-- On the end `q`, the integral over one period of `H_q(t, u_q) + ½ ω(u_q, ∂_t u_q)` is the
@@ -598,7 +598,7 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
     ring
   have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
     have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_neg (by linarith : q.endSign * s - T < 0), zero_mul]
+    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
   rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
   have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
       {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
@@ -1146,8 +1146,8 @@ private theorem abs_det_mul_boundaryForm_endChart
   rw [← hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 
 omit [TopologicalSpace M] in
@@ -1207,7 +1207,7 @@ private theorem integral_image_endChart_boundaryForm
     ring
   have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
     have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_neg (by linarith : q.endSign * s - T < 0), zero_mul]
+    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
   rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
   have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
       {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left

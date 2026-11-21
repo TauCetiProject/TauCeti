@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Picard
 public import TauCeti.Topology.KrullDimension.Basic
-public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 
 /-!
 # Riemann–Roch spaces on a proper curve
@@ -268,15 +268,7 @@ theorem finiteDimensional_globalSections_sheaf (hX : ∀ y : X, coheight y ≤ 1
   let := (Scheme.Modules.baseRingToGlobalSections k X).toAlgebra
   -- `Γ(X, ⊤)` is a finite field extension of `k`, since `X` is proper and integral over `k`.
   let := (isField_of_universallyClosed k (X ↘ Spec (.of k))).toField
-  have hbase : Scheme.Modules.baseRingToGlobalSections k X =
-      (X ↘ Spec (.of k)).appTop.hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom :=
-    RingHom.ext (Scheme.Modules.baseRingToGlobalSections_apply k X)
-  have : (Scheme.Modules.baseRingToGlobalSections k X).Finite := by
-    rw [hbase]
-    exact (finite_appTop_of_universallyClosed k (X ↘ Spec (.of k))).comp
-      (RingHom.Finite.of_surjective _
-        (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective)
-  have : Module.Finite k Γ(X, ⊤) := this
+  have : Module.Finite k Γ(X, ⊤) := Scheme.Modules.finite_baseRingToGlobalSections X k
   -- Codimension-one points of a curve are closed, so their residue fields are finite over `k`.
   have hfin (y : CodimensionOnePoint X) : (X.Γevaluation y).hom.Finite :=
     Scheme.finite_Γevaluation_of_isClosed (X ↘ Spec (.of k))
