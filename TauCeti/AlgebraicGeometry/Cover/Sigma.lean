@@ -1,0 +1,58 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.Cover.Sigma
+public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
+
+import Mathlib.AlgebraicGeometry.Limits
+
+/-!
+# Finite affine coproduct covers
+
+This file complements `Mathlib.AlgebraicGeometry.Cover.Sigma` (Christian Merten) by showing that a
+finite affine `P`-cover `𝒰` of an affine scheme `Spec R` collapses via its coproduct cover
+`𝒰.sigma` to a single affine `P`-morphism `Spec.map φ : Spec S ⟶ Spec R` factoring through an
+isomorphism `Spec S ≅ ∐ 𝒰.X` followed by `Sigma.desc 𝒰.f`.
+
+## Main results
+
+* `AlgebraicGeometry.Scheme.Cover.exists_specMap_sigma`: factor a finite affine `P`-cover of
+  `Spec R` through an isomorphism `Spec S ≅ ∐ 𝒰.X` and a single surjective `P`-morphism
+  `Spec.map φ : Spec S ⟶ Spec R`.
+-/
+
+public section
+
+universe v u
+
+open CategoryTheory Limits
+
+namespace AlgebraicGeometry.Scheme.Cover
+
+/-- A finite affine `P`-cover `𝒰` of `Spec R` collapses to a single surjective `P`-morphism
+`Spec.map φ : Spec S ⟶ Spec R` factoring as an isomorphism `e : Spec S ≅ ∐ 𝒰.X` followed by
+`Sigma.desc 𝒰.f`. -/
+lemma exists_specMap_sigma {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtSource P]
+    {R : CommRingCat.{u}} (𝒰 : Scheme.Cover.{v} (precoverage P) (Spec R)) [UnivLE.{v, u}]
+    (haff : ∀ i, IsAffine (𝒰.X i)) (hfin : Finite 𝒰.I₀) :
+    ∃ (S : CommRingCat.{u}) (φ : R ⟶ S) (e : Spec S ≅ ∐ 𝒰.X),
+      P (Spec.map φ) ∧ Surjective (Spec.map φ) ∧ Spec.map φ = e.hom ≫ Sigma.desc 𝒰.f := by
+  have : IsAffine (∐ 𝒰.X) := inferInstance
+  let q : Spec (Γ(∐ 𝒰.X, ⊤)) ⟶ Spec R := (∐ 𝒰.X).isoSpec.inv ≫ Sigma.desc 𝒰.f
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective q
+  have hdesc : P (Sigma.desc 𝒰.f) := IsZariskiLocalAtSource.sigmaDesc 𝒰.map_prop
+  have hP : P (Spec.map φ) := by
+    simpa only [hφ, q] using IsZariskiLocalAtSource.comp hdesc _
+  have : Surjective (Sigma.desc 𝒰.f) :=
+    Surjective.sigmaDesc_of_union_range_eq_univ 𝒰.iUnion_range
+  have hsurj : Surjective (Spec.map φ) := by
+    rw [hφ]
+    infer_instance
+  refine ⟨_, φ, (∐ 𝒰.X).isoSpec.symm, hP, hsurj, ?_⟩
+  simp [hφ, q]
+
+end AlgebraicGeometry.Scheme.Cover

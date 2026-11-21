@@ -228,6 +228,12 @@ def PreOneHypercover.over {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left)
   p₂ _ _ k := Over.homMk (E.p₂ k) (by simp [← Category.assoc, E.w])
   w _ _ k := Over.OverMorphism.ext (E.w k)
 
+/-- Forgetting the lift of a pre-`1`-hypercover `E` along `Over.forget X` recovers `E`. -/
+@[simp]
+lemma PreOneHypercover.map_over_forget {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left) :
+    (E.over Y).map (Over.forget X) = E :=
+  rfl
+
 /-- Lift a `J`-`1`-hypercover of `Y.left` in `C` to a `(J.over X)`-`1`-hypercover of `Y` in
 `Over X`. -/
 -- Exposed so that consumers retain definitional access to the index types `I₀` and `I₁`.
@@ -242,6 +248,13 @@ def GrothendieckTopology.OneHypercover.over {J : GrothendieckTopology C} {X : C}
   mem₁ i₁ i₂ W q₁ q₂ hw := by
     rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_preOneHypercover_sieve₁]
     exact E.mem₁ i₁ i₂ q₁.left q₂.left congr($(hw).left)
+
+/-- Forgetting the lift of a `J`-`1`-hypercover `E` along `Over.forget X` recovers `E`. -/
+@[simp]
+lemma GrothendieckTopology.OneHypercover.map_over_forget {J : GrothendieckTopology C} {X : C}
+    (Y : Over X) (E : J.OneHypercover.{w} Y.left) :
+    (E.over Y).map (Over.forget X) J = E :=
+  rfl
 
 end CategoryTheory
 
