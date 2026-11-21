@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.NumberTheory.Chebyshev.Basic
 
 /-!
 # Explicit bounds for `ψ - θ`, prime-power counts, and `ψ ↔ θ` transfers
@@ -97,30 +98,6 @@ open Finset Filter
 open scoped Chebyshev Asymptotics
 
 namespace TauCeti
-
-/-! ### Private Chebyshev helpers -/
-
-private lemma pos_of_theta_le {c : ℝ} (hθ : ∀ y, 2 ≤ y → θ y ≤ c * y) : 0 < c := by
-  have h1 : 0 < θ 2 := Chebyshev.theta_pos le_rfl
-  have h2 : θ 2 ≤ c * 2 := hθ 2 le_rfl
-  linarith
-
-private lemma pos_of_psi_le {c : ℝ} (hψ : ∀ y, 2 ≤ y → ψ y ≤ c * y) : 0 < c :=
-  pos_of_theta_le fun y hy ↦ (Chebyshev.theta_le_psi y).trans (hψ y hy)
-
-private lemma theta_le_mul_of_two_le {c y : ℝ} (hy : 0 ≤ y) (hθ : ∀ t, 2 ≤ t → θ t ≤ c * t) :
-    θ y ≤ c * y := by
-  rcases lt_or_ge y 2 with hy2 | hy2
-  · rw [Chebyshev.theta_eq_zero_of_lt_two hy2]
-    exact mul_nonneg (pos_of_theta_le hθ).le hy
-  · exact hθ y hy2
-
-private lemma psi_le_mul_of_two_le {c y : ℝ} (hy : 0 ≤ y) (hψ : ∀ t, 2 ≤ t → ψ t ≤ c * t) :
-    ψ y ≤ c * y := by
-  rcases lt_or_ge y 2 with hy2 | hy2
-  · rw [Chebyshev.psi_eq_zero_of_lt_two hy2]
-    exact mul_nonneg (pos_of_psi_le hψ).le hy
-  · exact hψ y hy2
 
 /-! ### Exact `ψ - θ` decompositions and lower bounds -/
 
