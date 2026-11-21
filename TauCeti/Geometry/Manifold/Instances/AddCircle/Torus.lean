@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
+public import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Integral linear automorphisms of a torus
@@ -156,9 +157,7 @@ instance instDistribMulActionGeneralLinearGroup : DistribMulAction (GL ι ℤ) (
   one_smul x := funext fun i ↦ by
     simp [generalLinearGroup_smul_apply, Matrix.one_apply, ite_smul]
   mul_smul A B x := funext fun i ↦ by
-    simp only [generalLinearGroup_smul_apply, Units.val_mul, Matrix.mul_apply, Finset.sum_smul,
-      Finset.smul_sum, mul_smul]
-    exact Finset.sum_comm
+    simp only [generalLinearGroup_smul_apply, Units.val_mul, Matrix.sum_mul_apply_smul]
   smul_zero A := funext fun i ↦ by simp [generalLinearGroup_smul_apply]
   smul_add A x y := funext fun i ↦ by
     simp only [generalLinearGroup_smul_apply, Pi.add_apply, smul_add, Finset.sum_add_distrib]

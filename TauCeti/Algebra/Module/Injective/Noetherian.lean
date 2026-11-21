@@ -69,7 +69,7 @@ instance injective_primaryComponent (𝔞 : Ideal R) :
       exact (IsNoetherian.noetherian (⊤ : Submodule R 𝔟)).map _)
     (by
       rintro _ ⟨x, rfl⟩
-      exact (g x).2)
+      exact (g x).property)
   obtain ⟨k, hk⟩ := Ideal.exists_pow_inf_eq_pow_smul 𝔞 (𝔟 : Submodule R R)
   have hvanish : ∀ x : 𝔟, (x : R) ∈ 𝔞 ^ (n + k) → g' x = 0 := by
     intro x hx
@@ -77,7 +77,7 @@ instance injective_primaryComponent (𝔞 : Ideal R) :
       have h := hk (n + k) (Nat.le_add_left k n)
       rw [Nat.add_sub_cancel] at h
       have hx' : (x : R) ∈ 𝔞 ^ (n + k) • (⊤ : Submodule R R) ⊓ 𝔟 := by
-        refine ⟨?_, x.2⟩
+        refine ⟨?_, x.property⟩
         rwa [Ideal.smul_eq_mul, Ideal.mul_top]
       rw [h] at hx'
       exact Submodule.smul_mono le_rfl inf_le_right hx'
@@ -100,13 +100,13 @@ instance injective_primaryComponent (𝔞 : Ideal R) :
           rw [← map_add]
           rfl
         rw [this, ih₁ hy₁', ih₂ hy₂', add_zero]
-    exact key x hmem x.2
+    exact key x hmem x.property
   -- Extend `g'` by zero on `𝔞^(n + k)`, and then to all of `R` by injectivity of `M`.
   let φ : R →ₗ.[R] M := ⟨𝔟, g'⟩
   let ψ : R →ₗ.[R] M := ⟨𝔞 ^ (n + k), 0⟩
   have H : ∀ (x : φ.domain) (y : ψ.domain), (x : R) = y → φ x = ψ y := by
     intro x y hxy
-    exact (hvanish x (hxy ▸ y.2)).trans (LinearMap.zero_apply _).symm
+    exact (hvanish x (hxy ▸ y.property)).trans (LinearMap.zero_apply _).symm
   obtain ⟨h, hh⟩ := Module.Baer.of_injective (R := R) (Q := M) inferInstance
     (𝔟 ⊔ 𝔞 ^ (n + k)) (φ.sup ψ H).toFun
   have hh₀ : ∀ r ∈ 𝔞 ^ (n + k), h r = 0 := by

@@ -69,7 +69,7 @@ theorem IsRemainder.weightInitialForm_mem_span
   rcases eq_or_lt_of_le hw with heq | hlt
   · rw [← heq, add_comm, smul_eq_mul, weightedHomogeneousComponent_weightedTotalDegree_add,
       ← weightInitialForm_def, ← weightInitialForm_def]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, g.2, rfl⟩)
+    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨g, g.property, rfl⟩)
   · rw [smul_eq_mul, weightedHomogeneousComponent_eq_zero _ _
       ((weightedTotalDegree_mul_le w (q g) (g : MvPolynomial σ R)).trans_lt
         (by simpa [add_comm] using hlt))]
@@ -118,7 +118,7 @@ theorem IsGroebnerBasis.exists_pos_weight_weightInitialIdeal_eq_span_leadingTerm
       obtain ⟨hne, ha⟩ := Finset.mem_erase.1 ha
       exact lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne)
   obtain ⟨w, hw, hcomp⟩ := m.exists_pos_weight_lt
-    (a := fun p : D ↦ p.1.1) (b := fun p : D ↦ p.1.2) fun p ↦ hDm p p.2
+    (a := fun p : D ↦ p.val.1) (b := fun p : D ↦ p.val.2) fun p ↦ hDm p p.property
   have hn := (hCn (m.weightRefinement w) fun p hp ↦
     m.weightRefinement_lt_of_weight_lt w (hcomp ⟨p, Finset.mem_union_left _ hp⟩)).1
   have hi : ∀ g ∈ G, weightInitialForm w g = m.leadingTerm g := by

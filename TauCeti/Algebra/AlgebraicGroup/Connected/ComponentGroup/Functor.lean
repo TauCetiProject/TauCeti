@@ -17,7 +17,8 @@ homomorphism of their component groups. Its underlying function is Mathlib's map
 components of the prime spectra. Compatibility with the rational component maps proves
 multiplicativity and characterizes the induced homomorphism uniquely.
 
-The construction defines a contravariant functor on finite-type commutative Hopf algebras.
+The construction defines a contravariant functor on finite-type commutative Hopf algebras, so an
+isomorphism of affine groups induces an isomorphism of component groups.
 An injective coordinate map induces a surjection on component groups. This gives the
 right-surjectivity part of passing an exact sequence of affine groups to component groups;
 it does not assert exactness at the middle term or injectivity at the left term.
@@ -170,5 +171,26 @@ theorem mapComponentGroup_surjective_of_injective (f : H ⟶ K)
   refine ⟨rationalComponentMap K q', ?_⟩
   rw [mapComponentGroup_rationalComponentMap]
   exact congrArg (rationalComponentMap H) hq'
+
+/-- An isomorphism of finite-type affine groups induces an isomorphism of their component
+groups. Coordinate arrows reverse, so `e : H ≅ K` gives `π₀(Spec K) ≃* π₀(Spec H)`. -/
+noncomputable def mapComponentGroupMulEquiv (e : H ≅ K) :
+    ConnectedComponents (PrimeSpectrum K) ≃* ConnectedComponents (PrimeSpectrum H) :=
+  MonoidHom.toMulEquiv (mapComponentGroup e.hom) (mapComponentGroup e.inv)
+    (by rw [← mapComponentGroup_comp, e.inv_hom_id, mapComponentGroup_id])
+    (by rw [← mapComponentGroup_comp, e.hom_inv_id, mapComponentGroup_id])
+
+/-- The component-group isomorphism of `e` is the component-group map of `e.hom`. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_apply (e : H ≅ K) (c : ConnectedComponents (PrimeSpectrum K)) :
+    mapComponentGroupMulEquiv e c = mapComponentGroup e.hom c :=
+  (rfl)
+
+/-- The inverse component-group isomorphism of `e` is the component-group map of `e.inv`. -/
+@[simp]
+theorem mapComponentGroupMulEquiv_symm_apply (e : H ≅ K)
+    (c : ConnectedComponents (PrimeSpectrum H)) :
+    (mapComponentGroupMulEquiv e).symm c = mapComponentGroup e.inv c :=
+  (rfl)
 
 end TauCeti.FiniteTypeCommHopfAlgCat

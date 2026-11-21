@@ -501,7 +501,7 @@ theorem length_rowReduce_ofFn {m : ℕ} (A : Matrix (Fin m) (Fin n) F) :
     (rowReduce (List.ofFn A)).length = A.rank := by
   have hrows : Set.range A.row = {v | v ∈ List.ofFn A} :=
     Set.ext fun v => (List.mem_ofFn' A v).symm
-  rw [← rank_rowReduceMatrix, Matrix.rank_eq_finrank_span_row, Matrix.rank_eq_finrank_span_row,
+  rw [← rank_rowReduceMatrix, ← Matrix.finrank_span_range_row, ← Matrix.finrank_span_range_row,
     range_row_rowReduceMatrix, hrows, span_rowReduce]
 
 end Field

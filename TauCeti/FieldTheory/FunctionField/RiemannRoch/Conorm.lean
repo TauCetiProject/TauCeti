@@ -225,7 +225,7 @@ theorem Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add [FiniteDimensional k 
   have hmem (p : Fin (Module.finrank k (riemannRochSpace A)) × ι) : (u p.1 : F) • z p.2 ∈ V := by
     rw [Algebra.smul_def]
     exact mul_mem_riemannRochSpace_add
-      ((mem_riemannRochSpace_conorm_iff hF' A _).mpr (u p.1).2) (hzC p.2)
+      ((mem_riemannRochSpace_conorm_iff hF' A _).mpr (u p.1).property) (hzC p.2)
   have hv : LinearIndependent k fun p ↦ (⟨_, hmem p⟩ : V) := by
     refine LinearIndependent.of_comp (V.subtype.restrictScalars k) ?_
     simpa [Function.comp_def] using linearIndependent_smul hu hz

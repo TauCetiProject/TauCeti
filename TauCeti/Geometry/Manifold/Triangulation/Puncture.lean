@@ -74,7 +74,7 @@ theorem exists_triangulation_vertex_image {S : Set M} (hS : S.Finite)
   ext x
   constructor
   · rintro ⟨_, ⟨_, ⟨y, rfl⟩, rfl⟩, rfl⟩
-    exact hmarked y ▸ y.2
+    exact hmarked y ▸ y.property
   · intro hx
     exact ⟨K.vertex (j ⟨x, hx⟩), ⟨j ⟨x, hx⟩, ⟨⟨x, hx⟩, rfl⟩, rfl⟩,
       hmarked ⟨x, hx⟩⟩

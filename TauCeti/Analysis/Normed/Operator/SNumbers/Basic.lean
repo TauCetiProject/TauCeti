@@ -19,7 +19,8 @@ term is the operator norm, and the term at index `n` vanishes on operators of ra
 
 This file defines the ordinary and strict axioms and derives the norm bound, Lipschitz
 continuity and scalar homogeneity. Strictness means normalization on every identity below
-the dimension, not merely on the finite Euclidean identities.
+the dimension, not merely on the finite Euclidean identities. An injective family is one that
+does not change under postcomposition with linear isometries.
 
 ## References
 
@@ -27,6 +28,8 @@ the dimension, not merely on the finite Euclidean identities.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
 * M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82,
   Remark 1, for the strict normalization (S5′) and its implication of (S5).
+* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for injective s-number
+  sequences.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/Basic.lean`: an earlier Lean formalization of the same axiom API.
 -/
@@ -113,6 +116,14 @@ theorem IsStrictSNumberSequence.of_normalize_of_lt_rank {s : SNumberFamily 𝕜}
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
     exact_mod_cast n.lt_succ_self
   normalize_of_lt_rank := normalize_of_lt_rank
+
+/-- An s-number family is injective when postcomposition with a metric injection, that is, a
+linear isometry `J`, leaves every term unchanged: `s (J ∘L T) n = s T n`. -/
+structure IsInjective (s : SNumberFamily 𝕜) : Prop where
+  /-- Postcomposition with a linear isometry leaves every term unchanged. -/
+  linearIsometry_comp : ∀ {X Y Z : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (J : Y →ₗᵢ[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ), s (J.toContinuousLinearMap ∘L T) n = s T n
 
 namespace IsSNumberSequence
 

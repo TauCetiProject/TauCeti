@@ -79,13 +79,13 @@ theorem kostantToralGeneratorMap_inr (r : J → I)
 torus branches without exposing the implementation of the family itself. -/
 theorem commonKernelHopfIdeal_kostantToralGeneratorMap_subtype (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (rho (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (rho (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     CommHopfAlgCat.commonKernelHopfIdeal
         (kostantToralGeneratorMap e h rho M hM b wt Subtype.val hnilS) =
       CommHopfAlgCat.commonKernelHopfIdeal
         ((fun j : Sum S Unit =>
           match j with
-          | .inl i => kostantRootSubgroupCoordinateMap e h rho M hM i.1 (hnilS i) b
+          | .inl i => kostantRootSubgroupCoordinateMap e h rho M hM i.val (hnilS i) b
           | .inr _ => GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt) :
           (j : Sum S Unit) → GeneralLinear.coordinateHopfAlgebra ℤ n ⟶
             match j with
