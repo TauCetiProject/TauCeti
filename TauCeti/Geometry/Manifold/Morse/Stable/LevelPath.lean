@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Trapping
 public import TauCeti.Topology.Closure
 public import TauCeti.Topology.PathSpace.Moore
 import TauCeti.Data.Fin.Basic
+import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.Stable.Stratum
 
@@ -181,15 +182,10 @@ private theorem exists_onChain {a : ℝ} (ha : a ∈ Icc (f (x (Fin.last k))) (f
   push Not at hcrit
   obtain ⟨j, hj₁, hj₂⟩ := Fin.exists_succ_lt_lt_castSucc (g := fun l ↦ f (x l)) hcrit
     (lt_of_le_of_ne ha.2 (hcrit 0).symm) (lt_of_le_of_ne ha.1 (hcrit _))
-  -- The values along the orbit of `z j` run from `f (x j)` down to `f (x (j + 1))`.
   have hfc := hX.mdifferentiable.continuous
-  have hg : Continuous fun t ↦ f (hX.flow t (z j)) :=
-    hfc.comp (hX.flow.continuous continuous_id continuous_const)
-  obtain ⟨t₁, ht₁⟩ := ((hfc.tendsto _).comp (Flow.mem_unstableSet.1 (hz j).1)
-    |>.eventually (lt_mem_nhds hj₂)).exists
-  obtain ⟨t₂, ht₂⟩ := ((hfc.tendsto _).comp (Flow.mem_stableSet.1 (hz j).2)
-    |>.eventually (gt_mem_nhds hj₁)).exists
-  obtain ⟨t, ht⟩ := intermediate_value_univ t₂ t₁ hg ⟨ht₂.le, ht₁.le⟩
+  obtain ⟨t, ht⟩ := Flow.exists_apply_flow_eq_of_mem_unstableSet_inter_stableSet
+    (hfc.comp (hX.flow.continuous continuous_id continuous_const)) hfc.continuousAt
+    hfc.continuousAt (hz j) ⟨hj₁, hj₂⟩
   exact ⟨_, Or.inr ⟨j, t, rfl⟩, ht⟩
 
 /-- **Going down a broken trajectory.** A point `m` of a broken trajectory below a point `u` of the
