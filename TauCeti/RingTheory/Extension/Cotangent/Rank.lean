@@ -25,9 +25,11 @@ number of generators of `I` near that point. This file compares it across presen
   Thus `dim F ⊗[S] I/I² - m` is bounded by the number of relations minus the number of generators
   of any presentation; in particular a presentation of `S` by `n + c'` generators and `c'`
   relations forces `I` to need at most `m - n` generators near every point.
-* Inverting an element `g` of `S` by one more generator `y` and one more relation `g y - 1` raises
-  the dimension of the fibre by one
-  (`Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway`).
+* When the conormal module of a composite presentation `R[X, Y] → T` splits as
+  `T ⊗[S] I/I² × K/K²`, the dimensions of the fibres add
+  (`Algebra.Generators.finrank_tensor_cotangent_comp_of_linearEquiv`). For instance, inverting an
+  element `g` of `S` by one more generator `y` and one more relation `g y - 1` raises the dimension
+  of the fibre by one (`Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway`).
 * The fibre of `I/I²` over `S` is the fibre of `I` over `R[x₁, …, x_m]`
   (`Algebra.Generators.finrank_tensor_cotangent`).
 
@@ -170,6 +172,23 @@ theorem finrank_tensor_cotangent_add_card_le (P : Generators R S ι) (F : Type*)
 variable {T F : Type*} [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T] [Field F]
   [Algebra S F] [Algebra T F] [IsScalarTower S T F]
 
+/-- If the conormal module `J/J²` of a composite presentation `R[X, Y] → T` splits as
+`T ⊗[S] I/I² × K/K²`, then at a field-valued point of `T` with finite-dimensional fibres of `I/I²`
+and `K/K²`, the dimension of the fibre of `J/J²` is the sum of their dimensions. -/
+theorem finrank_tensor_cotangent_comp_of_linearEquiv {ι' : Type*} (Q : Generators S T ι')
+    (P : Generators R S ι)
+    (e : (Q.comp P).toExtension.Cotangent ≃ₗ[T]
+      T ⊗[S] P.toExtension.Cotangent × Q.toExtension.Cotangent)
+    [Module.Finite F (F ⊗[S] P.toExtension.Cotangent)]
+    [Module.Finite F (F ⊗[T] Q.toExtension.Cotangent)] :
+    Module.finrank F (F ⊗[T] (Q.comp P).toExtension.Cotangent) =
+      Module.finrank F (F ⊗[S] P.toExtension.Cotangent) +
+        Module.finrank F (F ⊗[T] Q.toExtension.Cotangent) := by
+  have : Module.Finite F (F ⊗[T] (T ⊗[S] P.toExtension.Cotangent)) :=
+    Module.Finite.equiv (AlgebraTensorModule.cancelBaseChange S T F F _).symm
+  rw [(e.baseChange T F _ _).finrank_eq, (TensorProduct.prodRight T F F _ _).finrank_eq,
+    Module.finrank_prod, (AlgebraTensorModule.cancelBaseChange S T F F _).finrank_eq]
+
 /-- Presenting the localization `T = S[1/g]` by the generators of `P` and one more generator
 `y`, subject to one more relation `g y - 1`, raises the dimension of the fibre of the conormal
 module at a field-valued point of `T` by one. -/
@@ -182,9 +201,7 @@ theorem finrank_tensor_cotangent_comp_localizationAway (g : S) [IsLocalization.A
   have : Nontrivial T := (algebraMap T F).domain_nontrivial
   have : Module.Finite T (localizationAway T g).toExtension.Cotangent :=
     .of_basis (basisCotangentAway T g)
-  rw [((cotangentCompLocalizationAwayEquiv g P hx).baseChange T F _ _).finrank_eq,
-    (TensorProduct.prodRight T F F _ _).finrank_eq, Module.finrank_prod,
-    (AlgebraTensorModule.cancelBaseChange S T F F _).finrank_eq,
+  rw [finrank_tensor_cotangent_comp_of_linearEquiv _ P (cotangentCompLocalizationAwayEquiv g P hx),
     Module.finrank_baseChange (R := F) (S := T),
     Module.finrank_eq_card_basis (basisCotangentAway T g), Fintype.card_unit]
 

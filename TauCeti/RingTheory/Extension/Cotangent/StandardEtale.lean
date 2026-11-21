@@ -7,10 +7,9 @@ module
 
 public import Mathlib.RingTheory.Etale.StandardEtale
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
-import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.RingTheory.Etale.StandardEtaleQuotient
 import TauCeti.RingTheory.Extension.Cotangent.FlatLift
+import TauCeti.RingTheory.Extension.Cotangent.Rank
 import TauCeti.RingTheory.Extension.Cotangent.Smooth
 
 /-!
@@ -112,6 +111,14 @@ lemma cotangentCompEquivOfIsStandardEtale_symm_inl (a : B ⊗[A] P.toExtension.C
       LinearMap.liftBaseChange B (Extension.Cotangent.map (Q.toComp P).toExtensionHom) a :=
   LinearMap.congr_fun (cotangentCompEquivOfIsStandardEtale_symm_comp_inl Q P) a
 
+/-- The splitting sends the image of `B ⊗[A] I/I²` to the first factor. -/
+@[simp]
+lemma cotangentCompEquivOfIsStandardEtale_liftBaseChange (a : B ⊗[A] P.toExtension.Cotangent) :
+    cotangentCompEquivOfIsStandardEtale Q P
+        (LinearMap.liftBaseChange B (Extension.Cotangent.map (Q.toComp P).toExtensionHom) a) =
+      (a, 0) := by
+  rw [← cotangentCompEquivOfIsStandardEtale_symm_inl, LinearEquiv.apply_symm_apply]
+
 /-- Pointwise form of `snd_comp_cotangentCompEquivOfIsStandardEtale`. -/
 @[simp]
 lemma snd_cotangentCompEquivOfIsStandardEtale (a : (Q.comp P).toExtension.Cotangent) :
@@ -119,10 +126,11 @@ lemma snd_cotangentCompEquivOfIsStandardEtale (a : (Q.comp P).toExtension.Cotang
       Extension.Cotangent.map (Q.ofComp P).toExtensionHom a :=
   LinearMap.congr_fun (snd_comp_cotangentCompEquivOfIsStandardEtale Q P) a
 
-/-- Through a standard étale `A`-algebra `B` with a submersive presentation `Q`, the fibre at a
-field-valued point of `B` of the conormal module of the composite presentation `R[X, Y] → B` has
-dimension the dimension of the fibre of the conormal module of `P`, plus the number of relations
-of `Q`. -/
+/-- Through a standard étale `A`-algebra `B` with a submersive presentation `Q` with finitely many
+relations, the fibre at a field-valued point `F` of `B` of the conormal module of the composite
+presentation `R[X, Y] → B` has dimension the dimension of the fibre of the conormal module of `P`,
+plus the number of relations of `Q`, provided the fibre `F ⊗[A] I/I²` of the conormal module of
+`P` is finite-dimensional. -/
 theorem finrank_tensor_cotangent_comp_of_isStandardEtale {σ : Type*} [Finite σ]
     (Q : SubmersivePresentation A B ι' σ) (F : Type*) [Field F] [Algebra A F] [Algebra B F]
     [IsScalarTower A B F] [Module.Finite F (F ⊗[A] P.toExtension.Cotangent)] :
@@ -131,20 +139,11 @@ theorem finrank_tensor_cotangent_comp_of_isStandardEtale {σ : Type*} [Finite σ
   have : Nontrivial B := (algebraMap B F).domain_nontrivial
   have := Fintype.ofFinite σ
   have : Module.Finite B Q.toExtension.Cotangent := .of_basis Q.basisCotangent
-  have : Module.Finite F (F ⊗[B] (B ⊗[A] P.toExtension.Cotangent)) :=
-    Module.Finite.equiv (AlgebraTensorModule.cancelBaseChange A B F F _).symm
-  -- The splitting, transported to the fibre.
-  have hsplit : Module.finrank F (F ⊗[B] (Q.toGenerators.comp P).toExtension.Cotangent) =
-      Module.finrank F (F ⊗[A] P.toExtension.Cotangent) +
-        Module.finrank F (F ⊗[B] Q.toExtension.Cotangent) := by
-    rw [((cotangentCompEquivOfIsStandardEtale Q.toGenerators P).baseChange B F _ _).finrank_eq,
-      (_root_.TensorProduct.prodRight B F F _ _).finrank_eq, Module.finrank_prod,
-      (AlgebraTensorModule.cancelBaseChange A B F F _).finrank_eq]
-  -- The conormal module of `Q` is free on its relations.
-  have hfree : Module.finrank F (F ⊗[B] Q.toExtension.Cotangent) = Nat.card σ := by
-    rw [(Q.cotangentEquiv.baseChange B F _ _).finrank_eq,
-      Module.finrank_baseChange (R := F) (M' := σ → B), Module.finrank_fintype_fun_eq_card,
-      Nat.card_eq_fintype_card]
-  rw [hsplit, hfree]
+  -- The splitting, transported to the fibre; the conormal module of `Q` is free on its relations.
+  rw [finrank_tensor_cotangent_comp_of_linearEquiv _ P
+      (cotangentCompEquivOfIsStandardEtale Q.toGenerators P),
+    (Q.cotangentEquiv.baseChange B F _ _).finrank_eq,
+    Module.finrank_baseChange (R := F) (M' := σ → B), Module.finrank_fintype_fun_eq_card,
+    Nat.card_eq_fintype_card]
 
 end Algebra.Generators

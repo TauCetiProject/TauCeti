@@ -135,10 +135,12 @@ lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[
   -- `AdjoinRoot.map` factors through `AdjoinRoot p ⧸ (ker f)` via Mathlib's identification of
   -- this quotient with `AdjoinRoot` of the reduction of `p` modulo `ker f`.
   let e := f.quotientKerEquivOfSurjective hf
+  -- `e` composed with the quotient map is `f`.
+  have hef : (e : _ →+* S).comp (Ideal.Quotient.mk (RingHom.ker f)) = f :=
+    RingHom.ext (RingHom.quotientKerEquivOfSurjective_apply_mk hf)
   have he : Associated ((p.map (Ideal.Quotient.mk (RingHom.ker f))).map (e : _ →+* S))
       (p.map f) := by
-    rw [Polynomial.map_map]
-    rfl
+    rw [Polynomial.map_map, hef]
   let ψ₀ : AdjoinRoot p ⧸ (RingHom.ker f).map (of p) →+*
       AdjoinRoot (p.map (Ideal.Quotient.mk (RingHom.ker f))) :=
     (quotEquivQuotMap p (RingHom.ker f)).toRingHom
@@ -150,9 +152,7 @@ lemma ker_map_of_surjective {f : R →+* S} (hf : Function.Surjective f) (p : R[
         mk _ (g.map (Ideal.Quotient.mk (RingHom.ker f))) :=
       quotEquivQuotMap_apply_mk p g (RingHom.ker f)
     rw [map_mk, RingHom.comp_apply, RingHom.comp_apply, h₀, RingEquiv.toRingHom_eq_coe,
-      RingEquiv.coe_toRingHom, coe_mapRingEquiv, map_mk, Polynomial.map_map]
-    -- `e` composed with the quotient map is `f`.
-    rfl
+      RingEquiv.coe_toRingHom, coe_mapRingEquiv, map_mk, Polynomial.map_map, hef]
   rw [hψ, RingHom.ker_comp_of_injective _ ((mapRingEquiv e _ _ he).injective.comp
     (quotEquivQuotMap p (RingHom.ker f)).injective), Ideal.mk_ker]
 

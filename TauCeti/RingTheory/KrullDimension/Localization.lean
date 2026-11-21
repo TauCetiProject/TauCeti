@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Ideal.Height
 The primes of a localization `A[1/a]` correspond to the primes of `A` avoiding `a`, with the same
 heights (`IsLocalization.height_under`). So the Krull dimension of `A[1/a]` is bounded by any
 bound on the heights of the primes of the basic open `D(a)` of `Spec A`
-(`TauCeti.ringKrullDim_le_of_isLocalization_away`).
+(`TauCeti.ringKrullDim_le_of_height_le_on_basicOpen`).
 -/
 
 public section
@@ -22,7 +22,7 @@ namespace TauCeti
 
 /-- If every prime of `A` avoiding `a` has height at most `n`, then the localization `A[1/a]` has
 Krull dimension at most `n`. -/
-theorem ringKrullDim_le_of_isLocalization_away {A S : Type*} [CommRing A] [CommRing S]
+theorem ringKrullDim_le_of_height_le_on_basicOpen {A S : Type*} [CommRing A] [CommRing S]
     [Algebra A S] (a : A) [IsLocalization.Away a S] {n : ℕ}
     (hdim : ∀ p : Ideal A, p.IsPrime → a ∉ p → Ideal.height p ≤ n) :
     ringKrullDim S ≤ n := by

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Kaehler
-public import Mathlib.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
@@ -19,22 +18,24 @@ Jacobi–Zariski gives the exact sequence `B ⊗[A] I/I² → J/J² → K/K² �
 `B` lifts to a flat `R[X]`-algebra `C` with `C ⧸ I C ≅ B`
 (`Algebra.Generators.liftBaseChange_injective_of_flat_lift`).
 
-The proof goes through Mathlib's `Algebra.Extension.tensorCotangent`, which identifies
-`B ⊗[A] I/I²` with the conormal module of an extension `E` of `B` as soon as the kernel of `E` is
-the base change of `I`. For an extension whose ring is flat over `R[X]` with kernel `I E.Ring`,
-this holds (`Algebra.Extension.Hom.bijective_liftBaseChange_mapKer_of_flat`). If the map of
-extensions into `E` factors through another extension `P'` of `B`, then
+The proof goes through Mathlib's `Algebra.Extension.tensorCotangent`. For a map of extensions
+`P → E`, with `E` an extension of `B` with kernel `J'`, it identifies `B ⊗[A] I/I²` with `J'/J'²`
+provided the canonical map `E.Ring ⊗[P.Ring] I → J'` is bijective. Equality `J' = I E.Ring` with
+the extended ideal only makes this map surjective; if moreover `E.Ring` is flat over `P.Ring`, it
+is bijective (`Algebra.Extension.Hom.liftBaseChange_mapKer_bijective_of_flat_of_ker_eq_map`). If
+the map of extensions into `E` factors through another extension `P'` of `B`, then
 `B ⊗[A] I/I² → P'.Cotangent` is injective
-(`Algebra.Extension.liftBaseChange_injective_of_comp_eq`); for the flat lift `C → B`, take
-`P'` to be the composite presentation.
+(`Algebra.Extension.liftBaseChange_injective_of_bijective_liftBaseChange_mapKer_of_comp_eq`); for
+the flat lift `C → B`, take `P'` to be the composite presentation.
 
 ## Main results
 
-* `Algebra.Extension.tensorCotangent_apply`: the forward map of Mathlib's `tensorCotangent`.
-* `Algebra.Extension.Hom.bijective_liftBaseChange_mapKer_of_flat`: flat extension morphisms with
-  extended kernel identify `E.Ring ⊗ I` with the kernel of `E`.
-* `Algebra.Extension.liftBaseChange_injective_of_comp_eq`: conormal maps through a factorization
-  of such a morphism are injective after base change.
+* `Algebra.Extension.tensorCotangent_apply`, `Algebra.Extension.tensorCotangent_tmul`: the forward
+  map of Mathlib's `tensorCotangent`.
+* `Algebra.Extension.Hom.liftBaseChange_mapKer_bijective_of_flat_of_ker_eq_map`: flat extension
+  morphisms with extended kernel identify `E.Ring ⊗ I` with the kernel of `E`.
+* `Algebra.Extension.liftBaseChange_injective_of_bijective_liftBaseChange_mapKer_of_comp_eq`:
+  conormal maps through a factorization of such a morphism are injective after base change.
 * `Algebra.Generators.liftBaseChange_injective_of_flat_lift`: the case of a composite
   presentation and a flat lift.
 
@@ -65,29 +66,34 @@ theorem tensorCotangent_apply (f : P.Hom E) [Algebra P.Ring E.Ring]
     tensorCotangent f halg H x = (Cotangent.map f).liftBaseChange B x :=
   rfl
 
+/-- The forward map of `Algebra.Extension.tensorCotangent` on a pure tensor. -/
+@[simp]
+theorem tensorCotangent_tmul (f : P.Hom E) [Algebra P.Ring E.Ring]
+    (halg : algebraMap P.Ring E.Ring = f.toRingHom)
+    (H : Function.Bijective ((f.mapKer halg).liftBaseChange E.Ring)) (b : B) (x : P.Cotangent) :
+    tensorCotangent f halg H (b ⊗ₜ x) = b • Cotangent.map f x :=
+  LinearMap.liftBaseChange_tmul _ _ _ _
+
 /-- For a map of extensions `f : P → E` whose ring map is flat and whose target kernel `J'` is the
 extension `I E.Ring` of the kernel `I` of `P`, the map `E.Ring ⊗[P.Ring] I → J'` is bijective. -/
-theorem Hom.bijective_liftBaseChange_mapKer_of_flat (f : P.Hom E) [Algebra P.Ring E.Ring]
-    [Module.Flat P.Ring E.Ring] (halg : algebraMap P.Ring E.Ring = f.toRingHom)
+theorem Hom.liftBaseChange_mapKer_bijective_of_flat_of_ker_eq_map (f : P.Hom E)
+    [Algebra P.Ring E.Ring] [Module.Flat P.Ring E.Ring]
+    (halg : algebraMap P.Ring E.Ring = f.toRingHom)
     (hker : E.ker = P.ker.map (algebraMap P.Ring E.Ring)) :
     Function.Bijective ((f.mapKer halg).liftBaseChange E.Ring) := by
-  have hbij := Ideal.liftBaseChange_idealMap_bijective E.Ring P.ker
-  have key : ∀ z, ((f.mapKer halg).liftBaseChange E.Ring z).val =
-      ((Algebra.idealMap E.Ring P.ker).liftBaseChange E.Ring z).val := by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul c x => simp [halg]
-    | add z w hz hw => simp only [map_add, Submodule.coe_add, hz, hw]
-  refine ⟨fun z w hzw ↦ hbij.1 (Subtype.ext ((key z).symm.trans
-    ((congrArg Subtype.val hzw).trans (key w)))), fun y ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hbij.2 ⟨y.val, hker ▸ y.property⟩
-  exact ⟨z, Subtype.ext ((key z).trans congr(($hz).val))⟩
+  -- `f.mapKer` is `I → I E.Ring` followed by the identification `I E.Ring = E.ker`.
+  have h : f.mapKer halg = ((LinearEquiv.ofEq _ _ hker.symm).toLinearMap.restrictScalars P.Ring)
+      ∘ₗ Algebra.idealMap E.Ring P.ker := by
+    ext x
+    simp [halg]
+  rw [h, ← LinearMap.comp_liftBaseChange, LinearMap.coe_comp]
+  exact (LinearEquiv.bijective _).comp (Ideal.liftBaseChange_idealMap_bijective E.Ring P.ker)
 
 /-- Let `f : P → E` be a map of extensions such that `E.Ring ⊗[P.Ring] I → J'` is bijective, so
 that `B ⊗[A] I/I² ≅ J'/J'²` (`Algebra.Extension.tensorCotangent`). If `f` factors through an
 extension `P'` of `B`, then the induced map `B ⊗[A] I/I² → P'.Cotangent` is injective. -/
-theorem liftBaseChange_injective_of_comp_eq (f : P.Hom E) [Algebra P.Ring E.Ring]
-    (halg : algebraMap P.Ring E.Ring = f.toRingHom)
+theorem liftBaseChange_injective_of_bijective_liftBaseChange_mapKer_of_comp_eq (f : P.Hom E)
+    [Algebra P.Ring E.Ring] (halg : algebraMap P.Ring E.Ring = f.toRingHom)
     (H : Function.Bijective ((f.mapKer halg).liftBaseChange E.Ring))
     (h : P.Hom P') (g : P'.Hom E) (hgf : g.comp h = f) :
     Function.Injective ((Cotangent.map h).liftBaseChange B) := by
@@ -152,7 +158,7 @@ theorem liftBaseChange_injective_of_flat_lift {C : Type (max u v)} [CommRing C]
     ext1
     simp only [Extension.Hom.comp_toRingHom, Hom.toExtensionHom_toRingHom, toComp_toAlgHom, g, f]
     exact congrArg AlgHom.toRingHom key
-  exact Extension.liftBaseChange_injective_of_comp_eq f halg
-    (f.bijective_liftBaseChange_mapKer_of_flat halg hker) _ g hgf
+  exact Extension.liftBaseChange_injective_of_bijective_liftBaseChange_mapKer_of_comp_eq f halg
+    (f.liftBaseChange_mapKer_bijective_of_flat_of_ker_eq_map halg hker) _ g hgf
 
 end Algebra.Generators

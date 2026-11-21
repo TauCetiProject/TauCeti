@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.RingHom.StandardSmooth
 public import Mathlib.RingTheory.RingHom.Locally
 public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
+import Mathlib.RingTheory.Ideal.Height
 
 /-!
 # Standard syntomic ring homomorphisms
@@ -28,7 +29,11 @@ Locally standard syntomic ring maps are also flat and finitely presented
 (`TauCeti.flat_of_locally_isStandardSyntomicOfRelativeDimension`,
 `TauCeti.finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension`), and to be locally
 standard syntomic it suffices to have a standard syntomic basic open neighbourhood of every closed
-point (`TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal`).
+point (`TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal`). Conversely, a
+locally standard syntomic algebra has such a neighbourhood around every proper ideal
+(`TauCeti.exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally`). Over a field
+`k`, a locally standard syntomic algebra of relative dimension `n` has Krull dimension at most `n`
+(`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`).
 The theorem `TauCeti.isStandardSyntomicOfRelativeDimension_iff n f` relates an arbitrary
 ring map to its induced algebra structure. With `hf` as above, both conversions use the
 public bridge:
@@ -202,6 +207,43 @@ theorem locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal [Algeb
   rw [Set.mem_ofPred_eq, ← IsScalarTower.algebraMap_eq,
     isStandardSyntomicOfRelativeDimension_algebraMap]
   exact hstd
+
+/-- A locally standard syntomic algebra has a standard syntomic basic open neighbourhood of every
+proper ideal `I`: for some `g` whose powers avoid `I`, the localization `S[1/g]` is standard
+syntomic of relative dimension `n` over `R`. -/
+theorem exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally [Algebra R S]
+    (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R S))
+    (I : Ideal S) (hI : I ≠ ⊤) :
+    ∃ g : S, Disjoint (I : Set S) (Submonoid.powers g) ∧
+      Algebra.IsStandardSyntomicOfRelativeDimension n R (Localization.Away g) := by
+  obtain ⟨s, hs, hst⟩ := h
+  obtain ⟨g, hgs, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs I hI
+  refine ⟨g, hdisj, ?_⟩
+  rw [← isStandardSyntomicOfRelativeDimension_algebraMap, IsScalarTower.algebraMap_eq R S]
+  exact hst g hgs
+
+open TensorProduct in
+/-- An algebra over a field which is locally standard syntomic of relative dimension `n` has Krull
+dimension at most `n`. -/
+theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : Type u} [Field k]
+    [CommRing A] [Algebra k A]
+    (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap k A)) :
+    ringKrullDim A ≤ n := by
+  refine (ringKrullDim_le_iff_height_le _).mpr fun P hP ↦ ?_
+  -- Some chart `A[1/t]` of the cover contains `P`, and the height of `P` is computed there.
+  obtain ⟨t, hdisj, _⟩ :=
+    exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally h P hP.ne_top
+  have hPt : (P.map (algebraMap A (Localization.Away t))).IsPrime :=
+    IsLocalization.isPrime_of_isPrime_disjoint _ _ P hP hdisj.symm
+  -- The chart is nonzero, so over the field `k` its Krull dimension is exactly `n`.
+  let e := Algebra.TensorProduct.lid k (Localization.Away t)
+  have : Nontrivial (Localization.Away t) := PrimeSpectrum.nontrivial ⟨_, hPt⟩
+  have : Nontrivial (k ⊗[k] Localization.Away t) := e.toEquiv.nontrivial
+  rw [← IsLocalization.height_map_of_disjoint (S := Localization.Away t) (.powers t) P
+    hdisj.symm]
+  refine Ideal.height_le_ringKrullDim_of_isPrime.trans_eq ?_
+  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
+    Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field (n := n) k]
 
 end Locally
 

@@ -8,12 +8,11 @@ module
 public import TauCeti.RingTheory.RingHom.StandardSyntomic
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
-import Mathlib.RingTheory.Etale.StandardEtale
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Extension.Cotangent.Rank
 import TauCeti.RingTheory.Extension.Cotangent.StandardEtale
-import TauCeti.RingTheory.KrullDimension.Flat
-import TauCeti.RingTheory.Syntomic.Fiber
+import TauCeti.RingTheory.KrullDimension.GoingDown
+import TauCeti.RingTheory.Syntomic.LocalCriterion
 
 /-!
 # Descent of standard syntomic algebras along étale maps of the source
@@ -36,7 +35,8 @@ the generators `x, y, w`, the fibre of the conormal module at `Q` has dimension 
 of `I` (`Algebra.Generators.finrank_tensor_cotangent_comp_of_isStandardEtale`), and comparison with
 the standard syntomic presentation of `B` bounds the fibre of `I` at `Q` by `m - n`. The image of
 `Spec B → Spec A` is an open neighbourhood of `Q ∩ A`, and on it heights are at most
-`dim B ≤ n`, since flat maps satisfy going down (`TauCeti.exists_notMem_forall_height_le_of_flat`).
+`dim B ≤ n`, since flat maps satisfy going down
+(`TauCeti.exists_notMem_forall_height_le_of_hasGoingDown_of_ringKrullDim_le`).
 The presentation criterion
 `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le`
 then gives the standard syntomic neighbourhood.
@@ -102,9 +102,8 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
   have : Algebra.FinitePresentation k B := RingHom.finitePresentation_algebraMap.mp
     (isStandardSyntomicOfRelativeDimension_algebraMap (n := n) |>.mpr inferInstance
       ).finitePresentation
-  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing k A
-  obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_of_flat (A := A)
-    (ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
+  obtain ⟨a, ha, hdim⟩ := exists_notMem_forall_height_le_of_hasGoingDown_of_ringKrullDim_le
+    (A := A) (ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension (RingHom.locally_of
       (isStandardSyntomicOfRelativeDimension_respectsIso n) (algebraMap k B)
       (isStandardSyntomicOfRelativeDimension_algebraMap.mpr inferInstance))) Q
   exact exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_finrank_le
@@ -132,14 +131,10 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
       (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).right
       _ t₁ _ h
   -- A standard syntomic neighbourhood `B₂ = B₁[1/t₂]` of `Q₁`, still standard étale.
-  obtain ⟨s, hs, hst⟩ := h₁
-  obtain ⟨t₂, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs Q₁
-    ‹Q₁.IsPrime›.ne_top
+  obtain ⟨t₂, hdisj, _⟩ :=
+    exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally h₁ Q₁
+      ‹Q₁.IsPrime›.ne_top
   let B₂ := Localization.Away t₂
-  have : Algebra.IsStandardSyntomicOfRelativeDimension n k B₂ := by
-    rw [← isStandardSyntomicOfRelativeDimension_algebraMap,
-      IsScalarTower.algebraMap_eq k B₁ B₂]
-    exact hst t₂ hts
   have : Algebra.IsStandardEtale A B₂ := .of_isLocalizationAway t₂
   let Q₂ := Q₁.map (algebraMap B₁ B₂)
   have : Q₂.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ _ Q₁ inferInstance hdisj.symm

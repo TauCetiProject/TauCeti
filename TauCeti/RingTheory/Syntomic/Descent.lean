@@ -14,9 +14,9 @@ import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.Basic
 import TauCeti.RingTheory.Ideal.TensorProduct
 import TauCeti.RingTheory.KrullDimension.FiniteType
-import TauCeti.RingTheory.KrullDimension.Presentation
 import TauCeti.RingTheory.Spectrum.Prime.Point
 import TauCeti.RingTheory.Syntomic.Fiber
+import TauCeti.RingTheory.Syntomic.LocalCriterion
 
 /-!
 # Descent of standard syntomic algebras
@@ -102,14 +102,10 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
     ext a
     simp
   -- A standard syntomic chart `T = (K ⊗[k] A)[1/t]` around `q'`.
-  obtain ⟨s, hs, hst⟩ := h
   have hq'top : q' ≠ ⊤ := fun h ↦ ‹q.IsPrime›.ne_top (by rw [← hq', h, Ideal.comap_top])
-  obtain ⟨t, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs q' hq'top
+  obtain ⟨t, hdisj, hT⟩ :=
+    exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally h q' hq'top
   let T := Localization.Away t
-  have hT : Algebra.IsStandardSyntomicOfRelativeDimension n K T := by
-    rw [← isStandardSyntomicOfRelativeDimension_algebraMap,
-      IsScalarTower.algebraMap_eq K (K ⊗[k] A)]
-    exact hst t hts
   let Q := q'.map (algebraMap (K ⊗[k] A) T)
   have : Q.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ _ q' inferInstance hdisj.symm
   -- The point `F = κ(Q)`, with its algebra structures over `K ⊗[k] A`, `K[ι]` and `k[ι]`.
