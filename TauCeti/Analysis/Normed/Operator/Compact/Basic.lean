@@ -71,6 +71,16 @@ theorem mul_right {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M)
 
 end Mul
 
+/-- The product of two compact operators is compact. In particular this applies to the
+block-diagonal product of continuous linear maps. -/
+theorem prodMap {E F E' F' : Type*} [Zero E] [TopologicalSpace E] [TopologicalSpace F]
+    [Zero E'] [TopologicalSpace E'] [TopologicalSpace F'] {A : E → F} {B : E' → F'}
+    (hA : IsCompactOperator A) (hB : IsCompactOperator B) :
+    IsCompactOperator (Prod.map A B) := by
+  obtain ⟨K, hK, hAK⟩ := hA
+  obtain ⟨L, hL, hBL⟩ := hB
+  exact ⟨K ×ˢ L, hK.prod hL, prod_mem_nhds hAK hBL⟩
+
 variable {𝕜₁ 𝕜₂ X Y : Type*} [NontriviallyNormedField 𝕜₁] [SeminormedRing 𝕜₂]
   {σ₁₂ : 𝕜₁ →+* 𝕜₂} [SeminormedAddCommGroup X] [NormedSpace 𝕜₁ X] [AddCommMonoid Y]
   [Module 𝕜₂ Y] {K : X →ₛₗ[σ₁₂] Y}
