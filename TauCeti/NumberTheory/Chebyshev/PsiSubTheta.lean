@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecialFunctions.Log.Base
 import TauCeti.NumberTheory.Chebyshev.Basic
 
 /-!
@@ -53,12 +53,15 @@ by `6 * x / log x` for every `x ≥ 2`.
 * `TauCeti.theta_sqrt_le_psi_sub_theta`, `TauCeti.theta_sqrt_add_theta_cbrt_le_psi_sub_theta`:
   unconditional lower bounds on `ψ x - θ x`.
 * `TauCeti.sum_theta_rpow_le`: bounds the `k ≥ 3` sum by `c * psiSubThetaTailCoeff x * x ^ (1 / 3)`.
-* `TauCeti.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
+* `TauCeti.psiSubThetaTailCoeff_eq_zero_iff`,
+  `TauCeti.psiSubThetaTailCoeff_eq_sum_of_mem_Ico`,
   `TauCeti.strictAntiOn_psiSubThetaTailCoeff_Ico_two_pow`,
   `TauCeti.psiSubThetaTailCoeff_two_pow_succ_lt`,
+  `TauCeti.psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine`,
   `TauCeti.psiSubThetaTailCoeff_le_psiSubThetaTailBound`,
-  `TauCeti.antitoneOn_psiSubThetaTailBound`: dyadic monotonicity and uniform envelope for
-  `psiSubThetaTailCoeff`.
+  `TauCeti.psiSubThetaTailBound_le_iff_forall`,
+  `TauCeti.antitoneOn_psiSubThetaTailBound`: vanishing, dyadic monotonicity, sharpness, and
+  uniform least-upper-bound envelope for `psiSubThetaTailCoeff`.
 * `TauCeti.psi_sub_theta_le_add_max_mul_cbrt`, `TauCeti.psi_sub_theta_le_of_theta_le`,
   `TauCeti.psi_sub_theta_le_log4_mul`, `TauCeti.mul_sqrt_le_psi_sub_theta`,
   `TauCeti.psi_sub_theta_le_add_mul_cbrt`: unconditional and general-`θ` bounds on `ψ x - θ x`.
@@ -106,12 +109,8 @@ theorem psi_sub_theta_eq_sum_theta {x : ℝ} (hx : 0 ≤ x) :
     ψ x - θ x = ∑ k ∈ Icc 2 ⌊Real.log x / Real.log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) := by
   rcases lt_or_ge x 2 with hx2 | hx2
   · rw [Chebyshev.psi_eq_zero_of_lt_two hx2, Chebyshev.theta_eq_zero_of_lt_two hx2, sub_zero]
-    have hlt : ⌊Real.log x / Real.log 2⌋₊ < 1 := by
-      rcases hx.eq_or_lt with rfl | hx0
-      · simp
-      · rw [← Real.logb, Nat.floor_lt' one_ne_zero, Real.logb_lt_iff_lt_rpow one_lt_two hx0,
-          Nat.cast_one, Real.rpow_one]
-        exact hx2
+    have hlt : ⌊Real.log x / Real.log 2⌋₊ < 1 :=
+      (Real.natFloor_logb_lt_iff_lt_pow one_lt_two hx one_ne_zero).2 (by simpa using hx2)
     rw [Icc_eq_empty (by omega), sum_empty]
   · rw [Chebyshev.psi_eq_theta_add_sum_theta hx2, add_sub_cancel_left]
 
@@ -121,23 +120,16 @@ theorem psi_sub_theta_eq_theta_sqrt_add_sum {x : ℝ} (hx : 0 ≤ x) :
     ψ x - θ x = θ √x + ∑ k ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊, θ (x ^ ((1 : ℝ) / k)) := by
   rw [psi_sub_theta_eq_sum_theta hx]
   rcases lt_or_ge x 4 with hx4 | hx4
-  · have hlt : ⌊Real.log x / Real.log 2⌋₊ < 2 := by
-      rcases hx.eq_or_lt with rfl | hx0
-      · simp
-      · rw [← Real.logb, Nat.floor_lt' (by norm_num), Real.logb_lt_iff_lt_rpow one_lt_two hx0,
-          Real.rpow_natCast]
-        norm_num
-        exact hx4
+  · have hlt : ⌊Real.log x / Real.log 2⌋₊ < 2 :=
+      (Real.natFloor_logb_lt_iff_lt_pow one_lt_two hx (by norm_num)).2 (by norm_num; exact hx4)
     have hsq : √x < 2 := by
       rw [Real.sqrt_lt' (by norm_num)]
       linarith
     rw [Chebyshev.theta_eq_zero_of_lt_two hsq, Icc_eq_empty (by omega), Icc_eq_empty (by omega),
       sum_empty, zero_add]
-  · have h2 : 2 ≤ ⌊Real.log x / Real.log 2⌋₊ := by
-      rw [← Real.logb, Nat.le_floor_iff' (by norm_num),
-        Real.le_logb_iff_rpow_le one_lt_two (by linarith), Real.rpow_natCast]
-      norm_num
-      exact hx4
+  · have h2 : 2 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
+      (Real.le_natFloor_logb_iff_pow_le one_lt_two (by linarith) (by norm_num)).2
+        (by norm_num; exact hx4)
     rw [← add_sum_Ioc_eq_sum_Icc h2, ← Icc_add_one_left_eq_Ioc]
     congr 1
     rw [Real.sqrt_eq_rpow]
@@ -167,11 +159,8 @@ theorem theta_sqrt_add_theta_cbrt_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
     rw [Chebyshev.theta_eq_zero_of_lt_two hcbrt, add_zero]
     exact theta_sqrt_le_psi_sub_theta x
   · rw [psi_sub_theta_eq_theta_sqrt_add_sum hx]
-    have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ := by
-      rw [← Real.logb, Nat.le_floor_iff' (by norm_num),
-        Real.le_logb_iff_rpow_le one_lt_two (by linarith), Real.rpow_natCast]
-      norm_num
-      exact hx8
+    have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
+      (Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by norm_num)).2 (by norm_num; exact hx8)
     gcongr
     have hmem : (3 : ℕ) ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊ := mem_Icc.mpr ⟨le_rfl, h3⟩
     simpa only [Nat.cast_ofNat] using
@@ -196,14 +185,24 @@ theorem psiSubThetaTailCoeff_def (x : ℝ) :
 theorem psiSubThetaTailCoeff_eq_zero_of_lt_eight {x : ℝ} (hx0 : 0 ≤ x) (hx8 : x < 8) :
     psiSubThetaTailCoeff x = 0 := by
   rw [psiSubThetaTailCoeff_def]
-  have hlt : ⌊Real.log x / Real.log 2⌋₊ < 3 := by
-    rcases hx0.eq_or_lt with rfl | hxpos
-    · simp
-    · rw [← Real.logb, Nat.floor_lt' (by norm_num), Real.logb_lt_iff_lt_rpow one_lt_two hxpos,
-        Real.rpow_natCast]
-      norm_num
-      exact hx8
+  have hlt : ⌊Real.log x / Real.log 2⌋₊ < 3 :=
+    (Real.natFloor_logb_lt_iff_lt_pow one_lt_two hx0 (by norm_num)).2 (by norm_num; exact hx8)
   rw [Icc_eq_empty (by omega), sum_empty]
+
+/-- For `x ≥ 0`, `psiSubThetaTailCoeff x = 0` if and only if `x < 8`. -/
+@[simp]
+theorem psiSubThetaTailCoeff_eq_zero_iff {x : ℝ} (hx : 0 ≤ x) :
+    psiSubThetaTailCoeff x = 0 ↔ x < 8 := by
+  refine ⟨fun h0 ↦ ?_, psiSubThetaTailCoeff_eq_zero_of_lt_eight hx⟩
+  by_contra! hx8
+  have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
+    (Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by norm_num)).2 (by norm_num; exact hx8)
+  have h1 : (1 : ℝ) ≤ psiSubThetaTailCoeff x := by
+    rw [psiSubThetaTailCoeff_def]
+    have hmem : (3 : ℕ) ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊ := mem_Icc.mpr ⟨le_rfl, h3⟩
+    simpa using single_le_sum (f := fun k : ℕ ↦ x ^ ((1 : ℝ) / k - 1 / 3))
+      (fun _ _ ↦ Real.rpow_nonneg hx _) hmem
+  linarith
 
 /-- `psiSubThetaTailCoeff 0 = 0`. -/
 @[simp]
@@ -227,11 +226,8 @@ theorem psiSubThetaTailCoeff_le_max_sub_two {x : ℝ} (hx : 0 ≤ x) :
     exact le_max_right _ _
   · rw [psiSubThetaTailCoeff_def]
     have hx1 : 1 ≤ x := by linarith
-    have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ := by
-      rw [← Real.logb, Nat.le_floor_iff' (by norm_num),
-        Real.le_logb_iff_rpow_le one_lt_two (by linarith), Real.rpow_natCast]
-      norm_num
-      exact hx8
+    have h3 : 3 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
+      (Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by norm_num)).2 (by norm_num; exact hx8)
     have hdiv : 0 ≤ Real.log x / Real.log 2 :=
       div_nonneg (Real.log_nonneg hx1) (Real.log_pos one_lt_two).le
     calc ∑ k ∈ Icc 3 ⌊Real.log x / Real.log 2⌋₊, x ^ ((1 : ℝ) / k - 1 / 3)
@@ -261,14 +257,7 @@ summation limit `n`. -/
 theorem psiSubThetaTailCoeff_eq_sum_of_mem_Ico {n : ℕ} {x : ℝ}
     (hx : x ∈ Set.Ico ((2 : ℝ) ^ n) ((2 : ℝ) ^ (n + 1))) :
     psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 n, x ^ ((1 : ℝ) / k - 1 / 3) := by
-  have hx0 : 0 < x := lt_of_lt_of_le (by positivity) hx.1
-  have hx1 : 1 ≤ x := le_trans (one_le_pow₀ one_le_two) hx.1
-  have hfl : ⌊Real.log x / Real.log 2⌋₊ = n := by
-    rw [← Real.logb, Nat.floor_eq_iff (Real.logb_nonneg one_lt_two hx1),
-      Real.le_logb_iff_rpow_le one_lt_two hx0, Real.logb_lt_iff_lt_rpow one_lt_two hx0,
-      Real.rpow_natCast, ← Nat.cast_add_one, Real.rpow_natCast]
-    exact hx
-  rw [psiSubThetaTailCoeff_def, hfl]
+  rw [psiSubThetaTailCoeff_def, ← Real.logb, Real.natFloor_logb_eq_of_mem_Ico one_lt_two hx]
 
 /-- Bound on the cube-root tail `∑ k ≥ 3, θ (x ^ (1 / k))` in terms of `psiSubThetaTailCoeff`:
 if `θ y ≤ c * y` for all `y ≥ 2`, then for every `x ≥ 0`,
@@ -279,24 +268,16 @@ theorem sum_theta_rpow_le {c x : ℝ} (hx : 0 ≤ x) (hθ : ∀ y, 2 ≤ y → �
   rw [psiSubThetaTailCoeff_def, mul_sum, sum_mul]
   refine sum_le_sum fun k hk ↦ ?_
   obtain ⟨hk3, hkf⟩ := mem_Icc.mp hk
-  have hkle : (k : ℝ) ≤ Real.logb 2 x := (Nat.le_floor_iff' (by omega)).mp hkf
-  have hx0 : 0 < x := by
-    by_contra h
-    have hx' : x = 0 := le_antisymm (not_lt.mp h) hx
-    subst hx'
-    have : (3 : ℝ) ≤ 0 := by
-      have : (3 : ℝ) ≤ k := Nat.cast_le.mpr hk3
-      simpa using this.trans hkle
-    norm_num at this
+  have h2k : (2 : ℝ) ^ k ≤ x :=
+    (Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by omega)).mp hkf
+  have hx0 : 0 < x := lt_of_lt_of_le (by positivity) h2k
   have h2le : 2 ≤ x ^ ((1 : ℝ) / k) := by
-    have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-    have hk0 : (0 : ℝ) < k := by positivity
-    have hlog : Real.log 2 ≤ Real.log x * ((1 : ℝ) / k) := by
-      rw [mul_one_div, le_div_iff₀ hk0]
-      calc Real.log 2 * k = (k : ℝ) * Real.log 2 := mul_comm _ _
-        _ ≤ Real.log x := (le_div_iff₀ hlog2).mp hkle
-    rw [Real.rpow_def_of_pos hx0, ← Real.exp_log zero_lt_two]
-    exact Real.exp_le_exp.mpr hlog
+    have hkpos : (k : ℝ) ≠ 0 := by positivity
+    calc (2 : ℝ) = ((2 : ℝ) ^ (k : ℝ)) ^ ((1 : ℝ) / k) := by
+          rw [← Real.rpow_mul zero_le_two, mul_one_div_cancel hkpos, Real.rpow_one]
+      _ ≤ x ^ ((1 : ℝ) / k) := by
+          rw [Real.rpow_natCast]
+          exact Real.rpow_le_rpow (by positivity) h2k (by positivity)
   calc θ (x ^ ((1 : ℝ) / k))
       ≤ c * x ^ ((1 : ℝ) / k) := hθ _ h2le
     _ = c * (x ^ ((1 : ℝ) / k - 1 / 3) * x ^ ((1 : ℝ) / 3)) := by
@@ -448,6 +429,81 @@ theorem psiSubThetaTailCoeff_two_pow_anti {m n : ℕ} (hm : 9 ≤ m) (hmn : m �
   | refl => exact le_rfl
   | @step k hmk ih => exact (psiSubThetaTailCoeff_two_pow_succ_lt (hm.trans hmk)).le.trans ih
 
+private lemma two_rpow_neg_div_lt {p q : ℕ} {u : ℝ} (hq : q ≠ 0) (hu : 0 < u)
+    (h : 1 < u ^ q * (2 : ℝ) ^ p) : (2 : ℝ) ^ (-(p : ℝ) / q) < u := by
+  rw [← pow_lt_pow_iff_left₀ (by positivity) hu.le hq, ← Real.rpow_natCast,
+    ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
+    Real.rpow_neg zero_le_two, Real.rpow_natCast, ← one_div, div_lt_iff₀ (by positivity)]
+  exact h
+
+private lemma lt_two_rpow_neg_div {p q : ℕ} {l : ℝ} (hq : q ≠ 0) (hl : 0 ≤ l)
+    (h : l ^ q * (2 : ℝ) ^ p < 1) : l < (2 : ℝ) ^ (-(p : ℝ) / q) := by
+  rw [← pow_lt_pow_iff_left₀ hl (by positivity) hq,
+    ← Real.rpow_natCast ((2 : ℝ) ^ (-(p : ℝ) / q)),
+    ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hq),
+    Real.rpow_neg zero_le_two, Real.rpow_natCast, ← one_div, lt_div_iff₀ (by positivity)]
+  exact h
+
+/-- Sharpness of the threshold `n = 9` in `psiSubThetaTailCoeff_two_pow_succ_lt`:
+at `n = 8`, `psiSubThetaTailCoeff (2 ^ 8) < psiSubThetaTailCoeff (2 ^ 9)`. -/
+theorem psiSubThetaTailCoeff_two_pow_eight_lt_two_pow_nine :
+    psiSubThetaTailCoeff ((2 : ℝ) ^ 8) < psiSubThetaTailCoeff ((2 : ℝ) ^ 9) := by
+  have hIcc8 : Icc (4 : ℕ) 8 = {4, 5, 6, 7, 8} := by decide
+  have hIcc9 : Icc (4 : ℕ) 9 = {4, 5, 6, 7, 8, 9} := by decide
+  have h8 : psiSubThetaTailCoeff ((2 : ℝ) ^ 8) < 16 / 5 := by
+    rw [psiSubThetaTailCoeff_two_pow (by norm_num), hIcc8]
+    simp only [sum_insert (by decide : (4 : ℕ) ∉ ({5, 6, 7, 8} : Finset ℕ)),
+      sum_insert (by decide : (5 : ℕ) ∉ ({6, 7, 8} : Finset ℕ)),
+      sum_insert (by decide : (6 : ℕ) ∉ ({7, 8} : Finset ℕ)),
+      sum_insert (by decide : (7 : ℕ) ∉ ({8} : Finset ℕ)),
+      sum_singleton, Nat.cast_ofNat]
+    have h4 : (2 : ℝ) ^ ((8 : ℝ) / 4 - 8 / 3) < 63 / 100 := by
+      rw [show (8 : ℝ) / 4 - 8 / 3 = -((2 : ℕ) : ℝ) / 3 by norm_num]
+      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+    have h5 : (2 : ℝ) ^ ((8 : ℝ) / 5 - 8 / 3) < 48 / 100 := by
+      rw [show (8 : ℝ) / 5 - 8 / 3 = -((16 : ℕ) : ℝ) / 15 by norm_num]
+      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+    have h6 : (2 : ℝ) ^ ((8 : ℝ) / 6 - 8 / 3) < 40 / 100 := by
+      rw [show (8 : ℝ) / 6 - 8 / 3 = -((4 : ℕ) : ℝ) / 3 by norm_num]
+      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+    have h7 : (2 : ℝ) ^ ((8 : ℝ) / 7 - 8 / 3) < 36 / 100 := by
+      have hle : (2 : ℝ) ^ ((8 : ℝ) / 7 - 8 / 3) ≤ (2 : ℝ) ^ (-((3 : ℕ) : ℝ) / 2) :=
+        Real.rpow_le_rpow_of_exponent_le one_le_two (by norm_num)
+      exact hle.trans_lt (two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num))
+    have h8' : (2 : ℝ) ^ ((8 : ℝ) / 8 - 8 / 3) < 32 / 100 := by
+      rw [show (8 : ℝ) / 8 - 8 / 3 = -((5 : ℕ) : ℝ) / 3 by norm_num]
+      exact two_rpow_neg_div_lt (by norm_num) (by norm_num) (by norm_num)
+    linarith
+  have h9 : (16 : ℝ) / 5 < psiSubThetaTailCoeff ((2 : ℝ) ^ 9) := by
+    rw [psiSubThetaTailCoeff_two_pow (by norm_num), hIcc9]
+    simp only [sum_insert (by decide : (4 : ℕ) ∉ ({5, 6, 7, 8, 9} : Finset ℕ)),
+      sum_insert (by decide : (5 : ℕ) ∉ ({6, 7, 8, 9} : Finset ℕ)),
+      sum_insert (by decide : (6 : ℕ) ∉ ({7, 8, 9} : Finset ℕ)),
+      sum_insert (by decide : (7 : ℕ) ∉ ({8, 9} : Finset ℕ)),
+      sum_insert (by decide : (8 : ℕ) ∉ ({9} : Finset ℕ)),
+      sum_singleton, Nat.cast_ofNat]
+    have h4 : (19 : ℝ) / 32 < (2 : ℝ) ^ ((9 : ℝ) / 4 - 9 / 3) := by
+      rw [show (9 : ℝ) / 4 - 9 / 3 = -((3 : ℕ) : ℝ) / 4 by norm_num]
+      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+    have h5 : (43 : ℝ) / 100 < (2 : ℝ) ^ ((9 : ℝ) / 5 - 9 / 3) := by
+      rw [show (9 : ℝ) / 5 - 9 / 3 = -((6 : ℕ) : ℝ) / 5 by norm_num]
+      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+    have h6 : (353 : ℝ) / 1000 < (2 : ℝ) ^ ((9 : ℝ) / 6 - 9 / 3) := by
+      rw [show (9 : ℝ) / 6 - 9 / 3 = -((3 : ℕ) : ℝ) / 2 by norm_num]
+      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+    have h7 : (304 : ℝ) / 1000 < (2 : ℝ) ^ ((9 : ℝ) / 7 - 9 / 3) := by
+      rw [show (9 : ℝ) / 7 - 9 / 3 = -((12 : ℕ) : ℝ) / 7 by norm_num]
+      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+    have h8' : (27 : ℝ) / 100 < (2 : ℝ) ^ ((9 : ℝ) / 8 - 9 / 3) := by
+      rw [show (9 : ℝ) / 8 - 9 / 3 = -((15 : ℕ) : ℝ) / 8 by norm_num]
+      exact lt_two_rpow_neg_div (by norm_num) (by norm_num) (by norm_num)
+    rw [show (2 : ℝ) ^ ((9 : ℝ) / 9 - 9 / 3) = 1 / 4 by
+      rw [show (9 : ℝ) / 9 - 9 / 3 = -((2 : ℕ) : ℝ) by norm_num, Real.rpow_neg zero_le_two,
+        Real.rpow_natCast]
+      norm_num]
+    linarith
+  exact h8.trans h9
+
 /-- The uniform dyadic upper envelope
 `F(X) = max (f X) (f (2 ^ (⌊log X / log 2⌋₊ + 1)))` bounding `psiSubThetaTailCoeff x`
 for all `x ≥ X` once `X ≥ 2 ^ 8`. -/
@@ -462,6 +518,7 @@ theorem psiSubThetaTailBound_def (X : ℝ) :
   (rfl)
 
 /-- Upper-bound characterization of `psiSubThetaTailBound`. -/
+@[simp]
 theorem psiSubThetaTailBound_le_iff {X u : ℝ} :
     psiSubThetaTailBound X ≤ u ↔
       psiSubThetaTailCoeff X ≤ u ∧
@@ -492,27 +549,16 @@ theorem psiSubThetaTailCoeff_le_psiSubThetaTailBound {X x : ℝ} (hX : (2 : ℝ)
     psiSubThetaTailCoeff x ≤ psiSubThetaTailBound X := by
   set m := ⌊Real.log X / Real.log 2⌋₊
   set n := ⌊Real.log x / Real.log 2⌋₊
-  have hm8 : 8 ≤ m := by
-    dsimp only [m]
-    rw [← Real.logb, Nat.le_floor_iff' (by norm_num),
-      Real.le_logb_iff_rpow_le one_lt_two (by linarith [pow_pos (zero_lt_two (α := ℝ)) 8]),
-      Real.rpow_natCast]
-    exact hX
+  have hm8 : 8 ≤ m :=
+    (Real.le_natFloor_logb_iff_pow_le one_lt_two (by positivity) (by norm_num)).2 hX
   have hX1 : 1 ≤ X := le_trans (one_le_pow₀ one_le_two) hX
   have hx1 : 1 ≤ x := hX1.trans hXx
   have hmn : m ≤ n := Nat.floor_mono
     (div_le_div_of_nonneg_right (Real.log_le_log (by linarith) hXx) (Real.log_pos one_lt_two).le)
-  have hmem (y : ℝ) (hy : 1 ≤ y) :
-      y ∈ Set.Ico ((2 : ℝ) ^ ⌊Real.log y / Real.log 2⌋₊)
-        ((2 : ℝ) ^ (⌊Real.log y / Real.log 2⌋₊ + 1)) := by
-    have hy0 : 0 < y := zero_lt_one.trans_le hy
-    have hnn : 0 ≤ Real.logb 2 y := Real.logb_nonneg one_lt_two hy
-    rw [Set.mem_Ico, ← Real.rpow_natCast, ← Real.rpow_natCast,
-      ← Real.le_logb_iff_rpow_le one_lt_two hy0, ← Real.logb_lt_iff_lt_rpow one_lt_two hy0,
-      Nat.cast_add, Nat.cast_one]
-    exact ⟨Nat.floor_le hnn, Nat.lt_floor_add_one _⟩
-  have hXmem : X ∈ Set.Ico ((2 : ℝ) ^ m) ((2 : ℝ) ^ (m + 1)) := hmem X hX1
-  have hxmem : x ∈ Set.Ico ((2 : ℝ) ^ n) ((2 : ℝ) ^ (n + 1)) := hmem x hx1
+  have hXmem : X ∈ Set.Ico ((2 : ℝ) ^ m) ((2 : ℝ) ^ (m + 1)) :=
+    Real.mem_Ico_pow_natFloor_logb one_lt_two hX1
+  have hxmem : x ∈ Set.Ico ((2 : ℝ) ^ n) ((2 : ℝ) ^ (n + 1)) :=
+    Real.mem_Ico_pow_natFloor_logb one_lt_two hx1
   rw [psiSubThetaTailBound_def]
   rcases hmn.eq_or_lt with hEq | hLt
   · rw [← hEq] at hxmem
@@ -527,18 +573,20 @@ theorem psiSubThetaTailCoeff_le_psiSubThetaTailBound {X x : ℝ} (hX : (2 : ℝ)
       _ ≤ psiSubThetaTailCoeff ((2 : ℝ) ^ (m + 1)) :=
           psiSubThetaTailCoeff_two_pow_anti (by omega) hLt
 
+/-- Least-bound characterization of `psiSubThetaTailBound`: for every `X ≥ 2 ^ 8`,
+`psiSubThetaTailBound X` is the least upper bound of `psiSubThetaTailCoeff` on `[X, ∞)`. -/
+theorem psiSubThetaTailBound_le_iff_forall {X u : ℝ} (hX : (2 : ℝ) ^ 8 ≤ X) :
+    psiSubThetaTailBound X ≤ u ↔ ∀ x, X ≤ x → psiSubThetaTailCoeff x ≤ u := by
+  refine ⟨fun h x hx ↦ (psiSubThetaTailCoeff_le_psiSubThetaTailBound hX hx).trans h, fun h ↦ ?_⟩
+  have hXpos : 0 < X := lt_of_lt_of_le (by positivity) hX
+  exact psiSubThetaTailBound_le_iff.mpr
+    ⟨h X le_rfl, h _ (Real.lt_pow_natFloor_logb_add_one one_lt_two hXpos).le⟩
+
 /-- The uniform envelope `psiSubThetaTailBound` is antitone on `[2 ^ 8, ∞)`. -/
 theorem antitoneOn_psiSubThetaTailBound :
-    AntitoneOn psiSubThetaTailBound (Set.Ici ((2 : ℝ) ^ 8)) := by
-  intro X₁ hX₁ X₂ hX₂ hle
-  have hX₂pos : 0 < X₂ := lt_of_lt_of_le (by positivity) hX₂
-  have hlt : X₂ < (2 : ℝ) ^ (⌊Real.log X₂ / Real.log 2⌋₊ + 1) := by
-    rw [← Real.rpow_natCast, ← Real.logb_lt_iff_lt_rpow one_lt_two hX₂pos,
-      Nat.cast_add, Nat.cast_one]
-    exact Nat.lt_floor_add_one _
-  exact psiSubThetaTailBound_le_iff.mpr
-    ⟨psiSubThetaTailCoeff_le_psiSubThetaTailBound hX₁ hle,
-      psiSubThetaTailCoeff_le_psiSubThetaTailBound hX₁ (hle.trans hlt.le)⟩
+    AntitoneOn psiSubThetaTailBound (Set.Ici ((2 : ℝ) ^ 8)) :=
+  fun _ hX₁ _ hX₂ hle ↦ (psiSubThetaTailBound_le_iff_forall hX₂).mpr fun _ hx ↦
+    psiSubThetaTailCoeff_le_psiSubThetaTailBound hX₁ (hle.trans hx)
 
 /-! ### Unconditional bounds for `ψ - θ` and `ψ ↔ θ` error transfers -/
 
@@ -850,10 +898,8 @@ theorem card_filter_isPrimePow_Ioc_le_primeCounting_add {x : ℝ} (hx : 2 ≤ x)
     (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤
       (Nat.primeCounting ⌊x⌋₊ : ℝ) + (Real.log x / Real.log 2 - 1) * √x := by
   rw [card_filter_isPrimePow_Ioc_eq_sum_primeCounting (by linarith)]
-  have h1 : 1 ≤ ⌊Real.log x / Real.log 2⌋₊ := by
-    rw [← Real.logb, Nat.le_floor_iff' one_ne_zero,
-      Real.le_logb_iff_rpow_le one_lt_two (by linarith), Nat.cast_one, Real.rpow_one]
-    exact hx
+  have h1 : 1 ≤ ⌊Real.log x / Real.log 2⌋₊ :=
+    (Real.le_natFloor_logb_iff_pow_le one_lt_two (by linarith) one_ne_zero).2 (by simpa using hx)
   rw [← add_sum_Ioc_eq_sum_Icc h1, ← Icc_add_one_left_eq_Ioc]
   norm_num only [Nat.cast_one, div_one, Real.rpow_one, Nat.cast_add, Nat.cast_sum]
   gcongr
