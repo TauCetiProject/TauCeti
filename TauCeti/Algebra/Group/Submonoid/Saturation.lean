@@ -280,8 +280,8 @@ def nsmulSaturationInfClosureFaceOrderIso :
   SaturatedAddSubmonoid.comapOrderIsoOfNSMulSaturation
     (inclusion_injective (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))
     fun y ↦ by
-      obtain ⟨n, hn, hny⟩ := mem_nsmulSaturation.1 y.2.1
-      exact ⟨n, hn, ⟨n • y.1, hny⟩, rfl⟩
+      obtain ⟨n, hn, hny⟩ := mem_nsmulSaturation.1 y.property.1
+      exact ⟨n, hn, ⟨n • y.val, hny⟩, rfl⟩
 
 /-- Pulling back a face of the saturation of `S` in `AddSubgroup.closure S` computes `comap`. -/
 @[simp]
@@ -322,7 +322,7 @@ theorem faceSubgroup_def (F : SaturatedAddSubmonoid S) :
 /-- The canonical additive homomorphism from a face `F` of `S` into `F.faceSubgroup`. -/
 def toFaceSubgroup (F : SaturatedAddSubmonoid S) : F →+ F.faceSubgroup :=
   (S.toGroupClosure.comp F.toAddSubmonoid.subtype).codRestrict F.faceSubgroup fun a ↦
-    AddSubgroup.subset_closure ⟨a, a.2, rfl⟩
+    AddSubgroup.subset_closure ⟨a, a.property, rfl⟩
 
 /-- `F.toFaceSubgroup` agrees with `S.toGroupClosure` inside `AddSubgroup.closure (S : Set G)`. -/
 @[simp]
@@ -356,12 +356,12 @@ theorem mem_faceSubgroup_iff (F : SaturatedAddSubmonoid S)
       AddSubgroup.closure ((F.toAddSubmonoid.map S.toGroupClosure : AddSubmonoid _) : Set _) := rfl
   rw [heq, (F.toAddSubmonoid.map S.toGroupClosure).mem_groupClosure_iff]
   exact ⟨fun ⟨⟨_, a, ha, rfl⟩, ⟨_, b, hb, rfl⟩, h⟩ ↦ ⟨⟨a, ha⟩, ⟨b, hb⟩, h⟩,
-    fun ⟨a, b, h⟩ ↦ ⟨⟨_, a, a.2, rfl⟩, ⟨_, b, b.2, rfl⟩, h⟩⟩
+    fun ⟨a, b, h⟩ ↦ ⟨⟨_, a, a.property, rfl⟩, ⟨_, b, b.property, rfl⟩, h⟩⟩
 
 /-- Every element of `F.faceSubgroup` can be shifted into `F` by an element of `F`. -/
 theorem exists_add_toFaceSubgroup_eq (F : SaturatedAddSubmonoid S) (g : F.faceSubgroup) :
     ∃ a b : F, g + F.toFaceSubgroup b = F.toFaceSubgroup a := by
-  obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 g.2
+  obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 g.property
   exact ⟨a, b, Subtype.ext (by simpa using eq_sub_iff_add_eq.1 hab)⟩
 
 /-- If `F` is finitely generated, then `F.faceSubgroup` is finitely generated. -/
@@ -374,9 +374,9 @@ theorem toGroupClosure_mem_faceSubgroup_iff (F : SaturatedAddSubmonoid S) {s : S
     S.toGroupClosure s ∈ F.faceSubgroup ↔ s ∈ F := by
   refine ⟨fun hs ↦ ?_, fun hs ↦ AddSubgroup.subset_closure ⟨s, hs, rfl⟩⟩
   obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 hs
-  have hsb : s + b.1 = a.1 :=
+  have hsb : s + b.val = a.val :=
     S.toGroupClosure_injective (by simpa [map_add] using (sub_eq_iff_eq_add.1 hab.symm).symm)
-  exact (F.addSaturated (hsb ▸ a.2)).1
+  exact (F.addSaturated (hsb ▸ a.property)).1
 
 /-- Inclusion of faces of `S` is equivalent to inclusion of their generated subgroups inside
 `AddSubgroup.closure (S : Set G)`. -/
@@ -401,28 +401,28 @@ private theorem mem_closure_nsmulSaturationInfClosure_of_mem_nsmulSaturation
   obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 hnz
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
   -- Clear the difference `n • z = a - b` by shifting `z` by `b`: `(k + 1) • (z + b) = a + k • b`.
-  have hzb : (k + 1) • (z + S.toGroupClosure b.1).1 = (a.1 : G) + (k • b.1 : S) := by
-    have h1 : (k + 1) • (z + S.toGroupClosure b.1) =
-        S.toGroupClosure a.1 + k • S.toGroupClosure b.1 := by
+  have hzb : (k + 1) • (z + S.toGroupClosure b.val).val = (a.val : G) + (k • b.val : S) := by
+    have h1 : (k + 1) • (z + S.toGroupClosure b.val) =
+        S.toGroupClosure a.val + k • S.toGroupClosure b.val := by
       rw [smul_add, hab, succ_nsmul']; abel
     simpa [map_add, map_nsmul] using congrArg Subtype.val h1
   let w : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :=
-    ⟨(z + S.toGroupClosure b.1).1,
+    ⟨(z + S.toGroupClosure b.val).val,
       ⟨AddSubmonoid.mem_nsmulSaturation.2
-        ⟨k + 1, Nat.succ_pos k, hzb ▸ add_mem a.1.2 (nsmul_mem b.1.2 k)⟩,
-        (z + S.toGroupClosure b.1).2⟩⟩
+        ⟨k + 1, Nat.succ_pos k, hzb ▸ add_mem a.val.property (nsmul_mem b.val.property k)⟩,
+        (z + S.toGroupClosure b.val).property⟩⟩
   have hw : w ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
     (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
       ⟨k + 1, Nat.succ_pos k, AddSubmonoid.mem_map.2
-        ⟨a.1 + k • b.1, add_mem a.2 (nsmul_mem b.2 k), Subtype.ext hzb.symm⟩⟩
-  have hb : inc b.1 ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
+        ⟨a.val + k • b.val, add_mem a.property (nsmul_mem b.property k), Subtype.ext hzb.symm⟩⟩
+  have hb : inc b.val ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
     (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
-      ⟨1, Nat.one_pos, AddSubmonoid.mem_map.2 ⟨b.1, b.2, (one_nsmul (inc b.1)).symm⟩⟩
+      ⟨1, Nat.one_pos, AddSubmonoid.mem_map.2 ⟨b.val, b.property, (one_nsmul (inc b.val)).symm⟩⟩
   -- Express `z = w - b` inside `AddSubgroup.closure S`.
   have hz_eq : z = S.nsmulSaturationInfClosureToGroupClosure w -
-      S.nsmulSaturationInfClosureToGroupClosure (inc b.1) := Subtype.ext (by simp [w, inc])
+      S.nsmulSaturationInfClosureToGroupClosure (inc b.val) := Subtype.ext (by simp [w, inc])
   exact hz_eq ▸ sub_mem (AddSubgroup.subset_closure ⟨w, hw, rfl⟩)
-    (AddSubgroup.subset_closure ⟨inc b.1, hb, rfl⟩)
+    (AddSubgroup.subset_closure ⟨inc b.val, hb, rfl⟩)
 
 /-- Under `S.nsmulSaturationInfClosureToGroupClosure`, the subgroup of
 `AddSubgroup.closure (S : Set G)` generated by the face of the normalization of `S` corresponding
@@ -463,14 +463,15 @@ def faceSubgroupNSMulSaturationEquiv (F : SaturatedAddSubmonoid S) :
 /-- `faceSubgroupNSMulSaturationEquiv` preserves the underlying element of the ambient group `G`. -/
 theorem coe_faceSubgroupNSMulSaturationEquiv_apply (F : SaturatedAddSubmonoid S)
     (x : ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).faceSubgroup) :
-    ((F.faceSubgroupNSMulSaturationEquiv x : AddSubgroup.closure (S : Set G)) : G) = x.1.1 := by
+    ((F.faceSubgroupNSMulSaturationEquiv x : AddSubgroup.closure (S : Set G)) : G) =
+      x.val.val := by
   simp [faceSubgroupNSMulSaturationEquiv]
 
 /-- The inverse of `faceSubgroupNSMulSaturationEquiv` preserves the underlying element of the
 ambient group `G`. -/
 theorem coe_faceSubgroupNSMulSaturationEquiv_symm_apply (F : SaturatedAddSubmonoid S)
     (y : F.faceSubgroup.nsmulSaturation) :
-    ((F.faceSubgroupNSMulSaturationEquiv.symm y).1.1 : G) =
+    ((F.faceSubgroupNSMulSaturationEquiv.symm y).val.val : G) =
       ((y : AddSubgroup.closure (S : Set G)) : G) := by
   simpa using (F.coe_faceSubgroupNSMulSaturationEquiv_apply
     (F.faceSubgroupNSMulSaturationEquiv.symm y)).symm

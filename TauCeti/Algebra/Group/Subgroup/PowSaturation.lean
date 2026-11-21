@@ -84,7 +84,7 @@ theorem powSaturation_mono {H₁ H₂ : Subgroup G} (h : H₁ ≤ H₂) :
 theorem isMulTorsion_quotient_powSaturation :
     IsMulTorsion (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
   fun q ↦ QuotientGroup.induction_on q fun x ↦ by
-    obtain ⟨n, hn, hxn⟩ := (mem_powSaturation H).1 x.2
+    obtain ⟨n, hn, hxn⟩ := (mem_powSaturation H).1 x.property
     exact isOfFinOrder_iff_pow_eq_one.2
       ⟨n, hn, by rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]; exact hxn⟩
 

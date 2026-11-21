@@ -114,15 +114,15 @@ in `R[H]` clears into the image of `f` by multiplying with `mapDomain f s.1` for
 theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
     [AddCommGroup H] [CommSemiring R] {f : M →+ H} (hf : Function.Injective f)
     {T : Submonoid (AddMonoidAlgebra R M)}
-    (hunits : ∀ s : T, IsUnit (mapDomain f s.1))
-    (hsurj : ∀ g : H, ∃ (a : M) (s : T), single g (1 : R) * mapDomain f s.1 = single (f a) 1) :
+    (hunits : ∀ s : T, IsUnit (mapDomain f s.val))
+    (hsurj : ∀ g : H, ∃ (a : M) (s : T), single g (1 : R) * mapDomain f s.val = single (f a) 1) :
     letI := (mapDomainRingHom R f).toAlgebra
     IsLocalization T (AddMonoidAlgebra R H) := by
   let := (mapDomainRingHom R f).toAlgebra
   have halg (p : AddMonoidAlgebra R M) :
       algebraMap _ (AddMonoidAlgebra R H) p = mapDomain f p := by
     rw [RingHom.algebraMap_toAlgebra, mapDomainRingHom_apply]
-  refine ⟨⟨fun s ↦ halg s.1 ▸ hunits s, fun p ↦ ?_, fun {_ _} hab ↦ ?_⟩⟩
+  refine ⟨⟨fun s ↦ halg s.val ▸ hunits s, fun p ↦ ?_, fun {_ _} hab ↦ ?_⟩⟩
   · induction p using AddMonoidAlgebra.induction_on with
     | of g =>
       obtain ⟨a, s, hs⟩ := hsurj g
@@ -152,17 +152,17 @@ theorem exists_isLocalization_away_of_exists_add_eq {M H : Type*}
       IsLocalization.Away (single u (1 : R)) (AddMonoidAlgebra R H) := by
   have htop : (⊤ : AddSubmonoid M).FG := (AddMonoid.fg_iff_addSubmonoid_fg ⊤).1 inferInstance
   obtain ⟨u, hu⟩ := htop.exists_forall_exists_add_eq_nsmul
-  refine ⟨u.1, isLocalization_mapDomain_of_single hf (fun s ↦ ?_) (fun g ↦ ?_)⟩
-  · obtain ⟨n, hn⟩ := s.2
+  refine ⟨u.val, isLocalization_mapDomain_of_single hf (fun s ↦ ?_) (fun g ↦ ?_)⟩
+  · obtain ⟨n, hn⟩ := s.property
     dsimp only at hn
     rw [← hn, single_pow, one_pow, mapDomain_single]
-    exact (Group.isUnit (Multiplicative.ofAdd (f (n • u.1)))).map (of R H)
+    exact (Group.isUnit (Multiplicative.ofAdd (f (n • u.val)))).map (of R H)
   · obtain ⟨a, b, hab⟩ := hshift g
     obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
-    have hnu : g + n • f u.1 = f (a + c.1) := by
-      have hbc' : b + c.1 = n • u.1 := congrArg Subtype.val hbc
+    have hnu : g + n • f u.val = f (a + c.val) := by
+      have hbc' : b + c.val = n • u.val := congrArg Subtype.val hbc
       rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
-    exact ⟨a + c.1, ⟨single u.1 (1 : R) ^ n, n, rfl⟩, by
+    exact ⟨a + c.val, ⟨single u.val (1 : R) ^ n, n, rfl⟩, by
       simp [single_pow, single_mul_single, hnu]⟩
 
 end AddMonoidAlgebra

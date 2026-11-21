@@ -118,7 +118,7 @@ theorem FG.exists_forall_exists_mul_eq_pow {M : Type*} [CommMonoid M] {S : Submo
     ∃ u : S, ∀ b : S, ∃ (n : ℕ) (c : S), b * c = u ^ n := by
   classical
   obtain ⟨t, ht⟩ := isMulFG_iff.1 hS
-  let gen : t → S := fun a ↦ ⟨a.1, ht ▸ subset_closure a.2⟩
+  let gen : t → S := fun a ↦ ⟨a.val, ht ▸ subset_closure a.property⟩
   refine ⟨∏ a : t, gen a, fun ⟨y, hyS⟩ ↦ ?_⟩
   have hy : y ∈ closure (t : Set M) := ht.symm ▸ hyS
   induction hy using closure_induction with

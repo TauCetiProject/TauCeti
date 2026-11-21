@@ -81,7 +81,7 @@ theorem isLocalization_addMonoidAlgebra_faceSubgroup (R : Type*) [CommSemiring R
     IsLocalization (MonoidHom.mrange (of R F)) (AddMonoidAlgebra R F.faceSubgroup) :=
   isLocalization_mapDomain_of_single F.toFaceSubgroup_injective
     (fun s ↦ by
-      obtain ⟨m, hm⟩ := s.2
+      obtain ⟨m, hm⟩ := s.property
       rw [← hm, of_apply, mapDomain_single]
       exact (Group.isUnit (Multiplicative.ofAdd (F.toFaceSubgroup m.toAdd))).map
         (of R F.faceSubgroup))
@@ -122,7 +122,7 @@ theorem orbitMap_single_of_mem (R : Type*) [CommSemiring R] {s : S} (hs : s ∈ 
 /-- On a monomial in `F`, `F.orbitMap R` sends `single a r` to `single (F.toFaceSubgroup a) r`. -/
 theorem orbitMap_single_mem (R : Type*) [CommSemiring R] (a : F) (r : R) :
     F.orbitMap R (single (a : S) r) = single (F.toFaceSubgroup a) r :=
-  F.orbitMap_single_of_mem R a.2 r
+  F.orbitMap_single_of_mem R a.property r
 
 /-- On a monomial outside `F`, `F.orbitMap R` vanishes. -/
 @[simp]

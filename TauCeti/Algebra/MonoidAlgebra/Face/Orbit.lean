@@ -232,7 +232,7 @@ noncomputable def stabilizerDistinguishedPointMulEquiv (R A : Type*) [CommSemiri
   (MulEquiv.subgroupCongr (by
     ext χ
     rw [F.mem_stabilizer_distinguishedPoint_iff, MonoidHom.mem_ker, MonoidHom.ext_iff]
-    exact ⟨fun h x ↦ h x.toAdd.1 x.toAdd.2, fun h g hg ↦ h (.ofAdd ⟨g, hg⟩)⟩)).trans
+    exact ⟨fun h x ↦ h x.toAdd.val x.toAdd.property, fun h g hg ↦ h (.ofAdd ⟨g, hg⟩)⟩)).trans
     (F.faceSubgroup.kerCompHomSubtypeMulEquiv Aˣ)
 
 /-- Applying `stabilizerDistinguishedPointMulEquiv` on the class of `g` evaluates the character at
@@ -244,7 +244,7 @@ theorem stabilizerDistinguishedPointMulEquiv_apply (R A : Type*) [CommSemiring R
       (F.distinguishedPoint R A))
     (g : AddSubgroup.closure (S : Set G)) :
     F.stabilizerDistinguishedPointMulEquiv R A χ (.ofAdd (QuotientAddGroup.mk g)) =
-      χ.1 (.ofAdd g) := by
+      χ.val (.ofAdd g) := by
   simp [stabilizerDistinguishedPointMulEquiv]
 
 /-- The inverse of `stabilizerDistinguishedPointMulEquiv` precomposes with the quotient map. -/
@@ -416,12 +416,12 @@ theorem exists_pointOfChar_eq_of_pointSupport_eq {R K : Type*} [CommSemiring R] 
   let xF : AddMonoidAlgebra R F →ₐ[R] K :=
     x.comp (mapDomainAlgHom R R F.toAddSubmonoid.subtype)
   have hxF_unit (y : MonoidHom.mrange (of R F)) : IsUnit (xF y) := by
-    obtain ⟨m, hm⟩ := y.2
+    obtain ⟨m, hm⟩ := y.property
     have hy : (y : AddMonoidAlgebra R F) = single m.toAdd (1 : R) := by
       rw [← hm, of_apply]
     rw [hy]
     simp only [xF, AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single]
-    exact (S.mem_pointSupport_iff.1 (hx ▸ m.toAdd.2)).isUnit
+    exact (S.mem_pointSupport_iff.1 (hx ▸ m.toAdd.property)).isUnit
   let xgp : AddMonoidAlgebra R F.faceSubgroup →ₐ[R] K := IsLocalization.liftAlgHom hxF_unit
   let ψ : Multiplicative F.faceSubgroup →* Kˣ :=
     ((AddMonoidAlgebra.lift R K F.faceSubgroup).symm xgp).toHomUnits
@@ -466,8 +466,8 @@ theorem coe_pointSupportSubtypeEquivChar_apply_toFaceSubgroup (R K : Type*) [Com
     [Field K] [Algebra R K] (x : {x : AddMonoidAlgebra R S →ₐ[R] K // S.pointSupport x = F})
     (a : F) :
     (F.pointSupportSubtypeEquivChar R K x (.ofAdd (F.toFaceSubgroup a)) : K) =
-      x.1 (single (a : S) 1) := by
-  have hx : F.pointOfChar R (F.pointSupportSubtypeEquivChar R K x) = x.1 :=
+      x.val (single (a : S) 1) := by
+  have hx : F.pointOfChar R (F.pointSupportSubtypeEquivChar R K x) = x.val :=
     congrArg Subtype.val ((F.pointSupportSubtypeEquivChar R K).symm_apply_apply x)
   simpa using AlgHom.congr_fun hx (single (a : S) 1)
 
@@ -622,13 +622,13 @@ def orbitNormalizationCharHomKerEquiv (F : SaturatedAddSubmonoid S) (A : Type*)
         F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) →* Aˣ) :=
   AddSubgroup.kerCompHomInclusionMulEquiv F.faceSubgroup.le_nsmulSaturation Aˣ
 
-/-- `orbitNormalizationCharHomKerEquiv` evaluates on the class of `x` as `ψ.1 (.ofAdd x)`. -/
+/-- `orbitNormalizationCharHomKerEquiv` evaluates on the class of `x` as `ψ.val (.ofAdd x)`. -/
 @[simp]
 theorem orbitNormalizationCharHomKerEquiv_apply (F : SaturatedAddSubmonoid S) (A : Type*)
     [CommSemiring A] (ψ : (F.orbitNormalizationCharHom A).ker)
     (x : F.faceSubgroup.nsmulSaturation) :
     F.orbitNormalizationCharHomKerEquiv A ψ (.ofAdd (QuotientAddGroup.mk x)) =
-      ψ.1 (.ofAdd x) :=
+      ψ.val (.ofAdd x) :=
   AddSubgroup.kerCompHomInclusionMulEquiv_apply F.faceSubgroup.le_nsmulSaturation Aˣ ψ x
 
 /-- The inverse of `orbitNormalizationCharHomKerEquiv` precomposes with the quotient map. -/
@@ -680,7 +680,8 @@ theorem orbitNormalizationCharHom_injective_iff_of_charZero (hS : S.FG)
   rw [← MonoidHom.ker_eq_bot_iff]
   refine ⟨fun hbot ↦ le_antisymm F.faceSubgroup.le_nsmulSaturation fun z hz ↦ ?_,
     fun heq ↦ eq_bot_iff.2 fun ψ hψ ↦ MonoidHom.ext fun g ↦ by
-      rw [← ofAdd_toAdd g]; exact DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.1, heq.ge g.toAdd.2⟩)⟩
+      rw [← ofAdd_toAdd g]
+      exact DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.val, heq.ge g.toAdd.property⟩)⟩
   have h1 : Nat.card Q = 1 := by
     have hc := F.card_orbitNormalizationCharHom_ker hS K
     rw [hbot, Nat.card_unique] at hc; exact hc.symm
