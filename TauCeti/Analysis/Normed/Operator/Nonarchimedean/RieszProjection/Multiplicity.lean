@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Algebra.Ring.SpectralIdempotent
 public import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
@@ -98,14 +97,14 @@ private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszPro
   let : AddCommGroup E.range := inferInstance
   have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
   have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
-  let f : Module.End R E.range := u.toLinearMap.restrict hE.mapsTo_range
+  have hfix (x : E.range) : E x = x :=
+    (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
+  let f : Module.End R E.range := (u.restrict hE.mapsTo_range).toLinearMap
   refine ⟨inferInstance, inferInstance, f, ?_,
     (hE.isRowCompact hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
       hE.isIdempotentElem hE.mapsTo_range⟩
   -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
-  have hfix (x : E.range) : E x = x :=
-    (LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
   have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
     refine ⟨h, ?_⟩
     have hrestrict : (1 : Module.End R E.range) - a • f =

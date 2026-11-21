@@ -8,82 +8,91 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.SpectralProjection
+public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.BaseChange
+import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
-# The Riesz–Coleman projection for a polynomial factor
+# Riesz–Coleman projections and topological polynomial spectral splittings
 
 Let `R` be a seminormed commutative ring with Tate scalars (`TauCeti.NormedRing.IsTate R`), `M` a
-seminormed `R`-module with bounded scalar action, `u : M →L[R] M` a continuous endomorphism, and
+seminormed `R`-module with bounded scalar action, `u : M →L[R] M` a bounded endomorphism, and
 `Q : R[X]` a polynomial with reversal `Q* = Q.reverse`.
 
 A **Riesz–Coleman projection** of `u` for `Q` (`ContinuousLinearMap.IsRieszColemanProjection`) is
 a spectral projection (`ContinuousLinearMap.IsSpectralProjection`) of `u` for `Q*(u)` of order `1`:
-an idempotent `E` commuting with `u` and lying in the operator-norm closure of the polynomials in
-`u`, such that `Q*(u) * E = 0` and `Q*(u)` is invertible on the complementary summand
-`range (1 - E)`, with complementary inverse `w` (`ContinuousLinearMap.IsSpectralProjection.inverse`)
-again in the operator-norm closure of `R[u]`.
+an idempotent `E` commuting with `u` and lying in the operator-norm closure of `R[u]`, such that
+`Q*(u) * E = 0` and `Q*(u)` has a two-sided inverse `w` on the complementary summand `ker E =
+range (1 - E)` with `w` again in the closure of `R[u]`. It yields a topological direct-sum
+decomposition
 
-Thus `E` splits `M` into the topological complements `range E = ker Q*(u)` and
-`ker E = range Q*(u)` (`ContinuousLinearMap.IsRieszColemanProjection.isTopCompl_ker_range`), both
-`u`-stable, with `Q*(u)` zero on the first summand and a continuous linear automorphism of the
-second (`ContinuousLinearMap.IsSpectralProjection.equivKer`). When `Q` has invertible leading
-coefficient, the identity `X * Q*.divX + lc(Q) = Q*` expresses `E` as `u` times a polynomial in `u`
-times `E` (`ContinuousLinearMap.IsRieszColemanProjection.eq_mul_aeval_divX_mul`), showing that `u`
-itself restricts to a continuous linear automorphism of `range E`
-(`ContinuousLinearMap.IsRieszColemanProjection.equivRange`).
+  `M = ker Q*(u) ⊕ range Q*(u)`
 
-Such a projection is unique (`ContinuousLinearMap.IsSpectralProjection.unique`); for `Q = 1`
-(`ContinuousLinearMap.IsRieszColemanProjection.one_iff`, or more generally whenever `Q*(u)` is
-invertible) it is `E = 0`, and scaling `Q` by a unit of `R` leaves the predicate unchanged
-(`ContinuousLinearMap.IsRieszColemanProjection.units_smul_iff`). Any linear map intertwining two
-operators intertwines their Riesz–Coleman projections and complementary inverses for the same `Q`,
-without continuity assumptions (`ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
-`ContinuousLinearMap.IsRieszColemanProjection.semiconj_inverse`); in particular every bounded
-operator commuting with `u` commutes with `E` and `w`.
+into `u`-stable submodules (`ContinuousLinearMap.IsRieszColemanProjection.range_eq_ker`,
+`ContinuousLinearMap.IsRieszColemanProjection.range_aeval_reverse_eq_ker`,
+`ContinuousLinearMap.IsRieszColemanProjection.isTopCompl_ker_range_aeval_reverse`), on which
+`Q*(u)` vanishes on the first summand and restricts to a continuous linear automorphism of the
+second (`ContinuousLinearMap.IsRieszColemanProjection.equivKer`). Such a projection is unique
+(`ContinuousLinearMap.IsRieszColemanProjection.unique`); for `Q = 1` it is zero
+(`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
+`ContinuousLinearMap.IsRieszColemanProjection.eq_zero_of_one`,
+`ContinuousLinearMap.isRieszColemanProjection_one_zero`), and scaling `Q` by a unit of `R` leaves
+the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.units_smul_iff`).
 
-Riesz–Coleman projections compress along continuous linear retracts `r ∘ i = id` of `M` through a
-normed module `N` (`ContinuousLinearMap.IsRieszColemanProjection.comp_comp_of_retract`), and when
-`Q` has invertible leading coefficient the extension `i ∘ (r ∘ E ∘ i) ∘ r` recovers `E`
-(`ContinuousLinearMap.IsRieszColemanProjection.comp_comp_eq_of_retract`). On model spaces
-`C₀(J, R)`, bounded coefficient extension preserves Riesz–Coleman projections whenever `f`
-preserves the degree of `Q` (`ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`).
+When the leading coefficient of `Q` is a unit, the constant term of `Q*` is `Q.leadingCoeff`, so
+dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`. Consequently:
+
+* `u` restricts to a continuous linear automorphism of `range E = ker Q*(u)`
+  (`ContinuousLinearMap.IsRieszColemanProjection.equivRange`);
+* on a model space `C₀(I, R)` over an ultrametric `R`, if `u` is row compact then `E` is row
+  compact (`ContinuousLinearMap.IsRieszColemanProjection.isRowCompact`), and if `R` is also
+  complete then `ker Q*(u)` is finitely generated and projective over `R`
+  (`ContinuousLinearMap.IsRieszColemanProjection.finite_ker_aeval_reverse`,
+  `ContinuousLinearMap.IsRieszColemanProjection.projective_ker_aeval_reverse`), without assuming
+  `R` Noetherian or reduced;
+* Riesz–Coleman projections compress along continuous linear retracts `r ∘ i = id`, and when
+  `lc(Q)` is a unit the extension `i ∘ E ∘ r` recovers the ambient projection on `N` and `i`, `r`
+  identify `range E` with `range E'`
+  (`ContinuousLinearMap.IsRieszColemanProjection.comp_comp_of_retract`,
+  `ContinuousLinearMap.IsRieszColemanProjection.comp_comp_eq_of_retract`,
+  `ContinuousLinearMap.IsRieszColemanProjection.rangeEquivOfRetract`);
+* on model spaces `C₀(J, R)`, bounded coefficient extension preserves Riesz–Coleman projections
+  whenever the homomorphism preserves the degree of `Q`
+  (`ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`).
+
+Finally, any linear map intertwining two endomorphisms intertwines their Riesz–Coleman projections
+and complementary inverses for the same polynomial `Q`, so every bounded operator commuting with
+`u` commutes with `E` and preserves both spectral summands
+(`ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
+`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`).
 
 ## Main definitions
 
-* `ContinuousLinearMap.IsRieszColemanProjection`: the spectral projector of `u` for a polynomial
-  factor `Q`, instantiating `ContinuousLinearMap.IsSpectralProjection` at `Q*(u)` with order `1`.
-* `ContinuousLinearMap.IsRieszColemanProjection.equivRange`: `u` as a continuous linear
-  automorphism of the spectral summand `range E`, when `Q` has invertible leading coefficient.
-
-## Main results
-
-* `ContinuousLinearMap.IsRieszColemanProjection.one_iff`,
-  `ContinuousLinearMap.IsRieszColemanProjection.units_smul_iff`: normal-form equivalences for
-  `Q = 1` and unit scaling.
-* `ContinuousLinearMap.IsRieszColemanProjection.range_eq_ker`,
-  `ContinuousLinearMap.IsRieszColemanProjection.range_aeval_reverse_eq_ker`,
-  `ContinuousLinearMap.IsRieszColemanProjection.isTopCompl_ker_range`: the topological splitting
-  `M = ker Q*(u) ⊕ range Q*(u)`.
-* `ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
-  `ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`: intertwining and commuting
-  operators preserve the splitting.
-* `ContinuousLinearMap.IsRieszColemanProjection.comp_comp_of_retract`,
-  `ContinuousLinearMap.IsRieszColemanProjection.comp_comp_eq_of_retract`: retract transport.
-* `ContinuousLinearMap.IsRieszColemanProjection.mapCoeffs`: bounded base change on model spaces.
+* `ContinuousLinearMap.IsRieszColemanProjection`: the predicate characterising a spectral projector
+  onto `ker Q*(u)` along a topological `u`-stable complement (closed when `M` is Hausdorff) on
+  which `Q*(u)` is invertible, instantiating `ContinuousLinearMap.IsSpectralProjection` at
+  `Q*(u)` with order `1`.
+* `ContinuousLinearMap.IsRieszColemanProjection.inverse`: the inverse of `Q*(u)` on `ker E`,
+  extended by zero on `range E`.
+* `ContinuousLinearMap.IsRieszColemanProjection.equivKer`: `Q*(u)` as a continuous linear
+  automorphism of `ker E`.
+* `ContinuousLinearMap.IsRieszColemanProjection.equivRange`: when `IsUnit Q.leadingCoeff`, `u` as a
+  continuous linear automorphism of `range E`.
+* `ContinuousLinearMap.IsRieszColemanProjection.rangeEquivOfRetract`: when `IsUnit Q.leadingCoeff`,
+  the continuous linear equivalence `E.range ≃L[R] E'.range` induced by a continuous linear retract
+  `r ∘ i = id`.
 
 ## References
 
-* J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
-  Publ. Math. IHÉS **12** (1962), 69–85, §7.
-* R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127**
-  (1997), 417–479, Appendix A, A4.
+* R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127** (1997),
+  417–479, Appendix A, A3–A4.
 * C. Johansson and J. Newton, *Extended eigenvarieties for overconvergent cohomology*,
   arXiv:1604.07739, §2.2.
+* J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
+  Publ. Math. IHÉS **12** (1962), 69–85, §7.
 -/
 
 public section
@@ -95,12 +104,12 @@ namespace ContinuousLinearMap
 
 section Module
 
-variable {R : Type*} [SeminormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  {M : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+variable {R M : Type*} [SeminormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
 
-/-- A **Riesz–Coleman projection** of an endomorphism `u` of a seminormed `R`-module `M` for a
-polynomial `Q`: a spectral projection (`ContinuousLinearMap.IsSpectralProjection`) of `u` for the
-reversed polynomial `Q*(u)` of order `1`. -/
+/-- A **Riesz–Coleman projection** of an endomorphism `u` of a seminormed `R`-module `M` attached
+to a polynomial `Q : R[X]`: a spectral projection (`ContinuousLinearMap.IsSpectralProjection`) of
+`u` for the reversed polynomial `Q*(u)` of order `1`. -/
 @[expose] def IsRieszColemanProjection (u : M →L[R] M) (Q : R[X]) (E : M →L[R] M) : Prop :=
   IsSpectralProjection u (Polynomial.aeval u Q.reverse) 1 E
 
@@ -108,7 +117,7 @@ namespace IsRieszColemanProjection
 
 variable {u E : M →L[R] M} {Q : R[X]}
 
-/-- `Q*(u)` vanishes on the range of a Riesz–Coleman projection. -/
+/-- The reversed polynomial `Q*(u)` vanishes on the range of a Riesz–Coleman projection. -/
 theorem aeval_reverse_mul_eq_zero (hE : IsRieszColemanProjection u Q E) :
     Polynomial.aeval u Q.reverse * E = 0 := by
   simpa only [pow_one] using hE.pow_mul_eq_zero
@@ -148,19 +157,32 @@ theorem zero_of_natDegree_eq_zero (u : M →L[R] M) {Q : R[X]}
   rw [hinv]
   exact subset_closure (Subalgebra.algebraMap_mem _ _)
 
-/-- A Riesz–Coleman projection for `Q = 1` is equivalent to `E = 0`. -/
+end IsRieszColemanProjection
+
+/-- For `Q = 1`, the zero operator is a Riesz–Coleman projection of `u`. -/
+theorem isRieszColemanProjection_one_zero (u : M →L[R] M) :
+    IsRieszColemanProjection u 1 0 :=
+  IsRieszColemanProjection.zero_of_natDegree_eq_zero u Polynomial.natDegree_one (by simp)
+
+namespace IsRieszColemanProjection
+
+variable {u E : M →L[R] M} {Q : R[X]}
+
+/-- For `Q = 1`, the spectral summand is zero: any Riesz–Coleman projection for `1` is `0`. -/
+theorem eq_zero_of_one (hE : IsRieszColemanProjection u 1 E) : E = 0 :=
+  hE.eq_zero_of_natDegree_eq_zero Polynomial.natDegree_one (by simp)
+
+end IsRieszColemanProjection
+
+/-- For `Q = 1`, `E` is a Riesz–Coleman projection of `u` if and only if `E = 0`. -/
 @[simp]
-theorem one_iff : IsRieszColemanProjection u 1 E ↔ E = 0 :=
-  ⟨fun hE ↦ hE.eq_zero_of_natDegree_eq_zero Polynomial.natDegree_one (by simp),
-    fun h ↦ h ▸ zero_of_natDegree_eq_zero u Polynomial.natDegree_one (by simp)⟩
+theorem isRieszColemanProjection_one_iff {u E : M →L[R] M} :
+    IsRieszColemanProjection u 1 E ↔ E = 0 :=
+  ⟨IsRieszColemanProjection.eq_zero_of_one, fun h ↦ h ▸ isRieszColemanProjection_one_zero u⟩
 
-/-- A Riesz–Coleman projection for `Q = 1` is zero. -/
-theorem eq_zero_of_eq_one (hE : IsRieszColemanProjection u 1 E) : E = 0 :=
-  one_iff.mp hE
+namespace IsRieszColemanProjection
 
-/-- Zero is a Riesz–Coleman projection for `Q = 1`. -/
-theorem zero_of_eq_one (u : M →L[R] M) : IsRieszColemanProjection u 1 0 :=
-  one_iff.mpr rfl
+variable {u E : M →L[R] M} {Q : R[X]}
 
 /-- Scaling the polynomial `Q` by a unit of the coefficient ring does not change the Riesz–Coleman
 projection. -/
@@ -183,35 +205,97 @@ theorem units_smul_iff (c : Rˣ) :
     IsRieszColemanProjection u (c • Q) E ↔ IsRieszColemanProjection u Q E :=
   ⟨fun h ↦ by simpa using h.units_smul c⁻¹, fun h ↦ h.units_smul c⟩
 
-/-- A Riesz–Coleman projection commutes with every polynomial in the operator. -/
+/-- A Riesz–Coleman projection commutes with every polynomial in `u`. -/
 theorem commute_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
     Commute (Polynomial.aeval u P) E := by
-  rw [Polynomial.aeval_eq_smeval]
-  exact Polynomial.smeval_commute_left R P hE.commute
+  simpa only [Polynomial.aeval_eq_smeval] using Polynomial.smeval_commute_left R P hE.commute
 
 /-- A Riesz–Coleman projection commutes with `Q*(u)`. -/
 theorem commute_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
     Commute (Polynomial.aeval u Q.reverse) E :=
   IsSpectralProjection.commute_spectral hE
 
-/-- `E * Q*(u) = 0`, matching `aeval_reverse_mul_eq_zero` by commutativity. -/
+/-- `E * Q*(u) = 0`: `Q*(u)` takes values in `ker E`. -/
 theorem mul_aeval_reverse_eq_zero (hE : IsRieszColemanProjection u Q E) :
     E * Polynomial.aeval u Q.reverse = 0 := by
   simpa only [pow_one] using hE.mul_pow_eq_zero
 
-/-- Every polynomial in the operator preserves the kernel of a Riesz–Coleman projection. -/
-theorem mapsTo_ker_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
-    Set.MapsTo (Polynomial.aeval u P) E.ker E.ker :=
-  (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
-    ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp
-      (hE.commute_aeval P).symm).2
+/-- The operator preserves the kernel of its Riesz–Coleman projection. -/
+theorem mapsTo_ker (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.ker E.ker :=
+  IsSpectralProjection.mapsTo_ker hE
 
-/-- Every polynomial in the operator preserves the range of a Riesz–Coleman projection. -/
+/-- The operator preserves the range of its Riesz–Coleman projection. -/
+theorem mapsTo_range (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.range E.range :=
+  IsSpectralProjection.mapsTo_range hE
+
+/-- Every polynomial in `u` preserves `ker E`. -/
+theorem mapsTo_ker_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
+    Set.MapsTo (Polynomial.aeval u P) E.ker E.ker := by
+  intro x hx
+  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
+  apply LinearMap.mem_ker.mpr
+  simpa only [coe_coe, mul_apply_eq_comp, hx', map_zero] using
+    congr($((hE.commute_aeval P).eq.symm) x)
+
+/-- Every polynomial in `u` preserves `range E`. -/
 theorem mapsTo_range_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
-    Set.MapsTo (Polynomial.aeval u P) E.range E.range :=
-  (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
-    ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp
-      (hE.commute_aeval P).symm).1
+    Set.MapsTo (Polynomial.aeval u P) E.range E.range := by
+  rw [LinearMap.coe_range, coe_coe]
+  exact Function.Semiconj.mapsTo_range fun x ↦ congr($((hE.commute_aeval P).eq.symm) x)
+
+/-- The **complementary inverse** of a Riesz–Coleman projection: the inverse of `Q*(u)` on the
+complementary summand `range (1 - E)`, extended by zero on `range E`, chosen from
+`IsSpectralProjection.exists_inverse`. -/
+noncomputable def inverse (hE : IsRieszColemanProjection u Q E) : M →L[R] M :=
+  IsSpectralProjection.inverse hE
+
+/-- The complementary inverse is a right inverse of `Q*(u)` up to `1 - E`. -/
+theorem aeval_reverse_mul_inverse (hE : IsRieszColemanProjection u Q E) :
+    Polynomial.aeval u Q.reverse * hE.inverse = 1 - E :=
+  IsSpectralProjection.spectral_mul_inverse hE
+
+/-- The complementary inverse is a left inverse of `Q*(u)` up to `1 - E`. -/
+theorem inverse_mul_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
+    hE.inverse * Polynomial.aeval u Q.reverse = 1 - E :=
+  IsSpectralProjection.inverse_mul_spectral hE
+
+/-- The complementary inverse takes values in `ker E`. -/
+@[simp]
+theorem mul_inverse_eq_zero (hE : IsRieszColemanProjection u Q E) : E * hE.inverse = 0 :=
+  IsSpectralProjection.mul_inverse_eq_zero hE
+
+/-- The complementary inverse vanishes on `range E`. -/
+@[simp]
+theorem inverse_mul_eq_zero (hE : IsRieszColemanProjection u Q E) : hE.inverse * E = 0 :=
+  IsSpectralProjection.inverse_mul_eq_zero hE
+
+/-- The complementary inverse lies in the operator-norm closure of `R[u]`. -/
+theorem inverse_mem_closure_adjoin (hE : IsRieszColemanProjection u Q E) :
+    hE.inverse ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) :=
+  IsSpectralProjection.inverse_mem_closure_adjoin hE
+
+/-- Uniqueness of the complementary inverse among right inverses up to `1 - E` valued in
+`ker E`. -/
+theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
+    (hw : Polynomial.aeval u Q.reverse * w = 1 - E) (hEw : E * w = 0) : w = hE.inverse :=
+  IsSpectralProjection.eq_inverse hE hw hEw
+
+/-- The complementary inverse preserves `ker E`. -/
+theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
+    Set.MapsTo hE.inverse E.ker E.ker :=
+  IsSpectralProjection.mapsTo_ker_inverse hE
+
+/-- On `ker E`, `inverse` is a left inverse of `Q*(u)`. -/
+theorem inverse_aeval_reverse_apply (hE : IsRieszColemanProjection u Q E)
+    {x : M} (hx : x ∈ E.ker) :
+    hE.inverse (Polynomial.aeval u Q.reverse x) = x :=
+  IsSpectralProjection.inverse_spectral_apply hE hx
+
+/-- On `ker E`, `inverse` is a right inverse of `Q*(u)`. -/
+theorem aeval_reverse_apply_inverse (hE : IsRieszColemanProjection u Q E)
+    {x : M} (hx : x ∈ E.ker) :
+    Polynomial.aeval u Q.reverse (hE.inverse x) = x :=
+  IsSpectralProjection.spectral_apply_inverse hE hx
 
 /-- **The range of a Riesz–Coleman projection is `ker Q*(u)`.** -/
 theorem range_eq_ker (hE : IsRieszColemanProjection u Q E) :
@@ -219,93 +303,140 @@ theorem range_eq_ker (hE : IsRieszColemanProjection u Q E) :
       LinearMap.ker ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M) := by
   simpa only [pow_one] using IsSpectralProjection.range_eq_ker hE
 
-/-- **The range of `Q*(u)` is the kernel of its Riesz–Coleman projection**, i.e., the complementary
-summand `range (1 - E)`. -/
+/-- **The range of `Q*(u)` is the complementary summand `ker E`.** -/
 theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
     LinearMap.range ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M) =
       LinearMap.ker (E : M →ₗ[R] M) := by
   simpa only [pow_one] using IsSpectralProjection.range_pow_eq_ker hE le_rfl
 
-/-- **`ker Q*(u)` and `range Q*(u)` are topological complements.** -/
-theorem isTopCompl_ker_range (hE : IsRieszColemanProjection u Q E) :
+/-- **Topological decomposition `M = ker Q*(u) ⊕ range Q*(u)`.** -/
+theorem isTopCompl_ker_range_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
     (LinearMap.ker ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M)).IsTopCompl
       (LinearMap.range ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M)) := by
   simpa only [pow_one] using IsSpectralProjection.isTopCompl_ker_range_pow hE le_rfl
 
-/-- The range of `Q*(u)` is closed whenever `M` is `T₁` (in particular, normed). -/
+/-- In a Hausdorff module, the complementary summand `range Q*(u) = ker E` is closed. -/
 theorem isClosed_range_aeval_reverse [T1Space M] (hE : IsRieszColemanProjection u Q E) :
     IsClosed
       (LinearMap.range ((Polynomial.aeval u Q.reverse : M →L[R] M) : M →ₗ[R] M) : Set M) := by
   simpa only [pow_one] using IsSpectralProjection.isClosed_range_pow hE le_rfl
 
-/-- When `Q` has invertible leading coefficient, a Riesz–Coleman projection factors through `u` as
-`E = u * (-lc(Q)⁻¹ • Q*.divX(u) * E)`. This yields both compactness of `E` and invertibility of `u`
-on `range E`. -/
-theorem eq_mul_aeval_divX_mul (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
-    E = u * (-(Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E) := by
-  have hdiv : u * Polynomial.aeval u Q.reverse.divX + Q.leadingCoeff • (1 : M →L[R] M) =
-      Polynomial.aeval u Q.reverse := by
-    have h := congrArg (Polynomial.aeval u) (Polynomial.X_mul_divX_add Q.reverse)
-    simpa only [map_add, map_mul, Polynomial.aeval_X, Polynomial.aeval_C,
-      Polynomial.coeff_zero_reverse, Algebra.algebraMap_eq_smul_one] using h
-  have hmul := congrArg (· * E) hdiv
-  rw [add_mul (R := M →L[R] M), hE.aeval_reverse_mul_eq_zero, smul_mul_assoc, one_mul,
-    add_eq_zero_iff_eq_neg'] at hmul
-  have hscaled := congrArg (Ring.inverse Q.leadingCoeff • ·) hmul
-  rw [smul_smul, Ring.inverse_mul_cancel _ hQ, one_smul, smul_neg, ← neg_smul,
-    mul_assoc, ← mul_smul_comm] at hscaled
-  exact hscaled
+/-- `Q*(u)` as a continuous linear automorphism of the complementary summand `ker E`. -/
+noncomputable def equivKer (hE : IsRieszColemanProjection u Q E) : E.ker ≃L[R] E.ker :=
+  IsSpectralProjection.equivKer hE
 
-/-- **Invertibility of `u` on the spectral summand.** When `Q` has invertible leading coefficient,
-`u` restricts to a continuous linear automorphism of `range E`, with explicit inverse the
-restriction of `-lc(Q)⁻¹ • Q*.divX(u)`. -/
-noncomputable def equivRange (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
-    E.range ≃L[R] E.range := by
-  let v : M →L[R] M := -(Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX
-  have hmaps : Set.MapsTo v E.range E.range := by
-    intro x hx
-    simpa only [v, smul_apply, SetLike.mem_coe] using
-      E.range.smul_mem _ (hE.mapsTo_range_aeval Q.reverse.divX hx)
-  have hcomm_uv : Commute u v := by
-    have hX : Commute u (Polynomial.aeval u Q.reverse.divX) := by
-      simpa only [Polynomial.aeval_X] using
-        (Commute.all (X : R[X]) Q.reverse.divX).map (Polynomial.aeval u)
-    exact hX.smul_right _
-  have huvE : u * (v * E) = E := (hE.eq_mul_aeval_divX_mul hQ).symm
-  have hvuE : v * (u * E) = E := by rw [← mul_assoc, ← hcomm_uv.eq, mul_assoc, huvE]
-  exact ContinuousLinearEquiv.equivOfInverse
-    (u.restrict (fun _ hx ↦ hE.mapsTo_range hx))
-    (v.restrict (fun _ hx ↦ hmaps hx))
-    (fun x ↦ Subtype.ext <| by
-      have hfix : E x = x :=
-        ContinuousLinearMap.IsIdempotentElem.apply_coe_range hE.isIdempotentElem x
-      simpa only [restrict_apply, mul_apply_eq_comp, hfix] using congr($hvuE (x : M)))
-    (fun x ↦ Subtype.ext <| by
-      have hfix : E x = x :=
-        ContinuousLinearMap.IsIdempotentElem.apply_coe_range hE.isIdempotentElem x
-      simpa only [restrict_apply, mul_apply_eq_comp, hfix] using congr($huvE (x : M)))
+/-- The complementary automorphism `equivKer` acts by `Q*(u)`. -/
+@[simp]
+theorem coe_equivKer_apply (hE : IsRieszColemanProjection u Q E) (x : E.ker) :
+    (hE.equivKer x : M) = Polynomial.aeval u Q.reverse x :=
+  IsSpectralProjection.coe_equivKer_apply hE x
 
-/-- The spectral-summand automorphism acts by `u`. -/
+/-- The inverse complementary automorphism `equivKer.symm` acts by
+`IsRieszColemanProjection.inverse`. -/
+@[simp]
+theorem coe_equivKer_symm_apply (hE : IsRieszColemanProjection u Q E) (x : E.ker) :
+    (hE.equivKer.symm x : M) = hE.inverse x :=
+  IsSpectralProjection.coe_equivKer_symm_apply hE x
+
+/-- **Uniqueness of the Riesz–Coleman projection.** Two Riesz–Coleman projections of `u` for the
+same polynomial `Q` are equal. -/
+theorem unique {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection u Q E') : E = E' :=
+  IsSpectralProjection.unique hE hE'
+
+/-- When `Q.leadingCoeff` is a unit, `E` factors on the left through `u`: specifically,
+`u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E) = E`. -/
+theorem mul_smul_aeval_divX_reverse_mul (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) :
+    u * ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E) = E := by
+  -- Evaluating `X * Q*.divX + C (Q*(0)) = Q*` at `u` and right-multiplying by `E` kills the RHS.
+  have hdiv : Polynomial.aeval u (X * Q.reverse.divX + C (Q.reverse.coeff 0)) * E = 0 := by
+    rw [X_mul_divX_add]
+    exact hE.aeval_reverse_mul_eq_zero
+  rw [map_add, map_mul, aeval_X, aeval_C, coeff_zero_reverse, Algebra.algebraMap_eq_smul_one,
+    add_mul, smul_mul_assoc, one_mul, add_eq_zero_iff_eq_neg] at hdiv
+  calc u * ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E)
+      = (-Ring.inverse Q.leadingCoeff) • (u * Polynomial.aeval u Q.reverse.divX * E) := by
+        rw [smul_mul_assoc, mul_smul_comm, mul_assoc]
+    _ = (Ring.inverse Q.leadingCoeff * Q.leadingCoeff) • E := by
+        rw [hdiv, neg_smul, smul_neg, neg_neg, smul_smul]
+    _ = E := by rw [Ring.inverse_mul_cancel _ hQ, one_smul]
+
+/-- Symmetric form of `mul_smul_aeval_divX_reverse_mul`: `((-lc(Q)⁻¹) • (Q*.divX)(u) * E) * u =
+E`. -/
+theorem smul_aeval_divX_reverse_mul_mul (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) :
+    ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E) * u = E := by
+  have huP : Commute u (Polynomial.aeval u Q.reverse.divX) := by
+    simpa only [Polynomial.aeval_eq_smeval] using
+      (Polynomial.smeval_commute_left R Q.reverse.divX (Commute.refl u)).symm
+  have hcomm : Commute u ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX * E) :=
+    (huP.smul_right _).mul_right hE.commute
+  exact hcomm.eq.symm.trans (hE.mul_smul_aeval_divX_reverse_mul hQ)
+
+/-- On `range E`, `(-lc(Q)⁻¹) • (Q*.divX)(u)` is a left inverse of `u`. -/
+theorem neg_inverse_smul_aeval_divX_reverse_apply (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) {x : M} (hx : x ∈ E.range) :
+    ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX) (u x) = x := by
+  have hfix : E x = x :=
+    (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp hx
+  have hcomm : E (u x) = u (E x) := congr($(hE.commute.eq.symm) x)
+  have h := congr($(hE.smul_aeval_divX_reverse_mul_mul hQ) x)
+  simp only [mul_apply_eq_comp] at h
+  rwa [hcomm, hfix] at h
+
+/-- On `range E`, `(-lc(Q)⁻¹) • (Q*.divX)(u)` is a right inverse of `u`. -/
+theorem apply_neg_inverse_smul_aeval_divX_reverse (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) {x : M} (hx : x ∈ E.range) :
+    u (((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX) x) = x := by
+  have hfix : E x = x :=
+    (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp hx
+  have h := congr($(hE.mul_smul_aeval_divX_reverse_mul hQ) x)
+  simp only [mul_apply_eq_comp] at h
+  rwa [hfix] at h
+
+/-- **Invertibility of `u` on `ker Q*(u) = range E`.** When the leading coefficient of `Q` is a
+unit, `u` restricts to a continuous linear automorphism of `range E`. This includes `Q = 1`, when
+`range E = 0`. -/
+noncomputable def equivRange (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) : E.range ≃L[R] E.range :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    (u.restrict hE.mapsTo_range)
+    (((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX).restrict
+      fun _ hx ↦ E.range.smul_mem _ (hE.mapsTo_range_aeval Q.reverse.divX hx))
+    (ContinuousLinearMap.ext fun x ↦
+      Subtype.ext (hE.apply_neg_inverse_smul_aeval_divX_reverse hQ x.property))
+    (ContinuousLinearMap.ext fun x ↦
+      Subtype.ext (hE.neg_inverse_smul_aeval_divX_reverse_apply hQ x.property))
+
+/-- The spectral-summand automorphism `equivRange` acts by `u`. -/
 @[simp]
 theorem coe_equivRange_apply (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
-    (x : E.range) : (hE.equivRange hQ x : M) = u x :=
-  (rfl)
+    (x : E.range) : (hE.equivRange hQ x : M) = u x := by
+  simp [equivRange, coe_restrict_apply hE.mapsTo_range]
 
-/-- The inverse of `u` on `range E` acts by `-lc(Q)⁻¹ • Q*.divX(u)`. -/
+/-- The inverse spectral-summand automorphism `equivRange.symm` acts by `-lc(Q)⁻¹ • (Q*/X)(u)`. -/
 @[simp]
-theorem coe_equivRange_symm_apply (hE : IsRieszColemanProjection u Q E)
-    (hQ : IsUnit Q.leadingCoeff) (x : E.range) :
+theorem coe_equivRange_symm_apply (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
+    (x : E.range) :
     ((hE.equivRange hQ).symm x : M) =
-      (-(Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX) x :=
-  (rfl)
+      ((-Ring.inverse Q.leadingCoeff) • Polynomial.aeval u Q.reverse.divX) x := by
+  simp [equivRange]
 
-/-- When `Q` has invertible leading coefficient, the restriction of `u` to `range E` is a unit in
-the bounded endomorphism algebra of `range E`. -/
+/-- When `Q.leadingCoeff` is a unit, the restriction of `u` to `range E` is a unit of
+`E.range →L[R] E.range`. -/
 theorem isUnit_restrict_range (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
-    IsUnit (u.restrict (fun _ hx ↦ hE.mapsTo_range hx)) :=
-  isUnit_iff_exists.mpr ⟨((hE.equivRange hQ).symm : E.range →L[R] E.range),
-    ext fun x ↦ (hE.equivRange hQ).apply_symm_apply x,
-    ext fun x ↦ (hE.equivRange hQ).symm_apply_apply x⟩
+    IsUnit (u.restrict hE.mapsTo_range) :=
+  (hE.equivRange hQ).toUnit.isUnit
+
+/-- When `Q.leadingCoeff` is a unit, the `R`-linear restriction of `u` to `range E` is a unit of
+`Module.End R E.range`. -/
+theorem isUnit_toLinearMap_restrict_range (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) :
+    IsUnit ((u : M →ₗ[R] M).restrict hE.mapsTo_range) :=
+  (hE.isUnit_restrict_range hQ).map toLinearMapRingHom
 
 end IsRieszColemanProjection
 
@@ -320,44 +451,41 @@ variable {R M N : Type*} [SeminormedCommRing R] [TauCeti.NormedRing.IsTate R]
 
 namespace IsRieszColemanProjection
 
-/-- **Functoriality of Riesz–Coleman projections.** A linear map intertwining two operators
-intertwines their Riesz–Coleman projections for the same polynomial `Q`. Continuity of the
-intertwiner is unnecessary. -/
+/-- A linear map (not assumed continuous) intertwining `u` and `v` intertwines their
+Riesz–Coleman projections for the same polynomial `Q`. -/
 theorem semiconj (hE : IsRieszColemanProjection u Q E) (hF : IsRieszColemanProjection v Q F)
     (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Function.Semiconj f E F :=
   IsSpectralProjection.semiconj hE hF f (hf.aeval Q.reverse)
 
-/-- An intertwiner sends the spectral summand `range E = ker Q*(u)` into the corresponding
-summand. -/
+/-- An intertwiner sends the spectral summand `range E` into `range F`. -/
 theorem mapsTo_range_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.range F.range :=
   IsSpectralProjection.mapsTo_range_of_semiconj hE hF f (hf.aeval Q.reverse)
 
-/-- An intertwiner sends the complementary summand `ker E = range Q*(u)` into the corresponding
-summand. -/
+/-- An intertwiner sends the complementary summand `ker E` into `ker F`. -/
 theorem mapsTo_ker_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.ker F.ker :=
   IsSpectralProjection.mapsTo_ker_of_semiconj hE hF f (hf.aeval Q.reverse)
 
-/-- Intertwiners carry the complementary inverses of Riesz–Coleman projections to one another. -/
+/-- An intertwiner also intertwines the complementary inverses of `Q*(u)` and `Q*(v)`. -/
 theorem semiconj_inverse (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Function.Semiconj f hE.inverse hF.inverse :=
   IsSpectralProjection.semiconj_inverse hE hF f (hf.aeval Q.reverse)
 
-/-- A bounded operator commuting with `u` commutes with every Riesz–Coleman projection of `u`. -/
-theorem commute_of_commute (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
-    (hw : Commute w u) : Commute w E :=
-  ext fun x ↦ hE.semiconj hE w.toLinearMap (fun y ↦ congr($(hw.eq) y)) x
+/-- Every bounded operator commuting with `u` commutes with its Riesz–Coleman projection. -/
+theorem commute_of_commute (hE : IsRieszColemanProjection u Q E) {g : M →L[R] M}
+    (hg : Commute g u) : Commute g E :=
+  ContinuousLinearMap.ext fun x ↦ hE.semiconj hE g.toLinearMap (fun y ↦ congr($(hg.eq) y)) x
 
-/-- A bounded operator commuting with `u` commutes with the complementary inverse of every
-Riesz–Coleman projection of `u`. -/
-theorem commute_inverse_of_commute (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
-    (hw : Commute w u) : Commute w hE.inverse :=
-  ext fun x ↦ hE.semiconj_inverse hE w.toLinearMap (fun y ↦ congr($(hw.eq) y)) x
+/-- Every bounded operator commuting with `u` commutes with the complementary inverse. -/
+theorem commute_inverse_of_commute (hE : IsRieszColemanProjection u Q E) {g : M →L[R] M}
+    (hg : Commute g u) : Commute g hE.inverse :=
+  ContinuousLinearMap.ext fun x ↦
+    hE.semiconj_inverse hE g.toLinearMap (fun y ↦ congr($(hg.eq) y)) x
 
 end IsRieszColemanProjection
 
@@ -367,60 +495,137 @@ section Retract
 
 variable {R M N : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M} {Q : R[X]}
 
-/-- **Compression of Riesz–Coleman projections along a retract.** Let `r ∘ i = id` present `M` as a
-retract of a normed module `N`. If `E` is a Riesz–Coleman projection of the extension `i ∘ u ∘ r`
-for `Q`, then `r ∘ E ∘ i` is a Riesz–Coleman projection of `u` for `Q`. -/
-theorem IsRieszColemanProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {Q : R[X]}
-    {E : N →L[R] N} (hE : IsRieszColemanProjection (i.comp (u.comp r)) Q E) :
+/-- **Compression of Riesz–Coleman projections along a retract.** Let `r ∘ i = id` present `M` as
+a retract of a seminormed module `N`. If `E` is a Riesz–Coleman projection of `i ∘ u ∘ r` for `Q`,
+then `r ∘ E ∘ i` is a Riesz–Coleman projection of `u` for `Q`. -/
+theorem IsRieszColemanProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {E : N →L[R] N}
+    (hE : IsRieszColemanProjection (i.comp (u.comp r)) Q E) :
     IsRieszColemanProjection u Q (r.comp (E.comp i)) := by
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hr : Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  have hi : Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
-  exact IsSpectralProjection.comp_comp_of_retract hri (hr.aeval Q.reverse) (hi.aeval Q.reverse) hE
+  have hr_semi : Function.Semiconj r.toLinearMap (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
+  have hi_semi : Function.Semiconj i.toLinearMap u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
+  exact IsSpectralProjection.comp_comp_of_retract hri (hr_semi.aeval Q.reverse)
+    (hi_semi.aeval Q.reverse) hE
+
+/-- When `Q.leadingCoeff` is a unit, the Riesz–Coleman projection `E'` of the extension
+`i ∘ u ∘ r` along a continuous linear retract `r ∘ i = id` vanishes on `ker r` and takes values in
+`range i`, so extending any Riesz–Coleman projection `E` of `u` back to `N` recovers
+`E' = i ∘ E ∘ r`. -/
+theorem IsRieszColemanProjection.comp_comp_eq_of_retract (hri : r.comp i = .id R M)
+    {E : M →L[R] M} {E' : N →L[R] N} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E') (hQ : IsUnit Q.leadingCoeff) :
+    i.comp (E.comp r) = E' := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have hr_semi : Function.Semiconj r.toLinearMap (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
+  have hfac := hE'.mul_smul_aeval_divX_reverse_mul hQ
+  ext y
+  -- Since `E' = (i ∘ u ∘ r) * (...)`, `E' y` already lies in `range i`, so `i (r (E' y)) = E' y`.
+  have hirE : i (r (E' y)) = E' y := by
+    have hy := congr($hfac y).symm
+    simp only [mul_apply_eq_comp, comp_apply] at hy
+    rw [hy, hri']
+  calc (i.comp (E.comp r)) y = i (E (r y)) := by simp
+    _ = i (r (E' y)) := congrArg i (hE'.semiconj hE r.toLinearMap hr_semi y).symm
+    _ = E' y := hirE
+
+/-- When `Q.leadingCoeff` is a unit, along a continuous linear retract `r ∘ i = id`, `i` and `r`
+restrict to a continuous linear equivalence between the ranges of the Riesz–Coleman projections of
+`u` and `i ∘ u ∘ r`. -/
+noncomputable def IsRieszColemanProjection.rangeEquivOfRetract (hri : r.comp i = .id R M)
+    {E : M →L[R] M} {E' : N →L[R] N} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
+    (hQ : IsUnit Q.leadingCoeff) : E.range ≃L[R] E'.range :=
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have hi_semi : Function.Semiconj i u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
+  have hr_semi : Function.Semiconj r (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
+  have hi : ∀ x ∈ E.range, i x ∈ E'.range :=
+    fun _ hx ↦ hE.mapsTo_range_of_semiconj hE' i.toLinearMap hi_semi hx
+  have hr : ∀ y ∈ E'.range, r y ∈ E.range :=
+    fun _ hy ↦ hE'.mapsTo_range_of_semiconj hE r.toLinearMap hr_semi hy
+  ContinuousLinearEquiv.ofContinuousLinearMap (i.restrict hi) (r.restrict hr)
+    (ContinuousLinearMap.ext fun ⟨y, hy⟩ ↦ Subtype.ext <| by
+      have hEy : E' y = y :=
+        (LinearMap.IsIdempotentElem.mem_range_iff
+          (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE'.isIdempotentElem)).mp hy
+      have hy' := congr($(hE'.mul_smul_aeval_divX_reverse_mul hQ) y).symm
+      simp only [mul_apply_eq_comp, comp_apply, hEy] at hy'
+      simp only [comp_apply, id_apply, coe_restrict_apply]
+      rw [hy', hri'])
+    (ContinuousLinearMap.ext fun ⟨x, _⟩ ↦ Subtype.ext (hri' x))
+
+/-- The retract range equivalence `rangeEquivOfRetract` acts in the forward direction by `i`. -/
+@[simp]
+theorem IsRieszColemanProjection.coe_rangeEquivOfRetract_apply (hri : r.comp i = .id R M)
+    {E : M →L[R] M} {E' : N →L[R] N} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
+    (hQ : IsUnit Q.leadingCoeff) (x : E.range) :
+    ((hE.rangeEquivOfRetract hri hE' hQ x : N)) = i x := by
+  simp [rangeEquivOfRetract]
+
+/-- The inverse retract range equivalence `rangeEquivOfRetract.symm` acts by `r`. -/
+@[simp]
+theorem IsRieszColemanProjection.coe_rangeEquivOfRetract_symm_apply (hri : r.comp i = .id R M)
+    {E : M →L[R] M} {E' : N →L[R] N} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
+    (hQ : IsUnit Q.leadingCoeff) (y : E'.range) :
+    (((hE.rangeEquivOfRetract hri hE' hQ).symm y : M)) = r y := by
+  simp [rangeEquivOfRetract]
 
 end Retract
 
-section RetractRecovery
+section RowCompact
 
-variable {R M N : Type*} [SeminormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
-  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
+variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+  [NormedCommRing R] [TauCeti.NormedRing.IsTate R] [IsUltrametricDist R]
+  {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
 
-/-- **Recovery of an extended Riesz–Coleman projection from its compression.** Under a retract
-`r ∘ i = id`, if `Q` has invertible leading coefficient, any Riesz–Coleman projection `E` of the
-extension `i ∘ u ∘ r` takes values in `range i` and vanishes on `ker r`, and therefore equals the
-extension `i ∘ (r ∘ E ∘ i) ∘ r` of its compression. -/
-theorem IsRieszColemanProjection.comp_comp_eq_of_retract (hri : r.comp i = .id R M) {Q : R[X]}
-    (hQ : IsUnit Q.leadingCoeff) {E : N →L[R] N}
-    (hE : IsRieszColemanProjection (i.comp (u.comp r)) Q E) :
-    i.comp ((r.comp (E.comp i)).comp r) = E := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  -- `E` factors through `i ∘ u ∘ r` on both sides.
-  have hfac := hE.eq_mul_aeval_divX_mul hQ
-  have hfac_right : E = -(Ring.inverse Q.leadingCoeff) •
-      Polynomial.aeval (i.comp (u.comp r)) Q.reverse.divX * E * (i.comp (u.comp r)) := by
-    conv_lhs => rw [hfac]
-    have hX : Commute (i.comp (u.comp r))
-        (Polynomial.aeval (i.comp (u.comp r)) Q.reverse.divX) := by
-      simpa only [Polynomial.aeval_X] using
-        (Commute.all (X : R[X]) Q.reverse.divX).map (Polynomial.aeval (i.comp (u.comp r)))
-    rw [← mul_assoc, (hX.smul_right _).eq, mul_assoc, hE.commute.eq, ← mul_assoc]
-  have hir_left (z : N) : i (r (E z)) = E z := by
-    conv_lhs => rw [hfac]
-    conv_rhs => rw [hfac]
-    simp only [mul_apply_eq_comp, comp_apply, hri']
-  have hir_right (y : N) : E (i (r y)) = E y := by
-    conv_lhs => rw [hfac_right]
-    conv_rhs => rw [hfac_right]
-    simp only [mul_apply_eq_comp, comp_apply, hri']
-  ext y
-  simp only [comp_apply, hir_left, hir_right]
+namespace IsRieszColemanProjection
 
-end RetractRecovery
+/-- When `Q.leadingCoeff` is a unit, every Riesz–Coleman projection of a row-compact operator is
+row compact, including when `Q = 1`. -/
+theorem isRowCompact (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
+    (hu : u.IsRowCompact) : E.IsRowCompact := by
+  rw [← hE.mul_smul_aeval_divX_reverse_mul hQ, mul_def]
+  exact hu.comp_clm _
+
+variable [CompleteSpace R]
+
+/-- When `Q.leadingCoeff` is a unit, the finite spectral summand `range E` of a row-compact
+operator is finitely generated over `R`. -/
+theorem finite_range (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
+    (hu : u.IsRowCompact) : Module.Finite R E.range :=
+  (hE.isRowCompact hQ hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+
+/-- When `Q.leadingCoeff` is a unit, the finite spectral summand `range E` of a row-compact
+operator is projective over `R`. -/
+theorem projective_range (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
+    (hu : u.IsRowCompact) : Module.Projective R E.range :=
+  (hE.isRowCompact hQ hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+
+/-- When `Q.leadingCoeff` is a unit, `ker Q*(u)` is finitely generated over `R`. -/
+theorem finite_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
+    (hu : u.IsRowCompact) :
+    Module.Finite R
+      (LinearMap.ker ((Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)) :
+        C₀(I, R) →ₗ[R] C₀(I, R))) := by
+  rw [← hE.range_eq_ker]
+  exact hE.finite_range hQ hu
+
+/-- When `Q.leadingCoeff` is a unit, `ker Q*(u)` is projective over `R`. -/
+theorem projective_ker_aeval_reverse (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) (hu : u.IsRowCompact) :
+    Module.Projective R
+      (LinearMap.ker ((Polynomial.aeval u Q.reverse : C₀(I, R) →L[R] C₀(I, R)) :
+        C₀(I, R) →ₗ[R] C₀(I, R))) := by
+  rw [← hE.range_eq_ker]
+  exact hE.projective_range hQ hu
+
+end IsRieszColemanProjection
+
+end RowCompact
 
 section BaseChange
 
@@ -430,16 +635,16 @@ variable {J R S : Type*} [TopologicalSpace J] [DiscreteTopology J] [DecidableEq 
 
 /-- **Riesz–Coleman projections under bounded base change.** Coefficientwise extension along a
 bounded unital ring homomorphism `f : R →+* S` carries a Riesz–Coleman projection of `u` for `Q`
-to one of `u_S` for `Q.map f`, whenever `f` preserves the degree of `Q` (in particular, whenever
-`Q` has invertible leading coefficient, via `Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff`).
-No compactness is needed. -/
+to one of `u.mapCoeffs f hf` for `Q.map f`, whenever `f` preserves the degree of `Q` (in
+particular, whenever `Q` has invertible leading coefficient, via
+`Polynomial.natDegree_map_eq_of_isUnit_leadingCoeff`). No compactness is needed. -/
 theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(J, R) →L[R] C₀(J, R)} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (f : R →+* S)
     (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (hdeg : (Q.map f).natDegree = Q.natDegree) :
     IsRieszColemanProjection (u.mapCoeffs f hf) (Q.map f) (E.mapCoeffs f hf) := by
   have hrev : (Q.map f).reverse = Q.reverse.map f := by
     rw [Polynomial.reverse, hdeg, Polynomial.reflect_map, Polynomial.reverse]
-  simpa only [IsRieszColemanProjection, mapCoeffsRingHom_apply, mapCoeffs_aeval, hrev] using
+  simpa only [IsRieszColemanProjection, mapCoeffsRingHom_apply, aeval_mapCoeffs, hrev] using
     IsSpectralProjection.map hE (mapCoeffsRingHom f hf)
       (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 

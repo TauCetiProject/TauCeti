@@ -15,9 +15,10 @@ A bounded unital ring homomorphism `f : R →+* S` extends the matrix of an oper
 `C₀(J, R) →L[R] C₀(I, R)` coefficientwise to an operator over `S`. Null columns and a
 uniform entry bound ensure that the extended matrix defines a continuous linear map.
 The construction respects identities, addition, scalar multiplication, composition and polynomial
-evaluation, including composition of coefficient homomorphisms. Its matrix characterizes it
-uniquely. Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm
-sums and sends the closure of the polynomials in an endomorphism `u` into the closure of the
+evaluation (`ContinuousLinearMap.aeval_mapCoeffs`),
+including composition of coefficient homomorphisms. Its matrix characterizes it uniquely.
+Over Tate target scalars it is Lipschitz in operator norm, so it preserves operator-norm sums
+and sends the closure of the polynomials in an endomorphism `u` into the closure of the
 polynomials in its extension.
 
 The coefficient rings need not have a common ground field. Tate data on the source supplies
@@ -172,15 +173,19 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
 
-/-- Coefficient extension commutes with polynomial evaluation on endomorphisms. -/
+/-- Polynomial evaluation on `C₀(J, R) →L[R] C₀(J, R)` commutes with bounded coefficient
+extension. -/
 @[simp]
-theorem mapCoeffs_aeval (u : C₀(J, R) →L[R] C₀(J, R)) (p : Polynomial R) (f : R →+* S)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (Polynomial.aeval u p).mapCoeffs f hf = Polynomial.aeval (u.mapCoeffs f hf) (p.map f) := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq => simp [Polynomial.map_add, hp, hq]
-  | monomial n r =>
-    simp [Polynomial.map_monomial, Polynomial.aeval_monomial, Algebra.algebraMap_eq_smul_one]
+theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
+    Polynomial.aeval (u.mapCoeffs f hf) (P.map f) = (Polynomial.aeval u P).mapCoeffs f hf := by
+  induction P using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [Polynomial.map_add, map_add, map_add, mapCoeffs_add, hp, hq]
+  | monomial n a =>
+    rw [Polynomial.map_monomial, Polynomial.aeval_monomial, Polynomial.aeval_monomial,
+      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
+      smul_mul_assoc, one_mul, mapCoeffs_smul, mapCoeffs_pow]
 
 /-- Coefficient extension on endomorphisms of a model space, bundled as a ring homomorphism. -/
 noncomputable def mapCoeffsRingHom (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :

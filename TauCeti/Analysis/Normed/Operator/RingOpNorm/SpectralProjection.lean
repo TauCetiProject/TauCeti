@@ -170,24 +170,25 @@ theorem mul_pow_eq_zero (hE : IsSpectralProjection u C h E) : E * C ^ h = 0 :=
 /-- The operator `u` preserves the kernel of its spectral projection. -/
 theorem mapsTo_ker (hE : IsSpectralProjection u C h E) : Set.MapsTo u E.ker E.ker :=
   (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
-    ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp hE.commute.symm).2
+    ((ContinuousLinearMap.IsIdempotentElem.commute_iff
+      hE.isIdempotentElem).mp hE.commute.symm).right
 
 /-- The operator `u` preserves the range of its spectral projection. -/
 theorem mapsTo_range (hE : IsSpectralProjection u C h E) : Set.MapsTo u E.range E.range :=
   (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
-    ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp hE.commute.symm).1
+    ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp hE.commute.symm).left
 
 /-- The spectral operator `C` preserves the kernel of its spectral projection. -/
 theorem mapsTo_ker_spectral (hE : IsSpectralProjection u C h E) : Set.MapsTo C E.ker E.ker :=
   (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
     ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp
-      hE.commute_spectral.symm).2
+      hE.commute_spectral.symm).right
 
 /-- The spectral operator `C` preserves the range of its spectral projection. -/
 theorem mapsTo_range_spectral (hE : IsSpectralProjection u C h E) : Set.MapsTo C E.range E.range :=
   (Module.End.mem_invtSubmodule_iff_mapsTo _).mp
     ((ContinuousLinearMap.IsIdempotentElem.commute_iff hE.isIdempotentElem).mp
-      hE.commute_spectral.symm).1
+      hE.commute_spectral.symm).left
 
 /-- The **complementary inverse** of a spectral projection: the inverse of `C` on the complementary
 summand `range (1 - E)`, extended by zero on `range E`, chosen from
@@ -313,11 +314,11 @@ theorem isClosed_range_pow [T1Space M] (hE : IsSpectralProjection u C h E) (hn :
 `ker E`, identified with every stabilised range by `range_pow_eq_ker`. Its inverse is the
 restriction of `IsSpectralProjection.inverse`. -/
 noncomputable def equivKer (hE : IsSpectralProjection u C h E) : E.ker ≃L[R] E.ker :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (C.restrict (fun _ hx ↦ hE.mapsTo_ker_spectral hx))
     (hE.inverse.restrict (fun _ hx ↦ hE.mapsTo_ker_inverse hx))
-    (fun x ↦ Subtype.ext (hE.inverse_spectral_apply x.property))
-    (fun x ↦ Subtype.ext (hE.spectral_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.spectral_apply_inverse x.property))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext (hE.inverse_spectral_apply x.property))
 
 /-- The complementary automorphism acts by the spectral operator `C`. -/
 @[simp]
@@ -447,12 +448,12 @@ section Retract
 
 variable {R M N : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
-  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
   {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
 
 /-- **Compression of spectral projections along a retract.** Let `r ∘ i = id` present `M` as a
-retract of a normed module `N`, and suppose `r` and `i` intertwine spectral operators `D` on `N`
-and `C` on `M`. If `E` is a spectral projection of the extension `i ∘ u ∘ r` for `D`, then
+retract of a seminormed module `N`, and suppose `r` and `i` intertwine spectral operators `D` on
+`N` and `C` on `M`. If `E` is a spectral projection of the extension `i ∘ u ∘ r` for `D`, then
 `r ∘ E ∘ i` is a spectral projection of `u` for `C`. -/
 theorem IsSpectralProjection.comp_comp_of_retract (hri : r.comp i = .id R M)
     {C : M →L[R] M} {D : N →L[R] N} {h : ℕ} {E : N →L[R] N}
@@ -463,25 +464,36 @@ theorem IsSpectralProjection.comp_comp_of_retract (hri : r.comp i = .id R M)
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
   have hrh : Function.Semiconj (r : N →ₗ[R] M) (D ^ h : N →L[R] N) (C ^ h : M →L[R] M) := by
     simpa only [FunLike.coe_pow_eq_iterate] using hr.iterate_right h
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  have hE' := apply_comp_apply_of_mem_closure_adjoin hri hE.mem_closure_adjoin
-  have hw' := apply_comp_apply_of_mem_closure_adjoin hri hw
+  have hir_comm : Commute (i.comp r) D := by
+    ext y
+    simp only [mul_apply_eq_comp, comp_apply]
+    exact (congrArg i (hr y)).trans (hi (r y))
+  have hE' (y : N) : i (r (E y)) = E (i (r y)) :=
+    congr($(hE.commute_of_commute hir_comm) y)
+  have hw' (y : N) : i (r (hE.inverse y)) = hE.inverse (i (r y)) :=
+    congr($(hE.commute_inverse_of_commute hir_comm) y)
   have hEE (y : N) : E (E y) = E y := congr($hE.isIdempotentElem.eq y)
   have hEv (y : N) : E (i (u (r y))) = i (u (r (E y))) := congr($hE.commute.eq y).symm
   have hpow (y : N) : (D ^ h) (E y) = 0 := congr($hE.pow_mul_eq_zero y)
   refine ⟨?_, ?_, comp_comp_mem_closure_adjoin hri hE.mem_closure_adjoin, ?_,
-    ⟨r.comp (w.comp i), ?_, ?_, ?_, ?_, comp_comp_mem_closure_adjoin hri hw⟩⟩
+    ⟨r.comp (hE.inverse.comp i), ?_, ?_, ?_, ?_,
+      comp_comp_mem_closure_adjoin hri hE.inverse_mem_closure_adjoin⟩⟩
   · ext x; simp [hE', hri', hEE]
   · ext x; simpa [hri'] using congr(r $(hEv (i x))).symm
   · ext x; simpa [hpow] using (hrh (E (i x))).symm
   · ext x
-    simpa [hri'] using (hr (w (i x))).symm.trans congr(r $(DFunLike.congr_fun hw₁ (i x)))
+    simpa [hri'] using
+      (hr (hE.inverse (i x))).symm.trans congr(r $(congr($(hE.spectral_mul_inverse) (i x))))
   · ext x
     have hiCx : i (C x) = D (i x) := hi x
     simpa only [mul_apply_eq_comp, comp_apply, sub_apply, one_apply_eq_self, map_sub, hri',
-      hiCx] using congr(r $(DFunLike.congr_fun hw₂ (i x)))
-  · ext x; simpa [hw', hri'] using congr(r $(DFunLike.congr_fun hw₃ (i x)))
-  · ext x; simpa [hE', hri'] using congr(r $(DFunLike.congr_fun hw₄ (i x)))
+      hiCx] using congr(r $(congr($(hE.inverse_mul_spectral) (i x))))
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, hw', hri', zero_apply]
+    rw [← mul_apply_eq_comp, hE.mul_inverse_eq_zero, zero_apply, map_zero]
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, hE', hri', zero_apply]
+    rw [← mul_apply_eq_comp, hE.inverse_mul_eq_zero, zero_apply, map_zero]
 
 end Retract
 

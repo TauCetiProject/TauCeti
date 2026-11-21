@@ -69,7 +69,7 @@ invariants in their original order. -/
 theorem cup0H_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
     (dsimp% only (cup0H M N 0 (H0π M x) (H0π N y))) =
       H0π (M ⊗ N) ⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
-        simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ := by
+        simp [Representation.tprod_apply, x.property g, y.property g]⟩ := by
   rw [cup0H_H0π, H0π_comp_tateCohomologyFunctor_map_apply]
   apply congrArg (H0π (M ⊗ N))
   apply Subtype.ext

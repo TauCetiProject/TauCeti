@@ -88,9 +88,9 @@ in `R` if and only if `p` is open in `B`. -/
 theorem Ideal.isOpen_comap_subtype_iff (p : Ideal B) {R : Subring B} (hR : IsOpen (R : Set B)) :
     IsOpen (p.comap R.subtype : Set R) ↔ IsOpen (p : Set B) := by
   refine ⟨fun h ↦ AddSubgroup.isOpen_of_mem_nhds p.toAddSubgroup (g := 0) ?_,
-    fun h ↦ h.preimage continuous_subtype_val⟩
+    fun h ↦ h.preimage continuous_subtypeVal⟩
   -- the image of the open trace is an open neighbourhood of `0` in `B` contained in `p`
-  refine Filter.mem_of_superset ((hR.isOpenMap_subtype_val _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
+  refine Filter.mem_of_superset ((hR.isOpenMap_subtypeVal _ h).mem_nhds ⟨0, by simp, rfl⟩) ?_
   rintro _ ⟨x, hx, rfl⟩
   exact hx
 

@@ -429,8 +429,8 @@ theorem continuous_of_isClosed_graph_of_isTate (f : M →ₗ[R] N)
   let φ : M ≃ₗ[R] f.graph :=
     (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ f.graph_eq_range_prod.symm)
   have hφ : Continuous φ :=
-    φ.symm.continuous_symm_of_isTate continuous_subtype_val.fst
-  exact (continuous_subtype_val.comp hφ).snd
+    φ.symm.continuous_symm_of_isTate continuous_subtypeVal.fst
+  exact (continuous_subtypeVal.comp hφ).snd
 
 -- Adapted from `LinearMap.continuous_of_seq_closed_graph` in
 -- `Mathlib/Analysis/Normed/Operator/Banach.lean`.

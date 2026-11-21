@@ -38,9 +38,9 @@ series, then `Q*(u)` is not invertible.
 * `ContinuousLinearMap.IsRowCompact.isUnit_aeval_reverse_iff`: the same criterion on a model space
   `C₀(I, R)`, for the principal-minor series of the matrix of `u`.
 * `ContinuousLinearMap.IsPrCompact.isUnit_aeval_iff`,
-  `ContinuousLinearMap.IsRowCompact.isUnit_aeval_iff`: for a polynomial `P` with invertible
-  constant coefficient, `P(u)` is invertible exactly when `P*` and `det (1 - T u)` are coprime
-  entire series.
+  `ContinuousLinearMap.IsRowCompact.isUnit_aeval_iff`: for a polynomial `P` whose constant
+  coefficient is a unit (in particular a monic polynomial with unit constant term), `P(u)` is
+  invertible exactly when `P.reverse` and `det (1 - T u)` are coprime entire series.
 
 ## References
 
@@ -104,39 +104,40 @@ theorem IsRowCompact.isUnit_aeval_reverse_iff {I : Type*} [TopologicalSpace I] [
   convert hu'.isUnit_aeval_reverse_iff hQ using 3
   exact hu.charPowerSeries_eq_charPowerSeries_matrixCoeff.symm
 
-/-- **Polynomial invertibility on (Pr) modules.** Let `u` be a row-compact endomorphism of a module
-with property (Pr) and `P` a polynomial with invertible constant coefficient (in particular, a
-monic polynomial with invertible constant coefficient). Then `P(u)` is invertible exactly when its
-reversal `P* = P.reverse` and `det (1 - T u)` are coprime in the ring of entire series. -/
+/-- **Invertibility of `P(u)` for a polynomial with unit constant term.** Let `u` be a row-compact
+endomorphism of a module with property (Pr) and `P` a polynomial whose constant coefficient `P(0)`
+is a unit (in particular a monic polynomial with unit constant term). Then `P(u)` is invertible
+exactly when `P.reverse` and the Fredholm series `det (1 - T u)` are coprime in the ring of entire
+series. The unit hypothesis on `P(0)` is essential: for `P = X` and `u = 0` on a nonzero module,
+`P.reverse = 1` is coprime to `det (1 - T u) = 1` while `P(u) = 0` is not invertible. -/
 theorem IsPrCompact.isUnit_aeval_iff {u : M →L[R] M} (hu : u.IsPrCompact) {P : R[X]}
-    (hP : IsUnit (P.coeff 0)) :
+    (hP0 : IsUnit (P.coeff 0)) :
     IsUnit (Polynomial.aeval u P) ↔
-      IsCoprime
-        (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
+      IsCoprime (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
           IsEntire.subring R)
         ⟨u.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have : Nontrivial R := NormOneClass.nontrivial
-  have htd : P.natTrailingDegree = 0 := natTrailingDegree_eq_zero.mpr (Or.inr hP.ne_zero)
-  have hdeg : P.reverse.natDegree = P.natDegree := by rw [reverse_natDegree, htd, Nat.sub_zero]
-  have hrev : P.reverse.reverse = P := by rw [reverse, hdeg, reverse, reflect_reflect]
-  have hlead : P.reverse.leadingCoeff = P.coeff 0 := by
-    rw [reverse_leadingCoeff, trailingCoeff, htd]
-  simpa only [hrev] using hu.isUnit_aeval_reverse_iff (Q := P.reverse) (hlead ▸ hP)
+  have htrail : P.natTrailingDegree = 0 := natTrailingDegree_eq_zero.2 (Or.inr hP0.ne_zero)
+  have hlead : IsUnit P.reverse.leadingCoeff := by
+    rw [reverse_leadingCoeff, trailingCoeff, htrail]
+    exact hP0
+  have hrev : P.reverse.reverse = P := by
+    rw [reverse, reverse_natDegree, htrail, Nat.sub_zero, reverse, reflect_reflect]
+  simpa only [hrev] using hu.isUnit_aeval_reverse_iff hlead
 
-/-- **Polynomial invertibility on model spaces.** For a row-compact endomorphism `u` of `C₀(I, R)`
-and a polynomial `P` with invertible constant coefficient, `P(u)` is invertible exactly when its
-reversal `P* = P.reverse` and the principal-minor series `det (1 - T u)` are coprime in the ring of
-entire series. -/
+/-- **Invertibility of `P(u)` on model spaces.** For a row-compact endomorphism `u` of `C₀(I, R)`
+and a polynomial `P` whose constant coefficient is a unit, `P(u)` is invertible exactly when
+`P.reverse` and the principal-minor series `det (1 - T u)` are coprime in the ring of entire
+series. -/
 theorem IsRowCompact.isUnit_aeval_iff {I : Type*} [TopologicalSpace I] [DiscreteTopology I]
     [DecidableEq I] {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact) {P : R[X]}
-    (hP : IsUnit (P.coeff 0)) :
+    (hP0 : IsUnit (P.coeff 0)) :
     IsUnit (Polynomial.aeval u P) ↔
-      IsCoprime
-        (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
+      IsCoprime (⟨P.reverse, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P.reverse)⟩ :
           IsEntire.subring R)
         ⟨u.matrixCoeff.charPowerSeries, IsEntire.mem_subring.mpr hu.isEntire_charPowerSeries⟩ := by
   have hu' := isPrCompact_iff_isRowCompact.2 hu
-  convert hu'.isUnit_aeval_iff hP using 3
+  convert hu'.isUnit_aeval_iff hP0 using 3
   exact hu.charPowerSeries_eq_charPowerSeries_matrixCoeff.symm
 
 end ContinuousLinearMap
