@@ -12,7 +12,9 @@ public import TauCeti.Geometry.Manifold.Submersion.Split
 # Submersions under transverse base change
 
 Any `C^n` submersion (`1 ≤ n`) is transverse to every map in either factor
-(`TauCeti.transverse_of_isSubmersion_right`, `TauCeti.transverse_of_isSubmersion_left`).
+(`TauCeti.transverse_of_isSubmersion_right`, `TauCeti.transverse_of_isSubmersion_left`), and so is
+any map whose differential is surjective at the relevant point
+(`TauCeti.transverse_of_surjective_mfderiv_right`).
 
 For transverse maps `f : X → N` and `g : Y → N`, the projections from the equal-value
 subtype have tangent images `df⁻¹(range dg)` and `dg⁻¹(range df)`, respectively.
@@ -52,18 +54,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace N] [ChartedSpace HN N]
   {n : ℕ∞ω}
 
+/-- Every map `f : X → N` is transverse to a map `g : Y → N` in the second factor at a pair `p`
+where the differential of `g` is surjective. -/
+theorem transverse_of_surjective_mfderiv_right (f : X → N) {g : Y → N} (p : X × Y)
+    (hg : Surjective (mfderiv IY IN g p.2)) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)).range = ⊤ :=
+    LinearMap.range_eq_top.2 ((tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp hg)
+  rw [hr, sup_top_eq]
+
 /-- Every map `f : X → N` is transverse to a `C^n` submersion `g : Y → N` (`1 ≤ n`) in the
 second factor. -/
 theorem transverse_of_isSubmersion_right {f : X → N} {g : Y → N}
     (hn : 1 ≤ n) (hg : Manifold.IsSubmersion IY IN n g) (p : X × Y) :
     (mfderiv IX IN f p.1).range ⊔
       (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
-        (mfderiv IY IN g p.2)).range = ⊤ := by
-  have hs := (tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp
+        (mfderiv IY IN g p.2)).range = ⊤ :=
+  transverse_of_surjective_mfderiv_right f p
     (hg.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.2)
-  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
-      (mfderiv IY IN g p.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
-  rw [hr, sup_top_eq]
 
 /-- Every `C^n` submersion `f : X → N` (`1 ≤ n`) is transverse to any map `g : Y → N` in the
 first factor. -/

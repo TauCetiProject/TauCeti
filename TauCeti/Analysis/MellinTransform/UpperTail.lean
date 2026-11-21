@@ -16,8 +16,8 @@ Integrating a kernel against `t ^ (-(s + 1))` over `(1, ∞)` gives a holomorphi
 `r < re s` when the kernel is `O(t ^ r)` at infinity. This holds even without local
 integrability: in that case all the totalized integrals vanish. Absolute convergence and
 differentiation under the integral sign require local integrability on the closed ray, including
-its boundary at one. Uniformly bounded kernels have integral norm at most `C / re s` on
-`0 < re s`.
+its boundary at one. On `0 < re s`, a measurable kernel bounded by `C` on `(a, ∞)`, `a > 0`, gives
+an absolutely convergent integral over `(a, ∞)` of norm at most `C a ^ (-re s) / re s`.
 
 The proofs cut off kernels below one and use `mellin_indicator_Ici` to express the resulting
 integrals as Mellin transforms. These upper tails occur in partial summation and in the
@@ -39,6 +39,7 @@ The bounded-kernel estimate is extracted from the native partial-sum norm estima
   `log t`-weighted companion with local integrability.
 * `TauCeti.hasDerivAt_integral_mul_cpow_of_isBigO`: complex derivative of the upper tail on
   `r < Re s` with local integrability.
+* `TauCeti.integrableOn_mul_cpow_of_bound`: absolute convergence for a bounded kernel.
 * `TauCeti.norm_integral_mul_cpow_le_of_bound`: the explicit bound for a bounded kernel.
 -/
 
@@ -166,22 +167,37 @@ theorem hasDerivAt_integral_mul_cpow_of_isBigO {g : ℝ → ℂ} {r : ℝ}
   rw [Complex.real_smul, smul_eq_mul, neg_add']
   ring
 
-/-- If `‖g t‖ ≤ C` on `(1, ∞)`, then `‖∫ t in Set.Ioi 1, g t * t ^ (-(s + 1))‖ ≤ C / s.re` on
-`Re(s) > 0`. -/
-theorem norm_integral_mul_cpow_le_of_bound {g : ℝ → ℂ} {C : ℝ}
-    (hg : ∀ t ∈ Set.Ioi (1 : ℝ), ‖g t‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
-    ‖∫ t in Set.Ioi (1 : ℝ), g t * (t : ℂ) ^ (-(s + 1))‖ ≤ C / s.re := by
+/-- The pointwise domination of `g t * t ^ (-(s + 1))` by `C * t ^ (-(re s + 1))` on `(a, ∞)`. -/
+private theorem ae_norm_mul_cpow_le_of_bound {g : ℝ → ℂ} {C a : ℝ} (ha : 0 < a)
+    (hg : ∀ t ∈ Set.Ioi a, ‖g t‖ ≤ C) (s : ℂ) :
+    ∀ᵐ t ∂volume.restrict (Set.Ioi a), ‖g t * (t : ℂ) ^ (-(s + 1))‖ ≤ C * t ^ (-(s.re + 1)) := by
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (ha.trans ht)]
+  simp only [neg_re, add_re, one_re]
+  exact mul_le_mul_of_nonneg_right (hg t ht) (Real.rpow_nonneg (ha.trans ht).le _)
+
+/-- If `g` is measurable with `‖g t‖ ≤ C` on `(a, ∞)`, `a > 0`, then `t ↦ g t * t ^ (-(s + 1))` is
+integrable on `(a, ∞)` for `0 < Re s`. -/
+theorem integrableOn_mul_cpow_of_bound {g : ℝ → ℂ} {C a : ℝ} (ha : 0 < a)
+    (hgm : AEStronglyMeasurable g (volume.restrict (Set.Ioi a)))
+    (hg : ∀ t ∈ Set.Ioi a, ‖g t‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
+    IntegrableOn (fun t : ℝ ↦ g t * (t : ℂ) ^ (-(s + 1))) (Set.Ioi a) :=
+  Integrable.mono' ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1) ha).const_mul C)
+    (hgm.mul (measurable_ofReal.pow_const _).aestronglyMeasurable)
+    (ae_norm_mul_cpow_le_of_bound ha hg s)
+
+/-- If `‖g t‖ ≤ C` on `(a, ∞)`, `a > 0`, then
+`‖∫ t in Set.Ioi a, g t * t ^ (-(s + 1))‖ ≤ C * a ^ (-s.re) / s.re` on `Re(s) > 0`. -/
+theorem norm_integral_mul_cpow_le_of_bound {g : ℝ → ℂ} {C a : ℝ} (ha : 0 < a)
+    (hg : ∀ t ∈ Set.Ioi a, ‖g t‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
+    ‖∫ t in Set.Ioi a, g t * (t : ℂ) ^ (-(s + 1))‖ ≤ C * a ^ (-s.re) / s.re := by
   calc
-    _ ≤ ∫ t in Set.Ioi (1 : ℝ), C * t ^ (-(s.re + 1)) := by
-      refine norm_integral_le_of_norm_le ((integrableOn_Ioi_rpow_of_lt
-        (by linarith : -(s.re + 1) < -1) zero_lt_one).const_mul C) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
-      simp only [neg_re, add_re, one_re]
-      exact mul_le_mul_of_nonneg_right (hg t ht) (Real.rpow_nonneg (zero_lt_one.trans ht).le _)
-    _ = C / s.re := by
-      rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) zero_lt_one,
-        Real.one_rpow]
-      ring
+    _ ≤ ∫ t in Set.Ioi a, C * t ^ (-(s.re + 1)) :=
+      norm_integral_le_of_norm_le ((integrableOn_Ioi_rpow_of_lt
+        (by linarith : -(s.re + 1) < -1) ha).const_mul C) (ae_norm_mul_cpow_le_of_bound ha hg s)
+    _ = C * a ^ (-s.re) / s.re := by
+      have hexp : -(s.re + 1) + 1 = -s.re := by ring
+      rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha, hexp, neg_div_neg_eq,
+        mul_div_assoc]
 
 end TauCeti

@@ -10,6 +10,7 @@ public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Analysis.QuadraticSums.BoundedVariation
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
+import TauCeti.Probability.Process.Indistinguishable
 import TauCeti.Topology.Instances.NNReal.UniformGrid
 
 /-!
@@ -111,9 +112,7 @@ theorem indist_initial_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P)
     obtain ⟨C, hb⟩ := hb t
     exact hM.ae_eq_of_boundedVariationOn_of_bound (S := 0) (T := t) (by positivity)
       (hc.mono fun _ h ↦ h.continuousOn) (hv t) hb
-  obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq ℝ≥0
-  have hall : ∀ᵐ ω ∂P, ∀ n : ℕ, M (u n) ω = M 0 ω := ae_all_iff.2 fun n ↦ heq (u n)
-  filter_upwards [hc, hall] with ω hc hω t
-  exact hu.induction_on t (isClosed_eq hc continuous_const) hω
+  exact TauCeti.indist_of_ae_continuous hc
+    (Filter.Eventually.of_forall fun _ ↦ continuous_const) heq
 
 end MeasureTheory.Martingale

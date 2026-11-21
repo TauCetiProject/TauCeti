@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.LocallyClosed
-public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Topology.PartialHomeomorph.Basic
-import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Basic properties of open partial homeomorphisms
@@ -38,6 +37,9 @@ or target are also sent to locally closed subsets of the ambient space.
 * `OpenPartialHomeomorph.isLocallyClosed_image_of_subset_source`,
   `OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target`: an open partial homeomorphism
   and its inverse preserve locally closed subsets contained in their source or target.
+* `Topology.IsOpenEmbedding.of_continuousOn_inverse`: a continuous map with a continuous inverse
+  on an open set containing its range is an open embedding, being an open partial homeomorphism
+  with source the whole space.
 -/
 
 public section
@@ -74,3 +76,29 @@ theorem isLocallyClosed_image_symm_of_subset_target {s : Set Y} (hs : IsLocallyC
   e.symm.isLocallyClosed_image_of_subset_source hs hst
 
 end OpenPartialHomeomorph
+
+namespace Topology.IsOpenEmbedding
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A continuous map `f : X → Y` is an open embedding if it maps into an open set `W` on which a
+map `g` is continuous and inverse to `f`: `g ∘ f = id` and `f ∘ g = id` on `W`. Then `f` is an
+open partial homeomorphism with source `X` and target `W`. -/
+theorem of_continuousOn_inverse {f : X → Y} {g : Y → X} {W : Set Y} (hf : Continuous f)
+    (hW : IsOpen W) (hg : ContinuousOn g W) (hfW : ∀ x, f x ∈ W) (hgf : ∀ x, g (f x) = x)
+    (hfg : ∀ y ∈ W, f (g y) = y) : IsOpenEmbedding f :=
+  OpenPartialHomeomorph.isOpenEmbedding
+    { toFun := f
+      invFun := g
+      source := Set.univ
+      target := W
+      map_source' := fun x _ ↦ hfW x
+      map_target' := fun _ _ ↦ Set.mem_univ _
+      left_inv' := fun x _ ↦ hgf x
+      right_inv' := hfg
+      open_source := isOpen_univ
+      open_target := hW
+      continuousOn_toFun := hf.continuousOn
+      continuousOn_invFun := hg } rfl
+
+end Topology.IsOpenEmbedding
