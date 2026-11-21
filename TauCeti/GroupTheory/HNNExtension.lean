@@ -124,9 +124,9 @@ theorem exists_t_zpow_conj_eq_of (u : ℤˣ) {x : G} (hx : x ∈ toSubgroup A B 
     ∃ y ∈ toSubgroup A B u,
       (t : HNNExtension G A B φ) ^ (-(u : ℤ)) * of x * t ^ (u : ℤ) = of y := by
   rcases Int.units_eq_one_or u with rfl | rfl
-  · exact ⟨φ.symm ⟨x, hx⟩, (φ.symm ⟨x, hx⟩).2, by simp [equiv_symm_eq_conj]⟩
+  · exact ⟨φ.symm ⟨x, hx⟩, (φ.symm ⟨x, hx⟩).property, by simp [equiv_symm_eq_conj]⟩
   · have hx' : x ∈ A := by simpa using hx
-    exact ⟨φ ⟨x, hx'⟩, (φ ⟨x, hx'⟩).2, by simp [equiv_eq_conj]⟩
+    exact ⟨φ ⟨x, hx'⟩, (φ ⟨x, hx'⟩).property, by simp [equiv_eq_conj]⟩
 
 /-- The stable letter conjugates `g` into the base group exactly when `g ∈ A`. -/
 theorem t_mul_of_mul_inv_t_mem_range_iff {g : G} :

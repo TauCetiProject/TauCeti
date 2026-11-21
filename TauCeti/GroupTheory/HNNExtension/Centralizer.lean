@@ -159,7 +159,7 @@ theorem centralizer_of_eq_map (hA : TauCeti.IsTISubgroup A) (hA' : TauCeti.IsTIS
       simp [ReducedWord.prod, toList_eq_nil_of_prod_inv_mul_mul_prod_eq hA hA' hAA' hx (w := w)
         (by rw [mul_assoc, ← mem_centralizer_singleton_iff.1 hy, inv_mul_cancel_left])]
     refine ⟨w.head, mem_centralizer_singleton_iff.2 (of_injective φ ?_), hw.symm⟩
-    simpa [hw] using mem_centralizer_singleton_iff.1 hy
+    simpa [hw] using (mem_centralizer_singleton_iff.1 hy).eq
   · simpa using map_centralizer_le_centralizer_image {x} (of : B →* HNNExtension B A A' φ)
 
 /-! ### Examples -/
@@ -175,7 +175,7 @@ malnormal, the stable letter commutes with every element of `B` but does not lie
 example (x : B) : ∃ y ∈ centralizer {(of x : HNNExtension B ⊤ ⊤ (.refl _))},
     y ∉ (of : B →* HNNExtension B ⊤ ⊤ (.refl _)).range := by
   refine ⟨t, mem_centralizer_singleton_iff.2 ?_, fun ⟨g, hg⟩ => ?_⟩
-  · simpa using t_mul_of (φ := .refl (⊤ : Subgroup B)) ⟨x, mem_top x⟩
+  · simpa [commute_iff_eq] using t_mul_of (φ := .refl (⊤ : Subgroup B)) ⟨x, mem_top x⟩
   · simpa using congrArg (lift (1 : B →* Multiplicative ℤ) (.ofAdd 1) fun _ => by simp) hg.symm
 
 end HNNExtension
