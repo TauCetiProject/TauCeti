@@ -107,28 +107,6 @@ theorem summable_prime_log_one_sub_inv_add_inv :
       (fun p ↦ Real.neg_log_one_sub_inv_sub_inv_le (mod_cast p.property.two_le))
   exact hneg.neg.congr fun _ ↦ by ring
 
-/-- For `x > 0`, the tail of the positive quadratic Euler-product remainders
-`-log (1 - p⁻¹) - p⁻¹` over primes `p > x` is at most `4 / x`. -/
-theorem tsum_prime_neg_log_one_sub_inv_sub_inv_gt_le {x : ℝ} (hx : 0 < x) :
-    (∑' n : ℕ, if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0) ≤
-      4 / x := by
-  have hsq := summable_prime_inv_sq_gt x
-  have hnonneg : ∀ n : ℕ,
-      0 ≤ (if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0) := by
-    intro n
-    split_ifs with hn
-    · exact (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast hn.1.one_lt)).le
-    · exact le_rfl
-  have hle : ∀ n : ℕ,
-      (if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0) ≤
-        if n.Prime ∧ x < (n : ℝ) then ((n : ℝ) ^ 2)⁻¹ else 0 := by
-    intro n
-    split_ifs with hn
-    · exact Real.neg_log_one_sub_inv_sub_inv_le (mod_cast hn.1.two_le)
-    · exact le_rfl
-  exact ((hsq.of_nonneg_of_le hnonneg hle).tsum_le_tsum hle hsq).trans
-    (tsum_prime_inv_sq_gt_le hx)
-
 /-- **The Meissel–Mertens constant**: `B = γ + ∑_p (log (1 - p⁻¹) + p⁻¹)`, the constant term in
 Mertens's second theorem `∑_{p ≤ x} p⁻¹ = log log x + B + O(1 / log x)`. -/
 noncomputable def meisselMertensConstant : ℝ :=
@@ -195,40 +173,49 @@ theorem tendsto_sum_primesLE_inv_sub_log_log :
   refine (LFunctions.tendsto_primeSummatory_inv_absNorm_sub_log_log ℚ).congr fun x ↦ ?_
   rw [primeSummatory_rat_eq_sum_primesLE (fun n ↦ (n : ℝ)⁻¹)]
 
+/-- Upgrade an eventual `O(1 / log x)` estimate for a nonnegative prime sum to a uniform bound on
+`[2, ∞)`. -/
+private theorem exists_abs_sum_primesLE_sub_log_log_sub_le_of_isBigO {f : ℕ → ℝ} {A : ℝ}
+    (hf : ∀ p : ℕ, p.Prime → 0 ≤ f p)
+    (hO : (fun x : ℝ ↦ (∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) - Real.log (Real.log x) - A)
+      =O[atTop] fun x ↦ (Real.log x)⁻¹) :
+    ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
+      |(∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) - Real.log (Real.log x) - A| ≤ C / Real.log x := by
+  obtain ⟨C, -, hC⟩ := hO.exists_norm_le_div_log one_lt_two fun b ↦ by
+    refine ⟨(∑ p ∈ Nat.primesLE ⌊b⌋₊, f p) +
+        (|Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))|) + |A|,
+      fun x hx ↦ ?_⟩
+    rw [Real.norm_eq_abs]
+    have hsum_nonneg : 0 ≤ ∑ p ∈ Nat.primesLE ⌊x⌋₊, f p :=
+      sum_nonneg fun p hp ↦ hf p (Nat.prime_of_mem_primesLE hp)
+    have hsum_le : (∑ p ∈ Nat.primesLE ⌊x⌋₊, f p) ≤ ∑ p ∈ Nat.primesLE ⌊b⌋₊, f p :=
+      sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hx.2)) fun p hp _ ↦
+        hf p (Nat.prime_of_mem_primesLE hp)
+    have hll_lo : Real.log (Real.log 2) ≤ Real.log (Real.log x) :=
+      Real.log_le_log (Real.log_pos one_lt_two) (Real.log_le_log zero_lt_two hx.1)
+    have hll_hi : Real.log (Real.log x) ≤ Real.log (Real.log (max b 2)) :=
+      Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx.1))
+        (Real.log_le_log (by linarith [hx.1]) (hx.2.trans (le_max_left _ _)))
+    have hll_abs : |Real.log (Real.log x)| ≤
+        |Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))| := by
+      rw [abs_le]
+      constructor
+      · linarith [neg_abs_le (Real.log (Real.log 2)), abs_nonneg (Real.log (Real.log (max b 2)))]
+      · linarith [le_abs_self (Real.log (Real.log (max b 2))), abs_nonneg (Real.log (Real.log 2))]
+    refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans ?_) le_rfl)
+    rw [abs_of_nonneg hsum_nonneg]
+    exact add_le_add hsum_le hll_abs
+  exact ⟨C, by simpa only [Real.norm_eq_abs] using hC⟩
+
 /-- **Mertens's second theorem, uniform on `[2, ∞)`.** There is an absolute constant `C` such that
 for every real `x ≥ 2`,
 `|∑_{p ≤ x} p⁻¹ - log log x - meisselMertensConstant| ≤ C / log x`. -/
 theorem exists_abs_sum_primesLE_inv_sub_log_log_sub_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) - Real.log (Real.log x) - meisselMertensConstant| ≤
-        C / Real.log x := by
-  obtain ⟨C, -, hC⟩ :=
-    isBigO_sum_primesLE_inv_sub_log_log_sub_meisselMertensConstant.exists_norm_le_div_log
-      one_lt_two fun b ↦ by
-      refine ⟨(∑ p ∈ Nat.primesLE ⌊b⌋₊, (p : ℝ)⁻¹) +
-          (|Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))|) + |meisselMertensConstant|,
-        fun x hx ↦ ?_⟩
-      rw [Real.norm_eq_abs]
-      have hsum_nonneg : 0 ≤ ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ :=
-        sum_nonneg fun _ _ ↦ by positivity
-      have hsum_le : (∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) ≤ ∑ p ∈ Nat.primesLE ⌊b⌋₊, (p : ℝ)⁻¹ :=
-        sum_le_sum_of_subset_of_nonneg (Nat.primesLE_mono (Nat.floor_mono hx.2)) fun _ _ _ ↦ by
-          positivity
-      have hll_lo : Real.log (Real.log 2) ≤ Real.log (Real.log x) :=
-        Real.log_le_log (Real.log_pos one_lt_two) (Real.log_le_log zero_lt_two hx.1)
-      have hll_hi : Real.log (Real.log x) ≤ Real.log (Real.log (max b 2)) :=
-        Real.log_le_log (Real.log_pos (one_lt_two.trans_le hx.1))
-          (Real.log_le_log (by linarith [hx.1]) (hx.2.trans (le_max_left _ _)))
-      have hll_abs : |Real.log (Real.log x)| ≤
-          |Real.log (Real.log 2)| + |Real.log (Real.log (max b 2))| := by
-        rw [abs_le]
-        constructor
-        · linarith [neg_abs_le (Real.log (Real.log 2)), abs_nonneg (Real.log (Real.log (max b 2)))]
-        · linarith [le_abs_self (Real.log (Real.log (max b 2))), abs_nonneg (Real.log (Real.log 2))]
-      refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans ?_) le_rfl)
-      rw [abs_of_nonneg hsum_nonneg]
-      exact add_le_add hsum_le hll_abs
-  exact ⟨C, by simpa only [Real.norm_eq_abs] using hC⟩
+        C / Real.log x :=
+  exists_abs_sum_primesLE_sub_log_log_sub_le_of_isBigO (fun _ _ ↦ by positivity)
+    isBigO_sum_primesLE_inv_sub_log_log_sub_meisselMertensConstant
 
 /-- For `x ≥ 1`, the inclusive reciprocal-prime sum `∑_{p ≤ x} p⁻¹` exceeds the strict-cutoff sum
 `∑_{p < x} p⁻¹` by a nonnegative amount bounded by `1 / log x`. -/
@@ -328,47 +315,16 @@ theorem exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le :
 
 /-! ### Logarithmic Euler product and von Mangoldt form -/
 
-/-- Decomposition of the total prime logarithmic remainder into its cutoff sum up to `x` and its
-tail over primes `p > x`. -/
-private theorem sum_primesLE_neg_log_one_sub_inv_sub_inv_add_tail (x : ℝ) :
-    (∑ p ∈ Nat.primesLE ⌊x⌋₊, (-Real.log (1 - (p : ℝ)⁻¹) - (p : ℝ)⁻¹)) +
-      (∑' n : ℕ, if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0) =
-      -∑' p : Nat.Primes, (Real.log (1 - ((p : ℕ) : ℝ)⁻¹) + ((p : ℕ) : ℝ)⁻¹) := by
-  let r : ℕ → ℝ := fun n ↦ if n.Prime then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0
-  have hr_sum : Summable r :=
-    (Real.summable_nat_pow_inv.mpr one_lt_two).of_nonneg_of_le
-      (fun n ↦ by
-        simp only [r]
-        split_ifs with hn
-        · exact (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast hn.one_lt)).le
-        · exact le_rfl)
-      (fun n ↦ by
-        simp only [r]
-        split_ifs with hn
-        · exact Real.neg_log_one_sub_inv_sub_inv_le (mod_cast hn.two_le)
-        · positivity)
-  have hfin : ∑ p ∈ Nat.primesLE ⌊x⌋₊, r p =
-      ∑ p ∈ Nat.primesLE ⌊x⌋₊, (-Real.log (1 - (p : ℝ)⁻¹) - (p : ℝ)⁻¹) :=
-    sum_congr rfl fun p hp ↦ by simp [r, Nat.prime_of_mem_primesLE hp]
-  have htail : (∑' p : ↥(Nat.primesLE ⌊x⌋₊ : Set ℕ)ᶜ, r p) =
-      ∑' n : ℕ, if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0 := by
-    rw [tsum_subtype (Nat.primesLE ⌊x⌋₊ : Set ℕ)ᶜ r]
-    refine tsum_congr fun n ↦ ?_
-    by_cases hn : n.Prime
-    · have hmem : n ∈ (Nat.primesLE ⌊x⌋₊ : Set ℕ)ᶜ ↔ x < (n : ℝ) := by
-        simp only [Set.mem_compl_iff, mem_coe, Nat.mem_primesLE, hn, and_true, not_le]
-        rcases le_or_gt 0 x with hx | hx
-        · exact Nat.floor_lt hx
-        · simp [Nat.floor_of_nonpos hx.le, hn.pos, hx.trans_le (Nat.cast_nonneg n)]
-      simp [r, Set.indicator_apply, hn, hmem]
-    · simp [r, Set.indicator_apply, hn]
-  have htot : (∑' n : ℕ, r n) =
-      -∑' p : Nat.Primes, (Real.log (1 - ((p : ℕ) : ℝ)⁻¹) + ((p : ℕ) : ℝ)⁻¹) := by
-    rw [← tsum_neg]
-    have hsub := tsum_subtype {n : ℕ | n.Prime} (fun n : ℕ ↦ -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹)
-    refine (tsum_congr fun n ↦ ?_).trans (hsub.symm.trans (tsum_congr fun p ↦ by ring))
-    simp [r, Set.indicator_apply]
-  rw [← hfin, ← htail, hr_sum.sum_add_tsum_compl, htot]
+/-- **Logarithmic Euler-product form of Mertens's theorem, asymptotic form:**
+`∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ = O(1 / log x)` as `x → ∞`. -/
+theorem isBigO_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub :
+    (fun x : ℝ ↦ (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
+        Real.log (Real.log x) - Real.eulerMascheroniConstant)
+      =O[atTop] fun x ↦ (Real.log x)⁻¹ := by
+  refine (LFunctions.isBigO_primeSummatory_neg_log_one_sub_inv_absNorm_sub_log_log_sub ℚ).congr_left
+    fun x ↦ ?_
+  rw [primeSummatory_rat_eq_sum_primesLE (fun n ↦ -Real.log (1 - (n : ℝ)⁻¹)),
+    dedekindZeta_residue_rat, Real.log_one, add_zero]
 
 /-- **Logarithmic Euler-product form of Mertens's theorem, uniform on `[2, ∞)`.** There is an
 absolute constant `C` such that for every real `x ≥ 2`,
@@ -376,43 +332,10 @@ absolute constant `C` such that for every real `x ≥ 2`,
 theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-          Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ C / Real.log x := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_primesLE_inv_sub_log_log_sub_le
-  refine ⟨C + 4, fun x hx ↦ ?_⟩
-  have hx0 : 0 < x := by linarith
-  have hlog : 0 < Real.log x := Real.log_pos (by linarith)
-  set T := ∑' n : ℕ, if n.Prime ∧ x < (n : ℝ) then -Real.log (1 - (n : ℝ)⁻¹) - (n : ℝ)⁻¹ else 0
-  have hT0 : 0 ≤ T := tsum_nonneg fun n ↦ by
-    split_ifs with hn
-    · exact (Real.neg_log_one_sub_inv_sub_inv_pos (mod_cast hn.1.one_lt)).le
-    · exact le_rfl
-  have hTle : T ≤ 4 / Real.log x :=
-    (tsum_prime_neg_log_one_sub_inv_sub_inv_gt_le hx0).trans
-      (div_le_div_of_nonneg_left (by norm_num) hlog (Real.log_le_self hx0.le))
-  have hrel := sum_primesLE_neg_log_one_sub_inv_sub_inv_add_tail x
-  rw [sum_sub_distrib] at hrel
-  have hident : (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-      Real.log (Real.log x) - Real.eulerMascheroniConstant =
-      ((∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹) - Real.log (Real.log x) - meisselMertensConstant) -
-        T := by
-    rw [meisselMertensConstant_def]
-    linarith
-  rw [hident, add_div]
-  refine (abs_sub _ _).trans (add_le_add (hC x hx) ?_)
-  rwa [abs_of_nonneg hT0]
-
-/-- **Logarithmic Euler-product form of Mertens's theorem, asymptotic form:**
-`∑_{p ≤ x} -log (1 - p⁻¹) - log log x - γ = O(1 / log x)` as `x → ∞`. -/
-theorem isBigO_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub :
-    (fun x : ℝ ↦ (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-        Real.log (Real.log x) - Real.eulerMascheroniConstant)
-      =O[atTop] fun x ↦ (Real.log x)⁻¹ := by
-  obtain ⟨C, hC⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le
-  refine IsBigO.of_bound C ?_
-  filter_upwards [eventually_ge_atTop 2] with x hx
-  have hlog : 0 < Real.log x := Real.log_pos (by linarith)
-  rw [Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hlog.le), ← div_eq_mul_inv]
-  exact hC x hx
+          Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ C / Real.log x :=
+  exists_abs_sum_primesLE_sub_log_log_sub_le_of_isBigO
+    (fun p _ ↦ Real.neg_log_one_sub_nonneg (by positivity) (Nat.cast_inv_le_one p))
+    isBigO_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub
 
 /-- **Logarithmic Euler-product form of Mertens's theorem, limit form:**
 `∑_{p ≤ x} -log (1 - p⁻¹) - log log x → γ` as `x → ∞`. -/
@@ -558,22 +481,15 @@ theorem prod_primesLE_one_sub_inv_eq_exp_neg_sum (N : ℕ) :
   rw [Real.exp_neg, ← prod_primesLE_one_sub_inv_inv_eq_exp_sum, ← prod_inv_distrib]
   simp
 
-/-- Shared uniform logarithmic Euler-product error bounds on `[2, ∞)`. -/
-private theorem exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds :
-    ∃ M : ℝ, ∀ x : ℝ, 2 ≤ x →
-      |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-          Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ M / Real.log x ∧
-        |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-            Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ M / Real.log 2 := by
-  obtain ⟨K, hK⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_sub_log_log_sub_le
-  refine ⟨max K 0, fun x hx ↦ ?_⟩
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
-  have hlog : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
-  have hE : |(∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-      Real.log (Real.log x) - Real.eulerMascheroniConstant| ≤ max K 0 / Real.log x :=
-    (hK x hx).trans (div_le_div_of_nonneg_right (le_max_left _ _) hlog.le)
-  exact ⟨hE, hE.trans
-    (div_le_div_of_nonneg_left (le_max_right _ _) hlog2 (Real.log_le_log zero_lt_two hx))⟩
+/-- **Mertens's third theorem, big-O form:**
+`∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x = O(1)` as `x → ∞`. -/
+theorem isBigO_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log :
+    (fun x : ℝ ↦ (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
+        Real.exp Real.eulerMascheroniConstant * Real.log x)
+      =O[atTop] fun _ ↦ (1 : ℝ) := by
+  refine (LFunctions.isBigO_prod_one_sub_inv_absNorm_sub_mul_log ℚ).congr_left fun x ↦ ?_
+  rw [finprod_heightOneSpectrum_rat_ite_absNorm_le_eq_prod_primesLE (fun n ↦ (1 - (n : ℝ)⁻¹)⁻¹),
+    dedekindZeta_residue_rat, mul_one]
 
 /-- **Mertens's third theorem with bounded additive remainder.** There is an absolute constant `C`
 such that for every real `x ≥ 2`,
@@ -582,37 +498,33 @@ theorem exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
           Real.exp Real.eulerMascheroniConstant * Real.log x| ≤ C := by
-  obtain ⟨M, hM⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds
-  refine ⟨Real.exp Real.eulerMascheroniConstant * M * Real.exp (M / Real.log 2), fun x hx ↦ ?_⟩
-  have hlog : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
-  obtain ⟨hE, hE2⟩ := hM x hx
-  set E := (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-    Real.log (Real.log x) - Real.eulerMascheroniConstant
-  have hprod : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) =
-      Real.exp Real.eulerMascheroniConstant * Real.log x * Real.exp E := by
-    rw [prod_primesLE_one_sub_inv_inv_eq_exp_sum,
-      ← Real.exp_log hlog, ← Real.exp_add, ← Real.exp_add]
-    congr 1
-    simp only [E]
-    ring
-  rw [hprod, ← mul_sub_one, abs_mul, abs_of_pos (mul_pos (Real.exp_pos _) hlog)]
-  calc Real.exp Real.eulerMascheroniConstant * Real.log x * |Real.exp E - 1|
-      ≤ Real.exp Real.eulerMascheroniConstant * Real.log x *
-          (M / Real.log x * Real.exp (M / Real.log 2)) :=
-        mul_le_mul_of_nonneg_left (abs_exp_sub_one_le_mul_exp hE hE2) (by positivity)
-    _ = Real.exp Real.eulerMascheroniConstant * M * Real.exp (M / Real.log 2) := by
-        field_simp [hlog.ne']
-
-/-- **Mertens's third theorem, big-O form:**
-`∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x = O(1)` as `x → ∞`. -/
-theorem isBigO_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log :
-    (fun x : ℝ ↦ (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) -
-        Real.exp Real.eulerMascheroniConstant * Real.log x)
-      =O[atTop] fun _ ↦ (1 : ℝ) := by
-  obtain ⟨C, hC⟩ := exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le
-  refine IsBigO.of_bound C ?_
-  filter_upwards [eventually_ge_atTop 2] with x hx
-  simpa [Real.norm_eq_abs] using hC x hx
+  have hIci := isBigO_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log.isBigO_principal_Ici
+    (a := 2) (c := 1) one_pos (fun _ _ ↦ by simp) fun b ↦ ?_
+  · obtain ⟨C, hC⟩ := Asymptotics.isBigO_principal.mp hIci
+    exact ⟨C, fun x hx ↦ by simpa only [Real.norm_eq_abs, norm_one, mul_one] using hC x hx⟩
+  · refine ⟨(∏ p ∈ Nat.primesLE ⌊b⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) +
+        Real.exp Real.eulerMascheroniConstant * Real.log (max b 2), fun x hx ↦ ?_⟩
+    rw [Real.norm_eq_abs]
+    have hprod_nonneg : 0 ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ :=
+      prod_nonneg fun p _ ↦ inv_nonneg.mpr (sub_nonneg.mpr (Nat.cast_inv_le_one p))
+    have hprod_le : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) ≤
+        ∏ p ∈ Nat.primesLE ⌊b⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ :=
+      prod_le_prod_of_subset_of_one_le₀ (Nat.primesLE_mono (Nat.floor_mono hx.2))
+        (fun p _ ↦ inv_nonneg.mpr (sub_nonneg.mpr (Nat.cast_inv_le_one p)))
+        fun p hp _ ↦ by
+          have hp1 : (1 : ℝ) < p := mod_cast Nat.one_lt_of_mem_primesLE hp
+          exact (one_le_inv₀ (sub_pos.mpr (inv_lt_one_of_one_lt₀ hp1))).mpr
+            (sub_le_self 1 (by positivity))
+    have hlog_nonneg : 0 ≤ Real.exp Real.eulerMascheroniConstant * Real.log x :=
+      mul_nonneg (Real.exp_pos _).le (Real.log_pos (one_lt_two.trans_le hx.1)).le
+    have hlog_le : Real.exp Real.eulerMascheroniConstant * Real.log x ≤
+        Real.exp Real.eulerMascheroniConstant * Real.log (max b 2) :=
+      mul_le_mul_of_nonneg_left
+        (Real.log_le_log (by linarith [hx.1]) (hx.2.trans (le_max_left _ _)))
+        (Real.exp_pos _).le
+    refine (abs_sub _ _).trans (add_le_add ?_ ?_)
+    · rwa [abs_of_nonneg hprod_nonneg]
+    · rwa [abs_of_nonneg hlog_nonneg]
 
 /-- **Mertens's third theorem, asymptotic ratio form.** As `x → ∞`,
 `(∏_{p ≤ x} (1 - p⁻¹)⁻¹) / log x` tends to `e^γ`. -/
@@ -630,6 +542,54 @@ theorem tendsto_prod_primesLE_one_sub_inv_inv_div_log :
   have hlog : Real.log x ≠ 0 := (Real.log_pos hx).ne'
   rw [sub_mul, mul_assoc, mul_inv_cancel₀ hlog, mul_one, sub_add_cancel, div_eq_mul_inv]
 
+/-- Two-sided `log x` comparison for the full reciprocal Euler product on `[2, ∞)`, derived from
+`exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`. -/
+private theorem exists_pos_prod_primesLE_one_sub_inv_inv_bounds :
+    ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ x : ℝ, 2 ≤ x →
+      c₁ * Real.log x ≤ (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) ∧
+        (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) ≤ c₂ * Real.log x := by
+  obtain ⟨C, hC⟩ := exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le
+  set K := max C 0
+  set eg := Real.exp Real.eulerMascheroniConstant
+  have heg : 0 < eg := Real.exp_pos _
+  set B := max 2 (Real.exp (2 * K / eg))
+  have hB2 : 2 ≤ B := le_max_left _ _
+  have hlogB : 0 < Real.log B := Real.log_pos (one_lt_two.trans_le hB2)
+  refine ⟨min (eg / 2) (1 / Real.log B), eg + K / Real.log 2,
+    lt_min (half_pos heg) (div_pos one_pos hlogB), by positivity, fun x hx ↦ ?_⟩
+  have hlog : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
+  have hCx := abs_le.mp ((hC x hx).trans (le_max_left C 0))
+  constructor
+  · rcases le_or_gt B x with hBx | hxB
+    · have hlog_ge : 2 * K / eg ≤ Real.log x := by
+        calc 2 * K / eg = Real.log (Real.exp (2 * K / eg)) := (Real.log_exp _).symm
+          _ ≤ Real.log B := Real.log_le_log (Real.exp_pos _) (le_max_right _ _)
+          _ ≤ Real.log x := Real.log_le_log (by linarith) hBx
+      have hK_le : K ≤ eg * Real.log x / 2 := by
+        have := (div_le_iff₀ heg).mp hlog_ge
+        linarith
+      calc min (eg / 2) (1 / Real.log B) * Real.log x
+          ≤ (eg / 2) * Real.log x := mul_le_mul_of_nonneg_right (min_le_left _ _) hlog.le
+        _ = eg * Real.log x - eg * Real.log x / 2 := by ring
+        _ ≤ eg * Real.log x - K := by linarith
+        _ ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ := by linarith [hCx.1]
+    · have hprod_ge_one : (1 : ℝ) ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ :=
+        one_le_prod₀ fun p hp ↦ by
+          have hp1 : (1 : ℝ) < p := mod_cast Nat.one_lt_of_mem_primesLE hp
+          exact (one_le_inv₀ (sub_pos.mpr (inv_lt_one_of_one_lt₀ hp1))).mpr
+            (sub_le_self 1 (by positivity))
+      calc min (eg / 2) (1 / Real.log B) * Real.log x
+          ≤ (1 / Real.log B) * Real.log x := mul_le_mul_of_nonneg_right (min_le_right _ _) hlog.le
+        _ ≤ (1 / Real.log B) * Real.log B :=
+            mul_le_mul_of_nonneg_left (Real.log_le_log (by linarith) hxB.le) (by positivity)
+        _ = 1 := by field_simp [hlogB.ne']
+        _ ≤ ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ := hprod_ge_one
+  · calc (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹)
+        ≤ eg * Real.log x + K := by linarith [hCx.2]
+      _ = eg * Real.log x + (K / Real.log x) * Real.log x := by field_simp [hlog.ne']
+      _ ≤ eg * Real.log x + (K / Real.log 2) * Real.log x := by gcongr
+      _ = (eg + K / Real.log 2) * Real.log x := by ring
+
 /-- **Reciprocal form of Mertens's third theorem, uniform on `[2, ∞)`.** There is an absolute
 constant `C` such that for every real `x ≥ 2`,
 `|∏_{p ≤ x} (1 - p⁻¹) - e^(-γ) / log x| ≤ C / log² x`. -/
@@ -637,29 +597,29 @@ theorem exists_abs_prod_primesLE_one_sub_inv_sub_exp_neg_div_log_le :
     ∃ C : ℝ, ∀ x : ℝ, 2 ≤ x →
       |(∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) -
           Real.exp (-Real.eulerMascheroniConstant) / Real.log x| ≤ C / Real.log x ^ 2 := by
-  obtain ⟨M, hM⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds
-  refine ⟨Real.exp (-Real.eulerMascheroniConstant) * M * Real.exp (M / Real.log 2), fun x hx ↦ ?_⟩
+  obtain ⟨C, hC⟩ := exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le
+  obtain ⟨c₁, _, hc₁, _, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
+  refine ⟨max C 0 / (c₁ * Real.exp Real.eulerMascheroniConstant), fun x hx ↦ ?_⟩
   have hlog : 0 < Real.log x := Real.log_pos (one_lt_two.trans_le hx)
-  obtain ⟨hE, hE2⟩ := hM x hx
-  set E := (∑ p ∈ Nat.primesLE ⌊x⌋₊, -Real.log (1 - (p : ℝ)⁻¹)) -
-    Real.log (Real.log x) - Real.eulerMascheroniConstant
-  have hprod : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) =
-      Real.exp (-Real.eulerMascheroniConstant) / Real.log x * Real.exp (-E) := by
-    rw [prod_primesLE_one_sub_inv_eq_exp_neg_sum, div_eq_mul_inv, ← Real.exp_log hlog,
-      ← Real.exp_neg, ← Real.exp_add, ← Real.exp_add]
-    congr 1
-    simp only [E]
-    ring
-  rw [hprod, ← mul_sub_one, abs_mul, abs_of_pos (div_pos (Real.exp_pos _) hlog)]
-  calc Real.exp (-Real.eulerMascheroniConstant) / Real.log x * |Real.exp (-E) - 1|
-      ≤ Real.exp (-Real.eulerMascheroniConstant) / Real.log x *
-          (M / Real.log x * Real.exp (M / Real.log 2)) :=
-        mul_le_mul_of_nonneg_left
-          (abs_exp_sub_one_le_mul_exp ((abs_neg E).trans_le hE) ((abs_neg E).trans_le hE2))
-          (by positivity)
-    _ = Real.exp (-Real.eulerMascheroniConstant) * M * Real.exp (M / Real.log 2) /
-          Real.log x ^ 2 := by
-        field_simp [hlog.ne']
+  set P := ∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)⁻¹
+  have hP_ge : c₁ * Real.log x ≤ P := (hB x hx).1
+  have hP_pos : 0 < P := (mul_pos hc₁ hlog).trans_le hP_ge
+  have heg_pos : 0 < Real.exp Real.eulerMascheroniConstant := Real.exp_pos _
+  have hinv : (∏ p ∈ Nat.primesLE ⌊x⌋₊, (1 - (p : ℝ)⁻¹)) = P⁻¹ := by
+    simp [P, prod_inv_distrib]
+  have hid : P⁻¹ - Real.exp (-Real.eulerMascheroniConstant) / Real.log x =
+      (Real.exp Real.eulerMascheroniConstant * Real.log x - P) /
+        (P * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
+    rw [Real.exp_neg]
+    field_simp [hP_pos.ne', hlog.ne', heg_pos.ne']
+  rw [hinv, hid, abs_div, abs_of_pos (mul_pos hP_pos (mul_pos heg_pos hlog)), abs_sub_comm]
+  calc |P - Real.exp Real.eulerMascheroniConstant * Real.log x| /
+        (P * (Real.exp Real.eulerMascheroniConstant * Real.log x))
+      ≤ max C 0 / (c₁ * Real.log x * (Real.exp Real.eulerMascheroniConstant * Real.log x)) := by
+        gcongr
+        exact (hC x hx).trans (le_max_left C 0)
+    _ = max C 0 / (c₁ * Real.exp Real.eulerMascheroniConstant) / Real.log x ^ 2 := by
+        ring
 
 /-- **Reciprocal form of Mertens's third theorem, big-O form:**
 `∏_{p ≤ x} (1 - p⁻¹) - e^(-γ) / log x = O(1 / log² x)` as `x → ∞`. -/
@@ -699,16 +659,17 @@ positive constant `c₁ > 0` such that for every finite set `T : Finset ℕ` and
 theorem exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv :
     ∃ c₁ : ℝ, 0 < c₁ ∧ ∀ (T : Finset ℕ) (y : ℝ), 2 ≤ y →
       c₁ / Real.log y ≤ ∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹) := by
-  obtain ⟨M, hM⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds
-  set B := M / Real.log 2
-  refine ⟨Real.exp (-Real.eulerMascheroniConstant - B), Real.exp_pos _, fun T y hy ↦ ?_⟩
-  have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hSle := (abs_le.mp (hM y hy).2).2
-  have hfull : Real.exp (-Real.eulerMascheroniConstant - B) / Real.log y ≤
-      ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := by
-    rw [prod_primesLE_one_sub_inv_eq_exp_neg_sum, div_eq_mul_inv, ← Real.exp_log hlog,
-      ← Real.exp_neg, ← Real.exp_add]
-    exact Real.exp_le_exp.mpr (by linarith)
+  obtain ⟨_, c₂, _, hc₂, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
+  refine ⟨c₂⁻¹, inv_pos.mpr hc₂, fun T y hy ↦ ?_⟩
+  have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := prod_pos fun p hp ↦
+    sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast Nat.one_lt_of_mem_primesLE hp))
+  have hfull : c₂⁻¹ / Real.log y ≤ ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := by
+    have hle : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ ≤ c₂ * Real.log y := by
+      simpa [prod_inv_distrib] using (hB y hy).2
+    calc c₂⁻¹ / Real.log y = (c₂ * Real.log y)⁻¹ := by rw [div_eq_inv_mul, mul_inv, mul_comm]
+      _ ≤ ((∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹)⁻¹ :=
+          inv_anti₀ (inv_pos.mpr hprod_pos) hle
+      _ = ∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹) := inv_inv _
   exact hfull.trans (prod_le_prod_of_subset_of_le_one₀ (filter_subset _ _)
     (fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p)) (fun _ _ _ ↦ sub_le_self 1 (by positivity)))
 
@@ -720,22 +681,20 @@ theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds (T : Finset �
       c₁ / Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ∧
         (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ≤ c₂ / Real.log y := by
   obtain ⟨c₁, hc₁, hlo⟩ := exists_pos_div_log_le_prod_primesLE_filter_notMem_one_sub_inv
-  obtain ⟨M, hM⟩ := exists_abs_sum_primesLE_neg_log_one_sub_inv_bounds
-  set B := M / Real.log 2
+  obtain ⟨c₁', _, hc₁', _, hB⟩ := exists_pos_prod_primesLE_one_sub_inv_inv_bounds
   set P := ∏ p ∈ T with p.Prime, (1 - (p : ℝ)⁻¹)
   have hPpos : 0 < P := prod_pos fun p hp ↦
     sub_pos.mpr (inv_lt_one_of_one_lt₀ (mod_cast (mem_filter.mp hp).2.one_lt))
-  refine ⟨c₁, Real.exp (-Real.eulerMascheroniConstant + B) / P, hc₁,
-    div_pos (Real.exp_pos _) hPpos, fun y hy ↦ ⟨hlo T y hy, ?_⟩⟩
+  refine ⟨c₁, c₁'⁻¹ / P, hc₁, div_pos (inv_pos.mpr hc₁') hPpos, fun y hy ↦ ⟨hlo T y hy, ?_⟩⟩
   have hlog : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hSge := (abs_le.mp (hM y hy).2).1
-  have hfull : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)) ≤
-      Real.exp (-Real.eulerMascheroniConstant + B) / Real.log y := by
-    rw [prod_primesLE_one_sub_inv_eq_exp_neg_sum, div_eq_mul_inv, ← Real.exp_log hlog,
-      ← Real.exp_neg, ← Real.exp_add]
-    exact Real.exp_le_exp.mpr (by linarith)
-  have hmul : P * (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ≤
-      Real.exp (-Real.eulerMascheroniConstant + B) / Real.log y :=
+  have hfull : (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)) ≤ c₁'⁻¹ / Real.log y := by
+    have hle : c₁' * Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹ := by
+      simpa [prod_inv_distrib] using (hB y hy).1
+    calc (∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))
+        = ((∏ p ∈ Nat.primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹))⁻¹)⁻¹ := (inv_inv _).symm
+      _ ≤ (c₁' * Real.log y)⁻¹ := inv_anti₀ (mul_pos hc₁' hlog) hle
+      _ = c₁'⁻¹ / Real.log y := by rw [mul_inv, div_eq_inv_mul, mul_comm]
+  have hmul : P * (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)) ≤ c₁'⁻¹ / Real.log y :=
     (mul_le_mul_of_nonneg_right (prod_filter_prime_one_sub_inv_le T ⌊y⌋₊)
       (prod_nonneg fun p _ ↦ sub_nonneg.mpr (Nat.cast_inv_le_one p))).trans
       ((prod_filter_mul_prod_filter_not (Nat.primesLE ⌊y⌋₊) (· ∈ T) _).trans_le hfull)

@@ -52,9 +52,7 @@ which a summation argument can apply at infinitely many points at once. Continui
 functions on the half-line, with a nonvanishing dominating function, is another sufficient
 condition: it covers exponentially decaying majorants such as `exp (-p x)`. For the slowly decaying
 majorant `(log x)⁻¹` on `[a, ∞)` (`a > 1`), local boundedness of `f` on compact intervals alone
-suffices, covering step functions such as summatory functions. Similarly, an eventual
-`O((log x)⁻¹)` error for `g ⌊x⌋₊ - log (log x) - A` upgrades to a uniform `C / log x` bound on
-`(1, ∞)`, since `|log (log x)| * log x` stays bounded as `x → 1⁺`.
+suffices, covering step functions such as summatory functions.
 
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
@@ -98,8 +96,6 @@ evaluations of elliptic integrals.
 * `TauCeti.continuousAt_of_isBigO_sub`: `u y - u y' = O(y - y')` near `(x, x)` implies continuity
   of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
-* `TauCeti.exists_abs_comp_natFloor_sub_log_log_sub_le`: an eventual `O((log x)⁻¹)` bound for
-  `g ⌊x⌋₊ - log (log x) - A` gives a uniform `C / log x` bound on `(1, ∞)`.
 
 ## Related results
 
@@ -343,56 +339,5 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   simp only [id]
   field_simp
   ring
-
-/-- **Uniform `C / log x` bound on `(1, ∞)` from an eventual `O(1 / log x)` estimate.** If
-`g ⌊x⌋₊ - log (log x) - A = O((log x)⁻¹)` as `x → ∞`, then there exists `C ≥ 0` such that
-`|g ⌊x⌋₊ - log (log x) - A| ≤ C / log x` for all `x > 1`. -/
-theorem exists_abs_comp_natFloor_sub_log_log_sub_le {g : ℕ → ℝ} {A : ℝ}
-    (hO : (fun x : ℝ ↦ g ⌊x⌋₊ - Real.log (Real.log x) - A) =O[atTop] fun x ↦ (Real.log x)⁻¹) :
-    ∃ C, 0 ≤ C ∧ ∀ x, 1 < x → |g ⌊x⌋₊ - Real.log (Real.log x) - A| ≤ C / Real.log x := by
-  -- On `(1, B]`, the step function `g ⌊x⌋₊` takes finitely many values while
-  -- `|log (log x)| * log x` stays bounded near `1⁺` via `|log u| ≤ u + u⁻¹` for `u > 0`.
-  obtain ⟨c₀, hc₀, hbound⟩ := hO.exists_nonneg
-  obtain ⟨b, hb⟩ := eventually_atTop.mp hbound.bound
-  set B : ℕ := max 2 ⌈b⌉₊
-  have hbB : b ≤ B := (Nat.le_ceil b).trans (by exact_mod_cast le_max_right 2 ⌈b⌉₊)
-  set M : ℝ := ∑ k ∈ Finset.Icc 0 B, |g k|
-  have hM0 : 0 ≤ M := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
-  set C₁ : ℝ := (M + |A|) * Real.log B + (Real.log B ^ 2 + 1)
-  refine ⟨max c₀ C₁, hc₀.trans (le_max_left _ _), fun x hx1 ↦ ?_⟩
-  have hx0 : 0 < x := zero_lt_one.trans hx1
-  have hu : 0 < Real.log x := Real.log_pos hx1
-  rcases le_or_gt (B : ℝ) x with hBx | hxB
-  · have h := hb x (hbB.trans hBx)
-    rw [Real.norm_eq_abs, Real.norm_of_nonneg (inv_nonneg.mpr hu.le), ← div_eq_mul_inv] at h
-    exact h.trans (div_le_div_of_nonneg_right (le_max_left _ _) hu.le)
-  · have hfloor : ⌊x⌋₊ ∈ Finset.Icc 0 B :=
-      Finset.mem_Icc.mpr ⟨Nat.zero_le _, Nat.floor_le_of_le hxB.le⟩
-    have hgM : |g ⌊x⌋₊| ≤ M :=
-      Finset.single_le_sum (f := fun k ↦ |g k|) (fun _ _ ↦ abs_nonneg _) hfloor
-    have huB : Real.log x ≤ Real.log B := Real.log_le_log hx0 hxB.le
-    have hlogu : |Real.log (Real.log x)| ≤ Real.log x + (Real.log x)⁻¹ := by
-      rw [abs_le]
-      refine ⟨?_, ?_⟩
-      · have hinv := Real.log_le_sub_one_of_pos (inv_pos.mpr hu)
-        rw [Real.log_inv] at hinv
-        linarith
-      · linarith [Real.log_le_sub_one_of_pos hu, inv_pos.mpr hu]
-    have htri : |g ⌊x⌋₊ - Real.log (Real.log x) - A| ≤
-        (|g ⌊x⌋₊| + |A|) + |Real.log (Real.log x)| := by
-      linarith [abs_sub (g ⌊x⌋₊ - Real.log (Real.log x)) A,
-        abs_sub (g ⌊x⌋₊) (Real.log (Real.log x))]
-    rw [le_div_iff₀ hu]
-    calc |g ⌊x⌋₊ - Real.log (Real.log x) - A| * Real.log x
-        ≤ ((|g ⌊x⌋₊| + |A|) + (Real.log x + (Real.log x)⁻¹)) * Real.log x :=
-          mul_le_mul_of_nonneg_right (htri.trans (add_le_add le_rfl hlogu)) hu.le
-      _ = (|g ⌊x⌋₊| + |A|) * Real.log x + (Real.log x ^ 2 + (Real.log x)⁻¹ * Real.log x) := by
-          ring
-      _ = (|g ⌊x⌋₊| + |A|) * Real.log x + (Real.log x ^ 2 + 1) := by
-          rw [inv_mul_cancel₀ hu.ne']
-      _ ≤ (M + |A|) * Real.log B + (Real.log B ^ 2 + 1) := add_le_add
-          (mul_le_mul (add_le_add hgM le_rfl) huB hu.le (add_nonneg hM0 (abs_nonneg A)))
-          (add_le_add (pow_le_pow_left₀ hu.le huB 2) le_rfl)
-      _ ≤ max c₀ C₁ := le_max_right _ _
 
 end TauCeti
