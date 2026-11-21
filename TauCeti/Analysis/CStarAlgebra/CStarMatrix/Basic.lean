@@ -16,7 +16,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
-# Rectangular matrix operations and positivity by quadratic forms
+# Positivity and rectangular algebra for `CStarMatrix`
 
 We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
 with their conversion to ordinary matrices.
@@ -34,8 +34,9 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)` and the
-diagonal embedding `b ↦ diag(b, …, b)`.
+the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
+diagonal embedding `b ↦ diag(b, …, b)`, rectangular multiplication and `conjTranspose` laws,
+and the proper-star instance `IsProperStar (CStarMatrix n n A)`.
 
 ## Main declarations
 
@@ -58,6 +59,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le`.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
+* `CStarMatrix.instIsProperStar`: square matrices over a proper-star ordered ring have proper star.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -76,6 +78,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 ## References
 
 * E. C. Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Lemma 4.1.
+* B. Blackadar, *K-Theory for Operator Algebras*, 2nd ed., §4.6 and §5.1.
 -/
 
 public section
@@ -157,13 +160,13 @@ section Algebraic
 variable {n R A : Type*}
 
 /-- Scalars commute past matrix multiplication on the left, as for `Matrix`. -/
-instance instIsScalarTowerSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
+instance instIsScalarTowerSelf [Fintype n] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [IsScalarTower R A A] :
     IsScalarTower R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => smul_mul r M N⟩
 
 /-- Scalars commute past matrix multiplication on the right, as for `Matrix`. -/
-instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring A]
+instance instSMulCommClassSelf [Fintype n] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [SMulCommClass R A A] :
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
@@ -186,7 +189,8 @@ lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
-lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+lemma ofMatrix_symm_zero {m : Type*} [Zero A] :
+    ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
 @[simp]
@@ -195,22 +199,22 @@ lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
 @[simp]
-lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_add {m : Type*} [Add A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
 @[simp]
-lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Rectangular matrix multiplication is associative. -/
@@ -336,6 +340,84 @@ lemma ofMatrixₗ_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
 @[simp]
 lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module R A]
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
+
+section Rectangular
+variable {k l m : Type*}
+/-- A `CStarMatrix` with an empty row index type is a subsingleton. -/
+instance subsingleton_of_empty_left [IsEmpty m] : Subsingleton (CStarMatrix m n A) :=
+  ⟨fun _ _ => ext fun i => isEmptyElim i⟩
+/-- A `CStarMatrix` with an empty column index type is a subsingleton. -/
+instance subsingleton_of_empty_right [IsEmpty n] : Subsingleton (CStarMatrix m n A) :=
+  ⟨fun _ _ => ext fun _ j => isEmptyElim j⟩
+@[simp] theorem of_one [DecidableEq n] [Zero A] [One A] : ofMatrix (1 : Matrix n n A) = 1 := (rfl)
+@[simp] theorem of_mul_of [Fintype m] [Mul A] [AddCommMonoid A] (f : Matrix l m A)
+    (g : Matrix m n A) : ofMatrix f * ofMatrix g = ofMatrix (f * g) := (rfl)
+@[simp] theorem star_of [Star A] (f : Matrix n n A) : star (ofMatrix f) = ofMatrix fᴴ := (rfl)
+@[simp] theorem conjTranspose_of [Star A] (f : Matrix m n A) :
+    (ofMatrix f).conjTranspose = ofMatrix fᴴ := (rfl)
+/-- A self-adjoint square `CStarMatrix` equals its conjugate transpose. -/
+theorem conjTranspose_eq_of_isSelfAdjoint [Star A] {M : CStarMatrix n n A} (hM : IsSelfAdjoint M) :
+    M.conjTranspose = M := by rw [← star_eq_conjTranspose, hM.star_eq]
+/-- Rectangular matrix multiplication on `CStarMatrix` is associative. -/
+protected theorem mul_assoc [Fintype l] [Fintype m] [NonUnitalSemiring A] (L : CStarMatrix k l A)
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) : L * M * N = L * (M * N) :=
+  ofMatrix.symm.injective (Matrix.mul_assoc (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N))
+/-- Scalars pull out of both factors in a rectangular `CStarMatrix` product. -/
+protected theorem smul_mul_smul [Fintype m] [Monoid R] [AddCommMonoid A] [Mul A]
+    [DistribMulAction R A] [IsScalarTower R A A] [SMulCommClass R A A] (a b : R)
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) : (a • M) * (b • N) = (a * b) • (M * N) := by
+  rw [CStarMatrix.smul_mul, CStarMatrix.mul_smul, smul_smul]
+@[simp] protected theorem one_mul [Fintype m] [DecidableEq m] [NonAssocSemiring A]
+    (M : CStarMatrix m n A) : (1 : CStarMatrix m m A) * M = M :=
+  ofMatrix.symm.injective (Matrix.one_mul (ofMatrix.symm M))
+@[simp] protected theorem mul_one [Fintype n] [DecidableEq n] [NonAssocSemiring A]
+    (M : CStarMatrix m n A) : M * (1 : CStarMatrix n n A) = M :=
+  ofMatrix.symm.injective (Matrix.mul_one (ofMatrix.symm M))
+section
+variable [Fintype m] [NonUnitalNonAssocRing A]
+protected theorem mul_sub (L : CStarMatrix l m A) (M N : CStarMatrix m n A) :
+    L * (M - N) = L * M - L * N := ofMatrix.symm.injective (Matrix.mul_sub _ _ _)
+protected theorem sub_mul (L M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (L - M) * N = L * N - M * N := ofMatrix.symm.injective (Matrix.sub_mul _ _ _)
+@[simp] protected theorem neg_mul (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (-M) * N = -(M * N) := ofMatrix.symm.injective (Matrix.neg_mul _ _)
+@[simp] protected theorem mul_neg (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    M * (-N) = -(M * N) := ofMatrix.symm.injective (Matrix.mul_neg _ _)
+end
+theorem conjTranspose_injective [InvolutiveStar A] :
+    Function.Injective (conjTranspose : CStarMatrix m n A → CStarMatrix n m A) :=
+  Function.LeftInverse.injective conjTranspose_conjTranspose
+@[simp] theorem conjTranspose_inj [InvolutiveStar A] {M N : CStarMatrix m n A} :
+    M.conjTranspose = N.conjTranspose ↔ M = N := conjTranspose_injective.eq_iff
+@[simp] theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose := by ext; simp
+@[simp] theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose := by ext; simp
+@[simp] theorem conjTranspose_neg [AddGroup A] [StarAddMonoid A] (M : CStarMatrix m n A) :
+    (-M).conjTranspose = -M.conjTranspose := by ext; simp
+@[simp] theorem conjTranspose_smul [Star R] [Star A] [SMul R A] [StarModule R A] (r : R)
+    (M : CStarMatrix m n A) : (r • M).conjTranspose = star r • M.conjTranspose := by ext; simp
+@[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
+    (1 : CStarMatrix n n A).conjTranspose = 1 := ofMatrix.symm.injective Matrix.conjTranspose_one
+section
+variable [NonUnitalSemiring A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+/-- Over a star-ordered ring with proper star, `M.conjTranspose * M = 0` iff `M = 0`. -/
+@[simp] theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
+    M.conjTranspose * M = 0 ↔ M = 0 := by
+  refine ⟨fun h => ext fun i j => ?_, fun h => by simp [h]⟩
+  have hjj : ∑ k, star (M k j) * M k j = 0 := by simpa [mul_apply] using congr_fun (congr_fun h j) j
+  exact star_mul_self_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg fun k _ =>
+    star_mul_self_nonneg (M k j)).mp hjj i (Finset.mem_univ i))
+/-- Square matrices over a star-ordered ring with proper star have a proper star. -/
+instance instIsProperStar [Fintype n] : IsProperStar (CStarMatrix n n A) :=
+  ⟨fun h => by rwa [star_eq_conjTranspose, conjTranspose_mul_self_eq_zero] at h⟩
+/-- Over a star-ordered ring with proper star, `M * M.conjTranspose = 0` iff `M = 0`. -/
+@[simp] theorem self_mul_conjTranspose_eq_zero [Fintype n] {M : CStarMatrix m n A} :
+    M * M.conjTranspose = 0 ↔ M = 0 := by
+  rw [← conjTranspose_inj (M := M), conjTranspose_zero]
+  simpa using conjTranspose_mul_self_eq_zero (M := M.conjTranspose)
+end
+end Rectangular
 
 end Algebraic
 

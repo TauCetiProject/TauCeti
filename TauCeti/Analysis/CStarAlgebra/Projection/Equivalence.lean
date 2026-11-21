@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import TauCeti.Algebra.Star.PartialIsometry
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
