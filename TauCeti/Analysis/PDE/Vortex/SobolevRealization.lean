@@ -86,9 +86,9 @@ the general statement for Fredholm families,
 `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_rightInverse`, applied to the
 Lipschitz family `a ↦ L_a` and the inclusion into `L²`.
 
-Both are unique (`ContinuousLinearMap.IsOrthogonalKerProjection.eq`,
-`ContinuousLinearMap.IsOrthogonalRightInverse.eq`): at every coefficient where `L_a` is onto with
-a finite-dimensional kernel they are
+Both are unique (`ContinuousLinearMap.IsOrthogonalKerProjection.unique`,
+`ContinuousLinearMap.IsOrthogonalRightInverse.unique`): at every coefficient where `L_a` is onto
+with a finite-dimensional kernel they are
 `ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues L_a` and
 `ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues L_a`, which are continuous in `L_a`
 there (`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection`,

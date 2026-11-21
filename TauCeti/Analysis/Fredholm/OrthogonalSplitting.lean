@@ -54,8 +54,8 @@ complements of the kernel, which move continuously with the solution about which
   values in its kernel, `R - π R` is a right inverse of `T` whenever `R` is, and when `π` projects
   along the `ι`-orthogonal complement of the kernel, a right inverse `Q` with values in that
   complement splits every `e` as `e = π e + Q (T e)`.
-* `ContinuousLinearMap.IsOrthogonalKerProjection.eq` and
-  `ContinuousLinearMap.IsOrthogonalRightInverse.eq`: the projection onto the kernel along its
+* `ContinuousLinearMap.IsOrthogonalKerProjection.unique` and
+  `ContinuousLinearMap.IsOrthogonalRightInverse.unique`: the projection onto the kernel along its
   `ι`-orthogonal complement, and the right inverse with values in that complement, are unique.
   They are named `ContinuousLinearMap.orthogonalKerProjection ι T` and
   `ContinuousLinearMap.orthogonalRightInverse ι T`.
@@ -152,7 +152,7 @@ private theorem eq_zero_of_mem_ker_of_forall_inner_eq_zero (hι : Injective ι) 
 
 /-- **Uniqueness of the orthogonal kernel projection.** For an injective `ι` into an inner product
 space, two projections onto the kernel of `T` along its `ι`-orthogonal complement agree. -/
-theorem IsOrthogonalKerProjection.eq (hι : Injective ι) {π π' : E →L[𝕜] E}
+theorem IsOrthogonalKerProjection.unique (hι : Injective ι) {π π' : E →L[𝕜] E}
     (h : IsOrthogonalKerProjection ι T π) (h' : IsOrthogonalKerProjection ι T π') : π = π' := by
   ext e
   refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι
@@ -169,7 +169,7 @@ theorem IsOrthogonalKerProjection.apply_of_mem_ker (hι : Injective ι) {π : E 
 
 /-- **Uniqueness of the orthogonal right inverse.** For an injective `ι` into an inner product
 space, two right inverses of `T` whose values are `ι`-orthogonal to the kernel of `T` agree. -/
-theorem IsOrthogonalRightInverse.eq (hι : Injective ι) {Q Q' : F →L[𝕜] E}
+theorem IsOrthogonalRightInverse.unique (hι : Injective ι) {Q Q' : F →L[𝕜] E}
     (h : IsOrthogonalRightInverse ι T Q) (h' : IsOrthogonalRightInverse ι T Q') : Q = Q' := by
   ext y
   refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero (T := T) hι
@@ -188,7 +188,7 @@ theorem IsOrthogonalKerProjection.apply_add_apply_apply_eq_self (hι : Injective
 open Classical in
 /-- **The orthogonal kernel projection** of `T` for `ι`: the projection onto the kernel of `T`
 along its `ι`-orthogonal complement. It is unique for an injective `ι`
-(`ContinuousLinearMap.IsOrthogonalKerProjection.eq`) and exists when the kernel is
+(`ContinuousLinearMap.IsOrthogonalKerProjection.unique`) and exists when the kernel is
 finite-dimensional
 (`ContinuousLinearMap.isOrthogonalKerProjection_orthogonalKerProjection`); it is `0` when no
 such projection exists. -/
@@ -198,7 +198,7 @@ noncomputable def orthogonalKerProjection (ι : E →L[𝕜] H) (T : E →L[𝕜
 open Classical in
 /-- **The orthogonal right inverse** of `T` for `ι`: the right inverse of `T` whose values are
 `ι`-orthogonal to the kernel of `T`. It is unique for an injective `ι`
-(`ContinuousLinearMap.IsOrthogonalRightInverse.eq`) and exists when `T` is Fredholm and onto
+(`ContinuousLinearMap.IsOrthogonalRightInverse.unique`) and exists when `T` is Fredholm and onto
 (`ContinuousLinearMap.IsFredholm.isOrthogonalRightInverse_orthogonalRightInverse`); it is `0`
 when no such right inverse exists. -/
 noncomputable def orthogonalRightInverse (ι : E →L[𝕜] H) (T : E →L[𝕜] F) : F →L[𝕜] E :=
@@ -226,13 +226,13 @@ theorem IsOrthogonalRightInverse.isOrthogonalRightInverse_orthogonalRightInverse
 is `ContinuousLinearMap.orthogonalKerProjection ι T`. -/
 theorem IsOrthogonalKerProjection.eq_orthogonalKerProjection (hι : Injective ι) {π : E →L[𝕜] E}
     (h : IsOrthogonalKerProjection ι T π) : π = orthogonalKerProjection ι T :=
-  h.eq hι h.isOrthogonalKerProjection_orthogonalKerProjection
+  h.unique hι h.isOrthogonalKerProjection_orthogonalKerProjection
 
 /-- For an injective `ι`, a right inverse of `T` with values `ι`-orthogonal to the kernel is
 `ContinuousLinearMap.orthogonalRightInverse ι T`. -/
 theorem IsOrthogonalRightInverse.eq_orthogonalRightInverse (hι : Injective ι) {Q : F →L[𝕜] E}
     (h : IsOrthogonalRightInverse ι T Q) : Q = orthogonalRightInverse ι T :=
-  h.eq hι h.isOrthogonalRightInverse_orthogonalRightInverse
+  h.unique hι h.isOrthogonalRightInverse_orthogonalRightInverse
 
 end Orthogonal
 
