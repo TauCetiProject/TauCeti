@@ -107,88 +107,20 @@ lemma koszulBraidingSummand_def (X Y : CochainComplex C ℤ) (p q j : ℤ)
           (ComplexShape.up ℤ) q p j (by dsimp at h ⊢; omega)) :=
   (rfl)
 
-private lemma koszulBraidingSummand_comm (X Y : CochainComplex C ℤ)
-    (p q j : ℤ)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
-    koszulBraidingSummand C X Y p q j h ≫ (Y ⊗ X).d j (j + 1) =
-      HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
-          (ComplexShape.up ℤ) p q j h ≫ (X ⊗ Y).d j (j + 1) ≫
-        HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · (j + 1) ·) := by
-  replace h : p + q = j := h
-  have hdYX : (Y ⊗ X).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ Y X (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ Y X (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  have hdXY : (X ⊗ Y).d j (j + 1) =
-      HomologicalComplex.mapBifunctor.D₁ X Y (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) +
-        HomologicalComplex.mapBifunctor.D₂ X Y (curriedTensor C)
-          (ComplexShape.up ℤ) j (j + 1) :=
-    HomologicalComplex.mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hdYX, hdXY, koszulBraidingSummand]
-  simp only [Preadditive.comp_add, Preadditive.add_comp, Linear.units_smul_comp,
-    Category.assoc, HomologicalComplex.mapBifunctor.ι_D₁,
-    HomologicalComplex.mapBifunctor.ι_D₂,
-    HomologicalComplex.mapBifunctor.ι_D₁_assoc, HomologicalComplex.mapBifunctor.ι_D₂_assoc]
-  rw [HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk q (q + 1) rfl) p (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ q
-      (ComplexShape.up_mk p (p + 1) rfl) (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    HomologicalComplex.mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
-  simp only [ComplexShape.ε₁_def, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ, one_smul,
-    curriedTensor_map_app, curriedTensor_obj_map,
-    Linear.units_smul_comp, Linear.comp_units_smul, Category.assoc,
-    HomologicalComplex.ι_mapBifunctorDesc, koszulBraidingSummand, smul_smul]
-  have hs₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
-    rw [show (p + 1) * q = p * q + q by ring, Int.negOnePow_add]
-  have hs₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
-    rw [show p * (q + 1) = p * q + p by ring, Int.negOnePow_add, ← mul_assoc,
-      mul_comm p.negOnePow (p * q).negOnePow, mul_assoc, ← Int.negOnePow_add,
-      Int.negOnePow_even _ ⟨p, rfl⟩, mul_one]
-  rw [hs₁, hs₂, ← BraidedCategory.braiding_naturality_left_assoc,
-    ← BraidedCategory.braiding_naturality_right_assoc]
-  exact add_comm _ _
-
-/-- The Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`. -/
+/-- The Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the signed interchange
+`HomologicalComplex.tensorBraiding` of the tensor product, for the Koszul signs of Mathlib's
+`TotalComplexShapeSymmetry (up ℤ) (up ℤ) (up ℤ)`. -/
 noncomputable def koszulBraidingHom (X Y : CochainComplex C ℤ) :
-    X ⊗ Y ⟶ Y ⊗ X where
-  f j := HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · j ·)
-  comm' j j' hjj' := by
-    replace hjj' : j + 1 = j' := hjj'
-    subst hjj'
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q h
-    rw [HomologicalComplex.ι_mapBifunctorDesc_assoc]
-    exact koszulBraidingSummand_comm C X Y p q j h
-
-private lemma koszulBraidingHom_f (X Y : CochainComplex C ℤ) (j : ℤ) :
-    (koszulBraidingHom C X Y).f j =
-      HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · j ·) :=
-  rfl
+    X ⊗ Y ⟶ Y ⊗ X :=
+  (HomologicalComplex.tensorBraiding X Y).hom
 
 @[reassoc (attr := simp)]
 lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
     HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
         (ComplexShape.up ℤ) p q j h ≫ (koszulBraidingHom C X Y).f j =
-      koszulBraidingSummand C X Y p q j h := by
-  rw [koszulBraidingHom_f]
-  apply HomologicalComplex.ι_mapBifunctorDesc
-
-/-- The Koszul braiding of cochain complexes is the signed interchange
-`HomologicalComplex.tensorBraiding` of their tensor product, for the Koszul signs of Mathlib's
-`TotalComplexShapeSymmetry (up ℤ) (up ℤ) (up ℤ)`. -/
-lemma koszulBraidingHom_eq_tensorBraiding_hom (X Y : CochainComplex C ℤ) :
-    koszulBraidingHom C X Y = (HomologicalComplex.tensorBraiding X Y).hom := by
-  ext j : 1
-  refine HomologicalComplex.mapBifunctor.hom_ext fun p q (h : p + q = j) ↦ ?_
-  rw [ι_koszulBraidingHom, koszulBraidingSummand_def]
-  exact (HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h).symm
+      koszulBraidingSummand C X Y p q j h :=
+  HomologicalComplex.ιTensorObj_tensorBraiding_hom_f X Y p q j h
 
 /-- The Koszul braiding is natural in the left-hand factor. -/
 lemma koszulBraidingHom_naturality_left {X Y : CochainComplex C ℤ} (f : X ⟶ Y)

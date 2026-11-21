@@ -41,9 +41,9 @@ Over a braided coefficient category the comparison also relates the two intercha
 chain degrees, and that of the tensor product of the regradings, with the Koszul sign `(-1)^(a b)`
 of the cochain degrees `a = n₁ - p`, `b = n₂ - q`. The two agree up to the global sign
 `(-1)^(n₁ n₂)` (`ChainComplex.regradeTensorHom_comp_restrictionMap_tensorBraiding`), since
-`a b + n₂ a ≡ p q + n₁ q + n₁ n₂` modulo `2`. Consequently a chain-level product on `K` which is
-graded commutative up to a sign `ε` for the raw degrees regrades to a degree-zero product which is
-graded commutative up to `(-1)^n ε` for the cochain degrees
+`a b + n₂ (n₁ - a) ≡ p q + n₁ q + n₁ n₂` modulo `2`. Consequently a chain-level product on `K`
+which is graded commutative up to a sign `ε` for the raw degrees regrades to a degree-zero product
+which is graded commutative up to `(-1)^n ε` for the cochain degrees
 (`ChainComplex.tensorBraiding_hom_comp_regradeTensorHom_comp_restrictionMap`). This is the
 conversion of the input-exchange sign of the pair-of-pants product between the raw grading of
 Floer complexes and the cohomological grading in which graded commutativity reads `(-1)^(a b)`.
