@@ -179,14 +179,12 @@ closed). -/
 theorem coeff_smul_mem_idealSubmodule {J : TwoSidedIdeal A} (b : A) {z : E}
     (hz : z ∈ idealSubmodule J E) : b • z ∈ idealSubmodule J E := by
   let S : Submodule ℂ E := (idealSubmodule J E).comap (smulCLM (E := E) b).toLinearMap
-  have hS : IsClosed (S : Set E) := by
-    rw [Submodule.comap_coe, ContinuousLinearMap.coe_coe]
-    exact (isClosed_idealSubmodule J E).preimage (smulCLM (E := E) b).continuous
-  have hle : idealSubmodule J E ≤ S :=
-    (idealSubmodule_le_iff hS).mpr fun a ha x => by
-      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, smulCLM_apply,
-        ← (semigroupAction A E).mul_smul]
-      exact smul_mem_idealSubmodule (J.mul_mem_left b a ha) x
+  have hS : IsClosed (S : Set E) :=
+    (isClosed_idealSubmodule J E).preimage (smulCLM (E := E) b).continuous
+  have hle : idealSubmodule J E ≤ S := (idealSubmodule_le_iff hS).mpr fun a ha x => by
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, smulCLM_apply,
+      ← (semigroupAction A E).mul_smul]
+    exact smul_mem_idealSubmodule (J.mul_mem_left b a ha) x
   have hz' := hle hz
   rwa [Submodule.mem_comap, ContinuousLinearMap.coe_coe, smulCLM_apply] at hz'
 
@@ -211,11 +209,10 @@ theorem inner_mem_of_mem_idealSubmodule_right (y : E) {z : E} (hz : z ∈ idealS
   have hS : IsClosed (S : Set E) := by
     rw [Submodule.comap_coe, ContinuousLinearMap.coe_coe, TwoSidedIdeal.coe_toSubmodule]
     exact hJ.preimage (innerSL (A := A) y).continuous
-  have hle : idealSubmodule J E ≤ S :=
-    (idealSubmodule_le_iff hS).mpr fun a ha x => by
-      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, innerSL_apply,
-        TwoSidedIdeal.mem_toSubmodule, inner_op_smul_right]
-      exact J.mul_mem_right a (inner A y x) ha
+  have hle : idealSubmodule J E ≤ S := (idealSubmodule_le_iff hS).mpr fun a ha x => by
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, innerSL_apply,
+      TwoSidedIdeal.mem_toSubmodule, inner_op_smul_right]
+    exact J.mul_mem_right a (inner A y x) ha
   have hz' := hle hz
   rwa [Submodule.mem_comap, ContinuousLinearMap.coe_coe, innerSL_apply,
     TwoSidedIdeal.mem_toSubmodule] at hz'
@@ -632,13 +629,10 @@ theorem map_mem_idealSubmodule (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) {z : E} (hz : z ∈ idealSubmodule J E) :
     T z ∈ idealSubmodule J F := by
   let S : Submodule ℂ E := (idealSubmodule J F).comap T.toLinearMap
-  have hS : IsClosed (S : Set E) := by
-    rw [Submodule.comap_coe, ContinuousLinearMap.coe_coe]
-    exact (isClosed_idealSubmodule J F).preimage T.continuous
-  have hle : idealSubmodule J E ≤ S :=
-    (idealSubmodule_le_iff hS).mpr fun a ha x => by
-      rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, hT]
-      exact smul_mem_idealSubmodule ha (T x)
+  have hS : IsClosed (S : Set E) := (isClosed_idealSubmodule J F).preimage T.continuous
+  have hle : idealSubmodule J E ≤ S := (idealSubmodule_le_iff hS).mpr fun a ha x => by
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, hT]
+    exact smul_mem_idealSubmodule ha (T x)
   have hz' := hle hz
   rwa [Submodule.mem_comap, ContinuousLinearMap.coe_coe] at hz'
 
@@ -649,9 +643,7 @@ def quotientMapCLM (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
     E ⧸ idealSubmodule J E →L[ℂ] F ⧸ idealSubmodule J F :=
   (idealSubmodule J E).liftQL ((idealSubmodule J F).mkQL.comp T) fun z hz => by
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-      Submodule.mkQL_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact map_mem_idealSubmodule J T hT hz
+    simpa [Submodule.Quotient.mk_eq_zero] using map_mem_idealSubmodule J T hT hz
 
 @[simp]
 theorem quotientMapCLM_mk (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
@@ -683,9 +675,7 @@ two-sided ideals. -/
 def quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) :
     E ⧸ idealSubmodule J₁ E →L[ℂ] E ⧸ idealSubmodule J₂ E :=
   (idealSubmodule J₁ E).liftQL (idealSubmodule J₂ E).mkQL fun z hz => by
-    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Submodule.mkQL_apply,
-      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact idealSubmodule_mono h hz
+    simpa [Submodule.Quotient.mk_eq_zero] using idealSubmodule_mono h hz
 
 @[simp]
 theorem quotientFactorCLM_mk {J₁ J₂ : TwoSidedIdeal A} (h : J₁ ≤ J₂) (x : E) :
@@ -739,19 +729,15 @@ theorem norm_quotientMapCLM_apply_le (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
   refine le_of_forall_pos_le_add fun ε hε => ?_
   by_cases hT0 : ‖T‖ = 0
   · obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
-    calc
-      ‖quotientMapCLM J T hT (Submodule.Quotient.mk x)‖
-          = ‖(Submodule.Quotient.mk (T x) : F ⧸ idealSubmodule J F)‖ := by rw [quotientMapCLM_mk]
-      _ ≤ ‖T x‖ := Submodule.Quotient.norm_mk_le _ _
-      _ ≤ ‖T‖ * ‖x‖ := T.le_opNorm x
-      _ ≤ ‖T‖ * ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ + ε := by
-        simp [hT0, hε.le]
+    have hle : ‖quotientMapCLM J T hT (Submodule.Quotient.mk x)‖ ≤ 0 := by
+      simpa [hT0] using
+        (Submodule.Quotient.norm_mk_le (idealSubmodule J F) (T x)).trans (T.le_opNorm x)
+    simpa [hT0] using hle.trans hε.le
   · have hTpos : 0 < ‖T‖ := lt_of_le_of_ne (norm_nonneg T) (Ne.symm hT0)
     obtain ⟨x, rfl, hx⟩ := Submodule.Quotient.norm_mk_lt v (div_pos hε hTpos)
     calc
       ‖quotientMapCLM J T hT (Submodule.Quotient.mk x)‖
-          = ‖(Submodule.Quotient.mk (T x) : F ⧸ idealSubmodule J F)‖ := by rw [quotientMapCLM_mk]
-      _ ≤ ‖T x‖ := Submodule.Quotient.norm_mk_le _ _
+          ≤ ‖T x‖ := Submodule.Quotient.norm_mk_le _ _
       _ ≤ ‖T‖ * ‖x‖ := T.le_opNorm x
       _ ≤ ‖T‖ * (‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ + ε / ‖T‖) :=
         mul_le_mul_of_nonneg_left hx.le hTpos.le
@@ -861,17 +847,82 @@ theorem inner_quotientFactorCLM {J₁ J₂ : TwoSidedIdeal A} [IsClosed (J₁ : 
 
 end LeftModules
 
+section RightModules
+
+variable {E F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
+
 /-- Right-module `(A ⧸ J)ᵐᵒᵖ`-linearity of `quotientMapCLM J.op T hT`. -/
-theorem quotientMapCLM_op_smul {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-    [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
-    (J : TwoSidedIdeal A) (T : E →L[ℂ] F) (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x)
-    (q : (A ⧸ J)ᵐᵒᵖ) (v : E ⧸ idealSubmodule J.op E) :
+theorem quotientMapCLM_op_smul (J : TwoSidedIdeal A) (T : E →L[ℂ] F)
+    (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x) (q : (A ⧸ J)ᵐᵒᵖ)
+    (v : E ⧸ idealSubmodule J.op E) :
     quotientMapCLM J.op T hT (q • v) = q • quotientMapCLM J.op T hT v := by
   obtain ⟨q, rfl⟩ := op_surjective q
   obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective J q
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ v
   rw [op_mk_smul_mk, quotientMapCLM_mk, hT, quotientMapCLM_mk, op_mk_smul_mk]
+
+/-- A right `A`-linear map preserving `Aᵐᵒᵖ`-valued inner products preserves the transported
+`(A ⧸ J)ᵐᵒᵖ`-valued inner product on right quotients. -/
+theorem inner_quotientMapCLM_op_of_inner_eq (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
+    (T : E →L[ℂ] F) (hT : ∀ (u : Aᵐᵒᵖ) (x : E), T (u • x) = u • T x)
+    (hinner : ∀ x y : E, inner Aᵐᵒᵖ (T x) (T y) = inner Aᵐᵒᵖ x y)
+    (u v : E ⧸ idealSubmodule J.op E) :
+    inner (A ⧸ J)ᵐᵒᵖ (quotientMapCLM J.op T hT u) (quotientMapCLM J.op T hT v) =
+      inner (A ⧸ J)ᵐᵒᵖ u v := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+  apply unop_injective
+  rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk, hinner]
+
+/-- Adjoint pairs of bounded operators between right Hilbert `A`-modules descend to adjoint pairs
+between the right quotient Hilbert `(A ⧸ J)`-modules. -/
+theorem isAdjointPair_quotientMapCLM_op (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
+    [PartialOrder (A ⧸ J)] [StarOrderedRing (A ⧸ J)]
+    {T : E →L[ℂ] F} {S : F →L[ℂ] E}
+    (h : LinearMap.IsAdjointPair (innerₛₗ (A := Aᵐᵒᵖ) (E := E)).flip
+      (innerₛₗ (A := Aᵐᵒᵖ) (E := F)).flip T S) :
+    LinearMap.IsAdjointPair
+      (innerₛₗ (A := (A ⧸ J)ᵐᵒᵖ) (E := E ⧸ idealSubmodule J.op E)).flip
+      (innerₛₗ (A := (A ⧸ J)ᵐᵒᵖ) (E := F ⧸ idealSubmodule J.op F)).flip
+      (quotientMapCLM J.op T h.map_smul_coeff_cstarModule)
+      (quotientMapCLM J.op S h.symm_cstarModule.map_smul_coeff_cstarModule) := by
+  rw [isAdjointPair_inner_iff]
+  intro u v
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+  apply unop_injective
+  rw [quotientMapCLM_mk, quotientMapCLM_mk, unop_inner_mk_mk, unop_inner_mk_mk,
+    h.inner_eq_cstarModule]
+
+/-- `quotientFactorCLM` at `J₁.op ≤ J₂.op` intertwines the right quotient actions along
+`TwoSidedIdeal.Quotient.factor`. -/
+theorem quotientFactorCLM_op_smul {J₁ J₂ : TwoSidedIdeal A} (h : J₁.op ≤ J₂.op)
+    (q : (A ⧸ J₁)ᵐᵒᵖ) (u : E ⧸ idealSubmodule J₁.op E) :
+    quotientFactorCLM h (q • u) =
+      op (TwoSidedIdeal.Quotient.factor (TwoSidedIdeal.opOrderIso.le_iff_le.mp h) q.unop) •
+        quotientFactorCLM h u := by
+  obtain ⟨q, rfl⟩ := op_surjective q
+  obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective J₁ q
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+  rw [op_mk_smul_mk, quotientFactorCLM_mk, unop_op, TwoSidedIdeal.Quotient.factor_mk,
+    quotientFactorCLM_mk, op_mk_smul_mk]
+
+/-- `quotientFactorCLM` at `J₁.op ≤ J₂.op` intertwines the right quotient inner products along
+`TwoSidedIdeal.Quotient.factorStarAlgHom`. -/
+theorem inner_quotientFactorCLM_op {J₁ J₂ : TwoSidedIdeal A} [IsClosed (J₁ : Set A)]
+    [IsClosed (J₂ : Set A)] (h : J₁.op ≤ J₂.op) (u v : E ⧸ idealSubmodule J₁.op E) :
+    inner (A ⧸ J₂)ᵐᵒᵖ (quotientFactorCLM h u) (quotientFactorCLM h v) =
+      op (TwoSidedIdeal.Quotient.factorStarAlgHom (TwoSidedIdeal.opOrderIso.le_iff_le.mp h)
+        (unop (inner (A ⧸ J₁)ᵐᵒᵖ u v))) := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ u
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ v
+  apply unop_injective
+  rw [quotientFactorCLM_mk, quotientFactorCLM_mk, unop_op, unop_inner_mk_mk,
+    unop_inner_mk_mk, TwoSidedIdeal.Quotient.factorStarAlgHom_mk]
+
+end RightModules
 
 end FunctorialityCStarModule
 

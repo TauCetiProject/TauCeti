@@ -35,7 +35,6 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `TwoSidedIdeal.Quotient.nonUnitalCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebra`: C⋆-norm
   and C⋆-algebra instances on `A ⧸ I` for a closed two-sided ideal `I : TwoSidedIdeal A`.
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
-<<<<<<< HEAD
   `TwoSidedIdeal.Quotient.factorStarAlgHom`, `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`, and
   `TwoSidedIdeal.Quotient.opStarAlgEquiv`: universal `⋆`-homomorphisms and `⋆`-equivalences on
   C⋆-quotients. `mkStarAlgHom` and `liftStarAlgHom` have unital counterparts
@@ -43,16 +42,8 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `NonUnitalStarAlgHom.isClosed_range`, `StarAlgHom.isClosed_range`,
   `TwoSidedIdeal.isClosed_map_mk`, and `TwoSidedIdeal.isClosed_sup`: `⋆`-homomorphism ranges,
   images of closed ideals in quotients, and sums `I ⊔ J` of closed ideals are automatically closed.
-=======
-  `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
-  universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients. `mkStarAlgHom` and
-  `liftStarAlgHom` have unital counterparts `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom` and
-  `TwoSidedIdeal.Quotient.liftUnitalStarAlgHom`.
-* `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
-  `⋆`-algebra homomorphism between C⋆-algebras is closed.
 * `NonUnitalStarAlgHom.norm_apply_le_norm_apply_of_ker_le`: a `⋆`-homomorphism killing the kernel
   of another is dominated by it in norm.
->>>>>>> origin/main
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
   and `NonUnitalStarAlgHom.surjective_of_denseRange` (plus `StarAlgHom` counterparts): isometric
   first `⋆`-isomorphism theorem and surjectivity from dense range.

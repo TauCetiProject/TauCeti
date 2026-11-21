@@ -50,13 +50,8 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
   two-sided ideal of a C⋆-algebra as a `Submodule ℂ A` and as a `NonUnitalStarSubalgebra ℂ A`.
 * `TwoSidedIdeal.nonUnitalCStarAlgebra`: a closed two-sided ideal `I : TwoSidedIdeal A` is a
-<<<<<<< HEAD
   `NonUnitalCStarAlgebra` on its subtype carrier (inheriting `StarOrderedRing` via
   `TwoSidedIdeal.instStarOrderedRing`), with canonical isometric `⋆`-monomorphism
-  `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A` and `⋆`-isomorphism
-  `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`.
-=======
-  `NonUnitalCStarAlgebra` on its subtype carrier, with canonical isometric `⋆`-monomorphism
   `TwoSidedIdeal.starAlgHom : I →⋆ₙₐ[ℂ] A`, `⋆`-isomorphism
   `TwoSidedIdeal.toNonUnitalStarSubalgebraEquiv : I ≃⋆ₐ[ℂ] I.toNonUnitalStarSubalgebra`, and
   functional-calculus closure `TwoSidedIdeal.cfcₙ_mem_of_isClosed` and
@@ -67,7 +62,6 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 * `TauCeti.isFull_iff_closure_span_mul_eq_univ` and `TauCeti.isFull_star`: C⋆-algebra
   characterizations of full elements (`TauCeti.IsFull`, defined in
   `TauCeti.Topology.Algebra.Ring.TwoSidedIdeal`).
->>>>>>> origin/main
 * `NonUnitalStarSubalgebra.multiplierHom`: the canonical contractive star-algebra homomorphism
   `A →⋆ₙₐ[𝕜] 𝓜(𝕜, I)` attached to a star ideal `I` of `A`, with action formulas
   `multiplierHom_fst_apply` and `multiplierHom_snd_apply`, inclusion compatibility
