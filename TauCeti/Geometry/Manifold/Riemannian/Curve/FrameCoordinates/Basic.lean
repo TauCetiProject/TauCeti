@@ -12,10 +12,10 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Path
 
 /-!
-# Velocities of curves in an orthonormal frame of a surface
+# Inner products of curve velocities with tangent fields
 
 For a pair of tangent fields `s = (s₀, s₁)` and a curve `γ` in a Riemannian manifold, the complex
-number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` is the coordinate of the velocity `γ'(t)` in the frame
+number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` packages the two inner products with the velocity `γ'(t)`
 (`TauCeti.Manifold.frameVelocityCoordinates`). When the span of `s` at `γ t` contains the
 velocity, it vanishes exactly where the velocity does; if `s` is moreover orthonormal at `γ t`, it
 determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the norm of the velocity. It is
@@ -23,11 +23,12 @@ periodic along a periodic curve, continuous along a `C¹` curve for a continuous
 fields continuous on a set containing the curve, and `C^k` along a `C^(k+1)` curve for a `C^k`
 metric and tangent fields `C^k` on such a set.
 
-For a regular periodic `C¹` curve inside the domain of a local frame, the unit coordinates
-`z / ‖z‖` form a loop in the unit circle `Circle`
-(`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). When the frame is
-orthonormal along the curve, this is the unit tangent read in the frame: if `θ` is a continuous
-angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
+For velocity inner products `z` continuous and nonzero on `[0, 1]` with `z 1 = z 0`, the
+normalized coordinates `z / ‖z‖` form a loop in the unit circle `Circle`
+(`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). When the pair is
+orthonormal along the curve and its span contains the velocity, this is the unit tangent read
+in the pair: if `θ` is a continuous angle of this loop, the unit tangent is
+`T = cos θ s₀ + sin θ s₁`.
 
 ## Main results
 
@@ -38,8 +39,8 @@ angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 * `TauCeti.Manifold.periodic_frameVelocityCoordinates`: periodicity along periodic curves.
 * `TauCeti.Manifold.continuous_frameVelocityCoordinates`: continuity along `C¹` curves.
 * `TauCeti.Manifold.contDiff_frameVelocityCoordinates`: `C^k` regularity along `C^(k+1)` curves.
-* `TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`: the unit tangent loop in
-  the frame.
+* `TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`: the normalized
+  velocity-coordinate loop.
 
 ## References
 
@@ -60,8 +61,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (TangentSpace I : M → Type _)]
 
-/-- The complex coordinates `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` of the velocity of a curve `γ` at `t` in a
-pair of tangent fields `s = (s₀, s₁)`, evaluated at `γ t`. -/
+/-- The pair of inner products `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` with the velocity of `γ` at `t`,
+where the tangent fields `s = (s₀, s₁)` are evaluated at `γ t`. For an orthonormal pair whose
+span contains the velocity, these are its reconstruction coefficients. -/
 def frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) (γ : ℝ → M) (t : ℝ) : ℂ :=
   ⟨inner ℝ (s 0 (γ t)) (curveVelocity I γ t), inner ℝ (s 1 (γ t)) (curveVelocity I γ t)⟩
 
@@ -162,37 +164,30 @@ theorem continuous_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpac
   funext t
   exact (Complex.re_add_im (frameVelocityCoordinates s γ t)).symm
 
-/-- **The unit tangent loop in a frame.** For a regular `1`-periodic `C¹` curve `γ` in the
-domain `u` of a local frame, the normalized frame coordinates `z / ‖z‖` of the velocity form a loop
-in the unit circle. When the frame is orthonormal along `γ`, this is the unit tangent read in the
-frame. -/
-theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
-    {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M} (hs : IsLocalFrameOn I E n s u)
-    {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ) I 1 γ) (hγu : ∀ t, γ t ∈ u) (hp : Function.Periodic γ 1)
-    (hne : ∀ t, curveVelocity I γ t ≠ 0) :
+end Continuous
+
+/-- **The normalized velocity-coordinate loop.** If the velocity inner products `z` are
+continuous and nonzero on `[0, 1]` and satisfy `z 1 = z 0`, then `z / ‖z‖` forms a loop in the
+unit circle. For an orthonormal pair whose span contains the velocity along `γ`, this is the
+unit tangent read in the pair. -/
+theorem exists_path_eq_frameVelocityCoordinates_div_norm
+    {s : Fin 2 → Π x : M, TangentSpace I x} {γ : ℝ → M}
+    (hz : ContinuousOn (frameVelocityCoordinates s γ) (Icc 0 1))
+    (hne : ∀ t ∈ Icc (0 : ℝ) 1, frameVelocityCoordinates s γ t ≠ 0)
+    (hp : frameVelocityCoordinates s γ 1 = frameVelocityCoordinates s γ 0) :
     ∃ v : Circle, ∃ p : Path v v, ∀ t : unitInterval,
       (p t : ℂ) = frameVelocityCoordinates s γ t / (‖frameVelocityCoordinates s γ t‖ : ℂ) := by
-  let z := frameVelocityCoordinates s γ
-  have hz : Continuous z :=
-    continuous_frameVelocityCoordinates (fun i ↦ (hs.contMDiffOn i).continuousOn) hγ hγu
-  have hz0 (t : ℝ) : z t ≠ 0 :=
-    (frameVelocityCoordinates_eq_zero_iff (hs.generating (hγu t) Submodule.mem_top)).not.mpr
-      (hne t)
-  let U (t : ℝ) : Circle := ⟨z t / (‖z t‖ : ℂ), by
+  let z (t : unitInterval) := frameVelocityCoordinates s γ t
+  have hz' : Continuous z := hz.domRestrict
+  let U (t : unitInterval) : Circle := ⟨z t / (‖z t‖ : ℂ), by
     apply mem_sphere_zero_iff_norm.mpr
     rw [norm_div, Complex.norm_real, Real.norm_eq_abs, abs_norm]
-    exact div_self (norm_ne_zero_iff.mpr (hz0 t))⟩
+    exact div_self (norm_ne_zero_iff.mpr (hne t t.property))⟩
   have hU : Continuous U :=
-    (hz.div (Complex.continuous_ofReal.comp hz.norm) fun t ↦
-      Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hz0 t))).subtype_mk _
-  have hclosed : U 1 = U 0 := by
-    have hper : z 1 = z 0 := by
-      simpa only [zero_add] using
-        periodic_frameVelocityCoordinates s hp 0
-    exact Circle.ext (by simp only [U, hper])
-  exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtypeVal⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
-
-end Continuous
+    (hz'.div (Complex.continuous_ofReal.comp hz'.norm) fun t ↦
+      Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr (hne t t.property))).subtype_mk _
+  have hclosed : U 1 = U 0 := Circle.ext (by simp [U, z, hp])
+  exact ⟨U 0, ⟨⟨U, hU⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
 
 variable {k : ℕ∞ω} [IsManifold I 1 M]
   [IsContMDiffRiemannianBundle I k E (TangentSpace I : M → Type _)]

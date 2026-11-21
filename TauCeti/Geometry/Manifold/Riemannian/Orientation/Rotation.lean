@@ -91,12 +91,17 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
   let Φ : Π y : M, TangentSpace I y →L[ℝ] ℝ := fun y ↦
     letI := o.fact_finrank_tangentSpace y
     (o.orientationAt y).areaForm' (s y)
+  have hΦ (y : M) (w : TangentSpace I y) : Φ y w =
+      (letI := o.fact_finrank_tangentSpace y; (o.orientationAt y).areaForm (s y) w) := by
+    let := o.fact_finrank_tangentSpace y
+    simp only [Φ, _root_.Orientation.areaForm'_apply, LinearMap.coe_toContinuousLinearMap']
   have hJ (y : M) : (letI := o.fact_finrank_tangentSpace y
       (o.orientationAt y).rightAngleRotation (s y)) =
         Riemannian.Tensor.rieszDual (I := I) y (Φ y) := by
     apply Riemannian.Tensor.eq_rieszDual_iff_inner_eq.mpr
     intro w
     let := o.fact_finrank_tangentSpace y
+    rw [hΦ]
     exact (o.orientationAt y).inner_rightAngleRotation_left (s y) w
   have hd : ContMDiffAt I I.tangent n
       (fun y ↦ TotalSpace.mk' E y (Riemannian.Tensor.rieszDual (I := I) y (Φ y))) x := by
@@ -115,7 +120,7 @@ theorem contMDiffAt_rightAngleRotation (o : Manifold.Orientation I M (Fin 2))
     have hscalar := (contMDiffAt_totalSpace_iff.mp heval).2
     convert hscalar using 1
     funext y
-    exact (o.riemannianVolumeForm_eq_areaForm _ _).symm
+    exact (hΦ y _).trans (o.riemannianVolumeForm_eq_areaForm _ _).symm
   exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦
     congrArg (TotalSpace.mk' E y) (hJ y))
 

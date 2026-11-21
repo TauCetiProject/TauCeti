@@ -29,8 +29,8 @@ at `t`, with its velocity differentiable in the tangent-bundle trivialization ce
 
 public noncomputable section
 
-open Bundle CovariantDerivative TauCeti.Manifold
-open scoped Manifold
+open Bundle CovariantDerivative Filter TauCeti.Manifold
+open scoped Manifold Topology
 
 namespace IsLocalFrameOn
 
@@ -45,9 +45,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- The derivative of the complex velocity coordinates in an orthonormal local frame is the
 coordinate covariant acceleration minus `i ω(γ') z`. This holds for any metric connection, and
 only needs `γ` differentiable at `t`, with its velocity differentiable in the tangent-bundle
-trivialization centered at `γ t`. -/
+trivialization centered at `γ t`. Orthonormality is only required along `γ` near `t`. -/
 theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
-    (hu : IsOpen u) (ho : ∀ x ∈ u, Orthonormal ℝ (fun i ↦ s i x))
+    (hu : IsOpen u) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
     {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
     (hcov : IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov) (ht : γ t ∈ u)
     (hγ : MDifferentiableAt 𝓘(ℝ) I γ t)
@@ -60,6 +60,21 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
   have hframe (i : Fin 2) := (hs.contMDiffAt hu ht i).mdifferentiableAt one_ne_zero
   have hcoord (i : Fin 2) := differentiableAt_sectionCoord γ (fun r ↦ s i (γ r))
     ((hframe i).comp t hγ) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+  have hskew (i j : Fin 2) :
+      hs.coeff i (γ t) (cov (s j) (γ t) (curveVelocity I γ t)) +
+        hs.coeff j (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) = 0 := by
+    have hc : (fun r ↦ inner ℝ (s i (γ r)) (s j (γ r))) =ᶠ[𝓝 t]
+        fun _ ↦ if i = j then (1 : ℝ) else 0 :=
+      ho.mono fun r hr ↦ (orthonormal_iff_ite.mp hr) i j
+    have hm := (hcov.hasDerivAt_inner_alongCurve hγ (hcoord i) (hcoord j)).unique
+      ((hasDerivAt_const t _).congr_of_eventuallyEq hc)
+    rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) (hframe i),
+      alongCurve_pullback cov γ (s j) (hasMFDerivAt_curveVelocity hγ) (hframe j)] at hm
+    rw [hs.coeff_eq_inner ht ho.self_of_nhds, hs.coeff_eq_inner ht ho.self_of_nhds]
+    linarith [real_inner_comm (cov (s i) (γ t) (curveVelocity I γ t)) (s j (γ t))]
+  have hdiag (i : Fin 2) : hs.coeff i (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) = 0 := by
+    linarith [hskew i i]
+  have hswap := eq_neg_of_add_eq_zero_left (hskew 0 1)
   have hd (i : Fin 2) := hcov.hasDerivAt_inner_alongCurve hγ (hcoord i) hv
   have hinner (i : Fin 2) :
       inner ℝ (alongCurve cov γ (fun r ↦ s i (γ r)) t) (curveVelocity I γ t) =
@@ -69,15 +84,14 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E 1 s u)
           hs.coeff 1 (γ t) (cov (s i) (γ t) (curveVelocity I γ t)) := by
     rw [alongCurve_pullback cov γ (s i) (hasMFDerivAt_curveVelocity hγ) (hframe i),
       real_inner_comm,
-      curveVelocity_eq_frameVelocityCoordinates (ho _ ht)
+      curveVelocity_eq_frameVelocityCoordinates ho.self_of_nhds
         (hs.generating ht Submodule.mem_top)]
-    simp [inner_add_left, real_inner_smul_left, ← hs.coeff_eq_inner ht (ho _ ht)]
+    simp [inner_add_left, real_inner_smul_left, ← hs.coeff_eq_inner ht ho.self_of_nhds]
   have h0 := hd 0
   have h1 := hd 1
   rw [hinner] at h0 h1
-  simp only [Fin.isValue, mul_zero, add_zero, zero_add,
-    hs.coeff_covariantDerivative_self_eq_zero le_rfl hu ho hcov] at h0 h1
-  rw [hs.coeff_covariantDerivative_swap le_rfl hu ho hcov _ 0 1] at h1
+  simp only [hdiag, mul_zero, add_zero, zero_add] at h0 h1
+  rw [hswap] at h1
   convert h0.ofReal_comp.add (h1.ofReal_comp.mul_const Complex.I) using 1
   · funext r
     simpa only [Pi.add_apply, frameVelocityCoordinates_re, frameVelocityCoordinates_im] using

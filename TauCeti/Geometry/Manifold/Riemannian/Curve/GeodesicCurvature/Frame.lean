@@ -38,8 +38,8 @@ the point on the curve. The derivative of `z` itself holds for any metric connec
 
 public noncomputable section
 
-open Bundle CovariantDerivative TauCeti.Manifold
-open scoped Manifold
+open Bundle CovariantDerivative Filter TauCeti.Manifold
+open scoped Manifold Topology
 
 namespace IsLocalFrameOn
 
@@ -57,9 +57,9 @@ on the velocity. Where `z ≠ 0`, `Im(z' / z)` is the turning rate of the unit t
 The curve need only be differentiable at `t`, with its velocity differentiable in the
 tangent-bundle trivialization centered at `γ t`, and no unit-speed assumption is needed. At a
 stationary point `Im(z' / z)` is zero by the totalized division convention, and both sides are
-zero. -/
+zero. Orthonormality is only required along `γ` near `t`. -/
 theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s u)
-    (hu : IsOpen u) (ho : ∀ x ∈ u, Orthonormal ℝ (fun i ↦ s i x))
+    (hu : IsOpen u) (ho : ∀ᶠ r in 𝓝 t, Orthonormal ℝ (fun i ↦ s i (γ r)))
     (o : TauCeti.Manifold.Orientation I M (Fin 2)) (ht : γ t ∈ u)
     (hor : s 1 (γ t) = (letI := o.fact_finrank_tangentSpace (γ t);
       (o.orientationAt (γ t)).rightAngleRotation (s 0 (γ t))))
@@ -79,13 +79,27 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E 1 s
       (isMetricCompatible_leviCivitaConnection (I := I) (M := M)) ht hγ hγv).deriv]
   simp only [sub_div, mul_div_cancel_right₀ _ hz, Complex.sub_im, Complex.I_mul_im,
     Complex.ofReal_re, sub_add_cancel]
-  -- What remains is the normal component of the acceleration, read in the frame.
-  rw [geodesicCurvature_def,
-    orientedUnitNormal_eq_frameVelocityCoordinates o ((ho _ ht).norm_eq_one 0) hor,
-    inner_add_right, real_inner_smul_right, real_inner_smul_right, acceleration_def,
-    Complex.div_im, Complex.normSq_eq_norm_sq, norm_frameVelocityCoordinates (ho _ ht) hsp]
-  simp [real_inner_comm]
-  field_simp
-  ring
+  -- Reduce curvature and the normal component before doing the complex scalar algebra.
+  have hnormal :
+      inner ℝ (acceleration (leviCivitaConnection I M) γ t) (orientedUnitNormal o γ t) =
+        ((frameVelocityCoordinates s γ t).re *
+            inner ℝ (s 1 (γ t)) (acceleration (leviCivitaConnection I M) γ t) -
+          (frameVelocityCoordinates s γ t).im *
+            inner ℝ (s 0 (γ t)) (acceleration (leviCivitaConnection I M) γ t)) /
+          ‖curveVelocity I γ t‖ := by
+    rw [orientedUnitNormal_eq_frameVelocityCoordinates o (ho.self_of_nhds.norm_eq_one 0) hor]
+    simp [inner_add_right, real_inner_smul_right, real_inner_comm]
+    ring
+  have hcurv := geodesicCurvature_mul_norm_curveVelocity_sq (orientedUnitNormal o γ) hv
+  rw [hnormal] at hcurv
+  rw [Complex.div_im, Complex.normSq_eq_norm_sq,
+    norm_frameVelocityCoordinates ho.self_of_nhds hsp]
+  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.ofReal_im,
+    Complex.I_re, Complex.I_im, mul_zero, sub_zero, zero_add, mul_one,
+    Complex.add_im, Complex.mul_im, add_zero]
+  rw [← acceleration_def]
+  have hvnorm := norm_ne_zero_iff.mpr hv
+  field_simp at hcurv ⊢
+  nlinarith
 
 end IsLocalFrameOn
