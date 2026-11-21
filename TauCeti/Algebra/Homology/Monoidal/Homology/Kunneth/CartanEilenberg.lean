@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Flat.CategoryTheory
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.CartanEilenbergResolution
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Connecting
 public import TauCeti.Algebra.Homology.TotalComplex.Basic
@@ -66,7 +67,6 @@ lemma shortExact_whiskerLeft_row [∀ p, Module.Flat R (K.X p)] (p : ℕ) :
       (ShortComplex.mk _ _ (rowι_rowπ L p))).ShortExact :=
   HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits K
     (shortExact_row L p)
-    fun n ↦ (Finset.antidiagonal n).finite_toSet.subset fun x hx ↦ by simpa using hx
 
 end ChainComplex.cartanEilenbergResolution
 

@@ -57,6 +57,8 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
 ## Main declarations
 
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
+* `TauCeti.W1p.setAverage_norm_sub_setAverage_le_of_convex`: the mean oscillation of `u` over
+  `Ω`, by Hölder's inequality.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball`: the constant on a ball of radius `R`
   is `2 ^ (n + 1) * R`.
 * `TauCeti.W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset`: the same bound in `L²`,
@@ -349,6 +351,49 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
   rw [Lp.eNorm_def]
   exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
     (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
+
+/-- **The mean oscillation of a `W^{1,p}` function on a bounded convex domain.**  Let `Ω` be a
+bounded convex open set of positive measure in a finite-dimensional real inner product space of
+dimension `n`.  For `1 ≤ p ≤ ∞`, the mean over `Ω` of `|u - ⨍_Ω u|` is at most
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) * μ(Ω) ^ (-(1 + 1 / p))` times the `Lᵖ` norm of the weak gradient
+of `u ∈ W^{1,p}(Ω)`.  This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` with
+`S = Ω`, combined with Hölder's inequality. -/
+theorem W1p.setAverage_norm_sub_setAverage_le_of_convex
+    (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
+    (hOmega : mu Omega ≠ 0) (u : W1p mu Omega p) :
+    ⨍ y in Omega, ‖W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu‖ ∂mu ≤
+      mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) *
+        mu.real Omega ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+  set g : E → ℝ := fun y ↦ W1p.value u y - ⨍ z in Omega, W1p.value u z ∂mu
+  set m := mu.real Omega
+  set K := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
+  have hfin : mu Omega ≠ ∞ := hb.measure_lt_top.ne
+  have hm : 0 < m := ENNReal.toReal_pos hOmega hfin
+  have hK : 0 ≤ K := by positivity
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hfin
+  -- The Poincaré–Wirtinger inequality in `Lᵖ(Ω)`.
+  have hP : eLpNorm g p (mu.restrict Omega) ≤ ENNReal.ofReal (K / m) * ‖W1p.gradient u‖ₑ :=
+    W1p.eLpNorm_value_sub_setAverage_le_of_convex hconv hb subset_rfl hOmega u
+  have hPr : (eLpNorm g p (mu.restrict Omega)).toReal ≤ K / m * ‖W1p.gradient u‖ := by
+    have := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (div_nonneg hK hm.le), toReal_eNorm] at this
+  -- Hölder's inequality: `‖g‖_{L¹(Ω)} ≤ μ(Ω)^(1 - 1/p) ‖g‖_{Lᵖ(Ω)}`.
+  have hg : MemLp g p (mu.restrict Omega) := (Lp.memLp (W1p.value u)).sub (memLp_const _)
+  have hint := hg.integral_norm_le_mul_eLpNorm (Fact.out : 1 ≤ p)
+  rw [Measure.restrict_apply_univ, ← ENNReal.toReal_rpow, ← measureReal_def] at hint
+  rw [setAverage_eq, smul_eq_mul]
+  calc m⁻¹ * ∫ y in Omega, ‖g y‖ ∂mu
+      ≤ m⁻¹ * (m ^ (1 - 1 / p.toReal) * (K / m * ‖W1p.gradient u‖)) := by
+        gcongr
+        exact hint.trans (by gcongr)
+    _ = K * m ^ (-(1 + 1 / p.toReal)) * ‖W1p.gradient u‖ := by
+        have h : m ^ (-(1 + 1 / p.toReal)) =
+            m ^ (-1 : ℝ) * m ^ (-1 : ℝ) * m ^ (1 - 1 / p.toReal) := by
+          rw [← Real.rpow_add hm, ← Real.rpow_add hm]
+          congr 1
+          ring
+        rw [h, Real.rpow_neg_one]
+        ring
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
