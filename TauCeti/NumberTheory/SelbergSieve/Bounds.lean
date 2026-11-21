@@ -8,12 +8,13 @@ module
 public import Mathlib.NumberTheory.SelbergSieve
 public import TauCeti.NumberTheory.ArithmeticFunction.EulerProduct
 public import Mathlib.NumberTheory.Harmonic.Bounds
+public import TauCeti.NumberTheory.SelbergSieve.UpperBound
 
 /-!
 # Lower bounds for finite Selberg normalizers
 
-The density and harmonic comparisons hold at every real cutoff. The logarithmic comparison
-assumes a nonnegative cutoff.
+The density and harmonic comparisons hold at every real cutoff. The logarithmic comparisons
+assume a nonnegative inclusive cutoff, or a positive strict cutoff for the diagonal mass.
 The finite-prime argument is adapted from Arend Mellendijk's PNT+ Selberg bounds.
 
 ## Main results
@@ -24,6 +25,7 @@ The finite-prime argument is adapted from Arend Mellendijk's PNT+ Selberg bounds
   densities, at every real cutoff.
 * `BoundingSieve.sum_inv_le_sum_selbergTerms` and `BoundingSieve.log_le_sum_selbergTerms` use only
   reciprocal lower bounds on the relevant prime densities.
+* `BoundingSieve.log_le_diagonalMass` is the strict-cutoff form: `log z ≤ G(z)`.
 
 ## References
 
@@ -236,5 +238,26 @@ theorem log_le_sum_selbergTerms (s : BoundingSieve) (z : ℝ) (hz : 0 ≤ z)
   refine (log_le_harmonic_floor z hz).trans ?_
   simpa only [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast] using
     sum_inv_le_sum_selbergTerms s z hP hnu
+
+/-- The strict-cutoff Selberg diagonal mass `G(z)` is at least `log z` for every positive
+cutoff whose primes `p < z` are in the sieve and have density at least `1 / p`. -/
+theorem log_le_diagonalMass (s : BoundingSieve) {z : ℝ} (hz : 0 < z)
+    (hP : ∀ p : ℕ, p.Prime → (p : ℝ) < z → p ∣ s.prodPrimes)
+    (hnu : ∀ p : ℕ, p.Prime → (p : ℝ) < z → (p : ℝ)⁻¹ ≤ s.nu p) :
+    Real.log z ≤ s.diagonalMass z := by
+  have hlt (p : ℕ) (hp : (p : ℝ) ≤ ((⌈z⌉₊ - 1 : ℕ) : ℝ)) : (p : ℝ) < z := by
+    have := Nat.ceil_pos.mpr hz
+    exact Nat.lt_ceil.mp (by have := Nat.cast_le.mp hp; omega)
+  have hsum := sum_inv_le_sum_selbergTerms s ((⌈z⌉₊ - 1 : ℕ) : ℝ)
+    (fun p hp hpz ↦ hP p hp (hlt p hpz)) (fun p hp hpz ↦ hnu p hp (hlt p hpz))
+  rw [Nat.floor_natCast] at hsum
+  have hharm := log_add_one_le_harmonic (⌈z⌉₊ - 1)
+  rw [Nat.sub_add_cancel (Nat.ceil_pos.mpr hz), harmonic_eq_sum_Icc] at hharm
+  push_cast at hharm
+  calc Real.log z ≤ Real.log ⌈z⌉₊ := Real.log_le_log hz (Nat.le_ceil z)
+    _ ≤ _ := hharm.trans hsum
+    _ = s.diagonalMass z := by
+      rw [diagonalMass_eq_truncatedSelbergSum, truncatedSelbergSum_def,
+        Nat.cast_sub (Nat.ceil_pos.mpr hz), Nat.cast_one]
 
 end BoundingSieve
