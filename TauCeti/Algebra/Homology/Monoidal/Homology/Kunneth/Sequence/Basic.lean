@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.Algebra.Homology.ShortComplex.Exact
 
 /-!
 # The Künneth short exact sequence
@@ -364,17 +365,9 @@ private lemma tensorδ_exact_homologyKunneth (n : I) :
 are projective, for instance for a complex `L` of projective modules over a principal ideal
 domain.  No hypothesis is imposed on `K`; compare `HomologicalComplex.isSplitMono_homologyKunneth`,
 which assumes that the cycles of both complexes split off and gives a split monomorphism. -/
-theorem mono_homologyKunneth (n : I) : Mono (homologyKunneth K L n) := by
-  have hc := (tensorπ_exact K L n).gIsCokernel
-  have hm := (tensorδ_exact_homologyKunneth K L n).mono_cokernelDesc
+theorem mono_homologyKunneth (n : I) : Mono (homologyKunneth K L n) :=
   -- the cokernel of `tensorδ` is `⨁ Hₚ(K) ⊗ H_q(L)`, and the induced map is the Künneth map
-  have : cokernel.desc (tensorδ K L n) (tensorπ K L n ≫ homologyKunneth K L n)
-      (by rw [← Category.assoc, tensorδ_comp_tensorπ, zero_comp]) =
-      (IsColimit.coconePointUniqueUpToIso (cokernelIsCokernel _) hc).hom ≫
-        homologyKunneth K L n :=
-    (IsColimit.coconePointUniqueUpToIso_hom_desc _ hc).symm.trans
-      (_ ≫= Cofork.IsColimit.hom_ext hc ((Cofork.IsColimit.π_desc hc).trans (by simp)))
-  simpa only [this, mono_comp_iff_of_isIso] using hm
+  (tensorπ_exact K L n).mono_of_exact_comp _ _ (tensorδ_exact_homologyKunneth K L n)
 
 /-- The summand inclusion `Tor₁(Hₚ(K), H_q(L)) ⟶ Hₚ(K) ⊗ H_{q+1}(L / Z(L))`, identifying `Tor₁`
 with the kernel of `Hₚ(K) ⊗ H_{q+1}(L / Z(L)) ⟶ Hₚ(K) ⊗ H_q(Z(L))` through the projective
@@ -720,14 +713,10 @@ abbrev homologyKunnethShortComplex (m : I) : ShortComplex (ModuleCat.{u} R) :=
 
 /-- The second map `HomologicalComplex.homologyToTor` of the Künneth short complex is an
 epimorphism. -/
-private lemma epi_homologyToTor (m : I) : Epi (homologyToTor K L m) := by
-  -- `homologyToTor` is the lift of `toTensorQuotient` to the kernel `torToTensor` of `tensorδ`,
-  -- an epimorphism since `toTensorQuotient` and `tensorδ` are exact (`toTensorQuotient_exact`)
-  have := (toTensorQuotient_exact K L m).epi_kernelLift
-  rw [homologyToTor, ← IsLimit.lift_comp_conePointUniqueUpToIso_hom (kernelIsKernel _)]
-  -- `kernel.lift` abbreviates this `(kernelIsKernel _).lift` of a `KernelFork`, so the
-  -- epimorphism instance from `epi_kernelLift` applies by definitional equality.
-  infer_instance
+private lemma epi_homologyToTor (m : I) : Epi (homologyToTor K L m) :=
+  -- `homologyToTor` is the lift of `toTensorQuotient` to the kernel `torToTensor` of
+  -- `tensorδ`, an epimorphism since `toTensorQuotient` and `tensorδ` are exact
+  (toTensorQuotient_exact K L m).epi_lift_of_isLimit (torIsKernel K L m)
 
 /-- **The Künneth short exact sequence.**  Let `K` and `L` be chain complexes of modules over a
 commutative ring, indexed by `ℕ` or by any additive cancellative commutative monoid with a `1`
