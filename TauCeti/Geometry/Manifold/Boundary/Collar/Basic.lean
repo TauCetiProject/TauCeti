@@ -119,34 +119,34 @@ theorem collarAmbientEquiv_symm_apply_snd_apply_zero (n : ℕ)
 is nonnegative. -/
 theorem collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg (n : ℕ)
     (y : EuclideanHalfSpace (n + 1)) :
-    0 ≤ ((collarAmbientEquiv n).symm y.1).2 0 := by
+    0 ≤ ((collarAmbientEquiv n).symm y.val).2 0 := by
   rw [collarAmbientEquiv_symm_apply_snd_apply_zero]
-  exact y.2
+  exact y.property
 
 private def collarEquiv (n : ℕ) :
     (EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) ≃ EuclideanHalfSpace (n + 1) where
-  toFun p := ⟨collarAmbientEquiv n (p.1, p.2.1), by simpa using p.2.2⟩
+  toFun p := ⟨collarAmbientEquiv n (p.1, p.2.val), by simpa using p.2.property⟩
   invFun y :=
-    ((collarAmbientEquiv n).symm y.1 |>.1,
-      ⟨(collarAmbientEquiv n).symm y.1 |>.2,
+    ((collarAmbientEquiv n).symm y.val |>.1,
+      ⟨(collarAmbientEquiv n).symm y.val |>.2,
         collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg n y⟩)
   left_inv p := by
     -- The anonymous proof that the recovered normal coordinate is nonnegative prevents `Prod.ext`
     -- from reducing the inverse application until the two subtype-valued components are exposed.
     change
-      (((collarAmbientEquiv n).symm (collarAmbientEquiv n (p.1, p.2.1))).1,
-        ⟨((collarAmbientEquiv n).symm (collarAmbientEquiv n (p.1, p.2.1))).2, _⟩) = p
-    have h := (collarAmbientEquiv n).symm_apply_apply (p.1, p.2.1)
+      (((collarAmbientEquiv n).symm (collarAmbientEquiv n (p.1, p.2.val))).1,
+        ⟨((collarAmbientEquiv n).symm (collarAmbientEquiv n (p.1, p.2.val))).2, _⟩) = p
+    have h := (collarAmbientEquiv n).symm_apply_apply (p.1, p.2.val)
     have hfst : ((collarAmbientEquiv n).symm
-        (collarAmbientEquiv n (p.1, p.2.1))).1 = p.1 :=
+        (collarAmbientEquiv n (p.1, p.2.val))).1 = p.1 :=
       congrArg (fun q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) ↦ q.1) h
     have hsnd : ((collarAmbientEquiv n).symm
-        (collarAmbientEquiv n (p.1, p.2.1))).2 = p.2.1 :=
+        (collarAmbientEquiv n (p.1, p.2.val))).2 = p.2.val :=
       congrArg (fun q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) ↦ q.2) h
     exact Prod.ext hfst (Subtype.ext hsnd)
   right_inv y := by
     apply Subtype.ext
-    exact (collarAmbientEquiv n).apply_symm_apply y.1
+    exact (collarAmbientEquiv n).apply_symm_apply y.val
 
 /-- The product collar identification is smooth in both directions for Mathlib's standard models
 with corners, at every finite or infinite regularity. -/
@@ -166,15 +166,15 @@ def collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞} :
       rw [range_modelWithCornersEuclideanHalfSpace]
       dsimp [I]
       rw [collarAmbientEquiv_apply_zero]
-      simpa using p.2.2
+      simpa using p.2.property
     refine (J.contMDiffOn_symm.comp_contMDiff hcoord hrange).congr ?_
     intro p
     apply Subtype.ext
     -- Expand the model inverse explicitly so its half-space coercion can be rewritten by its API.
-    change collarAmbientEquiv n (p.1, p.2.1) =
-      ((𝓡∂ (n + 1)).symm (collarAmbientEquiv n (p.1, p.2.1))).1
+    change collarAmbientEquiv n (p.1, p.2.val) =
+      ((𝓡∂ (n + 1)).symm (collarAmbientEquiv n (p.1, p.2.val))).val
     rw [modelWithCornersEuclideanHalfSpace_symm_apply_of_le]
-    simpa only [collarAmbientEquiv_apply_zero] using p.2.2
+    simpa only [collarAmbientEquiv_apply_zero] using p.2.property
   contMDiff_invFun := by
     rw [chartedSpaceSelf_prod]
     let I := (𝓡 n).prod (𝓡∂ 1)
@@ -202,15 +202,15 @@ def collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞} :
 `collarAmbientEquiv`. -/
 theorem coe_collarDiffeomorph_apply (n : ℕ) {k : WithTop ℕ∞}
     (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
-    (collarDiffeomorph (k := k) n p).1 = collarAmbientEquiv n (p.1, p.2.1) :=
+    (collarDiffeomorph (k := k) n p).val = collarAmbientEquiv n (p.1, p.2.val) :=
   (rfl)
 
 /-- Read in the ambient Euclidean spaces, the inverse collar diffeomorphism is the inverse of the
 linear equivalence `collarAmbientEquiv`. -/
 theorem collarDiffeomorph_symm_apply_coe (n : ℕ) {k : WithTop ℕ∞}
     (y : EuclideanHalfSpace (n + 1)) :
-    (((collarDiffeomorph (k := k) n).symm y).1, ((collarDiffeomorph (k := k) n).symm y).2.1) =
-      (collarAmbientEquiv n).symm y.1 :=
+    (((collarDiffeomorph (k := k) n).symm y).1, ((collarDiffeomorph (k := k) n).symm y).2.val) =
+      (collarAmbientEquiv n).symm y.val :=
   (rfl)
 
 /-- The collar diffeomorphism is smooth from the product model `ModelProd` charted over itself,
@@ -252,15 +252,15 @@ theorem model_collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞}
 @[simp]
 theorem collarDiffeomorph_apply_zero (n : ℕ) {k : WithTop ℕ∞}
     (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
-    (collarDiffeomorph (k := k) n p).1 0 = p.2.1 0 := by
-  exact collarAmbientEquiv_apply_zero n p.1 p.2.1
+    (collarDiffeomorph (k := k) n p).val 0 = p.2.val 0 := by
+  exact collarAmbientEquiv_apply_zero n p.1 p.2.val
 
 /-- The collar diffeomorphism sends the boundary coordinates to the positive-index coordinates. -/
 @[simp]
 theorem collarDiffeomorph_apply_succ (n : ℕ) {k : WithTop ℕ∞}
     (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) (i : Fin n) :
-    (collarDiffeomorph (k := k) n p).1 i.succ = p.1 i := by
-  exact collarAmbientEquiv_apply_succ n p.1 p.2.1 i
+    (collarDiffeomorph (k := k) n p).val i.succ = p.1 i := by
+  exact collarAmbientEquiv_apply_succ n p.1 p.2.val i
 
 /-- The boundary component of the inverse collar diffeomorphism is the boundary projection. -/
 @[simp]
@@ -268,14 +268,14 @@ theorem collarDiffeomorph_symm_apply_fst (n : ℕ) {k : WithTop ℕ∞}
     (y : EuclideanHalfSpace (n + 1)) :
     ((collarDiffeomorph (k := k) n).symm y).1 = boundaryProj n y := by
   rw [boundaryProj_coe]
-  exact collarAmbientEquiv_symm_apply_fst n y.1
+  exact collarAmbientEquiv_symm_apply_fst n y.val
 
 /-- The inverse collar diffeomorphism recovers the inward normal coordinate at zero. -/
 @[simp]
 theorem collarDiffeomorph_symm_apply_snd_apply_zero (n : ℕ) {k : WithTop ℕ∞}
     (y : EuclideanHalfSpace (n + 1)) :
-    ((collarDiffeomorph (k := k) n).symm y).2.1 0 = y.1 0 := by
-  exact collarAmbientEquiv_symm_apply_snd_apply_zero n y.1
+    ((collarDiffeomorph (k := k) n).symm y).2.val 0 = y.val 0 := by
+  exact collarAmbientEquiv_symm_apply_snd_apply_zero n y.val
 
 /-- At normal coordinate zero, the collar diffeomorphism is the boundary parametrization. -/
 @[simp]

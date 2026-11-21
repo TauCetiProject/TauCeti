@@ -65,23 +65,23 @@ theorem isArcReachable_bidirectedHom_iff {x y : V(G)} :
   · -- The arrows leaving the vertices reachable from `x` without `F` have their edges in `F`.
     set C : Set V(G) := {v | (G.deleteEdges F).Reachable x v}
     set A : Set (Σ v w, G.BidirectedHom v w) := {a | a.1 ∈ C ∧ a.2.1 ∉ C}
-    have hAF : (fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.1) '' A ⊆ F := by
+    have hAF : (fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.val) '' A ⊆ F := by
       rintro _ ⟨⟨v, w, e, hvw⟩, ⟨hv, hw⟩, rfl⟩
       by_contra he
       exact hw (Reachable.trans hv (IsLink.reachable (G := G.deleteEdges F) ⟨hvw, he⟩))
     have hinj := bidirectedHom_edge_injOn_cut C
     have hA : A.Finite := Finite.of_finite_image ((finite_of_encard_le_coe hF.le).subset hAF) hinj
-    have hx : (G.deleteEdges F).Reachable x x := .refl x.2
+    have hx : (G.deleteEdges F).Reachable x x := .refl x.property
     refine ((isArcReachable_def.2 h).le_card (C := C) (F := hA.toFinset) hx hxy
       fun v w e hv hw ↦ hA.mem_toFinset.2 ⟨hv, hw⟩).not_gt ?_
     rw [← Nat.cast_lt (α := ℕ∞), ← hA.encard_eq_coe_toFinset_card, ← hinj.encard_image]
     exact (encard_le_encard hAF).trans_lt hF
   · -- Deleting the edges of the deleted arrows deletes these arrows and possibly more.
-    have hE : ((fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.1) '' F).encard < k := by
+    have hE : ((fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.val) '' F).encard < k := by
       rw [← Nat.cast_lt (α := ℕ∞)] at hF
       exact (encard_image_le _ _).trans_lt (by simpa using hF)
     refine (reachableWithout_bidirectedHom_iff.2 (h hE)).mono fun a ha ↦ ?_
-    exact mem_image_of_mem (fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.1) ha
+    exact mem_image_of_mem (fun a : Σ v w, G.BidirectedHom v w ↦ a.2.2.val) ha
 
 /-- The bidirected arrow family of a multigraph is `k`-arc-strong exactly when the multigraph is
 `k`-edge-connected. -/
@@ -90,7 +90,7 @@ theorem isArcStrong_bidirectedHom_iff : IsArcStrong G.BidirectedHom k ↔ G.IsEd
   ⟨fun h ↦ isEdgeConnected_def.2 fun x hx y hy ↦
       isArcReachable_bidirectedHom_iff.1 (h.isArcReachable ⟨x, hx⟩ ⟨y, hy⟩),
     fun h ↦ isArcStrong_def.2 fun x y ↦
-      isArcReachable_bidirectedHom_iff.2 (h.isEdgeReachable x.2 y.2)⟩
+      isArcReachable_bidirectedHom_iff.2 (h.isEdgeReachable x.property y.property)⟩
 
 /-- The arc connectivity of the bidirected arrow family of a multigraph is its edge
 connectivity. -/

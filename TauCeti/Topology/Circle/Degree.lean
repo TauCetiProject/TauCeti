@@ -79,10 +79,14 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   those fixing the endpoints.
 * `Circle.angleChange_trans`, `Circle.angleChange_mul`: it is additive under concatenation and
   pointwise products; the corresponding laws of the degree are derived from these.
+* `Circle.angleChange_eq_add_of_halves`: it is the sum of the angles swept by the two halves of
+  the path.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
   the same map through `Circle.exp` differ by a constant integer multiple of `2π`.
+* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
+  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -117,6 +121,20 @@ theorem exists_int_forall_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A]
     rwa [hc a₀, exp_add, mul_eq_left] at this
   obtain ⟨m, hm⟩ := exp_eq_one.1 hexp
   exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
+
+/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
+on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
+`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
+theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
+    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
+    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
+    ∃ C, ∀ x ∈ s, f x - g x = C := by
+  have := isPreconnected_iff_preconnectedSpace.1 hs
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
+    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
+    fun x ↦ by
+      simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.property)
+  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 /-- Every path in the circle has a continuous lift through `Circle.exp`. -/
 theorem exists_lift {x y : Circle} (γ : Path x y) :
@@ -281,6 +299,36 @@ theorem angleChange_inv {x y : Circle} (γ : Path x y) : angleChange γ.inv = -a
     angleChange_eq_sub γ θ.continuous hθ]
   ring
 
+/-- **Subdivision of the swept angle.** If `γ₁` runs through the first half of a path `γ` and `γ₂`
+through its second half, `γ₁ s = γ (s / 2)` and `γ₂ s = γ ((s + 1) / 2)`, then `γ` sweeps the sum
+of the angles that `γ₁` and `γ₂` sweep. The endpoints of `γ₁` and `γ₂` need not be written as
+those of `γ`. -/
+theorem angleChange_eq_add_of_halves {x y x₁ y₁ x₂ y₂ : Circle} (γ : Path x y)
+    (γ₁ : Path x₁ y₁) (γ₂ : Path x₂ y₂) (h₁ : ∀ s t : I, (t : ℝ) = s / 2 → γ₁ s = γ t)
+    (h₂ : ∀ s t : I, (t : ℝ) = (s + 1) / 2 → γ₂ s = γ t) :
+    angleChange γ = angleChange γ₁ + angleChange γ₂ := by
+  obtain ⟨θ, hθ⟩ := exists_lift γ
+  -- Reparametrize the lift `θ` of `γ` over each half.
+  let k₁ : I → I := fun s => Set.projIcc 0 1 zero_le_one ((s : ℝ) / 2)
+  let k₂ : I → I := fun s => Set.projIcc 0 1 zero_le_one (((s : ℝ) + 1) / 2)
+  have hk₁ (s : I) : (k₁ s : ℝ) = s / 2 := by
+    simp only [k₁, Set.coe_projIcc]
+    rw [min_eq_right (by linarith [unitInterval.le_one s]),
+      max_eq_right (by linarith [unitInterval.nonneg s])]
+  have hk₂ (s : I) : (k₂ s : ℝ) = (s + 1) / 2 := by
+    simp only [k₂, Set.coe_projIcc]
+    rw [min_eq_right (by linarith [unitInterval.le_one s]),
+      max_eq_right (by linarith [unitInterval.nonneg s])]
+  have hhalf : k₁ 1 = k₂ 0 := Subtype.ext (by rw [hk₁, hk₂]; simp)
+  have h0 : k₁ 0 = 0 := Subtype.ext (by rw [hk₁]; simp)
+  have h1 : k₂ 1 = 1 := Subtype.ext (by rw [hk₂]; norm_num)
+  rw [angleChange_eq_sub γ θ.continuous hθ,
+    angleChange_eq_sub γ₁ (θ := fun s => θ (k₁ s)) (by fun_prop)
+      (fun s => by rw [hθ, h₁ s _ (hk₁ s)]),
+    angleChange_eq_sub γ₂ (θ := fun s => θ (k₂ s)) (by fun_prop)
+      (fun s => by rw [hθ, h₂ s _ (hk₂ s)]), hhalf, h0, h1]
+  ring
+
 /-- A loop sweeping the angle `n * (2 * π)` has degree `n`. -/
 private theorem degree_eq_of_angleChange_eq {x : Circle} (γ : Path x x) {n : ℤ}
     (h : angleChange γ = n * (2 * π)) : degree γ = n := by
@@ -418,9 +466,9 @@ theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (hab
   have hb : 0 < b := (pos_iff_pos_of_mul_pos hab).1 ha
   -- Deform `a` and `b` linearly to `1`, through the positive numbers `(1 - s) c + s`.
   have hc {c : ℝ} (hc : 0 < c) (s : I) : 0 < (1 - (s : ℝ)) * c + s := by
-    rcases s.2.1.eq_or_lt with h | h
+    rcases s.property.1.eq_or_lt with h | h
     · simpa [← h] using hc
-    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) hc.le]
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.property.2) hc.le]
   let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
     (((1 - (p.1 : ℝ)) * b + p.1) * sin (2 * π * p.2) : ℝ) * Complex.I
   have hz (p : I × I) : 0 < ‖z p‖ := by

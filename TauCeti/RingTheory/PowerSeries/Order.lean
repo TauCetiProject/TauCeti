@@ -42,6 +42,8 @@ of `X ^ n` in `f`.
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
   `(coeff n f) ^ k` when `f` has order at least `n`.
+* `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
+  order `1` exactly when `coeff 1 f ≠ 0`.
 
 ## Provenance
 
@@ -143,6 +145,15 @@ theorem order_X_pow_mul_of_constantCoeff_ne_zero {f : R⟦X⟧} (hf : constantCo
   refine order_eq_nat.2 ⟨?_, fun i hi ↦ ?_⟩
   · rwa [coeff_X_pow_mul', ite_eq_left le_rfl, Nat.sub_self, coeff_zero_eq_constantCoeff_apply]
   · rw [coeff_X_pow_mul', ite_eq_right (not_le.2 hi)]
+
+/-- For a power series with zero constant coefficient, the order is one if and only if the linear
+coefficient is nonzero. -/
+theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    f.order = 1 ↔ coeff 1 f ≠ 0 := by
+  rw [← Nat.cast_one, order_eq_nat]
+  refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun i hi ↦ ?_⟩⟩
+  rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
+  exact hf
 
 /-- If `n` is strictly smaller than the order of `ψ`, then the `n`-th coefficient of
 `φ * (1 + ψ)` equals the `n`-th coefficient of `φ`. -/

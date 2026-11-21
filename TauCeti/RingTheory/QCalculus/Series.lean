@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.QCalculus.Basic
 import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.PowerSeries.Evaluation
-import TauCeti.RingTheory.PowerSeries.Exp
+import TauCeti.RingTheory.PowerSeries.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Order
 
@@ -462,7 +462,7 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
   rw [coeff_coeff_integralQPochhammer_eq_of_lt m k (N := m + 2) (by omega),
     qPochhammer_succ' (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)]
   have hresC : rescale (X : R⟦X⟧) (C (X : R⟦X⟧)) = C (X : R⟦X⟧) := by
-    ext (_ | n) <;> simp [coeff_rescale]
+    ext (_ | n) <;> simp
   have hres : qPochhammer ((X : (R⟦X⟧)⟦X⟧) * C (X : R⟦X⟧)) (C (X : R⟦X⟧)) (m + 1) =
       rescale (X : R⟦X⟧) (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)) := by
     rw [map_qPochhammer, rescale_X, hresC, mul_comm]

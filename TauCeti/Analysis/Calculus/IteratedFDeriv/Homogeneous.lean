@@ -327,7 +327,7 @@ theorem exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq {W G : Type*} [NormedAddC
     (C := A)
     (fun ξ hξ ↦ hfm ξ ((le_max_left R 1).trans_lt hξ)) (fun ξ hξ ↦ ?_)
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans ((le_max_right R 1).trans_lt hξ))
-  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.2 ?_)
+  refine (hA k hk ξ hξ0).trans (mul_le_of_le_one_right A.property ?_)
   exact zpow_le_one_of_nonpos₀ ((le_max_right R 1).trans hξ.le) (by omega)
 
 end TauCeti

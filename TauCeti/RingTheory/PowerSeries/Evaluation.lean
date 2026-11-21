@@ -48,6 +48,8 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
 ## Main results
 
 * `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
+* `PowerSeries.eval₂_map` and `PowerSeries.eval₂_C_X`: evaluation of a mapped power series and
+  evaluating a power series at `X` through `PowerSeries.C`.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
@@ -88,6 +90,33 @@ theorem continuous_eval₂_of_continuous {R S X : Type*} [CommRing R] [UniformSp
   simp only [eval₂]
   exact MvPowerSeries.continuous_eval₂_of_continuous hφ (fun _ ↦ ha)
     (fun x ↦ hasEval (heval x)) f
+
+/-- Evaluating a mapped power series `f.map ψ` via `φ` at `a` equals evaluating `f` via
+`φ.comp ψ` at `a`. -/
+theorem eval₂_map {A B S : Type*} [CommRing A] [CommRing B] [CommRing S]
+    [UniformSpace A] [UniformSpace B] [UniformSpace S]
+    [IsUniformAddGroup A] [IsTopologicalSemiring A]
+    [IsUniformAddGroup B] [IsTopologicalSemiring B]
+    [IsUniformAddGroup S] [T2Space S] [CompleteSpace S] [IsTopologicalRing S]
+    [IsLinearTopology S S]
+    {ψ : A →+* B} {φ : B →+* S} (hφ : Continuous φ) (hφψ : Continuous (φ.comp ψ))
+    {a : S} (ha : HasEval a) (f : A⟦X⟧) :
+    eval₂ φ a (f.map ψ) = eval₂ (φ.comp ψ) a f := by
+  have hsum : HasSum (fun d : ℕ ↦ (φ.comp ψ) (coeff d f) * a ^ d) (eval₂ φ a (f.map ψ)) := by
+    simpa [coeff_map] using hasSum_eval₂ hφ ha (f.map ψ)
+  exact hsum.unique (hasSum_eval₂ hφψ ha f)
+
+open scoped PowerSeries.WithPiTopology in
+/-- Evaluating a power series `f ∈ R⟦X⟧` at `X` through `PowerSeries.C` recovers `f`. -/
+@[simp]
+theorem eval₂_C_X {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
+    [T2Space R] [CompleteSpace R] [IsTopologicalRing R] [IsLinearTopology R⟦X⟧ R⟦X⟧]
+    (f : R⟦X⟧) :
+    eval₂ C (X : R⟦X⟧) f = f := by
+  have hsum : HasSum (fun d : ℕ ↦ monomial d (coeff d f)) (eval₂ C (X : R⟦X⟧) f) := by
+    simpa only [← monomial_eq_C_mul_X_pow] using
+      hasSum_eval₂ WithPiTopology.continuous_C HasEval.X f
+  exact hsum.unique (hasSum_of_monomials_self f)
 
 section AlgHom
 

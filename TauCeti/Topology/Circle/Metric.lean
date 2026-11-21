@@ -74,6 +74,13 @@ into a bound on an arc, and so the one a transport argument such as
 
 public section
 
+/-- The distance on `Circle` is the distance of the underlying complex numbers. `Circle` is a
+plain definition whose metric is transferred from the subtype `Submonoid.unitSphere ℂ`, so this
+is `Subtype.dist_eq` seen through that definition. -/
+theorem Circle.dist_eq_norm_coe_sub (z w : Circle) : dist z w = ‖(z : ℂ) - w‖ := by
+  rw [← Complex.dist_eq]
+  exact Subtype.dist_eq _ _
+
 namespace TauCeti
 
 open Metric Set
@@ -149,11 +156,7 @@ private lemma dist_circleExp_eq_norm_exp_sub_one (a b : ℝ) :
       ((Circle.exp (a - b) : ℂ) - 1) * (Circle.exp b : ℂ) := by
     rw [hsplit, Circle.coe_mul]
     ring
-  have hdist : dist (Circle.exp a) (Circle.exp b)
-      = ‖(Circle.exp a : ℂ) - (Circle.exp b : ℂ)‖ := by
-    rw [← Complex.dist_eq]
-    exact Subtype.dist_eq _ _
-  rw [hdist, hfactor, norm_mul, Circle.norm_coe, mul_one, Circle.coe_exp,
+  rw [Circle.dist_eq_norm_coe_sub, hfactor, norm_mul, Circle.norm_coe, mul_one, Circle.coe_exp,
     mul_comm ((a - b : ℝ) : ℂ) Complex.I]
 
 /-- **The polar chord identity on the unit circle**: the difference of two unit-circle
@@ -201,8 +204,7 @@ theorem dist_circleMap_eq_two_mul_abs_sin (ζ : ℂ) (ρ θ θ' : ℝ) :
     simp only [circleMap, Circle.coe_exp]
     ring
   have hchord : ‖(Circle.exp θ : ℂ) - (Circle.exp θ' : ℂ)‖ = 2 * |Real.sin ((θ - θ') / 2)| := by
-    rw [← dist_circleExp_eq_two_mul_abs_sin, ← Complex.dist_eq]
-    exact (Subtype.dist_eq _ _).symm
+    rw [← dist_circleExp_eq_two_mul_abs_sin, Circle.dist_eq_norm_coe_sub]
   rw [dist_eq_norm, hsub, norm_mul, Complex.norm_real, Real.norm_eq_abs, hchord]
   ring
 

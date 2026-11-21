@@ -41,10 +41,10 @@ variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restrictions to three consecutive skeleta form a map of skeletal triples. -/
 private def skeletonTripleMap (n : ℕ) : skeletonTriple C n ⟶ skeletonTriple C' n :=
-  ⟨ComposableArrows.homMk₂ (skeletonMap C C' hf n)
-    (skeletonMap C C' hf (n + 1)) (skeletonMap C C' hf (n + 2))
+  TopTriple.homMk (skeletonMap C C' hf n) (skeletonMap C C' hf (n + 1))
+    (skeletonMap C C' hf (n + 2))
     (skeletonMap_comp_inclusion C C' hf n.le_succ).symm
-    (skeletonMap_comp_inclusion C C' hf (n + 1).le_succ).symm⟩
+    (skeletonMap_comp_inclusion C C' hf (n + 1).le_succ).symm
 
 /-- The restrictions to two consecutive skeleta form a map of skeletal pairs. -/
 def skeletonPairMap (n : ℕ) : skeletonPair C n ⟶ skeletonPair C' n :=
@@ -198,6 +198,14 @@ This formula allows importing modules to rewrite without exposing the definition
 lemma cellularChainGroupMap_def (n : ℕ) :
     cellularChainGroupMap C C' hf R n =
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
+
+/-- Equal cellular maps induce equal morphisms on each cellular chain group. -/
+lemma cellularChainGroupMap_congr {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'}
+    (hf₁ : IsCellular C C' f₁) (hf₂ : IsCellular C C' f₂) (h : f₁ = f₂)
+    {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A) (n : ℕ) :
+    cellularChainGroupMap C C' hf₁ R n = cellularChainGroupMap C C' hf₂ R n := by
+  subst h
+  rfl
 
 /-- The identity cellular map acts as the identity on each cellular chain group. -/
 @[simp]

@@ -528,13 +528,14 @@ private theorem exists_plethysticExp_lo (F : (ℤ⸨X⸩)⟦X⟧) (k : ℕ) {m N
     exists_plethysticExp_zsmul_single p.2 (j := p.1)
       (by rw [mem_product, mem_Icc] at hp; omega) ((coeff p.1 F).coeff p.2) hm
       (mem_Ico.mp (mem_product.mp hp).2).1
-  refine ⟨∏ p ∈ (Icc 1 k ×ˢ Ico m N).attach, Gp p.1 p.2, ?_, ?_⟩
+  refine ⟨∏ p ∈ (Icc 1 k ×ˢ Ico m N).attach, Gp p.val p.property, ?_, ?_⟩
   · rw [map_prod, map_sum, plethysticExp_sum, ← Finset.prod_attach (Icc 1 k ×ˢ Ico m N)]
-    exact Finset.prod_congr rfl fun p _ ↦ (hGp p.1 p.2).1
-  · exact Finset.prod_induction (f := fun (p : { x // x ∈ Icc 1 k ×ˢ Ico m N }) ↦ Gp p.1 p.2)
+    exact Finset.prod_congr rfl fun p _ ↦ (hGp p.val p.property).1
+  · exact Finset.prod_induction
+      (f := fun (p : { x // x ∈ Icc 1 k ×ˢ Ico m N }) ↦ Gp p.val p.property)
       (fun (G : (ℤ⸨X⸩)⟦X⟧) ↦ ∀ a : ℕ, ∀ s < (a : ℤ) * m, (coeff a G).coeff s = 0)
       (fun _ _ h₁ h₂ ↦ coeff_coeff_mul_eq_zero_of_lt_mul h₁ h₂)
-      coeff_coeff_one_eq_zero_of_lt_mul fun p _ ↦ (hGp p.1 p.2).2
+      coeff_coeff_one_eq_zero_of_lt_mul fun p _ ↦ (hGp p.val p.property).2
 
 /-- If every positive `t`-coefficient of `F` vanishes below `q`-degree `N > 0`, then every
 positive `t`-coefficient of `plethysticLogSum F` vanishes below `q`-degree `N`. -/

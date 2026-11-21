@@ -33,11 +33,11 @@ arrows from x as structure arrows. -/
 @[expose]
 def underEquiv (n : ℕ) :
     {t : ComposableArrows C (n + 1) // t.obj 0 = x} ≃ ComposableArrows (Under x) n where
-  toFun t := Under.lift (Fin.succFunctor (n + 1) ⋙ t.1)
-    { app i := eqToHom t.2.symm ≫ t.1.map (homOfLE (Fin.zero_le i.succ))
+  toFun t := Under.lift (Fin.succFunctor (n + 1) ⋙ t.val)
+    { app i := eqToHom t.property.symm ≫ t.val.map (homOfLE (Fin.zero_le i.succ))
       naturality i j f := by
         dsimp
-        rw [Category.id_comp, Category.assoc, ← t.1.map_comp]
+        rw [Category.id_comp, Category.assoc, ← t.val.map_comp]
         congr 2 }
   invFun s := ⟨ComposableArrows.precomp (s ⋙ Under.forget x) (s.obj 0).hom, rfl⟩
   left_inv := by
@@ -62,14 +62,14 @@ def underEquiv (n : ℕ) :
 /-- The inverse correspondence prepends the structure arrow of the first object. -/
 @[simp]
 lemma underEquiv_symm_apply_coe {n : ℕ} (s : ComposableArrows (Under x) n) :
-    ((underEquiv x n).symm s).1 =
+    ((underEquiv x n).symm s).val =
       ComposableArrows.precomp (s ⋙ Under.forget x) (s.obj 0).hom := (rfl)
 
 /-- The arrow from the initial vertex x to a shifted vertex of the corresponding string is the
 structure arrow of the object of s at that vertex. -/
 lemma totalArrow_underEquiv_symm_apply_coe_zero_succ {n : ℕ} (s : ComposableArrows (Under x) n)
     (j : Fin (n + 1)) :
-    ((underEquiv x n).symm s).1.totalArrow 0 j.succ (Fin.zero_le _) =
+    ((underEquiv x n).symm s).val.totalArrow 0 j.succ (Fin.zero_le _) =
       ⟨x, (s.obj j).right, (s.obj j).hom⟩ :=
   -- The first structure arrow followed by the arrow to j is the structure arrow of j.
   (totalArrow_precomp_zero_succ _ _ j).trans
@@ -78,7 +78,7 @@ lemma totalArrow_underEquiv_symm_apply_coe_zero_succ {n : ℕ} (s : ComposableAr
 /-- The string of one arrow corresponding to a single object of `Under x` is its structure
 arrow. -/
 lemma underEquiv_symm_mk₀_coe (a : Under x) :
-    ((underEquiv x 0).symm (mk₀ a)).1 = mk₁ a.hom :=
+    ((underEquiv x 0).symm (mk₀ a)).val = mk₁ a.hom :=
   ext_succ_of_totalArrow ((precomp_δ₀ _ _).trans (ext₀ rfl))
     ((totalArrow_underEquiv_symm_apply_coe_zero_succ x _ 0).trans (by simp [totalArrow_def, mk₀]))
 
@@ -86,25 +86,25 @@ lemma underEquiv_symm_mk₀_coe (a : Under x) :
 @[simp]
 lemma underEquiv_apply_obj_right {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) (i : Fin (n + 1)) :
-    ((underEquiv x n t).obj i).right = t.1.obj i.succ := (rfl)
+    ((underEquiv x n t).obj i).right = t.val.obj i.succ := (rfl)
 
 /-- The structure arrow to an old vertex is its arrow from the initial vertex. -/
 @[simp]
 lemma underEquiv_apply_obj_hom {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) (i : Fin (n + 1)) :
     ((underEquiv x n t).obj i).hom =
-      eqToHom t.2.symm ≫ t.1.map (homOfLE (Fin.zero_le i.succ)) := (rfl)
+      eqToHom t.property.symm ≫ t.val.map (homOfLE (Fin.zero_le i.succ)) := (rfl)
 
 /-- The underlying morphisms are those between the old vertices. -/
 @[simp]
 lemma underEquiv_apply_map_right {n : ℕ}
     (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x})
     {i j : Fin (n + 1)} (f : i ⟶ j) :
-    ((underEquiv x n t).map f).right = t.1.map ((Fin.succFunctor (n + 1)).map f) := (rfl)
+    ((underEquiv x n t).map f).right = t.val.map ((Fin.succFunctor (n + 1)).map f) := (rfl)
 
 /-- Forgetting the structure arrows of `underEquiv x n t` drops the first arrow of `t`. -/
 @[simp]
 lemma underEquiv_comp_forget {n : ℕ} (t : {t : ComposableArrows C (n + 1) // t.obj 0 = x}) :
-    underEquiv x n t ⋙ Under.forget x = t.1.δ₀ := (rfl)
+    underEquiv x n t ⋙ Under.forget x = t.val.δ₀ := (rfl)
 
 end CategoryTheory.ComposableArrows
