@@ -98,6 +98,12 @@ theorem norm_timeDeriv_le_of_ae_timeDeriv_add_eq
   rw [le_antisymm hv (norm_nonneg _), mul_zero, add_zero]
   exact hd.trans (norm_nonneg f)
 
+/-- An almost everywhere bound `Λ` on the operators `A t` over `(a, b)` is nonnegative. -/
+private theorem nonneg_of_ae_norm_le (hab : a < b)
+    (hA_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖A t‖ ≤ Λ) : 0 ≤ Λ :=
+  nonneg_of_ae_restrict_abs_le (s := Ioo a b) (g := fun t ↦ ‖A t‖) (by simp [hab])
+    (hA_bound.mono fun t ht ↦ (abs_norm (A t)).trans_le ht)
+
 variable [CompleteSpace V] [CompleteSpace H]
 
 /-- **Uniqueness in the energy space.** Let `A(t)` satisfy Gårding's inequality
@@ -309,8 +315,7 @@ private theorem norm_parabolicSolutionₗ_apply_le
   rw [parabolicSolutionₗ_apply]
   set u := parabolicSolution hι hab hA hA_bound hα hβ hA_garding p
   obtain ⟨hu, hu₀⟩ := parabolicSolution_spec hι hab hA hA_bound hα hβ hA_garding p
-  have hΛ := nonneg_of_ae_restrict_abs_le (s := Ioo a b) (g := fun t ↦ ‖A t‖)
-    (by simp [hab]) (hA_bound.mono fun t ht ↦ (abs_norm (A t)).trans_le ht)
+  have hΛ := nonneg_of_ae_norm_le hab hA_bound
   have h₁ : ‖p.1‖ ≤ ‖p‖ := norm_fst_le p
   have h₂ : ‖p.2‖ ≤ ‖p‖ := norm_snd_le p
   -- The `L²(a, b; V)` part, by the energy estimate.
@@ -391,8 +396,7 @@ two norms and the energy space its graph norm. -/
 theorem norm_parabolicSolutionL_le :
     ‖parabolicSolutionL hι hab hA hA_bound hα hβ hA_garding‖ ≤
       1 + (1 + Λ) * √(exp (2 * β * (b - a)) * (1 + α⁻¹) / α) := by
-  have hΛ := nonneg_of_ae_restrict_abs_le (s := Ioo a b) (g := fun t ↦ ‖A t‖)
-    (by simp [hab]) (hA_bound.mono fun t ht ↦ (abs_norm (A t)).trans_le ht)
+  have hΛ := nonneg_of_ae_norm_le hab hA_bound
   exact LinearMap.mkContinuous_norm_le _ (by positivity) _
 
 end Existence
