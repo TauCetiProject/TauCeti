@@ -117,7 +117,7 @@ private theorem weight_eq_zero_of_notMem {p : MilnorTotalSpace G} {i : ℕ}
 
 private theorem sum_weight_of_support_subset {p : MilnorTotalSpace G} {S : Finset ℕ}
     (hS : ∀ i, i ∉ S → weight i p = 0) : ∑ i ∈ S, weight i p = 1 :=
-  (hasSum_sum_of_ne_finset_zero hS).unique (hasSum_weight p)
+  (tsum_eq_sum hS).symm.trans (tsum_weight p)
 
 end CoordBuilder
 
@@ -166,13 +166,12 @@ theorem exists_gt_half_partialWeightSum (p : MilnorTotalSpace G) :
 theorem exists_gt_half_partialWeightSum_of_isCompact_range {X : Type v} [TopologicalSpace X]
     {f : C(X, MilnorTotalSpace G)} (hf : IsCompact (Set.range f)) :
     ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) := by
-  obtain ⟨t, ht⟩ := hf.elim_finite_subcover
+  obtain ⟨N, hN⟩ := hf.elim_directed_cover
     (fun N ↦ {p : MilnorTotalSpace G | 1 / 2 < partialWeightSum G N p})
     (fun N ↦ isOpen_lt continuous_const (partialWeightSum G N).continuous)
-    fun p _ ↦ Set.mem_iUnion.mpr (exists_gt_half_partialWeightSum p)
-  refine ⟨t.sup id, fun x ↦ ?_⟩
-  obtain ⟨N, hNt, hNx⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_range_self x))
-  exact hNx.trans_le (partialWeightSum_mono (t.le_sup (f := id) hNt) (f x))
+    (fun p _ ↦ Set.mem_iUnion.mpr (exists_gt_half_partialWeightSum p))
+    (directed_of_isDirected_le fun _ _ h _ hp ↦ lt_of_lt_of_le hp (partialWeightSum_mono h _))
+  exact ⟨N, fun x ↦ hN (Set.mem_range_self x)⟩
 
 theorem exists_gt_half_partialWeightSum_comp {X : Type v} [TopologicalSpace X] [CompactSpace X]
     (f : C(X, MilnorTotalSpace G)) : ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) :=

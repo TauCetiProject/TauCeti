@@ -172,11 +172,9 @@ theorem hasSum_weight (p : MilnorTotalSpace G) : HasSum (fun i ↦ weight i p) 1
 @[simp] theorem tsum_weight (p : MilnorTotalSpace G) : ∑' i, weight i p = 1 :=
   (hasSum_weight p).tsum_eq
 
-@[simp] theorem finsum_weight (p : MilnorTotalSpace G) : ∑ᶠ i, weight i p = 1 := by
-  rw [finsum_eq_sum _ (finite_support_weight p), ← p.sum_weightFinsupp]
-  exact Finset.sum_subset
-    (fun _ hi ↦ Finsupp.mem_support_iff.mpr ((finite_support_weight p).mem_toFinset.mp hi))
-    fun _ _ hi ↦ not_not.mp fun hne ↦ hi ((finite_support_weight p).mem_toFinset.mpr hne)
+@[simp] theorem finsum_weight (p : MilnorTotalSpace G) : ∑ᶠ i, weight i p = 1 :=
+  (tsum_eq_finsum (L := SummationFilter.unconditional ℕ) (finite_support_weight p)).symm.trans
+    (tsum_weight p)
 
 theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 :=
   le_hasSum (hasSum_weight p) i fun j _ ↦ weight_nonneg j p

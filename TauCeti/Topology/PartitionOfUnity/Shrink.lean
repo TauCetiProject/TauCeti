@@ -26,6 +26,9 @@ of `X`, nor openness of the sets `U i`, is used.
 
 * `PartitionOfUnity.ofExistsPos`: normalize a locally finite nonnegative family positive at every
   point into a partition of unity.
+* `PartitionOfUnity.halfMaxTrunc` and `PartitionOfUnity.shrinkOfMax`: truncate a family of
+  continuous weights below half of a continuous positive function `m` (such as their pointwise
+  maximum) and normalize when the truncated supports are locally finite.
 * `PartitionOfUnity.shrink`: shrink the closed supports of a partition of unity on `X` inside its
   open supports, with weights given by `PartitionOfUnity.shrink_apply`.
 * `PartitionOfUnity.shrink_pos_iff` and `PartitionOfUnity.support_shrink`: `ρ.shrink i` is positive
@@ -100,6 +103,112 @@ theorem tsupport_ofExistsPos (f : ι → C(X, ℝ)) (hlf : LocallyFinite fun i �
 
 end OfExistsPos
 
+section ShrinkOfMax
+
+/-- Truncate a continuous weight `f i` below half of `m`: `x ↦ max 0 (f i x - m x / 2)`. -/
+noncomputable def halfMaxTrunc (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) : C(X, ℝ) :=
+  ⟨fun x ↦ max 0 (f i x - m x / 2),
+    continuous_const.max ((f i).continuous.sub (m.continuous.div_const 2))⟩
+
+/-- Pointwise formula for `PartitionOfUnity.halfMaxTrunc`. -/
+@[simp]
+theorem halfMaxTrunc_apply (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) (x : X) :
+    halfMaxTrunc f m i x = max 0 (f i x - m x / 2) :=
+  (rfl)
+
+/-- Each truncated weight `PartitionOfUnity.halfMaxTrunc` is nonnegative. -/
+theorem halfMaxTrunc_nonneg (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) (x : X) :
+    0 ≤ halfMaxTrunc f m i x :=
+  le_max_left _ _
+
+/-- A truncated weight `PartitionOfUnity.halfMaxTrunc f m i x` is positive iff `m x / 2 < f i x`. -/
+theorem halfMaxTrunc_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)} {i : ι} {x : X} :
+    0 < halfMaxTrunc f m i x ↔ m x / 2 < f i x := by
+  rw [halfMaxTrunc_apply, lt_max_iff, or_iff_right (lt_irrefl 0), sub_pos]
+
+/-- When `m` is positive everywhere, the open support of `halfMaxTrunc f m i` lies in
+`support (f i)`. -/
+theorem support_halfMaxTrunc_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)} (hm : ∀ x, 0 < m x) (i : ι) :
+    support (halfMaxTrunc f m i) ⊆ support (f i) := by
+  intro x hx
+  have hpos : m x / 2 < f i x :=
+    halfMaxTrunc_pos_iff.mp (lt_of_le_of_ne (halfMaxTrunc_nonneg f m i x) (Ne.symm hx))
+  exact ((half_pos (hm x)).trans hpos).ne'
+
+/-- When `m` is continuous and positive everywhere, the closed support of `halfMaxTrunc f m i`
+lies in the open support `support (f i)`. -/
+theorem tsupport_halfMaxTrunc_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)} (hm : ∀ x, 0 < m x) (i : ι) :
+    tsupport (halfMaxTrunc f m i) ⊆ support (f i) := by
+  intro x hx
+  have hclosed : IsClosed {y : X | m y / 2 ≤ f i y} :=
+    isClosed_le (m.continuous.div_const 2) (f i).continuous
+  have hle : m x / 2 ≤ f i x := by
+    refine closure_minimal (fun y hy ↦ ?_) hclosed hx
+    rw [mem_ofPred_eq]
+    exact (halfMaxTrunc_pos_iff.mp
+      (lt_of_le_of_ne (halfMaxTrunc_nonneg f m i y) (Ne.symm hy))).le
+  exact ((half_pos (hm x)).trans_le hle).ne'
+
+/-- Shrink a family of continuous weights `f` using a continuous function `m` (such as their
+pointwise maximum) such that at every point some `f i x` exceeds `m x / 2` and the truncated
+supports `support (halfMaxTrunc f m i)` are locally finite. -/
+noncomputable def shrinkOfMax (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) : PartitionOfUnity ι X :=
+  ofExistsPos (halfMaxTrunc f m) hlf (halfMaxTrunc_nonneg f m)
+    fun x ↦ let ⟨i, hi⟩ := hm_att x; ⟨i, halfMaxTrunc_pos_iff.mpr hi⟩
+
+/-- Each weight of `PartitionOfUnity.shrinkOfMax` is the truncated excess
+`max 0 (f i x - m x / 2)` divided by the finite sum of those truncated excesses. -/
+theorem shrinkOfMax_apply (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) (x : X) :
+    shrinkOfMax f m hlf hm_att i x =
+      max 0 (f i x - m x / 2) / ∑ᶠ k, max 0 (f k x - m x / 2) :=
+  (rfl)
+
+/-- A weight of `PartitionOfUnity.shrinkOfMax` is positive iff `m x / 2 < f i x`. -/
+theorem shrinkOfMax_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i)}
+    {hm_att : ∀ x, ∃ i, m x / 2 < f i x} {i : ι} {x : X} :
+    0 < shrinkOfMax f m hlf hm_att i x ↔ m x / 2 < f i x := by
+  rw [shrinkOfMax, ofExistsPos_pos_iff, halfMaxTrunc_pos_iff]
+
+/-- The open support of `shrinkOfMax f m hlf hm_att i` is `{x | m x / 2 < f i x}`. -/
+theorem support_shrinkOfMax (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) :
+    support (shrinkOfMax f m hlf hm_att i) = {x | m x / 2 < f i x} := by
+  ext x
+  exact ((shrinkOfMax f m hlf hm_att).nonneg i x).lt_iff_ne'.symm.trans shrinkOfMax_pos_iff
+
+/-- Every open support of `PartitionOfUnity.shrinkOfMax` lies in `support (f i)` when `m` is
+positive everywhere. -/
+theorem support_shrinkOfMax_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
+    support (shrinkOfMax f m hlf hm_att i) ⊆ support (f i) :=
+  (support_ofExistsPos _ _ _ _ i).subset.trans (support_halfMaxTrunc_subset hm_pos i)
+
+/-- Every closed support of `PartitionOfUnity.shrinkOfMax` lies in `support (f i)` when `m` is
+continuous and positive everywhere. -/
+theorem tsupport_shrinkOfMax_subset_support {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
+    tsupport (shrinkOfMax f m hlf hm_att i) ⊆ support (f i) :=
+  (tsupport_ofExistsPos _ _ _ _ i).subset.trans (tsupport_halfMaxTrunc_subset hm_pos i)
+
+/-- If every open support `support (f i)` lies in `U i` and `m` is continuous and positive
+everywhere, then `PartitionOfUnity.shrinkOfMax` is subordinate to `U`. -/
+theorem isSubordinate_shrinkOfMax {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfMaxTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x}
+    {U : ι → Set X} (hU : ∀ i, support (f i) ⊆ U i) :
+    (shrinkOfMax f m hlf hm_att).IsSubordinate U :=
+  fun i ↦ (tsupport_shrinkOfMax_subset_support hm_pos i).trans (hU i)
+
+end ShrinkOfMax
+
 section Shrink
 
 private noncomputable def maxWeight (ρ : PartitionOfUnity ι X) (x : X) : ℝ :=
@@ -136,61 +245,27 @@ private theorem continuous_maxWeight (ρ : PartitionOfUnity ι X) :
   exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ (ρ i).continuous).continuousAt.congr
     (hI.mono fun x hx ↦ (maxWeight_eq_of_support_subset hx).symm)
 
-private theorem exists_eq_maxWeight_and_pos (ρ : PartitionOfUnity ι X) (x : X) :
-    ∃ i, ρ i x = maxWeight ρ x ∧ 0 < maxWeight ρ x := by
-  classical
-  obtain ⟨i₀, hi₀⟩ := ρ.exists_pos (mem_univ x)
-  have hsub : support (ρ · x) ⊆ ρ.finsupport x := (ρ.coe_finsupport x).superset
-  have : Nonempty (ρ.finsupport x) := ⟨⟨i₀, hsub hi₀.ne'⟩⟩
-  obtain ⟨⟨i, _⟩, hi⟩ := exists_eq_ciSup_of_finite (f := fun j : ρ.finsupport x ↦ ρ j x)
-  exact ⟨i, hi.trans (maxWeight_eq_of_support_subset hsub).symm,
-    hi₀.trans_le (le_maxWeight ρ i₀ x)⟩
+private noncomputable def maxWeightCont (ρ : PartitionOfUnity ι X) : C(X, ℝ) :=
+  ⟨maxWeight ρ, continuous_maxWeight ρ⟩
 
-private noncomputable def truncWeight (ρ : PartitionOfUnity ι X) (i : ι) : C(X, ℝ) :=
-  ⟨fun x ↦ max 0 (ρ i x - maxWeight ρ x / 2),
-    continuous_const.max ((ρ i).continuous.sub ((continuous_maxWeight ρ).div_const 2))⟩
+private theorem maxWeight_pos (ρ : PartitionOfUnity ι X) (x : X) :
+    0 < maxWeight ρ x :=
+  let ⟨i₀, hi₀⟩ := ρ.exists_pos (mem_univ x)
+  hi₀.trans_le (le_maxWeight ρ i₀ x)
 
-private theorem support_truncWeight_subset (ρ : PartitionOfUnity ι X) (i : ι) :
-    support (truncWeight ρ i) ⊆ support (ρ i) := by
-  intro x hx
-  have hpos : 0 < truncWeight ρ i x := lt_of_le_of_ne (le_max_left _ _) (Ne.symm hx)
-  have hsub : 0 < ρ i x - maxWeight ρ x / 2 := by
-    rcases lt_max_iff.1 hpos with h | h
-    · exact absurd h (lt_irrefl 0)
-    · exact h
-  have hmax : 0 ≤ maxWeight ρ x / 2 := div_nonneg (maxWeight_nonneg ρ x) zero_le_two
-  exact (by linarith : 0 < ρ i x).ne'
-
-private theorem tsupport_truncWeight_subset (ρ : PartitionOfUnity ι X) (i : ι) :
-    tsupport (truncWeight ρ i) ⊆ support (ρ i) := by
-  intro x hx
-  have hclosed : IsClosed {y : X | maxWeight ρ y / 2 ≤ ρ i y} :=
-    isClosed_le ((continuous_maxWeight ρ).div_const 2) (ρ i).continuous
-  have hle : maxWeight ρ x / 2 ≤ ρ i x := by
-    refine closure_minimal (fun y hy ↦ ?_) hclosed hx
-    rw [mem_ofPred_eq]
-    have hpos : 0 < truncWeight ρ i y := lt_of_le_of_ne (le_max_left _ _) (Ne.symm hy)
-    rcases lt_max_iff.1 hpos with h | h
-    · exact absurd h (lt_irrefl 0)
-    · linarith
-  obtain ⟨_, -, hmax_pos⟩ := exists_eq_maxWeight_and_pos ρ x
-  exact ((half_pos hmax_pos).trans_le hle).ne'
-
-private theorem truncWeight_nonneg (ρ : PartitionOfUnity ι X) (i : ι) (x : X) :
-    0 ≤ truncWeight ρ i x :=
-  le_max_left _ _
-
-private theorem exists_truncWeight_pos (ρ : PartitionOfUnity ι X) (x : X) :
-    ∃ i, 0 < truncWeight ρ i x := by
-  obtain ⟨i, hi, hpos⟩ := exists_eq_maxWeight_and_pos ρ x
-  exact ⟨i, lt_max_of_lt_right (by rw [hi]; linarith)⟩
+private theorem exists_half_maxWeight_lt (ρ : PartitionOfUnity ι X) (x : X) :
+    ∃ i, maxWeight ρ x / 2 < ρ i x :=
+  let ⟨i₀, hi₀⟩ := ρ.exists_pos (mem_univ x)
+  haveI : Nonempty ι := ⟨i₀⟩
+  exists_lt_of_lt_ciSup (half_lt_self (hi₀.trans_le (le_maxWeight ρ i₀ x)))
 
 /-- Shrink a partition of unity `ρ` on `X` by truncating each weight below half of the pointwise
 maximum weight and renormalizing, so that every closed support lies in the corresponding open
 support of `ρ`. -/
 noncomputable def shrink (ρ : PartitionOfUnity ι X) : PartitionOfUnity ι X :=
-  ofExistsPos (truncWeight ρ) (ρ.locallyFinite.subset (support_truncWeight_subset ρ))
-    (truncWeight_nonneg ρ) (exists_truncWeight_pos ρ)
+  shrinkOfMax (ρ ·) (maxWeightCont ρ)
+    (ρ.locallyFinite.subset (support_halfMaxTrunc_subset (maxWeight_pos ρ)))
+    (exists_half_maxWeight_lt ρ)
 
 /-- Each weight of `ρ.shrink` is the truncated excess `max 0 (ρ i x - (⨆ j, ρ j x) / 2)` divided
 by the finite sum of those truncated excesses. -/
@@ -202,33 +277,31 @@ theorem shrink_apply (ρ : PartitionOfUnity ι X) (i : ι) (x : X) :
 /-- A shrunken weight `ρ.shrink i x` is positive if and only if `ρ i x` strictly exceeds half of
 the pointwise supremum `⨆ j, ρ j x`. -/
 theorem shrink_pos_iff {ρ : PartitionOfUnity ι X} {i : ι} {x : X} :
-    0 < ρ.shrink i x ↔ (⨆ j, ρ j x) / 2 < ρ i x := by
-  rw [shrink, ofExistsPos_pos_iff, truncWeight, ContinuousMap.coe_mk, lt_max_iff,
-    or_iff_right (lt_irrefl 0), sub_pos, maxWeight]
+    0 < ρ.shrink i x ↔ (⨆ j, ρ j x) / 2 < ρ i x :=
+  shrinkOfMax_pos_iff
 
 /-- The open support of `ρ.shrink i` is the set of points where `ρ i` strictly exceeds half of the
 pointwise supremum `⨆ j, ρ j x`. -/
 theorem support_shrink (ρ : PartitionOfUnity ι X) (i : ι) :
-    support (ρ.shrink i) = {x | (⨆ j, ρ j x) / 2 < ρ i x} := by
-  ext x
-  exact (ρ.shrink.nonneg i x).lt_iff_ne'.symm.trans ρ.shrink_pos_iff
+    support (ρ.shrink i) = {x | (⨆ j, ρ j x) / 2 < ρ i x} :=
+  support_shrinkOfMax (ρ ·) (maxWeightCont ρ) _ _ i
 
 /-- Every open support of `ρ.shrink` is contained in the open support of `ρ`. -/
 theorem support_shrink_subset (ρ : PartitionOfUnity ι X) (i : ι) :
     support (ρ.shrink i) ⊆ support (ρ i) :=
-  (support_ofExistsPos _ _ _ _ i).subset.trans (support_truncWeight_subset ρ i)
+  support_shrinkOfMax_subset (maxWeight_pos ρ) i
 
 /-- Every closed support of `ρ.shrink` is contained in the open support of `ρ`. -/
 theorem tsupport_shrink_subset_support (ρ : PartitionOfUnity ι X) (i : ι) :
     tsupport (ρ.shrink i) ⊆ support (ρ i) :=
-  (tsupport_ofExistsPos _ _ _ _ i).subset.trans (tsupport_truncWeight_subset ρ i)
+  tsupport_shrinkOfMax_subset_support (maxWeight_pos ρ) i
 
 /-- If every open support `support (ρ i)` lies in `U i`, then `ρ.shrink` is subordinate to `U` in
 the closed-support sense. -/
 theorem isSubordinate_shrink {ρ : PartitionOfUnity ι X} {U : ι → Set X}
     (hU : ∀ i, support (ρ i) ⊆ U i) :
     ρ.shrink.IsSubordinate U :=
-  fun i ↦ (ρ.tsupport_shrink_subset_support i).trans (hU i)
+  isSubordinate_shrinkOfMax (maxWeight_pos ρ) hU
 
 end Shrink
 
