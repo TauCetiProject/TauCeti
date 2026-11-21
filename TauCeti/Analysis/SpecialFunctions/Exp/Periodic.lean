@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 
 /-!
 # The periods of `exp (π i ·)` and `exp (2 π i ·)`, and branches of the logarithm
@@ -22,6 +23,11 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 `z₀ ^ m`, the expression `log z₀ + (1 / m) log (t / z₀ ^ m)` is a logarithm of an `m`-th root of
 `t`; it is continuous in `t` near `z₀ ^ m`, unlike the principal root.
 
+For any integral submodule of `ℂ` containing the horizontal period `2π`, logarithmic lifts
+with the same exponential agree in its native translation quotient. The quotient coordinate
+`z ↦ [-i log z]` is continuous off zero, including across the principal logarithm's branch cut;
+neither discreteness nor a full-lattice assumption is required.
+
 ## Main declarations
 
 * `Complex.exp_pi_mul_I_mul_eq_of_sub_eq`: `exp (π i a) = exp (π i b)` whenever `a - b` is an
@@ -35,6 +41,10 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
   `m`-th root of every `t ≠ 0`.
+* `Submodule.orbitRelQuotient_mk_eq_of_exp_I_mul_eq`: equal exponentials give equal logarithmic
+  lifts modulo any integral submodule containing `2π`.
+* `Submodule.continuousOn_orbitRelQuotient_mk_neg_I_mul_log`: the quotient logarithmic coordinate
+  is continuous away from zero, across its principal branch cut.
 -/
 
 public section
@@ -96,3 +106,40 @@ theorem exp_log_add_inv_mul_log_div_pow {m : ℕ} [NeZero m] {z₀ t : ℂ} (hz�
     mul_div_cancel₀ _ (pow_ne_zero m hz₀)]
 
 end Complex
+
+open Complex Filter Topology
+open scoped Real
+
+/-- A submodule containing the horizontal exponential period identifies logarithmic lifts with
+the same exponential. No discreteness assumption is required for this algebraic statement. -/
+theorem Submodule.orbitRelQuotient_mk_eq_of_exp_I_mul_eq (L : Submodule ℤ ℂ)
+    (hL : (2 * π : ℂ) ∈ L) {z w : ℂ} (h : exp (I * z) = exp (I * w)) :
+    _root_.Quotient.mk (AddAction.orbitRel L ℂ) z = _root_.Quotient.mk _ w := by
+  apply L.orbitRelQuotient_mk_eq_mk_iff.mpr
+  obtain ⟨m, hm⟩ := exp_eq_exp_iff_exists_int.mp h
+  have hd : z - w = (m : ℂ) * (2 * π) := by
+    apply mul_left_cancel₀ I_ne_zero
+    linear_combination hm
+  rw [hd, ← zsmul_eq_mul]
+  exact L.smul_mem m hL
+
+/-- The logarithm multiplied by `-i`, read modulo a horizontal period `2π`, is continuous off
+zero, including across the principal logarithm's branch cut. -/
+theorem Submodule.continuousOn_orbitRelQuotient_mk_neg_I_mul_log
+    (L : Submodule ℤ ℂ) (hL : (2 * π : ℂ) ∈ L) :
+    ContinuousOn (fun z : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log z)) {0}ᶜ := by
+  intro z hz
+  have hz0 : z ≠ 0 := by simpa using hz
+  have hslit : z / z ∈ slitPlane := by simp [hz0]
+  have hc : ContinuousAt (fun w : ℂ ↦ -I * log (w / z) + -I * log z) z :=
+    (continuousAt_const.mul ((continuousAt_clog hslit).comp (f := fun w : ℂ ↦ w / z)
+      (continuousAt_id.div_const z))).add continuousAt_const
+  have heq : (fun w : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log w)) =ᶠ[𝓝 z]
+      fun w ↦ _root_.Quotient.mk _ (-I * log (w / z) + -I * log z) := by
+    filter_upwards [isOpen_compl_singleton.mem_nhds hz] with w hw
+    have hw0 : w ≠ 0 := by simpa using hw
+    apply L.orbitRelQuotient_mk_eq_of_exp_I_mul_eq hL
+    simp only [mul_add, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul, Complex.exp_add]
+    rw [exp_log hw0, exp_log (div_ne_zero hw0 hz0), exp_log hz0, div_mul_cancel₀ _ hz0]
+  have hcont := (continuous_quotient_mk'.continuousAt.comp hc).congr_of_eventuallyEq heq
+  exact hcont.continuousWithinAt

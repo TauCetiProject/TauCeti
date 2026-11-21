@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.ComplexTorus
+public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedAnnulus
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
 
@@ -54,12 +56,15 @@ section Double
 
 variable [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
 
+private theorem log_div_pos : 0 < Real.log (r₂ / r₁) :=
+  Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
+
 private def doublePeriodBasis (r₁ r₂ : ℝ) [h₁ : Fact (0 < r₁)] [h₁₂ : Fact (r₁ < r₂)] :
     Module.Basis (Fin 2) ℝ ℂ :=
   Complex.basisOneI.unitsSMul fun i ↦
     if i = 0 then Units.mk0 (2 * π) (by positivity)
     else Units.mk0 (2 * Real.log (r₂ / r₁))
-      (mul_ne_zero (by norm_num) (Real.log_pos ((one_lt_div h₁.out).mpr h₁₂.out)).ne')
+      (mul_ne_zero (by norm_num) (log_div_pos (r₁ := r₁) (r₂ := r₂)).ne')
 
 /-- The rectangular period lattice of the double of the annulus: horizontal period `2π` and
 vertical period `2i log(r₂/r₁)`. -/
@@ -97,6 +102,11 @@ theorem mem_doublePeriodLattice_iff {w : ℂ} :
           Complex.coe_basisOneI, Units.smul_def, Complex.real_smul]⟩
   rw [doublePeriodLattice, hb, Submodule.mem_span_pair]
   simp only [zsmul_eq_mul]
+
+/-- The horizontal exponential period belongs to the period lattice of the doubled annulus. -/
+@[simp]
+theorem two_pi_mem_doublePeriodLattice : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ :=
+  mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
 
 private theorem conj_mem_doublePeriodLattice {z : ℂ} (hz : z ∈ doublePeriodLattice r₁ r₂) :
     conj z ∈ doublePeriodLattice r₁ r₂ := by
@@ -146,10 +156,8 @@ def doubleFirstSheet (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r₂)] :
     C(closedAnnulus r₁ r₂, AddAction.orbitRel.Quotient (doublePeriodLattice r₁ r₂) ℂ) where
   toFun z := Quotient.mk _ (doubleLog z)
   continuous_toFun := by
-    have hperiod : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ := by
-      rw [mem_doublePeriodLattice_iff]
-      exact ⟨1, 0, by simp⟩
-    have hc := (doublePeriodLattice r₁ r₂).continuousOn_orbitRelQuotient_mk_neg_I_mul_log hperiod
+    have hc := (doublePeriodLattice r₁ r₂).continuousOn_orbitRelQuotient_mk_neg_I_mul_log
+      two_pi_mem_doublePeriodLattice
     have hf : Continuous (fun z : closedAnnulus r₁ r₂ ↦ (z : ℂ) / (r₁ : ℂ)) :=
       continuous_subtypeVal.div_const _
     exact hc.comp_continuous hf fun z ↦ by
@@ -211,7 +219,7 @@ private theorem doublePeriod_eq_im_cases {u v : ℂ}
     ∃ m : ℤ, u.re - v.re = (m : ℝ) * (2 * π) ∧
       (u.im = v.im ∨ (u.im = Real.log (r₂ / r₁) ∧ v.im = -Real.log (r₂ / r₁)) ∨
         (u.im = -Real.log (r₂ / r₁) ∧ v.im = Real.log (r₂ / r₁))) := by
-  have hL : 0 < Real.log (r₂ / r₁) := Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
+  have hL : 0 < Real.log (r₂ / r₁) := log_div_pos
   obtain ⟨m, n, hn⟩ := mem_doublePeriodLattice_iff.mp
     ((doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_mk_iff.mp h)
   have hre := congrArg Complex.re hn
@@ -245,7 +253,7 @@ private theorem doubleLog_eq_of_re_im {x y : closedAnnulus r₁ r₂} {m : ℤ}
 private theorem doubleFirstSheet_injective : Function.Injective (doubleFirstSheet r₁ r₂) := by
   intro x y h
   simp only [doubleFirstSheet_apply, ← doubleLog.eq_1] at h
-  have hL : 0 < Real.log (r₂ / r₁) := Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
+  have hL : 0 < Real.log (r₂ / r₁) := log_div_pos
   obtain ⟨m, hre, him⟩ := doublePeriod_eq_im_cases
     ⟨(doubleLog_im_bounds x).1, (doubleLog_im_bounds x).2.trans hL.le⟩
     ⟨(doubleLog_im_bounds y).1, (doubleLog_im_bounds y).2.trans hL.le⟩ h
@@ -260,7 +268,7 @@ private theorem doubleFirstSheet_eq_conjugation_iff {x y : closedAnnulus r₁ r�
       x = y ∧ x ∈ (borderedInterior (closedAnnulus r₁ r₂) : Set _)ᶜ := by
   constructor
   · intro h
-    have hL : 0 < Real.log (r₂ / r₁) := Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
+    have hL : 0 < Real.log (r₂ / r₁) := log_div_pos
     simp only [doubleFirstSheet_apply, ← doubleLog.eq_1, doubleTorusConjugation_mk] at h
     have hv : -Real.log (r₂ / r₁) ≤ (conj (doubleLog y)).im ∧
         (conj (doubleLog y)).im ≤ Real.log (r₂ / r₁) := by
@@ -351,16 +359,21 @@ theorem doubleTorusMap_injective : Function.Injective (doubleTorusMap r₁ r₂)
       apply doubleTorusConjugation_involutive.injective
       simpa only [doubleTorusMap, DoubleAlong.desc_inr, ContinuousMap.comp_apply] using h
 
+omit hr₁ hr₁₂ in
+private theorem exp_I_mul_arg_of_norm_eq_one (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+    exp (I * (arg ζ : ℂ)) = ζ := by
+  simpa only [Circle.coe_exp, mul_comm] using
+    congrArg ((↑) : Circle → ℂ)
+      (Circle.exp_arg (⟨ζ, mem_sphere_zero_iff_norm.mpr hζ⟩ : Circle))
+
 private theorem doubleFirstSheet_innerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
     doubleFirstSheet r₁ r₂ ((innerChart ζ hζ).symm w) =
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ) ((arg ζ : ℂ) - w) := by
-  have hperiod : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ :=
-    mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
-  have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
-    simpa [hζ, mul_comm] using norm_mul_exp_arg_mul_I ζ
+  have heζ : exp (I * (arg ζ : ℂ)) = ζ := exp_I_mul_arg_of_norm_eq_one ζ hζ
   rw [doubleFirstSheet_apply, ← doubleLog]
-  apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq hperiod
+  apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq
+    two_pi_mem_doublePeriodLattice
   rw [exp_I_mul_doubleLog, coe_innerChart_symm_apply hw, mul_sub, exp_sub, heζ,
     neg_mul, exp_neg]
   field_simp [hr₁.out.ne']
@@ -370,12 +383,10 @@ private theorem doubleFirstSheet_outerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     doubleFirstSheet r₁ r₂ ((outerChart ζ hζ).symm w) =
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ)
         ((arg ζ : ℂ) + w - I * Real.log (r₂ / r₁)) := by
-  have hperiod : (2 * π : ℂ) ∈ doublePeriodLattice r₁ r₂ :=
-    mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
-  have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
-    simpa [hζ, mul_comm] using norm_mul_exp_arg_mul_I ζ
+  have heζ : exp (I * (arg ζ : ℂ)) = ζ := exp_I_mul_arg_of_norm_eq_one ζ hζ
   rw [doubleFirstSheet_apply, ← doubleLog]
-  apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq hperiod
+  apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq
+    two_pi_mem_doublePeriodLattice
   rw [exp_I_mul_doubleLog, coe_outerChart_symm_apply hw]
   -- Distribute `I` over the affine outer lift and use `I² = -1`; the resulting three terms
   -- exponentiate to the angular, chart and radial factors in the inverse-chart formula.
@@ -623,7 +634,7 @@ theorem fixed_locus_doubleTorusConjugation :
         ← (DoubleAlong.inl_eq_inr_iff _).2 ⟨rfl, hb⟩]
 
 /-- The two fixed boundary circles are disjoint. Strict separation of the radii is retained. -/
-theorem disjoint_doubleTorus_boundary_circles :
+theorem disjoint_range_doubleTorusCircle :
     Disjoint (range (doubleTorusCircle (r₁ := r₁) (r₂ := r₂) ⟨r₁, le_rfl, hr₁₂.out.le⟩))
       (range (doubleTorusCircle ⟨r₂, hr₁₂.out.le, le_rfl⟩)) := by
   rw [range_doubleTorusCircle, range_doubleTorusCircle, Set.disjoint_left]
@@ -633,29 +644,28 @@ theorem disjoint_doubleTorus_boundary_circles :
   have he : r₁ = r₂ := hx.symm.trans (hxy ▸ hy)
   exact hr₁₂.out.ne he
 
+/-- The analytic and topological annulus doubles use the same native quotient after identifying
+    the gluing sets. -/
+private def schottkyDoubleHomeomorphDoubleAlong :
+    SchottkyDouble (closedAnnulus r₁ r₂) ≃ₜ DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂) := by
+  -- The seam equality is propositional: transport the quotient type and topology together.
+  unfold SchottkyDouble
+  rw [compl_borderedInterior]
+  exact Homeomorph.refl _
+
 /-- The analytic annulus double has finite CW type by the native topological double comparison. -/
 instance instFiniteCWTypeSchottkyDouble :
     FiniteCWType (SchottkyDouble (closedAnnulus r₁ r₂)) := by
-  -- The seam equality is propositional. Unfold the double so `rw` abstracts the seam in
-  -- its type and quotient topology together; class congruence for `simp` holds the type fixed.
-  unfold SchottkyDouble
-  rw [compl_borderedInterior]
-  exact DoubleAlong.finiteCWType_annulusDouble hr₁.out hr₁₂.out
+  let := DoubleAlong.finiteCWType_annulusDouble hr₁.out hr₁₂.out
+  exact schottkyDoubleHomeomorphDoubleAlong.finiteCWType
 
 /-- The native analytic double has Euler characteristic zero, by the existing topological
 annulus-double comparison with `Circle × Circle`. -/
 theorem eulerChar_schottkyDouble :
     eulerChar (SchottkyDouble (closedAnnulus r₁ r₂)) = 0 := by
   let := DoubleAlong.finiteCWType_annulusDouble hr₁.out hr₁₂.out
-  -- Compare the quotient topologies along the same seam equality, then use the existing
-  -- homeomorphism invariance of Euler characteristic.
-  let e : SchottkyDouble (closedAnnulus r₁ r₂) ≃ₜ
-      DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂) := by
-    unfold SchottkyDouble
-    rw [compl_borderedInterior]
-    exact Homeomorph.refl _
-  rw [e.eulerChar_eq]
-  exact DoubleAlong.eulerChar_annulusDouble hr₁.out hr₁₂.out
+  rw [schottkyDoubleHomeomorphDoubleAlong.eulerChar_eq,
+    DoubleAlong.eulerChar_annulusDouble hr₁.out hr₁₂.out]
 
 end Double
 
