@@ -358,10 +358,6 @@ instance subsingleton_of_empty_right [IsEmpty n] : Subsingleton (CStarMatrix m n
 /-- A self-adjoint square `CStarMatrix` equals its conjugate transpose. -/
 theorem conjTranspose_eq_of_isSelfAdjoint [Star A] {M : CStarMatrix n n A} (hM : IsSelfAdjoint M) :
     M.conjTranspose = M := by rw [← star_eq_conjTranspose, hM.star_eq]
-/-- Rectangular matrix multiplication on `CStarMatrix` is associative. -/
-protected theorem mul_assoc [Fintype l] [Fintype m] [NonUnitalSemiring A] (L : CStarMatrix k l A)
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) : L * M * N = L * (M * N) :=
-  ofMatrix.symm.injective (Matrix.mul_assoc (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N))
 /-- Scalars pull out of both factors in a rectangular `CStarMatrix` product. -/
 protected theorem smul_mul_smul [Fintype m] [Monoid R] [AddCommMonoid A] [Mul A]
     [DistribMulAction R A] [IsScalarTower R A A] [SMulCommClass R A A] (a b : R)

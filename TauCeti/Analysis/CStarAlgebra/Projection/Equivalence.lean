@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import TauCeti.Algebra.Star.PartialIsometry
-import TauCeti.Data.Matrix.Block
-import Mathlib.LinearAlgebra.Matrix.Hermitian
-import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 /-!
 # Rectangular Murray–von Neumann equivalence
@@ -18,9 +15,10 @@ Matrix projections are Murray–von Neumann equivalent when they are the initial
 projections of a rectangular matrix. The index types may differ, so this relation identifies
 a projection with its zero padding, without identifying different matrix sizes by casts.
 
-We prove reflexivity on projections, symmetry, transitivity, compatibility with block sums,
-and preservation by nonunital star homomorphisms. These are the relations needed to form the
-projection monoid. No unit, separability, or cancellation is assumed.
+We prove reflexivity on projections, symmetry, transitivity, and preservation by nonunital star
+homomorphisms. These are the relations needed to form the projection monoid (compatibility with
+block sums is in `TauCeti.Analysis.CStarAlgebra.CStarMatrix.ProjectionEquiv`). No unit,
+separability, or cancellation is assumed.
 
 The algebraic matrix calculations use Mathlib's underlying `Matrix` operations, which are the
 operations used to define `CStarMatrix` multiplication and conjugate transpose.
@@ -80,31 +78,6 @@ protected theorem zero : MurrayVonNeumannEquiv (0 : CStarMatrix m m A)
     (0 : CStarMatrix n n A) :=
   ⟨.zero _, .zero _, 0, by simp, by simp⟩
 
-/-- Block-diagonal sums of equivalent projections are equivalent. -/
-theorem fromBlocks {p' : CStarMatrix k k A} {q' : CStarMatrix l l A}
-    (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEquiv p' q') :
-    MurrayVonNeumannEquiv (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (ofMatrix.symm p')))
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm q) 0 0 (ofMatrix.symm q'))) := by
-  obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  obtain ⟨hp', hq', w, hw, hw'⟩ := h'
-  refine ⟨⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hp'.isIdempotentElem,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) hp'.isSelfAdjoint.isHermitian⟩,
-    ⟨hq.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ hq'.isIdempotentElem,
-      hq.isSelfAdjoint.isHermitian.fromBlocks (by simp) hq'.isSelfAdjoint.isHermitian⟩,
-    ofMatrix (Matrix.fromBlocks (ofMatrix.symm v) 0 0 (ofMatrix.symm w)), ?_, ?_⟩
-  · apply ofMatrix.symm.injective
-    simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero,
-      Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
-      using congrArg₂ (fun x y => Matrix.fromBlocks x 0 0 y)
-        (congrArg ofMatrix.symm hv) (congrArg ofMatrix.symm hw)
-  · apply ofMatrix.symm.injective
-    simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero,
-      Matrix.fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
-      using congrArg₂ (fun x y => Matrix.fromBlocks x 0 0 y)
-        (congrArg ofMatrix.symm hv') (congrArg ofMatrix.symm hw')
-
 /-- A nonunital star ring homomorphism preserves rectangular equivalence entrywise. -/
 theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
     [NonUnitalRingHomClass F A B] [StarHomClass F A B]
@@ -135,30 +108,6 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
   · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
       Matrix.map_mul, Matrix.conjTranspose_map f hf] using
       congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv')
-
-/-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
-theorem pad_zero (hp : IsStarProjection p) :
-    MurrayVonNeumannEquiv p
-      (ofMatrix (Matrix.fromBlocks (ofMatrix.symm p) 0 0 (0 : Matrix k k A))) := by
-  have hsa : (ofMatrix.symm p)ᴴ = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_star] using congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq
-  have hid : ofMatrix.symm p * ofMatrix.symm p = ofMatrix.symm p := by
-    simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hp.isIdempotentElem.eq
-  refine ⟨hp, ⟨hp.isIdempotentElem.fromBlocks_zero₁₂_zero₂₁ .zero,
-    hp.isSelfAdjoint.isHermitian.fromBlocks (by simp) Matrix.isHermitian_zero⟩,
-    ofMatrix (Matrix.fromRows (ofMatrix.symm p) (0 : Matrix k m A)), ?_, ?_⟩ <;>
-    apply ofMatrix.symm.injective
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext i j
-    simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-  · simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply,
-      Matrix.conjTranspose_fromRows_eq_fromCols_conjTranspose, Matrix.conjTranspose_zero, hsa]
-    ext (i | i) (j | j)
-    · simpa [Matrix.mul_apply] using congrFun (congrFun hid i) j
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
-    · simp [Matrix.mul_apply]
 
 /-- A Murray–von Neumann equivalence is implemented by a matrix supported on its initial
 projection. -/

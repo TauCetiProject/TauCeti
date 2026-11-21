@@ -12,7 +12,7 @@ public import Mathlib.Data.Matrix.Basis
 # Entrywise maps, reindexing, and corner embeddings for `CStarMatrix`
 
 Entrywise functoriality (`map_zero`, `map_one`, `map_algebraMap`, `map_add`, `map_neg`, `map_sub`,
-`map_smul`, `map_comp`, `map_mul`, `map_conjTranspose`, `map_star`), bundled `⋆`-homomorphism lifts
+`map_smul`, `map_mul`, `map_conjTranspose`, `map_star`), bundled `⋆`-homomorphism lifts
 (`mapₙₐ`, `mapₐ`), rectangular and square reindexing equivalences (`reindexₗ`, `reindexₐ`), and
 diagonal corner embeddings (`singleNonUnitalStarAlgHom`).
 
@@ -55,9 +55,6 @@ protected theorem map_sub : (M - N).map φ = M.map φ - N.map φ := by ext; simp
 end
 protected theorem map_smul [SMul R A] [SMul R B] [FunLike F A B] [MulActionHomClass F R A B]
     (φ : F) (r : R) (M : CStarMatrix m n A) : (r • M).map φ = r • M.map φ := by ext; simp
-/-- Entrywise mapping of a composition factors into successive `CStarMatrix.map` calls. -/
-theorem map_comp (M : CStarMatrix m n A) (f : A → B) (g : B → C) :
-    M.map (g ∘ f) = (M.map f).map g := by ext; rfl
 /-- Mapping entries by a non-unital ring homomorphism commutes with rectangular multiplication. -/
 theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
     [FunLike F A B] [NonUnitalRingHomClass F A B] (φ : F) (M : CStarMatrix l m A)

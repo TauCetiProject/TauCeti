@@ -11,8 +11,10 @@ public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
 public import TauCeti.Analysis.CStarAlgebra.Exponential
 public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
+public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Data.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 
 /-!
 # Rectangular partial isometries and stabilized Murray–von Neumann paths on `CStarMatrix`
@@ -71,7 +73,7 @@ namespace IsPartialIsometry
 /-- Right-associated partial-isometry identity `v * (v.conjTranspose * v) = v`. -/
 theorem mul_conjTranspose_mul_self' [NonUnitalSemiring A] [Star A] {v : CStarMatrix m n A}
     (hv : v.IsPartialIsometry) : v * (v.conjTranspose * v) = v := by
-  rw [← CStarMatrix.mul_assoc, hv.mul_conjTranspose_mul_self]
+  rw [← mul_assoc_rectangular, hv.mul_conjTranspose_mul_self]
 /-- Right-multiplying a rectangular partial isometry by its initial projection fixes `v`. -/
 theorem mul_eq_self_of_conjTranspose_mul_self_eq [NonUnitalSemiring A] [Star A]
     {v : CStarMatrix n m A} {p : CStarMatrix m m A} (hv : v.IsPartialIsometry)
@@ -87,7 +89,7 @@ variable [NonUnitalSemiring A] [StarRing A] {v : CStarMatrix m n A} (hv : v.IsPa
 include hv
 /-- The conjugate transpose of a rectangular partial isometry is a partial isometry. -/
 protected theorem conjTranspose : v.conjTranspose.IsPartialIsometry := by
-  rw [isPartialIsometry_iff, conjTranspose_conjTranspose, CStarMatrix.mul_assoc]
+  rw [isPartialIsometry_iff, conjTranspose_conjTranspose, mul_assoc_rectangular]
   simpa only [conjTranspose_mul, conjTranspose_conjTranspose] using
     congrArg CStarMatrix.conjTranspose hv.mul_conjTranspose_mul_self
 /-- Adjoint partial-isometry identity `v.conjTranspose * v * v.conjTranspose = v.conjTranspose`. -/
@@ -97,10 +99,10 @@ theorem conjTranspose_mul_self_mul_conjTranspose :
 /-- Adjoint identity `v.conjTranspose * (v * v.conjTranspose) = v.conjTranspose`. -/
 theorem conjTranspose_mul_self_mul_conjTranspose' :
     v.conjTranspose * (v * v.conjTranspose) = v.conjTranspose := by
-  rw [← CStarMatrix.mul_assoc, hv.conjTranspose_mul_self_mul_conjTranspose]
+  rw [← mul_assoc_rectangular, hv.conjTranspose_mul_self_mul_conjTranspose]
 /-- The initial projection `v.conjTranspose * v` of a partial isometry is a star projection. -/
 theorem isStarProjection_conjTranspose_mul_self : IsStarProjection (v.conjTranspose * v) :=
-  ⟨by rw [IsIdempotentElem, CStarMatrix.mul_assoc, ← CStarMatrix.mul_assoc v, hv],
+  ⟨by rw [IsIdempotentElem, mul_assoc_rectangular, ← mul_assoc_rectangular v, hv],
    by rw [isSelfAdjoint_iff, star_eq_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]⟩
 /-- The final projection `v * v.conjTranspose` of a partial isometry is a star projection. -/
 theorem isStarProjection_mul_conjTranspose_self : IsStarProjection (v * v.conjTranspose) := by
@@ -128,11 +130,11 @@ variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [Is
   {v : CStarMatrix m n A}
 /-- Over a proper-star ordered ring, `v` is a partial isometry if `vᴴ * v` is idempotent. -/
 theorem of_isIdempotentElem_conjTranspose_mul_self (h : IsIdempotentElem (v.conjTranspose * v)) :
-    v.IsPartialIsometry := by
-  let B : CStarMatrix (m ⊕ n) (m ⊕ n) A := fromBlocks 0 v 0 0
-  have hB : TauCeti.IsPartialIsometry B := .of_isIdempotentElem_star_mul_self <| by
-    simpa [B, fromBlocks_mul, blockSum_def] using isIdempotentElem_blockSum_iff.mpr ⟨.zero, h⟩
-  simpa [isPartialIsometry_iff, B, fromBlocks_mul] using congrArg toBlocks₁₂ hB.mul_star_mul_self
+    v.IsPartialIsometry :=
+  isPartialIsometry_iff.mpr <| ofMatrix.symm.injective <|
+    Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) <| by
+      simpa only [IsIdempotentElem, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
+        congrArg ofMatrix.symm h.eq
 /-- Over a proper-star ordered ring, `v` is a partial isometry if `v * vᴴ` is idempotent. -/
 theorem of_isIdempotentElem_mul_conjTranspose_self (h : IsIdempotentElem (v * v.conjTranspose)) :
     v.IsPartialIsometry := by
@@ -193,7 +195,8 @@ theorem self_mul_conjTranspose_mul_of_isStarProjection (M : CStarMatrix m n A)
     {p : CStarMatrix n n A} (hp : IsStarProjection p) :
     (M * p) * (M * p).conjTranspose = M * p * M.conjTranspose := by
   rw [conjTranspose_mul, conjTranspose_eq_of_isSelfAdjoint hp.isSelfAdjoint,
-    CStarMatrix.mul_assoc, ← CStarMatrix.mul_assoc p, hp.isIdempotentElem.eq, CStarMatrix.mul_assoc]
+    mul_assoc_rectangular, ← mul_assoc_rectangular p, hp.isIdempotentElem.eq,
+    mul_assoc_rectangular]
 end
 section
 variable [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p : CStarMatrix n n A}
@@ -202,26 +205,15 @@ theorem conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one_of_isStarPro
     {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) (hp : IsStarProjection p) :
     (u * p).conjTranspose * (u * p) = p := by
   rw [conjTranspose_mul, conjTranspose_eq_of_isSelfAdjoint hp.isSelfAdjoint,
-    CStarMatrix.mul_assoc, ← CStarMatrix.mul_assoc u.conjTranspose, hu, CStarMatrix.one_mul,
+    mul_assoc_rectangular, ← mul_assoc_rectangular u.conjTranspose, hu, CStarMatrix.one_mul,
     hp.isIdempotentElem.eq]
 /-- Left-multiplying a star projection `p` by an isometry `u` yields a partial isometry. -/
 theorem IsPartialIsometry.mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection [Fintype m]
     {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) (hp : IsStarProjection p) :
     (u * p).IsPartialIsometry := by
-  rw [isPartialIsometry_iff, CStarMatrix.mul_assoc,
+  rw [isPartialIsometry_iff, mul_assoc_rectangular,
     conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection hu hp,
-    CStarMatrix.mul_assoc, hp.isIdempotentElem.eq]
-/-- Initial projection of `(u : CStarMatrix n n A) * p` for unitary `u` and star projection `p`. -/
-theorem conjTranspose_mul_self_unitary_mul_of_isStarProjection (u : unitary (CStarMatrix n n A))
-    (hp : IsStarProjection p) :
-    ((u : CStarMatrix n n A) * p).conjTranspose * ((u : CStarMatrix n n A) * p) = p :=
-  conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection
-    (by rw [← star_eq_conjTranspose]; exact Unitary.coe_star_mul_self u) hp
-/-- Left-multiplying a star projection `p` by a unitary `u` yields a partial isometry. -/
-theorem IsPartialIsometry.unitary_mul_of_isStarProjection (u : unitary (CStarMatrix n n A))
-    (hp : IsStarProjection p) : ((u : CStarMatrix n n A) * p).IsPartialIsometry :=
-  .mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection
-    (by rw [← star_eq_conjTranspose]; exact Unitary.coe_star_mul_self u) hp
+    mul_assoc_rectangular, hp.isIdempotentElem.eq]
 end
 
 section
@@ -280,20 +272,54 @@ theorem IsPartialIsometry.norm_eq_one (hv : v.IsPartialIsometry) (hv0 : v ≠ 0)
     exact hv.isStarProjection_conjTranspose_mul_self.norm_eq_one
       (mt conjTranspose_mul_self_eq_zero.mp hv0)
 end
+/-- `ofMatrix.symm p` is a star projection iff `p` is a star projection. -/
+@[simp] theorem isStarProjection_ofMatrix_symm_iff [NonUnitalNonAssocSemiring A] [Star A]
+    {p : CStarMatrix m m A} : IsStarProjection (ofMatrix.symm p) ↔ IsStarProjection p := by
+  rw [isStarProjection_iff, isStarProjection_iff, IsIdempotentElem, IsIdempotentElem,
+    IsSelfAdjoint, IsSelfAdjoint, ← ofMatrix_symm_mul, Matrix.star_eq_conjTranspose,
+    ← ofMatrix_symm_star, ofMatrix.symm.injective.eq_iff, ofMatrix.symm.injective.eq_iff]
+/-- `CStarMatrix.MurrayVonNeumannEquiv` coincides with `Matrix.IsMurrayVonNeumannEquivalent` on
+underlying matrices via `ofMatrix.symm`. -/
+theorem murrayVonNeumannEquiv_iff_matrix [NonUnitalSemiring A] [StarRing A]
+    {p : CStarMatrix m m A} {q : CStarMatrix n n A} :
+    p.MurrayVonNeumannEquiv q ↔
+      Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨v, hvp, hvq⟩ := h.exists_matrix
+    rw [Matrix.isMurrayVonNeumannEquivalent_iff]
+    exact ⟨isStarProjection_ofMatrix_symm_iff.mpr h.isStarProjection_left,
+      isStarProjection_ofMatrix_symm_iff.mpr h.isStarProjection_right,
+      ofMatrix.symm v, by rw [← ofMatrix_symm_conjTranspose, ← ofMatrix_symm_mul, hvp],
+      by rw [← ofMatrix_symm_conjTranspose, ← ofMatrix_symm_mul, hvq]⟩
+  · rw [Matrix.isMurrayVonNeumannEquivalent_iff] at h
+    rcases h with ⟨hp, hq, v, hvp, hvq⟩
+    exact (murrayVonNeumannEquiv_iff (isStarProjection_ofMatrix_symm_iff.mp hp)
+      (isStarProjection_ofMatrix_symm_iff.mp hq)).mpr
+      ⟨ofMatrix v, ofMatrix.symm.injective (by simpa using hvp),
+        ofMatrix.symm.injective (by simpa using hvq)⟩
+private theorem ofMatrix_symm_reindexₐ [Semiring R] [AddCommMonoid A] [Mul A] [Module R A]
+    [Star A] (e : m ≃ n) (M : CStarMatrix m m A) :
+    ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) := by
+  ext; rfl
 section
 variable [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
 /-- A rectangular partial isometry implements Murray–von Neumann equivalence between its initial
 and final projections. -/
 theorem IsPartialIsometry.murrayVonNeumannEquiv {v : CStarMatrix n m A} (hv : v.IsPartialIsometry) :
     (v.conjTranspose * v).MurrayVonNeumannEquiv (v * v.conjTranspose) :=
-  (murrayVonNeumannEquiv_iff hv.isStarProjection_conjTranspose_mul_self
-    hv.isStarProjection_mul_conjTranspose_self).mpr ⟨v, rfl, rfl⟩
+  murrayVonNeumannEquiv_iff_matrix.mpr
+    (Matrix.isMurrayVonNeumannEquivalent_of_mul_conjTranspose_mul_self_eq
+      (v := ofMatrix.symm v)
+      (by simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
+        congrArg ofMatrix.symm hv.mul_conjTranspose_mul_self))
 /-- Extract a rectangular partial-isometry witness from a Murray–von Neumann equivalence. -/
 theorem MurrayVonNeumannEquiv.exists_isPartialIsometry (h : p.MurrayVonNeumannEquiv q) :
     ∃ v : CStarMatrix n m A, v.IsPartialIsometry ∧ v.conjTranspose * v = p ∧
       v * v.conjTranspose = q := by
-  obtain ⟨v, hv, hv', hvp⟩ := h.exists_matrix_mul_eq_self
-  exact ⟨v, by rw [isPartialIsometry_iff, CStarMatrix.mul_assoc, hv, hvp], hv, hv'⟩
+  obtain ⟨v, hvp, hvq, hv⟩ :=
+    (murrayVonNeumannEquiv_iff_matrix.mp h).exists_mul_conjTranspose_mul_self_eq
+  exact ⟨ofMatrix v, isPartialIsometry_iff.mpr <| ofMatrix.symm.injective (by simpa using hv),
+    ofMatrix.symm.injective (by simpa using hvp), ofMatrix.symm.injective (by simpa using hvq)⟩
 /-- Rectangular `MurrayVonNeumannEquiv` holds iff witnessed by a rectangular partial isometry. -/
 theorem murrayVonNeumannEquiv_iff_exists_isPartialIsometry :
     p.MurrayVonNeumannEquiv q ↔
@@ -329,10 +355,11 @@ namespace MurrayVonNeumannEquiv
 protected theorem blockSum [NonUnitalSemiring A] [StarRing A] {p₁ : CStarMatrix l l A}
     {q₁ : CStarMatrix m m A} {p₂ : CStarMatrix n n A} {q₂ : CStarMatrix o o A}
     (h₁ : p₁.MurrayVonNeumannEquiv q₁) (h₂ : p₂.MurrayVonNeumannEquiv q₂) :
-    (CStarMatrix.blockSum p₁ p₂).MurrayVonNeumannEquiv (CStarMatrix.blockSum q₁ q₂) := by
-  rcases h₁.exists_isPartialIsometry with ⟨v₁, hv₁, rfl, rfl⟩
-  rcases h₂.exists_isPartialIsometry with ⟨v₂, hv₂, rfl, rfl⟩
-  simpa only [blockSum_conjTranspose, blockSum_mul] using (hv₁.blockSum hv₂).murrayVonNeumannEquiv
+    (CStarMatrix.blockSum p₁ p₂).MurrayVonNeumannEquiv (CStarMatrix.blockSum q₁ q₂) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_blockSum, ofMatrix_symm_zero] using
+      (murrayVonNeumannEquiv_iff_matrix.mp h₁).fromBlocks
+        (murrayVonNeumannEquiv_iff_matrix.mp h₂)
 section
 variable {p : CStarMatrix m m A} {q : CStarMatrix n n A}
 /-- Non-unital `⋆`-algebra homomorphisms via `mapₙₐ` preserve `MurrayVonNeumannEquiv`. -/
@@ -354,20 +381,23 @@ protected theorem amplify (k : Type*) [Fintype k] [DecidableEq k] [NonUnitalSemi
 end
 end MurrayVonNeumannEquiv
 theorem murrayVonNeumannEquiv_comm [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A}
-    {q : CStarMatrix n n A} : p.MurrayVonNeumannEquiv q ↔ q.MurrayVonNeumannEquiv p :=
-  ⟨MurrayVonNeumannEquiv.symm, MurrayVonNeumannEquiv.symm⟩
+    {q : CStarMatrix n n A} : p.MurrayVonNeumannEquiv q ↔ q.MurrayVonNeumannEquiv p := by
+  rw [murrayVonNeumannEquiv_iff_matrix, murrayVonNeumannEquiv_iff_matrix,
+    Matrix.isMurrayVonNeumannEquivalent_comm]
 section
 variable [Semiring R] [NonUnitalSemiring A] [Module R A] [StarRing A]
 private theorem mvn_reindexₐ_congr (R) [Semiring R] [Module R A] (e₁ : k ≃ l) (e₂ : m ≃ n)
     {p : CStarMatrix k k A} {q : CStarMatrix m m A} (h : p.MurrayVonNeumannEquiv q) :
-    (reindexₐ R A e₁ p).MurrayVonNeumannEquiv (reindexₐ R A e₂ q) := by
-  rcases h.exists_isPartialIsometry with ⟨v, hv, rfl, rfl⟩
-  simpa [conjTranspose_reindexₗ, reindexₗ_mul, reindexₗ_self_eq_reindexₐ] using
-    (hv.reindexₗ (R := R) e₂ e₁).murrayVonNeumannEquiv
+    (reindexₐ R A e₁ p).MurrayVonNeumannEquiv (reindexₐ R A e₂ q) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_reindexₐ] using
+      (murrayVonNeumannEquiv_iff_matrix.mp h).reindex e₁ e₂
 /-- Reindexing a star projection along a bijection `e : m ≃ n` yields an equivalent projection. -/
 theorem murrayVonNeumannEquiv_reindexₐ (e : m ≃ n) {p : CStarMatrix m m A}
-    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (reindexₐ R A e p) := by
-  simpa using mvn_reindexₐ_congr R (.refl m) e (.refl hp)
+    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (reindexₐ R A e p) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_reindexₐ] using
+      (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_reindex e
 @[simp] theorem murrayVonNeumannEquiv_reindexₐ_right_iff (e : m ≃ n) {p : CStarMatrix l l A}
     {q : CStarMatrix m m A} :
     p.MurrayVonNeumannEquiv (reindexₐ R A e q) ↔ p.MurrayVonNeumannEquiv q :=
@@ -383,33 +413,35 @@ section
 variable [NonUnitalSemiring A] [StarRing A]
 /-- Padding a star projection by a lower-right zero block yields an equivalent projection. -/
 theorem murrayVonNeumannEquiv_blockSum_zero (n : Type*) [Fintype n] {p : CStarMatrix m m A}
-    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (blockSum p (0 : CStarMatrix n n A)) := by
-  have hfr := fromRows_zero_mul_conjTranspose_fromRows_zero (n := n) hp
-  have hv : (fromRows p (0 : CStarMatrix n m A)).IsPartialIsometry := by
-    rw [isPartialIsometry_iff, hfr, blockSum_mul_fromRows, hp.isIdempotentElem.eq,
-      CStarMatrix.zero_mul]
-  have h1 : (fromRows p (0 : CStarMatrix n m A)).conjTranspose * fromRows p 0 = p := by
-    simp [conjTranspose_eq_of_isSelfAdjoint hp.isSelfAdjoint, hp.isIdempotentElem.eq]
-  simpa only [h1, hfr] using hv.murrayVonNeumannEquiv
+    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (blockSum p (0 : CStarMatrix n n A)) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_blockSum, ofMatrix_symm_zero] using
+      (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_fromBlocks_zero
 /-- Swapping the two diagonal blocks of `blockSum p q` preserves Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_blockSum_comm {p : CStarMatrix m m A} {q : CStarMatrix n n A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) :
     (blockSum p q).MurrayVonNeumannEquiv (blockSum q p) :=
-  reindexₐ_sumComm_blockSum (R := ℕ) p q ▸
-    murrayVonNeumannEquiv_reindexₐ (R := ℕ) (.sumComm m n)
-      (isStarProjection_blockSum_iff.mpr ⟨hp, hq⟩)
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_blockSum, ofMatrix_symm_zero] using
+      Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm
+        (isStarProjection_ofMatrix_symm_iff.mpr hp) (isStarProjection_ofMatrix_symm_iff.mpr hq)
 /-- `blockSum` of star projections is associative up to Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_blockSum_assoc {p : CStarMatrix l l A} {q : CStarMatrix m m A}
     {r : CStarMatrix n n A} (hp : IsStarProjection p) (hq : IsStarProjection q)
     (hr : IsStarProjection r) : (blockSum (blockSum p q) r).MurrayVonNeumannEquiv
-      (blockSum p (blockSum q r)) := reindexₐ_sumAssoc_blockSum (R := ℕ) p q r ▸
-  murrayVonNeumannEquiv_reindexₐ (R := ℕ) (.sumAssoc l m n)
-    (isStarProjection_blockSum_iff.mpr ⟨isStarProjection_blockSum_iff.mpr ⟨hp, hq⟩, hr⟩)
+      (blockSum p (blockSum q r)) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_blockSum, ofMatrix_symm_zero] using
+      Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc
+        (isStarProjection_ofMatrix_symm_iff.mpr hp)
+        (isStarProjection_ofMatrix_symm_iff.mpr hq)
+        (isStarProjection_ofMatrix_symm_iff.mpr hr)
 /-- Padding a star projection by an upper-left zero block yields an equivalent projection. -/
 theorem murrayVonNeumannEquiv_zero_blockSum (m : Type*) [Fintype m] {q : CStarMatrix n n A}
     (hq : IsStarProjection q) : q.MurrayVonNeumannEquiv (blockSum (0 : CStarMatrix m m A) q) :=
-  (murrayVonNeumannEquiv_blockSum_zero m hq).trans <|
-    murrayVonNeumannEquiv_blockSum_comm hq (.zero _)
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_blockSum, ofMatrix_symm_zero] using
+      (isStarProjection_ofMatrix_symm_iff.mpr hq).isMurrayVonNeumannEquivalent_zero_fromBlocks
 @[simp] theorem murrayVonNeumannEquiv_blockSum_zero_right_iff {p : CStarMatrix l l A}
     {q : CStarMatrix m m A} : p.MurrayVonNeumannEquiv (blockSum q (0 : CStarMatrix n n A)) ↔
       p.MurrayVonNeumannEquiv q := ⟨fun h => h.trans (murrayVonNeumannEquiv_blockSum_zero n
@@ -454,12 +486,13 @@ end
 /-- Conjugating a star projection `p` by an isometry `u` (`uᴴ * u = 1`) gives `p ∼ u * p * uᴴ`. -/
 theorem murrayVonNeumannEquiv_conj_of_conjTranspose_mul_self_eq_one [DecidableEq n] [Semiring A]
     [StarRing A] {u : CStarMatrix m n A} (hu : u.conjTranspose * u = 1) {p : CStarMatrix n n A}
-    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (u * p * u.conjTranspose) := by
-  have h1 := conjTranspose_mul_self_mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection hu hp
-  have h2 := self_mul_conjTranspose_mul_of_isStarProjection u hp
-  simpa only [h1, h2] using
-    (IsPartialIsometry.mul_of_conjTranspose_mul_self_eq_one_of_isStarProjection hu
-      hp).murrayVonNeumannEquiv
+    (hp : IsStarProjection p) : p.MurrayVonNeumannEquiv (u * p * u.conjTranspose) :=
+  murrayVonNeumannEquiv_iff_matrix.mpr <| by
+    simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
+      (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_mul_mul_conjTranspose
+        (w := ofMatrix.symm u) (by
+          simpa only [← ofMatrix_symm_mul, ← ofMatrix_symm_conjTranspose, hu,
+            ofMatrix_symm_one] using Matrix.one_mul (ofMatrix.symm p))
 /-- Unitary conjugacy over `Unitization R A` between projections from `A` gives `p ∼ q`. -/
 theorem MurrayVonNeumannEquiv.of_unitary_conj_unitization (R : Type*) [DecidableEq n]
     [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A]
@@ -478,12 +511,12 @@ theorem MurrayVonNeumannEquiv.of_unitary_conj_unitization (R : Type*) [Decidable
     dsimp only [w]; rw [mul_apply, ← Unitization.fstHom_apply, map_sum]
     exact (Finset.sum_eq_zero fun k _ => by simp [ι, Unitization.fst_mul]).symm) rfl
   have hpι : IsStarProjection (p.map ι) := by rw [← mapₙₐ_eq_map]; exact hp.map (mapₙₐ ι)
-  have hv : v.IsPartialIsometry := hι <| by
-    simpa only [map_mul, map_conjTranspose, hv_map] using
-      (IsPartialIsometry.unitary_mul_of_isStarProjection u hpι).mul_conjTranspose_mul_self
+  have hv : v.IsPartialIsometry := isPartialIsometry_iff.mpr <| hι <| by
+    simpa only [← star_eq_conjTranspose, map_mul, CStarMatrix.map_star, hv_map] using
+      (TauCeti.IsPartialIsometry.unitary_mul_of_isStarProjection u hpι).mul_star_mul_self
   have hvp : v.conjTranspose * v = p := hι <| by
-    simpa only [map_mul, map_conjTranspose, hv_map] using
-      conjTranspose_mul_self_unitary_mul_of_isStarProjection u hpι
+    simpa only [← star_eq_conjTranspose, map_mul, CStarMatrix.map_star, hv_map] using
+      hpι.star_mul_self_unitary_mul u
   have hvq : v * v.conjTranspose = q := hι <| by
     simpa only [map_mul, map_conjTranspose, hv_map, w, ← hu, star_eq_conjTranspose, ι] using
       self_mul_conjTranspose_mul_of_isStarProjection u.val hpι
@@ -528,7 +561,9 @@ end IsPartialIsometry
 
 section
 variable (v : CStarMatrix n m A) (p : CStarMatrix m m A) (q : CStarMatrix n n A)
-/-- Unit-free `(2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q`, matching `2⁻¹ • (1 - w)`. -/
+/-- Unit-free `(2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q`. When `v` witnesses
+Murray–von Neumann equivalence between `p` and `q` over a unital ring with real scalar action,
+this equals `(2⁻¹ : ℝ) • (1 - w)` for the associated `stabilizedConjUnitary` `w`. -/
 def stabilizedNegProj [Neg A] [Star A] [SMul ℝ A] : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
   (2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q
 theorem stabilizedNegProj_def [Neg A] [Star A] [SMul ℝ A] :
@@ -621,7 +656,7 @@ private theorem isPartialIsometry_stabilizedProjRotRows (t : ℝ) :
         ↑(Real.sin θ) * Complex.I * (-Complex.I * ↑(Real.sin θ)) = 1 by
       linear_combination (by simp : (Real.cos θ : ℂ) ^ 2 + (Real.sin θ : ℂ) ^ 2 = 1) -
         (Real.sin θ : ℂ) ^ 2 * Complex.I_sq, one_smul]
-  rw [isPartialIsometry_iff, CStarMatrix.mul_assoc, hinit, stabilizedProjRotRows, fromRows_mul,
+  rw [isPartialIsometry_iff, mul_assoc_rectangular, hinit, stabilizedProjRotRows, fromRows_mul,
     CStarMatrix.smul_mul, CStarMatrix.smul_mul, hp_proj.isIdempotentElem.eq,
     hv.mul_eq_self_of_conjTranspose_mul_self_eq hp]
 /-- Every point on `stabilizedProjRot v p q` for a partial isometry `v` is a star projection. -/
@@ -702,8 +737,8 @@ theorem expUnitary_conj_blockSum_eq_stabilizedProjRot (t : ℝ) :
     rw [Complex.star_def, Complex.mul_conj, hz, Complex.normSq_add_mul_I]; simp
   -- Factor `blockSum p 0 = F * Fᴴ` so `U * blockSum p 0 * Uᴴ = (U * F) * (U * F)ᴴ`.
   rw [star_eq_conjTranspose, ← fromRows_zero_mul_conjTranspose_fromRows_zero
-      (hp ▸ hv.isStarProjection_conjTranspose_mul_self), ← CStarMatrix.mul_assoc,
-    CStarMatrix.mul_assoc (_ * fromRows p 0), ← conjTranspose_mul,
+      (hp ▸ hv.isStarProjection_conjTranspose_mul_self), ← mul_assoc_rectangular,
+    mul_assoc_rectangular (_ * fromRows p 0), ← conjTranspose_mul,
     hv.expUnitary_smul_stabilizedNegProj_mul_fromRows hp hq t, conjTranspose_smul,
     CStarMatrix.smul_mul_smul, hzz, one_smul, hv.stabilizedProjRotRows_mul_conjTranspose hp hq t]
 end
@@ -740,11 +775,17 @@ theorem MurrayVonNeumannEquiv.exists_isSelfAdjoint_unitary_conj_blockSum_eq
     ∃ w : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A),
       IsSelfAdjoint (w : CStarMatrix (m ⊕ n) (m ⊕ n) A) ∧
       (w : CStarMatrix (m ⊕ n) (m ⊕ n) A) * blockSum p 0 *
-        star (w : CStarMatrix (m ⊕ n) (m ⊕ n) A) = blockSum 0 q :=
-  let ⟨_, hv, hp, hq⟩ := h.exists_isPartialIsometry
-  ⟨hv.stabilizedConjUnitary hp hq,
-    hv.isSelfAdjoint_stabilizedConjUnitary hp hq, hv.stabilizedConjUnitary_conj hp hq⟩
-/-- Over a unital C⋆-algebra, equivalent projections are conjugate by a unitary joined to `1`. -/
+        star (w : CStarMatrix (m ⊕ n) (m ⊕ n) A) = blockSum 0 q := by
+  obtain ⟨w, hw_sa, hw_u, hw_conj⟩ :=
+    (murrayVonNeumannEquiv_iff_matrix.mp h).exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
+  exact ⟨⟨ofMatrix w, Unitary.mem_iff.mpr
+      ⟨ofMatrix.symm.injective (by simpa [← Matrix.star_eq_conjTranspose] using hw_u.1),
+       ofMatrix.symm.injective (by simpa [← Matrix.star_eq_conjTranspose] using hw_u.2)⟩⟩,
+    isSelfAdjoint_iff.mpr <| ofMatrix.symm.injective
+      (by simpa [← Matrix.star_eq_conjTranspose] using hw_sa.star_eq),
+    ofMatrix.symm.injective (by simpa [blockSum_def, ← Matrix.star_eq_conjTranspose] using hw_conj)⟩
+/-- Over a unital C⋆-algebra, if `p` and `q` are Murray–von Neumann equivalent, a unitary joined
+to `1` conjugates `blockSum p 0` to `blockSum 0 q`. -/
 theorem MurrayVonNeumannEquiv.exists_joined_one_unitary_conj_blockSum_eq
     [DecidableEq m] [DecidableEq n] [CStarAlgebra A] (h : p.MurrayVonNeumannEquiv q) :
     ∃ w : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A), Joined 1 w ∧

@@ -57,10 +57,8 @@ variable [Fintype m] [Fintype n]
 theorem isAdjointPair_toCLM_conjTranspose (M : CStarMatrix m n A) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A)).flip
       (CStarModule.innerₛₗ (A := A)).flip (toCLM M) (toCLM M.conjTranspose) :=
-  CStarModule.isAdjointPair_inner_iff.mpr fun _ _ => by
-    simp only [toCLM_apply_eq_sum, WithCStarModule.pi_inner, WithCStarModule.equiv_symm_pi_apply,
-      WithCStarModule.inner_def, conjTranspose_apply, Finset.mul_sum, Finset.sum_mul, star_sum,
-      star_mul, mul_assoc]; exact Finset.sum_comm
+  CStarModule.isAdjointPair_inner_iff.mpr fun _ _ =>
+    CStarMatrix.inner_toCLM_conjTranspose_right.symm
 /-- Conjugate transposition on rectangular `CStarMatrix` is isometric. -/
 @[simp] theorem norm_conjTranspose (M : CStarMatrix m n A) : ‖M.conjTranspose‖ = ‖M‖ := by
   rw [norm_def, norm_def]; exact (isAdjointPair_toCLM_conjTranspose M).norm_eq_cstarModule
