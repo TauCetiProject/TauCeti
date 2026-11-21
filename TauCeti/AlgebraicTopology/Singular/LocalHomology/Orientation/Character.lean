@@ -134,7 +134,7 @@ theorem coe_localOrientationTransport_eq_zsmul (hd : finrank ℝ E = d) {x : M}
 
 /-- The orientation character takes only the values `1` and `-1`, so it is its own inverse. -/
 @[simp]
-theorem orientationCharacter_inv (hd : finrank ℝ E = d) (x : M) :
+theorem inv_orientationCharacter (hd : finrank ℝ E = d) (x : M) :
     (orientationCharacter hd x)⁻¹ = orientationCharacter hd x :=
   MonoidHom.ext fun _ ↦ Int.units_inv_eq_self _
 
