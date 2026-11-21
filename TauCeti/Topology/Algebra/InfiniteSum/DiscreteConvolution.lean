@@ -9,8 +9,10 @@ public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Data.Finset.NatAntidiagonal
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
@@ -47,6 +49,9 @@ groupings agree.
 * `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and its ring version
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
+* `DiscreteConvolution.norm_addRingConvolution_apply_le`: on an additive group, over an ultrametric
+  ring, if the coefficient norms of `f` and `g` are bounded by `A` and `B`, those of `f ⋆ᵣ₊ g` are
+  bounded by `A B`.
 * `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
   `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable families in a complete normed ring
   sums to `(∑ f) (∑ g)`.
@@ -210,6 +215,16 @@ theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [Topolo
     (f g : M → R) (x : M) :
     (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
   addConvolution_eq_tsum_neg_add _ f g x
+
+/-- On an additive group, over an ultrametric ring, if the coefficient norms of `f` and `g` are
+bounded by `A` and `B`, those of `f ⋆ᵣ₊ g` are bounded by `A B`. -/
+theorem norm_addRingConvolution_apply_le [SeminormedRing R] [IsUltrametricDist R] {f g : M → R}
+    {A B : ℝ} (hf : ∀ x, ‖f x‖ ≤ A) (hg : ∀ x, ‖g x‖ ≤ B) (x : M) : ‖(f ⋆ᵣ₊ g) x‖ ≤ A * B := by
+  have hA : 0 ≤ A := (norm_nonneg _).trans (hf 0)
+  rw [addRingConvolution_eq_tsum_sub]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hA ((norm_nonneg _).trans (hg 0))) fun y ↦
+      (norm_mul_le _ _).trans (mul_le_mul (hf _) (hg _) (norm_nonneg _) hA)
 
 /-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable
 families in a complete normed ring sums to `(∑ f) (∑ g)`. -/
