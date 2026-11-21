@@ -27,6 +27,10 @@ sequence with `P₁` and `P₀` projective. Then
 * `Torₙ(X, M)` vanishes for `n ≥ 2`
   (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_add_two`).
 
+Symmetrically, `Tor'₁(M, X)`, for Mathlib's `CategoryTheory.Tor'` deriving the first variable, is
+the kernel of `S.f ▷ X : P₁ ⊗ X ⟶ P₀ ⊗ X`
+(`CategoryTheory.ShortComplex.ShortExact.tor'OneIsoKernel`).
+
 Over a principal ideal domain the boundaries and cycles of a complex of free modules are free, so
 the homology `Hⱼ` has the presentation `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ ⟶ 0`. This identifies the `Tor₁` terms
 of the Künneth short exact sequence `0 ⟶ ⨁ Hᵢ ⊗ Hⱼ ⟶ Hₙ(K ⊗ L) ⟶ ⨁ Tor₁(Hᵢ, Hⱼ) ⟶ 0` with the
@@ -89,6 +93,11 @@ lemma homologyπ_comp_isoLeftDerivedObj_inv_comp_torOneIsoKernel_hom_comp_ι (X 
         (hS.torOneIsoKernel X).hom ≫ kernel.ι (X ◁ S.f) =
       ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj S.resolutionComplex).iCycles 1 :=
   hS.homologyπ_comp_isoLeftDerivedObj_inv_comp_leftDerivedOneIsoKernel_hom_comp_ι _
+
+/-- For a projective presentation `0 ⟶ P₁ ⟶ P₀ ⟶ M ⟶ 0`, `Tor'₁(M, X)`, which derives the first
+variable, is the kernel of `S.f ▷ X : P₁ ⊗ X ⟶ P₀ ⊗ X`. -/
+def tor'OneIsoKernel (X : C) : ((Tor' C 1).obj S.X₃).obj X ≅ kernel (S.f ▷ X) :=
+  hS.leftDerivedOneIsoKernel ((tensoringRight C).obj X)
 
 include hS in
 /-- `Torₙ(X, M)` vanishes for `n ≥ 2` when `M` has a projective presentation of length one. -/
