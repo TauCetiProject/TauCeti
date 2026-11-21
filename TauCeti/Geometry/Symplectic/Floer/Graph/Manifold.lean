@@ -56,8 +56,9 @@ energy plus a bounded term. This is how compactness for unperturbed pseudoholomo
 `(ℝ × ℝ) × M` applies to solutions of the inhomogeneous Floer equation in `M`.
 
 These are statements about one tangent space at a time, for the Floer data `(J, K)` of the
-manifold Floer equation of `TauCeti.Geometry.Symplectic.Floer.Manifold`. The smoothness of `J_K` as
-a section of the endomorphism bundle, and the closedness of `Ω_c`, are not treated here. For
+manifold Floer equation of `TauCeti.Geometry.Symplectic.Floer.Manifold`. For jointly smooth data,
+`J_K` is a smooth section of the endomorphism bundle of `(ℝ × ℝ) × M`
+(`TauCeti.Geometry.Symplectic.Floer.Graph.Smooth`); the closedness of `Ω_c` is not treated here. For
 bundled finite-regularity data with an antilinear forcing term, the same skew product is
 `TauCeti.InhomogeneousTerm.graphStructureAt`.
 
