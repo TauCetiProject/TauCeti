@@ -99,7 +99,7 @@ theorem mem_normSubgroup_of_coprime (hg : L'.ground ≤ L.ground) (ht : L'.top �
   have hn : L.degree • x ∈ L.normSubgroup F := by
     refine (mem_normSubgroup L F).2
       ⟨Submodule.inclusion (F.level_antitone L.top_le_ground) x, Subtype.ext ?_⟩
-    rw [norm_apply_coe_of_mem_level_ground _ _ _ x.2]
+    rw [norm_apply_coe_of_mem_level_ground _ _ _ x.property]
     simp
   -- Some integer combination of the two degrees is `1`.
   obtain ⟨a, b, hab⟩ := Nat.isCoprime_iff_coprime.2 hcop
@@ -146,9 +146,9 @@ def compositum : NormalLayer G where
   top_le_ground := inf_le_inf_right W L.top_le_ground
   normal := ⟨fun v hv u ↦ by
     rw [Subgroup.mem_subgroupOf, OpenSubgroup.toSubgroup_inf] at hv ⊢
-    exact ⟨L.conj_mem_top (OpenSubgroup.mem_inf.1 u.2).1 hv.1,
-      W.toSubgroup.mul_mem (W.toSubgroup.mul_mem (OpenSubgroup.mem_inf.1 u.2).2 hv.2)
-        (W.toSubgroup.inv_mem (OpenSubgroup.mem_inf.1 u.2).2)⟩⟩
+    exact ⟨L.conj_mem_top (OpenSubgroup.mem_inf.1 u.property).1 hv.1,
+      W.toSubgroup.mul_mem (W.toSubgroup.mul_mem (OpenSubgroup.mem_inf.1 u.property).2 hv.2)
+        (W.toSubgroup.inv_mem (OpenSubgroup.mem_inf.1 u.property).2)⟩⟩
 
 /-- The ground subgroup of the compositum `LE/KE` is `U ⊓ W`, cutting out `KE`. -/
 @[simp]
@@ -246,7 +246,7 @@ theorem compositumGalHom_injective : Function.Injective (L.compositumGalHom W) :
     have hground : (L.compositum W).ground ≤ W := by
       rw [compositum_ground]
       exact inf_le_right
-    have hu : (u : G) ∈ W := hground u.2
+    have hu : (u : G) ∈ W := hground u.property
     rw [QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf, OpenSubgroup.mem_toSubgroup,
       compositum_top, OpenSubgroup.mem_inf]
     exact ⟨hγ, hu⟩

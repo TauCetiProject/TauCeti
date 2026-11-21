@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
@@ -25,12 +26,15 @@ definition and decomposition of zigzag algebras.
 
 * `TauCeti.DoubledQuiver.walkToPath`: turn a graph walk into a doubled-quiver path.
 * `TauCeti.DoubledQuiver.pathToWalk`: turn a doubled-quiver path into a graph walk.
+* `TauCeti.DoubledQuiver.walkEquivPath`: bundle `walkToPath` and `pathToWalk` as an equivalence.
 * `TauCeti.DoubledQuiver.connectedComponentEquiv`: identify the two component types.
 
 ## Main results
 
 * `TauCeti.DoubledQuiver.pathToWalk_walkToPath` and `TauCeti.DoubledQuiver.walkToPath_pathToWalk`:
   the two conversions are mutually inverse.
+* `TauCeti.DoubledQuiver.vertices_walkToPath` and `TauCeti.DoubledQuiver.support_pathToWalk`:
+  the conversions map the ordered vertex lists along `vertex` and `(vertexEquiv G).symm`.
 * `TauCeti.DoubledQuiver.reachable_iff`: graph and doubled-quiver reachability agree.
 * `TauCeti.DoubledQuiver.preconnected_iff_isStronglyConnected`: graph preconnectedness is strong
   connectivity of the doubled quiver.
@@ -158,6 +162,47 @@ theorem walkToPath_pathToWalk {i j : V} (p : Quiver.Path (vertex G i) (vertex G 
   Quiver.Path.toList_injective _ _ <| by
     unfold pathToWalk
     rw [toList_walkToPath_copy, toList_walkToPath_pathToWalkAux]
+
+/-- Undirected walks of `G` between `u` and `v` are canonically equivalent to directed paths of
+`DoubledQuiver G` from `vertex G u` to `vertex G v`, bundling `DoubledQuiver.walkToPath` and
+`DoubledQuiver.pathToWalk`. -/
+def walkEquivPath (u v : V) : G.Walk u v ≃ Quiver.Path (vertex G u) (vertex G v) where
+  toFun := walkToPath G
+  invFun := pathToWalk G
+  left_inv := pathToWalk_walkToPath G
+  right_inv := walkToPath_pathToWalk G
+
+@[simp]
+theorem walkEquivPath_apply {u v : V} (p : G.Walk u v) :
+    walkEquivPath G u v p = walkToPath G p :=
+  (rfl)
+
+@[simp]
+theorem walkEquivPath_symm_apply {u v : V} (q : Quiver.Path (vertex G u) (vertex G v)) :
+    (walkEquivPath G u v).symm q = pathToWalk G q :=
+  (rfl)
+
+/-- `DoubledQuiver.walkToPath` maps the vertex support of a simple-graph walk in order along
+`DoubledQuiver.vertex`. -/
+@[simp]
+theorem vertices_walkToPath {u v : V} (p : G.Walk u v) :
+    (walkToPath G p).vertices = p.support.map (vertex G) := by
+  induction p with
+  | nil => simp
+  | cons h p ih =>
+    rw [walkToPath_cons, Quiver.Path.vertices_comp, ih]
+    simp [Quiver.Hom.toPath]
+
+/-- `DoubledQuiver.pathToWalk` maps the vertex sequence of a doubled-quiver path in order along
+`(vertexEquiv G).symm`. -/
+@[simp]
+theorem support_pathToWalk {u v : V} (q : Quiver.Path (vertex G u) (vertex G v)) :
+    (pathToWalk G q).support = q.vertices.map (vertexEquiv G).symm := by
+  conv_rhs => rw [← walkToPath_pathToWalk G q]
+  rw [vertices_walkToPath, List.map_map]
+  have hcomp : (vertexEquiv G).symm ∘ vertex G = id :=
+    funext (vertexEquiv_symm_vertex G)
+  rw [hcomp, List.map_id]
 
 /-- Turning a graph walk into a doubled-quiver path preserves its length. -/
 @[simp]

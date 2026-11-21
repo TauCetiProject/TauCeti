@@ -51,6 +51,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   precomposition with the quotient morphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientMapOfLe_surjective`: the finite-type form of
   quotient-to-quotient surjectivity.
+* `CommHopfAlgCat.quotientMap`, `TauCeti.FiniteTypeCommHopfAlgCat.quotientMap`: the morphism
+  `H ⧸ I ⟶ K ⧸ J` induced by a morphism `f : H ⟶ K` with `I.map f ≤ J`.
 * `CommHopfAlgCat.kerOfSurjective_quotientMapOfLe`: over a commutative ring, the
   Hopf ideal `J/I` is the surjective kernel of the induced quotient map.
 * `CommHopfAlgCat.ker_quotientMapOfLe`: over a field, the Hopf ideal `J/I` is the
@@ -670,6 +672,55 @@ theorem quotientMapOfLe_injective_iff (H : _root_.CommHopfAlgCat.{v} R)
     rw [quotientMapOfLe_refl]
     exact Function.injective_id
 
+/-- The coordinate morphism `H ⧸ I ⟶ K ⧸ J` induced by a morphism `f : H ⟶ K` with
+`I.map f ≤ J`. If `f` is the coordinate arrow of a homomorphism `φ : G' → G` mapping the closed
+subgroup `N'` cut out by `J` into the closed subgroup `N` cut out by `I`, this is the coordinate
+arrow of the restriction `N' → N`.
+
+It is the unique morphism out of `H ⧸ I` whose composite with `H ⟶ H ⧸ I` is
+`f ≫ (K ⟶ K ⧸ J)`. -/
+noncomputable def quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map f.hom ≤ J) : quotient H I ⟶ quotient K J :=
+  liftQuotient I (f ≫ mkQuotient K J) fun _ ha ↦
+    (mkQuotient_eq_zero_iff K J _).mpr (HopfIdeal.map_le_iff.mp h ha)
+
+/-- The induced quotient morphism sends the class of `a` modulo `I` to the class of `f a`
+modulo `J`. -/
+@[simp]
+lemma quotientMap_mk (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map f.hom ≤ J) (a : H) :
+    (quotientMap I J f h).hom (Ideal.Quotient.mk I.toIdeal a) =
+      Ideal.Quotient.mk J.toIdeal (f.hom a) :=
+  Bialgebra.Quotient.liftBialgHom_mk _ _ _ a
+
+/-- The induced quotient morphism commutes with the quotient morphisms. -/
+@[reassoc (attr := simp)]
+lemma mkQuotient_comp_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map f.hom ≤ J) :
+    mkQuotient H I ≫ quotientMap I J f h = f ≫ mkQuotient K J :=
+  mkQuotient_comp_liftQuotient _ _ _
+
+/-- Along the identity morphism, the induced quotient morphism is the quotient-to-quotient
+morphism of the inclusion `I ≤ J`. -/
+@[simp]
+lemma quotientMap_id (I J : HopfIdeal R H) (h : I.map (𝟙 H : H ⟶ H).hom ≤ J) :
+    quotientMap I J (𝟙 H) h = quotientMapOfLe H (by rwa [← HopfIdeal.map_id I]) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_quotientMap, mkQuotient_comp_quotientMapOfLe, Category.id_comp]
+
+/-- Induced quotient morphisms compose along composites of morphisms. -/
+@[simp]
+lemma quotientMap_comp {L : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
+    (J : HopfIdeal R K) (M : HopfIdeal R L) (f : H ⟶ K) (g : K ⟶ L)
+    (hf : I.map f.hom ≤ J) (hg : J.map g.hom ≤ M) :
+    quotientMap I J f hf ≫ quotientMap J M g hg =
+      quotientMap I M (f ≫ g) (by
+        rw [hom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono g.hom hf).trans hg) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_quotientMap_assoc, mkQuotient_comp_quotientMap,
+    mkQuotient_comp_quotientMap, Category.assoc]
+
 end CommHopfAlgCat
 
 end CommHopfAlgebras
@@ -872,6 +923,53 @@ lemma quotientMapOfLe_comp (H : FiniteTypeCommHopfAlgCat.{u, v} R)
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
     (_root_.CommHopfAlgCat.{v} R)).map_injective
   exact CommHopfAlgCat.quotientMapOfLe_comp H.obj hIJ hJK
+
+/-- The finite-type coordinate morphism `H ⧸ I ⟶ K ⧸ J` induced by a morphism `f : H ⟶ K` with
+`I.map f ≤ J`: the coordinate arrow of the restriction to closed subgroups of the homomorphism
+with coordinate arrow `f`. -/
+noncomputable def quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map (toBialgHom f) ≤ J) : quotient H I ⟶ quotient K J :=
+  ObjectProperty.homMk (CommHopfAlgCat.quotientMap I J f.hom h)
+
+/-- The finite-type induced quotient morphism sends the class of `a` modulo `I` to the class of
+`f a` modulo `J`. -/
+@[simp]
+lemma quotientMap_mk (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map (toBialgHom f) ≤ J) (a : H) :
+    toBialgHom (quotientMap I J f h) (Ideal.Quotient.mk I.toIdeal a) =
+      Ideal.Quotient.mk J.toIdeal (toBialgHom f a) :=
+  CommHopfAlgCat.quotientMap_mk I J f.hom h a
+
+/-- The finite-type induced quotient morphism commutes with the quotient morphisms. -/
+@[reassoc (attr := simp)]
+lemma mkQuotient_comp_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    (h : I.map (toBialgHom f) ≤ J) :
+    mkQuotient H I ≫ quotientMap I J f h = f ≫ mkQuotient K J := by
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (_root_.CommHopfAlgCat.{v} R)).map_injective
+  exact CommHopfAlgCat.mkQuotient_comp_quotientMap I J f.hom h
+
+/-- Along the identity morphism, the finite-type induced quotient morphism is the
+quotient-to-quotient morphism of the inclusion `I ≤ J`. -/
+@[simp]
+lemma quotientMap_id (I J : HopfIdeal R H) (h : I.map (toBialgHom (𝟙 H)) ≤ J) :
+    quotientMap I J (𝟙 H) h = quotientMapOfLe H (by rwa [← HopfIdeal.map_id I]) := by
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (_root_.CommHopfAlgCat.{v} R)).map_injective
+  exact CommHopfAlgCat.quotientMap_id I J h
+
+/-- Finite-type induced quotient morphisms compose along composites of morphisms. -/
+@[simp]
+lemma quotientMap_comp {L : FiniteTypeCommHopfAlgCat.{u, v} R} (I : HopfIdeal R H)
+    (J : HopfIdeal R K) (M : HopfIdeal R L) (f : H ⟶ K) (g : K ⟶ L)
+    (hf : I.map (toBialgHom f) ≤ J) (hg : J.map (toBialgHom g) ≤ M) :
+    quotientMap I J f hf ≫ quotientMap J M g hg =
+      quotientMap I M (f ≫ g) (by
+        rw [toBialgHom_comp, ← HopfIdeal.map_map]
+        exact (HopfIdeal.map_mono (toBialgHom g) hf).trans hg) := by
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (_root_.CommHopfAlgCat.{v} R)).map_injective
+  exact CommHopfAlgCat.quotientMap_comp I J M f.hom g.hom hf hg
 
 end TauCeti.FiniteTypeCommHopfAlgCat
 

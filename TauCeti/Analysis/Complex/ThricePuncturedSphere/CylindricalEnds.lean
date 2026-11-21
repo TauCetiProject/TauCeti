@@ -59,7 +59,7 @@ def negativeEnd : Iio (0 : ℝ) × AddCircle (1 : ℝ) ≃ₜ inf.neighborhood :
 
 /-- The negative end at infinity is the standard positive radial end with both signs reversed. -/
 theorem negativeEnd_apply (s : Iio (0 : ℝ)) (t : AddCircle (1 : ℝ)) :
-    negativeEnd (s, t) = inf.cylindricalEnd (⟨-(s : ℝ), neg_pos.mpr s.2⟩, -t) := (rfl)
+    negativeEnd (s, t) = inf.cylindricalEnd (⟨-(s : ℝ), neg_pos.mpr s.property⟩, -t) := (rfl)
 
 /-- The complex lifts of the two positive ends and the negative end at infinity.
 The lift at infinity is also `2 / exp (2πz)`. -/

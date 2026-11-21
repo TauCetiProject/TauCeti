@@ -71,7 +71,7 @@ to the class of `g • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquiv_mk_apply
     (g : Subgroup.normalizer (H : Set (FundamentalGroup X x₀))) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).1 (Quotient.mk'' e) =
+    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).val (Quotient.mk'' e) =
       Quotient.mk'' ((g : FundamentalGroup X x₀) • e) := by
   simpa [deckSubgroupQuotientProjEquiv] using
     (isQuotientCoveringMap (x₀ := x₀)).normalizerDeckHom_apply
@@ -83,7 +83,7 @@ class of `e` to the class of `g⁻¹ • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquiv_mk_symm_apply
     (g : Subgroup.normalizer (H : Set (FundamentalGroup X x₀))) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).1.symm (Quotient.mk'' e) =
+    (deckSubgroupQuotientProjEquiv x₀ H (QuotientGroup.mk g)).val.symm (Quotient.mk'' e) =
       Quotient.mk'' ((g : FundamentalGroup X x₀)⁻¹ • e) := by
   simpa [deckSubgroupQuotientProjEquiv] using
     (isQuotientCoveringMap (x₀ := x₀)).normalizerDeckHom_symm_apply
@@ -104,7 +104,7 @@ def deckSubgroupQuotientProjEquivOfNormal [H.Normal] :
 @[simp]
 theorem deckSubgroupQuotientProjEquivOfNormal_mk_apply [H.Normal]
     (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).1
+    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).val
         (Quotient.mk'' e) = Quotient.mk'' (g • e) := by
   simpa [deckSubgroupQuotientProjEquivOfNormal] using
     (isQuotientCoveringMap (x₀ := x₀)).deckHomOfNormal_apply
@@ -116,7 +116,7 @@ the class of `e` to the class of `g⁻¹ • e`. -/
 @[simp]
 theorem deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply [H.Normal]
     (g : FundamentalGroup X x₀) (e : UniversalCover x₀) :
-    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).1.symm
+    (deckSubgroupQuotientProjEquivOfNormal x₀ H (QuotientGroup.mk g)).val.symm
         (Quotient.mk'' e) = Quotient.mk'' (g⁻¹ • e) := by
   simpa [deckSubgroupQuotientProjEquivOfNormal] using
     (isQuotientCoveringMap (x₀ := x₀)).deckHomOfNormal_symm_apply

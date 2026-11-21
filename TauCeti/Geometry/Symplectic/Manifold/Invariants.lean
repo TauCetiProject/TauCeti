@@ -90,8 +90,8 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
       hσ.symplecticFormAt x u v := by
   have h := SmoothForm.eval₂_mpullback (fun y : M ↦ (g : G) • y)
     (contMDiff_const_smul (g : G)) σ x u v
-  rw [hσG g g.2] at h
-  have hgx : (g : G) • x = x := g.2
+  rw [hσG g g.property] at h
+  have hgx : (g : G) • x = x := g.property
   rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, h,
     tangentRepresentation_apply, hgx]
 
@@ -124,7 +124,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants :=
   SymplecticForm.isSymplectic_invariants_of_inner
-    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.2 u w))
+    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.property u w))
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
 
 end ConstSMul
@@ -145,7 +145,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation (hσ : σ.
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants := by
-  have : ContMDiffConstSMul I ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := IG)⟩
+  have : ContMDiffConstSMul I ∞ G M := ContMDiffSMul.contMDiffConstSMul IG
   -- The stabilizer is closed in the compact group `G`, hence compact.
   have hcont : Continuous fun g : G ↦ g • x :=
     (ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := ∞) (G := G) (M := M)).continuous.comp

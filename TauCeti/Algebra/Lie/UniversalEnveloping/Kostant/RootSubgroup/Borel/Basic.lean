@@ -335,7 +335,7 @@ theorem isSolvable_kostantTorusSubsystemSubgroup_of_isSolvable
       | H y =>
         rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq,
           Subgroup.mem_subgroupOf]
-        have key := Subgroup.commutator_le.1 hcomm _ (inv_mem y.2) _ (inv_mem x.2)
+        have key := Subgroup.commutator_le.1 hcomm _ (inv_mem y.property) _ (inv_mem x.property)
         rw [commutatorElement_def, inv_inv, inv_inv] at key
         have hxy : (((x * y)⁻¹ * (y * x) :
               kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A) :
