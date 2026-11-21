@@ -139,8 +139,6 @@ theorem measureReal_setOf_sort_eq_inter_preimage_orderStatistics (σ : Equiv.Per
   rw [measureReal_def, measure_setOf_sort_eq_inter_preimage_orderStatistics, ENNReal.toReal_mul,
     ENNReal.toReal_inv, ENNReal.toReal_natCast, measureReal_def]
 
-variable [MeasurableInf₂ α] [MeasurableSup₂ α]
-
 /-- The event that the sorting permutation lies in `s` and the order statistics lie in a
 measurable set `B` has probability `|s| / n!` times the probability of the second event. -/
 private theorem measure_preimage_sort_inter_preimage_orderStatistics
@@ -151,6 +149,8 @@ private theorem measure_preimage_sort_inter_preimage_orderStatistics
       Measure.count s * ((n.factorial : ℝ≥0∞)⁻¹ *
         (Measure.pi fun _ : Fin n => μ) ((fun x i => orderStatistic i x) ⁻¹' B)) := by
   classical
+  have : MeasurableInf₂ α := ⟨measurable_fst.min measurable_snd⟩
+  have : MeasurableSup₂ α := ⟨measurable_fst.max measurable_snd⟩
   have hpre : Tuple.sort ⁻¹' s ∩ (fun x : Fin n → α => fun i => orderStatistic i x) ⁻¹' B =
       ⋃ τ ∈ s.toFinset, {x | Tuple.sort x = τ} ∩ (fun x i => orderStatistic i x) ⁻¹' B := by
     ext x

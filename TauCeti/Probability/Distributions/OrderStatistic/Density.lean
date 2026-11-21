@@ -95,7 +95,7 @@ theorem map_orderStatistic_pi_eq_withDensity (j : Fin n) (hg : AEMeasurable g)
   have hhm : Measurable fun u : ℝ => c * u ^ j.val * (1 - u) ^ (n - j.val - 1) := by fun_prop
   have ha : (0 : ℝ) < (j : ℝ) + 1 := by positivity
   have hb : (0 : ℝ) < (n : ℝ) - j := by
-    have : (j.val : ℝ) < n := by exact_mod_cast j.2
+    have : (j.val : ℝ) < n := by exact_mod_cast j.isLt
     linarith
   have hbeta : betaMeasure ((j : ℝ) + 1) ((n : ℝ) - j) =
       (volume.restrict (Icc (0 : ℝ) 1)).withDensity fun u => ENNReal.ofReal
