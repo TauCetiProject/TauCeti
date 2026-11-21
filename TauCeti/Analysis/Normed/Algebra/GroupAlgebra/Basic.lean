@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Star.StarAlgHom
 public import TauCeti.MeasureTheory.Group.Convolution.Pointwise
 public import TauCeti.MeasureTheory.Group.Convolution.Star
-import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 
 /-!
 # The `L¹` group convolution Banach `⋆`-algebra
@@ -290,23 +289,6 @@ theorem norm_integralCLM_le [RCLike 𝕜] : ‖integralCLM 𝕜 μ‖ ≤ 1 :=
     rw [integralCLM_apply, ← L1.integral_eq_integral, one_mul, norm_def]
     exact L1.norm_integral_le f.ofConv
 
-/-- On a weakly locally compact `R₁` space with a locally finite Borel measure inner regular on
-compact sets, classes of compactly supported continuous functions are dense in
-`L1GroupAlgebra 𝕜 μ`. -/
-theorem dense_setOf_continuous_hasCompactSupport [TopologicalSpace G] [R1Space G]
-    [WeaklyLocallyCompactSpace G] [BorelSpace G] [IsFiniteMeasureOnCompacts μ]
-    [μ.InnerRegularCompactLTTop] [NormedAddCommGroup 𝕜] [NormedSpace ℝ 𝕜] :
-    Dense {u : L1GroupAlgebra 𝕜 μ |
-      ∃ f : G → 𝕜, Continuous f ∧ HasCompactSupport f ∧ u.ofConv =ᵐ[μ] f} := by
-  intro u
-  rw [Metric.mem_closure_iff]
-  intro ε hε
-  obtain ⟨v, ⟨f, hfc, hfs, hvf⟩, hv⟩ :=
-    Metric.mem_closure_iff.1
-      (Lp.dense_setOf_continuous_hasCompactSupport (X := G) (E := 𝕜) (μ := μ)
-        ENNReal.one_ne_top u.ofConv) ε hε
-  exact ⟨toConv v, ⟨f, hfc, hfs, hvf⟩, hv⟩
-
 end NormedSpace
 
 /-! ### Convolution multiplication and Banach algebra structure -/
@@ -420,13 +402,6 @@ theorem ofConv_mul_ae_eq_modularCharacter (f g : L1GroupAlgebra 𝕜 μ) :
     simpa only [smul_eq_mul] using
       TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul
         (μ := μ) f.ofConv g.ofConv x
-
-/-- Representative-independent pointwise formula for the convolution of `ofIntegrable` elements in
-`L1GroupAlgebra 𝕜 μ`. -/
-theorem ofConv_ofIntegrable_mul_ofIntegrable_ae_eq {f g : G → 𝕜} (hf : Integrable f μ)
-    (hg : Integrable g μ) :
-    (ofIntegrable hf * ofIntegrable hg).ofConv =ᵐ[μ] fun x ↦ ∫ y, f y * g (y⁻¹ * x) ∂μ := by
-  simpa only [ofConv_mul, ofConv_ofIntegrable, smul_eq_mul] using hf.convolutionL_toL1_ae_eq hg
 
 end PointwiseConvolution
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.RCLike
 import TauCeti.MeasureTheory.Integral.PeakFunction
 
 /-!
@@ -163,17 +164,10 @@ theorem tendsto_convolutionL_ofRealCLM_compLp_right {𝕜 : Type*} [RCLike 𝕜]
       l (𝓝 h) := by
   refine tendsto_convolutionL_right_of_norm_le (C := 1) (.of_forall fun i => ?_)
     (.of_forall fun i => ?_) (fun U hU => ?_) h
-  · have hcomm := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).integral_comp_comm (L1.integrable_coeFn (k i))
-    refine (integral_congr_ae ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp _)).trans ?_
-    rw [hcomm, hk1, RCLike.ofRealCLM_apply, RCLike.ofReal_one]
-  · calc ‖(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (k i)‖
-        ≤ ‖(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜)‖ * ‖k i‖ := ContinuousLinearMap.norm_compLp_le _ _
-      _ ≤ 1 * 1 := by
-        gcongr
-        · exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by
-            simp [RCLike.ofRealCLM_apply]
-        · rw [L1.norm_eq_integral_of_nonneg (hk i), hk1]
-      _ = 1 := one_mul 1
+  · rw [ContinuousLinearMap.integral_compLp]
+    simp_rw [RCLike.ofRealCLM_apply]
+    rw [integral_ofReal, hk1, RCLike.ofReal_one]
+  · rw [Lp.norm_ofRealCLM_compLp, L1.norm_eq_integral_of_nonneg (hk i), hk1]
   · filter_upwards [hkl U hU] with i hi
     filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp (k i), hi] with x hx₁ hx₂ hxU
     rw [hx₁, RCLike.ofRealCLM_apply, hx₂ hxU, RCLike.ofReal_zero]
