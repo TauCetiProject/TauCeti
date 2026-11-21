@@ -33,8 +33,10 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
   `i < j` to `b i ∧ b j`.
 * `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
   `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`,
-  `exteriorPower.ιMulti_two_neg_right`, and `exteriorPower.ιMulti_two_swap`: the wedge `u ∧ w`
-  of two vectors is bilinear and antisymmetric.
+  `exteriorPower.ιMulti_two_neg_right`, `exteriorPower.ιMulti_two_swap`, and
+  `exteriorPower.ιMulti_two_self`: the wedge `u ∧ w` of two vectors is bilinear and alternating.
+* `exteriorPower.ιMulti_two_swap_of_lt` and `exteriorPower.ιMulti_two_comp`: wedges of two
+  vectors of a family, normalized to increasing order and written as vectors of length two.
 * `exteriorPower.linearMap_ext_ιMulti_two`: linear maps out of `⋀²M` are determined on pure wedges
   `u ∧ v`.
 -/
@@ -78,6 +80,25 @@ theorem ιMulti_two_neg_right (u w : M) :
 theorem ιMulti_two_swap (u w : M) :
     ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
   simpa using (ιMulti R 2).map_swap ![u, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- Wedges of two vectors of a family indexed by a linear order are normalized to increasing
+order. The order hypothesis lets `simp` use this rule only in that direction. -/
+theorem ιMulti_two_swap_of_lt {ι : Type*} [LinearOrder ι] (v : ι → M) {i j : ι} (_ : j < i) :
+    ιMulti R 2 ![v i, v j] = -ιMulti R 2 ![v j, v i] :=
+  ιMulti_two_swap _ _
+
+/-- The wedge of the vectors `v (p 0)` and `v (p 1)` of a family `v`, indexed through
+`p : Fin 2 → ι`, written as a vector of length two. -/
+theorem ιMulti_two_comp {ι : Type*} (v : ι → M) (p : Fin 2 → ι) :
+    ιMulti R 2 (fun j ↦ v (p j)) = ιMulti R 2 ![v (p 0), v (p 1)] := by
+  congr 1
+  ext j : 1
+  fin_cases j <;> rfl
+
+/-- The wedge `u ∧ u` of a vector with itself vanishes. -/
+@[simp]
+theorem ιMulti_two_self (u : M) : ιMulti R 2 ![u, u] = 0 :=
+  (ιMulti R 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl zero_ne_one
 
 /-- Two linear maps out of `⋀[R]^2 M` agree if they agree on all pure wedges `u ∧ v`. -/
 theorem linearMap_ext_ιMulti_two {N : Type*} [AddCommGroup N] [Module R N]
