@@ -36,10 +36,14 @@ consecutive cutoffs along a compact exhaustion gives a nonnegative decomposition
 open set by compactly supported smooth functions, with partial sums at most one, together with
 cutoffs equal to one on their supports which are locally finite in the open set
 (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the gluing device for global
-approximation on a domain. Multiplying by a cutoff turns a
-function which is `C^k` on an open set containing its support into a `C^k` function on the whole
-space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G`
-agrees, at positions near a compact subset of `U`, with a function `C^k` on the whole product
+approximation on a domain. Given an explicit compact exhaustion `C` with
+`C j ⊆ interior (C (j + 1))`, the same telescoping construction produces nonnegative compactly
+supported smooth shell cutoffs `χ j` supported in `interior (C (j + 1))`, vanishing near
+`C (j - 1)`, and summing to one on each `C m` (`TauCeti.exists_contDiff_shell_cutoffs`).
+Multiplying by a cutoff turns a function which is `C^k` on an open set containing its support into
+a `C^k` function on the whole space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a
+function `C^k` on `U × G` agrees, at positions near a compact subset of `U`, with a function `C^k`
+on the whole product
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
@@ -474,6 +478,48 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   · exact hLmono (by omega) (hVL n hy)
   · rw [hsum]
     exact one_of_mem (heta'_one n N (by omega) (hVL n hy))
+
+/-- **Telescoping smooth shell cutoffs along a compact exhaustion.** Given a sequence of compact
+sets `C : ℕ → Set E` in a finite-dimensional real normed space with `C j ⊆ interior (C (j + 1))`,
+there exist smooth, compactly supported, nonnegative functions `χ j : E → ℝ` such that
+`tsupport (χ j) ⊆ interior (C (j + 1))`, `χ (j + 1)` vanishes on a neighbourhood of `C j`
+(`C j ⊆ (tsupport (χ (j + 1)))ᶜ`), and `∑ j ∈ Finset.range (m + 1), χ j z = 1` for every
+`z ∈ C m`. -/
+theorem exists_contDiff_shell_cutoffs [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {C : ℕ → Set E} (hC_cpt : ∀ j, IsCompact (C j))
+    (hC_step : ∀ j, C j ⊆ interior (C (j + 1))) :
+    ∃ χ : ℕ → E → ℝ,
+      (∀ j, ContDiff ℝ ∞ (χ j)) ∧
+      (∀ j, HasCompactSupport (χ j)) ∧
+      (∀ j x, 0 ≤ χ j x) ∧
+      (∀ j, tsupport (χ j) ⊆ interior (C (j + 1))) ∧
+      (∀ j, C j ⊆ (tsupport (χ (j + 1)))ᶜ) ∧
+      (∀ m, ∀ z ∈ C m, ∑ j ∈ Finset.range (m + 1), χ j z = 1) := by
+  have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
+  choose ψ hψ_cd hψ_range hψ_one hψ_cpt hψ_ts using fun n ↦
+    (hC_cpt n).exists_contDiff_cutoff isOpen_interior (hC_step n)
+  let L : ℕ → Set E := fun | 0 => ∅ | k + 1 => C k
+  let V : ℕ → Set E := fun | 0 => ∅ | k + 1 => interior (C k)
+  let eta' : ℕ → E → ℝ := fun | 0 | 1 => 0 | k + 2 => ψ k
+  obtain ⟨zeta, hzeta_cd, hzeta_cpt, hzeta_ts, hzeta_nn, hsum⟩ :=
+    exists_telescoping_cutoff_differences (L := L) (V := V) (eta' := eta') rfl
+      (fun | 0 => Subset.rfl | _ + 1 => interior_subset)
+      (monotone_nat_of_le_succ fun
+        | 0 => empty_subset _
+        | k + 1 => interior_mono (hC_mono k.le_succ))
+      rfl (fun | 0 | 1 => contDiff_const | k + 2 => hψ_cd k)
+      (fun | 0 | 1 => HasCompactSupport.zero | k + 2 => hψ_cpt k)
+      (fun | 0 | 1 => fun _ ↦ by simp [eta'] | k + 2 => fun x ↦ hψ_range k (mem_range_self x))
+      (fun | 0 | 1 => by simp [eta'] | k + 2 => hψ_ts k)
+      (fun | 0, _, _ => empty_subset _
+           | a + 1, b + 2, hab => (hC_mono (by omega)).trans (hψ_one b))
+  refine ⟨fun j ↦ zeta (j + 1), fun j ↦ hzeta_cd (j + 1), fun j ↦ hzeta_cpt (j + 1),
+    fun j x ↦ hzeta_nn (j + 1) x, fun j ↦ (hzeta_ts (j + 1)).trans sdiff_subset,
+    fun j z hz hzt ↦ (hzeta_ts (j + 2) hzt).2 hz, fun m z hz ↦ ?_⟩
+  have hz0 : zeta 0 z = 0 := by simpa [eta'] using hsum 1 z
+  have hsm := hsum (m + 2) z
+  rw [Finset.sum_range_succ', hz0, add_zero] at hsm
+  simpa [hsm, eta'] using interior_subset (hψ_one m hz)
 
 /-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
 all but finitely many of them vanish. This makes the locally finite sums built from
