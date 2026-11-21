@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import TauCeti.MeasureTheory.Integral.Entropy
+public import TauCeti.MeasureTheory.Integral.Entropy.Basic
 public import TauCeti.MeasureTheory.Integral.Dilation
 public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
