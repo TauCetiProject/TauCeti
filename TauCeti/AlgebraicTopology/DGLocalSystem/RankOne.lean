@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Homology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Twist
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
@@ -427,13 +428,6 @@ theorem monodromy_injective : Function.Injective (monodromy : RankOneLocalSystem
 
 /-! ### Characters with values in `ℤˣ` -/
 
-/-- A unit of `ℤ` maps to `1` in `R` exactly when it is `1` or `2 = 0` in `R`. -/
-private theorem unitsMap_intCast_eq_one_iff (u : ℤˣ) :
-    Units.map (Int.castRingHom R).toMonoidHom u = 1 ↔ u = 1 ∨ (2 : R) = 0 := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two]
-
 /-- The rank-one local system whose monodromy is a `ℤˣ`-valued character `χ`, read in `Rˣ`, is
 trivial exactly when `χ` is trivial or `2 = 0` in `R`. -/
 theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤˣ) :
@@ -441,7 +435,7 @@ theorem ofMonodromy_unitsMap_comp_eq_one_iff (χ : FundamentalGroup B b →* ℤ
       χ = 1 ∨ (2 : R) = 0 := by
   rw [← monodromy_injective.eq_iff, monodromy_ofMonodromy, monodromy_one, MonoidHom.ext_iff,
     MonoidHom.ext_iff]
-  simp only [MonoidHom.comp_apply, MonoidHom.one_apply, unitsMap_intCast_eq_one_iff,
+  simp only [MonoidHom.comp_apply, MonoidHom.one_apply, Int.unitsMap_castRingHom_eq_one_iff,
     forall_or_right]
 
 /-- The rank-one local system whose monodromy is a `ℤˣ`-valued character, read in `Rˣ`, is its own

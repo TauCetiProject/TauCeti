@@ -114,11 +114,9 @@ def localOrientationTransportPerm (x : M) :
     FundamentalGroup M x →* Equiv.Perm (LocalOrientation M x d) where
   toFun γ := localOrientationTransport M E d γ.asHom
   map_one' := by
-    rw [End.one_asHom, localOrientationTransport_id]
-    rfl
+    rw [End.one_asHom, localOrientationTransport_id, Equiv.Perm.one_def]
   map_mul' γ δ := by
-    rw [End.mul_asHom, localOrientationTransport_comp]
-    rfl
+    rw [End.mul_asHom, localOrientationTransport_comp, Equiv.Perm.mul_def]
 
 @[simp]
 lemma localOrientationTransportPerm_apply (x : M) (γ : FundamentalGroup M x) :
