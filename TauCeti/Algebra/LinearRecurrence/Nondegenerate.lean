@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.LinearRecurrence
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.NumberTheory.Real.GoldenRatio
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -18,7 +20,8 @@ A recurrence is nondegenerate when its characteristic polynomial has nonzero con
 coefficient and no quotient of distinct characteristic roots is a root of unity.
 Roots are taken in the algebraic closure of the coefficient field, not just in that field:
 in particular, irreducible characteristic polynomials do not satisfy the condition vacuously.
-Repeated roots are allowed.
+Repeated roots are allowed. Characteristic roots that already lie in the coefficient field
+inherit the conclusions, so their quotients have infinite order there as well.
 
 The power characterization says precisely that distinct roots remain distinct on every
 positive-step arithmetic progression. Nondegeneracy passes to characteristic-polynomial
@@ -82,6 +85,20 @@ theorem IsNondegenerate.not_isOfFinOrder_div (h : E.IsNondegenerate)
     (hθ' : θ' ∈ E.charPoly.rootSet (AlgebraicClosure K)) (hne : θ ≠ θ') :
     ¬IsOfFinOrder (θ / θ') :=
   h.2 hθ hθ' hne
+
+/-- Distinct characteristic roots in the coefficient field of a nondegenerate recurrence have a
+quotient of infinite multiplicative order. -/
+theorem IsNondegenerate.not_isOfFinOrder_div_of_mem_roots (h : E.IsNondegenerate) {θ θ' : K}
+    (hθ : θ ∈ E.charPoly.roots) (hθ' : θ' ∈ E.charPoly.roots) (hne : θ ≠ θ') :
+    ¬IsOfFinOrder (θ / θ') := by
+  let f := algebraMap K (AlgebraicClosure K)
+  have hroot {x : K} (hx : x ∈ E.charPoly.roots) :
+      f x ∈ E.charPoly.rootSet (AlgebraicClosure K) := by
+    rw [E.charPoly_monic.mem_rootSet, aeval_algebraMap_apply, coe_aeval_eq_eval,
+      (mem_roots'.mp hx).2.eq_zero, map_zero]
+  intro hfin
+  apply h.2 (hroot hθ) (hroot hθ') (f.injective.ne hne)
+  simpa [map_div₀] using (f : K →* AlgebraicClosure K).isOfFinOrder hfin
 
 /-- Nondegeneracy is equivalent to the nonzero constant coefficient condition together
 with separation of all distinct characteristic roots by every positive natural power. -/
@@ -201,6 +218,29 @@ example : ¬(⟨2, ![(-1 : ℚ), 0]⟩ : LinearRecurrence ℚ).IsNondegenerate :
     simp [hx]
   exact (isNondegenerate_iff_pow _).mp h |>.2 (hr i hi)
     (hr (-i) (by simpa using hi)) hne 2 (by decide) (by simp)
+
+/-- The Fibonacci recurrence `u(n+2) = u(n+1) + u(n)` is nondegenerate: a root `θ` of
+`X ^ 2 - (X + 1)` satisfies `θ ^ (k + 1) = F (k + 1) * θ + F k` with `F` the Fibonacci numbers, so
+distinct roots `θ, θ'` have `θ ^ (k + 1) - θ' ^ (k + 1) = F (k + 1) * (θ - θ') ≠ 0`. -/
+example : (Real.fibRec : LinearRecurrence ℚ).IsNondegenerate := by
+  have hpow {x : AlgebraicClosure ℚ}
+      (hx : x ∈ (Real.fibRec : LinearRecurrence ℚ).charPoly.rootSet (AlgebraicClosure ℚ)) (k : ℕ) :
+      x ^ (k + 1) = (Nat.fib (k + 1) : AlgebraicClosure ℚ) * x + Nat.fib k := by
+    have hx2 : x ^ 2 - (x + 1) = 0 := by
+      simpa [Real.fibRec_charPoly_eq] using aeval_eq_zero_of_mem_rootSet hx
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [pow_succ, ih, Nat.fib_add_two]
+      push_cast
+      linear_combination (Nat.fib (k + 1) : AlgebraicClosure ℚ) * hx2
+  refine (isNondegenerate_iff_pow _).mpr
+    ⟨by simp [Real.fibRec_charPoly_eq], fun {θ θ'} hθ hθ' hne n hn heq ↦ ?_⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hn
+  rw [zero_add, hpow hθ, hpow hθ'] at heq
+  have hfib : (Nat.fib (k + 1) : AlgebraicClosure ℚ) ≠ 0 := by
+    exact_mod_cast (Nat.fib_pos.mpr k.succ_pos).ne'
+  exact hne (mul_left_cancel₀ hfib (add_right_cancel heq))
 
 /-- A first-order recurrence with multiplier `2` is nondegenerate. -/
 example : (⟨1, ![(2 : ℚ)]⟩ : LinearRecurrence ℚ).IsNondegenerate := by
