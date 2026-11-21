@@ -13,15 +13,19 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 If `P'` lies over `P` in an algebraic extension `F' / F`, the embedding of fields extends
 uniquely to a continuous ring homomorphism `P.Completion →+* P'.Completion`. The
-extended valuation is the original completed valuation raised to the ramification index.
-The induced algebra structure makes the completed extension available for local Galois theory.
+extended valuation is the original completed valuation raised to the ramification index
+(`valuation_completionExtension`, `ord_completionExtension`), so completion preserves the
+ramification index `e(P' ∣ P)` (`ramificationIdx_completionPlace`). The induced algebra structure
+makes the completed extension available for local Galois theory.
 
 The algebra structure is explicit, since choosing different places above `P` gives different
 completed extensions. Install `completionExtensionAlgebra` locally. When the constant fields
 agree, `isScalarTower_completionExtensionAlgebra` also identifies the original constant action
-through the completed extension. The completed extension restricts to a local homomorphism
-`completionIntegersExtension` of completed valuation rings, whose algebra
-`completionIntegersExtensionAlgebra` is likewise installed locally.
+through the completed extension. The completed extension restricts to an injective local
+homomorphism `completionIntegersExtension` of completed valuation rings, whose algebra
+`completionIntegersExtensionAlgebra` is likewise installed locally and makes `𝒪̂_{P'}` a
+torsion-free `𝒪̂_P`-subalgebra of `F̂_{P'}` (`completionIntegersExtension_injective`,
+`isScalarTower_completionIntegers`, `isTorsionFree_completionIntegers`).
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -64,7 +68,7 @@ private theorem uniformContinuous_withValExtension :
       obtain ⟨x, hx⟩ := P.valuation_surjective γ
       exact ⟨WithVal.toVal P.valuation x, hx⟩
   have hcont := hc.pow (ramificationIdx F P')
-  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 ≠ 0 :=
+  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.val ≠ 0 :=
     (map_ne_zero_iff _ MonoidWithZeroHom.ValueGroup₀.embedding_injective).mpr γ.ne_zero
   filter_upwards [hcont.continuousAt.preimage_mem_nhds <| by
     simpa [(ramificationIdx_pos F P').ne'] using Iio_mem_nhds_zero hγ] with x hx
@@ -142,6 +146,18 @@ theorem algebraMap_completionExtensionAlgebra :
     letI := P.completionExtensionAlgebra P' hP
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
+
+/-- Completion preserves the ramification index, with no finiteness assumption on the residue
+extension. -/
+theorem ramificationIdx_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [ramificationIdx_def,
+    Valuation.ordIndex_eq_mul_of_forall_ord_eq _ P.completionPlace.valuation (fun x ↦ by
+      rw [Valuation.ord_comap, ord_valuation, ord_valuation, algebraMap_completionExtensionAlgebra,
+        P.ord_completionExtension P' hP x]),
+    Valuation.ordIndex_eq_one_of_surjective _ P.completionPlace.valuation_surjective, mul_one]
 
 /-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
 the embedding of `F` in its completion. -/
@@ -232,113 +248,28 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
       P.completionExtension P' hP x :=
   (rfl)
 
-/-- The action of `𝒪̂_P` on `F̂'_{P'}` via `F̂_P` factors through `𝒪̂_{P'}`. -/
-theorem isScalarTower_completionIntegersExtension :
+/-- The completed valuation-ring extension forms a scalar tower inside the completed upper field. -/
+instance isScalarTower_completionIntegersExtensionAlgebra :
     letI := P.completionExtensionAlgebra P' hP
     letI := P.completionIntegersExtensionAlgebra P' hP
     IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
-  let := P.completionExtensionAlgebra P' hP
-  let := P.completionIntegersExtensionAlgebra P' hP
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
   refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
   rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
-    P.algebraMap_completionExtensionAlgebra P' hP]
-  exact (P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP x).symm
+    P.algebraMap_completionExtensionAlgebra P' hP, ValuationSubring.algebraMap_apply,
+    ValuationSubring.algebraMap_apply, P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP]
 
-/-- The completed valuation ring above is torsion-free over the completed valuation ring below. -/
-theorem isTorsionFree_completionIntegersExtension :
+/-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
+instance isTorsionFree_completionIntegers :
     letI := P.completionIntegersExtensionAlgebra P' hP
     Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
-  let := P.completionIntegersExtensionAlgebra P' hP
-  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun x y h ↦ Subtype.ext ?_
-  exact (P.completionExtension P' hP).injective <| by
-    simpa only [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] using
-      congrArg (fun z : P'.completionPlace.integers ↦ (z : P'.Completion)) h
-
-/-- Completion preserves the ramification index of `P'` over `P`. -/
-@[simp]
-theorem ramificationIdx_completionPlace :
-    letI := P.completionExtensionAlgebra P' hP
-    ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
-  let := P.completionExtensionAlgebra P' hP
-  rw [ramificationIdx_def,
-    Valuation.ordIndex_eq_mul_of_forall_ord_eq _ P.completionPlace.valuation
-      (e := ramificationIdx F P') fun x ↦ by
-        simpa only [Valuation.ord_comap, ← ord_valuation,
-          P.algebraMap_completionExtensionAlgebra P' hP] using P.ord_completionExtension P' hP x,
-    Valuation.ordIndex_eq_one_of_surjective _ P.completionPlace.valuation_surjective, mul_one]
-
-section IntegralClosureMap
-
-include hP
-attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- Every element of `F'` integral over `𝒪_P` maps into the completed valuation ring `𝒪̂_{P'}` for
-every place `P'` lying over `P`. -/
-theorem completionEmbedding_mem_integers_of_mem_integralClosure {x : F'}
-    (hx : x ∈ integralClosure P.integers F') :
-    P'.completionEmbedding x ∈ P'.completionPlace.integers := by
-  have hx' : x ∈ P'.integers := P'.mem_integers_of_isIntegral
-    (fun a ↦ by subst hP; exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2) hx
-  simpa only [mem_integers_iff, completionPlace_valuation, valuation_completionEmbedding] using hx'
-
-/-- The canonical ring homomorphism from the integral closure `𝒪'_P` of `𝒪_P` in `F'` into the
-completed valuation ring `𝒪̂_{P'}` at a place `P'` lying over `P`. -/
-noncomputable def integralClosureToCompletionIntegers :
-    integralClosure P.integers F' →+* P'.completionPlace.integers :=
-  (P'.completionEmbedding.toRingHom.comp
-    (Subalgebra.val (integralClosure P.integers F'))).codRestrict P'.completionPlace.integers
-    fun x ↦ P.completionEmbedding_mem_integers_of_mem_integralClosure P' hP x.2
-
-@[simp] theorem coe_integralClosureToCompletionIntegers (x : integralClosure P.integers F') :
-    (P.integralClosureToCompletionIntegers P' hP x : P'.Completion) = P'.completionEmbedding x :=
-  (rfl)
-
-@[simp] theorem integralClosureToCompletionIntegers_algebraMap (r : P.integers) :
-    P.integralClosureToCompletionIntegers P' hP
-        (algebraMap P.integers (integralClosure P.integers F') r) =
-      P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
-  apply Subtype.ext
-  rw [coe_integralClosureToCompletionIntegers, coe_completionIntegersExtension,
-    completionIntegersEmbedding_apply, P.completionExtension_completionEmbedding P' hP,
-    Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply P.integers F F',
-    ValuationSubring.algebraMap_apply]
-
-/-- The canonical embedding `𝒪'_P →+* 𝒪̂_{P'}` of the local integral closure into the completed
-valuation ring is injective. -/
-theorem integralClosureToCompletionIntegers_injective :
-    Function.Injective (P.integralClosureToCompletionIntegers P' hP) :=
-  RingHom.injective_codRestrict.mpr <|
-    P'.completionEmbedding.toRingHom.injective.comp Subtype.val_injective
-
-/-- An ideal `I` of `𝒪'_P` whose nonzero elements have `P'`-order at least `n`, and which contains
-a nonzero element of `P'`-order `n`, generates `𝔪̂_{P'} ^ n` in `𝒪̂_{P'}`. -/
-theorem map_integralClosureToCompletionIntegers_eq_maximalIdeal_pow
-    {I : Ideal (integralClosure P.integers F')} {n : ℕ}
-    (hle : ∀ y ∈ I, y ≠ 0 → (n : ℤ) ≤ P'.ord (y : F'))
-    (hex : ∃ y ∈ I, y ≠ 0 ∧ P'.ord (y : F') = n) :
-    I.map (P.integralClosureToCompletionIntegers P' hP) =
-      IsLocalRing.maximalIdeal P'.completionPlace.integers ^ n := by
-  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun y hy ↦ ?_) fun z hz ↦ ?_
-  · rw [Ideal.mem_comap, P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration,
-      coe_integralClosureToCompletionIntegers, P'.completionEmbedding_mem_filtration_iff]
-    rcases eq_or_ne y 0 with rfl | hy0
-    · simp
-    exact (P'.mem_filtration_iff_le_ord (by simpa using hy0)).mpr (hle y hy hy0)
-  · obtain ⟨y, hy, hy0, hord⟩ := hex
-    let yc := P.integralClosureToCompletionIntegers P' hP y
-    have hyc0 : (yc : P'.Completion) ≠ 0 := by
-      rw [coe_integralClosureToCompletionIntegers]; exact (map_ne_zero _).mpr (by simpa using hy0)
-    have hinv_ord : P'.completionPlace.ord (yc : P'.Completion)⁻¹ = -(n : ℤ) := by
-      rw [P'.completionPlace.ord_inv, coe_integralClosureToCompletionIntegers,
-        ord_completionEmbedding, hord]
-    have hq_int : (yc : P'.Completion)⁻¹ * (z : P'.Completion) ∈ P'.completionPlace.integers :=
-      P'.completionPlace.mul_mem_integers_of_mem_filtration hinv_ord
-        ((P'.completionPlace.mem_maximalIdeal_pow_iff_coe_mem_filtration n z).mp hz)
-    have hz_eq : z = ⟨(yc : P'.Completion)⁻¹ * (z : P'.Completion), hq_int⟩ * yc :=
-      Subtype.ext (by rw [MulMemClass.coe_mul, mul_comm, mul_inv_cancel_left₀ hyc0])
-    exact hz_eq ▸ Ideal.mul_mem_left _ _ (Ideal.mem_map_of_mem _ hy)
-
-end IntegralClosureMap
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun a b hab ↦ Subtype.ext ?_
+  have hab' := congrArg Subtype.val hab
+  rw [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP,
+    P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] at hab'
+  exact (P.completionExtension P' hP).injective hab'
 
 end Integers
 

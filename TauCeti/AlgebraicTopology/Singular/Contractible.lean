@@ -14,8 +14,12 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Singular homology of contractible spaces
 
 A contractible space has the singular homology of a point: its homology vanishes in every positive
-degree, and its reduced homology vanishes in every degree. Consequently, the reduced connecting
-morphism of a pair is an isomorphism whenever its ambient space is contractible. For
+degree, and its reduced homology vanishes in every degree. Every map between contractible spaces
+therefore induces an isomorphism on singular homology
+(`TauCeti.isIso_singularHomologyFunctor_map_of_contractibleSpace`). More generally, when `Z` has
+the homology of a point, a map `Y ⟶ Z` is a homology isomorphism exactly when `Y` has the homology
+of a point (`TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_iff`). Likewise, the reduced
+connecting morphism of a pair is an isomorphism whenever its ambient space is contractible. For
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible; for a point this is
@@ -69,6 +73,29 @@ theorem isZero_singularHomologyFunctor_of_contractibleSpace (X : TopCat.{w})
       H.symm R n
   rw [IsZero.iff_id_eq_zero, ← hid, CategoryTheory.Functor.map_comp, hpt.eq_of_src
     (((singularHomologyFunctor C n).obj R).map s) 0, comp_zero]
+
+/-- **A map between contractible spaces induces an isomorphism on singular homology.** In degree
+zero it intertwines the augmentations, which are isomorphisms; in positive degrees both groups
+vanish. -/
+instance isIso_singularHomologyFunctor_map_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace X] [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rcases n with _ | n
+  · exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R f)
+  · exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace R Y n.succ_ne_zero) _
+
+/-- **Having the homology of a point along a homology isomorphism.** If the map from `Z` to a
+point induces an isomorphism on `Hₙ(-; R)`, then the map from `Y` to a point does if and only if
+`f : Y ⟶ Z` does: the map from `Y` to a point factors through `f`. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_iff {Y Z : TopCat.{w}} (f : Y ⟶ Z)
+    (n : ℕ)
+    (hZ : IsIso (((singularHomologyFunctor C n).obj R).map (TopCat.isTerminalPUnit.from Z))) :
+    IsIso (((singularHomologyFunctor C n).obj R).map (TopCat.isTerminalPUnit.from Y)) ↔
+      IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rw [TopCat.isTerminalPUnit.hom_ext (TopCat.isTerminalPUnit.from Y)
+    (f ≫ TopCat.isTerminalPUnit.from Z), Functor.map_comp]
+  exact isIso_comp_right_iff _ _
 
 variable [HasKernels C]
 

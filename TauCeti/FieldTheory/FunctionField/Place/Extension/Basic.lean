@@ -14,7 +14,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
-import TauCeti.RingTheory.LocalRing.ResidueField.Finrank
 import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
@@ -69,7 +68,9 @@ to the canonical fraction fields used by Mathlib's different API.
 
 ## Main results
 
-* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`,
+  and `TauCeti.Place.ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq` for the same
+  scaling at any contracting place without assuming `F' / F` integral.
 * `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
   field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
@@ -215,7 +216,7 @@ theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
   (isIntegral_algHom_iff (IsScalarTower.toAlgHom ↥P.integers F F')
       (algebraMap F F').injective (x := x)).trans
-    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
+    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.property) hx,
       fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
 end LocalModel
@@ -229,41 +230,6 @@ section LocalIntegralClosure
 variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-section Constants
-
-variable [Algebra.IsIntegral k k']
-
-variable {F'} in
-/-- Constants of `F'` are integral over the valuation ring of every place of `F / k`: they are
-integral over `k`, which lies in `𝒪_P`. -/
-theorem isIntegral_integers_algebraMap (c : k') :
-    IsIntegral P.integers (algebraMap k' F' c) := by
-  have := isScalarTower_constants_integersExtension F' P
-  exact (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-
-variable (k')
-
-/-- **The enlarged constant field `k'` acts on the local model `𝒪'_P`**, since `k'` is integral
-over `k ⊆ 𝒪_P`.
-
-This is not a global instance: it depends on `TauCeti.Place.algebraIntegersExtension` and, for
-`k' = k`, would compete with the `k`-algebra structure through `𝒪_P`. Install it locally together
-with `TauCeti.Place.isScalarTower_constants_integralClosure`. -/
-@[instance_reducible]
-noncomputable def algebraConstantsIntegralClosure :
-    Algebra k' (integralClosure (P.integers) F') :=
-  ((algebraMap k' F').codRestrict (integralClosure (P.integers) F')
-    (isIntegral_integers_algebraMap P)).toAlgebra
-
-attribute [local instance] algebraConstantsIntegralClosure in
-/-- The action of `TauCeti.Place.algebraConstantsIntegralClosure` on `𝒪'_P` is compatible with
-`F'`. -/
-theorem isScalarTower_constants_integralClosure :
-    IsScalarTower k' (integralClosure (P.integers) F') F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
-
-end Constants
 
 variable [FiniteDimensional F F']
 
@@ -379,6 +345,13 @@ theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
 
+theorem valuation_constantsEquiv_symm (Q : Place k' F') :
+    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := (rfl)
+
+theorem integers_constantsEquiv_symm (Q : Place k' F') :
+    ((constantsEquiv k k' F').symm Q).integers = Q.integers :=
+  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv_symm]
+
 end Constants
 
 section Restrict
@@ -450,6 +423,38 @@ theorem ord_algebraMap_restrict (f : F) :
   simpa only [Valuation.ord_comap, ← valuation_restrict k F P', ord_valuation,
     ramificationIdx_def, mul_comm] using
     (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
+
+variable {k F} in
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+  [Algebra.IsIntegral F F'] in
+/-- A place `Q'` of `F' / k'` whose valuation ring contracts to that of a place `Q` of `F / k` has
+positive ramification index over `F` scaling `Q.ord`, with no integrality assumption on `F' / F`. -/
+theorem ramificationIdx_pos_and_ord_algebraMap_eq_of_integers_comap_eq
+    {Q : Place k F} {Q' : Place k' F'} (hQ' : Q'.integers.comap (algebraMap F F') = Q.integers) :
+    0 < Q'.ramificationIdx F ∧
+      ∀ f : F, Q'.ord (algebraMap F F' f) = Q'.ramificationIdx F * Q.ord f := by
+  set w := Q'.valuation.comap (algebraMap F F')
+  have hw : w.IsEquiv Q.valuation := (Valuation.isEquiv_iff_valuationSubring _ _).mpr <| by
+    ext f; rw [Valuation.mem_valuationSubring_iff, Valuation.comap_apply, ← Q'.mem_integers_iff,
+      ← ValuationSubring.mem_comap, hQ', Q.mem_integers_iff, Valuation.mem_valuationSubring_iff]
+  obtain ⟨t, ht⟩ := Q.ord_surjective 1
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  have hwt : w t < 1 := (Valuation.isEquiv_iff_val_lt_one.mp hw).mpr
+    (by rw [Q.valuation_eq_exp_neg_ord ht0, ht]; simp)
+  have : w.IsNontrivial := ⟨t, w.ne_zero_iff.mpr ht0, hwt.ne⟩
+  have hpos : 0 < Valuation.ordIndex w :=
+    Nat.pos_of_ne_zero (Valuation.ordIndex_ne_zero_of_isNontrivial w)
+  have hkt : w.IsTrivialOn k :=
+    ⟨fun c hc ↦ (Valuation.isEquiv_iff_val_eq_one.mp hw).mpr (Q.isTrivialOn.eq_one c hc)⟩
+  let Q₀ : Place k F := ⟨w.normalization, Valuation.normalization_surjective w hpos.ne',
+    Valuation.IsTrivialOn.normalization w⟩
+  have hQ₀ : w.normalization = Q.valuation :=
+    congrArg Place.valuation (eq_of_isEquiv ((Valuation.isEquiv_normalization w).trans hw) : Q₀ = Q)
+  refine ⟨by rwa [ramificationIdx_def], fun f ↦ ?_⟩
+  have hord := Valuation.ord_normalization_mul_ordIndex w f
+  rw [hQ₀, Q.ord_valuation, mul_comm, ← ramificationIdx_def, Valuation.ord_comap,
+    Q'.ord_valuation] at hord
+  exact hord.symm
 
 /-- The order at `P'` of the term `c y ^ i` of a polynomial evaluated at `y`, for `c ≠ 0 ≠ y`:
 `e(P' ∣ P) · ord_P c + i · ord_{P'} y`. -/
@@ -586,7 +591,7 @@ theorem algebraMap_mem_integers_of_mem_integralClosure
     algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
   rw [Subalgebra.algebraMap_eq]
   exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.property) b.property
 
 variable {k F} in
 /-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
@@ -647,12 +652,25 @@ instance instHasExtensionValuation :
 latter is an algebra over the former. -/
 noncomputable instance instAlgebraIntegers : Algebra (P'.restrict k F).integers P'.integers :=
   (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)).codRestrict
-    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.2).toAlgebra
+    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.property).toAlgebra
 
 @[simp]
 theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
     ((algebraMap (P'.restrict k F).integers P'.integers x : P'.integers) : F') =
       algebraMap F F' (x : F) := (rfl)
+
+section
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The valuation-ring extension `𝒪_P ⊆ 𝒪_{P'}` forms a scalar tower inside `F'`. -/
+instance isScalarTower_restrict_integers_field :
+    IsScalarTower (P'.restrict k F).integers P'.integers F' :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+      ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
+
+end
 
 /-- The valuation-ring algebra map is local, so it induces the residue-field extension used by
 `relativeDegree`. -/
@@ -722,10 +740,20 @@ theorem relativeDegree_def :
 theorem relativeDegree_restrictConstants :
     relativeDegree k F (P'.restrictConstants k) = relativeDegree k F P' := by
   rw [relativeDegree_def, relativeDegree_def]
-  exact TauCeti.finrank_residueField_eq_of_eq
-    (congrArg Place.integers (restrict_restrictConstants k F P'))
-    (integers_restrictConstants P')
-    fun x y hxy ↦ by rw [coe_algebraMap_integers, coe_algebraMap_integers, hxy]
+  have h₁ : ((P'.restrictConstants k).restrict k F).integers.toSubring =
+      (P'.restrict k F).integers.toSubring :=
+    congrArg (fun R : Place k F ↦ R.integers.toSubring) (restrict_restrictConstants k F P')
+  have h₂ : (P'.restrictConstants k).integers.toSubring = P'.integers.toSubring :=
+    congrArg ValuationSubring.toSubring (integers_restrictConstants P')
+  refine Algebra.finrank_eq_of_equiv_equiv
+    (IsLocalRing.ResidueField.mapEquiv (RingEquiv.subringCongr h₁))
+    (IsLocalRing.ResidueField.mapEquiv (RingEquiv.subringCongr h₂)) ?_
+  ext x
+  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, Function.comp_apply,
+    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
+    IsLocalRing.ResidueField.algebraMap_residue]
+  congr 1
 
 omit [Algebra k F'] [IsScalarTower k k' F'] in
 /-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an
@@ -892,7 +920,7 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
     simp only [Finset.mem_sdiff, Finset.mem_singleton] at hj
     by_cases hAj : A j = 0
     · rw [hAj, map_zero]
-      exact zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
+      exact pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
     · obtain ⟨m, hm⟩ := hAord j hAj
       obtain ⟨m₀, hm₀⟩ := hAord j₀ hj₀A
       have hne : P'.ord (A j) ≠ P'.ord (A j₀) := by
@@ -1094,9 +1122,9 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
   have hI := linearIndependent_mul_pow_of_linearIndependent_residue_finite k F P'
     (fun i : I ↦ s i) (hind.comp Subtype.val Subtype.val_injective) ht
   let f : S → I × Fin (ramificationIdx F P') :=
-    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+    fun p ↦ (⟨p.val.1, Finset.mem_image_of_mem Prod.fst p.property⟩, p.val.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
-    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.val, x.2)) h
 
 /-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
 `P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
@@ -1235,7 +1263,7 @@ theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} {P₁ : Place k
     (P := fun i : T ↦ P i) (fun i ↦ hP i) (i₀ := ⟨i₀, Finset.mem_insert_self _ _⟩) hz₀ hord₀
     (fun i hi ↦ hpole i fun h ↦ hi (Subtype.ext h))
     (fun i j hij ↦ hreg i j fun h ↦ hij (Subtype.ext h))
-  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.2⟩ : T))
+  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.property⟩ : T))
     (fun _ _ h ↦ Subtype.ext (congrArg (fun i : T ↦ (i : ι)) h))
 
 end IndependenceOverPlace
