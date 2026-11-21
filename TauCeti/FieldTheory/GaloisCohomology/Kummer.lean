@@ -108,6 +108,8 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.explicitMap1_kummerMap`: pullback along an arbitrary field extension carries the
   Kummer class of a unit to the Kummer class of its image, and `TauCeti.explicitMap1_kummerIso` is
   the same statement on power classes.
+* `TauCeti.explicitCoeff2_kummerCoeffInclusion_explicitMap2`: composing pullback along
+  `kummerCoeffBaseChange` with changing the roots-of-unity level along `kummerCoeffInclusion`.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
   extension, restriction corresponding to the map of power classes `Kˣ ⧸ (Kˣ)ⁿ → Lˣ ⧸ (Lˣ)ⁿ`;
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
@@ -750,6 +752,34 @@ theorem kummerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff 
   apply Subtype.ext
   apply Units.ext
   simp [kummerCoeffBaseChange, absoluteGaloisGroupMap_commutes]
+
+/-- Composing `explicitMap2` along `kummerCoeffBaseChange` with `explicitCoeff2` along
+`kummerCoeffInclusion` is `explicitMap2` along the composite `KummerCoeff` homomorphism. -/
+theorem explicitCoeff2_kummerCoeffInclusion_explicitMap2 {m m' : ℕ} (hd : m ∣ m')
+    (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K m)) :
+    explicitCoeff2 _ _ (kummerCoeffInclusion L hd) continuous_of_discreteTopology
+        (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m)
+          (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
+          (kummerCoeffBaseChange m τ) continuous_of_discreteTopology
+          (kummerCoeffBaseChange_smul m τ) x) =
+      explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m)
+        (AbsoluteGaloisGroup L) (KummerCoeff L m') (absoluteGaloisGroupMap τ)
+        ((kummerCoeffInclusion L hd : _ →+ _).comp (kummerCoeffBaseChange m τ))
+        continuous_of_discreteTopology
+        (fun g y ↦ by
+          simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass,
+            kummerCoeffBaseChange_smul, map_smul])
+        x := by
+  have hcompP := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K m)
+    (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
+    (kummerCoeffBaseChange m τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul m τ)
+    (AbsoluteGaloisGroup L) (KummerCoeff L m') (ContinuousMonoidHom.id _)
+    (kummerCoeffInclusion L hd : _ →+ _) continuous_of_discreteTopology
+    (fun g y ↦ by simp only [AddMonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq, map_smul])
+  rw [explicitCoeff2_eq_explicitMap2]
+  exact DFunLike.congr_fun (hcompP.symm.trans (explicitMap2_congr_of_eq
+    (AbsoluteGaloisGroup K) (KummerCoeff K m)
+    (AbsoluteGaloisGroup L) (KummerCoeff L m') _ _ _ _ (by ext; simp) rfl)) x
 
 /-- Pullback transports the class of a chosen Kummer cocycle to the class of its
 transported root. This statement does not require the exponent to be invertible. -/

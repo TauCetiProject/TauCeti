@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Descent
 
 /-!
 # Congruence of kernel coefficient modules and their first cohomology
@@ -38,8 +38,7 @@ Selmer local condition.
 * `TauCeti.Isogeny.Hom.explicitCoeff1_kerCoeffIncl_kerH1Congr` and
   `TauCeti.Isogeny.Hom.mem_ker_explicitCoeff1_kerCoeffIncl_kerH1Congr_iff`: `kerH1Congr` commutes
   with `H¹(G_K, E₁[f]) → H¹(G_K, E₁)` and preserves its kernel.
-* `TauCeti.Isogeny.kerH1Congr_kummerMap` and `TauCeti.Isogeny.kerH1Congr_kerRes`: compatibility
-  with the Kummer map and restriction along field extensions.
+* `TauCeti.Isogeny.kerH1Congr_kummerMap`: compatibility with the Kummer map.
 
 ## References
 
@@ -218,24 +217,6 @@ theorem kerH1Congr_kummerMap {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
     [DecidableEq K] (h : ofIsogeny φ = ofIsogeny ψ) (P : W₂.toAffine.Point) :
     kerH1Congr h (φ.kummerMap P) = ψ.kummerMap P := by
   obtain rfl := Hom.ofIsogeny_injective h
-  simp
-
-/-- Restriction along a field extension commutes with `kerH1Congr` for an equality of base-changed
-isogenies. -/
-@[simp]
-theorem kerH1Congr_kerRes {L : Type*} [Field L] [Algebra K L]
-    (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-    {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
-    (h : ofIsogeny (φ.baseChange L) = ofIsogeny (ψ.baseChange L))
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    kerH1Congr h (φ.kerRes τ c) =
-      ψ.kerRes τ (kerH1Congr
-        (Hom.map_injective (algebraMap K L)
-          ((Hom.ofIsogeny_map φ (algebraMap K L)).trans
-            (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm))) c) := by
-  obtain rfl : φ = ψ := Hom.ofIsogeny_injective <| Hom.map_injective (algebraMap K L) <|
-    (Hom.ofIsogeny_map φ (algebraMap K L)).trans
-      (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm)
   simp
 
 end TauCeti.Isogeny

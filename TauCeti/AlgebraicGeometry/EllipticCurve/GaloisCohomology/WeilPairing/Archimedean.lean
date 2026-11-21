@@ -28,7 +28,9 @@ period index formulas (`Affine.Point.Index.Real`), and Kummer orthogonality yiel
 * `m ^ (2 * w.mult) · #H¹(K_w, E[m]) = #E(K_w)[m]²`, `#H¹_m(K_w)² = #H¹(K_w, E[m])`, and exact
   self-orthogonality of the local Selmer condition / Kummer image under `infiniteTateWeilPairing`;
 * `(deg φ) ^ w.mult · #H¹(K_w, E₁[φ]) = #E₁(K_w)[φ] · #E₂(K_w)[φ̂]`, `#H¹_φ(K_w) · #H¹_φ̂(K_w) =
-  #H¹(K_w, E₁[φ])`, and exact mutual orthogonality of the local Selmer / Kummer subgroups.
+  #H¹(K_w, E₁[φ])`, exact mutual orthogonality of the local Selmer / Kummer subgroups, and
+  vanishing of the archimedean Brauer invariant of the isogeny Weil cup product on those local
+  kernels (`TauCeti.Isogeny.infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker`).
 
 ## References
 
@@ -828,6 +830,22 @@ theorem range_kummerMap_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype
     φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_infiniteTateKerWeilPairing_dual_subtype
 
 end InfinitePlace
+
+/-- At an infinite place `w` of a field `K` (real or complex), the archimedean Brauer invariant of
+the isogeny Weil cup product vanishes whenever the two local classes lie in the `φ`- and
+`φ̂`-Selmer kernels over `w.Completion`. -/
+theorem infiniteInvMap_kerWeilBrauerPairing_eq_zero_of_mem_ker {K : Type*} [Field K]
+    (w : InfinitePlace K) {W₁ W₂ : WeierstrassCurve w.Completion} [W₁.IsElliptic] [W₂.IsElliptic]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (hn : IsUnit (φ.degree : w.Completion))
+    {a : H1 (AbsoluteGaloisGroup w.Completion) (ofIsogeny φ).KerCoeff}
+    {b : H1 (AbsoluteGaloisGroup w.Completion) (ofIsogeny φ.dual).KerCoeff}
+    (ha : a ∈ (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl
+      continuous_of_discreteTopology).ker)
+    (hb : b ∈ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
+      continuous_of_discreteTopology).ker) :
+    infiniteInvMap w (φ.kerWeilBrauerPairing hn a b) = 0 :=
+  (congrArg (infiniteInvMap w) (φ.kerWeilBrauerPairing_eq_zero_of_mem_ker hn ha hb)).trans
+    (map_zero _)
 
 end TauCeti.Isogeny
 

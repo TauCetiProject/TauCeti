@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Congr
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.BaseChange
@@ -154,35 +154,6 @@ private theorem kerH1Congr_ofIsogeny_dual_baseChange_kerRes
     (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff
     (AbsoluteGaloisGroup L) (ofIsogeny (φ.baseChange L).dual).KerCoeff
     _ _ _ _ (by ext; simp) rfl)) b
-
-omit [W₁.IsElliptic] [W₂.IsElliptic] φ hn in
-/-- Composing `explicitMap2` along `kummerCoeffBaseChange` with `explicitCoeff2` along
-`kummerCoeffInclusion` is `explicitMap2` along the composite `KummerCoeff` homomorphism. -/
-private theorem explicitCoeff2_kummerCoeffInclusion_explicitMap2 {m m' : ℕ} (hd : m ∣ m')
-    (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K m)) :
-    explicitCoeff2 _ _ (kummerCoeffInclusion L hd) continuous_of_discreteTopology
-        (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m)
-          (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
-          (kummerCoeffBaseChange m τ) continuous_of_discreteTopology
-          (kummerCoeffBaseChange_smul m τ) x) =
-      explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K m)
-        (AbsoluteGaloisGroup L) (KummerCoeff L m') (absoluteGaloisGroupMap τ)
-        ((kummerCoeffInclusion L hd : _ →+ _).comp (kummerCoeffBaseChange m τ))
-        continuous_of_discreteTopology
-        (fun g y ↦ by
-          simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass,
-            kummerCoeffBaseChange_smul, map_smul])
-        x := by
-  have hcompP := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K m)
-    (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
-    (kummerCoeffBaseChange m τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul m τ)
-    (AbsoluteGaloisGroup L) (KummerCoeff L m') (ContinuousMonoidHom.id _)
-    (kummerCoeffInclusion L hd : _ →+ _) continuous_of_discreteTopology
-    (fun g y ↦ by simp only [AddMonoidHom.coe_ofClass, ContinuousMonoidHom.coe_id, id_eq, map_smul])
-  rw [explicitCoeff2_eq_explicitMap2]
-  exact DFunLike.congr_fun (hcompP.symm.trans (explicitMap2_congr_of_eq
-    (AbsoluteGaloisGroup K) (KummerCoeff K m)
-    (AbsoluteGaloisGroup L) (KummerCoeff L m') _ _ _ _ (by ext; simp) rfl)) x
 
 /-- Restriction to a field extension commutes with the isogeny Weil cup product, up to
 transporting the restricted dual-kernel class across `φ.ofIsogeny_dual_baseChange L`

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Congr
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 
@@ -39,6 +40,7 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
   `K` on the points over the separable closures commutes with restriction along `τ`.
 * `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
   `H¹(G, E₁[φ]) → H¹(G, E₁)`.
+* `TauCeti.Isogeny.kerH1Congr_kerRes`: compatibility of restriction with kernel congruence.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 
 ## References
@@ -54,12 +56,14 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve WeierstrassCurve.Affine TauCeti.ContCohomology
 
-open Hom (ofIsogeny)
+open Hom (ofIsogeny kerH1Congr)
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
 
 variable {L : Type*} [Field L] [Algebra K L]
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
+
+section
 
 variable (φ : Isogeny W₁.toAffine W₂.toAffine)
 
@@ -147,5 +151,23 @@ theorem kerRes_kummerMap (P : W₂.toAffine.Point) :
   refine Subtype.ext <| funext fun g ↦ Subtype.ext ?_
   rw [cocyclesMap1_apply, coe_kerCoeffBaseChange, Hom.coe_kummerCocycle, Hom.coe_kummerCocycle,
     _root_.map_sub, pointCoeffBaseChange_smul]
+
+end
+
+/-- Restriction along a field extension commutes with `kerH1Congr` for an equality of base-changed
+isogenies. -/
+@[simp]
+theorem kerH1Congr_kerRes {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
+    (h : ofIsogeny (φ.baseChange L) = ofIsogeny (ψ.baseChange L))
+    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
+    kerH1Congr h (φ.kerRes τ c) =
+      ψ.kerRes τ (kerH1Congr
+        (Hom.map_injective (algebraMap K L)
+          ((Hom.ofIsogeny_map φ (algebraMap K L)).trans
+            (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm))) c) := by
+  obtain rfl : φ = ψ := Hom.ofIsogeny_injective <| Hom.map_injective (algebraMap K L) <|
+    (Hom.ofIsogeny_map φ (algebraMap K L)).trans
+      (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm)
+  simp
 
 end TauCeti.Isogeny
