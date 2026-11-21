@@ -397,55 +397,29 @@ theorem mulToPath_apply (γδ : MooreLoopSpace X x × MooreLoopSpace X x) :
     mulToPath x γδ = (γδ.1 * γδ.2).toPath :=
   (rfl)
 
-/-- The intermediate map of `mulToPathHomotopy`: the loop of the product of the two loops
-reparametrized to length one. -/
-private def mulToLengthOneToPath (x : X) :
-    C(MooreLoopSpace X x × MooreLoopSpace X x, Path x x) :=
-  ⟨fun γδ ↦ (toLengthOne γδ.1 * toLengthOne γδ.2).toPath,
-    continuous_toPath.comp (((toLengthOne (X := X) (x := x)).continuous.comp continuous_fst).mul
-      ((toLengthOne (X := X) (x := x)).continuous.comp continuous_snd))⟩
-
-private theorem mulToLengthOneToPath_apply (γδ : MooreLoopSpace X x × MooreLoopSpace X x) :
-    mulToLengthOneToPath x γδ = (toLengthOne γδ.1 * toLengthOne γδ.2).toPath :=
-  (rfl)
-
-/-- The first half of `mulToPathHomotopy`: `Path.transMooreLoopHomotopy` on the two loops on the
-unit interval, read back through `toPath`. -/
-private def transToPathHomotopy (x : X) :
-    ContinuousMap.Homotopy (transToPath x) (mulToLengthOneToPath x) where
-  toFun p := (Path.transMooreLoopHomotopy x (p.1, (p.2.1.toPath, p.2.2.toPath))).toPath
-  continuous_toFun := continuous_toPath.comp ((Path.transMooreLoopHomotopy x).continuous.comp
-    (continuous_fst.prodMk ((continuous_toPath.comp (continuous_fst.comp continuous_snd)).prodMk
-      (continuous_toPath.comp (continuous_snd.comp continuous_snd)))))
-  map_zero_left γδ := by
-    rw [(Path.transMooreLoopHomotopy x).apply_zero, Path.mooreLoopTrans_apply,
-      Path.toPath_toMooreLoop, transToPath_apply]
-  map_one_left γδ := by
-    rw [(Path.transMooreLoopHomotopy x).apply_one, Path.mulMooreLoop_apply,
-      mulToLengthOneToPath_apply, toLengthOne_apply, toLengthOne_apply]
-
-/-- The second half of `mulToPathHomotopy`: `unitHomotopy` on both factors, under `mulToPath`. -/
-private def mulUnitHomotopy (x : X) :
-    ContinuousMap.Homotopy (mulToLengthOneToPath x) (mulToPath x) where
-  toFun p := (unitHomotopy (p.1, p.2.1) * unitHomotopy (p.1, p.2.2)).toPath
-  continuous_toFun := continuous_toPath.comp
-    (((unitHomotopy (X := X) (x := x)).continuous.comp
-      (continuous_fst.prodMk (continuous_fst.comp continuous_snd))).mul
-    ((unitHomotopy (X := X) (x := x)).continuous.comp
-      (continuous_fst.prodMk (continuous_snd.comp continuous_snd))))
-  map_zero_left γδ := by
-    rw [(unitHomotopy (X := X) (x := x)).apply_zero, (unitHomotopy (X := X) (x := x)).apply_zero]
-    rfl
-  map_one_left γδ := by
-    rw [(unitHomotopy (X := X) (x := x)).apply_one, (unitHomotopy (X := X) (x := x)).apply_one]
-    rfl
-
 /-- **`MooreLoopSpace.toPath` is multiplicative up to homotopy**: the homotopy from
-`γ.toPath.trans δ.toPath` to `(γ * δ).toPath`, continuous in `(γ, δ)`.  Together with
+`γ.toPath.trans δ.toPath` to `(γ * δ).toPath`, continuous in `(γ, δ)`.  It is
+`MoorePath.toUnitPathTransHomotopy` on the Moore paths of the two loops.  Together with
 `Path.transMooreLoopHomotopy`, the homotopy equivalence `homotopyEquivPath` between the Moore loops
 and Mathlib's loops is multiplicative up to homotopy in both directions. -/
-def mulToPathHomotopy (x : X) : ContinuousMap.Homotopy (transToPath x) (mulToPath x) :=
-  (transToPathHomotopy x).trans (mulUnitHomotopy x)
+def mulToPathHomotopy (x : X) : ContinuousMap.Homotopy (transToPath x) (mulToPath x) where
+  toFun p := ⟨MoorePath.toUnitPathTransHomotopy
+      (p.1, ⟨(p.2.1.toMoorePath, p.2.2.toMoorePath), p.2.1.target_eq.trans p.2.2.source_eq.symm⟩),
+    (MoorePath.toUnitPathTransHomotopy_apply_zero_right _ _).trans p.2.1.source_eq,
+    (MoorePath.toUnitPathTransHomotopy_apply_one_right _ _).trans p.2.2.target_eq⟩
+  continuous_toFun := continuous_induced_rng.2 <|
+    (MoorePath.toUnitPathTransHomotopy (X := X)).continuous.comp (continuous_fst.prodMk
+      (((continuous_toMoorePath.comp (continuous_fst.comp continuous_snd)).prodMk
+        (continuous_toMoorePath.comp (continuous_snd.comp continuous_snd))).subtype_mk _))
+  map_zero_left γδ := by
+    ext s
+    simp only [Path.coe_mk', ContinuousMap.Homotopy.apply_zero, MoorePath.transToUnitPath_apply,
+      Path.coe_toContinuousMap, transToPath_apply, Path.trans_apply, Path.cast_coe,
+      MoorePath.toPath_apply, toPath_apply]
+  map_one_left γδ := by
+    ext s
+    simp only [Path.coe_mk', ContinuousMap.Homotopy.apply_one, MoorePath.toUnitPathTrans_apply,
+      mulToPath_apply, toPath_apply, toMoorePath_mul, MoorePath.toUnitPath_apply]
 
 end MooreLoopSpace
 
