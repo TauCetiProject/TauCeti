@@ -421,6 +421,7 @@ theorem contMDiff_reindex {m₁ m₂ : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n)
 
 /-- Composing the differential of a factor projection `eval i` with the differential of
 `reindex α` gives the differential of the `(α i)`-th factor projection. -/
+@[simp]
 theorem mfderiv_eval_reindex {m₁ m₂ : ℕ} (α : Fin (m₁ + 1) → Fin (m₂ + 1)) :
     letI := iteratedFiberProductChartedSpace hn hπ m₂
     letI := iteratedFiberProductChartedSpace hn hπ m₁

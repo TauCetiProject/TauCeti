@@ -968,7 +968,11 @@ theorem eval_iteratedFiberProductSplitDiffeomorph_symm (m₁ m₂ : ℕ)
 /-- **Uniqueness of the embedded submanifold structure.** Any manifold `P` admitting a `C^n`
 smooth embedding `ι : P → (Fin (m + 1) → Y)` onto the carrier of `IteratedFiberProduct π (m + 1)`
 is canonically `C^n`-diffeomorphic to `IteratedFiberProduct π (m + 1)`, independently of how `P`
-was constructed or parenthesised. -/
+was constructed or parenthesised.
+
+This applies `Manifold.IsSmoothEmbedding.diffeomorphOfRangeEq` to `hι` and
+`isSmoothEmbedding_coe_iteratedFiberProduct`, identifying the ranges via
+`range_coe_iteratedFiberProduct`. -/
 noncomputable def iteratedFiberProductDiffeomorphOfRangeEq {EP HP P : Type*}
     [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
     {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
@@ -977,23 +981,10 @@ noncomputable def iteratedFiberProductDiffeomorphOfRangeEq {EP HP P : Type*}
     (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)}) :
     letI := iteratedFiberProductChartedSpace hn hπ m
     P ≃ₘ^n⟮IP, 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)⟯
-      IteratedFiberProduct π (m + 1) := by
-  classical
+      IteratedFiberProduct π (m + 1) :=
   letI := iteratedFiberProductChartedSpace hn hπ m
-  have hemb := isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m
-  have hto : ∀ x : P, ∀ i j : Fin (m + 1), π (ι x i) = π (ι x j) :=
-    fun x ↦ hrange.le (mem_range_self x)
-  have hmem : ∀ y : IteratedFiberProduct π (m + 1), ∃ x : P, ι x = y.val :=
-    fun y ↦ hrange.ge y.property
-  have hcomp : ι ∘ (fun y : IteratedFiberProduct π (m + 1) ↦ (hmem y).choose) = Subtype.val :=
-    funext fun y ↦ (hmem y).choose_spec
-  exact
-    { toFun := fun x ↦ ⟨ι x, hto x⟩
-      invFun := fun y ↦ (hmem y).choose
-      left_inv := fun x ↦ hι.isEmbedding.injective (hmem ⟨ι x, hto x⟩).choose_spec
-      right_inv := fun y ↦ Subtype.ext (hmem y).choose_spec
-      contMDiff_toFun := hemb.contMDiff_iff_comp.2 hι.contMDiff
-      contMDiff_invFun := hι.contMDiff_iff_comp.2 (hcomp.symm ▸ hemb.contMDiff) }
+  hι.diffeomorphOfRangeEq (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm)
 
 /-- `iteratedFiberProductDiffeomorphOfRangeEq` sends `x : P` to `ι x` viewed in
 `IteratedFiberProduct π (m + 1)`. -/
@@ -1006,10 +997,15 @@ theorem coe_iteratedFiberProductDiffeomorphOfRangeEq_apply {EP HP P : Type*}
     (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)}) (x : P) :
     letI := iteratedFiberProductChartedSpace hn hπ m
     (iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange x : Fin (m + 1) → Y) = ι x :=
-  (rfl)
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  hι.apply_diffeomorphOfRangeEq (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) x
 
 /-- Applying `ι` to the inverse of `iteratedFiberProductDiffeomorphOfRangeEq` recovers the
-underlying tuple. -/
+underlying tuple.
+
+Not a `simp` lemma: the left-hand side has the bare function variable `ι` at the head (for bundled
+`TauCeti.SmoothEmbedding`, see `TauCeti.SmoothEmbedding.apply_diffeomorphOfRangeEq_symm`). -/
 theorem apply_iteratedFiberProductDiffeomorphOfRangeEq_symm {EP HP P : Type*}
     [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
     {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
@@ -1018,11 +1014,10 @@ theorem apply_iteratedFiberProductDiffeomorphOfRangeEq_symm {EP HP P : Type*}
     (hrange : range ι = {y : Fin (m + 1) → Y | ∀ i j, π (y i) = π (y j)})
     (y : IteratedFiberProduct π (m + 1)) :
     letI := iteratedFiberProductChartedSpace hn hπ m
-    ι ((iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange).symm y) = y.val := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  exact (coe_iteratedFiberProductDiffeomorphOfRangeEq_apply hn hπ hι hrange _).symm.trans
-    (congrArg Subtype.val
-      ((iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange).apply_symm_apply y))
+    ι ((iteratedFiberProductDiffeomorphOfRangeEq hn hπ hι hrange).symm y) = y.val :=
+  letI := iteratedFiberProductChartedSpace hn hπ m
+  hι.apply_diffeomorphOfRangeEq_symm (isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m)
+    (hrange.trans (range_coe_iteratedFiberProduct π (m + 1)).symm) y
 
 end ChosenAtlas
 
