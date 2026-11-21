@@ -142,13 +142,6 @@ theorem rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (hr : 0 ≤ r)
   have hz₀ : (z₀ : ℂ) ≠ 0 := fun h ↦ ht₀ (by rw [← hz₀m, h, zero_pow (NeZero.ne m)])
   let L : Metric.ball (0 : ℂ) (r ^ m) → ℂ := fun t ↦
     Complex.log z₀ + (m : ℂ)⁻¹ * Complex.log (t / (z₀ : ℂ) ^ m)
-  have hmem (t : Metric.ball (0 : ℂ) (r ^ m)) : Complex.exp (L t) ∈ rootsOfUnityBall m r := by
-    by_cases ht : (t : ℂ) = 0
-    · simp only [L, ht, zero_div, Complex.log_zero, mul_zero, add_zero, Complex.exp_log hz₀]
-      exact z₀.property
-    · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
-        ← norm_pow, Complex.exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
-      exact t.property
   -- The branch is holomorphic at `t₀`, where `t / z₀ ^ m = 1` lies in the slit plane.
   have hlog : ContDiffAt ℂ n (fun t ↦ Complex.log (t / (z₀ : ℂ) ^ m)) t₀ := by
     have h := (Complex.contDiffAt_log (n := n) (x := (t₀ : ℂ) / (z₀ : ℂ) ^ m)
@@ -161,7 +154,7 @@ theorem rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (hr : 0 ≤ r)
       (contMDiff_subtypeVal_ball (I := 𝓘(ℂ)) (n := n) (c := (0 : ℂ)) (r := r ^ m)).contMDiffAt
     exact h
   let w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r := fun t ↦
-    ⟨Complex.exp (L t), hmem t⟩
+    ⟨Complex.exp (L t), exp_log_add_inv_mul_log_div_pow_mem_rootsOfUnityBall hz₀ t⟩
   have hexp : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) n (((↑) : rootsOfUnityBall m r → ℂ) ∘ w) t₀ :=
     Complex.contDiff_exp.contMDiff.contMDiffAt.comp t₀ hL
   refine ⟨w, L, ?_, hL, fun t ht ↦ ⟨?_, rfl⟩⟩

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.GraphStep.Density
+public import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
 public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
@@ -35,7 +35,7 @@ identity `‖(∂s ∘ ι + A) u‖² = ‖(ι ∘ u)'‖² + ‖A ∘ u‖²`, 
 invertibility with inverse norm `≤ √(1 + ‖A⁻¹‖²)` for invertible `A`, failure of closed range when
 `A.ker ≠ ⊥`, and equivalence of closed range / Fredholmness / invertibility with `A.IsInvertible`
 for index-`0` Fredholm `A`. Adapts `TauCeti/Analysis/ODE/TrajectoryOperator.lean`,
-`TauCeti/Analysis/Sobolev/GraphStep/Density.lean`,
+`TauCeti/Analysis/Sobolev/GraphStep/Coordinates.lean`,
 `TauCeti/Analysis/ODE/EnergyEstimate/Cokernel.lean`, and
 `TauCeti/Analysis/ODE/TrajectoryOperator/Degenerate.lean`.
 
