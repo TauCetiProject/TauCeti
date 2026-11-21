@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Henselian
 import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 import TauCeti.LinearAlgebra.IntegralLattice.Signature
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms

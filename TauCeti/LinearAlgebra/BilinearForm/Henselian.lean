@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Fintype.Fiber
-public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.Group.Units.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -78,7 +79,6 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
     (hBdet : IsUnit (B.toMatrix b).det) (hCdet : IsUnit (C.toMatrix c).det) :
     B.Equivalent C ↔ IsSquare ((B.toMatrix b).det * (C.toMatrix c).det) := by
   classical
-  let := h2.invertible
   constructor
   · exact fun h ↦ h.isSquare_det_mul_det b c
   · intro hdet
@@ -93,7 +93,7 @@ theorem IsSymm.equivalent_iff_isSquare_det_mul_det
       ring
     have hdiag := (TauCeti.equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two
       h2 w v).mpr hsq
-    exact (hB.equivalent_iff_toQuadraticMap_equivalent hC).mpr
+    exact (hB.equivalent_iff_toQuadraticMap_equivalent hC h2.mem_nonZeroDivisors).mpr
       (hw.trans (hdiag.trans hv.symm))
 
 open IsLocalRing in

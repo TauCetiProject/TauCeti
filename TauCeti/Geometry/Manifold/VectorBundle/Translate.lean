@@ -214,9 +214,9 @@ variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle �
 private theorem contMDiff_translate {σ : ∀ y, V y}
     (hσ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (σ y)) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (p.2 + σ p.proj) := by
+      fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (p.snd + σ p.proj) := by
   have hid : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
-      fun p : TotalSpace F V ↦ TotalSpace.mk' F (E := V) p.proj p.2 :=
+      fun p : TotalSpace F V ↦ TotalSpace.mk' F (E := V) p.proj p.snd :=
     contMDiff_id
   exact hid.add_sectionAlong (hσ.comp (contMDiff_proj V))
 
@@ -225,8 +225,8 @@ private theorem contMDiff_translate {σ : ∀ y, V y}
 def vectorBundleTranslateDiffeomorph (σ : ∀ y, V y)
     (hσ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (σ y)) :
     TotalSpace F V ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, F)⟯ TotalSpace F V where
-  toFun p := ⟨p.proj, p.2 + σ p.proj⟩
-  invFun p := ⟨p.proj, p.2 + (-σ) p.proj⟩
+  toFun p := ⟨p.proj, p.snd + σ p.proj⟩
+  invFun p := ⟨p.proj, p.snd + (-σ) p.proj⟩
   left_inv p := by simp
   right_inv p := by simp
   contMDiff_toFun := contMDiff_translate hσ
@@ -236,7 +236,7 @@ def vectorBundleTranslateDiffeomorph (σ : ∀ y, V y)
 @[simp]
 theorem vectorBundleTranslateDiffeomorph_apply (σ : ∀ y, V y)
     (hσ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (σ y)) (p : TotalSpace F V) :
-    vectorBundleTranslateDiffeomorph σ hσ p = ⟨p.proj, p.2 + σ p.proj⟩ :=
+    vectorBundleTranslateDiffeomorph σ hσ p = ⟨p.proj, p.snd + σ p.proj⟩ :=
   (rfl)
 
 /-- The inverse of the translation by `σ` is the translation by `-σ`. -/
@@ -253,7 +253,7 @@ theorem vectorBundleTranslateDiffeomorph_zero :
     vectorBundleTranslateDiffeomorph (0 : ∀ y, V y)
         (Bundle.contMDiff_zeroSection 𝕜 V : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n _) =
       Diffeomorph.refl (IB.prod 𝓘(𝕜, F)) (TotalSpace F V) n :=
-  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_zero p.2)
+  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_zero p.snd)
 
 /-- Successive fibre translations add the sections. -/
 theorem vectorBundleTranslateDiffeomorph_trans (σ τ : ∀ y, V y)
@@ -261,6 +261,6 @@ theorem vectorBundleTranslateDiffeomorph_trans (σ τ : ∀ y, V y)
     (hτ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (τ y)) :
     (vectorBundleTranslateDiffeomorph σ hσ).trans (vectorBundleTranslateDiffeomorph τ hτ) =
       vectorBundleTranslateDiffeomorph (σ + τ) (hσ.add_section hτ) :=
-  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_assoc p.2 (σ p.proj) (τ p.proj))
+  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_assoc p.snd (σ p.proj) (τ p.proj))
 
 end TauCeti

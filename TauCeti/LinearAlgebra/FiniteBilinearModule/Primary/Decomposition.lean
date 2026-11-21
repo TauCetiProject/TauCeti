@@ -62,7 +62,7 @@ variable (A : FiniteBilinearModule)
 /-- The orthogonal product of the prime-primary restrictions of a finite bilinear module. -/
 @[expose] noncomputable def primaryComponents : FiniteBilinearModule where
   carrier := ∀ p : (Nat.card A).primeFactors,
-    AddCommGroup.primaryComponent A p.1
+    AddCommGroup.primaryComponent A p.val
   pairing :=
     { toFun := fun x ↦
         { toFun := fun y ↦ ∑ p, A.pairing (x p) (y p)
@@ -108,9 +108,9 @@ noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
       ∑ p, A.pairing (x p) (y p)
     exact A.pairing_sum_eq_sum_pairing_of_mem_primaryComponent
       Finset.univ Subtype.val (fun p ↦ x p) (fun p ↦ y p)
-      (fun p _ ↦ Nat.prime_of_mem_primeFactors p.2)
+      (fun p _ ↦ Nat.prime_of_mem_primeFactors p.property)
       (fun p _ q _ hpq ↦ by simpa using hpq)
-      (fun p _ ↦ (x p).2) (fun p _ ↦ (y p).2)
+      (fun p _ ↦ (x p).property) (fun p _ ↦ (y p).property)
 
 /-- The bilinear primary-decomposition isometry maps a tuple to its component sum. -/
 @[simp]
@@ -138,9 +138,9 @@ private noncomputable def primaryComponentsAddEquiv {A : FiniteBilinearModule.{u
     {B : FiniteBilinearModule.{v}} (hcard : Nat.card A = Nat.card B)
     (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
     A.primaryComponents ≃+ B.primaryComponents :=
-  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.1)
+  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.val)
     (primeFactorsEquiv hcard)).toAddEquiv.trans
-    (AddEquiv.piCongrRight fun q ↦ f q.1 (Nat.prime_of_mem_primeFactors q.2))
+    (AddEquiv.piCongrRight fun q ↦ f q.val (Nat.prime_of_mem_primeFactors q.property))
 
 /-- `primaryComponentsAddEquiv` applies the given equivalence to the reindexed component. This is
 `LinearEquiv.piCongrLeft'_apply` followed by `AddEquiv.piCongrRight_apply`, stated for the bundled
@@ -150,7 +150,7 @@ private theorem primaryComponentsAddEquiv_apply {A : FiniteBilinearModule.{u}}
     (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p)
     (x : A.primaryComponents) (q : (Nat.card B).primeFactors) :
     primaryComponentsAddEquiv hcard f x q =
-      f q.1 (Nat.prime_of_mem_primeFactors q.2) (x ((primeFactorsEquiv hcard).symm q)) :=
+      f q.val (Nat.prime_of_mem_primeFactors q.property) (x ((primeFactorsEquiv hcard).symm q)) :=
   rfl
 
 /-- An isometry of finite bilinear modules restricts to each `n`-primary component. -/
@@ -222,7 +222,7 @@ theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteBilinearModule.{
   rw [primaryComponents_pairing, primaryComponents_pairing]
   exact Fintype.sum_equiv (primeFactorsEquiv hcard).symm _ _ fun q ↦ by
     rw [primaryComponentsAddEquiv_apply, primaryComponentsAddEquiv_apply]
-    exact (f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_pairing _ _
+    exact (f q.val (Nat.prime_of_mem_primeFactors q.property)).map_pairing _ _
 
 /-- **Two finite bilinear modules are isometric if and only if their prime-primary components are
 isometric at every prime.** -/
@@ -242,12 +242,12 @@ variable (A : FiniteQuadraticModule)
 
 /-- The orthogonal product of the prime-primary restrictions of a finite quadratic module. -/
 @[expose] noncomputable def primaryComponents : FiniteQuadraticModule :=
-  pi fun p : (Nat.card A).primeFactors ↦ A.restrict (AddCommGroup.primaryComponent A p.1)
+  pi fun p : (Nat.card A).primeFactors ↦ A.restrict (AddCommGroup.primaryComponent A p.val)
 
 /-- The quadratic map on the orthogonal product is the sum of the component quadratic maps. -/
 @[simp]
 theorem primaryComponents_quadratic (x : A.primaryComponents) :
-    A.primaryComponents.quadratic x = ∑ p, A.quadratic (x p).1 :=
+    A.primaryComponents.quadratic x = ∑ p, A.quadratic (x p).val :=
   (pi_quadratic _ x).trans (Finset.sum_congr rfl fun p _ ↦ A.restrict_quadratic _ (x p))
 
 /-- `AddCommGroup.primaryDecomposition` typed with the bundled carrier `A.primaryComponents`, so
@@ -259,7 +259,7 @@ private noncomputable def primaryDecompositionAddEquiv : A.primaryComponents ≃
 /-- The bundled-carrier primary-decomposition additive equivalence maps a tuple to its component
 sum. -/
 private theorem primaryDecompositionAddEquiv_apply (x : A.primaryComponents) :
-    A.primaryDecompositionAddEquiv x = ∑ p, (x p).1 :=
+    A.primaryDecompositionAddEquiv x = ∑ p, (x p).val :=
   AddCommGroup.primaryDecomposition_apply A x
 
 /-- The canonical primary decomposition is a quadratic isometry. -/
@@ -268,10 +268,10 @@ noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
   map_app' x := by
     rw [primaryComponents_quadratic, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
       AddEquiv.coe_toIntLinearEquiv, primaryDecompositionAddEquiv_apply]
-    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ (x p).1)
-      (fun p _ ↦ Nat.prime_of_mem_primeFactors p.2)
+    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ (x p).val)
+      (fun p _ ↦ Nat.prime_of_mem_primeFactors p.property)
       (fun p _ q _ hpq ↦ by simpa using hpq)
-      (fun p _ ↦ (x p).2)
+      (fun p _ ↦ (x p).property)
 
 /-- The quadratic primary-decomposition isometry maps a tuple to its component sum. -/
 @[simp]
@@ -387,9 +387,9 @@ theorem nonempty_isometry_of_forall_primaryComponent {A : FiniteQuadraticModule.
   rw [primaryComponents_quadratic, primaryComponents_quadratic]
   -- The coercion of `g.toIntLinearEquiv` is `g` (`AddEquiv.coe_toIntLinearEquiv` is `rfl`).
   exact Fintype.sum_equiv (FiniteBilinearModule.primeFactorsEquiv hcard).symm _ _ fun q ↦
-    (congrArg (fun y : primaryComponent B.carrier q.1 ↦ B.quadratic y.1)
+    (congrArg (fun y : primaryComponent B.carrier q.val ↦ B.quadratic y.val)
       (FiniteBilinearModule.primaryComponentsAddEquiv_apply hcard _ x q)).trans
-      ((f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_app _)
+      ((f q.val (Nat.prime_of_mem_primeFactors q.property)).map_app _)
 
 /-- **Two finite quadratic modules are isometric if and only if their prime-primary components are
 isometric at every prime.** -/
