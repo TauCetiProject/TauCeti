@@ -112,7 +112,7 @@ theorem isEssential_comap_subtype_iff {N P : Submodule R M} :
   refine ⟨fun h x hx hx0 => ?_, fun h x hx0 => ?_⟩
   · obtain ⟨r, hrN, hr0⟩ := h ⟨x, hx⟩ fun h0 => hx0 (congrArg Subtype.val h0)
     exact ⟨r, hrN, fun h0 => hr0 (Subtype.ext h0)⟩
-  · obtain ⟨r, hrN, hr0⟩ := h x x.2 fun h0 => hx0 (Subtype.ext h0)
+  · obtain ⟨r, hrN, hr0⟩ := h x x.property fun h0 => hx0 (Subtype.ext h0)
     exact ⟨r, hrN, fun h0 => hr0 (congrArg Subtype.val h0)⟩
 
 /-- **Directed unions of essential extensions.** If the trace of `N` is essential in every member

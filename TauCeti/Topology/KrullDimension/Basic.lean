@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -47,6 +47,10 @@ closed, since a proper specialization of such a point would have codimension at 
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober space all
   of whose points have codimension at most `d + 1`, the closure of a point that is not a generic
   point of an irreducible component has dimension at most `d`.
+* `SpecializingMap.height_apply_le_height`: a specializing map from a T₀ space cannot
+  increase point height.
+* `SpecializingMap.topologicalKrullDim_le_of_surjective`: a surjective specializing map from
+  a T₀ space to a quasi-sober space cannot increase dimension; source sobriety is unnecessary.
 * `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
   the codimension of a point.
 * `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
@@ -214,11 +218,11 @@ theorem Topology.IsOpenEmbedding.coheight_subtype_eq {X Y : Type*} [TopologicalS
     coheight (⟨x, hx⟩ : T) = coheight (⟨f x, (hTF x).1 hx⟩ : F) := by
   have hlt {a b : X} : f a < f b ↔ a < b :=
     and_congr hf.isInducing.specializes_iff (not_congr hf.isInducing.specializes_iff)
-  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.2⟩ : F))
+  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.property⟩ : F))
     (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
   obtain ⟨v', hv'⟩ : (b : Y) ∈ Set.range f :=
     h.le.mem_open hf.isOpen_range ⟨v, rfl⟩
-  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.2)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
+  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.property)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
 
 namespace Topology.IsEmbedding
 
@@ -231,3 +235,38 @@ theorem topologicalKrullDim_preimage {X Y : Type*} [TopologicalSpace X] [Topolog
   exact (he.homeomorphOfSubsetRange Set.inter_subset_right).isHomeomorph.topologicalKrullDim_eq
 
 end Topology.IsEmbedding
+
+attribute [local instance] specializationPreorder specializationOrder in
+/-- A specializing map cannot increase the height of a point in the specialization orders.
+Continuity is unnecessary: each strict specialization chain lifts, and its lifted points are
+distinct because their images are distinct. -/
+theorem SpecializingMap.height_apply_le_height {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X]
+    {f : X → Y} (hf : SpecializingMap f) (x : X) : height (f x) ≤ height x := by
+  refine height_le fun p hp ↦ ?_
+  induction p using RelSeries.inductionOn' generalizing x with
+  | singleton y => simp
+  | snoc p y hy ih =>
+    simp only [RelSeries.last_snoc] at hp
+    have hlt : p.last < f x := hp ▸ hy
+    obtain ⟨x', hxx', hx'⟩ := hf hlt.le
+    have hx'x : x' < x := lt_of_le_of_ne hxx' (by rintro rfl; exact hlt.ne hx'.symm)
+    grw [RelSeries.snoc_length, Nat.cast_add, Nat.cast_one, ih x' hx'.symm]
+    exact height_add_one_le hx'x
+
+attribute [local instance] specializationPreorder specializationOrder in
+/-- A surjective specializing map from a T₀ space to a quasi-sober space cannot increase
+Krull dimension. No continuity or sobriety of the source is required. -/
+theorem SpecializingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X] [QuasiSober Y]
+    {f : X → Y} (hf : SpecializingMap f) (hsurj : Function.Surjective f) :
+    topologicalKrullDim Y ≤ topologicalKrullDim X := by
+  have hX : krullDim X ≤ topologicalKrullDim X := by
+    rw [krullDim_eq_iSup_coheight]
+    exact iSup_le TauCeti.coheight_le_topologicalKrullDim
+  rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, ← krullDim_eq_iSup_coheight,
+    krullDim_eq_iSup_height]
+  refine iSup_le fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := hsurj y
+  exact (WithBot.coe_le_coe.mpr (hf.height_apply_le_height x)).trans
+    ((height_le_krullDim x).trans hX)
