@@ -45,8 +45,8 @@ exactly when both factors are, which is how block-diagonal second derivatives on
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts. For an endomorphism `B`, the map
-`(u, l) ↦ (B u + l, u)` of `M × M` is invertible
+bundles over the same base, read in bundle charts. For a continuous linear map `B : M → N`, the
+map `(u, l) ↦ (B u + l, u)` from `M × N` to `N × M` is invertible
 (`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
@@ -350,15 +350,15 @@ end FstPreserving
 
 section CoprodId
 
-variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
-  [IsTopologicalAddGroup M]
+variable {R M N : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
 
-/-- For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible, with
-inverse `(f, g) ↦ (g, f - B g)`. -/
-theorem isInvertible_coprod_id_prod_fst (B : M →L[R] M) :
-    ((B.coprod (ContinuousLinearMap.id R M)).prod (fst R M M)).IsInvertible :=
-  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R M)).prod
-    (fst R M M)) ((snd R M M).prod (fst R M M - B ∘L snd R M M)) (ext fun _ ↦ by simp)
+/-- For a continuous linear map `B : M → N`, the map `(u, l) ↦ (B u + l, u)` from `M × N` to
+`N × M` is invertible, with inverse `(f, g) ↦ (g, f - B g)`. -/
+theorem isInvertible_coprod_id_prod_fst (B : M →L[R] N) :
+    ((B.coprod (ContinuousLinearMap.id R N)).prod (fst R M N)).IsInvertible :=
+  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R N)).prod
+    (fst R M N)) ((snd R N M).prod (fst R N M - B ∘L snd R N M)) (ext fun _ ↦ by simp)
     (ext fun _ ↦ by simp), rfl⟩
 
 end CoprodId
