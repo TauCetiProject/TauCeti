@@ -130,6 +130,14 @@ private noncomputable def splittingAlgHom :
     ℂ ⊗[ℝ] S →ₐ[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
   AlgHom.liftEquiv ℝ ℂ S _ splittingPoint.ofConv
 
+/-- Restricted to `S`, a complex algebra map `f : ℂ[ℤ²] → R` composed with `splittingAlgHom` is
+the point `f ∘ splittingPoint` of `S`. -/
+private theorem liftEquiv_symm_comp_splittingAlgHom {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (f : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) →ₐ[ℂ] R) :
+    (AlgHom.liftEquiv ℝ ℂ S R).symm (f.comp splittingAlgHom) =
+      (AlgHom.mapValue (f.restrictScalars ℝ) splittingPoint).ofConv :=
+  AlgHom.ext fun s ↦ by simp [splittingAlgHom, AlgHom.mapValue_apply]
+
 /-- The universal point of `S` with values in `ℂ ⊗[ℝ] S`. -/
 private noncomputable def universalPoint : WithConv (S →ₐ[ℝ] ℂ ⊗[ℝ] S) :=
   toConv Algebra.TensorProduct.includeRight
@@ -172,9 +180,9 @@ private theorem splittingInvAlgHom_comp_splittingAlgHom :
     rw [characterGroup_apply, zpow_one, zpow_zero, one_mul] at h₂
     ext <;> simp only [Units.coe_map, MonoidHom.coe_ofClass, MonoidHom.coe_toHomUnits,
       MonoidAlgebra.of_apply] <;> assumption
-  have key' := congrArg ofConv key
-  rw [AlgHom.mapValue_apply, ofConv_toConv, universalPoint, ofConv_toConv] at key'
-  exact AlgHom.ext fun s ↦ by simpa [splittingAlgHom] using DFunLike.congr_fun key' s
+  rw [liftEquiv_symm_comp_splittingAlgHom, key, universalPoint, ofConv_toConv]
+  exact AlgHom.ext fun s ↦ by
+    rw [AlgHom.liftEquiv_symm_apply, AlgHom.id_apply, Algebra.TensorProduct.includeRight_apply]
 
 /-- The convolution of the two images of `splittingPoint` under the coordinate inclusions
 `ℂ[ℤ²] → ℂ[ℤ²] ⊗ ℂ[ℤ²]`. -/
@@ -211,12 +219,9 @@ private theorem splittingAlgHom_comul :
     rw [splittingPointConv, map_mul, complexSplitting_mapValue_splittingPoint,
       complexSplitting_mapValue_splittingPoint, complexSplitting_mapValue_splittingPoint]
     ext <;> simp [Algebra.TensorProduct.tmul_mul_tmul]
-  refine AlgHom.ext fun s ↦ ?_
-  have h := (map_splittingAlgHom_comul_one_tmul s).trans
-    (congrArg (fun f : WithConv (S →ₐ[ℝ] _) ↦ f.ofConv s) key)
-  rw [AlgHom.liftEquiv_symm_apply, AlgHom.liftEquiv_symm_apply, AlgHom.comp_apply,
-    AlgHom.comp_apply, h]
-  simp [splittingAlgHom]
+  rw [liftEquiv_symm_comp_splittingAlgHom, ← key]
+  exact AlgHom.ext fun s ↦ by
+    rw [AlgHom.liftEquiv_symm_apply, AlgHom.comp_apply, map_splittingAlgHom_comul_one_tmul]
 
 private theorem splittingAlgHom_counit :
     (Bialgebra.counitAlgHom ℂ _).comp splittingAlgHom = Bialgebra.counitAlgHom ℂ (ℂ ⊗[ℝ] S) := by
@@ -226,8 +231,8 @@ private theorem splittingAlgHom_counit :
     apply (complexSplitting _).injective
     rw [complexSplitting_mapValue_splittingPoint, map_one]
     ext <;> simp
-  refine AlgHom.ext fun s ↦ ?_
-  simpa [splittingAlgHom] using congrArg (fun f : WithConv (S →ₐ[ℝ] ℂ) ↦ f.ofConv s) key
+  rw [liftEquiv_symm_comp_splittingAlgHom, key]
+  exact AlgHom.ext fun s ↦ by simp
 
 /-- `splittingAlgHom` as a bialgebra map. -/
 private noncomputable def splittingBialgHom :

@@ -109,6 +109,20 @@ section Points
 -- real module structure on `R`.
 variable {R : Type*} [CommRing R] [Algebra ℂ R]
 
+/-- The action of the `ℂ`-linear extension of a point `f` of `S` on `1 ⊗ v` in `R ⊗[ℂ] (ℂ ⊗[ℝ] V)`
+is multiplication by `c` exactly when `f` acts by `c` on the image of `v` in `R ⊗[ℝ] V`. -/
+private theorem endOfPoint_liftEquiv_one_tmul_eq_tmul_iff (f : S →ₐ[ℝ] R) (c : R)
+    (v : ℂ ⊗[ℝ] V) :
+    letI := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+    Comodule.endOfPoint (ℂ ⊗[ℝ] V) (AlgHom.liftEquiv ℝ ℂ S R f) (1 ⊗ₜ v) = c ⊗ₜ v ↔
+      Comodule.endOfPoint V f (LinearMap.rTensor V (IsScalarTower.toAlgHom ℝ ℂ R).toLinearMap v) =
+        c • LinearMap.rTensor V (IsScalarTower.toAlgHom ℝ ℂ R).toLinearMap v := by
+  let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+  rw [← (TensorProduct.AlgebraTensorModule.cancelBaseChange ℝ ℂ R R V).injective.eq_iff,
+    Comodule.cancelBaseChange_endOfPoint_liftEquiv,
+    TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor,
+    TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor, one_smul]
+
 /-- **A point of `S` acts on `V^{p,q}` by the character `(-p, -q)`.** For a point `g` of `S`
 with values in a complex algebra `R`, with coordinates `(z₁, z₂)` in `S(R) ≃ Rˣ × Rˣ`, and for
 `v ∈ V^{p,q}`, the action of `g` on the image of `v` in `R ⊗[ℝ] V` is multiplication by
@@ -134,10 +148,7 @@ theorem endOfPoint_rTensor_of_mem_hodgeComponent (g : WithConv (S →ₐ[ℝ] R)
     (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) χ 1
     ((hodgeComponent_def V p q).le hv)
   rw [hχ, one_mul, hχ'] at h
-  have h' := congrArg (TensorProduct.AlgebraTensorModule.cancelBaseChange ℝ ℂ R R V) h
-  rwa [Comodule.cancelBaseChange_endOfPoint_liftEquiv,
-    TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor,
-    TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor, one_smul] at h'
+  exact (endOfPoint_liftEquiv_one_tmul_eq_tmul_iff _ _ v).mp h
 
 /-- **A complex point of `S` acts on `V^{p,q}` by the character `(-p, -q)`**: a point `g` of
 `S(ℂ) ≃ ℂˣ × ℂˣ` with coordinates `(z₁, z₂)` acts on `V^{p,q}` by `z₁ ^ (-p) * z₂ ^ (-q)`. -/
@@ -197,14 +208,7 @@ theorem mem_hodgeComponent_iff {p q : ℤ} {v : ℂ ⊗[ℝ] V} :
           AlgHom.liftEquiv ℝ ℂ S _ splittingPoint.ofConv :=
       AlgHom.ext fun x ↦ by simp [← splittingBialgEquiv_toAlgHom]
     rw [hcoalg, ← hodgeComponent_def, halg] at hiff
-    refine hiff.mpr ?_
-    apply (TensorProduct.AlgebraTensorModule.cancelBaseChange ℝ ℂ
-      (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-      V).injective
-    rw [Comodule.cancelBaseChange_endOfPoint_liftEquiv,
-      TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor,
-      TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor, one_smul]
-    exact hv
+    exact hiff.mpr ((endOfPoint_liftEquiv_one_tmul_eq_tmul_iff _ _ v).mpr hv)
 
 end Points
 
