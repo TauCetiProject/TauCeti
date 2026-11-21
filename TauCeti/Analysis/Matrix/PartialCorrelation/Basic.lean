@@ -81,20 +81,6 @@ theorem card_strictLowerTriangle_column (j : Fin p) :
     Fintype.card {ij : strictLowerTriangle p // ij.val.2 = j} = p - 1 - j.val := by
   rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
 
-/-- The product over the three strictly lower positions of a `3 × 3` matrix. -/
-@[to_additive /-- The sum over the three strictly lower positions of a `3 × 3` matrix. -/]
-theorem prod_strictLowerTriangle_three {M : Type*} [CommMonoid M]
-    (f : strictLowerTriangle 3 → M) :
-    ∏ ij : strictLowerTriangle 3, f ij =
-      f ⟨(1, 0), by decide⟩ * f ⟨(2, 0), by decide⟩ * f ⟨(2, 1), by decide⟩ := by
-  have huniv :
-      (Finset.univ : Finset (strictLowerTriangle 3)) =
-        {⟨(1, 0), by decide⟩, ⟨(2, 0), by decide⟩, ⟨(2, 1), by decide⟩} := by
-    ext ⟨⟨a, b⟩, hab⟩
-    fin_cases a <;> fin_cases b <;> simp at hab ⊢
-  rw [huniv, Finset.prod_insert (by decide), Finset.prod_insert (by decide),
-    Finset.prod_singleton, ← mul_assoc]
-
 /-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
 `kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
 theorem strictLowerTriangle.exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p}

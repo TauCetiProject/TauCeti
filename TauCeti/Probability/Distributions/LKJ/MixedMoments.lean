@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.LKJ.Symmetry
 public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Analysis.Matrix.PartialCorrelation.GramPowers
 public import Mathlib.Probability.Distributions.Beta
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Analysis.Matrix.PosSemidef.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
@@ -35,8 +36,8 @@ preserves mixed moments, and any vertex `i` of odd symmetric degree `∑ j, (n (
 forces the mixed moment to vanish by diagonal sign invariance. Specializing to a single entry gives
 closed Beta-quotient moments of all natural orders, and evaluating a three-entry cycle gives the
 joint third moment `E[R i j * R i k * R j k] = 1 / (2 * η + p - 1) ^ 2` for pairwise distinct
-indices, witnessing non-independence of off-diagonal correlation entries despite their zero pairwise
-covariances.
+indices, witnessing non-independence of off-diagonal correlation entries despite zero pairwise
+covariances between distinct strict-lower-triangle entries.
 
 ## Main results
 
@@ -397,16 +398,13 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_of_diag {p : ℕ} {η : ℝ} (hη
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         ∏ ab, (R : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab ∂lkjMeasure p η = 1 := by
   let _ := isProbabilityMeasure_lkjMeasure (p := p) hη
-  have hae :
-      (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-        ∏ ab, (R : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab) =ᵐ[lkjMeasure p η]
-      fun _ ↦ 1 := by
-    filter_upwards [ae_diag_eq_one_lkjMeasure p η] with R hR
-    refine Finset.prod_eq_one fun ab _ ↦ ?_
-    by_cases hab : n ab = 0
-    · simp [hab]
-    · rw [hdiag ab hab, hR ab.2, one_pow]
-  rw [integral_congr_ae hae, integral_const, probReal_univ, one_smul]
+  rw [integral_prod_pow_coe_apply_lkjMeasure_eq_integral_prod_filter_ne]
+  have hprod (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+      (∏ q with q.1 ≠ q.2, (R : Matrix (Fin p) (Fin p) ℝ) q.1 q.2 ^ n q) = 1 := by
+    refine Finset.prod_eq_one fun q hq ↦ ?_
+    have h0 : n q = 0 := not_not.mp fun hn ↦ (Finset.mem_filter.mp hq).2 (hdiag q hn)
+    simp [h0]
+  simp [hprod]
 
 /-- In dimensions zero and one, every natural mixed entry moment under a positive-shape LKJ law
 equals one. -/
@@ -419,144 +417,148 @@ theorem integral_prod_pow_coe_apply_lkjMeasure_of_le_one {p : ℕ} (hp : p ≤ 1
 
 /-! ### Joint three-entry triangle moment of `lkjMeasure` -/
 
-private theorem prod_triangle_first_term (z : strictLowerTriangle 3 → ℝ) :
-    z ⟨(1, 0), by decide⟩ ^ 2 * z ⟨(2, 0), by decide⟩ ^ 2 =
-      ∏ ij : strictLowerTriangle 3,
-        z ij ^ (if ij = ⟨(2, 1), by decide⟩ then 0 else 2) := by
-  rw [prod_strictLowerTriangle_three]
-  have hne10 : (⟨(1, 0), by decide⟩ : strictLowerTriangle 3) ≠ ⟨(2, 1), by decide⟩ := by decide
-  have hne20 : (⟨(2, 0), by decide⟩ : strictLowerTriangle 3) ≠ ⟨(2, 1), by decide⟩ := by decide
-  simp [hne10, hne20]
-
-private theorem prod_triangle_second_term (z : strictLowerTriangle 3 → ℝ) :
-    partialCorrelationCholesky z 2 1 * partialCorrelationCholesky z 1 1 *
-        partialCorrelationCholesky z 2 0 * partialCorrelationCholesky z 1 0 =
-      ∏ q : Fin 3 × Fin 3,
-        partialCorrelationCholesky z q.1 q.2 ^
-          (if q = (2, 1) ∨ q = (1, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0) := by
-  let s : Finset (Fin 3 × Fin 3) := {(2, 1), (1, 1), (2, 0), (1, 0)}
-  have hsub :
-      (∏ q : Fin 3 × Fin 3,
-          partialCorrelationCholesky z q.1 q.2 ^
-            (if q = (2, 1) ∨ q = (1, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0)) =
-        ∏ q ∈ s,
-          partialCorrelationCholesky z q.1 q.2 ^
-            (if q = (2, 1) ∨ q = (1, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0) := by
-    symm
-    refine Finset.prod_subset (Finset.subset_univ _) fun q _ hq ↦ ?_
-    simp only [s, Finset.mem_insert, Finset.mem_singleton] at hq
-    rw [ite_eq_right hq, pow_zero]
-  rw [hsub]
-  dsimp only [s]
-  rw [Finset.prod_insert (by decide), Finset.prod_insert (by decide),
-    Finset.prod_insert (by decide), Finset.prod_singleton]
-  simp only [true_or, or_true, ↓reduceIte, pow_one]
-  ring
-
-private theorem partialCorrelationGram_triangle_three_eq (z : strictLowerTriangle 3 → ℝ) :
-    partialCorrelationGram z 2 1 * partialCorrelationGram z 2 0 *
-        partialCorrelationGram z 1 0 =
-      (∏ ij : strictLowerTriangle 3,
-          z ij ^ (if ij = ⟨(2, 1), by decide⟩ then 0 else 2)) +
-        ∏ q : Fin 3 × Fin 3,
-          partialCorrelationCholesky z q.1 q.2 ^
-            (if q = (2, 1) ∨ q = (1, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0) := by
-  have hIic : (Finset.Iic (1 : Fin 3)) = {0, 1} := by decide
-  have h21 : partialCorrelationGram z 2 1 =
-      z ⟨(2, 0), by decide⟩ * z ⟨(1, 0), by decide⟩ +
-        partialCorrelationCholesky z 2 1 * partialCorrelationCholesky z 1 1 := by
-    rw [partialCorrelationGram_apply_eq_sum_Iic, hIic, Finset.sum_insert (by decide),
-      Finset.sum_singleton,
-      partialCorrelationCholesky_apply_zero_of_pos z (by decide : (0 : Fin 3) < 2),
-      partialCorrelationCholesky_apply_zero_of_pos z (by decide : (0 : Fin 3) < 1)]
-  rw [h21, partialCorrelationGram_apply_zero_of_pos z (by decide : (0 : Fin 3) < 2),
-    partialCorrelationGram_apply_zero_of_pos z (by decide : (0 : Fin 3) < 1),
-    ← prod_triangle_first_term z, ← prod_triangle_second_term z,
-    partialCorrelationCholesky_apply_zero_of_pos z (by decide : (0 : Fin 3) < 2),
-    partialCorrelationCholesky_apply_zero_of_pos z (by decide : (0 : Fin 3) < 1)]
-  ring
-
-private theorem integral_triangle_first_term_three {η : ℝ} (hη : 0 < η) :
-    ∫ z : strictLowerTriangle 3 → ℝ,
-        (∏ ij : strictLowerTriangle 3, z ij ^ (if ij = ⟨(2, 1), by decide⟩ then 0 else 2))
-      ∂(Measure.pi fun ij : strictLowerTriangle 3 ↦
-        (betaMeasure (lkjPartialCorrelationShape 3 η ij)
-          (lkjPartialCorrelationShape 3 η ij)).map (fun x ↦ -1 + 2 * x)) =
-      1 / (2 * η + 2) ^ 2 := by
-  let _ (ij : strictLowerTriangle 3) : IsProbabilityMeasure
-      ((betaMeasure (lkjPartialCorrelationShape 3 η ij)
-        (lkjPartialCorrelationShape 3 η ij)).map (fun x ↦ -1 + 2 * x)) := by
-    let _ := isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
-      (lkjPartialCorrelationShape_pos hη ij)
-    infer_instance
-  let u₂₁ : strictLowerTriangle 3 := ⟨(2, 1), by decide⟩
-  rw [integral_fintype_prod_eq_prod
-      (f := fun (ij : strictLowerTriangle 3) (x : ℝ) ↦ x ^ (if ij = u₂₁ then 0 else 2)),
-    prod_strictLowerTriangle_three]
-  have hne10 : (⟨(1, 0), by decide⟩ : strictLowerTriangle 3) ≠ u₂₁ := by decide
-  have hne20 : (⟨(2, 0), by decide⟩ : strictLowerTriangle 3) ≠ u₂₁ := by decide
-  simp only [hne10, hne20, u₂₁, ↓reduceIte, pow_zero, integral_const, probReal_univ, smul_eq_mul,
-    mul_one]
-  rw [integral_sq_map_centered_betaMeasure
-      (lkjPartialCorrelationShape_pos hη ⟨(1, 0), by decide⟩),
-    integral_sq_map_centered_betaMeasure
-      (lkjPartialCorrelationShape_pos hη ⟨(2, 0), by decide⟩)]
-  simp only [lkjPartialCorrelationShape_eq, Fin.val_zero]
-  norm_num
-  field_simp
-  ring
-
 private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ),
         (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
           (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 ∂lkjMeasure 3 η =
       1 / (2 * η + 2) ^ 2 := by
-  let μ : strictLowerTriangle 3 → Measure ℝ := fun ij ↦
-    (betaMeasure (lkjPartialCorrelationShape 3 η ij)
-      (lkjPartialCorrelationShape 3 η ij)).map (fun x ↦ -1 + 2 * x)
-  let _ (ij : strictLowerTriangle 3) : IsProbabilityMeasure (μ ij) := by
-    let _ := isProbabilityMeasureBeta (lkjPartialCorrelationShape_pos hη ij)
-      (lkjPartialCorrelationShape_pos hη ij)
-    infer_instance
-  let u₂₁ : strictLowerTriangle 3 := ⟨(2, 1), by decide⟩
-  let m₂ : Fin 3 × Fin 3 → ℕ :=
-    fun q ↦ if q = (2, 1) ∨ q = (1, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0
-  have hm : Measurable fun M : Matrix (Fin 3) (Fin 3) ℝ ↦ M 2 1 * M 2 0 * M 1 0 :=
-    (Matrix.measurable_apply.mul Matrix.measurable_apply).mul Matrix.measurable_apply
-  rw [← integral_map (f := fun M : Matrix (Fin 3) (Fin 3) ℝ ↦ M 2 1 * M 2 0 * M 1 0)
-      measurable_subtypeVal.aemeasurable hm.aestronglyMeasurable,
-    map_coe_lkjMeasure hη,
-    integral_map continuous_partialCorrelationGram.measurable.aemeasurable hm.aestronglyMeasurable]
-  simp_rw [partialCorrelationGram_triangle_three_eq]
-  have hint1 : Integrable
-      (fun z : strictLowerTriangle 3 → ℝ ↦
-        ∏ ij : strictLowerTriangle 3, z ij ^ (if ij = u₂₁ then 0 else 2))
-      (Measure.pi μ) := by
-    simpa using integrable_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-      (lkjPartialCorrelationShape 3 η) 0 (fun ij ↦ if ij = u₂₁ then 0 else 2)
-      (lkjPartialCorrelationShape_pos hη) (by simpa using lkjPartialCorrelationShape_pos hη)
-  have hint2 : Integrable
-      (fun z : strictLowerTriangle 3 → ℝ ↦
-        ∏ q : Fin 3 × Fin 3, partialCorrelationCholesky z q.1 q.2 ^ m₂ q) (Measure.pi μ) :=
-    integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure
-      (lkjPartialCorrelationShape_pos hη) m₂
-  rw [integral_add hint1 hint2]
-  have hzero :
-      (∫ z, ∏ q : Fin 3 × Fin 3, partialCorrelationCholesky z q.1 q.2 ^ m₂ q ∂Measure.pi μ) =
-        0 := by
-    rw [integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure
-      (lkjPartialCorrelationShape_pos hη) m₂]
-    split_ifs with hle
-    · refine Finset.prod_eq_zero (Finset.mem_univ u₂₁) ?_
-      simp [u₂₁, m₂]
-    · rfl
-  rw [hzero, add_zero]
-  exact integral_triangle_first_term_three hη
+  let n : Fin 3 × Fin 3 → ℕ :=
+    fun q ↦ if q = (2, 1) ∨ q = (2, 0) ∨ q = (1, 0) then 1 else 0
+  have hmono (M : Matrix (Fin 3) (Fin 3) ℝ) :
+      M 2 1 * M 2 0 * M 1 0 = ∏ q : Fin 3 × Fin 3, M q.1 q.2 ^ n q := by
+    let s : Finset (Fin 3 × Fin 3) := {(2, 1), (2, 0), (1, 0)}
+    have hsub :
+        (∏ q : Fin 3 × Fin 3, M q.1 q.2 ^ n q) = ∏ q ∈ s, M q.1 q.2 ^ n q := by
+      symm
+      refine Finset.prod_subset (Finset.subset_univ _) fun q _ hq ↦ ?_
+      simp only [s, Finset.mem_insert, Finset.mem_singleton] at hq
+      simp [n, hq]
+    rw [hsub]
+    simp [s, n, mul_assoc]
+  simp_rw [hmono]
+  rw [integral_prod_pow_coe_apply_lkjMeasure 3 hη n]
+  let c₀ : mulTransposeExpansionChoice n := fun _ _ ↦ ⟨0, Fin.zero_le _⟩
+  have hne : ∀ c : mulTransposeExpansionChoice n, c ≠ c₀ →
+      (∏ ij : strictLowerTriangle 3,
+        if Even (mulTransposeExpansionPower c ij.val) then
+          beta (((mulTransposeExpansionPower c ij.val : ℝ) + 1) / 2)
+              (lkjPartialCorrelationShape 3 η ij +
+                partialCorrelationCholeskyMonomialResidualPower
+                  (mulTransposeExpansionPower c) ij) /
+            beta (1 / 2) (lkjPartialCorrelationShape 3 η ij)
+        else 0) = 0 := by
+    intro c hc
+    have hex : ∃ ij r, c ij r ≠ c₀ ij r := by
+      by_contra h
+      push Not at h
+      exact hc (funext fun ij ↦ funext fun r ↦ h ij r)
+    obtain ⟨ij, r, hij⟩ := hex
+    have h21 : ij = (2, 1) := by
+      by_contra hne21
+      apply hij
+      apply Subtype.ext
+      have hn : n ij ≠ 0 := fun h0 ↦ Fin.elim0 (r.cast h0)
+      have hmin : min ij.1 ij.2 = 0 := by
+        rcases ij with ⟨a, b⟩
+        fin_cases a <;> fin_cases b <;> simp_all [n]
+      exact Fin.le_zero_iff.mp ((c ij r).property.trans hmin.le)
+    subst h21
+    have hval : (c (2, 1) r : Fin 3) = 1 := by
+      have hle : (c (2, 1) r : Fin 3) ≤ 1 := by
+        simpa using (c (2, 1) r).property
+      have hne0 : (c (2, 1) r : Fin 3) ≠ 0 :=
+        fun h0 ↦ hij (Subtype.ext h0)
+      omega
+    have hpow : mulTransposeExpansionPower c (2, 1) = 1 := by
+      rw [mulTransposeExpansionPower_eq_sum, Fintype.sum_prod_type]
+      have hsum_zero (a b : Fin 3) (h0 : n (a, b) = 0) :
+          (∑ s : Fin (n (a, b)),
+            ((if (a, (c (a, b) s : Fin 3)) = (2, 1) then 1 else 0) +
+              if (b, (c (a, b) s : Fin 3)) = (2, 1) then 1 else 0)) = 0 := by
+        have : IsEmpty (Fin (n (a, b))) := by simp [h0]
+        simp
+      have hsum_col0 (a b : Fin 3) (hmin : min a b = 0) :
+          (∑ s : Fin (n (a, b)),
+            ((if (a, (c (a, b) s : Fin 3)) = (2, 1) then 1 else 0) +
+              if (b, (c (a, b) s : Fin 3)) = (2, 1) then 1 else 0)) = 0 := by
+        refine Finset.sum_eq_zero fun s _ ↦ ?_
+        have hs0 : (c (a, b) s : Fin 3) = 0 :=
+          Fin.le_zero_iff.mp ((c (a, b) s).property.trans hmin.le)
+        simp [hs0]
+      rw [Fin.sum_univ_three, Fin.sum_univ_three, Fin.sum_univ_three, Fin.sum_univ_three]
+      rw [hsum_zero 0 0 (by simp [n]), hsum_zero 0 1 (by simp [n]), hsum_zero 0 2 (by simp [n]),
+        hsum_col0 1 0 (by decide), hsum_zero 1 1 (by simp [n]), hsum_zero 1 2 (by simp [n]),
+        hsum_col0 2 0 (by decide), hsum_zero 2 2 (by simp [n])]
+      have : Subsingleton (Fin (n (2, 1))) := Fin.subsingleton_iff_le_one.mpr (by simp [n])
+      rw [Fintype.sum_eq_single r fun s hs ↦ absurd (Subsingleton.elim s r) hs]
+      simp [hval]
+    refine Finset.prod_eq_zero (Finset.mem_univ ⟨(2, 1), by decide⟩) ?_
+    simp [hpow]
+  rw [Fintype.sum_eq_single c₀ hne]
+  have hm_ne {a k : Fin 3} (hk : k ≠ 0) : mulTransposeExpansionPower c₀ (a, k) = 0 := by
+    rw [mulTransposeExpansionPower_eq_sum]
+    refine Finset.sum_eq_zero fun ab _ ↦ Finset.sum_eq_zero fun s _ ↦ ?_
+    simp [c₀, hk.symm]
+  have hres (ij : strictLowerTriangle 3) :
+      partialCorrelationCholeskyMonomialResidualPower (mulTransposeExpansionPower c₀) ij = 0 := by
+    rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi]
+    refine Finset.sum_eq_zero fun k hk ↦ ?_
+    have hk0 : k ≠ 0 := (Fin.zero_le _ |>.trans_lt (Finset.mem_Ioi.mp hk)).ne'
+    simp [hm_ne hk0]
+  have hm10 : mulTransposeExpansionPower c₀ (1, 0) = 2 := by
+    rw [mulTransposeExpansionPower_eq_sum, Fintype.sum_prod_type]
+    simp [Fin.sum_univ_three, c₀, n]
+  have hm20 : mulTransposeExpansionPower c₀ (2, 0) = 2 := by
+    rw [mulTransposeExpansionPower_eq_sum, Fintype.sum_prod_type]
+    simp [Fin.sum_univ_three, c₀, n]
+  have hm21 : mulTransposeExpansionPower c₀ (2, 1) = 0 := hm_ne (by decide)
+  let f : strictLowerTriangle 3 → ℝ := fun ij ↦
+    if Even (mulTransposeExpansionPower c₀ ij.val) then
+      beta (((mulTransposeExpansionPower c₀ ij.val : ℝ) + 1) / 2)
+          (lkjPartialCorrelationShape 3 η ij +
+            partialCorrelationCholeskyMonomialResidualPower
+              (mulTransposeExpansionPower c₀) ij) /
+        beta (1 / 2) (lkjPartialCorrelationShape 3 η ij)
+    else 0
+  let g : Fin 3 → Fin 3 → ℝ := fun j i ↦ if h : j < i then f ⟨(i, j), h⟩ else 1
+  have hprod : (∏ ij : strictLowerTriangle 3, f ij) =
+      f ⟨(1, 0), by decide⟩ * f ⟨(2, 0), by decide⟩ * f ⟨(2, 1), by decide⟩ := by
+    rw [← Fintype.prod_fiberwise (fun ij : strictLowerTriangle 3 ↦ ij.val.2) f]
+    have hcol (j : Fin 3) :
+        (∏ ij : {ij : strictLowerTriangle 3 // ij.val.2 = j}, f ij.val) =
+          ∏ i ∈ Finset.Ioi j, g j i := by
+      rw [Fintype.prod_equiv (strictLowerTriangleColumnEquiv j) _ (fun i : Set.Ioi j ↦ g j i.val)
+        fun ij ↦ by
+          have hj : j < ij.val.val.1 := by
+            simpa only [strictLowerTriangleColumnEquiv_apply_coe] using
+              Set.mem_Ioi.mp (strictLowerTriangleColumnEquiv j ij).property
+          simp only [g, strictLowerTriangleColumnEquiv_apply_coe]
+          split_ifs
+          exact congrArg f (Subtype.ext (Prod.ext rfl ij.property))]
+      refine Finset.prod_bij (fun i _ ↦ i.val) (fun i _ ↦ Finset.mem_Ioi.mpr i.property)
+        (fun _ _ _ _ h ↦ Subtype.ext h)
+        (fun i hi ↦ ⟨⟨i, Finset.mem_Ioi.mp hi⟩, Finset.mem_univ _, rfl⟩) (fun _ _ ↦ rfl)
+    simp_rw [hcol, prod_prod_Ioi_three g, g]
+    simp
+  change (∏ ij : strictLowerTriangle 3, f ij) = 1 / (2 * η + 2) ^ 2
+  rw [hprod]
+  simp only [f, hm10, hm20, hm21, hres, add_zero, even_two, Even.zero, ↓reduceIte,
+    Nat.cast_ofNat, Nat.cast_zero, zero_add]
+  have hb21 : beta (1 / 2) (lkjPartialCorrelationShape 3 η ⟨(2, 1), by decide⟩) ≠ 0 :=
+    (beta_pos (by norm_num) (lkjPartialCorrelationShape_pos hη _)).ne'
+  rw [div_self hb21, mul_one]
+  simp only [lkjPartialCorrelationShape_eq, Fin.val_zero]
+  norm_num
+  have hthree_half : (3 : ℝ) / 2 = 1 / 2 + 1 := by norm_num
+  rw [hthree_half, beta_add_one_left (by norm_num) (by positivity),
+    mul_div_cancel_right₀ _ (beta_pos (by norm_num) (by positivity)).ne']
+  field_simp
+  ring
 
 /-- **Joint three-entry triangle moment of the LKJ law.** For `0 < η` and pairwise distinct indices
 `i, j, k : Fin p`, the mixed moment `E[R i j * R i k * R j k]` equals `1 / (2 * η + p - 1) ^ 2`.
-In particular, although distinct off-diagonal correlation entries have covariance zero, any three
-entries forming a triangle have strictly positive joint third moment. -/
+In particular, although distinct strict-lower-triangle correlation entries have covariance zero, any
+three entries forming a triangle have strictly positive joint third moment. -/
 theorem integral_mul_mul_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
     {i j k : Fin p} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
@@ -736,5 +738,34 @@ theorem integral_pow_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
   (hX.integral_comp
     (TauCeti.Probability.integrable_pow_coe_apply_lkjMeasure η i j m).aestronglyMeasurable).trans
     (TauCeti.Probability.integral_pow_coe_apply_lkjMeasure hη i j m)
+
+/-- At positive shape, any mixed entry moment of a random matrix with LKJ law supported on the
+diagonal equals one. -/
+theorem integral_prod_pow_coe_apply_lkjMeasure_of_diag (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) {n : Fin p × Fin p → ℕ} (hdiag : ∀ ab, n ab ≠ 0 → ab.1 = ab.2) :
+    ∫ ω, (∏ ab, (X ω : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab) ∂P = 1 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_diag hη hdiag)
+
+/-- In dimensions zero and one, every natural mixed entry moment of a random matrix with
+positive-shape LKJ law equals one. -/
+theorem integral_prod_pow_coe_apply_lkjMeasure_of_le_one (hX : HasLaw X (lkjMeasure p η) P)
+    (hp : p ≤ 1) (hη : 0 < η) (n : Fin p × Fin p → ℕ) :
+    ∫ ω, (∏ ab, (X ω : Matrix (Fin p) (Fin p) ℝ) ab.1 ab.2 ^ n ab) ∂P = 1 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_prod_pow_coe_apply_lkjMeasure η n).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_le_one hp hη n)
+
+/-- Joint three-entry triangle moment of a random matrix with positive-shape LKJ law. -/
+theorem integral_mul_mul_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) {i j k : Fin p} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i j * (X ω : Matrix (Fin p) (Fin p) ℝ) i k *
+        (X ω : Matrix (Fin p) (Fin p) ℝ) j k ∂P =
+      1 / (2 * η + p - 1) ^ 2 :=
+  (hX.integral_comp
+    (((selfAdjoint.measurable_coe_apply i j).mul (selfAdjoint.measurable_coe_apply i k)).mul
+      (selfAdjoint.measurable_coe_apply j k)).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_mul_mul_coe_apply_lkjMeasure hη hij hik hjk)
 
 end ProbabilityTheory.HasLaw

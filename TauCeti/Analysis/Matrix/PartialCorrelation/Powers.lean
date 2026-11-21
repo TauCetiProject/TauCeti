@@ -424,13 +424,4 @@ theorem prod_pow_partialCorrelationCholesky_eq_prod
         (fun q _ ↦ partialCorrelationCholeskyEntryResidualPower_nonneg
           q.1 q.2 (m q) ij)).symm
 
-/-- The residual exponent of a Cholesky monomial at a partial-correlation coordinate is a
-nonnegative half-integer: half the sum of the natural powers of the entries strictly to its right
-in the same row. -/
-theorem partialCorrelationCholeskyMonomialResidualPower_eq_natCast_div_two
-    (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) :
-    partialCorrelationCholeskyMonomialResidualPower m ij =
-      ((∑ k ∈ Finset.Ioi ij.val.2, m (ij.val.1, k) : ℕ) : ℝ) / 2 := by
-  rw [partialCorrelationCholeskyMonomialResidualPower_eq_sum_Ioi, Nat.cast_sum, Finset.sum_div]
-
 end TauCeti
