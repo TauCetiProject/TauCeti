@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -101,6 +102,13 @@ theorem intervalIntegrable_eulerIntegrand (a : ℂ) {b c z : ℂ}
   exact (betaIntegral_convergent hb (by simpa using sub_pos.mpr hcb)).mul_continuousOn
     (by simpa only [uIcc_of_le zero_le_one] using continuousOn_eulerKernel a hz)
 
+/-- The right endpoint weight of the Euler integrand is integrable if its exponent has real
+part greater than `-1`. -/
+theorem intervalIntegrable_one_sub_ofReal_cpow {s : ℂ} (hs : -1 < s.re) (ρ : ℝ) :
+    IntervalIntegrable (fun t : ℝ => (1 - (t : ℂ)) ^ s) volume ρ 1 := by
+  simpa only [ofReal_sub, ofReal_one, sub_zero, sub_sub_cancel] using
+    ((intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1 - ρ) hs).comp_sub_left 1).symm
+
 /-- On an interval bounded away from zero, the Euler integrand only requires the endpoint
 condition `re b < re c` at one. -/
 theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re)
@@ -112,10 +120,9 @@ theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b
     rw [uIcc_of_le hρ1]
     exact Icc_subset_Icc_left hρ.le
   have hweight : IntervalIntegrable (fun t : ℝ => (1 - (t : ℂ)) ^ (c - b - 1)) volume ρ 1 := by
-    have h := betaIntegral_convergent (u := 1) (v := c - b) one_pos
-      (by simpa only [sub_re, sub_pos] using hbc)
-    simp only [sub_self, cpow_zero, one_mul] at h
-    exact h.mono_set (by simpa only [uIcc_of_le zero_le_one] using hsub)
+    apply intervalIntegrable_one_sub_ofReal_cpow
+    simp only [sub_re, one_re]
+    linarith
   have hpow : ContinuousOn (fun t : ℝ => (t : ℂ) ^ (b - 1)) (uIcc ρ 1) := by
     rw [uIcc_of_le hρ1]
     exact continuousOn_of_forall_continuousAt fun t ht =>

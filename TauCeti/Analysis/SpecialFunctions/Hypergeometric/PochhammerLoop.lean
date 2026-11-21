@@ -10,8 +10,8 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
--- Reuse the private `(0+)` keyhole contour helpers from `LoopIntegral.lean`.
-import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral
+-- Reuse the private `(0+)` keyhole contour helpers from `Loop/Integral.lean`.
+import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
 
 /-!
 # Pochhammer's double-loop contour integral for the Gauss hypergeometric function
@@ -32,7 +32,7 @@ crosses no branch cut.
 
 Splitting the radial segments at `A` expresses `Complex.hypergeometricPochhammerLoop` as a linear
 combination of the two `(0+)` keyhole pieces from
-`TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral`. Consequently:
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral`. Consequently:
 
 * `Complex.hypergeometricPochhammerLoop_eq`: for all complex parameters `(a, b, c)`, the integral is
   independent of admissible `(A, ρ₀, ρ₁)` satisfying `0 < ρ₀ < A`, `0 < ρ₁ < 1 - A`,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
@@ -41,6 +42,8 @@ boundary throughout the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`:
   `0 < re d` and `ρ ∈ (0, 1)`, it is jointly holomorphic in `(a, b, z)` along lines `c = b + d` on
   `{p | 1 - p.2.2 ∈ Complex.slitPlane ∧ ‖p.2.2‖ * ρ < 1}`
   (`Complex.analyticOnNhd_hypergeometricLoopZero`).
+  `Complex.hypergeometricLoopZero_eq_of_integrableOn` gives radius independence whenever
+  the Euler tail from the smaller radius is integrable.
 
 For `0 < re b < re c` and admissible radii `ρ ∈ (0, 1)` (satisfying
 `Metric.closedBall (1 - z) (‖z‖ * ρ) ⊆ Complex.slitPlane` for `hypergeometricLoopOne`, or
@@ -88,6 +91,11 @@ namespace Complex
 
 private def affineSegIntegrand (a β γ w₀ w₁ : ℂ) (u : ℝ) : ℂ :=
   (u : ℂ) ^ (β - 1) * (1 - (u : ℂ)) ^ (γ - 1) * (w₀ - w₁ * u) ^ (-a)
+
+/-- The unit affine segment is the unnormalized Euler kernel. -/
+private theorem affineSegIntegrand_unit (a b c z : ℂ) :
+    affineSegIntegrand a b (c - b) 1 z = fun t : ℝ =>
+      (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a) := rfl
 
 private def affineCircIntegrand (a β γ w₀ w₁ : ℂ) (ρ θ : ℝ) : ℂ :=
   ((ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1))) * (1 - ρ * exp (θ * I)) ^ (γ - 1) *
@@ -414,12 +422,8 @@ private theorem analyticAt_integral_affineSegIntegrand_unit {V : Type*} [NormedA
       (ofReal_mem_slitPlane.mpr (hρ.trans_le hu.1))).mul ?_
     exact ((hw₀.comp analyticAt_fst).sub ((hw₁.comp analyticAt_fst).mul analyticAt_snd)).cpow
       (ha.comp analyticAt_fst).neg (hslit u hu)
-  have hbeta : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (γ - 1)) volume ρ 1 := by
-    have h01 := betaIntegral_convergent (u := 1) (v := γ) one_pos hγ
-    simp only [sub_self, cpow_zero, one_mul] at h01
-    exact h01.mono_set (by
-      rw [uIcc_of_le hρ1.le, uIcc_of_le zero_le_one]
-      exact Icc_subset_Icc_left hρ.le)
+  have hbeta : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (γ - 1)) volume ρ 1 :=
+    intervalIntegrable_one_sub_ofReal_cpow (by simpa using hγ) ρ
   have hweight := ((intervalIntegrable_iff_integrableOn_Ioc_of_le hρ1.le).mp hbeta).integrable
   convert TauCeti.analyticAt_integral_smul (isCompact_Icc.image continuous_ofReal) hφ hφK hkernel
     hweight using 1
@@ -527,11 +531,8 @@ private theorem hypergeometricLoopOne_eq_affineLoopZero (a b c z : ℂ) (ρ : �
 private theorem intervalIntegrable_loopOne_seg (a b c z : ℂ) (hb : 0 < b.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : 1 - z ∈ slitPlane) :
     IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume ρ 1 := by
-  have hweight : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (b - 1)) volume ρ 1 := by
-    have h01 := betaIntegral_convergent (u := 1) (v := b) one_pos hb
-    simp only [sub_self, cpow_zero, one_mul] at h01
-    exact h01.mono_set (by
-      rw [uIcc_of_le hρ1.le, uIcc_of_le zero_le_one]; exact Icc_subset_Icc_left hρ.le)
+  have hweight : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (b - 1)) volume ρ 1 :=
+    intervalIntegrable_one_sub_ofReal_cpow (by simpa using hb) ρ
   have hcont : ContinuousOn
       (fun u : ℝ => (u : ℂ) ^ (c - b - 1) * ((1 - z) - (-z) * u) ^ (-a)) (uIcc ρ 1) := by
     rw [uIcc_of_le hρ1.le]
@@ -756,6 +757,28 @@ private theorem hypergeometricLoopZero_eq_affineLoopZero (a b c z : ℂ) (ρ : �
   rw [hypergeometricLoopZero_def, h1, h2, affineLoopZero]
   dsimp only [affineCircIntegrand]; ring
 
+/-- The `(0+)` loop is independent of admissible radii when its Euler tail is integrable
+from the smaller radius. The singularity at `1` need not satisfy a cut-plane hypothesis. -/
+theorem hypergeometricLoopZero_eq_of_integrableOn (a b c z : ℂ)
+    {ρ₁ ρ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₁1 : ρ₁ < 1) (hρ₂ : 0 < ρ₂) (hρ₂1 : ρ₂ < 1)
+    (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1)
+    (hint : IntegrableOn (fun t : ℝ =>
+      (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a))
+      (Ioo (min ρ₁ ρ₂) 1)) :
+    hypergeometricLoopZero a b c z ρ₁ = hypergeometricLoopZero a b c z ρ₂ := by
+  have hint' : IntegrableOn (affineSegIntegrand a b (c - b) 1 z) (Ioo (min ρ₁ ρ₂) 1) := by
+    rwa [affineSegIntegrand_unit]
+  have hint₁ : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume ρ₁ 1 :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ₁1.le).mpr
+      (hint'.mono_set (Ioo_subset_Ioo (min_le_left _ _) le_rfl))
+  have hint₂ : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume ρ₂ 1 :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hρ₂1.le).mpr
+      (hint'.mono_set (Ioo_subset_Ioo (min_le_right _ _) le_rfl))
+  rw [hypergeometricLoopZero_eq_affineLoopZero, hypergeometricLoopZero_eq_affineLoopZero]
+  exact affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₁ hρ₁1 hρ₂ hρ₂1
+    (closedBall_one_subset_slitPlane_iff.mpr hz₁) (closedBall_one_subset_slitPlane_iff.mpr hz₂)
+    hint₁ hint₂
+
 /-- **Radius independence of the `(0+)` loop integral.** Whenever `re b < re c`,
 `1 - z ∈ Complex.slitPlane`, and `ρ₁, ρ₂ ∈ (0, 1)` satisfy `‖z‖ ρᵢ < 1`, the `(0+)` loop integral
 `Complex.hypergeometricLoopZero` takes the same value at `ρ₁` and `ρ₂`. -/
@@ -763,11 +786,10 @@ theorem hypergeometricLoopZero_eq (a b c z : ℂ) (hbc : b.re < c.re) (hz : 1 - 
     {ρ₁ ρ₂ : ℝ} (hρ₁ : 0 < ρ₁) (hρ₁1 : ρ₁ < 1) (hρ₂ : 0 < ρ₂) (hρ₂1 : ρ₂ < 1)
     (hz₁ : ‖z‖ * ρ₁ < 1) (hz₂ : ‖z‖ * ρ₂ < 1) :
     hypergeometricLoopZero a b c z ρ₁ = hypergeometricLoopZero a b c z ρ₂ := by
-  rw [hypergeometricLoopZero_eq_affineLoopZero, hypergeometricLoopZero_eq_affineLoopZero]
-  exact affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₁ hρ₁1 hρ₂ hρ₂1
-    (closedBall_one_subset_slitPlane_iff.mpr hz₁) (closedBall_one_subset_slitPlane_iff.mpr hz₂)
-    (intervalIntegrable_eulerIntegrand_right a hbc hz hρ₁ hρ₁1.le)
-    (intervalIntegrable_eulerIntegrand_right a hbc hz hρ₂ hρ₂1.le)
+  apply hypergeometricLoopZero_eq_of_integrableOn a b c z hρ₁ hρ₁1 hρ₂ hρ₂1 hz₁ hz₂
+  exact (intervalIntegrable_iff_integrableOn_Ioo_of_le ((min_le_left ρ₁ ρ₂).trans_lt hρ₁1).le).mp
+    (intervalIntegrable_eulerIntegrand_right a hbc hz (lt_min hρ₁ hρ₂)
+      ((min_le_left ρ₁ ρ₂).trans_lt hρ₁1).le)
 
 /-- **Joint holomorphy of the `(0+)` loop integral along lines of fixed `c - b`.** For fixed `d`
 with `0 < re d` and `ρ ∈ (0, 1)`, `(a, b, z) ↦ hypergeometricLoopZero a b (b + d) z ρ` is jointly
@@ -804,7 +826,7 @@ theorem hypergeometricLoopZero_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0 < b.r
         ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
           (1 - z * t) ^ (-a) := by
   have hint : IntervalIntegrable (affineSegIntegrand a b (c - b) 1 z) volume 0 1 :=
-    intervalIntegrable_eulerIntegrand a hb hbc hz
+    by rw [affineSegIntegrand_unit]; exact intervalIntegrable_eulerIntegrand a hb hbc hz
   have hexp : exp (2 * π * I * (b - 1)) = exp (2 * π * I * b) := by
     simpa [sub_eq_add_neg] using exp_two_pi_mul_I_mul_add_intCast b (-1)
   rw [hypergeometricLoopZero_eq_affineLoopZero,
@@ -843,6 +865,20 @@ theorem hypergeometricLoopZero_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (hb : 0 
     _ = 2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b) *
           ((Gamma b * Gamma (c - b))⁻¹ * E) := by rw [hrefl]; ring
 
+/-- Invert the Gamma and phase factor shared by the single-loop formulas. -/
+private theorem eq_mul_of_eq_mul_hypergeometricLoopZeroFactor {b c loop value : ℂ}
+    (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1)
+    (h : loop = 2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b) * value) :
+    value = exp (-b * π * I) * Gamma (1 - b) / (2 * π * I * Gamma (c - b)) * loop := by
+  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos (by simpa using hbc)
+  have hG1b : Gamma (1 - b) ≠ 0 :=
+    Gamma_ne_zero fun n hn => hb_int n (by linear_combination -hn)
+  have hexp : exp (-(b * π * I)) * exp (b * π * I) = 1 := by
+    rw [← exp_add, neg_add_cancel, exp_zero]
+  rw [h]
+  field_simp
+  linear_combination value * hexp.symm
+
 /-- **DLMF 15.6.4 in the Euler convergence region.** For `0 < re b < re c`, `b ∉ {1, 2, …}`,
 `1 - z ∈ Complex.slitPlane`, and `ρ ∈ (0, 1)` satisfying `‖z‖ * ρ < 1`, `Complex.eulerIntegral` is
 represented on the cut plane by the `(0+)` loop integral around `0`. -/
@@ -852,15 +888,45 @@ theorem eulerIntegral_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ} (hb : 0 
     eulerIntegral a b c z =
       exp (-b * π * I) * Gamma (1 - b) / (2 * π * I * Gamma (c - b)) *
         hypergeometricLoopZero a b c z ρ := by
-  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
-  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
-  have hG1b : Gamma (1 - b) ≠ 0 :=
-    Gamma_ne_zero fun n hn => hb_int n (by linear_combination -hn)
-  rw [hypergeometricLoopZero_eq_eulerIntegral a hb hbc hz hρ hρ1 hzρ]
-  have hexp : exp (-(b * π * I)) * exp (b * π * I) = 1 := by
-    rw [← exp_add, neg_add_cancel, exp_zero]
-  field_simp
-  linear_combination (eulerIntegral a b c z) * hexp.symm
+  exact eq_mul_of_eq_mul_hypergeometricLoopZeroFactor hbc hb_int
+    (hypergeometricLoopZero_eq_eulerIntegral a hb hbc hz hρ hρ1 hzρ)
+
+/-- On the open unit disk the `(0+)` loop equals the regularized Gauss series times its
+Gamma and phase factors. This form includes positive integral `b`, where the loop vanishes.
+The continuation in `b` extends the original argument for `Complex.hypergeometricLoopZero_zero`.
+-/
+theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : ℂ}
+    (hbc : b.re < c.re) (hz : ‖z‖ < 1) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
+    hypergeometricLoopZero a b c z ρ =
+      2 * π * I * exp (b * π * I) * Gamma (c - b) / Gamma (1 - b) *
+        regularizedGaussHGFun a b c z := by
+  have hslit : 1 - z ∈ slitPlane := by
+    simpa only [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (by rwa [norm_neg] : ‖-z‖ < 1)
+  have hzρ : ‖z‖ * ρ < 1 := by nlinarith [norm_nonneg z]
+  let d := c - b
+  have hd : 0 < d.re := by simpa only [d, sub_re, sub_pos] using hbc
+  have hc : c = b + d := by simp [d]
+  have hloop : AnalyticOnNhd ℂ (fun w : ℂ => hypergeometricLoopZero a w (w + d) z ρ) univ :=
+    fun w _ => (analyticOnNhd_hypergeometricLoopZero hd hρ hρ1 (a, w, z) ⟨hslit, hzρ⟩).comp₂
+      analyticAt_const (analyticAt_id.prod analyticAt_const)
+  have hseries : AnalyticOnNhd ℂ (fun w : ℂ =>
+      2 * π * I * exp (w * π * I) * Gamma d / Gamma (1 - w) *
+        regularizedGaussHGFun a w (w + d) z) univ := by
+    intro w _
+    have hG := Complex.differentiable_one_div_Gamma.analyticAt (1 - w)
+    simp only [div_eq_mul_inv]
+    exact ((by fun_prop : AnalyticAt ℂ
+      (fun w : ℂ => 2 * π * I * exp (w * π * I) * Gamma d) w).mul
+        (hG.comp (analyticAt_const.sub analyticAt_id))).mul
+      (analyticAt_const.regularizedGaussHGFun analyticAt_id
+        (analyticAt_id.add analyticAt_const) analyticAt_const hz)
+  have heq := hloop.eq_of_eventuallyEq hseries (z₀ := 1) (by
+    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
+      (by simp : (0 : ℝ) < (1 : ℂ).re)] with w hw
+    have hwd : w.re < (w + d).re := by simpa only [add_re, lt_add_iff_pos_right] using hd
+    rw [hypergeometricLoopZero_eq_eulerIntegral a hw hwd hslit hρ hρ1 hzρ,
+      ← regularizedGaussHGFun_eq_eulerIntegral a hw hwd hz, add_sub_cancel_left])
+  simpa only [hc, add_sub_cancel_left] using congrFun heq b
 
 /-- At zero argument the `(0+)` loop integral evaluates in closed form for all complex `a`, `b`,
 and `c` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
@@ -869,30 +935,8 @@ theorem hypergeometricLoopZero_zero (a : ℂ) {b c : ℂ} (hbc : b.re < c.re) {�
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     hypergeometricLoopZero a b c 0 ρ =
       2 * π * I * exp (b * π * I) * Gamma (c - b) / (Gamma (1 - b) * Gamma c) := by
-  have hcb : 0 < (c - b).re := by simpa only [sub_re, sub_pos] using hbc
-  set d := c - b
-  have hc_eq : c = b + d := by simp [d]
-  rw [hc_eq]
-  have h0 : 1 - (0 : ℂ) ∈ slitPlane ∧ ‖(0 : ℂ)‖ * ρ < 1 := by simp [one_mem_slitPlane]
-  have han₁ : AnalyticOnNhd ℂ (fun w : ℂ => hypergeometricLoopZero a w (w + d) 0 ρ) univ :=
-    fun w _ => (analyticOnNhd_hypergeometricLoopZero hcb hρ hρ1 (a, w, 0) h0).comp₂
-      analyticAt_const (analyticAt_id.prod analyticAt_const)
-  have hG (s : ℂ) : AnalyticAt ℂ (fun s : ℂ => (Gamma s)⁻¹) s :=
-    Complex.differentiable_one_div_Gamma.analyticAt s
-  have han₂ : AnalyticOnNhd ℂ
-      (fun w : ℂ => 2 * π * I * exp (w * π * I) * Gamma d /
-        (Gamma (1 - w) * Gamma (w + d))) univ := fun w _ => by
-    simp_rw [div_eq_mul_inv, mul_inv]
-    exact ((analyticAt_const.mul ((analyticAt_id.mul analyticAt_const).mul
-      analyticAt_const).cexp).mul analyticAt_const).mul
-      (((hG _).comp (analyticAt_const.sub analyticAt_id)).mul
-        ((hG _).comp (analyticAt_id.add analyticAt_const)))
-  refine congrFun (han₁.eq_of_eventuallyEq han₂ (z₀ := 1) ?_) b
-  filter_upwards [isOpen_lt continuous_const Complex.continuous_re |>.mem_nhds
-    (by simp : (0 : ℝ) < (1 : ℂ).re)] with w hw
-  have hwd : w.re < (w + d).re := by simpa only [add_re, lt_add_iff_pos_right] using hcb
-  rw [hypergeometricLoopZero_eq_eulerIntegral a hw hwd h0.1 hρ hρ1 h0.2,
-    eulerIntegral_zero a hw hwd, add_sub_cancel_left, ← div_eq_mul_inv, div_div]
+  rw [hypergeometricLoopZero_eq_mul_regularizedGaussHGFun a hbc (by simp) hρ hρ1,
+    regularizedGaussHGFun_zero, ← div_eq_mul_inv, div_div]
 
 /-- With first parameter zero, the `(0+)` loop integral is independent of `z` and evaluates in
 closed form for all complex `b`, `c`, and `z` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
