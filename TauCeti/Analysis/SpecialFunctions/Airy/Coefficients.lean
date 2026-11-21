@@ -27,11 +27,13 @@ argument, and the Gamma-function multiplier `χ` of their error bounds (DLMF 9.7
 The asymptotic form of `χ` and its monotonicity come from Wendel's inequalities and the strict
 monotonicity of `Γ(x + c)/Γ(x)`, both consequences of the log-convexity of `Γ`.
 
-The definitions of `u_k`, `v_k` and `χ`, the statement of the recurrence and the values of `χ`
-are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
-`DLMF/Airy/Asymptotics/LaplaceSectors.lean` and `DLMF/Airy/Asymptotics/DerivativeRemainders.lean`.
-lean-DLMF writes `u_k` with Pochhammer symbols, so the proof of the recurrence from the product
-form is new, as are the monotonicity of `χ` and its asymptotic form.
+The definitions of `u_k`, `v_k` and `χ`, the statement of the recurrence, the values of `χ` and
+the asymptotic form of `χ` are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), files `DLMF/Airy/Asymptotics/LaplaceSectors.lean` and
+`DLMF/Airy/Asymptotics/DerivativeRemainders.lean`. lean-DLMF writes `u_k` with Pochhammer symbols
+and obtains the asymptotic form of `χ` from a limit of Gamma ratios; this formalization proves the
+recurrence from the product form and derives the asymptotic form from Wendel's inequalities. The
+strict monotonicity of `χ` is not in lean-DLMF.
 
 ## References
 
@@ -133,8 +135,8 @@ theorem airyChi_def (x : ℝ) :
 @[simp]
 theorem airyChi_zero : airyChi 0 = 1 := by
   have hπ : √π ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-  rw [airyChi_def, zero_div, zero_add, zero_add, Real.Gamma_one,
-    Real.Gamma_one_half_eq, mul_one, div_self hπ]
+  simp only [airyChi_def, zero_div, zero_add, Real.Gamma_one, Real.Gamma_one_half_eq, mul_one,
+    div_self hπ]
 
 /-- `Γ(3/2) = √π / 2`, the Gamma value in `χ(1)` and `χ(2)`. -/
 private theorem Gamma_three_halves : Real.Gamma (3 / 2) = √π / 2 := by
@@ -145,18 +147,14 @@ private theorem Gamma_three_halves : Real.Gamma (3 / 2) = √π / 2 := by
 /-- `χ(1) = π/2`. -/
 @[simp]
 theorem airyChi_one : airyChi 1 = π / 2 := by
-  have h₁ : (1 : ℝ) / 2 + 1 = 3 / 2 := by norm_num
-  have h₂ : (1 : ℝ) / 2 + 1 / 2 = 1 := by norm_num
-  rw [airyChi_def, h₁, h₂, Gamma_three_halves, Real.Gamma_one, div_one, ← mul_div_assoc,
-    Real.mul_self_sqrt Real.pi_pos.le]
+  norm_num [airyChi_def, Gamma_three_halves]
+  rw [← mul_div_assoc, Real.mul_self_sqrt Real.pi_pos.le]
 
 /-- `χ(2) = 2`. -/
 @[simp]
 theorem airyChi_two : airyChi 2 = 2 := by
   have hπ : √π ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-  have h₁ : (2 : ℝ) / 2 + 1 = 2 := by norm_num
-  have h₂ : (2 : ℝ) / 2 + 1 / 2 = 3 / 2 := by norm_num
-  rw [airyChi_def, h₁, h₂, Real.Gamma_two, Gamma_three_halves]
+  norm_num [airyChi_def, Gamma_three_halves]
   field_simp
 
 /-- `χ` is strictly increasing on `(-1, ∞)`, in particular on `(0, ∞)`. -/
