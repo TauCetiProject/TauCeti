@@ -29,19 +29,21 @@ public section
 
 open CategoryTheory
 
+universe u
+
 /-- **A path-connected stabilizer fixes the homology of based maps.** If the stabilizer of `x` is
 path connected, each of its elements `h` acts on the based mapping space `Map_*(B, X)` by a map
 homotopic to the identity, through a path from `1` to `h` in the stabilizer, and therefore fixes
 every class of its singular homology. This supplies the hypothesis of
 `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero` for a group action with
 path-connected stabilizer. -/
-theorem IsPathConnected.homologyMap_stabilizer_smul_apply {G X B : Type} [Group G]
+theorem IsPathConnected.homologyMap_stabilizer_smul_apply {G : Type*} {X B : Type u} [Group G]
     [TopologicalSpace G] [TopologicalSpace X] [MulAction G X] [ContinuousSMul G X]
     [TopologicalSpace B] {b₀ : B} {x : X}
     (hstab : IsPathConnected (MulAction.stabilizer G x : Set G))
-    (h : MulAction.stabilizer G x) {Λ : Type} [Ring Λ] (R : ModuleCat.{0} Λ) (k : ℕ)
+    (h : MulAction.stabilizer G x) {Λ : Type*} [Ring Λ] (R : ModuleCat.{u} Λ) (k : ℕ)
     (α : ((TopCat.toSSet.obj (TopCat.of (TauCeti.BasedMap B X b₀ x))).homology R k :
-      ModuleCat.{0} Λ)) :
+      ModuleCat.{u} Λ)) :
     (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ⟨(h • · : TauCeti.BasedMap B X b₀ x →
       TauCeti.BasedMap B X b₀ x), continuous_const_smul h⟩)) R k).hom α = α := by
   let γ := (hstab.joinedIn 1 (one_mem _) h h.property).joined_subtype.somePath
