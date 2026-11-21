@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.L2OpNorm
+public import TauCeti.Analysis.Matrix.SkewAdjoint
 public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
 import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.LinearAlgebra.Determinant
@@ -41,46 +42,6 @@ namespace TauCeti
 open Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
-
-/-- Extend strict upper coordinates to a skew-adjoint matrix with zero diagonal. -/
-def skewAdjointOfStrictUpper :
-    (StrictUpperFin n → 𝕜) →L[ℝ] Matrix (Fin n) (Fin n) 𝕜 :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun x ↦ Matrix.of fun i j ↦
-        if hij : i < j then x ⟨(i, j), hij⟩ else if hji : j < i then -star (x ⟨(j, i), hji⟩) else 0
-      map_add' := fun x y ↦ by
-        ext i j
-        simp only [Matrix.of_apply, Matrix.add_apply]
-        split_ifs <;> simp [neg_add_rev, add_comm]
-      map_smul' := fun c x ↦ by
-        ext i j
-        simp only [Matrix.of_apply, Matrix.smul_apply]
-        split_ifs <;> simp }
-
-/-- The extension on a strict upper entry is the given coordinate. -/
-@[simp] theorem skewAdjointOfStrictUpper_apply_of_lt (x : StrictUpperFin n → 𝕜) {i j : Fin n}
-    (h : i < j) : skewAdjointOfStrictUpper x i j = x ⟨(i, j), h⟩ := by
-  exact dite_eq_left h
-
-/-- The extension on a strict lower entry is the negative conjugate reflected coordinate. -/
-@[simp] theorem skewAdjointOfStrictUpper_apply_of_gt (x : StrictUpperFin n → 𝕜) {i j : Fin n}
-    (h : j < i) : skewAdjointOfStrictUpper x i j = -star (x ⟨(j, i), h⟩) := by
-  exact (dite_eq_right h.not_gt).trans (dite_eq_left h)
-
-/-- The skew-adjoint extension has zero diagonal. -/
-@[simp] theorem skewAdjointOfStrictUpper_apply_diag (x : StrictUpperFin n → 𝕜) (i : Fin n) :
-    skewAdjointOfStrictUpper x i i = 0 := by
-  simp [skewAdjointOfStrictUpper]
-
-/-- The strict upper extension is skew-adjoint. -/
-theorem skewAdjointOfStrictUpper_mem (x : StrictUpperFin n → 𝕜) :
-    skewAdjointOfStrictUpper x ∈ skewAdjoint (Matrix (Fin n) (Fin n) 𝕜) := by
-  rw [skewAdjoint.mem_iff]
-  ext i j
-  rcases lt_trichotomy i j with h | rfl | h
-  · simp [h, star_apply]
-  · simp [star_apply]
-  · simp [h, star_apply]
 
 open scoped Matrix.Norms.L2Operator in
 /-- The unitary exponential of a zero-diagonal skew-adjoint matrix. -/
