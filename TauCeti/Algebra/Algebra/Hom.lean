@@ -62,6 +62,8 @@ scalar `a ≠ 1` only when `n ≠ 0`.
 * `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
+* `AlgHom.range_comp_left_eq_fixedPoints`: when the image of an injective coefficient map is the
+  fixed ring of an endomorphism `τ`, the homomorphisms lifting through it are those fixed by `τ`.
 * `AlgHom.descend`: an algebra homomorphism constant on the fibres of a surjective algebra
   homomorphism descends along it, over arbitrary semirings; `AlgHom.descend_unique` says the
   descent is the only homomorphism factoring it.
@@ -226,6 +228,17 @@ theorem AlgHom.range_comp_left_eq_of_adjoin_eq_top (ψ : R →ₐ[k] S)
   have hle : Algebra.adjoin k (Set.range a) ≤ ψ.range.comap x :=
     Algebra.adjoin_le (Set.range_subset_iff.2 hx)
   exact hle (ha ▸ Algebra.mem_top)
+
+/-- When the image of an injective coefficient map `ψ : R → S` is exactly the set of fixed points
+of an endomorphism `τ` of `S`, a homomorphism lifts through `ψ` exactly when it is fixed by
+postcomposition with `τ`: descent of points along an extension of coefficients whose fixed ring is
+the base, such as a field over the fixed field of an automorphism. -/
+theorem AlgHom.range_comp_left_eq_fixedPoints (ψ : R →ₐ[k] S) (hψ : Function.Injective ψ)
+    {τ : S →ₐ[k] S} (hτ : {s | τ s = s} = Set.range ψ) :
+    Set.range (fun x : A →ₐ[k] R ↦ ψ.comp x) = {x : A →ₐ[k] S | τ.comp x = x} := by
+  rw [AlgHom.range_comp_left_of_injective ψ hψ, ← hτ]
+  ext x
+  simp [AlgHom.ext_iff]
 
 end Ranges
 

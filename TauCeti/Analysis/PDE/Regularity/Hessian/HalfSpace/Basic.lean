@@ -318,7 +318,8 @@ private theorem exists_continuousLinearEquiv_preimage_normalHalfSpace
       hcν, inner_smul_right, hinner]
   refine ⟨e, c, hee, he, fun a => ?_⟩
   ext y
-  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, hfst, div_lt_iff₀' hc]
+  simp only [mem_preimage, SetLike.mem_coe, mem_normalHalfSpace, ← WithLp.ofLp_fst, hfst,
+    div_lt_iff₀' hc]
 
 /-- **The Calderón–Zygmund estimate on a half-space, for constant coefficients.** Let
 `1 < p < ∞`. There is a constant `C` such that for every operator `A` on `ℝ × E` with

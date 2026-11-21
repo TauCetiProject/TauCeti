@@ -21,10 +21,12 @@ invertible nearby, and `deg r = deg s + n`. For `n = 0` this recovers the struct
 
 The construction is adapted from Mathlib's
 `Mathlib/AlgebraicGeometry/ProjectiveSpectrum/StructureSheaf.lean` (Jujian Zhang), which builds the
-structure sheaf `AlgebraicGeometry.Proj.structureSheaf` through the same sequence `IsFraction`,
-`isFractionPrelocal`, `isLocallyFraction`, a presheaf of abelian groups and its comparison with
-the sheaf of types. The passage to a presheaf of modules via `PresheafOfModules.ofPresheaf`
-follows `AlgebraicGeometry.StructureSheaf.moduleStructurePresheaf` in Mathlib's
+structure sheaf `AlgebraicGeometry.ProjectiveSpectrum.Proj.structureSheaf` through the same
+sequence `IsFraction`, `isFractionPrelocal`, `isLocallyFraction` and `subsheafToTypes`. Where
+Mathlib then passes to a presheaf of commutative rings
+(`AlgebraicGeometry.ProjectiveSpectrum.StructureSheaf.structurePresheafInCommRing`), the
+construction here uses a presheaf of abelian groups, and the passage to a presheaf of modules via
+`PresheafOfModules.ofPresheaf` follows `AlgebraicGeometry.moduleStructurePresheaf` in Mathlib's
 `Mathlib/AlgebraicGeometry/StructureSheaf.lean` (Johan Commelin, Kim Morrison, Andrew Yang).
 
 The fractions `r / s` form sections `AlgebraicGeometry.Proj.twistingSheaf.const`, and the
@@ -65,7 +67,7 @@ noncomputable section
 
 namespace AlgebraicGeometry
 
-open TopCat TopologicalSpace CategoryTheory Opposite
+open TopCat TopologicalSpace CategoryTheory
 
 universe u
 
@@ -85,9 +87,9 @@ variable {𝒜} in
 /-- A dependent function on an open `U` is a *fraction of degree `n`* if it is a fixed fraction
 `r / s` with `r` and `s` homogeneous, `deg r = deg s + n` and `s` outside every point of `U`. -/
 def IsFraction (n : ℤ) {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    (f : ∀ x : U, Localizations 𝒜 x.1) : Prop :=
+    (f : ∀ x : U, Localizations 𝒜 x.val) : Prop :=
   ∃ (i j : ℕ) (_ : (j : ℤ) = i + n) (r : 𝒜 j) (s : 𝒜 i)
-    (s_nin : ∀ x : U, (s : A) ∉ x.1.asHomogeneousIdeal.toIdeal),
+    (s_nin : ∀ x : U, (s : A) ∉ x.val.asHomogeneousIdeal.toIdeal),
     ∀ x : U, f x = Localization.mk (r : A) ⟨s, s_nin x⟩
 
 /-- Being a fraction of degree `n` is preserved by restriction to smaller opens. -/
@@ -106,33 +108,36 @@ variable {𝒜}
 
 /-- The zero function is locally a fraction of every degree. -/
 theorem isLocallyFraction_zero (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
-    (isLocallyFraction 𝒜 n).pred (0 : ∀ x : U, Localizations 𝒜 x.1) := fun x ↦ by
+    (isLocallyFraction 𝒜 n).pred (0 : ∀ x : U, Localizations 𝒜 x.val) := fun x ↦ by
   -- the denominator must have degree at least `-n`, so that the numerator `0` has degree `≥ 0`
-  obtain ⟨i, hi, s, hs, hsx⟩ := x.1.exists_le_mem_notMem (-n).toNat
-  refine ⟨U ⊓ ProjectiveSpectrum.basicOpen 𝒜 s, ⟨x.2, hsx⟩, homOfLE inf_le_left, i,
-    (i + n).toNat, by omega, 0, ⟨s, hs⟩, fun y ↦ y.2.2, fun y ↦ ?_⟩
+  obtain ⟨i, hi, s, hs, hsx⟩ := x.val.exists_le_mem_notMem (-n).toNat
+  refine ⟨U ⊓ ProjectiveSpectrum.basicOpen 𝒜 s, ⟨x.property, hsx⟩, homOfLE inf_le_left, i,
+    (i + n).toNat, by omega, 0, ⟨s, hs⟩, fun y ↦ y.property.2, fun y ↦ ?_⟩
   exact (Localization.mk_zero _).symm
 
+/-- The sum of two local fractions of degree `n` is a local fraction of degree `n`. -/
 theorem isLocallyFraction_add {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    {f g : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 n).pred f)
+    {f g : ∀ x : U, Localizations 𝒜 x.val} (hf : (isLocallyFraction 𝒜 n).pred f)
     (hg : (isLocallyFraction 𝒜 n).pred g) : (isLocallyFraction 𝒜 n).pred (f + g) := by
   intro x
   obtain ⟨Va, ma, ia, ia', ja, hja, ra, sa, hsa, wa⟩ := hf x
   obtain ⟨Vb, mb, ib, ib', jb, hjb, rb, sb, hsb, wb⟩ := hg x
   refine ⟨Va ⊓ Vb, ⟨ma, mb⟩, Opens.infLELeft _ _ ≫ ia, ia' + ib', ja + ib', by push_cast; omega,
-    ⟨sb * ra + sa * rb, add_mem (by simpa [add_comm] using SetLike.mul_mem_graded sb.2 ra.2)
-      (by convert SetLike.mul_mem_graded sa.2 rb.2 using 2; omega)⟩,
-    ⟨sa * sb, SetLike.mul_mem_graded sa.2 sb.2⟩,
-    fun y h ↦ (y.1.isPrime.mem_or_mem h).elim (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
+    ⟨sb * ra + sa * rb, add_mem
+        (by simpa [add_comm] using SetLike.mul_mem_graded sb.property ra.property)
+      (by convert SetLike.mul_mem_graded sa.property rb.property using 2; omega)⟩,
+    ⟨sa * sb, SetLike.mul_mem_graded sa.property sb.property⟩,
+    fun y ↦ y.val.isPrime.mul_notMem (hsa ⟨y.val, y.property.1⟩) (hsb ⟨y.val, y.property.2⟩),
     fun y ↦ ?_⟩
-  refine (congrArg₂ (· + ·) (wa ⟨y.1, y.2.1⟩) (wb ⟨y.1, y.2.2⟩)).trans ?_
+  refine (congrArg₂ (· + ·) (wa ⟨y.val, y.property.1⟩) (wb ⟨y.val, y.property.2⟩)).trans ?_
   rw [Localization.add_mk, add_comm]
   -- both sides now have the same numerator, and the denominators `⟨sa, _⟩ * ⟨sb, _⟩` and
   -- `⟨sa * sb, _⟩` agree by `Submonoid.mk_mul_mk`, which `congr 1` closes
   congr 1
 
+/-- The negative of a local fraction of degree `n` is a local fraction of degree `n`. -/
 theorem isLocallyFraction_neg {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    {f : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 n).pred f) :
+    {f : ∀ x : U, Localizations 𝒜 x.val} (hf : (isLocallyFraction 𝒜 n).pred f) :
     (isLocallyFraction 𝒜 n).pred (-f) := by
   intro x
   obtain ⟨V, m, i, a, b, h, r, s, hs, w⟩ := hf x
@@ -142,29 +147,31 @@ theorem isLocallyFraction_neg {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)
 /-- The product of a local fraction of degree `m` and a local fraction of degree `n` is a local
 fraction of degree `m + n`. -/
 theorem isLocallyFraction_mul {m n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    {f g : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 m).pred f)
+    {f g : ∀ x : U, Localizations 𝒜 x.val} (hf : (isLocallyFraction 𝒜 m).pred f)
     (hg : (isLocallyFraction 𝒜 n).pred g) : (isLocallyFraction 𝒜 (m + n)).pred (f * g) := by
   intro x
   obtain ⟨Va, ma, ia, ia', ja, hja, ra, sa, hsa, wa⟩ := hf x
   obtain ⟨Vb, mb, ib, ib', jb, hjb, rb, sb, hsb, wb⟩ := hg x
   refine ⟨Va ⊓ Vb, ⟨ma, mb⟩, Opens.infLELeft _ _ ≫ ia, ia' + ib', ja + jb, by push_cast; omega,
-    ⟨ra * rb, SetLike.mul_mem_graded ra.2 rb.2⟩, ⟨sa * sb, SetLike.mul_mem_graded sa.2 sb.2⟩,
-    fun y h ↦ (y.1.isPrime.mem_or_mem h).elim (hsa ⟨y.1, y.2.1⟩) (hsb ⟨y.1, y.2.2⟩),
+    ⟨ra * rb, SetLike.mul_mem_graded ra.property rb.property⟩, ⟨sa * sb,
+        SetLike.mul_mem_graded sa.property sb.property⟩,
+    fun y ↦ y.val.isPrime.mul_notMem (hsa ⟨y.val, y.property.1⟩) (hsb ⟨y.val, y.property.2⟩),
     fun y ↦ ?_⟩
-  exact (congrArg₂ (· * ·) (wa ⟨y.1, y.2.1⟩) (wb ⟨y.1, y.2.2⟩)).trans (Localization.mk_mul ..)
+  exact (congrArg₂ (· * ·) (wa ⟨y.val, y.property.1⟩) (wb ⟨y.val, y.property.2⟩)).trans
+      (Localization.mk_mul ..)
 
 /-- Sections of the structure sheaf of `Proj`, viewed in the localizations, are local fractions
 of degree `0`. -/
 theorem isLocallyFraction_val {U : Opens (ProjectiveSpectrum.top 𝒜)} (a : Γ(Proj 𝒜, U)) :
-    (isLocallyFraction 𝒜 0).pred fun x ↦ (a.1 x).val := by
+    (isLocallyFraction 𝒜 0).pred fun x ↦ (a.val x).val := by
   intro x
-  obtain ⟨V, m, i, j, r, s, hs, w⟩ := a.2 x
+  obtain ⟨V, m, i, j, r, s, hs, w⟩ := a.property x
   exact ⟨V, m, i, j, j, by simp, r, s, hs, fun y ↦
     (congrArg HomogeneousLocalization.val (w y)).trans (HomogeneousLocalization.val_mk _)⟩
 
 /-- Conversely, a local fraction of degree `0` takes values in the homogeneous localizations. -/
 theorem exists_val_eq {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    {f : ∀ x : U, Localizations 𝒜 x.1} (hf : (isLocallyFraction 𝒜 0).pred f) (x : U) :
+    {f : ∀ x : U, Localizations 𝒜 x.val} (hf : (isLocallyFraction 𝒜 0).pred f) (x : U) :
     ∃ a : HomogeneousLocalization 𝒜 _, a.val = f x := by
   obtain ⟨V, m, i, a, b, h, r, s, hs, w⟩ := hf x
   obtain rfl : b = a := by omega
@@ -174,7 +181,7 @@ variable (𝒜) in
 /-- The local fractions of degree `n` on `U`, as an additive subgroup of all dependent functions
 into the localizations. -/
 def sectionsAddSubgroup (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
-    AddSubgroup (∀ x : U, Localizations 𝒜 x.1) where
+    AddSubgroup (∀ x : U, Localizations 𝒜 x.val) where
   carrier := {f | (isLocallyFraction 𝒜 n).pred f}
   zero_mem' := isLocallyFraction_zero n U
   add_mem' := isLocallyFraction_add
@@ -182,7 +189,7 @@ def sectionsAddSubgroup (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
 
 /-- Membership in the section subgroup is the local-fraction predicate. -/
 theorem mem_sectionsAddSubgroup_iff {n : ℤ} {U : Opens (ProjectiveSpectrum.top 𝒜)}
-    (f : ∀ x : U, Localizations 𝒜 x.1) :
+    (f : ∀ x : U, Localizations 𝒜 x.val) :
     f ∈ sectionsAddSubgroup 𝒜 n U ↔ (isLocallyFraction 𝒜 n).pred f :=
   (Iff.rfl)
 
@@ -190,8 +197,8 @@ theorem mem_sectionsAddSubgroup_iff {n : ℤ} {U : Opens (ProjectiveSpectrum.top
 through the inclusions `A_{(x)} → A_x` of the homogeneous localizations. -/
 instance sectionsAddSubgroup.smul (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
     SMul Γ(Proj 𝒜, U) (sectionsAddSubgroup 𝒜 n U) where
-  smul a f := ⟨fun x ↦ (a.1 x).val * f.1 x, by
-    have := isLocallyFraction_mul (isLocallyFraction_val a) f.2
+  smul a f := ⟨fun x ↦ (a.val x).val * f.val x, by
+    have := isLocallyFraction_mul (isLocallyFraction_val a) f.property
     rw [zero_add] at this
     exact this⟩
 
@@ -200,15 +207,15 @@ sheaf of `Proj` on `U`. -/
 instance sectionsAddSubgroup.module (n : ℤ) (U : Opens (ProjectiveSpectrum.top 𝒜)) :
     Module Γ(Proj 𝒜, U) (sectionsAddSubgroup 𝒜 n U) where
   one_smul f := Subtype.ext <| funext fun x ↦
-    (congrArg (· * f.1 x) HomogeneousLocalization.val_one).trans (one_mul _)
+    (congrArg (· * f.val x) HomogeneousLocalization.val_one).trans (one_mul _)
   mul_smul _ _ f := Subtype.ext <| funext fun x ↦
-    (congrArg (· * f.1 x) (HomogeneousLocalization.val_mul _ _)).trans (mul_assoc _ _ _)
+    (congrArg (· * f.val x) (HomogeneousLocalization.val_mul _ _)).trans (mul_assoc _ _ _)
   smul_zero _ := Subtype.ext <| funext fun _ ↦ mul_zero _
   smul_add _ _ _ := Subtype.ext <| funext fun _ ↦ mul_add _ _ _
   add_smul _ _ f := Subtype.ext <| funext fun x ↦
-    (congrArg (· * f.1 x) (HomogeneousLocalization.val_add _ _)).trans (add_mul _ _ _)
+    (congrArg (· * f.val x) (HomogeneousLocalization.val_add _ _)).trans (add_mul _ _ _)
   zero_smul f := Subtype.ext <| funext fun x ↦
-    (congrArg (· * f.1 x) HomogeneousLocalization.val_zero).trans (zero_mul _)
+    (congrArg (· * f.val x) HomogeneousLocalization.val_zero).trans (zero_mul _)
 
 variable (𝒜)
 
@@ -221,17 +228,11 @@ def twistingSheafInType (n : ℤ) : Sheaf (Type u) (ProjectiveSpectrum.top 𝒜)
 def twistingPresheafInAb (n : ℤ) : (Opens (ProjectiveSpectrum.top 𝒜))ᵒᵖ ⥤ Ab.{u} where
   obj U := AddCommGrpCat.of (sectionsAddSubgroup 𝒜 n U.unop)
   map i := AddCommGrpCat.ofHom
-    { toFun f := ⟨fun x ↦ f.1 (i.unop x), (isLocallyFraction 𝒜 n).res i.unop f.1 f.2⟩
+    { toFun f := ⟨fun x ↦ f.val (i.unop x), (isLocallyFraction 𝒜 n).res i.unop f.val f.property⟩
       map_zero' := rfl
       map_add' _ _ := rfl }
   map_id _ := rfl
   map_comp _ _ := rfl
-
-/-- The presheaf of abelian groups `𝒪(n)` has the sheaf of types `𝒪(n)` as underlying presheaf
-of types. -/
-def twistingPresheafInAbCompForget (n : ℤ) :
-    twistingPresheafInAb 𝒜 n ⋙ forget Ab ≅ (twistingSheafInType 𝒜 n).obj :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ rfl
 
 /-- The twisting sheaf `𝒪(n)` as a presheaf of modules over the structure sheaf of `Proj`. -/
 def twistingPresheaf (n : ℤ) : PresheafOfModules.{u} (Proj 𝒜).ringCatSheaf.obj :=
@@ -254,8 +255,7 @@ fractions `r / s` of homogeneous elements with `deg r = deg s + n`. -/
 def twistingSheaf (n : ℤ) : (Proj 𝒜).Modules where
   val := twistingPresheaf 𝒜 n
   isSheaf := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) _).2
-    (TopCat.Presheaf.isSheaf_of_iso (twistingPresheafInAbCompForget 𝒜 n).symm
-      (twistingSheafInType 𝒜 n).2)
+    (twistingSheafInType 𝒜 n).property
 
 namespace twistingSheaf
 
@@ -263,58 +263,65 @@ variable {𝒜} {n : ℤ} {U V : (Proj 𝒜).Opens}
 
 /-- A section of `𝒪(n)` is determined by its values in the localizations. -/
 @[ext]
-theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x, s.1 x = t.1 x) : s = t :=
+theorem ext {s t : Γ(twistingSheaf 𝒜 n, U)} (h : ∀ x : U, s.val x = t.val x) : s = t :=
   Subtype.ext (funext h)
 
+/-- Restriction of sections of `𝒪(n)` is restriction of the underlying functions. -/
 @[simp]
 theorem res_apply (i : V ⟶ U) (s : Γ(twistingSheaf 𝒜 n, U)) (x : V) :
-    ((twistingSheaf 𝒜 n).presheaf.map i.op s).1 x = s.1 (i x) :=
+    ((twistingSheaf 𝒜 n).presheaf.map i.op s).val x = s.val (i x) :=
   (rfl)
 
+/-- The zero section of `𝒪(n)` has value `0` at every point. -/
 @[simp]
-theorem zero_apply (x : U) : (0 : Γ(twistingSheaf 𝒜 n, U)).1 x = 0 :=
+theorem zero_apply (x : U) : (0 : Γ(twistingSheaf 𝒜 n, U)).val x = 0 :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are added pointwise. -/
 @[simp]
-theorem add_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s + t).1 x = s.1 x + t.1 x :=
+theorem add_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s + t).val x = s.val x + t.val x :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are negated pointwise. -/
 @[simp]
-theorem neg_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (-s).1 x = -s.1 x :=
+theorem neg_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (-s).val x = -s.val x :=
   (rfl)
 
+/-- Sections of `𝒪(n)` are subtracted pointwise. -/
 @[simp]
-theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).1 x = s.1 x - t.1 x :=
+theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).val x = s.val x - t.val x :=
   (rfl)
 
+/-- Finite sums of sections of `𝒪(n)` are computed pointwise. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (t : ι → Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih => simp [Finset.sum_insert ha, ih]
+    (∑ i ∈ s, t i).val x = ∑ i ∈ s, (t i).val x :=
+  map_sum ((Pi.evalAddMonoidHom _ x).comp (sectionsAddSubgroup 𝒜 n U).subtype) t s
 
 /-- Sections of the structure sheaf act on sections of `𝒪(n)` pointwise, through the inclusions
 `A_{(x)} → A_x` of the homogeneous localizations. -/
 @[simp]
 theorem smul_apply (a : Γ(Proj 𝒜, U)) (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (a • s).1 x = (a.1 x).val * s.1 x :=
+    (a • s).val x = (a.val x).val * s.val x :=
   (rfl)
 
 /-- The section `r / s` of `𝒪(n)` on an open `U` on which the homogeneous element `s` does not
 vanish, for homogeneous `r` and `s` with `deg r = deg s + n`. -/
 def const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (U : (Proj 𝒜).Opens) (hU : U ≤ basicOpen 𝒜 s) : Γ(twistingSheaf 𝒜 n, U) :=
-  ⟨fun x ↦ Localization.mk r ⟨s, hU x.2⟩, fun x ↦ ⟨U, x.2, 𝟙 U, i, j, h, ⟨r, hr⟩, ⟨s, hs⟩,
-    fun y ↦ hU y.2, fun _ ↦ rfl⟩⟩
+  ⟨fun x ↦ Localization.mk r ⟨s, hU x.property⟩, fun x ↦ ⟨U, x.property, 𝟙 U, i, j, h, ⟨r, hr⟩, ⟨s,
+      hs⟩,
+    fun y ↦ hU y.property, fun _ ↦ rfl⟩⟩
 
+/-- The value of the section `r / s` at a point `x` is the fraction `r / s` in the
+localization at `x`. -/
 @[simp]
 theorem const_apply {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) (x : U) :
-    (const h r s hr hs U hU).1 x = Localization.mk r ⟨s, hU x.2⟩ :=
+    (const h r s hr hs U hU).val x = Localization.mk r ⟨s, hU x.property⟩ :=
   (rfl)
 
+/-- The restriction of the section `r / s` to a smaller open is the section `r / s` there. -/
 @[simp]
 theorem res_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) (iVU : V ⟶ U) :
@@ -322,11 +329,13 @@ theorem res_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜
       const h r s hr hs V (iVU.le.trans hU) :=
   (rfl)
 
+/-- The section `0 / s` is the zero section. -/
 @[simp]
 theorem const_zero {i j : ℕ} (h : (j : ℤ) = i + n) (s : A) (hr : (0 : A) ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) : const h 0 s hr hs U hU = 0 :=
   ext fun _ ↦ Localization.mk_zero _
 
+/-- The negative of the section `r / s` is the section `(-r) / s`. -/
 @[simp]
 theorem neg_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i)
     (hU : U ≤ basicOpen 𝒜 s) : -const h r s hr hs U hU = const h (-r) s (neg_mem hr) hs U hU :=
@@ -364,8 +373,8 @@ theorem exists_const (s : Γ(twistingSheaf 𝒜 n, U)) (x : Proj 𝒜) (hx : x �
     ∃ (V : (Proj 𝒜).Opens) (_ : x ∈ V) (iVU : V ⟶ U) (i j : ℕ) (h : (j : ℤ) = i + n)
       (r t : A) (hr : r ∈ 𝒜 j) (ht : t ∈ 𝒜 i) (hV : V ≤ basicOpen 𝒜 t),
       (twistingSheaf 𝒜 n).presheaf.map iVU.op s = const h r t hr ht V hV := by
-  obtain ⟨V, hxV, iVU, i, j, h, r, t, ht, w⟩ := s.2 ⟨x, hx⟩
-  exact ⟨V, hxV, iVU, i, j, h, r, t, r.2, t.2, fun y hy ↦ ht ⟨y, hy⟩, ext fun y ↦ w y⟩
+  obtain ⟨V, hxV, iVU, i, j, h, r, t, ht, w⟩ := s.property ⟨x, hx⟩
+  exact ⟨V, hxV, iVU, i, j, h, r, t, r.property, t.property, fun y hy ↦ ht ⟨y, hy⟩, ext fun y ↦ w y⟩
 
 /-- Every section of `𝒪(n)` is, near each point `x`, a fraction `r / g` on a standard open
 `D₊(g)` containing `x`, with `g` homogeneous of positive degree. -/
@@ -398,28 +407,30 @@ the structure sheaf: sections are multiplied pointwise in the localizations. -/
 def mul (m n : ℤ) :
     Γ(twistingSheaf 𝒜 m, U) →ₗ[Γ(Proj 𝒜, U)] Γ(twistingSheaf 𝒜 n, U) →ₗ[Γ(Proj 𝒜, U)]
       Γ(twistingSheaf 𝒜 (m + n), U) :=
-  LinearMap.mk₂ Γ(Proj 𝒜, U) (fun s t ↦ ⟨s.1 * t.1, isLocallyFraction_mul s.2 t.2⟩)
+  LinearMap.mk₂ Γ(Proj 𝒜, U) (fun s t ↦ ⟨s.val * t.val, isLocallyFraction_mul s.property
+      t.property⟩)
     (fun _ _ _ ↦ ext fun _ ↦ add_mul _ _ _)
     (fun _ _ _ ↦ ext fun _ ↦ mul_assoc _ _ _)
     (fun _ _ _ ↦ ext fun _ ↦ mul_add _ _ _)
     (fun _ _ _ ↦ ext fun _ ↦ mul_left_comm _ _ _)
 
+/-- Sections of twisting sheaves are multiplied pointwise. -/
 @[simp]
 theorem mul_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (mul 𝒜 U m n s t).1 x = s.1 x * t.1 x :=
+    (mul 𝒜 U m n s t).val x = s.val x * t.val x :=
   (rfl)
 
 /-- The multiplication of sections of twisting sheaves is associative, pointwise in the
 localizations. -/
 theorem mul_assoc_apply {l m : ℤ} (s : Γ(twistingSheaf 𝒜 l, U)) (t : Γ(twistingSheaf 𝒜 m, U))
     (u : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (mul 𝒜 U (l + m) n (mul 𝒜 U l m s t) u).1 x = (mul 𝒜 U l (m + n) s (mul 𝒜 U m n t u)).1 x :=
+    (mul 𝒜 U (l + m) n (mul 𝒜 U l m s t) u).val x = (mul 𝒜 U l (m + n) s (mul 𝒜 U m n t u)).val x :=
   mul_assoc _ _ _
 
 /-- The multiplication of sections of twisting sheaves is commutative, pointwise in the
 localizations. -/
 theorem mul_comm_apply {m : ℤ} (s : Γ(twistingSheaf 𝒜 m, U)) (t : Γ(twistingSheaf 𝒜 n, U))
-    (x : U) : (mul 𝒜 U m n s t).1 x = (mul 𝒜 U n m t s).1 x :=
+    (x : U) : (mul 𝒜 U m n s t).val x = (mul 𝒜 U n m t s).val x :=
   mul_comm _ _
 
 /-- The multiplication of sections of twisting sheaves commutes with restriction. -/
@@ -431,6 +442,7 @@ theorem res_mul {m : ℤ} (i : V ⟶ U) (s : Γ(twistingSheaf 𝒜 m, U))
         ((twistingSheaf 𝒜 n).presheaf.map i.op t) :=
   (rfl)
 
+/-- The product of the sections `r / s` and `r' / s'` is the section `(r * r') / (s * s')`. -/
 @[simp]
 theorem mul_const {m : ℤ} {i j i' j' : ℕ} (h : (j : ℤ) = i + m) (h' : (j' : ℤ) = i' + n)
     (r s r' s' : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i) (hr' : r' ∈ 𝒜 j') (hs' : s' ∈ 𝒜 i')
@@ -453,19 +465,22 @@ for `j = n`. Over `U = ⊤`, these are the components of the graded map
 `A → ⨁ₙ Γ(Proj A, 𝒪(n))`. -/
 def toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) :
     𝒜 j →+ Γ(twistingSheaf 𝒜 n, U) where
-  toFun r := twistingSheaf.const (i := 0) (by omega) (r : A) 1 r.2 SetLike.GradedOne.one_mem U
+  toFun r := twistingSheaf.const (i := 0)
+      (by omega) (r : A) 1 r.property SetLike.GradedOne.one_mem U
     (by simp [basicOpen_one])
   map_zero' := twistingSheaf.ext fun _ ↦ Localization.mk_zero _
   map_add' r r' := twistingSheaf.ext fun _ ↦ (Localization.add_mk_self _ _ _).symm
 
+/-- The section `toTwistingSheaf 𝒜 h U r` is the section `r / 1`. -/
 theorem toTwistingSheaf_eq_const {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j) :
-    toTwistingSheaf 𝒜 h U r = twistingSheaf.const (i := 0) (by omega) (r : A) 1 r.2
+    toTwistingSheaf 𝒜 h U r = twistingSheaf.const (i := 0) (by omega) (r : A) 1 r.property
       SetLike.GradedOne.one_mem U (by simp [basicOpen_one]) :=
   (rfl)
 
+/-- The value of `toTwistingSheaf 𝒜 h U r` at a point is the fraction `r / 1`. -/
 @[simp]
 theorem toTwistingSheaf_apply_apply {j : ℕ} (h : (j : ℤ) = n) (U : (Proj 𝒜).Opens) (r : 𝒜 j)
-    (x : U) : (toTwistingSheaf 𝒜 h U r).1 x = Localization.mk (r : A) 1 :=
+    (x : U) : (toTwistingSheaf 𝒜 h U r).val x = Localization.mk (r : A) 1 :=
   (rfl)
 
 /-- The sections `r / 1` are compatible with restriction. -/
@@ -481,7 +496,8 @@ theorem res_toTwistingSheaf {j : ℕ} (h : (j : ℤ) = n) (i : V ⟶ U) (r : �
 theorem mul_toTwistingSheaf {m : ℤ} {i j : ℕ} (hi : (i : ℤ) = m) (hj : (j : ℤ) = n)
     (U : (Proj 𝒜).Opens) (r : 𝒜 i) (r' : 𝒜 j) :
     mul 𝒜 U m n (toTwistingSheaf 𝒜 hi U r) (toTwistingSheaf 𝒜 hj U r') =
-      toTwistingSheaf 𝒜 (by push_cast; omega) U ⟨r * r', SetLike.mul_mem_graded r.2 r'.2⟩ :=
+      toTwistingSheaf 𝒜
+          (by push_cast; omega) U ⟨r * r', SetLike.mul_mem_graded r.property r'.property⟩ :=
   twistingSheaf.ext fun _ ↦ (Localization.mk_mul ..).trans (congrArg _ (Subtype.ext (mul_one 1)))
 
 variable (𝒜) in
@@ -490,37 +506,39 @@ variable (𝒜) in
 homogeneous localizations with those in the localizations. -/
 def sectionsLinearEquivTwistingSheafZero (U : (Proj 𝒜).Opens) :
     Γ(Proj 𝒜, U) ≃ₗ[Γ(Proj 𝒜, U)] Γ(twistingSheaf 𝒜 0, U) where
-  toFun a := ⟨fun x ↦ (a.1 x).val, isLocallyFraction_val a⟩
+  toFun a := ⟨fun x ↦ (a.val x).val, isLocallyFraction_val a⟩
   map_add' a b := twistingSheaf.ext fun x ↦ HomogeneousLocalization.val_add _ _
   map_smul' a b := twistingSheaf.ext fun x ↦ HomogeneousLocalization.val_mul _ _
-  invFun f := ⟨fun x ↦ (exists_val_eq f.2 x).choose, fun x ↦ by
-    obtain ⟨V, m, iVU, i, j, h, r, s, hs, w⟩ := f.2 x
+  invFun f := ⟨fun x ↦ (exists_val_eq f.property x).choose, fun x ↦ by
+    obtain ⟨V, m, iVU, i, j, h, r, s, hs, w⟩ := f.property x
     obtain rfl : j = i := by omega
     refine ⟨V, m, iVU, j, r, s, hs, fun y ↦ HomogeneousLocalization.val_injective _ ?_⟩
     rw [HomogeneousLocalization.val_mk]
-    exact (exists_val_eq f.2 (iVU y)).choose_spec.trans (w y)⟩
+    exact (exists_val_eq f.property (iVU y)).choose_spec.trans (w y)⟩
   left_inv a := Subtype.ext <| funext fun x ↦ HomogeneousLocalization.val_injective _
     (exists_val_eq (isLocallyFraction_val a) x).choose_spec
-  right_inv f := twistingSheaf.ext fun x ↦ (exists_val_eq f.2 x).choose_spec
+  right_inv f := twistingSheaf.ext fun x ↦ (exists_val_eq f.property x).choose_spec
 
+/-- The comparison of the structure sheaf with `𝒪(0)` preserves the value in each
+localization. -/
 @[simp]
 theorem sectionsLinearEquivTwistingSheafZero_apply_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U))
-    (x : U) : (sectionsLinearEquivTwistingSheafZero 𝒜 U a).1 x = (a.1 x).val :=
+    (x : U) : (sectionsLinearEquivTwistingSheafZero 𝒜 U a).val x = (a.val x).val :=
   (rfl)
 
 /-- The inverse of the degree-zero comparison preserves the value in each localization. -/
 @[simp]
 theorem sectionsLinearEquivTwistingSheafZero_symm_apply_val (U : (Proj 𝒜).Opens)
     (s : Γ(twistingSheaf 𝒜 0, U)) (x : U) :
-    (((sectionsLinearEquivTwistingSheafZero 𝒜 U).symm s).1 x).val = s.1 x := by
-  exact congrArg (fun t : Γ(twistingSheaf 𝒜 0, U) ↦ t.1 x)
+    (((sectionsLinearEquivTwistingSheafZero 𝒜 U).symm s).val x).val = s.val x :=
+  congrArg (fun t : Γ(twistingSheaf 𝒜 0, U) ↦ t.val x)
     ((sectionsLinearEquivTwistingSheafZero 𝒜 U).apply_symm_apply s)
 
 /-- Multiplying by the section of `𝒪(0)` corresponding to a section `a` of the structure sheaf
 is the scalar multiplication by `a`, pointwise in the localizations. -/
 theorem mul_sectionsLinearEquivTwistingSheafZero_apply (a : Γ(Proj 𝒜, U))
     (t : Γ(twistingSheaf 𝒜 n, U)) (x : U) :
-    (mul 𝒜 U 0 n (sectionsLinearEquivTwistingSheafZero 𝒜 U a) t).1 x = (a • t).1 x :=
+    (mul 𝒜 U 0 n (sectionsLinearEquivTwistingSheafZero 𝒜 U a) t).val x = (a • t).val x :=
   (rfl)
 
 variable (𝒜) in
@@ -529,12 +547,16 @@ def unitIsoTwistingSheafZero : SheafOfModules.unit (Proj 𝒜).ringCatSheaf ≅ 
   (SheafOfModules.fullyFaithfulForget _).preimageIso <| PresheafOfModules.isoMk
     (fun U ↦ (sectionsLinearEquivTwistingSheafZero 𝒜 U.unop).toModuleIso) fun _ _ _ ↦ rfl
 
+/-- The forward map of `unitIsoTwistingSheafZero` on sections over `U` is
+`sectionsLinearEquivTwistingSheafZero`. -/
 @[simp]
 theorem unitIsoTwistingSheafZero_hom_app_apply (U : (Proj 𝒜).Opens) (a : Γ(Proj 𝒜, U)) :
     Scheme.Modules.Hom.app (unitIsoTwistingSheafZero 𝒜).hom U a =
       sectionsLinearEquivTwistingSheafZero 𝒜 U a :=
   (rfl)
 
+/-- The backward map of `unitIsoTwistingSheafZero` on sections over `U` is the inverse of
+`sectionsLinearEquivTwistingSheafZero`. -/
 @[simp]
 theorem unitIsoTwistingSheafZero_inv_app_apply (U : (Proj 𝒜).Opens)
     (f : Γ(twistingSheaf 𝒜 0, U)) :

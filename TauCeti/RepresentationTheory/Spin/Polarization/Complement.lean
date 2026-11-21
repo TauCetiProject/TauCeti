@@ -79,9 +79,9 @@ noncomputable def ofIsComplOfPairing (hWW' : IsCompl W W') (hW : Q.IsTotallyIsot
   decompositionEquiv := LinearEquiv.prodUnique ≪≫ₗ Submodule.prodEquivOfIsCompl W W' hWW'
   decompositionEquiv_apply x := by
     rw [LinearEquiv.trans_apply, LinearEquiv.prodUnique_apply, Submodule.coe_prodEquivOfIsCompl',
-      (Submodule.mem_bot K).mp x.2.2, add_zero]
-  isotropic_W x := hW.apply_eq_zero x.2
-  isotropic_W' y := hW'.apply_eq_zero y.2
+      (Submodule.mem_bot K).mp x.2.property, add_zero]
+  isotropic_W x := hW.apply_eq_zero x.property
+  isotropic_W' y := hW'.apply_eq_zero y.property
   pairingEquiv := e
   pairingEquiv_apply := he
   pairing_separatingLeft := hsep
@@ -131,7 +131,7 @@ noncomputable def ofIsCompl (hQ : Q.Nondegenerate) (hWW' : IsCompl W W')
       rw [LinearMap.linearEquivOfInjective_apply, LinearMap.flip_apply, LinearMap.compl₁₂_apply,
         polarBilin_apply_apply, Submodule.subtype_apply, Submodule.subtype_apply])
     (fun x hx => Subtype.ext <|
-      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm.codisjoint x.2 fun y hy => by
+      hW.eq_zero_of_polar_eq_zero hQ hWW'.symm.codisjoint x.property fun y hy => by
         rw [polar_comm]
         exact hx ⟨y, hy⟩)
 

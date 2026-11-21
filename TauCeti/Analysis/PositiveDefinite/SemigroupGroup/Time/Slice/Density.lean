@@ -164,7 +164,7 @@ family of Radon--Nikodym derivatives decreases in time and the total masses are 
 set attached. That is what makes a fibrewise Bernstein argument possible. -/
 def timeSliceDensity (F : ℝ≥0 × V → ℂ) (t : ℝ≥0) (q : V) : ℝ≥0∞ :=
   ⨆ r : {r : ℚ≥0 // t < (r : ℝ≥0)},
-    (bochnerMeasure fun a ↦ F ((r.1 : ℝ≥0), a)).rnDeriv (bochnerMeasure fun a ↦ F (0, a)) q
+    (bochnerMeasure fun a ↦ F ((r.val : ℝ≥0), a)).rnDeriv (bochnerMeasure fun a ↦ F (0, a)) q
 
 /-- Each Radon--Nikodym derivative at a rational time to the right of `t` is dominated by the
 right-continuous density at `t`. -/
@@ -173,13 +173,13 @@ theorem rnDeriv_le_timeSliceDensity (F : ℝ≥0 × V → ℂ) {t : ℝ≥0} {r 
     (bochnerMeasure fun a ↦ F ((r : ℝ≥0), a)).rnDeriv (bochnerMeasure fun a ↦ F (0, a)) q
       ≤ timeSliceDensity F t q :=
   le_iSup (fun r : {r : ℚ≥0 // t < (r : ℝ≥0)} ↦
-    (bochnerMeasure fun a ↦ F ((r.1 : ℝ≥0), a)).rnDeriv
+    (bochnerMeasure fun a ↦ F ((r.val : ℝ≥0), a)).rnDeriv
       (bochnerMeasure fun a ↦ F (0, a)) q) ⟨r, hr⟩
 
 /-- The right-continuous density decreases in time, at every point. -/
 theorem timeSliceDensity_antitone (F : ℝ≥0 × V → ℂ) (q : V) :
     Antitone fun t ↦ timeSliceDensity F t q := fun _ _ htt' ↦
-  iSup_le fun r ↦ le_iSup_of_le ⟨r.1, htt'.trans_lt r.2⟩ le_rfl
+  iSup_le fun r ↦ le_iSup_of_le ⟨r.val, htt'.trans_lt r.property⟩ le_rfl
 
 @[fun_prop]
 theorem measurable_timeSliceDensity (F : ℝ≥0 × V → ℂ) (t : ℝ≥0) :
@@ -216,7 +216,7 @@ theorem timeSliceDensity_le_rnDeriv (hFpd : IsSemigroupGroupPD F) (hFcont : Cont
       ≤ᵐ[bochnerMeasure fun a ↦ F (0, a)]
         (bochnerMeasure fun a ↦ F (t, a)).rnDeriv (bochnerMeasure fun a ↦ F (0, a)) := by
   filter_upwards [ae_all_iff.2 fun r : {r : ℚ≥0 // t < (r : ℝ≥0)} ↦
-    rnDeriv_bochnerMeasure_timeSlice_ae_le hFpd hFcont hFbdd r.2.le] with q hq
+    rnDeriv_bochnerMeasure_timeSlice_ae_le hFpd hFcont hFbdd r.property.le] with q hq
   exact iSup_le hq
 
 /-- **The right-continuous density is a Radon--Nikodym derivative at every fixed time.** The
@@ -268,7 +268,7 @@ theorem tendsto_timeSliceDensity_nhdsGT (F : ℝ≥0 × V → ℂ) (t : ℝ≥0)
     Tendsto (fun s ↦ timeSliceDensity F s q) (𝓝[>] t) (𝓝 (timeSliceDensity F t q)) := by
   refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨r, hr⟩ := lt_iSup_iff.1 ha
-    filter_upwards [Ioo_mem_nhdsGT r.2] with s hs
+    filter_upwards [Ioo_mem_nhdsGT r.property] with s hs
     exact hr.trans_le (rnDeriv_le_timeSliceDensity F hs.2 q)
   · filter_upwards [self_mem_nhdsWithin] with s hs
     exact (timeSliceDensity_antitone F q (mem_Ioi.1 hs).le).trans_lt hb

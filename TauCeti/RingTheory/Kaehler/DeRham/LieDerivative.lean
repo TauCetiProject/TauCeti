@@ -273,10 +273,11 @@ theorem deRhamLieDeriv_sub {δ₁ δ₂ : Derivation k S S}
 theorem deRhamLieDeriv_sum {ι : Type*} (t : Finset ι) (δ : ι → Derivation k S S)
     (hδ : ∀ i ∈ t, ∀ r : R, KaehlerDifferential.D R S (δ i (algebraMap R S r)) = 0) :
     (∑ i ∈ t, δ i).deRhamLieDeriv (D_sum_algebraMap_eq_zero t δ hδ) =
-      ∑ i ∈ t.attach, (δ i.1).deRhamLieDeriv (hδ i.1 i.2) := by
+      ∑ i ∈ t.attach, (δ i.val).deRhamLieDeriv (hδ i.val i.property) := by
   symm
   refine deRhamLieDeriv_unique (∑ i ∈ t, δ i) _
-    (Submodule.sum_mem _ fun i _ ↦ (δ i.1).deRhamLieDeriv_mem_derivationLieAlgebra (hδ i.1 i.2))
+    (Submodule.sum_mem _ fun i _ ↦
+      (δ i.val).deRhamLieDeriv_mem_derivationLieAlgebra (hδ i.val i.property))
     (fun s ↦ by simp [Finset.sum_attach t (fun i ↦ algebraMap S _ (δ i s))])
     fun s ↦ by simp [map_sum]
 
@@ -326,14 +327,14 @@ theorem deRhamLieDeriv_commutator {δ₁ δ₂ : Derivation k S S}
     ⟨δ₁.deRhamLieDeriv h₁, δ₁.deRhamLieDeriv_mem_derivationLieAlgebra h₁⟩
   let L₂ : TauCeti.derivationLieAlgebra k (ExteriorAlgebra S Ω[S⁄R]) :=
     ⟨δ₂.deRhamLieDeriv h₂, δ₂.deRhamLieDeriv_mem_derivationLieAlgebra h₂⟩
-  have hbr : (⁅L₁, L₂⁆ : TauCeti.derivationLieAlgebra k (ExteriorAlgebra S Ω[S⁄R])).1 =
+  have hbr : (⁅L₁, L₂⁆ : TauCeti.derivationLieAlgebra k (ExteriorAlgebra S Ω[S⁄R])).val =
       (δ₁.deRhamLieDeriv h₁).comp (δ₂.deRhamLieDeriv h₂) -
         (δ₂.deRhamLieDeriv h₂).comp (δ₁.deRhamLieDeriv h₁) :=
     LinearMap.ext fun _ ↦ by
       simp [LieSubalgebra.coe_bracket, Ring.lie_def, _root_.mul_apply_eq_comp, L₁, L₂]
   rw [← hbr]
   symm
-  refine deRhamLieDeriv_unique ⁅δ₁, δ₂⁆ _ ⁅L₁, L₂⁆.2 (fun s ↦ ?_) (fun s ↦ ?_)
+  refine deRhamLieDeriv_unique ⁅δ₁, δ₂⁆ _ ⁅L₁, L₂⁆.property (fun s ↦ ?_) (fun s ↦ ?_)
   · simp [hbr, Derivation.commutator_apply]
   · simp [hbr]
 

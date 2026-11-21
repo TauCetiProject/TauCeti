@@ -261,7 +261,7 @@ theorem kaehlerLieDeriv_sub {δ₁ δ₂ : Derivation k S S}
 theorem kaehlerLieDeriv_sum {ι : Type*} (t : Finset ι) (δ : ι → Derivation k S S)
     (hδ : ∀ i ∈ t, ∀ r : R, KaehlerDifferential.D R S (δ i (algebraMap R S r)) = 0) :
     (∑ i ∈ t, δ i).kaehlerLieDeriv (D_sum_algebraMap_eq_zero t δ hδ) =
-      ∑ i ∈ t.attach, (δ i.1).kaehlerLieDeriv (hδ i.1 i.2) := by
+      ∑ i ∈ t.attach, (δ i.val).kaehlerLieDeriv (hδ i.val i.property) := by
   refine ((∑ i ∈ t, δ i).kaehlerLieDeriv_unique _ (fun s ↦ ?_) fun s ω ↦ ?_).symm
   · simp [Finset.sum_attach t (fun i ↦ KaehlerDifferential.D R S (δ i s))]
   · simp [LinearMap.sum_apply, kaehlerLieDeriv_smul, Finset.sum_add_distrib, Finset.sum_smul,
@@ -309,11 +309,11 @@ theorem mapSemilinear_kaehlerLieDeriv {kA kB R A B : Type*}
   | add _ _ ih₁ ih₂ => simp only [map_add, ih₁, ih₂]
 
 /-- Any compatible derivation couple `c : Derivation.couple k R S` satisfies the lift condition for
-`Ω[S⁄R]` because `c.1.1` preserves the image of `algebraMap R S`. -/
+`Ω[S⁄R]` because `c.val.1` preserves the image of `algebraMap R S`. -/
 theorem Compatible.D_apply_algebraMap_eq_zero [Algebra k R] [IsScalarTower k R S]
     (c : Derivation.couple k R S) (r : R) :
-    KaehlerDifferential.D R S (c.1.1 (algebraMap R S r)) = 0 := by
-  have hc : c.1.1 (algebraMap R S r) = algebraMap R S (c.1.2 r) := Compatible.apply c r
+    KaehlerDifferential.D R S (c.val.1 (algebraMap R S r)) = 0 := by
+  have hc : c.val.1 (algebraMap R S r) = algebraMap R S (c.val.2 r) := Compatible.apply c r
   rw [hc, Derivation.map_algebraMap]
 
 end Derivation

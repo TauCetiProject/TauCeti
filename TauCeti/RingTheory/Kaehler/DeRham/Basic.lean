@@ -496,7 +496,7 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
   let fC : S →ₐ[R] C := f.codRestrict C (Subalgebra.apply_mem_centralizer_range R f)
   letI : Algebra S C :=
     fC.toRingHom.toAlgebra' fun s c ↦ Subtype.ext <|
-      (Subalgebra.mem_centralizer_iff R).mp c.2 (f s) ⟨s, rfl⟩
+      (Subalgebra.mem_centralizer_iff R).mp c.property (f s) ⟨s, rfl⟩
   letI : IsScalarTower R S C := IsScalarTower.of_algebraMap_eq' fC.comp_algebraMap.symm
   let D₀ : Derivation R S C :=
     { toFun := fun s ↦ ⟨dB (f s), dB_mem_centralizer f hcomm s⟩
@@ -544,20 +544,20 @@ private noncomputable def liftAlgHomAux (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S
     (hf₀ : ∀ s : S, f s ∈ ℬ 0) (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s)
     (hsq : ∀ s : S, dB (f s) * dB (f s) = 0) :
     ExteriorAlgebra S Ω[S⁄R] →ₐ[R] B :=
-  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).1
+  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).val
 
 private theorem liftAlgHomAux_algebraMap (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →ₐ[R] B)
     (hf₀ : ∀ s : S, f s ∈ ℬ 0) (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s)
     (hsq : ∀ s : S, dB (f s) * dB (f s) = 0) (s : S) :
     liftAlgHomAux hB f hf₀ hcomm hsq (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) = f s :=
-  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).2.1 s
+  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).property.1 s
 
 private theorem liftAlgHomAux_ι_D (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →ₐ[R] B)
     (hf₀ : ∀ s : S, f s ∈ ℬ 0) (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s)
     (hsq : ∀ s : S, dB (f s) * dB (f s) = 0) (s : S) :
     liftAlgHomAux hB f hf₀ hcomm hsq (ExteriorAlgebra.ι S (KaehlerDifferential.D R S s)) =
       dB (f s) :=
-  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).2.2 s
+  (liftAlgHomAuxWithSpec hB f hf₀ hcomm hsq).property.2 s
 
 private theorem liftAlgHomAux_ι_mem_one (hB : TauCeti.IsDGAlgebra ℬ dB) (f : S →ₐ[R] B)
     (hf₀ : ∀ s : S, f s ∈ ℬ 0) (hcomm : ∀ s t : S, f s * dB (f t) = dB (f t) * f s)
