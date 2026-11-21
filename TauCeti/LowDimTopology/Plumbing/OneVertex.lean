@@ -40,10 +40,11 @@ So the class of `x₀` generates lattice homology, and the augmentation already 
 `U`-tower shows it generates freely.
 
 The lattice correction term `(k² + 1) / 4 - 2 m_k` of `TauCeti.PlumbingGraph.latticeCorrectionTerm`
-is explicit as well. For framing `w`, the rational square of `k` is `k² / w`, and for framing
-`-p < 0` and a representative with `|k| ≤ p` the minimum `m_k` vanishes, so the correction term is
-`(p - k²) / (4 p)`. For the `(-1)`-framed vertex, whose boundary is the three-sphere, every
-characteristic covector is spin^c equivalent to `1`, and the correction term is `0`.
+is explicit as well. Write `k₀ = k 0` for the single integer entry of `k`. For framing `w`, the
+rational square `k²` is `k₀² / w`, and for framing `-p < 0` and a representative with `|k₀| ≤ p`
+the minimum `m_k` vanishes, so the correction term is `(p - k₀²) / (4 p)`. For the `(-1)`-framed
+vertex, whose boundary is the three-sphere, every characteristic covector is spin^c equivalent to
+`1`, and the correction term is `0`.
 
 ## Main definitions
 
@@ -64,9 +65,10 @@ characteristic covector is spin^c equivalent to `1`, and the correction term is 
   `𝔽₂[U] ≅ ℍ(P, k)`.
 * `TauCeti.coefficientEquivOneVertexPlumbingLatticeHomology`: that isomorphism for the explicit
   one-vertex plumbing of negative framing.
-* `TauCeti.oneVertexPlumbing_covectorSquare`: the rational square of a covector is `k² / w`.
-* `TauCeti.oneVertexPlumbing_latticeCorrectionTerm`: for framing `-p < 0` and `|k| ≤ p`, the
-  lattice correction term is `(p - k²) / (4 p)`.
+* `TauCeti.oneVertexPlumbing_covectorSquare`: the rational square of a covector `k` is
+  `k₀² / w`, where `k₀ = k 0`.
+* `TauCeti.oneVertexPlumbing_latticeCorrectionTerm`: for framing `-p < 0` and `|k₀| ≤ p`, where
+  `k₀ = k 0`, the lattice correction term is `(p - k₀²) / (4 p)`.
 * `TauCeti.oneVertexPlumbing_neg_one_latticeCorrectionTerm`: for framing `-1` it is `0`.
 
 ## References
@@ -433,8 +435,8 @@ noncomputable def coefficientEquivOneVertexPlumbingLatticeHomology {w : ℤ} (hw
   PlumbingGraph.coefficientEquivLatticeHomologyOfUnique _ k h e.choose e.choose_spec.1
     e.choose_spec.2
 
-/-- The rational square of a covector `k` on the one-vertex plumbing with framing `w` is
-`k² / w`. -/
+/-- The rational square `k²` of a covector `k` on the one-vertex plumbing with framing `w` is
+`k₀² / w`, where `k₀ = k 0` is the single integer entry of `k`. -/
 theorem oneVertexPlumbing_covectorSquare (w : ℤ) (k : Fin 1 → ℤ) :
     (oneVertexPlumbing w).covectorSquare k = (k 0 : ℚ) ^ 2 / w := by
   rw [PlumbingGraph.covectorSquare_eq_div_det, oneVertexPlumbing_intersectionMatrix,
@@ -442,7 +444,8 @@ theorem oneVertexPlumbing_covectorSquare (w : ℤ) (k : Fin 1 → ℤ) :
   simp [dotProduct, sq]
 
 /-- On the one-vertex plumbing with framing `-p < 0`, the characteristic weight of a
-characteristic covector `k` with `|k| ≤ p` is nonnegative: `2 χ_k(x) = p x² - k x ≥ 0`. -/
+characteristic covector `k` with `|k₀| ≤ p`, where `k₀ = k 0`, is nonnegative:
+`2 χ_k(x) = p x₀² - k₀ x₀ ≥ 0`, where `x₀ = x 0`. -/
 private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
     (k : (oneVertexPlumbing (-p)).characteristicVectors) (hk : |k.val 0| ≤ p) (x : Fin 1 → ℤ) :
     0 ≤ (oneVertexPlumbing (-p)).characteristicWeight k x := by
@@ -450,7 +453,7 @@ private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
   rw [PlumbingGraph.characteristicWeightNumerator_def, PlumbingGraph.intersectionForm_apply,
     oneVertexPlumbing_intersectionMatrix] at h2
   simp only [Fin.sum_univ_one, Matrix.of_apply, Matrix.cons_val_fin_one] at h2
-  -- `k x ≤ p |x| ≤ p x²`, since `|k| ≤ p` and `|x| ≤ x²` for an integer `x`.
+  -- `k₀ x₀ ≤ p |x₀| ≤ p x₀²`, since `|k₀| ≤ p` and `|x₀| ≤ x₀²` for an integer `x₀`.
   have hkx : k.val 0 * x 0 ≤ p * |x 0| := by
     calc k.val 0 * x 0 ≤ |k.val 0 * x 0| := le_abs_self _
       _ = |k.val 0| * |x 0| := abs_mul _ _
@@ -460,8 +463,9 @@ private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
   nlinarith [mul_le_mul_of_nonneg_left hx hp]
 
 /-- **The lattice correction term of a one-vertex plumbing.** For framing `-p` with `p > 0` and a
-characteristic covector `k` with `|k| ≤ p`, the minimum of the characteristic weight is `0`, and
-the lattice correction term `(k² + 1) / 4 - 2 m_k` is `(p - k²) / (4 p)`. -/
+characteristic covector `k` whose single entry `k₀ = k 0` satisfies `|k₀| ≤ p`, the minimum of the
+characteristic weight is `0`, and the lattice correction term `(k² + 1) / 4 - 2 m_k`, with `k²` the
+rational square, is `(p - k₀²) / (4 p)`. -/
 theorem oneVertexPlumbing_latticeCorrectionTerm {p : ℤ} (hp : 0 < p)
     (k : (oneVertexPlumbing (-p)).characteristicVectors) (hk : |k.val 0| ≤ p) :
     (oneVertexPlumbing (-p)).latticeCorrectionTerm k = (p - (k.val 0 : ℚ) ^ 2) / (4 * p) := by

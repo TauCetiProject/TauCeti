@@ -12,6 +12,7 @@ public import TauCeti.LowDimTopology.Plumbing.Weight.Sublevel
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Linarith
+import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The rational square of a plumbing covector and the lattice correction term
@@ -133,6 +134,11 @@ theorem covectorSquare_neg (k : V → ℤ) : P.covectorSquare (-k) = P.covectorS
   rw [covectorSquare_def, covectorSquare_def, hneg, mulVec_neg, neg_dotProduct, dotProduct_neg,
     neg_neg]
 
+/-- The determinant of the rational intersection matrix is the cast of the integer determinant. -/
+private theorem det_map_intCast :
+    (P.intersectionMatrix.map ((↑) : ℤ → ℚ)).det = (P.intersectionMatrix.det : ℚ) :=
+  ((Int.castRingHom ℚ).map_det P.intersectionMatrix).symm
+
 /-- **The square through the adjugate.** `k² = (k · adj Q k) / det Q`. This equation needs no
 nonsingularity, since both sides vanish when `det Q = 0`. When `det Q ≠ 0` it shows that
 `det Q • k²` is the integer `k · adj Q k`. -/
@@ -142,13 +148,11 @@ theorem covectorSquare_eq_div_det (k : V → ℤ) :
   have hadj : (P.intersectionMatrix.map ((↑) : ℤ → ℚ)).adjugate =
       P.intersectionMatrix.adjugate.map ((↑) : ℤ → ℚ) :=
     ((Int.castRingHom ℚ).map_adjugate P.intersectionMatrix).symm
-  have hdet : (P.intersectionMatrix.map ((↑) : ℤ → ℚ)).det = (P.intersectionMatrix.det : ℚ) :=
-    ((Int.castRingHom ℚ).map_det P.intersectionMatrix).symm
   have hcast : ((k ⬝ᵥ (P.intersectionMatrix.adjugate *ᵥ k) : ℤ) : ℚ) =
       (fun v => (k v : ℚ)) ⬝ᵥ
         (P.intersectionMatrix.adjugate.map ((↑) : ℤ → ℚ) *ᵥ fun v => (k v : ℚ)) := by
     simp only [dotProduct, mulVec, map_apply, Int.cast_sum, Int.cast_mul]
-  rw [covectorSquare_def, inv_def, hadj, hdet, hcast]
+  rw [covectorSquare_def, inv_def, hadj, det_map_intCast, hcast]
   simp [Ring.inverse_eq_inv', smul_mulVec, div_eq_inv_mul]
 
 /-! ### Translation by twice the image of the intersection matrix -/
@@ -171,42 +175,25 @@ private theorem cast_characteristicWeightNumerator (k l : V → ℤ) :
   simp only [dotProduct, mulVec, Finset.mul_sum, Int.cast_add, Int.cast_sum, Int.cast_mul,
     mul_assoc]
 
-/-- For a symmetric matrix `A` over a field with invertible determinant,
-`(x + 2 A y) · A⁻¹ (x + 2 A y) = x · A⁻¹ x + 4 (x · y + y · A y)`. -/
-private theorem dotProduct_inv_mulVec_add_two_smul_mulVec {K : Type*} [Field K]
-    {A : Matrix V V K} (hA : IsUnit A.det) (hsymm : A.IsSymm) (x y : V → K) :
-    (x + (2 : K) • (A *ᵥ y)) ⬝ᵥ (A⁻¹ *ᵥ (x + (2 : K) • (A *ᵥ y))) =
-      x ⬝ᵥ (A⁻¹ *ᵥ x) + 4 * (x ⬝ᵥ y + y ⬝ᵥ (A *ᵥ y)) := by
-  -- `A⁻¹ (A y) = y` and, by symmetry of `A`, `(A y) · w = y · (A w)`.
-  have hinv : A⁻¹ *ᵥ (A *ᵥ y) = y := by
-    rw [mulVec_mulVec, nonsing_inv_mul A hA, one_mulVec]
-  have hswap : ∀ w : V → K, (A *ᵥ y) ⬝ᵥ w = y ⬝ᵥ (A *ᵥ w) := fun w => by
-    rw [dotProduct_comm, hsymm.dotProduct_mulVec_comm]
-  have hAinv : A *ᵥ (A⁻¹ *ᵥ x) = x := by
-    rw [mulVec_mulVec, mul_nonsing_inv A hA, one_mulVec]
-  simp only [mulVec_add, mulVec_smul, hinv, add_dotProduct, dotProduct_add, smul_dotProduct,
-    dotProduct_smul, hswap, hAinv, dotProduct_comm y x, smul_eq_mul]
-  ring
-
 /-- **Translating a covector by `2 Q l`.** If the intersection matrix `Q` is nonsingular, then
 `(k + 2 Q l)² = k² + 4 (⟨k, l⟩ + l · Q l)`, where the bracket is the characteristic-weight numerator
 `characteristicWeightNumerator k l`. -/
 theorem covectorSquare_add_two_mulVec (hQ : P.intersectionMatrix.det ≠ 0) (k l : V → ℤ) :
     P.covectorSquare (fun v => k v + 2 * (P.intersectionMatrix *ᵥ l) v) =
       P.covectorSquare k + 4 * P.characteristicWeightNumerator k l := by
-  have hdet : (P.intersectionMatrix.map ((↑) : ℤ → ℚ)).det = (P.intersectionMatrix.det : ℚ) :=
-    ((Int.castRingHom ℚ).map_det P.intersectionMatrix).symm
   have hunit : IsUnit (P.intersectionMatrix.map ((↑) : ℤ → ℚ)).det := by
-    rw [hdet]
+    rw [det_map_intCast]
     exact isUnit_iff_ne_zero.2 (by exact_mod_cast hQ)
   have hcast : (fun v => ((k v + 2 * (P.intersectionMatrix *ᵥ l) v : ℤ) : ℚ)) =
       (fun v => (k v : ℚ)) +
-        (2 : ℚ) • (P.intersectionMatrix.map ((↑) : ℤ → ℚ) *ᵥ fun v => (l v : ℚ)) := by
-    rw [← cast_mulVec]
+        P.intersectionMatrix.map ((↑) : ℤ → ℚ) *ᵥ (2 : ℚ) • fun v => (l v : ℚ) := by
+    rw [mulVec_smul, ← cast_mulVec]
     ext v
     simp
   rw [covectorSquare_def, covectorSquare_def, hcast, cast_characteristicWeightNumerator,
-    dotProduct_inv_mulVec_add_two_smul_mulVec hunit (P.intersectionMatrix_isSymm.map _)]
+    (P.intersectionMatrix_isSymm.map _).add_mulVec_dotProduct_inv_mulVec_add_mulVec hunit]
+  simp only [dotProduct_smul, smul_dotProduct, mulVec_smul, smul_eq_mul]
+  ring
 
 /-- **Némethi's identity.** For a characteristic covector `k` and a nonsingular intersection
 matrix `Q`, translating `k` by `2 Q l` lowers its square by eight times the characteristic weight
