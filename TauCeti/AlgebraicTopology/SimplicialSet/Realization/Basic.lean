@@ -233,8 +233,8 @@ private lemma exists_cellPoint_decomp {X : SSet.{u}} {n : ℕ} (x : X _⦋n⦌)
     ∃ c : X.ToTopCellPoint, ∃ (k r : ℕ) (ι : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono ι)
       (w₀ : StdSimplex ℝ (Fin (k + 1))) (hw₀ : ∀ j, w₀.weights j ≠ 0)
       (π : ⦋k⦌ ⟶ ⦋r⦌) (_ : Epi π) (z : X.nonDegenerate r),
-      w = w₀.map ι ∧ X.map ι.op x = X.map π.op z.1 ∧
-      c = ⟨N.mk z.1 z.2, w₀.map π,
+      w = w₀.map ι ∧ X.map ι.op x = X.map π.op z.val ∧
+      c = ⟨N.mk z.val z.property, w₀.map π,
         SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
   obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
   obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
@@ -247,9 +247,10 @@ private noncomputable def toTopCellPointOfSimplex {X : SSet.{u}} {n : ℕ} (x : 
 private lemma toTopCellPointOfSimplex_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : X _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) (ι : ⦋k⦌ ⟶ ⦋n⦌) [Mono ι]
     (w₀ : StdSimplex ℝ (Fin (k + 1))) (hw₀ : ∀ j, w₀.weights j ≠ 0) (hw : w = w₀.map ι)
-    (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π] (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.1) :
+    (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π] (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.val) :
     toTopCellPointOfSimplex x w =
-      ⟨N.mk z.1 z.2, w₀.map π, SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
+      ⟨N.mk z.val z.property, w₀.map π,
+        SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
   obtain ⟨k', r', ι', _, w₀', hw₀', π', _, z', hw', hz', hcell⟩ :=
     (exists_cellPoint_decomp x w).choose_spec
   obtain rfl : k' = k :=
@@ -271,7 +272,7 @@ private lemma toTopCellPointOfSimplex_map {X : SSet.{u}} {m n : ℕ} (θ : ⦋m�
   have : Epi e := epi_comp _ _; have : Mono ι' := mono_comp _ _
   have hfac : e ≫ ι' = ι ≫ θ := by simp [e, ι', image.fac]
   obtain ⟨r, π', _, z, hz⟩ := X.exists_nonDegenerate (X.map ι'.op x)
-  have hez_lhs : X.map ι.op (X.map θ.op x) = X.map (e ≫ π').op z.1 := by
+  have hez_lhs : X.map ι.op (X.map θ.op x) = X.map (e ≫ π').op z.val := by
     rw [← Functor.map_comp_apply, ← op_comp, ← hfac, op_comp, Functor.map_comp_apply, hz,
       ← Functor.map_comp_apply, ← op_comp]
   have hw_rhs : (w₀.map ι).map θ = (w₀.map e).map ι' := by
@@ -295,7 +296,7 @@ private lemma toTopObjMk_toTopCellPointOfSimplex {X : SSet.{u}} {n : ℕ} (x : X
   refine (congrArg (fun c : X.ToTopCellPoint ↦ toTopObjMk c.simplex.simplex c.coords)
     (toTopCellPointOfSimplex_eq_of_decomp x w ι w₀ hw₀ hw π z hz)).trans ?_
   dsimp only [N.mk, S.mk]
-  rw [← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
+  rw [← toTopObjMk_map π z.val w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
 
 private lemma toTopCellPointOfSimplex_cellPoint {X : SSet.{u}} (c : X.ToTopCellPoint) :
     toTopCellPointOfSimplex c.simplex.simplex c.coords = c := by
@@ -356,12 +357,13 @@ nondegenerate simplex `z`. -/
 lemma toTopCellPointEquiv_toTopObjMk_eq_of_decomp {X : SSet.{u}} {n k r : ℕ} (x : X _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) (ι : ⦋k⦌ ⟶ ⦋n⦌) (w₀ : StdSimplex ℝ (Fin (k + 1)))
     (hw₀ : ∀ j, w₀.weights j ≠ 0) (hw : w = w₀.map ι) (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π]
-    (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.1) :
+    (z : X.nonDegenerate r) (hz : X.map ι.op x = X.map π.op z.val) :
     X.toTopCellPointEquiv (toTopObjMk x w) =
-      ⟨N.mk z.1 z.2, w₀.map π, SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
+      ⟨N.mk z.val z.property, w₀.map π,
+        SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π hw₀⟩ := by
   apply X.toTopCellPointEquiv.symm.injective
   rw [Equiv.symm_apply_apply, toTopCellPointEquiv_symm_apply]; dsimp only [N.mk, S.mk]
-  rw [← toTopObjMk_map π z.1 w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
+  rw [← toTopObjMk_map π z.val w₀, ← hz, toTopObjMk_map ι x w₀, ← hw]
 
 /-- A realized vertex `toTopPoint x` lies in the `0`-dimensional open cell of `x`. -/
 @[simp] lemma toTopCellPointEquiv_toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) :
@@ -378,7 +380,7 @@ lemma toTopCellPointEquiv_toTopObjMk_subcomplex_le {X : SSet.{u}} {n : ℕ} (x :
   obtain ⟨k, ι, _, w₀, hw₀, hw⟩ := SimplexCategory.exists_mono_stdSimplex_map_eq w
   obtain ⟨r, π, _, z, hz⟩ := X.exists_nonDegenerate (X.map ι.op x)
   rw [toTopCellPointEquiv_toTopObjMk_eq_of_decomp x w ι w₀ hw₀ hw π z hz]
-  exact (S.subcomplex_eq_of_epi (S.mk (X.map ι.op x)) (S.mk z.1) π hz.symm).symm.trans_le
+  exact (S.subcomplex_eq_of_epi (S.mk (X.map ι.op x)) (S.mk z.val) π hz.symm).symm.trans_le
     (S.subcomplex_map_le (S.mk (X.map ι.op x)) (S.mk x) ι rfl)
 
 /-- The open cell of `toTopObjMk x w` has dimension at most `n`. -/
@@ -414,14 +416,15 @@ theorem toTopObjMk_injective_of_weights_ne_zero (X : SSet.{u}) {n : ℕ}
   obtain ⟨r₁, π₁, _, z₁, rfl⟩ := X.exists_nonDegenerate x₁
   obtain ⟨r₂, π₂, _, z₂, rfl⟩ := X.exists_nonDegenerate x₂
   rw [toTopObjMk_map, toTopObjMk_map] at h
-  have hc : X.toTopCellPointEquiv (toTopObjMk (N.mk z₁.1 z₁.2).simplex (w.map π₁)) =
-      X.toTopCellPointEquiv (toTopObjMk (N.mk z₂.1 z₂.2).simplex (w.map π₂)) :=
+  have hc : X.toTopCellPointEquiv (toTopObjMk (N.mk z₁.val z₁.property).simplex (w.map π₁)) =
+      X.toTopCellPointEquiv (toTopObjMk (N.mk z₂.val z₂.property).simplex (w.map π₂)) :=
     congrArg X.toTopCellPointEquiv h
-  rw [toTopCellPointEquiv_toTopObjMk_of_weights_ne_zero (N.mk z₁.1 z₁.2) (w.map π₁)
+  rw [toTopCellPointEquiv_toTopObjMk_of_weights_ne_zero (N.mk z₁.val z₁.property) (w.map π₁)
       (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₁ hw),
-    toTopCellPointEquiv_toTopObjMk_of_weights_ne_zero (N.mk z₂.1 z₂.2) (w.map π₂)
+    toTopCellPointEquiv_toTopObjMk_of_weights_ne_zero (N.mk z₂.val z₂.property) (w.map π₂)
       (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₂ hw)] at hc
-  have hsimp : N.mk z₁.1 z₁.2 = N.mk z₂.1 z₂.2 := congrArg ToTopCellPoint.simplex hc
+  have hsimp : N.mk z₁.val z₁.property = N.mk z₂.val z₂.property :=
+    congrArg ToTopCellPoint.simplex hc
   obtain rfl : r₁ = r₂ := congrArg (·.dim) hsimp
   obtain rfl : z₁ = z₂ := Subtype.ext (by simpa [N.mk, S.mk] using hsimp)
   have hcoords : w.map π₁ = w.map π₂ := by injection hc
