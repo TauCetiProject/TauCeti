@@ -108,8 +108,8 @@ theorem isIso_of_length_image_le_length_image_comp
   -- composite; comparing lengths, `θ` is an isomorphism.
   set θ := image.ι g ≫ f ≫ factorThruImage h with hθ
   have hV : length (image (g ≫ f ≫ h)) = length (image θ) :=
-    length_image_eq_of_fac (factorThruImage g ≫ factorThruImage θ) (image.ι θ ≫ image.ι h)
-      (by simp [θ])
+    length_image_eq_of_fac (e := factorThruImage g ≫ factorThruImage θ)
+      (m := image.ι θ ≫ image.ι h) (by simp [θ])
   have hU := le_antisymm (length_image_le_left θ) (hg.trans hV.le)
   have hW := le_antisymm (length_image_le_right θ) (hh.trans hV.le)
   have := mono_of_length_image_eq θ hU (hU ▸ hV ▸ hfin)
@@ -158,7 +158,8 @@ theorem length_image_map_le {F : ℕ ⥤ C} (hF : ∀ i, Indecomposable (F.obj i
       congr 1
     by_contra hcon
     have hc : ((b - n : ℕ) : ℕ∞) ≤ length (image (F.map φ)) := by
-      rw [show b - n = b - (n + 1) + 1 by omega, Nat.cast_add, Nat.cast_one]
+      have hsucc : b - n = b - (n + 1) + 1 := by omega
+      rw [hsucc, Nat.cast_add, Nat.cast_one]
       exact Order.add_one_le_of_lt (not_le.mp hcon)
     have hg := ih (homOfLE (Nat.le_add_right i (2 ^ n - 1))) le_rfl
     have hh := ih (homOfLE (by omega : a + 1 ≤ j)) (by omega)

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 public import Mathlib.RingTheory.Length
-public import TauCeti.CategoryTheory.Abelian.Length
+public import TauCeti.CategoryTheory.Subobject.Length
 import Mathlib.Algebra.Category.ModuleCat.Subobject
+import TauCeti.Algebra.Category.FGModuleCat.Basic
 import TauCeti.Algebra.Category.ModuleCat.Length
 import TauCeti.CategoryTheory.Subobject.FullSubcategory
 
@@ -17,23 +17,16 @@ import TauCeti.CategoryTheory.Subobject.FullSubcategory
 # The length of a finitely generated module as an object of `FGModuleCat`
 
 The length `CategoryTheory.length X` of a finitely generated module `X` as an object of
-`FGModuleCat A` is its length as a module (`FGModuleCat.length_eq`), over any ring `A`. Over a left
-Noetherian ring, submodules of finitely generated modules are finitely generated, so the finitely
-generated modules are closed under subobjects in `ModuleCat A`
-(`ModuleCat.isFG_isClosedUnderSubobjects`).
+`FGModuleCat A` is its length as a module (`FGModuleCat.length_eq`), over any ring `A`.
 
 ## Main results
 
-* `FGModuleCat.preservesMonomorphisms_ι`: a monomorphism of `FGModuleCat A` is injective.
-* `ModuleCat.isFG_isClosedUnderSubobjects`: over a left Noetherian ring, finitely generated modules
-  are closed under subobjects.
 * `FGModuleCat.length_eq`: `CategoryTheory.length X = Module.length A X.obj`.
 
 ## Implementation notes
 
-A monomorphism `f` of `FGModuleCat A` is injective: an element of its kernel spans a cyclic, hence
-finitely generated, submodule whose inclusion `f` kills. So the subobjects of `X` in
-`FGModuleCat A` embed into the submodules of `X.obj`
+A monomorphism of `FGModuleCat A` is injective (`FGModuleCat.preservesMonomorphisms_ι`), so the
+subobjects of `X` in `FGModuleCat A` embed into the submodules of `X.obj`
 (`CategoryTheory.ObjectProperty.subobjectOrderEmbedding`), giving
 `length X ≤ Module.length A X.obj`, and every finitely generated submodule is in the image.
 If `X.obj` is Noetherian, all its submodules are finitely generated, so the two lengths agree.
@@ -53,37 +46,6 @@ open CategoryTheory
 universe w v
 
 variable {A : Type v} [Ring A]
-
-/-- **A monomorphism of finitely generated modules is injective**: the inclusion
-`FGModuleCat A ⥤ ModuleCat A` preserves monomorphisms, over any ring `A`. -/
-instance FGModuleCat.preservesMonomorphisms_ι :
-    (ModuleCat.isFG.{w} A).ι.PreservesMonomorphisms where
-  preserves {X Y} f _ := by
-    refine (ModuleCat.mono_iff_injective _).2 ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
-    let N := Submodule.span A {x}
-    let Z : FGModuleCat.{w} A :=
-      ⟨ModuleCat.of A N, Module.Finite.iff_fg.2 (Submodule.fg_span_singleton x)⟩
-    have h : (ObjectProperty.homMk (ModuleCat.ofHom N.subtype) : Z ⟶ X) =
-        ObjectProperty.homMk 0 := by
-      refine (cancel_mono f).1 (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext ?_)))
-      intro y
-      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
-        ModuleCat.hom_comp, ConcreteCategory.hom_ofHom, LinearMap.coe_comp, Function.comp_apply,
-        ObjectProperty.homMk_zero, Limits.zero_comp, ObjectProperty.zero_hom, ModuleCat.hom_zero,
-        LinearMap.zero_apply]
-      -- `N.subtype y` is `y`, and `ConcreteCategory.hom` of a morphism of modules is its
-      -- underlying linear map, both definitionally.
-      exact LinearMap.mem_ker.1
-        ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hx) y.property)
-    simpa [Z] using congr_arg (fun g ↦ g.hom.hom ⟨x, Submodule.mem_span_singleton_self x⟩) h
-
-/-- **Over a left Noetherian ring, finitely generated modules are closed under subobjects**: a
-submodule of a finitely generated module is finitely generated. -/
-instance ModuleCat.isFG_isClosedUnderSubobjects [IsNoetherianRing A] :
-    (ModuleCat.isFG.{w} A).IsClosedUnderSubobjects where
-  prop_of_mono f _ hY := by
-    rw [ModuleCat.isFG_iff] at hY ⊢
-    exact Module.Finite.of_injective f.hom ((ModuleCat.mono_iff_injective f).1 inferInstance)
 
 /-- **The length of a finitely generated module as an object of `FGModuleCat A`** is its length as
 a module, over any ring `A`. -/

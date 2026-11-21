@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.RingTheory.Length
-public import TauCeti.CategoryTheory.Abelian.Length
+public import TauCeti.CategoryTheory.Subobject.Length
 import Mathlib.Algebra.Category.ModuleCat.Subobject
 
 /-!
