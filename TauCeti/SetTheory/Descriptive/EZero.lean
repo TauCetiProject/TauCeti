@@ -215,10 +215,10 @@ theorem not_isSmooth_of_borelReducible_eZero {X : Type*} [MeasurableSpace X] {E 
 
 /-! ### Borel reducibility of the graph -/
 
-/-- The graph of `E₀` is Borel reducible, as a set, to the diagonal of Cantor space: it is Borel,
-and the diagonal contains `(0, 0)` but not `(0, 1)`. -/
+/-- The graph of `E₀` is Borel reducible, as a set, to the diagonal of Cantor space. -/
 theorem borelReducible_setOf_eZero_diagonal :
     {p : (ℕ → Bool) × (ℕ → Bool) | eZero p.1 p.2}.BorelReducible (diagonal (ℕ → Bool)) :=
+  -- The graph is Borel, and the diagonal contains `(0, 0)` but not `(0, 1)`.
   measurableSet_eZero.borelReducible (y₁ := (fun _ => false, fun _ => false))
     (y₀ := (fun _ => false, fun _ => true)) (mem_diagonal _)
     fun h => Bool.false_ne_true (congrFun (mem_diagonal_iff.1 h) 0)

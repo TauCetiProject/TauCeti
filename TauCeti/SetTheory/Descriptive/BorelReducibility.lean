@@ -153,14 +153,14 @@ theorem BorelReducible.measurableSet (h : A.BorelReducible B) (hB : MeasurableSe
   exact hf hB
 
 /-- **Analyticity pulls back**: in a Polish space with its Borel σ-algebra, a set Borel reducible
-to an analytic subset of a second-countable Hausdorff space is analytic. A finer Polish topology
-on the source makes the reduction continuous, the preimage is analytic for it, and analytic sets
-stay analytic for the coarser original topology. -/
+to an analytic subset of a second-countable Hausdorff space is analytic. -/
 theorem BorelReducible.analyticSet [t : TopologicalSpace X] [PolishSpace X] [BorelSpace X]
     [TopologicalSpace Y] [T2Space Y] [SecondCountableTopology Y] [OpensMeasurableSpace Y]
     (h : A.BorelReducible B) (hB : MeasureTheory.AnalyticSet B) :
     MeasureTheory.AnalyticSet A := by
   obtain ⟨f, hf, rfl⟩ := h
+  -- A finer Polish topology on the source makes the reduction continuous, the preimage is
+  -- analytic for it, and analytic sets stay analytic for the coarser original topology.
   obtain ⟨t', ht', hft', ht'p⟩ := hf.exists_continuous
   -- Both topologies on `X` are in play, so the instances are passed explicitly.
   have h' := @MeasureTheory.AnalyticSet.preimage X Y t' _ ht'p _ B hB f hft'

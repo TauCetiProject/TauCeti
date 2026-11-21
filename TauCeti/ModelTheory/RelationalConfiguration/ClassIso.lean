@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Counting.Classes
+public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 
 /-!
@@ -22,7 +22,8 @@ every countable relational language, is Borel reducible to its own.
 The classes are arbitrary sets rather than model classes of sentences, because subclasses that
 are not invariant arise when comparing classes: the inclusion of a subclass, or the corestriction
 of a measurable map that preserves and reflects isomorphism, is a Borel reduction. On the model
-class of an infinitary sentence the relation is `TauCeti.RelationalConfiguration.isoSetoidOn`.
+class of an infinitary sentence it is `TauCeti.RelationalConfiguration.isoSetoidOn`, which is
+defined through it.
 
 ## Main definitions
 
@@ -41,7 +42,6 @@ class of an infinitary sentence the relation is `TauCeti.RelationalConfiguration
 * `TauCeti.RelationalConfiguration.borelReducible_classIso_of_mapsTo`: a measurable map between
   coding spaces that maps one class into another and preserves and reflects isomorphism on the
   first restricts to a Borel reduction.
-* `TauCeti.RelationalConfiguration.classIso_modelsOf`: on a model class it is `isoSetoidOn`.
 
 ## References
 
@@ -54,7 +54,7 @@ class of an infinitary sentence the relation is `TauCeti.RelationalConfiguration
 
 public section
 
-universe u v u' v' w w' uι
+universe u v u' v' w w'
 
 open FirstOrder FirstOrder.Language Set
 
@@ -64,8 +64,9 @@ variable {L : Language.{u, v}} [L.IsRelational] {α : Type w}
 
 /-- **Isomorphism restricted to a class.** For a set `K` of configurations on `α`, two members of
 `K` are related when their decoded structures are isomorphic: the pullback of `isoSetoid L α`
-along the inclusion of `K`. -/
-def classIso (K : Set (RelationalConfiguration L α)) : Setoid K :=
+along the inclusion of `K`. It is an abbreviation, so results stated for that pullback apply to
+it. -/
+abbrev classIso (K : Set (RelationalConfiguration L α)) : Setoid K :=
   (isoSetoid L α).comap Subtype.val
 
 variable {K A : Set (RelationalConfiguration L α)}
@@ -92,9 +93,10 @@ theorem classIso_iff_exists_perm_smul_eq {x y : K} :
   isoSetoid_iff_exists_perm_smul_eq
 
 /-- On the whole coding space, isomorphism restricted to the class `univ` is Borel bireducible
-with isomorphism: the inclusion of `univ` is a measurable equivalence. -/
+with isomorphism. -/
 theorem borelBireducible_classIso_univ :
     (classIso (univ : Set (RelationalConfiguration L α))).BorelBireducible (isoSetoid L α) :=
+  -- The inclusion of `univ` and its inverse are both measurable.
   Setoid.borelBireducible_iff.2
     ⟨Setoid.borelReducible_iff.2 ⟨Subtype.val, measurable_subtypeVal, fun _ _ => Iff.rfl⟩,
       Setoid.borelReducible_iff.2
@@ -125,7 +127,7 @@ theorem borelReducible_classIso_of_mapsTo {L' : Language.{u', v'}} [L'.IsRelatio
 
 /-- Isomorphism on the empty class is Borel reducible to isomorphism on every class, through the
 empty map. -/
-theorem borelReducible_classIso_empty {L' : Language.{u', v'}} [L'.IsRelational] {β : Type w'}
+theorem classIso_empty_borelReducible {L' : Language.{u', v'}} [L'.IsRelational] {β : Type w'}
     (K : Set (RelationalConfiguration L α)) :
     (classIso (∅ : Set (RelationalConfiguration L' β))).BorelReducible (classIso K) :=
   Setoid.borelReducible_iff.2 ⟨isEmptyElim, measurable_of_empty _, isEmptyElim⟩
@@ -140,12 +142,6 @@ theorem borelReducible_classIso_empty_iff {L' : Language.{u', v'}} [L'.IsRelatio
   · obtain ⟨f, -, -⟩ := Setoid.borelReducible_iff.1 h
     exact eq_empty_iff_forall_notMem.2 fun x hx => (f ⟨x, hx⟩).property
   · rintro rfl
-    exact borelReducible_classIso_empty _
-
-/-- On the model class of an infinitary sentence `φ`, isomorphism restricted to the class is
-isomorphism of models of `φ`, `isoSetoidOn α φ`. -/
-theorem classIso_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
-    classIso (modelsOf (V := α) φ) = isoSetoidOn α φ :=
-  (rfl)
+    exact classIso_empty_borelReducible _
 
 end TauCeti.RelationalConfiguration
