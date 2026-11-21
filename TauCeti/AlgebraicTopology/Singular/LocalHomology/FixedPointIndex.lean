@@ -88,7 +88,7 @@ opposite signs, one degenerate fixed point or none.
   set.
 * `ContinuousMap.fixedPointIndex_eq_sign_det_of_forall_eq`: an affine map `z ↦ A z + v` with
   `1 - A` invertible has index `sign det (1 - A)` on every open set containing its fixed point.
-* `ContinuousMap.fixedPointIndex_const`: a constant map has index `1`.
+* `ContinuousMap.fixedPointIndex_const`: a constant map with value in `U` has index `1`.
 * `ContinuousMap.localFixedPointIndex_of_subsingleton`,
   `ContinuousMap.fixedPointIndex_of_subsingleton`: in dimension zero the (local) index is `1`.
 * `ContinuousMap.two_mul_fixedPointIndex_eq_sign_sub_sign`: in dimension one, the index on an
