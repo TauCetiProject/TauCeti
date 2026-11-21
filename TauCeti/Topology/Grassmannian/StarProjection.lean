@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Basic
+public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -131,12 +131,11 @@ theorem norm_le_one {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) :
 
 /-- A point of `G(E, k)` with `k ≠ 0` has operator norm `1`. -/
 theorem norm_eq_one {P : E →L[𝕜] E} (hP : P ∈ grassmannian 𝕜 E k) (hk : k ≠ 0) :
-    ‖P‖ = 1 := by
-  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP.1
-  rw [h]
-  refine Submodule.norm_starProjection _ fun hb ↦ hk ?_
-  have := hP.2
-  rwa [hb, rank_bot, eq_comm, Nat.cast_eq_zero] at this
+    ‖P‖ = 1 :=
+  hP.1.norm_eq_one fun h ↦ hk <| by
+    have := hP.2
+    rwa [h, ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero, rank_bot, eq_comm,
+      Nat.cast_eq_zero] at this
 
 /-- The orthogonal projection onto a `k`-dimensional subspace is a point of `G(E, k)`. -/
 theorem starProjection_mem {S : Submodule 𝕜 E} [FiniteDimensional 𝕜 S]
@@ -230,9 +229,17 @@ end grassmannian
 complement of the range of `P`. -/
 @[simp]
 theorem range_one_sub_coe_grassmannian (P : grassmannian 𝕜 E k) :
-    LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ := by
-  obtain ⟨_, h⟩ := grassmannian.eq_starProjection_range P.property
-  rw [h, Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
+    LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ :=
+  P.property.1.range_one_sub
+
+/-- `G(E, 0) = {0}`: the only projection of rank zero is `0`. -/
+@[simp]
+theorem grassmannian_zero : grassmannian 𝕜 E 0 = {0} := by
+  ext P
+  rw [mem_grassmannian, mem_singleton_iff, Nat.cast_zero, Submodule.rank_eq_zero,
+    LinearMap.range_eq_bot, ← ContinuousLinearMap.toLinearMap_zero,
+    ContinuousLinearMap.coe_inj]
+  exact ⟨And.right, fun h ↦ ⟨h ▸ IsStarProjection.zero _, h⟩⟩
 
 end CompleteSpace
 
@@ -353,18 +360,6 @@ theorem grassmannianOrthogonalHomeomorph_symm (hkl : k + l = finrank 𝕜 E) :
     (grassmannianOrthogonalHomeomorph hkl).symm =
       grassmannianOrthogonalHomeomorph (𝕜 := 𝕜) (E := E) (by omega : l + k = finrank 𝕜 E) :=
   (rfl)
-
-/-- `G(E, 0) = {0}`: the only projection of rank zero is `0`. -/
-@[simp]
-theorem grassmannian_zero : grassmannian 𝕜 E 0 = {0} := by
-  ext P
-  simp only [mem_singleton_iff, mem_grassmannian_iff_exists_starProjection,
-    Submodule.finrank_eq_zero]
-  constructor
-  · rintro ⟨U, rfl, rfl⟩
-    exact Submodule.starProjection_bot
-  · rintro rfl
-    exact ⟨⊥, rfl, Submodule.starProjection_bot.symm⟩
 
 /-- `G(E, dim E) = {1}`: the only projection of full rank is the identity. -/
 @[simp]
