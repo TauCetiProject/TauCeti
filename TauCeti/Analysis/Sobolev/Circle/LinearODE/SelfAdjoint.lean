@@ -56,11 +56,10 @@ theorem isSelfAdjoint_domainOperator_I_smul_loopOperator
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
     IsSelfAdjoint (((inclusion (E := F) zero_le_one).restrictScalars ℝ).domainOperator
-      (I • loopOperator T S) (inclusion_injective zero_le_one)) := by
-  refine ContinuousLinearMap.isSelfAdjoint_domainOperator
-    (real_inner_I_smul_loopOperator_comm T S hS) (c := 0) rfl fun z ↦ ?_
-  obtain ⟨x, hx⟩ := ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL).surjective (-z)
-  exact ⟨x, by simp [hx]⟩
+      (I • loopOperator T S) (inclusion_injective zero_le_one)) :=
+  ContinuousLinearMap.isSelfAdjoint_domainOperator_of_isInvertible
+    (real_inner_I_smul_loopOperator_comm T S hS)
+    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
 
 /-- **The asymptotic operator of a nondegenerate loop has compact resolvent.** If `ζ' = S_t ζ`
 has no nonzero periodic solution, the operator `J₀ (d/dt - S_t)` on `H⁰(F)` with domain `H¹(F)`
@@ -68,15 +67,10 @@ has compact resolvent. -/
 theorem hasCompactResolvent_domainOperator_I_smul_loopOperator
     (hL : (loopOperator T S).IsInvertible) :
     (((inclusion (E := F) zero_le_one).restrictScalars ℝ).domainOperator
-      (I • loopOperator T S) (inclusion_injective zero_le_one)).HasCompactResolvent := by
-  refine ContinuousLinearMap.hasCompactResolvent_domainOperator (c := 0)
-    (isCompactOperator_inclusion (E := F) zero_lt_one) ?_
-  have hneg : (0 : ℝ) • (inclusion (E := F) zero_le_one).restrictScalars ℝ - I • loopOperator T S =
-      (ContinuousLinearEquiv.neg ℝ : CircleSobolev 0 F ≃L[ℝ] CircleSobolev 0 F) ∘L
-        (I • loopOperator T S) := by
-    ext; simp
-  rw [hneg]
-  exact ContinuousLinearMap.isInvertible_equiv.comp
-    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+      (I • loopOperator T S) (inclusion_injective zero_le_one)).HasCompactResolvent :=
+  ContinuousLinearMap.hasCompactResolvent_domainOperator (c := 0)
+    (isCompactOperator_inclusion (E := F) zero_lt_one)
+    (ContinuousLinearMap.isInvertible_zero_smul_sub_iff.2
+      ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL))
 
 end TauCeti.CircleSobolev

@@ -22,20 +22,24 @@ bounded from `H¹(S¹)` to `L²(S¹)`. Such pairs `(ι, A)` are the input of the
 `TauCeti.WeakDerivStep.domainTrajectoryOperator`. This file attaches to `(ι, A)` the partial linear
 operator `ContinuousLinearMap.domainOperator ι A hι` on `H` with domain `range ι`, acting by
 `ι x ↦ A x`, and translates the conditions usually placed on the pair into the native theory of
-partial operators. Symmetry and self-adjointness on an inner product space are in
+partial operators. The construction and its graph and closedness API allow `A` to take values in
+a second space `K`, as for the weak gradient `TauCeti.weakGradientPMap`. Symmetry and
+self-adjointness on an inner product space are in
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.CommonDomain`.
 
 * **Graph.** The graph of the partial operator is the range of `x ↦ (ι x, A x)`
   (`ContinuousLinearMap.graph_domainOperator`). If `D` is complete it is closed when the norm of
   `D` is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)`
-  (`ContinuousLinearMap.isClosed_domainOperator_of_norm_le`), and if `H` is complete as well, only
-  then (`ContinuousLinearMap.isClosed_domainOperator_iff`).
+  (`ContinuousLinearMap.isClosed_domainOperator_of_norm_le`), and if `H` and `K` are complete as
+  well, only then (`ContinuousLinearMap.isClosed_domainOperator_iff`).
 * **Resolvent.** If `c • ι - A : D → H` is invertible, `c` is a resolvent point with resolvent
   `ι ∘ (c • ι - A)⁻¹` (`ContinuousLinearMap.resolvent_domainOperator`); for complete `D` and `H`
   this characterizes the resolvent points
   (`ContinuousLinearMap.mem_resolventSet_domainOperator_iff`). If moreover `ι` is a compact
   operator, the partial operator has compact resolvent
-  (`ContinuousLinearMap.hasCompactResolvent_domainOperator`).
+  (`ContinuousLinearMap.hasCompactResolvent_domainOperator`). The shift at `c = 0` is invertible
+  exactly when `A` is (`ContinuousLinearMap.isInvertible_zero_smul_sub_iff`), so `0` is then a
+  resolvent point (`ContinuousLinearMap.mem_resolventSet_domainOperator_of_isInvertible`).
 
 When `ι` is the identity, the partial operator is the everywhere defined operator `A`
 (`ContinuousLinearMap.domainOperator_id`).
@@ -61,16 +65,17 @@ namespace ContinuousLinearMap
 
 section Basic
 
-variable {R D H : Type*} [Ring R] [AddCommGroup D] [Module R D] [TopologicalSpace D]
+variable {R D H K : Type*} [Ring R] [AddCommGroup D] [Module R D] [TopologicalSpace D]
   [AddCommGroup H] [Module R H] [TopologicalSpace H]
-  (ι A : D →L[R] H) (hι : Injective ι)
+  [AddCommGroup K] [Module R K] [TopologicalSpace K]
+  (ι : D →L[R] H) (A : D →L[R] K) (hι : Injective ι)
 
-/-- The partial linear operator on `H` with domain the range of an injective map `ι : D →L H`,
-acting by `ι x ↦ A x`. This is the unbounded operator on `H` described by a bounded operator
-`A : D →L H` on the common domain `D`. -/
-def domainOperator : H →ₗ.[R] H where
+/-- The partial linear operator from `H` to `K` with domain the range of an injective map
+`ι : D →L H`, acting by `ι x ↦ A x`. For `K = H`, this is the unbounded operator on `H` described
+by a bounded operator `A : D →L H` on the common domain `D`. -/
+def domainOperator : H →ₗ.[R] K where
   domain := LinearMap.range (ι : D →ₗ[R] H)
-  toFun := (A : D →ₗ[R] H) ∘ₗ (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).symm.toLinearMap
+  toFun := (A : D →ₗ[R] K) ∘ₗ (LinearEquiv.ofInjective (ι : D →ₗ[R] H) hι).symm.toLinearMap
 
 /-- The domain of `domainOperator ι A hι` is the range of `ι`. -/
 @[simp]
@@ -102,7 +107,7 @@ theorem domainOperator_apply_mk (x : D) (hx : ι x ∈ (domainOperator ι A hι)
 
 /-- A pair `(y, z)` lies on the graph of `domainOperator ι A hι` exactly when `y = ι x` and
 `z = A x` for some `x : D`. -/
-theorem mem_graph_domainOperator_iff {p : H × H} :
+theorem mem_graph_domainOperator_iff {p : H × K} :
     p ∈ (domainOperator ι A hι).graph ↔ ∃ x, ι x = p.1 ∧ A x = p.2 := by
   rw [LinearPMap.mem_graph_iff]
   constructor
@@ -115,7 +120,7 @@ theorem mem_graph_domainOperator_iff {p : H × H} :
 
 /-- The graph of `domainOperator ι A hι` is the range of `x ↦ (ι x, A x)`. -/
 theorem graph_domainOperator :
-    (domainOperator ι A hι).graph = LinearMap.range ((ι : D →ₗ[R] H).prod (A : D →ₗ[R] H)) := by
+    (domainOperator ι A hι).graph = LinearMap.range ((ι : D →ₗ[R] H).prod (A : D →ₗ[R] K)) := by
   ext p
   rw [mem_graph_domainOperator_iff]
   simp [Prod.ext_iff]
@@ -132,6 +137,20 @@ theorem domainOperator_id (A : H →L[R] H) :
       (LinearMap.toPMap_apply (A : H →ₗ[R] H) ⊤ ⟨y, hy'⟩).symm
 
 end Basic
+
+section Closed
+
+variable {R D H K : Type*} [CommRing R] [AddCommGroup D] [Module R D] [TopologicalSpace D]
+  [AddCommGroup H] [Module R H] [TopologicalSpace H]
+  [AddCommGroup K] [Module R K] [TopologicalSpace K]
+  {ι : D →L[R] H} {A : D →L[R] K} {hι : Injective ι}
+
+/-- `domainOperator ι A hι` is closed exactly when the range of `x ↦ (ι x, A x)` is closed. -/
+theorem isClosed_domainOperator_iff_isClosed_range :
+    (domainOperator ι A hι).IsClosed ↔ IsClosed (Set.range (ι.prod A)) := by
+  rw [LinearPMap.IsClosed, graph_domainOperator, ← coe_prod, LinearMap.coe_range, coe_coe]
+
+end Closed
 
 section Resolvent
 
@@ -165,6 +184,16 @@ theorem mem_resolventSet_domainOperator (h : (c • ι - A).IsInvertible) :
     c ∈ (domainOperator ι A hι).resolventSet :=
   (isResolventAt_domainOperator h).mem_resolventSet
 
+/-- The shift `0 • ι - A` of the pair is invertible exactly when `A` is. -/
+theorem isInvertible_zero_smul_sub_iff : ((0 : R) • ι - A).IsInvertible ↔ A.IsInvertible := by
+  have h : (0 : R) • ι - A = (ContinuousLinearEquiv.neg R : H ≃L[R] H) ∘L A := by ext; simp
+  rw [h, isInvertible_equiv_comp]
+
+/-- If `A` is invertible, then `0` is a resolvent point of `domainOperator ι A hι`. -/
+theorem mem_resolventSet_domainOperator_of_isInvertible (h : A.IsInvertible) :
+    0 ∈ (domainOperator ι A hι).resolventSet :=
+  mem_resolventSet_domainOperator (isInvertible_zero_smul_sub_iff.2 h)
+
 /-- If `c • ι - A` is invertible, the resolvent of `domainOperator ι A hι` at `c` is
 `ι ∘ (c • ι - A)⁻¹`. -/
 theorem resolvent_domainOperator (h : (c • ι - A).IsInvertible) :
@@ -197,47 +226,42 @@ theorem hasCompactResolvent_domainOperator (hcpt : IsCompactOperator ι)
     rw [resolvent_domainOperator h]
     exact hcpt.comp_clm _
 
-omit [IsTopologicalAddGroup H] [ContinuousConstSMul R H] in
-/-- `domainOperator ι A hι` is closed exactly when the range of `x ↦ (ι x, A x)` is closed. -/
-theorem isClosed_domainOperator_iff_isClosed_range :
-    (domainOperator ι A hι).IsClosed ↔ IsClosed (Set.range (ι.prod A)) := by
-  rw [LinearPMap.IsClosed, graph_domainOperator, ← coe_prod, LinearMap.coe_range, coe_coe]
-
 end Resolvent
 
 section Normed
 
-variable {𝕜 D H : Type*} [NontriviallyNormedField 𝕜]
+variable {𝕜 D H K : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup D] [NormedSpace 𝕜 D] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-  {ι A : D →L[𝕜] H} {hι : Injective ι} {c : 𝕜}
+  [NormedAddCommGroup K] [NormedSpace 𝕜 K]
 
 /-- For complete `D` and `H`, a scalar `c` is a resolvent point of `domainOperator ι A hι` exactly
 when `c • ι - A : D → H` is invertible. -/
-theorem mem_resolventSet_domainOperator_iff [CompleteSpace D] [CompleteSpace H] :
+theorem mem_resolventSet_domainOperator_iff [CompleteSpace D] [CompleteSpace H]
+    {ι A : D →L[𝕜] H} {hι : Injective ι} {c : 𝕜} :
     c ∈ (domainOperator ι A hι).resolventSet ↔ (c • ι - A).IsInvertible :=
   ⟨fun h ↦ isInvertible_iff_bijective.2 (bijective_smul_sub_of_mem_resolventSet h),
     mem_resolventSet_domainOperator⟩
 
 /-- If `D` is complete and its norm is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)`, then
 `domainOperator ι A hι` is closed. -/
-theorem isClosed_domainOperator_of_norm_le [CompleteSpace D] {C : ℝ}
-    (hC : ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖)) : (domainOperator ι A hι).IsClosed := by
+theorem isClosed_domainOperator_of_norm_le [CompleteSpace D] {ι : D →L[𝕜] H} {A : D →L[𝕜] K}
+    {hι : Injective ι} {C : ℝ} (hC : ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖)) :
+    (domainOperator ι A hι).IsClosed := by
   rw [isClosed_domainOperator_iff_isClosed_range]
-  obtain ⟨K, hK⟩ : ∃ K, AntilipschitzWith K (ι.prod A) := by
-    refine antilipschitzWith_iff_exists_mul_le_norm.2
-      ⟨(2 * max C 1)⁻¹, by positivity, fun x ↦ ?_⟩
-    rw [inv_mul_le_iff₀ (by positivity), prod_apply, Prod.norm_def]
-    have h2 : ‖ι x‖ + ‖A x‖ ≤ 2 * max (‖ι x‖) (‖A x‖) := by
-      linarith [le_max_left (‖ι x‖) (‖A x‖), le_max_right (‖ι x‖) (‖A x‖)]
+  have hbound : ∀ x, ‖x‖ ≤ (⟨2 * max C 0, by positivity⟩ : NNReal) * ‖ι.prod A x‖ := fun x ↦ by
+    have h₁ : ‖ι x‖ ≤ ‖ι.prod A x‖ := norm_fst_le (ι.prod A x)
+    have h₂ : ‖A x‖ ≤ ‖ι.prod A x‖ := norm_snd_le (ι.prod A x)
     calc ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖) := hC x
-      _ ≤ max C 1 * (2 * max (‖ι x‖) (‖A x‖)) :=
-        mul_le_mul (le_max_left _ _) h2 (by positivity) (by positivity)
-      _ = 2 * max C 1 * max (‖ι x‖) (‖A x‖) := by ring
-  exact hK.isClosed_range (ι.prod A).uniformContinuous
+      _ ≤ max C 0 * (‖ι x‖ + ‖A x‖) := by gcongr; exact le_max_left _ _
+      _ ≤ max C 0 * (2 * ‖ι.prod A x‖) := by gcongr; linarith
+      _ = (⟨2 * max C 0, by positivity⟩ : NNReal) * ‖ι.prod A x‖ := by
+        change _ = 2 * max C 0 * _; ring
+  exact ((ι.prod A).antilipschitz_of_bound hbound).isClosed_range (ι.prod A).uniformContinuous
 
-/-- For complete `D` and `H`, `domainOperator ι A hι` is closed exactly when the norm of `D` is
-bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)` for some `C`. -/
-theorem isClosed_domainOperator_iff [CompleteSpace D] [CompleteSpace H] :
+/-- For complete `D`, `H` and `K`, `domainOperator ι A hι` is closed exactly when the norm of `D`
+is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)` for some `C`. -/
+theorem isClosed_domainOperator_iff [CompleteSpace D] [CompleteSpace H] [CompleteSpace K]
+    {ι : D →L[𝕜] H} {A : D →L[𝕜] K} {hι : Injective ι} :
     (domainOperator ι A hι).IsClosed ↔ ∃ C, ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖) := by
   refine ⟨fun h ↦ ?_, fun ⟨C, hC⟩ ↦ isClosed_domainOperator_of_norm_le hC⟩
   obtain ⟨K, hK⟩ := (ι.prod A).antilipschitz_of_injective_of_isClosed_range
