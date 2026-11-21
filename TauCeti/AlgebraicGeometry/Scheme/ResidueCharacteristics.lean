@@ -86,6 +86,11 @@ namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}} {p : ℕ}
 
+/-- The only prime divisible by a prime `p` is `p` itself. -/
+private theorem prime_and_dvd_iff_eq (hp : p.Prime) {q : ℕ} : q.Prime ∧ p ∣ q ↔ q = p :=
+  ⟨fun ⟨hq, hpq⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp hq).mp hpq).symm,
+    by rintro rfl; exact ⟨hp, dvd_rfl⟩⟩
+
 /-- The residue characteristics of a scheme `X`: the primes `p` that are the characteristic of the
 residue field `κ(x)` at some point `x` of `X`. Residue characteristic zero contributes nothing, and
 the empty scheme has no residue characteristics. -/
@@ -109,12 +114,18 @@ theorem mem_residueChars_iff_exists_charP :
     p ∈ X.residueChars ↔ p.Prime ∧ ∃ x : X, CharP (X.residueField x) p := by
   simp only [mem_residueChars, ringChar.eq_iff]
 
+/-- A point lies in the zero locus of a global section `a` exactly when `a` vanishes in its
+residue field. -/
+theorem mem_zeroLocus_singleton_iff (a : Γ(X, ⊤)) (x : X) :
+    x ∈ X.zeroLocus {a} ↔ X.evaluation ⊤ x trivial a = 0 := by
+  rw [zeroLocus_singleton, Set.mem_compl_iff, SetLike.mem_coe,
+    ← X.evaluation_ne_zero_iff_mem_basicOpen x trivial, not_not]
+
 /-- A point lies in the zero locus of the global function `n` exactly when `n` vanishes in its
 residue field. -/
 theorem mem_zeroLocus_natCast_iff (n : ℕ) (x : X) :
     x ∈ X.zeroLocus {(n : Γ(X, ⊤))} ↔ (n : X.residueField x) = 0 := by
-  rw [zeroLocus_singleton, Set.mem_compl_iff, SetLike.mem_coe,
-    ← X.evaluation_ne_zero_iff_mem_basicOpen x trivial, map_natCast, not_not]
+  rw [mem_zeroLocus_singleton_iff, map_natCast]
 
 /-- A prime `p` is a residue characteristic exactly when it vanishes in some residue field. -/
 theorem mem_residueChars_iff_exists_natCast_eq_zero :
@@ -184,8 +195,7 @@ theorem _root_.TauCeti.AlgebraicGeometry.SchemeCharP.residueChars_eq [hp : Fact 
   ext q
   simp only [mem_residueChars_iff_not_isUnit, CharP.isUnit_natCast_iff hp.out, not_not,
     Set.mem_singleton_iff]
-  exact ⟨fun ⟨hq, hpq⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hp.out hq).mp hpq).symm,
-    by rintro rfl; exact ⟨hp.out, dvd_rfl⟩⟩
+  exact prime_and_dvd_iff_eq hp.out
 
 /-! ### Dominant morphisms of finite type -/
 
@@ -278,11 +288,9 @@ theorem residueChars_Spec_intLocalizationAtPrime (ℓ : ℕ) [hℓ : Fact ℓ.Pr
   rw [mem_residueChars_Spec_iff,
     ← map_natCast (algebraMap ℤ (Localization.AtPrime (Ideal.span {(ℓ : ℤ)}))) p]
   rw [IsLocalization.AtPrime.isUnit_to_map_iff _ (Ideal.span {(ℓ : ℤ)})]
-  simp only [Ideal.primeCompl, Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_compl_iff,
-    SetLike.mem_coe, Ideal.mem_span_singleton, Int.natCast_dvd_natCast, not_not,
+  simp only [Ideal.mem_primeCompl_iff, Ideal.mem_span_singleton, Int.natCast_dvd_natCast, not_not,
     Set.mem_singleton_iff]
-  exact ⟨fun ⟨hp, hℓp⟩ ↦ ((Nat.prime_dvd_prime_iff_eq hℓ.out hp).mp hℓp).symm,
-    by rintro rfl; exact ⟨hℓ.out, dvd_rfl⟩⟩
+  exact prime_and_dvd_iff_eq hℓ.out
 
 /-- Inverting `n` in the integers removes exactly the prime divisors of `n` from the residue
 characteristics; for instance `Spec ℤ[1/6]` has the primes other than `2` and `3`. -/
