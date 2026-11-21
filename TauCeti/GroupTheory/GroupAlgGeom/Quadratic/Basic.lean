@@ -1021,45 +1021,18 @@ end Commutators
 
 /-! ### The value at the trivial point -/
 
-section TrivialPoint
-
-variable (ι : G →* H) {n m : ℕ} {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
-
-/- The priority `high` makes these formulas fire before the evaluation formulas at a general point,
+/- The priority `high` makes this formula fire before the evaluation formulas at a general point,
 `eval_toWord_orientable` and its analogues in `Quadratic.Surface`, which would rewrite the value at
 the trivial point into a surface word. -/
 
-/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`: the word evaluates to `1` there. -/
+/-- The value of a standard quadratic equation `r₁ ⋯ r_k d = 1` at the trivial point is the product
+`(∏ⱼ₌₁ᵐ cⱼ) d` of its coefficients, mapped to `H`, where `c₁, …, c_m` are the coefficients of its
+conjugate atoms `zⱼ⁻¹ cⱼ zⱼ`. It is `1` for the types (1) and (3), which have no coefficients. -/
 @[simp high]
-theorem eval_one_toWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
-    eval ι 1 (orientable n hn x y inj).toWord = 1 :=
-  mem_V.1 (one_mem_V_orientable ι hn inj) _ rfl
-
-/-- The value of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d` at the trivial point is the product
-`∏ⱼ₌₁ᵐ cⱼ d` of its coefficients, mapped to `H`. -/
-@[simp high]
-theorem eval_one_toWord_orientableCoeff (hnm : 0 < n + m)
-    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
-    eval ι 1 (orientableCoeff n m hnm x y z inj c hc d hd).toWord =
-      (List.ofFn fun j => ι (c j)).prod * ι d := by
-  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def, map_commutatorElement]
-
-/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ xᵢ² = 1`: the word evaluates to `1` there. -/
-@[simp high]
-theorem eval_one_toWord_nonorientable (hn : 0 < n) (inj : x.Injective) :
-    eval ι 1 (nonorientable (G := G) n hn x inj).toWord = 1 := by
-  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-
-/-- The value of `∏ᵢ₌₁ⁿ xᵢ² ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d` at the trivial point is the product `∏ⱼ₌₁ᵐ cⱼ d` of
-its coefficients, mapped to `H`. -/
-@[simp high]
-theorem eval_one_toWord_nonorientableCoeff (hn : 0 < n) (inj : (Sum.elim x z).Injective)
-    (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
-    eval ι 1 (nonorientableCoeff n m hn x z inj c hc d hd).toWord =
-      (List.ofFn fun j => ι (c j)).prod * ι d := by
-  simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
-
-end TrivialPoint
+theorem eval_one_toWord (ι : G →* H) (S : Standard G X) :
+    eval ι 1 S.toWord = ι (S.coeffs.tail.prod * S.constant) := by
+  cases S <;>
+    simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def, map_commutatorElement]
 
 end Standard
 

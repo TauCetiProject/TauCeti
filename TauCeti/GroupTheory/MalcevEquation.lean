@@ -47,11 +47,12 @@ pairwise commuting elements.
   Vaught's condition.
 * `Group.IsVaught.isMulCommutative_closure`: in a group satisfying Vaught's condition, a solution
   of `x ^ 2 * y ^ 2 * z ^ 2 = 1` generates a commutative subgroup.
-* `Group.IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one`: in a torsion-free group satisfying
-  Vaught's condition, every solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` has `x * y * z = 1`.
 * `TauCeti.pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute`: if
   `a ^ 2 * b ^ 2 * c ^ 2 = 1` and `a * b * c` commutes with `a` and `b` and squares to the
   identity, then `a`, `b` and `c` commute pairwise.
+* `TauCeti.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one_of_commute`: in a torsion-free group, a
+  solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` by pairwise commuting elements has `x * y * z = 1`; by
+  Vaught's condition, every solution is of this kind.
 * `TauCeti.pairwise_commute_map_dihedralGroup_four_of_sq_mul_sq_mul_sq_eq_one`: in a group with
   torsion-free abelianization, every homomorphism to the dihedral group of order `8` sends a
   solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements.
@@ -112,14 +113,6 @@ theorem IsVaught.isMulCommutative_closure (hG : IsVaught G) {x y z : G}
   exact Subgroup.isMulCommutative_closure <| by
     simp [Set.pairwise_insert, hxy, hxz, hyz, hxy.symm, hxz.symm, hyz.symm]
 
-/-- In a torsion-free group satisfying Vaught's condition, `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces
-`x * y * z = 1`. -/
-theorem IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one [IsMulTorsionFree G] (hG : IsVaught G)
-    {x y z : G} (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) : x * y * z = 1 := by
-  obtain ⟨hxy, hxz, hyz⟩ := hG x y z h
-  refine (pow_eq_one_iff_left two_ne_zero).1 ?_
-  rwa [(hxz.mul_left hyz).mul_pow, hxy.mul_pow]
-
 end Group
 
 namespace TauCeti
@@ -146,6 +139,14 @@ theorem pairwise_commute_of_sq_mul_sq_mul_sq_eq_one_of_commute {a b c : G}
   have hac : Commute a c := hck ▸ ((Commute.refl a).mul_right hab).inv_right.mul_right ha
   have hbc : Commute b c := hck ▸ (hab.symm.mul_right (Commute.refl b)).inv_right.mul_right hb
   simp [Set.pairwise_insert, hab, hac, hbc, hab.symm, hac.symm, hbc.symm]
+
+/-- In a torsion-free group, pairwise commuting `x`, `y`, `z` with `x ^ 2 * y ^ 2 * z ^ 2 = 1`
+satisfy `x * y * z = 1`. -/
+theorem mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one_of_commute [IsMulTorsionFree G] {x y z : G}
+    (hxy : Commute x y) (hxz : Commute x z) (hyz : Commute y z) (h : x ^ 2 * y ^ 2 * z ^ 2 = 1) :
+    x * y * z = 1 := by
+  refine (pow_eq_one_iff_left two_ne_zero).1 ?_
+  rwa [(hxz.mul_left hyz).mul_pow, hxy.mul_pow]
 
 /-- In a group with torsion-free abelianization, every homomorphism to the dihedral group of order
 `8` sends a solution of `x ^ 2 * y ^ 2 * z ^ 2 = 1` to pairwise commuting elements. -/

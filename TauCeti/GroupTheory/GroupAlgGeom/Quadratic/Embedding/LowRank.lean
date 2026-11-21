@@ -7,12 +7,10 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Iterated
-import TauCeti.GroupTheory.FreeGroup.Commuting
 import TauCeti.GroupTheory.GroupAlgGeom.Abelian
 import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Regular
 import TauCeti.GroupTheory.GroupAlgGeom.Separated
 import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.FreeProduct
-import TauCeti.GroupTheory.NoncommPiCoprod
 
 /-!
 # Coordinate groups of `x₁² x₂² = 1` and `x₁² x₂² x₃² = 1`
@@ -23,9 +21,9 @@ commutative solutions in `G`:
 
 * `G` has unique roots, so every solution of `x₁² x₂² = 1` has `x₂ = x₁⁻¹`.
 * By Lyndon's theorem in free groups, `G` satisfies Vaught's condition
-  (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`); it is also torsion-free, so every solution of
-  `x₁² x₂² x₃² = 1` consists of pairwise commuting `x₁`, `x₂`, `x₃` with `x₁ x₂ x₃ = 1`
-  (`Group.IsVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one`).
+  (`TauCeti.LimitGroup.IsResiduallyFree.isVaught`), so every solution of `x₁² x₂² x₃² = 1`
+  consists of pairwise commuting `x₁`, `x₂`, `x₃`; `G` is also torsion-free, so `x₁ x₂ x₃ = 1`
+  (`TauCeti.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one_of_commute`).
 
 So the radicals of both equations are larger than their normal closures. If `G` is not abelian,
 they are described by these relations:
@@ -58,13 +56,14 @@ low-genus cases of the embedding theorem of [VAR-I].
 
 ## Main results
 
-* `Standard.exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two`: the coordinate
-  group of `x₁² x₂² = 1` embeds, over `G`, in an iterated extension of centralizers of `G`.
+* `Standard.exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two`: for a finite set
+  of variables `X`, the coordinate group of `x₁² x₂² = 1` embeds, over `G`, in an iterated
+  extension of centralizers of `G`.
 * `Standard.exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three`: the same for
-  `x₁² x₂² x₃² = 1`.
+  `x₁² x₂² x₃² = 1`, again for finite `X`.
 * `Standard.exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative`,
   `Standard.exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutative`: the same
-  embeddings for nonabelian `G` and a countable, possibly infinite, set of variables.
+  embeddings for nonabelian `G` and a countable, possibly infinite, set of variables `X`.
 
 ## References
 
@@ -97,9 +96,10 @@ theorem exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutativ
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {(nonorientable 2 two_pos x hx).toWord}) j),
       Function.Injective f := by
   classical
-  rw [show (nonorientable (G := G) 2 two_pos x hx).toWord =
-      inr (FreeGroup.of (x 0)) ^ 2 * inr (FreeGroup.of (x 1)) ^ 2 by
-    simp [toWord_def, List.ofFn_succ]]
+  have hword : (nonorientable (G := G) 2 two_pos x hx).toWord =
+      inr (FreeGroup.of (x 0)) ^ 2 * inr (FreeGroup.of (x 1)) ^ 2 := by
+    simp [toWord_def, List.ofFn_succ]
+  rw [hword]
   -- Every solution factors through the substitution `x₂ ↦ x₁⁻¹` of `G[X]`.
   have := hG.isResiduallyFree.hasUniqueRoots
   let p : X → GX G X :=
@@ -108,13 +108,16 @@ theorem exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutativ
   refine ((c.isDiscriminatedBy hG).isSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad
     (evalGHom inl p) (by simp [p, hx.ne zero_ne_one]) (fun w hw => mem_Rad.2 fun v hv => ?_) e
     he).elim fun f hf => ⟨E, _, j, c, f, hf.1⟩
-  -- By unique roots `v x₁ = (v x₂)⁻¹`, so `v` factors through the substitution.
-  have hv₁ : v (x 0) = (v (x 1))⁻¹ := by
-    simpa [mul_eq_one_iff_eq_inv, ← inv_pow, (pow_left_injective two_ne_zero).eq_iff] using
-      (mem_V.1 hv) _ rfl
-  have hfac : (eval (.id G) v).comp (evalGHom inl p : GX G X →* GX G X) = eval (.id G) v :=
-    GX.ext_hom (fun g => by simp) fun y => by by_cases hy : y = x 1 <;> simp [p, hy, hv₁]
-  rw [← hfac, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hw, map_one]
+  -- By unique roots `v x₁ v x₂ = 1`, so `v` factors through the substitution.
+  rw [V_pow_mul_pow two_ne_zero] at hv
+  have hv₁ : v (x 0) = (v (x 1))⁻¹ := eq_inv_of_mul_eq_one_left (by simpa using (mem_V.1 hv) _ rfl)
+  have hfac : (eval (.id G) v).comp (eval inl p) = eval (.id G) v := by
+    rw [eval_comp_eval]
+    congr 1
+    funext y
+    by_cases hy : y = x 1 <;> simp [p, hy, hv₁]
+  have hw' : eval inl p w = 1 := by simpa using hw
+  rw [← hfac, MonoidHom.comp_apply, hw', map_one]
 
 /-- Over a nonabelian fully residually free group `G`, the coordinate group of
 `x₁² x₂² x₃² = 1` in a countable set of variables embeds, over `G`, in an iterated extension of
@@ -125,9 +128,10 @@ theorem exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutat
     ∃ (E : Type u) (_ : Group E) (j : G →* E) (_ : ICE G E j)
       (f : GHom (CoordGroup.coeff (MonoidHom.id G) {(nonorientable 3 three_pos x hx).toWord}) j),
       Function.Injective f := by
-  rw [show (nonorientable (G := G) 3 three_pos x hx).toWord = inr (FreeGroup.of (x 0)) ^ 2 *
-      inr (FreeGroup.of (x 1)) ^ 2 * inr (FreeGroup.of (x 2)) ^ 2 by
-    simp [toWord_def, List.ofFn_succ, mul_assoc]]
+  have hword : (nonorientable (G := G) 3 three_pos x hx).toWord = inr (FreeGroup.of (x 0)) ^ 2 *
+      inr (FreeGroup.of (x 1)) ^ 2 * inr (FreeGroup.of (x 2)) ^ 2 := by
+    simp [toWord_def, List.ofFn_succ, mul_assoc]
+  rw [hword]
   -- Every solution factors through the map `G[X] →* G[X] ∗ ℤ²` sending `x₁`, `x₂` to the
   -- generators `a₁`, `a₂` of `ℤ²` and `x₃` to `(a₁ a₂)⁻¹`.
   let a : Fin 2 → Fin 2 → Multiplicative ℤ := fun i => Pi.mulSingle i (.ofAdd 1)
@@ -141,27 +145,32 @@ theorem exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutat
     (evalGHom _ p)
     (by simpa [p, hx.extend_apply] using congrArg (inr : _ →* Monoid.Coprod (GX G X) _) ha)
     (fun w hw => mem_Rad.2 fun v hv => ?_) e he).elim fun f hf => ⟨E, _, j, c, f, hf.1⟩
-  -- By Vaught's condition and torsion-freeness, `v x₁`, `v x₂` commute and `v x₁ v x₂ v x₃ = 1`.
+  -- By Vaught's condition `v x₁`, `v x₂`, `v x₃` commute pairwise, and by torsion-freeness
+  -- `v x₁ v x₂ v x₃ = 1`.
   have := hG.isResiduallyFree.isMulTorsionFree
   have hsq : v (x 0) ^ 2 * v (x 1) ^ 2 * v (x 2) ^ 2 = 1 := by simpa using (mem_V.1 hv) _ rfl
-  have h01 := ((Group.isVaught_iff G).1 hG.isResiduallyFree.isVaught _ _ _ hsq).1
-  have hv₃ := hG.isResiduallyFree.isVaught.mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one hsq
+  obtain ⟨h01, h02, h12⟩ := (Group.isVaught_iff G).1 hG.isResiduallyFree.isVaught _ _ _ hsq
+  have hv₃ := mul_mul_eq_one_of_sq_mul_sq_mul_sq_eq_one_of_commute h01 h02 h12 hsq
   let τ : Fin 2 → G := ![v (x 0), v (x 1)]
   have hτ : ∀ i j, Commute (τ i) (τ j) := by simp [τ, Fin.forall_fin_two, h01, h01.symm]
-  have hfac : (Monoid.Coprod.lift (eval (.id G) v) (zpowersPiHom τ hτ)).comp
-      (evalGHom (inl.comp inl) p : GX G X →* Monoid.Coprod (GX G X) (Fin 2 → Multiplicative ℤ)) =
-        eval (.id G) v := by
-    refine GX.ext_hom (fun g => by simp) fun y => ?_
-    obtain ⟨i, rfl⟩ | hy := em (∃ i, x i = y)
-    · simp only [MonoidHom.coe_comp, MonoidHom.coe_ofClass, coe_evalGHom, Function.comp_apply,
-        eval_inr, FreeGroup.lift_apply_of, hx.extend_apply, lift_apply_inr, p]
-      fin_cases i <;> simp [τ, a, eq_inv_of_mul_eq_one_right hv₃]
-    · simp [p, Function.extend_apply' _ _ _ hy]
-  rw [← hfac, MonoidHom.comp_apply, MonoidHom.mem_ker.1 hw, map_one]
+  let φ := Monoid.Coprod.lift (eval (.id G) v) (zpowersPiHom τ hτ)
+  have hfac : φ.comp (eval (inl.comp inl) p) = eval (.id G) v := by
+    rw [MonoidHom.comp_eval]
+    congr 1
+    · ext g
+      simp [φ]
+    · funext y
+      obtain ⟨i, rfl⟩ | hy := em (∃ i, x i = y)
+      · fin_cases i <;> simp [φ, p, τ, a, hx.extend_apply, eq_inv_of_mul_eq_one_right hv₃]
+      · simp [φ, p, Function.extend_apply' _ _ _ hy]
+  have hw' : eval (inl.comp inl) p w = 1 := by simpa using hw
+  rw [← hfac, MonoidHom.comp_apply, hw', map_one]
 
 /-- Over a fully residually free group `G`, the coordinate group of `x₁² x₂² = 1`, the
-non-orientable standard quadratic equation of genus two without coefficients, embeds, over `G`,
-in an iterated extension of centralizers of `G`. -/
+non-orientable standard quadratic equation of genus two without coefficients, in a finite set of
+variables `X` embeds, over `G`, in an iterated extension of centralizers of `G`. For nonabelian `G`
+and countable `X`, see `exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative`.
+-/
 theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
     (hG : IsFullyResiduallyFree G) [Finite X] {S : Standard G X} (ho : ¬S.IsOrientable)
     (hc : S.constant = 1) (hg : S.genus = 2) :
@@ -174,8 +183,10 @@ theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_two
   exact exists_ice_embedding_coordGroup_nonorientable_two_of_not_isMulCommutative hG hna inj
 
 /-- Over a fully residually free group `G`, the coordinate group of `x₁² x₂² x₃² = 1`, the
-non-orientable standard quadratic equation of genus three without coefficients, embeds, over `G`,
-in an iterated extension of centralizers of `G`. -/
+non-orientable standard quadratic equation of genus three without coefficients, in a finite set of
+variables `X` embeds, over `G`, in an iterated extension of centralizers of `G`. For nonabelian `G`
+and countable `X`, see
+`exists_ice_embedding_coordGroup_nonorientable_three_of_not_isMulCommutative`. -/
 theorem exists_ice_embedding_coordGroup_of_not_isOrientable_of_genus_eq_three
     (hG : IsFullyResiduallyFree G) [Finite X] {S : Standard G X} (ho : ¬S.IsOrientable)
     (hc : S.constant = 1) (hg : S.genus = 3) :

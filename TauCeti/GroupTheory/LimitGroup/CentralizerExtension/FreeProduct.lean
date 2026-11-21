@@ -25,11 +25,12 @@ For `K = G` the second one embeds the free `G`-group `G[X] = G ∗ F(X)` on a co
 over `G` in the single extension `G(u, ℤ)`. Over a nonabelian fully residually free group `H`, an
 element `u` that is not a proper power and an element `g ∉ C_H(u)` exist by root reduction, so
 `H[X]` and `H ∗ ℤⁿ` embed over `H` in one admissible extension of a centralizer of `H`. These are
-the free and the free abelian levels of a normalized tower over `H`. More generally, a group `K`
-that embeds over `H` in an iterated extension of centralizers of `H` is nonabelian and fully
-residually free, so `K ∗ ℤⁿ` embeds over `K` in an iterated extension of centralizers of `K`;
-composing the two embeddings (`TauCeti.LimitGroup.ICE.exists_embedding_comp`) embeds `K ∗ ℤⁿ`
-over `H` in an iterated extension of centralizers of `H`. For `K = H[X]` this embeds `H[X] ∗ ℤⁿ`.
+the free and the free abelian levels of a normalized tower over `H`. More generally, over a
+nonabelian fully residually free group `H`, a group `K` that embeds over `H` in an iterated
+extension of centralizers of `H` is itself nonabelian and fully residually free, so `K ∗ ℤⁿ` embeds
+over `K` in an iterated extension of centralizers of `K`; composing the two embeddings
+(`TauCeti.LimitGroup.ICE.exists_embedding_comp`) embeds `K ∗ ℤⁿ` over `H` in an iterated
+extension of centralizers of `H`. For `K = H[X]` this embeds `H[X] ∗ ℤⁿ`.
 
 ## Main results
 
@@ -39,8 +40,9 @@ over `H` in an iterated extension of centralizers of `H`. For `K = H[X]` this em
 * `TauCeti.LimitGroup.exists_ice_embedding_GX`: `H[X]` embeds over `H` in an ICE group over `H`.
 * `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi`: `H ∗ ℤⁿ` embeds over `H` in an ICE group
   over `H`.
-* `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`: if `K` embeds over
-  `H` in an ICE group over `H`, so does `K ∗ ℤⁿ`.
+* `TauCeti.LimitGroup.exists_ice_embedding_coprod_pi_of_exists_ice_embedding`: for a nonabelian
+  fully residually free group `H`, if `K` embeds over `H` in an ICE group over `H`, so does
+  `K ∗ ℤⁿ`.
 
 ## Implementation notes
 
@@ -410,11 +412,13 @@ theorem exists_ice_embedding_coprod_pi_of_exists_ice_embedding (hH : IsFullyResi
       Function.Injective f := by
   obtain ⟨E, _, j, c, e, he⟩ := hK
   -- `K` embeds in `E`, so it is fully residually free, and it contains `H`, so it is nonabelian.
-  have hκ : Function.Injective κ := fun a b h => c.injective <| by
-    rw [← e.map_coeff, ← e.map_coeff, h]
+  have hκ : Function.Injective κ := by
+    have hj := c.injective
+    rw [← e.comp_coeff, MonoidHom.coe_comp] at hj
+    exact hj.of_comp
   obtain ⟨E', _, j', c', g, hg⟩ := exists_ice_embedding_coprod_pi
     ((c.isFullyResiduallyFree hH).of_injective he)
-    (fun _ => hH' <| .of_comm fun a b => hκ <| by rw [map_mul, map_mul, mul_comm']) n
+    (fun _ => hH' <| .of_comm fun a b => (Commute.of_map hκ (mul_comm' (κ a) (κ b))).eq) n
   exact ICE.exists_embedding_comp hH c e he c' g hg
 
 end TauCeti.LimitGroup

@@ -518,11 +518,14 @@ theorem IsSeparatedBy.exists_injective_gHom_coordGroup_of_ker_le_Rad (h : IsSepa
     (hS : S ⊆ (σ : GX G X →* L).ker) (hσ : (σ : GX G X →* L).ker ≤ Rad ι S) (e : GHom l κ)
     (he : Function.Injective e) :
     ∃ f : GHom (CoordGroup.coeff ι S) κ, Function.Injective f ∧
-      ∀ w : GX G X, f (w : CoordGroup ι S) = e (σ w) :=
+      ∀ w : GX G X, f (w : CoordGroup ι S) = e (σ w) := by
   -- `G[X] ⧸ ker σ` embeds in `K` through `e`.
-  h.exists_injective_gHom_coordGroup_of_injective (hS.trans (subset_Rad _)) hσ
-    ⟨(e : L →* K).comp (QuotientGroup.kerLift _), fun g => by simp [GX.quotientCoeff_apply]⟩
+  obtain ⟨f, hf, hfw⟩ := h.exists_injective_gHom_coordGroup_of_injective (hS.trans (subset_Rad _))
+    hσ ⟨(e : L →* K).comp (QuotientGroup.kerLift _), fun g => by simp [GX.quotientCoeff_apply]⟩
     (he.comp (QuotientGroup.kerLift_injective _))
+  refine ⟨f, hf, fun w => ?_⟩
+  simp only [hfw, GHom.coe_mk, MonoidHom.comp_apply, QuotientGroup.kerLift_mk,
+    MonoidHom.coe_ofClass]
 
 section Example
 
