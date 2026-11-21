@@ -54,7 +54,8 @@ Euclidean algorithm, matched at the inversion step by Dedekind's reciprocity law
 ## Main results
 
 * `TauCeti.ModularForm.etaMultiplier_eq_exp_sum_fract_of_c_pos`,
-  `TauCeti.ModularForm.eta_smul_of_c_pos`: **Dedekind's functional equation** for `c > 0`.
+  `TauCeti.ModularForm.eta_smul_of_c_pos`,
+  `TauCeti.ModularForm.etaTransformation`: **Dedekind's functional equation** for `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_of_c_neg`,
   `TauCeti.ModularForm.etaMultiplier_of_c_ne_zero`: explicit Dedekind-sum formulas for `c < 0` and
   all `c ≠ 0`.
@@ -109,6 +110,23 @@ theorem eta_smul_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (τ : ℍ) :
         (((γ 0 0 : ℂ) + γ 1 1) / (12 * γ 1 0) - dedekindSum (γ 1 1) (γ 1 0) - 1 / 4)) *
       Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ := by
   rw [eta_smul, etaMultiplier_of_c_pos γ hc]
+
+/-- **Dedekind's functional equation**: under each element `γ ∈ SL(2, ℤ)`, `η` transforms by a
+24th root of unity times the principal square root of `c τ + d`, and when `c = γ 1 0 > 0` that root
+of unity is given explicitly by the finite `Int.fract` Dedekind sum (Apostol, Theorem 3.4). -/
+theorem etaTransformation (γ : SL(2, ℤ)) :
+    ∃ ε : ℂ, ε ^ 24 = 1 ∧
+      (∀ τ : ℍ, η (γ • τ : ℍ) =
+        ε * Complex.sqrt ((γ 1 0 : ℂ) * τ + (γ 1 1 : ℂ)) * η τ) ∧
+      (0 < γ 1 0 → ε = cexp (π * I *
+        (((γ 0 0 + γ 1 1 : ℤ) : ℂ) / (12 * (γ 1 0 : ℂ)) -
+          ∑ r ∈ Finset.Ioo (0 : ℤ) (γ 1 0), ((r : ℂ) / (γ 1 0 : ℂ)) *
+            (((Int.fract (((γ 1 1 * r : ℤ) : ℝ) / (γ 1 0 : ℝ)) : ℝ) : ℂ) - 1 / 2) -
+          1 / 4))) := by
+  refine ⟨etaMultiplier γ, etaMultiplier_pow_twentyFour γ, eta_smul γ, fun hc ↦ ?_⟩
+  rw [etaMultiplier_eq_exp_sum_fract_of_c_pos γ hc]
+  push_cast
+  rfl
 
 /-! ### Formulas for `c < 0` and arbitrary `c ≠ 0` -/
 

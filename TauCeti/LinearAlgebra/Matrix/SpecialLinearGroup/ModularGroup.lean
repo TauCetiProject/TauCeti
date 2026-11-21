@@ -42,6 +42,9 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   of `γ`.
 * `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
   `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
+* `Matrix.SpecialLinearGroup.mul_S_apply`, `Matrix.SpecialLinearGroup.mul_T_apply`,
+  `Matrix.SpecialLinearGroup.mul_T_zpow_apply`: row entries of `γ * S`, `γ * T`, and `γ * T ^ n` for
+  `γ ∈ SL(2, ℤ)`.
 -/
 
 public section
@@ -196,3 +199,25 @@ theorem mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ
   simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
 
 end TauCeti.ModularGroup
+
+namespace Matrix.SpecialLinearGroup
+
+open _root_.ModularGroup
+
+/-- Right multiplication by `S` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 1, -γ i 0)`. -/
+theorem mul_S_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i = ![γ i 1, -γ i 0] := by
+  ext j
+  fin_cases j <;> simp [coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- Right multiplication by `T ^ n` sends row `i` of `γ ∈ SL(2, ℤ)` to
+`(γ i 0, γ i 0 * n + γ i 1)`. -/
+theorem mul_T_zpow_apply (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i = ![γ i 0, γ i 0 * n + γ i 1] := by
+  ext j
+  fin_cases j <;> simp [coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- Right multiplication by `T` sends row `i` of `γ ∈ SL(2, ℤ)` to `(γ i 0, γ i 0 + γ i 1)`. -/
+theorem mul_T_apply (γ : SL(2, ℤ)) (i : Fin 2) : (γ * T) i = ![γ i 0, γ i 0 + γ i 1] := by
+  simpa using mul_T_zpow_apply γ 1 i
+
+end Matrix.SpecialLinearGroup

@@ -13,9 +13,10 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and packages the principal square
-root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
+involving sums of principal roots. The file also records the values `√i = e^{π i / 4}`,
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the negation law
+`Complex.sqrt_neg` together with its open half-plane corollaries `√(-z) = ∓i √z`, and
+packages the principal square root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
 -/
 
 public section
@@ -54,6 +55,45 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
     sqrt_eq_exp hτ₀, hlog, log_neg_I, log_I, ← exp_neg, ← exp_add]
   congr 1
   ring
+
+/-- Negating the input multiplies the principal square root by `-i` when `z.im > 0` or `z` is a
+negative real number, and by `i` otherwise. -/
+theorem sqrt_neg (z : ℂ) :
+    sqrt (-z) = if 0 < z.im ∨ (z.im = 0 ∧ z.re < 0) then -I * sqrt z else I * sqrt z := by
+  rcases lt_trichotomy z.im 0 with hz | hz | hz
+  · have hneg : 0 ≤ (-z).im := by simp [hz.le]
+    rw [ite_eq_right (by rintro (h | ⟨h, _⟩) <;> linarith), sqrt_eq_real_add_ite,
+      sqrt_eq_real_add_ite, ite_eq_right hz.not_ge, ite_eq_left hneg]
+    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg, one_mul, neg_one_mul]
+    ring_nf
+    rw [I_sq]
+    ring
+  · rcases lt_or_ge z.re 0 with hre | hre
+    · rw [ite_eq_left (Or.inr ⟨hz, hre⟩)]
+      have h := sqrt_neg_of_nonneg (a := -z)
+        (by rw [nonneg_iff]; exact ⟨by simp [hre.le], by simp [hz]⟩)
+      rw [neg_neg] at h
+      rw [h, ← mul_assoc]
+      simp
+    · rw [ite_eq_right (by rintro (h | ⟨_, h⟩) <;> linarith)]
+      exact sqrt_neg_of_nonneg (by rw [nonneg_iff]; exact ⟨hre, hz.symm⟩)
+  · have hneg : ¬ 0 ≤ (-z).im := by simp [hz]
+    rw [ite_eq_left (Or.inl hz), sqrt_eq_real_add_ite, sqrt_eq_real_add_ite,
+      ite_eq_left hz.le, ite_eq_right hneg]
+    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg, one_mul, neg_one_mul]
+    ring_nf
+    rw [I_sq]
+    ring
+
+/-- In the open upper half-plane, negating the input multiplies the principal square root by `-i`:
+`arg (-z) = arg z - π`. -/
+theorem sqrt_neg_of_im_pos {z : ℂ} (hz : 0 < z.im) : sqrt (-z) = -I * sqrt z := by
+  rw [sqrt_neg, ite_eq_left (Or.inl hz)]
+
+/-- In the open lower half-plane, negating the input multiplies the principal square root by `i`:
+`arg (-z) = arg z + π`. -/
+theorem sqrt_neg_of_im_neg {z : ℂ} (hz : z.im < 0) : sqrt (-z) = I * sqrt z := by
+  rw [sqrt_neg, ite_eq_right (by rintro (h | ⟨h, _⟩) <;> linarith)]
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]
