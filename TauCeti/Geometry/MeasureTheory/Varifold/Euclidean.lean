@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Measure.Subtype
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.Grassmannian.StarProjection
 public import TauCeti.Topology.Sets.Opens
@@ -146,7 +147,7 @@ noncomputable def restrictOpens (V : Measure (W × grassmannian E k)) (h : W' �
 theorem restrictOpens_self : restrictOpens V le_rfl = V := by
   have : (Prod.map (inclusion le_rfl) id : W × grassmannian E k → W × grassmannian E k) =
       fun p ↦ p := by
-    ext p <;> rfl
+    ext p <;> simp
   rw [restrictOpens, this, Measure.comap_id]
 
 @[simp]
@@ -166,8 +167,8 @@ variable [BorelSpace E]
 /-- The weight is carried by `W`. -/
 @[simp]
 theorem weight_compl_opens : weight V (W : Set E)ᶜ = 0 := by
-  rw [weight_apply W.isOpen.measurableSet.compl, preimage_compl, Subtype.coe_preimage_self,
-    compl_univ, preimage_empty, measure_empty]
+  rw [weight_apply W.isOpen.measurableSet.compl, preimage_compl, Subtype.coe_preimage_self]
+  simp
 
 /-- The mass `𝐌(V) = V univ` of a varifold is the weight of `W`. -/
 @[simp]
@@ -194,8 +195,7 @@ theorem ae_mem_support_weight [SecondCountableTopology E] :
 private theorem measurableEmbedding_inclusion_prodMap (h : W' ≤ W) :
     MeasurableEmbedding
       (Prod.map (inclusion h) id : W' × grassmannian E k → W × grassmannian E k) :=
-  MeasurableEmbedding.prodMap ⟨inclusion_injective h, measurable_inclusion h,
-    fun _ hs ↦ .image_inclusion h W'.isOpen.measurableSet hs⟩ .id
+  (W'.isOpen.measurableSet.measurableEmbedding_inclusion h).prodMap .id
 
 /-- The restriction to `W'` gives a set of pairs over `W'` the mass that `V` gives to it. -/
 theorem restrictOpens_apply (h : W' ≤ W) (s : Set (W' × grassmannian E k)) :
@@ -209,7 +209,7 @@ theorem map_restrictOpens (h : W' ≤ W) :
       V.restrict (Prod.fst ⁻¹' (Subtype.val ⁻¹' W')) := by
   rw [restrictOpens, (measurableEmbedding_inclusion_prodMap h).map_comap, range_prodMap,
     range_inclusion h, range_id, prod_univ]
-  rfl
+  exact congrArg V.restrict (ext fun p ↦ by simp)
 
 /-- The restriction of a varifold to an open subset is a varifold. -/
 instance isFiniteMeasureOnCompacts_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W) :
@@ -219,6 +219,7 @@ instance isFiniteMeasureOnCompacts_restrictOpens [IsFiniteMeasureOnCompacts V] (
     exact (hK.image ((continuous_inclusion h).prodMap continuous_id)).measure_lt_top
 
 /-- Restriction to open subsets is transitive. -/
+@[simp]
 theorem restrictOpens_restrictOpens (h' : W'' ≤ W') (h : W' ≤ W) :
     restrictOpens (restrictOpens V h) h' = restrictOpens V (h'.trans h) := by
   rw [restrictOpens, restrictOpens, restrictOpens, Measure.comap_comap
@@ -235,6 +236,7 @@ theorem restrictOpens_add (V₁ V₂ : Measure (W × grassmannian E k)) (h : W' 
 
 /-- Restriction to an open subset commutes with the restriction `V⌞A` to the pairs with base point
 in a set `A`. -/
+@[simp]
 theorem restrictOpens_restrict (h : W' ≤ W) (A : Set E) :
     restrictOpens (V.restrict (Prod.fst ⁻¹' (Subtype.val ⁻¹' A))) h =
       (restrictOpens V h).restrict (Prod.fst ⁻¹' (Subtype.val ⁻¹' A)) :=
@@ -247,7 +249,7 @@ theorem weight_restrictOpens (h : W' ≤ W) :
     weight (restrictOpens V h) = (weight V).restrict W' := by
   rw [← weight_restrict W'.isOpen.measurableSet, ← map_restrictOpens h, weight, weight,
     Measure.map_map measurable_coe_fst (measurableEmbedding_inclusion_prodMap h).measurable]
-  rfl
+  simp [Function.comp_def]
 
 /-- The support of the weight of the restriction of `V` to an open `W' ⊆ W`, taken relative to
 `W'`, is `spt ‖V‖ ∩ W'`. -/
