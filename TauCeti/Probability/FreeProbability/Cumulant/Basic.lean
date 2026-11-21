@@ -485,4 +485,21 @@ theorem freeCumulant_eq_of_orderIso (e : NoncrossingPartition s ≃o Noncrossing
 
 end OrderIso
 
+/-- Pulling a functional back along a monoid homomorphism is equivalent to mapping every
+argument forward. No linearity of the functional is required. -/
+theorem freeCumulant_comp_monoidHom {B : Type*} [Monoid A] [Monoid B] [CommRing R]
+    (φ : B → R) (f : A →* B) (a : α → A) (s : Finset α) :
+    freeCumulant (φ ∘ f) a s = freeCumulant φ (f ∘ a) s := by
+  simp [freeCumulant_def, partitionCumulant_def, partitionMoment_def,
+    Function.comp_def, map_list_prod, List.map_map]
+
+/-- Cumulants agree when their tuples list exactly the same arguments, even when the tuple
+lengths are written differently. -/
+theorem freeCumulant_congr_of_ofFn_eq [Monoid A] [CommRing R] (φ : A → R)
+    {n m : ℕ} {a : Fin n → A} {b : Fin m → A} (h : List.ofFn a = List.ofFn b) :
+    freeCumulant φ a univ = freeCumulant φ b univ := by
+  have hn : n = m := by simpa using congrArg List.length h
+  subst m
+  rw [List.ofFn_injective h]
+
 end TauCeti
