@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
 /-!
 # Linear extension of vertex data over a realization

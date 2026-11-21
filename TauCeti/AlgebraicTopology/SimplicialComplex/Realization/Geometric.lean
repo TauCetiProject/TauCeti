@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyFinite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.VertexScheme
 
@@ -189,6 +188,7 @@ theorem range_realizationToAmbient : range K.realizationToAmbient = K.space := b
     exact range_comp_subset_range _ _ hps
 
 /-- The comparison map takes values in the underlying space of `K`. -/
+@[simp]
 theorem realizationToAmbient_mem_space (x : Realization K.vertexScheme) :
     K.realizationToAmbient x ∈ K.space :=
   range_realizationToAmbient (K := K) ▸ mem_range_self x
@@ -207,6 +207,17 @@ theorem realizationToAmbient_mem_convexHull_iff (σ : Face K.vertexScheme)
     rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
       (realizationToAmbient_injective).mem_set_image, mem_range_faceInclusion_iff]
   simpa only [Finset.coe_map, Embedding.coe_subtype] using h
+
+/-- The comparison point belongs to the convex hull of a face of `K` exactly when its barycentric
+support is contained in the corresponding face of the vertex scheme. -/
+@[simp]
+theorem realizationToAmbient_mem_convexHull_face_iff (s : K.faces)
+    (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈ convexHull ℝ (s : Set E) ↔
+      x.val.support ⊆ (K.vertexSchemeFaceEquiv.symm s).val := by
+  conv_lhs => rw [← map_vertexSchemeFaceEquiv_symm_apply_coe s]
+  rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
+    realizationToAmbient_injective.mem_set_image, mem_range_faceInclusion_iff]
 
 /-- The comparison map is its own secant map, since it linearly extends the vertex inclusion. -/
 @[simp]
@@ -250,23 +261,11 @@ and the closed simplices of `K` form a locally finite family in
 theorem isClosedMap_codRestrict_realizationToAmbient [T2Space K.space]
     (hK : LocallyFinite fun s : K.faces => ((↑) : K.space → E) ⁻¹' convexHull ℝ (s : Set E)) :
     IsClosedMap (codRestrict K.realizationToAmbient K.space realizationToAmbient_mem_space) := by
-  intro C hC
-  set g := codRestrict K.realizationToAmbient K.space realizationToAmbient_mem_space
-  -- The image of `C` is the union of the images of its traces on the closed simplices, since
-  -- every point of the realization lies in the closed simplex of its carrier.
-  have hC' : g '' C = ⋃ σ : Face K.vertexScheme,
-      (g ∘ faceInclusion K.vertexScheme σ) '' (faceInclusion K.vertexScheme σ ⁻¹' C) := by
-    simp only [image_comp, image_preimage_eq_range_inter, ← image_iUnion, ← iUnion_inter,
-      iUnion_range_faceInclusion, univ_inter]
-  rw [hC']
-  refine LocallyFinite.isClosed_iUnion ?_ fun σ =>
-    (((isClosed_iff_faceInclusion.mp hC σ).isCompact.image
-      ((continuous_realizationToAmbient.codRestrict _).comp
-        (continuous_faceInclusion _ σ))).isClosed)
-  -- Each image lies in the closed simplex of the corresponding face of `K`.
-  refine (hK.comp_injective K.vertexSchemeFaceEquiv.injective).subset fun σ => ?_
-  rintro _ ⟨y, -, rfl⟩
-  simp only [g, comp_apply, mem_preimage, val_codRestrict_apply, vertexSchemeFaceEquiv_apply_coe]
+  refine isClosedMap_of_locallyFinite_faceInclusion (continuous_realizationToAmbient.codRestrict _)
+    ((hK.comp_injective K.vertexSchemeFaceEquiv.injective).subset fun σ => ?_)
+  -- Each closed simplex is carried into the closed simplex of the corresponding face of `K`.
+  rintro _ ⟨y, rfl⟩
+  simp only [comp_apply, mem_preimage, val_codRestrict_apply, vertexSchemeFaceEquiv_apply_coe]
   rw [← range_realizationToAmbient_comp_faceInclusion σ]
   exact mem_range_self y
 
@@ -276,16 +275,10 @@ comparison map is closed. -/
 theorem isClosedMap_realizationToAmbient [T2Space E]
     (hK : LocallyFinite fun s : K.faces => convexHull ℝ (s : Set E)) :
     IsClosedMap K.realizationToAmbient := by
-  -- The underlying space is a locally finite union of compact simplices, hence closed.
-  have hspace : IsClosed K.space := by
-    rw [space, biUnion_eq_iUnion]
-    refine hK.isClosed_iUnion fun s => ?_
-    obtain ⟨σ, hσ, hs⟩ := mem_faces_iff_exists_mem_vertexScheme.mp s.property
-    rw [← hs, ← range_realizationToAmbient_comp_faceInclusion ⟨σ, hσ⟩]
-    exact (isCompact_range
-      (continuous_realizationToAmbient.comp (continuous_faceInclusion _ _))).isClosed
-  exact hspace.isClosedMap_subtypeVal.comp
-    (isClosedMap_codRestrict_realizationToAmbient (hK.preimage_continuous continuous_subtypeVal))
+  refine isClosedMap_of_locallyFinite_faceInclusion continuous_realizationToAmbient
+    ((hK.comp_injective K.vertexSchemeFaceEquiv.injective).subset fun σ => ?_)
+  -- Each closed simplex is carried onto the closed simplex of the corresponding face of `K`.
+  rw [range_realizationToAmbient_comp_faceInclusion, comp_apply, vertexSchemeFaceEquiv_apply_coe]
 
 /-- If addition and real scalar multiplication on `E` are continuous, `E` is Hausdorff, and the
 closed simplices of `K` form a locally finite family in `E`, the

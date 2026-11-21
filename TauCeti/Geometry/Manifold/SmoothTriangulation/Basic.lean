@@ -123,18 +123,24 @@ theorem isSimplexImmersion_iff {σ : Finset ι} {g : StandardSimplex σ → M} :
 
 /-- Composing a linear map from simplex coordinates with a map smooth within a set gives a
 simplex immersion if the composite derivatives are injective on zero-sum directions. -/
-theorem _root_.ContinuousLinearMap.isSimplexImmersion_comp
+theorem _root_.LinearMap.isSimplexImmersion_comp
     {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {σ : Finset ι}
-    (L : (σ → ℝ) →L[ℝ] V) {F : V → M} {s : Set V}
+    (L : (σ → ℝ) →ₗ[ℝ] V) {F : V → M} {s : Set V}
     (hL : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s)
     (hF : ContMDiffOn 𝓘(ℝ, V) I n F s)
     (hF' : ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : V →L[ℝ] E,
       HasMFDerivWithinAt 𝓘(ℝ, V) I F s (L t.weights) F' ∧
         ∀ v : σ → ℝ, ∑ a, v a = 0 → F' (L v) = 0 → v = 0) :
     IsSimplexImmersion I n (fun x : StandardSimplex σ => F (L fun a => x.val a)) := by
-  refine ⟨F ∘ L, fun _ => rfl, hF.comp L.contMDiff.contMDiffOn hL, fun t => ?_⟩
+  -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
+  rw [← LinearMap.coe_toContinuousLinearMap' L] at hL hF' ⊢
+  refine ⟨F ∘ L.toContinuousLinearMap, fun _ => rfl,
+    hF.comp L.toContinuousLinearMap.contMDiff.contMDiffOn hL, fun t => ?_⟩
   obtain ⟨F', hFt, hinj⟩ := hF' t
-  exact ⟨F'.comp L, hFt.comp (⇑t.weights) L.hasMFDerivWithinAt hL.subset_preimage, hinj⟩
+  refine ⟨F'.comp L.toContinuousLinearMap,
+    hFt.comp (⇑t.weights) L.toContinuousLinearMap.hasMFDerivWithinAt hL.subset_preimage,
+    fun v hv hv0 => hinj v hv ?_⟩
+  rwa [ContinuousLinearMap.comp_apply] at hv0
 
 /-- Composing the barycentric map of an affinely independent vertex family with a map smooth
 within its convex hull gives an immersion if the derivative is injective along its affine span. -/
@@ -148,9 +154,8 @@ theorem isSimplexImmersion_comp_linearCombination
     IsSimplexImmersion I n (fun y : StandardSimplex σ =>
       F (Fintype.linearCombination ℝ p fun a => y.val a)) := by
   -- The barycentric map is the linear combination of the vertices.
-  let L : (σ → ℝ) →L[ℝ] V := (Fintype.linearCombination ℝ p).toContinuousLinearMap
-  have hL (v : σ → ℝ) : L v = ∑ a, v a • p a := by
-    rw [LinearMap.coe_toContinuousLinearMap', Fintype.linearCombination_apply]
+  let L : (σ → ℝ) →ₗ[ℝ] V := Fintype.linearCombination ℝ p
+  have hL (v : σ → ℝ) : L v = ∑ a, v a • p a := Fintype.linearCombination_apply ℝ p v
   have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
       (convexHull ℝ (range p)) := by
     rw [← Finset.range_standardSimplex_coordinates,
@@ -228,11 +233,9 @@ theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
     rw [← Finset.range_standardSimplex_coordinates, ← Finset.range_standardSimplex_coordinates]
     exact mapsTo_range_iff.mpr fun x => ⟨φ x, hφ x⟩
   have hsum := L.sum_apply_eq_of_mapsTo_range_weights hmaps
-  -- The domain of `L` is finite dimensional, so `L` is continuous.
-  let L' : (τ → ℝ) →L[ℝ] (σ → ℝ) := L.toContinuousLinearMap
-  suffices IsSimplexImmersion I n (fun x : StandardSimplex τ => F (L' fun a => x.val a)) by
-    simpa only [L', LinearMap.coe_toContinuousLinearMap', ← hφ, hFg, comp_def] using this
-  refine L'.isSimplexImmersion_comp hmaps hF fun t => ?_
+  suffices IsSimplexImmersion I n (fun x : StandardSimplex τ => F (L fun a => x.val a)) by
+    simpa only [← hφ, hFg, comp_def] using this
+  refine L.isSimplexImmersion_comp hmaps hF fun t => ?_
   obtain ⟨s, hs⟩ := hmaps ⟨t, rfl⟩
   obtain ⟨F', hFs, hinj⟩ := hF' s
   have hFt : HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F

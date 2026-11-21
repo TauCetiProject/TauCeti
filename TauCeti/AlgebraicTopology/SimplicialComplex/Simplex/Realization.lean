@@ -194,32 +194,6 @@ theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineI
   ext a
   exact h a (Finset.mem_univ a)
 
-variable {E : Type*} [AddCommMonoid E] [Module ℝ E] in
-/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
-corresponding linear combination of a family `p` is the convex hull of `p`. -/
-theorem range_linearCombination_standardSimplex (p : σ → E) :
-    Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.val a) =
-      convexHull ℝ (Set.range p) := by
-  classical
-  let := Module.addCommMonoidToAddCommGroup ℝ (M := E)
-  let : Convexity.ConvexSpace ℝ E := .ofModule
-  rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
-    ← Set.range_comp']
-  simp_rw [Fintype.linearCombination_apply,
-    ← Convexity.StdSimplex.affineMapMk_apply_eq_sum_of_fintype]
-  rw [Set.convexHull_eq_range_iConvexComb]
-  -- Reindex Mathlib's convex combinations between the family and its range.
-  let s : Set.range p → σ := fun x => x.property.choose
-  have hs (x : Set.range p) : p (s x) = x := x.property.choose_spec
-  apply Set.Subset.antisymm
-  · rintro _ ⟨w, rfl⟩
-    refine ⟨w.map (Set.rangeFactorization p), ?_⟩
-    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map,
-      Set.rangeFactorization]
-  · rintro _ ⟨w, rfl⟩
-    refine ⟨w.map s, ?_⟩
-    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map, hs]
-
 end LinearCombination
 
 end Finset
@@ -247,12 +221,10 @@ noncomputable def simplexRealizationHomeomorph (K : AbstractSimplicialComplex ι
       refine PreAbstractSimplicialComplex.mem_simplex.mpr
         ⟨K.isRelLowerSet_faces.prop_of_mem (support_mem K (faceInclusion K ⟨V, hV⟩ x)), ?_⟩
       simpa only [faceInclusion_val] using StandardSimplex.support_subset x⟩
-    invFun x := ⟨x.val.val, by
-      simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
-        ⟨Realization.nonneg K x.val, Realization.sum_eq_one K x.val,
-          (PreAbstractSimplicialComplex.mem_simplex.mp x.property).2⟩⟩
+    invFun x := ⟨x.val.val, Realization.mem_convexHull_of_support_subset K x.val
+      (PreAbstractSimplicialComplex.mem_simplex.mp x.property).2⟩
     left_inv x := Subtype.ext (faceInclusion_val K ⟨V, hV⟩ x)
-    right_inv x := Subtype.ext (Subtype.ext (faceInclusion_val K ⟨V, hV⟩ _)) }
+    right_inv x := Subtype.ext (faceInclusion_mk_val K ⟨V, hV⟩ x.val _) }
   letI : CompactSpace (StandardSimplex V) :=
     (Finset.standardSimplexHomeomorph V).symm.compactSpace
   have hc : Continuous e := (continuous_faceInclusion K ⟨V, hV⟩).subtype_mk _

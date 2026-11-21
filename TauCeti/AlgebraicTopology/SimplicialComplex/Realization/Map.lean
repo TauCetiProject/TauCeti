@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 public import Mathlib.Topology.ContinuousMap.Basic
 import Mathlib.Topology.Algebra.Ring.Real

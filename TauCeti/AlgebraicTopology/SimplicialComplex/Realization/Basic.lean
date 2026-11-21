@@ -43,9 +43,13 @@ space used in the definition of a triangulation (`TauCeti.IsTriangulable`).
 * `mem_realization_iff`: a finitely supported function belongs to the polyhedron exactly when it
   lies in the convex hull of the coordinate image of some abstract face.
 * `faceBarycenter_mem`: a face barycenter belongs to its closed simplex.
+* `Finset.range_linearCombination_standardSimplex`: the combinations of a family with weights in
+  a closed coordinate simplex form its convex hull.
 * `mem_range_faceInclusion_carrier`, `iUnion_range_faceInclusion`: closed faces cover the
   realization, with each point in the face of its carrier.
 * `isQuotientMap_sigma_faceInclusion`: the closed faces present the realization as a quotient.
+* `isClosedMap_of_locallyFinite_faceInclusion`: a continuous map into a Hausdorff space is closed
+  when the images of the closed simplices form a locally finite family.
 * `vertex`: the canonical point of the realization corresponding to a vertex.
 * `realizationBotHomeomorph`: the realization of the bottom complex is its discrete vertex space.
 -/
@@ -308,6 +312,28 @@ theorem mem_standardSimplex_iff {σ : Finset ι} {x : ι →₀ ℝ} :
     rw [Finset.coe_image] at hx
     exact hx
 
+/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
+corresponding linear combination of a family `p` is the convex hull of `p`. -/
+theorem _root_.Finset.range_linearCombination_standardSimplex {E : Type*} [AddCommMonoid E]
+    [Module ℝ E] {σ : Finset ι} (p : σ → E) :
+    range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.val a) =
+      convexHull ℝ (range p) := by
+  -- Extend `p` by zero; on the closed simplex the combination only involves the vertices of `σ`.
+  let q : ι → E := fun v => if h : v ∈ σ then p ⟨v, h⟩ else 0
+  have hy (y : StandardSimplex σ) :
+      Fintype.linearCombination ℝ p (fun a => y.val a) = Finsupp.linearCombination ℝ q y.val := by
+    rw [Fintype.linearCombination_apply,
+      Finsupp.linearCombination_apply_of_mem_supported ℝ (StandardSimplex.support_subset y),
+      ← Finset.sum_coe_sort σ]
+    exact Finset.sum_congr rfl fun a _ => by simp only [q, a.property, dite_true]
+  simp_rw [hy]
+  rw [← image_eq_range, LinearMap.image_convexHull, Finset.coe_image, ← image_comp]
+  congr 1
+  ext x
+  simp only [mem_image, Finset.mem_coe, Function.comp_apply, Finsupp.linearCombination_single,
+    one_smul, mem_range, Subtype.exists]
+  constructor <;> rintro ⟨v, hv, rfl⟩ <;> exact ⟨v, hv, by simp only [q, hv, dite_true]⟩
+
 /-- A point of a standard simplex lies in the simplex spanned by its support. -/
 theorem StandardSimplex.mem_convexHull_support {σ : Finset ι} (x : StandardSimplex σ) :
     x.val ∈ convexHull ℝ
@@ -484,6 +510,21 @@ theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
     exact ⟨⟨carrier K x, y⟩, hy⟩
   · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
     rfl
+
+/-- A continuous map from the realization into a Hausdorff space is closed when the images of the
+closed simplices form a locally finite family: the image of a closed set is the locally finite
+union of the compact images of its traces on the closed simplices. -/
+theorem isClosedMap_of_locallyFinite_faceInclusion {K : AbstractSimplicialComplex ι}
+    {Y : Type*} [TopologicalSpace Y] [T2Space Y] {f : Realization K → Y} (hf : Continuous f)
+    (hK : LocallyFinite fun σ : Face K => range (f ∘ faceInclusion K σ)) : IsClosedMap f := by
+  intro C hC
+  have hC' : f '' C = ⋃ σ : Face K, (f ∘ faceInclusion K σ) '' (faceInclusion K σ ⁻¹' C) := by
+    simp only [image_comp, image_preimage_eq_range_inter, ← image_iUnion, ← iUnion_inter,
+      iUnion_range_faceInclusion, univ_inter]
+  rw [hC']
+  exact (hK.subset fun σ => image_subset_range _ _).isClosed_iUnion fun σ =>
+    ((isClosed_iff_faceInclusion.mp hC σ).isCompact.image
+      (hf.comp (continuous_faceInclusion K σ))).isClosed
 
 /-- The carrier is contained in every finite vertex set whose closed simplex contains the point. -/
 theorem carrier_minimal (K : AbstractSimplicialComplex ι) (x : Realization K) {σ : Finset ι}

@@ -60,6 +60,13 @@ def vertexScheme : AbstractSimplicialComplex K.vertices :=
         PreAbstractSimplicialComplex.mem_restrict_iff_map, Finset.map_singleton]
       exact v.property
 
+/-- Forgetting singletons, the vertex scheme is the restriction of `K` to its vertices. -/
+@[simp]
+theorem vertexScheme_toPreAbstractSimplicialComplex :
+    K.vertexScheme.toPreAbstractSimplicialComplex =
+      K.toPreAbstractSimplicialComplex.restrict K.vertices :=
+  (rfl)
+
 variable {K}
 
 /-- A finite set of vertices is a face of the vertex scheme exactly when, as a finite set of
@@ -67,26 +74,16 @@ points, it is a face of the geometric complex. -/
 @[simp]
 theorem mem_vertexScheme_iff {σ : Finset K.vertices} :
     σ ∈ K.vertexScheme ↔ σ.map (Embedding.subtype (· ∈ K.vertices)) ∈ K.faces := by
-  rw [← mem_toPreAbstractSimplicialComplex]
+  rw [← mem_toPreAbstractSimplicialComplex, vertexScheme_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.mem_restrict_iff_map _ _ σ
 
 variable (K) in
 /-- The faces of the vertex scheme of `K` are the faces of `K`, read as finite sets of points. -/
-noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces where
-  toFun σ := ⟨σ.val.map (Embedding.subtype (· ∈ K.vertices)), mem_vertexScheme_iff.mp σ.property⟩
-  invFun s := by
-    classical
-    exact ⟨s.val.subtype (· ∈ K.vertices), by
-      rw [mem_vertexScheme_iff,
-        Finset.subtype_map_of_mem fun _ => mem_vertices_of_mem_faces s.property]
-      exact s.property⟩
-  left_inv σ := by
-    classical
-    exact Subtype.ext (Finset.map_injective (Embedding.subtype (· ∈ K.vertices))
-      (Finset.subtype_map_of_mem fun _ => Finset.property_of_mem_map_subtype σ.val))
-  right_inv s := by
-    classical
-    exact Subtype.ext (Finset.subtype_map_of_mem fun _ => mem_vertices_of_mem_faces s.property)
+noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces :=
+  -- `Equiv.finsetSubtypeComm` sends a finite set of vertices to its points, mapped along the
+  -- subtype embedding as in `mem_vertexScheme_iff`.
+  ((Equiv.finsetSubtypeComm (· ∈ K.vertices)).subtypeEquiv fun _ => mem_vertexScheme_iff).trans
+    (Equiv.subtypeSubtypeEquivSubtype fun hs _ => mem_vertices_of_mem_faces hs)
 
 /-- The face of `K` corresponding to a face of the vertex scheme is its set of points. -/
 @[simp]
@@ -132,6 +129,7 @@ noncomputable def vertexSchemeInclusion {L : SimplicialComplex 𝕜 E} (h : K �
     PreAbstractSimplicialComplex.SimplicialMap K.vertexScheme.toPreAbstractSimplicialComplex
       L.vertexScheme.toPreAbstractSimplicialComplex := by
   classical
+  -- The vertex schemes forget to restrictions (`vertexScheme_toPreAbstractSimplicialComplex`).
   exact
     (L.toPreAbstractSimplicialComplex.restrictInclusionOfSubset (vertices_mono h)).domainRestrict
       (PreAbstractSimplicialComplex.restrict_mono h K.vertices)

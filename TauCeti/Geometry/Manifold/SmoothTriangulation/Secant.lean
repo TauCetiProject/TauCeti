@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Basic
 
 import TauCeti.Analysis.Convex.Combination
@@ -21,9 +20,9 @@ simplex; it is defined, with its uniqueness and idempotence, in
 `TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension`. Secant maps are how
 Whitehead and Munkres pass from smooth to piecewise-linear maps: both the existence of smooth
 triangulations and their uniqueness up to linearly isomorphic subdivisions (Munkres, Theorems
-10.5 and 10.6) replace a smooth map, simplex by simplex, by its secant map, and use that the
-secant map is again non-degenerate on sufficiently small simplices of a subdivision with a
-uniform fatness bound.
+10.5 and 10.6) replace a simplexwise immersion of class at least `C¹`, simplex by simplex, by its
+secant map, and use that the secant map is again non-degenerate on sufficiently small simplices of
+a subdivision with a uniform fatness bound.
 
 The estimate behind that replacement on a single simplex, in barycentric coordinates, is proved in
 `TauCeti.Analysis.Convex.SecantEstimate`. Let `F : (σ → ℝ) → E` be differentiable within the
@@ -35,10 +34,11 @@ with coordinate sum zero). This file applies the estimate to secant maps. If mor
 so it is an immersion of the simplex. When `F` is `C¹` and `A` is its
 derivative at one point of a small simplex, the first condition holds with small `ε` by uniform
 continuity of the derivative, and the second holds when the simplex is not too thin. This file
-draws that conclusion for an immersion `g` of a simplex into a normed space: for every `t > 0`
-there is `δ > 0` such that the secant map of `g` on every simplex inside it of size `d < δ` which
-is `t`-fat at scale `d` is again an immersion. Applied to the simplices of a fine subdivision
-whose simplices are uniformly fat, this is Munkres' secant approximation theorem.
+draws that conclusion for an immersion `g` of a simplex into a normed space of class at least
+`C¹`: for every `t > 0` there is `δ > 0` such that the secant map of `g` on every simplex inside
+it of size `d < δ` which is `t`-fat at scale `d` is again an immersion. Applied to the simplices
+of a fine subdivision whose simplices are uniformly fat, this is Munkres' secant approximation
+theorem.
 
 ## Main results
 
@@ -81,10 +81,10 @@ injective on the directions of the simplex, is a `Cⁿ` immersion of the simplex
 theorem isSimplexImmersion {σ : Finset ι} (L : (σ → ℝ) →ₗ[ℝ] E)
     (hL : ∀ v : σ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
     TauCeti.IsSimplexImmersion 𝓘(ℝ, E) n fun x : StandardSimplex σ => L fun a => x.val a := by
-  -- The domain of `L` is finite dimensional, so `L` is continuous, and it is its own derivative.
-  let L' : (σ → ℝ) →L[ℝ] E := L.toContinuousLinearMap
-  exact TauCeti.isSimplexImmersion_iff.mpr ⟨L', fun _ => rfl, L'.contMDiff.contMDiffOn,
-    fun _ => ⟨L', L'.hasMFDerivWithinAt, hL⟩⟩
+  -- Follow `L` by the identity of `E`, which is its own derivative.
+  refine L.isSimplexImmersion_comp (mapsTo_univ _ _) (contMDiffOn_id (I := 𝓘(ℝ, E))) fun _ =>
+    ⟨ContinuousLinearMap.id ℝ E, hasMFDerivWithinAt_id _ _, fun v hv hv0 => hL v hv ?_⟩
+  rwa [ContinuousLinearMap.id_apply] at hv0
 
 end LinearMap
 

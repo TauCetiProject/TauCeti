@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.B
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.LinearExtension
 
 import Mathlib.Data.Fin.Tuple.Sort
+import Mathlib.LinearAlgebra.Finsupp.Pi
 import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
