@@ -315,6 +315,14 @@ theorem hamiltonianVectorField_sub {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f
       σ.hamiltonianVectorField f x - σ.hamiltonianVectorField g x := by
   simp [hamiltonianVectorField_def, mvfderiv_sub hf hg]
 
+/-- **Leibniz rule for Hamiltonian vector fields**: `X_{fg} = f X_g + g X_f` at every point where
+`f` and `g` are differentiable. -/
+theorem hamiltonianVectorField_mul {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.hamiltonianVectorField (f * g) x =
+      f x • σ.hamiltonianVectorField g x + g x • σ.hamiltonianVectorField f x := by
+  simp [hamiltonianVectorField_def, mvfderiv_mul hf hg]
+
 /-- The Hamiltonian vector field of a finite sum of functions differentiable at `x` is the sum of
 their Hamiltonian vector fields at `x`. -/
 theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → M → ℝ} {x : M}
