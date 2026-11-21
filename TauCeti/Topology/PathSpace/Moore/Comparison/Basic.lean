@@ -188,6 +188,12 @@ theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ
   · rw [min_eq_right ht, mul_one, γ.apply_of_length_le le_rfl,
       γ.apply_of_length_le (le_mul_of_one_le_right zero_le ht)]
 
+/-- Every Moore path is its reparametrization to the unit interval, run in its own length. -/
+@[simp]
+theorem ofUnitPath_toUnitPath_rescale_length (γ : MoorePath X) :
+    (ofUnitPath γ.toUnitPath).rescale γ.length = γ := by
+  rw [ofUnitPath_toUnitPath, rescale_rescale _ one_ne_zero, rescale_length]
+
 /-! ### The homotopy from `ofUnitPath ∘ toUnitPath` to the identity -/
 
 /-- A self-map of the Moore paths preserves the end points.  The homotopies below are through such
