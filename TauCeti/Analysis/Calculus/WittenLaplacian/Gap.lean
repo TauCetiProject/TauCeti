@@ -203,6 +203,35 @@ private theorem add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacia
         · exact h₀
         · exact hB p (Finset.some_mem_insertNone.1 hp))
 
+omit [Fintype ι] [LinearOrder ι] in
+/-- A point where the localized form `u • φ` does not vanish is one where neither `u` nor `φ`
+vanishes. -/
+private theorem ne_zero_and_ne_zero_of_smul_apply_ne_zero {u : (ι → ℝ) → ℝ}
+    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hx : (u • φ) x ≠ 0) : u x ≠ 0 ∧ φ x ≠ 0 :=
+  smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
+
+/-- Away from the critical points, where `|df|² ≥ c₀` and `∑_{i,j} |∂ᵢ∂ⱼf| ≤ h`, the potential
+`t² |df|² - t |Hess f|` bounds the quadratic form at the piece `J₀ φ` below by
+`(t² c₀ - t h) ‖J₀ φ‖²` for `t ≥ 0`. -/
+private theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_smul_mul
+    {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ} {J₀ : (ι → ℝ) → ℝ} {t c₀ h : ℝ}
+    (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x) (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) (hJ₀ : ContDiff ℝ 2 J₀)
+    (hc₀ : ∀ x, J₀ x ≠ 0 → φ x ≠ 0 → c₀ ≤ ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2)
+    (hh : ∀ x, J₀ x ≠ 0 → φ x ≠ 0 →
+      ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)| ≤ h)
+    (ht : 0 ≤ t) :
+    (t ^ 2 * c₀ - t * h) * ∫ x, ∑ s, (J₀ • φ) x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t (J₀ • φ) x s * (J₀ • φ) x s := by
+  have h₀ := mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul
+    (φ := J₀ • φ) (fun x hx ↦ hf x (tsupport_smul_subset_right J₀ φ hx)) (hJ₀.smul hφ)
+    hφc.smul_left
+    (fun x hx ↦ hc₀ x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1
+      (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).2)
+    (fun x hx ↦ hh x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1
+      (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).2) t
+  rwa [abs_of_nonneg ht] at h₀
+
 /-- **Witten's localization estimate.** Let `φ` be a compactly supported `C²` form, `f` a function
 that is `C²` on the support of `φ`, and `J₀`, `J p` (`p ∈ P`) `C²` functions with
 `J₀² + ∑ₚ (J p)² = 1` and `∑ᵢ (∂ᵢJ₀)² + ∑ₚ ∑ᵢ (∂ᵢ J p)² ≤ K` wherever `φ` does not vanish.
@@ -233,19 +262,12 @@ theorem le_integral_sum_euclideanWittenLaplacian_mul_of_sq_add_sum_sq_eq_one {f 
         (J p • φ) x s ^ 2) +
       (t ^ 2 * c₀ - t * h) * (∫ x, ∑ s, (J₀ • φ) x s ^ 2) - K * ∫ x, ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have hsmul_ne : ∀ (u : (ι → ℝ) → ℝ) x, (u • φ) x ≠ 0 → u x ≠ 0 ∧ φ x ≠ 0 := fun u x hx ↦
-    smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
-  -- Away from the critical points, the potential `t² |df|² - t |Hess f|` bounds `J₀ φ` below.
-  have h₀ := mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul
-    (φ := J₀ • φ) (fun x hx ↦ hf x (tsupport_smul_subset_right J₀ φ hx)) (hJ₀.smul hφ)
-    hφc.smul_left (fun x hx ↦ hc₀ x (hsmul_ne J₀ x hx).1 (hsmul_ne J₀ x hx).2)
-    (fun x hx ↦ hh x (hsmul_ne J₀ x hx).1 (hsmul_ne J₀ x hx).2) t
-  rw [abs_of_nonneg ht] at h₀
   have key := add_sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf hφ hφc hJ₀
-    hJ hJ1 hK h₀ fun p hp ↦
+    hJ hJ1 hK (mul_integral_le_integral_sum_euclideanWittenLaplacian_smul_mul hf hφ hφc hJ₀ hc₀ hh
+      ht) fun p hp ↦
       two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_eventuallyEq ht
         (hc p hp) ((hJ p hp).smul hφ) hφc.smul_left fun x hx ↦
-        hmodel p hp x (hsmul_ne (J p) x hx).1
+        hmodel p hp x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1
   rw [← Finset.mul_sum] at key
   linarith
 
@@ -308,16 +330,11 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_orthogonal
     (ht : 0 ≤ t) (htc : 2 * c + h ≤ t * c₀) :
     (2 * t * c - K) * ∫ x, ∑ s, φ x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
-  have hsmul_ne : ∀ (u : (ι → ℝ) → ℝ) x, (u • φ) x ≠ 0 → u x ≠ 0 ∧ φ x ≠ 0 := fun u x hx ↦
-    smul_ne_zero_iff.1 (by simpa only [Pi.smul_apply'] using hx)
   -- Away from the critical points, `t² c₀ - t h ≥ 2 t c` bounds `J₀ φ` below.
   have h₀ : 2 * t * c * ∫ x, ∑ s, (J₀ • φ) x s ^ 2 ≤
       ∫ x, ∑ s, euclideanWittenLaplacian f t (J₀ • φ) x s * (J₀ • φ) x s := by
-    have h₀ := mul_integral_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul
-      (φ := J₀ • φ) (fun x hx ↦ hf x (tsupport_smul_subset_right J₀ φ hx)) (hJ₀.smul hφ)
-      hφc.smul_left (fun x hx ↦ hc₀ x (hsmul_ne J₀ x hx).1 (hsmul_ne J₀ x hx).2)
-      (fun x hx ↦ hh x (hsmul_ne J₀ x hx).1 (hsmul_ne J₀ x hx).2) t
-    rw [abs_of_nonneg ht] at h₀
+    have h₀ :=
+      mul_integral_le_integral_sum_euclideanWittenLaplacian_smul_mul hf hφ hφc hJ₀ hc₀ hh ht
     have hN : 0 ≤ ∫ x, ∑ s, (J₀ • φ) x s ^ 2 :=
       integral_nonneg fun x ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
     have hcoef : 2 * t * c ≤ t ^ 2 * c₀ - t * h := by nlinarith
@@ -327,7 +344,7 @@ theorem mul_integral_le_integral_sum_euclideanWittenLaplacian_mul_of_orthogonal
     hJ hJ1 hK h₀ fun p hp ↦
       two_mul_mul_integral_le_integral_sum_euclideanWittenLaplacian_of_degree ht (hc p hp)
         ((hJ p hp).smul hφ) hφc.smul_left (fun x s hx ↦ hφm x s (right_ne_zero_of_mul hx))
-        (fun x hx ↦ hmodel p hp x (hsmul_ne (J p) x hx).1) (horth p hp)
+        (fun x hx ↦ hmodel p hp x (ne_zero_and_ne_zero_of_smul_apply_ne_zero hx).1) (horth p hp)
   -- The pieces `‖J₀ φ‖²` and `‖J p φ‖²` add up to `‖φ‖²`.
   have hsq : ∀ (u : (ι → ℝ) → ℝ) x, ∑ s, (u • φ) x s ^ 2 = u x ^ 2 * ∑ s, φ x s ^ 2 := by
     intro u x
