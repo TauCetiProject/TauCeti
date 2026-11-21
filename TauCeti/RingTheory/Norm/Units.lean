@@ -146,7 +146,7 @@ variable {K} in
 `a ^ [L : K]` lies in the norm group `N_{L/K}(Lˣ)`. -/
 theorem pow_finrank_mem_normGroup [Module.Finite K L] (a : Kˣ) :
     a ^ Module.finrank K L ∈ normGroup K L :=
-  mem_normGroup_iff.2 ⟨Units.map (algebraMap K L).toMonoidHom a, by simp [Algebra.norm_algebraMap]⟩
+  Algebra.pow_finrank_mem_range_normUnits K a
 
 end NormGroup
 

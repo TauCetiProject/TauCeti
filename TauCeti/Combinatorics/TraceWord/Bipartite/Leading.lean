@@ -78,24 +78,21 @@ visits one row and one column. -/
 theorem IsLeadingBipartiteWord.injective_bipartiteEdge_orientations {u : Fin k → α} {v : Fin k → β}
     (h : IsLeadingBipartiteWord u v) :
     Injective (bipartiteEdge u v ∘ Sum.inl) ∧ Injective (bipartiteEdge u v ∘ Sum.inr) := by
-  let e := interleaveIndexEquiv k
+  let e := finSumFinInterleaveEquiv k
   have hleft (t : Fin k) : finRotate (2 * k) (e (.inl t)) = e (.inr t) :=
-    finRotate_interleaveIndexEquiv_inl t
+    finRotate_finSumFinInterleaveEquiv_inl t
   have hright (t : Fin k) : finRotate (2 * k) (e (.inr t)) = e (.inl (finRotate k t)) :=
-    finRotate_interleaveIndexEquiv_inr t
-  let w : Fin (2 * k) → α ⊕ β := Sum.map u v ∘ e.symm
-  have hw (a : Fin k ⊕ Fin k) : w (e a) = Sum.map u v a :=
-    congrArg (Sum.map u v) (e.symm_apply_apply a)
-  have hv : univ.image w = (univ.image u).disjSum (univ.image v) :=
-    image_univ_sumMap_comp_interleaveIndexEquiv_symm u v
+    finRotate_finSumFinInterleaveEquiv_inr t
+  let w : Fin (2 * k) → α ⊕ β := bipartiteWord u v
+  have hw (a : Fin k ⊕ Fin k) : w (e a) = Sum.map u v a := by
+    cases a <;> simp [w, e]
   have hword (i : Fin (2 * k)) :
       ∃ j ≠ i, s(w j, w (finRotate (2 * k) j)) = s(w i, w (finRotate (2 * k) i)) := by
     obtain ⟨a, rfl⟩ := e.surjective i
     obtain ⟨b, hba, hb⟩ := (isLeadingBipartiteWord_iff.mp h).1 a
-    exact ⟨e b, e.injective.ne hba, by rw [interleaveIndexEquiv_edge_eq_pair_bipartiteEdge u v b,
-      interleaveIndexEquiv_edge_eq_pair_bipartiteEdge u v a, hb]⟩
+    exact ⟨e b, e.injective.ne hba, by rw [sym2_bipartiteWord u v b, sym2_bipartiteWord u v a, hb]⟩
   have hd := TreeWalk.prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq hword
-    (by rw [hv, card_disjSum]; exact (isLeadingBipartiteWord_iff.mp h).2)
+    (by rw [card_image_bipartiteWord]; exact (isLeadingBipartiteWord_iff.mp h).2)
   constructor
   · intro i j hij
     apply Sum.inl_injective (β := Fin k) (e.injective (hd ?_))

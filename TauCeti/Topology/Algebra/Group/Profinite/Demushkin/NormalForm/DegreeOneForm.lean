@@ -191,19 +191,19 @@ private theorem altClass_repr_inr (c : ZMod p) {i j : Fin n} (hij : i < j) :
 an odd index `2a + 1` to `inl a`, so that the pair `(2a, 2a + 1)` is a hyperbolic pair of the
 standard symplectic matrix with `B (b (2a)) (b (2a + 1)) = 1`. -/
 private def interleave {m : ℕ} (hn : n = 2 * m) : Fin n ≃ Fin m ⊕ Fin m :=
-  (finCongr hn).trans ((interleaveIndexEquiv m).symm.trans (Equiv.sumComm _ _))
+  (finCongr hn).trans ((finSumFinInterleaveEquiv m).symm.trans (Equiv.sumComm _ _))
 
 private theorem J_interleave {m : ℕ} (hn : n = 2 * m) {i j : Fin n} (hij : i < j) :
     Matrix.J (Fin m) (ZMod p) (interleave hn i) (interleave hn j) =
       if (i : ℕ) % 2 = 0 ∧ (j : ℕ) = i + 1 then 1 else 0 := by
-  simp only [interleave, Equiv.trans_apply, interleaveIndexEquiv_symm_apply,
+  simp only [interleave, Equiv.trans_apply, finSumFinInterleaveEquiv_symm_apply,
     finCongr_apply, Fin.val_cast]
   split_ifs with hi hj hj h h h h <;>
     simp [Matrix.J, Matrix.fromBlocks, Matrix.one_apply, Fin.ext_iff] <;> omega
 
 private theorem interleave_eq_inr_zero_iff {m : ℕ} (hn : n = 2 * (m + 1)) (k : Fin n) :
     interleave hn k = Sum.inr 0 ↔ (k : ℕ) = 0 := by
-  simp only [interleave, Equiv.trans_apply, interleaveIndexEquiv_symm_apply,
+  simp only [interleave, Equiv.trans_apply, finSumFinInterleaveEquiv_symm_apply,
     finCongr_apply, Fin.val_cast]
   split_ifs with hk
   · simp only [Equiv.sumComm_apply, Sum.swap_inl, Sum.inr.injEq, Fin.ext_iff, Fin.val_zero]

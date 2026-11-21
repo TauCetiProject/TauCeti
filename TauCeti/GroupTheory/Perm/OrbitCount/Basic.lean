@@ -53,6 +53,9 @@ permutations of the same type.
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
+* `Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one`: if `σ ^ p = 1` for a prime `p`, then
+  `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+  points.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
@@ -95,6 +98,7 @@ public section
 namespace TauCeti
 
 open Equiv Equiv.Perm
+open scoped Finset
 
 variable {α β : Type*}
 
@@ -269,6 +273,22 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
     omega
   rw [h, pow_add, pow_mul]
   simp
+
+/-- If `σ ^ p = 1` for a prime `p`, every orbit of `σ` is a fixed point or has exactly `p` points,
+so `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+points. -/
+theorem _root_.Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one {p : ℕ} [Fact p.Prime]
+    {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    p * orbitCount σ = Fintype.card α + (p - 1) * #{x | σ x = x} := by
+  have hfix : #{x | σ x = x} = Fintype.card α - #σ.support := by
+    rw [← count_one_fullCycleType_eq_card_filter, count_one_fullCycleType]
+  have hsum := σ.sum_cycleType
+  rw [cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate, smul_eq_mul] at hsum
+  obtain ⟨F, hF⟩ := Nat.exists_eq_add_of_le (Finset.card_le_univ σ.support)
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_lt (Fact.out : p.Prime).pos
+  rw [orbitCount_eq_card_parts_partition, card_parts_partition, hfix, hF, ← hsum]
+  simp only [zero_add, Nat.add_sub_cancel_left, Nat.add_sub_cancel]
+  ring
 
 end Finite
 

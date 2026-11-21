@@ -117,10 +117,10 @@ theorem tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur (
     · exact ⟨0, eventually_imp_distrib_left.mpr fun h' ↦ (hlarge h').elim⟩
   have hnR : Tendsto (fun i ↦ (Fintype.card (n i) : ℝ)) l atTop :=
     tendsto_natCast_atTop_atTop.comp hn
-  have hmajorant : Tendsto (fun i ↦ ((k : ℝ) ^ (2 * k + 1) * B *
-      max ((Fintype.card (p i) : ℝ) / Fintype.card (n i)) 1 ^ (k - 1)) / Fintype.card (n i))
-      l (𝓝 0) :=
-    (tendsto_const_nhds.mul ((hy.max tendsto_const_nhds).pow (k - 1))).div_atTop hnR
+  have hmajorant : Tendsto (fun i ↦ (k : ℝ) ^ (2 * k) * B * ∑ a ∈ range k,
+      ((Fintype.card (p i) : ℝ) / Fintype.card (n i)) ^ a / Fintype.card (n i)) l (𝓝 0) := by
+    simpa using (tendsto_finsetSum (range k) fun a _ ↦ (hy.pow a).div_atTop hnR).const_mul
+      ((k : ℝ) ^ (2 * k) * B)
   have herror : Tendsto (fun i ↦
       (∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure (hXm i) : Measure ℝ)) -
         leadingCovarianceMoment k (Fintype.card (p i)) (Fintype.card (n i))) l (𝓝 0) := by
@@ -153,14 +153,13 @@ theorem tendsto_expectedCovarianceSpectralMeasure_marchenkoPastur_of_uniform_ent
   refine ProbabilityMeasure.tendsto_of_tendsto_integral_pow isCompact_Icc
     (ae_iff.mp (ae_mem_Icc_zero_marchenkoPastur y)) ?_ ?_
   · intro k
-    rcases eq_or_ne k 0 with rfl | hk
-    · exact .of_forall fun _ ↦ by simp
     filter_upwards [hLp (max k 2) (by omega)] with i hi
     exact integrable_pow_expectedCovarianceSpectralMeasure (hXm i)
-      (integrable_trace_sampleCovariance_pow_of_ne_zero hk fun a b ↦
+      (integrable_trace_pow_sampleCovariance fun a b ↦
         (hi a b).mono_exponent (by
+          push_cast
           gcongr
-          exact le_max_left k 2))
+          exact_mod_cast le_max_left k 2))
   · intro k
     exact tendsto_integral_pow_expectedCovarianceSpectralMeasure_marchenkoPastur
       k hn hy hXm (fun _ ↦ hindep) (fun _ ↦ hmean) (hLp k) (fun _ ↦ hsecond) (hB k)

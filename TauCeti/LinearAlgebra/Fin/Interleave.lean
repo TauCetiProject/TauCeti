@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Fin.Sum
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.Topology.Algebra.Module.ExtendByZero
 
 /-!
@@ -18,7 +18,8 @@ second in the odd positions, filling unused positions with zero. The ambient dim
 coordinate injection used for block sums of finite Grassmannians; see the references in
 `TauCeti.Topology.Grassmannian.WhitneySum` for the classical disjoint-coordinate construction.
 
-The linear construction uses Mathlib's `Function.ExtendByZero.linearMap` and
+The index embedding is `TauCeti.interleaveIndex` from `TauCeti.Data.Fin.Sum`. The linear
+construction uses Mathlib's `Function.ExtendByZero.linearMap` and
 `LinearEquiv.sumArrowLequivProdArrow`. Continuity uses
 `Function.ExtendByZero.continuousLinearMap`.
 -/

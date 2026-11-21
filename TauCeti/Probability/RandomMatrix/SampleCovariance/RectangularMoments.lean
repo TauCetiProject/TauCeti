@@ -10,7 +10,6 @@ public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectral
 public import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Moment
 import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
-import TauCeti.Combinatorics.TraceWord.Bipartite.Counting
 
 /-!
 # The rectangular trace-word method for sample covariance moments
@@ -20,7 +19,8 @@ For positive degree `k` and independent centred entries in `L^(2k)`,
 singleton-edge terms.
 A leading word matches each entry with its conjugate, and its expectation is the product of
 the corresponding second absolute moments. The leading words are counted by noncrossing
-column partitions with injective row and column labellings. The remaining words contribute
+column partitions with injective row and column labellings. By
+`norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le`, the remaining words contribute
 an error controlled by the absolute entry moment of order `2k`.
 
 ## References
@@ -137,85 +137,7 @@ private theorem integral_prod_apply_mul_star_apply_eq_one
     ((hindep.precomp hInj).comp (fun _ z ↦ ‖z‖ ^ 2) fun _ ↦ by fun_prop)]
   simp only [hsecond, RCLike.ofReal_one, prod_const_one]
 
-/-- The expected trace at positive degree `k` differs from the leading-word count times
-`n⁻ᵏ` by at most `n⁻ᵏ p max(p,n)^(k-1) k^(2k+1) B`. Entries have unit second absolute
-moment. For `k > 1` they are also independent, centred, and in `L^(2k)`, with their absolute
-moments of order `2k` bounded by `B`. -/
-theorem norm_integral_trace_sampleCovariance_pow_sub_leading_le (hk : k ≠ 0)
-    (hindep : 1 < k → iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
-    (hX : 1 < k → ∀ i j, ∫ ω, X ω i j ∂P = 0)
-    (hXk : 1 < k → ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P)
-    (hX₂ : ∀ i j, ∫ ω, ‖X ω i j‖ ^ 2 ∂P = 1) {B : ℝ≥0}
-    (hB : 1 < k → ∀ i j, ∫ ω, ‖X ω i j‖ ^ (2 * k) ∂P ≤ B) :
-    ‖(∫ ω, ((X ω).sampleCovariance ^ k).trace ∂P) - (Fintype.card n : 𝕜)⁻¹ ^ k *
-      (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜)‖ ≤
-      (Fintype.card n : ℝ)⁻¹ ^ k * (Fintype.card p *
-        max (Fintype.card p) (Fintype.card n) ^ (k - 1) * k ^ (2 * k + 1) : ℕ) * B := by
-  classical
-  rcases eq_or_ne k 1 with rfl | hk₁
-  · rw [card_leadingBipartiteWord_one]
-    simp only [pow_one, integral_trace_sampleCovariance_eq X hX₂,
-      Nat.card_eq_fintype_card, sub_self, norm_zero]
-    positivity
-  have hk' : 1 < k := by omega
-  specialize hindep hk'
-  specialize hX hk'
-  specialize hXk hk'
-  specialize hB hk'
-  let f (w : (Fin k → p) × (Fin k → n)) : 𝕜 :=
-    ∫ ω, ∏ t, X ω (w.1 t) (w.2 t) * star (X ω (w.1 (finRotate k t)) (w.2 t)) ∂P
-  let S : Finset ((Fin k → p) × (Fin k → n)) :=
-    {w | ∀ a, ∃ b ≠ a, bipartiteEdge w.1 w.2 b = bipartiteEdge w.1 w.2 a}
-  let L : Finset ((Fin k → p) × (Fin k → n)) := {w | IsLeadingBipartiteWord w.1 w.2}
-  have hLS : L ⊆ S := fun w hw ↦ mem_filter.mpr ⟨mem_univ _,
-    (isLeadingBipartiteWord_iff.mp (mem_filter.mp hw).2).1⟩
-  have htrace : (∫ ω, ((X ω).sampleCovariance ^ k).trace ∂P) =
-      (Fintype.card n : 𝕜)⁻¹ ^ k * ∑ w ∈ S, f w := by
-    rw [integral_trace_sampleCovariance_pow hindep hX hk hXk]
-    simp only [S, sum_filter, Fintype.sum_prod_type, f]
-  have hleading : ∑ w ∈ L, f w =
-      (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜) := by
-    rw [sum_congr rfl (g := fun _ ↦ 1) fun w hw ↦ by
-      exact integral_prod_apply_mul_star_apply_eq_one (mem_filter.mp hw).2 hindep hXk hX₂]
-    rw [sum_const, nsmul_one, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  have hcount := card_bipartiteWord_le_of_card_image_add_card_image_le hk (S \ L) fun w hw ↦ by
-    obtain ⟨hS, hL⟩ := mem_sdiff.mp hw
-    have hS' := (mem_filter.mp hS).2
-    have hv := card_image_add_card_image_le_add_one_of_no_singleton_edge hS'
-    have hne : #(univ.image w.1) + #(univ.image w.2) ≠ k + 1 := fun he ↦
-      hL (mem_filter.mpr ⟨mem_univ _, isLeadingBipartiteWord_iff.mpr ⟨hS', he⟩⟩)
-    omega
-  rw [htrace, ← hleading, ← mul_sub, ← sum_sdiff hLS, add_sub_cancel_right,
-    norm_mul, norm_pow, norm_inv, RCLike.norm_natCast, mul_assoc]
-  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-  calc
-    _ ≤ ∑ w ∈ S \ L, ‖f w‖ := norm_sum_le _ _
-    _ ≤ ∑ _w ∈ S \ L, (B : ℝ) := by
-      apply sum_le_sum
-      intro w _
-      exact norm_integral_prod_apply_mul_star_apply_le hk w.1 w.2
-        (fun _ ↦ MemLp.integrable_norm_pow
-          (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hXk _ _) (by omega))
-        (fun _ ↦ hB _ _)
-    _ = (#(S \ L) : ℝ) * B := by simp
-    _ ≤ _ := mul_le_mul_of_nonneg_right (Nat.cast_le.mpr hcount) B.coe_nonneg
-
 end Trace
-
-private theorem covarianceMoment_error_bound (p n k : ℕ) (hp : p ≠ 0)
-    (hk : k ≠ 0) (B : ℝ) :
-    (p : ℝ)⁻¹ * ((n : ℝ)⁻¹ ^ k * (p * max p n ^ (k - 1) * k ^ (2 * k + 1) : ℕ) * B) =
-      ((k : ℝ) ^ (2 * k + 1) * B * max ((p : ℝ) / n) 1 ^ (k - 1)) / n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp [zero_pow hk]
-  have hpR : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hp
-  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hmax : ((max p n : ℕ) : ℝ) = max ((p : ℝ) / n) 1 * n := by
-    rw [Nat.cast_max, max_mul_of_nonneg _ _ (Nat.cast_nonneg _), div_mul_cancel₀ _ hnR, one_mul]
-  have hpow : (n : ℝ) ^ k = (n : ℝ) ^ (k - 1) * n := by
-    rw [← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hk)]
-  simp only [Nat.cast_mul, Nat.cast_pow, hmax, mul_pow, inv_pow, hpow]
-  field_simp
 
 section Bound
 
@@ -224,11 +146,11 @@ variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜]
   {P : Measure Ω} [IsProbabilityMeasure P] {k : ℕ} {X : Ω → Matrix p n 𝕜}
 
 /-- The expected spectral moment at positive degree `k` differs from the normalized leading-word
-count by at most `k^(2k+1) * B * max(p/n,1)^(k-1) / n`. The matrix is almost everywhere
-measurable and its entries have unit second absolute moment. For `k > 1` the entries are also
-independent, centred and in `L^(2k)`, with absolute moments of order `2k` bounded by `B`.
-With empty columns the positive-degree moment and leading count both vanish, so the bound is
-exact with zero error. -/
+count by at most `k^(2k) B ∑_{a<k} (p/n)ᵃ / n`. The matrix is almost everywhere measurable and its
+entries have unit second absolute moment. For `k > 1` the entries are also independent, centred
+and in `L^(2k)`, with absolute moments of order `2k` bounded by `B`. For `k > 1` this is
+`norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le`, in which each leading word
+contributes one. For `k = 1` the two sides agree. -/
 theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianceMoment_le
     (hk : k ≠ 0)
     (hXm : AEMeasurable X P)
@@ -239,18 +161,18 @@ theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianc
     (hB : 1 < k → ∀ i j, ∫ ω, ‖X ω i j‖ ^ (2 * k) ∂P ≤ B) :
     ‖(∫ x, x ^ k ∂(expectedCovarianceSpectralMeasure hXm : Measure ℝ)) -
         leadingCovarianceMoment k (Fintype.card p) (Fintype.card n)‖ ≤
-      ((k : ℝ) ^ (2 * k + 1) * B *
-        max ((Fintype.card p : ℝ) / Fintype.card n) 1 ^ (k - 1)) / Fintype.card n := by
-  let : DecidableEq n := Classical.decEq n
-  have hLp' : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k) P := by
+      (k : ℝ) ^ (2 * k) * B *
+        ∑ a ∈ range k, ((Fintype.card p : ℝ) / Fintype.card n) ^ a / Fintype.card n := by
+  classical
+  have hLp' : ∀ i j, MemLp (fun ω ↦ X ω i j) (2 * k : ℕ) P := by
     rcases eq_or_ne k 1 with rfl | hk₁
     · intro i j
       have hm : AEMeasurable (fun ω ↦ X ω i j) P :=
         (measurable_pi_apply j).comp_aemeasurable ((measurable_pi_apply i).comp_aemeasurable hXm)
-      simpa only [Nat.cast_one, mul_one] using
+      simpa only [Nat.mul_one, Nat.cast_ofNat] using
         (memLp_two_iff_integrable_sq_norm hm.aestronglyMeasurable).mpr
           (Integrable.of_integral_ne_zero (by rw [hsecond i j]; exact one_ne_zero))
-    · exact hLp (by omega)
+    · exact_mod_cast hLp (by omega)
   have hlead : (leadingCovarianceMoment k (Fintype.card p) (Fintype.card n) : 𝕜) =
       (Fintype.card p : 𝕜)⁻¹ * (Fintype.card n : 𝕜)⁻¹ ^ k *
         (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜) := by
@@ -259,13 +181,25 @@ theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianc
         (leadingCovarianceMoment_eq_normalized_card_leadingBipartiteWord (p := p) (n := n) hk)
   rw [Real.norm_eq_abs, ← RCLike.norm_ofReal (K := 𝕜), RCLike.ofReal_sub,
     ofReal_integral_pow_expectedCovarianceSpectralMeasure hXm
-      (integrable_trace_sampleCovariance_pow_of_ne_zero hk hLp'),
-    hlead, mul_assoc, ← mul_sub, norm_mul, norm_inv, RCLike.norm_natCast,
-    ← covarianceMoment_error_bound _ _ k Fintype.card_ne_zero hk B]
-  exact mul_le_mul_of_nonneg_left
-    (norm_integral_trace_sampleCovariance_pow_sub_leading_le (X := X)
-      hk hindep hmean hLp hsecond hB)
-    (inv_nonneg.mpr (Nat.cast_nonneg _))
+      (integrable_trace_pow_sampleCovariance hLp'), hlead, mul_assoc, ← mul_sub]
+  rcases eq_or_ne k 1 with rfl | hk₁
+  · rw [card_leadingBipartiteWord_one]
+    simp only [pow_one, integral_trace_sampleCovariance_eq X hsecond, Nat.card_eq_fintype_card,
+      sub_self, mul_zero, norm_zero]
+    positivity
+  have hk' : 1 < k := by omega
+  have hleading : (∑ w : (Fin k → p) × (Fin k → n) with
+        (∀ a, ∃ b ≠ a, bipartiteEdge w.1 w.2 b = bipartiteEdge w.1 w.2 a) ∧
+          #(univ.image w.1) + #(univ.image w.2) = k + 1,
+        ∫ ω, ∏ t, X ω (w.1 t) (w.2 t) * star (X ω (w.1 (finRotate k t)) (w.2 t)) ∂P) =
+      (Nat.card {w : (Fin k → p) × (Fin k → n) // IsLeadingBipartiteWord w.1 w.2} : 𝕜) := by
+    rw [sum_congr rfl fun w hw ↦ integral_prod_apply_mul_star_apply_eq_one
+      (isLeadingBipartiteWord_iff.mpr (mem_filter.mp hw).2) (hindep hk') (hLp hk') hsecond,
+      sum_const, nsmul_one, Nat.card_eq_fintype_card, Fintype.card_subtype]
+    simp only [isLeadingBipartiteWord_iff]
+  have h := norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le (𝕜 := 𝕜) hk
+    (hindep hk') (hmean hk') hLp' (hB hk')
+  rwa [hleading] at h
 
 end Bound
 

@@ -10,7 +10,7 @@ public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
 public import Mathlib.Logic.Equiv.Fin.Rotate
-import Mathlib.Data.Fin.Embedding
+import TauCeti.Data.Fin.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -32,28 +32,33 @@ The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv`
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
 two- or three-variable object can rewrite rather than unfold them.
 
-Interleaving sends the two blocks of `Fin k ⊕ Fin k` to the even and odd positions of
-`Fin (2 * k)`. The inverse reads the parity and divides the position by two. Rotation sends
-`inl i` to `inr i` and `inr i` to `inl (finRotate k i)`, so an alternating word can be read as
-an ordinary cyclic path.
-
 ## Main declarations
 
 * `TauCeti.unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left
   summand to `0` and the right to `1`.
 * `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
   sending the outer left summand to `0` and the two inner ones to `1` and `2`.
-* `TauCeti.interleaveIndex`: the even/odd embedding for two blocks of possibly different sizes.
-* `TauCeti.interleaveIndexEquiv`: the even/odd equivalence for equal-sized blocks.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
   type equivalent to `Fin n`.
+* `TauCeti.interleaveIndex`: the embedding `Fin a ⊕ Fin b ↪ Fin (2 * max a b)` placing the left
+  summand in the even positions and the right summand in the odd positions.
+* `TauCeti.finSumFinInterleaveEquiv`: for `a = b = k` this embedding is the interleaving
+  `Fin k ⊕ Fin k ≃ Fin (2 * k)`, `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
+  `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
+  Its inverse `TauCeti.finSumFinInterleaveEquiv_symm_apply` reads the parity of a position and
+  halves it.
 
 ## Implementation notes
 
-The construction imports are private. Only the finite sum, finiteness, equivalence, embedding
-and rotation interfaces used in the declaration types are public.
+The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
+`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
+than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
+`finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
+by the declaration types are public.
 -/
 
 public section
@@ -95,96 +100,6 @@ theorem unitSumUnitEquivFinTwo_symm_zero :
 theorem unitSumUnitEquivFinTwo_symm_one :
     unitSumUnitEquivFinTwo.symm 1 = Sum.inr () := by decide
 
-/-- Equal-sized blocks exhaust the even and odd positions in `Fin (2 * k)`. -/
-def interleaveIndexEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) :=
-  let e := (Equiv.prodUnique (Fin k) Unit).symm
-  (Equiv.sumCongr e e).trans
-    ((Equiv.prodSumDistrib (Fin k) Unit Unit).symm.trans
-      ((Equiv.prodCongr (Equiv.refl _) unitSumUnitEquivFinTwo).trans
-        (finProdFinEquiv.trans (finCongr (Nat.mul_comm k 2)))))
-
-/-- The even position of a left index. -/
-@[simp] theorem interleaveIndexEquiv_inl_val {k : ℕ} (i : Fin k) :
-    (interleaveIndexEquiv k (.inl i)).val = 2 * i.val := by
-  simp [interleaveIndexEquiv, finProdFinEquiv_apply_val]
-
-/-- The odd position of a right index. -/
-@[simp] theorem interleaveIndexEquiv_inr_val {k : ℕ} (i : Fin k) :
-    (interleaveIndexEquiv k (.inr i)).val = 2 * i.val + 1 := by
-  simp [interleaveIndexEquiv, finProdFinEquiv_apply_val, Nat.add_comm]
-
-/-- The disjoint even/odd positions for two finite coordinate blocks. -/
-def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) :=
-  ((Fin.castLEEmb (le_max_left a b)).sumMap (Fin.castLEEmb (le_max_right a b))).trans
-    (interleaveIndexEquiv (max a b)).toEmbedding
-
-/-- The left block occupies the even positions. -/
-@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
-    (interleaveIndex a b (.inl i)).val = 2 * i.val := by
-  simp [interleaveIndex]
-
-/-- The right block occupies the odd positions. -/
-@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
-    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := by
-  simp [interleaveIndex]
-
-/-- For equal block sizes, the interleaving embedding is the even/odd equivalence after
-transporting its codomain along `max_self`. -/
-@[simp] theorem interleaveIndex_self (k : ℕ) :
-    (interleaveIndex k k).trans (finCongr (congrArg (2 * ·) (max_self k))).toEmbedding =
-      (interleaveIndexEquiv k).toEmbedding := by
-  ext (i | i) <;> simp
-
-/-- The inverse interleaving reads an even position on the left and an odd position on the right. -/
-theorem interleaveIndexEquiv_symm_apply {k : ℕ} (i : Fin (2 * k)) :
-    (interleaveIndexEquiv k).symm i =
-      if (i : ℕ) % 2 = 0 then .inl ⟨i / 2, by have := i.isLt; omega⟩
-      else .inr ⟨i / 2, by have := i.isLt; omega⟩ := by
-  apply (interleaveIndexEquiv k).injective
-  have := i.isLt
-  by_cases h : (i : ℕ) % 2 = 0
-  · simp only [Equiv.apply_symm_apply, h, ite_true, Fin.ext_iff, interleaveIndexEquiv_inl_val]
-    omega
-  · simp only [Equiv.apply_symm_apply, h, ite_false, Fin.ext_iff, interleaveIndexEquiv_inr_val]
-    omega
-
-/-- Rotating an even position advances to the odd position of the same index. -/
-@[simp high] theorem finRotate_interleaveIndexEquiv_inl {k : ℕ} (i : Fin k) :
-    finRotate (2 * k) (interleaveIndexEquiv k (.inl i)) = interleaveIndexEquiv k (.inr i) := by
-  cases k with
-  | zero => exact Fin.elim0 i
-  | succ k =>
-    have hi : interleaveIndexEquiv (k + 1) (.inl i) ≠ Fin.last (2 * k + 1) := by
-      simp [Fin.ext_iff]
-      omega
-    apply Fin.ext
-    let j := interleaveIndexEquiv (k + 1) (.inl i)
-    have hrot : (finRotate (2 * (k + 1)) j).val =
-        if j = Fin.last (2 * k + 1) then 0 else j.val + 1 :=
-      coe_finRotate j
-    rw [hrot, ite_eq_right hi]
-    simp only [j, interleaveIndexEquiv_inl_val, interleaveIndexEquiv_inr_val]
-
-/-- Rotating an odd position advances to the even position of the next cyclic index. -/
-@[simp high] theorem finRotate_interleaveIndexEquiv_inr {k : ℕ} (i : Fin k) :
-    finRotate (2 * k) (interleaveIndexEquiv k (.inr i)) =
-      interleaveIndexEquiv k (.inl (finRotate k i)) := by
-  cases k with
-  | zero => exact Fin.elim0 i
-  | succ k =>
-    have hi : interleaveIndexEquiv (k + 1) (.inr i) = Fin.last (2 * k + 1) ↔
-        i = Fin.last k := by
-      simp only [Fin.ext_iff, interleaveIndexEquiv_inr_val, Fin.val_last]
-      omega
-    apply Fin.ext
-    let j := interleaveIndexEquiv (k + 1) (.inr i)
-    have hrot : (finRotate (2 * (k + 1)) j).val =
-        if j = Fin.last (2 * k + 1) then 0 else j.val + 1 :=
-      coe_finRotate j
-    rw [hrot, interleaveIndexEquiv_inl_val, @coe_finRotate k]
-    simp only [j, hi, interleaveIndexEquiv_inr_val]
-    split <;> omega
-
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2` iterated on the right, `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
 sending the outer left summand to `0` and the two inner summands to `1` and `2`.
 
@@ -221,5 +136,71 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_two :
 theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
     (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
   ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
+
+/-- The disjoint even/odd positions for two finite coordinate blocks. -/
+def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
+  toFun := Sum.elim
+    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
+    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
+  inj' := by
+    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
+    · exact congrArg Sum.inl (Fin.ext (by omega))
+    · omega
+    · omega
+    · exact congrArg Sum.inr (Fin.ext (by omega))
+
+@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
+    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
+
+@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
+    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
+
+/-- The interleaving of two copies of `Fin k` into `Fin (2 * k)`: `inl t ↦ 2 * t` and
+`inr t ↦ 2 * t + 1`. It is the embedding `TauCeti.interleaveIndex k k`, which is onto. -/
+def finSumFinInterleaveEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
+  toFun t := Fin.cast (by rw [max_self]) (interleaveIndex k k t)
+  invFun s := if s.val % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩
+  left_inv := by
+    rintro (t | t)
+    · simp
+    · simp [Fin.ext_iff]
+      omega
+  right_inv s := by
+    by_cases h : s.val % 2 = 0 <;> simp [h, Fin.ext_iff] <;> omega
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inl t) : ℕ) = 2 * t :=
+  (rfl)
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inr t) : ℕ) = 2 * t + 1 :=
+  (rfl)
+
+/-- The inverse interleaving reads an even position on the left and an odd position on the right,
+at half the position. -/
+theorem finSumFinInterleaveEquiv_symm_apply {k : ℕ} (s : Fin (2 * k)) :
+    (finSumFinInterleaveEquiv k).symm s =
+      if (s : ℕ) % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩ :=
+  (rfl)
+
+/-- The step after the even position `2 * t` is the odd position `2 * t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inl t)) =
+      finSumFinInterleaveEquiv k (.inr t) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
+
+/-- The step after the odd position `2 * t + 1` is the even position of the cyclically next index
+`t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inr t)) =
+      finSumFinInterleaveEquiv k (.inl (finRotate k t)) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite, val_finSumFinInterleaveEquiv_inl,
+    Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
 
 end TauCeti

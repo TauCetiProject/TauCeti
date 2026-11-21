@@ -100,16 +100,14 @@ theorem integrable_pow_expectedCovarianceSpectralMeasure (hXm : AEMeasurable X P
   let L (ω : Ω) : Measure ℝ := ((X ω).sampleCovariance.spectralMeasure
     (isHermitian_sampleCovariance (X ω)) : Measure ℝ)
   have hL : AEMeasurable L P := aemeasurable_covarianceMeasure hXm
-  rw [toMeasure_expectedCovarianceSpectralMeasure, Measure.bind_congr_right hL.ae_eq_mk]
-  refine (Measure.integrable_bind_iff hL.measurable_mk
-    (continuous_pow k).aestronglyMeasurable).mpr ⟨?_, ?_⟩
-  · filter_upwards [hL.ae_eq_mk] with ω hω
-    rw [← hω]
+  rw [toMeasure_expectedCovarianceSpectralMeasure]
+  refine (Measure.integrable_bind_iff hL (continuous_pow k).aestronglyMeasurable).mpr ⟨?_, ?_⟩
+  · filter_upwards with ω
     exact ⟨(continuous_pow k).aestronglyMeasurable, (hasFiniteIntegral_iff_norm _).mpr
       ((lintegral_ofReal_norm_pow_spectralMeasure_le _ _ k).trans_lt ENNReal.ofReal_lt_top)⟩
   · refine ((RCLike.reCLM.integrable_comp htrace).const_mul (Fintype.card p : ℝ)⁻¹).congr ?_
-    filter_upwards [hL.ae_eq_mk] with ω hω
-    rw [← hω, RCLike.reCLM_apply, ← integral_pow_spectralMeasure (X ω).sampleCovariance
+    filter_upwards with ω
+    rw [RCLike.reCLM_apply, ← integral_pow_spectralMeasure (X ω).sampleCovariance
       (isHermitian_sampleCovariance (X ω)) k]
     apply integral_congr_ae
     exact ((Matrix.posSemidef_sampleCovariance (X ω)).ae_mem_Ici_spectralMeasure).mono

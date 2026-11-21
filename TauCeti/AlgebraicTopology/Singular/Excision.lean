@@ -23,12 +23,15 @@ whose closure lies in the interior of `B` does not change relative homology
 (`TopPair.isIso_singularHomologyMap_excisionMap_compl`).  In particular, relative homology modulo
 the complement of a closed set `K` may be computed in any open neighbourhood `U` of `K`:
 `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms
-(`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`).
+(`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`). If `s` and `t` are
+disjoint closed subsets of `X`, then relative to `s` the union `s ∪ t` has the homology of `t`: the
+inclusion `(t, ∅) ⟶ (s ∪ t, s)` induces isomorphisms
+(`TopPair.isIso_singularHomologyMap_ofInclusionMap_union_of_disjoint`).
 
-Both follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'` whose map
-on ambient spaces is an embedding and whose subspace is the full preimage of the subspace of `P'`:
-if the ambient space of `P'` has an open cover each of whose members lies in the subspace of `P'`
-or in the image of `f`, then `f` induces isomorphisms on relative singular homology
+All of these follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'`
+whose map on ambient spaces is an embedding and whose subspace is the full preimage of the subspace
+of `P'`: if the ambient space of `P'` has an open cover each of whose members lies in the subspace
+of `P'` or in the image of `f`, then `f` induces isomorphisms on relative singular homology
 (`TopPair.isIso_singularHomologyMap_of_open_cover`).
 
 Two intermediate results are available on their own.  The relative small-chain theorem
@@ -52,8 +55,11 @@ applied to the excision map.
 Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
 interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
 `Hₙ(X, A)` and `Hₙ(X, B)` (`TopPair.singularHomology_inter_hom_ext`): a morphism vanishing in
-`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`. Dually, a class of
-`Hₙ(X, U)` vanishing in `Hₙ(X, U ∪ V)`, for open `U` and `V`, comes from `Hₙ(V, V ∩ U)`
+`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`.
+By induction on the number of sets, the same holds for finitely many subsets any two of whose
+interiors cover `X`: a morphism into `Hₙ(X, ⋂ j, U j)` is determined by its images in the groups
+`Hₙ(X, U j)` (`TopPair.singularHomology_iInter_hom_ext`). Dually, a class of `Hₙ(X, U)` vanishing
+in `Hₙ(X, U ∪ V)`, for open `U` and `V`, comes from `Hₙ(V, V ∩ U)`
 (`TopPair.exists_singularHomologyMap_excisionMap_eq`).
 
 ## References
@@ -186,6 +192,10 @@ subspace `A`. -/
 abbrev interPair : TopPair.{w} := ofSubset (X := TopCat.of A) (Subtype.val ⁻¹' B)
 
 /-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
+-- The body is exposed so that the ambient component of the excision maps for different `B` is the
+-- same inclusion `A → X` up to unfolding: twisted chains of `(A, A ∩ B)` use the coefficient system
+-- pulled back along it, and these must agree for all `B` and with other constructions on `A`.
+@[expose]
 def excisionMap : interPair A B ⟶ ofSubset B :=
   ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtypeVal.restrictPreimage⟩)
@@ -335,6 +345,44 @@ theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (h
 
 end Subsets
 
+section DisjointUnion
+
+variable {X : TopCat.{w}} {s t : Set X}
+
+/-- **Excision of a closed summand.** If `s` and `t` are disjoint closed subsets of `X`, the
+inclusion of pairs `(t, ∅) ⟶ (s ∪ t, s)` induces isomorphisms on relative singular homology:
+relative to `s`, the union `s ∪ t` has the singular homology of `t`. Both `s` and `t` are open in
+`s ∪ t`, so this is the excision of `s` from the pair `(s ∪ t, s)`. -/
+theorem isIso_singularHomologyMap_ofInclusionMap_union_of_disjoint (hs : IsClosed s)
+    (ht : IsClosed t) (hst : Disjoint s t) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (ofInclusionMap (Set.empty_subset t)
+      (Set.subset_union_left : s ⊆ s ∪ t) (ContinuousMap.inclusion Set.subset_union_right)
+      fun _ hx ↦ hx.elim) R n) := by
+  refine isIso_singularHomologyMap_of_open_cover R _
+    (by rw [ofInclusionMap_fst]; exact IsEmbedding.inclusion Set.subset_union_right) ?_
+    (fun b : Bool ↦ bif b then (Subtype.val ⁻¹' t)ᶜ else (Subtype.val ⁻¹' s)ᶜ)
+    (fun b ↦ by
+      cases b
+      · exact (hs.preimage continuous_subtypeVal).isOpen_compl
+      · exact (ht.preimage continuous_subtypeVal).isOpen_compl) ?_ (fun b ↦ ?_) n
+  · -- No point of `t` lies in `s`.
+    rintro (x : t) ⟨(y : s), hy⟩
+    have hyx : (y : X) = x :=
+      congrArg Subtype.val (hy.trans (ofInclusionMap_fst_apply (ContinuousMap.inclusion _) _ x))
+    exact (Set.disjoint_left.1 hst y.property (hyx ▸ x.property)).elim
+  · refine Set.eq_univ_of_forall fun (x : ↥(s ∪ t)) ↦ Set.mem_iUnion.2 ?_
+    by_cases hx : (x : X) ∈ s
+    · exact ⟨true, fun hxt ↦ Set.disjoint_left.1 hst hx hxt⟩
+    · exact ⟨false, hx⟩
+  · cases b
+    · -- A point of `s ∪ t` outside `s` lies in `t`, the image of the inclusion.
+      exact Or.inr fun (x : ↥(s ∪ t)) hx ↦ ⟨⟨x, x.property.resolve_left hx⟩,
+        ofInclusionMap_fst_apply (ContinuousMap.inclusion _) _ _⟩
+    · -- A point of `s ∪ t` outside `t` lies in `s`, the subspace of the pair.
+      exact Or.inl fun (x : ↥(s ∪ t)) hx ↦ ⟨⟨x, x.property.resolve_right hx⟩, rfl⟩
+
+end DisjointUnion
+
 section Inter
 
 open TauCeti
@@ -440,6 +488,58 @@ theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ
       TopPair.singularHomologyMap (totalToSubset U V) R n), zero_comp, ← Category.assoc]
     exact hl ▸ hw₂
   rw [← hl, hl₀, zero_comp]
+
+/-- The induction behind `TopPair.singularHomology_iInter_hom_ext`, over the finite set `s` of
+indices of the subsets intersected. -/
+private theorem singularHomology_biInter_hom_ext {ι : Type*} {U : ι → Set X}
+    (hU : Pairwise fun j k ↦ interior (U j) ∪ interior (U k) = Set.univ) (s : Finset ι)
+    {W : Set X} (hW : W = ⋂ j ∈ s, U j) (n : ℕ) {M : A}
+    {u v : M ⟶ (ofSubset W).singularHomology R n}
+    (h : ∀ j ∈ s, ∀ hj : Set.MapsTo (𝟙 X) W (U j),
+      u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hj) R n =
+        v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hj) R n) :
+    u = v := by
+  classical
+  induction s using Finset.induction_on generalizing W u v with
+  | empty =>
+    -- The intersection of no sets is everything, and `(X, X)` has no relative homology.
+    subst hW
+    refine (isZero_singularHomology_of_surjective_map _ R (Set.range_eq_univ.1 ?_) n).eq_of_tgt u v
+    rw [range_ofSubset_map]
+    ext
+    exact ⟨fun _ ↦ trivial, fun _ ↦ by simp⟩
+  | insert a s ha ih =>
+    obtain rfl : W = U a ∩ ⋂ j ∈ s, U j := by rw [hW, Finset.set_biInter_insert]
+    refine singularHomology_inter_hom_ext R ?_ (fun _ hx ↦ hx.1) (fun _ hx ↦ hx.2) n
+      (h a (Finset.mem_insert_self a s) _) ?_
+    · -- A point outside the interior of `U a` lies in the interior of every other `U j`.
+      refine Set.eq_univ_of_forall fun x ↦ (em (x ∈ interior (U a))).imp id fun hx ↦ ?_
+      rw [Finset.interior_iInter, Set.mem_iInter₂]
+      intro j hj
+      exact ((hU (i := j) (j := a) fun hja ↦ ha (hja ▸ hj)).ge (Set.mem_univ x)).resolve_right hx
+    · refine ih rfl fun j hj hj' ↦ ?_
+      have hV : Set.MapsTo (𝟙 X) (U a ∩ ⋂ j ∈ s, U j) (⋂ j ∈ s, U j) := fun _ hx ↦ hx.2
+      rw [Category.assoc, Category.assoc, ← singularHomologyMap_comp,
+        ofSubsetMap_comp_ofSubsetMap_of_comp_eq hV hj' (fun x hx ↦ hj' (hV hx))
+          (Category.comp_id _)]
+      exact h j (Finset.mem_insert_of_mem hj) _
+
+/-- **Relative homology modulo a finite intersection is detected on the members.** Let `U j`, for
+`j` in a finite type, be subsets of a space `X` such that the interiors of any two of them cover
+`X`, and let `W = ⋂ j, U j`. Two morphisms into `Hₙ(X, W)` agree as soon as their images in every
+`Hₙ(X, U j)` agree. For two sets this is `TopPair.singularHomology_inter_hom_ext`. The
+intersection `W` is an argument with `hW : W = ⋂ j, U j`, and `h` quantifies over the inclusion
+proofs, so that the maps of pairs in the hypotheses match those of the caller. -/
+theorem singularHomology_iInter_hom_ext {ι : Type*} [Finite ι] {U : ι → Set X}
+    (hU : Pairwise fun j k ↦ interior (U j) ∪ interior (U k) = Set.univ) {W : Set X}
+    (hW : W = ⋂ j, U j) (n : ℕ) {M : A} {u v : M ⟶ (ofSubset W).singularHomology R n}
+    (h : ∀ j (hj : Set.MapsTo (𝟙 X) W (U j)),
+      u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hj) R n =
+        v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hj) R n) :
+    u = v := by
+  have := Fintype.ofFinite ι
+  exact singularHomology_biInter_hom_ext R hU Finset.univ (by simpa using hW) n
+    fun j _ hj ↦ h j hj
 
 end Inter
 
