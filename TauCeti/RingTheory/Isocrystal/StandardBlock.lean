@@ -37,8 +37,8 @@ coprime. Under the functor from isocrystals to vector bundles on the Fargues–F
   the Frobenius on the standard basis, including the `π ^ s` wraparound.
 * `TauCeti.standardBlockFrobenius_bijective`: the Frobenius is bijective when `π ≠ 0`, so `D(s, r)`
   is an isocrystal.
-* `TauCeti.standardBlockFrobenius_iterate_rank`: if `σ` fixes `π`, then `Φ ^ r = π ^ s • σ ^ r`,
-  with `σ ^ r` acting on coordinates.
+* `TauCeti.standardBlockFrobenius_iterate_rank_apply`: if `σ` fixes `π`, then
+  `Φ ^ r = π ^ s • σ ^ r`, with `σ ^ r` acting on coordinates.
 * `TauCeti.eq_zero_of_intertwines_standardBlock`: if `σ` fixes `π ≠ 0` and preserves a valuation
   `v` with `v π ≠ 1`, there is no nonzero Frobenius-equivariant `L`-linear map `D(s, r) → D(s', r')`
   between blocks of different slopes `s / r ≠ s' / r'`.
@@ -158,7 +158,8 @@ private theorem standardBlockFrobenius_iterate_apply [NeZero r] (hσπ : σ π =
 
 /-- If `σ` fixes `π`, then the `r`-th power of the Frobenius of `D(s, r)` is `π ^ s • σ ^ r`,
 with `σ ^ r` acting on coordinates. -/
-theorem standardBlockFrobenius_iterate_rank (hσπ : σ π = π) (x : Fin r → L) (i : Fin r) :
+theorem standardBlockFrobenius_iterate_rank_apply (hσπ : σ π = π) (x : Fin r → L)
+    (i : Fin r) :
     (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) := by
   have := i.neZero
   rw [standardBlockFrobenius_iterate_apply hσπ, Fin.natCast_self, sub_zero]
@@ -174,14 +175,14 @@ theorem standardBlockFrobenius_iterate_rank (hσπ : σ π = π) (x : Fin r → 
 
 /-- If `σ` fixes `π`, then the `(r * m)`-th power of the Frobenius of `D(s, r)` is
 `π ^ (s * m) • σ ^ (r * m)`, with `σ ^ (r * m)` acting on coordinates. -/
-theorem standardBlockFrobenius_iterate_rank_mul (hσπ : σ π = π) (m : ℕ) (x : Fin r → L)
+theorem standardBlockFrobenius_iterate_rank_mul_apply (hσπ : σ π = π) (m : ℕ) (x : Fin r → L)
     (i : Fin r) :
     (standardBlockFrobenius σ π s r)^[r * m] x i = π ^ (s * m) * σ^[r * m] (x i) := by
   induction m generalizing x with
   | zero => simp
   | succ m ih =>
     have hσs : σ (π ^ s) = π ^ s := by rw [map_zpow₀, hσπ]
-    rw [Nat.mul_succ, iterate_add_apply, ih, standardBlockFrobenius_iterate_rank hσπ,
+    rw [Nat.mul_succ, iterate_add_apply, ih, standardBlockFrobenius_iterate_rank_apply hσπ,
       iterate_map_mul, iterate_fixed hσs, ← iterate_add_apply σ]
     simp only [zpow_mul, zpow_natCast, pow_succ]
     ring
@@ -213,14 +214,14 @@ theorem eq_zero_of_intertwines_standardBlock {Γ₀ : Type*} [LinearOrderedCommG
   have hx : (standardBlockFrobenius σ π s r)^[r * r'] (Pi.basisFun L (Fin r) j) =
       π ^ (s * r') • Pi.basisFun L (Fin r) j := by
     ext l
-    rw [standardBlockFrobenius_iterate_rank_mul hσπ, Pi.smul_apply, smul_eq_mul, Pi.basisFun_apply,
-      Pi.single_apply]
+    rw [standardBlockFrobenius_iterate_rank_mul_apply hσπ, Pi.smul_apply, smul_eq_mul,
+      Pi.basisFun_apply, Pi.single_apply]
     split_ifs <;> simp
   have hsc : Semiconj f (standardBlockFrobenius σ π s r) (standardBlockFrobenius σ π s' r') := hf
   have hy : π ^ (s * r') * y i = π ^ (s' * r) * σ^[r * r'] (y i) := by
     have := congrFun (hsc.iterate_right (r * r') (Pi.basisFun L (Fin r) j)) i
     rw [hx, map_smul, Pi.smul_apply, smul_eq_mul, mul_comm r r',
-      standardBlockFrobenius_iterate_rank_mul hσπ] at this
+      standardBlockFrobenius_iterate_rank_mul_apply hσπ] at this
     rwa [mul_comm r' r] at this
   -- Taking valuations, a nonzero coordinate of `y` would force `s * r' = s' * r`.
   by_contra hyi
