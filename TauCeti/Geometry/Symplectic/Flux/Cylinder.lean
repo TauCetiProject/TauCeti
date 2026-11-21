@@ -57,6 +57,13 @@ endpoint which agrees with the compactly supported flux on these shears and vani
 identity is continuous at the identity
 (`TauCeti.not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy`).
 
+On the other hand the area form is exact, `dr ∧ dθ = d(r dθ)`
+(`TauCeti.cylinderAreaForm_mem_exactForms`), so the compactly supported flux of a compactly
+supported diffeotopy only depends on its final diffeomorphism. In particular every compactly
+supported diffeotopy ending at the identity has zero compactly supported flux
+(`TauCeti.compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl`): the loops contribute
+nothing, and the compactly supported flux of a shear is an invariant of its final map.
+
 ## Main results
 
 * `TauCeti.fluxForm_cylinderShearDiffeotopy_cylinderAreaForm`: the flux form of the shear is
@@ -72,6 +79,8 @@ identity is continuous at the identity
 * `TauCeti.not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy`: the compactly
   supported flux, read as a function of the endpoint, is not continuous at the identity for the
   weak Whitney `C^∞` topology.
+* `TauCeti.compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl`: compactly supported
+  diffeotopies ending at the identity have zero compactly supported flux.
 
 ## References
 
@@ -299,5 +308,24 @@ theorem not_continuousWithinAt_of_eq_compactFlux_cylinderShearDiffeotopy {ι : T
     (hGc i₀)).1 (tendsto_const_nhds_iff.1 (h.congr hconst))))
 
 end Discontinuity
+
+/-! ### Loops have zero compactly supported flux -/
+
+/-- **Compactly supported loops of the cylinder have zero compactly supported flux.** The area
+form `dr ∧ dθ = d(r dθ)` is exact, so a diffeotopy of the cylinder which is the identity outside a
+compact set and ends at the identity has zero compactly supported flux. Thus the compactly
+supported fluxes of loops of compactly supported area-preserving diffeomorphisms of the cylinder
+all vanish, while the shears along functions `g` with `∫ g ≠ 0`, which do not end at the identity,
+have nonzero compactly supported flux. -/
+theorem compactFlux_cylinderAreaClosedForm_eq_zero_of_final_eq_refl
+    {Φ : Diffeotopy (𝓘(ℝ).prod 𝓘(ℝ)) ∞ (ℝ × AddCircle p)}
+    (h : Φ.final = Diffeomorph.refl (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) ∞)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (cylinderAreaClosedForm p).val)
+    (hc : Φ.fluxForm (cylinderAreaClosedForm p).val ∈
+      compactlySupportedForms (𝓘(ℝ).prod 𝓘(ℝ)) (ℝ × AddCircle p) 1)
+    {K : Set (ℝ × AddCircle p)} (hK : IsCompact K) (hΦK : ∀ t, EqOn (fun x ↦ Φ (t, x)) id Kᶜ) :
+    Φ.compactFlux (cylinderAreaClosedForm p) hΦ hc = 0 :=
+  Φ.compactFlux_eq_zero_of_final_eq_refl _
+    ((coe_cylinderAreaClosedForm p).symm ▸ cylinderAreaForm_mem_exactForms p) h hΦ hc hK hΦK
 
 end TauCeti
