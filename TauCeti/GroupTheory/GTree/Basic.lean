@@ -28,8 +28,10 @@ such actions.
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion. The action maps convex sets of vertices to convex sets and commutes with convex
-  hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
+  inversion, it does not increase along an equivariant map that does not increase distances, and
+  equivariantly isomorphic trees have the same translation lengths. The action maps convex sets
+  of vertices to convex sets and commutes with convex hulls; the segment from `x` to `(g h) x`
+  lies in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -606,6 +608,27 @@ theorem translationLength_pos_iff {g : G} : 0 < T.translationLength g ↔ T.IsHy
   unfold translationLength
   exact ((MulAction.surjective h).iInf_congr (h • ·) fun v => by
     simp only [mul_smul, inv_smul_smul, dist_smul]).symm
+
+/-- An equivariant map of vertices that does not increase distances does not increase translation
+lengths. -/
+theorem translationLength_le_of_dist_le {T' : GTree.{u', v'} G} (f : T.V →[G] T'.V)
+    (hf : ∀ x y : T.V, T'.dist (f x) (f y) ≤ T.dist x y) (g : G) :
+    T'.translationLength g ≤ T.translationLength g := by
+  obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  calc T'.translationLength g ≤ T'.dist (f v) (g • f v) := translationLength_le g (f v)
+    _ = T'.dist (f v) (f (g • v)) := by rw [map_smul]
+    _ ≤ T.translationLength g := (hf v (g • v)).trans hv.le
+
+/-- Translation lengths are invariant under equivariant isomorphisms of trees. -/
+theorem translationLength_eq_of_iso {T' : GTree.{u', v'} G} (φ : T.toSerreGraph.Iso T'.toSerreGraph)
+    (hφ : ∀ (g : G) (x : T.V), φ.equivV (g • x) = g • φ.equivV x) (g : G) :
+    T'.translationLength g = T.translationLength g := by
+  refine le_antisymm (translationLength_le_of_dist_le ⟨φ.equivV, hφ⟩
+    (fun x y => φ.toHom.dist_le (T.nonempty_path x y)) g)
+    (translationLength_le_of_dist_le ⟨φ.equivV.symm, fun h y => ?_⟩
+      (fun x y => φ.symm.toHom.dist_le (T'.nonempty_path x y)) g)
+  -- The inverse bijection is equivariant too.
+  simp [Equiv.symm_apply_eq, hφ]
 
 variable (T)
 
