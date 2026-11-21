@@ -32,10 +32,10 @@ compact disc, which is the form Peetre's compact-error argument
 kernel and closed range once `D_u` is realized on Sobolev spaces.
 
 * `exists_forall_le_mul_integral_floerLinearization_add_of_end` is the patching argument: for
-  Floer data that are regular along `u`, with `J` compatible along `u`, an estimate of `D_u` on
-  sections supported far out on the end implies the semi-Fredholm estimate. The section is cut
-  into an end piece and a core piece by smooth cutoffs of the plane. On the end piece the end
-  estimate applies, on the core piece the estimate of `D_u` on a disc
+  Floer data that are regular along `u`, with `J` compatible along `u` on a large disc, an
+  estimate of `D_u` on sections supported far out on the end implies the semi-Fredholm estimate.
+  The section is cut into an end piece and a core piece by smooth cutoffs of the plane. On the end
+  piece the end estimate applies, on the core piece the estimate of `D_u` on a disc
   (`TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt`),
   and the cutoffs cost only `L²` norms of `ξ` on a compact disc, by the Leibniz rule
   `D_u (β ξ) = β D_u ξ + (∂s β) ξ + J ((∂t β) ξ)`
@@ -205,13 +205,14 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
         refine (herr (hξ.of_le one_le_two) hξc).trans ?_
         nlinarith [le_max_left 2 C₁, le_max_right 2 C₁]
 
-/-- **Patching an end estimate into the semi-Fredholm estimate on a PSS plane.** Let `J(z)` be
-compatible along `u`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points `(z, u z)`, and `u` `C¹`.
-Suppose that the linearized Floer operator `D_u` controls the `W^{1,2}` norm on the end: there are
-`Ce` and `Re` such that every `C²` section `ξ` of compact support in the part
-`‖w‖ > exp (2π Re)` of the plane satisfies `∫ (‖∂s (ξ ∘ φ)‖² + ‖∂t (ξ ∘ φ)‖² + ‖ξ ∘ φ‖²) ≤
-Ce ∫ ‖D_u ξ‖²`, the left integral over `ℝ × [0, 1]` in the cylinder coordinates of the end lift
-`φ`. Then there are `C ≥ 0` and `R` such that every `C²` section `ξ` of compact support satisfies
+/-- **Patching an end estimate into the semi-Fredholm estimate on a PSS plane.** Let `J` be `C¹`
+and `K_s`, `K_t` `C²` at the points `(z, u z)`, and `u` `C¹`. Suppose that the linearized Floer
+operator `D_u` controls the `W^{1,2}` norm on the end: there are `Ce` and `Re` such that every `C²`
+section `ξ` of compact support in the part `‖w‖ > exp (2π Re)` of the plane satisfies
+`∫ (‖∂s (ξ ∘ φ)‖² + ‖∂t (ξ ∘ φ)‖² + ‖ξ ∘ φ‖²) ≤ Ce ∫ ‖D_u ξ‖²`, the left integral over
+`ℝ × [0, 1]` in the cylinder coordinates of the end lift `φ`. If moreover `J(z)` is compatible along
+`u` on the disc `‖w‖ ≤ exp (2π (Re + 2))`, then there are `C ≥ 0` and `R` such that every `C²`
+section `ξ` of compact support satisfies
 
 `∫_{ε s > R} (‖∂s (ξ ∘ φ)‖² + ‖∂t (ξ ∘ φ)‖² + ‖ξ ∘ φ‖²) +`
 `  ∫_{‖w‖ ≤ e^{2πR}} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{‖w‖ ≤ e^{2π (R + 1)}} ‖ξ‖²)`,
@@ -225,7 +226,7 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_end (ω : Symple
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hc : ∀ z, ω.Compatible (J z (u z))) {Ce Re : ℝ}
+    {Ce Re : ℝ}
     (he : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ {z | Real.exp (2 * π * Re) < ‖Complex.equivRealProdCLM.symm z‖} →
       ∫ ζ in univ ×ˢ Icc (0 : ℝ) 1,
@@ -233,7 +234,9 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_end (ω : Symple
             ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
             ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) ≤
         Ce * ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u ξ z‖ ^ 2) :
+          Ks Kt u ξ z‖ ^ 2)
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 2)) →
+      ω.Compatible (J z (u z))) :
     ∃ C, 0 ≤ C ∧ ∃ R : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       (∫ ζ in {s : ℝ | R < p.endSign * s} ×ˢ Icc (0 : ℝ) 1,
           (‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
@@ -248,9 +251,9 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_end (ω : Symple
             ‖ξ z‖ ^ 2) := by
   obtain ⟨C₁, hC₁, hend⟩ := exists_setIntegral_comp_realChart_le_of_end ω p hJ hKs hKt hu he
   obtain ⟨C₂, hC₂, hcore⟩ :=
-    ω.exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt hJ hKs hKt hu hc
+    ω.exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt hJ hKs hKt hu
     (a := Real.exp (2 * π * (Re + 1))) (b := Real.exp (2 * π * (Re + 1 + 1)))
-    (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos]))
+    (by rwa [add_assoc, one_add_one_eq_two]) (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos]))
   refine ⟨C₁ + C₂, by positivity, Re + 1, fun ξ hξ hξc ↦ ?_⟩
   -- The `L²` error term of the end lies in the larger disc of the core.
   have hmono : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 1))},
@@ -277,10 +280,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 part `‖w‖ > r` of the end of the PSS plane `p`, solving there the Floer equation for the
 perturbation of a jointly `C³` period-one Hamiltonian `H` with globally Lipschitz suspended vector
 field, with finite energy and values in a compact set `K` on which every one-periodic orbit of `H`
-is nondegenerate. Let the structures `J` be `C¹` along `u` and compatible along `u`, and on that
-part of the end equal to a `C²` period-one family `J_q(t)` read in the angular coordinate, with
-`J_q` compatible on `K`. Then there are `C ≥ 0` and `R` such that every `C²` section `ξ` of
-compact support satisfies
+is nondegenerate. Let the structures `J` be `C¹` along `u` and compatible along `u` on the disc
+`‖w‖ ≤ r`, and on the part `‖w‖ > r` of the end equal to a `C²` period-one family `J_q(t)` read in
+the angular coordinate, with `J_q` compatible on `K`. Then there are `C ≥ 0` and `R` such that
+every `C²` section `ξ` of compact support satisfies
 
 `∫_{ε s > R} (‖∂s (ξ ∘ φ)‖² + ‖∂t (ξ ∘ φ)‖² + ‖ξ ∘ φ‖²) +`
 `  ∫_{‖w‖ ≤ e^{2πR}} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{‖w‖ ≤ e^{2π (R + 1)}} ‖ξ‖²)`
@@ -301,7 +304,7 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy
     (hJr : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
       J z = Jq (p.endCoord (Complex.equivRealProdCLM.symm z)).im)
     (hu : ContDiff ℝ 1 u) (hur : ContDiffOn ℝ 3 u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
-    (hc : ∀ z, ω.Compatible (J z (u z)))
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ r → ω.Compatible (J z (u z)))
     (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
     (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
@@ -335,9 +338,15 @@ theorem exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy
     ω.exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_finite_energy
       p hH hHs hL hK hJq hJqper hJqK hJr hur huK hF hE hnd
   have hHs₂ : ContDiff ℝ (2 : ℕ∞) (uncurry H) := hHs.of_le (by norm_num)
-  exact ω.exists_forall_le_mul_integral_floerLinearization_add_of_end p hJ
+  -- On the end, compatibility comes from that of `J_q` on `K`.
+  refine ω.exists_forall_le_mul_integral_floerLinearization_add_of_end p hJ
     (fun _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs₂ 1).contDiffAt)
-    (fun _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs₂ Complex.I).contDiffAt) hu hc he
+    (fun _ ↦ (contDiff_uncurry_perturbation (p := p) hH hHs₂ Complex.I).contDiffAt) hu he
+    fun z _ ↦ ?_
+  rcases le_or_gt ‖Complex.equivRealProdCLM.symm z‖ r with hz | hz
+  · exact hc z hz
+  · rw [hJr z hz]
+    exact hJqK _ _ (huK z hz)
 
 end FiniteEnergy
 

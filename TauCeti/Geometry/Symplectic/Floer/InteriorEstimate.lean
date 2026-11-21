@@ -34,8 +34,8 @@ for every `C²` section `ξ` with support in `K`, which is
 and on a finite cylinder `[a, b] × [0, 1]` for every `C²` section closing up in `t`,
 `ξ(s, 1) = ξ(s, 0)` for `s ∈ [a, b]`, and vanishing on the slices `s = a` and `s = b`
 (`exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_periodic`).
-For compatible data on the whole plane, a cutoff between two discs `‖w‖ ≤ a < b` turns the first
-estimate into one for every `C²` section of compact support,
+For data on the whole plane, compatible on the disc `‖w‖ ≤ b`, a cutoff between two discs
+`‖w‖ ≤ a < b` turns the first estimate into one for every `C²` section of compact support,
 
 `∫_{‖w‖ ≤ a} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{‖w‖ ≤ b} ‖ξ‖²)`
 
@@ -159,9 +159,10 @@ private theorem setIntegral_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V} {β :
     simp [show β z' = 1 from h]
   simp only [hev.fderiv_eq, show β z • ξ z = ξ z from hev.eq_of_nhds]
 
-/-- **The estimate of the linearized Floer operator on a disc.** Let `J(z, u z)` be `ω`-compatible
-for every `z`, with `J` `C¹` and `Ks`, `Kt` `C²` at the points `(z, u z)`, and `u` `C¹`. Then for
-`a < b` there is a constant `C ≥ 0` such that every `C²` section `ξ` of compact support satisfies
+/-- **The estimate of the linearized Floer operator on a disc.** Let `a < b`, let `J(z, u z)` be
+`ω`-compatible for every `z` in the disc `‖w‖ ≤ b`, with `J` `C¹` and `Ks`, `Kt` `C²` at the points
+`(z, u z)`, and `u` `C¹`. Then there is a constant `C ≥ 0` such that every `C²` section `ξ` of
+compact support satisfies
 `∫_{‖w‖ ≤ a} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{‖w‖ ≤ b} ‖ξ‖²)`, the discs read in
 real coordinates. A cutoff between the two discs reduces this to the estimate on compactly
 supported sections,
@@ -174,7 +175,8 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
       (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
     (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
-    (hc : ∀ z, ω.Compatible (J z (u z))) {a b : ℝ} (hab : a < b) :
+    {a b : ℝ} (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ b → ω.Compatible (J z (u z)))
+    (hab : a < b) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a},
           (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
@@ -187,7 +189,7 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
   obtain ⟨C₀, hC₀, hcore⟩ :=
    exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearization_of_tsupport_subset
       ω (μ := volume) hK (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z)
-      (fun z _ ↦ hu.contDiffAt) fun z _ ↦ hc z
+      (fun z _ ↦ hu.contDiffAt) hc
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
   obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
