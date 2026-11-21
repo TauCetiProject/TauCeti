@@ -573,18 +573,32 @@ namespace LinearMap.BilinForm
 
 open _root_.QuadraticForm
 
+/-- The quadratic form of the Gram matrix of a bilinear form in a basis is equivalent to the
+quadratic form of the bilinear form, through the coordinates of the basis. -/
+theorem equivalent_toQuadraticForm'_toMatrix {R M I : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
+    (B.toMatrix b).toQuadraticForm'.Equivalent B.toQuadraticMap :=
+  ⟨{ toLinearEquiv := b.equivFun.symm
+     map_app' := fun v ↦ by
+       rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+       exact (B.dotProduct_toMatrix_mulVec b v v).symm }⟩
+
+/-- The positive index of a bilinear form agrees with that of its Gram matrix in any basis. -/
+@[simp]
+theorem sigPos_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
+    [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
+    (B : LinearMap.BilinForm R M) :
+    _root_.sigPos ((B.toMatrix b).toQuadraticForm') = _root_.sigPos B.toQuadraticMap :=
+  (equivalent_toQuadraticForm'_toMatrix b B).sigPos_eq
+
 /-- The negative index of a bilinear form agrees with that of its Gram matrix in any basis. -/
 @[simp]
 theorem sigNeg_toMatrix {R M I : Type*} [CommRing R] [LinearOrder R] [AddCommGroup M]
     [Module R M] [Fintype I] [DecidableEq I] (b : Module.Basis I R M)
     (B : LinearMap.BilinForm R M) :
-    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap := by
-  apply QuadraticMap.Equivalent.sigNeg_eq
-  refine ⟨{
-    toLinearEquiv := b.equivFun.symm
-    map_app' := fun v ↦ ?_ }⟩
-  rw [Matrix.toQuadraticForm'_apply, LinearMap.BilinMap.toQuadraticMap_apply]
-  exact (B.dotProduct_toMatrix_mulVec b v v).symm
+    _root_.sigNeg ((B.toMatrix b).toQuadraticForm') = _root_.sigNeg B.toQuadraticMap :=
+  (equivalent_toQuadraticForm'_toMatrix b B).sigNeg_eq
 
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]

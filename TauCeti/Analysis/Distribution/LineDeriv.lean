@@ -15,6 +15,8 @@ Iterating directional derivatives transfers them to the test function in reverse
 one minus sign per derivative, and the distributional Laplacian transfers directly to the test
 function with plus sign (`Distribution.laplacianCLM_apply_apply`). This evaluates repeated
 derivatives of distributions without unfolding the continuous transpose defining the derivative.
+The file also writes the Laplacian `laplacianCLM` as a sum of second iterated derivatives along an
+orthonormal basis.
 -/
 
 public section
@@ -69,3 +71,18 @@ theorem laplacianCLM_apply_apply (T : 𝓓'(Ω, F)) (φ : 𝓓(Ω, ℝ)) :
 end InnerProductSpace
 
 end Distribution
+
+namespace LineDeriv
+
+variable {ι E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [LineDeriv E V V] [LineDerivAdd E V V] [LineDerivSMul ℝ E V V] [ContinuousLineDeriv E V V]
+  [LineDerivLeftSMul ℝ E V V]
+
+/-- The Laplacian `laplacianCLM ℝ E V` is the sum of the second iterated derivatives
+`∂^{![b i, b i]}` along any orthonormal basis `b`. -/
+theorem laplacianCLM_eq_sum_iteratedLineDerivOp [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    (f : V) : laplacianCLM ℝ E V f = ∑ i, ∂^{![b i, b i]} f := by
+  simp [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left]
+
+end LineDeriv
