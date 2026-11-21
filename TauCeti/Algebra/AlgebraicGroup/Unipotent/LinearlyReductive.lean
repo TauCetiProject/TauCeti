@@ -107,7 +107,7 @@ theorem exists_mem_ne_zero_coact_eq_tmul_one_of_forall_isUnipotentPoint
   obtain ⟨v, hv, hvc⟩ :=
     (hasNonzeroFixedVector_iff (k := k) (H := H) (M := P)).mp
       (hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := P) hH)
-  refine ⟨v.1.1, v.1.2, fun hc ↦ hv (Subtype.ext (Subtype.ext hc)), ?_⟩
+  refine ⟨v.val.val, v.val.property, fun hc ↦ hv (Subtype.ext (Subtype.ext hc)), ?_⟩
   exact Subcomodule.coact_coe_eq_tmul_one N (Subcomodule.coact_coe_eq_tmul_one P hvc)
 
 /-- If a comodule over a reduced finite-type commutative Hopf algebra with

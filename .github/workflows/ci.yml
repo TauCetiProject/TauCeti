@@ -10,16 +10,24 @@ permissions:
   contents: read
   pull-requests: read  # scripts/lint-scope.sh reads the merged PRs' labels and branches
 
-# Keep the cache publisher live under a burst of main pushes. GitHub retains at
-# most one running and one pending run in this group: the running build is never
-# cancelled before it can publish, while superseded pending commits do not each
-# start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
-# intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection.
-# Dependency reconciliation uses conclusive runs as evidence for the current
-# pin, skipping coalesced commits without a completed build.
+# This workflow is main's post-merge check, not its cache publisher. Each merge-queue
+# landing fast-forwards main to a staging tip whose Lake cache pr-build.yml's
+# publish-merge-group-cache job published before the landing, and the queue
+# dispatches staging only on a base whose cache is published. The publish-lake-cache
+# job below is a best-effort fallback for pushes made outside the queue: it skips
+# when the exact map is already public, and nothing may wait for it. A cold rebuild
+# (a Mathlib or toolchain bump pushed directly) can exceed the hosted runner's 6h
+# limit; the queue then waits for that base, and alerts, until it is published.
+#
+# GitHub retains at most one running and one pending run in this group: the running
+# build is never cancelled, while superseded pending commits do not each start an
+# expensive rebuild. In a burst, this deliberately coalesces intermediate commits'
+# post-merge checks; the newest pending tip rechecks the entire tree, though
+# localizing a failure may then require bisection. Dependency reconciliation uses
+# conclusive runs as evidence for the current pin, skipping coalesced commits
+# without a completed build.
 concurrency:
-  group: main-ci-cache-publisher
+  group: main-ci
   cancel-in-progress: false
 
 env:
@@ -31,10 +39,10 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Infrastructure regression suites run separately in infrastructure-tests.yml.
+  # Infrastructure regression suites run in TauCetiTools checks.yml.
   build:
     # Publish fresh dot-notation context before library execution. GitHub's hosted
-    # pool can queue this serialized publisher behind hours of ordinary PR work.
+    # pool can queue this serialized check behind hours of ordinary PR work.
     runs-on: ubuntu-24.04
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
@@ -226,7 +234,11 @@ jobs:
       - name: Audit import headers against the complete source inventory
         run: python3 scripts/check-imports.py
 
-      # Temporary workaround; remove after adopting lean4#15868.
+      # Main-push builds use Lake's stock per-module restoration, one `leantar` process per cached
+      # module; only the sandboxed PR build in pr-build.yml runs TauCetiTools' bulk extraction first.
+      # https://github.com/leanprover/lean4/pull/16418 (libuv process spawning, in v4.37.0-rc1) is
+      # expected to make that per-module cost small; https://github.com/leanprover/lean4/pull/15868
+      # (native bulk unpacking) is still open.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the earlier fetch step filled;
@@ -413,6 +425,7 @@ jobs:
   # Run the secret-bearing upload on a fresh runner through the same hardened publisher used
   # by merge-group CI. Main publication remains a fallback: merge groups normally publish the
   # exact commit before landing, while this covers human-owned changes and operational retries.
+  # It is best effort, and no other workflow or queue step may depend on it (see the header).
   publish-lake-cache:
     needs: [build]
     if: ${{ needs.build.result == 'success' && needs.build.outputs.staged == 'true' }}

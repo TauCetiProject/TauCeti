@@ -63,6 +63,9 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
+* `TauCeti.mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero` and
+  `TauCeti.timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero`: a point where the field vanishes
+  between two times stays in the domain and is fixed by the time map between them.
 * `TauCeti.timeDependentFlowOf_trans_of_mem` and `TauCeti.timeDependentFlowOf_trans`: the two-time
   composition law, where it is defined, and everywhere for a complete suspension.
 * `TauCeti.timeDependentFlowOf_const_smul`: the time-dependent flow of a constant multiple `c • v`
@@ -362,8 +365,9 @@ theorem timeDependentFlowOf_trans_of_mem {r : ℝ} (hrs : ((r, s), x) ∈ timeDe
   refine ⟨hmem, ?_⟩
   rw [timeDependentFlowOf_def (s := r) (t := t), ← heq, hpt, timeDependentFlowOf_def]
 
-/-- In finite dimensions, the domain of the time-dependent flow of a `C¹` field is open. -/
-theorem isOpen_timeDependentFlowDomain [FiniteDimensional ℝ E] :
+/-- On a complete normed model space, the domain of the time-dependent flow of a `C¹` field
+is open. -/
+theorem isOpen_timeDependentFlowDomain [CompleteSpace E] :
     IsOpen (timeDependentFlowDomain X) :=
   (isOpen_flowDomain (contMDiff_timeDependentSuspensionField hX)).preimage (by fun_prop)
 
@@ -394,9 +398,10 @@ theorem timeDependentFlowOf_const_smul [T2Space M] [IsManifold I 1 M] [Boundaryl
     ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
   simpa [flowOf_zero, sub_eq_add_neg] using h
 
-/-- In finite dimensions, the time-dependent flow of a `C^n` field, `1 ≤ n`, is jointly `C^n` in
+/-- On a complete normed model space, the time-dependent flow of a `C^n` field, `1 ≤ n`, is
+jointly `C^n` in
 the initial time, the final time and the initial point on its domain. -/
-theorem contMDiffOn_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+theorem contMDiffOn_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
@@ -551,6 +556,104 @@ theorem exists_timeDependentFlow [FiniteDimensional ℝ E] [T2Space M]
     (by fun_prop : Continuous (fun t : ℝ ↦ ((p.1, t), p.2))).continuousAt.preimage_mem_nhds
       ((isOpen_timeDependentFlowDomain hX).mem_nhds (mem_timeDependentFlowDomain_self hX _ _))
   exact hdom.mono fun _ ht ↦ hasMFDerivAt_timeDependentFlowOf hX ht
+
+/-- Extend the suspended constant solution on a closed interval by local solutions at its
+endpoints. This construction uses only local existence, so it does not require separation. -/
+private theorem exists_isMIntegralCurveOn_eq_clock_const_on_uIcc [CompleteSpace E]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {x : M} (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) :
+    ∃ (γ : ℝ → ℝ × M) (l r : ℝ), (0 : ℝ) ∈ Ioo l r ∧ t - s ∈ Ioo l r ∧
+      γ 0 = (s, x) ∧ γ (t - s) = (t, x) ∧
+      IsMIntegralCurveOn γ (timeDependentSuspensionField X) (Ioo l r) := by
+  let a := min s t
+  let b := max s t
+  have hab : a ≤ b := min_le_max
+  -- Normalize the initial time once, shared by domain membership and stationarity.
+  suffices ∃ (γ : ℝ → ℝ × M) (l r : ℝ), l < a ∧ b < r ∧
+      (∀ u ∈ Icc a b, γ u = (u, x)) ∧
+      IsMIntegralCurveOn γ (timeDependentSuspensionField X) (Ioo l r) by
+    obtain ⟨γ, l, r, hl, hr, hγx, hγ⟩ := this
+    refine ⟨fun u ↦ γ (u + s), l - s, r - s,
+      ⟨by dsimp [a] at hl; linarith [min_le_left s t],
+        by dsimp [b] at hr; linarith [le_max_left s t]⟩,
+      ⟨by dsimp [a] at hl; linarith [min_le_right s t],
+        by dsimp [b] at hr; linarith [le_max_right s t]⟩,
+      by simpa using hγx s left_mem_uIcc,
+      by simpa using hγx t right_mem_uIcc, ?_⟩
+    exact (hγ.comp_add s).mono fun u hu ↦
+      ⟨by linarith [hu.1], by linarith [hu.2]⟩
+  -- Glue local suspension solutions onto the lifted constant segment at both endpoints.
+  have hW := contMDiff_timeDependentSuspensionField hX
+  obtain ⟨w, hw, ε, hε, hf⟩ := exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo
+    (x₀ := (a, x)) hW.contMDiffAt
+  obtain ⟨f, hfa, hf⟩ := hf a (a, x) (mem_of_mem_nhds hw)
+  obtain ⟨w, hw, η, hη, hg⟩ := exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo
+    (x₀ := (b, x)) hW.contMDiffAt
+  obtain ⟨g, hgb, hg⟩ := hg b (b, x) (mem_of_mem_nhds hw)
+  let γ : ℝ → ℝ × M := fun u ↦ if u ≤ a then f u else if u ≤ b then (u, x) else g u
+  refine ⟨γ, a - ε, b + η, by linarith, by linarith, ?_, ?_⟩
+  · intro u hu
+    dsimp only [γ]
+    split_ifs with hua hub
+    · rw [le_antisymm hua hu.1, hfa]
+    · rfl
+    · exact (hub hu.2).elim
+  · intro u hu
+    apply HasMFDerivAt.hasMFDerivWithinAt
+    apply Manifold.hasMFDerivAt_if_le (c := a)
+      (L := fun _ p ↦ (1 : ℝ →L[ℝ] ℝ).smulRight (timeDependentSuspensionField X p))
+    · rw [hfa, ite_eq_left hab]
+    · intro hua
+      exact (hf.isMIntegralCurveAt (Ioo_mem_nhds hu.1 (by linarith))).hasMFDerivAt
+    · intro hau
+      apply Manifold.hasMFDerivAt_if_le (c := b)
+        (L := fun _ p ↦ (1 : ℝ →L[ℝ] ℝ).smulRight (timeDependentSuspensionField X p))
+      · exact hgb.symm
+      · intro hub
+        have hconst := (hasMFDerivAt_id (I := 𝓘(ℝ, ℝ)) u).prodMk
+          (hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) x u)
+        exact hconst.congr_mfderiv (by
+          simp only [timeDependentSuspensionField, hx u ⟨hau, hub⟩]
+          apply ContinuousLinearMap.ext
+          intro v
+          apply Prod.ext
+          · exact (mul_one (M := ℝ) v).symm
+          -- Evaluate the scalar map before acting on the spatial tangent fibre.
+          · change (0 : TangentSpace I x) =
+              ((1 : ℝ →L[ℝ] ℝ) v) • (0 : TangentSpace I x)
+            exact (smul_zero _).symm)
+      · intro hbu
+        exact (hg.isMIntegralCurveAt (Ioo_mem_nhds (by linarith) hu.2)).hasMFDerivAt
+
+/-- A point where the field vanishes throughout the closed interval between `s` and `t` belongs
+to the domain of the time-dependent flow from `s` to `t`. No stationarity outside that interval
+is required. -/
+theorem mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero [CompleteSpace E]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {x : M} (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) :
+    ((s, t), x) ∈ timeDependentFlowDomain X := by
+  obtain ⟨γ, l, r, h0, ht, hγ0, -, hγ⟩ :=
+    exists_isMIntegralCurveOn_eq_clock_const_on_uIcc hX s t hx
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 ht
+
+/-- The time-dependent flow from `s` to `t` fixes a point where the field vanishes throughout
+the closed interval between those times. -/
+theorem timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero [CompleteSpace E] [T2Space M]
+    [IsManifold I 1 M] [BoundarylessManifold I M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {x : M} (s t : ℝ) (hx : ∀ u ∈ uIcc s t, X u x = 0) :
+    timeDependentFlowOf X s t x = x := by
+  obtain ⟨γ, l, r, h0, ht, hγ0, hγt, hγ⟩ :=
+    exists_isMIntegralCurveOn_eq_clock_const_on_uIcc hX s t hx
+  have heq := hγ.eqOn_maximalIntegralCurve (contMDiff_timeDependentSuspensionField hX)
+    h0 hγ0 ht
+  rw [timeDependentFlowOf_def, flowOf_apply, heq, hγt]
 
 /-! ### Time maps as partial diffeomorphisms -/
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Products of Fredholm operators
@@ -24,9 +25,13 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
+* `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
+  product.
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace ContinuousLinearMap
 
@@ -91,7 +96,7 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
       LinearMap.fst_surjective
   · obtain ⟨P, hP⟩ := h.closedComplemented_ker
     have hmem (x : E₁) : (P (x, 0) : E₁ × E₂).1 ∈ T.ker :=
-      congr($(LinearMap.mem_ker.mp (P (x, 0)).2).1)
+      congr($(LinearMap.mem_ker.mp (P (x, 0)).property).1)
     refine ⟨((fst K E₁ E₂).comp ((Submodule.subtypeL _).comp (P.comp (inl K E₁ E₂)))).codRestrict
       _ hmem, fun x ↦ Subtype.ext ?_⟩
     have hx : ((x : E₁), (0 : E₂)) ∈ (T.prodMap S : E₁ × E₂ →ₗ[K] F₁ × F₂).ker := by
@@ -112,5 +117,12 @@ lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S 
 @[simp]
 lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+/-- An `L^p` block sum of operators is Fredholm if and only if both blocks are. -/
+@[simp]
+lemma isFredholm_withLpProdMap_iff {p : ℝ≥0∞} :
+    IsFredholm (T.withLpProdMap p S) ↔ IsFredholm T ∧ IsFredholm S := by
+  rw [isFredholm_iff_of_comp_eq (S := T.prodMap S) (WithLp.prodContinuousLinearEquiv p K E₁ E₂)
+    (WithLp.prodContinuousLinearEquiv p K F₁ F₂) (by ext x <;> simp), isFredholm_prodMap_iff]
 
 end ContinuousLinearMap

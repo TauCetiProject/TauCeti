@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The symplectic form on the levels of a moment map
@@ -53,6 +54,8 @@ value, and the stabilizer `G_c` acting freely and properly on the level.
   `2 dim 𝔤 = dim M`, in which case it is the orbit tangent space
   (`TauCeti.SmoothTwoForm.IsMomentMap.isLagrangian_ker_differential_iff` and
   `TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_eq_orbitTangent`).
+* A map `g : N → M` into a level has tangent images in the kernels of `dμ`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.differential_mfderiv_eq_zero`).
 * For a smooth map `g : N → M` whose tangent images are the kernels of `dμ`, such as the inclusion
   of a regular level, the kernel of the pulled-back form `g^* σ` at `p` is the preimage under
   `dg_p` of `𝔤_c · g(p)` (`TauCeti.SmoothTwoForm.IsMomentMap.ker_bilinFormAt_mpullback`). This is
@@ -275,6 +278,17 @@ theorem ker_differential_eq_orbitTangent [FiniteDimensional ℝ E]
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+
+omit [IsManifold J ∞ N] in
+/-- **A map into a level is tangent to the kernel of `dμ`.** If a map `g : N → M` takes values in
+the level `μ⁻¹(c)`, then `dμ` vanishes on its tangent images. -/
+theorem differential_mfderiv_eq_zero {g : N → M} {c : Module.Dual ℝ 𝔤}
+    (hgc : ∀ p, μ (g p) = c) (p : N) (v : TangentSpace J p) :
+    h.differential (g p) (mfderiv J I g p v) = 0 := by
+  ext Z
+  rw [differential_apply, LinearMap.zero_apply]
+  exact range_mfderiv_le_ker_mfderiv_of_eventually_eq (f := fun y ↦ μ y Z) (g := g) (y := c Z)
+    (.of_forall fun q ↦ by simp [hgc q]) ⟨v, rfl⟩
 
 /-- **The kernel of the form pulled back to a level.** Let `g : N → M` be a smooth map whose
 tangent image at `p` is the kernel of `dμ` at `g p`, such as the inclusion of a regular level of

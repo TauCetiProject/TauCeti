@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.GaloisCohomology.Solvable
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Solvable
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.HerbrandQuotient
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
+import TauCeti.FieldTheory.Kummer.Cyclic
 
 /-!
 # The local second-cohomology bound
@@ -23,7 +28,11 @@ quotient `h(U_L) = 1` (`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_z
 
 Since two-periodicity also identifies `H²(Gal(L/K), Lˣ)` with the norm quotient
 `Kˣ / N_{L/K}(Lˣ)` (`TauCeti.cyclicNormQuotientEquiv`), this is the cyclic norm index
-`[Kˣ : N_{L/K}(Lˣ)] = [L : K]`. It is a Herbrand-quotient computation and uses no reciprocity.
+`[Kˣ : N_{L/K}(Lˣ)] = [L : K]`. It is a Herbrand-quotient computation and uses no reciprocity. In
+particular, when `K` contains a primitive `n`-th root of unity and a finite extension `L/K`
+containing an `n`-th root of `b ∈ Kˣ` has full norm group `N_{L/K}(Lˣ) = Kˣ`, the cyclic radical
+subextension `K(ⁿ√b)/K` also has norm index `1`, hence degree `1`, so `b ∈ (Kˣ)ⁿ`
+(`IsPrimitiveRoot.mem_powerSubgroup_of_normGroup_eq_top`).
 
 For a general finite Galois extension, the local Galois group is solvable, and the
 field-theoretic solvable reduction propagates the prime-degree cyclic case to the bound
@@ -35,20 +44,23 @@ split by an unramified extension.
 
 * `TauCeti.natCard_H2_units_eq_finrank`: `#H²(Gal(L/K), Lˣ) = [L : K]` for cyclic `L/K`.
 * `TauCeti.index_normGroup_of_isCyclic`: `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` for cyclic `L/K`.
+* `IsPrimitiveRoot.mem_powerSubgroup_of_normGroup_eq_top`: if `K` contains a primitive `n`-th root
+  of unity and a finite extension `L/K` containing an `n`-th root of `b ∈ Kˣ` has
+  `normGroup K L = ⊤`, then `b ∈ (Kˣ)ⁿ`.
 * `TauCeti.natCard_H2_units_dvd_finrank`: `#H²(Gal(L/K), Lˣ) ∣ [L : K]` for every finite Galois
   `L/K`.
 
 ## References
 
 * J.-P. Serre, *Local Fields*, Graduate Texts in Mathematics 67, Springer (1979), Chapter IX,
-  §3 and Chapter XIII, §1.
+  §3, Chapter XIII, §1, and Chapter XIV, §2.
 * J.-P. Serre, *Local class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
   *Algebraic Number Theory*, Chapter VI, §1.
 -/
 
 public noncomputable section
 
-open Module ValuativeRel
+open IntermediateField Module ValuativeRel
 
 namespace TauCeti
 
@@ -100,3 +112,47 @@ theorem natCard_H2_units_dvd_finrank :
   rw [natCard_H2_units_eq_finrank E F]
 
 end TauCeti
+
+namespace IsPrimitiveRoot
+
+/-- **Serre's radical norm-top criterion.** Let `K` be a nonarchimedean local field containing a
+primitive `n`-th root of unity `ζ`. If a finite extension `L/K` contains an `n`-th root `s` of
+`b ∈ Kˣ` (`sⁿ = b`) and has full norm subgroup `N_{L/K}(Lˣ) = Kˣ`, then `b ∈ (Kˣ)ⁿ`. -/
+theorem mem_powerSubgroup_of_normGroup_eq_top {K : Type} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] {L : Type*} [Field L] [Algebra K L]
+    [FiniteDimensional K L] {n : ℕ} {ζ : K} (hζ : IsPrimitiveRoot ζ n) {b : Kˣ} {s : L}
+    (hs : s ^ n = algebraMap K L b) (hnorm : TauCeti.normGroup K L = ⊤) :
+    b ∈ TauCeti.powerSubgroup Kˣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [pow_zero, eq_comm, map_eq_one_iff _ (algebraMap K L).injective,
+      Units.val_eq_one] at hs
+    exact hs ▸ one_mem _
+  have : NeZero n := ⟨hn⟩
+  -- Embed `K(s)` as `E := K⟮ι s⟯` inside `AlgebraicClosure K` to reduce to a simple radical
+  -- subextension and lower `L : Type*` to `Type` for `TauCeti.index_normGroup_of_isCyclic`.
+  let ι : L →ₐ[K] AlgebraicClosure K := IsAlgClosed.lift
+  set E := K⟮ι s⟯
+  have : FiniteDimensional K E := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral (ι s))
+  have hs' : AdjoinSimple.gen K (ι s) ^ n = algebraMap K E b :=
+    Subtype.ext (by simp [← map_pow, hs])
+  have hgen' : K⟮AdjoinSimple.gen K (ι s)⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top (ι s)
+  let j : E →ₐ[K] L := (AlgEquiv.ofInjectiveField ι).symm.toAlgHom.comp
+    (IntermediateField.inclusion (adjoin_simple_le_iff.2 (AlgHom.mem_fieldRange.2 ⟨s, rfl⟩)))
+  have hnorm' : TauCeti.normGroup K E = ⊤ :=
+    eq_top_iff.2 (hnorm.ge.trans j.normGroup_le_normGroup)
+  let _ := TauCeti.algebraicExtensionValuativeRel K E
+  let _ := TauCeti.algebraicExtensionNormedFieldTopology K E
+  have := TauCeti.finiteExtension_isNonarchimedeanLocalField K E
+  have := TauCeti.algebraicExtension_valuativeExtension K E
+  have := TauCeti.isGalois_of_pow_eq_of_adjoin_eq_top hζ hs' hgen'
+  have := TauCeti.isCyclic_of_pow_eq_of_adjoin_eq_top hζ hs' hgen'
+  have h1 : finrank K E = 1 := by
+    rw [← TauCeti.index_normGroup_of_isCyclic K E, hnorm', Subgroup.index_top]
+  obtain ⟨c, -, hcb⟩ := TauCeti.exists_pow_finrank_eq_algebraMap hζ hs' hgen'
+  rw [h1, Nat.div_one] at hcb
+  have hc0 : c ≠ 0 := by
+    rintro rfl
+    exact b.ne_zero (by rw [← hcb, zero_pow hn])
+  exact (TauCeti.mem_powerSubgroup_iff n).2 ⟨Units.mk0 c hc0, Units.ext (by simpa using hcb)⟩
+
+end IsPrimitiveRoot

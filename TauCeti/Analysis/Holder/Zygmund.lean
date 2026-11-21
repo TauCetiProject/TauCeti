@@ -90,6 +90,9 @@ derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
   inclusions `C^{0,α} ⊆ 𝒞^α` and `C_b^{k,α} ⊆ 𝒞^{k+α}`, for every `α ≥ 0`, with norm bounds.
 * `TauCeti.BesovSpace.ofCkHolderSpace`: the inclusion `C_b^{k,α} → 𝒞^{k+α}` as a continuous
   linear map, characterised by `TauCeti.BesovSpace.toDistr_ofCkHolderSpace`.
+* `TauCeti.BesovSpace.ofHolderSpace` and `TauCeti.BesovSpace.holderSpaceEquiv`: the inclusion
+  `C^{0,α} → 𝒞^α` as a continuous linear map and, for `0 < α < 1`, the isomorphism
+  `𝒞^α ≃ C^{0,α}`.
 * `TauCeti.BesovSpace.ckHolderSpaceEquiv`: for `0 < α < 1`, the isomorphism
   `𝒞^{k+α} ≃ C_b^{k,α}` given by `toCkHolderSpace` and `ofCkHolderSpace`, which are mutually
   inverse (`TauCeti.BesovSpace.toCkHolderSpace_ofCkHolderSpace` and
@@ -428,9 +431,8 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
       (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr ∧ ContDiff ℝ k f ∧
         (∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C * ‖u‖) ∧
           HolderWith (C * ‖u‖₊) α (iteratedFDeriv ℝ k f) := by
-  obtain ⟨n₀, hn₀⟩ : ∃ n₀ : ℕ, φ.rOut ≤ 2 ^ n₀ * φ.rIn := by
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-    exact ⟨n, ((div_lt_iff₀ φ.rIn_pos).1 hn).le⟩
+  obtain ⟨n₀, hn₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  replace hn₀ := hn₀.le
   obtain ⟨C₀, hC₀⟩ := exists_holderWith_tsum_of_rpow_mul_le (X := E) (Y := E [×k]→L[ℝ] F) hα0 hα1
   -- `B m = 2^{n₀ m} ‖D^m K₀‖₁` bounds the `m`-th derivatives of the smoothed blocks, and
   -- `q = 2^{-α}` is the ratio of the geometric series they form.
@@ -897,9 +899,10 @@ distribution of) such a map. The isomorphism is `TauCeti.BesovSpace.toCkHolderSp
 `TauCeti.BesovSpace.ofCkHolderSpace`. -/
 def ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ (k + α) ∞ ∞ ≃L[ℝ] CkHolderSpace k α E F :=
-  ContinuousLinearEquiv.equivOfInverse (toCkHolderSpace F φ k hα0 hα1) (ofCkHolderSpace F φ k α)
-    (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1)
-    (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1)
+  ContinuousLinearEquiv.ofContinuousLinearMap (toCkHolderSpace F φ k hα0 hα1)
+    (ofCkHolderSpace F φ k α)
+    (ContinuousLinearMap.ext (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1))
+    (ContinuousLinearMap.ext (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1))
 
 @[simp]
 theorem coe_ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
@@ -909,6 +912,95 @@ theorem coe_ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
 @[simp]
 theorem coe_ckHolderSpaceEquiv_symm (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
     ⇑(ckHolderSpaceEquiv F φ k hα0 hα1).symm = ofCkHolderSpace F φ k α :=
+  (rfl)
+
+/-! ### The case `k = 0`: `𝒞^α = C^{0,α}` -/
+
+/-- The constant of `exists_toDistr_eq_and_norm_le_of_holderWith`. -/
+private def ofHolderConst (α : ℝ≥0) : ℝ :=
+  (exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ α).choose
+
+/-- The element of `𝒞^α` represented by a bounded `α`-Hölder function, with the norm bound. -/
+private theorem exists_toDistr_eq_holderSpace {α : ℝ≥0} (f : HolderSpace α E F) :
+    ∃ u : BesovSpace F φ α ∞ ∞, u.toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction ∧
+      ‖u‖ ≤ 2 * ofHolderConst (F := F) φ α * ‖f‖ := by
+  obtain ⟨hC, h⟩ := (exists_toDistr_eq_and_norm_le_of_holderWith (F := F) φ α).choose_spec
+  obtain ⟨u, hu, hun⟩ := h f.toBoundedContinuousFunction (H := ‖f‖₊)
+    (by simpa using f.holderWith_nnnorm)
+  refine ⟨u, hu, hun.trans ?_⟩
+  have hf : ‖f.toBoundedContinuousFunction‖ + (‖f‖₊ : ℝ) ≤ 2 * ‖f‖ := by
+    rw [coe_nnNorm]
+    linarith [f.norm_toBoundedContinuousFunction_le]
+  calc ofHolderConst (F := F) φ α * (‖f.toBoundedContinuousFunction‖ + (‖f‖₊ : ℝ))
+      ≤ ofHolderConst (F := F) φ α * (2 * ‖f‖) := mul_le_mul_of_nonneg_left hf hC
+    _ = 2 * ofHolderConst (F := F) φ α * ‖f‖ := by ring
+
+/-- The element of `𝒞^α` represented by a bounded `α`-Hölder function. -/
+private def holderBesovRepr {α : ℝ≥0} (f : HolderSpace α E F) : BesovSpace F φ α ∞ ∞ :=
+  (exists_toDistr_eq_holderSpace φ f).choose
+
+private theorem toDistr_holderBesovRepr {α : ℝ≥0} (f : HolderSpace α E F) :
+    (holderBesovRepr φ f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  (exists_toDistr_eq_holderSpace φ f).choose_spec.1
+
+variable (F) in
+/-- **The inclusion `C^{0,α} ⊆ 𝒞^α`**: a bounded `α`-Hölder function, as an element of the
+Hölder–Zygmund space `B^α_{∞,∞}`. -/
+def ofHolderSpace (α : ℝ≥0) : HolderSpace α E F →L[ℝ] BesovSpace F φ α ∞ ∞ :=
+  LinearMap.mkContinuous
+    { toFun := holderBesovRepr φ
+      map_add' f g := ext <| by
+        simp only [toDistr_add, toDistr_holderBesovRepr,
+          HolderSpace.toBoundedContinuousFunction_add, map_add, Lp.toTemperedDistribution_add]
+      -- A real scalar acts as its complex coercion, for which every map in the chain is linear.
+      map_smul' c f := ext <| by
+        simp only [RingHom.id_apply, ← Complex.coe_smul, toDistr_smul, toDistr_holderBesovRepr,
+          HolderSpace.toBoundedContinuousFunction_smul, map_smul,
+          Lp.toTemperedDistribution_smul] }
+    (2 * ofHolderConst (F := F) φ α) fun f ↦ (exists_toDistr_eq_holderSpace φ f).choose_spec.2
+
+/-- The element `ofHolderSpace F φ α f` of `𝒞^α` is the tempered distribution of `f`. -/
+@[simp]
+theorem toDistr_ofHolderSpace {α : ℝ≥0} (f : HolderSpace α E F) :
+    (ofHolderSpace F φ α f).toDistr = toLpTop volume ℂ f.toBoundedContinuousFunction :=
+  toDistr_holderBesovRepr φ f
+
+/-- `ofHolderSpace` is a left inverse of `toHolderSpace`. -/
+@[simp]
+theorem ofHolderSpace_toHolderSpace {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    ofHolderSpace F φ α (toHolderSpace F φ hα0 hα1 u) = u :=
+  ext <| by rw [toDistr_ofHolderSpace, toLpTop_toHolderSpace]
+
+/-- `ofHolderSpace` is a right inverse of `toHolderSpace`. -/
+@[simp]
+theorem toHolderSpace_ofHolderSpace {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : HolderSpace α E F) :
+    toHolderSpace F φ hα0 hα1 (ofHolderSpace F φ α f) = f :=
+  (toHolderSpace_eq_iff φ hα0 hα1).2 (toDistr_ofHolderSpace φ f).symm
+
+variable (F) in
+/-- **`𝒞^α = C^{0,α}` with equivalent norms** for `0 < α < 1`: the Hölder–Zygmund space
+`B^α_{∞,∞}` and the space of bounded `α`-Hölder functions are isomorphic Banach spaces, through
+`toHolderSpace` and its inverse `ofHolderSpace`. -/
+def holderSpaceEquiv {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
+    BesovSpace F φ α ∞ ∞ ≃L[ℝ] HolderSpace α E F :=
+  ContinuousLinearEquiv.ofContinuousLinearMap (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
+    (ContinuousLinearMap.ext (toHolderSpace_ofHolderSpace φ hα0 hα1))
+    (ContinuousLinearMap.ext (ofHolderSpace_toHolderSpace φ hα0 hα1))
+
+/-- `holderSpaceEquiv` acts as `toHolderSpace`. -/
+@[simp]
+theorem holderSpaceEquiv_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (u : BesovSpace F φ α ∞ ∞) :
+    holderSpaceEquiv F φ hα0 hα1 u = toHolderSpace F φ hα0 hα1 u :=
+  (rfl)
+
+/-- The inverse of `holderSpaceEquiv` acts as `ofHolderSpace`. -/
+@[simp]
+theorem holderSpaceEquiv_symm_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1)
+    (f : HolderSpace α E F) :
+    (holderSpaceEquiv F φ hα0 hα1).symm f = ofHolderSpace F φ α f :=
   (rfl)
 
 end BesovSpace

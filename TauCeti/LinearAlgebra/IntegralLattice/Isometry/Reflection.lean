@@ -76,7 +76,7 @@ theorem rootReflection_apply (x : L) (hx : L.integralNorm x = 2) (y : V) :
   have hxx : L.form x x = 2 := by
     rw [← L.norm_apply, ← L.integralNorm_cast, hx]
     norm_num
-  have hlinear := LinearEquiv.eq_extendOfIsLattice
+  have hlinear := LinearEquiv.eq_extendOfIsFullLattice
     (rootReflection x hx).carrierEquiv (Module.reflection hxx) (by
       intro z
       simp only [rootReflection_carrierEquiv, Module.reflection_apply, Submodule.coe_sub,
