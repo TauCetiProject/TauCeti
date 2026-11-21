@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Flow.Eulerian
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.MixedPartial
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The two-parameter identity for flux forms
