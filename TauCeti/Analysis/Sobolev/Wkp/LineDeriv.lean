@@ -42,7 +42,7 @@ No boundedness or boundary regularity of `Ω` is assumed.
   of an element of `W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`, with gradients given by the weak Hessian.
 * `TauCeti.Wkp.lineDerivL`: the directional weak derivative as a bounded operator
   `W^{k+1,p}(Ω) → W^{k,p}(Ω)`, characterised by `TauCeti.Wkp.hasWeakLineDerivOn_lineDerivL`, and
-  bundled bilinearly in the direction and function as `TauCeti.Wkp.lineDerivCLM`.
+  bundled bilinearly in the direction and function as `TauCeti.Wkp.lineDerivBilinL`.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
@@ -329,7 +329,7 @@ theorem Wkp.lineDerivL_sub_left (v₁ v₂ : E) (k : ℕ) :
 
 /-- **The directional derivative, bundled in both the direction and the function.** Because `E` is
 finite-dimensional, the linear dependence `v ↦ TauCeti.Wkp.lineDerivL v k` is continuous. -/
-def Wkp.lineDerivCLM (k : ℕ) :
+def Wkp.lineDerivBilinL (k : ℕ) :
     E →L[ℝ] Wkp mu Omega p (k + 1) →L[ℝ] Wkp mu Omega p k :=
   LinearMap.toContinuousLinearMap
     { toFun := fun v => Wkp.lineDerivL v k
@@ -337,12 +337,12 @@ def Wkp.lineDerivCLM (k : ℕ) :
       map_smul' := fun c v => Wkp.lineDerivL_smul_left c v k }
 
 -- The dependent successor index in the codomain prevents this rule from matching in `simp`.
-theorem Wkp.lineDerivCLM_apply (k : ℕ) (v : E) :
-    Wkp.lineDerivCLM (mu := mu) (Omega := Omega) (p := p) k v = Wkp.lineDerivL v k :=
+theorem Wkp.lineDerivBilinL_apply (k : ℕ) (v : E) :
+    Wkp.lineDerivBilinL (mu := mu) (Omega := Omega) (p := p) k v = Wkp.lineDerivL v k :=
   (rfl)
 
-theorem Wkp.lineDerivCLM_apply_apply (k : ℕ) (v : E) (w : Wkp mu Omega p (k + 1)) :
-    Wkp.lineDerivCLM k v w = Wkp.lineDerivL v k w :=
+theorem Wkp.lineDerivBilinL_apply_apply (k : ℕ) (v : E) (w : Wkp mu Omega p (k + 1)) :
+    Wkp.lineDerivBilinL k v w = Wkp.lineDerivL v k w :=
   (rfl)
 
 /-- At order zero, `TauCeti.Wkp.lineDerivL` pairs the weak gradient with the direction `v` in

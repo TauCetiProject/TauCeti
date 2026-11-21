@@ -32,8 +32,6 @@ constants (`1` and `(card ι) ^ (j + 1)`).
 
 ## Main declarations
 
-* `TauCeti.IteratedGradient.evalL`: continuous linear evaluation of `IteratedGradient E j` along a
-  tuple `Fin (j + 1) → E` of directions.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ`: the linear isometric equivalence
   `IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)` when `E` is complete.
 * `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_iteratedGradientChain`: under this
@@ -55,43 +53,6 @@ section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- Evaluate an iterated gradient of index `j` along `j + 1` directions: the first `j` directions
-feed the outer continuous-linear slots from outermost to innermost, and the last direction pairs
-with the resulting vector in `E` via the inner product. -/
-def evalL : (j : ℕ) → (Fin (j + 1) → E) → IteratedGradient E j →L[ℝ] ℝ
-  | 0, m => innerSL ℝ (m 0)
-  | j + 1, m => (evalL j (Fin.tail m)).comp
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0))
-
-theorem evalL_zero (m : Fin 1 → E) :
-    evalL 0 m = innerSL ℝ (m 0) :=
-  (rfl)
-
-theorem evalL_succ (j : ℕ) (m : Fin (j + 1 + 1) → E) :
-    evalL (j + 1) m = (evalL j (Fin.tail m)).comp
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0)) :=
-  (rfl)
-
-theorem evalL_zero_apply (m : Fin 1 → E) (G : IteratedGradient E 0) :
-    evalL 0 m G = ⟪m 0, G⟫_ℝ :=
-  (rfl)
-
-theorem evalL_succ_apply (j : ℕ) (m : Fin (j + 1 + 1) → E) (G : IteratedGradient E (j + 1)) :
-    evalL (j + 1) m G = evalL j (Fin.tail m) (G (m 0)) :=
-  (rfl)
-
-/-- Evaluating an iterated gradient on a constant tuple of directions is `fullContractL`. -/
-@[simp]
-theorem evalL_const (j : ℕ) (h : E) :
-    evalL j (fun _ => h) = fullContractL j h := by
-  induction j with
-  | zero =>
-      rw [evalL_zero, fullContractL_zero]
-  | succ j ih =>
-      rw [evalL_succ, fullContractL_succ]
-      ext G
-      exact congrArg (fun L : IteratedGradient E j →L[ℝ] ℝ => L (G h)) ih
-
 /-- Pointwise evaluation after contracting one outermost slot at `h` evaluates at `Fin.cons h m`. -/
 theorem evalL_contractL_one_apply (j : ℕ) (h : E) (m : Fin (j + 1) → E)
     (G : IteratedGradient E (j + 1)) :
@@ -110,37 +71,12 @@ theorem ext_evalL {j : ℕ} {G₁ G₂ : IteratedGradient E j}
     G₁ = G₂ := by
   induction j with
   | zero =>
-      exact ext_inner_left ℝ fun v => h (fun _ => v)
+      exact ext_inner_left ℝ fun v => by simpa [evalL_zero_apply] using h (fun _ => v)
   | succ j ih =>
       ext v
       refine ih fun m => ?_
       have hm := h (Fin.cons v m)
       rwa [evalL_succ_apply, evalL_succ_apply, Fin.cons_zero, Fin.tail_cons] at hm
-
-/-- Pointwise operator-norm bound for multilinear evaluation of an iterated gradient. -/
-theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradient E j) :
-    ‖evalL j m G‖ ≤ ‖G‖ * ∏ k, ‖m k‖ := by
-  induction j with
-  | zero =>
-      rw [evalL_zero_apply, Fin.prod_univ_one]
-      exact (norm_inner_le_norm (m 0) G).trans_eq (mul_comm _ _)
-  | succ j ih =>
-      rw [evalL_succ_apply, Fin.prod_univ_succ]
-      calc
-        ‖evalL j (Fin.tail m) (G (m 0))‖ ≤ ‖G (m 0)‖ * ∏ k, ‖Fin.tail m k‖ :=
-          ih (Fin.tail m) (G (m 0))
-        _ ≤ (‖G‖ * ‖m 0‖) * ∏ k, ‖Fin.tail m k‖ :=
-          mul_le_mul_of_nonneg_right (G.le_opNorm (m 0))
-            (Finset.prod_nonneg fun _ _ => norm_nonneg _)
-        _ = ‖G‖ * (‖m 0‖ * ∏ k : Fin (j + 1), ‖m k.succ‖) := by
-          rw [mul_assoc, Fin.tail_def]
-
-/-- Multilinear evaluation at `m` has operator norm at most `∏ k, ‖m k‖`. -/
-theorem norm_evalL_le (j : ℕ) (m : Fin (j + 1) → E) :
-    ‖evalL j m‖ ≤ ∏ k, ‖m k‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (Finset.prod_nonneg fun _ _ => norm_nonneg _)
-    fun G => ?_
-  exact (norm_evalL_apply_le j m G).trans_eq (mul_comm _ _)
 
 /-- Any entry of an iterated gradient along vectors of an orthonormal basis has norm at most the
 operator norm of the field. -/
@@ -176,19 +112,11 @@ def toContinuousMultilinearMapₗᵢ :
     (j : ℕ) → IteratedGradient E j ≃ₗᵢ[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)
   | 0 => (InnerProductSpace.toDual ℝ E).trans (continuousMultilinearCurryFin1 ℝ E ℝ).symm
   | j + 1 =>
-      ({ toFun := fun A : E →L[ℝ] IteratedGradient E j =>
-            (toContinuousMultilinearMapₗᵢ j :
-              IteratedGradient E j →L[ℝ] (E [×(j + 1)]→L[ℝ] ℝ)).comp A
-         map_add' := fun A B => ContinuousLinearMap.comp_add _ A B
-         map_smul' := fun c A => ContinuousLinearMap.comp_smul _ c A
-         invFun := fun B =>
-            ((toContinuousMultilinearMapₗᵢ j).symm :
-              (E [×(j + 1)]→L[ℝ] ℝ) →L[ℝ] IteratedGradient E j).comp B
-         left_inv := fun A => by ext x; simp
-         right_inv := fun B => by ext x; simp
-         norm_map' :=
-           ContinuousLinearMap.opNorm_linearIsometryEquiv_comp (toContinuousMultilinearMapₗᵢ j) } :
-        (E →L[ℝ] IteratedGradient E j) ≃ₗᵢ[ℝ] (E →L[ℝ] (E [×(j + 1)]→L[ℝ] ℝ))).trans
+      (LinearIsometryEquiv.ofLinearIsometry
+        ((toContinuousMultilinearMapₗᵢ j).toLinearIsometry.postcomp (E := E))
+        ((toContinuousMultilinearMapₗᵢ j).symm.toLinearIsometry.postcomp (E := E)).toLinearMap
+        (LinearMap.ext fun B => by ext x; dsimp [LinearIsometry.postcomp]; simp)
+        (LinearMap.ext fun A => by ext x; dsimp [LinearIsometry.postcomp]; simp)).trans
         (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1 + 1) => E) ℝ).symm
 
 variable {E}
@@ -199,7 +127,8 @@ theorem toContinuousMultilinearMapₗᵢ_succ_apply (j : ℕ) (G : IteratedGradi
     (m : Fin (j + 1 + 1) → E) :
     toContinuousMultilinearMapₗᵢ E (j + 1) G m =
       toContinuousMultilinearMapₗᵢ E j (G (m 0)) (Fin.tail m) := by
-  simp [toContinuousMultilinearMapₗᵢ, continuousMultilinearCurryLeftEquiv_symm_apply]
+  simp [toContinuousMultilinearMapₗᵢ, continuousMultilinearCurryLeftEquiv_symm_apply,
+    LinearIsometry.postcomp]
 
 /-- Evaluating `toContinuousMultilinearMapₗᵢ E j G` at `m` agrees with `evalL j m G`. -/
 @[simp]

@@ -12,10 +12,11 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 # Contractions of iterated gradients
 
 An iterated gradient has continuous-linear direction slots outside a final vector. Partial
-contraction evaluates a specified number of the outer slots at a repeated direction. Full
-contraction evaluates all those slots and pairs the remaining vector with that direction.
-These operations turn derivative fields into the directional expressions used in Taylor
-polynomials, without choosing coordinates.
+contraction evaluates a specified number of the outer slots at a repeated direction. Multilinear
+evaluation (`TauCeti.IteratedGradient.evalL`) evaluates all direction slots and pairs the remaining
+vector with the last direction; full contraction (`TauCeti.IteratedGradient.fullContractL`) is its
+specialisation to a constant tuple of directions. These operations turn derivative fields into the
+directional expressions used in Taylor polynomials, without choosing coordinates.
 
 Both operations are continuous linear in the field. Partial contraction of `i` slots is
 homogeneous of degree `i` in the direction and has norm at most `‖h‖ ^ i`; full contraction of
@@ -99,12 +100,68 @@ section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+open scoped InnerProductSpace
+
+/-- Evaluate an iterated gradient of index `j` along `j + 1` directions: the first `j` directions
+feed the outer continuous-linear slots from outermost to innermost, and the last direction pairs
+with the resulting vector in `E` via the inner product. -/
+def evalL : (j : ℕ) → (Fin (j + 1) → E) → IteratedGradient E j →L[ℝ] ℝ
+  | 0, m => innerSL ℝ (m 0)
+  | j + 1, m => (evalL j (Fin.tail m)).comp
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0))
+
+theorem evalL_zero (m : Fin 1 → E) :
+    evalL 0 m = innerSL ℝ (m 0) :=
+  (rfl)
+
+theorem evalL_succ (j : ℕ) (m : Fin (j + 1 + 1) → E) :
+    evalL (j + 1) m = (evalL j (Fin.tail m)).comp
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0)) :=
+  (rfl)
+
+theorem evalL_zero_apply (m : Fin 1 → E) (G : IteratedGradient E 0) :
+    evalL 0 m G = ⟪m 0, G⟫_ℝ :=
+  (rfl)
+
+theorem evalL_succ_apply (j : ℕ) (m : Fin (j + 1 + 1) → E) (G : IteratedGradient E (j + 1)) :
+    evalL (j + 1) m G = evalL j (Fin.tail m) (G (m 0)) :=
+  (rfl)
+
+/-- Pointwise operator-norm bound for multilinear evaluation of an iterated gradient. -/
+theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradient E j) :
+    ‖evalL j m G‖ ≤ ‖G‖ * ∏ k, ‖m k‖ := by
+  induction j with
+  | zero =>
+      rw [evalL_zero_apply, Fin.prod_univ_one]
+      exact (norm_inner_le_norm (m 0) G).trans_eq (mul_comm _ _)
+  | succ j ih =>
+      rw [evalL_succ_apply, Fin.prod_univ_succ]
+      calc
+        ‖evalL j (Fin.tail m) (G (m 0))‖ ≤ ‖G (m 0)‖ * ∏ k, ‖Fin.tail m k‖ :=
+          ih (Fin.tail m) (G (m 0))
+        _ ≤ (‖G‖ * ‖m 0‖) * ∏ k, ‖Fin.tail m k‖ :=
+          mul_le_mul_of_nonneg_right (G.le_opNorm (m 0))
+            (Finset.prod_nonneg fun _ _ => norm_nonneg _)
+        _ = ‖G‖ * (‖m 0‖ * ∏ k : Fin (j + 1), ‖m k.succ‖) := by
+          rw [mul_assoc, Fin.tail_def]
+
+/-- Multilinear evaluation at `m` has operator norm at most `∏ k, ‖m k‖`. -/
+theorem norm_evalL_le (j : ℕ) (m : Fin (j + 1) → E) :
+    ‖evalL j m‖ ≤ ∏ k, ‖m k‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (Finset.prod_nonneg fun _ _ => norm_nonneg _)
+    fun G => ?_
+  exact (norm_evalL_apply_le j m G).trans_eq (mul_comm _ _)
+
 /-- Contract every outer slot at `h` and pair the remaining vector with `h`. Since an
 iterated gradient of index `j` has derivative order `j + 1`, this uses `j + 1` directions. -/
-def fullContractL : (j : ℕ) → E → IteratedGradient E j →L[ℝ] ℝ
-  | 0, h => innerSL ℝ h
-  | j + 1, h => (fullContractL j h).comp
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) h)
+def fullContractL (j : ℕ) (h : E) : IteratedGradient E j →L[ℝ] ℝ :=
+  evalL j (fun _ => h)
+
+/-- Evaluating an iterated gradient on a constant tuple of directions is `fullContractL`. -/
+@[simp]
+theorem evalL_const (j : ℕ) (h : E) :
+    evalL j (fun _ => h) = fullContractL j h :=
+  (rfl)
 
 @[simp]
 theorem fullContractL_zero (h : E) :
@@ -150,24 +207,13 @@ theorem fullContractL_zero_direction (j : ℕ) :
 /-- The absolute value of a full contraction is bounded by the field norm times the
 `(j + 1)`st power of the direction's norm. -/
 theorem norm_fullContractL_apply_le (j : ℕ) (h : E) (G : IteratedGradient E j) :
-    ‖fullContractL j h G‖ ≤ ‖G‖ * ‖h‖ ^ (j + 1) := by
-  induction j with
-  | zero =>
-      rw [fullContractL_zero]
-      simpa [mul_comm] using (norm_inner_le_norm (𝕜 := ℝ) h G)
-  | succ j ih =>
-      calc
-        ‖fullContractL (j + 1) h G‖ ≤ ‖G h‖ * ‖h‖ ^ (j + 1) := ih (G h)
-        _ ≤ (‖G‖ * ‖h‖) * ‖h‖ ^ (j + 1) :=
-          mul_le_mul_of_nonneg_right (G.le_opNorm h) (by positivity)
-        _ = ‖G‖ * ‖h‖ ^ (j + 1 + 1) := by rw [pow_succ]; ring
+    ‖fullContractL j h G‖ ≤ ‖G‖ * ‖h‖ ^ (j + 1) :=
+  (norm_evalL_apply_le j (fun _ => h) G).trans_eq (by simp)
 
 /-- The operator norm of full contraction is bounded by `‖h‖ ^ (j + 1)`. -/
 theorem norm_fullContractL_le (j : ℕ) (h : E) :
-    ‖fullContractL j h‖ ≤ ‖h‖ ^ (j + 1) := by
-  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
-  intro G
-  exact (norm_fullContractL_apply_le j h G).trans_eq (mul_comm _ _)
+    ‖fullContractL j h‖ ≤ ‖h‖ ^ (j + 1) :=
+  (norm_evalL_le j (fun _ => h)).trans_eq (by simp)
 
 end InnerProductSpace
 
