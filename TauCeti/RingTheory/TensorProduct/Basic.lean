@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
@@ -14,7 +15,8 @@ In the tensor product `A ⊗[R] B` of commutative `R`-algebras, a finite product
 is the pure tensor of the products: `∏ i ∈ s, a i ⊗ₜ b i = (∏ i ∈ s, a i) ⊗ₜ ∏ i ∈ s, b i`.
 This is the multiplicative counterpart of `TensorProduct.sum_tmul` and `TensorProduct.tmul_sum`,
 and extends `Algebra.TensorProduct.tmul_pow` from powers to products. For ordered list products
-neither factor needs to be commutative.
+neither factor needs to be commutative. Likewise, multiplying two adjacent entries of a tuple of
+pure tensors (`Fin.contractNth`) multiplies the adjacent entries of both factor tuples.
 
 For any `A ⊗[R] B`-algebra `Q` forming scalar towers with both `A` and `B`,
 `TauCeti.algebraMap_tensorProduct_tmul` expands `algebraMap (A ⊗[R] B) Q (a ⊗ₜ b)` as the product
@@ -35,6 +37,17 @@ theorem List.prod_map_tmul {R A B ι : Type*} [CommSemiring R]
   | nil => simp [Algebra.TensorProduct.one_def]
   | cons i l ih => simp only [List.map_cons, List.prod_cons, ih,
       Algebra.TensorProduct.tmul_mul_tmul]
+
+/-- Multiplying two adjacent entries of a tuple of pure tensors multiplies the adjacent entries of
+both factor tuples. Neither algebra is required to be commutative. -/
+@[simp]
+theorem Algebra.TensorProduct.contractNth_tmul {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [Semiring B] [Algebra R B] {n : ℕ} (j : Fin (n + 1)) (a : Fin (n + 1) → A)
+    (b : Fin (n + 1) → B) (i : Fin n) :
+    Fin.contractNth j (· * ·) (fun k ↦ a k ⊗ₜ[R] b k) i =
+      Fin.contractNth j (· * ·) a i ⊗ₜ[R] Fin.contractNth j (· * ·) b i := by
+  simp only [Fin.contractNth]
+  split_ifs <;> simp [Algebra.TensorProduct.tmul_mul_tmul]
 
 namespace Algebra.TensorProduct
 
