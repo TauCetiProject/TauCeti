@@ -79,6 +79,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
+* `Complex.toLex_norm_arg_injective`: the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)`
+  is injective on `ℂ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -390,6 +392,10 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
   field_simp
   simp
   ring
+
+/-- Injectivity of the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` on `ℂ`. -/
+theorem toLex_norm_arg_injective : Function.Injective fun z : ℂ ↦ toLex (‖z‖, arg z) :=
+  fun _ _ h ↦ let ⟨h₁, h₂⟩ := Prod.ext_iff.1 (toLex.injective h); ext_norm_arg h₁ h₂
 
 end Complex
 
