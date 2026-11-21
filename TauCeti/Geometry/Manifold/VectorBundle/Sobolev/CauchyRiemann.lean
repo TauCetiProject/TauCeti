@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
+public import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Chart
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
@@ -122,19 +122,19 @@ private theorem contDiffOn_coeff (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[�
     (ContinuousLinearMap.apply ℝ (ℂ →L[ℝ] F) (finBasis ℝ F j))).contDiff.comp_contDiffOn h
 
 include hD hDs in
-/-- Multiplication of the `j`th chart-`i` component by the `(c, j)` entry of the zeroth-order term,
-as an `Lᵖ` function on the image of chart `i`. -/
-private def zeroOrderL (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) (j : Fin (finrank ℝ F)) :
-    A.sectionChartData.SobolevData μ p 1 →L[ℝ] Lp ℝ p (μ.restrict (A.sectionChartData.image i)) :=
-  (Wkp.contDiffOnSMulL (Omega := A.sectionChartData.image i)
+/-- The zeroth-order matrix in chart `i`, applied to the value components of an order-one tuple.
+The native smooth matrix multiplier is used at order zero. -/
+private def zeroOrderL (i : Fin A.n) :
+    A.sectionChartData.SobolevData μ p 1 →L[ℝ]
+      (Fin (finrank ℝ (ℂ →L[ℝ] F)) → Lp ℝ p (μ.restrict (A.sectionChartData.image i))) :=
+  (Wkp.contDiffOnMulVecL (Omega := A.sectionChartData.image i)
     ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).uniqueDiffOn
     (A.isCompact_closure_image i)
     ((A.closure_image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i c j)).comp
-    ((Wkp.lowerOrderL 0).comp ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (A.sectionChartData.image i) p 1) j).comp
+      (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i)).comp
+    ((ContinuousLinearMap.piMap fun _ : Fin (finrank ℝ F) ↦ Wkp.lowerOrderL 0).comp
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
-        ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i)))
+        ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i))
 
 include hD hDs in
 /-- The `c`th component in chart `i` of the realization, on the image of chart `i`: the `c`th
@@ -144,7 +144,7 @@ private def chartL (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
     A.sectionChartData.SobolevData μ p 1 →L[ℝ] Lp ℝ p (μ.restrict (A.sectionChartData.image i)) :=
   (((LinearMap.toContinuousLinearMap ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp
       complexAntilinearPartL).compLpL p _).comp (A.sectionChartData.chartDerivL μ p i) +
-    ∑ j, zeroOrderL A hD hDs μ p i c j
+    (ContinuousLinearMap.proj c).comp (zeroOrderL A hD hDs μ p i)
 
 include hD hDs in
 /-- The components of the realization, before restricting to Sobolev sections. -/
@@ -163,31 +163,44 @@ private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))
           (complexAntilinearPartL (A.sectionChartData.chartDerivL μ p i w y)) +
         ∑ j, (finBasis ℝ (ℂ →L[ℝ] F)).coord c (A.chartZeroOrder D i y (finBasis ℝ F j)) *
           Wkp.value 1 (w i j) y := by
-  have hz (j : Fin (finrank ℝ F)) : (zeroOrderL A hD hDs μ p i c j w : ℂ → ℝ)
-      =ᵐ[μ.restrict (A.sectionChartData.image i)] fun y ↦ (finBasis ℝ (ℂ →L[ℝ] F)).coord c
-        (A.chartZeroOrder D i y (finBasis ℝ F j)) * Wkp.lowerOrderL 0 (w i j) y := by
-    have h := Wkp.value_contDiffOnSMulL_ae (mu := μ) (p := p) (Omega := A.sectionChartData.image i)
-        ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).uniqueDiffOn
-        (A.isCompact_closure_image i)
-        ((A.closure_image_subset_chart_image_closure_dom i).trans
-          (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i c j)
-        (Wkp.lowerOrderL 0 (w i j))
-    rw [Wkp.value_zero, Wkp.value_zero] at h
-    exact h
-  filter_upwards [Lp.coeFn_add (((((LinearMap.toContinuousLinearMap
-      ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp complexAntilinearPartL).compLpL p _).comp
-        (A.sectionChartData.chartDerivL μ p i)) w) ((∑ j, zeroOrderL A hD hDs μ p i c j) w),
+  have hz : (zeroOrderL A hD hDs μ p i w c : ℂ → ℝ)
+      =ᵐ[μ.restrict (A.sectionChartData.image i)] fun y ↦ ∑ j,
+        (finBasis ℝ (ℂ →L[ℝ] F)).coord c
+          (A.chartZeroOrder D i y (finBasis ℝ F j)) * Wkp.lowerOrderL 0 (w i j) y := by
+    have h := Wkp.value_contDiffOnMulVecL_ae (mu := μ) (p := p)
+      (Omega := A.sectionChartData.image i)
+      ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).uniqueDiffOn
+      (A.isCompact_closure_image i)
+      ((A.closure_image_subset_chart_image_closure_dom i).trans
+        (A.chart_image_closure_dom_subset i)) 0 (contDiffOn_coeff A hD hDs i)
+      (fun j ↦ Wkp.lowerOrderL 0 (w i j)) c
+    have hvalues :
+        (ContinuousLinearMap.piMap fun _ : Fin (finrank ℝ F) ↦ Wkp.lowerOrderL
+          (mu := μ) (Omega := A.sectionChartData.image i) (p := p) 0)
+          ((ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
+            ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i) w) =
+          fun j ↦ Wkp.lowerOrderL 0 (w i j) := by
+      funext j
+      simp only [ContinuousLinearMap.coe_piMap', Pi.map_apply]
+      -- The explicit chart-data index keeps the native product-space instances aligned.
+      exact congrArg (fun u : Fin (finrank ℝ F) → Wkp μ (A.sectionChartData.image i) p 1 ↦
+        Wkp.lowerOrderL 0 (u j)) (ContinuousLinearMap.proj_apply (R := ℝ)
+          (φ := fun i : Fin A.sectionChartData.n ↦
+            ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p 1) i w)
+    simp only [zeroOrderL, ContinuousLinearMap.comp_apply]
+    rw [hvalues]
+    simpa only [Wkp.value_zero] using h
+  filter_upwards [Lp.coeFn_add ((((LinearMap.toContinuousLinearMap
+      ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp complexAntilinearPartL).compLpL p _)
+        (A.sectionChartData.chartDerivL μ p i w)) (zeroOrderL A hD hDs μ p i w c),
     ContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ.restrict (A.sectionChartData.image i))
       ((LinearMap.toContinuousLinearMap ((finBasis ℝ (ℂ →L[ℝ] F)).coord c)).comp
-        complexAntilinearPartL) (A.sectionChartData.chartDerivL μ p i w),
-    Lp.coeFn_finsetSum (μ := μ.restrict (A.sectionChartData.image i)) (p := p) Finset.univ
-      fun j ↦ zeroOrderL A hD hDs μ p i c j w,
-    ae_all_iff.2 hz] with y h₁ h₂ h₃ h₄
-  rw [chartL, add_apply, h₁, Pi.add_apply, ContinuousLinearMap.comp_apply, h₂, sum_apply, h₃,
-    Finset.sum_apply]
-  refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun j _ ↦ ?_)
-  rw [Wkp.value_succ, Wkp.value_zero, ← Wkp.lowerOrderL_apply]
-  exact h₄ j
+        complexAntilinearPartL) (A.sectionChartData.chartDerivL μ p i w), hz] with y h₁ h₂ h₃
+  simp only [chartL, add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply]
+  rw [h₁, Pi.add_apply, h₂]
+  refine congrArg₂ (· + ·) rfl (h₃.trans ?_)
+  exact Finset.sum_congr rfl fun j _ ↦ by
+    rw [Wkp.value_succ, Wkp.value_zero, ← Wkp.lowerOrderL_apply]
 
 /-- **The chart formula of the realization.** In chart `i`, the chart data of the realization of
 an order-one tuple `w` are `∂bar uᵢ + Zᵢ uᵢ` almost everywhere, where `uᵢ` are the chart data of
