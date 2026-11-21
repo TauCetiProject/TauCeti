@@ -33,42 +33,6 @@ variable {p : ℕ} {R : Type*} [CommRing R] [UniformSpace R]
   [IsTopologicalRing R] [IsTateRing R] [IsUniform R] [Fact p.Prime]
   (ϖ : PseudoUniformizerRoots p R)
 
-private theorem gauge_le_root_radius_iff (x : powerBoundedSubring R) (n : ℕ) :
-    ϖ.gauge (x : R) ≤ (2 : ℝ) ^ (-((p : ℝ) / p ^ n)) ↔ ϖ.rootPB n ^ p ∣ x := by
-  have hg := ϖ.gauge_le_rpow_iff (x := (x : R)) (p : ℤ) n
-  simp only [Int.cast_natCast] at hg
-  rw [hg]
-  constructor
-  · intro hz
-    refine ⟨⟨_, hz⟩, Subtype.ext ?_⟩
-    simp only [Subring.coe_mul, Subring.coe_pow, coe_rootPB, ← coe_zpow_natCast,
-      zpow_neg, ← mul_assoc, Units.mul_inv, one_mul]
-  · rintro ⟨z, rfl⟩
-    simpa only [Subring.coe_mul, Subring.coe_pow, coe_rootPB, ← coe_zpow_natCast,
-      zpow_neg, ← mul_assoc, Units.inv_mul, one_mul] using z.property
-
-private theorem exists_gauge_radius_lt {x : R} {d : ℝ} (hd : ϖ.gauge x < d) :
-    ∃ (m : ℤ) (n : ℕ), (ϖ.zpow (-m) n : R) * x ∈ powerBoundedSubring R ∧
-      (2 : ℝ) ^ (-((m : ℝ) / p ^ n)) < d := by
-  rw [ϖ.gauge_eq_sInf (Fact.out : p.Prime).one_lt x] at hd
-  obtain ⟨_, ⟨⟨m, n⟩, hm, rfl⟩, hlt⟩ :=
-    exists_lt_of_csInf_lt (by
-      obtain ⟨k, hk⟩ := ϖ.normDatum.exists_zpow_mul_mem x
-      exact ⟨_, (-k, 0), by simpa [zpow_def] using hk, rfl⟩) hd
-  exact ⟨m, n, hm, hlt⟩
-
-private theorem gauge_le_one_of_relative_error {c : ℝ} (hc : c ≤ 1) {x y : R}
-    (hx : ϖ.gauge x ≤ 1) (hy : ϖ.gauge (x - y ^ p) ≤ c * ϖ.gauge x) :
-    ϖ.gauge y ≤ 1 := by
-  have he : ϖ.gauge (x - y ^ p) ≤ 1 := hy.trans <|
-    (mul_le_of_le_one_left (apply_nonneg _ _) hc).trans hx
-  have hp : ϖ.gauge y ^ p ≤ 1 := by
-    rw [← ϖ.isPowMul_gauge _ (Fact.out : p.Prime).pos]
-    have h := ϖ.isNonarchimedean_gauge x (-(x - y ^ p))
-    rw [← sub_eq_add_neg, sub_sub_cancel, map_neg_eq_map] at h
-    exact h.trans (max_le hx he)
-  exact (pow_le_one_iff_of_nonneg (apply_nonneg _ _) (Fact.out : p.Prime).ne_zero).mp hp
-
 variable [IsUniformAddGroup R] [CompleteSpace R] [T2Space R]
 
 private theorem exists_scaled_gauge_sub_pow_le [IsPerfectoidTateRing p R]
@@ -103,7 +67,7 @@ theorem exists_gauge_sub_pow_le_mul [IsPerfectoidTateRing p R] {c : ℝ}
   have hx0 : 0 < ϖ.gauge x := (apply_nonneg _ _).lt_of_ne'
     (fun h ↦ hx (ϖ.gauge_eq_zero_iff.mp h))
   have ha : 0 < (1 / 2 : ℝ) ^ p := by positivity
-  obtain ⟨m, n, hm, hn⟩ := ϖ.exists_gauge_radius_lt
+  obtain ⟨m, n, hm, hn⟩ := ϖ.exists_gauge_radius_lt (Fact.out : p.Prime).one_lt
     (x := x) (d := c / (1 / 2 : ℝ) ^ p * ϖ.gauge x) (by
       have hca : 1 < c / (1 / 2 : ℝ) ^ p := (lt_div_iff₀ ha).mpr (by simpa using hc)
       simpa using mul_lt_mul_of_pos_right hca hx0)
