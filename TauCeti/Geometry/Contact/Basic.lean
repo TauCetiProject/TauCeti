@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Topology.Algebra.Module.Contact
 
 /-!
 # Contact forms
@@ -45,9 +46,13 @@ condition at `x` only depends on the value of the form at `x` and on its exterio
 restricted to the hyperplane (`TauCeti.isContactFormAt_congr`). At an interior point the
 condition can be checked in the preferred chart
 (`TauCeti.isContactFormAt_inChartAt_iff`), which reduces local questions about contact forms on
-manifolds, such as the existence of Darboux charts, to open subsets of the model space.
-On a normed space it is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the
-bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
+manifolds, such as the existence of Darboux charts, to open subsets of the model space. On a normed
+space this is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the bilinear
+form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`). In finite dimension, since
+linear contactness is open (`TauCeti.isOpen_setOf_isContact_continuousAlternatingMap`), a `C¹`
+one-form that is contact at `x` remains contact on a neighbourhood of `x`
+(`TauCeti.IsContactFormAt.eventually`, `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`,
+`TauCeti.IsContactFormAt.eventually_modelSpace`).
 
 ## Main declarations
 
@@ -66,8 +71,11 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
   form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
-  `TauCeti.isContactFormAt_congr`, `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
+  `TauCeti.isContactFormAt_congr`, `TauCeti.SmoothForm.isContactFormAt_iff_isContact`, and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
+* `TauCeti.IsContactFormAt.eventually`, `TauCeti.SmoothForm.isOpen_setOf_isContactFormAt`,
+  `TauCeti.IsContactFormAt.eventually_modelSpace`: openness of the pointwise contact condition in
+  finite dimension.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
 * `TauCeti.isContactFormAt_modelSpace_iff_isContact`: on a normed space, the pointwise contact
@@ -356,6 +364,91 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
+private theorem isContactFormAt_iff_isContact_of_equiv {α : RoughForm I M ℝ 1} {y : M}
+    (L : TangentSpace I y ≃L[ℝ] E) {a : E [⋀^Fin 1]→L[ℝ] ℝ} {b : E [⋀^Fin 2]→L[ℝ] ℝ}
+    (ha : ∀ u, a ![u] = α y ![L.symm u])
+    (hb : ∀ u w, b ![u, w] = mextDeriv α y ![L.symm u, L.symm w]) :
+    IsContactFormAt α y ↔
+      Module.Dual.IsContact (ContinuousAlternatingMap.toDual a : E →ₗ[ℝ] ℝ)
+        (ContinuousAlternatingMap.flatL ℝ E ℝ b).toLinearMap₁₂ := by
+  rw [Module.Dual.isContact_iff_of_isRefl
+    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL b).isRefl]
+  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+    ContinuousAlternatingMap.flatL_apply_apply, ha, hb]
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
+    RoughForm.mem_ker.2 <| by simpa [ha] using LinearMap.congr_fun h0 (L v),
+    fun u hu huw ↦ L.symm.injective <| by
+      rw [map_zero]
+      exact h.nondegenerate (L.symm u) (RoughForm.mem_ker.2 hu) fun w hw ↦ by
+        simpa using huw (L w) (by simpa using RoughForm.mem_ker.1 hw)⟩,
+    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun u ↦ by
+      simp [ContinuousAlternatingMap.toDual_apply, ha, hz],
+    fun v hv hvw ↦ L.injective <| by
+      rw [map_zero]
+      exact h (L v) (by simpa using RoughForm.mem_ker.1 hv) fun w hw ↦ by
+        simpa using hvw (L.symm w) (RoughForm.mem_ker.2 hw)⟩⟩
+
+open scoped Topology in
+/-- **Openness of the pointwise contact condition.** On a finite-dimensional `C²` manifold, a `C¹`
+one-form that is a contact form at `x` remains a contact form on a neighbourhood of `x`. -/
+theorem IsContactFormAt.eventually [FiniteDimensional ℝ E] [IsManifold I 2 M]
+    {α : RoughForm I M ℝ 1} {x : M} (hc : IsContactFormAt α x)
+    (hα : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) 1
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x) :
+    ∀ᶠ y in 𝓝 x, IsContactFormAt α y := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by simp)
+  have : IsManifold I ((1 : WithTop ℕ∞) + 1) M := ‹IsManifold I 2 M›
+  let : ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  obtain ⟨s, hs, hαs⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).1 hα
+  obtain ⟨U, hUs, hU, hxU⟩ := mem_nhds_iff.1 hs
+  have hdU := contMDiffOn_mextDerivWithin (n := 0) α (hαs.mono hUs) hU.uniqueMDiffOn
+    fun _ hy ↦ subset_closure (hU.interior_eq.symm ▸ hy)
+  set dαU : RoughForm I M ℝ 2 := mextDerivWithin α U
+  set T := FiberBundle.trivializationAt E (TangentSpace I) x
+  have hxT : x ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
+  set A₁ : M → E [⋀^Fin 1]→L[ℝ] ℝ := fun y ↦
+    ContinuousAlternatingMap.inCoordinates E ℝ x y x y (α y)
+  set A₂ : M → E [⋀^Fin 2]→L[ℝ] ℝ := fun y ↦
+    ContinuousAlternatingMap.inCoordinates E ℝ x y x y (dαU y)
+  have hA₁ : ContinuousAt A₁ x :=
+    ((continuousAt_continuousAlternatingMap_bundle
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y))).1 hα.continuousAt).2
+  have hA₂ : ContinuousAt A₂ x :=
+    ((continuousAt_continuousAlternatingMap_bundle
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ) y (dαU y))).1
+        ((hdU x hxU).contMDiffAt (hU.mem_nhds hxU)).continuousAt).2
+  have hinCoord {y : M} (hyT : y ∈ T.baseSet) {k : ℕ} (ω : RoughForm I M ℝ k) (v : Fin k → E) :
+      ContinuousAlternatingMap.inCoordinates E ℝ x y x y (ω y) v =
+        ω y (fun i ↦ (T.continuousLinearEquivAt ℝ y hyT).symm (v i)) := by
+    have hsymm : ∀ u, (trivializationAt E (TangentSpace I) x).symmL ℝ y u = T.symm y u :=
+      T.symmL_apply hyT
+    simp [ContinuousAlternatingMap.inCoordinates, Function.comp_def, hsymm]
+  have hiff {y : M} (hyU : y ∈ U) (hyT : y ∈ T.baseSet) :
+      IsContactFormAt α y ↔
+        Module.Dual.IsContact (ContinuousAlternatingMap.toDual (A₁ y) : E →ₗ[ℝ] ℝ)
+          (ContinuousAlternatingMap.flatL ℝ E ℝ (A₂ y)).toLinearMap₁₂ :=
+    isContactFormAt_iff_isContact_of_equiv (T.continuousLinearEquivAt ℝ y hyT)
+      (fun u ↦ by
+        rw [hinCoord hyT α ![u]]
+        congr 1; funext i; fin_cases i; rfl)
+      (fun u w ↦ by
+        dsimp only [A₂, dαU]
+        rw [mextDerivWithin_of_isOpen hU hyU, hinCoord hyT (mextDeriv α) ![u, w]]
+        congr 1; funext i; fin_cases i <;> rfl)
+  filter_upwards [hU.mem_nhds hxU, T.open_baseSet.mem_nhds hxT,
+    (hA₁.prodMk hA₂).eventually
+      ((isOpen_setOf_isContact_continuousAlternatingMap (E := E)).mem_nhds
+        ((hiff hxU hxT).1 hc))] with y hyU hyT hy
+  exact (hiff hyU hyT).2 hy
+
+/-- **Openness of the contact condition for smooth forms.** On a finite-dimensional `C²` manifold,
+the set of points where a smooth one-form `α` is a contact form is open. -/
+theorem SmoothForm.isOpen_setOf_isContactFormAt [FiniteDimensional ℝ E] [IsManifold I 2 M]
+    (α : SmoothForm I M ℝ 1) : IsOpen {x : M | IsContactFormAt α.val x} :=
+  isOpen_iff_mem_nhds.2 fun _ hx ↦ hx.eventually ((α.contMDiff _).of_le (by simp))
+
 /-- **The contact condition at a point is congruent.** Two one-forms with the same value at `x`
 whose exterior derivatives at `x` agree on the common hyperplane `ker α_x` are contact at `x`
 together. Their exterior derivatives may differ off `ker α_x`. -/
@@ -417,25 +510,27 @@ a contact covector for the bilinear form of `dα(x)`. -/
 theorem isContactFormAt_modelSpace_iff_isContact {α : E → E [⋀^Fin 1]→L[ℝ] ℝ} {x : E} :
     IsContactFormAt (I := 𝓘(ℝ, E)) α x ↔
       Module.Dual.IsContact (ContinuousAlternatingMap.toDual (α x) : E →ₗ[ℝ] ℝ)
-        (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ := by
-  rw [Module.Dual.isContact_iff_of_isRefl
-    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL (extDeriv α x)).isRefl]
-  have hB (v w : E) :
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ v w =
-        extDeriv α x ![v, w] :=
-    ContinuousAlternatingMap.flatL_apply_apply _ v w
-  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply, hB]
-  have hd (v w : E) : mextDeriv α x ![v, w] = extDeriv α x ![v, w] :=
-    DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
-    RoughForm.mem_ker.2 <| (ContinuousAlternatingMap.toDual_apply (α x) v).symm.trans
-      (LinearMap.congr_fun h0 v),
-    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv) fun w hw ↦
-      (hd v w).trans (hvw w (RoughForm.mem_ker.1 hw))⟩,
-    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦
-      (ContinuousAlternatingMap.toDual_apply (α x) v).trans (by rw [hz]; rfl),
-      fun v hv hvw ↦ h v (RoughForm.mem_ker.1 hv) fun w hw ↦
-        (hd v w).symm.trans (hvw w (RoughForm.mem_ker.2 hw))⟩⟩
+        (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ :=
+  isContactFormAt_iff_isContact_of_equiv (α := (α : RoughForm 𝓘(ℝ, E) E ℝ 1))
+    (NormedSpace.fromTangentSpace x)
+    (fun _ ↦ by
+      simp only [NormedSpace.fromTangentSpace_symm_apply]
+      -- `TangentSpace 𝓘(ℝ, E) x` and `E` share the same carrier.
+      rfl)
+    (fun _ _ ↦ by
+      simp only [NormedSpace.fromTangentSpace_symm_apply]
+      exact (DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _).symm)
+
+open scoped Topology in
+/-- **Openness of the pointwise contact condition on a normed space.** On a finite-dimensional real
+normed space, a one-form that is `C¹` at `x` and is a contact form at `x` remains a contact form
+on a neighbourhood of `x`. -/
+theorem IsContactFormAt.eventually_modelSpace [FiniteDimensional ℝ E]
+    {α : E → E [⋀^Fin 1]→L[ℝ] ℝ} {x : E}
+    (hc : IsContactFormAt (I := 𝓘(ℝ, E)) α x) (hα : ContDiffAt ℝ 1 α x) :
+    ∀ᶠ y in 𝓝 x, IsContactFormAt (I := 𝓘(ℝ, E)) α y := by
+  let αR : RoughForm 𝓘(ℝ, E) E ℝ 1 := α
+  exact hc.eventually (contMDiffAt_form_modelSpace_iff (φ := αR).2 hα)
 
 end ModelSpace
 

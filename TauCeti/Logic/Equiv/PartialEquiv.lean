@@ -33,6 +33,9 @@ them in the other direction.
 * `PartialEquiv.preimage_singleton_inter_symm_image_eq_singleton`: the fibre of `f` over `f x`
   inside `e.symm '' s` is `{x}` when `e x` is the only point of `s` that `f ∘ e.symm` carries to
   `f x`.
+* `PartialEquiv.mem_source_of_symm_eq_coe`, `PartialEquiv.apply_coe_eq_of_symm_eq_coe`: source
+  membership and forward agreement with a partial equivalence on a subtype whose inverse matches
+  the ambient inverse on the ambient target.
 * `PartialEquiv.symm_map_of_intertwines`: if `e` intertwines a self-map `f` of its source with a
   map `A`, then `A` preserves the target and `e.symm` intertwines `A` with `f`.
 -/
@@ -111,6 +114,27 @@ theorem preimage_singleton_inter_symm_image_eq_singleton {δ : Type*} {f : α �
   refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨rfl, e x, hxs, e.left_inv hx⟩, ?_⟩
   rintro _ ⟨hz, z, hzs, rfl⟩
   rw [not_imp_not.1 (hisol z hzs) hz, e.left_inv hx]
+
+/-- If `e : PartialEquiv α β` satisfies `e.target ⊆ Φ.target` and `e.symm` agrees with
+`Subtype.val ∘ Φ.symm` on `e.target`, then every `p : Subtype P` with `(p : α) ∈ e.source` lies
+in `Φ.source`. -/
+theorem mem_source_of_symm_eq_coe {P : α → Prop} (Φ : PartialEquiv (Subtype P) β)
+    {e : PartialEquiv α β} (het : e.target ⊆ Φ.target)
+    (hesymm : ∀ z ∈ e.target, e.symm z = Φ.symm z) {p : Subtype P} (hp : (p : α) ∈ e.source) :
+    p ∈ Φ.source := by
+  have hsp : Φ.symm (e p) = p :=
+    Subtype.ext ((hesymm (e p) (e.map_source hp)).symm.trans (e.left_inv hp))
+  exact hsp ▸ Φ.map_target (het (e.map_source hp))
+
+/-- Under the hypotheses of `PartialEquiv.mem_source_of_symm_eq_coe`, `e p = Φ p` for every
+`p : Subtype P` with `(p : α) ∈ e.source`. -/
+theorem apply_coe_eq_of_symm_eq_coe {P : α → Prop} (Φ : PartialEquiv (Subtype P) β)
+    {e : PartialEquiv α β} (het : e.target ⊆ Φ.target)
+    (hesymm : ∀ z ∈ e.target, e.symm z = Φ.symm z) {p : Subtype P} (hp : (p : α) ∈ e.source) :
+    e p = Φ p := by
+  have hsp : Φ.symm (e p) = p :=
+    Subtype.ext ((hesymm (e p) (e.map_source hp)).symm.trans (e.left_inv hp))
+  exact (hsp ▸ Φ.right_inv (het (e.map_source hp))).symm
 
 /-- If a partial equivalence `e` intertwines a map `f` of its source into itself with a map `A`,
 then `A` maps the target of `e` into itself and `e.symm` intertwines `A` with `f` there. -/
