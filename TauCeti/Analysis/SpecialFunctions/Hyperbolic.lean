@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
@@ -58,6 +59,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
+* `Complex.tanh_isEquivalent_id` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4).
 * `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
@@ -415,6 +417,19 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
       (1 - tanh α * tanh θ) / 2 := by
   rw [cosh_sub, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
   field_simp
+
+open Asymptotics Topology in
+/-- `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4), along the full neighbourhood filter: `tanh` has
+derivative `1` at `0`, where both sides vanish. -/
+theorem tanh_isEquivalent_id : (fun z : ℂ ↦ tanh z) ~[𝓝 0] fun z ↦ z := by
+  have hd : HasDerivAt tanh 1 0 := by
+    have h := (hasDerivAt_sinh 0).div (hasDerivAt_cosh 0) (by simp)
+    simp only [cosh_zero, sinh_zero, mul_zero, sub_zero, one_pow, div_one, mul_one] at h
+    have he : sinh / cosh = tanh := funext fun z ↦ (tanh_eq_sinh_div_cosh z).symm
+    rwa [he] at h
+  have h := hd.isLittleO
+  simp only [tanh_zero, sub_zero, smul_eq_mul, mul_one] at h
+  exact h
 
 /-- The complex hyperbolic cosine is bounded by the mean of the norms of the two exponentials:
 `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2`. -/
