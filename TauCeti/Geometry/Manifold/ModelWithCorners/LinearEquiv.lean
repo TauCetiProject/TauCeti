@@ -64,6 +64,12 @@ theorem transContinuousLinearEquiv_trans (e : E ≃L[𝕜] F) (f : F ≃L[𝕜] 
       I.transContinuousLinearEquiv (e.trans f) := by
   ext1 <;> simp [ModelWithCorners.target_eq, Function.comp_def]
 
+/-- A continuous linear change of model coordinates preserves boundarylessness. -/
+instance instBoundarylessTransContinuousLinearEquiv [I.Boundaryless] (e : E ≃L[𝕜] F) :
+    (I.transContinuousLinearEquiv e).Boundaryless where
+  range_eq_univ := by
+    rw [I.transContinuousLinearEquiv_range e, I.range_eq_univ, image_univ, e.surjective.range_eq]
+
 /-- Differentiability within the model range of a coordinate expression `I ∘ f ∘ I.symm` is
 unchanged by a continuous linear change of model coordinates. -/
 theorem differentiableWithinAt_transContinuousLinearEquiv_iff (e : E ≃L[𝕜] F) (f : H → H)

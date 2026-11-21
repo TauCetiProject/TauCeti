@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
+public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!
@@ -39,6 +40,10 @@ When a change of model vector space `L : E ≃L[ℝ] F` is also needed, compose 
   `TauCeti.Manifold.Orientation.toBoundarylessModel_injective`,
   `TauCeti.Manifold.Orientation.toBoundarylessModel_inj`: compatibility with negation and
   injectivity.
+* `TauCeti.Manifold.Orientation.isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv`
+  (and `isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm`): recharting
+  `BoundarylessModel` along `e : E ≃L[ℝ] F` preserves orientation to
+  `(o.transContinuousLinearEquiv e).toBoundarylessModel`.
 -/
 
 public section
@@ -135,5 +140,43 @@ theorem toBoundarylessModel_injective :
 theorem toBoundarylessModel_inj {o₁ o₂ : Manifold.Orientation I M ι} :
     o₁.toBoundarylessModel = o₂.toBoundarylessModel ↔ o₁ = o₂ :=
   toBoundarylessModel_injective.eq_iff
+
+section TransContinuousLinearEquiv
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- The inverse recharting diffeomorphism
+`(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I e k).symm` preserves orientations from
+`(o.transContinuousLinearEquiv e).toBoundarylessModel` to `o`. -/
+theorem isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv_symm
+    (o : Manifold.Orientation I M ι) (e : E ≃L[ℝ] F) (k : ℕ∞ω)
+    (y : BoundarylessModel (I.transContinuousLinearEquiv e) M) :
+    IsOrientationPreservingAt (o.transContinuousLinearEquiv e).toBoundarylessModel o
+      (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) e k).symm y := by
+  have hcoe :
+      ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) e k).symm =
+        (id : M → M) ∘
+          (BoundarylessModel.homeomorph (I.transContinuousLinearEquiv e) M).symm := by
+    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv_symm, Function.id_comp]
+  rw [hcoe]
+  exact (o.isOrientationPreservingAt_id_transContinuousLinearEquiv_symm e _).comp
+    ((o.transContinuousLinearEquiv e).isOrientationPreservingAt_homeomorph_symm_toBoundarylessModel
+      y)
+
+/-- The recharting diffeomorphism `BoundarylessModel.diffeomorphTransContinuousLinearEquiv I e k`
+preserves orientations from `o` to `(o.transContinuousLinearEquiv e).toBoundarylessModel`. -/
+theorem isOrientationPreservingAt_diffeomorphTransContinuousLinearEquiv
+    (o : Manifold.Orientation I M ι) (e : E ≃L[ℝ] F) (k : ℕ∞ω) (x : M) :
+    IsOrientationPreservingAt o (o.transContinuousLinearEquiv e).toBoundarylessModel
+      (BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) e k) x := by
+  have hcoe :
+      ⇑(BoundarylessModel.diffeomorphTransContinuousLinearEquiv I (M := M) e k) =
+        BoundarylessModel.homeomorph (I.transContinuousLinearEquiv e) M ∘ (id : M → M) := by
+    rw [BoundarylessModel.coe_diffeomorphTransContinuousLinearEquiv, Function.comp_id]
+  rw [hcoe]
+  exact ((o.transContinuousLinearEquiv e).isOrientationPreservingAt_homeomorph_toBoundarylessModel
+    x).comp (o.isOrientationPreservingAt_id_transContinuousLinearEquiv e x)
+
+end TransContinuousLinearEquiv
 
 end TauCeti.Manifold.Orientation

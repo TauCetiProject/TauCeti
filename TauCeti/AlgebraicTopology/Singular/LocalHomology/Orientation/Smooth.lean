@@ -8,9 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
-public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Data.SignType.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Smooth orientations are homological orientations
@@ -77,8 +78,8 @@ preserves them.
   `localOrientationOfManifoldOrientation_eq_localOrientationOfOrientedChart_transHomeomorph` and
   `localOrientationOfManifoldOrientation_eq`.
 * `TauCeti.Manifold.Orientation.toHomologicalOrientation`: the homological orientation of a smooth
-  orientation, with `toHomologicalOrientation_apply`, `toHomologicalOrientation_neg` and
-  `toHomologicalOrientation_injective`.
+  orientation, with `toHomologicalOrientation_apply`, `toHomologicalOrientation_neg`,
+  `toHomologicalOrientation_injective`, and `comap_toHomologicalOrientation`.
 
 ## References
 
@@ -92,6 +93,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Metric Module Set Topology
+open OpenPartialHomeomorph (mem_refl_source)
 open scoped Manifold
 
 universe w v u
@@ -102,11 +104,6 @@ section Model
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-omit [NormedSpace ℝ E] in
-private theorem mem_refl_source (p : E) : p ∈ (OpenPartialHomeomorph.refl E).source := by
-  rw [OpenPartialHomeomorph.refl_source]
-  exact mem_univ p
 
 /-- Radial projection about a point `p` of `K`, on the complement of `K`. -/
 private def complRadial {K : Set E} {p : E} (hp : p ∈ K) : C((Kᶜ : Set E), sphere (0 : E) 1) :=
@@ -1121,6 +1118,8 @@ end ManifoldTransport
 
 namespace Manifold.Orientation
 
+section
+
 variable {M E : Type w} {H : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I 1 M] [ChartedSpace E M]
@@ -1174,6 +1173,73 @@ theorem toHomologicalOrientation_injective :
         exact absurd (congrArg Subtype.val hx) (IsLocalOrientation.neg_ne
           (singularHomologyComplSingletonIsoOfFinrankEq _ (chartAt E x) (mem_chart_source E x) hE)
           (localOrientationOfNormedChart _ _ _ hE).property)
+
+end
+
+section Comap
+
+variable {M E N : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace M] [T2Space M] [ChartedSpace E M]
+  [IsManifold 𝓘(ℝ, E) 1 M] [TopologicalSpace N] [T2Space N] [ChartedSpace E N]
+  [IsManifold 𝓘(ℝ, E) 1 N] {n : ℕ} (hE : finrank ℝ E = n + 1)
+
+/-- An orientation-preserving open embedding between boundaryless `C¹` manifolds modelled on `E`
+pulls back the homological orientation of the target to that of the source. -/
+theorem comap_toHomologicalOrientation
+    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (n + 1)))
+    (o' : Manifold.Orientation 𝓘(ℝ, E) N (Fin (n + 1)))
+    {j : M → N} (hj : IsOpenEmbedding j)
+    (hj' : ∀ x, IsOrientationPreservingAt o o' j x) :
+    (o'.toHomologicalOrientation hE).comap hj = o.toHomologicalOrientation hE := by
+  ext x : 1
+  apply (hj.localOrientationEquiv x (n + 1)).injective
+  rw [HomologicalOrientation.localOrientationEquiv_comap_apply]
+  apply Subtype.ext
+  rw [IsOpenEmbedding.coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_hom,
+    toHomologicalOrientation_apply, toHomologicalOrientation_apply,
+    localOrientationOfManifoldOrientation_eq, localOrientationOfManifoldOrientation_eq]
+  set oM : _root_.Orientation ℝ E (Fin (n + 1)) := o.orientationAt x
+  set oN : _root_.Orientation ℝ E (Fin (n + 1)) := o'.orientationAt (j x)
+  obtain ⟨e, he, heo⟩ := (isOrientationPreservingAt_iff o o' j x).1 (hj' x)
+  let e' : E ≃L[ℝ] E := e
+  set f' : E →L[ℝ] E := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) j x
+  have he' : (e' : E →L[ℝ] E) = f' := he
+  have hcard : Fintype.card (Fin (n + 1)) = finrank ℝ E := by simp [hE]
+  have hfd : HasFDerivAt (chartAt E (j x) ∘ j ∘ (chartAt E x).symm) f' (chartAt E x x) := by
+    have h :=
+      (mdifferentiableAt_of_isInvertible_mfderiv (hj' x).isInvertible_mfderiv).hasMFDerivAt.right
+    simp only [writtenInExtChartAt, hasFDerivWithinAt_univ, ModelWithCorners.range_eq_univ] at h
+    exact h
+  have hdet : f'.det ≠ 0 := by
+    rw [← he']
+    exact (LinearEquiv.isUnit_det' e'.toLinearEquiv).ne_zero
+  let jC : C(M, N) := ⟨j, hj.continuous⟩
+  have hU := (chartAt E x).localHomologyMap_restrict_localOrientationOfOrientedChart
+    oM hE (chartAt E (j x)) jC (mem_chart_source E x) (mem_chart_source E (j x))
+    isOpen_univ (mem_univ x) (fun _ _ hz ↦ hj.injective hz) hfd hdet
+  have huniv := isOpen_univ.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm
+    ⟨x, mem_univ x⟩ ((chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) oM hE)
+    fun _ hz ↦ Subtype.ext hz
+  have hmap : localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) jC
+        (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) (n + 1)
+        ((chartAt E x).localOrientationOfOrientedChart (mem_chart_source E x) oM hE).val =
+      (SignType.sign f'.det : ℤ) • ((chartAt E (j x)).localOrientationOfOrientedChart
+        (mem_chart_source E (j x)) oM hE).val := by
+    rw [← huniv, ← ConcreteCategory.comp_apply]
+    exact (ConcreteCategory.congr_hom (localHomologyMap_comp _ _ jC _ _ (n + 1)) _).trans hU
+  rw [hmap]
+  rcases _root_.Orientation.eq_or_eq_neg oN oM (by simp [hE]) with ho | ho
+  · have hpos : 0 < f'.det := by
+      rw [← he']
+      exact (_root_.Orientation.map_eq_iff_det_pos _ _ hcard).1 (heo.trans ho)
+    rw [sign_pos hpos, SignType.coe_one, one_zsmul, ho]
+  · have hneg : f'.det < 0 := by
+      rw [← he']
+      exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ hcard).1 (heo.trans ho)
+    rw [sign_neg hneg, SignType.coe_neg_one, neg_one_zsmul, ho,
+      OpenPartialHomeomorph.localOrientationOfOrientedChart_neg, LocalOrientation.coe_neg]
+
+end Comap
 
 end Manifold.Orientation
 

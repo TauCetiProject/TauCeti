@@ -217,6 +217,24 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
 
+/-- Postcomposing with a `C^n` diffeomorphism (`n ≠ 0`) preserves invertibility of the manifold
+derivative, with no differentiability assumption on `f`. -/
+@[simp]
+theorem isInvertible_mfderiv_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (f : P → M) (x : P) :
+    (mfderiv K J (h ∘ f) x).IsInvertible ↔ (mfderiv K I f x).IsInvertible := by
+  rw [h.mfderiv_diffeomorph_comp hn, ← h.mfderivToContinuousLinearEquiv_coe hn]
+  exact ContinuousLinearMap.isInvertible_equiv_comp
+
+/-- Precomposing with a `C^n` diffeomorphism (`n ≠ 0`) preserves invertibility of the manifold
+derivative at the corresponding point, with no differentiability assumption on `f`. -/
+@[simp]
+theorem isInvertible_mfderiv_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (f : N → P) (x : M) :
+    (mfderiv I K (f ∘ h) x).IsInvertible ↔ (mfderiv J K f (h x)).IsInvertible := by
+  rw [h.mfderiv_comp_diffeomorph hn, ← h.mfderivToContinuousLinearEquiv_coe hn]
+  exact ContinuousLinearMap.isInvertible_comp_equiv
+
 /-- **Chain rule for precomposition with a diffeomorphism, for vector-valued functions.** The
 differential of `f ∘ h` at `x`, with values in `E'`, is `df ∘ dh`. No differentiability of `f` is
 assumed. -/

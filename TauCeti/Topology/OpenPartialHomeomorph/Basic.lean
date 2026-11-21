@@ -30,6 +30,8 @@ or target are also sent to locally closed subsets of the ambient space.
 
 ## Main statements
 
+* `OpenPartialHomeomorph.mem_refl_source`: every point lies in the source of the identity open
+  partial homeomorphism.
 * `OpenPartialHomeomorph.isClosed_image_symm_of_isCompact`: the inverse of an open partial
   homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 * `OpenPartialHomeomorph.isClosed_image_of_closure_subset_target`: the image of a closed subset
@@ -46,7 +48,14 @@ public section
 
 namespace OpenPartialHomeomorph
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (e : OpenPartialHomeomorph X Y)
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- Every point lies in the source of the identity open partial homeomorphism. -/
+lemma mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source := by
+  rw [refl_source]
+  exact Set.mem_univ x
+
+variable (e : OpenPartialHomeomorph X Y)
 
 /-- The image under `e.symm` of a compact subset of `e.target` is closed when the source space
 is Hausdorff. -/

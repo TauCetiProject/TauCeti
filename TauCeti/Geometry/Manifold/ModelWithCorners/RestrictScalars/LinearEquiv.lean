@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
-public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
@@ -22,19 +22,12 @@ For changes of manifold model coordinates, see Kobayashi--Nomizu,
 
 public section
 
-open Set
-
 namespace ModelWithCorners
 
 variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
   {E F H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [TopologicalSpace H]
   (I : ModelWithCorners 𝕜' E H) [I.Boundaryless]
-
-/-- A continuous linear change of coordinates preserves a boundaryless model. -/
-instance (e : E ≃L[𝕜'] F) : (I.transContinuousLinearEquiv e).Boundaryless where
-  range_eq_univ := by
-    rw [I.transContinuousLinearEquiv_range, I.range_eq_univ, image_univ, e.surjective.range_eq]
 
 variable [LinearMap.CompatibleSMul E F 𝕜 𝕜']
 

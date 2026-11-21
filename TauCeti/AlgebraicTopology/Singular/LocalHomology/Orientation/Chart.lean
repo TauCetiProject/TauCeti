@@ -23,8 +23,13 @@ orientations used to construct fundamental classes.
 
 The oriented local homology isomorphism of any chart factors through that of the identity chart of
 the model, which is read through the connecting morphism and radial projection about the point.
-Translations of the model preserve the local orientations selected in the identity chart, and
-composing a chart with a linear isometry equivalence of the model while transporting the model
+Translations of the model preserve the local orientations selected in the identity chart. Linear
+isometries between real inner product spaces intertwine the oriented local homology isomorphisms
+of the identity charts
+(`TauCeti.singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality`) and the
+oriented-chart local orientations of intertwined charts
+(`OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv`),
+and composing a chart with a linear isometry equivalence of the model while transporting the model
 orientation preserves the selected local orientation
 (`OpenPartialHomeomorph.localOrientationOfOrientedChart_transHomeomorph_linearIsometryEquiv`).
 
@@ -303,6 +308,63 @@ theorem localHomologyMap_translate_localOrientationOfOrientedChart_refl {p c : E
 
 end Translation
 
+section LinearIsometry
+
+variable {E F : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- On punctured spaces, a linear isometry intertwines the radial projections onto the unit
+spheres. -/
+private theorem snd_ofSubsetMap_linearIsometryEquiv_toHomeomorph
+    (f : E ≃ₗᵢ[ℝ] F) (p : E) :
+    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+        (TopCat.ofHom (f.toHomeomorph : C(E, F))) (B := {p}ᶜ) (B' := {f p}ᶜ)
+        (fun _ hy h ↦ hy (f.injective h))) ≫
+      TopCat.ofHom (complSingletonHomotopyEquivSphere (f p)).toFun =
+    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun ≫
+      TopCat.ofHom ⟨f.toLinearIsometry.unitSphereMap,
+        f.toLinearIsometry.continuous_unitSphereMap⟩ := by
+  ext z
+  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+  refine ((coe_complSingletonHomotopyEquivSphere_apply (f p) _).trans ?_).trans
+    ((LinearIsometry.coe_unitSphereMap_apply f.toLinearIsometry _).trans
+      (congrArg (f : E → F) (coe_complSingletonHomotopyEquivSphere_apply p z))).symm
+  erw [TopPair.ofSubsetMap_snd_apply]
+  simp only [TopCat.hom_ofHom, ContinuousMap.coe_ofClass, LinearIsometryEquiv.coe_toHomeomorph,
+    ← map_sub, f.norm_map, map_smul]
+
+/-- A linear isometry `f : E ≃ₗᵢ[ℝ] F` intertwines the oriented local homology isomorphisms of
+the identity charts. -/
+@[reassoc]
+theorem singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality
+    {n : ℕ} (hE : finrank ℝ E = n + 1) (f : E ≃ₗᵢ[ℝ] F)
+    {p : E} (hp : p ∈ (OpenPartialHomeomorph.refl E).source)
+    {q : F} (hq : q ∈ (OpenPartialHomeomorph.refl F).source) (hpq : f p = q)
+    (oE : Orientation ℝ E (Fin (n + 1))) (oF : Orientation ℝ F (Fin (n + 1)))
+    (ho : Orientation.map (Fin (n + 1)) f.toLinearEquiv oE = oF)
+    (h : (f.toHomeomorph : C(E, F)) ⁻¹' {q} ⊆ {p}) :
+    let hF : finrank ℝ F = n + 1 := (LinearEquiv.finrank_eq f.toLinearEquiv).symm.trans hE
+    localHomologyMap R (f.toHomeomorph : C(E, F)) h (n + 1) ≫
+        (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl F)
+          hq oF hF).hom =
+      (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl E)
+        hp oE hE).hom := by
+  subst hpq
+  dsimp only
+  rw [singularHomologyComplSingletonIsoOfOrientation_refl_hom,
+    singularHomologyComplSingletonIsoOfOrientation_refl_hom,
+    localHomologyMap_def, ← TopPair.reducedSingularHomologyδ_naturality_assoc]
+  congr 1
+  -- The composite is only type-correct after unfolding the subspace of the pair.
+  erw [← Functor.map_comp_assoc,
+    snd_ofSubsetMap_linearIsometryEquiv_toHomeomorph f p,
+    Functor.map_comp_assoc]
+  congr 1
+  exact reducedSingularHomologySphereIsoOfOrientation_hom_naturality R oE oF f ho hE
+
+end LinearIsometry
+
 section LinearIsometryEquiv
 
 variable {M E F : Type w} [TopologicalSpace M] [T1Space M]
@@ -379,3 +441,49 @@ theorem
 end LinearIsometryEquiv
 
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+open TauCeti
+
+/-- For a continuous map `j : C(M, N)` intertwining charts `φ` and `ψ` via a linear isometry
+`f : E ≃ₗᵢ[ℝ] F` (`ψ (j z) = f (φ z)` on `φ.source`), `j` carries the oriented-chart local
+orientation of `φ` at `x` to that of `ψ` at `j x` for the mapped orientation. -/
+theorem localHomologyMap_localOrientationOfOrientedChart_linearIsometryEquiv
+    {M N E F : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T1Space N]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N F)
+    {n : ℕ} (hE : finrank ℝ E = n + 1) (f : E ≃ₗᵢ[ℝ] F) (j : C(M, N))
+    {x : M} (hx : x ∈ φ.source) (hjφ : Set.MapsTo j φ.source ψ.source)
+    (hφψ : ∀ z ∈ φ.source, ψ (j z) = f (φ z)) (hj : j ⁻¹' {j x} ⊆ {x})
+    (oE : Orientation ℝ E (Fin (n + 1))) (oF : Orientation ℝ F (Fin (n + 1)))
+    (ho : Orientation.map (Fin (n + 1)) f.toLinearEquiv oE = oF) :
+    let hF : finrank ℝ F = n + 1 := (LinearEquiv.finrank_eq f.toLinearEquiv).symm.trans hE
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j hj (n + 1)
+        (φ.localOrientationOfOrientedChart hx oE hE).val =
+      (ψ.localOrientationOfOrientedChart (hjφ hx) oF hF).val := by
+  intro hF
+  set R := ModuleCat.of ℤ (ULift.{w} ℤ)
+  let isoM := singularHomologyComplSingletonIsoOfOrientation R φ hx oE hE
+  let isoM' := singularHomologyComplSingletonIsoOfOrientation R ψ (hjφ hx) oF hF
+  have hf : (f.toHomeomorph : C(E, F)) ⁻¹' {ψ (j x)} ⊆ {φ x} := by
+    rw [hφψ x hx, ContinuousMap.coe_ofClass, LinearIsometryEquiv.coe_toHomeomorph,
+      ← Set.image_singleton, f.injective.preimage_image]
+  have hiso : localHomologyMap R j hj (n + 1) ≫ isoM'.hom = isoM.hom := by
+    dsimp only [isoM, isoM']
+    rw [singularHomologyComplSingletonIsoOfOrientation_hom_eq R ψ (hjφ hx) (mem_refl_source _),
+      singularHomologyComplSingletonIsoOfOrientation_hom_eq R φ hx (mem_refl_source _),
+      ← Category.assoc,
+      localHomologyMap_comp_singularHomologyComplSingletonIsoOfChart_hom R j
+        (f.toHomeomorph : C(E, F)) φ ψ hx hjφ hφψ hj hf,
+      Category.assoc]
+    congr 1
+    exact singularHomologyComplSingletonIsoOfOrientation_refl_hom_naturality
+      R hE f (mem_refl_source _) (mem_refl_source _) (hφψ x hx).symm oE oF ho hf
+  rw [coe_localOrientationOfOrientedChart, coe_localOrientationOfOrientedChart]
+  apply (ConcreteCategory.bijective_of_isIso isoM'.hom).1
+  rw [← ConcreteCategory.comp_apply, hiso]
+  exact (isoM.inv_hom_id_apply 1).trans (isoM'.inv_hom_id_apply 1).symm
+
+end OpenPartialHomeomorph

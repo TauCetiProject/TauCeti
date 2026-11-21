@@ -31,6 +31,8 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
 
 ## Main results
 
+* `LinearIsometry.planeRotation_apply`: explicit coordinate formula for the rotation in the
+  orthonormal basis `ι 1`, `ι I`.
 * `LinearIsometry.planeRotation_apply_map`: the rotation by `c` multiplies the plane by `c`.
 * `LinearIsometry.planeRotation_apply_of_mem_orthogonal`: it fixes the orthogonal complement of
   the plane.
@@ -141,6 +143,14 @@ def planeRotation : Circle →* E ≃ₗᵢ[ℝ] E where
 private theorem planeRotation_apply_eq (c : Circle) (x : E) :
     ι.planeRotation c x = x + ι ((c - 1) * planeCoord ι x) :=
   (rfl)
+
+/-- Explicit coordinate formula for `planeRotation`: `planeRotation ι c x` adds `(c - 1)` times the
+complex coordinate of the orthogonal projection of `x` onto `ι ℂ` in the orthonormal basis
+`ι 1`, `ι I`. -/
+theorem planeRotation_apply (c : Circle) (x : E) :
+    ι.planeRotation c x =
+      x + ι (((c : ℂ) - 1) * ((⟪ι 1, x⟫ : ℂ) + (⟪ι I, x⟫ : ℂ) * I)) := by
+  rw [planeRotation_apply_eq, planeCoord_apply]
 
 /-- **The rotation by `c` multiplies the plane `ι ℂ` by `c`.** -/
 @[simp]

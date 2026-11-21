@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Geometry.Manifold.ModelWithCorners.LinearEquiv
 
 /-!
 # Replacing a boundaryless model by its vector space
@@ -34,6 +35,10 @@ are their additive counterparts.
 atlases. `BoundarylessModel.diffeomorphOfExtChartAtEq` constructs the common identity
 transport from the extended-chart comparison and manifold boundarylessness;
 `coe_diffeomorphOfExtChartAtEq` and `coe_diffeomorphOfExtChartAtEq_symm` give its functions.
+`BoundarylessModel.diffeomorphTransContinuousLinearEquiv` combines
+`ContinuousLinearEquiv.toTransContinuousLinearEquiv` with `BoundarylessModel.diffeomorph` to
+rechart a boundaryless model `(M, I)` along any continuous linear equivalence `e : E ≃L[𝕜] F` to
+a self-modelled copy over `F`.
 
 ## References
 
@@ -472,6 +477,34 @@ theorem coe_diffeomorph (n : ℕ∞ω) : ⇑(diffeomorph I (M := M) n) = homeomo
 theorem coe_diffeomorph_symm (n : ℕ∞ω) :
     ⇑(diffeomorph I (M := M) n).symm = (homeomorph I M).symm :=
   (rfl)
+
+/-- Recharting a manifold on a boundaryless model `(M, I)` along `e : E ≃L[𝕜] F` to the
+self-modelled copy `BoundarylessModel (I.transContinuousLinearEquiv e) M`. -/
+def diffeomorphTransContinuousLinearEquiv {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (e : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    M ≃ₘ^n⟮I, 𝓘(𝕜, F)⟯ BoundarylessModel (I.transContinuousLinearEquiv e) M :=
+  (e.toTransContinuousLinearEquiv (n := n) I M).trans
+    (diffeomorph (I.transContinuousLinearEquiv e) n)
+
+/-- The recharting diffeomorphism has the identity homeomorphism as its underlying map. -/
+@[simp]
+theorem coe_diffeomorphTransContinuousLinearEquiv {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (e : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    ⇑(diffeomorphTransContinuousLinearEquiv I (M := M) e n) =
+      homeomorph (I.transContinuousLinearEquiv e) M := by
+  rw [diffeomorphTransContinuousLinearEquiv, Diffeomorph.coe_trans, coe_diffeomorph,
+    ContinuousLinearEquiv.coe_toTransContinuousLinearEquiv, Function.comp_id]
+
+/-- The inverse recharting diffeomorphism has the inverse identity homeomorphism as its underlying
+map. -/
+@[simp]
+theorem coe_diffeomorphTransContinuousLinearEquiv_symm {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] (e : E ≃L[𝕜] F) (n : ℕ∞ω) :
+    ⇑(diffeomorphTransContinuousLinearEquiv I (M := M) e n).symm =
+      (homeomorph (I.transContinuousLinearEquiv e) M).symm := by
+  rw [diffeomorphTransContinuousLinearEquiv, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
+    ContinuousLinearEquiv.coe_toTransContinuousLinearEquiv_symm, coe_diffeomorph_symm,
+    Function.id_comp]
 
 section Derivatives
 
