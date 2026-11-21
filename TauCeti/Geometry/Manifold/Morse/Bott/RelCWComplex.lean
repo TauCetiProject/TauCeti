@@ -140,7 +140,14 @@ theorem exists_relCWComplex_union_negativeDiscBundle
       ((TopCat.isoOfHomeo eS).hom ≫ TopCat.ofHom α) ((TopCat.isoOfHomeo eD).hom ≫ TopCat.ofHom χ)
       (TopCat.ofHom (ContinuousMap.inclusion (subset_union_left : L ⊆ L ∪ Θ '' D))) :=
     hsq.flip.of_iso (TopCat.isoOfHomeo eS).symm (TopCat.isoOfHomeo eD).symm (Iso.refl _)
-      (Iso.refl _) rfl
+      (Iso.refl _) (by
+        ext x : 1
+        refine Subtype.ext ?_
+        simp only [eD, eS, Iso.symm_hom, TopCat.isoOfHomeo_inv, TopCat.hom_comp,
+          ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+          ContinuousMap.inclusion_apply_coe, coe_negativeNormalSpaceHomeomorph_symm_apply]
+        -- Both sides are the vector `x` of `S_ε`, read in `ν⁻`.
+        rfl)
       (by simp only [Iso.refl_hom, Category.comp_id, Iso.symm_hom, Iso.inv_hom_id_assoc])
       (by simp only [Iso.refl_hom, Category.comp_id, Iso.symm_hom, Iso.inv_hom_id_assoc])
       (by simp only [Iso.refl_hom, Category.comp_id, Category.id_comp])

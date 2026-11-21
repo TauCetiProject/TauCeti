@@ -121,7 +121,7 @@ private def negativeDiscBundleInclusion :
 /-- A set `A` of vectors of the negative normal bundle `ν⁻`, whose total space carries the topology
 of a subspace of the normal bundle, is homeomorphic to the set `A'` of normal vectors it consists
 of. -/
-@[expose] def negativeNormalSpaceHomeomorph
+def negativeNormalSpaceHomeomorph
     (A : Set (TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s))
     (A' : Set (TotalSpace P fun s ↦ i.NormalSpace s hn))
     (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈ A')
@@ -138,6 +138,29 @@ of. -/
     right_inv _ := rfl
     continuous_toFun := (hι.continuous.comp continuous_subtypeVal).subtype_mk _
     continuous_invFun := (hι.continuous_iff.2 continuous_subtypeVal).subtype_mk _ }
+
+@[simp]
+theorem coe_negativeNormalSpaceHomeomorph_apply
+    (A : Set (TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s))
+    (A' : Set (TotalSpace P fun s ↦ i.NormalSpace s hn))
+    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈ A')
+    (hA' : ∀ x ∈ A', x.snd ∈ h.negativeNormalSpace hn g x.proj) (v : A) :
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
+    (h.negativeNormalSpaceHomeomorph hn P g r A A' hA hA' v :
+        TotalSpace P fun s ↦ i.NormalSpace s hn) = ⟨v.val.proj, v.val.snd⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_negativeNormalSpaceHomeomorph_symm_apply
+    (A : Set (TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s))
+    (A' : Set (TotalSpace P fun s ↦ i.NormalSpace s hn))
+    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈ A')
+    (hA' : ∀ x ∈ A', x.snd ∈ h.negativeNormalSpace hn g x.proj) (x : A') :
+    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
+    ((h.negativeNormalSpaceHomeomorph hn P g r A A' hA hA').symm x :
+        TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) =
+      ⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩ :=
+  (rfl)
 
 /-- The inclusion `(D_ε, S_ε) ⟶ (ν⁻, ν⁻₀)` of the negative disc-sphere pair into the Thom pair of
 the negative normal bundle `ν⁻`, whose total space carries the topology of a subspace of the normal
