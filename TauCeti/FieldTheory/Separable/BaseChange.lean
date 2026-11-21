@@ -7,6 +7,8 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
+import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.FieldTheory.Separable.Adjoin
 
 /-!
@@ -18,11 +20,17 @@ separable over `K`. Every generator `φ (1 ⊗ l)` is annihilated by `minpoly K�
 separable over `K₀`, hence over `K`, and these generators generate `E` as a `K`-algebra. No
 finiteness hypothesis on `L / K₀` is needed.
 
+For fields `K ⊆ L ⊆ Ω` with `L / K` separable, `L(α) / K(α)` is also separable for any `α : Ω`,
+without assuming `α` is algebraic over `L`
+(`TauCeti.IntermediateField.isSeparable_adjoinBaseChange`).
+
 ## Main results
 
 * `AlgHom.isSeparable_of_surjective_of_isSeparable`: a commutative domain receiving a surjective
   `K`-algebra homomorphism from `K ⊗[K₀] L`, where `L` is a separable `K₀`-algebra, is separable
   over `K`.
+* `TauCeti.IntermediateField.isSeparable_adjoinBaseChange`: if `L / K` is separable, then
+  `L(α) / K(α)` is separable for any `α` in an overfield `Ω` of `L`.
 -/
 
 public section
@@ -63,3 +71,24 @@ theorem isSeparable_of_surjective_of_isSeparable {K₀ L K E : Type*}
   exact ⟨fun x ↦ (Subalgebra.isSeparable_iff.mp hsep_adj) x (htop ▸ Algebra.mem_top)⟩
 
 end AlgHom
+
+namespace TauCeti.IntermediateField
+
+open _root_.IntermediateField
+
+/-- If `L / K` is separable, then `L(α) / K(α)` is separable for any `α` in an overfield `Ω` of
+`L`. -/
+theorem isSeparable_adjoinBaseChange (K L : Type*) [Field K] [Field L] [Algebra K L]
+    {Ω : Type*} [Field Ω] [Algebra K Ω] [Algebra L Ω] [IsScalarTower K L Ω]
+    [Algebra.IsSeparable K L] (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    Algebra.IsSeparable K⟮α⟯ L⟮α⟯ := by
+  let := (adjoinBaseChange K L α).toAlgebra
+  rw [← separableClosure.eq_top_iff]
+  refine top_unique <| adjoin_range_algebraMap_adjoinBaseChange_eq_top K L α ▸ adjoin_le_iff.mpr ?_
+  rintro _ ⟨l, rfl⟩
+  exact mem_separableClosure_iff.mpr <|
+    ((Algebra.IsSeparable.isSeparable K l).map (IsScalarTower.toAlgHom K L L⟮α⟯)
+      (algebraMap L L⟮α⟯).injective).tower_top K⟮α⟯
+
+end TauCeti.IntermediateField

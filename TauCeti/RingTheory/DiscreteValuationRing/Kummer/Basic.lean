@@ -52,9 +52,8 @@ tame ramification.
   `TauCeti.IsDiscreteValuationRing.finrank_adjoin_of_pow_eq_of_irreducible`: `[K(α) : K] = n`.
 * `TauCeti.IsDiscreteValuationRing.minpoly_eq_of_pow_eq_of_irreducible`: the minimal polynomial of
   `α` over `A` is `X ^ n - π`.
-* `TauCeti.IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible` and
-  `TauCeti.IsDiscreteValuationRing.isFractionRing_integralClosure_of_pow_eq_of_irreducible`: the
-  integral closure of `A` in `L` is `A[α]` and has fraction field `L`.
+* `TauCeti.IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible`: the
+  integral closure of `A` in `L` is `A[α]`.
 * `TauCeti.IsDiscreteValuationRing.powerBasisIntegralClosureOfPowEq` and
   `TauCeti.IsDiscreteValuationRing.liftIntegralClosureOfPowEq`: the `A`-power basis of
   `integralClosure A L` with generator `α` of dimension `n`, and the universal-property `A`-algebra
@@ -253,14 +252,6 @@ theorem liftIntegralClosureOfPowEq_mk {R : Type*} [Ring R] [Algebra A R]
   have hmk : (⟨α, h⟩ : integralClosure A L) = (powerBasisIntegralClosureOfPowEq hπ hα hgen).gen :=
     Subtype.ext (by simp)
   rw [hmk, liftIntegralClosureOfPowEq_gen]
-
-/-- The integral closure of a discrete valuation ring `A` in a Kummer extension `L` of its
-fraction field has `L` as its fraction field. -/
-theorem isFractionRing_integralClosure_of_pow_eq_of_irreducible (hπ : Irreducible π)
-    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
-    IsFractionRing (integralClosure A L) L := by
-  rw [integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen]
-  exact TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top hgen
 
 /-- If `L` is generated over the fraction field of a discrete valuation ring `A` by an `n`-th root
 `α` of a uniformizer of `A`, the results of `TauCeti.RingTheory.DiscreteValuationRing.Eisenstein`

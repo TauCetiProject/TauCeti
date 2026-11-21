@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.FieldTheory.SeparableClosure
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
@@ -27,8 +26,8 @@ quotient of `K(α) ⊗[K] L` whenever `α` is algebraic over `L` or `L / K` is f
 (`TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct` and
 `TauCeti.IntermediateField.surjective_adjoinBaseChange_tensorProduct_of_finiteDimensional`).
 Regardless of whether `α` is algebraic over `L`, `L(α)` is generated as a field over `K(α)` by
-the image of `L`, the inclusion is compatible with any common base ring `A` acting on `K`, `L`, and
-`Ω`, and finiteness and separability of `L / K` pass to `L(α) / K(α)`.
+the image of `L`, the inclusion is compatible with any base ring `A` forming scalar towers
+`A → K → Ω` and `A → L → Ω`, and finiteness of `L / K` passes to `L(α) / K(α)`.
 -/
 
 public section
@@ -214,19 +213,6 @@ theorem finiteDimensional_adjoinBaseChange [FiniteDimensional K L] (α : Ω) :
   let := (adjoinBaseChange K L α).toAlgebra
   Module.Finite.of_surjective (adjoinBaseChangeTensorLift K L α).toLinearMap
     (surjective_adjoinBaseChange_tensorProduct_of_finiteDimensional K L α)
-
-/-- If `L / K` is separable, then `L(α) / K(α)` is separable for any `α` in an overfield `Ω` of
-`L`. -/
-theorem isSeparable_adjoinBaseChange [Algebra.IsSeparable K L] (α : Ω) :
-    letI := (adjoinBaseChange K L α).toAlgebra
-    Algebra.IsSeparable K⟮α⟯ L⟮α⟯ := by
-  let := (adjoinBaseChange K L α).toAlgebra
-  rw [← separableClosure.eq_top_iff]
-  refine top_unique <| adjoin_range_algebraMap_adjoinBaseChange_eq_top K L α ▸ adjoin_le_iff.mpr ?_
-  rintro _ ⟨l, rfl⟩
-  exact mem_separableClosure_iff.mpr <|
-    ((Algebra.IsSeparable.isSeparable K l).map (IsScalarTower.toAlgHom K L L⟮α⟯)
-      (algebraMap L L⟮α⟯).injective).tower_top K⟮α⟯
 
 end AdjoinBaseChange
 
