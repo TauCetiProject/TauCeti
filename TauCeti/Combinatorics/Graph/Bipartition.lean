@@ -40,8 +40,10 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.Iso.isBipartition_map_iff`: a graph isomorphism preserves and reflects bipartitions.
 * `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
   `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
-* `SimpleGraph.IsBipartiteWith.exists_isBipartition_ofSimpleGraph` and
-  `SimpleGraph.isBipartite_iff_exists_isBipartition_ofSimpleGraph`: on a finite vertex type,
+* `SimpleGraph.IsBipartiteWith.exists_isBipartition_ofSimpleGraph`: on a finite vertex type, any
+  bipartition of `H` extends to a covering bipartition of `Graph.ofSimpleGraph H`, keeping the left
+  side fixed and enlarging the right side to cover the remaining vertices.
+* `SimpleGraph.isBipartite_iff_exists_isBipartition_ofSimpleGraph`: on a finite vertex type,
   bipartite simple graphs are precisely those whose associated multigraph admits a covering
   bipartition.
 * `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and

@@ -9,7 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import TauCeti.Combinatorics.SimpleGraph.VertexCover
 
-import TauCeti.Combinatorics.SimpleGraph.Maps
+import TauCeti.Combinatorics.SimpleGraph.Subgraph
 
 /-!
 # Maximal matchings, maximum matchings, the matching number, and vertex-cover duality
