@@ -17,6 +17,11 @@ being averaged uniformly over the finite sign cube. It agrees with `TauCeti.rade
 and is the quantity in which Rademacher type and cotype are defined. Being a finite average, it
 needs neither completeness, nor scalars, nor a measure space.
 
+The file opens with the sign-cube averages of products of signs: two signs average to `1` on the
+diagonal and to `0` off it, and four signs average to the number of ways their indices match in
+pairs, corrected when all four agree. The first computes second moments; the second computes the
+fourth moments of Rademacher sums with noncommuting coefficients.
+
 We record the specialization of the general moment API to `R₂` — absolute homogeneity, invariance
 under reindexing and zero-padding, comparison along bounded additive maps, and the summand bounds
 `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖` — and evaluate `R₂` in inner product spaces. Because distinct signs are
@@ -25,6 +30,9 @@ the family; in particular `n` copies of a vector `y` of a real normed space have
 
 ## Main declarations
 
+* `TauCeti.expect_units_apply_mul_apply` and
+  `TauCeti.expect_units_apply_mul_apply_mul_apply_mul_apply`: the sign-cube averages of products
+  of two and of four Rademacher signs.
 * `TauCeti.rademacherSecondMoment`: the Rademacher second moment `R₂(y)`.
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
@@ -55,20 +63,63 @@ section Signs
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- A Rademacher sign squares to `1`. -/
+private theorem units_apply_mul_self (ε : ι → ℤˣ) (i : ι) :
+    ((ε i : ℤ) : ℝ) * (ε i : ℤ) = 1 := by
+  simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
+
+/-- If `g` does not change when the `i`-th sign is flipped, then `εᵢ g(ε)` averages to zero over
+the sign cube. -/
+theorem expect_units_apply_mul_eq_zero (i : ι) {g : (ι → ℤˣ) → ℝ}
+    (hg : ∀ ε, g (Pi.mulSingle i (-1) * ε) = g ε) :
+    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * g ε = 0 := by
+  -- Flipping the sign of the `i`-th coordinate negates every term.
+  let σ := Equiv.mulLeft (Pi.mulSingle i (-1) : ι → ℤˣ)
+  have h := Fintype.expect_equiv σ (fun ε ↦ -(((ε i : ℤ) : ℝ) * g ε))
+    (fun ε ↦ ((ε i : ℤ) : ℝ) * g ε) fun ε ↦ by simp [σ, hg]
+  rw [expect_neg_distrib] at h
+  linarith
+
 /-- Averaged over the sign cube, the product of two signs is `1` on the diagonal and `0` off it:
 distinct Rademacher signs are orthogonal. -/
 theorem expect_units_apply_mul_apply (i j : ι) :
     𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
   split_ifs with hij
   · subst hij
-    simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  · -- Flipping the sign of the `i`-th coordinate negates every term.
-    let σ := Equiv.mulLeft (Pi.mulSingle i (-1) : ι → ℤˣ)
-    have h := Fintype.expect_equiv σ (fun ε ↦ -(((ε i : ℤ) : ℝ) * (ε j : ℤ)))
-      (fun ε ↦ ((ε i : ℤ) : ℝ) * (ε j : ℤ)) fun ε ↦ by
-        simp [σ, Ne.symm hij]
-    rw [expect_neg_distrib] at h
-    linarith
+    simp [units_apply_mul_self]
+  · exact expect_units_apply_mul_eq_zero i fun ε ↦ by simp [Ne.symm hij]
+
+/-- Averaged over the sign cube, a product of four signs is `1` when its indices match in pairs
+and `0` otherwise: the three pairings `i = j, k = l`, `i = k, j = l` and `i = l, j = k` each
+contribute `1`, and the correction `-2` undoes the triple count when all four indices agree. -/
+theorem expect_units_apply_mul_apply_mul_apply_mul_apply (i j k l : ι) :
+    𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε l : ℤ) =
+      (if i = j ∧ k = l then 1 else 0) + (if i = k ∧ j = l then 1 else 0) +
+        (if i = l ∧ j = k then 1 else 0) - 2 * if i = j ∧ j = k ∧ k = l then 1 else 0 := by
+  -- If `i` matches one of `j, k, l`, the two signs `εᵢ` cancel and two signs remain.
+  by_cases hij : i = j
+  · subst hij
+    simp_rw [units_apply_mul_self, one_mul, expect_units_apply_mul_apply]
+    split_ifs <;> grind
+  by_cases hik : i = k
+  · subst hik
+    have h (ε : ι → ℤˣ) : ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε i : ℤ) * (ε l : ℤ) =
+        ((ε j : ℤ) : ℝ) * (ε l : ℤ) := by
+      linear_combination ((ε j : ℤ) : ℝ) * (ε l : ℤ) * units_apply_mul_self ε i
+    simp_rw [h, expect_units_apply_mul_apply]
+    split_ifs <;> grind
+  by_cases hil : i = l
+  · subst hil
+    have h (ε : ι → ℤˣ) : ((ε i : ℤ) : ℝ) * (ε j : ℤ) * (ε k : ℤ) * (ε i : ℤ) =
+        ((ε j : ℤ) : ℝ) * (ε k : ℤ) := by
+      linear_combination ((ε j : ℤ) : ℝ) * (ε k : ℤ) * units_apply_mul_self ε i
+    simp_rw [h, expect_units_apply_mul_apply]
+    split_ifs <;> grind
+  -- Otherwise `εᵢ` occurs once, and flipping it negates the product.
+  simp_rw [mul_assoc]
+  rw [expect_units_apply_mul_eq_zero i fun ε ↦ by simp [Ne.symm hij, Ne.symm hik, Ne.symm hil]]
+  simp [hij, hik, hil]
 
 end Signs
 
