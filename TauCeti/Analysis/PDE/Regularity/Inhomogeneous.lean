@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
-public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
+public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.Algebra.Order.Ring.MaxOneMul
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal

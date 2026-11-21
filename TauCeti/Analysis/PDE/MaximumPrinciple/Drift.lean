@@ -136,6 +136,51 @@ private theorem ae_sub_le_energyIntegrand_jetField
     linarith [neg_abs_le (⟪b x, g x⟫_ℝ * f x)]
   convert key
 
+/-- **The energy with a bounded drift.** For uniformly elliptic `a`, bounded coefficients, a drift
+`‖b‖ ≤ β` and `c ≥ 0`, the energy of `v ∈ H¹(Ω)` satisfies
+`λ ‖∇v‖² - β ∫_Ω ‖∇v‖ |v| ≤ a(v, v)`: pointwise, ellipticity bounds the principal part of the
+energy density below, `c v² ≥ 0`, and only the drift term `⟪b, ∇v⟫ v` can be negative. -/
+theorem mul_norm_gradient_sq_sub_le_energyFormH1_self
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta) (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
+    (v : W1p mu Omega 2) :
+    lam * ‖W1p.gradient v‖ ^ 2 -
+        beta * ∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu ≤
+      energyFormH1 a b c v v := by
+  have hint₁ : Integrable (fun x ↦ ‖W1p.gradient v x‖ ^ 2) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.gradient v)).norm.integrable_sq
+  have hint₂ : Integrable (fun x ↦ ‖W1p.gradient v x‖ * ‖W1p.value v x‖) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.gradient v)).norm.integrable_mul (Lp.memLp (W1p.value v)).norm
+  have hle := integral_mono_ae ((hint₁.const_mul lam).sub (hint₂.const_mul beta))
+    (integrable_energyIntegrand_jetField hcoeff v v)
+    (ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg v)
+  simp only [Pi.sub_apply] at hle
+  rwa [integral_sub (hint₁.const_mul lam) (hint₂.const_mul beta), integral_const_mul,
+    integral_const_mul, W1p.integral_norm_gradient_sq_eq_norm_gradient_sq,
+    ← energyFormH1_def] at hle
+
+omit [DecidableEq ι] in
+/-- If `∇v = 0` almost everywhere outside a measurable set `Γ`, then in `ℝ≥0∞` the drift integral
+`∫_Ω |∇v| |v|` is a lower integral that only sees `Γ`. -/
+private theorem ofReal_integral_norm_gradient_mul_norm_value_eq {v : W1p mu Omega 2}
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : MeasurableSet Γ)
+    (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
+    ENNReal.ofReal (∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu) =
+      ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
+  set f := W1p.value v
+  set g := W1p.gradient v
+  have hint : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) (mu.restrict Omega) :=
+    (Lp.memLp g).norm.integrable_mul (Lp.memLp f).norm
+  rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun x ↦ by positivity),
+    ← lintegral_indicator hΓ]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hgrad] with x hx
+  by_cases hxΓ : x ∈ Γ
+  · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm, ofReal_norm]
+  · have hg0 : g x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
+    rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, ENNReal.ofReal_zero]
+
 /-- In `ℝ≥0∞`, the drift term is a lower integral that only sees `Γ`, and it balances
 `λ ‖∇v‖²`. -/
 private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
@@ -146,36 +191,13 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
     (hΓ : MeasurableSet Γ) (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
     ENNReal.ofReal lam * ‖W1p.gradient v‖ₑ ^ 2 ≤ ENNReal.ofReal beta *
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
-  -- Hölder's inequality on `Γ`, then the Sobolev inequality.
-  set μ := mu.restrict Omega
-  set f := W1p.value v
-  set g := W1p.gradient v
-  have hpt := ae_sub_le_energyIntegrand_jetField h hb_bound hc_nonneg v
-  have hint₁ : Integrable (fun x ↦ ‖g x‖ ^ 2) μ := (Lp.memLp (W1p.gradient v)).norm.integrable_sq
-  have hint₂ : Integrable (fun x ↦ ‖g x‖ * ‖f x‖) μ :=
-    (Lp.memLp g).norm.integrable_mul (Lp.memLp f).norm
-  have hreal : lam * ‖g‖ ^ 2 ≤ beta * ∫ x, ‖g x‖ * ‖f x‖ ∂μ := by
-    have hle := (integral_mono_ae ((hint₁.const_mul lam).sub (hint₂.const_mul beta))
-      (integrable_energyIntegrand_jetField hcoeff v v) hpt).trans
-      ((energyFormH1_def a b c v v).symm.trans_le henergy)
-    simp only [Pi.sub_apply] at hle
-    rw [integral_sub (hint₁.const_mul lam) (hint₂.const_mul beta), integral_const_mul,
-      integral_const_mul, W1p.integral_norm_gradient_sq_eq_norm_gradient_sq] at hle
-    linarith
-  -- In `ℝ≥0∞`, the drift term is a lower integral that only sees `Γ`.
-  have hlint : ENNReal.ofReal (∫ x, ‖g x‖ * ‖f x‖ ∂μ) = ∫⁻ x in Γ, ‖g x‖ₑ * ‖f x‖ₑ ∂μ := by
-    rw [ofReal_integral_eq_lintegral_ofReal hint₂ (ae_of_all _ fun x ↦ by positivity),
-      ← lintegral_indicator hΓ]
-    refine lintegral_congr_ae ?_
-    filter_upwards [hgrad] with x hx
-    by_cases hxΓ : x ∈ Γ
-    · rw [indicator_of_mem hxΓ, ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm,
-        ofReal_norm]
-    · have hg0 : g x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
-      rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, ENNReal.ofReal_zero]
+  have hreal : lam * ‖W1p.gradient v‖ ^ 2 ≤
+      beta * ∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu := by
+    linarith [mul_norm_gradient_sq_sub_le_energyFormH1_self h hcoeff hb_bound hc_nonneg v]
   have := ENNReal.ofReal_le_ofReal hreal
   rwa [ENNReal.ofReal_mul h.pos.le, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm,
-    ENNReal.ofReal_mul' (integral_nonneg fun x ↦ by positivity), hlint] at this
+    ENNReal.ofReal_mul' (integral_nonneg fun x ↦ by positivity),
+    ofReal_integral_norm_gradient_mul_norm_value_eq hΓ hgrad] at this
 
 omit [DecidableEq ι] in
 /-- If `‖v‖_q ≤ S ‖∇v‖₂` with `q ≥ 2`, then
@@ -208,6 +230,33 @@ private theorem lintegral_enorm_gradient_mul_enorm_value_le
     _ ≤ ‖g‖ₑ * (S * ‖g‖ₑ * μ Γ ^ (2⁻¹ - q.toReal⁻¹)) := by
         exact mul_le_mul'
           ((eLpNorm_mono_measure _ Measure.restrict_le_self).trans_eq (Lp.eNorm_def g).symm) hf
+
+omit [DecidableEq ι] in
+/-- **The drift integral on a set of finite measure.** If `‖v‖_q ≤ S ‖∇v‖₂` with `q ≥ 2` and
+`∇v = 0` almost everywhere outside a measurable set `Γ` of finite measure, then
+`∫_Ω |∇v| |v| ≤ ‖∇v‖₂ · S ‖∇v‖₂ · |Γ|^{1/2 - 1/q}`, by Hölder's inequality on `Γ` and the
+Sobolev inequality. -/
+theorem integral_norm_gradient_mul_norm_value_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
+    {v : W1p mu Omega 2}
+    (hsob : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : MeasurableSet Γ) (hΓfin : mu.restrict Omega Γ ≠ ∞)
+    (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
+    ∫ x in Omega, ‖W1p.gradient v x‖ * ‖W1p.value v x‖ ∂mu ≤
+      ‖W1p.gradient v‖ * (S * ‖W1p.gradient v‖ *
+        (mu.restrict Omega).real Γ ^ (2⁻¹ - q.toReal⁻¹)) := by
+  have hexp : 0 ≤ 2⁻¹ - q.toReal⁻¹ := by
+    rcases eq_or_ne q ⊤ with rfl | hqt
+    · simp
+    · have : (2 : ℝ) ≤ q.toReal := by simpa using ENNReal.toReal_mono hqt hq
+      linarith [inv_anti₀ two_pos this]
+  have hle := ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top (ENNReal.mul_ne_top
+      (ENNReal.mul_ne_top ENNReal.coe_ne_top eNorm_ne_top) (ENNReal.rpow_ne_top_of_nonneg hexp
+        hΓfin)))
+    ((ofReal_integral_norm_gradient_mul_norm_value_eq hΓ hgrad).trans_le
+      (lintegral_enorm_gradient_mul_enorm_value_le hq hsob Γ))
+  rwa [ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ by positivity), ENNReal.toReal_mul,
+    ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm, ENNReal.coe_toReal,
+    ← ENNReal.toReal_rpow, ← measureReal_def] at hle
 
 /-- The energy estimate behind the weak maximum principle. Let `v ∈ H¹(Ω)` have nonpositive
 energy `a(v, v) ≤ 0` and satisfy `‖v‖_q ≤ S ‖∇v‖₂`, and let `Γ` be a measurable set outside of
