@@ -756,14 +756,14 @@ def fixedIntegerHiveShiftEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : �
       rw [boundary_add_affine_of_productBoundary h.property (-a) (-b), DominantWeight.shift_shift,
         DominantWeight.shift_shift, DominantWeight.shift_shift]
       simp [hab]⟩
-  left_inv h := by
-    apply Subtype.ext; ext p
-    simp only [add_apply, affine_apply]
-    ring
-  right_inv h := by
-    apply Subtype.ext; ext p
-    simp only [add_apply, affine_apply]
-    ring
+  left_inv h := Subtype.ext <| by
+    dsimp only
+    rw [add_assoc, affine_add_affine, add_neg_cancel, show a + b + (-a + -b) = 0 by ring,
+      affine_zero, add_zero]
+  right_inv h := Subtype.ext <| by
+    dsimp only
+    rw [add_assoc, affine_add_affine, neg_add_cancel, show -a + -b + (a + b) = 0 by ring,
+      affine_zero, add_zero]
 
 @[simp] theorem coe_fixedIntegerHiveShiftEquiv_apply {n : ℕ} (lam μ γ : DominantWeight n)
     (a b : ℤ) (h : FixedIntegerHive (productBoundary lam μ γ)) :

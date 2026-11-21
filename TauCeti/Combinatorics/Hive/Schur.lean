@@ -152,15 +152,15 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
     hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape
   have hsupp : Function.support f ⊆ (Finset.univ.map emb : Finset (DominantWeight n)) := by
     intro γ hγ_supp
-    have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 := by
-      intro h0
-      exact hγ_supp (by simp [f, h0])
+    have hcnt : hiveCount (productBoundary lam μ γ) ≠ 0 :=
+      Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam μ γ))
+        (fun γ => diagramSchurPoly n R γ.shape) hγ_supp
     obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
     have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.property hlam hμ
-    rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hγ_poly] at hcnt
-    have hcard : γ.shape.card = lam.shape.card + μ.shape.card := by
-      by_contra hne
-      exact hcnt (@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hne))
+    have hcard : γ.shape.card = lam.shape.card + μ.shape.card := Int.ofNat_inj.mp <| by
+      rw [DominantWeight.natCast_card_shape hγ_poly, Nat.cast_add,
+        DominantWeight.natCast_card_shape hlam, DominantWeight.natCast_card_shape hμ,
+        sum_eq_of_productBoundary h.property]
     refine Finset.mem_coe.mpr (Finset.mem_map.mpr
       ⟨⟨γ.shape.toPartition hcard, by
         rw [YoungDiagram.ofPartition_toPartition]
@@ -183,19 +183,16 @@ private theorem finsum_hiveCount_one_eq_smul :
     (∑ᶠ γ : DominantWeight 1,
       hiveCount (productBoundary lam lam γ) • diagramSchurPoly 2 ℤ γ.shape) =
       hiveCount (productBoundary lam lam γ₁) • diagramSchurPoly 2 ℤ γ₁.shape := by
-  classical
   intro lam γ₁
-  let f (γ : DominantWeight 1) : MvPolynomial (Fin 2) ℤ :=
-    hiveCount (productBoundary lam lam γ) • diagramSchurPoly 2 ℤ γ.shape
-  have hsupp : Function.support f ⊆ ({γ₁} : Finset (DominantWeight 1)) := by
-    intro γ hγ_supp
-    have hcnt : hiveCount (productBoundary lam lam γ) ≠ 0 := fun h0 => hγ_supp (by simp [f, h0])
-    obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
-    have hsum := sum_eq_of_productBoundary h.property
-    simp only [Fin.sum_univ_one, lam, Matrix.cons_val_zero] at hsum
-    refine Finset.mem_coe.mpr (Finset.mem_singleton.mpr ?_)
-    ext i; fin_cases i; dsimp [γ₁]; omega
-  exact (finsum_eq_sum_of_support_subset f hsupp).trans (Finset.sum_singleton f γ₁)
+  refine finsum_eq_single _ γ₁ fun γ hne => ?_
+  by_contra h0
+  have hcnt : hiveCount (productBoundary lam lam γ) ≠ 0 :=
+    Function.support_smul_subset_left (fun γ => hiveCount (productBoundary lam lam γ))
+      (fun γ => diagramSchurPoly 2 ℤ γ.shape) h0
+  obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
+  have hsum := sum_eq_of_productBoundary h.property
+  simp only [Fin.sum_univ_one, lam, Matrix.cons_val_zero] at hsum
+  exact hne (by ext i; fin_cases i; dsimp [γ₁]; omega)
 
 private theorem natCard_lrTableau_std_one_det_two :
     let lam : DominantWeight 1 := ⟨![1], by decide⟩

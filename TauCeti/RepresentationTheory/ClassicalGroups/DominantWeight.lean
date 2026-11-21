@@ -308,17 +308,16 @@ theorem natCast_rowLen_shape {l : DominantWeight n} (hl : l.IsPolynomial) (i : F
 `l.shape`. -/
 theorem sum_filter_lt_eq_sum_range_rowLen {l : DominantWeight n} (hl : l.IsPolynomial) (j : ℕ) :
     (∑ r : Fin n with r.val < j, l.val r) = ∑ r ∈ Finset.range j, (l.shape.rowLen r : ℤ) := by
-  induction j with
-  | zero => simp
-  | succ m ih =>
-    by_cases hm : m < n
-    · rw [sum_filter_val_lt_succ hm l.val, Finset.sum_range_succ, ih,
-        natCast_rowLen_shape hl ⟨m, hm⟩]
-    · have hnm : n ≤ m := Nat.le_of_not_lt hm
-      have hfilt : (Finset.univ.filter fun r : Fin n => r.val < m + 1) =
-          Finset.univ.filter fun r : Fin n => r.val < m := by ext r; simp; omega
-      rw [hfilt, Finset.sum_range_succ, rowLen_shape_eq_zero_of_le l hnm, Nat.cast_zero,
-        add_zero, ih]
+  have h1 : (∑ r : Fin n with r.val < j, l.val r) =
+      ∑ r ∈ Finset.range (min j n), (l.shape.rowLen r : ℤ) := by
+    rw [← prefixSum_eq_sum_range j fun r => (l.shape.rowLen r : ℤ), prefixSum_def]
+    exact Finset.sum_congr rfl fun r _ => (natCast_rowLen_shape hl r).symm
+  have h2 : ∑ r ∈ Finset.Ico (min j n) j, (l.shape.rowLen r : ℤ) = 0 :=
+    Finset.sum_eq_zero fun r hr => by
+      have hmin : min j n ≤ r := (Finset.mem_Ico.mp hr).1
+      have hrj : r < j := (Finset.mem_Ico.mp hr).2
+      rw [rowLen_shape_eq_zero_of_le l (by omega), Nat.cast_zero]
+  rw [h1, ← Finset.sum_range_add_sum_Ico _ (min_le_left j n), h2, add_zero]
 
 /-- The Young diagram of a polynomial weight has `∑ λᵢ` cells. -/
 theorem natCast_card_shape {l : DominantWeight n} (hl : l.IsPolynomial) :
