@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
@@ -32,7 +33,9 @@ classes, and each open normal subgroup `U` gives the projection `proj R Γ U` on
 which is surjective. Two elements with the same projections are equal, and these two facts are
 the inverse-limit description of the algebra. Its universal property is `lift`: a compatible
 family of `R`-algebra homomorphisms into the levels `R[Γ ⧸ U]` assembles into an `R`-algebra
-homomorphism into `R[[Γ]]`, unique with the prescribed projections (`algHom_ext`).
+homomorphism into `R[[Γ]]`, unique with the prescribed projections (`algHom_ext`). An element is
+a unit exactly when all of its projections are, and the coefficient sums of the projections,
+which agree at all levels, form the augmentation `R[[Γ]] → R`.
 
 When `R` is a topological ring, the completed group algebra carries the inverse-limit topology:
 the coarsest topology making every coefficient of every projection continuous. Scalar
@@ -61,6 +64,8 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
   from a compatible family of `R`-algebra homomorphisms into the group algebras `R[Γ ⧸ U]`.
 * `TauCeti.completedGroupAlgebra.coeffFamily R Γ`: all coefficients of all projections, the map
   along which the topology is induced.
+* `TauCeti.completedGroupAlgebra.augmentation R Γ`: the augmentation `R[[Γ]] → R`, the coefficient
+  sum of the projection onto any level.
 
 ## Main results
 
@@ -71,6 +76,8 @@ commutative exactly when `Γ` is (`isMulCommutative_iff`).
   with the projections and `lift` has the prescribed ones.
 * `TauCeti.completedGroupAlgebra.proj_of`: a group element projects to the corresponding basis
   element of the quotient group algebra.
+* `TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`: an element is a unit exactly
+  when all of its projections are.
 * `TauCeti.completedGroupAlgebra.isEmbedding_coeffFamily`,
   `TauCeti.completedGroupAlgebra.isClosedEmbedding_coeffFamily`: the topology is the
   inverse-limit topology, and the compatible families form a closed subset of the product.
@@ -275,6 +282,50 @@ theorem proj_surjective (U : OpenNormalSubgroup Γ) : Function.Surjective (proj 
   | smul r x hx =>
     obtain ⟨x', rfl⟩ := hx
     exact ⟨r • x', map_smul _ _ _⟩
+
+variable {R Γ} in
+/-- An element of the completed group algebra is a unit exactly when each of its projections
+onto the levels `R[Γ ⧸ U]` is a unit. -/
+theorem isUnit_iff_forall_isUnit_proj {x : completedGroupAlgebra R Γ} :
+    IsUnit x ↔ ∀ U, IsUnit (proj R Γ U x) := by
+  refine ⟨fun hx U ↦ hx.map _, fun hx ↦ ?_⟩
+  -- The inverses at the levels are compatible, since the transition maps are ring homomorphisms.
+  let y := mk R Γ (fun U ↦ ↑(hx U).unit⁻¹) fun U V hUV ↦ by
+    refine (Units.inv_eq_of_mul_eq_one_left ?_).symm
+    rw [IsUnit.unit_spec, ← mapDomain_mapOfLE_proj hUV, ← MonoidAlgebra.mapDomain_mul,
+      IsUnit.val_inv_mul, MonoidAlgebra.mapDomain_one]
+  refine ⟨⟨x, y, ext fun U ↦ ?_, ext fun U ↦ ?_⟩, rfl⟩
+  · rw [map_mul, proj_mk, map_one, IsUnit.mul_val_inv]
+  · rw [map_mul, proj_mk, map_one, IsUnit.val_inv_mul]
+
+/-- The **augmentation** `R[[Γ]] → R` of the completed group algebra: the sum of the coefficients
+of a projection onto any level `R[Γ ⧸ U]`, which does not depend on the level
+(`augmentation_proj`). It sends every group element to `1` (`augmentation_of`). -/
+noncomputable def augmentation : completedGroupAlgebra R Γ →+* R :=
+  (MonoidAlgebra.augmentation R (Γ ⧸ (⊤ : OpenNormalSubgroup Γ).toSubgroup)).comp
+    (proj R Γ ⊤).toRingHom
+
+variable {R Γ} in
+/-- The augmentation of the completed group algebra is the coefficient sum of the projection
+onto any level. -/
+@[simp]
+theorem augmentation_proj (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ) :
+    MonoidAlgebra.augmentation R (Γ ⧸ U.toSubgroup) (proj R Γ U x) = augmentation R Γ x := by
+  simp [augmentation, ← mapDomain_mapOfLE_proj (le_top : U ≤ ⊤) x,
+    ← MonoidAlgebra.mapDomainRingHom_apply, ← RingHom.comp_apply]
+
+variable {R} in
+/-- The augmentation sends every group element to `1`. -/
+@[simp]
+theorem augmentation_of (γ : Γ) : augmentation R Γ (of R Γ γ) = 1 := by
+  rw [← augmentation_proj ⊤, proj_of, MonoidAlgebra.augmentation_single]
+
+variable {Γ} in
+/-- The augmentation restricts to the identity on the scalars. -/
+@[simp]
+theorem augmentation_algebraMap (r : R) :
+    augmentation R Γ (algebraMap R (completedGroupAlgebra R Γ) r) = r := by
+  simp [← augmentation_proj ⊤]
 
 /-- Every element of the completed group algebra agrees at any given level `V` with a finite
 `R`-linear combination of group elements. -/

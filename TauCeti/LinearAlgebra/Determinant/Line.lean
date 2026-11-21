@@ -345,6 +345,16 @@ def detLineCongrKerCoker (e₁ : ker f ≃ₗ[R] ker g) (e₂ : (N ⧸ range f) 
   TensorProduct.congr (LinearEquiv.detLineCongr e₁) (LinearEquiv.detLineCongr e₂).symm.dualMap
 
 variable {g : M' →ₗ[R] N'} in
+/-- `LinearMap.detLineCongrKerCoker` is the tensor product of the isomorphisms of the kernel
+determinant lines and of the duals of the cokernel determinant lines. -/
+theorem detLineCongrKerCoker_def (e₁ : ker f ≃ₗ[R] ker g)
+    (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) :
+    detLineCongrKerCoker e₁ e₂ =
+      TensorProduct.congr (LinearEquiv.detLineCongr e₁)
+        (LinearEquiv.detLineCongr e₂).symm.dualMap :=
+  (rfl)
+
+variable {g : M' →ₗ[R] N'} in
 @[simp]
 theorem detLineCongrKerCoker_tmul (e₁ : ker f ≃ₗ[R] ker g)
     (e₂ : (N ⧸ range f) ≃ₗ[R] (N' ⧸ range g)) (x : TauCeti.detLine R (ker f))

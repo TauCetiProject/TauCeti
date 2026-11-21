@@ -14,13 +14,16 @@ public import TauCeti.LinearAlgebra.Matrix.Triangular
 `TauCeti.superdiagonalShift n` is the nilpotent `n × n` matrix with ones on the superdiagonal and
 zeros elsewhere. Subtracting a multiple of it from the identity gives an upper unitriangular
 matrix, hence a unit, over any ring, and multiplying a row vector by `s • superdiagonalShift n`
-moves each entry one place to the right, multiplied by `s` on the right.
+moves each entry one place to the right, multiplied by `s` on the right. Multiplying a matrix on
+the left by `superdiagonalShift n` moves its rows up by one place.
 
 ## Main results
 
 * `TauCeti.isUnit_one_sub_smul_superdiagonalShift`: `1 - s • superdiagonalShift n` is a unit.
 * `TauCeti.vecMul_smul_superdiagonalShift_succ`: row multiplication by `s • superdiagonalShift`
   shifts entries to the right.
+* `TauCeti.superdiagonalShift_mul_apply`: left multiplication by `superdiagonalShift` shifts rows
+  up.
 -/
 
 public section
@@ -75,6 +78,20 @@ theorem vecMul_smul_superdiagonalShift_succ (v : Fin (d + 1) → A) (s : A) (j :
   · simp
   · rw [Fin.ext_iff, Fin.val_castSucc]
     omega
+
+/-- Multiplying a matrix on the left by the superdiagonal shift moves each row up by one place,
+and makes the last row zero. -/
+theorem superdiagonalShift_mul_apply {k : ℕ} {l : Type*} (B : Matrix (Fin k) l A) (i : Fin k)
+    (j : l) :
+    ((superdiagonalShift k : Matrix (Fin k) (Fin k) A) * B) i j =
+      if h : (i : ℕ) + 1 < k then B ⟨i + 1, h⟩ j else 0 := by
+  rw [Matrix.mul_apply]
+  simp only [superdiagonalShift_apply, ite_mul, one_mul, zero_mul]
+  split_ifs with h
+  · rw [Fintype.sum_eq_single ⟨i + 1, h⟩ fun r hr ↦
+      ite_eq_right_iff.2 fun hr' ↦ (hr (Fin.ext hr')).elim]
+    simp
+  · exact Finset.sum_eq_zero fun r _ ↦ ite_eq_right_iff.2 fun hr ↦ absurd (hr ▸ r.isLt) h
 
 end Semiring
 

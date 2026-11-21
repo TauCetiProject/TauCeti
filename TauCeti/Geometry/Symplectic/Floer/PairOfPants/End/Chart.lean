@@ -843,6 +843,14 @@ theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
   · exact ⟨k, by simp [h]⟩
   · exact ⟨-k, by simp [h, add_comm]⟩
 
+/-- The positive end chart is an open map. -/
+theorem isOpenMap_positiveEndChart (q : Puncture) : IsOpenMap (positiveEndChart q) := by
+  convert ((Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp
+    q.isOpenMap_cylindricalEndLift).comp Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap).comp
+      (Homeomorph.smulOfNeZero _ q.endSign_ne_zero).isOpenMap using 1
+  funext z
+  simp [positiveEndChart_apply, endChart_apply]
+
 /-- The positive end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one. -/
 theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
     InjOn (positiveEndChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
