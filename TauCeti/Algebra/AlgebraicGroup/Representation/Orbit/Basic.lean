@@ -54,6 +54,8 @@ of the Lie algebra as the homogeneous space of its centralizer.
   `Comodule.VectorOrbit.mk`, induction principle `Comodule.VectorOrbit.ind` and eliminator
   `Comodule.VectorOrbit.lift`.
 * `Comodule.VectorOrbit.image`: the geometric image of an orbit in `P(M × k)`.
+* `Comodule.VectorOrbit.isConstructible_image`: the geometric image of an orbit is
+  constructible.
 * `Comodule.coset_stabilizerHopfIdeal_eq_iff_exists_units_matrixCoefficient`: the matrix
   coefficients of `(v, 1)` detect the cosets of the stabilizer of `v`.
 * `Comodule.fppfHomogeneousQuotientIsoVectorOrbitPoints`: `G / Stab_G(v)` is represented
@@ -256,6 +258,14 @@ theorem image_mk (v : M) :
     (mk v : VectorOrbit k H M).image =
       Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v)) :=
   (rfl)
+
+/-- The geometric image of a rational orbit is constructible in `P(M × k)`. -/
+theorem isConstructible_image [Algebra.FiniteType k H] (O : VectorOrbit k H M) :
+    Topology.IsConstructible O.image := by
+  induction O using VectorOrbit.ind with | h v
+  rw [image_mk]
+  exact isConstructible_range_projectiveOrbitMap (H := H) ((v, 1) : M × k)
+    (Module.isUnimodular_mk_one v)
 
 end Image
 

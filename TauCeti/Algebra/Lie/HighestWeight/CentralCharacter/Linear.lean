@@ -70,8 +70,7 @@ Over an algebraically closed field the projection is onto the Weyl invariants
   `χ_λ(z)` is its value at `λ + ρ`.
 * `TauCeti.hcProjectionLinear_mem_linearInvariants`: the linear projection takes values in the
   Weyl invariants.
-* `TauCeti.exists_mem_linearInvariants_lift_eq_zero_one` and
-  `TauCeti.forall_mem_linearInvariants_lift_eq_iff`: Weyl-invariant polynomials in `S(H)^W`
+* `TauCeti.forall_mem_linearInvariants_lift_eq_iff`: Weyl-invariant polynomials in `S(H)^W`
   separate distinct Weyl orbits on `H*`.
 
 ## References
@@ -219,37 +218,25 @@ theorem coe_dotInvariantsEquivLinearInvariants_symm_apply (q : linearInvariants 
   rw [← h, translation_translation, neg_add_cancel, translation_zero]
   rfl
 
-/-- Two weights in distinct Weyl orbits are separated by a Weyl-invariant polynomial taking
-values zero and one. -/
-theorem exists_mem_linearInvariants_lift_eq_zero_one {lam mu : Dual K H}
-    (h : ¬ ∃ w : (IsKilling.rootSystem H).weylGroup, w • lam = mu) :
-    ∃ q ∈ linearInvariants H, _root_.SymmetricAlgebra.lift lam q = 0 ∧
-      _root_.SymmetricAlgebra.lift mu q = 1 := by
-  obtain ⟨b⟩ := (IsKilling.rootSystem H).nonempty_base
-  have hdot : ¬ ∃ w, dotAction (IsKilling.rootSystem H) b w
-      (lam - weylVector (IsKilling.rootSystem H) b) =
-        mu - weylVector (IsKilling.rootSystem H) b := by
-    rintro ⟨w, hw⟩
-    apply h
-    refine ⟨w, ?_⟩
-    simpa [dotAction_def] using hw
-  obtain ⟨p, hp, hlam, hmu⟩ := exists_mem_dotInvariants_lift_eq_zero_one hdot
-  refine ⟨translation (-weylVector (IsKilling.rootSystem H) b) p,
-    (translation_neg_weylVector_mem_linearInvariants_iff b).2 hp, ?_, ?_⟩
-  · simpa [← sub_eq_add_neg] using hlam
-  · simpa [← sub_eq_add_neg] using hmu
-
 /-- Equality of all Weyl-invariant polynomial values characterizes a Weyl orbit on the weights. -/
 theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
     (∀ q ∈ linearInvariants H,
         _root_.SymmetricAlgebra.lift lam q = _root_.SymmetricAlgebra.lift mu q) ↔
       ∃ w : (IsKilling.rootSystem H).weylGroup, w • lam = mu := by
-  refine ⟨fun heq ↦ ?_, ?_⟩
-  · by_contra h
-    obtain ⟨q, hq, hlam, hmu⟩ := exists_mem_linearInvariants_lift_eq_zero_one h
-    simpa [hlam, hmu] using heq q hq
-  · rintro ⟨w, rfl⟩ q hq
-    exact ((mem_linearInvariants_iff.mp hq) w lam).symm
+  obtain ⟨b⟩ := (IsKilling.rootSystem H).nonempty_base
+  let ρ := weylVector (IsKilling.rootSystem H) b
+  have hquant : (∀ q ∈ linearInvariants H,
+        _root_.SymmetricAlgebra.lift lam q = _root_.SymmetricAlgebra.lift mu q) ↔
+      (∀ p ∈ dotInvariants b,
+        _root_.SymmetricAlgebra.lift (lam - ρ) p = _root_.SymmetricAlgebra.lift (mu - ρ) p) := by
+    refine ⟨fun h p hp ↦ ?_, fun h q hq ↦ ?_⟩
+    · simpa [ρ, ← sub_eq_add_neg] using
+        h (dotInvariantsEquivLinearInvariants b ⟨p, hp⟩)
+          (dotInvariantsEquivLinearInvariants b ⟨p, hp⟩).property
+    · simpa [ρ] using
+        h ((dotInvariantsEquivLinearInvariants b).symm ⟨q, hq⟩) (SetLike.coe_mem _)
+  rw [hquant, forall_mem_dotInvariants_lift_eq_iff]
+  simp only [ρ, dotAction_def, sub_add_cancel, sub_left_inj]
 
 /-! ### The linear Harish-Chandra projection -/
 

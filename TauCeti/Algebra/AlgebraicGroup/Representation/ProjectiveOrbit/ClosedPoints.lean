@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Fini
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.LinearAlgebra.Unimodular
 import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedPoints
@@ -46,6 +47,8 @@ generation nor reducedness of the Hopf algebra.
   rational group points are closed.
 * `ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq`: the closed points of
   projective space are the identity images of orbit morphisms of nonzero vectors.
+* `TauCeti.Comodule.exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd`: closed points of
+  the affine chart `M = {t ≠ 0}` in `P(M × k)` are identity images of `(w, 1)`.
 * `TauCeti.Comodule.range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints`: the
   rational orbit images are the closed points of the orbit.
 
@@ -124,6 +127,34 @@ theorem _root_.ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap
     rw [h, hv n hn s hs, hmv]
   · rintro ⟨m, hm, rfl⟩
     exact projectiveOrbitMap_kernelPoint_mem_closedPoints m hm _
+
+omit [Comodule k H M] in
+/-- Over an algebraically closed field, every closed point in the standard affine chart
+`M = {t ≠ 0}` of `P(M × k)` is the image of the identity point under the projective orbit
+morphism of `(w, 1)` for some `w : M`. -/
+theorem exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd [Comodule k H (M × k)]
+    {x : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))}
+    (hxU : x ∈ (Proj.basicOpen
+      (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
+      (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _))
+    (hx : x ∈ closedPoints _) :
+    ∃ w : M, projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
+        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) = x := by
+  obtain ⟨v, hv1, hv⟩ :=
+    ProjectiveSpectrum.exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed
+      (mem_closedPoints_iff.mp hx) ((Proj.mem_basicOpen _ _ x).mp hxU)
+  set u := (Module.evalEquiv k (M × k)).symm v
+  have huv : Module.Dual.eval k (M × k) u = v :=
+    LinearMap.ext fun ψ ↦ Module.apply_evalEquiv_symm_apply k (M × k) ψ v
+  have hu2 : u.2 = 1 := by
+    simpa using (LinearMap.congr_fun huv (LinearMap.snd k M k)).trans hv1
+  refine ⟨u.1, ProjectiveSpectrum.ext_of_mem_pos fun n hn s hs ↦ ?_⟩
+  have h := mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((u.1, 1) : M × k)
+    (Module.isUnimodular_mk_one u.1) 1 hs
+  simp only [map_one, one_apply_eq_self] at h
+  simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at h
+  have hu : ((u.1, 1) : M × k) = u := Prod.ext rfl hu2.symm
+  rw [h, hv n hn s hs, hu, huv]
 
 variable [Algebra.FiniteType k H]
 

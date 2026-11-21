@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
 import Mathlib.Algebra.Polynomial.Roots
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
-import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
@@ -51,8 +49,9 @@ adjoint orbits, in particular on nilpotent orbits.
 ## Main declarations
 
 * `TauCeti.Comodule.VectorOrbit.image_injective`,
-  `TauCeti.Comodule.VectorOrbit.closure_image_injective`: orbits are determined by their images,
-  and even by the closures of their images.
+  `TauCeti.Comodule.VectorOrbit.disjoint_image_of_ne`,
+  `TauCeti.Comodule.VectorOrbit.closure_image_injective`: distinct orbits have disjoint images,
+  and are determined by their images and even by the closures of their images.
 * `TauCeti.Comodule.VectorOrbit.instPartialOrder`: the closure order.
 * `TauCeti.Comodule.VectorOrbit.mk_le_mk_iff`, `TauCeti.Comodule.VectorOrbit.mk_lt_mk_iff`:
   the orbit of `w` lies below the orbit of `v` when `w` lies in the closure of the orbit of
@@ -92,6 +91,38 @@ section Conical
 variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
 
+omit [HopfAlgebra k H] [Comodule k H M] [Module.Finite k M] in
+/-- Restricting homogeneous coordinates on `M × k` to the affine line `t ↦ (t • v, 1)`. -/
+private noncomputable def lineRestrictionAlgHom (v : M) :
+    SymmetricAlgebra k (Module.Dual k (M × k)) →ₐ[k] Polynomial k :=
+  SymmetricAlgebra.lift
+    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.X * Polynomial.C (φ (v, 0))
+      map_add' := fun φ ψ ↦ by
+        simp only [LinearMap.add_apply, map_add, mul_add]
+        ring
+      map_smul' := fun r φ ↦ by
+        simp only [LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply, map_mul,
+          Polynomial.smul_eq_C_mul]
+        ring }
+
+omit [HopfAlgebra k H] [Comodule k H M] [Module.Finite k M] in
+private theorem eval_lineRestrictionAlgHom (v : M) (t : k)
+    (q : SymmetricAlgebra k (Module.Dual k (M × k))) :
+    (lineRestrictionAlgHom (k := k) v q).eval t =
+      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) q := by
+  have hcomp : (Polynomial.aeval t).comp (lineRestrictionAlgHom (k := k) v) =
+      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
+    ext φ
+    have hdecomp : (t • v, (1 : k)) = (0, (1 : k)) + t • (v, (0 : k)) := by
+      ext <;> simp
+    simp only [lineRestrictionAlgHom, LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp,
+      Polynomial.coe_aeval_eq_eval, Function.comp_apply, SymmetricAlgebra.lift_ι_apply,
+      LinearMap.coe_mk, AddHom.coe_mk, Polynomial.eval_add, Polynomial.eval_C,
+      Polynomial.eval_mul, Polynomial.eval_X, Module.Dual.eval_apply]
+    rw [hdecomp, map_add, map_smul, smul_eq_mul, mul_comm]
+  simpa only [AlgHom.comp_apply, Polynomial.coe_aeval_eq_eval] using
+    congrArg (fun g ↦ g q) hcomp
+
 /-- **Conical orbits contain zero in their closure.** Over an infinite field `k`, if the rational
 orbit of `v` contains every nonzero scalar multiple `t • v`, then the line through `(0, 1)` lies in
 the closure of the projective orbit image of `(v, 1)`. Neither algebraic closedness nor finite
@@ -123,32 +154,9 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
   have hq_le : ProjectiveSpectrum.basicOpen 𝒜 q ≤ ProjectiveSpectrum.basicOpen 𝒜 f := by
     rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f]
     exact le_iSup (fun i ↦ ProjectiveSpectrum.basicOpen 𝒜 (GradedRing.proj 𝒜 i f)) d
-  let L : Module.Dual k (M × k) →ₗ[k] Polynomial k :=
-    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.X * Polynomial.C (φ (v, 0))
-      map_add' := fun φ ψ ↦ by
-        simp only [LinearMap.add_apply, map_add, mul_add]
-        ring
-      map_smul' := fun r φ ↦ by
-        simp only [LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply, map_mul,
-          Polynomial.smul_eq_C_mul]
-        ring }
-  let P : Polynomial k := SymmetricAlgebra.lift L q
-  have hPeval (t : k) :
-      P.eval t = SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) q := by
-    have hcomp : (Polynomial.aeval t).comp (SymmetricAlgebra.lift L) =
-        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
-      ext φ
-      have hdecomp : (t • v, (1 : k)) = (0, (1 : k)) + t • (v, (0 : k)) := by
-        ext <;> simp
-      simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp,
-        Polynomial.coe_aeval_eq_eval, Function.comp_apply, SymmetricAlgebra.lift_ι_apply, L,
-        LinearMap.coe_mk, AddHom.coe_mk, Polynomial.eval_add, Polynomial.eval_C,
-        Polynomial.eval_mul, Polynomial.eval_X, Module.Dual.eval_apply]
-      rw [hdecomp, map_add, map_smul, smul_eq_mul, mul_comm]
-    have hq := congrArg (fun g ↦ g q) hcomp
-    simpa only [AlgHom.comp_apply, P, Polynomial.coe_aeval_eq_eval] using hq
+  let P : Polynomial k := lineRestrictionAlgHom (k := k) v q
   have hP0 : P.eval 0 ≠ 0 := by
-    rw [hPeval 0, zero_smul]
+    rw [eval_lineRestrictionAlgHom, zero_smul]
     intro hzero
     apply (ProjectiveSpectrum.mem_basicOpen 𝒜 q _).mp h0q
     have hmem := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((0, 1) : M × k)
@@ -166,7 +174,7 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)), hfU (hq_le ?_), ?_⟩
   · intro hmem
     apply hPt
-    rw [hPeval t]
+    rw [eval_lineRestrictionAlgHom]
     have h := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((t • v, 1) : M × k)
       (Module.isUnimodular_mk_one (t • v)) 1 hq_hom).mp (by simpa [AlgHom.convOne_def] using hmem)
     simpa using h
@@ -189,6 +197,27 @@ theorem image_injective : Function.Injective (image : VectorOrbit k H M → Set 
   rw [image_mk, image_mk, eq_comm, range_projectiveOrbitMap_eq_iff] at h
   obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq_of_mem_range _ _ _ _ h
   exact mk_eq_mk_iff.mpr ⟨g, basePointsRepresentation_eq_of_span_eq hg⟩
+
+/-- **Distinct orbits have disjoint geometric images.** Two distinct rational orbits share no
+scheme point, closed or nonclosed, in `P(M × k)`. -/
+theorem disjoint_image_of_ne {O O' : VectorOrbit k H M} (h : O ≠ O') :
+    Disjoint O.image O'.image := by
+  by_contra hdisj
+  rw [Set.not_disjoint_iff_nonempty_inter] at hdisj
+  obtain ⟨x, ⟨hxO, hxO'⟩, hxc⟩ :=
+    (O.isConstructible_image.inter O'.isConstructible_image).nonempty_inter_closedPoints hdisj
+  induction O using VectorOrbit.ind with | h v
+  induction O' using VectorOrbit.ind with | h w
+  rw [image_mk] at hxO hxO'
+  obtain ⟨u, rfl⟩ := exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd (H := H)
+    (range_projectiveOrbitMap_subset_basicOpen_snd v hxO) hxc
+  have huv : (mk u : VectorOrbit k H M) = mk v := image_injective <| by
+    rw [image_mk, image_mk]
+    exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr hxO
+  have huw : (mk u : VectorOrbit k H M) = mk w := image_injective <| by
+    rw [image_mk, image_mk]
+    exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr hxO'
+  exact h (huv.symm.trans huw)
 
 /-- **Orbits are determined by their closures.** Two rational orbits whose geometric images
 have the same closure in `P(M × k)` are equal. -/
@@ -314,42 +343,6 @@ theorem mk_zero_le_mk_of_forall_smul {v : M}
     (mk (0 : M) : VectorOrbit k H M) ≤ mk v :=
   mk_le_mk_iff.mpr (mem_closure_projectiveOrbitMap_zero_of_forall_smul hv)
 
-omit [Algebra.FiniteType k H] in
-private theorem exists_mk_one_eq_of_mem_basicOpen_snd_inter_closedPoints
-    {x : Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))}
-    (hxU : x ∈ (Proj.basicOpen
-      (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
-      (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _))
-    (hxc : x ∈ closedPoints _) :
-    ∃ w : M, projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) = x := by
-  obtain ⟨⟨v, c⟩, hm, rfl⟩ :=
-    (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) x).mp hxc
-  have hc : c ≠ 0 := by
-    intro hc0
-    apply hxU
-    have h := (ι_mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, c) : M × k) hm 1
-      (LinearMap.snd k M k)).mpr (by simp [hc0])
-    simpa [AlgHom.convOne_def] using h
-  refine ⟨c⁻¹ • v, ?_⟩
-  have hspan : k ∙ ((c⁻¹ • v, 1) : M × k) = k ∙ ((v, c) : M × k) := by
-    have hsmul : c⁻¹ • ((v, c) : M × k) = (c⁻¹ • v, 1) := by
-      ext <;> simp [hc]
-    rw [← hsmul]
-    exact Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.mpr (inv_ne_zero hc)) _
-  have h := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq (H := H)
-    ((c⁻¹ • v, 1) : M × k) (Module.isUnimodular_mk_one (c⁻¹ • v))
-    ((v, c) : M × k) hm 1 1).mpr (by simpa using hspan)
-  simpa [AlgHom.convOne_def] using h
-
-omit [IsAlgClosed k] in
-private theorem isConstructible_image (O : VectorOrbit k H M) :
-    Topology.IsConstructible O.image := by
-  induction O using VectorOrbit.ind with | h v
-  rw [image_mk]
-  exact isConstructible_range_projectiveOrbitMap (H := H) ((v, 1) : M × k)
-    (Module.isUnimodular_mk_one v)
-
 /-- **Closure decomposition for orbits with finite lower set.** When only finitely many rational
 orbits lie below `O` in the closure order, the closure of `O` inside the affine chart `M = {t ≠ 0}`
 of `P(M × k)` is the exact union of the full scheme-point orbit images `O' ≤ O`. -/
@@ -369,13 +362,13 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion_le {O : VectorOrbit k H M}
       isClosed_closure.isOpen_compl).of_compl
   have hUnion_c : Topology.IsConstructible
       (⋃ O' ∈ {O' : VectorOrbit k H M | O' ≤ O}, O'.image) :=
-    Topology.IsConstructible.biUnion hfin fun O' _ ↦ isConstructible_image O'
+    Topology.IsConstructible.biUnion hfin fun O' _ ↦ O'.isConstructible_image
   rw [(hcl_c.inter hU_c).eq_iff_inter_closedPoints_eq hUnion_c]
   induction O using VectorOrbit.ind with | h v
   ext x
   constructor
   · rintro ⟨⟨hxcl, hxU⟩, hxc⟩
-    obtain ⟨w, rfl⟩ := exists_mk_one_eq_of_mem_basicOpen_snd_inter_closedPoints (H := H) hxU hxc
+    obtain ⟨w, rfl⟩ := exists_projectiveOrbitMap_mk_one_eq_of_mem_basicOpen_snd (H := H) hxU hxc
     rw [image_mk] at hxcl
     exact ⟨Set.mem_biUnion (mk_le_mk_iff.mpr hxcl)
       ((image_mk (k := k) (H := H) w).symm ▸ Set.mem_range_self _), hxc⟩
@@ -396,46 +389,18 @@ theorem closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt {O : VectorOrbit k
         (Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
           (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _) =
       ⋃ O' ∈ {O' : VectorOrbit k H M | O' < O}, O'.image := by
-  let U : Set (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))) :=
-    (Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))
-      (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _)
-  have hfin_lt : {O' : VectorOrbit k H M | O' < O}.Finite :=
-    hfin.subset fun _ (h : _ < O) ↦ le_of_lt h
-  have hU_c : Topology.IsConstructible U :=
-    (NoetherianSpace.isCompact U).isConstructible (Proj.basicOpen _ _).isOpen
-  have hcl_c : Topology.IsConstructible (closure O.image) :=
-    ((NoetherianSpace.isCompact (closure O.image)ᶜ).isConstructible
-      isClosed_closure.isOpen_compl).of_compl
-  have hUnion_c : Topology.IsConstructible
-      (⋃ O' ∈ {O' : VectorOrbit k H M | O' < O}, O'.image) :=
-    Topology.IsConstructible.biUnion hfin_lt fun O' _ ↦ isConstructible_image O'
-  rw [((hcl_c.sdiff (isConstructible_image O)).inter hU_c).eq_iff_inter_closedPoints_eq hUnion_c]
-  induction O using VectorOrbit.ind with | h v
+  rw [Set.sdiff_eq, Set.inter_right_comm, ← Set.sdiff_eq,
+    closure_image_inter_basicOpen_snd_eq_biUnion_le hfin]
   ext x
+  simp only [Set.mem_sdiff, Set.mem_iUnion, Set.mem_ofPred_eq, exists_prop]
   constructor
-  · rintro ⟨⟨hxbd, hxU⟩, hxc⟩
-    obtain ⟨w, rfl⟩ := exists_mk_one_eq_of_mem_basicOpen_snd_inter_closedPoints (H := H) hxU hxc
-    rw [image_mk] at hxbd
-    exact ⟨Set.mem_biUnion (mk_lt_mk_iff.mpr hxbd)
-      ((image_mk (k := k) (H := H) w).symm ▸ Set.mem_range_self _), hxc⟩
-  · rintro ⟨hx, hxc⟩
-    obtain ⟨O', hO'lt, hxO'⟩ := Set.mem_iUnion₂.mp hx
-    have hxU : x ∈ U := by
-      induction O' using VectorOrbit.ind with | h u
-      rw [image_mk] at hxO'
-      exact range_projectiveOrbitMap_subset_basicOpen_snd u hxO'
-    refine ⟨⟨⟨(le_iff_image_subset_closure.mp (le_of_lt hO'lt)) hxO', ?_⟩, hxU⟩, hxc⟩
-    intro hxO
-    obtain ⟨w, rfl⟩ := exists_mk_one_eq_of_mem_basicOpen_snd_inter_closedPoints (H := H) hxU hxc
-    induction O' using VectorOrbit.ind with | h u
-    rw [image_mk] at hxO' hxO
-    have hwu : (mk w : VectorOrbit k H M) = mk u := image_injective <| by
-      rw [image_mk, image_mk]
-      exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr hxO'
-    have hwv : (mk w : VectorOrbit k H M) = mk v := image_injective <| by
-      rw [image_mk, image_mk]
-      exact (range_projectiveOrbitMap_eq_iff _ _ _ _).mpr hxO
-    exact hO'lt.ne (hwu.symm.trans hwv)
+  · rintro ⟨⟨O', hO'le, hxO'⟩, hxO⟩
+    refine ⟨O', lt_of_le_of_ne hO'le ?_, hxO'⟩
+    rintro rfl
+    exact hxO hxO'
+  · rintro ⟨O', hO'lt, hxO'⟩
+    exact ⟨⟨O', le_of_lt hO'lt, hxO'⟩,
+      Set.disjoint_right.mp (disjoint_image_of_ne hO'lt.ne') hxO'⟩
 
 end VectorOrbit
 

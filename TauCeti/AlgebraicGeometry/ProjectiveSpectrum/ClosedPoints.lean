@@ -28,6 +28,9 @@ point is the kernel of a `k`-algebra homomorphism `ψ` on it
 
 * `AlgHom.apply_awayMk_eq_lift`: a `k`-algebra homomorphism on the chart of a
   linear coordinate `φ` evaluates `a / φⁿ` as `a` at the functional `c ↦ ψ (c / φ)`.
+* `ProjectiveSpectrum.exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
+  point of `Proj (Sym N)` in `D₊(φ)` is the vanishing locus of a functional taking value `1` at
+  `φ`.
 * `ProjectiveSpectrum.exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed`: a closed
   point of `Proj (Sym N)` is the vanishing locus of a nonzero functional on `N`.
 
@@ -99,23 +102,14 @@ universe u
 
 variable {k N : Type u} [Field k] [AddCommGroup N] [Module k N]
 
-/-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`, for
-`N` finite-dimensional, is cut out by a nonzero functional `v` on `N`: a homogeneous polynomial
-of positive degree lies in its homogeneous prime ideal exactly when it vanishes at `v`. -/
-theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed k]
-    [Module.Finite k N] (x : Proj (homogeneousSubmodule k N)) (hx : IsClosed {x}) :
-    ∃ v : Module.Dual k N, v ≠ 0 ∧ ∀ n > 0, ∀ s ∈ homogeneousSubmodule k N n,
+/-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`
+lying in the standard open `D₊(φ)` of a linear coordinate `φ : N`, for `N` finite-dimensional,
+is cut out by a functional `v` on `N` normalized by `v φ = 1`. -/
+theorem exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed k]
+    [Module.Finite k N] {x : Proj (homogeneousSubmodule k N)} (hx : IsClosed {x})
+    {φ : N} (hφx : SymmetricAlgebra.ι k N φ ∉ x.asHomogeneousIdeal) :
+    ∃ v : Module.Dual k N, v φ = 1 ∧ ∀ n > 0, ∀ s ∈ homogeneousSubmodule k N n,
       s ∈ x.asHomogeneousIdeal ↔ SymmetricAlgebra.lift v s = 0 := by
-  -- A relevant prime does not contain every linear coordinate.
-  obtain ⟨φ, hφx⟩ : ∃ φ : N, SymmetricAlgebra.ι k N φ ∉ x.asHomogeneousIdeal := by
-    by_contra! h
-    refine x.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le _).mpr fun n hn t ht ↦ ?_)
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-    rw [homogeneousSubmodule, pow_succ'] at ht
-    refine (Submodule.mul_le (P := x.asHomogeneousIdeal.toIdeal.restrictScalars k)).mpr
-      (fun a ha b _ ↦ ?_) ht
-    obtain ⟨c, rfl⟩ := ha
-    exact Ideal.mul_mem_right b _ (h c)
   have hφ := ι_mem_homogeneousSubmodule k N φ
   obtain ⟨y, rfl⟩ : x ∈ Set.range (Proj.awayι _ _ hφ one_pos) := by
     rw [← Scheme.Hom.coe_opensRange, Proj.opensRange_awayι]
@@ -136,14 +130,14 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
       (fun c ↦ by simp)
   have key {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :=
     ψ.apply_awayMk_eq_lift v (fun c ↦ by simp [v]) ha
-  refine ⟨v, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
+  refine ⟨v, ?_, fun n hn s hs ↦ ?_⟩
   · -- The functional takes the value `1` on the chart coordinate `φ`.
     have h1 : Away.mk _ hφ 1 (SymmetricAlgebra.ι k N φ) (by simp) = 1 := by
       apply val_injective
       simp [Away.val_mk]
     have := key hφ
-    rw [h1, map_one, SymmetricAlgebra.lift_ι_apply, hv, LinearMap.zero_apply] at this
-    exact one_ne_zero this
+    rw [h1, map_one, SymmetricAlgebra.lift_ι_apply] at this
+    exact this.symm
   · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
     rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
       Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
@@ -155,5 +149,26 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     have := key (n := n) (a := s ^ 1) (by simpa using hs)
     rw [map_pow, pow_one (SymmetricAlgebra.lift v s)] at this
     exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
+
+/-- Over an algebraically closed field, a closed point of the projective spectrum of `Sym N`, for
+`N` finite-dimensional, is cut out by a nonzero functional `v` on `N`: a homogeneous polynomial
+of positive degree lies in its homogeneous prime ideal exactly when it vanishes at `v`. -/
+theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed k]
+    [Module.Finite k N] (x : Proj (homogeneousSubmodule k N)) (hx : IsClosed {x}) :
+    ∃ v : Module.Dual k N, v ≠ 0 ∧ ∀ n > 0, ∀ s ∈ homogeneousSubmodule k N n,
+      s ∈ x.asHomogeneousIdeal ↔ SymmetricAlgebra.lift v s = 0 := by
+  -- A relevant prime does not contain every linear coordinate.
+  obtain ⟨φ, hφx⟩ : ∃ φ : N, SymmetricAlgebra.ι k N φ ∉ x.asHomogeneousIdeal := by
+    by_contra! h
+    refine x.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le _).mpr fun n hn t ht ↦ ?_)
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+    rw [homogeneousSubmodule, pow_succ'] at ht
+    refine (Submodule.mul_le (P := x.asHomogeneousIdeal.toIdeal.restrictScalars k)).mpr
+      (fun a ha b _ ↦ ?_) ht
+    obtain ⟨c, rfl⟩ := ha
+    exact Ideal.mul_mem_right b _ (h c)
+  obtain ⟨v, hvφ, hv⟩ :=
+    exists_apply_eq_one_forall_mem_symmetricAlgebra_iff_of_isClosed hx hφx
+  exact ⟨v, fun h0 ↦ one_ne_zero (by rw [← hvφ, h0, LinearMap.zero_apply]), hv⟩
 
 end ProjectiveSpectrum

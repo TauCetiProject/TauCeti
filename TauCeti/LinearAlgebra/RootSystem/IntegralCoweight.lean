@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 import Mathlib.Algebra.Module.Submodule.Union
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Making an integral coweight dominant and uniqueness in its Weyl orbit
@@ -180,12 +179,8 @@ theorem Base.existsUnique_coweightEquiv_forall_exists_nat (b : P.Base) (x : N)
   refine ⟨(w : P.Aut).coweightEquiv x, ⟨⟨w, rfl⟩, hw⟩, ?_⟩
   rintro y ⟨⟨v, rfl⟩, hy⟩
   refine b.eq_of_coweightEquiv_eq_of_forall_exists_nat hy hw (w := v⁻¹ * w) ?_
-  have hmul : ((v⁻¹ * w : P.weylGroup) : P.Aut).coweightEquiv =
-      (v⁻¹ : P.Aut).coweightEquiv.trans (w : P.Aut).coweightEquiv := by
-    ext z
-    simp [Equiv.coweightEquiv_apply, Subgroup.coe_mul]
-  rw [hmul, LinearEquiv.trans_apply]
-  congr 1
-  exact LinearEquiv.symm_apply_apply (v : P.Aut).coweightEquiv x
+  rw [Subgroup.coe_mul, Equiv.mul_eq_comp, Equiv.coweightEquiv_comp_toLin, LinearEquiv.trans_apply,
+    Subgroup.coe_inv, Equiv.coweightEquiv_inv]
+  exact congrArg (w : P.Aut).coweightEquiv (LinearEquiv.symm_apply_apply _ x)
 
 end RootPairing

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Exponential
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Nilpotent.Cone
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Uniqueness
 import Mathlib.Data.Set.Card
 import TauCeti.Algebra.Lie.CartanExists
@@ -37,10 +37,8 @@ dominant neutral element has a nonzero weighted Dynkin diagram
 in `𝔤` (`TauCeti.Comodule.VectorOrbit.finite_setOf_isNilpotentAd`), at most `3 ^ finrank k 𝔥 - 1`
 nonzero ones (`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_le`) and at
 most `3 ^ finrank k 𝔥` in total (`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_le`),
-without assuming `G` is connected. In particular, every nilpotent adjoint orbit is closed under
-nonzero scalar multiplication (`TauCeti.exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad`)
-and contains `0` in its closure (`TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_isNilpotent_ad`),
-and for any nilpotent orbit `O`, only finitely many orbits lie below `O` in the closure order
+without assuming `G` is connected. Consequently, for any nilpotent orbit `O`, only finitely many
+orbits lie below `O` in the closure order
 (`TauCeti.Comodule.VectorOrbit.finite_setOf_le_of_isNilpotentAd`,
 `TauCeti.Comodule.VectorOrbit.finite_setOf_lt_of_isNilpotentAd`), yielding the exact scheme-point
 decompositions of `closure O` and `closure O \ O` inside the affine chart `𝔤 = {t ≠ 0}` of
@@ -64,9 +62,6 @@ all-zero diagram `0` to the zero orbit and `b.weightedDynkinDiagram h` to each n
   `sl₂` triple is `G°(k)`-conjugate to one with dominant neutral element.
 * `TauCeti.exists_basePointsRepresentation_isSl2Triple_of_isNilpotent_ad`: every nonzero
   `ad`-nilpotent element is `G(k)`-conjugate to the nilpositive element of a dominant `sl₂` triple.
-* `TauCeti.exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad` and
-  `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_isNilpotent_ad`: nilpotent adjoint orbits are
-  conical and contain `0` in their closure, without assuming connectedness.
 * `TauCeti.Comodule.VectorOrbit.finite_setOf_isNilpotentAd`,
   `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_le`, and
   `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_le`: finiteness and `3 ^ rank` bounds for
@@ -166,23 +161,6 @@ theorem exists_basePointsRepresentation_isSl2Triple_of_isNilpotent_ad
     t₀.exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements
       (H := FiniteTypeCommHopfAlgCat.of k H) b
   exact ⟨g, h, hh, _, t⟩
-
-/-- **Nilpotent adjoint orbits are conical.** Every nonzero scalar multiple of an `ad`-nilpotent
-element lies in its rational adjoint orbit. No connectedness of `G` is assumed. -/
-theorem exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad {e : 𝔤}
-    (he : IsNilpotent (LieAlgebra.ad k 𝔤 e)) {t : k} (ht : t ≠ 0) :
-    ∃ g : WithConv (H →ₐ[k] k), Comodule.basePointsRepresentation 𝔤 g e = t • e := by
-  by_cases he0 : e = 0
-  · exact ⟨1, by simp [he0]⟩
-  · obtain ⟨h, f, tr⟩ := exists_isSl2Triple_of_isNilpotent_ad he he0
-    have tr' : IsSl2Triple h (t • e) (t⁻¹ • f) :=
-      { h_ne_zero := tr.h_ne_zero
-        lie_e_f := by rw [smul_lie, lie_smul, tr.lie_e_f, smul_smul, mul_inv_cancel₀ ht, one_smul]
-        lie_h_e_nsmul := by rw [lie_smul, tr.lie_h_e_nsmul, smul_comm]
-        lie_h_f_nsmul := by rw [lie_smul, tr.lie_h_f_nsmul, smul_neg, smul_comm] }
-    obtain ⟨g, -, -, hge, -⟩ :=
-      tr.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq tr'
-    exact ⟨g, hge⟩
 
 /-- Map sending each dominant neutral element to the rational adjoint orbit of its nilpositive
 partner; by Malcev–Kostant conjugacy at fixed `h`, this orbit is independent of the partner. -/
@@ -286,13 +264,6 @@ theorem finite_setOf_lt_of_isNilpotentAd {O : VectorOrbit k H 𝔤} (hO : O.IsNi
     {O' : VectorOrbit k H 𝔤 | O' < O}.Finite :=
   (finite_setOf_le_of_isNilpotentAd hO).subset fun (_ : VectorOrbit k H 𝔤) (hlt : _ < O) ↦
     hlt.le
-
-/-- **Zero lies in the closure of every nilpotent adjoint orbit.** No connectedness of `G` is
-assumed. -/
-theorem mk_zero_le_mk_of_isNilpotent_ad {e : 𝔤} (he : IsNilpotent (LieAlgebra.ad k 𝔤 e)) :
-    (mk (0 : 𝔤) : VectorOrbit k H 𝔤) ≤ mk e :=
-  mk_zero_le_mk_of_forall_smul fun _ ht ↦
-    exists_basePointsRepresentation_eq_smul_of_isNilpotent_ad he ht
 
 /-- **Orbit closure decomposition for nilpotent orbits.** Inside the affine chart `𝔤 = {t ≠ 0}` of
 `P(𝔤 × k)`, the closure of a nilpotent adjoint orbit `O` is the finite union of the full

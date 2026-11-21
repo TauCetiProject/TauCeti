@@ -20,7 +20,8 @@ let `d` be a tangent vector at the identity whose left-invariant derivation
 By `TauCeti.Comodule.endOfPoint_expPointAt`, the one-parameter exponential curve
 `t ↦ Bialgebra.expPointAt d hd t` acts on every finitely generated `H`-comodule `M` over any
 commutative `R`-algebra `B` as `IsNilpotent.exp (t • (Comodule.differential d).baseChange B)`,
-where `Comodule.differential d` is nilpotent. Consequently, every point
+where `t • (Comodule.differential d).baseChange B` is nilpotent
+(`TauCeti.Comodule.isNilpotent_smul_baseChange_differential`). Consequently, every point
 `Bialgebra.expPointAt d hd t` on an exponential curve — and hence `Bialgebra.expPoint d hd` — is
 unipotent (`TauCeti.HopfAlgebra.isUnipotentPoint_expPointAt`,
 `TauCeti.HopfAlgebra.isUnipotentPoint_expPoint`).
@@ -60,13 +61,9 @@ theorem isUnipotentPoint_expPointAt [CommRing B] [Algebra R B]
   rw [isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one]
   intro M
   rw [Comodule.endOfPoint_expPointAt d hd t]
-  obtain ⟨K, hK⟩ := by
-    open Comodule in
-    exact
-      isNilpotent_differential_of_finite_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
-        (R := R) (H := H) (M := M) hd
-  exact ⟨K, IsNilpotent.pow_exp_sub_one_eq_zero
-    (by rw [smul_pow, ← LinearMap.baseChange_pow, hK, LinearMap.baseChange_zero, smul_zero])⟩
+  obtain ⟨K, hK⟩ :=
+    Comodule.isNilpotent_smul_baseChange_differential (R := R) (H := H) (M := M) hd t
+  exact ⟨K, IsNilpotent.pow_exp_sub_one_eq_zero hK⟩
 
 /-- The exponential point of a tangent vector with locally nilpotent invariant derivation is
 unipotent. -/

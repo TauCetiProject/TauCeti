@@ -7,19 +7,18 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Exponential
+public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Exponential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Comodule
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
 public import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
-public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
-import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 import TauCeti.RingTheory.Nilpotent.Log
 
@@ -49,8 +48,7 @@ Over an algebraically closed field, `expAdPoint hx` lies in the identity compone
 `C_G(y)°(k)` whenever `⁅x, y⁆ = 0`, so the entire inner automorphism group `Int(𝔤)` is realized by
 rational points of `G°` (`TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent`),
 and Kostant's subgroup `expAdSubgroup k e` is realized inside `C_G(e)°(k)`
-(`TauCeti.map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent`), lifting
-Kostant's conjugacy of `sl₂` triples sharing `e` to `C_G(e)°(k)`.
+(`TauCeti.map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent`).
 
 ## Main declarations
 
@@ -80,11 +78,6 @@ Kostant's conjugacy of `sl₂` triples sharing `e` to `C_G(e)°(k)`.
   `TauCeti.exists_mem_closure_unipotent_identityComponent_of_mem_intLieAlgebra`, and
   `TauCeti.exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup`: lifting
   `Int(𝔤)` and `expAdSubgroup` to products of unipotent rational points.
-* `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq`,
-  `IsSl2Triple.exists_mem_closure_unipotent_centralizerHopfIdeal_eq`, and
-  `IsSl2Triple.exists_mem_closure_unipotent_centralizerHopfIdeal_identityComponent_eq`:
-  Kostant's conjugacy of `sl₂` triples sharing `e` by rational points (and products of unipotent
-  points) of `C_G(e)` and `C_G(e)°`.
 
 ## References
 
@@ -311,17 +304,11 @@ theorem exists_mem_closure_unipotent_of_mem_intLieAlgebra [LieAlgebra ℚ 𝔤]
     ∃ g ∈ Subgroup.closure {u : WithConv (H →ₐ[k] k) | HopfAlgebra.IsUnipotentPoint u},
       LinearMap.GeneralLinearGroup.ofLinearEquiv
         (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g).toLinearEquiv = φ := by
-  have hbot : (⊥ : HopfIdeal k H).lieSubalgebra (B := k) = ⊤ := by
-    rw [eq_top_iff]
-    intro d _
-    rw [HopfIdeal.mem_lieSubalgebra_iff]
-    intro x hx
-    have hx0 : x = 0 := hx
-    simp [hx0]
-  obtain ⟨g, hg, hgf⟩ :=
+  simpa [show CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+      (⊥ : HopfIdeal k H) (CommAlgCat.of k k) = ⊤ from
+    CommHopfAlgCat.quotientPointsSubgroup_bot _ _] using
     exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_intLieAlgebra (⊥ : HopfIdeal k H)
-      hbot hφ
-  exact ⟨g, Subgroup.closure_mono (by rintro _ ⟨_, hu⟩; exact hu) hg, hgf⟩
+      HopfIdeal.lieSubalgebra_bot hφ
 
 /-- **Lifting `expAdSubgroup k e` into closed subgroups containing `ker (ad e)`.** If `I` cuts out
 a closed subgroup whose tangent Lie algebra contains `Lie(C_G(e))`, then every automorphism in
@@ -464,104 +451,3 @@ theorem exists_mem_closure_unipotent_identityComponent_of_mem_intLieAlgebra
 end IsAlgClosed
 
 end TauCeti
-
-namespace IsSl2Triple
-
-open TauCeti
-
-universe u
-
-attribute [local instance] Derivation.adjointComodule
-
-/-- **Kostant's conjugacy theorem at fixed nilpositive element, in `C_G(e)°(k)`.** Over an
-algebraically closed field `k` of characteristic zero, if `G = Spec H` is of finite type with
-Killing Lie algebra `𝔤`, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `𝔤` sharing `e` are
-conjugate by a rational point of the connected centralizer `C_G(e)°`. -/
-theorem exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq
-    {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-    {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-    {h f h' f' e : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
-    ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (centralizerHopfIdeal H.obj e).identityComponent (CommAlgCat.of k k),
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' := by
-  let _ := ratLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))
-  obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
-  obtain ⟨g, hg, hgu⟩ :=
-    map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent (H := H) e
-      ⟨φ.toLinearEquiv, hφ, rfl⟩
-  have hact (z : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g z =
-        φ z := by
-    have := LinearMap.congr_fun (congrArg Units.val hgu) z
-    rwa [MonoidHom.coe_toHomUnits] at this
-  exact ⟨g, hg, (hact e).trans hφe, (hact h).trans hφh, (hact f).trans hφf⟩
-
-/-- **Group-level Kostant conjugacy in `C_G(e)(k)` by unipotent points.** Over any field `k` of
-characteristic zero, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `𝔤` sharing `e` are
-conjugate by a point `g` in the subgroup generated by the unipotent rational points of `C_G(e)(k)`.
--/
-theorem exists_mem_closure_unipotent_centralizerHopfIdeal_eq
-    {k : Type u} [Field k] [CharZero k] {H : Type u} [CommRing H] [HopfAlgebra k H]
-    [Algebra.FiniteType k H]
-    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-    {h e f h' f' : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
-    ∃ g ∈ Subgroup.closure
-        {u ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-            (centralizerHopfIdeal H e) (CommAlgCat.of k k) |
-          HopfAlgebra.IsUnipotentPoint u},
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' := by
-  let _ : LieAlgebra ℚ (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-    ratLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))
-  obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
-  obtain ⟨g, hg, hgeq⟩ :=
-    exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup e
-      (centralizerHopfIdeal H e) le_rfl hφ
-  have hact (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g x =
-        φ x := by
-    rw [← Derivation.basePointsAdjointLieEquiv_apply, ← LieEquiv.coe_toLinearEquiv, hgeq,
-      LieEquiv.coe_toLinearEquiv]
-  exact ⟨g, hg, hact h ▸ hφh, hact e ▸ hφe, hact f ▸ hφf⟩
-
-/-- **Group-level Kostant conjugacy in `C_G(e)°(k)` by unipotent points.** Over an algebraically
-closed field of characteristic zero, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `𝔤`
-sharing `e` are conjugate by a point `g` in the subgroup generated by the unipotent rational points
-of the connected centralizer `C_G(e)°(k)`. -/
-theorem exists_mem_closure_unipotent_centralizerHopfIdeal_identityComponent_eq
-    {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-    {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-    {h e f h' f' : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
-    ∃ g ∈ Subgroup.closure
-        {u ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-            (centralizerHopfIdeal H e).identityComponent (CommAlgCat.of k k) |
-          HopfAlgebra.IsUnipotentPoint u},
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' := by
-  let _ : LieAlgebra ℚ (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-    ratLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))
-  obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
-  obtain ⟨g, hg, hgeq⟩ :=
-    exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup e
-      (centralizerHopfIdeal H e).identityComponent
-      (HopfIdeal.lieSubalgebra_identityComponent _).ge hφ
-  have hact (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g x =
-        φ x := by
-    rw [← Derivation.basePointsAdjointLieEquiv_apply, ← LieEquiv.coe_toLinearEquiv, hgeq,
-      LieEquiv.coe_toLinearEquiv]
-  exact ⟨g, hg, hact h ▸ hφh, hact e ▸ hφe, hact f ▸ hφf⟩
-
-end IsSl2Triple

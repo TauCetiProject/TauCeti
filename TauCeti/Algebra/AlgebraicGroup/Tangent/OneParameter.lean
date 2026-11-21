@@ -140,11 +140,31 @@ theorem curveVelocity_expPointPolynomial_comp {K : Type*} [CommRing K]
   rw [algEquivSelf_curveVelocity_apply, AlgHom.comp_apply,
     coeff_one_expPointPolynomial, algEquivSelf_derivationComp_apply]
 
+include hd in
+omit [Algebra ℚ H] in
+/-- Scaling a tangent vector whose invariant derivation is locally nilpotent preserves local
+nilpotence of its invariant derivation. -/
+theorem exists_iterate_leftInvariantDerivation_smul_eq_zero (t : R) (h : H) :
+    ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
+  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
+    map_smul leftInvariantDerivation t d
+  simpa only [hsmul] using (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t h
+
+/-- Over the base ring, evaluating the exponential curve at `t` gives the exponential point of
+the scaled tangent vector `t • d`. -/
+theorem expPointAt_eq_toConv_expPoint_smul (t : R) :
+    expPointAt d hd t =
+      WithConv.toConv
+        (expPoint (t • d) (exists_iterate_leftInvariantDerivation_smul_eq_zero d hd t)) := by
+  apply WithConv.ext
+  ext x
+  simp only [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply,
+    Derivation.taylorExpAt_eq_taylorExp_smul,
+    map_smul (leftInvariantDerivation (R := R) (H := H)) t d]
+
 /-- At parameter one, the curve recovers the invariant-vector-field exponential. -/
 theorem expPointAt_one : expPointAt d hd (1 : R) = WithConv.toConv (expPoint d hd) := by
-  apply WithConv.ext
-  ext h
-  rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply, Derivation.taylorExpAt_one]
+  simpa only [one_smul] using expPointAt_eq_toConv_expPoint_smul d hd 1
 
 /-- Evaluating the polynomial exponential curve at one recovers the exponential point. -/
 theorem aeval_one_comp_expPointPolynomial :
@@ -157,19 +177,12 @@ exponential curve. -/
 theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
     (leftInvariantDerivation d).taylorExpAt hd t h =
       tensorComponent (expPointAt d hd t).ofConv.toLinearMap (Coalgebra.comul (R := R) h) := by
+  rw [expPointAt_eq_toConv_expPoint_smul d hd t, Derivation.taylorExpAt_eq_taylorExp_smul]
   have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
-  have ht : ∀ h, ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
-    simpa only [hsmul] using
-      (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t
-  have he : expPointAt d hd t = WithConv.toConv (expPoint (t • d) ht) := by
-    apply WithConv.ext
-    ext x
-    rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply]
-    simp only [hsmul]
-    rw [Derivation.taylorExpAt_eq_taylorExp_smul]
-  rw [he, Derivation.taylorExpAt_eq_taylorExp_smul]
-  simpa only [hsmul] using taylorExp_leftInvariantDerivation_apply (t • d) ht h
+    map_smul leftInvariantDerivation t d
+  simpa only [hsmul] using
+    taylorExp_leftInvariantDerivation_apply (t • d)
+      (exists_iterate_leftInvariantDerivation_smul_eq_zero d hd t) h
 
 /-- Substitute the sum of two independent parameters in the exponential curve. -/
 private noncomputable def expPointAddPolynomial : H →ₐ[R] R[X][X] :=
