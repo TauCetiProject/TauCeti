@@ -281,7 +281,7 @@ private theorem leftAdjointL_cylindricalAdjointCoeff
         (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) He
         (t, x t, ω.hamiltonianVectorField (He t) (x t))) =
       endLoop Je x t * rotatedField ω Je He x t := by
-  refine ω.ext_of_apply_eq fun v w ↦ ?_
+  refine ω.continuousLinearMap_ext_of_apply_eq fun v w ↦ ?_
   rw [cylindricalAdjointCoeff_eq_endLoopDeriv_add, apply_leftAdjointL_apply]
   simp only [rotatedField, mul_apply_eq_comp, add_apply, sub_apply, map_add, map_sub,
     LinearMap.sub_apply]

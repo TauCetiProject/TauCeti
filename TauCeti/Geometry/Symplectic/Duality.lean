@@ -99,7 +99,7 @@ theorem apply_flatEquiv_symm_apply (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ
 
 omit [FiniteDimensional ℝ V] in
 /-- Two endomorphisms that pair in the same way under `ω` are equal. -/
-theorem ext_of_apply_eq (ω : SymplecticForm V) {L L' : V →L[ℝ] V}
+theorem continuousLinearMap_ext_of_apply_eq (ω : SymplecticForm V) {L L' : V →L[ℝ] V}
     (h : ∀ v w, ω (L v) w = ω (L' v) w) : L = L' :=
   ContinuousLinearMap.coe_injective
     (ω.toBilinForm.compLeft_injective ω.nondegenerate (LinearMap.BilinForm.ext h))
@@ -119,10 +119,10 @@ noncomputable def leftAdjointL (ω : SymplecticForm V) : (V →L[ℝ] V) →L[�
   LinearMap.toContinuousLinearMap
     { toFun := fun L ↦ LinearMap.toContinuousLinearMap
         (ω.toBilinForm.leftAdjointOfNondegenerate ω.nondegenerate (L : V →ₗ[ℝ] V))
-      map_add' := fun L L' ↦ ω.ext_of_apply_eq fun v w ↦ by
+      map_add' := fun L L' ↦ ω.continuousLinearMap_ext_of_apply_eq fun v w ↦ by
         simp only [LinearMap.coe_toContinuousLinearMap', add_apply, map_add, LinearMap.add_apply,
           apply_leftAdjointOfNondegenerate_apply]
-      map_smul' := fun c L ↦ ω.ext_of_apply_eq fun v w ↦ by
+      map_smul' := fun c L ↦ ω.continuousLinearMap_ext_of_apply_eq fun v w ↦ by
         simp only [LinearMap.coe_toContinuousLinearMap', smul_apply, map_smul, LinearMap.smul_apply,
           RingHom.id_apply, apply_leftAdjointOfNondegenerate_apply] }
 
@@ -135,6 +135,6 @@ theorem apply_leftAdjointL_apply (ω : SymplecticForm V) (L : V →L[ℝ] V) (v 
 theorem Invariant.leftAdjointL_eq_neg {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (hJ : ω.Invariant J) :
     ω.leftAdjointL J.toLinearMap.toContinuousLinearMap = -J.toLinearMap.toContinuousLinearMap :=
-  ω.ext_of_apply_eq fun v w ↦ by simp [hJ.apply_apply_eq_neg]
+  ω.continuousLinearMap_ext_of_apply_eq fun v w ↦ by simp [hJ.apply_apply_eq_neg]
 
 end TauCeti.SymplecticForm
