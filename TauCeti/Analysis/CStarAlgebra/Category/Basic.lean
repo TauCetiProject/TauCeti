@@ -356,55 +356,120 @@ theorem norm_def (a : End X) : ‖a‖ = ‖a.asHom‖ := (rfl)
 
 end Norm
 
-variable [Preadditive C] [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C]
-  [DaggerLinear ℂ C] [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X : C}
+section Transport
 
-/-- The normed space axioms for `End X`, transported from the Hom space of `X`. -/
-theorem normedSpaceCore (X : C) : NormedSpace.Core ℂ (End X) where
-  norm_nonneg a := CStarCategory.norm_nonneg a.asHom
+variable [Preadditive C] [∀ X Y : C, Norm (X ⟶ Y)] {X : C}
+
+/-- Transport `NormedSpace.Core` from `X ⟶ X` to `End X` along `End.asHom`. -/
+theorem normedSpaceCoreOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X)) : NormedSpace.Core 𝕜 (End X) where
+  norm_nonneg a := hcore.norm_nonneg a.asHom
   norm_smul c a := by
-    simpa only [norm_def, smul_asHom] using
-      (CStarCategory.normedSpaceCore X X).norm_smul c a.asHom
+    simpa only [norm_def, smul_asHom] using hcore.norm_smul c a.asHom
   norm_triangle a b := by
-    simpa only [norm_def, add_asHom] using
-      (CStarCategory.normedSpaceCore X X).norm_triangle a.asHom b.asHom
+    simpa only [norm_def, add_asHom] using hcore.norm_triangle a.asHom b.asHom
   norm_eq_zero_iff a := by
-    rw [norm_def, CStarCategory.norm_eq_zero, End.ext_iff, zero_asHom]
+    rw [norm_def, hcore.norm_eq_zero_iff, End.ext_iff, zero_asHom]
 
-/-- `End X` is a normed group for the norm of its underlying arrows. -/
-instance instNormedAddCommGroup : NormedAddCommGroup (End X) :=
-  .ofCore (normedSpaceCore X)
-
-/-- `End X` is a normed ring: its operator-order multiplication is submultiplicative. -/
-instance instNormedRing : NormedRing (End X) where
-  __ := (inferInstance : NormedAddCommGroup (End X))
+/-- Transport `NormedRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X` and submultiplicative
+composition. -/
+@[expose, instance_reducible]
+def normedRingOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖) : NormedRing (End X) where
+  __ := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
   __ := (inferInstance : Ring (End X))
   norm_mul_le a b := by
-    simpa only [norm_def, mul_asHom, mul_comm ‖a.asHom‖] using
-      CStarCategory.norm_comp_le b.asHom a.asHom
+    simpa only [norm_def, mul_asHom, mul_comm ‖a.asHom‖] using hcomp b.asHom a.asHom
 
-/-- `End X` is a normed complex algebra. -/
-instance instNormedAlgebra : NormedAlgebra ℂ (End X) where
-  norm_smul_le c a := ((normedSpaceCore X).norm_smul c a).le
+/-- Transport `NormedAlgebra` on `End X` from a `NormedSpace.Core` on `X ⟶ X` and
+submultiplicative composition. -/
+@[expose, instance_reducible]
+def normedAlgebraOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖) :
+    letI := normedRingOf hcore hcomp
+    NormedAlgebra 𝕜 (End X) :=
+  letI := normedRingOf hcore hcomp
+  ⟨fun c a => ((normedSpaceCoreOf hcore).norm_smul c a).le⟩
 
-/-- `End X` is complete, since the Hom space of `X` is. -/
-instance instCompleteSpace : CompleteSpace (End X) := by
-  let := CStarCategory.normedAddCommGroup X X
-  have : CompleteSpace (X ⟶ X) := CStarCategory.completeSpace X X
+/-- Transport completeness from `X ⟶ X` to `End X` along `End.addEquiv`. -/
+theorem completeSpaceOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomplete : letI := NormedAddCommGroup.ofCore hcore; CompleteSpace (X ⟶ X)) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
+    CompleteSpace (End X) := by
+  let := NormedAddCommGroup.ofCore hcore
+  have : CompleteSpace (X ⟶ X) := hcomplete
+  let := NormedAddCommGroup.ofCore (normedSpaceCoreOf hcore)
   let e : End X ≃ᵢ (X ⟶ X) :=
     { toEquiv := End.addEquiv.toEquiv
       isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun a => by
         rw [End.addEquiv_apply, End.norm_def] }
   exact e.completeSpace
 
+/-- Transport `CStarRing` on `End X` from a `NormedSpace.Core` on `X ⟶ X`, submultiplicative
+composition, and the C*-inequality on `X ⟶ X`. -/
+theorem cstarRingOf {𝕜 : Type*} [NormedField 𝕜] [Linear 𝕜 C]
+    [DaggerCategory C] [DaggerPreadditive C]
+    (hcore : NormedSpace.Core 𝕜 (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖)
+    (hmul_self : ∀ f : X ⟶ X, ‖f‖ * ‖f‖ ≤ ‖f ≫ dagger f‖) :
+    letI := normedRingOf hcore hcomp
+    CStarRing (End X) :=
+  letI := normedRingOf hcore hcomp
+  ⟨fun a => by simpa only [norm_def, mul_asHom, star_asHom] using hmul_self a.asHom⟩
+
+/-- Transport `CStarAlgebra` on `End X` from a complex `NormedSpace.Core`, completeness,
+submultiplicative composition, and the C*-inequality on `X ⟶ X`. -/
+@[expose, instance_reducible]
+def cstarAlgebraOf [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+    (hcore : NormedSpace.Core ℂ (X ⟶ X))
+    (hcomplete : letI := NormedAddCommGroup.ofCore hcore; CompleteSpace (X ⟶ X))
+    (hcomp : ∀ f g : X ⟶ X, ‖f ≫ g‖ ≤ ‖f‖ * ‖g‖)
+    (hmul_self : ∀ f : X ⟶ X, ‖f‖ * ‖f‖ ≤ ‖f ≫ dagger f‖) :
+    CStarAlgebra (End X) :=
+  letI := normedRingOf hcore hcomp
+  letI := normedAlgebraOf hcore hcomp
+  haveI := completeSpaceOf hcore hcomplete
+  haveI := cstarRingOf hcore hcomp hmul_self
+  {}
+
+end Transport
+
+variable [Preadditive C] [Linear ℂ C] [DaggerCategory C] [DaggerPreadditive C]
+  [DaggerLinear ℂ C] [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C] {X : C}
+
+/-- The normed space axioms for `End X`, transported from the Hom space of `X`. -/
+theorem normedSpaceCore (X : C) : NormedSpace.Core ℂ (End X) :=
+  normedSpaceCoreOf (CStarCategory.normedSpaceCore X X)
+
+/-- `End X` is a normed group for the norm of its underlying arrows. -/
+instance instNormedAddCommGroup : NormedAddCommGroup (End X) :=
+  .ofCore (normedSpaceCore X)
+
+/-- `End X` is a normed ring: its operator-order multiplication is submultiplicative. -/
+instance instNormedRing : NormedRing (End X) :=
+  normedRingOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
+
+/-- `End X` is a normed complex algebra. -/
+instance instNormedAlgebra : NormedAlgebra ℂ (End X) :=
+  normedAlgebraOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
+
+/-- `End X` is complete, since the Hom space of `X` is. -/
+instance instCompleteSpace : CompleteSpace (End X) :=
+  completeSpaceOf (CStarCategory.normedSpaceCore X X) (CStarCategory.completeSpace X X)
+
 /-- The C*-identity in `End X`, from the C*-inequality of the category. -/
-instance instCStarRing : CStarRing (End X) where
-  norm_mul_self_le a := by
-    simpa only [norm_def, mul_asHom, star_asHom] using CStarCategory.norm_mul_self_le a.asHom
+instance instCStarRing : CStarRing (End X) :=
+  cstarRingOf (CStarCategory.normedSpaceCore X X) (fun f g => CStarCategory.norm_comp_le f g)
+    (fun f => CStarCategory.norm_mul_self_le f)
 
 /-- Each endomorphism algebra of a C*-category is a unital C*-algebra, with the dagger as
 star and Mathlib's operator-order multiplication. -/
-instance instCStarAlgebra : CStarAlgebra (End X) where
+instance instCStarAlgebra : CStarAlgebra (End X) :=
+  cstarAlgebraOf (CStarCategory.normedSpaceCore X X) (CStarCategory.completeSpace X X)
+    (fun f g => CStarCategory.norm_comp_le f g) (fun f => CStarCategory.norm_mul_self_le f)
 
 /-- The positive cone of the C*-algebra `End X`: self-adjoint elements with nonnegative
 spectrum. -/

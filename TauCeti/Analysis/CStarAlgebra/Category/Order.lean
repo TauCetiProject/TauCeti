@@ -165,35 +165,9 @@ theorem ofSpectrumNonneg {C : Type u} [Category.{v} C] [Preadditive C] [Linear �
   norm_comp_le := norm_comp_le
   norm_mul_self_le := norm_mul_self_le
   exists_self_comp_dagger_eq {X Y} f := by
-    have hcore : NormedSpace.Core ℂ (End X) :=
-      { norm_nonneg a := (normedSpaceCore X X).norm_nonneg a.asHom
-        norm_smul c a := by
-          simpa only [End.norm_def, End.smul_asHom] using
-            (normedSpaceCore X X).norm_smul c a.asHom
-        norm_triangle a b := by
-          simpa only [End.norm_def, End.add_asHom] using
-            (normedSpaceCore X X).norm_triangle a.asHom b.asHom
-        norm_eq_zero_iff a := by
-          rw [End.norm_def, (normedSpaceCore X X).norm_eq_zero_iff, End.ext_iff, End.zero_asHom] }
-    let _ : NormedAddCommGroup (End X) := .ofCore hcore
-    let _ : NormedRing (End X) :=
-      { __ := (inferInstance : NormedAddCommGroup (End X))
-        __ := (inferInstance : Ring (End X))
-        norm_mul_le a b := by
-          simpa only [End.norm_def, End.mul_asHom, mul_comm ‖a.asHom‖] using
-            norm_comp_le b.asHom a.asHom }
-    let _ : NormedAlgebra ℂ (End X) := ⟨fun c a => (hcore.norm_smul c a).le⟩
-    have _ : CompleteSpace (End X) := by
-      let := NormedAddCommGroup.ofCore (normedSpaceCore X X)
-      have : CompleteSpace (X ⟶ X) := completeSpace X X
-      let e : End X ≃ᵢ (X ⟶ X) :=
-        { toEquiv := End.addEquiv.toEquiv
-          isometry_toFun := AddMonoidHomClass.isometry_of_norm End.addEquiv fun a => by
-            rw [End.addEquiv_apply, End.norm_def] }
-      exact e.completeSpace
-    have _ : CStarRing (End X) := ⟨fun a => by
-      simpa only [End.norm_def, End.mul_asHom, End.star_asHom] using norm_mul_self_le a.asHom⟩
-    let _ : CStarAlgebra (End X) := {}
+    let _ : CStarAlgebra (End X) :=
+      End.cstarAlgebraOf (normedSpaceCore X X) (completeSpace X X)
+        (fun g h => norm_comp_le g h) (fun g => norm_mul_self_le g)
     let _ : PartialOrder (End X) := CStarAlgebra.spectralOrder (End X)
     have _ : StarOrderedRing (End X) := CStarAlgebra.spectralOrderedRing (End X)
     have hsa : IsSelfAdjoint (End.of (f ≫ dagger f)) := by
