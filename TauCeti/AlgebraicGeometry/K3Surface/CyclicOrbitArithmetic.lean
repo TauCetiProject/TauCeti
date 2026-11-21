@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticFunction.JordanTotient
+import TauCeti.Data.Nat.GCD
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
@@ -13,6 +14,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Simproc.Divisors
+import Mathlib.Tactic.Simproc.Factors
 
 /-!
 # Orbit arithmetic of symplectic cyclic actions on K3 surfaces
@@ -202,13 +204,6 @@ theorem cyclicSubgroupOrbitCount_def (n : ℕ) (a : ℕ → ℕ) (d e : ℕ) :
     cyclicSubgroupOrbitCount n a d e = ∑ m ∈ n.divisors with m.gcd d = e, n / m.lcm d * a m :=
   (rfl)
 
-/-- An orbit with stabilizer of order `m` has `n / m = (d / gcd (m, d)) * (n / lcm (m, d))` points:
-`d / gcd (m, d)` orbits of the subgroup of order `d`, each of `n / lcm (m, d)` points. -/
-private theorem div_gcd_mul_div_lcm {n m d : ℕ} (hm : m ∣ n) (hd : d ∣ n) (hd0 : d ≠ 0) :
-    d / m.gcd d * (n / m.lcm d) = n / m := by
-  rw [Nat.div_mul_div_comm (Nat.gcd_dvd_right m d) (Nat.lcm_dvd hm hd), Nat.gcd_mul_lcm,
-    mul_comm m d, Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hd0)]
-
 /-- The orbit relations pass to subgroups: the orbit counts of the subgroup of order `d` satisfy
 the orbit relations of the cyclic group of order `d`. -/
 theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
@@ -224,7 +219,7 @@ theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
         refine Finset.sum_congr rfl fun m hm ↦ ?_
         obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
         rw [Nat.gcd_assoc, Nat.gcd_eq_right (Nat.dvd_of_mem_divisors hd'),
-          ← div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
+          ← Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
         ring
     _ = ∑ m ∈ n.divisors, n / m * a m * (m.gcd d' ^ 2 - 1) :=
         Finset.sum_fiberwise_of_maps_to
@@ -250,7 +245,7 @@ theorem cyclicFixedPointCount_cyclicSubgroupOrbitCount {n : ℕ} (a : ℕ → �
         · refine Finset.sum_congr rfl fun m hm ↦ ?_
           obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
           rw [ite_eq_left (hef.trans (Nat.gcd_dvd_left m d)), ← mul_assoc,
-            div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
+            Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
         · refine (Finset.sum_eq_zero fun m hm ↦ ?_).symm
           obtain ⟨-, rfl⟩ := Finset.mem_filter.1 hm
           exact ite_eq_right fun hem ↦ hef (Nat.dvd_gcd hem he)
@@ -456,43 +451,27 @@ private theorem IsK3CyclicOrbitData.not_dvd_of_mem {n : ℕ} {a : ℕ → ℕ}
   simp only [Finset.mem_insert, Finset.mem_singleton] at hd
   rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 4) (l := 3) (by norm_num) (by norm_num)
-      (by rw [show 10 = 2 * 5 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 3) (l := 4) (by norm_num) (by norm_num)
-      (by rw [show 21 = 3 * 7 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 2) (l := 3) (by norm_num) (by norm_num)
-      (by rw [show 22 = 2 * 11 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 4) (l := 5) (by norm_num) (by norm_num)
-      (by rw [show 25 = 5 ^ 2 by norm_num, mathieuFunction_prime_pow (by norm_num) two_ne_zero]
-          norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by rw [show 28 = 2 ^ 2 * 7 by norm_num, mathieuFunction_mul (by norm_num),
-            mathieuFunction_prime_pow Nat.prime_two two_ne_zero]
-          norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by rw [show 33 = 3 * 11 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 2) (by norm_num) (by norm_num)
-      (by rw [show 35 = 5 * 7 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 3) (l := 7) (by norm_num) (by norm_num)
-      (by rw [show 49 = 7 ^ 2 by norm_num, mathieuFunction_prime_pow (by norm_num) two_ne_zero]
-          norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 3) (by norm_num) (by norm_num)
-      (by rw [show 55 = 5 * 11 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 1) (l := 4) (by norm_num) (by norm_num)
-      (by rw [show 77 = 7 * 11 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
   · exact h.not_dvd_of_mathieuFunction_eq_div hn (k := 2) (l := 11) (by norm_num) (by norm_num)
-      (by rw [show 121 = 11 ^ 2 by norm_num, mathieuFunction_prime_pow (by norm_num) two_ne_zero]
-          norm_num)
-      (by norm_num)
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num)
 
 /-- **The possible orders of a symplectic cyclic action.** If the orbit relations hold for the
 cyclic group of order `n ≠ 0` and the exceptional root lattice of the resolved quotient has rank at
@@ -508,20 +487,13 @@ theorem IsK3CyclicOrbitData.mem_candidates {n : ℕ} {a : ℕ → ℕ} (h : IsK3
   -- orders `9`, `12` and `16`: orbit divisibility over the subgroups of orders `3`, `6` and `8`
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_three (d := 3) (k := 6) (l := 2) (by norm_num)
       (by norm_num)
-      (by rw [← sq, mathieuFunction_prime_pow Nat.prime_three two_ne_zero]; norm_num)
-      (by norm_num) hdn
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_two (d := 6) (k := 2) (l := 1) (by norm_num)
-      (by rw [show 6 = 2 * 3 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-      (by rw [show 6 * 2 = 2 ^ 2 * 3 by norm_num, mathieuFunction_mul (by norm_num),
-            mathieuFunction_prime_pow Nat.prime_two two_ne_zero]
-          norm_num)
-      (by norm_num) hdn
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
   · exact h.not_dvd_of_not_dvd_sub hn Nat.prime_two (d := 8) (k := 2) (l := 1) (by norm_num)
-      (by rw [show 8 = 2 ^ 3 by norm_num, mathieuFunction_prime_pow Nat.prime_two (by norm_num)]
-          norm_num)
-      (by rw [show 8 * 2 = 2 ^ 4 by norm_num, mathieuFunction_prime_pow Nat.prime_two (by norm_num)]
-          norm_num)
-      (by norm_num) hdn
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
+      (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors]) (by norm_num) hdn
   -- the remaining orders have nonintegral `ε`
   · exact h.not_dvd_of_mem hn hd hdn
 
@@ -529,7 +501,7 @@ theorem IsK3CyclicOrbitData.mem_candidates {n : ℕ} {a : ℕ → ℕ} (h : IsK3
 theorem IsK3CyclicOrbitData.orbitCounts_eleven {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 11 a) :
     a 11 = 2 := by
   have h11 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 11) (by norm_num) (k := 2)
-    (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h11
   simpa [Finset.filter_insert, Finset.filter_singleton] using h11
 
@@ -538,11 +510,11 @@ theorem IsK3CyclicOrbitData.orbitCounts_eleven {a : ℕ → ℕ} (h : IsK3Cyclic
 theorem IsK3CyclicOrbitData.orbitCounts_fourteen {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 14 a) :
     a 2 = 1 ∧ a 7 = 1 ∧ a 14 = 1 := by
   have h2 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 2 ∣ 14) (by norm_num) (k := 8)
-    (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   have h7 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 7 ∣ 14) (by norm_num) (k := 3)
-    (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   have h14 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 14) (by norm_num) (k := 1)
-    (by rw [show 14 = 2 * 7 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h2 h7 h14
   simp [Finset.filter_insert, Finset.filter_singleton] at h2 h7 h14
   omega
@@ -552,11 +524,11 @@ theorem IsK3CyclicOrbitData.orbitCounts_fourteen {a : ℕ → ℕ} (h : IsK3Cycl
 theorem IsK3CyclicOrbitData.orbitCounts_fifteen {a : ℕ → ℕ} (h : IsK3CyclicOrbitData 15 a) :
     a 3 = 1 ∧ a 5 = 1 ∧ a 15 = 1 := by
   have h3 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 3 ∣ 15) (by norm_num) (k := 6)
-    (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   have h5 := h.cyclicFixedPointCount_eq (by norm_num) (by norm_num : 5 ∣ 15) (by norm_num) (k := 4)
-    (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   have h15 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 15) (by norm_num) (k := 1)
-    (by rw [show 15 = 3 * 5 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
+    (by norm_num [mathieuFunction_def, ← Nat.toFinset_factors])
   simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h3 h5 h15
   simp [Finset.filter_insert, Finset.filter_singleton] at h3 h5 h15
   omega
