@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.InnerProductSpace.Frame
+import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 
 /-!
 # Rank-one projections and orthonormal bases
