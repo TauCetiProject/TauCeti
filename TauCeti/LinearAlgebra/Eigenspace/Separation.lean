@@ -39,6 +39,8 @@ and `(f - μ • 1) ^ k` kills `w`, then applying `(f - μ • 1) ^ k` stays ins
   scalars are pairwise distinct, every summand is a generalized eigenspace.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
+* `Module.End.inf_eigenspace_sup_inf_eigenspace_neg`: an invariant submodule of an involution
+  splits as the supremum of its intersections with the `μ`- and `-μ`-eigenspaces (`μ * μ = 1`).
 -/
 
 public section
@@ -97,6 +99,22 @@ theorem isCompl_eigenspace_one_neg_one (h2 : IsUnit (2 : K)) {T : Module.End K V
 end TauCeti
 
 namespace Module.End
+
+/-- An invariant submodule of an involutive endomorphism over a commutative ring in which `2` is a
+unit is the supremum of its intersections with the `μ`- and `-μ`-eigenspaces (`μ * μ = 1`). -/
+theorem inf_eigenspace_sup_inf_eigenspace_neg {T : Module.End K V} (h2 : IsUnit (2 : K))
+    (hT : Function.Involutive T) {μ : K} (hμ : μ * μ = 1) {N : Submodule K V}
+    (hN : ∀ x ∈ N, T x ∈ N) :
+    (N ⊓ T.eigenspace μ) ⊔ (N ⊓ T.eigenspace (-μ)) = N := by
+  let := h2.invertible
+  have hmem {ν : K} (hν : ν * ν = 1) {x : V} (hx : x ∈ N) :
+      (T.eigenProjOfInvolutive hT hν x : V) ∈ N := by
+    rw [coe_eigenProjOfInvolutive_apply]; exact N.smul_mem _ (N.add_mem hx (N.smul_mem _ (hN x hx)))
+  have hμ' : -μ * -μ = 1 := (neg_mul_neg μ μ).trans hμ
+  exact le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ Submodule.mem_sup.mpr
+    ⟨_, ⟨hmem hμ hx, (T.eigenProjOfInvolutive hT hμ x).2⟩,
+      _, ⟨hmem hμ' hx, (T.eigenProjOfInvolutive hT hμ' x).2⟩,
+      T.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hT hμ hμ' x⟩
 
 variable [IsDomain K] [Module.IsTorsionFree K V]
 
