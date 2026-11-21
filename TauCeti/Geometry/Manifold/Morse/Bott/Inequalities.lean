@@ -157,8 +157,7 @@ theorem finrank_singularHomology_negativeDiscSpherePair
   rw [(@asIso _ _ _ _ _ (h.isIso_singularHomologyMap_negativeDiscThomPairMap hn
     g.toRiemannianMetric r hdim hV hε (ModuleCat.of K K) n)).toLinearEquiv.finrank_eq]
   split_ifs with hrn
-  · rw [bettiNumber_def]
-    exact finrank_singularHomology_thomPair_of_subsingleton_units (Fin r → ℝ) _ (n - r) n
+  · exact finrank_singularHomology_thomPair_of_subsingleton_units (Fin r → ℝ) _ (n - r) n
       (by rw [Module.finrank_fin_fun]; omega)
   · have hz := isZero_singularHomology_thomPair (F := Fin r → ℝ)
       (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (ModuleCat.of K K)
@@ -280,20 +279,6 @@ private theorem nonempty_biproduct_iso_singularHomology_union_iUnion_image_negat
   exact ⟨@asIso _ _ _ _ _ hiso ≪≫
     TopPair.singularHomologyMapIso _ (TopPair.ofSubsetPreimageValIso (X := TopCat.of M) hXZ) n⟩
 
-/-- The relative homology of the sublevels at two values `a < c < b` is finite-dimensional when `c`
-is the only possible critical value of `f` in `[a, b]`, since `a` and `b` are then regular. -/
-private theorem finite_singularHomology_sublevelPair_of_forall [T2Space M] [CompactSpace M]
-    (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
-    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (K : Type) [Field K] (n : ℕ) :
-    Module.Finite K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
-      ModuleCat K) := by
-  have hreg {t : ℝ} (ht : t ∈ ({a, b} : Set ℝ)) : IsRegularValue I 𝓘(ℝ) f t :=
-    isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hxt⟩ ↦ by
-      have := hcrit x hx (by rcases ht with rfl | rfl <;> simp [hxt, (hac.trans hcb).le])
-      rcases ht with rfl | rfl <;> linarith
-  exact finite_singularHomology_sublevelPair_of_contMDiff (ModuleCat.of K K) hfs
-    hfs.continuous.isProperMap (hac.trans hcb).le (hreg (by simp)) (hreg (by simp)) n
-
 namespace IsMorseBottFamily
 
 variable [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
@@ -350,7 +335,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
     h.contMDiff (fun j ↦ hdim j) (fun j ↦ g j) (fun j ↦ hr j) Θ hε0 hΘf hD hdisj K n
   -- So the band homology is the direct sum of the homologies of the negative disc bundles.
   let e := e₁ ≪≫ (@asIso _ _ _ _ _ hiso).symm ≪≫ e₂.symm
-  have := finite_singularHomology_sublevelPair_of_forall h.contMDiff hac hcb hcrit K n
+  have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
+    h.contMDiff.continuous.isProperMap hac hcb hcrit n
   have := Module.Finite.equiv e.toLinearEquiv
   have := ModuleCat.finite_of_finite_biproduct (R := K) (fun j : {j // ∀ s, f (i j s) = c} ↦
     ((h.isNondegenerateCriticalSubmanifold j).negativeDiscSpherePair hn
@@ -361,9 +347,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum {a b c : ℝ} (hac : a < c)
     (h.isNondegenerateCriticalSubmanifold j).finrank_singularHomology_negativeDiscSpherePair hn
       h.contMDiff (hdim j) (g j) (hr j) hε0 K n]
   rw [← Finset.filter_filter, Finset.sum_filter]
-  refine (Finset.sum_subtype _ (fun j ↦ ?_)
+  exact (Finset.sum_subtype _ (fun j ↦ by simp)
     fun j ↦ if r j ≤ n then bettiNumber K (S j) (n - r j) else 0).symm
-  simp
 
 /-- **A cut of the values of a Morse–Bott function.** On a compact manifold the values of a
 Morse–Bott function can be cut at values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, regular from `s 1` on, with
