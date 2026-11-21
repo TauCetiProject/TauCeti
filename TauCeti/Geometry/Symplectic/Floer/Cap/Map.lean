@@ -209,6 +209,7 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
 
 /-- The map of the comparison of the identity matrix of class-indexed series is the identity:
 the stationary cylinders act as the identity on the completed capped module. -/
+@[simp]
 theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₁] [DecidableEq ι₁]
     {F₁ : (Σ i, P₁ i) → ℝ} (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
     (x : NovikovModule R F₁) :
