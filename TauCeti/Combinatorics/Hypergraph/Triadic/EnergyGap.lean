@@ -52,6 +52,12 @@ coarser skeleton is top-regular at that scheduled tolerance. A refinement
 of the pair palette alone, as produced by `Colored3Graph.exists_topRegularOverMostPolyads`, is
 one instance of the refinement hypothesis.
 
+## Main definitions
+
+* `TauCeti.topRegularFineTolerance`, `TauCeti.topRegularFineProportion`, and
+  `TauCeti.topRegularEnergyGap`: calibrated fine tolerance, exceptional proportion, and energy-gap
+  threshold for scheduled-rank regularity transfer.
+
 ## Main results
 
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_polyadMap_polyadEnergy_sub_le` and
@@ -60,9 +66,10 @@ one instance of the refinement hypothesis.
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_vertexPart_le_of_polyadEnergy_sub_le` and
   `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_vertexPart_le_of_polyadEnergy_sub_le`:
   transfer under vertex-partition refinement with pair-color edits.
-* `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_polyadEnergy_sub_le` and
-  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le`: exact-refinement
-  specializations.
+* `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_polyadEnergy_sub_le`,
+  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le`, and
+  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq`:
+  exact-refinement specializations, including the scheduled-rank calibration.
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_sum_abs_relativeDensity_sub_le` and
   `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_sum_abs_relativeDensity_sub_le`: transfer when
   fine densities match an arbitrary coarse reference target in `L¹`.
@@ -81,7 +88,9 @@ public section
 
 open Finset
 
-namespace TauCeti.Colored3Graph
+namespace TauCeti
+
+namespace Colored3Graph
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
   {H : Colored3Graph κ V} {C D : TriadicComplex3 V} {η δ : ℝ} {r : ℕ}
@@ -387,7 +396,102 @@ theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le [Fintype κ] {μ : ℝ}
   exact div_le_div_of_nonneg_right (by linarith [topRegularOverMostPolyads_iff.1 h])
     (sub_pos.2 hηδ).le
 
+end Colored3Graph
+
+/-! ### Scheduled-rank calibration -/
+
+/-- Fine top-regularity tolerance for scheduled-rank energy-gap transfer at coarse tolerance `δ`. -/
+noncomputable def topRegularFineTolerance (δ : ℝ) : ℝ :=
+  δ ^ 2 / 2
+
+/-- Unfolding lemma for `TauCeti.topRegularFineTolerance`. -/
+theorem topRegularFineTolerance_def (δ : ℝ) :
+    topRegularFineTolerance δ = δ ^ 2 / 2 :=
+  (rfl)
+
+/-- For positive `δ`, `topRegularFineTolerance δ` is positive. -/
+theorem topRegularFineTolerance_pos {δ : ℝ} (hδ : 0 < δ) :
+    0 < topRegularFineTolerance δ := by
+  rw [topRegularFineTolerance_def]
+  positivity
+
+/-- Fine exceptional-mass bound for scheduled-rank energy-gap transfer at coarse tolerance `δ` and
+exceptional proportion `ε`. -/
+noncomputable def topRegularFineProportion (δ ε : ℝ) : ℝ :=
+  ε * δ ^ 2 / 4
+
+/-- Unfolding lemma for `TauCeti.topRegularFineProportion`. -/
+theorem topRegularFineProportion_def (δ ε : ℝ) :
+    topRegularFineProportion δ ε = ε * δ ^ 2 / 4 :=
+  (rfl)
+
+/-- For positive `δ` and `ε`, `topRegularFineProportion δ ε` is positive. -/
+theorem topRegularFineProportion_pos {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
+    0 < topRegularFineProportion δ ε := by
+  rw [topRegularFineProportion_def]
+  positivity
+
+/-- Calibrated polyad energy-gap threshold for scheduled-rank regularity transfer with `q` top
+colors, coarse tolerance `δ`, and exceptional proportion `ε`. -/
+noncomputable def topRegularEnergyGap (q : ℕ) (δ ε : ℝ) : ℝ :=
+  (ε * δ ^ 2 / (4 * (q + 1))) ^ 2
+
+/-- Unfolding lemma for `TauCeti.topRegularEnergyGap`. -/
+theorem topRegularEnergyGap_def (q : ℕ) (δ ε : ℝ) :
+    topRegularEnergyGap q δ ε = (ε * δ ^ 2 / (4 * (q + 1))) ^ 2 :=
+  (rfl)
+
+/-- For positive `δ` and `ε`, `topRegularEnergyGap q δ ε` is positive. -/
+theorem topRegularEnergyGap_pos (q : ℕ) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
+    0 < topRegularEnergyGap q δ ε := by
+  rw [topRegularEnergyGap_def]
+  positivity
+
+namespace Colored3Graph
+
+variable {κ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
+  {H : Colored3Graph κ V} {C D : TriadicComplex3 V} {δ : ℝ} {r : ℕ}
+
+/-- **Scheduled-rank energy-gap regularity transfer.** Specializes
+`TopRegularOverMostPolyads.of_polyadEnergy_sub_le` to fine parameters
+`topRegularFineTolerance δ` and `topRegularFineProportion δ ε` across an energy gap at most
+`topRegularEnergyGap (Nat.card κ) δ ε`, yielding `(δ, r)`-top regularity outside an `ε`-proportion
+of the injective triples. -/
+theorem TopRegularOverMostPolyads.of_polyadEnergy_sub_le_div_sq [Fintype κ] {δ ε : ℝ}
+    (h : H.TopRegularOverMostPolyads D (topRegularFineTolerance δ)
+      (topRegularFineProportion δ ε) r)
+    (hC : C.IsPolyadDecomposition) (hD : D.IsPolyadDecomposition)
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
+    (hgap : H.polyadEnergy D.skeleton - H.polyadEnergy C.skeleton ≤
+      topRegularEnergyGap (Nat.card κ) δ ε)
+    (hδ : 0 < δ) (hε : 0 < ε) :
+    H.TopRegularOverMostPolyads C δ ε r := by
+  rw [topRegularFineTolerance_def, topRegularFineProportion_def] at h
+  rw [topRegularEnergyGap_def] at hgap
+  set q : ℝ := (Nat.card κ : ℝ)
+  set γ := ε * δ ^ 2 / (4 * (q + 1))
+  have hγ : 0 < γ := by positivity
+  have hreg := h.of_polyadEnergy_sub_le hC hD hV f hf hgap (by positivity) hδ
+    (by linarith [pow_pos hδ 2])
+  refine hreg.mono le_rfl ?_ le_rfl
+  -- The exceptional proportion is at most `(ε δ² / 4 + √(q γ²)) / (δ² / 2) ≤ ε`.
+  rw [← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
+  have hsqrt : √(q * γ ^ 2) ≤ q * γ := by
+    rw [← Real.sqrt_sq (mul_nonneg (Nat.cast_nonneg _) hγ.le)]
+    refine Real.sqrt_le_sqrt ?_
+    have hq : (Nat.card κ : ℝ) ≤ (Nat.card κ : ℝ) ^ 2 :=
+      mod_cast Nat.le_self_pow two_ne_zero (Nat.card κ)
+    nlinarith [pow_pos hγ 2]
+  have hqγ : q * γ ≤ ε * δ ^ 2 / 4 := by
+    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_pos hε (pow_pos hδ 2)]
+  linarith
+
 /-! ### Reference density targets -/
+
+variable {η : ℝ}
 
 open Classical in
 /-- **Exceptional mass from matching a coarse reference density target.** Let `C` and `D` be polyad
@@ -441,4 +545,6 @@ theorem TopRegularOverMostPolyads.of_sum_abs_relativeDensity_sub_le [Fintype κ]
   exact div_le_div_of_nonneg_right (by linarith [topRegularOverMostPolyads_iff.1 h])
     (sub_pos.2 hηδ).le
 
-end TauCeti.Colored3Graph
+end Colored3Graph
+
+end TauCeti

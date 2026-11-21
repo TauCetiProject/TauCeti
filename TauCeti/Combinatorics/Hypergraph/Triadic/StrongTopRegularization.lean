@@ -91,6 +91,18 @@ theorem topRegularRefinementBound_le_strongTopRegularityStep {t m M n : ℕ} (η
     (le_sup (f := fun n ↦ topRegularRefinementBound t (r n) (η n) (μ n) M)
       (mem_range.2 (Nat.lt_succ_of_le hn)))
 
+/-- `strongTopRegularityStep` is monotone in both the number of vertex cells and the number of
+pair colors. -/
+theorem strongTopRegularityStep_mono {t₁ t₂ m₁ m₂ : ℕ} (η μ : ℕ → ℝ) (r : ℕ → ℕ)
+    (ht : t₁ ≤ t₂) (hm : m₁ ≤ m₂) :
+    strongTopRegularityStep t₁ η μ r m₁ ≤ strongTopRegularityStep t₂ η μ r m₂ := by
+  rw [strongTopRegularityStep_def]
+  refine Finset.sup_le fun n hn ↦ ?_
+  have hn' : n ≤ t₂ + m₂ + t₂ ^ 3 * m₂ ^ 3 :=
+    (Nat.lt_succ_iff.1 (mem_range.1 hn)).trans (by gcongr)
+  exact (topRegularRefinementBound_mono_parts _ _ _ _ ht).trans
+    (topRegularRefinementBound_le_strongTopRegularityStep η μ r hm hn')
+
 /-- `strongTopRegularityStep` never lowers the number of pair colors. -/
 theorem le_strongTopRegularityStep (t : ℕ) (η μ : ℕ → ℝ) (r : ℕ → ℕ) (m : ℕ) :
     m ≤ strongTopRegularityStep t η μ r m :=
@@ -225,36 +237,21 @@ theorem exists_topRegularOverMostPolyads_scheduledRank [Finite κ] [Fintype κ�
     (S : PairSkeleton3 κ₂ V) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) (r : ℕ → ℕ) :
     ∃ (C : TriadicComplex3 V) (π : Fin C.pairColorCount → κ₂),
       C.pairColorCount ≤ strongTopRegularityBound #S.vertexPart.parts
-        ((ε * δ ^ 2 / (4 * (Nat.card κ + 1))) ^ 2) (fun _ ↦ δ ^ 2 / 2) (fun _ ↦ ε * δ ^ 2 / 4) r
+        (topRegularEnergyGap (Nat.card κ) δ ε)
+        (fun _ ↦ topRegularFineTolerance δ) (fun _ ↦ topRegularFineProportion δ ε) r
         (Fintype.card κ₂) ∧
       C.skeleton.vertexPart = S.vertexPart ∧
       (∀ p, π (C.skeleton.pairColors.color p) = S.pairColors.color p) ∧
       (∀ c, π (C.skeleton.pairColors.rev c) = S.pairColors.rev (π c)) ∧
       C.polyads = univ ∧ H.TopRegularOverMostPolyads C δ ε (r C.complexity) := by
   have := Fintype.ofFinite κ
-  set q : ℝ := (Nat.card κ : ℝ)
-  set γ := ε * δ ^ 2 / (4 * (q + 1))
-  have hγ : 0 < γ := by positivity
   obtain ⟨C, D, π, f, hCcard, -, hCV, hDV, hπ, hrev, hf, -, hCpol, hDpol, hDreg, hgap⟩ :=
-    H.exists_strong_topRegularOverMostPolyads S (pow_pos hγ 2) (η := fun _ ↦ δ ^ 2 / 2)
-      (μ := fun _ ↦ ε * δ ^ 2 / 4) (fun _ ↦ by positivity) (fun _ ↦ by positivity) r
-  refine ⟨C, π, hCcard, hCV, hπ, hrev, hCpol, ?_⟩
-  have hreg := hDreg.of_polyadEnergy_sub_le (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
-    (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
-    (fun p ↦ (hf p).symm) hgap (by positivity) hδ (by linarith [pow_pos hδ 2])
-  refine hreg.mono le_rfl ?_ le_rfl
-  -- The exceptional proportion is at most `(ε δ² / 4 + √(q γ²)) / (δ² / 2) ≤ ε`.
-  rw [← Nat.card_eq_fintype_card, div_le_iff₀ (by nlinarith [pow_pos hδ 2])]
-  have hsqrt : √(q * γ ^ 2) ≤ q * γ := by
-    rw [← Real.sqrt_sq (mul_nonneg (Nat.cast_nonneg _) hγ.le)]
-    refine Real.sqrt_le_sqrt ?_
-    have hq : (Nat.card κ : ℝ) ≤ (Nat.card κ : ℝ) ^ 2 :=
-      mod_cast Nat.le_self_pow two_ne_zero (Nat.card κ)
-    nlinarith [pow_pos hγ 2]
-  have hqγ : q * γ ≤ ε * δ ^ 2 / 4 := by
-    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_pos hε (pow_pos hδ 2)]
-  linarith
+    H.exists_strong_topRegularOverMostPolyads S (topRegularEnergyGap_pos (Nat.card κ) hδ hε)
+      (fun _ ↦ topRegularFineTolerance_pos hδ) (fun _ ↦ topRegularFineProportion_pos hδ hε) r
+  exact ⟨C, π, hCcard, hCV, hπ, hrev, hCpol,
+    hDreg.of_polyadEnergy_sub_le_div_sq (C.isPolyadDecomposition_of_polyads_eq_univ hCpol)
+      (D.isPolyadDecomposition_of_polyads_eq_univ hDpol) (hDV.trans hCV.symm).le f
+      (fun p ↦ (hf p).symm) hgap hδ hε⟩
 
 end Colored3Graph
 
