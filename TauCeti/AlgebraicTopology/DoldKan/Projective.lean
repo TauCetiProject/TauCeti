@@ -86,14 +86,9 @@ instance Γ.projective_obj (K : ChainComplex C ℕ) [∀ n, Projective (K.X n)]
   inferInstanceAs (Projective ((Γ₀.obj K).obj Δ))
 
 instance N.projective_X (X : SimplicialObject C) [∀ n, Projective (X _⦋n⦌)] (n : ℕ) :
-    Projective ((N.obj X).X n) := by
-  let r : Retract ((N.obj X).X n) (X _⦋n⦌) :=
-    { i := (inclusionN.app X).f n
-      r := (PInftyToN.app X).f n
-      retract := by
-        rw [← HomologicalComplex.comp_f, inclusionN_app_comp_PInftyToN_app,
-          HomologicalComplex.id_f] }
-  exact r.projective
+    Projective ((N.obj X).X n) :=
+  (((retractN (C := C)).map ((evaluation _ _).obj X)).map
+    (HomologicalComplex.eval _ _ n)).projective (p := inferInstanceAs (Projective (X _⦋n⦌)))
 
 end Projective
 
@@ -232,21 +227,8 @@ theorem quasiIso_N_whiskering_of_projective
     (f : X ⟶ Y) [QuasiIso ((alternatingFaceMapComplex C).map f)] :
     QuasiIso (Idempotents.DoldKan.N.map (((whiskering C D).obj F).map f)) := by
   obtain ⟨e, he⟩ := exists_homotopyEquiv_whiskering_map_of_projective F f
-  let hEquiv : _root_.HomotopyEquiv
-      (Idempotents.DoldKan.N.obj (((whiskering C D).obj F).obj X))
-      (Idempotents.DoldKan.N.obj (((whiskering C D).obj F).obj Y)) :=
-    { hom := Idempotents.DoldKan.N.map e.hom
-      inv := Idempotents.DoldKan.N.map e.inv
-      homotopyHomInvId :=
-        (_root_.Homotopy.ofEq (Idempotents.DoldKan.N.map_comp e.hom e.inv).symm).trans
-          (e.homotopyHomInvId.toNHomotopy.trans
-            (_root_.Homotopy.ofEq (Idempotents.DoldKan.N.map_id _)))
-      homotopyInvHomId :=
-        (_root_.Homotopy.ofEq (Idempotents.DoldKan.N.map_comp e.inv e.hom).symm).trans
-          (e.homotopyInvHomId.toNHomotopy.trans
-            (_root_.Homotopy.ofEq (Idempotents.DoldKan.N.map_id _))) }
-  rw [← he]
-  exact homotopyEquivalences_le_quasiIso D (.down ℕ) _ hEquiv.homotopyEquivalences_hom
+  rw [← he, ← e.toNHomotopyEquiv_hom]
+  exact e.toNHomotopyEquiv.quasiIso_hom
 
 /-- **Full-subcategory version of `quasiIso_whiskering_of_projective`**: if `ι : C₀ ⥤ C` is a fully
 faithful functor into an abelian category `C` (for example `P.ι : P.FullSubcategory ⥤ C` for

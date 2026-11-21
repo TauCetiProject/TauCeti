@@ -21,23 +21,23 @@ In an idempotent-complete preadditive category `C` with finite coproducts, the D
 complexes or normalized chain complexes (Dold–Puppe, Satz 3.31).
 
 While `SimplicialObject.Homotopy.toChainHomotopy` holds in any preadditive category, the converse
-constructs an explicit chain map `cylinderChainMap H : K[(cylinder C).obj X] ⟶ K[Y]` restricting
-along `cylinderι₀` and `cylinderι₁` to `K.map f` and `K.map g`, restricts it to
-`Idempotents.DoldKan.N`, pulls it back along the full faithfulness of `N` to a simplicial morphism
-`(cylinder C).obj X ⟶ Y`, and applies `Homotopy.ofCylinderHom`.
+constructs an internal chain map `K[(cylinder C).obj X] ⟶ K[Y]` restricting along `cylinderι₀` and
+`cylinderι₁` to `K.map f` and `K.map g`, restricts it to `Idempotents.DoldKan.N`, pulls it back
+along the full faithfulness of `N` to a simplicial morphism `(cylinder C).obj X ⟶ Y`, and applies
+`Homotopy.ofCylinderHom`.
 
 ## Main definitions and results
 
 * `Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy equivalence
   `N.obj X ≃ K[X]` in any pseudoabelian category with finite coproducts.
-* `SimplicialObject.cylinderChainMap`: explicit chain map `K[(cylinder C).obj X] ⟶ K[Y]`.
 * `SimplicialObject.Homotopy.ofAlternatingFaceMapComplexHomotopy`, `ofNHomotopy`,
   `ofNormalizedMooreComplexHomotopy`: lifting chain homotopies to simplicial homotopies.
 * `SimplicialObject.nonempty_homotopy_iff_alternatingFaceMapComplex`, `nonempty_homotopy_iff_N`,
   `nonempty_homotopy_iff_normalizedMooreComplex`: Dold–Puppe, Satz 3.31.
-* `SimplicialObject.HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv`,
-  `SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`: lifting chain homotopy
-  equivalences to simplicial homotopy equivalences.
+* `SimplicialObject.HomotopyEquiv.toNHomotopyEquiv`,
+  `SimplicialObject.HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv`,
+  `SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`: normalized-chain
+  counterpart and lifting chain homotopy equivalences to simplicial homotopy equivalences.
 * `Idempotents.DoldKan.Γ.mapHomotopy`, `Idempotents.DoldKan.Γ.mapHomotopyEquiv`: the inverse
   Dold–Kan functor `Γ` preserves homotopies and homotopy equivalences.
 
@@ -109,6 +109,34 @@ private def cylinderChainMapTerm {X Y : SimplicialObject C} {f g : X ⟶ Y}
       else if α.toOrderHom 1 = 0 then f.app (op ⦋m + 1⦌)
       else f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m
 
+private lemma δ_toOrderHom_apply {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
+    (SimplexCategory.δ i).toOrderHom j = i.succAbove j :=
+  SimplexCategory.δ_apply i j
+
+private lemma δ_zero_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 1⦌ ⟶ ⦋1⦌) :
+    (SimplexCategory.δ (0 : Fin (n + 2)) ≫ α).toOrderHom 0 = α.toOrderHom 1 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
+private lemma δ_zero_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) :
+    (SimplexCategory.δ (0 : Fin (n + 3)) ≫ α).toOrderHom 1 = α.toOrderHom 2 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
+private lemma δ_one_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 1⦌ ⟶ ⦋1⦌) :
+    (SimplexCategory.δ (1 : Fin (n + 2)) ≫ α).toOrderHom 0 = α.toOrderHom 0 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
+private lemma δ_one_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) :
+    (SimplexCategory.δ (1 : Fin (n + 3)) ≫ α).toOrderHom 1 = α.toOrderHom 2 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
+private lemma δ_succ_succ_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) (k : Fin (n + 1)) :
+    (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 0 = α.toOrderHom 0 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
+private lemma δ_succ_succ_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) (k : Fin (n + 1)) :
+    (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 1 = α.toOrderHom 1 := by
+  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+
 private lemma cylinderChainMapTerm_comm_zero {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g))
@@ -121,9 +149,9 @@ private lemma cylinderChainMapTerm_comm_zero {X Y : SimplicialObject C} {f g : X
   have hH := H.comm 0
   rw [Homotopy.dNext_zero_chainComplex, Homotopy.prevD_chainComplex, zero_add] at hH
   simp only [alternatingFaceMapComplex_map_f, alternatingFaceMapComplex_obj_d] at hf hg hH
-  have hδ0 : (SimplexCategory.δ 0 ≫ α).toOrderHom 0 = α.toOrderHom 1 := rfl
-  have hδ1 : (SimplexCategory.δ 1 ≫ α).toOrderHom 0 = α.toOrderHom 0 := rfl
-  rw [Fin.sum_univ_two, cylinderChainMapTerm, cylinderChainMapTerm, cylinderChainMapTerm, hδ0, hδ1]
+  rw [Fin.sum_univ_two, cylinderChainMapTerm, cylinderChainMapTerm, cylinderChainMapTerm]
+  simp only [Fin.coe_ofNat_eq_mod, Nat.zero_mod, pow_zero, one_smul, Nat.mod_succ, pow_one,
+    neg_one_smul, δ_zero_comp_toOrderHom_zero, δ_one_comp_toOrderHom_zero]
   rcases eq_or_ne (α.toOrderHom 0) 0 with h0 | h0
   · rcases eq_or_ne (α.toOrderHom 1) 0 with h1 | h1
     · simp only [h0, h1, zero_ne_one, ↓reduceIte, hf]
@@ -151,14 +179,7 @@ private lemma cylinderChainMapTerm_δ_succ_succ {X Y : SimplicialObject C} {f g 
       if α.toOrderHom 0 = 1 then g.app (op ⦋m + 1⦌)
       else if α.toOrderHom 1 = 0 then f.app (op ⦋m + 1⦌)
       else f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m := by
-  have hk0 : (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 0 = α.toOrderHom 0 := rfl
-  have hk1 : (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 1 = α.toOrderHom 1 := by
-    simp only [SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
-      SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply]
-    rw [Fin.succAbove_of_castSucc_lt k.succ.succ (1 : Fin (m + 2)) (Fin.one_lt_succ_succ k)]
-    rfl
-  rw [cylinderChainMapTerm, hk0, hk1]
+  rw [cylinderChainMapTerm, δ_succ_succ_comp_toOrderHom_zero, δ_succ_succ_comp_toOrderHom_one]
 
 private lemma cylinderChainMapTerm_comm_succ_jump {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
@@ -168,9 +189,11 @@ private lemma cylinderChainMapTerm_comm_succ_jump {X Y : SimplicialObject C} {f 
     cylinderChainMapTerm H (m + 2) α ≫ AlternatingFaceMapComplex.objD Y (m + 1) =
       ∑ i : Fin (m + 3), (-1 : ℤ) ^ (i : ℕ) •
         (X.δ i ≫ cylinderChainMapTerm H (m + 1) (SimplexCategory.δ i ≫ α)) := by
-  have h2 : α.toOrderHom ((1 : Fin (m + 2)).succ) = 1 :=
-    le_antisymm (Fin.le_last _) (le_trans h1.symm.le (α.toOrderHom.monotone
-      (by rw [← Fin.succ_zero_eq_one, Fin.succ_le_succ_iff]; exact Fin.zero_le 1)))
+  have h2 : α.toOrderHom 2 = 1 :=
+    le_antisymm (Fin.le_last _) (le_trans h1.symm.le
+      (α.toOrderHom.monotone (by
+        rw [← Fin.succ_zero_eq_one, ← Fin.succ_one_eq_two, Fin.succ_le_succ_iff]
+        exact Fin.zero_le 1)))
   have hf := ((alternatingFaceMapComplex C).map f).comm (m + 1 + 1) (m + 1)
   have hH := H.comm (m + 1)
   rw [Homotopy.dNext_succ_chainComplex, Homotopy.prevD_chainComplex] at hH
@@ -182,17 +205,14 @@ private lemma cylinderChainMapTerm_comm_succ_jump {X Y : SimplicialObject C} {f 
       homotopyHom H (m + 1) ≫ AlternatingFaceMapComplex.objD Y (m + 1) +
       g.app (op ⦋m + 1⦌) at hH
   have ht0 : cylinderChainMapTerm H (m + 1) (SimplexCategory.δ 0 ≫ α) = g.app (op ⦋m + 1⦌) := by
-    have hd0 : (SimplexCategory.δ (0 : Fin (m + 3)) ≫ α).toOrderHom 0 = α.toOrderHom 1 := rfl
-    rw [cylinderChainMapTerm, hd0, h1]; simp
+    rw [cylinderChainMapTerm, δ_zero_comp_toOrderHom_zero, h1]; simp
   have ht_succ : ∀ j : Fin (m + 2),
       cylinderChainMapTerm H (m + 1) (SimplexCategory.δ j.succ ≫ α) =
         f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m :=
     Fin.cases (by
-        have hd10 : (SimplexCategory.δ (0 : Fin (m + 2)).succ ≫ α).toOrderHom 0 =
-            α.toOrderHom 0 := rfl
-        have hd11 : (SimplexCategory.δ (0 : Fin (m + 2)).succ ≫ α).toOrderHom 1 =
-            α.toOrderHom ((1 : Fin (m + 2)).succ) := rfl
-        rw [cylinderChainMapTerm, hd10, hd11, h0, h2]; simp)
+        rw [Fin.succ_zero_eq_one, cylinderChainMapTerm, δ_one_comp_toOrderHom_zero,
+          δ_one_comp_toOrderHom_one, h0, h2]
+        simp)
       (fun k ↦ by rw [cylinderChainMapTerm_δ_succ_succ, h0, h1]; simp)
   have hLHS : cylinderChainMapTerm H (m + 2) α =
       f.app (op ⦋m + 1 + 1⦌) - X.δ 0 ≫ homotopyHom H (m + 1) := by
@@ -233,19 +253,19 @@ private lemma cylinderChainMapTerm_comm_succ {X Y : SimplicialObject C} {f g : X
   have hf := ((alternatingFaceMapComplex C).map f).comm (m + 1 + 1) (m + 1)
   have hg := ((alternatingFaceMapComplex C).map g).comm (m + 1 + 1) (m + 1)
   simp only [alternatingFaceMapComplex_map_f, alternatingFaceMapComplex_obj_d] at hf hg
-  have hd00 : (SimplexCategory.δ (0 : Fin (m + 3)) ≫ α).toOrderHom 0 = α.toOrderHom 1 := rfl
-  have hd01 : (SimplexCategory.δ (0 : Fin (m + 3)) ≫ α).toOrderHom 1 =
-      α.toOrderHom ((1 : Fin (m + 2)).succ) := rfl
-  have hd10 : (SimplexCategory.δ (0 : Fin (m + 2)).succ ≫ α).toOrderHom 0 = α.toOrderHom 0 := rfl
-  have hd11 : (SimplexCategory.δ (0 : Fin (m + 2)).succ ≫ α).toOrderHom 1 =
-      α.toOrderHom ((1 : Fin (m + 2)).succ) := rfl
   rcases eq_or_ne (α.toOrderHom 0) 0 with h0 | h0
   · rcases eq_or_ne (α.toOrderHom 1) 0 with h1 | h1
-    · rcases eq_or_ne (α.toOrderHom ((1 : Fin (m + 2)).succ)) 0 with h2 | h2
+    · rcases eq_or_ne (α.toOrderHom 2) 0 with h2 | h2
       · have ht : ∀ i : Fin (m + 3),
             cylinderChainMapTerm H (m + 1) (SimplexCategory.δ i ≫ α) = f.app (op ⦋m + 1⦌) :=
-          Fin.cases (by rw [cylinderChainMapTerm, hd00, hd01, h1, h2]; simp)
-            (Fin.cases (by rw [cylinderChainMapTerm, hd10, hd11, h0, h2]; simp)
+          Fin.cases (by
+              rw [cylinderChainMapTerm, δ_zero_comp_toOrderHom_zero, δ_zero_comp_toOrderHom_one,
+                h1, h2]
+              simp)
+            (Fin.cases (by
+                rw [Fin.succ_zero_eq_one, cylinderChainMapTerm, δ_one_comp_toOrderHom_zero,
+                  δ_one_comp_toOrderHom_one, h0, h2]
+                simp)
               (fun k ↦ by rw [cylinderChainMapTerm_δ_succ_succ, h0, h1]; simp))
         have hLHS : cylinderChainMapTerm H (m + 2) α = f.app (op ⦋m + 1 + 1⦌) := by
           rw [cylinderChainMapTerm, h0, h1]; simp
@@ -256,10 +276,14 @@ private lemma cylinderChainMapTerm_comm_succ {X Y : SimplicialObject C} {f g : X
         -- cancel via `X.δ (0 : Fin (m + 2)).succ ≫ X.δ 0 = X.δ 0 ≫ X.δ 0`.
         have ht0 : cylinderChainMapTerm H (m + 1) (SimplexCategory.δ 0 ≫ α) =
             f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m := by
-          rw [cylinderChainMapTerm, hd00, hd01, h1, h2]; simp
+          rw [cylinderChainMapTerm, δ_zero_comp_toOrderHom_zero, δ_zero_comp_toOrderHom_one,
+            h1, h2]
+          simp
         have ht1 : cylinderChainMapTerm H (m + 1) (SimplexCategory.δ (0 : Fin (m + 2)).succ ≫ α) =
             f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m := by
-          rw [cylinderChainMapTerm, hd10, hd11, h0, h2]; simp
+          rw [Fin.succ_zero_eq_one, cylinderChainMapTerm, δ_one_comp_toOrderHom_zero,
+            δ_one_comp_toOrderHom_one, h0, h2]
+          simp
         have ht2 : ∀ k : Fin (m + 1),
             cylinderChainMapTerm H (m + 1) (SimplexCategory.δ k.succ.succ ≫ α) =
               f.app (op ⦋m + 1⦌) := fun k ↦ by rw [cylinderChainMapTerm_δ_succ_succ, h0, h1]; simp
@@ -293,7 +317,7 @@ variable [HasFiniteCoproducts C]
 /-- Explicit chain map `K[(cylinder C).obj X] ⟶ K[Y]` associated to a chain homotopy
 `H : Homotopy ((alternatingFaceMapComplex C).map f) ((alternatingFaceMapComplex C).map g)`. Its
 restrictions along `cylinderι₀` and `cylinderι₁` recover `K.map f` and `K.map g`. -/
-def cylinderChainMap {X Y : SimplicialObject C} {f g : X ⟶ Y}
+private def cylinderChainMap {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
     (alternatingFaceMapComplex C).obj ((cylinder C).obj X) ⟶
@@ -309,8 +333,8 @@ def cylinderChainMap {X Y : SimplicialObject C} {f g : X ⟶ Y}
       | zero => exact cylinderChainMapTerm_comm_zero H α
       | succ m => exact cylinderChainMapTerm_comm_succ H m α)
 
-@[reassoc (attr := simp)]
-lemma alternatingFaceMapComplex_map_cylinderι₀_comp_cylinderChainMap
+@[reassoc]
+private lemma alternatingFaceMapComplex_map_cylinderι₀_comp_cylinderChainMap
     {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
@@ -319,8 +343,8 @@ lemma alternatingFaceMapComplex_map_cylinderι₀_comp_cylinderChainMap
   ext (_ | m) <;>
     simp [cylinderChainMap, cylinderChainMapTerm, SimplexCategory.const_apply]
 
-@[reassoc (attr := simp)]
-lemma alternatingFaceMapComplex_map_cylinderι₁_comp_cylinderChainMap
+@[reassoc]
+private lemma alternatingFaceMapComplex_map_cylinderι₁_comp_cylinderChainMap
     {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
@@ -403,6 +427,29 @@ theorem nonempty_homotopy_iff_N {X Y : SimplicialObject C} (f g : X ⟶ Y) :
   ⟨fun ⟨h⟩ ↦ ⟨h.toNHomotopy⟩, fun ⟨H⟩ ↦ ⟨Homotopy.ofNHomotopy H⟩⟩
 
 namespace HomotopyEquiv
+
+/-- A combinatorial simplicial homotopy equivalence induces a chain homotopy equivalence on
+pseudoabelian normalized chain complexes `Idempotents.DoldKan.N`. -/
+def toNHomotopyEquiv {X Y : SimplicialObject C} (e : HomotopyEquiv X Y) :
+    _root_.HomotopyEquiv (N.obj X) (N.obj Y) where
+  hom := N.map e.hom
+  inv := N.map e.inv
+  homotopyHomInvId :=
+    (_root_.Homotopy.ofEq (N.map_comp e.hom e.inv).symm).trans <|
+      e.homotopyHomInvId.toNHomotopy.trans <|
+        _root_.Homotopy.ofEq (N.map_id X)
+  homotopyInvHomId :=
+    (_root_.Homotopy.ofEq (N.map_comp e.inv e.hom).symm).trans <|
+      e.homotopyInvHomId.toNHomotopy.trans <|
+        _root_.Homotopy.ofEq (N.map_id Y)
+
+@[simp]
+lemma toNHomotopyEquiv_hom {X Y : SimplicialObject C} (e : HomotopyEquiv X Y) :
+    e.toNHomotopyEquiv.hom = N.map e.hom := (rfl)
+
+@[simp]
+lemma toNHomotopyEquiv_inv {X Y : SimplicialObject C} (e : HomotopyEquiv X Y) :
+    e.toNHomotopyEquiv.inv = N.map e.inv := (rfl)
 
 /-- A chain homotopy equivalence `e` between `K[X]` and `K[Y]` whose forward morphism is `K.map f`
 lifts to a simplicial homotopy equivalence `HomotopyEquiv X Y` with forward morphism `f`. -/

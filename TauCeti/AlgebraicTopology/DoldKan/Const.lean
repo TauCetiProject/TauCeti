@@ -18,8 +18,8 @@ pseudoabelian Dold–Kan correspondence identifies constant simplicial objects
 
 * `isZero_N_const_obj_X_succ`: in positive degrees, the normalized chains of a constant simplicial
   object vanish.
-* `N.constIso`: `N.obj ((SimplicialObject.const C).obj X) ≅ (ChainComplex.single₀ C).obj X`.
-* `Γ.single₀Iso`: `Γ.obj ((ChainComplex.single₀ C).obj X) ≅ (SimplicialObject.const C).obj X`.
+* `N.constIso`: `SimplicialObject.const C ⋙ N ≅ ChainComplex.single₀ C`.
+* `Γ.single₀Iso`: `ChainComplex.single₀ C ⋙ Γ ≅ SimplicialObject.const C`.
 
 ## References
 
@@ -53,9 +53,7 @@ lemma isZero_N_const_obj_X_succ (X : C) (m : ℕ) :
     HomologicalComplex.comp_f, ← inclusionN_app_comp_PInfty ((SimplicialObject.const C).obj X),
     HomologicalComplex.comp_f, hP, comp_zero, zero_comp]
 
-/-- The normalized chain complex `N.obj ((SimplicialObject.const C).obj X)` of a constant simplicial
-object is canonically isomorphic to `(ChainComplex.single₀ C).obj X`. -/
-def N.constIso (X : C) :
+private def N.constIsoApp (X : C) :
     N.obj ((SimplicialObject.const C).obj X) ≅ (ChainComplex.single₀ C).obj X :=
   HomologicalComplex.Hom.isoOfComponents
     (fun
@@ -76,23 +74,47 @@ def N.constIso (X : C) :
       obtain rfl := hij.symm
       exact (isZero_N_const_obj_X_succ X j).eq_of_src _ _)
 
-/-- In degree `0`, the forward map of `N.constIso X` is the inclusion of normalized chains. -/
-@[simp]
-lemma N.constIso_hom_f_zero (X : C) :
-    (N.constIso X).hom.f 0 = (inclusionN.app ((SimplicialObject.const C).obj X)).f 0 := by
-  simp [N.constIso]
+/-- The normalized chain complex functor `N` sends constant simplicial objects to degree-zero
+complexes, naturally in the object `X : C`. -/
+def N.constIso : SimplicialObject.const C ⋙ N ≅ ChainComplex.single₀ C :=
+  NatIso.ofComponents N.constIsoApp fun {X Y} f ↦ by
+    ext
+    simp only [Functor.comp_map, HomologicalComplex.comp_f, ChainComplex.single₀_map_f_zero,
+      N.constIsoApp, HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.trans_hom,
+      ChainComplex.single₀ObjXSelf]
+    have hnat := congrArg (fun φ : N.obj ((SimplicialObject.const C).obj X) ⟶
+        (AlgebraicTopology.alternatingFaceMapComplex C).obj ((SimplicialObject.const C).obj Y) ↦
+          φ.f 0)
+      (inclusionN.naturality ((SimplicialObject.const C).map f))
+    simp only [HomologicalComplex.comp_f,
+      AlgebraicTopology.alternatingFaceMapComplex_map_f] at hnat
+    simpa using hnat
 
-/-- In degree `0`, the inverse map of `N.constIso X` is the projection onto normalized chains. -/
+/-- In degree `0`, the forward map of `N.constIso` at `X` is the inclusion of normalized chains. -/
 @[simp]
-lemma N.constIso_inv_f_zero (X : C) :
-    (N.constIso X).inv.f 0 = (PInftyToN.app ((SimplicialObject.const C).obj X)).f 0 := by
-  simp [N.constIso]
+lemma N.constIso_hom_app_f_zero (X : C) :
+    (N.constIso.hom.app X).f 0 = (inclusionN.app ((SimplicialObject.const C).obj X)).f 0 := by
+  simp [N.constIso, N.constIsoApp]
 
-/-- Under the inverse Dold–Kan functor `Γ`, the chain complex `(ChainComplex.single₀ C).obj X`
-concentrated in degree `0` corresponds to the constant simplicial object
+/-- In degree `0`, the inverse map of `N.constIso` at `X` is the projection onto normalized
+chains. -/
+@[simp]
+lemma N.constIso_inv_app_f_zero (X : C) :
+    (N.constIso.inv.app X).f 0 = (PInftyToN.app ((SimplicialObject.const C).obj X)).f 0 := by
+  simp [N.constIso, N.constIsoApp]
+
+/-- Under the inverse Dold–Kan functor `Γ`, degree-zero chain complexes
+`(ChainComplex.single₀ C).obj X` correspond naturally to constant simplicial objects
 `(SimplicialObject.const C).obj X`. -/
-def Γ.single₀Iso (X : C) :
-    Γ.obj ((ChainComplex.single₀ C).obj X) ≅ (SimplicialObject.const C).obj X :=
-  Γ.mapIso (N.constIso X).symm ≪≫ (ε (C := C)).symm.app ((SimplicialObject.const C).obj X)
+def Γ.single₀Iso : ChainComplex.single₀ C ⋙ Γ ≅ SimplicialObject.const C :=
+  NatIso.ofComponents
+    (fun X ↦ Γ.mapIso (N.constIso.symm.app X) ≪≫
+      (ε (C := C)).symm.app ((SimplicialObject.const C).obj X))
+    (fun {X Y} f ↦ by
+      dsimp
+      rw [← Category.assoc, ← Γ.map_comp, N.constIso.inv.naturality f, Γ.map_comp, Category.assoc]
+      simpa [Category.assoc] using
+        whisker_eq (Γ.map (N.constIso.inv.app X))
+          ((ε (C := C)).inv.naturality ((SimplicialObject.const C).map f)))
 
 end CategoryTheory.Idempotents.DoldKan
