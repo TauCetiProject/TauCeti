@@ -29,7 +29,9 @@ A kernel `G x y` on a bounded set `s` that is dominated by a translation kernel,
 `(x, y) ↦ G x y * g y` is integrable on `s × s`
 (`MeasureTheory.LocallyIntegrable.integrable_uncurry_mul_of_abs_le`). Green kernels of bounded
 domains are dominated in this way by the fundamental solution, which is locally integrable but not
-integrable.
+integrable. For a symmetric kernel `G`, Fubini's theorem moves `G` from a bounded weight `ψ`
+supported in `s` onto `f`: `∫_s f(x) ∫ G(x, y) ψ(y) dy dx = ∫_s ψ(y) ∫_s G(y, x) f(x) dx dy`
+(`MeasureTheory.Integrable.setIntegral_mul_integral_mul_comm`).
 -/
 
 public section
@@ -323,5 +325,42 @@ theorem integrable_uncurry_mul_of_abs_le {K : E → ℝ} (hK : LocallyIntegrable
         exact ENNReal.mul_lt_top hM hg.2
 
 end LocallyIntegrable
+
+/-! ### Symmetric kernels -/
+
+namespace Integrable
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ]
+
+/-- **Fubini's theorem for a symmetric kernel.** Let `G` be symmetric and let
+`(x, y) ↦ G x y * f y` be integrable on `s × s`. For a bounded measurable `ψ` supported in `s`,
+`∫_s f(x) ∫ G(x, y) ψ(y) dy dx = ∫_s ψ(y) ∫_s G(y, x) f(x) dx dy`. -/
+theorem setIntegral_mul_integral_mul_comm {s : Set α} {G : α → α → ℝ} {f ψ : α → ℝ}
+    (hGf : Integrable (Function.uncurry fun x y ↦ G x y * f y)
+      ((μ.restrict s).prod (μ.restrict s)))
+    (hs : MeasurableSet s) (hG : ∀ x y, G x y = G y x) (hψ : AEStronglyMeasurable ψ (μ.restrict s))
+    {C : ℝ} (hC : ∀ x, ‖ψ x‖ ≤ C) (hψs : Function.support ψ ⊆ s) :
+    ∫ x in s, f x * ∫ y, G x y * ψ y ∂μ ∂μ = ∫ y in s, ψ y * ∫ x in s, G y x * f x ∂μ ∂μ := by
+  have hψ0 := Function.support_subset_iff'.1 hψs
+  have hprod : Integrable (Function.uncurry fun x y ↦ f x * (G x y * ψ y))
+      ((μ.restrict s).prod (μ.restrict s)) := by
+    refine (hGf.swap.mul_bdd (c := C) hψ.comp_snd (Eventually.of_forall fun p ↦ hC p.2)).congr
+      (Eventually.of_forall fun ⟨x, y⟩ ↦ ?_)
+    simp only [Function.comp_apply, Prod.swap_prod_mk, Function.uncurry_apply_pair, hG x y]
+    ring
+  calc ∫ x in s, f x * ∫ y, G x y * ψ y ∂μ ∂μ
+      = ∫ x in s, ∫ y in s, f x * (G x y * ψ y) ∂μ ∂μ := by
+        refine setIntegral_congr_fun hs fun x _ ↦ ?_
+        rw [integral_const_mul, setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+          rw [hψ0 y hy, mul_zero]]
+    _ = ∫ y in s, ∫ x in s, f x * (G x y * ψ y) ∂μ ∂μ := integral_integral_swap hprod
+    _ = _ := by
+        refine setIntegral_congr_fun hs fun y _ ↦ ?_
+        rw [← integral_const_mul]
+        refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+        simp only [hG x y]
+        ring
+
+end Integrable
 
 end MeasureTheory

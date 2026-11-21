@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.MeasureTheory.Integral.Kernel.Potential
 
 /-!
 # Green kernels of the Dirichlet Laplacian by duality
@@ -54,40 +55,6 @@ open MeasureTheory Metric Set Filter TopologicalSpace
 open scoped ContDiff
 
 variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-
-/-- **Fubini's theorem for a symmetric kernel.** If `G` is symmetric, `(x, y) ↦ G(x, y) f(y)` is
-integrable on `Ω × Ω` and `ψ` is continuous with compact support in `Ω`, then
-`∫_Ω f(x) ∫ G(x, y) ψ(y) dy dx = ∫_Ω ψ(y) ∫_Ω G(y, x) f(x) dx dy`. -/
-private theorem setIntegral_mul_integral_mul_comm {G : EuclideanSpace ℝ (Fin (n + 1)) →
-    EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hG : ∀ x y, G x y = G y x)
-    {f ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    (hGf : Integrable (Function.uncurry fun x y => G x y * f y)
-      ((volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))).prod
-        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))))
-    (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
-    (hψsupp : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
-    ∫ x in Omega, f x * ∫ y, G x y * ψ y = ∫ y in Omega, ψ y * ∫ x in Omega, G y x * f x := by
-  obtain ⟨C, hC⟩ := hψ.bounded_above_of_compact_support hψc
-  have hψ0 := Function.support_subset_iff'.1 ((subset_tsupport ψ).trans hψsupp)
-  have hprod : Integrable (Function.uncurry fun x y => f x * (G x y * ψ y))
-      ((volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))).prod
-        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) := by
-    refine (hGf.swap.mul_bdd (c := C) hψ.aestronglyMeasurable.comp_snd
-      (Eventually.of_forall fun p => hC p.2)).congr (Eventually.of_forall fun ⟨x, y⟩ => ?_)
-    simp only [Function.comp_apply, Prod.swap_prod_mk, Function.uncurry_apply_pair, hG x y]
-    ring
-  calc ∫ x in Omega, f x * ∫ y, G x y * ψ y
-      = ∫ x in Omega, ∫ y in Omega, f x * (G x y * ψ y) := by
-        refine setIntegral_congr_fun Omega.isOpen.measurableSet fun x _ => ?_
-        rw [integral_const_mul, setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by
-          rw [hψ0 y hy, mul_zero]]
-    _ = ∫ y in Omega, ∫ x in Omega, f x * (G x y * ψ y) := integral_integral_swap hprod
-    _ = _ := by
-        refine setIntegral_congr_fun Omega.isOpen.measurableSet fun y _ => ?_
-        rw [← integral_const_mul]
-        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-        simp only [hG x y]
-        ring
 
 /-- **The duality identity.** If `u` is the weak solution of `-Δu = f` on `Ω` and the weak
 solution of `-Δw = ψ` for a test function `ψ` is the Green potential of `ψ`, then
@@ -187,7 +154,8 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_setIntegral_mul_of_forall_contDiff
         rw [hu.setIntegral_mul_value_eq hΩ hψL2
           (hrep ψ hψ hψc hψsupp (hψL2.toLp ψ) hψL2.coeFn_toLp)]
     _ = 0 := by
-        rw [setIntegral_mul_integral_mul_comm hG hGf hψ.continuous hψc hψsupp, sub_self]
+        rw [hGf.setIntegral_mul_integral_mul_comm Omega.isOpen.measurableSet hG hψmeas hC
+          ((subset_tsupport ψ).trans hψsupp), sub_self]
 
 end PDE
 

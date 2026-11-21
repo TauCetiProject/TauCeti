@@ -59,6 +59,12 @@ duality (`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_setIntegral_mul_of_for
 
 ## Main declarations
 
+* `TauCeti.harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul`,
+  `TauCeti.continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul`,
+  `TauCeti.integral_planarNewtonianKernel_one_sub_conj_mul_eq`: the harmonic correction and its
+  boundary values.
+* `TauCeti.integral_planarGreenKernel_mul_eq_sub`: the Green potential is the corrected Newtonian
+  potential.
 * `TauCeti.integrable_planarGreenKernel_mul`: the Green operator on `L¹(B)`.
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_integral_planarGreenKernel_mul`: the
   representation for data of class `C²` supported in the disk.
@@ -85,13 +91,6 @@ variable (e : EuclideanSpace ℝ (Fin 2) ≃ₗᵢ[ℝ] ℂ)
 /-! ### The Green operator on `L¹` of the disk -/
 
 section Integrals
-
-/-- The planar Newtonian kernel in the coordinates `e` is locally integrable. -/
-private theorem locallyIntegrable_planarNewtonianKernel_comp :
-    LocallyIntegrable (planarNewtonianKernel ∘ e) := by
-  have h := locallyIntegrable_planarNewtonianKernel
-  rw [← e.measurePreserving.map_eq] at h
-  exact (locallyIntegrable_map_homeomorph e.toHomeomorph).1 h
 
 /-- **The Green operator on `L¹` of the unit disk.** For `g` integrable on the unit disk of `ℝ²`,
 the function `(x, y) ↦ G(x, y) g(y)` is integrable on the square of the disk. -/
@@ -158,8 +157,9 @@ private theorem continuousOn_planarNewtonianKernel_one_sub_conj_mul (hf : Contin
           1 - starRingEnd ℂ (e p.1) * e p.2)
         (contDiff_one_sub_conj_mul e (k := 0)).continuous.continuousAt
 
-/-- The harmonic correction is continuous on the closed disk. -/
-private theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf : Continuous f)
+/-- The harmonic correction `x ↦ ∫ Φ(1 - conj (e x) * e y) f(y) dy` is continuous on the closed
+unit disk, for `f` continuous with `tsupport f` inside the open unit disk. -/
+theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     ContinuousOn (fun x ↦ ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y)
       (closedBall 0 1) :=
@@ -168,8 +168,9 @@ private theorem continuousOn_integral_planarNewtonianKernel_one_sub_conj_mul (hf
     (continuousOn_planarNewtonianKernel_one_sub_conj_mul e hf hsupp) fun _ _ _ hy => by
       rw [image_eq_zero_of_notMem_tsupport hy, mul_zero]
 
-/-- The harmonic correction is harmonic in the disk. -/
-private theorem harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul (hf : Continuous f)
+/-- The harmonic correction `x ↦ ∫ Φ(1 - conj (e x) * e y) f(y) dy` is harmonic in the unit
+disk, for `f` continuous with `tsupport f` inside the unit disk. -/
+theorem harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     HarmonicOnNhd (fun x ↦ ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y)
       (ball 0 1) := by
@@ -191,7 +192,7 @@ private theorem harmonicOnNhd_integral_planarNewtonianKernel_one_sub_conj_mul (h
 /-- **Boundary values of the harmonic correction.** On the unit circle
 `‖1 - conj (e x) * e y‖ = ‖e x - e y‖`, so the harmonic correction equals the Newtonian
 potential there. -/
-private theorem integral_planarNewtonianKernel_one_sub_conj_mul_eq {x : EuclideanSpace ℝ (Fin 2)}
+theorem integral_planarNewtonianKernel_one_sub_conj_mul_eq {x : EuclideanSpace ℝ (Fin 2)}
     (hx : ‖x‖ = 1) :
     ∫ y, planarNewtonianKernel (1 - starRingEnd ℂ (e x) * e y) * f y =
       ∫ y, planarNewtonianKernel (e y - e x) * f y := by
@@ -204,7 +205,7 @@ private theorem integral_planarNewtonianKernel_one_sub_conj_mul_eq {x : Euclidea
 /-- **The Green potential is the corrected Newtonian potential.** For `f` continuous with
 `tsupport f` inside the unit disk and `x` in the closed disk,
 `∫ G(x, y) f(y) dy = ∫ Φ(e y - e x) f(y) dy - ∫ Φ(1 - conj (e x) * e y) f(y) dy`. -/
-private theorem integral_planarGreenKernel_mul_eq_sub (hf : Continuous f)
+theorem integral_planarGreenKernel_mul_eq_sub (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) {x : EuclideanSpace ℝ (Fin 2)} (hx : ‖x‖ ≤ 1) :
     ∫ y, planarGreenKernel (e x) (e y) * f y =
       (∫ y, planarNewtonianKernel (e y - e x) * f y) -
