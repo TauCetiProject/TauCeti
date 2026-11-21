@@ -26,6 +26,11 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   condition.
 * `TauCeti.W1p.posPart_sub_mem_w1p0Submodule`: lowering `u ∈ W^{1,p}_0(Ω)` by a nonnegative
   `v ∈ W^{1,p}(Ω)` keeps `(u - v)⁺` in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.value_posPart_sub_posPart_sub_smul_ae`,
+  `TauCeti.W1p.gradient_posPart_sub_posPart_sub_smul_eq_zero_ae`: the truncation
+  `min(u⁺, c v) = u⁺ - (u⁺ - c v)⁺` and the vanishing of its gradient where `u ≤ 0`.
+* `TauCeti.W1p.mem_w1p0Submodule_of_nonneg_of_le`: a function between `0` and an element of
+  `W^{1,p}_0(Ω)` lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
 * `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
@@ -231,6 +236,57 @@ theorem W1p.posPart_sub_mem_w1p0Submodule (hp : p ≠ ∞) {u v : W1p mu Omega p
     W1p.value_ofTestFunctionₗ, hphi, image_eq_zero_of_notMem_tsupport hxK, zero_sub]
   exact max_eq_right (neg_nonpos.2 hvx)
 
+/-- **Functions squeezed below a zero-boundary function have zero boundary values.** If
+`u ∈ W^{1,p}_0(Ω)` and `v ∈ W^{1,p}(Ω)` satisfy `0 ≤ v ≤ u` almost everywhere, then
+`v ∈ W^{1,p}_0(Ω)`, since `v = u - (u - v)⁺`. -/
+theorem W1p.mem_w1p0Submodule_of_nonneg_of_le (hp : p ≠ ∞) {u v : W1p mu Omega p}
+    (hu : u ∈ w1p0Submodule mu Omega p) (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x)
+    (hvu : ∀ᵐ x ∂mu.restrict Omega, W1p.value v x ≤ W1p.value u x) :
+    v ∈ w1p0Submodule mu Omega p := by
+  have heq : u - W1p.posPart hp (u - v) = v := by
+    refine W1p.ext_value (Lp.ext ?_)
+    filter_upwards [W1p.value_sub_ae u (W1p.posPart hp (u - v)),
+      Lp.coeFn_posPart (W1p.value (u - v)), W1p.value_sub_ae u v, hvu] with x h1 h2 h3 h4
+    rw [h1, Pi.sub_apply, W1p.value_posPart, h2, h3, Pi.sub_apply,
+      max_eq_left (sub_nonneg.2 h4), sub_sub_cancel]
+  rw [← heq]
+  exact (w1p0Submodule mu Omega p).toSubmodule.sub_mem hu
+    (W1p.posPart_sub_mem_w1p0Submodule hp hu hv)
+
+/-- **The truncation `min(u⁺, c v)`.** The function `u⁺ - (u⁺ - c v)⁺` has value
+`min(u⁺, c v)` almost everywhere. -/
+theorem W1p.value_posPart_sub_posPart_sub_smul_ae (hp : p ≠ ∞) (u v : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value (W1p.posPart hp u -
+      W1p.posPart hp (W1p.posPart hp u - c • v)) x =
+        min (max (W1p.value u x) 0) (c * W1p.value v x) := by
+  filter_upwards [W1p.value_sub_ae (W1p.posPart hp u) (W1p.posPart hp (W1p.posPart hp u - c • v)),
+    Lp.coeFn_posPart (W1p.value (W1p.posPart hp u - c • v)),
+    W1p.value_sub_ae (W1p.posPart hp u) (c • v), Lp.coeFn_posPart (W1p.value u),
+    W1p.value_smul_ae c v] with x h1 h2 h3 h4 h5
+  rw [h1, Pi.sub_apply, W1p.value_posPart (u := W1p.posPart hp u - c • v), h2, h3, Pi.sub_apply,
+    W1p.value_posPart, h4, h5, Pi.smul_apply, smul_eq_mul]
+  rcases le_total (max (W1p.value u x) 0) (c * W1p.value v x) with hle | hle
+  · rw [min_eq_left hle, max_eq_right (sub_nonpos.2 hle), sub_zero]
+  · rw [min_eq_right hle, max_eq_left (sub_nonneg.2 hle), sub_sub_cancel]
+
+/-- **The truncation `min(u⁺, c v)` is constant where `u ≤ 0`.** If `c v ≥ 0`, the weak gradient
+of `u⁺ - (u⁺ - c v)⁺` vanishes almost everywhere on `{u ≤ 0}`. -/
+theorem W1p.gradient_posPart_sub_posPart_sub_smul_eq_zero_ae (hp : p ≠ ∞)
+    (u v : W1p mu Omega p) {c : ℝ} (hcv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c * W1p.value v x) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ 0 → W1p.gradient (W1p.posPart hp u -
+      W1p.posPart hp (W1p.posPart hp u - c • v)) x = 0 := by
+  filter_upwards [W1p.gradient_sub_ae (W1p.posPart hp u)
+      (W1p.posPart hp (W1p.posPart hp u - c • v)), W1p.gradient_posPart_ae hp u,
+    W1p.gradient_posPart_ae hp (W1p.posPart hp u - c • v),
+    W1p.value_sub_ae (W1p.posPart hp u) (c • v), Lp.coeFn_posPart (W1p.value u),
+    W1p.value_smul_ae c v, hcv] with x h1 h2 h3 h4 h5 h6 h7 hu
+  have hup : W1p.value (W1p.posPart hp u) x = 0 := by
+    rw [W1p.value_posPart, h5, max_eq_right hu]
+  rw [h1, Pi.sub_apply, h2, h3, indicator_of_notMem (s := {y | 0 < W1p.value u y})
+    (not_lt.2 hu), indicator_of_notMem (s := {y | 0 < W1p.value (W1p.posPart hp u - c • v) y})
+      (by rw [mem_ofPred_eq, h4, Pi.sub_apply, hup, h6, Pi.smul_apply, smul_eq_mul, not_lt]
+          linarith), sub_zero]
+
 /-- If `(u - k)⁺` satisfies the homogeneous Dirichlet boundary condition, then so does
 `(u - l)⁺` at every higher level `l ≥ k`: boundary values at most `k` are at most `l`. -/
 theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (hk : 0 ≤ k)
@@ -247,7 +303,7 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
 zero-boundary Sobolev function again has zero boundary values
 (`TauCeti.W1p.posPart_mem_w1p0Submodule`). -/
 def W1p0.posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) : W1p0 mu Omega p :=
-  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.2⟩
+  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.property⟩
 
 @[simp]
 theorem W1p0.coe_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
@@ -262,7 +318,7 @@ theorem W1p0.valueL_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
 /-- Taking the positive part is continuous on `W^{1,p}_0(Ω)` for finite exponents. -/
 theorem W1p0.continuous_posPart (hp : p ≠ ∞) :
     Continuous (W1p0.posPart (mu := mu) (Omega := Omega) hp) :=
-  ((W1p.continuous_posPart hp).comp continuous_subtype_val).subtype_mk _
+  ((W1p.continuous_posPart hp).comp continuous_subtypeVal).subtype_mk _
 
 /-- Taking the positive part does not increase the norm of `W^{1,p}_0(Ω)`. -/
 theorem W1p0.norm_posPart_le (hp : p ≠ ∞) (u : W1p0 mu Omega p) :

@@ -42,16 +42,17 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, and the sharp `1 /
 
 ## Main declarations
 
-* `TauCeti.contDiffOn_realStirlingRemainder`, `TauCeti.iteratedDeriv_realStirlingRemainder`,
-  `TauCeti.realStirlingRemainder_eq_integral`: smoothness and real integral representation of
-  `realStirlingRemainder n` and its derivatives on `(0, ∞)`.
+* `TauCeti.contDiffOn_realStirlingSeriesRemainder`,
+  `TauCeti.iteratedDeriv_realStirlingSeriesRemainder`,
+  `TauCeti.realStirlingSeriesRemainder_eq_integral`: smoothness and real integral representation of
+  `realStirlingSeriesRemainder n` and its derivatives on `(0, ∞)`.
 * `TauCeti.differentiableOn_digamma_slitPlane`, `TauCeti.contDiffOn_digamma_Ioi`,
   `TauCeti.iteratedDeriv_digamma_ofReal`: holomorphy and real-axis derivative agreement for digamma.
-* `TauCeti.isCompletelyMonotoneOnIoi_realStirlingRemainder_odd`,
-  `TauCeti.isCompletelyMonotoneOnIoi_neg_realStirlingRemainder_even`: Alzer's complete monotonicity
-  of `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` on `(0, ∞)`.
+* `TauCeti.isCompletelyMonotoneOnIoi_realStirlingSeriesRemainder_odd`,
+  `TauCeti.isCompletelyMonotoneOnIoi_neg_realStirlingSeriesRemainder_even`: Alzer's complete
+  monotonicity of `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` on `(0, ∞)`.
 * `TauCeti.sum_stirlingTerm_lt_log_Gamma_sub`, `TauCeti.log_Gamma_sub_lt_sum_stirlingTerm`,
-  `TauCeti.stirling_lt_log_Gamma`, `TauCeti.abs_realStirlingRemainder_lt_abs_stirlingTerm`:
+  `TauCeti.stirling_lt_log_Gamma`, `TauCeti.abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm`:
   enveloping inequalities for `Real.log (Real.Gamma x)`.
 * `TauCeti.digamma_lt_log_sub_inv_two_mul`, `TauCeti.log_sub_inv_two_mul_sub_lt_digamma`,
   `TauCeti.digamma_lt_log_sub_inv_two_mul_sub_sum`,
@@ -60,10 +61,10 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, and the sharp `1 /
   `TauCeti.polygammaStirlingSum_lt_neg_one_pow_mul_iteratedDeriv_digamma`,
   `TauCeti.neg_one_pow_mul_iteratedDeriv_digamma_lt_polygammaStirlingSum`: Alzer's polygamma
   brackets on `(0, ∞)`.
-* `TauCeti.norm_stirlingRemainder_lt`, `TauCeti.norm_stirlingRemainder_one_lt`,
-  `TauCeti.norm_iteratedDeriv_stirlingRemainder_one_lt`,
+* `TauCeti.norm_stirlingSeriesRemainder_lt`, `TauCeti.norm_stirlingRemainder_lt`,
+  `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt`,
+  `TauCeti.norm_stirlingSeriesRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_stirlingRemainder_lt_of_abs_arg_le`,
-  `TauCeti.norm_stirlingRemainder_one_lt_of_abs_arg_le`,
   `TauCeti.Gamma_eq_sqrt_two_pi_mul_exp`: Stieltjes' sector bound and Ramaré's exponential form.
 
 ## References
@@ -138,20 +139,20 @@ private theorem iteratedDeriv_ofReal_of_differentiableOn_slitPlane {f : ℂ → 
       him.unique (hasDerivAt_const x (0 : ℝ))
     exact Complex.ext (by simp [hre_eq]) (by simp [him_eq])
 
-/-- Every real Stirling remainder `realStirlingRemainder n` is `C^∞` on `(0, ∞)`. -/
-theorem contDiffOn_realStirlingRemainder (n : ℕ) :
-    ContDiffOn ℝ ∞ (realStirlingRemainder n) (Ioi 0) :=
-  contDiffOn_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingRemainder n)
-    (fun _ hx ↦ stirlingRemainder_ofReal n hx)
+/-- Every real Stirling remainder `realStirlingSeriesRemainder n` is `C^∞` on `(0, ∞)`. -/
+theorem contDiffOn_realStirlingSeriesRemainder (n : ℕ) :
+    ContDiffOn ℝ ∞ (realStirlingSeriesRemainder n) (Ioi 0) :=
+  contDiffOn_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingSeriesRemainder n)
+    (fun _ hx ↦ stirlingSeriesRemainder_ofReal n hx)
 
-/-- On `(0, ∞)`, every complex iterated derivative of `stirlingRemainder n` is the coercion of the
-corresponding real iterated derivative of `realStirlingRemainder n`. -/
+/-- On `(0, ∞)`, every complex iterated derivative of `stirlingSeriesRemainder n` is the coercion
+of the corresponding real iterated derivative of `realStirlingSeriesRemainder n`. -/
 @[simp]
-theorem iteratedDeriv_stirlingRemainder_ofReal (n k : ℕ) {x : ℝ} (hx : 0 < x) :
-    iteratedDeriv k (stirlingRemainder n) (x : ℂ) =
-      ((iteratedDeriv k (realStirlingRemainder n) x : ℝ) : ℂ) :=
-  iteratedDeriv_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingRemainder n)
-    (fun _ ht ↦ stirlingRemainder_ofReal n ht) k hx
+theorem iteratedDeriv_stirlingSeriesRemainder_ofReal (n k : ℕ) {x : ℝ} (hx : 0 < x) :
+    iteratedDeriv k (stirlingSeriesRemainder n) (x : ℂ) =
+      ((iteratedDeriv k (realStirlingSeriesRemainder n) x : ℝ) : ℂ) :=
+  iteratedDeriv_ofReal_of_differentiableOn_slitPlane (differentiableOn_stirlingSeriesRemainder n)
+    (fun _ ht ↦ stirlingSeriesRemainder_ofReal n ht) k hx
 
 /-- Complex digamma is holomorphic on the slit plane. -/
 theorem differentiableOn_digamma_slitPlane : DifferentiableOn ℂ Complex.digamma slitPlane :=
@@ -170,19 +171,20 @@ theorem iteratedDeriv_digamma_ofReal (k : ℕ) {x : ℝ} (hx : 0 < x) :
   iteratedDeriv_ofReal_of_differentiableOn_slitPlane differentiableOn_digamma_slitPlane
     (fun _ _ ↦ Complex.digamma_ofReal) k hx
 
-/-- Exact real integral representation for every iterated derivative of `realStirlingRemainder n`
-on `(0, ∞)`: for `n ≥ 1`, `k : ℕ`, and `x > 0`,
+/-- Exact real integral representation for every iterated derivative of
+`realStirlingSeriesRemainder n` on `(0, ∞)`: for `n ≥ 1`, `k : ℕ`, and `x > 0`,
 `r_n^{(k)}(x) = (-1)^k ((2n + k - 1)! / (2n)!) ∫₀^∞ (B_{2n} - B_{2n}({u})) / (u + x)^{2n + k} du`.
 -/
-theorem iteratedDeriv_realStirlingRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ} (hx : 0 < x) :
-    iteratedDeriv k (realStirlingRemainder n) x =
+theorem iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ}
+    (hx : 0 < x) :
+    iteratedDeriv k (realStirlingSeriesRemainder n) x =
       (-1 : ℝ) ^ k * (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
         ∫ u in Ioi (0 : ℝ),
           ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
             (u + x) ^ (2 * n + k) := by
   apply Complex.ofReal_injective
-  rw [← iteratedDeriv_stirlingRemainder_ofReal n k hx,
-    iteratedDeriv_stirlingRemainder hn k (Complex.ofReal_mem_slitPlane.mpr hx)]
+  rw [← iteratedDeriv_stirlingSeriesRemainder_ofReal n k hx,
+    iteratedDeriv_stirlingSeriesRemainder hn k (Complex.ofReal_mem_slitPlane.mpr hx)]
   have hint :
       ∫ u in Ioi (0 : ℝ),
         (((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u) : ℝ) : ℂ) /
@@ -194,13 +196,14 @@ theorem iteratedDeriv_realStirlingRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {
       (integral_ofReal (𝕜 := ℂ))
   rw [hint]; push_cast; rfl
 
-/-- Exact real integral representation of `realStirlingRemainder n` on `(0, ∞)` for `n ≥ 1`. -/
-theorem realStirlingRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
-    realStirlingRemainder n x =
+/-- Exact real integral representation of `realStirlingSeriesRemainder n` on `(0, ∞)` for
+`n ≥ 1`. -/
+theorem realStirlingSeriesRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
+    realStirlingSeriesRemainder n x =
       ∫ u in Ioi (0 : ℝ),
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
           ((2 * n : ℝ) * (u + x) ^ (2 * n)) := by
-  have h0 := iteratedDeriv_realStirlingRemainder hn 0 hx
+  have h0 := iteratedDeriv_realStirlingSeriesRemainder hn 0 hx
   rw [iteratedDeriv_zero, pow_zero, one_mul, add_zero, ← integral_const_mul] at h0
   rw [h0]
   have hfac : ((2 * n)! : ℝ) = (2 * n : ℝ) * ((2 * n - 1)! : ℝ) := by
@@ -227,14 +230,14 @@ private theorem integrableOn_signed_bernoulli_sub_div_pow_Ioi (n : ℕ) {k : ℕ
   simp only [Complex.reCLM_apply, heq, Complex.ofReal_re]
   ring
 
-private theorem signed_iteratedDeriv_realStirlingRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
+private theorem signed_iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
     {x : ℝ} (hx : 0 < x) :
-    (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingRemainder n) x =
+    (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingSeriesRemainder n) x =
       (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
         ∫ u in Ioi (0 : ℝ),
           (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
             (u + x) ^ (2 * n + k) := by
-  rw [iteratedDeriv_realStirlingRemainder hn k hx]
+  rw [iteratedDeriv_realStirlingSeriesRemainder hn k hx]
   have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
   have hint_mul :
       (-1 : ℝ) ^ (n + 1) *
@@ -277,21 +280,21 @@ private theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 �
 /-- For every `n ≥ 1`, `k : ℕ`, and `x > 0`, the signed real Stirling remainder
 `t ↦ (-1)^{n+1} r_n(t)` has strictly alternating `k`-th derivative:
 `0 < (-1)^k * ((-1)^{n+1} r_n)^{(k)}(x)`. -/
-theorem neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos {n : ℕ} (hn : 1 ≤ n)
+theorem neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 ≤ n)
     (k : ℕ) {x : ℝ} (hx : 0 < x) :
     0 < (-1 : ℝ) ^ k *
-      iteratedDeriv k (fun t ↦ (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n t) x := by
-  rw [iteratedDeriv_const_mul_field ((-1 : ℝ) ^ (n + 1)) (realStirlingRemainder n), ← mul_assoc,
-    signed_iteratedDeriv_realStirlingRemainder hn k hx]
+      iteratedDeriv k (fun t ↦ (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n t) x := by
+  rw [iteratedDeriv_const_mul_field ((-1 : ℝ) ^ (n + 1)) (realStirlingSeriesRemainder n),
+    ← mul_assoc, signed_iteratedDeriv_realStirlingSeriesRemainder hn k hx]
   exact mul_pos (by positivity)
     (integral_signed_bernoulli_sub_div_pow_pos hn (by omega : 2 ≤ 2 * n + k) hx)
 
 /-- **Alzer's theorem (odd remainders)**: for every `m, k : ℕ` and `x > 0`,
 `0 < (-1)^k * r_{2m+1}^{(k)}(x)`. -/
-theorem neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos (m k : ℕ) {x : ℝ}
+theorem neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos (m k : ℕ) {x : ℝ}
     (hx : 0 < x) :
-    0 < (-1 : ℝ) ^ k * iteratedDeriv k (realStirlingRemainder (2 * m + 1)) x := by
-  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos
+    0 < (-1 : ℝ) ^ k * iteratedDeriv k (realStirlingSeriesRemainder (2 * m + 1)) x := by
+  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos
     (n := 2 * m + 1) (by omega) k hx
   have hpow : (-1 : ℝ) ^ (2 * m + 1 + 1) = 1 := by
     rw [show 2 * m + 1 + 1 = 2 * (m + 1) by omega, pow_mul, neg_one_sq, one_pow]
@@ -299,42 +302,44 @@ theorem neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos (m k : ℕ) 
 
 /-- **Alzer's theorem (negated even remainders)**: for every `m, k : ℕ` and `x > 0`,
 `0 < (-1)^k * (-r_{2m+2})^{(k)}(x)`. -/
-theorem neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos (m k : ℕ) {x : ℝ}
+theorem neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos (m k : ℕ) {x : ℝ}
     (hx : 0 < x) :
-    0 < (-1 : ℝ) ^ k * iteratedDeriv k (fun t ↦ -realStirlingRemainder (2 * m + 2) t) x := by
-  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos
+    0 < (-1 : ℝ) ^ k * iteratedDeriv k (fun t ↦ -realStirlingSeriesRemainder (2 * m + 2) t) x := by
+  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos
     (n := 2 * m + 2) (by omega) k hx
   have hpow : (-1 : ℝ) ^ (2 * m + 2 + 1) = -1 := Odd.neg_one_pow ⟨m + 1, by omega⟩
   simpa only [hpow, neg_one_mul] using h
 
-/-- For every `m : ℕ`, the odd-order real Stirling remainder `F_m = realStirlingRemainder (2m + 1)`
-is completely monotone on `(0, ∞)` (Alzer 1997, Theorem 8). -/
-theorem isCompletelyMonotoneOnIoi_realStirlingRemainder_odd (m : ℕ) :
-    IsCompletelyMonotoneOnIoi (realStirlingRemainder (2 * m + 1)) :=
-  ⟨contDiffOn_realStirlingRemainder (2 * m + 1),
-    fun k _ hx ↦ (neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos m k hx).le⟩
+/-- For every `m : ℕ`, the odd-order real Stirling remainder
+`F_m = realStirlingSeriesRemainder (2m + 1)` is completely monotone on `(0, ∞)`
+(Alzer 1997, Theorem 8). -/
+theorem isCompletelyMonotoneOnIoi_realStirlingSeriesRemainder_odd (m : ℕ) :
+    IsCompletelyMonotoneOnIoi (realStirlingSeriesRemainder (2 * m + 1)) :=
+  ⟨contDiffOn_realStirlingSeriesRemainder (2 * m + 1),
+    fun k _ hx ↦ (neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos m k hx).le⟩
 
 /-- For every `m : ℕ`, the negated even-order real Stirling remainder
-`G_m = -realStirlingRemainder (2m + 2)` is completely monotone on `(0, ∞)`
+`G_m = -realStirlingSeriesRemainder (2m + 2)` is completely monotone on `(0, ∞)`
 (Alzer 1997, Theorem 8). -/
-theorem isCompletelyMonotoneOnIoi_neg_realStirlingRemainder_even (m : ℕ) :
-    IsCompletelyMonotoneOnIoi (fun t ↦ -realStirlingRemainder (2 * m + 2) t) :=
-  ⟨(contDiffOn_realStirlingRemainder (2 * m + 2)).neg,
-    fun k _ hx ↦ (neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos m k hx).le⟩
+theorem isCompletelyMonotoneOnIoi_neg_realStirlingSeriesRemainder_even (m : ℕ) :
+    IsCompletelyMonotoneOnIoi (fun t ↦ -realStirlingSeriesRemainder (2 * m + 2) t) :=
+  ⟨(contDiffOn_realStirlingSeriesRemainder (2 * m + 2)).neg,
+    fun k _ hx ↦ (neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos m k hx).le⟩
 
-/-- For `n ≥ 1` and `x > 0`, `realStirlingRemainder n x` has strict sign `(-1)^{n+1}`. -/
-theorem neg_one_pow_succ_mul_realStirlingRemainder_pos {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
-    0 < (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n x := by
+/-- For `n ≥ 1` and `x > 0`, `realStirlingSeriesRemainder n x` has strict sign `(-1)^{n+1}`. -/
+theorem neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 ≤ n) {x : ℝ}
+    (hx : 0 < x) :
+    0 < (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x := by
   simpa only [pow_zero, one_mul, iteratedDeriv_zero] using
-    neg_one_pow_mul_iteratedDeriv_signed_realStirlingRemainder_pos hn 0 hx
+    neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos hn 0 hx
 
 /-- Even-length partial sums of Stirling's series strictly underestimate `log Γ(x)` minus the
 leading Stirling terms for every `m : ℕ` and `x > 0`. -/
 theorem sum_stirlingTerm_lt_log_Gamma_sub (m : ℕ) {x : ℝ} (hx : 0 < x) :
     ∑ i ∈ Finset.Icc 1 (2 * m), stirlingTerm i x <
       Real.log (Real.Gamma x) - ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) := by
-  have h := neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos m 0 hx
-  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingRemainder,
+  have h := neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos m 0 hx
+  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder,
     Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -343,8 +348,8 @@ leading Stirling terms for every `m : ℕ` and `x > 0`. -/
 theorem log_Gamma_sub_lt_sum_stirlingTerm (m : ℕ) {x : ℝ} (hx : 0 < x) :
     Real.log (Real.Gamma x) - ((x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2) <
       ∑ i ∈ Finset.Icc 1 (2 * m + 1), stirlingTerm i x := by
-  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos m 0 hx
-  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingRemainder,
+  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos m 0 hx
+  simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder,
     show 2 * m + 2 = (2 * m + 1) + 1 by omega, Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -358,14 +363,16 @@ theorem stirling_lt_log_Gamma {x : ℝ} (hx : 0 < x) :
 
 /-- Enveloping bound on `(0, ∞)`: for every `n ≥ 1` and `x > 0`, the Stirling remainder is strictly
 smaller in absolute value than the first omitted term: `|r_n(x)| < |T_n(x)|`. -/
-theorem abs_realStirlingRemainder_lt_abs_stirlingTerm {n : ℕ} (hn : 1 ≤ n) {x : ℝ} (hx : 0 < x) :
-    |realStirlingRemainder n x| < |stirlingTerm n x| := by
-  have h1 := neg_one_pow_succ_mul_realStirlingRemainder_pos hn hx
-  have h2 := neg_one_pow_succ_mul_realStirlingRemainder_pos (n := n + 1) (by omega) hx
-  rw [realStirlingRemainder_succ, pow_succ] at h2
-  have hlt : (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n x <
+theorem abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm {n : ℕ} (hn : 1 ≤ n) {x : ℝ}
+    (hx : 0 < x) :
+    |realStirlingSeriesRemainder n x| < |stirlingTerm n x| := by
+  have h1 := neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn hx
+  have h2 := neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos (n := n + 1) (by omega) hx
+  rw [realStirlingSeriesRemainder_succ, pow_succ] at h2
+  have hlt : (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x <
       (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by linarith
-  have habs_r : |realStirlingRemainder n x| = (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n x := by
+  have habs_r : |realStirlingSeriesRemainder n x| =
+      (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x := by
     simpa [abs_mul] using abs_of_pos h1
   have habs_T : |stirlingTerm n x| = (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by
     simpa [abs_mul] using abs_of_pos (lt_trans h1 hlt)
@@ -373,10 +380,10 @@ theorem abs_realStirlingRemainder_lt_abs_stirlingTerm {n : ℕ} (hn : 1 ≤ n) {
 
 /-! ### Digamma brackets on `(0, ∞)` -/
 
-/-- First derivative of `realStirlingRemainder n` on `(0, ∞)`:
+/-- First derivative of `realStirlingSeriesRemainder n` on `(0, ∞)`:
 `r_n'(x) = ψ(x) - log x + 1 / (2x) + ∑_{j=1}^{n-1} B_{2j} / (2j x^{2j})`. -/
-theorem deriv_realStirlingRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
-    deriv (realStirlingRemainder n) x =
+theorem deriv_realStirlingSeriesRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
+    deriv (realStirlingSeriesRemainder n) x =
       Real.digamma x - Real.log x + 1 / (2 * x) +
         ∑ j ∈ Finset.Ico 1 n, (bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)) := by
   have hlogG : HasDerivAt (fun t ↦ Real.log (Real.Gamma t)) (Real.digamma x) x :=
@@ -409,9 +416,9 @@ theorem deriv_realStirlingRemainder (n : ℕ) {x : ℝ} (hx : 0 < x) :
     have hp2 : x ^ (2 * j) = x ^ (2 * j - 2) * x ^ 2 := by rw [← pow_add]; congr 1; omega
     have hxpow : x ^ (2 * j - 2) ≠ 0 := pow_ne_zero _ hx.ne'
     rw [hc, hp1, hp2]; field_simp
-  have htot : HasDerivAt (realStirlingRemainder n) _ x :=
+  have htot : HasDerivAt (realStirlingSeriesRemainder n) _ x :=
     ((hlogG.sub hmain).sub (HasDerivAt.fun_sum hterm)).congr_of_eventuallyEq
-      (Eventually.of_forall fun _ ↦ by simp only [realStirlingRemainder, Pi.sub_apply])
+      (Eventually.of_forall fun _ ↦ by simp only [realStirlingSeriesRemainder, Pi.sub_apply])
   rw [htot.deriv, Finset.sum_neg_distrib]; ring
 
 /-- Arbitrary-order upper digamma bracket on `(0, ∞)`: for every `m : ℕ` and `x > 0`,
@@ -420,8 +427,8 @@ theorem digamma_lt_log_sub_inv_two_mul_sub_sum (m : ℕ) {x : ℝ} (hx : 0 < x) 
     Real.digamma x <
       Real.log x - 1 / (2 * x) -
         ∑ j ∈ Finset.Icc 1 (2 * m), (bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)) := by
-  have h := neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos m 1 hx
-  rw [pow_one, iteratedDeriv_one, deriv_realStirlingRemainder (2 * m + 1) hx,
+  have h := neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos m 1 hx
+  rw [pow_one, iteratedDeriv_one, deriv_realStirlingSeriesRemainder (2 * m + 1) hx,
     Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -431,8 +438,8 @@ theorem log_sub_inv_two_mul_sub_sum_lt_digamma (m : ℕ) {x : ℝ} (hx : 0 < x) 
     Real.log x - 1 / (2 * x) -
         ∑ j ∈ Finset.Icc 1 (2 * m + 1), (bernoulli (2 * j) : ℝ) / ((2 * j : ℝ) * x ^ (2 * j)) <
       Real.digamma x := by
-  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos m 1 hx
-  rw [pow_one, iteratedDeriv_one, deriv.fun_neg, deriv_realStirlingRemainder (2 * m + 2) hx,
+  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos m 1 hx
+  rw [pow_one, iteratedDeriv_one, deriv.fun_neg, deriv_realStirlingSeriesRemainder (2 * m + 2) hx,
     show 2 * m + 2 = (2 * m + 1) + 1 by omega, Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
@@ -512,17 +519,17 @@ private theorem iteratedDeriv_bernoulli_div_mul_pow {i k : ℕ} (hi : 1 ≤ i) (
   rw [hprod, hz, zpow_neg, zpow_natCast]
   field_simp
 
-/-- Relation between `iteratedDeriv (k + 1) (realStirlingRemainder n)` and the `k`-th polygamma
-function `iteratedDeriv k Real.digamma` on `(0, ∞)` for `k ≥ 1`. -/
-theorem iteratedDeriv_succ_realStirlingRemainder (n : ℕ) {k : ℕ} (hk : 1 ≤ k) {x : ℝ}
+/-- Relation between `iteratedDeriv (k + 1) (realStirlingSeriesRemainder n)` and the `k`-th
+polygamma function `iteratedDeriv k Real.digamma` on `(0, ∞)` for `k ≥ 1`. -/
+theorem iteratedDeriv_succ_realStirlingSeriesRemainder (n : ℕ) {k : ℕ} (hk : 1 ≤ k) {x : ℝ}
     (hx : 0 < x) :
-    iteratedDeriv (k + 1) (realStirlingRemainder n) x =
+    iteratedDeriv (k + 1) (realStirlingSeriesRemainder n) x =
       iteratedDeriv k Real.digamma x + (-1 : ℝ) ^ k * polygammaStirlingSum k (n - 1) x := by
-  have hev : deriv (realStirlingRemainder n) =ᶠ[𝓝 x]
+  have hev : deriv (realStirlingSeriesRemainder n) =ᶠ[𝓝 x]
       fun t : ℝ ↦ (Real.digamma t - Real.log t + 1 / (2 * t)) +
         ∑ i ∈ Finset.Ico 1 n, (bernoulli (2 * i) : ℝ) / ((2 * i : ℝ) * t ^ (2 * i)) := by
     filter_upwards [isOpen_Ioi.mem_nhds hx] with t ht
-    exact deriv_realStirlingRemainder n ht
+    exact deriv_realStirlingSeriesRemainder n ht
   rw [iteratedDeriv_succ', hev.iteratedDeriv_eq]
   have hcd_psi : ContDiffAt ℝ k Real.digamma x :=
     (contDiffOn_digamma_Ioi.contDiffAt (isOpen_Ioi.mem_nhds hx)).of_le (by exact_mod_cast le_top)
@@ -568,8 +575,8 @@ theorem iteratedDeriv_succ_realStirlingRemainder (n : ℕ) {k : ℕ} (hk : 1 ≤
 theorem polygammaStirlingSum_lt_neg_one_pow_mul_iteratedDeriv_digamma {k : ℕ} (hk : 1 ≤ k)
     (n : ℕ) {x : ℝ} (hx : 0 < x) :
     polygammaStirlingSum k (2 * n) x < (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x := by
-  have h := neg_one_pow_mul_iteratedDeriv_realStirlingRemainder_odd_pos n (k + 1) hx
-  rw [iteratedDeriv_succ_realStirlingRemainder (2 * n + 1) hk hx] at h
+  have h := neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos n (k + 1) hx
+  rw [iteratedDeriv_succ_realStirlingSeriesRemainder (2 * n + 1) hk hx] at h
   simp only [Nat.add_sub_cancel, mul_add] at h
   have hneg : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ k = -1 := by
     rw [pow_succ, mul_right_comm, ← mul_pow]; norm_num
@@ -581,8 +588,8 @@ theorem polygammaStirlingSum_lt_neg_one_pow_mul_iteratedDeriv_digamma {k : ℕ} 
 theorem neg_one_pow_mul_iteratedDeriv_digamma_lt_polygammaStirlingSum {k : ℕ} (hk : 1 ≤ k)
     (n : ℕ) {x : ℝ} (hx : 0 < x) :
     (-1 : ℝ) ^ (k + 1) * iteratedDeriv k Real.digamma x < polygammaStirlingSum k (2 * n + 1) x := by
-  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos n (k + 1) hx
-  rw [iteratedDeriv_fun_neg, iteratedDeriv_succ_realStirlingRemainder (2 * n + 2) hk hx] at h
+  have h := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos n (k + 1) hx
+  rw [iteratedDeriv_fun_neg, iteratedDeriv_succ_realStirlingSeriesRemainder (2 * n + 2) hk hx] at h
   simp only [show 2 * n + 2 - 1 = 2 * n + 1 by omega, mul_neg, mul_add] at h
   have hneg : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ k = -1 := by
     rw [pow_succ, mul_right_comm, ← mul_pow]; norm_num
@@ -594,15 +601,15 @@ theorem neg_one_pow_mul_iteratedDeriv_digamma_lt_polygammaStirlingSum {k : ℕ} 
 /-- Comparison of the slit-plane derivative `‖r_n^{(k)}(z)‖` to its positive real-axis value at
 `‖z‖`: for `n ≥ 1`, `k : ℕ`, and `z ∈ slitPlane`,
 `‖r_n^{(k)}(z)‖ ≤ ((-1)^k (-1)^{n+1} r_n^{(k)}(‖z‖)) / cos (arg z / 2) ^ (2n + k)`. -/
-theorem norm_iteratedDeriv_stirlingRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ}
+theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ}
     (hz : z ∈ slitPlane) :
-    ‖iteratedDeriv k (stirlingRemainder n) z‖ ≤
-      ((-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingRemainder n) ‖z‖) /
+    ‖iteratedDeriv k (stirlingSeriesRemainder n) z‖ ≤
+      ((-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖) /
         Real.cos (z.arg / 2) ^ (2 * n + k) := by
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
-  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
-  rw [iteratedDeriv_stirlingRemainder hn k hz,
-    signed_iteratedDeriv_realStirlingRemainder hn k hz_pos,
+  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
+  rw [iteratedDeriv_stirlingSeriesRemainder hn k hz,
+    signed_iteratedDeriv_realStirlingSeriesRemainder hn k hz_pos,
     norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
     Complex.norm_natCast, Complex.norm_natCast, mul_div_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
@@ -618,7 +625,7 @@ theorem norm_iteratedDeriv_stirlingRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k
       (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
     simpa [abs_mul] using abs_of_nonneg hnn
   have hsec : Real.cos (z.arg / 2) * (u + ‖z‖) ≤ ‖(u : ℂ) + z‖ := by
-    simpa [add_comm] using Complex.cos_arg_div_two_mul_norm_add_le_norm_add_ofReal z u
+    simpa [add_comm] using Complex.cos_half_arg_mul_norm_add_le_norm_add_ofReal z u
   have hpow : Real.cos (z.arg / 2) ^ (2 * n + k) * (u + ‖z‖) ^ (2 * n + k) ≤
       ‖(u : ℂ) + z‖ ^ (2 * n + k) := by
     rw [← mul_pow]; exact pow_le_pow_left₀ (by positivity) hsec (2 * n + k)
@@ -635,51 +642,56 @@ theorem norm_iteratedDeriv_stirlingRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k
 
 /-- **Stieltjes' sharp sector bound** on the slit plane: for every `n ≥ 1` and `z ∈ slitPlane`,
 `‖r_n(z)‖ < ‖T_n(z)‖ / cos (arg z / 2) ^ (2n)`. -/
-theorem norm_stirlingRemainder_lt {n : ℕ} (hn : 1 ≤ n) {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖stirlingRemainder n z‖ < ‖stirlingTerm n z‖ / Real.cos (z.arg / 2) ^ (2 * n) := by
+theorem norm_stirlingSeriesRemainder_lt {n : ℕ} (hn : 1 ≤ n) {z : ℂ} (hz : z ∈ slitPlane) :
+    ‖stirlingSeriesRemainder n z‖ < ‖stirlingTerm n z‖ / Real.cos (z.arg / 2) ^ (2 * n) := by
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
-  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
-  have hle := norm_iteratedDeriv_stirlingRemainder_le_real hn 0 hz
+  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
+  have hle := norm_iteratedDeriv_stirlingSeriesRemainder_le_real hn 0 hz
   simp only [iteratedDeriv_zero, pow_zero, one_mul, add_zero] at hle
-  have habs_r :
-      (-1 : ℝ) ^ (n + 1) * realStirlingRemainder n ‖z‖ = |realStirlingRemainder n ‖z‖| := by
+  have habs_r : (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n ‖z‖ =
+      |realStirlingSeriesRemainder n ‖z‖| := by
     simpa [abs_mul] using
-      (abs_of_pos (neg_one_pow_succ_mul_realStirlingRemainder_pos hn hz_pos)).symm
+      (abs_of_pos (neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn hz_pos)).symm
   rw [habs_r] at hle
-  have hlt := abs_realStirlingRemainder_lt_abs_stirlingTerm hn hz_pos
+  have hlt := abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm hn hz_pos
   rw [← norm_stirlingTerm_eq_abs_norm n z] at hlt
   exact lt_of_le_of_lt hle (div_lt_div_of_pos_right hlt (pow_pos hcos_pos _))
 
-/-- Stieltjes' sharp `n = 1` bound on the slit plane:
-`‖r₁(z)‖ < 1 / (12 * cos (arg z / 2) ^ 2 * ‖z‖)`. -/
-theorem norm_stirlingRemainder_one_lt {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖stirlingRemainder 1 z‖ < 1 / (12 * Real.cos (z.arg / 2) ^ 2 * ‖z‖) := by
-  have h := norm_stirlingRemainder_lt le_rfl hz
-  rw [stirlingTerm_one, norm_div, norm_one, norm_mul, Complex.norm_ofNat] at h
+/-- Stieltjes' sharp `n = 1` bound on the slit plane for `TauCeti.stirlingRemainder`:
+`‖stirlingRemainder z‖ < 1 / (12 * cos (arg z / 2) ^ 2 * ‖z‖)`. -/
+theorem norm_stirlingRemainder_lt {z : ℂ} (hz : z ∈ slitPlane) :
+    ‖stirlingRemainder z‖ < 1 / (12 * Real.cos (z.arg / 2) ^ 2 * ‖z‖) := by
+  have h := norm_stirlingSeriesRemainder_lt le_rfl hz
+  rw [stirlingTerm_one, norm_div, norm_one, norm_mul, Complex.norm_ofNat,
+    stirlingSeriesRemainder_one_eq_stirlingRemainder] at h
   convert h using 1
   simp only [Nat.mul_one, div_eq_mul_inv, mul_inv]; ring
 
-/-- Sharp `1 / 12` half-angle bound for all derivatives of the leading Stirling remainder `r₁` on
-the slit plane: for every `k : ℕ` and `z ∈ slitPlane`,
-`‖r₁^{(k)}(z)‖ < k! / (12 * cos (arg z / 2) ^ (k + 2) * ‖z‖ ^ (k + 1))`. -/
-theorem norm_iteratedDeriv_stirlingRemainder_one_lt (k : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
-    ‖iteratedDeriv k (stirlingRemainder 1) z‖ <
+/-- Sharp `1 / 12` half-angle bound for all derivatives of `TauCeti.stirlingRemainder` on the
+slit plane: for every `k : ℕ` and `z ∈ slitPlane`,
+`‖iteratedDeriv k stirlingRemainder z‖ < k! / (12 * cos (arg z / 2) ^ (k + 2) * ‖z‖ ^ (k + 1))`. -/
+theorem norm_iteratedDeriv_stirlingRemainder_lt (k : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
+    ‖iteratedDeriv k stirlingRemainder z‖ <
       (k ! : ℝ) / (12 * Real.cos (z.arg / 2) ^ (k + 2) * ‖z‖ ^ (k + 1)) := by
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
-  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_arg_div_two_pos_of_mem_slitPlane hz
-  have hle := norm_iteratedDeriv_stirlingRemainder_le_real le_rfl k hz
+  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
+  have hle := norm_iteratedDeriv_stirlingSeriesRemainder_le_real le_rfl k hz
   rw [show (-1 : ℝ) ^ (1 + 1) = 1 by norm_num, mul_one, show 2 * 1 + k = k + 2 by omega] at hle
+  have hfun : stirlingSeriesRemainder 1 = stirlingRemainder :=
+    funext stirlingSeriesRemainder_one_eq_stirlingRemainder
+  rw [hfun] at hle
   -- Since `G₀ = -r₂` is strictly completely monotone,
   -- `(-1)^k r₁^{(k)}(‖z‖) < (-1)^k T₁^{(k)}(‖z‖)`.
-  have hG := neg_one_pow_mul_iteratedDeriv_neg_realStirlingRemainder_even_pos 0 k hz_pos
-  have heq_r2 : (fun t : ℝ ↦ -realStirlingRemainder 2 t) =
-      fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹ - realStirlingRemainder 1 t := by
-    ext t; rw [realStirlingRemainder_succ, stirlingTerm_one]; simp only [one_div, mul_inv]; ring
+  have hG := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos 0 k hz_pos
+  have heq_r2 : (fun t : ℝ ↦ -realStirlingSeriesRemainder 2 t) =
+      fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹ - realStirlingSeriesRemainder 1 t := by
+    ext t; rw [realStirlingSeriesRemainder_succ, stirlingTerm_one]
+    simp only [one_div, mul_inv]; ring
   simp only [Nat.mul_zero, zero_add] at hG
   have hT1_cd : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ :=
     contDiffAt_const.mul (contDiffAt_id.inv hz_pos.ne')
   rw [heq_r2, iteratedDeriv_fun_sub hT1_cd
-    (((contDiffOn_realStirlingRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
+    (((contDiffOn_realStirlingSeriesRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
       (by exact_mod_cast le_top))] at hG
   have hT1_deriv : iteratedDeriv k (fun t : ℝ ↦ (12⁻¹ : ℝ) * t⁻¹) ‖z‖ =
       (-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) := by
@@ -688,60 +700,53 @@ theorem norm_iteratedDeriv_stirlingRemainder_one_lt (k : ℕ) {z : ℂ} (hz : z 
     simp only [div_eq_mul_inv, mul_inv]; ring
   have hk2 : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
   rw [hT1_deriv, mul_sub, ← mul_assoc, hk2, one_mul] at hG
-  calc ‖iteratedDeriv k (stirlingRemainder 1) z‖
-      ≤ ((-1 : ℝ) ^ k * iteratedDeriv k (realStirlingRemainder 1) ‖z‖) /
+  calc ‖iteratedDeriv k stirlingRemainder z‖
+      ≤ ((-1 : ℝ) ^ k * iteratedDeriv k (realStirlingSeriesRemainder 1) ‖z‖) /
           Real.cos (z.arg / 2) ^ (k + 2) := hle
     _ < ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) / Real.cos (z.arg / 2) ^ (k + 2) :=
         div_lt_div_of_pos_right (by linarith) (pow_pos hcos_pos _)
     _ = (k ! : ℝ) / (12 * Real.cos (z.arg / 2) ^ (k + 2) * ‖z‖ ^ (k + 1)) := by
         simp only [div_eq_mul_inv, mul_inv]; ring
 
-private theorem sin_div_two_le_cos_arg_div_two {z : ℂ} {δ : ℝ} (hδ : 0 < δ)
-    (hz : |z.arg| ≤ π - δ) : Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) := by
-  have hle : |z.arg / 2| ≤ π / 2 - δ / 2 := by
-    rw [abs_div, show |(2 : ℝ)| = 2 by norm_num]
-    linarith
-  have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) (by linarith [Real.pi_pos]) hle
-  rwa [Real.cos_pi_div_two_sub, Real.cos_abs] at hcos
-
 /-- Uniform sector form of Stieltjes' bound: for `0 < δ`, `|arg z| ≤ π - δ`, `z ≠ 0`, and
 `n ≥ 1`, `‖r_n(z)‖ < ‖T_n(z)‖ / sin (δ / 2) ^ (2n)`. -/
-theorem norm_stirlingRemainder_lt_of_abs_arg_le {n : ℕ} (hn : 1 ≤ n) {z : ℂ} {δ : ℝ}
+theorem norm_stirlingSeriesRemainder_lt_of_abs_arg_le {n : ℕ} (hn : 1 ≤ n) {z : ℂ} {δ : ℝ}
     (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
-    ‖stirlingRemainder n z‖ < ‖stirlingTerm n z‖ / Real.sin (δ / 2) ^ (2 * n) := by
+    ‖stirlingSeriesRemainder n z‖ < ‖stirlingTerm n z‖ / Real.sin (δ / 2) ^ (2 * n) := by
   have hslit : z ∈ slitPlane := Complex.mem_slitPlane_of_abs_arg_le hδ hz hz0
   have hδπ : δ ≤ π := by linarith [abs_nonneg z.arg]
   have hsin_pos : 0 < Real.sin (δ / 2) :=
     Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [Real.pi_pos])
   have hsin_le : Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) :=
-    sin_div_two_le_cos_arg_div_two hδ hz
-  exact lt_of_lt_of_le (norm_stirlingRemainder_lt hn hslit)
+    Complex.sin_half_le_cos_half_arg_of_abs_arg_le hδ.le hz
+  exact lt_of_lt_of_le (norm_stirlingSeriesRemainder_lt hn hslit)
     (div_le_div_of_nonneg_left (norm_nonneg _) (pow_pos hsin_pos _)
       (pow_le_pow_left₀ hsin_pos.le hsin_le _))
 
-/-- Ramaré's sector form of Stieltjes' `n = 1` bound: for `0 < δ`, `|arg z| ≤ π - δ`, and
-`z ≠ 0`, `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`. -/
-theorem norm_stirlingRemainder_one_lt_of_abs_arg_le {z : ℂ} {δ : ℝ}
+/-- Ramaré's sector form of Stieltjes' `n = 1` bound for `TauCeti.stirlingRemainder`:
+for `0 < δ`, `|arg z| ≤ π - δ`, and `z ≠ 0`,
+`‖stirlingRemainder z‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`. -/
+theorem norm_stirlingRemainder_lt_of_abs_arg_le {z : ℂ} {δ : ℝ}
     (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
-    ‖stirlingRemainder 1 z‖ < 1 / (12 * Real.sin (δ / 2) ^ 2 * ‖z‖) := by
-  have h := norm_stirlingRemainder_lt_of_abs_arg_le le_rfl hδ hz hz0
-  rw [stirlingTerm_one, norm_div, norm_one, norm_mul, Complex.norm_ofNat] at h
+    ‖stirlingRemainder z‖ < 1 / (12 * Real.sin (δ / 2) ^ 2 * ‖z‖) := by
+  have h := norm_stirlingSeriesRemainder_lt_of_abs_arg_le le_rfl hδ hz hz0
+  rw [stirlingTerm_one, norm_div, norm_one, norm_mul, Complex.norm_ofNat,
+    stirlingSeriesRemainder_one_eq_stirlingRemainder] at h
   convert h using 1
   simp only [Nat.mul_one, div_eq_mul_inv, mul_inv]
   ring
 
 /-- Exponential Stirling representation of `Complex.Gamma` on the slit plane:
-`Γ(z) = √(2π) * exp ((z - 1/2) * log z - z + r₁(z))`. -/
+`Γ(z) = √(2π) * exp ((z - 1/2) * log z - z + stirlingRemainder z)`. -/
 theorem Gamma_eq_sqrt_two_pi_mul_exp {z : ℂ} (hz : z ∈ slitPlane) :
     Complex.Gamma z =
       (Real.sqrt (2 * π) : ℂ) *
-        Complex.exp ((z - 1 / 2) * Complex.log z - z + stirlingRemainder 1 z) := by
+        Complex.exp ((z - 1 / 2) * Complex.log z - z + stirlingRemainder z) := by
   have hlog : logGamma z =
       ((Real.log (2 * π) / 2 : ℝ) : ℂ) +
-        ((z - 1 / 2) * Complex.log z - z + stirlingRemainder 1 z) := by
-    have h := logGamma_eq_stirling_add_remainder 1 z
-    simp only [Finset.Ico_self, Finset.sum_empty, add_zero] at h
-    linear_combination h
+        ((z - 1 / 2) * Complex.log z - z + stirlingRemainder z) := by
+    rw [logGamma_eq_add_stirlingRemainder]
+    ring
   have hexp_half : Real.exp (Real.log (2 * π) / 2) = Real.sqrt (2 * π) := by
     rw [← Real.sqrt_sq (Real.exp_pos _).le, sq, ← Real.exp_add, add_halves,
       Real.exp_log (by positivity)]

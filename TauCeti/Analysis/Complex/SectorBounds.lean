@@ -12,10 +12,15 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 For a complex number `s` separated in argument from the negative real axis and a nonnegative
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
-`c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. On the
-sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`. These inequalities control
-reciprocal kernels in sectorial integrals. A nonzero point of such a sector, with `0 < δ`, lies in
-the slit plane.
+`c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. More
+sharply, `cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` for every `z : ℂ` and `t : ℝ`, and on the
+closed sector `|arg z| ≤ π - δ` with `0 ≤ δ` one has `sin (δ / 2) * (‖z‖ + t) ≤ ‖z + t‖`
+(as well as `c = (1 - cos δ) / 2` for `t ≥ 0`). For `z` in the sector `Re z ≤ c ‖z‖`, `c < 1`,
+around the negative real axis, `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. These inequalities
+control reciprocal kernels in sectorial and Stieltjes integrals and resolvent symbols. A nonzero
+point of such a sector, with `0 < δ`, lies in the slit plane, and every sector
+`{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
+(`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 -/
 
 public section
@@ -57,6 +62,92 @@ theorem mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {s : ℂ} {δ t : ℝ}
     rw [norm_mul_cos_arg] at h
     nlinarith
 
+/-- On the sector `Re z ≤ c ‖z‖`, the difference `t - z` with a nonnegative real `t` satisfies
+`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. For `c < 1` this keeps `t - z` away from `0`; for
+`c ≥ 1` the left side is nonpositive. -/
+theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz : z.re ≤ c * ‖z‖) :
+    (1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖(t : ℂ) - z‖ := by
+  rcases le_or_gt 1 c with hc | hc
+  · have : (1 - max c (-1)) / 2 ≤ 0 := by linarith [le_max_left c (-1)]
+    nlinarith [norm_nonneg ((t : ℂ) - z), norm_nonneg z]
+  have h := mul_norm_add_le_norm_add_ofReal (s := -z) (c := (1 - max c (-1)) / 2)
+    (by linarith [max_lt hc (show (-1 : ℝ) < 1 by norm_num)]) (by linarith [le_max_right c (-1)])
+    ht (by
+      rw [norm_neg, neg_re]
+      nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
+  rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
+
+/-- For every complex `z` and real `t`,
+`‖z + t‖² - (cos (arg z / 2) * (‖z‖ + t))² = (sin (arg z / 2) * (‖z‖ - t))²`. -/
+theorem norm_add_ofReal_sq_sub_cos_half_arg_sq (z : ℂ) (t : ℝ) :
+    ‖z + (t : ℂ)‖ ^ 2 - (Real.cos (z.arg / 2) * (‖z‖ + t)) ^ 2 =
+      (Real.sin (z.arg / 2) * (‖z‖ - t)) ^ 2 := by
+  have hsq : ‖z + (t : ℂ)‖ ^ 2 = ‖z‖ ^ 2 + 2 * t * z.re + t ^ 2 := by
+    simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
+    ring
+  have hre : z.re = ‖z‖ * (2 * Real.cos (z.arg / 2) ^ 2 - 1) := by
+    rw [← norm_mul_cos_arg z, ← Real.cos_two_mul]
+    ring_nf
+  have hcs := Real.sin_sq_add_cos_sq (z.arg / 2)
+  rw [hsq, hre]
+  linear_combination -((‖z‖ - t) ^ 2) * hcs
+
+/-- Because `arg z ∈ (-π, π]`, the half-angle cosine `cos (arg z / 2)` is always nonnegative. -/
+theorem cos_half_arg_nonneg (z : ℂ) : 0 ≤ Real.cos (z.arg / 2) :=
+  Real.cos_nonneg_of_mem_Icc ⟨by linarith [neg_pi_lt_arg z], by linarith [arg_le_pi z]⟩
+
+/-- The half-angle cosine `cos (arg z / 2)` is strictly positive iff `z` does not lie on the
+negative real axis (`arg z ≠ π`). -/
+theorem cos_half_arg_pos_iff {z : ℂ} : 0 < Real.cos (z.arg / 2) ↔ z.arg ≠ Real.pi := by
+  refine ⟨fun h hpi ↦ ?_, fun hne ↦ ?_⟩
+  · rw [hpi, Real.cos_pi_div_two] at h
+    exact lt_irrefl 0 h
+  · exact Real.cos_pos_of_mem_Ioo ⟨by linarith [neg_pi_lt_arg z],
+      by linarith [lt_of_le_of_ne (arg_le_pi z) hne]⟩
+
+/-- Every point of the slit plane has `0 < cos (arg z / 2)`. -/
+theorem cos_half_arg_pos {z : ℂ} (hz : z ∈ slitPlane) : 0 < Real.cos (z.arg / 2) :=
+  cos_half_arg_pos_iff.mpr (mem_slitPlane_iff_arg.mp hz).1
+
+/-- For every complex `z` and real `t`, `|cos (arg z / 2) * (‖z‖ + t)| ≤ ‖z + t‖`. -/
+theorem abs_cos_half_arg_mul_norm_add_le_norm_add_ofReal (z : ℂ) (t : ℝ) :
+    |Real.cos (z.arg / 2) * (‖z‖ + t)| ≤ ‖z + (t : ℂ)‖ := by
+  have hsq : (Real.cos (z.arg / 2) * (‖z‖ + t)) ^ 2 ≤ ‖z + (t : ℂ)‖ ^ 2 := by
+    linarith [norm_add_ofReal_sq_sub_cos_half_arg_sq z t,
+      sq_nonneg (Real.sin (z.arg / 2) * (‖z‖ - t))]
+  simpa only [abs_norm] using sq_le_sq.mp hsq
+
+/-- Sharp half-angle translation lower bound: `cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` for every
+complex `z` and real `t`. -/
+theorem cos_half_arg_mul_norm_add_le_norm_add_ofReal (z : ℂ) (t : ℝ) :
+    Real.cos (z.arg / 2) * (‖z‖ + t) ≤ ‖z + (t : ℂ)‖ :=
+  (le_abs_self _).trans (abs_cos_half_arg_mul_norm_add_le_norm_add_ofReal z t)
+
+/-- On the closed sector `|arg z| ≤ π - δ` with `0 ≤ δ`, the half-angle cosine satisfies
+`sin (δ / 2) ≤ cos (arg z / 2)`. -/
+theorem sin_half_le_cos_half_arg_of_abs_arg_le {z : ℂ} {δ : ℝ}
+    (hδ : 0 ≤ δ) (hs : |z.arg| ≤ Real.pi - δ) :
+    Real.sin (δ / 2) ≤ Real.cos (z.arg / 2) := by
+  have hle : |z.arg / 2| ≤ Real.pi / 2 - δ / 2 := by
+    rw [abs_div, abs_two]
+    linarith
+  have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg (z.arg / 2))
+    (by linarith [Real.pi_pos]) hle
+  rwa [Real.cos_abs, Real.cos_pi_div_two_sub] at hcos
+
+/-- On the closed sector `|arg z| ≤ π - δ` with `0 ≤ δ`, every real translate `z + t` satisfies
+`sin (δ / 2) * (‖z‖ + t) ≤ ‖z + t‖`. -/
+theorem sin_half_mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {z : ℂ} {δ : ℝ}
+    (hδ : 0 ≤ δ) (hs : |z.arg| ≤ Real.pi - δ) (t : ℝ) :
+    Real.sin (δ / 2) * (‖z‖ + t) ≤ ‖z + (t : ℂ)‖ := by
+  have hδπ : δ ≤ Real.pi := by linarith [abs_nonneg z.arg]
+  have hsin : 0 ≤ Real.sin (δ / 2) :=
+    Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
+  rcases le_or_gt 0 (‖z‖ + t) with hzt | hzt
+  · exact (mul_le_mul_of_nonneg_right (sin_half_le_cos_half_arg_of_abs_arg_le hδ hs) hzt).trans
+      (cos_half_arg_mul_norm_add_le_norm_add_ofReal z t)
+  · exact (mul_nonpos_of_nonneg_of_nonpos hsin hzt.le).trans (norm_nonneg _)
+
 /-- A nonzero complex number with `|arg s| < π` lies in the slit plane. -/
 theorem mem_slitPlane_of_abs_arg_lt {s : ℂ} (hs : |s.arg| < Real.pi) (hs0 : s ≠ 0) :
     s ∈ slitPlane :=
@@ -68,32 +159,34 @@ theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
 
-/-- Since `arg s ∈ (-π, π]`, its half-angle lies in `(-π / 2, π / 2]` and has nonnegative cosine. -/
-theorem cos_arg_div_two_nonneg (s : ℂ) : 0 ≤ Real.cos (s.arg / 2) :=
-  Real.cos_nonneg_of_mem_Icc ⟨by linarith [neg_pi_lt_arg s], by linarith [arg_le_pi s]⟩
-
-/-- On the slit plane `|arg s| < π`, so `cos (arg s / 2) > 0`. -/
-theorem cos_arg_div_two_pos_of_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) :
-    0 < Real.cos (s.arg / 2) := by
-  have hlt : s.arg < Real.pi :=
-    lt_of_le_of_ne (arg_le_pi s) (mem_slitPlane_iff_arg.mp hs).1
-  exact Real.cos_pos_of_mem_Ioo ⟨by linarith [neg_pi_lt_arg s], by linarith⟩
-
-/-- Sharp half-angle lower bound for translation by a real `t`:
-`cos (arg s / 2) * (‖s‖ + t) ≤ ‖s + t‖` for every `s : ℂ` and `t : ℝ`. -/
-theorem cos_arg_div_two_mul_norm_add_le_norm_add_ofReal (s : ℂ) (t : ℝ) :
-    Real.cos (s.arg / 2) * (‖s‖ + t) ≤ ‖s + t‖ := by
-  have hsq : ‖s + t‖ ^ 2 = ‖s‖ ^ 2 + 2 * t * s.re + t ^ 2 := by
-    simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
-    ring
-  have hre : s.re = ‖s‖ * (2 * Real.cos (s.arg / 2) ^ 2 - 1) := by
-    rw [← norm_mul_cos_arg s]
-    conv_lhs => rw [show s.arg = 2 * (s.arg / 2) by ring]
-    rw [Real.cos_two_mul]
-  have hcos_le : Real.cos (s.arg / 2) ^ 2 ≤ 1 := Real.cos_sq_le_one _
-  have hle_sq : (Real.cos (s.arg / 2) * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
-    rw [hsq, hre]
-    nlinarith [mul_nonneg (sub_nonneg.mpr hcos_le) (sq_nonneg (‖s‖ - t))]
-  nlinarith [norm_nonneg (s + t)]
+/-- Every sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected. -/
+theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
+    IsPreconnected {z : ℂ | |z.arg| < α ∧ r < ‖z‖} := by
+  let φ : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * Complex.exp ((p.2 : ℂ) * Complex.I)
+  have hφ : Continuous φ := by fun_prop
+  -- Realize the sector as the continuous polar image of `(Ici 0 ∩ Ioi r) ×ˢ Ioo (-α) α`.
+  have himg : φ '' ((Set.Ici 0 ∩ Set.Ioi r) ×ˢ Set.Ioo (-α) α) =
+      {z : ℂ | |z.arg| < α ∧ r < ‖z‖} := by
+    ext z
+    constructor
+    · rintro ⟨⟨ρ, θ⟩, ⟨⟨hρ0, hrρ⟩, hθ⟩, rfl⟩
+      have hnorm : ‖φ (ρ, θ)‖ = ρ := by
+        simp [φ, abs_of_nonneg hρ0]
+      refine ⟨?_, by rwa [hnorm]⟩
+      rcases lt_or_ge Real.pi α with hα | hα
+      · exact (abs_arg_le_pi _).trans_lt hα
+      · rcases hρ0.eq_or_lt with rfl | hρ_pos
+        · simp only [φ, ofReal_zero, zero_mul, arg_zero, abs_zero]
+          linarith [hθ.1, hθ.2]
+        · have harg : (φ (ρ, θ)).arg = θ := by
+            rw [arg_ofReal_mul hρ_pos _, arg_exp_mul_I, toIocMod_eq_self]
+            exact ⟨by linarith [hθ.1], by linarith [hθ.2]⟩
+          rw [harg]
+          exact abs_lt.mpr hθ
+    · rintro ⟨harg, hnorm⟩
+      exact ⟨(‖z‖, z.arg), ⟨⟨norm_nonneg z, hnorm⟩, abs_lt.mp harg⟩, norm_mul_exp_arg_mul_I z⟩
+  rw [← himg]
+  exact ((Set.ordConnected_Ici.inter Set.ordConnected_Ioi).isPreconnected.prod
+    isPreconnected_Ioo).image φ hφ.continuousOn
 
 end Complex

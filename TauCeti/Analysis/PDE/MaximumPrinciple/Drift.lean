@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.FredholmAlternative
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
 # The weak maximum principle with bounded drift
@@ -317,11 +318,8 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
   -- Since `u ∈ L²` and `k ≥ 0`, the superlevel sets `{u > l}`, `l > k`, have finite measure.
   have hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞ := by
     intro l hkl
-    have hl : 0 < l := hk.trans_lt hkl
-    refine ne_top_of_le_ne_top ((Lp.memLp (W1p.value u)).meas_ge_lt_top (by norm_num)
-      (by norm_num) (Real.toNNReal_pos.2 hl).ne').ne (measure_mono fun x hx ↦ ?_)
-    rw [mem_ofPred_eq, Real.toNNReal_le_iff_le_coe, coe_nnNorm, Real.norm_eq_abs]
-    exact (le_of_lt hx).trans (le_abs_self _)
+    exact ((Lp.memLp (W1p.value u)).measure_gt_lt_top two_ne_zero ENNReal.ofNat_ne_top
+      (hk.trans_lt hkl)).ne
   -- Along suitable levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive measure,
   -- the measure of `{u > lⱼ, ∇u ≠ 0}` tends to zero, so the level estimate fails for large `j`.
   by_contra hcon

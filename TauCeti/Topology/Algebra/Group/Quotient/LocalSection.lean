@@ -48,7 +48,7 @@ variable {X : Type*} {K : Subgroup G} {π : G → X} {U : Set X} {s : X → G}
 @[to_additive]
 private theorem map_mul_eq_of_localSection (hK : ∀ a b, π a = π b ↔ a⁻¹ * b ∈ K)
     (hsec : ∀ q ∈ U, π (s q) = q) {q : X} (hq : q ∈ U) (h : K) : π (s q * h) = q :=
-  ((hK _ _).2 (by rw [inv_mul_cancel_left]; exact h.2)).symm.trans (hsec q hq)
+  ((hK _ _).2 (by rw [inv_mul_cancel_left]; exact h.property)).symm.trans (hsec q hq)
 
 /-- The fiber coordinate of `localSectionTrivializationOfCosetFibers`: over `U` it is
 `s (π g)⁻¹ * g`, and elsewhere it is `1`. -/
@@ -101,7 +101,7 @@ def localSectionTrivializationOfCosetFibers (K : Subgroup G) (hπ : Continuous �
       fun g hg ↦ coe_localSectionFiber hg
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hp ↦ hp.1).mul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl
@@ -141,7 +141,7 @@ theorem localSectionTrivializationOfCosetFibers_apply_mul {g : G} (hg : π g ∈
       ((localSectionTrivializationOfCosetFibers K hπ hK U hU s hs hsec g).1,
         (localSectionTrivializationOfCosetFibers K hπ hK U hU s hs hsec g).2 * h) := by
   have hgh : π (g * h) = π g :=
-    ((hK _ _).2 (by rw [inv_mul_cancel_left]; exact h.2)).symm
+    ((hK _ _).2 (by rw [inv_mul_cancel_left]; exact h.property)).symm
   refine Prod.ext hgh (Subtype.ext ?_)
   rw [Subgroup.coe_mul, localSectionTrivializationOfCosetFibers_fiberCoordinate (hgh.symm ▸ hg),
     localSectionTrivializationOfCosetFibers_fiberCoordinate hg, hgh, mul_assoc]

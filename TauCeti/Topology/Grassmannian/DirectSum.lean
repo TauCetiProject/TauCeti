@@ -46,9 +46,9 @@ followed by the images of the vectors of the second frame. -/
 def directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜)) (hf : Function.Injective f)
     (v : finiteFullRankFrame 𝕜 a N) (w : finiteFullRankFrame 𝕜 b M) :
     finiteFullRankFrame 𝕜 (a + b) P :=
-  ⟨Fin.append (fun i ↦ f (v.1 i, 0)) (fun j ↦ f (0, w.1 j)), by
+  ⟨Fin.append (fun i ↦ f (v.val i, 0)) (fun j ↦ f (0, w.val j)), by
     have h := (linearIndependent_equiv finSumFinEquiv.symm).2
-      ((linearIndependent_inl_union_inr' v.2 w.2).map' f (LinearMap.ker_eq_bot.2 hf))
+      ((linearIndependent_inl_union_inr' v.property w.property).map' f (LinearMap.ker_eq_bot.2 hf))
     convert h using 1
     ext k : 1
     refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k <;> simp⟩
@@ -56,7 +56,7 @@ def directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 
 @[simp]
 theorem coe_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (v : finiteFullRankFrame 𝕜 a N) (w : finiteFullRankFrame 𝕜 b M) :
-    (directSum f hf v w).1 = Fin.append (fun i ↦ f (v.1 i, 0)) (fun j ↦ f (0, w.1 j)) := (rfl)
+    (directSum f hf v w).val = Fin.append (fun i ↦ f (v.val i, 0)) (fun j ↦ f (0, w.val j)) := (rfl)
 
 /-- Combining two frames along a continuous linear map is jointly continuous. -/
 theorem continuous_directSum [TopologicalSpace 𝕜]
@@ -67,11 +67,11 @@ theorem continuous_directSum [TopologicalSpace 𝕜]
   refine Continuous.subtype_mk (continuous_pi fun k ↦ ?_) _
   refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
   · simp only [Fin.append_left]
-    exact hfc.comp (((continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)).prodMk
+    exact hfc.comp (((continuous_apply i).comp (continuous_subtypeVal.comp continuous_fst)).prodMk
       continuous_const)
   · simp only [Fin.append_right]
     exact hfc.comp (continuous_const.prodMk
-      ((continuous_apply j).comp (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_apply j).comp (continuous_subtypeVal.comp continuous_snd)))
 
 end finiteFullRankFrame
 
@@ -82,15 +82,15 @@ namespace finiteGrassmannian
 noncomputable def directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M) :
     finiteGrassmannian 𝕜 (a + b) P :=
-  ⟨(V.1.prod W.1).map f, by
+  ⟨(V.val.prod W.val).map f, by
     rw [← (Submodule.equivMapOfInjective f hf _).finrank_eq,
-      (Submodule.prodEquiv V.1 W.1).finrank_eq, Module.finrank_prod, V.2, W.2]⟩
+      (Submodule.prodEquiv V.val W.val).finrank_eq, Module.finrank_prod, V.property, W.property]⟩
 
 /-- The direct sum is the image of the product plane.
 Use `mem_directSum` for membership simplification. -/
 theorem coe_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M) :
-    (directSum f hf V W).1 = (V.1.prod W.1).map f := (rfl)
+    (directSum f hf V W).val = (V.val.prod W.val).map f := (rfl)
 
 /-- A vector lies in a direct sum exactly when it is the image of a pair of vectors of the
 two summands. -/
@@ -98,7 +98,7 @@ two summands. -/
 theorem mem_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M)
     (x : Fin P → 𝕜) :
-    x ∈ (directSum f hf V W).1 ↔ ∃ v ∈ V.1, ∃ w ∈ W.1, f (v, w) = x := by
+    x ∈ (directSum f hf V W).val ↔ ∃ v ∈ V.val, ∃ w ∈ W.val, f (v, w) = x := by
   simp only [coe_directSum, Submodule.mem_map, Submodule.mem_prod, Prod.exists]
   constructor
   · rintro ⟨v, w, ⟨hv, hw⟩, rfl⟩
@@ -119,11 +119,11 @@ theorem frameSpan_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[�
     refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
     · simp only [finiteFullRankFrame.coe_directSum, Fin.append_left, SetLike.mem_coe,
         mem_directSum, coe_frameSpan]
-      exact ⟨v.1 i, Submodule.subset_span (mem_range_self i), 0, Submodule.zero_mem _, rfl⟩
+      exact ⟨v.val i, Submodule.subset_span (mem_range_self i), 0, Submodule.zero_mem _, rfl⟩
     · simp only [finiteFullRankFrame.coe_directSum, Fin.append_right, SetLike.mem_coe,
         mem_directSum, coe_frameSpan]
-      exact ⟨0, Submodule.zero_mem _, w.1 j, Submodule.subset_span (mem_range_self j), rfl⟩
-  · exact (frameSpan _).2.trans (directSum f hf (frameSpan v) (frameSpan w)).2.symm
+      exact ⟨0, Submodule.zero_mem _, w.val j, Submodule.subset_span (mem_range_self j), rfl⟩
+  · exact (frameSpan _).property.trans (directSum f hf (frameSpan v) (frameSpan w)).property.symm
 
 /-- Over a topological field, the direct sum along a continuous linear map is jointly
 continuous for the frame-quotient topologies. -/
@@ -159,7 +159,7 @@ theorem directSum_map_map (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜]
 @[simp]
 theorem comap_inl_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M) :
-    (directSum f hf V W).1.comap (f ∘ₗ LinearMap.inl 𝕜 _ _) = V.1 := by
+    (directSum f hf V W).val.comap (f ∘ₗ LinearMap.inl 𝕜 _ _) = V.val := by
   rw [Submodule.comap_comp, coe_directSum, Submodule.comap_map_eq_of_injective hf,
     Submodule.prod_comap_inl]
 
@@ -167,7 +167,7 @@ theorem comap_inl_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[�
 @[simp]
 theorem comap_inr_directSum (f : (Fin N → 𝕜) × (Fin M → 𝕜) →ₗ[𝕜] (Fin P → 𝕜))
     (hf : Function.Injective f) (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M) :
-    (directSum f hf V W).1.comap (f ∘ₗ LinearMap.inr 𝕜 _ _) = W.1 := by
+    (directSum f hf V W).val.comap (f ∘ₗ LinearMap.inr 𝕜 _ _) = W.val := by
   rw [Submodule.comap_comp, coe_directSum, Submodule.comap_map_eq_of_injective hf,
     Submodule.prod_comap_inr]
 
@@ -196,8 +196,8 @@ coordinates lie in the second plane. -/
 @[simp]
 theorem mem_blockSum (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian 𝕜 b M)
     (x : Fin (N + M) → 𝕜) :
-    x ∈ (blockSum V W).1 ↔
-      (fun i ↦ x (Fin.castAdd M i)) ∈ V.1 ∧ (fun j ↦ x (Fin.natAdd N j)) ∈ W.1 := by
+    x ∈ (blockSum V W).val ↔
+      (fun i ↦ x (Fin.castAdd M i)) ∈ V.val ∧ (fun j ↦ x (Fin.natAdd N j)) ∈ W.val := by
   rw [blockSum, coe_directSum, Submodule.mem_map_equiv, LinearEquiv.symm_symm,
     Submodule.mem_prod]
   -- Splitting evaluates at `finSumFinEquiv (Sum.inl i) = Fin.castAdd M i` and

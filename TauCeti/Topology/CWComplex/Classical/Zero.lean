@@ -53,13 +53,13 @@ instance zeroSkeletonDiscreteTopology :
     (CWComplex.closed E (Subtype.val '' A) (Subtype.coe_image_subset _ A)).2 fun n j ↦ by
       obtain rfl : n = 0 := by
         rw [CWComplex.Subcomplex.cell_def] at j
-        simpa [E, skeletonLT_I] using j.2
+        simpa [E, skeletonLT_I] using j.property
       rw [closedCell_zero_eq_singleton]
       exact ((Set.finite_singleton _).subset Set.inter_subset_right).isClosed
-  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtype_val
+  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtypeVal
 
 /-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
 instance zeroSkeletonPreviousIsEmpty : IsEmpty (↑(skeletonLT C ((0 : ℕ) : ℕ∞))) :=
-  ⟨fun x ↦ by simpa [← SetLike.mem_coe, CWComplex.skeletonLT_zero_eq_empty] using x.2⟩
+  ⟨fun x ↦ by simpa [← SetLike.mem_coe, CWComplex.skeletonLT_zero_eq_empty] using x.property⟩
 
 end TauCeti
