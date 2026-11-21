@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Persistence of nondegenerate fixed points under small `C¹` perturbations
@@ -256,38 +257,13 @@ theorem exists_pos_forall_isInvertible_id_sub_fderiv [CompleteSpace E] (hK : IsC
     ∃ δ > 0, ∀ g : E → E, (∀ x ∈ K, ‖g x - f x‖ ≤ δ) →
       (∀ x ∈ K, ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ δ) →
       ∀ x ∈ K, IsFixedPt g x → (ContinuousLinearMap.id ℝ E - fderiv ℝ g x).IsInvertible := by
-  -- The non-invertible operators form a closed set `S`; if it is empty there is nothing to prove.
-  set S : Set (E →L[ℝ] E) := {T | ¬T.IsInvertible}
-  have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  rcases S.eq_empty_or_nonempty with hSe | hSne
-  · refine ⟨1, one_pos, fun g _ _ x _ _ ↦ ?_⟩
-    by_contra h
-    exact hSe.subset (mem_ofPred.2 h)
-  -- `φ x` is positive on `K`: at a fixed point of `f` the operator `1 - Df` lies outside `S`.
-  set φ : E → ℝ := fun x ↦ ‖x - f x‖ + infDist (ContinuousLinearMap.id ℝ E - fderiv ℝ f x) S
-  have hφ : ContinuousOn φ K := (continuousOn_id.sub hf₀).norm.add
-    ((continuous_infDist_pt S).comp_continuousOn (continuousOn_const.sub hf₁))
-  have hpos (x : E) (hx : x ∈ K) : 0 < φ x := by
-    by_cases h₀ : IsFixedPt f x
-    · have h := (hS.notMem_iff_infDist_pos hSne).1 fun h ↦ h (hf x hx h₀)
-      simpa [φ, h₀.eq] using h
-    · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm h₀))) infDist_nonneg
-  -- By compactness, `φ` has a positive lower bound `m` on `K`.
-  obtain ⟨m, hm, hmK⟩ : ∃ m > 0, ∀ x ∈ K, m ≤ φ x := by
-    rcases K.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨1, one_pos, by simp⟩
-    obtain ⟨x₀, hx₀, hmin⟩ := hK.exists_isMinOn hne hφ
-    exact ⟨φ x₀, hpos x₀ hx₀, fun x hx ↦ hmin hx⟩
-  refine ⟨m / 3, by positivity, fun g hg₀ hg₁ x hx hgx ↦ not_not.1 fun h ↦ ?_⟩
-  -- At a fixed point of `g`, `f` moves `x` by at most `m / 3`, so `1 - Df(x)` is at distance at
-  -- least `2m / 3` from `S`, while `1 - Dg(x)` lies in `S` within `m / 3` of it.
-  have h₁ : ‖x - f x‖ ≤ m / 3 := by simpa [hgx.eq] using hg₀ x hx
-  have h₂ : infDist (ContinuousLinearMap.id ℝ E - fderiv ℝ f x) S ≤
-      ‖fderiv ℝ g x - fderiv ℝ f x‖ := by
-    refine (infDist_le_dist_of_mem (mem_ofPred.2 h : _ ∈ S)).trans_eq ?_
-    rw [dist_eq_norm, show ContinuousLinearMap.id ℝ E - fderiv ℝ f x -
-      (ContinuousLinearMap.id ℝ E - fderiv ℝ g x) = fderiv ℝ g x - fderiv ℝ f x by abel]
-  linarith [hmK x hx, hg₁ x hx]
+  -- Apply the compactness lemma to the displacement `x - f x` and the operators `1 - Df(x)`.
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_isInvertible_of_norm_le (d := fun x ↦ x - f x)
+    (A := fun x ↦ ContinuousLinearMap.id ℝ E - fderiv ℝ f x) (continuousOn_id.sub hf₀)
+    (continuousOn_const.sub hf₁) fun x hx hx₀ ↦ hf x hx (sub_eq_zero.1 hx₀).symm
+  refine ⟨δ, hδ, fun g hg₀ hg₁ x hx hgx ↦ h x hx _ (by simpa [hgx.eq] using hg₀ x hx) ?_⟩
+  rw [sub_sub_sub_cancel_left, norm_sub_rev]
+  exact hg₁ x hx
 
 /-- **Nondegeneracy of the fixed points in a compact set persists under small `C¹`
 perturbations.**

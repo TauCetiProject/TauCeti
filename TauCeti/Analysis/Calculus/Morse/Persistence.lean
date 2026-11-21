@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!
@@ -256,38 +257,10 @@ theorem exists_pos_forall_hasNondegenerateCriticalPointsOn [CompleteSpace E] {K 
       (∀ x ∈ K, ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ δ) →
       (∀ x ∈ K, ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ ≤ δ) →
       HasNondegenerateCriticalPointsOn g K := by
-  -- The non-invertible operators form a closed set `S`; if it is empty there is nothing to prove.
-  set S : Set (E →L[ℝ] E →L[ℝ] ℝ) := {T | ¬T.IsInvertible}
-  have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  rcases S.eq_empty_or_nonempty with hSe | hSne
-  · refine ⟨1, one_pos, fun g hg _ _ ↦ hasNondegenerateCriticalPointsOn_iff.2
-      fun x hx hgx ↦ ⟨hg x hx, hgx, not_not.1 fun h ↦ ?_⟩⟩
-    exact hSe.subset (show fderiv ℝ (fderiv ℝ g) x ∈ S from h)
-  -- `φ x` is positive on `K`: at a critical point of `f` the Hessian lies outside `S`.
-  set φ : E → ℝ := fun x ↦ ‖fderiv ℝ f x‖ + infDist (fderiv ℝ (fderiv ℝ f) x) S
-  have hφ : ContinuousOn φ K := hf₁.norm.add ((continuous_infDist_pt S).comp_continuousOn hf₂)
-  have hpos (x : E) (hx : x ∈ K) : 0 < φ x := by
-    by_cases h₀ : fderiv ℝ f x = 0
-    · have h := (hS.notMem_iff_infDist_pos hSne).1 fun h ↦
-        h (hasNondegenerateCriticalPointsOn_iff.1 hM hx h₀).isInvertible
-      simpa [φ, h₀] using h
-    · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 h₀) infDist_nonneg
-  -- By compactness, `φ` has a positive lower bound `m` on `K`.
-  obtain ⟨m, hm, hmK⟩ : ∃ m > 0, ∀ x ∈ K, m ≤ φ x := by
-    rcases K.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨1, one_pos, by simp⟩
-    obtain ⟨x₀, hx₀, hmin⟩ := hK.exists_isMinOn hne hφ
-    exact ⟨φ x₀, hpos x₀ hx₀, fun x hx ↦ hmin hx⟩
-  refine ⟨m / 3, by positivity, fun g hg hg₁ hg₂ ↦ hasNondegenerateCriticalPointsOn_iff.2
-    fun x hx hgx ↦ ⟨hg x hx, hgx, not_not.1 fun h ↦ ?_⟩⟩
-  -- At a critical point of `g` the differential of `f` is at most `m / 3`, so the Hessian of `f`
-  -- is at distance at least `2m / 3` from `S`, while that of `g` lies in `S` within `m / 3` of it.
-  have h₁ : ‖fderiv ℝ f x‖ ≤ m / 3 := by simpa [hgx] using hg₁ x hx
-  have h₂ : infDist (fderiv ℝ (fderiv ℝ f) x) S ≤
-      ‖fderiv ℝ (fderiv ℝ g) x - fderiv ℝ (fderiv ℝ f) x‖ :=
-    (infDist_le_dist_of_mem (show fderiv ℝ (fderiv ℝ g) x ∈ S from h)).trans_eq
-      ((dist_comm _ _).trans
-        (dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)))
-  linarith [hmK x hx, hg₂ x hx]
+  -- Apply the compactness lemma to the differential and the Hessian of `f`.
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_isInvertible_of_norm_le hf₁ hf₂
+    fun x hx h₀ ↦ (hasNondegenerateCriticalPointsOn_iff.1 hM hx h₀).isInvertible
+  exact ⟨δ, hδ, fun g hg hg₁ hg₂ ↦ hasNondegenerateCriticalPointsOn_iff.2 fun x hx hgx ↦
+    ⟨hg x hx, hgx, h x hx _ (by simpa [hgx] using hg₁ x hx) (hg₂ x hx)⟩⟩
 
 end TauCeti.HasNondegenerateCriticalPointsOn
