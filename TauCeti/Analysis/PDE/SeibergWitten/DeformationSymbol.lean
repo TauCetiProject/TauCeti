@@ -149,18 +149,9 @@ theorem deformationSymbol_fst_mul_add_inner_snd (ξ a b : V) :
     (deformationSymbol o hkl ξ a).1 * (deformationSymbol o hkl ξ b).1 +
       ⟪(deformationSymbol o hkl ξ a).2, (deformationSymbol o hkl ξ b).2⟫ =
       ‖ξ‖ ^ 2 * ⟪a, b⟫ := by
-  -- `⟪x, ⋆y⟫ = vol(ξ, b, ξ, a) = 0` and `⟪⋆x, y⟫ = vol(ξ, a, ξ, b) = 0` for `x = ξ ∧ a` and
-  -- `y = ξ ∧ b`, since both volumes repeat `ξ`.
-  have hxy : ⟪ιMulti ℝ 2 ![ξ, a], o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, b])⟫ = 0 := by
-    rw [real_inner_comm, o.inner_hodgeStar_ιMulti_two hkl]
-    exact o.volumeForm.map_eq_zero_of_eq ![ξ, b, ξ, a] (i := 0) (j := 2) rfl (by decide)
-  have hyx : ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a]), ιMulti ℝ 2 ![ξ, b]⟫ = 0 := by
-    rw [o.inner_hodgeStar_ιMulti_two hkl]
-    exact o.volumeForm.map_eq_zero_of_eq ![ξ, a, ξ, b] (i := 0) (j := 2) rfl (by decide)
-  simp only [deformationSymbol_apply_fst, deformationSymbol_apply_snd, real_inner_smul_left,
-    real_inner_smul_right, inner_add_left, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar,
-    inner_ιMulti_two, real_inner_comm ξ a, real_inner_self_eq_norm_sq]
-  linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪ξ, a⟫) / 2 * Real.mul_self_sqrt zero_le_two
+  simp only [deformationSymbol_apply_fst, deformationSymbol_apply_snd,
+    ← o.coe_selfDualWedge_apply hkl, ← Submodule.coe_inner]
+  exact o.inner_mul_add_inner_selfDualWedge hkl ξ a b
 
 /-- **Ellipticity of `δ₀`**: `⟪ξ, a⟫² + ‖√2 (ξ ∧ a)⁺‖² = ‖ξ‖² ‖a‖²`. Thus `σ_ξ` is `‖ξ‖` times an
 isometry into `ℝ ⊕ Λ⁺` with its Euclidean norm. -/

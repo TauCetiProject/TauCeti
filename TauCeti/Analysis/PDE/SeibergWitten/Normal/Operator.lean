@@ -205,10 +205,10 @@ theorem normalDomainEquiv_apply_normalCoord (y η : ℂ → EuclideanSpace ℝ (
 
 /-- At the pulled-back canonical-line background `(normalConnection e x, normalSpinor o ρ e u₀ x)`,
 the flat Seiberg–Witten equations hold iff `Vortex.equation x = 0` at `normalCoord e p`. -/
-theorem flatDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff
+theorem flatChiralDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} {p : V}
     (hx : DifferentiableAt ℝ x (normalCoord e p)) :
-    (flatDirac o ρ e (normalConnection e x) (normalSpinor o ρ e u₀ x) p = 0 ∧
+    (flatChiralDirac o ρ (normalConnection e x) (normalSpinor o ρ e u₀ x) p = 0 ∧
       flatCurvatureDefect o ρ J hkl (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he)
         (normalConnection e x) (normalSpinor o ρ e u₀ x) p = 0) ↔
       Vortex.equation x (normalCoord e p) = 0 := by
@@ -216,7 +216,7 @@ theorem flatDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff
     (normalCoord e).differentiableAt
   have hns : normalSpinor o ρ e u₀ x = fun q ↦ (Vortex.sectionValue x ∘ normalCoord e) q • u₀ :=
     funext fun q ↦ normalSpinor_apply u₀ x q
-  rw [← Submodule.coe_eq_zero, hns, coe_flatDirac_smul_const (normalConnection e x) hα u₀,
+  rw [← Submodule.coe_eq_zero, hns, coe_flatChiralDirac_smul_const (normalConnection e x) hα u₀ e,
     flatCurvatureDefect_eq_zero_iff]
   have h := sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
     hQ hkl he h₀ h₂₃ (r := 2⁻¹) (by norm_num) h₂ hρ hu₀ hu₀₁ hx
@@ -302,12 +302,12 @@ theorem linearizedFlatCurvature_normalPerturbation (x : ℂ → EuclideanSpace �
     Vortex.gaugeFixedAdjoint_apply_one]; module
 
 omit h₂ hρ hu₀₁ in
-private theorem coe_flatDirac_normalPerturbationSpinor (x : ℂ → EuclideanSpace ℝ (Fin 4))
+private theorem coe_flatChiralDirac_normalPerturbationSpinor (x : ℂ → EuclideanSpace ℝ (Fin 4))
     {y η : ℂ → EuclideanSpace ℝ (Fin 4)} {p : V}
     (hy : DifferentiableAt ℝ y (normalCoord e p))
     (hη : DifferentiableAt ℝ η (normalCoord e p)) :
     let z := normalCoord e p
-    (flatDirac o ρ e (normalConnection e x) (normalPerturbationSpinor o ρ e u₀ y η) p : W) =
+    (flatChiralDirac o ρ (normalConnection e x) (normalPerturbationSpinor o ρ e u₀ y η) p : W) =
       ((fderiv ℝ (Vortex.sectionValue y) z 1 + I * (x z 0 : ℂ) * Vortex.sectionValue y z) +
           (fderiv ℝ (Vortex.sectionValue y) z I + I * (x z 1 : ℂ) * Vortex.sectionValue y z) * I) •
           ρ (ι Q (e 2)) u₀ +
@@ -328,8 +328,9 @@ private theorem coe_flatDirac_normalPerturbationSpinor (x : ℂ → EuclideanSpa
         (fun q ↦ (Vortex.sectionValue η ∘ normalCoord e) q • v₀) :=
     funext fun q ↦ by
       simp [normalPerturbationSpinor, normalFrameSpinor_def, Vortex.sectionValue_apply, v₀]
-  rw [hsplit, flatDirac_add (normalConnection e x) (hsmul_d hy u₀) (hsmul_d hη v₀),
-    Submodule.coe_add, coe_flatDirac_smul_const _ (hsec hy), coe_flatDirac_smul_const _ (hsec hη),
+  rw [hsplit, flatChiralDirac_add (normalConnection e x) (hsmul_d hy u₀) (hsmul_d hη v₀),
+    Submodule.coe_add, coe_flatChiralDirac_smul_const _ (hsec hy) _ e,
+    coe_flatChiralDirac_smul_const _ (hsec hη) _ e,
     sum_covariantDeriv_normalConnection_smul_ι x hy u₀,
     sum_covariantDeriv_normalConnection_smul_ι x hη v₀, ι_apply_two_antiCanonicalSpinor hQ u₀,
     ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀,
@@ -397,7 +398,7 @@ theorem linearizedFlatDirac_normalPerturbation (x : ℂ → EuclideanSpace ℝ (
     simp_rw [Vortex.fderiv_sectionValue_apply (hpη 2) (hpη 3)]
     apply Complex.ext <;> simp [Vortex.sectionValue_apply] <;> ring
   apply Subtype.ext; rw [linearizedFlatDirac_apply, Submodule.coe_add,
-    coe_flatDirac_normalPerturbationSpinor hQ hkl he h₀ h₂₃ hu₀ x hy hη,
+    coe_flatChiralDirac_normalPerturbationSpinor hQ hkl he h₀ h₂₃ hu₀ x hy hη,
     coe_sum_normalPerturbationForm_smul_normalSpinor hQ hkl he h₀ h₂₃ hu₀ x y η p,
     Submodule.coe_sub, Submodule.coe_smul, Submodule.coe_smul,
     coe_halfSpinCliffordMul_apply_apply, coe_halfSpinCliffordMul_apply_apply,

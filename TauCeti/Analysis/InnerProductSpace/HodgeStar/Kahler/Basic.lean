@@ -648,51 +648,68 @@ section InnerAndNorm
 variable {o : Orientation ℝ V (Fin 4)} {e : OrthonormalBasis (Fin 4) ℝ V}
   {J : AlmostComplexStructure V} {hkl : 2 + 2 = finrank ℝ V} {he : e.toBasis.orientation = o}
 
+/-- In a positively oriented unitary frame `e`, `J.kahlerSelfDual` equals
+`o.selfDualWedge hkl (e 0) (e 1)`. -/
+theorem kahlerSelfDual_eq_selfDualWedge (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
+    J.kahlerSelfDual o hkl hω = o.selfDualWedge hkl (e 0) (e 1) := Subtype.ext <| by
+  rw [coe_kahlerSelfDual, Orientation.coe_selfDualWedge_apply,
+    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, o.hodgeStar_ιMulti_zero_one hkl he]
+
+/-- In a positively oriented orthonormal frame `e`, `antiInvariantSelfDual₁` equals
+`o.selfDualWedge hkl (e 0) (e 2)`. -/
+theorem antiInvariantSelfDual₁_eq_selfDualWedge :
+    antiInvariantSelfDual₁ o e hkl he = o.selfDualWedge hkl (e 0) (e 2) := Subtype.ext <| by
+  rw [coe_antiInvariantSelfDual₁, Orientation.coe_selfDualWedge_apply,
+    o.hodgeStar_ιMulti_zero_two hkl he, sub_eq_add_neg]
+
+/-- In a positively oriented orthonormal frame `e`, `antiInvariantSelfDual₂` equals
+`o.selfDualWedge hkl (e 0) (e 3)`. -/
+theorem antiInvariantSelfDual₂_eq_selfDualWedge :
+    antiInvariantSelfDual₂ o e hkl he = o.selfDualWedge hkl (e 0) (e 3) := Subtype.ext <| by
+  rw [coe_antiInvariantSelfDual₂, Orientation.coe_selfDualWedge_apply,
+    o.hodgeStar_ιMulti_zero_three hkl he]
+
+private theorem inner_selfDualWedge_orthonormalBasis {i j : Fin 4} (hi : i ≠ 0) :
+    ⟪o.selfDualWedge hkl (e 0) (e i), o.selfDualWedge hkl (e 0) (e j)⟫ = ⟪e i, e j⟫ := by
+  have h := o.inner_mul_add_inner_selfDualWedge hkl (e 0) (e i) (e j)
+  rw [e.orthonormal.inner_eq_zero hi.symm, zero_mul, zero_add, e.orthonormal.1 0, one_pow,
+    one_mul] at h
+  exact h
+
 /-- `antiInvariantSelfDual₁` has unit norm in `Λ⁺ V`. -/
 theorem norm_antiInvariantSelfDual₁ : ‖antiInvariantSelfDual₁ o e hkl he‖ = 1 :=
   (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
-    rw [← real_inner_self_eq_norm_sq, Submodule.coe_inner, coe_antiInvariantSelfDual₁]
-    simp only [real_inner_smul_left, real_inner_smul_right, inner_sub_left, inner_sub_right,
-      e.orthonormal.inner_ιMulti_two]
-    norm_num [div_eq_mul_inv]
-    linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
+    rw [← real_inner_self_eq_norm_sq, antiInvariantSelfDual₁_eq_selfDualWedge,
+      inner_selfDualWedge_orthonormalBasis (by decide), real_inner_self_eq_norm_sq,
+      e.orthonormal.1 2, one_pow]
 
 /-- `antiInvariantSelfDual₂` has unit norm in `Λ⁺ V`. -/
 theorem norm_antiInvariantSelfDual₂ : ‖antiInvariantSelfDual₂ o e hkl he‖ = 1 :=
   (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
-    rw [← real_inner_self_eq_norm_sq, Submodule.coe_inner, coe_antiInvariantSelfDual₂]
-    simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right,
-      e.orthonormal.inner_ιMulti_two]
-    norm_num [div_eq_mul_inv]
-    linear_combination (2⁻¹ : ℝ) * Real.mul_self_sqrt zero_le_two
+    rw [← real_inner_self_eq_norm_sq, antiInvariantSelfDual₂_eq_selfDualWedge,
+      inner_selfDualWedge_orthonormalBasis (by decide), real_inner_self_eq_norm_sq,
+      e.orthonormal.1 3, one_pow]
 
 /-- `antiInvariantSelfDual₁` and `antiInvariantSelfDual₂` are orthogonal in `Λ⁺ V`. -/
 theorem inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ :
     ⟪antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he⟫ = 0 := by
-  rw [Submodule.coe_inner, coe_antiInvariantSelfDual₁, coe_antiInvariantSelfDual₂]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_sub_left, inner_add_right,
-    e.orthonormal.inner_ιMulti_two]
-  norm_num
+  rw [antiInvariantSelfDual₁_eq_selfDualWedge, antiInvariantSelfDual₂_eq_selfDualWedge,
+    inner_selfDualWedge_orthonormalBasis (by decide), e.orthonormal.inner_eq_zero (by decide)]
 
 /-- `J.kahlerSelfDual` is orthogonal to `antiInvariantSelfDual₁` in `Λ⁺ V`. -/
 theorem inner_kahlerSelfDual_antiInvariantSelfDual₁ (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
     ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₁ o e hkl he⟫ = 0 := by
-  rw [Submodule.coe_inner, coe_kahlerSelfDual, coe_antiInvariantSelfDual₁,
-    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_sub_right,
-    e.orthonormal.inner_ιMulti_two]
-  norm_num
+  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₁_eq_selfDualWedge,
+    inner_selfDualWedge_orthonormalBasis (by decide), e.orthonormal.inner_eq_zero (by decide)]
 
 /-- `J.kahlerSelfDual` is orthogonal to `antiInvariantSelfDual₂` in `Λ⁺ V`. -/
 theorem inner_kahlerSelfDual_antiInvariantSelfDual₂ (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm) :
     ⟪J.kahlerSelfDual o hkl hω, antiInvariantSelfDual₂ o e hkl he⟫ = 0 := by
-  rw [Submodule.coe_inner, coe_kahlerSelfDual, coe_antiInvariantSelfDual₂,
-    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right,
-    e.orthonormal.inner_ιMulti_two]
-  norm_num
+  rw [kahlerSelfDual_eq_selfDualWedge he h₀ h₂ hω, antiInvariantSelfDual₂_eq_selfDualWedge,
+    inner_selfDualWedge_orthonormalBasis (by decide), e.orthonormal.inner_eq_zero (by decide)]
 
 end InnerAndNorm
 
@@ -702,20 +719,21 @@ private theorem orthonormal_selfDualTuple (J : AlmostComplexStructure V)
     (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
     Orthonormal ℝ ![J.kahlerSelfDual o hkl (hodgeStar_kahlerForm h₀ h₂ hkl he),
       antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he] := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hk := norm_kahlerSelfDual (o := o) (hkl := hkl)
-    (hω := hodgeStar_kahlerForm h₀ h₂ hkl he) hJ
-  have h1 := norm_antiInvariantSelfDual₁ (o := o) (e := e) (hkl := hkl) (he := he)
-  have h2 := norm_antiInvariantSelfDual₂ (o := o) (e := e) (hkl := hkl) (he := he)
-  have hk1 := inner_kahlerSelfDual_antiInvariantSelfDual₁ (he := he) h₀ h₂
-    (hodgeStar_kahlerForm h₀ h₂ hkl he)
-  have hk2 := inner_kahlerSelfDual_antiInvariantSelfDual₂ (he := he) h₀ h₂
-    (hodgeStar_kahlerForm h₀ h₂ hkl he)
-  have h12 := inner_antiInvariantSelfDual₁_antiInvariantSelfDual₂ (o := o) (e := e)
-    (hkl := hkl) (he := he)
-  exact ⟨fun i ↦ by fin_cases i <;> assumption, fun {i j} hij ↦ by
-    fin_cases i <;> fin_cases j <;>
-      first | contradiction | assumption | rwa [real_inner_comm]⟩
+  have hmap : ![J.kahlerSelfDual o hkl (hodgeStar_kahlerForm h₀ h₂ hkl he),
+      antiInvariantSelfDual₁ o e hkl he, antiInvariantSelfDual₂ o e hkl he] =
+      fun i : Fin 3 ↦ o.selfDualWedge hkl (e 0) (e i.succ) := funext fun i ↦ by
+    fin_cases i
+    · exact kahlerSelfDual_eq_selfDualWedge he h₀ h₂ (hodgeStar_kahlerForm h₀ h₂ hkl he)
+    · exact antiInvariantSelfDual₁_eq_selfDualWedge (he := he)
+    · exact antiInvariantSelfDual₂_eq_selfDualWedge (he := he)
+  rw [hmap]
+  refine ⟨fun i ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    rw [← real_inner_self_eq_norm_sq, inner_selfDualWedge_orthonormalBasis (Fin.succ_ne_zero i),
+      real_inner_self_eq_norm_sq, e.orthonormal.1 i.succ, one_pow],
+    fun {i j} hij ↦ by
+      dsimp only
+      rw [inner_selfDualWedge_orthonormalBasis (Fin.succ_ne_zero i),
+        e.orthonormal.inner_eq_zero ((Fin.succ_injective 3).ne hij)]⟩
 
 /-- **The real orthonormal basis `(ω_u, ρ₁, ρ₂)` of `Λ⁺ V`** induced by a positively oriented
 unitary frame `e`. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
@@ -34,8 +35,11 @@ star under rotations.
 
 In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
 volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
-(`Orientation.inner_hodgeStar_ιMulti_two`). For a positively oriented orthonormal basis `e`, this
-gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`
+(`Orientation.inner_hodgeStar_ιMulti_two`), and the map `a ↦ √2 (ξ ∧ a)⁺` into `Λ⁺ V`
+(`Orientation.selfDualWedge`) satisfies the polarized ellipticity identity
+`⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫`
+(`Orientation.inner_mul_add_inner_selfDualWedge`). For a positively oriented orthonormal basis
+`e`, this gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`
 (`Orientation.hodgeStar_ιMulti_zero_one` and its companions). Consequently a self-dual or
 anti-self-dual two-vector is determined by its coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`,
 and its squared norm is twice the sum of their squares
@@ -249,6 +253,45 @@ theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) 
     congr 1
     ext i
     fin_cases i <;> rfl
+
+/-- In dimension four, the linear map `a ↦ √2 (ξ ∧ a)⁺` into the `+1` eigenspace `Λ⁺ V` of the
+Hodge star. -/
+def selfDualWedge (hkl : 2 + 2 = finrank ℝ V) (ξ : V) :
+    V →ₗ[ℝ] Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 where
+  toFun a := (√2 : ℝ) • o.selfDualProj even_two hkl (ιMulti ℝ 2 ![ξ, a])
+  map_add' a b := by rw [ιMulti_two_add_right, map_add, smul_add]
+  map_smul' c a := by rw [ιMulti_two_smul_right, map_smul, smul_comm, RingHom.id_apply]
+
+/-- Underlying two-vector of `o.selfDualWedge hkl ξ a`:
+`(√2 / 2) • (ξ ∧ a + ⋆(ξ ∧ a))`. -/
+@[simp]
+theorem coe_selfDualWedge_apply (hkl : 2 + 2 = finrank ℝ V) (ξ a : V) :
+    (o.selfDualWedge hkl ξ a : ⋀[ℝ]^2 V) =
+      (√2 / 2 : ℝ) • (ιMulti ℝ 2 ![ξ, a] + o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a])) := by
+  simp [selfDualWedge, smul_smul, div_eq_mul_inv]
+
+/-- `o.selfDualWedge hkl ξ ξ = 0`. -/
+@[simp]
+theorem selfDualWedge_self (hkl : 2 + 2 = finrank ℝ V) (ξ : V) :
+    o.selfDualWedge hkl ξ ξ = 0 := by
+  have h : ιMulti ℝ 2 ![ξ, ξ] = 0 :=
+    (ιMulti ℝ 2).map_eq_zero_of_eq ![ξ, ξ] (i := 0) (j := 1) rfl zero_ne_one
+  simp [selfDualWedge, h]
+
+/-- **Polarized ellipticity of `a ↦ (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)` in dimension four**:
+`⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫`. -/
+theorem inner_mul_add_inner_selfDualWedge (hkl : 2 + 2 = finrank ℝ V) (ξ a b : V) :
+    ⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫ := by
+  have hxy : ⟪ιMulti ℝ 2 ![ξ, a], o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, b])⟫ = 0 := by
+    rw [real_inner_comm, o.inner_hodgeStar_ιMulti_two hkl]
+    exact o.volumeForm.map_eq_zero_of_eq ![ξ, b, ξ, a] (i := 0) (j := 2) rfl (by decide)
+  have hyx : ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, a]), ιMulti ℝ 2 ![ξ, b]⟫ = 0 := by
+    rw [o.inner_hodgeStar_ιMulti_two hkl]
+    exact o.volumeForm.map_eq_zero_of_eq ![ξ, a, ξ, b] (i := 0) (j := 2) rfl (by decide)
+  simp only [Submodule.coe_inner, coe_selfDualWedge_apply, real_inner_smul_left,
+    real_inner_smul_right, inner_add_left, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar,
+    inner_ιMulti_two, real_inner_comm ξ a, real_inner_self_eq_norm_sq]
+  linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪ξ, a⟫) / 2 * Real.mul_self_sqrt zero_le_two
 
 variable {o} (hkl : 2 + 2 = finrank ℝ V) {e : OrthonormalBasis (Fin 4) ℝ V}
   (he : e.toBasis.orientation = o)

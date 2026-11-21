@@ -178,6 +178,30 @@ theorem covariantDeriv_apply {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ
     covariantDeriv b α x v = fderiv ℝ α x v + b x (fun _ ↦ v) • I • α x := by
   simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
 
+/-- The covariant derivative is additive at a point where both sections are differentiable. -/
+theorem covariantDeriv_add {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) {α₁ α₂ : E → W} {x : E}
+    (h₁ : DifferentiableAt ℝ α₁ x) (h₂ : DifferentiableAt ℝ α₂ x) :
+    covariantDeriv b (α₁ + α₂) x = covariantDeriv b α₁ x + covariantDeriv b α₂ x :=
+  ContinuousLinearMap.ext fun v ↦ by
+    simp [covariantDeriv_apply, fderiv_add h₁ h₂, smul_add]; abel
+
+/-- The covariant derivative is `ℂ`-homogeneous for constant complex scalars. -/
+theorem covariantDeriv_smul {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (c : ℂ) (α : E → W) (x : E) :
+    covariantDeriv b (c • α) x = c • covariantDeriv b α x :=
+  ContinuousLinearMap.ext fun v ↦ by
+    simp only [_root_.smul_apply, covariantDeriv_apply, fderiv_const_smul_field,
+      Pi.smul_apply, ← Complex.coe_smul]
+    module
+
+/-- The covariant derivative sends the zero section to zero. -/
+@[simp]
+theorem covariantDeriv_zero {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (x : E) :
+    covariantDeriv b (0 : E → W) x = 0 :=
+  ContinuousLinearMap.ext fun v ↦ by simp [covariantDeriv_apply]
+
 /-- The covariant derivative of a `C¹` section for a continuous connection form is
 continuous. -/
 theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) :

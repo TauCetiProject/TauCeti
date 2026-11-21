@@ -8,18 +8,20 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
+public import TauCeti.Analysis.PDE.SeibergWitten.FlatWeitzenbock
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # The flat four-dimensional Seiberg–Witten operators and their linearization
 
 On an oriented four-dimensional real inner product space `V` with Clifford module `W = W⁺ ⊕ W⁻`
-and compatible almost complex structure `J`, this file defines the flat chiral Dirac operator
-`flatDirac` (`D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ`) built from `spinorCovariantDeriv`, the unit-symbol
+and compatible almost complex structure `J`, this file defines the chiral restriction
+`flatChiralDirac` (`W⁺ → W⁻`) of `TauCeti.SeibergWitten.flatDirac`, the unit-symbol
 self-dual curvature defect `flatCurvatureDefect`, their pointwise directional linearizations (first
 variations) `linearizedFlatCurvature` and `linearizedFlatDirac` (`hasDerivAt_flatCurvatureDefect`,
-`hasDerivAt_flatDirac`), the formal infinitesimal gauge-fixing adjoint `flatGaugeAdjoint`
+`hasDerivAt_flatChiralDirac`), the formal infinitesimal gauge-fixing adjoint `flatGaugeAdjoint`
 (`mul_flatGaugeAdjoint_eq`), and the combined eight-real-component linearized gauge-fixed operator
 `gaugeFixedFlatOperator`, together with orthonormal-frame independence and linearity properties.
 
@@ -46,105 +48,96 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 
 attribute [local instance] finiteDimensional_of_finrank_four
 
-omit [FiniteDimensional ℂ W] in
-/-- **Covariant derivative of a positive half-spinor field** `∇_a χ = dχ + i b χ` for `a = i b`. -/
-def spinorCovariantDeriv (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
-    V →L[ℝ] positiveHalfSpinors o ρ :=
-  fderiv ℝ χ p +
-    ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (b p)).smulRight (I • χ p)
+private theorem fderiv_coe_positiveHalfSpinors (χ : V → positiveHalfSpinors o ρ) (p v : V) :
+    fderiv ℝ (fun q ↦ (χ q : W)) p v = (fderiv ℝ χ p v : W) := by
+  let ιL : positiveHalfSpinors o ρ →L[ℝ] W :=
+    (positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ
+  let πL : W →L[ℝ] positiveHalfSpinors o ρ :=
+    (positiveHalfSpinors o ρ).orthogonalProjectionOnto.restrictScalars ℝ
+  by_cases hχ : DifferentiableAt ℝ χ p
+  · exact congrArg (· v) (ιL.hasFDerivAt.comp p hχ.hasFDerivAt).fderiv
+  · have hcoe : ¬DifferentiableAt ℝ (fun q ↦ (χ q : W)) p := fun h ↦
+      hχ <| (πL.differentiableAt.comp p h).congr_of_eventuallyEq <|
+        Filter.Eventually.of_forall fun q ↦
+          (Submodule.orthogonalProjectionOnto_mem_subspace_eq_self _).symm
+    rw [fderiv_zero_of_not_differentiableAt hcoe, fderiv_zero_of_not_differentiableAt hχ]
+    simp
 
-omit [FiniteDimensional ℂ W] in
-/-- Pointwise directional evaluation of `spinorCovariantDeriv`. -/
-@[simp] theorem spinorCovariantDeriv_apply (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+private theorem covariantDeriv_coe_positiveHalfSpinors (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (χ : V → positiveHalfSpinors o ρ) (p v : V) :
-    spinorCovariantDeriv b χ p v = fderiv ℝ χ p v + b p (fun _ ↦ v) • (I • χ p) := by
-  simp [spinorCovariantDeriv, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
+    covariantDeriv b (fun q ↦ (χ q : W)) p v = (covariantDeriv b χ p v : W) := by
+  simp only [covariantDeriv_apply, fderiv_coe_positiveHalfSpinors, Submodule.coe_add,
+    Submodule.coe_smul_of_tower]
 
-omit [FiniteDimensional ℂ W] in
-/-- `spinorCovariantDeriv` is additive in the spinor field at a point of differentiability. -/
-theorem spinorCovariantDeriv_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    {χ₁ χ₂ : V → positiveHalfSpinors o ρ} {p : V}
-    (h₁ : DifferentiableAt ℝ χ₁ p) (h₂ : DifferentiableAt ℝ χ₂ p) :
-    spinorCovariantDeriv b (χ₁ + χ₂) p =
-      spinorCovariantDeriv b χ₁ p + spinorCovariantDeriv b χ₂ p :=
-  ContinuousLinearMap.ext fun v ↦ by simp [fderiv_add h₁ h₂, smul_add]; abel
-
-omit [FiniteDimensional ℂ W] in
-/-- `spinorCovariantDeriv` is `ℂ`-homogeneous in the spinor field for constant complex scalars. -/
-theorem spinorCovariantDeriv_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (c : ℂ)
-    (χ : V → positiveHalfSpinors o ρ) (p : V) :
-    spinorCovariantDeriv b (c • χ) p = c • spinorCovariantDeriv b χ p :=
-  ContinuousLinearMap.ext fun v ↦ by
-    simp only [smul_apply, spinorCovariantDeriv_apply, fderiv_const_smul_field, Pi.smul_apply,
-      ← Complex.coe_smul]; module
-
-omit [FiniteDimensional ℂ W] in
-/-- `spinorCovariantDeriv` sends the zero spinor field to zero. -/
-@[simp] theorem spinorCovariantDeriv_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (p : V) :
-    spinorCovariantDeriv b (0 : V → positiveHalfSpinors o ρ) p = 0 :=
-  ContinuousLinearMap.ext fun v ↦ by simp [spinorCovariantDeriv_apply]
-
-omit [FiniteDimensional ℂ W] in
-/-- Along a constant spinor direction `ψ₀`, `spinorCovariantDeriv` acts via `covariantDeriv b`. -/
-theorem spinorCovariantDeriv_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {α : V → ℂ} {p : V}
-    (hα : DifferentiableAt ℝ α p) (ψ₀ : positiveHalfSpinors o ρ) (v : V) :
-    spinorCovariantDeriv b (fun q ↦ α q • ψ₀) p v = covariantDeriv b α p v • ψ₀ := by
-  rw [spinorCovariantDeriv_apply, fderiv_smul_const hα ψ₀, ContinuousLinearMap.smulRight_apply,
-    covariantDeriv_apply, add_smul, ← Complex.coe_smul, smul_smul, smul_smul]
-  congr 2; simp only [Complex.real_smul]; ring
-
-omit [FiniteDimensional ℂ W] in variable (o ρ e) in
-/-- **The flat chiral Dirac operator** `D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ : W⁺ → W⁻`. -/
-def flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
+variable (o ρ) in
+/-- **The flat chiral Dirac operator** `D_b⁺ χ = D_b χ : W⁺ → W⁻`, restricting
+`TauCeti.SeibergWitten.flatDirac` to positive half-spinor fields. -/
+def flatChiralDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
     Module.End.eigenspace (ρ (chirality Q o)) (-1) :=
-  ∑ k, halfSpinCliffordMul o ρ 1 (e k)
-    (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
-      (spinorCovariantDeriv b χ p (e k)))
+  ⟨flatDirac ρ b (fun q ↦ (χ q : W)) p, by
+    let e₀ : OrthonormalBasis (Fin 4) ℝ V :=
+      (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+    rw [flatDirac_eq_sum ρ e₀]
+    refine Submodule.sum_mem _ fun k _ ↦ ?_
+    rw [covariantDeriv_coe_positiveHalfSpinors,
+      ← LinearEquiv.coe_ofEq_apply (positiveHalfSpinors_eq_eigenspace o ρ)
+        (covariantDeriv b χ p (e₀ k)),
+      ← coe_halfSpinCliffordMul_apply_apply (o := o) (ρ := ρ) (ε := 1) (v := e₀ k)
+        (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
+          (covariantDeriv b χ p (e₀ k)))]
+    exact (halfSpinCliffordMul o ρ 1 (e₀ k) _).property⟩
 
-omit [FiniteDimensional ℂ W] in
-/-- Ambient Clifford-module expression for `flatDirac`. -/
-@[simp] theorem coe_flatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+/-- Ambient Clifford-module expression for `flatChiralDirac`. -/
+@[simp] theorem coe_flatChiralDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (χ : V → positiveHalfSpinors o ρ) (p : V) :
-    (flatDirac o ρ e b χ p : W) = ∑ k, ρ (ι Q (e k)) (spinorCovariantDeriv b χ p (e k)) := by
-  simp [flatDirac]
+    (flatChiralDirac o ρ b χ p : W) = flatDirac ρ b (fun q ↦ (χ q : W)) p :=
+  (rfl)
 
-omit [FiniteDimensional ℂ W] in
-/-- `flatDirac` is independent of the choice of orthonormal basis of `V`. -/
-theorem flatDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4) ℝ V)
+/-- Basis expansion of `flatChiralDirac` in any orthonormal basis `e` of `V`. -/
+theorem flatChiralDirac_eq_sum (e : OrthonormalBasis (Fin 4) ℝ V)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
-    flatDirac o ρ e b χ p = flatDirac o ρ e' b χ p :=
-  e.sum_apply_self_eq e' <|
-    ((LinearMap.restrictScalarsₗ ℝ ℂ _ _ ℝ).comp (halfSpinCliffordMul o ρ 1)).compl₂
-      (((LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)).toLinearMap.restrictScalars
-        ℝ).comp (spinorCovariantDeriv b χ p).toLinearMap)
+    flatChiralDirac o ρ b χ p = ∑ k, halfSpinCliffordMul o ρ 1 (e k)
+      (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
+        (covariantDeriv b χ p (e k))) := by
+  apply Subtype.ext
+  rw [coe_flatChiralDirac, flatDirac_eq_sum ρ e, Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [covariantDeriv_coe_positiveHalfSpinors, coe_halfSpinCliffordMul_apply_apply,
+    LinearEquiv.coe_ofEq_apply]
 
-omit [FiniteDimensional ℂ W] in
-/-- `flatDirac` is additive in the spinor field at a point of differentiability. -/
-theorem flatDirac_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {χ₁ χ₂ : V → positiveHalfSpinors o ρ} {p : V}
-    (h₁ : DifferentiableAt ℝ χ₁ p) (h₂ : DifferentiableAt ℝ χ₂ p) :
-    flatDirac o ρ e b (χ₁ + χ₂) p = flatDirac o ρ e b χ₁ p + flatDirac o ρ e b χ₂ p := by
-  simp [flatDirac, spinorCovariantDeriv_add b h₁ h₂, Finset.sum_add_distrib]
+/-- `flatChiralDirac` is additive in the spinor field at a point of differentiability. -/
+theorem flatChiralDirac_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {χ₁ χ₂ : V → positiveHalfSpinors o ρ}
+    {p : V} (h₁ : DifferentiableAt ℝ χ₁ p) (h₂ : DifferentiableAt ℝ χ₂ p) :
+    flatChiralDirac o ρ b (χ₁ + χ₂) p =
+      flatChiralDirac o ρ b χ₁ p + flatChiralDirac o ρ b χ₂ p := by
+  let e₀ : OrthonormalBasis (Fin 4) ℝ V :=
+    (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+  simp [flatChiralDirac_eq_sum e₀, covariantDeriv_add b h₁ h₂, Finset.sum_add_distrib]
 
-omit [FiniteDimensional ℂ W] in
-/-- `flatDirac` is `ℂ`-homogeneous in the spinor field for constant complex scalars. -/
-theorem flatDirac_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (c : ℂ)
+/-- `flatChiralDirac` is `ℂ`-homogeneous in the spinor field for constant complex scalars. -/
+theorem flatChiralDirac_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (c : ℂ)
     (χ : V → positiveHalfSpinors o ρ) (p : V) :
-    flatDirac o ρ e b (c • χ) p = c • flatDirac o ρ e b χ p := by
-  simp [flatDirac, spinorCovariantDeriv_smul, Finset.smul_sum]
+    flatChiralDirac o ρ b (c • χ) p = c • flatChiralDirac o ρ b χ p := by
+  let e₀ : OrthonormalBasis (Fin 4) ℝ V :=
+    (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+  simp [flatChiralDirac_eq_sum e₀, covariantDeriv_smul, Finset.smul_sum]
 
-omit [FiniteDimensional ℂ W] in
-/-- `flatDirac` sends the zero spinor field to zero. -/
-@[simp] theorem flatDirac_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (p : V) :
-    flatDirac o ρ e b 0 p = 0 := by
-  simp [flatDirac]
+/-- `flatChiralDirac` sends the zero spinor field to zero. -/
+@[simp] theorem flatChiralDirac_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (p : V) :
+    flatChiralDirac o ρ b 0 p = 0 := by
+  let e₀ : OrthonormalBasis (Fin 4) ℝ V :=
+    (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
+  simp [flatChiralDirac_eq_sum e₀]
 
-omit [FiniteDimensional ℂ W] in
-/-- Action of `flatDirac` on a scalar multiple `α • ψ₀` of a constant positive half-spinor. -/
-theorem coe_flatDirac_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {α : V → ℂ} {p : V}
-    (hα : DifferentiableAt ℝ α p) (ψ₀ : positiveHalfSpinors o ρ) :
-    (flatDirac o ρ e b (fun q ↦ α q • ψ₀) p : W) =
+/-- Action of `flatChiralDirac` on a scalar multiple `α • ψ₀` of a constant positive
+half-spinor. -/
+theorem coe_flatChiralDirac_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {α : V → ℂ} {p : V}
+    (hα : DifferentiableAt ℝ α p) (ψ₀ : positiveHalfSpinors o ρ)
+    (e : OrthonormalBasis (Fin 4) ℝ V) :
+    (flatChiralDirac o ρ b (fun q ↦ α q • ψ₀) p : W) =
       ∑ k, covariantDeriv b α p (e k) • ρ (ι Q (e k)) ψ₀ := by
-  simp [spinorCovariantDeriv_smul_const b hα]
+  simpa [coe_flatChiralDirac] using flatDirac_smul_const ρ hα (ψ₀ : W) e
+
 
 variable (o ρ J) in
 /-- **Self-dual curvature defect** `(√2 / 2) (F + ⋆F - ω / 8 + q(χ) / 2) ∈ Λ⁺ V`, `F = -db`. -/
@@ -226,26 +219,24 @@ theorem linearizedFlatCurvature_smul (hkl : 2 + 2 = finrank ℝ V) (χ : V → p
     linearizedFlatCurvature o ρ hkl χ 0 0 p = 0 := by
   simpa using linearizedFlatCurvature_smul hkl χ 0 0 0 p
 
-omit [FiniteDimensional ℂ W] in variable (o ρ e) in
+variable (o ρ e) in
 /-- **Linearized chiral Dirac operator** `D_b ζ + ∑ₖ c(eₖ) (i δb(eₖ) χ)`. -/
 def linearizedFlatDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
     (δb : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ζ : V → positiveHalfSpinors o ρ) (p : V) :
     Module.End.eigenspace (ρ (chirality Q o)) (-1) :=
-  flatDirac o ρ e b ζ p + ∑ k, halfSpinCliffordMul o ρ 1 (e k)
+  flatChiralDirac o ρ b ζ p + ∑ k, halfSpinCliffordMul o ρ 1 (e k)
     (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
       (δb p (fun _ ↦ e k) • (I • χ p)))
 
-omit [FiniteDimensional ℂ W] in
 /-- Unfolding formula for `linearizedFlatDirac`. -/
 theorem linearizedFlatDirac_apply (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
     (δb : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ζ : V → positiveHalfSpinors o ρ) (p : V) :
     linearizedFlatDirac o ρ e b χ δb ζ p =
-      flatDirac o ρ e b ζ p + ∑ k, halfSpinCliffordMul o ρ 1 (e k)
+      flatChiralDirac o ρ b ζ p + ∑ k, halfSpinCliffordMul o ρ 1 (e k)
         (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
           (δb p (fun _ ↦ e k) • (I • χ p))) :=
   (rfl)
 
-omit [FiniteDimensional ℂ W] in
 /-- `linearizedFlatDirac` is independent of the choice of orthonormal basis of `V`. -/
 theorem linearizedFlatDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4) ℝ V)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
@@ -256,11 +247,10 @@ theorem linearizedFlatDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4
   let B := ((LinearMap.restrictScalarsₗ ℝ ℂ _ _ ℝ).comp (halfSpinCliffordMul o ρ 1)).compl₂
     (((LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)).toLinearMap.restrictScalars
       ℝ).comp T)
-  exact congrArg₂ (· + ·) (flatDirac_congr_orthonormalBasis e' b ζ p) <| by
+  exact congrArg (flatChiralDirac o ρ b ζ p + ·) <| by
     simpa [B, T, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply] using
       e.sum_apply_self_eq e' B
 
-omit [FiniteDimensional ℂ W] in
 /-- `linearizedFlatDirac` is additive in the perturbation `(δb, ζ)` at a point of
 differentiability of the spinor perturbations. -/
 theorem linearizedFlatDirac_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
@@ -268,25 +258,23 @@ theorem linearizedFlatDirac_add (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V �
     (h₁ : DifferentiableAt ℝ ζ₁ p) (h₂ : DifferentiableAt ℝ ζ₂ p) :
     linearizedFlatDirac o ρ e b χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
       linearizedFlatDirac o ρ e b χ δb₁ ζ₁ p + linearizedFlatDirac o ρ e b χ δb₂ ζ₂ p := by
-  simp only [linearizedFlatDirac_apply, flatDirac_add b h₁ h₂, Pi.add_apply,
+  simp only [linearizedFlatDirac_apply, flatChiralDirac_add b h₁ h₂, Pi.add_apply,
     ContinuousAlternatingMap.add_apply, add_smul, map_add, Finset.sum_add_distrib]
   abel
 
-omit [FiniteDimensional ℂ W] in
 /-- `linearizedFlatDirac` commutes with real scalar multiplication of `(δb, ζ)`. -/
 theorem linearizedFlatDirac_smul (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ)
     (r : ℝ) (δb : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ζ : V → positiveHalfSpinors o ρ) (p : V) :
     linearizedFlatDirac o ρ e b χ (r • δb) (r • ζ) p =
       r • linearizedFlatDirac o ρ e b χ δb ζ p := by
   have hζ : r • ζ = (r : ℂ) • ζ := funext fun q ↦ (Complex.coe_smul (r : ℝ) (ζ q)).symm
-  rw [linearizedFlatDirac_apply, linearizedFlatDirac_apply, hζ, flatDirac_smul, Complex.coe_smul,
-    smul_add, Finset.smul_sum]
+  rw [linearizedFlatDirac_apply, linearizedFlatDirac_apply, hζ, flatChiralDirac_smul,
+    Complex.coe_smul, smul_add, Finset.smul_sum]
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     ← mul_smul, ← Complex.coe_smul, map_smul, ofReal_mul, mul_assoc]
 
-omit [FiniteDimensional ℂ W] in
 /-- `linearizedFlatDirac` sends the zero perturbation to zero. -/
 @[simp] theorem linearizedFlatDirac_zero (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (χ : V → positiveHalfSpinors o ρ) (p : V) :
@@ -322,12 +310,12 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
       simp only [flatCurvatureDefect, Pi.add_apply, Pi.smul_apply, hcurv t, id_eq,
         Function.comp_apply]
 
-/-- `linearizedFlatDirac` is the directional derivative of `flatDirac` along
+/-- `linearizedFlatDirac` is the directional derivative of `flatChiralDirac` along
 `(b + t • δb, χ + t • ζ)` at `t = 0`. -/
-theorem hasDerivAt_flatDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+theorem hasDerivAt_flatChiralDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     {χ ζ : V → positiveHalfSpinors o ρ} {p : V}
     (hχ : DifferentiableAt ℝ χ p) (hζ : DifferentiableAt ℝ ζ p) :
-    HasDerivAt (fun t : ℝ ↦ flatDirac o ρ e (b + t • δb) (χ + t • ζ) p)
+    HasDerivAt (fun t : ℝ ↦ flatChiralDirac o ρ (b + t • δb) (χ + t • ζ) p)
       (linearizedFlatDirac o ρ e b χ δb ζ p) 0 := by
   have : FiniteDimensional ℝ (positiveHalfSpinors o ρ) := FiniteDimensional.trans ℝ ℂ _
   let C (k : Fin 4) :
@@ -335,26 +323,27 @@ theorem hasDerivAt_flatDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (((halfSpinCliffordMul o ρ 1 (e k)).comp
       (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)).toLinearMap).restrictScalars
       ℝ).toContinuousLinearMap
-  let d₁ (k : Fin 4) := spinorCovariantDeriv b ζ p (e k) + δb p (fun _ ↦ e k) • (I • χ p)
+  let d₁ (k : Fin 4) := covariantDeriv b ζ p (e k) + δb p (fun _ ↦ e k) • (I • χ p)
   let d₂ (k : Fin 4) := δb p (fun _ ↦ e k) • (I • ζ p)
-  have hcov (t : ℝ) (k : Fin 4) : spinorCovariantDeriv (b + t • δb) (χ + t • ζ) p (e k) =
-      spinorCovariantDeriv b χ p (e k) + t • d₁ k + (t * t) • d₂ k := by
-    rw [spinorCovariantDeriv_apply, (hχ.hasFDerivAt.add (hζ.hasFDerivAt.const_smul t)).fderiv]
-    simp only [d₁, d₂, spinorCovariantDeriv_apply, add_apply, smul_apply, Pi.add_apply,
+  have hcov (t : ℝ) (k : Fin 4) : covariantDeriv (b + t • δb) (χ + t • ζ) p (e k) =
+      covariantDeriv b χ p (e k) + t • d₁ k + (t * t) • d₂ k := by
+    rw [covariantDeriv_apply, (hχ.hasFDerivAt.add (hζ.hasFDerivAt.const_smul t)).fderiv]
+    simp only [d₁, d₂, covariantDeriv_apply, add_apply, smul_apply, Pi.add_apply,
       Pi.smul_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
       smul_eq_mul, ← Complex.coe_smul]; push_cast; module
   have hterm (k : Fin 4) : HasDerivAt
-      (fun t : ℝ ↦ C k (spinorCovariantDeriv (b + t • δb) (χ + t • ζ) p (e k))) (C k (d₁ k)) 0 :=
+      (fun t : ℝ ↦ C k (covariantDeriv (b + t • δb) (χ + t • ζ) p (e k))) (C k (d₁ k)) 0 :=
     ((C k).hasFDerivAt.comp_hasDerivAt (0 : ℝ) (((((hasDerivAt_id (0 : ℝ)).smul_const
-        (d₁ k)).const_add (spinorCovariantDeriv b χ p (e k))).fun_add
+        (d₁ k)).const_add (covariantDeriv b χ p (e k))).fun_add
       (((hasDerivAt_id (0 : ℝ)).mul (hasDerivAt_id (0 : ℝ))).smul_const (d₂ k))).congr_deriv
         (by simp))).congr_of_eventuallyEq <| Filter.Eventually.of_forall fun t ↦
           congrArg (C k) (hcov t k)
   have hlin : linearizedFlatDirac o ρ e b χ δb ζ p = ∑ k : Fin 4, C k (d₁ k) := by
-    simp [C, d₁, linearizedFlatDirac_apply, flatDirac, Finset.sum_add_distrib]
+    simp [C, d₁, linearizedFlatDirac_apply, flatChiralDirac_eq_sum e, Finset.sum_add_distrib]
   rw [hlin]
   exact (HasDerivAt.fun_sum fun k (_ : k ∈ Finset.univ) ↦ hterm k).congr_of_eventuallyEq <|
-    Filter.Eventually.of_forall fun t ↦ by simp [C, flatDirac]
+    Filter.Eventually.of_forall fun t ↦ by
+      simp [C, flatChiralDirac_eq_sum e]
 
 omit [FiniteDimensional ℂ W] in variable (e) in
 /-- **Formal adjoint of the 4D infinitesimal gauge action** `f ↦ (-df, i f χ)` with respect to the

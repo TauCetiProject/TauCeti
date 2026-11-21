@@ -385,15 +385,15 @@ theorem coe_antiCanonicalSpinor (u₀ : positiveHalfSpinors o ρ) :
 theorem ι_apply_zero_antiCanonicalSpinor (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (u₀ : positiveHalfSpinors o ρ) :
     ρ (ι Q (e 0)) (antiCanonicalSpinor o ρ e u₀) = -ρ (ι Q (e 2)) u₀ := by
-  rw [coe_antiCanonicalSpinor, map_ι_apply_map_ι_apply_of_norm_eq_one hQ (e.orthonormal.1 0)]
+  rw [coe_antiCanonicalSpinor, e.map_ι_apply_map_ι_apply hQ ρ]
 
 /-- Clifford action of `e₂` on `v₀ = c(e₀) c(e₂) u₀`: `c(e₂) v₀ = c(e₀) u₀`. -/
 theorem ι_apply_two_antiCanonicalSpinor (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (u₀ : positiveHalfSpinors o ρ) :
     ρ (ι Q (e 2)) (antiCanonicalSpinor o ρ e u₀) = ρ (ι Q (e 0)) u₀ := by
   rw [coe_antiCanonicalSpinor,
-    map_ι_apply_comm_of_inner_eq_zero hQ (e.orthonormal.2 (by decide : (2 : Fin 4) ≠ 0)),
-    map_ι_apply_map_ι_apply_of_norm_eq_one hQ (e.orthonormal.1 2), map_neg, neg_neg]
+    e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (2 : Fin 4) ≠ 0),
+    e.map_ι_apply_map_ι_apply hQ ρ, map_neg, neg_neg]
 
 end AntiCanonicalAlgebra
 
@@ -460,9 +460,9 @@ theorem ι_apply_three_of_cliffordProjection_apply_eq_self {u₀ : positiveHalfS
 private theorem ι_one_ι_two_canonical {u₀ : positiveHalfSpinors o ρ}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     ρ (ι Q (e 1)) (ρ (ι Q (e 2)) u₀) = I • (antiCanonicalSpinor o ρ e u₀ : W) := by
-  rw [map_ι_apply_comm_of_inner_eq_zero hQ (e.orthonormal.2 (by decide : (1 : Fin 4) ≠ 2)),
+  rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (1 : Fin 4) ≠ 2),
     ι_apply_one_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
-    map_ι_apply_comm_of_inner_eq_zero hQ (e.orthonormal.2 (by decide : (2 : Fin 4) ≠ 0))]
+    e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (2 : Fin 4) ≠ 0)]
   simp [coe_antiCanonicalSpinor]
 
 private theorem ι_one_ι_three_canonical {u₀ : positiveHalfSpinors o ρ}
@@ -487,11 +487,11 @@ theorem bivectorExterior_kahlerForm_antiCanonicalSpinor {u₀ : positiveHalfSpin
       I • (antiCanonicalSpinor o ρ e u₀ : W) := by
     conv_lhs =>
       rw [coe_antiCanonicalSpinor,
-        map_ι_apply_comm_of_inner_eq_zero hQ (e.orthonormal.2 (by decide : (0 : Fin 4) ≠ 2))]
+        e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (0 : Fin 4) ≠ 2)]
     simp only [map_neg]
     rw [map_ι_apply_map_ι_apply_map_ι_apply_of_inner_eq_zero hQ (e.orthonormal.1 2)
         (e.orthonormal.2 (by decide : (2 : Fin 4) ≠ 3)),
-      map_ι_apply_comm_of_inner_eq_zero hQ (e.orthonormal.2 (by decide : (3 : Fin 4) ≠ 0)),
+      e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (3 : Fin 4) ≠ 0),
       ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀]
     simp [coe_antiCanonicalSpinor]
   rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂₃]
