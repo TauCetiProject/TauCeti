@@ -200,8 +200,8 @@ theorem isRegularWeight_twoWeylVector : IsRegularWeight P (twoWeylVector P b) :=
   (isRegularWeight_iff P _).mpr (coroot'_twoWeylVector_ne_zero P b)
 
 /-- The sum of the positive roots is nonzero as soon as there is a root at all. -/
-theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 := fun h ↦
-  coroot'_twoWeylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+theorem twoWeylVector_ne_zero [Nonempty ι] : twoWeylVector P b ≠ 0 :=
+  (isRegularWeight_twoWeylVector P b).ne_zero
 
 end Reduced
 
@@ -367,8 +367,8 @@ theorem isRegularWeight_weylVector : IsRegularWeight P (weylVector P b) :=
   (isRegularWeight_iff P _).mpr (coroot'_weylVector_ne_zero P b)
 
 /-- The Weyl vector is nonzero as soon as there is a root at all. -/
-theorem weylVector_ne_zero [Nonempty ι] : weylVector P b ≠ 0 := fun h ↦
-  coroot'_weylVector_ne_zero P b (Classical.arbitrary ι) (by rw [h, map_zero])
+theorem weylVector_ne_zero [Nonempty ι] : weylVector P b ≠ 0 :=
+  (isRegularWeight_weylVector P b).ne_zero
 
 end Weyl
 

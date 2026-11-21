@@ -152,16 +152,16 @@ theorem isProjectiveLimit_reindexFamily_iff (S : Set ι)
     (P : ∀ I : Finset ι, Measure (∀ i : I, X i)) (μ : Measure (∀ i : S, X i)) :
     IsProjectiveLimit μ ((⟨Subtype.val, Subtype.val_injective⟩ : S ↪ ι).reindexFamily P) ↔
       ∀ (I : Finset ι) (hI : (I : Set ι) ⊆ S),
-        μ.map (fun x (i : I) ↦ x ⟨i.1, hI i.2⟩) = P I := by
+        μ.map (fun x (i : I) ↦ x ⟨i.val, hI i.property⟩) = P I := by
   classical
   let e : S ↪ ι := ⟨Subtype.val, Subtype.val_injective⟩
   have hcomm (J : Finset S) (hJ : (↑(J.map e) : Set ι) ⊆ S) :
       (piFinsetMapMeasurableEquiv (X := X) e J ∘ J.restrict) =
-        (fun (x : ∀ i : S, X i) (i : J.map e) ↦ x ⟨i.1, hJ i.2⟩) := by
+        (fun (x : ∀ i : S, X i) (i : J.map e) ↦ x ⟨i.val, hJ i.property⟩) := by
     funext x i
     obtain ⟨j, rfl⟩ := (J.equivMap e).surjective i
     rw [Function.comp_apply, piFinsetMapMeasurableEquiv_apply_apply]
-    have hj : (⟨(J.equivMap e j).1, hJ (J.equivMap e j).2⟩ : S) = j.1 :=
+    have hj : (⟨(J.equivMap e j).val, hJ (J.equivMap e j).property⟩ : S) = j.val :=
       Subtype.ext (Finset.equivMap_apply_coe e J j)
     simp only [Finset.restrict_def]
     exact eq_of_heq (congr_arg_heq x hj.symm)
@@ -171,7 +171,7 @@ theorem isProjectiveLimit_reindexFamily_iff (S : Set ι)
     let J := I.subtype (· ∈ S)
     have hmap : J.map e = I := Finset.subtype_map_of_mem (fun _ hi ↦ hI hi)
     have hPJ (hJ : (↑(J.map e) : Set ι) ⊆ S) :
-        μ.map (fun x (i : J.map e) ↦ x ⟨i.1, hJ i.2⟩) = P (J.map e) := by
+        μ.map (fun x (i : J.map e) ↦ x ⟨i.val, hJ i.property⟩) = P (J.map e) := by
       rw [← hcomm J hJ]
       exact hμ J
     rw [hmap] at hPJ

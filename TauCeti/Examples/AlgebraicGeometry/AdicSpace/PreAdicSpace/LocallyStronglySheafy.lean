@@ -48,7 +48,7 @@ example (S : Pair ℚ_[p]) :
       (spa S.plus).Nonempty := by
   refine ⟨.of_isStronglyNoetherian,
     (IsStronglySheafy.of_isStronglyNoetherian (A := ℚ_[p])).restrictedMvPowerSeriesCompletion 1,
-    Set.nonempty_iff_ne_empty.mpr ?_⟩
+    Set.ne_empty_iff_nonempty.mp ?_⟩
   rw [Ne, spa_eq_empty_iff_subsingleton S.plus S.isRingOfIntegralElements]
   exact not_subsingleton ℚ_[p]
 
@@ -96,7 +96,7 @@ example (Y : AdicSpace.{0}) :
       (Pair.powerBounded ℚ_[p]).plus
       (Pair.powerBounded ℚ_[p]).isRingOfIntegralElements.isPowerBounded_of_mem hP
   have hne : (spa (Pair.powerBounded ℚ_[p]).plus).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty, Ne,
+    rw [← Set.ne_empty_iff_nonempty, Ne,
       spa_eq_empty_iff_subsingleton _ (Pair.powerBounded ℚ_[p]).isRingOfIntegralElements]
     exact not_subsingleton ℚ_[p]
   exact ⟨hne.to_subtype, hLNA, (isLocallyNoetherianAnalytic_iff.mp hLNA).1,

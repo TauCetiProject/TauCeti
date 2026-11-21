@@ -130,7 +130,7 @@ the symplectic complement `U^ω`. -/
 theorem mem_ker_restrict_iff {u : U} :
     u ∈ LinearMap.ker (ω.toBilinForm.restrict U) ↔ (u : V) ∈ ω.orthogonal U := by
   rw [LinearMap.mem_ker, mem_orthogonal_iff']
-  refine ⟨fun h y hy => ?_, fun h => LinearMap.ext fun y => h y y.2⟩
+  refine ⟨fun h y hy => ?_, fun h => LinearMap.ext fun y => h y y.property⟩
   simpa using LinearMap.congr_fun h ⟨y, hy⟩
 
 /-- The kernel of the restriction of `ω` to `U`, viewed in `V`, is `U ∩ U^ω`. -/
@@ -138,7 +138,7 @@ theorem map_subtype_ker_restrict :
     (LinearMap.ker (ω.toBilinForm.restrict U)).map U.subtype = U ⊓ ω.orthogonal U := by
   ext v
   simp only [Submodule.mem_map, Submodule.mem_inf, mem_ker_restrict_iff, Submodule.subtype_apply]
-  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.2, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
+  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.property, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
 
 /-- The **reduced space** `U ⧸ (U ∩ U^ω)` of a subspace `U` of a symplectic vector space: the
 quotient of `U` by the kernel of the restriction of `ω`. -/
@@ -177,7 +177,7 @@ theorem subsingleton_reducedSpace_iff :
     Subsingleton (ω.ReducedSpace U) ↔ ω.IsIsotropic U := by
   rw [Submodule.Quotient.subsingleton_iff, Submodule.eq_top_iff', isIsotropic_iff_le]
   exact ⟨fun h u hu => (mem_ker_restrict_iff ω U).1 (h ⟨u, hu⟩),
-    fun h u => (mem_ker_restrict_iff ω U).2 (h u.2)⟩
+    fun h u => (mem_ker_restrict_iff ω U).2 (h u.property)⟩
 
 /-- The kernel of the restriction of `ω` to `U` is trivial exactly when `U` is a symplectic
 subspace. -/
@@ -185,7 +185,7 @@ theorem ker_restrict_eq_bot_iff :
     LinearMap.ker (ω.toBilinForm.restrict U) = ⊥ ↔ ω.IsSymplectic U := by
   rw [isSymplectic_iff_disjoint, Submodule.disjoint_def, Submodule.eq_bot_iff]
   refine ⟨fun h v hv hv' => ?_,
-    fun h u hu => Subtype.ext <| h u u.2 ((mem_ker_restrict_iff ω U).1 hu)⟩
+    fun h u hu => Subtype.ext <| h u u.property ((mem_ker_restrict_iff ω U).1 hu)⟩
   simpa using h ⟨v, hv⟩ ((mem_ker_restrict_iff ω U).2 hv')
 
 /-- For a symplectic subspace `U`, there is nothing to divide out: the identification of the
@@ -233,7 +233,7 @@ private theorem polar_comp_subtype_eq_zero {Q : QuadraticForm ℝ V}
     (hw : w ∈ LinearMap.ker (ω.toBilinForm.restrict U)) (u : U) :
     QuadraticMap.polar (Q.comp U.subtype) w u = 0 := by
   rw [mem_ker_restrict_iff] at hw
-  simpa [QuadraticMap.polar] using hQ w ⟨w.2, hw⟩ u u.2
+  simpa [QuadraticMap.polar] using hQ w ⟨w.property, hw⟩ u u.property
 
 /-- The **quadratic form induced on the reduced space** `U ⧸ (U ∩ U^ω)` by a quadratic form `Q` on
 `V` whose polar form vanishes on `(U ∩ U^ω) × U`: the form `[u] ↦ Q u`. -/
@@ -326,7 +326,7 @@ noncomputable def reducedSpaceCongr (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorp
 theorem reducedSpaceCongr_mk (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorphism ω ω' e)
     {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') (u : U) :
     reducedSpaceCongr ω ω' e he hU (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ⟨e u, hU ▸ Submodule.mem_map_of_mem u.2⟩ :=
+      Submodule.Quotient.mk ⟨e u, hU ▸ Submodule.mem_map_of_mem u.property⟩ :=
   (rfl)
 
 /-- The map of reduced spaces induced by a linear symplectomorphism is a symplectomorphism. -/
@@ -403,7 +403,7 @@ theorem reducedSpaceRepresentation_apply_mk {G : Type*} [Group G] (ρ : G →* V
     (hρ : ∀ g, IsSymplectomorphism ω ω (ρ g)) (U : Submodule ℝ V) (hU : ∀ g, ∀ u ∈ U, ρ g u ∈ U)
     (g : G) (u : U) :
     ω.reducedSpaceRepresentation ρ hρ U hU g (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ⟨ρ g u, hU g u u.2⟩ :=
+      Submodule.Quotient.mk ⟨ρ g u, hU g u u.property⟩ :=
   (rfl)
 
 /-- A group acting by linear symplectomorphisms preserving `U` acts by symplectomorphisms of the
@@ -452,7 +452,7 @@ theorem IsLagrangian.reduction_map [FiniteDimensional ℝ V] (hL : ω.IsLagrangi
   -- Since `U^ω ⊆ U`, the `L`-component `l = u - c` lies in `L ∩ U` and has the class of `u`.
   have hlU : l ∈ U := by
     have : l = u - c := by rw [← hlc]; abel
-    exact this ▸ U.sub_mem u.2 (isCoisotropic_iff_le.1 hU hc)
+    exact this ▸ U.sub_mem u.property (isCoisotropic_iff_le.1 hU hc)
   refine ⟨⟨l, hlU⟩, hl, ReducedSpace.mk_eq_mk_iff.2 ?_⟩
   have : l - (u : V) = -c := by rw [← hlc]; abel
   exact this ▸ (ω.orthogonal U).neg_mem hc
