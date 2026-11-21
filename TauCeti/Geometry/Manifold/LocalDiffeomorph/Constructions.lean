@@ -45,8 +45,8 @@ records the source, target, forward map and inverse map of Mathlib's composition
   `PartialDiffeomorph` through its underlying `PartialEquiv`.
 * `PartialDiffeomorph.exists_transition`: charts with a common coordinate induce a local change
   of parameters carrying the specified points to one another.
-* `ContinuousLinearEquiv.hasMFDerivAt_toPartialDiffeomorphProd`: such a partial diffeomorphism
-  onto a product is its own derivative at every point.
+* `ContinuousLinearEquiv.hasMFDerivAt_toPartialDiffeomorphProd`: for `A : E ≃L[𝕜] F × G`, the
+  partial diffeomorphism `A.toPartialDiffeomorphProd` has derivative `A` at every point.
 * `PartialDiffeomorph.exists_curve_single_axis`: pulling a coordinate axis back through a
   partial diffeomorphism into `EuclideanSpace ℝ ι` gives a curve through the centre point, `C^n`
   near `0`.
