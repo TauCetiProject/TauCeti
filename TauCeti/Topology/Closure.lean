@@ -41,10 +41,10 @@ into it.
   non-isolated point has that point in its closure.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
-* `Dense.subset_closure_range_domRestrict_preimage`: the values of a family with dense range that
-  lie in an open set are dense in it.
 * `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
   nonempty open interval of a densely ordered space takes a value in it.
+* `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
+  set contained in the closure of its range are dense in that set.
 -/
 
 public section
@@ -108,11 +108,12 @@ theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder 
   obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
   exact ⟨i, hy'⟩
 
-end TauCeti
-
-/-- When the values of `c` are dense, the values lying in an open set `s` are dense in `s`. -/
-theorem Dense.subset_closure_range_domRestrict_preimage {α X : Type*} [TopologicalSpace X]
-    {c : α → X} (hc : Dense (range c)) {s : Set X} (hs : IsOpen s) :
+/-- When an open set `s` lies in the closure of the values of `c`, the values of `c` lying in `s`
+are dense in `s`. -/
+theorem subset_closure_range_domRestrict_preimage {α : Type*} {c : α → X} {s : Set X}
+    (hs : IsOpen s) (h : s ⊆ closure (range c)) :
     s ⊆ closure (range ((c ⁻¹' s).domRestrict c)) := by
   rw [range_domRestrict, image_preimage_eq_inter_range]
-  exact hc.open_subset_closure_inter hs
+  exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
+
+end TauCeti

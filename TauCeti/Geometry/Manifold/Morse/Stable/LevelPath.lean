@@ -875,18 +875,27 @@ theorem coe_morseRecordsConcat (hq : ∀ i, c i ≠ f q)
   (rfl)
 
 /-- **The Moore path of a concatenation of broken trajectories is the concatenation of their Moore
-paths**, for levels of `c` that are dense and avoid the level of `q`. -/
-theorem morseLevelPath_morseRecordsConcat (hf : IsMorse 𝓘(ℝ, E) f) (hc : Dense (range c))
-    (hq : ∀ i, c i ≠ f q)
+paths**, for levels of `c` that are dense between `f r` and `f p` and avoid the level of `q`. -/
+theorem morseLevelPath_morseRecordsConcat (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : Ioo (f r) (f p) ⊆ closure (range c)) (hq : ∀ i, c i ≠ f q)
     (w : hX.morseBrokenTrajectoryRecords p q ((c ⁻¹' Ioo (f q) (f p)).domRestrict c) ×
       hX.morseBrokenTrajectoryRecords q r ((c ⁻¹' Ioo (f r) (f q)).domRestrict c)) :
-    hX.morseLevelPath hf (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo)
+    hX.morseLevelPath hf (subset_closure_range_domRestrict_preimage isOpen_Ioo hdense)
         (hX.morseRecordsConcat hq w) =
-      (hX.morseLevelPath hf (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo) w.1).trans
-        (hX.morseLevelPath hf (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo) w.2)
+      (hX.morseLevelPath hf (subset_closure_range_domRestrict_preimage isOpen_Ioo
+          ((Ioo_subset_Ioo_left (hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords
+            w.2.property)).trans hdense)) w.1).trans
+        (hX.morseLevelPath hf (subset_closure_range_domRestrict_preimage isOpen_Ioo
+          ((Ioo_subset_Ioo_right (hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords
+            w.1.property)).trans hdense)) w.2)
         (by rw [target_morseLevelPath, source_morseLevelPath]) := by
   have hqp := hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords w.1.property
   have hrq := hX.apply_le_apply_of_mem_morseBrokenTrajectoryRecords w.2.property
+  have hdense' := subset_closure_range_domRestrict_preimage isOpen_Ioo hdense
+  have hdense₁ := subset_closure_range_domRestrict_preimage isOpen_Ioo
+    ((Ioo_subset_Ioo_left hrq).trans hdense)
+  have hdense₂ := subset_closure_range_domRestrict_preimage isOpen_Ioo
+    ((Ioo_subset_Ioo_right hqp).trans hdense)
   refine MoorePath.ext ?_ fun t ↦ ?_
   · rw [MoorePath.length_trans, length_morseLevelPath, length_morseLevelPath,
       length_morseLevelPath, ← Real.toNNReal_add (sub_nonneg.2 hqp) (sub_nonneg.2 hrq),
@@ -894,16 +903,12 @@ theorem morseLevelPath_morseRecordsConcat (hf : IsMorse 𝓘(ℝ, E) f) (hc : De
   rw [MoorePath.trans_apply, length_morseLevelPath, morseLevelPath_apply]
   split_ifs with ht
   · rw [morseLevelPath_apply]
-    exact hX.morseLevelPoint_concatLevelRecords_of_le hq w.1.property w.2.property hf
-      (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo)
-      (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo)
-      (by linarith [(Real.le_toNNReal_iff_coe_le (sub_nonneg.2 hqp)).1 ht])
+    exact hX.morseLevelPoint_concatLevelRecords_of_le hq w.1.property w.2.property hf hdense'
+      hdense₁ (by linarith [(Real.le_toNNReal_iff_coe_le (sub_nonneg.2 hqp)).1 ht])
   · rw [morseLevelPath_apply, NNReal.coe_sub (not_le.1 ht).le,
       Real.coe_toNNReal _ (sub_nonneg.2 hqp), show f q - (t - (f p - f q)) = f p - t by ring]
-    exact hX.morseLevelPoint_concatLevelRecords_of_ge hq w.1.property w.2.property hf
-      (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo)
-      (hc.subset_closure_range_domRestrict_preimage isOpen_Ioo)
-      (by linarith [(Real.toNNReal_lt_iff_lt_coe (sub_nonneg.2 hqp)).1 (not_le.1 ht)])
+    exact hX.morseLevelPoint_concatLevelRecords_of_ge hq w.1.property w.2.property hf hdense'
+      hdense₂ (by linarith [(Real.toNNReal_lt_iff_lt_coe (sub_nonneg.2 hqp)).1 (not_le.1 ht)])
 
 end ConcatPath
 
