@@ -59,6 +59,8 @@ vectors indexed by `ι`.
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
   `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
+* `Module.Basis.sum_coord_add_smul`: a vector whose coordinates in a basis `B` are those of `X`
+  plus the matrix of a linear map `Z` applied to `v` is `X + Z (∑ j, v j • b j)`.
 * `Module.Basis.algebraMap_sum_mul_eq_mul` and
   `Module.Basis.algebraMap_mul_constr_eq_algebraMap_sum`: coordinate-clearing identities for a
   finite basis over an algebra `F` of a commutative semiring `T`.
@@ -293,6 +295,26 @@ theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
   (rfl)
 
 end SumInr
+
+section SumCoord
+
+/-- **Reassembling a vector from coordinates.** Expanding in bases `b` of `F` and `B` of `H`: if
+the `c`th coordinate of a vector is the `c`th coordinate of `X` plus the matrix of `Z` applied to
+`v`, the vector is `X + Z (∑ j, v j • b j)`. -/
+theorem sum_coord_add_smul {R F H : Type*} [CommSemiring R] [AddCommMonoid F] [Module R F]
+    [AddCommMonoid H] [Module R H] {ι κ : Type*} [Fintype ι] [Fintype κ] (b : Basis ι R F)
+    (B : Basis κ R H)
+    (X : H) (Z : F →ₗ[R] H) (v : ι → R) :
+    ∑ c, (B.coord c X + ∑ j, B.coord c (Z (b j)) * v j) • B c = X + Z (∑ j, v j • b j) := by
+  simp only [add_smul, Finset.sum_add_distrib, Finset.sum_smul, map_sum, map_smul,
+    Basis.coord_apply]
+  congr 1
+  · exact B.sum_repr X
+  · rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp_rw [mul_comm _ (v j), mul_smul, ← Finset.smul_sum, B.sum_repr]
+
+end SumCoord
 
 section Algebra
 
