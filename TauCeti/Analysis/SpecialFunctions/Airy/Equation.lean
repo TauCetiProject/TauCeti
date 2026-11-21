@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.Calculus.Deriv.Second
 
 /-!
 # Airy's equation
@@ -27,7 +28,9 @@ solution satisfies the Riccati equation `W' = z − W²`.
 * `TauCeti.eq_of_airy_ode`: two entire solutions with the same value and derivative at one point
   are equal;
 * `TauCeti.hasDerivAt_deriv_div_of_airy_ode_at`, `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the
-  Riccati form (DLMF 9.2.16), pointwise and for entire solutions.
+  Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
+* `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
+  `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`.
 
 ## Implementation notes
 
@@ -247,5 +250,17 @@ theorem hasDerivAt_deriv_div_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable 
     (hode : ∀ z, deriv^[2] w z = z * w z) {z : ℂ} (hz : w z ≠ 0) :
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z :=
   hasDerivAt_deriv_div_of_airy_ode_at (hw z) (hw.deriv z) (hode z) hz
+
+
+/-- **Rotation symmetry** of the inhomogeneous Airy equation: if `f'' = z f + c` and `ν³ = 1`,
+then the rotated function `z ↦ ν f(ν z)` satisfies the same equation. No differentiability of `f`
+is needed. With `c = 0`, `z ↦ ν w(ν z)` solves Airy's equation whenever `w` does. -/
+theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
+    (hf : ∀ z, deriv^[2] f z = z * f z + c) (hν : ν ^ 3 = 1) (z : ℂ) :
+    deriv^[2] (fun w => ν * f (ν * w)) z = z * (ν * f (ν * z)) + c := by
+  simp only [← iteratedDeriv_eq_iterate, iteratedDeriv_const_mul_field,
+    iteratedDeriv_comp_mul_left, smul_eq_mul]
+  rw [iteratedDeriv_eq_iterate, hf]
+  linear_combination (ν * z * f (ν * z) + c) * hν
 
 end TauCeti
