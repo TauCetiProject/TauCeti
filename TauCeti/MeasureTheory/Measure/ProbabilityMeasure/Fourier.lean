@@ -9,19 +9,15 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
-import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.Fourier.Kronecker
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan
 
 /-!
 # Fourier criteria for weak convergence on circles and tori
 
-On a compact space, integration against a probability measure is `1`-Lipschitz in the supremum norm
-on `C(X, 𝕜)`, so weak convergence of probability measures is equivalent to convergence of integrals
-on any family of continuous functions whose linear span is uniformly dense
-(`tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top`).
-
 Applying Stone–Weierstrass density of trigonometric polynomials (`span_fourier_closure_eq_top` on
-`AddCircle T` and `UnitAddTorus.span_mFourier_closure_eq_top` on `UnitAddTorus d`), probability
+`AddCircle T` and `UnitAddTorus.span_mFourier_closure_eq_top` on `UnitAddTorus d`) to the compact
+dense-span criteria in `TauCeti.MeasureTheory.Measure.ProbabilityMeasure.DenseSpan`, probability
 measures on an additive circle or unit torus converge weakly exactly when all their integer Fourier
 moments converge. In particular, convergence to Haar probability is equivalent to vanishing of every
 nonzero Fourier moment, and a probability measure on a circle or torus is determined by its Fourier
@@ -35,74 +31,6 @@ noncomputable section
 open Filter MeasureTheory Set Topology
 
 namespace MeasureTheory.ProbabilityMeasure
-
-section CompactDenseSpan
-
-variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
-  [OpensMeasurableSpace X] {ι : Type*} {L : Filter ι}
-  {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
-
-/-- On a compact space, probability measures converge weakly if and only if their integrals converge
-on a set of continuous functions whose linear span is uniformly dense. -/
-theorem tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top (𝕜 : Type*) [RCLike 𝕜]
-    {S : Set C(X, 𝕜)} (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤) :
-    Tendsto μs L (𝓝 μ) ↔ ∀ f ∈ S,
-      Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L (𝓝 (∫ x, f x ∂(μ : Measure X))) := by
-  constructor
-  · intro h f _
-    exact (tendsto_iff_forall_integral_rclike_tendsto 𝕜).1 h
-      (BoundedContinuousFunction.mkOfCompact f)
-  · intro h
-    have hint (f : C(X, 𝕜)) (ρ : ProbabilityMeasure X) :
-        Integrable (fun x ↦ f x) (ρ : Measure X) :=
-      Integrable.of_bound f.continuous.aestronglyMeasurable ‖f‖
-        (ae_of_all _ f.norm_coe_le_norm)
-    have hLip (ρ : ProbabilityMeasure X) :
-        LipschitzWith 1 (fun f : C(X, 𝕜) ↦ ∫ x, f x ∂(ρ : Measure X)) := by
-      apply LipschitzWith.of_dist_le_mul
-      intro f g
-      rw [dist_eq_norm, ← integral_sub (hint f ρ) (hint g ρ)]
-      simpa only [NNReal.coe_one, one_mul, dist_eq_norm, probReal_univ, mul_one,
-        ContinuousMap.sub_apply] using
-        norm_integral_le_of_norm_le_const (μ := (ρ : Measure X))
-          (ae_of_all _ fun x ↦ (f - g).norm_coe_le_norm x)
-    -- The test functions with convergent integrals form a closed linear subspace.
-    let M : Submodule 𝕜 C(X, 𝕜) :=
-      { carrier := {f | Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) L
-          (𝓝 (∫ x, f x ∂(μ : Measure X)))}
-        zero_mem' := by simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (0 : 𝕜)) L (𝓝 0))
-        add_mem' := by
-          intro f g hf hg
-          simpa only [mem_ofPred_eq, ContinuousMap.coe_add, Pi.add_apply,
-            integral_add (hint f _) (hint g _)] using hf.add hg
-        smul_mem' := by
-          intro c f hf
-          simpa only [mem_ofPred_eq, ContinuousMap.coe_smul, Pi.smul_apply, integral_smul] using
-            hf.const_smul c }
-    have hclosed : IsClosed (M : Set C(X, 𝕜)) :=
-      (LipschitzWith.uniformEquicontinuous _ 1 (fun i ↦ hLip (μs i))).equicontinuous
-        |>.isClosed_setOfPred_tendsto (hLip μ).continuous
-    have hspan : Submodule.span 𝕜 S ≤ M := Submodule.span_le.mpr h
-    have htop := (Submodule.span 𝕜 S).topologicalClosure_minimal hspan hclosed
-    rw [hS] at htop
-    apply (tendsto_iff_forall_integral_rclike_tendsto 𝕜).2
-    intro f
-    exact htop (Submodule.mem_top : f.toContinuousMap ∈ (⊤ : Submodule 𝕜 C(X, 𝕜)))
-
-/-- On a compact space whose space of probability measures is Hausdorff, a probability measure is
-determined by its integrals on a set of continuous functions whose linear span is uniformly
-dense. -/
-theorem ext_of_forall_integral_eq_of_span_closure_eq_top [T2Space (ProbabilityMeasure X)]
-    (𝕜 : Type*) [RCLike 𝕜] {ν : ProbabilityMeasure X} {S : Set C(X, 𝕜)}
-    (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤)
-    (h : ∀ f ∈ S, ∫ x, f x ∂(μ : Measure X) = ∫ x, f x ∂(ν : Measure X)) :
-    μ = ν := by
-  have hlim : Tendsto (fun _ : ℕ ↦ μ) atTop (𝓝 ν) :=
-    (tendsto_iff_forall_integral_tendsto_of_span_closure_eq_top 𝕜 hS).2 fun f hf ↦ by
-      simpa only [h f hf] using tendsto_const_nhds
-  exact tendsto_nhds_unique tendsto_const_nhds hlim
-
-end CompactDenseSpan
 
 section AddCircle
 
@@ -172,15 +100,11 @@ theorem tendsto_volume_unitAddTorus_iff :
           (𝓝 0) := by
   rw [tendsto_iff_forall_integral_mFourier_tendsto]
   simp only [Measure.coe_toProbabilityMeasure, TauCeti.UnitAddTorus.integral_mFourier]
-  constructor
-  · intro h k hk
-    simpa [hk] using h k
-  · intro h k
-    by_cases hk : k = 0
-    · subst hk
-      simpa [UnitAddTorus.mFourier_zero] using
-        (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
-    · simpa [hk] using h k hk
+  refine ⟨fun h k hk ↦ by simpa [hk] using h k, fun h k ↦ ?_⟩
+  by_cases hk : k = 0
+  · subst hk; simpa [UnitAddTorus.mFourier_zero] using
+      (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
+  · simpa [hk] using h k hk
 
 /-- A probability measure on `UnitAddTorus d` is determined by its integer Fourier moments. -/
 theorem ext_of_forall_integral_mFourier_eq {ν : ProbabilityMeasure (UnitAddTorus d)}

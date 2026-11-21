@@ -24,13 +24,14 @@ matches the shape used in limit theorems.
 There is one construction, not three: the probability measures are *defined* from the finite
 measure, and the sequence form as a specialization, so they can never drift apart.
 
-The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
-Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
-so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
-empirical measures of its pieces weighted by their sizes. The finite-population form is used by
-quantitative sampling arguments and, applied to eigenvalues, defines empirical spectral measures of
-matrices. The sequence form is the process-level input to the empirical-measure form of de
-Finetti's theorem.
+The API covers evaluation (including visit frequencies via `empiricalMeasure_real_eq_frequency`),
+integration (including continuous complex test functions via `integral_empiricalMeasure_complex`),
+pushforward, continuity, measurability and finite support. Values are counted with multiplicity:
+the empirical measure depends only on the multiset of values, so it is invariant under reindexing.
+The empirical measure of a concatenation is the average of the empirical measures of its pieces
+weighted by their sizes. The finite-population form is used by quantitative sampling arguments and,
+applied to eigenvalues, defines empirical spectral measures of matrices. The sequence form is the
+process-level input to the empirical-measure form of de Finetti's theorem.
 -/
 
 public section
@@ -400,6 +401,16 @@ theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (h
     · intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
 
+/-- The empirical frequency of a measurable set equals the real-valued mass assigned to it by the
+empirical probability measure. -/
+theorem empiricalMeasure_real_eq_frequency {x : ℕ → α} {E : Set α}
+    [DecidablePred (· ∈ E)] (hE : MeasurableSet E) (n : ℕ) :
+    ((empiricalMeasure x n : Measure α) E).toReal =
+      (((Finset.range (n + 1)).filter (fun i ↦ x i ∈ E)).card : ℝ) / ((n + 1 : ℕ) : ℝ) := by
+  rw [empiricalMeasure_apply_toReal hE, div_eq_inv_mul]
+  congr 1
+  simp [Set.indicator_apply]
+
 omit [MeasurableSpace Ω] in
 /-- Evaluation of a path's empirical measure, written as indicators on the sample space. -/
 theorem empiricalMeasure_process_apply_toReal {X : ℕ → Ω → α} {ω : Ω} {n : ℕ}
@@ -419,6 +430,15 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
       ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ Finset.range (n + 1), f (x i) := by
   rw [empiricalMeasure, integral_empiricalMeasureOfFintype hf, Fintype.card_fin,
     Fin.sum_univ_eq_sum_range (fun i => f (x i))]
+
+/-- Integrating a continuous complex function against the empirical probability measure produces
+its successor-indexed Cesàro average. -/
+theorem integral_empiricalMeasure_complex {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (x : ℕ → X) (f : C(X, ℂ)) (n : ℕ) :
+    ∫ y, f y ∂(empiricalMeasure x n : Measure X) =
+      ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
+  rw [integral_empiricalMeasure f.continuous.stronglyMeasurable, Complex.real_smul]
+  simp
 
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
 theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :

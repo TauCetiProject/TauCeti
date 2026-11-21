@@ -54,6 +54,12 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   `k (k - 1)` for every `k : ℤ`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
+* `Finset.sum_range_sum_range_lt`, `Finset.sum_range_sum_range_le`: swap indices in strict and
+  weak triangular sums over `range H`.
+* `Finset.sum_range_sum_Ico_sub`: reindex pairs `0 ≤ h₁ < h₂ < H` by lag `h = h₂ - h₁` with
+  multiplicity `H - h`.
+* `Finset.sum_range_sum_range_eq_diag_add_Ico`, `Finset.sum_range_hermitian_split`: split a
+  square sum over `range H × range H` into its diagonal and upper triangle.
 -/
 
 public section
@@ -239,5 +245,66 @@ theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f 
     (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
   all_goals simp only [mem_Ico, mem_filter, mem_range] at *
   all_goals first | omega | (congr 1; omega)
+
+/-- Swapping indices in a strict triangular sum over `range H`. -/
+theorem sum_range_sum_range_lt {M : Type*} [AddCommMonoid M] (H : ℕ) (ψ : ℕ → ℕ → M) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ range h₁, ψ h₂ h₁ =
+      ∑ h₂ ∈ range H, ∑ h₁ ∈ Ico (h₂ + 1) H, ψ h₂ h₁ := by
+  induction H with
+  | zero => simp
+  | succ H ih =>
+    rw [sum_range_succ, ih, sum_range_succ, Ico_self, sum_empty, add_zero, ← sum_add_distrib]
+    exact sum_congr rfl fun h₂ hh₂ ↦ (sum_Ico_succ_top (mem_range.mp hh₂) _).symm
+
+/-- Swapping indices in a weak triangular sum over `range H`. -/
+theorem sum_range_sum_range_le {M : Type*} [AddCommMonoid M] (H : ℕ) (ψ : ℕ → ℕ → M) :
+    ∑ j ∈ range H, ∑ t ∈ range (j + 1), ψ t j =
+      ∑ t ∈ range H, ∑ j ∈ Ico t H, ψ t j := by
+  induction H with
+  | zero => simp
+  | succ H ih =>
+    rw [sum_range_succ, ih, sum_range_succ, sum_range_succ, Nat.Ico_succ_singleton, sum_singleton,
+      ← add_assoc]; congr 1; rw [← sum_add_distrib]
+    exact sum_congr rfl fun t ht ↦ (sum_Ico_succ_top (le_of_lt (mem_range.mp ht)) _).symm
+
+/-- Counting pairs `0 ≤ h₁ < h₂ < H` by their lag `h = h₂ - h₁` gives multiplicity `H - h`. -/
+theorem sum_range_sum_Ico_sub {M : Type*} [AddCommMonoid M] (H : ℕ) (φ : ℕ → M) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, φ (h₂ - h₁) =
+      ∑ h ∈ Ico 1 H, (H - h) • φ h := by
+  have hrhs : ∑ h ∈ Ico 1 H, (H - h) • φ h =
+      ∑ q ∈ (Ico 1 H).sigma (fun h ↦ range (H - h)), φ q.1 := by
+    rw [← sum_sigma' (Ico 1 H) (fun h ↦ range (H - h)) (fun h _ ↦ φ h)]
+    exact sum_congr rfl fun h _ ↦ by rw [sum_const, card_range]
+  rw [sum_sigma', hrhs]
+  refine sum_nbij' (fun p ↦ ⟨p.2 - p.1, p.1⟩) (fun q ↦ ⟨q.2, q.2 + q.1⟩)
+    (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) (fun _ _ ↦ rfl)
+  all_goals simp only [mem_sigma, mem_range, mem_Ico] at *
+  · omega
+  · omega
+  · exact Sigma.ext rfl (heq_of_eq (by dsimp; omega))
+  · exact Sigma.ext (by dsimp; omega) (heq_of_eq rfl)
+
+/-- Splitting a square sum over `range H × range H` into its diagonal and upper triangle. -/
+theorem sum_range_sum_range_eq_diag_add_Ico {M : Type*} [AddCommMonoid M] (H : ℕ)
+    (S : ℕ → ℕ → M) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ range H, S h₁ h₂ =
+      (∑ h₁ ∈ range H, S h₁ h₁) +
+        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + S h₂ h₁) := by
+  rw [sum_congr rfl fun h₁ hh₁ ↦ (by
+    rw [← sum_range_add_sum_Ico _ (mem_range.mp hh₁), sum_range_succ]; abel :
+    ∑ h₂ ∈ range H, S h₁ h₂ =
+      S h₁ h₁ + (∑ h₂ ∈ range h₁, S h₁ h₂) + ∑ h₂ ∈ Ico (h₁ + 1) H, S h₁ h₂),
+    sum_add_distrib, sum_add_distrib, add_assoc]
+  congr 1; rw [sum_range_sum_range_lt]; simp_rw [← sum_add_distrib]
+  exact sum_congr rfl fun _ _ ↦ sum_congr rfl fun _ _ ↦ add_comm _ _
+
+/-- Diagonal plus star-upper-triangle decomposition for a star-Hermitian matrix on `range H`. -/
+theorem sum_range_hermitian_split {M : Type*} [AddCommMonoid M] [Star M] (H : ℕ)
+    (S : ℕ → ℕ → M) (hconj : ∀ h₁ h₂, S h₂ h₁ = star (S h₁ h₂)) :
+    ∑ h₁ ∈ range H, ∑ h₂ ∈ range H, S h₁ h₂ =
+      (∑ h₁ ∈ range H, S h₁ h₁) +
+        ∑ h₁ ∈ range H, ∑ h₂ ∈ Ico (h₁ + 1) H, (S h₁ h₂ + star (S h₁ h₂)) := by
+  rw [sum_range_sum_range_eq_diag_add_Ico]; congr 1
+  exact sum_congr rfl fun h₁ _ ↦ sum_congr rfl fun h₂ _ ↦ by rw [hconj h₁ h₂]
 
 end Finset

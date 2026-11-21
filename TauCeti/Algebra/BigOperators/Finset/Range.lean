@@ -76,6 +76,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   before each element.
 * `Finset.prod_range_mul_eq_prod_prod`, `Finset.sum_range_mul_eq_sum_sum`: split a product or
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
+* `Finset.prod_range_mul_eq_prod_mod`, `Finset.sum_range_mul_eq_sum_mod`: reindex a product or
+  sum over `range (q * k)` by quotient and remainder modulo `q`.
 * `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
   numbers is `m (m + 1)`.
 * `Finset.sum_range_add_two_mul`: the sum `∑_{j<J} (D + 2j + 1)` of an arithmetic progression
@@ -182,6 +184,13 @@ theorem prod_range_mul_eq_prod_prod {M : Type*} [CommMonoid M] (f : ℕ → M) (
   induction q with
   | zero => simp
   | succ q ih => rw [Nat.mul_succ, prod_range_add, ih, prod_range_succ]
+
+/-- Reindex a product over `range (q * k)` by quotient and remainder modulo `q`. -/
+@[to_additive sum_range_mul_eq_sum_mod
+  /-- Reindex a sum over `range (q * k)` by quotient and remainder modulo `q`. -/]
+theorem prod_range_mul_eq_prod_mod {M : Type*} [CommMonoid M] (f : ℕ → M) (q k : ℕ) :
+    ∏ i ∈ range (q * k), f i = ∏ r ∈ range q, ∏ m ∈ range k, f (q * m + r) := by
+  rw [prod_range_mul_eq_prod_prod, prod_comm]
 
 /-- The sum `∑_{i=1}^{m} 2i` of the first `m` positive even numbers is `m (m + 1)`. It is, for
 instance, the exponent of the leading power of `q` in `∏_{i=1}^{m} (q^{2i} - 1)`. -/

@@ -9,22 +9,15 @@ public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.Module.Basic
 import Mathlib.Tactic.Positivity
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Cesàro averages under shifts, finite modifications, and residue decompositions
 
-This file records elementary invariance and decomposition properties of the successor-indexed
-Cesàro averages `n ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ Finset.range (n + 1), f i` in a real
-seminormed vector space:
-
-* `TauCeti.tendsto_cesaro_congr_of_eventuallyEq`: modifying finitely many terms does not change
-  the Cesàro limit.
-* `TauCeti.tendsto_cesaro_comp_add_iff`: for a bounded sequence, shifting the index by `m` does
-  not change the Cesàro limit.
-* `TauCeti.tendsto_cesaro_of_forall_mod`: if a bounded sequence has Cesàro limits along every
-  residue class modulo `q > 0`, its overall Cesàro average converges to the mean of those limits.
-* `TauCeti.tendsto_cesaro_mul_add_of_ite_mod`: convergence of the Cesàro average of a sequence
-  masked to a single residue class `r mod q` implies convergence along the progression `q * i + r`.
+* `TauCeti.tendsto_cesaro_congr_of_eventuallyEq`: finite-modification invariance.
+* `TauCeti.tendsto_cesaro_comp_add_iff`: index-shift invariance.
+* `TauCeti.tendsto_cesaro_of_forall_mod`: residue-class decomposition modulo `q > 0`.
+* `TauCeti.tendsto_cesaro_mul_add_of_ite_mod`: masked single-residue average to progression average.
 -/
 
 public section
@@ -33,38 +26,36 @@ open Filter Finset Topology
 
 namespace TauCeti
 
-/-- Reindex a sum over `range (q * k)` by quotient and remainder modulo `q`. -/
-private theorem sum_range_mul_eq_sum_mod {M : Type*} [AddCommMonoid M] (f : ℕ → M) (q k : ℕ) :
-    ∑ i ∈ range (q * k), f i = ∑ r ∈ range q, ∑ m ∈ range k, f (q * m + r) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [Nat.mul_succ, sum_range_add, ih]
-    simp_rw [sum_range_succ, sum_add_distrib]
+private theorem tendsto_succ_inv : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) :=
+  tendsto_inv_atTop_zero.comp
+    ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))
 
-/-- For `q > 0`, the quotient ratio `((n + 1) / q) / (n + 1)` converges to `q⁻¹`. -/
-private theorem tendsto_div_nat_div_succ {q : ℕ} (hq : 0 < q) :
-    Tendsto (fun n : ℕ ↦ (((n + 1) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ))
+/-- For `q > 0`, `((n + q - r) / q) / (n + 1)` converges to `q⁻¹` for every `r < q`. -/
+private theorem tendsto_add_sub_div_div_succ {q r : ℕ} (hq : 0 < q) (hr : r < q) :
+    Tendsto (fun n : ℕ ↦ (((n + q - r) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ))
       atTop (𝓝 (q : ℝ)⁻¹) := by
-  have hrem : Tendsto (fun n : ℕ ↦
-      (((n + 1) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ) - (q : ℝ)⁻¹) atTop (𝓝 0) := by
-    have hbound : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹) atTop (𝓝 0) :=
-      tendsto_inv_atTop_zero.comp
-        ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))
-    refine squeeze_zero_norm (fun n ↦ ?_) hbound
-    have hdiv : ((n + 1 : ℕ) : ℝ) = (q : ℝ) * (((n + 1) / q : ℕ) : ℝ) +
-        (((n + 1) % q : ℕ) : ℝ) := by exact_mod_cast (Nat.div_add_mod (n + 1) q).symm
-    have heq : (((n + 1) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ) - (q : ℝ)⁻¹ =
-        -((((n + 1) % q : ℕ) : ℝ) / ((q : ℝ) * ((n + 1 : ℕ) : ℝ))) := by
-      field_simp
-      linarith
-    rw [heq, norm_neg, Real.norm_of_nonneg (by positivity)]
-    have hmod_lt : (((n + 1) % q : ℕ) : ℝ) ≤ q := by
-      exact_mod_cast (Nat.mod_lt (n + 1) hq).le
-    calc (((n + 1) % q : ℕ) : ℝ) / ((q : ℝ) * ((n + 1 : ℕ) : ℝ))
-        ≤ (q : ℝ) / ((q : ℝ) * ((n + 1 : ℕ) : ℝ)) := by gcongr
-      _ = ((n + 1 : ℕ) : ℝ)⁻¹ := by field_simp
-  simpa using hrem.add (tendsto_const_nhds (x := (q : ℝ)⁻¹))
+  have hlo : Tendsto (fun n : ℕ ↦ (q : ℝ)⁻¹ * (1 - (r + 1 : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹))
+      atTop (𝓝 (q : ℝ)⁻¹) := by
+    simpa using (tendsto_const_nhds (x := (q : ℝ)⁻¹)).mul
+      ((tendsto_const_nhds (x := (1 : ℝ))).sub (tendsto_succ_inv.const_mul (r + 1 : ℝ)))
+  have hhi : Tendsto (fun n : ℕ ↦ (q : ℝ)⁻¹ * (1 + ((q : ℝ) - 1) * ((n + 1 : ℕ) : ℝ)⁻¹))
+      atTop (𝓝 (q : ℝ)⁻¹) := by
+    simpa using (tendsto_const_nhds (x := (q : ℝ)⁻¹)).mul
+      ((tendsto_const_nhds (x := (1 : ℝ))).add (tendsto_succ_inv.const_mul ((q : ℝ) - 1)))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlo hhi (fun n ↦ ?_) (fun n ↦ ?_)
+  all_goals
+    have hn1 : ((n + 1 : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)
+    have hnat : ((q * ((n + q - r) / q) + (n + q - r) % q : ℕ) : ℝ) = ((n + q - r : ℕ) : ℝ) := by
+      exact_mod_cast Nat.div_add_mod (n + q - r) q
+    rw [Nat.cast_add, Nat.cast_mul, Nat.cast_sub (by omega), Nat.cast_add] at hnat
+  · have hmod_le : (((n + q - r) % q : ℕ) : ℝ) ≤ q := by exact_mod_cast (Nat.mod_lt _ hq).le
+    rw [(by field_simp; push_cast; ring :
+        1 - (r + 1 : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹ = ((n : ℝ) - r) / ((n + 1 : ℕ) : ℝ)),
+      inv_mul_eq_div, div_div, div_le_div_iff₀ (by positivity) (by positivity)]; nlinarith
+  · rw [(by field_simp; push_cast; ring :
+        1 + ((q : ℝ) - 1) * ((n + 1 : ℕ) : ℝ)⁻¹ = ((n : ℝ) + q) / ((n + 1 : ℕ) : ℝ)),
+      inv_mul_eq_div, div_div, div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [Nat.cast_nonneg (α := ℝ) ((n + q - r) % q), Nat.cast_nonneg (α := ℝ) r]
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -74,135 +65,98 @@ theorem tendsto_cesaro_congr_of_eventuallyEq {f g : ℕ → E} {L : E} (hfg : f 
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 L) ↔
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 L) := by
   obtain ⟨N, hN⟩ := eventually_atTop.mp hfg
-  have hdiff : Tendsto (fun n : ℕ ↦
-      ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i -
-        ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 0) := by
-    have hconst : ∀ n ≥ N, ∑ i ∈ range (n + 1), (f i - g i) =
-        ∑ i ∈ range N, (f i - g i) := by
-      intro n hn
-      rw [← sum_range_add_sum_Ico _ (by omega : N ≤ n + 1)]
-      have hzero : ∑ i ∈ Ico N (n + 1), (f i - g i) = 0 :=
-        sum_eq_zero fun i hi ↦ by rw [hN i (mem_Ico.mp hi).1, sub_self]
-      rw [hzero, add_zero]
-    have hlim : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range N, (f i - g i))
-        atTop (𝓝 0) := by
-      simpa using (tendsto_inv_atTop_zero.comp
-        ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))).smul_const
-        (∑ i ∈ range N, (f i - g i))
-    refine hlim.congr' ?_
-    filter_upwards [eventually_ge_atTop N] with n hn
-    rw [← smul_sub, ← sum_sub_distrib, hconst n hn]
-  refine ⟨fun hf ↦ ?_, fun hg ↦ ?_⟩
-  · simpa using hf.sub hdiff
-  · simpa using hdiff.add hg
+  have hlim : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range N, (f i - g i))
+      atTop (𝓝 0) := by simpa using tendsto_succ_inv.smul_const (∑ i ∈ range N, (f i - g i))
+  have hdiff : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i -
+      ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), g i) atTop (𝓝 0) := by
+    refine hlim.congr' (eventually_atTop.mpr ⟨N, fun n hn ↦ ?_⟩); dsimp only
+    rw [← smul_sub, ← sum_sub_distrib, ← sum_range_add_sum_Ico _ (by omega : N ≤ n + 1),
+      sum_eq_zero (s := Ico N (n + 1)) fun i hi ↦ by rw [hN i (mem_Ico.mp hi).1, sub_self],
+      add_zero]
+  exact ⟨fun hf ↦ by simpa using hf.sub hdiff, fun hg ↦ by simpa using hdiff.add hg⟩
 
-/-- For a bounded sequence, shifting the index by a fixed offset `m` does not change the
-convergence or value of its Cesàro averages. -/
-theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (hbdd : ∃ C : ℝ, ∀ n, ‖f n‖ ≤ C) (m : ℕ) :
+/-- Shifting the index of a sequence by a fixed offset `m` does not change the convergence or value
+of its Cesàro averages. -/
+theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f (i + m)) atTop (𝓝 L) ↔
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 L) := by
-  obtain ⟨C, hC⟩ := hbdd
-  have hdiff : Tendsto (fun n : ℕ ↦
-      ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f (i + m) -
-        ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop (𝓝 0) := by
-    have hbound : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ * (2 * (m : ℝ) * C)) atTop (𝓝 0) := by
-      simpa using (tendsto_inv_atTop_zero.comp
-        ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))).mul_const
-        (2 * (m : ℝ) * C)
-    refine squeeze_zero_norm (fun n ↦ ?_) hbound
-    rw [← smul_sub, norm_smul, Real.norm_of_nonneg (by positivity)]
-    gcongr
-    have hshift : ∑ i ∈ range (n + 1), f (i + m) - ∑ i ∈ range (n + 1), f i =
-        ∑ i ∈ range m, f (n + 1 + i) - ∑ i ∈ range m, f i := by
-      have h1 : ∑ i ∈ range (m + (n + 1)), f i =
-          ∑ i ∈ range m, f i + ∑ i ∈ range (n + 1), f (m + i) := sum_range_add f m (n + 1)
-      have h2 : ∑ i ∈ range (n + 1 + m), f i =
-          ∑ i ∈ range (n + 1), f i + ∑ i ∈ range m, f (n + 1 + i) := sum_range_add f (n + 1) m
-      rw [Nat.add_comm m (n + 1)] at h1
-      simp_rw [Nat.add_comm m _] at h1
-      exact sub_eq_sub_iff_add_eq_add.mpr (by rw [add_comm, ← h1, h2, add_comm])
-    rw [hshift]
-    calc ‖∑ i ∈ range m, f (n + 1 + i) - ∑ i ∈ range m, f i‖
-        ≤ ‖∑ i ∈ range m, f (n + 1 + i)‖ + ‖∑ i ∈ range m, f i‖ := norm_sub_le _ _
-      _ ≤ ∑ i ∈ range m, ‖f (n + 1 + i)‖ + ∑ i ∈ range m, ‖f i‖ :=
-          add_le_add (norm_sum_le _ _) (norm_sum_le _ _)
-      _ ≤ ∑ _i ∈ range m, C + ∑ _i ∈ range m, C :=
-          add_le_add (sum_le_sum fun _ _ ↦ hC _) (sum_le_sum fun _ _ ↦ hC _)
-      _ = 2 * (m : ℝ) * C := by simp; ring
-  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
-  · simpa using hf.sub hdiff
-  · simpa using hdiff.add hf
+  have hsum (n : ℕ) : ∑ i ∈ range (n + 1), f (i + m) + ∑ i ∈ range m, f i =
+      ∑ i ∈ range (n + m + 1), f i := by
+    conv_rhs => rw [(by omega : n + m + 1 = m + (n + 1)), sum_range_add, add_comm]
+    exact congrArg (· + ∑ i ∈ range m, f i) (sum_congr rfl fun i _ ↦ by rw [Nat.add_comm])
+  have hprefix : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range m, f i) atTop (𝓝 0) := by
+    simpa using tendsto_succ_inv.smul_const (∑ i ∈ range m, f i)
+  constructor
+  · intro hB
+    have hratio : Tendsto (fun n : ℕ ↦ ((n - m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
+      have hsub_lim : Tendsto (fun n : ℕ ↦ (1 : ℝ) - (m : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹)
+          atTop (𝓝 1) := by
+        simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub (tendsto_succ_inv.const_mul (m : ℝ))
+      refine hsub_lim.congr' (eventually_atTop.mpr ⟨m, fun n hn ↦ ?_⟩); dsimp only
+      rw [(by rw [Nat.cast_add, Nat.cast_sub hn]; push_cast; ring :
+          ((n - m + 1 : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) - m),
+        sub_div, div_self (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), div_eq_mul_inv]
+    refine Tendsto.congr' ?_
+      (by simpa using (hratio.smul (hB.comp (tendsto_sub_atTop_nat m))).add hprefix)
+    filter_upwards [eventually_ge_atTop m] with n hn
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+    rw [Nat.add_sub_cancel, smul_smul, div_eq_mul_inv, mul_right_comm,
+      mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]; push_cast; rfl
+  · intro hA
+    have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
+      have hadd_lim : Tendsto (fun n : ℕ ↦ (1 : ℝ) + (m : ℝ) * ((n + 1 : ℕ) : ℝ)⁻¹)
+          atTop (𝓝 1) := by
+        simpa using (tendsto_const_nhds (x := (1 : ℝ))).add (tendsto_succ_inv.const_mul (m : ℝ))
+      refine hadd_lim.congr fun n ↦ ?_
+      rw [(by push_cast; ring : ((n + m + 1 : ℕ) : ℝ) = ((n + 1 : ℕ) : ℝ) + m),
+        add_div, div_self (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero n)), div_eq_mul_inv]
+    refine Tendsto.congr (fun n ↦ ?_)
+      (by simpa using (hratio.smul (hA.comp (tendsto_add_atTop_nat m))).sub hprefix)
+    rw [smul_smul, div_eq_mul_inv, mul_right_comm,
+      mul_inv_cancel₀ (by positivity), one_mul, ← hsum n, smul_add,
+      add_sub_cancel_right]; push_cast; rfl
 
-/-- The trailing remainder of length `(n + 1) % q` in a bounded Cesàro average tends to `0`. -/
-private theorem tendsto_cesaro_tail_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q)
-    {C : ℝ} (hC : ∀ n, ‖f n‖ ≤ C) :
-    Tendsto (fun n : ℕ ↦
-      ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ Ico (q * ((n + 1) / q)) (n + 1), f i) atTop (𝓝 0) := by
-  have hC0 : 0 ≤ C := (norm_nonneg (f 0)).trans (hC 0)
-  have hbound : Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ * ((q : ℝ) * C)) atTop (𝓝 0) := by
-    simpa using (tendsto_inv_atTop_zero.comp
-      ((tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1))).mul_const
-      ((q : ℝ) * C)
-  refine squeeze_zero_norm (fun n ↦ ?_) hbound
-  rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-  gcongr
-  calc ‖∑ i ∈ Ico (q * ((n + 1) / q)) (n + 1), f i‖
-      ≤ ∑ i ∈ Ico (q * ((n + 1) / q)) (n + 1), ‖f i‖ := norm_sum_le _ _
-    _ ≤ ∑ _i ∈ Ico (q * ((n + 1) / q)) (n + 1), C := sum_le_sum fun _ _ ↦ hC _
-    _ = ((n + 1 - q * ((n + 1) / q) : ℕ) : ℝ) * C := by simp
-    _ ≤ (q : ℝ) * C := by
-        gcongr
-        have hrem_eq : n + 1 - q * ((n + 1) / q) = (n + 1) % q := by
-          have := Nat.div_add_mod (n + 1) q
-          omega
-        rw [hrem_eq]
-        exact_mod_cast (Nat.mod_lt (n + 1) hq).le
-
-/-- If a bounded sequence has Cesàro limits along every residue class modulo `q > 0`, then its
-Cesàro averages converge to the average of those limits. -/
-theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q)
-    (hbdd : ∃ C : ℝ, ∀ n, ‖f n‖ ≤ C) {L : ℕ → E}
+/-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, then its Cesàro
+averages converge to the average of those limits. -/
+theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q) {L : ℕ → E}
     (hL : ∀ r < q, Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ •
       ∑ i ∈ range (n + 1), f (q * i + r)) atTop (𝓝 (L r))) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f i) atTop
       (𝓝 ((q : ℝ)⁻¹ • ∑ r ∈ range q, L r)) := by
-  obtain ⟨C, hC⟩ := hbdd
-  have hk_top : Tendsto (fun n : ℕ ↦ (n + 1) / q - 1) atTop atTop := by
-    rw [tendsto_atTop_atTop]
-    intro b
-    refine ⟨q * (b + 1), fun n hn ↦ ?_⟩
-    have : b + 1 ≤ (n + 1) / q := by
-      rw [Nat.le_div_iff_mul_le hq, Nat.mul_comm]
-      omega
-    omega
-  have hmain : Tendsto (fun n : ℕ ↦
-      ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (q * ((n + 1) / q)), f i) atTop
-      (𝓝 ((q : ℝ)⁻¹ • ∑ r ∈ range q, L r)) := by
-    have hsum : Tendsto (fun n : ℕ ↦ ∑ r ∈ range q,
-        ((((n + 1) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) •
-          (((((n + 1) / q - 1) + 1 : ℕ) : ℝ)⁻¹ •
-            ∑ m ∈ range (((n + 1) / q - 1) + 1), f (q * m + r))) atTop
-        (𝓝 (∑ r ∈ range q, (q : ℝ)⁻¹ • L r)) :=
-      tendsto_finsetSum (range q) fun r hr ↦
-        (tendsto_div_nat_div_succ hq).smul ((hL r (mem_range.mp hr)).comp hk_top)
-    rw [← smul_sum] at hsum
-    refine hsum.congr' ?_
-    filter_upwards [eventually_ge_atTop q] with n hn
-    have hk : 1 ≤ (n + 1) / q := by
-      rw [Nat.le_div_iff_mul_le hq]
-      omega
-    have hk1 : (n + 1) / q - 1 + 1 = (n + 1) / q := Nat.sub_add_cancel hk
-    have hk0 : (((n + 1) / q : ℕ) : ℝ) ≠ 0 := by
-      exact_mod_cast (Nat.pos_of_ne_zero (by omega)).ne'
-    rw [sum_range_mul_eq_sum_mod, smul_sum]
-    refine sum_congr rfl fun r _ ↦ ?_
-    rw [hk1, smul_smul]
-    congr 1
-    field_simp
-  have htot := hmain.add (tendsto_cesaro_tail_mod hq hC)
-  rw [add_zero] at htot
-  refine htot.congr fun n ↦ ?_
-  rw [← smul_add, sum_range_add_sum_Ico _ (Nat.mul_div_le (n + 1) q)]
+  have hdecomp (n : ℕ) : (∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r)) =
+      ∑ i ∈ range (n + 1), f i := by
+    rw [sum_sigma' (range q) (fun r ↦ range ((n + q - r) / q)) (fun r m ↦ f (q * m + r))]
+    refine sum_nbij' (fun p : Σ _ : ℕ, ℕ ↦ q * p.2 + p.1) (fun i ↦ ⟨i % q, i / q⟩)
+      (fun p hp ↦ ?_) (fun i hi ↦ ?_) (fun p hp ↦ ?_) (fun i _ ↦ Nat.div_add_mod i q)
+      (fun _ _ ↦ rfl)
+    · simp only [mem_sigma, mem_range] at hp ⊢
+      have hlt : p.2 + 1 ≤ (n + q - p.1) / q := hp.2
+      rw [Nat.le_div_iff_mul_le hq, Nat.succ_mul, Nat.mul_comm p.2 q] at hlt; omega
+    · simp only [mem_sigma, mem_range] at hi ⊢; refine ⟨Nat.mod_lt i hq, ?_⟩
+      rw [← Nat.succ_le_iff, Nat.le_div_iff_mul_le hq, Nat.succ_mul, Nat.mul_comm (i / q) q]
+      have hdm := Nat.div_add_mod i q; omega
+    · simp only [mem_sigma, mem_range] at hp
+      exact Sigma.ext (by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hp.1])
+        (heq_of_eq (by dsimp; rw [Nat.mul_add_div hq, Nat.div_eq_of_lt hp.1, add_zero]))
+  have hsum : Tendsto (fun n : ℕ ↦ ∑ r ∈ range q,
+      ((((n + q - r) / q : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) •
+        (((((n + q - r) / q - 1) + 1 : ℕ) : ℝ)⁻¹ •
+          ∑ m ∈ range (((n + q - r) / q - 1) + 1), f (q * m + r))) atTop
+      (𝓝 (∑ r ∈ range q, (q : ℝ)⁻¹ • L r)) :=
+    tendsto_finsetSum (range q) fun r hr ↦ by
+      have hrq : r < q := mem_range.mp hr
+      exact (tendsto_add_sub_div_div_succ hq hrq).smul ((hL r hrq).comp
+        (tendsto_atTop_atTop.mpr fun b ↦ ⟨q * (b + 1), fun n hn ↦ by
+          have hle : b + 1 ≤ (n + q - r) / q := by
+            rw [Nat.le_div_iff_mul_le hq, Nat.mul_comm]; omega
+          omega⟩))
+  rw [← smul_sum] at hsum; refine hsum.congr' ?_
+  filter_upwards [eventually_ge_atTop q] with n hn; rw [← hdecomp n, smul_sum]
+  refine sum_congr rfl fun r hr ↦ ?_; have hrq : r < q := mem_range.mp hr
+  have hk : 1 ≤ (n + q - r) / q := by rw [Nat.le_div_iff_mul_le hq]; omega
+  rw [Nat.sub_add_cancel hk, smul_smul]; congr 1
+  field_simp [(by exact_mod_cast (by omega : (n + q - r) / q ≠ 0) :
+    (((n + q - r) / q : ℕ) : ℝ) ≠ 0)]
 
 /-- If the Cesàro average of a sequence masked to a single residue class `r mod q` (`0 ≤ r < q`)
 converges to `L`, then the Cesàro average along the progression `i ↦ q * i + r` converges to
@@ -212,34 +166,20 @@ theorem tendsto_cesaro_mul_add_of_ite_mod {f : ℕ → E} {q r : ℕ} (hq : 0 < 
       ∑ i ∈ range (n + 1), if i % q = r then f i else 0) atTop (𝓝 L)) :
     Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range (n + 1), f (q * i + r))
       atTop (𝓝 ((q : ℝ) • L)) := by
-  have hsub : Tendsto (fun m : ℕ ↦ q * (m + 1) - 1) atTop atTop := by
-    rw [tendsto_atTop_atTop]
-    intro b
-    refine ⟨b, fun m hm ↦ ?_⟩
-    have : m + 1 ≤ q * (m + 1) := Nat.le_mul_of_pos_left _ hq
-    omega
-  have hcomp := (h.comp hsub).const_smul (q : ℝ)
-  refine hcomp.congr fun m ↦ ?_
-  have hidx : q * (m + 1) - 1 + 1 = q * (m + 1) :=
-    Nat.sub_add_cancel (Nat.mul_pos hq (Nat.succ_pos m))
+  have hsub : Tendsto (fun m : ℕ ↦ q * (m + 1) - 1) atTop atTop :=
+    tendsto_atTop_atTop.mpr fun b ↦ ⟨b, fun m hm ↦ by
+      have : m + 1 ≤ q * (m + 1) := Nat.le_mul_of_pos_left _ hq; omega⟩
+  refine ((h.comp hsub).const_smul (q : ℝ)).congr fun m ↦ ?_
   have hsum : ∑ i ∈ range (q * (m + 1)), (if i % q = r then f i else 0) =
       ∑ j ∈ range (m + 1), f (q * j + r) := by
-    rw [sum_range_mul_eq_sum_mod]
-    have hinner : ∀ s ∈ range q,
+    rw [sum_range_mul_eq_sum_mod, sum_congr rfl fun s hs ↦ (by
+        by_cases hsr : s = r <;>
+          simp [hsr, Nat.mod_eq_of_lt (mem_range.mp hs), Nat.mod_eq_of_lt hr] :
         ∑ j ∈ range (m + 1), (if (q * j + s) % q = r then f (q * j + s) else 0) =
-          if s = r then ∑ j ∈ range (m + 1), f (q * j + r) else 0 := by
-      intro s hs
-      have hs' : s < q := mem_range.mp hs
-      have hmod (j : ℕ) : (q * j + s) % q = s := by
-        rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hs']
-      simp_rw [hmod]
-      split_ifs with hsr
-      · subst hsr; rfl
-      · simp
-    rw [sum_congr rfl hinner, sum_ite_eq' (range q) r]
-    simp [mem_range.mpr hr]
-  simp only [Function.comp_apply, hidx, hsum, smul_smul, Nat.cast_mul, mul_inv]
-  have hq0 : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq.ne'
-  rw [← mul_assoc, mul_inv_cancel₀ hq0, one_mul]
+          if s = r then ∑ j ∈ range (m + 1), f (q * j + r) else 0),
+      sum_ite_eq' (range q) r]; simp [mem_range.mpr hr]
+  simp only [Function.comp_apply, Nat.sub_add_cancel (Nat.mul_pos hq (Nat.succ_pos m)), hsum,
+    smul_smul, Nat.cast_mul, mul_inv]
+  rw [← mul_assoc, mul_inv_cancel₀ (Nat.cast_ne_zero.mpr hq.ne'), one_mul]
 
 end TauCeti
