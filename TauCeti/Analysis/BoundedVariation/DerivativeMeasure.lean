@@ -90,11 +90,12 @@ theorem exists_regular_lineDeriv_ofFun_apply_eq [BorelSpace E]
     (v : E) :
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), ∂_{v} (Distribution.ofFun Ω u μ ⊤) φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
-  refine (Distribution.forall_exists_abs_le_iff_exists_regular _).1 fun K hK hKΩ => ?_
+  refine (Distribution.hasLocallyFiniteMass_iff_exists_regular _).1
+    (Distribution.hasLocallyFiniteMass_def.2 fun K hK hKΩ => ?_)
   obtain ⟨U, hKU, hU⟩ := hu K hK hKΩ
-  refine ⟨‖v‖ * (totalVariationOn μ U u).toReal, fun φ hφ => ?_⟩
   have hC : 0 ≤ ‖v‖ * (totalVariationOn μ U u).toReal := by positivity
-  rw [Distribution.lineDerivOp_apply_apply]
+  refine ⟨‖v‖ * (totalVariationOn μ U u).toReal, hC, fun φ hφ => ?_⟩
+  rw [Real.norm_eq_abs, Distribution.lineDerivOp_apply_apply]
   by_cases hli : LocallyIntegrableOn u Ω μ
   · -- The same function, as a test function on `U`.
     let φ' : 𝓓(U, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ.trans hKU⟩

@@ -85,10 +85,10 @@ def stalkLiftAddHom
   (colimit.desc ((OpenNhds.inclusion x).op ⋙ F)
     { pt := AddCommGrpCat.of T
       ι :=
-        { app := fun U ↦ AddCommGrpCat.ofHom (f U.unop.1 U.unop.2)
+        { app := fun U ↦ AddCommGrpCat.ofHom (f U.unop.val U.unop.property)
           naturality := fun {U V} i ↦ by
             ext m
-            exact hf i.unop V.unop.2 m } }).hom
+            exact hf i.unop V.unop.property m } }).hom
 
 /-- The additive map induced from compatible section maps takes a germ to its prescribed value. -/
 @[simp]

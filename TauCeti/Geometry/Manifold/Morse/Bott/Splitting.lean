@@ -50,6 +50,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_apply_self_pos_of_mem_positiveNormalSpace`: the normal
   Hessian is negative definite on the negative normal space and positive definite on the positive
   normal space.
+* `IsCriticalSubmanifold.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace` and
+  `IsCriticalSubmanifold.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace`: the
+  corresponding semidefiniteness, including the zero vector.
 * `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
@@ -66,6 +69,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.isLocallyConstant_finrank_positiveNormalSpace`: these
   dimensions are locally constant along the submanifold.
+* `IsNondegenerateCriticalSubmanifold.exists_linearEquiv_negativeNormalSpace`: the negative
+  normal space, with minus half the normal Hessian as squared norm, is a Euclidean space whose
+  dimension is the Morse index.
 
 ## References
 
@@ -159,6 +165,13 @@ theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
   LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi
     (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
 
+/-- **The normal Hessian is positive semidefinite on the positive normal space.** -/
+theorem normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace
+    (hv : v ∈ h.positiveNormalSpace hn g s) : 0 ≤ h.normalHessian hn s v v := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · simp
+  · exact (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g hv hv0).le
+
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
@@ -233,7 +246,7 @@ theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn
 theorem negativeNormalSpaceEquiv_self (s : S) :
     h.negativeNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
   ext v
-  simp [Submodule.projection_apply_of_mem_left _ v.2]
+  simp [Submodule.projection_apply_of_mem_left _ v.property]
 
 /-- **The positive normal spaces for two fibre metrics are isomorphic.** The positive normal
 space relative to `g` is identified with the positive normal space relative to `g'` by projecting
@@ -264,7 +277,7 @@ theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn
 theorem positiveNormalSpaceEquiv_self (s : S) :
     h.positiveNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
   ext v
-  simp [Submodule.projection_apply_of_mem_left _ v.2]
+  simp [Submodule.projection_apply_of_mem_left _ v.property]
 
 /-- **The rank of the negative normal space is locally constant** along a Morse–Bott
 submanifold. -/
@@ -278,6 +291,27 @@ theorem isLocallyConstant_finrank_positiveNormalSpace :
     IsLocallyConstant fun s ↦ Module.finrank ℝ (h.positiveNormalSpace hn g s) := by
   simpa only [h.finrank_positiveNormalSpace hn g] using
     h.neg.isLocallyConstant_manifoldMorseIndex hn
+
+/-- **The negative normal space is Euclidean for minus half the normal Hessian.** There is a linear
+equivalence onto the negative normal space at `s` from the Euclidean space whose dimension is the
+Morse index at `i s`, along which `-½ Hessₛ (v, v)` is the squared norm. -/
+theorem exists_linearEquiv_negativeNormalSpace (s : S) :
+    ∃ e : EuclideanSpace ℝ (Fin (manifoldMorseIndex I f (i s))) ≃ₗ[ℝ] h.negativeNormalSpace hn g s,
+      ∀ x, -(2⁻¹ * h.normalHessian hn s (e x) (e x)) = ‖x‖ ^ 2 := by
+  rw [← h.finrank_negativeNormalSpace hn g s]
+  obtain ⟨e, he⟩ := LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply
+    (((h.isSymm_normalHessian hn s).restrict (h.negativeNormalSpace hn g s)).smul (-2⁻¹ : ℝ))
+    fun v hv ↦ by
+      have := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.property
+        (Submodule.coe_eq_zero.not.2 hv)
+      simp only [LinearMap.smul_apply, LinearMap.BilinForm.restrict_apply,
+        LinearMap.domRestrict_apply, smul_eq_mul]
+      linarith
+  refine ⟨e, fun x ↦ ?_⟩
+  have hx := he x x
+  simp only [LinearMap.smul_apply, LinearMap.BilinForm.restrict_apply,
+    LinearMap.domRestrict_apply, smul_eq_mul, real_inner_self_eq_norm_sq] at hx
+  linarith
 
 end IsNondegenerateCriticalSubmanifold
 

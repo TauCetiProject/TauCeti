@@ -109,7 +109,7 @@ standard punctured neighbourhood into the sphere. -/
   | inf =>
     rw [coe_coord_inf, sphereCoordInv_inf,
       OnePoint.invChart_symm_of_ne_zero (by
-        exact div_ne_zero (div_ne_zero (by norm_num) z.1.ne_zero) (by norm_num))]
+        exact div_ne_zero (div_ne_zero (by norm_num) z.val.ne_zero) (by norm_num))]
     simp [ThricePuncturedSphere.toOnePoint_apply, div_div]
 
 end TauCeti.ThricePuncturedSphere.Puncture

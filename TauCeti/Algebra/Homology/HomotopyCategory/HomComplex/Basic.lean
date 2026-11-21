@@ -37,6 +37,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
   components of `z`.
 * `CochainComplex.HomComplex.Cochain.XIsoOfEq_hom_comp_v`: precomposing a component of a
   cochain with an `XIsoOfEq` identification of its source.
+* `CochainComplex.HomComplex.Cochain.v_eq_zero_of_isZero`: a cochain vanishes on a zero term of
+  its source.
 -/
 
 public section
@@ -94,7 +96,7 @@ the components of `z`. -/
 theorem equivHomotopy_symm_hom {φ₁ φ₂ : F ⟶ G}
     (z : { z : Cochain F G (-1) // Cochain.ofHom φ₁ = δ (-1) 0 z + Cochain.ofHom φ₂ })
     (p q : ℤ) (hpq : p + -1 = q) :
-    ((Cochain.equivHomotopy φ₁ φ₂).symm z).hom p q = z.1.v p q hpq :=
+    ((Cochain.equivHomotopy φ₁ φ₂).symm z).hom p q = z.val.v p q hpq :=
   -- The components of `(Cochain.equivHomotopy φ₁ φ₂).symm z` are defined by cases on `p + -1 = q`.
   dite_eq_left hpq
 
@@ -112,5 +114,10 @@ lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h :
     (F.XIsoOfEq h).hom ≫ z.v p₂ q hpq = z.v p₁ q (by rw [h, hpq]) := by
   subst h
   simp
+
+/-- A cochain vanishes on every term of its source that is a zero object. -/
+theorem v_eq_zero_of_isZero {n i j : ℤ} (hij : i + n = j) (hF : Limits.IsZero (F.X i))
+    (z : Cochain F G n) : z.v i j hij = 0 :=
+  hF.eq_of_src _ _
 
 end CochainComplex.HomComplex.Cochain

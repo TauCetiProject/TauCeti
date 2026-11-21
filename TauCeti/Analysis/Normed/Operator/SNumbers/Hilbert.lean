@@ -66,14 +66,14 @@ approximation numbers `aₙ(B ∘ T ∘ A)` over all contractions `A : ℓ₂ �
 where `ℓ₂ = ℓ²(ℕ, 𝕜)`. The indexing is zero-based, so `h₀(T) = ‖T‖` (`hilbertNumber_zero`). -/
 noncomputable def hilbertNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨆ p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) // ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1},
-    (p.1.2 ∘L T ∘L p.1.1).singularValue n
+    (p.val.2 ∘L T ∘L p.val.1).singularValue n
 
 /-- `hₙ(T)` is the supremum of `aₙ(B ∘ T ∘ A)` over the contractions `A : ℓ₂ → E` and
 `B : F → ℓ₂`. -/
 theorem hilbertNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.hilbertNumber n =
       ⨆ p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) // ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1},
-        (p.1.2 ∘L T ∘L p.1.1).singularValue n := by
+        (p.val.2 ∘L T ∘L p.val.1).singularValue n := by
   rw [hilbertNumber]
 
 private instance :
@@ -82,16 +82,17 @@ private instance :
 
 private theorem bddAbove_range_singularValue_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
     BddAbove (Set.range fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
-      ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ (p.1.2 ∘L T ∘L p.1.1).singularValue n) :=
+      ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ (p.val.2 ∘L T ∘L p.val.1).singularValue n) :=
   ⟨‖T‖₊, Set.forall_mem_range.mpr fun p ↦
-    (singularValue_comp_comp_le_of_norm_le_one p.2.2 p.2.1 T n).trans (T.singularValue_le_nnnorm n)⟩
+    (singularValue_comp_comp_le_of_norm_le_one p.property.2 p.property.1 T n).trans
+        (T.singularValue_le_nnnorm n)⟩
 
 /-- Every compression of `T` by contractions bounds `hₙ(T)` from below. -/
 theorem singularValue_comp_comp_le_hilbertNumber_of_norm_le_one (T : E →L[𝕜] F)
     {A : ℓ²(ℕ, 𝕜) →L[𝕜] E} {B : F →L[𝕜] ℓ²(ℕ, 𝕜)} (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) (n : ℕ) :
     (B ∘L T ∘L A).singularValue n ≤ T.hilbertNumber n :=
   le_ciSup (f := fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
-      ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ (p.1.2 ∘L T ∘L p.1.1).singularValue n)
+      ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} ↦ (p.val.2 ∘L T ∘L p.val.1).singularValue n)
     (bddAbove_range_singularValue_comp_comp T n) ⟨(A, B), hA, hB⟩
 
 /-- **Upper-bound characterization.** `hₙ(T) ≤ c` exactly when `aₙ(B ∘ T ∘ A) ≤ c` for all
@@ -155,7 +156,7 @@ bounded `A : ℓ₂ → E` and `B : F → ℓ₂`. -/
 theorem hilbertNumber_eq_iSup_div (T : E →L[𝕜] F) (n : ℕ) :
     T.hilbertNumber n =
       ⨆ p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) // p.1 ≠ 0 ∧ p.2 ≠ 0},
-        (p.1.2 ∘L T ∘L p.1.1).singularValue n / (‖p.1.2‖₊ * ‖p.1.1‖₊) := by
+        (p.val.2 ∘L T ∘L p.val.1).singularValue n / (‖p.val.2‖₊ * ‖p.val.1‖₊) := by
   have hdiv (A : ℓ²(ℕ, 𝕜) →L[𝕜] E) (B : F →L[𝕜] ℓ²(ℕ, 𝕜)) :
       (B ∘L T ∘L A).singularValue n / (‖B‖₊ * ‖A‖₊) ≤ T.hilbertNumber n := by
     rcases eq_or_ne (‖B‖₊ * ‖A‖₊) 0 with h0 | h0
@@ -164,10 +165,10 @@ theorem hilbertNumber_eq_iSup_div (T : E →L[𝕜] F) (n : ℕ) :
     exact (singularValue_comp_comp_le_hilbertNumber B T A n).trans_eq (by ring)
   have hbdd : BddAbove (Set.range fun p : {p : (ℓ²(ℕ, 𝕜) →L[𝕜] E) × (F →L[𝕜] ℓ²(ℕ, 𝕜)) //
       p.1 ≠ 0 ∧ p.2 ≠ 0} ↦
-        (p.1.2 ∘L T ∘L p.1.1).singularValue n / (‖p.1.2‖₊ * ‖p.1.1‖₊)) :=
-    ⟨T.hilbertNumber n, Set.forall_mem_range.mpr fun p ↦ hdiv p.1.1 p.1.2⟩
+        (p.val.2 ∘L T ∘L p.val.1).singularValue n / (‖p.val.2‖₊ * ‖p.val.1‖₊)) :=
+    ⟨T.hilbertNumber n, Set.forall_mem_range.mpr fun p ↦ hdiv p.val.1 p.val.2⟩
   refine le_antisymm (hilbertNumber_le_iff.mpr fun A B hA hB ↦ ?_)
-    (ciSup_le' fun p ↦ hdiv p.1.1 p.1.2)
+    (ciSup_le' fun p ↦ hdiv p.val.1 p.val.2)
   rcases eq_or_ne (‖B‖₊ * ‖A‖₊) 0 with h0 | h0
   · -- A factor of norm zero makes the compression vanish.
     have h := B.singularValue_comp_comp_le T A n

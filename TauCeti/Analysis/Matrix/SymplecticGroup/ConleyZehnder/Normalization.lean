@@ -172,7 +172,7 @@ theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSympl
           J n ℝ * ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) / 2 := by
   set Ψ : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ)
   have hΨc : Continuous Ψ :=
-    Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+    Units.continuous_val.comp (continuous_subtypeVal.comp γ.continuous)
   -- The straightened graph of `γ t` is the graph of the symmetric matrix `graphSymm (γ t)`.
   set S : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ graphSymm (Ψ t) with hSdef
   have hinv : Continuous fun t ↦ (Ψ t + 1)⁻¹ :=
@@ -188,7 +188,7 @@ theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSympl
   have hreal (t : I) : (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage = (diagonalStraightening n *
       graphFrame ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
     rw [(hδ t).1, realImage_diagonalStraightening_mul_graphFrame
-      (mem_iff_mem_symplecticGroup.1 (γ t).2) (hγ t)]
+      (mem_iff_mem_symplecticGroup.1 (γ t).property) (hγ t)]
   rw [conleyZehnderIndex_eq_neg_maslovIndex γ δ hreal,
     maslovIndex_eq_signature_sub_of_souriau_eq_cayley δ hSc hS fun t ↦ (hδ t).2, hSdef]
   dsimp only
@@ -277,7 +277,7 @@ private theorem signature_exp_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n
   have hloc : IsLocallyConstant fun u : I ↦ signature (g u) := by
     refine (IsLocallyConstant.iff_eventually_eq _).2 fun u ↦ ?_
     filter_upwards [IsHermitian.eventually_signature_eq_of_continuousAt hgh
-      (hgc.comp continuous_subtype_val).continuousAt (hgdet u)] with w hw
+      (hgc.comp continuous_subtypeVal).continuousAt (hgdet u)] with w hw
     exact (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh w)).symm.trans
       (hw.trans (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh u)))
   have h := hloc.apply_eq_of_preconnectedSpace 1 0
@@ -305,13 +305,13 @@ theorem conleyZehnderIndex_eq_neg_signature_div_two {S : Matrix (n ⊕ n) (n ⊕
       NormedSpace.exp ((t : ℝ) • (J n ℝ * S))) :
     conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
   have hK' (t : I) : 2 * ‖(t : ℝ) • (J n ℝ * S)‖ < Real.log 2 := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.2.1, mul_left_comm]
-    exact (mul_le_of_le_one_left (by positivity) t.2.2).trans_lt hK
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg t.property.1, mul_left_comm]
+    exact (mul_le_of_le_one_left (by positivity) t.property.2).trans_lt hK
   rw [conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one γ fun t ↦ by
     rw [hγ t]; exact isUnit_det_exp_add_one (hK' t)]
   have hΨ (t : I) : NormedSpace.exp ((t : ℝ) • (J n ℝ * S)) ∈ symplecticGroup n ℝ := by
     rw [← hγ t]
-    exact mem_iff_mem_symplecticGroup.1 (γ t).2
+    exact mem_iff_mem_symplecticGroup.1 (γ t).property
   have hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1 := by
     rw [← γ.source, hγ 0, Set.Icc.coe_zero, zero_smul, NormedSpace.exp_zero]
   have hB : ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = NormedSpace.exp (J n ℝ * S) := by

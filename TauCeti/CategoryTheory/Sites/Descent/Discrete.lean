@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Discrete.Basic
 
@@ -15,16 +16,35 @@ public import TauCeti.CategoryTheory.Discrete.Basic
 A presheaf of types `P` on a category `C` defines a `Cat`-valued pseudofunctor on
 `LocallyDiscrete Cᵒᵖ` whose fibre over `X` is the discrete category on `P.obj X`, lifted to a
 larger universe of objects so that it can be compared with pseudofunctors such as the ones
-on schemes. Its fibres are discrete, hence groupoids, and it is a stack for a Grothendieck
-topology `J` exactly when `P` is a sheaf for `J` (Stacks, Lemma 0432).
+on schemes, with pullback given by `P.map`. In the language of fibred categories this is the
+category fibred in sets, or in setoids, associated with `P`. Its fibres are discrete, hence
+groupoids.
+
+The main results compare Mathlib's descent conditions for this pseudofunctor with the sheaf
+conditions for `P`. Since all hom-sets in the fibres are subsingletons, descent data for a
+presieve `R` are exactly compatible families of elements of `P` along `R`, and morphisms of
+descent data are equalities of the restrictions. Hence the pseudofunctor is a prestack exactly
+when `P` is separated, and a stack exactly when `P` is a sheaf (Stacks, Lemma 0432). This is how
+sheaves of sets, in particular algebraic spaces and representable functors, are viewed as stacks
+in setoids.
 
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.ofPresheaf`: the discrete pseudofunctor of a presheaf of types.
-* `CategoryTheory.Pseudofunctor.isStackFor_ofPresheaf_iff`: it satisfies effective descent along
-  a presieve if and only if `P` satisfies the sheaf condition for that presieve.
-* `CategoryTheory.Pseudofunctor.isStack_ofPresheaf_iff`: it is a stack for `J` if and only if
-  `P` is a sheaf for `J`.
+* `CategoryTheory.Pseudofunctor.ofPresheaf.objEquiv`: the objects of the fibre over `X` are the
+  elements of `P.obj X`.
+* `CategoryTheory.Pseudofunctor.ofPresheafMap`: the strong transformation induced by a morphism
+  of presheaves, with `ofPresheafMapId` and `ofPresheafMapComp` comparing it with identities and
+  composites.
+* `CategoryTheory.Pseudofunctor.ofPresheaf.descentDataEquivCompatible`: descent data for the
+  discrete pseudofunctor along a presieve `R` are equivalent to compatible families of `P` along
+  `R`.
+* `CategoryTheory.Pseudofunctor.isPrestackFor_ofPresheaf_iff`,
+  `CategoryTheory.Pseudofunctor.isStackFor_ofPresheaf_iff`: descent along a presieve `R` holds for
+  morphisms iff `P` is separated for `R`, and is effective iff `P` is a sheaf for `R`.
+* `CategoryTheory.Pseudofunctor.isPrestack_ofPresheaf_iff`,
+  `CategoryTheory.Pseudofunctor.isStack_ofPresheaf_iff`: the discrete pseudofunctor is a prestack
+  for `J` iff `P` is separated for `J`, and a stack for `J` iff `P` is a sheaf for `J`.
 
 ## References
 
@@ -33,7 +53,7 @@ topology `J` exactly when `P` is a sheaf for `J` (Stacks, Lemma 0432).
 
 @[expose] public section
 
-universe w' w v u
+universe w' w t v u
 
 namespace CategoryTheory
 
@@ -42,11 +62,6 @@ open Opposite
 attribute [local instance] uliftCategory
 
 namespace Pseudofunctor
-
-/-- The isomorphism between the objects of `ULift (Discrete α)` given by an equality in `α`. -/
-private abbrev uliftDiscreteIsoOfEq {α : Type w} {a b : α} (h : a = b) :
-    (⟨⟨a⟩⟩ : ULift.{w'} (Discrete α)) ≅ ⟨⟨b⟩⟩ :=
-  eqToIso (congrArg (fun a ↦ ULift.up (Discrete.mk a)) h)
 
 variable {C : Type u} [Category.{v} C] (P : Cᵒᵖ ⥤ Type w)
 
@@ -93,47 +108,190 @@ lemma nonempty_hom_ofPresheaf_obj_iff {X : LocallyDiscrete Cᵒᵖ} (x y : (ofPr
     Nonempty (x ⟶ y) ↔ x.down.as = y.down.as :=
   ⟨fun ⟨f⟩ ↦ Discrete.eq_of_hom f, fun h ↦ ⟨eqToHom (ULift.ext (Discrete.ext h))⟩⟩
 
-variable {P} in
-/-- The discrete pseudofunctor of `P` satisfies effective descent along a presieve if and only
-if `P` satisfies the sheaf condition for it. -/
-theorem isStackFor_ofPresheaf_iff {S : C} (R : Presieve S) :
+namespace ofPresheaf
+
+variable {P}
+
+/-- The objects of the fibre of the discrete pseudofunctor of `P` over `X` are the elements of
+`P.obj X`. -/
+def objEquiv (X : Cᵒᵖ) : (ofPresheaf.{w'} P).obj (.mk X) ≃ P.obj X where
+  toFun M := M.down.as
+  invFun x := ⟨⟨x⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Pulling back an object of the discrete pseudofunctor of `P` applies `P.map`. -/
+lemma objEquiv_map_toFunctor_obj {X Y : Cᵒᵖ} (f : X ⟶ Y) (M : (ofPresheaf.{w'} P).obj (.mk X)) :
+    objEquiv Y (((ofPresheaf.{w'} P).map f.toLoc).toFunctor.obj M) = P.map f (objEquiv X M) :=
+  (rfl)
+
+variable {X : Cᵒᵖ}
+
+/-- The morphism between two objects of a fibre of the discrete pseudofunctor with the same
+underlying element. -/
+def homMk {M N : (ofPresheaf.{w'} P).obj (.mk X)} (h : objEquiv X M = objEquiv X N) : M ⟶ N :=
+  eqToHom (ULift.ext (Discrete.ext h))
+
+/-- The isomorphism between two objects of a fibre of the discrete pseudofunctor with the same
+underlying element. -/
+def isoMk {M N : (ofPresheaf.{w'} P).obj (.mk X)} (h : objEquiv X M = objEquiv X N) : M ≅ N :=
+  eqToIso (ULift.ext (Discrete.ext h))
+
+/-- Two objects of a fibre of the discrete pseudofunctor related by a morphism have the same
+underlying element. -/
+lemma eq_of_hom {M N : (ofPresheaf.{w'} P).obj (.mk X)} (φ : M ⟶ N) :
+    objEquiv X M = objEquiv X N :=
+  Discrete.eq_of_hom φ
+
+end ofPresheaf
+
+open ofPresheaf
+
+variable {P}
+
+/-- The strong transformation between discrete pseudofunctors induced by a morphism of presheaves
+of types: on the fibre over `X` it applies `α.app X`. -/
+def ofPresheafMap {Q : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) :
+    StrongTrans (ofPresheaf.{w'} P) (ofPresheaf.{w'} Q) where
+  app a := Functor.toCatHom
+    { obj M := ⟨⟨α.app a.as M.down.as⟩⟩
+      map φ := homMk (X := a.as) (congrArg (α.app a.as) (eq_of_hom (X := a.as) φ))
+      map_id _ := Subsingleton.elim _ _
+      map_comp _ _ := Subsingleton.elim _ _ }
+  -- The two composites send `M` to `α (P.map f M)` and `Q.map f (α M)`, which agree by the
+  -- naturality of `α`; all coherence conditions hold because the fibres are discrete.
+  naturality f := Cat.Hom.isoMk (NatIso.ofComponents
+    (fun M ↦ isoMk (by exact α.naturality_apply f.as M.down.as))
+    (fun _ ↦ Subsingleton.elim _ _))
+  naturality_naturality _ := by ext; exact Subsingleton.elim _ _
+  naturality_id _ := by ext; exact Subsingleton.elim _ _
+  naturality_comp _ _ := by ext; exact Subsingleton.elim _ _
+
+/-- The strong transformation induced by `α` applies `α` to the underlying elements. -/
+@[simp]
+lemma ofPresheaf.objEquiv_ofPresheafMap_app_toFunctor_obj {Q : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q)
+    {X : Cᵒᵖ} (M : (ofPresheaf.{w'} P).obj (.mk X)) :
+    objEquiv X (((ofPresheafMap α).app (.mk X)).toFunctor.obj M) = α.app X (objEquiv X M) :=
+  (rfl)
+
+open scoped StrongTrans in
+/-- The strong transformation induced by the identity of `P` is isomorphic to the identity. -/
+def ofPresheafMapId (P : Cᵒᵖ ⥤ Type w) :
+    Iso (C := ofPresheaf.{w'} P ⟶ ofPresheaf.{w'} P)
+      (ofPresheafMap (𝟙 P)) (StrongTrans.id _) :=
+  StrongTrans.isoMk
+    (fun _ ↦ Cat.Hom.isoMk (NatIso.ofComponents (fun _ ↦ isoMk rfl)
+      (fun _ ↦ Subsingleton.elim _ _)))
+    (fun _ ↦ by ext; exact Subsingleton.elim _ _)
+
+open scoped StrongTrans in
+/-- The strong transformation induced by a composite of morphisms of presheaves is isomorphic to
+the composite of the induced strong transformations. -/
+def ofPresheafMapComp {Q R : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) (β : Q ⟶ R) :
+    Iso (C := ofPresheaf.{w'} P ⟶ ofPresheaf.{w'} R)
+      (ofPresheafMap (α ≫ β)) ((ofPresheafMap α).vcomp (ofPresheafMap β)) :=
+  StrongTrans.isoMk
+    (fun _ ↦ Cat.Hom.isoMk (NatIso.ofComponents (fun _ ↦ isoMk rfl)
+      (fun _ ↦ Subsingleton.elim _ _)))
+    (fun _ ↦ by ext; exact Subsingleton.elim _ _)
+
+variable {S : C}
+
+instance {ι : Type t} {X : ι → C} (f : ∀ i, X i ⟶ S)
+    (D₁ D₂ : (ofPresheaf.{w'} P).DescentData f) : Subsingleton (D₁ ⟶ D₂) :=
+  ⟨fun _ _ ↦ DescentData.hom_ext fun _ ↦ Subsingleton.elim _ _⟩
+
+instance (R : Presieve S) :
+    ((ofPresheaf.{w'} P).toDescentData (fun (g : R.category) ↦ g.obj.hom)).Faithful :=
+  ⟨fun _ ↦ Subsingleton.elim _ _⟩
+
+/-- Descent data for the discrete pseudofunctor of `P` along a presieve `R` are the same as
+compatible families of elements of `P` along `R`: the descent datum is determined by its objects,
+and the morphisms of the descent datum exist exactly when the family is compatible. -/
+def ofPresheaf.descentDataEquivCompatible (R : Presieve S) :
+    (ofPresheaf.{w'} P).DescentData (fun (g : R.category) ↦ g.obj.hom) ≃
+      {x : Presieve.FamilyOfElements P R // x.Compatible} where
+  toFun D := ⟨fun _ f hf ↦ objEquiv _ (D.obj (R.categoryMk f hf)),
+    fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦ eq_of_hom
+      (D.hom (g₁ ≫ f₁) (i₁ := R.categoryMk f₁ h₁) (i₂ := R.categoryMk f₂ h₂) g₁ g₂ rfl w.symm)⟩
+  invFun x :=
+    { obj g := (objEquiv _).symm (x.val g.obj.hom g.property)
+      hom _ _ _ _ f₁ f₂ hf₁ hf₂ := homMk (x.property f₁ f₂ _ _ (hf₁.trans hf₂.symm))
+      pullHom_hom := by intros; exact Subsingleton.elim _ _
+      hom_self := by intros; exact Subsingleton.elim _ _
+      hom_comp := by intros; exact Subsingleton.elim _ _ }
+  left_inv D := by
+    obtain ⟨obj, hom, _, _, _⟩ := D
+    dsimp only
+    congr 1
+    funext _ _ _ _ _ _ _ _
+    exact Subsingleton.elim _ _
+  right_inv _ := rfl
+
+/-- The compatible family attached to a descent datum consists of its underlying elements. -/
+@[simp]
+lemma ofPresheaf.descentDataEquivCompatible_apply_coe {R : Presieve S}
+    (D : (ofPresheaf.{w'} P).DescentData (fun (g : R.category) ↦ g.obj.hom))
+    {Y : C} (f : Y ⟶ S) (hf : R f) :
+    (descentDataEquivCompatible R D).val f hf = objEquiv _ (D.obj (R.categoryMk f hf)) :=
+  (rfl)
+
+/-- The descent datum attached to a compatible family has the elements of the family as its
+objects. -/
+@[simp]
+lemma ofPresheaf.descentDataEquivCompatible_symm_apply_obj {R : Presieve S}
+    (x : {x : Presieve.FamilyOfElements P R // x.Compatible}) (g : R.category) :
+    ((descentDataEquivCompatible.{w'} R).symm x).obj g =
+      (objEquiv _).symm (x.val g.obj.hom g.property) :=
+  (rfl)
+
+private lemma nonempty_hom_toDescentData_obj_iff {R : Presieve S}
+    (M N : (ofPresheaf.{w'} P).obj (.mk (op S))) :
+    Nonempty (((ofPresheaf P).toDescentData (fun (g : R.category) ↦ g.obj.hom)).obj M ⟶
+      ((ofPresheaf P).toDescentData (fun (g : R.category) ↦ g.obj.hom)).obj N) ↔
+      ∀ ⦃Y : C⦄ ⦃f : Y ⟶ S⦄, R f → P.map f.op (objEquiv _ M) = P.map f.op (objEquiv _ N) := by
+  refine ⟨fun ⟨φ⟩ Y f hf ↦ eq_of_hom (φ.hom (R.categoryMk f hf)), fun h ↦ ⟨?_⟩⟩
+  exact { hom g := homMk (h g.property), comm := fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _ }
+
+private lemma toDescentData_full_iff (R : Presieve S) :
+    ((ofPresheaf.{w'} P).toDescentData (fun (g : R.category) ↦ g.obj.hom)).Full ↔
+      Presieve.IsSeparatedFor P R := by
+  refine ⟨fun h x t₁ t₂ ht₁ ht₂ ↦ ?_, fun h ↦ ⟨fun {M N} φ ↦ ?_⟩⟩
+  · obtain ⟨φ⟩ := (nonempty_hom_toDescentData_obj_iff (R := R)
+      ((objEquiv _).symm t₁) ((objEquiv _).symm t₂)).2
+      (fun _ f hf ↦ (ht₁ f hf).trans (ht₂ f hf).symm)
+    exact eq_of_hom (((ofPresheaf.{w'} P).toDescentData _).preimage φ)
+  · exact ⟨homMk (h.ext fun _ _ hf ↦ (nonempty_hom_toDescentData_obj_iff M N).1 ⟨φ⟩ hf),
+      Subsingleton.elim _ _⟩
+
+/-- The discrete pseudofunctor of `P` satisfies descent of morphisms along a presieve `R` iff `P`
+is separated for `R`. -/
+lemma isPrestackFor_ofPresheaf_iff (R : Presieve S) :
+    (ofPresheaf.{w'} P).IsPrestackFor R ↔ Presieve.IsSeparatedFor P R := by
+  rw [isPrestackFor_iff, ← toDescentData_full_iff]
+  exact ⟨fun ⟨h⟩ ↦ h.full, fun _ ↦ ⟨.ofFullyFaithful _⟩⟩
+
+/-- The discrete pseudofunctor of `P` satisfies effective descent along a presieve `R` iff `P`
+satisfies the sheaf condition for it. -/
+theorem isStackFor_ofPresheaf_iff (R : Presieve S) :
     (ofPresheaf.{w'} P).IsStackFor R ↔ Presieve.IsSheafFor P R := by
-  refine ⟨fun h x hx ↦ ?_, fun hR ↦ ?_⟩
-  · have := h.isEquivalence
-    let G := (ofPresheaf.{w'} P).toDescentData (fun (f : R.category) ↦ f.obj.hom)
-    let D : (ofPresheaf.{w'} P).DescentData (fun (f : R.category) ↦ f.obj.hom) :=
-      { obj i := ⟨⟨x i.obj.hom i.property⟩⟩
-        hom _ _ i₁ i₂ f₁ f₂ hf₁ hf₂ := (uliftDiscreteIsoOfEq.{w'}
-          (hx f₁ f₂ i₁.property i₂.property (hf₁.trans hf₂.symm))).hom
-        pullHom_hom := by intros; exact Subsingleton.elim _ _
-        hom_self := by intros; exact Subsingleton.elim _ _
-        hom_comp := by intros; exact Subsingleton.elim _ _ }
-    let e := G.objObjPreimageIso D
-    refine ⟨(G.objPreimage D).down.as,
-      fun _ f hf ↦ Discrete.eq_of_hom (e.hom.hom ⟨Over.mk f, hf⟩), fun t ht ↦ ?_⟩
-    let φ : G.obj ⟨⟨t⟩⟩ ⟶ G.obj (G.objPreimage D) :=
-      { hom i := (uliftDiscreteIsoOfEq.{w'}
-          ((ht i.obj.hom i.property).trans (Discrete.eq_of_hom (e.hom.hom i)).symm)).hom
-        comm := by intros; exact Subsingleton.elim _ _ }
-    exact Discrete.eq_of_hom (G.preimage φ)
-  · rw [isStackFor_iff]
-    exact
-      { faithful := ⟨fun _ ↦ Subsingleton.elim _ _⟩
-        full := ⟨fun {M N} φ ↦ ⟨by
-          obtain ⟨⟨m⟩⟩ := M
-          obtain ⟨⟨n⟩⟩ := N
-          exact (uliftDiscreteIsoOfEq.{w'} (hR.isSeparatedFor.ext fun Y f hf ↦
-            Discrete.eq_of_hom (φ.hom ⟨Over.mk f, hf⟩))).hom,
-          DescentData.hom_ext fun _ ↦ Subsingleton.elim _ _⟩⟩
-        essSurj := ⟨fun D ↦ by
-          let x : Presieve.FamilyOfElements P R :=
-            fun _ g hg ↦ (D.obj ⟨Over.mk g, hg⟩).down.as
-          have hx : x.Compatible := fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦
-            Discrete.eq_of_hom (D.hom (g₁ ≫ f₁) (i₁ := ⟨Over.mk f₁, h₁⟩)
-              (i₂ := ⟨Over.mk f₂, h₂⟩) g₁ g₂ rfl w.symm)
-          exact ⟨⟨⟨hR.amalgamate x hx⟩⟩, ⟨DescentData.isoMk
-            (fun i ↦ uliftDiscreteIsoOfEq.{w'} (hR.valid_glue hx i.obj.hom i.property))
-            (fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _)⟩⟩⟩ }
+  rw [isStackFor_iff, ← Presieve.isSeparatedFor_and_exists_isAmalgamation_iff_isSheafFor,
+    ← toDescentData_full_iff]
+  refine ⟨fun h ↦ ⟨h.full, fun x hx ↦ ?_⟩, fun ⟨hfull, hx⟩ ↦ ⟨inferInstance, hfull, ⟨fun D ↦ ?_⟩⟩⟩
+  · obtain ⟨M, ⟨e⟩⟩ :=
+      h.essSurj.mem_essImage ((descentDataEquivCompatible.{w'} R).symm ⟨x, hx⟩)
+    exact ⟨objEquiv _ M, fun _ f hf ↦ eq_of_hom (e.hom.hom (R.categoryMk f hf))⟩
+  · obtain ⟨t, ht⟩ := hx _ (descentDataEquivCompatible R D).property
+    exact ⟨(objEquiv _).symm t, ⟨DescentData.isoMk
+      (fun g ↦ isoMk (ht g.obj.hom g.property)) (fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _)⟩⟩
+
+variable (P)
+
+/-- The discrete pseudofunctor of `P` is a prestack for `J` iff `P` is separated for `J`. -/
+lemma isPrestack_ofPresheaf_iff (J : GrothendieckTopology C) :
+    (ofPresheaf.{w'} P).IsPrestack J ↔ Presieve.IsSeparated J P :=
+  ⟨fun _ _ R hR ↦ (isPrestackFor_ofPresheaf_iff _).1 ((ofPresheaf.{w'} P).isPrestackFor' R hR),
+    fun h ↦ .of_isPrestackFor fun _ R hR ↦ (isPrestackFor_ofPresheaf_iff _).2 (h R hR)⟩
 
 /-- The discrete pseudofunctor of a presheaf of types `P` is a stack for `J` if and only if `P`
 is a sheaf for `J` (Stacks, Lemma 0432). -/

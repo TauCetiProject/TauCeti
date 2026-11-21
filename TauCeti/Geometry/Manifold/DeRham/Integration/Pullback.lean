@@ -73,34 +73,34 @@ theorem integralTopForm_mpullback_eq_zero_of_not_surjective
     (o : Manifold.Orientation I M (Fin n)) (o' : Manifold.Orientation I' N (Fin n)) {f : M → N}
     (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (hs : ¬Surjective f)
     {φ : SmoothForm I' N ℝ n} (hφ : φ ∈ compactlySupportedForms I' N n) :
-    integralTopForm o (SmoothForm.mpullback f hf φ).1 = 0 := by
+    integralTopForm o (SmoothForm.mpullback f hf φ).val = 0 := by
   obtain ⟨y, hy⟩ : ∃ y, y ∉ range f := by
     simpa only [Surjective, mem_range, not_forall] using hs
   -- A top form `θ` of integral one supported off the closed image of `f`.
   obtain ⟨θ, hθf, hθ⟩ := exists_compactlySupportedClosedForms_integralTopForm_eq_one o' y
     (hp.isClosedMap.isClosed_range.isOpen_compl.mem_nhds hy)
-  have hθc := ((mem_compactlySupportedClosedForms I').mp θ.2).1
+  have hθc := ((mem_compactlySupportedClosedForms I').mp θ.property).1
   -- `φ - (∫_N φ) θ` has integral zero, so it is exact with compact support.
-  set c := integralTopForm o' φ.1
-  have hex : φ + (-c) • θ.1 ∈ exactCompactlySupportedForms I' N n := by
+  set c := integralTopForm o' φ.val
+  have hex : φ + (-c) • θ.val ∈ exactCompactlySupportedForms I' N n := by
     refine (mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o'
       (add_mem hφ (Submodule.smul_mem _ _ hθc))).2 ?_
     rw [Submodule.coe_add, Submodule.coe_smul, integralTopForm_add o'
-      (φ.isSmoothForm.of_le (by simp)) ((θ.1.isSmoothForm.smul (-c)).of_le (by simp))
+      (φ.isSmoothForm.of_le (by simp)) ((θ.val.isSmoothForm.smul (-c)).of_le (by simp))
       ((mem_compactlySupportedForms I').mp hφ)
       (((mem_compactlySupportedForms I').mp hθc).of_isClosed_subset (isClosed_tsupport _)
         (RoughForm.tsupport_smul_subset _ _)),
       integralTopForm_smul, hθ]
     ring
   -- The pullback of `θ` vanishes, since `θ` vanishes on the image of `f`.
-  have hθ0 : SmoothForm.mpullback f hf θ.1 = 0 := by
+  have hθ0 : SmoothForm.mpullback f hf θ.val = 0 := by
     refine Subtype.ext (funext fun x ↦ ?_)
     ext v
     rw [SmoothForm.mpullback_apply, image_eq_zero_of_notMem_tsupport
       (fun hx ↦ hθf hx (mem_range_self x))]
     -- Both sides are the value of a zero alternating map.
     rfl
-  have hpull : SmoothForm.mpullback f hf φ = SmoothForm.mpullback f hf (φ + (-c) • θ.1) := by
+  have hpull : SmoothForm.mpullback f hf φ = SmoothForm.mpullback f hf (φ + (-c) • θ.val) := by
     rw [map_add, map_smul, hθ0, smul_zero, add_zero]
   rw [hpull]
   exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
@@ -114,7 +114,7 @@ theorem surjective_of_integralTopForm_mpullback_ne_zero
     (o : Manifold.Orientation I M (Fin n)) (o' : Manifold.Orientation I' N (Fin n)) {f : M → N}
     (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) {φ : SmoothForm I' N ℝ n}
     (hφ : φ ∈ compactlySupportedForms I' N n)
-    (h : integralTopForm o (SmoothForm.mpullback f hf φ).1 ≠ 0) : Surjective f :=
+    (h : integralTopForm o (SmoothForm.mpullback f hf φ).val ≠ 0) : Surjective f :=
   not_not.1 fun hs ↦ h (integralTopForm_mpullback_eq_zero_of_not_surjective o o' hf hp hs hφ)
 
 end TauCeti

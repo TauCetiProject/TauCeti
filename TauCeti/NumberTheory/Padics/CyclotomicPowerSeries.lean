@@ -92,7 +92,7 @@ noncomputable def cyclotomicSubst : ℤ_[p] →* (O⟦X⟧ →ₐ[O] O⟦X⟧) w
     rw [AlgHom.mul_apply, coe_substAlgHom, coe_substAlgHom, coe_substAlgHom,
       subst_comp_subst_apply (hasSubst_binomialSeries_sub_one b)
         (hasSubst_binomialSeries_sub_one a), subst_sub (hasSubst_binomialSeries_sub_one a),
-      subst_one, PadicInt.binomialSeries_subst_binomialSeries_sub_one]
+      subst_one, subst_binomialSeries_sub_one]
 
 variable {O}
 
@@ -112,7 +112,7 @@ theorem cyclotomicSubst_C (a : ℤ_[p]) (c : O) : cyclotomicSubst O a (C c) = C 
 @[simp]
 theorem cyclotomicSubst_binomialSeries (a b : ℤ_[p]) :
     cyclotomicSubst O a (binomialSeries O b) = binomialSeries O (a * b) := by
-  rw [cyclotomicSubst_apply, PadicInt.binomialSeries_subst_binomialSeries_sub_one]
+  rw [cyclotomicSubst_apply, subst_binomialSeries_sub_one]
 
 theorem cyclotomicSubst_one_add_X (a : ℤ_[p]) :
     cyclotomicSubst O a (1 + X) = binomialSeries O a := by
@@ -194,7 +194,8 @@ theorem map_cyclotomicSubst {O' : Type*} [CommRing O'] [Algebra ℤ_[p] O'] (σ 
   have hs : map (σ : O →+* O') (f.subst (binomialSeries O a - 1)) =
       (map (σ : O →+* O') f).subst (map (σ : O →+* O') (binomialSeries O a - 1)) :=
     PowerSeries.map_subst (hasSubst_binomialSeries_sub_one a) _
-  rw [cyclotomicSubst_apply, cyclotomicSubst_apply, hs, map_sub, map_one, map_binomialSeries]
+  rw [cyclotomicSubst_apply, cyclotomicSubst_apply, hs, map_sub, map_one,
+    map_algHom_binomialSeries]
 
 section Frobenius
 
