@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Pattern
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.GlueWord
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.RootSystems
-import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # The glue columns of the rootful rank-24 table
@@ -380,20 +379,6 @@ theorem glueSubgroup_eq_zmultiples (r : RootfulNiemeierType) {l : List ℕ}
     r.glueSubgroup = AddSubgroup.zmultiples w := by
   rw [glueSubgroup_def, r.glueGenerators_eq_singleton hl hw,
     AddSubgroup.zmultiples_eq_closure]
-
-/-- An injective additive homomorphism between the glue modules of two rows whose range contains
-the target glue generators and whose preimage of the target glue generators is the source glue
-generators preserves membership in the glue subgroup. -/
-theorem apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff {r s : RootfulNiemeierType}
-    (φ : r.glueModule →+ s.glueModule) (hφ_inj : Function.Injective φ)
-    (hrange : s.glueGenerators ⊆ Set.range φ)
-    (hφ : ∀ v, φ v ∈ s.glueGenerators ↔ v ∈ r.glueGenerators) (w : r.glueModule) :
-    φ w ∈ s.glueSubgroup ↔ w ∈ r.glueSubgroup := by
-  have hgen : φ ⁻¹' s.glueGenerators = r.glueGenerators := Set.ext hφ
-  have h := φ.closure_preimage_eq_of_injective hφ_inj hrange
-  rw [hgen, ← r.glueSubgroup_def, ← s.glueSubgroup_def] at h
-  exact (AddSubgroup.mem_comap (f := φ) (K := s.glueSubgroup) (x := w)).symm.trans
-    (by rw [← h])
 
 /-! ### Glue words of a row in the coordinates of an explicit family -/
 

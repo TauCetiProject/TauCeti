@@ -297,10 +297,7 @@ theorem discriminantGroupPiEquiv_discriminantGroupEquiv_pi (f : ∀ i, Isometry 
     (c : (pi L).DiscriminantGroup) (i : ι) :
     discriminantGroupPiEquiv M ((Isometry.pi f).discriminantGroupEquiv c) i =
       (f i).discriminantGroupEquiv (discriminantGroupPiEquiv L c i) := by
-  have h : Isometry.pi f = Isometry.piCongr (Equiv.refl ι) f :=
-    Isometry.ext fun x ↦ funext fun j ↦
-      (Isometry.pi_apply f x j).trans (Isometry.piCongr_apply_apply (Equiv.refl ι) f x j).symm
-  rw [h]
+  rw [Isometry.pi_eq_piCongr]
   exact discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr (Equiv.refl ι) f c i
 
 /-- **Naturality of the summandwise alphabet isometry under coordinatewise isometries.**  Let
@@ -319,13 +316,10 @@ theorem discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsomet
     (Isometry.pi f).discriminantQuadraticIsometry (isEven_pi hL)
         (discriminantQuadraticIsometryPiOfIsometry L a x) =
       discriminantQuadraticIsometryPiOfIsometry M b fun i ↦ g i (x i) := by
-  have hpi : Isometry.pi f = Isometry.piCongr (Equiv.refl ι) f :=
-    Isometry.ext fun y ↦ funext fun j ↦
-      (Isometry.pi_apply f y j).trans (Isometry.piCongr_apply_apply (Equiv.refl ι) f y j).symm
   have heq : Equiv.piCongrLeft (fun i ↦ B i) (Equiv.refl ι) (fun i ↦ g i (x i)) =
       fun i ↦ g i (x i) :=
     funext fun i ↦ Equiv.piCongrLeft_apply_apply (fun i ↦ B i) (Equiv.refl ι) _ i
-  rw [hpi, ← heq]
+  rw [Isometry.pi_eq_piCongr, ← heq]
   exact discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
     a b (Equiv.refl ι) f g h x
 
@@ -338,9 +332,7 @@ theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft (σ : κ ≃
     (c : (pi fun k ↦ L (σ k)).DiscriminantGroup) (k : κ) :
     discriminantGroupPiEquiv L ((Isometry.piCongrLeft L σ).discriminantGroupEquiv c) (σ k) =
       discriminantGroupPiEquiv (fun k ↦ L (σ k)) c k := by
-  have h : Isometry.piCongrLeft L σ = Isometry.piCongr σ fun k ↦ Isometry.refl (L (σ k)) := by
-    rw [Isometry.piCongr_def, Isometry.pi_refl, Isometry.refl_trans]
-  rw [h]
+  rw [Isometry.piCongrLeft_eq_piCongr]
   exact (discriminantGroupPiEquiv_discriminantGroupEquiv_piCongr σ
     (fun k ↦ Isometry.refl (L (σ k))) c k).trans (by simp)
 
@@ -367,9 +359,7 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
     (Isometry.piCongrLeft L σ).discriminantQuadraticIsometry (isEven_pi fun k ↦ hL (σ k))
         (discriminantQuadraticIsometryPiOfIsometry (fun k ↦ L (σ k)) (fun k ↦ a (σ k)) x) =
       discriminantQuadraticIsometryPiOfIsometry L a (Equiv.piCongrLeft (fun i ↦ A i) σ x) := by
-  have h : Isometry.piCongrLeft L σ = Isometry.piCongr σ fun k ↦ Isometry.refl (L (σ k)) := by
-    rw [Isometry.piCongr_def, Isometry.pi_refl, Isometry.refl_trans]
-  rw [h]
+  rw [Isometry.piCongrLeft_eq_piCongr]
   exact discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
     (fun k ↦ a (σ k)) a σ (fun k ↦ Isometry.refl (L (σ k))) (fun _ ↦ id)
     (fun k y ↦ ((Isometry.discriminantQuadraticIsometry_apply (Isometry.refl (L (σ k)))

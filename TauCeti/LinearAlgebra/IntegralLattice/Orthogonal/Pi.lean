@@ -362,6 +362,19 @@ theorem piCongr_refl :
   exact (piCongr_apply_apply (Equiv.refl ι) _ x i).trans
     ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
 
+/-- `Isometry.pi` is the specialization of `Isometry.piCongr` to the identity index
+equivalence. -/
+theorem pi_eq_piCongr (f : ∀ i, Isometry (L i) (M i)) :
+    pi f = piCongr (Equiv.refl ι) f := by
+  ext x i
+  exact (pi_apply f x i).trans (piCongr_apply_apply (Equiv.refl ι) f x i).symm
+
+/-- `Isometry.piCongrLeft` is the specialization of `Isometry.piCongr` to identity summand
+isometries. -/
+theorem piCongrLeft_eq_piCongr (σ : κ ≃ ι) :
+    piCongrLeft L σ = piCongr σ fun k ↦ Isometry.refl (L (σ k)) := by
+  rw [piCongr_def, pi_refl, refl_trans]
+
 /-- Composing two `Isometry.piCongr` maps composes the index equivalences and summand
 isometries. -/
 @[simp]
