@@ -105,8 +105,11 @@ section
 variable {B : LinearMap.BilinMap R W C} {p q : (bilinearFactorSet B).Extension}
 
 /-- **The coefficient coordinate of a product** in the Heisenberg group of `B`: the coefficient
-accumulates the value of `B` at the two space coordinates. -/
-@[simp]
+accumulates the value of `B` at the two space coordinates. Not `@[simp]`: the global simplifier
+already rewrites `(p * q).left` to this normal form through
+`TauCeti.FactorSet.Extension.mul_left`, `TauCeti.trivialMulDistribMulAction_smul` and
+`TauCeti.Heisenberg.bilinearFactorSet_apply`, so tagging it would shadow those lemmas
+(the `simpNF` linter rejects the tag). -/
 theorem bilinearExtension_mul_left :
     (p * q).left = ofAdd (p.left.toAdd + q.left.toAdd + B p.right.toAdd q.right.toAdd) := by
   simp only [FactorSet.Extension.mul_left, TauCeti.trivialMulDistribMulAction_smul,
