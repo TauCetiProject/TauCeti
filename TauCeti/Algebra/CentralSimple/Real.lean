@@ -12,9 +12,10 @@ public import TauCeti.Algebra.CentralSimple.Degree
 -- `Mathlib.Algebra.Quaternion` is imported publicly because `ℍ[ℝ]` occurs in the statement of the
 -- classification.
 public import Mathlib.Algebra.Quaternion
--- `Mathlib.Basic.Real.Basic` is imported publicly because `ℝ` is the base field of every statement
--- below: `Mathlib.Algebra.Quaternion` supplies `ℍ[·]` over an arbitrary base but not `ℝ` itself.
+-- `Mathlib.Basic.Real.Basic` and `Mathlib.LinearAlgebra.Complex.Module` are imported publicly
+-- because `ℝ`, `ℂ`, and the `ℝ`-algebra structure on `ℂ` occur in the classification below.
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.Complex.Module
 -- Non-public: the maximal subfield supplying the degree bound
 -- (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), the quaternion
 -- centrality used in the examples, the basis that builds the isomorphism
@@ -72,6 +73,8 @@ needed; the rest is the elementary Frobenius argument.
   that is a domain is `ℍ[ℝ]`.
 * `TauCeti.nonempty_algEquiv_real_or_quaternion`: **Frobenius' theorem**, a real central division
   algebra is `ℝ` or `ℍ[ℝ]`.
+* `TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`: **general Frobenius' theorem**, every
+  finite-dimensional real algebra without zero divisors is `ℝ`, `ℂ`, or `ℍ[ℝ]`.
 
 ## Implementation notes
 
@@ -424,5 +427,51 @@ theorem nonempty_algEquiv_real_or_quaternion (D : Type*) [DivisionRing D] [Algeb
     right
     rw [hd] at hsq
     exact nonempty_algEquiv_quaternion_of_finrank_eq_four D (by omega)
+
+/-- **Frobenius' theorem for real division algebras.** Every finite-dimensional associative real
+algebra without zero divisors is `ℝ`-isomorphic to `ℝ`, `ℂ`, or `ℍ[ℝ]`.
+
+Such an algebra is automatically a division algebra. Its centre is a finite field extension of
+`ℝ`, hence isomorphic to `ℝ` or `ℂ`. In the real-centre case `D` is central over `ℝ` and
+`TauCeti.nonempty_algEquiv_real_or_quaternion` gives `ℝ` or `ℍ[ℝ]`; in the complex-centre case
+`D` is finite and therefore integral over the algebraically closed field `ℂ`, so `ℂ → D` is
+bijective. -/
+theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [IsDomain D]
+    [Algebra ℝ D] [FiniteDimensional ℝ D] :
+    Nonempty (D ≃ₐ[ℝ] ℝ) ∨ Nonempty (D ≃ₐ[ℝ] ℂ) ∨ Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
+  let _ : DivisionRing D := divisionRingOfFiniteDimensional ℝ D
+  set Z := Subalgebra.center ℝ D
+  let _ : Field Z := (IsField.of_isDomain_of_finite ℝ Z).toField
+  have _ : Algebra.IsAlgebraic ℝ Z := Algebra.IsAlgebraic.of_finite ℝ Z
+  rcases _root_.Real.nonempty_algEquiv_or Z with hZ | hZ
+  · obtain ⟨eZ⟩ := hZ
+    have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
+      have hz : (⟨x, hx⟩ : Z) = algebraMap ℝ Z (eZ ⟨x, hx⟩) :=
+        eZ.injective (by rw [AlgEquiv.commutes, Algebra.algebraMap_self_apply])
+      have hval : x = algebraMap ℝ D (eZ ⟨x, hx⟩) := congrArg Subtype.val hz
+      exact hval ▸ Subalgebra.algebraMap_mem _ _⟩
+    rcases nonempty_algEquiv_real_or_quaternion D with hR | hH
+    · exact Or.inl hR
+    · exact Or.inr (Or.inr hH)
+  · obtain ⟨eZ⟩ := hZ
+    right; left
+    obtain ⟨s, hs⟩ := ‹FiniteDimensional ℝ D›.fg_top
+    have hrep (x : D) : ∃ c : D → ℝ, ∑ y ∈ s, algebraMap ℝ D (c y) * y = x := by
+      obtain ⟨c, -, rfl⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top : x ∈ _)
+      exact ⟨c, by simp only [Algebra.smul_def]⟩
+    let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
+    have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
+      (Subalgebra.mem_center_iff.mp (eZ.symm c).2 x).symm
+    let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
+    have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
+    have _ : Module.Finite ℂ D := ⟨⟨s, eq_top_iff.2 fun x _ ↦ by
+      obtain ⟨c, rfl⟩ := hrep x
+      refine Submodule.sum_mem _ fun y hy ↦ ?_
+      have hsm : (algebraMap ℝ ℂ (c y)) • y = algebraMap ℝ D (c y) * y := by
+        rw [Algebra.smul_def, hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
+      exact hsm ▸ Submodule.smul_mem _ _ (Submodule.subset_span hy)⟩⟩
+    have h := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
+    rw [hmap] at h
+    exact ⟨(AlgEquiv.ofBijective f h).symm⟩
 
 end TauCeti
