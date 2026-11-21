@@ -32,6 +32,13 @@ namespace SerreGraph
 
 variable {Γ : SerreGraph}
 
+/-- A geodesic line is injective. -/
+theorem injective_of_dist_eq_natAbs {c : ℤ → Γ.V}
+    (hc : ∀ m n, Γ.dist (c m) (c n) = (m - n).natAbs) : Function.Injective c := fun m n h => by
+  have := hc m n
+  rw [h, dist_self] at this
+  omega
+
 /-- A family of vertices indexed by the integers whose consecutive members are joined by a path
 and at distance at most one does not increase distances. -/
 theorem dist_le_natAbs {c : ℤ → Γ.V} (h : ∀ n, Nonempty (Γ.Path (c n) (c (n + 1))))

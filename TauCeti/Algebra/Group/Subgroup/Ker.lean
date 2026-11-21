@@ -11,8 +11,9 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 # Ranges and equality loci of group homomorphisms
 
 This file supplies the characteristic membership equation for the subgroup equality locus, the
-invariance of the range of a group homomorphism under precomposition with a surjection, and the
-range and kernel of the pointwise inverse of a homomorphism into a commutative group.
+invariance of the range of a group homomorphism under precomposition with a surjection, the range
+and kernel of the pointwise inverse of a homomorphism into a commutative group, and the separation
+of conjugates from a subgroup by a homomorphism killing it.
 
 ## Main results
 
@@ -20,6 +21,8 @@ range and kernel of the pointwise inverse of a homomorphism into a commutative g
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.conj_notMem_of_le_ker`: a homomorphism killing a subgroup `S` but not `x` keeps the
+  conjugates of `x` out of `S`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -56,6 +59,14 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+/-- A homomorphism `f` that kills a subgroup `S` but not `x` keeps every conjugate of `x` out of
+`S`, since the kernel of `f` is normal. -/
+@[to_additive /-- An additive homomorphism `f` that kills a subgroup `S` but not `x` keeps every
+conjugate of `x` out of `S`, since the kernel of `f` is normal. -/]
+theorem conj_notMem_of_le_ker {N : Type*} [MulOneClass N] (f : G →* N) {S : Subgroup G}
+    (hS : S ≤ f.ker) {x : G} (hx : f x ≠ 1) (y : G) : y * x * y⁻¹ ∉ S := fun h =>
+  hx (by simpa [mul_assoc] using f.normal_ker.conj_mem' _ (hS h) y)
 
 end MonoidHom
 

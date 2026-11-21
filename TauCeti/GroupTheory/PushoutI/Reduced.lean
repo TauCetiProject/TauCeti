@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
-import Mathlib.Tactic.Group
 
 /-!
 # Reduced words in an amalgamated product
@@ -26,22 +25,12 @@ sequence of factors; in particular the product of a reduced word of two or more 
 factor. This file states these facts for lists of letters `⟨i, g⟩` with `g : G i`, consecutive
 letters in different factors, which is the form in which they are applied to concrete words.
 
-A reduced list is *cyclically reduced* when it has at most one letter or its first and last letters
-lie in different factors. Every element of the amalgamated product is conjugate to an element of
-the amalgamated subgroup times the product of a cyclically reduced list: if the first letter `a₁`
-and the last letter `aᵣ` of a reduced list lie in the same factor, conjugating `h * a₁ ⋯ aᵣ` by
-`h * a₁` gives `a₂ ⋯ aᵣ₋₁ (aᵣ * h * a₁)`, with one letter fewer, or two fewer when `aᵣ * h * a₁`
-lies in the amalgamated subgroup. Like the existence of normal forms, this does not need the `φ i`
-to be injective.
-
 ## Main results
 
 * `Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod`: every element is `h * w` with `h` in the
   amalgamated subgroup and `w` the product of a reduced word.
 * `Monoid.PushoutI.exists_eq_of_mul_list_prod`: every element is `g * w` with `g` in a given
   factor `G i` and `w` the product of a reduced list of letters not starting in `G i`.
-* `Monoid.PushoutI.exists_conj_eq_base_mul_list_prod`: every element is conjugate to `h * w` with
-  `h` in the amalgamated subgroup and `w` the product of a cyclically reduced list of letters.
 * `Monoid.PushoutI.exists_reduced_toList_eq`: a reduced list of letters is a reduced word.
 * `Monoid.PushoutI.list_prod_notMem_range_base`: the product of a nonempty reduced list of letters
   is not in the amalgamated subgroup.
@@ -59,8 +48,6 @@ to be injective.
 
 * J.-P. Serre, *Trees*, Chapter I, §1.2, Theorem 1 (the normal form theorem for amalgamated
   products).
-* R. C. Lyndon, P. E. Schupp, *Combinatorial group theory*, Chapter IV, §2 (cyclically reduced
-  elements of free products with amalgamation).
 -/
 
 public section
@@ -136,82 +123,6 @@ theorem exists_eq_of_mul_list_prod (i : ι) (x : PushoutI φ) :
       fun l hl => ((List.isChain_cons.1 hc).1 l hl).symm, ?_⟩
     simp only [List.map_cons, List.prod_cons, map_mul, mul_assoc]
   · exact ⟨φ i h, _, hc, hred, by simpa using hj, rfl⟩
-
-/-- One step of cyclic reduction: if the first and the last letter of a reduced list
-`a₁ ⋯ aᵣ`, `r ≥ 2`, lie in the same factor `G i`, then `h * a₁ ⋯ aᵣ` is conjugate to
-`a₂ ⋯ aᵣ₋₁ (aᵣ * h * a₁)`, that is, to `h' * a₂ ⋯ aᵣ₋₁` for some `h'` in the amalgamated subgroup
-or to a reduced list of `r - 1` letters. -/
-private theorem exists_conj_eq_base_mul_list_prod_of_fst_eq {h : H} {i : ι} {a b : G i}
-    {M : List (Σ i, G i)} (hc : (⟨i, a⟩ :: (M ++ [⟨i, b⟩])).IsChain fun l l' => l.1 ≠ l'.1)
-    (hred : ∀ l ∈ ⟨i, a⟩ :: (M ++ [⟨i, b⟩]), l.2 ∉ (φ l.1).range) :
-    ∃ (y : PushoutI φ) (h' : H) (L : List (Σ i, G i)), (L.IsChain fun l l' => l.1 ≠ l'.1) ∧
-      (∀ l ∈ L, l.2 ∉ (φ l.1).range) ∧ L.length < M.length + 2 ∧
-      y * (base φ h * ((⟨i, a⟩ :: (M ++ [⟨i, b⟩])).map fun l => of l.1 l.2).prod) * y⁻¹ =
-        base φ h' * (L.map fun l => of l.1 l.2).prod := by
-  obtain ⟨hM, -, hMb⟩ := List.isChain_append.1 (List.isChain_cons.1 hc).2
-  have hredM (l) (hl : l ∈ M) : l.2 ∉ (φ l.1).range :=
-    hred l (List.mem_cons_of_mem _ (List.mem_append_left _ hl))
-  -- Conjugating by `(h * a₁)⁻¹` moves `a₁` to the end, next to `aᵣ`.
-  have hconj : base φ h * ((⟨i, a⟩ :: (M ++ [⟨i, b⟩])).map fun l => of (φ := φ) l.1 l.2).prod =
-      (base φ h * of i a) * ((M.map fun l => of l.1 l.2).prod * of i (b * φ i h * a)) *
-        (base φ h * of i a)⁻¹ := by
-    simp only [List.map_cons, List.map_append, List.map_nil, List.prod_cons, List.prod_append,
-      List.prod_nil, mul_one, map_mul, of_apply_eq_base]
-    group
-  by_cases hd : b * φ i h * a ∈ (φ i).range
-  · obtain ⟨h', hh'⟩ := hd
-    refine ⟨base φ h' * (base φ h * of i a)⁻¹, h', M, hM, hredM, by omega, ?_⟩
-    rw [hconj, ← hh', of_apply_eq_base]
-    group
-  · refine ⟨(base φ h * of i a)⁻¹, 1, M ++ [⟨i, b * φ i h * a⟩],
-      List.isChain_append.2 ⟨hM, List.isChain_singleton _, by simpa using hMb⟩, ?_, by simp, ?_⟩
-    · simp only [List.mem_append, List.mem_singleton]
-      rintro l (hl | rfl)
-      exacts [hredM l hl, hd]
-    · rw [hconj]
-      simp only [map_one, one_mul, List.map_append, List.map_singleton, List.prod_append,
-        List.prod_singleton]
-      group
-
-/-- Cyclic reduction of `h * a₁ ⋯ aᵣ` for a reduced list `a₁ ⋯ aᵣ`. -/
-private theorem exists_conj_eq_base_mul_list_prod_aux (h : H) (L : List (Σ i, G i))
-    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) :
-    ∃ (y : PushoutI φ) (h' : H) (L' : List (Σ i, G i)), L'.IsChain (fun l l' => l.1 ≠ l'.1) ∧
-      (∀ l ∈ L', l.2 ∉ (φ l.1).range) ∧
-      (L'.length ≤ 1 ∨ ∀ a ∈ L'.head?, ∀ b ∈ L'.getLast?, a.1 ≠ b.1) ∧
-      y * (base φ h * (L.map fun l => of l.1 l.2).prod) * y⁻¹ =
-        base φ h' * (L'.map fun l => of l.1 l.2).prod := by
-  induction hn : L.length using Nat.strong_induction_on generalizing h L with
-  | _ n ih =>
-  by_cases hcyc : L.length ≤ 1 ∨ ∀ a ∈ L.head?, ∀ b ∈ L.getLast?, a.1 ≠ b.1
-  · exact ⟨1, h, L, hc, hred, hcyc, by simp⟩
-  -- Otherwise `L = a₁ :: (M ++ [aᵣ])` with `a₁` and `aᵣ` in the same factor.
-  rcases L with _ | ⟨⟨i, a⟩, K⟩
-  · simp at hcyc
-  obtain ⟨M, ⟨j, b⟩, rfl⟩ : ∃ M l, K = M ++ [l] := by
-    rcases K.eq_nil_or_concat with rfl | ⟨M, l, rfl⟩
-    exacts [by simp at hcyc, ⟨M, l, List.concat_eq_append⟩]
-  obtain rfl : i = j := by simpa [List.getLast?_cons] using hcyc
-  obtain ⟨y, h', L', hc', hred', hlen, hy⟩ :=
-    exists_conj_eq_base_mul_list_prod_of_fst_eq (h := h) hc hred
-  obtain ⟨z, h'', L'', hc'', hred'', hcyc'', hz⟩ :=
-    ih L'.length (by simp at hn; omega) h' L' hc' hred' rfl
-  exact ⟨z * y, h'', L'', hc'', hred'', hcyc'', by rw [← hz, ← hy]; group⟩
-
-/-- **Cyclic reduction** in an amalgamated product of groups: every element is conjugate to
-`h * a₁ ⋯ aᵣ` with `h` in the amalgamated subgroup and letters `aⱼ`, consecutive ones from
-different factors and none of them in the amalgamated subgroup, such that `r ≤ 1` or the first and
-the last letter lie in different factors. -/
-theorem exists_conj_eq_base_mul_list_prod (x : PushoutI φ) :
-    ∃ (y : PushoutI φ) (h : H) (L : List (Σ i, G i)), L.IsChain (fun l l' => l.1 ≠ l'.1) ∧
-      (∀ l ∈ L, l.2 ∉ (φ l.1).range) ∧
-      (L.length ≤ 1 ∨ ∀ a ∈ L.head?, ∀ b ∈ L.getLast?, a.1 ≠ b.1) ∧
-      y * x * y⁻¹ = base φ h * (L.map fun l => of l.1 l.2).prod := by
-  obtain ⟨h, ⟨L, hL, hc⟩, hred, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
-  have hw : ofCoprodI (Word.prod ⟨L, hL, hc⟩) = (L.map fun l => of (φ := φ) l.1 l.2).prod := by
-    simp [Word.prod, map_list_prod, Function.comp_def]
-  rw [hw]
-  exact exists_conj_eq_base_mul_list_prod_aux h L hc hred
 
 /-- A list of letters, consecutive ones from different factors and none of them in the amalgamated
 subgroup, spells a reduced word of the free product with the same product. -/

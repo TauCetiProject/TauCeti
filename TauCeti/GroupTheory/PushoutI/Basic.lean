@@ -27,11 +27,9 @@ This is the reason the boundary maps of a graph of groups are required to be inj
 data of an amalgam `A ∗_C B` with a non-injective map `C →* B` and an injective map `C →* A`, the
 vertex group `A` does not embed in the amalgam, and the normal form theorem fails.
 
-In a pushout of monoids along `φ i : H →* G i`, the image `base φ c` of an element of `H` is also
-the image of `φ i c` under the inclusion of `G i`, so the image of `H` lies in the image of every
-factor. In particular, for a pushout of groups along `φ i : C →* G i`, an element of a factor
-`G i` that centralizes the image of `C` in `G i` commutes in the pushout with every element of the
-image of `C`.
+For a pushout of groups along `φ i : C →* G i`, an element of a factor `G i` that centralizes the
+image of `C` in `G i` commutes in the pushout with every element of the image `base φ c` of `C`,
+since that image is also the image of `φ i c` under the inclusion of `G i`.
 
 Conversely, two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups are completed to
 a commutative square of injective homomorphisms into a group: the amalgamated product
@@ -48,8 +46,6 @@ its amalgam with that dihedral group along `g = rⁿ`. For `n = 2`, `r² = ⁅r,
   identifies every pair of elements identified by some `φ j`.
 * `Monoid.PushoutI.not_injective_of`: if `φ i` is injective and `φ j` is not, then `G i` does not
   embed in the pushout.
-* `Monoid.PushoutI.base_mrange_le_of_mrange`: the image of the amalgamated monoid in the pushout
-  lies in the image of every factor.
 * `Monoid.PushoutI.commute_of_base_of_mem_centralizer`: an element of a factor centralizing the
   image of `C` commutes with the image of `C` in the pushout.
 * `Monoid.PushoutI.exists_injective_comp_eq_comp`: two injective homomorphisms out of a group `C`
@@ -74,13 +70,6 @@ section Monoid
 
 variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Monoid (G i)] [Monoid H]
   {φ : ∀ i, H →* G i} {i : ι}
-
-/-- The image of `H` in the pushout of the maps `φ k : H →* G k` lies in the image of every
-factor. -/
-theorem base_mrange_le_of_mrange (i : ι) :
-    MonoidHom.mrange (base φ) ≤ MonoidHom.mrange (of (φ := φ) i) := by
-  rintro _ ⟨c, rfl⟩
-  exact ⟨φ i c, of_apply_eq_base φ i c⟩
 
 /-- If the factor `G i` embeds in the pushout of the maps `φ k : H →* G k`, then `φ i` identifies
 any two elements of `H` that some map `φ j` identifies: both pairs of images are the images of

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.PushoutI.Centralizer
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
@@ -34,6 +35,10 @@ hyperbolic, so its centralizer is cyclic, while the centralizer of `a` is free a
 
 * `TauCeti.LimitGroup.CentralizerExt.isCyclic_centralizer`: if `C_G(u)` is malnormal in `G`, the
   centralizer in `G(u, ℤⁿ)` of an element conjugate into neither factor is cyclic.
+* `TauCeti.LimitGroup.CentralizerExt.conj_of_mul_t_notMem_range_of`: no conjugate of `g * tᵢ`
+  lies in `G`.
+* `TauCeti.LimitGroup.CentralizerExt.conj_of_mul_t_notMem_range_ofProd`: in `F(a, ℤⁿ)`, no
+  conjugate of `b * tᵢ` lies in `C_F(a) × ℤⁿ`; so `b * tᵢ` is conjugate into neither factor.
 * `TauCeti.LimitGroup.CentralizerExt.isCyclic_centralizer_of_freeGroup_of_mul_t`: the element
   `b * tᵢ` of `F(a, ℤⁿ)` has cyclic centralizer.
 
@@ -64,33 +69,39 @@ theorem isCyclic_centralizer (hT : IsTISubgroup (centralizer {u})) {x : Centrali
   · exact fun h => hxG y (by rwa [of_def])
   · exact fun h => hxA y (by rwa [ofProd_def])
 
+/-- For every `g ∈ G`, no conjugate of `g * tᵢ` in `G(u, ℤⁿ)` lies in `G`. -/
+theorem conj_of_mul_t_notMem_range_of (g : G) (i : Fin n) (y : CentralizerExt u n) :
+    y * (of g * t i) * y⁻¹ ∉ (of : G →* CentralizerExt u n).range :=
+  -- The homomorphism to `ℤ` killing `G` and sending every `tⱼ` to `1` does not kill `g * tᵢ`.
+  (lift (K := Multiplicative ℤ) 1 (fun _ => .ofAdd 1) (fun _ _ => .all _ _)
+    fun _ _ _ => .all _ _).conj_notMem_of_le_ker (by rintro _ ⟨g, rfl⟩; simp) (by simp) y
+
+/-- In `F(a, ℤⁿ)` for a free group `F` with distinct basis elements `a` and `b`, no conjugate of
+`b * tᵢ` lies in the factor `C_F(a) × ℤⁿ = ⟨a⟩ × ℤⁿ`. -/
+theorem conj_of_mul_t_notMem_range_ofProd {α : Type*} {a b : α} (hab : a ≠ b) (i : Fin n)
+    (y : CentralizerExt (FreeGroup.of a) n) :
+    y * (of (FreeGroup.of b) * t i) * y⁻¹ ∉
+      (ofProd : _ →* CentralizerExt (FreeGroup.of a) n).range := by
+  classical
+  -- The homomorphism to `ℤ` sending `b` to `1` and the other basis elements and every `tⱼ` to `0`
+  -- kills `⟨a⟩ × ℤⁿ` but not `b * tᵢ`.
+  refine (lift (K := Multiplicative ℤ) (FreeGroup.lift fun c => if c = b then .ofAdd 1 else 1) 1
+    (fun _ _ => .all _ _) fun _ _ _ => .all _ _).conj_notMem_of_le_ker ?_ (by simp) y
+  rw [range_ofProd]
+  refine sup_le ?_ ((closure_le _).2 ?_)
+  · rintro _ ⟨c, hc, rfl⟩
+    rw [IsFreeGroup.centralizer_singleton_eq_zpowers_self (FreeGroup.not_isProperPower_of a)]
+      at hc
+    obtain ⟨k, rfl⟩ := hc
+    simp [hab]
+  · rintro _ ⟨j, rfl⟩
+    simp
+
 /-- In `F(a, ℤⁿ)` for a free group `F` with distinct basis elements `a` and `b`, the element
 `b * tᵢ` has cyclic centralizer. -/
 theorem isCyclic_centralizer_of_freeGroup_of_mul_t {α : Type*} {a b : α} (hab : a ≠ b) (i : Fin n) :
-    IsCyclic (centralizer {(of (FreeGroup.of b) * t i : CentralizerExt (FreeGroup.of a) n)}) := by
-  classical
-  set x : CentralizerExt (FreeGroup.of a) n := of (FreeGroup.of b) * t i
-  -- A homomorphism to `ℤ` that kills a subgroup and not `x` keeps the conjugates of `x` out of it.
-  have key (f : CentralizerExt (FreeGroup.of a) n →* Multiplicative ℤ)
-      (S : Subgroup (CentralizerExt (FreeGroup.of a) n)) (hS : S ≤ f.ker) (hx : f x ≠ 1)
-      (y : CentralizerExt (FreeGroup.of a) n) : y * x * y⁻¹ ∉ S := fun h =>
-    hx (by simpa using hS h)
-  refine isCyclic_centralizer (IsFreeGroup.isCSA.centralizer_isTISubgroup _)
-    (key (lift 1 (fun _ => .ofAdd 1) (fun _ _ => .all _ _) fun _ _ _ => .all _ _) _ ?_ ?_)
-    (key (lift (FreeGroup.lift fun c => if c = b then .ofAdd 1 else 1) 1 (fun _ _ => .all _ _)
-      fun _ _ _ => .all _ _) _ ?_ ?_)
-  · rintro _ ⟨g, rfl⟩
-    simp
-  · simp [x]
-  · rw [range_ofProd]
-    refine sup_le ?_ ((closure_le _).2 ?_)
-    · rintro _ ⟨c, hc, rfl⟩
-      rw [IsFreeGroup.centralizer_singleton_eq_zpowers_self (FreeGroup.not_isProperPower_of a)]
-        at hc
-      obtain ⟨k, rfl⟩ := hc
-      simp [hab]
-    · rintro _ ⟨j, rfl⟩
-      simp
-  · simp [x]
+    IsCyclic (centralizer {(of (FreeGroup.of b) * t i : CentralizerExt (FreeGroup.of a) n)}) :=
+  isCyclic_centralizer (IsFreeGroup.isCSA.centralizer_isTISubgroup _)
+    (conj_of_mul_t_notMem_range_of _ i) (conj_of_mul_t_notMem_range_ofProd hab i)
 
 end TauCeti.LimitGroup.CentralizerExt
