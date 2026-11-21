@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
@@ -100,6 +101,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   homogeneous polynomials of degree `n`.
 * `SchwartzMap.cutoffExponential`: the cut-off exponential `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`.
 * `SchwartzMap.fourier_cutoffExponential`: its Fourier transform.
+* `SchwartzMap.tendsto_integral_mul_cutoffExponential`: as `ε → 0`, it tends to the exponential
+  `φ(0) exp(i ⟪y, ξ⟫)` as a tempered distribution, tested against integrable functions.
 
 ## References
 
@@ -449,10 +452,8 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 @[simp]
 theorem cutoffExponential_apply (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : F) (y : E) :
     φ.cutoffExponential ε ξ v y = (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) • v := by
-  have hg : (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I)).HasTemperateGrowth :=
-    Complex.hasTemperateGrowth_exp_mul_I.comp
-      (by fun_prop : (inner ℝ · ξ : E → ℝ).HasTemperateGrowth)
-  simp [cutoffExponential, hε, smulLeftCLM_apply_apply hg]
+  simp [cutoffExponential, hε,
+    smulLeftCLM_apply_apply (Function.hasTemperateGrowth_exp_inner_mul_I ξ)]
 
 /-- **The Fourier transform of a cut-off exponential** is the rescaled Fourier transform of the
 cutoff, translated to the frequency `ξ / 2π`:
@@ -469,6 +470,33 @@ theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : �
       smul_smul]
   rw [fourier_coe, hmod, TauCeti.fourier_fourierChar_smul,
     TauCeti.fourier_comp_smul (fun z ↦ φ z • v), TauCeti.fourier_smul_const, fourier_coe]
+
+open scoped Topology in
+/-- **The cut-off exponentials tend to the exponential as tempered distributions.** For an
+integrable `g`, as `ε → 0` the pairing of `g` with the cut-off exponential
+`y ↦ exp(i ⟪y, ξ⟫) φ(ε y)` tends to `φ(0) ∫ g(y) exp(i ⟪y, ξ⟫) dy`. -/
+theorem tendsto_integral_mul_cutoffExponential (φ : 𝓢(E, ℂ)) {g : E → ℂ} (hg : Integrable g)
+    (ξ : E) :
+    Filter.Tendsto (fun ε ↦ ∫ y, g y * φ.cutoffExponential ε ξ (1 : ℂ) y) (𝓝[≠] 0)
+      (𝓝 (φ 0 * ∫ y, g y * Complex.exp (⟪y, ξ⟫ * Complex.I))) := by
+  rw [← integral_const_mul]
+  refine tendsto_integral_filter_of_dominated_convergence
+    (fun y ↦ ‖g y‖ * SchwartzMap.seminorm ℂ 0 0 φ)
+    (.of_forall fun ε ↦ hg.aestronglyMeasurable.mul
+      (φ.cutoffExponential ε ξ 1).continuous.aestronglyMeasurable)
+    (eventually_mem_nhdsWithin.mono fun ε hε ↦ .of_forall fun y ↦ ?_) (hg.norm.mul_const _)
+    (.of_forall fun y ↦ ?_)
+  · rw [cutoffExponential_apply φ hε, smul_eq_mul, mul_one, norm_mul, norm_mul,
+      Complex.norm_exp_ofReal_mul_I, one_mul]
+    exact mul_le_mul_of_nonneg_left (φ.norm_le_seminorm ℂ _) (norm_nonneg _)
+  · have hc : Continuous fun ε : ℝ ↦ g y * (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) :=
+      continuous_const.mul (continuous_const.mul (φ.continuous.comp (by fun_prop)))
+    have h := (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
+    rw [zero_smul, show g y * (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ 0) =
+      φ 0 * (g y * Complex.exp (⟪y, ξ⟫ * Complex.I)) by ring] at h
+    refine h.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    rw [cutoffExponential_apply φ hε, smul_eq_mul, mul_one]
 
 end CutoffExponential
 

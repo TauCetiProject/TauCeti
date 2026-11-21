@@ -69,6 +69,8 @@ No inner product instance on the algebraic dual is installed.
   positive semidefinite.
 * `InnerProductSpace.dualMetric_self_eq_zero_iff`: a functional has zero square norm iff it is zero.
 * `LinearMap.dualMetric_dualMap_left`: transposition and Hermitian adjunction commute.
+* `LinearIndependent.innerSL`: the functionals `⟪vᵢ, ·⟫` of a linearly independent family are
+  linearly independent.
 -/
 
 public section
@@ -308,6 +310,16 @@ theorem _root_.LinearMap.dualMetric_dualMap_left (T : E →ₗ[𝕜] F)
 end FiniteDimensional
 
 end InnerProductSpace
+
+/-- The inner-product functionals `⟪vᵢ, ·⟫` of a linearly independent family `vᵢ` are linearly
+independent, since `v ↦ ⟪v, ·⟫` is injective and conjugate-linear. -/
+theorem LinearIndependent.innerSL {𝕜 F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] {v : ι → F} (hv : LinearIndependent 𝕜 v) :
+    LinearIndependent 𝕜 fun i ↦ _root_.innerSL 𝕜 (v i) :=
+  -- `_root_` is needed because `innerSL` alone would refer to this theorem.
+  hv.map_of_surjective_injectiveₛ (starRingEnd 𝕜)
+    (_root_.innerSL 𝕜 : F →L⋆[𝕜] StrongDual 𝕜 F).toLinearMap.toAddMonoidHom
+    (starRingEnd 𝕜).surjective (fun _ _ ↦ innerSL_inj.mp) fun _ _ ↦ by simp
 
 namespace ContinuousLinearMap
 
