@@ -18,16 +18,19 @@ import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 Let `G` be a nonabelian fully residually free group and `S = 1` a standard quadratic equation over
 `G` of one of the forms
 `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` (type (4), `n > 0`) or `c₁^{z₁} ⋯ c_m^{z_m} d = 1`
-(type (2) of genus `0`), where `c^z = z⁻¹ c z`. Suppose that `S` has a solution `a` in `G` and that
-all its solutions in `G` are commutative: at each of them, consecutive atoms commute. Then the
-radical `R(S)` is the normal closure of the system `commutativeSystem x z c a`. With
-`uⱼ = a(zⱼ)⁻¹ zⱼ` and `C` the centralizer of the elements `a(zⱼ)⁻¹ cⱼ a(zⱼ)` and `a(x_k)`, this
-system consists of `x₁ ⋯ xₙ = a(x₁) ⋯ a(xₙ)` and of the commutators of the `x_k` and the `uⱼ` with
-each other and with the elements of `C` ([IFT], Theorem 2 (7); [VAR-I], Corollary 3 and
-Proposition 8 (4)). The proof follows [VAR-I]:
+(type (2) of genus `0`, `m > 0`), where `c^z = z⁻¹ c z`, the variables are distinct, `cⱼ ≠ 1` and
+`d ≠ 1`. Suppose that `S` has a solution `a` in `G` and that all its solutions in `G` are
+commutative: at each of them, consecutive atoms commute. Then the radical `R(S)` is the normal
+closure of the system `commutativeSystem x z c a`. With `uⱼ = a(zⱼ)⁻¹ zⱼ` and `C` the centralizer
+of the elements `a(zⱼ)⁻¹ cⱼ a(zⱼ)` and `a(x_k)`, this system consists of `x₁ ⋯ xₙ = a(x₁) ⋯ a(xₙ)`
+and of the commutators of the `x_k` and the `uⱼ` with each other and with the elements of `C`
+([IFT], Theorem 2 (7); [VAR-I], Corollary 3 and Proposition 8 (4)). The proof follows [VAR-I]:
 
 * At every solution all atoms commute with each other, so they lie in the abelian centralizer
-  `C_G(d)`, and `C = C_G(d)` (`Group.IsCommTransitive.centralizer_eq_centralizer_singleton`).
+  `C_G(d)`, and `C = C_G(d)` (`Group.IsCommTransitive.centralizer_eq_centralizer_singleton`;
+  for the two forms of `S`,
+  `Standard.centralizer_eq_centralizer_singleton_of_forall_isCommutative_nonorientableCoeff` and
+  `Standard.centralizer_eq_centralizer_singleton_of_forall_isCommutative_orientableCoeff_zero`).
   Consecutive atoms commute, and commutation is transitive through
   nonidentity elements. A square `xₖ²` may be trivial, but then moving the values of the `xₖ`
   with trivial square to the front gives another solution, in which the nontrivial atoms are
@@ -57,7 +60,7 @@ the variables of `S`. Over `G = ℤ`, the commutator `⁅y, g⁆` with a variabl
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.Quadratic.commutativeSystem`: the system of [IFT], Theorem 2 (7), of a
-  solution `a`.
+  point `a`.
 
 ## Main results
 
@@ -65,10 +68,16 @@ the variables of `S`. Over `G = ℤ`, the commutator `⁅y, g⁆` with a variabl
 * `TauCeti.GroupAlgGeom.Quadratic.mem_V_commutativeSystem_iff`: the solutions of the system.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_leftInverse_gHom_systemGroup_commutativeSystem`: the
   group of the system is a retract over `G` of `G(d, ℤ^{m + n}) ∗ F(X)` when `C = C_G(d)`.
+* `Standard.centralizer_eq_centralizer_singleton_of_forall_isCommutative_orientableCoeff_zero`,
+  `Standard.centralizer_eq_centralizer_singleton_of_forall_isCommutative_nonorientableCoeff` (in
+  `TauCeti.GroupAlgGeom.Quadratic`): `C = C_G(d)` at a solution of a standard equation `S` all
+  of whose solutions are commutative.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_orientableCoeff_zero_of_forall_isCommutative`:
-  the radical of `c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all its solutions are commutative.
+  the radical of a standard equation `c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all its solutions are
+  commutative.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_nonorientableCoeff_of_forall_isCommutative`:
-  the radical of `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all its solutions are commutative.
+  the radical of a standard equation `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all its solutions
+  are commutative.
 
 ## References
 
@@ -92,10 +101,16 @@ variable {G X : Type*} [Group G]
 
 /-! ### The system -/
 
-/-- The system describing the solutions of `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` when all of them
-are commutative, in terms of a fixed solution `a`: with `uⱼ = a(zⱼ)⁻¹ zⱼ` and `C` the centralizer
-of the elements `cⱼ^{a(zⱼ)}` and `a(x_k)`, it consists of `x₁ ⋯ xₙ = a(x₁) ⋯ a(xₙ)` and of the
-commutators of the `x_k` and the `uⱼ` with each other and with the elements of `C`. -/
+/-- The system of relators built from variables `x_k`, `zⱼ`, coefficients `cⱼ` and a point `a`:
+with `uⱼ = a(zⱼ)⁻¹ zⱼ` and `C` the centralizer of the elements `a(zⱼ)⁻¹ cⱼ a(zⱼ)` and `a(x_k)`, it
+consists of the relator `x₁ ⋯ xₙ (a(x₁) ⋯ a(xₙ))⁻¹` and of the commutators of the `x_k` and the
+`uⱼ` with each other and with the elements of `C`.
+
+Let `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (distinct variables, `cⱼ ≠ 1` and
+`d ≠ 1`) over a nonabelian fully residually free group, all of whose solutions are commutative,
+and let `a` be a solution. Then the normal closure of this system is the radical of the equation
+(`Standard.Rad_toWord_nonorientableCoeff_of_forall_isCommutative`, and
+`Standard.Rad_toWord_orientableCoeff_zero_of_forall_isCommutative` for `n = 0`, `m > 0`). -/
 def commutativeSystem {n m : ℕ} (x : Fin n → X) (z : Fin m → X) (c : Fin m → G) (a : X → G) :
     Set (GX G X) :=
   let ξ : Fin n → GX G X := fun k ↦ inr (FreeGroup.of (x k))
@@ -258,18 +273,17 @@ private theorem commute_of_mem_atomVals (hG : IsCommTransitive G)
   · exact .inr ⟨j, rfl⟩
 
 /-- If all solutions are commutative, every solution sends the `xₖ` into `C_G(d)`. -/
-private theorem mem_centralizer_of_mem_V (hG : IsFullyResiduallyFree G)
+private theorem mem_centralizer_of_mem_V [IsMulTorsionFree G] (hG : IsCommTransitive G)
     (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1)
     (hall : ∀ v ∈ V (.id G) {sqConjWord x z c d}, (atomVals x z c v).IsChain Commute)
     {v : X → G} (hv : v ∈ V (.id G) {sqConjWord x z c d}) (k : Fin n) :
     v (x k) ∈ centralizer {d} := by
-  have := hG.isResiduallyFree.isMulTorsionFree
-  have hk := commute_of_mem_atomVals hG.isCommTransitive inj hc hall hv
+  have hk := commute_of_mem_atomVals hG inj hc hall hv
     (List.mem_append_left _ (List.mem_ofFn.2 ⟨k, rfl⟩))
   refine mem_centralizer_singleton_iff.2 ?_
   rcases eq_or_ne (v (x k) ^ 2) 1 with h1 | h1
   · simp [sq_eq_one.1 h1]
-  · exact ((isCommTransitive_iff G).1 hG.isCommTransitive _ _ _ h1 (Commute.self_pow _ 2) hk).eq
+  · exact ((isCommTransitive_iff G).1 hG _ _ _ h1 (Commute.self_pow _ 2) hk).eq
 
 /-- If all solutions are commutative, every solution sends the `zⱼ⁻¹ cⱼ zⱼ` into `C_G(d)`. -/
 private theorem conj_mem_centralizer_of_mem_V (hG : IsCommTransitive G)
@@ -561,14 +575,15 @@ private theorem Rad_sqConjWord_eq_normalClosure (hG : IsFullyResiduallyFree G)
     (hall : ∀ v ∈ V (.id G) {sqConjWord x z c d}, (atomVals x z c v).IsChain Commute) :
     Rad (.id G) {sqConjWord x z c d} = normalClosure (commutativeSystem x z c a) := by
   have hT := hG.isCommTransitive
-  have hs := mem_centralizer_of_mem_V hG inj hc hall ha
+  have := hG.isResiduallyFree.isMulTorsionFree
+  have hs := mem_centralizer_of_mem_V hT inj hc hall ha
   have hb := conj_mem_centralizer_of_mem_V hT inj hc hall ha
   -- The group of the system embeds over `G` in a group discriminated by `G`.
   obtain ⟨f, _, hf⟩ := exists_leftInverse_gHom_systemGroup_commutativeSystem inj
     (centralizer_eq_of_mem_V hT hd ha hs hb)
   refine (SystemGroup.isSeparatedBy_coeff_iff_of_subset (fun w hw ↦ mem_Rad.2 fun v hv ↦ ?_)
     fun t ht ↦ mem_Rad.2 fun v hv ↦ mem_V.1 (mem_V_commutativeSystem_of_mem_V hG hc hd ha hs hb
-      hv (mem_centralizer_of_mem_V hG inj hc hall hv)
+      hv (mem_centralizer_of_mem_V hT inj hc hall hv)
       (conj_mem_centralizer_of_mem_V hT inj hc hall hv)) t ht).1
     ((CentralizerExt.isDiscriminatedBy_inl_comp_of hG hna hd).isSeparatedBy.of_injective f
       hf.injective)
@@ -577,9 +592,80 @@ private theorem Rad_sqConjWord_eq_normalClosure (hG : IsFullyResiduallyFree G)
 
 namespace Standard
 
-/-- Over a nonabelian fully residually free group, if all solutions of
-`c₁^{z₁} ⋯ c_m^{z_m} d = 1` are commutative, its radical is the normal closure of the system
-`commutativeSystem` of a solution. -/
+/-! ### The standard equations -/
+
+private theorem injective_sumElim_elim0 {m : ℕ} {x y : Fin 0 → X} {z : Fin m → X}
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) :
+    (Sum.elim (Fin.elim0 : Fin 0 → X) z).Injective :=
+  Function.Injective.sumElim (fun p ↦ p.elim0) (fun _ _ h ↦ Sum.inr_injective (inj h))
+    fun p ↦ p.elim0
+
+private theorem toWord_orientableCoeff_zero_eq_sqConjWord {m : ℕ} {x y : Fin 0 → X}
+    {z : Fin m → X} {c : Fin m → G} {d : G} (hm : 0 < 0 + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (orientableCoeff 0 m hm x y z inj c hc d hd).toWord = sqConjWord Fin.elim0 z c d := by
+  simp [toWord_def, sqConjWord]
+
+private theorem isCommutative_orientableCoeff_zero_iff {m : ℕ} {x y : Fin 0 → X}
+    {z : Fin m → X} {c : Fin m → G} {d : G} {hm : 0 < 0 + m}
+    {inj : (Sum.elim (Sum.elim x y) z).Injective} {hc : ∀ j, c j ≠ 1} {hd : d ≠ 1}
+    {v : X → G} :
+    (orientableCoeff 0 m hm x y z inj c hc d hd).IsCommutative (.id G) v ↔
+      (atomVals Fin.elim0 z c v).IsChain Commute := by
+  simp [isCommutative_iff, atomVals, List.map_ofFn, Function.comp_def]
+
+private theorem toWord_nonorientableCoeff_eq_sqConjWord (hn : 0 < n)
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff n m hn x z inj c hc d hd).toWord = sqConjWord x z c d := by
+  simp [toWord_def, sqConjWord]
+
+private theorem isCommutative_nonorientableCoeff_iff {hn : 0 < n}
+    {inj : (Sum.elim x z).Injective} {hc : ∀ j, c j ≠ 1} {hd : d ≠ 1} {v : X → G} :
+    (nonorientableCoeff n m hn x z inj c hc d hd).IsCommutative (.id G) v ↔
+      (atomVals x z c v).IsChain Commute := by
+  simp [isCommutative_iff, atomVals, List.map_ofFn, Function.comp_def]
+
+/-- Let `c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (`m > 0`, distinct variables `zⱼ`,
+`cⱼ ≠ 1` and `d ≠ 1`) over a commutative transitive group `G`. If all its solutions are
+commutative, then at every solution `a` the centralizer of the elements `a(zⱼ)⁻¹ cⱼ a(zⱼ)` is the
+centralizer of `d`: this is the centralizer `C` of `commutativeSystem Fin.elim0 z c a`. -/
+theorem centralizer_eq_centralizer_singleton_of_forall_isCommutative_orientableCoeff_zero
+    (hG : IsCommTransitive G) {m : ℕ} {x y : Fin 0 → X} {z : Fin m → X} {c : Fin m → G} {d : G}
+    (hm : 0 < 0 + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) {a : X → G}
+    (ha : a ∈ V (.id G) {(orientableCoeff 0 m hm x y z inj c hc d hd).toWord})
+    (hall : ∀ v ∈ V (.id G) {(orientableCoeff 0 m hm x y z inj c hc d hd).toWord},
+      (orientableCoeff 0 m hm x y z inj c hc d hd).IsCommutative (.id G) v) :
+    centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+      Set.range fun k ↦ a (Fin.elim0 k)) = centralizer {d} := by
+  rw [toWord_orientableCoeff_zero_eq_sqConjWord] at ha hall
+  exact centralizer_eq_of_mem_V hG hd ha (fun k ↦ k.elim0)
+    (conj_mem_centralizer_of_mem_V hG (injective_sumElim_elim0 inj) hc
+      (fun v hv ↦ isCommutative_orientableCoeff_zero_iff.1 (hall v hv)) ha)
+
+/-- Let `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (`n > 0`, distinct variables,
+`cⱼ ≠ 1` and `d ≠ 1`) over a torsion-free commutative transitive group `G`. If all its solutions
+are commutative, then at every solution `a` the centralizer of the elements `a(zⱼ)⁻¹ cⱼ a(zⱼ)`
+and `a(x_k)` is the centralizer of `d`: this is the centralizer `C` of
+`commutativeSystem x z c a`. -/
+theorem centralizer_eq_centralizer_singleton_of_forall_isCommutative_nonorientableCoeff
+    [IsMulTorsionFree G] (hG : IsCommTransitive G) {n m : ℕ} {x : Fin n → X} {z : Fin m → X}
+    {c : Fin m → G} {d : G} (hn : 0 < n)
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) {a : X → G}
+    (ha : a ∈ V (.id G) {(nonorientableCoeff n m hn x z inj c hc d hd).toWord})
+    (hall : ∀ v ∈ V (.id G) {(nonorientableCoeff n m hn x z inj c hc d hd).toWord},
+      (nonorientableCoeff n m hn x z inj c hc d hd).IsCommutative (.id G) v) :
+    centralizer (Set.range (fun j ↦ (a (z j))⁻¹ * c j * a (z j)) ∪
+      Set.range fun k ↦ a (x k)) = centralizer {d} := by
+  rw [toWord_nonorientableCoeff_eq_sqConjWord] at ha hall
+  have hall' := fun v hv ↦ isCommutative_nonorientableCoeff_iff.1 (hall v hv)
+  exact centralizer_eq_of_mem_V hG hd ha (mem_centralizer_of_mem_V hG inj hc hall' ha)
+    (conj_mem_centralizer_of_mem_V hG inj hc hall' ha)
+
+/-- Let `c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (`m > 0`, distinct variables `zⱼ`,
+`cⱼ ≠ 1` and `d ≠ 1`) over a nonabelian fully residually free group `G`, with a solution `a`. If
+all its solutions are commutative, its radical is the normal closure of
+`commutativeSystem Fin.elim0 z c a`. -/
 theorem Rad_toWord_orientableCoeff_zero_of_forall_isCommutative (hG : IsFullyResiduallyFree G)
     (hna : ¬IsMulCommutative G) {m : ℕ} {x y : Fin 0 → X} {z : Fin m → X} {c : Fin m → G} {d : G}
     (hm : 0 < 0 + m)
@@ -589,18 +675,14 @@ theorem Rad_toWord_orientableCoeff_zero_of_forall_isCommutative (hG : IsFullyRes
       (orientableCoeff 0 m hm x y z inj c hc d hd).IsCommutative (.id G) v) :
     Rad (.id G) {(orientableCoeff 0 m hm x y z inj c hc d hd).toWord} =
       normalClosure (commutativeSystem Fin.elim0 z c a) := by
-  have inj' : (Sum.elim (Fin.elim0 : Fin 0 → X) z).Injective :=
-    Function.Injective.sumElim (fun p ↦ p.elim0) (fun _ _ h ↦ Sum.inr_injective (inj h))
-      fun p ↦ p.elim0
-  have hW : (orientableCoeff 0 m hm x y z inj c hc d hd).toWord = sqConjWord Fin.elim0 z c d := by
-    simp [toWord_def, sqConjWord]
-  rw [hW] at ha hall ⊢
-  refine Rad_sqConjWord_eq_normalClosure hG hna inj' hc hd ha fun v hv ↦ ?_
-  simpa [isCommutative_iff, atomVals, List.map_ofFn, Function.comp_def] using hall v hv
+  rw [toWord_orientableCoeff_zero_eq_sqConjWord] at ha hall ⊢
+  exact Rad_sqConjWord_eq_normalClosure hG hna (injective_sumElim_elim0 inj) hc hd ha
+    fun v hv ↦ isCommutative_orientableCoeff_zero_iff.1 (hall v hv)
 
-/-- Over a nonabelian fully residually free group, if all solutions of
-`x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` are commutative, its radical is the normal closure of the
-system `commutativeSystem` of a solution. -/
+/-- Let `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (`n > 0`, distinct variables,
+`cⱼ ≠ 1` and `d ≠ 1`) over a nonabelian fully residually free group `G`, with a solution `a`. If
+all its solutions are commutative, its radical is the normal closure of
+`commutativeSystem x z c a`. -/
 theorem Rad_toWord_nonorientableCoeff_of_forall_isCommutative (hG : IsFullyResiduallyFree G)
     (hna : ¬IsMulCommutative G) {n m : ℕ} {x : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
     (hn : 0 < n)
@@ -610,11 +692,9 @@ theorem Rad_toWord_nonorientableCoeff_of_forall_isCommutative (hG : IsFullyResid
       (nonorientableCoeff n m hn x z inj c hc d hd).IsCommutative (.id G) v) :
     Rad (.id G) {(nonorientableCoeff n m hn x z inj c hc d hd).toWord} =
       normalClosure (commutativeSystem x z c a) := by
-  have hW : (nonorientableCoeff n m hn x z inj c hc d hd).toWord = sqConjWord x z c d := by
-    simp [toWord_def, sqConjWord]
-  rw [hW] at ha hall ⊢
-  refine Rad_sqConjWord_eq_normalClosure hG hna inj hc hd ha fun v hv ↦ ?_
-  simpa [isCommutative_iff, atomVals, List.map_ofFn, Function.comp_def] using hall v hv
+  rw [toWord_nonorientableCoeff_eq_sqConjWord] at ha hall ⊢
+  exact Rad_sqConjWord_eq_normalClosure hG hna inj hc hd ha
+    fun v hv ↦ isCommutative_nonorientableCoeff_iff.1 (hall v hv)
 
 end Standard
 
