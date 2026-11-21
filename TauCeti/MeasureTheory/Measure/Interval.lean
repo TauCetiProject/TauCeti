@@ -59,6 +59,8 @@ longer windows linearly in their length, and so makes the measure locally finite
   `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
   whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
   `(n + 1) * C`, and is locally finite.
+* `MeasureTheory.Measure.restrict_Ioi_apply_Iic`: restricting a measure to `(a, ∞)` and evaluating
+  on `(-∞, b]` gives `μ (Ioc a b)`.
 -/
 
 public section
@@ -69,6 +71,14 @@ open scoped Topology ENNReal NNReal
 namespace MeasureTheory
 
 namespace Measure
+
+/-- Evaluating the restriction of a measure to `(a, ∞)` on `(-∞, b]` gives the measure of
+`(a, b]`. -/
+theorem restrict_Ioi_apply_Iic {α : Type*} [Preorder α] [TopologicalSpace α]
+    [ClosedIicTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    (μ : Measure α) (a b : α) :
+    μ.restrict (Ioi a) (Iic b) = μ (Ioc a b) := by
+  rw [Measure.restrict_apply measurableSet_Iic, inter_comm, Ioi_inter_Iic]
 
 section NegInvariant
 

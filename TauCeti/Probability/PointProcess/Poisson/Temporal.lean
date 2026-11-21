@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.PointProcess.Poisson.Count
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Path
+public import TauCeti.Probability.Process.Poisson.Filtered
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Construction
-import TauCeti.Probability.RandomMeasure.Cumulative
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -31,7 +32,11 @@ The conclusion concerns counts on arbitrary Borel sets, not just temporal interv
 
 This supplies the converse to the count-increment properties in
 `TauCeti.Probability.PointProcess.Poisson.Count`, allowing random measures represented by
-counting processes or arrival times to be recognized as Poisson random measures.
+counting processes or arrival times to be recognized as Poisson random measures. It also records
+the specializations to `countPathMeasure` for almost surely monotone, right-continuous count paths
+measurable at nonnegative rational times, and the equivalence in the homogeneous case with the
+real cast of the count process being an `IsFilteredPoissonProcess` relative to its natural
+filtration.
 
 ## References
 
@@ -42,7 +47,7 @@ counting processes or arrival times to be recognized as Poisson random measures.
 public section
 
 open MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal NNRat
 
 namespace TauCeti.Probability
 
@@ -151,6 +156,75 @@ theorem isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
   simpa only [smul_nnvolume_Ioc, ENNReal.toNNReal_coe] using
     isPoissonRandomMeasure_iff_count_increments (Λ := (r : ℝ≥0∞) • nnvolume)
       (by simp) hM hcount
+
+/-- For a count process measurable at nonnegative rational times whose paths are monotone and
+right-continuous on one event of full measure, `countPathMeasure (N · ω)` is a Poisson random
+measure with locally finite intensity `Λ` (`Λ {0} = 0`) if and only if `N 0 = 0` almost surely and
+`N` has independent Poisson increments with parameters `(Λ (Ioc s t)).toNNReal`. -/
+theorem isPoissonRandomMeasure_countPathMeasure_iff_count_increments
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {N : ℝ≥0 → Ω → ℕ} {Λ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure Λ] (hΛ : Λ {0} = 0)
+    (hN : ∀ q : ℚ≥0, Measurable (N q))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
+    IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) Λ ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
+        (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
+  isPoissonRandomMeasure_iff_count_increments hΛ
+    (measurable_countPathMeasure_of_nnrat hN)
+    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
+
+/-- Homogeneous specialization: for a count process measurable at nonnegative rational times whose
+paths are monotone and right-continuous on one event of full measure, `countPathMeasure (N · ω)` is
+a rate-`r` homogeneous Poisson random measure if and only if `N 0 = 0` almost surely and `N` has
+independent rate-`r` Poisson increments. -/
+theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_count_increments
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
+    (hN : ∀ q : ℚ≥0, Measurable (N q))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
+    IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
+        (poissonMeasure (r * (t - s))) P :=
+  isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
+    (measurable_countPathMeasure_of_nnrat hN)
+    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
+
+/-- For a measurable random measure `M` on `ℝ≥0` represented almost surely by a coordinatewise
+measurable natural-valued cumulative count process `N`, `M` is a rate-`r` homogeneous Poisson
+random measure if and only if `(N t ω : ℝ)` is a rate-`r` Poisson process relative to its natural
+filtration. -/
+theorem isPoissonRandomMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {M : Ω → Measure ℝ≥0} {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
+    (hM : Measurable M) (hN : ∀ t, Measurable (N t))
+    (hcount : ∀ᵐ ω ∂P, ∀ t, M ω (Iic t) = (N t ω : ℝ≥0∞)) :
+    IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume) ↔
+      IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P := by
+  rw [isPoissonRandomMeasure_smul_nnvolume_iff_count_increments hM hcount,
+    isFilteredPoissonProcess_natural_natCast_iff hN]
+
+/-- For a natural-valued process with measurable coordinates whose paths are monotone and
+right-continuous on one event of full measure, `countPathMeasure (N · ω)` is a rate-`r`
+homogeneous Poisson random measure on `ℝ≥0` if and only if `(N t ω : ℝ)` is a rate-`r` Poisson
+process relative to its natural filtration. -/
+theorem isPoissonRandomMeasure_countPathMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0} (hN : ∀ t, Measurable (N t))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
+    IsPoissonRandomMeasure P (fun ω ↦ countPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
+      IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P :=
+  isPoissonRandomMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
+    (measurable_countPathMeasure_of_nnrat fun q ↦ hN q) hN
+    (hreg.mono fun _ ⟨hf, hrc⟩ t ↦ countPathMeasure_Iic hf hrc t)
 
 /-- **Zero-rate temporal Poisson characterization.** A measurable random measure with a
 natural-valued cumulative count process on a probability space has zero Poisson intensity if and

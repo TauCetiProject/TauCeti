@@ -43,7 +43,8 @@ connected support onto a law split into two separated pieces is continuous on th
 is the topological reason why optimal transport maps onto disconnected targets are discontinuous.
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
-measure. Completing the source measure preserves every random variable's law, finite-dimensional
+measure. Completing the source measure preserves every random variable's law, postcomposing a
+random variable with a measurable embedding preserves and reflects its law, finite-dimensional
 marginals determine the path-space law of an a.e.-measurable process on a finite measure space, and
 passing to an almost-sure limit along a countably generated nontrivial filter on a finite measure
 space preserves a common law when the target Borel space has outer closed approximation.
@@ -61,6 +62,8 @@ measurable equivalences let these characterizations pass to other representation
 * `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
   variable with that law, without requiring the property to be measurable;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
+* `MeasurableEmbedding.hasLaw_comp_iff` — postcomposing with a measurable embedding `f` has law
+  `μ.map f` if and only if the original random variable has law `μ`;
 * `ProbabilityTheory.HasLaw.cond_of_restrict`,
   `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
   `ProbabilityTheory.HasLaw.of_restrict_of_ae_mem` — normalizing a scalar-multiple restricted law
@@ -114,6 +117,18 @@ open scoped NNReal
 namespace TauCeti
 
 namespace Probability
+
+/-- Postcomposing a random variable with a measurable embedding `f` has law `μ.map f` if and only
+if the original random variable has law `μ`. -/
+theorem _root_.MeasurableEmbedding.hasLaw_comp_iff {Ω α β : Type*}
+    {mΩ : MeasurableSpace Ω} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
+    {f : α → β} (hf : MeasurableEmbedding f) {X : Ω → α} {μ : Measure α} {P : Measure Ω} :
+    HasLaw (f ∘ X) (μ.map f) P ↔ HasLaw X μ P := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (hasLaw_map hf.measurable.aemeasurable).comp h⟩
+  have hx : AEMeasurable X P := hf.aemeasurable_comp_iff.mp h.aemeasurable
+  refine ⟨hx, hf.map_injective ?_⟩
+  rw [AEMeasurable.map_map_of_aemeasurable hf.measurable.aemeasurable hx]
+  exact h.map_eq
 
 variable {X : Type*} {Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {T : X → Y}
 variable {μ : Measure X} {ν : Measure Y}
