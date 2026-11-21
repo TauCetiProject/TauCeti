@@ -64,6 +64,8 @@ valid including at positive integers where both sides vanish.
   `-1` avoids `−ℕ`.
 * `Real.sub_natCast_ne_neg_natCast` — a real number strictly between `0` and `1`, shifted left by
   a natural number, avoids `−ℕ`.
+* `Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast` — the reflection formula at `c - k`:
+  `(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))` when `sin πc ≠ 0`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -349,6 +351,25 @@ theorem sub_natCast_ne_neg_natCast {a : ℝ} (ha0 : 0 < a) (ha1 : a < 1) (N n : 
     linarith
   · have : (n : ℝ) + 1 ≤ N := by exact_mod_cast hNn
     linarith
+
+open scoped Real in
+/-- The reflection formula at `c - k`: when `sin πc ≠ 0`,
+`(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))`. -/
+theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
+    (hc : sin (π * c) ≠ 0) (k : ℕ) :
+    (-1) ^ k / (k ! : ℝ) * Gamma (c - k) =
+      π / sin (π * c) / (k ! * Gamma (1 - c + k)) := by
+  have hrefl := Gamma_mul_Gamma_one_sub (c - k)
+  rw [show π * (c - k) = π * c - k * π by ring, sin_sub_nat_mul_pi,
+    show 1 - (c - k) = 1 - c + k by ring] at hrefl
+  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
+  have hG : Gamma (1 - c + k) ≠ 0 := fun h ↦ by
+    rw [h, mul_zero] at hrefl
+    exact div_ne_zero pi_ne_zero (mul_ne_zero hsgn hc) hrefl.symm
+  rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
+  set S := sin (π * c)
+  rw [← hrefl]
+  field_simp
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of

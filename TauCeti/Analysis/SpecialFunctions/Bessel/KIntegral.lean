@@ -48,7 +48,7 @@ vertical line `N` units to the left of the strip `0 < Re t < 1`.
 
 ## Main results
 
-* `TauCeti.integral_cpow_mul_exp_neg_add_div_Ioi`: the series evaluation above for `0 < p < 1`.
+* `Complex.integral_cpow_mul_exp_neg_add_div_Ioi`: the series evaluation above for `0 < p < 1`.
 
 ## References
 
@@ -66,7 +66,7 @@ open Set MeasureTheory Filter
 open scoped Real Nat Topology
 open Complex hiding exp continuous_exp
 
-namespace TauCeti
+namespace Complex
 
 /-! ### Decay of `Γ(t) Γ(t + p)` to the left -/
 
@@ -107,29 +107,11 @@ private lemma norm_Gamma_mul_Gamma_add_le {p δ : ℝ} (hδ : 0 < δ) (hp : 0 < 
 
 /-! ### Residues of `x^{-t} Γ(t) Γ(t + p)` -/
 
-/-- The reflection formula at `c - k`: when `sin πc ≠ 0`,
-`(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))`. -/
-private lemma neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
-    (hc : Real.sin (π * c) ≠ 0) (k : ℕ) :
-    (-1) ^ k / (k ! : ℝ) * Real.Gamma (c - k) =
-      π / Real.sin (π * c) / (k ! * Real.Gamma (1 - c + k)) := by
-  have hrefl := Real.Gamma_mul_Gamma_one_sub (c - k)
-  rw [show π * (c - k) = π * c - k * π by ring, Real.sin_sub_nat_mul_pi,
-    show 1 - (c - k) = 1 - c + k by ring] at hrefl
-  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
-  have hG : Real.Gamma (1 - c + k) ≠ 0 := fun h ↦ by
-    rw [h, mul_zero] at hrefl
-    exact div_ne_zero Real.pi_ne_zero (mul_ne_zero hsgn hc) hrefl.symm
-  rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
-  set S := Real.sin (π * c)
-  rw [← hrefl]
-  field_simp
-
 /-- The residue of `x^{-t} Γ(t) Γ(t + p)` at the pole `t = -k` of `Γ(t)`, written through the
 reflection formula as the `k`th term of `(π / sin pπ) 𝐅(1 - p, x)`. -/
 private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (hp0 : 0 < p)
     (hp1 : p < 1) (hx : 0 < x) (k : ℕ) :
-    Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) (-(k : ℂ)) =
+    TauCeti.Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) (-(k : ℂ)) =
       ((π / Real.sin (π * p) : ℝ) : ℂ) * ((x ^ k / (k ! * Real.Gamma (1 - p + k)) : ℝ) : ℂ) := by
   have hslit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
   have hΓp : ∀ n : ℕ, -(k : ℂ) + p ≠ -n := by
@@ -148,7 +130,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
     (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (p - k)) =
       π / Real.sin (π * p) * (x ^ k / (k ! * Real.Gamma (1 - p + k))) := by
-    rw [mul_left_comm, neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin]
+    rw [mul_left_comm, Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin]
     ring
   exact_mod_cast hreal
 
@@ -156,7 +138,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
 the reflection formula as the `k`th term of `-(π / sin pπ) x^p 𝐅(1 + p, x)`. -/
 private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : ℝ} (hp0 : 0 < p)
     (hp1 : p < 1) (hx : 0 < x) (k : ℕ) :
-    Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) (-(p : ℂ) - k) =
+    TauCeti.Contour.residue (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) (-(p : ℂ) - k) =
       -(((π / Real.sin (π * p) : ℝ) : ℂ) * (x : ℂ) ^ (p : ℂ)) *
         ((x ^ k / (k ! * Real.Gamma (1 + p + k)) : ℝ) : ℂ) := by
   have hslit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
@@ -172,7 +154,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : �
   have hfun : (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) =
       fun z ↦ Gamma (z + p) * ((x : ℂ) ^ (-(z + p - p)) * Gamma (z + p - p)) :=
     funext fun z ↦ by rw [add_sub_cancel_right]; ring
-  rw [hfun, Contour.residue_comp_add_const
+  rw [hfun, TauCeti.Contour.residue_comp_add_const
       (fun w : ℂ ↦ Gamma w * ((x : ℂ) ^ (-(w - p)) * Gamma (w - p))) (p : ℂ),
     show -(p : ℂ) - k + p = -(k : ℂ) by ring, residue_Gamma_mul_neg_nat k hw,
     show -(-(k : ℂ) - p) = p + k by ring, cpow_add _ _ (ofReal_ne_zero.mpr hx.ne'),
@@ -182,7 +164,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : �
     exact (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (-p - k)) =
       -(π / Real.sin (π * p)) * (x ^ k / (k ! * Real.Gamma (1 + p + k))) := by
-    rw [mul_left_comm, neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin, mul_neg,
+    rw [mul_left_comm, Real.neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin, mul_neg,
       Real.sin_neg, sub_neg_eq_add]
     ring
   have hc : ((-1 : ℂ) ^ k / (k ! : ℂ)) * ((x : ℂ) ^ k * ((Real.Gamma (-p - k) : ℝ) : ℂ)) =
@@ -239,7 +221,7 @@ private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : 
     simp only [sub_re, neg_re, ofReal_re, natCast_re] at h'
     exact Real.sub_natCast_ne_neg_natCast hp0 hp1 k j (by linarith)
   obtain ⟨C, -, hC⟩ := exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc p (δ - N) 1 1
-  have hshift := mellinInv_eq_mellinInv_add_sum_residue_of_norm_le (S := A ∪ B)
+  have hshift := TauCeti.mellinInv_eq_mellinInv_add_sum_residue_of_norm_le (S := A ∪ B)
     (σ₀ := δ - N) (σ₁ := 1) (B := fun T ↦ C / T) (f := fun z ↦ Gamma z * Gamma (z + p))
     (by linarith) hx.le
     (fun z hz hzS ↦ analyticAt_Gamma_mul_Gamma_add hp0 hp1 hz.1
@@ -303,7 +285,8 @@ private lemma tendsto_mellinInv_Gamma_mul_Gamma_add {p x : ℝ} (hp0 : 0 < p) (h
     have hfac : (1 : ℝ) ≤ N ! := by exact_mod_cast Nat.one_le_of_lt (Nat.factorial_pos N)
     calc ‖mellinInv (δ - N) (fun z ↦ Gamma z * Gamma (z + p)) x‖
         ≤ x ^ (-(δ - N)) / (2 * π) * (M * π) :=
-          (norm_mellinInv_le _ _ hx.le).trans (mul_le_mul_of_nonneg_left hint (by positivity))
+          (TauCeti.norm_mellinInv_le _ _ hx.le).trans
+            (mul_le_mul_of_nonneg_left hint (by positivity))
       _ = A * ((x / κ) ^ N / N !) * (N ! : ℝ)⁻¹ := by
           rw [neg_sub, Real.rpow_sub hx, Real.rpow_natCast, div_pow]
           have : 0 < x ^ δ := Real.rpow_pos_of_pos hx δ
@@ -344,4 +327,4 @@ theorem integral_cpow_mul_exp_neg_add_div_Ioi {p x : ℝ} (hp0 : 0 < p) (hp1 : p
     show (1 + (p : ℂ)) = ((1 + p : ℝ) : ℂ) by push_cast; ring]
   ring
 
-end TauCeti
+end Complex
