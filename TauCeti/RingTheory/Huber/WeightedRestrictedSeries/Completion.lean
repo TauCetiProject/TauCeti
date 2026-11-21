@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 
+import TauCeti.Topology.UniformSpace.DiscreteUniformity
+
 /-!
 # The completed restricted power-series algebra `A⟨X₁,…,Xₖ⟩`
 
@@ -56,6 +58,8 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   `A⟨X₁,…,Xₖ⟩ ≃+* B⟨X₁,…,Xₖ⟩` induced by a dense inducing ring map `A → B`. For the completion
   map `A → Â` it says that `A` and its separated completion have the same completed restricted
   power-series algebras.
+* `TauCeti.Huber.weightedPolynomialCompletionEquivOfDiscrete`: over a discrete base `A`, the
+  canonical ring isomorphism `A[X₁, …, Xₖ] ≃+* Â⟨X₁, …, Xₖ⟩_T`.
 
 ## Main results
 
@@ -588,5 +592,71 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
     (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
 
 end Subring
+
+/-! ### The discrete case
+
+Over a discrete nonarchimedean ring `A`, `A⟨X⟩_T` is discrete (hence complete and Hausdorff for its
+right additive uniformity) and coincides with the polynomial ring `A[X₁, …, Xₖ]`, so its completion
+`Â⟨X⟩_T` is likewise canonically isomorphic to `A[X₁, …, Xₖ]`. -/
+
+section Discrete
+
+open UniformSpace
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] [DiscreteTopology A]
+  {k : ℕ}
+
+/-- Over a discrete ring `A`, the completed weighted restricted power-series ring `Â⟨X₁, …, Xₖ⟩_T`
+is canonically isomorphic to the polynomial ring `A[X₁, …, Xₖ]`. -/
+noncomputable def weightedPolynomialCompletionEquivOfDiscrete
+    (T : Fin k → Set A) (hT : IsWeightFamily T) :
+    MvPolynomial (Fin k) A ≃+* Completion (weightedRestrictedSubring T hT) :=
+  have : DiscreteUniformity (weightedRestrictedSubring T hT) :=
+    IsRightUniformAddGroup.discreteUniformity
+  (weightedPolynomialEquivOfDiscrete T hT).trans
+    (Completion.completeRingEquivSelf (weightedRestrictedSubring T hT)).symm
+
+/-- `weightedPolynomialCompletionEquivOfDiscrete` acts by the polynomial inclusion followed by the
+canonical map into the completion. -/
+@[simp]
+theorem weightedPolynomialCompletionEquivOfDiscrete_apply
+    {T : Fin k → Set A} {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
+    weightedPolynomialCompletionEquivOfDiscrete T hT p =
+      (weightedPolynomialHom T hT p : Completion (weightedRestrictedSubring T hT)) := by
+  have : DiscreteUniformity (weightedRestrictedSubring T hT) :=
+    IsRightUniformAddGroup.discreteUniformity
+  simp [weightedPolynomialCompletionEquivOfDiscrete]
+
+/-- The inverse of `weightedPolynomialCompletionEquivOfDiscrete` sends the completion image of a
+restricted series `f` back to its underlying polynomial via
+`weightedPolynomialEquivOfDiscrete.symm`. -/
+@[simp]
+theorem weightedPolynomialCompletionEquivOfDiscrete_symm_coe
+    {T : Fin k → Set A} {hT : IsWeightFamily T} (f : weightedRestrictedSubring T hT) :
+    (weightedPolynomialCompletionEquivOfDiscrete T hT).symm
+      (f : Completion (weightedRestrictedSubring T hT)) =
+      (weightedPolynomialEquivOfDiscrete T hT).symm f := by
+  have : DiscreteUniformity (weightedRestrictedSubring T hT) :=
+    IsRightUniformAddGroup.discreteUniformity
+  simp [weightedPolynomialCompletionEquivOfDiscrete]
+
+/-- `weightedPolynomialCompletionEquivOfDiscrete` carries a constant polynomial `C a` to
+`algebraMap A Â⟨X⟩_T a`. -/
+theorem weightedPolynomialCompletionEquivOfDiscrete_C
+    {T : Fin k → Set A} {hT : IsWeightFamily T} (a : A) :
+    weightedPolynomialCompletionEquivOfDiscrete T hT (MvPolynomial.C a) =
+      algebraMap A (Completion (weightedRestrictedSubring T hT)) a := by
+  rw [weightedPolynomialCompletionEquivOfDiscrete_apply, weightedPolynomialHom_C,
+    algebraMap_completion_weightedRestrictedSubring_apply]
+
+/-- `weightedPolynomialCompletionEquivOfDiscrete` carries each variable `X i` to the completed
+weighted variable `weightedX T hT i`. -/
+theorem weightedPolynomialCompletionEquivOfDiscrete_X
+    {T : Fin k → Set A} {hT : IsWeightFamily T} (i : Fin k) :
+    weightedPolynomialCompletionEquivOfDiscrete T hT (MvPolynomial.X i) =
+      (weightedX T hT i : Completion (weightedRestrictedSubring T hT)) := by
+  rw [weightedPolynomialCompletionEquivOfDiscrete_apply, weightedPolynomialHom_X]
+
+end Discrete
 
 end TauCeti.Huber

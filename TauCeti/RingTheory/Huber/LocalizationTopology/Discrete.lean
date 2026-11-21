@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.FinitePresentation
+public import Mathlib.RingTheory.LocalProperties.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
+
+import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 
 /-!
 # Completed localisations of a discrete ring
@@ -39,6 +43,11 @@ of the Čech complexes of localisations.
   discrete.
 * `TauCeti.Huber.PairOfDefinition.completionLocEquivOfDiscreteTopology`: the canonical map
   `Aₛ → A⟨T/s⟩` is a ring isomorphism.
+* `TauCeti.Huber.PairOfDefinition.ringHom_prop_toCompletionLoc_of_discreteTopology`: over a
+  discrete ring `A`, any ring-homomorphism property respecting isomorphisms and holding for
+  localisations away from an element holds for `toCompletionLoc : A →+* A⟨T/s⟩`.
+* `TauCeti.Huber.PairOfDefinition.finitePresentation_toCompletionLoc_of_discreteTopology`: over a
+  discrete ring `A`, `toCompletionLoc : A →+* A⟨T/s⟩` is algebraically of finite presentation.
 
 ## References
 
@@ -54,7 +63,9 @@ namespace TauCeti.Huber
 
 namespace PairOfDefinition
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
+universe u
+
+variable {A : Type u} [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
 
 /-- **Over a discrete ring every presentation is admissible for the localisation topology.** The
 ideal of definition is nilpotent, so the fractions `b/s` with `b` in a high enough power of it are
@@ -158,6 +169,75 @@ theorem completionLocEquivOfDiscreteTopology_symm_coe (P : PairOfDefinition A) (
   let _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := discreteUniformity_locUniformSpace P T s S hden
   exact UniformSpace.Completion.completeRingEquivSelf_coe S x
+
+/-- Under the isomorphism `Aₛ ≃+* A⟨T/s⟩` over a discrete ring, `toCompletionLoc` factors as
+`completionLocEquivOfDiscreteTopology ∘ algebraMap A Aₛ`. -/
+theorem completionLocEquivOfDiscreteTopology_comp_algebraMap (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (completionLocEquivOfDiscreteTopology P T s S hden).toRingHom.comp (algebraMap A S) =
+      toCompletionLoc P T s S hden := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  ext a
+  simp [toCompletionLoc_apply]
+
+/-- Composing `toCompletionLoc : A →+* A⟨T/s⟩` with the inverse of
+`completionLocEquivOfDiscreteTopology` recovers `algebraMap A Aₛ`. -/
+theorem completionLocEquivOfDiscreteTopology_symm_comp_toCompletionLoc (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (completionLocEquivOfDiscreteTopology P T s S hden).symm.toRingHom.comp
+        (toCompletionLoc P T s S hden) =
+      algebraMap A S := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  ext a
+  simp [toCompletionLoc_apply]
+
+/-- Over a discrete ring `A`, any ring-homomorphism property `R` that respects isomorphisms and
+holds for localisations away from an element holds for `toCompletionLoc P T s S hden`, since
+`Aₛ ≃+* A⟨T/s⟩` (`PairOfDefinition.completionLocEquivOfDiscreteTopology`). -/
+theorem ringHom_prop_toCompletionLoc_of_discreteTopology (P : PairOfDefinition A)
+    {R : ∀ {X Y : Type u} [CommRing X] [CommRing Y], (X →+* Y) → Prop}
+    (hiso : RingHom.RespectsIso @R) (hloc : RingHom.HoldsForLocalizationAway @R)
+    (T : Set A) (s : A) (S : Type u) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    R (toCompletionLoc P T s S hden) := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [← completionLocEquivOfDiscreteTopology_comp_algebraMap P T s S hden]
+  exact hiso.1 _ (completionLocEquivOfDiscreteTopology P T s S hden) (hloc S s)
+
+/-- Over a discrete ring `A`, the canonical homomorphism `A →+* A⟨T/s⟩` into the completed
+localization is algebraically of finite presentation (`RingHom.FinitePresentation`), since it is
+`algebraMap A Aₛ` followed by the ring isomorphism `completionLocEquivOfDiscreteTopology`. -/
+theorem finitePresentation_toCompletionLoc_of_discreteTopology (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (toCompletionLoc P T s S hden).FinitePresentation := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [← completionLocEquivOfDiscreteTopology_comp_algebraMap P T s S hden]
+  exact (RingHom.FinitePresentation.of_bijective
+    (completionLocEquivOfDiscreteTopology P T s S hden).bijective).comp
+    (RingHom.finitePresentation_algebraMap.mpr (IsLocalization.Away.finitePresentation s))
 
 end PairOfDefinition
 

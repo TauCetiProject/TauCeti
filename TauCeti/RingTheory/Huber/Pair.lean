@@ -44,8 +44,9 @@ than selected by a typeclass.
   `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
   perfect.
-* `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
-  definitions above are not vacuous.
+* `TauCeti.Huber.Pair.discrete`, `TauCeti.Huber.Pair.Hom.ofDiscrete`: a discrete ring is a Huber
+  pair with `A⁺ = A`, and any ring homomorphism between discrete rings is a morphism of discrete
+  Huber pairs.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
   associatively and unitally (`TauCeti.Huber.Pair.Hom.comp_assoc`,
   `TauCeti.Huber.Pair.Hom.id_comp`, `TauCeti.Huber.Pair.Hom.comp_id`).
@@ -277,6 +278,49 @@ def discrete [DiscreteTopology A] : Pair A where
 /-- The ring of integral elements of the discrete Huber pair is the whole ring. -/
 @[simp]
 theorem discrete_plus [DiscreteTopology A] : (discrete A).plus = ⊤ := (rfl)
+
+end
+
+section DiscreteHom
+
+variable [DiscreteTopology A]
+  {B : Type*} [CommRing B] [TopologicalSpace B] [DiscreteTopology B]
+  {C : Type*} [CommRing C] [TopologicalSpace C] [DiscreteTopology C]
+
+/-- Package any ring homomorphism between discrete commutative rings as a morphism of discrete
+Huber pairs `Pair.discrete A → Pair.discrete B`. -/
+def Hom.ofDiscrete (φ : A →+* B) : Hom (discrete A) (discrete B) where
+  toRingHom := φ
+  continuous_toRingHom := continuous_of_discreteTopology
+  map_mem_plus _ _ := Subring.mem_top _
+
+/-- The underlying ring homomorphism of `Pair.Hom.ofDiscrete φ` is `φ`. -/
+@[simp]
+theorem Hom.toRingHom_ofDiscrete (φ : A →+* B) : (Hom.ofDiscrete φ).toRingHom = φ := (rfl)
+
+/-- Packaging the identity ring homomorphism yields the identity morphism of `Pair.discrete A`. -/
+@[simp]
+theorem Hom.ofDiscrete_id : Hom.ofDiscrete (RingHom.id A) = Hom.id (discrete A) := by
+  ext; simp
+
+/-- Packaging a composite ring homomorphism yields the composite of the discrete pair morphisms. -/
+@[simp]
+theorem Hom.ofDiscrete_comp (g : B →+* C) (f : A →+* B) :
+    Hom.ofDiscrete (g.comp f) = (Hom.ofDiscrete g).comp (Hom.ofDiscrete f) := by
+  ext; simp
+
+/-- Any morphism between discrete Huber pairs equals `Pair.Hom.ofDiscrete` applied to its
+underlying ring homomorphism. -/
+@[simp]
+theorem Hom.ofDiscrete_toRingHom (f : Hom (discrete A) (discrete B)) :
+    Hom.ofDiscrete f.toRingHom = f := by
+  ext; simp
+
+end DiscreteHom
+
+section
+
+variable [IsTopologicalRing A] [IsHuberRing A]
 
 variable (A) in
 /-- In a Huber ring, `A°` is a ring of integral elements: it is open
