@@ -228,36 +228,13 @@ theorem isUnramifiedIn_iSup_iff (p : Ideal (𝓞 K)) {ι : Sort*} (E : ι → In
   simp only [isUnramifiedIn_iff_forall_inertia_le, fixingSubgroup_iSup, le_iInf_iff]
   exact ⟨fun h i Q hQ ↦ h Q hQ i, fun h Q hQ i ↦ h i Q hQ⟩
 
+omit [NumberField K] [NumberField M] [IsGalois K M] in
 /-- **Unramifiedness in a conjugate field.** An ideal `p` of `𝓞 K` is unramified in `σ E` exactly
 when it is unramified in `E`. -/
 theorem isUnramifiedIn_map_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) (σ : M ≃ₐ[K] M) :
-    Algebra.IsUnramifiedIn (𝓞 ↥(E.map (σ : M →ₐ[K] M))) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p := by
-  obtain ⟨H, rfl⟩ : ∃ H, fixedField H = E := ⟨_, IsGalois.fixedField_fixingSubgroup E⟩
-  rw [← H.fixedField_map_conj σ, isUnramifiedIn_iff_forall_inertia_le,
-    isUnramifiedIn_iff_forall_inertia_le, fixingSubgroup_fixedField, fixingSubgroup_fixedField]
-  -- `I(σ • Q) = σ I(Q) σ⁻¹`, and `σ` permutes the primes above `p`
-  refine ⟨fun h Q hQ ↦ ?_, fun h Q hQ ↦ ?_⟩
-  · have hσQ : σ • Q ∈ p.primesOver (𝓞 M) := by
-      have := hQ.1
-      have := hQ.2
-      exact ⟨inferInstance, inferInstance⟩
-    have := h _ hσQ
-    rwa [Ideal.inertia_smul,
-      Subgroup.map_le_map_iff_of_injective (MulAut.conj σ).injective] at this
-  · rw [← smul_inv_smul σ Q, Ideal.inertia_smul]
-    have hσQ : σ⁻¹ • Q ∈ p.primesOver (𝓞 M) := by
-      have := hQ.1
-      have := hQ.2
-      exact ⟨inferInstance, inferInstance⟩
-    exact Subgroup.map_mono (h _ hσQ)
-
-/-- **Unramifiedness in the normal closure.** An ideal `p` of `𝓞 K` is unramified in an
-intermediate field `E` of `M / K` exactly when it is unramified in the normal closure of `E`
-in `M`. -/
-theorem isUnramifiedIn_normalClosure_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) :
-    Algebra.IsUnramifiedIn (𝓞 (normalClosure K E M)) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p := by
-  rw [normalClosure_def'' E, isUnramifiedIn_iSup_iff]
-  simp only [isUnramifiedIn_map_iff, forall_const]
+    Algebra.IsUnramifiedIn (𝓞 ↥(E.map (σ : M →ₐ[K] M))) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
+  ((NumberField.RingOfIntegers.mapAlgEquiv (k := K)
+    (E.equivMap (σ : M →ₐ[K] M))).isUnramifiedIn_iff p).symm
 
 /-! ### Normal closures in a normal extension -/
 
@@ -291,5 +268,13 @@ theorem isUnramifiedIn_normalClosure_iff_of_normal [Nonempty (X →ₐ[K] Ω)] (
   exact ⟨fun h ↦ (hX (Classical.arbitrary _)).2 (h _), fun h f ↦ (hX f).1 h⟩
 
 end NormalAmbient
+
+/-- **Unramifiedness in the normal closure.** An ideal `p` of `𝓞 K` is unramified in an
+intermediate field `E` of `M / K` exactly when it is unramified in the normal closure of `E`
+in `M`. -/
+theorem isUnramifiedIn_normalClosure_iff (p : Ideal (𝓞 K)) (E : IntermediateField K M) :
+    Algebra.IsUnramifiedIn (𝓞 (normalClosure K E M)) p ↔ Algebra.IsUnramifiedIn (𝓞 E) p :=
+  have : Nonempty (E →ₐ[K] M) := ⟨E.val⟩
+  isUnramifiedIn_normalClosure_iff_of_normal p
 
 end Ideal
