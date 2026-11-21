@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
-# Common bounds for weighted coefficients of finite sums
+# Weighted coefficient bounds for sums
 
 The ultrametric inequality preserves a common bound for the weighted coefficients of a finite
 family of series. This gives both boundedness and Gauss-norm bounds when assembling series.
@@ -21,6 +21,20 @@ public section
 namespace TauCeti
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R] {c : ℝ}
+
+namespace PowerSeries
+
+variable {f g : _root_.PowerSeries R}
+
+variable (f g) in
+/-- Over an ultrametric ring, each weighted coefficient norm of a sum is at most the larger of the
+two summands' weighted coefficient norms, at a nonnegative radius. -/
+theorem norm_coeff_add_mul_pow_le_max (hc : 0 ≤ c) (m : ℕ) :
+    ‖(f + g).coeff m‖ * c ^ m ≤ max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) := by
+  rw [map_add, ← max_mul_of_nonneg _ _ (pow_nonneg hc m)]
+  exact mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
+
+end PowerSeries
 
 /-- A common bound for the weighted coefficients of degree `n` of finitely many series also
 bounds that of their sum in an ultrametric ring, including the empty sum. -/

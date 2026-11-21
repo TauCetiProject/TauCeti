@@ -12,9 +12,9 @@ import Mathlib.Analysis.Normed.Algebra.Ultra
 /-!
 # Evaluation of p-adic exponential polynomials and their Hasse derivatives
 
-On a closed disc strictly inside the p-adic exponential discs of all its frequencies, an
-exponential polynomial is restricted, so each of its exponential series converges there and the
-evaluation identities of `TauCeti.RingTheory.PowerSeries.Exp.Eval` apply.
+On a closed disc strictly inside the p-adic exponential discs of all the frequencies, each
+rescaled exponential series is restricted. This gives the termwise summability needed to apply the
+evaluation identities of `TauCeti.RingTheory.PowerSeries.Exp.Eval`.
 -/
 
 public section
@@ -47,8 +47,9 @@ theorem evalAt_hasseDeriv_sum_smul_rescale_exp
   -- the rational scalar `(k!)⁻¹` acts on `K` as division by `k!`
   simp only [Algebra.smul_def, map_inv₀, map_natCast, div_eq_inv_mul]
 
-/-- A fixed Hasse derivative of an exponential polynomial vanishes on a closed disc strictly
-inside the exponential discs exactly when the corresponding ordinary derivative sum vanishes. -/
+/-- At any point `y` of a closed disc strictly inside the exponential discs, a fixed Hasse
+derivative of an exponential polynomial evaluates to zero if and only if the corresponding
+ordinary derivative sum is zero at that same point `y`. -/
 theorem evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff
     (hxc : ∀ i ∈ s, ‖x i‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (k : ℕ) {y : K} (hy : ‖y‖ ≤ c) :
     (hasseDeriv k (∑ i ∈ s, a i • rescale (x i) (exp K))).evalAt y = 0 ↔

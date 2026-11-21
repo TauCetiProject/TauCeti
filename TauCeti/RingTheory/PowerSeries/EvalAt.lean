@@ -70,6 +70,8 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.evalAt_sum_of_summable`: evaluation commutes with finite sums of series whose
   terms at the point are summable.
+* `PowerSeries.evalAt_smul_of_summable`: evaluation commutes with scalar multiplication when
+  the evaluation terms are summable.
 * `PowerSeries.norm_evalAt_le_gaussNorm` and `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm`:
   the Gauss-norm bound in an ultrametric algebra, in particular for restricted series.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le`: a coefficient map
@@ -189,6 +191,19 @@ theorem evalAt_eq_ofScalarsSum {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra �
 theorem commute_evalAt [IsTopologicalSemiring A] [T2Space A] (f : R⟦X⟧) (b : A) :
     Commute b (f.evalAt b) :=
   Commute.tsum_right _ fun n ↦ ((Commute.refl b).pow_right n).smul_right _
+
+/-- Multiplying a series with summable evaluation terms by a scalar gives a series summing to
+that scalar times its value. -/
+theorem hasSum_evalAt_smul_of_summable [ContinuousConstSMul R A] {f : R⟦X⟧} {b : A}
+    (hf : Summable fun n ↦ coeff n f • b ^ n) (a : R) :
+    HasSum (fun n ↦ coeff n (a • f) • b ^ n) (a • f.evalAt b) := by
+  simpa only [evalAt_def, coeff_smul, smul_eq_mul, mul_smul] using hf.hasSum.const_smul a
+
+/-- Evaluation commutes with scalar multiplication when the evaluation terms are summable. -/
+theorem evalAt_smul_of_summable [ContinuousConstSMul R A] [T2Space A] {f : R⟦X⟧} {b : A}
+    (hf : Summable fun n ↦ coeff n f • b ^ n) (a : R) :
+    (a • f).evalAt b = a • f.evalAt b :=
+  (hasSum_evalAt_smul_of_summable hf a).tsum_eq
 
 /-- Evaluation commutes with finite sums of series whose terms at `b` are summable. -/
 theorem evalAt_sum_of_summable [ContinuousAdd A] [T2Space A] {ι : Type*} (s : Finset ι)
@@ -571,9 +586,8 @@ theorem IsRestricted.evalAt_add (hf : f.IsRestricted c) (hg : g.IsRestricted c) 
 /-- Evaluation at a point of norm at most `c` commutes with scalar multiplication of a series
 restricted at `c`. -/
 theorem IsRestricted.evalAt_smul (hf : f.IsRestricted c) (a : R) (hb : ‖b‖ ≤ c) :
-    (a • f).evalAt b = a • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using HasSum.const_smul a (hf.hasSum_evalAt hb))
+    (a • f).evalAt b = a • f.evalAt b :=
+  evalAt_smul_of_summable (R := R) (A := A) (hf.summable_smul_pow hb) a
 
 /-- Evaluation at a point of norm at most `c` commutes with finite sums of series restricted
 at `c`. -/

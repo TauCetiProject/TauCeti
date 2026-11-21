@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Exp.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
-public import TauCeti.RingTheory.PowerSeries.GaussNorm.FiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.NumberTheory.Padics.Basic

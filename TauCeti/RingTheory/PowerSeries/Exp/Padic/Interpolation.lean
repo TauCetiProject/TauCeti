@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Eval
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Schwarz
 import Mathlib.Analysis.Normed.Algebra.Ultra
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Interpolation of p-adic exponential polynomials on closed discs
@@ -29,7 +30,7 @@ open scoped Nat
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K] [Algebra ℚ K]
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
   [NormedAlgebra ℚ_[p] K] [CompleteSpace K] {ι : Type*} {s : Finset ι} {a x : ι → K} {c : ℝ}
 
 /-- **Interpolation on a closed disc with pointwise multiplicities.** If the ordinary
@@ -44,6 +45,7 @@ theorem norm_sum_mul_exp_le_mul_prod_pow (hc : 0 < c)
     (k : ℕ) {z : K} (hz : ‖z‖ ≤ c) :
     ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (z * x i)‖ ≤
       c⁻¹ ^ k * A * ∏ b ∈ g, (‖z - b‖ / c) ^ (T b - k) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
   have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
   have hF := isRestricted_sum_smul_rescale_exp s a x hc.le hxc
   have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_prod_pow (L := K) hc hg

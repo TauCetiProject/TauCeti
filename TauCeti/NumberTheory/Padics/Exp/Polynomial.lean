@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.IntegerGrid
-public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Eval
-import Mathlib.Analysis.Normed.Algebra.Ultra
+public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Interpolation
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -64,7 +63,7 @@ public section
 open Finset
 open scoped Nat
 
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K] [Algebra ℚ K]
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
   [NormedAlgebra ℚ_[p] K] [CompleteSpace K] {ι : Type*} {s : Finset ι} {a x : ι → K} {c : ℝ}
 
 open PowerSeries
@@ -91,18 +90,20 @@ theorem norm_sum_mul_exp_le_mul_norm_prod (hc : 1 ≤ c)
     (k : ℕ) (z : ℤ_[p]) :
     ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (algebraMap ℚ_[p] K z * x i)‖ ≤
       c⁻¹ ^ k * A * (‖∏ b ∈ g, (z - b)‖ / c ^ g.card) ^ (T - k) := by
-  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
-  have hc0 : 0 < c := zero_lt_one.trans_le hc
-  have hb (b : ℤ_[p]) : ‖algebraMap ℚ_[p] K b‖ ≤ c :=
-    (PadicInt.norm_algebraMap_le_one b).trans hc
-  have hF := isRestricted_sum_smul_rescale_exp s a x hc0.le hxc
-  have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_prod hc
-    (fun b hb' t ht ↦ (evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff hxc t (hb b)).mpr
-      (hzero b hb' t ht)) k z
-  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hxc k (hb z)] at h
-  exact h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-    (gaussNorm_sum_smul_rescale_exp_le s a x hc0.le (fun i hi ↦ (hxc i hi).le) hA ha)
-    (by positivity)) (by positivity))
+  classical
+  have hinj : Function.Injective fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b := fun y z h ↦
+    Subtype.ext ((algebraMap ℚ_[p] K).injective h)
+  have hdist (b : ℤ_[p]) :
+      ‖algebraMap ℚ_[p] K z - algebraMap ℚ_[p] K b‖ = ‖z - b‖ := by
+    rw [← map_sub, ← PadicInt.coe_sub, norm_algebraMap', ← PadicInt.norm_def]
+  have h := norm_sum_mul_exp_le_mul_prod_pow (zero_lt_one.trans_le hc) hxc hA ha
+    (g := g.image fun b : ℤ_[p] ↦ algebraMap ℚ_[p] K b) (T := fun _ ↦ T)
+    (forall_mem_image.mpr fun b _ ↦ (PadicInt.norm_algebraMap_le_one b).trans hc)
+    (by simpa using hzero) k ((PadicInt.norm_algebraMap_le_one z).trans hc)
+  refine h.trans_eq ?_
+  rw [prod_image hinj.injOn]
+  simp only [hdist]
+  rw [prod_pow, prod_div_distrib, prod_const, ← norm_prod]
 
 /-- **Interpolation of a p-adic exponential polynomial on the integers not divisible by `q`.**
 Let `K` be a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius with
@@ -126,17 +127,18 @@ theorem norm_sum_mul_exp_le_mul_norm_factorial_pow (hc : 1 ≤ c)
     ‖∑ i ∈ s, a i * (x i ^ k / k !) * NormedSpace.exp (algebraMap ℚ_[p] K z * x i)‖ ≤
       c⁻¹ ^ k * A *
         (‖((N / q)! : ℤ_[p])‖ ^ (q - 1) / c ^ ((range N).filter (¬q ∣ ·)).card) ^ (T - k) := by
-  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
-  have hc0 : 0 < c := zero_lt_one.trans_le hc
-  have hj (j : ℕ) : ‖(j : K)‖ ≤ c := (IsUltrametricDist.norm_natCast_le_one K j).trans hc
-  have hF := isRestricted_sum_smul_rescale_exp s a x hc0.le hxc
-  have h := hF.norm_evalAt_hasseDeriv_le_gaussNorm_mul_norm_factorial_pow hc hq
-    (fun j hjN hqj t ht ↦ (evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff hxc t (hj j)).mpr
-      (hzero j hjN hqj t ht)) k z
-  rw [evalAt_hasseDeriv_sum_smul_rescale_exp hxc k
-    ((PadicInt.norm_algebraMap_le_one z).trans hc)] at h
-  exact h.trans (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-    (gaussNorm_sum_smul_rescale_exp_le s a x hc0.le (fun i hi ↦ (hxc i hi).le) hA ha)
-    (by positivity)) (by positivity))
+  classical
+  have hinj : Set.InjOn (Nat.cast : ℕ → ℤ_[p]) ((range N).filter (¬q ∣ ·) : Set ℕ) :=
+    Nat.cast_injective.injOn
+  have h := norm_sum_mul_exp_le_mul_norm_prod hc hxc hA ha
+    (g := ((range N).filter (¬q ∣ ·)).image (Nat.cast : ℕ → ℤ_[p])) (T := T)
+    (fun b hb ↦ by
+      obtain ⟨j, hj, rfl⟩ := mem_image.mp hb
+      rw [mem_filter, mem_range] at hj
+      simpa using hzero j hj.1 hj.2) k z
+  rw [prod_image hinj, card_image_of_injOn hinj] at h
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  gcongr
+  exact PadicInt.norm_prod_filter_not_dvd_sub_le z hq N
 
 end TauCeti

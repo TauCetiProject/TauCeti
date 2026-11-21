@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.PowerSeries.Exp.HasseDeriv
 import TauCeti.RingTheory.PowerSeries.Rescale
 import Mathlib.Tactic.Module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
-public import Mathlib.RingTheory.PowerSeries.Exp
 
 /-!
 # Evaluation of the formal exponential
@@ -33,9 +32,11 @@ namespace TauCeti
 /-- The formal exponential evaluates to `NormedSpace.exp`: both are the sum `∑ bⁿ / n!`. Neither
 side assumes convergence, so the identity also holds for the junk value of a divergent sum. -/
 @[simp]
-theorem evalAt_exp {R A : Type*} [CommRing R] [Algebra ℚ R] [Ring A] [Algebra R A] [Algebra ℚ A]
-    [IsScalarTower ℚ R A] [TopologicalSpace A] [IsTopologicalRing A] (b : A) :
+theorem evalAt_exp {R A : Type*} [CommRing R] [Algebra ℚ R] [Ring A] [Algebra R A]
+    [TopologicalSpace A] [IsTopologicalRing A] (b : A) :
     (exp R).evalAt b = NormedSpace.exp b := by
+  let : Algebra ℚ A := Algebra.compHom A (algebraMap ℚ R)
+  let : IsScalarTower ℚ R A := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   rw [evalAt_def, NormedSpace.exp_eq_tsum_rat]
   refine tsum_congr fun n ↦ ?_
   rw [coeff_exp, algebraMap_smul, one_div]
@@ -59,15 +60,11 @@ theorem evalAt_hasseDeriv_sum_smul_rescale_exp_of_summable
     match_scalars
     rw [Algebra.smul_def]
     ring
-  -- the evaluated terms of `c • exp(xX)` are those of `exp(xX)` multiplied by `c`
-  have hterm (c : R) (i : ι) (n : ℕ) : coeff n (c • rescale (x i) (exp R)) • y ^ n =
-      c * (coeff n (rescale (x i) (exp R)) • y ^ n) := by
-    rw [coeff_smul, smul_eq_mul, smul_eq_mul, smul_eq_mul, mul_assoc]
-  rw [hD, evalAt_sum_of_summable s fun i hi ↦ ((hs i hi).mul_left _).congr fun n ↦
-    (hterm _ i n).symm]
+  rw [hD, evalAt_sum_of_summable s fun i hi ↦
+    (hasSum_evalAt_smul_of_summable (hs i hi) _).summable]
   refine sum_congr rfl fun i hi ↦ ?_
-  rw [evalAt_def, tsum_congr (hterm _ i), (hs i hi).tsum_mul_left, ← evalAt_def, evalAt_rescale,
-    evalAt_exp, smul_eq_mul, mul_comm (x i)]
+  rw [evalAt_smul_of_summable (hs i hi), evalAt_rescale, evalAt_exp, smul_eq_mul,
+    smul_eq_mul, mul_comm (x i)]
 
 /-- If each rescaled exponential series `exp(xᵢX)` converges at `y`, the `k`th Hasse derivative
 of `∑ᵢ aᵢ exp(xᵢX)` vanishes at `y` exactly when `∑ᵢ aᵢ xᵢ ^ k exp(y xᵢ)` does. -/
