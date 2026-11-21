@@ -124,7 +124,10 @@ theorem isTheta_ordinaryHypergeometricCoefficient {a b c : ℂ} (ha : ∀ k : �
   filter_upwards [eventually_gt_atTop 0] with n hn
   exact norm_natCast_cpow_of_pos hn _
 
-/-- The ratio `cₛ₊₁ / cₛ − 1` of consecutive Gauss coefficients is `O(1 / s)`. -/
+/-- The recurrence multiplier `r(s) = (a + s)(b + s) / ((s + 1)(c + s))` of the Gauss coefficients,
+`cₛ₊₁ = r(s) cₛ` (`TauCeti.ordinaryHypergeometricCoefficient_add_one`), satisfies
+`r(s) − 1 = O(1 / s)`, for all complex parameters. It is the ratio `cₛ₊₁ / cₛ` only where
+`cₛ ≠ 0`; for a terminating series the coefficients vanish from some index on. -/
 private theorem isBigO_coefficientRatio_sub_one (a b c : ℂ) :
     (fun n : ℕ => (a + n) * (b + n) / ((n + 1) * (c + n)) - 1) =O[atTop]
       fun n : ℕ => (n : ℝ) ^ (-1 : ℝ) := by
