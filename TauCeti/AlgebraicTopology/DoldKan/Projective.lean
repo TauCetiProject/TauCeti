@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.DoldKan.DoldPuppe
+import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Projectivity across Dold–Kan and weak equivalences under non-additive functors
@@ -68,11 +69,7 @@ instance Γ₀.projective_obj {C : Type u} [Category.{v} C] [Preadditive C] [Has
     Projective ((Γ₀.obj K).obj Δ) := by
   have : ∀ A : SimplicialObject.Splitting.IndexSet Δ, Projective (Γ₀.Obj.summand K Δ A) :=
     fun A ↦ inferInstanceAs (Projective (K.X A.1.unop.len))
-  let p : Projective (∐ fun A : SimplicialObject.Splitting.IndexSet Δ ↦ Γ₀.Obj.summand K Δ A) :=
-    { factors f e _ :=
-        ⟨Sigma.desc fun A ↦ Projective.factorThru (Sigma.ι _ A ≫ f) e,
-          Sigma.hom_ext _ _ fun A ↦ by simp⟩ }
-  exact p
+  exact Projective.of_isColimit_cofan (coproductIsCoproduct _)
 
 end AlgebraicTopology.DoldKan
 
