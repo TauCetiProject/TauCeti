@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
@@ -496,8 +497,8 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V)
   rw [abs_det_mul_fderiv_truncation_wedge_endChart hT hζ, hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 
 /-- On the end `q`, the integral over one period of `H_q(t, u_q) + ½ ω(u_q, ∂_t u_q)` is the
@@ -597,7 +598,7 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
     ring
   have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
     have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_neg (by linarith : q.endSign * s - T < 0), zero_mul]
+    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
   rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
   have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
       {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
@@ -720,7 +721,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul (ω : Symplectic
       (𝓝 (∑ q, q.endSign * A q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
+      (by simpa only [Puncture.inv_endSign] using hA q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm ω hK hKH hH hHc hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)
@@ -944,12 +945,12 @@ open Floer
 open scoped _root_.Manifold
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
   {K : ℂ → M → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → M → ℝ} {u : ℝ × ℝ → M} {T₀ : ℝ}
 
 section Parts
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- The components of a datum which is `C¹` on `S × M`, read in real coordinates, are `C¹`
 jointly in the domain point of `S` and the target point. -/
 private theorem contMDiffOn_perturbation
@@ -966,7 +967,7 @@ private theorem contMDiffOn_perturbation
   exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
     contMDiffAt_const).contMDiffWithinAt
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- A datum which is `C¹` on `S × M`, evaluated along a map which is `C¹` on `S`, is `C¹` on
 `S`. -/
 private theorem contDiffOn_perturbation_comp
@@ -1015,7 +1016,7 @@ private noncomputable def boundaryForm (K : ℂ → M → ℂ →L[ℝ] ℝ) (u 
     fderiv ℝ (SymplecticForm.truncation T) z stdComplexLineImag *
       K (Complex.equivRealProdCLM.symm z) (u z) 1
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 private theorem integrable_boundaryForm
     (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
@@ -1026,7 +1027,7 @@ private theorem integrable_boundaryForm
     (SymplecticForm.integrable_fderiv_truncation_mul T _
       (contDiffOn_perturbation_comp hK hu 1).continuousOn)
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- The exterior derivative of `K(u)`, weighted by the cutoff at height `T`, integrates to minus
 the integral of `dχ ∧ K(u)`. -/
 private theorem integral_truncation_mul_exteriorDeriv_eq
@@ -1145,8 +1146,8 @@ private theorem abs_det_mul_boundaryForm_endChart
   rw [← hα]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ T₀`, so `K = H_q dt` there.
   by_cases hs : T₀ ≤ q.endSign * ζ.1
-  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le hKH hH hs]
-  · rw [smoothTransition.deriv_of_neg (by linarith)]
+  · rw [perturbationPullback_endChart_stdComplexLineImag_of_le (hKH q) (hH q) hs]
+  · rw [smoothTransition.deriv_of_nonpos (by linarith)]
     ring
 
 omit [TopologicalSpace M] in
@@ -1158,12 +1159,10 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
   have hper : Periodic (fun t ↦ H q t (u (endChart q (s, t)))) 1 := fun t ↦ by
     simp only [endChart_add_one, hH q t]
-  have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-  rw [zero_add, show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num,
-    intervalIntegral.integral_of_le (by norm_num)] at h
-  rw [integral_Ico_eq_integral_Ioc, h]
+  rw [integral_Ico_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
+    hper.intervalIntegral_neg_div_two_eq]
 
-omit [IsManifold I ⊤ M] in
+omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- **The boundary term on one end, for a manifold target.** For `T ≥ 2` with `K = H_q dt` beyond
 height `T₀ ≤ T`, the integral of `dχ ∧ K(u)` over the end `q` is `-±∫ β'(±s - T) h_q(s) ds`,
 where `h_q(s) = ∫₀¹ H_q(t, u(φ_q(s, t))) dt`; the weighted integrals `h_q` are integrable. -/
@@ -1208,7 +1207,7 @@ private theorem integral_image_endChart_boundaryForm
     ring
   have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
     have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_neg (by linarith : q.endSign * s - T < 0), zero_mul]
+    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
   rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
   have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
       {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
@@ -1270,7 +1269,7 @@ section Limit
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
-omit [IsManifold I ⊤ M] [FiniteDimensional ℝ E] in
+omit [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] in
 /-- As the height tends to infinity, the integrals of the end Hamiltonians averaged against
 `β'(±s - T)` tend to their limits along the ends. -/
 private theorem tendsto_sum_integral_deriv_smoothTransition_mul
@@ -1286,7 +1285,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) atTop (𝓝 (∑ q, q.endSign * h q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have hlim := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hh q)
+      (by simpa only [Puncture.inv_endSign] using hh q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm hK hKH hH hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)

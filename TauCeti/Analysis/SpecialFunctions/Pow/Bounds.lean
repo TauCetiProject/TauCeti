@@ -15,7 +15,10 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # Elementary bounds on real powers
 
 If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
-powers of a level confined to an interval bounded away from zero.
+powers of a level confined to an interval bounded away from zero. Likewise, for `0 < u` and any
+exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates `u ^ (Re s - 1)` for all
+`u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`; and
+for `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t` raises the exponent on `(a, ∞)`.
 
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
@@ -33,9 +36,11 @@ For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r �
 how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
 
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
-`v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. This is
-Bernoulli's inequality made homogeneous, and it is the first-order optimality test for weighted
-sums of powers.
+`v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. Conversely,
+for `0 ≤ p ≤ 1`, `u ≥ 0`, and `v > 0`, concavity reverses the inequality:
+`u ^ p ≤ v ^ p + p * v ^ (p - 1) * (u - v)`. These are the convex and concave forms of
+Bernoulli's inequality made homogeneous, giving first-order optimality tests and secant-tangent
+comparisons for real powers.
 
 For `t ∈ [0, 1]` and any exponent `r`, the sum `(1 - t) ^ r + t ^ r` is positive, so it can be
 used as the normalizing denominator of a pair of weights.
@@ -91,15 +96,32 @@ If `u : ℝ → F` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ �
 `a > 0` and `b < a / 2`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
 function that does not need a derivative.
 
+For nonpositive exponents `α ≤ 0`, `t ↦ t ^ α` is antitone on `(0, ∞)`, so unit-step differences
+of the antiderivative `t ↦ t ^ (α + 1) / (α + 1)` bracket `x ^ α`:
+`((x + 1) ^ (α + 1) - x ^ (α + 1)) / (α + 1) ≤ x ^ α` for every `0 < x` and `α ≤ 0`, and
+`x ^ α ≤ (x ^ (α + 1) - (x - 1) ^ (α + 1)) / (α + 1)` for `1 ≤ x` and `-1 < α ≤ 0` (including the
+endpoint `x = 1` where `(x - 1) ^ (α + 1) = 0`). Telescoping these bounds controls discrete power
+sums `∑ j ^ α` in the sublinear regime `-1 < α ≤ 0`.
+
+For every real exponent `β` and `0 ≤ t ≤ x`, `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β`, bounding a
+power of either sign uniformly across `[x, 2 * x]` as needed for derivative remainder bounds on
+dyadic intervals.
+
 ## Main results
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
+* `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
+  `p ∈ Set.Icc p₁ p₂`.
+* `Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le`: `u ^ s ≤ a ^ (s - t) * u ^ t` for `0 < a ≤ u`
+  and `s ≤ t`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
-* `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
-  `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`: the tangent-line inequalities for `u ↦ u ^ p`.
+* `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow`,
+  `Real.rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow`, and
+  `Real.rpow_le_rpow_add_mul_rpow_sub_one_mul_sub`: convex and concave tangent-line inequalities
+  for `u ↦ u ^ p`.
 * `Real.one_sub_rpow_add_rpow_pos`: `0 < (1 - t) ^ r + t ^ r` for `t ∈ [0, 1]`.
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
@@ -118,21 +140,35 @@ function that does not need a derivative.
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
   for `1 < q`, `0 < δ ≤ 1` and `0 ≤ r ≤ 1`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: the uniform strict power mean inequality.
+* `Real.rpow_le_rpow_sub_sub_one_rpow_div` and `Real.add_one_rpow_sub_rpow_div_le_rpow`: unit
+  backward- and forward-difference bounds on `t ↦ t ^ (α + 1) / (α + 1)` comparing with `x ^ α`
+  for `α ≤ 0`.
+* `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
+  and every real `β`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
-* `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one`:
-  `(1 + ‖x‖) ^ p ≤ 2 ^ (-p) (1 + ‖y‖) ^ p` for `p ≤ 0` and `‖y - x‖ ≤ 1`.
+* `TauCeti.one_add_norm_add_rpow_le_mul`: `(1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p`
+  for any `p : ℝ`.
+* `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one` and
+  `TauCeti.one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one`:
+  `(1 + ‖x‖) ^ p ≤ 2 ^ |p| (1 + ‖y‖) ^ p` when `x` and `y` are at distance at most `1`.
 * `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
   for `1 ≤ ‖ξ‖`.
 * `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
   `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
+* `TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le`: on a ball, every constant is at most
+  a multiple of `(1 + ‖ξ‖ ^ 2) ^ (r / 2)`.
 * `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
   `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
   `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
   `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
 * `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
   `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
+* `TauCeti.rpow_mul_rpow_le_max`, `Prod.norm_fst_rpow_mul_norm_snd_rpow_le`, and
+  `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
+  product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
+  of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
 -/
 
 public section
@@ -149,6 +185,21 @@ theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻�
   · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
          _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
          _ = R ^ |a| := by rw [abs_of_neg ha]
+
+/-- For `0 < u` and `p ∈ Set.Icc p₁ p₂`, `u ^ p ≤ u ^ p₁ + u ^ p₂`. -/
+theorem rpow_le_rpow_add_rpow_of_mem_Icc {u p p₁ p₂ : ℝ} (hu : 0 < u) (hp : p ∈ Set.Icc p₁ p₂) :
+    u ^ p ≤ u ^ p₁ + u ^ p₂ := by
+  rcases le_total u 1 with hu1 | hu1
+  · exact le_add_of_le_of_nonneg (rpow_le_rpow_of_exponent_ge hu hu1 hp.1) (by positivity)
+  · exact le_add_of_nonneg_of_le (by positivity) (rpow_le_rpow_of_exponent_le hu1 hp.2)
+
+/-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
+theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
+    (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
+  calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
+    _ ≤ a ^ (s - t) * u ^ t :=
+      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
+        (rpow_nonneg (ha.le.trans hau) t)
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -224,6 +275,23 @@ theorem rpow_add_mul_rpow_sub_one_mul_sub_le_rpow {p u v : ℝ} (hp : 1 ≤ p) (
   rcases eq_or_ne u v with rfl | huv
   · simp
   exact (rpow_add_mul_rpow_sub_one_mul_sub_lt_rpow hp hu hv huv).le
+
+/-- **The concave tangent-line inequality for real powers.** For `0 ≤ p ≤ 1`, `0 ≤ u`, and `0 < v`,
+`u ↦ u ^ p` lies below its tangent line at `v`. This is Bernoulli's inequality
+`rpow_one_add_le_one_add_mul_self` made homogeneous. -/
+theorem rpow_le_rpow_add_mul_rpow_sub_one_mul_sub {p u v : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1)
+    (hu : 0 ≤ u) (hv : 0 < v) : u ^ p ≤ v ^ p + p * v ^ (p - 1) * (u - v) := by
+  have hs : -1 ≤ (u - v) / v := by
+    rw [le_div_iff₀ hv]
+    linarith
+  have h := rpow_one_add_le_one_add_mul_self hs hp₀ hp₁
+  have hu_div : 1 + (u - v) / v = u / v := by
+    field_simp
+    ring
+  rw [hu_div, div_rpow hu hv.le, div_le_iff₀ (rpow_pos_of_pos hv p)] at h
+  rw [rpow_sub_one hv.ne']
+  calc u ^ p ≤ (1 + p * ((u - v) / v)) * v ^ p := h
+    _ = v ^ p + p * (v ^ p / v) * (u - v) := by field_simp
 
 /-- For `t ∈ [0, 1]` and any exponent `r`, `(1 - t) ^ r + t ^ r` is positive: at least one of the
 two bases is positive. -/
@@ -470,6 +538,66 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
         rw [hr_def, div_rpow ht hs.le]
         field_simp
 
+/-- For `-1 < α ≤ 0` and `1 ≤ x`, `x ^ α` is bounded above by the unit backward difference of
+`t ↦ t ^ (α + 1) / (α + 1)` (at `x = 1`, `(x - 1) ^ (α + 1) = 0` requires `-1 < α`). -/
+theorem rpow_le_rpow_sub_sub_one_rpow_div {α : ℝ} (hα : -1 < α) (hα₀ : α ≤ 0) {x : ℝ}
+    (hx : 1 ≤ x) :
+    x ^ α ≤ (x ^ (α + 1) - (x - 1) ^ (α + 1)) / (α + 1) := by
+  have hα₁ : 0 < α + 1 := by linarith
+  have h := rpow_le_rpow_add_mul_rpow_sub_one_mul_sub (p := α + 1) (u := x - 1) (v := x)
+    hα₁.le (by linarith) (by linarith) (by linarith)
+  have hsub : x - 1 - x = -1 := by ring
+  rw [add_sub_cancel_right, hsub, mul_neg_one] at h
+  rw [le_div_iff₀ hα₁]
+  linarith
+
+/-- For `α ≤ 0` and `0 < x`, `x ^ α` is bounded below by the unit forward difference of
+`t ↦ t ^ (α + 1) / (α + 1)`. -/
+theorem add_one_rpow_sub_rpow_div_le_rpow {α : ℝ} (hα₀ : α ≤ 0) {x : ℝ} (hx : 0 < x) :
+    ((x + 1) ^ (α + 1) - x ^ (α + 1)) / (α + 1) ≤ x ^ α := by
+  rcases lt_trichotomy (α + 1) 0 with hlt | heq | hgt
+  · have hprod : x ^ (α + 1) * (1 + x⁻¹) ^ (α + 1) = (x + 1) ^ (α + 1) := by
+      rw [← mul_rpow hx.le (by positivity), mul_add, mul_one, mul_inv_cancel₀ hx.ne']
+    have hrhs : x ^ (α + 1) * (1 + (α + 1) * x⁻¹) = x ^ (α + 1) + (α + 1) * x ^ α := by
+      rw [rpow_add_one hx.ne']
+      field_simp
+    have hlog : log (1 + x⁻¹) ≤ x⁻¹ := by
+      linarith [log_le_sub_one_of_pos (by positivity : 0 < 1 + x⁻¹)]
+    have hbern : 1 + (α + 1) * x⁻¹ ≤ (1 + x⁻¹) ^ (α + 1) := by
+      rw [rpow_def_of_pos (by positivity)]
+      linarith [(add_one_le_exp (x⁻¹ * (α + 1))).trans
+        (exp_le_exp.mpr (mul_le_mul_of_nonpos_right hlog hlt.le))]
+    have hmul := mul_le_mul_of_nonneg_left hbern (rpow_nonneg hx.le (α + 1))
+    rw [hprod, hrhs] at hmul
+    rw [div_le_iff_of_neg hlt]
+    linarith
+  · rw [heq, div_zero]
+    positivity
+  · have h := rpow_le_rpow_add_mul_rpow_sub_one_mul_sub (p := α + 1) (u := x + 1) (v := x)
+      hgt.le (by linarith) (by positivity) hx
+    rw [add_sub_cancel_right, add_sub_cancel_left, mul_one] at h
+    rw [div_le_iff₀ hgt]
+    linarith
+
+/-- On `[x, 2 * x]`, a real power `(x + t) ^ β` of either sign is bounded above by
+`max 1 (2 ^ β) * x ^ β` whenever `0 ≤ t ≤ x` (including at `x = t = 0`). -/
+theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (ht₀ : 0 ≤ t) (htx : t ≤ x) :
+    (x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β := by
+  rcases (ht₀.trans htx).eq_or_lt with rfl | hx
+  · obtain rfl : t = 0 := le_antisymm htx ht₀
+    rw [add_zero]
+    exact le_mul_of_one_le_left (rpow_nonneg le_rfl β) (le_max_left 1 (2 ^ β))
+  · have hxt : 0 < x + t := by linarith
+    rcases le_total 0 β with hβ | hβ
+    · calc (x + t) ^ β ≤ (2 * x) ^ β := rpow_le_rpow hxt.le (by linarith) hβ
+        _ = 2 ^ β * x ^ β := mul_rpow zero_le_two hx.le
+        _ ≤ max 1 (2 ^ β) * x ^ β :=
+          mul_le_mul_of_nonneg_right (le_max_right _ _) (rpow_nonneg hx.le β)
+    · calc (x + t) ^ β ≤ x ^ β := rpow_le_rpow_of_nonpos hx (by linarith) hβ
+        _ = 1 * x ^ β := (one_mul _).symm
+        _ ≤ max 1 (2 ^ β) * x ^ β :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (rpow_nonneg hx.le β)
+
 end Real
 
 namespace TauCeti
@@ -501,6 +629,24 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
 
+/-- Multiplicative shift bound (Peetre's inequality) for the weight `1 + ‖x‖`: for every real
+exponent `p`, `(1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p`. -/
+theorem one_add_norm_add_rpow_le_mul {E : Type*} [SeminormedAddGroup E] (p : ℝ) (x y : E) :
+    (1 + ‖x + y‖) ^ p ≤ (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+  rcases le_total 0 p with hp | hp
+  · calc (1 + ‖x + y‖) ^ p ≤ ((1 + ‖x‖) * (1 + ‖y‖)) ^ p :=
+            Real.rpow_le_rpow (by positivity) (one_add_norm_add_le x y) hp
+      _ = (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+            rw [Real.mul_rpow (by positivity) (by positivity), abs_of_nonneg hp]
+  · have h1 : (1 + ‖y‖) * (1 + ‖x‖)⁻¹ ≤ 1 + ‖x + y‖ := by
+      rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+      simpa only [neg_add_cancel_left, norm_neg, mul_comm] using one_add_norm_add_le (-x) (x + y)
+    calc (1 + ‖x + y‖) ^ p ≤ ((1 + ‖y‖) * (1 + ‖x‖)⁻¹) ^ p :=
+            Real.rpow_le_rpow_of_nonpos (by positivity) h1 hp
+      _ = (1 + ‖x‖) ^ |p| * (1 + ‖y‖) ^ p := by
+            rw [Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow (by positivity),
+              ← Real.rpow_neg (by positivity), abs_of_nonpos hp, mul_comm]
+
 /-- For a nonpositive exponent `p` and points at distance at most `1`, the weight
 `(1 + ‖x‖) ^ p` is bounded by `2 ^ (-p)` times its value at `y`. -/
 theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [SeminormedAddGroup E]
@@ -515,6 +661,17 @@ theorem one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one {E : Type*} [Semino
     _ = (2 : ℝ) ^ (-p) * (1 + ‖y‖) ^ p := by
       rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
       ring
+
+/-- For any real exponent `p` and points at distance at most `1`, the weight `(1 + ‖x‖) ^ p` is
+bounded by `2 ^ |p|` times its value at `y`. -/
+theorem one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one {E : Type*}
+    [SeminormedAddGroup E] (p : ℝ) {x y : E} (h : ‖x - y‖ ≤ 1) :
+    (1 + ‖x‖) ^ p ≤ (2 : ℝ) ^ |p| * (1 + ‖y‖) ^ p := by
+  calc (1 + ‖x‖) ^ p = (1 + ‖(x - y) + y‖) ^ p := by rw [sub_add_cancel]
+    _ ≤ (1 + ‖x - y‖) ^ |p| * (1 + ‖y‖) ^ p := one_add_norm_add_rpow_le_mul p (x - y) y
+    _ ≤ (2 : ℝ) ^ |p| * (1 + ‖y‖) ^ p := by
+        gcongr
+        linarith
 
 /-- Away from the origin, a power `‖ξ‖ ^ r` is bounded by a multiple of the Japanese bracket
 power: for `1 ≤ ‖ξ‖`, `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
@@ -572,6 +729,15 @@ theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedA
       (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
   · rw [abs_of_neg hr, neg_neg]
     exact Real.rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
+
+/-- On a ball, every constant is at most a multiple of each power of the Japanese bracket: for
+`‖ξ‖ ≤ R`, `M ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem exists_le_mul_one_add_norm_sq_rpow_of_norm_le {E : Type*} [SeminormedAddGroup E]
+    (M R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ : E, ‖ξ‖ ≤ R → M ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  refine ⟨max M 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun ξ hξ ↦ ?_⟩
+  calc M ≤ max M 0 := le_max_left _ _
+    _ = max M 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ _ := by gcongr; exact one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r
 
 open Real in
 /-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
@@ -644,4 +810,37 @@ theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup
     _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
     _ = 3 * c * (t - t') ^ β := by ring
 
+/-- For `0 ≤ a`, `0 ≤ b`, and `x ∈ [0, 1]`, the geometric interpolant `a ^ (1 - x) * b ^ x` is at
+most `max a b`. -/
+theorem rpow_mul_rpow_le_max {a b x : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    a ^ (1 - x) * b ^ x ≤ max a b := by
+  calc a ^ (1 - x) * b ^ x
+      ≤ max a b ^ (1 - x) * max a b ^ x :=
+        mul_le_mul (Real.rpow_le_rpow ha (le_max_left a b) (sub_nonneg.2 hx.2))
+          (Real.rpow_le_rpow hb (le_max_right a b) hx.1)
+          (Real.rpow_nonneg hb _) (Real.rpow_nonneg (ha.trans (le_max_left a b)) _)
+    _ = max a b := by
+        rw [← Real.rpow_add' (ha.trans (le_max_left a b)) (by simp), sub_add_cancel, Real.rpow_one]
+
+/-- Continuity from the right of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` at `ε = 0` for
+`θ ∈ [0, 1]`, used to pass Riesz–Thorin bounds from positive endpoint constants to nonnegative
+ones. -/
+theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hle : ∀ ε > 0, A ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C) :
+    A ≤ M₀ ^ (1 - θ) * M₁ ^ θ * C := by
+  have hcont : Continuous fun ε : ℝ ↦ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C :=
+    (((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr (sub_nonneg.2 hθ.2)).mul
+      ((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr hθ.1)).mul continuous_const
+  have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
+  simp only [add_zero] at hlim
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
 end TauCeti
+
+/-- For `p` in a product of seminormed groups and `x ∈ [0, 1]`,
+`‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`. -/
+theorem Prod.norm_fst_rpow_mul_norm_snd_rpow_le {E F : Type*} [SeminormedAddGroup E]
+    [SeminormedAddGroup F] (p : E × F) {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    ‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖ := by
+  rw [Prod.norm_def]
+  exact TauCeti.rpow_mul_rpow_le_max (norm_nonneg p.1) (norm_nonneg p.2) hx

@@ -8,16 +8,24 @@ module
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Operator.Completeness
 
 /-!
 # Extending bounded-operator convergence from dense subsets
 
-This file records two standard density arguments for uniformly bounded families of continuous
+This file records standard density arguments for uniformly bounded families of continuous
 semilinear maps between seminormed spaces. Pointwise convergence on a dense subset extends to
-pointwise convergence everywhere, and uniform Cauchy convergence on a parameter set does likewise.
-Both rest on the same estimate
-`ContinuousLinearMap.norm_sub_apply_le_of_norm_le`, which moves the point at which a
-difference of two bounded operators is evaluated to a nearby point of the dense subset.
+pointwise convergence everywhere (`ContinuousLinearMap.tendsto_apply_of_dense`) and hence transfers
+pointwise continuity from a dense subset or dense span
+(`ContinuousLinearMap.continuous_apply_of_dense`,
+`ContinuousLinearMap.continuous_apply_of_dense_span`). Uniform Cauchy convergence on a parameter
+set likewise extends from a dense subset (`ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense`),
+so an eventually bounded family into a complete normed space that converges on a dense subset or
+dense span converges strongly everywhere to a continuous semilinear map
+(`ContinuousLinearMap.exists_tendsto_apply_of_dense`,
+`ContinuousLinearMap.exists_tendsto_apply_of_dense_span`). These rest on the estimate
+`ContinuousLinearMap.norm_sub_apply_le_of_norm_le`, which moves the point at which a difference of
+two bounded operators is evaluated to a nearby point of the dense subset.
 
 For series, the same kind of estimate shows that if the finite partial sums `∑ i ∈ s, T i` of a
 family of operators into a complete space are uniformly bounded, then the vectors `x` for which
@@ -29,6 +37,7 @@ public section
 namespace ContinuousLinearMap
 
 open Filter
+open scoped Topology Uniformity
 
 variable {𝕜 𝕜₂ X Y : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
 variable {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂]
@@ -101,5 +110,67 @@ theorem isClosed_setOf_summable_apply [CompleteSpace Y] {ι : Type*} {T : ι →
     gcongr
     linarith [hT t, le_abs_self A]
   linarith [hs t ht, le_opNorm (∑ i ∈ t, T i) (x - y)]
+
+/-- A uniformly bounded family of continuous semilinear maps that is continuous at every vector in a
+dense subset is continuous at every vector. -/
+theorem continuous_apply_of_dense {Z : Type*} [TopologicalSpace Z] {D : Set X}
+    (hD : Dense D) {f : Z → X →SL[σ₁₂] Y} {C : ℝ} (hbound : ∀ z, ‖f z‖ ≤ C)
+    (hcont : ∀ x ∈ D, Continuous fun z => f z x) (x : X) : Continuous fun z => f z x :=
+  continuous_iff_continuousAt.2 fun _ =>
+    tendsto_apply_of_dense hD (.of_forall hbound) (fun y hy => (hcont y hy).continuousAt) x
+
+/-- A uniformly bounded family of continuous semilinear maps that is continuous at every vector of a
+set with dense `𝕜`-span is continuous at every vector. -/
+theorem continuous_apply_of_dense_span {Z : Type*} [TopologicalSpace Z] {D : Set X}
+    (hD : Dense (Submodule.span 𝕜 D : Set X)) {f : Z → X →SL[σ₁₂] Y} {C : ℝ}
+    (hbound : ∀ z, ‖f z‖ ≤ C) (hcont : ∀ x ∈ D, Continuous fun z => f z x) (x : X) :
+    Continuous fun z => f z x := by
+  refine continuous_apply_of_dense hD hbound (fun y hy => ?_) x
+  induction hy using Submodule.span_induction with
+  | mem y hy => exact hcont y hy
+  | zero => exact continuous_const.congr fun _ => (map_zero _).symm
+  | add _ _ _ _ hu hv => exact (hu.add hv).congr fun _ => (map_add _ _ _).symm
+  | smul c _ _ hu => exact (hu.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm
+
+/-- An eventually uniformly bounded family of continuous semilinear maps into a complete normed
+space that converges pointwise on a dense subset converges pointwise everywhere to a continuous
+semilinear map. -/
+theorem exists_tendsto_apply_of_dense {Y' : Type*} [NormedAddCommGroup Y'] [NormedSpace 𝕜₂ Y']
+    [CompleteSpace Y'] {ι : Type*} {l : Filter ι} [l.NeBot] {D : Set X} (hD : Dense D)
+    {f : ι → X →SL[σ₁₂] Y'} {C : ℝ} (hbound : ∀ᶠ i in l, ‖f i‖ ≤ C)
+    (htendsto : ∀ x ∈ D, ∃ y, Tendsto (fun i => f i x) l (𝓝 y)) :
+    ∃ g : X →SL[σ₁₂] Y', ∀ x, Tendsto (fun i => f i x) l (𝓝 (g x)) := by
+  have hcauchy (x : X) : Cauchy (map (fun i => f i x) l) :=
+    cauchy_map_iff.2 ⟨‹_›, fun u hu => (uniformCauchySeqOn_apply_of_dense hD
+      (f := fun i (_ : Unit) => f i) (s := Set.univ) (hbound.mono fun _ hi _ _ => hi)
+      (fun y hy _ hv => let ⟨_, hw⟩ := htendsto y hy
+        Filter.Eventually.mono ((cauchy_map_iff.1 hw.cauchy_map).2 hv) fun _ hm _ _ => hm)
+      x u hu).mono fun _ hm => hm () trivial⟩
+  let g : X → Y' := fun x => limUnder l fun i => f i x
+  have hg (x : X) : Tendsto (fun i => f i x) l (𝓝 (g x)) :=
+    tendsto_nhds_limUnder (cauchy_map_iff_exists_tendsto.1 (hcauchy x))
+  have hmem : g ∈ closure (((↑) : (X →SL[σ₁₂] Y') → X → Y') '' Metric.closedBall 0 C) :=
+    mem_closure_of_tendsto (tendsto_pi_nhds.2 hg) <| hbound.mono fun i hi =>
+      ⟨f i, mem_closedBall_zero_iff.2 hi, rfl⟩
+  exact ⟨ofMemClosureImageCoeBounded g Metric.isBounded_closedBall hmem,
+    fun x => by simpa [ofMemClosureImageCoeBounded_apply] using hg x⟩
+
+/-- An eventually uniformly bounded family of continuous semilinear maps into a complete normed
+space that converges pointwise on a set with dense `𝕜`-span converges pointwise everywhere to a
+continuous semilinear map. -/
+theorem exists_tendsto_apply_of_dense_span {Y' : Type*} [NormedAddCommGroup Y']
+    [NormedSpace 𝕜₂ Y'] [CompleteSpace Y'] {ι : Type*} {l : Filter ι} [l.NeBot] {D : Set X}
+    (hD : Dense (Submodule.span 𝕜 D : Set X)) {f : ι → X →SL[σ₁₂] Y'} {C : ℝ}
+    (hbound : ∀ᶠ i in l, ‖f i‖ ≤ C)
+    (htendsto : ∀ x ∈ D, ∃ y, Tendsto (fun i => f i x) l (𝓝 y)) :
+    ∃ g : X →SL[σ₁₂] Y', ∀ x, Tendsto (fun i => f i x) l (𝓝 (g x)) := by
+  refine exists_tendsto_apply_of_dense hD hbound fun y hy => ?_
+  induction hy using Submodule.span_induction with
+  | mem y hy => exact htendsto y hy
+  | zero => exact ⟨0, by simp⟩
+  | add _ _ _ _ hu hv =>
+    exact ⟨_, (hu.choose_spec.add hv.choose_spec).congr fun _ => (map_add _ _ _).symm⟩
+  | smul c _ _ hu =>
+    exact ⟨_, (hu.choose_spec.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm⟩
 
 end ContinuousLinearMap

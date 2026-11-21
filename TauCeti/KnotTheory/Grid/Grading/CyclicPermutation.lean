@@ -153,7 +153,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n)
 @[simp]
 theorem alexanderℤ_relabelRows_finRotate (x : GridState n) :
     (G.relabelRows (finRotate n)).alexanderℤ (x.relabelRows (finRotate n)) = G.alexanderℤ x := by
-  have h := G.1.alexander_relabelRows_finRotate x
+  have h := G.val.alexander_relabelRows_finRotate x
   rw [← val_relabelRows, alexander_eq_intCast, alexander_eq_intCast] at h
   exact_mod_cast h
 
@@ -162,7 +162,7 @@ theorem alexanderℤ_relabelRows_finRotate (x : GridState n) :
 theorem alexanderℤ_relabelColumns_finRotate (x : GridState n) :
     (G.relabelColumns (finRotate n)).alexanderℤ (x.relabelColumns (finRotate n)) =
       G.alexanderℤ x := by
-  have h := G.1.alexander_relabelColumns_finRotate x
+  have h := G.val.alexander_relabelColumns_finRotate x
   rw [← val_relabelColumns, alexander_eq_intCast, alexander_eq_intCast] at h
   exact_mod_cast h
 
@@ -171,7 +171,7 @@ rows. -/
 @[simp]
 theorem bidegree_relabelRows_finRotate (x : GridState n) :
     (G.relabelRows (finRotate n)).bidegree (x.relabelRows (finRotate n)) = G.bidegree x := by
-  have h := G.1.maslovO_relabelRows_finRotate x
+  have h := G.val.maslovO_relabelRows_finRotate x
   rw [← val_relabelRows, GridDiagram.maslovO_eq_intCast, GridDiagram.maslovO_eq_intCast] at h
   refine Prod.ext ?_ ?_
   · rw [bidegree_fst, bidegree_fst]
@@ -184,7 +184,7 @@ columns. -/
 theorem bidegree_relabelColumns_finRotate (x : GridState n) :
     (G.relabelColumns (finRotate n)).bidegree (x.relabelColumns (finRotate n)) =
       G.bidegree x := by
-  have h := G.1.maslovO_relabelColumns_finRotate x
+  have h := G.val.maslovO_relabelColumns_finRotate x
   rw [← val_relabelColumns, GridDiagram.maslovO_eq_intCast,
     GridDiagram.maslovO_eq_intCast] at h
   refine Prod.ext ?_ ?_
