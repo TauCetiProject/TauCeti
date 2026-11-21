@@ -128,7 +128,7 @@ theorem not_injective_universalGSpaceToStandard_zero [Nontrivial k] [Nonempty G]
     simp [c₀, c₁]
   have heq : single c₀ (1 : k) = single c₁ (1 : k) := hinj <| by
     rw [universalGSpaceToStandard_single, universalGSpaceToStandard_single, hlabels]
-  have hv := congrArg (fun c ↦ (c.vertexEmbedding 0).1)
+  have hv := congrArg (fun c ↦ (c.vertexEmbedding 0).fst)
     (Finsupp.single_left_injective (one_ne_zero : (1 : k) ≠ 0) heq)
   simp [c₀, c₁] at hv
 

@@ -128,7 +128,7 @@ section of the projective model corresponding to `P` under `projModelPointsEquiv
 @[simp]
 theorem toEllipticCurveGeomPointsMulEquiv_symm_apply_left (P : Multiplicative W.toAffine.Point) :
     (W.toEllipticCurveGeomPointsMulEquiv.symm P).left =
-      (W.projModelPointsEquiv.symm P.toAdd).1 ≫ (toEllipticCurveGeomIso W).inv := by
+      (W.projModelPointsEquiv.symm P.toAdd).val ≫ (toEllipticCurveGeomIso W).inv := by
   -- the inverse of `Hom.mulEquivCongrRight` is composition with
   -- `(toEllipticCurveGeomOverIso W).inv`; its `simps` lemma is stated on the carrier of a `MonCat`
   -- object, so it does not rewrite a morphism
@@ -216,7 +216,7 @@ noncomputable def toEllipticCurveGeomTorsionPointsMulEquiv [DecidableEq K] (n : 
   toFun y := .ofAdd ⟨(W.toEllipticCurveGeomPointsMulEquiv
     (y ≫ (toEllipticCurveGeom W).torsionι n)).toAdd, (W.comp_mulBy_eq_one_iff _ n).1 (by simp)⟩
   invFun P := EllipticCurveGeom.torsionLift
-    (W.toEllipticCurveGeomPointsMulEquiv.symm (.ofAdd P.toAdd.1))
+    (W.toEllipticCurveGeomPointsMulEquiv.symm (.ofAdd P.toAdd.val))
     ((W.comp_mulBy_eq_one_iff _ n).2 (by simp))
   left_inv y := EllipticCurveGeom.torsion_hom_ext <|
     (EllipticCurveGeom.torsionLift_torsionι _ _).trans <| by
@@ -290,9 +290,9 @@ theorem finite_comp_mulBy_eq_one {n : ℤ} (hn : n ≠ 0) :
   -- composing with `e⁻¹` sends the points of `E` killed by `[n]` injectively to those of `W`
   refine .of_injective (β := {x : 𝟙_ (Over (Spec (.of K))) ⟶
     Over.mk W.toEllipticCurveGeom.structureMap // x ≫ W.toEllipticCurveGeom.mulBy n = 1})
-    (fun x ↦ ⟨x.1 ≫ e', ?_⟩) fun x y hxy ↦ ?_
+    (fun x ↦ ⟨x.val ≫ e', ?_⟩) fun x y hxy ↦ ?_
   · ext1
-    have hx := congrArg CommaMorphism.left x.2
+    have hx := congrArg CommaMorphism.left x.property
     simp only [Over.comp_left, hom_one_left] at hx ⊢
     have hmul' : e.inv ≫ (W.toEllipticCurveGeom.mulBy n).left = (E.mulBy n).left ≫ e.inv := by
       rw [Iso.inv_comp_eq, ← reassoc_of% hmul, Iso.hom_inv_id, Category.comp_id]

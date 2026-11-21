@@ -103,7 +103,7 @@ theorem coe_kerInvariantsFunctor_map_hom_apply {A B : Rep.{w} k G} (f : A ⟶ B)
 noncomputable def resKerInvariantsHomEquiv (M : Rep.{w} k Q) (A : Rep.{w} k G) :
     (res π M ⟶ A) ≃ₗ[k] (M ⟶ kerInvariants π hπ A) where
   toFun f := Rep.ofHom ⟨f.hom.toLinearMap.codRestrict _ fun m u => by
-      simpa [π.mem_ker.1 u.2] using (hom_comm_apply f (u : G) m).symm, fun q => by
+      simpa [π.mem_ker.1 u.property] using (hom_comm_apply f (u : G) m).symm, fun q => by
     obtain ⟨g, rfl⟩ := hπ q
     ext m
     refine Eq.trans ?_ (coe_kerInvariants_ρ_apply π hπ A g _).symm
@@ -194,7 +194,7 @@ theorem coe_kerAverage_hom_apply (A : Rep.{w} k G) (a : A) :
 theorem kerAverage_hom_apply_coe (A : Rep.{w} k G)
     (v : Representation.invariants (A.ρ.comp π.ker.subtype)) :
     (kerAverage π hπ A).hom (v : A) = v :=
-  Subtype.ext (Representation.averageMap_id _ _ v.2)
+  Subtype.ext (Representation.averageMap_id _ _ v.property)
 
 /-- A `G`-equivariant map into the inflation of a representation `M` of `Q` is determined by its
 restriction to the `ker π`-invariants, through the averaging projection; this is the hom-set
@@ -214,7 +214,7 @@ noncomputable def kerInvariantsResHomEquiv (A : Rep.{w} k G) (M : Rep.{w} k Q) :
   right_inv f := by
     ext a
     have h (u : π.ker) : f.hom (A.ρ u a) = f.hom a := by
-      simp [hom_comm_apply f (u : G) a, π.mem_ker.1 u.2]
+      simp [hom_comm_apply f (u : G) a, π.mem_ker.1 u.property]
     refine (congrArg f.hom (coe_kerAverage_hom_apply π hπ A a)).trans ?_
     rw [Representation.averageMap_apply]
     simp [h, Finset.card_univ, ← Nat.cast_smul_eq_nsmul k, smul_smul]

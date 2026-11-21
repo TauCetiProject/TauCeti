@@ -44,10 +44,15 @@ alone gives only this weaker statement.
   multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`.
 * `TauCeti.integralCoeffComul`, `TauCeti.integralCoeffMul`: the coefficient maps, the diagonal of
   `ULift ℤ` and the multiplication of `ℤ`.
+* `TauCeti.integralCoeffIso`: the isomorphism `ULift ℤ ≅ ℤ` of chain coefficients, through which
+  the diagonal and the multiplication are the inverse left unitor and the left unitor of `ℤ`
+  (`TauCeti.integralCoeffComul_comp_tensorHom`, `TauCeti.integralCoeffMul_eq_leftUnitor_hom`).
 
 ## Main results
 
 * `TopCat.integralCup_naturality`: `f^* a ⌣ f^* b = f^* (a ⌣ b)`.
+* `TopCat.integralCup_singularCohomologyChainCoefficientMap`: through `TauCeti.integralCoeffIso`,
+  the integral cup product is the cup product with chain coefficients `ℤ` along the left unitor.
 * `TopCat.integralCup_assoc`: `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`.
 * `TopCat.integralCup_gradedComm`: `b ⌣ a = (-1)^(p q) a ⌣ b`.
 * `TopCat.integralCup_integralCohomologyOne`: `1 ⌣ b = b`, and
@@ -131,6 +136,39 @@ theorem integralCoeffMul_assoc :
   -- Both sides are `integralCoeffMul` on pure tensors, that is products (`integralCoeffMul_apply`).
   exact mul_assoc a b c
 
+/-- The isomorphism `ULift ℤ ≅ ℤ` from the integral chain coefficients to the unit object `ℤ` of
+`ModuleCat ℤ`, the chain coefficients of `TopCat.singularCup` along the left unitor. -/
+def integralCoeffIso : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
+  ULift.moduleEquiv.toModuleIso
+
+@[simp]
+theorem integralCoeffIso_hom_apply (n : ModuleCat.of ℤ (ULift.{0} ℤ)) :
+    integralCoeffIso.hom n = n.down :=
+  (rfl)
+
+@[simp]
+theorem integralCoeffIso_inv_apply (n : 𝟙_ (ModuleCat.{0} ℤ)) :
+    integralCoeffIso.inv n = (⟨n⟩ : ULift ℤ) :=
+  (rfl)
+
+/-- Through `integralCoeffIso`, the diagonal `n ↦ n (1 ⊗ 1)` of `ULift ℤ` is the inverse of the left
+unitor of `ℤ`. -/
+theorem integralCoeffComul_comp_tensorHom :
+    integralCoeffComul ≫ (integralCoeffIso.hom ⊗ₘ integralCoeffIso.hom) =
+      integralCoeffIso.hom ≫ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv := by
+  ext n
+  simp only [ConcreteCategory.comp_apply]
+  rw [integralCoeffComul_apply, map_smul, ModuleCat.MonoidalCategory.tensorHom_tmul,
+    ModuleCat.MonoidalCategory.leftUnitor_inv_apply, integralCoeffIso_hom_apply,
+    integralCoeffIso_hom_apply, ← TensorProduct.tmul_smul]
+  simp
+
+/-- The multiplication of the integral cochain values is the left unitor of `ℤ`. -/
+theorem integralCoeffMul_eq_leftUnitor_hom :
+    integralCoeffMul = (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom := by
+  refine ModuleCat.MonoidalCategory.tensor_ext fun a b ↦ ?_
+  exact (ModuleCat.MonoidalCategory.leftUnitor_hom_apply (M := 𝟙_ (ModuleCat.{0} ℤ)) a b).symm
+
 end TauCeti
 
 namespace TopCat
@@ -166,6 +204,24 @@ theorem integralCup_naturality {Y : TopCat.{0}} (f : X ⟶ Y) (p q n : ℕ) (h :
         (TopCat.singularCohomologyMap f q b) =
       TopCat.singularCohomologyMap f n (Y.integralCup p q n h a b) :=
   singularCup_naturality f ℤ integralCoeffComul integralCoeffMul p q n h a b
+
+/-- **The integral cup product is the cup product with coefficients in `ℤ`**: through the
+isomorphism `TauCeti.integralCoeffIso` of chain coefficients `ULift ℤ ≅ ℤ`, the integral cup product
+is the singular cup product along the inverse left unitor and the left unitor of `ℤ`, the cup
+product of Hatcher's convention. -/
+theorem integralCup_singularCohomologyChainCoefficientMap (p q n : ℕ) (h : p + q = n)
+    (a : X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) p)
+    (b : X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) q) :
+    X.integralCup p q n h
+        (X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom p a)
+        (X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom q b) =
+      X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom n
+        (X.singularCup ℤ (λ_ _).inv (λ_ _).hom p q n h a b) := by
+  rw [integralCup_def, ← singularCup_comp_tensorHom, integralCoeffComul_comp_tensorHom,
+    singularCup_precomp, integralCoeffMul_eq_leftUnitor_hom]
+  -- The two sides differ only in writing the cochain values as `ModuleCat.of ℤ ℤ` or as the unit
+  -- object `𝟙_ (ModuleCat ℤ)`, which Mathlib defines to be `ModuleCat.of ℤ ℤ`.
+  rfl
 
 /-- **Associativity of the integral cup product**, `(a ⌣ b) ⌣ c = a ⌣ (b ⌣ c)`. -/
 theorem integralCup_assoc {p q r m m' n : ℕ} (h₁₂ : p + q = m) (h : m + r = n)

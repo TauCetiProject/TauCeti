@@ -188,7 +188,7 @@ theorem isSeparable_adjoin_image_of_constantCompositum_eq_top
     IntermediateField.adjoin_le_iff.mpr fun z hz ↦
       IntermediateField.subset_adjoin k' _ ⟨z, hz, rfl⟩
   let ψ : K →+* L :=
-    ((algebraMap F F').comp (algebraMap K F)).codRestrict L.toSubfield fun a ↦ hle a.2
+    ((algebraMap F F').comp (algebraMap K F)).codRestrict L.toSubfield fun a ↦ hle a.property
   -- The restricted map makes the two routes from `k(S)` to `F'` agree.
   let : Algebra K L := ψ.toAlgebra
   have : IsScalarTower K L F' := .of_algebraMap_eq fun a ↦ rfl
@@ -233,7 +233,7 @@ theorem exists_finiteDimensional_lt_card_constantCompositum_eq_top (n : ℕ) :
     rintro x ⟨a, -, hax⟩
     have hx : IsIntegral k (x : Ω) := by
       rw [← hax]
-      exact (mem_algebraicClosure_iff.mp a.2).isIntegral
+      exact (mem_algebraicClosure_iff.mp a.property).isIntegral
     exact (isIntegral_algHom_iff (F'.val.restrictScalars k) Subtype.val_injective).mp hx
   refine ⟨F', IntermediateField.adjoin k T', IntermediateField.finiteDimensional_adjoin hint,
     ?_, ?_⟩
@@ -288,7 +288,7 @@ theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Po
     exact ⟨⟨r, hrF'⟩,
       algebraMap_mem_constantCompositum F k' F' ⟨_, IntermediateField.subset_adjoin k _ hroot⟩, rfl⟩
   -- The preimage `w` of `x` under the inclusion `F · k' → F'` is `x` itself.
-  obtain ⟨w, hw, hwx⟩ := hle x.2
+  obtain ⟨w, hw, hwx⟩ := hle x.property
   obtain rfl : w = x := Subtype.ext hwx
   exact hw
 
