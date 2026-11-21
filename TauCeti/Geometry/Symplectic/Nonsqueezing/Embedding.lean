@@ -29,13 +29,13 @@ The target is the product of the sphere `S²(a) = (OnePoint ℂ, a • ω_FS)` o
 * `TauCeti.sphereTorusChart a p c hr` is the product of the inverse of the disc chart
   `OnePoint.areaDiscChart a`, which maps the open disc of radius `√(a / π)` onto the sphere minus
   `∞`, with the torus chart `TauCeti.complexPiTorusChart p c hr` on the ball of radius `r` about `c`
-  in `ι → ℂ`. It is a partial diffeomorphism from `ball 0 √(a / π) × ball c r` into `S²(a) × T`
-  pulling the product form back to the standard form `dx ∧ dy ⊕ ω₀` of `ℂ × (ι → ℂ)`
+  in `ι → ℂ`. For `a > 0` it is a partial diffeomorphism from `ball 0 √(a / π) × ball c r` into
+  `S²(a) × T` pulling the product form back to the standard form `dx ∧ dy ⊕ ω₀` of `ℂ × (ι → ℂ)`
   (`TauCeti.eval₂_mfderiv_sphereTorusChart`).
 * `TauCeti.euclideanSphereTorusChart a p c hr` reads the first chart on complex Euclidean space
   `ℂᵐ⁺¹ = EuclideanSpace ℂ (Fin (m + 1))`, splitting off the first coordinate:
-  `x ↦ (x 0, (x (i + 1))ᵢ)`. It pulls the product form back to the standard symplectic form
-  `Im ⟪v, w⟫` of `ℂᵐ⁺¹` (`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`).
+  `x ↦ (x 0, (x (i + 1))ᵢ)`. For `a > 0` it pulls the product form back to the standard
+  symplectic form `Im ⟪v, w⟫` of `ℂᵐ⁺¹` (`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`).
 
 Every bounded set `s ⊆ ℂᵐ⁺¹` whose first coordinates satisfy `|x₀| < R`, with `π R² ≤ a`, lies in
 the source of `euclideanSphereTorusChart a p 0 hr` for one radius `r` and all periods `p i ≥ 2 r`
@@ -46,17 +46,17 @@ symplectic embedding of the ball into the cylinder with the chart gives a symple
 
 ## Main definitions
 
-* `TauCeti.sphereTorusChart`: the symplectic embedding of `ball 0 √(a / π) × ball c r` in
-  `ℂ × (ι → ℂ)` into `S²(a) × T`.
+* `TauCeti.sphereTorusChart`: for `a > 0`, the symplectic embedding of `ball 0 √(a / π) × ball c r`
+  in `ℂ × (ι → ℂ)` into `S²(a) × T`.
 * `TauCeti.euclideanSphereTorusChart`: the same embedding read on `EuclideanSpace ℂ (Fin (m + 1))`.
 
 ## Main results
 
 * `TauCeti.isSymplectic_smul_fubiniStudyForm_prod_torusSymplecticForm`: `S²(a) × T` is symplectic.
-* `TauCeti.eval₂_mfderiv_sphereTorusChart`: the first chart pulls the product form back to
-  `dx ∧ dy ⊕ ω₀`.
-* `TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`: the second chart pulls the product form back
-  to `Im ⟪v, w⟫`.
+* `TauCeti.eval₂_mfderiv_sphereTorusChart`: for `a > 0`, the first chart pulls the product form
+  back to `dx ∧ dy ⊕ ω₀`.
+* `TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`: for `a > 0`, the second chart pulls the
+  product form back to `Im ⟪v, w⟫`.
 * `TauCeti.exists_forall_subset_euclideanSphereTorusChart_source`: bounded pieces of the cylinder
   lie in its source once the periods are large.
 
@@ -169,11 +169,11 @@ variable (a : ℝ) (p : Fin m ⊕ Fin m → ℝ) [∀ i, Fact (0 < p i)]
 /-- **The symplectic embedding of a piece of the cylinder into `S²(a) × T`.** On complex Euclidean
 space `ℂᵐ⁺¹`, the map `x ↦ (φ⁻¹ (x 0), ρ (x (i + 1))ᵢ)`, where `φ` is the disc chart of the sphere
 of area `a` and `ρ = TauCeti.complexPiTorusCover p` the covering map of the torus, as a partial
-diffeomorphism defined where `|x 0| < √(a / π)` and `(x (i + 1))ᵢ` lies in the ball of radius `r`
-about `c` (`TauCeti.mem_euclideanSphereTorusChart_source`). It is the splitting
-`EuclideanSpace.consPiEquivL` of `ℂᵐ⁺¹` into `ℂ × ℂᵐ` followed by `TauCeti.sphereTorusChart`. It
-pulls the product form `a • ω_FS ⊕ ω_T` back to the standard symplectic form `Im ⟪v, w⟫`
-(`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`). -/
+diffeomorphism. For `a > 0` it is defined where `|x 0| < √(a / π)` and `(x (i + 1))ᵢ` lies in the
+ball of radius `r` about `c` (`TauCeti.mem_euclideanSphereTorusChart_source`), and it pulls the
+product form `a • ω_FS ⊕ ω_T` back to the standard symplectic form `Im ⟪v, w⟫`
+(`TauCeti.eval₂_mfderiv_euclideanSphereTorusChart`). It is the splitting
+`EuclideanSpace.consPiEquivL` of `ℂᵐ⁺¹` into `ℂ × ℂᵐ` followed by `TauCeti.sphereTorusChart`. -/
 def euclideanSphereTorusChart (c : Fin m → ℂ) {r : ℝ} (hr : ∀ i, 2 * r ≤ p i) :
     PartialDiffeomorph 𝓘(ℝ, EuclideanSpace ℂ (Fin (m + 1)))
       (𝓘(ℝ, ℂ).prod (ModelWithCorners.pi fun _ : Fin m ⊕ Fin m ↦ 𝓘(ℝ)))
