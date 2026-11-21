@@ -41,8 +41,12 @@ ring without zero divisors is positive definite exactly when its single entry is
   more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
+* `Matrix.IsUnit.posDef_transpose_mul_mul_iff` and `Matrix.IsUnit.posDef_mul_mul_transpose_iff`:
+  congruence by an invertible matrix over a ring with trivial star preserves positive definiteness.
 * `Matrix.PosDef.trivialStar`: over a linearly ordered field, a positive definite matrix on a
   nonempty index type forces the star to be trivial.
+* `Matrix.PosDef.sq_apply_le_inv_apply_self_mul_dotProduct_mulVec`: Cauchy–Schwarz coordinate
+  bound `x k ^ 2 ≤ S⁻¹ k k * (x ⬝ᵥ S *ᵥ x)`.
 * `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 * `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
@@ -210,6 +214,27 @@ end Matrix
 
 end TauCeti
 
+namespace Matrix.IsUnit
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [Ring R] [PartialOrder R] [StarRing R]
+  [TrivialStar R]
+
+/-- For an invertible matrix `P` over a star-ring with trivial star, `Pᵀ * B * P` is positive
+definite if and only if `B` is. -/
+theorem posDef_transpose_mul_mul_iff {B P : Matrix n n R} (hP : IsUnit P) :
+    (Pᵀ * B * P).PosDef ↔ B.PosDef := by
+  simpa only [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    Matrix.IsUnit.posDef_star_left_conjugate_iff (x := B) hP
+
+/-- For an invertible matrix `P` over a star-ring with trivial star, `P * B * Pᵀ` is positive
+definite if and only if `B` is. -/
+theorem posDef_mul_mul_transpose_iff {B P : Matrix n n R} (hP : IsUnit P) :
+    (P * B * Pᵀ).PosDef ↔ B.PosDef := by
+  simpa only [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    Matrix.IsUnit.posDef_star_right_conjugate_iff (x := B) hP
+
+end Matrix.IsUnit
+
 namespace Matrix.PosDef
 
 section TrivialStar
@@ -238,6 +263,29 @@ end TrivialStar
 
 variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [StarRing K]
+
+/-- **Cauchy–Schwarz coordinate bound for a positive-definite quadratic form.** Every coordinate
+of `x` satisfies `x k ^ 2 ≤ S⁻¹ k k * (x ⬝ᵥ S *ᵥ x)`. -/
+theorem sq_apply_le_inv_apply_self_mul_dotProduct_mulVec [DecidableEq B] {S : Matrix B B K}
+    (hS : S.PosDef) (x : B → K) (k : B) :
+    x k ^ 2 ≤ S⁻¹ k k * (x ⬝ᵥ S *ᵥ x) := by
+  have : Nonempty B := ⟨k⟩
+  have := hS.trivialStar
+  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
+  have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
+    simpa [F, Matrix.toBilin'_apply'] using hS.posSemidef.dotProduct_mulVec_nonneg u
+  have hsymm : LinearMap.IsSymm F :=
+    LinearMap.BilinForm.isSymm_iff.mp (Matrix.isSymm_toBilin'_iff_isSymm.mpr hS.isHermitian.isSymm)
+  set u : B → K := S⁻¹ *ᵥ Pi.single k 1
+  have hSu : S *ᵥ u = Pi.single k 1 := by
+    rw [Matrix.mulVec_mulVec,
+      Matrix.mul_nonsing_inv S ((Matrix.isUnit_iff_isUnit_det S).mp hS.isUnit), Matrix.one_mulVec]
+  have hFxu : F x u = x k := by rw [Matrix.toBilin'_apply', hSu, dotProduct_single_one]
+  have hFuu : F u u = S⁻¹ k k := by
+    rw [Matrix.toBilin'_apply', hSu, dotProduct_single_one]; simp [u]
+  have hcs := F.apply_sq_le_of_symm hnonneg hsymm x u
+  rw [hFxu, hFuu, Matrix.toBilin'_apply', mul_comm] at hcs
+  exact hcs
 
 /-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
 matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared

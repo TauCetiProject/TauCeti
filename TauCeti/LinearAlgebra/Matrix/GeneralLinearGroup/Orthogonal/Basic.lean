@@ -48,6 +48,8 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
   `TauCeti.GLSpecialOrthogonal.mem_iff_mem_specialOrthogonalGroup`: the two groups are Mathlib's
   matrix groups read on units.
 * `TauCeti.GLOrthogonal.coe_inv`: an orthogonal matrix is inverted by its transpose.
+* `TauCeti.GLOrthogonal.inv_mul_mem_of_mul_transpose_eq`: equal right Gram matrices
+  `h * hᵀ = p * pᵀ` force `p⁻¹ * h` to be orthogonal.
 * `TauCeti.GLOrthogonal.map_mem` and `TauCeti.GLSpecialOrthogonal.map_mem`: a ring homomorphism
   maps orthogonal and special orthogonal matrices to orthogonal and special orthogonal matrices.
 * `TauCeti.GLOrthogonal.eq_unitarySubgroup` and `TauCeti.GLSpecialOrthogonal.eq_GLSpecialUnitary`:
@@ -115,6 +117,22 @@ theorem mem_iff' {A : GL n R} :
 theorem coe_inv {A : GL n R} (hA : A ∈ GLOrthogonal n R) :
     ((A⁻¹ : GL n R) : Matrix n n R) = (A : Matrix n n R)ᵀ :=
   (mem_iff_transpose_eq_inv.mp hA).symm
+
+/-- If two invertible matrices have the same right Gram matrix `h * hᵀ = p * pᵀ`, then `p⁻¹ * h`
+is orthogonal. -/
+theorem inv_mul_mem_of_mul_transpose_eq {p h : GL n R}
+    (heq : (h : Matrix n n R) * (h : Matrix n n R)ᵀ =
+      (p : Matrix n n R) * (p : Matrix n n R)ᵀ) :
+    p⁻¹ * h ∈ GLOrthogonal n R := by
+  rw [mem_iff']
+  calc ((p⁻¹ * h : GL n R) : Matrix n n R) * ((p⁻¹ * h : GL n R) : Matrix n n R)ᵀ
+      = ((p⁻¹ : GL n R) : Matrix n n R) *
+          ((h : Matrix n n R) * (h : Matrix n n R)ᵀ) *
+          ((p⁻¹ : GL n R) : Matrix n n R)ᵀ := by
+        simp only [Units.val_mul, transpose_mul, Matrix.mul_assoc]
+    _ = ((p⁻¹ * p : GL n R) : Matrix n n R) * ((p⁻¹ * p : GL n R) : Matrix n n R)ᵀ := by
+        rw [heq]; simp only [Units.val_mul, transpose_mul, Matrix.mul_assoc]
+    _ = 1 := by simp
 
 /-- The carrier of the orthogonal group is the preimage, under the coercion of units, of the
 matrices whose transpose is a left inverse. This is the form its closedness is read from. -/

@@ -67,6 +67,14 @@ Lie-algebra theory.
   entries strictly above the diagonal.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
+* `Matrix.IsUpperTriangular.transpose_submatrix_of_strictAnti` and
+  `Matrix.IsUpperUnitriangular.transpose_submatrix_of_strictAnti` — transposing and reindexing by
+  a strictly decreasing map preserves upper triangularity and upper unitriangularity.
+* `Matrix.transpose_mul_diagonal_mul_apply`,
+  `Matrix.IsUpperUnitriangular.transpose_mul_diagonal_mul_apply`,
+  `Matrix.IsUpperUnitriangular.apply_le_transpose_mul_diagonal_mul_self`, and
+  `Matrix.IsUpperUnitriangular.det_transpose_mul_diagonal_mul` — entry formulas, diagonal lower
+  bound, and determinant of `Nᵀ * diagonal d * N`.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
@@ -145,6 +153,20 @@ theorem IsUpperUnitriangular.submatrix {n : Type*} [Preorder m] [Preorder n] [Ze
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m} (hf : StrictMono f) :
     (M.submatrix f f).IsUpperUnitriangular :=
   ⟨hM.isUpperTriangular.submatrix_of_strictMono hf, fun i ↦ hM.apply_diag (f i)⟩
+
+/-- Transposing an upper-triangular matrix and reindexing rows and columns by a strictly
+decreasing map preserves upper triangularity. -/
+theorem IsUpperTriangular.transpose_submatrix_of_strictAnti {n : Type*} [Preorder m] [Preorder n]
+    [Zero R] {M : Matrix m m R} (hM : M.IsUpperTriangular) {f : n → m} (hf : StrictAnti f) :
+    (Mᵀ.submatrix f f).IsUpperTriangular :=
+  fun _ _ hij ↦ hM (hf hij)
+
+/-- Transposing an upper-unitriangular matrix and reindexing rows and columns by a strictly
+decreasing map preserves upper unitriangularity. -/
+theorem IsUpperUnitriangular.transpose_submatrix_of_strictAnti {n : Type*} [Preorder m]
+    [Preorder n] [Zero R] [One R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m}
+    (hf : StrictAnti f) : (Mᵀ.submatrix f f).IsUpperUnitriangular :=
+  ⟨hM.isUpperTriangular.transpose_submatrix_of_strictAnti hf, fun i ↦ hM.apply_diag (f i)⟩
 
 /-- Two upper-unitriangular matrices are equal if their entries strictly above the diagonal
 agree. -/
@@ -568,6 +590,54 @@ theorem exists_sum_mul_eq_of_isUpperUnitriangular {ι T : Type*} [LinearOrder ι
   simp only [M, mulVec, dotProduct, submatrix_apply] at this
   rw [← this, ← Finset.sum_coe_sort S]
   exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.property]
+
+section DiagonalCongruence
+
+/-- Entrywise expansion of `Nᵀ * diagonal d * N`:
+`(Nᵀ * diagonal d * N) i j = ∑ k, d k * N k i * N k j`. -/
+theorem transpose_mul_diagonal_mul_apply {p q T : Type*} [Fintype p] [DecidableEq p]
+    [CommSemiring T] (N : Matrix p q T) (d : p → T) (i j : q) :
+    (Nᵀ * diagonal d * N) i j = ∑ k : p, d k * N k i * N k j := by
+  simp only [Matrix.mul_apply, transpose_apply, diagonal_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [Finset.sum_mul, Finset.sum_eq_single k (fun _ _ hlk ↦ by simp [hlk]) (by simp)]
+  simp [mul_comm, mul_left_comm]
+
+/-- For an upper-unitriangular matrix `N`, the `(i, j)` entry of `Nᵀ * diagonal d * N` splits off
+the leading term `d i * N i j` from the earlier indices `k < i`. -/
+theorem IsUpperUnitriangular.transpose_mul_diagonal_mul_apply {p T : Type*} [Fintype p]
+    [LinearOrder p] [CommSemiring T] {N : Matrix p p T} (hN : N.IsUpperUnitriangular)
+    (d : p → T) (i j : p) :
+    (Nᵀ * diagonal d * N) i j =
+      d i * N i j + ∑ k ∈ Finset.univ.filter (· < i), d k * N k i * N k j := by
+  rw [Matrix.transpose_mul_diagonal_mul_apply, ← Finset.add_sum_erase _ _ (Finset.mem_univ i),
+    hN.apply_diag i, mul_one]
+  congr 1
+  refine (Finset.sum_subset (fun k hk ↦ Finset.mem_erase.mpr
+    ⟨(Finset.mem_filter.mp hk).2.ne, Finset.mem_univ k⟩) fun k hk hnot ↦ ?_).symm
+  have hik : i < k := lt_of_le_of_ne
+    (le_of_not_gt fun hlt ↦ hnot (Finset.mem_filter.mpr ⟨Finset.mem_univ k, hlt⟩))
+    (Finset.mem_erase.mp hk).1.symm
+  simp [hN.isUpperTriangular hik]
+
+/-- Diagonal lower bound for an `Nᵀ * diagonal d * N` factorization with `N` upper unitriangular
+and nonnegative diagonal weights `d`: `d i ≤ (Nᵀ * diagonal d * N) i i`. -/
+theorem IsUpperUnitriangular.apply_le_transpose_mul_diagonal_mul_self {p T : Type*} [Fintype p]
+    [LinearOrder p] [CommRing T] [LinearOrder T] [IsStrictOrderedRing T] {N : Matrix p p T}
+    (hN : N.IsUpperUnitriangular) {d : p → T} (hd : ∀ k, 0 ≤ d k) (i : p) :
+    d i ≤ (Nᵀ * diagonal d * N) i i := by
+  rw [hN.transpose_mul_diagonal_mul_apply d i i, hN.apply_diag i, mul_one]
+  refine le_add_of_nonneg_right (Finset.sum_nonneg fun k _ ↦ ?_)
+  rw [mul_assoc]
+  exact mul_nonneg (hd k) (mul_self_nonneg (N k i))
+
+/-- The determinant of `Nᵀ * diagonal d * N` for upper-unitriangular `N` is `∏ i, d i`. -/
+theorem IsUpperUnitriangular.det_transpose_mul_diagonal_mul {p T : Type*} [Fintype p]
+    [LinearOrder p] [CommRing T] {N : Matrix p p T} (hN : N.IsUpperUnitriangular) (d : p → T) :
+    (Nᵀ * diagonal d * N).det = ∏ i, d i := by
+  rw [det_mul, det_mul, det_transpose, hN.det_eq_one, det_diagonal, one_mul, mul_one]
+
+end DiagonalCongruence
 
 end Matrix
 
