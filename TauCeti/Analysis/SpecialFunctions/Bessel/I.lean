@@ -52,6 +52,9 @@ von Mises–Fisher laws.
 * `Real.hasDerivAt_besselI` — `I_ν'(x) = I_{ν+1}(x) + (ν / x) I_ν(x)`.
 * `Real.hasDerivAt_rpow_neg_mul_besselI` — the derivative of `(x / 2) ^ (-ν) I_ν(x)`.
 * `Real.besselI_sub_besselI` — the recurrence `I_{ν-1}(x) - I_{ν+1}(x) = (2 ν / x) I_ν(x)`.
+* `Real.hasDerivAt_rpow_neg_mul_besselI'` — the derivative of `x ^ (-ν) I_ν(x)`.
+* `Real.iterate_inv_mul_deriv_rpow_neg_mul_besselI` — the ladder identity
+  `(x⁻¹ d/dx)ᵏ (x ^ (-ν) I_ν(x)) = x ^ (-ν - k) I_{ν+k}(x)` for `x ≠ 0`.
 * `Real.integral_exp_mul_cos_mul_cos` — the circle integral
   `∫_{-π}^{π} e^{κ cos θ} cos (n θ) dθ = 2π I_n(κ)` for natural `n` and real `κ`.
 * `Real.integral_exp_mul_cos_mul_cexp` — its complex form
@@ -274,6 +277,46 @@ theorem besselI_sub_besselI (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
     hsub, hadd_two, hadd_one, h, rpow_sub_one hx2, rpow_add_one hx2]
   field_simp
   ring
+
+/-! ### The ladder operator `x⁻¹ d/dx` -/
+
+/-- The derivative of `x ^ (-ν) I_ν(x)` at a nonzero argument is `x ^ (-ν) I_{ν+1}(x)`: the
+variant of `Real.hasDerivAt_rpow_neg_mul_besselI` without the normalization by `2 ^ ν`. -/
+theorem hasDerivAt_rpow_neg_mul_besselI' (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun x : ℝ ↦ x ^ (-ν) * besselI ν x) (x ^ (-ν) * besselI (ν + 1) x) x := by
+  convert ((hasDerivAt_id' x).rpow_const (p := -ν) (Or.inl hx)).mul
+    (hasDerivAt_besselI ν hx) using 1
+  rw [rpow_sub_one hx]
+  field_simp
+  ring
+
+/-- **The ladder identity for `I_ν`** (DLMF 10.29.4, second identity). Let `L` be the operator
+`(L f)(x) = x⁻¹ f'(x)` on real functions, that is, `x⁻¹ d/dx`. For every real order `ν`, every
+natural `k` and every `x ≠ 0` (in particular every `x > 0`),
+`(Lᵏ (y ↦ y ^ (-ν) I_ν(y)))(x) = x ^ (-ν - k) I_{ν+k}(x)`.
+
+Here `Lᵏ` is the `k`-fold iterate of `x⁻¹ d/dx` itself, which multiplies by `x⁻¹` after each
+differentiation; it is not `x⁻ᵏ` times the ordinary `k`-th derivative `iteratedDeriv k`. -/
+theorem iterate_inv_mul_deriv_rpow_neg_mul_besselI (ν : ℝ) (k : ℕ) {x : ℝ} (hx : x ≠ 0) :
+    (fun f : ℝ → ℝ ↦ fun y ↦ y⁻¹ * deriv f y)^[k] (fun y ↦ y ^ (-ν) * besselI ν y) x =
+      x ^ (-ν - k) * besselI (ν + k) x := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    -- The `k`-th iterate agrees with `y ↦ y ^ (-(ν + k)) I_{ν+k}(y)` on the open set `y ≠ 0`.
+    have heq : (fun f : ℝ → ℝ ↦ fun y ↦ y⁻¹ * deriv f y)^[k] (fun y ↦ y ^ (-ν) * besselI ν y)
+        =ᶠ[𝓝 x] fun y ↦ y ^ (-(ν + k)) * besselI (ν + k) y :=
+      (eventually_ne_nhds hx).mono fun y hy ↦ by rw [ih hy, neg_add']
+    rw [Function.iterate_succ_apply', heq.deriv_eq,
+      (hasDerivAt_rpow_neg_mul_besselI' (ν + k) hx).deriv]
+    push_cast
+    rw [← add_assoc, sub_add_eq_sub_sub, rpow_sub_one hx, neg_add']
+    ring
+
+/-- The ladder identity at `k = 1` is the derivative `Real.hasDerivAt_rpow_neg_mul_besselI'`. -/
+example (ν : ℝ) {x : ℝ} (hx : x ≠ 0) :
+    x⁻¹ * deriv (fun y ↦ y ^ (-ν) * besselI ν y) x = x ^ (-ν - 1) * besselI (ν + 1) x := by
+  simpa using iterate_inv_mul_deriv_rpow_neg_mul_besselI ν 1 hx
 
 /-! ### The circle integral of the integer orders -/
 
