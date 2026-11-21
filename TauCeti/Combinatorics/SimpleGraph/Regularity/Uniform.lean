@@ -29,6 +29,7 @@ Neither bound needs the sets to be disjoint.
 * `SimpleGraph.IsUniform.compl`: uniformity of disjoint sets passes to the complement graph.
 * `SimpleGraph.IsUniform.abs_card_interedges_sub_le`: rectangle discrepancy of a uniform pair.
 * `SimpleGraph.IsUniform.abs_sum_sum_mul_sub_le`: the same bound for tests with values in `[0, 1]`.
+* `Finpartition.isUniform_of_nonUniforms_eq_empty`: uniformity when all distinct parts are uniform.
 -/
 
 public section
@@ -121,3 +122,26 @@ theorem IsUniform.abs_sum_sum_mul_sub_le (h : G.IsUniform ε s t) {f g : α → 
   ring
 
 end SimpleGraph
+
+namespace Finpartition
+
+variable {α 𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [DecidableEq α]
+  {A : Finset α} {P : Finpartition A} {G : SimpleGraph α} [DecidableRel G.Adj] {ε : 𝕜}
+
+/-- There are no nonuniform pairs of parts exactly when every pair of distinct parts is uniform. -/
+theorem nonUniforms_eq_empty_iff : P.nonUniforms G ε = ∅ ↔
+    ∀ u ∈ P.parts, ∀ v ∈ P.parts, u ≠ v → G.IsUniform ε u v := by
+  rw [eq_empty_iff_forall_notMem]
+  simp only [Prod.forall, mk_mem_nonUniforms, not_and, not_not]
+  exact ⟨fun h u hu v hv huv ↦ h u v hu hv huv, fun h u v hu hv huv ↦ h u hu v hv huv⟩
+
+/-- If every pair of distinct parts is uniform, then the partition is uniform. -/
+theorem isUniform_of_nonUniforms_eq_empty [IsStrictOrderedRing 𝕜]
+    (h : P.nonUniforms G ε = ∅) : P.IsUniform G ε := by
+  rw [IsUniform, h, card_empty, Nat.cast_zero, Nat.mul_sub_left_distrib, mul_one, ← offDiag_card]
+  rcases P.parts.offDiag.eq_empty_or_nonempty with hempty | ⟨⟨u, v⟩, huv⟩
+  · simp [hempty]
+  obtain ⟨hu, hv, hne⟩ := mem_offDiag.1 huv
+  exact mul_nonneg (Nat.cast_nonneg _) ((nonUniforms_eq_empty_iff.1 h u hu v hv hne).pos.le)
+
+end Finpartition
