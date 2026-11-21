@@ -25,6 +25,8 @@ square roots are specific to `ℝ`.
 
 * `TauCeti.strictMonoOn_div_one_sub`, `TauCeti.image_div_one_sub_Ioo`, and
   `TauCeti.hasDerivAt_div_one_sub` describe the chart `u ↦ u / (1 - u)` on intervals below `1`;
+* `TauCeti.div_one_sub_factors` rewrites affine factors in this chart over any field, and
+  `TauCeti.div_one_sub_Ioo_chart` collects the facts for a monotone change of variables;
 * `TauCeti.image_sq_div_const_Ioi`, `TauCeti.injOn_sq_div_const_Ioi`, and
   `TauCeti.hasDerivAt_sq_div_const` describe the square chart `z ↦ z ^ 2 / ν` on positive
   half-lines;
@@ -42,6 +44,14 @@ variable {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-! ### The chart `u ↦ u / (1 - u)` -/
+
+/-- Rewrite the affine factors `1 + v` and `1 + v - z * v` for `v = u / (1 - u)`. -/
+lemma div_one_sub_factors {K : Type*} [Field K] {u : K} (hu : 1 - u ≠ 0) (z : K) :
+    1 + u / (1 - u) = (1 - u)⁻¹ ∧
+      1 + u / (1 - u) - z * (u / (1 - u)) = (1 - z * u) * (1 - u)⁻¹ := by
+  have h : 1 + u / (1 - u) = (1 - u)⁻¹ := by
+    rw [one_add_div hu, sub_add_cancel, one_div]
+  exact ⟨h, by rw [h, div_eq_mul_inv, sub_mul, one_mul, mul_assoc]⟩
 
 /-- The chart `u ↦ u / (1 - u)` is strictly increasing on `(-∞, 1)`. -/
 lemma strictMonoOn_div_one_sub : StrictMonoOn (fun u : α => u / (1 - u)) (Iio 1) := by
@@ -70,6 +80,17 @@ lemma hasDerivAt_div_one_sub {u : 𝕜} (hu : u ≠ 1) :
     HasDerivAt (fun t : 𝕜 => t / (1 - t)) ((1 - u) ^ 2)⁻¹ u :=
   ((hasDerivAt_id' u).div ((hasDerivAt_id' u).const_sub 1)
     (sub_ne_zero.2 hu.symm)).congr_deriv (by ring)
+
+/-- The image, within-interval derivative, and monotonicity of the chart `u ↦ u / (1 - u)`
+on `(ρ, 1)`, for monotone changes of variables. -/
+lemma div_one_sub_Ioo_chart [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {ρ : 𝕜} (hρ : ρ < 1) :
+    (fun u : 𝕜 => u / (1 - u)) '' Ioo ρ 1 = Ioi (ρ / (1 - ρ)) ∧
+      (∀ u ∈ Ioo ρ 1, HasDerivWithinAt (fun t : 𝕜 => t / (1 - t))
+        ((1 - u) ^ 2)⁻¹ (Ioo ρ 1) u) ∧
+      MonotoneOn (fun u : 𝕜 => u / (1 - u)) (Ioo ρ 1) :=
+  ⟨image_div_one_sub_Ioo hρ,
+    fun _ hu => (hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt,
+    strictMonoOn_div_one_sub.monotoneOn.mono Ioo_subset_Iio_self⟩
 
 /-! ### The square chart on the positive half-line -/
 

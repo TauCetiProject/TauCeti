@@ -11,9 +11,9 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
@@ -102,15 +102,8 @@ theorem intervalIntegrable_eulerIntegrand (a : ℂ) {b c z : ℂ}
   exact (betaIntegral_convergent hb (by simpa using sub_pos.mpr hcb)).mul_continuousOn
     (by simpa only [uIcc_of_le zero_le_one] using continuousOn_eulerKernel a hz)
 
-/-- The right endpoint weight of the Euler integrand is integrable if its exponent has real
-part greater than `-1`. -/
-theorem intervalIntegrable_one_sub_ofReal_cpow {s : ℂ} (hs : -1 < s.re) (ρ : ℝ) :
-    IntervalIntegrable (fun t : ℝ => (1 - (t : ℂ)) ^ s) volume ρ 1 := by
-  simpa only [ofReal_sub, ofReal_one, sub_zero, sub_sub_cancel] using
-    ((intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1 - ρ) hs).comp_sub_left 1).symm
-
-/-- On an interval bounded away from zero, the Euler integrand only requires the endpoint
-condition `re b < re c` at one. -/
+/-- On the cut plane, restricting the Euler integrand to `[ρ, 1]` with `ρ > 0` removes the
+condition `0 < b.re`; only `b.re < c.re` is needed for the endpoint at one. -/
 theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b.re < c.re)
     (hz : 1 - z ∈ slitPlane) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) :
     IntervalIntegrable (fun t : ℝ =>
@@ -119,17 +112,10 @@ theorem intervalIntegrable_eulerIntegrand_right (a : ℂ) {b c z : ℂ} (hbc : b
   have hsub : uIcc ρ 1 ⊆ Icc 0 1 := by
     rw [uIcc_of_le hρ1]
     exact Icc_subset_Icc_left hρ.le
-  have hweight : IntervalIntegrable (fun t : ℝ => (1 - (t : ℂ)) ^ (c - b - 1)) volume ρ 1 := by
-    apply intervalIntegrable_one_sub_ofReal_cpow
-    simp only [sub_re, one_re]
+  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ hρ1
+  · simp only [sub_re, one_re]
     linarith
-  have hpow : ContinuousOn (fun t : ℝ => (t : ℂ) ^ (b - 1)) (uIcc ρ 1) := by
-    rw [uIcc_of_le hρ1]
-    exact continuousOn_of_forall_continuousAt fun t ht =>
-      continuous_ofReal.continuousAt.cpow continuousAt_const
-        (ofReal_mem_slitPlane.mpr (hρ.trans_le ht.1))
-  simpa only [Pi.mul_apply, mul_left_comm, mul_comm, mul_assoc] using
-    hweight.mul_continuousOn (hpow.mul ((continuousOn_eulerKernel a hz).mono hsub))
+  · exact (continuousOn_eulerKernel a hz).mono hsub
 
 /-- For fixed `b` and `c` in the convergence region, the unnormalized Euler integral is
 jointly holomorphic in its first parameter and its argument, away from the cut `[1, ∞)`. -/

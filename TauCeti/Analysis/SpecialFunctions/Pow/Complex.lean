@@ -566,29 +566,6 @@ end TauCeti
 
 namespace Complex
 
-/-- Collect powers of a common denominator in a product with a continued logarithm.
-The inverse uses the principal branch away from the negative real axis, and `hpow`
-specifies that the product power splits without a branch change. -/
-theorem exp_sub_log_mul_mul_inv_cpow (p r t : ℂ) {s q : ℂ} (hs : s ≠ 0)
-    (harg : s.arg ≠ Real.pi) (hpow : (q * s⁻¹) ^ t = q ^ t * s⁻¹ ^ t) (l D : ℂ) :
-    exp ((l - log s) * p) * s⁻¹ ^ r * (q * s⁻¹) ^ t * (D / s ^ 2) =
-      exp (l * p) * s ^ (-p - r - t - 2) * q ^ t * D := by
-  have hinv (e : ℂ) : s⁻¹ ^ e = s ^ (-e) := by
-    rw [inv_cpow s e harg, cpow_neg]
-  have he : exp ((l - log s) * p) = exp (l * p) * s ^ (-p) := by
-    rw [cpow_def_of_ne_zero hs, ← exp_add]
-    congr 1
-    ring
-  have hsq : (s ^ 2)⁻¹ = s ^ (-2 : ℂ) := by rw [cpow_neg]; norm_num
-  calc
-    _ = exp (l * p) * (s ^ (-p) * s ^ (-r) * s ^ (-t) * s ^ (-2 : ℂ)) * q ^ t * D := by
-      rw [he, hpow, hinv r, hinv t, div_eq_mul_inv, hsq]
-      ring
-    _ = _ := by
-      rw [← cpow_add (-p) (-r) hs, ← cpow_add (-p + -r) (-t) hs,
-        ← cpow_add (-p + -r + -t) (-2) hs]
-      simp only [sub_eq_add_neg]
-
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
   rcases eq_or_ne w 0 with rfl | hw

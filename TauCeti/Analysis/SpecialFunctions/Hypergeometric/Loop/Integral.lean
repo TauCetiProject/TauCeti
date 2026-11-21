@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 
@@ -54,7 +55,7 @@ radius collapses each contour onto `[0, 1]`, yielding DLMF 15.6.2 (away from `c 
 `ρ ∈ (0, 1)` (and `0 < re b` or `re b < re c`, respectively), parameter holomorphy evaluates both
 integrals in closed form via reciprocal Gamma factors.
 Pochhammer's `(0+, 1+, 0-, 1-)` double-loop integral (DLMF 15.6.5 and 5.12.12) is developed in
-`TauCeti.Analysis.SpecialFunctions.Hypergeometric.PochhammerLoop` using the same keyhole
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Pochhammer` using the same keyhole
 infrastructure.
 
 ## Implementation notes
@@ -423,7 +424,7 @@ private theorem analyticAt_integral_affineSegIntegrand_unit {V : Type*} [NormedA
     exact ((hw₀.comp analyticAt_fst).sub ((hw₁.comp analyticAt_fst).mul analyticAt_snd)).cpow
       (ha.comp analyticAt_fst).neg (hslit u hu)
   have hbeta : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (γ - 1)) volume ρ 1 :=
-    intervalIntegrable_one_sub_ofReal_cpow (by simpa using hγ) ρ
+    TauCeti.intervalIntegrable_one_sub_ofReal_cpow (by simpa using hγ) ρ
   have hweight := ((intervalIntegrable_iff_integrableOn_Ioc_of_le hρ1.le).mp hbeta).integrable
   convert TauCeti.analyticAt_integral_smul (isCompact_Icc.image continuous_ofReal) hφ hφK hkernel
     hweight using 1
@@ -531,20 +532,15 @@ private theorem hypergeometricLoopOne_eq_affineLoopZero (a b c z : ℂ) (ρ : �
 private theorem intervalIntegrable_loopOne_seg (a b c z : ℂ) (hb : 0 < b.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : 1 - z ∈ slitPlane) :
     IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume ρ 1 := by
-  have hweight : IntervalIntegrable (fun u : ℝ => (1 - (u : ℂ)) ^ (b - 1)) volume ρ 1 :=
-    intervalIntegrable_one_sub_ofReal_cpow (by simpa using hb) ρ
-  have hcont : ContinuousOn
-      (fun u : ℝ => (u : ℂ) ^ (c - b - 1) * ((1 - z) - (-z) * u) ^ (-a)) (uIcc ρ 1) := by
-    rw [uIcc_of_le hρ1.le]
-    refine continuousOn_of_forall_continuousAt fun u hu => ContinuousAt.mul ?_ ?_
-    · exact ContinuousAt.cpow continuous_ofReal.continuousAt continuousAt_const
-        (ofReal_mem_slitPlane.mpr (hρ.trans_le hu.1))
-    · exact ContinuousAt.cpow (by fun_prop) continuousAt_const (by
-        rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
-        exact one_sub_mul_ofReal_mem_slitPlane hz
-          ⟨sub_nonneg.mpr hu.2, sub_le_self _ (hρ.le.trans hu.1)⟩)
-  convert hweight.mul_continuousOn hcont using 1
-  ext u; simp only [affineSegIntegrand]; ring
+  unfold affineSegIntegrand
+  apply TauCeti.intervalIntegrable_ofReal_cpow_mul_one_sub_cpow_mul hρ hρ1.le
+    (by simpa using hb)
+  rw [uIcc_of_le hρ1.le]
+  refine continuousOn_of_forall_continuousAt fun u hu => ?_
+  exact ContinuousAt.cpow (by fun_prop) continuousAt_const (by
+    rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
+    exact one_sub_mul_ofReal_mem_slitPlane hz
+      ⟨sub_nonneg.mpr hu.2, sub_le_self _ (hρ.le.trans hu.1)⟩)
 
 /-- **Radius independence of the `(1+)` loop integral.** Whenever `0 < re b` and the closed disks
 around `1` of radii `ρ₁, ρ₂ ∈ (0, 1)` map into the slit plane under `u ↦ 1 - z u`, the loop
@@ -893,8 +889,7 @@ theorem eulerIntegral_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ} (hb : 0 
 
 /-- On the open unit disk the `(0+)` loop equals the regularized Gauss series times its
 Gamma and phase factors. This form includes positive integral `b`, where the loop vanishes.
-The continuation in `b` extends the original argument for `Complex.hypergeometricLoopZero_zero`.
--/
+It holds when `b.re < c.re` and `0 < ρ < 1`, without requiring `0 < b.re`. -/
 theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : ℂ}
     (hbc : b.re < c.re) (hz : ‖z‖ < 1) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     hypergeometricLoopZero a b c z ρ =
@@ -903,6 +898,7 @@ theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : �
   have hslit : 1 - z ∈ slitPlane := by
     simpa only [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (by rwa [norm_neg] : ‖-z‖ < 1)
   have hzρ : ‖z‖ * ρ < 1 := by nlinarith [norm_nonneg z]
+  -- Adapt the earlier continuation proof of `Complex.hypergeometricLoopZero_zero`.
   let d := c - b
   have hd : 0 < d.re := by simpa only [d, sub_re, sub_pos] using hbc
   have hc : c = b + d := by simp [d]
@@ -927,6 +923,18 @@ theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : �
     rw [hypergeometricLoopZero_eq_eulerIntegral a hw hwd hslit hρ hρ1 hzρ,
       ← regularizedGaussHGFun_eq_eulerIntegral a hw hwd hz, add_sub_cancel_left])
   simpa only [hc, add_sub_cancel_left] using congrFun heq b
+
+/-- On the open unit disk, the regularized Gauss function is represented by the `(0+)` loop
+when `b.re < c.re`, `b` is not a positive integer, and `0 < ρ < 1`. No positivity assumption on
+`b.re` is needed. -/
+theorem regularizedGaussHGFun_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ}
+    (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hz : ‖z‖ < 1) {ρ : ℝ}
+    (hρ : 0 < ρ) (hρ1 : ρ < 1) :
+    regularizedGaussHGFun a b c z =
+      exp (-b * π * I) * Gamma (1 - b) / (2 * π * I * Gamma (c - b)) *
+        hypergeometricLoopZero a b c z ρ := by
+  exact eq_mul_of_eq_mul_hypergeometricLoopZeroFactor hbc hb_int
+    (hypergeometricLoopZero_eq_mul_regularizedGaussHGFun a hbc hz hρ hρ1)
 
 /-- At zero argument the `(0+)` loop integral evaluates in closed form for all complex `a`, `b`,
 and `c` whenever `re b < re c` and `ρ ∈ (0, 1)`. -/
