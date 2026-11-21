@@ -103,7 +103,7 @@ def fixingSubgroup (s : Set P) : Subgroup (P ≃ᵃ[k] P) where
   inv_mem' {f} hf p hp := by rw [inv_def, symm_apply_eq, hf p hp]
 
 @[simp]
-theorem mem_fixingSubgroup {s : Set P} {f : P ≃ᵃ[k] P} :
+theorem mem_fixingSubgroup_iff {s : Set P} {f : P ≃ᵃ[k] P} :
     f ∈ fixingSubgroup k s ↔ ∀ p ∈ s, f p = p :=
   Iff.rfl
 

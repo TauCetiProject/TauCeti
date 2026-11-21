@@ -86,25 +86,26 @@ the unordered marking `C` onto itself: the affine automorphisms `f` of `K` with 
 `p ∈ P` and `f '' C = C`. -/
 def markingStabilizer (P C : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ f '' C = C}
-  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
-    mul_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1) (AffineEquiv.mem_fixingSubgroup.2 hg.1), by
+  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 <|
+    mul_mem (AffineEquiv.mem_fixingSubgroup_iff.2 hf.1)
+      (AffineEquiv.mem_fixingSubgroup_iff.2 hg.1), by
     rw [AffineEquiv.coe_mul, Set.image_comp, hg.2, hf.2]⟩
-  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup.1 (one_mem _), by simp⟩
-  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
-    inv_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1),
+  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 (one_mem _), by simp⟩
+  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 <|
+    inv_mem (AffineEquiv.mem_fixingSubgroup_iff.2 hf.1),
     by
       calc (f⁻¹ : K ≃ᵃ[K] K) '' C = f.symm '' (f '' C) := by rw [hf.2, AffineEquiv.inv_def]
         _ = C := by simp [Set.image_image]⟩
 
 @[simp]
-theorem mem_markingStabilizer :
+theorem mem_markingStabilizer_iff :
     f ∈ markingStabilizer P C ↔ (∀ p ∈ P, f p = p) ∧ f '' C = C :=
   Iff.rfl
 
 /-- The stabilizer of a marking fixes each point of `P`. -/
 theorem markingStabilizer_le_fixingSubgroup :
     markingStabilizer P C ≤ AffineEquiv.fixingSubgroup K P :=
-  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup.2 hf.1
+  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup_iff.2 hf.1
 
 /-- An element of the stabilizer of a marking maps marked points, and only those, to marked
 points. -/
@@ -169,23 +170,24 @@ marked points `P`: the affine automorphisms `f` of `K` fixing each point of `P` 
 `u ∘ f = u`. -/
 def markedIsotropy (u : K → X) (P : Set K) : Subgroup (K ≃ᵃ[K] K) where
   carrier := {f | (∀ p ∈ P, f p = p) ∧ u ∘ f = u}
-  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
-    mul_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1) (AffineEquiv.mem_fixingSubgroup.2 hg.1), by
+  mul_mem' {f g} hf hg := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 <|
+    mul_mem (AffineEquiv.mem_fixingSubgroup_iff.2 hf.1)
+      (AffineEquiv.mem_fixingSubgroup_iff.2 hg.1), by
     rw [AffineEquiv.coe_mul, ← Function.comp_assoc, hf.2, hg.2]⟩
-  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup.1 (one_mem _), rfl⟩
-  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup.1 <|
-    inv_mem (AffineEquiv.mem_fixingSubgroup.2 hf.1),
+  one_mem' := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 (one_mem _), rfl⟩
+  inv_mem' {f} hf := ⟨AffineEquiv.mem_fixingSubgroup_iff.1 <|
+    inv_mem (AffineEquiv.mem_fixingSubgroup_iff.2 hf.1),
     by
       funext z
       simpa [AffineEquiv.inv_def] using congrFun hf.2 (f.symm z) |>.symm⟩
 
 @[simp]
-theorem mem_markedIsotropy : f ∈ markedIsotropy u P ↔ (∀ p ∈ P, f p = p) ∧ u ∘ f = u :=
+theorem mem_markedIsotropy_iff : f ∈ markedIsotropy u P ↔ (∀ p ∈ P, f p = p) ∧ u ∘ f = u :=
   Iff.rfl
 
 /-- The isotropy of `u` with the marked points `P` fixes each point of `P`. -/
 theorem markedIsotropy_le_fixingSubgroup : markedIsotropy u P ≤ AffineEquiv.fixingSubgroup K P :=
-  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup.2 hf.1
+  fun _ hf ↦ AffineEquiv.mem_fixingSubgroup_iff.2 hf.1
 
 /-- Without marked points besides `∞`, the isotropy is the set of affine automorphisms `f` with
 `u ∘ f = u`. -/
