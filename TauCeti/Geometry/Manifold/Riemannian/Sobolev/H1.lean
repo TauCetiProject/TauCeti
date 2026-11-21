@@ -10,9 +10,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -58,8 +56,6 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
   `TauCeti.Manifold.SobolevH1.toLp_injective`.
 * `TauCeti.Manifold.SobolevH1.inner_ofSmooth_right`: Green's identity on `H¹(M)`.
 * `TauCeti.Manifold.SobolevH1.dirichletForm`: the Dirichlet form.
-* `TauCeti.Manifold.SobolevH1.neg_laplaceBeltrami_eq_of_forall_dirichletForm_ofSmooth_eq`:
-  converse to Green's identity for smooth functions with continuous forcing.
 
 ## Implementation notes
 
@@ -464,34 +460,6 @@ theorem dirichletForm_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ
   rw [dirichletForm_apply, inner_ofSmooth_right_eq_inner, toLp_ofSmooth, ← inner_sub_right,
     ← map_sub, L2.inner_toLp_continuousMap]
   simp [subLaplaceBeltrami, mul_comm]
-
-/-- **From the weak equation to the pointwise PDE.** If a smooth function `u` on a closed
-manifold with a `C¹` Riemannian metric satisfies `D(u, ψ) = ∫ f ψ dV` for every smooth test
-function `ψ`, where `f` is continuous, then `-Δu = f` holds at every point of `M`. -/
-theorem neg_laplaceBeltrami_eq_of_forall_dirichletForm_ofSmooth_eq (u : C^∞⟮I, M; ℝ⟯)
-    {f : M → ℝ} (hf : Continuous f)
-    (h : ∀ ψ : C^∞⟮I, M; ℝ⟯,
-      dirichletForm (ofSmooth u) (ofSmooth ψ) = ∫ x, f x * ψ x ∂riemannianVolume I M)
-    (x : M) :
-    -laplaceBeltrami I u x = f x := by
-  have hΔ : Continuous fun y ↦ -laplaceBeltrami I u y :=
-    (continuous_laplaceBeltrami (u.contMDiff.of_le (by simp))).neg
-  have hae : (fun y ↦ -laplaceBeltrami I u y) =ᵐ[riemannianVolume I M] f := by
-    refine ae_eq_of_integral_contMDiff_smul_eq I hΔ.locallyIntegrable hf.locallyIntegrable
-      fun ψ hψ _ ↦ ?_
-    let ψ' : C^∞⟮I, M; ℝ⟯ := ⟨ψ, hψ⟩
-    have hpair : dirichletForm (ofSmooth u) (ofSmooth ψ') =
-        ∫ y, ψ y * -laplaceBeltrami I u y ∂riemannianVolume I M := by
-      rw [dirichletForm_comm, dirichletForm_ofSmooth_right]
-      refine integral_congr_ae ?_
-      filter_upwards [toLp_ofSmooth_ae_eq ψ'] with y hy
-      rw [hy]
-      rfl
-    have hrhs : dirichletForm (ofSmooth u) (ofSmooth ψ') =
-        ∫ y, ψ y * f y ∂riemannianVolume I M :=
-      (h ψ').trans <| integral_congr_ae <| Filter.Eventually.of_forall fun y ↦ mul_comm (f y) (ψ y)
-    simpa only [smul_eq_mul] using hpair.symm.trans hrhs
-  exact congrFun (Measure.eq_of_ae_eq hae hΔ hf) x
 
 end Green
 

@@ -98,7 +98,7 @@ weights. -/
 @[expose, reducible]
 noncomputable def pullback (φ : MorseChart E f' (σ x)) : MorseChart E f x where
   toChart := σ.toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  mem_maximalAtlas := σ.transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
+  mem_maximalAtlas := σ.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl φ.mem_maximalAtlas
   mem_source := φ.mem_source
   apply_self := φ.apply_self
   coord := φ.coord

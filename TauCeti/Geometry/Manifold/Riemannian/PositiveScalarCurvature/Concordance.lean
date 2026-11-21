@@ -103,7 +103,7 @@ public section
 
 open Bundle Set Topology Filter
 open TauCeti.Manifold (tangentSpaceProdEquiv tangentSpaceProdEquiv_apply mfderiv_prodMap_apply
-  tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id
+  tangentSpaceProdEquiv_mfderiv_prodMap_id isInvertible_mfderiv_prodMap_id_left
   isInvertible_mfderiv_prodMap_id_right isInvertible_mfderiv_prodMap_id_subtypeVal_Icc
   contMDiff_prod_right_comm isInvertible_mfderiv_prod_right_comm mfderiv_prod_right_comm_apply)
 open scoped ContDiff Manifold
@@ -186,7 +186,7 @@ def reparamTime (hφ : ContDiff ℝ ∞ φ) (hφ' : ∀ t, deriv φ t ≠ 0) :
     ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p) :=
   G.pullback (Prod.map id φ) (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp))) fun p ↦
-    (isInvertible_mfderiv_prodMap_id (hφ' p.2)).injective
+    (isInvertible_mfderiv_prodMap_id_left (hφ' p.2)).injective
 
 variable {G}
 
@@ -217,7 +217,7 @@ theorem scalarCurvature_reparamTime [T2Space M] (hφ : ContDiff ℝ ∞ φ) (hφ
     (G.reparamTime hφ hφ').scalarCurvature p = G.scalarCurvature (p.1, φ p.2) :=
   scalarCurvature_pullback_of_isInvertible G
     (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp)))
-    (fun p ↦ isInvertible_mfderiv_prodMap_id (hφ' p.2)) p
+    (fun p ↦ isInvertible_mfderiv_prodMap_id_left (hφ' p.2)) p
 
 /-- Reparametrising the `ℝ`-coordinate preserves positive scalar curvature. -/
 theorem HasPositiveScalarCurvature.reparamTime [T2Space M] (h : G.HasPositiveScalarCurvature)
@@ -598,7 +598,7 @@ private theorem isInvertible_mfderiv_prodMap_id_collarTimeIcc (hδ : 0 < δ) (h�
       (Prod.map id (collarTimeIcc hδ hδ₁) : M × ℝ → M × unitInterval) p).IsInvertible := by
   -- The composite with the invertible differential of the inclusion is the differential of
   -- `(x, t) ↦ (x, collarTime δ t)`, invertible since `collarTime δ` has nonzero derivative.
-  have h := isInvertible_mfderiv_prodMap_id (I := I)
+  have h := isInvertible_mfderiv_prodMap_id_left (I := I)
     (deriv_collarTime_ne_zero hδ p.2)
   obtain ⟨e, he⟩ := isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (I := I)
     (Prod.map id (collarTimeIcc hδ hδ₁) p)

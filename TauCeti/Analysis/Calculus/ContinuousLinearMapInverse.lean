@@ -38,6 +38,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `HasStrictFDerivAt.exists_continuousLinearEquiv_id_add`: `y ↦ y + f y` has an invertible strict
+  derivative where `f` has a strict derivative of norm less than one.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`,
@@ -53,7 +55,7 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
-  is `C^n`.
+  is `C^n`; `ContinuousAt.ringInverse` is the continuous version, on any topological domain.
 * `TauCeti.iteratedDeriv_ringInverse_add_smul`: all derivatives of the ring inverse of an
   affine pencil, at any parameter where the pencil is a unit.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -180,6 +182,18 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
+
+/-- A strict derivative of norm less than one is a small perturbation of the identity: if `f` has
+strict derivative `f'` at `x` with `‖f'‖ < 1`, then `y ↦ y + f y` has an invertible strict
+derivative at `x`, namely `1 + f'`. -/
+theorem HasStrictFDerivAt.exists_continuousLinearEquiv_id_add [CompleteSpace E] {f : E → E}
+    {f' : E →L[𝕜] E} {x : E} (hf : HasStrictFDerivAt f f' x) (hf' : ‖f'‖ < 1) :
+    ∃ L : E ≃L[𝕜] E, HasStrictFDerivAt (fun y ↦ y + f y) (L : E →L[𝕜] E) x := by
+  set L := ContinuousLinearEquiv.unitsEquiv 𝕜 E (Units.oneSub (-f') (by rwa [norm_neg]))
+  have hL : (L : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + f' := by
+    ext v
+    simp [L, ContinuousLinearEquiv.unitsEquiv_apply]
+  exact ⟨L, hL ▸ (hasStrictFDerivAt_id x).add hf⟩
 
 end Perturbation
 
@@ -328,6 +342,13 @@ theorem ContDiffAt.inverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
   have hi := contDiffAt_ringInverse (n := n) 𝕜 u
   rw [hu] at hi
   exact hi.comp x hf
+
+/-- The ring inverse of a family continuous at a point where it takes a unit value is continuous
+there. -/
+theorem ContinuousAt.ringInverse {Y : Type*} [TopologicalSpace Y] {f : Y → R} {y : Y}
+    (hf : ContinuousAt f y) (hfy : IsUnit (f y)) :
+    ContinuousAt (fun y' => Ring.inverse (f y')) y :=
+  (NormedRing.inverse_continuousAt hfy.unit).comp_of_eq hf hfy.unit_spec.symm
 
 /-- The ring inverse of a `C^n` family of units is `C^n`. -/
 theorem ContDiff.inverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :

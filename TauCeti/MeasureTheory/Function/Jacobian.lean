@@ -86,6 +86,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
 * `Equiv.inv_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹(φ x)‖ ≤ L`, then `|det Dφ(x)| ≥ L^{-n}` in
   dimension `n`.
+* `Equiv.inv_max_one_pow_le_abs_det_fderiv`: if `‖Dφ⁻¹‖ ≤ L` everywhere, then
+  `|det Dφ| ≥ (max 1 L)^{-n}` everywhere.
 -/
 
 public section
@@ -428,3 +430,13 @@ theorem Equiv.inv_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E] [Norm
   rw [eq_inv_of_mul_eq_one_left (by rw [← abs_mul, mul_comm, h, abs_one] :
     |(fderiv ℝ φ x).det| * |(fderiv ℝ φ.symm (φ x)).det| = 1)]
   exact inv_anti₀ hpos hle
+
+/-- **A uniform lower bound for the Jacobian determinant.** If a bijection `φ` of a
+finite-dimensional real normed space and its inverse are differentiable and `‖Dφ⁻¹‖ ≤ L`
+everywhere, then `|det Dφ| ≥ (max 1 L)^{-n}` everywhere, in dimension `n`. The bound is positive
+and depends only on `L` and `n`. -/
+theorem Equiv.inv_max_one_pow_le_abs_det_fderiv {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (φ : E ≃ E) (hφ : Differentiable ℝ φ)
+    (hψ : Differentiable ℝ φ.symm) {L : ℝ} (hL : ∀ y, ‖fderiv ℝ φ.symm y‖ ≤ L) (x : E) :
+    (max 1 L ^ Module.finrank ℝ E)⁻¹ ≤ |(fderiv ℝ φ x).det| :=
+  φ.inv_pow_le_abs_det_fderiv (hφ x) (hψ _) ((hL _).trans (le_max_right 1 L))
