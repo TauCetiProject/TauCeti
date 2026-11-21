@@ -39,10 +39,10 @@ proper closed ideal.
 * `PositiveContinuousLinearMap.traceKernel_eq_top_iff`: `N_τ = A` only for `τ = 0`.
 * `PositiveContinuousLinearMap.isFaithfulTrace_iff_traceKernel_eq_bot` and
   `PositiveContinuousLinearMap.isFaithfulTrace_iff_gnsNonUnitalStarAlgHom_injective`.
-* `PositiveContinuousLinearMap.IsTracialState.isFaithfulTrace_of_forall_isClosed`: on a
-  C⋆-algebra whose only closed two-sided ideals are `⊥` and `⊤`, every tracial state is
-  faithful (`PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed` for nonzero
-  tracial positive functionals).
+* `PositiveContinuousLinearMap.IsTracialState.isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top`:
+  on a C⋆-algebra whose only closed two-sided ideals are `⊥` and `⊤`, every tracial state is
+  faithful (`PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top`
+  for nonzero tracial positive functionals).
 * `PositiveContinuousLinearMap.IsFaithfulTrace.comp`: faithfulness pulls back along injective
   star homomorphisms.
 
@@ -71,6 +71,13 @@ private theorem map_star_mul_self_eq_zero_iff_star (hτ : ∀ a b, τ (a * b) = 
   rw [star_star, hτ]
 
 open TauCeti.StarPositiveFunctional in
+/-- The GNS null space of `τ` consists of the elements with `τ (star a * a) = 0`. -/
+private theorem mem_nullSubmodule_ofPositiveLinearMap_iff (a : A) :
+    a ∈ (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).nullSubmodule ↔ τ (star a * a) = 0 := by
+  rw [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero, ofPositiveLinearMap_apply,
+    coe_toPositiveLinearMap]
+
+open TauCeti.StarPositiveFunctional in
 /-- The **trace kernel** `N_τ = {a | τ (star a * a) = 0}` of a positive functional `τ` with
 `τ (a * b) = τ (b * a)`, as a two-sided ideal. It is closed (`isClosed_traceKernel`), stable
 under `star` (`star_mem_traceKernel_iff`), and equal to the kernel of the GNS representation
@@ -79,24 +86,21 @@ ideal: for the vector state `x ↦ x₁₁` on `2 × 2` matrices it contains `e�
 `e₁₂ * e₂₁ = e₁₁`. -/
 def traceKernel (hτ : ∀ a b, τ (a * b) = τ (b * a)) : TwoSidedIdeal A :=
   .mk' {a | τ (star a * a) = 0} (by simp)
-    (fun {a b} ha hb => by
-      simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
-        (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).nullSubmodule.add_mem
-          (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using ha)
-          (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using hb))
+    (fun {a b} ha hb => (mem_nullSubmodule_ofPositiveLinearMap_iff τ _).1 <|
+      (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).nullSubmodule.add_mem
+        ((mem_nullSubmodule_ofPositiveLinearMap_iff τ a).2 ha)
+        ((mem_nullSubmodule_ofPositiveLinearMap_iff τ b).2 hb))
     (fun {a} ha => by simpa using ha)
-    (fun {a b} hb => by
-      -- the null space of a positive functional is a left ideal
-      simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
-        (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).mul_mem_nullSubmodule a
-          (b := b) (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using hb))
+    -- the null space of a positive functional is a left ideal
+    (fun {a b} hb => (mem_nullSubmodule_ofPositiveLinearMap_iff τ _).1 <|
+      (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).mul_mem_nullSubmodule a
+        ((mem_nullSubmodule_ofPositiveLinearMap_iff τ b).2 hb))
     (fun {a b} ha => by
       -- `a * b = star (star b * star a)`, and `N_τ` is a left ideal stable under `star`
       have h := (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).mul_mem_nullSubmodule (star b)
-        (b := star a) (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
-          (map_star_mul_self_eq_zero_iff_star τ hτ a).2 ha)
-      rw [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero, ofPositiveLinearMap_apply,
-        coe_toPositiveLinearMap, ← star_mul] at h
+        ((mem_nullSubmodule_ofPositiveLinearMap_iff τ (star a)).2
+          ((map_star_mul_self_eq_zero_iff_star τ hτ a).2 ha))
+      rw [mem_nullSubmodule_ofPositiveLinearMap_iff, ← star_mul] at h
       exact (map_star_mul_self_eq_zero_iff_star τ hτ _).1 h)
 
 section TraceKernel
@@ -217,16 +221,18 @@ theorem isFaithfulTrace_iff_gnsNonUnitalStarAlgHom_injective
 
 /-- A nonzero tracial positive functional on a C⋆-algebra whose only closed two-sided ideals are
 `⊥` and `⊤` is faithful, since its trace kernel is a proper closed ideal. -/
-theorem isFaithfulTrace_of_forall_isClosed (hτ : ∀ a b, τ (a * b) = τ (b * a)) (hτ0 : τ ≠ 0)
+theorem isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top (hτ : ∀ a b, τ (a * b) = τ (b * a))
+    (hτ0 : τ ≠ 0)
     (hA : ∀ I : TwoSidedIdeal A, IsClosed (I : Set A) → I = ⊥ ∨ I = ⊤) : τ.IsFaithfulTrace :=
   (isFaithfulTrace_iff_traceKernel_eq_bot hτ).2 <|
     (hA _ (isClosed_traceKernel τ hτ)).resolve_right ((traceKernel_eq_top_iff τ hτ).not.2 hτ0)
 
 /-- **Tracial states of simple C⋆-algebras are faithful.** If the only closed two-sided ideals
 of `A` are `⊥` and `⊤`, every tracial state of `A` is faithful. -/
-theorem IsTracialState.isFaithfulTrace_of_forall_isClosed (hτ : τ.IsTracialState)
+theorem IsTracialState.isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top
+    (hτ : τ.IsTracialState)
     (hA : ∀ I : TwoSidedIdeal A, IsClosed (I : Set A) → I = ⊥ ∨ I = ⊤) : τ.IsFaithfulTrace :=
-  PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed hτ.map_mul_comm
+  PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed_eq_bot_or_eq_top hτ.map_mul_comm
     (by rintro rfl; simpa using hτ.norm_eq_one) hA
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
