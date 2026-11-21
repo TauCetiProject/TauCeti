@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Indexing
 public import TauCeti.AlgebraicTopology.Cohomology.Triple
+public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.CategoryTheory.Subobject.Cokernel
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
@@ -43,9 +44,10 @@ on `X (p - 1)`.
   simplex with image in `X q` (`TauCeti.mem_range_singularCochainFiltration_arrow_iff`). If every
   compact subset of `Y` lies in some `X q`, then every singular simplex of `Y` lies in some `X q`,
   so in each degree the filtration is complete and separated
-  (`TauCeti.isCompleteFiltration_singularCochainFiltration`): a cochain is determined by its values
-  on the simplices, and a sequence of cochains whose successive differences vanish on larger and
-  larger `X q` stabilizes on each simplex. Unlike the filtration of singular chains, the stages
+  (`TauCeti.isCompleteFiltration_singularCochainFiltration`): a cochain is the family of its
+  restrictions to the simplices (`TauCeti.cochainComponentsLinearEquiv`), and in these coordinates
+  the filtration is the weight filtration of a product, the weight of a simplex being the first
+  stage containing it. Unlike the filtration of singular chains, the stages
   need not vanish in any degree, as for the skeletal filtration of an infinite-dimensional CW
   complex.
 * **Convergence of a complete filtration.** If moreover `X (-1) = ∅` and `Hⁿ(X j, X (j - 1)) = 0`
@@ -263,30 +265,13 @@ theorem mem_range_singularCochainFiltration_arrow_iff (q : ℤ) {m : ℕ} {n : �
       ∀ σ : (TopCat.toSSet.obj Y) _⦋m⦌, Set.range (Y.toSSetObjEquiv _ σ) ⊆ X q →
         (TopCat.toSSet.obj Y).ιChainComplex (R := R) σ ≫
           ((Y.singularCochainComplex R k M).extendXIso _ hn).hom c = 0 := by
-  -- The stage is the image of the extended relative cochains, whose image in degree `m` is the
-  -- kernel of restriction to `X q`, by exactness of the cochain sequence of the pair `(Y, X q)`.
-  have hrange : LinearMap.range ((singularCochainFiltration R k M X q).arrow.f n).hom =
-      LinearMap.range ((singularCochainFiltrationι R k M X q).f n).hom := by
-    rw [← singularCochainFiltrationIso_hom_comp_singularCochainFiltrationι,
-      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top]
-    exact LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance)
-  have hexact : LinearMap.range
-      (((TopPair.ofSubset (X q)).singularCochainComplexShortComplex R k M).f.f m).hom =
-        LinearMap.ker ((TopCat.singularCochainComplexMap (R := R) (k := k) (M := M)
-          (TopPair.ofSubset (X q)).map).f m).hom :=
-    (((TopPair.ofSubset (X q)).shortExact_singularCochainComplexShortComplex R k M).exact.map
-      (HomologicalComplex.eval (ModuleCat.{v} k) (ComplexShape.up ℕ) m)).moduleCat_range_eq_ker
-  rw [hrange, singularCochainFiltrationι_def, ← TopPair.singularCochainComplexShortComplex_f_eq]
-  refine (HomologicalComplex.mem_range_extendMap_f_iff ComplexShape.embeddingUpNat
-    ((TopPair.ofSubset (X q)).singularCochainComplexShortComplex R k M).f hn c).trans ?_
-  rw [hexact, LinearMap.mem_ker, TopCat.singularCochainComplexMap_f_apply]
-  refine (SSet.chainComplexMap_f_comp_eq_zero_iff _ R _).trans ⟨fun hc σ hσ ↦ ?_, fun hc τ ↦ ?_⟩
-  · obtain ⟨τ, rfl⟩ :=
-      ((TopPair.ofSubset (X q)).isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ σ).2
-        (hσ.trans (TopPair.range_ofSubset_map (B := X q)).ge)
-    exact hc τ
-  · exact hc _ ((((TopPair.ofSubset (X q)).isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff
-      _ _).1 ⟨τ, rfl⟩).trans (TopPair.range_ofSubset_map (B := X q)).le)
+  rw [← singularCochainFiltrationIso_hom_comp_singularCochainFiltrationι, HomologicalComplex.comp_f,
+    ModuleCat.hom_comp, LinearMap.range_comp_of_range_eq_top _ (ModuleCat.range_eq_top_of_epi _),
+    singularCochainFiltrationι_def]
+  refine (HomologicalComplex.mem_range_extendMap_f_iff _ _ hn c).trans ?_
+  have h := TopPair.mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff
+    (TopPair.ofSubset (X q)) R k M m (((Y.singularCochainComplex R k M).extendXIso _ hn).hom c)
+  rwa [TopPair.range_ofSubset_map] at h
 
 end Membership
 
@@ -380,19 +365,17 @@ variable {R k M}
 
 include hX in
 /-- **The filtration of singular cochains is complete and separated.** If every compact subset of
-`Y` lies in some `X q`, then in each degree the stages `F^j`, `j ≥ 0`, of the filtration of the
-singular cochains by vanishing on `X (j - 1)` form a complete separated filtration: a cochain is
-determined by its values on the singular simplices, each of which lies in some `X q`, and a
-sequence whose successive differences vanish on larger and larger `X q` stabilizes on each
-simplex. -/
+`Y` lies in some `X q`, then in each degree the stages of the filtration of the singular cochains
+by vanishing on `X (j - a)`, `j : ℕ`, form a complete separated filtration, for every offset `a`.
+A cochain is the family of its restrictions to the singular simplices
+(`TauCeti.cochainComponentsLinearEquiv`), and in these coordinates the filtration is the weight
+filtration of a product (`TauCeti.isCompleteFiltration_pi`), the weight of a simplex being the
+first stage containing it; a singular simplex has compact image, so it has a weight. -/
 theorem isCompleteFiltration_singularCochainFiltration
-    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (n : ℤ) :
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (a n : ℤ) :
     IsCompleteFiltration fun j : ℕ ↦
-      LinearMap.range ((singularCochainFiltration R k M X ((j : ℤ) - 1)).arrow.f n).hom := by
-  have hanti : Antitone fun j : ℕ ↦
-      LinearMap.range ((singularCochainFiltration R k M X ((j : ℤ) - 1)).arrow.f n).hom :=
-    fun _ _ hab ↦ Subobject.range_arrow_f_hom_le
-      (antitone_singularCochainFiltration_sub_one R k M hX (by exact_mod_cast hab)) n
+      LinearMap.range ((singularCochainFiltration R k M X (j - a)).arrow.f n).hom := by
+  classical
   by_cases hn : ∃ m : ℕ, ComplexShape.embeddingUpNat.f m = n
   swap
   · -- Below degree `0` the extended cochain complex vanishes.
@@ -400,45 +383,37 @@ theorem isCompleteFiltration_singularCochainFiltration
     have : Subsingleton (((Y.singularCochainComplex R k M).extend
         ComplexShape.embeddingUpNat).X n) :=
       ModuleCat.isZero_iff_subsingleton.1 (isZero_extend_X _ _ n hn)
-    exact ⟨hanti, fun x _ ↦ Subsingleton.elim _ _,
-      fun x _ ↦ ⟨0, fun j ↦ by rw [Subsingleton.elim (0 - x j) 0]; exact zero_mem _⟩⟩
+    exact
+      { antitone _ _ _ x _ := by rw [Subsingleton.elim x 0]; exact zero_mem _
+        eq_zero_of_forall_mem x _ := Subsingleton.elim x 0
+        exists_limit x _ := ⟨0, fun j ↦ by rw [Subsingleton.elim (0 - x j) 0]; exact zero_mem _⟩ }
   obtain ⟨m, hm⟩ := hn
-  have hmem (j : ℕ) (c) :=
-    mem_range_singularCochainFiltration_arrow_iff (R := R) (k := k) (M := M) (X := X)
-      ((j : ℤ) - 1) hm c
-  set e := (Y.singularCochainComplex R k M).extendXIso ComplexShape.embeddingUpNat hm
-  -- Every singular simplex lies in the stage `X (N σ - 1)`.
-  have hN (σ : (TopCat.toSSet.obj Y) _⦋m⦌) :
-      ∃ N : ℕ, Set.range (Y.toSSetObjEquiv _ σ) ⊆ X ((N : ℤ) - 1) := by
+  -- A singular simplex has compact image, so it lies in some stage `X (j - a)`.
+  have hσ (σ : (TopCat.toSSet.obj Y) _⦋m⦌) :
+      ∃ j : ℕ, Set.range (Y.toSSetObjEquiv _ σ) ⊆ X (j - a) := by
     obtain ⟨q, hq⟩ := hK _ (isCompact_range (Y.toSSetObjEquiv _ σ).continuous)
-    exact ⟨(q + 1).toNat, hq.trans (hX (by lia))⟩
-  choose N hN using hN
-  refine ⟨hanti, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · -- A cochain vanishing on every stage vanishes on every simplex.
-    have h₀ : e.hom x = 0 := SSet.chainComplex_hom_ext fun σ ↦
-      ((hmem _ x).1 (hx _) σ (hN σ)).trans comp_zero.symm
-    simpa using congrArg e.inv h₀
-  · -- On a simplex in `X (a - 1)`, the sequence is constant from `a` on.
-    have hstab (σ : (TopCat.toSSet.obj Y) _⦋m⦌) (a : ℕ)
-        (ha : Set.range (Y.toSSetObjEquiv _ σ) ⊆ X ((a : ℤ) - 1)) (b : ℕ) (hab : a ≤ b) :
-        (TopCat.toSSet.obj Y).ιChainComplex (R := R) σ ≫ e.hom (x b) =
-          (TopCat.toSSet.obj Y).ιChainComplex (R := R) σ ≫ e.hom (x a) := by
-      induction b, hab using Nat.le_induction with
-      | base => rfl
-      | succ b hab ih =>
-        have h := (hmem b _).1 (hx b) σ (ha.trans (hX (by lia)))
-        rw [map_sub] at h
-        exact (sub_eq_zero.1 ((Preadditive.comp_sub _ _ _).symm.trans h)).trans ih
-    -- The limit takes on each simplex `σ` the eventual value of the sequence there.
-    let L := Cofan.IsColimit.desc ((TopCat.toSSet.obj Y).isColimitChainComplexXCofan R m)
-      fun σ ↦ (TopCat.toSSet.obj Y).ιChainComplex (R := R) σ ≫ e.hom (x (N σ))
-    refine ⟨e.inv L, fun j ↦ (hmem j _).2 fun σ hσ ↦ ?_⟩
-    have hL : e.hom (e.inv L) = L := ConcreteCategory.congr_hom e.inv_hom_id L
-    rw [map_sub, hL]
-    refine (Preadditive.comp_sub _ _ _).trans (sub_eq_zero.2 ((Cofan.IsColimit.fac _ _ σ).trans ?_))
-    rcases le_total j (N σ) with h | h
-    · exact hstab σ j hσ _ h
-    · exact (hstab σ _ (hN σ) _ h).symm
+    exact ⟨(q + a).toNat, hq.trans (hX (by lia))⟩
+  -- In the coordinates given by the simplices, the filtration is a weight filtration of a
+  -- product, with the weight of a simplex the first stage containing it.
+  let G : ℕ → Submodule k ((TopCat.toSSet.obj Y) _⦋m⦌ → (R ⟶ M)) := fun j ↦
+    ⨅ (σ) (_ : Nat.find (hσ σ) < j), LinearMap.ker (LinearMap.proj σ)
+  have hG := isCompleteFiltration_pi (fun σ ↦ Nat.find (hσ σ)) G fun j v ↦ by simp [G]
+  convert ((hG.comp_add_right 1).comap_linearEquiv
+    (cochainComponentsLinearEquiv k (TopCat.toSSet.obj Y) R M m)).comap_linearEquiv
+      ((Y.singularCochainComplex R k M).extendXIso _ hm).toLinearEquiv using 1
+  funext j
+  ext x
+  rw [mem_range_singularCochainFiltration_arrow_iff _ hm]
+  simp only [G, Submodule.mem_comap, Submodule.mem_iInf, LinearMap.mem_ker]
+  -- A simplex lies in `X (j - a)` exactly when its weight is at most `j`; the coordinates of a
+  -- cochain are its restrictions to the summands of the simplices.
+  -- `Iso.toLinearMap_toLinearEquiv` unwraps the coordinate equivalence; the two sides then
+  -- differ only in the instances of the coercion to functions, closed by `rfl`.
+  refine forall_congr' fun σ ↦ imp_congr ?_ (by
+    rw [LinearMap.proj_apply, LinearEquiv.coe_coe, cochainComponentsLinearEquiv_apply,
+      Iso.toLinearMap_toLinearEquiv]; rfl)
+  rw [Nat.lt_succ_iff, Nat.find_le_iff]
+  exact ⟨fun h ↦ ⟨j, le_rfl, h⟩, fun ⟨i, hi, h⟩ ↦ h.trans (hX (by lia))⟩
 
 /-- The graded pieces `F^j / F^{j+1}` of the filtration of singular cochains have vanishing
 cohomology in degree `m` when `Hⁿ(X j, X (j - 1))` vanishes for `m = n`. -/
@@ -480,11 +455,11 @@ theorem isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration
     exact CochainComplex.isZero_homology_of_antitone_of_isCompleteFiltration _
       (antitone_singularCochainFiltration_sub_one R k M hX)
       (by
-        convert (isCompleteFiltration_singularCochainFiltration hX hK (n - 1)).comp_add_right p'
+        convert (isCompleteFiltration_singularCochainFiltration hX hK 1 (n - 1)).comp_add_right p'
           using 2
         push_cast
         rw [add_comm])
-      (fun x hx ↦ (isCompleteFiltration_singularCochainFiltration hX hK n).eq_zero_of_forall_mem
+      (fun x hx ↦ (isCompleteFiltration_singularCochainFiltration hX hK 1 n).eq_zero_of_forall_mem
         x fun j ↦ hx j)
       fun j hj ↦ isZero_homology_filtrationCokernel hX j n fun m hm ↦ hvanish j m (by lia)
 
@@ -507,7 +482,7 @@ def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFirstQuadrant
     (fun p ↦ singularCochainFiltration R k M X (p - 1))
     (antitone_singularCochainFiltration_sub_one R k M hX)
     (singularCochainFiltration_eq_top R k M (by rwa [zero_sub]))
-    (isCompleteFiltration_singularCochainFiltration hX hK)
+    (isCompleteFiltration_singularCochainFiltration hX hK 1)
     (fun j _ m hm ↦ isZero_homology_filtrationCokernel hX j m fun n hn ↦ hvanish j n (by lia))
     r hr p q hp hq
 
