@@ -59,7 +59,9 @@ estimate their masses.
   test function of time equal to one near `[0, 1]`, used to cut forms on it off in time.
 * `TestFunction.cylinderCutoff`: the cutoff `(x, t) ↦ τ t • χ x` on the cylinder built from a test
   function `χ` on `Ω` and the time cutoff `τ`, with its values `TestFunction.cylinderCutoff_apply`,
-  equal to `χ` at the times `t ∈ [0, 1]`.
+  equal to `χ` at the times `t ∈ [0, 1]` (`TestFunction.cylinderCutoff_apply_of_mem_Icc`) and to
+  one near the points `(x, t)`, `t ∈ [0, 1]`, near which `χ` is one
+  (`TestFunction.cylinderCutoff_eventually_eq_one`).
 * `TestFunction.cylinderHomotopyCLM`: the cylinder homotopy operator on test forms, as a
   continuous linear map.
 * `TauCeti.isCompact_inter_preimage_prodMk_left`: the slices `ιₜ` are proper from `Ω` to `W` at

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
@@ -31,7 +32,8 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * `∂ (Φ_# T) = Φ_# (∂ T)`, where `∂ T = T ∘ d`;
 * the support of `Φ_# T` lies in the image under `Φ` of the support of `T`, and for a proper `Φ`
   the support of `T ∘ Φ^*` lies in the closure of that image;
-* if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then `M(Φ_# T) ≤ L ^ k M(T)`;
+* if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then `M(Φ_# T) ≤ L ^ k M(T)`, so `Φ_# T`
+  is normal when `T` is;
 * functoriality: `(Ψ ∘ Φ)_# T = Ψ_# (Φ_# T)`.
 
 The same construction pushes forward distributions `T : 𝓓'(Ω, F)`: the composition with a cutoff
@@ -56,7 +58,8 @@ whatever the regularity of `T`.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
 * `Distribution.dsupport_comp_pullbackCLM_subset`: for a proper map `Φ`,
   `spt (Φ_# T) ⊆ closure (Φ (Ω ∩ spt T))`.
-* `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
+* `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`, and
+  `Distribution.IsNormal.comp_cutoffPullbackCLM`: `Φ_# T` is normal when `T` is.
 * `Distribution.cutoffPushforwardCLM`: the pushforward of distributions with a cutoff, with its
   independence of the cutoff `Distribution.cutoffPushforwardCLM_congr`, its support
   `Distribution.dsupport_cutoffPushforwardCLM_subset`, its complex-linear extension
@@ -223,6 +226,25 @@ theorem mass_comp_cutoffPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V
         _ = L ^ k := by ring
     · simp [image_eq_zero_of_notMem_tsupport hx]
   simpa using enorm_apply_le_mul_mass_of_forall_norm_le T (b := L ^ k) (by simpa using hpt)
+
+/-- **Normality of a pushforward**: if `|χ| ≤ 1`, `χ` is equal to one near the support of `T` and
+`‖DΦ‖ ≤ L` on the support of `χ`, then the pushforward `T ∘ (χ Φ^*)` of a normal current `T` is
+normal. -/
+theorem IsNormal.comp_cutoffPullbackCLM [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} (hT : IsNormal T)
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) (hχ₁ : ∀ x, |χ x| ≤ 1) {L : ℝ≥0}
+    (hL : ∀ x ∈ tsupport χ, ‖fderiv ℝ Φ x‖ ≤ L) :
+    IsNormal (T ∘L cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) := by
+  have hM {j : ℕ} (S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V) (hS : mass S ≠ ⊤) :
+      mass (S ∘L cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin j]→L[ℝ] F) →L[ℝ] V) ≠ ⊤ := by
+    rw [ContinuousLinearMap.coe_comp]
+    exact ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.coe_ne_top) hS)
+      (mass_comp_cutoffPullbackCLM_le S hχ₁ hL)
+  cases k with
+  | zero => exact isNormal_finZero_iff.2 (hM T (isNormal_finZero_iff.1 hT))
+  | succ k =>
+    rw [isNormal_succ_iff, ContinuousLinearMap.comp_cutoffPullbackCLM_comp_extDerivCLM T hχ]
+    exact ⟨hM T (isNormal_succ_iff.1 hT).1, hM _ (isNormal_succ_iff.1 hT).2⟩
 
 end Distribution
 

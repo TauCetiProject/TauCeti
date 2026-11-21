@@ -47,7 +47,8 @@ used to push forward currents whose support is compact, see
 * `Distribution.HasLocallyFiniteMass.comp_pullbackCLM`: pushforward preserves locally finite
   mass.
 * `TestFunction.cutoffPullbackCLM`: the pullback with a cutoff `ω ↦ χ Φ^* ω`, as a continuous
-  linear map, with its values `TestFunction.cutoffPullbackCLM_apply`.
+  linear map, with its values `TestFunction.cutoffPullbackCLM_apply` and
+  `TestFunction.cutoffPullbackCLM_congr_fun` (only the map matters, not its smoothness proof).
 * `TestFunction.extDerivCLM_cutoffPullbackCLM_apply`: `d (χ Φ^* ω) = χ Φ^* (d ω)` at every point
   near which `χ = 1`.
 * `TestFunction.cutoffPullbackCLM_cutoffPullbackCLM`: composition of pullbacks with cutoffs.
@@ -437,6 +438,13 @@ theorem cutoffPullbackCLM_apply (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) (x :
   by_cases hx : x ∈ Ω
   · simp [pullbackFun, hx]
   · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (χ.tsupport_subset h)]
+
+/-- Equal maps give equal pullbacks with a cutoff, whatever the smoothness proofs. -/
+theorem cutoffPullbackCLM_congr_fun {Ψ : E → E'} (h : Φ = Ψ) {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω} :
+    (cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
+      cutoffPullbackCLM χ Ψ hΨ := by
+  subst h
+  rfl
 
 /-- The support of a pullback with a cutoff lies in the support of the cutoff, over the support of
 the form. -/

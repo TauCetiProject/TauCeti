@@ -156,15 +156,6 @@ private theorem lineHomotopy_image_subset (s : Set E) :
 
 end LineHomotopy
 
-omit [CompleteSpace F] in
-/-- Equal maps give equal pullbacks with a cutoff, whatever the smoothness proofs. -/
-private theorem cutoffPullbackCLM_congr_fun {m : ℕ} {Ψ₀ Ψ₁ : E → E'} (h : Ψ₀ = Ψ₁)
-    {hΨ₀ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ₀ Ω} {hΨ₁ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ₁ Ω} :
-    (cutoffPullbackCLM χ Ψ₀ hΨ₀ : 𝓓(Ω', E' [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
-      cutoffPullbackCLM χ Ψ₁ hΨ₁ := by
-  subst h
-  rfl
-
 variable (hΦ₀ hΦ₁) in
 /-- The support of a homotopy current along the straight-line homotopy lies in the union of the
 segments `[Φ₀ x, Φ₁ x]` over the points of the support of `T`, when `χ` is one near it. -/
@@ -213,8 +204,8 @@ theorem exists_comp_cutoffPullbackCLM_sub_eq_add_comp_extDerivCLM
   have h := ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM (Ω' := Ω')
     (hH₀ := by rw [lineHomotopy_zero]; exact hΦ₀)
     (hH₁ := by rw [lineHomotopy_one]; exact hΦ₁) (hH := contDiffOn_lineHomotopy hΦ₀ hΦ₁) T hχ
-  rw [cutoffPullbackCLM_congr_fun lineHomotopy_zero (hΨ₁ := hΦ₀),
-    cutoffPullbackCLM_congr_fun lineHomotopy_one (hΨ₁ := hΦ₁)] at h
+  rw [cutoffPullbackCLM_congr_fun lineHomotopy_zero (hΨ := hΦ₀),
+    cutoffPullbackCLM_congr_fun lineHomotopy_one (hΨ := hΦ₁)] at h
   refine ⟨(T ∘L extDerivCLM) ∘L cutoffHomotopyPullbackCLM χ _ (contDiffOn_lineHomotopy hΦ₀ hΦ₁),
     T ∘L cutoffHomotopyPullbackCLM χ _ (contDiffOn_lineHomotopy hΦ₀ hΦ₁), by rw [h]; abel,
     mass_comp_cutoffHomotopyPullbackCLM_lineHomotopy_le hΦ₀ hΦ₁ T hχ₁ hδ hL₀ hL₁,
@@ -237,8 +228,8 @@ theorem exists_comp_cutoffPullbackCLM_sub_eq_comp_extDerivCLM_finZero
   have h := ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero
     (Ω' := Ω') (hH₀ := by rw [lineHomotopy_zero]; exact hΦ₀)
     (hH₁ := by rw [lineHomotopy_one]; exact hΦ₁) (hH := contDiffOn_lineHomotopy hΦ₀ hΦ₁) T hχ
-  rw [cutoffPullbackCLM_congr_fun lineHomotopy_zero (hΨ₁ := hΦ₀),
-    cutoffPullbackCLM_congr_fun lineHomotopy_one (hΨ₁ := hΦ₁)] at h
+  rw [cutoffPullbackCLM_congr_fun lineHomotopy_zero (hΨ := hΦ₀),
+    cutoffPullbackCLM_congr_fun lineHomotopy_one (hΨ := hΦ₁)] at h
   refine ⟨T ∘L cutoffHomotopyPullbackCLM χ _ (contDiffOn_lineHomotopy hΦ₀ hΦ₁), h.symm, ?_,
     dsupport_comp_cutoffHomotopyPullbackCLM_lineHomotopy_subset hΦ₀ hΦ₁ T subset_rfl⟩
   -- In degree zero no derivative bound is needed; the spatial derivative is bounded by
@@ -256,6 +247,14 @@ theorem exists_comp_cutoffPullbackCLM_sub_eq_comp_extDerivCLM_finZero
       exact hδ _ hp.1)
     fun p hp ↦ (hC p hp).trans (Real.le_coe_toNNReal C)).trans_eq ?_
   rw [pow_zero, mul_one]
+
+variable (χ) in
+/-- The derivative of a map smooth on `Ω` is bounded on the compact set `tsupport χ`. -/
+private theorem exists_forall_norm_fderiv_le {Φ : E → E'} (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
+    ∃ L : ℝ≥0, ∀ x ∈ tsupport χ, ‖fderiv ℝ Φ x‖ ≤ L := by
+  obtain ⟨C, hC⟩ := χ.hasCompactSupport.exists_bound_of_continuousOn
+    ((hΦ.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).mono χ.tsupport_subset)
+  exact ⟨C.toNNReal, fun x hx ↦ (hC x hx).trans (Real.le_coe_toNNReal C)⟩
 
 end Distribution
 
@@ -285,34 +284,23 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le
   obtain ⟨R, S, heq, hS, hR, -, -⟩ :=
     exists_comp_cutoffPullbackCLM_sub_eq_add_comp_extDerivCLM (Ω' := Ω') (hΦ₀ := hΦ₀)
       (hΦ₁ := hΦ₁) T hχ hχ₁ hδ hL₀ hL₁
-  -- The pushforwards of `T` and of `∂ T` have finite mass.
-  have hfin (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω)
-      (hL : ∀ x ∈ tsupport χ, ‖fderiv ℝ Φ x‖ ≤ L) :
-      mass (T ∘L cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ) ≠ ⊤ ∧
-        mass ((T ∘L cutoffPullbackCLM χ Φ hΦ) ∘L
-          (extDerivCLM : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _)) ≠ ⊤ := by
-    rw [comp_cutoffPullbackCLM_comp_extDerivCLM T hχ]
-    refine ⟨ne_top_of_le_ne_top ?_ (mass_comp_cutoffPullbackCLM_le T hχ₁ hL),
-      ne_top_of_le_ne_top ?_
-        (mass_comp_cutoffPullbackCLM_le (T ∘L extDerivCLM) hχ₁ hL)⟩ <;> finiteness
-  have hS' : mass S ≠ ⊤ := ne_top_of_le_ne_top (by finiteness) hS
-  have hR' : mass R ≠ ⊤ := ne_top_of_le_ne_top (by finiteness) hR
-  have hRd : R ∘L extDerivCLM = (T ∘L cutoffPullbackCLM χ Φ₁ hΦ₁) ∘L extDerivCLM -
-      (T ∘L cutoffPullbackCLM χ Φ₀ hΦ₀) ∘L extDerivCLM := by
-    rw [← sub_comp, heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM, comp_zero, add_zero]
+  -- The difference of the pushforwards is normal, and so are `R` and `S`.
+  have hP : IsNormal (T ∘L cutoffPullbackCLM χ Φ₁ hΦ₁ - T ∘L cutoffPullbackCLM χ Φ₀ hΦ₀ :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
+    (hT.comp_cutoffPullbackCLM hχ hχ₁ hL₁).sub (hT.comp_cutoffPullbackCLM hχ hχ₁ hL₀)
+  have hRd : R ∘L extDerivCLM =
+      (T ∘L cutoffPullbackCLM χ Φ₁ hΦ₁ - T ∘L cutoffPullbackCLM χ Φ₀ hΦ₀) ∘L extDerivCLM := by
+    rw [heq, add_comp, comp_assoc, extDerivCLM_comp_extDerivCLM, comp_zero, add_zero]
   have hSd : S ∘L extDerivCLM = T ∘L cutoffPullbackCLM χ Φ₁ hΦ₁ -
       T ∘L cutoffPullbackCLM χ Φ₀ hΦ₀ - R := by
     rw [heq]
     abel
-  have hRn : IsNormal R := isNormal_succ_iff.2 ⟨hR', by
+  have hRn : IsNormal R := isNormal_succ_iff.2 ⟨ne_top_of_le_ne_top (by finiteness) hR, by
     rw [hRd]
-    exact (mass_sub_le.trans_lt (ENNReal.add_lt_top.2 ⟨(hfin Φ₁ hΦ₁ hL₁).2.lt_top,
-      (hfin Φ₀ hΦ₀ hL₀).2.lt_top⟩)).ne⟩
-  have hSn : IsNormal S := isNormal_succ_iff.2 ⟨hS', by
+    exact (isNormal_succ_iff.1 hP).2⟩
+  have hSn : IsNormal S := isNormal_succ_iff.2 ⟨ne_top_of_le_ne_top (by finiteness) hS, by
     rw [hSd]
-    exact (mass_sub_le.trans_lt (ENNReal.add_lt_top.2 ⟨(mass_sub_le.trans_lt
-      (ENNReal.add_lt_top.2 ⟨(hfin Φ₁ hΦ₁ hL₁).1.lt_top, (hfin Φ₀ hΦ₀ hL₀).1.lt_top⟩)),
-      hR'.lt_top⟩)).ne⟩
+    exact (hP.sub hRn).mass_ne_top⟩
   calc _ ≤ mass R + mass S := normalFlatMass_le_of_eq_add_comp_extDerivCLM _ hRn hSn heq
     _ ≤ δ * L ^ k * mass (T ∘L extDerivCLM) + δ * L ^ (k + 1) * mass T := add_le_add hR hS
     _ = δ * (L ^ (k + 1) * mass T + L ^ k * mass (T ∘L extDerivCLM)) := by ring
@@ -334,17 +322,13 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero
       (hΦ₁ := hΦ₁) T hχ hχ₁ hδ
   -- In degree zero the derivative enters the mass bound only through its zeroth power, so any
   -- bound, which exists by compactness of `tsupport χ`, will do.
-  have hpush (Φ : E → E') (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) :
-      mass (T ∘L cutoffPullbackCLM χ Φ hΦ : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) ≠ ⊤ := by
-    obtain ⟨C, hC⟩ := χ.hasCompactSupport.exists_bound_of_continuousOn
-      ((hΦ.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).mono χ.tsupport_subset)
-    exact ne_top_of_le_ne_top (by finiteness) (mass_comp_cutoffPullbackCLM_le T hχ₁
-      (L := C.toNNReal) fun x hx ↦ (hC x hx).trans (Real.le_coe_toNNReal C))
+  obtain ⟨L₀, hL₀⟩ := exists_forall_norm_fderiv_le χ hΦ₀
+  obtain ⟨L₁, hL₁⟩ := exists_forall_norm_fderiv_le χ hΦ₁
   have hSn : IsNormal S := isNormal_succ_iff.2
     ⟨ne_top_of_le_ne_top (by finiteness) hS, by
       rw [← heq]
-      exact (mass_sub_le.trans_lt (ENNReal.add_lt_top.2
-        ⟨(hpush Φ₁ hΦ₁).lt_top, (hpush Φ₀ hΦ₀).lt_top⟩)).ne⟩
+      exact ((hT.comp_cutoffPullbackCLM hχ hχ₁ hL₁).sub
+        (hT.comp_cutoffPullbackCLM hχ hχ₁ hL₀)).mass_ne_top⟩
   calc _ ≤ mass (0 : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] ℝ) + mass S :=
         normalFlatMass_le_of_eq_add_comp_extDerivCLM _ isNormal_zero hSn (by rw [heq, zero_add])
     _ ≤ δ * mass T := by simpa using hS
@@ -363,17 +347,14 @@ theorem tendsto_normalFlatMass_comp_cutoffPullbackCLM_sub {ι : Type*} {l : Filt
     Tendsto (fun i ↦ (T ∘L cutoffPullbackCLM χ (Φs i) (hΦs i) - T ∘L cutoffPullbackCLM χ Φ hΦ :
       𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ).normalFlatMass) l (𝓝 0) := by
   obtain ⟨hT₀, hT₁⟩ := isNormal_succ_iff.1 hT
-  -- The derivative of `Φ` is bounded on the compact set `tsupport χ`.
-  obtain ⟨C, hC⟩ := χ.hasCompactSupport.exists_bound_of_continuousOn
-    ((hΦ.continuousOn_fderiv_of_isOpen Ω.isOpen (by simp)).mono χ.tsupport_subset)
+  obtain ⟨C, hC⟩ := exists_forall_norm_fderiv_le χ hΦ
   refine TauCeti.tendsto_nhds_zero_of_forall_eventually_le_mul
-    (C := max L C.toNNReal ^ (k + 1) * mass T + max L C.toNNReal ^ k * mass (T ∘L extDerivCLM))
+    (C := max L C ^ (k + 1) * mass T + max L C ^ k * mass (T ∘L extDerivCLM))
     (by finiteness) fun δ hδ ↦ ?_
   filter_upwards [hL, Metric.tendstoUniformlyOn_iff.1 hu δ hδ] with i hi hdist
   exact normalFlatMass_comp_cutoffPullbackCLM_sub_le T hT hχ hχ₁
     (fun x hx ↦ by rw [← dist_eq_norm, dist_comm]; exact (hdist x hx).le)
-    (fun x hx ↦ ((hC x hx).trans (Real.le_coe_toNNReal C)).trans
-      (NNReal.coe_le_coe.2 (le_max_right _ _)))
+    (fun x hx ↦ (hC x hx).trans (NNReal.coe_le_coe.2 (le_max_right _ _)))
     fun x hx ↦ (hi x hx).trans (NNReal.coe_le_coe.2 (le_max_left _ _))
 
 /-- **Flat convergence of pushforwards in degree zero**: let `T` be a `0`-current of finite mass

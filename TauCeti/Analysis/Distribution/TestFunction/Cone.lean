@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 public import TauCeti.Analysis.Distribution.Support
-public import TauCeti.Analysis.Distribution.TestFunction.CylinderHomotopy
+public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 
@@ -47,9 +46,9 @@ On test forms, the operator `TestFunction.coneCLM p χ` sends `ω` to `χ • K 
 function and `K ω = x ↦ ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt` is the Poincaré homotopy
 operator `TauCeti.poincareHomotopy` with centre `p`. Wherever `χ` is equal to one it satisfies the
 homotopy formula of the Poincaré lemma, `K d ω + d K ω = ω` on forms of positive degree and
-`K d ω = ω - ω p` on functions. Continuity for the LF topologies comes from writing it as the
-cylinder homotopy operator `TestFunction.cylinderHomotopyCLM` of the pullback with cutoff
-`TestFunction.cutoffPullbackCLM` along the contraction.
+`K d ω = ω - ω p` on functions. It is the homotopy operator with a cutoff
+`TestFunction.cutoffHomotopyPullbackCLM` of the contraction, which gives its continuity for the LF
+topologies.
 
 ## Main declarations
 
@@ -128,63 +127,21 @@ private theorem fderiv_coneMap_comp_inl (p x : E) (t : ℝ) :
   ext v
   simp [fderiv_coneMap_apply]
 
-/-- The pullback with cutoff along the contraction onto `p`. -/
-private def conePullback (p : E) (χ : 𝓓(Ω, ℝ)) {m : ℕ} :
-    𝓓(Ω, E [⋀^Fin m]→L[ℝ] F) →L[ℝ] 𝓓(Ω.cylinder, (E × ℝ) [⋀^Fin m]→L[ℝ] F) :=
-  cutoffPullbackCLM (cylinderCutoff χ) (coneMap p) (contDiff_coneMap p).contDiffOn
-
-omit [NormedSpace ℝ E] in
-private theorem cyl_fst_mem : ∀ q ∈ Ω.cylinder, q.2 ∈ Icc (0 : ℝ) 1 → q.1 ∈ Ω :=
-  fun _ hq _ ↦ Opens.mem_cylinder.1 hq
-
-/-- At times `t ∈ [0, 1]`, the slices of the pulled-back form are `χ x` times the pullback of
-`ω` along `x ↦ p + t • (x - p)`. -/
-private theorem conePullback_apply_comp_inl {m : ℕ} (ω : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)) {x : E}
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    (conePullback p χ ω (x, t)).compContinuousLinearMap (.inl ℝ E ℝ) =
-      χ x • (ω (coneMap p (x, t))).compContinuousLinearMap (t • ContinuousLinearMap.id ℝ E) := by
-  ext v
-  simp [conePullback, cylinderCutoff_apply_of_mem_Icc ht, Function.comp_def, fderiv_coneMap_apply]
-
 /-- The integrand of the cone operator. -/
-private theorem curryLeft_conePullback_apply (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) {x : E}
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-    ((conePullback p χ ω (x, t)).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) =
-      χ x • t ^ k • (ω (p + t • (x - p))).curryLeft (x - p) := by
+private theorem curryLeft_pullback_coneMap_apply (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) (x : E)
+    (t : ℝ) :
+    (((ω (coneMap p (x, t))).compContinuousLinearMap (fderiv ℝ (coneMap p) (x, t))).curryLeft
+        (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) =
+      t ^ k • (ω (p + t • (x - p))).curryLeft (x - p) := by
   ext v
   have h := (ω (p + t • (x - p))).curryLeft (x - p) |>.map_smul_univ (fun _ ↦ t) v
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
-  simp only [conePullback, cutoffPullbackCLM_apply, cylinderCutoff_apply_of_mem_Icc ht,
-    ContinuousAlternatingMap.smul_apply, curryLeft_apply_apply, compContinuousLinearMap_apply]
+  simp only [ContinuousAlternatingMap.smul_apply, curryLeft_apply_apply,
+    compContinuousLinearMap_apply]
   rw [← curryLeft_apply_apply, ← h, curryLeft_apply_apply]
-  congr 2
+  congr 1
   funext i
   cases i using Fin.cases <;> simp [fderiv_coneMap_apply]
-
-/-- At time one, the slice of the pulled-back form is `χ • ω`. -/
-private theorem pullbackCLM_prodMk_left_conePullback_one {m : ℕ}
-    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ Ω.cylinder →
-      IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (1 : ℝ))) ⁻¹' K)}
-    (ω : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)) (x : E) :
-    pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp
-      (conePullback p χ ω) x = χ x • ω x := by
-  rw [pullbackCLM_prodMk_left_apply cyl_fst_mem ⟨zero_le_one, le_rfl⟩,
-    conePullback_apply_comp_inl ω ⟨zero_le_one, le_rfl⟩]
-  ext v
-  simp [coneMap]
-
-/-- At time zero, the slice of the pulled-back form is `χ` times the pullback along the constant
-map `p`. -/
-private theorem pullbackCLM_prodMk_left_conePullback_zero {m : ℕ}
-    {hp : ∀ K : Set (E × ℝ), IsCompact K → K ⊆ Ω.cylinder →
-      IsCompact ((Ω : Set E) ∩ (fun x ↦ (x, (0 : ℝ))) ⁻¹' K)}
-    (ω : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F)) (x : E) :
-    pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const) hp
-      (conePullback p χ ω) x =
-        χ x • (ω p).compContinuousLinearMap (0 : E →L[ℝ] E) := by
-  rw [pullbackCLM_prodMk_left_apply cyl_fst_mem ⟨le_rfl, zero_le_one⟩,
-    conePullback_apply_comp_inl ω ⟨le_rfl, zero_le_one⟩]
-  simp [coneMap]
 
 end Construction
 
@@ -197,18 +154,17 @@ Precomposing a `k`-current `T` on `Ω` with it gives the cone over `T` with vert
 equal to one near the support of `T`. -/
 def coneCLM (p : E) (χ : 𝓓(Ω, ℝ)) :
     𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
-  cylinderHomotopyCLM cyl_fst_mem ∘L conePullback p χ
+  cutoffHomotopyPullbackCLM χ (coneMap p) (contDiff_coneMap p).contDiffOn
 
 /-- The cone operator is `χ` times the Poincaré homotopy operator with centre `p`:
 `x ↦ χ x • ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt`. -/
 @[simp]
 theorem coneCLM_apply (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) (x : E) :
     coneCLM p χ ω x = χ x • poincareHomotopy p ω x := by
-  rw [coneCLM, ContinuousLinearMap.comp_apply, cylinderHomotopyCLM_apply, poincareHomotopy_apply,
-    ← intervalIntegral.integral_smul]
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [uIcc_of_le zero_le_one] at ht
-  rw [curryLeft_conePullback_apply ω ht, AffineMap.lineMap_apply_module', add_comm (t • (x - p)) p]
+  rw [coneCLM, cutoffHomotopyPullbackCLM_apply, cylinderHomotopy_apply, poincareHomotopy_apply]
+  congr 1
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  rw [curryLeft_pullback_coneMap_apply, AffineMap.lineMap_apply_module', add_comm (t • (x - p)) p]
 
 /-- The cone operator of a test form is pointwise bounded by `|χ x| ‖x - p‖ B / (k + 1)` for any
 bound `B` of the form along the segment from `p` to `x`. -/
@@ -236,16 +192,6 @@ theorem norm_coneCLM_apply_le (ω : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F)) (x
         gcongr
         exact hB _ (lineMap_mem_segment ℝ p x ht')
 
-/-- Where `χ` is one, the cone operator of `d ω` is the cylinder homotopy operator of the exterior
-derivative of the pulled-back form. -/
-private theorem coneCLM_extDerivCLM_apply_eq {m : ℕ} (ω : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] F))
-    {x : E} (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
-    coneCLM p χ (extDerivCLM ω) x =
-      cylinderHomotopyCLM cyl_fst_mem (extDerivCLM (conePullback p χ ω)) x := by
-  rw [coneCLM, ContinuousLinearMap.comp_apply, coe_cylinderHomotopyCLM, coe_cylinderHomotopyCLM]
-  exact cylinderHomotopy_congr fun t ht ↦
-    (extDerivCLM_cutoffPullbackCLM_apply ω (cylinderCutoff_eventually_eq_one hx ht)).symm
-
 /-- **The homotopy formula of the cone operator**: `K d ω + d K ω = ω` on test `(k + 1)`-forms, at
 every point near which the cutoff `χ` is one. -/
 theorem coneCLM_extDerivCLM_add_extDerivCLM_coneCLM_apply
@@ -264,14 +210,11 @@ theorem coneCLM_extDerivCLM_add_extDerivCLM_coneCLM_apply
 theorem coneCLM_extDerivCLM_apply_finZero (ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F)) {x : E}
     (hx : ∀ᶠ y in 𝓝 x, χ y = 1) :
     coneCLM p χ (extDerivCLM ω) x = ω x - ω p := by
-  have h := congr($(cylinderHomotopyCLM_comp_extDerivCLM_finZero (hW := cyl_fst_mem) (F := F))
-    (conePullback p χ ω) x)
-  simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply] at h
-  rw [coneCLM_extDerivCLM_apply_eq ω hx, h, pullbackCLM_prodMk_left_conePullback_one,
-    pullbackCLM_prodMk_left_conePullback_zero, hx.self_of_nhds, one_smul, one_smul]
-  congr 1
-  ext v
-  simp [Subsingleton.elim v 0]
+  rw [coneCLM, cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero
+    (hH₀ := ((contDiff_coneMap p).comp (contDiff_id.prodMk contDiff_const)).contDiffOn)
+    (hH₁ := ((contDiff_coneMap p).comp (contDiff_id.prodMk contDiff_const)).contDiffOn) ω hx,
+    cutoffPullbackCLM_apply, cutoffPullbackCLM_apply, hx.self_of_nhds, one_smul, one_smul]
+  congr 1 <;> ext v <;> simp [coneMap, Subsingleton.elim v (![] : Fin 0 → E)]
 
 /-- The cone operator with zero cutoff is zero. -/
 @[simp]
@@ -784,27 +727,16 @@ theorem mass_comp_coneCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]
     mass (T ∘ (coneCLM p χ : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ≤
       ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) * mass T := by
   refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(coneCLM p χ ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ (r / (k + 1) : ℝ≥0) := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
+  have hpt (x : E) : ‖coneCLM p χ ω x‖ ≤ (r / (k + 1) : ℝ≥0) := by
     by_cases hx : x ∈ tsupport χ
     · refine (norm_coneCLM_apply_le ω x fun t _ ↦ hω _).trans ?_
       calc |χ x| * (‖x - p‖ * 1 / (k + 1)) ≤ 1 * (r * 1 / (k + 1)) := by
             gcongr
             exacts [hχ x, hr x hx]
         _ = (r / (k + 1) : ℝ≥0) := by simp
-    · have h0 : coneCLM p χ ω x = 0 := by
-        rw [coneCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul]
-      rw [h0, norm_zero]
+    · rw [coneCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul, norm_zero]
       positivity
-  calc ‖T (coneCLM p χ ω)‖ₑ
-      ≤ mass T * ‖(coneCLM p χ ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
-        exact ENNReal.ofReal_le_ofReal hb
-    _ = ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) * mass T := mul_comm _ _
+  exact enorm_apply_le_mul_mass_of_forall_norm_le T hpt
 
 /-- **The mass of the cone**: if the support of a `k`-current `T` of finite mass lies in the closed
 ball of radius `r` about `p`, then `M(δ_p × T) ≤ r M(T) / (k + 1)`. -/
