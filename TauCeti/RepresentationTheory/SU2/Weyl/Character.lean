@@ -175,7 +175,7 @@ theorem sin_mul_character_symPower_torusExp (θ : ℝ) :
   have hnum : ((Circle.exp θ : Circle) : ℂ) ^ (d + 1)
       - (((Circle.exp θ : Circle) : ℂ)⁻¹) ^ (d + 1)
       = 2 * Complex.I * (Real.sin (((d : ℝ) + 1) * θ) : ℂ) := by
-    rw [hz, ← Complex.exp_neg, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, Nat.cast_add,
+    rw [hz, ← Complex.exp_neg, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, Nat.cast_add,
       Nat.cast_one, h₁, h₂, exp_sub_exp_neg_mul_I]
   rw [torusExp_def, ← mul_assoc, ← hden, sub_inv_mul_character_symPower_torusHom d (Circle.exp θ)]
   exact hnum

@@ -130,7 +130,7 @@ epimorphic. -/
 theorem isQuasicompact_of_isInitial {X : C} (hX : IsInitial X) : IsQuasicompact X := by
   intro ι Y π _
   refine ⟨∅, ⟨⟨{ desc := fun _ _ ↦ hX.to _, fac := fun _ _ i ↦ ?_, uniq := ?_ }⟩⟩⟩
-  · exact (Finset.notMem_empty _ i.2).elim
+  · exact (Finset.notMem_empty _ i.property).elim
   · exact fun _ _ _ _ ↦ hX.hom_ext _ _
 
 /-- Identities are quasicompact: a fibre product along an identity is isomorphic to the base. -/

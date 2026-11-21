@@ -31,6 +31,9 @@ compatibility lets local properties of modules, expressed on open covers, be tra
 scheme morphisms. Being an isomorphism is such a local property: a morphism of modules is an
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
+Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
+adjoint to direct image.
+
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
 module by free modules can be moved between slices, open subschemes and open immersions.
@@ -51,6 +54,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
+  pullback is direct image along the inverse;
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
@@ -140,6 +145,16 @@ lemma pseudofunctor_left_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
       eqToHom (by simp) := by
   simpa using NatTrans.congr_app (pseudofunctor_left_unitality f) M
 
+/-- The composition comparison for `a ≫ 𝟙 B` identifies the pullback identity comparison. -/
+@[reassoc]
+lemma pullbackComp_id_hom {A B : Scheme.{u}} (a : A ⟶ B) (M : B.Modules) :
+    (pullbackComp a (𝟙 B)).hom.app M ≫
+      (pullbackCongr (Category.comp_id a)).hom.app M =
+    (pullback a).map ((pullbackId B).hom.app M) := by
+  apply (cancel_epi ((pullbackComp a (𝟙 B)).inv.app M)).1
+  simpa only [Iso.inv_hom_id_app_assoc, pullbackCongr, eqToIso.hom, eqToHom_app]
+    using (pseudofunctor_left_unitality_app a M).symm
+
 /-- The right unitality condition of the pullback pseudofunctor, on the component at a module. -/
 @[reassoc]
 lemma pseudofunctor_right_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
@@ -205,6 +220,21 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   simp [pullbackCongr]
 
 end Coherence
+
+section IsIso
+
+/-- Along an isomorphism of schemes `g`, pullback is direct image along the inverse, both being
+left adjoint to direct image along `g`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) [IsIso g] :
+    pullback g ≅ pushforward (inv g) :=
+  (pullbackPushforwardAdjunction g).leftAdjointUniq
+    (CategoryTheory.Equivalence.mk (pushforward (inv g)) (pushforward g)
+      ((pushforwardId Y).symm ≪≫ pushforwardCongr (IsIso.inv_hom_id g).symm ≪≫
+        (pushforwardComp (inv g) g).symm)
+      (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
+        pushforwardId X)).toAdjunction
+
+end IsIso
 
 section Unit
 
@@ -300,22 +330,22 @@ section Monoidal
 variable (f : X ⟶ Y)
 
 /-- Pushforward of modules along a morphism of schemes is lax monoidal
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
+(`SheafOfModules.pushforwardLaxMonoidal`): its tensor map `f_* M ⊗ f_* N ⟶ f_* (M ⊗ N)`
 is induced by `m ⊗ n ↦ m ⊗ n` on sections, and its unit map `𝒪_Y ⟶ f_* 𝒪_X` is given by `f` on
 sections (`pushforward_ε`). -/
 instance pushforwardLaxMonoidal : (pushforward f).LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
 
 /-- Pushforward of modules along a scheme morphism respects the symmetry of tensor products. -/
 instance pushforwardLaxBraided : (pushforward f).LaxBraided :=
-  TauCeti.SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
+  SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
 
 /-- The unit map `𝒪_Y ⟶ f_* 𝒪_X` of the pushforward of modules is given by `f` on sections. -/
 @[simp]
 lemma pushforward_ε :
     Functor.LaxMonoidal.ε (pushforward f) =
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
-  TauCeti.SheafOfModules.pushforward_ε f.toRingCatSheafHom
+  SheafOfModules.pushforward_ε f.toRingCatSheafHom
 
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
@@ -367,9 +397,9 @@ instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 
 /-- The identification `pushforward f ⋙ pushforward g ≅ pushforward (f ≫ g)` is an isomorphism of
-lax monoidal functors (`TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
+lax monoidal functors (`SheafOfModules.isMonoidal_pushforwardComp_hom`). -/
 instance isMonoidal_pushforwardComp_hom : NatTrans.IsMonoidal (pushforwardComp f g).hom :=
-  TauCeti.SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
+  SheafOfModules.isMonoidal_pushforwardComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
 
 /-- The identification `pushforward f ≅ pushforward f'` for equal morphisms `f = f'` is an
 isomorphism of lax monoidal functors. -/
@@ -393,7 +423,7 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
         Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
-  TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+  SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
 agrees with the successive tensor comparisons followed by the composition isomorphisms on

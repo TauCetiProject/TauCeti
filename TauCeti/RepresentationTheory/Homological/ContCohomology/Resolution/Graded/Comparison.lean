@@ -194,9 +194,10 @@ theorem gradedResolutionTopRep_ρ_gradedComparison {v : M.V} (hv : ∀ g, M.ρ g
 augmentation of the total coinduced resolution, by constant functions in degree zero. -/
 @[simp]
 theorem gradedComparison_ι_apply (x : X.V) :
-    (c.gradedComparison).hom (c.ι.hom x).1 = X.gradedResolutionAugmentation x := by
+    (c.gradedComparison).hom (c.ι.hom x).val = X.gradedResolutionAugmentation x := by
   classical
-  rw [c.gradedComparison_apply_of_mem (n := 0) (c.ι.hom x).2, gradedResolutionAugmentation_apply,
+  rw [c.gradedComparison_apply_of_mem (n := 0) (c.ι.hom x).property,
+      gradedResolutionAugmentation_apply,
     ← c.ι_comp_comparison_f_zero, comp_apply]
   -- The degree-zero object of `gradedCochainComplex` is the subtype `ℳ 0`, so the element
   -- rebuilt from `(c.ι.hom x).1` is `c.ι.hom x` by subtype eta.
