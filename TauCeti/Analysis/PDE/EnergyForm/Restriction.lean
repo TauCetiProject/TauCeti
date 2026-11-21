@@ -37,6 +37,9 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_add_const_nonpos`,
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
+* `TauCeti.PDE.exists_energyFormH1_restrictL_add_const_nonneg`: the restriction of a nonnegative
+  weak supersolution with a mass term `c`, shifted by a positive constant, is a weak supersolution
+  for a mass coefficient bounded by `|c|`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
@@ -258,6 +261,52 @@ theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → M
     (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
     0 ≤ energyFormH1 a b 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
   rw [energyFormH1_add_const_left]
+  exact energyFormH1_restrictL_nonneg hU hu v hv
+
+/-- **Shifted nonnegative weak supersolutions with a mass term.** Let `u ∈ H¹(Ω)` be nonnegative
+almost everywhere and satisfy `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, for an energy form
+with drift `b` and a measurable mass coefficient `c` of either sign. Then for every open `U ⊆ Ω` of
+finite measure and every `δ > 0` the shifted restriction `u|_U + δ ∈ H¹(U)` is again a weak
+supersolution on `U`, for the same `a` and `b` and a measurable mass coefficient `c'` with
+`|c'| ≤ |c|` everywhere. -/
+theorem exists_energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} (hU : U ≤ Omega)
+    [IsFiniteMeasure (mu.restrict U)] (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
+    (hu0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ c' : EuclideanSpace ℝ ι → ℝ, AEStronglyMeasurable c' (mu.restrict U) ∧
+      (∀ x, ‖c' x‖ ≤ ‖c x‖) ∧ ∀ v : W1p0 mu U 2,
+        (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) →
+          0 ≤ energyFormH1 a b c' (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  have hUO : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hU
+  -- The factor `θ = u⁺ / (u⁺ + δ) ∈ [0, 1]`, equal to `u / (u + δ)` where `u ≥ 0`.
+  set θ : EuclideanSpace ℝ ι → ℝ := fun x => max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)
+  have hθ : ∀ x, 0 ≤ θ x ∧ θ x ≤ 1 := fun x => by
+    have h0 : 0 ≤ max (W1p.value u x) 0 := le_max_right _ _
+    exact ⟨div_nonneg h0 (by linarith), (div_le_one (by linarith)).2 (by linarith)⟩
+  have hval : AEMeasurable (fun x => max (W1p.value u x) 0) (mu.restrict Omega) :=
+    (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.max aemeasurable_const
+  refine ⟨fun x => c x * θ x, ?_, fun x => ?_, fun v hv => ?_⟩
+  · exact ((hc.aemeasurable.mul (hval.div (hval.add_const δ))).aestronglyMeasurable).mono_measure
+      (Measure.restrict_mono hUO le_rfl)
+  · rw [norm_mul, Real.norm_of_nonneg (hθ x).1]
+    exact mul_le_of_le_one_right (norm_nonneg _) (hθ x).2
+  -- The two energy forms have the same integrand almost everywhere on `U`.
+  have key : energyFormH1 a b (fun x => c x * θ x) (W1p.restrictL hU u + W1p.const δ)
+      (v : W1p mu U 2) = energyFormH1 a b c (W1p.restrictL hU u) (v : W1p mu U 2) := by
+    rw [energyFormH1_def, energyFormH1_def]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ, W1p.value_restrictL_ae hU u,
+      ae_restrict_of_ae_restrict_of_subset hUO hu0] with x hx hxu hx0
+    have hcx : c x * θ x * (W1p.value u x + δ) = c x * W1p.value u x := by
+      simp only [θ, max_eq_left hx0]
+      field_simp
+    simp only [jetField_apply, energyIntegrand_apply, W1p.gradient_add_const, hx, hxu,
+      massForm_apply, hcx]
+  rw [key]
   exact energyFormH1_restrictL_nonneg hU hu v hv
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
