@@ -347,8 +347,7 @@ theorem not_finiteDimensional {𝕜 ι : Type*} {E : ι → Type*} [NormedDivisi
     rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
     exact linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
       linearIndependent_unique_iff.mpr (hv i)
-  have : Finite ι := hli.finite_of_isNoetherian
-  exact _root_.not_finite ι
+  exact Module.Finite.not_linearIndependent_of_infinite _ hli
 
 /-- Evaluating a single-coordinate vector at its own coordinate is the identity continuous linear
 map. -/

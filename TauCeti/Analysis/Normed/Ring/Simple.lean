@@ -28,8 +28,6 @@ Two structural consequences follow:
 
 ## Main declarations
 
-* `TwoSidedIdeal.eq_top_of_norm_lt_one`: a two-sided ideal containing an element within distance
-  `1` of `1` is `⊤`.
 * `TwoSidedIdeal.topologicalClosure_ne_top`: the closure of a proper two-sided ideal is proper.
 * `TwoSidedIdeal.isClosed_of_isCoatom`: maximal two-sided ideals are closed.
 * `IsSimpleRing.of_forall_isClosed_eq_bot_or_eq_top` and
@@ -43,11 +41,10 @@ Two structural consequences follow:
 * H. G. Dales, *Banach Algebras and Automatic Continuity*, London Mathematical Society Monographs
   24, Clarendon Press (2000), §1.3.
 
-The two-sided ideal closure lemmas (`TwoSidedIdeal.eq_top_of_norm_lt_one`,
-`TwoSidedIdeal.topologicalClosure_ne_top`, `TwoSidedIdeal.topologicalClosure_eq_self_of_isCoatom`,
-and `TwoSidedIdeal.isClosed_of_isCoatom`) adapt Heather Macbeth's `Ideal.eq_top_of_norm_lt_one`,
-`Ideal.closure_ne_top`, `Ideal.IsMaximal.closure_eq`, and `Ideal.IsMaximal.isClosed` in
-`Mathlib/Analysis/Normed/Ring/Units.lean` to `TwoSidedIdeal`.
+The two-sided ideal closure lemmas (`TwoSidedIdeal.topologicalClosure_ne_top`,
+`TwoSidedIdeal.topologicalClosure_eq_self_of_isCoatom`, and `TwoSidedIdeal.isClosed_of_isCoatom`)
+adapt Heather Macbeth's `Ideal.closure_ne_top`, `Ideal.IsMaximal.closure_eq`, and
+`Ideal.IsMaximal.isClosed` in `Mathlib/Analysis/Normed/Ring/Units.lean` to `TwoSidedIdeal`.
 -/
 
 public section
@@ -55,11 +52,6 @@ public section
 namespace TwoSidedIdeal
 
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
-
-/-- A two-sided ideal containing an element within distance `1` of `1` is the whole ring. -/
-theorem eq_top_of_norm_lt_one (I : TwoSidedIdeal R) {x : R} (hxI : x ∈ I) (hx : ‖1 - x‖ < 1) :
-    I = ⊤ :=
-  (asIdeal_eq_top_iff I).mp <| I.asIdeal.eq_top_of_norm_lt_one (I.mem_asIdeal.mpr hxI) hx
 
 /-- The topological closure of a proper two-sided ideal in a normed ring with summable geometric
 series is proper. -/

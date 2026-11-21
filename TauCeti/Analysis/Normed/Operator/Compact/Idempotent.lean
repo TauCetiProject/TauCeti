@@ -48,8 +48,7 @@ theorem IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [S
     ∃ v : H →ₗᵢ[𝕜] H,
       p * v.toContinuousLinearMap = v.toContinuousLinearMap ∧
         Star.star v.toContinuousLinearMap * p * v.toContinuousLinearMap = 1 := by
-  have : CompleteSpace p.range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range hp).completeSpace_coe
+  have : CompleteSpace p.range := ContinuousLinearMap.IsIdempotentElem.completeSpace_range hp
   have hinf : ¬ FiniteDimensional 𝕜 p.range := fun _ ↦
     hnc (LinearMap.HasFiniteRange.isCompactOperator Submodule.FG.of_finite)
   obtain ⟨e⟩ := TauCeti.nonempty_linearIsometryEquiv_of_separableSpace_of_not_finiteDimensional
