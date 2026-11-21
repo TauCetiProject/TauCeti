@@ -33,12 +33,16 @@ motion `Circle.rigidMotion u a` acts
 * by the linear isometry equivalence `TauCeti.Vortex.coefficientMotion u a` on the `L∞` classes
   of fields,
 * by the continuous linear equivalence `TauCeti.Vortex.variationMotion u a` on `H¹(ℂ)⁴`, and
-* by the linear isometry equivalence `TauCeti.Vortex.targetMotion u a` on `L²(ℂ; ℝ⁴)`,
+* by the linear isometry equivalence `TauCeti.Vortex.targetMotion u a` on `L²(ℂ; ℝ⁴)`, the
+  target, and by `TauCeti.Vortex.fieldMotion u a` on `L²(ℂ; ℝ⁴)`, the `L²` values of variations,
 
 each composing with the motion and rotating the values by `fieldRotation u` or `targetRotation u`
 (`TauCeti.Vortex.coeFn_coefficientMotion`, `TauCeti.Vortex.value_variationMotion_ae`,
-`TauCeti.Vortex.coeFn_targetMotion`); the weak gradients of a moved variation are rotated by `u⁻¹`
-as well (`TauCeti.Vortex.gradient_variationMotion_ae`). The two isometries are built from the
+`TauCeti.Vortex.coeFn_targetMotion`, `TauCeti.Vortex.coeFn_fieldMotion`); the weak gradients of a
+moved variation are rotated by `u⁻¹` as well (`TauCeti.Vortex.gradient_variationMotion_ae`).
+Taking `L²` values intertwines the motions of variations and of fields
+(`TauCeti.Vortex.sobolevFieldValues_variationMotion`), so the motion of variations preserves the
+`L²` pairing. The isometries are built from the
 measure-preserving pullback `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` and the pointwise
 isometry `LinearIsometryEquiv.compLpₗᵢ`. Each action is trivial at the identity, composes as
 the motions do, and has as inverse the motion by the inverse isometry `z ↦ u⁻¹ z - u⁻¹ a`.
@@ -51,22 +55,39 @@ are unchanged. The moved class of a field `x` is the class of `rotateField u (tr
 (`TauCeti.Vortex.coeFn_coefficientMotion_of_ae_eq`), so these laws transport the Fredholm theory
 of the realization at a vortex to all of its translates and rotations.
 
+The same holds for the operators that split the realization along the `L²` pairing. A projection
+`π` of `H¹(ℂ)⁴` onto the kernel of `L_c` along the `L²`-orthogonal complement of the kernel, and a
+right inverse `Q` of `L_c` with values `L²`-orthogonal to the kernel, move with the coefficient:
+those at the moved coefficient are the conjugates `π' (g·y) = g·(π y)` and `Q' (g·f) = g·(Q f)`
+(`TauCeti.Vortex.apply_variationMotion_eq_variationMotion_apply_of_ker_projection`,
+`TauCeti.Vortex.apply_targetMotion_eq_variationMotion_apply_of_rightInverse`). For `u = 1` and
+`a = 0` this is their uniqueness. No linearity of `π` or `Q` is assumed.
+
 ## Main definitions
 
 * `TauCeti.Vortex.coefficientMotion`, `TauCeti.Vortex.variationMotion`,
-  `TauCeti.Vortex.targetMotion`: the motion `z ↦ u z + a` on coefficients, variations and targets.
+  `TauCeti.Vortex.targetMotion`, `TauCeti.Vortex.fieldMotion`: the motion `z ↦ u z + a` on
+  coefficients, variations, targets and the `L²` values of variations.
 
 ## Main results
 
 * `TauCeti.Vortex.coefficientMotion_coefficientMotion`,
-  `TauCeti.Vortex.variationMotion_variationMotion`, `TauCeti.Vortex.targetMotion_targetMotion`
-  and the `_one_zero` and `_symm` lemmas: the group laws of the three actions.
+  `TauCeti.Vortex.variationMotion_variationMotion`, `TauCeti.Vortex.targetMotion_targetMotion`,
+  `TauCeti.Vortex.fieldMotion_fieldMotion` and the `_one_zero` and `_symm` lemmas: the group laws
+  of the four actions.
 * `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion_apply`,
   `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion`: the intertwining law.
 * `TauCeti.Vortex.ker_sobolevGaugeFixedOperator_coefficientMotion`,
   `TauCeti.Vortex.sobolevGaugeFixedOperator_coefficientMotion_surjective_iff`,
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_coefficientMotion_iff`,
-  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_coefficientMotion`: its consequences.
+  `TauCeti.Vortex.index_sobolevGaugeFixedOperator_coefficientMotion`,
+  `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_coefficientMotion`: its consequences.
+* `TauCeti.Vortex.sobolevFieldValues_variationMotion`,
+  `TauCeti.Vortex.inner_sobolevFieldValues_variationMotion`: the motions preserve the `L²` pairing
+  of variations.
+* `TauCeti.Vortex.apply_variationMotion_eq_variationMotion_apply_of_ker_projection`,
+  `TauCeti.Vortex.apply_targetMotion_eq_variationMotion_apply_of_rightInverse`: the rigid-motion
+  laws of the `L²`-orthogonal kernel projections and right inverses.
 
 ## References
 
@@ -81,7 +102,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory TopologicalSpace
-open scoped ENNReal ComplexConjugate
+open scoped ENNReal ComplexConjugate InnerProductSpace
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
@@ -252,6 +273,14 @@ def targetMotion (u : Circle) (a : ℂ) :
     Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
   lpMotion 2 (targetRotation u) (u.rigidMotion a)
 
+/-- **The rigid motion `z ↦ u z + a` on the `L²` classes of fields.** It sends the class of `v`
+to the class of `rotateField u (translateField a v)` (`coeFn_fieldMotion`). It is the motion of
+the `L²` values of `H¹` variations (`sobolevFieldValues_variationMotion`), whose `L²` pairing
+defines the orthogonal complement of the kernel of `sobolevGaugeFixedOperator`. -/
+def fieldMotion (u : Circle) (a : ℂ) :
+    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
+  lpMotion 2 (fieldRotation u) (u.rigidMotion a)
+
 /-- **The rigid motion `z ↦ u z + a` on `H¹` variations.** It acts on the four coordinates in
 `H¹(ℂ) = W^{1,2}(ℂ)` as `rotateField u ∘ translateField a` acts on their values
 (`value_variationMotion_ae`): each coordinate is composed with the motion, and the connection
@@ -284,6 +313,13 @@ theorem coeFn_targetMotion (u : Circle) (a : ℂ) (f : Lp (EuclideanSpace ℝ (F
   rw [targetMotion, hz, rotateTarget_apply_eq_targetRotation, translateField_apply,
     Circle.rigidMotion_apply]
 
+/-- The field moved by `z ↦ u z + a` is the rotated translate of the field. -/
+theorem coeFn_fieldMotion (u : Circle) (a : ℂ) (v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
+    ⇑(fieldMotion u a v) =ᵐ[μ⊤] rotateField u (translateField a v) := by
+  filter_upwards [coeFn_lpMotion (fieldRotation u) (u.rigidMotion a) v] with z hz
+  rw [fieldMotion, hz, rotateField_apply_eq_fieldRotation, translateField_apply,
+    Circle.rigidMotion_apply]
+
 /-- The values of a variation moved by `z ↦ u z + a` are the rotated translates of its values. -/
 theorem value_variationMotion_ae (u : Circle) (a : ℂ) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     ∀ᵐ z ∂μ⊤, (WithLp.toLp 2 fun j ↦ W1p.value (variationMotion u a y j) z :
@@ -314,6 +350,10 @@ theorem targetMotion_one_zero : targetMotion 1 0 = LinearIsometryEquiv.refl ℝ 
   by rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
 
 @[simp]
+theorem fieldMotion_one_zero : fieldMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
+  by rw [fieldMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
+
+@[simp]
 theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.refl ℝ _ :=
   ContinuousLinearEquiv.ext <| funext fun y ↦ by
     rw [variationMotion, w1pMotionEquiv_apply, fieldRotation_one, Circle.rigidMotion_one_zero,
@@ -336,6 +376,15 @@ theorem targetMotion_targetMotion (u v : Circle) (a b : ℂ)
     targetMotion u a (targetMotion v b f) = targetMotion (u * v) (v * a + b) f := by
   rw [targetMotion, targetMotion, targetMotion, ← LinearIsometryEquiv.trans_apply,
     lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, targetRotation_trans_targetRotation]
+
+/-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
+`z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
+`volume.restrict ↑⊤`, which simp rewrites to `volume.restrict Set.univ`. -/
+theorem fieldMotion_fieldMotion (u v : Circle) (a b : ℂ)
+    (w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
+    fieldMotion u a (fieldMotion v b w) = fieldMotion (u * v) (v * a + b) w := by
+  rw [fieldMotion, fieldMotion, fieldMotion, ← LinearIsometryEquiv.trans_apply,
+    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. -/
@@ -368,6 +417,13 @@ theorem coefficientMotion_symm (u : Circle) (a : ℂ) :
 theorem targetMotion_symm (u : Circle) (a : ℂ) :
     (targetMotion u a).symm = targetMotion u⁻¹ (-((u : ℂ)⁻¹ * a)) := by
   rw [targetMotion, targetMotion, lpMotion_symm, targetRotation_symm, Circle.rigidMotion_symm]
+
+/-- The inverse of the motion `z ↦ u z + a` on fields is the motion by the inverse isometry
+`z ↦ u⁻¹ z - u⁻¹ a`. -/
+@[simp]
+theorem fieldMotion_symm (u : Circle) (a : ℂ) :
+    (fieldMotion u a).symm = fieldMotion u⁻¹ (-((u : ℂ)⁻¹ * a)) := by
+  rw [fieldMotion, fieldMotion, lpMotion_symm, fieldRotation_symm, Circle.rigidMotion_symm]
 
 /-- The inverse of the motion `z ↦ u z + a` on variations is the motion by the inverse isometry
 `z ↦ u⁻¹ z - u⁻¹ a`. -/
@@ -456,5 +512,118 @@ theorem index_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
       (sobolevGaugeFixedOperator c).index := by
   rw [sobolevGaugeFixedOperator_coefficientMotion]
   simp
+
+/-! ### Kernel projections and right inverses -/
+
+/-- **Rigid motions intertwine the `L²` values of variations.** The `L²` class of the values of
+a variation moved by `z ↦ u z + a` is the moved `L²` class of its values. -/
+theorem sobolevFieldValues_variationMotion (u : Circle) (a : ℂ)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues (variationMotion u a y) = fieldMotion u a (sobolevFieldValues y) := by
+  refine Lp.ext ?_
+  filter_upwards [sobolevFieldValues_ae_eq (variationMotion u a y), value_variationMotion_ae u a y,
+    coeFn_fieldMotion u a (sobolevFieldValues y),
+    (measurePreserving_top (u.rigidMotion a)).quasiMeasurePreserving.ae
+      (sobolevFieldValues_ae_eq y)] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, rotateField_apply_eq_fieldRotation, rotateField_apply_eq_fieldRotation,
+    translateField_apply, translateField_apply, ← Circle.rigidMotion_apply, h₄]
+
+/-- **Rigid motions preserve the `L²` pairing of variations**, through which the orthogonal
+complement of the kernel of `sobolevGaugeFixedOperator` is taken. -/
+theorem inner_sobolevFieldValues_variationMotion (u : Circle) (a : ℂ)
+    (y y' : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ⟪sobolevFieldValues (variationMotion u a y), sobolevFieldValues (variationMotion u a y')⟫_ℝ =
+      ⟪sobolevFieldValues y, sobolevFieldValues y'⟫_ℝ := by
+  rw [sobolevFieldValues_variationMotion, sobolevFieldValues_variationMotion,
+    LinearIsometryEquiv.inner_map_map]
+
+/-- A moved variation lies in the kernel of the realization at the moved coefficient exactly when
+the variation lies in the kernel of the realization at `c`. -/
+theorem variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff (u : Circle)
+    (a : ℂ) (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    variationMotion u a y ∈ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker ↔
+      y ∈ (sobolevGaugeFixedOperator c).ker := by
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    sobolevGaugeFixedOperator_coefficientMotion_apply, LinearIsometryEquiv.map_eq_zero_iff]
+
+/-- Rigid motions preserve the dimension of the kernel of the realization. -/
+theorem finrank_ker_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
+    (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    Module.finrank ℝ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker =
+      Module.finrank ℝ (sobolevGaugeFixedOperator c).ker := by
+  rw [ker_sobolevGaugeFixedOperator_coefficientMotion]
+  exact LinearEquiv.finrank_map_eq (variationMotion u a).toLinearEquiv _
+
+/-- A kernel element of the realization whose values are `L²`-orthogonal to the values of every
+kernel element vanishes. -/
+private theorem eq_zero_of_mem_ker_of_forall_inner_eq_zero
+    {c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {w : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hw : w ∈ (sobolevGaugeFixedOperator c).ker)
+    (h : ∀ k ∈ (sobolevGaugeFixedOperator c).ker,
+      ⟪sobolevFieldValues w, sobolevFieldValues k⟫_ℝ = 0) : w = 0 :=
+  sobolevFieldValues_injective ((inner_self_eq_zero.1 (h w hw)).trans (map_zero _).symm)
+
+/-- The moved values of a variation whose values are orthogonal to the kernel at `c` are
+orthogonal to the kernel at the moved coefficient. -/
+private theorem inner_sobolevFieldValues_variationMotion_eq_zero (u : Circle) (a : ℂ)
+    {c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hy : ∀ k ∈ (sobolevGaugeFixedOperator c).ker,
+      ⟪sobolevFieldValues y, sobolevFieldValues k⟫_ℝ = 0)
+    {k : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hk : k ∈ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker) :
+    ⟪sobolevFieldValues (variationMotion u a y), sobolevFieldValues k⟫_ℝ = 0 := by
+  rw [← (variationMotion u a).apply_symm_apply k, inner_sobolevFieldValues_variationMotion]
+  refine hy _ ?_
+  rwa [← variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff u a,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- **The rigid-motion law of the `L²`-orthogonal kernel projections.** Let `π` be the projection
+of `H¹(ℂ)⁴` onto the kernel of the realization `L_c` along the `L²`-orthogonal complement of that
+kernel, and `π'` the same projection for the realization at the coefficient moved by
+`z ↦ u z + a`. Then `π'` is `π` conjugated by the motion of variations: `π' (g·y) = g·(π y)`. -/
+theorem apply_variationMotion_eq_variationMotion_apply_of_ker_projection (u : Circle) (a : ℂ)
+    {c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+    {π π' : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) → Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hπ : ∀ y, π y ∈ (sobolevGaugeFixedOperator c).ker)
+    (hπo : ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator c).ker,
+      ⟪sobolevFieldValues (y - π y), sobolevFieldValues k⟫_ℝ = 0)
+    (hπ' : ∀ y, π' y ∈ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker)
+    (hπ'o : ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker,
+      ⟪sobolevFieldValues (y - π' y), sobolevFieldValues k⟫_ℝ = 0)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    π' (variationMotion u a y) = variationMotion u a (π y) := by
+  -- The difference lies in the moved kernel and its values are orthogonal to that kernel.
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero
+    (sub_mem (hπ' _) ((variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff
+      u a c _).2 (hπ y))) fun k hk ↦ ?_)
+  have h : π' (variationMotion u a y) - variationMotion u a (π y) =
+      variationMotion u a (y - π y) - (variationMotion u a y - π' (variationMotion u a y)) := by
+    rw [map_sub]
+    abel
+  rw [h, map_sub, inner_sub_left, inner_sobolevFieldValues_variationMotion_eq_zero u a (hπo y) hk,
+    hπ'o _ k hk, sub_zero]
+
+/-- **The rigid-motion law of the `L²`-orthogonal right inverses.** Let `Q` be a right inverse of
+the realization `L_c` whose values are `L²`-orthogonal to its kernel, and `Q'` such a right
+inverse of the realization at the coefficient moved by `z ↦ u z + a`. Then `Q'` is `Q`
+conjugated by the motions of targets and variations: `Q' (g·f) = g·(Q f)`. -/
+theorem apply_targetMotion_eq_variationMotion_apply_of_rightInverse (u : Circle) (a : ℂ)
+    {c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+    {Q Q' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ → Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (hQ : ∀ f, sobolevGaugeFixedOperator c (Q f) = f)
+    (hQo : ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator c).ker,
+      ⟪sobolevFieldValues (Q f), sobolevFieldValues k⟫_ℝ = 0)
+    (hQ' : ∀ f, sobolevGaugeFixedOperator (coefficientMotion u a c) (Q' f) = f)
+    (hQ'o : ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator (coefficientMotion u a c)).ker,
+      ⟪sobolevFieldValues (Q' f), sobolevFieldValues k⟫_ℝ = 0)
+    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
+    Q' (targetMotion u a f) = variationMotion u a (Q f) := by
+  -- The difference solves the homogeneous equation and its values are orthogonal to the kernel.
+  refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero
+    (c := coefficientMotion u a c) ?_ fun k hk ↦ ?_)
+  · rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hQ',
+      sobolevGaugeFixedOperator_coefficientMotion_apply, hQ, sub_self]
+  · rw [map_sub, inner_sub_left, hQ'o _ k hk,
+      inner_sobolevFieldValues_variationMotion_eq_zero u a (hQo f) hk, sub_zero]
 
 end TauCeti.Vortex
