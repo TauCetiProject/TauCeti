@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -46,20 +45,18 @@ namespace Int
 /-- Two consecutive integers have nonnegative product: no integer lies strictly between `t - 1`
 and `t`. -/
 theorem zero_le_mul_sub_one (t : ℤ) : 0 ≤ t * (t - 1) := by
-  rcases le_or_gt t 0 with ht | ht
-  · nlinarith [mul_nonneg (by omega : (0 : ℤ) ≤ -t) (by omega : (0 : ℤ) ≤ 1 - t)]
-  · exact mul_nonneg (by omega) (by omega)
+  rw [mul_sub_one, ← sq, sub_nonneg]
+  exact le_self_sq t
 
-/-- The exceptional term of a unit exceptional value is nonnegative: rescaling by the unit turns
-`s * (s - δ)` into a product of consecutive integers. Nonnegativity fails for the other odd
-exceptional values, where already `1 * (1 - ε) < 0` for `ε ≥ 3`. -/
+/-- For a unit `δ` of `ℤ`, the product `s * (s - δ)` is nonnegative: rescaling by `δ = ±1` turns
+it into the product `(δ * s) * (δ * s - 1)` of consecutive integers. Nonnegativity fails for every
+other nonzero `δ`: if `2 ≤ |δ|`, then `s * (s - δ) < 0` at `s = Int.sign δ`. -/
 theorem zero_le_mul_sub_units (δ : ℤˣ) (s : ℤ) : 0 ≤ s * (s - (δ : ℤ)) := by
-  have hδ : (δ : ℤ) * (δ : ℤ) = 1 := by
-    rcases Int.units_eq_one_or δ with rfl | rfl <;> norm_num
-  have hEq : ((δ : ℤ) * s) * ((δ : ℤ) * s - 1) = s * (s - (δ : ℤ)) := by
-    linear_combination (s * s) * hδ
-  rw [← hEq]
-  exact zero_le_mul_sub_one _
+  rcases units_eq_one_or δ with rfl | rfl
+  · exact zero_le_mul_sub_one s
+  · -- for `δ = -1`, `s * (s + 1)` is the consecutive product `-s * (-s - 1)`
+    push_cast
+    linear_combination zero_le_mul_sub_one (-s)
 
 /-- Every integer satisfies `c ^ 2 ≡ c` modulo `2`, since `c * (c - 1)` is even. -/
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
@@ -74,9 +71,8 @@ theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m 
 `T(n + k) = T(n) + T(k) + n k` for `T(m) = m (m - 1) / 2`. -/
 theorem add_mul_add_sub_one_ediv_two (n k : ℤ) :
     (n + k) * (n + k - 1) / 2 = n * (n - 1) / 2 + k * (k - 1) / 2 + n * k := by
-  have h := two_mul_mul_sub_one_ediv_two
-  refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
-  rw [mul_add, mul_add, h, h, h]
+  refine mul_left_cancel₀ two_ne_zero ?_
+  simp only [mul_add, two_mul_mul_sub_one_ediv_two]
   ring
 
 /-- The reflection `n ↦ 1 - n` fixes the halved product `n (n - 1) / 2` of consecutive
@@ -89,15 +85,10 @@ theorem one_sub_mul_one_sub_sub_one_ediv_two (n : ℤ) :
 /-- On natural numbers the halved product `n (n - 1) / 2` is the binomial coefficient
 `n.choose 2`. -/
 theorem natCast_choose_two (n : ℕ) : ((n.choose 2 : ℕ) : ℤ) = n * ((n : ℤ) - 1) / 2 := by
-  have h := two_mul_mul_sub_one_ediv_two n
-  have h' : 2 * n.choose 2 = n * (n - 1) := by
-    rw [Nat.choose_two_right]
-    exact Nat.mul_div_cancel' (Nat.even_mul_pred_self n).two_dvd
   rcases n with _ | n
   · simp
-  · have h'' : (2 : ℤ) * ((n + 1).choose 2 : ℕ) = ((n : ℤ) + 1) * n := by
-      exact_mod_cast h'
-    push_cast at h ⊢
-    linarith
+  · rw [Nat.choose_two_right, Int.natCast_ediv]
+    push_cast
+    rw [add_sub_cancel_right]
 
 end Int
