@@ -262,6 +262,94 @@ theorem indexFormIntegrandWithin_const_smul_right (c : ℝ) (t : ℝ) :
   rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_const_smul_left,
     indexFormIntegrandWithin_comm]
 
+/-- Multiplying the first field by a scalar function gives a derivative term and a scaled
+index density. The differentiability assumptions are only at the evaluation parameter. -/
+theorem indexFormIntegrandWithin_smul_left (φ : ℝ → ℝ) {t : ℝ}
+    (hφ : DifferentiableWithinAt ℝ φ s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t) :
+    indexFormIntegrandWithin I γ (fun r ↦ φ r • V r) W s t =
+      derivWithin φ s t * inner ℝ (V t)
+        (alongCurveWithin (leviCivitaConnection I M) γ W s t) +
+      φ t * indexFormIntegrandWithin I γ V W s t := by
+  rw [indexFormIntegrandWithin_def, alongCurveWithin_smul _ γ V φ s hφ hV,
+    indexFormIntegrandWithin_def]
+  simp only [inner_add_left, real_inner_smul_left, map_smul, LinearMap.smul_apply]
+  ring
+
+/-- Multiplying the second field by a scalar function gives the corresponding derivative
+term and a scaled index density. -/
+theorem indexFormIntegrandWithin_smul_right (ψ : ℝ → ℝ) {t : ℝ}
+    (hψ : DifferentiableWithinAt ℝ ψ s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t) :
+    indexFormIntegrandWithin I γ V (fun r ↦ ψ r • W r) s t =
+      derivWithin ψ s t * inner ℝ
+        (alongCurveWithin (leviCivitaConnection I M) γ V s t) (W t) +
+      ψ t * indexFormIntegrandWithin I γ V W s t := by
+  rw [indexFormIntegrandWithin_comm, indexFormIntegrandWithin_smul_left ψ hψ hW,
+    indexFormIntegrandWithin_comm, real_inner_comm (W t)]
+
+/-- The unrestricted index density obeys the scalar product rule in its first field. -/
+theorem indexFormIntegrand_smul_left (φ : ℝ → ℝ) {t : ℝ}
+    (hφ : DifferentiableAt ℝ φ t)
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t) :
+    indexFormIntegrand I γ (fun r ↦ φ r • V r) W t =
+      deriv φ t * inner ℝ (V t) (alongCurve (leviCivitaConnection I M) γ W t) +
+      φ t * indexFormIntegrand I γ V W t := by
+  simpa only [indexFormIntegrandWithin_univ, derivWithin_univ, alongCurveWithin_univ]
+    using indexFormIntegrandWithin_smul_left φ hφ.differentiableWithinAt
+      hV.differentiableWithinAt (s := univ)
+
+/-- The unrestricted index density obeys the scalar product rule in its second field. -/
+theorem indexFormIntegrand_smul_right (ψ : ℝ → ℝ) {t : ℝ}
+    (hψ : DifferentiableAt ℝ ψ t)
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t) :
+    indexFormIntegrand I γ V (fun r ↦ ψ r • W r) t =
+      deriv ψ t * inner ℝ (alongCurve (leviCivitaConnection I M) γ V t) (W t) +
+      ψ t * indexFormIntegrand I γ V W t := by
+  simpa only [indexFormIntegrandWithin_univ, derivWithin_univ, alongCurveWithin_univ]
+    using indexFormIntegrandWithin_smul_right ψ hψ.differentiableWithinAt
+      hW.differentiableWithinAt (s := univ)
+
+/-- The polarized index density of scalar multiples of two parallel fields is the product
+of the scalar derivatives times the field pairing, minus the weighted curvature pairing. -/
+theorem indexFormIntegrandWithin_smul_smul_of_alongCurveWithin_eq_zero
+    (φ ψ : ℝ → ℝ) {t : ℝ} (hφ : DifferentiableWithinAt ℝ φ s t)
+    (hψ : DifferentiableWithinAt ℝ ψ s t)
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hparallelV : alongCurveWithin (leviCivitaConnection I M) γ V s t = 0)
+    (hparallelW : alongCurveWithin (leviCivitaConnection I M) γ W s t = 0) :
+    indexFormIntegrandWithin I γ (fun r ↦ φ r • V r) (fun r ↦ ψ r • W r) s t =
+      derivWithin φ s t * derivWithin ψ s t * inner ℝ (V t) (W t) -
+      φ t * ψ t * inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+        (curveVelocityWithin I γ s t) (curveVelocityWithin I γ s t)) (W t) := by
+  rw [indexFormIntegrandWithin_smul_left φ hφ hV,
+    alongCurveWithin_smul _ γ W ψ s hψ hW, hparallelW, smul_zero, add_zero,
+    indexFormIntegrandWithin_smul_right ψ hψ hW,
+    indexFormIntegrandWithin_def, hparallelV, hparallelW]
+  simp only [real_inner_smul_right, inner_zero_left, inner_zero_right]
+  ring
+
+/-- The polarized scalar-multiple identity for parallel fields with unrestricted derivatives. -/
+theorem indexFormIntegrand_smul_smul_of_alongCurve_eq_zero
+    (φ ψ : ℝ → ℝ) {t : ℝ} (hφ : DifferentiableAt ℝ φ t)
+    (hψ : DifferentiableAt ℝ ψ t)
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hW : DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hparallelV : alongCurve (leviCivitaConnection I M) γ V t = 0)
+    (hparallelW : alongCurve (leviCivitaConnection I M) γ W t = 0) :
+    indexFormIntegrand I γ (fun r ↦ φ r • V r) (fun r ↦ ψ r • W r) t =
+      deriv φ t * deriv ψ t * inner ℝ (V t) (W t) -
+      φ t * ψ t * inner ℝ ((leviCivitaConnection I M).curvatureTensor (γ t) (V t)
+        (curveVelocity I γ t) (curveVelocity I γ t)) (W t) := by
+  simpa only [indexFormIntegrandWithin_univ, derivWithin_univ, alongCurveWithin_univ,
+    curveVelocityWithin_univ] using
+    indexFormIntegrandWithin_smul_smul_of_alongCurveWithin_eq_zero φ ψ
+      hφ.differentiableWithinAt hψ.differentiableWithinAt hV.differentiableWithinAt
+      hW.differentiableWithinAt (s := univ)
+      (by simpa only [alongCurveWithin_univ] using hparallelV)
+      (by simpa only [alongCurveWithin_univ] using hparallelW)
+
 /-- The index form is homogeneous in the first field. -/
 @[to_fun (attr := simp) indexForm_fun_const_smul_left]
 theorem indexForm_const_smul_left (c : ℝ) :
