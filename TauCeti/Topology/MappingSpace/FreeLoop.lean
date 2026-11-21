@@ -248,6 +248,12 @@ theorem unitAddCircleMapHomeomorphClosedUnitPath_apply (γ : C(UnitAddCircle, Q)
     circleMapHomeomorphClosedUnitPath_apply]
   exact congrArg γ (homeomorphCircle_symm_unitToCircle t)
 
+/-- The map from `UnitAddCircle` of a closed path `p` sends the class of `t` to `p t`. -/
+@[simp]
+theorem unitAddCircleMapHomeomorphClosedUnitPath_symm_apply (p : ClosedUnitPath Q) (t : I) :
+    unitAddCircleMapHomeomorphClosedUnitPath.symm p ((t : ℝ) : UnitAddCircle) = p.val t := by
+  rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, Homeomorph.apply_symm_apply]
+
 /-- Restricting `circleMapHomeomorphClosedUnitPath` to the fibre of evaluation at `1 ∈ Circle` over
 `x` gives the homeomorphism `BasedMap Circle Q 1 x ≃ₜ Path x x`. -/
 def basedMapCircleOneHomeomorphPath (x : Q) : BasedMap Circle Q 1 x ≃ₜ Path x x :=

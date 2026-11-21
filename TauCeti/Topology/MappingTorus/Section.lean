@@ -138,6 +138,7 @@ private theorem mk_apply_coe_one (x : F) : mk φ (φ x) ((1 : I) : ℝ) = mk φ 
 private def sweep (γ : SeamedPath φ) : C(I, MappingTorus φ) :=
   ⟨fun t ↦ mk φ (γ.val t) t, (continuous_mk φ).comp (γ.val.continuous.prodMk continuous_subtypeVal)⟩
 
+@[simp]
 private theorem sweep_apply (γ : SeamedPath φ) (t : I) : sweep φ γ t = mk φ (γ.val t) t :=
   (rfl)
 
@@ -193,6 +194,7 @@ private def sweepHomeomorph : SeamedPath φ ≃ₜ Sweep φ where
   continuous_toFun := ((continuous_sweep φ).subtype_mk _).subtype_mk _
   continuous_invFun := (continuous_unsweep φ).subtype_mk _
 
+@[simp]
 private theorem sweepHomeomorph_apply (γ : SeamedPath φ) (t : I) :
     (sweepHomeomorph φ γ).val.val t = sweep φ γ t :=
   (rfl)
@@ -206,18 +208,14 @@ def sectionHomeomorph :
     (Homeomorph.subtype unitAddCircleMapHomeomorphClosedUnitPath fun s ↦ by
       simp only [unitAddCircleMapHomeomorphClosedUnitPath_apply]
       exact ⟨fun h t ↦ h _, fun h θ ↦ by
-        obtain ⟨t, ht⟩ := unitToCircle_surjective (AddCircle.homeomorphCircle one_ne_zero θ)
-        rw [← (AddCircle.homeomorphCircle one_ne_zero).symm_apply_apply θ, ← ht,
-          homeomorphCircle_symm_unitToCircle]
+        obtain ⟨t, rfl⟩ := exists_coe_unitInterval_eq θ
         exact h t⟩).symm
 
 /-- The section of a seamed path passes through `mk φ (γ t) t` at time `t`. -/
 @[simp]
 theorem sectionHomeomorph_apply (γ : SeamedPath φ) (t : I) :
     (sectionHomeomorph φ γ).val (t : ℝ) = mk φ (γ.val t) t := by
-  rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, sectionHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.subtype_symm_apply_coe, Homeomorph.apply_symm_apply, sweepHomeomorph_apply,
-    sweep_apply]
+  simp [sectionHomeomorph]
 
 /-- The seamed path of a section consists of the fibre coordinates of the section. -/
 @[simp]

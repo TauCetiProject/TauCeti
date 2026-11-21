@@ -39,6 +39,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
 * `TauCeti.homeomorphCircle_symm_unitToCircle`: `unitToCircle t` corresponds to the class of `t`
   in `UnitAddCircle`.
+* `TauCeti.exists_coe_unitInterval_eq`: every point of `UnitAddCircle` is the class of a point
+  of the unit interval.
 * `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
   `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
@@ -67,7 +69,13 @@ theorem unitToCircle_apply (t : I) : unitToCircle t = Circle.exp (2 * Real.pi * 
 @[simp]
 theorem homeomorphCircle_symm_unitToCircle (t : I) :
     (AddCircle.homeomorphCircle one_ne_zero).symm (unitToCircle t) = ((t : ℝ) : UnitAddCircle) := by
-  simpa [unitToCircle_apply] using AddCircle.homeomorphCircle_symm_exp one_ne_zero (t : ℝ)
+  rw [unitToCircle_apply, AddCircle.homeomorphCircle_one_symm_exp]
+
+/-- Every point of `UnitAddCircle` is the class of a point of the unit interval. -/
+theorem exists_coe_unitInterval_eq (θ : UnitAddCircle) :
+    ∃ t : I, ((t : ℝ) : UnitAddCircle) = θ := by
+  obtain ⟨t, ht, rfl⟩ := (AddCircle.coe_image_Icc_eq (1 : ℝ) 0).ge (Set.mem_univ θ)
+  exact ⟨⟨t, by simpa using ht⟩, rfl⟩
 
 @[simp]
 theorem unitToCircle_zero : unitToCircle 0 = 1 := by
