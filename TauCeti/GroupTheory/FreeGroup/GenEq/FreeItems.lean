@@ -100,17 +100,10 @@ private theorem renameEquiv_inclFreeVars_toGX
       (EqIneqSystem.toGX _ FreeGroup.of).comp
         (FreeGroup.map (Sum.map (Ω.freeItemsᶜ.orderEmbOfFin rfl) id)) :=
     FreeGroup.ext_hom _ _ fun x => by cases x <;> simp
-  have hmk (L : List ((Fin #Ω.freeItemsᶜ ⊕ A) × Bool)) :
-      FreeGroup.mk (restoreWord Ω.freeItems L) =
-        FreeGroup.map (Sum.map (Ω.freeItemsᶜ.orderEmbOfFin rfl) id) (FreeGroup.mk L) := by
-    rw [FreeGroup.map.mk]
-    congr 1
-    induction L with
-    | nil => simp
-    | cons x L ih => obtain ⟨y | a, b⟩ := x <;> simp [ih]
   have := DFunLike.congr_fun h (FreeGroup.mk u.1 * (FreeGroup.mk u.2)⁻¹)
   simp only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom] at this
-  rw [this, map_mul, map_inv, ← hmk, ← hmk, restoreEquation_fst, restoreEquation_snd]
+  rw [this, map_mul, map_inv, ← mk_restoreWord, ← mk_restoreWord, restoreEquation_fst,
+    restoreEquation_snd]
 
 /-- The system `Ω*` is, up to renaming the items, the system `\overline{Ω}*` of the generalised
 equation without its free items, regarded as a system in the remaining items and the free items:

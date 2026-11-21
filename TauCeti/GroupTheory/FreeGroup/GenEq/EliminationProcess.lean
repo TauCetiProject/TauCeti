@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.FreeGroup.GenEq.FreeItems
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Kernel
 import Mathlib.GroupTheory.FreeGroup.Center
-import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.GroupAlgGeom.SumVars
 
 /-!
@@ -65,7 +64,7 @@ namespace TauCeti
 namespace GenEq
 
 open GroupAlgGeom Monoid.Coprod
-open scoped Finset commutatorElement
+open scoped Finset
 
 variable {A : Type*}
 
@@ -360,25 +359,11 @@ private theorem kernelExample_orderEmbOfFin_four :
   rw [kernelExample_orderEmbOfFin]
   decide
 
-/-- The commutator `[h₀, z h₄ z⁻¹]` in `F_{R(\overline{Ω})} ∗ ⟨z⟩`, `z` the free item of the
-example. -/
-private abbrev kernelExampleCommutator :
-    GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
-  let x : GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
-    inl ((inr (FreeGroup.of (kernelExampleItem 0)) :
-      GX (FreeGroup (Fin 2)) (Fin #kernelExample.freeItemsᶜ)) : CoordGroup _ _)
-  let y : GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
-    inl ((inr (FreeGroup.of (kernelExampleItem 4)) :
-      GX (FreeGroup (Fin 2)) (Fin #kernelExample.freeItemsᶜ)) : CoordGroup _ _)
-  let z : GX kernelExample.deleteFreeItems.coordGroup (Fin #kernelExample.freeItems) :=
-    inr (FreeGroup.of ⟨0, by simp [kernelExample_freeItems]⟩)
-  ⁅x, z * y * z⁻¹⁆
-
-/-- The commutator `[h₀, z h₄ z⁻¹]` vanishes at every point: every point of `\overline{Ω}` extends
-to a point of `Ω`, at which `h₀ = 1` or `h₄ = 1`. -/
-private theorem freeVarsHom_kernelExampleCommutator :
-    CoordGroup.freeVarsHom (.id _) _ _ kernelExampleCommutator = 1 := by
-  refine CoordGroup.freeVarsHom_eq_one_iff.2 fun v hv u => ?_
+/-- Every point of `\overline{Ω}` has `h₀ = 1` or `h₄ = 1`: it extends to a point of `Ω`. -/
+private theorem kernelExample_deleteFreeItems_eq_one_or_eq_one
+    {v : Fin kernelExample.deleteFreeItems.numItems → FreeGroup (Fin 2)}
+    (hv : v ∈ V (.id _) kernelExample.deleteFreeItems.toSystem) :
+    v (kernelExampleItem 0) = 1 ∨ v (kernelExampleItem 4) = 1 := by
   let e := finSumEquivOfFinset (s := kernelExample.freeItemsᶜ) rfl
     (congrArg Finset.card (compl_compl _))
   have hext (k : Fin #kernelExample.freeItemsᶜ) :
@@ -386,34 +371,26 @@ private theorem freeVarsHom_kernelExampleCommutator :
     simp [e, (Equiv.symm_apply_eq _).2 (finSumEquivOfFinset_inl _ _ k).symm]
   have hv' : Sum.elim v 1 ∘ e.symm ∈ V (.id _) kernelExample.toSystem :=
     mem_V_toSystem_iff_deleteFreeItems.2 (by simpa only [hext] using hv)
-  obtain h | h := kernelExample_eq_one_or_eq_one hv'
-  · rw [← kernelExample_orderEmbOfFin_zero, hext] at h
-    simp [h]
-  · rw [← kernelExample_orderEmbOfFin_four, hext] at h
-    simp [h]
+  rw [← hext, ← hext, kernelExample_orderEmbOfFin_zero, kernelExample_orderEmbOfFin_four]
+  exact kernelExample_eq_one_or_eq_one hv'
 
-/-- The commutator `[h₀, z h₄ z⁻¹]` is not trivial: the points `(a, …, 1, …)` and `(1, …, b, …)`
-show that `h₀` and `h₄` are not trivial in `F_{R(\overline{Ω})}`. -/
-private theorem kernelExampleCommutator_ne_one : kernelExampleCommutator ≠ 1 := by
+/-- For the example `Ω`, its own kernel, with the free item `z = h₁₂`, the surjection
+`F_{R(\overline{Ω})} ∗ ⟨z⟩ → F_{R(Ω)}` (the coordinate group of `Ω` being that of `\overline{Ω}*`
+with the free variable `z`, by `toSystem_eq_image_addFreeVars`) is not injective: every point has
+`h₀ = 1` or `h₄ = 1`, but the points `(a, 1, …)` and `(1, b, …)` show that neither `h₀` nor `h₄`
+is trivial in `F_{R(\overline{Ω})}`. -/
+example : ¬ Function.Injective (CoordGroup.freeVarsHom (.id (FreeGroup (Fin 2)))
+    (Fin #kernelExample.freeItems) kernelExample.deleteFreeItems.toSystem) := by
+  have : Nonempty (Fin #kernelExample.freeItems) := ⟨⟨0, by simp [kernelExample_freeItems]⟩⟩
   have hp₁ := mem_V_toSystem_iff_deleteFreeItems.1 kernelExample_mem_V₁
   have hp₂ := mem_V_toSystem_iff_deleteFreeItems.1 kernelExample_mem_V₂
   -- Passed to `simp` as hypotheses: as global lemmas they do not fire on the evaluated points.
   have h₀ := kernelExample_orderEmbOfFin_zero
   have h₄ := kernelExample_orderEmbOfFin_four
-  refine Monoid.Coprod.commutatorElement_inl_conj_ne_one (fun h => ?_) (fun h => ?_)
-    (FreeGroup.of_ne_one _)
-  · simpa [h₀] using congrArg (CoordGroup.evalGHom _ hp₁) h
-  · simpa [h₄] using congrArg (CoordGroup.evalGHom _ hp₂) h
-
-/-- For the example `Ω`, its own kernel, with the free item `z = h₁₂`, the surjection
-`F_{R(\overline{Ω})} ∗ ⟨z⟩ → F_{R(Ω)}` (the coordinate group of `Ω` being that of `\overline{Ω}*`
-with the free variable `z`, by `toSystem_eq_image_addFreeVars`) is not injective:
-`[h₀, z h₄ z⁻¹]` vanishes at every point, since every point has `h₀ = 1` or `h₄ = 1`, but it is
-not trivial in the free product, since the points `(a, 1, …)` and `(1, b, …)` show that neither
-`h₀` nor `h₄` is trivial in `F_{R(\overline{Ω})}`. -/
-example : ¬ Function.Injective (CoordGroup.freeVarsHom (.id (FreeGroup (Fin 2)))
-    (Fin #kernelExample.freeItems) kernelExample.deleteFreeItems.toSystem) := fun h =>
-  kernelExampleCommutator_ne_one (h (freeVarsHom_kernelExampleCommutator.trans (map_one _).symm))
+  exact CoordGroup.not_injective_freeVarsHom_of_forall_eq_one_or_eq_one
+    (CoordGroup.genericPoint_ne_one_iff (x := kernelExampleItem 0).2 ⟨_, hp₁, by simp [h₀]⟩)
+    (CoordGroup.genericPoint_ne_one_iff (x := kernelExampleItem 4).2 ⟨_, hp₂, by simp [h₄]⟩)
+    fun _ hv => by simpa using kernelExample_deleteFreeItems_eq_one_or_eq_one hv
 
 end GenEq
 
