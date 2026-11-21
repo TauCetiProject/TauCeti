@@ -142,7 +142,7 @@ instance : SMulCommClass (S ⊗[A] Λ) A (S ⊗[A] M) where
   smul_comm t a x := by rw [← algebraMap_smul S a x, smul_comm, algebraMap_smul]
 
 variable (A S Λ M) in
-/-- The map `m ↦ 1 ⊗ m`, semilinear along the inclusion `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
+/-- The map `m ↦ 1 ⊗ m`, semilinear along the canonical algebra map `Λ → S ⊗[A] Λ`, `l ↦ 1 ⊗ l`. -/
 noncomputable def includeRight :
     M →ₛₗ[RingHomClass.toRingHom (Algebra.TensorProduct.includeRight : Λ →ₐ[A] S ⊗[A] Λ)]
       S ⊗[A] M where

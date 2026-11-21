@@ -85,6 +85,7 @@ theorem isConflationExact_finiteProjectiveModulesExtendScalars :
 /-- **Extension of scalars on `K₀(proj R)`.** A ring homomorphism `f : R →+* S` induces
 `K₀(proj R) →+ K₀(proj S)`, sending the class of a finitely generated projective `R`-module `P` to
 the class of `S ⊗_R P`. -/
+@[expose]
 noncomputable def finiteProjectiveModulesK0Extend :
     ExactK0.{u} (finiteProjectiveModulesExactStructure R) →+
       ExactK0.{u} (finiteProjectiveModulesExactStructure S) :=

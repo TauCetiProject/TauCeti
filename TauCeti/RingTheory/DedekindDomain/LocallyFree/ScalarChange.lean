@@ -40,7 +40,9 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A] {K : Type*} [Field K] [Al
   {M : Type*} [AddCommGroup M] [Module A M] [Module Λ M] [IsScalarTower A Λ M] {n : ℕ}
 
 /-- Extension along a morphism of algebras over the central Dedekind base, whose destination
-algebra is finite over the base, preserves locally free lattices and their rank. -/
+algebra is finite over the base, preserves locally free lattices and their rank. The extended
+module must carry an `A`-action compatible with its destination-algebra action. When no such
+action is already available, activate `TauCeti.BalancedExtension.moduleBase` locally. -/
 theorem IsLocallyFreeOfRank.extendScalars [Module.Finite A Γ]
     (h : IsLocallyFreeOfRank A K Λ M n) (f : Λ →ₐ[A] Γ)
     [Module A (BalancedExtension (RingHomClass.toRingHom f) M)]

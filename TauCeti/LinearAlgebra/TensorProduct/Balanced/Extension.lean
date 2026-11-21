@@ -313,6 +313,16 @@ theorem congrRingHom_symm {g : R →+* S} (h : f = g) :
   subst g
   rfl
 
+/-- Transport along reflexive equality is the identity equivalence. -/
+@[simp]
+theorem congrRingHom_refl : congrRingHom (P := P) (rfl : f = f) = LinearEquiv.refl S _ := by rfl
+
+/-- Successive transports compose to transport along the transitive equality. -/
+theorem congrRingHom_trans {g h : R →+* S} (hfg : f = g) (hgh : g = h) :
+    (congrRingHom (P := P) hfg).trans (congrRingHom hgh) = congrRingHom (hfg.trans hgh) := by
+  subst g h
+  rfl
+
 section CentralAction
 
 /-- Scalars acting compatibly with the destination ring act on the first factor of `S ⊗_R P`. -/

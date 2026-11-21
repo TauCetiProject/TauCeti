@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Module.Projective.FreeComplement
 public import TauCeti.Algebra.Module.StableEquivalent
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
@@ -228,6 +228,21 @@ theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
   rw [classOf, sub_eq_zero]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
     (.refl _ _) (.refl _ _)
+
+/-- Extension of scalars on split `K₀` sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`, for every
+finitely generated projective `Λ`-module `M`. -/
+theorem map_extendScalars_classOf {Λ' : Type u} [Ring Λ'] (f : Λ →+* Λ') (n : ℕ) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (classOf Λ M n) =
+      classOf Λ' (BalancedExtension f M) n := by
+  rw [classOf_def, classOf_def, map_sub, map_nsmul,
+    SplitK0.map_of, SplitK0.map_of,
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
+    -- `Λ' ⊗_Λ Λ ≃ Λ'`, through `Λ ≃ Λ¹` and `Λ' ⊗_Λ Λ¹ ≃ Λ'¹`.
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' Λ',
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)
+      ((BalancedExtension.congr f (LinearEquiv.funUnique (Fin 1) Λ Λ).symm).trans
+        ((BalancedExtension.piScalarRight f (Fin 1)).trans (LinearEquiv.funUnique (Fin 1) Λ' Λ')))]
 
 end ClassOf
 
