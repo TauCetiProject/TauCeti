@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 
 /-!
@@ -26,8 +27,9 @@ for every potential, and needs no linearity or continuity of `T`.
 
 If moreover `P` is almost everywhere nonnegative and almost everywhere at least `a > 0` outside a
 ball, then every such realization is a bijection
-(`TauCeti.bijective_of_integral_apply_mul_eq`). For a bounded linear `T` this makes it a
-continuous linear isomorphism `H²(E) ≃ L²(E; ℂ)`, by `ContinuousLinearEquiv.ofBijective`.
+(`TauCeti.bijective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul`).
+For a bounded linear `T` this makes it a continuous linear isomorphism `H²(E) ≃ L²(E; ℂ)`, by
+`ContinuousLinearEquiv.ofBijective`.
 
 * It is injective, because the real and imaginary parts of a complex `L²` weak solution of
   `-Δu + P u = 0` are real weak solutions, which vanish
@@ -54,8 +56,10 @@ Bessel-potential spaces.
   of `-Δu + P u = 0` vanishes almost everywhere.
 * `TauCeti.apply_eq_iff_forall_integral_mul_neg_laplacian_add_mul_eq`: a realization is
   characterized by its weak equation.
-* `TauCeti.injective_of_integral_apply_mul_eq`, `TauCeti.surjective_of_integral_apply_mul_eq`,
-  `TauCeti.bijective_of_integral_apply_mul_eq`: a realization is injective, onto and bijective.
+* `TauCeti.injective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul`,
+  `TauCeti.surjective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul`,
+  `TauCeti.bijective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul`: a realization is
+  injective, onto and bijective.
 
 ## References
 
@@ -122,31 +126,28 @@ theorem apply_eq_iff_forall_integral_mul_neg_laplacian_add_mul_eq
     T u = g ↔ ∀ φ : E → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, inclusionLp zero_le_two u z * ((-Δ (φ : E → ℝ) z + P z * φ z : ℝ) : ℂ) =
         ∫ z, g z * (φ z : ℂ) := by
-  refine ⟨fun h φ hφ hc ↦ by rw [← hT u φ hφ hc, h], fun h ↦ Lp.ext ?_⟩
+  refine ⟨fun h φ hφ hc ↦ by rw [← hT u φ hφ hc, h], fun h ↦ sub_eq_zero.1 ?_⟩
   -- `T u - g` is orthogonal to every test function, so it vanishes.
-  have hd : ∀ᵐ z ∂volume, (T u - g) z = 0 := by
-    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero
-      ((Lp.memLp (T u - g)).locallyIntegrable (by norm_num)) fun φ hφ hc ↦ ?_
-    have hφ2 : MemLp (fun z ↦ (φ z : ℂ)) 2 volume :=
-      (hφ.continuous.memLp_of_hasCompactSupport hc).ofReal
-    calc ∫ z, φ z • (T u - g) z = ∫ z, (T u z * (φ z : ℂ) - g z * (φ z : ℂ)) := by
-          refine integral_congr_ae ?_
-          filter_upwards [Lp.coeFn_sub (T u) g] with z hz
-          rw [hz, Pi.sub_apply, Complex.real_smul]
-          ring
-      _ = 0 := by
-          rw [integral_sub (f := fun z ↦ T u z * (φ z : ℂ)) (g := fun z ↦ g z * (φ z : ℂ))
-            ((Lp.memLp _).integrable_mul hφ2) ((Lp.memLp _).integrable_mul hφ2),
-            hT u φ hφ hc, h φ hφ hc, sub_self]
-  filter_upwards [hd, Lp.coeFn_sub (T u) g] with z h₁ h₂
-  rw [← sub_eq_zero, ← Pi.sub_apply, ← h₂, h₁]
+  refine Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero fun φ ↦ ?_
+  have hφ2 : MemLp (fun z ↦ (φ z : ℂ)) 2 volume :=
+    (φ.contDiff.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).ofReal
+  calc ∫ z, φ z • (T u - g) z = ∫ z, (T u z * (φ z : ℂ) - g z * (φ z : ℂ)) := by
+        refine integral_congr_ae ?_
+        filter_upwards [Lp.coeFn_sub (T u) g] with z hz
+        rw [hz, Pi.sub_apply, Complex.real_smul]
+        ring
+    _ = 0 := by
+        rw [integral_sub (f := fun z ↦ T u z * (φ z : ℂ)) (g := fun z ↦ g z * (φ z : ℂ))
+          ((Lp.memLp _).integrable_mul hφ2) ((Lp.memLp _).integrable_mul hφ2),
+          hT u φ φ.contDiff φ.hasCompactSupport, h φ φ.contDiff φ.hasCompactSupport, sub_self]
 
 /-- **A realization of the Schrödinger operator is injective.** Let `P` be essentially bounded,
 almost everywhere nonnegative, and almost everywhere at least `a > 0` outside the closed ball of
 radius `R`. Every `T : H²(E) → L²(E; ℂ)` with `∫ (T u) φ = ∫ u (-Δφ + P φ)` for all `u` and all
 smooth compactly supported real `φ` is injective. -/
-theorem injective_of_integral_apply_mul_eq [Nontrivial E] (hP : MemLp P ⊤ (volume : Measure E))
-    (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a) (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
+theorem injective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul [Nontrivial E]
+    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
     (hT : ∀ (u : H^{2}(E)) (φ : E → ℝ), ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, T u z * (φ z : ℂ) =
         ∫ z, inclusionLp zero_le_two u z * ((-Δ (φ : E → ℝ) z + P z * φ z : ℝ) : ℂ)) :
@@ -180,8 +181,9 @@ everywhere nonnegative, and almost everywhere at least `a > 0` outside the close
 `R`. Every `T : H²(E) → L²(E; ℂ)` with `∫ (T u) φ = ∫ u (-Δφ + P φ)` for all `u` and all smooth
 compactly supported real `φ` is onto: every `g ∈ L²(E; ℂ)` is `T u` for the weak solution
 `u ∈ H²(E)` of `-Δu + P u = g`. -/
-theorem surjective_of_integral_apply_mul_eq [Nontrivial E] (hP : MemLp P ⊤ (volume : Measure E))
-    (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a) (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
+theorem surjective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul [Nontrivial E]
+    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
     (hT : ∀ (u : H^{2}(E)) (φ : E → ℝ), ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, T u z * (φ z : ℂ) =
         ∫ z, inclusionLp zero_le_two u z * ((-Δ (φ : E → ℝ) z + P z * φ z : ℝ) : ℂ)) :
@@ -218,13 +220,14 @@ radius `R`. Every map `T : H²(E) → L²(E; ℂ)` with `∫ (T u) φ = ∫ u (-
 all smooth compactly supported real `φ` is bijective. When `T` is a bounded linear map, it is
 therefore a continuous linear isomorphism `H²(E) ≃ L²(E; ℂ)` (`ContinuousLinearEquiv.ofBijective`),
 by the open mapping theorem. -/
-theorem bijective_of_integral_apply_mul_eq [Nontrivial E] (hP : MemLp P ⊤ (volume : Measure E))
-    (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a) (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
+theorem bijective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul [Nontrivial E]
+    (hP : MemLp P ⊤ (volume : Measure E)) (hP₀ : ∀ᵐ z ∂volume, 0 ≤ P z) {a R : ℝ} (ha : 0 < a)
+    (hPa : ∀ᵐ z ∂volume, R < ‖z‖ → a ≤ P z)
     (hT : ∀ (u : H^{2}(E)) (φ : E → ℝ), ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, T u z * (φ z : ℂ) =
         ∫ z, inclusionLp zero_le_two u z * ((-Δ (φ : E → ℝ) z + P z * φ z : ℝ) : ℂ)) :
     Function.Bijective T :=
-  ⟨injective_of_integral_apply_mul_eq T hP hP₀ ha hPa hT,
-    surjective_of_integral_apply_mul_eq T hP hP₀ ha hPa hT⟩
+  ⟨injective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul T hP hP₀ ha hPa hT,
+    surjective_of_integral_apply_mul_eq_integral_mul_neg_laplacian_add_mul T hP hP₀ ha hPa hT⟩
 
 end TauCeti
