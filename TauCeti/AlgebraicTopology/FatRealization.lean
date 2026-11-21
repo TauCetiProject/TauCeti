@@ -7,10 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.SemiSimplexCategory
 public import Mathlib.AlgebraicTopology.TopologicalSimplex
-public import Mathlib.Topology.CompactOpen
-public import Mathlib.Topology.Homeomorph.Lemmas
-public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
+public import TauCeti.Topology.Category.TopCat.FunctorTensor
 
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -19,41 +17,25 @@ import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 A semi-simplicial space is a functor `X : SemiSimplexCategoryᵒᵖ ⥤ TopCat`: a space `Xₙ` for each
 `n` with face maps along the order embeddings `⦋m⦌ₛ ⟶ ⦋n⦌ₛ`, but no degeneracies. Its fat
-realization `‖X‖` is the quotient of the disjoint union `Σ n, Xₙ × Δⁿ` by the identifications
-`(X(f) x, t) ∼ (x, f_* t)` for every order embedding `f : ⦋m⦌ₛ ⟶ ⦋n⦌ₛ`, where `f_*` is the induced
-face inclusion of topological simplices (`SemiSimplexCategory.toTop`). This is a concrete model of
-the coend of `Xₘ × Δⁿ` over the semi-simplex category: `TauCeti.fatRealization.desc` and
-`TauCeti.fatRealization.hom_ext` are its universal property. A simplicial space has a fat
-realization through `SemiSimplexCategory.toSimplexCategory`, which forgets its degeneracies; this
-is the model of the classifying space of a topological groupoid built from the topological nerve.
+realization `‖X‖` (`TauCeti.fatRealization X`) is the functor tensor product
+`TauCeti.functorTensor SemiSimplexCategory.toTop X`: the quotient of the disjoint union
+`Σ n, Xₙ × Δⁿ` by the identifications `(X(f) x, t) ∼ (x, f_* t)` for every order embedding
+`f : ⦋m⦌ₛ ⟶ ⦋n⦌ₛ`, where `f_*` is the induced face inclusion of topological simplices
+(`SemiSimplexCategory.toTop`).
 
-This file constructs `TauCeti.fatRealization X` with its characteristic maps
-`TauCeti.fatRealization.ι X n : C(Xₙ × Δⁿ, ‖X‖)`, its universal property
-(`TauCeti.fatRealization.desc`, and `TauCeti.fatRealization.lift` for its underlying set), its
-quotient topology (`TauCeti.fatRealization.isOpen_iff`, `TauCeti.fatRealization.continuous_iff`)
-and its functoriality (`TauCeti.fatRealizationFunctor`). An augmentation `ε : X ⟶ const Z`
-induces the map `TauCeti.fatRealization.augment ε : ‖X‖ ⟶ Z` sending `[x, t]` to `ε x`. A family
-of maps `φ s : X ⟶ Y`, `s ∈ [0, 1]`, depending continuously on `s` in each level, induces a
-homotopy `TauCeti.fatRealization.homotopy` from `‖φ 0‖` to `‖φ 1‖`: since `[0, 1]` is locally
-compact, the product of `‖X‖` with `[0, 1]` is still a quotient of `Σ n, Xₙ × Δⁿ × [0, 1]`.
+Characteristic maps (`TauCeti.fatRealization.ι`), universal property (`TauCeti.fatRealization.desc`,
+`TauCeti.fatRealization.lift`, `TauCeti.fatRealization.hom_ext`), functoriality
+(`TauCeti.fatRealizationFunctor`, `TauCeti.fatRealization.map`), augmentations
+(`TauCeti.fatRealization.augment`), homotopies (`TauCeti.fatRealization.homotopy`), and
+open/closed restrictions for saturated subfunctors (`TauCeti.fatRealization.isOpenEmbedding_map`,
+`TauCeti.fatRealization.isClosedEmbedding_map`) are inherited directly from
+`TauCeti.Topology.Category.TopCat.FunctorTensor`.
 
 For the topological simplices `SemiSimplexCategory.toTop.obj n`, the file also provides the
 barycentric coordinates (`SemiSimplexCategory.toTopWeights`), the boundary `∂Δⁿ`
 (`SemiSimplexCategory.toTopBoundary`) and carrier faces: every point of `Δⁿ` is the image under a
 unique face inclusion of a point off the boundary of that face
 (`SemiSimplexCategory.exists_toTop_map_eq`, `SemiSimplexCategory.eq_and_eq_of_toTop_map_eq`).
-
-The main results are the open and closed restriction theorems. If `φ : Y ⟶ X` is levelwise an
-open (respectively closed) embedding and its image is closed under passing from a face back to the
-simplex, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is an open (respectively closed) embedding
-(`TauCeti.fatRealization.isOpenEmbedding_map`, `TauCeti.fatRealization.isClosedEmbedding_map`).
-In particular, if the image of `φ` in each level is the preimage of a set `V ⊆ Z` under an
-augmentation, then `‖Y‖` is homeomorphic, through `‖φ‖`, to the subspace of `‖X‖` lying over `V`
-(`TauCeti.fatRealization.preimage_augment_eq_range_map`,
-`TauCeti.fatRealization.isOpenEmbedding_map_of_range_eq_preimage` and
-`TauCeti.fatRealization.isClosedEmbedding_map_of_range_eq_preimage`). For the nerve of a groupoid
-augmented by the orbit map to its coarse space, this identifies the preimage of a saturated open
-or closed set with the fat realization of the nerve of the restricted groupoid.
 
 ## References
 
@@ -85,6 +67,10 @@ the underlying morphism of the simplex category. -/
 theorem toTop_map {m n : SemiSimplexCategory} (f : m ⟶ n) :
     toTop.{u}.map f = SimplexCategory.toTop.map (toSimplexCategory.map f) :=
   (rfl)
+
+/-- Every topological simplex of `SemiSimplexCategory` is nonempty. -/
+instance nonempty_toTop_obj (n : SemiSimplexCategory) : Nonempty (toTop.{u}.obj n) :=
+  inferInstanceAs (Nonempty (SimplexCategory.toTop.{u}.obj (toSimplexCategory.obj n)))
 
 section TopologicalSimplex
 
@@ -252,380 +238,221 @@ namespace TauCeti
 
 open SemiSimplexCategory (toTop)
 
-variable (X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u})
+/-- The fat realization `‖X‖` of a semi-simplicial space `X`: the functor tensor product of
+`SemiSimplexCategory.toTop` and `X`. -/
+abbrev fatRealization (X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}) : TopCat.{u} :=
+  functorTensor toTop X
 
-/-- The face identifications `(X(f) x, t) ∼ (x, f_* t)` on `Σ n, Xₙ × Δⁿ`. -/
-private inductive FatRealizationRel :
-    (Σ n : SemiSimplexCategory, X.obj (op n) × toTop.{u}.obj n) →
-      (Σ n : SemiSimplexCategory, X.obj (op n) × toTop.{u}.obj n) → Prop
-  | mk {m n : SemiSimplexCategory} (f : m ⟶ n) (x : X.obj (op n)) (t : toTop.{u}.obj m) :
-      FatRealizationRel ⟨m, X.map f.op x, t⟩ ⟨n, x, toTop.map f t⟩
-
-/-- The fat realization `‖X‖` of a semi-simplicial space `X`: the quotient of `Σ n, Xₙ × Δⁿ` by
-the identifications `(X(f) x, t) ∼ (x, f_* t)` along the face maps, with the quotient topology. -/
-def fatRealization : TopCat.{u} :=
-  TopCat.of (Quot (FatRealizationRel X))
+/-- The fat realization as a functor from semi-simplicial spaces to spaces. -/
+abbrev fatRealizationFunctor : (SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u} :=
+  functorTensorFunctor toTop
 
 namespace fatRealization
 
+section Basic
+
+variable (X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u})
+
 /-- The characteristic map `Xₙ × Δⁿ → ‖X‖` of level `n` of the fat realization. -/
-def ι (n : SemiSimplexCategory) : C(X.obj (op n) × toTop.{u}.obj n, fatRealization X) :=
-  ⟨fun p ↦ Quot.mk (FatRealizationRel X) ⟨n, p⟩, continuous_quot_mk.comp continuous_sigmaMk⟩
+abbrev ι (n : SemiSimplexCategory) : C(X.obj (op n) × toTop.{u}.obj n, fatRealization X) :=
+  functorTensor.ι toTop X n
 
 /-- The characteristic maps are compatible with the face identifications. -/
-@[simp]
 theorem ι_map {m n : SemiSimplexCategory} (f : m ⟶ n) (x : X.obj (op n)) (t : toTop.{u}.obj m) :
     ι X m (X.map f.op x, t) = ι X n (x, toTop.map f t) :=
-  Quot.sound (FatRealizationRel.mk f x t)
+  functorTensor.ι_map toTop X f x t
 
 /-- Every point of the fat realization lies in the image of a characteristic map. -/
-theorem ι_jointly_surjective (p : fatRealization X) : ∃ n x t, ι X n (x, t) = p := by
-  induction p using Quot.ind with
-  | mk p => exact ⟨p.1, p.2.1, p.2.2, rfl⟩
+theorem ι_jointly_surjective (p : fatRealization X) : ∃ n x t, ι X n (x, t) = p :=
+  functorTensor.ι_jointly_surjective toTop X p
 
 /-- The fat realization carries the quotient topology of `Σ n, Xₙ × Δⁿ`. -/
 theorem isQuotientMap_sigma :
     IsQuotientMap fun p : Σ n : SemiSimplexCategory, X.obj (op n) × toTop.{u}.obj n ↦
-      ι X p.1 p.2 :=
-  isQuotientMap_quot_mk
+      ι X p.fst p.snd :=
+  functorTensor.isQuotientMap_sigma toTop X
 
 /-- A set in the fat realization is open exactly when its preimage under every characteristic map
 is open. -/
-theorem isOpen_iff {s : Set (fatRealization X)} : IsOpen s ↔ ∀ n, IsOpen (ι X n ⁻¹' s) := by
-  rw [← (isQuotientMap_sigma X).isOpen_preimage, isOpen_sigma_iff]
-  rfl
+theorem isOpen_iff {s : Set (fatRealization X)} : IsOpen s ↔ ∀ n, IsOpen (ι X n ⁻¹' s) :=
+  functorTensor.isOpen_iff
 
 /-- A set in the fat realization is closed exactly when its preimage under every characteristic
 map is closed. -/
-theorem isClosed_iff {s : Set (fatRealization X)} :
-    IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) := by
-  simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
+theorem isClosed_iff {s : Set (fatRealization X)} : IsClosed s ↔ ∀ n, IsClosed (ι X n ⁻¹' s) :=
+  functorTensor.isClosed_iff
 
 /-- A map out of the fat realization is continuous exactly when its composite with every
 characteristic map is continuous. -/
 theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : fatRealization X → Z} :
-    Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) := by
-  rw [(isQuotientMap_sigma X).continuous_iff, continuous_sigma_iff]
-  rfl
+    Continuous g ↔ ∀ n, Continuous (g ∘ ι X n) :=
+  functorTensor.continuous_iff
 
 /-- Two continuous maps out of the fat realization agree as soon as they agree on the image of
 every characteristic map. -/
-@[ext]
 theorem hom_ext {Z : TopCat} {g h : fatRealization X ⟶ Z}
-    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h := by
-  ext p
-  obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
-  exact H n x t
+    (H : ∀ n x t, g (ι X n (x, t)) = h (ι X n (x, t))) : g = h :=
+  functorTensor.hom_ext H
+
+end Basic
 
 section Lift
 
-variable {X} {Z : Sort*} (g : ∀ n, X.obj (op n) × toTop.{u}.obj n → Z)
+variable {X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} {Z : Sort*}
+  (g : ∀ n, X.obj (op n) × toTop.{u}.obj n → Z)
   (hg : ∀ ⦃m n : SemiSimplexCategory⦄ (f : m ⟶ n) (x : X.obj (op n)) (t : toTop.{u}.obj m),
     g m (X.map f.op x, t) = g n (x, toTop.map f t))
 
 /-- The universal property of the underlying set of the fat realization: functions on the sets
 `Xₙ × Δⁿ` compatible with the face identifications descend to a function on `‖X‖`. -/
-def lift : fatRealization X → Z :=
-  Quot.lift (fun p ↦ g p.1 p.2) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+abbrev lift : fatRealization X → Z :=
+  functorTensor.lift g hg
 
-@[simp]
 theorem lift_ι (n : SemiSimplexCategory) (p : X.obj (op n) × toTop.{u}.obj n) :
     lift g hg (ι X n p) = g n p :=
-  (rfl)
+  functorTensor.lift_ι g hg n p
 
 end Lift
 
 section Desc
 
-variable {X} {Z : Type*} [TopologicalSpace Z] (g : ∀ n, C(X.obj (op n) × toTop.{u}.obj n, Z))
+variable {X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} {Z : Type*} [TopologicalSpace Z]
+  (g : ∀ n, C(X.obj (op n) × toTop.{u}.obj n, Z))
   (hg : ∀ ⦃m n : SemiSimplexCategory⦄ (f : m ⟶ n) (x : X.obj (op n)) (t : toTop.{u}.obj m),
     g m (X.map f.op x, t) = g n (x, toTop.map f t))
 
 /-- The universal property of the fat realization: continuous maps `Xₙ × Δⁿ → Z` compatible with
 the face identifications descend to a continuous map `‖X‖ → Z`. -/
-def desc : C(fatRealization X, Z) where
-  toFun := lift (fun n ↦ g n) hg
-  continuous_toFun := continuous_quot_lift _ (continuous_sigma fun n ↦ (g n).continuous)
+abbrev desc : C(fatRealization X, Z) :=
+  functorTensor.desc g hg
 
-@[simp]
 theorem desc_ι (n : SemiSimplexCategory) (p : X.obj (op n) × toTop.{u}.obj n) :
     desc g hg (ι X n p) = g n p :=
-  (rfl)
+  functorTensor.desc_ι g hg n p
 
 end Desc
 
 section Map
 
-variable {X} {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}}
+variable {X Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}}
 
 /-- The map of fat realizations induced by a map of semi-simplicial spaces. -/
-def map (φ : X ⟶ Y) : fatRealization X ⟶ fatRealization Y :=
-  TopCat.ofHom <|
-    desc (Z := fatRealization Y) (fun n ↦ (ι Y n).comp ((φ.app (op n)).hom.prodMap (.id _))) <| by
-    intro m n f x t
-    simp
+abbrev map (φ : X ⟶ Y) : fatRealization X ⟶ fatRealization Y :=
+  functorTensor.map toTop φ
 
-@[simp]
 theorem map_ι (φ : X ⟶ Y) (n : SemiSimplexCategory) (x : X.obj (op n)) (t : toTop.{u}.obj n) :
     map φ (ι X n (x, t)) = ι Y n (φ.app (op n) x, t) :=
-  (rfl)
+  functorTensor.map_ι toTop φ n x t
 
-@[simp]
-theorem map_id : map (𝟙 X) = 𝟙 (fatRealization X) := by
-  ext; simp
+theorem map_id : map (𝟙 X) = 𝟙 (fatRealization X) :=
+  functorTensor.map_id toTop X
 
-@[simp]
 theorem map_comp {W : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : X ⟶ Y) (ψ : Y ⟶ W) :
-    map (φ ≫ ψ) = map φ ≫ map ψ := by
-  ext; simp
+    map (φ ≫ ψ) = map φ ≫ map ψ :=
+  functorTensor.map_comp toTop φ ψ
 
 end Map
 
-end fatRealization
-
-/-- The fat realization as a functor from semi-simplicial spaces to spaces. -/
-@[expose, simps]
-def fatRealizationFunctor : (SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}) ⥤ TopCat.{u} where
-  obj := fatRealization
-  map := fatRealization.map
-
-namespace fatRealization
-
 section Augment
 
-variable {X} {Z : TopCat.{u}}
+variable {X : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} {Z : TopCat.{u}}
 
 /-- The map `‖X‖ ⟶ Z` induced by an augmentation `ε : X ⟶ const Z`, sending `[x, t]` to `ε x`. -/
-def augment (ε : X ⟶ (Functor.const _).obj Z) : fatRealization X ⟶ Z :=
-  TopCat.ofHom <| desc (Z := Z) (fun n ↦ (ε.app (op n)).hom.comp ContinuousMap.fst) <| by
-    intro m n f x t
-    simp
+abbrev augment (ε : X ⟶ (Functor.const _).obj Z) : fatRealization X ⟶ Z :=
+  functorTensor.augment toTop ε
 
-@[simp]
 theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : SemiSimplexCategory) (x : X.obj (op n))
     (t : toTop.{u}.obj n) : augment ε (ι X n (x, t)) = ε.app (op n) x :=
-  (rfl)
+  functorTensor.augment_ι toTop ε n x t
 
-/-- If an augmentation is a quotient map in one degree, its realization is a quotient map.
-No condition on the other degrees or the face maps is needed. -/
+/-- If an augmentation is a quotient map in one degree, its realization is a quotient map. -/
 theorem isQuotientMap_augment (ε : X ⟶ (Functor.const _).obj Z) (n : SemiSimplexCategory)
-    (hε : IsQuotientMap (ε.app (op n))) : IsQuotientMap (augment ε) := by
-  obtain ⟨t⟩ : Nonempty (SimplexCategory.toTop.{u}.obj
-    (SemiSimplexCategory.toSimplexCategory.obj n)) := inferInstance
-  let j : X.obj (op n) → fatRealization X := fun x ↦ ι X n (x, t)
-  have hj : Continuous j := (ι X n).continuous.comp (continuous_id.prodMk continuous_const)
-  have heq : (augment ε) ∘ j = fun x ↦ ε.app (op n) x :=
-    funext fun x ↦ augment_ι ε n x t
-  exact IsQuotientMap.of_comp hj (augment ε).hom.continuous (heq.symm ▸ hε)
+    (hε : IsQuotientMap (ε.app (op n))) : IsQuotientMap (augment ε) :=
+  functorTensor.isQuotientMap_augment ε n hε
 
 /-- The augmentation of `‖X‖` induced by `ε` restricts along `‖φ‖` to the augmentation of `‖Y‖`
 induced by `φ ≫ ε`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem map_comp_augment {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
-    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) := by
-  ext; simp
+    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) :=
+  functorTensor.map_comp_augment toTop φ ε
 
 end Augment
 
 section Homotopy
 
-variable {X} {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}}
+variable {X Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}}
 
 /-- A family `φ s : X ⟶ Y` of maps of semi-simplicial spaces, indexed by `s ∈ [0, 1]` and
 continuous jointly in `s` and the point in each level, induces the homotopy
 `(s, [x, t]) ↦ [φ s x, t]` from `‖φ 0‖` to `‖φ 1‖`. -/
-def homotopy (φ : unitInterval → (X ⟶ Y))
+abbrev homotopy (φ : unitInterval → (X ⟶ Y))
     (hφ : ∀ n : SemiSimplexCategory,
-      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.1).app (op n) p.2) :
-    ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom where
-  toFun p := map (φ p.1) p.2
-  continuous_toFun := (isQuotientMap_sigma X).continuous_lift_prod_right <| by
-    -- `[0, 1]` is locally compact, so it suffices to check continuity on each `Xₙ × Δⁿ × [0, 1]`.
-    have : Continuous fun q : Σ n : SemiSimplexCategory,
-        (X.obj (op n) × toTop.{u}.obj n) × unitInterval ↦
-          ι Y q.1 ((φ q.2.2).app (op q.1) q.2.1.1, q.2.1.2) :=
-      continuous_sigma fun n ↦ (ι Y n).continuous.comp <|
-        ((hφ n).comp (continuous_snd.prodMk (continuous_fst.comp continuous_fst))).prodMk
-          (continuous_snd.comp continuous_fst)
-    exact (this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)).congr
-      fun ⟨_, n, x, t⟩ ↦ (map_ι _ n x t).symm
-  map_zero_left _ := rfl
-  map_one_left _ := rfl
+      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.fst).app (op n) p.snd) :
+    ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom :=
+  functorTensor.homotopy toTop φ hφ
 
-@[simp]
 theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
     (hφ : ∀ n : SemiSimplexCategory,
-      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.1).app (op n) p.2)
+      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.fst).app (op n) p.snd)
     (s : unitInterval) (n : SemiSimplexCategory) (x : X.obj (op n)) (t : toTop.{u}.obj n) :
     homotopy φ hφ (s, ι X n (x, t)) = ι Y n ((φ s).app (op n) x, t) :=
-  (rfl)
+  functorTensor.homotopy_apply_ι toTop φ hφ s n x t
 
 end Homotopy
 
 section Restriction
 
-variable {X} {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
+variable {X Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
 
 /-- The points of `‖X‖` in the image of `‖φ‖` are those of the form `[φ y, t]`. -/
 theorem range_map :
-    range (map φ) = {p | ∃ n y t, ι X n (φ.app (op n) y, t) = p} := by
-  ext p
-  constructor
-  · rintro ⟨q, rfl⟩
-    obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
-    exact ⟨n, y, t, rfl⟩
-  · rintro ⟨n, y, t, rfl⟩
-    exact ⟨ι Y n (y, t), rfl⟩
-
-/-- If a simplex of `X` lies in the image of `φ`, so does each of its faces. -/
-private theorem map_mem_range {m n : SemiSimplexCategoryᵒᵖ} (f : m ⟶ n) {x : X.obj m}
-    (hx : x ∈ range (φ.app m)) : X.map f x ∈ range (φ.app n) := by
-  obtain ⟨y, rfl⟩ := hx
-  exact ⟨Y.map f y, NatTrans.naturality_apply φ f y⟩
-
-section PartialInv
-
-variable {φ} (hinj : ∀ n, Function.Injective (φ.app n))
-  (hsat : ∀ ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
-    X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m))
-
-include hinj hsat
-
-open scoped Classical in
-/-- A partial inverse of `‖φ‖`, defined on the points `[φ y, t]`. -/
-private def partialInv : fatRealization X → Option (fatRealization Y) :=
-  Quot.lift
-    (fun p ↦ if hx : p.2.1 ∈ range (φ.app (op p.1)) then some (ι Y p.1 (hx.choose, p.2.2))
-      else none) <| by
-    rintro _ _ ⟨f, x, t⟩
-    dsimp only
-    split_ifs with hx' hx hx
-    · -- The chosen preimage of the face `X(f) x` is the face of the chosen preimage of `x`.
-      have hchoose : hx'.choose = Y.map f.op hx.choose :=
-        hinj _ (by rw [hx'.choose_spec, NatTrans.naturality_apply, hx.choose_spec])
-      rw [hchoose, ι_map]
-    · exact absurd (hsat f.op x hx') hx
-    · exact absurd (map_mem_range φ f.op hx) hx'
-    · rfl
-
-open scoped Classical in
-private theorem partialInv_ι (n : SemiSimplexCategory) (x : X.obj (op n))
-    (t : toTop.{u}.obj n) :
-    partialInv hinj hsat (ι X n (x, t)) =
-      if hx : x ∈ range (φ.app (op n)) then some (ι Y n (hx.choose, t)) else none :=
-  (rfl)
-
-private theorem partialInv_map (q : fatRealization Y) :
-    partialInv hinj hsat (map φ q) = some q := by
-  obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
-  rw [map_ι, partialInv_ι]
-  split_ifs with hx
-  · rw [hinj _ hx.choose_spec]
-  · exact absurd ⟨y, rfl⟩ hx
-
-private theorem exists_eq_of_partialInv_eq_some {n : SemiSimplexCategory} {x : X.obj (op n)}
-    {t : toTop.{u}.obj n} {q : fatRealization Y}
-    (h : partialInv hinj hsat (ι X n (x, t)) = some q) :
-    ∃ y, φ.app (op n) y = x ∧ ι Y n (y, t) = q := by
-  rw [partialInv_ι] at h
-  split_ifs at h with hx
-  exact ⟨hx.choose, hx.choose_spec, Option.some.inj h⟩
-
-/-- If `φ : Y ⟶ X` is levelwise injective and a simplex of `X` lies in the image of `φ` whenever
-one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is injective. -/
-theorem map_injective : Function.Injective (map φ) := fun q q' h ↦ Option.some.inj <| by
-  rw [← partialInv_map hinj hsat q, ← partialInv_map hinj hsat q', h]
-
-/-- Under the same hypotheses, the preimage in level `n` of the image of `W ⊆ ‖Y‖` under `‖φ‖`
-is the image under `φ × id` of the preimage of `W`. -/
-private theorem preimage_ι_image_map (W : Set (fatRealization Y)) (n : SemiSimplexCategory) :
-    ι X n ⁻¹' (map φ '' W) = Prod.map (φ.app (op n)) id '' (ι Y n ⁻¹' W) := by
-  ext ⟨x, t⟩
-  constructor
-  · rintro ⟨q, hq, hqx⟩
-    have h := partialInv_map hinj hsat q
-    rw [hqx] at h
-    obtain ⟨y, rfl, rfl⟩ := exists_eq_of_partialInv_eq_some hinj hsat h
-    exact ⟨(y, t), hq, rfl⟩
-  · rintro ⟨⟨y, t'⟩, hy, hyx⟩
-    simp only [Prod.map_apply, id_eq, Prod.mk.injEq] at hyx
-    obtain ⟨rfl, rfl⟩ := hyx
-    exact ⟨ι Y n (y, t'), hy, rfl⟩
-
-end PartialInv
+    range (map φ) = {p | ∃ n y t, ι X n (φ.app (op n) y, t) = p} :=
+  functorTensor.range_map toTop φ
 
 variable {φ}
 
+/-- If `φ : Y ⟶ X` is levelwise injective and a simplex of `X` lies in the image of `φ` whenever
+one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is injective. -/
+theorem map_injective (hinj : ∀ n, Function.Injective (φ.app n))
+    (hsat : ∀ ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
+      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) : Function.Injective (map φ) :=
+  functorTensor.map_injective hinj hsat
+
 /-- **Open restriction.** If `φ : Y ⟶ X` is levelwise an open embedding and a simplex of `X` lies
-in the image of `φ` whenever one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is an open embedding:
-`‖Y‖` is an open subspace of `‖X‖`, with the quotient topology of its own fat realization. -/
+in the image of `φ` whenever one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is an open embedding. -/
 theorem isOpenEmbedding_map (hφ : ∀ n, IsOpenEmbedding (φ.app n))
     (hsat : ∀ ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
-      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
-    IsOpenEmbedding (map φ) := by
-  have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isOpenMap (map φ).hom.continuous (map_injective hinj hsat)
-    fun W hW ↦ ?_
-  rw [isOpen_iff] at hW ⊢
-  intro n
-  rw [preimage_ι_image_map hinj hsat]
-  exact ((hφ (op n)).prodMap .id).isOpenMap _ (hW n)
+      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) : IsOpenEmbedding (map φ) :=
+  functorTensor.isOpenEmbedding_map hφ hsat
 
 /-- **Closed restriction.** If `φ : Y ⟶ X` is levelwise a closed embedding and a simplex of `X`
 lies in the image of `φ` whenever one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is a closed
-embedding: `‖Y‖` is a closed subspace of `‖X‖`, with the quotient topology of its own fat
-realization. -/
+embedding. -/
 theorem isClosedEmbedding_map (hφ : ∀ n, IsClosedEmbedding (φ.app n))
     (hsat : ∀ ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m),
-      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
-    IsClosedEmbedding (map φ) := by
-  have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isClosedMap (map φ).hom.continuous (map_injective hinj hsat)
-    fun W hW ↦ ?_
-  rw [isClosed_iff] at hW ⊢
-  intro n
-  rw [preimage_ι_image_map hinj hsat]
-  exact ((hφ (op n)).prodMap .id).isClosedMap _ (hW n)
+      X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) : IsClosedEmbedding (map φ) :=
+  functorTensor.isClosedEmbedding_map hφ hsat
 
 variable {Z : TopCat.{u}} (ε : X ⟶ (Functor.const _).obj Z) {V : Set Z}
 
 /-- If the image of `φ` in every level is the preimage of `V` under an augmentation `ε`, then the
 part of `‖X‖` lying over `V` is exactly the image of `‖Y‖`. -/
 theorem preimage_augment_eq_range_map (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) :
-    augment ε ⁻¹' V = range (map φ) := by
-  ext p
-  constructor
-  · intro hp
-    obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
-    obtain ⟨y, rfl⟩ : x ∈ range (φ.app (op n)) := by rwa [hrange]
-    exact ⟨ι Y n (y, t), rfl⟩
-  · rintro ⟨q, rfl⟩
-    obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
-    rw [mem_preimage, ← ConcreteCategory.comp_apply, map_comp_augment, augment_ι]
-    exact (hrange (op n)).subset ⟨y, rfl⟩
-
-/-- If the image of `φ` in every level is the preimage of a set under an augmentation, then a
-simplex lies in the image of `φ` whenever one of its faces does. -/
-private theorem mem_range_of_map_mem_range (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V)
-    ⦃m n : SemiSimplexCategoryᵒᵖ⦄ (f : m ⟶ n) (x : X.obj m)
-    (hx : X.map f x ∈ range (φ.app n)) : x ∈ range (φ.app m) := by
-  rw [hrange, mem_preimage, NatTrans.naturality_apply] at hx
-  rw [hrange]
-  simpa using hx
+    augment ε ⁻¹' V = range (map φ) :=
+  functorTensor.preimage_augment_eq_range_map ε hrange
 
 /-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
-`ε`, then `‖φ‖` is an open embedding; by `preimage_augment_eq_range_map` its image is the part of
-`‖X‖` lying over `V`. -/
+`ε`, then `‖φ‖` is an open embedding. -/
 theorem isOpenEmbedding_map_of_range_eq_preimage (hφ : ∀ n, IsOpenEmbedding (φ.app n))
     (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) : IsOpenEmbedding (map φ) :=
-  isOpenEmbedding_map hφ (mem_range_of_map_mem_range ε hrange)
+  functorTensor.isOpenEmbedding_map_of_range_eq_preimage ε hφ hrange
 
 /-- If `φ` is levelwise a closed embedding whose image is the preimage of `V` under an
-augmentation `ε`, then `‖φ‖` is a closed embedding; by `preimage_augment_eq_range_map` its image
-is the part of `‖X‖` lying over `V`. -/
+augmentation `ε`, then `‖φ‖` is a closed embedding. -/
 theorem isClosedEmbedding_map_of_range_eq_preimage (hφ : ∀ n, IsClosedEmbedding (φ.app n))
     (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) : IsClosedEmbedding (map φ) :=
-  isClosedEmbedding_map hφ (mem_range_of_map_mem_range ε hrange)
+  functorTensor.isClosedEmbedding_map_of_range_eq_preimage ε hφ hrange
 
 end Restriction
 

@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialObject.TopCat
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
+public import TauCeti.Topology.Compactness.Paracompact
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization
@@ -783,6 +784,17 @@ instance instT4Space [∀ n : ℕ, T4Space (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)
     fun n ↦ (isEmbedding_prodMkLeft (toTopInitialVertex.{u} ⦋n⦌)).t2Space
   have : NormalSpace X.geometricRealization := normalSpace X fun {n} j ↦ X.isClosedEmbedding_σ j
   exact {}
+
+/-- Every simplicial space whose levels `X _⦋n⦌` are `T3` (regular Hausdorff) and Lindelöf has a
+`T4` (normal Hausdorff, and hence paracompact) thin geometric realization in its colimit
+topology. -/
+instance (priority := 90) instT4Space_of_t3Space_lindelofSpace [h3 : ∀ n : ℕ, T3Space (X _⦋n⦌)]
+    [hL : ∀ n : ℕ, LindelofSpace (X _⦋n⦌)] : T4Space X.geometricRealization :=
+  have (n : ℕ) : T4Space (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
+    have := h3 n
+    have := hL n
+    inferInstance
+  inferInstance
 
 end Topology
 

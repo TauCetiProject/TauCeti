@@ -226,6 +226,12 @@ instance [RegularSpace (Quiver.Total C)] : RegularSpace ((topologicalNerve C).ob
 instance [CompactSpace (ComposableArrows C Δ.unop.len)] :
     CompactSpace ((topologicalNerve C).obj Δ) :=
   inferInstanceAs (CompactSpace (ComposableArrows C Δ.unop.len))
+instance [SigmaCompactSpace (ComposableArrows C Δ.unop.len)] :
+    SigmaCompactSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (SigmaCompactSpace (ComposableArrows C Δ.unop.len))
+instance [LindelofSpace (ComposableArrows C Δ.unop.len)] :
+    LindelofSpace ((topologicalNerve C).obj Δ) :=
+  inferInstanceAs (LindelofSpace (ComposableArrows C Δ.unop.len))
 instance [FirstCountableTopology (Quiver.Total C)] :
     FirstCountableTopology ((topologicalNerve C).obj Δ) :=
   inferInstanceAs (FirstCountableTopology (ComposableArrows C Δ.unop.len))

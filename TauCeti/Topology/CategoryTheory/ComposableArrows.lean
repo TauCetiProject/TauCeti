@@ -19,8 +19,9 @@ its remaining string, with the matching endpoint equation. In degree zero,
 Thus the topology defined by recording all composite arrows introduces no extra topology
 beyond that of composable strings. These identifications apply to topological groupoids
 without discarding any isotropy arrows. When source, target, units and composition are continuous,
-`C` is Hausdorff and `Quiver.Total C` is compact, each nerve level is compact
-(`CategoryTheory.ComposableArrows.compactSpace_of_compactSpace`).
+`C` is Hausdorff and `Quiver.Total C` is compact or `σ`-compact, each nerve level is compact
+(`CategoryTheory.ComposableArrows.compactSpace_of_compactSpace`) or `σ`-compact
+(`CategoryTheory.ComposableArrows.sigmaCompactSpace`) respectively.
 
 Composition is required to be continuous on the subspace of pairs with matching endpoints.
 No topology on individual hom types and no new category or groupoid carrier is used.
@@ -33,7 +34,7 @@ No topology on individual hom types and no new category or groupoid carrier is u
 
 public section
 
-open CategoryTheory Topology
+open CategoryTheory Set Topology
 
 universe v u
 
@@ -192,6 +193,20 @@ theorem continuous_iff_first_tail {Y : Type*} [TopologicalSpace Y] {n : ℕ}
   simp only [continuous_induced_rng, continuous_prodMk, Function.comp_def,
     precompHomeomorph_apply]
 
+variable (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
+
+include hs ht in
+/-- When objects are Hausdorff and both source and target are continuous, the matching-endpoint
+locus in `Quiver.Total C × ComposableArrows C n` is closed. -/
+theorem isClosed_eq_right_left [T2Space C] (n : ℕ) :
+    IsClosed {p : Quiver.Total C × ComposableArrows C n | p.fst.right = p.snd.left} :=
+  isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+
+omit [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)] in
+private theorem surjective_totalLeft :
+    Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
+  fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+
 include hs hu hc in
 /-- When source, target, units and composition are continuous, `C` is Hausdorff and
 `Quiver.Total C` is compact, every `ComposableArrows C n` is compact. -/
@@ -203,16 +218,11 @@ theorem compactSpace_of_compactSpace
   -- closed fiber product in a compact product.
   induction n with
   | zero =>
-    have hsurj : Function.Surjective (Quiver.Total.left : Quiver.Total C → C) :=
-      fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
-    have : CompactSpace C := hsurj.compactSpace hs
+    have : CompactSpace C := (surjective_totalLeft (C := C)).compactSpace hs
     exact (zeroHomeomorph hs hu).symm.compactSpace
-  | succ n ih =>
-    have hclosed :
-        IsClosed {p : Quiver.Total C × ComposableArrows C n | p.1.right = p.2.left} :=
-      isClosed_eq (ht.comp continuous_fst) ((continuous_obj hs 0).comp continuous_snd)
+  | succ n _ =>
     have : CompactSpace {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left} :=
-      isCompact_iff_compactSpace.mp hclosed.isCompact
+      isCompact_iff_compactSpace.mp (isClosed_eq_right_left hs ht n).isCompact
     exact (precompHomeomorph hs hu hc n).symm.compactSpace
 
 instance instCompactSpace [IsGroupoid C] [TauCeti.IsTopologicalGroupoid C]
@@ -220,6 +230,30 @@ instance instCompactSpace [IsGroupoid C] [TauCeti.IsTopologicalGroupoid C]
     CompactSpace (ComposableArrows C n) :=
   have : T2Space C := (TauCeti.IsTopologicalGroupoid.isEmbedding_unit C).t2Space
   compactSpace_of_compactSpace
+    TauCeti.IsTopologicalGroupoid.continuous_source TauCeti.IsTopologicalGroupoid.continuous_unit
+    (by simpa only [Quiver.Total.comp_def] using TauCeti.IsTopologicalGroupoid.continuous_comp)
+    TauCeti.IsTopologicalGroupoid.continuous_target n
+
+include hs ht hu hc in
+/-- When `C` is Hausdorff, `Quiver.Total C` is `σ`-compact, and source, target, units, and
+composition are continuous, every nerve level `ComposableArrows C n` is `σ`-compact. -/
+theorem sigmaCompactSpace [T2Space C] [SigmaCompactSpace (Quiver.Total C)] :
+    ∀ n : ℕ, SigmaCompactSpace (ComposableArrows C n)
+  | 0 =>
+    have : SigmaCompactSpace C :=
+      isSigmaCompact_univ_iff.mp
+        ((surjective_totalLeft (C := C)).range_eq ▸ isSigmaCompact_range hs)
+    (zeroHomeomorph hs hu).isClosedEmbedding.sigmaCompactSpace
+  | n + 1 =>
+    have := sigmaCompactSpace n
+    have := (isClosed_eq_right_left hs ht n).sigmaCompactSpace
+    (precompHomeomorph hs hu hc n).isClosedEmbedding.sigmaCompactSpace
+
+instance instSigmaCompactSpace [IsGroupoid C] [TauCeti.IsTopologicalGroupoid C]
+    [T2Space (Quiver.Total C)] [SigmaCompactSpace (Quiver.Total C)] (n : ℕ) :
+    SigmaCompactSpace (ComposableArrows C n) :=
+  have : T2Space C := (TauCeti.IsTopologicalGroupoid.isEmbedding_unit C).t2Space
+  sigmaCompactSpace
     TauCeti.IsTopologicalGroupoid.continuous_source TauCeti.IsTopologicalGroupoid.continuous_unit
     (by simpa only [Quiver.Total.comp_def] using TauCeti.IsTopologicalGroupoid.continuous_comp)
     TauCeti.IsTopologicalGroupoid.continuous_target n

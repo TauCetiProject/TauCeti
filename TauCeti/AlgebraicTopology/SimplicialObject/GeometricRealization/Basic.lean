@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Compactness.Lindelof
 public import TauCeti.AlgebraicTopology.FatRealization
+public import TauCeti.Topology.Compactness.Lindelof
+import TauCeti.AlgebraicTopology.TopologicalSimplex
 
 /-!
 # Geometric realization of a simplicial space
@@ -92,6 +94,14 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {g : X.geometricRealizat
 
 instance [∀ n : ℕ, LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     LindelofSpace X.geometricRealization := Quot.lindelofSpace
+
+/-- If every level `X _⦋n⦌` is Lindelöf, then `X.geometricRealization` is Lindelöf. -/
+instance (priority := 90) instLindelofSpace_of_levels [hX : ∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :
+    LindelofSpace X.geometricRealization :=
+  have (n : ℕ) : LindelofSpace (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
+    have := hX n
+    inferInstance
+  inferInstance
 
 instance [∀ n : ℕ, UCompactlyGeneratedSpace.{v} (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌)] :
     UCompactlyGeneratedSpace.{v} X.geometricRealization :=
