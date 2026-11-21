@@ -126,11 +126,11 @@ theorem exists_relCWComplex_union_negativeDiscBundle
   -- `{f ≤ c - ε} ∪ Θ(D_ε)` is obtained by attaching `D_ε` along `S_ε`, and these are the unit disc
   -- and sphere bundles of `ν⁻` for the norm `-(2ε)⁻¹ Hessₛ`.
   obtain ⟨α, χ, -, -, hsq⟩ := isPushout_negativeDiscBundle hf hD hΘc hΘi hΘ
-  let eD := h.negativeNormalSpaceHomeomorph hn P g r
+  let eD := subbundleTotalSpaceHomeomorph P (h.negativeNormalSpace hn g)
     (discBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s)) D
     (h.mem_discBundle_iff_mem_negativeDiscBundle hn P g r hε)
     fun _ hx ↦ mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx
-  let eS := h.negativeNormalSpaceHomeomorph hn P g r
+  let eS := subbundleTotalSpaceHomeomorph P (h.negativeNormalSpace hn g)
     (sphereBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s))
     (h.negativeSphereBundle hn P g ε)
     (h.mem_sphereBundle_iff_mem_negativeSphereBundle hn P g r hε)
@@ -145,7 +145,7 @@ theorem exists_relCWComplex_union_negativeDiscBundle
         refine Subtype.ext ?_
         simp only [eD, eS, Iso.symm_hom, TopCat.isoOfHomeo_inv, TopCat.hom_comp,
           ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
-          ContinuousMap.inclusion_apply_coe, coe_negativeNormalSpaceHomeomorph_symm_apply]
+          ContinuousMap.inclusion_apply_coe, coe_subbundleTotalSpaceHomeomorph_symm_apply]
         -- Both sides are the vector `x` of `S_ε`, read in `ν⁻`.
         rfl)
       (by simp only [Iso.refl_hom, Category.comp_id, Iso.symm_hom, Iso.inv_hom_id_assoc])
