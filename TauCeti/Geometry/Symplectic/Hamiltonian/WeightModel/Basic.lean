@@ -119,6 +119,7 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
 * `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
+* `TauCeti.stdSymplecticForm_torusRotation`: these rotations are symplectic.
 * `TauCeti.prodMap_piLpCongrLeft_torusRotation`: relabelling the coordinates of `ℂ^ι` relabels the
   angles of the rotations.
 * `TauCeti.forall_weightRotation_apply_eq_self_iff`: the fixed points of the action of `𝔱`.
@@ -925,6 +926,13 @@ theorem torusRotation_add (θ θ' : ι → AddCircle (2 * π)) :
   obtain ⟨t', rfl⟩ := exists_coe_eq θ'
   rw [torusRotation_coe, torusRotation_coe, ← weightRotation_add, ← neg_add, ← torusRotation_coe]
   simp only [Pi.add_def, Pi.add_apply, QuotientAddGroup.mk_add]
+
+/-- Rotations by angles in `(ℝ / 2πℤ)^ι` preserve the standard symplectic form. -/
+theorem stdSymplecticForm_torusRotation (θ : ι → AddCircle (2 * π))
+    (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    stdSymplecticForm (torusRotation θ x) (torusRotation θ y) = stdSymplecticForm x y := by
+  obtain ⟨t, rfl⟩ := exists_coe_eq θ
+  rw [torusRotation_coe, stdSymplecticForm_weightRotation]
 
 /-- The rotation `z_j ↦ exp(-i θ_j) z_j` preserves each modulus `|z_j|`. -/
 @[simp]
