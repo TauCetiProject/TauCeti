@@ -21,11 +21,14 @@ moment map for the product form `σ₁.prod σ₂ = pr₁^* σ₁ + pr₂^* σ�
 
 `μ(x₁, x₂)(Z₁, Z₂) = μ₁(x₁)(Z₁) + μ₂(x₂)(Z₂)`
 
-(`TauCeti.SmoothTwoForm.IsMomentMap.prodMap`), the functional `μ₁(x₁).coprod μ₂(x₂)` on
-`𝔤₁ × 𝔤₂`. Its cocycle is the sum of the cocycles of the factors
-(`TauCeti.SmoothTwoForm.momentCocycle_prodMap`; for the diagonal action of a single Lie algebra,
-`TauCeti.SmoothTwoForm.momentCocycle_prod`), so it vanishes exactly where both cocycles vanish
-(`TauCeti.SmoothTwoForm.momentCocycle_prodMap_eq_zero_iff`). Its differential is componentwise
+(`TauCeti.SmoothTwoForm.IsMomentMap.infinitesimalProdMap`), the functional
+`μ₁(x₁).coprod μ₂(x₂)` on `𝔤₁ × 𝔤₂`. For the factorwise action of a product of Lie groups, see
+`TauCeti.SmoothTwoForm.IsMomentMap.prodMap` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Prod`. Its cocycle is the sum of
+the cocycles of the factors (`TauCeti.SmoothTwoForm.momentCocycle_prodMap`; for the diagonal
+action of a single Lie algebra, `TauCeti.SmoothTwoForm.momentCocycle_prod`), so it vanishes
+exactly where both cocycles vanish (`TauCeti.SmoothTwoForm.momentCocycle_prodMap_eq_zero_iff`).
+Its differential is componentwise
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap_apply`; for the diagonal action,
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_prod_apply`): read in the product tangent space
 it is `dμ₁ × dμ₂` followed by `LinearMap.coprodEquiv`
@@ -51,8 +54,8 @@ in `TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ReducedForm`.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsMomentMap.prodMap`: the moment map of the componentwise action of
-  `𝔤₁ × 𝔤₂` on `M₁ × M₂`.
+* `TauCeti.SmoothTwoForm.IsMomentMap.infinitesimalProdMap`: the moment map of the componentwise
+  action of `𝔤₁ × 𝔤₂` on `M₁ × M₂`.
 * `TauCeti.SmoothTwoForm.momentCocycle_prodMap`: the cocycle of the product is the sum of the
   cocycles of the factors.
 * `TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_prodMap`: `ker dμ = ker dμ₁ × ker dμ₂`.
@@ -144,8 +147,10 @@ namespace IsMomentMap
 /-- **Moment maps of products.** If `μ₁` and `μ₂` are moment maps of infinitesimal actions of
 `𝔤₁` on `(M₁, σ₁)` and of `𝔤₂` on `(M₂, σ₂)`, then `(x₁, x₂) ↦ μ₁(x₁).coprod μ₂(x₂)`, that is
 `(Z₁, Z₂) ↦ μ₁(x₁)(Z₁) + μ₂(x₂)(Z₂)`, is a moment map of the componentwise action of `𝔤₁ × 𝔤₂`
-on `M₁ × M₂` for the product form. -/
-theorem prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂) :
+on `M₁ × M₂` for the product form. This is the infinitesimal counterpart of
+`TauCeti.SmoothTwoForm.IsMomentMap.prodMap`, which treats the factorwise action of a product of Lie
+groups. -/
+theorem infinitesimalProdMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂) :
     (σ₁.prod σ₂).IsMomentMap (a₁.prodMap a₂) fun p ↦ (μ₁ p.1).coprod (μ₂ p.2) := by
   rw [InfinitesimalAction.prodMap_def]
   convert (h₁.comp (LieHom.fst ℝ 𝔤₁ 𝔤₂)).prod (h₂.comp (LieHom.snd ℝ 𝔤₁ 𝔤₂)) using 2 with p
@@ -171,7 +176,7 @@ theorem differential_prod_apply {b : InfinitesimalAction 𝔤₁ I₂ M₂} {ν 
 @[simp]
 theorem differential_prodMap_apply (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂)
     (p : M₁ × M₂) (v : TangentSpace (I₁.prod I₂) p) :
-    (h₁.prodMap h₂).differential p v =
+    (h₁.infinitesimalProdMap h₂).differential p v =
       (h₁.differential p.1 (Manifold.tangentSpaceProdEquiv p v).1).coprod
         (h₂.differential p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
   refine LinearMap.ext fun Z ↦ ?_
@@ -183,7 +188,7 @@ theorem differential_prodMap_apply (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ :
 `𝔤₁* × 𝔤₂*` with `(𝔤₁ × 𝔤₂)*`. -/
 theorem differential_prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂)
     (p : M₁ × M₂) :
-    (h₁.prodMap h₂).differential p =
+    (h₁.infinitesimalProdMap h₂).differential p =
       (LinearMap.coprodEquiv ℝ).toLinearMap ∘ₗ
         ((h₁.differential p.1).prodMap (h₂.differential p.2)) ∘ₗ
           (Manifold.tangentSpaceProdEquiv p).toLinearMap :=
@@ -194,7 +199,7 @@ differentials of `μ₁` at `x₁` and of `μ₂` at `x₂` are surjective. -/
 @[simp]
 theorem differential_prodMap_surjective_iff (h₁ : σ₁.IsMomentMap a₁ μ₁)
     (h₂ : σ₂.IsMomentMap a₂ μ₂) (p : M₁ × M₂) :
-    Surjective ((h₁.prodMap h₂).differential p) ↔
+    Surjective ((h₁.infinitesimalProdMap h₂).differential p) ↔
       Surjective (h₁.differential p.1) ∧ Surjective (h₂.differential p.2) := by
   rw [differential_prodMap h₁ h₂, LinearMap.coe_comp, LinearMap.coe_comp]
   simp only [LinearEquiv.coe_coe, LinearMap.coe_prodMap, ContinuousLinearEquiv.coe_toLinearEquiv,
@@ -204,7 +209,7 @@ theorem differential_prodMap_surjective_iff (h₁ : σ₁.IsMomentMap a₁ μ₁
 map of a product at `(x₁, x₂)` is `ker (dμ₁)_{x₁} × ker (dμ₂)_{x₂}`. -/
 theorem ker_differential_prodMap (h₁ : σ₁.IsMomentMap a₁ μ₁) (h₂ : σ₂.IsMomentMap a₂ μ₂)
     (p : M₁ × M₂) :
-    LinearMap.ker ((h₁.prodMap h₂).differential p) =
+    LinearMap.ker ((h₁.infinitesimalProdMap h₂).differential p) =
       ((LinearMap.ker (h₁.differential p.1)).prod (LinearMap.ker (h₂.differential p.2))).comap
         (Manifold.tangentSpaceProdEquiv p).toLinearMap := by
   rw [differential_prodMap h₁ h₂, LinearEquiv.ker_comp, LinearMap.ker_comp, LinearMap.ker_prodMap]
@@ -216,7 +221,7 @@ theorem range_mfderiv_prodMap_le_ker_differential_prodMap_iff (h₁ : σ₁.IsMo
     (h₂ : σ₂.IsMomentMap a₂ μ₂) {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.1)
     (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.2) :
     LinearMap.range (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z).toLinearMap ≤
-        LinearMap.ker ((h₁.prodMap h₂).differential (Prod.map i₁ i₂ z)) ↔
+        LinearMap.ker ((h₁.infinitesimalProdMap h₂).differential (Prod.map i₁ i₂ z)) ↔
       LinearMap.range (mfderiv J₁ I₁ i₁ z.1).toLinearMap ≤
           LinearMap.ker (h₁.differential (i₁ z.1)) ∧
         LinearMap.range (mfderiv J₂ I₂ i₂ z.2).toLinearMap ≤
@@ -236,7 +241,7 @@ theorem range_mfderiv_prodMap_eq_ker_differential_prodMap_iff (h₁ : σ₁.IsMo
     (h₂ : σ₂.IsMomentMap a₂ μ₂) {z : Z₁ × Z₂} (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.1)
     (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.2) :
     LinearMap.range (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z).toLinearMap =
-        LinearMap.ker ((h₁.prodMap h₂).differential (Prod.map i₁ i₂ z)) ↔
+        LinearMap.ker ((h₁.infinitesimalProdMap h₂).differential (Prod.map i₁ i₂ z)) ↔
       LinearMap.range (mfderiv J₁ I₁ i₁ z.1).toLinearMap =
           LinearMap.ker (h₁.differential (i₁ z.1)) ∧
         LinearMap.range (mfderiv J₂ I₂ i₂ z.2).toLinearMap =
