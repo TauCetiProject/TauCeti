@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Excision
 import TauCeti.Algebra.Module.GradedModule.Internal
+import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.Basic
 
 /-!
 # The stages of positive dimension of Brown's model of the based path chains
@@ -27,9 +28,9 @@ of the based path fibration to the disks of the `(m + 1)`-cells and `∂P` its p
 spheres. The radial paths after `γ j` give the section cube of `j`
 (`TauCeti.cellSectionCube`), a singular `(m + 1)`-cube of `P`; as a chain it is the **section
 chain** `cⱼ` (`TauCeti.cellSectionChain`), a relative cycle of `(P, ∂P)`
-(`TauCeti.cubicalChainModuleDifferential_cellSectionChain_mem`). The free generator of `j` goes to
-the image `c₀ j` of `cⱼ` in `C_*(P_b B; R)`, which has dimension `m + 1`, lies over the
-`(m + 1)`-skeleton and has boundary over the `m`-skeleton.
+(`TauCeti.cubicalChainModuleDifferential_cellSectionChain_mem_cubicalChainModuleSupportedIn`). The
+free generator of `j` goes to the image `c₀ j` of `cⱼ` in `C_*(P_b B; R)`, which has dimension
+`m + 1`, lies over the `(m + 1)`-skeleton and has boundary over the `m`-skeleton.
 
 The main result is that the map `(y_j)_j ↦ ∑_j y_j · c₀ j` from the free module on the
 `(m + 1)`-cells is a quasi-isomorphism onto the chains over the `(m + 1)`-skeleton modulo those over
@@ -59,8 +60,8 @@ It is the composite of two quasi-isomorphisms.
   the free module on the `(m + 1)`-cells is quasi-isomorphic to the relative chains of `(P, ∂P)`.
 * `TauCeti.cubicalChainModuleLinearMap_cellSectionChain_mem_cubicalChainModuleGrading`,
   `TauCeti.cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton_succ`,
-  `TauCeti.cubicalChainModuleDifferential_cubicalChainModuleLinearMap_cellSectionChain_mem`: the
-  image of a section chain in `C_*(P_b B; R)` has dimension `m + 1`, lies over the
+  `cubicalChainModuleDifferential_toMoorePathFrom_cellSectionChain_mem_pathFromChainSkeleton`:
+  the image of a section chain in `C_*(P_b B; R)` has dimension `m + 1`, lies over the
   `(m + 1)`-skeleton and has boundary over the `m`-skeleton.
 * `exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFromChainSkeleton_succ`:
   the free module on the `(m + 1)`-cells is quasi-isomorphic to the chains over the
@@ -116,7 +117,8 @@ private theorem mapsTo_cellSectionCube (j : cell C (m + 1)) :
 
 /-- **The section chain of a cell is a relative cycle**: its boundary lies over the boundary
 sphere. -/
-theorem cubicalChainModuleDifferential_cellSectionChain_mem (j : cell C (m + 1)) :
+theorem cubicalChainModuleDifferential_cellSectionChain_mem_cubicalChainModuleSupportedIn
+    (j : cell C (m + 1)) :
     cubicalChainModuleDifferential _ H R (cellSectionChain H R γ j) ∈
       cubicalChainModuleSupportedIn H R (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
         {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) := by
@@ -156,13 +158,9 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem (p : ℕ)
         NormalizedCubicalChain.supportedIn R (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
           {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) (p + (m + 1)) := by
   classical
-  have hA : Set.range (cellPathPullbackPair b C (m + 1)).map =
-      MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
-        {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1} :=
-    TopPair.range_ofSubset_map
   obtain ⟨μ, hμ⟩ :=
     (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_of_boundary_mem
-      R (n := p + m) x (by rw [hA]; exact hx)
+      R (n := p + m) x (by rw [range_cellPathPullbackPair_map]; exact hx)
   choose z hz using fun j ↦
     HomologicalComplex.moduleCat_homologyπ_surjective
       ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))) p
@@ -176,7 +174,7 @@ private theorem exists_sub_sum_leftAct_sub_boundary_mem (p : ℕ)
     LinearEquiv.apply_symm_apply] at hsum
   obtain ⟨v, hv⟩ := ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R _).1
     (by simpa using hμ.sub hsum)
-  exact ⟨v, by rwa [hA] at hv⟩
+  exact ⟨v, by rwa [range_cellPathPullbackPair_map] at hv⟩
 
 /-- **The section cubes are independent on relative homology.** If `∑ⱼ zⱼ · cⱼ`, for finitely many
 `(m + 1)`-cells `j` and `q`-cycles `zⱼ` of the Moore loops at `b`, is a relative boundary of the
@@ -200,77 +198,14 @@ private theorem homologyπ_eq_zero_of_sum_leftAct_sub_boundary_mem (q : ℕ)
     ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).homologyπ q (z j) =
       0 := by
   classical
-  have hA : Set.range (cellPathPullbackPair b C (m + 1)).map =
-      MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
-        {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1} :=
-    TopPair.range_ofSubset_map
   have h₀ := ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R _).2
-    ⟨v, by rw [hA]; exact h⟩
+    ⟨v, by rw [range_cellPathPullbackPair_map]; exact h⟩
   have hsum := TopPair.IsCubicalRepresentative.sum s fun j _ ↦
     isCubicalRepresentative_cellPathPullbackHomologyEquiv γ R q j (z j)
   have hz := hsum.unique h₀
   rw [← map_sum, LinearEquiv.map_eq_zero_iff] at hz
   have hzj := congrArg (fun x ↦ x j) hz
   simpa [DirectSum.lof_eq_of, DirectSum.sum_apply, DirectSum.of_apply, hj] using hzj
-
-/-! ### Cycles of the loop algebra -/
-
-/-- A cycle of the normalized cubical chain complex is a cycle of the loop algebra. -/
-private theorem cubicalChainDifferential_lof_iCycles (q : ℕ)
-    (z : ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).cycles q) :
-    cubicalChainDifferential (MooreLoopSpace B b) R (cubicalChainLof (MooreLoopSpace B b) R q
-      (normalizedCubicalChainComplexXEquiv _ q
-        (((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).iCycles q z))) =
-      0 := by
-  cases q with
-  | zero => exact cubicalChainDifferential_lof_zero _ _ _
-  | succ q =>
-    have h := normalizedCubicalChainComplexXEquiv_d_apply (R := R) (TopCat.of (MooreLoopSpace B b))
-      q (((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).iCycles (q + 1) z)
-    rw [moduleCat_d_iCycles_apply, map_zero] at h
-    rw [cubicalChainDifferential_lof_succ]
-    exact (congrArg (cubicalChainLof (MooreLoopSpace B b) R q) h.symm).trans (map_zero _)
-
-/-- A cycle of the loop algebra is a cycle of the normalized cubical chain complex. -/
-private theorem exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero (q : ℕ)
-    {a : NormalizedCubicalChain (MooreLoopSpace B b) R q}
-    (ha : cubicalChainDifferential (MooreLoopSpace B b) R
-      (cubicalChainLof (MooreLoopSpace B b) R q a) = 0) :
-    ∃ z : ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).cycles q,
-      normalizedCubicalChainComplexXEquiv _ q
-        (((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).iCycles q z) =
-        a := by
-  cases q with
-  | zero =>
-    exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
-      ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))) 0 a 0 (by simp)
-      (by rw [HomologicalComplex.shape _ 0 0 (by simp)]; rfl)⟩
-  | succ q =>
-    rw [cubicalChainDifferential_lof_succ] at ha
-    have hd : NormalizedCubicalChain.boundary _ R q a = 0 :=
-      DirectSum.of_injective q (by simpa [DirectSum.lof_eq_of] using ha)
-    exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
-      ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))) (q + 1) a q
-      (by simp) ((normalizedCubicalChainComplexXEquiv_d_apply (R := R)
-        (TopCat.of (MooreLoopSpace B b)) q a).trans hd)⟩
-
-/-- A homogeneous cycle of dimension `q` of the loop algebra is a cycle of the normalized cubical
-chain complex. -/
-private theorem exists_iCycles_eq_of_mem_cubicalChainGrading (q : ℕ)
-    {a : loopChainAlgebra B b R} (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(q : ℤ)))
-    (hda : cubicalChainDifferential (MooreLoopSpace B b) R a = 0) :
-    ∃ z : ((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).cycles q,
-      cubicalChainLof (MooreLoopSpace B b) R q (normalizedCubicalChainComplexXEquiv _ q
-        (((normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace B b))).iCycles q z)) =
-        a := by
-  obtain ⟨a, rfl⟩ : ∃ a' : NormalizedCubicalChain (MooreLoopSpace B b) R q,
-      cubicalChainLof (MooreLoopSpace B b) R q a' = a := by
-    rcases (mem_cubicalChainGrading_iff _ R).1 ha with rfl | ⟨n, a', hn, rfl⟩
-    · exact ⟨0, map_zero _⟩
-    · obtain rfl : n = q := by omega
-      exact ⟨a', rfl⟩
-  obtain ⟨z, hz⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero q hda
-  exact ⟨z, by rw [hz]⟩
 
 /-! ### The free module on the cells and the relative chains of the pullback -/
 
@@ -309,7 +244,7 @@ private theorem differential_linearCombination_sub_mem
         add_sub_cancel_left]
       refine Submodule.smul_of_tower_mem _ _ (smul_mem_cubicalChainModuleSupportedIn
         smul_mem_cellBoundary _ ?_)
-      exact cubicalChainModuleDifferential_cellSectionChain_mem γ j
+      exact cubicalChainModuleDifferential_cellSectionChain_mem_cubicalChainModuleSupportedIn γ j
     | add a a' ha ha' =>
       convert add_mem ha ha' using 1
       simp only [map_add, add_smul]
@@ -327,28 +262,25 @@ private theorem exists_differential_sub_mem_of_lt {i : ℤ} (hi : -((m : ℤ) + 
     ∃ v, cubicalChainModuleDifferential _ H R v - x ∈
       cubicalChainModuleSupportedIn H R (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
         {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) := by
-  have hA : Set.range (cellPathPullbackPair b C (m + 1)).map =
-      MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
-        {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1} :=
-    TopPair.range_ofSubset_map
   rcases mem_cubicalChainModuleGrading_iff.1 hxi with rfl | ⟨e, x, he, rfl⟩
   · exact ⟨0, by simp⟩
   -- The relative homology vanishes in dimension `e < m + 1`, so the class of `x` is zero.
   obtain ⟨μ, hμ⟩ : ∃ μ, (cellPathPullbackPair b C (m + 1)).IsCubicalRepresentative R x μ := by
     cases e with
-    | zero => exact (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_zero R x
+    | zero =>
+      exact (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_of_dim_zero R x
     | succ e =>
       rw [cubicalChainModuleDifferential_lof_succ,
         cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hx
       exact (cellPathPullbackPair b C (m + 1)).exists_isCubicalRepresentative_of_boundary_mem R x
-        (by rw [hA]; exact hx)
+        (by rw [range_cellPathPullbackPair_map]; exact hx)
   obtain rfl : μ = 0 := (ModuleCat.isZero_iff_subsingleton.1
     (isZero_cubicalHomology_cellPathPullbackPair_of_lt γ R (j := e) (by omega))).elim _ _
   obtain ⟨v, hv⟩ : ∃ v : NormalizedCubicalChain (MoorePathPullback (sigmaCellMap C (m + 1)) b) R
       (e + 1), x - NormalizedCubicalChain.boundary _ R e v ∈ NormalizedCubicalChain.supportedIn R
         (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
           {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) e := by
-    rw [← hA]
+    rw [← range_cellPathPullbackPair_map]
     exact ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R x).1 hμ
   refine ⟨cubicalChainModuleLof _ H R (e + 1) v, ?_⟩
   rw [cubicalChainModuleDifferential_lof_succ, ← map_sub,
@@ -371,12 +303,7 @@ private theorem exists_linearCombination_add_differential_sub_mem (p : ℕ)
           cubicalChainModuleSupportedIn H R (MoorePathPullback.proj (sigmaCellMap C (m + 1)) b ⁻¹'
             {q | ‖(q.2 : Fin (m + 1) → ℝ)‖ = 1}) := by
   classical
-  obtain ⟨x, rfl⟩ : ∃ x' : NormalizedCubicalChain _ R (p + (m + 1)),
-      cubicalChainModuleLof _ H R _ x' = x := by
-    rcases mem_cubicalChainModuleGrading_iff.1 hxi with rfl | ⟨n, x', hn, rfl⟩
-    · exact ⟨0, map_zero _⟩
-    · obtain rfl : n = p + (m + 1) := by omega
-      exact ⟨x', rfl⟩
+  obtain ⟨x, rfl⟩ := exists_cubicalChainModuleLof_eq hxi (p + (m + 1)) (by push_cast; ring)
   -- `p + (m + 1)` is `p + m + 1` by definition, which exhibits `x` as a chain of a successor
   -- dimension
   replace hx : NormalizedCubicalChain.boundary _ R (p + m) x ∈ NormalizedCubicalChain.supportedIn R
@@ -423,12 +350,7 @@ private theorem exists_mapRange_eq_of_linearCombination_sub_differential_mem (q 
     (by simpa [hn] using (mem_rowFiniteTotalGrading_iff _ _).1 hyi j)
     (by simpa using DFunLike.congr_fun hy j)
   -- The relative boundary `∑ⱼ zⱼ · cⱼ - ∂w`, on chains.
-  obtain ⟨w, rfl⟩ : ∃ w' : NormalizedCubicalChain _ R (q + (m + 1) + 1),
-      cubicalChainModuleLof _ H R _ w' = w := by
-    rcases mem_cubicalChainModuleGrading_iff.1 hwi with rfl | ⟨n', w', hn', rfl⟩
-    · exact ⟨0, map_zero _⟩
-    · obtain rfl : n' = q + (m + 1) + 1 := by omega
-      exact ⟨w', rfl⟩
+  obtain ⟨w, rfl⟩ := exists_cubicalChainModuleLof_eq hwi (q + (m + 1) + 1) (by push_cast; omega)
   have hsum : linearCombination (loopChainAlgebra B b R) (cellSectionChain H R γ) y =
       cubicalChainModuleLof _ H R _ (∑ j ∈ y.support,
         NormalizedCubicalChain.leftAct (MooreLoopSpace B b) _ R q (m + 1)
@@ -513,9 +435,8 @@ private theorem exists_mapRange_eq_and_add_differential_sub_mem_of_mem (i : ℤ)
       · omega
     rw [map_zero, zero_sub, neg_mem_iff] at hyu
     rcases eq_or_lt_of_le (show -(m : ℤ) ≤ i by omega) with rfl | hi
-    · obtain ⟨z, v, hz, hzv⟩ := exists_linearCombination_add_differential_sub_mem γ 0
+    · exact exists_linearCombination_add_differential_sub_mem γ 0
         (by convert hui using 2; push_cast; ring) hyu
-      exact ⟨z, v, hz, hzv⟩
     · obtain ⟨v, hv⟩ := exists_differential_sub_mem_of_lt γ (i := i - 1) (by omega) hui hyu
       exact ⟨0, v, map_zero _, by simpa using hv⟩
 
@@ -611,7 +532,7 @@ theorem cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton_of
 
 /-- The boundary of the image of the section chain of a cell in `C_*(P_b B; R)` lies over the
 `m`-skeleton. -/
-theorem cubicalChainModuleDifferential_cubicalChainModuleLinearMap_cellSectionChain_mem
+theorem cubicalChainModuleDifferential_toMoorePathFrom_cellSectionChain_mem_pathFromChainSkeleton
     (j : cell C (m + 1)) :
     cubicalChainModuleDifferential _ H R
         (cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom
@@ -619,7 +540,7 @@ theorem cubicalChainModuleDifferential_cubicalChainModuleLinearMap_cellSectionCh
       pathFromChainSkeleton b C H R m := by
   rw [cubicalChainModuleDifferential_linearMap]
   exact cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton_of_mem
-    (cubicalChainModuleDifferential_cellSectionChain_mem γ j)
+    (cubicalChainModuleDifferential_cellSectionChain_mem_cubicalChainModuleSupportedIn γ j)
 
 /-- **The free module on the `(m + 1)`-cells is quasi-isomorphic to the chains on the based path
 space over the `(m + 1)`-skeleton, modulo those over the `m`-skeleton.** Choose a Moore path `γ j`

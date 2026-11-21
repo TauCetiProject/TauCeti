@@ -28,6 +28,11 @@ differential `b`.
 
 ## Main results
 
+* `TauCeti.cubicalChainDifferential_lof_iCycles`,
+  `TauCeti.exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero`,
+  `TauCeti.exists_iCycles_eq_of_mem_cubicalChainGrading`: the cycles of the normalized cubical
+  chain complex of a space are the homogeneous elements of the algebra of cubical chains with
+  differential zero.
 * `TauCeti.exists_isRepresentingChain`: every relative class is represented.
 * `TauCeti.IsRepresentingCycle.exists_isRepresentingChain`: a relative class is represented by a
   chain with a prescribed boundary.
@@ -53,6 +58,60 @@ namespace TauCeti
 open NormalizedCubicalChain
 
 variable {k : Type u} [CommRing k] {X : TopCat.{u}} {A : Set X}
+
+section Cycles
+
+variable {Y : Type u} [TopologicalSpace Y]
+
+/-- A cycle of the normalized cubical chain complex has differential zero in the algebra of cubical
+chains. -/
+theorem cubicalChainDifferential_lof_iCycles (q : ℕ)
+    (z : ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).cycles q) :
+    cubicalChainDifferential Y k (cubicalChainLof Y k q (normalizedCubicalChainComplexXEquiv _ q
+      (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z))) = 0 := by
+  cases q with
+  | zero => exact cubicalChainDifferential_lof_zero _ _ _
+  | succ q =>
+    have h := normalizedCubicalChainComplexXEquiv_d_apply (R := k) (TopCat.of Y) q
+      (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles (q + 1) z)
+    rw [HomologicalComplex.moduleCat_d_iCycles_apply, map_zero] at h
+    rw [cubicalChainDifferential_lof_succ]
+    exact (congrArg (cubicalChainLof Y k q) h.symm).trans (map_zero _)
+
+/-- A chain with differential zero in the algebra of cubical chains is a cycle of the normalized
+cubical chain complex. -/
+theorem exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero (q : ℕ)
+    {a : NormalizedCubicalChain Y k q}
+    (ha : cubicalChainDifferential Y k (cubicalChainLof Y k q a) = 0) :
+    ∃ z : ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).cycles q,
+      normalizedCubicalChainComplexXEquiv _ q
+        (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z) = a := by
+  cases q with
+  | zero =>
+    exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
+      ((normalizedCubicalChainComplex k).obj (TopCat.of Y)) 0 a 0 (by simp)
+      (by rw [HomologicalComplex.shape _ 0 0 (by simp)]; rfl)⟩
+  | succ q =>
+    rw [cubicalChainDifferential_lof_succ] at ha
+    have hd : boundary _ k q a = 0 :=
+      DirectSum.of_injective q (by simpa [DirectSum.lof_eq_of] using ha)
+    exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
+      ((normalizedCubicalChainComplex k).obj (TopCat.of Y)) (q + 1) a q (by simp)
+      ((normalizedCubicalChainComplexXEquiv_d_apply (R := k) (TopCat.of Y) q a).trans hd)⟩
+
+/-- A homogeneous element of cohomological degree `-q` with differential zero in the algebra of
+cubical chains is a cycle of the normalized cubical chain complex. -/
+theorem exists_iCycles_eq_of_mem_cubicalChainGrading (q : ℕ)
+    {a : normalizedCubicalChainAlgebra Y k} (ha : a ∈ cubicalChainGrading Y k (-(q : ℤ)))
+    (hda : cubicalChainDifferential Y k a = 0) :
+    ∃ z : ((normalizedCubicalChainComplex k).obj (TopCat.of Y)).cycles q,
+      cubicalChainLof Y k q (normalizedCubicalChainComplexXEquiv _ q
+        (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z)) = a := by
+  obtain ⟨a, rfl⟩ := exists_cubicalChainLof_eq Y k ha q (neg_neg _).symm
+  obtain ⟨z, hz⟩ := exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero q hda
+  exact ⟨z, by rw [hz]⟩
+
+end Cycles
 
 /-- An element `a` of the algebra of normalized cubical chains of `X` **represents** the class `μ`
 of the relative cubical homology `Hₙ(X, A)` when it is a chain of dimension `n` whose image in

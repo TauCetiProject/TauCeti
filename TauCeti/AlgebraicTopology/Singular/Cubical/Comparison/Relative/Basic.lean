@@ -83,10 +83,11 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * `TopPair.IsCubicalRepresentative.map`: a map of pairs carries a representative of a relative
   class to a representative of its image.
 * `TopPair.exists_isCubicalRepresentative_of_boundary_mem`,
-  `TopPair.exists_isCubicalRepresentative_zero`, `TopPair.isCubicalRepresentative_zero_iff`: a
-  relative cycle represents a relative class, the zero class exactly when it is a relative
-  boundary; representatives are additive (`TopPair.IsCubicalRepresentative.sum`) and determine
-  their class (`TopPair.IsCubicalRepresentative.unique`).
+  `TopPair.exists_isCubicalRepresentative_of_dim_zero`,
+  `TopPair.isCubicalRepresentative_zero_iff`: a relative cycle represents a relative class, the
+  zero class exactly when it is a relative boundary; representatives are additive
+  (`TopPair.IsCubicalRepresentative.sum`) and determine their class
+  (`TopPair.IsCubicalRepresentative.unique`).
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -507,7 +508,7 @@ theorem exists_isCubicalRepresentative_of_boundary_mem (P : TopPair.{u}) {n : �
 
 /-- Every chain of dimension `0` of the ambient space is a relative cycle, so it represents a
 relative class. -/
-theorem exists_isCubicalRepresentative_zero (P : TopPair.{u})
+theorem exists_isCubicalRepresentative_of_dim_zero (P : TopPair.{u})
     (c : NormalizedCubicalChain P.fst k 0) : ∃ μ, P.IsCubicalRepresentative k c μ :=
   ⟨_, _, ((P.cubicalChainComplex k).iCycles_moduleCatCyclesMk 0 _ 0 (by simp)
     (by rw [(P.cubicalChainComplex k).shape 0 0 (by simp)]; rfl)).symm, rfl⟩
