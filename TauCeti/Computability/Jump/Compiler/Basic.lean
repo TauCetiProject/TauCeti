@@ -13,8 +13,9 @@ import TauCeti.Data.PFun.Basic
 
 `Code.jumpProgram` queries its oracle at the index produced by `Code.jumpIndex`. The compiler
 chooses its translator code noncomputably. The resulting map and its iteration are primitive
-recursive. For characteristic-function oracles the compiler supplies programs for reductions
-between finite jumps.
+recursive. A program computing the characteristic-function oracle of `A` in that of `B` compiles
+to a reduction from `A.jump` to `B.jump`. Iteration lifts the supplied reduction to matching
+finite jump levels.
 -/
 
 public section
@@ -38,6 +39,13 @@ noncomputable def jumpProgram (d : Code) : Code :=
 private theorem eval_jumpIndexTranslator (O : ℕ →. ℕ) (d : Code) (e : ℕ) :
     eval O (exists_jumpIndexCode.choose.curry (encode d)) e = Part.some (d.jumpIndex e) := by
   simp only [eval_curry, exists_jumpIndexCode.choose_spec, Nat.unpair_pair, ofNat_encode]
+
+/-- The compiled jump program composes one oracle query with a translator that returns the
+translated index even on the empty oracle. -/
+theorem exists_jumpProgram_eq_comp_oracle (d : Code) :
+    ∃ t : Code, d.jumpProgram = comp oracle t ∧
+      ∀ e, eval (fun _ => Part.none) t e = Part.some (d.jumpIndex e) :=
+  ⟨_, rfl, eval_jumpIndexTranslator _ d⟩
 
 /-- The jump program compiler is primitive recursive in the supplied reduction program. -/
 theorem primrec_jumpProgram : Primrec jumpProgram :=

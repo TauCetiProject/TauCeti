@@ -19,9 +19,9 @@ program halts within the allotted fuel, with use at most the prescribed bound on
 
 The two simulations relate this way of running the programs to substitution in the program
 syntax. Inlining a successful outer run adds at most the inner fuel to its own fuel. Conversely,
-a successful inlined run can be reproduced by giving the query program the inlined fuel at every
-address. For a fixed successful inlined run, its recorded base-oracle use is the least bound
-that permits a successful replay of that run using bounded query answers.
+a successful inlined run can be replayed when the query program gets at least the inlined fuel
+at every address and the use bound covers the inlined run's recorded base-oracle use. This
+recorded use is the least bound that permits replay with bounded query answers.
 -/
 
 public section
