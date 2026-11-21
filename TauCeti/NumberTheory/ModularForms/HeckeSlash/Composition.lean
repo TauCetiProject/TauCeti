@@ -278,7 +278,7 @@ theorem heckeSlashSum_heckeSlashSum_eq_sum_nsmul
     TauCeti.sum_eq_sum_image_fiber (pairCoset D₁ D₂)
       fun q ↦ f ∣[k] (rightCosetRep D₁ q.1 * rightCosetRep D₂ q.2)]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
-  exact sum_slash_eq_nsmul_heckeSlashSum k D _ _ (fun i ↦ pairCoset_eq_iff.mp i.2)
+  exact sum_slash_eq_nsmul_heckeSlashSum k D _ _ (fun i ↦ pairCoset_eq_iff.mp i.property)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) f hf
 
 end Assembly

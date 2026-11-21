@@ -41,7 +41,7 @@ representative. -/
 theorem RoughForm.inChartAt_opens_eventuallyEq (ω : RoughForm 𝓘(ℝ, E) U F k)
     (ω₀ : E → E [⋀^Fin k]→L[ℝ] F) (hω : ∀ x : U, ω x = ω₀ x) (x : U) :
     ω.inChartAt x =ᶠ[𝓝 (x : E)] ω₀ := by
-  have he := U.chartAt_subtype_val_symm_eventuallyEq (H := E) (x := x)
+  have he := U.chartAt_subtypeVal_symm_eventuallyEq (H := E) (x := x)
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
     OpenPartialHomeomorph.refl_apply] at he
   filter_upwards [he.eventually_nhds] with z hz
@@ -87,7 +87,7 @@ theorem isSmoothForm_opens_iff {n : WithTop ℕ∞}
   exact ⟨fun h x hx ↦ (key ⟨x, hx⟩).mp
       (ω.contDiffWithinAt_range_inChartAt_of_contMDiffAt (h ⟨x, hx⟩)),
     fun h x ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self
-      ((key x).mpr (h x.2))⟩
+      ((key x).mpr (h x.property))⟩
 
 /-- Exterior differentiation within an arbitrary subset of an open model domain agrees
 with flat exterior differentiation of an ambient representative. No regularity is needed. -/
@@ -95,7 +95,7 @@ theorem mextDerivWithin_opens_eq_extDerivWithin
     {ω : RoughForm 𝓘(ℝ, E) U F k} {ω₀ : E → E [⋀^Fin k]→L[ℝ] F}
     (hω : ∀ x : U, ω x = ω₀ x) (s : Set U) (x : U) :
     mextDerivWithin ω s x = extDerivWithin ω₀ (Subtype.val '' s) (x : E) := by
-  have he := U.chartAt_subtype_val_symm_eventuallyEq (H := E) (x := x)
+  have he := U.chartAt_subtypeVal_symm_eventuallyEq (H := E) (x := x)
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
     OpenPartialHomeomorph.refl_apply] at he
   have hs : (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s =ᶠ[𝓝 (x : E)] Subtype.val '' s := by
@@ -122,7 +122,7 @@ theorem mextDeriv_opens_eq_extDeriv
     mextDeriv ω x = extDeriv ω₀ (x : E) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_opens_eq_extDerivWithin hω,
     image_univ, Subtype.range_coe_subtype]
-  exact extDerivWithin_of_mem_nhds (U.isOpen.mem_nhds x.2)
+  exact extDerivWithin_of_mem_nhds (U.isOpen.mem_nhds x.property)
 
 /-- A regular form on an open model domain has an ambient representative regular on that
 domain. This asserts no regularity of the representative across its boundary. -/
@@ -147,7 +147,7 @@ theorem mextDeriv_opens_eq_zero_iff
     exact (mextDeriv_opens_eq_extDeriv hω ⟨x, hx⟩).symm.trans (congrFun h ⟨x, hx⟩)
   · intro h
     funext x
-    exact (mextDeriv_opens_eq_extDeriv hω x).trans (h x x.2)
+    exact (mextDeriv_opens_eq_extDeriv hω x).trans (h x x.property)
 
 /-- Degree-one rough forms on a canonical open model domain are exactly fields of
 continuous linear maps. This is a pointwise equivalence, imposing no continuity in the base. -/
@@ -194,7 +194,7 @@ theorem IsSmoothForm.continuous_flatOneFormEquiv {n : WithTop ℕ∞}
   let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
     (ι := Fin 1) 0).symm
   have hc : Continuous (fun x : U ↦ ω₀ x) :=
-    hω₀.continuousOn.comp_continuous continuous_subtype_val fun x ↦ x.2
+    hω₀.continuousOn.comp_continuous continuous_subtypeVal fun x ↦ x.property
   exact (L.continuous.comp hc).congr fun x ↦ congrArg L (heq x).symm
 
 /-- The flat one-form adapter of the differential of a restricted function is its ambient

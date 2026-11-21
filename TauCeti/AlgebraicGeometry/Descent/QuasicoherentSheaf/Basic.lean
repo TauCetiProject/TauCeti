@@ -115,6 +115,32 @@ lemma modulesPseudofunctor_mapComp_inv_toNatTrans {T T' T'' : LocallyDiscrete Sc
   ext M
   exact Category.id_comp _
 
+/-- The factorization form of module pullback composition, on the hom component. -/
+lemma modulesPseudofunctor_mapComp'_hom_toNatTrans_app {A B C : Scheme.{u}} (a : B ⟶ C) (b : A ⟶ B)
+    (c : A ⟶ C) (h : b ≫ a = c) (M : C.Modules) :
+    (modulesPseudofunctor.mapComp' a.op.toLoc b.op.toLoc c.op.toLoc
+      (by rw [← h]; rfl)).hom.toNatTrans.app M =
+      (Scheme.Modules.pullbackCongr h).inv.app M ≫
+        (Scheme.Modules.pullbackComp b a).inv.app M := by
+  subst h
+  simp only [op_comp, Quiver.Hom.comp_toLoc, Cat.Hom.comp_toFunctor,
+    Pseudofunctor.mapComp'_eq_mapComp, modulesPseudofunctor_mapComp_hom_toNatTrans,
+    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_inv]
+  exact (Category.id_comp _).symm
+
+/-- The factorization form of module pullback composition, on the inverse component. -/
+lemma modulesPseudofunctor_mapComp'_inv_toNatTrans_app {A B C : Scheme.{u}} (a : B ⟶ C) (b : A ⟶ B)
+    (c : A ⟶ C) (h : b ≫ a = c) (M : C.Modules) :
+    (modulesPseudofunctor.mapComp' a.op.toLoc b.op.toLoc c.op.toLoc
+      (by rw [← h]; rfl)).inv.toNatTrans.app M =
+      (Scheme.Modules.pullbackComp b a).hom.app M ≫
+        (Scheme.Modules.pullbackCongr h).hom.app M := by
+  subst h
+  simp only [op_comp, Quiver.Hom.comp_toLoc, Cat.Hom.comp_toFunctor,
+    Pseudofunctor.mapComp'_eq_mapComp, modulesPseudofunctor_mapComp_inv_toNatTrans,
+    Scheme.Modules.pullbackCongr, eqToIso_refl, Iso.refl_hom]
+  exact (Category.comp_id _).symm
+
 /-- The pullback `pullHom φ g gf₁ gf₂` of a morphism `φ : f₁^* M₁ ⟶ f₂^* M₂` of modules along `g`,
 the restriction map of Mathlib's presheaves of morphisms `Pseudofunctor.presheafHom`, is `g^* φ`
 read through the composition isomorphisms of pullback and the identifications
