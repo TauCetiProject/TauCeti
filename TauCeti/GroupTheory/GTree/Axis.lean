@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GTree.FixedPoint
 public import TauCeti.GroupTheory.GTree.Line
 public import TauCeti.Combinatorics.Graph.Serre.GeodesicLine
 public import TauCeti.Algebra.Group.Action.Pow
+import TauCeti.Data.Int.Isometry
 
 /-!
 # The axis of a hyperbolic automorphism of a tree
@@ -52,6 +53,8 @@ nonzero power of a hyperbolic element has the same axis.
   geodesic line translated by `g` by a nonzero amount `t` is the axis of `g`, which is then
   hyperbolic; `TauCeti.GTree.translationLength_eq_natAbs_of_smul_eq_add`: `ℓ(g) = |t|` for every
   amount `t`.
+* `TauCeti.GTree.exists_smul_eq_add_of_commute`: an element commuting with a hyperbolic element
+  translates its axis.
 * `TauCeti.GTree.dist_smul_eq_translationLength_add`: `d(v, g v) = ℓ(g) + 2 d(v, axis)`.
 * `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.isHyperbolic_zpow_iff`,
   `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) = |n| ℓ(g)`, `gⁿ` is hyperbolic exactly when `g`
@@ -336,6 +339,34 @@ theorem axis_eq_range_of_smul_eq_add (hc : ∀ m n, T.dist (c m) (c n) = (m - n)
     exact ⟨m, ((dist_eq_zero_iff (T.nonempty_path v (c m))).mp (by omega)).symm⟩
   · rintro _ ⟨m, rfl⟩
     rw [mem_axis_iff, hg, hc, hℓ]
+    omega
+
+/-- **An element commuting with a hyperbolic element translates its axis.** Let `c` be a geodesic
+line that `g` translates by a nonzero amount `t`, so that `g` is hyperbolic with axis `c`. Then
+every `h` commuting with `g` acts on `c` as a translation `c n ↦ c (n + k)`: it maps the axis to
+itself, so it acts on `c` as an isometry of `ℤ`, and a reflection would conjugate the translation
+by `t` into the translation by `-t`. -/
+theorem exists_smul_eq_add_of_commute {h : G} (hc : ∀ m n, T.dist (c m) (c n) = (m - n).natAbs)
+    (ht : t ≠ 0) (hgc : ∀ n, g • c n = c (n + t)) (hgh : Commute g h) :
+    ∃ k : ℤ, ∀ n, h • c n = c (n + k) := by
+  have hrange := (axis_eq_range_of_smul_eq_add hc ht hgc).symm
+  -- `h` maps the axis `Set.range c` of `g` into itself, so `h • c n = c (φ n)` for an isometry
+  -- `φ` of `ℤ`: a translation or a reflection.
+  have hmem (n : ℤ) : h • c n ∈ Set.range c := by
+    rw [hrange, smul_mem_axis_iff_of_commute hgh, ← hrange]
+    exact Set.mem_range_self n
+  choose φ hφ using hmem
+  have hiso (m n : ℤ) : (φ m - φ n).natAbs = (m - n).natAbs := by
+    rw [← hc (φ m) (φ n), hφ m, hφ n, dist_smul, hc]
+  -- Since `h` commutes with `g`, the isometry `φ` commutes with the translation by `t ≠ 0`, which
+  -- rules out a reflection.
+  have hper : φ 0 + t = φ t := SerreGraph.injective_of_dist_eq_natAbs hc <|
+    calc c (φ 0 + t) = g • h • c 0 := by rw [← hφ 0, hgc (φ 0)]
+      _ = h • g • c 0 := by rw [smul_smul, hgh.eq, mul_smul]
+      _ = c (φ t) := by rw [hgc 0, zero_add, hφ t]
+  rcases Int.forall_eq_add_or_forall_eq_sub_of_natAbs_sub_eq hiso with hφ' | hφ'
+  · exact ⟨φ 0, fun n => by rw [← hφ n, hφ' n, add_comm (φ 0) n]⟩
+  · have := hφ' t
     omega
 
 end Translation

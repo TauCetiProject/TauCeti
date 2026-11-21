@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
-public import TauCeti.GroupTheory.PushoutI.Centralizer
+public import TauCeti.GroupTheory.PushoutI.Centralizer.Hyperbolic
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.GroupTheory.FreeGroup.CSA
 
@@ -87,15 +87,12 @@ theorem conj_of_mul_t_notMem_range_ofProd {α : Type*} {a b : α} (hab : a ≠ b
   -- kills `⟨a⟩ × ℤⁿ` but not `b * tᵢ`.
   refine (lift (K := Multiplicative ℤ) (FreeGroup.lift fun c => if c = b then .ofAdd 1 else 1) 1
     (fun _ _ => .all _ _) fun _ _ _ => .all _ _).conj_notMem_of_le_ker ?_ (by simp) y
-  rw [range_ofProd]
-  refine sup_le ?_ ((closure_le _).2 ?_)
-  · rintro _ ⟨c, hc, rfl⟩
-    rw [IsFreeGroup.centralizer_singleton_eq_zpowers_self (FreeGroup.not_isProperPower_of a)]
-      at hc
-    obtain ⟨k, rfl⟩ := hc
-    simp [hab]
-  · rintro _ ⟨j, rfl⟩
-    simp
+  rintro _ ⟨⟨⟨c, hc⟩, v⟩, rfl⟩
+  rw [MonoidHom.mem_ker, lift_ofProd, zpowersPiHom_apply_eq_prod]
+  -- Every `tⱼ` maps to `1`, and `c ∈ C_F(a) = ⟨a⟩` maps to `1` since `a ≠ b`.
+  rw [IsFreeGroup.centralizer_singleton_eq_zpowers_self (FreeGroup.not_isProperPower_of a)] at hc
+  obtain ⟨k, rfl⟩ := hc
+  simp [hab]
 
 /-- In `F(a, ℤⁿ)` for a free group `F` with distinct basis elements `a` and `b`, the element
 `b * tᵢ` has cyclic centralizer. -/

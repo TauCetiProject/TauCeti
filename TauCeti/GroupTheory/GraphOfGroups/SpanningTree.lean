@@ -37,6 +37,8 @@ of the petal `a` being the generator `a`.
   inverse on the generators of `π₁(𝔸, T)`.
 * `TauCeti.GraphOfGroups.π₁Equiv_symm_toπ₁Tree`: the inverse sends the element of `π₁(𝔸, T)`
   read off an `𝔸`-path `p` from `a` to `b` to the class of `[v₀, a]_T p [b, v₀]_T`.
+* `TauCeti.GraphOfGroups.π₁Equiv_vertexHom_mapPath_of_isTree`: over a tree, which is its own
+  spanning tree, `π₁Equiv` sends the class of `q y q⁻¹` to `y ∈ A_b` for every edge path `q`.
 
 ## References
 
@@ -189,6 +191,16 @@ theorem π₁Equiv_apply (g : π₁ 𝔸 v₀) : π₁Equiv 𝔸 v₀ T g = π�
     π₁Equiv 𝔸 v₀ T (π₁.vertexHom ((dartPrefunctor 𝔸).mapPath (T.path v₀ v)) g) =
       π₁Tree.of T.darts v g := by
   rw [← π₁Equiv_symm_of, MulEquiv.apply_symm_apply]
+
+/-- When `Γ` is a tree, its spanning tree `Γ` contains every dart, so for any edge path `q` from
+`v₀` to `b`, `π₁Equiv` sends the class of `q y q⁻¹` to the image of `y ∈ A_b` in `π₁(𝔸, Γ)`. -/
+@[simp] theorem π₁Equiv_vertexHom_mapPath_of_isTree (h : Γ.IsTree) {b : Γ.V} (q : Γ.Path v₀ b)
+    (y : 𝔸.vertexGroup b) :
+    π₁Equiv 𝔸 v₀ h.spanningTree (π₁.vertexHom ((dartPrefunctor 𝔸).mapPath q) y) =
+      π₁Tree.of h.spanningTree.darts b y := by
+  have hq : q.weight (fun {a b : Γ.V} (_ : a ⟶ b) => (1 : π₁Tree 𝔸 h.spanningTree.darts)) = 1 :=
+    Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
+  simp [π₁Equiv_apply, hq]
 
 /-- `π₁Equiv` sends the class of the loop `[v₀, src e]_T e [tgt e, v₀]_T` to the generator of
 the dart `e`. -/

@@ -107,9 +107,11 @@ left inverse homomorphisms of the amalgamated monoids, are left inverse. -/
 theorem map_comp_map_eq_id {g : ∀ i, G' i →* G i} {k' : H' →* H}
     (hgk : ∀ i, (g i).comp (φ' i) = (φ i).comp k') (hgf : ∀ i, LeftInverse (g i) (f i))
     (hk : LeftInverse k' k) : (map g k' hgk).comp (map f k hfk) = .id (PushoutI φ) := by
+  have hgf' : (fun i => (g i).comp (f i)) = fun i => .id (G i) :=
+    funext fun i => MonoidHom.ext (hgf i)
+  have hk' : k'.comp k = .id H := MonoidHom.ext hk
   rw [← map_comp]
-  simp only [show (fun i => (g i).comp (f i)) = fun i => .id (G i) from
-    funext fun i => MonoidHom.ext (hgf i), show k'.comp k = .id H from MonoidHom.ext hk, map_id]
+  simp only [hgf', hk', map_id]
 
 end Monoid
 

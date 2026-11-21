@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
 public import TauCeti.GroupTheory.TrivialIntersection
 public import TauCeti.Combinatorics.Graph.Serre.GeodesicLine
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Bass–Serre trees with malnormal edge groups
@@ -60,6 +61,7 @@ namespace TauCeti
 namespace GraphOfGroups
 
 open _root_.MulAction
+open scoped Pointwise
 
 variable {Γ : SerreGraph.{u, v}} {𝔸 : GraphOfGroups.{u, v, w, x} Γ} {a : Γ.V}
 
@@ -71,15 +73,17 @@ theorem stabilizer_bassSerreDart_inf_stabilizer_smul_eq_bot {b c : Γ.V} (p : �
     (hg : g ∉ (𝔸.αArrow e).range) :
     stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ⊓
       stabilizer (π₁ 𝔸 a) (π₁.vertexHom p g • bassSerreDart p e) = ⊥ := by
-  -- The two stabilizers are the images of `α_e(A_e)` and `g α_e(A_e) g⁻¹` in `π₁(𝔸, a)` under the
-  -- injective homomorphism `π₁.vertexHom p`.
-  have hconj : (MulAut.conj (π₁.vertexHom p g)).toMonoidHom.comp (π₁.vertexHom p) =
-      (π₁.vertexHom p).comp (MulAut.conj g).toMonoidHom := MonoidHom.ext fun _ => by simp
-  rw [stabilizer_smul_eq_stabilizer_map_conj, stabilizer_bassSerreDart, Subgroup.map_map, hconj,
-    ← Subgroup.map_map, ← Subgroup.map_inf _ _ _ (π₁.vertexHom_injective p)]
-  -- The pointwise conjugate `MulAut.conj g • H` is by definition the image of `H` under
-  -- `MulAut.conj g` (`Subgroup.pointwise_smul_def`).
-  exact (congrArg _ (isTISubgroup_iff_inf_conj_smul_eq_bot.1 hT g hg)).trans (Subgroup.map_bot _)
+  -- The stabilizer of the translate is the image of `g α_e(A_e) g⁻¹` under `π₁.vertexHom p`.
+  have hstab : stabilizer (π₁ 𝔸 a) (π₁.vertexHom p g • bassSerreDart p e) =
+      (MulAut.conj g • (𝔸.αArrow e).range).map (π₁.vertexHom p) := by
+    have hconj : (MulAut.conj (π₁.vertexHom p g)).toMonoidHom.comp (π₁.vertexHom p) =
+        (π₁.vertexHom p).comp (MulAut.conj g).toMonoidHom := MonoidHom.ext fun _ => by simp
+    rw [stabilizer_smul_eq_stabilizer_map_conj, stabilizer_bassSerreDart, Subgroup.map_map, hconj,
+      ← Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe, map_conj_eq_conj_smul]
+  -- So the intersection is the image of `α_e(A_e) ∩ g α_e(A_e) g⁻¹ = 1` under the injective
+  -- homomorphism `π₁.vertexHom p`.
+  rw [hstab, stabilizer_bassSerreDart, ← Subgroup.map_inf _ _ _ (π₁.vertexHom_injective p),
+    isTISubgroup_iff_inf_conj_smul_eq_bot.1 hT g hg, Subgroup.map_bot]
 
 /-- Let `e : b ⟶ c` be a dart whose edge group `α_e(A_e)` is malnormal in `A_b`. In the Bass–Serre
 tree, two distinct darts `p α_e(A_e)` and `q α_e(A_e)` over `e` leaving the same vertex
@@ -91,6 +95,7 @@ theorem stabilizer_bassSerreDart_inf_stabilizer_bassSerreDart_eq_bot {b c : Γ.V
   -- The dart `q α_e(A_e)` is the translate of `p α_e(A_e)` by an element fixing `p A_b`.
   obtain ⟨γ, hγ⟩ := exists_smul_bassSerreDart_eq p q e
   have hγv : γ ∈ stabilizer _ (bassSerreVertex p) := by
+    rw [mem_stabilizer_iff]
     simpa [hpq] using congrArg (bassSerreTree 𝔸 a).src hγ
   rw [stabilizer_bassSerreVertex] at hγv
   obtain ⟨g, rfl⟩ := hγv
@@ -140,11 +145,12 @@ private theorem exists_bassSerreProjection_mapV_eq {c : ℤ → (bassSerreTree (
     (b : SerreGraph.segment.V) : ∃ n, (bassSerreProjection _ a).mapV (c n) = b := by
   obtain ⟨d, hs, ht⟩ := SerreGraph.exists_src_eq_and_tgt_eq_of_dist_eq_one (hc 0 1)
   set π := bassSerreProjection (segment f g hf hg) a
-  have h₀ : SerreGraph.segment.src (π.mapE d) = π.mapV (c 0) := hs ▸ π.map_src d
+  -- A dart of the segment is its source vertex: here `π d` is `π (c 0)`.
+  have h₀ : π.mapE d = π.mapV (c 0) := (SerreGraph.segment_src _).symm.trans (hs ▸ π.map_src d)
   have h₁ : SerreGraph.segment.tgt (π.mapE d) = π.mapV (c 1) := ht ▸ π.map_tgt _ d
   by_cases h : π.mapV (c 0) = b
   · exact ⟨0, h⟩
-  · -- The source of the dart `π d` is the vertex `π (c 0) ≠ b`, so its target is `b`.
+  · -- The source of the dart `π d` is `π (c 0) ≠ b`, so its target is `b`.
     exact ⟨1, h₁ ▸ SerreGraph.segment_tgt_eq_of_ne (h₀.trans_ne h)⟩
 
 /-- **Geodesic lines have trivial pointwise stabilizers** in the Bass–Serre tree of `A ∗_C B`

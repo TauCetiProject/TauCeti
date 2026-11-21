@@ -583,7 +583,7 @@ private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
     cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
       π₁Tree.cyclicAmalgamEquiv m n hm hn (SerreGraph.segment_spanningTree_darts_nonempty _)
         (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) :=
-  congrArg (π₁Tree.cyclicAmalgamEquiv m n hm hn _) (π₁Equiv_segment_vertexHom_mapPath ..)
+  congrArg (π₁Tree.cyclicAmalgamEquiv m n hm hn _) (π₁Equiv_vertexHom_mapPath_of_isTree ..)
 
 @[simp] theorem cyclicAmalgamEquiv_vertexHom_false (q : SerreGraph.segment.Path v₀ false)
     (c : Multiplicative ℤ) :
