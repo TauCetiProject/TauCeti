@@ -377,8 +377,8 @@ lemma subsingleton_of_neg {k : ℤ} (hk : k < 0) : Subsingleton (ChowGroup X k) 
   obtain ⟨α, rfl⟩ := cycleClass_surjective a
   obtain ⟨β, rfl⟩ := cycleClass_surjective b
   have hbot := cyclesOfDimension_eq_bot_of_neg X hk
-  have hα : (α : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ α.2
-  have hβ : (β : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ β.2
+  have hα : (α : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ α.property
+  have hβ : (β : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ β.property
   rw [AddSubgroup.mem_bot] at hα hβ
   rw [Subtype.ext (hα.trans hβ.symm)]
 

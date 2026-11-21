@@ -186,10 +186,10 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
   -- By the small-chain theorems, this is the conclusion.
   have hcov : ⋃ i, ![{x : ↥(U ⊔ V) | (x : M) ∈ U}, {x | (x : M) ∈ V}] i = Set.univ := by
     rw [Set.iUnion_vecCons_pair]
-    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.2
+    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.property
   exact (quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex R S _
-    (IsOpen.vecCons (U.isOpen.preimage continuous_subtype_val)
-      (V.isOpen.preimage continuous_subtype_val)) hcov).2 h₃
+    (IsOpen.vecCons (U.isOpen.preimage continuous_subtypeVal)
+      (V.isOpen.preimage continuous_subtypeVal)) hcov).2 h₃
 
 end MayerVietoris
 
@@ -249,7 +249,7 @@ def toSmallSmoothSingularSubcomplex {ι : Type*} (S : ι → Set M) {V : Opens M
       rintro n _ ⟨σ, rfl⟩
       rw [mem_smallSmoothSingularSubcomplex_iff]
       refine ⟨(mem_smoothSingularSubcomplex_iff _).1
-        (smoothSingularSubcomplex_le_preimage (contMDiff_subtype_val (I := I)) n σ.2), ?_⟩
+        (smoothSingularSubcomplex_le_preimage (contMDiff_subtypeVal (I := I)) n σ.property), ?_⟩
       rw [NatTrans.comp_app, ConcreteCategory.comp_apply, Subfunctor.ι_app, TypeCat.ofHom_apply,
         TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp]
       exact ⟨i, (Set.image_subset_range _ _).trans (Subtype.range_coe.trans_subset h)⟩)
@@ -271,7 +271,7 @@ theorem toSmallSmoothSingularSubcomplex_homOfLE_left {ι : Type*} (S : ι → Se
     {i : ι} (h : (V : Set M) ⊆ S i) :
     toSmallSmoothSingularSubcomplex I S h ≫
         homOfLE (smallSmoothSingularSubcomplex_le_smoothSingularSubcomplex I S) =
-      smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I)) := by
+      smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I)) := by
   rw [← cancel_mono (smoothSingularSubcomplex I M).ι, Category.assoc, homOfLE_ι,
     toSmallSmoothSingularSubcomplex_ι, smoothSingularSubcomplexMap_subtypeVal_ι]
 
@@ -359,8 +359,8 @@ theorem commSq_smoothSingularSubcomplexMap_inter (I : ModelWithCorners ℝ E H) 
         (contMDiff_inclusion (I := I) _))
       (smoothSingularSubcomplexMap (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
         (contMDiff_inclusion (I := I) _))
-      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) where
+      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) where
   w := by
     rw [← cancel_mono (smoothSingularSubcomplex I M).ι]
     simp only [Category.assoc, smoothSingularSubcomplexMap_subtypeVal_ι,
@@ -458,8 +458,8 @@ private lemma smoothMayerVietorisFromBiprod_comp_homologyMap
         (homOfLE (smallSmoothSingularSubcomplex_le_smoothSingularSubcomplex I
           ![(U : Set M), (V : Set M)])) R n =
     SSet.mayerVietorisFromBiprod R
-      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) n := by
+      (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+      (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) n := by
   ext <;> simp [← SSet.homologyMap_comp]
 
 /-- Composing `smoothMayerVietorisδ` with the inclusion difference into `Hₘ^∞(U) ⊞ Hₘ^∞(V)` is
@@ -479,8 +479,8 @@ zero. -/
 @[reassoc (attr := simp)]
 theorem smoothMayerVietorisFromBiprod_δ (hUV : U ⊔ V = ⊤) (n m : ℕ) (h : m + 1 = n := by lia) :
     SSet.mayerVietorisFromBiprod R
-        (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtype_val (I := I)))
-        (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtype_val (I := I))) n ≫
+        (smoothSingularSubcomplexMap (Subtype.val : U → M) (contMDiff_subtypeVal (I := I)))
+        (smoothSingularSubcomplexMap (Subtype.val : V → M) (contMDiff_subtypeVal (I := I))) n ≫
       smoothMayerVietorisδ I R hUV n m h = 0 := by
   rw [← smoothMayerVietorisFromBiprod_comp_homologyMap I R
       (by simp) (by simp), Category.assoc,

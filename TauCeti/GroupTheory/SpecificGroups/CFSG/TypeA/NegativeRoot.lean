@@ -31,15 +31,15 @@ public section
 
 namespace TauCeti.TypeALieIndex
 
-variable (d : TypeALieIndex) (i : Fin d.1.rank) (u : Multiplicative d.1.Closure)
+variable (d : TypeALieIndex) (i : Fin d.val.rank) (u : Multiplicative d.val.Closure)
 
 /-- The type-A graph factor sends the lowering subgroup at `i` to the lowering subgroup at the
 selected diagram image, with no sign or change of additive parameter. -/
 @[simp]
 theorem graphAut_rootSubgroupPoints_inr :
-    d.graphAut (SlStd.rootSubgroupPoints d.1.rank (.inr i) d.1.Closure u) =
-      SlStd.rootSubgroupPoints d.1.rank (.inr (d.toGraphTwistedIndex.diagramPerm i))
-        d.1.Closure u := by
+    d.graphAut (SlStd.rootSubgroupPoints d.val.rank (.inr i) d.val.Closure u) =
+      SlStd.rootSubgroupPoints d.val.rank (.inr (d.toGraphTwistedIndex.diagramPerm i))
+        d.val.Closure u := by
   rcases d.exists_eq_ofA_or_exists_eq_ofTwistedA with
     ⟨rank, q, hvalid, rfl⟩ | ⟨rank, q, hvalid, rfl⟩
   · rw [graphAut_ofA, MulAut.one_apply, GraphTwistedIndex.diagramPerm_A,
@@ -57,11 +57,11 @@ theorem graphAut_rootSubgroupPoints_inr :
 and raises their additive parameters to the indexed field order. -/
 @[simp]
 theorem steinberg_rootSubgroupPoints_inr :
-    d.steinberg (SlStd.rootSubgroupPoints d.1.rank (.inr i) d.1.Closure u) =
-      SlStd.rootSubgroupPoints d.1.rank (.inr (d.toGraphTwistedIndex.diagramPerm i))
-        d.1.Closure (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+    d.steinberg (SlStd.rootSubgroupPoints d.val.rank (.inr i) d.val.Closure u) =
+      SlStd.rootSubgroupPoints d.val.rank (.inr (d.toGraphTwistedIndex.diagramPerm i))
+        d.val.Closure (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_def, SlStd.frobenius_rootSubgroupPoints,
-    ← d.1.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
+    ← d.val.fieldOrder_eq_characteristic_pow, graphAut_rootSubgroupPoints_inr]
 
 end TauCeti.TypeALieIndex

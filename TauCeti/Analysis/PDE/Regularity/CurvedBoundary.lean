@@ -300,11 +300,11 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph
   choose V hxV w hw using hloc
   obtain ⟨t, ht⟩ := hΩ.isCompact_closure.elim_nhds_subcover' (fun x hx => (V x hx : Set _))
     fun x hx => (V x hx).isOpen.mem_nhds (hxV x hx)
-  have hcov : Omega ≤ ⨆ i : t, Omega ⊓ V i.1.1 i.1.2 := fun y hy => by
+  have hcov : Omega ≤ ⨆ i : t, Omega ⊓ V i.val.val i.val.property := fun y hy => by
     obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (ht (subset_closure hy))
     exact Opens.mem_iSup.2 ⟨⟨x, hxt⟩, Opens.mem_inf.2 ⟨hy, hyx⟩⟩
   obtain ⟨v, hv, -, -⟩ := Wkp.exists_glue (fun _ => inf_le_left) hcov 2
-    (fun i => w i.1.1 i.1.2) (u := W1p.value u) fun i => by
+    (fun i => w i.val.val i.val.property) (u := W1p.value u) fun i => by
       rw [Wkp.value_succ, Wkp.value_one, hw]
       exact W1p.value_restrictL_ae inf_le_left u
   exact ⟨v, W1p.ext_value (Lp.ext (by rw [Wkp.value_lowerOrder_one]; exact hv))⟩

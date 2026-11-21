@@ -172,17 +172,20 @@ theorem pullbackDrift_apply (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ �
       toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ (b (Φ x)) :=
   (rfl)
 
-/-- The transformed drift of the zero vector field is zero. -/
-@[simp]
-theorem pullbackDrift_zero (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :
-    pullbackDrift Φ 0 = 0 := by
-  ext
-  simp [pullbackDrift_apply]
-
 @[simp]
 theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E)
     (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
   (rfl)
+
+@[simp]
+theorem pullbackDrift_zero (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :
+    pullbackDrift Φ (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) = 0 := by
+  funext x; simp [pullbackDrift_apply]
+
+@[simp]
+theorem pullbackDensity_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E) :
+    pullbackDensity Φ (0 : E → ℝ) = 0 := by
+  funext x; simp
 
 /-- Where `DΦ(x)` is invertible, the map of the inverse Jacobian matrix is a right inverse of
 `DΦ(x)`. -/
@@ -468,7 +471,7 @@ theorem exists_holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}
   -- The drift is `g(|det DΦ|, b ∘ Φ, T)` for the smooth map `g(j, v, S) = j S v`, and the
   -- argument is `r`-Hölder and bounded on `s`.
   have hg : ContDiff ℝ 1 fun p : ℝ × EuclideanSpace ℝ ι ×
-      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) => p.1 • p.2.2 p.2.1 :=
+      (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) => p.fst • p.snd.snd p.snd.fst :=
     contDiff_fst.smul ((contDiff_snd.comp contDiff_snd).clm_apply (contDiff_fst.comp contDiff_snd))
   have hbΦ : HolderOnWith (Kb * KΦ ^ (r : ℝ)) r (fun x => b (Φ x)) s := by
     simpa only [mul_one, Function.comp_def] using hb.comp hΦ.holderOnWith hmaps
@@ -601,7 +604,7 @@ theorem energyFormH1_compL_eq_setIntegral_add_setIntegral_inner (hΦ : Different
   set w := W1p.compL Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁ hΨdet (φ : W1p mu U 2)
   have hw : w ∈ w1p0Submodule mu V 2 :=
     W1p.compL_mem_w1p0Submodule_of_leftInvOn Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁
-      hΨdet hΦ.continuousOn hmaps hΦΨ φ.2
+      hΨdet hΦ.continuousOn hmaps hΦΨ φ.property
   have hφ : W1p.compL Φ hp hΦ hinj hmaps hL hc₀ hdet w = φ :=
     W1p.compL_compL_of_leftInvOn Φ hp hΦ hinj hmaps hL hc₀ hdet hΨ hΦΨ.injOn
       hΨmaps hΨL hc₁ hΨdet hΨΦ (φ : W1p mu U 2)

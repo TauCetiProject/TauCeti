@@ -111,7 +111,7 @@ private def nnratTime (r : ℚ≥0) : nnratTimeSet := ⟨r, ⟨r, rfl⟩⟩
 private theorem exists_nnratBrownianSkeleton :
     ∃ P : Measure (nnratTimeSet → ℝ), IsProbabilityMeasure P ∧
       (∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ nnratTimeSet),
-        MeasurePreserving (fun (x : nnratTimeSet → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
+        MeasurePreserving (fun (x : nnratTimeSet → ℝ) (i : I) ↦ x ⟨i.val, hI i.property⟩) P
           (projectiveFamily I)) ∧
       ∀ ⦃n : ℕ⦄, n ≠ 0 →
         IsKolmogorovProcess (fun (t : nnratTimeSet) (x : nnratTimeSet → ℝ) ↦ x t) P
@@ -128,7 +128,7 @@ private instance : IsProbabilityMeasure nnratBrownianMeasure :=
 
 private lemma hasLaw_finset_nnratBrownianMeasure (I : Finset ℝ≥0)
     (hI : (I : Set ℝ≥0) ⊆ nnratTimeSet) :
-    HasLaw (fun (ω : nnratTimeSet → ℝ) (i : I) ↦ ω ⟨i.1, hI i.2⟩)
+    HasLaw (fun (ω : nnratTimeSet → ℝ) (i : I) ↦ ω ⟨i.val, hI i.property⟩)
       (projectiveFamily I) nnratBrownianMeasure :=
   (exists_nnratBrownianSkeleton.choose_spec.2.1 I hI).hasLaw
 
@@ -199,7 +199,7 @@ private lemma ae_eq_rawBrownian (r : ℚ≥0) :
 private lemma isPreBrownianReal_rawBrownian :
     IsPreBrownianReal rawBrownian nnratBrownianMeasure where
   hasLaw I := by
-    let v (n : ℕ) (i : I) : ℚ≥0 := approxDyadicNNRat n i.1
+    let v (n : ℕ) (i : I) : ℚ≥0 := approxDyadicNNRat n i.val
     let Z (n : ℕ) (ω : nnratTimeSet → ℝ) : EuclideanSpace ℝ I :=
       toLp 2 fun i : I ↦ rawBrownian (v n i) ω
     let Zlim (ω : nnratTimeSet → ℝ) : EuclideanSpace ℝ I :=
@@ -208,12 +208,12 @@ private lemma isPreBrownianReal_rawBrownian :
       (MeasurableEquiv.toLp 2 (I → ℝ)).measurable.comp
         (measurable_pi_iff.mpr fun i ↦ measurable_rawBrownian (u i))
     have hZ_meas (n : ℕ) : Measurable (Z n) := hmeas_toLp (fun i ↦ (v n i : ℝ≥0))
-    have hZlim_meas : Measurable Zlim := hmeas_toLp (fun i ↦ i.1)
+    have hZlim_meas : Measurable Zlim := hmeas_toLp (fun i ↦ i.val)
     -- Step 1: dyadic approximations `Z n` converge pointwise to `Zlim`, hence in distribution.
     have hZ_tendsto (ω : nnratTimeSet → ℝ) : Tendsto (fun n ↦ Z n ω) atTop (𝓝 (Zlim ω)) :=
       (PiLp.continuous_toLp 2 _).tendsto _ |>.comp
         (tendsto_pi_nhds.mpr fun i ↦
-          ((continuous_rawBrownian ω).tendsto i.1).comp (tendsto_approxDyadicNNRat i.1))
+          ((continuous_rawBrownian ω).tendsto i.val).comp (tendsto_approxDyadicNNRat i.val))
     let S (u : I → ℝ≥0) : Matrix I I ℝ := Matrix.of fun i j : I ↦ min (u i : ℝ) (u j : ℝ)
     have hPSD (u : I → ℝ≥0) : (S u).PosSemidef := by
       let J : Finset ℝ≥0 := Finset.univ.image u
@@ -239,9 +239,9 @@ private lemma isPreBrownianReal_rawBrownian :
     have hc : Continuous (fun u : I → ℝ≥0 ↦
         (multivariateGaussian 0 (S u)).toProbabilityMeasure) :=
       Continuous.multivariateGaussian (m := fun _ ↦ 0) continuous_const (by fun_prop) hPSD
-    have hu_tendsto : Tendsto (fun n ↦ fun i : I ↦ (v n i : ℝ≥0)) atTop (𝓝 fun i : I ↦ i.1) :=
-      tendsto_pi_nhds.mpr fun i ↦ tendsto_approxDyadicNNRat i.1
-    have hS_eq : S (fun i : I ↦ i.1) = BrownianReal.covMatrix I := by
+    have hu_tendsto : Tendsto (fun n ↦ fun i : I ↦ (v n i : ℝ≥0)) atTop (𝓝 fun i : I ↦ i.val) :=
+      tendsto_pi_nhds.mpr fun i ↦ tendsto_approxDyadicNNRat i.val
+    have hS_eq : S (fun i : I ↦ i.val) = BrownianReal.covMatrix I := by
       ext i j; simp [S, BrownianReal.covMatrix_apply]
     have hZlim_eq :
         nnratBrownianMeasure.map Zlim = multivariateGaussian 0 (BrownianReal.covMatrix I) := by

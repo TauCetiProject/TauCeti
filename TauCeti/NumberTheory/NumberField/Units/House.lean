@@ -147,12 +147,12 @@ theorem norm_logEmbedding_le_mul_log_house (u : (𝓞 K)ˣ) :
     exact_mod_cast finrank_pos
   refine (pi_norm_le_iff_of_nonneg (mul_nonneg (mul_nonneg zero_le_two hd)
     (Real.log_nonneg (one_le_house u)))).mpr fun w ↦ ?_
-  have hmult : (mult w.1 : ℝ) ≤ 2 := by
+  have hmult : (mult w.val : ℝ) ≤ 2 := by
     unfold mult
     split_ifs <;> norm_num
   rw [logEmbedding_component, Real.norm_eq_abs, abs_mul, Nat.abs_cast, mul_assoc]
   refine mul_le_mul hmult ?_ (abs_nonneg _) zero_le_two
-  rw [← norm_embedding_eq w.1]
+  rw [← norm_embedding_eq w.val]
   exact abs_log_norm_embedding_le u _
 
 end Units

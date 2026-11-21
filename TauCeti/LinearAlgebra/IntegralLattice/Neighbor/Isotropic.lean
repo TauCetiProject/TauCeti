@@ -86,7 +86,7 @@ theorem coe_mem_neighborKernel_iff (v x : L) :
 /-- The neighbor kernel is contained in the original carrier. -/
 theorem neighborKernel_le (v : L) : L.neighborKernel p v ≤ L.carrier := by
   rintro _ ⟨y, -, rfl⟩
-  exact y.2
+  exact y.property
 
 /-- **Membership in the neighbor kernel**: its vectors are the lattice vectors whose pairing with
 `v` is divisible by `p`. -/
@@ -283,7 +283,7 @@ theorem isEven_neighbor (hL : L.IsEven) (hv₂ : 2 * (p : ℤ) ^ 2 ∣ L.integra
     (L.neighbor p v hv).IsEven := by
   rw [isEven_iff_forall_norm]
   intro x
-  obtain ⟨y, hy, n, hx⟩ := (L.mem_neighbor_carrier_iff hv x).mp x.2
+  obtain ⟨y, hy, n, hx⟩ := (L.mem_neighbor_carrier_iff hv x).mp x.property
   obtain ⟨a, ha⟩ := hL.exists_norm_eq_two_mul ⟨y, L.neighborKernel_le p v hy⟩
   obtain ⟨c, hc⟩ := exists_form_inv_smul_eq hy
   obtain ⟨b, hb⟩ := hv₂
@@ -319,7 +319,7 @@ theorem zsmul_inv_smul_mem_carrier_iff {w : L} (hvw : IsCoprime (L.integralForm 
     exact hvw.symm.dvd_of_dvd_mul_right hdvd
   · rintro ⟨m, rfl⟩
     rw [mul_comm, mul_smul, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ, smul_inv_smul₀ hp]
-    exact L.carrier.smul_mem m v.2
+    exact L.carrier.smul_mem m v.property
 
 /-- The multiples of `p (v / p)` lie in the neighbor kernel. -/
 private theorem zsmul_inv_smul_mem_neighborKernel (m : ℤ) :

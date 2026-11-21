@@ -220,7 +220,7 @@ theorem mem_orbit_iff_exists_pow_card_pow {x y : E} :
   set φ := _root_.FiniteField.frobeniusAlgEquivOfAlgebraic F E with hφ
   refine ⟨?_, ?_⟩
   · rintro ⟨g, rfl⟩
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp g.property
     have hx : IsIntegral F x := (Algebra.IsAlgebraic.isAlgebraic (R := F) x).isIntegral
     set m := (minpoly F x).natDegree
     have hm0 : 0 < m := minpoly.natDegree_pos hx
