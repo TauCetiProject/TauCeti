@@ -96,7 +96,8 @@ theorem mem_delzantLevel_simplex_iff
           fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) := by
       rw [LinearMap.mem_ker]
       ext l
-      simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply]
+      rw [linearCombination_simplexNormal_apply, Pi.one_apply, Pi.one_apply, sub_self,
+        Pi.zero_apply]
     have := mem_delzantLevel.1 h 1 h1
     simp only [delzantMomentMap_apply, Pi.one_apply, one_mul, Fintype.sum_option,
       simplexSupport_none, simplexSupport_some, add_zero] at this
@@ -131,12 +132,9 @@ theorem mem_ker_facetTorusHom_simplex_iff {θ : Option κ → AddCircle (2 * π)
   obtain rfl : (fun o ↦ (t o : AddCircle (2 * π))) = θ := funext ht
   rw [AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_range]
   -- The class of `t` is in the kernel when `t_(some k) - t_none ∈ 2πℤ` for every `k`.
-  have hsum : Fintype.linearCombination ℝ
+  rw [show Fintype.linearCombination ℝ
       (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t =
-        fun k ↦ t (some k) - t none := by
-    ext l
-    simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply, sub_eq_neg_add]
-  rw [hsum]
+        fun k ↦ t (some k) - t none from funext (linearCombination_simplexNormal_apply t)]
   have hcoe (k : κ) : ((t (some k) : AddCircle (2 * π)) = t none) ↔
       ∃ n : ℤ, (2 * π) * n = t (some k) - t none := by
     rw [← sub_eq_zero, ← QuotientAddGroup.mk_sub, AddCircle.coe_eq_zero_iff]
@@ -156,43 +154,29 @@ theorem mem_ker_facetTorusHom_simplex_iff {θ : Option κ → AddCircle (2 * π)
 
 /-! ### Complex coordinates -/
 
-omit [DecidableEq κ] in
-/-- The rotation `z ↦ e^(iφ) z` by a constant angle in the complex coordinates `z_o = q_o + i p_o`
-multiplies them by `cos φ + i sin φ`. -/
-private theorem weightRotation_const_complex (φ : ℝ)
-    (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)) (o : Option κ) :
-    ((weightRotation (fun _ ↦ φ) x).1 o : ℂ) + (weightRotation (fun _ ↦ φ) x).2 o * I =
-      (cos φ + sin φ * I) * ((x.1 o : ℂ) + x.2 o * I) := by
-  apply Complex.ext <;> simp
-  ring
-
-omit [Fintype κ] [DecidableEq κ] in
-/-- Points of `ℂ^(Option κ)` with the same complex coordinates are equal. -/
-private theorem ext_of_complex
-    {x y : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)}
-    (h : ∀ o, (x.1 o : ℂ) + x.2 o * I = (y.1 o : ℂ) + y.2 o * I) : x = y := by
-  refine Prod.ext ?_ ?_ <;> ext o
-  · simpa using congrArg Complex.re (h o)
-  · simpa using congrArg Complex.im (h o)
-
-omit [DecidableEq κ] in
-/-- The squared moduli `|q_o + i p_o|²` of the complex coordinates sum to `‖q‖² + ‖p‖²`. -/
-private theorem sum_normSq_complex (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)) :
-    ∑ o, ‖(x.1 o : ℂ) + x.2 o * I‖ ^ 2 = ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 := by
-  simp only [Complex.sq_norm, Complex.normSq_add_mul_I, EuclideanSpace.real_norm_sq_eq,
-    Finset.sum_add_distrib]
-
-/-- On the level of the simplex of size `a > 0`, the complex coordinates `q_o + i p_o` do not all
-vanish. -/
+/-- On the level of the simplex of size `a > 0`, the complex coordinates `q_o + i p_o`
+(`TauCeti.complexEuclideanEquivRealProd`) do not all vanish. -/
 theorem complex_ne_zero_of_mem_delzantLevel_simplex (ha : 0 < a)
     {x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)}
     (hx : x ∈ delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) :
-    (fun o ↦ (x.1 o : ℂ) + x.2 o * I) ≠ 0 := by
+    ⇑((complexEuclideanEquivRealProd (Option κ)).symm x) ≠ 0 := by
   intro h
-  rw [mem_delzantLevel_simplex_iff, ← sum_normSq_complex] at hx
-  simp only [fun o ↦ congrFun h o, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, Finset.sum_const_zero] at hx
+  rw [mem_delzantLevel_simplex_iff, ← norm_complexEuclideanEquivRealProd_symm_sq,
+    EuclideanSpace.norm_sq_eq, h] at hx
+  simp only [Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
+    Finset.sum_const_zero] at hx
   linarith
+
+/-- If the complex coordinates of a point of the level of the simplex of size `a` are `c • v`, then
+`‖c‖² ∑ o, |v_o|² = 2a`. -/
+private theorem norm_sq_mul_sum_norm_sq_eq_of_smul_eq
+    {x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)}
+    (hx : x ∈ delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a))
+    {c : ℂ} {v : Option κ → ℂ} (hc : c • v = ⇑((complexEuclideanEquivRealProd (Option κ)).symm x)) :
+    ‖c‖ ^ 2 * ∑ o, ‖v o‖ ^ 2 = 2 * a := by
+  rw [← mem_delzantLevel_simplex_iff.1 hx, ← norm_complexEuclideanEquivRealProd_symm_sq,
+    EuclideanSpace.norm_sq_eq, ← hc, Finset.mul_sum]
+  simp only [Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
 
 namespace DelzantQuotient
 
@@ -214,28 +198,24 @@ private theorem mk_eq_mk_iff_mk_complex_eq (ha : 0 < a)
         weightRotation (fun _ ↦ -t none) := by
       rw [show (fun o ↦ (t o : AddCircle (2 * π))) = fun _ ↦ (t none : AddCircle (2 * π)) from
         funext (mem_ker_facetTorusHom_simplex_iff.1 hθ), torusRotation_coe, Pi.neg_def]
-    rw [coe_vadd_delzantLevel, hrot, weightRotation_const_complex, Pi.smul_apply, smul_eq_mul]
+    rw [coe_vadd_delzantLevel, hrot, complexEuclideanEquivRealProd_symm_weightRotation_apply,
+      Pi.smul_apply, smul_eq_mul]
   · -- A scalar relating two points of the same sphere has modulus one, so it is `e^(iφ)`.
     rintro ⟨c, hc⟩
-    have hx := mem_delzantLevel_simplex_iff.1 x.property
-    have hy := mem_delzantLevel_simplex_iff.1 y.property
-    rw [← sum_normSq_complex] at hx hy
     have hnorm : ‖c‖ = 1 := by
-      have hsum : ∑ o, ‖((x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).1 o : ℂ) +
-          (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).2 o * I‖ ^ 2 =
-            ‖c‖ ^ 2 * (2 * a) := by
-        rw [← hy, Finset.mul_sum]
-        refine Finset.sum_congr rfl fun o _ ↦ ?_
-        rw [← congrFun hc o, Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
-      rw [hx] at hsum
+      have h := norm_sq_mul_sum_norm_sq_eq_of_smul_eq x.property hc
+      rw [← EuclideanSpace.norm_sq_eq, norm_complexEuclideanEquivRealProd_symm_sq,
+        mem_delzantLevel_simplex_iff.1 y.property] at h
       have h1 : ‖c‖ ^ 2 = 1 := by
         have : (‖c‖ ^ 2 - 1) * (2 * a) = 0 := by linarith
         exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_right (by positivity))
       nlinarith [norm_nonneg c]
     refine ⟨fun _ ↦ ((-Complex.arg c : ℝ) : AddCircle (2 * π)),
-      mem_ker_facetTorusHom_simplex_iff.2 fun _ ↦ rfl, Subtype.ext (ext_of_complex fun o ↦ ?_)⟩
+      mem_ker_facetTorusHom_simplex_iff.2 fun _ ↦ rfl,
+      Subtype.ext ((complexEuclideanEquivRealProd _).symm.injective (PiLp.ext fun o ↦ ?_))⟩
     rw [coe_vadd_delzantLevel, torusRotation_coe, show -(fun _ : Option κ ↦ -Complex.arg c) =
-      fun _ ↦ Complex.arg c from funext fun _ ↦ neg_neg _, weightRotation_const_complex]
+      fun _ ↦ Complex.arg c from funext fun _ ↦ neg_neg _,
+      complexEuclideanEquivRealProd_symm_weightRotation_apply]
     have hcexp : (Real.cos (Complex.arg c) + Real.sin (Complex.arg c) * I : ℂ) = c := by
       simpa [hnorm] using Complex.norm_mul_cos_add_sin_mul_I c
     rw [hcexp, ← congrFun hc o, Pi.smul_apply, smul_eq_mul]
@@ -255,16 +235,18 @@ private theorem exists_mk_complex_eq (ha : 0 < a) (p : ℙ ℂ (Option κ → �
   set r : ℝ := √(2 * a / ∑ o, ‖v o‖ ^ 2)
   set x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ) :=
     (WithLp.toLp 2 fun o ↦ ((r : ℂ) * v o).re, WithLp.toLp 2 fun o ↦ ((r : ℂ) * v o).im)
-  have hxv (o : Option κ) : (x.1 o : ℂ) + x.2 o * I = (r : ℂ) * v o := Complex.re_add_im _
+  have hxv : ⇑((complexEuclideanEquivRealProd (Option κ)).symm x) = (r : ℂ) • v :=
+    funext fun _ ↦ (complexEuclideanEquivRealProd_symm_apply _ _).trans (Complex.re_add_im _)
   have hx : x ∈ delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
       (simplexSupport a) := by
-    rw [mem_delzantLevel_simplex_iff, ← sum_normSq_complex]
-    simp only [hxv, norm_mul, Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs,
-      ← Finset.mul_sum]
+    rw [mem_delzantLevel_simplex_iff, ← norm_complexEuclideanEquivRealProd_symm_sq,
+      EuclideanSpace.norm_sq_eq, hxv]
+    simp only [Pi.smul_apply, smul_eq_mul, norm_mul, Complex.norm_real, Real.norm_eq_abs, mul_pow,
+      sq_abs, ← Finset.mul_sum]
     rw [Real.sq_sqrt (by positivity), div_mul_cancel₀ _ hs.ne']
   refine ⟨⟨x, hx⟩, ?_⟩
   conv_rhs => rw [← p.mk_rep]
-  exact (Projectivization.mk_eq_mk_iff' ℂ _ _ _ hv).2 ⟨r, funext fun o ↦ (hxv o).symm⟩
+  exact (Projectivization.mk_eq_mk_iff' ℂ _ _ _ hv).2 ⟨r, hxv.symm⟩
 
 /-- **The Delzant quotient of the standard simplex is complex projective space.** For `a > 0`,
 the map `[z] ↦ [z]` from the Delzant quotient of the simplex of size `a`, the quotient of the
@@ -296,9 +278,7 @@ def simplexHomeomorph (ha : 0 < a) :
 theorem simplexHomeomorph_mk (ha : 0 < a)
     (x : delzantLevel ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) :
     simplexHomeomorph ha (mk x) =
-      Projectivization.mk ℂ
-        (fun o ↦ ((x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).1 o : ℂ) +
-          (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).2 o * I)
+      Projectivization.mk ℂ ⇑((complexEuclideanEquivRealProd (Option κ)).symm x)
         (complex_ne_zero_of_mem_delzantLevel_simplex ha x.property) :=
   lift_mk _ _ x
 
@@ -318,22 +298,19 @@ theorem reducedMomentMap_simplexHomeomorph_symm_mk (ha : 0 < a) {v : Option κ �
   rw [Homeomorph.apply_symm_apply, simplexHomeomorph_mk,
     Projectivization.mk_eq_mk_iff' ℂ _ _ _ hv] at h
   obtain ⟨c, hc⟩ := h
-  -- The coordinates of `x` are `c • v`, and `‖x‖² = 2a`.
-  have hxc (o : Option κ) :
-      ‖((x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).1 o : ℂ) +
-        (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).2 o * I‖ ^ 2 =
-          ‖c‖ ^ 2 * ‖v o‖ ^ 2 := by
-    rw [← congrFun hc o, Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
-  have hsum := mem_delzantLevel_simplex_iff.1 x.property
-  rw [← sum_normSq_complex] at hsum
-  simp only [hxc, ← Finset.mul_sum] at hsum
+  -- The complex coordinates of `x` are `c • v`, and `‖x‖² = 2a`.
+  have hsum := norm_sq_mul_sum_norm_sq_eq_of_smul_eq x.property hc
   have hk := reducedMomentMap_mk_apply (i := (Int.castAddHom ℝ).compLeft κ) (u := simplexNormal κ)
     surjective_linearCombination_simplexNormal x (some k)
   simp only [simplexNormal_some, AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one,
     simplexSupport_some, add_zero] at hk
   rw [hk]
-  have hxk := hxc (some k)
-  rw [Complex.sq_norm, Complex.normSq_add_mul_I] at hxk
+  have hxk : (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).1 (some k) ^ 2 +
+      (x : EuclideanSpace ℝ (Option κ) × EuclideanSpace ℝ (Option κ)).2 (some k) ^ 2 =
+        ‖c‖ ^ 2 * ‖v (some k)‖ ^ 2 := by
+    rw [← Complex.normSq_add_mul_I, ← Complex.sq_norm, ← complexEuclideanEquivRealProd_symm_apply,
+      ← hc,
+      Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
   have hs : ∑ o, ‖v o‖ ^ 2 ≠ 0 := fun h0 ↦ by
     rw [h0, mul_zero] at hsum
     linarith
