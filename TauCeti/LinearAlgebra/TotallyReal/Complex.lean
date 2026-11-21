@@ -145,7 +145,7 @@ theorem IsTotallyReal.rank_span_complex
   let b := Basis.ofVectorSpace ℝ L
   have hind : LinearIndependent ℂ ((↑) ∘ b : _ → E) :=
     hL.linearIndependent_complex (b.linearIndependent.map' L.subtype L.ker_subtype)
-      fun i ↦ (b i).2
+      fun i ↦ (b i).property
   have hspan : Submodule.span ℂ (L : Set E) = Submodule.span ℂ (Set.range ((↑) ∘ b : _ → E)) := by
     rw [← Submodule.span_span_of_tower ℝ ℂ (Set.range _), Set.range_comp, ← L.coe_subtype,
       Submodule.span_image, b.span_eq, Submodule.map_top, Submodule.range_subtype]
@@ -315,7 +315,7 @@ of `E`: `L` is a real form of `E`. -/
 noncomputable def complexBasis {ι : Type*} (b : Basis ι ℝ L) : Basis ι ℂ E :=
   Basis.mk (v := L.subtype ∘ b)
     (hL.isTotallyReal.linearIndependent_complex
-      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).2)
+      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).property)
     (hL.span_complex_eq_top (by
       rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top])).ge
 

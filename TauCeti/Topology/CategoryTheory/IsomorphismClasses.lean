@@ -141,12 +141,12 @@ theorem isOpenEmbedding_of_mk_eq_isomorphismClassesMk {U : Set C} {r : Setoid U}
   have hcomp : φ ∘ Quotient.mk r = Quotient.mk (isIsomorphicSetoid C) ∘ Subtype.val := funext hφ
   refine .of_continuous_injective_isOpenMap ?_ (injective_of_mk_eq_isomorphismClassesMk hr hφ) ?_
   · rw [isQuotientMap_quotient_mk'.continuous_iff]
-    exact hcomp ▸ continuous_quotient_mk'.comp continuous_subtype_val
+    exact hcomp ▸ continuous_quotient_mk'.comp continuous_subtypeVal
   · intro W hW
     rw [← Quotient.mk_surjective.image_preimage W, image_image]
     simp only [hφ]
     rw [← image_image]
     exact (isOpenQuotientMap_isomorphismClassesMk hs ht).isOpenMap _
-      (hU.isOpenMap_subtype_val _ (hW.preimage continuous_quotient_mk'))
+      (hU.isOpenMap_subtypeVal _ (hW.preimage continuous_quotient_mk'))
 
 end TauCeti

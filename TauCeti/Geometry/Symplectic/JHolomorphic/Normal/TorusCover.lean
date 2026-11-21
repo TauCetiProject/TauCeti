@@ -66,7 +66,7 @@ variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
   [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
   [FiniteCWType X] [FiniteCWType Y]
-  (f : FiniteHolomorphicMap X Y) [FiniteCWType ↥f.branchValuesᶜ]
+  (f : FiniteHolomorphicMap X Y)
 
 /-- Let `f : X → Y` be a finite holomorphic map from a compact Riemann surface with
 `χ(X) = 2 - 2 · genus X` to a surface `Y` with `χ(Y) = 0`. If `2 genus X - 2 + 2 δ ≤ 0`, then `f`

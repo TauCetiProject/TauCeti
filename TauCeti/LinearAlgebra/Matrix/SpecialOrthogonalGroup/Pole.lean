@@ -95,7 +95,7 @@ def poles (K : Subgroup (specialOrthogonalGroup (Fin 3) ℝ)) : SubMulAction K (
     rintro ⟨hp, g, hg, hgp⟩
     refine ⟨?_, k * g * k⁻¹, by simpa using hg, by rw [mul_smul, mul_smul, inv_smul_smul, hgp]⟩
     -- A rotation preserves the dot product.
-    have hk := (mem_specialOrthogonalGroup_iff.mp (k : specialOrthogonalGroup (Fin 3) ℝ).2).1
+    have hk := (mem_specialOrthogonalGroup_iff.mp (k : specialOrthogonalGroup (Fin 3) ℝ).property).1
     simpa [Subgroup.smul_def, Submonoid.smul_def, hp] using
       mem_orthogonalGroup_iff_dotProduct_mulVec.mp hk p p
 
@@ -115,7 +115,7 @@ namespace poles
 /-- A pole is a unit vector. -/
 @[simp]
 theorem coe_dotProduct_self (p : poles K) : (p : Fin 3 → ℝ) ⬝ᵥ p = 1 :=
-  p.2.1
+  p.property.1
 
 /-- A pole is nonzero. -/
 @[simp]
@@ -124,7 +124,7 @@ theorem coe_ne_zero (p : poles K) : (p : Fin 3 → ℝ) ≠ 0 := fun h ↦ by
 
 /-- The antipodal map on the poles. -/
 instance : InvolutiveNeg (poles K) where
-  neg p := ⟨-p, neg_mem_poles.mpr p.2⟩
+  neg p := ⟨-p, neg_mem_poles.mpr p.property⟩
   neg_neg p := Subtype.ext (neg_neg (p : Fin 3 → ℝ))
 
 @[simp, norm_cast]
@@ -157,7 +157,7 @@ theorem fixedBy_poles_eq_pair {g : K} (hg : g ≠ 1) {p : poles K} (hgp : g • 
     fixedBy (poles K) g = {p, -p} := by
   have hgp' : g • (p : Fin 3 → ℝ) = p := by rw [← SubMulAction.val_smul, hgp]
   have hpair := setOf_mulVec_eq_self_eq_pair_of_mem_specialOrthogonalGroup
-    (g : specialOrthogonalGroup (Fin 3) ℝ).2 (by simpa using hg)
+    (g : specialOrthogonalGroup (Fin 3) ℝ).property (by simpa using hg)
     (by simpa [Subgroup.smul_def, Submonoid.smul_def, smul_eq_mulVec] using hgp')
   ext q
   have hq := Set.ext_iff.mp hpair q
@@ -172,7 +172,7 @@ on the unit sphere. -/
 theorem exists_fixedBy_poles_eq_pair {g : K} (hg : g ≠ 1) :
     ∃ p : poles K, fixedBy (poles K) g = {p, -p} := by
   obtain ⟨v, hv, hgv⟩ := exists_dotProduct_self_eq_one_mulVec_eq_self_of_mem_specialOrthogonalGroup
-    (by decide) (g : specialOrthogonalGroup (Fin 3) ℝ).2
+    (by decide) (g : specialOrthogonalGroup (Fin 3) ℝ).property
   have hgv' : g • v = v := by simpa [Subgroup.smul_def, Submonoid.smul_def] using hgv
   exact ⟨⟨v, hv, g, hg, hgv'⟩,
     fixedBy_poles_eq_pair hg (Subtype.ext (by rw [SubMulAction.val_smul]; exact hgv'))⟩
@@ -200,17 +200,17 @@ instance [Finite K] : Finite (poles K) := by
   -- Each nonidentity element contributes the two endpoints of its axis.
   refine Set.finite_univ_iff.mp ((Set.finite_iUnion
     (f := fun g : {g : K // g ≠ 1} ↦ fixedBy (poles K) (g : K)) fun g ↦ ?_).subset ?_)
-  · obtain ⟨p, hp⟩ := exists_fixedBy_poles_eq_pair g.2
+  · obtain ⟨p, hp⟩ := exists_fixedBy_poles_eq_pair g.property
     rw [hp]
     exact Set.toFinite _
   · rintro p -
-    obtain ⟨-, g, hg, hgp⟩ := p.2
+    obtain ⟨-, g, hg, hgp⟩ := p.property
     exact Set.mem_iUnion.mpr
       ⟨⟨g, hg⟩, mem_fixedBy.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩
 
 /-- The stabilizer of a pole is nontrivial. -/
 instance (p : poles K) : Nontrivial (stabilizer K p) := by
-  obtain ⟨-, g, hg, hgp⟩ := p.2
+  obtain ⟨-, g, hg, hgp⟩ := p.property
   exact ⟨⟨g, mem_stabilizer_iff.mpr (Subtype.ext (by rw [SubMulAction.val_smul, hgp]))⟩, 1,
     fun h ↦ hg ((Subgroup.mk_eq_one _).mp h)⟩
 

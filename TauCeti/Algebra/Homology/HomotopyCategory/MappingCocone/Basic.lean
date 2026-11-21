@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import Mathlib.CategoryTheory.Abelian.Refinements
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.CategoryTheory.Shift.CommShift
+import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 
 /-!
 # Projections of the mapping cocone and short exact sequences
@@ -33,6 +35,10 @@ compares the mapping cone of the first map with the third term.
 * `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst` and
   `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v`: the projections of
   the mapping cocone are natural in commutative squares.
+* `CochainComplex.mappingCocone.triangle_mor₃_f_shiftFunctorObjXIso_hom`: the connecting morphism
+  of `CochainComplex.mappingCocone.triangle` is, in components, `CochainComplex.mappingCocone.inr`.
+* `CochainComplex.mappingCocone.isStrictlyGE`: the mapping cocone of a morphism of complexes
+  strictly concentrated in degrees at least `n` is strictly concentrated in degrees at least `n`.
 * `CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`: for a short exact sequence `S` of
   cochain complexes, the lift `S.X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism.
 
@@ -69,7 +75,7 @@ variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
 /-- The components of the first projection of the mapping cocone are those of the first
 projection of the mapping cone. -/
 lemma fst_f {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p : ℤ) :
-    (fst φ).f p = (mappingCone.fst φ).1.v (p + -1) p (by lia) := by
+    (fst φ).f p = (mappingCone.fst φ).val.v (p + -1) p (by lia) := by
   simp [fst, Cochain.leftShift_v (n := 1) _ _ _ _ _ p _ (p + -1) (by lia)]
   rfl
 
@@ -85,8 +91,8 @@ lemma shiftFunctor_map_mappingCone_map_comp_fst {K₁ L₁ K₂ L₂ : CochainCo
     (fst φ₁).f n ≫ a.f n
   rw [fst_f, fst_f, shiftFunctor_map_f']
   change (mappingCone.map φ₁ φ₂ a b comm).f (n + -1) ≫
-      (mappingCone.fst φ₂).1.v (n + -1) n (by lia) =
-    (mappingCone.fst φ₁).1.v (n + -1) n (by lia) ≫ a.f n
+      (mappingCone.fst φ₂).val.v (n + -1) n (by lia) =
+    (mappingCone.fst φ₁).val.v (n + -1) n (by lia) ≫ a.f n
   apply mappingCone.ext_from φ₁ n (n + -1) (by lia) <;> simp [mappingCone.map]
 
 /-- The components of the second projection of the mapping cocone are those of the second
@@ -143,6 +149,33 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
   rw [← Category.comp_id f, ← Category.comp_id g, ← id_X φ p q hpq, Preadditive.comp_add,
     Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂]
 
+/-- The connecting morphism `L ⟶ (mappingCocone φ)⟦1⟧` of the triangle `mappingCocone.triangle φ`
+is, in components, the inclusion `mappingCocone.inr φ` of `L` into the mapping cocone, without
+sign. -/
+@[reassoc]
+lemma triangle_mor₃_f_shiftFunctorObjXIso_hom {K L : CochainComplex C ℤ} (φ : K ⟶ L)
+    (p q : ℤ) (hpq : p + 1 = q) :
+    (triangle φ).mor₃.f p ≫ ((mappingCocone φ).shiftFunctorObjXIso 1 p q (by omega)).hom =
+      (inr φ).val.v p q hpq := by
+  subst hpq
+  -- `mappingCocone φ` is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components are
+  -- restated in matching types before `rightShift_v` applies.
+  change ((mappingCone.inr φ).f p ≫ ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1
+      (by lia)).inv.app (mappingCone φ)).f p) ≫
+      (((mappingCone φ)⟦(-1 : ℤ)⟧).shiftFunctorObjXIso 1 p (p + 1) rfl).hom =
+    ((Cochain.ofHom (mappingCone.inr φ)).rightShift (-1) 1 (by lia)).v p (p + 1) rfl
+  rw [Cochain.rightShift_v _ _ _ _ p (p + 1) rfl p (add_zero p)]
+  simp [shiftFunctorCompIsoId, shiftFunctorAdd'_hom_app_f', shiftFunctorZero_inv_app_f,
+    shiftFunctorObjXIso]
+  rfl
+
+/-- The mapping cocone of a morphism of cochain complexes which are both strictly concentrated
+in degrees at least `n` is strictly concentrated in degrees at least `n`. -/
+instance isStrictlyGE {K L : CochainComplex C ℤ} (φ : K ⟶ L) (n : ℤ) [K.IsStrictlyGE n]
+    [L.IsStrictlyGE n] : (mappingCocone φ).IsStrictlyGE n := by
+  have := isStrictlyGE_mappingCone φ n n (n - 1)
+  exact (mappingCone φ).isStrictlyGE_shift (n - 1) (-1) n (by lia)
+
 end
 
 section Abelian
@@ -185,7 +218,7 @@ private lemma epi_toId_f (p : ℤ) [Epi (φ.f p)] : Epi ((toId φ).f p) := by
   obtain ⟨A', π, hπ, x, hx⟩ :=
     surjective_up_to_refinements_of_epi (φ.f p) (y ≫ (fst (𝟙 L)).f p)
   refine ⟨A', π, hπ, x ≫ (inl φ).v p p (add_zero p) +
-    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).1.v (p + -1) p (by lia), ?_⟩
+    π ≫ y ≫ (snd (𝟙 L)).v p (p + -1) rfl ≫ (inr φ).val.v (p + -1) p (by lia), ?_⟩
   apply ext_to (𝟙 L) p (p + -1) rfl
   · simp [toId_f_fst_f, hx]
   · simp [toId_f_snd_v]

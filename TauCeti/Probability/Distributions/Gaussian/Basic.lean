@@ -41,6 +41,7 @@ by parts.
   `v = 0`).
 * `TauCeti.Probability.tendsto_mul_gaussianPDFReal_zero_one_cocompact` — `x φ(x) → 0` as
   `|x| → ∞`, for the standard Gaussian density `φ`.
+* `TauCeti.Probability.tendsto_gaussianPDFReal_zero_one_atBot` — `φ(x) → 0` as `x → -∞`.
 * `TauCeti.Probability.hasDerivAt_gaussianPDFReal` — the derivative of the Gaussian density in
   its real argument is `-(x - μ) / v` times the density, for every variance.
 * `TauCeti.Probability.integrable_gaussianReal_iff_integrable_gaussianPDFReal_smul` — at positive
@@ -135,6 +136,16 @@ theorem tendsto_mul_gaussianPDFReal_zero_one_cocompact :
   simp only [gaussianPDFReal_zero_one, rpow_one, norm_mul, norm_eq_abs, abs_exp,
     abs_of_pos (inv_pos.2 (sqrt_pos.2 (by positivity : (0 : ℝ) < 2 * π)))]
   ring_nf
+
+/-- The standard Gaussian density tends to `0` at `-∞`. -/
+theorem tendsto_gaussianPDFReal_zero_one_atBot :
+    Tendsto (gaussianPDFReal 0 1) atBot (𝓝 0) := by
+  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.mono_left atBot_le_cocompact).mul
+    tendsto_inv_atBot_zero
+  rw [mul_zero] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_lt_atBot 0] with x hx
+  rw [mul_comm x, mul_assoc, mul_inv_cancel₀ hx.ne, mul_one]
 
 /-- The derivative of the Gaussian density in its real argument is `-(x - μ) / v` times the
 density. At zero variance both sides vanish. -/

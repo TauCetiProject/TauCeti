@@ -69,17 +69,17 @@ theorem isSheaf_presentationLimitPlusPresheaf_of_isSheaf
       presentationLimitPlusSubring hAplus hP W := e W t
   have sec_map {W W' : Opens ↥(spa Aplus)} (i : W' ⟶ W)
       (t : G.obj (op W)) :
-      (sec W' (G.map i.op t)).1 = F.map i.op (sec W t).1 := by
+      (sec W' (G.map i.op t)).val = F.map i.op (sec W t).val := by
     have h := congrArg (fun f ↦ f t)
       (presentationLimitPlusPresheaf_map hAplus hP i.op)
     exact congrArg Subtype.val h
   have sec_injective (W : Opens ↥(spa Aplus)) : Function.Injective (sec W) := by
     exact (e W).injective
-  let sfF (i : ι) : F.obj (op (U i)) := (sec (U i) (sf i)).1
+  let sfF (i : ι) : F.obj (op (U i)) := (sec (U i) (sf i)).val
   have hcF : F.IsCompatible U sfF := by
     intro i j
     rw [← sec_map, ← sec_map]
-    exact congrArg (fun t ↦ (sec (U i ⊓ U j) t).1) (hc i j)
+    exact congrArg (fun t ↦ (sec (U i ⊓ U j) t).val) (hc i j)
   obtain ⟨s, hs, hu⟩ := hF.isSheafUniqueGluing U sfF hcF
   have hsplus : s ∈ presentationLimitPlusSubring hAplus hP (iSup U) := by
     apply mem_presentationLimitPlusSubring_of_forall_restrict hAplus hP U s
@@ -88,16 +88,16 @@ theorem isSheaf_presentationLimitPlusPresheaf_of_isSheaf
     -- for the membership lemma.
     change F.map (Opens.leSupr U i).op s ∈ _
     rw [hs i]
-    exact (sec (U i) (sf i)).2
+    exact (sec (U i) (sf i)).property
   let t : G.obj (op (iSup U)) := (e (iSup U)).symm ⟨s, hsplus⟩
-  have htval : (sec (iSup U) t).1 = s := by
+  have htval : (sec (iSup U) t).val = s := by
     simp only [sec, t, Equiv.apply_symm_apply]
   refine ⟨t, ?_, ?_⟩
   · intro i
     apply sec_injective
     apply Subtype.ext
     -- Unfold `sfF` only to expose the ambient section used by `sec_map`.
-    change (sec (U i) (G.map (Opens.leSupr U i).op t)).1 = sfF i
+    change (sec (U i) (G.map (Opens.leSupr U i).op t)).val = sfF i
     rw [sec_map]
     rw [htval]
     exact hs i
@@ -107,7 +107,7 @@ theorem isSheaf_presentationLimitPlusPresheaf_of_isSheaf
     rw [htval]
     apply hu
     intro i
-    have h := congrArg (fun z ↦ (sec (U i) z).1) (ht i)
+    have h := congrArg (fun z ↦ (sec (U i) z).val) (ht i)
     rw [sec_map] at h
     exact h
 

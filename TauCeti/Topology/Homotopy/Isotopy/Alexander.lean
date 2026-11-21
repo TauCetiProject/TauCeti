@@ -56,8 +56,8 @@ private theorem norm_shrinkMap_sub_le (f : E ≃ₜ E) {C : ℝ}
     have heq : (p.1 : ℝ) • f ((p.1 : ℝ)⁻¹ • p.2) - p.2 =
         (p.1 : ℝ) • (f ((p.1 : ℝ)⁻¹ • p.2) - (p.1 : ℝ)⁻¹ • p.2) := by
       rw [smul_sub, smul_inv_smul₀ ht']
-    rw [shrinkMap, ite_eq_right ht, heq, norm_smul_of_nonneg p.1.2.1]
-    exact mul_le_mul_of_nonneg_left (hC _) p.1.2.1
+    rw [shrinkMap, ite_eq_right ht, heq, norm_smul_of_nonneg p.1.property.1]
+    exact mul_le_mul_of_nonneg_left (hC _) p.1.property.1
 
 private theorem continuous_shrinkMap (f : E ≃ₜ E) {C : ℝ}
     (hC : ∀ x, ‖f x - x‖ ≤ C) : Continuous (shrinkMap f) := by
@@ -123,8 +123,8 @@ theorem alexanderIsotopy_apply_of_le_norm (f : E ≃ₜ E) (C : ℝ)
     exact TauCeti.AmbientIsotopy.map_zero_left _ x
   have ht' : (t : ℝ) ≠ 0 := fun h => ht (Subtype.ext h)
   rw [alexanderIsotopy_apply_of_ne_zero f C hC ht, hf, smul_inv_smul₀ ht']
-  rw [norm_smul, norm_inv, Real.norm_of_nonneg t.2.1, inv_mul_eq_div,
-    le_div_iff₀ (lt_of_le_of_ne t.2.1 (Ne.symm ht')), one_mul]
+  rw [norm_smul, norm_inv, Real.norm_of_nonneg t.property.1, inv_mul_eq_div,
+    le_div_iff₀ (lt_of_le_of_ne t.property.1 (Ne.symm ht')), one_mul]
   exact hx
 
 /-- **Alexander's lemma.** A homeomorphism of the closed unit ball fixing the unit sphere is
@@ -137,7 +137,7 @@ def alexanderIsotopyClosedBall (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : 
     intro t x
     have hfix {y : E} (hy : 1 ≤ ‖y‖) : Φ.toContinuousMap (t, y) = y :=
       alexanderIsotopy_apply_of_le_norm _ _ _
-        (fun z hz => f.extendClosedBall_of_one_le hf hz) t (t.2.2.trans hy)
+        (fun z hz => f.extendClosedBall_of_one_le hf hz) t (t.property.2.trans hy)
     by_cases hx : x ∈ closedBall (0 : E) 1
     · refine iff_of_true ?_ hx
       by_contra hy
@@ -188,9 +188,10 @@ theorem coe_alexanderIsotopyClosedBall_smul
     (t : I) (x : closedBall (0 : E) 1) :
     ((f.alexanderIsotopyClosedBall hf).toContinuousMap
       (t, ⟨(t : ℝ) • (x : E), by
-        rw [mem_closedBall_zero_iff, norm_smul_of_nonneg t.2.1]
+        rw [mem_closedBall_zero_iff, norm_smul_of_nonneg t.property.1]
         exact (mul_le_mul_of_nonneg_left
-          (mem_closedBall_zero_iff.mp x.2) t.2.1).trans (by simpa using t.2.2)⟩) : E) =
+          (mem_closedBall_zero_iff.mp x.property) t.property.1).trans
+              (by simpa using t.property.2)⟩) : E) =
       (t : ℝ) • (f x : E) := by
   rw [coe_alexanderIsotopyClosedBall_apply]
   by_cases ht : t = 0
@@ -207,6 +208,6 @@ theorem alexanderIsotopyClosedBall_apply_of_norm_eq_one
     (hf : ∀ x : closedBall (0 : E) 1, ‖(x : E)‖ = 1 → f x = x)
     (t : I) (x : closedBall (0 : E) 1) (hx : ‖(x : E)‖ = 1) :
     (f.alexanderIsotopyClosedBall hf).toContinuousMap (t, x) = x :=
-  f.alexanderIsotopyClosedBall_apply_of_le_norm hf t x (t.2.2.trans_eq hx.symm)
+  f.alexanderIsotopyClosedBall_apply_of_le_norm hf t x (t.property.2.trans_eq hx.symm)
 
 end Homeomorph

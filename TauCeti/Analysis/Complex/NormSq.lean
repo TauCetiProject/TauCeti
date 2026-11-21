@@ -32,6 +32,8 @@ the norm along upward vertical rays leaving a point of the closed upper half-pla
   points that lie on or outside a second circle, lie on or outside the second circle.
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
   `2 |re z| / R`.
+* `Complex.sqrt_sq_add_sq_le_norm_add_mul_I`: a lower bound from a nonnegative real-coordinate
+  margin at a fixed imaginary height.
 * `Complex.norm_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`, `‖z‖ ≤ ‖z + s * I‖`.
 * `Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`,
   `(‖z‖ + s) / 2 ≤ ‖z + s * I‖`.
@@ -145,6 +147,14 @@ theorem norm_one_add_sq_div_sq_of_norm_eq {z : ℂ} {R : ℝ} (hz : ‖z‖ = R)
   simp only [norm_div, norm_mul, norm_pow, hz, norm_real, Real.norm_eq_abs,
     abs_two, abs_of_pos hR]
   field_simp
+
+/-- A nonnegative lower bound for the absolute real coordinate gives a Euclidean lower bound
+for a complex point at the same imaginary height. -/
+theorem sqrt_sq_add_sq_le_norm_add_mul_I {a c t : ℝ} (ha : 0 ≤ a) (hac : a ≤ |c|) :
+    Real.sqrt (a ^ 2 + t ^ 2) ≤ ‖(c : ℂ) + t * I‖ := by
+  apply (Real.sqrt_le_left (norm_nonneg _)).mpr
+  rw [Complex.sq_norm, Complex.normSq_add_mul_I]
+  nlinarith only [ha, hac, sq_abs c]
 
 /-- For `z` in the closed upper half-plane, every point `z + s * I` (`s ≥ 0`) of the vertical ray
 going upward from `z` is at least as far from the origin as `z`. -/
