@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 public import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
 # Regularity of the upstairs logarithmic gauge
@@ -107,17 +107,11 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
   -- A branch centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
-  let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by
-    simp only [L]
-    rw [Complex.exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
   have hLc : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n
-      (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) := by
-    apply contMDiffAt_const.add
-    exact (Complex.contDiffAt_log (x := 1) one_mem_slitPlane).contMDiffAt.comp_of_eq
-      ((contDiff_id.div_const (z₀ : ℂ)).contMDiff.comp
-        (rootsOfUnityBall.contMDiff_val.comp contMDiff_fst)).contMDiffAt
-      (by simp [hz₀])
+      (fun p : rootsOfUnityBall m r × E ↦ log (z₀ : ℂ) + log ((p.1 : ℂ) / z₀)) (z₀, e₀) := by
+    simpa only [Function.comp_def] using (contDiffAt_log_add_log_div hz₀).contMDiffAt.comp
+      (z₀, e₀) (rootsOfUnityBall.contMDiff_val.comp
+        (contMDiff_fst : ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n Prod.fst)).contMDiffAt
   have hpow : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) :=
     rootsOfUnityBall.contMDiff_powMap
   have hq := (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff
@@ -130,6 +124,6 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
   filter_upwards [hopen.mem_nhds hz₀] with p hp
   simpa [Function.comp_def, powPullbackPeriod_apply] using
-    (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)
+    (torusFamilyLogGauge_mk_of_exp_eq P l (exp_log_add_log_div hz₀ hp) p.2)
 
 end TauCeti

@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import Mathlib.Algebra.Module.Torsion.Free
+import TauCeti.Algebra.Module.ZLattice.Family.RotatedDisc
 
 /-!
 # The logarithmic gauge of a cyclic quotient of a family of tori
@@ -22,9 +25,14 @@ rotation by an `m`-th root of unity `ζ` acts on `X` by
 (`TauCeti.logTranslationMulAction`): the linear part is trivial and the translation part is the
 normalized pure translation. Any logarithm of `ζ` may be used in this formula, since two of them
 change the translation by a period (`TauCeti.logTranslationMulAction_smul_mk_of_exp_eq`); for the
-generator `ζ = exp (2πi / m)` the translation is `(1 / m) • P (z ^ m) l`. Let
+generator `ζ = exp (2πi / m)` the translation is `(1 / m) • P (z ^ m) l`. Over a disc of positive
+radius with injective central periods, this action is free exactly when the class of `l` in
+`Λ ⧸ mΛ` has exact order `m` (`TauCeti.isCancelSMul_logTranslationMulAction_iff`), and the action
+and cyclic quotient depend only on the class of `l` modulo `mΛ`
+(`TauCeti.logTranslationMulAction_add_nsmul`, `TauCeti.logTranslationQuotientAddNsmulEquiv`). Let
 `Q = X / C_m` be the orbit space, with its coordinate `t = z ^ m`
-(`TauCeti.torusFamilyCyclicQuotientProjection`).
+(`TauCeti.torusFamilyCyclicQuotientProjection`) and quotient atlas
+`TauCeti.logTranslationQuotientChartedSpace`.
 
 Over the punctured disc `D_t*` the cyclic quotient is canonically the family `Y` itself, by the
 *logarithmic gauge*
@@ -48,6 +56,10 @@ quotient need not be locally a family of tori there.
 * `TauCeti.powPullbackPeriod`: the pullback of a family of periods along `z ↦ z ^ m`.
 * `TauCeti.logTranslationMulAction`: the action of the `m`-th roots of unity on the pulled-back
   family by rotation and normalized translation.
+* `TauCeti.logTranslationQuotientChartedSpace`: the quotient atlas on `Q = X / C_m` for a free
+  normalized pure translation action.
+* `TauCeti.logTranslationQuotientAddNsmulEquiv`: canonical identification of the cyclic quotients
+  for `l + m • μ` and `l`.
 * `TauCeti.torusFamilyLogGauge`: the logarithmic gauge `X → Y`, meaningful over `z ≠ 0`.
 * `TauCeti.torusFamilyLogGaugeEquiv`: the equivalence `Q* ≃ Y*` over `D_t*`.
 * `TauCeti.torusFamilyLogGaugeHomeomorph`: the same equivalence as a homeomorphism.
@@ -64,6 +76,8 @@ open MulAction Set Filter Topology Complex
 open scoped Real
 
 namespace TauCeti
+
+section
 
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type*} [AddCommGroup E]
   (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] E)
@@ -118,7 +132,24 @@ theorem powPullbackPeriod_smul_apply (ζ : rootsOfUnity m ℂ) (z : rootsOfUnity
       AddMonoidHom.id E (powPullbackPeriod m r P z l) := by
   simp
 
-variable [Module ℂ E] (l : Λ)
+/-- The punctured torus family `{t ≠ 0}` over the disc `Metric.ball 0 (r ^ m)` as an open
+subset of `(Metric.ball 0 (r ^ m) × E) / Λ`. -/
+@[expose, reducible]
+noncomputable def torusFamilyBallNonzeroOpens [TopologicalSpace E] :
+    letI := periodAddAction P
+    TopologicalSpace.Opens (AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) :=
+  letI := periodAddAction P
+  ⟨{y | ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0},
+    isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection P))
+      continuous_const⟩
+
+section NormalizedAction
+
+variable [Module ℂ E]
+
+section
+
+variable (l : Λ)
 
 /-- The translation part of the normalized pure translation action: the rotation by `ζ` sends
 the fibre over `z` to the fibre over `ζ z`, translating by `(log ζ / 2πi) • P (z ^ m) l`. -/
@@ -219,6 +250,190 @@ theorem logTranslationMulAction_smul_mk_of_exp_two_pi_I_div_eq {ζ : rootsOfUnit
     ζ • (Quotient.mk _ (z, e) : AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) =
       Quotient.mk _ (ζ • z, e + (m : ℂ)⁻¹ • P (rootsOfUnityBall.powMap m r z) l) := by
   rw [logTranslationMulAction_smul_mk_of_exp_eq P l hζ, div_div_cancel_left₀ two_pi_I_ne_zero]
+
+end
+
+/-- **Freeness of the normalized action.** Over a disc of positive radius whose central periods
+`P 0` are injective, the normalized pure translation action for `l : Λ` is free exactly when the
+class of `l` in `Λ ⧸ mΛ` has exact additive order `m`. -/
+theorem isCancelSMul_logTranslationMulAction_iff (hr : 0 < r)
+    (hinj : Function.Injective (P ⟨0, mem_ball_zero_iff.2 (by simpa using pow_pos hr m)⟩))
+    (l : Λ) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    IsCancelSMul (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) ↔
+      addOrderOf (Submodule.Quotient.mk l : QuotSMulTop (m : ℤ) Λ) = m := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  let _ := logTranslationMulAction P l
+  let u₀ : rootsOfUnityBall m r := ⟨0, mem_rootsOfUnityBall.2 (by simpa using hr)⟩
+  have hu₀ : (u₀ : ℂ) = 0 := rfl
+  have hpow₀ : rootsOfUnityBall.powMap m r u₀ =
+      ⟨0, mem_ball_zero_iff.2 (by simpa using pow_pos hr m)⟩ :=
+    Subtype.ext (by simp [u₀, zero_pow (NeZero.ne m)])
+  have hprimℂ : IsPrimitiveRoot (exp (2 * π * I / m)) m :=
+    Complex.isPrimitiveRoot_exp m (NeZero.ne m)
+  let ζ : rootsOfUnity m ℂ := hprimℂ.toRootsOfUnity
+  have hζval : exp (2 * π * I / m) = ((ζ : ℂˣ) : ℂ) := hprimℂ.val_toRootsOfUnity_coe.symm
+  have hζprim : IsPrimitiveRoot ζ m :=
+    IsPrimitiveRoot.coe_submonoidClass_iff.1 (IsPrimitiveRoot.coe_units_iff.1 (hζval ▸ hprimℂ))
+  have hmE : Function.Injective fun v : E ↦ m • v := by
+    have : HasUniqueDiv E := .of_isTorsionFree ℂ E
+    exact nsmul_right_injective (NeZero.ne m)
+  have hβ : logTranslationSection P l ζ u₀ =
+      Quotient.mk _ (u₀, (m : ℂ)⁻¹ • powPullbackPeriod m r P u₀ l) := by
+    rw [logTranslationSection_eq_mk_of_exp_eq P l hζval,
+      smul_rootsOfUnityBall_of_coe_eq_zero hu₀ ζ, div_div_cancel_left₀ two_pi_I_ne_zero]
+  have hl : powPullbackPeriod m r P u₀ l =
+      m • ((m : ℂ)⁻¹ • powPullbackPeriod m r P u₀ l) := by
+    rw [← Nat.cast_smul_eq_nsmul ℂ, smul_inv_smul₀ (Nat.cast_ne_zero.2 (NeZero.ne m))]
+  exact isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_mk_eq
+    (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
+    (powPullbackPeriod m r P) (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ)
+    (powPullbackPeriod_smul_apply P) (logTranslationSection P l)
+    (torusFamilyProjection_logTranslationSection P l) (logTranslationSection_mul P l)
+    hu₀ hζprim (fun _ ↦ rfl) (by simpa only [powPullbackPeriod_apply, hpow₀] using hinj)
+    hmE hβ hl
+
+/-- Each translation section of the normalized pure translation action is continuous for continuous
+periods. -/
+theorem continuous_logTranslationSection [TopologicalSpace E] [ContinuousSMul ℂ E] {l : Λ}
+    (hcont : Continuous fun t ↦ P t l) (ζ : rootsOfUnity m ℂ) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    Continuous (logTranslationSection P l ζ) := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  have heq : logTranslationSection P l ζ = fun z ↦
+      Quotient.mk _ (ζ • z, (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l) :=
+    funext fun z ↦ logTranslationSection_eq_mk_of_exp_eq P l (exp_log (ζ : ℂˣ).ne_zero) z
+  rw [heq]
+  exact continuous_quotient_mk'.comp
+    ((continuous_const_smul ζ).prodMk
+      (continuous_const.smul (continuous_powPullbackPeriod P hcont)))
+
+/-- Adding an element of `mΛ` to `l` does not change the normalized translation section:
+`m * log ζ` is an integer multiple of `2πi`, so `(log ζ / 2πi) • P (z ^ m) (m • μ)` is a period. -/
+theorem logTranslationSection_add_nsmul (l μ : Λ) (ζ : rootsOfUnity m ℂ)
+    (z : rootsOfUnityBall m r) :
+    logTranslationSection P (l + m • μ) ζ z = logTranslationSection P l ζ z := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  have hexp : exp ((m : ℂ) * log ((ζ : ℂˣ) : ℂ)) = exp 0 := by
+    rw [exp_natCast_mul, exp_log (ζ : ℂˣ).ne_zero, exp_zero]
+    have hpow : (ζ : ℂˣ) ^ m = 1 := (_root_.mem_rootsOfUnity m (ζ : ℂˣ)).1 ζ.property
+    simpa only [Units.val_pow_eq_pow_val, Units.val_one] using congrArg Units.val hpow
+  obtain ⟨k, hk⟩ := exists_div_two_pi_I_smul_eq_add_zsmul hexp (powPullbackPeriod m r P z μ)
+  rw [zero_div, zero_smul, zero_add] at hk
+  rw [logTranslationSection_eq_mk_of_exp_eq P (l + m • μ) (exp_log (ζ : ℂˣ).ne_zero),
+    logTranslationSection_eq_mk_of_exp_eq P l (exp_log (ζ : ℂˣ).ne_zero),
+    Quotient.eq, AddAction.orbitRel_apply, mem_orbit_periodAddAction_iff]
+  refine ⟨rfl, k • μ, ?_⟩
+  rw [map_add, map_nsmul, smul_add, add_sub_cancel_left, div_two_pi_I_smul_nsmul, hk,
+    map_zsmul, powPullbackPeriod_apply, powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul]
+
+/-- The normalized translation action depends only on the class of `l` modulo `mΛ`. -/
+theorem logTranslationMulAction_add_nsmul (l μ : Λ) :
+    logTranslationMulAction P (l + m • μ) = logTranslationMulAction P l := by
+  have hsec : logTranslationSection P (l + m • μ) = logTranslationSection P l :=
+    funext fun ζ ↦ funext fun z ↦ logTranslationSection_add_nsmul P l μ ζ z
+  simp only [logTranslationMulAction, hsec]
+
+/-- Freeness of the normalized pure translation action is invariant under replacing `l` by
+`l + m • μ`. -/
+theorem isCancelSMul_logTranslationMulAction_add_nsmul (l μ : Λ)
+    (hfree : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P l
+      IsCancelSMul (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P (l + m • μ)
+    IsCancelSMul (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  rw [logTranslationMulAction_add_nsmul P l μ]
+  exact hfree
+
+/-- Canonical identification of the cyclic quotients for `l + m • μ` and `l`, induced by the
+identity upstairs (the two `μ_m`-actions coincide by `logTranslationMulAction_add_nsmul`). -/
+noncomputable def logTranslationQuotientAddNsmulEquiv (l μ : Λ) :
+    (letI := periodAddAction (powPullbackPeriod m r P);
+      letI := logTranslationMulAction P (l + m • μ);
+      orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) ≃
+    (letI := periodAddAction (powPullbackPeriod m r P);
+      letI := logTranslationMulAction P l;
+      orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  letI := periodAddAction (powPullbackPeriod m r P)
+  Quotient.congr (Equiv.refl _) fun _ _ ↦ by
+    rw [logTranslationMulAction_add_nsmul P l μ]
+    rfl
+
+/-- On representatives, `logTranslationQuotientAddNsmulEquiv` sends the orbit class of `x` to the
+orbit class of `x`. -/
+@[simp] theorem logTranslationQuotientAddNsmulEquiv_mk (l μ : Λ)
+    (x : letI := periodAddAction (powPullbackPeriod m r P)
+      AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    logTranslationQuotientAddNsmulEquiv P l μ
+        (letI := logTranslationMulAction P (l + m • μ); Quotient.mk _ x) =
+      (letI := logTranslationMulAction P l; Quotient.mk _ x) := (rfl)
+
+/-- On representatives, the inverse of `logTranslationQuotientAddNsmulEquiv` sends the orbit class
+of `x` to the orbit class of `x`. -/
+@[simp] theorem logTranslationQuotientAddNsmulEquiv_symm_mk (l μ : Λ)
+    (x : letI := periodAddAction (powPullbackPeriod m r P)
+      AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    (logTranslationQuotientAddNsmulEquiv P l μ).symm
+        (letI := logTranslationMulAction P l; Quotient.mk _ x) =
+      (letI := logTranslationMulAction P (l + m • μ); Quotient.mk _ x) := (rfl)
+
+/-- The canonical identification between the cyclic quotients for `l + m • μ` and `l` preserves the
+descended base coordinate `t = z ^ m`. -/
+@[simp] theorem torusFamilyCyclicQuotientProjection_logTranslationQuotientAddNsmulEquiv
+    (l μ : Λ)
+    (q : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P (l + m • μ)
+      orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    (letI := logTranslationMulAction P l;
+      torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+        (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+        (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+        (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+        (logTranslationSection_mul P l) (logTranslationQuotientAddNsmulEquiv P l μ q)) =
+      (letI := logTranslationMulAction P (l + m • μ);
+        torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+          (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+          (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+          (logTranslationSection P (l + m • μ))
+          (torusFamilyProjection_logTranslationSection P (l + m • μ))
+          (logTranslationSection_mul P (l + m • μ)) q) := by
+  let _ := periodAddAction (powPullbackPeriod m r P)
+  obtain ⟨x, rfl⟩ := Quotient.exists_rep q
+  rw [logTranslationQuotientAddNsmulEquiv_mk, torusFamilyCyclicQuotientProjection_mk,
+    torusFamilyCyclicQuotientProjection_mk]
+
+/-- The punctured cyclic quotient `{t ≠ 0}` as an open subset of the orbit space `Q = X / C_m`. -/
+@[expose, reducible]
+noncomputable def logTranslationQuotientNonzeroOpens [TopologicalSpace E] (l : Λ) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    TopologicalSpace.Opens (orbitRel.Quotient (rootsOfUnity m ℂ)
+      (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  letI := periodAddAction (powPullbackPeriod m r P)
+  letI := logTranslationMulAction P l
+  ⟨{q | torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+      (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+      (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+      (logTranslationSection_mul P l) q ≠ 0},
+    isOpen_ne_fun (continuous_torusFamilyCyclicQuotientProjection _ _ _ _ _ _ _ _ _)
+      continuous_const⟩
+
+end NormalizedAction
+
+variable [Module ℂ E] (l : Λ)
 
 /-! ### The logarithmic gauge -/
 
@@ -544,15 +759,13 @@ private theorem isOpenQuotientMap_logTranslationQuotient_mk :
   have hcontX : ∀ l', Continuous fun z ↦ powPullbackPeriod m r P z l' :=
     fun l' ↦ continuous_powPullbackPeriod P (hcont l')
   have := continuousConstVAdd_periodAddAction _ hcontX
-  have hb : ∀ ζ, Continuous (logTranslationSection P l ζ) := fun ζ ↦
-    continuous_quotient_mk'.comp ((continuous_const_smul ζ).prodMk
-      (continuous_const.smul (hcontX l)))
   have : ContinuousConstSMul (rootsOfUnity m ℂ)
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :=
     continuousConstSMul_torusFamilyAffineMulAction (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
       (fun _ _ _ _ ↦ rfl) _ _ (powPullbackPeriod_smul_apply P) (logTranslationSection P l)
       (torusFamilyProjection_logTranslationSection P l)
-      (logTranslationSection_mul P l) hcontX (fun _ ↦ continuous_snd) hb
+      (logTranslationSection_mul P l) hcontX (fun _ ↦ continuous_snd)
+      (fun ζ ↦ continuous_logTranslationSection P (hcont l) ζ)
   exact MulAction.isOpenQuotientMap_quotientMk.comp AddAction.isOpenQuotientMap_quotientMk
 
 include hcont in
@@ -585,9 +798,6 @@ private theorem continuousAt_torusFamilyLogGauge_out
       zero_pow (NeZero.ne m)]
   -- Near `z₀`, use the continuous branch `L z = log z₀ + log (z / z₀)` of the logarithm.
   let L : ℂ → ℂ := fun z ↦ log z₀ + log (z / z₀)
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by
-    simp only [L]
-    rw [Complex.exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
   have hopen : IsOpen {p : rootsOfUnityBall m r × E | (p.1 : ℂ) ≠ 0} :=
     isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
   refine ContinuousAt.congr_of_eventuallyEq (f := fun p ↦ Quotient.mk _
@@ -605,7 +815,7 @@ private theorem continuousAt_torusFamilyLogGauge_out
   · filter_upwards [hopen.mem_nhds hz₀] with p hp
     obtain ⟨z, e⟩ := p
     rw [Function.comp_apply, torusFamilyLogGauge_out (by rwa [torusFamilyProjection_mk]),
-      torusFamilyLogGauge_mk_of_exp_eq P l (hL hp)]
+      torusFamilyLogGauge_mk_of_exp_eq P l (exp_log_add_log_div hz₀ hp)]
 
 include hcont in
 /-- The inverse of the logarithmic gauge is continuous on the punctured family. -/
@@ -677,15 +887,7 @@ noncomputable def torusFamilyLogGaugeHomeomorph :
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    {q : orbitRel.Quotient (rootsOfUnity m ℂ)
-        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
-      torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
-        (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
-        (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-        (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-        (logTranslationSection_mul P l) q ≠ 0} ≃ₜ
-      {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
-        ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
+    logTranslationQuotientNonzeroOpens P l ≃ₜ torusFamilyBallNonzeroOpens P :=
   letI := periodAddAction P
   letI := periodAddAction (powPullbackPeriod m r P)
   letI := logTranslationMulAction P l
@@ -707,5 +909,42 @@ noncomputable def torusFamilyLogGaugeHomeomorph :
   (rfl)
 
 end Topology
+
+end
+
+section QuotientChartedSpace
+
+variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] E)
+  [∀ t, DiscreteTopology (LinearMap.range (P t))]
+  [∀ t, IsZLattice ℝ (LinearMap.range (P t))]
+  (hinj : ∀ t, Function.Injective (P t))
+
+/-- The quotient atlas `TauCeti.torusFamilyAffineQuotientChartedSpace` specialized to the
+normalized pure translation action `TauCeti.logTranslationMulAction`. -/
+@[expose, instance_reducible]
+noncomputable def logTranslationQuotientChartedSpace
+    (hcont : ∀ l', Continuous fun t ↦ P t l') (l : Λ)
+    (hfree : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P l
+      IsCancelSMul (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    ChartedSpace (ModelProd ℂ E)
+      (orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  torusFamilyAffineQuotientChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    (fun _ _ ↦ AddMonoidHom.id E) (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ)
+    (powPullbackPeriod_smul_apply P) (logTranslationSection P l)
+    (torusFamilyProjection_logTranslationSection P l)
+    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+    (fun l' ↦ continuous_powPullbackPeriod P (hcont l'))
+    (fun _ ↦ continuous_snd)
+    (fun ζ ↦ continuous_logTranslationSection P (hcont l) ζ) hfree
+
+end QuotientChartedSpace
 
 end TauCeti

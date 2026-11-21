@@ -287,6 +287,13 @@ def subtype (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) 
   contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     (g.symm.contMDiff.comp contMDiff_subtypeVal)
 
+/-- The underlying equivalence of the restriction `Diffeomorph.subtype` is
+`Equiv.subtypeEquiv`. -/
+@[simp]
+theorem subtype_toEquiv (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) :
+    (g.subtype h_iff).toEquiv = g.toEquiv.subtypeEquiv h_iff :=
+  (rfl)
+
 /-- The restriction `Diffeomorph.subtype` evaluates as the diffeomorphism. -/
 @[simp]
 theorem subtype_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) (x : U) :
