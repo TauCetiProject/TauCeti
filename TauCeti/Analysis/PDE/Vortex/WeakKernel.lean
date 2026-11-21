@@ -51,7 +51,7 @@ At a smooth field whose coordinates have bounded derivatives through order `3`:
   (`gaugeFixedKernelEquivWeak : gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`), equating their
   dimensions (`finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel`).
 
-When all derivatives of `x` are bounded:
+When `x` is smooth with all derivatives bounded:
 
 * every `u ∈ weakGaugeFixedKernel x` lies in `sobolevFields s` for all `s : ℝ`
   (`coeFn_mem_sobolevFields_of_mem_weakGaugeFixedKernel`) with a smooth representative
@@ -59,17 +59,19 @@ When all derivatives of `x` are bounded:
 * every classical kernel element is smooth, lies in `sobolevFields s` for all `s : ℝ`
   (`contDiff_and_mem_sobolevFields_of_mem_gaugeFixedKernel`), and has all iterated derivatives
   vanishing at infinity (`tendsto_iteratedFDeriv_cocompact_of_mem_gaugeFixedKernel_apply`), so the
-  Sobolev kernel on `C¹ ∩ H^s` (or `C⁰ ∩ H^s` for `s > 2`) is independent of `s : ℝ`
+  Sobolev kernel on `C¹ ∩ L² ∩ H^s` (and on `C⁰ ∩ H^s` for `s > 2`) is independent of `s : ℝ`
   (`mem_gaugeFixedKernel_iff_mem_sobolevFields`,
   `mem_gaugeFixedKernel_iff_continuous_and_mem_sobolevFields`).
 
-A smooth field in `A_m^s` for `s > 4` has bounded derivatives through order `3`, so its weak
-kernel has real dimension `2m` (`finrank_weakGaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace`).
-In particular, a continuous field lying in `A_m^k` for every `k` — or any `C¹` Coulomb-slice vortex
-in `A_m^k` (`k ≥ 2`) via `TauCeti.Analysis.PDE.Vortex.Bootstrap` — has classical and weak kernels
-of real dimension `2m` (`framedGaugeFixedKernelEquivWeak`,
-`finrank_weakGaugeFixedKernel_eq_two_mul`,
-`finrank_gaugeFixedKernel_eq_two_mul_of_equation_eq_zero`,
+A smooth field in `A_m^s` for `s > 4` has bounded derivatives through order `3`, so when it
+satisfies `∂bar_a α = 0` its weak kernel has real dimension `2m`
+(`finrank_weakGaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace`). In particular, a continuous
+field lying in `A_m^k` for every `k` has isomorphic classical and weak kernels
+(`framedGaugeFixedKernelEquivWeak`), and when `∂bar_a α = 0` its weak kernel has real dimension
+`2m` (`finrank_weakGaugeFixedKernel_eq_two_mul`). Separately, any `C¹` Coulomb-slice vortex in
+`A_m^k` (`k ≥ 2`) lies in every `A_m^j` by `TauCeti.Analysis.PDE.Vortex.Bootstrap` and satisfies
+the vortex equations, so its classical and weak kernels have real dimension `2m`
+(`finrank_gaugeFixedKernel_eq_two_mul_of_equation_eq_zero`,
 `finrank_weakGaugeFixedKernel_eq_two_mul_of_equation_eq_zero`).
 
 ## Main definitions
@@ -92,7 +94,7 @@ of real dimension `2m` (`framedGaugeFixedKernelEquivWeak`,
   order `3`, the weak kernel is the space of `L²` classes of the classical kernel.
 * `TauCeti.Vortex.mem_gaugeFixedKernel_iff_mem_sobolevFields`,
   `TauCeti.Vortex.mem_gaugeFixedKernel_iff_continuous_and_mem_sobolevFields`: order-independence of
-  the kernel across all `s : ℝ`.
+  the kernel on `C¹ ∩ L² ∩ H^s` across all `s : ℝ`, and on `C⁰ ∩ H^s` for `s > 2`.
 * `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_card`,
   `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_of_tendsto_sectionValue_mul_inv_pow`,
   `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul_of_mem_framedFieldSpace`,
