@@ -30,8 +30,9 @@ commute with every element commuting with `a`. The spectral mapping theorem show
 
 The idempotent `p = rieszIdempotent a K` cuts out the part `K` of the spectrum: in the corner
 ring `p A p` (`IsIdempotentElem.Corner`), whose unit is `p`, the compression of `μ - a` is a
-unit exactly when `μ ∉ K` (`TauCeti.isUnit_compress_rieszIdempotent_iff`). Equivalently,
-`(μ - a) p + (1 - p)` is a unit of `A` exactly when `μ ∉ K`.
+unit exactly when `μ ∉ K` (`TauCeti.isUnit_compress_rieszIdempotent_iff`), so the spectrum of
+the compression of `a` in this corner is `K` (`TauCeti.spectrum_compress_rieszIdempotent`).
+Equivalently, `(μ - a) p + (1 - p)` is a unit of `A` exactly when `μ ∉ K`.
 
 For a bounded operator `T` on a complex Banach space, the ranges of the Riesz idempotents of `K`
 and of its complement are closed topological complements, each invariant under every operator
@@ -52,7 +53,8 @@ hyperinvariant subspace.
 * `TauCeti.rieszIdempotent_eq_zero_iff` and `TauCeti.rieszIdempotent_eq_one_iff`.
 * `TauCeti.isUnit_sub_mul_rieszIdempotent_add_iff` and
   `TauCeti.isUnit_compress_rieszIdempotent_iff`: the corner spectrum of `a` cut out by
-  `rieszIdempotent a K` is `K`.
+  `rieszIdempotent a K` is `K`, stated as an equality in
+  `TauCeti.spectrum_compress_rieszIdempotent`.
 * `ContinuousLinearMap.ker_rieszIdempotent`,
   `ContinuousLinearMap.isTopCompl_range_rieszIdempotent_range_rieszIdempotent_compl` and
   `Commute.range_rieszIdempotent_mem_invtSubmodule`: the spectral decomposition of a bounded
@@ -248,13 +250,22 @@ theorem isUnit_sub_mul_rieszIdempotent_add_iff (a : A) (K : Clopens (spectrum �
 
 /-- **Corner spectrum**: for `p = rieszIdempotent a K`, the compression `p (μ - a) p` of `μ - a`
 is a unit of the corner ring `p A p`, whose unit is `p`, exactly when `μ` lies outside `K`. Thus
-the spectrum of `a` in this corner is `K`. -/
+the spectrum of `a` in this corner is `K` (`TauCeti.spectrum_compress_rieszIdempotent`). -/
 theorem isUnit_compress_rieszIdempotent_iff (a : A) (K : Clopens (spectrum ℂ a)) (μ : ℂ) :
     IsUnit ((isIdempotentElem_rieszIdempotent a K).compress (algebraMap ℂ A μ - a)) ↔
       μ ∉ ((↑) '' (K : Set (spectrum ℂ a)) : Set ℂ) := by
   rw [IsIdempotentElem.isUnit_compress_iff_of_commute _
     ((Algebra.commute_algebraMap_left μ _).sub_left (commute_rieszIdempotent a K)).symm,
     add_comm, isUnit_sub_mul_rieszIdempotent_add_iff]
+
+/-- **Exact corner spectrum**: for `p = rieszIdempotent a K`, the spectrum of the compression
+`p a p` of `a` in the corner ring `p A p` is `K`. -/
+theorem spectrum_compress_rieszIdempotent (a : A) (K : Clopens (spectrum ℂ a)) :
+    spectrum ℂ ((isIdempotentElem_rieszIdempotent a K).compress a) =
+      ((↑) '' (K : Set (spectrum ℂ a)) : Set ℂ) := by
+  ext μ
+  rw [spectrum.mem_iff, ← IsIdempotentElem.compress_algebraMap, ← IsIdempotentElem.compress_sub,
+    isUnit_compress_rieszIdempotent_iff, not_not]
 
 end TauCeti
 
@@ -291,10 +302,6 @@ theorem isTopCompl_range_rieszIdempotent_range_rieszIdempotent_compl (T : E →L
     Submodule.IsTopCompl (rieszIdempotent T K).range (rieszIdempotent T Kᶜ).range :=
   ker_rieszIdempotent T K ▸ IsIdempotentElem.isTopCompl (isIdempotentElem_rieszIdempotent T K)
 
-theorem isClosed_range_rieszIdempotent (T : E →L[ℂ] E) (K : Clopens (spectrum ℂ T)) :
-    IsClosed ((rieszIdempotent T K).range : Set E) :=
-  (isTopCompl_range_rieszIdempotent_range_rieszIdempotent_compl T K).isClosed
-
 /-- The range of a Riesz idempotent is zero exactly when its part of the spectrum is empty. -/
 theorem range_rieszIdempotent_eq_bot_iff (T : E →L[ℂ] E) (K : Clopens (spectrum ℂ T)) :
     (rieszIdempotent T K).range = ⊥ ↔ K = ⊥ := by
@@ -318,7 +325,8 @@ theorem exists_isClosed_ne_bot_ne_top_forall_commute_mem_invtSubmodule_of_not_is
   rw [isPreconnected_iff_preconnectedSpace, preconnectedSpace_iff_clopen] at hT
   push Not at hT
   obtain ⟨K, hK, hK0, hK1⟩ := hT
-  refine ⟨(rieszIdempotent T ⟨K, hK⟩).range, isClosed_range_rieszIdempotent T _, ?_, ?_,
+  refine ⟨(rieszIdempotent T ⟨K, hK⟩).range,
+    IsIdempotentElem.isClosed_range (isIdempotentElem_rieszIdempotent T _), ?_, ?_,
     fun S hS ↦ hS.range_rieszIdempotent_mem_invtSubmodule _⟩
   · rw [Ne, range_rieszIdempotent_eq_bot_iff, ← SetLike.coe_set_eq]
     exact hK0.ne_empty
