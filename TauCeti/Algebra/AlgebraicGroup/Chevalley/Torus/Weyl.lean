@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Coroot
-import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Weyl representatives normalize the actual Chevalley torus
@@ -175,44 +174,6 @@ representatives; no field or algebraic-closure hypothesis is needed. -/
 instance normal_torusPoints_subgroupOf_weylSubgroup :
     (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)).Normal :=
   Subgroup.normal_subgroupOf_of_le_normalizer (D.weylSubgroup_le_normalizer_range_torusPoints A)
-
-section IntegralFactorization
-
-attribute [local instance high] Ring.toIntAlgebra
-
-/-- Every element of `D.weylSubgroup A` factors as an actual torus point times the image of an
-integral Weyl element. -/
-theorem mem_weylSubgroup_iff_exists_torusPoints_mul_map_int
-    (A : Type*) [CommRing A] (g : D.points A) :
-    g ∈ D.weylSubgroup A ↔
-      ∃ s : Fin t.rank → Aˣ, ∃ w ∈ D.weylSubgroup ℤ,
-        D.torusPoints A s *
-          (D.pointsPresentation ℤ).map (D.pointsPresentation A) (Int.castRingHom A) w = g := by
-  let φ := (D.pointsPresentation ℤ).map (D.pointsPresentation A) (Int.castRingHom A)
-  have hsup : D.weylSubgroup A = (D.torusPoints A).range ⊔ (D.weylSubgroup ℤ).map φ := by
-    apply le_antisymm
-    · rw [D.weylSubgroup_def A, Subgroup.closure_le]
-      rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-      · exact Subgroup.mem_sup_left ⟨s, rfl⟩
-      · refine Subgroup.mem_sup_right ⟨D.weylElement (t.simpleIndex ht i) ℤ 1,
-          D.weylElement_mem_weylSubgroup ℤ i, ?_⟩
-        have hcoe := D.coe_weylSubgroupMap ℤ (Int.castRingHom A)
-          ⟨D.weylElement (t.simpleIndex ht i) ℤ 1, D.weylElement_mem_weylSubgroup ℤ i⟩
-        rw [D.weylSubgroupMap_weylElement] at hcoe
-        exact hcoe.symm
-    · exact sup_le (D.range_torusPoints_le_weylSubgroup A)
-        (D.map_weylSubgroup_le (Int.castRingHom A))
-  have hnorm : (D.weylSubgroup ℤ).map φ ≤ Subgroup.normalizer (D.torusPoints A).range :=
-    (D.map_weylSubgroup_le (Int.castRingHom A)).trans
-      (D.weylSubgroup_le_normalizer_range_torusPoints A)
-  rw [hsup, Subgroup.mem_sup_of_right_le_normalizer_left hnorm]
-  constructor
-  · rintro ⟨_, ⟨s, rfl⟩, _, ⟨w, hw, rfl⟩, h⟩
-    exact ⟨s, w, hw, h⟩
-  · rintro ⟨s, w, hw, h⟩
-    exact ⟨_, ⟨s, rfl⟩, _, ⟨w, hw, rfl⟩, h⟩
-
-end IntegralFactorization
 
 end
 

@@ -101,13 +101,6 @@ theorem weylSubgroup_le_comap (A : Type*) [CommRing A] {B : Type*} [CommRing B]
   · rw [SetLike.mem_coe, Subgroup.mem_comap, D.map_weylElement_one]
     exact D.weylElement_mem_weylSubgroup B i
 
-/-- Scalar extension carries the Weyl subgroup into the Weyl subgroup over the target ring,
-without a surjectivity assumption on the ring map. -/
-theorem map_weylSubgroup_le {A : Type*} {B : Type*} [CommRing A] [CommRing B] (f : A →+* B) :
-    (D.weylSubgroup A).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
-      D.weylSubgroup B :=
-  Subgroup.map_le_iff_le_comap.mpr (D.weylSubgroup_le_comap A f)
-
 /-- The homomorphism of Weyl subgroups induced by scalar extension. -/
 noncomputable def weylSubgroupMap (A : Type*) [CommRing A] {B : Type*} [CommRing B]
     (f : A →+* B) : D.weylSubgroup A →* D.weylSubgroup B :=
@@ -156,29 +149,6 @@ noncomputable def simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
 theorem coe_simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
     (D.simpleWeylLift A i : D.points A) = D.weylElement (t.simpleIndex ht i) A 1 :=
   (rfl)
-
-/-- Two group homomorphisms out of `D.weylSubgroup A` agree if they agree on all actual torus
-points and all pinned simple Weyl representatives. -/
-theorem weylSubgroup_hom_ext {A : Type v} [CommRing A] {G : Type*} [Group G]
-    {h₁ h₂ : D.weylSubgroup A →* G}
-    (htorus : ∀ s : Fin t.rank → Aˣ,
-      h₁ ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ =
-        h₂ ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩)
-    (hweyl : ∀ i : Fin t.rank,
-      h₁ ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩ =
-        h₂ ⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩) :
-    h₁ = h₂ := by
-  ext g
-  let P : Subgroup (D.points A) := (MonoidHom.eqLocus h₁ h₂).map (D.weylSubgroup A).subtype
-  have hle : D.weylSubgroup A ≤ P := by
-    rw [D.weylSubgroup_def A, Subgroup.closure_le]
-    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
-    · exact ⟨⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩, htorus s, rfl⟩
-    · exact ⟨⟨D.weylElement (t.simpleIndex ht i) A 1, D.weylElement_mem_weylSubgroup A i⟩,
-        hweyl i, rfl⟩
-  obtain ⟨g', hg', hval⟩ := hle g.property
-  have heq : g' = g := Subtype.ext hval
-  rwa [← heq]
 
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
@@ -522,22 +492,5 @@ theorem weylProjection_eq_one_iff (k : Type v) [Field k] [Infinite k]
     apply D.realizesWeyl_unique hw
     intro s
     simpa only [map_one, MulAut.one_apply, kostantTorusMatrix_apply] using (hg s).mul_inv_cancel
-
-/-- The Weyl projection of an integral Weyl element is independent of the target field. -/
-theorem weylProjection_map_int_eq {k₁ : Type*} {k₂ : Type*} [Field k₁] [Field k₂]
-    (w : D.weylSubgroup ℤ) :
-    D.weylProjection k₁ (D.weylSubgroupMap ℤ (Int.castRingHom k₁) w) =
-      D.weylProjection k₂ (D.weylSubgroupMap ℤ (Int.castRingHom k₂) w) :=
-  DFunLike.congr_fun
-    (D.weylSubgroup_hom_ext
-      (h₁ := (D.weylProjection k₁).comp (D.weylSubgroupMap ℤ (Int.castRingHom k₁)))
-      (h₂ := (D.weylProjection k₂).comp (D.weylSubgroupMap ℤ (Int.castRingHom k₂)))
-      (fun s => by
-        simp only [MonoidHom.comp_apply, D.weylSubgroupMap_torusPoints,
-          D.weylProjection_torusPoints])
-      (fun i => by
-        simp only [MonoidHom.comp_apply, D.weylSubgroupMap_weylElement,
-          D.weylProjection_weylElement]))
-    w
 
 end TauCeti.DynkinType.ChevalleyDatum

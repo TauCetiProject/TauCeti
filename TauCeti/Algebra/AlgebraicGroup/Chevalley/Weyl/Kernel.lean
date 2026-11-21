@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Intersection
 
 /-!
 # The kernel of the Chevalley Weyl projection

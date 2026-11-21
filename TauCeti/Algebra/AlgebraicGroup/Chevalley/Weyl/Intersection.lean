@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Quotient
 
 /-!
 # Intersections of the Borel and positive subgroups with the Weyl subgroup
