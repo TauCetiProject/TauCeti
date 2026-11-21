@@ -26,6 +26,8 @@ simultaneously.
 
 * `CategoryTheory.ShortComplex.ShortExact.isSplitMono_f_iff_isSplitEpi_g`: the initial map splits
   if and only if the final map splits.
+* `CategoryTheory.ShortComplex.Exact.isIso_cokernelDesc`: in an exact sequence with epimorphic
+  final map, the final map induces an isomorphism from the cokernel of the initial map.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
@@ -245,6 +247,14 @@ theorem ShortExact.isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] 
       (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- In an exact sequence whose final map is an epimorphism, the final map induces an isomorphism
+from the cokernel of the initial map. -/
+lemma Exact.isIso_cokernelDesc {S : ShortComplex C} (hS : S.Exact) [Epi S.g] :
+    IsIso (cokernel.desc S.f S.g S.zero) := by
+  have := hS.mono_cokernelDesc
+  have : Epi (cokernel.desc S.f S.g S.zero) := epi_of_epi_fac (cokernel.π_desc S.f S.g S.zero)
+  exact isIso_of_mono_of_epi _
 
 /-- A componentwise direct sum of short exact sequences is short exact. -/
 lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :

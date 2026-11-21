@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Chains
 public import TauCeti.Order.Filter.Basic
 
 /-!
@@ -18,8 +17,9 @@ through the restriction maps `Hₖ(M, M ∖ K) ⟶ Hₖ(M, M ∖ S)`.  A singula
 compact image.  So when every compact set disjoint from `S` misses some member of a downward
 directed family of sets `K ⊇ S`, the subspaces `M ∖ K` exhaust `M ∖ S` in the sense of compact
 supports, and relative homology of the pair `(M, M ∖ S)` is the colimit of the relative homology
-of the pairs `(M, M ∖ K)` (`TopPair.isColimitMapCoconeSingularHomology`).  With coefficients in a
-module this says two things:
+of the pairs `(M, M ∖ K)`, as already the relative singular chains are
+(`TauCeti.isColimitMapCoconeSingularChainComplexComplPairCocone`).  With coefficients in a module
+this says two things:
 
 * every class of `Hₖ(M, M ∖ S)` is the restriction of a class of some `Hₖ(M, M ∖ K)`
   (`TauCeti.exists_localHomologyRestriction_eq`);
@@ -58,20 +58,6 @@ section Family
 variable {S : Set M} {ι : Type w} [Preorder ι] [IsDirected ι (· ≤ ·)] [Nonempty ι]
   {K : ι → Set M} (hK : Antitone K) (hSK : ∀ i, S ⊆ K i)
 
-/-- The pairs `(M, M ∖ K i)`, with the maps induced by the identity of `M`. -/
-private def complPairDiagram : ι ⥤ TopPair.{w} where
-  obj i := TopPair.ofSubset ((K i)ᶜ : Set (TopCat.of M))
-  map h := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hK h.le))
-  map_id _ := TopPair.ofSubsetMap_id _
-  map_comp _ _ := TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _
-
-/-- The cocone of the pairs `(M, M ∖ K i)` over the pair `(M, M ∖ S)`. -/
-private def complPairCocone : Cocone (complPairDiagram hK) where
-  pt := TopPair.ofSubset (Sᶜ : Set (TopCat.of M))
-  ι := { app i := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hSK i))
-         naturality _ _ _ :=
-           (TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _).symm.trans (Category.comp_id _).symm }
-
 variable (hcpt : ∀ T : Set M, IsCompact T → Disjoint T S → ∃ i, Disjoint T (K i))
 include hK hcpt
 
@@ -80,19 +66,9 @@ include hK hcpt
 misses some `K i`. -/
 private def isColimitComplPairCocone :
     IsColimit ((TopPair.singularHomologyFunctor N k).mapCocone (complPairCocone hK hSK)) := by
-  have hfst (i : ι) : TopPair.Hom.fst ((complPairCocone hK hSK).ι.app i) = 𝟙 (TopCat.of M) :=
-    TopPair.ofSubsetMap_fst _ _
-  refine TopPair.isColimitMapCoconeSingularHomology N k _ (fun i ↦ ?_) (fun T _ ↦ ?_)
-    fun T hT ↦ ?_
-  · rw [hfst]
-    exact IsEmbedding.id
-  · refine ⟨Classical.arbitrary ι, fun x _ ↦ ⟨x, ?_⟩⟩
-    rw [hfst]
-    rfl
-  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtypeVal)
-      (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
-    exact ⟨i, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
-      Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
+  rw [TopPair.singularHomologyFunctor_eq_chainComplexFunctor]
+  exact isColimitOfPreserves (HomologicalComplex.homologyFunctor _ _ k)
+    (isColimitMapCoconeSingularChainComplexComplPairCocone N hK hSK hcpt)
 
 /-- The colimit of `isColimitComplPairCocone`, with its components written as local homology
 groups and restriction maps. -/
