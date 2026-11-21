@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Topology.VectorBundle.Section
 public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
-public import Mathlib.Topology.VectorBundle.Constructions
+public import Mathlib.Topology.FiberBundle.Constructions
 
 import TauCeti.Topology.VectorBundle.Smul
 

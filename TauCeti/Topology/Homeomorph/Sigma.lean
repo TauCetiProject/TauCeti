@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
-public import Mathlib.Topology.Homeomorph.Defs
 
 /-!
 # Disjoint unions of families of homeomorphisms

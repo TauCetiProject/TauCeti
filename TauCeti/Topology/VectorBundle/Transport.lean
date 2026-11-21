@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Transport
-public import TauCeti.Topology.VectorBundle.Trivialization
+public import Mathlib.Topology.VectorBundle.Basic
 
 /-!
 # Transporting vector-bundle structures along fibrewise continuous linear equivalences
