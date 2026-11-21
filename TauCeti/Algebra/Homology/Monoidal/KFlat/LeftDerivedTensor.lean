@@ -494,7 +494,7 @@ def leftDerivedTensorObjIsoKFlatTensor (P : CochainComplex C ℤ) [P.IsKFlat] :
     ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
     (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
     (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
-    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
+    (Functor.isoWhiskerRight ((curriedTensorIsoMap₂HomologicalComplex C (.up ℤ)).app P)
       DerivedCategory.Q)
 
 /-- On a complex model `L`, `leftDerivedTensorObjIsoKFlatTensor LF α P` intertwines
@@ -512,7 +512,7 @@ theorem leftDerivedTensorObjIsoKFlatTensor_hom_app_Q_comp
     ((MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj P ⋙ DerivedCategory.Q)
     (((MonoidalCategory.curriedTensor C).map₂CochainComplex.obj P) ⋙ DerivedCategory.Q)
     (LF.obj (DerivedCategory.Q.obj P)) P.kFlatTensor
-    (Functor.isoWhiskerRight ((CochainComplex.curriedTensorIsoMap₂CochainComplex C).app P)
+    (Functor.isoWhiskerRight ((curriedTensorIsoMap₂HomologicalComplex C (.up ℤ)).app P)
       DerivedCategory.Q).hom L
   rw [← CochainComplex.kFlatTensorModelIso_eq_liftingIso P] at h
   have h' := h =≫ P.kFlatTensorModelIso.hom.app L

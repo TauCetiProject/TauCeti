@@ -217,8 +217,8 @@ instance isIso_kFlatTensorMap [HasDerivedCategory C]
       DerivedCategory.Q) := by
     rw [NatTrans.isIso_iff_isIso_app]
     intro A
-    simp only [whiskerRight_app, curriedTensor_map₂CochainComplex_map_app,
-      Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj]
+    simp only [whiskerRight_app, Functor.map₂HomologicalComplex_map_app,
+      Functor.comp_obj, Functor.map₂HomologicalComplex_obj_obj]
     infer_instance
   rw [kFlatTensorMap_eq_liftNatTrans]
   exact (Localization.liftNatIso DerivedCategory.Q (quasiIso C (.up ℤ))
