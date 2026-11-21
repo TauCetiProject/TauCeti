@@ -139,10 +139,10 @@ theorem continuous_leftMul_cornerFunctional (A : LinkingAlgebra X) :
   exact continuous_leftMul_single X k φ i j (A.entry i j)
 
 /-- The completed GNS Hilbert space of `LinkingAlgebra X` associated to a positive linear
-functional `φ : End (X k) →ₚ[ℂ] ℂ`. Defined as `@[expose] def` rather than `abbrev` because
+functional `φ : End (X k) →ₚ[ℂ] ℂ`. Defined as `def` rather than `abbrev` because
 operator-norm rewrites and `NegPart` synthesis on `(cornerFunctional X k φ).HilbertGNS →L[ℂ] ...`
 time out unfolding `UniformSpace.Completion (SeparationQuotient PreGNS)`. -/
-@[expose] def GNS : Type v :=
+def GNS : Type v :=
   (cornerFunctional X k φ).HilbertGNS
 
 noncomputable instance instGNSNormedAddCommGroup : NormedAddCommGroup (GNS X k φ) :=
