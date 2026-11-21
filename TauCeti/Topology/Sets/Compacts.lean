@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Sets.Compacts
+public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
 # Images and preimages of compact sets
@@ -15,16 +16,22 @@ public import Mathlib.Topology.Sets.Compacts
 The preimage of a compact set under a proper map is compact
 (`IsProperMap.isCompact_preimage`). This file packages that as the map
 `TopologicalSpace.Compacts.comap f hf : Compacts β → Compacts α` for a proper map `f : α → β`,
-monotone and functorial in `f`. It is the operation through which the cohomology with compact
-supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
+monotone and functorial in `f`, preserving `⊥`, `⊔` and `⊓`. It is the operation through which
+the cohomology with compact supports of a space, a colimit over its compact subsets, is
+contravariant in proper maps. When the target is locally compact, the preimages of the compact
+neighbourhoods of `K` are cofinal among the compact neighbourhoods of `f⁻¹(K)`
+(`TopologicalSpace.Compacts.exists_comap_le_of_mem_compactNhds`). It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
 with compact supports covariant in open embeddings. A compact set lies in one member of a
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Finally, in a
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In a
 Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
-(`TopologicalSpace.Compacts.toClosedsFunctor`).
+(`TopologicalSpace.Compacts.toClosedsFunctor`). Finally, in a
+locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`), so the compact
+neighbourhoods of `K` form a nonempty family; local homology along `K` is the colimit over them.
 -/
 
 public section
@@ -60,6 +67,43 @@ lemma comap_comp (f : α → β) (g : β → γ) (hf : IsProperMap f) (hg : IsPr
     (K : Compacts γ) :
     Compacts.comap (g ∘ f) (hg.comp hf) K = Compacts.comap f hf (Compacts.comap g hg K) :=
   (rfl)
+
+@[simp]
+lemma comap_bot (f : α → β) (hf : IsProperMap f) : Compacts.comap f hf ⊥ = ⊥ :=
+  Compacts.ext preimage_empty
+
+@[simp]
+lemma comap_sup (f : α → β) (hf : IsProperMap f) (K L : Compacts β) :
+    Compacts.comap f hf (K ⊔ L) = Compacts.comap f hf K ⊔ Compacts.comap f hf L :=
+  Compacts.ext preimage_union
+
+@[simp]
+lemma comap_inf [T2Space α] [T2Space β] (f : α → β) (hf : IsProperMap f) (K L : Compacts β) :
+    Compacts.comap f hf (K ⊓ L) = Compacts.comap f hf K ⊓ Compacts.comap f hf L :=
+  Compacts.ext preimage_inter
+
+/-- The preimage of a compact neighbourhood of `K` under a proper map is a compact neighbourhood
+of the preimage of `K`. -/
+lemma comap_mem_compactNhds (f : α → β) (hf : IsProperMap f) {K L : Compacts β}
+    (hL : L ∈ K.compactNhds) : Compacts.comap f hf L ∈ (Compacts.comap f hf K).compactNhds :=
+  fun x ↦ hf.continuous.continuousAt.preimage_mem_nhds (hL ⟨f x, x.property⟩)
+
+/-- For a proper map `f` into a locally compact space, the preimages of the compact
+neighbourhoods of `K` are cofinal among the compact neighbourhoods of `f⁻¹(K)`: every compact
+neighbourhood of `f⁻¹(K)` contains the preimage of a compact neighbourhood of `K`. -/
+lemma exists_comap_le_of_mem_compactNhds [LocallyCompactSpace β] (f : α → β)
+    (hf : IsProperMap f) {K : Compacts β} {L' : Compacts α}
+    (hL' : L' ∈ (Compacts.comap f hf K).compactNhds) :
+    ∃ L ∈ K.compactNhds, Compacts.comap f hf L ≤ L' := by
+  obtain ⟨U, hKU, hUL'⟩ := exists_open_set_nhds_of_mem_compactsNhds hL'
+  have hK : (K : Set β) ⊆ (f '' (U : Set α)ᶜ)ᶜ := by
+    rintro _ hy ⟨x, hx, rfl⟩
+    exact hx (hKU hy)
+  obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact
+    (hf.isClosedMap _ U.isOpen.isClosed_compl).isOpen_compl hK
+  refine ⟨⟨L, hL⟩, fun y ↦ mem_interior_iff_mem_nhds.mp (hKL y.property), fun x hx ↦ hUL' ?_⟩
+  by_contra hxU
+  exact hLU hx ⟨x, hxU, rfl⟩
 
 /-- The image of compact sets under a continuous map is monotone. -/
 lemma map_mono (f : α → β) (hf : Continuous f) : Monotone (Compacts.map f hf) :=
@@ -102,5 +146,25 @@ variable (α) in
 /-- A compact subset of a Hausdorff space as a closed subset, functorially for inclusions. -/
 abbrev toClosedsFunctor [T2Space α] : Compacts α ⥤ Closeds α :=
   toCloseds_mono.functor
+
+section CompactNhds
+
+variable [LocallyCompactSpace α]
+
+/-- In a locally compact space, a closed set disjoint from a compact set `K` misses some compact
+neighbourhood of `K`. -/
+lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClosed T)
+    (hKT : Disjoint (K : Set α) T) : ∃ L ∈ K.compactNhds, Disjoint (L : Set α) T := by
+  obtain ⟨L, hL, hKL, hLT⟩ := exists_compact_between K.isCompact hT.isOpen_compl
+    hKT.subset_compl_right
+  exact ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.property),
+    disjoint_compl_left.mono_left hLT⟩
+
+/-- In a locally compact space, every compact set has a compact neighbourhood. -/
+instance (K : Compacts α) : Nonempty K.compactNhds :=
+  let ⟨L, hL, _⟩ := K.exists_mem_compactNhds_disjoint isClosed_empty (disjoint_empty _)
+  ⟨⟨L, hL⟩⟩
+
+end CompactNhds
 
 end TopologicalSpace.Compacts
