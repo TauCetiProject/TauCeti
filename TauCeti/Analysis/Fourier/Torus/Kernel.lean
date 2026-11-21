@@ -276,7 +276,8 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
       _ ≤ _ := by gcongr
   rw [schwartzKernel_apply]
   refine (tsum_of_norm_bounded
-    ((TauCeti.summable_pi_int_inv_one_add_norm_pow.mul_left _).mul_left _).hasSum key).trans_eq ?_
+    (((TauCeti.summable_pi_int_inv_one_add_norm_pow (lt_add_one _)).mul_left _).mul_left _).hasSum
+      key).trans_eq ?_
   rw [tsum_mul_left, tsum_mul_left]
   ring
 

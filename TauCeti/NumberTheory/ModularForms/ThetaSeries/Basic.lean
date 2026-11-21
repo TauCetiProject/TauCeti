@@ -296,9 +296,8 @@ theorem differentiableOn_thetaCoset (γ : E) :
     have hw' : 0 < w.im := lt_trans (half_pos hz) hw
     simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
   · have h0 : thetaCoset L γ = 0 :=
-      thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
-        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * y)
-          (by positivity) hs)
+      thetaCoset_eq_zero_of_forall_not_summable L γ fun _ _ hs =>
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ hs)
     rw [h0]
     exact differentiableOn_const 0
 

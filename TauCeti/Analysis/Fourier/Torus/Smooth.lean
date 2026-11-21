@@ -312,7 +312,7 @@ theorem summable_norm_mFourierCoeff_mul_pow {f : UnitAddTorus d → ℂ} (hf : f
     Summable fun n ↦ ‖mFourierCoeff f n‖ * (1 + R * ‖n‖) ^ N := by
   obtain ⟨M, hM⟩ := exists_derivBound hf (N + Fintype.card d + 1)
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left
+    ((summable_pi_int_inv_one_add_norm_pow (lt_add_one _)).mul_left
       ((1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M)))
   have h1 : (1 + R * ‖n‖) ^ N ≤ (1 + R) ^ N * (1 + ‖n‖) ^ N := by
     rw [← mul_pow]
@@ -470,7 +470,7 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
   obtain ⟨C₀, hC₀⟩ := hc 0
   obtain ⟨C, hC⟩ := hc K
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left (2 ^ K * (C₀ + C)))
+    ((summable_pi_int_inv_one_add_norm_pow (lt_add_one _)).mul_left (2 ^ K * (C₀ + C)))
   have hpow : (1 + ‖n‖) ^ K ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
     calc (1 + ‖n‖) ^ K ≤ 2 ^ (K - 1) * (1 ^ K + ‖n‖ ^ K) := add_pow_le zero_le_one (norm_nonneg n) K
       _ ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by

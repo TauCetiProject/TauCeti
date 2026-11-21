@@ -31,15 +31,15 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
 * `ZLattice.summable_exp_neg_mul_norm_add_sq`: `∑ v ∈ L, exp (-c ‖x + v‖²)` converges for
   `0 < c`.
 * `ZLattice.discreteTopology_of_summable_exp_neg_mul_norm_add_sq`: the converse, a subgroup `L`
-  of a normed group over which some Gaussian `v ↦ exp (-c ‖x + v‖²)`, `0 < c`, is summable is
+  of a normed group over which some function `v ↦ exp (-c ‖x + v‖²)`, `c : ℝ`, is summable is
   discrete.
 * `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
   natural number `r` exceeds the rank of `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
-* `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
-  converges.
+* `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-r)` converges
+  once the natural number `r` exceeds `card d`.
 -/
 
 public section
@@ -52,17 +52,20 @@ section Discrete
 
 variable {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E)
 
-/-- If the Gaussian `exp (-c ‖γ + v‖²)`, `c > 0`, is summable over a subgroup `L` of a normed
-group, then `L` is discrete: only finitely many `v ∈ L` have `‖γ + v‖` bounded. -/
-theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ} (hc : 0 < c)
+/-- If `exp (-c ‖γ + v‖²)` is summable over a subgroup `L` of a normed group for some `c : ℝ`, then
+`L` is discrete: only finitely many `v ∈ L` have `‖γ + v‖` bounded. For `0 < c` this is the
+Gaussian; for `c ≤ 0` summability even forces `L` to be finite. -/
+theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ}
     (h : Summable fun v : L => Real.exp (-c * ‖γ + (v : E)‖ ^ 2)) : DiscreteTopology L := by
-  -- Only finitely many `v ∈ L` have `‖γ + v‖ ≤ R`, since the terms tend to `0`.
+  -- Only finitely many `v ∈ L` have `‖γ + v‖ ≤ R`, since the terms tend to `0` while being
+  -- at least `exp (-|c| R²)` on that set.
   have hfin (R : ℝ) : {v : L | ‖γ + (v : E)‖ ≤ R}.Finite := by
     refine (Filter.eventually_cofinite.mp (h.tendsto_cofinite_zero.eventually
-      (gt_mem_nhds (Real.exp_pos (-c * R ^ 2))))).subset fun v hv => ?_
+      (gt_mem_nhds (Real.exp_pos (-|c| * R ^ 2))))).subset fun v hv => ?_
     simp only [Set.mem_ofPred_eq, not_lt] at hv ⊢
     have := pow_le_pow_left₀ (norm_nonneg _) hv 2
-    exact Real.exp_le_exp.mpr (by nlinarith)
+    exact Real.exp_le_exp.mpr
+      (by nlinarith [le_abs_self c, abs_nonneg c, sq_nonneg ‖γ + (v : E)‖])
   have hnhds : {v : L | ‖(v : E)‖ < 1} ∈ 𝓝 (0 : L) :=
     (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).mem_nhds (by simp)
   refine discreteTopology_of_isOpen_singleton_zero (isOpen_singleton_of_finite_mem_nhds 0 hnhds
@@ -139,12 +142,12 @@ theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -F
   have hn (i : d) : ‖(n i : ℝ)‖₊ = ‖n i‖₊ := NNReal.eq (Int.norm_cast_real _)
   simp [Pi.norm_def, hn]
 
-/-- The series `∑ n, (1 + ‖n‖) ^ (-(card d + 1))` over the integer vectors `n : d → ℤ`, with the
-sup norm, converges. -/
-theorem summable_pi_int_inv_one_add_norm_pow {d : Type*} [Fintype d] :
-    Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ (Fintype.card d + 1))⁻¹ := by
+/-- The series `∑ n, (1 + ‖n‖) ^ (-r)` over the integer vectors `n : d → ℤ`, with the sup norm,
+converges once the natural number `r` exceeds `card d`. -/
+theorem summable_pi_int_inv_one_add_norm_pow {d : Type*} [Fintype d] {r : ℕ}
+    (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ := by
   refine Summable.of_norm_bounded_eventually
-    (summable_pi_int_norm_rpow (-((Fintype.card d + 1 : ℕ) : ℝ)) (by push_cast; linarith)) ?_
+    (summable_pi_int_norm_rpow (-(r : ℝ)) (neg_lt_neg (by exact_mod_cast hr))) ?_
   filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
   have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
   rw [Real.norm_of_nonneg (by positivity), Real.rpow_neg hpos.le, Real.rpow_natCast]
