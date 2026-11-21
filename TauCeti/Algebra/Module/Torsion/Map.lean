@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-import TauCeti.LinearAlgebra.Exact
+import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Exact.Ladder
 
 /-!
 # The `r`-torsion of a linear map
@@ -71,8 +72,14 @@ theorem torsionByMap_id : torsionByMap r (LinearMap.id : M →ₗ[R] M) = Linear
   ext
   rfl
 
+@[simp]
 theorem torsionByMap_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
     torsionByMap r (g ∘ₗ f) = torsionByMap r g ∘ₗ torsionByMap r f := by
+  ext
+  rfl
+
+@[simp]
+theorem torsionByMap_zero : torsionByMap r (0 : M →ₗ[R] N) = 0 := by
   ext
   rfl
 
@@ -122,15 +129,16 @@ variable {R : Type*} [CommSemiring R] {r : R} {M₁ M₂ M₃ : Type*} [AddCommM
 then `M₂[r] → M₃[r]` is injective, since its kernel is the image of `M₁[r] = 0`. -/
 theorem injective_torsionByMap_of_injective_smul (hfg : Exact f g) (hf : Injective f)
     (hr : Injective fun x : M₁ ↦ r • x) : Injective (torsionByMap r g) := fun x₁ x₂ h ↦ by
-  -- `x₁ - x₂ = f w` by exactness, and `f (r • w) = r • (x₁ - x₂) = 0`, so `w = 0`; as `M₃` need
-  -- not be a group, `g (x₁ - x₂) = 0` is computed as `g x₁ + g (-x₂) = g x₂ + g (-x₂) = g 0`
-  obtain ⟨w, hw⟩ := (hfg ((x₁ : M₂) - x₂)).1 <| by
+  -- `x₁ - x₂ ∈ M₂[r]` dies in `M₃[r]`, so it comes from `M₁[r] = 0` by left exactness; as `M₃`
+  -- need not be a group, `g (x₁ - x₂) = 0` is computed as `g x₁ + g (-x₂) = g x₂ + g (-x₂) = g 0`
+  have hd : (x₁ : M₂) - x₂ ∈ torsionBy R M₂ r := by
+    simp [mem_torsionBy_iff, smul_sub, (mem_torsionBy_iff _ _).1 x₁.property,
+      (mem_torsionBy_iff _ _).1 x₂.property]
+  obtain ⟨w, hw⟩ := (exact_torsionByMap hfg hf ⟨_, hd⟩).1 <| Subtype.ext <| by
     have h' : g x₁ = g x₂ := by simpa using congrArg Subtype.val h
     simpa [sub_eq_add_neg, h'] using (map_add g (x₂ : M₂) (-x₂)).symm
-  have hw0 : w = 0 := hr <| hf <| by
-    simp [hw, smul_sub, (mem_torsionBy_iff _ _).1 x₁.property,
-      (mem_torsionBy_iff _ _).1 x₂.property]
-  exact Subtype.ext <| sub_eq_zero.1 <| by simp [← hw, hw0]
+  have hw0 : (w : M₁) = 0 := hr <| by simp
+  exact Subtype.ext <| sub_eq_zero.1 <| by simpa [hw0] using (congrArg Subtype.val hw).symm
 
 /-- Along an exact sequence `M₁ → M₂ → M₃ → 0`, if multiplication by `r` is surjective on `M₁`,
 then `M₂[r] → M₃[r]` is surjective. The map `M₁ → M₂` need not be injective. -/
@@ -138,12 +146,14 @@ theorem surjective_torsionByMap_of_surjective_smul (hfg : Exact f g) (hg : Surje
     (hr : Surjective fun x : M₁ ↦ r • x) : Surjective (torsionByMap r g) := fun x ↦ by
   -- a lift `y` of `x` has `g (r • y) = 0`; correct it by the image of `M₁ = r • M₁`
   obtain ⟨y, hy⟩ := hg x
-  obtain ⟨y', hy', hgy'⟩ := hfg.exists_apply_eq_zero_and_apply_eq_of_surjective
-    (α := DistribSMul.toLinearMap R M₁ r) (β := DistribSMul.toLinearMap R M₂ r)
-    (γ := DistribSMul.toLinearMap R M₃ r) hfg.linearMap_comp_eq_zero hr
-    (LinearMap.ext fun x ↦ (map_smul f r x).symm) (LinearMap.ext fun x ↦ (map_smul g r x).symm)
-    (y := y) (by simp [hy])
-  exact ⟨⟨y', (mem_torsionBy_iff _ _).2 (by simpa using hy')⟩, Subtype.ext (by simp [hgy', hy])⟩
+  obtain ⟨w, hw, hgw⟩ := Exact.exists_apply_eq_zero_and_apply_eq_of_surjective
+    (f := f.toAddMonoidHom) (g := g.toAddMonoidHom) (f' := f.toAddMonoidHom)
+    (g' := g.toAddMonoidHom) (α := DistribSMul.toAddMonoidHom M₁ r)
+    (β := DistribSMul.toAddMonoidHom M₂ r) (γ := DistribSMul.toAddMonoidHom M₃ r) hfg
+    hfg.apply_apply_eq_zero hr (fun x ↦ (map_smul f r x).symm)
+    (fun x ↦ (map_smul g r x).symm) (y := y) (by simp [hy])
+  exact ⟨⟨y + f w, (mem_torsionBy_iff _ _).2 (by simpa using hw)⟩,
+    Subtype.ext (by simpa [hy] using hgw)⟩
 
 end Exact
 
@@ -166,8 +176,13 @@ theorem torsionByLinearMap_id :
     torsionByLinearMap r (LinearMap.id : M₁ →ₗ[R] M₁) = LinearMap.id :=
   LinearMap.ext fun _ ↦ rfl
 
+@[simp]
 theorem torsionByLinearMap_comp (g : M₂ →ₗ[R] M₃) (f : M₁ →ₗ[R] M₂) :
     torsionByLinearMap r (g ∘ₗ f) = torsionByLinearMap r g ∘ₗ torsionByLinearMap r f :=
+  LinearMap.ext fun _ ↦ rfl
+
+@[simp]
+theorem torsionByLinearMap_zero : torsionByLinearMap r (0 : M₁ →ₗ[R] M₂) = 0 :=
   LinearMap.ext fun _ ↦ rfl
 
 end QuotientLinear
