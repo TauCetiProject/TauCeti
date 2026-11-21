@@ -56,6 +56,8 @@ two abscissae is named.
 * `TauCeti.LSeries.abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg`: for nonnegative coefficients
   they are equal, ordinary convergence at a real point being absolute there
   (`TauCeti.LSeriesConverges_iff_LSeriesSummable_of_nonneg`).
+* `TauCeti.LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff`: a series that converges
+  absolutely exactly on `Re s > a` has abscissa of absolute convergence `a`.
 
 ## References
 
@@ -317,6 +319,15 @@ theorem abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg (ha : ∀ n, n ≠ 0 → 0
     abscissaOfConv f = _root_.LSeries.abscissaOfAbsConv f :=
   congrArg sInf (congrArg _
     (Set.ext fun x ↦ LSeriesConverges_iff_LSeriesSummable_of_nonneg ha x))
+
+/-- A Dirichlet series that converges absolutely exactly on `Re s > a` has abscissa of absolute
+convergence `a`. -/
+theorem abscissaOfAbsConv_eq_of_LSeriesSummable_iff {a : ℝ}
+    (h : ∀ s : ℂ, LSeriesSummable f s ↔ a < s.re) : _root_.LSeries.abscissaOfAbsConv f = a := by
+  refine le_antisymm (_root_.LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
+    (h y).mpr (by simpa using hy)) (not_lt.mp fun ha ↦ ?_)
+  exact lt_irrefl a <| by
+    simpa using (h a).mp (LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using ha))
 
 end LSeries
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
+import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic

@@ -130,16 +130,14 @@ public section
 open Set Filter Topology
 open scoped NNReal ENNReal
 
-variable {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y] [CompleteSpace Y]
-  {C r : ℝ≥0} {f : X → Y} {s : Set X}
-
 /-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
 exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
 continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
 `r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
 continuous.
 Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
-theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
+theorem HolderOnWith.extend_of_dense {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y]
+    [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
     (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
   classical
   rcases eq_or_ne r 0 with rfl | hr
@@ -621,7 +619,8 @@ theorem nnHolderNorm_smul {X Y 𝕜 : Type*} [MetricSpace X] [NormedAddCommGroup
 
 /-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
 with constant `c ^ (1 / 2)`. -/
-theorem HolderOnWith.of_edist_sq_le {u : ℝ → X} {S : Set ℝ} {c : ℝ} (hc0 : 0 ≤ c)
+theorem HolderOnWith.of_edist_sq_le {X : Type*} [PseudoEMetricSpace X] {u : ℝ → X} {S : Set ℝ}
+    {c : ℝ} (hc0 : 0 ≤ c)
     (hsq : ∀ s ∈ S, ∀ t ∈ S, s ≤ t → edist (u s) (u t) ^ 2 ≤ ENNReal.ofReal (c * |s - t|)) :
     HolderOnWith (c.toNNReal ^ (2⁻¹ : ℝ)) (1 / 2) u S := by
   refine fun s hs t ht ↦
