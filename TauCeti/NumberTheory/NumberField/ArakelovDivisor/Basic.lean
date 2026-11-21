@@ -285,6 +285,11 @@ def mk : ArakelovDivisor K →+ ArakelovPicardGroup K := QuotientAddGroup.mk' _
 
 variable {K}
 
+/-- The quotient coercion `↑D` into the compactified Picard group, as produced for instance by
+`QuotientAddGroup.induction_on`, is the class `mk K D`; as a simp lemma it brings the coercion to
+the `mk` form on which the API below is stated. -/
+@[simp] theorem coe_eq_mk (D : ArakelovDivisor K) : (D : ArakelovPicardGroup K) = mk K D := (rfl)
+
 /-- Every class in the compactified Picard group is the class of an Arakelov divisor. -/
 theorem mk_surjective : Function.Surjective (mk K) := QuotientAddGroup.mk'_surjective _
 
