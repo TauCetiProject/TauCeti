@@ -37,15 +37,16 @@ torus `(ℝ / ℤ)^d`.
 * `ZLattice.discreteTopology_of_summable_exp_neg_mul_norm_add_sq`: the converse, a subgroup `L`
   of a normed group over which some function `v ↦ exp (-c ‖x + v‖²)`, `c : ℝ`, is summable is
   discrete.
-* `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
-  natural number `r` exceeds the rank of `L`.
+* `ZLattice.summable_one_add_norm_rpow`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ r` converges for real
+  `r < -rank L`; `ZLattice.summable_one_add_norm_pow_inv` is the case of a natural exponent `-r`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm_of_decay`: a function decaying faster than every
   power of `1 + ‖x‖` is summable along `L` against every power of `1 + ‖ℓ‖`.
 * `TauCeti.summable_pi_int_iff_summable_span`: summability over `d → ℤ` is summability over the
   standard lattice `ℤ^d ⊆ ℝ^d`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
-* `TauCeti.summable_pi_int_one_add_norm_pow_inv`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-r)` converges
-  once the natural number `r` exceeds `card d`.
+* `TauCeti.summable_pi_int_one_add_norm_rpow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ r` converges for real
+  `r < -card d`; `TauCeti.summable_pi_int_one_add_norm_pow_inv` is the case of a natural exponent
+  `-r`.
 -/
 
 public section
@@ -60,12 +61,11 @@ variable {E : Type*} [NormedAddCommGroup E] (L : Submodule ℤ E)
 
 /-- If `v ↦ exp (-c ‖γ + v‖²)` is summable over a subgroup `L` of a normed group for some
 `c : ℝ`, then `L` is discrete. The terms are continuous in `v`, positive at `0` and tend to `0`
-along the cofinite filter, so `0` is isolated (`isOpen_singleton_of_tendsto_cofinite`). -/
+along the cofinite filter, so `0` is isolated (`Filter.Tendsto.isOpen_singleton_of_cofinite`). -/
 theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ}
     (h : Summable fun v : L => Real.exp (-c * ‖γ + (v : E)‖ ^ 2)) : DiscreteTopology L :=
   discreteTopology_of_isOpen_singleton_zero <|
-    isOpen_singleton_of_tendsto_cofinite h.tendsto_cofinite_zero (by fun_prop)
-      (Real.exp_pos _).ne'
+    h.tendsto_cofinite_zero.isOpen_singleton_of_cofinite (by fun_prop) (Real.exp_pos _).ne'
 
 end Discrete
 
@@ -89,17 +89,23 @@ theorem summable_exp_neg_mul_norm_add_sq {c : ℝ} (hc : 0 < c) (x : E) :
     |>.comp_tendsto htend)
   simpa [Function.comp_def, sub_neg_eq_add, add_comm] using key
 
-/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
-summable as soon as `r` exceeds the rank of `L`. -/
-theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) :
-    Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ := by
-  refine Summable.of_norm_bounded_eventually (summable_norm_pow_inv L r hr) ?_
-  -- Away from `0`, `(1 + ‖ℓ‖) ^ (-r) ≤ ‖ℓ‖ ^ (-r)`.
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ r` is
+summable for every real `r < -rank L`. -/
+theorem summable_one_add_norm_rpow (r : ℝ) (hr : r < -Module.finrank ℤ L) :
+    Summable fun ℓ : L ↦ (1 + ‖(ℓ : E)‖) ^ r := by
+  refine Summable.of_norm_bounded_eventually (summable_norm_rpow L r hr) ?_
+  -- Away from `0`, `(1 + ‖ℓ‖) ^ r ≤ ‖ℓ‖ ^ r` since `r < 0`.
   filter_upwards [Set.Finite.compl_mem_cofinite (Set.finite_singleton (0 : L))] with ℓ hℓ
   have hℓ : 0 < ‖(ℓ : E)‖ := by simpa using hℓ
-  rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
-  gcongr
-  simp
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_rpow_of_nonpos hℓ (by simp) (hr.le.trans (neg_nonpos.2 (Nat.cast_nonneg _)))
+
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
+summable as soon as the natural number `r` exceeds the rank of `L`. -/
+theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) :
+    Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ :=
+  (summable_one_add_norm_rpow L (-r) (neg_lt_neg (by exact_mod_cast hr))).congr fun ℓ ↦ by
+    rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
 
 /-- A function on `E` decaying faster than every power of `1 + ‖x‖` is summable along a discrete
 subgroup `L` against every power of `1 + ‖ℓ‖`. -/
@@ -141,14 +147,21 @@ theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -F
   simpa only [pi_norm_intCast_real] using
     (summable_pi_int_iff_summable_span (f := fun x ↦ ‖x‖ ^ r)).2 hL
 
+/-- The series `∑ n, (1 + ‖n‖) ^ r` over the integer vectors `n : d → ℤ`, with the sup norm,
+converges for every real `r < -card d`. -/
+theorem summable_pi_int_one_add_norm_rpow {d : Type*} [Fintype d] (r : ℝ)
+    (hr : r < -Fintype.card d) : Summable fun n : d → ℤ ↦ (1 + ‖n‖) ^ r := by
+  have hL := ZLattice.summable_one_add_norm_rpow
+    (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))) r
+    (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
+  simpa only [pi_norm_intCast_real] using
+    (summable_pi_int_iff_summable_span (f := fun x ↦ (1 + ‖x‖) ^ r)).2 hL
+
 /-- The series `∑ n, (1 + ‖n‖) ^ (-r)` over the integer vectors `n : d → ℤ`, with the sup norm,
 converges once the natural number `r` exceeds `card d`. -/
 theorem summable_pi_int_one_add_norm_pow_inv {d : Type*} [Fintype d] {r : ℕ}
-    (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ := by
-  have hL := ZLattice.summable_one_add_norm_pow_inv
-    (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d))) (r := r)
-    (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
-  simpa only [pi_norm_intCast_real] using
-    (summable_pi_int_iff_summable_span (f := fun x ↦ ((1 + ‖x‖) ^ r)⁻¹)).2 hL
+    (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ :=
+  (summable_pi_int_one_add_norm_rpow (-r) (neg_lt_neg (by exact_mod_cast hr))).congr fun n ↦ by
+    rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
 
 end TauCeti

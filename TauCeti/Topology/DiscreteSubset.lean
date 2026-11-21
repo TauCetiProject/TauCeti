@@ -18,8 +18,9 @@ punctured neighbourhood membership `U \ S ∈ 𝓝[≠] x` (`IsOpen.sdiff_mem_nh
 
 A point `x` of a T1 space is isolated as soon as some function `f` into a Hausdorff space, tending
 to `y` along the cofinite filter, is continuous at `x` with `f x ≠ y`
-(`isOpen_singleton_of_tendsto_cofinite`): near `x` the values of `f` stay away from `y`, which
-happens only finitely often. A summable function nonzero at `x` is one such `f`.
+(`Filter.Tendsto.isOpen_singleton_of_cofinite`): near `x` the values of `f` stay away from `y`,
+which happens only finitely often. For instance, a summable real-valued function that is continuous
+at `x` and nonzero there is one such `f`, with `y = 0`.
 
 ## Main results
 
@@ -27,7 +28,7 @@ happens only finitely often. A summable function nonzero at `x` is one such `f`.
   `x ∈ U ∩ S`.
 * `IsOpen.sdiff_mem_nhdsNE_of_isDiscrete`: `U \ S ∈ 𝓝[≠] x` whenever `U` is open, `U ∩ S` is
   discrete, and `x ∈ U ∩ S`.
-* `isOpen_singleton_of_tendsto_cofinite`: `{x}` is open if some `f` with `f → y` along the
+* `Filter.Tendsto.isOpen_singleton_of_cofinite`: `{x}` is open if some `f` with `f → y` along the
   cofinite filter is continuous at `x` with `f x ≠ y`.
 -/
 
@@ -57,8 +58,9 @@ theorem IsOpen.sdiff_mem_nhdsNE_of_isDiscrete {X : Type*} [TopologicalSpace X] {
 
 /-- A point `x` of a T1 space is isolated if some function `f` into a Hausdorff space tends to `y`
 along the cofinite filter and is continuous at `x` with `f x ≠ y`: a neighbourhood of `x` on which
-`f` stays away from `y` is finite. For instance, `f` can be summable and nonzero at `x`. -/
-theorem isOpen_singleton_of_tendsto_cofinite {X Y : Type*} [TopologicalSpace X] [T1Space X]
+`f` stays away from `y` is finite. For instance, `f` can be a summable real-valued function that
+is continuous at `x` and nonzero there, with `y = 0`. -/
+theorem Filter.Tendsto.isOpen_singleton_of_cofinite {X Y : Type*} [TopologicalSpace X] [T1Space X]
     [TopologicalSpace Y] [T2Space Y] {f : X → Y} {y : Y} (hf : Tendsto f cofinite (𝓝 y)) {x : X}
     (hx : ContinuousAt f x) (hne : f x ≠ y) : IsOpen ({x} : Set X) := by
   obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := t2_separation hne
