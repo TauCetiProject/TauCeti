@@ -955,13 +955,9 @@ of the existing gauge-fixed Schwartz operator. -/
 theorem linearizedEquation_vacuumField (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (z : ℂ) :
     linearizedEquation vacuumField y z =
       !₂[vacuumOperator y z 1, vacuumOperator y z 2, vacuumOperator y z 3] := by
-  have hd (i : Fin 4) (v : ℂ) :
-      fderiv ℝ (fun w ↦ y w i) z v = (∂_{v} y) z i := by
-    have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp z
-      y.differentiableAt.hasFDerivAt).fderiv
-    simpa [Function.comp_def, SchwartzMap.lineDerivOp_apply_eq_fderiv] using
-      congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hp
+  -- The simp lemma `SchwartzMap.fderiv_apply_eq_lineDerivOp_apply` turns the coordinate
+  -- derivatives of `y` into coordinates of its line derivatives.
   ext i
-  fin_cases i <;> simp [vacuumField, hd] <;> ring
+  fin_cases i <;> simp [vacuumField] <;> ring
 
 end TauCeti.Vortex

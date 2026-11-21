@@ -155,7 +155,7 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
   have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
   ext x
-  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM, map_add, map_neg,
+  simpa only [laplacianResolvent_apply, SchwartzMap.laplacian_postcompCLM, map_add, map_neg,
     map_smul, postcompCLM_postcompCLM, reCLM_comp_ofRealLI, postcompCLM_apply,
     ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
@@ -166,7 +166,7 @@ theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
   have hcomplex := fourierMultiplierCLM_laplacian (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹)
     (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
   have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
-  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
+  simpa only [laplacianResolvent_apply, SchwartzMap.laplacian_postcompCLM] using hreal
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]

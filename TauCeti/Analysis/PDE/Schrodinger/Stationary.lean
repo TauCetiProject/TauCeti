@@ -269,7 +269,7 @@ private theorem neg_laplacian_add_eq {P h g : E → ℝ} (hh : MemLp h 2 volume)
     convert (Δ φ).memLp 2 (μ := volume) using 1
     exact funext fun z ↦ (SchwartzMap.laplacian_apply φ z).symm
   -- Both sides as real integrals against `h`, `g` and `P h`.
-  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, laplacian_postcompCLM,
+  rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
     Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, one_smul]

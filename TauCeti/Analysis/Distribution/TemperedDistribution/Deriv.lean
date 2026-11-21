@@ -60,7 +60,7 @@ with a continuous real-linear map applied to the values of the function. -/
 theorem lineDerivOp_toTemperedDistributionCLM_postcompCLM (L : G →L[ℝ] F) (f : 𝓢(E, G)) (m : E) :
     ∂_{m} (toTemperedDistributionCLM E F μ (f.postcompCLM L)) =
       toTemperedDistributionCLM E F μ ((∂_{m} f).postcompCLM L) := by
-  rw [lineDerivOp_toTemperedDistributionCLM_eq, TauCeti.lineDerivOp_postcompCLM]
+  rw [lineDerivOp_toTemperedDistributionCLM_eq, SchwartzMap.lineDerivOp_postcompCLM]
 
 /-- Iterated directional derivatives of the tempered distribution given by a Schwartz function are
 the tempered distributions of its iterated directional derivatives. -/
