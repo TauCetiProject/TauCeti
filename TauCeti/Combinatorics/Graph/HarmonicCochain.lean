@@ -17,13 +17,14 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 Fix a multigraph `G` and choose, for every actual edge, a tail and a head among the actual
 vertices. A one-cochain is a function on the actual edges; its value on the reverse flag of an
-edge is understood to be the negative value, also for a loop. The *edge differential* of a vertex
+edge is understood to be the negative value. The *edge differential* of a vertex
 function `f` is the cochain `e ↦ f (tail e) - f (head e)`. Given positive rational edge lengths
 `ℓ`, the *weighted divergence* of a cochain `c` with coefficients in a field of characteristic
 zero is the vertex function whose value at `v` is the sum of `c e / ℓ e` over the edges with
-tail `v` minus the same sum over the edges with head `v`. A loop contributes both terms, which
-cancel. A cochain is *harmonic* when its divergence vanishes and *exact* when it is an edge
-differential.
+tail `v` minus the same sum over the edges with head `v`. An edge whose chosen tail and head
+coincide contributes both terms, which cancel; this is the case for loops when the endpoint maps
+come from a `Graph.Orientation`. A cochain is *harmonic* when its divergence vanishes and *exact*
+when it is an edge differential.
 
 The edge pairing `(c, d)_ℓ = ∑ₑ c e * d e / ℓ e` makes the differential and the divergence
 adjoint, so the harmonic cochains are exactly the cochains orthogonal to the exact ones. The main
@@ -83,7 +84,7 @@ variable {M : Type*} [AddCommGroup M]
 
 /-- The edge differential of a vertex function `f`: its value on an actual edge is the value of
 `f` at the chosen tail minus its value at the chosen head. The reverse flag of the edge carries
-the negative value; on a loop the differential vanishes. -/
+the negative value; on an edge whose chosen tail and head coincide the differential vanishes. -/
 def edgeDifferential (f : G.vertexSet → M) : G.edgeSet → M :=
   fun e ↦ f (tail e) - f (head e)
 
@@ -171,8 +172,8 @@ variable {k : Type*} [Field k] [Fintype G.edgeSet]
   (length : G.edgeSet → {q : ℚ // 0 < q})
 
 /-- The weighted divergence of a cochain `c` at a vertex `v`: the sum of `c e / ℓ e` over the
-actual edges with tail `v`, minus the same sum over the actual edges with head `v`. A loop at `v`
-contributes both terms, which cancel. -/
+actual edges with tail `v`, minus the same sum over the actual edges with head `v`. An edge whose
+chosen tail and head are both `v` contributes both terms, which cancel. -/
 noncomputable def edgeDivergence (c : G.edgeSet → k) (v : G.vertexSet) : k := by
   classical
   exact ∑ e : G.edgeSet,
@@ -362,8 +363,7 @@ private theorem edgeDifferential_eq_zero_of_edgeDivergence_eq_zero_rat (f : G.ve
   exact he.resolve_right (by simpa using (length e).2.ne')
 
 /-- A harmonic exact cochain vanishes: if the weighted divergence of `d f` is zero, then
-`d f = 0`. Over a general field of characteristic zero this is reduced to the rationals by
-applying `ℚ`-linear functionals. -/
+`d f = 0`. -/
 theorem edgeDifferential_eq_zero_of_edgeDivergence_eq_zero (f : G.vertexSet → k)
     (h : ∀ v, G.edgeDivergence tail head length (G.edgeDifferential tail head f) v = 0) :
     G.edgeDifferential tail head f = 0 := by
