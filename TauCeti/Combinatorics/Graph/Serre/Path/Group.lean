@@ -164,7 +164,7 @@ instance : Group (PathGroup Γ v) where
 /-- Reversal-compatible dart weights extend to a homomorphism on reduced closed paths. -/
 def lift {G : Type*} [Group G] (wt : Γ.E → G)
     (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹) : PathGroup Γ v →* G where
-  toFun p := p.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1)
+  toFun p := p.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val)
   map_one' := by simp
   map_mul' p q := by
     rw [toPath_mul, ← (Path.homotopic_reduce Γ _).weight_eq Γ wt hwt]
@@ -172,12 +172,12 @@ def lift {G : Type*} [Group G] (wt : Γ.E → G)
 
 theorem lift_apply {G : Type*} [Group G] (wt : Γ.E → G)
     (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹) (p : PathGroup Γ v) :
-    lift wt hwt p = p.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := (rfl)
+    lift wt hwt p = p.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := (rfl)
 
 /-- The weight of a closed path can be computed before reducing it. -/
 @[simp] theorem lift_ofPath {G : Type*} [Group G] (wt : Γ.E → G)
     (hwt : ∀ e, wt (Γ.rev e) = (wt e)⁻¹) (p : Γ.Path v v) :
-    lift wt hwt (ofPath p) = p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := by
+    lift wt hwt (ofPath p) = p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := by
   rw [lift_apply, toPath_ofPath]
   exact ((Path.homotopic_reduce Γ p).weight_eq Γ wt hwt).symm
 

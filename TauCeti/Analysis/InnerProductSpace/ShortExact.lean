@@ -247,13 +247,14 @@ An algebraically short exact sequence `0 → E --f--> H --g--> F → 0` of bound
 noncomputable def orthogonalShortExactEquiv : (E × F) ≃L[𝕜] H :=
   let ρ := f.orthogonalLeftInverse hf hfg.isClosed_range
   let σ := g.orthogonalRightInverse hg
-  ContinuousLinearEquiv.equivOfInverse (f.coprod σ) (ρ.prod g)
-    (fun ⟨x, z⟩ ↦ Prod.ext
+  ContinuousLinearEquiv.ofContinuousLinearMap (f.coprod σ) (ρ.prod g)
+    (ContinuousLinearMap.ext fun y ↦ by
+      have hy := DFunLike.congr_fun
+        (comp_orthogonalLeftInverse_add_orthogonalRightInverse_comp hf hfg hg) y
+      simpa only [ρ, σ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coprod_apply,
+        ContinuousLinearMap.prod_apply, add_apply, ContinuousLinearMap.id_apply] using hy)
+    (ContinuousLinearMap.ext fun ⟨x, z⟩ ↦ Prod.ext
       (by simp [ρ, σ, hfg]) (by simp [σ, hfg.apply_apply_eq_zero x]))
-    (fun y ↦ by
-      simpa only [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.prod_apply,
-        ← ContinuousLinearMap.comp_apply, ← add_apply, ContinuousLinearMap.id_apply] using
-        DFunLike.congr_fun (comp_orthogonalLeftInverse_add_orthogonalRightInverse_comp hf hfg hg) y)
 
 @[simp] theorem orthogonalShortExactEquiv_apply (xz : E × F) :
     orthogonalShortExactEquiv hf hfg hg xz = f xz.1 + g.orthogonalRightInverse hg xz.2 := (rfl)

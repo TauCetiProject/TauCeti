@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TemperateGrowth
+public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # Pullback of tempered distributions along a change of variables
@@ -29,12 +31,23 @@ point mass at `x` (`compCLM_delta`).
 
 The pullback is contravariantly functorial, `(χ ∘ φ)^* = φ^* ∘ χ^*` (`compCLM_trans`), so pulling
 back along `φ⁻¹` inverts it (`compCLM_symm_compCLM`, `compCLM_compCLM_symm`). It turns
-multiplication by `g` into multiplication by `g ∘ φ` (`compCLM_smulLeftCLM`).
+multiplication by `g` into multiplication by `g ∘ φ` (`compCLM_smulLeftCLM`). It satisfies the
+chain rule: if `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
+`∂_v (φ^* T) = ∑ᵢ cᵢ φ^* (∂_{bᵢ} T)` (`lineDerivOp_compCLM`), and conversely
+`φ^* (∂_v T) = ∑ᵢ (dᵢ ∘ φ) ∂_{bᵢ} (φ^* T)` for the coordinates `dᵢ` of `Dφ⁻¹ v`
+(`compCLM_lineDerivOp`).
 
-This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s`,
-which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`. It needs no bound on the
-derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of `ℝ²` and its inverse are
-polynomial, with unbounded derivatives, and they pull back tempered distributions.
+If `φ` pushes `μ` forward to at most a finite multiple of `μ`, the pullback of the distribution of
+`u ∈ Lᵖ(μ)` is that of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`
+(`compCLM_toTemperedDistribution_eq_compOfMapLeSmul`). If the Jacobian of `φ` is bounded below,
+`c ≤ |det Dφ|` with `c > 0`, the pullback maps every `Lᵖ` space to itself, with norm at most
+`c^{-1/p}` (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
+
+This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s` and
+Besov spaces `B^s_{p, q}`, which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`.
+It needs no bound on the derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of
+`ℝ²` and its inverse are polynomial, with unbounded derivatives, and they pull back tempered
+distributions.
 
 ## References
 
@@ -44,7 +57,7 @@ polynomial, with unbounded derivatives, and they pull back tempered distribution
 public noncomputable section
 
 open MeasureTheory
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv
 
 namespace TemperedDistribution
 
@@ -117,6 +130,32 @@ theorem compCLM_smulLeftCLM (hφ : (φ : E → E).HasTemperateGrowth)
   ext f
   simp [SchwartzMap.pushforwardCLM_smulLeftCLM ℂ hφ hψ hg]
 
+variable {ι : Type*} [Fintype ι]
+
+/-- **The chain rule for the pullback.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
+`∂_v (φ^* T) = ∑ᵢ cᵢ φ^* (∂_{bᵢ} T)`. -/
+theorem lineDerivOp_compCLM (b : Module.Basis ι ℝ E) (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (T : 𝓢'(E, F)) (v : E) :
+    ∂_{v} (compCLM F φ hφ hψ T) = ∑ i, smulLeftCLM F (fun x ↦ ((b.repr (fderiv ℝ φ x v) i : ℝ) : ℂ))
+      (compCLM F φ hφ hψ (∂_{b i} T)) := by
+  ext g
+  simp [SchwartzMap.pushforwardCLM_lineDerivOp ℂ b hφ hψ g v, map_sum]
+
+/-- **The pullback of a derivative.** If `Dφ⁻¹(φ x) v = ∑ᵢ dᵢ(x) bᵢ` in a basis `b`, then
+`φ^* (∂_v T) = ∑ᵢ dᵢ ∂_{bᵢ} (φ^* T)`. This is the chain rule `lineDerivOp_compCLM` for `φ⁻¹`,
+pulled back along `φ`. -/
+theorem compCLM_lineDerivOp (b : Module.Basis ι ℝ E) (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (T : 𝓢'(E, F)) (v : E) :
+    compCLM F φ hφ hψ (∂_{v} T) = ∑ i,
+      smulLeftCLM F (fun x ↦ ((b.repr (fderiv ℝ φ.symm (φ x) v) i : ℝ) : ℂ))
+        (∂_{b i} (compCLM F φ hφ hψ T)) := by
+  conv_lhs => rw [← compCLM_symm_compCLM hφ hψ hφ T]
+  rw [lineDerivOp_compCLM b hψ hφ, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hc : (fun x ↦ ((b.repr (fderiv ℝ φ.symm x v) i : ℝ) : ℂ)).HasTemperateGrowth :=
+    hψ.basis_repr_fderiv_apply b v i
+  rw [compCLM_smulLeftCLM hφ hψ hc, compCLM_compCLM_symm, Function.comp_def]
+
 end TVS
 
 section Normed
@@ -145,6 +184,51 @@ theorem compCLM_toTemperedDistribution (hφ : (φ : E → E).HasTemperateGrowth)
   ext f
   simp only [compCLM_apply_apply, Function.HasTemperateGrowth.toTemperedDistribution_apply,
     SchwartzMap.integral_pushforwardCLM_smul, Function.comp_apply]
+
+open scoped ENNReal in
+/-- If `φ` pushes `μ` forward to at most `C • μ` with `C < ∞`, pulling back the distribution of
+`u ∈ Lᵖ(μ)` along `φ` gives the distribution of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`, for
+every `1 ≤ p ≤ ∞`. -/
+theorem compCLM_toTemperedDistribution_eq_compOfMapLeSmul [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {C : ℝ≥0∞} (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (hC : C ≠ ∞) (hmap : μ.map φ ≤ C • μ)
+    (u : Lp F p μ) :
+    compCLM F φ hφ hψ (u : 𝓢'(E, F)) =
+      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.aemeasurable hC hmap u : 𝓢'(E, F)) := by
+  ext f
+  rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
+    SchwartzMap.integral_pushforwardCLM_smul]
+  refine integral_congr_ae
+    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable hC hmap u).mono fun x hx ↦ ?_)
+  dsimp only
+  rw [hx, Function.comp_apply]
+
+open scoped ENNReal in
+/-- **The pullback on `Lᵖ`.** If `c ≤ |det Dφ|` everywhere, with `c > 0`, the pullback of the
+distribution of `f ∈ Lᵖ(μ)` is the distribution of `f ∘ φ ∈ Lᵖ(μ)`, of norm at most
+`c^{-1/p} ‖f‖_p`. -/
+theorem exists_compCLM_toTemperedDistribution_eq_and_norm_le [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    {c : ℝ} (hc : 0 < c) (hdet : ∀ x, c ≤ |(fderiv ℝ φ x).det|) (f : Lp F p μ) :
+    ∃ v : Lp F p μ, compCLM F φ hφ hψ (f : 𝓢'(E, F)) = v ∧ v =ᵐ[μ] f ∘ φ ∧
+      ‖v‖ ≤ c⁻¹ ^ p.toReal⁻¹ * ‖f‖ := by
+  have hdiff : DifferentiableOn ℝ φ Set.univ := (hφ.1.differentiable (by simp)).differentiableOn
+  have hle := eLpNorm_comp_restrict_le (μ := μ) (p := p) isOpen_univ hdiff φ.injective.injOn
+    subset_rfl MeasurableSet.univ hc (fun x _ ↦ hdet x) f
+  have hmem := (Lp.memLp f).restrict (φ '' Set.univ) |>.comp_restrict_of_le_abs_det
+    isOpen_univ hdiff φ.injective.injOn subset_rfl MeasurableSet.univ hc (fun x _ ↦ hdet x)
+  rw [Set.image_univ_of_surjective φ.surjective, Measure.restrict_univ] at hle
+  rw [Measure.restrict_univ] at hmem
+  refine ⟨hmem.toLp _, ?_, hmem.coeFn_toLp, ?_⟩
+  · ext g
+    rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
+      SchwartzMap.integral_pushforwardCLM_smul ℂ μ hφ hψ g f]
+    exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
+  · rw [Lp.norm_toLp, Lp.norm_def]
+    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
+      ENNReal.toReal_nonneg (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne'))
+        (Lp.eLpNorm_ne_top f)) hle).trans_eq ?_
+    simp [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, hc.le]
 
 end Normed
 

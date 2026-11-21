@@ -164,7 +164,7 @@ theorem mem_complexProjectiveIncidence_iff_projectiveIncidenceChartEquations_eq_
       projectiveIncidenceChartEquations i (Projectivization.affineChart i L) c = 0 := by
   rw [mem_complexProjectiveIncidence,
     mem_complexProjectiveZeroLocus_iff_eval_affineChart
-      (fun k ↦ (mem_homogeneousSubmodule _ _).mp (c k).2) hi]
+      (fun k ↦ (mem_homogeneousSubmodule _ _).mp (c k).property) hi]
   simp only [_root_.funext_iff, projectiveIncidenceChartEquations_apply, Pi.zero_apply]
 
 /-- At an incidence point, projection of the kernel of the joint chart linearization onto the
@@ -186,7 +186,7 @@ theorem surjective_parameterProj_projectiveIncidenceChartEquations_iff [Finite �
   rw [ContinuousLinearMap.parameterProj_surjective_iff _ _ htotal]
   simpa only [projectiveIncidenceChartEquations_apply] using
     surjective_fderiv_eval_dehomogenize_affineChart_iff i
-      (fun k ↦ (mem_homogeneousSubmodule _ _).mp (c k).2)
+      (fun k ↦ (mem_homogeneousSubmodule _ _).mp (c k).property)
       (mem_complexProjectiveIncidence.mp hL) hi
 
 end Complex

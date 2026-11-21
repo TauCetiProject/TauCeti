@@ -18,9 +18,9 @@ In an algebraically exact diagram `(T₁, T₂, T₃)` of continuous linear maps
 `0 → F₁ --g₁--> F₂ --g₂--> F₃`, where `E₂, E₃, F₁, F₂` are Banach spaces and `F₃` is a `T₁`
 topological module, the Banach open mapping theorem makes `f₂` an open quotient map and `g₁`
 (whose range equals the closed kernel of `g₂` because `F₃` is `T₁`) a topological embedding.
-Consequently `TauCeti.snakeδ` is automatically continuous (`TauCeti.continuous_snakeδ`, bundled as
-`TauCeti.banachSnakeδL`), with no splitting or Hilbert-space assumptions; in particular, Hilbert
-short exact diagrams over `RCLike` fields are covered directly by typeclass inference.
+Consequently `Function.Exact.snakeδ` is automatically continuous (`TauCeti.continuous_snakeδ`,
+bundled as `TauCeti.banachSnakeδL`), with no splitting or Hilbert-space assumptions; in particular,
+Hilbert short exact diagrams over `RCLike` fields are covered directly by typeclass inference.
 
 ## References
 
@@ -31,6 +31,8 @@ short exact diagrams over `RCLike` fields are covered directly by typeclass infe
 public section
 
 namespace TauCeti
+
+open ContinuousLinearMap (toLinearMap_comp_eq)
 
 universe u u₁ u₂ u₃ v₁ v₂ v₃
 
@@ -61,20 +63,19 @@ noncomputable def banachSnakeδL : T₃.ker →L[𝕜] F₁ ⧸ T₁.range :=
 
 @[simp, norm_cast] theorem toLinearMap_banachSnakeδL :
     (banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃).toLinearMap =
-      snakeδ hf hf₂ hg hg₁ (congrArg ContinuousLinearMap.toLinearMap h₁₂)
-        (congrArg ContinuousLinearMap.toLinearMap h₂₃) := by simp [banachSnakeδL]
+      hf.snakeδ hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃) := by
+  simp [banachSnakeδL]
 
 @[simp] theorem coe_banachSnakeδL :
     ⇑(banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃) =
-      snakeδ hf hf₂ hg hg₁ (congrArg ContinuousLinearMap.toLinearMap h₁₂)
-        (congrArg ContinuousLinearMap.toLinearMap h₂₃) := by simp [banachSnakeδL]
+      hf.snakeδ hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃) := by
+  simp [banachSnakeδL]
 
 /-- In an algebraically exact diagram where `E₂, E₃, F₁, F₂` are Banach spaces over a
 `NontriviallyNormedField` and `F₃` is a `T₁` space, the algebraic snake connecting map
-`TauCeti.snakeδ` is automatically continuous. -/
+`Function.Exact.snakeδ` is automatically continuous. -/
 theorem continuous_snakeδ :
-    Continuous (snakeδ hf hf₂ hg hg₁ (congrArg ContinuousLinearMap.toLinearMap h₁₂)
-      (congrArg ContinuousLinearMap.toLinearMap h₂₃)) :=
+    Continuous (hf.snakeδ hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)) :=
   coe_banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃ ▸ (banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃).continuous
 
 /-- Diagram-chase formula for `TauCeti.banachSnakeδL`: if `f₂ x₂ = x₃` and `g₁ y₁ = T₂ x₂`, then
@@ -82,7 +83,9 @@ theorem continuous_snakeδ :
 theorem banachSnakeδL_eq (x₃ : T₃.ker) (x₂ : E₂) (y₁ : F₁)
     (hx₂ : f₂ x₂ = x₃) (hy₁ : g₁ y₁ = T₂ x₂) :
     banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃ x₃ = Submodule.Quotient.mk y₁ := by
-  simpa only [coe_banachSnakeδL] using snakeδ_eq hf hf₂ hg hg₁ _ _ x₃ x₂ y₁ hx₂ hy₁
+  simpa only [coe_banachSnakeδL] using
+    hf.snakeδ_apply hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
+      x₃ x₂ hx₂ y₁ hy₁
 
 /-- When continuous linear splittings `(σ, ρ)` also exist, `TauCeti.banachSnakeδL` agrees with
 `TauCeti.snakeδL`. -/
@@ -95,11 +98,13 @@ theorem banachSnakeδL_eq_snakeδL
 /-- Exactness of `TauCeti.banachSnakeδL` at `ker T₃`. -/
 theorem exact_kerMapL_banachSnakeδL :
     Function.Exact (kerMapL h₂₃) (banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃) := by
-  simpa only [coe_kerMapL, coe_banachSnakeδL] using exact_kerMap_snakeδ hf hf₂ hg hg₁ _ _
+  simpa only [coe_kerMapL, coe_banachSnakeδL] using
+    hf.restrict_ker_snakeδ hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
 /-- Exactness of `TauCeti.banachSnakeδL` at `F₁ ⧸ range T₁`. -/
 theorem exact_banachSnakeδL_cokerMapL :
     Function.Exact (banachSnakeδL hf hf₂ hg hg₁ h₁₂ h₂₃) (cokerMapL h₁₂) := by
-  simpa only [coe_banachSnakeδL, coe_cokerMapL] using exact_snakeδ_cokerMap hf hf₂ hg hg₁ _ _
+  simpa only [coe_banachSnakeδL, coe_cokerMapL] using
+    hf.snakeδ_mapQ_range hg hf₂ hg₁ (toLinearMap_comp_eq h₁₂) (toLinearMap_comp_eq h₂₃)
 
 end TauCeti
