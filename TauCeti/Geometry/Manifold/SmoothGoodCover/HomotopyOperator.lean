@@ -83,6 +83,12 @@ theorem homotopyOperator_def (θ : RoughForm I ↥(s.inf C.openSet) F (k + 1)) :
       TauCeti.homotopyOperator (mpullback (I.prod (𝓡∂ 1)) I (C.cylinderContract s hs hW) θ) :=
   (rfl)
 
+/-- The homotopy operator of a smooth good cover maps the zero form to zero. -/
+@[simp]
+theorem homotopyOperator_zero :
+    C.homotopyOperator s hs hW (0 : RoughForm I ↥(s.inf C.openSet) F (k + 1)) = 0 := by
+  rw [homotopyOperator_def, mpullback_zero, TauCeti.homotopyOperator_zero]
+
 /-- The homotopy operator of a smooth good cover preserves `C^r` regularity of forms. -/
 theorem isSmoothForm_homotopyOperator {r : ℕ∞} [IsManifold I 1 M] [IsManifold I (r + 1) M]
     {θ : RoughForm I ↥(s.inf C.openSet) F (k + 1)} (hθ : IsSmoothForm I r θ) :
@@ -111,8 +117,8 @@ theorem mextDeriv_homotopyOperator [IsManifold I 2 M] [CompleteSpace F]
     {θ : RoughForm I ↥(s.inf C.openSet) F (k + 1)} (hθ : IsSmoothForm I 1 θ)
     (hclosed : mextDeriv θ = 0) :
     mextDeriv (C.homotopyOperator s hs hW θ) = θ := by
-  simpa [hclosed, homotopyOperator_def] using
-    C.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv s hs hW hθ
+  have h := C.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv s hs hW hθ
+  rwa [hclosed, homotopyOperator_zero, add_zero] at h
 
 end SmoothGoodCover
 
