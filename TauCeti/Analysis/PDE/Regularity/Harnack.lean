@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Crossover
 public import TauCeti.Analysis.PDE.Regularity.ReverseHolder
-public import TauCeti.Analysis.PDE.Regularity.Supersolution.Lp
 import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
 import TauCeti.Analysis.PDE.Regularity.Supersolution.LowerOrder
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
 # Moser's weak Harnack inequality and the Harnack inequality
@@ -184,14 +184,6 @@ private theorem ae_ae_le_mul_of_setAverage_le {f : EuclideanSpace ℝ ι → ℝ
     _ = D * V * C₁ * f x := by
         rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
         field_simp
-
-/-- **The limit `δ → 0`.** If `g ≤ C (f + δ)` almost everywhere for every `δ = 1/(k + 1)`, then
-`g ≤ C f` almost everywhere. -/
-private theorem ae_le_mul_of_forall_ae_le_mul_add_one_div {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f g : α → ℝ} {C : ℝ}
-    (h : ∀ k : ℕ, ∀ᵐ x ∂μ, g x ≤ C * (f x + 1 / ((k : ℝ) + 1))) : ∀ᵐ x ∂μ, g x ≤ C * f x := by
-  filter_upwards [ae_all_iff.2 h] with x hx
-  simpa using ge_of_tendsto' ((tendsto_one_div_add_atTop_nhds_zero_nat.const_add _).const_mul C) hx
 
 /-! ### Lower-order terms -/
 
