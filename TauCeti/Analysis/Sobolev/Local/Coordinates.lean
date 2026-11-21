@@ -125,9 +125,9 @@ theorem memWkpLoc_succ_of_hasWeakFDerivOn (b : Module.Basis ι ℝ E) {ξ : E �
   have : CompleteSpace V := hD.completeSpace
   refine memWkpLoc_succ_iff.2 ⟨hξ, D, hD, ?_⟩
   have hR (c : E →L[ℝ] ℝ) (w : V) :
-      ContinuousLinearMap.smulRightL ℝ E V c w = c.smulRight w := rfl
+      ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V c w = c.smulRight w := rfl
   have hDeq : D = fun x => ∑ i,
-      ContinuousLinearMap.smulRightL ℝ E V (b.coord i).toContinuousLinearMap (D x (b i)) := by
+      ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V (b.coord i).toContinuousLinearMap (D x (b i)) := by
     ext x y
     simp only [hR, sum_apply,
       ContinuousLinearMap.smulRight_apply, LinearMap.coe_toContinuousLinearMap', b.coord_apply]
@@ -136,7 +136,7 @@ theorem memWkpLoc_succ_of_hasWeakFDerivOn (b : Module.Basis ι ℝ E) {ξ : E �
     simp only [map_smul]
   rw [hDeq]
   exact MemWkpLoc.sum Finset.univ fun i _ =>
-    (hb i).clm_comp (ContinuousLinearMap.smulRightL ℝ E V (b.coord i).toContinuousLinearMap)
+    (hb i).clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V (b.coord i).toContinuousLinearMap)
 
 /-- **Local Sobolev classes through directional components of a weak derivative.** For any finite
 basis `b` of `E`, `ξ ∈ W^{k+1,q}_loc(U)` iff `ξ ∈ L^q_loc(U)` and `ξ` has a weak derivative `D`

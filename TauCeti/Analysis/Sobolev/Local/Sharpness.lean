@@ -105,7 +105,7 @@ theorem memLpLoc_norm_rpow_iff [Nontrivial E] (hp0 : p ≠ 0) (hp : p ≠ ∞) (
 `p < Module.finrank ℝ E`. -/
 theorem memLpLoc_norm_inv (hp : p < Module.finrank ℝ E) :
     MemLpLoc p U (fun x : E => ‖x‖⁻¹) :=
-  memLpLoc_iff.2 fun _ _ hc => hc.memLp_norm_inv_restrict hp
+  memLpLoc_iff.2 fun _ _ hc => hc.isBounded.memLp_norm_inv_restrict hp
 
 /-- On a nontrivial space `E`, `x ↦ ‖x‖⁻¹` is not locally `Lᵖ` on any neighbourhood of the origin
 when `Module.finrank ℝ E ≤ p` (including `p = ∞`). -/

@@ -140,10 +140,10 @@ section RadialPower
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
 
-/-- For `-1 < α` and `0 < p < ∞`, if `-Module.finrank ℝ E < α * p.toReal`, then `x ↦ ‖x‖ ^ α • x`
+/-- For `-1 < α` and `p < ∞`, if `-Module.finrank ℝ E < α * p.toReal`, then `x ↦ ‖x‖ ^ α • x`
 belongs to `MemWkpLoc p U 1` on every subset `U` of `E`. -/
 theorem memWkpLoc_one_norm_rpow_smul [Nontrivial E] {p : ℝ≥0∞} {U : Set E} {α : ℝ}
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hα : -1 < α)
+    (hp : p ≠ ∞) (hα : -1 < α)
     (hs : -(Module.finrank ℝ E : ℝ) < α * p.toReal) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ α • x) := by
   have hnorm := memLpLoc_norm_rpow (E := E) (p := p) (U := U) hp hs
@@ -188,7 +188,7 @@ theorem memWkpLoc_one_norm_rpow_smul_iff [Nontrivial E] {p : ℝ≥0∞} {U : Se
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : E)) (hα : -1 < α) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ α • x) ↔ -(Module.finrank ℝ E : ℝ) < α * p.toReal :=
   ⟨fun h => not_le.1 fun hs => not_memWkpLoc_one_norm_rpow_smul hp0 hp hU hα hs h,
-    memWkpLoc_one_norm_rpow_smul hp0 hp hα⟩
+    memWkpLoc_one_norm_rpow_smul hp hα⟩
 
 end RadialPower
 

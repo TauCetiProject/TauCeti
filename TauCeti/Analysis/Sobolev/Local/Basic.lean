@@ -1000,7 +1000,7 @@ private theorem iteratedFDeriv_of_contDiffOn_aux {F' : Type (max u v)} [NormedAd
       (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
     have hgk : ContDiffOn ℝ k (fderiv ℝ g) (Opens.interior U) :=
       hg.fderiv_of_isOpen isOpen_interior (by push_cast; rfl)
-    have h := ih hDk hU hgk (Filter.EventuallyEq.refl _ _)
+    have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
     have heq : iteratedFDeriv ℝ (k + 1) g =
         fun x => (continuousMultilinearCurryRightEquiv' ℝ k E F').symm
           (iteratedFDeriv ℝ k (fderiv ℝ g) x) := by

@@ -98,23 +98,23 @@ theorem not_aestronglyMeasurable_lp_single {α : Type*} [DecidableEq α] [Measur
     let δ : ℝ := 1 / ((n : ℝ) + 1)
     have hδ : 0 < δ := Nat.one_div_pos_of_nat
     have hnear : ∀ x : piece n, ∃ z : c,
-        dist (lp.single (E := G) p x.1 (a x.1)) z.1 < δ / 2 := fun x => by
-      obtain ⟨z, hzc, hxz⟩ := Metric.mem_closure_iff.1 (htc x.2.1.2) (δ / 2) (half_pos hδ)
+        dist (lp.single (E := G) p x.val (a x.val)) z.val < δ / 2 := fun x => by
+      obtain ⟨z, hzc, hxz⟩ := Metric.mem_closure_iff.1 (htc x.property.1.2) (δ / 2) (half_pos hδ)
       exact ⟨⟨z, hzc⟩, hxz⟩
     choose f hf using hnear
     have hfinj : Function.Injective f := by
       intro x y hxy
       by_contra hne
-      have hsep : δ ≤ dist (lp.single (E := G) p x.1 (a x.1))
-          (lp.single (E := G) p y.1 (a y.1)) :=
-        x.2.2.trans (lp.norm_le_dist_single (Subtype.coe_ne_coe.2 hne) (a x.1) (a y.1))
-      have hlt : dist (lp.single (E := G) p x.1 (a x.1))
-          (lp.single (E := G) p y.1 (a y.1)) < δ := by
-        calc dist (lp.single (E := G) p x.1 (a x.1)) (lp.single (E := G) p y.1 (a y.1))
-            ≤ dist (lp.single (E := G) p x.1 (a x.1)) (f x).1 +
-                dist (lp.single (E := G) p y.1 (a y.1)) (f x).1 := dist_triangle_right _ _ _
-          _ = dist (lp.single (E := G) p x.1 (a x.1)) (f x).1 +
-                dist (lp.single (E := G) p y.1 (a y.1)) (f y).1 := by rw [hxy]
+      have hsep : δ ≤ dist (lp.single (E := G) p x.val (a x.val))
+          (lp.single (E := G) p y.val (a y.val)) :=
+        x.property.2.trans (lp.norm_le_dist_single (Subtype.coe_ne_coe.2 hne) (a x.val) (a y.val))
+      have hlt : dist (lp.single (E := G) p x.val (a x.val))
+          (lp.single (E := G) p y.val (a y.val)) < δ := by
+        calc dist (lp.single (E := G) p x.val (a x.val)) (lp.single (E := G) p y.val (a y.val))
+            ≤ dist (lp.single (E := G) p x.val (a x.val)) (f x).val +
+                dist (lp.single (E := G) p y.val (a y.val)) (f x).val := dist_triangle_right _ _ _
+          _ = dist (lp.single (E := G) p x.val (a x.val)) (f x).val +
+                dist (lp.single (E := G) p y.val (a y.val)) (f y).val := by rw [hxy]
           _ < δ / 2 + δ / 2 := add_lt_add (hf x) (hf y)
           _ = δ := add_halves δ
       exact hsep.not_gt hlt

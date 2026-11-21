@@ -569,7 +569,7 @@ theorem aestronglyMeasurable_radialRpowDeriv (α : ℝ) :
     AEStronglyMeasurable (radialRpowDeriv (E := E) α) μ := by
   unfold radialRpowDeriv
   have hcont : Continuous (fun x : E => (innerSL ℝ x).smulRight x) :=
-    ((ContinuousLinearMap.smulRightL ℝ E E).continuous.comp (innerSL ℝ).continuous).clm_apply
+    ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E E).continuous.comp (innerSL ℝ).continuous).clm_apply
       continuous_id
   exact ((measurable_norm.pow_const α).aestronglyMeasurable.smul aestronglyMeasurable_const).add
     ((measurable_const.mul (measurable_norm.pow_const (α - 2))).aestronglyMeasurable.smul
