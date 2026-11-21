@@ -13,6 +13,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
@@ -23,13 +24,14 @@ import TauCeti.Topology.Homotopy.Contractible
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence compact, Hausdorff, second-countable, metrizable, contractible and locally path
-connected. Every monomorphism in `SimplexCategory` induces a closed embedding of topological
-simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of `Δⁿ` lies in
-the open interior (`SimplexCategory.toTopInterior`) of a unique face. The geometric realization
-`|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the topological simplex, is
-contractible as well. This file also names its initial vertex, and the continuous map on the
-topological `n`-simplex that underlies a singular `n`-simplex of a space.
+lift, hence compact, Hausdorff, second-countable, metrizable, contractible (in particular simply
+connected), and locally path connected. Every monomorphism in `SimplexCategory` induces a closed
+embedding of topological simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and
+every point of `Δⁿ` lies in the open interior (`SimplexCategory.toTopInterior`) of a unique face.
+The geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it,
+is contractible as well. This file also names its initial vertex, records how `SimplexCategory`
+monomorphisms and epimorphisms interact with interior points of `Convexity.StdSimplex`, and names
+the continuous map on the topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -39,6 +41,10 @@ topological `n`-simplex that underlies a singular `n`-simplex of a space.
   `SimplexCategory.toTopBoundary`: closed face embeddings and unique open-face decomposition.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
+* `SimplexCategory.exists_mono_stdSimplex_map_eq`, `SimplexCategory.eq_of_mono_stdSimplex_map_eq`,
+  `SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero`: unique face decomposition and
+  pushforward injectivity of interior points of `Convexity.StdSimplex` along `SimplexCategory`
+  morphisms.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
   behaviour under reindexing, pushforward and the lax monoidal structure of `TopCat.toSSet`, and
   the endpoints of the parametrization `SSet.stdSimplex.toSSetObjI` of the unit interval.
@@ -301,6 +307,56 @@ lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, toTop_map_toTopInitialVertex_down,
     toTop_map_toTopInitialVertex_down]
   rfl
+
+section StdSimplex
+
+variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
+
+/-- Every point of `StdSimplex R (Fin (n + 1))` comes from a face `[Mono ι]` at an interior point.
+-/
+lemma exists_mono_stdSimplex_map_eq {n : ℕ} (w : StdSimplex R (Fin (n + 1))) :
+    ∃ (k : ℕ) (ι : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono ι) (w₀ : StdSimplex R (Fin (k + 1))),
+      (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map ι :=
+  let ⟨k, f, w₀, hf, hw₀, hw⟩ := StdSimplex.exists_strictMono_map_eq w
+  ⟨k, Hom.mk ⟨f, hf.monotone⟩, mono_iff_injective.2 hf.injective, w₀, hw₀, hw⟩
+
+/-- Pushing an interior point forward along an epimorphism `π : ⦋k⦌ ⟶ ⦋r⦌` preserves nonzero
+weights. -/
+lemma weights_stdSimplex_map_ne_zero_of_epi {k r : ℕ} (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π]
+    {w₀ : StdSimplex R (Fin (k + 1))} (hw₀ : ∀ j, w₀.weights j ≠ 0) (j : Fin (r + 1)) :
+    (w₀.map π).weights j ≠ 0 :=
+  StdSimplex.weights_map_ne_zero_of_surjective (epi_iff_surjective.1 ‹_›) hw₀ j
+
+/-- Two monomorphisms `⦋k₁⦌ ⟶ ⦋n⦌` and `⦋k₂⦌ ⟶ ⦋n⦌` pushing interior points to the same point
+satisfy `k₁ = k₂`. -/
+lemma eq_dim_of_mono_stdSimplex_map_eq {n k₁ k₂ : ℕ} {ι₁ : ⦋k₁⦌ ⟶ ⦋n⦌} [Mono ι₁]
+    {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0) {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono ι₂]
+    {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) :
+    k₁ = k₂ :=
+  Nat.succ.inj (by
+    simpa using Fintype.card_congr
+      (StdSimplex.equivOfInjectiveMapEq (mono_iff_injective.1 ‹_›) hw₁
+        (mono_iff_injective.1 ‹_›) hw₂ h))
+
+/-- A monomorphism `⦋k⦌ ⟶ ⦋n⦌` pushing an interior point to a given point is uniquely determined
+together with the interior point. -/
+lemma eq_of_mono_stdSimplex_map_eq {n k : ℕ} {ι₁ ι₂ : ⦋k⦌ ⟶ ⦋n⦌} [Mono ι₁] [Mono ι₂]
+    {w₁ w₂ : StdSimplex R (Fin (k + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0)
+    (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) : ι₁ = ι₂ ∧ w₁ = w₂ := by
+  obtain ⟨hfn, rfl⟩ := StdSimplex.eq_of_strictMono_map_eq
+    (ι₁.toOrderHom.monotone.strictMono_of_injective (mono_iff_injective.1 ‹_›))
+    (ι₂.toOrderHom.monotone.strictMono_of_injective (mono_iff_injective.1 ‹_›)) hw₁ hw₂ h
+  exact ⟨by ext i : 3; exact congrFun hfn i, rfl⟩
+
+/-- Morphisms `⦋n⦌ ⟶ ⦋r⦌` are determined by the pushforward of any interior point. -/
+lemma eq_of_stdSimplex_map_eq_of_weights_ne_zero {n r : ℕ} {π₁ π₂ : ⦋n⦌ ⟶ ⦋r⦌}
+    {w : StdSimplex R (Fin (n + 1))} (hw : ∀ j, w.weights j ≠ 0) (h : w.map π₁ = w.map π₂) :
+    π₁ = π₂ := by
+  ext i : 3
+  exact congrFun (StdSimplex.eq_of_monotone_map_eq_of_weights_ne_zero
+    π₁.toOrderHom.monotone π₂.toOrderHom.monotone hw h) i
+
+end StdSimplex
 
 end SimplexCategory
 

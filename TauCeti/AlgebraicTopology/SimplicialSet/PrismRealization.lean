@@ -91,39 +91,36 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
       Function.Injective (objEquiv y) ∧ (∀ j, w'.weights j ≠ 0) ∧
       toTopObjMk x w = toTopObjMk y w' ∧
       StdSimplex.map (objEquiv x) w = StdSimplex.map (objEquiv y) w' := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  by_cases h0 : ∃ j, w.weights j = 0
-  · -- Pass to the face opposite a vertex with vanishing coordinate.
-    obtain ⟨j, hj⟩ := h0
-    obtain _ | n := n
-    · simp at hj
-    have hsupp : ↑w.weights.support ⊆ Set.range j.succAbove := by
-      intro i hi
-      exact Fin.exists_succAbove_eq (fun h ↦ by simp [h, hj] at hi)
-    obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
-    refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
-    · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
-      exact congrArg _ (StdSimplex.map_comap _ w hsupp).symm
-    · rw [← h₂]
-      conv_lhs => rw [← StdSimplex.map_comap Fin.succAbove_right_injective w hsupp]
-      rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
-  · push Not at h0
-    by_cases hi : Function.Injective (objEquiv x)
-    · exact ⟨n, x, w, hi, h0, rfl, rfl⟩
-    -- Pass to a degeneracy of the face opposite a repeated vertex.
-    obtain _ | n := n
-    · exact absurd (fun a b _ ↦ Fin.ext (by have := a.isLt; have := b.isLt; lia)) hi
-    obtain ⟨j, hj⟩ : ∃ j : Fin (n + 1), objEquiv x j.castSucc = objEquiv x j.succ := by
-      have h : ¬ StrictMono (objEquiv x) := fun h ↦ hi h.injective
+  -- First strip zero weights once via `StdSimplex.exists_strictMono_map_eq`.
+  obtain ⟨k, f, w₀, hf, hw₀, rfl⟩ := StdSimplex.exists_strictMono_map_eq w
+  let θ : ⦋k⦌ ⟶ ⦋n⦌ := SimplexCategory.Hom.mk ⟨f, hf.monotone⟩
+  have htop : toTopObjMk x (w₀.map f) = toTopObjMk ((Δ[p] ⊗ Δ[q]).map θ.op x) w₀ :=
+    (toTopObjMk_map θ x w₀).symm
+  have hmap : StdSimplex.map (objEquiv x) (w₀.map f) =
+      StdSimplex.map (objEquiv ((Δ[p] ⊗ Δ[q]).map θ.op x)) w₀ := by
+    rw [StdSimplex.map_map]
+    exact congrArg (w₀.map ·) (funext fun j ↦ (objEquiv_map_apply x θ j).symm)
+  rw [htop, hmap]
+  generalize (Δ[p] ⊗ Δ[q]).map θ.op x = x₀
+  clear f hf θ htop hmap
+  induction k with
+  | zero =>
+    exact ⟨0, x₀, w₀, fun a b _ ↦ Fin.ext (by have := a.isLt; have := b.isLt; lia), hw₀, rfl, rfl⟩
+  | succ k ih =>
+    by_cases hi : Function.Injective (objEquiv x₀)
+    · exact ⟨k + 1, x₀, w₀, hi, hw₀, rfl, rfl⟩
+    -- Pass to a degeneracy of the face opposite a repeated vertex, preserving nonzero weights.
+    obtain ⟨j, hj⟩ : ∃ j : Fin (k + 1), objEquiv x₀ j.castSucc = objEquiv x₀ j.succ := by
+      have h : ¬ StrictMono (objEquiv x₀) := fun h ↦ hi h.injective
       rw [Fin.strictMono_iff_lt_succ] at h
       push Not at h
       obtain ⟨j, hj⟩ := h
-      exact ⟨j, ((objEquiv x).monotone (Fin.castSucc_le_succ j)).eq_of_not_lt hj⟩
-    have hx := (σ_δ_succ_of_eq x j hj).symm
+      exact ⟨j, ((objEquiv x₀).monotone (Fin.castSucc_le_succ j)).eq_of_not_lt hj⟩
+    have hx := (σ_δ_succ_of_eq x₀ j hj).symm
     obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j.succ x) (StdSimplex.map j.predAbove w)
+      ih (StdSimplex.map j.predAbove w₀)
+        (StdSimplex.weights_map_ne_zero_of_surjective (Fin.predAbove_surjective j) hw₀)
+        ((Δ[p] ⊗ Δ[q]).δ j.succ x₀)
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
     · rw [← h₁]
       conv_lhs => rw [hx]
@@ -142,34 +139,17 @@ private lemma toTopObjMk_eq_of_injective {r r' : ℕ} {y : (Δ[p] ⊗ Δ[q] : SS
     (hw' : ∀ j, w'.weights j ≠ 0)
     (h : StdSimplex.map (objEquiv y) w = StdSimplex.map (objEquiv y') w') :
     toTopObjMk y w = toTopObjMk y' w' := by
-  classical
-  have hsupp {r : ℕ} (w : StdSimplex ℝ (Fin (r + 1))) (hw : ∀ j, w.weights j ≠ 0) :
-      w.weights.support = Finset.univ :=
-    Finset.eq_univ_iff_forall.2 fun j ↦ by simpa using hw j
-  have himage : Finset.univ.image (objEquiv y) = Finset.univ.image (objEquiv y') := by
-    have := congrArg (fun w ↦ w.weights.support) h
-    simpa only [StdSimplex.weights_map, Finsupp.mapDomain_support_of_injective hy,
-      Finsupp.mapDomain_support_of_injective hy', hsupp w hw, hsupp w' hw'] using this
-  obtain rfl : r = r' := by
-    simpa [Finset.card_image_of_injective _ hy, Finset.card_image_of_injective _ hy'] using
-      congrArg Finset.card himage
+  obtain rfl : r = r' := Nat.succ.inj (by
+    simpa using Fintype.card_congr (StdSimplex.equivOfInjectiveMapEq hy hw hy' hw' h))
   have hmono {y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋r⦌} (hy : Function.Injective (objEquiv y)) :
       StrictMono (toLex ∘ objEquiv y) :=
     (Prod.Lex.toLex_mono.comp (objEquiv y).monotone).strictMono_of_injective
       (toLex.injective.comp hy)
-  have hrange : Set.range (toLex ∘ objEquiv y) = Set.range (toLex ∘ objEquiv y') := by
-    have : Set.range (objEquiv y) = Set.range (objEquiv y') := by
-      rw [← Set.image_univ, ← Set.image_univ, ← Finset.coe_univ, ← Finset.coe_image,
-        ← Finset.coe_image, himage]
-    rw [Set.range_comp, Set.range_comp, this]
-  obtain rfl : y = y' := by
-    apply objEquiv.injective
-    refine OrderHom.ext _ _ (funext fun k ↦ ?_)
-    exact toLex.injective
-      (congrFun ((StrictMono.range_inj_of_wellFoundedLT (hmono hy) (hmono hy')).1 hrange) k)
-  obtain rfl : w = w' := by
-    rw [← StdSimplex.weights_inj, StdSimplex.weights_map, StdSimplex.weights_map] at h
-    exact (StdSimplex.weights_inj).1 (Finsupp.mapDomain_injective hy h)
+  have hlex : w.map (toLex ∘ objEquiv y) = w'.map (toLex ∘ objEquiv y') := by
+    rw [StdSimplex.map_comp, StdSimplex.map_comp, h]
+  obtain ⟨hfn, rfl⟩ := StdSimplex.eq_of_strictMono_map_eq (hmono hy) (hmono hy') hw hw' hlex
+  obtain rfl : y = y' := objEquiv.injective <|
+    OrderHom.ext _ _ (funext fun k ↦ toLex.injective (congrFun hfn k))
   rfl
 
 /-- A point of the geometric realization of `Δ[p] ⊗ Δ[q]` is determined by the distribution of its

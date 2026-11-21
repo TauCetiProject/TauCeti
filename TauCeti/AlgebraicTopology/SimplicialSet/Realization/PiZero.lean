@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 public import Mathlib.Topology.Homotopy.TopCat.ZerothHomotopy
-public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
-public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
 /-!
@@ -53,19 +51,6 @@ end TauCeti.TopCat
 
 namespace SSet
 
-/-- The point of the geometric realization `|X|` given by a vertex `x` of `X`: the singular vertex
-`(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
-noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
-  TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
-
-/-- The realization of a map sends the point of a vertex to the point of its image. -/
-@[simp]
-lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
-    toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
-  dsimp at h
-  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
-
 /-- The singular simplicial set of a weak homotopy equivalence is bijective on connected
 components, these being the path components of the spaces. -/
 lemma bijective_mapπ₀_toSSet_map {T T' : TopCat.{u}} (g : T ⟶ T')
@@ -96,17 +81,11 @@ variable (X : SSet.{u})
 /-- The continuous map from `|X|` to the discrete space `π₀ X` adjoint to the map from `X` to the
 discrete simplicial set on `π₀ X`. -/
 private noncomputable def toTopToπ₀ : |X| ⟶ TopCat.discrete.obj (π₀ X) :=
-  (sSetTopAdj.homEquiv X _).symm (X.toπ₀ ≫
-    (constHomEquiv (π₀ X)).symm fun c ↦ TopCat.toSSetObj₀Equiv.symm c)
+  toTop.map X.toπ₀ ≫ (toTopConstIso (π₀ X)).hom
 
 private lemma toTopToπ₀_toTopPoint (x : X _⦋0⦌) : toTopToπ₀ X (toTopPoint x) = π₀.mk x := by
-  have h := ConcreteCategory.congr_hom
-    (NatTrans.congr_app (sSetTopAdj.homEquiv_unit X _ (toTopToπ₀ X)) (Opposite.op ⦋0⦌)) x
-  rw [toTopToπ₀, Equiv.apply_symm_apply] at h
-  dsimp at h
-  rw [toπ₀_app_zero, constHomEquiv_symm_app_zero] at h
-  rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
-  exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
+  rw [toTopToπ₀, ConcreteCategory.comp_apply, toTop_map_toTopPoint, toπ₀_app_zero,
+    toTopConstIso_hom_toTopPoint]
 
 /-- The unit `X ⟶ Sing |X|` is injective on connected components: a path in `|X|` between the
 points of two vertices stays in one connected component of `X`. -/
@@ -122,31 +101,19 @@ lemma injective_mapπ₀_unit : Function.Injective (mapπ₀ (sSetTopAdj.unit.ap
       (TopCat.zerothHomotopyEquiv.symm z)
   refine Function.LeftInverse.injective (g := r) fun c ↦ ?_
   induction c using π₀.rec with | mk x => ?_
-  simp only [r, mapπ₀_mk, TopCat.zerothHomotopyEquiv_symm_mk]
+  simp only [r, mapπ₀_mk, TopCat.zerothHomotopyEquiv_symm_mk, ← toTopPoint_def]
   exact toTopToπ₀_toTopPoint X x
 
-/-- The unit `X ⟶ Sing |X|` is surjective on connected components: every point of `|X|` lies in
-the realization of a simplex of `X`, which is path connected. -/
+/-- The unit `X ⟶ Sing |X|` is surjective on connected components: every point of `|X|` can be
+joined by a path to the realization of a vertex of `X`. -/
 lemma surjective_mapπ₀_unit : Function.Surjective (mapπ₀ (sSetTopAdj.unit.app X)) := by
   intro z
   induction z using π₀.rec with | mk p => ?_
-  -- The point of `p` comes from the realization of some simplex `j.hom : Δ[n] ⟶ X`.
-  obtain ⟨j, y, hy⟩ := Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves (toTop ⋙ forget TopCat) (denseAtUliftYoneda X))
-    (TopCat.toSSetObj₀Equiv p)
-  dsimp at y hy
-  rw [Category.id_comp] at hy
-  have : PathConnectedSpace |uliftYoneda.{u}.obj j.left| :=
-    inferInstanceAs (PathConnectedSpace |stdSimplex.{u}.obj j.left|)
-  let v : (uliftYoneda.{u}.obj j.left) _⦋0⦌ := ULift.up (SimplexCategory.const _ _ 0)
-  refine ⟨π₀.mk (j.hom.app _ v), ?_⟩
+  obtain ⟨x, hx⟩ := exists_joined_toTopPoint (TopCat.toSSetObj₀Equiv p)
+  refine ⟨π₀.mk x, ?_⟩
   rw [mapπ₀_mk, TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk,
-    TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk, ← hy]
-  -- The singular vertex of the unit at a vertex is, by definition, the point of that vertex.
-  change TopCat.zerothHomotopyEquiv (.mk (toTopPoint (j.hom.app _ v))) = _
-  rw [← toTop_map_toTopPoint]
-  exact congrArg _ (ZerothHomotopy.sound (((PathConnectedSpace.joined (toTopPoint v) y).map
-    (toTop.map j.hom).hom.continuous).somePath))
+    TauCeti.TopCat.π₀_mk_eq_zerothHomotopyEquiv_mk, ← toTopPoint_def]
+  exact congrArg _ (ZerothHomotopy.sound hx.somePath)
 
 /-- The unit `X ⟶ Sing |X|` of the realization–singular adjunction is bijective on connected
 components. -/
@@ -161,8 +128,8 @@ noncomputable def π₀EquivZerothHomotopy : π₀ X ≃ ZerothHomotopy |X| :=
 /-- The component of a vertex corresponds to the path component of its point. -/
 @[simp]
 lemma π₀EquivZerothHomotopy_mk (x : X _⦋0⦌) :
-    X.π₀EquivZerothHomotopy (π₀.mk x) = .mk (toTopPoint x) :=
-  (rfl)
+    X.π₀EquivZerothHomotopy (π₀.mk x) = .mk (toTopPoint x) := by
+  simp [π₀EquivZerothHomotopy, toTopPoint_def]
 
 open modelCategoryQuillen in
 /-- A weak equivalence of simplicial sets induces a bijection on connected components. -/
