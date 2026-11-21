@@ -51,8 +51,7 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
     (hs0 : 0 ≤ s) (hs : 2 * (c : ℝ) * s < 1) :
     ∫⁻ ω, ENNReal.ofReal (exp (s * X ω ^ 2)) ∂μ ≤
       ENNReal.ofReal ((1 - 2 * (c : ℝ) * s) ^ (-1 / 2 : ℝ)) := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have : IsFiniteMeasure μ := h.isFiniteMeasure
   let X₀ : Ω → ℝ := h.aemeasurable.mk X
   have hX₀_meas : Measurable X₀ := h.aemeasurable.measurable_mk
   have hX₀_eq : X =ᵐ[μ] X₀ := h.aemeasurable.ae_eq_mk; have h₀ := h.congr hX₀_eq
@@ -94,8 +93,7 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
 /-- For `c`-sub-Gaussian `X`, `exp (s * X ^ 2)` is integrable whenever `2 * c * s < 1`. -/
 theorem integrable_exp_mul_sq (h : HasSubgaussianMGF X c μ) {s : ℝ} (hs : 2 * (c : ℝ) * s < 1) :
     Integrable (fun ω ↦ exp (s * X ω ^ 2)) μ := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have : IsFiniteMeasure μ := h.isFiniteMeasure
   have haesm : AEStronglyMeasurable (fun ω ↦ exp (s * X ω ^ 2)) μ :=
     (Real.measurable_exp.comp_aemeasurable
       ((h.aemeasurable.pow_const 2).const_mul s)).aestronglyMeasurable
@@ -254,48 +252,6 @@ end ComplexSubGaussian
 
 namespace iIndepFun
 
-/-- Two-sided sub-Gaussian tail bound for a linear combination of independent coordinates. -/
-theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
-    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
-    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ι → ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) (c i) μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
-    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp
-        (-t ^ 2 / (2 * ∑ i, (a i) ^ 2 * (c i : ℝ))) := by
-  let Y : ι → Ω → ℝ := fun i ω ↦ a i * X i ω
-  let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
-  let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
-  have hY_indep : iIndepFun Y μ :=
-    h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
-  have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c i) μ := by
-    intro i
-    exact (hX i).const_mul (a i)
-  have hS : HasSubgaussianMGF S (∑ i, a2 i * c i) μ := by
-    exact HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
-        intro i _
-        exact hY i)
-  have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := hS.measureReal_abs_ge_le ht
-  have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
-      ∑ i, (a i) ^ 2 * (c i : ℝ) := by
-    rw [NNReal.coe_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [NNReal.coe_mul]
-    rfl
-  simpa only [hproxy] using hbound
-
-/-- The linear-form tail bound when all coordinates have the same variance proxy. -/
-theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
-    {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {μ : Measure Ω}
-    {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ℝ≥0}
-    (hX : ∀ i, HasSubgaussianMGF (X i) c μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
-    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ((c : ℝ) * ∑ i, (a i) ^ 2))) := by
-  simpa only [Finset.mul_sum, mul_comm] using
-    h_indep.measureReal_abs_sum_mul_ge_le_of_iIndepFun hX a ht
-
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {P : Measure Ω}
 
 /-- The dot product of independent sub-Gaussian random variables with a deterministic vector `w`
@@ -312,9 +268,35 @@ theorem hasSubgaussianMGF_dotProduct {X : ι → Ω → ℝ} (hindep : iIndepFun
       fun i _ ↦ hproxy i ▸ (hX i).const_mul (w i)
   simpa only [dotProduct, mul_comm] using hsum
 
+/-- Two-sided sub-Gaussian tail bound for a linear combination of independent coordinates. -/
+theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
+    {μ : Measure Ω} {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ι → ℝ≥0}
+    (hX : ∀ i, HasSubgaussianMGF (X i) (c i) μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp
+        (-t ^ 2 / (2 * ∑ i, (a i) ^ 2 * (c i : ℝ))) := by
+  have hS := h_indep.hasSubgaussianMGF_dotProduct hX a
+  have hdot : (fun ω ↦ (fun i ↦ X i ω) ⬝ᵥ a) = fun ω ↦ ∑ i, a i * X i ω :=
+    funext fun _ ↦ by simp only [dotProduct, mul_comm]
+  have hproxy : ((∑ i, ‖a i‖₊ ^ 2 * c i : ℝ≥0) : ℝ) = ∑ i, a i ^ 2 * (c i : ℝ) := by
+    push_cast
+    simp only [Real.norm_eq_abs, sq_abs]
+  rw [hdot] at hS
+  simpa only [hproxy] using hS.measureReal_abs_ge_le ht
+
+/-- The linear-form tail bound when all coordinates have the same variance proxy. -/
+theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
+    {μ : Measure Ω} {X : ι → Ω → ℝ} (h_indep : iIndepFun X μ) {c : ℝ≥0}
+    (hX : ∀ i, HasSubgaussianMGF (X i) c μ) (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t) :
+    μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
+      2 * Real.exp (-t ^ 2 / (2 * ((c : ℝ) * ∑ i, (a i) ^ 2))) := by
+  simpa only [Finset.mul_sum, mul_comm] using
+    h_indep.measureReal_abs_sum_mul_ge_le_of_iIndepFun hX a ht
+
 /-- A random vector of `EuclideanSpace ℝ ι` with independent coordinates, each with variance
 proxy `c`, is a sub-Gaussian vector (`TauCeti.IsSubgaussianVector`) with proxy `c`: the form
-`⟪u, x⟫` has proxy `∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2` by `hasSubgaussianMGF_dotProduct`. -/
+`⟪u, x⟫` has proxy `∑ i, ‖u i‖₊ ^ 2 * c = c * ‖u‖₊ ^ 2`. In particular every unit direction has
+the same proxy `c` as the coordinates, so the coordinate bound passes to all linear forms. -/
 theorem isSubgaussianVector {x : Ω → EuclideanSpace ℝ ι} {c : ℝ≥0}
     (hindep : iIndepFun (fun i ω ↦ x ω i) P) (hx : ∀ i, HasSubgaussianMGF (fun ω ↦ x ω i) c P) :
     TauCeti.IsSubgaussianVector x c P := by
@@ -324,7 +306,7 @@ theorem isSubgaussianVector {x : Ω → EuclideanSpace ℝ ι} {c : ℝ≥0}
     simp [mul_comm]
   rw [← hproxy]
   refine (hindep.hasSubgaussianMGF_dotProduct hx u).congr (ae_of_all _ fun ω ↦ ?_)
-  simp [dotProduct, PiLp.inner_apply, mul_comm]
+  simp only [EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
 
 /-- Exponential moment bound for the dot product of independent `K`-sub-Gaussian random variables
 with a deterministic vector `w`. -/

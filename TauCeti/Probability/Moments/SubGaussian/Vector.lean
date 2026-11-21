@@ -28,8 +28,10 @@ whose variance is `2`.
 * `TauCeti.isSubgaussianVector_zero_iff`, `TauCeti.isSubgaussianVector_zero_measure`: the zero
   vector is sub-Gaussian exactly when the total mass is at most `1`, and every vector is
   sub-Gaussian under the zero measure.
+* `TauCeti.isSubgaussianVector_zero_proxy_iff`: in finite dimension, the proxy `0` means that the
+  vector vanishes almost everywhere and the total mass is at most `1`.
 * `TauCeti.IsSubgaussianVector.integrable`, `TauCeti.IsSubgaussianVector.integral_eq_zero`: a
-  sub-Gaussian vector of `EuclideanSpace ℝ ι` is integrable, and centred under a zero or
+  sub-Gaussian vector in a finite-dimensional space is integrable, and centred under a zero or
   probability measure.
 * `TauCeti.IsSubgaussianVector.continuousLinearMap_comp`: for a complete source space, the image
   under a continuous linear map `A` of a sub-Gaussian vector with proxy `c` has proxy
@@ -38,7 +40,7 @@ whose variance is `2`.
 Vectors with independent sub-Gaussian coordinates are treated in
 `TauCeti.Probability.Moments.SubGaussian.ExponentialMoments`
 (`ProbabilityTheory.iIndepFun.isSubgaussianVector`) and
-centred Gaussian vectors in `TauCeti.Probability.Moments.SubGaussian.Gaussian`
+centred Gaussian vectors in `TauCeti.Probability.Moments.SubGaussian.Gaussian.Multivariate`
 (`ProbabilityTheory.HasLaw.isSubgaussianVector`).
 
 ## References
@@ -95,7 +97,23 @@ theorem isSubgaussianVector_zero_iff {c : ℝ≥0} :
 @[simp]
 theorem isSubgaussianVector_zero_measure {x : Ω → E} {c : ℝ≥0} :
     IsSubgaussianVector x c (0 : Measure Ω) :=
-  fun _ ↦ ⟨fun _ ↦ by simp, fun _ ↦ by simp only [mgf_zero_measure, Pi.zero_apply]; positivity⟩
+  fun _ ↦ by
+    rw [HasSubgaussianMGF_iff_kernel, Kernel.const_zero]
+    exact Kernel.HasSubgaussianMGF.zero_kernel
+
+/-- In a finite-dimensional space, a random vector is sub-Gaussian with variance proxy `0` exactly
+when it vanishes almost everywhere and the total mass is at most `1`. -/
+@[simp]
+theorem isSubgaussianVector_zero_proxy_iff [FiniteDimensional ℝ E] {x : Ω → E} :
+    IsSubgaussianVector x 0 μ ↔ x =ᵐ[μ] 0 ∧ μ Set.univ ≤ 1 := by
+  refine ⟨fun h ↦ ⟨?_, (h 0).measure_univ_le_one⟩, fun ⟨hx, hμ⟩ ↦ ?_⟩
+  · let b := stdOrthonormalBasis ℝ E
+    have hb (i) : (fun ω ↦ ⟪b i, x ω⟫) =ᵐ[μ] 0 :=
+      ((h (b i)).mono (zero_mul _).le).ae_eq_zero_of_hasSubgaussianMGF_zero
+    filter_upwards [ae_all_iff.2 hb] with ω hω
+    rw [← b.sum_repr' (x ω)]
+    simp [fun i ↦ show ⟪b i, x ω⟫ = 0 from hω i]
+  · exact fun u ↦ (isSubgaussianVector_zero_iff.2 hμ u).congr (hx.mono fun ω hω ↦ by simp [hω])
 
 namespace IsSubgaussianVector
 
@@ -124,18 +142,18 @@ theorem hasSubgaussianMGF_eval {ι : Type*} [Fintype ι] {x : Ω → EuclideanSp
   classical
   simpa [EuclideanSpace.inner_single_left] using h (EuclideanSpace.single i 1)
 
-/-- A sub-Gaussian vector of `EuclideanSpace ℝ ι` is integrable. -/
-theorem integrable {ι : Type*} [Fintype ι] {x : Ω → EuclideanSpace ℝ ι}
-    (h : IsSubgaussianVector x c μ) : Integrable x μ :=
-  Integrable.of_eval_piLp fun i ↦ (h.hasSubgaussianMGF_eval i).integrable
+/-- A sub-Gaussian vector in a finite-dimensional space is integrable. -/
+theorem integrable [FiniteDimensional ℝ E] (h : IsSubgaussianVector x c μ) : Integrable x μ := by
+  let b := stdOrthonormalBasis ℝ E
+  rw [funext fun ω ↦ (b.sum_repr' (x ω)).symm]
+  exact integrable_finsetSum _ fun i _ ↦ (h (b i)).integrable.smul_const (b i)
 
-/-- Under a zero or probability measure, a sub-Gaussian vector of `EuclideanSpace ℝ ι` has mean
-zero. -/
-theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] {ι : Type*} [Fintype ι]
-    {x : Ω → EuclideanSpace ℝ ι} (h : IsSubgaussianVector x c μ) : ∫ ω, x ω ∂μ = 0 := by
-  ext i
-  rw [eval_integral_piLp (fun i ↦ (h.hasSubgaussianMGF_eval i).integrable), PiLp.zero_apply]
-  exact (h.hasSubgaussianMGF_eval i).integral_eq_zero
+/-- Under a zero or probability measure, a sub-Gaussian vector in a finite-dimensional space has
+mean zero. -/
+theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] [FiniteDimensional ℝ E]
+    (h : IsSubgaussianVector x c μ) : ∫ ω, x ω ∂μ = 0 :=
+  integral_eq_zero_of_forall_integral_inner_eq_zero ℝ x h.integrable fun u ↦
+    (h u).integral_eq_zero
 
 /-- Let `E` be complete. The image of a sub-Gaussian vector with proxy `c` under a continuous
 linear map `A : E →L[ℝ] F` is a sub-Gaussian vector with proxy `‖A‖₊ ^ 2 * c`. -/
@@ -144,10 +162,10 @@ theorem continuousLinearMap_comp [CompleteSpace E] {F : Type*} [NormedAddCommGro
     IsSubgaussianVector (fun ω ↦ A (x ω)) (‖A‖₊ ^ 2 * c) μ := by
   intro v
   -- The Riesz representative `w` of the functional `⟪v, A ·⟫` has `‖w‖ ≤ ‖A‖ * ‖v‖`.
-  set w := (InnerProductSpace.toDual ℝ E).symm ((InnerProductSpace.toDualMap ℝ F v).comp A)
+  set w := (InnerProductSpace.toDual ℝ E).symm (A.toSesqForm v)
   have hw : ‖w‖₊ ≤ ‖A‖₊ * ‖v‖₊ := by
-    rw [LinearIsometryEquiv.nnNorm_map, mul_comm, ← (InnerProductSpace.toDualMap ℝ F).nnNorm_map v]
-    exact ContinuousLinearMap.opNNNorm_comp_le _ _
+    rw [← NNReal.coe_le_coe, coe_nnNorm, LinearIsometryEquiv.norm_map]
+    exact ContinuousLinearMap.toSesqForm_apply_norm_le
   refine ((h w).congr (ae_of_all _ fun ω ↦ ?_)).mono ?_
   · simp [w, InnerProductSpace.toDual_symm_apply]
   · calc c * ‖w‖₊ ^ 2 ≤ c * (‖A‖₊ * ‖v‖₊) ^ 2 := by gcongr

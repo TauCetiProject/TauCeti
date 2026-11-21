@@ -8,20 +8,22 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Moments.SubGaussian.Vector
 import TauCeti.Probability.Distributions.Gaussian.Transforms
+import TauCeti.Probability.Moments.SubGaussian.Gaussian.Real
 
 /-!
 # Centred Gaussian vectors are sub-Gaussian vectors
 
-A real random variable with law `gaussianReal 0 v` is sub-Gaussian with variance proxy `v`. A
-random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector
+A random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector
 (`TauCeti.IsSubgaussianVector`) whose variance proxy is the Euclidean operator norm `‖S‖₊` of the
 matrix parameter `S`. When `S` is positive semidefinite it is the covariance matrix; otherwise
 Mathlib's `multivariateGaussian 0 S` is the Dirac mass at `0`.
 
 ## Main results
 
-* `ProbabilityTheory.HasLaw.hasSubgaussianMGF`
 * `ProbabilityTheory.HasLaw.isSubgaussianVector`
+
+The scalar case, `ProbabilityTheory.HasLaw.hasSubgaussianMGF` for `gaussianReal 0 v`, is in
+`TauCeti.Probability.Moments.SubGaussian.Gaussian.Real`.
 
 ## References
 
@@ -34,12 +36,6 @@ open MeasureTheory TauCeti
 open scoped NNReal RealInnerProductSpace Matrix.Norms.L2Operator
 
 namespace ProbabilityTheory
-
-/-- A random variable with centred Gaussian law `gaussianReal 0 v` is `v`-sub-Gaussian. -/
-theorem HasLaw.hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
-    {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) μ) : HasSubgaussianMGF X v μ := by
-  rw [← HasSubgaussianMGF.id_map_iff hX.aemeasurable, hX.map_eq]
-  exact ⟨integrable_exp_mul_gaussianReal, fun t ↦ by simp [mgf_id_gaussianReal]⟩
 
 /-- A random vector with law `multivariateGaussian 0 S` is a sub-Gaussian vector whose variance
 proxy is the Euclidean operator norm `‖S‖₊` of the matrix parameter `S`. For positive
