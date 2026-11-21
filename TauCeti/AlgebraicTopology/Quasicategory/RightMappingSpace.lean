@@ -446,11 +446,11 @@ theorem map_ι (f : X ⟶ Y) :
       (X.rightMappingSpace x y).ι ≫ Functor.whiskerLeft joinVertex.op f :=
   (rfl)
 
-/-- The map induced on right mapping spaces sends an `(n + 1)`-simplex of `X` to its image under
-`f`. -/
+/-- The map induced on right mapping spaces sends a simplex of `X` to its image under `f`. -/
 @[simp]
-theorem map_app_coe (f : X ⟶ Y) {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    dsimp% ((map x y f).app _ s).val = f.app _ (s.val : X _⦋n + 1⦌) :=
+theorem map_app_coe (f : X ⟶ Y) {m : SimplexCategoryᵒᵖ}
+    (s : (X.rightMappingSpace x y : SSet.{u}).obj m) :
+    dsimp% ((map x y f).app m s).val = f.app (op (joinVertex.obj m.unop)) s.val :=
   (rfl)
 
 variable (x y) in
@@ -659,8 +659,18 @@ theorem map_comp_uliftIso_hom {Y : SSet.{u}} (f : X ⟶ Y) :
     map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
         (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom =
       (uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f) := by
-  ext m s
-  rfl
+  refine SSet.hom_ext fun m ↦ ConcreteCategory.hom_ext _ _ fun s ↦ ?_
+  refine ULift.ext (Subtype.ext ?_)
+  calc (((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f) ≫
+        (uliftIso.{u, v} (f.app (op ⦋0⦌) x) (f.app (op ⦋0⦌) y)).hom).app m s).down).val
+      = ((map (ULift.up x) (ULift.up y) (uliftFunctor.{v, u}.map f)).app m s).val.down :=
+        uliftIso_hom_app_down_coe _
+    _ = f.app (op (joinVertex.obj m.unop)) s.val.down :=
+        congrArg ULift.down (map_app_coe (uliftFunctor.{v, u}.map f) s)
+    _ = f.app (op (joinVertex.obj m.unop)) (((uliftIso.{u, v} x y).hom.app m s).down).val := by
+        rw [uliftIso_hom_app_down_coe]
+    _ = (((uliftIso.{u, v} x y).hom ≫ uliftFunctor.{v, u}.map (map x y f)).app m s).down.val :=
+        (map_app_coe f _).symm
 
 end ulift
 

@@ -39,6 +39,8 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
 * `CategoryTheory.SimplicialNerve.map_apply`, `CategoryTheory.SimplicialNerve.map_apply_obj`:
   restriction in `SimplicialNerve C` as precomposition with `SimplicialThickening.functor`.
 * `CategoryTheory.SimplicialNerve.vertexEquiv`: vertices of `SimplicialNerve C` are objects of `C`.
+* `CategoryTheory.SimplicialNerve.vertexEquiv_simplicialNerveMap_app`: `simplicialNerveMap F` acts
+  on vertices by `F.obj`.
 * `CategoryTheory.SimplicialNerve.homEquiv`: edges of `SimplicialNerve C` are morphisms of `C`.
 
 ## References
@@ -186,6 +188,14 @@ lemma map_apply_obj {m n : SimplexCategoryᵒᵖ} (f : m ⟶ n) (G : (Simplicial
   (congrArg (·.obj i) (map_apply C f G)).trans (EnrichedFunctor.comp_obj _ _ _ _)
 
 variable {C}
+
+/-- `simplicialNerveMap F` acts on vertices by `F.obj`. -/
+@[simp↓]
+lemma vertexEquiv_simplicialNerveMap_app {D : Type u} [Category.{v} D] [SimplicialCategory D]
+    (F : EnrichedFunctor SSet.{v} C D) (x : (SimplicialNerve C) _⦋0⦌) :
+    vertexEquiv D ((simplicialNerveMap F).app (op ⦋0⦌) x) = F.obj (vertexEquiv C x) := by
+  rw [vertexEquiv_apply, vertexEquiv_apply, simplicialNerveMap_app]
+  rfl
 
 /-- The edge of the simplicial nerve given by a morphism of the underlying category. -/
 def edgeMk {x y : C} (f : x ⟶ y) :

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
-public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
 
 /-!
