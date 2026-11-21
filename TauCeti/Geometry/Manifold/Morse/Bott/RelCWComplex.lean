@@ -86,27 +86,6 @@ variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsCriticalSubmanifold
 
-/-- A set `A` of vectors of the negative normal bundle `ν⁻`, whose total space carries the topology
-of a subspace of the normal bundle, is homeomorphic to the set `A'` of normal vectors it consists
-of. -/
-private def negativeNormalSpaceHomeomorph
-    (A : Set (TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s))
-    (A' : Set (TotalSpace P fun s ↦ i.NormalSpace s hn))
-    (hA : ∀ v, v ∈ A ↔ (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈ A')
-    (hA' : ∀ x ∈ A', x.snd ∈ h.negativeNormalSpace hn g x.proj) :
-    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
-    A ≃ₜ A' :=
-  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
-  have hι := isEmbedding_totalSpace_subbundle P (Fin r → ℝ) (h.negativeNormalSpace hn g)
-  -- Unlike `Topology.IsEmbedding.homeomorphImage`, the inverse is explicit, so that these
-  -- homeomorphisms commute with the inclusions of sphere bundles in disc bundles by `rfl`.
-  { toFun v := ⟨⟨v.val.proj, v.val.snd⟩, (hA v.val).1 v.property⟩
-    invFun x := ⟨⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩, (hA _).2 x.property⟩
-    left_inv _ := rfl
-    right_inv _ := rfl
-    continuous_toFun := (hι.continuous.comp continuous_subtypeVal).subtype_mk _
-    continuous_invFun := (hι.continuous_iff.2 continuous_subtypeVal).subtype_mk _ }
-
 variable [T2Space M] [FiniteDimensional ℝ E'] [IsManifold J 1 S] [T2Space S]
   [CWComplex (univ : Set S)] [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
 
@@ -147,11 +126,11 @@ theorem exists_relCWComplex_union_negativeDiscBundle
   -- `{f ≤ c - ε} ∪ Θ(D_ε)` is obtained by attaching `D_ε` along `S_ε`, and these are the unit disc
   -- and sphere bundles of `ν⁻` for the norm `-(2ε)⁻¹ Hessₛ`.
   obtain ⟨α, χ, -, -, hsq⟩ := isPushout_negativeDiscBundle hf hD hΘc hΘi hΘ
-  let eD := negativeNormalSpaceHomeomorph (r := r)
+  let eD := h.negativeNormalSpaceHomeomorph hn P g r
     (discBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s)) D
     (h.mem_discBundle_iff_mem_negativeDiscBundle hn P g r hε)
     fun _ hx ↦ mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx
-  let eS := negativeNormalSpaceHomeomorph (r := r)
+  let eS := h.negativeNormalSpaceHomeomorph hn P g r
     (sphereBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s))
     (h.negativeSphereBundle hn P g ε)
     (h.mem_sphereBundle_iff_mem_negativeSphereBundle hn P g r hε)
