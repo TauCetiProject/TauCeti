@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -237,9 +238,7 @@ theorem eventually_mfderivRank_le_mfderivRank (hf : ContMDiffAt I J n f x) (hn :
   -- chart image of `x`, so its derivative within `range I` is continuous there.
   obtain ⟨u, hu, hzu, hg⟩ := (contMDiffAt_iff.1 hf₁).2.contDiffOn' le_rfl (by simp)
   rw [insert_eq_of_mem hz] at hg
-  have hcont := hg.continuousOn_fderivWithin (I.uniqueDiffOn.inter hu) le_rfl _ ⟨hz, hzu⟩
-  have hD : ∀ w ∈ range I ∩ u, fderivWithin 𝕜 g (range I ∩ u) w = fderivWithin 𝕜 g (range I) w :=
-    fun w hw ↦ fderivWithin_inter (hu.mem_nhds hw.2)
+  have hcont := hg.continuousOn_fderivWithin_of_inter I.uniqueDiffOn hu le_rfl _ ⟨hz, hzu⟩
   -- In finite dimensions the rank of a linear map is a natural number, and maps of rank at least
   -- that of the derivative at the chart image of `x` form an open set.
   have hrank : ∀ L : E →L[𝕜] E',
@@ -253,11 +252,11 @@ theorem eventually_mfderivRank_le_mfderivRank (hf : ContMDiffAt I J n f x) (hn :
       w ∈ u ∧ mfderivRank I J f x ≤
         finrank 𝕜 (LinearMap.range (fderivWithin 𝕜 g (range I) w : E →ₗ[𝕜] E')) := by
     rw [← nhdsWithin_inter_of_mem' (mem_nhdsWithin_of_mem_nhds (hu.mem_nhds hzu))]
-    have hmem : fderivWithin 𝕜 g (range I ∩ u) (extChartAt I x x) ∈
+    have hmem : fderivWithin 𝕜 g (range I) (extChartAt I x x) ∈
         {L : E →L[𝕜] E' | (mfderivRank I J f x : Cardinal) ≤ (L : E →ₗ[𝕜] E').rank} := by
-      rw [Set.mem_ofPred_eq, hrank, hD _ ⟨hz, hzu⟩, ← hx]
+      rw [Set.mem_ofPred_eq, hrank, ← hx]
     filter_upwards [hcont (hopen.mem_nhds hmem), self_mem_nhdsWithin] with w hw hwu
-    rw [Set.mem_preimage, Set.mem_ofPred_eq, hrank, hD w hwu] at hw
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, hrank] at hw
     exact ⟨hwu.2, hw⟩
   rw [← map_extChartAt_nhds, eventually_map] at hev
   filter_upwards [hev, (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf₁,
