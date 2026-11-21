@@ -314,17 +314,17 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix 
 
 /-- Matrices `v` and `w` whose columns lie in the ranges of orthogonal self-adjoint matrices `a`
 and `b`, in the sense that `a * v = v`, `b * w = w` and `a * b = 0`, satisfy `vᴴ * w = 0`. -/
-theorem conjTranspose_mul_eq_zero_of_mul_eq_zero {a b : Matrix n n R} (ha : IsSelfAdjoint a)
-    {v : Matrix n m R} {w : Matrix n o R} (hv : a * v = v) (hw : b * w = w) (hab : a * b = 0) :
-    vᴴ * w = 0 := by
+theorem conjTranspose_mul_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix n n R}
+    (ha : IsSelfAdjoint a) {v : Matrix n k R} {w : Matrix n l R} (hv : a * v = v)
+    (hw : b * w = w) (hab : a * b = 0) : vᴴ * w = 0 := by
   rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose a, ha.star_eq, Matrix.mul_assoc,
     ← Matrix.mul_assoc a, hab, Matrix.zero_mul, Matrix.mul_zero]
 
 /-- Matrices `v` and `w` whose rows lie in the ranges of orthogonal self-adjoint matrices `a` and
 `b`, in the sense that `v * a = v`, `w * b = w` and `a * b = 0`, satisfy `v * wᴴ = 0`. -/
-theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {a b : Matrix m m R} (hb : IsSelfAdjoint b)
-    {v : Matrix n m R} {w : Matrix o m R} (hv : v * a = v) (hw : w * b = w) (hab : a * b = 0) :
-    v * wᴴ = 0 := by
+theorem mul_conjTranspose_eq_zero_of_mul_eq_zero {k l : Type*} {a b : Matrix m m R}
+    (hb : IsSelfAdjoint b) {v : Matrix k m R} {w : Matrix l m R} (hv : v * a = v)
+    (hw : w * b = w) (hab : a * b = 0) : v * wᴴ = 0 := by
   rw [← hv, ← hw, conjTranspose_mul, ← star_eq_conjTranspose b, hb.star_eq, ← Matrix.mul_assoc,
     Matrix.mul_assoc v, hab, Matrix.mul_zero, Matrix.zero_mul]
 
