@@ -45,12 +45,15 @@ contained in `L.support`, an `L`-sum of a family that vanishes on `L.support` ou
 theorem HasProd.eq_prod_support_of_ne_finset_one [L.HasSupport] [DecidablePred (· ∈ L.support)]
     (ha : HasProd f a L) (hf : ∀ b ∈ L.support, b ∉ s → f b = 1) :
     a = ∏ b ∈ (↑s ∩ L.support).toFinset, f b := by
+  -- In the discrete topology, `hasProd_prod_support_of_ne_finset_one` says that the partial
+  -- products are eventually equal to the finite product.
+  have h : ∀ᶠ t in L.filter, ∏ b ∈ t, f b = ∏ b ∈ (↑s ∩ L.support).toFinset, f b := by
+    let : TopologicalSpace α := ⊥
+    have := discreteTopology_bot α
+    simpa only [HasProd, nhds_discrete, tendsto_pure] using
+      hasProd_prod_support_of_ne_finset_one hf
   unfold HasProd at ha
-  refine (tendsto_const_nhds_iff.1 (ha.congr' ?_)).symm
-  filter_upwards [(L.filter.biInter_mem (Set.toFinite (↑s ∩ L.support))).2 fun b hb ↦ hb.2,
-    L.eventually_le_support] with t ht ht'
-  simp only [Set.mem_iInter, Set.mem_ofPred_eq] at ht
-  exact Finset.prod_congr_of_eq_on_inter (by grind) (by grind) (by grind)
+  exact (tendsto_const_nhds_iff.1 (ha.congr' h)).symm
 
 /-- In a T1 space, for a nontrivial summation filter that eventually contains every finite set, a
 product of a family that is `1` outside a finite set `s` equals the finite product over `s`. -/

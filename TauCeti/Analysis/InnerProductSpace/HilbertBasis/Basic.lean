@@ -20,14 +20,14 @@ A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
 
 It also expands the value of a continuous semilinear map in a Hilbert basis: the series
 `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). A continuous
-semilinear map into a module with a T1 topology that vanishes on all but finitely many vectors of a
-Hilbert basis has its range spanned by the images of the remaining ones
-(`HilbertBasis.range_eq_span_image_of_apply_eq_zero`), so such a map has finite rank when it is
-linear (`HilbertBasis.hasFiniteRange_of_apply_eq_zero`). Among continuous semilinear maps into
-a module with a Hausdorff topology, semilinear isometries into a seminormed module with a Hausdorff
-topology, and semilinear isometric equivalences out of `E`, all with a fixed scalar homomorphism
-`σ`, each map is determined by its values on a Hilbert basis
-(`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
+semilinear map, with a surjective scalar homomorphism `σ`, into a module with a T1 topology that
+vanishes on all but finitely many vectors of a Hilbert basis has its range spanned, over the target
+scalars, by the images of the remaining ones (`HilbertBasis.range_eq_span_image_of_apply_eq_zero`),
+so such a map has finite rank when it is linear (`HilbertBasis.hasFiniteRange_of_apply_eq_zero`).
+Among continuous semilinear maps into a module with a Hausdorff topology, semilinear isometries
+into a seminormed module with a Hausdorff topology, and semilinear isometric equivalences out of
+`E`, all with a fixed scalar homomorphism `σ`, each map is determined by its values on a Hilbert
+basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
 `HilbertBasis.ext_linearIsometryEquiv`). Hence a continuous semilinear map between spaces with
 Hilbert bases, for a fixed `σ`, is determined by its matrix entries in those bases
 (`HilbertBasis.ext_inner_apply`).
@@ -102,9 +102,9 @@ theorem hasSum_inner_smul_apply {𝕜' F : Type*} [Semiring 𝕜'] {σ : 𝕜 �
     HasSum (fun i ↦ σ ⟪b i, x⟫_𝕜 • T (b i)) (T x) := by
   simpa only [map_smulₛₗ, b.repr_apply_apply] using T.hasSum (b.hasSum_repr x)
 
-/-- The range of a continuous semilinear map into a module with a T1 topology that vanishes on
-every vector of a Hilbert basis outside a finite set `s` of indices is spanned by the images of the
-basis vectors indexed by `s`. -/
+/-- The range of a continuous semilinear map, with a surjective scalar homomorphism `σ : 𝕜 →+* 𝕜'`,
+into a module with a T1 topology that vanishes on every vector of a Hilbert basis outside a finite
+set `s` of indices is the `𝕜'`-span of the images of the basis vectors indexed by `s`. -/
 theorem range_eq_span_image_of_apply_eq_zero {𝕜' F : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
     [RingHomSurjective σ] [AddCommMonoid F] [Module 𝕜' F] [TopologicalSpace F] [T1Space F]
     (b : HilbertBasis ι 𝕜 E) (T : E →SL[σ] F) (s : Finset ι) (hT : ∀ i ∉ s, T (b i) = 0) :
