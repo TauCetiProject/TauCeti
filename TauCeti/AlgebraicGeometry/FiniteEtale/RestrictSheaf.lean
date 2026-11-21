@@ -22,15 +22,12 @@ is the coproduct of `M` copies of `S`. Its sheaf of sections is the constant ét
 For an étale morphism `p : T ⟶ S`, restricting the sheaf of sections of a finite étale `S`-scheme
 `X` along `p` yields the sheaf of sections of its base change `(pullback p).obj X`
 (`TauCeti.FiniteEtaleScheme.toSheafCompSmallEtaleMapPushforwardIso`,
-`TauCeti.FiniteEtaleScheme.toSheafCompSmallEtalePullbackIso`), via the canonical bijection on
-sections `TauCeti.FiniteEtaleScheme.restrictSectionEquiv`.
+`TauCeti.FiniteEtaleScheme.toSheafCompSmallEtalePullbackIso`).
 
 ## Main definitions
 
 * `TauCeti.FiniteEtaleScheme.trivialCover`: the finite étale cover of `S` given by a finite
   coproduct of copies of `S`.
-* `TauCeti.FiniteEtaleScheme.restrictSectionEquiv`: bijection between sections of `X` over
-  `p.smallEtaleMap.obj V` and sections of `(pullback p).obj X` over `V`.
 * `TauCeti.FiniteEtaleScheme.toSheafCompSmallEtaleMapPushforwardIso`: natural isomorphism
   `toSheaf S ⋙ p.smallEtaleMap.sheafPushforwardContinuous (Type u) _ _ ≅ pullback p ⋙ toSheaf T`.
 * `TauCeti.FiniteEtaleScheme.toSheafCompSmallEtalePullbackIso`: natural isomorphism
@@ -70,22 +67,11 @@ noncomputable def trivialCover (M : Type u) [Finite M] : FiniteEtaleScheme S :=
 noncomputable def toSheafOfHomIdIso :
     (toSheaf S).obj (ofHom (𝟙 S)) ≅
       (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).obj PUnit.{u + 1} :=
-  let hT : IsTerminal ((toEtale S).obj (ofHom (𝟙 S))) :=
-    (Scheme.Etale.mkIdTerminal S).ofIso
-      ((Scheme.Etale.forgetFullyFaithful S).preimageIso (eqToIso (by simp)))
-  let e : (Functor.const S.Etaleᵒᵖ).obj PUnit.{u + 1} ≅
-      (sheafToPresheaf (Scheme.smallEtaleTopology S) (Type u)).obj
-        ((toSheaf S).obj (ofHom (𝟙 S))) :=
-    NatIso.ofComponents (fun U ↦ Equiv.toIso
-      { toFun _ := hT.from U.unop
-        invFun _ := PUnit.unit
-        left_inv _ := rfl
-        right_inv _ := hT.hom_ext _ _ }) (fun _ ↦ by
-      ext _
-      exact hT.hom_ext _ _)
-  ((presheafToSheaf (Scheme.smallEtaleTopology S) (Type u)).mapIso e ≪≫
-    (asIso (sheafificationAdjunction (Scheme.smallEtaleTopology S) (Type u)).counit).app
-      ((toSheaf S).obj (ofHom (𝟙 S)))).symm
+  have := preservesLimitsOfShape_pempty_of_preservesTerminal (toSheaf S)
+  ((isTerminalOfHomId S).isTerminalObj (toSheaf S)).uniqueUpToIso
+      (Sheaf.isTerminalTerminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}) ≪≫
+    (asIso ((sheafificationAdjunction (Scheme.smallEtaleTopology S) (Type u)).counit.app
+      (Sheaf.terminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}))).symm
 
 /-- The sheaf of sections of `trivialCover S M` is the constant étale sheaf with value `M`. -/
 noncomputable def toSheafTrivialCoverIso (M : Type u) [Finite M] :
@@ -94,9 +80,8 @@ noncomputable def toSheafTrivialCoverIso (M : Type u) [Finite M] :
   haveI : Fintype M := Fintype.ofFinite M
   have := hasColimitsOfShape_of_hasFiniteColimits
     (C := Sheaf (Scheme.smallEtaleTopology S) (Type u)) (Discrete M)
-  have : (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).IsLeftAdjoint :=
-    (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u) (Scheme.Etale.mkIdTerminal S))
-      |>.isLeftAdjoint
+  have := (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u)
+      (Scheme.Etale.mkIdTerminal S)).isLeftAdjoint
   PreservesCoproduct.iso (toSheaf S) _ ≪≫
     Sigma.mapIso (fun _ ↦ toSheafOfHomIdIso S) ≪≫
     (PreservesCoproduct.iso (constantSheaf (Scheme.smallEtaleTopology S) (Type u)) _).symm ≪≫
@@ -109,44 +94,6 @@ section RestrictSheaf
 
 variable {S T : Scheme.{u}}
 
-/-- Bijection between sections of `X` over `p.smallEtaleMap.obj V` and sections of
-`(pullback p).obj X` over `V`. -/
-noncomputable def restrictSectionEquiv (p : T ⟶ S) [Etale p]
-    (X : FiniteEtaleScheme S) (V : T.Etale) :
-    (p.smallEtaleMap.obj V ⟶ (toEtale S).obj X) ≃
-      (V ⟶ (toEtale T).obj ((pullback p).obj X)) where
-  toFun g := MorphismProperty.Over.homMk
-    (Limits.pullback.lift g.left V.hom (MorphismProperty.Over.w g))
-    (Limits.pullback.lift_snd _ _ _)
-  invFun h := MorphismProperty.Over.homMk
-    (h.left ≫ Limits.pullback.fst X.obj.hom p)
-    (((Category.assoc h.left (Limits.pullback.fst X.obj.hom p) X.obj.hom).trans
-      (congrArg (h.left ≫ ·) Limits.pullback.condition)).trans
-      (MorphismProperty.Over.w_assoc h p))
-  left_inv g := by
-    apply MorphismProperty.Over.Hom.ext
-    exact Limits.pullback.lift_fst _ _ _
-  right_inv h := by
-    apply MorphismProperty.Over.Hom.ext
-    refine Limits.pullback.hom_ext ?_ ?_
-    · exact Limits.pullback.lift_fst _ _ _
-    · exact (Limits.pullback.lift_snd _ _ _).trans (MorphismProperty.Over.w h).symm
-
-/-- Underlying scheme morphism of `restrictSectionEquiv p X V g`. -/
-@[simp]
-lemma restrictSectionEquiv_apply_left (p : T ⟶ S) [Etale p]
-    (X : FiniteEtaleScheme S) (V : T.Etale) (g : p.smallEtaleMap.obj V ⟶ (toEtale S).obj X) :
-    (restrictSectionEquiv p X V g).left =
-      Limits.pullback.lift g.left V.hom (MorphismProperty.Over.w g) := by
-  rfl
-
-/-- Underlying scheme morphism of `(restrictSectionEquiv p X V).symm h`. -/
-@[simp]
-lemma restrictSectionEquiv_symm_apply_left (p : T ⟶ S) [Etale p]
-    (X : FiniteEtaleScheme S) (V : T.Etale) (h : V ⟶ (toEtale T).obj ((pullback p).obj X)) :
-    ((restrictSectionEquiv p X V).symm h).left = h.left ≫ Limits.pullback.fst X.obj.hom p := by
-  rfl
-
 /-- Restricting the sheaf of sections of a finite étale `S`-scheme along an étale morphism
 `p : T ⟶ S` via `p.smallEtaleMap` gives the sheaf of sections of its base change to `T`,
 naturally in `X`. -/
@@ -154,52 +101,29 @@ noncomputable def toSheafCompSmallEtaleMapPushforwardIso (p : T ⟶ S) [Etale p]
     toSheaf S ⋙ p.smallEtaleMap.sheafPushforwardContinuous (Type u)
         (Scheme.smallEtaleTopology T) (Scheme.smallEtaleTopology S) ≅
       pullback p ⋙ toSheaf T :=
-  NatIso.ofComponents
-    (fun X ↦ ObjectProperty.isoMk _ <| NatIso.ofComponents
-      (fun V ↦ (restrictSectionEquiv p X V.unop).toIso)
-      (fun {V W} a ↦ by
-        rcases V with ⟨V⟩; rcases W with ⟨W⟩
-        ext g
-        apply MorphismProperty.Over.Hom.ext
-        refine Limits.pullback.hom_ext ?_ ?_
-        · exact (Limits.pullback.lift_fst _ _ _).trans
-            ((Category.assoc _ _ _).trans
-              (congrArg (a.unop.left ≫ ·) (Limits.pullback.lift_fst _ _ _))).symm
-        · exact (Limits.pullback.lift_snd _ _ _).trans
-            ((MorphismProperty.Over.w a.unop).symm.trans
-              ((Category.assoc _ _ _).trans
-                (congrArg (a.unop.left ≫ ·) (Limits.pullback.lift_snd _ _ _))).symm)))
-    (fun {X Y} f ↦ by
-      ext ⟨V⟩ g
-      apply MorphismProperty.Over.Hom.ext
-      refine Limits.pullback.hom_ext ?_ ?_
-      · exact (Limits.pullback.lift_fst _ _ _).trans <|
-          ((Category.assoc _ _ _).trans <|
-            (congrArg ((restrictSectionEquiv p X V g).left ≫ ·)
-              (Limits.pullback.lift_fst _ _ _)).trans <|
-              ((Category.assoc _ _ _).symm.trans <|
-                congrArg (· ≫ f.hom.left) (Limits.pullback.lift_fst _ _ _))).symm
-      · exact (Limits.pullback.lift_snd _ _ _).trans <|
-          ((Category.assoc _ _ _).trans <|
-            (congrArg ((restrictSectionEquiv p X V g).left ≫ ·)
-              (Limits.pullback.lift_snd _ _ _)).trans <|
-              Limits.pullback.lift_snd _ _ _).symm)
-
-/-- Forward component formula for `toSheafCompSmallEtaleMapPushforwardIso`. -/
-@[simp]
-lemma toSheafCompSmallEtaleMapPushforwardIso_hom_app_hom_app (p : T ⟶ S) [Etale p]
-    (X : FiniteEtaleScheme S) (V : T.Etale) :
-    ((toSheafCompSmallEtaleMapPushforwardIso p).hom.app X).hom.app (op V) =
-      TypeCat.ofHom (restrictSectionEquiv p X V) := by
-  rfl
-
-/-- Inverse component formula for `toSheafCompSmallEtaleMapPushforwardIso`. -/
-@[simp]
-lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app_hom_app (p : T ⟶ S) [Etale p]
-    (X : FiniteEtaleScheme S) (V : T.Etale) :
-    ((toSheafCompSmallEtaleMapPushforwardIso p).inv.app X).hom.app (op V) =
-      TypeCat.ofHom (restrictSectionEquiv p X V).symm := by
-  rfl
+  let eBC : toEtale S ⋙ p.smallEtaleBaseChange ≅ pullback p ⋙ toEtale T :=
+    NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by ext; rfl)
+  ((fullyFaithfulSheafToPresheaf (Scheme.smallEtaleTopology T) (Type u)).whiskeringRight _)
+    |>.preimageIso
+    (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (toSheaf S)
+        (p.smallEtaleMap.sheafPushforwardContinuousCompSheafToPresheafIso (Type u)
+          (Scheme.smallEtaleTopology T) (Scheme.smallEtaleTopology S)) ≪≫
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight
+        (Functor.associator _ _ _ ≪≫
+          Functor.isoWhiskerLeft (toEtale S)
+            (Scheme.smallEtaleTopology S).yonedaCompSheafToPresheaf)
+        _ ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (toEtale S) p.smallEtaleMapBaseChangeAdj.compYonedaIso.symm ≪≫
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight eBC yoneda ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (pullback p)
+        (Functor.isoWhiskerLeft (toEtale T)
+          (Scheme.smallEtaleTopology T).yonedaCompSheafToPresheaf.symm) ≪≫
+      (Functor.associator _ _ _).symm)
 
 /-- Pulling back the sheaf of sections of a finite étale `S`-scheme along an étale morphism
 `p : T ⟶ S` gives the sheaf of sections of its base change to `T`, naturally in `X`. -/
