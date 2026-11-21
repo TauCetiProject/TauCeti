@@ -12,6 +12,8 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Determinant
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Area and change of variables for a holomorphic map
@@ -95,6 +97,9 @@ because that is what Mathlib's versions of them ask for.
 * `TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le` — each directional energy after the
   inversion is bounded by the Dirichlet energy:
   `∫ ‖∂_v (f ∘ (·⁻¹))‖² ≤ ‖v‖² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`.
+* `TauCeti.integrableOn_norm_fderiv_comp_inv_apply_one_sq` — for a solution of the
+  Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` with `‖J‖` bounded along it, integrability of
+  `‖∂ₛu‖ ^ 2` outside a disc gives integrability of the same density for `w ↦ u w⁻¹` near `0`.
 
 ## References
 
@@ -361,5 +366,41 @@ theorem integral_norm_fderiv_comp_inv_apply_sq_le {f : ℂ → E} (v : ℂ)
         rw [integral_const_mul, integral_image_eq_integral_norm_deriv_sq_smul hd hs
           inv_injective.injOn G]
     _ = ‖v‖ ^ 2 * ∫ w, G w := by rw [himage, restrict_compl_singleton]
+
+/-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
+for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
+map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
+integrable energy density outside the disc of radius `R`. The Cauchy--Riemann equation bounds
+`‖du‖` by `(1 + M) ‖∂ₛu‖`, and inversion preserves finite energy
+(`TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff`). -/
+theorem integrableOn_norm_fderiv_comp_inv_apply_one_sq [CompleteSpace E] {u : ℂ → E}
+    {J : E → E →L[ℝ] E} {R M : ℝ}
+    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
+    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) (ball 0 R⁻¹) := by
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  set D : Set ℂ := ball 0 R⁻¹ \ {0}
+  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
+  have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
+  -- By the Cauchy--Riemann equation, `‖du‖ ≤ (1 + M) ‖∂ₛu‖` outside the disc of radius `R`.
+  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (closedBall 0 R)ᶜ := by
+    refine (henergy.const_mul ((1 + M) ^ 2)).mono'
+      ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
+      (ae_restrict_of_forall_mem isClosed_closedBall.isOpen_compl.measurableSet fun z hz ↦ ?_)
+    rw [norm_pow, norm_norm, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM z hz) le_rfl) 2
+  -- Inversion preserves finite energy.
+  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) D :=
+    (integrableOn_norm_fderiv_comp_inv_sq_iff hDm).2 (hfull.mono_set hDE.image_subset)
+  have hD1 : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
+    refine hD.mono' ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable
+      (ae_of_all _ fun w ↦ ?_)
+    rw [norm_pow, norm_norm]
+    exact pow_le_pow_left₀ (norm_nonneg _)
+      (by simpa using (fderiv ℝ (fun w ↦ u w⁻¹) w).le_opNorm (1 : ℂ)) 2
+  exact hD1.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
 
 end TauCeti

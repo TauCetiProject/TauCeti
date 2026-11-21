@@ -51,6 +51,8 @@ finite-dimensional real Lie group `G`:
   its Lie algebra.
 * `TauCeti.Lie.IsTorus.nonempty_continuousMulEquiv_pi_circle`: a torus is a product of circles,
   with one factor for each dimension of its Lie algebra.
+* `TauCeti.Lie.IsTorus.exists_sq_eq_one_ne_one`: a nontrivial torus contains an element `g ≠ 1`
+  with `g ^ 2 = 1`.
 * `TauCeti.Lie.IsTorus.exists_closedZpowers_eq`: a torus has a topological generator.
 * `TauCeti.Lie.IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer`: the centralizer of a maximal
   torus of a compact Lie group has the Lie algebra of the torus.
@@ -269,6 +271,37 @@ theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsT
     intros
     exact TauCeti.nonempty_continuousMulEquiv_pi_circle
       (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule))
+
+section Involution
+
+variable (I)
+include I
+
+/-- **A nontrivial torus contains an involution**: an element `g ≠ 1` with `g ^ 2 = 1`, namely
+the element `-1` of a circle factor. -/
+theorem IsTorus.exists_sq_eq_one_ne_one {T : Subgroup G} (hT : IsTorus T) (hT1 : T ≠ ⊥) :
+    ∃ g ∈ T, g ^ 2 = 1 ∧ g ≠ 1 := by
+  obtain ⟨φ⟩ := hT.nonempty_continuousMulEquiv_pi_circle (I := I)
+  set d := Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)
+  -- `T` is nontrivial, so it has at least one circle factor.
+  have hd : 0 < d := by
+    refine Nat.pos_of_ne_zero fun hd ↦ hT1 ?_
+    have : IsEmpty (Fin d) := by
+      rw [hd]
+      infer_instance
+    have : Subsingleton T := φ.toEquiv.subsingleton
+    exact T.eq_bot_of_subsingleton
+  -- The element `-1` of the first circle factor is an involution of `T`.
+  let c : Fin d → Circle := Pi.mulSingle ⟨0, hd⟩ (-1)
+  have hc2 : c ^ 2 = 1 := by
+    rw [← Pi.mulSingle_pow, neg_one_sq, Pi.mulSingle_one]
+  have hc1 : c ≠ 1 := fun h ↦ Circle.neg_ne_self 1 (by
+    simpa [c] using congrFun h ⟨0, hd⟩)
+  refine ⟨φ.symm c, (φ.symm c).property, ?_, fun h ↦ hc1 ?_⟩
+  · rw [← Subgroup.coe_pow, ← map_pow, hc2, map_one, Subgroup.coe_one]
+  · rw [← φ.apply_symm_apply c, show φ.symm c = 1 from Subtype.ext h, map_one]
+
+end Involution
 
 section Generator
 

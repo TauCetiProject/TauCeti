@@ -81,7 +81,8 @@ theorem map_volume_restrict_pi_Ici_sum [Nonempty ι] :
   have hexp' : Measurable fun s : ℝ ↦ ENNReal.ofReal (Real.exp s) := by fun_prop
   -- Tilting by `exp (-s)` turns `ν` into the Gamma law of shape `m + 1`.
   have htilt : ν.withDensity (fun s ↦ ENNReal.ofReal (Real.exp (-s))) = gammaMeasure (m + 1) 1 := by
-    rw [← Measure.map_withDensity_comp hsum hexp, ← Probability.pi_expMeasure_one_eq_withDensity,
+    rw [← Measure.map_withDensity_comp hsum.aemeasurable hexp.aemeasurable,
+      ← Probability.pi_expMeasure_one_eq_withDensity,
       Probability.map_sum_pi_expMeasure one_pos, hm, Nat.cast_succ]
   -- Untilting by `exp s`, the inverse of `exp (-s)`, recovers `ν`.
   have hinv : (fun s ↦ (ENNReal.ofReal (Real.exp (-s)))⁻¹) =

@@ -40,9 +40,8 @@ variable {σ R : Type*} [CommSemiring R]
 theorem rename_const_eq_aeval_aeval_X (c : σ) (p : MvPolynomial σ R) :
     rename (fun _ => c) p =
       Polynomial.aeval (X c) (aeval (fun _ => (Polynomial.X : Polynomial R)) p) := by
-  rw [← AlgHom.comp_apply]
-  congr 1
-  exact algHom_ext fun i => by simp
+  rw [comp_aeval_apply, rename_eq_aeval]
+  simp [Function.comp_def]
 
 variable (σ R) in
 /-- Sending every variable to `X` is surjective onto `R[X]` when there is at least one
@@ -59,20 +58,19 @@ evaluating `p` at the constant tuple `Function.const σ w`. -/
 theorem eval_aeval_const_X (w : R) (p : MvPolynomial σ R) :
     (aeval (Function.const σ (Polynomial.X : Polynomial R)) p).eval w =
       eval (Function.const σ w) p := by
-  rw [← Function.const_def (y := w)]
-  simpa [Polynomial.aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] using
-    comp_aeval_apply (f := Function.const σ (Polynomial.X : Polynomial R)) (Polynomial.aeval w) p
+  rw [← Polynomial.coe_aeval_eq_eval, comp_aeval_apply]
+  simp [← Function.const_def]
 
 /-- For the substitution `Tᵢ ↦ aᵢ X` of `R[Tᵢ : i ∈ σ]` into `R[X]`, the coefficient of `X` in
 the image of `p * Tᵢ` is `aᵢ` times the constant coefficient of `p`. -/
 theorem coeff_one_aeval_C_mul_X_mul_X (a : σ → R) (p : MvPolynomial σ R) (i : σ) :
     (aeval (fun j ↦ Polynomial.C (a j) * Polynomial.X) (p * X i)).coeff 1 =
       constantCoeff p * a i := by
-  have hconst : (Polynomial.evalRingHom 0).comp
-      (aeval (R := R) fun j ↦ Polynomial.C (a j) * Polynomial.X).toRingHom = constantCoeff :=
-    ringHom_ext (by simp) (by simp)
-  rw [map_mul, aeval_X, ← mul_assoc, Polynomial.coeff_mul_X, Polynomial.coeff_mul_C,
-    Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.coe_evalRingHom]
-  exact congr($hconst p * a i)
+  -- the constant coefficient of the image of `p` is `p` evaluated at `0`
+  have h0 : (aeval (fun j ↦ Polynomial.C (a j) * Polynomial.X) p).coeff 0 = constantCoeff p := by
+    rw [Polynomial.coeff_zero_eq_eval_zero, ← Polynomial.coe_aeval_eq_eval, comp_aeval_apply]
+    simp [← eval_zero']
+  -- `X i ↦ C (a i) * X`, and the coefficient of `X` in `q * C (a i) * X` is `q.coeff 0 * a i`
+  simp [← mul_assoc, h0]
 
 end MvPolynomial
