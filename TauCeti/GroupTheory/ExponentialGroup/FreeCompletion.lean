@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.ExponentialGroup.Completion
-import Mathlib.Tactic.DeriveCountable
 import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -40,9 +39,6 @@ exponents in `A`, modulo the least congruence containing the group laws, the mul
   `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective` to `isCompletion_of`.
 * `TauCeti.ExponentialGroup.Completion.of_pow_ne_one`: with a ring homomorphism `f : A →+* ℤ`,
   the power `g ^ a` of an element of infinite order of `G` is not the identity when `f a ≠ 0`.
-* `TauCeti.ExponentialGroup.Completion.instCountable`, `instSubsingleton`: the completion of a
-  countable group over a countable semiring is countable, and that of the trivial group is
-  trivial.
 
 ## Implementation notes
 
@@ -117,8 +113,6 @@ private inductive Rel : Term A G → Term A G → Prop
   | conj_pow (s t) (a : A) : Rel (pow (mul (mul s t) (inv s)) a) (mul (mul s (pow t a)) (inv s))
   | mul_pow {s t} (a : A) :
       Rel (mul s t) (mul t s) → Rel (pow (mul s t) a) (mul (pow s a) (pow t a))
-
-deriving instance Countable for Term
 
 end Completion
 
@@ -242,16 +236,6 @@ theorem of_pow_ne_one (f : A →+* ℤ) {g : G} (hg : ¬IsOfFinOrder g) {a : A} 
   obtain ⟨r, hr, hpow⟩ := exists_retraction (G := G) f
   refine fun h => hg (isOfFinOrder_iff_zpow_eq_one.2 ⟨f a, ha, ?_⟩)
   simpa [hpow, hr] using congrArg r h
-
-/-- The tensor completion of a countable group over a countable semiring is countable. -/
-instance instCountable [Countable A] [Countable G] : Countable (Completion A G) :=
-  inferInstanceAs (Countable (Quot _))
-
-/-- The tensor completion of the trivial group is trivial. -/
-instance instSubsingleton [Subsingleton G] : Subsingleton (Completion A G) :=
-  Subgroup.subsingleton_iff.1 <| subsingleton_of_bot_eq_top <| eq_top_of_range_le
-    (by rintro _ ⟨g, rfl⟩; simp [Subsingleton.elim g 1])
-    fun x hx a => by simp [Subgroup.mem_bot.1 hx]
 
 end Completion
 

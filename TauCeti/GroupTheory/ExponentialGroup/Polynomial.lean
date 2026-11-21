@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.GroupTheory.ExponentialGroup.FreeCompletion
+import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
 # Groups with exponents in the polynomial ring `ℤ[t]`
@@ -31,12 +32,16 @@ generated.
 * `TauCeti.IsExponentialGroup.isExponentialGroup_polynomialPow`: this is a `ℤ[t]`-group structure
   when `T` commutes with conjugation and is multiplicative on commuting elements.
 * `TauCeti.IsExponentialGroup.polynomialPow_zpow`: for `T g = g ^ m` it is `g ^ p = g ^ p(m)`.
+* `TauCeti.IsExponentialGroup.map_polynomialPow`: a homomorphism `φ` with `φ ∘ T' = T ∘ φ`
+  commutes with the exponentiations determined by `T'` and `T`.
 * `TauCeti.IsExponentialGroup.pow_mem_of_pow_X_mem`: in a `ℤ[t]`-group, a subgroup closed under
   the `t`-th power is closed under every exponent.
 * `TauCeti.IsExponentialGroup.map_pow_of_map_pow_X`: a homomorphism of `ℤ[t]`-groups that commutes
   with the `t`-th power commutes with every exponent.
 * `TauCeti.ExponentialGroup.Completion.existsUnique_monoidHom_map_pow_X`: the universal property
   of the `ℤ[t]`-completion in terms of the `t`-th power.
+* `TauCeti.ExponentialGroup.Completion.of_pow_ne_one_of_ne_zero`: in the `ℤ[t]`-completion, the
+  powers `g ^ p`, `p ≠ 0`, of an element `g` of infinite order of `G` are nontrivial.
 * `TauCeti.ExponentialGroup.Completion.not_fg_closure_range_pow`: the powers `g ^ (t ^ k)` of an
   element of infinite order of `G` generate a subgroup of the `ℤ[t]`-completion that is not
   finitely generated.
@@ -70,13 +75,14 @@ variable {G : Type*} [Group G]
 /-- The exponentiation by integer polynomials determined by a map `T : G → G`, to be thought of as
 the `t`-th power: `g ^ (∑ nᵢ tⁱ) = ∏ (Tⁱ g) ^ nᵢ`, the product in increasing order of `i`. It is
 not an instance. -/
-noncomputable abbrev polynomialPow (T : G → G) : Pow G ℤ[X] :=
-  ⟨fun g p => ((p.support.sort (· ≤ ·)).map fun i => T^[i] g ^ p.coeff i).prod⟩
+@[instance_reducible]
+noncomputable def polynomialPow (T : G → G) : Pow G ℤ[X] :=
+  ⟨fun g p => (p.support.sort.map fun i => T^[i] g ^ p.coeff i).prod⟩
 
 /-- The defining formula of `polynomialPow`. -/
 theorem polynomialPow_def (T : G → G) (g : G) (p : ℤ[X]) :
     letI := polynomialPow T
-    g ^ p = ((p.support.sort (· ≤ ·)).map fun i => T^[i] g ^ p.coeff i).prod :=
+    g ^ p = (p.support.sort.map fun i => T^[i] g ^ p.coeff i).prod :=
   (rfl)
 
 /-- The `t`-th power of the exponentiation determined by `T` is `T`. -/
@@ -86,20 +92,25 @@ theorem polynomialPow_X (T : G → G) (g : G) :
     g ^ (X : ℤ[X]) = T g := by
   simp [polynomialPow_def]
 
-/-- A homomorphism intertwining two maps intertwines the exponentiations they determine. -/
-private theorem map_polynomialPow {H : Type*} [Group H] {T : G → G} {T' : H → H} (φ : H →* G)
+/-- A homomorphism `φ` with `φ ∘ T' = T ∘ φ` commutes with the exponentiations determined by `T'`
+and `T`. -/
+theorem map_polynomialPow {H : Type*} [Group H] {T : G → G} {T' : H → H} (φ : H →* G)
     (hφ : ∀ x, φ (T' x) = T (φ x)) (x : H) (p : ℤ[X]) :
     letI := polynomialPow T
     letI := polynomialPow T'
-    φ x ^ p = φ (x ^ p) := by
-  simp only [polynomialPow_def, map_list_prod, List.map_map]
-  congr 1
-  refine List.map_congr_left fun i _ => ?_
-  rw [Function.comp_apply, map_zpow, Function.Semiconj.iterate_right hφ i x]
+    φ (x ^ p) = φ x ^ p := by
+  simp [polynomialPow_def, map_list_prod, Function.comp_def,
+    Function.Semiconj.iterate_right hφ _ _]
 
 section CommGroup
 
 variable {Z : Type*} [CommGroup Z]
+
+/-- In a commutative group, the exponentiation determined by `T` is a product over the support. -/
+private theorem polynomialPow_eq_prod (T : Z → Z) (z : Z) (p : ℤ[X]) :
+    letI := polynomialPow T
+    z ^ p = ∏ i ∈ p.support, T^[i] z ^ p.coeff i := by
+  rw [polynomialPow_def, ((p.support.sort_perm_toList _).map _).prod_eq, Finset.prod_map_toList]
 
 /-- In a commutative group, the exponentiation determined by an endomorphism `τ` is the
 `ℤ[t]`-module structure in which `t` acts by `τ`, written multiplicatively. -/
@@ -108,17 +119,8 @@ private theorem polynomialPow_eq_aeval (τ : Z →* Z) (z : Z) (p : ℤ[X]) :
     z ^ p = (aeval τ.toAdditive.toIntLinearMap p (.ofMul z)).toMul := by
   have hit (n : ℕ) : (τ.toAdditive.toIntLinearMap ^ n) (.ofMul z) = .ofMul (τ^[n] z) := by
     rw [pow_apply_eq_iterate]
-    induction n with
-    | zero => rfl
-    | succ n ih =>
-      rw [Function.iterate_succ_apply', ih, Function.iterate_succ_apply']
-      simp
-  rw [polynomialPow_def, aeval_def, eval₂_eq_sum, Polynomial.sum_def, LinearMap.sum_apply,
-    toMul_sum, Finset.prod_eq_multiset_prod, ← Finset.sort_eq _ (· ≤ ·), Multiset.map_coe,
-    Multiset.prod_coe]
-  congr 1
-  refine List.map_congr_left fun i _ => ?_
-  simp [hit]
+    exact (Function.Semiconj.iterate_right (f := Additive.ofMul) (ga := τ) (fun _ => rfl) n z).symm
+  simp [polynomialPow_eq_prod, aeval_def, eval₂_eq_sum, Polynomial.sum_def, hit]
 
 /-- In a commutative group, the exponentiation determined by an endomorphism is a `ℤ[t]`-group
 structure. -/
@@ -152,13 +154,13 @@ private theorem commute_apply (hconj : ∀ g h : G, T (g * h * g⁻¹) = g * T h
   exact key.symm
 
 /-- Two commuting elements lie in a commutative subgroup `Z` that `T` maps to itself, namely the
-centralizer of their centralizer, and the exponentiation determined by `T` restricts to that
-determined by the endomorphism `T` of `Z`. -/
+centralizer of their centralizer. The exponentiation determined by the endomorphism `T` of `Z` is
+a `ℤ[t]`-group structure on `Z`, and the exponentiation determined by `T` restricts to it. -/
 private theorem exists_commutative_subgroup (hconj : ∀ g h : G, T (g * h * g⁻¹) = g * T h * g⁻¹)
     (hmul : ∀ g h : G, Commute g h → T (g * h) = T g * T h) {g h : G} (hc : Commute g h) :
-    ∃ (Z : Subgroup G) (_ : ∀ x y : Z, x * y = y * x) (τ : Z →* Z) (zg zh : Z),
-      (zg : G) = g ∧ (zh : G) = h ∧ ∀ (z : Z) (p : ℤ[X]),
-        letI := polynomialPow T; letI := polynomialPow τ; (z : G) ^ p = ↑(z ^ p) := by
+    ∃ (Z : Subgroup G) (τ : Z →* Z) (_ : letI := polynomialPow τ; IsExponentialGroup ℤ[X] Z)
+      (zg zh : Z), (zg : G) = g ∧ (zh : G) = h ∧ Commute zg zh ∧ ∀ (z : Z) (p : ℤ[X]),
+        letI := polynomialPow T; letI := polynomialPow τ; ↑(z ^ p) = (z : G) ^ p := by
   have hS : ({g, h} : Set G).Pairwise Commute := by
     rintro a (rfl | rfl) b (rfl | rfl) - <;> first | exact Commute.refl _ | exact hc | exact hc.symm
   have hcomm := Set.centralizer_centralizer_comm_of_comm hS
@@ -169,9 +171,10 @@ private theorem exists_commutative_subgroup (hconj : ∀ g h : G, T (g * h * g�
     { toFun x := ⟨T x, hT x x.property⟩
       map_one' := Subtype.ext (by simpa using hmul 1 1 (Commute.one_left 1))
       map_mul' x y := Subtype.ext (hmul x y (hcomm _ x.property _ y.property)) }
-  exact ⟨Z, fun x y => Subtype.ext (hcomm _ x.property _ y.property), τ,
+  have hZ (x y : Z) : x * y = y * x := Subtype.ext (hcomm _ x.property _ y.property)
+  exact ⟨Z, τ, isExponentialGroup_polynomialPow_of_comm hZ τ,
     ⟨g, Set.subset_centralizer_centralizer (by simp)⟩,
-    ⟨h, Set.subset_centralizer_centralizer (by simp)⟩, rfl, rfl,
+    ⟨h, Set.subset_centralizer_centralizer (by simp)⟩, rfl, rfl, hZ _ _,
     map_polynomialPow Z.subtype fun _ => rfl⟩
 
 /-- A map `T : G → G` that commutes with conjugation and is multiplicative on commuting elements
@@ -190,20 +193,14 @@ theorem isExponentialGroup_polynomialPow (hconj : ∀ g h : G, T (g * h * g⁻¹
   · rw [polynomialPow_def, ← C_1, support_C one_ne_zero]
     simp
   -- `pow_add`, `pow_mul` and `mul_pow` hold in a commutative subgroup containing the elements
-  · obtain ⟨Z, hZ, τ, z, -, rfl, -, e⟩ := exists_commutative_subgroup hconj hmul (Commute.refl g)
-    let := polynomialPow τ
-    have := isExponentialGroup_polynomialPow_of_comm hZ τ
-    rw [e, e, e, IsExponentialGroup.pow_add, Subgroup.coe_mul]
-  · obtain ⟨Z, hZ, τ, z, -, rfl, -, e⟩ := exists_commutative_subgroup hconj hmul (Commute.refl g)
-    let := polynomialPow τ
-    have := isExponentialGroup_polynomialPow_of_comm hZ τ
-    rw [e, e, e, IsExponentialGroup.pow_mul]
-  · simpa using map_polynomialPow (MulAut.conj k).toMonoidHom (T := T) (T' := T)
-      (fun x => by simpa using (hconj k x).symm) h p
-  · obtain ⟨Z, hZ, τ, zg, zh, rfl, rfl, e⟩ := exists_commutative_subgroup hconj hmul hc
-    let := polynomialPow τ
-    have := isExponentialGroup_polynomialPow_of_comm hZ τ
-    rw [← Subgroup.coe_mul, e, e, e, IsExponentialGroup.mul_pow (hZ zg zh), Subgroup.coe_mul]
+  · obtain ⟨Z, τ, _, z, -, rfl, -, -, e⟩ := exists_commutative_subgroup hconj hmul (.refl g)
+    rw [← e, ← e, ← e, IsExponentialGroup.pow_add, Subgroup.coe_mul]
+  · obtain ⟨Z, τ, _, z, -, rfl, -, -, e⟩ := exists_commutative_subgroup hconj hmul (.refl g)
+    rw [← e, ← e, ← e, IsExponentialGroup.pow_mul]
+  · simpa using (map_polynomialPow (MulAut.conj k).toMonoidHom (T := T) (T' := T)
+      (fun x => by simpa using (hconj k x).symm) h p).symm
+  · obtain ⟨Z, τ, _, zg, zh, rfl, rfl, hc, e⟩ := exists_commutative_subgroup hconj hmul hc
+    rw [← Subgroup.coe_mul, ← e, ← e, ← e, IsExponentialGroup.mul_pow hc, Subgroup.coe_mul]
 
 end Hyp
 
@@ -219,7 +216,7 @@ theorem polynomialPow_zpow (m : ℤ) (g : G) (p : ℤ[X]) :
     (fun x => map_zpow _ x m) (.ofAdd 1) p
   rw [polynomialPow_eq_aeval, hτ, aeval_algebraMap_apply_eq_algebraMap_eval,
     Module.algebraMap_end_apply] at h
-  simpa using h
+  simpa using h.symm
 
 /-- In a `ℤ[t]`-group, a subgroup closed under the `t`-th power is closed under every exponent. -/
 theorem pow_mem_of_pow_X_mem [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] {S : Subgroup G}
@@ -246,7 +243,7 @@ end IsExponentialGroup
 namespace ExponentialGroup.Completion
 
 open IsExponentialGroup
-open scoped TauCeti.ExponentialGroup.Completion
+open scoped TauCeti.ExponentialGroup.Completion TauCeti.IsExponentialGroup.MultiplicativePow
 
 variable {G : Type*} [Group G]
 
@@ -269,7 +266,7 @@ theorem existsUnique_monoidHom_map_pow_X {H : Type*} [Group H] {T : H → H}
 
 /-- In the `ℤ[t]`-completion, the powers of an element of `G` of infinite order with nonzero
 exponents are nontrivial. -/
-private theorem of_pow_ne_one_of_ne_zero {g : G} (hg : ¬IsOfFinOrder g) {p : ℤ[X]} (hp : p ≠ 0) :
+theorem of_pow_ne_one_of_ne_zero {g : G} (hg : ¬IsOfFinOrder g) {p : ℤ[X]} (hp : p ≠ 0) :
     (of g : Completion ℤ[X] G) ^ p ≠ 1 := by
   -- a nonzero integer polynomial does not vanish at some integer `m`
   obtain ⟨m, hm⟩ : ∃ m : ℤ, p.eval m ≠ 0 := by
@@ -277,47 +274,39 @@ private theorem of_pow_ne_one_of_ne_zero {g : G} (hg : ¬IsOfFinOrder g) {p : �
     exact hp (Polynomial.funext fun m => by simpa using H m)
   exact of_pow_ne_one (evalRingHom m) hg (by simpa using hm)
 
-/-- The powers of `x` with exponents of degree at most `N`. -/
-private def powersDegreeLE (x : Completion ℤ[X] G) (N : ℕ) : Subgroup (Completion ℤ[X] G) where
-  carrier := {y | ∃ q : ℤ[X], q.natDegree ≤ N ∧ x ^ q = y}
-  one_mem' := ⟨0, by simp, IsExponentialGroup.pow_zero x⟩
-  mul_mem' := by
-    rintro _ _ ⟨q, hq, rfl⟩ ⟨r, hr, rfl⟩
-    exact ⟨q + r, natDegree_add_le_of_degree_le hq hr, IsExponentialGroup.pow_add x q r⟩
-  inv_mem' := by
-    rintro _ ⟨q, hq, rfl⟩
-    exact ⟨-q, by rwa [natDegree_neg], IsExponentialGroup.pow_neg x q⟩
-
-private theorem powersDegreeLE_mono (x : Completion ℤ[X] G) : Monotone (powersDegreeLE x) :=
-  fun _ _ hNM _ ⟨q, hq, h⟩ => ⟨q, hq.trans hNM, h⟩
-
 /-- The polynomial powers `g ^ (t ^ k)` of an element of infinite order of `G` generate a subgroup
 of the `ℤ[t]`-completion of `G` that is not finitely generated. -/
 theorem not_fg_closure_range_pow {g : G} (hg : ¬IsOfFinOrder g) : ¬(Subgroup.closure
     (Set.range fun k : ℕ => (of g : Completion ℤ[X] G) ^ (X ^ k : ℤ[X]))).FG := by
   set x : Completion ℤ[X] G := of g
+  -- the powers of `x` with exponents of degree at most `N`
+  let P (N : ℕ) := (degreeLE ℤ N).toAddSubgroup.toSubgroup.map (powHom ℤ[X] x).toMonoidHom
+  have hP : Monotone P := fun _ _ hNM => Subgroup.map_mono <| AddSubgroup.toSubgroup.monotone <|
+    Submodule.toAddSubgroup_mono <| degreeLE_mono <| WithBot.coe_le_coe.2 hNM
   intro hfg
   obtain ⟨S, hS⟩ := Subgroup.isMulFG_iff.1 hfg
-  -- each generator in `S` is a power of `x` with an exponent of bounded degree
-  have hSL (s) (hs : s ∈ S) : ∃ N, s ∈ powersDegreeLE x N := by
-    refine (Subgroup.mem_iSup_of_directed (powersDegreeLE_mono x).directed_le).1 <|
+  -- each generator in `S` lies in some `P N`
+  have hSP (s) (hs : s ∈ S) : ∃ N, s ∈ P N := by
+    refine (Subgroup.mem_iSup_of_directed hP.directed_le).1 <|
       (Subgroup.closure_le _).2 ?_ (hS ▸ Subgroup.subset_closure hs)
     rintro _ ⟨k, rfl⟩
-    exact Subgroup.mem_iSup_of_mem k ⟨X ^ k, natDegree_X_pow_le k, rfl⟩
-  choose! N hN using hSL
-  -- hence all powers `x ^ (t ^ k)` have exponents of degree at most `M`, which fails at `M + 1`
+    exact Subgroup.mem_iSup_of_mem k <|
+      Subgroup.mem_map.2 ⟨.ofAdd (X ^ k), mem_degreeLE.2 (degree_X_pow_le k), by simp⟩
+  choose! N hN using hSP
+  -- hence all powers `x ^ (t ^ k)` lie in `P M`, which fails at `M + 1`
   set M := S.sup N
-  have hle : Subgroup.closure (S : Set _) ≤ powersDegreeLE x M :=
-    (Subgroup.closure_le _).2 fun s hs => powersDegreeLE_mono x (S.le_sup hs) (hN s hs)
+  have hle : Subgroup.closure (S : Set _) ≤ P M :=
+    (Subgroup.closure_le _).2 fun s hs => hP (S.le_sup hs) (hN s hs)
   have hmem : x ^ (X ^ (M + 1) : ℤ[X]) ∈ Subgroup.closure (S : Set _) := by
     rw [hS]
     exact Subgroup.subset_closure (Set.mem_range_self (M + 1))
-  obtain ⟨q, hq, h⟩ := hle hmem
-  refine of_pow_ne_one_of_ne_zero hg (p := X ^ (M + 1) - q)
-    (sub_ne_zero.2 (ne_of_apply_ne natDegree ?_)) ?_
-  · rw [natDegree_X_pow]
-    omega
-  · rw [IsExponentialGroup.pow_sub, ← h, mul_inv_cancel]
+  obtain ⟨q, hq, h⟩ := Subgroup.mem_map.1 (hle hmem)
+  refine of_pow_ne_one_of_ne_zero hg (p := X ^ (M + 1) - q.toAdd)
+    (sub_ne_zero.2 (ne_of_apply_ne degree ?_)) ?_
+  · rw [degree_X_pow]
+    exact ((mem_degreeLE.1 hq).trans_lt (WithBot.coe_lt_coe.2 M.lt_succ_self)).ne'
+  · rw [IsExponentialGroup.pow_sub, ← h]
+    simp [x]
 
 end ExponentialGroup.Completion
 
