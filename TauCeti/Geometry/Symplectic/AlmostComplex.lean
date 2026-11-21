@@ -58,7 +58,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
   their complex eigenlines by complex numbers of modulus one.
 * `TauCeti.SymplecticForm.Invariant.apply_add_apply_eq_zero`: invariance of `ω` under `J` in the
-  form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`.
+  form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`, and
+  `TauCeti.SymplecticForm.Invariant.apply_apply_eq_neg`: `ω (J v) w = -ω v (J w)`.
 * `TauCeti.AlmostComplexStructure.tangentSpace J`: the tangent condition `Y J + J Y = 0` for
   variations `Y` of `J`, and `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the variations
   that are moreover skew-adjoint for `ω`. Among variations anticommuting with `J`, skew-adjointness
@@ -897,6 +898,12 @@ theorem Invariant.apply_add_apply_eq_zero {ω : SymplecticForm V} {J : AlmostCom
   beta_reduce
   rw [J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp hJ) v w]
   exact neg_add_cancel _
+
+/-- For a complex structure `J` preserving `ω`, moving `J` across `ω` negates it:
+`ω (J v) w = -ω v (J w)`. -/
+theorem Invariant.apply_apply_eq_neg {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hJ : ω.Invariant J) (v w : V) : ω (J v) w = -ω v (J w) :=
+  J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp hJ) v w
 
 /-- For a `J`-invariant form, the associated bilinear form is symmetric pointwise. Only invariance
 is needed. -/

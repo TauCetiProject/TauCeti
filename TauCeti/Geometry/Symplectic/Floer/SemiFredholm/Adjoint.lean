@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.CauchyRiemann
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -36,15 +37,18 @@ orbits. It is the estimate of `TauCeti.Geometry.Symplectic.Floer.SemiFredholm` f
 * **Reflection.** The leading term of `D_u^*` is `-∂s`. Precomposing with the reflection
   `ρ (s, t) = (-s, t)` and writing covectors through `ω`, `η (ρ w) = ω (ζ w, ·)`, turns `D_u^*`
   into the real Cauchy–Riemann operator `∂s ζ + J(ρ w, u (ρ w)) ∂t ζ - A(ρ w)ᵀ ζ` on vector fields,
-  where `ᵀ` is the `ω`-transpose, Mathlib's `LinearMap.BilinForm.leftAdjointOfNondegenerate`. Its
-  leading coefficient is again `ω`-compatible, and the reflection exchanges the two ends.
+  where `ᵀ` is the `ω`-transpose `TauCeti.SymplecticForm.leftAdjointL` and `ω♭` is
+  `TauCeti.SymplecticForm.flatEquiv`. Its leading coefficient is again `ω`-compatible, and the
+  reflection exchanges the two ends.
 * **The limits.** At an end orbit `x`, with `j_t = J_t(x t)`, `S_t = dX_{H_t}(x t)` and
   `j' = d/dt j_t`, the coefficient `A` converges to `j' + j S`
   (`TauCeti.SymplecticForm.cylindricalAdjointCoeff` along `x`), so the reflected operator
   converges to the stationary cylinder operator `∂s + j (∂t - S'')` of the rotated field
   `S'' = j j' - j S j`. This field is infinitesimally symplectic, and `ξ ↦ j ξ` carries solutions
-  of `ξ' = S ξ` to solutions of `ξ' = S'' ξ`. When `j` has period one, the return map of `S''` is
-  conjugate to that of `S`, so it fixes no nonzero vector at a nondegenerate orbit.
+  of `ξ' = S ξ` to solutions of `ξ' = S'' ξ` (`TauCeti.dysonSeriesLeft_mul_sub_mul_mul_eq`). When
+  `j` has period one, the return map of `S''` is conjugate to that of `S`
+  (`TauCeti.det_one_sub_dysonSeriesLeft_mul_sub_mul_mul`), so it fixes no nonzero vector at a
+  nondegenerate orbit.
 * **The estimate.** The semi-Fredholm estimate of real Cauchy–Riemann operators with
   nondegenerate limits
   (`exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_tendstoUniformlyOn`)
@@ -83,65 +87,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-! ### Covectors as vectors through `ω` -/
-
-/-- The isomorphism `v ↦ ω(v, ·)` of `V` with its dual. -/
-private noncomputable def flatCLE (ω : SymplecticForm V) : V ≃L[ℝ] (V →L[ℝ] ℝ) :=
-  ((ω.toBilinForm.toDual ω.nondegenerate).trans
-    LinearMap.toContinuousLinearMap).toContinuousLinearEquiv
-
-private theorem flatCLE_apply (ω : SymplecticForm V) (v w : V) : ω.flatCLE v w = ω v w := by
-  simp [flatCLE, LinearMap.BilinForm.toDual_def]
-
-/-- The left adjoint `Lᵀ` of an endomorphism `L` for `ω`, `ω (Lᵀ v) w = ω v (L w)`. -/
-private theorem apply_leftAdjointOfNondegenerate_apply (ω : SymplecticForm V) (L : V →L[ℝ] V)
-    (v w : V) :
-    ω (ω.toBilinForm.leftAdjointOfNondegenerate ω.nondegenerate (L : V →ₗ[ℝ] V) v) w =
-      ω v (L w) :=
-  ω.toBilinForm.isAdjointPairLeftAdjointOfNondegenerate ω.nondegenerate _ v w
-
-/-- The `ω`-transpose `L ↦ Lᵀ` of endomorphisms, Mathlib's
-`LinearMap.BilinForm.leftAdjointOfNondegenerate` for `ω`, as a continuous linear map in `L`; it is
-characterized by `ω (Lᵀ v) w = ω v (L w)` (`apply_dualTranspose_apply`). -/
-private noncomputable def dualTranspose (ω : SymplecticForm V) :
-    (V →L[ℝ] V) →L[ℝ] (V →L[ℝ] V) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun L ↦ LinearMap.toContinuousLinearMap
-        (ω.toBilinForm.leftAdjointOfNondegenerate ω.nondegenerate (L : V →ₗ[ℝ] V))
-      map_add' := fun L L' ↦ by
-        ext v
-        refine ω.flatCLE.injective (ContinuousLinearMap.ext fun w ↦ ?_)
-        simp only [LinearMap.coe_toContinuousLinearMap', add_apply, map_add, flatCLE_apply]
-        simp only [apply_leftAdjointOfNondegenerate_apply, add_apply, map_add]
-      map_smul' := fun c L ↦ by
-        ext v
-        refine ω.flatCLE.injective (ContinuousLinearMap.ext fun w ↦ ?_)
-        simp only [LinearMap.coe_toContinuousLinearMap', smul_apply, map_smul, flatCLE_apply,
-          RingHom.id_apply]
-        simp only [apply_leftAdjointOfNondegenerate_apply, smul_apply, map_smul] }
-
-private theorem apply_dualTranspose_apply (ω : SymplecticForm V) (L : V →L[ℝ] V) (v w : V) :
-    ω (ω.dualTranspose L v) w = ω v (L w) :=
-  ω.apply_leftAdjointOfNondegenerate_apply L v w
-
-/-- Two endomorphisms that pair in the same way under `ω` are equal. -/
-private theorem ext_of_apply_eq (ω : SymplecticForm V) {L L' : V →L[ℝ] V}
-    (h : ∀ v w, ω (L v) w = ω (L' v) w) : L = L' := by
-  ext v
-  refine ω.flatCLE.injective (ContinuousLinearMap.ext fun w ↦ ?_)
-  rw [flatCLE_apply, flatCLE_apply, h]
-
-omit [FiniteDimensional ℝ V] in
-/-- For a structure `J` preserving `ω`, moving `J` across `ω` negates it:
-`ω (J v) w = -ω v (J w)`. -/
-private theorem apply_apply_eq_neg_of_invariant {ω : SymplecticForm V}
-    {J : AlmostComplexStructure V} (hJ : ω.Invariant J) (v w : V) : ω (J v) w = -ω v (J w) :=
-  eq_neg_of_add_eq_zero_left (hJ.apply_add_apply_eq_zero v w)
-
-private theorem apply_flatCLE_symm_apply (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) (w : V) :
-    ω (ω.flatCLE.symm φ) w = φ w := by
-  rw [← flatCLE_apply, ContinuousLinearEquiv.apply_symm_apply]
-
 /-! ### The reflected adjoint -/
 
 /-- The reflection `ρ (s, t) = (-s, t)` of the cylinder, as a linear map. -/
@@ -149,6 +94,22 @@ private noncomputable def reflectL : (ℝ × ℝ) →L[ℝ] ℝ × ℝ :=
   (-ContinuousLinearMap.fst ℝ ℝ ℝ).prod (ContinuousLinearMap.snd ℝ ℝ ℝ)
 
 private theorem reflectL_apply (z : ℝ × ℝ) : reflectL z = (-z.1, z.2) := (rfl)
+
+private theorem reflectL_stdComplexLineReal :
+    reflectL stdComplexLineReal = -stdComplexLineReal := by
+  simp [reflectL_apply, stdComplexLineReal]
+
+private theorem reflectL_stdComplexLineImag :
+    reflectL stdComplexLineImag = stdComplexLineImag := by
+  simp [reflectL_apply, stdComplexLineImag]
+
+/-- The derivative of the reflected vector field `ω♭⁻¹ ∘ η ∘ ρ` of a covector field `η`. -/
+private theorem hasFDerivAt_flatEquiv_symm_comp_reflectL (ω : SymplecticForm V)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η (reflectL z)) :
+    HasFDerivAt (fun w ↦ ω.flatEquiv.symm (η (reflectL w)))
+      ((ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp ((fderiv ℝ η (reflectL z)).comp reflectL))
+      z :=
+  ω.flatEquiv.symm.hasFDerivAt.comp z (hη.hasFDerivAt.comp z reflectL.hasFDerivAt)
 
 /-- **The reflected formal adjoint is a Cauchy–Riemann operator.** Let `J(z, u z)` preserve `ω`
 at `ρ z`, for the reflection `ρ (s, t) = (-s, t)`. Write the covector field `η` through `ω` as the
@@ -167,100 +128,23 @@ private theorem floerLinearizationAdjoint_reflectL_eq (ω : SymplecticForm V)
     (hc : ω.Invariant (J (reflectL z) (u (reflectL z)))) :
     ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η
         (reflectL z) =
-      ω.flatCLE (fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) z stdComplexLineReal +
+      ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineReal +
         J (reflectL z) (u (reflectL z))
-          (fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) z stdComplexLineImag) -
-        ω.dualTranspose (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap)
+          (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineImag) -
+        ω.leftAdjointL (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap)
             (reflectL z) stdComplexLineImag -
           ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-            (reflectL z)) (ω.flatCLE.symm (η (reflectL z)))) := by
-  have hζ : HasFDerivAt (fun w ↦ ω.flatCLE.symm (η (reflectL w)))
-      ((ω.flatCLE.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp ((fderiv ℝ η (reflectL z)).comp reflectL))
-      z :=
-    ω.flatCLE.symm.hasFDerivAt.comp z (hη.hasFDerivAt.comp z reflectL.hasFDerivAt)
-  rw [floerLinearizationAdjoint_eq_neg hη hJu, hζ.fderiv]
+            (reflectL z)) (ω.flatEquiv.symm (η (reflectL z)))) := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu,
+    (hasFDerivAt_flatEquiv_symm_comp_reflectL ω hη).fderiv]
   ext w
-  have hR : reflectL stdComplexLineReal = -stdComplexLineReal := by
-    simp [reflectL_apply, stdComplexLineReal]
-  have hI : reflectL stdComplexLineImag = stdComplexLineImag := by
-    simp [reflectL_apply, stdComplexLineImag]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hR, hI, map_neg,
-    flatCLE_apply, map_add, map_sub, apply_dualTranspose_apply, apply_flatCLE_symm_apply,
-    neg_apply, add_apply, sub_apply, apply_apply_eq_neg_of_invariant hc,
-    LinearMap.coe_toContinuousLinearMap']
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    reflectL_stdComplexLineReal, reflectL_stdComplexLineImag, map_neg, flatEquiv_apply, map_add,
+    map_sub, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply, add_apply, sub_apply,
+    hc.apply_apply_eq_neg, LinearMap.coe_toContinuousLinearMap']
   ring
 
 /-! ### The limit of the reflected adjoint at a nondegenerate orbit -/
-
-omit [FiniteDimensional ℝ V] in
-/-- **Rotating a linear equation by complex structures.** Let `J` be a differentiable path of
-complex structures, `J t * J t = -1`, with derivative `D`, and let `S` be continuous. Then the
-propagator of `Γ' = (J D - J S J) Γ` is `-J(t) Ψ(t) J(0)` for the propagator `Ψ` of `Ψ' = S Ψ`:
-the map `ξ ↦ J ξ` carries solutions of `ξ' = S ξ` to solutions of the rotated equation. -/
-private theorem dysonSeriesLeft_mul_sub_mul_mul_eq [CompleteSpace V] {J D S : ℝ → V →L[ℝ] V}
-    (hJ : ∀ t, HasDerivAt J (D t) t) (hJJ : ∀ t, J t * J t = -1) (hD : Continuous D)
-    (hS : Continuous S) (t : ℝ) :
-    dysonSeriesLeft (fun t ↦ J t * D t - J t * S t * J t) t =
-      -(J t * dysonSeriesLeft S t * J 0) := by
-  have hJc : Continuous J := continuous_iff_continuousAt.2 fun t ↦ (hJ t).continuousAt
-  -- Differentiating `J * J = -1` gives `D J = -J D`.
-  have hDJ (t : ℝ) : D t * J t = -(J t * D t) := by
-    have h := ((hJ t).mul (hJ t)).unique
-      ((hasDerivAt_const t (-1 : V →L[ℝ] V)).congr_of_eventuallyEq
-        (Eventually.of_forall fun s ↦ hJJ s))
-    rw [eq_neg_iff_add_eq_zero]
-    simpa using h
-  have hf (t : ℝ) : HasDerivAt (fun t ↦ -(J t * dysonSeriesLeft S t * J 0))
-      ((J t * D t - J t * S t * J t) * -(J t * dysonSeriesLeft S t * J 0)) t := by
-    have h := (((hJ t).mul (hasDerivAt_dysonSeriesLeft hS t)).mul_const (J 0)).neg
-    convert h using 1
-    have h₁ : J t * D t * J t = D t := by
-      rw [mul_assoc, hDJ, mul_neg, ← mul_assoc, hJJ, neg_mul, one_mul, neg_neg]
-    have h₂ : J t * S t * J t * J t = -(J t * S t) := by
-      rw [mul_assoc _ (J t), hJJ, mul_neg, mul_one]
-    calc (J t * D t - J t * S t * J t) * -(J t * dysonSeriesLeft S t * J 0)
-        = -((J t * D t * J t) * dysonSeriesLeft S t * J 0) +
-            (J t * S t * J t * J t) * dysonSeriesLeft S t * J 0 := by noncomm_ring
-      _ = _ := by rw [h₁, h₂]; noncomm_ring
-  have h0 : -(J 0 * dysonSeriesLeft S 0 * J 0) = 1 := by
-    rw [dysonSeriesLeft_zero, mul_one, hJJ, neg_neg]
-  have h := eq_dysonSeriesLeft_mul (p := fun t ↦ J t * D t - J t * S t * J t)
-    ((hJc.mul hD).sub ((hJc.mul hS).mul hJc)) hf t
-  rw [h0, mul_one] at h
-  exact h.symm
-
-/-- If the return map `Ψ(1)` of `ξ' = S ξ` fixes no nonzero vector, neither does the return map of
-the rotated equation `ξ' = (J D - J S J) ξ` of `dysonSeriesLeft_mul_sub_mul_mul_eq`, for a loop of
-complex structures, `J 1 = J 0`. -/
-private theorem det_one_sub_dysonSeriesLeft_mul_sub_mul_mul_ne_zero {J D S : ℝ → V →L[ℝ] V}
-    (hJ : ∀ t, HasDerivAt J (D t) t) (hJJ : ∀ t, J t * J t = -1) (hD : Continuous D)
-    (hS : Continuous S) (hJ1 : J 1 = J 0)
-    (hdet : LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
-    LinearMap.det ((1 - dysonSeriesLeft (fun t ↦ J t * D t - J t * S t * J t) 1 :
-      V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0 := by
-  have hJJv (v : V) : J 0 (J 0 v) = -v := by
-    simpa using congrArg (· v) (hJJ 0)
-  rw [dysonSeriesLeft_mul_sub_mul_mul_eq hJ hJJ hD hS, hJ1]
-  intro h
-  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).1 (LinearMap.det_eq_zero_iff_ker_ne_bot.1 h)
-  -- `w = J v` is fixed by `Ψ(1)`.
-  have hv' : v + J 0 (dysonSeriesLeft S 1 (J 0 v)) = 0 := by simpa using hv
-  have hw : (1 - dysonSeriesLeft S 1 : V →L[ℝ] V) (J 0 v) = 0 := by
-    have h₁ := congrArg (J 0) hv'
-    rw [map_add, hJJv, map_zero] at h₁
-    simpa [sub_eq_add_neg, eq_comm, add_eq_zero_iff_eq_neg] using h₁
-  have hw0 : J 0 v = 0 := by
-    by_contra hw0
-    exact hdet (LinearMap.det_eq_zero_iff_ker_ne_bot.2
-      ((Submodule.ne_bot_iff _).2 ⟨J 0 v, hw, hw0⟩))
-  exact hv0 (by simpa [hw0] using hJJv v)
-
-/-- For a structure `J` preserving `ω`, the `ω`-transpose of `J` is `-J`. -/
-private theorem dualTranspose_eq_neg_of_invariant {ω : SymplecticForm V}
-    {J : AlmostComplexStructure V} (hJ : ω.Invariant J) :
-    ω.dualTranspose J.toLinearMap.toContinuousLinearMap = -J.toLinearMap.toContinuousLinearMap :=
-  ω.ext_of_apply_eq fun v w ↦ by
-    simp [apply_dualTranspose_apply, apply_apply_eq_neg_of_invariant hJ]
 
 section EndLoop
 
@@ -290,12 +174,29 @@ private theorem endLoop_mul_self (t : ℝ) : endLoop Je x t * endLoop Je x t = -
   ext v
   simp [endLoop]
 
+/-- Along an orbit where `J_t` is `ω`-compatible, the loop `j` is `ω`-skew. -/
+private theorem apply_endLoop_apply (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) (a b : V) :
+    ω (endLoop Je x t a) b = -ω a (endLoop Je x t b) := by
+  simpa only [endLoop, LinearMap.coe_toContinuousLinearMap'] using
+    (hJx t).invariant.apply_apply_eq_neg a b
+
+/-- The linearized Hamiltonian field `S = dX_{H_t}(y)` is `ω`-skew. -/
+private theorem apply_fderiv_hamiltonianVectorField_apply (hHe : ContDiff ℝ 2 (uncurry He))
+    (t : ℝ) (y a b : V) :
+    ω (fderiv ℝ (ω.hamiltonianVectorField (He t)) y a) b =
+      -ω a (fderiv ℝ (ω.hamiltonianVectorField (He t)) y b) :=
+  eq_neg_of_add_eq_zero_left (ω.apply_fderiv_hamiltonianVectorField_add
+    ((hHe.comp ((contDiff_const (c := t)).prodMk contDiff_id)).contDiffAt) a b)
+
 private theorem hasDerivAt_endLoop
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t) (t : ℝ) :
-    HasDerivAt (endLoop Je x) (endLoopDeriv ω Je He x t) t :=
-  ((hJe.differentiable one_ne_zero (t, x t)).hasFDerivAt.comp_hasDerivAt t
-    ((hasDerivAt_id t).prodMk (hx t)) :)
+    HasDerivAt (endLoop Je x) (endLoopDeriv ω Je He x t) t := by
+  -- `endLoop` is the structure `(t, y) ↦ J_t(y)` along the curve `t ↦ (t, x t)`, whose velocity
+  -- is `(1, X_{H_t}(x t))`, so the chain rule gives `endLoopDeriv`.
+  unfold endLoop endLoopDeriv
+  exact (hJe.differentiable one_ne_zero (t, x t)).hasFDerivAt.comp_hasDerivAt t
+    ((hasDerivAt_id t).prodMk (hx t))
 
 private theorem continuous_endLoopDeriv (hHe : ContDiff ℝ 2 (uncurry He))
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -307,40 +208,37 @@ private theorem continuous_endLoopDeriv (hHe : ContDiff ℝ 2 (uncurry He))
 
 /-- The derivative of a loop of `ω`-compatible structures is `ω`-skew: its `ω`-transpose is its
 negative. -/
-private theorem dualTranspose_endLoopDeriv
+private theorem leftAdjointL_endLoopDeriv
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
     (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) :
-    ω.dualTranspose (endLoopDeriv ω Je He x t) = -endLoopDeriv ω Je He x t := by
+    ω.leftAdjointL (endLoopDeriv ω Je He x t) = -endLoopDeriv ω Je He x t := by
   have h := hasDerivAt_endLoop hJe hx t
-  refine (ω.dualTranspose.hasFDerivAt.comp_hasDerivAt t h).unique ?_
-  exact h.neg.congr_of_eventuallyEq (Eventually.of_forall fun s ↦
-    dualTranspose_eq_neg_of_invariant (hJx s).invariant)
+  refine (ω.leftAdjointL.hasFDerivAt.comp_hasDerivAt t h).unique ?_
+  exact h.neg.congr_of_eventuallyEq
+    (Eventually.of_forall fun s ↦ (hJx s).invariant.leftAdjointL_eq_neg)
 
 /-- The derivative of a loop of `ω`-compatible structures is `ω`-skew. -/
 private theorem apply_endLoopDeriv_apply
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
     (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) (a b : V) :
-    ω.toBilinForm (endLoopDeriv ω Je He x t a) b =
-      -ω.toBilinForm a (endLoopDeriv ω Je He x t b) := by
-  have h := ω.apply_dualTranspose_apply (endLoopDeriv ω Je He x t) a b
-  rw [dualTranspose_endLoopDeriv hJe hx hJx t] at h
-  beta_reduce at h
+    ω (endLoopDeriv ω Je He x t a) b = -ω a (endLoopDeriv ω Je He x t b) := by
+  have h := ω.apply_leftAdjointL_apply (endLoopDeriv ω Je He x t) a b
+  rw [leftAdjointL_endLoopDeriv hJe hx hJx t] at h
+  beta_reduce at h ⊢
   rw [neg_apply, map_neg, LinearMap.neg_apply] at h
   linarith
 
-/-- `D j = -j D` for the derivative `D` of the loop `j` of complex structures. -/
+/-- `D j = -j D` for the derivative `D` of the loop `j` of complex structures, by differentiating
+`j * j = -1`. -/
 private theorem endLoopDeriv_endLoop_apply
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t) (t : ℝ) (a : V) :
     endLoopDeriv ω Je He x t (endLoop Je x t a) = -endLoop Je x t (endLoopDeriv ω Je He x t a) := by
-  have h := (hasDerivAt_endLoop hJe hx t).mul (hasDerivAt_endLoop hJe hx t)
-  have h' := h.unique ((hasDerivAt_const t (-1 : V →L[ℝ] V)).congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ endLoop_mul_self s))
-  have h'' := congrArg (· a) h'
-  simp only [add_apply, zero_apply] at h''
-  exact eq_neg_of_add_eq_zero_left h''
+  have h := (ContinuousLinearMap.mul ℝ (V →L[ℝ] V)).apply_add_apply_eq_zero_of_const
+    (hasDerivAt_endLoop hJe hx t) (hasDerivAt_endLoop hJe hx t) endLoop_mul_self
+  exact eq_neg_of_add_eq_zero_left (by simpa using congrArg (· a) h)
 
 /-- `rotatedField` is infinitesimally symplectic. -/
 private theorem apply_rotatedField_add
@@ -350,54 +248,52 @@ private theorem apply_rotatedField_add
     (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) (v w : V) :
     ω (rotatedField ω Je He x t v) w + ω v (rotatedField ω Je He x t w) = 0 := by
   simp only [rotatedField, sub_apply, mul_apply_eq_comp, map_sub, LinearMap.sub_apply]
+  have hj := apply_endLoop_apply hJx t
+  have hS := apply_fderiv_hamiltonianVectorField_apply (ω := ω) hHe t (x t)
+  have hD := apply_endLoopDeriv_apply hJe hx hJx t
+  have e₁ := endLoopDeriv_endLoop_apply hJe hx t w
   set j := endLoop Je x t
   set D := endLoopDeriv ω Je He x t
   set S := fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)
-  set B := ω.toBilinForm
-  have hj (a b : V) : B (j a) b = -B a (j b) :=
-    apply_apply_eq_neg_of_invariant (hJx t).invariant a b
-  have hS (a b : V) : B (S a) b = -B a (S b) := eq_neg_of_add_eq_zero_left
-    (ω.apply_fderiv_hamiltonianVectorField_add
-      ((hHe.comp ((contDiff_const (c := t)).prodMk contDiff_id)).contDiffAt) a b)
-  have hD := apply_endLoopDeriv_apply hJe hx hJx t
-  have e₁ : B v (D (j w)) = -B v (j (D w)) := by
-    rw [endLoopDeriv_endLoop_apply hJe hx t, map_neg]
+  have e₂ : ω v (D (j w)) = -ω v (j (D w)) := by
+    beta_reduce
+    rw [e₁, map_neg]
   linarith [hj (D v) w, hD v (j w), hj (S (j v)) w, hS (j v) (j w), hj v (S (j w))]
+
+/-- Along the orbit, `cylindricalAdjointCoeff (t, x t, X_{H_t}(x t))` is `D + j S`: its term in
+the slice defect `∂t u - X_{H_t}(u)` vanishes there. -/
+private theorem cylindricalAdjointCoeff_eq_endLoopDeriv_add (t : ℝ) :
+    ω.cylindricalAdjointCoeff (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) He
+      (t, x t, ω.hamiltonianVectorField (He t) (x t)) =
+        endLoopDeriv ω Je He x t +
+          endLoop Je x t * fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t) := by
+  rw [cylindricalAdjointCoeff_def, sub_self, map_zero, zero_sub, sub_neg_eq_add, endLoopDeriv,
+    endLoop, mul_def, uncurry_def]
 
 /-- The `ω`-transpose of the limit `A(t, x t, X_{H_t}(x t)) = D + j S` of the zeroth-order
 coefficient of the formal adjoint is `j * rotatedField`. -/
-private theorem dualTranspose_cylindricalAdjointCoeff
+private theorem leftAdjointL_cylindricalAdjointCoeff
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hHe : ContDiff ℝ 2 (uncurry He))
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (He t) (x t)) t)
     (hJx : ∀ t, ω.Compatible (Je t (x t))) (t : ℝ) :
-    ω.dualTranspose (ω.cylindricalAdjointCoeff
+    ω.leftAdjointL (ω.cylindricalAdjointCoeff
         (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) He
         (t, x t, ω.hamiltonianVectorField (He t) (x t))) =
       endLoop Je x t * rotatedField ω Je He x t := by
-  have hA : ω.cylindricalAdjointCoeff (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) He
-      (t, x t, ω.hamiltonianVectorField (He t) (x t)) =
-        endLoopDeriv ω Je He x t +
-          endLoop Je x t * fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t) := by
-    rw [cylindricalAdjointCoeff_def]
-    simp [endLoopDeriv, endLoop, mul_def, uncurry_def]
   refine ω.ext_of_apply_eq fun v w ↦ ?_
-  rw [hA, apply_dualTranspose_apply]
+  rw [cylindricalAdjointCoeff_eq_endLoopDeriv_add, apply_leftAdjointL_apply]
   simp only [rotatedField, mul_apply_eq_comp, add_apply, sub_apply, map_add, map_sub,
     LinearMap.sub_apply]
-  set j := endLoop Je x t
-  set D := endLoopDeriv ω Je He x t
-  set S := fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)
-  set B := ω.toBilinForm
-  have hj (a b : V) : B (j a) b = -B a (j b) :=
-    apply_apply_eq_neg_of_invariant (hJx t).invariant a b
-  have hS (a b : V) : B (S a) b = -B a (S b) := eq_neg_of_add_eq_zero_left
-    (ω.apply_fderiv_hamiltonianVectorField_add
-      ((hHe.comp ((contDiff_const (c := t)).prodMk contDiff_id)).contDiffAt) a b)
-  have hjj (a : V) : j (j a) = -a := by
+  have hj := apply_endLoop_apply hJx t
+  have hS := apply_fderiv_hamiltonianVectorField_apply (ω := ω) hHe t (x t)
+  have hD := apply_endLoopDeriv_apply hJe hx hJx t v w
+  have hjj (a : V) : endLoop Je x t (endLoop Je x t a) = -a := by
     simpa using congrArg (· a) (endLoop_mul_self (Je := Je) (x := x) t)
   rw [hjj, hjj, map_neg, map_neg, LinearMap.neg_apply, LinearMap.neg_apply]
-  linarith [apply_endLoopDeriv_apply hJe hx hJx t v w, hj v (S w), hS (j v) w]
+  set j := endLoop Je x t
+  set S := fderiv ℝ (ω.hamiltonianVectorField (He t)) (x t)
+  linarith [hj v (S w), hS (j v) w]
 
 private theorem continuous_rotatedField (hHe : ContDiff ℝ 2 (uncurry He))
     (hJe : ContDiff ℝ 1 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -420,10 +316,11 @@ private theorem det_one_sub_dysonSeriesLeft_rotatedField_ne_zero {K : ℝ≥0}
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hx1 : x 1 = x 0 := (ω.eq_timeDependentHamiltonianFlow He hX hx 0 1).trans
     (isNondegenerateFixedPt_iff.1 hnd).1
-  exact det_one_sub_dysonSeriesLeft_mul_sub_mul_mul_ne_zero (hasDerivAt_endLoop hJe hx)
-    endLoop_mul_self (continuous_endLoopDeriv hHe hJe hxc)
-    (ω.continuous_fderiv_hamiltonianVectorField_comp hHe hxc) (by simp [endLoop, hx1, hJe1])
-    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hHe hx hnd)
+  unfold rotatedField
+  rw [det_one_sub_dysonSeriesLeft_mul_sub_mul_mul (hasDerivAt_endLoop hJe hx) endLoop_mul_self
+    (continuous_endLoopDeriv hHe hJe hxc) (ω.continuous_fderiv_hamiltonianVectorField_comp hHe hxc)
+    (by simp [endLoop, hx1, hJe1])]
+  exact ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hHe hx hnd
 
 /-- **The coefficients of the adjoint near an orbit.** Along a filter `l` of slices on which the
 loops of `u` converge uniformly to an orbit `x` and the slice defect tends uniformly to zero,
@@ -485,58 +382,46 @@ private theorem setIntegral_comp_reflectL (g : ℝ × ℝ → ℝ) (a b : ℝ) :
       ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, g z := by
   simpa [reflectL_apply] using (setIntegral_Icc_neg_prod_eq g (-b) (-a) (Icc 0 1)).symm
 
-/-- The derivative of the reflected vector field `ω♭⁻¹ ∘ η ∘ ρ` of a covector field `η`. -/
-private theorem hasFDerivAt_flatCLE_symm_comp_reflectL (ω : SymplecticForm V)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ} (hη : DifferentiableAt ℝ η (reflectL z)) :
-    HasFDerivAt (fun w ↦ ω.flatCLE.symm (η (reflectL w)))
-      ((ω.flatCLE.symm : (V →L[ℝ] ℝ) →L[ℝ] V).comp ((fderiv ℝ η (reflectL z)).comp reflectL))
-      z :=
-  ω.flatCLE.symm.hasFDerivAt.comp z (hη.hasFDerivAt.comp z reflectL.hasFDerivAt)
-
 /-- Pointwise, the `W^{1,2}` density of a covector field `η` at `ρ w` is at most `‖ω♭‖²` times
 that of the reflected vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ` at `w`. -/
 private theorem sobolev_reflectL_le (ω : SymplecticForm V) {η : ℝ × ℝ → V →L[ℝ] ℝ}
     (hη : Differentiable ℝ η) (w : ℝ × ℝ) :
     ‖fderiv ℝ η (reflectL w) stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ η (reflectL w) stdComplexLineImag‖ ^ 2 + ‖η (reflectL w)‖ ^ 2 ≤
-      ‖(ω.flatCLE : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 *
-        (‖fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) w stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) w stdComplexLineImag‖ ^ 2 +
-          ‖ω.flatCLE.symm (η (reflectL w))‖ ^ 2) := by
-  set c := ‖(ω.flatCLE : V →L[ℝ] (V →L[ℝ] ℝ))‖
-  have hb (φ : V →L[ℝ] ℝ) : ‖φ‖ ^ 2 ≤ c ^ 2 * ‖ω.flatCLE.symm φ‖ ^ 2 := by
+      ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖ ^ 2 *
+        (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineImag‖ ^ 2 +
+          ‖ω.flatEquiv.symm (η (reflectL w))‖ ^ 2) := by
+  set c := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
+  have hb (φ : V →L[ℝ] ℝ) : ‖φ‖ ^ 2 ≤ c ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
     rw [← mul_pow]
     refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-    simpa using (ω.flatCLE : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatCLE.symm φ)
-  have hd := (hasFDerivAt_flatCLE_symm_comp_reflectL ω (hη (reflectL w))).fderiv
-  have hR : reflectL stdComplexLineReal = -stdComplexLineReal := by
-    simp [reflectL_apply, stdComplexLineReal]
-  have hI : reflectL stdComplexLineImag = stdComplexLineImag := by
-    simp [reflectL_apply, stdComplexLineImag]
-  rw [hd]
-  simp only [ContinuousLinearMap.comp_apply, hR, hI, map_neg, norm_neg, mul_add]
+    simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
+  rw [(hasFDerivAt_flatEquiv_symm_comp_reflectL ω (hη (reflectL w))).fderiv]
+  simp only [ContinuousLinearMap.comp_apply, reflectL_stdComplexLineReal,
+    reflectL_stdComplexLineImag, map_neg, norm_neg, mul_add]
   gcongr <;> exact hb _
 
 /-- `‖ω♭⁻¹ φ‖² ≤ ‖ω♭⁻¹‖² ‖φ‖²`. -/
-private theorem norm_flatCLE_symm_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
-    ‖ω.flatCLE.symm φ‖ ^ 2 ≤ ‖(ω.flatCLE.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
+private theorem norm_flatEquiv_symm_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
+    ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
   rw [← mul_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatCLE.symm : _ →L[ℝ] V).le_opNorm φ) 2
+  exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
 
 /-- **Transferring the estimate.** Let `P ζ = ∂s ζ + Jr ∂t ζ + Ar ζ` satisfy the semi-Fredholm
 estimate with error region `[-T, T] × [0, 1]`, and let `D` be an operator on covector fields such
 that, for every `C²` field `η`, `D η` is continuous and `D η (ρ z) = ω♭ (P ζ z)` for the reflected
 vector field `ζ = ω♭⁻¹ ∘ η ∘ ρ`. Then `D` satisfies the semi-Fredholm estimate with the same error
 region. -/
-private theorem exists_forall_setIntegral_le_of_flatCLE_reflectL (ω : SymplecticForm V)
+private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : SymplecticForm V)
     {Jr : ℝ × ℝ → AlmostComplexStructure V} {Ar : ℝ × ℝ → V →L[ℝ] V}
     (hJr : Continuous fun z ↦ (Jr z).toLinearMap.toContinuousLinearMap) (hAr : Continuous Ar)
     {D : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ × ℝ → V →L[ℝ] ℝ}
     (hDc : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → Continuous (D η))
-    (hD : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ∀ z, D η (reflectL z) = ω.flatCLE
-      (fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) z stdComplexLineReal +
-        Jr z (fderiv ℝ (fun w ↦ ω.flatCLE.symm (η (reflectL w))) z stdComplexLineImag) +
-        Ar z (ω.flatCLE.symm (η (reflectL z)))))
+    (hD : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → ∀ z, D η (reflectL z) = ω.flatEquiv
+      (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineReal +
+        Jr z (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z stdComplexLineImag) +
+        Ar z (ω.flatEquiv.symm (η (reflectL z)))))
     {C₀ T : ℝ} (hC₀ : 0 ≤ C₀)
     (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
       ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
@@ -552,18 +437,18 @@ private theorem exists_forall_setIntegral_le_of_flatCLE_reflectL (ω : Symplecti
             ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
           C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖D η z‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖η z‖ ^ 2) := by
-  set c₁ := ‖(ω.flatCLE : V →L[ℝ] (V →L[ℝ] ℝ))‖
-  set c₂ := ‖(ω.flatCLE.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
+  set c₁ := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
+  set c₂ := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
   refine ⟨c₁ ^ 2 * C₀ * c₂ ^ 2, by positivity, fun η hη hper a b hab hη₀ ↦ ?_⟩
-  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatCLE.symm (η (reflectL w))
-  have hζ : ContDiff ℝ 2 ζ := ω.flatCLE.symm.contDiff.comp (hη.comp reflectL.contDiff)
+  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η (reflectL w))
+  have hζ : ContDiff ℝ 2 ζ := ω.flatEquiv.symm.contDiff.comp (hη.comp reflectL.contDiff)
   have hζ₀ (s t : ℝ) (hs : s ∉ Ioo (-b) (-a)) : ζ (s, t) = 0 := by
     have : -s ∉ Ioo a b := fun h ↦ hs ⟨by linarith [h.2], by linarith [h.1]⟩
     simp [ζ, reflectL_apply, hη₀ _ t this]
-  have hb := ω.norm_flatCLE_symm_sq_le
+  have hb := ω.norm_flatEquiv_symm_sq_le
   have hP (w : ℝ × ℝ) : ‖fderiv ℝ ζ w stdComplexLineReal + Jr w (fderiv ℝ ζ w stdComplexLineImag) +
       Ar w (ζ w)‖ ^ 2 ≤ c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2 := by
-    rw [← ContinuousLinearEquiv.symm_apply_apply ω.flatCLE (_ + _), ← hD hη w]
+    rw [← ContinuousLinearEquiv.symm_apply_apply ω.flatEquiv (_ + _), ← hD hη w]
     exact hb _
   have hm : MeasurableSet (Icc (-b) (-a) ×ˢ Icc (0 : ℝ) 1) :=
     measurableSet_Icc.prod measurableSet_Icc
@@ -652,7 +537,7 @@ private theorem tendstoUniformlyOn_reflectL (ω : SymplecticForm V)
     TendstoUniformlyOn
         (fun s t ↦ (J (reflectL (s, t)) (u (reflectL (s, t)))).toLinearMap.toContinuousLinearMap)
         (fun t ↦ (Je t (x t)).toLinearMap.toContinuousLinearMap) l' (Icc 0 1) ∧
-      TendstoUniformlyOn (fun s t ↦ -ω.dualTranspose
+      TendstoUniformlyOn (fun s t ↦ -ω.leftAdjointL
           (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) (reflectL (s, t))
               stdComplexLineImag -
             ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
@@ -660,9 +545,9 @@ private theorem tendstoUniformlyOn_reflectL (ω : SymplecticForm V)
         (fun t ↦ -((Je t (x t)).toLinearMap.toContinuousLinearMap ∘L rotatedField ω Je He x t))
         l' (Icc 0 1) := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  set c := ‖ω.dualTranspose‖ + 1
+  set c := ‖ω.leftAdjointL‖ + 1
   have hc : 0 < c := by positivity
-  have hc1 : 1 ≤ c := by simp only [c]; linarith [norm_nonneg ω.dualTranspose]
+  have hc1 : 1 ≤ c := by simp only [c]; linarith [norm_nonneg ω.leftAdjointL]
   have hev (ε : ℝ) (hε : 0 < ε) := hl.eventually
     ((eventually_norm_sub_le_of_tendstoUniformlyOn hHe hJe hxc hux hδ
       (ε := ε / (2 * c)) (by positivity)).and hagree)
@@ -676,7 +561,7 @@ private theorem tendstoUniformlyOn_reflectL (ω : SymplecticForm V)
     simp only [reflectL_apply] at hs hag ⊢
   · rw [(hag t).self_of_nhds.1]
     exact ((hs t ht).1).trans_lt (hεc' ε hε)
-  · have hB := dualTranspose_cylindricalAdjointCoeff hJe hHe hx hJx t
+  · have hB := leftAdjointL_cylindricalAdjointCoeff hJe hHe hx hJx t
     simp only [endLoop] at hB
     rw [fderiv_sub_floerLinearizationCoeff_eq_of_eventuallyEq ω (hJe.differentiable one_ne_zero)
       (hu _) (hag t), ← mul_def, ← hB, neg_sub_neg, ← map_sub]
@@ -795,12 +680,12 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
   have hJrc : Continuous fun z ↦
       (J (reflectL z) (u (reflectL z))).toLinearMap.toContinuousLinearMap :=
     hJu₁.continuous.comp reflectL.continuous
-  have hArc : Continuous fun z ↦ -ω.dualTranspose
+  have hArc : Continuous fun z ↦ -ω.leftAdjointL
       (fderiv ℝ (fun w ↦ (J w (u w)).toLinearMap.toContinuousLinearMap) (reflectL z)
           stdComplexLineImag -
         ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
           (reflectL z)) :=
-    (ω.dualTranspose.continuous.comp (hAc.comp reflectL.continuous)).neg
+    (ω.leftAdjointL.continuous.comp (hAc.comp reflectL.continuous)).neg
   obtain ⟨C₀, hC₀, T, hest⟩ :=
     ω.exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_tendstoUniformlyOn
       (fun z ↦ hJu (reflectL z)) hJrc hArc hJxp (hJp.continuous.comp (continuous_id.prodMk hxpc))
@@ -810,7 +695,7 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearizationAdjoint_a
       (apply_rotatedField_add hJm hHm hxm hJxm) (continuous_rotatedField hHm hJm hxmc)
       (det_one_sub_dysonSeriesLeft_rotatedField_ne_zero hXm hHm hxm hndm hJm hJm1) hJlp hAlp
   -- Transfer the estimate back to the formal adjoint on covector fields.
-  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_le_of_flatCLE_reflectL ω hJrc hArc
+  obtain ⟨C, hC, h⟩ := exists_forall_setIntegral_le_of_flatEquiv_reflectL ω hJrc hArc
     (D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u)
     (fun η hη ↦ continuous_floerLinearizationAdjoint (fun z ↦ hcyl.contDiffAt_almostComplex z)
