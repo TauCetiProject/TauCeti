@@ -56,6 +56,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
 * `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
+* `TauCeti.PDE.matrixBilinearForm_eq_sum_inner_transpose`: expansion of the second argument,
+  `ηᵀ A ξ = ∑ⱼ ⟪η, cⱼ⟫ ξⱼ` with `cⱼ` the columns of `A`.
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
@@ -1173,6 +1175,18 @@ theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : Euclidean
         matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) η = matrixBilinearForm A ξ η := by
   conv_rhs => rw [← (EuclideanSpace.basisFun n ℝ).sum_repr' ξ]
   simp [map_sum, map_smul]
+
+/-- Expanding the second argument of a matrix bilinear form in the standard basis:
+`ηᵀ A ξ = ∑ⱼ ⟪η, cⱼ⟫ ξⱼ`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
+theorem matrixBilinearForm_eq_sum_inner_transpose (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ =
+      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * ⟪ξ, EuclideanSpace.basisFun n ℝ j⟫_ℝ := by
+  classical
+  simp only [EuclideanSpace.inner_basisFun_real]
+  simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
+    Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 /-- The conormal component obtained by applying a matrix bilinear form to a smooth gradient is
 smooth. -/
