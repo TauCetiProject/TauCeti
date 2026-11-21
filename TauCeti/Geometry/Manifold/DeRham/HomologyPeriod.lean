@@ -45,6 +45,8 @@ in `Type`.
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
 * `TauCeti.homologyPeriodHom_mextDeriv`: exact forms have vanishing periods, for any coefficients.
+* `TauCeti.homologyPeriodHom_mapCoeff`: the periods commute with continuous linear maps of the
+  coefficients.
 * `TauCeti.IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub`: near a point where a
   closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
@@ -169,6 +171,21 @@ theorem homologyPeriodHom_smul (a : ℝ) :
     (fun c ↦ by
       rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.smul_apply])
     fun s ↦ by rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, pathClassIntegral_smul]
+
+/-- The periods of a closed `C¹` form commute with continuous linear maps of the coefficients. -/
+theorem homologyPeriodHom_mapCoeff {G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0) (L : F →L[ℝ] G)
+    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+    homologyPeriodHom (RoughForm.mapCoeff L φ) c = L (homologyPeriodHom φ c) := by
+  have h := homologyPeriodHom_eq_of_simplexChain (φ := RoughForm.mapCoeff L φ)
+    (g := (L.toLinearMap.toAddMonoidHom).comp (homologyPeriodHom φ))
+    ((L.toLinearMap.restrictScalars ℤ).comp
+      (chainsDesc fun s ↦ pathClassIntegral φ (.mk (path₁ s))))
+    (fun c ↦ by
+      rw [AddMonoidHom.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk]
+      simp)
+    fun s ↦ by simp [pathClassIntegral_mapCoeff hφ hφc]
+  simp [h]
 
 /-- The periods of a `1`-form which is not a closed `C¹` form are `0` by convention. -/
 theorem homologyPeriodHom_undef (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :
