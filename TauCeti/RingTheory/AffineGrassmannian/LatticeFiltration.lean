@@ -214,6 +214,21 @@ theorem latticeFiltration_map_diagonalLattice_eq
           ((g : Matrix n n B).map (Ideal.Quotient.mk (Ideal.span {ξ}))).mulVecLin := by
   rw [latticeFiltration_map_mulVecLin, latticeFiltration_diagonalLattice hinj]
 
+/-- `latticeFiltration_map_diagonalLattice_eq` with the reduced matrix written as the linear
+equivalence `GeneralLinearGroup.toLin` of the reduction of `g`, for the rank and complement
+theorems. -/
+private theorem latticeFiltration_map_diagonalLattice_eq_map_linearEquiv
+    (hinj : Function.Injective (algebraMap B K)) (hξ : IsUnit (algebraMap B K ξ)) (g : GL n B)
+    (k : n → ℤ) (m : ℤ) :
+    ((diagonalLattice k hξ).map
+        (((g : Matrix n n B).map (algebraMap B K)).mulVecLin.restrictScalars B)).latticeFiltration
+        hξ m = (pi {i | m < k i} fun _ ↦ ⊥).map
+          (LinearMap.GeneralLinearGroup.generalLinearEquiv _ _ (GeneralLinearGroup.toLin
+            (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g)) :
+              (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] n → B ⧸ Ideal.span {ξ}) := by
+  rw [latticeFiltration_map_diagonalLattice_eq hinj, ← GeneralLinearGroup.val_map_apply,
+    ← GeneralLinearGroup.coe_toLin, ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
+
 /-- **Rank of the filtration of a translated diagonal lattice.** If `B → K` is injective and `ξ`
 is not a unit of `B`, the filtration `Fil^m (g μ(ξ) Bⁿ)` has rank `#{i | k i ≤ m}` over `B ⧸ ξ`. -/
 theorem finrank_latticeFiltration_map_diagonalLattice [Nontrivial (B ⧸ Ideal.span {ξ})]
@@ -231,10 +246,7 @@ theorem finrank_latticeFiltration_map_diagonalLattice [Nontrivial (B ⧸ Ideal.s
       ⨅ i ∈ {i | m < k i}, LinearMap.ker
         (LinearMap.proj i : (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] _) := by
     ext; simp
-  -- The reduced matrix is invertible: `mulVecLin` of it is Mathlib's `toLin` of the reduction.
-  rw [latticeFiltration_map_diagonalLattice_eq hinj,
-    ← GeneralLinearGroup.val_map_apply, ← GeneralLinearGroup.coe_toLin,
-    ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, LinearEquiv.finrank_map_eq, h,
+  rw [latticeFiltration_map_diagonalLattice_eq_map_linearEquiv hinj, LinearEquiv.finrank_map_eq, h,
     (LinearMap.iInfKerProjEquiv (B ⧸ Ideal.span {ξ}) (fun _ ↦ B ⧸ Ideal.span {ξ}) hd
     hu).finrank_eq, Module.finrank_fintype_fun_eq_card]
   exact Fintype.card_congr (Equiv.subtypeEquivRight fun _ ↦ Iff.rfl)
@@ -249,9 +261,7 @@ theorem exists_isCompl_latticeFiltration_map_diagonalLattice
       IsCompl (((diagonalLattice k hξ).map
         (((g : Matrix n n B).map (algebraMap B K)).mulVecLin.restrictScalars B)).latticeFiltration
           hξ m) C := by
-  rw [latticeFiltration_map_diagonalLattice_eq hinj,
-    ← GeneralLinearGroup.val_map_apply, ← GeneralLinearGroup.coe_toLin,
-    ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap]
+  rw [latticeFiltration_map_diagonalLattice_eq_map_linearEquiv hinj]
   exact ⟨_, isCompl_map _ (isCompl_pi_bot_compl _)⟩
 
 /-- **Base change of the filtration.** For a ring map `φ : B → B'` and `g ∈ GLₙ(B)`, the
