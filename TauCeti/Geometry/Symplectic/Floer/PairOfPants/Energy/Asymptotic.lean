@@ -53,6 +53,12 @@ specializations to the constant form `SymplecticForm.constSmooth`.
   integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
   its integral along their pointwise limits, either when the Hamiltonian is globally bounded or
   when the map takes values in a compact set.
+* `SmoothTwoForm.IsNondegenerate` compact-target energy criteria:
+  `integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`,
+  `lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact`, and
+  `integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`: automatic integrability,
+  finiteness, and the manifold pair-of-pants energy identity for maps into a compact set `B`
+  without assuming finite energy a priori.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -161,6 +167,126 @@ open Floer
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
+
+/-- **Automatic integrability of a nonnegative Floer energy density on a compact set.** Compactness
+of `[0, 1] × B` uniformly bounds `∫₀¹ H_q(t, u(φ_q(±σ, t))) dt` for `σ > 0`, making the Floer energy
+density integrable over `S` without global bounds on `H_q` or end convergence. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q))) (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      thricePuncturedSphereReal) :
+    IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal := by
+  have hS : volume.restrict thricePuncturedSphereReal = volume :=
+    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+  rw [IntegrableOn, hS] at hA hR ⊢
+  have hbound : ∀ q, ∃ C : ℝ, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ B, ‖uncurry (H q) p‖ ≤ C := fun q ↦
+    (isCompact_Icc.prod hB).exists_bound_of_continuousOn (hHc q).continuousOn
+  choose C hC using hbound
+  refine hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
+    (C := C) fun q ↦ ?_
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with σ hσ
+  have hmem (t : ℝ) : endChart q (q.endSign * σ, t) ∈ thricePuncturedSphereReal :=
+    endChart_mem_thricePuncturedSphereReal
+      (by simpa only [← mul_assoc, endSign_mul_self, one_mul] using hσ)
+  simpa only [Real.norm_eq_abs, uncurry_apply_pair, sub_zero, abs_one, mul_one] using
+    intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦
+      hC q (t, u (endChart q (q.endSign * σ, t)))
+        ⟨Ioc_subset_Icc_self (uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1) ▸ ht), huB _ (hmem t)⟩
+
+/-- **Automatic finiteness of the Lebesgue Floer energy on a compact set.** -/
+theorem IsNondegenerate.lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q))) (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      thricePuncturedSphereReal) :
+    ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤ := by
+  have hS : volume.restrict thricePuncturedSphereReal = volume :=
+    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+  have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    hK hKH hH hHc hB hu huB he hA hR
+  rw [IntegrableOn, hS] at hEint
+  rw [hS, ← ofReal_integral_eq_lintegral_ofReal hEint (ae_mem_thricePuncturedSphereReal.mono he)]
+  exact ENNReal.ofReal_ne_top
+
+/-- **The manifold pair-of-pants energy identity on a compact target set.** If `t ↦ u(φ_q(±s, t))`
+converges pointwise to `y_q` as `s → ∞` on each end `q`, then
+`∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, y_q(t)) dt - ∫_S R_K(u)` without finite energy a priori. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    {K : ℂ → M → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {B : Set M} {u : ℝ × ℝ → M}
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHc : ∀ q, Continuous (uncurry (H q))) (hB : IsCompact B)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+      thricePuncturedSphereReal)
+    {y : Puncture → ℝ → M}
+    (hy : ∀ q t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y q t))) :
+    ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in thricePuncturedSphereReal, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (y q t)) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+  have hS : volume.restrict thricePuncturedSphereReal = volume :=
+    Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
+  have hEint := hω.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact
+    hK hKH hH hHc hB hu huB he hA hR
+  rw [IntegrableOn, hS] at hEint hA hR
+  simp only [hS]
+  exact hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hEint hA hR
+    fun q ↦ tendsto_intervalIntegral_endChart_of_isCompact (hHc q) hB hu.continuousOn huB (hy q)
 
 /-- **The energy identity on the pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of bounded period-one `C¹` Hamiltonians `H_q` on a finite-dimensional

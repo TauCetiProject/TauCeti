@@ -877,9 +877,9 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
     (fun w t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
       (fun z hz ↦ hfloer z (hsub hz)) hE₁)
-    (fun z hz ↦ hL z (mem_Ioi.1 hz.1).le) fun x hxper hx hxK ↦ by
+    (fun z hz ↦ hL z (mem_Ioi.1 hz.1).le) fun x hxper hx hxK _ ↦ by
       obtain ⟨ε, hε, h⟩ := hiso x hxper hx hxK
-      exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+      exact ⟨ε, hε, fun y hyper hy _ _ hyx ↦ h y hyper hy (hyx 0)⟩
   -- The limit orbit lies in `K`, so it is nondegenerate.
   have hdy := hnd x hxper hx fun t ↦ hK.isClosed.mem_of_tendsto (hux.tendsto_at t)
     ((eventually_gt_atTop (a + 1)).mono fun s hs ↦ huK s (by linarith) t)

@@ -160,14 +160,14 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer
     (fun s hs t ↦ huB _ (hmem (s, t) hs))
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH')).continuous
     (fun v t ↦ by simp only [hH'per t]) hfin (fun z hz ↦ hC z (hab z hz.1))
-    fun x hxper hx hxB ↦ by
+    fun x hxper hx hxB _ ↦ by
       -- Isolation of the orbits of `H'_q` comes from nondegeneracy of the orbits of `H_q`.
       have hnd₀ := hnd _ (periodic_comp_endSign_mul hxper) (hasDerivAt_comp_endSign_mul hx)
         fun t ↦ hxB _
       rw [mul_zero] at hnd₀
       obtain ⟨ε, hε, h⟩ :=
         exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian hL hx hnd₀
-      exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+      exact ⟨ε, hε, fun y hyper hy _ _ hyx ↦ h y hyper hy (hyx 0)⟩
   refine ⟨fun t ↦ x (q.endSign * t), periodic_comp_endSign_mul hxper,
     hasDerivAt_comp_endSign_mul hx, ?_⟩
   rw [funext (comp_endChart_eq_comp_positiveEndChart u q)]

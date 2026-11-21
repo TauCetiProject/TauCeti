@@ -232,7 +232,9 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_
     hDU hcore hs ht hu hx hKdef
   rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hA ⊢
   rw [← hKs, ← hKt] at he ⊢
-  exact hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR hh
+  exact hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
+    (C := fun q ↦ |∫ t in (0 : ℝ)..1, H q t (x q t)| + 1) fun q ↦
+      ((hh q).abs.eventually (Iio_mem_nhds (lt_add_one _))).mono fun _ ↦ le_of_lt
 
 variable {E' G' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace G']
   {J : ModelWithCorners ℝ E' G'} [TopologicalSpace N] [ChartedSpace G' N] [IsManifold J 1 N]

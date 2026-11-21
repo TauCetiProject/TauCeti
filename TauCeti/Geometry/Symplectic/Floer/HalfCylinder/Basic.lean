@@ -373,9 +373,9 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
     (fun v t ↦ by simp only [hHper t])
     (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
-      hfloer hE) hC fun x hxper hx hxK ↦ ?_
+      hfloer hE) hC fun x hxper hx hxK _ ↦ ?_
   -- A nondegenerate orbit is isolated.
   obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx (hnd x hxper hx hxK)
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+  exact ⟨ε, hε, fun y hyper hy _ _ hyx ↦ h y hyper hy (hyx 0)⟩
 
 end TauCeti.SymplecticForm
