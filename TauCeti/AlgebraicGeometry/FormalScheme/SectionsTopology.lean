@@ -1,0 +1,509 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.FormalScheme.Basic
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.HomEquiv
+public import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.GlueMorphisms
+
+import TauCeti.Topology.Algebra.Ring.Basic
+
+/-!
+# Topologies on rings of sections of a formal scheme
+
+Every affine formal open `U` of a formal scheme `X` of finite ideal type admits a chart
+`e : X|_U ≅ Spf A`, inducing `sectionsIsoOfIsoSpf e : Γ(U, O_X) ≅ A` and pulling back the adic
+topology of `A` to the chart-independent topology `sectionsTopology X U hU` (via
+`Spf.isHomeomorph_sectionsHom_of_iso`). For an arbitrary open `U`, `sheafSectionsTopology X U` is
+the initial topology for restrictions `Γ(U, O_X) → Γ(W, O_X)` to affine formal opens `W ⊆ U`
+(EGA I, Ch. 0, 3.8.1; Ch. I, 10.4.5), agreeing with `sectionsTopology` on affine formal opens and
+with `Spf.quotientSectionsTopology` on `ofSpf A`.
+
+## Main definitions
+
+* `TauCeti.FormalScheme.sectionsIsoOfIsoSpf`: `Γ(U, O_X) ≅ A` induced by `X|_U ≅ Spf A`.
+* `TauCeti.FormalScheme.sectionsTopology`: intrinsic adic topology on `Γ(U, O_X)` for affine `U`.
+* `TauCeti.FormalScheme.sheafSectionsTopology`: initial topology on `Γ(U, O_X)` for arbitrary `U`.
+
+## Main results
+
+* `TauCeti.FormalScheme.isHomeomorph_sectionsIsoOfIsoSpf`,
+  `TauCeti.FormalScheme.sectionsTopology_isTopologicalRing`,
+  `TauCeti.FormalScheme.sectionsTopology_isAdicRing`,
+  `TauCeti.FormalScheme.continuous_restrict_of_isAffineOpen`: chart independence and adic structure.
+* `TauCeti.FormalScheme.sheafSectionsTopology_restrict`,
+  `TauCeti.FormalScheme.sheafSectionsTopology_isTopologicalRing`,
+  `TauCeti.FormalScheme.sheafSectionsTopology_eq_sectionsTopology`,
+  `TauCeti.FormalScheme.sheafSectionsTopology_ofSpf`: sheaf topology properties and comparison.
+
+## References
+
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, 3.8.1 and
+  Ch. I, 10.4.5.
+* [Stacks Project, Tag 0AHY](https://stacks.math.columbia.edu/tag/0AHY).
+-/
+
+public section
+
+open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry Topology
+
+namespace TauCeti.FormalScheme
+
+universe u
+
+section ChartIsomorphism
+
+private theorem isOpenEmbedding_functor_top (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    U.isOpenEmbedding.functor.obj ⊤ = U := by
+  ext x; simp
+
+private noncomputable def restrictTopSectionsIso (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    X.presheaf.obj (op U) ≅ (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) :=
+  X.presheaf.mapIso (eqToIso (congrArg op (isOpenEmbedding_functor_top X U).symm))
+
+private noncomputable def globalSectionsIsoOfIso {Y Z : LocallyRingedSpace.{u}} (e : Y ≅ Z) :
+    Y.presheaf.obj (op ⊤) ≅ Z.presheaf.obj (op ⊤) where
+  hom := e.inv.c.app (op ⊤)
+  inv := e.hom.c.app (op ⊤)
+  hom_inv_id := by
+    have h := (LocallyRingedSpace.comp_c_app e.hom e.inv (op ⊤)).symm
+    rwa [e.hom_inv_id] at h
+  inv_hom_id := by
+    have h := (LocallyRingedSpace.comp_c_app e.inv e.hom (op ⊤)).symm
+    rwa [e.inv_hom_id] at h
+
+/-- The ring isomorphism `Γ(U, O_X) ≅ A` induced by an affine formal chart `e : X|_U ≅ Spf A`. -/
+noncomputable def sectionsIsoOfIsoSpf {X : FormalScheme.{u}} {U : Opens X}
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    (e : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf A) :
+    X.presheaf.obj (op U) ≅ CommRingCat.of A :=
+  restrictTopSectionsIso X.toLocallyRingedSpace U ≪≫ globalSectionsIsoOfIso e ≪≫
+    (@Spf.globalSectionsIso A _ _ _ _ (IsAdicRing.ideal_spec A).2.2 (IsAdicRing.ideal_spec A).2.1)
+
+/-- For nested affine formal opens `W ≤ U` with charts `X|_U ≅ Spf A` and `X|_W ≅ Spf B`, the
+restriction map `Γ(U, O_X) → Γ(W, O_X)` corresponds under the chart isomorphisms to
+`Spf.sectionsHom` of the induced morphism `Spf B ⟶ Spf A`. -/
+theorem sectionsIsoOfIsoSpf_comp_eq_sectionsHom {X : FormalScheme.{u}} {W U : Opens X}
+    (hWU : W ≤ U)
+    {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+    (eU : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf A)
+    (eW : X.toLocallyRingedSpace.restrict W.isOpenEmbedding ≅ Spf B) :
+    (sectionsIsoOfIsoSpf eU).inv ≫ X.presheaf.map (homOfLE hWU).op ≫
+        (sectionsIsoOfIsoSpf eW).hom =
+      CommRingCat.ofHom
+        (Spf.sectionsHom (eW.inv ≫ X.toLocallyRingedSpace.restrictHomOfLE hWU ≫ eU.hom)) := by
+  let X₀ := X.toLocallyRingedSpace
+  let gA : (Spf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
+    @Spf.globalSectionsIso A _ _ _ _ (IsAdicRing.ideal_spec A).2.2 (IsAdicRing.ideal_spec A).2.1
+  let gB : (Spf B).presheaf.obj (op ⊤) ≅ CommRingCat.of B :=
+    @Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2 (IsAdicRing.ideal_spec B).2.1
+  have hres : (restrictTopSectionsIso X₀ U).inv ≫ X.presheaf.map (homOfLE hWU).op ≫
+      (restrictTopSectionsIso X₀ W).hom = (X₀.restrictHomOfLE hWU).c.app (op ⊤) := by
+    rw [LocallyRingedSpace.restrictHomOfLE_c_app]
+    -- `erw`: `X.presheaf.mapIso` and `Opens.functor` match at default transparency.
+    erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
+    exact congrArg X.presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
+  have h1 : (sectionsIsoOfIsoSpf eU).inv ≫ X.presheaf.map (homOfLE hWU).op ≫
+      (sectionsIsoOfIsoSpf eW).hom =
+      gA.inv ≫ (eW.inv ≫ X₀.restrictHomOfLE hWU ≫ eU.hom).c.app (op ⊤) ≫ gB.hom :=
+    CommRingCat.hom_ext <| RingHom.ext fun a ↦
+      congrArg (fun t ↦ gB.hom (eW.inv.c.app (op ⊤) t))
+        (ConcreteCategory.congr_hom hres (eU.hom.c.app (op ⊤) (gA.inv a)))
+  exact h1.trans ((congrArg (gA.inv ≫ ·) (Spf.c_app_top_comp_globalSectionsIso_hom _)).trans
+    (Iso.inv_hom_id_assoc gA _))
+
+/-- Two affine formal charts on the same open differ on sections by `Spf.sectionsHom` of the
+transition isomorphism. -/
+theorem sectionsIsoOfIsoSpf_trans {X : FormalScheme.{u}} {U : Opens X}
+    {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+    (e₁ : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf A)
+    (e₂ : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf B) :
+    (sectionsIsoOfIsoSpf e₁).inv ≫ (sectionsIsoOfIsoSpf e₂).hom =
+      CommRingCat.ofHom (Spf.sectionsHom (e₂.inv ≫ e₁.hom)) := by
+  have h := sectionsIsoOfIsoSpf_comp_eq_sectionsHom (le_refl U) e₁ e₂
+  rw [LocallyRingedSpace.restrictHomOfLE_refl, Category.id_comp,
+    show X.presheaf.map (homOfLE (le_refl U)).op = 𝟙 _ from X.presheaf.map_id (op U),
+    Category.id_comp] at h
+  exact h
+
+/-- For an affine formal open `W ≤ U` with chart `e : X|_W ≅ Spf B`, the sheaf component at `U` of
+the open immersion `j = e.inv ≫ X.ofRestrict W : Spf B ⟶ X` agrees with restriction `Γ(U) → Γ(W)`
+followed by `sectionsIsoOfIsoSpf e`. -/
+theorem chartImmersion_c_app {X : FormalScheme.{u}} {W U : Opens X} (hWU : W ≤ U)
+    {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+    (e : X.toLocallyRingedSpace.restrict W.isOpenEmbedding ≅ Spf B) :
+    let j : Spf B ⟶ X.toLocallyRingedSpace :=
+      e.inv ≫ X.toLocallyRingedSpace.ofRestrict W.isOpenEmbedding
+    have hj : (Opens.map j.base).obj U = ⊤ := by
+      ext q
+      exact iff_true_intro (hWU (e.inv.base q).2)
+    j.c.app (op U) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hj)) ≫
+        (@Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2
+          (IsAdicRing.ideal_spec B).2.1).hom =
+      X.presheaf.map (homOfLE hWU).op ≫ (sectionsIsoOfIsoSpf e).hom := by
+  intro j hj
+  let iW := X.toLocallyRingedSpace.ofRestrict W.isOpenEmbedding
+  have hpreW : (Opens.map iW.base).obj U = ⊤ := by ext x; exact iff_true_intro (hWU x.2)
+  have hcomp : j.c.app (op U) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hj)) =
+      iW.c.app (op U) ≫
+        (X.toLocallyRingedSpace.restrict W.isOpenEmbedding).presheaf.map
+          (eqToHom (congrArg op hpreW)) ≫ e.inv.c.app (op ⊤) := by
+    rw [LocallyRingedSpace.comp_c_app e.inv iW (op U)]
+    -- `erw`: pushforward presheaf on `op U` matches `restrict.presheaf` at default transparency.
+    erw [Category.assoc]
+    refine congrArg (iW.c.app (op U) ≫ ·) ?_
+    have hm : (Spf B).presheaf.map (eqToHom (congrArg op hj)) =
+        ((TopCat.Presheaf.pushforward CommRingCat e.inv.base).obj (Spf B).presheaf).map
+          (eqToHom (congrArg op hpreW)) :=
+      congrArg (Spf B).presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
+    exact (congrArg (e.inv.c.app _ ≫ ·) hm).trans
+      (e.inv.c.naturality (eqToHom (congrArg op hpreW))).symm
+  have hres : iW.c.app (op U) ≫
+      (X.toLocallyRingedSpace.restrict W.isOpenEmbedding).presheaf.map
+        (eqToHom (congrArg op hpreW)) =
+      X.presheaf.map (homOfLE hWU).op ≫ (restrictTopSectionsIso X.toLocallyRingedSpace W).hom := by
+    -- `erw`: `ofRestrict.c.app` and `restrict.presheaf.map` both unfold to `X.presheaf.map`.
+    erw [← X.presheaf.map_comp, ← X.presheaf.map_comp]
+    exact congrArg X.presheaf.map (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
+  let gB : (Spf B).presheaf.obj (op ⊤) ≅ CommRingCat.of B :=
+    @Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2 (IsAdicRing.ideal_spec B).2.1
+  change j.c.app (op U) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hj)) ≫ gB.hom = _
+  rw [← Category.assoc, hcomp]
+  exact CommRingCat.hom_ext <| RingHom.ext fun s ↦
+    congrArg (fun t ↦ gB.hom (e.inv.c.app (op ⊤) t)) (ConcreteCategory.congr_hom hres s)
+
+/-- Specialisation of `chartImmersion_c_app` to global sections (`U = ⊤`). -/
+theorem chartImmersion_c_app_top {X : FormalScheme.{u}} {W : Opens X}
+    {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+    (e : X.toLocallyRingedSpace.restrict W.isOpenEmbedding ≅ Spf B) :
+    (e.inv ≫ X.toLocallyRingedSpace.ofRestrict W.isOpenEmbedding).c.app (op ⊤) ≫
+        (@Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2
+          (IsAdicRing.ideal_spec B).2.1).hom =
+      X.presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫ (sectionsIsoOfIsoSpf e).hom := by
+  have hchart := chartImmersion_c_app (X := X) (le_top : W ≤ ⊤) e
+  dsimp only at hchart
+  -- `erw`: `(Opens.map _).obj ⊤` is defeq to `⊤` at default transparency.
+  erw [show (Spf B).presheaf.map (eqToHom (congrArg op (by
+    ext q; exact iff_true_intro trivial :
+      (Opens.map (e.inv ≫ X.toLocallyRingedSpace.ofRestrict W.isOpenEmbedding).base).obj ⊤ =
+        ⊤))) = 𝟙 _ from (Spf B).presheaf.map_id _, Category.id_comp] at hchart
+  exact hchart
+
+end ChartIsomorphism
+
+section AffineSectionsTopology
+
+private noncomputable def affineRing {X : FormalScheme.{u}} {U : Opens X} (hU : X.IsAffineOpen U) :
+    Type u :=
+  Classical.choose ((X.isAffineOpen_iff U).mp hU)
+
+private noncomputable instance affineRingCommRing {X : FormalScheme.{u}} {U : Opens X}
+    (hU : X.IsAffineOpen U) : CommRing (affineRing hU) :=
+  Classical.choose (Classical.choose_spec ((X.isAffineOpen_iff U).mp hU))
+
+private noncomputable instance affineRingTop {X : FormalScheme.{u}} {U : Opens X}
+    (hU : X.IsAffineOpen U) : TopologicalSpace (affineRing hU) :=
+  Classical.choose (Classical.choose_spec (Classical.choose_spec ((X.isAffineOpen_iff U).mp hU)))
+
+private instance affineRingIsTopRing {X : FormalScheme.{u}} {U : Opens X} (hU : X.IsAffineOpen U) :
+    IsTopologicalRing (affineRing hU) :=
+  Classical.choose (Classical.choose_spec (Classical.choose_spec
+    (Classical.choose_spec ((X.isAffineOpen_iff U).mp hU))))
+
+private instance affineRingIsAdicRing {X : FormalScheme.{u}} {U : Opens X} (hU : X.IsAffineOpen U) :
+    IsAdicRing (affineRing hU) :=
+  Classical.choose (Classical.choose_spec (Classical.choose_spec
+    (Classical.choose_spec (Classical.choose_spec ((X.isAffineOpen_iff U).mp hU)))))
+
+private noncomputable def affineChart {X : FormalScheme.{u}} {U : Opens X}
+    (hU : X.IsAffineOpen U) :
+    X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf (affineRing hU) :=
+  Classical.choice (Classical.choose_spec (Classical.choose_spec (Classical.choose_spec
+    (Classical.choose_spec (Classical.choose_spec ((X.isAffineOpen_iff U).mp hU))))))
+
+/-- The intrinsic adic topology on the ring of sections `Γ(U, O_X)` over an affine formal open `U`,
+defined by pulling back the topology of `A` along any chart `X|_U ≅ Spf A`. It is independent of
+the chosen chart (`isHomeomorph_sectionsIsoOfIsoSpf`). -/
+@[instance_reducible]
+noncomputable def sectionsTopology (X : FormalScheme.{u}) (U : Opens X) (hU : X.IsAffineOpen U) :
+    TopologicalSpace (X.presheaf.obj (op U)) :=
+  TopologicalSpace.induced (sectionsIsoOfIsoSpf (affineChart hU)).hom inferInstance
+
+/-- **Chart independence of `sectionsTopology`.** For every affine formal chart `e : X|_U ≅ Spf A`,
+the induced ring isomorphism `Γ(U, O_X) ≅ A` is a homeomorphism for `sectionsTopology X U hU`. -/
+theorem isHomeomorph_sectionsIsoOfIsoSpf {X : FormalScheme.{u}} {U : Opens X}
+    (hU : X.IsAffineOpen U)
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    (e : X.toLocallyRingedSpace.restrict U.isOpenEmbedding ≅ Spf A) :
+    @IsHomeomorph _ _ (sectionsTopology X U hU) _ (sectionsIsoOfIsoSpf e).hom := by
+  let _ : TopologicalSpace (X.presheaf.obj (op U)) := sectionsTopology X U hU
+  let e₀ := affineChart hU
+  have hbij := (sectionsIsoOfIsoSpf e₀).commRingCatIsoToRingEquiv.bijective
+  have h₀ : IsHomeomorph (sectionsIsoOfIsoSpf e₀).hom :=
+    isHomeomorph_iff_isEmbedding_surjective.mpr ⟨⟨IsInducing.induced _, hbij.1⟩, hbij.2⟩
+  have hcomp : ((sectionsIsoOfIsoSpf e).hom : _ → _) =
+      (Spf.sectionsHom (e.inv ≫ e₀.hom)) ∘ (sectionsIsoOfIsoSpf e₀).hom := by
+    ext s
+    have h := ConcreteCategory.congr_hom (sectionsIsoOfIsoSpf_trans e₀ e)
+      ((sectionsIsoOfIsoSpf e₀).hom s)
+    have hinv := ConcreteCategory.congr_hom (sectionsIsoOfIsoSpf e₀).hom_inv_id s
+    simp only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
+      CommRingCat.hom_ofHom, CommRingCat.hom_id] at h hinv ⊢
+    rw [← h, hinv]; rfl
+  rw [hcomp]
+  exact (Spf.isHomeomorph_sectionsHom_of_iso (e.symm ≪≫ e₀)).comp h₀
+
+/-- For an affine formal open `U`, `sectionsTopology X U hU` is a ring topology on `Γ(U, O_X)`. -/
+theorem sectionsTopology_isTopologicalRing (X : FormalScheme.{u}) (U : Opens X)
+    (hU : X.IsAffineOpen U) :
+    @IsTopologicalRing (X.presheaf.obj (op U)) (sectionsTopology X U hU) _ :=
+  TauCeti.isTopologicalRing_induced (sectionsIsoOfIsoSpf (affineChart hU)).hom.hom
+
+/-- For an affine formal open `U`, `Γ(U, O_X)` equipped with `sectionsTopology X U hU` is an adic
+ring of finite ideal type. -/
+theorem sectionsTopology_isAdicRing (X : FormalScheme.{u}) (U : Opens X) (hU : X.IsAffineOpen U) :
+    @IsAdicRing (X.presheaf.obj (op U)) _ (sectionsTopology X U hU)
+      (sectionsTopology_isTopologicalRing X U hU) := by
+  let _ : TopologicalSpace (X.presheaf.obj (op U)) := sectionsTopology X U hU
+  have _ : IsTopologicalRing (X.presheaf.obj (op U)) := sectionsTopology_isTopologicalRing X U hU
+  let eqv : X.presheaf.obj (op U) ≃+* affineRing hU :=
+    (sectionsIsoOfIsoSpf (affineChart hU)).commRingCatIsoToRingEquiv
+  let I : Ideal (affineRing hU) := IsAdicRing.ideal (affineRing hU)
+  obtain ⟨hIfg, hIadic, hIcomp⟩ := IsAdicRing.ideal_spec (affineRing hU)
+  have hmap : I.comap eqv.toRingHom = I.map eqv.symm.toRingHom :=
+    le_antisymm
+      (fun s (hs : eqv s ∈ I) ↦ by simpa using Ideal.mem_map_of_mem eqv.symm.toRingHom hs)
+      (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by change eqv (eqv.symm a) ∈ I; simpa using ha)
+  exact ⟨⟨I.comap eqv.toRingHom, hmap ▸ hIfg.map eqv.symm.toRingHom,
+    IsAdic.comap hIadic eqv (IsInducing.induced _),
+    hmap ▸ (IsAdicComplete.congr_ringEquiv I eqv.symm).mpr hIcomp⟩⟩
+
+/-- Restriction between nested affine formal opens is continuous for `sectionsTopology`. -/
+theorem continuous_restrict_of_isAffineOpen {X : FormalScheme.{u}} {W U : Opens X}
+    (hW : X.IsAffineOpen W) (hU : X.IsAffineOpen U) (hWU : W ≤ U) :
+    @Continuous _ _ (sectionsTopology X U hU) (sectionsTopology X W hW)
+      (X.presheaf.map (homOfLE hWU).op) := by
+  let eU := affineChart hU
+  let eW := affineChart hW
+  let _ : TopologicalSpace (X.presheaf.obj (op U)) := sectionsTopology X U hU
+  let _ : TopologicalSpace (X.presheaf.obj (op W)) := sectionsTopology X W hW
+  rw [(isHomeomorph_sectionsIsoOfIsoSpf hW eW).isInducing.continuous_iff]
+  have hcomp : ((sectionsIsoOfIsoSpf eW).hom : _ → _) ∘ (X.presheaf.map (homOfLE hWU).op) =
+      (Spf.sectionsHom (eW.inv ≫ X.toLocallyRingedSpace.restrictHomOfLE hWU ≫ eU.hom)) ∘
+        (sectionsIsoOfIsoSpf eU).hom := by
+    ext s
+    have h := ConcreteCategory.congr_hom (sectionsIsoOfIsoSpf_comp_eq_sectionsHom hWU eU eW)
+      ((sectionsIsoOfIsoSpf eU).hom s)
+    have hinv := ConcreteCategory.congr_hom (sectionsIsoOfIsoSpf eU).hom_inv_id s
+    simp only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
+      CommRingCat.hom_ofHom, CommRingCat.hom_id] at h hinv ⊢
+    rw [← h, hinv]; rfl
+  rw [hcomp]
+  exact (Spf.continuous_sectionsHom _).comp (isHomeomorph_sectionsIsoOfIsoSpf hU eU).continuous
+
+private theorem continuous_c_app_comp_globalSectionsIso {A B : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsAdicRing B]
+    {U : Opens (Spf.carrier A)} (j : Spf B ⟶ Spf A) (hj : (Opens.map j.base).obj U = ⊤) :
+    @Continuous _ _ (Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U) _
+      (j.c.app (op U) ≫ (Spf B).presheaf.map (eqToHom (congrArg op hj)) ≫
+        (@Spf.globalSectionsIso B _ _ _ _ (IsAdicRing.ideal_spec B).2.2
+          (IsAdicRing.ideal_spec B).2.1).hom) := by
+  have := (IsAdicRing.ideal_spec B).2.2
+  let tA := Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U
+  let tBU := Spf.quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ((Opens.map j.base).obj U)
+  let tB := Spf.quotientSectionsTopology (IsAdicRing.ideal_spec B).2.1 ⊤
+  have h2 : @Continuous _ _ tBU tB ((Spf B).presheaf.map (eqToHom (congrArg op hj))) := by
+    rw [show (eqToHom (congrArg op hj) : op ((Opens.map j.base).obj U) ⟶ op ⊤) =
+      (homOfLE (le_of_eq hj.symm)).op from Quiver.Hom.unop_inj (Subsingleton.elim _ _)]
+    exact Spf.quotientSectionsTopology_restrict (IsAdicRing.ideal_spec B).2.1 _
+  have h3 : @Continuous _ _ tB _ (Spf.globalSectionsIso (IsAdicRing.ideal_spec B).2.1).hom :=
+    @IsHomeomorph.continuous _ _ tB _ _
+      (Spf.isHomeomorph_globalSectionsIso (IsAdicRing.ideal_spec B).2.1)
+  exact @Continuous.comp _ _ _ tA tB _ _ _ h3
+    (@Continuous.comp _ _ _ tA tBU tB _ _ h2 (Spf.continuous_c_app j U))
+
+/-- On `ofSpf A`, the chart isomorphism induced by `Spf.restrictBasicOpenIso f` coincides with
+`Spf.basicOpenSectionsIso`. -/
+theorem sectionsIsoOfIsoSpf_restrictBasicOpenIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] (f : A) :
+    sectionsIsoOfIsoSpf (X := ofSpf A) (U := Spf.basicOpen f) (Spf.restrictBasicOpenIso f) =
+      Spf.basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  have := (IsAdicRing.ideal_spec (AdicRing.CompletedAway A f)).2.2
+  let Uf : Opens (ofSpf A) := Spf.basicOpen f
+  let e := Spf.restrictBasicOpenIso f
+  let j : Spf (AdicRing.CompletedAway A f) ⟶ Spf A :=
+    e.inv ≫ (ofSpf A).toLocallyRingedSpace.ofRestrict Uf.isOpenEmbedding
+  let iso₁ := sectionsIsoOfIsoSpf (X := ofSpf A) (U := Uf) e
+  let iso₂ : (ofSpf A).presheaf.obj (op Uf) ≅ CommRingCat.of (AdicRing.CompletedAway A f) :=
+    Spf.basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f
+  let gA : (ofSpf A).presheaf.obj (op ⊤) ≅ CommRingCat.of A :=
+    Spf.globalSectionsIso (IsAdicRing.ideal_spec A).2.1
+  let _ : TopologicalSpace ((ofSpf A).presheaf.obj (op Uf)) :=
+    Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 (Spf.basicOpen f)
+  have hchart := chartImmersion_c_app (X := ofSpf A) (le_refl Uf) e
+  dsimp only at hchart
+  rw [show (ofSpf A).presheaf.map (homOfLE (le_refl Uf)).op = 𝟙 _ from (ofSpf A).presheaf.map_id _,
+    Category.id_comp] at hchart
+  have hcont₁ : Continuous iso₁.hom := by
+    have htop_j : (Opens.map j.base).obj (Spf.basicOpen f) = ⊤ := by
+      ext q; exact iff_true_intro (e.inv.base q).2
+    rw [show (iso₁.hom : _ → _) = _ from funext fun s ↦ (ConcreteCategory.congr_hom hchart s).symm]
+    exact continuous_c_app_comp_globalSectionsIso j htop_j
+  have hψ_cont : Continuous (iso₂.inv ≫ iso₁.hom).hom := by
+    have hhomeo₂ : IsHomeomorph iso₂.hom :=
+      Spf.quotientSectionsTopology_basic (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f
+    have hinv : (iso₂.inv : _ → _) = hhomeo₂.homeomorph.symm := funext fun x ↦ hhomeo₂.injective
+      ((ConcreteCategory.congr_hom iso₂.inv_hom_id x).trans
+        (hhomeo₂.homeomorph.apply_symm_apply x).symm)
+    exact hcont₁.comp (hinv ▸ hhomeo₂.homeomorph.symm.continuous)
+  have hψ_id : iso₂.inv ≫ iso₁.hom = 𝟙 _ := CommRingCat.hom_ext <| by
+    refine AdicRing.CompletedAway.ringHom_ext A f hψ_cont continuous_id ?_
+    have h1 : CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A f)) ≫
+        (iso₂.inv ≫ iso₁.hom) =
+        gA.inv ≫ (ofSpf A).presheaf.map (homOfLE (le_top : Uf ≤ ⊤)).op ≫ iso₁.hom := by
+      have hg : gA.inv ≫ (ofSpf A).presheaf.map (homOfLE (le_top : Uf ≤ ⊤)).op ≫ iso₂.hom =
+          CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A f)) :=
+        Spf.globalSectionsIso_inv_comp_basicOpenSectionsIso_hom (IsAdicRing.ideal_spec A).2.1
+          (IsAdicRing.ideal_spec A).1 f
+      rw [← hg, Category.assoc, Category.assoc, Iso.hom_inv_id_assoc]
+    have h2 : gA.inv ≫ (ofSpf A).presheaf.map (homOfLE (le_top : Uf ≤ ⊤)).op ≫ iso₁.hom =
+        CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A f)) := by
+      rw [← chartImmersion_c_app_top (X := ofSpf A) e]
+      exact (congrArg (gA.inv ≫ ·) (Spf.c_app_top_comp_globalSectionsIso_hom j)).trans
+        ((Iso.inv_hom_id_assoc gA _).trans
+          (by rw [show j = Spf.basicOpenι f from Spf.restrictBasicOpenIso_inv_ofRestrict f,
+            Spf.sectionsHom_basicOpenι f]))
+    exact congrArg CommRingCat.Hom.hom (h1.trans h2)
+  exact Iso.ext <| by
+    change iso₁.hom = iso₂.hom
+    rw [← Category.id_comp iso₁.hom, ← iso₂.hom_inv_id, Category.assoc, hψ_id, Category.comp_id]
+
+/-- On a basic open `D(f)` of `ofSpf A`, `sectionsTopology` coincides with
+`Spf.quotientSectionsTopology`. -/
+theorem sectionsTopology_ofSpf_basicOpen (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] (f : A) :
+    sectionsTopology (ofSpf A) (Spf.basicOpen f) (isAffineOpen_basicOpen A f) =
+      Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 (Spf.basicOpen f) := by
+  let t₁ := sectionsTopology (ofSpf A) (Spf.basicOpen f) (isAffineOpen_basicOpen A f)
+  let t₂ := Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 (Spf.basicOpen f)
+  have h₁ := isHomeomorph_sectionsIsoOfIsoSpf (X := ofSpf A) (isAffineOpen_basicOpen A f)
+    (Spf.restrictBasicOpenIso f)
+  rw [sectionsIsoOfIsoSpf_restrictBasicOpenIso] at h₁
+  have h₂ := Spf.quotientSectionsTopology_basic (IsAdicRing.ideal_spec A).2.1
+    (IsAdicRing.ideal_spec A).1 f
+  exact (@IsInducing.eq_induced _ _ t₁ _ _ (@IsHomeomorph.isInducing _ _ t₁ _ _ h₁)).trans
+    (@IsInducing.eq_induced _ _ t₂ _ _ (@IsHomeomorph.isInducing _ _ t₂ _ _ h₂)).symm
+
+end AffineSectionsTopology
+
+section SheafSectionsTopology
+
+/-- **The sheaf topology on sections over an arbitrary open of a formal scheme** (EGA I, Ch. 0,
+3.8.1; Ch. I, 10.4.5): the initial topology on `Γ(U, O_X)` for the restriction maps to all affine
+formal opens `W ⊆ U`, each carrying its intrinsic adic topology `sectionsTopology`. -/
+@[instance_reducible]
+noncomputable def sheafSectionsTopology (X : FormalScheme.{u}) (U : Opens X) :
+    TopologicalSpace (X.presheaf.obj (op U)) :=
+  ⨅ (W : Opens X) (hWU : W ≤ U) (hW : X.IsAffineOpen W),
+    TopologicalSpace.induced (X.presheaf.map (homOfLE hWU).op) (sectionsTopology X W hW)
+
+/-- A map into `Γ(U, O_X)` is continuous for `sheafSectionsTopology` if and only if its composite
+with every restriction to an affine formal open `W ⊆ U` is continuous for `sectionsTopology`. -/
+theorem continuous_iff_sheafSectionsTopology {Z : Type*} [TopologicalSpace Z]
+    (X : FormalScheme.{u}) (U : Opens X) (g : Z → X.presheaf.obj (op U)) :
+    @Continuous _ _ _ (sheafSectionsTopology X U) g ↔
+      ∀ (W : Opens X) (hWU : W ≤ U) (hW : X.IsAffineOpen W),
+        @Continuous _ _ _ (sectionsTopology X W hW) ((X.presheaf.map (homOfLE hWU).op) ∘ g) := by
+  rw [sheafSectionsTopology, continuous_iInf_rng]
+  simp_rw [continuous_iInf_rng, continuous_induced_rng]
+
+/-- Every restriction map `Γ(U, O_X) → Γ(V, O_X)` is continuous for `sheafSectionsTopology`. -/
+theorem sheafSectionsTopology_restrict (X : FormalScheme.{u}) {U V : Opens X} (hVU : V ≤ U) :
+    @Continuous _ _ (sheafSectionsTopology X U) (sheafSectionsTopology X V)
+      (X.presheaf.map (homOfLE hVU).op) := by
+  let _ : TopologicalSpace (X.presheaf.obj (op U)) := sheafSectionsTopology X U
+  refine (continuous_iff_sheafSectionsTopology X V _).mpr fun W hWV hW ↦ ?_
+  rw [show (X.presheaf.map (homOfLE hWV).op) ∘ (X.presheaf.map (homOfLE hVU).op) =
+    (X.presheaf.map (homOfLE (hWV.trans hVU)).op) from funext fun s ↦
+      (ConcreteCategory.congr_hom (X.presheaf.map_comp (homOfLE hVU).op (homOfLE hWV).op) s).symm]
+  exact (continuous_iff_le_induced (t₁ := sheafSectionsTopology X U)
+    (t₂ := sectionsTopology X W hW)).mpr
+    (iInf_le_of_le W (iInf_le_of_le (hWV.trans hVU) (iInf_le _ hW)))
+
+/-- For every open `U`, `sheafSectionsTopology X U` is a ring topology on `Γ(U, O_X)`. -/
+theorem sheafSectionsTopology_isTopologicalRing (X : FormalScheme.{u}) (U : Opens X) :
+    @IsTopologicalRing (X.presheaf.obj (op U)) (sheafSectionsTopology X U) _ := by
+  refine TauCeti.isTopologicalRing_iInf fun W ↦
+    TauCeti.isTopologicalRing_iInf fun hWU ↦ TauCeti.isTopologicalRing_iInf fun hW ↦ ?_
+  let _ : TopologicalSpace (X.presheaf.obj (op W)) := sectionsTopology X W hW
+  have _ : IsTopologicalRing (X.presheaf.obj (op W)) := sectionsTopology_isTopologicalRing X W hW
+  exact TauCeti.isTopologicalRing_induced (X.presheaf.map (homOfLE hWU).op).hom
+
+/-- On an affine formal open `U`, `sheafSectionsTopology X U` coincides with
+`sectionsTopology X U hU`. -/
+theorem sheafSectionsTopology_eq_sectionsTopology (X : FormalScheme.{u}) (U : Opens X)
+    (hU : X.IsAffineOpen U) :
+    sheafSectionsTopology X U = sectionsTopology X U hU := by
+  apply le_antisymm
+  · refine iInf_le_of_le U (iInf_le_of_le (le_refl U) (iInf_le_of_le hU ?_))
+    rw [show ((X.presheaf.map (homOfLE (le_refl U)).op) : _ → _) = id from
+      funext fun s ↦ ConcreteCategory.congr_hom (X.presheaf.map_id (op U)) s,
+      @induced_id _ (sectionsTopology X U hU)]
+  · exact le_iInf fun W ↦ le_iInf fun hWU ↦ le_iInf fun hW ↦
+      (continuous_iff_le_induced (t₁ := sectionsTopology X U hU)
+        (t₂ := sectionsTopology X W hW)).mp (continuous_restrict_of_isAffineOpen hW hU hWU)
+
+/-- On an affine formal scheme `ofSpf A`, `sheafSectionsTopology` agrees with
+`Spf.quotientSectionsTopology` on every open subset `U` (EGA I, Ch. 0, 3.8.1; Ch. I, 10.4.5). -/
+theorem sheafSectionsTopology_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] (U : Opens (ofSpf A)) :
+    sheafSectionsTopology (ofSpf A) U =
+      Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U := by
+  let U' : Opens (Spf.carrier A) := U
+  apply le_antisymm
+  · change sheafSectionsTopology (ofSpf A) U ≤
+      Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U'
+    rw [Spf.quotientSectionsTopology_def]
+    refine le_iInf fun f ↦ le_iInf fun hf ↦ iInf_le_of_le (Spf.basicOpen f)
+      (iInf_le_of_le hf (iInf_le_of_le (isAffineOpen_basicOpen A f) ?_))
+    rw [sectionsTopology_ofSpf_basicOpen, Spf.quotientSectionsTopology_basicOpen]
+    exact le_rfl
+  · refine le_iInf fun W ↦ le_iInf fun hWU ↦ le_iInf fun hW ↦ ?_
+    obtain ⟨B, _, _, _, _, ⟨e⟩⟩ := ((ofSpf A).isAffineOpen_iff W).mp hW
+    let j : Spf B ⟶ Spf A := e.inv ≫ (Spf A).ofRestrict W.isOpenEmbedding
+    have hj : (Opens.map j.base).obj U' = ⊤ := by ext q; exact iff_true_intro (hWU (e.inv.base q).2)
+    have hchart := chartImmersion_c_app (X := ofSpf A) hWU e
+    dsimp only at hchart
+    let tU : TopologicalSpace ((ofSpf A).presheaf.obj (op U)) :=
+      Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 U'
+    let tW : TopologicalSpace ((ofSpf A).presheaf.obj (op W)) := sectionsTopology (ofSpf A) W hW
+    let _ := tU
+    let _ := tW
+    change tU ≤ _
+    refine (continuous_iff_le_induced (t₁ := tU) (t₂ := tW)).mp ?_
+    have hind := @IsHomeomorph.isInducing _ _ tW _ _
+      (isHomeomorph_sectionsIsoOfIsoSpf (X := ofSpf A) hW e)
+    rw [hind.continuous_iff,
+      show ((sectionsIsoOfIsoSpf e).hom : _ → _) ∘ ((ofSpf A).presheaf.map (homOfLE hWU).op) = _
+        from funext fun s ↦ (ConcreteCategory.congr_hom hchart s).symm]
+    exact continuous_c_app_comp_globalSectionsIso j hj
+
+/-- On the global open `⊤` of `ofSpf A`, `sectionsTopology` coincides with
+`Spf.quotientSectionsTopology`. -/
+theorem sectionsTopology_ofSpf_top (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    sectionsTopology (ofSpf A) ⊤ (isAffineOpen_top_ofSpf A) =
+      Spf.quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 ⊤ :=
+  (sheafSectionsTopology_eq_sectionsTopology (ofSpf A) ⊤ (isAffineOpen_top_ofSpf A)).symm.trans
+    (sheafSectionsTopology_ofSpf A ⊤)
+
+end SheafSectionsTopology
+
+end TauCeti.FormalScheme
