@@ -31,12 +31,12 @@ then `Φ_*(A × α)` lives over the fundamental class of `M` at `x₀`
 This is the argument of Propositions 6.29 and 6.33 of Barraud–Damian–Humilière–Oancea, for
 classes of diffeomorphisms coming from a group action. There the group is the identity component
 of `Diff(M)`, and the source uses that its stabilizer acts trivially on the homology of `Ω²M`; the
-hypothesis here asks this only of the class `α`. It holds when the stabilizer is path connected
-(`IsPathConnected.homologyMap_stabilizer_smul_apply`, in
-`TauCeti.AlgebraicTopology.Singular.Homotopy.BasedMapStabilizer`). It can fail for the identity
-component of `Diff(M)` when `π₁(M)` acts nontrivially on `π₂(M)`: an isotopy from the identity to a
-diffeomorphism fixing `x₀` moves `x₀` around a loop, and the diffeomorphism acts on
-`π₀(Ω²M) = π₂(M)` through that loop.
+hypothesis here asks this only of the class `α`. Every element joined to `1` by a path in the
+stabilizer fixes `α` (`JoinedIn.homologyMap_stabilizer_smul_apply`, in
+`TauCeti.AlgebraicTopology.Singular.Homotopy.BasedMapStabilizer`), so the hypothesis holds when the
+stabilizer is path connected. It can fail for the identity component of `Diff(M)` when `π₁(M)` acts
+nontrivially on `π₂(M)`: an isotopy from the identity to a diffeomorphism fixing `x₀` moves `x₀`
+around a loop, and the diffeomorphism acts on `π₀(Ω²M) = π₂(M)` through that loop.
 
 ## The computation
 
