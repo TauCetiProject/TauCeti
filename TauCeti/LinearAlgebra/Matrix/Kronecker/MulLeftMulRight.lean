@@ -13,9 +13,10 @@ import Mathlib.LinearAlgebra.Matrix.StdBasis
 # The determinant of `X ↦ A * X * B`
 
 On the square matrices `Matrix n n R` over a commutative ring, the `R`-linear map
-`X ↦ A * X * B` has the Kronecker product `A ⊗ₖ Bᵀ` as its matrix in the standard basis, so its
-determinant is `det A ^ n * det B ^ n` (`Matrix.det_mulLeft_comp_mulRight`). For `B = Aᴴ` this
-computes the determinant of the congruence action of `GL_n` on matrices.
+`X ↦ A * X * B` has the Kronecker product `A ⊗ₖ Bᵀ` as its matrix in the standard basis
+(`Matrix.toMatrix_stdBasis_mulLeft_comp_mulRight`), so its determinant is
+`det A ^ n * det B ^ n` (`Matrix.det_mulLeft_comp_mulRight`). For `B = Aᴴ` this computes the
+determinant of the congruence action of `GL_n` on matrices.
 -/
 
 public section
@@ -26,19 +27,23 @@ namespace Matrix
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
 
+/-- In the standard basis of `n × n` matrices, the `R`-linear map `X ↦ A * X * B` has the
+Kronecker product `A ⊗ₖ Bᵀ` as its matrix. -/
+theorem toMatrix_stdBasis_mulLeft_comp_mulRight (A B : Matrix n n R) :
+    LinearMap.toMatrix (stdBasis R n n) (stdBasis R n n)
+      (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = A ⊗ₖ Bᵀ := by
+  have hrepr (X : Matrix n n R) (p : n × n) : (stdBasis R n n).repr X p = X p.1 p.2 := by
+    simp [stdBasis]
+  ext ⟨i, j⟩ ⟨k, l⟩
+  simp [LinearMap.toMatrix_apply, stdBasis_eq_single, hrepr, Matrix.mul_apply,
+    Matrix.single_apply, ite_and, Finset.sum_ite_eq]
+
 /-- **The determinant of two-sided multiplication**: the `R`-linear map `X ↦ A * X * B` on
 `n × n` matrices has determinant `det A ^ n * det B ^ n`. -/
 theorem det_mulLeft_comp_mulRight (A B : Matrix n n R) :
     LinearMap.det (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
       A.det ^ Fintype.card n * B.det ^ Fintype.card n := by
-  have hrepr (X : Matrix n n R) (p : n × n) : (stdBasis R n n).repr X p = X p.1 p.2 := by
-    simp [stdBasis]
-  -- In the standard basis the map `X ↦ A * X * B` has matrix `A ⊗ₖ Bᵀ`.
-  have h : LinearMap.toMatrix (stdBasis R n n) (stdBasis R n n)
-      (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = A ⊗ₖ Bᵀ := by
-    ext ⟨i, j⟩ ⟨k, l⟩
-    simp [LinearMap.toMatrix_apply, stdBasis_eq_single, hrepr, Matrix.mul_apply,
-      Matrix.single_apply, ite_and, Finset.sum_ite_eq]
-  rw [← LinearMap.det_toMatrix (stdBasis R n n), h, det_kronecker, det_transpose]
+  rw [← LinearMap.det_toMatrix (stdBasis R n n), toMatrix_stdBasis_mulLeft_comp_mulRight,
+    det_kronecker, det_transpose]
 
 end Matrix

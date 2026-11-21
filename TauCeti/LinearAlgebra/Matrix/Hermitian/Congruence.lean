@@ -131,8 +131,9 @@ theorem det_skewAdjointConjugate
   rw [skewAdjointConjugate, LinearMap.det_restrictSkewAdjoint ht, ← selfAdjointConjugate,
     det_selfAdjointConjugate hfix ht]
 
-/-- **The modulus of the Siegel Levi action**: the scaled congruence `Y ↦ a • (C * Y * Cᴴ)`
-on hermitian matrices has `F`-determinant `a ^ (n ^ 2) * N_{E/F}(det C) ^ n`. -/
+/-- **The determinant of the scaled congruence action on hermitian matrices**: the scaled
+congruence `Y ↦ a • (C * Y * Cᴴ)` has `F`-determinant `a ^ (n ^ 2) * N_{E/F}(det C) ^ n`. Its
+absolute value is the modulus of the Siegel Levi action. -/
 theorem det_smul_selfAdjointConjugate [Nontrivial E]
     (hfix : ∀ c : E, IsSelfAdjoint c → c ∈ Set.range (algebraMap F E))
     (ht : (t : E) ∈ skewAdjoint E) (a : F) (C : Matrix n n E) :
@@ -141,8 +142,9 @@ theorem det_smul_selfAdjointConjugate [Nontrivial E]
   rw [LinearMap.det_smul, finrank_selfAdjoint_submodule F E n hfix ht,
     det_selfAdjointConjugate hfix ht]
 
-/-- **The modulus of the Siegel Levi action on skew-hermitian matrices**: the scaled congruence
-`Y ↦ a • (C * Y * Cᴴ)` has `F`-determinant `a ^ (n ^ 2) * N_{E/F}(det C) ^ n`. -/
+/-- **The determinant of the scaled congruence action on skew-hermitian matrices**: the scaled
+congruence `Y ↦ a • (C * Y * Cᴴ)` has `F`-determinant `a ^ (n ^ 2) * N_{E/F}(det C) ^ n`. Its
+absolute value is the modulus of the Siegel Levi action. -/
 theorem det_smul_skewAdjointConjugate [Nontrivial E]
     (hfix : ∀ c : E, IsSelfAdjoint c → c ∈ Set.range (algebraMap F E))
     (ht : (t : E) ∈ skewAdjoint E) (a : F) (C : Matrix n n E) :

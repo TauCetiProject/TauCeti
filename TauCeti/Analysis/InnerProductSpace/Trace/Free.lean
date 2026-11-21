@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Trace
-public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
+import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
 
 /-!
 # Trace-free self-adjoint endomorphisms
@@ -328,8 +328,10 @@ theorem finrank_traceFreeSelfAdjoint :
     have him : (LinearMap.trace ℂ E T).im = 0 := Complex.conj_eq_iff_im.1 hT.conj_trace
     simp [hφ, hT, Complex.ext_iff, him]
   have hS : finrank ℝ S = finrank ℂ E ^ 2 := by
-    rw [finrank_selfAdjoint_submodule, ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E)
-      (F' := E)).finrank_eq, Module.finrank_linearMap, sq]
+    rw [finrank_selfAdjoint_submodule_eq ℝ _ (fun c hc ↦ ⟨c.re, Complex.conj_eq_iff_re.mp hc⟩)
+        (t := Units.mk0 Complex.I Complex.I_ne_zero) (by simp [skewAdjoint.mem_iff]),
+      ← (LinearMap.toContinuousLinearMap (𝕜 := ℂ) (E := E) (F' := E)).finrank_eq,
+      Module.finrank_linearMap, sq]
   have : FiniteDimensional ℝ (E →L[ℂ] E) := Module.Finite.trans ℂ _
   have hle : traceFreeSelfAdjoint E ≤ S := fun T hT ↦ hT.1
   have hrk := LinearMap.finrank_range_add_finrank_ker φ
