@@ -52,6 +52,8 @@ extension of a ring of dimension at most one in it is injective.
   exactly when `ϖ ∣ x`.
 * `Irreducible.smodEq_maximalIdeal_pow_iff_dvd`: for a uniformizer `ϖ`, congruence modulo
   `𝔪 ^ n` is divisibility of the difference by `ϖ ^ n`.
+* `Irreducible.mul_mem_maximalIdeal_pow_succ_iff`: multiplying by a uniformizer shifts membership
+  in powers of the maximal ideal by one.
 * `TauCeti.IsDiscreteValuationRing.infinite`: a discrete valuation ring is infinite, since the
   powers of a uniformizer are pairwise distinct.
 * `TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero`: a ring map to a reduced semiring
@@ -180,6 +182,13 @@ theorem _root_.Irreducible.smodEq_maximalIdeal_pow_iff_dvd {ϖ : S} (hϖ : Irred
     {n : ℕ} {x y : S} :
     x ≡ y [SMOD maximalIdeal S ^ n] ↔ ϖ ^ n ∣ x - y := by
   rw [SModEq.sub_mem, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
+
+/-- Multiplying by a uniformizer shifts membership in powers of the maximal ideal by one. -/
+theorem _root_.Irreducible.mul_mem_maximalIdeal_pow_succ_iff {ϖ : S} (hϖ : Irreducible ϖ)
+    {k : ℕ} {z : S} :
+    ϖ * z ∈ maximalIdeal S ^ (k + 1) ↔ z ∈ maximalIdeal S ^ k := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow, pow_succ',
+    Ideal.mem_span_singleton, Ideal.mem_span_singleton, mul_dvd_mul_iff_left hϖ.ne_zero]
 
 /-- A discrete valuation ring is infinite: a finite domain is a field, and a discrete valuation
 ring is not. -/
