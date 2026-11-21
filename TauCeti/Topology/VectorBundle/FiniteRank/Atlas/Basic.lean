@@ -159,16 +159,6 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
-/-- Every point of a rank stratum lies in its own preferred chart domain. -/
-theorem mem_baseSet_self (n : ℕ) (x : {x : X // A.rank x = n}) :
-    x ∈ (A.charts n).baseSet x := by
-  simpa only [A.indexAt_eq] using (A.charts n).mem_baseSet_at x
-
-/-- At any point of a rank stratum, the preferred trivialization is the chart labelled by it. -/
-theorem trivializationAt_charts (n : ℕ) (x : {x : X // A.rank x = n}) :
-    trivializationAt (Fin n → 𝕜) (A.charts n).Fiber x = (A.charts n).localTriv x := by
-  rw [VectorBundleCore.trivializationAt, VectorBundleCore.localTrivAt, A.indexAt_eq]
-
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
@@ -285,12 +275,17 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v) :
     TotalSpace Unit A.Fiber ≃ₜ Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜) :=
   A.totalSpaceHomeomorph.symm.trans
-    { toEquiv := Equiv.sigmaCongrRight fun n =>
-        (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv
-      continuous_toFun := continuous_sigma fun n =>
-        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).continuous
-      continuous_invFun := continuous_sigma fun n =>
-        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).symm.continuous }
+    ((Equiv.sigmaCongrRight fun n =>
+      (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv).toHomeomorphOfIsInducing
+      ((Equiv.isHomeomorph_iff_isInducing _).mp <|
+        (funext fun ⟨_, _⟩ => rfl :
+          ⇑(Equiv.sigmaCongrRight fun n =>
+            (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv) =
+          Sigma.map id fun n => ⇑(A.stratumHomeomorphOfCoordChangeEqId hcoord n)) ▸
+        IsHomeomorph.sigmaMap
+          (Y := fun n => {x : X // A.rank x = n} × (Fin n → 𝕜))
+          Function.bijective_id fun n =>
+          (A.stratumHomeomorphOfCoordChangeEqId hcoord n).isHomeomorph))
 
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_apply
     (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
@@ -346,12 +341,18 @@ stratum trivialization domain at `z`. -/
   rw [VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet]
 
 private noncomputable def gluedReconstructionHomeomorph :
-    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) where
-  toEquiv := Equiv.sigmaCongrRight fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv
-  continuous_toFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).continuous
-  continuous_invFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm.continuous
+    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  (Equiv.sigmaCongrRight fun n =>
+    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv).toHomeomorphOfIsInducing
+    ((Equiv.isHomeomorph_iff_isInducing _).mp <|
+      (funext fun ⟨_, _⟩ => rfl :
+        ⇑(Equiv.sigmaCongrRight fun n =>
+          (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv) =
+        Sigma.map id fun n => ⇑(pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))) ▸
+      IsHomeomorph.sigmaMap
+        (Y := fun n => TotalSpace (Fin n → 𝕜) (E n))
+        Function.bijective_id fun n =>
+        (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).isHomeomorph)
 
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear

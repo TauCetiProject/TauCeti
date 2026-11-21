@@ -16,8 +16,9 @@ Given a locally constant rank function `r : LocallyConstant X ℕ`, `FiniteRankA
 places the constant-rank trivial core on each clopen rank stratum `{x : X // r x = n}`, with
 identity transition maps everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes
 continuity of maps into its reconstructed total space in terms of continuity of coordinate vectors
-on each clopen rank stratum, `FiniteRankAtlas.trivialTotalSpaceHomeomorph` identifies its
-reconstructed total space with the disjoint union of the stratum products, and
+on each clopen rank stratum, `(trivial 𝕜 X r).totalSpaceHomeomorphOfCoordChangeEqId`
+(with `fun _ _ _ _ _ _ => rfl`) identifies its reconstructed total space with the disjoint
+union of the stratum products via its generic `@[simp]` evaluation lemmas, and
 `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the reconstructed total space of a
 constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
 
@@ -80,27 +81,6 @@ theorem continuous_mk_trivial_iff {Y : Type*} [TopologicalSpace Y]
   exact (FiniteRankBundleCore.continuous_trivial_iff
     (𝕜 := 𝕜) (B := {x : X // r x = n}) (n := n)).trans
     (and_iff_right ((hb.comp continuous_subtypeVal).subtype_mk _))
-
-variable (𝕜) in
-/-- The reconstructed total space of a trivial variable-rank atlas is homeomorphic to the
-disjoint union of the product spaces over its rank strata. -/
-def trivialTotalSpaceHomeomorph (r : LocallyConstant X ℕ) :
-    TotalSpace Unit (trivial 𝕜 X r).Fiber ≃ₜ Σ n : ℕ, {x : X // r x = n} × (Fin n → 𝕜) :=
-  (trivial 𝕜 X r).totalSpaceHomeomorphOfCoordChangeEqId fun _ _ _ _ _ _ => rfl
-
-/-- Forward evaluation of `trivialTotalSpaceHomeomorph`. -/
-@[simp] theorem trivialTotalSpaceHomeomorph_apply (r : LocallyConstant X ℕ)
-    (p : TotalSpace Unit (trivial 𝕜 X r).Fiber) :
-    trivialTotalSpaceHomeomorph 𝕜 r p = ⟨r p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ :=
-  (trivial 𝕜 X r).totalSpaceHomeomorphOfCoordChangeEqId_apply (fun _ _ _ _ _ _ => rfl) p
-
-/-- Inverse evaluation of `trivialTotalSpaceHomeomorph`. -/
-@[simp] theorem trivialTotalSpaceHomeomorph_symm_apply (r : LocallyConstant X ℕ)
-    (n : ℕ) (x : {x : X // r x = n}) (v : Fin n → 𝕜) :
-    (trivialTotalSpaceHomeomorph 𝕜 r).symm ⟨n, (x, v)⟩ =
-      ⟨x.val, fun i => v (Fin.cast x.property i)⟩ :=
-  (trivial 𝕜 X r).totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
-    (fun _ _ _ _ _ _ => rfl) n x v
 
 /-- A map into the reconstructed total space of a constant-rank trivial atlas is continuous if and
 only if its base map and coordinate vector are continuous. -/

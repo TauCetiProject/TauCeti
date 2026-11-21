@@ -418,28 +418,10 @@ instance : HasBinaryBiproducts (FiniteRankAtlas 𝕜 X) where
 instance : HasFiniteBiproducts (FiniteRankAtlas 𝕜 X) :=
   hasFiniteBiproducts_of_hasBinaryBiproducts
 
-/-- The canonical isomorphism between the concrete Whitney sum and the categorical binary
-biproduct `A ⊞ D`. -/
-noncomputable def whitneySumIsoBiprod (A D : FiniteRankAtlas 𝕜 X) :
-    whitneySum A D ≅ A ⊞ D :=
-  biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)
-
-/-- Forward morphism of `whitneySumIsoBiprod`. -/
-@[simp] theorem whitneySumIsoBiprod_hom (A D : FiniteRankAtlas 𝕜 X) :
-    (whitneySumIsoBiprod A D).hom = biprod.lift (whitneyFst A D) (whitneySnd A D) := by
-  simp [whitneySumIsoBiprod]
-  rfl
-
-/-- Inverse morphism of `whitneySumIsoBiprod`. -/
-@[simp] theorem whitneySumIsoBiprod_inv (A D : FiniteRankAtlas 𝕜 X) :
-    (whitneySumIsoBiprod A D).inv = biprod.desc (whitneyInl A D) (whitneyInr A D) := by
-  simp [whitneySumIsoBiprod]
-  rfl
-
 /-- Rank additivity for the categorical binary biproduct `A ⊞ D`. -/
 @[simp] theorem rank_biprod (A D : FiniteRankAtlas 𝕜 X) :
     (A ⊞ D).rank = A.rank + D.rank :=
-  (whitneySumIsoBiprod A D).symm.finiteRankAtlas_rank_eq
+  (biprod.uniqueUpToIso A D (whitneyBiconeIsBilimit A D)).symm.finiteRankAtlas_rank_eq
 
 /-- Rank additivity for finite categorical biproducts `⨁ f`. -/
 @[simp] theorem rank_biproduct.{w} {J : Type w} [Fintype J] (f : J → FiniteRankAtlas 𝕜 X) :
