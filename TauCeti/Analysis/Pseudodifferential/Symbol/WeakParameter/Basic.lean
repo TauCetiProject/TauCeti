@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Weakly parameter-dependent symbols
@@ -722,21 +723,10 @@ end Comp
 
 /-! ### The normalized resolvent of `1 - Δ` -/
 
-/-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t`, `t ≥ 0`, satisfy
-`‖1 - r t‖ ≥ (1 - max c (-1)) / 2 * (1 + ‖r‖ t)`, which keeps them away from `0` for `c < 1`. -/
-private theorem mul_one_add_le_norm_one_sub_mul {c : ℝ} {r : ℂ}
-    (hr : r.re ≤ c * ‖r‖) {t : ℝ} (ht : 0 ≤ t) :
-    (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) ≤ ‖1 - r * t‖ := by
-  have hnorm : ‖r * t‖ = ‖r‖ * t := by rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
-  have h := Complex.mul_add_norm_le_norm_ofReal_sub (z := r * t) zero_le_one (by
-    rw [hnorm]
-    simpa [mul_assoc] using mul_le_mul_of_nonneg_right hr ht)
-  rwa [hnorm, Complex.ofReal_one] at h
-
 private theorem one_sub_mul_ne_zero {c : ℝ} (hc : c < 1) {r : ℂ} (hr : r.re ≤ c * ‖r‖) {t : ℝ}
     (ht : 0 ≤ t) : 1 - r * t ≠ 0 := by
   intro h
-  have h' := mul_one_add_le_norm_one_sub_mul hr ht
+  have h' := Complex.mul_one_add_le_norm_one_sub_mul hr ht
   rw [h, norm_zero] at h'
   have : 0 < (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) :=
     mul_pos (by linarith [max_lt hc (show (-1 : ℝ) < 1 by norm_num)]) (by positivity)
@@ -761,12 +751,6 @@ private theorem exists_norm_iteratedFDeriv_weight_le (i : ℕ) : ∃ C, ∀ ξ :
 private theorem contDiff_weight :
     ContDiff ℝ ∞ fun ξ : CoordinateSpace n => ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ) :=
   Complex.ofRealCLM.contDiff.comp (contDiff_const.add (contDiff_norm_sq ℝ))
-
-/-- With `t = ⟨ξ⟩ = (1 + ‖ξ‖²) ^ (1 / 2)`, `t ^ i = (1 + ‖ξ‖²) ^ (i / 2)`. -/
-private theorem japaneseBracket_pow (ξ : CoordinateSpace n) (i : ℕ) :
-    ((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)) ^ i = (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-  ring_nf
 
 /-- **The dilated symbol of `1 - r (1 - Δ)`.** With `t = ⟨ξ⟩`, the derivatives at `0` of
 `v ↦ 1 - r (1 + ‖ξ + t v‖²)` are at most `(1 + |C|) (1 + ‖r‖ (1 + ‖ξ‖²))`, where `C` is a
@@ -802,7 +786,7 @@ private theorem norm_iteratedFDeriv_one_sub_mul_weight_dilate_le (j : ℕ) {C : 
       ((1 + ‖ξ + t • v‖ ^ 2 : ℝ) : ℂ)) 0‖ ≤ |C| * (1 + ‖ξ‖ ^ 2) := by
     rw [norm_iteratedFDeriv_comp_add_const_smul (fun ξ : CoordinateSpace n =>
       ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ)) ξ t 0 j, smul_zero, add_zero, Real.norm_eq_abs,
-      abs_of_pos (Real.rpow_pos_of_pos hu _), japaneseBracket_pow]
+      abs_of_pos (Real.rpow_pos_of_pos hu _), one_add_norm_sq_rpow_one_div_two_pow]
     calc (1 + ‖ξ‖ ^ 2) ^ ((j : ℝ) / 2) * ‖iteratedFDeriv ℝ j
           (fun ξ : CoordinateSpace n => ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ)) ξ‖
         ≤ (1 + ‖ξ‖ ^ 2) ^ ((j : ℝ) / 2) * (|C| * (1 + ‖ξ‖ ^ 2) ^ ((2 - j : ℝ) / 2)) := by
@@ -855,7 +839,7 @@ private theorem exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le {c : ℝ} (
   have hlow : (1 - max c (-1)) / 2 * σ ≤ ‖h 0‖ := by
     have h0 : h 0 = 1 - r * (u : ℂ) := by simp [hhdef, hudef]
     rw [h0]
-    exact mul_one_add_le_norm_one_sub_mul hr hu.le
+    exact Complex.mul_one_add_le_norm_one_sub_mul hr hu.le
   have hinv := hQb h σ 0 (by positivity) (hh.of_le (mod_cast le_top)) hder hlow k le_rfl
   -- Undo the dilation: `‖D^k (h⁻¹) 0‖ = t ^ k ‖D^k (1 - r (1 + ‖·‖²))⁻¹ ξ‖`.
   have hundil : ‖iteratedFDeriv ℝ k (fun v => (h v)⁻¹) 0‖ = ‖t‖ ^ k * ‖iteratedFDeriv ℝ k
@@ -863,7 +847,7 @@ private theorem exists_norm_iteratedFDeriv_inv_one_sub_mul_weight_le {c : ℝ} (
     norm_iteratedFDeriv_comp_add_const_smul
       (fun ξ : CoordinateSpace n => (1 - r * ((1 + ‖ξ‖ ^ 2 : ℝ) : ℂ))⁻¹) ξ t 0 k
   rw [hundil, smul_zero, add_zero, Real.norm_eq_abs, abs_of_pos ht, htdef,
-    japaneseBracket_pow] at hinv
+    one_add_norm_sq_rpow_one_div_two_pow] at hinv
   have hpow : 0 < u ^ ((k : ℝ) / 2) := Real.rpow_pos_of_pos hu _
   calc _ ≤ Q / u ^ ((k : ℝ) / 2) := by
         rw [le_div_iff₀ hpow, mul_comm]
