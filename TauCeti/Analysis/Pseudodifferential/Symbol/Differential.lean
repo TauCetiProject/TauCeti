@@ -112,9 +112,9 @@ degree `m - j` collects the summands of order `m - j`
 def ofDifferentialSymbol (m : ℕ) (s : Finset ι) (v : ∀ i, Fin (k i) → CoordinateSpace n)
     (b : ι → CoordinateSpace n → V →L[ℂ] W) (hb : ∀ i ∈ s, ContDiff ℝ ∞ (b i))
     (hk : ∀ i ∈ s, k i ≤ m) : ClassicalSymbol n V W m :=
-  ∑ i ∈ s.attach, inclusion (m - k i) (by rw [Nat.cast_sub (hk i i.2)]; ring)
-    (ofContDiffHomogeneous (m := k i) (differentialSymbol {i.1} v b)
-      (contDiff_differentialSymbol _ v fun j hj ↦ Finset.mem_singleton.1 hj ▸ hb i i.2)
+  ∑ i ∈ s.attach, inclusion (m - k i) (by rw [Nat.cast_sub (hk i i.property)]; ring)
+    (ofContDiffHomogeneous (m := k i) (differentialSymbol {i.val} v b)
+      (contDiff_differentialSymbol _ v fun j hj ↦ Finset.mem_singleton.1 hj ▸ hb i i.property)
       fun x ξ _ t _ ↦ by
         rw [Real.rpow_natCast]
         exact differentialSymbol_smul_snd _ v b (fun j hj ↦ by rw [Finset.mem_singleton.1 hj])
@@ -154,7 +154,7 @@ theorem coefficient_term_ofDifferentialSymbol (j : ℕ) {x ξ : CoordinateSpace 
   simp only [ofDifferentialSymbol, term_sum, coefficient_sum, Finset.sum_apply]
   rw [differentialSymbol_def, Finset.sum_filter, ← Finset.sum_attach s]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hki := hk i i.2
+  have hki := hk i i.property
   rw [term_inclusion]
   split_ifs with hj hkj hkj
   · -- The summand `i` has order `m - j`: its term of degree `m - j` is its principal symbol.
@@ -291,10 +291,8 @@ theorem principal_negLaplacian :
 
 /-- **The Laplacian is elliptic.** -/
 theorem isElliptic_negLaplacian : (negLaplacian n V).IsElliptic := by
-  refine isElliptic_def.2 <| HomogeneousSymbol.isElliptic_iff.2 fun x ξ hξ ↦ ?_
-  rw [principal_negLaplacian, coefficient_normRpow_of_ne_zero _ _ _ hξ, ← Complex.coe_smul,
-    ContinuousLinearMap.isInvertible_smul_iff (by simpa using hξ)]
-  simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)
+  rw [isElliptic_def, principal_negLaplacian]
+  exact HomogeneousSymbol.isElliptic_normRpow _ _ _ _
 
 end ClassicalSymbol
 

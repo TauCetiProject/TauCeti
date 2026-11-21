@@ -45,7 +45,7 @@ def topCatHomotopyOfContMDiff {k : ℕ∞ω} (hf : ContMDiff I J k f) (hg : Cont
     (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) :
     TopCat.Homotopy (TopCat.ofHom ⟨f, hf.continuous⟩) (TopCat.ofHom ⟨g, hg.continuous⟩) where
   toFun p := F (p.1, p.2)
-  continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
+  continuous_toFun := hF.continuous.comp (continuous_subtypeVal.prodMap continuous_id)
   map_zero_left := h₀
   map_one_left := h₁
 

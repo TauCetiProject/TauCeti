@@ -76,7 +76,7 @@ theorem le_jacobson_of_ne_top_of_isLocalRing_end [Module.Projective R P]
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self φ with hu | hu
   · refine hN (Submodule.eq_top_iff'.2 fun x ↦ ?_)
     obtain ⟨y, rfl⟩ := (Module.End.isUnit_iff φ).1 hu |>.2 x
-    exact (h y).2
+    exact (h y).property
   · refine hK.1 (Submodule.eq_top_iff'.2 fun x ↦ ?_)
     obtain ⟨y, rfl⟩ := (Module.End.isUnit_iff _).1 hu |>.2 x
     exact hφ y

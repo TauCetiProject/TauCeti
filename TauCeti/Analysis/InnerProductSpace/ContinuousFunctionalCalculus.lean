@@ -159,7 +159,7 @@ instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
     · rw [hsp] at hx
       simpa [hgf ⟨x, hx⟩] using f.norm_coe_le_norm ⟨x, hx⟩
     · rw [← hgf x]
-      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
+      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.property) (hsp ▸ hg)
         (by simpa using hT)
 
 section RCLike
@@ -345,7 +345,7 @@ theorem nonneg_add_star_sub_smul_of_spectrum_re
     (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
     0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
   have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
-    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).property)).2
     rw [spectrum_realPart' W]
     rintro _ ⟨z, hz, rfl⟩
     exact hspec z hz

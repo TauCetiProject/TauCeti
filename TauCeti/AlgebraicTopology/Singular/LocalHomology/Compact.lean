@@ -193,7 +193,7 @@ private lemma detects_symm_image_biUnion_closedBall (hn : finrank ℝ E = n)
   rw [← iUnion_subtype (· ∈ t) fun a ↦ closedBall (φ a) (r a)]
   have hconv (a : t) := convex_closedBall (φ a) (r a)
   have hcpt (a : t) := isCompact_closedBall (φ a) (r a)
-  have hφ (a : t) := ht a a.2
+  have hφ (a : t) := ht a a.property
   refine ⟨fun k hk ↦ isZero_localHomology_symm_image_iUnion N φ hn hconv hcpt hφ hk,
     fun α hα ↦ ?_⟩
   have := localHomology_symm_image_iUnion_hom_ext N φ hn hconv hcpt hφ

@@ -84,7 +84,8 @@ private theorem fg_of_finrank_le_aux :
     -- `v₀` cannot lie in the `K`-span of `P'`, since clearing denominators would kill `φ x₀`.
     have hv₀_notMem : v₀ ∉ Submodule.span K (P' : Set V) := fun hv₀_span ↦ by
       obtain ⟨m, c, y, hsum⟩ := Submodule.mem_span_set'.mp hv₀_span
-      have hy (i : Fin m) : ∃ z : P, φ z = 0 ∧ (z : V) = (y i : V) := by simpa [P'] using (y i).2
+      have hy (i : Fin m) : ∃ z : P, φ z = 0 ∧ (z : V) = (y i : V)
+          := by simpa [P'] using (y i).property
       choose z hz_ker hz_val using hy
       obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R) c
       choose a ha using hs
@@ -96,7 +97,7 @@ private theorem fg_of_finrank_le_aux :
       have hkill : (s : R) * φ x₀ = 0 := by
         rw [← smul_eq_mul, ← map_smul, hsx₀, map_sum]
         exact Finset.sum_eq_zero fun i _ ↦ by rw [map_smul, hz_ker i, smul_zero]
-      exact mul_ne_zero (nonZeroDivisors.ne_zero s.2) hφx₀ hkill
+      exact mul_ne_zero (nonZeroDivisors.ne_zero s.property) hφx₀ hkill
     have hU'_lt : U' < U := lt_of_le_not_ge inf_le_right fun hle ↦ hv₀_notMem (hle (hPU hv₀P)).1
     have hP'_fg : P'.FG := fg_of_finrank_le_aux n P' U'
       (Nat.lt_succ_iff.mp ((Submodule.finrank_lt_finrank_of_lt hU'_lt).trans_le hU))

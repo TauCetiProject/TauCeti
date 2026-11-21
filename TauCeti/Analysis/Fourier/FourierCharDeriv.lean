@@ -86,7 +86,7 @@ theorem contDiff_fourierChar_inner (η : E) {n : WithTop ℕ∞} :
 /-- The plane waves `𝐞 ⟪η, x⟫` depend continuously on the frequency and the position jointly. -/
 theorem continuous_fourierChar_inner :
     Continuous fun p : E × E ↦ (𝐞 ⟪p.1, p.2⟫ : ℂ) :=
-  continuous_subtype_val.comp (continuous_fourierChar.comp continuous_inner)
+  continuous_subtypeVal.comp (continuous_fourierChar.comp continuous_inner)
 
 /-- **Derivatives of a plane wave.** The derivative of order `k` of the plane wave
 `x ↦ 𝐞 ⟪η, x⟫ = exp(2πi ⟪η, x⟫)` is bounded by `(2π ‖η‖) ^ k` at every point. -/

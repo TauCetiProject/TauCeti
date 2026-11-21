@@ -309,7 +309,7 @@ theorem coe_galRestrict_eq_toRingHom (σ : L ≃ₐ[K] L) :
 @[simp]
 theorem coe_smul_primesOver_ringOfIntegers {p : Ideal (𝓞 K)}
     (σ : L ≃ₐ[K] L) (P : p.primesOver (𝓞 L)) :
-    (σ • P).1 = σ • P.1 := by
+    (σ • P).val = σ • P.val := by
   rw [Ideal.coe_smul_primesOver_eq_map_galRestrict, Ideal.pointwise_smul_def,
     ← Ideal.map_coe, coe_galRestrict_eq_toRingHom]
 
@@ -326,7 +326,7 @@ theorem stabilizer_primesOver_ringOfIntegers {p : Ideal (𝓞 K)} (P : p.primesO
 instance isPretransitive_primesOver_ringOfIntegers [IsGalois K L] {p : Ideal (𝓞 K)} :
     MulAction.IsPretransitive (L ≃ₐ[K] L) (p.primesOver (𝓞 L)) where
   exists_smul_eq P Q := by
-    obtain ⟨σ, hσ⟩ := Ideal.exists_smul_eq_of_isGaloisGroup p P.1 Q.1 (L ≃ₐ[K] L)
+    obtain ⟨σ, hσ⟩ := Ideal.exists_smul_eq_of_isGaloisGroup p P.val Q.val (L ≃ₐ[K] L)
     exact ⟨σ, Subtype.ext ((coe_smul_primesOver_ringOfIntegers K L σ P).trans hσ)⟩
 
 /-- The automorphism action on primes above a set, transported from the primes-over fibres. -/
@@ -340,7 +340,7 @@ noncomputable instance primesAboveRingOfIntegersMulAction
 @[simp]
 theorem sigmaPrimesOverEquivPrimesAbove_smul
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
-    (p : Σ v : S, v.1.asIdeal.primesOver (𝓞 L)) :
+    (p : Σ v : S, v.val.asIdeal.primesOver (𝓞 L)) :
     sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S (σ • p) =
       σ • sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S p := by
   -- The transported action applies the inverse reindexing, the fibre action, then reindexing.
@@ -354,7 +354,7 @@ theorem sigmaPrimesOverEquivPrimesAbove_smul
 theorem asIdeal_smul_primesAbove_ringOfIntegers
     (S : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))) (σ : L ≃ₐ[K] L)
     (w : ↥(IsDedekindDomain.HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) S)) :
-    (σ • w).1.asIdeal = σ • w.1.asIdeal := by
+    (σ • w).val.asIdeal = σ • w.val.asIdeal := by
   obtain ⟨p, rfl⟩ := (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) S).surjective w
   rw [← sigmaPrimesOverEquivPrimesAbove_smul]
   rcases p with ⟨v, P⟩

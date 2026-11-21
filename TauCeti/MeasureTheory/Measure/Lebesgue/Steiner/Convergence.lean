@@ -238,18 +238,21 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
   -- Directions are sequences of unit vectors, and `d e n` is the distance to `B` after `n` steps.
   let D := {e : ℕ → E // ∀ k, ‖e k‖ = 1}
   let d : D → ℕ → ℝ≥0∞ := fun e n =>
-    volume (iterateSteinerSymmetrization e.1 e.2 s n ∆ ball (0 : E) r)
+    volume (iterateSteinerSymmetrization e.val e.property s n ∆ ball (0 : E) r)
   have h' (e : D) (n j : ℕ) : ∃ (e' : D) (m : ℕ),
-      volume (iterateSteinerSymmetrization e'.1 e'.2 (iterateSteinerSymmetrization e.1 e.2 s n) m ∆
+      volume (iterateSteinerSymmetrization e'.val e'.property (iterateSteinerSymmetrization e.val
+          e.property s n) m ∆
         ball 0 r) < ((j : ℝ≥0∞) + 1)⁻¹ := by
-    obtain ⟨e', he', m, hm⟩ := h e.1 e.2 n ((j : ℝ≥0∞) + 1)⁻¹ (ENNReal.inv_pos.2 (by simp))
+    obtain ⟨e', he', m, hm⟩ := h e.val e.property n ((j : ℝ≥0∞) + 1)⁻¹ (ENNReal.inv_pos.2 (by simp))
     exact ⟨⟨e', he'⟩, m, hm⟩
   choose f m hf using h'
   -- Splicing `e'` after the first `N` terms of `e`.
-  have h'' (e : D) (N : ℕ) (e' : D) : ∃ e'' : D, (∀ k < N, e''.1 k = e.1 k) ∧
-      ∀ m, iterateSteinerSymmetrization e''.1 e''.2 s (N + m) =
-        iterateSteinerSymmetrization e'.1 e'.2 (iterateSteinerSymmetrization e.1 e.2 s N) m := by
-    obtain ⟨e'', he'', h₁, h₂⟩ := exists_iterateSteinerSymmetrization_add_eq e.1 e.2 N e'.1 e'.2
+  have h'' (e : D) (N : ℕ) (e' : D) : ∃ e'' : D, (∀ k < N, e''.val k = e.val k) ∧
+      ∀ m, iterateSteinerSymmetrization e''.val e''.property s (N + m) =
+        iterateSteinerSymmetrization e'.val e'.property (iterateSteinerSymmetrization e.val
+            e.property s N) m := by
+    obtain ⟨e'', he'', h₁, h₂⟩ := exists_iterateSteinerSymmetrization_add_eq e.val e.property N
+        e'.val e'.property
     exact ⟨⟨e'', he''⟩, h₁, h₂ s⟩
   choose splice hsplice_lt hsplice_add using h''
   -- Stage `j` consists of directions `σ j` and a number `N j` of steps after which the distance
@@ -265,17 +268,18 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     simp only [step]
     omega
   -- The diagonal sequence of directions agrees with stage `j` on its first `N j` terms.
-  obtain ⟨e', he_eq⟩ := exists_forall_lt_eq_of_strictMono (fun j => (σ j).1.1) hN
+  obtain ⟨e', he_eq⟩ := exists_forall_lt_eq_of_strictMono (fun j => (σ j).1.val) hN
     fun j k hk => by rw [hσ]; exact hsplice_lt _ _ _ k hk
   let e : D := ⟨e', fun k => by
     rw [he_eq (k + 1) k ((Nat.lt_succ_self k).trans_le (hN.id_le (k + 1)))]
-    exact (σ (k + 1)).1.2 k⟩
+    exact (σ (k + 1)).1.property k⟩
   -- After the steps of stage `j + 1`, the distance to `B` is less than `1 / (j + 1)`.
-  have hstep (j : ℕ) (p : D × ℕ) (q : D) (hq : ∀ k < (step j p).2, q.1 k = (step j p).1.1 k) :
+  have hstep (j : ℕ) (p : D × ℕ) (q : D) (hq : ∀ k < (step j p).2, q.val k = (step j p).1.val k) :
       d q (step j p).2 < ((j : ℝ≥0∞) + 1)⁻¹ := by
     obtain ⟨e', N⟩ := p
     dsimp only [d, step] at hq ⊢
-    rw [iterateSteinerSymmetrization_congr q.1 q.2 (splice e' N (f e' N j)).2 s hq, add_assoc,
+    rw [iterateSteinerSymmetrization_congr q.val q.property (splice e' N (f e' N j)).property s hq,
+        add_assoc,
       hsplice_add]
     exact (antitone_volume_iterateSteinerSymmetrization_symmDiff_ball _ _
       (nullMeasurableSet_iterateSteinerSymmetrization _ _ hs _) r (Nat.le_succ _)).trans_lt
@@ -283,7 +287,7 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
   have hd_stage (j : ℕ) : d e (σ (j + 1)).2 < ((j : ℝ≥0∞) + 1)⁻¹ := by
     have := hstep j (σ j) e fun k hk => he_eq (j + 1) k (by rwa [hσ])
     rwa [← hσ] at this
-  refine ⟨e.1, e.2, ENNReal.tendsto_atTop_zero.2 fun ε hε => ?_⟩
+  refine ⟨e.val, e.property, ENNReal.tendsto_atTop_zero.2 fun ε hε => ?_⟩
   obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt hε.ne'
   refine ⟨(σ (j + 1)).2, fun n hn => ?_⟩
   calc d e n ≤ d e (σ (j + 1)).2 :=

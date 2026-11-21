@@ -141,10 +141,10 @@ theorem eq_zero_of_add_eq_pow_smul (hf : Differentiable ℂ f) {L : Submodule �
   have : DiscreteTopology L' := .of_subset ‹DiscreteTopology L› hL'
   have : IsZLattice ℝ L' := IsZLattice.of_relIndex_ne_zero hidx
   -- The holonomy of the pulled-back power `N ^ j` around `n • ω₀ ∈ L'` is `ψ ω₀ ^ (n * j)`.
-  obtain ⟨n, hn, -, hmem⟩ := AddSubgroup.exists_nsmul_mem_of_relIndex_ne_zero hidx ω₀.2
+  obtain ⟨n, hn, -, hmem⟩ := AddSubgroup.exists_nsmul_mem_of_relIndex_ne_zero hidx ω₀.property
   refine hf.eq_zero_of_add_eq_smul
     (ψ := (ψ ^ j).compAddMonoidHom (Submodule.inclusion hL').toAddMonoidHom) ?_
-    fun z ω ↦ by simpa [Submodule.inclusion_apply] using h z ω ω.2
+    fun z ω ↦ by simpa [Submodule.inclusion_apply] using h z ω ω.property
   intro h1
   refine hω₀ (isOfFinOrder_iff_pow_eq_one.2 ⟨n * j, Nat.mul_pos hn (Nat.pos_of_ne_zero hj), ?_⟩)
   have h2 := DFunLike.congr_fun h1 ⟨n • (ω₀ : V), hmem.1⟩

@@ -173,7 +173,7 @@ theorem equivFreeGroup_of_eq_dartWord (e : Γ.E) :
   rw [equivFreeGroup_of_eq_dartWord, GraphOfGroups.π₁Tree.dartWord_of_mem he]
 
 @[simp] theorem equivFreeGroup_symm_of (e : ↥(O \ T)) :
-    (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.1 := by
+    (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.val := by
   simp [equivFreeGroup]
 
 end free
