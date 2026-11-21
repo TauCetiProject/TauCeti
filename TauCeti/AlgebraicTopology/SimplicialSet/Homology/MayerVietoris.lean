@@ -11,6 +11,12 @@ public import Mathlib.CategoryTheory.Abelian.CommSq
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
+public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+public import TauCeti.CategoryTheory.Subfunctor.Basic
+public import TauCeti.Order.CompleteLattice.MulticoequalizerDiagram
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 
 /-!
 # The Mayer–Vietoris sequence of a pushout of simplicial sets
@@ -52,6 +58,13 @@ of singular homology for an open cover by two sets is obtained from such a squar
 * `SSet.mayerVietorisShortComplexMap`: the map of Mayer–Vietoris short exact sequences induced by
   a map of pushout squares.
 * `SSet.mayerVietorisδ_naturality`: the connecting morphism is natural in maps of pushout squares.
+* `SSet.quasiIso_chainComplexMap_of_isPushout`: a map of pushout squares that induces
+  quasi-isomorphisms on chains at three corners induces one at the fourth.
+* `SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`: for a bicartesian square of subcomplexes
+  `A₁, A₂, A₃, A₄` and a further subcomplex `S`, if `S ⊓ Aᵢ ⊆ Aᵢ` is a quasi-isomorphism on chains
+  for `i = 1, 2, 3`, then so is `S ⊓ A₄ ⊆ A₄`.
+* `SSet.mayerVietorisδ_homologyπ`: evaluate the connecting map from an actual split cycle,
+  for any module coefficient object.
 
 ## References
 
@@ -280,5 +293,99 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
       SSet.homologyMap φ₄ R n ≫ mayerVietorisδ R sq' n m h :=
   HomologicalComplex.HomologySequence.δ_naturality
     (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
+
+include sq in
+variable {φ₁ φ₂ φ₃ φ₄} in
+/-- **Comparison of Mayer–Vietoris sequences.** For a map of pushout squares of simplicial sets
+whose top maps are monomorphisms, if the maps of chains with coefficients in `R` induced on three
+corners `X₁`, `X₂` and `X₃` are quasi-isomorphisms, then so is the one induced on the fourth corner
+`X₄`. -/
+lemma quasiIso_chainComplexMap_of_isPushout (sq' : IsPushout t' l' r' b') [Mono t']
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') (h₁ : QuasiIso (chainComplexMap φ₁ R))
+    (h₂ : QuasiIso (chainComplexMap φ₂ R)) (h₃ : QuasiIso (chainComplexMap φ₃ R)) :
+    QuasiIso (chainComplexMap φ₄ R) := by
+  let ψ := mayerVietorisShortComplexMap R sq sq' ht hl hr hb
+  have hψ₂ : QuasiIso ψ.τ₂ := by
+    rw [mayerVietorisShortComplexMap_τ₂]
+    exact HomologicalComplex.quasiIso_biprod_map _ _
+  have hψ₃ : QuasiIso ψ.τ₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
+    (shortExact_mayerVietorisShortComplex R sq) (shortExact_mayerVietorisShortComplex R sq')
+    (by rwa [mayerVietorisShortComplexMap_τ₁]) hψ₂
+  rwa [mayerVietorisShortComplexMap_τ₃] at hψ₃
+
+section Subcomplex
+
+variable {X : SSet.{w}} {S A₁ A₂ A₃ A₄ : X.Subcomplex}
+
+/-- **Comparison of Mayer–Vietoris sequences of subcomplexes.** Let `A₁, A₂, A₃, A₄` be a
+bicartesian square of subcomplexes of `X`, so that `A₂ ⊔ A₃ = A₄` and `A₂ ⊓ A₃ = A₁`, and let `S`
+be a further subcomplex. If the inclusions `S ⊓ A₁ ⊆ A₁`, `S ⊓ A₂ ⊆ A₂` and `S ⊓ A₃ ⊆ A₃` induce
+quasi-isomorphisms on chains with coefficients in `R`, then so does `S ⊓ A₄ ⊆ A₄`. -/
+lemma quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq (hsq : Subcomplex.BicartSq A₁ A₂ A₃ A₄)
+    (h₁ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₁ ≤ A₁)) R))
+    (h₂ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₂ ≤ A₂)) R))
+    (h₃ : QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₃ ≤ A₃)) R)) :
+    QuasiIso (chainComplexMap (Subcomplex.homOfLE (inf_le_right : S ⊓ A₄ ≤ A₄)) R) :=
+  -- The inclusions `S ⊓ Aᵢ ⊆ Aᵢ` form a map of pushout squares; each square commutes because
+  -- both of its composites are the inclusion of a subcomplex.
+  quasiIso_chainComplexMap_of_isPushout R (Subcomplex.BicartSq.isPushout (hsq.inf_left S))
+    hsq.isPushout
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp])
+    (by rw [Subcomplex.homOfLE_comp, Subcomplex.homOfLE_comp]) h₁ h₂ h₃
+
+end Subcomplex
+
+end SSet
+
+namespace SSet
+
+section ModuleCycleEvaluation
+
+open HomologicalComplex
+
+variable {k : Type u} [Ring k] (R : ModuleCat.{w} k)
+  {X₁ X₂ X₃ X₄ : SSet.{w}} {t : X₁ ⟶ X₂} {l : X₁ ⟶ X₃}
+  {r : X₂ ⟶ X₄} {b : X₃ ⟶ X₄}
+local notation "K₁" => X₁.chainComplex R
+local notation "K₂" => X₂.chainComplex R
+local notation "K₃" => X₃.chainComplex R
+local notation "K₄" => X₄.chainComplex R
+
+/-- The ordered Mayer–Vietoris connecting map sends a split cycle to its overlap class,
+for any module coefficient object. The first map is the native `(t, -l)`. -/
+theorem mayerVietorisδ_homologyπ (m : ℕ) (sq : IsPushout t l r b) [Mono t]
+    (z : (K₄).cycles (m + 1)) (u : (K₂).X (m + 1)) (v : (K₃).X (m + 1))
+    (w : (K₁).cycles m)
+    (hsum : (chainComplexMap r R).f (m + 1) u + (chainComplexMap b R).f (m + 1) v =
+      (K₄).iCycles (m + 1) z)
+    (hu : (chainComplexMap t R).f m ((K₁).iCycles m w) = (K₂).d (m + 1) m u)
+    (hv : -((chainComplexMap l R).f m ((K₁).iCycles m w)) = (K₃).d (m + 1) m v) :
+    mayerVietorisδ R sq (m + 1) m rfl ((K₄).homologyπ (m + 1) z) =
+      (K₁).homologyπ m w := by
+  let x₂ : (K₂ ⊞ K₃).X (m + 1) :=
+    (biprod.inl : K₂ ⟶ K₂ ⊞ K₃).f (m + 1) u +
+      (biprod.inr : K₃ ⟶ K₂ ⊞ K₃).f (m + 1) v
+  have h₂ : (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f (m + 1) x₂ =
+      (K₄).iCycles (m + 1) z := by
+    dsimp only [x₂]
+    rw [map_add, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, biprod.inl_desc,
+      ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, biprod.inr_desc]
+    exact hsum
+  have h₁ : (biprod.lift (chainComplexMap t R) (-chainComplexMap l R)).f m
+      ((K₁).iCycles m w) = (K₂ ⊞ K₃).d (m + 1) m x₂ := by
+    simp only [HomologicalComplex.biprod_lift_f_apply, HomologicalComplex.neg_f_apply,
+      ModuleCat.hom_neg, LinearMap.neg_apply]
+    rw [hu, hv]
+    exact (((K₂ ⊞ K₃).d (m + 1) m).hom.map_add _ _).trans
+      (congrArg₂ (· + ·)
+        (HomologicalComplex.Hom.comm_apply (biprod.inl : K₂ ⟶ K₂ ⊞ K₃) (m + 1) m u)
+        (HomologicalComplex.Hom.comm_apply (biprod.inr : K₃ ⟶ K₂ ⊞ K₃) (m + 1) m v)) |>.symm
+  rw [mayerVietorisδ_def R sq (m + 1) m rfl]
+  exact (shortExact_mayerVietoris R sq).moduleCat_δ_homologyπ (m + 1) m rfl z x₂ h₂ w h₁
+
+end ModuleCycleEvaluation
 
 end SSet
