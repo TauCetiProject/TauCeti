@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 
 /-!
 # Log-convexity of shifted and rescaled Gamma
@@ -21,13 +22,24 @@ into itself, and sums the results over a finite set of shifts.
 
 These are the log-convexity inputs of the Bohr–Mollerup proof of Gauss's multiplication formula.
 
+Log-convexity also bounds and orders the ratios of Gamma values at shifted points.
+
+* `Real.rpow_one_sub_le_Gamma_add_one_div_Gamma_add`,
+  `Real.Gamma_add_one_div_Gamma_add_le_rpow`: Wendel's inequalities for `0 ≤ s ≤ 1`, the lower
+  bound `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)` for `x ≥ 0` and the upper bound
+  `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}` for `x + s ≥ 0`.
+* `Real.isEquivalent_Gamma_add_one_div_Gamma_add`: for every real `s`,
+  `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` as `x → ∞`.
+* `Real.strictMonoOn_Gamma_add_div_Gamma`: for `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly
+  increasing on `(0, ∞)`.
+
 The statements are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMF/Gamma/Multiplication.lean`.
 -/
 
 public section
 
-open Finset
+open Finset Filter Asymptotics
 
 namespace Real
 
@@ -55,5 +67,165 @@ theorem convexOn_sum_log_Gamma_add_div {ι : Type*} (s : Finset ι) {c : ι → 
     simp_rw [sum_insert hi]
     exact (convexOn_log_Gamma_add_div (hc i (mem_insert_self i s)) hm).add
       (ih fun j hj => hc j (mem_insert_of_mem hj))
+
+/-- For `0 < g` and `u + v = 1`, `g ^ u * (b ^ v * g ^ v) = b ^ v * g`: the power-product
+normalization in the two Wendel bounds. -/
+private theorem rpow_mul_mul_rpow_eq_mul {g b u v : ℝ} (hg : 0 < g) (huv : u + v = 1) :
+    g ^ u * (b ^ v * g ^ v) = b ^ v * g := by
+  rw [mul_left_comm, ← rpow_add hg, huv, rpow_one]
+
+/-- Wendel's lower bound: for `x ≥ 0` and `0 ≤ s ≤ 1`, `x^{1-s} ≤ Γ(x + 1)/Γ(x + s)`. -/
+theorem rpow_one_sub_le_Gamma_add_one_div_Gamma_add {x s : ℝ} (hx : 0 ≤ x) (hs0 : 0 ≤ s)
+    (hs1 : s ≤ 1) : x ^ (1 - s) ≤ Gamma (x + 1) / Gamma (x + s) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · rw [zero_add, Gamma_one, zero_add]
+    rcases hs1.eq_or_lt with rfl | hs1
+    · simp
+    rw [zero_rpow (by linarith)]
+    exact div_nonneg zero_le_one (Gamma_nonneg_of_nonneg hs0)
+  have hΓ := Gamma_pos_of_pos hx
+  rw [le_div_iff₀ (Gamma_pos_of_pos (by linarith)), Gamma_add_one hx.ne']
+  rcases hs0.eq_or_lt with rfl | hs0
+  · simp
+  rcases hs1.eq_or_lt with rfl | hs1
+  · simp [Gamma_add_one hx.ne']
+  have hG := Gamma_mul_add_mul_le_rpow_Gamma_mul_rpow_Gamma hx (by linarith : 0 < x + 1)
+    (sub_pos.2 hs1) hs0 (by ring)
+  have harg : (1 - s) * x + s * (x + 1) = x + s := by ring
+  rw [harg, Gamma_add_one hx.ne', mul_rpow hx.le hΓ.le,
+    rpow_mul_mul_rpow_eq_mul hΓ (sub_add_cancel 1 s)] at hG
+  calc x ^ (1 - s) * Gamma (x + s) ≤ x ^ (1 - s) * (x ^ s * Gamma x) := by gcongr
+    _ = x * Gamma x := by rw [← mul_assoc, ← rpow_add hx, sub_add_cancel, rpow_one]
+
+/-- Wendel's upper bound: for `0 ≤ s ≤ 1` and `x + s ≥ 0`, `Γ(x + 1)/Γ(x + s) ≤ (x + s)^{1-s}`. -/
+theorem Gamma_add_one_div_Gamma_add_le_rpow {x s : ℝ} (hxs : 0 ≤ x + s) (hs0 : 0 ≤ s)
+    (hs1 : s ≤ 1) : Gamma (x + 1) / Gamma (x + s) ≤ (x + s) ^ (1 - s) := by
+  rcases hxs.eq_or_lt with h | hxs
+  · rw [← h, Gamma_zero, div_zero]
+    exact rpow_nonneg le_rfl _
+  have hΓ := Gamma_pos_of_pos hxs
+  rw [div_le_iff₀ hΓ]
+  rcases hs0.eq_or_lt with rfl | hs0
+  · rw [add_zero] at hxs ⊢
+    rw [Gamma_add_one hxs.ne', sub_zero, rpow_one]
+  rcases hs1.eq_or_lt with rfl | hs1
+  · simp
+  have hG := Gamma_mul_add_mul_le_rpow_Gamma_mul_rpow_Gamma hxs (by linarith : 0 < x + s + 1)
+    hs0 (sub_pos.2 hs1) (by ring)
+  have harg : s * (x + s) + (1 - s) * (x + s + 1) = x + 1 := by ring
+  rw [harg, Gamma_add_one hxs.ne', mul_rpow hxs.le hΓ.le,
+    rpow_mul_mul_rpow_eq_mul hΓ (add_sub_cancel s 1)] at hG
+  exact hG
+
+/-- For `0 ≤ s ≤ 1`, `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` as `x → ∞`, from Wendel's inequalities. -/
+private theorem isEquivalent_Gamma_add_one_div_Gamma_add_of_mem_Icc {s : ℝ} (hs0 : 0 ≤ s)
+    (hs1 : s ≤ 1) :
+    (fun x : ℝ => Gamma (x + 1) / Gamma (x + s)) ~[atTop] fun x => x ^ (1 - s) := by
+  refine isEquivalent_of_tendsto_one ?_
+  have hlim : Tendsto (fun x : ℝ => (1 + s * x⁻¹) ^ (1 - s)) atTop (nhds 1) := by
+    have h := ((tendsto_inv_atTop_zero.const_mul s).const_add 1).rpow_const
+      (p := 1 - s) (Or.inr (by linarith))
+    simpa using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim ?_ ?_
+  · filter_upwards [eventually_gt_atTop 0] with x hx
+    rw [Pi.div_apply, one_le_div (rpow_pos_of_pos hx _)]
+    exact rpow_one_sub_le_Gamma_add_one_div_Gamma_add hx.le hs0 hs1
+  · filter_upwards [eventually_gt_atTop 0] with x hx
+    have hxs : (1 + s * x⁻¹) * x = x + s := by field_simp
+    rw [Pi.div_apply, div_le_iff₀ (rpow_pos_of_pos hx _), ← mul_rpow (by positivity) hx.le, hxs]
+    exact Gamma_add_one_div_Gamma_add_le_rpow (by linarith) hs0 hs1
+
+/-- The asymptotic relation `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` is unchanged by `s ↦ s + 1`. -/
+private theorem isEquivalent_Gamma_add_one_div_Gamma_add_iff_add_one (s : ℝ) :
+    ((fun x : ℝ => Gamma (x + 1) / Gamma (x + s)) ~[atTop] fun x => x ^ (1 - s)) ↔
+      ((fun x : ℝ => Gamma (x + 1) / Gamma (x + (s + 1))) ~[atTop]
+        fun x => x ^ (1 - (s + 1))) := by
+  have hlin : (fun x : ℝ => x + s) ~[atTop] fun x => x :=
+    IsEquivalent.refl.add_isLittleO (isLittleO_const_id_atTop s)
+  have hΓ : (fun x : ℝ => Gamma (x + 1) / Gamma (x + (s + 1)) * (x + s)) =ᶠ[atTop]
+      fun x => Gamma (x + 1) / Gamma (x + s) := by
+    filter_upwards [eventually_gt_atTop (-s)] with x hx
+    have hne : x + s ≠ 0 := by linarith
+    rw [← add_assoc, Gamma_add_one hne, div_mul_eq_mul_div, mul_comm (x + s) (Gamma (x + s)),
+      mul_div_mul_right _ _ hne]
+  have hpow : (fun x : ℝ => x ^ (1 - (s + 1)) * x) =ᶠ[atTop] fun x => x ^ (1 - s) := by
+    filter_upwards [eventually_gt_atTop 0] with x hx
+    have hexp : 1 - (s + 1) = 1 - s - 1 := by ring
+    rw [hexp, rpow_sub hx, rpow_one, div_mul_cancel₀ _ hx.ne']
+  constructor
+  · intro h
+    refine ((h.mul hlin.inv).congr_left ?_).congr_right ?_
+    · filter_upwards [hΓ, eventually_gt_atTop (-s)] with x hx hxs
+      simp only [Pi.mul_apply, Pi.inv_apply, ← hx]
+      have hne : x + s ≠ 0 := by linarith
+      field_simp [hne]
+    · filter_upwards [hpow, eventually_gt_atTop 0] with x hx hx0
+      simp only [Pi.mul_apply, Pi.inv_apply, ← hx]
+      field_simp
+  · intro h
+    exact ((h.mul hlin).congr_left hΓ).congr_right hpow
+
+/-- For every real `s`, `Γ(x + 1)/Γ(x + s) ∼ x^{1-s}` as `x → ∞`. -/
+theorem isEquivalent_Gamma_add_one_div_Gamma_add (s : ℝ) :
+    (fun x : ℝ => Gamma (x + 1) / Gamma (x + s)) ~[atTop] fun x => x ^ (1 - s) := by
+  have key : ∀ n : ℤ, (fun x : ℝ => Gamma (x + 1) / Gamma (x + (Int.fract s + n))) ~[atTop]
+      fun x => x ^ (1 - (Int.fract s + n)) := by
+    intro n
+    induction n using Int.induction_on with
+    | zero =>
+      simpa using isEquivalent_Gamma_add_one_div_Gamma_add_of_mem_Icc (Int.fract_nonneg s)
+        (Int.fract_lt_one s).le
+    | succ n ih =>
+      push_cast
+      rw [← add_assoc]
+      exact (isEquivalent_Gamma_add_one_div_Gamma_add_iff_add_one _).1 ih
+    | pred n ih =>
+      refine (isEquivalent_Gamma_add_one_div_Gamma_add_iff_add_one _).2 ?_
+      push_cast at ih ⊢
+      have hn : Int.fract s + (-(n : ℝ) - 1) + 1 = Int.fract s + -(n : ℝ) := by ring
+      rwa [hn]
+  simpa [Int.fract_add_floor] using key ⌊s⌋
+
+/-- For `c > 0`, `x ↦ Γ(x + c)/Γ(x)` is strictly increasing on `(0, ∞)`. -/
+theorem strictMonoOn_Gamma_add_div_Gamma {c : ℝ} (hc : 0 < c) :
+    StrictMonoOn (fun x : ℝ => Gamma (x + c) / Gamma x) (Set.Ioi 0) := by
+  have hmono : ∀ {s t : ℝ}, 0 < s → s ≤ t →
+      log (Gamma (s + c)) - log (Gamma s) ≤ log (Gamma (t + c)) - log (Gamma t) := by
+    intro s t hs hst
+    have ht : 0 < t := hs.trans_le hst
+    have hsc : 0 < s + c := by linarith
+    have htc : 0 < t + c := by linarith
+    have h1 := convexOn_log_Gamma.secant_mono (a := s) (x := s + c) (y := t + c) hs hsc htc
+      (by linarith) (by linarith) (by linarith)
+    have h2 := convexOn_log_Gamma.secant_mono (a := t + c) (x := s) (y := t) htc hs ht
+      (by linarith) (by linarith) hst
+    simp only [Function.comp_apply] at h1 h2
+    rw [add_sub_cancel_left] at h1
+    have htc' : t - (t + c) = -c := by ring
+    rw [← neg_sub (t + c) s, ← neg_sub (log (Gamma (t + c))), neg_div_neg_eq, htc',
+      ← neg_sub (log (Gamma (t + c))), neg_div_neg_eq] at h2
+    exact (div_le_div_iff_of_pos_right hc).1 (h1.trans h2)
+  intro s (hs : 0 < s) t (ht : 0 < t) hst
+  have hpos : ∀ {x : ℝ}, 0 < x → 0 < Gamma (x + c) / Gamma x := fun hx =>
+    div_pos (Gamma_pos_of_pos (by linarith)) (Gamma_pos_of_pos hx)
+  have hshift : ∀ {x : ℝ}, 0 < x → log (Gamma (x + 1 + c)) - log (Gamma (x + 1)) =
+      log (Gamma (x + c)) - log (Gamma x) + (log (x + c) - log x) := by
+    intro x hx
+    have hx1 : x + 1 + c = x + c + 1 := by ring
+    rw [hx1, Gamma_add_one (by linarith), Gamma_add_one hx.ne',
+      log_mul (by linarith) (Gamma_pos_of_pos (by linarith)).ne',
+      log_mul hx.ne' (Gamma_pos_of_pos hx).ne']
+    ring
+  have hD : log (t + c) - log t < log (s + c) - log s := by
+    rw [sub_lt_sub_iff, ← log_mul (by linarith) hs.ne', ← log_mul (by linarith) ht.ne']
+    exact log_lt_log (by positivity) (by nlinarith)
+  simp only
+  rw [← log_lt_log_iff (hpos hs) (hpos ht), log_div (Gamma_pos_of_pos (by linarith)).ne'
+      (Gamma_pos_of_pos hs).ne', log_div (Gamma_pos_of_pos (by linarith)).ne'
+      (Gamma_pos_of_pos ht).ne']
+  refine (hmono hs hst.le).lt_of_ne fun heq => ?_
+  have h := hmono (by linarith : 0 < s + 1) (by linarith : s + 1 ≤ t + 1)
+  rw [hshift hs, hshift ht, heq] at h
+  linarith
 
 end Real
