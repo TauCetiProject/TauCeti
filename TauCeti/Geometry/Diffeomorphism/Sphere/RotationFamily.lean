@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Degree.Homological
 public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
+public import TauCeti.Topology.Algebra.OrthogonalGroup
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Sphere.Equator
@@ -49,6 +51,11 @@ dimension `n` of the sphere,
 This is the direct proof of Barraud, Damian, Humilière and Oancea, which needs no computation of
 homotopy groups of `SO(n)`.
 
+For `E = ℝᴺ` the rotations are special orthogonal matrices. They form a continuous family
+`Sᴺ⁻² × S¹ → SO(N)` (`TauCeti.sphereRotationMatrix`) whose orbit map at `p` is the rotation family
+(`TauCeti.sphereRotationMatrix_smul_self`), so the rotation family factors through the orbit map
+`SO(N) → Sᴺ⁻¹` of `p`.
+
 More generally the rotation family has degree `1 + (-1) ^ (n - 1)` on `Sⁿ`, so the fundamental
 class of `Sⁿ⁻¹ × S¹` is sent to `(1 + (-1) ^ (n - 1)) • [Sⁿ]`
 (`Orientation.mapFundamentalClass_sphereRotationFamily`) and `Sⁿ` is `(1 + (-1) ^ (n - 1))`-covered
@@ -63,6 +70,8 @@ comparison of the smooth and homological degrees is applied directly with the pr
 * `TauCeti.sphereRotationIsometry p (v, z)`: the rotation of `E` by the angle of `z` in that plane.
 * `TauCeti.sphereRotationDiff p k`: the rotations as a continuous family of `C^k` diffeomorphisms
   of the sphere.
+* `TauCeti.sphereRotationMatrix p`: for `E = ℝᴺ`, the rotations as a continuous family of
+  special orthogonal matrices.
 
 ## Main results
 
@@ -75,6 +84,9 @@ comparison of the smooth and homological degrees is applied directly with the pr
   family of the sphere.
 * `TauCeti.joined_one_sphereRotationDiff`: every diffeomorphism in the family lies in the identity
   path component of `Diff^k(Sⁿ)`.
+* `TauCeti.toLinearIsometryEquiv_sphereRotationMatrix`: the matrix `sphereRotationMatrix p x` acts
+  on `ℝᴺ` as the rotation `sphereRotationIsometry p x`.
+* `TauCeti.sphereRotationMatrix_smul_self`: the matrices act on `p` by the rotation family.
 * `Orientation.mapFundamentalClass_sphereRotationFamily`: the rotation family sends `[Sᵐ × S¹]` to
   `(1 + (-1) ^ m) • [Sᵐ⁺¹]`.
 * `TauCeti.HomologicalOrientation.isCoveredByDiffeomorphisms_sphere_one_add_neg_one_pow`: `Sᵐ⁺¹`
@@ -262,6 +274,88 @@ theorem joined_one_sphereRotationDiff (p : sphere (0 : E) 1) (k : ℕ∞ω)
     hj.map (sphereRotationDiff (n := n) p k).continuous
 
 end RotationFamily
+
+/-! ### The rotations as special orthogonal matrices -/
+
+section Matrix
+
+open _root_.Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The rotations have determinant one: along a path in the circle from the angle of `z` to the
+angle `0`, they are joined to the identity. -/
+private theorem det_ofLinearIsometryEquiv_sphereRotationIsometry
+    (p : sphere (0 : EuclideanSpace ℝ ι) 1)
+    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    (UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x) :
+      Matrix ι ι ℝ).det = 1 := by
+  have hc : Continuous fun z : sphere (0 : ℂ) 1 ↦
+      (UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p (x.1, z)) :
+        orthogonalGroup ι ℝ) :=
+    UnitaryGroup.continuous_ofLinearIsometryEquiv
+      ((continuous_sphereRotationIsometry p).comp (continuous_const.prodMk continuous_id))
+  have h1 : sphereRotationIsometry p (x.1, 1) = 1 :=
+    sphereRotationIsometry_of_coe_eq_one p x.1 rfl
+  have : PathConnectedSpace (sphere (0 : ℂ) 1) := isPathConnected_iff_pathConnectedSpace.1 <|
+    isPathConnected_sphere
+      (by rw [← Module.finrank_eq_rank, Complex.finrank_real_complex]; norm_num) 0 zero_le_one
+  simpa [h1] using
+    TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq.1 ((PathConnectedSpace.joined x.2 1).map hc)
+
+/-- **The rotations of `ℝᴺ` in the planes through `p` as special orthogonal matrices**: the matrix
+of the rotation `TauCeti.sphereRotationIsometry p (v, z)` by the angle of `z` in the plane spanned
+by `p` and `v`, as a continuous map `Sᴺ⁻² × S¹ → SO(N)`. It acts on `p` by the rotation family of
+the sphere (`TauCeti.sphereRotationMatrix_smul_self`). The coordinates of `ℝᴺ` are indexed by an
+arbitrary finite type `ι` with `N` elements. -/
+def sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1) :
+    C(sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1,
+      specialOrthogonalGroup ι ℝ) where
+  toFun x := ⟨UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x),
+    mem_specialOrthogonalGroup_iff.2 ⟨(UnitaryGroup.ofLinearIsometryEquiv _).property,
+      det_ofLinearIsometryEquiv_sphereRotationIsometry p x⟩⟩
+  continuous_toFun := (continuous_subtypeVal.comp (UnitaryGroup.continuous_ofLinearIsometryEquiv
+    (continuous_sphereRotationIsometry p))).subtype_mk _
+
+/-- The matrix `TauCeti.sphereRotationMatrix p x` is the unitary matrix of the rotation
+`TauCeti.sphereRotationIsometry p x`. -/
+@[simp]
+theorem coe_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1)
+    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    (sphereRotationMatrix p x : Matrix ι ι ℝ) =
+      UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x) :=
+  (rfl)
+
+/-- The matrix `TauCeti.sphereRotationMatrix p x`, as a unitary matrix through the inclusion of
+`SO(N)` in `O(N)` along which `SO(N)` acts on the sphere, acts on `ℝᴺ` as the rotation
+`TauCeti.sphereRotationIsometry p x`. -/
+@[simp]
+theorem toLinearIsometryEquiv_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ ι) 1)
+    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    UnitaryGroup.toLinearIsometryEquiv
+        (Submonoid.inclusion (S := specialOrthogonalGroup ι ℝ)
+          (T := unitaryGroup ι ℝ) (fun _ hA ↦ hA.1) (sphereRotationMatrix p x)) =
+      sphereRotationIsometry p x :=
+  UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv _
+
+/-- The matrix `TauCeti.sphereRotationMatrix p x` acts on the unit sphere as the rotation
+`TauCeti.sphereRotationIsometry p x`. -/
+theorem sphereRotationMatrix_smul (p : sphere (0 : EuclideanSpace ℝ ι) 1)
+    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1)
+    (y : sphere (0 : EuclideanSpace ℝ ι) 1) :
+    sphereRotationMatrix p x • y = sphereRotationIsometry p x • y := by
+  rw [SpecialOrthogonalGroup.smul_sphere_def, toLinearIsometryEquiv_sphereRotationMatrix]
+
+/-- **The matrices act on `p` by the rotation family of the sphere.** -/
+@[simp]
+theorem sphereRotationMatrix_smul_self (p : sphere (0 : EuclideanSpace ℝ ι) 1)
+    (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ ι))ᗮ) 1 × sphere (0 : ℂ) 1) :
+    sphereRotationMatrix p x • p = sphereRotationFamily p x :=
+  Subtype.ext <| by
+    rw [sphereRotationMatrix_smul, LinearIsometryEquiv.coe_smul_unitSphere,
+      sphereRotationIsometry_apply_self]
+
+end Matrix
 
 /-! ### Odd spheres are covered by rotations -/
 
