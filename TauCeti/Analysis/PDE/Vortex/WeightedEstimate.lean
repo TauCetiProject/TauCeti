@@ -391,13 +391,13 @@ private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c R₂ : ℝ} {V θ : �
     push Not at hz
     have hθz : θ z = π / 2 := (hθout z hz).self_of_nhds
     have h₀ : fderiv ℝ θ z = 0 := by rw [(hθout z hz).fderiv_eq, fderiv_const_apply]
-    rw [h₀, hθz, Real.cos_pi_div_two, norm_zero, mul_zero, abs_zero, zero_mul, add_zero] at hv₁d
-    rw [h₀, hθz, Real.sin_pi_div_two, norm_zero, mul_zero, abs_one, one_mul, zero_add] at hv₂d
-    rw [hθz, Real.cos_pi_div_two, Real.sin_pi_div_two, mul_zero, mul_one,
-      le_antisymm hv₁d (norm_nonneg _)]
-    have := pow_le_pow_left₀ (norm_nonneg _) hv₂d 2
+    have h₁ : fderiv ℝ (fun t ↦ V t * Real.cos (θ t)) z = 0 := by simpa [h₀, hθz] using hv₁d
+    have h₂ : ‖fderiv ℝ (fun t ↦ V t * Real.sin (θ t)) z‖ ≤ ‖fderiv ℝ V z‖ := by
+      simpa [h₀, hθz] using hv₂d
+    have := pow_le_pow_left₀ (norm_nonneg _) h₂ 2
     have hδa : min (min c₀ a / 2) (a - c ^ 2) * V z ^ 2 ≤ (a - c ^ 2) * V z ^ 2 :=
       mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)
+    simp [hθz, h₁]
     linarith [hdV z]
 
 /-- **Weighted coercivity of `L_x L_x*` from a spectral gap and an exterior mass.** Let

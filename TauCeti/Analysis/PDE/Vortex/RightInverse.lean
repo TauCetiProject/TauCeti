@@ -595,16 +595,12 @@ private theorem lintegral_ofReal_exp_sq_mul_norm_sq_le (hx : ContDiff ℝ 1 x)
     (hcoer V hV hV₀ (norm_fderiv_exp_div_one_add_mul_exp_le c hb₀ hε.le))
   have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
     hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
-  have hVn : ∫⁻ z, ENNReal.ofReal (V z ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
-      ENNReal.ofReal (4 / δ + 8 * c ^ 2 / δ ^ 2) *
-        ∫⁻ z, ENNReal.ofReal (Real.exp (c * √(b + ‖z‖ ^ 2)) ^ 2 * ‖f z‖ ^ 2) ∂μ := by
-    rw [← ofReal_integral_eq_lintegral_ofReal (hwt hy) (ae_of_all _ fun z ↦ by positivity)]
-    refine (ENNReal.ofReal_le_ofReal h).trans ?_
-    rw [ENNReal.ofReal_mul (by positivity),
-      ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
-    gcongr with z
-    exact exp_div_one_add_mul_exp_le_exp c hε.le z
-  exact hVn
+  rw [← ofReal_integral_eq_lintegral_ofReal (hwt hy) (ae_of_all _ fun z ↦ by positivity)]
+  refine (ENNReal.ofReal_le_ofReal h).trans ?_
+  rw [ENNReal.ofReal_mul (by positivity),
+    ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
+  gcongr with z
+  exact exp_div_one_add_mul_exp_le_exp c hε.le z
 
 omit [μ.IsAddHaarMeasure] in
 /-- From the weight `exp(c √(b + |z|²))` to the weight `exp(c ρ)`, `ρ = √(1 + |z|²)`: the two
