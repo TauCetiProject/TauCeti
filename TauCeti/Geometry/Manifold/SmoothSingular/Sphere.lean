@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Square
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 public import TauCeti.Geometry.Manifold.SmoothSingular.Period
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
+import TauCeti.MeasureTheory.Integral.FullSimplex
 
 /-!
 # Integrals over spheres factor through the Hurewicz map
@@ -65,121 +66,6 @@ namespace TauCeti
 
 variable {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The coordinates `(y₀, y₁)` of a point of the Euclidean plane, as a volume-preserving
-measurable equivalence onto `ℝ × ℝ`. -/
-private def euclideanPlaneEquivProd : EuclideanSpace ℝ (Fin 2) ≃ᵐ ℝ × ℝ :=
-  (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
-
-private theorem euclideanPlaneEquivProd_apply (y : EuclideanSpace ℝ (Fin 2)) :
-    euclideanPlaneEquivProd y = (y 0, y 1) :=
-  (rfl)
-
-private theorem measurePreserving_euclideanPlaneEquivProd :
-    MeasurePreserving euclideanPlaneEquivProd :=
-  (volume_preserving_finTwoArrow ℝ).comp
-    (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp (Fin 2))
-
-/-- A shear of the plane fixing one coordinate is a measurable embedding. -/
-private theorem measurableEmbedding_shear_fst :
-    MeasurableEmbedding fun z : ℝ × ℝ ↦ (z.1 + z.2, z.2) :=
-  .of_measurable_inverse (by fun_prop) (by
-      rw [Set.range_eq_univ.2 fun z ↦ ⟨(z.1 - z.2, z.2), by simp⟩]; exact .univ)
-    (g := fun z : ℝ × ℝ ↦ (z.1 - z.2, z.2)) (by fun_prop) fun z ↦ by simp
-
-private theorem measurableEmbedding_shear_snd :
-    MeasurableEmbedding fun z : ℝ × ℝ ↦ (z.1, z.1 + z.2) :=
-  .of_measurable_inverse (by fun_prop) (by
-      rw [Set.range_eq_univ.2 fun z ↦ ⟨(z.1, z.2 - z.1), by simp⟩]; exact .univ)
-    (g := fun z : ℝ × ℝ ↦ (z.1, z.2 - z.1)) (by fun_prop) fun z ↦ by simp
-
-/-- The lower half `{0 ≤ t ≤ s ≤ 1}` of the unit square. -/
-private def squareLowerHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.2 ∧ z.2 ≤ z.1 ∧ z.1 ≤ 1}
-
-/-- The upper half `{0 ≤ s ≤ t ≤ 1}` of the unit square. -/
-private def squareUpperHalf : Set (ℝ × ℝ) := {z | 0 ≤ z.1 ∧ z.1 ≤ z.2 ∧ z.2 ≤ 1}
-
-/-- The shear `y ↦ (y₀ + y₁, y₁)` carries `Δ²` onto the lower half `{0 ≤ t ≤ s ≤ 1}` of the unit
-square, preserving volume. -/
-private theorem setIntegral_fullSimplex_comp_shear_fst (f : ℝ × ℝ → F) :
-    ∫ y in fullSimplex 2, f (y 0 + y 1, y 1) =
-      ∫ z in squareLowerHalf, f z := by
-  have hmp : MeasurePreserving ((fun z : ℝ × ℝ ↦ (z.1 + z.2, z.2)) ∘ euclideanPlaneEquivProd) :=
-    (measurePreserving_add_prod volume volume).comp measurePreserving_euclideanPlaneEquivProd
-  have h := hmp.setIntegral_preimage_emb
-      (measurableEmbedding_shear_fst.comp euclideanPlaneEquivProd.measurableEmbedding) f
-      squareLowerHalf
-  have hpre :
-      (fun z : ℝ × ℝ ↦ (z.1 + z.2, z.2)) ∘ euclideanPlaneEquivProd ⁻¹' squareLowerHalf =
-        fullSimplex 2 := by
-    ext y
-    simp only [squareLowerHalf, mem_preimage, Function.comp_apply, euclideanPlaneEquivProd_apply,
-      mem_ofPred_eq, mem_fullSimplex_iff, Fin.forall_fin_two, Fin.sum_univ_two]
-    constructor
-    · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨by linarith, h₁⟩, h₃⟩
-    · rintro ⟨⟨h₀, h₁⟩, h₂⟩; exact ⟨h₁, by linarith, h₂⟩
-  rw [hpre] at h
-  simpa only [Function.comp_apply, euclideanPlaneEquivProd_apply] using h
-
-/-- The shear `y ↦ (y₀, y₀ + y₁)` carries `Δ²` onto the upper half `{0 ≤ s ≤ t ≤ 1}` of the unit
-square, preserving volume. -/
-private theorem setIntegral_fullSimplex_comp_shear_snd (f : ℝ × ℝ → F) :
-    ∫ y in fullSimplex 2, f (y 0, y 0 + y 1) =
-      ∫ z in squareUpperHalf, f z := by
-  have hmp : MeasurePreserving ((fun z : ℝ × ℝ ↦ (z.1, z.1 + z.2)) ∘ euclideanPlaneEquivProd) :=
-    (measurePreserving_prod_add volume volume).comp measurePreserving_euclideanPlaneEquivProd
-  have h := hmp.setIntegral_preimage_emb
-      (measurableEmbedding_shear_snd.comp euclideanPlaneEquivProd.measurableEmbedding) f
-      squareUpperHalf
-  have hpre :
-      (fun z : ℝ × ℝ ↦ (z.1, z.1 + z.2)) ∘ euclideanPlaneEquivProd ⁻¹' squareUpperHalf =
-        fullSimplex 2 := by
-    ext y
-    simp only [squareUpperHalf, mem_preimage, Function.comp_apply, euclideanPlaneEquivProd_apply,
-      mem_ofPred_eq, mem_fullSimplex_iff, Fin.forall_fin_two, Fin.sum_univ_two]
-    constructor
-    · rintro ⟨h₁, h₂, h₃⟩; exact ⟨⟨h₁, by linarith⟩, h₃⟩
-    · rintro ⟨⟨h₀, h₁⟩, h₂⟩; exact ⟨h₀, by linarith, h₂⟩
-  rw [hpre] at h
-  simpa only [Function.comp_apply, euclideanPlaneEquivProd_apply] using h
-
-/-- **The unit square is the union of two simplices.** For a function `f` integrable on the unit
-square, the integrals of `f` over its lower and upper triangles, each parametrized by the
-full-dimensional simplex `Δ²` through a shear of determinant one, add up to its integral over the
-square. -/
-private theorem setIntegral_fullSimplex_add_setIntegral_fullSimplex {f : ℝ × ℝ → F}
-    (hf : IntegrableOn f (Icc (0, 0) (1, 1))) :
-    (∫ y in fullSimplex 2, f (y 0 + y 1, y 1)) + ∫ y in fullSimplex 2, f (y 0, y 0 + y 1) =
-      ∫ z in Icc (0, 0) (1, 1), f z := by
-  have hunion : squareLowerHalf ∪ squareUpperHalf = Icc (0, 0) (1, 1) := by
-    ext z
-    simp only [mem_union, mem_ofPred_eq, squareLowerHalf, squareUpperHalf, mem_Icc]
-    constructor
-    · rintro (⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩)
-      exacts [⟨⟨by linarith, h₁⟩, h₃, by linarith⟩, ⟨⟨h₁, by linarith⟩, by linarith, h₃⟩]
-    · rintro ⟨⟨h₁, h₂⟩, h₃, h₄⟩
-      rcases le_total z.1 z.2 with h | h
-      exacts [Or.inr ⟨h₁, h, h₄⟩, Or.inl ⟨h₂, h, h₃⟩]
-  -- The two triangles meet in the diagonal, a line, which is a null set.
-  have hdisj : AEDisjoint volume squareLowerHalf squareUpperHalf := by
-    rw [AEDisjoint, Measure.volume_eq_prod]
-    refine measure_mono_null (t := (LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :
-      Set (ℝ × ℝ))) (fun z hz ↦ ?_) (Measure.addHaar_submodule _ _ fun h ↦ ?_)
-    · simp only [mem_inter_iff, mem_ofPred_eq, squareLowerHalf, squareUpperHalf] at hz
-      simp only [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.fst_apply,
-        LinearMap.snd_apply, sub_eq_zero]
-      exact le_antisymm hz.2.2.1 hz.1.2.1
-    · have h10 : ((1, 0) : ℝ × ℝ) ∈ LinearMap.ker (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ) :=
-        h ▸ Submodule.mem_top
-      simp at h10
-  have hT₂ : MeasurableSet squareUpperHalf :=
-    (measurableSet_le measurable_const measurable_fst).inter
-      ((measurableSet_le measurable_fst measurable_snd).inter
-        (measurableSet_le measurable_snd measurable_const))
-  rw [setIntegral_fullSimplex_comp_shear_fst, setIntegral_fullSimplex_comp_shear_snd,
-    ← setIntegral_union₀ hdisj hT₂.nullMeasurableSet
-      (hf.mono_set (hunion ▸ subset_union_left)) (hf.mono_set (hunion ▸ subset_union_right)),
-    hunion]
-
 /-- The parametrization `y ↦ (y₀ + y₁, y₁)` of the lower triangle of the unit square by `Δ²`. -/
 private def lowerTriangleMap : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ × ℝ :=
   (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2) + EuclideanSpace.proj 1).prod (EuclideanSpace.proj 1)
@@ -204,85 +90,74 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 private abbrev planeIntegrand (φ : RoughForm I M F 2) (v : ℝ × ℝ → M) (z : ℝ × ℝ) : F :=
   φ (v z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I v z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I v z (0, 1)]
 
+/-- The pullback of a two-form by `v ∘ A` along a linear parametrization `A` of a triangle of the
+unit square. Let `b₀ = (1, 0)` and `b₁ = (0, 1)`. If `A` sends the coordinate vector `eⱼ` of `Δ²`
+to `bⱼ`, except that it sends `eᵢ` to `bᵢ + bₖ` for some `k ≠ i`, then on the coordinate vectors of
+`Δ²` the pullback is the plane integrand of `v` at `A y`: the form does not see the added `bₖ`. -/
+private theorem mpullback_comp_apply_of_update {v : ℝ × ℝ → M}
+    (hv : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I v) (φ : RoughForm I M F 2)
+    {A : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ × ℝ} {i k : Fin 2} (hik : i ≠ k)
+    (hA : ∀ j, A (EuclideanSpace.single j 1) =
+      Function.update ![(1, 0), (0, 1)] i (![(1, 0), (0, 1)] i + ![(1, 0), (0, 1)] k) j)
+    (y : EuclideanSpace ℝ (Fin 2)) :
+    mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ A) φ y
+        (fun j ↦ EuclideanSpace.single j 1) = planeIntegrand φ v (A y) := by
+  set D := mfderiv 𝓘(ℝ, ℝ × ℝ) I v (A y)
+  set m : Fin 2 → TangentSpace I (v (A y)) := fun j ↦ D (![(1, 0), (0, 1)] j)
+  have hD : (fun j ↦ mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ A) y
+      (EuclideanSpace.single j 1)) = Function.update m i (m i + m k) := by
+    rw [mfderiv_comp y (hv _) A.mdifferentiableAt, ContinuousLinearMap.mfderiv_eq]
+    ext j
+    refine (congrArg D (hA j)).trans ?_
+    by_cases hj : j = i
+    · subst hj
+      simp only [Function.update_self]
+      exact map_add D _ _
+    · simp only [Function.update_of_ne hj, m]
+  have hzero : φ (v (A y)) (Function.update m i (m k)) = 0 := (φ _).map_update_self _ hik
+  refine (mpullback_apply (v ∘ A) φ y _).trans ?_
+  rw [hD, Function.comp_apply, (φ _).map_update_add, Function.update_eq_self, hzero, add_zero]
+  congr 1
+  ext j
+  fin_cases j <;> rfl
+
 /-- Along the lower triangle parametrization `A y = (y₀ + y₁, y₁)`, the pullback of a two-form by
-`v ∘ A` on the coordinate vectors of `Δ²` is the plane integrand of `v` at `A y`: the
-derivative of `A` sends them to `(1, 0)` and `(1, 1)`, and the form does not see the added
-`(1, 0)`. -/
+`v ∘ A` on the coordinate vectors of `Δ²` is the plane integrand of `v` at `A y`. -/
 private theorem mpullback_comp_lowerTriangleMap_apply {v : ℝ × ℝ → M}
     (hv : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I v) (φ : RoughForm I M F 2)
     (y : EuclideanSpace ℝ (Fin 2)) :
     mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ lowerTriangleMap) φ y
-        (fun i ↦ EuclideanSpace.single i 1) = planeIntegrand φ v (lowerTriangleMap y) := by
-  set D := mfderiv 𝓘(ℝ, ℝ × ℝ) I v (lowerTriangleMap y)
-  have hD : (fun i ↦ mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ lowerTriangleMap) y
-      (EuclideanSpace.single i 1)) = Function.update ![D (1, 0), D (0, 1)] 1 (D (1, 0) + D (0, 1))
-      := by
-    rw [mfderiv_comp y (hv _) lowerTriangleMap.mdifferentiableAt, ContinuousLinearMap.mfderiv_eq]
-    have h₀ : lowerTriangleMap (EuclideanSpace.single 0 1) = (1, 0) := by
-      simp [lowerTriangleMap_apply]
-    have h₁ : lowerTriangleMap (EuclideanSpace.single 1 1) = (1, 0) + (0, 1) := by
-      simp [lowerTriangleMap_apply]
-    ext i
-    fin_cases i
-    · exact (congrArg D h₀).trans (by simp)
-    · exact (congrArg D h₁).trans ((map_add D _ _).trans (by simp))
-  have hzero :
-      φ (v (lowerTriangleMap y)) (Function.update ![D (1, 0), D (0, 1)] 1 (D (1, 0))) = 0 :=
-    (φ _).map_update_self _ (i := 1) (j := 0) (by decide)
-  refine (mpullback_apply (v ∘ lowerTriangleMap) φ y _).trans ?_
-  rw [hD, Function.comp_apply, (φ _).map_update_add, hzero, zero_add]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+        (fun i ↦ EuclideanSpace.single i 1) = planeIntegrand φ v (lowerTriangleMap y) :=
+  mpullback_comp_apply_of_update hv φ (i := 1) (k := 0) (by decide)
+    (fun j ↦ by fin_cases j <;> simp [lowerTriangleMap_apply]) y
 
 /-- Along the upper triangle parametrization `A y = (y₀, y₀ + y₁)`, the pullback of a two-form by
-`v ∘ A` on the coordinate vectors of `Δ²` is the plane integrand of `v` at `A y`: the
-derivative of `A` sends them to `(1, 1)` and `(0, 1)`, and the form does not see the added
-`(0, 1)`. -/
+`v ∘ A` on the coordinate vectors of `Δ²` is the plane integrand of `v` at `A y`. -/
 private theorem mpullback_comp_upperTriangleMap_apply {v : ℝ × ℝ → M}
     (hv : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I v) (φ : RoughForm I M F 2)
     (y : EuclideanSpace ℝ (Fin 2)) :
     mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ upperTriangleMap) φ y
-        (fun i ↦ EuclideanSpace.single i 1) = planeIntegrand φ v (upperTriangleMap y) := by
-  set D := mfderiv 𝓘(ℝ, ℝ × ℝ) I v (upperTriangleMap y)
-  have hD : (fun i ↦ mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I (v ∘ upperTriangleMap) y
-      (EuclideanSpace.single i 1)) = Function.update ![D (1, 0), D (0, 1)] 0 (D (1, 0) + D (0, 1))
-      := by
-    rw [mfderiv_comp y (hv _) upperTriangleMap.mdifferentiableAt, ContinuousLinearMap.mfderiv_eq]
-    have h₀ : upperTriangleMap (EuclideanSpace.single 0 1) = (1, 0) + (0, 1) := by
-      simp [upperTriangleMap_apply]
-    have h₁ : upperTriangleMap (EuclideanSpace.single 1 1) = (0, 1) := by
-      simp [upperTriangleMap_apply]
-    ext i
-    fin_cases i
-    · exact (congrArg D h₀).trans ((map_add D _ _).trans (by simp))
-    · exact (congrArg D h₁).trans (by simp)
-  have hzero :
-      φ (v (upperTriangleMap y)) (Function.update ![D (1, 0), D (0, 1)] 0 (D (0, 1))) = 0 :=
-    (φ _).map_update_self _ (i := 0) (j := 1) (by decide)
-  refine (mpullback_apply (v ∘ upperTriangleMap) φ y _).trans ?_
-  rw [hD, Function.comp_apply, (φ _).map_update_add, hzero, add_zero]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+        (fun i ↦ EuclideanSpace.single i 1) = planeIntegrand φ v (upperTriangleMap y) :=
+  mpullback_comp_apply_of_update hv φ (i := 0) (k := 1) (by decide)
+    (fun j ↦ by fin_cases j <;> simp [upperTriangleMap_apply]) y
+
+/-- Read on `Δ²`, the barycentric coordinates `w₁` and `w₂` are the coordinates `y₀` and `y₁`. -/
+private theorem fullSimplexEquivStdSimplex_weights_one_two (y : fullSimplex 2) :
+    (fullSimplexEquivStdSimplex 2 y).weights 1 = y.val 0 ∧
+      (fullSimplexEquivStdSimplex 2 y).weights 2 = y.val 1 :=
+  ⟨fullSimplexEquivStdSimplex_weights_succ y 0, fullSimplexEquivStdSimplex_weights_succ y 1⟩
 
 /-- Read on `Δ²`, the lower triangle of the square is the parametrization `y ↦ (y₀ + y₁, y₁)`. -/
 private theorem squareLowerTriangle_fullSimplexEquivStdSimplex (y : fullSimplex 2) :
     (((squareLowerTriangle (fullSimplexEquivStdSimplex 2 y) 0 : ℝ),
       (squareLowerTriangle (fullSimplexEquivStdSimplex 2 y) 1 : ℝ))) = lowerTriangleMap y := by
-  have h₀ := fullSimplexEquivStdSimplex_weights_succ y 0
-  have h₁ := fullSimplexEquivStdSimplex_weights_succ y 1
-  simp only [Fin.succ_zero_eq_one, Fin.succ_one_eq_two] at h₀ h₁
-  rw [squareLowerTriangle_apply_zero, squareLowerTriangle_apply_one, lowerTriangleMap_apply, h₀, h₁]
+  simp [lowerTriangleMap_apply, fullSimplexEquivStdSimplex_weights_one_two]
 
 /-- Read on `Δ²`, the upper triangle of the square is the parametrization `y ↦ (y₀, y₀ + y₁)`. -/
 private theorem squareUpperTriangle_fullSimplexEquivStdSimplex (y : fullSimplex 2) :
     (((squareUpperTriangle (fullSimplexEquivStdSimplex 2 y) 0 : ℝ),
       (squareUpperTriangle (fullSimplexEquivStdSimplex 2 y) 1 : ℝ))) = upperTriangleMap y := by
-  have h₀ := fullSimplexEquivStdSimplex_weights_succ y 0
-  have h₁ := fullSimplexEquivStdSimplex_weights_succ y 1
-  simp only [Fin.succ_zero_eq_one, Fin.succ_one_eq_two] at h₀ h₁
-  rw [squareUpperTriangle_apply_zero, squareUpperTriangle_apply_one, upperTriangleMap_apply, h₀, h₁]
+  simp [upperTriangleMap_apply, fullSimplexEquivStdSimplex_weights_one_two]
 
 namespace IsSmoothSphere
 
@@ -308,6 +183,13 @@ variable {T : C(Convexity.StdSimplex ℝ (Fin 3), Fin 2 → unitInterval)}
   {A : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ × ℝ}
   {hTA : ∀ y : fullSimplex 2,
     ((T (fullSimplexEquivStdSimplex 2 y) 0 : ℝ), (T (fullSimplexEquivStdSimplex 2 y) 1 : ℝ)) = A y}
+
+/-- The underlying singular simplex of the triangle simplex of `v` is the singular simplex of
+`p ∘ T`, for the generalized loop `p` of `v`. -/
+private theorem triangleSimplex_val (hv : IsSmoothSphere I x v) :
+    (hv.triangleSimplex T A hTA).val = ((TopCat.of M).toSSetObjEquiv (.op ⦋2⦌)).symm
+      ((hv.genLoop : C(Fin 2 → unitInterval, M)).comp T) :=
+  (rfl)
 
 /-- Read on `Δ²`, the triangle simplex of a smooth sphere `v` is `v ∘ A`. -/
 private theorem triangleSimplex_toContinuousMap_apply (hv : IsSmoothSphere I x v)
@@ -337,36 +219,6 @@ private abbrev upperSimplex (hv : IsSmoothSphere I x v) : SmoothSimplex I M 2 :=
   hv.triangleSimplex squareUpperTriangle upperTriangleMap
     squareUpperTriangle_fullSimplexEquivStdSimplex
 
-end IsSmoothSphere
-
-/-- The constant singular `2`-simplex at a point is smooth. -/
-private def constSimplex (x : M) : SmoothSimplex I M 2 :=
-  ⟨((TopCat.of M).toSSetObjEquiv (.op ⦋2⦌)).symm (ContinuousMap.const _ x),
-    mem_smoothSingularSubcomplex_of_contMDiffOn _ (g := fun _ ↦ x) contMDiffOn_const
-      Filter.univ_mem fun _ ↦ rfl⟩
-
-/-- Read on `Δ²`, the constant simplex at `x` is constant. -/
-private theorem constSimplex_toContinuousMap_apply (x : M) (y : fullSimplex 2) :
-    (constSimplex (I := I) x).toContinuousMap y = x := by
-  rw [SmoothSimplex.toContinuousMap_apply]
-  dsimp only [constSimplex]
-  rw [Equiv.apply_symm_apply, ContinuousMap.const_apply]
-
-/-- The integral of a two-form over a constant simplex vanishes. -/
-private theorem integral_constSimplex (x : M) (φ : RoughForm I M F 2) :
-    (constSimplex (I := I) x).integral φ = 0 := by
-  rw [(constSimplex x).integral_eq_setIntegral_mpullback φ (g := fun _ ↦ x)
-    (fun y ↦ (constSimplex_toContinuousMap_apply x y).symm) fun _ _ ↦ mdifferentiableAt_const]
-  refine (setIntegral_congr_fun (g := fun _ ↦ (0 : F)) (isClosed_fullSimplex 2).measurableSet
-    fun y _ ↦ ?_).trans (integral_zero _ _)
-  refine (mpullback_apply (fun _ ↦ x) φ y _).trans ((φ x).map_coord_zero 0 ?_)
-  rw [mfderiv_const (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin 2))) (I' := I) (M := EuclideanSpace ℝ (Fin 2))]
-  rfl
-
-namespace IsSmoothSphere
-
-variable {x : M} {v : ℝ × ℝ → M}
-
 /-- The triangulated cycle of a smooth sphere `v`, as a smooth singular chain: the lower and upper
 triangle simplices minus twice the constant simplex at `x`. -/
 private def smoothSquareChain (hv : IsSmoothSphere I x v) :
@@ -376,7 +228,7 @@ private def smoothSquareChain (hv : IsSmoothSphere I x v) :
     + ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ)
       hv.upperSimplex).hom 1
     - 2 • ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ)
-      (constSimplex x)).hom 1
+      (SmoothSimplex.const x)).hom 1
 
 /-- As a singular chain, the smooth triangulated chain of a smooth sphere is the triangulated chain
 of its generalized loop. -/
@@ -388,8 +240,15 @@ private theorem chainComplexMap_ι_f_smoothSquareChain (hv : IsSmoothSphere I x 
         (((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1) =
       simplexChain (X := TopCat.of M) σ.val 1 := by
     rw [← ConcreteCategory.comp_apply, SSet.ι_chainComplexMap_f]
+    -- `simplexChain` is `ιChainComplex` of `TopCat.toSSet.obj _`, whose chain complex is by
+    -- definition `(singularChains ℤ).obj _`, and the inclusion of the subcomplex sends `σ` to
+    -- `σ.val`.
     rfl
-  rw [smoothSquareChain, map_sub, map_add, map_nsmul, h, h, h, GenLoop.squareChain_def]
+  rw [smoothSquareChain, map_sub, map_add, map_nsmul, h, h, h, GenLoop.squareChain_def,
+    triangleSimplex_val, triangleSimplex_val, SmoothSimplex.coe_const]
+  -- The two sides are the same chain, with its sum and difference taken in the degree-`2` chains
+  -- of `SSet.chainComplex (TopCat.toSSet.obj _)` and of `(singularChains ℤ).obj _` respectively,
+  -- which are the same module by definition.
   rfl
 
 /-- The smooth triangulated chain of a smooth sphere is a cycle, since its image among all singular
@@ -419,6 +278,8 @@ private theorem homologyMap_ι_smoothSquareClass (hv : IsSmoothSphere I x v) :
   rw [smoothSquareClass, SSet.homologyMap, homologyMap_homologyπ_moduleCatCyclesMk,
     GenLoop.squareClass_def]
   simp only [chainComplexMap_ι_f_smoothSquareChain]
+  -- The cycles and homology of `SSet.chainComplex (TopCat.toSSet.obj _)` are by definition those
+  -- of `(singularChains ℤ).obj _`.
   rfl
 
 variable {φ : RoughForm I M F 2}
@@ -435,7 +296,7 @@ private theorem smoothHomologyPeriodHom_smoothSquareClass (hφ : IsSmoothForm I 
   rw [smoothSquareClass, smoothHomologyPeriodHom_homologyπ hφ hdφ,
     HomologicalComplex.iCycles_moduleCatCyclesMk, smoothSquareChain, map_sub, map_add, map_nsmul,
     integrationCochain_ιChainComplex, integrationCochain_ιChainComplex,
-    integrationCochain_ιChainComplex, integral_constSimplex, integral_triangleSimplex,
+    integrationCochain_ιChainComplex, SmoothSimplex.integral_const, integral_triangleSimplex,
     integral_triangleSimplex, one_smul, one_smul, one_smul, smul_zero, sub_zero]
   have hv' := hv.contMDiff.mdifferentiable (by simp)
   simp only [mpullback_comp_lowerTriangleMap_apply hv', mpullback_comp_upperTriangleMap_apply hv',

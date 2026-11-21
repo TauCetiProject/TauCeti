@@ -138,21 +138,29 @@ theorem squareUpperTriangle_apply_one (w : StdSimplex ℝ (Fin 3)) :
     (squareUpperTriangle w 1 : ℝ) = w.weights 1 + w.weights 2 :=
   (rfl)
 
+/-- On the face of the standard `2`-simplex opposite the vertex `0`, the coordinates `w₁` and `w₂`
+sum to `1`. -/
+private theorem weights_one_add_weights_two_map_succAbove_zero (z : StdSimplex ℝ (Fin 2)) :
+    (StdSimplex.map (Fin.succAbove 0) z).weights 1 +
+      (StdSimplex.map (Fin.succAbove 0) z).weights 2 = 1 := by
+  rw [StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
+    StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl,
+    StdSimplex.total_fin_two]
+
 /-- The diagonal faces of the two triangles of the square agree: both are `z ↦ (z₁, z₁)`. -/
 private theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
     squareLowerTriangle (StdSimplex.map (Fin.succAbove 1) z) =
       squareUpperTriangle (StdSimplex.map (Fin.succAbove 2) z) := by
+  have h₁ : (StdSimplex.map (Fin.succAbove 1) z).weights 2 = z.weights 1 :=
+    StdSimplex.weights_map_succAbove_of_eq (by decide) z
+  have h₂ : (StdSimplex.map (Fin.succAbove 2) z).weights 1 = z.weights 1 :=
+    StdSimplex.weights_map_succAbove_of_eq (by decide) z
   funext j
   apply Subtype.ext
-  fin_cases j
-  · simp only [Fin.zero_eta, squareLowerTriangle_apply_zero, squareUpperTriangle_apply_zero]
-    rw [StdSimplex.weights_map_succAbove_self,
-      StdSimplex.weights_map_succAbove_of_eq (j := 1) (i := 1) (k := 2) (by decide),
-      StdSimplex.weights_map_succAbove_of_eq (j := 2) (i := 1) (k := 1) (by decide), zero_add]
-  · simp only [Fin.mk_one, squareLowerTriangle_apply_one, squareUpperTriangle_apply_one]
-    rw [StdSimplex.weights_map_succAbove_self,
-      StdSimplex.weights_map_succAbove_of_eq (j := 1) (i := 1) (k := 2) (by decide),
-      StdSimplex.weights_map_succAbove_of_eq (j := 2) (i := 1) (k := 1) (by decide), add_zero]
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
+      squareUpperTriangle_apply_zero, squareLowerTriangle_apply_one, squareUpperTriangle_apply_one,
+      StdSimplex.weights_map_succAbove_self, h₁, h₂, zero_add, add_zero]
 
 /-- A face of the singular `2`-simplex of a map `f` out of the standard `2`-simplex is the singular
 `1`-simplex of any map `g` agreeing with `f` on that face. -/
@@ -213,17 +221,11 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
         ((p : C(I^(Fin 2), X)).comp T)) = c :=
     δ_toSSetObjEquiv_symm_eq _ i _ fun z ↦ GenLoop.boundary p _ (h z)
   have hL₀ := hx (T := squareLowerTriangle) (i := 0) fun z ↦ mem_boundary_of_coord 0 <| Or.inr <| by
-    rw [squareLowerTriangle_apply_zero,
-      StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
-      StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl,
-      StdSimplex.total_fin_two]
+    rw [squareLowerTriangle_apply_zero, weights_one_add_weights_two_map_succAbove_zero]
   have hL₂ := hx (T := squareLowerTriangle) (i := 2) fun z ↦ mem_boundary_of_coord 1 <| Or.inl <| by
     rw [squareLowerTriangle_apply_one, StdSimplex.weights_map_succAbove_self]
   have hU₀ := hx (T := squareUpperTriangle) (i := 0) fun z ↦ mem_boundary_of_coord 1 <| Or.inr <| by
-    rw [squareUpperTriangle_apply_one,
-      StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
-      StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl,
-      StdSimplex.total_fin_two]
+    rw [squareUpperTriangle_apply_one, weights_one_add_weights_two_map_succAbove_zero]
   have hU₁ := hx (T := squareUpperTriangle) (i := 1) fun z ↦ mem_boundary_of_coord 0 <| Or.inl <| by
     rw [squareUpperTriangle_apply_zero, StdSimplex.weights_map_succAbove_self]
   -- The diagonal faces of the two triangles are both `z ↦ (z₁, z₁)`.
@@ -242,8 +244,7 @@ theorem d_squareChain (p : Ω^ (Fin 2) X x) :
     singularChains_d_simplexChain, singularChains_d_simplexChain]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero]
   simp only [Fin.succ_zero_eq_one, Fin.succ_one_eq_two, hL₀, hL₂, hU₀, hU₁, hdiag, hc]
-  simp only [Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.zero_mod, pow_zero, one_smul, Nat.one_mod,
-    pow_one, neg_zsmul, Nat.mod_succ, even_two, Even.neg_pow, one_pow]
+  simp
   abel
 
 /-- The **square class** of a generalized loop `p : I² → X` at `x`: the class in `H₂(X; ℤ)` of its
