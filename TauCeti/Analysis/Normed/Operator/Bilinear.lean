@@ -242,18 +242,21 @@ variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [Nont
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
   [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
   [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
-  [IsTopologicalAddGroup H]
 
 /-- On normable spaces, when both scalar homomorphisms are isometric and the second is
 surjective, the flip `LinearMap.pairingFlip` of a continuous pairing is Mathlib's flip. The
-topological additive group structure of `F` used by `LinearMap.pairingFlip` comes from its
-normability (`PolynormableSpace.isTopologicalAddGroup`). -/
+topological additive group structures of `F` and `H` used by `LinearMap.pairingFlip`, by
+Mathlib's flip and by the topology of `F →SL[σ₂₃] H` come from their normability
+(`PolynormableSpace.isTopologicalAddGroup`). -/
 @[simp]
-theorem pairingFlip_eq_flip (μ : E →SL[σ₁₃] F →SL[σ₂₃] H)
+theorem pairingFlip_eq_flip
+    (μ : haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H; E →SL[σ₁₃] F →SL[σ₂₃] H)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
     haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+    haveI := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
     μ.toLinearMap.pairingFlip hμ = μ.flip := by
   have := PolynormableSpace.isTopologicalAddGroup 𝕜₂ F
+  have := PolynormableSpace.isTopologicalAddGroup 𝕜₃ H
   ext
   rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
 
