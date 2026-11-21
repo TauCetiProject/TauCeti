@@ -26,6 +26,8 @@ description of the cycles and homology classes of `cokernel φ` through represen
   onto the quotients of `G_a`, grow with the source (`HomologicalComplex.range_map_f_le`).
 * The image `π c` of `c ∈ A_i` is a cycle exactly when the boundary of `c` lies in the range of
   `φ` (`HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff`).
+* Every homology class of `cokernel φ` is the class of such an image `π c`
+  (`HomologicalComplex.exists_moduleCatKerHomologyClass_cokernel_π_eq`).
 * Changing `c` by a boundary of `A` does not change the homology class of `π c`
   (`HomologicalComplex.moduleCatKerHomologyClass_cokernel_π_sub_d`), and conversely two
   representatives with the same class differ by a boundary up to an element of the range of `φ`
@@ -106,6 +108,16 @@ lemma homologyMap_cokernel_map_moduleCatKerHomologyClass {n m : ι} (hm : c.next
 end Map
 
 variable {n m p : ι} (hm : c.next n = m) (hp : c.prev n = p)
+
+/-- Every homology class of the cokernel of `φ` is the class of the image of some `x ∈ A_n` whose
+image is a cycle. -/
+lemma exists_moduleCatKerHomologyClass_cokernel_π_eq (ξ : (cokernel φ).homology n) :
+    ∃ (x : A.X n) (hx : (cokernel φ).d n m ((cokernel.π φ).f n x) = 0),
+      (cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n x, hx⟩ = ξ := by
+  obtain ⟨⟨z, hz⟩, rfl⟩ := (cokernel φ).moduleCatKerHomologyClass_surjective hm ξ
+  obtain ⟨x, rfl⟩ := cokernel_π_f_surjective φ n z
+  exact ⟨x, hz, rfl⟩
+
 include hp
 
 /-- Changing a representative by a boundary of `A` does not change the homology class of its

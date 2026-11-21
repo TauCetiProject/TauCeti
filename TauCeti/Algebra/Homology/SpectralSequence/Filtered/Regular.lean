@@ -121,12 +121,6 @@ private def IsCokernelRep {s a : EInt} (f : s ⟶ a) {n : ℤ}
   ∃ hc : ((cokernel (G.map f)).d n (n + 1)) ((cokernel.π (G.map f)).f n c) = 0,
     (cokernel (G.map f)).moduleCatKerHomologyClass (CochainComplex.next ℤ n) ⟨_, hc⟩ = ξ
 
-private lemma exists_isCokernelRep {s a : EInt} (f : s ⟶ a) {n : ℤ}
-    (ξ : (cokernel (G.map f)).homology n) : ∃ c, IsCokernelRep G f ξ c := by
-  obtain ⟨⟨z, hz⟩, hzξ⟩ := HomologicalComplex.moduleCatKerHomologyClass_surjective _ _ ξ
-  obtain ⟨c, rfl⟩ := HomologicalComplex.cokernel_π_f_surjective _ n z
-  exact ⟨c, hz, hzξ⟩
-
 /-- Let `s' ≤ s ≤ a`, and let `ξ` be the image of a class `ξ'` of `H^n(G_a / G_{s'})` in
 `H^n(G_a / G_s)`. A representative of `ξ` is corrected by an element of `G_s` to a representative
 of `ξ'`. -/
@@ -137,7 +131,8 @@ private lemma exists_isCokernelRep_sub_mem_range {s' s a : EInt} (f' : s' ⟶ a)
       (G.map (𝟙 a)) (G.map_comp_map_eq_map_comp_map _ _ _ _)) n ξ' = ξ)
     (c : (G.obj a).X n) (hc : IsCokernelRep G f ξ c) :
     ∃ c', IsCokernelRep G f' ξ' c' ∧ c' - c ∈ LinearMap.range ((G.map f).f n).hom := by
-  obtain ⟨c', hc'₁, hc'₂⟩ := exists_isCokernelRep G f' ξ'
+  obtain ⟨c', hc'₁, hc'₂⟩ := HomologicalComplex.exists_moduleCatKerHomologyClass_cokernel_π_eq
+    _ (CochainComplex.next ℤ n) ξ'
   -- `c'` also represents `ξ` modulo `G_s`, so it differs from `c` by a boundary modulo `G_s`.
   have hc'₃ := (HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff (G.map f) n (n + 1) c').2
     (HomologicalComplex.range_map_f_le G _ _ u _
@@ -187,7 +182,8 @@ private theorem exists_homologyMap_cokernelMap_eq {a n : ℤ}
     exists_isCokernelRep_sub_mem_range G _ _
       (homOfLE (WithBotTop.coe_le_coe.2 (by omega : a - (k + 1 : ℕ) ≤ a - k))) _ _
       (hξ _ _ (by omega) _ _ _ _) c hc
-  obtain ⟨c₀, hc₀⟩ := exists_isCokernelRep G _ (ξ (a - (0 : ℕ)) (by omega))
+  obtain ⟨c₀, hc₀⟩ : ∃ c, Rep 0 c :=
+    HomologicalComplex.exists_moduleCatKerHomologyClass_cokernel_π_eq _ (CochainComplex.next ℤ n) _
   -- The successive representatives, and their limit `L` in `G_a`.
   choose next hnext using step
   obtain ⟨seq, -, hseqs⟩ : ∃ seq : (k : ℕ) → {c // Rep k c}, (seq 0).val = c₀ ∧
