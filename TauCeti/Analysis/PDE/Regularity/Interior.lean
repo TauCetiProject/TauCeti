@@ -101,6 +101,8 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
   interior `H²` estimate on the set where a given cutoff equals one.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball`: **the
   interior `H²` estimate on balls**, with lower-order terms and explicit dependence on the radius.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_ball_and_norm_le`: the same
+  estimate as a bound on the norm of `u` in `W^{2,2}(B(x₀, r))`.
 * `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
 * `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
   integration by parts against the conormal gradient of a `C²` function.
@@ -1317,6 +1319,84 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball [Dec
   have hF := Lp.toReal_eLpNorm_restrict_mono f hUB hΩ
   exact le_of_le_ball_bound hGle (hg.trans (by linarith)) hGU hVU (norm_nonneg _) (norm_nonneg _)
     hβ0 hγ0 hc₀ hr ha.pos ha.upper_nonneg (by positivity)
+
+/-- **The interior `H²` estimate on balls, in the norm of `W^{2,2}`.** There is a constant `C`,
+depending only on the dimension `n`, with the following property. Let `a` be uniformly elliptic on
+`B(x₀, 2 r) ⊆ Ω` with constants `λ ≤ Λ`, with `x ↦ a(x)` `K`-Lipschitz there in the operator norm
+of its bilinear forms, let `b, c ∈ L∞(Ω)` with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on
+`B(x₀, 2 r)`, and let `u ∈ H¹(Ω)` be a weak solution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`
+
+and no boundary condition. Then the restriction of `u` to `B(x₀, r)` is the first-order part of
+some `U ∈ W^{2,2}(B(x₀, r))` with
+
+`‖U‖ ≤ ‖u‖ + n² (‖f‖ + (β + 2 K + C Λ / r) ‖u‖ + (γ + C K / r + C Λ / r²) ‖u‖) / λ`,
+
+the norms on the right being those of `W^{1,2}(Ω)` and `L²(Ω)`. This is
+`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball` for the
+directions of the standard basis, summed by `TauCeti.Wkp.norm_iteratedGradient_one_le_sum`. -/
+theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_ball_and_norm_le [DecidableEq ι] :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
+      ⦃Omega : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+      ⦃b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι⦄ ⦃c : EuclideanSpace ℝ ι → ℝ⦄
+      ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃r lam Lam β γ : ℝ⦄ ⦃K : ℝ≥0⦄
+      ⦃f : Lp ℝ 2 (mu.restrict Omega)⦄ ⦃u : W1p mu Omega 2⦄ (hr : 0 < r)
+      (hΩ : Metric.ball x₀ (2 * r) ⊆ Omega),
+      UniformlyEllipticOn (Metric.ball x₀ (2 * r)) a lam Lam →
+      LipschitzOnWith K (fun x => matrixBilinearForm (a x)) (Metric.ball x₀ (2 * r)) →
+      MemLp b ⊤ (mu.restrict Omega) → MemLp c ⊤ (mu.restrict Omega) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), ‖b x‖ ≤ β) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), |c x| ≤ γ) →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      ∃ U : Wkp mu ⟨Metric.ball x₀ r, Metric.isOpen_ball⟩ 2 2,
+        Wkp.lowerOrder 1 U = W1p.restrictL (SetLike.coe_subset_coe.mp
+          ((Metric.ball_subset_ball (by linarith : r ≤ 2 * r)).trans hΩ)) u ∧
+        ‖U‖ ≤ ‖u‖ + Fintype.card ι ^ 2 * ((‖f‖ + (β + 2 * K + C * Lam / r) * ‖u‖ +
+          (γ + C * K / r + C * Lam / r ^ 2) * ‖u‖) / lam) := by
+  obtain ⟨C, hC0, hball⟩ :=
+    UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball (ι := ι)
+  refine ⟨C, hC0, fun mu _ Omega a b c x₀ r lam Lam β γ K f u hr hΩ ha hK hb hc hβ hγ hu => ?_⟩
+  set e := EuclideanSpace.basisFun ι ℝ
+  set hBΩ : (⟨Metric.ball x₀ r, Metric.isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) ≤ Omega :=
+    SetLike.coe_subset_coe.mp ((Metric.ball_subset_ball (by linarith : r ≤ 2 * r)).trans hΩ)
+  -- The ball has positive measure, so the almost everywhere bounds force `0 ≤ β` and `0 ≤ γ`.
+  have : (ae (mu.restrict (Metric.ball x₀ (2 * r)))).NeBot :=
+    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ (by positivity)).ne'
+  have hβ0 : 0 ≤ β := let ⟨_, hx⟩ := hβ.exists; (norm_nonneg _).trans hx
+  have hγ0 : 0 ≤ γ := let ⟨_, hx⟩ := hγ.exists; (abs_nonneg _).trans hx
+  -- The second derivatives `∂ᵢ ⟪∇u, eⱼ⟫` on `B(x₀, r)`, with their bounds.
+  choose G hGle hG using fun i j => hball mu hr hΩ ha hK hb hc hβ hγ hu (e j) (e i)
+  have hG' : ∀ i j, HasWeakLineDerivOn mu ⟨Metric.ball x₀ r, Metric.isOpen_ball⟩
+      (fun x => ⟪W1p.gradient (W1p.restrictL hBΩ u) x, e j⟫_ℝ) (G i j) (e i) := fun i j =>
+    (hG i j).congr_ae ((W1p.gradient_restrictL_ae hBΩ u).mono fun x hx => by simp only [hx])
+  obtain ⟨U, hU⟩ :=
+    W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn (W1p.restrictL hBΩ u) e
+      fun i j => ⟨G i j, hG' i j⟩
+  refine ⟨U, hU, ?_⟩
+  have hHess := Wkp.norm_iteratedGradient_one_le_sum U e (g := G) (by rw [hU]; exact hG')
+  -- Each entry is bounded by the norms of the data on `Ω`.
+  have hentry : ∀ i j, ‖G i j‖ ≤ (‖f‖ + (β + 2 * K + C * Lam / r) * ‖u‖ +
+      (γ + C * K / r + C * Lam / r ^ 2) * ‖u‖) / lam := fun i j => by
+    have hf := Lp.toReal_eLpNorm_restrict_le_norm f hΩ
+    have hg := (Lp.toReal_eLpNorm_restrict_le_norm (W1p.gradient u) hΩ).trans
+      (W1p.norm_gradient_le u)
+    have hv := (Lp.toReal_eLpNorm_restrict_le_norm (W1p.value u) hΩ).trans (W1p.norm_value_le u)
+    have hlam := ha.pos.le
+    have hLam := ha.upper_nonneg
+    refine (hGle i j).trans ?_
+    rw [e.orthonormal.1 i, e.orthonormal.1 j, one_mul, one_mul]
+    gcongr
+  calc ‖U‖ ≤ ‖Wkp.lowerOrder 1 U‖ + ‖Wkp.iteratedGradient 1 U‖ :=
+        Wkp.norm_le_norm_lowerOrder_add_norm_iteratedGradient 1 U
+    _ ≤ ‖u‖ + ∑ _i : ι, ∑ _j : ι, (‖f‖ + (β + 2 * K + C * Lam / r) * ‖u‖ +
+          (γ + C * K / r + C * Lam / r ^ 2) * ‖u‖) / lam := by
+        gcongr ?_ + ?_
+        · rw [hU]
+          exact W1p.norm_restrictL_le hBΩ u
+        · exact hHess.trans (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hentry i j)
+    _ = _ := by simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; ring
 
 end PDE
 
