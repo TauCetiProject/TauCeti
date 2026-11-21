@@ -52,10 +52,9 @@ which lifts the pointwise `(0,1)`-projection
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`: on the image of a chart, a one-form is a
   `(0,1)`-form exactly when its reading is complex antilinear, and its `(0,1)`-part is read as the
   complex antilinear part of its reading.
-* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`,
-  `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: on an overlap, the chart
-  data of one-forms change chart by `η ↦ g ∘ η ∘ dτ`, which commutes with taking the complex
-  antilinear part.
+* `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: the chart-data change
+  `η ↦ g ∘ η ∘ dτ` of one-forms, described in the general real chart-data API, commutes with
+  taking the complex antilinear part.
 * `TauCeti.mem_zeroOneSobolevSections_iff`: membership is complex antilinearity of the chart data
   almost everywhere.
 * `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`: an element whose chart data are the
@@ -150,57 +149,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
   [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A : FiniteBundleAtlas ℂ M F V)
-
-/-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
-theorem sectionChartData_image_tangentHom (i : Fin A.n) :
-    (A.tangentHom.sectionChartData.image i : Set ℂ) = A.image i :=
-  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
-
-/-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
-theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
-    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
-  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom A i i')
-
-/-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
-those of `A`. -/
-theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : ℂ}
-    (hy : y ∈ A.overlap i i') :
-    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
-  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
-    (congrFun (transition_tangentHom A i i') y)
-
-/-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
-on the corresponding chart image of `A`. -/
-theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop} :
-    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) ↔
-      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet,
-    ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet,
-    sectionChartData_image_tangentHom]
-
-/-- Almost everywhere on an overlap of the section chart data of one-forms is almost everywhere
-on the corresponding overlap of `A`. -/
-theorem ae_overlap_tangentHom_iff (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop} :
-    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
-      ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
-  rw [sectionChartData_overlap_tangentHom]
-
-/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
-one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
-theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : ℂ}
-    (hy : y ∈ A.overlap i i') (η : ℂ →L[ℝ] F) :
-    A.tangentHom.sectionChartData.coordChange i i' y η =
-      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
-        (η.comp (fderiv ℝ (A.transition i i') y)) := by
-  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom]
-  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
-    rw [transition_tangentHom, image_tangentHom]
-    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
-  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
-    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
-  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
-  exact h.symm
 
 variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [∀ x, Module ℂ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
