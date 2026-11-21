@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
+import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Complex.RegularSingularity.Basic
@@ -26,26 +27,20 @@ import TauCeti.Analysis.ODE.Wronskian
 /-!
 # Abel–Liouville Wronskian and fundamental pair at a regular singularity
 
-For a second-order complex linear differential equation `w''(z) + f(z) w'(z) + g(z) w(z) = 0` at a
-regular singularity `z₀` where `(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and
-`(z - z₀)² g(z) = ∑ g_s (z - z₀)^s` converge on `0 < ‖z - z₀‖ < r`:
-* Using the termwise integrated exponent `H(u) = ∑_{s ≥ 1} (fs s / s) u^s`
+For `w''(z) + f(z) w'(z) + g(z) w(z) = 0` at a regular singularity `z₀` where
+`(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and `(z - z₀)² g(z) = ∑ g_s (z - z₀)^s` on `0 < ‖z - z₀‖ < r`:
+* Using `H(u) = ∑_{s ≥ 1} (fs s / s) u^s`
   (`FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast`,
   `HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast`), the weighted Wronskian
-  `(z - z₀)^{fs 0} exp(H(z - z₀)) (w₁ w₂' - w₁' w₂)` is constant on the slit punctured disc
-  `{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` for any two holomorphic solutions `w₁`, `w₂`
-  (`TauCeti.cpow_mul_exp_mul_wronskian_eq`).
-* In both the non-resonant and resonant regimes, the Wronskian `w₁ w₂' - w₁' w₂` satisfies an
-  explicit Abel–Liouville formula (`TauCeti.wronskian_regularSingular_eq`,
-  `TauCeti.wronskian_regularSingular_second_eq`) and never vanishes on the slit punctured disc
+  `(z - z₀)^{fs 0} exp(H(z - z₀)) (w₁ w₂' - w₁' w₂)` is constant on
+  `{z | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}` (`TauCeti.cpow_mul_exp_mul_wronskian_eq`).
+* Explicit Abel–Liouville formulas (`TauCeti.wronskian_regularSingular_eq`,
+  `TauCeti.wronskian_regularSingular_second_eq`), nonvanishing
   (`TauCeti.wronskian_regularSingular_ne_zero`, `TauCeti.wronskian_regularSingular_second_ne_zero`),
-  yielding a fundamental pair at every regular singularity
-  (`TauCeti.exists_regularSingular_fundamental_pair`).
+  and fundamental pair existence (`TauCeti.exists_regularSingular_fundamental_pair`).
 
 ## References
-
-* NIST *Digital Library of Mathematical Functions*, §2.7(ii), formulas 2.7.1–2.7.6,
-  <https://dlmf.nist.gov/2.7.ii>.
+* NIST DLMF §2.7(ii), 2.7.1–2.7.6, <https://dlmf.nist.gov/2.7.ii>.
 * F. W. J. Olver, *Asymptotics and Special Functions*, A K Peters, 1997, Chapter 5, §§4–5.
 -/
 
@@ -55,17 +50,6 @@ open Complex Filter Metric Set
 open scoped Topology ENNReal
 
 namespace TauCeti
-
-private theorem tsum_mul_zero_pow (c : ℕ → ℂ) : (∑' s : ℕ, c s * (0 : ℂ) ^ s) = c 0 := by
-  rw [tsum_eq_single 0 fun s hs => by simp [zero_pow hs]]; simp
-
-private theorem hasFPowerSeriesOnBall_of_punctured {z₀ : ℂ} {r : ℝ} (hr : 0 < r) (c : ℕ → ℂ)
-    (hc : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => c s * (z - z₀) ^ s) :
-    HasFPowerSeriesOnBall (fun u : ℂ => ∑' s, c s * u ^ s)
-      (FormalMultilinearSeries.ofScalars ℂ c) 0 (ENNReal.ofReal r) :=
-  FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_summable c
-    (ENNReal.ofReal_pos.mpr hr) fun u hu0 hur => by
-      simpa using hc (z₀ + u) (by simpa using hu0) (by simpa using eNorm_lt_ofReal_iff.mp hur)
 
 /-- **Abel–Liouville Wronskian constancy at a regular singularity**: for any two holomorphic
 solutions `w₁`, `w₂` of `w'' + f w' + g w = 0` on `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`,
@@ -90,7 +74,8 @@ theorem cpow_mul_exp_mul_wronskian_eq {z₀ : ℂ} {r : ℝ} {f g w₁ w₂ : �
   set U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
   have hr : 0 < r := (norm_nonneg (z₁ - z₀)).trans_lt hz₁.2
   have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
-  have hpF := hasFPowerSeriesOnBall_of_punctured hr fs fun z hz0 hzr => (hf z hz0 hzr).summable
+  have hpF := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr
+    fun z hz0 hzr => (hf z hz0 hzr).summable
   have hE : ∀ z ∈ U, HasDerivAt (fun w => (w - z₀) ^ fs 0 * cexp (H (w - z₀)))
       (f z * ((z - z₀) ^ fs 0 * cexp (H (z - z₀)))) z := by
     rintro z ⟨hzs, hzb⟩
@@ -201,29 +186,37 @@ private theorem abel_liouville_wronskian_ansatz_eq {z₀ α₁ α₂ c : ℂ} {N
       (((hasDerivAt_cpow_mul_tsum (σ := α₁) ha_sum hw.1 hw.2).const_mul c).mul
         (((hasDerivAt_id w).sub_const z₀).clog hw.1))).differentiableAt).differentiableWithinAt)
     hw₂_sol
-  have hpF := hasFPowerSeriesOnBall_of_punctured hr fs fun w hw0 hwr => (hf w hw0 hwr).summable
+  have hpF := FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_of_norm_sub_lt fs z₀ hr
+    fun w hw0 hwr => (hf w hw0 hwr).summable
   have hH_cont : ContinuousAt H 0 := by
     simpa only [sub_zero] using
       (FormalMultilinearSeries.hasFPowerSeriesOnBall_tsum_ofScalars_div_natCast fs 0
         (ENNReal.ofReal_pos.mpr hr) hpF.r_le).analyticAt.continuousAt
   set A₁ : ℂ → ℂ := fun u => ∑' s, a s * u ^ s; set B : ℂ → ℂ := fun u => ∑' s, b s * u ^ s
-  have hA₁_an : AnalyticOnNhd ℂ A₁ (ball 0 r) := Metric.eball_ofReal (x := (0 : ℂ)) (ε := r) ▸
-    (hasFPowerSeriesOnBall_of_punctured hr a fun w _ hwr => ha_sum w hwr).analyticOnNhd
-  have hB_an : AnalyticOnNhd ℂ B (ball 0 r) := Metric.eball_ofReal (x := (0 : ℂ)) (ε := r) ▸
-    (hasFPowerSeriesOnBall_of_punctured hr b fun w _ hwr => hb_sum w hwr).analyticOnNhd
-  have h0_mem : (0 : ℂ) ∈ ball (0 : ℂ) r := mem_ball_self hr
-  have hA₁_cont := (hA₁_an 0 h0_mem).continuousAt
-  have hB_cont := (hB_an 0 h0_mem).continuousAt
-  have hA₁'_cont := (hA₁_an.deriv 0 h0_mem).continuousAt
-  have hB'_cont := (hB_an.deriv 0 h0_mem).continuousAt
+  have hA₁_an := FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt a z₀ hr
+    fun w _ => ha_sum w
+  have hB_an := FormalMultilinearSeries.analyticOnNhd_tsum_ofScalars_of_norm_sub_lt b z₀ hr
+    fun w _ => hb_sum w
+  have := (hA₁_an 0 (mem_ball_self hr)).continuousAt
+  have := (hB_an 0 (mem_ball_self hr)).continuousAt
+  have := (hA₁_an.deriv 0 (mem_ball_self hr)).continuousAt
+  have := (hB_an.deriv 0 (mem_ball_self hr)).continuousAt
   set G : ℂ → ℂ := fun u =>
     cexp (H u) * ((α₂ - α₁) * A₁ u * B u + u * (A₁ u * deriv B u - deriv A₁ u * B u) +
       c * u ^ N * A₁ u ^ 2)
   have hG_cont0 : ContinuousAt G 0 := by fun_prop
-  have hH0 : H 0 = 0 := by
-    simpa [H] using tsum_mul_zero_pow (fun s => if s = 0 then (0 : ℂ) else fs s / s)
   have hG0 : G 0 = (α₂ - α₁) * a 0 * b 0 + c * (0 : ℂ) ^ N * a 0 ^ 2 := by
-    simp [G, hH0, A₁, B, tsum_mul_zero_pow]
+    have hH0 : H 0 = 0 := by
+      simpa only [H, FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul, mul_one,
+        ↓reduceIte] using FormalMultilinearSeries.ofScalarsSum_zero (E := ℂ)
+          fun s => if s = 0 then (0 : ℂ) else fs s / s
+    have hA₁0 : A₁ 0 = a 0 := by
+      simpa only [A₁, FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul, mul_one] using
+        FormalMultilinearSeries.ofScalarsSum_zero (E := ℂ) a
+    have hB0 : B 0 = b 0 := by
+      simpa only [B, FormalMultilinearSeries.ofScalarsSum_eq_tsum, smul_eq_mul, mul_one] using
+        FormalMultilinearSeries.ofScalarsSum_zero (E := ℂ) b
+    simp [G, hH0, hA₁0, hB0]
   have hFG : ∀ t ∈ Ioo (0 : ℝ) r, (z - z₀) ^ fs 0 * cexp (H (z - z₀)) *
       (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z) = G (t : ℂ) := fun t ⟨ht0, htr⟩ =>
     (hconst z (z₀ + t) ⟨hzs, hzb⟩ ⟨by simpa using Complex.ofReal_mem_slitPlane.mpr ht0,

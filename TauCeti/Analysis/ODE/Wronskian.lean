@@ -31,29 +31,6 @@ public section
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [RCLike 𝕜] {q φ φ' ψ ψ' : 𝕜 → 𝕜}
-
-/-- The Wronskian `ψ φ' - φ ψ'` of two solutions of `f'' = q f` on `ℝ` or `ℂ` is constant. -/
-theorem wronskian_eq_of_hasDerivAt
-    (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
-    (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t) (t a : 𝕜) :
-    ψ t * φ' t - φ t * ψ' t = ψ a * φ' a - φ a * ψ' a := by
-  have hderiv : ∀ t, HasDerivAt (fun r ↦ ψ r * φ' r - φ r * ψ' r) 0 t := fun t ↦
-    (((hψ t).mul (hφ' t)).sub ((hφ t).mul (hψ' t))).congr_deriv (by ring)
-  exact is_const_of_deriv_eq_zero (fun t ↦ (hderiv t).differentiableAt)
-    (fun t ↦ (hderiv t).deriv) t a
-
-/-- The Wronskian `ψ φ' - φ ψ'` of the fundamental pair of solutions of `f'' = q f` at `a`, with
-`φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1`, is identically one. The value `ψ'(a)` is irrelevant,
-since it is multiplied by `φ(a) = 0`. -/
-theorem wronskian_eq_one_of_hasDerivAt {a : 𝕜}
-    (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
-    (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t)
-    (hφa : φ a = 0) (hφ'a : φ' a = 1) (hψa : ψ a = 1) (t : 𝕜) :
-    ψ t * φ' t - φ t * ψ' t = 1 := by
-  rw [wronskian_eq_of_hasDerivAt hφ hφ' hψ hψ' t a, hφa, hφ'a, hψa]
-  ring
-
 /-- **Abel–Liouville Wronskian constancy** on an open preconnected domain `U` in `ℝ` or `ℂ`: if
 `w₁` and `w₂` satisfy `w'' + f w' + g w = 0` on `U` and `E` is an integrating factor with
 `E' = f * E` on `U`, then `E * (w₁ * w₂' - w₁' * w₂)` is constant on `U`. -/
@@ -74,5 +51,29 @@ theorem mul_wronskian_eq_of_hasDerivAt {𝕜 : Type*} [RCLike 𝕜] {U : Set �
   exact hU.is_const_of_deriv_eq_zero hconn
     (fun z hz ↦ (hderiv z hz).differentiableAt.differentiableWithinAt)
     (fun z hz ↦ (hderiv z hz).deriv) hz₁ hz₂
+
+variable {𝕜 : Type*} [RCLike 𝕜] {q φ φ' ψ ψ' : 𝕜 → 𝕜}
+
+/-- The Wronskian `ψ φ' - φ ψ'` of two solutions of `f'' = q f` on `ℝ` or `ℂ` is constant. -/
+theorem wronskian_eq_of_hasDerivAt
+    (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
+    (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t) (t a : 𝕜) :
+    ψ t * φ' t - φ t * ψ' t = ψ a * φ' a - φ a * ψ' a := by
+  rw [mul_comm (φ t), mul_comm (φ a)]
+  simpa using mul_wronskian_eq_of_hasDerivAt (U := Set.univ) isOpen_univ isPreconnected_univ
+    (f := 0) (g := -q) (E := fun _ ↦ (1 : 𝕜)) (fun z _ ↦ by simpa using hasDerivAt_const z (1 : 𝕜))
+    (fun z _ ↦ hψ z) (fun z _ ↦ by simpa using hψ' z)
+    (fun z _ ↦ hφ z) (fun z _ ↦ by simpa using hφ' z) (Set.mem_univ t) (Set.mem_univ a)
+
+/-- The Wronskian `ψ φ' - φ ψ'` of the fundamental pair of solutions of `f'' = q f` at `a`, with
+`φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1`, is identically one. The value `ψ'(a)` is irrelevant,
+since it is multiplied by `φ(a) = 0`. -/
+theorem wronskian_eq_one_of_hasDerivAt {a : 𝕜}
+    (hφ : ∀ t, HasDerivAt φ (φ' t) t) (hφ' : ∀ t, HasDerivAt φ' (q t * φ t) t)
+    (hψ : ∀ t, HasDerivAt ψ (ψ' t) t) (hψ' : ∀ t, HasDerivAt ψ' (q t * ψ t) t)
+    (hφa : φ a = 0) (hφ'a : φ' a = 1) (hψa : ψ a = 1) (t : 𝕜) :
+    ψ t * φ' t - φ t * ψ' t = 1 := by
+  rw [wronskian_eq_of_hasDerivAt hφ hφ' hψ hψ' t a, hφa, hφ'a, hψa]
+  ring
 
 end TauCeti

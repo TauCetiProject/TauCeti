@@ -377,16 +377,10 @@ theorem isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt (z₀ : ℂ) (r : ℝ) :
 preconnected. -/
 theorem isPreconnected_setOf_sub_mem_slitPlane_and_norm_sub_lt (z₀ : ℂ) (r : ℝ) :
     IsPreconnected {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} := by
-  have heq : {z : ℂ | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} =
-      (fun u : ℂ ↦ z₀ + u) '' (slitPlane ∩ Metric.ball 0 r) := by
-    ext z
-    simp only [Set.mem_ofPred_eq, Set.mem_image, Set.mem_inter_iff, Metric.mem_ball,
-      dist_zero_right]
-    exact ⟨fun ⟨h1, h2⟩ ↦ ⟨z - z₀, ⟨h1, h2⟩, add_sub_cancel z₀ z⟩,
-      fun ⟨u, ⟨h1, h2⟩, hu⟩ ↦ by subst hu; exact ⟨by simpa using h1, by simpa using h2⟩⟩
-  rw [heq]
-  exact (isPreconnected_slitPlane_inter_ball r).image _
-    (continuous_const.add continuous_id).continuousOn
+  convert ((IsometryEquiv.subRight z₀).toHomeomorph.isPreconnected_preimage).2
+    (isPreconnected_slitPlane_inter_ball r) using 1
+  ext z
+  simp [Metric.mem_ball, dist_eq_norm]
 
 end TauCeti
 

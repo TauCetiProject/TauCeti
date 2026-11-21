@@ -18,34 +18,26 @@ import Mathlib.Tactic.Ring
 /-!
 # Indicial polynomial and formal coefficient recurrences at a regular singularity
 
-For a second-order complex linear differential equation
-
-`w''(z) + f(z) w'(z) + g(z) w(z) = 0`
-
-around a point `z₀` where `(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and
+For `w''(z) + f(z) w'(z) + g(z) w(z) = 0` around `z₀` with `(z - z₀) f(z) = ∑ f_s (z - z₀)^s` and
 `(z - z₀)² g(z) = ∑ g_s (z - z₀)^s`, the leading exponents at `z₀` are the roots `α₁`, `α₂`
 (`Re α₂ ≤ Re α₁`) of the **indicial polynomial**
+`Q(α) = α(α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)` (`TauCeti.indicialPoly`).
 
-`Q(α) = α(α - 1) + f₀ α + g₀ = (α - α₁)(α - α₂)`.
+This file defines `TauCeti.indicialPoly` and the canonical coefficient sequences (DLMF §2.7(ii)):
+* `TauCeti.regularSingularCoeff`: `a_s` (`a₀ = 1`) solving
+  `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k` whenever `Q(ρ + s) ≠ 0`
+  (DLMF 2.7.5; totalized to `0` at resonant indices).
+* `TauCeti.regularSingularLogMultiplier`: the logarithmic multiplier `c` when `α₁ - α₂ = N ∈ ℕ`
+  (`c = 1` for `N = 0`, cancelling the resonant obstruction at `s = N` for `N ≥ 1`).
+* `TauCeti.regularSingularSecondCoeff`: second-solution coefficients `b_s` (`b_N = 0`, and `b₀ = 1`
+  for `N ≥ 1`, DLMF 2.7.6).
 
-This file defines `TauCeti.indicialPoly` together with the canonical normalized formal coefficient
-sequences of NIST DLMF §2.7(ii):
-* `TauCeti.regularSingularCoeff`: the sequence `a_s` (`a₀ = 1`) solving
-  `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k` (DLMF 2.7.5);
-* `TauCeti.regularSingularLogMultiplier`: the logarithmic multiplier `c` in DLMF 2.7.6 when
-  `α₁ - α₂ = N ∈ ℕ` (`c = 1` for `N = 0`, and cancelling the resonant sum at `s = N` for `N ≥ 1`);
-* `TauCeti.regularSingularSecondCoeff`: the second-solution coefficient sequence `b_s` in
-  DLMF 2.7.6, normalized by `b_N = 0` and `b₀ = 1` for `N ≥ 1`.
-
-Analytic convergence on the full disc `‖z - z₀‖ < r`, solutionhood on the slit punctured disc,
-and uniqueness are proved in `TauCeti.Analysis.ODE.Complex.RegularSingularity.Basic`; the
-Abel–Liouville Wronskian formulas, nonvanishing, and fundamental pair existence are proved in
+Convergence, solutionhood, and uniqueness are in
+`TauCeti.Analysis.ODE.Complex.RegularSingularity.Basic`; Wronskians and fundamental pairs are in
 `TauCeti.Analysis.ODE.Complex.RegularSingularity.Wronskian`.
 
 ## References
-
-* NIST *Digital Library of Mathematical Functions*, §2.7(ii), formulas 2.7.2–2.7.6,
-  <https://dlmf.nist.gov/2.7.ii>.
+* NIST DLMF §2.7(ii), 2.7.2–2.7.6, <https://dlmf.nist.gov/2.7.ii>.
 * F. W. J. Olver, *Asymptotics and Special Functions*, A K Peters, 1997, Chapter 5, §§4–5.
 -/
 
@@ -128,8 +120,11 @@ theorem indicialPoly_add_nat_ne_zero_of_ne {f₀ g₀ α₂ : ℂ} {N s : ℕ}
 
 /-! ### Recursive coefficient sequences -/
 
-/-- The normalized series coefficients `a_s` (`a₀ = 1`) attached to an indicial root `ρ` via
-`Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k` (DLMF 2.7.5). -/
+/-- The normalized series coefficients `a_s` (`a₀ = 1`) attached to an indicial exponent `ρ` via
+`a_s = -Q(ρ + s)⁻¹ ∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`. Whenever `Q(ρ + s) ≠ 0` for
+all `s ≥ 1`, this solves `Q(ρ + s) a_s = -∑_{k < s} ((ρ + k) f_{s - k} + g_{s - k}) a_k`
+(DLMF 2.7.5); at any resonant index `Q(ρ + s) = 0`, Lean's totalized inverse sets `a_s = 0`
+without enforcing the recurrence. -/
 def regularSingularCoeff (fs gs : ℕ → ℂ) (ρ : ℂ) (s : ℕ) : ℂ :=
   if s = 0 then 1
   else -(indicialPoly (fs 0) (gs 0) (ρ + s))⁻¹ *
@@ -208,6 +203,24 @@ theorem natCast_mul_regularSingularLogMultiplier (fs gs : ℕ → ℂ) (α₂ : 
   have hN0 : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   rw [regularSingularLogMultiplier_of_ne_zero fs gs α₂ (by omega)]; field_simp [hN0]
 
+/-- Shifted logarithmic forcing coefficients for `α₁ = α₂ + N` and primary series coefficients `a`
+(DLMF 2.7.6): `0` for `s < N`, and
+`(2 (α₂ + s) + f₀ - 1) a_{s - N} + ∑_{k < s - N} f_{s - N - k} a_k` for `N ≤ s`. -/
+def regularSingularLogForcing (fs a : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) : ℂ :=
+  if s < N then 0
+  else (2 * (α₂ + s) + fs 0 - 1) * a (s - N) + ∑ k ∈ range (s - N), fs (s - N - k) * a k
+
+@[simp]
+theorem regularSingularLogForcing_of_lt (fs a : ℕ → ℂ) (α₂ : ℂ) {N s : ℕ} (hs : s < N) :
+    regularSingularLogForcing fs a α₂ N s = 0 := by
+  simp [regularSingularLogForcing, hs]
+
+/-- Unfolding formula for `regularSingularLogForcing` at or above the resonant index `N ≤ s`. -/
+theorem regularSingularLogForcing_of_le (fs a : ℕ → ℂ) (α₂ : ℂ) {N s : ℕ} (hs : N ≤ s) :
+    regularSingularLogForcing fs a α₂ N s =
+      (2 * (α₂ + s) + fs 0 - 1) * a (s - N) + ∑ k ∈ range (s - N), fs (s - N - k) * a k := by
+  simp [regularSingularLogForcing, not_lt_of_ge hs]
+
 /-- The series coefficients `b_s` of the second solution when `α₁ - α₂ = N ∈ ℕ` (DLMF 2.7.6),
 normalized by `b_N = 0` (omitting the resonant term) and `b₀ = 1` when `N ≥ 1`. -/
 def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) : ℂ :=
@@ -224,8 +237,7 @@ def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) :
           ((α₂ + k.val) * fs (s - k.val) + gs (s - k.val)) *
             regularSingularSecondCoeff fs gs α₂ N k.val) +
         regularSingularLogMultiplier fs gs α₂ N *
-          ((2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
-            ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k))
+          regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s)
 termination_by s
 decreasing_by all_goals exact mem_range.mp k.property
 
@@ -275,8 +287,7 @@ theorem regularSingularSecondCoeff_of_gt (fs gs : ℕ → ℂ) (α₂ : ℂ) {N 
         ((∑ k ∈ range s,
             ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k) +
           regularSingularLogMultiplier fs gs α₂ N *
-            ((2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
-              ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k)) := by
+            regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s) := by
   conv_lhs => rw [regularSingularSecondCoeff]
   simp only [hsN.ne', show s ≠ 0 by omega, not_lt_of_gt hsN, ↓reduceIte]
   rw [Finset.sum_attach (range s) fun k =>
@@ -289,8 +300,7 @@ theorem indicialPoly_mul_regularSingularSecondCoeff_of_gt {fs gs : ℕ → ℂ} 
       -(∑ k ∈ range s,
           ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k) -
         regularSingularLogMultiplier fs gs α₂ N *
-          ((2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
-            ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k) := by
+          regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s := by
   rw [regularSingularSecondCoeff_of_gt fs gs α₂ hsN]; field_simp [hQ]; ring
 
 /-- The canonical resonant pair `(regularSingularSecondCoeff, regularSingularLogMultiplier)`
@@ -300,20 +310,19 @@ theorem regularSingularSecondCoeff_rec {fs gs : ℕ → ℂ} {α₂ : ℂ} {N : 
     (indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s +
       ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
         regularSingularSecondCoeff fs gs α₂ N k) +
-    regularSingularLogMultiplier fs gs α₂ N * (if s < N then 0
-      else (2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
-        ∑ k ∈ range (s - N),
-          fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k) = 0 := by
+    regularSingularLogMultiplier fs gs α₂ N *
+      regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s = 0 := by
   rcases lt_trichotomy s N with hsN | rfl | hsN
   · rcases eq_or_ne s 0 with rfl | hs0
-    · simp [hsN, hfact]
+    · simp [regularSingularLogForcing, hsN, hfact]
     · have h := indicialPoly_mul_regularSingularSecondCoeff_of_lt (Nat.pos_of_ne_zero hs0) hsN
         (indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hsN.ne)
-      simp only [hsN, ↓reduceIte, mul_zero, add_zero]; linear_combination h
+      simp only [regularSingularLogForcing, hsN, ↓reduceIte, mul_zero, add_zero]
+      linear_combination h
   · have h2N : 2 * (α₂ + (s : ℂ)) + fs 0 - 1 = s := by
       linear_combination (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1
     rcases eq_or_ne s 0 with rfl | hs0
-    · simpa using h2N
+    · simpa [regularSingularLogForcing] using h2N
     · have hsum_eq : (∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
             regularSingularSecondCoeff fs gs α₂ s k) =
           ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) *
@@ -324,10 +333,10 @@ theorem regularSingularSecondCoeff_rec {fs gs : ℕ → ℂ} {α₂ : ℂ} {N : 
           regularSingularLogMultiplier fs gs α₂ s * (s : ℂ) = 0 := by
         linear_combination
           natCast_mul_regularSingularLogMultiplier fs gs α₂ (Nat.pos_of_ne_zero hs0)
-      simpa [hfact, h2N, hsum_eq] using hterm
+      simpa [regularSingularLogForcing, hfact, h2N, hsum_eq] using hterm
   · have h := indicialPoly_mul_regularSingularSecondCoeff_of_gt hsN
       (indicialPoly_add_nat_ne_zero_of_ne hfact (by omega) hsN.ne')
-    simp only [not_lt_of_gt hsN, ↓reduceIte]; linear_combination h
+    linear_combination h
 
 /-- Any pair `(b', c')` satisfying `b' N = 0`, the normalization `(N = 0 → c' = 1)`,
 `(1 ≤ N → b' 0 = 1)`, and the resonant indicial recursion coincides with
@@ -340,9 +349,7 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
     (hrec : ∀ s : ℕ,
       (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
         ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) +
-      c' * (if s < N then 0
-        else (2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
-          ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k) = 0) :
+      c' * regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s = 0) :
     b' = regularSingularSecondCoeff fs gs α₂ N ∧
       c' = regularSingularLogMultiplier fs gs α₂ N := by
   set b := regularSingularSecondCoeff fs gs α₂ N
@@ -357,7 +364,7 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
       · simp [b, hb'0 hs, hs]
       · have hdiff := sub_eq_zero.mpr ((hrec s).trans (regularSingularSecondCoeff_rec hfact s).symm)
         rw [hsum_congr s fun k hk => ih k hk (hk.trans hs)] at hdiff
-        simp only [hs, ↓reduceIte, mul_zero, add_zero] at hdiff
+        simp only [regularSingularLogForcing, hs, ↓reduceIte, mul_zero, add_zero] at hdiff
         exact mul_left_cancel₀ (indicialPoly_add_nat_ne_zero_of_ne hfact hs0 hs.ne)
           (by linear_combination hdiff)
   have hc'_eq : c' = c := by
@@ -366,7 +373,7 @@ theorem eq_regularSingularSecondCoeff_of_rec {fs gs b' : ℕ → ℂ} {α₂ c' 
     · have h2N : 2 * (α₂ + (N : ℂ)) + fs 0 - 1 = N := by
         linear_combination (forall_indicialPoly_eq_sub_mul_sub_iff.mp hfact).1
       exact mul_right_cancel₀ (Nat.cast_ne_zero.mpr hN0) (by
-        simpa [b, c, hfact, h2N, hsum_congr N hb'_lt] using
+        simpa [b, c, regularSingularLogForcing, hfact, h2N, hsum_congr N hb'_lt] using
           (hrec N).trans (regularSingularSecondCoeff_rec hfact N).symm)
   refine ⟨?_, hc'_eq⟩
   ext s; induction s using Nat.strong_induction_on with | ind s ih =>
