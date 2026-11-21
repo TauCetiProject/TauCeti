@@ -255,7 +255,7 @@ theorem isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisC
   have hΦw : frameSynthesisCLM A x w = 0 := (inner_self (A := Aᵐᵒᵖ)).mp <| by
     rw [(isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x).inner_eq_cstarModule,
       frameAnalysisCLM_frameSynthesisCLM_apply, map_sub, CStarMatrix.mulVecCLM_mulVecCLM,
-      hp.isIdempotentElem.eq, sub_self, inner_zero_right]
+      hp.isIdempotentElem.eq, sub_self, CStarModule.inner_zero_right']
   rw [map_sub, sub_eq_zero, ← frameAnalysisCLM_frameSynthesisCLM_apply] at hΦw
   simpa only [frameSynthesisCLM_apply, frameAnalysisCLM_apply_apply, op_unop] using hΦw
 
@@ -423,7 +423,7 @@ noncomputable def IsParsevalFrame.equivRangeGram {x : ι → E} (hx : IsParseval
 
 @[simp] theorem IsParsevalFrame.equivRangeGram_symm_apply {x : ι → E} (hx : IsParsevalFrame Aᵐᵒᵖ x)
     (u : LinearMap.range (CStarMatrix.mulVecLinearMap (CStarMatrix.gram A x))) :
-    hx.equivRangeGram.symm u = frameSynthesisLinearMap A x u.1 := by
+    hx.equivRangeGram.symm u = frameSynthesisLinearMap A x u.val := by
   simp [IsParsevalFrame.equivRangeGram]
 
 /-- If `p : CStarMatrix ι ι A` is a star projection and
@@ -445,7 +445,7 @@ theorem exists_isParsevalFrame_and_gram_eq_of_isStarProjection {p : CStarMatrix 
       hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
   refine ⟨x, isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisCLM.mpr
     ⟨hgram ▸ hp, fun z ↦ ?_⟩, hgram⟩
-  obtain ⟨v, hv⟩ := (U z).2
+  obtain ⟨v, hv⟩ := (U z).property
   refine ⟨v, U.toLinearEquiv.injective (Subtype.ext ?_)⟩
   rw [frameSynthesisCLM_apply, map_sum]
   simp only [map_smul, LinearIsometryEquiv.coe_toLinearEquiv]
@@ -591,7 +591,7 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
   set u := unop (inner Aᵐᵒᵖ (f w) (f w))
   set v := unop (inner Aᵐᵒᵖ (w - g (f w)) (w - g (f w)))
   have hg_le : unop (inner Aᵐᵒᵖ (g (f w)) (g (f w))) ≤ ‖gL‖ ^ 2 • u :=
-    gL.unop_inner_map_map_self_le (fun b z ↦ g.map_smul (op b) z) (f w)
+    CStarModule.unop_inner_map_map_le_norm_sq_smul gL (fun b z ↦ g.map_smul (op b) z) (f w)
   have hw_split : unop (inner Aᵐᵒᵖ w w) ≤ (2 : ℝ) • (‖gL‖ ^ 2 • u + v) := by
     have hadd := unop_inner_add_add_self_le (A := A) (g (f w)) (w - g (f w))
     rw [add_sub_cancel] at hadd
@@ -599,9 +599,9 @@ private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [Dec
   have hCu : ‖gL‖ ^ 2 • u + v ≤ (1 + ‖gL‖ ^ 2) • (u + v) := by
     calc ‖gL‖ ^ 2 • u + v
         ≤ (u + ‖gL‖ ^ 2 • u) + (v + ‖gL‖ ^ 2 • v) :=
-          add_le_add (le_add_of_nonneg_left (unop_nonneg.mpr inner_self_nonneg))
+          add_le_add (le_add_of_nonneg_left (unop_nonneg.mpr CStarModule.inner_self_nonneg))
             (le_add_of_nonneg_right (smul_nonneg (sq_nonneg _)
-              (unop_nonneg.mpr inner_self_nonneg)))
+              (unop_nonneg.mpr (CStarModule.inner_self_nonneg (A := Aᵐᵒᵖ) (x := w - g (f w))))))
       _ = (1 + ‖gL‖ ^ 2) • (u + v) := by module
   rw [mul_smul]
   exact hw_split.trans (smul_le_smul_of_nonneg_left hCu zero_le_two)
@@ -888,7 +888,7 @@ theorem IsParsevalFrame.inner_polarModulus_right_nonneg {x : ι → E} (hx : IsP
   have hadj := (isAdjointPair_frameSynthesisCLM_frameAnalysisCLM (A := A) x).symm_cstarModule
   rw [← hadj.inner_eq_cstarModule, hRR,
     ← (CStarMatrix.isAdjointPair_mulVecCLM_star R).inner_eq_cstarModule]
-  exact inner_self_nonneg
+  exact CStarModule.inner_self_nonneg (A := Aᵐᵒᵖ) (E := C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
 
 /-- `hx.polarModulus T` has the same Gram inner products as `T`:
 `⟨|T| y, |T| z⟩_A = ⟨T y, T z⟩_A`. -/

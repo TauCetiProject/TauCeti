@@ -81,7 +81,7 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log
   have he : (fun z ↦ Real.exp (u z + P.natDegree * Real.log ‖z‖)) =ᶠ[cocompact ℂ]
       (fun z ↦ Real.exp (u z) * ‖z‖ ^ P.natDegree) := by
     filter_upwards [hz] with z hz
-    rw [Real.exp_add, Real.exp_nat_mul, Real.exp_log (norm_pos_iff.mpr hz)]
+    rw [Real.exp_add, Real.exp_natCast_mul, Real.exp_log (norm_pos_iff.mpr hz)]
   constructor
   · intro h
     have hh := (Real.continuousAt_log one_ne_zero).tendsto.comp
@@ -97,6 +97,11 @@ theorem eventually_norm_inv_phase_eq_one (m : ℕ) :
     ∀ᶠ z : ℂ in cocompact ℂ, ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖ = 1 := by
   filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
   simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+
+/-- The modulus of the inverse degree-`m` winding phase tends to one at infinity. -/
+theorem tendsto_norm_inv_phase (m : ℕ) :
+    Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
+  tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
 
 /-- For a reconstructed monic polynomial section, unit modulus at infinity already fixes
 its degree-`m` end phase. The scalar ansatz has no independent phase ambiguity. -/
