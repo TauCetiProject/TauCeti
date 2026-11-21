@@ -158,6 +158,13 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
 
+/-- On the face of the standard `2`-simplex opposite the vertex `0`, the weights `w₁` and `w₂`
+sum to `1`. -/
+theorem weights_one_add_weights_two_map_succAbove_zero (z : StdSimplex R (Fin 2)) :
+    (z.map (Fin.succAbove 0)).weights 1 + (z.map (Fin.succAbove 0)).weights 2 = 1 := by
+  rw [weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
+    weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl, total_fin_two]
+
 omit [IsStrictOrderedRing R] in
 /-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
 vanishing last weight, is the standard simplex on `Fin n` with a zero last weight appended. -/
