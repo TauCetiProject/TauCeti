@@ -70,6 +70,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
+* `TauCeti.eventually_integrableOn_sphere_of_isBigO_one`: in dimension `d + 1`, a function that
+  is bounded at infinity is integrable on the spheres of large radius around the origin.
 * `TauCeti.tendsto_setIntegral_sphere_of_isLittleO`: in dimension `d + 1`, the integral over the
   sphere of radius `r` of a function that is `o(‖x‖ ^ (-d))` at infinity tends to `0` as `r → ∞`.
 
@@ -468,6 +470,23 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n 
     _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
     restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
     smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
+
+omit [FiniteDimensional ℝ E] in
+/-- In a real inner product space of dimension `d + 1`, an `AEStronglyMeasurable` function that is
+bounded at infinity is integrable, for `d`-dimensional Hausdorff measure, on the spheres of large
+radius around the origin: these have finite measure `r ^ d |Sᵈ|`. -/
+theorem eventually_integrableOn_sphere_of_isBigO_one {F : Type*} [NormedAddCommGroup F] {d : ℕ}
+    (hE : finrank ℝ E = d + 1) {f : E → F} (hm : AEStronglyMeasurable f μHE[d])
+    (hf : f =O[Bornology.cobounded E] fun _ ↦ (1 : ℝ)) :
+    ∀ᶠ r in atTop, IntegrableOn f (sphere (0 : E) r) μHE[d] := by
+  obtain ⟨C, hC⟩ := hf.bound
+  obtain ⟨R, -, hR⟩ := hasBasis_cobounded_norm.eventually_iff.1 hC
+  filter_upwards [eventually_ge_atTop R, eventually_gt_atTop 0] with r hRr hr
+  refine Measure.integrableOn_of_bounded (M := C * ‖(1 : ℝ)‖) ?_ hm ?_
+  · rw [euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume hE 0 hr]
+    exact ENNReal.ofReal_ne_top
+  · refine (ae_restrict_iff' isClosed_sphere.measurableSet).2 (Eventually.of_forall fun x hx ↦ ?_)
+    exact hR (show R ≤ ‖x‖ by rw [mem_sphere_zero_iff_norm.1 hx]; exact hRr)
 
 omit [FiniteDimensional ℝ E] in
 /-- **Sphere integrals of functions decaying faster than the area.** If `f = o(‖x‖ ^ (-d))` at

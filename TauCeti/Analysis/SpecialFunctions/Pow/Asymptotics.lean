@@ -26,7 +26,7 @@ On a seminormed group, as `‖s‖ → ∞`:
 * `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` whenever `a < b`, for every real `c`;
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+  in particular `√‖s‖ = o(s)`, and `‖s‖ ^ a` tends to `0` whenever `a < 0`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -154,6 +154,12 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
   (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a < 0`, `‖s‖ ^ a` tends to `0` as `‖s‖ → ∞`. -/
+theorem tendsto_norm_rpow_cobounded {a : ℝ} (ha : a < 0) :
+    Tendsto (fun s : E ↦ ‖s‖ ^ a) (cobounded E) (𝓝 0) :=
+  (Asymptotics.isLittleO_one_iff ℝ).1
+    ((isLittleO_norm_rpow_norm_rpow_cobounded ha).congr_right fun _ ↦ Real.rpow_zero _)
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
