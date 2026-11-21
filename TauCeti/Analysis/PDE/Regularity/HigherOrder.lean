@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
-public import TauCeti.Analysis.PDE.Regularity.Interior
+public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
