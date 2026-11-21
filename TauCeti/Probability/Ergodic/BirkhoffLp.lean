@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.BirkhoffSum.Average
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -89,9 +90,8 @@ theorem integral_birkhoffSum (hT : MeasurePreserving T μ μ) (hf : Integrable f
   simp_rw [birkhoffSum]
   rw [integral_finsetSum (Finset.range n) (f := fun k x ↦ f (T^[k] x))
     fun k _ ↦ (hT.iterate k).integrable_comp_of_integrable hf]
-  have hterm (k : ℕ) : ∫ x, f (T^[k] x) ∂μ = ∫ x, f x ∂μ := by
-    rw [← integral_map (hT.iterate k).aemeasurable
-      ((hT.iterate k).map_eq.symm ▸ hf.aestronglyMeasurable), (hT.iterate k).map_eq]
+  have hterm (k : ℕ) : ∫ x, f (T^[k] x) ∂μ = ∫ x, f x ∂μ :=
+    (hT.iterate k).hasLaw.integral_comp hf.aestronglyMeasurable
   simp [hterm]
 
 /-- The integral of a nonempty Birkhoff average of an integrable observable under a

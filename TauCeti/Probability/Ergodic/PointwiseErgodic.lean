@@ -19,9 +19,11 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.Dynamics.BirkhoffSum.Limsup
 import TauCeti.Dynamics.BirkhoffSum.Maximal
 import TauCeti.Dynamics.BirkhoffSum.Norm
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -49,8 +51,8 @@ indicators to an arbitrary real Banach space `E` requires no separability hypoth
 convergence holds on simple functions by linearity and transfers to all `Integrable` functions via
 `L¹`-density of simple functions and the weak-type maximal inequality; `Lᵖ` convergence for
 `1 ≤ p < ∞` follows from `Lᵖ` dominated convergence (`TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`)
-on simple functions together with `Lᵖ`-contractivity of Birkhoff averages and conditional
-expectations.
+on simple functions together with `ContinuousLinearMap.tendsto_apply_of_dense` for the Koopman
+averages and `TauCeti.MeasureTheory.condExpLp` on `Lp`.
 
 Supporting general-purpose lemmas live in their canonical homes: pointwise norm bounds in
 `TauCeti.Dynamics.BirkhoffSum.Norm`, orbit invariance of `limsup`/`liminf` in
@@ -422,21 +424,17 @@ theorem ae_tendsto_birkhoffAverage_condExp (hT : MeasurePreserving T μ μ)
       (𝓝 (μ[f | MeasurableSpace.invariants T] x)) := by
   let err : ℕ → Ω → ℝ :=
     fun n x ↦ ‖birkhoffAverage ℝ T f n x - μ[f | MeasurableSpace.invariants T] x‖
-  have hall : ∀ᵐ x ∂μ, ∀ k : ℕ,
-      limsup (fun n ↦ (err n x : EReal)) atTop ≤
-        (((((k + 1 : ℕ) : ℝ)⁻¹ : ℝ)) : EReal) := by
-    rw [ae_all_iff]
-    intro k
-    rw [ae_iff]
-    simpa only [not_le] using measure_lt_limsup_norm_birkhoffAverage_sub_condExp_eq_zero hT hf
-      (δ := ((k + 1 : ℕ) : ℝ)⁻¹) (by positivity)
-  filter_upwards [hall] with x hx
+  have hle : ∀ᵐ x ∂μ, limsup (fun n ↦ (err n x : EReal)) atTop ≤ 0 := by
+    rw [ae_le_const_iff_forall_gt_measure_zero]
+    intro b hb
+    obtain ⟨δ, h0δ, hδb⟩ := EReal.exists_between_coe_real hb
+    exact measure_mono_null (fun _ hx ↦ hδb.trans_le hx)
+      (measure_lt_limsup_norm_birkhoffAverage_sub_condExp_eq_zero hT hf (EReal.coe_pos.mp h0δ))
+  filter_upwards [hle] with x hx
   rw [tendsto_iff_norm_sub_tendsto_zero]
   refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
-  have hlt : limsup (fun n ↦ (err n x : EReal)) atTop < (ε : EReal) :=
-    (hx k).trans_lt (EReal.coe_lt_coe_iff.mpr (by simpa [one_div] using hk))
-  obtain ⟨N, hN⟩ := eventually_atTop.mp (eventually_lt_of_limsup_lt hlt)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp
+    (eventually_lt_of_limsup_lt (hx.trans_lt (EReal.coe_pos.mpr hε)))
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)]
   exact EReal.coe_lt_coe_iff.mp (hN n hn)
@@ -449,36 +447,82 @@ theorem tendsto_eLpNorm_birkhoffAverage_sub_condExp (hT : MeasurePreserving T μ
     Tendsto
       (fun n ↦ eLpNorm (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) p μ)
       atTop (𝓝 0) := by
-  rw [ENNReal.tendsto_atTop_zero]
-  intro ε hε
-  have hε3 : 0 < ε / 3 := ENNReal.div_pos hε.ne' (by norm_num)
-  obtain ⟨s, hs_dist, _⟩ := hf.exists_simpleFunc_eLpNorm_sub_lt hp hε3.ne'
-  have hs_lim := tendsto_eLpNorm_birkhoffAverage_sub_condExp_simpleFunc hT hp s
-  obtain ⟨N, hN⟩ := eventually_atTop.mp (hs_lim.eventually (gt_mem_nhds hε3))
-  refine ⟨N, fun n hn ↦ ?_⟩
-  calc
-    eLpNorm (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) p μ
-      = eLpNorm (birkhoffAverage ℝ T (f - ⇑s) n +
-          (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) -
-          μ[f - ⇑s | MeasurableSpace.invariants T]) p μ :=
-        eLpNorm_congr_ae
-          ((ae_birkhoffAverage_sub_condExp_decomp T (hf.integrable hp1)
-            s.integrable_of_isFiniteMeasure).mono fun _ h ↦ h n)
-    _ ≤ eLpNorm (birkhoffAverage ℝ T (f - ⇑s) n) p μ +
-          eLpNorm (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) p μ +
-          eLpNorm (μ[f - ⇑s | MeasurableSpace.invariants T]) p μ :=
-        (eLpNorm_sub_le hp1).trans (add_le_add (eLpNorm_add_le hp1) le_rfl)
-    _ ≤ eLpNorm (f - ⇑s) p μ +
-          eLpNorm (birkhoffAverage ℝ T s n - μ[s | MeasurableSpace.invariants T]) p μ +
-          eLpNorm (f - ⇑s) p μ := by
-          gcongr
-          · exact hT.eLpNorm_birkhoffAverage_le hp1 (f - ⇑s) n
-          · exact eLpNorm_condExp_le_eLpNorm (f - ⇑s) hp1
-    _ ≤ ε / 3 + ε / 3 + ε / 3 := by gcongr; exact (hN n hn).le
-    _ = ε := by
-        rw [← ENNReal.add_div, ← ENNReal.add_div]
-        have h3 : ε + ε + ε = ε * 3 := by ring
-        rw [h3, ENNReal.mul_div_cancel_right (by norm_num) (by norm_num)]
+  have : Fact (1 ≤ p) := ⟨hp1⟩
+  let U : Lp E p μ →L[ℝ] Lp E p μ := (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap
+  have hU_iter_add (k : ℕ) (g₁ g₂ : Lp E p μ) : U^[k] (g₁ + g₂) = U^[k] g₁ + U^[k] g₂ := by
+    induction k with
+    | zero => rfl
+    | succ k ih => simp only [Function.iterate_succ_apply', ih, map_add]
+  have hU_iter_smul (k : ℕ) (c : ℝ) (g : Lp E p μ) : U^[k] (c • g) = c • U^[k] g := by
+    induction k with
+    | zero => rfl
+    | succ k ih => simp only [Function.iterate_succ_apply', ih, map_smul]
+  have hU_iter_norm (k : ℕ) (g : Lp E p μ) : ‖U^[k] g‖ = ‖g‖ := by
+    induction k with
+    | zero => rfl
+    | succ k ih =>
+      rw [Function.iterate_succ_apply', ← ih]
+      exact (Lp.compMeasurePreservingₗᵢ ℝ T hT).norm_map _
+  let A (n : ℕ) : Lp E p μ →L[ℝ] Lp E p μ :=
+    LinearMap.mkContinuous
+      { toFun g := birkhoffAverage ℝ U id n g
+        map_add' g₁ g₂ := by
+          simp only [birkhoffAverage, birkhoffSum, id_eq, hU_iter_add, Finset.sum_add_distrib,
+            smul_add]
+        map_smul' c g := by
+          simp only [RingHom.id_apply, birkhoffAverage, birkhoffSum, id_eq, hU_iter_smul]
+          rw [← Finset.smul_sum, smul_comm] }
+      1 fun g ↦ by
+        rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk]
+        rcases eq_or_ne n 0 with rfl | hn
+        · simp [birkhoffAverage]
+        · calc
+            ‖birkhoffAverage ℝ U id n g‖
+              = (n : ℝ)⁻¹ * ‖∑ k ∈ Finset.range n, U^[k] g‖ := by
+                  simp only [birkhoffAverage, birkhoffSum, id_eq, norm_smul,
+                    Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+            _ ≤ (n : ℝ)⁻¹ * ∑ k ∈ Finset.range n, ‖U^[k] g‖ :=
+                  mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
+            _ = (n : ℝ)⁻¹ * ∑ _k ∈ Finset.range n, ‖g‖ := by
+                  congr 1; exact Finset.sum_congr rfl fun k _ ↦ hU_iter_norm k g
+            _ = ‖g‖ := by simp [Finset.sum_const, nsmul_eq_mul, hn]
+  have hA_apply (n : ℕ) (g : Lp E p μ) :
+      A n g = birkhoffAverage ℝ (Lp.compMeasurePreserving T hT) id n g := by
+    simp only [A, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk, U,
+      LinearIsometry.coe_toContinuousLinearMap, Lp.coe_compMeasurePreservingₗᵢ]
+  have hA_norm (n : ℕ) : ‖A n‖ ≤ 1 := LinearMap.mkContinuous_norm_le _ zero_le_one _
+  have hA_dense : ∀ g ∈ (Lp.simpleFunc E p μ : Set (Lp E p μ)),
+      Tendsto (fun n ↦ A n g) atTop
+        (𝓝 (TauCeti.MeasureTheory.condExpLp ℝ (MeasurableSpace.invariants T) p μ g)) := by
+    intro g hg
+    let s : SimpleFunc Ω E := Lp.simpleFunc.toSimpleFunc ⟨g, hg⟩
+    have hs_ae : (s : Ω → E) =ᵐ[μ] ⇑g := Lp.simpleFunc.toSimpleFunc_eq_toFun ⟨g, hg⟩
+    rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+    refine (tendsto_eLpNorm_birkhoffAverage_sub_condExp_simpleFunc hT hp s).congr fun n ↦
+      eLpNorm_congr_ae ?_
+    have h1 : birkhoffAverage ℝ T s n =ᵐ[μ] ⇑(A n g) := by
+      rw [hA_apply n g]
+      exact (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hs_ae n).trans
+        (Lp.coeFn_birkhoffAverage_compMeasurePreserving ℝ g hT n).symm
+    have h2 : μ[s | MeasurableSpace.invariants T] =ᵐ[μ]
+        ⇑(TauCeti.MeasureTheory.condExpLp ℝ (MeasurableSpace.invariants T) p μ g) :=
+      (condExp_congr_ae hs_ae).trans (TauCeti.MeasureTheory.condExpLp_ae_eq g).symm
+    exact h1.sub h2
+  have hLp : Tendsto (fun n ↦ A n (hf.toLp f)) atTop
+      (𝓝 (TauCeti.MeasureTheory.condExpLp ℝ (MeasurableSpace.invariants T) p μ (hf.toLp f))) :=
+    ContinuousLinearMap.tendsto_apply_of_dense (Lp.simpleFunc.dense hp)
+      (Eventually.of_forall hA_norm) hA_dense (hf.toLp f)
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hLp
+  refine hLp.congr fun n ↦ eLpNorm_congr_ae ?_
+  have h1 : ⇑(A n (hf.toLp f)) =ᵐ[μ] birkhoffAverage ℝ T f n := by
+    rw [hA_apply n (hf.toLp f)]
+    exact (Lp.coeFn_birkhoffAverage_compMeasurePreserving ℝ (hf.toLp f) hT n).trans
+      (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
+  have h2 :
+      ⇑(TauCeti.MeasureTheory.condExpLp ℝ (MeasurableSpace.invariants T) p μ (hf.toLp f)) =ᵐ[μ]
+        μ[f | MeasurableSpace.invariants T] :=
+    (TauCeti.MeasureTheory.condExpLp_ae_eq (hf.toLp f)).trans (condExp_congr_ae hf.coeFn_toLp)
+  exact h1.sub h2
 
 /-- **`L¹` ergodic theorem.** For a measure-preserving endomorphism `T` of a finite measure space
 `(Ω, μ)` and an integrable Banach-valued observable `f`, the mean norm deviation between
