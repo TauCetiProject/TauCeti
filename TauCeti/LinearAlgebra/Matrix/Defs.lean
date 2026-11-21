@@ -52,3 +52,10 @@ theorem ext_fin_succ {m n : ℕ} {M N : Matrix (Fin (m + 1)) (Fin (n + 1)) α}
   exacts [h₀₀, h₀ₛ _, hₛ₀ _, hₛₛ _ _]
 
 end Matrix
+
+namespace TauCeti
+
+/-- The strictly upper-triangular positions in a matrix indexed by `Fin n`. -/
+abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
+
+end TauCeti
