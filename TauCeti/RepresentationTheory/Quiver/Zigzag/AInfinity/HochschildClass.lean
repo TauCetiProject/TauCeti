@@ -276,7 +276,7 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
   have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 := by
     rw [subword_eq_of_tprod k x (by omega) (by omega)]
     have h := hφ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := n + 1)
-      (by omega) (fun j ↦ x ⟨0 + j.1, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
+      (by omega) (fun j ↦ x ⟨0 + j.val, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
     simpa [InternalGrading.shift_piece] using h
   rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
     LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,

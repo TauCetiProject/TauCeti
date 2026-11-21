@@ -120,7 +120,7 @@ private theorem exists_holderSpaceL_of_image (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ
   have hmaps : ∀ x ∈ closure (Ω : Set F), e x ∈ closure (W : Set (WithLp 2 (ℝ × E))) :=
     fun x hx ↦ hW ▸ image_closure_subset_closure_image e.continuous (mem_image_of_mem e hx)
   let g : closure (Ω : Set F) → closure (W : Set (WithLp 2 (ℝ × E))) :=
-    fun x ↦ ⟨e x, hmaps x x.2⟩
+    fun x ↦ ⟨e x, hmaps x x.property⟩
   have hg : LipschitzWith 1 g := LipschitzWith.of_dist_le_mul fun x y ↦ by
     simp [g, Subtype.dist_eq, e.dist_map]
   let R : Wkp volume Ω p m →L[ℝ] Wkp volume W p m :=

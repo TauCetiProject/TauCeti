@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -58,6 +60,9 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   complex seminormed space structure, complete when `X` is, and continuous conjugation
   `TauCeti.Complexification.conjCLE`.
 * `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+* `TauCeti.Complexification.instFiniteComplex`, `TauCeti.Complexification.finrank_complex`: the
+  complexification of a finite-dimensional real vector space is finite-dimensional over `ℂ`, of
+  complex dimension the real dimension of the original space.
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
@@ -595,6 +600,17 @@ theorem tensorEquivComplexification_baseChange {X Y : Type*}
     tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
       T.complexify (tensorEquivComplexification X u) := by ext <;> simp
 
+/-- The complexification of a finite-dimensional real vector space is finite-dimensional over
+`ℂ`. -/
+instance Complexification.instFiniteComplex [Module.Finite ℝ W] :
+    Module.Finite ℂ (Complexification W) :=
+  .equiv (tensorEquivComplexification W)
+
+/-- The complexification of a real vector space has complex dimension its real dimension. -/
+@[simp] theorem Complexification.finrank_complex :
+    Module.finrank ℂ (Complexification W) = Module.finrank ℝ W :=
+  (tensorEquivComplexification W).finrank_eq.symm.trans Module.finrank_baseChange
+
 end TauCeti
 
 namespace ContinuousLinearEquiv
@@ -607,8 +623,10 @@ variable {X Y Z : Type*} [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 /-- Complexification of a continuous `ℝ`-linear equivalence between real seminormed spaces, as a
 continuous `ℂ`-linear equivalence between their Taylor-seminormed complexifications. -/
 def complexify (e : X ≃L[ℝ] Y) : Complexification X ≃L[ℂ] Complexification Y :=
-  equivOfInverse e.toContinuousLinearMap.complexify e.symm.toContinuousLinearMap.complexify
-    (fun _ ↦ by ext <;> simp) (fun _ ↦ by ext <;> simp)
+  ofContinuousLinearMap e.toContinuousLinearMap.complexify
+    e.symm.toContinuousLinearMap.complexify
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
+    (ContinuousLinearMap.ext fun _ ↦ by ext <;> simp)
 
 @[simp] theorem toContinuousLinearMap_complexify (e : X ≃L[ℝ] Y) :
     e.complexify.toContinuousLinearMap = e.toContinuousLinearMap.complexify := (rfl)

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.Orthogonal
 public import Mathlib.Analysis.CStarAlgebra.Projection
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Algebra.Star.Projection.Family
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra

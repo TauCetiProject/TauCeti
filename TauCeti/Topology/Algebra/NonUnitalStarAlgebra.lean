@@ -7,17 +7,61 @@ module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 public import TauCeti.Algebra.Star.Subalgebra
+public import TauCeti.Algebra.Star.Opposite
 
 /-!
-# Topological closure and closed corner subalgebras of nonunital star subalgebras
+# Topological closure, closed corners, and dense inclusions of nonunital `⋆`-subalgebras
 
-This file provides `NonUnitalStarSubalgebra.topologicalClosure_coe` identifying the underlying set
-of `s.topologicalClosure` with `closure (s : Set A)`, matching
-`StarSubalgebra.topologicalClosure_coe`, as well as `IsClosed` instances for the fixed corner
-`s.corner hp` and orthogonal corner `s.orthoCorner hp` of a closed nonunital star subalgebra.
+This file provides `@[simp]`, closedness, and density lemmas for nonunital `⋆`-subalgebras and
+opposite `⋆`-algebra homomorphisms:
+
+* `NonUnitalStarSubalgebra.topologicalClosure_coe`: the underlying set of `s.topologicalClosure`
+  is `closure (s : Set A)`, matching `StarSubalgebra.topologicalClosure_coe`.
+* `NonUnitalStarSubalgebra.isClosed_corner`, `NonUnitalStarSubalgebra.isClosed_orthoCorner`:
+  `IsClosed` instances for the fixed corner `s.corner hp` and orthogonal corner `s.orthoCorner hp`
+  of a closed nonunital `⋆`-subalgebra.
+* `NonUnitalStarAlgHom.denseRange_op`, `NonUnitalStarAlgHom.denseRange_unop`,
+  `StarAlgHom.denseRange_op`, `StarAlgHom.denseRange_unop`: `@[simp]` density lemmas for opposite
+  `⋆`-algebra homomorphisms.
+* `NonUnitalStarSubalgebraClass.denseRange_subtype` and `denseRange_subtype_op`: the subtype
+  inclusion of `s` (and its multiplicative opposite) has dense range iff `(s : Set A)` is dense.
 -/
 
 public section
+
+/-- `f.op : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ` has dense range if and only if `f : A →⋆ₙₐ[R] B` does. -/
+@[simp]
+theorem NonUnitalStarAlgHom.denseRange_op {R A B : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Star A]
+    [NonUnitalNonAssocSemiring B] [DistribMulAction R B] [Star B] [TopologicalSpace B]
+    (f : A →⋆ₙₐ[R] B) : DenseRange f.op ↔ DenseRange f := by
+  have h : ⇑f.op = MulOpposite.opHomeomorph ∘ (f ∘ MulOpposite.unop) := funext f.op_apply_apply
+  rw [DenseRange, h, Set.range_comp, MulOpposite.unop_surjective.range_comp,
+    MulOpposite.opHomeomorph.isDenseEmbedding.dense_image]
+  rfl
+
+/-- `NonUnitalStarAlgHom.unop f` has dense range if and only if `f` does. -/
+@[simp]
+theorem NonUnitalStarAlgHom.denseRange_unop {R A B : Type*} [Monoid R]
+    [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Star A]
+    [NonUnitalNonAssocSemiring B] [DistribMulAction R B] [Star B] [TopologicalSpace B]
+    (f : Aᵐᵒᵖ →⋆ₙₐ[R] Bᵐᵒᵖ) : DenseRange (NonUnitalStarAlgHom.unop f) ↔ DenseRange f := by
+  rw [← NonUnitalStarAlgHom.denseRange_op, Equiv.apply_symm_apply]
+
+/-- `f.op : Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ` has dense range if and only if `f : A →⋆ₐ[R] B` does. -/
+@[simp]
+theorem StarAlgHom.denseRange_op {R A B : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B] [TopologicalSpace B]
+    (f : A →⋆ₐ[R] B) : DenseRange f.op ↔ DenseRange f := by
+  rw [← f.op.coe_toNonUnitalStarAlgHom, f.toNonUnitalStarAlgHom_op,
+    NonUnitalStarAlgHom.denseRange_op, f.coe_toNonUnitalStarAlgHom]
+
+/-- `StarAlgHom.unop f` has dense range if and only if `f` does. -/
+@[simp]
+theorem StarAlgHom.denseRange_unop {R A B : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B] [TopologicalSpace B]
+    (f : Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ) : DenseRange (StarAlgHom.unop f) ↔ DenseRange f := by
+  rw [← StarAlgHom.denseRange_op, Equiv.apply_symm_apply]
 
 namespace NonUnitalStarSubalgebra
 
@@ -47,3 +91,23 @@ instance isClosed_orthoCorner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (
     continuous_const).and (isClosed_eq (continuous_id.mul continuous_const) continuous_const))
 end Corner
 end NonUnitalStarSubalgebra
+
+namespace NonUnitalStarSubalgebraClass
+
+variable {R A S : Type*} [CommSemiring R] [TopologicalSpace A]
+  [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+  [SetLike S A] [NonUnitalSubsemiringClass S A] [SMulMemClass S R A] [StarMemClass S A]
+
+/-- The subtype inclusion `NonUnitalStarSubalgebraClass.subtype s` has dense range if and only if
+`(s : Set A)` is dense in `A`. -/
+theorem denseRange_subtype (s : S) :
+    DenseRange (NonUnitalStarSubalgebraClass.subtype s) ↔ Dense (s : Set A) := by
+  rw [NonUnitalStarSubalgebraClass.coe_subtype, denseRange_subtypeVal, SetLike.setOfPred_mem_eq]
+
+/-- The opposite subtype inclusion `(NonUnitalStarSubalgebraClass.subtype s).op` has dense range if
+and only if `(s : Set A)` is dense in `A`. -/
+theorem denseRange_subtype_op (s : S) :
+    DenseRange (NonUnitalStarSubalgebraClass.subtype s).op ↔ Dense (s : Set A) :=
+  (NonUnitalStarAlgHom.denseRange_op _).trans (denseRange_subtype s)
+
+end NonUnitalStarSubalgebraClass

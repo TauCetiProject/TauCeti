@@ -295,7 +295,7 @@ instance instIsMulCommutativeQuotientPLowerCentralStep (N : Subgroup G) [N.Norma
     obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective b
     refine (QuotientGroup.commute_mk_iff.mpr (mem_subgroupOf.mpr ?_)).eq
     rw [← coe_subtype, map_commutatorElement]
-    exact commutator_mem_pLowerCentralStep x.2 y
+    exact commutator_mem_pLowerCentralStep x.property y
 
 /-- `N ⧸ Nᵖ[N, G]` has exponent dividing `p`: the `p`-th powers of the elements of `N` lie in
 `pLowerCentralStep p N`. -/
@@ -304,7 +304,7 @@ theorem exponent_quotient_pLowerCentralStep_subgroupOf_dvd (N : Subgroup G) [N.N
   Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun q ↦ by
     obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective q
     rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, mem_subgroupOf, coe_pow]
-    exact pow_mem_pLowerCentralStep n.2
+    exact pow_mem_pLowerCentralStep n.property
 
 /-- `N ⧸ Nᵖ[N, G]` is an abstract `p`-group, since its exponent divides `p`. -/
 theorem isPGroup_quotient_pLowerCentralStep_subgroupOf (N : Subgroup G) [N.Normal] :
@@ -322,7 +322,7 @@ theorem mk_conjNormal_eq {N : Subgroup G} [N.Normal] (g : G) (n : N) :
     rw [commutatorElement_inv, commutatorElement_def]
     group
   rw [h]
-  exact (pLowerCentralStep p N).inv_mem (commutator_mem_pLowerCentralStep (N.inv_mem n.2) g)
+  exact (pLowerCentralStep p N).inv_mem (commutator_mem_pLowerCentralStep (N.inv_mem n.property) g)
 
 /-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a normal subgroup `R`
 and a homomorphism `φ` on `R` with closed kernel, `φ` kills the trace
@@ -336,12 +336,13 @@ theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal] {A :
   · intro h
     refine ⟨fun r ↦ ?_, fun g r ↦ ?_⟩
     · rw [← map_pow]
-      exact h (mem_subgroupOf.mpr (by rw [coe_pow]; exact pow_mem_pLowerCentralStep r.2))
+      exact h (mem_subgroupOf.mpr (by rw [coe_pow]; exact pow_mem_pLowerCentralStep r.property))
     · have hmem : ⁅g, (r : G)⁆ ∈ pLowerCentralStep p R := by
         rw [← commutatorElement_inv]
-        exact (pLowerCentralStep p R).inv_mem (commutator_mem_pLowerCentralStep r.2 g)
+        exact (pLowerCentralStep p R).inv_mem (commutator_mem_pLowerCentralStep r.property g)
       have hconj : MulAut.conjNormal g r =
-          ⟨⁅g, (r : G)⁆, commutator_le_right ⊤ R (commutator_mem_commutator (mem_top g) r.2)⟩ * r :=
+          ⟨⁅g, (r : G)⁆, commutator_le_right ⊤ R (commutator_mem_commutator
+              (mem_top g) r.property)⟩ * r :=
         Subtype.ext (by simp only [MulAut.conjNormal_apply, coe_mul, commutatorElement_def]; group)
       rw [hconj, map_mul, MonoidHom.mem_ker.mp (h (mem_subgroupOf.mpr hmem)), one_mul]
   · rintro ⟨hpow, hconj⟩

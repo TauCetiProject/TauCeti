@@ -122,7 +122,7 @@ theorem mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul
     (hp.projectionConjugacyUnitary hq h : A) * p * star (hp.projectionConjugacyUnitary hq h : A) =
       q := by
   rw [← hp.mul_projectionConjugacyUnitary_eq_projectionConjugacyUnitary_mul hq h, mul_assoc,
-    Unitary.mul_star_self_of_mem (hp.projectionConjugacyUnitary hq h).2, mul_one]
+    Unitary.mul_star_self_of_mem (hp.projectionConjugacyUnitary hq h).property, mul_one]
 /-- Distance bound `‖(u : A) - 1‖ ≤ √2 * ‖p - q‖` for `u = hp.projectionConjugacyUnitary hq h`. -/
 theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
     (hq : IsStarProjection q) (h : ‖p - q‖ < 1) :
@@ -150,7 +150,7 @@ theorem norm_projectionConjugacyUnitary_sub_one_le (hp : IsStarProjection p)
   have hstar_sub : star ((u : A) - 1) * ((u : A) - 1) = cfc (fun x : ℝ ↦ 2 * (1 - √x)) a := by
     rw [show star ((u : A) - 1) * ((u : A) - 1) = (2 : A) - ((u : A) + star (u : A)) by
         simp only [star_sub, star_one, sub_mul, mul_sub, mul_one, one_mul,
-          Unitary.star_mul_self_of_mem u.2, ← one_add_one_eq_two]; abel,
+          Unitary.star_mul_self_of_mem u.property, ← one_add_one_eq_two]; abel,
       ← map_ofNat (algebraMap ℝ A) 2, ← cfc_const (2 : ℝ) a ha, hu_add, ← cfc_sub _ _ a]
     exact cfc_congr fun _ _ ↦ by ring
   refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp ?_
