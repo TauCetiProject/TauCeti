@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import Mathlib.Analysis.Normed.Affine.ContinuousAffineMap
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # Continuous weak derivatives are classical derivatives
@@ -19,7 +22,9 @@ A continuous function on an open domain with a continuous weak Fréchet derivati
 and its classical derivative is the given weak derivative at every point of the domain.
 More generally, a `Cᵏ` weak derivative makes the function `Cᵏ⁺¹`. These results turn continuous
 representatives of Sobolev derivative fields into classical regularity, without imposing any
-boundary regularity or global integrability assumption.
+boundary regularity or global integrability assumption. Conversely, every continuous affine map
+`T : E →ᴬ[ℝ] F` into a complete space has weak derivative `fun _ => T.contLinear` on every open
+domain (`ContinuousAffineMap.hasWeakFDerivOn`).
 
 The proof combines `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` with Mathlib's
 `ContDiffBump.convolution_tendsto_right` and `hasFDerivAt_of_tendstoUniformlyOnFilter`.
@@ -133,5 +138,12 @@ theorem HasWeakFDerivOn.contDiffOn_succ
   refine ⟨fun x hx => (h.hasFDerivAt_of_continuousOn hu hU.continuousOn hx).differentiableAt
     |>.differentiableWithinAt, by simp, ?_⟩
   exact hU.congr fun x hx => h.fderiv_eq_of_continuousOn hu hU.continuousOn hx
+
+/-- Every continuous affine map into a complete space has its linear part as weak Fréchet
+derivative on every open set. -/
+theorem _root_.ContinuousAffineMap.hasWeakFDerivOn [CompleteSpace F] (T : E →ᴬ[ℝ] F)
+    (Ω : Opens E) : HasWeakFDerivOn mu Ω T (fun _ => T.contLinear) := by
+  have hf : fderiv ℝ (T : E → F) = fun _ => T.contLinear := funext fun _ => T.fderiv
+  exact hf ▸ (T.contDiff.contDiffOn (s := (Ω : Set E))).hasWeakFDerivOn_fderiv (μ := mu)
 
 end TauCeti

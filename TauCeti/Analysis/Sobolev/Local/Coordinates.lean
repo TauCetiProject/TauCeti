@@ -10,22 +10,27 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
-# Coordinates of local Sobolev maps
+# Coordinates and partial derivatives of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
-only if all its coordinates in a finite basis are. The same criterion holds for local `Lᵖ`
-membership. These criteria allow scalar local estimates to be applied to vector-valued maps
-without choosing compatible representatives of their iterated weak derivatives.
+only if all its coordinates in a finite basis are (`Module.Basis.memWkpLoc_iff`). The same
+criterion holds for local `Lᵖ` membership on any topological measure space
+(`Module.Basis.memLpLoc_iff`). These criteria allow scalar local estimates to be applied to
+vector-valued maps without choosing compatible representatives of their iterated weak
+derivatives, including the zero-dimensional codomain, order zero, and exponent infinity.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
 Conversely, real functions in a local Sobolev class, one for each vector of a finite basis,
 are the coordinates of a single map in that class (`Module.Basis.exists_memWkpLoc_repr_eq`).
 
-For maps on `ℂ`, a weak derivative `D` is likewise tested through its two partial derivatives
-`z ↦ D z 1` and `z ↦ D z I`: `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` characterises
-`W^{k+1,q}_loc(U)` by local `L^q` membership and these two partial derivatives lying in
-`W^{k,q}_loc(U)`, for an arbitrary codomain.
+On the domain side, for any finite basis `b` of a real normed space `E` and any codomain `V`,
+a weak derivative `D : E → E →L[ℝ] V` is reconstructed from its directional components
+`x ↦ D x (b i)` via `ContinuousLinearMap.smulRightL`. Thus `Module.Basis.memWkpLoc_succ_iff_apply`
+characterizes `W^{k+1,q}_loc(U)` by local `L^q` membership and `x ↦ D x (b i) ∈ W^{k,q}_loc(U)`
+for all `i`, and `Module.Basis.memWkpLoc_succ_iff_hasWeakLineDerivOn` identifies the coordinate-free
+definition `TauCeti.MemWkpLoc` with the classical partial-derivative definition for `1 ≤ q`.
+For maps on `ℂ`, `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I` specializes this to `1` and `I`.
 
 On an open set, the precise representative of a locally `Lᵖ` map is reconstructed from the
 precise representatives of its coordinates wherever these are continuous
@@ -33,27 +38,27 @@ precise representatives of its coordinates wherever these are continuous
 
 ## References
 
+* L. C. Evans, *Partial Differential Equations*, second edition, §5.2.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   Appendix B.1 (vector-valued Sobolev spaces).
 -/
 
 public noncomputable section
 
-open TauCeti MeasureTheory
+open TauCeti MeasureTheory TopologicalSpace
 
 namespace Module.Basis
 
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G]
-  {p : ENNReal} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
+section Codomain
 
 variable {ι : Type*} [Finite ι]
 
-/-- Local Sobolev membership of every order can be tested in any finite basis.
-Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
-in the same Sobolev class. -/
-theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun z => b.repr (f z) i) := by
+/-- Local `Lᵖ` membership can be tested in any finite basis of the codomain, on any topological
+measure space. No completeness of the codomain is needed. -/
+theorem memLpLoc_iff {E F : Type*} [TopologicalSpace E] [MeasureSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set E} {f : E → F}
+    (b : Module.Basis ι ℝ F) :
+    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun x => b.repr (f x) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
   let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
@@ -61,63 +66,166 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
   · intro h i
     exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
   · intro h
-    have hs : MemWkpLoc p U k (fun z => ∑ i, b.repr (f z) i • b i) := by
-      apply MemWkpLoc.sum
-      intro i _
-      exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
+    have hs : MemLpLoc p U (fun x => ∑ i, b.repr (f x) i • b i) :=
+      MemLpLoc.sum Finset.univ fun i _ =>
+        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
 
-/-- Local `Lᵖ` membership can be tested in any finite basis. No completeness of the
-codomain is needed. -/
-theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
-  simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
+/-- Local Sobolev membership of every order can be tested in any finite basis of the codomain.
+Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map
+in the same Sobolev class. -/
+theorem memWkpLoc_iff {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+    [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F} (b : Module.Basis ι ℝ F) :
+    MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p U k (fun x => b.repr (f x) i) := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  constructor
+  · intro h i
+    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
+  · intro h
+    have hs : MemWkpLoc p U k (fun x => ∑ i, b.repr (f x) i • b i) :=
+      MemWkpLoc.sum Finset.univ fun i _ =>
+        (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
+    simpa only [b.sum_repr] using hs
 
 /-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
-are the coordinates in `b` of a single function `ℂ → F` in `MemWkpLoc p U k`. -/
-theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → ℂ → ℝ}
+are the coordinates in `b` of a single function `E → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasureSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {p : ENNReal} {U : Set E} {k : ℕ} (b : Module.Basis ι ℝ F) {v : ι → E → ℝ}
     (hv : ∀ i, MemWkpLoc p U k (v i)) :
-    ∃ V : ℂ → F, MemWkpLoc p U k V ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+    ∃ V : E → F, MemWkpLoc p U k V ∧ ∀ i, (fun x => b.repr (V x) i) = v i := by
   have := Fintype.ofFinite ι
-  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
-    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  have hrepr : ∀ i, (fun x => b.repr (b.equivFun.symm fun j => v j x) i) = v i := fun i =>
+    funext fun x => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
   exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
 
-end Module.Basis
+end Codomain
 
-namespace Module.Basis
+section Domain
 
-open TopologicalSpace TauCeti.MeasureTheory
+variable {E V ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E]
+  [OpensMeasurableSpace E] [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
+  {q : ENNReal} {U : Set E} {k : ℕ}
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
-  {p : ENNReal} {Ω : Opens ℂ} {f : ℂ → F}
+/-- **Assembling a weak derivative from its directional components in a domain basis.** If `ξ` is
+locally `L^q` on `U` and has a weak derivative `D` on `interior U` whose directional components
+`x ↦ D x (b i)` along a finite basis `b` of `E` lie in `W^{k,q}_loc(U)`, then
+`ξ ∈ W^{k+1,q}_loc(U)`. No finite-dimensionality of `V` is needed. -/
+theorem memWkpLoc_succ_of_hasWeakFDerivOn (b : Module.Basis ι ℝ E) {ξ : E → V}
+    {D : E → E →L[ℝ] V} (hξ : MemLpLoc q U ξ)
+    (hD : HasWeakFDerivOn volume (Opens.interior U) ξ D)
+    (hb : ∀ i, MemWkpLoc q U k fun x => D x (b i)) :
+    MemWkpLoc q U (k + 1) ξ := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  have : CompleteSpace V := hD.completeSpace
+  refine memWkpLoc_succ_iff.2 ⟨hξ, D, hD, ?_⟩
+  have hR (c : E →L[ℝ] ℝ) (w : V) :
+      ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V c w = c.smulRight w := rfl
+  have hDeq : D = fun x => ∑ i,
+      ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V (b.coord i).toContinuousLinearMap (D x (b i)) := by
+    ext x y
+    simp only [hR, sum_apply,
+      ContinuousLinearMap.smulRight_apply, LinearMap.coe_toContinuousLinearMap', b.coord_apply]
+    conv_lhs => rw [← b.sum_repr y]
+    rw [map_sum]
+    simp only [map_smul]
+  rw [hDeq]
+  exact MemWkpLoc.sum Finset.univ fun i _ =>
+    (hb i).clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E V (b.coord i).toContinuousLinearMap)
+
+/-- **Local Sobolev classes through directional components of a weak derivative.** For any finite
+basis `b` of `E`, `ξ ∈ W^{k+1,q}_loc(U)` iff `ξ ∈ L^q_loc(U)` and `ξ` has a weak derivative `D`
+on `interior U` with `x ↦ D x (b i) ∈ W^{k,q}_loc(U)` for every `i`. -/
+theorem memWkpLoc_succ_iff_apply (b : Module.Basis ι ℝ E) {ξ : E → V} :
+    MemWkpLoc q U (k + 1) ξ ↔ MemLpLoc q U ξ ∧ ∃ D : E → E →L[ℝ] V,
+      HasWeakFDerivOn volume (Opens.interior U) ξ D ∧
+        ∀ i, MemWkpLoc q U k fun x => D x (b i) := by
+  refine ⟨fun h => ?_, fun ⟨hξ, D, hD, hb⟩ => b.memWkpLoc_succ_of_hasWeakFDerivOn hξ hD hb⟩
+  obtain ⟨hξ, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 h
+  have : CompleteSpace V := hD.completeSpace
+  exact ⟨hξ, D, hD, fun i => hDk.clm_comp (ContinuousLinearMap.apply ℝ V (b i))⟩
+
+/-- **Equivalence with partial weak derivatives in a finite domain basis.** For `1 ≤ q` and a
+complete codomain `V`, `ξ ∈ W^{k+1,q}_loc(U)` if and only if `ξ ∈ L^q_loc(U)` and each basis
+direction `b i` admits a weak directional derivative on `interior U` lying in `W^{k,q}_loc(U)`. -/
+theorem memWkpLoc_succ_iff_hasWeakLineDerivOn [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    [CompleteSpace V] (b : Module.Basis ι ℝ E) (hq : 1 ≤ q) {ξ : E → V} :
+    MemWkpLoc q U (k + 1) ξ ↔ MemLpLoc q U ξ ∧
+      ∀ i, ∃ d : E → V, HasWeakLineDerivOn volume (Opens.interior U) ξ d (b i) ∧
+        MemWkpLoc q U k d := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  constructor
+  · intro h
+    obtain ⟨hξ, D, hD, hb⟩ := (b.memWkpLoc_succ_iff_apply).1 h
+    exact ⟨hξ, fun i => ⟨fun x => D x (b i), hD.hasWeakLineDerivOn (b i), hb i⟩⟩
+  · rintro ⟨hξ, hd⟩
+    choose d hd_weak hd_mem using hd
+    let D : E → E →L[ℝ] V := fun x => ∑ i, (b.coord i).toContinuousLinearMap.smulRight (d i x)
+    have hDb : ∀ i x, D x (b i) = d i x := fun i x => by
+      simp [D, b.coord_apply, b.repr_self, Finsupp.single_apply]
+    have hξ_int : LocallyIntegrableOn ξ (Opens.interior U) volume :=
+      (hξ.mono_set interior_subset).locallyIntegrableOn hq isOpen_interior.isLocallyClosed
+    have hD : HasWeakFDerivOn volume (Opens.interior U) ξ D :=
+      b.hasWeakFDerivOn_of_forall hξ_int fun i => by simpa only [hDb i] using hd_weak i
+    exact b.memWkpLoc_succ_of_hasWeakFDerivOn hξ hD fun i => by simpa only [hDb i] using hd_mem i
+
+/-- **Order-one partial-derivative characterization in a finite domain basis.** For `1 ≤ q` and a
+complete codomain `V`, `ξ ∈ W^{1,q}_loc(U)` if and only if `ξ ∈ L^q_loc(U)` and each basis
+direction `b i` admits a locally `L^q` weak directional derivative on `interior U`. -/
+theorem memWkpLoc_one_iff_hasWeakLineDerivOn [IsFiniteMeasureOnCompacts (volume : Measure E)]
+    [CompleteSpace V] (b : Module.Basis ι ℝ E) (hq : 1 ≤ q) {ξ : E → V} :
+    MemWkpLoc q U 1 ξ ↔ MemLpLoc q U ξ ∧
+      ∀ i, ∃ d : E → V, HasWeakLineDerivOn volume (Opens.interior U) ξ d (b i) ∧
+        MemLpLoc q U d := by
+  simpa only [memWkpLoc_zero_iff] using
+    b.memWkpLoc_succ_iff_hasWeakLineDerivOn (k := 0) (U := U) (ξ := ξ) hq
+
+end Domain
+
+section PreciseRepresentative
+
+open TauCeti.MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
+  {p : ENNReal} {Ω : Opens E} {f : E → F}
 
 /-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
 coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
 combination of those precise representatives with the vectors of `b`. -/
 theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 ≤ p)
     (hf : MemLpLoc p Ω f)
-    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun z => b.repr (f z) i) Ω) :
+    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun x => b.repr (f x) i) Ω) :
     Set.EqOn (preciseRepresentative volume f)
-      (fun z => ∑ i, preciseRepresentative volume (fun w => b.repr (f w) i) z • b i) Ω := by
+      (fun x => ∑ i, preciseRepresentative volume (fun y => b.repr (f y) i) x • b i) Ω := by
   have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
   refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
     (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
     (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
-  have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
+  have hcoord : ∀ i, (fun x => b.repr (f x) i) =ᵐ[volume.restrict Ω]
+      preciseRepresentative volume fun x => b.repr (f x) i := fun i =>
     (b.memLpLoc_iff.1 hf i).ae_eq_preciseRepresentative hp
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (f z)]
-  exact Finset.sum_congr rfl fun i _ => by rw [← hz i]
+  filter_upwards [ae_all_iff.2 hcoord] with x hx
+  conv_lhs => rw [← b.sum_repr (f x)]
+  exact Finset.sum_congr rfl fun i _ => by rw [← hx i]
+
+end PreciseRepresentative
 
 end Module.Basis
 
-/-! ### Local Sobolev classes through the two partial derivatives -/
+/-! ### Local Sobolev classes on `ℂ` through the two partial derivatives -/
 
 namespace TauCeti
 
-open Complex TopologicalSpace
+open Complex
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {q : ENNReal} {U : Set ℂ} {k : ℕ}
 

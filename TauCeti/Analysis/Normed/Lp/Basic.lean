@@ -20,7 +20,9 @@ import TauCeti.Analysis.Normed.Operator.Dense
 The characteristic equation and single-coordinate retraction identities for Mathlib's bundled
 coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLinearMap`,
 `lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
-with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
+with `lp.evalCLM` without unfolding its construction as a bounded linear map, distinct
+single-coordinate vectors `lp.single p i a` and `lp.single p j b` lie at distance at least `‖a‖`
+(`lp.norm_le_dist_single`), and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
 extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
 coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
@@ -132,6 +134,17 @@ variable {ι 𝕜 : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
 /-- The bundled coordinate evaluation returns the corresponding coordinate. -/
 @[simp]
 theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p i x = x i := (rfl)
+
+/-- Distinct single-coordinate vectors `lp.single p i a` and `lp.single p j b` lie at distance at
+least `‖a‖`. -/
+theorem norm_le_dist_single [DecidableEq ι] [Fact (1 ≤ p)] {i j : ι} (hij : i ≠ j)
+    (a : E i) (b : E j) :
+    ‖a‖ ≤ dist (lp.single p i a) (lp.single p j b) := by
+  rw [dist_eq_norm]
+  have hle := lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne'
+    (lp.single p i a - lp.single p j b) i
+  rwa [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_single, lp.coeFn_single, Pi.single_eq_same,
+    Pi.single_eq_of_ne hij, sub_zero] at hle
 
 /-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
 theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
