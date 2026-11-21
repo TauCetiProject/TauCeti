@@ -21,13 +21,14 @@ inequality. Graph morphisms do not increase it. Every piece of a shortest path i
 so that along a shortest path the distance between two vertices is the difference of their
 positions.
 
-A path no longer than the distance between its endpoints is reduced. In an acyclic graph the
-unique reduced path between two vertices realizes their distance, since free reduction never
-lengthens a path. In a preconnected graph, a pair of vertices at minimal distance between two
-nonempty sets of vertices is joined by a reduced path meeting the first set only at its start and
-the second only at its end. The distance from a vertex attains a minimum on every nonempty set
-of vertices, and a shortest path from the vertex to a minimizer meets the set only at its end; in
-an acyclic graph this applies to the reduced path.
+A path no longer than the distance between its endpoints is reduced. None of its darts ends at
+its start or starts at its end, so it leaves its start only through its first dart and enters its
+end only through its last dart. In an acyclic graph the unique reduced path between two vertices
+realizes their distance, since free reduction never lengthens a path. In a preconnected graph, a
+pair of vertices at minimal distance between two nonempty sets of vertices is joined by a reduced
+path meeting the first set only at its start and the second only at its end. The distance from a
+vertex attains a minimum on every nonempty set of vertices, and a shortest path from the vertex to
+a minimizer meets the set only at its end; in an acyclic graph this applies to the reduced path.
 
 ## References
 
@@ -107,7 +108,7 @@ theorem exists_src_eq_and_tgt_eq_of_dist_eq_one {a b : Γ.V} (h : Γ.dist a b = 
   obtain ⟨p, hp⟩ := exists_length_eq_dist hab
   obtain ⟨c, e, q, hq, rfl⟩ := p.eq_toPath_comp_of_length_eq_succ (hp.trans h)
   obtain rfl := q.eq_of_length_zero hq
-  exact ⟨e.1, e.2.1, e.2.2⟩
+  exact ⟨e.val, e.property.1, e.property.2⟩
 
 /-- Joined vertices are joined by a sequence of vertices, each joined to the next by a path and at
 distance at most one from it, that reaches the second vertex after as many steps as their
@@ -180,8 +181,8 @@ theorem Path.nodup_darts_of_length_eq_dist {a b : Γ.V} {p : Γ.Path a b}
     rw [List.mem_singleton] at hf
     subst hf
     obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p hg
-    have h₁ := dist_le_length (q.cons (Γ.dart f.1))
-    have h₂ : Γ.dist a (Γ.tgt f.1) = Γ.dist a d := by rw [f.2.2]
+    have h₁ := dist_le_length (q.cons (Γ.dart f.val))
+    have h₂ : Γ.dist a (Γ.tgt f.val) = Γ.dist a d := by rw [f.property.2]
     simp only [Quiver.Path.length_cons, Quiver.Path.length_comp] at hp h₁
     lia
 
@@ -209,7 +210,7 @@ theorem Path.dist_tgt_src_add_two_le {a b : Γ.V} (p : Γ.Path a b) {e f : Γ.E}
       Option.some.injEq] at he
     subst hf he
     have := dist_le_length q
-    rw [f'.2.2, e'.2.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
+    rw [f'.property.2, e'.property.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
       Quiver.Path.length_cons]
     omega
 
@@ -224,6 +225,37 @@ theorem Path.isReduced_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b}
   have hdarts := (Path.darts_reduce_sublist Γ p).eq_of_length hlen
   rw [Path.isReduced_iff_isChain, ← hdarts, ← Path.isReduced_iff_isChain]
   exact Path.isReduced_reduce Γ p
+
+/-- A shortest path never returns to its start: no dart of it ends there. -/
+theorem Path.tgt_ne_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b} (hp : p.length ≤ Γ.dist a b)
+    {e : Γ.E} (he : e ∈ Path.darts Γ p) : Γ.tgt e ≠ a := by
+  intro h
+  obtain ⟨q, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  have h₁ := dist_le_length r
+  rw [Quiver.Path.length_comp, Quiver.Path.length_cons] at hp
+  generalize r.length = n at h₁ hp
+  rw [h] at h₁
+  omega
+
+/-- A shortest path never leaves its end: no dart of it starts there. -/
+theorem Path.src_ne_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b} (hp : p.length ≤ Γ.dist a b)
+    {e : Γ.E} (he : e ∈ Path.darts Γ p) : Γ.src e ≠ b := by
+  simpa using Path.tgt_ne_of_length_le_dist (p := p.reverse)
+    (by rwa [Quiver.Path.length_reverse, dist_comm]) (e := Γ.rev e)
+    (by simpa [Γ.rev_injective.eq_iff] using he)
+
+/-- A dart of a shortest path that leaves its start is its first dart. -/
+theorem Path.mem_head?_darts_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b}
+    (hp : p.length ≤ Γ.dist a b) {e : Γ.E} (he : e ∈ Path.darts Γ p) (hea : Γ.src e = a) :
+    e ∈ (Path.darts Γ p).head? :=
+  Path.mem_head?_darts_of_forall_tgt_ne Γ he fun _ hf => hea ▸ Path.tgt_ne_of_length_le_dist hp hf
+
+/-- A dart of a shortest path that enters its end is its last dart. -/
+theorem Path.mem_getLast?_darts_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b}
+    (hp : p.length ≤ Γ.dist a b) {e : Γ.E} (he : e ∈ Path.darts Γ p) (heb : Γ.tgt e = b) :
+    e ∈ (Path.darts Γ p).getLast? :=
+  Path.mem_getLast?_darts_of_forall_src_ne Γ he fun _ hf =>
+    heb ▸ Path.src_ne_of_length_le_dist hp hf
 
 /-! ### Distances in acyclic graphs -/
 

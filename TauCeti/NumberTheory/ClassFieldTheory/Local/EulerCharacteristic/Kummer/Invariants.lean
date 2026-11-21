@@ -58,23 +58,24 @@ namespace TauCeti
 
 section Count
 
-variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] {L : Type} [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
-  [IsGalois K L] (sigma : L →ₐ[K] SeparableClosure K) {ℓ : ℕ} [Fact ℓ.Prime]
+/-- The absolute Galois group acts trivially on the constant coefficient module. -/
+local instance {K : Type} [Field K] {ℓ : ℕ} :
+    DistribMulAction (AbsoluteGaloisGroup K) (ZMod ℓ) :=
+  trivialZModAction ℓ (AbsoluteGaloisGroup K)
+
+local instance {K : Type} [Field K] {ℓ : ℕ} :
+    ContinuousSMul (AbsoluteGaloisGroup K) (ZMod ℓ) :=
+  ⟨continuous_snd⟩
+
+section ExactK0
+
+variable {K : Type} [Field K] {L : Type} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [Module.Finite K L] [IsGalois K L]
+  (sigma : L →ₐ[K] SeparableClosure K) {ℓ : ℕ} [Fact ℓ.Prime]
   (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
     ∀ xi : KummerCoeff K ℓ, g • xi = xi)
   [NeZero (Nat.card Gal(L/K) : ZMod ℓ)]
 
-/-- The absolute Galois group acts trivially on the constant coefficient module. -/
-local instance : DistribMulAction (AbsoluteGaloisGroup K) (ZMod ℓ) :=
-  trivialZModAction ℓ (AbsoluteGaloisGroup K)
-
-local instance : ContinuousSMul (AbsoluteGaloisGroup K) (ZMod ℓ) :=
-  ⟨continuous_snd⟩
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeExtension K L] in
 /-- **The finite-layer count from the class of the power classes.** If the power-class
 representation has class `1 + [μ_ℓ(L)] + c [𝔽_ℓ[G]]`, then
 `dim (H¹ ⊗ A)ᴳ = dim (μ_ℓ^∨ ⊗ A)ᴳ + dim Aᴳ + c dim A`. -/
@@ -136,9 +137,20 @@ private theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_exactK0
   rw [← hP, ← hH, fdRepK0RingEquiv_of, finrankTensorInvariantsK0_of] at hcount
   exact hcount
 
-/-- **The first cohomology of a finite Galois layer, away from the residue characteristic.** If `ℓ`
-is a unit of `𝒪[L]` and `σ(L)` contains the `ℓ`th roots of unity, then for every
-finite-dimensional representation `A` of `G = Gal(L/K)` over `𝔽_ℓ` with `ℓ ∤ #G`,
+end ExactK0
+
+variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] {L : Type} [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Normal K L]
+  (sigma : L →ₐ[K] SeparableClosure K) {ℓ : ℕ} [Fact ℓ.Prime]
+  (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
+    ∀ xi : KummerCoeff K ℓ, g • xi = xi)
+  [NeZero (Nat.card Gal(L/K) : ZMod ℓ)]
+
+/-- **The first cohomology of a finite Galois layer, away from the residue characteristic.** For a
+compatible normal extension `L/K` of nonarchimedean local fields embedded in `Kˢ` by `σ`, if `ℓ` is
+a unit of `𝒪[L]` and `σ(L)` contains the `ℓ`th roots of unity, then for every finite-dimensional
+representation `A` of `G = Gal(L/K)` over `𝔽_ℓ` with `ℓ ∤ #G`,
 `dim (H¹(Gal(Kˢ/σ(L)), 𝔽_ℓ) ⊗ A)ᴳ = dim (μ_ℓ^∨ ⊗ A)ᴳ + dim Aᴳ`. -/
 theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_isUnit
     (hℓ : IsUnit (ℓ : 𝒪[L])) (A : FDRep (ZMod ℓ) Gal(L/K)) :
@@ -149,6 +161,9 @@ theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_isUnit
           (V := TensorProduct (ZMod ℓ) (Module.Dual (ZMod ℓ) (KummerCoeff K ℓ)) A)
           ((kummerCoeffFiniteRepresentation sigma ℓ hN).dual.tprod A.ρ)) +
         finrank (ZMod ℓ) (Representation.invariants A.ρ) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  have : Algebra.IsSeparable K L := Algebra.IsSeparable.of_algHom K (SeparableClosure K) sigma
+  have : IsGalois K L := {}
   have hℓK : IsUnit (ℓ : K) := by
     refine Ne.isUnit fun h ↦ natCast_ne_zero_of_isUnit hℓ ?_
     rw [← map_natCast (algebraMap K L), h, map_zero]
@@ -157,12 +172,13 @@ theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_isUnit
   have h := finrank_invariants_kummerH1FiniteRepresentation_tprod_of_exactK0 sigma hN hℓK 0 hPC A
   omega
 
-/-- **The first cohomology of a finite Galois layer, at the residue characteristic.** If `K` and `L`
-are finite extensions of `ℚ_p` and `σ(L)` contains the `p`th roots of unity, then for every
+/-- **The first cohomology of a finite Galois layer, at the residue characteristic.** If `K` is a
+finite extension of `ℚ_p`, `L/K` is a compatible normal extension of nonarchimedean local fields
+embedded in `Kˢ` by `σ`, and `σ(L)` contains the `p`th roots of unity, then for every
 finite-dimensional representation `A` of `G = Gal(L/K)` over `𝔽_p` with `p ∤ #G`,
 `dim (H¹(Gal(Kˢ/σ(L)), 𝔽_p) ⊗ A)ᴳ = dim (μ_p^∨ ⊗ A)ᴳ + dim Aᴳ + [K : ℚ_p] dim A`. -/
 theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_finitePadicExtension
-    [FinitePadicExtension K ℓ] [FinitePadicExtension L ℓ] (A : FDRep (ZMod ℓ) Gal(L/K)) :
+    [FinitePadicExtension K ℓ] (A : FDRep (ZMod ℓ) Gal(L/K)) :
     finrank (ZMod ℓ) (Representation.invariants
         (V := TensorProduct (ZMod ℓ) (H1 sigma.fieldRange.fixingSubgroup (ZMod ℓ)) A)
         ((kummerH1FiniteRepresentation sigma ℓ).tprod A.ρ)) =
@@ -171,6 +187,13 @@ theorem finrank_invariants_kummerH1FiniteRepresentation_tprod_of_finitePadicExte
           ((kummerCoeffFiniteRepresentation sigma ℓ hN).dual.tprod A.ρ)) +
         finrank (ZMod ℓ) (Representation.invariants A.ρ) +
           finrank ℚ_[ℓ] K * finrank (ZMod ℓ) A := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  have : Algebra.IsSeparable K L := Algebra.IsSeparable.of_algHom K (SeparableClosure K) sigma
+  have : IsGalois K L := {}
+  let _ : Algebra ℚ_[ℓ] L := ((algebraMap K L).comp (algebraMap ℚ_[ℓ] K)).toAlgebra
+  have : IsScalarTower ℚ_[ℓ] K L := .of_algebraMap_eq' rfl
+  have : Module.Finite ℚ_[ℓ] L := .trans K L
+  have : ValuativeExtension ℚ_[ℓ] L := .trans ℚ_[ℓ] K L
   have : CharZero K := FinitePadicExtension.charZero K ℓ
   have hℓK : IsUnit (ℓ : K) := (Nat.cast_ne_zero.2 (NeZero.ne ℓ)).isUnit
   have h := finrank_invariants_kummerH1FiniteRepresentation_tprod_of_exactK0 sigma hN hℓK

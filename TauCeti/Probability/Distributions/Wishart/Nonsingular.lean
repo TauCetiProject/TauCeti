@@ -228,7 +228,7 @@ private theorem measurable_nonsingularWishartPDFReal_comp {γ : Type*} [Measurab
   classical
   have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
   have hg' : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ) :=
-    measurable_subtype_coe.comp hg
+    measurable_subtypeVal.comp hg
   have hdetg : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hg'
   have hdetT : Measurable fun c => (T c).det :=
@@ -371,7 +371,7 @@ theorem map_subtype_val_comap_nonsingularWishartMeasure (n : ℝ) (S : Matrix (F
     ((nonsingularWishartMeasure n S).comap
         (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
         Subtype.val = nonsingularWishartMeasure n S :=
-  (map_comap_subtype_coe (measurableSet_posDefMatrix p) _).trans
+  (map_comap_subtypeVal (measurableSet_posDefMatrix p) _).trans
     (Measure.restrict_eq_self_of_ae_mem (ae_posDef_nonsingularWishartMeasure n S))
 
 /-! ### The density of a Wishart random matrix -/
@@ -488,6 +488,6 @@ theorem measurable_nonsingularWishartMeasure_selfAdjoint :
     Measurable fun q : ℝ × selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       nonsingularWishartMeasure q.1 (q.2 : Matrix (Fin p) (Fin p) ℝ) :=
   measurable_nonsingularWishartMeasure.comp
-    (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
+    (measurable_fst.prodMk (measurable_subtypeVal.comp measurable_snd))
 
 end TauCeti.Probability

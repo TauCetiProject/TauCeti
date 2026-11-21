@@ -330,7 +330,7 @@ theorem limOneSubsequenceEquiv_comp_connecting :
   obtain ⟨b, hb⟩ := productMap_surjective hg (z : H.Product)
   obtain ⟨a, ha⟩ := (exact_productMap hfg (G.shift b)).1 <| by
     rw [← shift_natural_apply, hb]
-    exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ z.2)
+    exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ z.property)
   rw [LinearMap.comp_apply, LinearMap.comp_apply, connecting_apply f g hf hfg hg z b hb a ha,
     LinearEquiv.coe_coe, limOneSubsequenceEquiv_mk]
   -- The restriction of `b` and the sum of `a` compute the sampled connecting map.

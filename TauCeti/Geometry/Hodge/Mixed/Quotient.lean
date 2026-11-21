@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Hodge.Mixed.Bigrading
 public import TauCeti.Geometry.Hodge.Mixed.Substructure
 public import TauCeti.Geometry.Hodge.SubquotientModel
-import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Quotients of mixed Hodge structures

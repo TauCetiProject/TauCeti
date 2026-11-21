@@ -52,11 +52,11 @@ theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spec
   obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1
     (StarSubalgebra.spectrum_eq (S := S) (a := x) ▸ spectrum.algebraMap_mem ℂ hz)
   have hχ_strong : WeakDual.toStrongDual (χ : WeakDual ℂ S) =
-      (WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap :=
+      (WeakDual.CharacterSpace.toAlgHom χ : S →ₙₐ[ℂ] ℂ).toStrongDual :=
     DFunLike.ext _ _ fun _ => by simp
   have hχ_state : (χ : WeakDual ℂ S) ∈ stateSpace S :=
     mem_stateSpace_iff_norm_eq_one_and_map_one.2
-      ⟨hχ_strong ▸ AlgHom.toContinuousLinearMap_norm _, by simp⟩
+      ⟨hχ_strong ▸ AlgHom.norm_toStrongDual_toNonUnitalAlgHom _, by simp⟩
   obtain ⟨ψ, hψ, hψ_ext⟩ := S.exists_mem_stateSpace_forall_apply_coe_eq hχ_state
   refine ⟨.mk₀ (WeakDual.toStrongDual ψ) fun _ => map_nonneg_of_mem_stateSpace hψ,
     (PositiveContinuousLinearMap.mk₀_apply _ _ 1).trans <|

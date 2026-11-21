@@ -43,6 +43,8 @@ limit, so Borel–Moore homology sits in the short exact sequence
 `TauCeti.LocalCoefficientSystem.exact_limOneToBorelMooreHomology_borelMooreHomologyToLim`,
 `TauCeti.LocalCoefficientSystem.borelMooreHomologyToLim_surjective`), whose right-hand map is
 induced by the relative classes (`TauCeti.LocalCoefficientSystem.limπ_borelMooreHomologyToLim`).
+When `lim¹` vanishes that map is bijective
+(`TauCeti.LocalCoefficientSystem.borelMooreHomologyToLim_bijective`).
 
 ## Main declarations
 
@@ -96,13 +98,13 @@ variable (P : TopPair.{v}) (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) 
 locally finite chain on the finitely many simplices meeting `X \ B`. -/
 private def toRelativeFun (c : locallyFiniteChains L k) : (P.twistedChainComplex L).X k :=
   ((P.twistedChainComplexπ L).f k).hom <|
-    ∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
+    ∑ σ ∈ ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset,
       (ιTwistedChainComplex L k σ).hom ((c : ∀ τ : (TopCat.toSSet.obj P.fst) _⦋k⦌,
         L.obj (initialVertex τ)) σ)
 
 private lemma toRelativeFun_eq (c : locallyFiniteChains L k) :
     toRelativeFun P L hP c = ((P.twistedChainComplexπ L).f k).hom
-      (∑ σ ∈ ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset,
+      (∑ σ ∈ ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset,
         (ιTwistedChainComplex L k σ).hom ((c : ∀ τ : (TopCat.toSSet.obj P.fst) _⦋k⦌,
           L.obj (initialVertex τ)) σ)) :=
   (rfl)
@@ -148,7 +150,7 @@ lemma locallyFiniteChainsToRelative_locallyFiniteBoundary (c : locallyFiniteChai
     P.locallyFiniteChainsToRelative L hP (locallyFiniteBoundary L k c) =
       ((P.twistedChainComplex L).d (k + 1) k).hom (P.locallyFiniteChainsToRelative L hP c) := by
   refine P.twistedChainComplex_ext_coeff L fun ρ hρ ↦ ?_
-  set S := ((mem_locallyFiniteChains.1 c.2).finite_setOf_inter_nonempty hP).toFinset
+  set S := ((mem_locallyFiniteChains.1 c.property).finite_setOf_inter_nonempty hP).toFinset
   have hd (a : L.twistedChainComplex.X (k + 1)) : ((P.twistedChainComplex L).d (k + 1) k).hom
       (((P.twistedChainComplexπ L).f (k + 1)).hom a) =
         ((P.twistedChainComplexπ L).f k).hom ((L.twistedChainComplex.d (k + 1) k).hom a) :=
@@ -879,6 +881,18 @@ theorem borelMooreHomologyToLim_surjective (j : ℕ) :
   rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
   exact (ComplexTower.homologyToLim_surjective
     (relativeChainComplexTower_shift_surjective L K K.subset_succ) j).comp e.surjective
+
+/-- The map from Borel–Moore homology to the limit of the relative twisted homology modules of a
+compact exhaustion is bijective when `lim¹` of the relative homology modules in degree `j + 1`
+vanishes. -/
+theorem borelMooreHomologyToLim_bijective (j : ℕ)
+    [Subsingleton ((relativeChainComplexTower L K).homology (j + 1)).limOne] :
+    Function.Bijective (borelMooreHomologyToLim L K j) := by
+  let e := (HomologicalComplex.homologyMapIso
+    (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
+  rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
+  exact (ComplexTower.homologyToLim_bijective (relativeChainComplexTower_shift_surjective L K)
+    (ComplexShape.down_mk (j + 1) j rfl)).comp e.bijective
 
 end Milnor
 

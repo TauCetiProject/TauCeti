@@ -55,45 +55,45 @@ theorem exists_partialDiffeomorph_normalBundle_add_subset
     (hlocal :
       letI := normalFiberBundle (hf.of_le (by simp)) himm hdim
       ∀ x, IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) ∞
-        (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + p.2)
+        (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + p.snd)
         (zeroSection F (fun x => normalSubspace I f x) x))
     {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
     letI := normalFiberBundle (hf.of_le (by simp)) himm hdim
     ∃ r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < r x) ∧
       ∃ Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V)
           (TotalSpace F (fun x => normalSubspace I f x)) V ∞,
-        Φ.source = {p | ‖(p.2 : V)‖ < r p.proj} ∧ Φ.target ⊆ O ∧
-          ∀ p, Φ p = f p.proj + p.2 := by
+        Φ.source = {p | ‖(p.snd : V)‖ < r p.proj} ∧ Φ.target ⊆ O ∧
+          ∀ p, Φ p = f p.proj + p.snd := by
   let := normalFiberBundle (hf.of_le (by simp)) himm hdim
   have : SecondCountableTopology M := hind.secondCountableTopology
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   let a : TotalSpace F (fun x => normalSubspace I f x) → V :=
-    fun p => f p.proj + p.2
+    fun p => f p.proj + p.snd
   let U := {p | IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) ∞ a p}
   have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp => hp.eventually
   obtain ⟨r, hr, hemb, hambient, hdisc⟩ :=
     exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection
       hf himm hind hU hlocal hO hfO
-  let S := {p : TotalSpace F (fun x => normalSubspace I f x) | ‖(p.2 : V)‖ < r p.proj}
+  let S := {p : TotalSpace F (fun x => normalSubspace I f x) | ‖(p.snd : V)‖ < r p.proj}
   have hS : IsOpen S := by
     have he := (isEmbedding_totalSpace_normalSubspace (I := I) (F := F) f).continuous
     exact isOpen_lt (continuous_norm.comp he.snd) (r.contMDiff.continuous.comp he.fst)
   have ha : IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) ∞ a S :=
-    fun p => hdisc p.1 p.2.le
+    fun p => hdisc p.val p.property.le
   have hinj : InjOn a S := by
     intro p hp q hq hpq
     apply (isEmbedding_totalSpace_normalSubspace (F := F) f).injective
     exact congrArg Subtype.val (hemb.injective
-      (a₁ := ⟨(p.proj, (p.2 : V)), mem_normalTubeOfRadius.mpr ⟨p.2.2, hp⟩⟩)
-      (a₂ := ⟨(q.proj, (q.2 : V)), mem_normalTubeOfRadius.mpr ⟨q.2.2, hq⟩⟩) hpq)
+      (a₁ := ⟨(p.proj, (p.snd : V)), mem_normalTubeOfRadius.mpr ⟨p.snd.property, hp⟩⟩)
+      (a₂ := ⟨(q.proj, (q.snd : V)), mem_normalTubeOfRadius.mpr ⟨q.snd.property, hq⟩⟩) hpq)
   have : Nonempty (TotalSpace F (fun x => normalSubspace I f x)) :=
     Nonempty.map (zeroSection F (fun x => normalSubspace I f x)) inferInstance
   let Φ := ha.partialDiffeomorphOfInjOn hS hinj
   refine ⟨r, hr, Φ, ha.partialDiffeomorphOfInjOn_source hS hinj, ?_, ?_⟩
   · rw [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_target]
     rintro _ ⟨p, hp, rfl⟩
-    exact hambient p.proj p.2 hp.le
+    exact hambient p.proj p.snd hp.le
   · intro p
     rw [IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn]
 
@@ -107,7 +107,7 @@ theorem exists_partialDiffeomorph_wholeNormalBundle_subset
     (hlocal :
       letI := normalFiberBundle (hf.of_le (by simp)) himm hdim
       ∀ x, IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) ∞
-        (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + p.2)
+        (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + p.snd)
         (zeroSection F (fun x => normalSubspace I f x) x))
     {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
     letI := normalFiberBundle (hf.of_le (by simp)) himm hdim
@@ -116,7 +116,7 @@ theorem exists_partialDiffeomorph_wholeNormalBundle_subset
           (TotalSpace F (fun x => normalSubspace I f x)) V ∞,
         Φ.source = univ ∧ Φ.target ⊆ O ∧
           (∀ p, Φ p = f p.proj +
-            r p.proj • OpenPartialHomeomorph.univUnitBall (p.2 : V)) ∧
+            r p.proj • OpenPartialHomeomorph.univUnitBall (p.snd : V)) ∧
           ∀ x, Φ (zeroSection F (fun x => normalSubspace I f x) x) = f x := by
   let := normalFiberBundle (hf.of_le (by simp)) himm hdim
   obtain ⟨r, hr, Ψ, hsource, htarget, hΨ⟩ :=
@@ -136,7 +136,7 @@ theorem exists_partialDiffeomorph_wholeNormalBundle_subset
     simp [hRsource, hpreimage]
   have hformula (p : TotalSpace F (fun x => normalSubspace I f x)) :
       (R.trans Ψ) p = f p.proj +
-        r p.proj • OpenPartialHomeomorph.univUnitBall (p.2 : V) := by
+        r p.proj • OpenPartialHomeomorph.univUnitBall (p.snd : V) := by
     simp [hΨ, R, normalBundleRadialPartialDiffeomorphOfRadius_apply]
   refine ⟨r, hr, R.trans Ψ, hcomp_source, ?_, hformula, ?_⟩
   · exact fun p hp => htarget hp.1
