@@ -55,6 +55,10 @@ the constructions apply to disconnected group actions as well as to symplectic a
 * `TauCeti.SmoothTwoForm.IsMomentMap.prod_comp_monoidHom`,
   `TauCeti.SmoothTwoForm.IsMomentMap.prodMap`: the moment-map identity for actions on the product
   through homomorphisms and for the factorwise action of a product of Lie groups.
+* `TauCeti.SmoothTwoForm.IsMomentMap.differential_prodMap`,
+  `TauCeti.SmoothTwoForm.IsMomentMap.forall_differential_surjective_prodMap`: the differential of
+  the moment map of a product is the pair of the differentials, so a pair of regular values is a
+  regular value.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.prod_comp_monoidHom`: an action on the product
   through homomorphisms to the two acting groups.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.prodMap`: the factorwise action of a product of
@@ -211,6 +215,51 @@ theorem prodMap [MulAction (G × G') (M × N)]
     mdifferentiableAt_fst mdifferentiableAt_snd hsmul using 2 with p
   ext ξ
   simp
+
+/-- **The differential of the moment map of a product.** For `G × G'` acting factorwise on
+`M × N`, with moment map `(x, y) ↦ (μ x, ν y)`, the differential at `p` sends a tangent vector
+with components `(v₁, v₂)` to `(dμ(v₁), dν(v₂))`, under the identification of the dual of the Lie
+algebra of `G × G'` with `𝔤* × 𝔤'*`. -/
+theorem differential_prodMap [MulAction (G × G') (M × N)]
+    [ContMDiffSMul (I.prod I') (I₁.prod I₂) ∞ (G × G') (M × N)]
+    (hμ : σ.IsMomentMap (InfinitesimalAction.fundamental I G I₁ M) μ)
+    (hν : τ.IsMomentMap (InfinitesimalAction.fundamental I' G' I₂ N) ν)
+    (hsmul : ∀ (g : G × G') (p : M × N), g • p = (g.1 • p.1, g.2 • p.2)) (p : M × N)
+    (v : TangentSpace (I₁.prod I₂) p) :
+    (hμ.prodMap hν hsmul).differential p v =
+      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G'
+        (hμ.differential p.1 (Manifold.tangentSpaceProdEquiv p v).1,
+          hν.differential p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
+  ext ξ
+  rw [differential_apply_eq_eval₂, Lie.groupLieAlgebraDualProdDualEquivDual_apply,
+    differential_apply_eq_eval₂, differential_apply_eq_eval₂,
+    InfinitesimalAction.fundamental_apply,
+    fundamentalVectorField_prod_of_smul_eq (MonoidHom.fst G G') (MonoidHom.snd G G')
+      mdifferentiableAt_fst mdifferentiableAt_snd hsmul, eval₂_prod,
+    Manifold.tangentSpaceProdEquiv_prodVectorField]
+  simp only [InfinitesimalAction.fundamental_apply]
+
+/-- **Regular values of the moment map of a product.** For `G × G'` acting factorwise on `M × N`,
+if `c` is a regular value of `μ` and `c'` is a regular value of `ν`, then `(c, c')` is a regular
+value of the moment map `(x, y) ↦ (μ x, ν y)`. -/
+theorem forall_differential_surjective_prodMap [MulAction (G × G') (M × N)]
+    [ContMDiffSMul (I.prod I') (I₁.prod I₂) ∞ (G × G') (M × N)]
+    (hμ : σ.IsMomentMap (InfinitesimalAction.fundamental I G I₁ M) μ)
+    (hν : τ.IsMomentMap (InfinitesimalAction.fundamental I' G' I₂ N) ν)
+    (hsmul : ∀ (g : G × G') (p : M × N), g • p = (g.1 • p.1, g.2 • p.2))
+    {c : Module.Dual ℝ (GroupLieAlgebra I G)} {c' : Module.Dual ℝ (GroupLieAlgebra I' G')}
+    (hreg₁ : ∀ x, μ x = c → Function.Surjective (hμ.differential x))
+    (hreg₂ : ∀ y, ν y = c' → Function.Surjective (hν.differential y)) (p : M × N)
+    (hp : Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G' (μ p.1, ν p.2) =
+      Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G' (c, c')) :
+    Function.Surjective ((hμ.prodMap hν hsmul).differential p) := by
+  obtain ⟨h₁, h₂⟩ := Prod.mk.inj (LinearEquiv.injective _ hp)
+  intro f
+  obtain ⟨⟨a, b⟩, rfl⟩ := (Lie.groupLieAlgebraDualProdDualEquivDual ℝ I G I' G').surjective f
+  obtain ⟨v₁, rfl⟩ := hreg₁ p.1 h₁ a
+  obtain ⟨v₂, rfl⟩ := hreg₂ p.2 h₂ b
+  refine ⟨(Manifold.tangentSpaceProdEquiv p).symm (v₁, v₂), ?_⟩
+  rw [differential_prodMap hμ hν hsmul, ContinuousLinearEquiv.apply_symm_apply]
 
 end IsMomentMap
 
