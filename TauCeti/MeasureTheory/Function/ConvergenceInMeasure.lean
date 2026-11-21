@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.Probability.Moments.Chebyshev
 
 /-! # Convergence in measure: bounds, continuous transformations, and algebraic operations
@@ -57,6 +58,8 @@ This file also develops continuous and algebraic stability of `MeasureTheory.Ten
 * `TauCeti.tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm` and
   `tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm`: `Lᵖ(μ.prod ν)` convergence (`0 < p < ∞`)
   forces `ν`-tail measures of `μ`-slice `p`-th power integrals to tend to zero.
+* `TauCeti.tendsto_measure_lintegral_enorm_sub_sq`: slice `L²`-energy convergence in measure is
+  transitive across an intermediate family via the squared triangle inequality.
 * `MeasureTheory.AEStronglyMeasurable.tendstoInMeasure_smul`: on finite measure spaces, scalar
   multiplication by an a.e. strongly measurable scalar function preserves convergence in measure.
 * `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
@@ -260,6 +263,26 @@ theorem tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm
   simpa only [ENNReal.toReal_natCast, ENNReal.rpow_natCast] using
     tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm
       (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n) hlim hε
+
+/-- If `∫⁻ y, ‖f i y x - h i y x‖ₑ ^ 2 ∂ν` and `∫⁻ y, ‖g i y x - h i y x‖ₑ ^ 2 ∂ν` both have
+all positive `μ`-tail measures tending to zero along `l` (including `∞`), and the first slice
+integrand is eventually `μ`-a.e. `ν`-a.e. measurable, then `∫⁻ y, ‖f i y x - g i y x‖ₑ ^ 2 ∂ν`
+also has all positive `μ`-tail measures tending to zero along `l`. -/
+theorem tendsto_measure_lintegral_enorm_sub_sq {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    [SeminormedAddCommGroup E] {f g h : ι → β → α → E}
+    (hfh : ∀ᶠ i in l, ∀ᵐ x ∂μ, AEMeasurable (fun y ↦ ‖f i y x - h i y x‖ₑ ^ 2) ν)
+    (hf : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦
+      μ {x | ε ≤ ∫⁻ y, ‖f i y x - h i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0))
+    (hg : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦
+      μ {x | ε ≤ ∫⁻ y, ‖g i y x - h i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun i ↦ μ {x | ε ≤ ∫⁻ y, ‖f i y x - g i y x‖ₑ ^ 2 ∂ν}) l (𝓝 0) :=
+  tendsto_measure_ge_zero_of_ae_le
+    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top hf hδ)
+    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top hg hδ)
+    (hfh.mono fun i hi ↦ hi.mono fun x hx ↦ by
+      simpa only [mul_add] using
+        lintegral_enorm_sub_sq_le_two_mul (g := fun y ↦ g i y x) hx) hε
 
 /-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
 zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates

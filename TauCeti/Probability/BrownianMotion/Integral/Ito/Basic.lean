@@ -304,23 +304,6 @@ theorem neg (hI : IsItoIntegral ℱ P W H I) : IsItoIntegral ℱ P W (-H) (-I) :
 @[simp] theorem neg_iff : IsItoIntegral ℱ P W (-H) (-I) ↔ IsItoIntegral ℱ P W H I :=
   ⟨fun h ↦ by simpa only [neg_neg] using h.neg, neg⟩
 
-private theorem tendsto_measure_lintegral_enorm_sq_sub_of_two {ι : Type*} {l : Filter ι}
-    {t : ℝ≥0} {A B C : ι → ℝ≥0 → Ω → ℝ}
-    (hAC : ∀ i ω, AEMeasurable (fun s ↦ ‖A i s ω - C i s ω‖ₑ ^ 2) (timeMeasure t))
-    (h₁ : ∀ ε > 0, Tendsto (fun i ↦
-      P {ω | ε ≤ ∫⁻ s, ‖A i s ω - C i s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0))
-    (h₂ : ∀ ε > 0, Tendsto (fun i ↦
-      P {ω | ε ≤ ∫⁻ s, ‖B i s ω - C i s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ P {ω | ε ≤
-      ∫⁻ s, ‖A i s ω - B i s ω‖ₑ ^ 2 ∂timeMeasure t}) l (𝓝 0) :=
-  tendsto_measure_ge_zero_of_ae_le
-    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top h₁ hδ)
-    (fun _ hδ ↦ tendsto_measure_ge_zero_const_mul (c := 2) ENNReal.ofNat_ne_top h₂ hδ)
-    (Eventually.of_forall fun i ↦ Eventually.of_forall fun ω ↦ by
-      simpa only [mul_add] using
-        lintegral_enorm_sub_sq_le_two_mul (g := fun s ↦ B i s ω) (hAC i ω)) hε
-
 /-- The sum of two Itô integrals is an Itô integral of the sum of their integrands. -/
 theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
     IsItoIntegral ℱ P W (H + K) (I + J) := by
@@ -332,13 +315,14 @@ theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
     Finance.exists_simpleHolding_simpleGains_sub ℱ t (a₂ := -(a₂ m)) (hτ₁ m) (ha₁ m) (hτ₂ m)
       (fun j hj ↦ (ha₂ m j hj).neg)
   refine ⟨N, grid, height, hgrid, hheight, fun ε hε ↦
-    (tendsto_measure_lintegral_enorm_sq_sub_of_two
-      (A := fun m s ω ↦ Finance.simpleHolding (τ₁ m) (n₁ m) (a₁ m) s ω - H s ω)
-      (B := fun m s ω ↦ K s ω - Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m) s ω)
-      (C := fun _ _ _ ↦ 0)
-      (fun m ω ↦ by simpa only [sub_zero, Pi.sub_apply] using
-        (((Finance.isStronglyPredictable_simpleHolding (ha₁ m)).stronglyMeasurable_path ω).sub
-          (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2 |>.aemeasurable)
+    (tendsto_measure_lintegral_enorm_sub_sq
+      (f := fun m s ω ↦ Finance.simpleHolding (τ₁ m) (n₁ m) (a₁ m) s ω - H s ω)
+      (g := fun m s ω ↦ K s ω - Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m) s ω)
+      (h := fun _ _ _ ↦ 0)
+      (.of_forall fun m ↦ .of_forall fun ω ↦ by
+        simpa only [sub_zero, Pi.sub_apply] using
+          (((Finance.isStronglyPredictable_simpleHolding (ha₁ m)).stronglyMeasurable_path ω).sub
+            (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2 |>.aemeasurable)
       (fun _ hδ ↦ by simpa only [sub_zero] using hE₁ _ hδ)
       (fun _ hδ ↦ by simpa only [sub_zero, eNorm_sub_rev (K _ _)] using hE₂ _ hδ) hε).congr
       fun m ↦ congrArg P <| Set.ext fun ω ↦ iff_of_eq <| congrArg (ε ≤ ·) <|
@@ -380,10 +364,11 @@ theorem of_seq {H_seq : ℕ → ℝ≥0 → Ω → ℝ} {U_seq : ℕ → ℝ≥0
     ⟨n m, τ m, a m, hτ m, ha m, hm₁.le, hm₂.le⟩
   choose N grid height hgrid hheight hE_diag hG_diag using hstep
   refine ⟨N, grid, height, hgrid, hheight, fun _ hε ↦
-    tendsto_measure_lintegral_enorm_sq_sub_of_two (C := H_seq)
-      (fun k ω ↦ (((Finance.isStronglyPredictable_simpleHolding (hheight k)).stronglyMeasurable_path
-        ω).sub ((hU k).isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
-        |>.aemeasurable)
+    tendsto_measure_lintegral_enorm_sub_sq (h := H_seq)
+      (.of_forall fun k ↦ .of_forall fun ω ↦
+        (((Finance.isStronglyPredictable_simpleHolding (hheight k)).stronglyMeasurable_path
+          ω).sub ((hU k).isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
+          |>.aemeasurable)
       (fun _ hδ ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hδ_lim
         (.of_forall fun _ ↦ zero_le) ((hδ_lim.eventually (eventually_lt_nhds hδ)).mono fun k hk ↦
           (measure_mono fun _ hω ↦ hk.le.trans hω).trans (hE_diag k)))
@@ -416,12 +401,13 @@ theorem tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   have henergy : TendstoInMeasure P
       (fun p : ι × ℕ ↦ elementaryEnergy (grid p) (height p) (N p)) lp (fun _ ↦ 0) :=
     tendstoInMeasure_iff_norm.2 fun δ hδ ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le
-      tendsto_const_nhds (tendsto_measure_lintegral_enorm_sq_sub_of_two (l := lp)
-        (A := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
-        (B := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (C := fun _ ↦ H)
-        (fun p ω ↦ (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path
-          ω).sub (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
-          |>.aemeasurable)
+      tendsto_const_nhds (tendsto_measure_lintegral_enorm_sub_sq (l := lp)
+        (f := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
+        (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
+        (.of_forall fun p ↦ .of_forall fun ω ↦
+          (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path
+            ω).sub (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
+            |>.aemeasurable)
         (fun _ hε ↦ (hE _ hε).comp tendsto_fst) (fun _ hε ↦ (hE₂ _ hε).comp tendsto_snd)
         (ENNReal.ofReal_pos.2 hδ))
       (fun _ ↦ zero_le) fun p ↦ measure_mono fun ω hω ↦ by
