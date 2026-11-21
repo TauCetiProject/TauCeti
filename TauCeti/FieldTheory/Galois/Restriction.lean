@@ -273,8 +273,8 @@ theorem mem_embeddingSubgroup_iff {σ : M ≃ₐ[K] M} :
 theorem range_restrictScalarsHom_eq_embeddingSubgroup :
     (AlgEquiv.restrictScalarsHom (S := L) K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range =
       embeddingSubgroup K L M := by
-  ext σ; rw [MonoidHom.mem_range, mem_embeddingSubgroup_iff]
-  exact ⟨fun ⟨τ, h⟩ x ↦ h ▸ τ.commutes x, fun h ↦ ⟨{ σ with commutes' := h }, rfl⟩⟩
+  ext σ
+  rw [AlgEquiv.mem_range_restrictScalarsHom_iff, mem_embeddingSubgroup_iff]
 
 /-- For `L = M`, the fixing subgroup of `M` in `Gal(M/K)` is trivial. -/
 @[simp]
@@ -411,15 +411,8 @@ theorem AlgEquiv.restrictNormalHom_apply_eq_restrictNormal (σ : M ≃ₐ[K] M) 
 theorem AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one
     (σ : M ≃ₐ[K] M) :
     σ ∈ (AlgEquiv.restrictScalarsHom (S := L) K).range ↔ σ.restrictNormal L = 1 := by
-  constructor
-  · rintro ⟨τ, rfl⟩
-    apply (AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M _).2
-    intro x
-    exact τ.commutes x
-  · intro h
-    let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := σ.toRingEquiv)
-      ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)
-    exact ⟨τ, AlgEquiv.ext fun x ↦ by simp [τ]⟩
+  rw [AlgEquiv.mem_range_restrictScalarsHom_iff,
+    AlgEquiv.restrictNormal_eq_one_iff_algebraMap]
 
 /-- The image of `Gal(M/L)` in `Gal(M/K)` under restriction of scalars is the kernel of
 restriction to `L`. -/

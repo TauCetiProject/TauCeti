@@ -263,6 +263,7 @@ theorem IsAlgebraicBelyiPair.of_algEquiv (h : IsAlgebraicBelyiPair k F)
 variable (k) in
 /-- **The trivial Belyi pair**: the rational function field `k(t)` over itself, the Belyi map of
 degree one, is an algebraic Belyi pair. -/
+@[simp]
 theorem isAlgebraicBelyiPair_ratFunc : IsAlgebraicBelyiPair k (RatFunc k) where
   isIntegrallyClosedIn := isIntegrallyClosedIn_ratFunc
   ramificationIdx_eq_one {P} _ := Place.ramificationIdx_self P
@@ -328,6 +329,7 @@ variable {M : Type*} [Field M] [Algebra k M] [Algebra (RatFunc k) M]
 
 variable (k M) in
 /-- The bottom intermediate field `⊥` of `M / k(t)` is an algebraic Belyi pair over `k`. -/
+@[simp]
 theorem isAlgebraicBelyiPair_bot : IsAlgebraicBelyiPair k ↥(⊥ : IntermediateField (RatFunc k) M) :=
   (isAlgebraicBelyiPair_ratFunc k).of_algEquiv (IntermediateField.botEquiv (RatFunc k) M).symm
 

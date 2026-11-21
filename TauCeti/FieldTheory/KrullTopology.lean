@@ -46,10 +46,11 @@ the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/
 * `AlgEquiv.continuous_autCongr`, `AlgEquiv.autContinuousCongr`: an isomorphism of field
   extensions `L ≃ₐ[K] L'` induces a topological group isomorphism `Gal(L/K) ≃ₜ* Gal(L'/K)` by
   conjugation.
-* `AlgEquiv.continuous_restrictScalarsHom`, `AlgEquiv.isClosed_range_restrictScalarsHom`,
-  `AlgEquiv.restrictScalarsHomRangeEquiv`: for any field tower `F → K → L`, restriction of scalars
-  `Gal(L/K) →* Gal(L/F)` is continuous, and when `K/F` is algebraic its image is closed and
-  isomorphic as a topological group to `Gal(L/K)`.
+* `AlgEquiv.continuous_restrictScalarsHom`, `AlgEquiv.mem_range_restrictScalarsHom_iff`,
+  `AlgEquiv.isClosed_range_restrictScalarsHom`, `AlgEquiv.restrictScalarsHomRangeEquiv`: for any
+  field tower `F → K → L`, restriction of scalars `Gal(L/K) →* Gal(L/F)` is continuous with image
+  the automorphisms fixing `K`, and when `K/F` is algebraic its image is closed and isomorphic as
+  a topological group to `Gal(L/K)`.
 * `IntermediateField.isOpen_ker_comp_restrictNormalHom`: an additive homomorphism from
   `Gal(E/K)` for a finite normal intermediate field `E`, read on `Gal(L/K)` through restriction,
   has open kernel.
@@ -225,6 +226,14 @@ theorem AlgEquiv.continuous_restrictScalarsHom :
       (IntermediateField.mem_fixingSubgroup_iff E' τ).mp hτ _
         (IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩)]
 
+/-- **Pointwise characterization of the image of restriction of scalars**: an `F`-automorphism of
+`L` lies in the image of `Gal(L/K)` under `AlgEquiv.restrictScalarsHom F` iff it fixes the image
+of `K` pointwise. Neither algebraicity nor normality is needed. -/
+theorem AlgEquiv.mem_range_restrictScalarsHom_iff {σ : Gal(L/F)} :
+    σ ∈ (AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range ↔
+      ∀ c : K, σ (algebraMap K L c) = algebraMap K L c :=
+  ⟨fun ⟨τ, hτ⟩ c ↦ hτ ▸ τ.commutes c, fun h ↦ ⟨{ σ with commutes' := h }, rfl⟩⟩
+
 variable (F) in
 /-- **The image of restriction of scalars is closed in the Krull topology** when `K/F` is algebraic
 (neither algebraicity nor normality of `L/K` is needed). -/
@@ -233,9 +242,8 @@ theorem AlgEquiv.isClosed_range_restrictScalarsHom [Algebra.IsAlgebraic F K] :
   have hrange : ((AlgEquiv.restrictScalarsHom F : Gal(L/K) →* Gal(L/F)).range : Set Gal(L/F)) =
       ⋂ c : K, {σ : Gal(L/F) | σ (algebraMap K L c) = algebraMap K L c} := by
     ext σ
-    simp only [SetLike.mem_coe, MonoidHom.mem_range, AlgEquiv.restrictScalarsHom_apply,
+    simp only [SetLike.mem_coe, AlgEquiv.mem_range_restrictScalarsHom_iff,
       Set.mem_iInter, Set.mem_ofPred_eq]
-    exact ⟨fun ⟨τ, hτ⟩ c ↦ hτ ▸ τ.commutes c, fun h ↦ ⟨{ σ with commutes' := h }, rfl⟩⟩
   rw [hrange]
   exact isClosed_iInter fun c ↦
     ((Algebra.IsIntegral.isIntegral (R := F) c).algebraMap).isLocallyConstant_apply.isClosed_fiber _

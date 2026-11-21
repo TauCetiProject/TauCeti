@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.MaximalUnramified
 public import TauCeti.FieldTheory.RatFunc.Galois
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.OuterAction
 -- Proof-only: `IntermediateField.restrictScalarsAlgEquiv` transfers normality over `RatFunc F`.
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
@@ -40,8 +41,13 @@ via `TauCeti.outerAction` to a continuous homomorphism
   `TauCeti.belyiArithmeticRestrict_surjective`, `TauCeti.ker_belyiArithmeticRestrict`,
   `TauCeti.continuous_belyiArithmeticRestrict`: topological exactness of the fundamental sequence.
 * `TauCeti.belyiConjByLift_apply_apply`, `TauCeti.belyiOuterActionOfTower_belyiArithmeticRestrict`,
-  `TauCeti.belyiOuterActionOfTower_smul_conjClasses_mk`: explicit formulas on lifts and conjugacy
-  classes.
+  `TauCeti.belyiOuterActionOfTower_smul_conjClasses_mk`,
+  `TauCeti.belyiOuterActionOfTower_smul_closedSubgroupConjClasses_mk`,
+  `TauCeti.belyiConjByLift_smul_closedSubgroup_eq_of_belyiArithmeticRestrict_eq`,
+  `TauCeti.belyiConjByLift_smul_fixingOpenSubgroup`,
+  `TauCeti.belyiGeometricFundamentalGroupOuterAction_smul_fixingOpenSubgroup`,
+  `TauCeti.belyiConjByLift_smul_restrictNormalOpenNormalSubgroup`: explicit formulas on lifts,
+  conjugacy classes, closed-subgroup conjugacy classes, open subgroups, and open normal kernels.
 * `TauCeti.continuous_belyiOuterActionOfTower`,
   `TauCeti.continuous_belyiGeometricFundamentalGroupOuterAction`,
   `TauCeti.continuous_belyiAbsoluteGaloisGroupOuterAction`: continuity for the Krull and
@@ -57,6 +63,20 @@ via `TauCeti.outerAction` to a continuous homomorphism
 public section
 
 namespace TauCeti
+
+private theorem continuousAut_conj_smul_closedSubgroup_of_normal
+    {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+    (γ : G) (H : ClosedSubgroup G) [H.toSubgroup.Normal] :
+    ContinuousAut.conj γ • H = H := by
+  refine SetLike.ext fun δ ↦ ?_
+  rw [ContinuousAut.mem_smul_closedSubgroup_iff]
+  change (ContinuousAut.conj γ).symm δ ∈ H.toSubgroup ↔ δ ∈ H.toSubgroup
+  have hsymm : (ContinuousAut.conj γ).symm δ = γ⁻¹ * δ * γ := by
+    change ((ContinuousAut.conj γ)⁻¹) δ = _
+    rw [← map_inv, ContinuousAut.conj_apply, inv_inv]
+  rw [hsymm]
+  exact ⟨fun h ↦ by simpa [mul_assoc] using ‹H.toSubgroup.Normal›.conj_mem _ h γ,
+    fun h ↦ by simpa [mul_assoc] using ‹H.toSubgroup.Normal›.conj_mem _ h γ⁻¹⟩
 
 /-! ### The fundamental exact sequence and outer action in a general arithmetic tower -/
 
@@ -75,9 +95,12 @@ variable (F K M) in
 noncomputable def belyiGeometricSubgroup : Subgroup Gal(↥Ω/RatFunc F) :=
   (AlgEquiv.restrictScalarsHom (RatFunc F) : Gal(↥Ω/RatFunc K) →* Gal(↥Ω/RatFunc F)).range
 
+/-- An `F(t)`-automorphism of `maximalBelyiExtension K M` lies in `belyiGeometricSubgroup F K M`
+iff it fixes the image of `RatFunc K` pointwise. -/
 theorem mem_belyiGeometricSubgroup_iff {τ : Gal(↥Ω/RatFunc F)} :
     τ ∈ belyiGeometricSubgroup F K M ↔
-      ∃ γ : Gal(↥Ω/RatFunc K), γ.restrictScalars (RatFunc F) = τ := Iff.rfl
+      ∀ c : RatFunc K, τ (algebraMap (RatFunc K) ↥Ω c) = algebraMap (RatFunc K) ↥Ω c :=
+  AlgEquiv.mem_range_restrictScalarsHom_iff
 
 variable [Algebra F K] [IsScalarTower F (RatFunc F) (RatFunc K)]
   (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
@@ -250,6 +273,41 @@ theorem belyiConjByLift_apply_apply (τ : Gal(↥Ω/RatFunc F)) (γ : Gal(↥Ω/
     belyiConjByLift hX τ γ x = τ (γ (τ.symm x)) := by
   rw [← AlgEquiv.restrictScalars_apply (RatFunc F), restrictScalars_belyiConjByLift_apply]; rfl
 
+/-- `belyiConjByLift` is multiplicative in the lifting automorphism `τ`. -/
+@[simp]
+theorem belyiConjByLift_mul (τ₁ τ₂ : Gal(↥Ω/RatFunc F)) :
+    belyiConjByLift hX (τ₁ * τ₂) = belyiConjByLift hX τ₁ * belyiConjByLift hX τ₂ := by
+  refine ContinuousMulEquiv.ext fun γ ↦ AlgEquiv.ext fun x ↦ ?_
+  rw [ContinuousAut.coe_mul, Function.comp_apply, belyiConjByLift_apply_apply,
+    belyiConjByLift_apply_apply, belyiConjByLift_apply_apply, AlgEquiv.mul_apply]
+  congr 3
+
+/-- Conjugation by the restriction of scalars of `γ : Gal(maximalBelyiExtension K M / RatFunc K)`
+is inner conjugation `ContinuousAut.conj γ`. -/
+@[simp]
+theorem belyiConjByLift_restrictScalars (γ : Gal(↥Ω/RatFunc K)) :
+    belyiConjByLift hX (γ.restrictScalars (RatFunc F)) = ContinuousAut.conj γ := by
+  ext γ' x
+  simp [belyiConjByLift_apply_apply, ContinuousAut.conj_apply]
+
+/-- Inner conjugation fixes every normal closed subgroup `H` of
+`Gal(maximalBelyiExtension K M / RatFunc K)`, so `belyiConjByLift hX τ • H` depends only on the
+arithmetic projection `belyiArithmeticRestrict M hX τ`. -/
+theorem belyiConjByLift_smul_closedSubgroup_eq_of_belyiArithmeticRestrict_eq
+    {τ₁ τ₂ : Gal(↥Ω/RatFunc F)}
+    (hτ : belyiArithmeticRestrict M hX τ₁ = belyiArithmeticRestrict M hX τ₂)
+    (H : ClosedSubgroup Gal(↥Ω/RatFunc K)) [H.toSubgroup.Normal] :
+    belyiConjByLift hX τ₁ • H = belyiConjByLift hX τ₂ • H := by
+  have hker : τ₁⁻¹ * τ₂ ∈ (belyiArithmeticRestrict M hX).ker := by
+    rw [MonoidHom.mem_ker, map_mul, map_inv, hτ, inv_mul_cancel]
+  rw [ker_belyiArithmeticRestrict] at hker
+  obtain ⟨γ, hγ⟩ := hker
+  have hτ₂ : τ₂ = τ₁ * γ.restrictScalars (RatFunc F) := by
+    rw [AlgEquiv.restrictScalarsHom_apply] at hγ
+    rw [hγ, mul_inv_cancel_left]
+  rw [hτ₂, belyiConjByLift_mul, mul_smul, belyiConjByLift_restrictScalars,
+    continuousAut_conj_smul_closedSubgroup_of_normal]
+
 section NormalTower
 
 variable [Normal (RatFunc F) M]
@@ -349,6 +407,17 @@ theorem belyiOuterActionOfTower_smul_conjClasses_mk (τ : Gal(↥Ω/RatFunc F))
       ConjClasses.mk (belyiConjByLift hX τ γ) := by
   rw [belyiOuterActionOfTower_belyiArithmeticRestrict, ContinuousOut.mk_smul_mk]
 
+/-- Under `belyiOuterActionOfTower M hX`, the arithmetic projection of a lift `τ` carries
+`ClosedSubgroupConjClasses.mk H` to
+`ClosedSubgroupConjClasses.mk (belyiConjByLift hX τ • H)`. -/
+theorem belyiOuterActionOfTower_smul_closedSubgroupConjClasses_mk (τ : Gal(↥Ω/RatFunc F))
+    (H : ClosedSubgroup Gal(↥Ω/RatFunc K)) :
+    belyiOuterActionOfTower M hX (belyiArithmeticRestrict M hX τ) •
+        ClosedSubgroupConjClasses.mk H =
+      ClosedSubgroupConjClasses.mk (belyiConjByLift hX τ • H) := by
+  rw [belyiOuterActionOfTower_belyiArithmeticRestrict,
+    ContinuousOut.mk_smul_closedSubgroupConjClass]
+
 /-- `belyiOuterActionOfTower M hX` is continuous from the Krull topology on `Gal(K/F)` to the
 congruence-quotient topology on `ContinuousOut Gal(maximalBelyiExtension K M / RatFunc K)`. -/
 theorem continuous_belyiOuterActionOfTower : Continuous (belyiOuterActionOfTower M hX) :=
@@ -421,6 +490,164 @@ theorem belyiGeometricFundamentalGroupOuterAction_smul_conjClasses_mk :
   rw [belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict F K τ,
     ContinuousOut.mk_smul_mk]
 
+/-- Closed-subgroup conjugacy-class action of `belyiGeometricFundamentalGroupOuterAction F K` along
+a lift `τ`. -/
+theorem belyiGeometricFundamentalGroupOuterAction_smul_closedSubgroupConjClasses_mk :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ (τ : Gal(↥(maximalBelyiExtension K M₀)/RatFunc F))
+      (H : ClosedSubgroup (BelyiGeometricFundamentalGroup K)),
+      belyiGeometricFundamentalGroupOuterAction F K (belyiArithmeticRestrict M₀ hX₀ τ) •
+          ClosedSubgroupConjClasses.mk H =
+        ClosedSubgroupConjClasses.mk (belyiConjByLift hX₀ τ • H) := by
+  let _ := RatFunc.mapAlgebra F K
+  have := RatFunc.isScalarTower_mapAlgebra F K
+  intro τ H
+  rw [belyiGeometricFundamentalGroupOuterAction_belyiArithmeticRestrict F K τ,
+    ContinuousOut.mk_smul_closedSubgroupConjClass]
+
+/-- Transport of a `fixingOpenSubgroup` under conjugation by a lift `τ` that intertwines the
+lifted embeddings of two finite algebraic Belyi pairs. -/
+theorem belyiConjByLift_smul_fixingOpenSubgroup :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ (τ : Gal(↥(maximalBelyiExtension K M₀)/RatFunc F))
+      {E E' : Type*} [Field E] [Algebra K E] [Algebra (RatFunc K) E] [IsScalarTower K (RatFunc K) E]
+      [FiniteDimensional (RatFunc K) E] (hE : IsAlgebraicBelyiPair K E) (f : E →ₐ[RatFunc K] M₀)
+      [Field E'] [Algebra K E'] [Algebra (RatFunc K) E'] [IsScalarTower K (RatFunc K) E']
+      [FiniteDimensional (RatFunc K) E'] (hE' : IsAlgebraicBelyiPair K E')
+      (f' : E' →ₐ[RatFunc K] M₀) (eE : E ≃+* E'),
+      (∀ x : E, τ (liftMaximalBelyiExtension hE f x) = liftMaximalBelyiExtension hE' f' (eE x)) →
+      belyiConjByLift hX₀ τ •
+          (⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).toSubgroup,
+            (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).isClosed⟩ :
+              ClosedSubgroup (BelyiGeometricFundamentalGroup K)) =
+        ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').toSubgroup,
+          (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').isClosed⟩ := by
+  let _ := RatFunc.mapAlgebra F K
+  have := RatFunc.isScalarTower_mapAlgebra F K
+  intro τ E E' _ _ _ _ _ hE f _ _ _ _ _ hE' f' eE he
+  refine SetLike.ext fun γ ↦ ?_
+  rw [ContinuousAut.mem_smul_closedSubgroup_iff]
+  change (belyiConjByLift hX₀ τ).symm γ ∈ BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f ↔
+    γ ∈ BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f'
+  rw [BelyiGeometricFundamentalGroup.mem_fixingOpenSubgroup_iff,
+    BelyiGeometricFundamentalGroup.mem_fixingOpenSubgroup_iff]
+  have hconj (x : E) :
+      γ (τ (liftMaximalBelyiExtension hE f x)) =
+        τ (((belyiConjByLift hX₀ τ).symm γ) (liftMaximalBelyiExtension hE f x)) := by
+    have happly := belyiConjByLift_apply_apply hX₀ τ ((belyiConjByLift hX₀ τ).symm γ)
+      (τ (liftMaximalBelyiExtension hE f x))
+    rw [ContinuousMulEquiv.apply_symm_apply, AlgEquiv.symm_apply_apply] at happly
+    exact happly
+  constructor
+  · intro h y
+    obtain ⟨x, rfl⟩ := eE.surjective y
+    rw [← he x, hconj x, h x]
+  · intro h x
+    apply τ.injective
+    rw [← hconj x, he x, h (eE x)]
+
+/-- Under `belyiGeometricFundamentalGroupOuterAction F K`, the arithmetic projection of a lift `τ`
+carries the conjugacy class of `fixingOpenSubgroup hE f` to that of `fixingOpenSubgroup hE' f'`
+whenever `τ` intertwines their lifted embeddings. -/
+theorem belyiGeometricFundamentalGroupOuterAction_smul_fixingOpenSubgroup :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ (τ : Gal(↥(maximalBelyiExtension K M₀)/RatFunc F))
+      {E E' : Type*} [Field E] [Algebra K E] [Algebra (RatFunc K) E] [IsScalarTower K (RatFunc K) E]
+      [FiniteDimensional (RatFunc K) E] (hE : IsAlgebraicBelyiPair K E) (f : E →ₐ[RatFunc K] M₀)
+      [Field E'] [Algebra K E'] [Algebra (RatFunc K) E'] [IsScalarTower K (RatFunc K) E']
+      [FiniteDimensional (RatFunc K) E'] (hE' : IsAlgebraicBelyiPair K E')
+      (f' : E' →ₐ[RatFunc K] M₀) (eE : E ≃+* E'),
+      (∀ x : E, τ (liftMaximalBelyiExtension hE f x) = liftMaximalBelyiExtension hE' f' (eE x)) →
+      belyiGeometricFundamentalGroupOuterAction F K (belyiArithmeticRestrict M₀ hX₀ τ) •
+          ClosedSubgroupConjClasses.mk
+            ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).toSubgroup,
+              (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).isClosed⟩ =
+        ClosedSubgroupConjClasses.mk
+          ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').toSubgroup,
+            (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').isClosed⟩ := by
+  let _ := RatFunc.mapAlgebra F K
+  have := RatFunc.isScalarTower_mapAlgebra F K
+  intro τ E E' _ _ _ _ _ hE f _ _ _ _ _ hE' f' eE he
+  rw [belyiGeometricFundamentalGroupOuterAction_smul_closedSubgroupConjClasses_mk F K τ,
+    belyiConjByLift_smul_fixingOpenSubgroup F K τ hE f hE' f' eE he]
+
+/-- Inner conjugation fixes the open normal kernel `restrictNormalOpenNormalSubgroup hE f`. -/
+theorem belyiConjByLift_restrictScalars_smul_restrictNormalOpenNormalSubgroup :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ (γ : BelyiGeometricFundamentalGroup K) {E : Type*} [Field E] [Algebra K E]
+      [Algebra (RatFunc K) E] [IsScalarTower K (RatFunc K) E] [FiniteDimensional (RatFunc K) E]
+      [Normal (RatFunc K) E] (hE : IsAlgebraicBelyiPair K E) (f : E →ₐ[RatFunc K] M₀),
+      belyiConjByLift hX₀ (γ.restrictScalars (RatFunc F)) •
+          (⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE f).toSubgroup,
+            (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+              hE f).toOpenSubgroup.isClosed⟩ :
+              ClosedSubgroup (BelyiGeometricFundamentalGroup K)) =
+        ⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE f).toSubgroup,
+          (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+            hE f).toOpenSubgroup.isClosed⟩ := by
+  let _ := RatFunc.mapAlgebra F K
+  have := RatFunc.isScalarTower_mapAlgebra F K
+  intro γ E _ _ _ _ _ _ hE f
+  rw [belyiConjByLift_restrictScalars, continuousAut_conj_smul_closedSubgroup_of_normal]
+
+/-- For an open normal kernel `restrictNormalOpenNormalSubgroup hE f`, conjugation by any lift `τ'`
+with the same arithmetic projection as a compatible lift `τ` yields the exact transported open
+normal kernel `restrictNormalOpenNormalSubgroup hE' f'`. -/
+theorem belyiConjByLift_smul_restrictNormalOpenNormalSubgroup :
+    letI : Algebra (RatFunc F) (RatFunc K) := RatFunc.mapAlgebra F K
+    haveI : IsScalarTower F (RatFunc F) (RatFunc K) := RatFunc.isScalarTower_mapAlgebra F K
+    ∀ {τ τ' : Gal(↥(maximalBelyiExtension K M₀)/RatFunc F)},
+      belyiArithmeticRestrict M₀ hX₀ τ' = belyiArithmeticRestrict M₀ hX₀ τ →
+      ∀ {E E' : Type*} [Field E] [Algebra K E] [Algebra (RatFunc K) E]
+        [IsScalarTower K (RatFunc K) E] [FiniteDimensional (RatFunc K) E] [Normal (RatFunc K) E]
+        (hE : IsAlgebraicBelyiPair K E) (f : E →ₐ[RatFunc K] M₀)
+      [Field E'] [Algebra K E'] [Algebra (RatFunc K) E'] [IsScalarTower K (RatFunc K) E']
+      [FiniteDimensional (RatFunc K) E'] [Normal (RatFunc K) E'] (hE' : IsAlgebraicBelyiPair K E')
+      (f' : E' →ₐ[RatFunc K] M₀) (eE : E ≃+* E'),
+      (∀ x : E, τ (liftMaximalBelyiExtension hE f x) = liftMaximalBelyiExtension hE' f' (eE x)) →
+      belyiConjByLift hX₀ τ' •
+          (⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE f).toSubgroup,
+            (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+              hE f).toOpenSubgroup.isClosed⟩ :
+              ClosedSubgroup (BelyiGeometricFundamentalGroup K)) =
+        ⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE' f').toSubgroup,
+          (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+            hE' f').toOpenSubgroup.isClosed⟩ := by
+  let _ := RatFunc.mapAlgebra F K
+  have := RatFunc.isScalarTower_mapAlgebra F K
+  intro τ τ' hτ E E' _ _ _ _ _ _ hE f _ _ _ _ _ _ hE' f' eE he
+  rw [belyiConjByLift_smul_closedSubgroup_eq_of_belyiArithmeticRestrict_eq hX₀ hτ]
+  have hsub :
+      (⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE f).toSubgroup,
+        (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+          hE f).toOpenSubgroup.isClosed⟩ :
+          ClosedSubgroup (BelyiGeometricFundamentalGroup K)) =
+        ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).toSubgroup,
+          (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).isClosed⟩ := by
+    apply ClosedSubgroup.toSubgroup_injective
+    dsimp only
+    rw [BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup_toSubgroup,
+      BelyiGeometricFundamentalGroup.ker_restrictNormalHom,
+      BelyiGeometricFundamentalGroup.fixingOpenSubgroup_toSubgroup]
+  have hsub' :
+      (⟨(BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup hE' f').toSubgroup,
+        (BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup
+          hE' f').toOpenSubgroup.isClosed⟩ :
+          ClosedSubgroup (BelyiGeometricFundamentalGroup K)) =
+        ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').toSubgroup,
+          (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').isClosed⟩ := by
+    apply ClosedSubgroup.toSubgroup_injective
+    dsimp only
+    rw [BelyiGeometricFundamentalGroup.restrictNormalOpenNormalSubgroup_toSubgroup,
+      BelyiGeometricFundamentalGroup.ker_restrictNormalHom,
+      BelyiGeometricFundamentalGroup.fixingOpenSubgroup_toSubgroup]
+  rw [hsub, hsub']
+  exact belyiConjByLift_smul_fixingOpenSubgroup F K τ hE f hE' f' eE he
+
 /-- `belyiGeometricFundamentalGroupOuterAction F K` is continuous for the Krull and
 congruence-quotient topologies. -/
 theorem continuous_belyiGeometricFundamentalGroupOuterAction :
@@ -485,6 +712,45 @@ theorem belyiAbsoluteGaloisGroupOuterAction_smul_conjClasses_mk :
         ConjClasses.mk (belyiConjByLift hX₀ τ γ) :=
   haveI : CharZero F₀ := hChar₀
   belyiGeometricFundamentalGroupOuterAction_smul_conjClasses_mk F F₀
+
+/-- Closed-subgroup conjugacy-class action of `belyiAbsoluteGaloisGroupOuterAction F` along a
+lift `τ`. -/
+theorem belyiAbsoluteGaloisGroupOuterAction_smul_closedSubgroupConjClasses_mk :
+    haveI : CharZero F₀ := hChar₀
+    letI : Algebra (RatFunc F) (RatFunc F₀) := RatFunc.mapAlgebra F F₀
+    haveI : IsScalarTower F (RatFunc F) (RatFunc F₀) := RatFunc.isScalarTower_mapAlgebra F F₀
+    ∀ (τ : Gal(↥(maximalBelyiExtension F₀ M₀)/RatFunc F))
+      (H : ClosedSubgroup (BelyiGeometricFundamentalGroup F₀)),
+      belyiAbsoluteGaloisGroupOuterAction F (belyiArithmeticRestrict M₀ hX₀ τ) •
+          ClosedSubgroupConjClasses.mk H =
+        ClosedSubgroupConjClasses.mk (belyiConjByLift hX₀ τ • H) :=
+  haveI : CharZero F₀ := hChar₀
+  belyiGeometricFundamentalGroupOuterAction_smul_closedSubgroupConjClasses_mk F F₀
+
+/-- Under `belyiAbsoluteGaloisGroupOuterAction F`, the arithmetic projection of a lift `τ` carries
+the conjugacy class of `fixingOpenSubgroup hE f` to that of `fixingOpenSubgroup hE' f'` whenever
+`τ` intertwines their lifted embeddings. -/
+theorem belyiAbsoluteGaloisGroupOuterAction_smul_fixingOpenSubgroup :
+    haveI : CharZero F₀ := hChar₀
+    letI : Algebra (RatFunc F) (RatFunc F₀) := RatFunc.mapAlgebra F F₀
+    haveI : IsScalarTower F (RatFunc F) (RatFunc F₀) := RatFunc.isScalarTower_mapAlgebra F F₀
+    ∀ (τ : Gal(↥(maximalBelyiExtension F₀ M₀)/RatFunc F))
+      {E E' : Type*} [Field E] [Algebra F₀ E] [Algebra (RatFunc F₀) E]
+      [IsScalarTower F₀ (RatFunc F₀) E] [FiniteDimensional (RatFunc F₀) E]
+      (hE : IsAlgebraicBelyiPair F₀ E) (f : E →ₐ[RatFunc F₀] M₀)
+      [Field E'] [Algebra F₀ E'] [Algebra (RatFunc F₀) E']
+      [IsScalarTower F₀ (RatFunc F₀) E'] [FiniteDimensional (RatFunc F₀) E']
+      (hE' : IsAlgebraicBelyiPair F₀ E') (f' : E' →ₐ[RatFunc F₀] M₀) (eE : E ≃+* E'),
+      (∀ x : E, τ (liftMaximalBelyiExtension hE f x) = liftMaximalBelyiExtension hE' f' (eE x)) →
+      belyiAbsoluteGaloisGroupOuterAction F (belyiArithmeticRestrict M₀ hX₀ τ) •
+          ClosedSubgroupConjClasses.mk
+            ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).toSubgroup,
+              (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE f).isClosed⟩ =
+        ClosedSubgroupConjClasses.mk
+          ⟨(BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').toSubgroup,
+            (BelyiGeometricFundamentalGroup.fixingOpenSubgroup hE' f').isClosed⟩ :=
+  haveI : CharZero F₀ := hChar₀
+  belyiGeometricFundamentalGroupOuterAction_smul_fixingOpenSubgroup F F₀
 
 /-- Continuity of `belyiAbsoluteGaloisGroupOuterAction F` for the Krull and congruence-quotient
 topologies. -/
