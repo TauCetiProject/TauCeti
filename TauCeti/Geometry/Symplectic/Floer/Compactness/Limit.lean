@@ -209,25 +209,18 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
     (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num)) (hJ.of_le (by norm_num)) hS hvW
     (fun n ↦ (hu (φ n)).mono sdiff_subset) (fun n z hz ↦ hfl (φ n) z hz.1) hbd
     (fun z hz ↦ hlim.tendsto_at hz)
-  -- The energy of `v` over `S` is finite, by Fatou's lemma.
   have hX := (ω.contDiffOn_uncurry_hamiltonianOneForm (n := 0) hW (hKs.of_le (by norm_num))
     (hKt.of_le (by norm_num))).continuousOn
   have hnn (n : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) : 0 ≤ ω.floerEnergyDensity Ks Kt (u (φ n)) z :=
     ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK (φ n) hz)) (hfl (φ n) z hz)
-  obtain ⟨hint_v, -⟩ := ω.integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto
-    hS.measurableSet (fun z hz ↦ ((hX.continuousAt (hW.mem_nhds (hvW z hz))).comp
-      (Continuous.prodMk_right z).continuousAt)) (fun n z hz ↦ hnn n z hz.1)
-    (fun n ↦ (hint (φ n)).mono_set sdiff_subset)
-    (fun n ↦ (setIntegral_mono_set (hint (φ n)) (ae_restrict_of_forall_mem hΩ.measurableSet
-      (hnn n)) (ae_of_all _ fun z (hz : z ∈ S) ↦ hz.1)).trans (hE (φ n)))
-    (fun z hz ↦ hlim.tendsto_at hz) fun z hz ↦ hdlim.tendsto_at hz
   -- The energy densities converge locally uniformly off the bubbling points.
   have hdens := ω.tendstoLocallyUniformlyOn_floerEnergyDensity hS hv.continuousOn
     (hv.continuousOn_fderiv_of_isOpen hS le_rfl)
     (fun z hz ↦ hX.continuousAt (hW.mem_nhds (hvW z hz))) hlim hdlim
-  obtain ⟨ψ, m, hψ, hm, hmE⟩ :=
+  -- The energy of `v` over `S` is finite, and the bubbling points carry masses.
+  obtain ⟨ψ, m, hψ, hint_v, hm, hmE⟩ :=
     exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le hΩ hZΩ hnn
-      (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hint_v hdens
+      (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hdens
   have hconcψ (z : ℝ × ℝ) (hz : z ∈ Z) (ε : ℝ) (hε : 0 < ε) : ∀ᶠ n in atTop,
       δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ (ψ n))) y :=
     hψ.tendsto_atTop.eventually (hconc z hz ε hε)

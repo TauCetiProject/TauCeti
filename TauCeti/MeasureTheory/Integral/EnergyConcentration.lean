@@ -510,10 +510,10 @@ private theorem tendsto_setIntegral_ball_of_tendsto_setIntegral_ball {e : ℕ �
   ring
 
 /-- **Energy masses at the points of a finite set.** Let `e n ≥ 0` be densities on an open set `Ω`
-with `∫_Ω e n ≤ E`, converging locally uniformly on `Ω \ Z` to a density `f` integrable there, for
-a finite set `Z ⊆ Ω`. Then along a subsequence `ψ` each point `z ∈ Z` carries a mass `m z`: for
-every small `ε > 0`, the energy of the ball about `z` converges to the mass plus the energy of the
-limit on the punctured ball,
+with `∫_Ω e n ≤ E`, converging locally uniformly on `Ω \ Z` to a density `f`, for a finite set
+`Z ⊆ Ω`. Then `f` is integrable on `Ω \ Z`, by Fatou's lemma, and along a subsequence `ψ` each point
+`z ∈ Z` carries a mass `m z`: for every small `ε > 0`, the energy of the ball about `z` converges to
+the mass plus the energy of the limit on the punctured ball,
 
 `∫_{B_ε(z)} e (ψ n) → m z + ∫_{B_ε(z) \ {z}} f`,
 
@@ -523,13 +523,22 @@ points of `Z`, and no energy is created in the limit. -/
 theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
     {e : ℕ → X → ℝ} {f : X → ℝ} {Z : Finset X} (hΩ : IsOpen Ω) (hZΩ : ↑Z ⊆ Ω)
     (he : ∀ n, ∀ y ∈ Ω, 0 ≤ e n y) (hint : ∀ n, IntegrableOn (e n) Ω μ)
-    (hE : ∀ n, ∫ y in Ω, e n y ∂μ ≤ E) (hf : IntegrableOn f (Ω \ ↑Z) μ)
-    (hlim : TendstoLocallyUniformlyOn e f atTop (Ω \ ↑Z)) :
-    ∃ (ψ : ℕ → ℕ) (m : X → ℝ), StrictMono ψ ∧
+    (hE : ∀ n, ∫ y in Ω, e n y ∂μ ≤ E) (hlim : TendstoLocallyUniformlyOn e f atTop (Ω \ ↑Z)) :
+    ∃ (ψ : ℕ → ℕ) (m : X → ℝ), StrictMono ψ ∧ IntegrableOn f (Ω \ ↑Z) μ ∧
       (∀ z ∈ Z, ∀ᶠ ε in 𝓝[>] 0, Tendsto (fun n ↦ ∫ y in ball z ε, e (ψ n) y ∂μ) atTop
         (𝓝 (m z + ∫ y in ball z ε \ {z}, f y ∂μ))) ∧
       ∫ y in Ω \ ↑Z, f y ∂μ + ∑ z ∈ Z, m z ≤ E := by
   classical
+  -- The limit is integrable off `Z`, by Fatou's lemma.
+  have hSm : MeasurableSet (Ω \ ↑Z) := hΩ.measurableSet.diff Z.finite_toSet.measurableSet
+  have hf : IntegrableOn f (Ω \ ↑Z) μ :=
+    TauCeti.integrable_of_tendsto_of_integral_le (l := atTop) (D := E)
+      (.of_forall fun n ↦ (hint n).mono_set sdiff_subset)
+      (.of_forall fun n ↦ ae_restrict_of_forall_mem hSm fun y hy ↦ he n y hy.1)
+      (ae_restrict_of_forall_mem hSm fun y hy ↦ hlim.tendsto_at hy)
+      (.of_forall fun n ↦ (setIntegral_mono_set (hint n)
+        (ae_restrict_of_forall_mem hΩ.measurableSet (he n)) sdiff_subset.eventuallySubset).trans
+        (hE n))
   -- A common radius `r` for which the closed balls about the points of `Z` lie in `Ω` and are far
   -- apart, so that each of them meets `Z` only in its centre.
   obtain ⟨r, hr, hrΩ, hsep⟩ := exists_pos_closedBall_subset_and_lt_dist (T := Z)
@@ -547,7 +556,7 @@ theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
   have hAz (z : Z) : Tendsto (fun n ↦ a (ψ n) z) atTop (𝓝 (A z)) := tendsto_pi_nhds.1 hA z
   set m : X → ℝ := fun z ↦ if hz : z ∈ Z then A ⟨z, hz⟩ - ∫ y in ball z r \ {z}, f y ∂μ else 0
   have hm (z : Z) : m z = A z - ∫ y in ball (z : X) r \ {(z : X)}, f y ∂μ := by simp [m]
-  refine ⟨ψ, m, hψ, fun z hz ↦ ?_, ?_⟩
+  refine ⟨ψ, m, hψ, hf, fun z hz ↦ ?_, ?_⟩
   · filter_upwards [Ioc_mem_nhdsGT hr] with ε hε
     rw [hm ⟨z, hz⟩]
     exact tendsto_setIntegral_ball_of_tendsto_setIntegral_ball
