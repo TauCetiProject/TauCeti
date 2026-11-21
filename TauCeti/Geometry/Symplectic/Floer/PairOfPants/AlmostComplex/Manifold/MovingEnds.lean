@@ -320,7 +320,7 @@ theorem puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex
       ← Floer.puncturedSphereAlmostComplex_eq_pairOfPantsAlmostComplex (h₀.compatibleAt x)]
     congr 1
     funext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
 
 omit [FiniteDimensional ℝ E] in
 /-- On a tangent fiber, end families with one family replaced by the base structure are the

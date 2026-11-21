@@ -570,7 +570,7 @@ theorem puncturedSpherePerturbation_associativity_of_one_le (hτ : 1 ≤ τ) (hL
   funext w x
   rw [puncturedSpherePerturbation_def, puncturedSpherePerturbation_def]
   congr 1
-  exact (Fintype.sum_equiv (finRotate 3) _ _ fun i => by fin_cases i <;> rfl).symm
+  exact (Fintype.sum_equiv (finRotate 3) _ _ fun i => by fin_cases i <;> simp).symm
 
 end Ends
 
