@@ -217,19 +217,15 @@ theorem exists_abs_laplacian_le_one_and_lt_norm_iteratedFDeriv_two
   have hv : ‖v‖ = 1 := b.orthonormal.1 _
   have hw : ‖w‖ = 1 := b.orthonormal.1 _
   have hvw : ⟪w, v⟫_ℝ = 0 := b.orthonormal.2 (by simp [Fin.ext_iff])
-  have hsq (z : V) : ContDiff ℝ ∞ fun y : V ↦ ⟪z, y⟫_ℝ ^ 2 :=
-    ((contDiff_const.inner ℝ contDiff_id).pow 2)
-  set q : V → ℝ := (fun y ↦ ⟪v, y⟫_ℝ ^ 2) - fun y ↦ ⟪w, y⟫_ℝ ^ 2 with hq_def
-  have hq : ContDiff ℝ ∞ q := (hsq v).sub (hsq w)
+  set q : V → ℝ := fun y ↦ ⟪v, y⟫_ℝ ^ 2 - ⟪w, y⟫_ℝ ^ 2 with hq_def
+  have hq : ContDiff ℝ ∞ q := (contDiff_inner_sq v).sub (contDiff_inner_sq w)
   refine exists_abs_laplacian_le_one_and_lt_norm_of_harmonic hq (fun x ↦ ?_) (fun h ↦ ?_) C
-  · rw [hq_def, ((hsq v).contDiffAt.of_le (by simp)).laplacian_sub
-      ((hsq w).contDiffAt.of_le (by simp)), laplacian_inner_sq,
-      laplacian_inner_sq, hv, hw, sub_self]
+  · rw [hq_def, laplacian_inner_sq_sub_inner_sq, hv, hw, sub_self]
   · -- `D²q(0)(v, v) = 2 ‖v‖⁴ - 2 ⟪w, v⟫² = 2`.
     have h2 : iteratedFDeriv ℝ 2 q 0 ![v, v] = 2 := by
       have hg : ContDiff ℝ 2 fun t : ℝ ↦ t ^ 2 := contDiff_id.pow 2
-      rw [hq_def, iteratedFDeriv_sub_apply ((hsq v).contDiffAt.of_le (by simp))
-        ((hsq w).contDiffAt.of_le (by simp)), sub_apply,
+      rw [hq_def, fun_iteratedFDeriv_sub_apply (contDiff_inner_sq v).contDiffAt
+        (contDiff_inner_sq w).contDiffAt, sub_apply,
         iteratedFDeriv_two_comp_inner v 0 hg.contDiffAt,
         iteratedFDeriv_two_comp_inner w 0 hg.contDiffAt, hvw, real_inner_self_eq_norm_sq, hv]
       simp

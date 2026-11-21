@@ -167,10 +167,6 @@ private theorem F_sq (r : ℝ) : F (r ^ 2) = √(-Real.log r) := by
 /-- The harmonic quadratic polynomial `⟪e₀, x⟫² - ⟪e₁, x⟫²`. -/
 private def quad (e : Fin 2 → E) (x : E) : ℝ := ⟪e 0, x⟫_ℝ ^ 2 - ⟪e 1, x⟫_ℝ ^ 2
 
-private theorem contDiff_inner_sq {n : WithTop ℕ∞} (v : E) :
-    ContDiff ℝ n fun y : E ↦ ⟪v, y⟫_ℝ ^ 2 :=
-  (innerSL ℝ v).contDiff.pow 2
-
 private theorem contDiff_quad {n : WithTop ℕ∞} (e : Fin 2 → E) : ContDiff ℝ n (quad e) :=
   (contDiff_inner_sq (e 0)).sub (contDiff_inner_sq (e 1))
 
@@ -500,12 +496,8 @@ variable [FiniteDimensional ℝ E]
 
 private theorem laplacian_quad {e : Fin 2 → E} (he : Orthonormal ℝ e) (x : E) :
     Δ (quad e) x = 0 := by
-  have := ((contDiff_inner_sq (e 0)).contDiffAt (x := x)).laplacian_sub
-    ((contDiff_inner_sq (e 1)).contDiffAt (x := x))
-  -- `ContDiffAt.laplacian_sub` is stated for a `Pi` difference `f₁ - f₂`, which `quad e` unfolds
-  -- to by definition.
-  rw [show quad e = (fun y : E ↦ ⟪e 0, y⟫_ℝ ^ 2) - (fun y : E ↦ ⟪e 1, y⟫_ℝ ^ 2) from rfl, this]
-  simp [TauCeti.laplacian_inner_sq, he.1 0, he.1 1]
+  rw [show quad e = fun y ↦ ⟪e 0, y⟫_ℝ ^ 2 - ⟪e 1, y⟫_ℝ ^ 2 from rfl]
+  simp [he.1 0, he.1 1]
 
 /-- **The Laplacian of the approximant** `uₜ(x) = h(x) F(‖x‖² + t)`: since `h` is harmonic and
 homogeneous of degree `2`, `Δuₜ = h (4 ‖x‖² F''(s) + (2n + 8) F'(s))` with `s = ‖x‖² + t`. -/
