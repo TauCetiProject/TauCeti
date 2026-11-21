@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
-import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Strong-exchange shortening for lifted Weyl words of Chevalley data
