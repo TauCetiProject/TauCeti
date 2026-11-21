@@ -65,8 +65,7 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R
 commutative ring has characteristic polynomial `(X - μ) ^ n`, then `(f - μ • 1) ^ n = 0`. -/
 theorem pow_sub_smul_eq_zero_of_charpoly_eq {f : Module.End R M} {μ : R} {n : ℕ}
     (h : f.charpoly = (X - C μ) ^ n) : (f - μ • 1) ^ n = 0 := by
-  have hX : (f - μ • 1).charpoly = X ^ n := by
-    rw [charpoly_sub_smul, h, pow_comp, Polynomial.sub_comp, X_comp, C_comp, add_sub_cancel_right]
+  have hX : (f - μ • 1).charpoly = X ^ n := by simpa [h] using charpoly_sub_smul f μ
   rw [← aeval_X_pow (R := R), ← hX, aeval_self_charpoly]
 
 /-- **Cayley–Hamilton for the eigenvalue `1`.** If an endomorphism of a finite free module over a

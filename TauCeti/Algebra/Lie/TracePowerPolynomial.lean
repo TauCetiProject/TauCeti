@@ -205,8 +205,9 @@ theorem charpoly_coeff_genericActionMatrix_mem_lieInvariants (c : Basis κ R M) 
   refine mem_lieInvariants.mpr fun y ↦ ?_
   refine Derivation.charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul _
     (B := -(LinearMap.toMatrix c c (LieModule.toEnd R L M y)).map (algebraMap R S)) ?_ i
-  rw [map_lieModuleDerivation_genericActionMatrix, neg_mul, mul_neg, sub_neg_eq_add,
-    neg_add_eq_sub]
+  rw [map_lieModuleDerivation_genericActionMatrix]
+  simp only [Matrix.neg_mul, Matrix.mul_neg]
+  abel
 
 /-- **The lower characteristic coefficients of the generic action matrix vanish at the origin**:
 every coefficient of its characteristic polynomial other than the leading one has zero constant
