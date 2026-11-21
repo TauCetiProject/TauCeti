@@ -73,10 +73,11 @@ for any `T ∈ GL(L)`).
 * `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
-* `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
+* `Submodule.IsFullLattice.map_localAddHaar`,
+  `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
   `Module.Basis.map_localAddHaar`, `Module.Basis.localAddHaar_eq_smul`,
-  `Module.Basis.localAddHaar_eq_of_valuation_det_eq_one`: invariance under `GL(L)`, transport along
-  linear equivalences, and change-of-basis scaling.
+  `Module.Basis.localAddHaar_eq_of_valuation_det_eq_one`: transport along linear equivalences,
+  invariance under `GL(L)`, and change-of-basis scaling.
 
 ## References
 
@@ -411,9 +412,8 @@ theorem integral_linearEquiv_addHaar {F : Type*} [NormedAddCommGroup F] [NormedS
 omit [Module.Finite E V] in
 /-- **Zero-dimensional check (`dim_E V = 0`).** On a zero-dimensional `E`-vector space, every
 `E`-linear automorphism has determinant `1` and preserves every additive Haar measure. -/
-@[simp, grind =]
-theorem map_linearEquiv_addHaar_of_subsingleton [Subsingleton V] (μ : Measure V)
-    [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) : map T μ = μ := by
+example [Subsingleton V] (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) :
+    map T μ = μ := by
   have : Module.Finite E V := Module.Finite.of_finite
   rw [map_linearEquiv_addHaar μ T, LinearMap.det_eq_one_of_subsingleton, map_one]
   simp
@@ -671,6 +671,28 @@ theorem eq_localAddHaar_iff (μ : Measure V) [μ.IsAddLeftInvariant]
   refine ⟨fun h ↦ h ▸ localAddHaar_self L, fun h ↦ ?_⟩
   rw [eq_smul_localAddHaar L μ, h, one_smul]
 
+/-- Pushing a lattice-normalized Haar measure forward along a linear equivalence `e : V ≃ₗ[E] W`
+yields the Haar measure attached to the transported lattice
+`L.map ((e : V →ₗ[E] W).restrictScalars 𝒪[E])`. -/
+theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[E] W]
+    [IsScalarTower 𝒪[E] E W] [TopologicalSpace W] [IsModuleTopology E W]
+    [MeasurableSpace W] [BorelSpace W] (e : V ≃ₗ[E] W) :
+    Measure.map e (localAddHaar L) =
+      localAddHaar (L.map ((e : V →ₗ[E] W).restrictScalars 𝒪[E])) := by
+  let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  let _ : IsTopologicalAddGroup W := IsModuleTopology.isTopologicalAddGroup E W
+  let ee : V ≃L[E] W := e.toContinuousLinearEquivOfIsModuleTopology
+  have _ : ((localAddHaar L).map ee).IsAddHaarMeasure :=
+    ee.isAddHaarMeasure_map (localAddHaar L)
+  have hee : ⇑ee = ⇑e := LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology e
+  let L' : Submodule 𝒪[E] W := L.map ((e : V →ₗ[E] W).restrictScalars 𝒪[E])
+  rw [← hee, eq_localAddHaar_iff L']
+  have hpre : ee ⁻¹' (L' : Set W) = (L : Set V) := by
+    ext x
+    simp [L', hee]
+  rw [Measure.map_apply ee.continuous.measurable (isClosed L').measurableSet, hpre,
+    localAddHaar_self L]
+
 end Borel
 
 /-- **`GL(L)` preserves every additive Haar measure on `V`.** -/
@@ -752,25 +774,20 @@ theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[
     [IsScalarTower 𝒪[E] E W] [TopologicalSpace W] [IsModuleTopology E W]
     [MeasurableSpace W] [BorelSpace W] (b : Basis ι E V) (e : V ≃ₗ[E] W) :
     Measure.map e b.localAddHaar = (b.map e).localAddHaar := by
-  let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
-  let _ : IsTopologicalAddGroup W := IsModuleTopology.isTopologicalAddGroup E W
-  let ee : V ≃L[E] W := e.toContinuousLinearEquivOfIsModuleTopology
-  have _ : (b.localAddHaar.map ee).IsAddHaarMeasure := ee.isAddHaarMeasure_map b.localAddHaar
-  have hee : ⇑ee = ⇑e := LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology e
-  rw [← hee, (b.map e).eq_localAddHaar_iff]
-  have hpre : ee ⁻¹' (Submodule.span 𝒪[E] (Set.range (b.map e)) : Set W) =
-      (Submodule.span 𝒪[E] (Set.range b) : Set V) := by
-    rw [hee, ← e.image_symm_eq_preimage]
-    have hrange : e.symm '' Set.range (b.map e) = Set.range b := by
-      ext x
-      simp [Basis.map_apply]
-    have hspan := LinearMap.map_span (e.symm.toLinearMap.restrictScalars 𝒪[E])
-      (Set.range (b.map e))
-    simpa [Submodule.map_coe, hrange] using
-      congrArg (fun M : Submodule 𝒪[E] V ↦ (M : Set V)) hspan
-  rw [Measure.map_apply ee.continuous.measurable
-    (Submodule.IsFullLattice.isClosed (Submodule.span 𝒪[E] (Set.range (b.map e)))).measurableSet,
-    hpre, localAddHaar_span_range]
+  have hspan :
+      (Submodule.span 𝒪[E] (Set.range b)).map ((e : V →ₗ[E] W).restrictScalars 𝒪[E]) =
+        Submodule.span 𝒪[E] (Set.range (b.map e)) := by
+    rw [Submodule.map_span]
+    congr 1
+    ext x
+    simp [Basis.map_apply]
+  have hcongr : ∀ {L₁ L₂ : Submodule 𝒪[E] W} [L₁.IsFullLattice E] [L₂.IsFullLattice E],
+      L₁ = L₂ →
+        Submodule.IsFullLattice.localAddHaar L₁ = Submodule.IsFullLattice.localAddHaar L₂ := by
+    rintro L₁ _ _ _ rfl
+    rfl
+  rw [localAddHaar_def, Submodule.IsFullLattice.map_localAddHaar, localAddHaar_def]
+  exact hcongr hspan
 
 /-- **Change-of-basis formula for normalized Haar measures.** For two finite `E`-bases `b` and `b'`
 of `V` indexed by a `Fintype ι`, `b'.localAddHaar = |b.det b'|_E⁻¹ • b.localAddHaar`. -/

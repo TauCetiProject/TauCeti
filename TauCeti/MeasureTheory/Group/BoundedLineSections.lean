@@ -80,6 +80,8 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
 
 /-- Any locally finite left-invariant measure on `ι → K` (`[Finite ι]`) assigns measure zero to
 every coordinate hyperplane `{a | a j = 0}`. -/
+-- Not `@[grind =]`: `j` only appears inside the `setOf` predicate, so `grind` rejects the pattern.
+@[simp]
 theorem measure_coord_eq_zero (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] (j : ι) :
     μ {a : ι → K | a j = 0} = 0 := by

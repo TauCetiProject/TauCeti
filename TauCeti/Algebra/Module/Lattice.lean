@@ -49,6 +49,7 @@ commutative rings. Finally, scalar extension of a free full lattice recovers its
   same finrank.
 * `Submodule.IsFullLattice.pi`: the product of a finite family of full lattices is a full lattice.
 * `Submodule.IsFullLattice.prod`: the product of two full lattices is a full lattice.
+* `Submodule.IsFullLattice.map`: a linear equivalence sends a full lattice to a full lattice.
 * `LinearEquiv.extendOfIsFullLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-modules.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
@@ -306,6 +307,39 @@ theorem _root_.LinearMap.det_eq_algebraMap_det_of_isFullLattice {S : Submodule R
   rw [hconj, LinearMap.det_conj, LinearMap.det_baseChange]
 
 end Rationalization
+
+section MapEquiv
+
+variable {R A : Type*} {V : Type u} {W : Type v}
+variable [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+variable [AddCommGroup W] [Module R W] [Module A W] [IsScalarTower R A W]
+
+/-- A linear equivalence sends a full lattice to a full lattice. -/
+instance IsFullLattice.map (S : Submodule R V) [S.IsFullLattice A] (e : V ≃ₗ[A] W) :
+    (S.map ((e : V →ₗ[A] W).restrictScalars R)).IsFullLattice A where
+  fg := (IsLattice.fg A S).map _
+  linearIndepOn s hs hli := by
+    have hS : e.symm '' s ⊆ (S : Set V) := by
+      rintro _ ⟨_, hy, rfl⟩
+      obtain ⟨x, hx, rfl⟩ := hs hy
+      simpa using hx
+    have hR : LinearIndepOn R id (e.symm '' s) :=
+      LinearIndepOn.id_image (v := (e.symm : W →ₗ[A] V).restrictScalars R)
+        (hli.map' ((e.symm : W →ₗ[A] V).restrictScalars R)
+          (LinearMap.ker_eq_bot_of_injective e.symm.injective))
+    have hA : LinearIndepOn A id (e.symm '' s) := IsLattice.linearIndepOn _ hS hR
+    have him : (e : V →ₗ[A] W) '' (e.symm '' s) = s := by
+      ext y
+      simp
+    rw [← him]
+    exact LinearIndepOn.id_image (v := (e : V →ₗ[A] W))
+      (hA.map' (e : V →ₗ[A] W) (LinearMap.ker_eq_bot_of_injective e.injective))
+  span_eq_top := by
+    simp [Submodule.map_coe, _root_.Submodule.IsFullLattice.span_eq_top,
+      LinearMap.range_eq_top.mpr e.surjective]
+
+end MapEquiv
 
 section Map
 
