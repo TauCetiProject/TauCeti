@@ -43,7 +43,7 @@ theorem wittAdd_one :
     wittAdd p 1 =
       X (0, 1) + X (1, 1) + TauCeti.DeltaRing.addCorrection p (X (0, 0)) (X (1, 0)) := by
   have h := wittStructureInt_prop p (X 0 + X 1 : MvPolynomial (Fin 2) ℤ) 1
-  simp only [wittPolynomial_one, map_add, map_mul, map_pow, bind₁_X_right, algHom_C,
+  simp only [wittPolynomial_one, map_add, map_mul, map_pow, aeval_X, algHom_C,
     rename_X, ← wittAdd.eq_1] at h
   have hc := TauCeti.DeltaRing.natCast_mul_addCorrection (p := p)
     (X (0, 0) : MvPolynomial (Fin 2 × ℕ) ℤ) (X (1, 0))
