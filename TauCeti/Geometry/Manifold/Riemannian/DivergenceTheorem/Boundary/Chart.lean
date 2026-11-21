@@ -212,7 +212,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
 local instance : IsManifold (𝓡∂ (n + 1)) 1 M := IsManifold.of_le (n := 2) (by norm_num)
 local instance : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 private abbrev ambTriv (α : M) := trivializationAt (Espace (n + 1)) (TangentSpace (𝓡∂ (n + 1))) α
 private abbrev bdryTriv (α : (𝓡∂ (n + 1)).boundary M) :=
@@ -473,8 +473,7 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux_of_disjoint {α :
     · have hp_src : ec.symm w ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source :=
         (extChartAt_source (I := 𝓡∂ (n + 1)) α) ▸ ec.map_target hw'
       have hp_bdry : ec.symm w ∈ (𝓡∂ (n + 1)).boundary M := by
-        rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-          (by simp : (2 : ℕ∞ω) ≠ 0) (chart_mem_atlas _ α) hp_src]
+        rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hp_src]
         simpa [ec, w, extChartAt, modelWithCornersEuclideanHalfSpace_toFun,
           euclideanHalfSpaceBoundaryParam_apply_zero] using
           congrArg (fun v : Espace (n + 1) ↦ v 0) (ec.right_inv hw')

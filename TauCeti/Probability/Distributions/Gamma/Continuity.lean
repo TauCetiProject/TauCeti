@@ -33,23 +33,23 @@ namespace TauCeti.Probability
 theorem continuous_gammaMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       (⟨gammaMeasure p.1 p.2,
-        isProbabilityMeasure_gammaMeasure p.1.2 p.2.2⟩ : ProbabilityMeasure ℝ)) := by
+        isProbabilityMeasure_gammaMeasure p.1.property p.2.property⟩ : ProbabilityMeasure ℝ)) := by
   apply continuous_iff_seqContinuous.2
   intro p a hp
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
     (μ := fun n ↦ ⟨gammaMeasure (p n).1 (p n).2,
-      isProbabilityMeasure_gammaMeasure (p n).1.2 (p n).2.2⟩)
+      isProbabilityMeasure_gammaMeasure (p n).1.property (p n).2.property⟩)
   intro t
-  simp only [ProbabilityMeasure.coe_mk, charFun_gammaMeasure (p _).1.2 (p _).2.2,
-    charFun_gammaMeasure a.1.2 a.2.2]
+  simp only [ProbabilityMeasure.coe_mk, charFun_gammaMeasure (p _).1.property (p _).2.property,
+    charFun_gammaMeasure a.1.property a.2.property]
   have hr : Tendsto (fun n ↦ ((p n).2 : ℂ)) atTop (𝓝 (a.2 : ℂ)) :=
     Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((continuous_subtype_val.comp continuous_snd).tendsto a |>.comp hp)
+      ((continuous_subtypeVal.comp continuous_snd).tendsto a |>.comp hp)
   have ha : Tendsto (fun n ↦ ((p n).1 : ℂ)) atTop (𝓝 (a.1 : ℂ)) :=
     Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((continuous_subtype_val.comp continuous_fst).tendsto a |>.comp hp)
+      ((continuous_subtypeVal.comp continuous_fst).tendsto a |>.comp hp)
   refine (tendsto_const_nhds.sub (tendsto_const_nhds.div hr ?_)).cpow ha.neg ?_
-  · exact_mod_cast a.2.2.ne'
+  · exact_mod_cast a.2.property.ne'
   · apply Complex.mem_slitPlane_iff.2
     left
     simp [Complex.div_re, Complex.normSq_ofReal]

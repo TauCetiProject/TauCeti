@@ -155,7 +155,7 @@ noncomputable def unitDiscAutEquivProd : unitDiscAut ≃ Circle × Complex.UnitD
         unitDiscStandardAutomorphismEquiv_mem_unitDiscAut p.1 p.2⟩ : unitDiscAut))
     ⟨fun _ _ h => unitDiscStandardAutomorphismEquiv_injective (congrArg Subtype.val h),
       fun e => by
-        obtain ⟨u, a, ha⟩ := mem_unitDiscAut_iff.1 e.2
+        obtain ⟨u, a, ha⟩ := mem_unitDiscAut_iff.1 e.property
         exact ⟨(u, a), Subtype.ext ha.symm⟩⟩).symm
 
 @[simp]

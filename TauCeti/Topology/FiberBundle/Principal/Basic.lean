@@ -121,12 +121,12 @@ over `b` with fibre coordinate `1`. -/
 theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :
     e.toOpenPartialHomeomorph.symm (b, g) =
       ⟨(e.toOpenPartialHomeomorph.symm (b, 1)).proj,
-        op g • (e.toOpenPartialHomeomorph.symm (b, 1)).2⟩ := by
+        op g • (e.toOpenPartialHomeomorph.symm (b, 1)).snd⟩ := by
   set s := e.toOpenPartialHomeomorph.symm (b, 1)
   have hsb : s.proj = b := e.proj_symm_apply' hb
   have hs : s.proj ∈ e.baseSet := by rwa [hsb]
   have hes : (e s).2 = 1 := congrArg Prod.snd (e.apply_symm_apply' hb)
-  have hy : (⟨s.proj, op g • s.2⟩ : TotalSpace G P) ∈ e.source := e.mem_source.2 hs
+  have hy : (⟨s.proj, op g • s.snd⟩ : TotalSpace G P) ∈ e.source := e.mem_source.2 hs
   refine ((e.toOpenPartialHomeomorph.eq_symm_apply hy ((e.mem_target (x := (b, g))).2 hb)).2
     ?_).symm
   rw [e.coe_coe, e.apply_smul hs, TotalSpace.eta, hes, one_mul, hsb]
@@ -221,6 +221,11 @@ noncomputable def division (p q : P b) : G :=
 @[simp]
 theorem smul_division (p q : P b) : op (division G p q) • p = q :=
   (trivializationAt G P b).op_inv_mul_smul (mem_baseSet_trivializationAt G P b) p q
+
+/-- On the total space, acting on `⟨b, p⟩` by `division G p q` yields `⟨b, q⟩`. -/
+theorem smul_division_mk (p q : P b) :
+    op (division G p q) • (⟨b, p⟩ : TotalSpace G P) = ⟨b, q⟩ :=
+  congrArg (TotalSpace.mk' G b) (smul_division p q)
 
 /-- The division map of `p` and `q` is the unique `g` with `p • g = q`. -/
 theorem division_eq_iff {p q : P b} {g : G} : division G p q = g ↔ op g • p = q := by
@@ -398,7 +403,7 @@ variable [IsTopologicalGroup G] (σ : ∀ b, P b) {U : Set B} (hU : IsOpen U)
 inverse sends `(b, g)` to `σ b • g`. It is equivariant
 (`TauCeti.PrincipalBundle.isEquivariant_trivializationOfSection`). -/
 noncomputable def trivializationOfSection : Trivialization G (π G P) where
-  toFun p := (p.proj, division G (σ p.proj) p.2)
+  toFun p := (p.proj, division G (σ p.proj) p.snd)
   invFun x := ⟨x.1, op x.2 • σ x.1⟩
   source := π G P ⁻¹' U
   target := U ×ˢ univ
@@ -409,7 +414,7 @@ noncomputable def trivializationOfSection : Trivialization G (π G P) where
   open_source := hU.preimage (FiberBundle.continuous_proj G P)
   open_target := hU.prod isOpen_univ
   continuousOn_toFun := (FiberBundle.continuous_proj G P).continuousOn.prodMk <|
-    ContinuousOn.division (f := π G P) (p := fun x ↦ σ x.proj) (q := fun x ↦ x.2)
+    ContinuousOn.division (f := π G P) (p := fun x ↦ σ x.proj) (q := fun x ↦ x.snd)
       (hσ.comp (FiberBundle.continuous_proj G P).continuousOn fun _ hx ↦ hx) continuousOn_id
   continuousOn_invFun :=
     ContinuousOn.totalSpaceMk_smul (f := Prod.fst) (p := fun x ↦ σ x.1)
@@ -422,7 +427,7 @@ noncomputable def trivializationOfSection : Trivialization G (π G P) where
 
 @[simp]
 theorem trivializationOfSection_apply (p : TotalSpace G P) :
-    trivializationOfSection σ hU hσ p = (p.proj, division G (σ p.proj) p.2) :=
+    trivializationOfSection σ hU hσ p = (p.proj, division G (σ p.proj) p.snd) :=
   (rfl)
 
 @[simp]

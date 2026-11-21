@@ -105,10 +105,10 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_hom_app {D E : WeilDivisor X}
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
     (s : (divisorSheaf D).obj.obj (op U)) :
     (divisorSheafSectionsEquiv E U
-        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op U) s)).1 =
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op U) s)).val =
       fun y : U ↦ if E y ≤ 0 then affineChart (sphereMap
         ((f.toMul : MeromorphicFunction X).finitePart *
-          Subtype.val.extend (divisorSheafSectionsEquiv D U s).1 0) y) else 0 :=
+          Subtype.val.extend (divisorSheafSectionsEquiv D U s).val 0) y) else 0 :=
   divisorSheafGlobalMulIso_hom_app _ _ _ U s
 
 /-- On a punctured neighbourhood of each point, `divisorSheafIsoOfPrincipalDivisorEq` sends a
@@ -118,9 +118,9 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_hom_app_eventuallyEq {D E : WeilDivi
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
     (s : (divisorSheaf D).obj.obj (op U)) (x : U) :
     (divisorSheafSectionsEquiv E U
-        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op U) s)).1 =ᶠ[𝓝[≠] x]
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).hom.hom.app (op U) s)).val =ᶠ[𝓝[≠] x]
       fun y ↦ (f.toMul : MeromorphicFunction X).finitePart y *
-        (divisorSheafSectionsEquiv D U s).1 y :=
+        (divisorSheafSectionsEquiv D U s).val y :=
   divisorSheafGlobalMulIso_hom_app_eventuallyEq _ _ _ U s x
 
 /-- The inverse of `divisorSheafIsoOfPrincipalDivisorEq` is multiplication by the reciprocal of
@@ -130,10 +130,10 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_inv_app {D E : WeilDivisor X}
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
     (s : (divisorSheaf E).obj.obj (op U)) :
     (divisorSheafSectionsEquiv D U
-        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op U) s)).1 =
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op U) s)).val =
       fun y : U ↦ if D y ≤ 0 then affineChart (sphereMap
         ((f.toMul : MeromorphicFunction X).finitePart⁻¹ *
-          Subtype.val.extend (divisorSheafSectionsEquiv E U s).1 0) y) else 0 :=
+          Subtype.val.extend (divisorSheafSectionsEquiv E U s).val 0) y) else 0 :=
   divisorSheafGlobalMulIso_inv_app _ _ _ U s
 
 /-- On a punctured neighbourhood of each point, the inverse of
@@ -143,9 +143,9 @@ theorem divisorSheafIsoOfPrincipalDivisorEq_inv_app_eventuallyEq {D E : WeilDivi
     (hf : (MeromorphicFunction.orderSystem X).principalDivisor f = D - E) (U : Opens X)
     (s : (divisorSheaf E).obj.obj (op U)) (x : U) :
     (divisorSheafSectionsEquiv D U
-        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op U) s)).1 =ᶠ[𝓝[≠] x]
+        ((divisorSheafIsoOfPrincipalDivisorEq f hf).inv.hom.app (op U) s)).val =ᶠ[𝓝[≠] x]
       fun y ↦ ((f.toMul : MeromorphicFunction X).finitePart y)⁻¹ *
-        (divisorSheafSectionsEquiv E U s).1 y :=
+        (divisorSheafSectionsEquiv E U s).val y :=
   divisorSheafGlobalMulIso_inv_app_eventuallyEq _ _ _ U s x
 
 /-- Multiplication by the constant function `1` is the identity of `𝒪(D)`. -/
@@ -187,7 +187,7 @@ global section `s` of `𝒪(D)`, embeds into meromorphic functions as `k` times 
 private theorem toMeromorphic_eq_mul_of_eventuallyEq {D E : WeilDivisor X}
     (k : MeromorphicFunction X) {g : X → ℂ} (hk : ∀ x, k.finitePart =ᶠ[𝓝[≠] x] g)
     (s : divisorSections D ⊤) (t : divisorSections E ⊤)
-    (ht : ∀ x : (⊤ : Opens X), t.1 =ᶠ[𝓝[≠] x] fun y ↦ g y * s.1 y) :
+    (ht : ∀ x : (⊤ : Opens X), t.val =ᶠ[𝓝[≠] x] fun y ↦ g y * s.val y) :
     divisorSections.toMeromorphic E t = k * divisorSections.toMeromorphic D s := by
   refine MeromorphicFunction.eq_of_eventuallyEq_finitePart fun x ↦ ?_
   have hx : Tendsto (fun y : X ↦ (⟨y, trivial⟩ : (⊤ : Opens X))) (𝓝[≠] x)

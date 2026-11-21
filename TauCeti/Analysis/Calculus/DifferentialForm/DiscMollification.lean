@@ -134,15 +134,15 @@ theorem contDiff_discMollification {n : ℕ∞} (hρ : ContDiff ℝ n ρ) (hσ :
   let D := closedBall z₀ r
   have : CompactSpace D := isCompact_iff_compactSpace.mp (isCompact_closedBall z₀ r)
   have : IsFiniteMeasure (volume.comap ((↑) : D → ℂ)) :=
-    ⟨by rw [comap_subtype_coe_apply measurableSet_closedBall, image_univ, Subtype.range_coe]
+    ⟨by rw [comap_subtypeVal_apply measurableSet_closedBall, image_univ, Subtype.range_coe]
         exact measure_closedBall_lt_top⟩
   -- Integrate `ρ(y - p)` along `p = σ z` against the continuous weight of the coordinates.
   have hg := (continuous_repr_fderiv_mul (b := b) hσ s).comp
-    (continuous_subtype_val (p := (· ∈ D)))
+    (continuous_subtypeVal (p := (· ∈ D)))
   have key := contDiffOn_integral_smul_of_contDiffOn (μ := volume.comap ((↑) : D → ℂ))
     (ι := fun z : D ↦ σ z) (F := fun q : E × E ↦ ρ (q.1 - q.2))
     (integrableOn_univ.1 (hg.continuousOn.integrableOn_compact isCompact_univ))
-    (hσ.continuous.comp (continuous_subtype_val (p := (· ∈ D)))) isOpen_univ
+    (hσ.continuous.comp (continuous_subtypeVal (p := (· ∈ D)))) isOpen_univ
     (hρ.comp (contDiff_fst.sub contDiff_snd)).contDiffOn (U := univ) fun _ _ _ ↦ mem_univ _
   rw [contDiffOn_univ] at key
   convert key using 1

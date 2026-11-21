@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -37,6 +38,12 @@ whenever the extension vanishes near every point of `W` outside `U`
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
 the extension step of its compactly supported variant.
+
+A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambient manifolds
+(`PartialDiffeomorph.liftOpens`), pulls a form back as `Ψ` pulls back its restriction to `V`
+(`TauCeti.mpullback_liftOpens_apply_coe`). So a construction carried out on an open submanifold,
+such as a flow defined only where some condition on the forms holds, transfers to the ambient
+manifold.
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -91,7 +98,7 @@ namespace RoughForm
 theorem extendByZero_inclusion {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k) (x : U) :
     extendByZero W ω (Opens.inclusion h x) = ω x := by
   simp only [extendByZero, Opens.inclusion]
-  exact dite_eq_left x.2
+  exact dite_eq_left x.property
 
 /-- The extension by zero agrees with the form at the points of the smaller open subset. -/
 theorem extendByZero_apply_of_mem {U W : Opens M} (ω : RoughForm I U F k) {x : W}
@@ -182,7 +189,7 @@ private theorem extendByZero_eq_extend {U W : Opens M} (h : U ≤ W) (ω : Rough
       ((Set.inclusion_injective h).extend_apply _ (0 : W → E [⋀^Fin k]→L[ℝ] F) ⟨x, hx⟩).symm
   · have hxr : ¬∃ y, Opens.inclusion h y = x := by
       rintro ⟨y, rfl⟩
-      exact hx y.2
+      exact hx y.property
     exact (extendByZero_apply_of_notMem ω hx).trans
       (Function.extend_apply' (γ := E [⋀^Fin k]→L[ℝ] F) (f := Opens.inclusion h) ω 0 x hxr).symm
 
@@ -215,7 +222,7 @@ theorem eventually_extendByZero_eq_zero {U W : Opens M} (h : U ≤ W) {ω : Roug
   have hxs : x ∉ _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (extendByZero W ω) :=
     fun hxs ↦ hx <| by
       obtain ⟨y, -, rfl⟩ := tsupport_extendByZero_subset h hω hxs
-      exact y.2
+      exact y.property
   filter_upwards [(_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _).isOpen_compl.mem_nhds
     hxs] with y hy
   exact _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] F) hy
@@ -257,7 +264,7 @@ theorem mextDeriv_ofFunction_coe_fst_apply {U : Opens F} (z : U × M)
       v.1 := by
   have h : (fun z : U × M ↦ (z.1 : F)) = Subtype.val ∘ Prod.fst := rfl
   rw [mextDeriv_ofFunction_apply, h, mfderiv_comp z
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
+      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
     ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
   -- Tangent vectors of `U × M` are pairs.
@@ -352,7 +359,7 @@ theorem IsSmoothForm.of_mpullback_inclusion_sup {U V : Opens M} {n : WithTop ℕ
     IsSmoothForm I n γ := by
   refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
     (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
-  · rcases Opens.mem_sup.mp x.2 with hx | hx
+  · rcases Opens.mem_sup.mp x.property with hx | hx
     exacts [⟨true, hx⟩, ⟨false, hx⟩]
   · cases b
     · exact hV
@@ -385,5 +392,30 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
       (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
   exact (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h
     (fun x hx ↦ RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx))
+
+omit [IsManifold I 1 M] in
+/-- **Pullback along a partial diffeomorphism between open subsets.** Let `Ψ` be a partial
+diffeomorphism from an open subset `U` of `M` to an open subset `V` of `M'`, read in the ambient
+manifolds as `Ψ.liftOpens`. At a point of the source of `Ψ`, pulling a form on `M'` back along the
+lift is pulling its restriction to `V` back along `Ψ`. -/
+theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {n : WithTop ℕ∞} {U : Opens M} {V : Opens M'}
+    (Ψ : PartialDiffeomorph I I' U V n) (hn : n ≠ 0) (hU : Nonempty U) (hV : Nonempty V)
+    (ω : RoughForm I' M' F k) {x : U} (hx : x ∈ Ψ.source) :
+    mpullback I I' (Ψ.liftOpens hU hV) ω x =
+      mpullback I I' Ψ (mpullback I' I' (Subtype.val : V → M') ω) x := by
+  have hval (z : V) : MDifferentiableAt I' I' (Subtype.val : V → M') z :=
+    contMDiff_subtypeVal.mdifferentiableAt one_ne_zero
+  have hlift : MDifferentiableAt I I' (Ψ.liftOpens hU hV) x :=
+    (Ψ.liftOpens hU hV).mdifferentiableAt hn (by
+      rw [PartialDiffeomorph.liftOpens_source]
+      exact ⟨x, hx, rfl⟩)
+  -- On `U`, the lift composed with the inclusion is the inclusion composed with `Ψ`.
+  have hcomp : ⇑(Ψ.liftOpens hU hV) ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ :=
+    funext (Ψ.liftOpens_apply_coe hU hV)
+  refine (mpullback_subtype_val_apply _ x).symm.trans ?_
+  rw [← mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hlift, hcomp,
+    mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
 
 end TauCeti

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
+public import Mathlib.Order.WithBot
 
 import Mathlib.Order.SuccPred.Nat
 import TauCeti.Order.SuccPred.IntermediateValue
@@ -27,7 +29,9 @@ instead.
 The second statement is the diagonal extraction of a subsequence along which countably many
 sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
 each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
-them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+them converge. It is the compactness step of the Arzelà–Ascoli theorem. For finitely many
+properties of extractions, each preserved by further extraction, the same holds one property at a
+time (`TauCeti.extraction_forall_mem_finset`).
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
@@ -40,7 +44,9 @@ steps of at most one.
 
 In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
 numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
-(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`. In an
+Archimedean ordered semiring, truncating a finite `WithTop` element at natural casts eventually
+stabilizes (`WithTop.eventually_min_natCast_eq`).
 -/
 
 public section
@@ -77,31 +83,51 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
   -- `θ j` is the subsequence along which `x 0, …, x j` converge, each refining the previous one.
   let θ : ℕ → {ψ : ℕ → ℕ // StrictMono ψ} := fun j ↦ Nat.rec
     ⟨ψ' 0 id strictMono_id, hψ' 0 id strictMono_id⟩
-    (fun j θj ↦ ⟨θj.1 ∘ ψ' (j + 1) θj.1 θj.2, θj.2.comp (hψ' (j + 1) θj.1 θj.2)⟩) j
-  have hθ0 : (θ 0).1 = ψ' 0 id strictMono_id := rfl
-  have hθsucc j : (θ (j + 1)).1 = (θ j).1 ∘ ψ' (j + 1) (θ j).1 (θ j).2 := rfl
-  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).1 n)) atTop (l z) := by
+    (fun j θj ↦ ⟨θj.val ∘ ψ' (j + 1) θj.val θj.property, θj.property.comp (hψ'
+        (j + 1) θj.val θj.property)⟩) j
+  have hθ0 : (θ 0).val = ψ' 0 id strictMono_id := rfl
+  have hθsucc j : (θ (j + 1)).val = (θ j).val ∘ ψ' (j + 1) (θ j).val (θ j).property := rfl
+  have hθ j : ∃ z, Tendsto (fun n ↦ x j ((θ j).val n)) atTop (l z) := by
     cases j with
     | zero => exact ⟨_, by simpa only [hθ0, id] using hy 0 id strictMono_id⟩
     | succ j =>
-      exact ⟨_, by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).1 (θ j).2⟩
+      exact ⟨_,
+          by simpa only [hθsucc, Function.comp_apply] using hy (j + 1) (θ j).val (θ j).property⟩
   -- Every later `θ n` is a subsequence of `θ j`.
-  have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).1 a = (θ j).1 b := by
+  have hsub j n (hjn : j ≤ n) a : ∃ b, a ≤ b ∧ (θ n).val a = (θ j).val b := by
     induction n, hjn using Nat.le_induction generalizing a with
     | base => exact ⟨a, le_rfl, rfl⟩
     | succ n _ ih =>
-      obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).1 (θ n).2 a)
+      obtain ⟨b, hab, hb⟩ := ih (ψ' (n + 1) (θ n).val (θ n).property a)
       exact ⟨b, ((hψ' _ _ _).id_le a).trans hab, by rw [hθsucc]; exact hb⟩
   -- The diagonal subsequence `n ↦ θ n n`.
-  refine ⟨fun n ↦ (θ n).1 n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
+  refine ⟨fun n ↦ (θ n).val n, strictMono_nat_of_lt_succ fun n ↦ ?_, fun j ↦ ?_⟩
   · rw [hθsucc]
-    exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
+    exact (θ n).property.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).property n.lt_succ_self)
   · obtain ⟨z, hz⟩ := hθ j
     choose m hm using fun n ↦ hsub j (max j n) (le_max_left _ _) (max j n)
     refine ⟨z, (hz.comp (tendsto_atTop_mono (fun n ↦ (le_max_right j n).trans (hm n).1)
       tendsto_id)).congr' ?_⟩
     filter_upwards [eventually_ge_atTop j] with n hn
     simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+
+/-- **Common extraction for finitely many properties.** Let `P i` be properties of extractions
+`ψ : ℕ → ℕ`, for `i` in a finite set `s`, each preserved by passing to a further extraction. If
+every extraction has, for each `i ∈ s`, a further extraction with property `P i`, then a single
+extraction has every property `P i`, `i ∈ s`. -/
+theorem extraction_forall_mem_finset {ι : Type*} {s : Finset ι} {P : ι → (ℕ → ℕ) → Prop}
+    (h : ∀ i ∈ s, ∀ ψ : ℕ → ℕ, StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P i (ψ ∘ ψ'))
+    (hP : ∀ i ∈ s, ∀ ψ ψ' : ℕ → ℕ, StrictMono ψ' → P i ψ → P i (ψ ∘ ψ')) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ i ∈ s, P i ψ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨id, strictMono_id, by simp⟩
+  | insert a s _ ih =>
+    obtain ⟨ψ, hψ, hs⟩ := ih (fun i hi ↦ h i (Finset.mem_insert_of_mem hi))
+      fun i hi ↦ hP i (Finset.mem_insert_of_mem hi)
+    obtain ⟨ψ', hψ', ha⟩ := h a (Finset.mem_insert_self a s) ψ hψ
+    exact ⟨ψ ∘ ψ', hψ.comp hψ', (Finset.forall_mem_insert _ _ _).2
+      ⟨ha, fun i hi ↦ hP i (Finset.mem_insert_of_mem hi) ψ ψ' hψ' (hs i hi)⟩⟩
 
 /-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
 floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
@@ -156,3 +182,18 @@ theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [
     exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 end TauCeti
+
+namespace WithTop
+
+/-- Truncating a finite extended element at `(n : ι)` eventually leaves it unchanged. -/
+theorem eventually_min_natCast_eq {ι : Type*} [Semiring ι] [LinearOrder ι] [IsOrderedRing ι]
+    [Archimedean ι] {τ : WithTop ι} (hfin : τ ≠ ⊤) :
+    ∀ᶠ n : ℕ in atTop, min ((n : ι) : WithTop ι) τ = τ := by
+  cases τ with
+  | top => exact absurd rfl hfin
+  | coe s =>
+    obtain ⟨N, hN⟩ := exists_nat_ge s
+    filter_upwards [eventually_ge_atTop N] with n hn
+    exact min_eq_right (WithTop.coe_le_coe.mpr (hN.trans (Nat.mono_cast hn)))
+
+end WithTop

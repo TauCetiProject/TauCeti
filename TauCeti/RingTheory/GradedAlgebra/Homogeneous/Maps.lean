@@ -232,7 +232,7 @@ theorem irrelevant_le_map_baseChangeMap :
     | tmul s a =>
       rw [HomogeneousIdeal.toIdeal_map]
       have ha := Ideal.mem_map_of_mem (baseChangeMap S 𝒜)
-        (mem_irrelevant_of_mem 𝒜 hn a.2)
+        (mem_irrelevant_of_mem 𝒜 hn a.property)
       simpa only [Submodule.coe_toBaseChange_tmul, baseChangeMap_apply,
         Algebra.TensorProduct.tmul_mul_tmul, one_mul, mul_one] using
         Ideal.mul_mem_left _ (s ⊗ₜ[R] (1 : A)) ha

@@ -48,7 +48,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 private abbrev bdryI (n : ℕ) := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
 

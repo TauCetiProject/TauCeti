@@ -84,7 +84,7 @@ variable [ContinuousConstSMul 𝕜 X]
 `-1`-eigenspaces, through `x ↦ (2⁻¹ • (x + σ x), 2⁻¹ • (x - σ x))`. -/
 noncomputable def equivEigenspaceProd (σ : X →L[𝕜] X) (hσ : Function.Involutive σ) :
     X ≃L[𝕜] eigenspace (σ : End 𝕜 X) 1 × eigenspace (σ : End 𝕜 X) (-1) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((((2 : 𝕜)⁻¹ • (ContinuousLinearMap.id 𝕜 X + σ)).codRestrict _ fun x ↦ by
         rw [mem_eigenspace_iff]
         simp [hσ x, add_comm]).prod
@@ -93,16 +93,17 @@ noncomputable def equivEigenspaceProd (σ : X →L[𝕜] X) (hσ : Function.Invo
         simp [hσ x, smul_sub]
         abel))
     ((Submodule.subtypeL _).coprod (Submodule.subtypeL _))
-    (fun x ↦ by
-      have h2 : x + σ x + (x - σ x) = (2 : 𝕜) • x := by module
-      simp only [coprod_apply, prod_apply, Submodule.subtypeL_apply, coe_codRestrict_apply,
-        smul_apply, add_apply, sub_apply, id_apply]
-      rw [← smul_add, h2, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul])
-    (fun ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ ↦ by
+    (ContinuousLinearMap.ext fun ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ ↦ by
       rw [mem_eigenspace_iff] at ha hb
       simp only [coe_coe, one_smul, neg_smul] at ha hb
       ext <;>
       simp [ha, hb, ← add_smul, ← two_mul, mul_inv_cancel₀ (two_ne_zero (α := 𝕜))])
+    (ContinuousLinearMap.ext fun x ↦ by
+      have h2 : x + σ x + (x - σ x) = (2 : 𝕜) • x := by module
+      simp only [comp_apply, coprod_apply, prod_apply,
+        Submodule.subtypeL_apply, coe_codRestrict_apply, smul_apply, add_apply, sub_apply,
+        id_apply]
+      rw [← smul_add, h2, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul])
 
 @[simp]
 lemma coe_equivEigenspaceProd_fst (σ : X →L[𝕜] X) (hσ : Function.Involutive σ) (x : X) :
@@ -148,7 +149,7 @@ def eigenspaceNegEquiv {σ J : X →L[𝕜] X} (hJ : J.comp J = -ContinuousLinea
     (hJσ : σ.comp J = -J.comp σ) (μ : 𝕜) :
     eigenspace (σ : End 𝕜 X) μ ≃L[𝕜] eigenspace (σ : End 𝕜 X) (-μ) :=
   have hJσx (x : X) : σ (J x) = -J (σ x) := congr($hJσ x)
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (J.restrict fun x hx ↦ by
       rw [mem_eigenspace_iff] at hx ⊢
       simp only [coe_coe] at hx ⊢
@@ -157,8 +158,8 @@ def eigenspaceNegEquiv {σ J : X →L[𝕜] X} (hJ : J.comp J = -ContinuousLinea
       rw [mem_eigenspace_iff] at hx ⊢
       simp only [coe_coe, neg_apply, map_neg] at hx ⊢
       rw [hJσx, hx, map_smul, neg_smul, neg_neg, smul_neg])
-    (fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
-    (fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by simpa using congr(-$hJ x))
 
 @[simp]
 lemma coe_eigenspaceNegEquiv_apply {σ J : X →L[𝕜] X}

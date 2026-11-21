@@ -79,7 +79,7 @@ theorem isIrreducible_restrict_sl_of_forall_one_lie_eq_smul {c : K}
     LieModule.IsIrreducible K (LieAlgebra.SpecialLinear.sl (Fin n) K) M := by
   refine isIrreducible_of_sup_center_eq_top_of_forall_exists_lie_eq_smul K
     (Matrix (Fin n) (Fin n) K) M _ (sup_center_eq_top hn) fun z => ?_
-  obtain ⟨r, hr⟩ := mem_center_matrix_iff.mp z.2
+  obtain ⟨r, hr⟩ := mem_center_matrix_iff.mp z.property
   exact ⟨r * c, fun m => by rw [hr, smul_lie, hc, smul_smul]⟩
 
 /-- **An irreducible `gl n` module carrying a highest weight vector stays irreducible on restriction

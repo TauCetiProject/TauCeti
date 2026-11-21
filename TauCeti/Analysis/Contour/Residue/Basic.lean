@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 import TauCeti.Order.WithBot
 
@@ -55,6 +56,11 @@ incomplete codomain.
   residue is the leading Laurent (trailing) coefficient.
 * `TauCeti.Contour.residue_div_sub_pow_of_analyticAt` — the Cauchy-kernel computation
   `Res_{z₀} (g / (· − z₀) ^ (k + 1)) = g^{(k)}(z₀) / k !` for `g : ℂ → ℂ` analytic at `z₀`.
+* `TauCeti.Contour.residue_zero_cpow_smul_of_eventually_ne_zero`,
+  `TauCeti.Contour.residue_zero_cpow_smul`, `TauCeti.Contour.residue_zero_cpow_neg_smul`,
+  `TauCeti.Contour.residue_zero_cpow_mul`, `TauCeti.Contour.residue_zero_cpow_neg_mul` —
+  vanishing of the residue when multiplying by `(0 : ℂ) ^ g z` for an exponent nonzero on a
+  punctured neighborhood (in particular `(0 : ℂ) ^ z` and `(0 : ℂ) ^ (-z)`).
 
 ## Provenance
 
@@ -414,6 +420,46 @@ theorem residue_of_laurent_expansion {f g : ℂ → ℂ} {z₀ : ℂ} {N : ℕ} 
   · simp
   · rw [dite_eq_left hpos, Finset.sum_eq_single ⟨0, hpos⟩ (fun k _ hk ↦ ite_eq_right fun h0 ↦
       hk (Fin.ext h0)) (by simp), ite_eq_left rfl]
+
+/-- If `g : ℂ → ℂ` does not vanish on a punctured neighborhood of `z₀`, then
+`z ↦ (0 : ℂ) ^ g z • f z` vanishes on a punctured neighborhood of `z₀` and has residue `0`,
+without requiring meromorphy of `f` or completeness of `E`. -/
+theorem residue_zero_cpow_smul_of_eventually_ne_zero {g : ℂ → ℂ} (f : ℂ → E) {z₀ : ℂ}
+    (hg : ∀ᶠ z in 𝓝[≠] z₀, g z ≠ 0) :
+    residue (fun z ↦ (0 : ℂ) ^ g z • f z) z₀ = 0 :=
+  (residue_congr_nhdsNE (hg.mono fun z hz ↦ by rw [Complex.zero_cpow hz, zero_smul])).trans
+    (residue_eq_zero_of_analyticAt analyticAt_const)
+
+/-- Since `z ↦ (0 : ℂ) ^ z` vanishes on a punctured neighborhood of every point `z₀`, multiplying
+any function by `(0 : ℂ) ^ z` has residue `0` at `z₀`. -/
+@[simp]
+theorem residue_zero_cpow_smul (f : ℂ → E) (z₀ : ℂ) :
+    residue (fun z ↦ (0 : ℂ) ^ z • f z) z₀ = 0 :=
+  residue_zero_cpow_smul_of_eventually_ne_zero f
+    ((eventually_cofinite_ne (0 : ℂ)).filter_mono (nhdsNE_le_cofinite z₀))
+
+/-- Since `z ↦ (0 : ℂ) ^ (-z)` vanishes on a punctured neighborhood of every point `z₀`,
+multiplying any function by `(0 : ℂ) ^ (-z)` has residue `0` at `z₀`. -/
+@[simp]
+theorem residue_zero_cpow_neg_smul (f : ℂ → E) (z₀ : ℂ) :
+    residue (fun z ↦ (0 : ℂ) ^ (-z) • f z) z₀ = 0 :=
+  residue_zero_cpow_smul_of_eventually_ne_zero f
+    (((eventually_cofinite_ne (0 : ℂ)).filter_mono (nhdsNE_le_cofinite z₀)).mono fun _ hz ↦
+      neg_ne_zero.mpr hz)
+
+/-- The applied `*` companion to `residue_zero_cpow_smul`: `z ↦ (0 : ℂ) ^ z * f z` has residue `0`
+at every point `z₀`. -/
+@[simp]
+theorem residue_zero_cpow_mul (f : ℂ → ℂ) (z₀ : ℂ) :
+    residue (fun z ↦ (0 : ℂ) ^ z * f z) z₀ = 0 := by
+  simpa only [smul_eq_mul] using residue_zero_cpow_smul f z₀
+
+/-- The applied `*` companion to `residue_zero_cpow_neg_smul`: `z ↦ (0 : ℂ) ^ (-z) * f z` has
+residue `0` at every point `z₀`. -/
+@[simp]
+theorem residue_zero_cpow_neg_mul (f : ℂ → ℂ) (z₀ : ℂ) :
+    residue (fun z ↦ (0 : ℂ) ^ (-z) * f z) z₀ = 0 := by
+  simpa only [smul_eq_mul] using residue_zero_cpow_neg_smul f z₀
 
 end TauCeti.Contour
 

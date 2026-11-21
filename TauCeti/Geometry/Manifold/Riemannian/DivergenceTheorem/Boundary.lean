@@ -89,7 +89,7 @@ theorem hasCompactSupport_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n
       inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)) := by
   have hclosed := ((𝓡∂ (n + 1)).isClosed_boundary (M := M) one_ne_zero).isClosedEmbedding_subtypeVal
   refine HasCompactSupport.intro' (hclosed.isCompact_preimage hc)
-    ((isClosed_tsupport _).preimage continuous_subtype_val) fun x hx ↦ ?_
+    ((isClosed_tsupport _).preimage continuous_subtypeVal) fun x hx ↦ ?_
   have h0 : X (x : M) = 0 := image_eq_zero_of_notMem_tsupport
     (α := EuclideanSpace ℝ (Fin (n + 1))) hx
   simp [h0]
@@ -103,11 +103,11 @@ theorem continuous_boundaryFlux {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) 
     (hX : Continuous (T% X)) :
     Continuous (fun x : (𝓡∂ (n + 1)).boundary M ↦
       inner ℝ (X (x : M)) (halfSpaceOutwardUnitNormal x)) := by
-  let _ := isManifold_boundary (n := n) (k := 1) M one_ne_zero
+  let _ := isManifold_boundary (n := n) (k := 1) M
   have _ : IsManifold (𝓡∂ (n + 1)) (0 + 1) M := by simpa using ‹IsManifold (𝓡∂ (n + 1)) 1 M›
   exact (ContMDiff.inner_bundle
     (h := IsContinuousRiemannianBundle.toIsContMDiffZero (IB := 𝓡∂ (n + 1)))
-    (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2 (hX.comp continuous_subtype_val))
+    (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2 (hX.comp continuous_subtypeVal))
     (contMDiff_zero_iff (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))).2
       continuous_halfSpaceOutwardUnitNormal)).continuous
 
@@ -417,7 +417,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalf
 
 local instance : IsManifold (𝓡∂ (n + 1)) 1 M := IsManifold.of_le (n := 2) (by norm_num)
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 /-- **Comparison of Stokes' theorem for `ι_X dV` with the Riemannian divergence theorem.** On an
 oriented `C²` Riemannian manifold with boundary, the top-form integral of `d(ι_X dV)` equals
