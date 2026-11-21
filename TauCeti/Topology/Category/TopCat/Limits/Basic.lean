@@ -159,14 +159,22 @@ theorem coe_sigmaMap :
     refine Limits.Sigma.hom_ext _ _ fun i ↦ ?_
     rw [Limits.Sigma.ι_map_assoc, TopCat.sigmaIsoSigma_hom_ι, ← Category.assoc,
       TopCat.sigmaIsoSigma_hom_ι]
-    rfl
+    -- Both sides send `x : A i` to `⟨i, φ i x⟩`.
+    refine TopCat.ext fun x ↦ ?_
+    simp [Sigma.map]
+  ext x
   rw [this]
-  rfl
+  simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk,
+    Function.comp_apply]
 
 /-- **A coproduct of embeddings in `TopCat` is an embedding.** -/
 theorem isEmbedding_sigmaMap (hφ : ∀ i, Topology.IsEmbedding (φ i)) :
     Topology.IsEmbedding (Limits.Sigma.map φ) := by
-  rw [coe_sigmaMap]
+  have hA : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)) = (TopCat.sigmaIsoSigma A).hom :=
+    funext (TopCat.homeoOfIso_apply _)
+  have hX : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) = (TopCat.sigmaIsoSigma X).inv :=
+    funext fun x ↦ by rw [TopCat.homeoOfIso_apply, Iso.symm_hom]
+  rw [coe_sigmaMap, ← hA, ← hX]
   exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm).isEmbedding.comp
     (((Topology.isEmbedding_sigmaMap Function.injective_id).2 hφ).comp
       (TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)).isEmbedding)

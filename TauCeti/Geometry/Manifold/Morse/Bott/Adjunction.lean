@@ -438,37 +438,6 @@ end IsCriticalSubmanifold
 
 end Adjunction
 
-section AttachmentSquare
-
-universe u
-
-variable {M : Type u} [TopologicalSpace M]
-
-/-- If a subset `X` of `M` is obtained from `L ⊆ X` by attaching `D` along `α : A → L`, as a
-pushout square in `TopCat`, and `X` is a strong deformation retract of `Y ⊇ X`, then `Y` is
-homotopy equivalent to the pushout of `j` and `α`, by a homotopy equivalence which is the
-inclusion on `L`. This is the step from the deformation theorems for the negative disc bundles to
-their attachment in pushout form. -/
-private theorem exists_homotopyEquiv_pushout_of_isPushout {L X Y : Set M} (hLX : L ⊆ X)
-    (hXY : X ⊆ Y) {A D : TopCat.{u}} {j : A ⟶ D} {α : A ⟶ TopCat.of L} {χ : D ⟶ TopCat.of X}
-    (sq : IsPushout j α χ (TopCat.ofHom (ContinuousMap.inclusion hLX)))
-    (ρ : C(Y, ↥(Y ∩ X))) (hρ : ∀ y, ρ (ContinuousMap.inclusion inter_subset_left y) = y)
-    (R : ((ContinuousMap.inclusion inter_subset_left).comp ρ).HomotopyRel (ContinuousMap.id _)
-      {y | (y : M) ∈ X}) :
-    ∃ e : ↑(pushout j α) ≃ₕ Y, ∀ z, (e (pushout.inr j α z) : M) = z := by
-  -- The pushout is identified with `X` compatibly with the inclusions of `L`, and `X` is a strong
-  -- deformation retract of `Y`.
-  have hinr (w : L) : (TopCat.homeoOfIso sq.isoPushout.symm (pushout.inr j α w) : M) = w := by
-    rw [TopCat.homeoOfIso_apply, Iso.symm_hom, ← ConcreteCategory.comp_apply,
-      sq.inr_isoPushout_inv, TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
-  refine ⟨((TopCat.homeoOfIso sq.isoPushout.symm).trans
-    (Homeomorph.setCongr (inter_eq_right.2 hXY).symm)).toHomotopyEquiv.trans
-    (ContinuousMap.HomotopyEquiv.ofRetraction _ ρ hρ R.toHomotopy), fun z ↦ ?_⟩
-  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply]
-  exact hinr z
-
-end AttachmentSquare
-
 section Attachment
 
 universe u
@@ -983,9 +952,8 @@ theorem exists_homotopyEquiv_pushout_sigma_negativeDiscBundle [T2Space M]
     exact ⟨hac.le, hcb.le⟩
   have (k : ι) : Nonempty (S k) := h.nonempty k
   have : Finite {k // ∀ s, f (i k s) = c} :=
-    ((h.locallyFinite_range.finite_nonempty_inter_compact hcompact).subset
-      (t := {k | ∀ s, f (i k s) = c})
-      fun k hk ↦ (range_nonempty (i k)).mono (subset_inter subset_rfl (hsub ⟨k, hk⟩))).to_subtype
+    ((h.finite_setOf_range_subset hcompact).subset (t := {k | ∀ s, f (i k s) = c})
+      fun k hk ↦ hsub ⟨k, hk⟩).to_subtype
   have (k : {k // ∀ s, f (i k s) = c}) : CompactSpace (S k) :=
     h.compactSpace_of_range_subset hcompact (hsub k)
   exact SmoothEmbedding.exists_homotopyEquiv_pushout_sigma_negativeDiscBundle

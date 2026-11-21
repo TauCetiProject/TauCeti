@@ -9,6 +9,7 @@ public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.Category.TopCat.Pushout
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Homotopy invariance of attaching along a cofibration
@@ -68,6 +69,10 @@ a two-sided homotopy inverse of `F`.
   base induces a homotopy equivalence of attachments.**
 * `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`: the same for the pushouts in
   `TopCat`, as a homotopy equivalence `Z ∪_a Y ≃ₕ Z' ∪_{e ∘ a} Y` which is `e` on `Z`.
+* `TauCeti.exists_homotopyEquiv_pushout_of_isPushout`: if a subspace `X` is obtained from `L ⊆ X`
+  by an attachment, given as a pushout square in `TopCat`, and `X` is a strong deformation retract
+  of `Y`, then `Y` is homotopy equivalent to the pushout, by a homotopy equivalence which is the
+  inclusion on `L`.
 * `TauCeti.TopCat.hasHomotopyExtensionProperty_range_sigmaMap`: a coproduct in `TopCat` of
   cofibrations is a cofibration, so that several pieces can be attached at once along a coproduct
   of cofibrations.
@@ -348,11 +353,44 @@ theorem hasHomotopyExtensionProperty_range_sigmaMap
     rintro ⟨⟨k, a⟩, hka⟩
     obtain ⟨rfl, ha⟩ := Sigma.mk.inj_iff.1 hka
     exact ⟨mem_univ _, a, eq_of_heq ha⟩
+  have hA : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma A)) = (TopCat.sigmaIsoSigma A).hom :=
+    funext (TopCat.homeoOfIso_apply _)
+  have hX : ⇑(TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) = (TopCat.sigmaIsoSigma X).inv :=
+    funext fun x ↦ by rw [TopCat.homeoOfIso_apply, Iso.symm_hom]
   convert (HasHomotopyExtensionProperty.sigma hφ).image
     (TopCat.homeoOfIso (TopCat.sigmaIsoSigma X).symm) using 1
-  rw [coe_sigmaMap, range_comp, range_comp,
-    Function.Surjective.range_eq (f := ⇑(TopCat.sigmaIsoSigma A).hom)
-      (TopCat.homeoOfIso _).surjective, image_univ, hrange]
-  rfl
+  rw [coe_sigmaMap, ← hA, ← hX, range_comp, range_comp, Homeomorph.range_coe, image_univ, hrange]
 
 end TauCeti.TopCat
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits Set
+
+universe u
+
+variable {M : Type u} [TopologicalSpace M]
+
+/-- **An attachment onto a strong deformation retract.** If a subset `X` of `M` is obtained from
+`L ⊆ X` by attaching `D` along `α : A → L`, as a pushout square in `TopCat`, and `X` is a strong
+deformation retract of `Y ⊇ X`, then `Y` is homotopy equivalent to the pushout of `j` and `α`, by a
+homotopy equivalence which is the inclusion on `L`. -/
+theorem exists_homotopyEquiv_pushout_of_isPushout {L X Y : Set M} (hLX : L ⊆ X)
+    (hXY : X ⊆ Y) {A D : TopCat.{u}} {j : A ⟶ D} {α : A ⟶ TopCat.of L} {χ : D ⟶ TopCat.of X}
+    (sq : IsPushout j α χ (TopCat.ofHom (ContinuousMap.inclusion hLX)))
+    (ρ : C(Y, ↥(Y ∩ X))) (hρ : ∀ y, ρ (ContinuousMap.inclusion inter_subset_left y) = y)
+    (R : ((ContinuousMap.inclusion inter_subset_left).comp ρ).HomotopyRel (ContinuousMap.id _)
+      {y | (y : M) ∈ X}) :
+    ∃ e : ↑(pushout j α) ≃ₕ Y, ∀ z, (e (pushout.inr j α z) : M) = z := by
+  -- The pushout is identified with `X` compatibly with the inclusions of `L`, and `X` is a strong
+  -- deformation retract of `Y`.
+  have hinr (w : L) : (TopCat.homeoOfIso sq.isoPushout.symm (pushout.inr j α w) : M) = w := by
+    rw [TopCat.homeoOfIso_apply, Iso.symm_hom, ← ConcreteCategory.comp_apply,
+      sq.inr_isoPushout_inv, TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
+  refine ⟨((TopCat.homeoOfIso sq.isoPushout.symm).trans
+    (Homeomorph.setCongr (inter_eq_right.2 hXY).symm)).toHomotopyEquiv.trans
+    (ContinuousMap.HomotopyEquiv.ofRetraction _ ρ hρ R.toHomotopy), fun z ↦ ?_⟩
+  rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.coe_ofRetraction_apply]
+  exact hinr z
+
+end TauCeti
