@@ -24,6 +24,8 @@ of `X`, nor openness of the sets `U i`, is used.
 
 ## Main definitions and results
 
+* `TauCeti.ciSup_eq_ciSup_of_notMem_le`, `TauCeti.continuous_ciSup_of_eventually_le`:
+  eventually-finitely-dominated real-valued `iSup` reduction and continuity.
 * `PartitionOfUnity.ofExistsPos`: normalize a locally finite nonnegative family positive at every
   point into a partition of unity.
 * `PartitionOfUnity.halfMaxTrunc` and `PartitionOfUnity.shrinkOfMax`: truncate a family of
@@ -46,6 +48,36 @@ of `X`, nor openness of the sets `U i`, is used.
 public section
 
 open Function Set Filter Topology
+
+namespace TauCeti
+
+/-- If a bounded, nonnegative real-valued family `f : ι → ℝ` is dominated outside a finite set
+`I : Finset ι` by the finite supremum `⨆ i : I, f i`, then its supremum `⨆ i, f i` equals
+`⨆ i : I, f i`. -/
+theorem ciSup_eq_ciSup_of_notMem_le {ι : Type*} {f : ι → ℝ} (hbdd : BddAbove (range f))
+    (hnn : ∀ i, 0 ≤ f i) {I : Finset ι} (hI : ∀ j ∉ I, f j ≤ ⨆ i : I, f i) :
+    ⨆ i, f i = ⨆ i : I, f i := by
+  have hnonneg : 0 ≤ ⨆ i : I, f i := Real.iSup_nonneg fun i ↦ hnn i.1
+  refine le_antisymm (Real.iSup_le (fun j ↦ ?_) hnonneg)
+    (Real.iSup_le (fun i : I ↦ le_ciSup hbdd i.1) (Real.iSup_nonneg hnn))
+  by_cases hj : j ∈ I
+  · exact le_ciSup (finite_range (fun i : I ↦ f i)).bddAbove ⟨j, hj⟩
+  · exact hI j hj
+
+/-- The pointwise supremum of a pointwise bounded, nonnegative family of continuous real-valued
+functions is continuous if around every point it is eventually dominated outside a finite index
+set by the supremum over that finite set. -/
+theorem continuous_ciSup_of_eventually_le {ι X : Type*} [TopologicalSpace X] {f : ι → X → ℝ}
+    (hf : ∀ i, Continuous (f i)) (hbdd : ∀ x, BddAbove (range fun i ↦ f i x))
+    (hnn : ∀ i x, 0 ≤ f i x)
+    (hevent : ∀ x₀, ∃ I : Finset ι, ∀ᶠ x in 𝓝 x₀, ∀ j ∉ I, f j x ≤ ⨆ i : I, f i x) :
+    Continuous fun x ↦ ⨆ i, f i x := by
+  refine continuous_iff_continuousAt.mpr fun x₀ ↦ ?_
+  obtain ⟨I, hI⟩ := hevent x₀
+  exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ hf i.1).continuousAt.congr
+    (hI.mono fun x hx ↦ (ciSup_eq_ciSup_of_notMem_le (hbdd x) (fun i ↦ hnn i x) hx).symm)
+
+end TauCeti
 
 namespace PartitionOfUnity
 
@@ -218,32 +250,18 @@ private theorem bddAbove_range_apply (ρ : PartitionOfUnity ι X) (x : X) :
     BddAbove (range fun i ↦ ρ i x) :=
   ⟨1, forall_mem_range.2 fun i ↦ ρ.le_one i x⟩
 
-private theorem maxWeight_nonneg (ρ : PartitionOfUnity ι X) (x : X) :
-    0 ≤ maxWeight ρ x :=
-  Real.iSup_nonneg fun i ↦ ρ.nonneg i x
-
 private theorem le_maxWeight (ρ : PartitionOfUnity ι X) (i : ι) (x : X) :
     ρ i x ≤ maxWeight ρ x :=
   le_ciSup (bddAbove_range_apply ρ x) i
 
-private theorem maxWeight_eq_of_support_subset {ρ : PartitionOfUnity ι X} {I : Finset ι} {x : X}
-    (hI : support (ρ · x) ⊆ I) :
-    maxWeight ρ x = ⨆ i : I, ρ i x := by
-  have hnonneg : 0 ≤ ⨆ i : I, ρ i x := Real.iSup_nonneg fun i ↦ ρ.nonneg i x
-  refine le_antisymm (Real.iSup_le (fun i ↦ ?_) hnonneg)
-    (Real.iSup_le (fun i : I ↦ le_maxWeight ρ i.1 x) (maxWeight_nonneg ρ x))
-  by_cases hi : i ∈ I
-  · exact le_ciSup (finite_range (fun j : I ↦ ρ j x)).bddAbove ⟨i, hi⟩
-  · have h0 : ρ i x = 0 := by_contra fun hne ↦ hi (hI hne)
-    exact h0.le.trans hnonneg
-
 private theorem continuous_maxWeight (ρ : PartitionOfUnity ι X) :
     Continuous (maxWeight ρ) := by
-  classical
-  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  refine TauCeti.continuous_ciSup_of_eventually_le (fun i ↦ (ρ i).continuous)
+    (bddAbove_range_apply ρ) (fun i x ↦ ρ.nonneg i x) fun x₀ ↦ ?_
   obtain ⟨I, hI⟩ := ρ.locallyFinite.exists_finset_support x₀
-  exact (TauCeti.continuous_ciSup_of_finite fun i : I ↦ (ρ i).continuous).continuousAt.congr
-    (hI.mono fun x hx ↦ (maxWeight_eq_of_support_subset hx).symm)
+  exact ⟨I, hI.mono fun x hx j hj ↦
+    (by_contra fun hne ↦ hj (hx hne) : ρ j x = 0).le.trans
+      (Real.iSup_nonneg fun i ↦ ρ.nonneg i.1 x)⟩
 
 private noncomputable def maxWeightCont (ρ : PartitionOfUnity ι X) : C(X, ℝ) :=
   ⟨maxWeight ρ, continuous_maxWeight ρ⟩

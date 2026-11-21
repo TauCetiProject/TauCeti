@@ -56,60 +56,65 @@ section CoordBuilder
 
 variable {G : Type u}
 
-private def ofFinsetCoordVal (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) : (Σ _ : ℕ, G) →₀ ℝ :=
-  letI := Classical.decEq (Σ _ : ℕ, G)
-  ∑ i ∈ S, Finsupp.single (⟨i, ℓ i⟩ : Σ _ : ℕ, G) (w i)
+private def labelEmbedding (ℓ : ℕ → G) : ℕ ↪ Σ _ : ℕ, G :=
+  ⟨fun i ↦ ⟨i, ℓ i⟩, fun _ _ h ↦ (Sigma.ext_iff.mp h).1⟩
 
-private theorem ofFinsetCoordVal_apply [DecidableEq G] (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (i : ℕ) (b : G) :
-    ofFinsetCoordVal S w ℓ ⟨i, b⟩ = if i ∈ S ∧ b = ℓ i then w i else 0 := by
-  unfold ofFinsetCoordVal; rw [Finset.sum_apply']
-  simp only [Finsupp.single_apply, Sigma.mk.injEq]
-  by_cases hi : i ∈ S
-  · rw [Finset.sum_eq_single i (fun _ _ hji ↦ by simp [hji]) (fun hi' ↦ absurd hi hi')]
-    simp [hi, eq_comm]
-  · rw [Finset.sum_eq_zero fun _ hj ↦ by simp [ne_of_mem_of_not_mem hj hi]]; simp [hi]
+private theorem labelEmbedding_apply (ℓ : ℕ → G) (i : ℕ) :
+    labelEmbedding ℓ i = ⟨i, ℓ i⟩ := rfl
+
+private theorem fst_comp_labelEmbedding (ℓ : ℕ → G) :
+    Sigma.fst ∘ labelEmbedding ℓ = id := rfl
+
+private def ofFinsetCoordVal (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) : (Σ _ : ℕ, G) →₀ ℝ :=
+  (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ)
+
+private theorem ofFinsetCoordVal_apply_self (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) (i : ℕ) :
+    ofFinsetCoordVal S w ℓ ⟨i, ℓ i⟩ = if i ∈ S then w i else 0 := by
+  rw [ofFinsetCoordVal, ← labelEmbedding_apply ℓ i, Finsupp.embDomain_apply_self,
+    Finsupp.indicator_apply, dite_eq_ite]
 
 private def ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) : MilnorTotalSpace G := by
-  classical
-  refine ofRealization ⟨ofFinsetCoordVal S w ℓ, mem_indexedJoin_realization_iff.mpr
-    ⟨fun ⟨i, b⟩ ↦ ?_, ?_, fun ⟨i₁, b₁⟩ ⟨i₂, b₂⟩ hv₁ hv₂ h12 ↦ ?_⟩⟩
-  · rw [ofFinsetCoordVal_apply]; split_ifs with h; exacts [hw_nonneg i h.1, le_rfl]
-  · unfold ofFinsetCoordVal
-    rwa [Finsupp.sum_finsetSum _ _ _ (fun _ ↦ rfl) (fun _ _ _ ↦ rfl),
-      Finset.sum_congr rfl fun i _ ↦ Finsupp.sum_single_index (h := fun _ r ↦ r) rfl]
-  · dsimp only at h12; subst h12; rw [ofFinsetCoordVal_apply] at hv₁ hv₂
-    split_ifs at hv₁ with h₁ <;> split_ifs at hv₂ with h₂
-    exacts [by rw [h₁.2, h₂.2], absurd rfl hv₂, absurd rfl hv₁, absurd rfl hv₁]
-
-private theorem val_ofFinsetCoord [DecidableEq G] (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) (i : ℕ) (b : G) :
-    (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val ⟨i, b⟩ = if i ∈ S ∧ b = ℓ i then w i else 0 := by
-  rw [ofFinsetCoord, val_ofRealization, ofFinsetCoordVal_apply]
+    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) : MilnorTotalSpace G :=
+  ofRealization ⟨ofFinsetCoordVal S w ℓ, mem_indexedJoin_realization_iff.mpr <| by
+    classical
+    refine ⟨?_, ?_, ?_⟩
+    · intro v
+      rw [ofFinsetCoordVal, Finsupp.embDomain_apply]
+      split_ifs with h
+      · rw [Finsupp.indicator_apply]
+        split_ifs with hs
+        · exact hw_nonneg _ hs
+        · exact le_rfl
+      · exact le_rfl
+    · rw [ofFinsetCoordVal, Finsupp.sum_embDomain,
+        Finsupp.sum_of_support_subset _ (Finsupp.support_indicator_subset S _) _ fun _ _ ↦ rfl]
+      rw [Finset.sum_congr rfl fun i hi ↦ Finsupp.indicator_of_mem hi (fun i _ ↦ w i)]
+      exact hw_sum
+    · intro v₁ v₂ hv₁ hv₂ h12
+      rw [← Finsupp.mem_support_iff, ofFinsetCoordVal, Finsupp.support_embDomain,
+        Finset.mem_map] at hv₁ hv₂
+      obtain ⟨j₁, _, rfl⟩ := hv₁
+      obtain ⟨j₂, _, rfl⟩ := hv₂
+      obtain rfl : j₁ = j₂ := h12
+      rfl⟩
 
 private theorem weight_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
     (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) (i : ℕ) :
     weight i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = if i ∈ S then w i else 0 := by
   classical
-  by_cases hi : i ∈ S
-  · simp only [hi, ↓reduceIte]
-    by_cases hwi : w i = 0
-    · rw [hwi]; refine not_not.mp fun hne ↦ ?_
-      obtain ⟨b, hb⟩ := weight_ne_zero_iff.mp hne; simp [val_ofFinsetCoord, hwi] at hb
-    · have hv : (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val ⟨i, ℓ i⟩ = w i := by
-        simp [val_ofFinsetCoord, hi]
-      rw [weight_eq_val_of_ne_zero (hv ▸ hwi), hv]
-  · simp only [hi, ↓reduceIte]; refine not_not.mp fun hne ↦ ?_
-    obtain ⟨b, hb⟩ := weight_ne_zero_iff.mp hne; simp [val_ofFinsetCoord, hi] at hb
+  have hval : (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val =
+      (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ) :=
+    val_ofRealization _
+  rw [weight_def, hval, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
+    fst_comp_labelEmbedding, Finsupp.mapDomain_id, Finsupp.indicator_apply, dite_eq_ite]
 
 private theorem label_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
     (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) {i : ℕ}
     (hi : i ∈ S) (hwi : 0 < w i) :
     label i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = ℓ i := by
-  classical
-  exact (eq_label_of_val_pos (p := ofFinsetCoord S w ℓ hw_nonneg hw_sum)
-    (by simp [val_ofFinsetCoord, hi, hwi])).symm
+  refine (eq_label_of_val_pos (p := ofFinsetCoord S w ℓ hw_nonneg hw_sum) ?_).symm
+  rw [ofFinsetCoord, val_ofRealization, ofFinsetCoordVal_apply_self]
+  simpa [hi] using hwi
 
 private theorem weight_eq_zero_of_notMem {p : MilnorTotalSpace G} {i : ℕ}
     (hi : i ∉ (finite_support_weight p).toFinset) : weight i p = 0 :=
@@ -445,8 +450,8 @@ instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
 
 instance instPathConnectedSpaceMilnorClassifyingSpace [Group G] :
     PathConnectedSpace (MilnorClassifyingSpace G) :=
-  (milnorClassifyingSpaceProj_surjective G).pathConnectedSpace
-    (continuous_milnorClassifyingSpaceProj G)
+  letI := MulAction.orbitRel Gᵐᵒᵖ (MilnorTotalSpace G)
+  Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk'
 
 instance instSimplyConnectedSpaceMilnorTotalSpace [Nonempty G] :
     SimplyConnectedSpace (MilnorTotalSpace G) :=
