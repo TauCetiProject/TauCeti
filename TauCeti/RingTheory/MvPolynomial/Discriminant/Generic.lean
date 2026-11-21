@@ -39,9 +39,9 @@ with weights `depressedWeight m i = i + 2`. Specializing `freeMonic` shows that 
 invertible in `R`, the Tschirnhaus shift `X ↦ X + a₁ / m` induces an `R`-algebra automorphism
 `TauCeti.tschirnhausEquiv` of `MvPolynomial (Fin m) R` carrying `(freeMonic R m).discr` to the
 variable-embedded `depressedDiscr R m`. Consequently, `depressedDiscr R m` is prime whenever
-`2 ≠ 0` and `IsUnit (m : R)` over a unique factorization domain (in particular in characteristic
-zero), so localizing `MvPolynomial (Fin (m - 1)) R` away from `depressedDiscr R m` has homogeneous
-unit degrees `m * (m - 1) ℤ` and shift class group `ZMod (m * (m - 1))`.
+`2 ≠ 0` and `IsUnit (m : R)` over a unique factorization domain (in particular over a field of
+characteristic zero), so localizing `MvPolynomial (Fin (m - 1)) R` away from `depressedDiscr R m`
+has homogeneous unit degrees `m * (m - 1) ℤ` and shift class group `ZMod (m * (m - 1))`.
 
 In degrees `2` and `3` the depressed discriminant is `-4 * X 0` and `-4 * X 0 ^ 3 - 27 * X 1 ^ 2`.
 In particular, when `2 ≠ 0` and `3` is invertible in a unique factorization domain `R`,
@@ -72,8 +72,8 @@ group `ZMod 12`.
   primality of `(Polynomial.freeMonic R m).discr` for `m ≥ 2` when `(2 : R) ≠ 0`.
 * `TauCeti.depressedDiscr_mem`: `depressedDiscr R m` has weight `m * (m - 1)` for `depressedWeight`.
 * `TauCeti.depressedDiscr_prime` and `TauCeti.depressedDiscr_prime_of_charZero`: primality of
-  `depressedDiscr R m` for `m ≥ 2` when `(2 : R) ≠ 0` and `IsUnit (m : R)` (in particular in
-  characteristic zero).
+  `depressedDiscr R m` for `m ≥ 2` when `(2 : R) ≠ 0` and `IsUnit (m : R)` (in particular over a
+  field of characteristic zero).
 * `TauCeti.homogeneousUnitDegrees_away_depressedDiscr`: the homogeneous unit degrees after
   inverting `depressedDiscr R m` are `AddSubgroup.zmultiples (m * (m - 1))`.
 * `TauCeti.depressedDiscr_two` and `TauCeti.depressedDiscr_three`: explicit formulas in degrees
@@ -792,7 +792,8 @@ theorem depressedDiscr_prime {R : Type*} [CommRing R] [IsDomain R] [UniqueFactor
   exact (MulEquiv.prime_iff (tschirnhausEquiv R hm hmR).toMulEquiv).mpr
     (prime_discr_freeMonic h2 hm)
 
-/-- In characteristic zero, the generic depressed discriminant is prime for every `m ≥ 2`. -/
+/-- Over a field of characteristic zero, the generic depressed discriminant is prime for every
+`m ≥ 2`. -/
 theorem depressedDiscr_prime_of_charZero (K : Type*) [Field K] [CharZero K] (m : ℕ) (hm : 2 ≤ m) :
     Prime (depressedDiscr K m) :=
   depressedDiscr_prime (two_ne_zero) (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (by omega))) hm
