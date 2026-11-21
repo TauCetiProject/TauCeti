@@ -8,14 +8,19 @@ module
 public import Mathlib.Algebra.Field.Periodic
 public import Mathlib.Analysis.Normed.Group.Bounded
 public import Mathlib.Order.Interval.Set.Basic
+public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Boundedness of periodic families over a compact space
+# Bounds for continuous periodic functions and families on `ℝ`
 
-A family `f t x`, periodic in the real parameter `t` with a nonzero period and jointly continuous
-in `(t, x)` with `x` in a compact space, is bounded
-(`Function.Periodic.exists_bound_of_continuous_uncurry`). This is the parametrised version of
-Mathlib's `Function.Periodic.isBounded_of_continuous`; time-periodic Hamiltonians on a compact
+A continuous periodic function on `ℝ` with values in a seminormed group has bounded norm
+(`Function.Periodic.exists_bound_of_continuous`). This is the pointwise form of Mathlib's
+`Function.Periodic.isBounded_of_continuous`, which bounds the range instead, and is the form needed
+to bound period-one Hamiltonians and their normalizations in Floer theory.
+
+More generally, a family `f t x`, periodic in the real parameter `t` with a nonzero period and
+jointly continuous in `(t, x)` with `x` in a compact space, is bounded
+(`Function.Periodic.exists_bound_of_continuous_uncurry`); time-periodic Hamiltonians on a compact
 manifold are the basic example.
 -/
 
@@ -24,6 +29,12 @@ public section
 open Set
 
 namespace Function
+
+/-- A continuous periodic function on `ℝ` has bounded norm. -/
+theorem Periodic.exists_bound_of_continuous {E : Type*} [SeminormedAddGroup E] {f : ℝ → E}
+    {c : ℝ} (hf : Periodic f c) (hc : c ≠ 0) (hfc : Continuous f) : ∃ C, ∀ t, ‖f t‖ ≤ C := by
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1 (hf.isBounded_of_continuous hc hfc)
+  exact ⟨C, fun t ↦ hC _ (mem_range_self t)⟩
 
 /-- A family `f t x`, periodic in `t ∈ ℝ` with a nonzero period and jointly continuous in
 `(t, x)` with `x` in a compact space, is bounded. -/
