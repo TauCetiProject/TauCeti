@@ -48,7 +48,6 @@ vectors, so they hold over any nontrivially normed field.
 
 ## Main declarations
 
-* `TauCeti.zeroSectionComplProj`: the projection `E₀ → B`.
 * `Bundle.Trivialization.zeroSectionCompl`: the chart of `E₀ → B` induced by a linear chart of `E`.
 * `TauCeti.TopCat.mem_serreFibrations_zeroSectionComplProj`: `E₀ → B` is a Serre fibration.
 * `TauCeti.isNConnected_zeroSectionComplProj`, `TauCeti.isNConnected_subtypeVal_zeroSectionCompl`:
@@ -74,27 +73,6 @@ noncomputable section
 open Bundle CategoryTheory Limits Module Set Topology
 
 universe u w
-
-namespace TauCeti
-
-section Proj
-
-variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F]
-  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-
-/-- The projection `E₀ → B` of the nonzero vectors of a bundle to the base. -/
-def zeroSectionComplProj : C(zeroSectionCompl F E, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtypeVal⟩
-
-@[simp]
-theorem zeroSectionComplProj_apply (v : zeroSectionCompl F E) :
-    zeroSectionComplProj F E v = (v : TotalSpace F E).proj :=
-  (rfl)
-
-end Proj
-
-end TauCeti
 
 namespace Bundle.Trivialization
 

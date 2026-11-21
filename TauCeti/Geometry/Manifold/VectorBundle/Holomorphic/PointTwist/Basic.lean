@@ -183,10 +183,11 @@ theorem pointTwistFactor_mul_false {x z : X} {b b' : Bool} (hb : z ∈ pointTwis
     cases b <;> cases b' <;> simp_all
   · exact pointTwistFactor_mul (by simpa using hzx) hb hb'
 
+section SmoothFactor
+
 variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X]
 
-omit [IsManifold 𝓘(ℂ) n X] in
-theorem contMDiffOn_pointTwistCoord [IsManifold 𝓘(ℂ) n X] (x : X) :
+theorem contMDiffOn_pointTwistCoord (x : X) :
     ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n (pointTwistCoord x) (chartAt ℂ x).source :=
   (contMDiffOn_chart (I := 𝓘(ℂ))).sub contMDiffOn_const
 
@@ -210,12 +211,13 @@ theorem contMDiffOn_pointTwistFactor_false (x : X) (b : Bool) :
   · exact contMDiffOn_const
   · exact contMDiffOn_pointTwistCoord x
 
+end SmoothFactor
+
 /-- Read in the chart at `x`, the centred coordinate is the translation `w ↦ w - φ x`. -/
 theorem pointTwistCoord_chartAt_symm {x : X} {w : ℂ} (hw : w ∈ (chartAt ℂ x).target) :
     pointTwistCoord x ((chartAt ℂ x).symm w) = w - chartAt ℂ x x := by
   rw [pointTwistCoord, (chartAt ℂ x).right_inv hw]
 
-omit [IsManifold 𝓘(ℂ) n X] in
 theorem continuousOn_pointTwistFactor (x : X) (b b' : Bool) :
     ContinuousOn (pointTwistFactor x b b') (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') :=
   (contMDiffOn_pointTwistFactor (n := 0) x b b').continuousOn
@@ -246,6 +248,7 @@ theorem signedPointTwistFactor_mul {x z : X} {s b b' b'' : Bool} (hb : z ∈ poi
     exact pointTwistFactor_mul hb'' hb' hb
   · exact pointTwistFactor_mul hb hb' hb''
 
+variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X] in
 theorem contMDiffOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
     ContMDiffOn 𝓘(ℂ) 𝓘(ℂ) n (signedPointTwistFactor x s b b')
       (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') := by
@@ -253,13 +256,14 @@ theorem contMDiffOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
   · exact (contMDiffOn_pointTwistFactor x b' b).mono fun _ hz ↦ ⟨hz.2, hz.1⟩
   · exact contMDiffOn_pointTwistFactor x b b'
 
-omit [IsManifold 𝓘(ℂ) n X] in
 theorem continuousOn_signedPointTwistFactor (x : X) (s b b' : Bool) :
     ContinuousOn (signedPointTwistFactor x s b b')
       (pointTwistBaseSet x b ∩ pointTwistBaseSet x b') :=
   (contMDiffOn_signedPointTwistFactor (n := 0) x s b b').continuousOn
 
 /-! ### The point-twist core -/
+
+section Bundle
 
 variable (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F]
   (E : X → Type*) [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)]
@@ -324,17 +328,6 @@ theorem signedPointTwistCore_coordChange (x : X) (s : Bool) (i j : X × Bool) (z
       signedPointTwistFactor x s i.2 j.2 z •
         ((trivializationAt F E i.1).coordChangeL ℂ (trivializationAt F E j.1) z : F →L[ℂ] F) :=
   (rfl)
-
-/-- The signed point twist of a `C^n` vector bundle is a `C^n` vector bundle. Over `𝓘(ℂ)` with
-`n = ∞` this is the holomorphic structure of `E(x)` and of `E(-x)`. -/
-instance signedPointTwistCore.isContMDiff [ContMDiffVectorBundle n F E 𝓘(ℂ)] (x : X) (s : Bool) :
-    (signedPointTwistCore F E x s).IsContMDiff 𝓘(ℂ) n where
-  contMDiffOn_coordChange i j := by
-    refine ((contMDiffOn_signedPointTwistFactor x s i.2 j.2).mono ?_).smul
-      ((contMDiffOn_coordChangeL (IB := 𝓘(ℂ)) (n := n) (trivializationAt F E i.1)
-        (trivializationAt F E j.1)).mono ?_)
-    · exact fun _ hz ↦ ⟨hz.1.2, hz.2.2⟩
-    · exact fun _ hz ↦ ⟨hz.1.1, hz.2.1⟩
 
 /-- The coordinates of the preferred chart of the signed point twist at `z₀`. -/
 theorem signedPointTwistCore_trivializationAt_apply (x : X) (s : Bool) (z₀ : X)
@@ -556,7 +549,78 @@ theorem signedPointTwistCore_trivializationAt_of_ne {x z : X} {s : Bool} (h : z 
 
 /-! ### Sections of the point twist -/
 
-variable [ContMDiffVectorBundle n F E 𝓘(ℂ)]
+open Classical in
+variable (F) in
+/-- The section of the point twist determined by a section `σ` of `E` with at most a simple pole
+at `x`, given a section `ρ` of `E` that agrees with `σ` multiplied by the centred chart coordinate
+off `x`. Off `x` it is `pointTwistMul` of `σ`, and at `x` it is the leading coefficient `ρ x`. -/
+def pointTwistOfPole (x : X) (σ ρ : ∀ z, E z) (z : X) : (pointTwistCore F E x).Fiber z :=
+  if z = x then (trivializationAt F E z ⟨z, ρ z⟩).2 else pointTwistMul F E x z (σ z)
+
+variable (F) in
+@[simp] theorem pointTwistOfPole_self (x : X) (σ ρ : ∀ z, E z) :
+    pointTwistOfPole F x σ ρ x = (trivializationAt F E x ⟨x, ρ x⟩).2 :=
+  ite_eq_left rfl
+
+variable (F) in
+@[simp] theorem pointTwistOfPole_of_ne {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
+    pointTwistOfPole F x σ ρ z = pointTwistMul F E x z (σ z) :=
+  ite_eq_right h
+
+/-- Every section of the point twist is recovered by `pointTwistOfPole` from its reading as a
+section of `E` and its leading coefficient. -/
+@[simp] theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
+    (τ : ∀ z, (pointTwistCore F E x).Fiber z) :
+    pointTwistOfPole F x (fun z ↦ pointTwistDiv F E x z (τ z))
+      (fun z ↦ pointTwistPoleMul F E x z (τ z)) = τ := by
+  classical
+  funext z
+  by_cases h : z = x
+  · subst h
+    rw [pointTwistOfPole_self]
+    exact trivializationAt_pointTwistPoleMul_self (F := F) z (τ z)
+  · rw [pointTwistOfPole_of_ne F h]
+    -- Without `F`, unification takes the model fibre to be the type of `τ z`, which is the
+    -- point-twist fibre `(pointTwistCore F E x).Fiber z` rather than `F` itself.
+    exact pointTwistMul_pointTwistDiv (F := F) h (τ z)
+
+theorem pointTwistDiv_pointTwistOfPole {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
+    pointTwistDiv F E x z (pointTwistOfPole F x σ ρ z) = σ z := by
+  rw [pointTwistOfPole_of_ne F h]
+  exact pointTwistDiv_pointTwistMul h (σ z)
+
+@[simp] theorem pointTwistPoleMul_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z} {z : X}
+    (hz : z = x ∨ ρ z = pointTwistCoord x z • σ z) :
+    pointTwistPoleMul F E x z (pointTwistOfPole F x σ ρ z) = ρ z := by
+  classical
+  by_cases h : z = x
+  · subst h
+    rw [pointTwistOfPole_self, pointTwistPoleMul_apply, decide_eq_true rfl,
+      pointTwistFactor_self, one_smul]
+    exact (trivializationAt F E z).symm_apply_apply_mk (mem_baseSet_trivializationAt F E z) _
+  · refine (pointTwistPoleMul_eq_smul_pointTwistDiv h _).trans ?_
+    rw [pointTwistDiv_pointTwistOfPole h, hz.resolve_left h]
+
+end Bundle
+
+section ContMDiffBundle
+
+variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {E : X → Type*} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)]
+  [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle ℂ F E] [ContMDiffVectorBundle n F E 𝓘(ℂ)]
+
+/-- The signed point twist of a `C^n` vector bundle is a `C^n` vector bundle. Over `𝓘(ℂ)` with
+`n = ∞` this is the holomorphic structure of `E(x)` and of `E(-x)`. -/
+instance signedPointTwistCore.isContMDiff (x : X) (s : Bool) :
+    (signedPointTwistCore F E x s).IsContMDiff 𝓘(ℂ) n where
+  contMDiffOn_coordChange i j := by
+    refine ((contMDiffOn_signedPointTwistFactor x s i.2 j.2).mono ?_).smul
+      ((contMDiffOn_coordChangeL (IB := 𝓘(ℂ)) (n := n) (trivializationAt F E i.1)
+        (trivializationAt F E j.1)).mono ?_)
+    · exact fun _ hz ↦ ⟨hz.1.2, hz.2.2⟩
+    · exact fun _ hz ↦ ⟨hz.1.1, hz.2.1⟩
 
 /-- Multiplication by the canonical section of `𝒪(x)` sends a section of `E` that is `C^n` at
 `z₀` to a section of the point twist that is `C^n` at `z₀`. -/
@@ -642,64 +706,6 @@ theorem contMDiff_pointTwist_section_iff {x : X} {τ : ∀ z, (pointTwistCore F 
   · exact (contMDiffAt_pointTwist_section_iff_of_ne hz).2
       (h₁.contMDiffAt (isOpen_compl_singleton.mem_nhds hz))
 
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-open Classical in
-variable (F) in
-/-- The section of the point twist determined by a section `σ` of `E` with at most a simple pole
-at `x`, given a section `ρ` of `E` that agrees with `σ` multiplied by the centred chart coordinate
-off `x`. Off `x` it is `pointTwistMul` of `σ`, and at `x` it is the leading coefficient `ρ x`. -/
-def pointTwistOfPole (x : X) (σ ρ : ∀ z, E z) (z : X) : (pointTwistCore F E x).Fiber z :=
-  if z = x then (trivializationAt F E z ⟨z, ρ z⟩).2 else pointTwistMul F E x z (σ z)
-
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-variable (F) in
-@[simp] theorem pointTwistOfPole_self (x : X) (σ ρ : ∀ z, E z) :
-    pointTwistOfPole F x σ ρ x = (trivializationAt F E x ⟨x, ρ x⟩).2 :=
-  ite_eq_left rfl
-
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-variable (F) in
-@[simp] theorem pointTwistOfPole_of_ne {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
-    pointTwistOfPole F x σ ρ z = pointTwistMul F E x z (σ z) :=
-  ite_eq_right h
-
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-/-- Every section of the point twist is recovered by `pointTwistOfPole` from its reading as a
-section of `E` and its leading coefficient. -/
-@[simp] theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
-    (τ : ∀ z, (pointTwistCore F E x).Fiber z) :
-    pointTwistOfPole F x (fun z ↦ pointTwistDiv F E x z (τ z))
-      (fun z ↦ pointTwistPoleMul F E x z (τ z)) = τ := by
-  classical
-  funext z
-  by_cases h : z = x
-  · subst h
-    rw [pointTwistOfPole_self]
-    exact trivializationAt_pointTwistPoleMul_self (F := F) z (τ z)
-  · rw [pointTwistOfPole_of_ne F h]
-    -- Without `F`, unification takes the model fibre to be the type of `τ z`, which is the
-    -- point-twist fibre `(pointTwistCore F E x).Fiber z` rather than `F` itself.
-    exact pointTwistMul_pointTwistDiv (F := F) h (τ z)
-
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-theorem pointTwistDiv_pointTwistOfPole {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
-    pointTwistDiv F E x z (pointTwistOfPole F x σ ρ z) = σ z := by
-  rw [pointTwistOfPole_of_ne F h]
-  exact pointTwistDiv_pointTwistMul h (σ z)
-
-omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-@[simp] theorem pointTwistPoleMul_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z} {z : X}
-    (hz : z = x ∨ ρ z = pointTwistCoord x z • σ z) :
-    pointTwistPoleMul F E x z (pointTwistOfPole F x σ ρ z) = ρ z := by
-  classical
-  by_cases h : z = x
-  · subst h
-    rw [pointTwistOfPole_self, pointTwistPoleMul_apply, decide_eq_true rfl,
-      pointTwistFactor_self, one_smul]
-    exact (trivializationAt F E z).symm_apply_apply_mk (mem_baseSet_trivializationAt F E z) _
-  · refine (pointTwistPoleMul_eq_smul_pointTwistDiv h _).trans ?_
-    rw [pointTwistDiv_pointTwistOfPole h, hz.resolve_left h]
-
 /-- Conversely to `contMDiff_pointTwist_section_iff`, every section `σ` of `E` that is `C^n` off
 `x` and has at most a simple pole at `x`, in the sense that its product with the centred chart
 coordinate extends to a section `ρ` that is `C^n` at `x`, comes from a `C^n` section of the point
@@ -719,22 +725,21 @@ theorem contMDiff_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z}
     filter_upwards [h] with z hz
     rw [pointTwistPoleMul_pointTwistOfPole hz]
 
+end ContMDiffBundle
+
 /-! ### The canonical section of `𝒪(x)` -/
 
-omit [IsManifold 𝓘(ℂ) n X] in
 /-- The canonical section of `𝒪(x)`, the point twist of the trivial line bundle: the image of the
 constant function `1` under multiplication by the canonical section. -/
 def pointTwistSection (x z : X) : (pointTwistCore ℂ (Bundle.Trivial X ℂ) x).Fiber z :=
   pointTwistMul ℂ (Bundle.Trivial X ℂ) x z (1 : ℂ)
 
-omit [IsManifold 𝓘(ℂ) n X] in
 open Classical in
 theorem pointTwistSection_apply (x z : X) :
     pointTwistSection x z = pointTwistFactor x false (decide (z = x)) z := by
   rw [pointTwistSection, pointTwistMul_apply]
   exact mul_one (pointTwistFactor x false (decide (z = x)) z)
 
-omit [IsManifold 𝓘(ℂ) n X] in
 /-- The canonical section of `𝒪(x)` vanishes exactly at `x`. -/
 @[simp] theorem pointTwistSection_eq_zero_iff {x z : X} : pointTwistSection x z = 0 ↔ z = x := by
   classical
@@ -746,7 +751,6 @@ omit [IsManifold 𝓘(ℂ) n X] in
   · simp only [h, decide_false, pointTwistFactor_self, iff_false]
     exact one_ne_zero (α := ℂ)
 
-omit [IsManifold 𝓘(ℂ) n X] in
 /-- In the chart of `𝒪(x)` at `x`, the canonical section is the centred chart coordinate, so its
 zero at `x` is simple. -/
 theorem pointTwistCore_localTriv_pointTwistSection {x z : X} (hz : z ∈ (chartAt ℂ x).source) :
@@ -755,6 +759,7 @@ theorem pointTwistCore_localTriv_pointTwistSection {x z : X} (hz : z ∈ (chartA
   rw [pointTwistSection, pointTwistCore_localTriv_pointTwistMul ⟨mem_univ z, hz⟩]
   exact mul_one (pointTwistCoord x z)
 
+variable {n : ℕ∞ω} [IsManifold 𝓘(ℂ) n X] in
 /-- The canonical section of `𝒪(x)` is `C^n`; for `n = ∞`, or `n = ω`, it is holomorphic. -/
 theorem contMDiff_pointTwistSection (x : X) :
     ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, ℂ)) n

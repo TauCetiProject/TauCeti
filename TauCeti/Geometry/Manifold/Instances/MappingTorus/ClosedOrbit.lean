@@ -235,6 +235,11 @@ theorem ncard_mk_preimage_range_closedOrbit (t : ℝ) :
     rw [minimalPeriod_eq_zero_of_notMem_periodicPts hx,
       mk_preimage_range_closedOrbit_eq_range_zpow h, (Set.infinite_range_of_injective hinj).ncard]
 
+/-- The period `1` of a fixed point is positive, so the closed orbit through a fixed point is
+parametrized by the circle `ℝ / ℤ` of period `(1 : ℕ)`. -/
+instance fact_natCast_one_pos : Fact (0 < ((1 : ℕ) : ℝ)) :=
+  ⟨Nat.cast_pos.2 one_pos⟩
+
 section Topology
 
 variable [Fact (0 < (d : ℝ))]
