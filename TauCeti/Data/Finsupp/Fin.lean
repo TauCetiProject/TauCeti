@@ -55,6 +55,11 @@ theorem cons_le_cons_iff [Zero M] [LE M] {x y : M} {s t : Fin n →₀ M} :
     cons x s ≤ cons y t ↔ x ≤ y ∧ s ≤ t := by
   simp [Finsupp.le_def, Fin.forall_fin_succ]
 
+/-- If `α : Fin (n + 1) →₀ M` vanishes at `0`, prepending `0` to `α.tail` recovers `α`. -/
+theorem cons_zero_tail [Zero M] {α : Fin (n + 1) →₀ M} (h : α 0 = 0) :
+    cons 0 α.tail = α := by
+  rw [← h, cons_tail]
+
 /-- Strict lexicographic comparison of `Finsupp.cons` compares the heads first and compares
 the tails when the heads are equal. -/
 theorem toLex_cons_lt_toLex_cons_iff [Zero M] [LT M] {x y : M} {s t : Fin n →₀ M} :

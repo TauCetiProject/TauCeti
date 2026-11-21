@@ -350,6 +350,13 @@ theorem homogeneousSubmodule_le_iff {d : ℕ} {N : Submodule R (MvPolynomial σ 
   exact ⟨fun h α hα ↦ h ⟨α, hα, (single_eq_monomial (R := R) α 1).symm⟩,
     fun h _ ⟨α, hα, hp⟩ ↦ hp ▸ by simpa [single_eq_monomial] using h α hα⟩
 
+/-- Every homogeneous polynomial of degree `0` is the constant polynomial of its constant
+coefficient. -/
+theorem IsHomogeneous.eq_C_constantCoeff {p : MvPolynomial σ R} (hp : p.IsHomogeneous 0) :
+    p = C (constantCoeff p) := by
+  rw [constantCoeff_eq, ← totalDegree_eq_zero_iff_eq_C]
+  rwa [totalDegree_zero_iff_isHomogeneous]
+
 /-- In a single variable, every homogeneous polynomial of degree `d` is a scalar multiple of the
 unique degree-`d` monomial `monomial (Finsupp.single default d) 1`. -/
 theorem IsHomogeneous.eq_monomial_single_default [Unique σ] {d : ℕ} {p : MvPolynomial σ R}

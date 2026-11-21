@@ -23,8 +23,9 @@ import TauCeti.Data.Finsupp.Weight
 
 An upward-closed diagram `D : Set (σ →₀ ℕ)` on a finite linearly ordered variable set `σ`
 decomposes into finitely many minimal vertices `D.diagramVertices : Finset (σ →₀ ℕ)` (by Dickson's
-lemma) and pairwise disjoint `DegLex`-ordered cells `D.diagramCell α = α + D.diagramBox α`, which
-index the quotient and remainder supports in `DegLex` Hironaka division (see
+lemma) and pairwise disjoint `DegLex`-ordered cells `D.diagramCell α = α + D.diagramBox α` that
+partition `D`. In `DegLex` Hironaka division, the quotient supports lie in the boxes
+`D.diagramBox α` and the remainder is supported in `Dᶜ` (see
 `TauCeti.RingTheory.MvPolynomial.Diagram.Division` and
 `TauCeti.RingTheory.MvPolynomial.Diagram.CutoffDet`).
 
@@ -35,9 +36,10 @@ coordinate-zero slice `D.diagramSliceZero`, Bierstone and Milman (1997, Definiti
 * For `α ∈ D.diagramVertices` with `1 ≤ α 0` and `β ∈ D.diagramBox α`, every remaining coordinate
   satisfies `β q.succ < α 0` (`Set.apply_succ_lt_of_mem_diagramBox`), so `β 0 = 0` forces
   `α.degree + β.degree < D.diagramCutoff` (`Set.degree_add_lt_diagramCutoff_of_mem_diagramBox`).
-* Above `D.diagramCutoff`, both `Dᶜ` (`Set.single_zero_add_notMem_of_notMem`) and every quotient
-  box `D.diagramBox α` (`Set.single_zero_add_mem_diagramBox`) are stable under adding
-  `Finsupp.single 0 1`.
+* When `D` is also upward closed and `D.diagramCutoff ≤ γ.degree`, `Dᶜ` is stable under adding
+  `Finsupp.single 0 1` (`Set.single_zero_add_notMem_of_notMem`).
+* When `D.diagramCutoff ≤ α.degree + β.degree`, every quotient box `D.diagramBox α` is stable
+  under adding `Finsupp.single 0 1` (`Set.single_zero_add_mem_diagramBox`).
 
 ## Main definitions
 
@@ -74,23 +76,23 @@ theorem transferExp_def (α : σ →₀ ℕ) (i j : σ) :
 @[simp] theorem transferExp_zero (i j : σ) : (0 : σ →₀ ℕ).transferExp i j = 0 := by
   simp [transferExp_def]
 
-theorem transferExp_apply_left (α : σ →₀ ℕ) {i j : σ} (hij : i ≠ j) :
+@[simp] theorem transferExp_apply_left (α : σ →₀ ℕ) {i j : σ} (hij : i ≠ j) :
     α.transferExp i j i = 0 := by simp [transferExp_def, single_eq_of_ne hij]
 
-theorem transferExp_apply_right (α : σ →₀ ℕ) {i j : σ} (hij : i ≠ j) :
+@[simp] theorem transferExp_apply_right (α : σ →₀ ℕ) {i j : σ} (hij : i ≠ j) :
     α.transferExp i j j = α j + α i := by simp [transferExp_def, single_eq_of_ne hij.symm]
 
-theorem transferExp_apply_of_ne (α : σ →₀ ℕ) {i j k : σ} (hki : k ≠ i) (hkj : k ≠ j) :
+@[simp] theorem transferExp_apply_of_ne (α : σ →₀ ℕ) {i j k : σ} (hki : k ≠ i) (hkj : k ≠ j) :
     α.transferExp i j k = α k := by simp [transferExp_def, single_eq_of_ne hki, single_eq_of_ne hkj]
 
 theorem transferExp_apply [DecidableEq σ] (α : σ →₀ ℕ) (i j k : σ) :
     α.transferExp i j k =
       if i = j then α k else if k = i then 0 else if k = j then α j + α i else α k := by
   split_ifs with hij hki hkj
-  · exact hij ▸ congrArg (· k) (α.transferExp_self i)
-  · subst hki; exact α.transferExp_apply_left hij
-  · subst hkj; exact α.transferExp_apply_right hij
-  · exact α.transferExp_apply_of_ne hki hkj
+  exacts [hij ▸ congrArg (· k) (α.transferExp_self i),
+    (congrArg (α.transferExp i j) hki).trans (α.transferExp_apply_left hij),
+    (congrArg (α.transferExp i j) hkj).trans (α.transferExp_apply_right hij),
+    α.transferExp_apply_of_ne hki hkj]
 
 @[simp] theorem transferExp_add (α β : σ →₀ ℕ) (i j : σ) :
     (α + β).transferExp i j = α.transferExp i j + β.transferExp i j := by
@@ -105,10 +107,8 @@ theorem transferExp_of_apply_eq_zero {α : σ →₀ ℕ} {i : σ} (h : α i = 0
 
 @[simp] theorem degree_transferExp (α : σ →₀ ℕ) (i j : σ) :
     (α.transferExp i j).degree = α.degree := by
-  have h : (α - single i (α i)).degree + α i = α.degree := by
-    simpa [map_add, degree_single] using
-      congrArg degree (tsub_add_cancel_of_le (single_le_iff.mpr (le_rfl : α i ≤ α i)))
-  rw [transferExp_def, map_add, degree_single, h]
+  conv_rhs => rw [← tsub_add_cancel_of_le (single_le_iff.mpr (le_rfl : α i ≤ α i))]
+  simp [transferExp_def]
 
 theorem transferExp_mono {α β : σ →₀ ℕ} (h : α ≤ β) (i j : σ) :
     α.transferExp i j ≤ β.transferExp i j := by
@@ -120,9 +120,8 @@ theorem transferExp_mono {α β : σ →₀ ℕ} (h : α ≤ β) (i j : σ) :
 theorem mapDomain_transferExp {f : σ → τ} (hf : Function.Injective f) (α : σ →₀ ℕ) (i j : σ) :
     (α.transferExp i j).mapDomain f = (α.mapDomain f).transferExp (f i) (f j) := by
   classical
-  ext k
-  by_cases hk : k ∈ Set.range f
-  · obtain ⟨r, rfl⟩ := hk; simp [hf, transferExp_apply, hf.eq_iff]
+  ext k; rcases em (k ∈ Set.range f) with ⟨r, rfl⟩ | hk
+  · simp [hf, transferExp_apply, hf.eq_iff]
   · simp [mapDomain_of_notMem_range _ _ hk,
       transferExp_apply_of_ne _ (fun h ↦ hk ⟨i, h.symm⟩) (fun h ↦ hk ⟨j, h.symm⟩)]
 
@@ -147,15 +146,6 @@ end TransferExp
 end Finsupp
 
 namespace Set
-
-private theorem preimage_equivMapDomain {σ τ : Type*} (e : σ ≃ τ) (D : Set (τ →₀ ℕ)) :
-    Finsupp.equivMapDomain e ⁻¹' D = Finsupp.mapDomain e ⁻¹' D := by
-  ext; simp [Finsupp.equivMapDomain_eq_mapDomain]
-
-private theorem mem_range_mapDomain_of_le {σ τ : Type*} {f : σ → τ} {α : σ →₀ ℕ} {γ : τ →₀ ℕ}
-    (hle : γ ≤ α.mapDomain f) : γ ∈ Set.range (Finsupp.mapDomain f) :=
-  (Finsupp.mem_range_mapDomain_iff' f γ).mpr fun b hb ↦
-    Nat.eq_zero_of_le_zero ((hle b).trans_eq (Finsupp.mapDomain_of_notMem_range α b hb))
 
 section MonotoneDiagram
 
@@ -211,7 +201,7 @@ theorem IsMonotoneDiagram.preimage_mapDomain {τ : Type*} [Preorder σ] [Preorde
 theorem isMonotoneDiagram_preimage_equivMapDomain {τ : Type*} [Preorder σ] [Preorder τ]
     (e : σ ≃o τ) {D : Set (τ →₀ ℕ)} :
     (Finsupp.equivMapDomain e.toEquiv ⁻¹' D).IsMonotoneDiagram ↔ D.IsMonotoneDiagram := by
-  refine ⟨fun h α hα i j hij ↦ ?_, fun h ↦ preimage_equivMapDomain e.toEquiv D ▸
+  refine ⟨fun h α hα i j hij ↦ ?_, fun h ↦ Finsupp.preimage_equivMapDomain e.toEquiv D ▸
       h.preimage_mapDomain (f := e.toEquiv) e.strictMono e.injective⟩
   obtain ⟨α₀, rfl⟩ := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective α
   obtain ⟨i₀, rfl⟩ := e.surjective i; obtain ⟨j₀, rfl⟩ := e.surjective j
@@ -240,9 +230,8 @@ theorem diagramVertices_subset (D : Set (σ →₀ ℕ)) :
     (D.diagramVertices : Set (σ →₀ ℕ)) ⊆ D := fun _ hα ↦ (mem_diagramVertices_iff.mp hα).prop
 
 theorem isAntichain_diagramVertices (D : Set (σ →₀ ℕ)) :
-    IsAntichain (· ≤ ·) (D.diagramVertices : Set (σ →₀ ℕ)) :=
-  fun _ hα _ hβ ↦ setOfPred_minimal_antichain _
-    (mem_diagramVertices_iff.mp hα) (mem_diagramVertices_iff.mp hβ)
+    IsAntichain (· ≤ ·) (D.diagramVertices : Set (σ →₀ ℕ)) := fun _ hα _ hβ ↦
+  setOfPred_minimal_antichain _ (mem_diagramVertices_iff.mp hα) (mem_diagramVertices_iff.mp hβ)
 
 theorem exists_mem_diagramVertices_le {D : Set (σ →₀ ℕ)} {γ : σ →₀ ℕ} (hγ : γ ∈ D) :
     ∃ α ∈ D.diagramVertices, α ≤ γ :=
@@ -262,8 +251,7 @@ theorem _root_.IsUpperSet.biUnion_Ici_diagramVertices {D : Set (σ →₀ ℕ)} 
 @[simp] theorem diagramVertices_empty : (∅ : Set (σ →₀ ℕ)).diagramVertices = ∅ := by
   ext; simp [Minimal]
 
-@[simp] theorem diagramVertices_eq_empty_iff {D : Set (σ →₀ ℕ)} :
-    D.diagramVertices = ∅ ↔ D = ∅ :=
+@[simp] theorem diagramVertices_eq_empty_iff {D : Set (σ →₀ ℕ)} : D.diagramVertices = ∅ ↔ D = ∅ :=
   ⟨fun h ↦ eq_empty_iff_forall_notMem.mpr fun _ hγ ↦
     let ⟨α, hα, _⟩ := exists_mem_diagramVertices_le hγ; Finset.notMem_empty α (h ▸ hα),
     fun h ↦ by simp [h]⟩
@@ -293,15 +281,14 @@ theorem mem_diagramVertices_preimage_mapDomain_iff {σ τ : Type*} [Finite σ] [
     α ∈ (Finsupp.mapDomain f ⁻¹' D).diagramVertices ↔ α.mapDomain f ∈ D.diagramVertices := by
   simp only [mem_diagramVertices_iff, Minimal, mem_preimage,
     ← Finsupp.mapDomain_le_mapDomain_iff_le hf]
-  exact and_congr Iff.rfl ⟨fun h γ hγ hle ↦
-    let ⟨_, hβ⟩ := mem_range_mapDomain_of_le hle; hβ ▸ h (hβ ▸ hγ) (hβ ▸ hle),
-    fun h _ hβ hle ↦ h hβ hle⟩
+  exact and_congr Iff.rfl ⟨fun h _ hγ hle ↦ let ⟨_, hβ⟩ := Finsupp.mem_range_mapDomain_of_le hle
+    hβ ▸ h (hβ ▸ hγ) (hβ ▸ hle), fun h _ hβ hle ↦ h hβ hle⟩
 
 theorem mem_diagramVertices_preimage_equivMapDomain_iff {σ τ : Type*} [Finite σ] [Finite τ]
     (e : σ ≃ τ) {D : Set (τ →₀ ℕ)} {α : σ →₀ ℕ} :
     α ∈ (Finsupp.equivMapDomain e ⁻¹' D).diagramVertices ↔
       Finsupp.equivMapDomain e α ∈ D.diagramVertices := by
-  rw [preimage_equivMapDomain, Finsupp.equivMapDomain_eq_mapDomain]
+  rw [Finsupp.preimage_equivMapDomain, Finsupp.equivMapDomain_eq_mapDomain]
   exact mem_diagramVertices_preimage_mapDomain_iff e.injective
 
 end DiagramVerticesPullback
@@ -324,8 +311,8 @@ theorem mem_diagramBox_iff {D : Set (σ →₀ ℕ)} {α β : σ →₀ ℕ} :
   Iff.rfl
 
 theorem mem_diagramCell_iff {D : Set (σ →₀ ℕ)} {α γ : σ →₀ ℕ} :
-    γ ∈ D.diagramCell α ↔
-      α ≤ γ ∧ ∀ α' ∈ D.diagramVertices, toDegLex α' < toDegLex α → ¬ α' ≤ γ := Iff.rfl
+    γ ∈ D.diagramCell α ↔ α ≤ γ ∧ ∀ α' ∈ D.diagramVertices, toDegLex α' < toDegLex α → ¬ α' ≤ γ :=
+  Iff.rfl
 
 theorem isLowerSet_diagramBox (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) : IsLowerSet (D.diagramBox α) :=
   fun _ _ hle hβ α' hα' hlt hα'le ↦ hβ α' hα' hlt (hα'le.trans (add_le_add_right hle α))
@@ -342,8 +329,7 @@ theorem tsub_mem_diagramBox_of_mem_diagramCell {D : Set (σ →₀ ℕ)} {α γ 
 
 theorem image_add_diagramBox_eq_diagramCell (D : Set (σ →₀ ℕ)) (α : σ →₀ ℕ) :
     (α + ·) '' D.diagramBox α = D.diagramCell α := by
-  ext γ
-  exact ⟨fun ⟨_, hβ, h⟩ ↦ h ▸ add_mem_diagramCell_iff.mpr hβ,
+  ext γ; exact ⟨fun ⟨_, hβ, h⟩ ↦ h ▸ add_mem_diagramCell_iff.mpr hβ,
     fun hγ ↦ ⟨γ - α, tsub_mem_diagramBox_of_mem_diagramCell hγ, add_tsub_cancel_of_le hγ.1⟩⟩
 
 @[simp] theorem zero_mem_diagramBox {D : Set (σ →₀ ℕ)} {α : σ →₀ ℕ} (hα : α ∈ D.diagramVertices) :
@@ -364,28 +350,28 @@ for any diagram `D`. -/
 /-- For an upward-closed diagram `D` and vertex `α ∈ D.diagramVertices`, the division cell
 `D.diagramCell α` is contained in `D`. -/
 theorem diagramCell_subset {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) {α : σ →₀ ℕ}
-    (hα : α ∈ D.diagramVertices) : D.diagramCell α ⊆ D :=
-  fun _ hγ ↦ hD hγ.1 (D.diagramVertices_subset hα)
+    (hα : α ∈ D.diagramVertices) : D.diagramCell α ⊆ D := fun _ hγ ↦
+  hD hγ.1 (D.diagramVertices_subset hα)
 
 /-- An exponent outside an upward-closed diagram `D` lies in no vertex division cell. -/
 theorem notMem_diagramCell_of_notMem {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) {α : σ →₀ ℕ}
-    (hα : α ∈ D.diagramVertices) {γ : σ →₀ ℕ} (hγ : γ ∉ D) : γ ∉ D.diagramCell α :=
-  fun h ↦ hγ (diagramCell_subset hD hα h)
+    (hα : α ∈ D.diagramVertices) {γ : σ →₀ ℕ} (hγ : γ ∉ D) : γ ∉ D.diagramCell α := fun h ↦
+  hγ (diagramCell_subset hD hα h)
 
 /-- Distinct vertices of `D` have disjoint division cells. -/
 theorem disjoint_diagramCell {D : Set (σ →₀ ℕ)} {α₁ α₂ : σ →₀ ℕ}
     (h₁ : α₁ ∈ D.diagramVertices) (h₂ : α₂ ∈ D.diagramVertices) (hne : α₁ ≠ α₂) :
     Disjoint (D.diagramCell α₁) (D.diagramCell α₂) :=
   disjoint_left.mpr fun _ hc₁ hc₂ ↦ (lt_trichotomy (toDegLex α₁) (toDegLex α₂)).elim
-    (fun h ↦ hc₂.2 α₁ h₁ h hc₁.1) fun h ↦ h.elim (fun h ↦ hne (toDegLex_injective h))
-      (fun h ↦ hc₁.2 α₂ h₂ h hc₂.1)
+    (fun h ↦ hc₂.2 α₁ h₁ h hc₁.1)
+    fun h ↦ h.elim (fun h ↦ hne (toDegLex_injective h)) (fun h ↦ hc₁.2 α₂ h₂ h hc₂.1)
 
 /-- If `γ` belongs to the division cells of two vertices `α₁, α₂ ∈ D.diagramVertices`, then
 `α₁ = α₂`. -/
 theorem eq_of_mem_diagramCell {D : Set (σ →₀ ℕ)} {α₁ α₂ γ : σ →₀ ℕ}
     (h₁ : α₁ ∈ D.diagramVertices) (h₂ : α₂ ∈ D.diagramVertices)
-    (hc₁ : γ ∈ D.diagramCell α₁) (hc₂ : γ ∈ D.diagramCell α₂) : α₁ = α₂ :=
-  by_contra fun hne ↦ (disjoint_diagramCell h₁ h₂ hne).le_bot ⟨hc₁, hc₂⟩
+    (hc₁ : γ ∈ D.diagramCell α₁) (hc₂ : γ ∈ D.diagramCell α₂) : α₁ = α₂ := by_contra fun hne ↦
+  (disjoint_diagramCell h₁ h₂ hne).le_bot ⟨hc₁, hc₂⟩
 
 /-- For an upward-closed diagram `D`, its vertex division cells cover `D`. -/
 theorem biUnion_diagramCell_eq {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) :
@@ -393,7 +379,7 @@ theorem biUnion_diagramCell_eq {D : Set (σ →₀ ℕ)} (hD : IsUpperSet D) :
   classical
   ext γ; simp only [mem_iUnion, exists_prop]
   refine ⟨fun ⟨_, hα, hc⟩ ↦ diagramCell_subset hD hα hc, fun hγ ↦ ?_⟩
-  let s : Finset (DegLex (σ →₀ ℕ)) := (D.diagramVertices.filter (· ≤ γ)).image toDegLex
+  let s := (D.diagramVertices.filter (· ≤ γ)).image toDegLex
   have hs : s.Nonempty := let ⟨α, hα, hle⟩ := exists_mem_diagramVertices_le hγ
     ⟨toDegLex α, Finset.mem_image_of_mem _ (Finset.mem_filter.mpr ⟨hα, hle⟩)⟩
   obtain ⟨α, hαf, hmin_eq⟩ := Finset.mem_image.mp (s.min'_mem hs)
@@ -415,11 +401,11 @@ theorem mem_diagramBox_preimage_mapDomain_iff {τ : Type*} [Finite τ] [LinearOr
     β ∈ (Finsupp.mapDomain f ⁻¹' D).diagramBox α ↔
       β.mapDomain f ∈ D.diagramBox (α.mapDomain f) := by
   simp only [mem_diagramBox_iff, ← Finsupp.mapDomain_add]
-  refine ⟨fun h γ hγ hlt hle ↦ ?_, fun h α' hα' hlt hle ↦
-    h (α'.mapDomain f) ((mem_diagramVertices_preimage_mapDomain_iff hf.injective).mp hα')
-      ((Finsupp.toDegLex_mapDomain_lt_iff hf).mpr hlt)
-      ((Finsupp.mapDomain_le_mapDomain_iff_le hf.injective _ _).mpr hle)⟩
-  obtain ⟨α', rfl⟩ := mem_range_mapDomain_of_le hle
+  refine ⟨fun h γ hγ hlt hle ↦ ?_, fun h α' hα' hlt hle ↦ h (α'.mapDomain f)
+    ((mem_diagramVertices_preimage_mapDomain_iff hf.injective).mp hα')
+    ((Finsupp.toDegLex_mapDomain_lt_iff hf).mpr hlt)
+    ((Finsupp.mapDomain_le_mapDomain_iff_le hf.injective _ _).mpr hle)⟩
+  obtain ⟨α', rfl⟩ := Finsupp.mem_range_mapDomain_of_le hle
   exact h α' ((mem_diagramVertices_preimage_mapDomain_iff hf.injective).mpr hγ)
     ((Finsupp.toDegLex_mapDomain_lt_iff hf).mp hlt)
     ((Finsupp.mapDomain_le_mapDomain_iff_le hf.injective _ _).mp hle)
@@ -428,7 +414,7 @@ theorem mem_diagramBox_preimage_equivMapDomain_iff {τ : Type*} [Finite τ] [Lin
     (e : σ ≃o τ) {D : Set (τ →₀ ℕ)} {α β : σ →₀ ℕ} :
     β ∈ (Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramBox α ↔
       Finsupp.equivMapDomain e.toEquiv β ∈ D.diagramBox (Finsupp.equivMapDomain e.toEquiv α) := by
-  simp only [preimage_equivMapDomain, Finsupp.equivMapDomain_eq_mapDomain]
+  simp only [Finsupp.preimage_equivMapDomain, Finsupp.equivMapDomain_eq_mapDomain]
   exact mem_diagramBox_preimage_mapDomain_iff (f := e.toEquiv) e.strictMono
 
 end DivisionCells
@@ -444,7 +430,9 @@ def diagramSliceZero (D : Set (Fin (n + 1) →₀ ℕ)) : Set (Fin n →₀ ℕ)
 @[simp] theorem mem_diagramSliceZero_iff {D : Set (Fin (n + 1) →₀ ℕ)} {α' : Fin n →₀ ℕ} :
     α' ∈ D.diagramSliceZero ↔ Finsupp.cons 0 α' ∈ D := Iff.rfl
 
-private theorem diagramSliceZero_eq_preimage_mapDomain (D : Set (Fin (n + 1) →₀ ℕ)) :
+/-- The coordinate-zero slice `D.diagramSliceZero` is the preimage of `D` under
+`Finsupp.mapDomain Fin.succ`. -/
+theorem diagramSliceZero_eq_preimage_mapDomain (D : Set (Fin (n + 1) →₀ ℕ)) :
     D.diagramSliceZero = Finsupp.mapDomain Fin.succ ⁻¹' D := by
   ext; simp [diagramSliceZero, Finsupp.mapDomain_finSucc]
 
@@ -455,8 +443,8 @@ private theorem diagramSliceZero_eq_preimage_mapDomain (D : Set (Fin (n + 1) →
     (Set.univ : Set (Fin (n + 1) →₀ ℕ)).diagramSliceZero = Set.univ := by ext; simp
 
 theorem _root_.IsUpperSet.diagramSliceZero {D : Set (Fin (n + 1) →₀ ℕ)} (hD : IsUpperSet D) :
-    IsUpperSet D.diagramSliceZero :=
-  fun _ _ hle hα ↦ hD (Finsupp.cons_le_cons_iff.mpr ⟨le_rfl, hle⟩) hα
+    IsUpperSet D.diagramSliceZero := fun _ _ hle hα ↦
+  hD (Finsupp.cons_le_cons_iff.mpr ⟨le_rfl, hle⟩) hα
 
 theorem IsMonotoneDiagram.diagramSliceZero {D : Set (Fin (n + 1) →₀ ℕ)}
     (hD : D.IsMonotoneDiagram) : D.diagramSliceZero.IsMonotoneDiagram :=
@@ -471,8 +459,7 @@ theorem mem_diagramVertices_diagramSliceZero_iff {D : Set (Fin (n + 1) →₀ �
 @[simp] theorem cons_zero_mem_diagramBox_iff {D : Set (Fin (n + 1) →₀ ℕ)} {α' β' : Fin n →₀ ℕ} :
     Finsupp.cons 0 β' ∈ D.diagramBox (Finsupp.cons 0 α') ↔
       β' ∈ D.diagramSliceZero.diagramBox α' := by
-  rw [diagramSliceZero_eq_preimage_mapDomain, ← Finsupp.mapDomain_finSucc,
-    ← Finsupp.mapDomain_finSucc]
+  simp only [diagramSliceZero_eq_preimage_mapDomain, ← Finsupp.mapDomain_finSucc]
   exact (mem_diagramBox_preimage_mapDomain_iff Fin.strictMono_succ).symm
 
 end SliceZero
@@ -482,8 +469,7 @@ section DiagramCutoff
 open scoped Classical in
 private noncomputable def diagramCutoffFin : ∀ {n : ℕ}, Set (Fin n →₀ ℕ) → ℕ
   | 0, _ => 0
-  | n + 1, D =>
-    max (diagramCutoffFin D.diagramSliceZero)
+  | n + 1, D => max (diagramCutoffFin D.diagramSliceZero)
       ((D.diagramVertices.filter (fun α ↦ 1 ≤ α 0)).sup (fun α ↦ α.degree + n * (α 0 - 1) + 1))
 
 private noncomputable def diagramCutoffAux {σ : Type*} (ft : Fintype σ) [LinearOrder σ]
@@ -506,10 +492,10 @@ private theorem diagramCutoff_eq_of_orderIsoFin {σ : Type*} [Finite σ] [Linear
   rw [diagramCutoff]; set ft : Fintype σ := Fintype.ofFinite σ; rw [diagramCutoffAux]
   obtain rfl : @Fintype.card σ ft = d := by
     simpa using (@Fintype.card_congr (Fin d) σ _ ft e.toEquiv).symm
-  rw [show @Fintype.orderIsoFinOfCardEq σ _ ft _ rfl = e by
-    ext i
-    let f := (@Fintype.orderIsoFinOfCardEq σ _ ft _ rfl).trans e.symm
-    exact (OrderIso.symm_apply_eq e).mp (Fin.ext (Fin.coe_orderIso_apply f i))]
+  have he : @Fintype.orderIsoFinOfCardEq σ _ ft _ rfl = e := by
+    ext i; let f := (@Fintype.orderIsoFinOfCardEq σ _ ft _ rfl).trans e.symm
+    exact (OrderIso.symm_apply_eq e).mp (Fin.ext (Fin.coe_orderIso_apply f i))
+  rw [he]
 
 /-- `Set.diagramCutoff` is invariant under pulling a diagram back along an order isomorphism of
 variable sets. -/
@@ -560,9 +546,8 @@ theorem add_mul_add_one_le_diagramCutoff {n : ℕ} {D : Set (Fin (n + 1) →₀ 
     {α : Fin (n + 1) →₀ ℕ} (hα : α ∈ D.diagramVertices) (hα0 : 1 ≤ α 0) :
     α.degree + n * (α 0 - 1) + 1 ≤ D.diagramCutoff := by
   classical
-  rw [diagramCutoff_fin_succ]
   exact (Finset.le_sup (f := fun α : Fin (n + 1) →₀ ℕ ↦ α.degree + n * (α 0 - 1) + 1)
-    (Finset.mem_filter.mpr ⟨hα, hα0⟩)).trans (le_max_right _ _)
+    (Finset.mem_filter.mpr ⟨hα, hα0⟩)).trans (diagramCutoff_fin_succ D ▸ le_max_right _ _)
 
 private theorem toDegLex_lt_of_le_transferExp {σ : Type*} [LinearOrder σ] {α' α : σ →₀ ℕ}
     {i j : σ} (hij : i < j) (hα : 0 < α i) (hle : α' ≤ α.transferExp i j) :
@@ -574,17 +559,12 @@ private theorem toDegLex_lt_of_le_transferExp {σ : Type*} [LinearOrder σ] {α'
 
 private theorem transferExp_zero_succ_le {n : ℕ} {α γ : Fin (n + 1) →₀ ℕ} {q : Fin n}
     (hq : α q.succ + α 0 ≤ γ q.succ) (hne : ∀ r : Fin n, r ≠ q → α r.succ ≤ γ r.succ) :
-    α.transferExp 0 q.succ ≤ γ := fun i ↦ by
-  cases i using Fin.cases with
-  | zero => simp [Finsupp.transferExp_apply_left α (Fin.succ_ne_zero q).symm]
-  | succ r =>
-    by_cases hrq : r = q
-    · subst hrq; simpa [Finsupp.transferExp_apply_right α (Fin.succ_ne_zero r).symm] using hq
-    · rw [Finsupp.transferExp_apply_of_ne α (Fin.succ_ne_zero r) ((Fin.succ_injective _).ne hrq)]
-      exact hne r hrq
-
-private theorem degree_eq_zero_add_tail {n : ℕ} (γ : Fin (n + 1) →₀ ℕ) :
-    γ.degree = γ 0 + γ.tail.degree := by conv_lhs => rw [← Finsupp.cons_tail γ, Finsupp.degree_cons]
+    α.transferExp 0 q.succ ≤ γ := Fin.forall_fin_succ.mpr
+  ⟨by simp [Finsupp.transferExp_apply_left α (Fin.succ_ne_zero q).symm], fun r ↦ by
+    obtain rfl | hr := eq_or_ne r q
+    · simpa [Finsupp.transferExp_apply_right α (Fin.succ_ne_zero r).symm] using hq
+    · simpa [Finsupp.transferExp_apply_of_ne α (Fin.succ_ne_zero r)
+        ((Fin.succ_injective _).ne hr)] using hne r hr⟩
 
 /-- For a monotone diagram `D` on `Fin (n + 1)`, if `α ∈ D.diagramVertices` has `1 ≤ α 0` and
 `β ∈ D.diagramBox α`, then every remaining coordinate of `β` satisfies `β q.succ < α 0`. -/
@@ -594,8 +574,7 @@ theorem apply_succ_lt_of_mem_diagramBox {n : ℕ} {D : Set (Fin (n + 1) →₀ �
     β q.succ < α 0 := by
   obtain ⟨α', hα', hα'δ⟩ := exists_mem_diagramVertices_le
     (hD_mono (D.diagramVertices_subset hα) (Fin.succ_pos q))
-  by_contra! hge
-  exact hβ α' hα' (toDegLex_lt_of_le_transferExp (Fin.succ_pos q) hα0 hα'δ)
+  by_contra! hge; exact hβ α' hα' (toDegLex_lt_of_le_transferExp (Fin.succ_pos q) hα0 hα'δ)
     (hα'δ.trans (transferExp_zero_succ_le (by simp; omega) (fun r _ ↦ by simp)))
 
 /-- Under the hypotheses of `Set.apply_succ_lt_of_mem_diagramBox`, if `β 0 = 0`, then
@@ -605,10 +584,9 @@ theorem degree_add_lt_diagramCutoff_of_mem_diagramBox {n : ℕ} {D : Set (Fin (n
     (hα : α ∈ D.diagramVertices) (hα0 : 1 ≤ α 0) (hβ : β ∈ D.diagramBox α) (hβ0 : β 0 = 0) :
     α.degree + β.degree < D.diagramCutoff := by
   have htail : β.tail.degree ≤ n * (α 0 - 1) := by
-    simpa [Finsupp.degree_eq_sum, Finsupp.tail_apply] using
-      Finset.sum_le_sum fun q (_ : q ∈ Finset.univ) ↦
-        Nat.le_sub_one_of_lt (apply_succ_lt_of_mem_diagramBox hD_mono hα hα0 hβ q)
-  have hdegβ := degree_eq_zero_add_tail β
+    simpa [Finsupp.degree_eq_sum, Finsupp.tail_apply] using Finset.sum_le_sum (s := Finset.univ)
+      fun q _ ↦ Nat.le_sub_one_of_lt (apply_succ_lt_of_mem_diagramBox hD_mono hα hα0 hβ q)
+  have hdegβ := Finsupp.degree_eq_zero_add_tail β
   have hcut := add_mul_add_one_le_diagramCutoff hα hα0; omega
 
 private theorem degree_add_one_le_of_le_single_zero_add {n : ℕ} {α γ : Fin (n + 1) →₀ ℕ}
@@ -617,43 +595,38 @@ private theorem degree_add_one_le_of_le_single_zero_add {n : ℕ} {α γ : Fin (
     1 ≤ α 0 ∧ γ.degree + 1 ≤ α.degree + n * (α 0 - 1) := by
   have h0lt : γ 0 < α 0 := by
     by_contra! h0le; exact hnot fun i ↦ Fin.cases h0le (fun q ↦ by simpa using hle q.succ) i
-  have hle0 : α 0 ≤ 1 + γ 0 := by simpa using hle 0
-  have hα0 : 1 ≤ α 0 := by omega
+  have hα0 : 1 ≤ α 0 := by have := hle 0; simp at this; omega
   have hsum : γ.tail.degree ≤ α.tail.degree + n * (α 0 - 1) := by
     simpa [Finsupp.degree_eq_sum, Finset.sum_add_distrib] using Finset.sum_le_sum
-      (s := Finset.univ) (f := fun q : Fin n ↦ γ.tail q)
-      (g := fun q : Fin n ↦ α.tail q + (α 0 - 1)) fun q _ ↦ by
+      (s := Finset.univ) (g := fun q : Fin n ↦ α.tail q + (α 0 - 1)) fun q _ ↦ by
         by_contra! hgt
         exact htrans hα0 q (transferExp_zero_succ_le
-          (by rw [Finsupp.tail_apply, Finsupp.tail_apply] at hgt; omega)
-          fun r _ ↦ by simpa using hle r.succ)
-  have hdegγ := degree_eq_zero_add_tail γ; have hdegα := degree_eq_zero_add_tail α
+          (by simp only [Finsupp.tail_apply] at hgt; omega) fun r _ ↦ by simpa using hle r.succ)
+  have hdegγ := Finsupp.degree_eq_zero_add_tail γ; have hdegα := Finsupp.degree_eq_zero_add_tail α
   exact ⟨hα0, by omega⟩
 
-/-- Above `D.diagramCutoff`, the complement of an upward-closed monotone diagram `D` on
-`Fin (n + 1)` is stable under adding `Finsupp.single 0 1`. -/
+/-- For an upward-closed monotone diagram `D` on `Fin (n + 1)`, if `γ ∉ D` and
+`D.diagramCutoff ≤ γ.degree`, then `Finsupp.single 0 1 + γ ∉ D`. -/
 theorem single_zero_add_notMem_of_notMem {n : ℕ} {D : Set (Fin (n + 1) →₀ ℕ)}
     (hD_up : IsUpperSet D) (hD_mono : D.IsMonotoneDiagram) {γ : Fin (n + 1) →₀ ℕ}
     (hγ : γ ∉ D) (hdeg : D.diagramCutoff ≤ γ.degree) : Finsupp.single 0 1 + γ ∉ D := by
-  intro hmem
-  obtain ⟨α, hα, hle⟩ := exists_mem_diagramVertices_le hmem
+  intro hmem; obtain ⟨α, hα, hle⟩ := exists_mem_diagramVertices_le hmem
   obtain ⟨hα0, hbound⟩ := degree_add_one_le_of_le_single_zero_add
     (fun hαγ ↦ hγ (hD_up hαγ (D.diagramVertices_subset hα))) hle
     (fun _ q hle' ↦ hγ (hD_up hle' (hD_mono (D.diagramVertices_subset hα) (Fin.succ_pos q))))
   have hcut := add_mul_add_one_le_diagramCutoff hα hα0; omega
 
-/-- Above `D.diagramCutoff`, every quotient box `D.diagramBox α` of a monotone diagram `D` on
-`Fin (n + 1)` is stable under adding `Finsupp.single 0 1`. -/
+/-- For a monotone diagram `D` on `Fin (n + 1)`, if `β ∈ D.diagramBox α` and
+`D.diagramCutoff ≤ α.degree + β.degree`, then `Finsupp.single 0 1 + β ∈ D.diagramBox α`. -/
 theorem single_zero_add_mem_diagramBox {n : ℕ} {D : Set (Fin (n + 1) →₀ ℕ)}
     (hD_mono : D.IsMonotoneDiagram) {α β : Fin (n + 1) →₀ ℕ} (hβ : β ∈ D.diagramBox α)
-    (hdeg : D.diagramCutoff ≤ α.degree + β.degree) :
-    Finsupp.single 0 1 + β ∈ D.diagramBox α := by
+    (hdeg : D.diagramCutoff ≤ α.degree + β.degree) : Finsupp.single 0 1 + β ∈ D.diagramBox α := by
   intro α' hα' hlt hle
   obtain ⟨hα'0, hbound⟩ := degree_add_one_le_of_le_single_zero_add (hβ α' hα' hlt)
-    (by rwa [add_left_comm] : α' ≤ Finsupp.single 0 1 + (α + β)) fun hα'0 q hle_q ↦ by
-      obtain ⟨α'', hα'', hα''le⟩ := exists_mem_diagramVertices_le
+    (by rwa [add_left_comm] : α' ≤ Finsupp.single 0 1 + (α + β)) fun hα'0 q hle_q ↦
+      let ⟨α'', hα'', hα''le⟩ := exists_mem_diagramVertices_le
         (hD_mono (D.diagramVertices_subset hα') (Fin.succ_pos q))
-      exact hβ α'' hα'' ((toDegLex_lt_of_le_transferExp (Fin.succ_pos q) hα'0 hα''le).trans hlt)
+      hβ α'' hα'' ((toDegLex_lt_of_le_transferExp (Fin.succ_pos q) hα'0 hα''le).trans hlt)
         (hα''le.trans hle_q)
   rw [map_add] at hbound; have hcut := add_mul_add_one_le_diagramCutoff hα' hα'0; omega
 

@@ -55,6 +55,21 @@ theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α →
   simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
     SetLike.ext_iff.1 h x
 
+/-- Pulling back a set along `Finsupp.equivMapDomain e` equals pulling it back along
+`Finsupp.mapDomain e`. -/
+theorem preimage_equivMapDomain {σ τ M : Type*} [AddCommMonoid M] (e : σ ≃ τ)
+    (D : Set (τ →₀ M)) :
+    equivMapDomain e ⁻¹' D = mapDomain e ⁻¹' D := by
+  ext; simp [equivMapDomain_eq_mapDomain]
+
+/-- Any canonically ordered finitely supported function bounded above by `α.mapDomain f` lies in
+the range of `Finsupp.mapDomain f`. -/
+theorem mem_range_mapDomain_of_le {σ τ M : Type*} [AddCommMonoid M] [PartialOrder M]
+    [CanonicallyOrderedAdd M] {f : σ → τ} {α : σ →₀ M} {γ : τ →₀ M}
+    (hle : γ ≤ α.mapDomain f) : γ ∈ Set.range (mapDomain f) :=
+  (mem_range_mapDomain_iff' f γ).mpr fun b hb ↦
+    nonpos_iff_eq_zero.mp ((hle b).trans_eq (mapDomain_of_notMem_range α b hb))
+
 /-- The weight of the push-forward of `u` along `f` is the weight of `u` for the weights `w ∘ f`. -/
 theorem weight_mapDomain {σ τ M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     (f : σ → τ) (w : τ → M) (u : σ →₀ R) :

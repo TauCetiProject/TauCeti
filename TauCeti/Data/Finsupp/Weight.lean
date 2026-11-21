@@ -40,7 +40,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
-* `Finsupp.degree_cons`: prepending `c` at `0` adds `c` to the degree.
+* `Finsupp.degree_cons`, `Finsupp.degree_eq_zero_add_tail`: prepending `c` at `0` adds `c` to the
+  degree, and `degree α = α 0 + degree α.tail`.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
@@ -115,6 +116,12 @@ theorem degree_cons {n : ℕ} {M : Type*} [AddCommMonoid M] (c : M) (α' : Fin n
   have hsplit : cons c α' = cons c 0 + cons 0 α' := by rw [cons_add_cons, add_zero, zero_add]
   rw [hsplit, map_add, cons_zero_eq_single_zero, degree_single, ← mapDomain_finSucc,
     degree_mapDomain]
+
+/-- The degree of a finitely supported function on `Fin (n + 1)` splits into its head at `0`
+plus the degree of its tail. -/
+theorem degree_eq_zero_add_tail {n : ℕ} {M : Type*} [AddCommMonoid M] (γ : Fin (n + 1) →₀ M) :
+    γ.degree = γ 0 + γ.tail.degree := by
+  conv_lhs => rw [← cons_tail γ, degree_cons]
 
 /-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
 form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial
