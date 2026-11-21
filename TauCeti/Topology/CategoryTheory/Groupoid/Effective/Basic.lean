@@ -247,7 +247,8 @@ noncomputable def EffectiveQuotient.isomorphismClassesHomeomorph :
     _root_.Quotient (isIsomorphicSetoid C) ≃ₜ
       _root_.Quotient (isIsomorphicSetoid (EffectiveQuotient C)) :=
   (toEffectiveQuotient C).isomorphismClassesHomeomorph
-    isHomeomorph_toEffectiveQuotient_obj.isQuotientMap
+    ((toEffectiveQuotient C).isQuotientMap_isomorphismClasses_map
+      isHomeomorph_toEffectiveQuotient_obj.isQuotientMap)
 
 @[simp]
 theorem EffectiveQuotient.isomorphismClassesHomeomorph_apply_mk (x : C) :

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Coarse maps of refinement functors
@@ -15,18 +16,31 @@ public import Mathlib.Topology.Constructions
 Give the isomorphism classes of a category the quotient topology from its objects. A functor
 continuous on objects induces a continuous map on these quotients. If its object map is a
 quotient map, so is the induced map. Consequently a full functor reflecting isomorphisms whose
-object map is quotient induces a homeomorphism
-`CategoryTheory.Functor.isomorphismClassesHomeomorph`. This covers fully faithful functors and
-full functors out of groupoids. In particular this applies to fully faithful refinements with
-open surjective object map.
+induced map on isomorphism classes is a quotient map induces a homeomorphism
+`CategoryTheory.Functor.isomorphismClassesHomeomorph` and a proper map
+`CategoryTheory.Functor.isProperMap_isomorphismClasses_map`. This covers fully faithful functors
+and full functors out of groupoids, and in particular refinements whose object map is a quotient
+map as well as essentially surjective open refinements.
+
+When the quotient projection `Quotient.mk (isIsomorphicSetoid D)` is an open map—for instance,
+when `D` is a groupoid with continuous source and open target—an open object map already induces
+an open map on isomorphism classes (`CategoryTheory.Functor.isOpenMap_isomorphismClasses_map`),
+even if the functor is not surjective on objects. When `F.obj` is also continuous, fullness and
+reflection of isomorphisms give an open embedding
+(`CategoryTheory.Functor.isOpenEmbedding_isomorphismClasses_map`), essential surjectivity gives
+an open quotient map (`CategoryTheory.Functor.isOpenQuotientMap_isomorphismClasses_map_of_essSurj`),
+and combining both gives a coarse homeomorphism via `isomorphismClassesHomeomorph` and properness
+(`CategoryTheory.Functor.isProperMap_isomorphismClasses_map_of_essSurj`) without requiring
+surjectivity on objects.
 A full functor reflecting isomorphisms whose object map is continuous and closed, with range
 closed under isomorphisms, induces a closed embedding
 (`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
 
 For groupoids these quotients are the coarse spaces. The construction keeps all arrows and
 requires no faithfulness of an isotropy action. It does not require a continuous choice of
-inverse functor or of representatives. The homeomorphisms respect composition and naturally
-isomorphic functors, as required when comparing different refinements of a presentation.
+inverse functor or of representatives. The homeomorphisms and proper maps respect identities,
+composition, and naturally isomorphic functors, as required when comparing different refinements
+of a presentation.
 
 ## References
 
@@ -59,6 +73,44 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
   exact (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).of_comp_isQuotientMap
     (F.isomorphismClasses_map_comp_mk.symm ▸
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
+
+/-- The identity functor induces a quotient map on isomorphism classes. -/
+theorem isQuotientMap_isomorphismClasses_map_id :
+    IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
+  rw [isomorphismClasses_map_id]
+  exact .id
+
+/-- Composing functors whose induced maps on isomorphism classes are quotient maps gives a
+quotient map on isomorphism classes. -/
+theorem isQuotientMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
+    (hG : IsQuotientMap (X := Quotient (isIsomorphicSetoid D))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
+    IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
+  rw [isomorphismClasses_map_comp]
+  exact hG.comp hF
+
+/-- The identity functor induces a proper map on isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map_id :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
+  rw [isomorphismClasses_map_id]
+  exact isProperMap_id
+
+/-- Composing functors whose induced maps on isomorphism classes are proper gives a proper map on
+isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map_comp (F : C ⥤ D) (G : D ⥤ E)
+    (hF : IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
+    (hG : IsProperMap (X := Quotient (isIsomorphicSetoid D))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
+  rw [isomorphismClasses_map_comp]
+  exact hG.comp hF
 
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose object
 map is continuous and closed, with range closed under isomorphisms, induces a closed embedding on
@@ -94,22 +146,24 @@ theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Refle
   · rintro ⟨x, hx, rfl⟩
     exact ⟨_, hx, hφ x⟩
 
-/-- A full functor reflecting isomorphisms, for instance a fully faithful functor, with quotient
-object map identifies the spaces of isomorphism classes homeomorphically. For groupoids this is
-the coarse homeomorphism of the refinement. -/
+/-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose induced map
+on isomorphism classes is a quotient map identifies the spaces of isomorphism classes
+homeomorphically. For groupoids this is the coarse homeomorphism of the refinement. -/
 def isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) :
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom)) :
     Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) :=
   (isHomeomorph_iff_isQuotientMap_injective
     (X := Quotient (isIsomorphicSetoid C)) (Y := Quotient (isIsomorphicSetoid D))).2
-    ⟨F.isQuotientMap_isomorphismClasses_map hF, F.isomorphismClasses_map_injective⟩ |>.homeomorph _
+    ⟨hF, F.isomorphismClasses_map_injective⟩ |>.homeomorph _
 
 -- The underlying function is preserved by `IsHomeomorph.homeomorph`.
 /-- The coarse homeomorphism has Mathlib's map on isomorphism classes as its underlying
 function. -/
 @[simp]
 theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) :
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom)) :
     ⇑(F.isomorphismClassesHomeomorph hF) =
       (isomorphismClasses.map F.toCatHom :
         Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D)) := (rfl)
@@ -117,7 +171,8 @@ theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.ReflectsIsomo
 /-- The coarse homeomorphism sends the class of an object to the class of its image. -/
 @[simp]
 theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) (x : C) :
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom)) (x : C) :
     F.isomorphismClassesHomeomorph hF (Quotient.mk _ x) =
       Quotient.mk _ (F.obj x) := by
   simp only [coe_isomorphismClassesHomeomorph, isomorphismClasses_map_mk]
@@ -125,7 +180,8 @@ theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.Reflects
 /-- The inverse coarse homeomorphism takes the class of an image object back to its class. -/
 @[simp]
 theorem isomorphismClassesHomeomorph_symm_apply_mk (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) (x : C) :
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom)) (x : C) :
     (F.isomorphismClassesHomeomorph hF).symm (Quotient.mk _ (F.obj x)) =
       Quotient.mk _ x := by
   simpa only [isomorphismClassesHomeomorph_apply_mk] using
@@ -133,8 +189,10 @@ theorem isomorphismClassesHomeomorph_symm_apply_mk (F : C ⥤ D) [F.Full] [F.Ref
 
 /-- The identity refinement induces the identity coarse homeomorphism. -/
 @[simp]
-theorem isomorphismClassesHomeomorph_id :
-    (𝟭 C).isomorphismClassesHomeomorph IsQuotientMap.id = Homeomorph.refl _ := by
+theorem isomorphismClassesHomeomorph_id
+    (h : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom)) :
+    (𝟭 C).isomorphismClassesHomeomorph h = Homeomorph.refl _ := by
   ext q
   induction q using Quotient.inductionOn with
   | h x => simp
@@ -143,8 +201,11 @@ theorem isomorphismClassesHomeomorph_id :
 @[simp]
 theorem isomorphismClassesHomeomorph_comp (F : C ⥤ D) (G : D ⥤ E)
     [F.Full] [F.ReflectsIsomorphisms] [G.Full] [G.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) (hG : IsQuotientMap G.obj) :
-    (F ⋙ G).isomorphismClassesHomeomorph (hG.comp hF) =
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
+    (hG : IsQuotientMap (X := Quotient (isIsomorphicSetoid D))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
+    (F ⋙ G).isomorphismClassesHomeomorph (isQuotientMap_isomorphismClasses_map_comp F G hF hG) =
       (F.isomorphismClassesHomeomorph hF).trans (G.isomorphismClassesHomeomorph hG) := by
   ext q
   induction q using Quotient.inductionOn with
@@ -153,10 +214,71 @@ theorem isomorphismClassesHomeomorph_comp (F : C ⥤ D) (G : D ⥤ E)
 /-- Naturally isomorphic refinements give equal coarse homeomorphisms. -/
 theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
     [F.Full] [F.ReflectsIsomorphisms] [G.Full] [G.ReflectsIsomorphisms]
-    (hF : IsQuotientMap F.obj) (hG : IsQuotientMap G.obj) (e : F ≅ G) :
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
+    (hG : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map G.toCatHom)) (e : F ≅ G) :
     F.isomorphismClassesHomeomorph hF = G.isomorphismClassesHomeomorph hG := by
   ext q
   simp only [coe_isomorphismClassesHomeomorph]
   exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
+
+/-- A full functor reflecting isomorphisms whose induced map on isomorphism classes is a quotient
+map induces a proper map on isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
+    (hF : IsQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom)) :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  (F.isomorphismClassesHomeomorph hF).isProperMap
+
+section OpenTarget
+
+/-- When the quotient projection on `D` is open, a functor with open object map induces an open
+map on isomorphism classes, without requiring surjectivity on objects. -/
+theorem isOpenMap_isomorphismClasses_map (F : C ⥤ D) (hFo : IsOpenMap F.obj)
+    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
+    IsOpenMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) := by
+  set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
+    ⇑(isomorphismClasses.map F.toCatHom)
+  have hcomp : φ ∘ Quotient.mk (isIsomorphicSetoid C) =
+      Quotient.mk (isIsomorphicSetoid D) ∘ F.obj := F.isomorphismClasses_map_comp_mk
+  intro U hU
+  rw [← (Quotient.mk_surjective (s := isIsomorphicSetoid C)).image_preimage U,
+    ← Set.image_comp, hcomp, Set.image_comp]
+  exact hq _ (hFo _ (hU.preimage continuous_quotient_mk'))
+
+/-- A full functor reflecting isomorphisms whose object map is continuous and open, into a target
+with open quotient projection, induces an open embedding on isomorphism classes. -/
+theorem isOpenEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
+    (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
+    IsOpenEmbedding (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  .of_continuous_injective_isOpenMap (F.continuous_isomorphismClasses_map hF)
+    F.isomorphismClasses_map_injective (F.isOpenMap_isomorphismClasses_map hFo hq)
+
+/-- An essentially surjective functor with continuous open object map, into a target with open
+quotient projection, induces an open quotient map on isomorphism classes. -/
+theorem isOpenQuotientMap_isomorphismClasses_map_of_essSurj (F : C ⥤ D) [F.EssSurj]
+    (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
+    IsOpenQuotientMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  ⟨F.isomorphismClasses_map_surjective, F.continuous_isomorphismClasses_map hF,
+    F.isOpenMap_isomorphismClasses_map hFo hq⟩
+
+/-- An essentially surjective full functor reflecting isomorphisms, with continuous open object map
+into a target with open quotient projection, induces a proper map on isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map_of_essSurj (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
+    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  F.isProperMap_isomorphismClasses_map
+    (F.isOpenQuotientMap_isomorphismClasses_map_of_essSurj hF hFo hq).isQuotientMap
+
+end OpenTarget
 
 end CategoryTheory.Functor

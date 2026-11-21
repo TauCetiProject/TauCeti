@@ -29,6 +29,8 @@ A continuous section of a continuous locally injective map over an open set has 
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
 agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+Without separation, local injectivity still cancels a map on germs of continuous maps agreeing at
+a point (`IsLocallyInjective.eventuallyEq_of_comp`).
 
 ## References
 
@@ -138,5 +140,17 @@ theorem IsSeparatedMap.eqOn_of_leftInvOn [TopologicalSpace B] (sep : IsSeparated
     (hl' : LeftInvOn p s' S) {y : B} (hy : y ∈ S) (hee' : s y = s' y) : EqOn s s' S :=
   sep.eqOn_of_comp_eqOn hinj hS hs hs'
     (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
+
+/-- If `p : E → B` is locally injective and two maps continuous at `a` agree at `a` and have
+eventually equal compositions with `p` near `a`, then they agree on a neighbourhood of `a`. No
+topology on the codomain `B` is needed. -/
+theorem IsLocallyInjective.eventuallyEq_of_comp {A : Type*} [TopologicalSpace A]
+    (hp : IsLocallyInjective p) {g₁ g₂ : A → E} {a : A}
+    (hg₁ : ContinuousAt g₁ a) (hg₂ : ContinuousAt g₂ a)
+    (h0 : g₁ a = g₂ a) (hcomp : ∀ᶠ z in 𝓝 a, p (g₁ z) = p (g₂ z)) : g₁ =ᶠ[𝓝 a] g₂ := by
+  obtain ⟨U, hUo, haU, hUinj⟩ := hp (g₁ a)
+  filter_upwards [hg₁.preimage_mem_nhds (hUo.mem_nhds haU),
+    hg₂.preimage_mem_nhds (hUo.mem_nhds (h0 ▸ haU)), hcomp] with z hz₁ hz₂ hfz
+  exact hUinj hz₁ hz₂ hfz
 
 end IsLocallyInjective
