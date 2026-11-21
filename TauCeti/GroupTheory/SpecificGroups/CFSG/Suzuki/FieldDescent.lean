@@ -54,8 +54,8 @@ field of the field Frobenius. -/
 @[simp]
 theorem fieldRange_generatorFieldEmbedding (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
-    (generatorFieldEmbedding m hvalid).fieldRange = (of m hvalid).1.fixedField := by
-  apply (of m hvalid).1.eq_fixedField_of_natCard
+    (generatorFieldEmbedding m hvalid).fieldRange = (of m hvalid).val.fixedField := by
+  apply (of m hvalid).val.eq_fixedField_of_natCard
   rw [← Nat.card_congr (generatorFieldEmbedding m hvalid).rangeRestrictFieldEquiv.toEquiv,
     GaloisField.card]
   · exact (LieTypeIndex.fieldOrder_suzuki m).symm
@@ -66,33 +66,33 @@ Suzuki generators exactly when the field Frobenius fixes it. -/
 @[simp]
 theorem mem_range_generatorFieldEmbedding_iff (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
-    {x : (of m hvalid).1.Closure} :
+    {x : (of m hvalid).val.Closure} :
     (∃ y, generatorFieldEmbedding m hvalid y = x) ↔
-      x ^ (of m hvalid).1.fieldOrder = x := by
+      x ^ (of m hvalid).val.fieldOrder = x := by
   rw [← RingHom.mem_fieldRange]
   rw [fieldRange_generatorFieldEmbedding]
-  exact (of m hvalid).1.mem_fixedField
+  exact (of m hvalid).val.mem_fixedField
 
 /-- Scalar extension after the Suzuki coordinate change has exactly the invertible matrices
 whose entries are fixed by the field Frobenius. -/
 @[simp]
 theorem mem_range_generatorEmbedding_iff (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
-    (g : GL (Fin 4) (of m hvalid).1.Closure) :
+    (g : GL (Fin 4) (of m hvalid).val.Closure) :
     (∃ g₀, generatorEmbedding m hvalid g₀ = g) ↔
-      ∀ i j, (g i j) ^ (of m hvalid).1.fieldOrder = g i j := by
+      ∀ i j, (g i j) ^ (of m hvalid).val.fieldOrder = g i j := by
   rw [← MonoidHom.mem_range,
     ← Matrix.GeneralLinearGroup.mem_range_map_galoisFieldEmbedding_iff]
   -- Both finite-field embeddings identify their source with the same fixed subfield.
   let e : GaloisField 2 (2 * m + 1) ≃+*
-      GaloisField (of m hvalid).1.characteristic (of m hvalid).1.fieldExponent :=
+      GaloisField (of m hvalid).val.characteristic (of m hvalid).val.fieldExponent :=
     ((generatorFieldEmbedding m hvalid).rangeRestrictFieldEquiv.trans
       (RingEquiv.subfieldCongr (fieldRange_generatorFieldEmbedding m hvalid))).trans
-      (of m hvalid).1.galoisFieldEquivFixedField.symm
+      (of m hvalid).val.galoisFieldEquivFixedField.symm
   -- `RingEquiv.subfieldCongr` has no coercion lemma in Mathlib; by definition it is the
   -- identity on underlying elements of the closure.
   have he (x) :
-      (of m hvalid).1.galoisFieldEmbedding (e x) = generatorFieldEmbedding m hvalid x := by
+      (of m hvalid).val.galoisFieldEmbedding (e x) = generatorFieldEmbedding m hvalid x := by
     simp only [ValidLieTypeIndex.galoisFieldEmbedding_apply, e, RingEquiv.trans_apply,
       RingEquiv.apply_symm_apply]
     exact RingHom.rangeRestrictFieldEquiv_apply_coe _ x
@@ -116,12 +116,12 @@ the finite field used by the standard generators. -/
 theorem map_fixedSubgroup_le_range_generatorEmbedding (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype ≤
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype ≤
       (generatorEmbedding m hvalid).range := by
   rintro g ⟨x, hx, rfl⟩
   rw [MonoidHom.mem_range, mem_range_generatorEmbedding_iff]
   intro i j
-  exact (of m hvalid).1.mem_fixedField.mp
+  exact (of m hvalid).val.mem_fixedField.mp
     ((of m hvalid).coe_mem_fixedField_of_mem_fixedSubgroup_steinberg x hx i j)
 
 /-- The exact finite-field preimage of the Suzuki Steinberg fixed-point subgroup. Equality with
@@ -129,7 +129,7 @@ theorem map_fixedSubgroup_le_range_generatorEmbedding (m : ℕ)
 def finiteFixedSubgroup (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Valid) :
     Subgroup (GL (Fin 4) (GaloisField 2 (2 * m + 1))) :=
   ((fixedSubgroup (of m hvalid).steinberg).map
-      (SpStd.points 1 (of m hvalid).1.Closure).subtype).comap
+      (SpStd.points 1 (of m hvalid).val.Closure).subtype).comap
     (generatorEmbedding m hvalid)
 
 /-- Membership in the finite-field preimage is detected by scalar extension to the Suzuki
@@ -140,7 +140,7 @@ theorem mem_finiteFixedSubgroup (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Vali
     g ∈ finiteFixedSubgroup m hvalid ↔
       generatorEmbedding m hvalid g ∈
         (fixedSubgroup (of m hvalid).steinberg).map
-          (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
+          (SpStd.points 1 (of m hvalid).val.Closure).subtype :=
   Iff.rfl
 
 /-- Over the generator field, a matrix is a Steinberg fixed point exactly when its coordinate
@@ -200,7 +200,7 @@ theorem map_finiteFixedSubgroup (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     (finiteFixedSubgroup m hvalid).map (generatorEmbedding m hvalid) =
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype :=
   Subgroup.map_comap_eq_self (map_fixedSubgroup_le_range_generatorEmbedding m hvalid)
 
 /-- Scalar extension is an isomorphism from the finite-field preimage onto the Suzuki Steinberg
@@ -209,7 +209,7 @@ noncomputable def finiteFixedSubgroupEquiv (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     finiteFixedSubgroup m hvalid ≃*
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype :=
   ((finiteFixedSubgroup m hvalid).equivMapOfInjective
       (generatorEmbedding m hvalid) (generatorEmbedding_injective m hvalid)).trans
     (MulEquiv.subgroupCongr (map_finiteFixedSubgroup m hvalid))
@@ -218,7 +218,7 @@ noncomputable def finiteFixedSubgroupEquiv (m : ℕ)
 theorem coe_finiteFixedSubgroupEquiv_apply (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) (g : finiteFixedSubgroup m hvalid) :
     (finiteFixedSubgroupEquiv m hvalid g :
-        GL (Fin 4) (of m hvalid).1.Closure) = generatorEmbedding m hvalid g :=
+        GL (Fin 4) (of m hvalid).val.Closure) = generatorEmbedding m hvalid g :=
   by
     simp only [finiteFixedSubgroupEquiv, MulEquiv.trans_apply,
       Subgroup.coe_equivMapOfInjective_apply, MulEquiv.subgroupCongr_apply]
@@ -228,9 +228,9 @@ theorem coe_finiteFixedSubgroupEquiv_apply (m : ℕ)
 theorem generatorEmbedding_finiteFixedSubgroupEquiv_symm_apply (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
     (g : (fixedSubgroup (of m hvalid).steinberg).map
-      (SpStd.points 1 (of m hvalid).1.Closure).subtype) :
+      (SpStd.points 1 (of m hvalid).val.Closure).subtype) :
     generatorEmbedding m hvalid ((finiteFixedSubgroupEquiv m hvalid).symm g) =
-      (g : GL (Fin 4) (of m hvalid).1.Closure) := by
+      (g : GL (Fin 4) (of m hvalid).val.Closure) := by
   rw [← coe_finiteFixedSubgroupEquiv_apply]
   exact congrArg Subtype.val ((finiteFixedSubgroupEquiv m hvalid).apply_symm_apply g)
 

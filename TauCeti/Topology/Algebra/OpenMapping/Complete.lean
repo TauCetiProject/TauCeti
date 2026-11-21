@@ -204,20 +204,20 @@ theorem isOpenMap_of_closure_image_mem_nhds [(𝓝 (0 : M)).IsCountablyGenerated
       exists_closed_nhds_zero_neg_eq_add_subset
         (Filter.inter_mem hT (hW.toHasBasis.mem_of_mem (i := n) trivial))
   let V : ℕ → {T : Set M // T ∈ 𝓝 (0 : M)} :=
-    Nat.rec ⟨U₀, hU₀_nhds⟩ fun n T ↦ ⟨step T.1 T.2 n, hstep_nhds T.1 T.2 n⟩
-  have hV_add : ∀ n, (V (n + 1)).1 + (V (n + 1)).1 ⊆ (V n).1 ∩ W n :=
-    fun n ↦ hstep_add (V n).1 (V n).2 n
-  have hV_basis : ∀ U ∈ 𝓝 (0 : M), ∃ n, (V n).1 ⊆ U := by
+    Nat.rec ⟨U₀, hU₀_nhds⟩ fun n T ↦ ⟨step T.val T.property n, hstep_nhds T.val T.property n⟩
+  have hV_add : ∀ n, (V (n + 1)).val + (V (n + 1)).val ⊆ (V n).val ∩ W n :=
+    fun n ↦ hstep_add (V n).val (V n).property n
+  have hV_basis : ∀ U ∈ 𝓝 (0 : M), ∃ n, (V n).val ⊆ U := by
     intro U hU
     obtain ⟨n, -, hn⟩ := hW.toHasBasis.mem_iff.mp hU
     refine ⟨n + 1, fun x hx ↦ hn ?_⟩
     exact (hV_add n (by
-      simpa only [add_zero] using Set.add_mem_add hx (mem_of_mem_nhds (V (n + 1)).2))).2
-  refine Filter.mem_of_superset (h _ (V 1).2) fun y hy ↦ ?_
+      simpa only [add_zero] using Set.add_mem_add hx (mem_of_mem_nhds (V (n + 1)).property))).2
+  refine Filter.mem_of_superset (h _ (V 1).property) fun y hy ↦ ?_
   obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc hU₀_closed
-    (fun n ↦ mem_of_mem_nhds (V n).2)
+    (fun n ↦ mem_of_mem_nhds (V n).property)
     (fun n ↦ (hV_add n).trans Set.inter_subset_left) hV_basis
-    (fun n ↦ h _ (V (n + 2)).2) hy
+    (fun n ↦ h _ (V (n + 2)).property) hy
   exact hU₀S hx
 
 end TauCeti

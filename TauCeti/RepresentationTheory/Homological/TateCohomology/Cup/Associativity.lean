@@ -98,8 +98,8 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
   obtain ⟨z, rfl⟩ : ∃ z', (dimensionShiftUpIso P s).hom z' = z :=
     ⟨(dimensionShiftUpIso P s).inv z, Iso.inv_hom_id_apply _ _⟩
   have hN : ((ShortComplex.mk (coindBotUnit P) (dimensionShiftUpπ P)
-      (coindBotUnit_comp_dimensionShiftUpπ P)).map (tensorLeft N)).ShortExact := by
-    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_tensorLeft_shortExact P N
+      (coindBotUnit_comp_dimensionShiftUpπ P)).map (tensorLeft N)).ShortExact :=
+    dimensionShiftUpSES_tensorLeft_shortExact P N
   -- On the right, the tensor product of the upward sequence of `P` with `N` is split by
   -- `N ⊗ (evaluation at 1)`, so `x ∪ δ w = (-1)^p δ (x ∪ w)` for its connecting map.
   have hR := cup_δ_of_leftInverse M hN
@@ -108,8 +108,7 @@ private theorem cup_assoc_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs : 0
   -- On the left, the associator commutes with the connecting maps.
   have hL := map_associator_δ M N (S := ShortComplex.mk (coindBotUnit P) (dimensionShiftUpπ P)
       (coindBotUnit_comp_dimensionShiftUpπ P))
-    (by simpa only [dimensionShiftUpSES_def] using
-      dimensionShiftUpSES_tensorLeft_shortExact P (M ⊗ N))
+    (dimensionShiftUpSES_tensorLeft_shortExact P (M ⊗ N))
     (haveI := hN.epi_g; Rep.shortExact_map_tensorLeft_of_leftInverse hN.exact M
       (Rep.leftInverse_whiskerLeft N (coindBotUnit P) (leftInverse_coindBotUnit P))) r
     (cup (M ⊗ N) (dimensionShiftUp P) (p + q) s r h (cup M N p q (p + q) rfl x y) z)
@@ -133,11 +132,11 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
         (cup (M ⊗ N) P (p + q) s r h (cup M N p q (p + q) rfl x y) z) =
       cup M (N ⊗ P) p r₂ r (by omega) x (cup N P q s r₂ h₂ y z) := by
   have hD : (ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
-      (dimensionShiftDownι_comp_indBotCounit P)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact P
+      (dimensionShiftDownι_comp_indBotCounit P)).ShortExact :=
+    dimensionShiftDownSES_shortExact P
   have hN : ((ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
-      (dimensionShiftDownι_comp_indBotCounit P)).map (tensorLeft N)).ShortExact := by
-    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_tensorLeft_shortExact P N
+      (dimensionShiftDownι_comp_indBotCounit P)).map (tensorLeft N)).ShortExact :=
+    dimensionShiftDownSES_tensorLeft_shortExact P N
   -- The downward sequence of `P` is split, hence so is its tensor product with `N`.
   obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit P)
   have hρN := Rep.leftInverse_whiskerLeft N (dimensionShiftDownι P) hρ
@@ -158,12 +157,11 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
   -- `δ ((x ∪ y) ∪ z) = (-1)^(p + q) (x ∪ y) ∪ δ z` by the definition of the cup product.
   have hL := map_associator_δ M N (S := ShortComplex.mk (dimensionShiftDownι P) (indBotCounit P)
       (dimensionShiftDownι_comp_indBotCounit P))
-    (by simpa only [dimensionShiftDownSES_def] using
-      dimensionShiftDownSES_tensorLeft_shortExact P (M ⊗ N)) hMN r
+    (dimensionShiftDownSES_tensorLeft_shortExact P (M ⊗ N)) hMN r
     (cup (M ⊗ N) P (p + q) s r h (cup M N p q (p + q) rfl x y) z)
   have hT := congrArg ((p + q).negOnePow • ·)
     (cup_dimensionShiftDownIso_hom (M ⊗ N) P hs h rfl (cup M N p q (p + q) rfl x y) z)
-  rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
+  rw [Int.negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
   rw [← hL, ← hT, map_zsmul_unit, ih]
   -- On the right, `δ (x ∪ w) = (-1)^p x ∪ δ w` for the split sequence, and
   -- `δ (y ∪ z) = (-1)^q y ∪ δ z` by the definition of the cup product.
@@ -171,8 +169,8 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
     (cup_δ_of_leftInverse M hN hρN (show p + r₂ = r by omega) x (cup N P q s r₂ h₂ y z))
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hR
   have hTN := congrArg (q.negOnePow • ·) (cup_dimensionShiftDownIso_hom N P hs h₂ rfl y z)
-  rw [negOnePow_smul_negOnePow_smul] at hR
-  rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hTN
+  rw [Int.negOnePow_smul_negOnePow_smul] at hR
+  rw [Int.negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hTN
   rw [← hR, ← hTN, map_zsmul_unit, smul_smul, ← Int.negOnePow_add]
 
 /-- Associativity of the Tate cup product when the last class has nonnegative degree. -/

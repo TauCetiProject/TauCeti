@@ -94,13 +94,13 @@ noncomputable def placesOverEquivPrimesOver (v : FinitePlace K) :
 
 @[simp]
 theorem placesOverEquivPrimesOver_apply (v : FinitePlace K) (w : v.placesOver F) :
-    (placesOverEquivPrimesOver F v w).1 = w.1.maximalIdeal.asIdeal :=
+    (placesOverEquivPrimesOver F v w).val = w.val.maximalIdeal.asIdeal :=
   (rfl)
 
 @[simp]
 theorem placesOverEquivPrimesOver_symm_apply (v : FinitePlace K)
     (q : v.maximalIdeal.asIdeal.primesOver (𝓞 F)) :
-    ((placesOverEquivPrimesOver F v).symm q).1.maximalIdeal.asIdeal = q.1 := by
+    ((placesOverEquivPrimesOver F v).symm q).val.maximalIdeal.asIdeal = q.val := by
   simpa only [placesOverEquivPrimesOver_apply] using
     congrArg Subtype.val ((placesOverEquivPrimesOver F v).apply_symm_apply q)
 
@@ -119,7 +119,7 @@ theorem nonempty_placesOver (v : FinitePlace K) : (v.placesOver F).Nonempty := b
 /-- A finite place above `v` restricts to its absolute value exactly when its local degree is one.
 In particular, a ramified or nonsplit place need not satisfy `AbsoluteValue.LiesOver`. -/
 theorem liesOver_val_iff_localDegree_eq_one (w : FinitePlace F) (v : FinitePlace K)
-    [w.LiesOver v] : w.1.LiesOver v.1 ↔ w.localDegree K = 1 := by
+    [w.LiesOver v] : w.val.LiesOver v.val ↔ w.localDegree K = 1 := by
   constructor
   · intro h
     obtain ⟨z, hz, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot v.maximalIdeal.ne_bot
@@ -128,7 +128,7 @@ theorem liesOver_val_iff_localDegree_eq_one (w : FinitePlace F) (v : FinitePlace
       rw [← v.mk_maximalIdeal, mk_apply]
       exact (norm_lt_one_iff_mem K v.maximalIdeal z).mpr hz
     have hres : w (algebraMap K F (z : K)) = v (z : K) :=
-      AbsoluteValue.LiesOver.apply_algebraMap v.1 (w := w.1) (z : K)
+      AbsoluteValue.LiesOver.apply_algebraMap v.val (w := w.val) (z : K)
     apply pow_right_injective₀ hpos hlt.ne
     simpa only [pow_one] using (apply_algebraMap w v (z : K)).symm.trans hres
   · intro h
@@ -157,7 +157,7 @@ example (v : FinitePlace K) :
   rw [sum_localDegree, Module.finrank_self]
 
 example (w : FinitePlace F) (v : FinitePlace K) [w.LiesOver v]
-    (h : 1 < w.localDegree K) : ¬ w.1.LiesOver v.1 := by
+    (h : 1 < w.localDegree K) : ¬ w.val.LiesOver v.val := by
   rw [liesOver_val_iff_localDegree_eq_one w v]
   exact h.ne'
 

@@ -334,7 +334,7 @@ theorem isLocalDiffeomorph_comp
       (isLocalHomeomorph_source hs.isLocalHomeomorph)
     IsLocalDiffeomorph I I n
       fun p : {p : Quiver.Total (EffectiveQuotient C) × Quiver.Total (EffectiveQuotient C) //
-        p.1.right = p.2.left} ↦ p.1.1.comp p.1.2 p.2 :=
+        p.1.right = p.2.left} ↦ p.val.1.comp p.val.2 p.property :=
   letI := isTopologicalGroupoid hs.isLocalHomeomorph
   letI := chartedSpaceArrows (H := H) hs.isLocalHomeomorph
   IsTopologicalGroupoid.isLocalDiffeomorph_comp
@@ -351,7 +351,7 @@ theorem contMDiff_comp
       (isLocalHomeomorph_source hs.isLocalHomeomorph)
     ContMDiff I I n
       fun p : {p : Quiver.Total (EffectiveQuotient C) × Quiver.Total (EffectiveQuotient C) //
-        p.1.right = p.2.left} ↦ p.1.1.comp p.1.2 p.2 :=
+        p.1.right = p.2.left} ↦ p.val.1.comp p.val.2 p.property :=
   letI := isTopologicalGroupoid hs.isLocalHomeomorph
   letI := chartedSpaceArrows (H := H) hs.isLocalHomeomorph
   letI := IsTopologicalGroupoid.composablePairsChartedSpace (H' := H)

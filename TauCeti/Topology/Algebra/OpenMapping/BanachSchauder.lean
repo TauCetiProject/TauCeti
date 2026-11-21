@@ -344,8 +344,8 @@ theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
   let φ : E ≃ₗ[R] f.graph :=
     (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ f.graph_eq_range_prod.symm)
   have hφ : Continuous φ :=
-    φ.symm.continuous_symm_of_complete continuous_subtype_val.fst
-  exact (continuous_subtype_val.comp hφ).snd
+    φ.symm.continuous_symm_of_complete continuous_subtypeVal.fst
+  exact (continuous_subtypeVal.comp hφ).snd
 
 /-- **Sequential closed graph theorem.** A linear map between complete first-countable uniform
 modules (with `T₀` domain) is continuous if its graph is sequentially closed: whenever `u n → x`
@@ -565,14 +565,14 @@ theorem isClosed_range_of_isCompl_of_complete {R E F : Type*}
   let Φ : (E × G) →L[R] F := f.coprod G.subtypeL
   have hsurj : Surjective Φ := LinearMap.range_eq_top.mp <| by
     simpa [Φ, LinearMap.range_coprod] using hG.sup_eq_top
-  have hpre : Φ ⁻¹' (f.range : Set F) = {p : E × G | p.2 = 0} := by
+  have hpre : Φ ⁻¹' (f.range : Set F) = {p : E × G | p.snd = 0} := by
     ext p
     simp only [Set.mem_preimage, SetLike.mem_coe, Set.mem_ofPred_eq, Φ, coprod_apply,
       Submodule.coe_subtypeL, Submodule.coe_subtype]
-    have hfp : f p.1 ∈ f.range := f.mem_range_self p.1
+    have hfp : f p.fst ∈ f.range := f.mem_range_self p.fst
     refine ⟨fun hmem ↦ ?_, fun h0 ↦ by simp [h0]⟩
-    have hb : (p.2 : F) ∈ f.range := by simpa using f.range.sub_mem hmem hfp
-    have hbot : (p.2 : F) ∈ f.range ⊓ G := ⟨hb, p.2.2⟩
+    have hb : (p.snd : F) ∈ f.range := by simpa using f.range.sub_mem hmem hfp
+    have hbot : (p.snd : F) ∈ f.range ⊓ G := ⟨hb, p.snd.property⟩
     rw [hG.inf_eq_bot] at hbot
     exact Submodule.coe_eq_zero.mp (by simpa using hbot)
   have hclosed : IsClosed (Φ ⁻¹' (f.range : Set F)) := by

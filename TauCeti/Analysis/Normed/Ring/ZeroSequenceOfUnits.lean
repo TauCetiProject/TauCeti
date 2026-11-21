@@ -23,8 +23,6 @@ nontrivially normed fields as well as to modules over seminormed rings with a co
 
 ## Main results
 
-* `TauCeti.HasZeroSequenceOfUnits.tendsto_pow_unit_of_norm_lt_one`: the powers of a unit of norm
-  strictly less than `1` in a seminormed ring converge to zero.
 * `TauCeti.HasZeroSequenceOfUnits.of_norm_lt_one`: a seminormed ring containing a unit of norm
   strictly less than `1` admits a zero sequence of units.
 * `TauCeti.HasZeroSequenceOfUnits.of_nontriviallyNormedField`: every nontrivially normed field
@@ -37,18 +35,12 @@ open Filter Topology
 
 namespace TauCeti.HasZeroSequenceOfUnits
 
-/-- The powers of a unit `u` with `‖(u : R)‖ < 1` in a seminormed ring form a sequence of units
-converging to zero. -/
-theorem tendsto_pow_unit_of_norm_lt_one {R : Type*} [SeminormedRing R] (u : Rˣ)
-    (hu : ‖(u : R)‖ < 1) :
-    Tendsto (fun n : ℕ ↦ ((u ^ n : Rˣ) : R)) atTop (𝓝 0) := by
-  simpa only [Units.val_pow_eq_pow_val] using tendsto_pow_atTop_nhds_zero_of_norm_lt_one hu
-
 /-- A seminormed ring admitting a unit of norm strictly less than `1` carries a zero sequence of
 units. -/
 theorem of_norm_lt_one {R : Type*} [SeminormedRing R] (u : Rˣ) (hu : ‖(u : R)‖ < 1) :
     HasZeroSequenceOfUnits R :=
-  ⟨fun n ↦ u ^ n, tendsto_pow_unit_of_norm_lt_one u hu⟩
+  ⟨fun n ↦ u ^ n,
+    by simpa only [Units.val_pow_eq_pow_val] using tendsto_pow_atTop_nhds_zero_of_norm_lt_one hu⟩
 
 /-- Every nontrivially normed field carries a zero sequence of units, given by the powers of any
 nonzero element of norm strictly less than `1`. -/
