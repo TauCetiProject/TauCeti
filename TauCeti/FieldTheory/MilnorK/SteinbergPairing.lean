@@ -217,15 +217,7 @@ theorem eq_zero_of_odd_complementary (hc : IsSteinbergPairing c) {g : Fˣ}
 
 private theorem not_isSquare_mul_inv_of_isSquare {s t : Fˣ} (hs : IsSquare s) (ht : ¬ IsSquare t) :
     ¬ IsSquare (s * t⁻¹) := by
-  rintro ⟨w, hw⟩; obtain ⟨u, rfl⟩ := hs
-  refine ht ⟨u * w⁻¹, ?_⟩
-  have h1 : u * u = w * w * t := mul_inv_eq_iff_eq_mul.mp hw
-  rw [show t = (u * u) * (w * w)⁻¹ by rw [h1, mul_comm (w * w) t, mul_inv_cancel_right],
-    mul_inv_rev]
-  ac_rfl
-
-private theorem not_isSquare_inv {t : Fˣ} (ht : ¬ IsSquare t) : ¬ IsSquare t⁻¹ := by
-  rintro ⟨w, hw⟩; exact ht ⟨w⁻¹, by simpa [mul_inv_rev] using congrArg Inv.inv hw⟩
+  intro h; apply ht; simpa using hs.div h
 
 private theorem exists_odd_zpow_of_not_isSquare {g : Fˣ} (hg : ∀ x : Fˣ, x ∈ Subgroup.zpowers g)
     {a : Fˣ} (ha : ¬ IsSquare a) : ∃ k : ℤ, g ^ (2 * k + 1) = a := by
@@ -234,7 +226,7 @@ private theorem exists_odd_zpow_of_not_isSquare {g : Fˣ} (hg : ∀ x : Fˣ, x �
   · exact absurd ⟨g ^ k, by rw [← zpow_add]⟩ ha
   · exact ⟨k, rfl⟩
 
-private theorem exists_not_isSquare_complementary_of_ringChar_ne_zero [IsCyclic Fˣ]
+private theorem exists_not_isSquare_complementary_of_ringChar_ne_zero
     (hchar : ringChar F ≠ 0) (hchar2 : ¬ CharP F 2) {g : Fˣ} (hg_nsq : ¬ IsSquare g) :
     ∃ a b : Fˣ, ¬ IsSquare a ∧ ¬ IsSquare b ∧ (a : F) + b = 1 := by
   have hprime := (CharP.char_is_prime_or_zero F (ringChar F)).resolve_right hchar
@@ -244,11 +236,9 @@ private theorem exists_not_isSquare_complementary_of_ringChar_ne_zero [IsCyclic 
   let u : Fˣ := Units.mk0 (1 - (g : F)) h1g_ne
   by_cases hu : IsSquare u
   · by_cases hneg1 : IsSquare (-1 : Fˣ)
-    · have hnegu : IsSquare (-u) := by
-        obtain ⟨x, hx⟩ := hneg1; obtain ⟨y, hy⟩ := hu
-        exact ⟨x * y, by rw [show -u = (-1 : Fˣ) * u by ext; simp, hx, hy]; ac_rfl⟩
+    · have hnegu : IsSquare (-u) := by simpa using hneg1.mul hu
       refine ⟨(-u) * g⁻¹, g⁻¹, not_isSquare_mul_inv_of_isSquare hnegu hg_nsq,
-        not_isSquare_inv hg_nsq, ?_⟩
+        mt isSquare_inv.mp hg_nsq, ?_⟩
       have hg0 : (g : F) ≠ 0 := g.ne_zero
       simp only [Units.val_mul, Units.val_neg, Units.val_inv_eq_inv_val, u, Units.val_mk0]
       field_simp; ring
@@ -280,7 +270,7 @@ private theorem exists_not_isSquare_complementary_of_ringChar_ne_zero [IsCyclic 
         by_contra fun hnsq ↦ Nat.find_min hex (by omega : m - 1 < m) ⟨hm1_ne, hnsq⟩
       refine ⟨Units.mk0 ((m - 1 : ℕ) : F) hm1_ne * (Units.mk0 (m : F) hm_ne)⁻¹,
         (Units.mk0 (m : F) hm_ne)⁻¹, not_isSquare_mul_inv_of_isSquare hm1_sq hm_nsq,
-        not_isSquare_inv hm_nsq, ?_⟩
+        mt isSquare_inv.mp hm_nsq, ?_⟩
       simp only [Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0]
       rw [← add_one_mul, ← Nat.cast_add_one, Nat.sub_add_cancel (by omega : 1 ≤ m),
         mul_inv_cancel₀ hm_ne]
