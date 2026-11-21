@@ -67,13 +67,13 @@ instance : MonoidalCategoryStruct (FiniteRankBundleCore 𝕜 B) where
   tensorHom := tensorHom
   tensorUnit := trivial 𝕜 B 1
   associator A D C :=
-    constIso (fun _ => Set.inter_assoc _ _ _) (kroneckerAssoc 𝕜 A.rank D.rank C.rank)
+    constIso (fun _ => (Set.inter_assoc _ _ _).le) (kroneckerAssoc 𝕜 A.rank D.rank C.rank)
       fun _ _ _ _ _ => kroneckerAssoc_comp_kronecker _ _ _
   leftUnitor A :=
-    constIso (fun _ => Set.univ_inter _) (kroneckerLid 𝕜 A.rank)
+    constIso (fun _ => (Set.univ_inter _).le) (kroneckerLid 𝕜 A.rank)
       fun _ _ _ _ _ => kroneckerLid_comp_kronecker _
   rightUnitor A :=
-    constIso (fun _ => Set.inter_univ _) (kroneckerRid 𝕜 A.rank)
+    constIso (fun _ => (Set.inter_univ _).le) (kroneckerRid 𝕜 A.rank)
       fun _ _ _ _ _ => kroneckerRid_comp_kronecker _
 
 variable {A A' D D' C : FiniteRankBundleCore 𝕜 B}
@@ -178,7 +178,7 @@ instance : MonoidalPreadditive (FiniteRankBundleCore 𝕜 B) where
 /-- The braiding `A ⊗ D ≅ D ⊗ A` of cores, with the coordinate swap `kroneckerComm` as its
 constant coordinate matrix. -/
 def tensorComm (A D : FiniteRankBundleCore 𝕜 B) : A ⊗ D ≅ D ⊗ A :=
-  constIso (fun _ => Set.inter_comm _ _) (kroneckerComm 𝕜 A.rank D.rank)
+  constIso (fun _ => (Set.inter_comm _ _).le) (kroneckerComm 𝕜 A.rank D.rank)
     fun _ _ _ _ _ => kroneckerComm_comp_kronecker _ _
 
 @[simp] theorem fiberMap_tensorComm_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
@@ -217,7 +217,7 @@ instance : SymmetricCategory (FiniteRankBundleCore 𝕜 B) where
 /-- The monoidal braiding is the constant isomorphism induced by the Kronecker swap. -/
 theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
     (β_ A D) =
-      constIso (fun _ => Set.inter_comm _ _) (kroneckerComm 𝕜 A.rank D.rank)
+      constIso (fun _ => (Set.inter_comm _ _).le) (kroneckerComm 𝕜 A.rank D.rank)
         (fun _ _ _ _ _ => kroneckerComm_comp_kronecker _ _) := (rfl)
 
 @[simp] theorem fiberMap_braiding_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
@@ -233,6 +233,11 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
     ∀ m : ℕ, (tensorPow A m).rank = A.rank ^ m
   | 0 => rfl
   | m + 1 => by rw [tensorPow_succ, rank_tensorObj, rank_tensorPow A m, pow_succ']
+
+/-- Every tensor power of a core of rank one has rank one. -/
+theorem rank_tensorPow_of_rank_eq_one {A : FiniteRankBundleCore 𝕜 B} (hA : A.rank = 1) (m : ℕ) :
+    (tensorPow A m).rank = 1 := by
+  rw [rank_tensorPow, hA, one_pow]
 
 /-- The chart domains of a core lie in those of each of its tensor powers. -/
 theorem baseSet_subset_baseSet_tensorPow (A : FiniteRankBundleCore 𝕜 B) (i : B) :

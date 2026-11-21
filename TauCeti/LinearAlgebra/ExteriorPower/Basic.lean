@@ -315,7 +315,7 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     map_surjective hf.2⟩
 
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
-theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
+@[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
     map n (c • f) = c ^ n • map n f := by
   apply linearMap_ext
   ext m

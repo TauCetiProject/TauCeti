@@ -113,7 +113,7 @@ theorem piEquiv_symm_exteriorPowerCoords (j : ℕ) {m n : ℕ}
 @[simp] theorem exteriorPowerCoords_smul (j : ℕ) {m n : ℕ} (c : R)
     (f : (Fin m → R) →ₗ[R] (Fin n → R)) :
     (c • f).exteriorPowerCoords j = c ^ j • f.exteriorPowerCoords j :=
-  LinearMap.ext fun v ↦ by simp [exteriorPowerCoords, map_smul_eq_pow_smul]
+  LinearMap.ext fun v ↦ by simp [exteriorPowerCoords]
 
 /-- The entries of the `j`th compound matrix are the `j × j` minors of the original matrix, with
 rows and columns selected by the enumerated subsets in increasing order. -/

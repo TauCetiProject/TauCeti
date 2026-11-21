@@ -209,7 +209,7 @@ theorem exteriorPowerZeroIso_hom_naturality {A D : FiniteRankBundleCore 𝕜 B} 
 /-- The degree-one exterior power of a bundle is the bundle itself. -/
 noncomputable def exteriorPowerOneIso (A : FiniteRankBundleCore 𝕜 B) :
     (exteriorPower 𝕜 B 1).obj A ≅ A :=
-  constIso (fun _ => rfl) (exteriorPower.piOneContinuousEquiv 𝕜 A.rank)
+  constIso (fun _ => subset_rfl) (exteriorPower.piOneContinuousEquiv 𝕜 A.rank)
     -- The transitions of the exterior power are compound matrices on `Fin (A.rank.choose 1) → 𝕜`.
     fun _ _ _ _ _ => exteriorPower.piOneContinuousEquiv_comp_exteriorPowerCoords _
 
@@ -303,10 +303,10 @@ private theorem piCongrLeft_comp_exteriorPowerCoords_kronecker {n N r r' : ℕ} 
 
 /-- For a line bundle `L`, the fibres of `⋀^j (L ⊗ E)` and `L^⊗j ⊗ ⋀^j E` have the same
 dimension. -/
-private theorem choose_rank_tensor_eq {L : FiniteRankBundleCore 𝕜 B} (hL : L.rank = 1)
+theorem choose_rank_mul_rank_of_rank_eq_one {L : FiniteRankBundleCore 𝕜 B} (hL : L.rank = 1)
     (E : FiniteRankBundleCore 𝕜 B) (j : ℕ) :
     (L.rank * E.rank).choose j = (tensorPow L j).rank * E.rank.choose j := by
-  rw [rank_tensorPow, hL, one_pow, one_mul, one_mul]
+  rw [rank_tensorPow_of_rank_eq_one hL, hL, one_mul, one_mul]
 
 variable (j : ℕ) (L : FiniteRankBundleCore 𝕜 B)
 
@@ -316,39 +316,31 @@ the isomorphism reindexes the coordinates of the two spaces, both of dimension
 the `j`th compound matrix of `c • g` is `c ^ j` times the compound matrix of `g`. -/
 noncomputable def exteriorPowerLineTensorIso (hL : L.rank = 1) (E : FiniteRankBundleCore 𝕜 B) :
     (exteriorPower 𝕜 B j).obj (L ⊗ E) ≅ tensorPow L j ⊗ (exteriorPower 𝕜 B j).obj E :=
-  constIsoOfSubset (fun i ↦ Set.inter_subset_inter_left _ (baseSet_subset_baseSet_tensorPow L i j))
-    (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (choose_rank_tensor_eq hL E j)))
+  constIso (fun i ↦ Set.inter_subset_inter_left _ (baseSet_subset_baseSet_tensorPow L i j))
+    (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (choose_rank_mul_rank_of_rank_eq_one hL E j)))
     fun i i' x _ _ ↦ by
       let : Unique (Fin L.rank) := ⟨⟨⟨0, by omega⟩⟩, fun k ↦ Fin.ext (by omega)⟩
       obtain ⟨c, hc⟩ : ∃ c : 𝕜, L.core.coordChange i i' x =
           c • ContinuousLinearMap.id 𝕜 (Fin L.rank → 𝕜) :=
         ⟨_, (L.core.coordChange i i' x).eq_smul_id_of_unique⟩
-      -- Unfold the transitions of the exterior powers and of the tensor products.
-      change (piCongrLeft 𝕜 (fun _ ↦ 𝕜) (finCongr (choose_rank_tensor_eq hL E j)) :
-          _ →L[𝕜] _).comp
-        (((L.core.coordChange i i' x).kronecker
-          (E.core.coordChange i i' x)).exteriorPowerCoords j) =
-        (((tensorPow L j).core.coordChange i i' x).kronecker
-          ((E.core.coordChange i i' x).exteriorPowerCoords j)).comp _
-      rw [coordChange_tensorPow_of_eq_smul_id L hc j, hc]
+      simp only [coordChange_exteriorPower_obj, coordChange_tensorObj,
+        coordChange_tensorPow_of_eq_smul_id L hc j, hc]
       exact piCongrLeft_comp_exteriorPowerCoords_kronecker j hL
-        (by rw [rank_tensorPow, hL, one_pow]) _ _ _ _
+        (rank_tensorPow_of_rank_eq_one hL j) _ _ _ _
 
 @[simp] theorem fiberMap_exteriorPowerLineTensorIso_hom (hL : L.rank = 1)
     (E : FiniteRankBundleCore 𝕜 B) (x : B) :
     (exteriorPowerLineTensorIso j L hL E).hom.fiberMap x =
       ContinuousLinearEquiv.toContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜)
-        (finCongr (by rw [rank_tensorPow, hL, one_pow, one_mul, one_mul] :
-          (L.rank * E.rank).choose j = (tensorPow L j).rank * E.rank.choose j))) :=
-  fiberMap_constIsoOfSubset_hom _ _ _ x
+        (finCongr (choose_rank_mul_rank_of_rank_eq_one hL E j))) :=
+  fiberMap_constIso_hom _ _ _ x
 
 @[simp] theorem fiberMap_exteriorPowerLineTensorIso_inv (hL : L.rank = 1)
     (E : FiniteRankBundleCore 𝕜 B) (x : B) :
     (exteriorPowerLineTensorIso j L hL E).inv.fiberMap x =
       ContinuousLinearEquiv.toContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜)
-        (finCongr (by rw [rank_tensorPow, hL, one_pow, one_mul, one_mul] :
-          (L.rank * E.rank).choose j = (tensorPow L j).rank * E.rank.choose j))).symm :=
-  fiberMap_constIsoOfSubset_inv _ _ _ x
+        (finCongr (choose_rank_mul_rank_of_rank_eq_one hL E j))).symm :=
+  fiberMap_constIso_inv _ _ _ x
 
 /-- The identification `⋀^j (L ⊗ E) ≅ L^⊗j ⊗ ⋀^j E` is natural in `E`. -/
 @[reassoc]
@@ -358,8 +350,8 @@ theorem exteriorPowerLineTensorIso_hom_naturality (hL : L.rank = 1)
       (exteriorPowerLineTensorIso j L hL E).hom ≫ tensorPow L j ◁ (exteriorPower 𝕜 B j).map f :=
   hom_ext fun x ↦ by
     have h := piCongrLeft_comp_exteriorPowerCoords_kronecker j hL
-      (by rw [rank_tensorPow, hL, one_pow]) 1 (f.fiberMap x) (choose_rank_tensor_eq hL E j)
-      (choose_rank_tensor_eq hL E' j)
+      (rank_tensorPow_of_rank_eq_one hL j) 1 (f.fiberMap x)
+      (choose_rank_mul_rank_of_rank_eq_one hL E j) (choose_rank_mul_rank_of_rank_eq_one hL E' j)
     rw [one_smul, one_pow, one_smul] at h
     rw [fiberMap_comp, fiberMap_comp, fiberMap_exteriorPower_map, fiberMap_whiskerLeft,
       fiberMap_whiskerLeft, fiberMap_exteriorPowerLineTensorIso_hom,
