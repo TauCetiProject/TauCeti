@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 
 /-!
 # Corestriction of finitely generated comodules
@@ -20,6 +21,8 @@ preserved automatically.
 
 * `TauCeti.FGComoduleCat.corestrict`: corestriction as a functor on finitely generated
   comodules.
+* `CoalgHom.matrixCoefficient_corestrict_mem_range`: matrix coefficients of corestricted
+  finite comodules lie in the range of the coalgebra map.
 * Compatibility lemmas with `ComoduleCat.corestrict`, the inclusion into all comodules, and
   the forgetful functor to semimodules.
 
@@ -154,3 +157,28 @@ theorem corestrict_obj_coact_id (M : FGComoduleCat.{u, v, x} R C) :
 end FGComoduleCat
 
 end TauCeti
+
+open TauCeti
+
+namespace CoalgHom
+
+universe u v w x
+
+variable {R : Type u} [CommSemiring R]
+variable {C : Type v} {D : Type w} [AddCommMonoid C] [Module R C] [Coalgebra R C]
+  [AddCommMonoid D] [Module R D] [Coalgebra R D]
+
+/-- Every matrix coefficient of a finite comodule corestricted along `f` lies in the range of
+`f`. -/
+theorem matrixCoefficient_corestrict_mem_range (f : C →ₗc[R] D) (Y : FGComoduleCat.{u, v, x} R C)
+    (φ : (FGComoduleCat.corestrict f).obj Y →ₗ[R] R) (y : (FGComoduleCat.corestrict f).obj Y) :
+    Comodule.matrixCoefficient (C := D) φ y ∈ LinearMap.range (f : C →ₗ[R] D) := by
+  -- The coefficient over `D` is the image under `f` of the coefficient over `C`, read with the
+  -- corestricted comodule structure on the carrier of `Y`.
+  have key (ψ : Y →ₗ[R] R) (z : Y) :
+      (letI : Comodule R D Y := Comodule.Corestrict f;
+        Comodule.matrixCoefficient (C := D) ψ z) ∈ LinearMap.range (f : C →ₗ[R] D) :=
+    ⟨_, (CoalgHom.matrixCoefficient_corestrict f ψ z).symm⟩
+  exact key φ y
+
+end CoalgHom
