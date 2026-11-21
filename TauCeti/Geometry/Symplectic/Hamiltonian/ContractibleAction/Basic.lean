@@ -159,6 +159,17 @@ variable {w w₁ w₂ : ℝ × ℝ → M} {γ₀ γ₁ γ₂ : ℝ → M}
 theorem isCap {x : M} (hw : IsLoopCylinder I w γ₀ fun _ ↦ x) : IsCap I w γ₀ :=
   ⟨x, hw⟩
 
+/-- The initial loop of a cylinder is `1`-periodic. -/
+theorem periodic_left (hw : IsLoopCylinder I w γ₀ γ₁) : Function.Periodic γ₀ 1 := fun t ↦ by
+  rw [← hw.apply_zero, ← hw.apply_zero]
+  exact hw.apply_add_one (0, t)
+
+/-- The initial loop of a cylinder is `C²`. -/
+theorem contMDiff_left (hw : IsLoopCylinder I w γ₀ γ₁) : ContMDiff 𝓘(ℝ) I 2 γ₀ := by
+  have h : γ₀ = w ∘ fun t ↦ (0, t) := funext fun t ↦ (hw.apply_zero t).symm
+  rw [h]
+  exact hw.contMDiff.comp (contDiff_const.prodMk contDiff_id).contMDiff
+
 /-- The concatenation of a cylinder from `γ₀` to `γ₁` and a cylinder from `γ₁` to `γ₂` is a
 cylinder from `γ₀` to `γ₂`. -/
 theorem trans (hw₁ : IsLoopCylinder I w₁ γ₀ γ₁) (hw₂ : IsLoopCylinder I w₂ γ₁ γ₂) :
@@ -177,6 +188,19 @@ theorem symm (hw : IsLoopCylinder I w γ₀ γ₁) :
   apply_add_one z := hw.apply_add_one (1 - z.1, z.2)
   apply_zero t := by simp [hw.apply_one]
   apply_one t := by simp [hw.apply_zero]
+
+/-- Reversing the second coordinate of a cylinder from `γ₀` to `γ₁` gives a cylinder from the
+reversed loop `t ↦ γ₀ (1 - t)` to the reversed loop `t ↦ γ₁ (1 - t)`. -/
+theorem comp_prodMap_id_one_sub (hw : IsLoopCylinder I w γ₀ γ₁) :
+    IsLoopCylinder I (w ∘ Prod.map id (fun t ↦ 1 - t)) (fun t ↦ γ₀ (1 - t))
+      (fun t ↦ γ₁ (1 - t)) where
+  contMDiff := hw.contMDiff.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff
+  apply_add_one z := by
+    obtain ⟨s, t⟩ := z
+    simp only [Function.comp_apply, Prod.map_apply, id_eq]
+    rw [show 1 - (t + 1) = -t by ring, ← neg_add_eq_sub, hw.apply_add_one (s, -t)]
+  apply_zero t := by simp [hw.apply_zero]
+  apply_one t := by simp [hw.apply_one]
 
 /-- The image of a cylinder from `γ₀` to `γ₁` under a `C²` map `f` is a cylinder from `f ∘ γ₀` to
 `f ∘ γ₁`. -/

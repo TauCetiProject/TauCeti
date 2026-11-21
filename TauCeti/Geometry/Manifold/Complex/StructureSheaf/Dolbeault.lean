@@ -15,7 +15,7 @@ public import TauCeti.Geometry.Manifold.Sheaf.Smooth.Cech
 public import TauCeti.Topology.Sheaves.Cech.OneVanishing
 
 /-!
-# The Dolbeault sequence and `H¹(D, 𝒪) = 0` on discs
+# The Dolbeault sequence and `H¹(U, 𝒪) = 0` on open subsets of the plane
 
 On an open set `U` of the complex plane, the holomorphic functions are the smooth functions
 annihilated by the Cauchy-Riemann operator `\bar∂`. This file packages this as an exact
@@ -23,11 +23,11 @@ sequence of sheaves of complex vector spaces on `U`,
 `0 ⟶ 𝒪 ⟶ ℰ ⟶ ℰ`, where `𝒪` is the holomorphic structure sheaf, `ℰ` is the sheaf of smooth
 complex-valued functions and the last map is `f ↦ \bar∂ f` (`TauCeti.dolbeaultSequence`).
 
-The sheaf `ℰ` is fine, so it has no higher Čech cohomology. If moreover the equation
-`\bar∂ g = f` can be solved with `g` smooth on `U` for every smooth `f` on `U`, then the
-structure sheaf of `U` has zero degree one Čech cohomology. By the Dolbeault lemma this applies to
-every disc, including the whole plane: `H¹(D, 𝒪) = 0`. In the theory of Riemann surfaces this
-is the acyclicity of coordinate discs for the structure sheaf in degree one.
+The sheaf `ℰ` is fine, so it has no higher Čech cohomology. By the Dolbeault lemma on open
+subsets of the plane, the equation `\bar∂ g = f` can be solved with `g` smooth on `U` for every
+smooth `f` on `U`, so the structure sheaf of `U` has zero degree one Čech cohomology:
+`H¹(U, 𝒪) = 0`. In the theory of Riemann surfaces this gives, in particular, the acyclicity of
+coordinate discs for the structure sheaf in degree one.
 
 Sections of the sheaves over an open set `V` of `U` are functions on `V`. Their Wirtinger
 derivatives are computed after extending them by zero to the whole plane, which does not change
@@ -42,15 +42,15 @@ them near the points of the open set `V`.
 ## Main results
 
 * `TauCeti.dolbeaultSequence_exact`: the sequence is exact, and its first map is a monomorphism.
-* `TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules`: `H¹(U, 𝒪) = 0` when
-  `\bar∂ g = f` is smoothly solvable on `U`.
-* `TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules_eball`: `H¹(D, 𝒪) = 0` for
-  every disc `D = eball c R`, `R ≤ ∞`.
+* `TauCeti.isZero_cechCohomology_one_holomorphicStructureSheafModules`: `H¹(U, 𝒪) = 0` for
+  every open set `U ⊆ ℂ`.
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   Theorem 13.4 (`H¹(X, 𝒪) = 0` for discs) and Corollary 13.3.
+* L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
+  North-Holland, 1990, Theorem 1.4.4 (solvability of `\bar∂ g = f` on open subsets of `ℂ`).
 -/
 
 public noncomputable section
@@ -381,14 +381,13 @@ private lemma contMDiff_restrict {g : ℂ → ℂ} (hg : ContDiffOn ℝ ∞ g U)
       obtain ⟨w, rfl⟩ := exists_of_mem_planeSet hz
       exact amb_apply _ w)
 
-/-- If `\bar∂ g = f` has a smooth solution `g` on `U` for every smooth `f` on `U`, then the
-Cauchy-Riemann operator is surjective on global smooth sections. -/
-private lemma surjective_dolbeaultDbar_app_top
-    (hU : ∀ f : ℂ → ℂ, ContDiffOn ℝ ∞ f U →
-      ∃ g : ℂ → ℂ, ContDiffOn ℝ ∞ g U ∧ ∀ z ∈ U, conjWirtingerDeriv g z 1 = f z) :
+/-- The Cauchy-Riemann operator is surjective on global smooth sections, by the Dolbeault lemma on
+the open set `U`. -/
+private lemma surjective_dolbeaultDbar_app_top :
     Function.Surjective ((dolbeaultSequence U).g.app (op ⊤)) := by
   intro (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op ⊤))
-  obtain ⟨g, hg, hgf⟩ := hU _ (contDiffOn_amb U (mem_smoothSections_iff.1 (secE U ⊤ s).property))
+  obtain ⟨g, hg, hgf⟩ := U.isOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq
+    (n := ⊤) le_top (contDiffOn_amb U (mem_smoothSections_iff.1 (secE U ⊤ s).property))
   refine ⟨(secE U ⊤).symm ⟨_, mem_smoothSections_iff.2 (contMDiff_restrict U hg)⟩,
     smoothSheafModule.ext fun y ↦ ?_⟩
   have h : (secE U ⊤ (dbarLinear U ⊤ ((secE U ⊤).symm
@@ -402,28 +401,16 @@ private lemma surjective_dolbeaultDbar_app_top
     exact amb_apply _ w
   exact h
 
-/-- **The structure sheaf of a plane domain has no degree one Čech cohomology** as soon as the
-equation `\bar∂ g = f` has a smooth solution `g` on `U` for every smooth `f` on `U`. -/
-theorem isZero_cechCohomology_one_holomorphicStructureSheafModules
-    (hU : ∀ f : ℂ → ℂ, ContDiffOn ℝ ∞ f U →
-      ∃ g : ℂ → ℂ, ContDiffOn ℝ ∞ g U ∧ ∀ z ∈ U, conjWirtingerDeriv g z 1 = f z) :
+/-- **`H¹(U, 𝒪) = 0` for open subsets of the plane.** The structure sheaf of an open set
+`U ⊆ ℂ` has no degree one Čech cohomology. -/
+theorem isZero_cechCohomology_one_holomorphicStructureSheafModules :
     IsZero ((Topology.cechCohomology (TopCat.of U) (ModuleCat.{0} ℂ) 1).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) U).obj) := by
   have : LocallyCompactSpace U := U.isOpen.locallyCompactSpace
   exact Topology.isZero_cechCohomology_one_of_exact (dolbeaultSequence U)
     (dolbeaultSequence_exact U) (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).property
-    (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).property (surjective_dolbeaultDbar_app_top U hU)
+    (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).property (surjective_dolbeaultDbar_app_top U)
     (smoothSheafModule.isZero_cechCohomology_obj_succ 𝓘(ℝ, ℂ) U ℂ ℂ 0)
-
-/-- **`H¹(D, 𝒪) = 0` for discs.** The structure sheaf of an open disc `eball c R` of radius
-`R ≤ ∞`, in particular of the whole plane, has no degree one Čech cohomology. -/
-theorem isZero_cechCohomology_one_holomorphicStructureSheafModules_eball (c : ℂ) (R : ENNReal) :
-    IsZero ((Topology.cechCohomology (TopCat.of (⟨Metric.eball c R, Metric.isOpen_eball⟩ :
-      Opens ℂ)) (ModuleCat.{0} ℂ) 1).obj
-      (holomorphicStructureSheafModules 𝓘(ℂ) (⟨Metric.eball c R, Metric.isOpen_eball⟩ :
-        Opens ℂ)).obj) :=
-  isZero_cechCohomology_one_holomorphicStructureSheafModules _ fun _ hf ↦
-    exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball (c := c) (R := R) (n := ⊤) le_top hf
 
 end Cohomology
 

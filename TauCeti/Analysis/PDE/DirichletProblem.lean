@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.Poincare
 public import TauCeti.Analysis.Sobolev.FiniteMeasure
 
 /-!
@@ -70,13 +70,16 @@ The inhomogeneous boundary condition `u = g` on `∂Ω`, for boundary values giv
 `g ∈ H¹(Ω)`, is again carried by `H¹₀(Ω)`: it means `u - g ∈ H¹₀(Ω)`.
 `TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq` solves the resulting
 problem for a forcing `ℓ ∈ H⁻¹(Ω) = (H¹₀(Ω))*` by applying Lax--Milgram to `u - g`, with
-right-hand side `v ↦ ℓ v - a(g, v)`. The solution obeys the estimate
-`‖u - g‖ ≤ (‖ℓ‖ + ‖a‖ ‖g‖) / C`, and for a symmetric form it minimizes the Dirichlet energy
-`a(v, v) / 2 - ℓ (v - g)` over `g + H¹₀(Ω)`. For `L = -Δ` and `ℓ = 0` the solution is the
-*harmonic replacement* of `g`, the comparison function of the Campanato approach to regularity
-(`TauCeti/Analysis/PDE/Regularity/HarmonicReplacement.lean`). On a bounded Lipschitz domain the
-condition `u - g ∈ H¹₀(Ω)` is the trace condition `u = g` on `∂Ω`
-(`TauCeti/Analysis/PDE/DirichletProblem/Trace.lean`).
+right-hand side `v ↦ ℓ v - a(g, v)`. The reduction itself, for existence and for unique
+existence, holds for every bounded form and is, in the namespace `TauCeti.PDE`,
+`exists_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_exists_w1p0` and
+`existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_existsUnique_w1p0`.
+The solution obeys the estimate `‖u - g‖ ≤ (‖ℓ‖ + ‖a‖ ‖g‖) / C`, and for a symmetric form it
+minimizes the Dirichlet energy `a(v, v) / 2 - ℓ (v - g)` over `g + H¹₀(Ω)`. For `L = -Δ` and
+`ℓ = 0` the solution is the *harmonic replacement* of `g`, the comparison function of the
+Campanato approach to regularity (`TauCeti/Analysis/PDE/Regularity/HarmonicReplacement.lean`).
+On a bounded Lipschitz domain the condition `u - g ∈ H¹₀(Ω)` is the trace condition `u = g` on
+`∂Ω` (`TauCeti/Analysis/PDE/DirichletProblem/Trace.lean`).
 
 ## A priori bound
 
@@ -105,6 +108,12 @@ the constructed one, so it is available before, and independently of, uniqueness
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`: the Lax--Milgram solution and the
   existence-and-uniqueness theorem.
 * `TauCeti.PDE.norm_le_of_isWeakSolutionDirichlet`: the energy estimate `‖u‖ ≤ ‖f‖/C`.
+* `TauCeti.PDE.UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le`: the energy
+  estimate `‖u‖_{H¹} ≤ (2/λ) (‖f‖ + κ ‖u‖_{L²})` from Gårding's inequality, with no coercivity.
+* `TauCeti.PDE.dirichletGraph` and `TauCeti.PDE.isClosed_dirichletGraph`: the pairs `(u, f)` of
+  a weak solution and its datum form a closed subspace of `H¹(Ω) × L²(Ω)`;
+  `TauCeti.PDE.mk_mem_dirichletGraph_iff` identifies membership with
+  `TauCeti.PDE.IsWeakSolutionDirichlet`.
 * `TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq`: existence and
   uniqueness for prescribed boundary values `u = g` on `∂Ω`, `g ∈ H¹(Ω)`, and forcing
   `ℓ ∈ H⁻¹(Ω)`, with its case of a ball-contained domain
@@ -352,6 +361,128 @@ theorem norm_le_of_isWeakSolutionDirichlet (hC : 0 < C)
   · rw [le_div_iff₀ hC]
     nlinarith [hkey, hpos]
 
+/-- **The energy estimate without coercivity.** Let `a` be uniformly elliptic with lower constant
+`λ`, and let `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `Ω`, with no sign condition on `c`.
+Gårding's inequality and the equation tested against a weak solution `u` itself give
+
+`‖u‖_{H¹} ≤ (2/λ) (‖f‖_{L²} + (λ/2 + |γ| + β²/2λ) ‖u‖_{L²})`.
+
+No boundedness or regularity of `Ω` is assumed, and `u` need not be unique. -/
+theorem UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le [DecidableEq ι]
+    {lam Lam beta gamma : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a b c f u) :
+    ‖(u : W1p mu Omega 2)‖ ≤ 2 / lam *
+      (‖f‖ + (lam / 2 + |gamma| + beta ^ 2 / (2 * lam)) * ‖W1p.value (u : W1p mu Omega 2)‖) := by
+  classical
+  have hlam : 0 < lam := h.pos
+  set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam) with hκ_def
+  have hκ : 0 ≤ κ := by positivity
+  -- Redefining `b` and `c` as `0` off the full-measure set where the bounds hold changes neither
+  -- the energy form nor measurability, and gives the bounds `max β 0` and `max γ 0` everywhere.
+  have hbb : b =ᵐ[mu.restrict Omega] fun x => if ‖b x‖ ≤ beta then b x else 0 :=
+    hb_bound.mono fun x hx => (ite_eq_left hx).symm
+  have hcc : c =ᵐ[mu.restrict Omega] fun x => if ‖c x‖ ≤ gamma then c x else 0 :=
+    hc_bound.mono fun x hx => (ite_eq_left hx).symm
+  have hβ : (max beta 0) ^ 2 ≤ beta ^ 2 := by
+    rcases le_total beta 0 with hb0 | hb0 <;> simp [hb0, sq_nonneg]
+  have hγ : lam / 2 + max gamma 0 + (max beta 0) ^ 2 / (2 * lam) ≤ κ := by
+    rw [hκ_def]
+    linarith [max_le (le_abs_self gamma) (abs_nonneg gamma),
+      div_le_div_of_nonneg_right hβ (by positivity : (0 : ℝ) ≤ 2 * lam)]
+  have hgar := h.garding_energyFormH1_self_norm_of_norm_le (beta := max beta 0)
+    (gamma := max gamma 0) ha (hb.congr hbb) (hc.congr hcc)
+    (fun x _ => by
+      split_ifs with hx
+      exacts [hx.trans (le_max_left _ _), norm_zero.trans_le (le_max_right _ _)])
+    (fun x _ => by
+      split_ifs with hx
+      exacts [hx.trans (le_max_left _ _), norm_zero.trans_le (le_max_right _ _)])
+    (u : W1p mu Omega 2)
+  rw [← energyFormH1_congr_ae .rfl hbb hcc] at hgar
+  have hV := W1p.norm_value_le (u : W1p mu Omega 2)
+  have heq : energyFormH1 a b c (u : W1p mu Omega 2) (u : W1p mu Omega 2) ≤
+      ‖f‖ * ‖(u : W1p mu Omega 2)‖ := by
+    rw [hu u, dirichletForcing_apply]
+    exact (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left hV (norm_nonneg f))
+  -- Since `‖u‖_{L²} ≤ ‖u‖_{H¹}`, this is `λ ‖u‖² / 2 ≤ (‖f‖ + κ ‖u‖_{L²}) ‖u‖`; divide by `‖u‖`.
+  have hkey : lam / 2 * ‖(u : W1p mu Omega 2)‖ ^ 2 ≤
+      (‖f‖ + κ * ‖W1p.value (u : W1p mu Omega 2)‖) * ‖(u : W1p mu Omega 2)‖ := by
+    nlinarith [mul_le_mul_of_nonneg_left hV
+      (mul_nonneg hκ (norm_nonneg (W1p.value (u : W1p mu Omega 2)))),
+      sq_nonneg ‖W1p.value (u : W1p mu Omega 2)‖]
+  rcases (norm_nonneg (u : W1p mu Omega 2)).eq_or_lt with hzero | hpos
+  · rw [← hzero]
+    positivity
+  · rw [div_mul_eq_mul_div, le_div_iff₀ hlam]
+    nlinarith
+
+/-! ### The graph of the Dirichlet problem -/
+
+/-- The **graph of the weak Dirichlet problem**: the pairs `(u, f)` with `u ∈ H¹₀(Ω)` a weak
+solution of `L u = f` for `f ∈ L²(Ω)`, as a subspace of `H¹(Ω) × L²(Ω)`. For essentially bounded
+coefficients it is closed (`TauCeti.PDE.isClosed_dirichletGraph`), hence a Banach space, the
+setting of open-mapping arguments for a priori estimates. -/
+def dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    Submodule ℝ (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) where
+  carrier := {p | p.1 ∈ w1p0Submodule mu Omega 2 ∧
+    ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v}
+  add_mem' {p q} hp hq := ⟨add_mem hp.1 hq.1, fun v => by
+    simp only [Prod.fst_add, Prod.snd_add, map_add, add_apply, hp.2 v,
+      hq.2 v, dirichletForcing_apply, inner_add_left]⟩
+  zero_mem' := ⟨zero_mem _, fun v => by simp⟩
+  smul_mem' r p hp := ⟨SMulMemClass.smul_mem r hp.1, fun v => by
+    simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_apply, hp.2 v,
+      dirichletForcing_apply, real_inner_smul_left, smul_eq_mul]⟩
+
+/-- The graph of the weak Dirichlet problem as a set: the boundary condition `u ∈ H¹₀(Ω)` and the
+weak equation, each a closed condition. -/
+theorem coe_dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
+      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩
+        {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
+  (rfl)
+
+/-- A pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly when `u ∈ H¹₀(Ω)`
+and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+@[simp] theorem mem_dirichletGraph_iff
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
+    p ∈ dirichletGraph hcoeff ↔ p.1 ∈ w1p0Submodule mu Omega 2 ∧
+      ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
+  rw [← SetLike.mem_coe, coe_dirichletGraph]
+  simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, energyFormH1L_apply]
+
+/-- For `u ∈ H¹₀(Ω)`, the pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly
+when `u` is a weak solution of `L u = f`. -/
+theorem mk_mem_dirichletGraph_iff
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u : W1p0 mu Omega 2) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ((u : W1p mu Omega 2), f) ∈ dirichletGraph hcoeff ↔ IsWeakSolutionDirichlet a b c f u :=
+  (mem_dirichletGraph_iff hcoeff).trans (and_iff_right u.property)
+
+/-- The graph of the weak Dirichlet problem is closed in `H¹(Ω) × L²(Ω)`. -/
+theorem isClosed_dirichletGraph
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    IsClosed (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) := by
+  rw [coe_dirichletGraph]
+  refine ((w1p0Submodule mu Omega 2).isClosed.preimage
+    (continuous_fst (X := W1p mu Omega 2) (Y := Lp ℝ 2 (mu.restrict Omega)))).inter ?_
+  simp only [Set.ofPred_forall]
+  refine isClosed_iInter fun v => isClosed_eq ?_ ?_
+  · exact ((energyFormH1L hcoeff).continuous.comp continuous_fst).clm_apply continuous_const
+  · simp only [dirichletForcing_apply]
+    exact continuous_snd.inner continuous_const
+
 /-! ### Coercivity and Lax--Milgram -/
 
 /-- **A diagonal lower bound is coercivity.** The energy-form file proves bounds of the shape
@@ -425,6 +556,72 @@ theorem existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
 
 /-! ### Prescribed boundary values -/
 
+/-- **Reduction to zero boundary values.** For `u, g ∈ H¹(Ω)` and `ℓ ∈ H⁻¹(Ω)`, the function `u`
+satisfies `a(u, v) = ℓ v` for every `v ∈ H¹₀(Ω)` exactly when `u - g` satisfies
+`a(u - g, v) = ℓ v - a(g, v)` for every `v ∈ H¹₀(Ω)`. -/
+theorem forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v) ↔
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (u - g) (v : W1p mu Omega 2) =
+        ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) :=
+  forall_congr' fun v => by rw [energyFormH1_sub_left hcoeff, sub_left_inj]
+
+/-- For `w ∈ H¹₀(Ω)`, the function `g + w` has boundary values `g`. -/
+private theorem add_coe_sub_mem_w1p0Submodule (g : W1p mu Omega 2) (w : W1p0 mu Omega 2) :
+    g + (w : W1p mu Omega 2) - g ∈ w1p0Submodule mu Omega 2 := by
+  rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
+  exact w.property
+
+/-- **The Dirichlet problem with boundary values `g` as a problem in `H¹₀(Ω)`.** For `g ∈ H¹(Ω)` and
+`ℓ ∈ H⁻¹(Ω)`, the problem `a(u, ·) = ℓ` on `H¹₀(Ω)` with `u - g ∈ H¹₀(Ω)` has a solution `u` exactly
+when the problem `a(w, ·) = ℓ - a(g, ·)` has a solution `w ∈ H¹₀(Ω)`; the two are related by
+`u = g + w`. -/
+theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_exists_w1p0
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    (∃ u : W1p mu Omega 2, u - g ∈ w1p0Submodule mu Omega 2 ∧
+        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v) ↔
+      ∃ w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
+        energyFormH1L0 hcoeff w v = ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) := by
+  constructor
+  · rintro ⟨u, hu, hu'⟩
+    refine ⟨⟨u - g, hu⟩, fun v => ?_⟩
+    rw [energyFormH1L0_apply]
+    exact (forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq hcoeff u g ℓ).1 hu' v
+  · rintro ⟨w, hw⟩
+    refine ⟨g + w, ?_, (forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq hcoeff _ g ℓ).2
+      fun v => ?_⟩
+    · exact add_coe_sub_mem_w1p0Submodule g w
+    · rw [add_sub_cancel_left, ← hw v, energyFormH1L0_apply]
+
+/-- **Unique solvability with boundary values `g`, reduced to `H¹₀(Ω)`.** For `g ∈ H¹(Ω)` and
+`ℓ ∈ H⁻¹(Ω)`, the problem `a(u, ·) = ℓ` on `H¹₀(Ω)` with `u - g ∈ H¹₀(Ω)` has exactly one solution
+`u` exactly when the problem `a(w, ·) = ℓ - a(g, ·)` has exactly one solution `w ∈ H¹₀(Ω)`. -/
+theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_existsUnique_w1p0
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
+    (∃! u : W1p mu Omega 2, u - g ∈ w1p0Submodule mu Omega 2 ∧
+        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v) ↔
+      ∃! w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
+        energyFormH1L0 hcoeff w v = ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) := by
+  have hsol := fun u => forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq hcoeff u g ℓ
+  -- `u ↦ u - g` is a bijection from the functions with boundary values `g` onto `H¹₀(Ω)`.
+  constructor
+  · rintro ⟨u, ⟨hu, hu'⟩, huniq⟩
+    refine ⟨⟨u - g, hu⟩, fun v => (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v),
+      fun w hw => Subtype.ext ?_⟩
+    have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
+    exact eq_sub_of_add_eq' <| huniq (g + w) ⟨add_coe_sub_mem_w1p0Submodule g w,
+      (hsol _).2 fun v => by rw [hgw, ← energyFormH1L0_apply hcoeff]; exact hw v⟩
+  · rintro ⟨w, hw, hwuniq⟩
+    have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
+    refine ⟨g + w, ⟨add_coe_sub_mem_w1p0Submodule g w, (hsol _).2 fun v => by
+      rw [hgw, ← energyFormH1L0_apply hcoeff]; exact hw v⟩, fun u ⟨hu, hu'⟩ => ?_⟩
+    have := hwuniq ⟨u - g, hu⟩
+      fun v => (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v)
+    rw [← this, Submodule.coe_mk, add_sub_cancel]
+
 /-- **The Dirichlet problem with boundary values in `H¹(Ω)` and forcing in `H⁻¹(Ω)`.** For a
 divergence-form operator whose energy form is bounded and coercive on `H¹₀(Ω)`, every
 `g ∈ H¹(Ω)` and every `ℓ ∈ H⁻¹(Ω) = (H¹₀(Ω))*`, there is exactly one `u ∈ H¹(Ω)` with
@@ -441,28 +638,11 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (g : W1p mu Omega 2)
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
     ∃! u : W1p mu Omega 2, u - g ∈ w1p0Submodule mu Omega 2 ∧
-      ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v := by
-  let ℓ' : StrongDual ℝ (W1p0 mu Omega 2) :=
-    ℓ - (energyFormH1L hcoeff g).comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL
-  have hsol : ∀ u : W1p mu Omega 2, (∀ v : W1p0 mu Omega 2,
-      energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v) ↔
-      ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (u - g) (v : W1p mu Omega 2) = ℓ' v := fun u => by
-    refine forall_congr' fun v => ?_
-    simp only [ℓ', sub_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-      energyFormH1L_apply, energyFormH1_sub_left hcoeff]
-    constructor <;> intro h <;> linarith
-  -- `u - g` is the Lax--Milgram solution for `ℓ'`.
-  obtain ⟨w, hw, hwuniq⟩ := hcoercive.existsUnique_forall_eq ℓ'
-  have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
-  refine ⟨g + w, ⟨?_, (hsol _).2 fun v => ?_⟩, fun u ⟨hu, hu'⟩ => ?_⟩
-  · rw [hgw, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact w.property
-  · rw [hgw, ← hw v, energyFormH1L0_apply]
-  · have hu₀ : u - g ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu
-    have hw' : ∀ v : W1p0 mu Omega 2, energyFormH1L0 hcoeff ⟨u - g, hu₀⟩ v = ℓ' v := fun v =>
-      (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v)
-    have := hwuniq _ hw'
-    rw [← this, Submodule.coe_mk, add_sub_cancel]
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) = ℓ v :=
+  (existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_existsUnique_w1p0
+    hcoeff g ℓ).2 <| by
+    simpa using hcoercive.existsUnique_forall_eq
+      (ℓ - (energyFormH1L hcoeff g).comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL)
 
 /-- **The energy estimate for two problems.** Let `u ∈ H¹(Ω)` satisfy `B(u, v) = ℓ(v)` for every
 `v ∈ H¹₀(Ω)`, where `B` is the energy form of the coefficients `(a, b, c)` and satisfies

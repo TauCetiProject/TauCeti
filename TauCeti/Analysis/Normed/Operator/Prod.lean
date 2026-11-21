@@ -14,10 +14,15 @@ The continuous linear map `(x, y) ↦ f x + g y` out of a product (`ContinuousLi
 operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le`). This bounds solution
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
-has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
+is determined by its values on the coordinate vectors
+(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`), and has operator norm at most
+`‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
-(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`).
+(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`). For an
+endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`
+(`ContinuousLinearMap.norm_apply_fst_sub_fst_le`, `ContinuousLinearMap.norm_apply_snd_sub_snd_le`),
+so `L` moves each coordinate of `v` little when it is close to the identity.
 -/
 
 public section
@@ -35,18 +40,22 @@ theorem opNorm_coprod_le (f : E →L[𝕜] G) (g : F →L[𝕜] G) : ‖f.coprod
     ((f.opNorm_comp_le _).trans (mul_le_of_le_one_right (norm_nonneg _) (norm_fst_le _ _ _)))
     ((g.opNorm_comp_le _).trans (mul_le_of_le_one_right (norm_nonneg _) (norm_snd_le _ _ _))))
 
+/-- A continuous linear map out of `𝕜 × 𝕜` at `(a, b)` is `a` times its value at `(1, 0)` plus `b`
+times its value at `(0, 1)`. -/
+theorem apply_mk_eq_smul_add_smul (f : 𝕜 × 𝕜 →L[𝕜] G) (a b : 𝕜) :
+    f (a, b) = a • f (1, 0) + b • f (0, 1) := by
+  rw [← map_smul, ← map_smul, ← map_add]
+  simp
+
 /-- A continuous linear map out of `𝕜 × 𝕜` has operator norm at most the sum of the norms of its
 values on the coordinate vectors. -/
 theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 →L[𝕜] G) :
     ‖f‖ ≤ ‖f (1, 0)‖ + ‖f (0, 1)‖ := by
-  refine f.opNorm_le_bound (by positivity) fun p ↦ ?_
-  have hp : f p = p.1 • f (1, 0) + p.2 • f (0, 1) := by
-    rw [← map_smul, ← map_smul, ← map_add]
-    simp
-  rw [hp, add_mul]
+  refine f.opNorm_le_bound (by positivity) fun ⟨a, b⟩ ↦ ?_
+  rw [f.apply_mk_eq_smul_add_smul a b, add_mul]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
-  · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le p) (norm_nonneg _)
-  · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le p) (norm_nonneg _)
+  · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le (a, b)) (norm_nonneg _)
+  · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le (a, b)) (norm_nonneg _)
 
 /-- The map `(x, y) ↦ (x, c • y)` on a product has operator norm at most `1` when `‖c‖ ≤ 1`. -/
 theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 1) :
@@ -59,4 +68,15 @@ theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 
   rw [norm_smul]
   exact (mul_le_of_le_one_left (norm_nonneg _) hc).trans (norm_snd_le _ _ _)
 
+/-- The first component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_fst_sub_fst_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).1 - v.1‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_fst_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
+/-- The second component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).2 - v.2‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
 end ContinuousLinearMap
+
