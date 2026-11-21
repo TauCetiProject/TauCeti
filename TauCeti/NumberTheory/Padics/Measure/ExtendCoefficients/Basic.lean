@@ -12,6 +12,7 @@ public import Mathlib.Topology.DiscreteQuotient
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
@@ -461,6 +462,39 @@ theorem existsUnique_apply_comp_eq_iff_norm_le_one (hje : Topology.IsEmbedding j
     exact ⟨μ, hμ, fun μ' hμ' ↦ ext fun f ↦ hje.injective ((hμ' f).symm.trans (hμ f))⟩
 
 end OperatorNorm
+
+section WeakContinuity
+
+variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*}
+  [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O]
+
+open Topology in
+/-- For a continuous contractive `j : O →+* K`, `μ ↦ extendCoefficients j hj μ f` is weakly
+continuous on `D(X, O)` for every `f : C(X, K)`. -/
+theorem continuous_extendCoefficients_apply_weak {j : O →+* K} (hj : ∀ a, ‖j a‖ ≤ 1)
+    (hjc : Continuous j) (f : C(X, K)) :
+    @Continuous _ _ (WeakTopology (X := X) (R := O) (E := O)) _ fun μ : D(X, O) ↦
+      extendCoefficients j hj μ f := by
+  let : TopologicalSpace D(X, O) := WeakTopology
+  have hloc (φ : LocallyConstant X K) :
+      Continuous fun μ : D(X, O) ↦ extendCoefficients j hj μ φ := by
+    classical
+    let q : C(X, φ.discreteQuotient) := ⟨_, φ.discreteQuotient.proj_continuous⟩
+    let := Fintype.ofFinite φ.discreteQuotient
+    have hφ : (φ : C(X, K)) = (ContinuousMap.equivFnOfDiscrete.symm φ.lift).comp q :=
+      ContinuousMap.ext fun x ↦ (congrFun φ.lift_comp_proj x).symm
+    simp_rw [hφ, extendCoefficients_apply_comp_eq_sum]
+    exact continuous_finsetSum _ fun a _ ↦ continuous_const.mul <|
+      hjc.comp <| (continuous_apply a).comp (continuous_finiteProjection q)
+  refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
+  obtain ⟨φ, hφf⟩ := LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f hε
+  refine ⟨_, hloc φ, fun μ ↦ hεu ?_⟩
+  rw [dist_eq_norm, ← map_sub, ← coe_toCLMEquiv]
+  exact ((ContinuousLinearMap.le_opNorm _ _).trans <| mul_le_of_le_one_left (norm_nonneg _) <|
+    norm_toCLMEquiv_extendCoefficients_le j hj _).trans_lt (by rwa [← dist_eq_norm])
+
+end WeakContinuity
 
 section Examples
 

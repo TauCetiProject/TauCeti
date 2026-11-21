@@ -185,6 +185,15 @@ theorem powerSeriesAlgEquiv_symm_X :
     (powerSeriesAlgEquiv R A M).symm PowerSeries.X = single 1 PowerSeries.X :=
   (powerSeriesAlgEquiv R A M).symm_apply_eq.mpr (toPowerSeries_single_one_X R A M).symm
 
+/-- The inverse of `powerSeriesAlgEquiv` sends a scalar power series `φ` embedded along
+`singleOneRingHom` to the monomial `φ · 1`. -/
+@[simp]
+theorem powerSeriesAlgEquiv_symm_map_singleOneRingHom (φ : PowerSeries A) :
+    (powerSeriesAlgEquiv R A M).symm
+        (PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M) φ) =
+      single 1 φ :=
+  (powerSeriesAlgEquiv R A M).symm_apply_eq.mpr (toPowerSeries_single_one R A M φ).symm
+
 /-- For `φ ∈ A⟦X⟧` and `ψ ∈ A[M]⟦X⟧`, with `M` finite, `φ` read in `A[M]⟦X⟧` divides `ψ` exactly
 when it divides, in `A⟦X⟧`, the coefficient at every `m ∈ M` of the element of `A⟦X⟧[M]`
 corresponding to `ψ`: the multiples of `φ` are the elements all of whose `M`-coefficients are
@@ -195,5 +204,16 @@ theorem map_singleOneRingHom_dvd_iff (φ : PowerSeries A) (ψ : PowerSeries (Mon
       ∀ m, φ ∣ ((powerSeriesAlgEquiv R A M).symm ψ).coeff m := by
   rw [← map_singleOneRingHom_dvd_toPowerSeries_iff R, ← coe_powerSeriesAlgEquiv,
     AlgEquiv.apply_symm_apply]
+
+/-- `liftNCAlgHom f g h_comm` on `(powerSeriesAlgEquiv R A M).symm ψ` is a finite sum over `M`. -/
+theorem liftNCAlgHom_powerSeriesAlgEquiv_symm_apply {B : Type*} [Semiring B] [Algebra R B]
+    [Fintype M] (f : PowerSeries A →ₐ[R] B) (g : M →* B)
+    (h_comm : ∀ x y, Commute (f x) (g y)) (ψ : PowerSeries (MonoidAlgebra A M)) :
+    liftNCAlgHom f g h_comm ((powerSeriesAlgEquiv R A M).symm ψ) =
+      ∑ m : M, f (((powerSeriesAlgEquiv R A M).symm ψ).coeff m) * g m := by
+  classical
+  conv_lhs => rw [← sum_coeff_single ((powerSeriesAlgEquiv R A M).symm ψ),
+    Finsupp.sum_fintype _ _ (fun m ↦ single_zero m), map_sum]
+  exact Finset.sum_congr rfl fun _ _ ↦ by simp
 
 end MonoidAlgebra

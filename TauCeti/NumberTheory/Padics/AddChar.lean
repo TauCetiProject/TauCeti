@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.AddChar
 public import Mathlib.Topology.Algebra.Monoid.AddChar
 public import TauCeti.NumberTheory.Padics.BinomialSeries
+public import TauCeti.NumberTheory.Padics.PowerSeries
 public import TauCeti.RingTheory.Huber.Padic.Basic
 public import TauCeti.RingTheory.PowerSeries.Evaluation
 
@@ -48,6 +49,8 @@ product of copies of `ℤ_p`. When both apply the two characters agree
   `PadicInt.binomialAddChar hz`.
 * `PadicInt.binomialAddChar_eq_addChar_of_value_at_one`: agreement with Mathlib's normed
   construction when both apply.
+* `TauCeti.padicPowerSeriesEval_binomialSeries`: evaluating `(1 + X) ^ s` via
+  `TauCeti.padicPowerSeriesEval` recovers `PadicInt.addChar_of_value_at_one`.
 
 ## References
 
@@ -150,3 +153,18 @@ theorem binomialAddChar_eq_addChar_of_value_at_one (hz : PowerSeries.HasEval z) 
   eq_addChar_of_value_at_one hz (continuous_binomialAddChar hz) (binomialAddChar_one hz)
 
 end PadicInt
+
+namespace TauCeti
+
+/-- Evaluating `(1 + X) ^ s` via `padicPowerSeriesEval` yields
+`PadicInt.addChar_of_value_at_one t ht s`. -/
+@[simp] theorem padicPowerSeriesEval_binomialSeries {p : ℕ} [Fact p.Prime] {R : Type*}
+    [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
+    {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) (s : ℤ_[p]) :
+    padicPowerSeriesEval p ht (PowerSeries.binomialSeries ℤ_[p] s) =
+      PadicInt.addChar_of_value_at_one t ht s := by
+  rw [padicPowerSeriesEval_apply, PowerSeries.evalAt_def, PadicInt.coe_addChar_of_value_at_one,
+    PadicInt.mahlerSeries_apply ht]
+  congr 1 with n; simp [PowerSeries.binomialSeries_coeff, mahler_apply]
+
+end TauCeti

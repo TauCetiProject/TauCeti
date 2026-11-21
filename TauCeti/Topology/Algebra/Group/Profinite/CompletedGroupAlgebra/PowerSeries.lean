@@ -447,4 +447,14 @@ theorem aeval_bijective_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
   (powerSeriesCoordinate (isProP_multiplicative_padicInt p)
     (topologicallyGenerates_ofAdd_one_padicInt p)).bijective
 
+/-- Continuous ring homs from `ℤ_p[[Γ]]` to a Hausdorff semiring agreeing on `[g]` are equal. -/
+theorem ringHom_ext_of_continuous_padicInt {p : ℕ} [Fact p.Prime] {Γ A : Type*} [Group Γ]
+    [TopologicalSpace Γ] [Semiring A] [TopologicalSpace A] [T2Space A]
+    {φ ψ : completedGroupAlgebra ℤ_[p] Γ →+* A} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hΓ : ∀ g : Γ, φ (of ℤ_[p] Γ g) = ψ (of ℤ_[p] Γ g)) : φ = ψ :=
+  have halg : Continuous (algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] Γ)) :=
+    (continuous_id.smul continuous_const).congr fun a ↦ (Algebra.algebraMap_eq_smul_one a).symm
+  ringHom_ext_of_continuous hφ hψ (congrFun <| PadicInt.denseRange_natCast.equalizer
+    (hφ.comp halg) (hψ.comp halg) (funext fun _ ↦ by simp)) hΓ
+
 end TauCeti.completedGroupAlgebra

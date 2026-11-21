@@ -205,6 +205,16 @@ theorem topologicallyGenerates_ofAdd_one_padicInt (p : ℕ) [Fact p.Prime] :
   simp only [Set.image_singleton, f, AddMonoidHom.coe_toMultiplicative,
     Function.comp_apply, toAdd_ofAdd, Int.coe_castAddHom, Int.cast_one]
 
+/-- Every `p`-adic unit `u ∈ ℤ_pˣ` topologically generates the additive group of `ℤ_p`. -/
+@[simp] theorem topologicallyGenerates_ofAdd_unit_padicInt (p : ℕ) [Fact p.Prime] (u : ℤ_[p]ˣ) :
+    (Subgroup.closure ({Multiplicative.ofAdd (u : ℤ_[p])} : Set _)).topologicalClosure = ⊤ := by
+  let f := (AddMonoidHom.mulLeft (u : ℤ_[p])).toMultiplicative
+  have hsurj : Function.Surjective f := fun y ↦
+    ⟨.ofAdd ((u⁻¹ : ℤ_[p]ˣ) * y.toAdd), Multiplicative.toAdd.injective (by simp [f, ← mul_assoc])⟩
+  convert topologicalClosure_closure_image_eq_top (topologicallyGenerates_ofAdd_one_padicInt p)
+    (continuous_ofAdd.comp (continuous_const.mul continuous_toAdd)) hsurj.denseRange using 1
+  simp [f]
+
 /-- The additive group of the `p`-adic integers is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     IsTopologicallyFinitelyGenerated (Multiplicative ℤ_[p]) :=
