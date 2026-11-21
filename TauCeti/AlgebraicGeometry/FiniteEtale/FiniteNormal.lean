@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Extension
-import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Normal
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections

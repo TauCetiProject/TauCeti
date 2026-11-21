@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
-public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.FiniteEtale.BranchPurity

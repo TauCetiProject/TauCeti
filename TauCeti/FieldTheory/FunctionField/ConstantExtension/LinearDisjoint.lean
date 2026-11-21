@@ -44,6 +44,10 @@ a shared transcendental parameter `x` (or over `k(t)`) recovers linear disjointn
   `TauCeti.finrank_ratFunc_eq_of_linearDisjoint`: preserve the degree over `k(x)` and `RatFunc k`.
 * `TauCeti.IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint`: preserve the
   one-variable function-field property under an arbitrary linearly disjoint extension of constants.
+* `TauCeti.finrank_eq_of_constantCompositum_eq_top_of_linearDisjoint`,
+  `TauCeti.minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint`, and
+  `TauCeti.isSeparable_iff_of_constantCompositum_eq_top_of_linearDisjoint`: preserve the degree,
+  minimal polynomials, and separability of any relative extension `F / E` on passing to `F' / E'`.
 * `TauCeti.linearDisjoint_of_transcendental_of_finrank_eq` and
   `TauCeti.linearDisjoint_of_finrank_ratFunc_eq`: degree preservation over a shared parameter or
   `k(t)` implies linear disjointness of constants.
@@ -120,6 +124,146 @@ theorem IsFunctionField.of_constantCompositum_eq_top_of_linearDisjoint
   have := hF.finiteDimensional_adjoin hx
   have := finiteDimensional_adjoin_simple_of_constantCompositum_eq_top (k := k) h x
   exact (H.transcendental_algebraMap hx).isFunctionField_adjoin.finite_extension
+
+section RelativeExtension
+
+variable {E E' : Type*} [Field E] [Field E'] [Algebra k E] [Algebra E F] [IsScalarTower k E F]
+  [Algebra k' E'] [Algebra E E'] [Algebra E F'] [Algebra E' F'] [IsScalarTower k' E' F']
+  [IsScalarTower E F F'] [IsScalarTower E E' F']
+
+/-- Identify an external compositum `E' = E · k'` inside `F'` with `k'(C)` for `C = im(E → F)`. -/
+private noncomputable def subfieldEquivOfConstantCompositum (k : Type u) [Field k]
+    [Algebra k F] [Algebra k E] [IsScalarTower k E F] (hE : constantCompositum E k' E' = ⊤) :
+    E' ≃+* IntermediateField.adjoin k'
+      (Set.range (algebraMap (IsScalarTower.toAlgHom k E F).fieldRange F')) := by
+  let ψ := IsScalarTower.toAlgHom k' E' F'
+  let C' := IntermediateField.adjoin k'
+    (Set.range (algebraMap (IsScalarTower.toAlgHom k E F).fieldRange F'))
+  have hsub : ψ.fieldRange.toSubfield = C'.toSubfield := le_antisymm (by
+    rintro _ ⟨y, rfl⟩
+    have hEC' : ∀ a : E, ψ (algebraMap E E' a) ∈ C'.toSubfield := fun a ↦ by
+      change algebraMap E' F' (algebraMap E E' a) ∈ C'
+      rw [← IsScalarTower.algebraMap_apply E E' F', IsScalarTower.algebraMap_apply E F F']
+      exact IntermediateField.subset_adjoin k' _ ⟨⟨algebraMap E F a, ⟨a, rfl⟩⟩, rfl⟩
+    exact ((constantCompositum_le_iff E k' E'
+      (K := (C'.toSubfield.comap ψ.toRingHom).toIntermediateField hEC')).mpr fun c ↦ by
+        change ψ (algebraMap k' E' c) ∈ C'; rw [ψ.commutes]; exact C'.algebraMap_mem c)
+      (hE ▸ IntermediateField.mem_top)) (IntermediateField.adjoin_le_iff.mpr <| by
+        rintro _ ⟨⟨_, ⟨a, rfl⟩⟩, rfl⟩
+        exact ⟨algebraMap E E' a, by
+          change algebraMap E' F' (algebraMap E E' a) = algebraMap F F' (algebraMap E F a)
+          rw [← IsScalarTower.algebraMap_apply E E' F', ← IsScalarTower.algebraMap_apply E F F']⟩)
+  exact ψ.equivFieldRange.toRingEquiv.trans (RingEquiv.subfieldCongr hsub)
+
+@[simp]
+private theorem subfieldEquivOfConstantCompositum_coe (k : Type u) [Field k] [Algebra k F]
+    [Algebra k E] [IsScalarTower k E F] (hE : constantCompositum E k' E' = ⊤) (c : E') :
+    (subfieldEquivOfConstantCompositum k (F := F) (F' := F') hE c : F') = algebraMap E' F' c :=
+  rfl
+
+/-- **Linearly disjoint constant extension preserves minimal polynomials over subextensions.**
+Let `F' = F · k'` with `k'` linearly disjoint from `F` over `k`, and let `E' = E · k'` for a field
+`E` between `k` and `F`. Every element `x ∈ F` integral over `E` has minimal polynomial over `E'`
+equal to the base change of `minpoly E x`. Neither `k' / k` nor `F / E` need be finite. -/
+theorem minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (hE : constantCompositum E k' E' = ⊤) {x : F} (hx : IsIntegral E x) :
+    minpoly E' (algebraMap F F' x) = (minpoly E x).map (algebraMap E E') := by
+  let f := IsScalarTower.toAlgHom k E F
+  let eE := f.equivFieldRange
+  let eE' := subfieldEquivOfConstantCompositum k (F := F) (F' := F') hE
+  have heE (c : f.fieldRange) : algebraMap E F (eE.symm c) = c :=
+    congrArg Subtype.val (eE.apply_symm_apply c)
+  let pb := IntermediateField.adjoin.powerBasis hx
+  have hliE : LinearIndependent E (fun i : Fin pb.dim ↦ x ^ (i : ℕ)) := by
+    convert pb.basis.linearIndependent.map' (E⟮x⟯).val.toLinearMap
+      (LinearMap.ker_eq_bot.mpr Subtype.val_injective) with i; simp [pb]
+  have hliC' := H.linearIndependent_adjoin_algebraMap_comp f.fieldRange
+    (hliE.map_of_injective_injective eE.symm (AddMonoidHom.id F) (by simp) (by simp)
+      fun c y ↦ by simp [Algebra.smul_def, heE])
+  have hliE' : LinearIndependent E' (fun i : Fin pb.dim ↦ algebraMap F F' x ^ (i : ℕ)) := by
+    convert hliC'.map_of_injective_injective eE' (AddMonoidHom.id F') (by simp) (by simp)
+      (fun c y ↦ by simp [Algebra.smul_def, eE']) with i; simp
+  let x' := algebraMap F F' x
+  have hx' : IsIntegral E' x' := (hx.map (IsScalarTower.toAlgHom E F F')).tower_top
+  have hliSub : LinearIndependent E'
+      (fun i : Fin pb.dim ↦ (IntermediateField.AdjoinSimple.gen E' x') ^ (i : ℕ)) :=
+    LinearIndependent.of_comp (E'⟮x'⟯).val.toLinearMap (by convert hliE' with i; simp [x'])
+  have := IntermediateField.adjoin.finiteDimensional hx'
+  refine (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hx')
+    ((minpoly.monic hx).map _) (minpoly.dvd_map_of_isScalarTower' E E' F' x) ?_).symm
+  rw [(minpoly.monic hx).natDegree_map, ← IntermediateField.adjoin.finrank hx']
+  simpa [pb, IntermediateField.adjoin.powerBasis_dim hx] using hliSub.fintype_card_le_finrank
+
+/-- **Linearly disjoint constant extension preserves relative degrees.** Let `F' = F · k'` with `k'`
+linearly disjoint from `F` over `k`, and let `E' = E · k'` for a field `E` between `k` and `F`.
+Then `[F' : E'] = [F : E]`, with no algebraicity or finiteness assumption on `k' / k` or `F / E`. -/
+theorem finrank_eq_of_constantCompositum_eq_top_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (hE : constantCompositum E k' E' = ⊤) (hF : constantCompositum F k' F' = ⊤) :
+    Module.finrank E' F' = Module.finrank E F := by
+  let f := IsScalarTower.toAlgHom k E F
+  let C := f.fieldRange
+  let C' := IntermediateField.adjoin k' (Set.range (algebraMap C F'))
+  let eE := f.equivFieldRange
+  let eE' := subfieldEquivOfConstantCompositum k (F := F) (F' := F') hE
+  have heE (c : C) : algebraMap E F (eE.symm c) = c := congrArg Subtype.val (eE.apply_symm_apply c)
+  have heE' (c : C') : algebraMap E' F' (eE'.symm c) = c :=
+    congrArg Subtype.val (eE'.apply_symm_apply c)
+  by_cases hAlg : Algebra.IsAlgebraic E F
+  · have : Algebra.IsAlgebraic C F := ⟨fun y ↦
+      let ⟨p, hp0, hpy⟩ := hAlg.isAlgebraic y
+      ⟨p.map eE.toRingHom, Polynomial.map_ne_zero hp0,
+        by rwa [Polynomial.aeval_def, Polynomial.eval₂_map]⟩⟩
+    let b := Module.Basis.ofVectorSpace E F
+    let bC := b.mapCoeffs eE.toRingEquiv fun c y ↦ by
+      simp [Algebra.smul_def, eE, f, AlgHom.equivFieldRange_apply_coe]
+    let b' := (constantExtensionBasisOfLinearDisjoint H hF C bC).mapCoeffs eE'.symm fun c y ↦ by
+      simp [Algebra.smul_def, heE']
+    exact (Module.finrank_eq_nat_card_basis b').trans (Module.finrank_eq_nat_card_basis b).symm
+  · have hnE : ¬ Module.Finite E F := fun hf ↦ hAlg (Algebra.IsAlgebraic.of_finite E F)
+    rw [Module.finrank_of_not_finite hnE]
+    refine Module.finrank_of_not_finite fun hf' ↦ hnE ?_
+    let b' := Module.Basis.ofVectorSpace E' F'
+    have : Finite (Module.Basis.ofVectorSpaceIndex E' F') := Module.Finite.finite_basis b'
+    have hfinC' : Module.Finite C' F' := Module.Finite.of_basis
+      (b'.mapCoeffs eE' fun _ _ ↦ by rw [Algebra.smul_def, Algebra.smul_def]; rfl)
+    have hlt : Cardinal.lift.{v'} (Module.rank C F) < Cardinal.aleph0 :=
+      (H.lift_rank_le_lift_rank_adjoin_algebraMap C).trans_lt
+        (by simpa using Module.rank_lt_aleph0 C' F')
+    have hfinC : Module.Finite C F := Module.rank_lt_aleph0_iff.mp (by simpa using hlt)
+    let bC := Module.Basis.ofVectorSpace C F
+    have : Finite (Module.Basis.ofVectorSpaceIndex C F) := Module.Finite.finite_basis bC
+    exact Module.Finite.of_basis
+      (bC.mapCoeffs eE.symm.toRingEquiv fun c y ↦ by simp [Algebra.smul_def, heE])
+
+/-- **Linearly disjoint constant extension preserves separability of algebraic relative
+extensions.** Let `F' = F · k'` with `k'` linearly disjoint from `F` over `k`, and `E' = E · k'`
+for a field `E` between `k` and `F` with `F / E` algebraic. Then `F' / E'` is separable if and
+only if `F / E` is separable, for arbitrary (possibly transcendental or inseparable) `k' / k`. -/
+theorem isSeparable_iff_of_constantCompositum_eq_top_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (hE : constantCompositum E k' E' = ⊤) (hF : constantCompositum F k' F' = ⊤)
+    [Algebra.IsAlgebraic E F] :
+    Algebra.IsSeparable E' F' ↔ Algebra.IsSeparable E F := by
+  have hsep_el (x : F) : IsSeparable E' (algebraMap F F' x) ↔ IsSeparable E x := by
+    rw [IsSeparable, IsSeparable, minpoly_map_of_constantCompositum_eq_top_of_linearDisjoint H hE
+      (Algebra.IsAlgebraic.isAlgebraic x).isIntegral, Polynomial.separable_map]
+  refine ⟨fun h ↦ ⟨fun x ↦ (hsep_el x).mp (Algebra.IsSeparable.isSeparable E' _)⟩, fun h ↦ ?_⟩
+  let L := IntermediateField.adjoin E' (Set.range (algebraMap F F'))
+  have htop : L = ⊤ := top_le_iff.mp fun z _ ↦ by
+    have hle := (constantCompositum_le_iff F k' F' (K := L.toSubfield.toIntermediateField
+      fun a ↦ IntermediateField.subset_adjoin E' _ ⟨a, rfl⟩)).mpr fun c ↦ by
+        change algebraMap k' F' c ∈ L
+        rw [IsScalarTower.algebraMap_apply k' E' F' c]
+        exact L.algebraMap_mem (algebraMap k' E' c)
+    exact (hF ▸ hle) IntermediateField.mem_top
+  rw [← IntermediateField.isSeparable_top, ← htop,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro _ ⟨x, rfl⟩
+  exact (hsep_el x).mpr (Algebra.IsSeparable.isSeparable E x)
+
+end RelativeExtension
 
 /-- **Linear disjointness over a shared parameter from degree preservation.** -/
 theorem linearDisjoint_of_transcendental_of_finrank_eq (h : constantCompositum F k' F' = ⊤) {x : F}

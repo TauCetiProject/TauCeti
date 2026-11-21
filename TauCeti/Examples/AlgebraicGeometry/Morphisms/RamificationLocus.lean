@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Smooth.Flat
-public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 

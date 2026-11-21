@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
@@ -39,6 +40,9 @@ with model `Spec (ι → F)` and compatibility with both pullback projections.
   composite of pullbacks.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
   of an affine chart is an affine chart of the base change.
+* `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_of_isPullback`: compatible
+  affine charts on any pullback square give an affine tensor-product chart on the fibre product
+  with explicit projections and range.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 * `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
@@ -88,6 +92,47 @@ theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [Com
     (pullbackRightPullbackFstIso _ _ _).inv ≫ pullback.snd _ _ ≫ H.isoPullback.inv,
     inferInstance, ?_⟩
   simp
+
+/-- **Affine charts on a pullback square.** Given a pullback square `H : IsPullback gX f' f gY` of
+schemes, a monomorphism `iY : Spec R ⟶ Y`, and open immersions `iY' : Spec S ⟶ Y'` and
+`iX : Spec A ⟶ X` compatible with `gY` and `f`, the tensor product `Spec (S ⊗[R] A)` embeds as an
+open subscheme of `X'` with range `(f' ⁻¹' Set.range iY') ∩ (gX ⁻¹' Set.range iX)`, compatible with
+both `f'` and `gX`. -/
+theorem exists_isOpenImmersion_spec_tensorProduct_of_isPullback
+    {R S A : Type u} [CommRing R] [CommRing S] [CommRing A] [Algebra R S] [Algebra R A]
+    {X Y X' Y' : Scheme.{u}} {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
+    (H : IsPullback gX f' f gY)
+    {iY : Spec (.of R) ⟶ Y} {iY' : Spec (.of S) ⟶ Y'} {iX : Spec (.of A) ⟶ X}
+    [Mono iY] [IsOpenImmersion iY'] [IsOpenImmersion iX]
+    (eY' : Spec.map (CommRingCat.ofHom (algebraMap R S)) ≫ iY = iY' ≫ gY)
+    (eX : Spec.map (CommRingCat.ofHom (algebraMap R A)) ≫ iY = iX ≫ f) :
+    ∃ ι : Spec (.of (S ⊗[R] A)) ⟶ X', IsOpenImmersion ι ∧
+      ι ≫ f' = Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iY' ∧
+      ι ≫ gX = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) ≫ iX ∧
+      Set.range ι = f' ⁻¹' Set.range iY' ∩ gX ⁻¹' Set.range iX := by
+  let m := pullback.map (Spec.map (CommRingCat.ofHom (algebraMap R S)))
+    (Spec.map (CommRingCat.ofHom (algebraMap R A))) gY f iY' iX iY eY' eX
+  have : IsOpenImmersion m := Scheme.pullback_map_isOpenImmersion ..
+  let ι : Spec (.of (S ⊗[R] A)) ⟶ X' := (pullbackSpecIso R S A).inv ≫ m ≫ H.flip.isoPullback.inv
+  have h₁ : ι ≫ f' =
+      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom) ≫ iY' := by simp [ι, m]
+  have h₂ : ι ≫ gX = Spec.map (CommRingCat.ofHom
+      (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom) ≫ iX := by simp [ι, m]
+  refine ⟨ι, inferInstance, h₁, h₂, Set.ext fun z ↦ ⟨?_, fun ⟨hy', hx⟩ ↦ ?_⟩⟩
+  · rintro ⟨q, rfl⟩
+    exact ⟨by rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₁]; exact ⟨_, rfl⟩,
+      by rw [Set.mem_preimage, ← Scheme.Hom.comp_apply, h₂]; exact ⟨_, rfl⟩⟩
+  · have hw : H.flip.isoPullback.hom z ∈
+        pullback.fst gY f ⁻¹' Set.range iY' ∩ pullback.snd gY f ⁻¹' Set.range iX :=
+      ⟨by simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_fst]
+        using hy',
+       by simpa only [Set.mem_preimage, ← Scheme.Hom.comp_apply, IsPullback.isoPullback_hom_snd]
+        using hx⟩
+    rw [← Scheme.Pullback.range_map (f := Spec.map (CommRingCat.ofHom (algebraMap R S)))
+      (g := Spec.map (CommRingCat.ofHom (algebraMap R A))) gY f iY' iX iY eY' eX] at hw
+    obtain ⟨p, hp⟩ := hw
+    exact ⟨(pullbackSpecIso R S A).hom p, by simp [ι, m, hp]⟩
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/
