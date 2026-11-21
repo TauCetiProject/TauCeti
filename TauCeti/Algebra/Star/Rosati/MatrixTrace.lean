@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Algebra.Star.Rosati.Basic
+import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
@@ -156,8 +157,7 @@ theorem isRosatiPositive_stdMatrixTrace_complex_iff {n : Type*} [Fintype n] (S :
   have hsum : star v ⬝ᵥ (S *ᵥ v) = ∑ j : n, ∑ k : n, star (v j) * S j k * v k := by
     simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, Pi.star_apply]
   have him : (star v ⬝ᵥ (S *ᵥ v)).im = 0 := by
-    have h1 := congrArg Complex.im (hS.star_dotProduct_mulVec_comm v v)
-    simp only [RCLike.star_def, Complex.conj_im] at h1; linarith
+    simpa using Matrix.IsHermitian.im_star_dotProduct_mulVec_self hS v
   rw [Complex.pos_iff, hsum]
   exact ⟨fun h ↦ ⟨h, by simpa [hsum] using him.symm⟩, fun h ↦ h.1⟩
 
@@ -178,11 +178,7 @@ theorem cyclic_linearMap_matrix_eq_trace {R D M : Type*} [CommSemiring R] [Ring 
   classical
   rcases isEmpty_or_nonempty n with hempty | ⟨⟨i₀⟩⟩
   · exact ⟨0, fun _ _ ↦ rfl, fun X ↦ by simp [Subsingleton.elim X 0]⟩
-  · let e00 : D →ₗ[R] Matrix n n D :=
-      { toFun := Matrix.single i₀ i₀
-        map_add' := Matrix.single_add i₀ i₀
-        map_smul' := fun r a ↦ by ext i j; simp [Matrix.single] }
-    let τ : D →ₗ[R] M := t.comp e00
+  · let τ : D →ₗ[R] M := t.comp (Matrix.singleLinearMap R i₀ i₀)
     have hsingle_ne {i j : n} (hij : i ≠ j) (a : D) : t (Matrix.single i j a) = 0 := by
       have h1 : Matrix.single i j a = Matrix.single i j a * Matrix.single j j (1 : D) := by
         rw [Matrix.single_mul_single_same, mul_one]
@@ -204,44 +200,33 @@ theorem cyclic_linearMap_matrix_eq_trace {R D M : Type*} [CommSemiring R] [Ring 
       rw [Finset.sum_eq_single i (fun j _ hji ↦ hsingle_ne hji.symm (X i j))
         (fun hi ↦ absurd (Finset.mem_univ i) hi), hsingle_diag]
 
-/-- Rank-one trace identity: for `X i j = v i * star (w j)`,
+/-- Rank-one trace identity: for `X = Matrix.vecMulVec v (star w)`,
 `stdMatrixTrace rePart (X * u * Xᴴ * u⁻¹)` equals `rePart (Q_{u⁻¹}(v) * Q_u(w))`. -/
 theorem stdMatrixTrace_rankOne_mul_conj {R D M : Type*} [CommSemiring R] [Ring D] [Module R D]
     [StarRing D] [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
     {rePart : D →ₗ[R] M} (hre_cyclic : ∀ a b : D, rePart (a * b) = rePart (b * a))
     (u : (Matrix n n D)ˣ) (v w : n → D) :
-    let X : Matrix n n D := Matrix.of fun i j ↦ v i * star (w j)
+    let X : Matrix n n D := Matrix.vecMulVec v (star w)
     stdMatrixTrace rePart (X * (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D)) =
       rePart ((∑ i : n, ∑ m : n, star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m) *
         (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k)) := by
   intro X
-  have hterm (m i k j : n) :
-      rePart (v m * star (w j) * (u : Matrix n n D) j k *
-        (w k * star (v i)) * (↑u⁻¹ : Matrix n n D) i m) =
-      rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
-        (star (w j) * (u : Matrix n n D) j k * w k)) := by
-    rw [show v m * star (w j) * (u : Matrix n n D) j k * (w k * star (v i)) *
-        (↑u⁻¹ : Matrix n n D) i m =
-        v m * ((star (w j) * (u : Matrix n n D) j k * w k) *
-          (star (v i) * (↑u⁻¹ : Matrix n n D) i m)) by simp only [mul_assoc],
-      hre_cyclic, mul_assoc (star (w j) * (u : Matrix n n D) j k * w k), hre_cyclic]
-  have hLHS : stdMatrixTrace rePart (X * (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D)) =
-      ∑ i : n, ∑ m : n, ∑ j : n, ∑ k : n,
-        rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
-          (star (w j) * (u : Matrix n n D) j k * w k)) := by
-    simp only [stdMatrixTrace_apply, Matrix.trace, Matrix.diag_apply, Matrix.mul_apply,
-      Matrix.conjTranspose_apply, X, Matrix.of_apply, star_mul, star_star,
-      Finset.sum_mul, map_sum]
-    simp_rw [hterm]; rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
-  have hRHS : rePart ((∑ i : n, ∑ m : n, star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m) *
-      (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k)) =
-      ∑ i : n, ∑ m : n, ∑ j : n, ∑ k : n,
-        rePart (star (v i) * (↑u⁻¹ : Matrix n n D) i m * v m *
-          (star (w j) * (u : Matrix n n D) j k * w k)) := by
-    simp only [Finset.sum_mul]
-    simp only [Finset.mul_sum, map_sum]
-  exact hLHS.trans hRHS.symm
+  have hX : X * (u : Matrix n n D) * Xᴴ * (↑u⁻¹ : Matrix n n D) =
+      Matrix.vecMulVec v
+        ((((star w) ᵥ* (u : Matrix n n D)) ⬝ᵥ w) • ((star v) ᵥ* (↑u⁻¹ : Matrix n n D))) := by
+    rw [mul_assoc (X * (u : Matrix n n D)), Matrix.conjTranspose_vecMulVec, star_star,
+      Matrix.vecMulVec_mul w (star v) (↑u⁻¹ : Matrix n n D),
+      Matrix.vecMulVec_mul v (star w) (u : Matrix n n D), Matrix.vecMulVec_mul_vecMulVec]
+  rw [stdMatrixTrace_apply, hX, Matrix.trace_vecMulVec]
+  have htr : rePart (v ⬝ᵥ ((((star w) ᵥ* (u : Matrix n n D)) ⬝ᵥ w) •
+      ((star v) ᵥ* (↑u⁻¹ : Matrix n n D)))) =
+      rePart (((star v ᵥ* (↑u⁻¹ : Matrix n n D)) ⬝ᵥ v) *
+        ((star w ᵥ* (u : Matrix n n D)) ⬝ᵥ w)) := by
+    simp only [dotProduct, Pi.smul_apply, smul_eq_mul, map_sum]
+    rw [Finset.sum_congr rfl fun i _ ↦ by rw [hre_cyclic, mul_assoc], ← map_sum,
+      ← Finset.mul_sum, hre_cyclic]
+  rw [htr, ← Matrix.dotProduct_mulVec, ← Matrix.dotProduct_mulVec]
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, Pi.star_apply]
 
 end CyclicAndRankOne
 

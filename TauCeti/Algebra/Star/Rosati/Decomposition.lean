@@ -166,13 +166,13 @@ private theorem symm_single_one_mul {E : Type*} [Ring E] [Algebra ℝ E]
     {ι : Type*} [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)]
     (e : E ≃ₐ[ℝ] ∀ i, A i) (i : ι) (x : E) :
     e.symm (Pi.single i 1) * x = e.symm (Pi.single i (e x i)) :=
-  e.injective <| funext fun j ↦ by by_cases hji : j = i <;> [subst hji; skip] <;> simp_all
+  e.injective <| by simp [← Pi.single_mul_left]
 
 private theorem symm_single_mul {E : Type*} [Ring E] [Algebra ℝ E]
     {ι : Type*} [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)]
     (e : E ≃ₐ[ℝ] ∀ i, A i) (i : ι) (u v : A i) :
     e.symm (Pi.single i (u * v)) = e.symm (Pi.single i u) * e.symm (Pi.single i v) := by
-  rw [← map_mul]; congr 1; ext j; by_cases hji : j = i <;> [subst hji; skip] <;> simp_all
+  rw [Pi.single_mul, map_mul]
 
 /-- When `star` fixes every coordinate central idempotent `e.symm (Pi.single i 1)`, `star` acts
 coordinatewise via `a ↦ e (star (e.symm (Pi.single i a))) i`. -/
@@ -228,13 +228,9 @@ private abbrev inducedFactorStarRing {E : Type*} [Ring E] [Algebra ℝ E] [StarR
 /-- Restriction of a linear functional `t : E →ₗ[ℝ] ℝ` to the `i`-th factor `FactorCopy (A i)`. -/
 private def factorTrace {E : Type*} [Ring E] [Algebra ℝ E]
     {ι : Type*} [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] [∀ i, Algebra ℝ (A i)]
-    (e : E ≃ₐ[ℝ] ∀ i, A i) (t : E →ₗ[ℝ] ℝ) (i : ι) : FactorCopy (A i) →ₗ[ℝ] ℝ where
-  toFun x := t (e.symm (Pi.single i x.val))
-  map_add' x y := by rw [show (x + y).val = x.val + y.val from rfl, Pi.single_add, map_add, map_add]
-  map_smul' r x := by
-    have hsm : Pi.single i (r • x.val) = r • Pi.single i x.val := by
-      ext j; by_cases hji : j = i <;> [subst hji; skip] <;> simp_all
-    rw [show (r • x).val = r • x.val from rfl, hsm, map_smul, map_smul, RingHom.id_apply]
+    (e : E ≃ₐ[ℝ] ∀ i, A i) (t : E →ₗ[ℝ] ℝ) (i : ι) : FactorCopy (A i) →ₗ[ℝ] ℝ :=
+  (t.comp e.symm.toLinearMap).comp
+    ((LinearMap.single ℝ A i).comp (factorCopyEquiv (A i)).toLinearMap)
 
 /-- The factor trace `factorTrace e t i` inherits cyclicity from `t`. -/
 private theorem factorTrace_cyclic {E : Type*} [Ring E] [Algebra ℝ E]
@@ -282,11 +278,10 @@ private theorem trace_mul_mul_star_eq_sum_factorTrace {E : Type*} [Ring E] [Alge
   let _ := inducedFactorStarRing e hδ
   have heq : s * x * star x = ∑ i : ι,
       e.symm (Pi.single i (e s i * e x i * e (star (e.symm (Pi.single i (e x i)))) i)) := by
-    refine e.injective (funext fun j ↦ ?_)
-    rw [map_sum, Finset.sum_apply, Finset.sum_eq_single j]
-    · simp [apply_star_eq_coord e hδ x j]
-    · intro i _ hij; simp [Pi.single_eq_of_ne (Ne.symm hij)]
-    · intro hj; exact absurd (Finset.mem_univ j) hj
+    apply e.injective
+    rw [map_sum]
+    simp_rw [AlgEquiv.apply_symm_apply, ← apply_star_eq_coord e hδ x, ← Pi.mul_apply, ← map_mul]
+    exact (LinearMap.sum_single_apply A (e (s * x * star x))).symm
   conv_lhs => rw [heq, map_sum]
   rfl
 
@@ -410,35 +405,37 @@ private noncomputable def splitProductEquiv {n : ℕ} {A : Fin n → Type*} [∀
     (∀ i, A i) ≃ₐ[ℝ]
       ((∀ i : {i // (nf i).tag = 0}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℝ) ×
         (∀ i : {i // (nf i).tag = 1}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℂ) ×
-        (∀ i : {i // (nf i).tag = 2}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℍ[ℝ])) where
-  toFun x := (fun i ↦ (nf i.1).realEquiv i.2 (x i.1),
-    fun i ↦ (nf i.1).complexEquiv i.2 (x i.1), fun i ↦ (nf i.1).quatEquiv i.2 (x i.1))
-  invFun y i := match h : nf i with
-    | .real e _ _ => e.symm (y.1 ⟨i, by simp [FactorNormalForm.tag, h]⟩)
-    | .complex e _ _ => e.symm (y.2.1 ⟨i, by simp [FactorNormalForm.tag, h]⟩)
-    | .quaternion e _ _ => e.symm (y.2.2 ⟨i, by simp [FactorNormalForm.tag, h]⟩)
-  left_inv x := funext fun i ↦ by
-    dsimp only; split
-    · rename_i e _ _ h; rw [FactorNormalForm.realEquiv_eq _ h, AlgEquiv.symm_apply_apply]
-    · rename_i e _ _ h; rw [FactorNormalForm.complexEquiv_eq _ h, AlgEquiv.symm_apply_apply]
-    · rename_i e _ _ h; rw [FactorNormalForm.quatEquiv_eq _ h, AlgEquiv.symm_apply_apply]
-  right_inv y := Prod.ext
-    (funext fun ⟨i, hi⟩ ↦ by
-      dsimp only; split <;> first | (rename_i h; simp [FactorNormalForm.tag, h] at hi; done) |
-        (rename_i e _ _ h; rw [FactorNormalForm.realEquiv_eq hi h, AlgEquiv.apply_symm_apply]))
-    (Prod.ext
-      (funext fun ⟨i, hi⟩ ↦ by
-        dsimp only; split <;> first | (rename_i h; simp [FactorNormalForm.tag, h] at hi; done) |
-          (rename_i e _ _ h; rw [FactorNormalForm.complexEquiv_eq hi h, AlgEquiv.apply_symm_apply]))
-      (funext fun ⟨i, hi⟩ ↦ by
-        dsimp only; split <;> first | (rename_i h; simp [FactorNormalForm.tag, h] at hi; done) |
-          (rename_i e _ _ h; rw [FactorNormalForm.quatEquiv_eq hi h, AlgEquiv.apply_symm_apply])))
-  map_mul' _ _ := Prod.ext (funext fun _ ↦ map_mul _ _ _)
-    (Prod.ext (funext fun _ ↦ map_mul _ _ _) (funext fun _ ↦ map_mul _ _ _))
-  map_add' _ _ := Prod.ext (funext fun _ ↦ map_add _ _ _)
-    (Prod.ext (funext fun _ ↦ map_add _ _ _) (funext fun _ ↦ map_add _ _ _))
-  commutes' r := Prod.ext (funext fun _ ↦ AlgEquiv.commutes _ r)
-    (Prod.ext (funext fun _ ↦ AlgEquiv.commutes _ r) (funext fun _ ↦ AlgEquiv.commutes _ r))
+        (∀ i : {i // (nf i).tag = 2}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℍ[ℝ])) :=
+  let s1 : (∀ i, A i) ≃ₐ[ℝ]
+      (∀ i : {i // (nf i).tag = 0}, A i.1) × (∀ i : {i // (nf i).tag ≠ 0}, A i.1) :=
+    AlgEquiv.ofRingEquiv
+      (f := RingEquiv.piEquivPiSubtypeProd (fun i ↦ (nf i).tag = 0) A) fun _ ↦ rfl
+  let s2 : (∀ i : {i // (nf i).tag ≠ 0}, A i.1) ≃ₐ[ℝ]
+      (∀ i : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag = 1}, A i.1.1) ×
+      (∀ i : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag ≠ 1}, A i.1.1) :=
+    AlgEquiv.ofRingEquiv
+      (f := RingEquiv.piEquivPiSubtypeProd (fun i : {i // (nf i).tag ≠ 0} ↦ (nf i.1).tag = 1)
+        (fun i ↦ A i.1))
+      fun _ ↦ rfl
+  let e1 : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag = 1} ≃ {i // (nf i).tag = 1} :=
+    ⟨fun x ↦ ⟨x.1.1, x.2⟩, fun x ↦ ⟨⟨x.1, by simp [x.2]⟩, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+  let e2 : {i : {i // (nf i).tag ≠ 0} // (nf i.1).tag ≠ 1} ≃ {i // (nf i).tag = 2} :=
+    ⟨fun x ↦ ⟨x.1.1, by have := x.1.2; have := x.2; omega⟩,
+      fun x ↦ ⟨⟨x.1, by simp [x.2]⟩, by simp [x.2]⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+  let blocks : ((∀ i : {i // (nf i).tag = 0}, A i.1) ×
+      ((∀ i : {i // (nf i).tag = 1}, A i.1) × (∀ i : {i // (nf i).tag = 2}, A i.1))) ≃ₐ[ℝ]
+      ((∀ i : {i // (nf i).tag = 0}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℝ) ×
+        (∀ i : {i // (nf i).tag = 1}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℂ) ×
+        (∀ i : {i // (nf i).tag = 2}, Matrix (Fin (d i.1)) (Fin (d i.1)) ℍ[ℝ])) :=
+    AlgEquiv.prodCongr
+      (AlgEquiv.piCongrRight fun i ↦ (nf i.1).realEquiv i.2)
+      (AlgEquiv.prodCongr
+        (AlgEquiv.piCongrRight fun i ↦ (nf i.1).complexEquiv i.2)
+        (AlgEquiv.piCongrRight fun i ↦ (nf i.1).quatEquiv i.2))
+  (s1.trans (AlgEquiv.prodCongr AlgEquiv.refl
+    (s2.trans (AlgEquiv.prodCongr
+      (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 1} ↦ A i.1) e1)
+      (AlgEquiv.piCongrLeft ℝ (fun i : {i // (nf i).tag = 2} ↦ A i.1) e2))))).trans blocks
 
 private theorem splitProductEquiv_star {n : ℕ} {A : Fin n → Type*} [∀ i, Ring (A i)]
     [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)] {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ}
@@ -447,14 +444,20 @@ private theorem splitProductEquiv_star {n : ℕ} {A : Fin n → Type*} [∀ i, R
   Prod.ext
     (funext fun ⟨i, hi⟩ ↦ by
       cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-        (rename_i e hs _; simp [splitProductEquiv, FactorNormalForm.realEquiv_eq hi h, hs]))
+        (rename_i e hs _
+         change (nf i).realEquiv hi (star (x i)) = star ((nf i).realEquiv hi (x i))
+         simp [FactorNormalForm.realEquiv_eq hi h, hs]))
     (Prod.ext
       (funext fun ⟨i, hi⟩ ↦ by
         cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-          (rename_i e hs _; simp [splitProductEquiv, FactorNormalForm.complexEquiv_eq hi h, hs]))
+          (rename_i e hs _
+           change (nf i).complexEquiv hi (star (x i)) = star ((nf i).complexEquiv hi (x i))
+           simp [FactorNormalForm.complexEquiv_eq hi h, hs]))
       (funext fun ⟨i, hi⟩ ↦ by
         cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-          (rename_i e hs _; simp [splitProductEquiv, FactorNormalForm.quatEquiv_eq hi h, hs])))
+          (rename_i e hs _
+           change (nf i).quatEquiv hi (star (x i)) = star ((nf i).quatEquiv hi (x i))
+           simp [FactorNormalForm.quatEquiv_eq hi h, hs])))
 
 private theorem splitProductEquiv_pos {n : ℕ} {A : Fin n → Type*} [∀ i, Ring (A i)]
     [∀ i, Algebra ℝ (A i)] [∀ i, StarRing (A i)] {t : ∀ i, A i →ₗ[ℝ] ℝ} {d : Fin n → ℕ}
@@ -468,25 +471,34 @@ private theorem splitProductEquiv_pos {n : ℕ} {A : Fin n → Type*} [∀ i, Ri
   refine ⟨fun hx ↦ ⟨fun ⟨i, hi⟩ ↦ ?_, fun ⟨i, hi⟩ ↦ ?_, fun ⟨i, hi⟩ ↦ ?_⟩,
       fun ⟨hR, hC, hH⟩ i ↦ ?_⟩
   · cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-      (rename_i e _ hp; simpa [splitProductEquiv, FactorNormalForm.realEquiv_eq hi h] using
-        (hp (x i)).mp (hx i))
+      (rename_i e _ hp
+       change ((nf i).realEquiv hi (x i)).PosDef
+       simpa [FactorNormalForm.realEquiv_eq hi h] using (hp (x i)).mp (hx i))
   · cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-      (rename_i e _ hp; simpa [splitProductEquiv, FactorNormalForm.complexEquiv_eq hi h] using
-        (hp (x i)).mp (hx i))
+      (rename_i e _ hp
+       change ((nf i).complexEquiv hi (x i)).PosDef
+       simpa [FactorNormalForm.complexEquiv_eq hi h] using (hp (x i)).mp (hx i))
   · cases h : nf i <;> first | (simp [FactorNormalForm.tag, h] at hi; done) |
-      (rename_i e _ hp; simpa [splitProductEquiv, FactorNormalForm.quatEquiv_eq hi h] using
-        (hp (x i)).mp (hx i))
+      (rename_i e _ hp
+       change ((nf i).quatEquiv hi (x i)).IsHermitian ∧
+         ∀ v : Fin (d i) → ℍ[ℝ], v ≠ 0 →
+           0 < (∑ j, ∑ k, star (v j) * ((nf i).quatEquiv hi (x i)) j k * v k).re
+       simpa [FactorNormalForm.quatEquiv_eq hi h] using (hp (x i)).mp (hx i))
   · cases h : nf i with
     | real e _ hp =>
       have hi : (nf i).tag = 0 := by simp [FactorNormalForm.tag, h]
-      exact (hp (x i)).mpr ((congrArg (· (x i)) (FactorNormalForm.realEquiv_eq hi h)) ▸ hR ⟨i, hi⟩)
+      have h' : ((nf i).realEquiv hi (x i)).PosDef := hR ⟨i, hi⟩
+      exact (hp (x i)).mpr ((congrArg (· (x i)) (FactorNormalForm.realEquiv_eq hi h)) ▸ h')
     | complex e _ hp =>
       have hi : (nf i).tag = 1 := by simp [FactorNormalForm.tag, h]
-      exact (hp (x i)).mpr
-        ((congrArg (· (x i)) (FactorNormalForm.complexEquiv_eq hi h)) ▸ hC ⟨i, hi⟩)
+      have h' : ((nf i).complexEquiv hi (x i)).PosDef := hC ⟨i, hi⟩
+      exact (hp (x i)).mpr ((congrArg (· (x i)) (FactorNormalForm.complexEquiv_eq hi h)) ▸ h')
     | quaternion e _ hp =>
       have hi : (nf i).tag = 2 := by simp [FactorNormalForm.tag, h]
-      exact (hp (x i)).mpr ((congrArg (· (x i)) (FactorNormalForm.quatEquiv_eq hi h)) ▸ hH ⟨i, hi⟩)
+      have h' : ((nf i).quatEquiv hi (x i)).IsHermitian ∧
+          ∀ v : Fin (d i) → ℍ[ℝ], v ≠ 0 →
+            0 < (∑ j, ∑ k, star (v j) * ((nf i).quatEquiv hi (x i)) j k * v k).re := hH ⟨i, hi⟩
+      exact (hp (x i)).mpr ((congrArg (· (x i)) (FactorNormalForm.quatEquiv_eq hi h)) ▸ h')
 
 end FactorAssembly
 

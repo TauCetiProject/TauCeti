@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Algebra.Star.Rosati.Basic
 import Mathlib.Algebra.Central.Basic
 import Mathlib.Algebra.Central.Matrix
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 import Mathlib.LinearAlgebra.Matrix.Trace
@@ -72,27 +73,6 @@ namespace TauCeti
 
 section SharedNormalization
 
-/-- A nonzero rank-one matrix `X i j = v i * star (w j)` over a division ring. -/
-private theorem rankOne_ne_zero {D : Type*} [DivisionRing D] [StarRing D] {n : Type*}
-    {v w : n → D} (hv : v ≠ 0) (hw : w ≠ 0) :
-    Matrix.of (fun i j ↦ v i * star (w j)) ≠ (0 : Matrix n n D) := by
-  obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hv; obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp hw
-  intro h0
-  have h := congrFun (congrFun h0 i₀) j₀
-  simp only [Matrix.of_apply, Matrix.zero_apply, mul_eq_zero, star_eq_zero] at h
-  exact h.elim hi₀ hj₀
-
-/-- Inner `ℝ`-algebra automorphism `X ↦ r⁻¹ * X * r` induced by a unit `r`. -/
-private def innerConjAlgEquiv {R : Type*} [Ring R] [Algebra ℝ R] (r : Rˣ) : R ≃ₐ[ℝ] R where
-  toFun X := (↑r⁻¹ : R) * X * (r : R)
-  invFun Y := (r : R) * Y * (↑r⁻¹ : R)
-  left_inv X := by simp [← mul_assoc]
-  right_inv Y := by simp [mul_assoc]
-  map_mul' X Y := by simp only [mul_assoc, Units.mul_inv_cancel_left]
-  map_add' X Y := by simp only [mul_add, add_mul]
-  commutes' k := by
-    rw [Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one, r.inv_mul]
-
 /-- **Skolem–Noether presentation of an involution on a central simple algebra.** Given an
 `F`-algebra automorphism `α` of a finite-dimensional central simple `F`-star algebra `M` such that
 `X ↦ α (star X)` is an involution, `α X = u * X * u⁻¹` for a unit `u : Mˣ` satisfying
@@ -152,7 +132,7 @@ private theorem exists_pos_hermitian_unit {D : Type*} [DivisionRing D] [Algebra 
     simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, Pi.star_apply]
   have hprod (w : n → D) (hw : w ≠ 0) :
       0 < α * rePart (∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k) := by
-    have h1 := hpos (Matrix.of fun i j ↦ v₀ i * star (w j)) (rankOne_ne_zero hv₀ hw)
+    have h1 := hpos (Matrix.vecMulVec v₀ (star w)) (by simp [hv₀, hw])
     rw [stdMatrixTrace_rankOne_mul_conj hre_cyclic u v₀ w] at h1
     set q1 := ∑ i : n, ∑ m : n, star (v₀ i) * (↑u⁻¹ : Matrix n n D) i m * v₀ m
     set q2 := ∑ j : n, ∑ k : n, star (w j) * (u : Matrix n n D) j k * w k
@@ -214,16 +194,19 @@ private theorem exists_star_algEquiv_matrix_of_hermitian_unit {A D : Type*}
     have hmul : (a : Matrix n n D) * (Rinv * Rinv) = 1 := by
       rw [← hrsq, mul_assoc R R, ← mul_assoc R Rinv, r.mul_inv, one_mul, r.mul_inv]
     simpa [mul_assoc] using (congrArg ((↑a⁻¹ : Matrix n n D) * ·) hmul).symm
-  let e : A ≃ₐ[ℝ] Matrix n n D := φ.trans (innerConjAlgEquiv r)
+  let e : A ≃ₐ[ℝ] Matrix n n D :=
+    φ.trans (MulSemiringAction.toAlgEquiv ℝ _ (ConjAct.toConjAct r⁻¹))
+  have he_apply (x : A) : e x = Rinv * φ x * R := by
+    simp [e, ConjAct.units_smul_def, R, Rinv]
   have heStar (x : A) : e (star x) = star (e x) := by
-    change Rinv * φ (star x) * R = (Rinv * φ x * R)ᴴ
-    rw [hσ, ← haConj, ← hrsq, haInv, Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, hrH,
-      hrInvH]
+    rw [he_apply (star x), Matrix.star_eq_conjTranspose, he_apply x, hσ, ← haConj, ← hrsq, haInv,
+      Matrix.conjTranspose_mul, Matrix.conjTranspose_mul, hrH, hrInvH]
     simp only [mul_assoc, R, Rinv, Units.inv_mul_cancel_left, r.inv_mul, mul_one]
   have heTrace : t = (c • stdMatrixTrace rePart).comp e.toLinearMap := by
     ext x
-    have htr : stdMatrixTrace rePart (Rinv * φ x * R) = stdMatrixTrace rePart (φ x) := by
-      rw [stdMatrixTrace_cyclic hre_cyclic (Rinv * φ x) R, ← mul_assoc, r.mul_inv, one_mul]
+    have htr : stdMatrixTrace rePart (e x) = stdMatrixTrace rePart (φ x) := by
+      rw [he_apply x, stdMatrixTrace_cyclic hre_cyclic (Rinv * φ x) R, ← mul_assoc, r.mul_inv,
+        one_mul]
     rw [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, LinearMap.smul_apply, smul_eq_mul]
     exact (ht x).trans (congrArg (c * ·) htr.symm)
   refine ⟨e, heStar, fun s ↦ ?_⟩
@@ -299,7 +282,7 @@ private theorem not_pos_of_skewSymmetric_real {n : Type*} [Fintype n] [Decidable
     False := by
   let v₀ : n → ℝ := Pi.single (Classical.arbitrary n) 1
   have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h (Classical.arbitrary n)
-  have hposX := hpos (Matrix.of fun i j ↦ v₀ i * star (v₀ j)) (rankOne_ne_zero hv₀ hv₀)
+  have hposX := hpos (Matrix.vecMulVec v₀ (star v₀)) (by simp [hv₀])
   rw [stdMatrixTrace_rankOne_mul_conj (fun a b ↦ mul_comm a b) u v₀ v₀] at hposX
   have hQ0 : ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℝ) j k * v₀ k = 0 := by
     have hswap : ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℝ) j k * v₀ k =
@@ -487,19 +470,12 @@ theorem exists_star_algEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A]
       Matrix.posDef_iff_dotProduct_mulVec.mpr
         ⟨Subsingleton.elim _ _, fun v hv ↦ absurd (Subsingleton.elim v 0) hv⟩
   · have : StarModule ℝ A := starModule_of_trace_mul_star_pos t hpos
-    let t' : A →ₗ[ℝ] ℝ :=
-      { toFun := fun x ↦ (t x + t (star x)) / 2
-        map_add' := fun x y ↦ by simp only [star_add, map_add]; ring
-        map_smul' := fun c x ↦ by
-          simp only [star_smul, star_trivial, map_smul, smul_eq_mul, RingHom.id_apply]; ring }
-    have ht' (x : A) : t' x = (t x + t (star x)) / 2 := rfl
-    have hcyc' (x y : A) : t' (x * y) = t' (y * x) := by
-      simp only [ht', star_mul, hcyclic x y, hcyclic (star y) (star x)]
-    have hstar' (x : A) : t' (star x) = t' x := by simp only [ht', star_star, add_comm]
-    have hpos' (x : A) (hx : x ≠ 0) : 0 < t' (x * star x) := by
-      have h := hpos x hx; simp only [ht', star_mul, star_star]; linarith
+    let t' : A →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ A).subtype).comp (selfAdjointPart ℝ)
+    have hpos' (x : A) (hx : x ≠ 0) : 0 < t' (x * star x) :=
+      comp_selfAdjointPart_mul_star_pos hpos hx
     have hI := star_I_smul_one_eq_neg φ t' hpos'
-    obtain ⟨c, hc, ht⟩ := trace_eq_mul_stdMatrixTrace_complex φ hI t' hcyc' hstar' hpos'
+    obtain ⟨c, hc, ht⟩ := trace_eq_mul_stdMatrixTrace_complex φ hI t'
+      (comp_selfAdjointPart_cyclic hcyclic) (comp_selfAdjointPart_star t) hpos'
     let α : Matrix n n ℂ ≃ₐ[ℂ] Matrix n n ℂ :=
       { toFun := fun X ↦ φ (star (φ.symm Xᴴ)), invFun := fun Y ↦ (φ (star (φ.symm Y)))ᴴ
         left_inv := fun X ↦ by simp, right_inv := fun Y ↦ by simp
@@ -521,7 +497,7 @@ theorem exists_star_algEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A]
         simp [show a.im = 0 by linarith]))
       φ t' c hc ht hpos' u' hu'H hσ
     exact ⟨e, heStar, fun s ↦ by
-      rw [← isRosatiPositive_iff_of_symmetrize ht' hcyclic, hePos,
+      rw [← isRosatiPositive_iff_of_symmetrize (comp_selfAdjointPart_apply t) hcyclic, hePos,
         isRosatiPositive_stdMatrixTrace_complex_iff]⟩
 
 end ComplexFactor
@@ -595,14 +571,14 @@ private theorem not_pos_of_skewHermitian_quaternion {n : Type*} [Fintype n] [Dec
   set r : ℍ[ℝ] := ∑ i : n, ∑ m : n, star (v₀ i) * Uinv i m * v₀ m
   set s : ℍ[ℝ] := ∑ j : n, ∑ k : n, star (v₀ j) * (u : Matrix n n ℍ[ℝ]) j k * v₀ k
   have hpos0 : 0 < (r * s).re := by
-    have h := hpos (Matrix.of fun i j ↦ v₀ i * star (v₀ j)) (rankOne_ne_zero hv₀ hv₀)
+    have h := hpos (Matrix.vecMulVec v₀ (star v₀)) (by simp [hv₀])
     rwa [stdMatrixTrace_rankOne_mul_conj hre_cyc u v₀ v₀] at h
   obtain ⟨q, hq0, hqconj⟩ := exists_pure_quaternion_neg_conj r
     (re_quadForm_eq_zero_of_skewHermitian huinv_skew v₀)
   let v₁ : n → ℍ[ℝ] := fun i ↦ v₀ i * q
   have hv₁ : v₁ ≠ 0 := fun h ↦ by have := congrFun h i₀; simp [v₁, v₀, hq0] at this
   have hpos1 : 0 < (-(Quaternion.normSq q • r) * s).re := by
-    have h := hpos (Matrix.of fun i j ↦ v₁ i * star (v₀ j)) (rankOne_ne_zero hv₁ hv₀)
+    have h := hpos (Matrix.vecMulVec v₁ (star v₀)) (by simp [hv₁, hv₀])
     rw [stdMatrixTrace_rankOne_mul_conj hre_cyc u v₁ v₀] at h
     have hQ1 : ∑ i : n, ∑ m : n, star (v₁ i) * Uinv i m * v₁ m = star q * r * q := by
       simp only [v₁, r, star_mul, Finset.mul_sum, Finset.sum_mul, mul_assoc]

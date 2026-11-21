@@ -170,6 +170,41 @@ theorem isRosatiPositive_iff_of_symmetrize {E : Type*} [Semiring E] [Module ℝ 
     rw [star_mul, star_mul, star_star, hs.star_eq, ← mul_assoc, hcyclic, mul_assoc]
   rw [ht', hst]; constructor <;> intro h <;> linarith
 
+/-- Evaluating `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)` gives
+`(t x + t (star x)) / 2`. -/
+theorem comp_selfAdjointPart_apply {E : Type*} [AddCommGroup E] [Module ℝ E] [StarAddMonoid E]
+    [StarModule ℝ E] (t : E →ₗ[ℝ] ℝ) (x : E) :
+    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) x =
+      (t x + t (star x)) / 2 := by
+  change t (selfAdjointPart ℝ x : E) = (t x + t (star x)) / 2
+  rw [selfAdjointPart_apply_coe, map_smul, map_add, smul_eq_mul, invOf_eq_inv, div_eq_inv_mul]
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)` is
+star-invariant. -/
+theorem comp_selfAdjointPart_star {E : Type*} [AddCommGroup E] [Module ℝ E] [StarAddMonoid E]
+    [StarModule ℝ E] (t : E →ₗ[ℝ] ℝ) (x : E) :
+    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (star x) =
+      ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) x := by
+  simp only [comp_selfAdjointPart_apply, star_star, add_comm]
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)`
+inherits cyclicity from `t`. -/
+theorem comp_selfAdjointPart_cyclic {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E] [StarRing E]
+    [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ} (hcyclic : ∀ x y : E, t (x * y) = t (y * x)) (x y : E) :
+    ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (x * y) =
+      ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (y * x) := by
+  simp only [comp_selfAdjointPart_apply, star_mul, hcyclic x y, hcyclic (star y) (star x)]
+
+/-- The symmetrization `(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)`
+inherits strict positivity on `x * star x` from `t`. -/
+theorem comp_selfAdjointPart_mul_star_pos {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E]
+    [StarRing E] [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ}
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {x : E} (hx : x ≠ 0) :
+    0 < ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) (x * star x) := by
+  have h := hpos x hx
+  simp only [comp_selfAdjointPart_apply, star_mul, star_star]
+  linarith
+
 end IsRosatiPositive
 
 /-! ### Automatic real-linearity of the involution -/
@@ -333,16 +368,18 @@ theorem isRosatiPositive_of_isPositive_lmul_of_isUnit (t : E →ₗ[ℝ] ℝ)
   refine ⟨(isSymmetric_lmul_iff t hcyclic hstar hpos s).mp hsPos.isSymmetric, fun x hx ↦ ?_⟩
   refine lt_of_le_of_ne (hsPos.re_inner_nonneg_left x) fun hzero ↦ hx ?_
   set T := Algebra.lmul ℝ E s
-  have hTxx : ⟪T x, x⟫_ℝ = 0 := hzero.symm
-  have hTxy (y : E) : ⟪T x, y⟫_ℝ = 0 := by
-    have hsym : ⟪T y, x⟫_ℝ = ⟪T x, y⟫_ℝ := by rw [hsPos.isSymmetric y x, real_inner_comm]
-    have h := hsPos.re_inner_nonneg_left ((⟪T y, y⟫_ℝ + 1) • x - ⟪T x, y⟫_ℝ • y)
-    simp only [RCLike.re_to_real, map_sub, map_smul, inner_sub_left, inner_sub_right,
-      inner_smul_left, inner_smul_right, starRingEnd_apply, star_trivial, hTxx, hsym] at h
-    have ha : 0 ≤ ⟪T y, y⟫_ℝ := hsPos.re_inner_nonneg_left y
-    nlinarith
+  let B := (innerₗ E).compl₁₂ T LinearMap.id
+  have hB : LinearMap.IsSymm B := ⟨fun a b ↦ by
+    simp only [B, LinearMap.compl₁₂_apply, LinearMap.id_coe, id_eq, innerₗ_apply_apply,
+      RingHom.id_apply]
+    rw [hsPos.isSymmetric, real_inner_comm]⟩
+  have hTxx : ⟪T x, T x⟫_ℝ = 0 := by
+    have hsq := LinearMap.BilinForm.apply_sq_le_of_symm B hsPos.re_inner_nonneg_left hB x (T x)
+    have hBxx : B x x = 0 := hzero.symm
+    rw [hBxx, zero_mul] at hsq
+    exact eq_zero_of_pow_eq_zero (le_antisymm hsq (sq_nonneg _))
   obtain ⟨u, rfl⟩ := hu
-  simpa [T] using congrArg ((↑u⁻¹ : E) * ·) (inner_self_eq_zero.mp (hTxy (T x)))
+  simpa [T] using congrArg ((↑u⁻¹ : E) * ·) (inner_self_eq_zero.mp hTxx)
 
 end InnerProduct
 
@@ -446,21 +483,14 @@ theorem rosatiPositiveSquareRoot {E : Type*} [Ring E] [Algebra ℝ E] [StarRing 
       (∀ x : E, Commute x s → Commute x r ∧ Commute x ((r⁻¹ : Eˣ) : E)) ∧
       ∀ r' : E, IsRosatiPositive t r' → r' * r' = s → r' = r := by
   have : StarModule ℝ E := starModule_of_trace_mul_star_pos t hpos
-  let t' : E →ₗ[ℝ] ℝ :=
-    { toFun := fun x ↦ (t x + t (star x)) / 2
-      map_add' := fun x y ↦ by simp only [star_add, map_add]; ring
-      map_smul' := fun c x ↦ by
-        simp only [star_smul, star_trivial c, map_smul, RingHom.id_apply, smul_eq_mul]; ring }
+  let t' : E →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)
   have hiff (a : E) : IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
-    isRosatiPositive_iff_of_symmetrize (fun _ ↦ rfl) hcyclic
+    isRosatiPositive_iff_of_symmetrize (comp_selfAdjointPart_apply t) hcyclic
   obtain ⟨hsU, r, hrpos, hrsq, hrmem, hrImem, hcomm, huniq⟩ :=
     rosatiPositiveSquareRoot_of_star_invariant t'
-      (fun x y ↦ by simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_mul, hcyclic x y,
-        hcyclic (star y) (star x)])
-      (fun x ↦ by simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_star, add_comm])
-      (fun x hx ↦ by
-        have := hpos x hx; simp only [t', LinearMap.coe_mk, AddHom.coe_mk, star_mul, star_star]
-        linarith)
+      (comp_selfAdjointPart_cyclic hcyclic)
+      (comp_selfAdjointPart_star t)
+      (fun _ hx ↦ comp_selfAdjointPart_mul_star_pos hpos hx)
       s ((hiff s).mpr hs)
   exact ⟨hsU, r, (hiff r).mp hrpos, hrsq, hrmem, hrImem, hcomm,
     fun r' hr' hr'sq ↦ huniq r' ((hiff r').mpr hr') hr'sq⟩

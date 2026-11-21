@@ -455,21 +455,15 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
     · exact Or.inr (Or.inr hH)
   · obtain ⟨eZ⟩ := hZ
     right; left
-    obtain ⟨s, hs⟩ := ‹FiniteDimensional ℝ D›.fg_top
-    have hrep (x : D) : ∃ c : D → ℝ, ∑ y ∈ s, algebraMap ℝ D (c y) * y = x := by
-      obtain ⟨c, -, rfl⟩ := Submodule.mem_span_finset.mp (hs.symm ▸ Submodule.mem_top : x ∈ _)
-      exact ⟨c, by simp only [Algebra.smul_def]⟩
     let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
     have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
       (Subalgebra.mem_center_iff.mp (eZ.symm c).2 x).symm
     let _ : Algebra ℂ D := f.toRingHom.toAlgebra' hcomm
     have hmap : algebraMap ℂ D = f.toRingHom := RingHom.algebraMap_toAlgebra' f.toRingHom hcomm
-    have _ : Module.Finite ℂ D := ⟨⟨s, eq_top_iff.2 fun x _ ↦ by
-      obtain ⟨c, rfl⟩ := hrep x
-      refine Submodule.sum_mem _ fun y hy ↦ ?_
-      have hsm : (algebraMap ℝ ℂ (c y)) • y = algebraMap ℝ D (c y) * y := by
-        rw [Algebra.smul_def, hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
-      exact hsm ▸ Submodule.smul_mem _ _ (Submodule.subset_span hy)⟩⟩
+    have hst : IsScalarTower ℝ ℂ D := IsScalarTower.of_algebraMap_eq fun r ↦ by
+      rw [hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
+    have _ : Module.Finite ℂ D :=
+      @Module.Finite.of_restrictScalars_finite ℝ ℂ D _ _ _ Algebra.toModule _ _ hst ‹_›
     have h := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
     rw [hmap] at h
     exact ⟨(AlgEquiv.ofBijective f h).symm⟩
