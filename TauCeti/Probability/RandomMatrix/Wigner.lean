@@ -278,19 +278,25 @@ theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :
   simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv, Complex.norm_real,
     Real.norm_eq_abs, inv_pow, sq_abs, Real.sq_sqrt (Nat.cast_nonneg n)]
 
+/-- The norm of an off-diagonal Wigner entry is the norm of the corresponding upper
+coordinate multiplied by the inverse square root of the matrix size. -/
+theorem norm_wignerMatrix_apply_of_ne {i j : Fin n} (h : i ≠ j) :
+    ‖wignerMatrix ξ η n ω i j‖ = (Real.sqrt n)⁻¹ *
+      ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ := by
+  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ = (Real.sqrt n)⁻¹ := by
+    rw [norm_inv, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne h) with hij | hij
+  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, hn,
+      min_eq_left hij.le, max_eq_right hij.le]
+  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, norm_star, hn,
+      min_eq_right hij.le, max_eq_left hij.le]
+
 /-- The squared absolute value of an off-diagonal entry is the corresponding upper
 coordinate's squared absolute value divided by the matrix size. -/
 theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
     ‖wignerMatrix ξ η n ω i j‖ ^ 2 = (n : ℝ)⁻¹ *
       ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ ^ 2 := by
-  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-      inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne h) with hij | hij
-  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, mul_pow, hn,
-      min_eq_left hij.le, max_eq_right hij.le]
-  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, mul_pow, norm_star, hn,
-      min_eq_right hij.le, max_eq_left hij.le]
+  rw [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, inv_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
 
 /-- The normalised Wigner matrix is Hermitian for every sample point. -/
 theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermitian := by

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
 
@@ -127,19 +128,43 @@ theorem _root_.MeasureTheory.MemLp.norm_integral_indicator_norm_le_of_integral_e
   have hS : NullMeasurableSet S P :=
     nullMeasurableSet_lt aemeasurable_const hX.aestronglyMeasurable.norm.aemeasurable
   have hsplit : (∫ ω, Sᶜ.indicator X ω ∂P) = -(∫ ω, S.indicator X ω ∂P) := by
-    have h := integral_add (hint.indicator₀ hS) (hint.indicator₀ hS.compl)
-    simp_rw [indicator_self_add_compl_apply, hmean] at h
-    exact eq_neg_of_add_eq_zero_right h.symm
+    rw [integral_indicator₀ hS.compl, integral_indicator₀ hS,
+      setIntegral_compl₀ hS hint, hmean, zero_sub]
   have hcomp : Sᶜ = {ω | ‖X ω‖ ≤ r} := by ext ω; simp [S]
   rw [← hcomp, hsplit, norm_neg, ← integral_div]
   refine norm_integral_le_of_norm_le
     ((hX.integrable_norm_pow (Nat.succ_ne_zero k)).div_const _) (.of_forall fun ω ↦ ?_)
   by_cases hω : ω ∈ S
   · rw [indicator_of_mem hω, le_div_iff₀ (pow_pos hr _), pow_succ, mul_comm]
-    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr.le (show r ≤ ‖X ω‖ from hω.le) _)
-      (norm_nonneg _)
+    simp only [S, Set.mem_ofPred_eq] at hω
+    exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr.le hω.le _) (norm_nonneg _)
   · rw [indicator_of_notMem hω, norm_zero]
     positivity
+
+/-- For a centered variable with a finite fourth moment and `a > 1/6`, the truncated
+mean at cutoff `(n + 1)^a` vanishes even after multiplying by `√(n + 1)`. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_sqrt_mul_norm_integral_indicator_norm_le
+    (hX : MemLp X 4 P)
+    (hmean : ∫ ω, X ω ∂P = 0) {a : ℝ} (ha : 1 / 6 < a) :
+    Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) *
+      ‖∫ ω, {ω' | ‖X ω'‖ ≤ ((n + 1 : ℕ) : ℝ) ^ a}.indicator X ω ∂P‖) atTop (𝓝 0) := by
+  let C := ∫ ω, ‖X ω‖ ^ 4 ∂P
+  have hlim : Tendsto (fun n : ℕ ↦ C * ((n + 1 : ℕ) : ℝ) ^ (1 / 2 - 3 * a)) atTop (𝓝 0) :=
+    by
+      simpa only [mul_zero, neg_sub, Function.comp_apply] using
+        ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
+          (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).const_mul C
+  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hlim
+  let N : ℝ := (n + 1 : ℕ)
+  have hN : 0 < N := by dsimp only [N]; positivity
+  calc
+    _ ≤ Real.sqrt N * (C / (N ^ a) ^ 3) :=
+      mul_le_mul_of_nonneg_left
+        (hX.norm_integral_indicator_norm_le_of_integral_eq_zero hmean (Real.rpow_pos_of_pos hN _))
+        (Real.sqrt_nonneg _)
+    _ = _ := by
+      rw [Real.sqrt_eq_rpow, Real.rpow_mul_div_rpow_pow hN]
+      simp only [N, Nat.cast_ofNat, mul_comm a]
 
 end TruncationMean
 

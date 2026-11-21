@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Euclidean operator norms and the largest Gram eigenvalue
@@ -118,5 +119,29 @@ theorem exists_unit_eigenvector_conjTranspose_mul_self [Nonempty n]
       simpa using hinner
     exact_mod_cast hcast
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+
+/-- The absolute value of each ordered Hermitian eigenvalue is bounded by the Euclidean
+operator norm. -/
+theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (j : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ j‖ ≤ ‖A‖ := by
+  rw [hA.l2_opNorm_eq_norm_eigenvalues]
+  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
+  simpa only [IsHermitian.eigenvalues, e, Equiv.symm_apply_apply] using
+    norm_le_pi_norm hA.eigenvalues (e j)
+
+/-- The `2*k`-th power of the Euclidean operator norm of a Hermitian matrix is bounded by
+the trace of its `2*k`-th power. The trace in this inequality is real. -/
+theorem IsHermitian.l2_opNorm_pow_le_re_trace_pow [Nonempty n] {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (k : ℕ) : ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
+  obtain ⟨i, hi, hmax⟩ := Finset.exists_max_image Finset.univ
+    (fun i ↦ ‖hA.eigenvalues i‖) Finset.univ_nonempty
+  have hnorm : ‖A‖ ≤ ‖hA.eigenvalues i‖ := by
+    rw [hA.l2_opNorm_eq_norm_eigenvalues]
+    exact (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun j ↦ hmax j (Finset.mem_univ j)
+  rw [hA.trace_pow_eq_sum_eigenvalues_pow]
+  simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+  refine (pow_le_pow_left₀ (norm_nonneg _) hnorm _).trans ?_
+  rw [Real.norm_eq_abs, pow_abs_two_mul]
+  exact Finset.single_le_sum (fun j _ ↦ (even_two_mul k).pow_nonneg (hA.eigenvalues j)) hi
 
 end Matrix

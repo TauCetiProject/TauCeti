@@ -550,3 +550,8 @@ theorem exp_neg_mul_abs_isLittleO_abs_rpow_cocompact {a : ℝ} (ha : 0 < a) (s :
       (tendsto_norm_cocompact_atTop (E := ℝ))
 
 end TauCeti
+
+/-- Collect the powers of a positive base in a quotient with a scalar numerator. -/
+theorem Real.rpow_mul_div_rpow_pow {x : ℝ} (hx : 0 < x) (a b C : ℝ) (k : ℕ) :
+    x ^ b * (C / (x ^ a) ^ k) = C * x ^ (b - a * k) := by
+  rw [← Real.rpow_mul_natCast hx.le, mul_div_left_comm, ← Real.rpow_sub hx]

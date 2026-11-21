@@ -47,17 +47,17 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
     using ENNReal.hasSum_toReal hfin
 
 /-- A series of finite extended nonnegative reals has finite sum if it is eventually
-bounded by a summable sequence of nonnegative real numbers. -/
-theorem ENNReal.tsum_lt_top_of_eventually_le_ofReal {f : ℕ → ℝ≥0∞} {b : ℕ → ℝ}
-    (hf : ∀ n, f n ≠ ∞) (hb₀ : ∀ n, 0 ≤ b n) (hb : Summable b)
-    (h : ∀ᶠ n in atTop, f n ≤ ENNReal.ofReal (b n)) : (∑' n, f n) < ∞ := by
+bounded by a series with finite sum. -/
+theorem ENNReal.tsum_lt_top_of_eventually_le {f b : ℕ → ℝ≥0∞}
+    (hf : ∀ n, f n ≠ ∞) (hb : (∑' n, b n) < ∞)
+    (h : ∀ᶠ n in atTop, f n ≤ b n) : (∑' n, f n) < ∞ := by
   obtain ⟨N, hN⟩ := eventually_atTop.1 h
-  have hs : Summable (fun n ↦ (f n).toReal) := (summable_nat_add_iff N).1 <|
-    Summable.of_nonneg_of_le (fun _ ↦ ENNReal.toReal_nonneg) (fun n ↦ by
-      simpa only [ENNReal.toReal_ofReal (hb₀ _)] using
-        ENNReal.toReal_mono ENNReal.ofReal_ne_top (hN (n + N) (Nat.le_add_left N n)))
-      ((summable_nat_add_iff N).2 hb)
-  simpa only [ENNReal.ofReal_toReal (hf _)] using hs.tsum_ofReal_lt_top
+  rw [← sum_add_tsum_compl (Finset.range N) f]
+  refine ENNReal.add_lt_top.2 ⟨ENNReal.sum_lt_top.2 fun n _ ↦ (hf n).lt_top, ?_⟩
+  refine (tsum_le_tsum (g := fun n : {n // n ∉ Finset.range N} ↦ b n) fun n ↦
+    hN n (by simpa only [Finset.mem_range, not_lt] using n.property)).trans_lt ?_
+  exact (CompleteLattice.summable.tsum_le_tsum_of_inj Subtype.val Subtype.val_injective
+    (fun _ _ ↦ zero_le) (fun _ ↦ le_rfl) CompleteLattice.summable).trans_lt hb
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :
