@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -106,8 +107,7 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
     Module.Finite.of_surjective (g' : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x))) hsurj
   have hdim' : Module.finrank 𝕜 (TangentSpace I' (f x)) =
       Module.finrank 𝕜 (TangentSpace I'' (g (f x))) := by
-    rw [(tangentSpaceCastModel I' (f x)).toLinearEquiv.finrank_eq,
-      (tangentSpaceCastModel I'' (g (f x))).toLinearEquiv.finrank_eq, hdim]
+    rw [finrank_tangentSpace, finrank_tangentSpace, hdim]
   have hinj : Function.Injective g' :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
       (f := (g' : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))) hdim').2 hsurj
