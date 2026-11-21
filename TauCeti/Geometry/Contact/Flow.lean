@@ -41,7 +41,10 @@ contactomorphisms for every `t` exactly when `R_α f = 0`
 particular a complete Reeb flow consists of strict contactomorphisms
 (`IsContactForm.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField`), and is packaged as
 a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
-(`IsContactForm.exists_reebFlow_ne`).
+(`IsContactForm.exists_reebFlow_ne`). The complete Reeb flow is jointly smooth
+(`IsContactForm.contMDiff_reebFlow_uncurry`) and preserves `α`, `R_α`, `ξ = ker α` and `dα`
+(`IsContactForm.mpullback_reebFlow_apply`, `IsContactForm.mfderiv_reebFlow_apply_self`,
+`IsContactForm.mfderiv_reebFlow_mem_kerDistribution`, `IsContactForm.mextDeriv_mfderiv_reebFlow`).
 
 ## Contact action, symplectic transport, and linearized Reeb return maps
 
@@ -646,6 +649,77 @@ theorem IsContactForm.isMIntegralCurve_reebFlow (hα : α.IsContactForm)
 theorem IsContactForm.isCompleteVectorField_reebVectorField [CompactSpace M]
     (hα : α.IsContactForm) : IsCompleteVectorField α.reebVectorField :=
   isCompleteVectorField_of_compactSpace (contMDiff_one_reebVectorField hα)
+
+namespace IsContactForm
+
+section Complete
+
+variable (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
+
+/-- Unfolds `IsContactForm.reebFlow` as `TauCeti.globalFlow` of `α.reebVectorField`. -/
+theorem reebFlow_def :
+    hα.reebFlow hc =
+      globalFlow α.reebVectorField (hα.contMDiff_reebVectorField.of_le (by simp)) hc :=
+  (rfl)
+
+/-- The Reeb flow equals the time-`t` global flow diffeomorphism at every point. -/
+theorem reebFlow_eq_globalFlowDiffeomorph (t : ℝ) (x : M) :
+    hα.reebFlow hc t x =
+      globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t x :=
+  (globalFlowDiffeomorph_apply hc le_top hα.contMDiff_reebVectorField t x).symm
+
+/-- As a function, the time-`t` map of `reebFlow` agrees with `globalFlowDiffeomorph`. -/
+theorem reebFlow_eq_coe_globalFlowDiffeomorph (t : ℝ) :
+    hα.reebFlow hc t = ⇑(globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t) :=
+  funext (hα.reebFlow_eq_globalFlowDiffeomorph hc t)
+
+/-- Every integral curve of the Reeb vector field is an orbit of the Reeb flow. -/
+theorem reebFlow_eq_of_isMIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ α.reebVectorField) (t : ℝ) :
+    hα.reebFlow hc t (γ 0) = γ t :=
+  globalFlow_eq_of_isMIntegralCurve _ hc hγ t
+
+/-- The Reeb flow is jointly smooth in time and space. -/
+theorem contMDiff_reebFlow_uncurry :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (Function.uncurry (hα.reebFlow hc)) :=
+  contMDiff_globalFlow_uncurry hc le_top hα.contMDiff_reebVectorField
+
+/-- The time-`t` map of the Reeb flow is smooth. -/
+theorem contMDiff_reebFlow_apply (t : ℝ) :
+    ContMDiff I I ∞ (hα.reebFlow hc t) :=
+  contMDiff_globalFlow_apply hc le_top hα.contMDiff_reebVectorField t
+
+/-- Each time-`t` map of the Reeb flow pulls `α` back to `α`. -/
+theorem mpullback_reebFlow_apply (t : ℝ) (x : M) :
+    TauCeti.mpullback I I (hα.reebFlow hc t) α.val x = α.val x := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact hα.mpullback_flowOf_reebVectorField_apply (hc.mem_flowDomain t x)
+
+/-- The differential of the Reeb flow preserves the Reeb vector field. -/
+theorem mfderiv_reebFlow_apply_self (t : ℝ) (x : M) :
+    mfderiv I I (hα.reebFlow hc t) x (α.reebVectorField x) =
+      α.reebVectorField (hα.reebFlow hc t x) :=
+  mfderiv_globalFlow_apply_self _ hc t x
+
+/-- The differential of the Reeb flow maps the contact distribution `ξ = ker α` to itself. -/
+theorem mfderiv_reebFlow_mem_kerDistribution (t : ℝ) {x : M} {v : TangentSpace I x}
+    (hv : v ∈ α.kerDistribution x) :
+    mfderiv I I (hα.reebFlow hc t) x v ∈ α.kerDistribution (hα.reebFlow hc t x) := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact (hα.mfderiv_flowOf_reebVectorField_mem_kerDistribution_iff
+    (hc.mem_flowDomain t x) v).2 hv
+
+/-- The Reeb flow preserves the exterior derivative `dα` on tangent vectors. -/
+theorem mextDeriv_mfderiv_reebFlow (t : ℝ) (x : M) (v w : TangentSpace I x) :
+    mextDeriv α.val (hα.reebFlow hc t x)
+        ![mfderiv I I (hα.reebFlow hc t) x v, mfderiv I I (hα.reebFlow hc t) x w] =
+      mextDeriv α.val x ![v, w] := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact hα.mextDeriv_mfderiv_flowOf_reebVectorField (hc.mem_flowDomain t x) v w
+
+end Complete
+
+end IsContactForm
 
 end ReebFlow
 

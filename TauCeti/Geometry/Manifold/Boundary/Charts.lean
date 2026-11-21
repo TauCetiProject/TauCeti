@@ -28,9 +28,9 @@ this work, and they are the content of the file.
 
 * **The boundary is visible in every chart.** Mathlib defines a boundary point through the chart
   *at that point*. Detecting it in any other chart is the topological invariance of the boundary,
-  `OpenPartialHomeomorph.isBoundaryPoint_iff_mem_frontier_range`, which rests on invariance of
-  domain and needs no smoothness. This file specialises it to the Euclidean half-space equation
-  `x ∈ ∂M ↔ (e x) 0 = 0`.
+  `ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`, which rests on
+  invariance of domain and needs no smoothness. This file specialises it to the Euclidean
+  half-space equation `x ∈ ∂M ↔ (e x) 0 = 0`.
 * **The transition maps stay `C^k`.** A boundary transition map is the ambient transition map
   conjugated by the linear parametrization of the coordinate hyperplane, and `ContDiffOn` composes
   with continuous linear maps, so no new analysis is needed.
@@ -91,7 +91,7 @@ point exactly when any chart around it reads it with positive zeroth coordinate.
 theorem ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace d)} {x : M} (hx : x ∈ e.source) :
     (𝓡∂ d).IsInteriorPoint x ↔ 0 < (e x).val 0 := by
-  rw [e.isInteriorPoint_iff_mem_interior_range _ hx,
+  rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range_of_finiteDimensional hx,
     interior_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact Iff.rfl
 
@@ -108,7 +108,7 @@ the boundary exactly when any chart around it reads it with vanishing zeroth coo
 theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.source) :
     x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).val 0 = 0 := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    e.isBoundaryPoint_iff_mem_frontier_range _ hx,
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
     frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
 

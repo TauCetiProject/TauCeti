@@ -13,9 +13,10 @@ public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basi
 
 For an element `a` of a complex Banach algebra, the holomorphic germ calculus
 `holomorphicCalculus a` reflects units: `f(a)` is invertible exactly when the germ `f` has no
-zero on the spectrum of `a`. Consequently the calculus commutes with `Ring.inverse`, it agrees
-with rational functions whose poles lie off the spectrum, it sends `(μ - z)⁻¹` to the resolvent
-at `μ`, and it satisfies the spectral mapping theorem `σ(f(a)) = f(σ(a))`.
+zero on the spectrum of `a`. Consequently the calculus commutes with `Ring.inverse`, it sends
+quotients to products with inverses and so agrees with rational functions whose poles lie off the
+spectrum, it sends `(μ - z)⁻¹` to the resolvent at `μ`, and it satisfies the spectral mapping
+theorem `σ(f(a)) = f(σ(a))`.
 
 The key step is that a germ vanishing at `λ ∈ σ(a)` factors as `(z - λ) h(z)`, so that
 `f(a) = (a - λ) h(a) = h(a) (a - λ)` cannot be invertible. The zero algebra, where the spectrum
@@ -29,6 +30,8 @@ and the germ algebra are trivial, is included.
 * `TauCeti.spectrum_holomorphicCalculus`, `TauCeti.spectrum_holomorphicCalculus_ofFun`,
   `TauCeti.spectrum_holomorphicCalculusOn`, and `TauCeti.spectrum_holomorphicCalculusOn_of`: the
   spectral mapping theorem for germs, represented germs, and functions on an open neighbourhood.
+* `TauCeti.holomorphicCalculus_ofFun_div` and `TauCeti.holomorphicCalculus_polynomial_div`:
+  quotients are sent to quotients, so the calculus agrees with rational functions.
 
 ## References
 
@@ -92,6 +95,20 @@ theorem holomorphicCalculus_ofFun_inv (a : A) (f : ℂ → ℂ)
       Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) := by
   rw [holomorphicGerms.ofFun_inv hf hne, holomorphicCalculus_ringInverse]
 
+/-- The calculus sends a quotient by a function with no zero on the spectrum to the product with
+the inverse of the denominator's value. -/
+theorem holomorphicCalculus_ofFun_div (a : A) {f g : ℂ → ℂ}
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) (hg : AnalyticOnNhd ℂ g (spectrum ℂ a))
+    (hne : ∀ z ∈ spectrum ℂ a, g z ≠ 0) :
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hne)) =
+      holomorphicCalculus a (holomorphicGerms.ofFun f hf) *
+        Ring.inverse (holomorphicCalculus a (holomorphicGerms.ofFun g hg)) := by
+  have h : holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hne) =
+      holomorphicGerms.ofFun f hf * holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) (hg.inv hne) := by
+    rw [← holomorphicGerms.ofFun_mul, holomorphicGerms.ofFun_eq_iff]
+    exact .of_forall fun z ↦ div_eq_mul_inv _ _
+  rw [h, map_mul, holomorphicCalculus_ofFun_inv a _ hg hne]
+
 /-- The calculus agrees with rational functions whose poles lie off the spectrum. -/
 theorem holomorphicCalculus_polynomial_div (a : A) (p q : Polynomial ℂ)
     (hq : ∀ x ∈ spectrum ℂ a, q.eval x ≠ 0) :
@@ -99,15 +116,9 @@ theorem holomorphicCalculus_polynomial_div (a : A) (p q : Polynomial ℂ)
       (((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)).div
         ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq)) =
       Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q) := by
-  have hp := (AnalyticOnNhd.eval_polynomial (𝕜 := ℂ) p).mono (subset_univ (spectrum ℂ a))
-  have hq' := (AnalyticOnNhd.eval_polynomial (𝕜 := ℂ) q).mono (subset_univ (spectrum ℂ a))
-  have h : holomorphicGerms.ofFun (fun z ↦ p.eval z / q.eval z) (hp.div hq' hq) =
-      holomorphicGerms.ofFun (fun z ↦ p.eval z) hp *
-        holomorphicGerms.ofFun (fun z ↦ (q.eval z)⁻¹) (hq'.inv hq) := by
-    rw [← holomorphicGerms.ofFun_mul, holomorphicGerms.ofFun_eq_iff]
-    exact .of_forall fun z ↦ div_eq_mul_inv _ _
-  rw [h, map_mul, holomorphicCalculus_ofFun_inv a _ hq' hq, holomorphicCalculus_polynomial,
-    holomorphicCalculus_polynomial]
+  rw [holomorphicCalculus_ofFun_div a ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))
+    ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq,
+    holomorphicCalculus_polynomial, holomorphicCalculus_polynomial]
 
 /-- The calculus sends `z ↦ (μ - z)⁻¹` to the resolvent of `a` at a point `μ` off the
 spectrum. -/

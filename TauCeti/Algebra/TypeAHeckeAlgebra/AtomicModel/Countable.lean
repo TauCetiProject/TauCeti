@@ -242,7 +242,8 @@ theorem countableAtomicTrace_star_mul_self_nonneg [PartialOrder R] [StarRing R] 
     0 ≤ countableAtomicTrace pos q p hp n (star x * x) :=
   ge_of_tendsto (tendsto_atomicTrace_finset pos q p hp n (star x * x)) <|
     Eventually.of_forall fun s ↦
-      atomicTrace_star_mul_self_nonneg (fun a : s ↦ pos a) q (fun a : s ↦ hp0 a) x
+      atomicTrace_star_mul_self_nonneg (fun a : s ↦ pos a) q (fun a : s ↦ p a)
+        (fun a : s ↦ hp0 a) x
 
 /-- Conjugating `countableAtomicTrace` conjugates both the weights and the argument. -/
 theorem star_countableAtomicTrace [StarRing R] [NormedStarGroup R]
@@ -264,7 +265,8 @@ theorem countableAtomicTrace_star [StarRing R] [ContinuousStar R]
       star (countableAtomicTrace pos q p hp_sum n x) :=
   tendsto_nhds_unique (tendsto_atomicTrace_finset pos q p hp_sum n (star x)) <|
     ((continuous_star.tendsto _).comp (tendsto_atomicTrace_finset pos q p hp_sum n x)).congr
-      fun s ↦ (atomicTrace_star (fun a : s ↦ pos a) q (fun a : s ↦ hp a) x).symm
+      fun s ↦ (atomicTrace_star (fun a : s ↦ pos a) q (fun a : s ↦ p a)
+        (fun a : s ↦ hp a) x).symm
 
 /-- **Null space of a strictly positive countable atomic trace** over a complete normed
 `StarOrderedRing` with `OrderClosedTopology` and no zero divisors:

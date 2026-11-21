@@ -80,10 +80,10 @@ private theorem ocneanuTrace_wenzlParam_nonneg {q : ℂˣ} [Fact (IsSelfAdjoint 
   cases b
   · simp only [Bool.false_eq_true, ↓reduceIte, hmap, mul_wenzlParam_neg_natCast_sub h1Q hcZ,
       ← TypeAHeckeAlgebra.atomicTrace_negGeometric_eq q hcZ (star y * y)]
-    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q hw y
+    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q _ hw y
   · simp only [↓reduceIte, hmap, mul_wenzlParam_natCast_sub h1Q hcZ,
       ← TypeAHeckeAlgebra.atomicTrace_geometric_eq q hcZ (star y * y)]
-    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q hw y
+    exact TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg _ q _ hw y
 
 /-- **Positivity of the Ocneanu trace across Wenzl's positive-real parameter set.** For real nonzero
 `q : ℂˣ` with `(Q : ℂ) = (q : ℂ) ^ 2` and `η ∈ wenzlPositiveSet Q`, the Ocneanu trace at

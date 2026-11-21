@@ -450,7 +450,7 @@ theorem toLp_congrRescale_ae_eq
   have hι : Measurable ι :=
     (WithMetric.continuous_toWithMetric.comp WithMetric.continuous_ofWithMetric).measurable
   obtain ⟨C, hC, hmap⟩ := exists_map_riemannianVolume_le_smul_rescale g hf hf_pos
-  let L := Lp.compOfMapLeSmul (E := ℝ) (p := 2) ℝ hι hC hmap
+  let L := Lp.compOfMapLeSmul (E := ℝ) (p := 2) ℝ hι.aemeasurable hC hmap
   have heq : toLp (congrRescale g hf hf_pos w) = L (toLp w) := by
     refine induction_on w (isClosed_eq (toLp.continuous.comp (congrRescale g hf hf_pos).continuous)
       (L.continuous.comp toLp.continuous)) fun u ↦ ?_
@@ -459,13 +459,13 @@ theorem toLp_congrRescale_ae_eq
     filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I (WithMetric g))
         ((u.comp (WithMetric.diffeomorphWithMetric g ĝ ∞).toContMDiffMap :
           C^∞⟮I, WithMetric g; ℝ⟯) : C(WithMetric g, ℝ)),
-      Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι hC hmap
+      Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι.aemeasurable hC hmap
         (ContinuousMap.toLp 2 (riemannianVolume I (WithMetric ĝ)) ℝ (u : C(WithMetric ĝ, ℝ))),
-      (QuasiMeasurePreserving.of_map_le_smul hι hmap).ae_eq_comp
+      (QuasiMeasurePreserving.of_map_le_smul hι.aemeasurable hmap).ae_eq_comp
         (ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) (riemannianVolume I (WithMetric ĝ))
           (u : C(WithMetric ĝ, ℝ)))] with x h1 h2 h3
     rw [h1, h2, h3]; simp [ι]
-  exact heq ▸ Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι hC hmap (toLp w)
+  exact heq ▸ Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) hι.aemeasurable hC hmap (toLp w)
 
 end Rescale
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import Mathlib.Analysis.Complex.Schwarz
 
 /-!
 # Schwarz's lemma with prescribed zeros
@@ -28,18 +29,28 @@ At a zero `a ∈ s` itself the same quotient controls the derivative of order `k
 `f⁽ᵏ⁽ᵃ⁾⁾(a) = (k a)! • h a`. This bounds the first nonvanishing derivative of an auxiliary function
 at one of its zeros, as in Gelfond's proof of the Gelfond–Schneider theorem.
 
+At a single centre `c` on an open disc `ball c ρ`, no continuity up to the boundary circle is
+required: if `g` is holomorphic and bounded by `M` on `ball c ρ` and vanishes to order at least `T`
+at `c`, then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `ball c ρ`
+(`Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`), deduced from Mathlib's higher-order Schwarz
+lemma `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`.
+
 ## Main results
 
 * `TauCeti.norm_le_mul_prod_div_pow`: the bound by the product over the zeros.
 * `TauCeti.norm_le_mul_three_mul_div_pow`: the bound `M * (3 * R / T) ^ ∑ x ∈ s, k x`.
 * `TauCeti.norm_iteratedDeriv_le_mul_prod_div_pow`: the bound for the derivative of order `k a`
   at a zero `a ∈ s`.
+* `Complex.norm_le_mul_div_pow_of_le_analyticOrderAt`: the bound `M * (‖w - c‖ / ρ) ^ T` on an
+  open disc for a zero of order at least `T` at the centre.
 
 ## References
 
 * J.-H. Evertse, *Diophantine approximation*, lecture notes (2019), ch. 4, §4.4, Lemma 4.26.
 * M. Waldschmidt, *Diophantine approximation on linear algebraic groups*, Springer (2000), §2.2,
-  Lemma 2.4.
+  Lemma 2.4, and §4.5, Lemma 4.13.
+* Michail Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
+  commit `1d51891b5b`, `Mathlib/NumberTheory/Transcendental/Baker/Interpolation.lean`, Apache 2.0).
 -/
 
 public section
@@ -203,3 +214,22 @@ theorem norm_le_mul_three_mul_div_pow {R : ℝ} (hf : AnalyticOnNhd ℂ f (close
   nlinarith [norm_nonneg (x - c)]
 
 end TauCeti
+
+/-- **Schwarz's lemma for a zero of order `T` on an open disc.** If `g` is holomorphic and bounded
+by `M` on the open disc `Metric.ball c ρ` and vanishes to order at least `T` at the centre `c`,
+then `‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T` throughout `Metric.ball c ρ`. Unlike
+`TauCeti.norm_le_mul_prod_div_pow`, no continuity up to the boundary circle is required. -/
+theorem Complex.norm_le_mul_div_pow_of_le_analyticOrderAt {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] {g : ℂ → V} {c : ℂ} {ρ M : ℝ}
+    (hd : DifferentiableOn ℂ g (Metric.ball c ρ)) (hM : ∀ w ∈ Metric.ball c ρ, ‖g w‖ ≤ M)
+    {T : ℕ} (hT : (T : ℕ∞) ≤ analyticOrderAt g c) {w : ℂ} (hw : w ∈ Metric.ball c ρ) :
+    ‖g w‖ ≤ M * (‖w - c‖ / ρ) ^ T := by
+  rcases Nat.eq_zero_or_pos T with rfl | hTpos
+  · simpa using hM w hw
+  have hgc : g c = 0 :=
+    apply_eq_zero_of_analyticOrderAt_ne_zero ((Nat.cast_pos.2 hTpos).trans_le hT).ne'
+  have hmaps : Set.MapsTo g (ball c ρ) (closedBall (g c) M) := fun z hz ↦ by
+    simpa [hgc] using hM z hz
+  have hlittle := TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt hTpos hT
+  have hest := Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO hd hmaps hlittle hw
+  rwa [hgc, dist_zero_right, dist_eq_norm, Nat.sub_add_cancel hTpos] at hest

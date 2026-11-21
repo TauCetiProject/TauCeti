@@ -16,6 +16,8 @@ curvature:
 
 * `OrthonormalBasis.sum_apply_mul_inner`: a linear functional `ℓ` satisfies
   `∑ i, ℓ (b i) * ⟪b i, a⟫ = ℓ a`, the expansion of `a` in `b` pushed through `ℓ`.
+* `OrthonormalBasis.sum_apply_mul_inner_mul_inner`: a scalar-valued bilinear map `B` satisfies
+  `∑ i, ∑ j, B (u i) (v j) * ⟪u i, x⟫ * ⟪v j, y⟫ = B x y` in a pair of orthonormal bases.
 * `OrthonormalBasis.sum_inner_smul_rankOne`: an operator is the sum of its matrix coefficients
   times the corresponding rank-one operators.
 * `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the two-basis expansion
@@ -68,6 +70,21 @@ theorem real_inner_fin_two {V : Type*} [NormedAddCommGroup V] [InnerProductSpace
     real_inner_comm (b 1) y]
 
 variable {F κ : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype κ]
+
+/-- A scalar-valued bilinear map is recovered from its values on a pair of orthonormal bases:
+`∑ i, ∑ j, B (u i) (v j) * ⟪u i, x⟫ * ⟪v j, y⟫ = B x y`. -/
+theorem sum_apply_mul_inner_mul_inner (u : OrthonormalBasis ι 𝕜 E)
+    (v : OrthonormalBasis κ 𝕜 F) (B : E →ₗ[𝕜] F →ₗ[𝕜] 𝕜) (x : E) (y : F) :
+    ∑ i, ∑ j, B (u i) (v j) * ⟪u i, x⟫_𝕜 * ⟪v j, y⟫_𝕜 = B x y := by
+  have hj (i : ι) :
+      ∑ j, B (u i) (v j) * ⟪u i, x⟫_𝕜 * ⟪v j, y⟫_𝕜 = B (u i) y * ⟪u i, x⟫_𝕜 := by
+    calc ∑ j, B (u i) (v j) * ⟪u i, x⟫_𝕜 * ⟪v j, y⟫_𝕜
+        = (∑ j, B (u i) (v j) * ⟪v j, y⟫_𝕜) * ⟪u i, x⟫_𝕜 := by
+          rw [Finset.sum_mul]
+          exact Finset.sum_congr rfl fun _ _ ↦ by ring
+      _ = B (u i) y * ⟪u i, x⟫_𝕜 := by rw [v.sum_apply_mul_inner]
+  simp_rw [hj]
+  simpa only [LinearMap.flip_apply] using u.sum_apply_mul_inner (B.flip y) x
 
 /-- **Expansion in rank-one operators.** For orthonormal bases `(uᵢ)` of `E` and `(vⱼ)` of `F`,
 every `C : F →L[𝕜] E` is the sum of its matrix coefficients `⟪uᵢ, C vⱼ⟫` times the rank-one

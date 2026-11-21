@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.SpecialFunctions.Arcosh
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Data.Nat.Factorial.Basic
 
@@ -49,6 +50,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
 * `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
   derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
@@ -56,6 +58,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
+* `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
+* `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
+  `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -348,6 +353,16 @@ theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
 theorem tendsto_cosh_atBot : Filter.Tendsto cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
 
+/-- The shifted hyperbolic cosine `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`. -/
+theorem bijOn_cosh_sub_one_Ioi :
+    Set.BijOn (fun u : ℝ ↦ cosh u - 1) (Set.Ioi 0) (Set.Ioi 0) := by
+  refine ⟨fun u hu ↦ sub_pos.mpr (one_lt_cosh.mpr (ne_of_gt hu)),
+    sub_left_injective.comp_injOn coshOpenPartialHomeomorph.injOn, fun τ hτ ↦ ?_⟩
+  have hτ' : 1 < τ + 1 := by linarith [Set.mem_Ioi.mp hτ]
+  refine ⟨arcosh (τ + 1), arcosh_pos hτ', ?_⟩
+  dsimp only
+  rw [cosh_arcosh hτ'.le, add_sub_cancel_right]
+
 /-- The derivative of `log (cosh x)` is `tanh x`. -/
 theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :
     HasDerivAt (fun x ↦ Real.log (Real.cosh x)) (Real.tanh x) x := by
@@ -400,5 +415,22 @@ theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
       (1 - tanh α * tanh θ) / 2 := by
   rw [cosh_sub, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
   field_simp
+
+/-- The complex hyperbolic cosine is bounded by the mean of the norms of the two exponentials:
+`‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2`. -/
+theorem norm_cosh_le (z : ℂ) : ‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 := by
+  rw [cosh, norm_div, Complex.norm_two]
+  gcongr
+  exact norm_add_le _ _
+
+/-- The bound `Complex.norm_cosh_le` with a common factor `w`:
+`‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2`. It dominates `cosh z * w` by the two
+exponential terms `exp (± z) * w`. -/
+theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2 := by
+  calc ‖cosh z * w‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 * ‖w‖ := by
+        rw [norm_mul]
+        gcongr
+        exact norm_cosh_le z
+    _ = _ := by rw [norm_mul, norm_mul]; ring
 
 end Complex
