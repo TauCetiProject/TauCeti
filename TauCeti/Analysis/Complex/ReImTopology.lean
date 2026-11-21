@@ -12,9 +12,10 @@ public import Mathlib.Topology.Sets.Opens
 # Upper halves of open planar sets
 
 The open upper half `W ∩ {0 < im}` of an open set `W ⊆ ℂ` is packaged as an open set,
-`TopologicalSpace.Opens.upperHalf`. A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper
-half-plane has interior `Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), which as an
-open set is the upper half of `Ω`
+`TopologicalSpace.Opens.upperHalf`. A closed half-plane `{a ≤ im}` is a neighbourhood of each
+point of the open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively open
+subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior `Ω ∩ {0 < im}`
+(`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
 (`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
@@ -58,6 +59,12 @@ theorem TopologicalSpace.Opens.coe_upperHalf_subset (W : Opens ℂ) :
   fun _ hz => ⟨(Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2.le⟩
 
 namespace TauCeti
+
+/-- A closed half-plane `{z : ℂ | a ≤ z.im}` is a neighbourhood of each point of the open
+half-plane `{z | a < z.im}`. -/
+theorem setOfPred_le_im_mem_nhds {a : ℝ} {w : ℂ} (hw : a < w.im) :
+    {z : ℂ | a ≤ z.im} ∈ 𝓝 w :=
+  mem_interior_iff_mem_nhds.mp (by rwa [Complex.interior_setOfPred_le_im])
 
 /-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
 `Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets
