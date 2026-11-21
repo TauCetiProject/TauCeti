@@ -231,6 +231,13 @@ theorem mem_modelsOfTheory_reductConfiguration_iff (g : L →ᴸ L') (c : Relati
   let := g.reduct V
   exact g.onTheory_model T
 
+/-- Pulling back `modelsOfTheory T` along `g.reductConfiguration` yields
+`modelsOfTheory (g.onTheory T)`. -/
+@[simp]
+theorem preimage_reductConfiguration_modelsOfTheory (g : L →ᴸ L') (T : L.Theory) :
+    g.reductConfiguration ⁻¹' modelsOfTheory (V := V) T = modelsOfTheory (g.onTheory T) :=
+  Set.ext fun c => (g.mem_modelsOfTheory_reductConfiguration_iff c T).symm
+
 end LHom
 
 namespace LEquiv

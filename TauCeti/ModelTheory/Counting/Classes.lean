@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
+import TauCeti.Data.Setoid.Cardinal
 import TauCeti.SetTheory.Descriptive.Silver
 
 /-!
@@ -118,13 +119,8 @@ theorem isoSetoidOn_apply {V : Type w} {φ : L.SentenceInf ι} {c d : modelsOf (
 isomorphism classes as those of `ψ`: the inclusion of model classes is injective on classes. -/
 theorem mk_quotient_isoSetoidOn_le_of_subset {ι' : Type uι'} {V : Type w} {φ : L.SentenceInf ι}
     {ψ : L.SentenceInf ι'} (h : modelsOf (V := V) φ ⊆ modelsOf ψ) :
-    #(Quotient (isoSetoidOn V φ)) ≤ #(Quotient (isoSetoidOn V ψ)) := by
-  refine mk_le_of_injective (f := Quotient.map (inclusion h) fun _ _ hcd => hcd) ?_
-  intro p q
-  induction p, q using Quotient.inductionOn₂ with
-  | h c d =>
-    intro hcd
-    exact Quotient.sound (Quotient.exact (s := isoSetoidOn V ψ) hcd)
+    #(Quotient (isoSetoidOn V φ)) ≤ #(Quotient (isoSetoidOn V ψ)) :=
+  Setoid.mk_quotient_comap_val_le_of_subset h
 
 /-- On a countable carrier, in a language with countably many relation symbols of each arity,
 the models of a sentence have at most continuum many isomorphism classes. -/
