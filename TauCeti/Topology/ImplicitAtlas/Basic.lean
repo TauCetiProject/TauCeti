@@ -302,11 +302,19 @@ theorem regLocus_eq_empty_of_neg {I : Finset A}
     (hI : d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) < 0) : 𝒜.regLocus I = ∅ :=
   eq_empty_of_forall_notMem fun _ hx ↦ (𝒜.nonneg_of_mem_regLocus hx).not_gt hI
 
+/-- A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over the regular
+locus of `X_I`: `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
+theorem footprintMap_notMem_regLocus_of_act_eq {I J : Finset A} (h : I ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi I J) {g : (α : J) → Γ α} (hg : g ≠ 1)
+    (hgI : Finset.restrict₂ (π := Γ) h g = 1) (hx : act J g x = x) :
+    𝒜.footprintMap h x ∉ 𝒜.regLocus I :=
+  fun hreg ↦ hg (𝒜.eq_one_of_act_eq h x hreg g hgI hx)
+
 /-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
 space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
 nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty: a
 nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the point of
-`X_∅`, and `Γ_α` acts freely on `ψ_∅α⁻¹(X_∅^reg)`. -/
+`X_∅`, so `ImplicitAtlas.footprintMap_notMem_regLocus_of_act_eq` applies. -/
 theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
     [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
   refine eq_empty_of_forall_notMem fun y hy ↦ ?_
@@ -315,11 +323,11 @@ theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Sub
     obtain rfl := Finset.mem_singleton.1 hβ
     exact Subsingleton.elim _ _
   obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ α)
-  have hfree := 𝒜.eq_one_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
-    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
-    (Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+  refine 𝒜.footprintMap_notMem_regLocus_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
+    (g := Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+    (fun hg ↦ hγ (by simpa using congr_fun hg ⟨α, Finset.mem_singleton_self α⟩))
     (funext fun β ↦ (Finset.notMem_empty _ β.property).elim) (Subsingleton.elim _ _)
-  exact hγ (by simpa using congr_fun hfree ⟨α, Finset.mem_singleton_self α⟩)
+    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
 
 include 𝒜 in
 /-- A space carries no implicit atlas whose expected dimensions `d + m_I` are all negative,
