@@ -118,14 +118,14 @@ applied to an integrable function that is almost everywhere at least `a`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
-* `TauCeti.measureReal_mul_sq_norm_setAverage_le`: consequently `μ s ‖f_s‖² ≤ ∫_s ‖f‖²` in an
-  inner product space.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.measureReal_mul_sq_norm_setAverage_le`: consequently `μ s ‖f_s‖² ≤ ∫_s ‖f‖²` for
+  `f ∈ L²(s)`.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
 * `TauCeti.setLAverage_add_const`: a constant term comes out of the lower average over a set of
   finite nonzero measure.
@@ -581,6 +581,29 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq {E : Type*} [NormedAddCommGroup
   simp only [Real.eNorm_of_nonneg ha, ← ENNReal.ofReal_pow ha] at h
   exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
 
+/-- The measure of a set `s` of finite measure times the squared norm of the average of `f` over
+`s` is at most `∫_s ‖f‖²`. -/
+theorem measureReal_mul_sq_norm_setAverage_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {s : Set X} {f : X → F} (hs : μ s ≠ ⊤) (hf : MemLp f 2 (μ.restrict s)) :
+    μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2 ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
+  have hf2 : IntegrableOn (fun x ↦ ‖f x‖ ^ 2) s μ := by
+    simpa only [sub_zero] using hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs 0
+  have hnorm : ‖⨍ y in s, f y ∂μ‖ ≤ ⨍ y in s, ‖f y‖ ∂μ := by
+    simp only [setAverage_eq, norm_smul, smul_eq_mul, Real.norm_eq_abs,
+      abs_of_nonneg (inv_nonneg.2 measureReal_nonneg)]
+    exact mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _)
+      (inv_nonneg.2 measureReal_nonneg)
+  calc μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2
+      ≤ μ.real s * ⨍ x in s, ‖f x‖ ^ 2 ∂μ := by
+        gcongr
+        exact (pow_le_pow_left₀ (norm_nonneg _) hnorm 2).trans
+          (sq_setAverage_norm_le_setAverage_norm_sq hf2)
+    _ ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
+        rcases eq_or_ne (μ s) 0 with h0 | h0
+        · simp [Measure.real, h0]
+        · rw [measureReal_def, setAverage_eq, smul_eq_mul, measureReal_def, ← mul_assoc,
+            mul_inv_cancel₀ (ENNReal.toReal_ne_zero.2 ⟨h0, hs⟩), one_mul]
+
 end Jensen
 
 section VanishingProportion
@@ -859,17 +882,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s
     ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hf hfc]
   exact le_add_of_nonneg_right (by positivity)
-
-/-- In a real inner product space, the measure of a set `s` of finite measure times the squared
-norm of the average of `f` over `s` is at most `∫_s ‖f‖²`. -/
-theorem measureReal_mul_sq_norm_setAverage_le (hs : μ s ≠ ⊤) (hf : MemLp f 2 (μ.restrict s)) :
-    μ.real s * ‖⨍ y in s, f y ∂μ‖ ^ 2 ≤ ∫ x in s, ‖f x‖ ^ 2 ∂μ := by
-  have h := setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs
-    (hf.integrableOn_of_subset one_le_two subset_rfl hs)
-    (hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs 0)
-  simp only [sub_zero] at h
-  rw [h]
-  exact le_add_of_nonneg_left (integral_nonneg fun _ => by positivity)
 
 /-- **Comparison of square mean oscillations on nested sets.** Let `s ⊆ t` with `μ t < ∞`, let `f`
 and `H` be square integrable on `t`, and suppose the square mean oscillation of `H` decays from

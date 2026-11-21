@@ -590,8 +590,6 @@ private lemma setAverage_closedBall_restrict_norm_sub_le {κ C V R t : ℝ} (hc 
   exact (div_le_div_of_nonneg_right hψ hS0.le).trans
     (div_le_div_of_nonneg_left hX0 (mul_pos hc hBt) hdS)
 
-variable [CompleteSpace F]
-
 /-- If `Ω` has density at least `c` in `closedBall z s`, `s ≤ R`, and `∫_{B(z, R) ∩ Ω} ‖g‖² ≤ V`,
 then the average `g_s` of `g` over `ball z s ∩ Ω` satisfies `c (s / R)ⁿ μ(B(z, R)) ‖g_s‖² ≤ V`. -/
 private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (hsR : s ≤ R)
@@ -609,6 +607,8 @@ private lemma mul_sq_norm_setAverage_ball_inter_le {s R V : ℝ} (hs : 0 < s) (h
   rw [(div_eq_iff (measureReal_ball_pos μ z hR).ne').1
     (μ.addHaar_real_ball_div_addHaar_real_ball z z hR hs)] at h2
   exact (mul_le_mul_of_nonneg_right h2 (sq_nonneg _)).trans h1
+
+variable [CompleteSpace F]
 
 /-- **Bounded averages from Campanato decay.** Let `κ > 0`, `θ ∈ (0, 1]` and `c > 0`. Let `Ω` have
 density at least `c` in the closed balls `closedBall z t`, `0 < t ≤ R`, let `g` be square
