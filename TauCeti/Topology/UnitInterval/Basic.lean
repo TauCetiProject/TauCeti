@@ -21,6 +21,8 @@ Elementary maps, membership lemmas, and open inclusions for `I = Set.Icc (0 : �
 * `TauCeti.iocToUnitInterval`, `TauCeti.iocOne`, and `TauCeti.iooToIoc`: canonical open embeddings
   `(0, 1] → [0, 1]` (missing only `0`) and `(0, 1) → (0, 1]` (missing only `1 = iocOne`), together
   with their ranges and continuity lemmas.
+* `TauCeti.truncatedShift`: truncated shift `(t, s) ↦ max (s - t) 0` on `I × I`, together with its
+  value formula (`TauCeti.coe_truncatedShift`) and endpoint identities.
 
 ## Main declarations
 
@@ -31,6 +33,9 @@ Elementary maps, membership lemmas, and open inclusions for `I = Set.Icc (0 : �
   coercion formula, continuity, and vanishing at `0` and `1` of `TauCeti.tent`.
 * `TauCeti.iocToUnitInterval`, `TauCeti.iocOne`, `TauCeti.iooToIoc`: canonical open inclusions
   `(0, 1] → [0, 1]` and `(0, 1) → (0, 1]`.
+* `TauCeti.truncatedShift`, `TauCeti.coe_truncatedShift`, `TauCeti.truncatedShift_zero_right`,
+  `TauCeti.truncatedShift_zero_left`, `TauCeti.truncatedShift_one_left`: the truncated shift
+  `I × I → I` and its endpoint laws.
 -/
 
 public section
@@ -130,5 +135,30 @@ theorem notMem_range_iooToIoc_iff (t : Ioc (0 : ℝ) 1) :
 theorem isOpenEmbedding_iooToIoc : IsOpenEmbedding iooToIoc :=
   ⟨IsEmbedding.of_comp continuous_iooToIoc continuous_subtypeVal IsEmbedding.subtypeVal,
     range_iooToIoc ▸ isOpen_compl_singleton⟩
+
+/-- Truncated shift `(t, s) ↦ max (s - t) 0` on `unitInterval × unitInterval`. -/
+noncomputable def truncatedShift : C(I × I, I) where
+  toFun p := ⟨max ((p.2 : ℝ) - (p.1 : ℝ)) 0,
+    le_max_right _ _, max_le ((sub_le_self _ p.1.property.1).trans p.2.property.2) zero_le_one⟩
+  continuous_toFun := Continuous.subtype_mk
+    (((continuous_subtypeVal.comp continuous_snd).sub
+      (continuous_subtypeVal.comp continuous_fst)).max continuous_const) _
+
+/-- The real value of `TauCeti.truncatedShift p` is `max (p.2 - p.1) 0`. -/
+@[simp]
+theorem coe_truncatedShift (p : I × I) :
+    (truncatedShift p : ℝ) = max ((p.2 : ℝ) - (p.1 : ℝ)) 0 := (rfl)
+
+@[simp]
+theorem truncatedShift_zero_right (t : I) : truncatedShift (t, 0) = 0 := by
+  ext; simp [t.property.1]
+
+@[simp]
+theorem truncatedShift_zero_left (s : I) : truncatedShift (0, s) = s := by
+  ext; simp [s.property.1]
+
+@[simp]
+theorem truncatedShift_one_left (s : I) : truncatedShift (1, s) = 0 := by
+  ext; simp [sub_nonpos.mpr s.property.2]
 
 end TauCeti

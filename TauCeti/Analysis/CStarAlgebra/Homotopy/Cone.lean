@@ -71,6 +71,15 @@ noncomputable def pathQuotientKerEvalZeroEquiv (A : Type*) [NonUnitalCStarAlgebr
     (φ := ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I))
     fun a => ⟨ContinuousMap.const I a, by simp⟩
 
+@[simp]
+theorem pathQuotientKerEvalZeroEquiv_mk (A : Type*) [NonUnitalCStarAlgebra A] (f : C(I, A)) :
+    pathQuotientKerEvalZeroEquiv A
+        (TwoSidedIdeal.Quotient.mk
+          (TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I))) f) = f 0 :=
+  (NonUnitalStarAlgHom.quotientKerEquivOfSurjective_mk
+    (φ := ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I)) _ f).trans
+    (ContinuousMap.evalNonUnitalStarAlgHom_apply ℂ A (0 : I) f)
+
 namespace CStarCone
 
 section Basic
@@ -122,6 +131,13 @@ theorem coe_equivKerEvalZero_apply (f : CStarCone A) :
       toPath f := by
   rw [coe_toPath_apply, equivKerEvalZero,
     ZeroAtInftyContinuousMap.coe_equivKerContinuousMapEvalOfNotMemRangeIff_apply]
+
+@[simp]
+theorem equivKerEvalZero_symm_apply
+    (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A (0 : I)))
+    (x : Ioc (0 : ℝ) 1) :
+    equivKerEvalZero.symm g x = (g : C(I, A)) (iocToUnitInterval x) := by
+  simp [equivKerEvalZero]
 
 /-- Evaluation at `1` as a `⋆`-homomorphism `CStarCone A →⋆ₙₐ[ℂ] A`. -/
 abbrev evalOne : CStarCone A →⋆ₙₐ[ℂ] A :=
@@ -178,6 +194,12 @@ noncomputable def quotientKerEvalOneEquiv :
     CStarCone A ⧸ TwoSidedIdeal.ker (evalOne (A := A)) ≃⋆ₐ[ℂ] A :=
   NonUnitalStarAlgHom.quotientKerEquivOfSurjective evalOne_surjective
 
+@[simp]
+theorem quotientKerEvalOneEquiv_mk (f : CStarCone A) :
+    quotientKerEvalOneEquiv (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (evalOne (A := A))) f) =
+      f iocOne := by
+  simp [quotientKerEvalOneEquiv]
+
 /-- Functorial action of a `⋆`-homomorphism `φ : A →⋆ₙₐ[ℂ] B` on cones. -/
 def map (φ : A →⋆ₙₐ[ℂ] B) : CStarCone A →⋆ₙₐ[ℂ] CStarCone B :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom (Ioc (0 : ℝ) 1) φ (map_continuous φ)
@@ -199,44 +221,37 @@ theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
 theorem evalOne_comp_map (φ : A →⋆ₙₐ[ℂ] B) : evalOne.comp (map φ) = φ.comp evalOne := by
   ext f; simp
 
+theorem toPath_comp_map (φ : A →⋆ₙₐ[ℂ] B) :
+    toPath.comp (map φ) =
+      (ContinuousMap.compNonUnitalStarAlgHom I φ (map_continuous φ)).comp toPath := by
+  ext f t
+  by_cases ht0 : t = 0
+  · subst ht0; simp
+  · obtain ⟨x, rfl⟩ := notMem_compl_iff.mp fun hx =>
+      ht0 ((notMem_range_iocToUnitInterval_iff t).mp hx)
+    simp
+
 end Basic
 
 section Contraction
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- Truncated shift `(t, s) ↦ max(s - t, 0)` on `unitInterval × unitInterval`. -/
-private noncomputable def coneShift : C(I × I, I) where
-  toFun p := ⟨max ((p.2 : ℝ) - (p.1 : ℝ)) 0,
-    le_max_right _ _, max_le ((sub_le_self _ p.1.property.1).trans p.2.property.2) zero_le_one⟩
-  continuous_toFun := Continuous.subtype_mk
-    (((continuous_subtypeVal.comp continuous_snd).sub
-      (continuous_subtypeVal.comp continuous_fst)).max continuous_const) _
-
-private theorem coneShift_zero_right (t : I) : coneShift (t, 0) = 0 := by
-  ext; simp [coneShift, t.property.1]
-
-private theorem coneShift_zero_left (s : I) : coneShift (0, s) = s := by
-  ext; simp [coneShift, s.property.1]
-
-private theorem coneShift_one_left (s : I) : coneShift (1, s) = 0 := by
-  ext; simp [coneShift, sub_nonpos.mpr s.property.2]
-
 /-- Continuous path `t ↦ φ_t(f)` in `CStarCone A` induced by precomposing `toPath f` with
-`coneShift`. -/
+`truncatedShift`. -/
 private noncomputable def contractionPath (f : CStarCone A) : C(I, CStarCone A) where
-  toFun t := ofPathEqZero (((toPath f).comp coneShift).curry t) (by
-    rw [ContinuousMap.curry_apply, ContinuousMap.comp_apply, coneShift_zero_right,
+  toFun t := ofPathEqZero (((toPath f).comp truncatedShift).curry t) (by
+    rw [ContinuousMap.curry_apply, ContinuousMap.comp_apply, truncatedShift_zero_right,
       toPath_apply_zero])
   continuous_toFun := by
     rw [(isometry_toPath (A := A)).isUniformInducing.isInducing.continuous_iff]
-    convert ((toPath f).comp coneShift).curry.continuous using 1
+    convert ((toPath f).comp truncatedShift).curry.continuous using 1
     ext t s
     simp
 
 @[simp]
 private theorem contractionPath_apply (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1) :
-    contractionPath f t s = toPath f (coneShift (t, iocToUnitInterval s)) := by
+    contractionPath f t s = toPath f (truncatedShift (t, iocToUnitInterval s)) := by
   simp [contractionPath]
 
 /-- Explicit contraction homotopy on `CStarCone A` given by `φ_t(f)(s) = f(s - t)` for `s > t` and
@@ -250,23 +265,25 @@ noncomputable def contractionHomotopy :
       map_add' f g := by ext t s; simp [map_add]
       map_mul' f g := by ext t s; simp [map_mul]
       map_star' f := by ext t s; simp [map_star] }
-  eval_zero f := by ext s; simp [coneShift_zero_left]
-  eval_one f := by ext s; simp [coneShift_one_left]
+  eval_zero f := by ext s; simp
+  eval_one f := by ext s; simp
 
-theorem contractionHomotopy_apply_of_lt (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1)
+@[simp]
+theorem contractionHomotopy_toHom_apply_of_lt (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1)
     (hst : (t : ℝ) < (s : ℝ)) :
-    (contractionHomotopy (A := A)).eval t f s =
+    (contractionHomotopy (A := A)).toHom f t s =
       f ⟨(s : ℝ) - (t : ℝ), sub_pos.mpr hst, (sub_le_self _ t.property.1).trans s.property.2⟩ := by
-  have hshift : coneShift (t, iocToUnitInterval s) =
+  have hshift : truncatedShift (t, iocToUnitInterval s) =
       iocToUnitInterval ⟨(s : ℝ) - (t : ℝ), sub_pos.mpr hst,
         (sub_le_self _ t.property.1).trans s.property.2⟩ := by
-    ext; simp [coneShift, max_eq_left (sub_pos.mpr hst).le]
+    ext; simp [max_eq_left (sub_pos.mpr hst).le]
   simp [contractionHomotopy, hshift]
 
-theorem contractionHomotopy_apply_of_le (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1)
-    (hst : (s : ℝ) ≤ (t : ℝ)) : (contractionHomotopy (A := A)).eval t f s = 0 := by
-  have hshift : coneShift (t, iocToUnitInterval s) = 0 := by
-    ext; simp [coneShift, max_eq_right (sub_nonpos.mpr hst)]
+@[simp]
+theorem contractionHomotopy_toHom_apply_of_le (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1)
+    (hst : (s : ℝ) ≤ (t : ℝ)) : (contractionHomotopy (A := A)).toHom f t s = 0 := by
+  have hshift : truncatedShift (t, iocToUnitInterval s) = 0 := by
+    ext; simp [max_eq_right (sub_nonpos.mpr hst)]
   simp [contractionHomotopy, hshift]
 
 /-- Every cone C⋆-algebra `CStarCone A` is contractible. -/
@@ -324,6 +341,12 @@ theorem coe_equivKerEvalOne_apply (f : CStarSuspension A) :
   rw [equivKerEvalOne, ZeroAtInftyContinuousMap.coe_equivKerEvalOfNotMemRangeIff_apply, toCone,
     ZeroAtInftyContinuousMap.coe_extendByZeroNonUnitalStarAlgHom]
 
+@[simp]
+theorem equivKerEvalOne_symm_apply
+    (g : TwoSidedIdeal.ker (CStarCone.evalOne (A := A))) (x : Ioo (0 : ℝ) 1) :
+    equivKerEvalOne.symm g x = (g : CStarCone A) (iooToIoc x) := by
+  simp [equivKerEvalOne]
+
 /-- Restrict any cone element `f : CStarCone A` satisfying `CStarCone.evalOne f = 0` to
 `CStarSuspension A`. -/
 noncomputable def ofConeEqZero (f : CStarCone A) (hf1 : CStarCone.evalOne f = 0) :
@@ -353,6 +376,11 @@ noncomputable def equivReal (A : Type*) [NonUnitalCStarAlgebra A] :
   ZeroAtInftyContinuousMap.congrLeftStarAlgEquiv ℂ A iooZeroOneHomeomorphReal
 
 @[simp]
+theorem equivReal_apply (f : CStarSuspension A) (y : ℝ) :
+    equivReal A f y = f (iooZeroOneHomeomorphReal.symm y) := by
+  simp [equivReal]
+
+@[simp]
 theorem equivReal_symm_apply (f : C₀(ℝ, A)) (x : Ioo (0 : ℝ) 1) :
     (equivReal A).symm f x = f (Real.tan (Real.pi * ((x : ℝ) - 2⁻¹))) := by simp [equivReal]
 
@@ -372,6 +400,15 @@ theorem map_comp (ψ : B →⋆ₙₐ[ℂ] C) (φ : A →⋆ₙₐ[ℂ] B) :
     map (ψ.comp φ) = (map ψ).comp (map φ) :=
   ZeroAtInftyContinuousMap.compLeftNonUnitalStarAlgHom_comp (Ioo (0 : ℝ) 1) φ ψ
     (map_continuous φ) (map_continuous ψ)
+
+theorem toCone_comp_map (φ : A →⋆ₙₐ[ℂ] B) :
+    toCone.comp (map φ) = (CStarCone.map φ).comp toCone := by
+  ext f t
+  by_cases ht1 : t = iocOne
+  · subst ht1; simp
+  · obtain ⟨x, rfl⟩ := notMem_compl_iff.mp fun hx =>
+      ht1 ((notMem_range_iooToIoc_iff t).mp hx)
+    simp
 
 /-- The inclusion `CStarSuspension A →⋆ₙₐ[ℂ] CStarCone A` is null-homotopic (the suspension is
 subcontractible inside the cone). -/
