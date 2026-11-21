@@ -24,6 +24,8 @@ manifold differential of a function to tangent vectors whose base point varies.
   smooth section of the tangent bundle of a model space.
 * `contMDiff_tangentBundle_mk_zero`: smoothness of the zero tangent vector over a varying point.
 * `contMDiff_tangentBundle_mk_constBase`: smoothness of a varying model vector over a fixed point.
+* `ContMDiff.contDiff_tangentBundle_mk_constBase`: a `C^n` function on the tangent bundle is `C^n`
+  along each tangent fibre.
 * `TauCeti.mdifferentiableAt_mvfderiv_apply`: a directional derivative of a `C²` function
   along a differentiable vector field is differentiable at the point.
 * `ContMDiffAt.contMDiffAt_mvfderiv_apply`: applying the differential of a function that is
@@ -126,6 +128,12 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
   -- Both fibers are over `x`, so their coordinate change is the identity on the model space.
   change tangentCoordChange I x x x (v q) = v q
   exact tangentCoordChange_self (mem_extChartAt_source x)
+
+/-- A `C^n` function on the tangent bundle is `C^n` along the tangent fibre over each point. -/
+theorem ContMDiff.contDiff_tangentBundle_mk_constBase {g : TangentBundle I M → F}
+    (hg : ContMDiff I.tangent 𝓘(𝕜, F) n g) (x : M) :
+    ContDiff 𝕜 n fun w : E ↦ g (TotalSpace.mk' E x w) :=
+  contMDiff_iff_contDiff.1 (hg.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
 
 end TangentBundleInputs
 
