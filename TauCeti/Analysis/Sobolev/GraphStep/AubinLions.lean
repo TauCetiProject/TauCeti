@@ -80,7 +80,7 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [CompleteSpace
 /-! ### Cutting an interval into `N` pieces -/
 
 /-- The left endpoint `a + k (b - a) / N` of the `k`-th of the `N` intervals of equal length
-cutting `[a, b)`. -/
+cutting `(a, b]`. -/
 private def node (a b : ℝ) (N k : ℕ) : ℝ := a + k * ((b - a) / N)
 
 private theorem node_succ (N k : ℕ) : node a b N (k + 1) = node a b N k + (b - a) / N := by
@@ -103,8 +103,8 @@ private theorem node_le_node (hab : a ≤ b) (N : ℕ) {j k : ℕ} (hjk : j ≤ 
   simp only [node]
   gcongr
 
-/-- The `k`-th piece `[a + k h, a + (k + 1) h)`, with `h = (b - a) / N`. -/
-private abbrev piece (a b : ℝ) (N k : ℕ) : Set ℝ := Ico (node a b N k) (node a b N (k + 1))
+/-- The `k`-th piece `(a + k h, a + (k + 1) h]`, with `h = (b - a) / N`. -/
+private abbrev piece (a b : ℝ) (N k : ℕ) : Set ℝ := Ioc (node a b N k) (node a b N (k + 1))
 
 /-- The interior `(a + k h, a + (k + 1) h)` of the `k`-th piece. -/
 private abbrev pieceIoo (a b : ℝ) (N k : ℕ) : Set ℝ := Ioo (node a b N k) (node a b N (k + 1))
@@ -118,42 +118,22 @@ private theorem pieceIoo_subset_Ioo (hab : a ≤ b) {N : ℕ} {k : ℕ} (hk : k 
 
 private theorem pairwise_disjoint_piece (hab : a ≤ b) (N : ℕ) :
     Pairwise (Function.onFun Disjoint fun k : Fin N ↦ piece a b N k) :=
-  (Monotone.pairwise_disjoint_on_Ico_succ fun _ _ h ↦ node_le_node hab N h).comp_of_injective
+  (Monotone.pairwise_disjoint_on_Ioc_succ fun _ _ h ↦ node_le_node hab N h).comp_of_injective
     Fin.val_injective
 
-private theorem iUnion_piece (hab : a < b) {N : ℕ} (hN : 0 < N) :
-    ⋃ k : Fin N, piece a b N k = Ico a b := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
-  have hb : node a b N N = b := node_self hN.ne'
+private theorem iUnion_piece (hab : a ≤ b) {N : ℕ} (hN : 0 < N) :
+    ⋃ k : Fin N, piece a b N k = Ioc a b := by
+  have h := (Monotone.biUnion_Ico_Ioc_map_succ (fun _ _ h ↦ node_le_node hab N h) 0 N)
+  rw [node_zero, node_self hN.ne'] at h
+  rw [← h]
   ext t
-  simp only [mem_iUnion, mem_Ico]
-  constructor
-  · rintro ⟨k, hk₁, hk₂⟩
-    refine ⟨?_, ?_⟩
-    · exact (node_zero N).symm.trans_le ((node_le_node hab.le N (Nat.zero_le k)).trans hk₁)
-    · exact hb ▸ hk₂.trans_le (node_le_node hab.le N k.isLt)
-  · rintro ⟨ht₁, ht₂⟩
-    -- The index of the piece containing `t` is `⌊(t - a) / h⌋₊`.
-    have hx : 0 ≤ (t - a) / ((b - a) / N) := div_nonneg (sub_nonneg.2 ht₁) hh.le
-    have hxN : (t - a) / ((b - a) / N) < N := by
-      rw [div_lt_iff₀ hh]
-      field_simp [(Nat.cast_pos.2 hN).ne']
-      linarith
-    refine ⟨⟨⌊(t - a) / ((b - a) / N)⌋₊, (Nat.floor_lt hx).2 hxN⟩, ?_, ?_⟩
-    · have := Nat.floor_le hx
-      simp only [node]
-      rw [le_div_iff₀ hh] at this
-      linarith
-    · have := Nat.lt_floor_add_one ((t - a) / ((b - a) / N))
-      rw [node_succ, node]
-      rw [div_lt_iff₀ hh] at this
-      linarith
+  simp [Fin.exists_iff]
 
 /-- Lebesgue measure on `(a, b)` is the sum of its restrictions to the `N` pieces. -/
 private theorem restrict_Ioo_eq_sum (hab : a < b) {N : ℕ} (hN : 0 < N) :
     volume.restrict (Ioo a b) = Measure.sum fun k : Fin N ↦ volume.restrict (piece a b N k) := by
-  rw [Measure.restrict_congr_set Ioo_ae_eq_Ico, ← iUnion_piece hab hN,
-    Measure.restrict_iUnion (pairwise_disjoint_piece hab.le N) fun _ ↦ measurableSet_Ico]
+  rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc, ← iUnion_piece hab.le hN,
+    Measure.restrict_iUnion (pairwise_disjoint_piece hab.le N) fun _ ↦ measurableSet_Ioc]
 
 /-! ### The step approximation -/
 
@@ -168,8 +148,8 @@ private def pieceMean (a b : ℝ) (N k : ℕ) : Lp D p (volume.restrict (Omega :
 /-- The indicator of the `k`-th piece times a constant, as a continuous linear map
 `H → Lᵖ((a, b), H)`. -/
 private def pieceIndicator (a b : ℝ) (N k : ℕ) : H →L[ℝ] Lp H p (volume.restrict (Ioo a b)) :=
-  indicatorConstLpL ℝ p (measurableSet_Ico (a := node a b N k) (b := node a b N (k + 1)))
-    ((Measure.restrict_apply_le _ _).trans_lt measure_Ico_lt_top).ne
+  indicatorConstLpL ℝ p (measurableSet_Ioc (a := node a b N k) (b := node a b N (k + 1)))
+    ((Measure.restrict_apply_le _ _).trans_lt measure_Ioc_lt_top).ne
 
 omit [CompleteSpace H] in
 /-- On `(a, b)`, `pieceIndicator a b N k c` is the indicator of the `k`-th piece with value `c`. -/
@@ -225,7 +205,7 @@ private theorem stepApprox_ae_eq (hΩ : Ioo a b ⊆ Omega) (hab : a < b) {N : �
     ae_restrict_of_ae_restrict_of_subset hsub hind, ae_restrict_mem measurableSet_Ioo]
     with t hs hi ht
   rw [hs, Finset.sum_apply, Finset.sum_eq_single k]
-  · rw [hi k, indicator_of_mem (Ioo_subset_Ico_self ht), pieceMean_apply (hsub.trans hΩ),
+  · rw [hi k, indicator_of_mem (Ioo_subset_Ioc_self ht), pieceMean_apply (hsub.trans hΩ),
       setAverage_eq, setAverage_eq, map_smul, ← ι.integral_comp_comm]
     · refine congrArg _ (integral_congr_ae ?_)
       exact ae_restrict_of_ae_restrict_of_subset (hsub.trans hΩ) (ι.coeFn_compLpL u).symm
@@ -237,7 +217,7 @@ private theorem stepApprox_ae_eq (hΩ : Ioo a b ⊆ Omega) (hab : a < b) {N : �
   · intro j _ hjk
     rw [hi j, indicator_of_notMem]
     exact fun htj ↦ Set.disjoint_left.1 (pairwise_disjoint_piece hab.le N hjk) htj
-      (Ioo_subset_Ico_self ht)
+      (Ioo_subset_Ioc_self ht)
   · exact fun h ↦ absurd (Finset.mem_univ k) h
 
 /-! ### The approximation estimate and compactness -/
@@ -268,7 +248,7 @@ private theorem norm_restrictBaseL_sub_stepApprox_le
     have hlen : node a b N (k + 1) - node a b N k = (b - a) / N := by
       rw [node_succ, add_sub_cancel_left]
     rw [hlen] at hP
-    rw [← Measure.restrict_congr_set Ioo_ae_eq_Ico]
+    rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     refine le_of_eq_of_le (eLpNorm_congr_ae ?_) hP
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hsub
         (Lp.coeFn_sub (restrictBaseL base hΩ u) (stepApprox ι a b N (prev base u))),
