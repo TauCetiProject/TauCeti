@@ -25,9 +25,9 @@ satisfy
 λ 0 ≤ ⋯ ≤ λ (M - 2) ≤ 1,   A · μ k / μ (k - 1) ≤ λ (M - 1),
 ```
 
-with `A > 0` independent of the level `Q` and of the exponents `c`: all minima but the last are at
-most `1`, and a large jump between the consecutive minima `μ (k - 1)` and `μ k` of the original
-domain makes the last minimum of the wedge domain large.
+with `A > 0` independent of the level `Q`, of the exponents `c` and of `p`: all minima but the
+last are at most `1`, and a large jump between the consecutive minima `μ (k - 1)` and `μ k` of the
+original domain makes the last minimum of the wedge domain large.
 
 The upper bounds hold because the wedge domain contains the Plücker vectors of the `p`-subfamilies
 of a basis `y` that meet the first `k` indices
@@ -45,7 +45,8 @@ The lower bound is Minkowski's second theorem twice. Its lower half for the wedg
 product is at most `λ (M - 1) ^ d`, and taking `d`-th roots gives the bound
 (`TauCeti.NumberField.exists_pos_forall_mul_div_le_successiveMinimum_wedge`). Both halves hold for
 every choice of the bijections `σ v` in the wedge exponents, since the weight does not depend on
-them.
+them. The constant there depends on the degree `p`; as only the finitely many degrees
+`p ≤ card ι` occur, their least constant serves for all of them.
 
 ## Main results
 
@@ -53,10 +54,11 @@ them.
   `⋀^p` containing the Plücker vectors of the `p`-subfamilies of a basis meeting the first `k`
   indices has its first `M - 1` minima at most `1`.
 * `TauCeti.NumberField.exists_pos_forall_mul_div_le_successiveMinimum_wedge`: if the first
-  `M - 1` minima of the wedge domain are at most `1`, its last minimum is at least
-  `A · μ k / μ (k - 1)`, with `A > 0` independent of `Q`, `c`, `k` and the bijections.
+  `M - 1` minima of the wedge domain of a fixed degree `p` are at most `1`, its last minimum is
+  at least `A · μ k / μ (k - 1)`, with `A > 0` independent of `Q`, `c` and the bijections.
 * `TauCeti.NumberField.exists_successiveMinimum_wedge`: Bombieri–Gubler's Lemma 7.5.31, the two
-  bounds together for a wedge domain built from the successive minima.
+  bounds together for a wedge domain built from the successive minima, with `A > 0` independent
+  of `p`, `Q` and `c`.
 
 ## References
 
@@ -175,12 +177,12 @@ private theorem exists_pos_forall_mul_div_pow_le_prod_successiveMinimum_wedge
           div_self (hμ k (by omega)).ne', one_pow, mul_one]
 
 /-- **The last minimum of the wedge domain is large after a large jump** (Bombieri–Gubler,
-Lemma 7.5.31). Let the forms `L v` be linearly independent at the infinite places and at `S₀`,
-let `0 < p` and `0 < C`. There is `A > 0` such that for all exponents `c`, levels `0 < Q ≠ 1`,
-`k + p = card ι` and bijections `σ`, if `μ` are the successive minima over `K` of
-`approxDomain S₀ L c Q` and the first `M - 1` successive minima `λ` of the wedge domain
-`approxDomain S₀ (wedgeForms ∘ L) (wedgeExponent c p k σ μ C Q) Q` are at most `1`, where
-`M = (card ι).choose p`, then `A · μ k / μ (k - 1) ≤ λ (M - 1)`. -/
+Lemma 7.5.31), for a fixed degree `p`. Let the forms `L v` be linearly independent at the infinite
+places and at `S₀`, let `0 < p` and `0 < C`. There is `A > 0`, depending on `p`, such that for
+all exponents `c`, levels `0 < Q ≠ 1`, `k + p = card ι` and bijections `σ`, if `μ` are the
+successive minima over `K` of `approxDomain S₀ L c Q` and the first `M - 1` successive minima
+`λ` of the wedge domain `approxDomain S₀ (wedgeForms ∘ L) (wedgeExponent c p k σ μ C Q) Q` are at
+most `1`, where `M = (card ι).choose p`, then `A · μ k / μ (k - 1) ≤ λ (M - 1)`. -/
 theorem exists_pos_forall_mul_div_le_successiveMinimum_wedge {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
@@ -233,19 +235,20 @@ theorem exists_pos_forall_mul_div_le_successiveMinimum_wedge {S₀ : Finset (Fin
 
 /-- **Bombieri–Gubler, Lemma 7.5.31: the successive minima of the wedge domain.** There is
 `C > 0`, depending only on `K` and `ι`, with the following property. Let the forms `L v` be
-linearly independent at the infinite places and at `S₀`, and `0 < p`. There is `A > 0` such that
-for all exponents `c`, levels `0 < Q ≠ 1` and `k + p = card ι`, with `μ` the successive minima over
+linearly independent at the infinite places and at `S₀`. There is `A > 0` such that for all
+`0 < p`, exponents `c`, levels `0 < Q ≠ 1` and `k + p = card ι`, with `μ` the successive minima over
 `K` of `approxDomain S₀ L c Q`, some bijections `σ` make the successive minima `λ` of the wedge
 domain `approxDomain S₀ (wedgeForms ∘ L) (wedgeExponent c p k σ μ C Q) Q` satisfy `λ l ≤ 1` for
 `l + 1 < M` and `A · μ k / μ (k - 1) ≤ λ (M - 1)`, where `M = (card ι).choose p`.
 
 The bijections are those of `exists_plucker_mem_approxDomain_wedgeForms`, applied to a family
-realizing the minima `μ`. -/
+realizing the minima `μ`, and `A` is the least of the constants of
+`exists_pos_forall_mul_div_le_successiveMinimum_wedge` over the degrees `p ≤ card ι`. -/
 theorem exists_successiveMinimum_wedge :
     ∃ C : ℝ, 0 < C ∧ ∀ (S₀ : Finset (FinitePlace K)) (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)),
       (∀ v : InfinitePlace K, LinearIndependent K (L v.val)) →
-      (∀ v ∈ S₀, LinearIndependent K (L v.val)) → ∀ p : ℕ, 0 < p → ∃ A : ℝ, 0 < A ∧
-      ∀ (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (k : ℕ), 0 < Q → Q ≠ 1 →
+      (∀ v ∈ S₀, LinearIndependent K (L v.val)) → ∃ A : ℝ, 0 < A ∧
+      ∀ (p : ℕ) (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) (k : ℕ), 0 < p → 0 < Q → Q ≠ 1 →
         k + p = Fintype.card ι → ∃ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
           (∀ l, l + 1 < (Fintype.card ι).choose p →
             (approxModule S₀ (fun v ↦ wedgeForms (L v) p) (wedgeExponent c p k σ
@@ -262,9 +265,15 @@ theorem exists_successiveMinimum_wedge :
                 ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) Q)
               ((Fintype.card ι).choose p - 1) := by
   obtain ⟨C, hC, hplucker⟩ := exists_plucker_mem_approxDomain_wedgeForms (K := K) (ι := ι)
-  refine ⟨C, hC, fun S₀ L hLinf hLfin p hp ↦ ?_⟩
-  obtain ⟨A, hA, hlast⟩ := exists_pos_forall_mul_div_le_successiveMinimum_wedge hLinf hLfin hp hC
-  refine ⟨A, hA, fun c Q k hQ hQ₁ hkp ↦ ?_⟩
+  refine ⟨C, hC, fun S₀ L hLinf hLfin ↦ ?_⟩
+  -- The constants for the finitely many degrees `p ≤ card ι` have a positive least one.
+  choose! A hA hlast using fun p (hp : 0 < p) ↦
+    exists_pos_forall_mul_div_le_successiveMinimum_wedge hLinf hLfin hp hC
+  set s := insert 1 ((Icc 1 (Fintype.card ι)).image A)
+  refine ⟨s.min' (insert_nonempty _ _), (lt_min'_iff _ _).2 fun a ha ↦ ?_,
+    fun p c Q k hp hQ hQ₁ hkp ↦ ?_⟩
+  · obtain rfl | ⟨p, hp, rfl⟩ := by simpa [s] using ha
+    exacts [one_pos, hA p hp.1]
   set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) with hμ_def
   let _ := discreteTopology_mixedImage_approxModule hLfin c Q
   let _ := isZLattice_mixedImage_approxModule hLfin c hQ.ne'
@@ -300,6 +309,9 @@ theorem exists_successiveMinimum_wedge :
         (approxBody (fun v ↦ wedgeForms (L v) p) e Q) l ≤ 1 :=
     successiveMinimum_le_one_of_forall_plucker_mem (L := fun v ↦ wedgeForms (L v) p) (c := e) hkp
       hy (hmem k p) hl
-  exact ⟨σ, hle, hlast c Q k σ hQ hQ₁ hkp hle⟩
+  refine ⟨σ, hle, le_trans (mul_le_mul_of_nonneg_right (min'_le _ _ (mem_insert_of_mem
+    (mem_image_of_mem _ (mem_Icc.2 ⟨hp, by omega⟩)))) (div_nonneg
+    (Submodule.successiveMinimum_nonneg _ _ _) (Submodule.successiveMinimum_nonneg _ _ _)))
+    (hlast p hp c Q k σ hQ hQ₁ hkp hle)⟩
 
 end TauCeti.NumberField
