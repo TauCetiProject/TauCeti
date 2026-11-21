@@ -94,7 +94,7 @@ private theorem expEval_ne_zero_of_forall_galConj_eq_of_isIntegral {x : K[K]} (h
   -- `1`. Since `K / ℚ` is normal, `σ` is the fixed embedding precomposed with an automorphism `τ`,
   -- and `τ a` is the auxiliary value at `τ γ₀`, of absolute value less than `1`.
   obtain ⟨σ, hσ⟩ := exists_conjugate_one_le_norm (K := K)
-    (α := ⟨a, isIntegral_auxValue hγ₀ hint hl⟩) fun h ↦ ha0 congr($h.1)
+    (α := ⟨a, isIntegral_auxValue hγ₀ hint hl⟩) fun h ↦ ha0 congr(Subtype.val $h)
   set τ := σ.toRatAlgHom.restrictNormal' K
   have hτ : σ a = algebraMap K ℂ (auxValue x m.natAbs p (τ γ₀)) := by
     rw [← hfix τ, auxValue_galConj]

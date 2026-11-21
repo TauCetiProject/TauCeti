@@ -45,6 +45,11 @@ one, are fundamental classes in this sense.
   `μ` exactly when `r` is a unit.
 * `TauCeti.isFundamentalClass_iff_ne_zero`: over a division ring, on a compact connected manifold,
   the fundamental classes are exactly the nonzero top-dimensional classes.
+* `TauCeti.IsFundamentalClass.exists_linearEquiv_isUnit`: on a compact connected manifold, with
+  coefficients free of rank one over a Dedekind-finite ring `k`, the top homology carrying a
+  fundamental class `μ` is a copy of `k` in which `μ` is a unit.
+* `TauCeti.IsFundamentalClass.map_homeomorph`: homeomorphisms carry fundamental classes to
+  fundamental classes.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_fundamentalClass`: the integral fundamental
@@ -53,6 +58,11 @@ one, are fundamental classes in this sense.
   compact oriented manifold, `c • [M]` is a fundamental class exactly when `c = ±1`. In
   particular `2 • [M]` is not (`not_isFundamentalClass_two_zsmul_fundamentalClass`); for `M` the
   circle, the image of `2 • [S¹]` at each point is twice a generator.
+* `TauCeti.HomologicalOrientation.isFundamentalClass_iff_eq_or_eq_neg`: on a compact connected
+  oriented manifold, the integral fundamental classes are exactly `[M]` and `-[M]`.
+* `TauCeti.HomologicalOrientation.exists_eq_smul_mapFundamentalClass_of_isFundamentalClass`: the
+  integral fundamental classes of a space homeomorphic to such a manifold through `e` are
+  `±e_*[M]`.
 * `TauCeti.HomologicalOrientation.isFundamentalClass_rationalFundamentalClass`: the rational
   fundamental class of a compact connected oriented manifold is a fundamental class.
 
@@ -124,6 +134,42 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
 
 end Definition
 
+section Homeomorph
+
+variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M'] {R : Type u} [Ring R]
+  {N : ModuleCat.{w} R} {n : ℕ}
+
+open AlgebraicTopology in
+/-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : M ≃ₜ M'`
+carries a fundamental class of `M` to a fundamental class of `M'`. -/
+theorem IsFundamentalClass.map_homeomorph
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (hμ : IsFundamentalClass μ) (e : M ≃ₜ M') :
+    IsFundamentalClass
+      ((((singularHomologyFunctor (ModuleCat.{w} R) n).obj N).map
+        (TopCat.ofHom (e : C(M, M')))).hom μ) := by
+  intro y
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(M, M')) x = y := e.surjective y
+  have hx : (e : C(M, M')) ⁻¹' {(e : C(M, M')) x} ⊆ {x} := fun z hz ↦ e.injective hz
+  have hx' : (e.symm : C(M', M)) ⁻¹' {x} ⊆ {(e : C(M, M')) x} := fun z hz ↦
+    e.symm_apply_eq.1 hz
+  -- The map of local homology induced by `e` has the one induced by `e.symm` as a section.
+  have hsurj : Function.Surjective (localHomologyMap N (e : C(M, M')) hx n) := fun z ↦ by
+    refine ⟨localHomologyMap N (e.symm : C(M', M)) hx' n z, ?_⟩
+    rw [← ConcreteCategory.comp_apply, localHomologyMap_comp,
+      localHomologyMap_congr N (ContinuousMap.ext fun y ↦ e.apply_symm_apply y :
+        (e : C(M, M')).comp e.symm = ContinuousMap.id M'), localHomologyMap_id]
+    exact congrArg (fun φ ↦ φ.hom z) (localHomologyRestriction_refl N _ n)
+  have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
+  rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
+    LinearMap.range_eq_top.2 hsurj] at h
+  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology.
+  rw [singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
+  exact h
+
+end Homeomorph
+
 section Manifold
 
 variable {M E : Type w} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -191,6 +237,30 @@ theorem isFundamentalClass_iff_ne_zero [T2Space M] [CompactSpace M] [ConnectedSp
   rw [← map_zero (singularHomologyToLocalHomology (ModuleCat.of K K) x _)]
   exact (singularHomologyToLocalHomology_injective _ rfl x).ne hμ
 
+include hn in
+/-- **The top homology of a manifold with a fundamental class is free of rank one.** On a compact
+connected `n`-manifold, with coefficients `R ≃ₗ[k] k` over a Dedekind-finite ring `k` (for instance
+a commutative ring or a domain), if `μ ∈ Hₙ(M; R)` is a fundamental class then `Hₙ(M; R)` is
+isomorphic to `k` by an equivalence sending `μ` to a unit: restriction to the local homology at a
+point is injective (`TauCeti.singularHomologyToLocalHomology_injective`), surjective since its
+image contains the generator given by `μ`, and carries `μ` to a generator. -/
+theorem IsFundamentalClass.exists_linearEquiv_isUnit [T2Space M] [CompactSpace M]
+    [ConnectedSpace M] {k : Type w} [Ring k] [IsDedekindFiniteMonoid k] {R : ModuleCat.{w} k}
+    (eR : R ≃ₗ[k] k) {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k)}
+    (hμ : IsFundamentalClass μ) :
+    ∃ e : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k) ≃ₗ[k] k,
+      IsUnit (e μ) := by
+  obtain ⟨x⟩ : Nonempty M := ConnectedSpace.toNonempty
+  have hsurj : Function.Surjective (singularHomologyToLocalHomology R x n) := by
+    rw [← LinearMap.range_eq_top, eq_top_iff, ← (isFundamentalClass_iff μ).1 hμ x,
+      Submodule.span_le, Set.singleton_subset_iff]
+    exact LinearMap.mem_range_self _ μ
+  let eL := localHomologySingletonLinearEquiv R hn eR x
+  refine ⟨(LinearEquiv.ofBijective _
+    ⟨singularHomologyToLocalHomology_injective R hn x, hsurj⟩).trans eL, ?_⟩
+  -- The image of `μ` generates the local homology, so its coordinate is a unit.
+  exact eL.span_singleton_eq_top_iff_isUnit.1 ((isFundamentalClass_iff μ).1 hμ x)
+
 end Manifold
 
 section Integral
@@ -237,6 +307,46 @@ theorem not_isFundamentalClass_two_zsmul_fundamentalClass [Nonempty M] :
     ¬ IsFundamentalClass ((2 : ℤ) • o.fundamentalClass hn) := by
   rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]
   omega
+
+/-- **The fundamental classes of a connected manifold.** On a compact connected oriented manifold,
+the integral fundamental classes are exactly `[M]` and `-[M]`. -/
+theorem isFundamentalClass_iff_eq_or_eq_neg [ConnectedSpace M]
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)) :
+    IsFundamentalClass μ ↔ μ = o.fundamentalClass hn ∨ μ = -o.fundamentalClass hn := by
+  have : Nonempty M := ConnectedSpace.toNonempty
+  obtain ⟨c, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn μ
+  rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]
+  refine ⟨?_, ?_⟩
+  · rintro (rfl | rfl) <;> simp
+  · rintro (h | h)
+    · exact Or.inl (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
+    · exact Or.inr (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
+
+open AlgebraicTopology CategoryTheory in
+/-- **Fundamental classes of a homeomorphic copy.** If `e : M ≃ₜ X` is a homeomorphism from a
+compact connected oriented manifold, every integral fundamental class of `X` is `±` the image
+`e_*[M]` of the fundamental class of `M`. -/
+theorem exists_eq_smul_mapFundamentalClass_of_isFundamentalClass [ConnectedSpace M] {X : Type}
+    [TopologicalSpace X] (e : M ≃ₜ X)
+    {μ : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ μ = s • o.mapFundamentalClass hn (e : C(M, X)) := by
+  -- Pull `μ` back to `M`, where it is `±[M]`, and push it forward again along `e`.
+  have hμe : (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom (e : C(M, X)))).hom
+      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom (e.symm : C(X, M)))).hom μ) = μ :=
+    congrArg (fun φ ↦ φ.hom μ) (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo (X := TopCat.of M) e)).inv_hom_id
+  rcases (o.isFundamentalClass_iff_eq_or_eq_neg hn _).1 (hμ.map_homeomorph e.symm) with h | h
+  · refine ⟨1, Or.inl rfl, ?_⟩
+    rw [one_smul, mapFundamentalClass_def, ← h]
+    exact hμe.symm
+  · refine ⟨-1, Or.inr rfl, ?_⟩
+    rw [neg_one_zsmul, ← mapFundamentalClass_neg, mapFundamentalClass_def, fundamentalClass_neg,
+      ← h]
+    exact hμe.symm
 
 /-- **The rational fundamental class is a fundamental class** on a compact connected oriented
 manifold: it is nonzero, and over the field `ℚ` every nonzero top-dimensional class is

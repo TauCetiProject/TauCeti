@@ -115,25 +115,27 @@ private noncomputable def baseChangeToTensorAux
   have : Module.Finite B (ContinuousKaehlerDifferential A B) := finite hAB
   letI : TopologicalSpace M := moduleTopology B' M; have : IsModuleTopology B' M := ⟨rfl⟩
   let δ := baseChangeDerivation (A' := A') hAB
-  exact ⟨liftOfFinite δ.1 δ.2.1, fun b ↦ (liftOfFinite_D δ.1 δ.2.1 (inl A B A' b)).trans (δ.2.2 b)⟩
+  exact ⟨liftOfFinite δ.val δ.property.1,
+    fun b ↦ (liftOfFinite_D δ.val δ.property.1 (inl A B A' b)).trans (δ.property.2 b)⟩
 
 private theorem baseChangeToTensor_comp_fromTensor
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
-    (baseChangeToTensorAux (A' := A') hAB).1.comp baseChangeFromTensor = LinearMap.id :=
+    (baseChangeToTensorAux (A' := A') hAB).val.comp baseChangeFromTensor = LinearMap.id :=
   linearMap_tensor_ext hAB fun b ↦ by
     simp only [LinearMap.comp_apply, LinearMap.id_apply, baseChangeFromTensor, map_tmul,
       mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
-    exact (baseChangeToTensorAux (A' := A') hAB).2 b
+    exact (baseChangeToTensorAux (A' := A') hAB).property b
 
 private theorem baseChangeFromTensor_comp_toTensor
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
-    baseChangeFromTensor.comp (baseChangeToTensorAux (A' := A') hAB).1 = LinearMap.id := by
+    baseChangeFromTensor.comp (baseChangeToTensorAux (A' := A') hAB).val = LinearMap.id := by
   have hA'B' := baseChange_isTopologicallyFiniteType (A' := A') hAB
   have : IsNoetherianType (CompletedTensor A B A') := .of_isTopologicallyFiniteType hA'B'
   refine linearMap_ext_of_dense_adjoin hA'B' (CompletedTensor.dense_adjoin_range_inl A B A') ?_
   rintro _ ⟨b, rfl⟩
-  simp only [LinearMap.comp_apply, LinearMap.id_apply, (baseChangeToTensorAux (A' := A') hAB).2,
-    baseChangeFromTensor, map_tmul, mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
+  simp only [LinearMap.comp_apply, LinearMap.id_apply,
+    (baseChangeToTensorAux (A' := A') hAB).property, baseChangeFromTensor, map_tmul,
+    mapSemilinear_D, one_smul, algebraMap_leftAlgebra]
 
 /-- **Huber Proposition 1.6.3(iii) (Base change of continuous differentials)**: for `A → B`
 topologically of finite type into a complete Hausdorff Huber ring `B` of noetherian type and
@@ -146,7 +148,7 @@ noncomputable def baseChangeEquiv (A' : Type*) [CommRing A'] [Algebra A A']
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) :
     ContinuousKaehlerDifferential A' (CompletedTensor A B A') ≃ₗ[CompletedTensor A B A']
       CompletedTensor A B A' ⊗[B] ContinuousKaehlerDifferential A B :=
-  LinearEquiv.ofLinearMap (baseChangeToTensorAux (A' := A') hAB).1 baseChangeFromTensor
+  LinearEquiv.ofLinearMap (baseChangeToTensorAux (A' := A') hAB).val baseChangeFromTensor
     (baseChangeToTensor_comp_fromTensor (A' := A') hAB)
     (baseChangeFromTensor_comp_toTensor (A' := A') hAB)
 
@@ -176,7 +178,7 @@ theorem baseChangeEquiv_D_inl (A' : Type*) [CommRing A'] [Algebra A A']
     (hAB : IsTopologicallyFiniteType (algebraMap A B)) (b : B) :
     baseChangeEquiv A' hAB (D A' (CompletedTensor A B A') (inl A B A' b)) =
       (1 : CompletedTensor A B A') ⊗ₜ[B] D A B b :=
-  (baseChangeToTensorAux (A' := A') hAB).2 b
+  (baseChangeToTensorAux (A' := A') hAB).property b
 
 /-- `baseChangeEquiv` annihilates `d (inr a')`. -/
 @[simp]

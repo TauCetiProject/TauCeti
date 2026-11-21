@@ -158,22 +158,22 @@ private noncomputable def liftDerivationAux :
 nonarchimedean module `M` over a topological ring `R`, to a continuous `A`-derivation on
 `B ⊗̂_A C` along a continuous algebra map `B ⊗̂_A C → R` compatible with `inl` and `inr`. -/
 noncomputable def liftDerivation : Derivation A (CompletedTensor A B C) M :=
-  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).1
+  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).val
 
 /-- The derivation extended to `B ⊗̂_A C` is continuous. -/
 @[fun_prop] theorem continuous_liftDerivation :
     Continuous (liftDerivation dB dC hdB hdC hcont hinl hinr) :=
-  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.1
+  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).property.1
 
 /-- The extended derivation agrees with `dB` on the left coprojection. -/
 @[simp] theorem liftDerivation_inl (b : B) :
     liftDerivation dB dC hdB hdC hcont hinl hinr (inl A B C b) = dB b :=
-  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.2.1 b
+  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).property.2.1 b
 
 /-- The extended derivation agrees with `dC` on the right coprojection. -/
 @[simp] theorem liftDerivation_inr (c : C) :
     liftDerivation dB dC hdB hdC hcont hinl hinr (inr A B C c) = dC c :=
-  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).2.2.2 c
+  (liftDerivationAux dB dC hdB hdC hcont hinl hinr).property.2.2 c
 
 /-- A continuous `A`-derivation on `B ⊗̂_A C` agreeing with `dB` on `inl` and with `dC` on `inr`
 equals `liftDerivation`. -/

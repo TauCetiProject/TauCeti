@@ -273,10 +273,12 @@ completed one. -/
 theorem fromKaehler_fromIdeal (x : KaehlerDifferential.ideal A B) :
     fromKaehler A B (KaehlerDifferential.fromIdeal A B x) =
       fromIdeal A B ⟨toCompletion A B B x, by
-        simpa using RingHom.mem_ker.mp x.2⟩ := by
+        simpa using RingHom.mem_ker.mp x.property⟩ := by
   refine ((D A B).liftKaehlerDifferential_apply x).trans ?_
   rw [tensorProductTo_D]
-  congr 1; ext; simp [RingHom.mem_ker.mp x.2]
+  congr 1
+  ext
+  simp [RingHom.mem_ker.mp x.property]
 
 variable {A B}
 

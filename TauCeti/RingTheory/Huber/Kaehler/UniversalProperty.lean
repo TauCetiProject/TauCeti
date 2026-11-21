@@ -65,14 +65,14 @@ private noncomputable def liftLinearMap (δ : Derivation A B M) (hδ : Continuou
       (continuous_mulRingHom A B) (RingHom.ext (mulRingHom_inl A B))
       (RingHom.ext (mulRingHom_inr A B))
   let g : ideal A B →ₗ[CompletedTensor A B B] M :=
-    { toFun x := d x.1
-      map_add' x y := map_add d x.1 y.1
+    { toFun x := d x.val
+      map_add' x y := map_add d x.val y.val
       map_smul' r x := by
-        rw [RingHom.id_apply, SetLike.val_smul, smul_eq_mul, d.leibniz, hsmul x.1,
-          mem_ideal_iff.mp x.2, zero_smul, add_zero] }
+        rw [RingHom.id_apply, SetLike.val_smul, smul_eq_mul, d.leibniz, hsmul x.val,
+          mem_ideal_iff.mp x.property, zero_smul, add_zero] }
   have hg (x y : ideal A B) : g (x * y) = 0 := by
     simp only [g, LinearMap.coe_mk, AddHom.coe_mk, MulMemClass.coe_mul, d.leibniz, hsmul,
-      mem_ideal_iff.mp x.2, mem_ideal_iff.mp y.2, zero_smul, add_zero]
+      mem_ideal_iff.mp x.property, mem_ideal_iff.mp y.property, zero_smul, add_zero]
   let q : ContinuousKaehlerDifferential A B →ₗ[CompletedTensor A B B] M :=
     (Ideal.Cotangent.lift g hg).comp (cotangentEquiv A B).toLinearMap
   refine ⟨{ toFun := q
@@ -90,14 +90,14 @@ nonarchimedean `B`-module factors through a continuous `B`-linear map `Ωᶜ[B�
 `A` nor `B` needs any noetherian or finite-type hypothesis for existence. -/
 noncomputable def lift (δ : Derivation A B M) (hδ : Continuous δ) :
     ContinuousKaehlerDifferential A B →L[B] M :=
-  { (liftLinearMap δ hδ).1 with
-    cont := IsModuleTopology.continuous_of_linearMap (liftLinearMap δ hδ).1 }
+  { (liftLinearMap δ hδ).val with
+    cont := IsModuleTopology.continuous_of_linearMap (liftLinearMap δ hδ).val }
 
 /-- Evaluating the universal lift on `d b` recovers `δ b`. -/
 @[simp]
 theorem lift_D (δ : Derivation A B M) (hδ : Continuous δ) (b : B) :
     lift δ hδ (D A B b) = δ b :=
-  (liftLinearMap δ hδ).2 b
+  (liftLinearMap δ hδ).property b
 
 /-- Precomposing the universal lift with `D A B` recovers `δ`. -/
 @[simp]
@@ -193,9 +193,9 @@ noncomputable def continuousLinearMapEquivDerivation
     (h : IsTopologicallyFiniteType (algebraMap A B)) :
     (ContinuousKaehlerDifferential A B →L[B] M) ≃ {δ : Derivation A B M // Continuous δ} where
   toFun f := ⟨f.toLinearMap.compDer (D A B), f.continuous.comp (continuous_D h)⟩
-  invFun δ := lift δ.1 δ.2
+  invFun δ := lift δ.val δ.property
   left_inv _ := hom_ext h fun b ↦ lift_D _ _ b
-  right_inv δ := Subtype.ext (compDer_lift_D δ.1 δ.2)
+  right_inv δ := Subtype.ext (compDer_lift_D δ.val δ.property)
 
 /-- The underlying derivation of `continuousLinearMapEquivDerivation h f` is `f ∘ d`. -/
 @[simp]
@@ -210,7 +210,7 @@ theorem continuousLinearMapEquivDerivation_apply_coe
 theorem continuousLinearMapEquivDerivation_symm_apply
     (h : IsTopologicallyFiniteType (algebraMap A B))
     (δ : {δ : Derivation A B M // Continuous δ}) :
-    (continuousLinearMapEquivDerivation h).symm δ = lift δ.1 δ.2 := (rfl)
+    (continuousLinearMapEquivDerivation h).symm δ = lift δ.val δ.property := (rfl)
 
 /-- `continuousLinearMapEquivDerivation` sends `lift δ hδ` back to `⟨δ, hδ⟩`. -/
 @[simp]
@@ -256,13 +256,13 @@ Definition 1.6.1 and (1.6.2)(ii)): any continuous `A`-derivation `δ : B → N` 
 `Ωᶜ[B⁄A] →ₗ[B] N`. -/
 noncomputable def liftOfFinite (δ : Derivation A B N) (hδ : Continuous δ) :
     ContinuousKaehlerDifferential A B →ₗ[B] N :=
-  (liftOfFiniteAux δ hδ).1
+  (liftOfFiniteAux δ hδ).val
 
 /-- Evaluating `liftOfFinite δ hδ` on `d b` recovers `δ b`. -/
 @[simp]
 theorem liftOfFinite_D (δ : Derivation A B N) (hδ : Continuous δ) (b : B) :
     liftOfFinite δ hδ (D A B b) = δ b :=
-  (liftOfFiniteAux δ hδ).2 b
+  (liftOfFiniteAux δ hδ).property b
 
 /-- Precomposing `liftOfFinite δ hδ` with `D A B` recovers `δ`. -/
 @[simp]

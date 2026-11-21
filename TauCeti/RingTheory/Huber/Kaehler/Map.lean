@@ -74,7 +74,7 @@ private noncomputable def mapCotangent :
 private theorem mapCotangent_fromIdeal (x : ideal A B) :
     mapCotangent α φ hφ hφc (fromIdeal A B x) =
       fromIdeal A' B' ⟨CompletedTensor.map α φ φ hφ hφ hφc hφc x,
-        ideal_le_comap_map α φ hφ hφc x.2⟩ := by
+        ideal_le_comap_map α φ hφ hφc x.property⟩ := by
   simp only [mapCotangent, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
     LinearEquiv.coe_coe, cotangentEquiv_fromIdeal]
   exact (congrArg (cotangentEquiv A' B').symm
@@ -99,7 +99,7 @@ noncomputable def mapSemilinear :
 @[simp] theorem mapSemilinear_fromIdeal (x : ideal A B) :
     mapSemilinear α φ hφ hφc (fromIdeal A B x) =
       fromIdeal A' B' ⟨CompletedTensor.map α φ φ hφ hφ hφc hφc x,
-        ideal_le_comap_map α φ hφ hφc x.2⟩ :=
+        ideal_le_comap_map α φ hφ hφc x.property⟩ :=
   mapCotangent_fromIdeal α φ hφ hφc x
 
 /-- Change of rings carries `d b` to `d (φ b)`. -/
@@ -232,7 +232,7 @@ theorem mapTower_fromIdeal (x : ideal A C) :
             (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
             (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
             continuous_id continuous_id x,
-          ideal_le_comap_map (algebraMap A B) (RingHom.id C) _ continuous_id x.2⟩ :=
+          ideal_le_comap_map (algebraMap A B) (RingHom.id C) _ continuous_id x.property⟩ :=
   mapSemilinear_fromIdeal _ _ _ continuous_id x
 
 /-- `mapTower` carries `d_A c` to `d_B c`. -/

@@ -541,7 +541,7 @@ private theorem exists_factor_of_ne_zero [W.toAffine.IsCharNeTwoNF] (h2 : IsUnit
   rcases Q with _ | ⟨x, y, h⟩
   · exact absurd (Subtype.ext (hQ.symm.trans (map_zero _))) hT
   -- `2 (x, y) = O` forces `ψ₂(x, y) = 2y = 0`
-  have h2T := AddSubgroup.torsionBy.nsmul_iff.1 T.2
+  have h2T := AddSubgroup.torsionBy.nsmul_iff.1 T.property
   rw [← hQ, ← map_nsmul, two_nsmul, AddEquiv.map_eq_zero_iff,
     WeierstrassCurve.Affine.Point.some_add_self_eq_zero_iff h,
     WeierstrassCurve.Affine.evalEval_polynomialY, WeierstrassCurve.a₁_of_isCharNeTwoNF,
@@ -637,7 +637,7 @@ theorem eq_zero_of_forall_factorCohomologicalMap_eq_zero (h2 : IsUnit ((2 : ℕ)
   induction c using QuotientAddGroup.induction_on with
   | _ z =>
   rw [H1pi_eq_zero_iff, mem_B1_iff]
-  exact isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero W h2 (mem_Z1_iff.1 z.2).2
+  exact isCoboundary₁_of_torsionCoeffWeilPairing_eq_zero W h2 (mem_Z1_iff.1 z.property).2
     fun _ _ hg ↦ torsionCoeffWeilPairing_eq_zero_of_smul_eq W h2 hc' hg
 
 /-- **The cohomological `2`-descent map is injective** (Silverman X.1.4):
@@ -869,7 +869,7 @@ theorem coe_embeddingTorsionCoeff (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ
 private def embeddingH0 (p : W.toAffine.f.Factors) (σ : 𝕃 p →ₐ[K] SeparableClosure K) :
     H0 σ.fieldRange.fixingSubgroup (W.TorsionCoeff 2) :=
   ⟨embeddingTorsionCoeff W p σ, fun g ↦ by
-    have hg := (mem_fixingSubgroup_fieldRange_iff W p σ).1 g.2
+    have hg := (mem_fixingSubgroup_fieldRange_iff W p σ).1 g.property
     rw [Subgroup.smul_def, embeddingTorsionCoeff,
       smul_rootTorsionCoeff W _ _ (hg.symm ▸ aeval_embedding_root_f W p σ)]
     -- the two points agree since `g` fixes `σ θ`, which `congr` closes from `hg`
@@ -962,7 +962,7 @@ private theorem kummerCor_factorCohomologicalMap (p : W.toAffine.f.Factors)
     rw [hg]
     refine (kummerCoeffMapSymm_factorTorsionCharacter W p σ h2 _).trans ?_
     dsimp only
-    rw [cocyclesMap1_apply, (embeddingH0 W p σ).2 g, AddMonoidHom.id_apply,
+    rw [cocyclesMap1_apply, (embeddingH0 W p σ).property g, AddMonoidHom.id_apply,
       ContinuousMonoidHom.subgroupSubtype_apply, coe_embeddingH0]
   refine Multiplicative.toAdd.injective ((toAdd_kummerCor K 2 (𝕃 p) σ _).trans ?_)
   exact (congrArg _ key).trans
