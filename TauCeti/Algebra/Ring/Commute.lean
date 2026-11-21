@@ -40,8 +40,9 @@ A square-zero differential commutes with any element `e` satisfying a homotopy i
 ## Main results
 
 * `Commute.one_sub_smul_left`, `Commute.one_sub_smul_right`: commutation with `1 - a • u`.
-* `Commute.pow_succ_mul_eq_pow_mul_of_mul_eq`: `C ^ (h + 1) W_h = C ^ h d_h` for an
-  inhomogeneous recurrence `C Wₖ₊₁ = dₖ₊₁ + u Wₖ` with `dⱼ = 0` for `j < h`.
+* `Commute.pow_succ_mul_eq_pow_mul_of_mul_eq`: `C ^ (h + 1) W_h = C ^ h d_h` when `C` commutes
+  with `u` and `Wₖ` satisfies the inhomogeneous recurrence `C W₀ = d₀`, `C Wₖ₊₁ = dₖ₊₁ + u Wₖ`
+  for `k < h`, with `dⱼ = 0` for `j < h`.
 * `Commute.add_pow_apply_eq_zero`, `Commute.sub_pow_apply_eq_zero`: nilpotent action of `x + y`
   and `x - y` at degree `r₁ + r₀` when commuting additive endomorphisms `x`, `y` kill `u` at
   degrees `r₁`, `r₀`.
