@@ -265,6 +265,22 @@ theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ)
   linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
     norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
 
+/-- The `Lᵖ` norm of the `t`-derivative is at most the `Lᵖ` norm of the jet. -/
+theorem eLpNorm_fderiv_zero_one_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
+    (hξ : AEStronglyMeasurable (fun z ↦ fderiv ℝ ξ z (0, 1)) μ) (p : ℝ≥0∞) :
+    eLpNorm (fun z ↦ fderiv ℝ ξ z (0, 1)) p μ ≤ eLpNorm (jet ξ) p μ :=
+  eLpNorm_mono hξ (norm_fderiv_zero_one_le_norm_jet ξ)
+
+/-- The `Lᵖ` norm of the derivative is at most twice the `Lᵖ` norm of the jet. -/
+theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
+    (hξ : AEStronglyMeasurable (fderiv ℝ ξ) μ) (p : ℝ≥0∞) :
+    eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ := by
+  have := eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (c := 2) hξ (g := jet ξ)
+    (Eventually.of_forall fun y ↦ by
+      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
+      exact norm_fderiv_le_two_mul_norm_jet ξ y) p
+  simpa [ENNReal.smul_def] using this
+
 /-! ### The `L²` jets of a space of sections and their closure -/
 
 /-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with square integrable

@@ -661,7 +661,8 @@ end Lp
 section Jet
 
 open MeasureTheory Set
-open StripSobolev (jet stripMeasure jet_sub norm_le_norm_jet norm_fderiv_zero_one_le_norm_jet)
+open StripSobolev (jet stripMeasure jet_sub norm_le_norm_jet
+  eLpNorm_fderiv_zero_one_le_eLpNorm_jet)
 open scoped NNReal ENNReal
 
 omit [FiniteDimensional ℝ V] in
@@ -678,20 +679,6 @@ private theorem norm_le_mul_toReal_eLpNorm_jet {M p : ℝ≥0} {η : ℝ × ℝ 
         rw [ENNReal.toReal_mul, ENNReal.coe_toReal]
         gcongr
         exact_mod_cast le_add_of_nonneg_right zero_le_one
-
-/-- The `Lᵖ` norm of the difference of the slice velocities of two differentiable maps is at most
-the `Lᵖ` norm of the jet of their difference. -/
-private theorem eLpNorm_fderiv_sub_le_eLpNorm_jet_sub {ξ₁ ξ₂ : ℝ × ℝ → V} (hξ₁ : ContDiff ℝ 1 ξ₁)
-    (hξ₂ : ContDiff ℝ 1 ξ₂) (μ : Measure (ℝ × ℝ)) (p : ℝ≥0∞) :
-    eLpNorm (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) p μ ≤
-      eLpNorm (jet (ξ₁ - ξ₂)) p μ := by
-  have h : (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) =
-      fun z ↦ fderiv ℝ (ξ₁ - ξ₂) z stdComplexLineImag := funext fun z ↦ by
-    rw [fderiv_sub (hξ₁.differentiable one_ne_zero z) (hξ₂.differentiable one_ne_zero z),
-      sub_apply]
-  rw [h]
-  exact eLpNorm_mono (((hξ₁.sub hξ₂).continuous_fderiv one_ne_zero).clm_apply
-    continuous_const).aestronglyMeasurable (norm_fderiv_zero_one_le_norm_jet _)
 
 /-- A multiple of the larger of two finite norms is at most the same multiple of their sum. -/
 private theorem ofReal_mul_max_toReal_le {c : ℝ≥0} {E₁ E₂ : ℝ≥0∞} (hE₁ : E₁ ≠ ∞) (hE₂ : E₂ ≠ ∞) :
@@ -802,12 +789,19 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
   refine hQ.trans (mul_add_add_le_of_ofReal_le (by positivity)
     ((norm_nonneg _).trans (hA (0, 0) ⟨mem_univ _, left_mem_Icc.2 zero_le_one⟩)) ?_ ?_
     (eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet _))
-    (eLpNorm_mono ((hξ₁.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).aestronglyMeasurable (norm_fderiv_zero_one_le_norm_jet _))
-    (eLpNorm_fderiv_sub_le_eLpNorm_jet_sub hξ₁ hξ₂ _ _))
+    (eLpNorm_fderiv_zero_one_le_eLpNorm_jet ((hξ₁.continuous_fderiv one_ne_zero).clm_apply
+      continuous_const).aestronglyMeasurable _) ?_)
   · exact ofReal_mul_max_toReal_le hE₁ hE₂
   · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
     exact congrArg _ (ENNReal.ofReal_toReal hE)
+  · -- The difference of the slice velocities is the slice velocity of the difference.
+    have h : (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) =
+        fun z ↦ fderiv ℝ (ξ₁ - ξ₂) z stdComplexLineImag := funext fun z ↦ by
+      rw [fderiv_sub (hξ₁.differentiable one_ne_zero z) (hξ₂.differentiable one_ne_zero z),
+        sub_apply]
+    rw [h]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
 
 end Jet
 

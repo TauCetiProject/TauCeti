@@ -23,7 +23,7 @@ between `1` and `3 ^ (1 / p)`, the `Lᵖ` norm on the strip of its jet
 `TauCeti.StripSobolev.jet ξ = (ξ, ∂s ξ, ∂t ξ)`.
 
 The cylinder has dimension two, so for `p > 2` Morrey's inequality bounds a section pointwise by
-its `W^{1,p}` norm: there is a constant `C`, depending only on `p`, with
+its `W^{1,p}` norm: there is a constant `C`, depending on `p`, with
 
 `‖ξ z‖ ≤ C ‖jet ξ‖_{Lᵖ(ℝ × [0, 1])}`
 
@@ -60,7 +60,8 @@ public section
 namespace TauCeti.CylinderSobolev
 
 open MeasureTheory Metric Set Module
-open StripSobolev (jet stripMeasure norm_le_norm_jet norm_fderiv_le_two_mul_norm_jet continuous_jet)
+open StripSobolev (jet stripMeasure norm_le_norm_jet eLpNorm_fderiv_le_two_mul_eLpNorm_jet
+  continuous_jet)
 open scoped ENNReal NNReal
 
 variable {E V : Type*} [NormedAddCommGroup E] [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -89,9 +90,9 @@ theorem setLIntegral_ball_le_two_mul_of_periodic {g : ℝ × ℝ → ℝ≥0∞}
     _ = 2 * ∫⁻ y, g y ∂stripMeasure := by rw [hstrip, hstrip, two_mul]
 
 /-- **`Lᵖ` norms over unit balls of the cylinder.** The `Lᵖ` norm over a ball of radius one of a
-continuous function of period one in `t` is at most twice its `Lᵖ` norm on the strip, for
+strongly measurable function of period one in `t` is at most twice its `Lᵖ` norm on the strip, for
 `1 ≤ p < ∞`. -/
-theorem eLpNorm_restrict_ball_le_two_mul_of_periodic {f : ℝ × ℝ → E} (hf : Continuous f)
+theorem eLpNorm_restrict_ball_le_two_mul_of_periodic {f : ℝ × ℝ → E} (hf : StronglyMeasurable f)
     (hper : ∀ s t, f (s, t + 1) = f (s, t)) {p : ℝ≥0} (hp : 1 ≤ p) (z : ℝ × ℝ) :
     eLpNorm f p (volume.restrict (ball z 1)) ≤ 2 * eLpNorm f p stripMeasure := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
@@ -104,7 +105,7 @@ theorem eLpNorm_restrict_ball_le_two_mul_of_periodic {f : ℝ × ℝ → E} (hf 
       ≤ (2 * ∫⁻ y, ‖f y‖ₑ ^ (p : ℝ) ∂stripMeasure) ^ (1 / (p : ℝ)) := by
         gcongr
         exact setLIntegral_ball_le_two_mul_of_periodic
-          ((hf.eNorm.measurable).pow_const _) (fun s t ↦ by rw [hper]) z
+          (hf.eNorm.pow_const _) (fun s t ↦ by rw [hper]) z
     _ = 2 ^ (1 / (p : ℝ)) * (∫⁻ y, ‖f y‖ₑ ^ (p : ℝ) ∂stripMeasure) ^ (1 / (p : ℝ)) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ 2 * (∫⁻ y, ‖f y‖ₑ ^ (p : ℝ) ∂stripMeasure) ^ (1 / (p : ℝ)) := by
@@ -112,16 +113,6 @@ theorem eLpNorm_restrict_ball_le_two_mul_of_periodic {f : ℝ × ℝ → E} (hf 
         calc (2 : ℝ≥0∞) ^ (1 / (p : ℝ)) ≤ 2 ^ (1 : ℝ) :=
               ENNReal.rpow_le_rpow_of_exponent_le one_le_two hp1
           _ = 2 := ENNReal.rpow_one 2
-
-/-- The `Lᵖ` norm of the derivative of a `C¹` map is at most twice the `Lᵖ` norm of its jet. -/
-private theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ)
-    (μ : Measure (ℝ × ℝ)) (p : ℝ≥0∞) : eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ := by
-  have := eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul (μ := μ) (c := 2)
-    (hξ.continuous_fderiv one_ne_zero).aestronglyMeasurable (g := jet ξ)
-    (Filter.Eventually.of_forall fun y ↦ by
-      rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, coe_nnNorm]
-      exact norm_fderiv_le_two_mul_norm_jet ξ y) p
-  simpa [ENNReal.smul_def] using this
 
 /-- **Morrey's estimate on the cylinder.** For `p > 2` there is a constant `C` such that every
 `C¹` section `ξ` of period one in `t` satisfies `‖ξ z‖ ≤ C ‖jet ξ‖_{Lᵖ(ℝ × [0, 1])}` at every
@@ -136,41 +127,40 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   have hm (z : ℝ × ℝ) : volume (ball z 1) = m := Measure.addHaar_ball_center volume z 1
   have hm0 : m ≠ 0 := (measure_ball_pos volume 0 one_pos).ne'
   have hmtop : m ≠ ∞ := measure_ball_lt_top.ne
-  -- The constant of the Morrey potential estimate on a unit ball, and of the mean.
-  set c₀ : ℝ≥0∞ := ENNReal.ofReal (1 ^ finrank ℝ (ℝ × ℝ) / finrank ℝ (ℝ × ℝ)) / m *
-    ENNReal.ofReal ((finrank ℝ (ℝ × ℝ) * volume.real (ball (0 : ℝ × ℝ) 1) * (p - 1) /
-      (p - finrank ℝ (ℝ × ℝ))) ^ (1 - 1 / (p : ℝ)) * 1 ^ (1 - finrank ℝ (ℝ × ℝ) / (p : ℝ)))
-  set c₁ : ℝ≥0∞ := m ^ (-(p : ℝ)⁻¹)
-  have hc₀ : c₀ ≠ ∞ := ENNReal.mul_ne_top (ENNReal.div_ne_top ENNReal.ofReal_ne_top hm0)
-    ENNReal.ofReal_ne_top
-  have hc₁ : c₁ ≠ ∞ := ENNReal.rpow_ne_top_of_ne_zero hm0 hmtop
+  -- The Morrey potential estimate on the unit ball about `z`, with a constant independent of `z`
+  -- since all unit balls have the same measure.
+  obtain ⟨c₀, hmor, hc₀⟩ : ∃ c₀ : ℝ≥0∞, (∀ {ξ : ℝ × ℝ → V}, ContDiff ℝ 1 ξ → ∀ z,
+      ‖ξ z - ⨍ y in ball z 1, ξ y‖ₑ ≤ c₀ * eLpNorm (fderiv ℝ ξ) p (volume.restrict (ball z 1))) ∧
+      c₀ ≠ ∞ :=
+    ⟨_, fun {ξ} hξ z ↦ (enorm_sub_setAverage_le_of_starConvex_of_finrank_lt (μ := volume)
+      (u := ξ) (S := ball z 1) isOpen_ball hξ.contDiffOn
+      ((convex_ball z 1).starConvex (mem_ball_self one_pos)) ball_subset_closedBall Subset.rfl
+      (by rw [hm]; exact hm0) hp').trans_eq (by rw [hm]), by finiteness⟩
+  -- Hölder's inequality for the mean over the unit ball about `z`.
+  obtain ⟨c₁, hmean, hc₁⟩ : ∃ c₁ : ℝ≥0∞, (∀ (ξ : ℝ × ℝ → V) z,
+      ‖⨍ y in ball z 1, ξ y‖ₑ ≤ c₁ * eLpNorm ξ p (volume.restrict (ball z 1))) ∧ c₁ ≠ ∞ :=
+    ⟨_, fun ξ z ↦ (TauCeti.enorm_setAverage_le (mu := volume) (s := ball z 1) (f := ξ) (p := p)
+      (by exact_mod_cast hp1) ENNReal.coe_ne_top).trans_eq (by rw [hm, ENNReal.coe_toReal]),
+      ENNReal.rpow_ne_top_of_ne_zero hm0 hmtop⟩
   refine ⟨((2 * c₀ + c₁) * 2).toNNReal, fun {ξ} hξ hper z ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (by finiteness)]
   -- The jet on the unit ball is controlled by the jet on the strip.
-  have hball := eLpNorm_restrict_ball_le_two_mul_of_periodic (continuous_jet hξ)
+  have hball := eLpNorm_restrict_ball_le_two_mul_of_periodic (continuous_jet hξ).stronglyMeasurable
     (jet_add_one_of_periodic hper) hp1 z
-  -- The Morrey potential estimate on the unit ball about `z`.
-  have hmor := enorm_sub_setAverage_le_of_starConvex_of_finrank_lt (μ := volume) (u := ξ)
-    (S := ball z 1) isOpen_ball hξ.contDiffOn ((convex_ball z 1).starConvex (mem_ball_self one_pos))
-    ball_subset_closedBall Subset.rfl
-    (by rw [hm]; exact hm0) hp'
-  rw [hm] at hmor
   -- The derivative and the section are controlled by the jet.
-  have hder := eLpNorm_fderiv_le_two_mul_eLpNorm_jet hξ (volume.restrict (ball z 1)) p
+  have hder := eLpNorm_fderiv_le_two_mul_eLpNorm_jet (μ := volume.restrict (ball z 1))
+    (hξ.continuous_fderiv one_ne_zero).aestronglyMeasurable p
   have hval : eLpNorm ξ p (volume.restrict (ball z 1)) ≤
       eLpNorm (jet ξ) p (volume.restrict (ball z 1)) :=
     eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet ξ)
-  have hmean := TauCeti.enorm_setAverage_le (mu := volume) (s := ball z 1) (f := ξ)
-    (p := p) (by exact_mod_cast hp1) ENNReal.coe_ne_top
-  rw [hm, ENNReal.coe_toReal] at hmean
   set N := eLpNorm (jet ξ) p (volume.restrict (ball z 1))
   calc ‖ξ z‖ₑ = ‖(ξ z - ⨍ y in ball z 1, ξ y) + ⨍ y in ball z 1, ξ y‖ₑ := by
         rw [sub_add_cancel]
     _ ≤ ‖ξ z - ⨍ y in ball z 1, ξ y‖ₑ + ‖⨍ y in ball z 1, ξ y‖ₑ := eNorm_add_le _ _
     _ ≤ c₀ * (2 * N) + c₁ * N := by
         gcongr
-        · exact hmor.trans (by gcongr)
-        · exact hmean.trans (by gcongr)
+        · exact (hmor hξ z).trans (by gcongr)
+        · exact (hmean ξ z).trans (by gcongr)
     _ = (2 * c₀ + c₁) * N := by ring
     _ ≤ (2 * c₀ + c₁) * (2 * eLpNorm (jet ξ) p stripMeasure) := by gcongr
     _ = (2 * c₀ + c₁) * 2 * eLpNorm (jet ξ) p stripMeasure := by ring
