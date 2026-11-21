@@ -183,13 +183,12 @@ theorem det_inner_eq_one_or_eq_neg_one {F : Type*} [NormedAddCommGroup F] [Inner
     (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = 1 ∨ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = -1 := by
   set A : Matrix ι ι ℝ := Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ
   -- The rows of `A` are the coordinates of the orthonormal vectors `τ' j`.
-  have hA : A * Aᴴ = 1 := (hτ.orthonormal_sum_smul_iff A).1 <| by
+  have hA : A ∈ Matrix.unitaryGroup ι ℝ := (hτ.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 <| by
     convert hτ' using 1
     funext j
     exact hτ.sum_inner_smul_eq_of_mem_span (h j)
-  have hdet : A.det * A.det = 1 := by
-    simpa [Matrix.det_conjTranspose] using congrArg Matrix.det hA
-  exact mul_self_eq_one_iff.1 hdet
+  rw [← sq_eq_one_iff]
+  simpa [unitary, sq] using! Matrix.det_of_mem_unitary hA
 
 end Orthonormal
 

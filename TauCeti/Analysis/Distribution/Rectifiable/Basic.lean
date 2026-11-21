@@ -9,9 +9,11 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.InnerProductSpace.Comass
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
+import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Currents of oriented sets with multiplicity
@@ -39,10 +41,11 @@ values of absolute value at most one on orthonormal frames.
 
 The current only depends on the pointwise products `θ(x) ω_x(τ(x))` on `Ω`, up to null sets
 (`Distribution.frameCurrent_eq_of_ae`). In particular it is additive in the multiplicity
-(`Distribution.frameCurrent_add`), changes sign with it (`Distribution.frameCurrent_neg`), and a
-change of orthonormal frame within the same plane multiplies the multiplicity by the determinant
-`±1` of the change (`Distribution.frameCurrent_eq_det_inner_mul`): the frames enter only through
-the orientations of the planes they span. Its local mass on a set `U` is at most `∫_U |θ| dμHE[k]`
+(`Distribution.frameCurrent_eq_add_of_ae`), changes sign with it
+(`Distribution.frameCurrent_neg`), and a change of orthonormal frame within the same plane
+multiplies the multiplicity by the determinant `±1` of the change
+(`Distribution.frameCurrent_eq_det_inner_mul`): the frames enter only through the orientations of
+the planes they span. Its local mass on a set `U` is at most `∫_U |θ| dμHE[k]`
 (`Distribution.localMass_frameCurrent_le`), so the current has locally finite mass
 (`Distribution.hasLocallyFiniteMass_frameCurrent`).
 
@@ -52,7 +55,8 @@ the orientations of the planes they span. Its local mass on a set `U` is at most
 * `Distribution.frameCurrent_apply`: its value on a test form, for locally integrable `θ`.
 * `Distribution.frameCurrent_eq_of_ae`: data with almost everywhere equal pairings have the same
   current.
-* `Distribution.frameCurrent_add`, `Distribution.frameCurrent_neg`: linearity in the multiplicity.
+* `Distribution.frameCurrent_eq_add_of_ae`, `Distribution.frameCurrent_neg`: linearity in the
+  multiplicity.
 * `Distribution.frameCurrent_eq_det_inner_mul`: changing the frames within the same planes.
 * `Distribution.localMass_frameCurrent_le`, `Distribution.hasLocallyFiniteMass_frameCurrent`: the
   mass bound.
@@ -71,21 +75,6 @@ noncomputable section
 open Set TopologicalSpace TestFunction MeasureTheory exteriorPower
 open scoped Distributions ENNReal RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
-  [BorelSpace V] {k : ℕ}
-
-/-- The determinant of the overlap matrix `(⟪σ(x) i, τ(x) j⟫)` of two measurable fields of frames is
-measurable. -/
-theorem Measurable.det_inner [SecondCountableTopology V] {α : Type*} [MeasurableSpace α]
-    {σ τ : α → Fin k → V}
-    (hσ : Measurable σ) (hτ : Measurable τ) :
-    Measurable fun x ↦ (Matrix.of fun j i ↦ ⟪σ x i, τ x j⟫).det := by
-  have hc : Continuous fun M : Fin k → Fin k → ℝ ↦ (Matrix.of M).det :=
-    Continuous.matrix_det (A := fun M : Fin k → Fin k → ℝ ↦ Matrix.of M) continuous_id
-  refine hc.measurable.comp (measurable_pi_iff.2 fun j ↦ measurable_pi_iff.2 fun i ↦ ?_)
-  exact Measurable.inner (f := fun x ↦ σ x i) (g := fun x ↦ τ x j)
-    ((measurable_pi_apply i).comp hσ) ((measurable_pi_apply j).comp hτ)
-
 namespace Distribution
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -96,6 +85,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 def frameDensity (θ : V → ℝ) (τ : V → Fin k → V) (x : V) : ⋀[ℝ]^k V :=
   θ x • ιMulti ℝ k (τ x)
 
+omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
+theorem frameDensity_apply (θ : V → ℝ) (τ : V → Fin k → V) (x : V) :
+    frameDensity θ τ x = θ x • ιMulti ℝ k (τ x) :=
+  (rfl)
+
 /-- The **current of an oriented set with multiplicity**: the `k`-current on `Ω` sending a test
 `k`-form `ω` to `∫ θ(x) ω_x(τ(x)) dμHE[k](x)`, for a multiplicity `θ` and orientation frames `τ`.
 It is zero by convention when the field of `k`-vectors `x ↦ θ(x) τ₁(x) ∧ ⋯ ∧ τₖ(x)` is not locally
@@ -103,6 +97,13 @@ integrable on `Ω`; for locally integrable `θ` and measurable orthonormal frame
 `Distribution.frameCurrent_apply`. -/
 def frameCurrent (θ : V → ℝ) (τ : V → Fin k → V) : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ :=
   integralAgainstBilinCLM formVectorPairing μHE[k] (frameDensity θ τ)
+
+/-- The frame current is the integral of the frame density against `μHE[k]`, paired with forms by
+`exteriorPower.formVectorPairing`; it is zero when the density is not locally integrable on `Ω`. -/
+theorem frameCurrent_def (θ : V → ℝ) (τ : V → Fin k → V) :
+    (frameCurrent θ τ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) =
+      integralAgainstBilinCLM formVectorPairing μHE[k] (frameDensity θ τ) :=
+  (rfl)
 
 omit [MeasurableSpace V] [BorelSpace V] in
 @[simp]
@@ -178,7 +179,7 @@ theorem frameCurrent_eq_of_ae {θ θ' : V → ℝ} {τ τ' : V → Fin k → V}
 /-- **Additivity in the multiplicity.** If the pairing of `(θ, τ)` is almost everywhere on `Ω` the
 sum of the pairings of `(θ₁, τ₁)` and `(θ₂, τ₂)`, the frame current of `(θ, τ)` is the sum of the
 other two. -/
-theorem frameCurrent_add {θ θ₁ θ₂ : V → ℝ} {τ τ₁ τ₂ : V → Fin k → V}
+theorem frameCurrent_eq_add_of_ae {θ θ₁ θ₂ : V → ℝ} {τ τ₁ τ₂ : V → Fin k → V}
     (hθ : LocallyIntegrableOn θ Ω μHE[k]) (hτ : Measurable τ)
     (hτo : ∀ x, θ x ≠ 0 → Orthonormal ℝ (τ x)) (hθ₁ : LocallyIntegrableOn θ₁ Ω μHE[k])
     (hτ₁ : Measurable τ₁) (hτo₁ : ∀ x, θ₁ x ≠ 0 → Orthonormal ℝ (τ₁ x))
@@ -236,14 +237,11 @@ theorem frameCurrent_eq_det_inner_mul {θ : V → ℝ} {τ τ' : V → Fin k →
   have hd (x : V) (hx : θ x ≠ 0) : |d x| = 1 := by
     rcases Orthonormal.det_inner_eq_one_or_eq_neg_one (hτo x hx) (hτo' x hx) (h x hx)
       with h1 | h1 <;> simp [d, h1]
-  have hdm : Measurable d := hτ.det_inner hτ'
-  have hθ' : LocallyIntegrableOn (fun x ↦ d x * θ x) Ω μHE[k] := fun x hx ↦ by
-    obtain ⟨t, ht, hint⟩ := hθ x hx
-    refine ⟨t, ht, Integrable.mono hint (hdm.aestronglyMeasurable.mul hint.aestronglyMeasurable)
-      (ae_of_all _ fun y ↦ ?_)⟩
-    by_cases hy : θ y = 0
-    · simp [hy]
-    · rw [norm_mul, Real.norm_eq_abs (d y), hd y hy, one_mul]
+  have hdm : Measurable d := Measurable.matrix_det <| Measurable.of_eval_matrix _ fun j i ↦
+    ((measurable_pi_apply i).comp hτ).inner ((measurable_pi_apply j).comp hτ')
+  have hθ' : LocallyIntegrableOn (fun x ↦ d x * θ x) Ω μHE[k] :=
+    hθ.bdd_mul_of_ne_zero hdm.aestronglyMeasurable
+      (ae_of_all _ fun x hx ↦ (Real.norm_eq_abs _).trans_le (hd x hx).le)
   refine frameCurrent_eq_of_ae hθ hτ' hτo' hθ' hτ (fun x hx ↦ hτo x (right_ne_zero_of_mul hx))
     (ae_of_all _ fun x _ ω ↦ ?_)
   by_cases hx : θ x = 0

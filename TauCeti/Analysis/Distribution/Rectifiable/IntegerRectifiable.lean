@@ -8,11 +8,12 @@ module
 public import TauCeti.Analysis.Distribution.Rectifiable.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.IntegrationCurrent
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Local
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Approximate
-import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Uniqueness
+import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Integer-rectifiable currents
@@ -38,12 +39,10 @@ The integer-rectifiable currents form an additive subgroup of the real `k`-curre
 is closure under addition. At almost every point where the supports of two such currents meet,
 their approximate tangent planes agree, since an approximate tangent plane of the union of the
 supports is one of each support, and approximate tangent planes are unique almost everywhere
-(`TauCeti.CountablyRectifiable.ae_existsUnique_densityZeroOutsideCones`). There the two orthonormal
-frames span the same plane, so they differ by an orthogonal change of frame of determinant `±1`,
-and the sum is the frame current of the first frame with multiplicity `θ₁ ± θ₂`. Uniqueness of
-approximate tangent planes is a local statement, proved for sets of locally finite measure in `V`;
-here the support only has locally finite measure in `Ω`, and the statement is localized to the
-balls compactly contained in `Ω`.
+(`TauCeti.CountablyRectifiable.ae_densityZeroOutsideCones_union`, for sets of locally finite
+measure in `Ω`). There the two orthonormal frames span the same plane, so they differ by an
+orthogonal change of frame of determinant `±1`, and the sum is the frame current of the first frame
+with multiplicity `θ₁ ± θ₂`.
 
 For example the integration current `[[Ω]]` of the open set in top degree is integer-rectifiable
 (`Distribution.isIntegerRectifiable_integrationCurrent`), with multiplicity one on `Ω` and a
@@ -51,10 +50,6 @@ constant orthonormal frame.
 
 ## Main declarations
 
-* `TauCeti.DensityZeroOutsideCones`: the cone-density condition of an approximate tangent plane.
-* `TauCeti.CountablyRectifiable.ae_existsUnique_densityZeroOutsideCones`: approximate tangent
-  planes exist and are unique almost everywhere on a countably rectifiable set of locally finite
-  measure in an open set.
 * `Distribution.IsIntegerRectifiable`: integer-rectifiable currents.
 * `Distribution.integerRectifiableCurrents`: their additive subgroup.
 * `Distribution.isIntegerRectifiable_integrationCurrent`: the integration current of an open set.
@@ -64,8 +59,8 @@ constant orthonormal frame.
 * H. Federer, *Geometric Measure Theory*, §4.1.24 and §4.1.28 (rectifiable currents).
 * H. Federer and W. H. Fleming, *Normal and integral currents*, Ann. of Math. **72** (1960),
   458–520.
-* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 3, §1 (approximate tangent planes),
-  and Chapter 6, §3 (integer multiplicity rectifiable currents).
+* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §3 (integer multiplicity
+  rectifiable currents).
 -/
 
 public section
@@ -74,130 +69,6 @@ noncomputable section
 
 open Set Filter Metric TopologicalSpace TestFunction MeasureTheory Module
 open scoped Distributions ENNReal Topology RealInnerProductSpace
-
-namespace TauCeti
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [MeasurableSpace V] [BorelSpace V] {k : ℕ}
-
-/-- The **cone-density condition** of an approximate tangent plane: the part of `S` outside every
-cone about the `k`-plane `x + P` has `k`-dimensional density zero at `x`. Together with positive
-density, which holds almost everywhere on a countably `k`-rectifiable set of locally finite measure,
-this says that `P` is an approximate tangent plane of `S` at `x`. -/
-def DensityZeroOutsideCones (k : ℕ) (S : Set V) (x : V) (P : Submodule ℝ V) : Prop :=
-  ∀ ε > (0 : ℝ), Tendsto (fun r ↦
-    μHE[k] {z ∈ S ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)
-
-omit [FiniteDimensional ℝ V] in
-/-- The cone-density condition passes to subsets. -/
-theorem DensityZeroOutsideCones.mono {S T : Set V} {x : V} {P : Submodule ℝ V}
-    (h : DensityZeroOutsideCones k T x P) (hST : S ⊆ T) : DensityZeroOutsideCones k S x P :=
-  fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h ε hε)
-    (fun _ ↦ zero_le) fun _ ↦ ENNReal.div_le_div_right (measure_mono fun _ hz ↦ by
-      exact ⟨⟨hST hz.1.1, hz.1.2⟩, hz.2⟩) _
-
-omit [FiniteDimensional ℝ V] in
-/-- The cone-density condition at `x` only depends on the set near `x`. -/
-theorem densityZeroOutsideCones_inter_iff {S B : Set V} {x : V} {P : Submodule ℝ V} {δ : ℝ}
-    (hδ : 0 < δ) (hB : closedBall x δ ⊆ B) :
-    DensityZeroOutsideCones k (S ∩ B) x P ↔ DensityZeroOutsideCones k S x P := by
-  refine forall₂_congr fun ε _ ↦ tendsto_congr' ?_
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds hδ)] with r hr
-  congr 3
-  ext z
-  simp only [mem_inter_iff, and_congr_left_iff]
-  intro _ hz
-  exact and_iff_left (hB (closedBall_subset_closedBall hr.le hz))
-
-/-- **Approximate tangent planes in an open set.** Let `S` be a measurable, countably
-`k`-rectifiable set whose intersections with the compact subsets of an open set `Ω` have finite
-`μHE[k]` measure. At almost every point of `S` in `Ω` there is a unique `k`-plane outside every
-cone about which `S` has density zero. -/
-theorem CountablyRectifiable.ae_existsUnique_densityZeroOutsideCones {Ω S : Set V} (hΩ : IsOpen Ω)
-    (hS : CountablyRectifiable k S) (hSm : MeasurableSet S)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω → μHE[k] (S ∩ K) ≠ ∞) :
-    ∀ᵐ x ∂μHE[k], x ∈ Ω → x ∈ S → ∃ P : Submodule ℝ V, finrank ℝ P = k ∧
-      DensityZeroOutsideCones k S x P ∧
-        ∀ Q : Submodule ℝ V, finrank ℝ Q = k → DensityZeroOutsideCones k S x Q → Q = P := by
-  -- Cover `Ω` by countably many balls whose closures lie in `Ω`.
-  have hr (x : Ω) : ∃ r > 0, closedBall (x : V) r ⊆ Ω := by
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hΩ x x.property
-    exact ⟨ε / 2, half_pos hε, (closedBall_subset_ball (half_lt_self hε)).trans hball⟩
-  choose r hr0 hrΩ using hr
-  obtain ⟨T, hTc, hTU⟩ :=
-    isOpen_iUnion_countable (fun x : Ω ↦ ball (x : V) (r x)) fun _ ↦ isOpen_ball
-  -- On each closed ball the set has finite measure, where the existence and uniqueness theorems
-  -- apply; inside the open ball the cone-density condition is that of `S`.
-  have hpiece (c : Ω) : ∀ᵐ x ∂μHE[k], x ∈ ball (c : V) (r c) → x ∈ S →
-      ∃ P : Submodule ℝ V, finrank ℝ P = k ∧ DensityZeroOutsideCones k S x P ∧
-        ∀ Q : Submodule ℝ V, finrank ℝ Q = k → DensityZeroOutsideCones k S x Q → Q = P := by
-    set Sc := S ∩ closedBall (c : V) (r c)
-    have hfc : μHE[k] Sc ≠ ∞ := hfin _ (isCompact_closedBall _ _) (hrΩ c)
-    have : IsFiniteMeasure (μHE[k].restrict Sc) := isFiniteMeasure_restrict.2 hfc
-    have hSc : CountablyRectifiable k Sc := hS.mono inter_subset_left
-    have hScm : NullMeasurableSet Sc μHE[k] :=
-      (hSm.inter isClosed_closedBall.measurableSet).nullMeasurableSet
-    filter_upwards [hSc.ae_exists_submodule_tendsto_measure_outside_cone_div hScm,
-      hSc.ae_eq_of_tendsto_measure_outside_cone_div hScm] with x hex huniq hxb hxS
-    have hxSc : x ∈ Sc := ⟨hxS, ball_subset_closedBall hxb⟩
-    have hδ : 0 < r c - dist x c := sub_pos.2 hxb
-    have hiff (P : Submodule ℝ V) :
-        DensityZeroOutsideCones k Sc x P ↔ DensityZeroOutsideCones k S x P :=
-      densityZeroOutsideCones_inter_iff hδ (closedBall_subset_closedBall' (by linarith))
-    obtain ⟨P, hP, hPc⟩ := hex hxSc
-    exact ⟨P, hP, (hiff P).1 hPc, fun Q hQ hQc ↦ huniq hxSc Q P hQ hP ((hiff Q).2 hQc) hPc⟩
-  have : Countable T := hTc.to_subtype
-  filter_upwards [ae_all_iff.2 fun c : T ↦ hpiece c] with x hx hxΩ hxS
-  have hxT : x ∈ ⋃ i ∈ T, ball (i : V) (r i) :=
-    hTU ▸ mem_iUnion.2 ⟨⟨x, hxΩ⟩, mem_ball_self (hr0 _)⟩
-  obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 hxT
-  exact hx ⟨c, hcT⟩ hxc hxS
-
-/-- At almost every point of the union of two such sets in `Ω`, the plane outside whose cones
-either set has density zero is one for the union. In particular, where the two sets meet, their
-planes agree. -/
-theorem CountablyRectifiable.ae_densityZeroOutsideCones_union {Ω S₁ S₂ : Set V} (hΩ : IsOpen Ω)
-    (hS₁ : CountablyRectifiable k S₁) (hS₁m : MeasurableSet S₁)
-    (hfin₁ : ∀ K, IsCompact K → K ⊆ Ω → μHE[k] (S₁ ∩ K) ≠ ∞)
-    (hS₂ : CountablyRectifiable k S₂) (hS₂m : MeasurableSet S₂)
-    (hfin₂ : ∀ K, IsCompact K → K ⊆ Ω → μHE[k] (S₂ ∩ K) ≠ ∞)
-    {P₁ P₂ : V → Submodule ℝ V} (hP₁ : ∀ x ∈ S₁, finrank ℝ (P₁ x) = k)
-    (hP₂ : ∀ x ∈ S₂, finrank ℝ (P₂ x) = k)
-    (hP₁c : ∀ᵐ x ∂μHE[k], x ∈ Ω → x ∈ S₁ → DensityZeroOutsideCones k S₁ x (P₁ x))
-    (hP₂c : ∀ᵐ x ∂μHE[k], x ∈ Ω → x ∈ S₂ → DensityZeroOutsideCones k S₂ x (P₂ x)) :
-    ∀ᵐ x ∂μHE[k], x ∈ Ω →
-      (x ∈ S₁ → DensityZeroOutsideCones k (S₁ ∪ S₂) x (P₁ x)) ∧
-      (x ∈ S₂ → DensityZeroOutsideCones k (S₁ ∪ S₂) x (P₂ x)) ∧
-      (x ∈ S₁ → x ∈ S₂ → P₁ x = P₂ x) := by
-  have hfin : ∀ K, IsCompact K → K ⊆ Ω → μHE[k] ((S₁ ∪ S₂) ∩ K) ≠ ∞ := fun K hK hKΩ ↦ by
-    rw [union_inter_distrib_right]
-    exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hfin₁ K hK hKΩ, hfin₂ K hK hKΩ⟩)
-      (measure_union_le _ _)
-  filter_upwards [(hS₁.union hS₂).ae_existsUnique_densityZeroOutsideCones hΩ (hS₁m.union hS₂m)
-      hfin, hS₁.ae_existsUnique_densityZeroOutsideCones hΩ hS₁m hfin₁,
-      hS₂.ae_existsUnique_densityZeroOutsideCones hΩ hS₂m hfin₂, hP₁c, hP₂c]
-    with x hU h₁ h₂ hc₁ hc₂ hxΩ
-  -- The plane `Q` of the union is a plane of each set, so it is the unique plane of each.
-  have key (hx : x ∈ S₁ ∪ S₂) : ∃ Q : Submodule ℝ V, DensityZeroOutsideCones k (S₁ ∪ S₂) x Q ∧
-      (x ∈ S₁ → P₁ x = Q) ∧ (x ∈ S₂ → P₂ x = Q) := by
-    obtain ⟨Q, hQ, hQc, -⟩ := hU hxΩ hx
-    refine ⟨Q, hQc, fun hx₁ ↦ ?_, fun hx₂ ↦ ?_⟩
-    · obtain ⟨P, -, -, hPu⟩ := h₁ hxΩ hx₁
-      exact (hPu (P₁ x) (hP₁ x hx₁) (hc₁ hxΩ hx₁)).trans
-        (hPu Q hQ (hQc.mono subset_union_left)).symm
-    · obtain ⟨P, -, -, hPu⟩ := h₂ hxΩ hx₂
-      exact (hPu (P₂ x) (hP₂ x hx₂) (hc₂ hxΩ hx₂)).trans
-        (hPu Q hQ (hQc.mono subset_union_right)).symm
-  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_, fun hx₁ hx₂ ↦ ?_⟩
-  · obtain ⟨Q, hQc, h, -⟩ := key (Or.inl hx)
-    rwa [h hx]
-  · obtain ⟨Q, hQc, -, h⟩ := key (Or.inr hx)
-    rwa [h hx]
-  · obtain ⟨Q, -, h, h'⟩ := key (Or.inl hx₁)
-    rw [h hx₁, h' hx₂]
-
-end TauCeti
 
 namespace Distribution
 
@@ -220,22 +91,15 @@ def IsIntegerRectifiable (T : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ]
       DensityZeroOutsideCones k {x | θ x ≠ 0} x (Submodule.span ℝ (range (τ x)))) ∧
     T = frameCurrent (fun x ↦ (θ x : ℝ)) τ
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The support of an integer multiplicity, locally integrable on `Ω`, has finite measure on the
-compact subsets of `Ω`, since the multiplicity has absolute value at least one there. -/
-theorem measure_setOf_ne_zero_inter_ne_top {θ : V → ℤ} (hθm : Measurable θ)
-    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[k]) {K : Set V} (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) : μHE[k] ({x | θ x ≠ 0} ∩ K) ≠ ∞ := by
-  have hS : MeasurableSet {x | θ x ≠ 0} := hθm (measurableSet_singleton 0).compl
-  refine ne_top_of_le_ne_top (hθ.integrableOn_compact_subset hKΩ hK).2.ne ?_
-  rw [← Measure.restrict_apply hS, ← lintegral_indicator_one hS]
-  refine lintegral_mono fun x ↦ ?_
-  by_cases hx : θ x = 0
-  · simp [hx]
-  · rw [indicator_of_mem (show x ∈ {x | θ x ≠ 0} from hx), Pi.one_apply,
-      Real.eNorm_eq_ofReal_abs]
-    have h1 : (1 : ℝ) ≤ |((θ x : ℤ) : ℝ)| := by exact_mod_cast Int.one_le_abs hx
-    exact ENNReal.one_le_ofReal.2 h1
+/-- Unfolding `Distribution.IsIntegerRectifiable` into its multiplicity and frame data. -/
+theorem isIntegerRectifiable_iff {T : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ} :
+    IsIntegerRectifiable T ↔ ∃ (θ : V → ℤ) (τ : V → Fin k → V), Measurable θ ∧ Measurable τ ∧
+      CountablyRectifiable k {x | θ x ≠ 0} ∧ LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[k] ∧
+      (∀ x, θ x ≠ 0 → Orthonormal ℝ (τ x)) ∧
+      (∀ᵐ x ∂μHE[k], x ∈ Ω → θ x ≠ 0 →
+        DensityZeroOutsideCones k {x | θ x ≠ 0} x (Submodule.span ℝ (range (τ x)))) ∧
+      T = frameCurrent (fun x ↦ (θ x : ℝ)) τ :=
+  Iff.rfl
 
 /-- An integer-rectifiable current has locally finite mass. -/
 theorem IsIntegerRectifiable.hasLocallyFiniteMass {T : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
@@ -276,8 +140,9 @@ private theorem abs_frameSign (σ τ : Fin k → V) : |(frameSign σ τ : ℝ)| 
 
 private theorem measurable_frameSign {σ τ : V → Fin k → V} (hσ : Measurable σ)
     (hτ : Measurable τ) : Measurable fun x ↦ frameSign (σ x) (τ x) :=
-  Measurable.ite (measurableSet_le measurable_const (hσ.det_inner hτ)) measurable_const
-    measurable_const
+  Measurable.ite (measurableSet_le measurable_const (Measurable.matrix_det <|
+    Measurable.of_eval_matrix _ fun j i ↦ ((measurable_pi_apply i).comp hσ).inner
+      ((measurable_pi_apply j).comp hτ))) measurable_const measurable_const
 
 omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
 /-- On forms, an orthonormal frame `τ` in the plane of an orthonormal frame `σ` is `σ` times the
@@ -295,15 +160,12 @@ omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 integrable. -/
 private theorem locallyIntegrableOn_add_mul {θ₁ θ₂ ε : V → ℤ}
     (hθ₁ : LocallyIntegrableOn (fun x ↦ (θ₁ x : ℝ)) Ω μHE[k])
-    (hθ₂ : LocallyIntegrableOn (fun x ↦ (θ₂ x : ℝ)) Ω μHE[k]) (hθ₂m : Measurable θ₂)
-    (hεm : Measurable ε) (hε : ∀ x, |(ε x : ℝ)| = 1) :
+    (hθ₂ : LocallyIntegrableOn (fun x ↦ (θ₂ x : ℝ)) Ω μHE[k]) (hεm : Measurable ε)
+    (hε : ∀ x, |(ε x : ℝ)| = 1) :
     LocallyIntegrableOn (fun x ↦ ((θ₁ x + ε x * θ₂ x : ℤ) : ℝ)) Ω μHE[k] := by
-  have h2 : LocallyIntegrableOn (fun x ↦ (ε x : ℝ) * θ₂ x) Ω μHE[k] := fun x hx ↦ by
-    obtain ⟨t, ht, hint⟩ := hθ₂ x hx
-    refine ⟨t, ht, Integrable.mono hint ?_ (ae_of_all _ fun y ↦ ?_)⟩
-    · exact ((measurable_from_top.comp hεm).mul
-        (measurable_from_top.comp hθ₂m)).aestronglyMeasurable
-    · rw [norm_mul, Real.norm_eq_abs (ε y : ℝ), hε, one_mul]
+  have h2 : LocallyIntegrableOn (fun x ↦ (ε x : ℝ) * θ₂ x) Ω μHE[k] :=
+    hθ₂.bdd_mul_of_ne_zero (measurable_from_top.comp hεm).aestronglyMeasurable
+      (ae_of_all _ fun x _ ↦ (Real.norm_eq_abs _).trans_le (hε x).le)
   convert hθ₁.add h2 using 1
   funext x
   simp
@@ -320,7 +182,7 @@ private theorem intCast_add_mul_mul_apply_ite {θ₁ θ₂ e : ℤ} {τ₁ τ₂
     · simp [h']
     · simp [not_not.1 h']
   by_cases h2 : θ₂ = 0
-  · rw [h2, mul_zero, add_zero, h1, Int.cast_zero, zero_mul, add_zero]
+  · simpa [h2] using h1
   · rw [← h h2, ← h1]
     push_cast
     ring
@@ -351,9 +213,9 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
   have hsupp : {x | θ x ≠ 0} ⊆ {x | θ₁ x ≠ 0} ∪ {x | θ₂ x ≠ 0} := fun x hx ↦ by_contra fun h ↦
     hx (by simp only [mem_union, mem_ofPred_eq, not_or, not_not] at h; simp [θ, h.1, h.2])
   -- At almost every point of the supports, the two frames span the plane of the union.
-  have hU := hS₁.ae_densityZeroOutsideCones_union Ω.isOpen hS₁m
-    (fun K hK hKΩ ↦ measure_setOf_ne_zero_inter_ne_top hθ₁m hθ₁ hK hKΩ) hS₂ hS₂m
-    (fun K hK hKΩ ↦ measure_setOf_ne_zero_inter_ne_top hθ₂m hθ₂ hK hKΩ)
+  have hU := hS₁.ae_densityZeroOutsideCones_union Ω.isOpen hS₁m.nullMeasurableSet
+    (fun _ ↦ hθ₁.measure_setOf_intCast_ne_zero_inter_ne_top hθ₁m) hS₂ hS₂m.nullMeasurableSet
+    (fun _ ↦ hθ₂.measure_setOf_intCast_ne_zero_inter_ne_top hθ₂m)
     (P₁ := fun x ↦ Submodule.span ℝ (range (τ₁ x)))
     (P₂ := fun x ↦ Submodule.span ℝ (range (τ₂ x)))
     (fun x hx ↦ by simpa using finrank_span_eq_card (hτo₁ x hx).linearIndependent)
@@ -370,7 +232,7 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
     · simp only [σ, h1, ite_false]
       exact Submodule.subset_span ⟨j, rfl⟩
   have hθli : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[k] :=
-    locallyIntegrableOn_add_mul hθ₁ hθ₂ hθ₂m hεm fun x ↦ abs_frameSign _ _
+    locallyIntegrableOn_add_mul hθ₁ hθ₂ hεm fun x ↦ abs_frameSign _ _
   refine ⟨θ, σ, hθ₁m.add (hεm.mul hθ₂m), hσ, (hS₁.union hS₂).mono hsupp, hθli,
     fun x hx ↦ hσo x (by simpa using hsupp hx), ?_, ?_⟩
   · filter_upwards [hU] with x hx hxΩ hθx
@@ -380,7 +242,7 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
     · simpa [σ, not_not.1 h1] using (hx hxΩ).2.1 ((hsupp hθx).resolve_left h1)
   · have hθo (x : V) (hx : ((θ x : ℤ) : ℝ) ≠ 0) : Orthonormal ℝ (σ x) :=
       hσo x (by simpa using hsupp (show θ x ≠ 0 by exact_mod_cast hx))
-    refine (frameCurrent_add (θ := fun x ↦ (θ x : ℝ)) hθli hσ hθo hθ₁ hτ₁
+    refine (frameCurrent_eq_add_of_ae (θ := fun x ↦ (θ x : ℝ)) hθli hσ hθo hθ₁ hτ₁
       (fun x hx ↦ hτo₁ x (by exact_mod_cast hx)) hθ₂ hτ₂
       (fun x hx ↦ hτo₂ x (by exact_mod_cast hx)) ?_).symm
     · filter_upwards [hpt] with x hx hxΩ ω
@@ -423,21 +285,16 @@ theorem isIntegerRectifiable_integrationCurrent {m : ℕ} (b : OrthonormalBasis 
       (measurable_from_top.comp hθm).aestronglyMeasurable (ae_of_all _ fun y ↦ by
         by_cases hy : y ∈ Ω <;> simp [θ, hy])
   refine ⟨θ, fun _ ↦ b, hθm, measurable_const, ?_, hθ, fun _ _ ↦ b.orthonormal,
-    ae_of_all _ fun x _ _ ε hε ↦ ?_, ?_⟩
+    ae_of_all _ fun x _ _ ↦ ?_, ?_⟩
   · rw [hS]
     simpa using (CountablyRectifiable.isometryEquiv_image_iff
       (e := b.repr.toIsometryEquiv) (s := (Ω : Set V))).1 (CountablyRectifiable.euclidean _)
   · -- The plane spanned by `b` is the whole space, so no point lies outside the cones.
-    have hspan : Submodule.span ℝ (range (b : Fin m → V)) = ⊤ := b.toBasis.span_eq.trans rfl
-    refine tendsto_const_nhds.congr fun r ↦ ?_
-    rw [hspan, Submodule.top_coe]
-    have hempty : {z ∈ {x | θ x ≠ 0} ∩ closedBall x r |
-        ε * dist z x < infDist (z - x) (univ : Set V)} = ∅ := by
-      ext z
-      simp only [infDist_zero_of_mem (mem_univ _), mem_sep_iff, mem_empty_iff_false, iff_false,
-        not_and, not_lt]
-      exact fun _ ↦ mul_nonneg hε.le dist_nonneg
-    rw [hempty, measure_empty, ENNReal.zero_div]
+    have hspan : Submodule.span ℝ (range (b : Fin m → V)) = ⊤ := by
+      rw [← b.coe_toBasis]
+      exact b.toBasis.span_eq
+    rw [hspan]
+    exact densityZeroOutsideCones_top _ _
   · ext ω
     rw [frameCurrent_apply hθ measurable_const (fun _ _ ↦ b.orthonormal),
       Orientation.integrationCurrent_apply_eq_integral_volume _ b rfl, hμ]

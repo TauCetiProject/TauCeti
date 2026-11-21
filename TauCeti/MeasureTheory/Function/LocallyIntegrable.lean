@@ -56,6 +56,12 @@ Local integrability on the trace `U ∩ s` of a closed set on an open set is loc
 A function locally integrable on `s` up to the closure of a null-measurable set `t`, cut off to
 `t`, is locally integrable on `s` (`MeasureTheory.LocallyIntegrableOn.indicator_of_closure`).
 
+A function locally integrable on `s` stays so after multiplication by a measurable factor that is
+bounded where the function does not vanish
+(`MeasureTheory.LocallyIntegrableOn.bdd_mul_of_ne_zero`), and an integer-valued function locally
+integrable on `s` has support of finite measure in the compact subsets of `s`
+(`MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`).
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -125,6 +131,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrability.
 * `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
   local integrability.
+* `MeasureTheory.LocallyIntegrableOn.bdd_mul_of_ne_zero`: a factor bounded on the support
+  preserves local integrability.
+* `MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`: an integer-valued
+  locally integrable function has support of finite measure in compact subsets.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -530,6 +540,46 @@ theorem mul_bdd {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ} (h
   exact ⟨s, hs, hus.mul_bdd hv.restrict (ae_restrict_of_ae hvC)⟩
 
 end MeasureTheory.LocallyIntegrable
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+open scoped ENNReal
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X} {s : Set X}
+
+/-- The product of a function locally integrable on `s` with an almost everywhere strongly
+measurable factor that is bounded almost everywhere on the support of the function is locally
+integrable on `s`, a local form of Mathlib's `MeasureTheory.Integrable.bdd_mul` with the bound
+needed only where the function does not vanish. -/
+theorem bdd_mul_of_ne_zero {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ}
+    (hu : LocallyIntegrableOn u s μ) (hv : AEStronglyMeasurable v μ)
+    (hvC : ∀ᵐ x ∂μ, u x ≠ 0 → ‖v x‖ ≤ C) : LocallyIntegrableOn (fun x ↦ v x * u x) s μ :=
+  fun x hx ↦ by
+  obtain ⟨t, ht, hint⟩ := hu x hx
+  refine ⟨t, ht, hint.norm.const_mul C |>.mono' (hv.restrict.mul hint.aestronglyMeasurable)
+    (ae_restrict_of_ae (hvC.mono fun y hy ↦ ?_))⟩
+  by_cases h : u y = 0
+  · simp [h]
+  · exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hy h) (norm_nonneg _))
+
+/-- A measurable integer-valued function that is locally integrable on `s` as a real function has
+support of finite measure in every compact subset of `s`, since its absolute value is at least one
+on its support. -/
+theorem measure_setOf_intCast_ne_zero_inter_ne_top {θ : X → ℤ}
+    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) s μ) (hθm : Measurable θ) {K : Set X}
+    (hK : IsCompact K) (hKs : K ⊆ s) : μ ({x | θ x ≠ 0} ∩ K) ≠ ∞ := by
+  have hS : MeasurableSet {x | θ x ≠ 0} := hθm (measurableSet_singleton 0).compl
+  refine ne_top_of_le_ne_top (hθ.integrableOn_compact_subset hKs hK).2.ne ?_
+  rw [← Measure.restrict_apply hS, ← lintegral_indicator_one hS]
+  refine lintegral_mono fun x ↦ ?_
+  by_cases hx : θ x = 0
+  · simp [hx]
+  · rw [indicator_of_mem (show x ∈ {x | θ x ≠ 0} from hx), Pi.one_apply,
+      Real.eNorm_eq_ofReal_abs]
+    have h1 : (1 : ℝ) ≤ |((θ x : ℤ) : ℝ)| := by exact_mod_cast Int.one_le_abs hx
+    exact ENNReal.one_le_ofReal.2 h1
+
+end MeasureTheory.LocallyIntegrableOn
 
 namespace MeasureTheory.Lp
 
