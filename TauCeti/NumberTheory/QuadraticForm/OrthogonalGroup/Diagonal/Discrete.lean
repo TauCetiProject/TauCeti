@@ -86,7 +86,7 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicOrthogonalDiagonal
     let : IsTopologicalGroup (ℝ ⊗[ℚ] V ≃ₗ[ℝ] ℝ ⊗[ℚ] V) := inferInstance
     exact (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv (b.baseChange ℝ)).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   -- Real isometries with small matrix entries, and finite adeles integral at every prime.
   let A : Set (orthogonalGroup (Q.baseChange ℝ)) := {g | ∀ i j, |M g i j| < 2}
   let B : Subgroup U.finiteAdelicOrthogonal := integralSubgroupOf U.orthogonal

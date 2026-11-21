@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen, Giada Franz
 -/
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Topology.ContinuousMap.Ascoli
 public import TauCeti.Analysis.Calculus.Equicontinuity
@@ -23,10 +24,16 @@ may depend on the compact set and derivative order.
 This is the local analytic extraction used for coordinate metrics in pointed smooth
 compactness. No geometric atlas, curvature estimate or geometric limit is constructed here.
 
+The ball specialization below originates in Giada Franz's `ForTauCeti` formalization.
+It packages the local derivative bounds and convergence using smaller closed balls, as needed
+when extracting smooth limits of local graphing functions.
+
 ## Main results
 
 * `IsOpen.exists_strictMono_tendstoUniformlyOn_iteratedFDeriv`: simultaneous convergence
   of every derivative to those of one smooth limit on every compact subset.
+* `TauCeti.exists_subseq_tendstoUniformlyOn_iteratedFDeriv`: the ball specialization, with
+  bounds and convergence on every smaller closed ball.
 
 ## References
 
@@ -168,3 +175,32 @@ theorem exists_strictMono_tendstoUniformlyOn_iteratedFDeriv [FiniteDimensional �
   exact hconv.congr_right (fun x hx ↦ (heq m (hKΩ hx)).symm)
 
 end IsOpen
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+
+/-- **Arzelà–Ascoli for smooth functions on a ball.** If smooth functions `f_i` on `B_R(p)` have,
+for every order `k` and every `r < R`, `k`-th derivatives bounded on `closedBall p r`
+uniformly in `i`,
+then a subsequence converges smoothly on compact subsets of the ball to a smooth function `g`:
+`D^k f_(φ i) → D^k g` uniformly on every `closedBall p r` with `r < R`, for every `k`. -/
+theorem exists_subseq_tendstoUniformlyOn_iteratedFDeriv {f : ℕ → E → F} {p : E} {R : ℝ}
+    (hf : ∀ i, ContDiffOn ℝ ∞ (f i) (ball p R))
+    (hbd : ∀ k : ℕ, ∀ r < R, ∃ C, ∀ i, ∀ x ∈ closedBall p r,
+      ‖iteratedFDeriv ℝ k (f i) x‖ ≤ C) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : E → F, ContDiffOn ℝ ∞ g (ball p R) ∧
+      ∀ k : ℕ, ∀ r < R, TendstoUniformlyOn (fun i ↦ iteratedFDeriv ℝ k (f (φ i)))
+        (iteratedFDeriv ℝ k g) atTop (closedBall p r) := by
+  obtain ⟨φ, hφ, g, hg, hlim⟩ :=
+    isOpen_ball.exists_strictMono_tendstoUniformlyOn_iteratedFDeriv hf (by
+      intro K hK hKΩ k
+      obtain ⟨r, hr, hKr⟩ := exists_lt_subset_ball hK.isClosed hKΩ
+      obtain ⟨C, hC⟩ := hbd k r hr
+      exact ⟨C, Eventually.of_forall fun i x hx ↦ hC i x (ball_subset_closedBall (hKr hx))⟩)
+  exact ⟨φ, hφ, g, hg, fun k r hr ↦
+    hlim k (closedBall p r) (isCompact_closedBall p r) (closedBall_subset_ball hr)⟩
+
+end TauCeti

@@ -57,7 +57,7 @@ theorem contMDiff_starProjection_span_singleton (g : ContMDiffRiemannianMetric I
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
       (fun p : TotalSpace F V ↦
-        (⟨p.proj, (ℂ ∙ s p.proj).starProjection (𝕜 := ℂ) p.2⟩ : TotalSpace F V)) := by
+        (⟨p.proj, (ℂ ∙ s p.proj).starProjection (𝕜 := ℂ) p.snd⟩ : TotalSpace F V)) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
   have hb := Bundle.contMDiff_proj V (F := F) (IB := IB) (n := n)
@@ -85,7 +85,7 @@ theorem contMDiff_starProjection_orthogonal_span_singleton
     letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
       (fun p : TotalSpace F V ↦
-        (⟨p.proj, (ℂ ∙ s p.proj)ᗮ.starProjection (𝕜 := ℂ) p.2⟩ : TotalSpace F V)) := by
+        (⟨p.proj, (ℂ ∙ s p.proj)ᗮ.starProjection (𝕜 := ℂ) p.snd⟩ : TotalSpace F V)) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
   have hp := g.contMDiff_starProjection_span_singleton hI s hs hne

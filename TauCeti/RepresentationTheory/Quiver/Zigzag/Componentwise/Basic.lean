@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Category.AlgCat.Basic
 public import Mathlib.Algebra.DualNumber
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Isomorphism
 

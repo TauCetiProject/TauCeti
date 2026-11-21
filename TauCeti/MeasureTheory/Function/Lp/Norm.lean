@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
@@ -16,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Data.ENNReal.Inv
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
@@ -29,6 +31,9 @@ bounds.
 * `MeasureTheory.Lp.normLp`: the pointwise norm `x ↦ ‖f x‖` bundled as an element of `Lp ℝ p μ`.
 * `MeasureTheory.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `MeasureTheory.Lp.ofReal_norm_add_mul_norm` and `MeasureTheory.memLp_of_eLpNorm_add_mul_ne_top`:
+  the cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions in terms of `eLpNorm`, and a pair of
+  functions of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, `t > 0`, lies in `L^{p₀} × L^{p₁}`.
 * `TauCeti.exists_eLpNorm_le_mul_enorm_of_ae_eq`: on a finite measure space, a bounded linear map
   into `L^{p⋆}` representing `v` gives `‖v u‖_q ≤ C ‖u‖` for every `q ≤ p⋆`.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
@@ -37,7 +42,11 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
+  `L²` functions.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
+* `MeasureTheory.integral_norm_sq_eq_toReal_eLpNorm_sq`: the integral of the squared pointwise
+  norm of any a.e. strongly measurable function is its squared `L²` seminorm, as a real number.
 * `MeasureTheory.MemLp.eLpNorm_two_eq_ofReal_sqrt_integral`: the `L²` seminorm of a
   square-integrable function is the square root of the integral of its squared norm.
 * `MeasureTheory.tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub`: L² convergence implies
@@ -58,6 +67,9 @@ bounds.
   everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
+* `MeasureTheory.Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top`: on a σ-finite
+  measure space, every nonnegative level strictly below the `L∞` norm of an operator-valued
+  function is witnessed at a single vector on a measurable set of positive finite measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
@@ -75,6 +87,8 @@ bounds.
 * `MeasureTheory.MemLp.norm_toLp_le_of_ae_bound`: on a finite measure space, a function in `Lᵖ`
   bounded almost everywhere in norm by `C ≥ 0` has `Lᵖ` norm at most
   `measureUnivNNReal μ ^ p.toReal⁻¹ * C`.
+* `MeasureTheory.MemLp.norm_toLp_le_of_eLpNorm_le`: an `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p` against
+  a representative `u` of `v ∈ Lᵖ` is the norm bound `‖g‖ ≤ B ‖v‖`.
 * `TauCeti.Lp.isBounded_range_of_ae_bound` and `TauCeti.isBounded_range_toLp_of_ae_bound`: on a
   finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere pointwise norm
   bound has bounded range.
@@ -87,6 +101,15 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `MeasureTheory.memLp_top_inv_of_ae_le_norm` and
+  `MeasureTheory.memLp_top_inv_sub_of_ae_le_norm_sub`: an almost-everywhere strongly measurable
+  function into a normed division ring bounded away from zero (or from a scalar `z`) almost
+  everywhere has essentially bounded reciprocal (`MemLp · ∞ μ`).
+* `LinearIsometry.norm_compLp` and `LinearIsometry.norm_compLpL_apply`: post-composing an `Lᵖ`
+  function with a semilinear isometry preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_apply_one_compLp` and
+  `ContinuousLinearMap.norm_apply_one_compLpL_apply`: evaluating an `Lᵖ` family of linear maps
+  `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -240,7 +263,7 @@ end TauCeti
 namespace MeasureTheory
 
 open Filter
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
@@ -356,6 +379,20 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
+/-- **Cauchy–Schwarz for `L²` functions.** For `f, g ∈ L²`, possibly with different codomains,
+`∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`. -/
+theorem Lp.integral_norm_mul_norm_le {alpha E F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup E] [NormedAddCommGroup F] (f : Lp E 2 m)
+    (g : Lp F 2 m) :
+    ∫ x, ‖f x‖ * ‖g x‖ ∂m ≤ ‖f‖ * ‖g‖ := by
+  have hf : MemLp (fun x => ‖f x‖) (ENNReal.ofReal (2 : ℝ)) m := by
+    simpa using (Lp.memLp f).norm
+  have hg : MemLp (fun x => ‖g x‖) (ENNReal.ofReal (2 : ℝ)) m := by
+    simpa using (Lp.memLp g).norm
+  simpa only [norm_norm, Real.rpow_two, ← Real.sqrt_eq_rpow, Lp.integral_norm_sq_eq_norm_sq,
+    Real.sqrt_sq_eq_abs, abs_norm] using
+    integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
+
 /-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
 squared pointwise norm. -/
 theorem MemLp.eLpNorm_two_eq_ofReal_sqrt_integral {alpha F : Type*} [MeasurableSpace alpha]
@@ -373,6 +410,18 @@ theorem MemLp.norm_toLp_sq {alpha F : Type*} [MeasurableSpace alpha] {m : Measur
   refine integral_congr_ae ?_
   filter_upwards [hf.coeFn_toLp] with x hx
   rw [hx]
+
+/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
+square of the real part of its `L²` seminorm. Both sides vanish when the function is not square
+integrable. -/
+theorem integral_norm_sq_eq_toReal_eLpNorm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = (eLpNorm f 2 m).toReal ^ 2 := by
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ sq_nonneg _) (hf.norm.pow 2),
+    ← ENNReal.toReal_pow, TauCeti.eLpNorm_two_sq_eq_lintegral hf]
+  congr 1
+  refine lintegral_congr fun x ↦ ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
 
 /-- L² convergence implies convergence of the integral of the squared norm, for any measure
 and any normed additive group of values. -/
@@ -457,6 +506,35 @@ theorem MemLp.norm_toLp_le_of_ae_bound {α E : Type*} [MeasurableSpace α] [Norm
     ‖hf.toLp f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C :=
   Lp.norm_le_of_ae_bound hC (hf.coeFn_toLp.mp (hfC.mono fun _ hx hxy ↦ hxy ▸ hx))
 
+/-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, `t ≥ 0`, in terms of `eLpNorm`. -/
+theorem Lp.ofReal_norm_add_mul_norm {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {p q : ℝ≥0∞} (g : Lp E p μ) (h : Lp E q μ) {t : ℝ} (ht : 0 ≤ t) :
+    ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
+  rw [Lp.norm_def, Lp.norm_def, ENNReal.ofReal_add ENNReal.toReal_nonneg
+    (mul_nonneg ht ENNReal.toReal_nonneg), ENNReal.ofReal_mul ht,
+    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g), ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
+
+/-- A splitting of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, with `t > 0`, is a pair of `L^{p₀}` and
+`L^{p₁}` functions. -/
+theorem memLp_of_eLpNorm_add_mul_ne_top {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {p₀ p₁ : ℝ≥0∞} {f₀ f₁ : α → E} {t : ℝ} (ht : 0 < t)
+    (hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ ≠ ∞) :
+    MemLp f₀ p₀ μ ∧ MemLp f₁ p₁ μ := by
+  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
+  refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
+  rw [htop, ENNReal.mul_top (by simpa using ht)]
+
+/-- An `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p`, with `u` a representative of `v ∈ Lᵖ`, is the norm
+bound `‖g‖ ≤ B ‖v‖` in `Lᵖ`. -/
+theorem MemLp.norm_toLp_le_of_eLpNorm_le {α E F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedAddCommGroup F] {μ : Measure α} {p : ℝ≥0∞} {g : α → F}
+    (hg : MemLp g p μ) {u : α → E} {v : Lp E p μ} (hv : u =ᵐ[μ] v) {B : ℝ≥0}
+    (h : eLpNorm g p μ ≤ B * eLpNorm u p μ) : ‖hg.toLp g‖ ≤ B * ‖v‖ := by
+  rw [Lp.norm_toLp, Lp.norm_def, ← eLpNorm_congr_ae hv, ← ENNReal.coe_toReal,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
+
 section Restrict
 
 variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
@@ -490,7 +568,6 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
       (eLpNorm g q (μ.restrict t)).toReal ^ 2 * μ.real s ^ (1 - 2 / q.toReal) := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   have hgs : MemLp g q (μ.restrict s) := hg.mono_measure (Measure.restrict_mono hst le_rfl)
-  have hg2 : MemLp g 2 (μ.restrict s) := hgs.mono_exponent hq
   have hexp : 0 ≤ 1 / 2 - 1 / q.toReal := by
     rcases eq_or_ne q ∞ with rfl | hq'
     · simp
@@ -508,9 +585,7 @@ theorem MemLp.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow {q : ℝ≥
       (ENNReal.rpow_ne_top_of_nonneg hexp hs)) (h.trans (mul_le_mul_left hmono _))).trans_eq ?_
     rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, measureReal_def]
   -- `∫_s ‖g‖² = ‖g‖²_{L²(s)}`.
-  have hI : ∫ x in s, ‖g x‖ ^ 2 ∂μ = (eLpNorm g 2 (μ.restrict s)).toReal ^ 2 := by
-    rw [← hg2.norm_toLp_sq, Lp.norm_toLp]
-  rw [hI]
+  rw [integral_norm_sq_eq_toReal_eLpNorm_sq hgs.aestronglyMeasurable]
   calc _ ≤ ((eLpNorm g q (μ.restrict t)).toReal * μ.real s ^ (1 / 2 - 1 / q.toReal)) ^ 2 :=
         pow_le_pow_left₀ ENNReal.toReal_nonneg hH 2
     _ = _ := by
@@ -594,4 +669,124 @@ theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGr
 
 end IntegralRpow
 
+section OperatorNorm
+variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a σ-finite measure space, every nonnegative `c < ‖A‖` is witnessed by a single vector
+`u : E` and a measurable set `t` with `0 < μ t < ∞` on which `c * ‖u‖ < ‖A x u‖`. -/
+theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFinite μ]
+    (A : Lp (E →L[𝕜] F) ∞ μ) {c : ℝ} (hc_nonneg : 0 ≤ c) (hc_lt : c < ‖A‖) :
+    ∃ (u : E) (t : Set α), MeasurableSet t ∧ (∀ x ∈ t, c * ‖u‖ < ‖A x u‖) ∧ 0 < μ t ∧ μ t < ∞ := by
+  obtain ⟨C, hC_count, hC_sub⟩ := (Lp.stronglyMeasurable A).isSeparable_range
+  set δ := (‖A‖ - c) / 3 with hδ_def
+  have hδ : 0 < δ := by linarith [hδ_def]
+  set S : Set (E →L[𝕜] F) := {B ∈ C | c + δ < ‖B‖}
+  have : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
+  choose u hu using fun B : S ↦ show ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ by
+    by_contra! h; exact (not_le_of_gt B.property.2) ((B : E →L[𝕜] F).opNorm_le_bound
+        (by linarith) h)
+  have hcover : {x | c + 2 * δ < ‖A x‖} ⊆ ⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖} := fun x hx ↦ by
+    obtain ⟨B, hBC, hdist⟩ := Metric.mem_closure_iff.mp (hC_sub ⟨x, rfl⟩) δ hδ
+    rw [dist_comm, _root_.dist_eq_norm] at hdist
+    have hBS : B ∈ S := ⟨hBC, by
+      have := norm_sub_le B (B - A x); rw [sub_sub_cancel] at this; linarith [Set.mem_ofPred.mp hx]⟩
+    set v := u ⟨B, hBS⟩
+    have htri : ‖B v‖ ≤ ‖(B - A x) v‖ + ‖A x v‖ := by
+      simpa only [sub_apply, sub_add_cancel] using norm_add_le ((B - A x) v) (A x v)
+    have hle := ((B - A x).le_opNorm v).trans (mul_le_mul_of_nonneg_right hdist.le (norm_nonneg _))
+    exact Set.mem_iUnion.mpr ⟨⟨B, hBS⟩, Set.mem_ofPred.mpr (by nlinarith [hu ⟨B, hBS⟩])⟩
+  have hμ_union : μ (⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖}) ≠ 0 :=
+    mt (measure_mono_null hcover) (Lp.measure_lt_norm_ne_zero (by linarith) (by linarith [hδ_def]))
+  obtain ⟨B, hμs⟩ : ∃ B : S, μ {x | c * ‖u B‖ < ‖A x (u B)‖} ≠ 0 := by
+    by_contra! hzero; exact hμ_union (measure_iUnion_null hzero)
+  have hs : MeasurableSet {x | c * ‖u B‖ < ‖A x (u B)‖} := measurableSet_lt measurable_const
+    (((ContinuousLinearMap.apply 𝕜 F (u B)).continuous.norm.comp_stronglyMeasurable
+      (Lp.stronglyMeasurable A)).measurable)
+  obtain ⟨t, ht, hts, h1, h2⟩ := Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
+  exact ⟨u B, t, ht, hts, h1, h2⟩
+
+end OperatorNorm
+section Inv
+
+variable {α 𝕜 : Type*} [MeasurableSpace α] [NormedDivisionRing 𝕜] {μ : Measure α}
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x‖` almost everywhere for some `ε > 0`, then its pointwise inverse `x ↦ (f x)⁻¹`
+is essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_of_ae_le_norm {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {ε : ℝ}
+    (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x‖) :
+    MemLp (fun x ↦ (f x)⁻¹) ∞ μ := by
+  refine memLp_top_of_bound hf.inv₀ ε⁻¹ ?_
+  filter_upwards [hbound] with x hx
+  rw [norm_inv]
+  exact inv_anti₀ hε hx
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x - z‖` almost everywhere for some `ε > 0`, then `x ↦ (z - f x)⁻¹` is
+essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {z : 𝕜}
+    {ε : ℝ} (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x - z‖) :
+    MemLp (fun x ↦ (z - f x)⁻¹) ∞ μ :=
+  memLp_top_inv_of_ae_le_norm (aestronglyMeasurable_const.sub hf) hε
+    (hbound.mono fun x hx ↦ norm_sub_rev (f x) z ▸ hx)
+
+end Inv
+
 end MeasureTheory
+
+section CompLpNorm
+
+open MeasureTheory
+open scoped ENNReal
+
+namespace LinearIsometry
+
+variable {α E F 𝕜₁ 𝕜₂ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry preserves its `Lᵖ` norm. -/
+@[simp]
+theorem norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with x hx
+  rw [hx, L.coe_toContinuousLinearMap, L.norm_map]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry via `compLpL` preserves its `Lᵖ`
+norm. -/
+theorem norm_compLpL_apply [Fact (1 ≤ p)] (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLpL p μ f‖ = ‖f‖ :=
+  L.norm_compLp f
+
+end LinearIsometry
+
+namespace ContinuousLinearMap
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+
+/-- Pointwise evaluation at `1 : 𝕜` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ` norm. -/
+@[simp]
+theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ContinuousLinearMap.apply 𝕜 E (1 : 𝕜) =
+      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.toContinuousLinearMap := by
+    ext φ
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.norm_compLp f
+
+/-- Pointwise evaluation at `1 : 𝕜` via `compLpL` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ`
+norm. -/
+theorem norm_apply_one_compLpL_apply [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLpL p μ f‖ = ‖f‖ :=
+  norm_apply_one_compLp f
+
+end ContinuousLinearMap
+
+end CompLpNorm

@@ -138,7 +138,7 @@ private def fixingSubgroupMulEquiv : AbsoluteGaloisGroup L ≃* ↥σ.fieldRange
         ((h : AbsoluteGaloisGroup K).toRingEquiv.trans (separableClosureRingEquiv K L σ).symm))
       fun x ↦ by
         have hx : (h : AbsoluteGaloisGroup K) (σ x) = σ x :=
-          (IntermediateField.mem_fixingSubgroup_iff _ _).mp h.2 (σ x) ⟨x, rfl⟩
+          (IntermediateField.mem_fixingSubgroup_iff _ _).mp h.property (σ x) ⟨x, rfl⟩
         simp [hx]
   left_inv g := by ext x; simp
   right_inv h := by ext x; simp
@@ -178,7 +178,7 @@ private theorem continuous_fixingSubgroupMulEquiv : Continuous (fixingSubgroupMu
     (H := fixingSubgroup (AbsoluteGaloisGroup K) t)).mp ?_ fun y ↦ ?_
   · exact adjoin_le_iff.mpr fun y hy ↦ (mem_fixedField_iff
       (H := fixingSubgroup (AbsoluteGaloisGroup K) t) y).mpr fun f hf ↦ hf ⟨y, hy⟩
-  · exact hfix y y.2
+  · exact hfix y y.property
 
 /-- **The absolute Galois group of `L` is the subgroup of `G_K` fixing `σ(L)` pointwise**, as
 topological groups: conjugation by the identification `separableClosureRingEquiv K L σ` of separable

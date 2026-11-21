@@ -32,6 +32,8 @@ Marcinkiewicz). This file records its elementary arithmetic.
 * `TauCeti.eq_top_iff_of_inv_eq`: for `0 < θ < 1`, `s = ∞` exactly when `s₀ = s₁ = ∞`.
 * `TauCeti.one_le_of_inv_eq`: interpolating exponents in `[1, ∞]` stays in `[1, ∞]`.
 * `TauCeti.inv_conjExponent_eq_of_inv_eq`: the conjugate exponents interpolate in the same way.
+* `TauCeti.exists_slope_of_inv_eq`: for `0 < θ < 1`, the exponents `(1 - t) / s₀ + t / s₁` along
+  `0 ≤ t ≤ 1` are `(1 + (t - θ) κ) / s` for a fixed slope `κ`, with nonnegative factor.
 * `TauCeti.exists_inv_eq_of_inv_lt_inv_add`: an exponent `q ≥ p` with `1/p - 1/q < ν` is
   interpolated, with `θ < 1`, between `p` and a finite `s` with `1/p - 1/s < ν`.
 -/
@@ -157,6 +159,45 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
           tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hs₁), mul_one, mul_one,
           ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one]
     _ = _ := by rw [hs]; ring
+
+/-- **The exponent along the segment.** Let `1 / s = (1 - θ) / s₀ + θ / s₁` with `0 < θ < 1`.
+There is a slope `κ` such that for every `0 ≤ t ≤ 1` the factor `1 + (t - θ) κ` is nonnegative and
+`(1 + (t - θ) κ) / s = (1 - t) / s₀ + t / s₁`. The factor equals `1` at `t = θ`; it is the real
+part of the exponent of the analytic families in three-lines proofs of complex interpolation. -/
+theorem exists_slope_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    ∃ κ : ℝ, ∀ t ∈ Set.Icc (0 : ℝ) 1, 0 ≤ 1 + (t - θ) * κ ∧
+      ENNReal.ofReal (1 + (t - θ) * κ) * s⁻¹ =
+        ENNReal.ofReal (1 - t) * s₀⁻¹ + ENNReal.ofReal t * s₁⁻¹ := by
+  rw [inv_eq_ofReal_of_inv_eq hs₀ hs₁ (Set.Ioo_subset_Icc_self hθ) hs]
+  obtain ⟨hθ0, hθ1⟩ := hθ
+  -- Work with the real reciprocals `a₀ = 1 / s₀`, `a₁ = 1 / s₁` and `a = 1 / s`.
+  set a₀ := (s₀⁻¹).toReal
+  set a₁ := (s₁⁻¹).toReal
+  have ha₀ : 0 ≤ a₀ := ENNReal.toReal_nonneg
+  have ha₁ : 0 ≤ a₁ := ENNReal.toReal_nonneg
+  have e₀ : s₀⁻¹ = ENNReal.ofReal a₀ := (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₀)).symm
+  have e₁ : s₁⁻¹ = ENNReal.ofReal a₁ := (ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hs₁)).symm
+  rw [e₀, e₁]
+  set a := (1 - θ) * a₀ + θ * a₁
+  have ha : 0 ≤ a := add_nonneg (mul_nonneg (sub_pos.2 hθ1).le ha₀) (mul_nonneg hθ0.le ha₁)
+  -- The factor times `a` is the convex combination of `a₀` and `a₁`. If `a = 0`, both vanish.
+  have key (t : ℝ) : (1 + (t - θ) * ((a₁ - a₀) / a)) * a = (1 - t) * a₀ + t * a₁ := by
+    rcases ha.eq_or_lt with ha | ha
+    · obtain ⟨h₀, h₁⟩ : a₀ = 0 ∧ a₁ = 0 := by
+        constructor <;> nlinarith [mul_nonneg (sub_pos.2 hθ1).le ha₀, mul_nonneg hθ0.le ha₁]
+      simp [← ha, h₀, h₁]
+    · field_simp
+      ring
+  refine ⟨(a₁ - a₀) / a, fun t ht => ?_⟩
+  have ht₁ : 0 ≤ 1 - t := sub_nonneg.2 ht.2
+  have hβ : 0 ≤ 1 + (t - θ) * ((a₁ - a₀) / a) := by
+    rcases ha.eq_or_lt with ha | ha
+    · simp [← ha]
+    · nlinarith [key t, mul_nonneg ht₁ ha₀, mul_nonneg ht.1 ha₁]
+  refine ⟨hβ, ?_⟩
+  rw [← ENNReal.ofReal_mul hβ, key, ENNReal.ofReal_add (mul_nonneg ht₁ ha₀) (mul_nonneg ht.1 ha₁),
+    ENNReal.ofReal_mul ht₁, ENNReal.ofReal_mul ht.1]
 
 /-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν` with `1/p - 1/q < ν`. Then `q` is interpolated
 between `p` and a larger finite exponent still in this range: there are a finite `s ≥ 1` with

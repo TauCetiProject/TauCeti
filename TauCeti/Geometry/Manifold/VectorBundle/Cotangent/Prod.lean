@@ -58,25 +58,25 @@ and `p ∘ dι₂` at `y`, for the slice inclusions `ι₁ = (·, y)` and `ι₂
 private def toProd (z : CotangentBundle (I.prod J) (M × N)) :
     CotangentBundle I M × CotangentBundle J N :=
   (TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj.1
-      (z.2 ∘L mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1),
+      (z.snd ∘L mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1),
     TotalSpace.mk' (F →L[𝕜] 𝕜) z.proj.2
-      (z.2 ∘L mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2))
+      (z.snd ∘L mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2))
 
 /-- Combine covectors `a` at `x` and `b` at `y` into the covector `a ∘ d pr₁ + b ∘ d pr₂` on
 `M × N` at `(x, y)`. -/
 private def ofProd (w : CotangentBundle I M × CotangentBundle J N) :
     CotangentBundle (I.prod J) (M × N) :=
   TotalSpace.mk' (E × F →L[𝕜] 𝕜) (w.1.proj, w.2.proj)
-    (w.1.2 ∘L mfderiv (I.prod J) I Prod.fst (w.1.proj, w.2.proj) +
-      w.2.2 ∘L mfderiv (I.prod J) J Prod.snd (w.1.proj, w.2.proj))
+    (w.1.snd ∘L mfderiv (I.prod J) I Prod.fst (w.1.proj, w.2.proj) +
+      w.2.snd ∘L mfderiv (I.prod J) J Prod.snd (w.1.proj, w.2.proj))
 
 /-- A covector on `M × N` evaluates a tangent vector as the sum of its two restrictions evaluated
 on the components of the vector. -/
 private theorem snd_apply_eq_toProd_add (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace (I.prod J) z.proj) :
-    z.2 v = (toProd z).1.2 (mfderiv (I.prod J) I Prod.fst z.proj v) +
-      (toProd z).2.2 (mfderiv (I.prod J) J Prod.snd z.proj v) := by
-  refine (congrArg z.2 ?_).trans (map_add z.2 _ _)
+    z.snd v = (toProd z).1.snd (mfderiv (I.prod J) I Prod.fst z.proj v) +
+      (toProd z).2.snd (mfderiv (I.prod J) J Prod.snd z.proj v) := by
+  refine (congrArg z.snd ?_).trans (map_add z.snd _ _)
   -- A tangent vector of the product is the sum of its two slice components.
   rw [mfderiv_fst, mfderiv_snd, mfderiv_prod_left, mfderiv_prod_right]
   exact Prod.ext (add_zero _).symm (zero_add _).symm
@@ -99,7 +99,7 @@ private theorem toProd_ofProd (w : CotangentBundle I M × CotangentBundle J N) :
         (mfderiv I (I.prod J) (fun x : M ↦ (x, w.2.proj)) w.1.proj v) = 0 := by
       rw [mfderiv_snd, mfderiv_prod_left]
       rfl
-    exact (congrArg₂ (fun a b ↦ w.1.2 a + w.2.2 b) h₁ h₂).trans (by rw [map_zero, add_zero])
+    exact (congrArg₂ (fun a b ↦ w.1.snd a + w.2.snd b) h₁ h₂).trans (by rw [map_zero, add_zero])
   · have h₁ : mfderiv (I.prod J) I Prod.fst (w.1.proj, w.2.proj)
         (mfderiv J (I.prod J) (fun y : N ↦ (w.1.proj, y)) w.2.proj v) = 0 := by
       rw [mfderiv_fst, mfderiv_prod_right]
@@ -108,7 +108,7 @@ private theorem toProd_ofProd (w : CotangentBundle I M × CotangentBundle J N) :
         (mfderiv J (I.prod J) (fun y : N ↦ (w.1.proj, y)) w.2.proj v) = v := by
       rw [mfderiv_snd, mfderiv_prod_right]
       rfl
-    exact (congrArg₂ (fun a b ↦ w.1.2 a + w.2.2 b) h₁ h₂).trans (by rw [map_zero, zero_add])
+    exact (congrArg₂ (fun a b ↦ w.1.snd a + w.2.snd b) h₁ h₂).trans (by rw [map_zero, zero_add])
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
@@ -182,7 +182,7 @@ through `z.proj`. -/
 theorem prodDiffeomorph_fst (z : CotangentBundle (I.prod J) (M × N)) :
     (prodDiffeomorph I J M N z).1 =
       TotalSpace.mk' (E →L[𝕜] 𝕜) z.proj.1
-        (z.2 ∘L mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1) :=
+        (z.snd ∘L mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1) :=
   (rfl)
 
 /-- The second component of `prodDiffeomorph z` is the restriction of `z` along the vertical slice
@@ -190,7 +190,7 @@ through `z.proj`. -/
 theorem prodDiffeomorph_snd (z : CotangentBundle (I.prod J) (M × N)) :
     (prodDiffeomorph I J M N z).2 =
       TotalSpace.mk' (F →L[𝕜] 𝕜) z.proj.2
-        (z.2 ∘L mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2) :=
+        (z.snd ∘L mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2) :=
   (rfl)
 
 /-- The first component of `prodDiffeomorph z` evaluates a tangent vector `v` of `M` as `z`
@@ -198,8 +198,8 @@ evaluates its image under the differential of the slice inclusion `x ↦ (x, y)`
 @[simp]
 theorem prodDiffeomorph_fst_snd_apply (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace I (prodDiffeomorph I J M N z).1.proj) :
-    (prodDiffeomorph I J M N z).1.2 v =
-      z.2 (mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1 v) :=
+    (prodDiffeomorph I J M N z).1.snd v =
+      z.snd (mfderiv I (I.prod J) (fun x : M ↦ (x, z.proj.2)) z.proj.1 v) :=
   (rfl)
 
 /-- The second component of `prodDiffeomorph z` evaluates a tangent vector `v` of `N` as `z`
@@ -207,8 +207,8 @@ evaluates its image under the differential of the slice inclusion `y ↦ (x, y)`
 @[simp]
 theorem prodDiffeomorph_snd_snd_apply (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace J (prodDiffeomorph I J M N z).2.proj) :
-    (prodDiffeomorph I J M N z).2.2 v =
-      z.2 (mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2 v) :=
+    (prodDiffeomorph I J M N z).2.snd v =
+      z.snd (mfderiv J (I.prod J) (fun y : N ↦ (z.proj.1, y)) z.proj.2 v) :=
   (rfl)
 
 /-- The inverse of `prodDiffeomorph` lies over the pair of base points. -/
@@ -222,9 +222,9 @@ covector `a ∘ d pr₁ + b ∘ d pr₂` at `(x, y)`. -/
 @[simp]
 theorem prodDiffeomorph_symm_snd_apply (w : CotangentBundle I M × CotangentBundle J N)
     (v : TangentSpace (I.prod J) ((prodDiffeomorph I J M N).symm w).proj) :
-    ((prodDiffeomorph I J M N).symm w).2 v =
-      w.1.2 (mfderiv (I.prod J) I Prod.fst (w.1.proj, w.2.proj) v) +
-        w.2.2 (mfderiv (I.prod J) J Prod.snd (w.1.proj, w.2.proj) v) :=
+    ((prodDiffeomorph I J M N).symm w).snd v =
+      w.1.snd (mfderiv (I.prod J) I Prod.fst (w.1.proj, w.2.proj) v) +
+        w.2.snd (mfderiv (I.prod J) J Prod.snd (w.1.proj, w.2.proj) v) :=
   (rfl)
 
 /-- **`prodDiffeomorph` preserves the pairing of covectors with tangent vectors:** a covector `z`
@@ -232,8 +232,8 @@ on `M × N` evaluates a tangent vector `v` as the sum of its two restrictions ev
 components `d pr₁ v` and `d pr₂ v`. -/
 theorem snd_apply_eq_prodDiffeomorph_add (z : CotangentBundle (I.prod J) (M × N))
     (v : TangentSpace (I.prod J) z.proj) :
-    z.2 v = (prodDiffeomorph I J M N z).1.2 (mfderiv (I.prod J) I Prod.fst z.proj v) +
-      (prodDiffeomorph I J M N z).2.2 (mfderiv (I.prod J) J Prod.snd z.proj v) :=
+    z.snd v = (prodDiffeomorph I J M N z).1.snd (mfderiv (I.prod J) I Prod.fst z.proj v) +
+      (prodDiffeomorph I J M N z).2.snd (mfderiv (I.prod J) J Prod.snd z.proj v) :=
   snd_apply_eq_toProd_add z v
 
 /-- `prodDiffeomorph` sends the zero covector at `p = (x, y)` to the pair of zero covectors at `x`

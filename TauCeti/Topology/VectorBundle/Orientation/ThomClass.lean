@@ -85,7 +85,8 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `eq_thomClassOfModel_of_forall` characterizes it, as does
   `eq_thomClassOfModel_of_forall_exists` reading each fibre in a single trivialization, with
   `exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel` its reading in any one; and
-  `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class.
+  `isThomClass_thomClassOfModel` shows that normalization by a generator gives a Thom class, and
+  `thomClassOfModel_neg` that reversing the orientation negates it.
 * `TauCeti.VectorBundleOrientation.exists_isThomClass`: an oriented real vector bundle has a Thom
   class with coefficients in any commutative ring.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_fiberThomPairMap_thomClass`: the integral
@@ -275,7 +276,8 @@ private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (�
   all_goals
     split_ifs with h
     · exact Or.inl ⟨h, rfl⟩
-    · exact Or.inr ⟨(Orientation.eq_or_eq_neg _ ω hι).resolve_left h, rfl⟩
+    · exact Or.inr
+        ⟨(Orientation.eq_or_eq_neg _ ω (Nat.card_eq_fintype_card.trans hι)).resolve_left h, rfl⟩
 
 variable [VectorBundle ℝ F E]
 
@@ -302,7 +304,8 @@ private theorem fiber_eq_and_fiber_eq_neg_iff (hι : Fintype.card ι = finrank �
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
           orientedFiberClass ω g e hb (o b) := by
   refine ⟨fun ⟨h₁, h₂⟩ e _ b hb ↦ ?_, fun h ↦ ⟨fun e _ b hb hω ↦ ?_, fun e _ b hb hω ↦ ?_⟩⟩
-  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with hω | hω
+  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+      (Nat.card_eq_fintype_card.trans hι) with hω | hω
     · simp [orientedFiberClass, hω, h₁ e b hb hω]
     · simp [orientedFiberClass, hω, h₂ e b hb hω, (Module.Ray.ne_neg_self ω).symm]
   · simp [h e b hb, orientedFiberClass, hω]
@@ -422,6 +425,18 @@ theorem eq_thomClassOfModel_of_forall {u : (thomPair F E).singularCohomology R' 
     ⟨fun e _ b hb h ↦ (hu e b hb).1 h, fun e _ b hb h ↦ (hu e b hb).2 h⟩
     (existsUnique_singularCohomology_thomPair_fiber hι o ω g).exists.choose_spec
 
+/-- **Reversing the orientation negates the Thom class** `thomClassOfModel o hι ω g`. -/
+@[simp]
+theorem thomClassOfModel_neg : (-o).thomClassOfModel hι ω g = -o.thomClassOfModel hι ω g := by
+  refine (eq_thomClassOfModel_of_forall (-o) fun e _ b hb ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩).symm <;>
+    rw [neg_apply, Trivialization.mapOrientation_neg] at h
+  · have h' : e.mapOrientation ι hb (o b) = -ω := by
+      rw [← h]; exact (neg_neg (G := Orientation ℝ F ι) _).symm
+    rw [map_neg, o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg
+      e hb h', neg_neg]
+  · rw [map_neg, o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb
+      (neg_injective h)]
+
 end ThomClass
 
 /-- To identify a class with the Thom class `thomClassOfModel o hι ω g`, it suffices to read its
@@ -465,7 +480,8 @@ theorem exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClassOfModel hι ω g) =
           TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _
             g' := by
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
   · exact ⟨g, Or.inl ⟨h, rfl⟩,
       o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h⟩
   · exact ⟨-g, Or.inr ⟨h, rfl⟩,
@@ -490,7 +506,8 @@ theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
     let L := ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
     exact L.span_singleton_apply_eq_top_iff.2 hg
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h]
     exact hge
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg e hb h,
