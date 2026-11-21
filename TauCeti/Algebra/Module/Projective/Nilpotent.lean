@@ -7,11 +7,14 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 import Mathlib.LinearAlgebra.Isomorphisms
+import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Module.LinearMap.EndQuotient
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Lifting projectivity along a nilpotent element
@@ -32,6 +35,8 @@ and composing `r₀` with its inverse retracts `F` onto `K`. Hence `M` is a dire
 
 * `Module.Projective.of_quotient_smul_top`: a module whose reduction modulo a nilpotent element
   `ϖ` is projective and whose `ϖ`-torsion lies in `ann(ϖ) • M` is projective.
+* `Module.Flat.mem_annihilator_smul_top_of_smul_eq_zero`: over a ring of characteristic `m`, the
+  torsion condition holds for `ϖ = k` whenever `M` is flat over `ℤ ⧸ m`.
 
 ## References
 
@@ -46,11 +51,6 @@ open Submodule
 namespace Module.Projective
 
 variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M] {ϖ : A}
-
-private theorem mem_span_singleton_smul_top_iff {N : Type*} [AddCommGroup N] [Module A N] (x : N) :
-    x ∈ Ideal.span {ϖ} • (⊤ : Submodule A N) ↔ ∃ y, ϖ • y = x := by
-  rw [ideal_span_singleton_smul, mem_smul_pointwise_iff_exists]
-  simp
 
 variable {ι F : Type*} [AddCommGroup F] [Module A F] {π : F →ₗ[A] M}
 
@@ -96,13 +96,13 @@ private theorem exists_linearMap_ker_sub_mem (b : Basis ι A F) (hπ : Function.
         Submodule.Quotient.mk (π (b i)) := by
       have := LinearMap.congr_fun hs (Submodule.Quotient.mk (π (b i)))
       rwa [LinearMap.comp_apply, ← hf] at this
-    obtain ⟨y, hy⟩ := (mem_span_singleton_smul_top_iff _).mp
+    obtain ⟨y, hy⟩ := mem_span_singleton_smul_top_iff.mp
       ((Submodule.Quotient.eq _).mp hπf.symm)
     obtain ⟨c, rfl⟩ := hπ y
     refine ⟨⟨b i - f - ϖ • c, ?_⟩, ?_⟩
     · simp [K, ← hy]
     · rw [← hf, Submodule.Quotient.eq]
-      exact (mem_span_singleton_smul_top_iff _).mpr ⟨c, by rw [Submodule.coe_mk]; abel⟩
+      exact mem_span_singleton_smul_top_iff.mpr ⟨c, by rw [Submodule.coe_mk]; abel⟩
   choose k hk using key
   -- The map `r₀ : F → K` sending `b i` to `k i` satisfies `[c - r₀ c] = s [π c]`.
   let r₀ : F →ₗ[A] K := b.constr A k
@@ -133,13 +133,13 @@ private theorem of_quotient_smul_top_of_surjective (b : Basis ι A F) (hπ : Fun
   have hu : IsUnit (r₀ ∘ₗ K.subtype) := by
     refine Ideal.isUnit_of_endMapQ_eq_one _ K hI
       (Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_))
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, mkQ_apply, Ideal.endMapQ_mk,
-      Module.End.one_eq_id, LinearMap.id_apply, Submodule.Quotient.eq]
-    obtain ⟨c, hc⟩ := (mem_span_singleton_smul_top_iff _).mp (hr₀ x)
+    simp only [LinearMap.comp_apply, mkQ_apply, Ideal.endMapQ_mk, one_apply_eq_self]
+    rw [Submodule.Quotient.eq]
+    obtain ⟨c, hc⟩ := mem_span_singleton_smul_top_iff.mp (hr₀ x)
     obtain ⟨y, hyK, hy⟩ := exists_mem_ker_smul_eq hπ hM c (by
       rw [hc, map_sub, LinearMap.mem_ker.mp x.property, LinearMap.mem_ker.mp (r₀ x).property,
         sub_zero])
-    refine (mem_span_singleton_smul_top_iff _).mpr ⟨-⟨y, hyK⟩, Subtype.ext ?_⟩
+    refine mem_span_singleton_smul_top_iff.mpr ⟨-⟨y, hyK⟩, Subtype.ext ?_⟩
     simp [hy, hc]
   -- Hence `F` retracts onto `K`, and `π` has a section.
   let r : F →ₗ[A] K := ↑hu.unit⁻¹ ∘ₗ r₀
@@ -166,3 +166,30 @@ theorem of_quotient_smul_top (hϖ : IsNilpotent ϖ)
     (Finsupp.linearCombination_id_surjective A M) hϖ hM
 
 end Module.Projective
+
+namespace Module.Flat
+
+variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
+
+/-- Over a ring `A` of characteristic `m`, a module flat over `ℤ ⧸ m` satisfies the torsion
+condition of `Module.Projective.of_quotient_smul_top` for every integer `k`: an element killed by
+`k` lies in `ann(k) • M`. -/
+theorem mem_annihilator_smul_top_of_smul_eq_zero {m : ℕ} [CharP A m] [Module (ZMod m) M]
+    [Flat (ZMod m) M] (k : ℕ) (x : M) (hx : (k : A) • x = 0) :
+    x ∈ (Ideal.span {(k : A)}).annihilator • (⊤ : Submodule A M) := by
+  let φ : ZMod m →+* A := ZMod.castHom (dvd_refl m) A
+  -- The two actions of `ℤ ⧸ m` on `M` agree.
+  have hφ (z : ZMod m) (y : M) : z • y = φ z • y := by
+    rw [← ZMod.intCast_zmod_cast z, map_intCast, Int.cast_smul_eq_zsmul, Int.cast_smul_eq_zsmul]
+  obtain ⟨l, a, y, hxy, hrel⟩ := isTrivialRelation_of_sum_smul_eq_zero (ι := Unit)
+    (f := fun _ ↦ (k : ZMod m)) (x := fun _ ↦ x) (by simpa [hφ] using hx)
+  have hx' : x = ∑ j, a () j • y j := hxy ()
+  rw [hx']
+  refine Submodule.sum_mem _ fun j _ ↦ ?_
+  rw [hφ]
+  refine Submodule.smul_mem_smul ((Submodule.mem_annihilator_span_singleton _ _).mpr ?_)
+    Submodule.mem_top
+  have hj : (k : ZMod m) * a () j = 0 := by simpa using hrel j
+  rw [smul_eq_mul, mul_comm, ← map_natCast φ, ← map_mul, hj, map_zero]
+
+end Module.Flat

@@ -17,7 +17,8 @@ study modules over it with a Frobenius.
 
 A ring homomorphism `f : R →+* S` induces a ring homomorphism `W_n(R) →+* W_n(S)` acting on Witt
 coordinates by `f`, compatibly with truncation from `W(R)`. For `R` of characteristic `p` the
-Witt-vector Frobenius of `W_n(R)` is `TruncatedWittVector.map (frobenius R p)`, and for perfect `R`
+Witt-vector Frobenius of `W_n(R)` is `TruncatedWittVector.map (frobenius R p)`
+(`TruncatedWittVector.map_frobenius_truncate`), and for perfect `R`
 it is the automorphism `TruncatedWittVector.mapEquiv (frobeniusEquiv R p)`.
 
 For `n ≠ 0` the zeroth coordinate is a ring homomorphism `W_n(R) →+* R`. When `R` has
@@ -80,6 +81,13 @@ theorem map_id : map (RingHom.id R) = RingHom.id (TruncatedWittVector p n R) :=
 theorem map_map (g : S →+* T) (f : R →+* S) (x : TruncatedWittVector p n R) :
     map g (map f x) = map (g.comp f) x :=
   ext fun i ↦ by simp
+
+/-- The Witt vector Frobenius of `W(R)` descends to `TruncatedWittVector.map (frobenius R p)` on
+`W_n(R)` for `R` of characteristic `p`. -/
+theorem map_frobenius_truncate [CharP R p] (x : WittVector p R) :
+    map (frobenius R p) (WittVector.truncate n x) =
+      WittVector.truncate n (WittVector.frobenius x) := by
+  rw [map_truncate, WittVector.frobenius_eq_map_frobenius]
 
 /-- The ring isomorphism of truncated Witt vectors induced by a ring isomorphism `e`, acting on
 Witt coordinates by `e`. -/
@@ -178,8 +186,8 @@ noncomputable def quotientPEquiv :
 
 @[simp]
 theorem quotientPEquiv_mk (x : TruncatedWittVector p n R) :
-    quotientPEquiv (Ideal.Quotient.mk _ x) = constantCoeff x :=
-  (rfl)
+    quotientPEquiv (Ideal.Quotient.mk _ x) = constantCoeff x := by
+  simp [quotientPEquiv, Ideal.quotEquivOfEq_mk, RingHom.quotientKerEquivOfSurjective_apply_mk]
 
 /-- For a perfect ring `R` of characteristic `p` and `n ≠ 0`, the reduction modulo `p` of `W_n(R)`
 is perfect, being isomorphic to `R`. -/

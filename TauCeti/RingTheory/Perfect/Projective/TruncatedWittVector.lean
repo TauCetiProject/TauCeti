@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
-import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Module.Projective.Nilpotent
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Perfect.Projective.Basic
 
 /-!
@@ -61,26 +61,6 @@ open Module TruncatedWittVector
 variable {R M : Type*} [CommRing R] (p : ℕ) [Fact p.Prime] [CharP R p] {n : ℕ}
   [AddCommGroup M] [Module (TruncatedWittVector p n R) M]
 
-/-- Over `W_n(R)`, a module flat over `ℤ ⧸ pⁿ` has no `p`-torsion beyond `ann(p) • M`. -/
-private theorem mem_annihilator_smul_top_of_smul_eq_zero [Module (ZMod (p ^ n)) M]
-    [Flat (ZMod (p ^ n)) M] (x : M) (hx : (p : TruncatedWittVector p n R) • x = 0) :
-    x ∈ (Ideal.span {(p : TruncatedWittVector p n R)}).annihilator •
-      (⊤ : Submodule (TruncatedWittVector p n R) M) := by
-  let φ : ZMod (p ^ n) →+* TruncatedWittVector p n R := ZMod.castHom (dvd_refl _) _
-  -- The two actions of `ℤ ⧸ pⁿ` on `M` agree.
-  have hφ (z : ZMod (p ^ n)) (y : M) : z • y = φ z • y := by
-    rw [← ZMod.natCast_zmod_val z, map_natCast, Nat.cast_smul_eq_nsmul, Nat.cast_smul_eq_nsmul]
-  obtain ⟨k, a, y, hxy, hrel⟩ := Flat.isTrivialRelation_of_sum_smul_eq_zero (ι := Unit)
-    (f := fun _ ↦ (p : ZMod (p ^ n))) (x := fun _ ↦ x) (by simpa [hφ] using hx)
-  have hx' : x = ∑ j, a () j • y j := hxy ()
-  rw [hx']
-  refine Submodule.sum_mem _ fun j _ ↦ ?_
-  rw [hφ]
-  refine Submodule.smul_mem_smul ((Submodule.mem_annihilator_span_singleton _ _).mpr ?_)
-    Submodule.mem_top
-  have hj : (p : ZMod (p ^ n)) * a () j = 0 := by simpa using hrel j
-  rw [smul_eq_mul, mul_comm, ← map_natCast φ, ← map_mul, hj, map_zero]
-
 variable [PerfectRing R p]
 
 attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm in
@@ -109,8 +89,7 @@ private theorem projective_quotient_smul_top [NeZero n]
   let Fσ : M ≃ₛₗ[(σ : A →+* A)] M :=
     { F with map_smul' := fun c x ↦ by simpa [hσ] using hF c x }
   have hmem (y : M) : y ∈ I • (⊤ : Submodule A M) ↔ ∃ z : M, p • z = y := by
-    rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists]
-    simp [Nat.cast_smul_eq_nsmul]
+    simp [I, Submodule.mem_span_singleton_smul_top_iff, Nat.cast_smul_eq_nsmul]
   have hI : (I • (⊤ : Submodule A M)).map (Fσ : M →ₛₗ[(σ : A →+* A)] M) = I • ⊤ := by
     ext y
     simp only [Submodule.mem_map, hmem]
@@ -126,8 +105,7 @@ private theorem projective_quotient_smul_top [NeZero n]
   -- `φ^a(c)` is congruent to `c ^ p ^ a` modulo `p`.
   have hc : iterateFrobenius (A ⧸ I) p a (Ideal.Quotient.mk I c) = Ideal.Quotient.mk I (σ c) := by
     apply e.injective
-    rw [iterateFrobenius_def, ← map_pow, he, he, hσ, constantCoeff_map, iterateFrobenius_def,
-      map_pow]
+    simp [iterateFrobenius_def, he, hσ]
   -- The reduction of `F` acts on representatives (`Submodule.Quotient.equiv_apply`).
   have hmk (y : M) : (Submodule.Quotient.equiv _ _ Fσ hI).toAddEquiv (Submodule.Quotient.mk y) =
       Submodule.Quotient.mk (F y) := by
@@ -151,6 +129,7 @@ theorem projective_of_flat_of_addEquiv_map_iterateFrobenius
   have : NeZero n := ⟨hn.ne'⟩
   have := projective_quotient_smul_top p ha F hF
   exact Projective.of_quotient_smul_top
-    ⟨n, by rw [← Nat.cast_pow, CharP.cast_eq_zero]⟩ (mem_annihilator_smul_top_of_smul_eq_zero p)
+    ⟨n, by rw [← Nat.cast_pow, CharP.cast_eq_zero]⟩
+    (Flat.mem_annihilator_smul_top_of_smul_eq_zero (m := p ^ n) p)
 
 end TauCeti
