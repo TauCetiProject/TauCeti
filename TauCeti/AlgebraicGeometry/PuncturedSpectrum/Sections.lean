@@ -47,7 +47,10 @@ so the theorem assumes `Module.IsTorsionFree A B`.
 For an affine scheme over the punctured spectrum of a Noetherian local ring of depth at least
 two, the morphism on spectra of global sections restricts to the original scheme. This uses
 Mathlib's `AlgebraicGeometry.Scheme.isPullback_toSpecΓ_toSpecΓ` after identifying the global
-sections of the punctured base with the local ring.
+sections of the punctured base with the local ring. More generally, a scheme affine over a
+quasi-compact open `U` of `Spec A` is the restriction of `Spec B` for any `A`-algebra `B` whose
+base change to `Γ(U, ⊤)` is its ring of functions. Without the depth bound the punctured spectrum
+may be a basic open `D(t)`, whose ring of functions is `A_t`.
 
 In the finite normal case, the same bijectivity says that the base change of `Spec B` to the
 punctured spectrum of `A` has `B` as its ring of global functions.
@@ -59,6 +62,11 @@ punctured spectrum of `A` has `B` as its ring of global functions.
   from the functions on `Spec A` to those on its punctured spectrum.
 * `TauCeti.IsLocalRing.isPullback_puncturedSpectrum_toSpecΓ`: reconstruction of an affine
   scheme over the puncture by restricting the spectrum of its sections.
+* `TauCeti.AlgebraicGeometry.Spec.isLocalization_away_of_eq_basicOpen`: the functions on an open
+  `D(t)` of `Spec A` form the localization `A_t`.
+* `TauCeti.AlgebraicGeometry.Spec.isPullback_toSpecΓ_of_isPushout`: a scheme affine over a
+  quasi-compact open `U` of `Spec R` whose ring of functions is `Γ(U, ⊤) ⊗[R] B` is the
+  restriction of `Spec B` to `U`.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegral`: the integral case,
   an affine form of Stacks, Lemma 58.20.1 (0BM8).
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed`: the finite
@@ -145,6 +153,45 @@ theorem presheaf_map_leTop_bijective_of_isIntegrallyClosed [IsLocalRing A] [IsNo
     eq_maximalIdeal (inferInstance : (𝔮.under A).IsMaximal),
     maximalIdeal_height_eq_ringKrullDim]
   exact hdim
+
+/-- If an open subscheme `U` of `Spec A` is the basic open `D(t)`, its ring of functions is the
+localization `A_t`, as an `A`-algebra through restriction from `Spec A`. -/
+theorem isLocalization_away_of_eq_basicOpen {U : (Spec (.of A)).Opens} {t : A}
+    (ht : U = PrimeSpectrum.basicOpen t) :
+    letI := ((Scheme.ΓSpecIso (.of A)).inv ≫ U.ι.appTop).hom.toAlgebra
+    IsLocalization.Away t Γ(U.toScheme, ⊤) := by
+  let : Algebra Γ(Spec (.of A), ⊤) Γ(Spec (.of A), U.ι ''ᵁ ⊤) :=
+    ((Spec (.of A)).presheaf.map (homOfLE le_top : U.ι ''ᵁ ⊤ ⟶ ⊤).op).hom.toAlgebra
+  -- Over `Γ(Spec A, ⊤)`, this is the localization of an affine scheme at a basic open.
+  have : IsLocalization.Away ((Scheme.ΓSpecIso (.of A)).inv t) Γ(Spec (.of A), U.ι ''ᵁ ⊤) :=
+    (isAffineOpen_top (Spec (.of A))).isLocalization_of_eq_basicOpen _ (homOfLE le_top)
+      (by rw [Scheme.Opens.ι_image_top, basicOpen_eq_of_affine]; exact ht)
+  -- Transport the base ring along `Γ(Spec A, ⊤) ≅ A`.
+  have := IsLocalization.isLocalization_of_base_ringEquiv
+    (.powers ((Scheme.ΓSpecIso (.of A)).inv t)) Γ(Spec (.of A), U.ι ''ᵁ ⊤)
+    (Scheme.ΓSpecIso (.of A)).commRingCatIsoToRingEquiv
+  have he : (Scheme.ΓSpecIso (.of A)).commRingCatIsoToRingEquiv
+      ((Scheme.ΓSpecIso (.of A)).inv t) = t := (Scheme.ΓSpecIso (.of A)).inv_hom_id_apply t
+  -- The transported algebra structure is restriction precomposed with `(ΓSpecIso A).inv`, which is
+  -- the algebra structure of the statement by definition.
+  rwa [Submonoid.map_powers, he] at this
+
+/-- Let `U` be a quasi-compact open subscheme of `Spec R` and `f : V ⟶ U` an affine morphism. If
+an `R`-algebra `B` with a map `h : B ⟶ Γ(V, ⊤)` exhibits `Γ(V, ⊤)` as the pushout
+`Γ(U, ⊤) ⊗[R] B`, then `V` is the restriction of `Spec B` to `U`, with `V ⟶ Spec B` induced by
+`h`. -/
+theorem isPullback_toSpecΓ_of_isPushout {R : CommRingCat.{u}} {U : (Spec R).Opens}
+    [CompactSpace U] {V : Scheme.{u}} (f : V ⟶ U) [IsAffineHom f] {B : CommRingCat.{u}}
+    {g : R ⟶ B} {h : B ⟶ Γ(V, ⊤)}
+    (H : IsPushout ((Scheme.ΓSpecIso R).inv ≫ U.ι.appTop) g f.appTop h) :
+    IsPullback f (V.toSpecΓ ≫ Spec.map h) U.ι (Spec.map g) := by
+  have : U.toScheme.IsQuasiAffine := Scheme.IsQuasiAffine.of_isImmersion U.ι
+  -- `V` is the restriction of `Spec Γ(V, ⊤)` to `U`, and `Spec Γ(V, ⊤)` that of `Spec B`.
+  have hU : U.toScheme.toSpecΓ ≫ Spec.map ((Scheme.ΓSpecIso R).inv ≫ U.ι.appTop) = U.ι := by
+    rw [Spec.map_comp, ← Category.assoc, ← Scheme.toSpecΓ_naturality, Category.assoc,
+      toSpecΓ_SpecMap_ΓSpecIso_inv, Category.comp_id]
+  simpa only [hU] using
+    (Scheme.isPullback_toSpecΓ_toSpecΓ f).paste_vert (isPullback_SpecMap_of_isPushout _ _ _ _ H)
 
 end TauCeti.AlgebraicGeometry.Spec
 

@@ -29,6 +29,8 @@ by finitely many basic opens, so that covers can be described and glued chart by
 * `TauCeti.IsLocalRing.puncturedSpectrum_eq_iSup_basicOpen`: if some set `s` generates an ideal
   whose radical is the maximal ideal, the puncture is the union of the basic opens `D(x)` for
   `x ∈ s`.
+* `TauCeti.IsLocalRing.exists_puncturedSpectrum_eq_basicOpen`: in a local domain of dimension at
+  most one, the puncture is a single basic open `D(t)`.
 * `TauCeti.IsLocalRing.isCompact_puncturedSpectrum`: the puncture is quasi-compact whenever the
   maximal ideal is the radical of a finitely generated ideal.
 * `TauCeti.IsLocalRing.isCompact_puncturedSpectrum_of_fg_maximalIdeal`: the special case of a
@@ -126,6 +128,40 @@ theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
   apply SetLike.ext'
   rw [TopologicalSpace.Opens.coe_iSup]
   exact (coe_puncturedSpectrum R).trans key
+
+/-- The punctured spectrum of a local domain of dimension at most one is a single basic open
+`D(t)`, for some `t` in the maximal ideal such that every nonzero element of `R` divides a power of
+`t`: for a field `t = 0` and the puncture is empty, and otherwise any nonzero `t` in the maximal
+ideal works.
+The divisibility says that `R_t` is the fraction field of `R` when `t ≠ 0`. -/
+theorem exists_puncturedSpectrum_eq_basicOpen [IsDomain R] (hdim : ringKrullDim R ≤ 1) :
+    ∃ t ∈ IsLocalRing.maximalIdeal R, puncturedSpectrum R = PrimeSpectrum.basicOpen t ∧
+      ∀ a : R, a ≠ 0 → ∃ n : ℕ, a ∣ t ^ n := by
+  have : Ring.KrullDimLE 1 R := Ring.krullDimLE_iff.mpr hdim
+  -- A nonzero element of the maximal ideal lies in no prime other than the maximal ideal.
+  have hrad (a : R) (ha : a ∈ IsLocalRing.maximalIdeal R) (ha0 : a ≠ 0) :
+      (Ideal.span {a}).radical = IsLocalRing.maximalIdeal R := by
+    refine le_antisymm ?_ ?_
+    · rw [(IsLocalRing.maximalIdeal.isMaximal R).isPrime.radical_le_iff, Ideal.span_le]
+      simpa using ha
+    · rw [Ideal.radical_eq_sInf]
+      refine le_sInf fun J ⟨hJ, hJp⟩ ↦ ?_
+      have hJ0 : J ≠ ⊥ := fun h ↦ ha0 (by simpa [h] using hJ (Ideal.mem_span_singleton_self a))
+      exact (IsLocalRing.eq_maximalIdeal (hJp.isMaximal_of_ne_bot hJ0)).ge
+  have hpunct (t : R) (ht : (Ideal.span {t}).radical = IsLocalRing.maximalIdeal R) :
+      puncturedSpectrum R = PrimeSpectrum.basicOpen t := by
+    simpa using puncturedSpectrum_eq_iSup_basicOpen R (s := {t}) (by simpa using ht)
+  by_cases h : IsLocalRing.maximalIdeal R = ⊥
+  · refine ⟨0, zero_mem _, hpunct 0 ?_, fun a ha ↦ ⟨0, ?_⟩⟩
+    · rw [h, Set.singleton_zero, Ideal.span_zero, Ideal.radical_bot_of_isReduced]
+    · by_contra hu
+      exact ha (by simpa [h] using (IsLocalRing.mem_maximalIdeal a).mpr fun h' ↦ hu h'.dvd)
+  · obtain ⟨t, ht, ht0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h
+    refine ⟨t, ht, hpunct t (hrad t ht ht0), fun a ha ↦ ?_⟩
+    by_cases hu : IsUnit a
+    · exact ⟨0, hu.dvd⟩
+    obtain ⟨n, hn⟩ := (hrad a ((IsLocalRing.mem_maximalIdeal a).mpr hu) ha).ge ht
+    exact ⟨n, Ideal.mem_span_singleton.mp hn⟩
 
 /-- The punctured spectrum is quasi-compact when the maximal ideal is the radical of a finitely
 generated ideal. -/
