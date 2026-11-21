@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Computability.Enumeration.Relative
+import TauCeti.Computability.Enumeration.Relative.Basic
 import TauCeti.Computability.Enumeration.Comparison
 import TauCeti.Computability.Enumeration.Closure
 import TauCeti.Computability.Enumeration.Range
@@ -15,7 +15,7 @@ import TauCeti.Computability.RE
 /-!
 # Regression examples: relative enumerations, stage comparisons, and index closure
 
-These examples exercise `TauCeti.Computability.Enumeration.Relative`,
+These examples exercise `TauCeti.Computability.Enumeration.Relative.Basic`,
 `TauCeti.Computability.Enumeration.Comparison`, `TauCeti.Computability.Enumeration.IndexClosure`,
 `TauCeti.Computability.Enumeration.Closure`, `TauCeti.Computability.Enumeration.Range`, and
 `TauCeti.Computability.RE` from a downstream module, using public APIs only:

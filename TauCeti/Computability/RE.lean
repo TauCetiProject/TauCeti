@@ -207,20 +207,8 @@ namespace Computable
 /-- The range of a total computable function is c.e. -/
 theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Computable f) :
     REPred (· ∈ Set.range f) := by
-  classical
-  have hmap : Computable fun p : β × ℕ => (Encodable.decode p.2).map f :=
-    (Computable.decode.comp Computable.snd).option_map (hf.comp Computable.snd)
-  have heq : ComputablePred fun p : β × ℕ => (Encodable.decode p.2).map f = some p.1 :=
-    (Primrec.eq.decide.to_comp.comp hmap
-      (Computable.option_some.comp Computable.fst)).computablePred
-  refine (ComputablePred.rePred_exists
-    (p := fun b n => (Encodable.decode (α := α) n).map f = some b) heq).of_eq fun b => ?_
-  constructor
-  · rintro ⟨n, hn⟩
-    obtain ⟨a, -, hab⟩ := Option.map_eq_some_iff.mp hn
-    exact ⟨a, hab⟩
-  · rintro ⟨a, rfl⟩
-    exact ⟨Encodable.encode a, by simp⟩
+  have hf' : Partrec (f : α →. β) := hf.partrec
+  simpa only [PFun.ran_coe] using hf'.rePred_mem_ran
 
 /-- The image of a c.e. set under a total computable function is c.e. -/
 theorem rePred_mem_image {β : Type*} [Primcodable β] {f : α → β} {S : Set α}

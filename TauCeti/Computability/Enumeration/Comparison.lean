@@ -9,7 +9,7 @@ public import TauCeti.Computability.Enumeration.Stage
 public import TauCeti.Computability.RecursiveIn
 public import TauCeti.Data.Nat.BitIndices
 import Mathlib.Data.Set.Finite.Lattice
-import TauCeti.Computability.Primrec.FiniteSet
+import TauCeti.Computability.Primrec.Bitwise
 
 /-!
 # Uniform stage comparison for finite-stage enumerations
@@ -35,7 +35,8 @@ premises, and when `B` is directed under inclusion its totality characterizes
   characterizes limiting-set inclusion and equality for directed enumerations.
 * `TauCeti.Enumeration.recursiveIn_stageCompare`, `TauCeti.Enumeration.partrec_stageCompare`,
   `TauCeti.Enumeration.computableIn_stageCompare_get`,
-  `TauCeti.Enumeration.exists_computableIn_stage_comparison`: uniform effectivity and total
+  `TauCeti.Enumeration.exists_computableIn_stage_comparison`,
+  `TauCeti.Enumeration.exists_computable_stage_comparison`: uniform effectivity and total
   stage-transfer maps.
 
 ## References
@@ -162,5 +163,19 @@ theorem exists_computableIn_stage_comparison {α : Type*} [Primcodable α] {G : 
     computableIn_stageCompare_get hB hA hdomBA,
     fun a s => subset_of_mem_stageCompare (Part.get_mem (hdomAB a s)),
     fun a s => subset_of_mem_stageCompare (Part.get_mem (hdomBA a s))⟩
+
+/-- Uniformly computable families of directed enumerations with equal limiting sets admit jointly
+computable stage-comparison maps witnessing both inclusions `A a s ⊆ B a (f (a, s))` and
+`B a s ⊆ A a (g (a, s))`. -/
+theorem exists_computable_stage_comparison {α : Type*} [Primcodable α] {A B : α → ℕ → Finset ℕ}
+    (hA_dir : ∀ a, Directed (· ⊆ ·) (A a)) (hB_dir : ∀ a, Directed (· ⊆ ·) (B a))
+    (hA : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2))
+    (hB : Computable fun p : α × ℕ => Finset.equivBitIndices.symm (B p.1 p.2))
+    (heq : ∀ a, stageLimit (A a) = stageLimit (B a)) :
+    ∃ f g : α × ℕ → ℕ, Computable f ∧ Computable g ∧
+      (∀ a s, A a s ⊆ B a (f (a, s))) ∧ (∀ a s, B a s ⊆ A a (g (a, s))) := by
+  obtain ⟨f, g, hf, hg, hfg, hgf⟩ := exists_computableIn_stage_comparison (G := ∅)
+    hA_dir hB_dir hA.computableIn hB.computableIn heq
+  exact ⟨f, g, TauCeti.computableIn_empty_iff.1 hf, TauCeti.computableIn_empty_iff.1 hg, hfg, hgf⟩
 
 end TauCeti.Enumeration

@@ -46,13 +46,19 @@ theorem ran_map_const {α : Type u} {β : Type v} (f : α →. β) :
 theorem ran_comp_map_const {α : Type u} {β : Type v} {γ : Type w} (g : α →. γ) (f : α →. β) :
     PFun.ran (PFun.comp g fun x => (f x).map fun _ => x) = g.image f.Dom := by
   ext y
+  have hcomp (x : α) :
+      PFun.comp g (fun x => (f x).map fun _ => x) x = ((f x).map fun _ => x).bind g :=
+    PFun.comp_apply g (fun x => (f x).map fun _ => x) x
   simp only [ran, Set.mem_ofPred_eq, mem_image, mem_dom]
   refine ⟨?_, ?_⟩
   · rintro ⟨x, hx⟩
+    rw [hcomp] at hx
     obtain ⟨x', hx', hy⟩ := Part.mem_bind_iff.1 hx
     obtain ⟨b, hb, rfl⟩ := (Part.mem_map_iff _).1 hx'
     exact ⟨x, ⟨b, hb⟩, hy⟩
   · rintro ⟨x, ⟨b, hb⟩, hy⟩
-    exact ⟨x, Part.mem_bind_iff.2 ⟨x, (Part.mem_map_iff _).2 ⟨b, hb, rfl⟩, hy⟩⟩
+    refine ⟨x, ?_⟩
+    rw [hcomp]
+    exact Part.mem_bind_iff.2 ⟨x, (Part.mem_map_iff _).2 ⟨b, hb, rfl⟩, hy⟩
 
 end PFun

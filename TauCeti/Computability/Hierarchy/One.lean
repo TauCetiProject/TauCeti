@@ -18,8 +18,9 @@ the reverse implication uses finite successful computations of an oracle program
 oracle is essential to computing bounded simulation.
 
 This gives the ordinary characterization by `REPred` at the empty oracle, the index presentation
-by oracle-program domains, and one-one and many-one completeness of the relative jump `Z'` and its
-complement `(Z')ᶜ` for `Σ⁰₁` and `Π⁰₁` predicates.
+by oracle-program domains, closure of relative `Σ⁰₁` sets under partial preimages
+(`RecursiveIn.isSigma_one_mem_preimage`), and one-one and many-one completeness of the relative
+jump `Z'` and its complement `(Z')ᶜ` for `Σ⁰₁` and `Π⁰₁` predicates.
 No program index is extracted computably from a semantic pointclass-membership proof.
 
 ## References
@@ -72,8 +73,7 @@ theorem isSigma_one_dom_eval (c : Code) :
 /-- The domain of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
 theorem _root_.RecursiveIn.isSigma_one_mem_dom {β : Type*} [Primcodable β] {f : α →. β}
     (hf : RecursiveIn {Z.oracle} f) : IsSigma Z 1 (· ∈ f.Dom) := by
-  unfold RecursiveIn at hf
-  obtain ⟨c, hc⟩ := Code.exists_code.1 hf
+  obtain ⟨c, hc⟩ := RecursiveIn.exists_code.1 hf
   exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq fun x => by
     simp [PFun.Dom, hc, encodek]
 
@@ -90,12 +90,32 @@ theorem isSigma_one_iff_exists_code : IsSigma Z 1 p ↔
   constructor
   · intro h
     obtain ⟨f, hf, heq⟩ := h.exists_recursiveIn_domain
-    unfold RecursiveIn at hf
-    obtain ⟨c, hc⟩ := Code.exists_code.1 hf
+    obtain ⟨c, hc⟩ := RecursiveIn.exists_code.1 hf
     exact ⟨c, fun x => by simpa [hc, encodek] using heq x⟩
   · rintro ⟨c, heq⟩
     exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq
       fun x => (heq x).symm
+
+/-- The preimage of a relative Σ⁰₁ set under a partial function recursive in `Z` is Σ⁰₁ relative
+to `Z`. -/
+theorem _root_.RecursiveIn.isSigma_one_mem_preimage {β : Type*} [Primcodable β] {f : α →. β}
+    {S : Set β} (hf : RecursiveIn {Z.oracle} f) (hS : IsSigma Z 1 (· ∈ S)) :
+    IsSigma Z 1 (· ∈ f.preimage S) := by
+  obtain ⟨cf, hcf⟩ := RecursiveIn.exists_code.1 hf
+  obtain ⟨cS, hcS⟩ := isSigma_one_iff_exists_code.1 hS
+  have heq : ∀ x : α, encode x ∈ (Code.eval Z.oracle (Code.comp cS cf)).Dom ↔
+      x ∈ f.preimage S := by
+    intro x
+    rw [Code.dom_eval_comp, PFun.mem_preimage, PFun.mem_preimage, hcf]
+    simp only [encodek, Part.coe_some, Part.bind_some, Part.mem_map_iff, PFun.Dom,
+      Set.mem_ofPred_eq]
+    constructor
+    · rintro ⟨m, hm, y, hy, rfl⟩
+      exact ⟨y, (hcS y).2 hm, hy⟩
+    · rintro ⟨y, hyS, hyf⟩
+      exact ⟨encode y, (hcS y).1 hyS, y, hyf, rfl⟩
+  exact ((isSigma_one_dom_eval (Z := Z) (Code.comp cS cf)).preimage
+    Primrec.encode.computableIn).of_eq heq
 
 /-- At the empty oracle, the quantifier definition of Σ⁰₁ agrees with Mathlib's c.e.
 predicate `REPred`. -/

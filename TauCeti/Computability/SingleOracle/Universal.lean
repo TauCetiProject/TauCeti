@@ -100,7 +100,8 @@ theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (hg : Pri
       (snd.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
         (Primrec.ofNat _).comp (snd.comp Primrec.unpair)
   refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩
-  simp [hca, hcg, Seq.seq]
+  rw [eval_comp, eval_pair, eval_pair_left_right, hca]
+  simp [hcg, Seq.seq]
 
 /-- A single program whose evaluation on `n`, relative to every total oracle `O`, is the least
 witness `k` at which a primitive recursive predicate holds of `(n, k)` and the finite oracle string
@@ -113,6 +114,7 @@ theorem exists_code_rfind_answers {p : ℕ × ℕ × List ℕ → Bool} (hp : Pr
     (Primrec.cond hp (const 0) (const 1))
   refine ⟨comp (rfind' t) (pair (pair left right) zero), fun O n => ?_⟩
   have hid : eval (O : ℕ →. ℕ) (pair (pair left right) zero) n = Part.some (Nat.pair n 0) := by
+    rw [eval_pair, eval_pair_left_right, eval_zero]
     simp [Seq.seq]
   rw [eval_comp, hid, PFun.some_bind, eval_rfind']
   have hstep : (fun m => (fun m => decide (m = 0)) <$> eval (O : ℕ →. ℕ) t (Nat.pair n (m + 0))) =
@@ -160,8 +162,8 @@ private theorem exists_universal : ∃ u : Code, ∀ (O : ℕ → ℕ) (e x : �
     fun k => evaln (fun z => ((List.range k).map O)[z]?) k (ofNat Code e) x with hR
   have hrun (k : ℕ) : run (Nat.pair e x, k, (List.range k).map O) = R k := by
     simp only [run, Nat.unpair_pair, hR]
-  have hid : eval (O : ℕ →. ℕ) (pair left right) (Nat.pair e x) = Part.some (Nat.pair e x) := by
-    simp [Seq.seq]
+  have hid : eval (O : ℕ →. ℕ) (pair left right) (Nat.pair e x) = Part.some (Nat.pair e x) :=
+    eval_pair_left_right (O : ℕ →. ℕ) (Nat.pair e x)
   have hsearch : eval (O : ℕ →. ℕ) s (Nat.pair e x) =
       Nat.rfind fun k => Part.some (R k).isSome := by
     rw [hs]

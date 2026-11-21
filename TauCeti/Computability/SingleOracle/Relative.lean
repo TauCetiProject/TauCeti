@@ -53,31 +53,11 @@ oracle-computable, uniformly in the family parameter, stage, program, and input.
 theorem computableIn_evalStage (hσ : ComputableIn₂ G σ) :
     ComputableIn G (fun p : α × ℕ × Code × ℕ =>
       evalStage (fun z => some (σ p.1 z)) p.2.1 p.2.2.1 p.2.2.2) := by
-  open Primrec in
-  have hguard : Primrec fun q : Option Halt × ℕ × Code =>
-      if encode q.2.2 < q.2.1 then
-        q.1.bind fun d => if d.output < q.2.1 then some d else none
-      else none :=
-    Primrec.ite (nat_lt.comp (encode_iff.2 (snd.comp snd)) (fst.comp snd))
-      (option_bind fst <| Primrec₂.mk <|
-        Primrec.ite (nat_lt.comp (Halt.primrec_output.comp snd) (fst.comp (snd.comp fst)))
-          (option_some.comp snd) (const none))
-      (const none)
-  have hargs : ComputableIn G fun p : α × ℕ × Code × ℕ =>
-      (evaln (fun z => some (σ p.1 z)) p.2.1 p.2.2.1 p.2.2.2, p.2.1, p.2.2.1) :=
-    (computableIn_evaln hσ).pair
-      ((ComputableIn.fst.comp ComputableIn.snd).pair
-        (ComputableIn.fst.comp (ComputableIn.snd.comp ComputableIn.snd)))
-  refine RecursiveIn.of_eq (hguard.computableIn.comp hargs) fun p => congrArg Part.some <|
-    Option.ext fun d => ?_
-  by_cases hc : encode p.2.2.1 < p.2.1
-  · simp only [hc, ↓reduceIte, Option.bind_eq_some_iff, evalStage_eq_some_iff, true_and]
-    constructor
-    · rintro ⟨d', hd', h⟩
-      split_ifs at h with hd
-      exact ⟨Option.some.inj h ▸ hd', Option.some.inj h ▸ hd⟩
-    · rintro ⟨h, hd⟩
-      exact ⟨d, h, by simp [hd]⟩
-  · simp [evalStage_eq_none_of_le_encode (Nat.le_of_not_lt hc), hc]
+  have hargs : ComputableIn G (fun p : α × ℕ × Code × ℕ => (p.1, p.2.1)) :=
+    ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd)
+  have hp : ComputableIn G (fun p : α × ℕ × Code × ℕ => (List.range p.2.1).map (σ p.1)) :=
+    hσ.list_range_map.comp hargs
+  have hr := primrec_evalStage_list.computableIn.comp (hp.pair ComputableIn.snd)
+  exact RecursiveIn.of_eq hr fun p => congrArg Part.some (evalStage_range_map _ _ _ _)
 
 end TauCeti.Oracle.Single.Code

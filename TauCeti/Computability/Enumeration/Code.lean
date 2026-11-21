@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.Colex
 public import Mathlib.Computability.RE
 public import TauCeti.Computability.Enumeration.Stage
-public import TauCeti.Computability.FiniteSet
+public import TauCeti.Computability.Enumeration.Membership
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!

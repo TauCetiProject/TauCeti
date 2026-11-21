@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Computability.Enumeration.Code
 public import TauCeti.Computability.RecursiveIn
-import TauCeti.Computability.Enumeration.Domain
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -147,14 +146,15 @@ theorem computableIn_serializedStage {α : Type*} [Primcodable α] {G : Set (ℕ
     ComputableIn G fun p : α × ℕ => Finset.equivBitIndices.symm (serializedStage (A p.1) p.2) := by
   have hunpair : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) => p.2.1.unpair :=
     Primrec.unpair.computableIn.comp (ComputableIn.fst.comp ComputableIn.snd)
-  have hcode : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) =>
-      Finset.equivBitIndices.symm (A p.1.1 p.2.1.unpair.2) :=
-    hA.comp ((ComputableIn.fst.comp ComputableIn.fst).pair (ComputableIn.snd.comp hunpair))
+  have hmem0 : ComputableIn G fun q : (α × ℕ) × ℕ => decide (q.2 ∈ A q.1.1 q.1.2) :=
+    computableIn_mem_of_computableIn_equivBitIndices (ι := α × ℕ) (A := fun p : α × ℕ => A p.1 p.2)
+      hA
   have hmem : ComputableIn G fun p : (α × ℕ) × (ℕ × ℕ) =>
       decide (p.2.1.unpair.1 ∈ A p.1.1 p.2.1.unpair.2) :=
     RecursiveIn.of_eq
-      (Primrec.mem_equivBitIndices.decide.computableIn.comp
-        (hcode.pair (ComputableIn.fst.comp hunpair))) fun p => by simp
+      (hmem0.comp (((ComputableIn.fst.comp ComputableIn.fst).pair
+        (ComputableIn.snd.comp hunpair)).pair (ComputableIn.fst.comp hunpair)))
+      fun _ => rfl
   have hcond : Primrec fun q : Bool × ℕ × ℕ => bif q.1 then q.2.1 ||| 2 ^ q.2.2 else q.2.1 :=
     Primrec.cond Primrec.fst
       (Primrec.nat_lor.comp (Primrec.fst.comp Primrec.snd)
@@ -191,6 +191,23 @@ theorem computable_serializedStage_domStage :
       Finset.equivBitIndices.symm (serializedStage p.1.domStage p.2) :=
   computable_serializedStage Nat.Partrec.Code.primrec_domStage.to_comp
 
+/-- Any stage presentation with oracle-computable binary finite-set codes can be serialized into
+an increasing presentation starting empty, adding at most one entry per stage, with the same
+limiting set and oracle-computable binary finite-set codes. -/
+theorem exists_serialized_stages_of_stages {G : Set (ℕ →. ℕ)} {S : Set ℕ}
+    (hS : ∃ A : ℕ → Finset ℕ,
+      ComputableIn G (fun s => Finset.equivBitIndices.symm (A s)) ∧ stageLimit A = S) :
+    ∃ A : ℕ → Finset ℕ, Monotone A ∧ A 0 = ∅ ∧ (∀ s, (fresh A s).card ≤ 1) ∧
+      ComputableIn G (fun s => Finset.equivBitIndices.symm (A s)) ∧ stageLimit A = S := by
+  obtain ⟨A, hA, hlim⟩ := hS
+  have hser : ComputableIn G fun p : Unit × ℕ =>
+      Finset.equivBitIndices.symm (serializedStage A p.2) :=
+    computableIn_serializedStage (α := Unit) (A := fun _ => A) (hA.comp ComputableIn.snd)
+  refine ⟨serializedStage A, monotone_serializedStage A, serializedStage_zero A,
+    card_fresh_serializedStage_le_one A,
+    hser.comp ((ComputableIn.const ()).pair ComputableIn.id), ?_⟩
+  rw [stageLimit_serializedStage, hlim]
+
 /-- Every c.e. predicate has an effective increasing finite-stage presentation starting empty
 with at most one new entry per stage, and every such presentation has a c.e. limit. -/
 theorem rePred_iff_exists_serialized_stages {p : ℕ → Prop} :
@@ -199,13 +216,10 @@ theorem rePred_iff_exists_serialized_stages {p : ℕ → Prop} :
       Computable (fun s => Finset.equivBitIndices.symm (A s)) ∧ stageLimit A = {x | p x} := by
   constructor
   · intro hp
-    obtain ⟨c, hc⟩ := rePred_iff_exists_code.mp hp
-    refine ⟨serializedStage c.domStage, monotone_serializedStage _, serializedStage_zero _,
-      card_fresh_serializedStage_le_one _,
-      computable_serializedStage_domStage.comp ((Computable.const c).pair Computable.id), ?_⟩
-    rw [stageLimit_serializedStage, Nat.Partrec.Code.stageLimit_domStage]
-    ext x
-    exact (hc x).symm
+    obtain ⟨A, -, -, hA, hlim⟩ := rePred_iff_exists_stages.mp hp
+    obtain ⟨B, hmono, hzero, hfresh, hB, hlimB⟩ :=
+      exists_serialized_stages_of_stages (G := ∅) ⟨A, hA.computableIn, hlim⟩
+    exact ⟨B, hmono, hzero, hfresh, TauCeti.computableIn_empty_iff.1 hB, hlimB⟩
   · rintro ⟨A, hmono, hzero, _, hcomp, hlim⟩
     exact rePred_iff_exists_stages.mpr ⟨A, hmono, hzero, hcomp, hlim⟩
 

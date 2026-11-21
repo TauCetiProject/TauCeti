@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Enumeration.Serialization
-public import TauCeti.Computability.FiniteSet
-public import TauCeti.Computability.Hierarchy.One
+public import TauCeti.Computability.Enumeration.Code
+public import TauCeti.Computability.Enumeration.Stage
+public import TauCeti.Computability.RecursiveIn
 public import TauCeti.Computability.SingleOracle.Stage
 import TauCeti.Computability.Primrec.FiniteSet
-import TauCeti.Computability.SingleOracle.Relative
 
 /-!
-# Relative finite-stage enumerations
+# Relative finite-stage domain enumerations of oracle programs
 
 For an oracle program `c : TauCeti.Oracle.Single.Code` and oracle answers `σ : ℕ → Option ℕ`,
 `c.domStage σ s` is the normalized finite stage `W_{c,s}^σ`: the inputs on which `c` halts at
@@ -23,10 +22,11 @@ below `s` and `c.domStage σ s = ∅` whenever `s ≤ encode c`.
 When `σ` fixes the answers of a set oracle `Z` (or a total oracle `O`), these stages start empty,
 increase with `s`, and have limit `(Code.eval Z.oracle c).Dom`. Their binary finite-set codes are
 primitive recursive uniformly in any primitive-recursive family of finite oracle answers (such as
-finite oracle strings or binary-coded finite sets), and `Z`-computable uniformly in the program
-and the stage. Applying `TauCeti.Enumeration.serializedStage` yields uniformly `Z`-computable
-single-entry stages, characterizing `IsSigma Z 1` predicates on `ℕ` as limits of `Z`-computable
-monotone finite stages (with or without serialization).
+finite oracle strings or binary-coded finite sets), and uniformly `O`-computable in the program and
+the stage for any oracle-computable family of total oracles.
+
+Serialization and `Σ⁰₁` stage characterizations live downstream in
+`TauCeti.Computability.Enumeration.Relative.Basic`.
 
 ## Main definitions
 
@@ -35,22 +35,21 @@ monotone finite stages (with or without serialization).
 
 ## Main results
 
+* `TauCeti.Oracle.Single.Code.domStage_def`, `TauCeti.Oracle.Single.Code.mem_domStage`,
+  `TauCeti.Oracle.Single.Code.domStage_subset_range`,
+  `TauCeti.Oracle.Single.Code.domStage_zero`,
+  `TauCeti.Oracle.Single.Code.domStage_eq_empty_of_le_encode`: definition and basic stage bounds.
 * `TauCeti.Oracle.Single.Code.monotone_domStage`,
-  `TauCeti.Oracle.Single.Code.stageLimit_domStage`: the stages start empty, increase, and limit
-  to the domain of the oracle program.
+  `TauCeti.Oracle.Single.Code.domStage_eq_of_eqOn`,
+  `TauCeti.Oracle.Single.Code.domStage_range_map`,
+  `TauCeti.Oracle.Single.Code.stageLimit_domStage`: monotonicity, prefix agreement, and domain
+  limit.
 * `TauCeti.Oracle.Single.Code.primrecRel_mem_domStage`,
   `TauCeti.Oracle.Single.Code.primrec_domStage`,
+  `TauCeti.Oracle.Single.Code.computableIn_domStage`,
+  `TauCeti.Oracle.Single.Code.computableIn_domStage_total`,
   `TauCeti.Oracle.Single.Code.computableIn_domStage_setAnswers`: uniform effectivity of the
   normalized stages and their binary finite-set codes.
-* `TauCeti.Enumeration.computableIn_serializedStage_domStage_setAnswers`: relative serialization
-  produces uniformly `Z`-computable domain stages.
-* `TauCeti.Enumeration.isSigma_one_mem_stageLimit`,
-  `TauCeti.Enumeration.isSigma_one_mem_stageLimit_of_equivBitIndices`: limits of finite stages
-  with `Z`-computable membership (in particular, `Z`-computable binary codes) are Σ⁰₁ relative
-  to `Z`.
-* `TauCeti.Enumeration.isSigma_one_iff_exists_stages`,
-  `TauCeti.Enumeration.isSigma_one_iff_exists_serialized_stages`: relative stage characterizations
-  of Σ⁰₁ predicates on `ℕ`.
 
 ## References
 
@@ -59,7 +58,7 @@ monotone finite stages (with or without serialization).
 
 public section
 
-open Encodable TauCeti.ArithmeticalHierarchy TauCeti.Enumeration
+open Encodable TauCeti.Enumeration
 
 namespace TauCeti.Oracle.Single.Code
 
@@ -67,6 +66,11 @@ namespace TauCeti.Oracle.Single.Code
 answers `σ`: the inputs on which `evalStage σ s c` succeeds. -/
 def domStage (c : Code) (σ : ℕ → Option ℕ) (s : ℕ) : Finset ℕ :=
   (Finset.range s).filter fun x => (evalStage σ s c x).isSome
+
+/-- Unfolding equation for `domStage` as a filtered initial interval. -/
+theorem domStage_def (c : Code) (σ : ℕ → Option ℕ) (s : ℕ) :
+    c.domStage σ s = (Finset.range s).filter fun x => (evalStage σ s c x).isSome := by
+  rw [domStage]
 
 variable {σ τ : ℕ → Option ℕ} {c : Code} {s x : ℕ}
 
@@ -188,46 +192,14 @@ oracles are oracle-computable, uniformly in the family parameter, the program, a
 theorem computableIn_domStage {G : Set (ℕ →. ℕ)} {σ : α → ℕ → ℕ} (hσ : ComputableIn₂ G σ) :
     ComputableIn G fun p : α × Code × ℕ =>
       Finset.equivBitIndices.symm (p.2.1.domStage (fun z => some (σ p.1 z)) p.2.2) := by
-  have heval : ComputableIn G fun q : (α × Code × ℕ) × (ℕ × ℕ) =>
-      evalStage (fun z => some (σ q.1.1 z)) q.1.2.2 q.1.2.1 q.2.1 :=
-    (computableIn_evalStage hσ).comp <|
-      (ComputableIn.fst.comp ComputableIn.fst).pair <|
-        (ComputableIn.snd.comp (ComputableIn.snd.comp ComputableIn.fst)).pair <|
-          (ComputableIn.fst.comp (ComputableIn.snd.comp ComputableIn.fst)).pair
-            (ComputableIn.fst.comp ComputableIn.snd)
-  have hcond : Primrec fun r : Option Halt × ℕ × ℕ =>
-      bif r.1.isSome then r.2.1 ||| 2 ^ r.2.2 else r.2.1 :=
-    Primrec.cond (Primrec.option_isSome.comp Primrec.fst)
-      (Primrec.nat_lor.comp (Primrec.fst.comp Primrec.snd)
-        (Primrec.nat_pow.comp (Primrec.const 2) (Primrec.snd.comp Primrec.snd)))
-      (Primrec.fst.comp Primrec.snd)
-  have hstep : ComputableIn₂ G fun (p : α × Code × ℕ) (q : ℕ × ℕ) =>
-      if (evalStage (fun z => some (σ p.1 z)) p.2.2 p.2.1 q.1).isSome then
-        q.2 ||| 2 ^ q.1
-      else q.2 :=
-    RecursiveIn.of_eq
-      (hcond.computableIn.comp
-        (heval.pair ((ComputableIn.snd.comp ComputableIn.snd).pair
-          (ComputableIn.fst.comp ComputableIn.snd))))
-      fun _ => by simp
-  refine RecursiveIn.of_eq
-    (ComputableIn.nat_rec (ComputableIn.snd.comp ComputableIn.snd) (ComputableIn.const 0) hstep)
-    ?_
-  rintro ⟨a, c, s⟩
-  congr 1
-  have hrec : ∀ k, Nat.rec (motive := fun _ => ℕ) 0
-      (fun n b => if (evalStage (fun z => some (σ a z)) s c n).isSome then b ||| 2 ^ n else b)
-      k = Finset.equivBitIndices.symm
-        ((Finset.range k).filter fun x => (evalStage (fun z => some (σ a z)) s c x).isSome) := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      simp only [ih, Finset.range_add_one, Finset.filter_insert]
-      split_ifs with hk
-      · exact (Finset.equivBitIndices_symm_insert _ _).symm
-      · rfl
-  exact hrec s
+  have hargs : ComputableIn G (fun p : α × Code × ℕ => (p.1, p.2.2)) :=
+    ComputableIn.fst.pair (ComputableIn.snd.comp ComputableIn.snd)
+  have hp : ComputableIn G (fun p : α × Code × ℕ => (List.range p.2.2).map (σ p.1)) :=
+    hσ.list_range_map.comp hargs
+  have hr := primrec_domStage_list.computableIn.comp (hp.pair ComputableIn.snd)
+  exact RecursiveIn.of_eq hr fun p =>
+    congrArg (fun S => Part.some (Finset.equivBitIndices.symm S))
+      (domStage_range_map (σ p.1) p.2.1 p.2.2)
 
 /-- For a total oracle `O`, binary finite-set codes of `O`-relative domain stages are computable in
 `O`, uniformly in the program and the stage. -/
@@ -257,72 +229,3 @@ theorem computableIn_domStage_setAnswers (Z : Set ℕ) :
 end Effectivity
 
 end TauCeti.Oracle.Single.Code
-
-namespace TauCeti.Enumeration
-
-open TauCeti.Oracle.Single
-
-/-! ### Relative serialization and stage characterizations -/
-
-/-- The canonical `Z`-relative c.e. domain enumerations have uniformly `Z`-computable serialized
-stages. -/
-theorem computableIn_serializedStage_domStage_setAnswers (Z : Set ℕ) :
-    ComputableIn {Z.oracle} fun p : Code × ℕ =>
-      Finset.equivBitIndices.symm (serializedStage (p.1.domStage (Code.setAnswers Z)) p.2) :=
-  computableIn_serializedStage (A := fun c : Code => c.domStage (Code.setAnswers Z))
-    (Code.computableIn_domStage_setAnswers Z)
-
-/-- The limit of finite stages whose membership relation is `Z`-computable is Σ⁰₁ relative to
-`Z`. -/
-theorem isSigma_one_mem_stageLimit {Z : Set ℕ} {A : ℕ → Finset ℕ}
-    (hA : ComputableIn {Z.oracle} fun p : ℕ × ℕ => decide (p.2 ∈ A p.1)) :
-    IsSigma Z 1 fun x => x ∈ stageLimit A :=
-  isSigma_one_iff.2 ⟨fun p => decide (p.1 ∈ A p.2),
-    hA.comp (ComputableIn.snd.pair ComputableIn.fst), fun x => by simp⟩
-
-/-- The limit of finite stages whose binary codes are `Z`-computable is Σ⁰₁ relative to `Z`. -/
-theorem isSigma_one_mem_stageLimit_of_equivBitIndices {Z : Set ℕ} {A : ℕ → Finset ℕ}
-    (hA : ComputableIn {Z.oracle} fun s => Finset.equivBitIndices.symm (A s)) :
-    IsSigma Z 1 fun x => x ∈ stageLimit A :=
-  isSigma_one_mem_stageLimit (computableIn_mem_of_computableIn_equivBitIndices hA)
-
-/-- A predicate on `ℕ` is Σ⁰₁ relative to `Z` if and only if it is the limit of increasing finite
-stages, starting empty, whose binary finite-set codes are `Z`-computable. -/
-theorem isSigma_one_iff_exists_stages {Z : Set ℕ} {p : ℕ → Prop} :
-    IsSigma Z 1 p ↔ ∃ A : ℕ → Finset ℕ, Monotone A ∧ A 0 = ∅ ∧
-      ComputableIn {Z.oracle} (fun s => Finset.equivBitIndices.symm (A s)) ∧
-      stageLimit A = {x | p x} := by
-  constructor
-  · intro hp
-    obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hp
-    refine ⟨c.domStage (Code.setAnswers Z), c.monotone_domStage _, c.domStage_zero _,
-      (Code.computableIn_domStage_setAnswers Z).comp
-        ((ComputableIn.const c).pair ComputableIn.id), ?_⟩
-    rw [Code.stageLimit_domStage_setAnswers]
-    ext x
-    exact (hc x).symm
-  · rintro ⟨A, -, -, hA, hlim⟩
-    exact (isSigma_one_mem_stageLimit_of_equivBitIndices hA).of_eq fun x => by
-      rw [hlim, Set.mem_ofPred_eq]
-
-/-- A predicate on `ℕ` is Σ⁰₁ relative to `Z` if and only if it is the limit of increasing
-`Z`-computable finite stages starting empty with at most one new entry per stage. -/
-theorem isSigma_one_iff_exists_serialized_stages {Z : Set ℕ} {p : ℕ → Prop} :
-    IsSigma Z 1 p ↔ ∃ A : ℕ → Finset ℕ, Monotone A ∧ A 0 = ∅ ∧
-      (∀ s, (fresh A s).card ≤ 1) ∧
-      ComputableIn {Z.oracle} (fun s => Finset.equivBitIndices.symm (A s)) ∧
-      stageLimit A = {x | p x} := by
-  constructor
-  · intro hp
-    obtain ⟨c, hc⟩ := isSigma_one_iff_exists_code.1 hp
-    refine ⟨serializedStage (c.domStage (Code.setAnswers Z)), monotone_serializedStage _,
-      serializedStage_zero _, card_fresh_serializedStage_le_one _,
-      (computableIn_serializedStage_domStage_setAnswers Z).comp
-        ((ComputableIn.const c).pair ComputableIn.id), ?_⟩
-    rw [stageLimit_serializedStage, Code.stageLimit_domStage_setAnswers]
-    ext x
-    exact (hc x).symm
-  · rintro ⟨A, hmono, hzero, -, hA, hlim⟩
-    exact isSigma_one_iff_exists_stages.2 ⟨A, hmono, hzero, hA, hlim⟩
-
-end TauCeti.Enumeration
