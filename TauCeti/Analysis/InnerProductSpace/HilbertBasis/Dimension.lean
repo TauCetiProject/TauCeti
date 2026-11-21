@@ -54,7 +54,7 @@ Hilbert spaces have Hilbert dimension `0`, a positive natural number, or `ℵ₀
 infinite-dimensional Hilbert space is unitarily isomorphic to `ℓ²(ℕ, 𝕜)`. The file also establishes
 basis-existence characterizations (`TauCeti.nonempty_hilbertBasis_iff_lift_mk_eq`,
 `TauCeti.nonempty_hilbertBasis_nat_iff`) and cardinal addition laws for `L²` products, orthogonal
-decompositions, and quotients by closed complete submodules (`TauCeti.hilbertDim_prodLp`,
+decompositions, and quotients by closed submodules (`TauCeti.hilbertDim_prodLp`,
 `TauCeti.hilbertDim_add_hilbertDim_orthogonal`, `TauCeti.hilbertDim_add_hilbertDim_quotient`,
 `TauCeti.hilbertDim_orthogonal_eq_of_finiteDimensional`).
 
@@ -796,19 +796,19 @@ theorem hilbertDim_add_hilbertDim_orthogonal {E : Type u}
     hilbertDim 𝕜 K + hilbertDim 𝕜 Kᗮ = hilbertDim 𝕜 E := by
   rw [← hilbertDim_prodLp', ← K.orthogonalDecomposition.hilbertDim_eq]
 
-/-- The quotient `E ⧸ K` by a closed submodule `K` with orthogonal projection has the same Hilbert
+/-- The quotient `E ⧸ K` by a closed submodule `K` of a Hilbert space `E` has the same Hilbert
 dimension as `Kᗮ`. -/
 theorem hilbertDim_quotient_eq_orthogonal {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] [IsClosed (K : Set E)] :
+    (K : Submodule 𝕜 E) [IsClosed (K : Set E)] :
     hilbertDim 𝕜 (E ⧸ K) = hilbertDim 𝕜 Kᗮ :=
   K.quotientEquivOrthogonal.hilbertDim_eq
 
-/-- For a complete closed submodule `K` of a Hilbert space `E`, the Hilbert dimensions of `K` and
-`E ⧸ K` sum to the Hilbert dimension of `E`. -/
+/-- For a closed submodule `K` of a Hilbert space `E`, the Hilbert dimensions of `K` and `E ⧸ K`
+sum to the Hilbert dimension of `E`. -/
 theorem hilbertDim_add_hilbertDim_quotient {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    (K : Submodule 𝕜 E) [CompleteSpace K] [IsClosed (K : Set E)] :
+    (K : Submodule 𝕜 E) [IsClosed (K : Set E)] :
     hilbertDim 𝕜 K + hilbertDim 𝕜 (E ⧸ K) = hilbertDim 𝕜 E := by
   rw [hilbertDim_quotient_eq_orthogonal, hilbertDim_add_hilbertDim_orthogonal]
 
