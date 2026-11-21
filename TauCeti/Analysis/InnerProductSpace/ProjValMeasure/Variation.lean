@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Polarization
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 import Mathlib.Analysis.Complex.OperatorNorm
-import Mathlib.Analysis.MeanInequalities
 import TauCeti.MeasureTheory.VectorMeasure.Variation.Basic
 
 /-!
