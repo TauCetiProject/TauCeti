@@ -77,7 +77,8 @@ private lemma abs_sub_integral_uniformSphereMeasure_le {f : sphere (0 : E) 1 →
     have hdist : dist u v ≤ 2 := by
       rw [Subtype.dist_eq]
       calc dist (u : E) v ≤ dist (u : E) 0 + dist (0 : E) v := dist_triangle _ _ _
-        _ = 2 := by rw [dist_comm (0 : E), mem_sphere.1 u.2, mem_sphere.1 v.2]; norm_num
+        _ = 2 := by
+          rw [dist_comm (0 : E), mem_sphere.1 u.property, mem_sphere.1 v.property]; norm_num
     rw [← Real.dist_eq, mul_comm]
     exact (hf.dist_le_mul u v).trans (mul_le_mul_of_nonneg_left hdist L.coe_nonneg)
   have hfi : Integrable f (uniformSphereMeasure E) :=
@@ -142,8 +143,8 @@ private lemma integral_stdGaussian_norm_mul_comp_sphereDirection {g : sphere (0 
       sphereDirection_smul_of_pos e hpos, norm_smul, Real.norm_of_nonneg hpos.le,
       norm_eq_of_mem_sphere, mul_one, smul_eq_mul, mul_assoc]
   have hmeas : Measurable fun u : sphere (0 : E) 1 ↦ ‖(u : E)‖ * g (sphereDirection e u) :=
-    (measurable_norm.comp measurable_subtype_coe).mul
-      (hg.comp ((measurable_sphereDirection e).comp measurable_subtype_coe))
+    (measurable_norm.comp measurable_subtypeVal).mul
+      (hg.comp ((measurable_sphereDirection e).comp measurable_subtypeVal))
   rw [integral_stdGaussian_of_posHomog hmeas.aestronglyMeasurable hhomog, smul_eq_mul]
   simp only [sphereDirection_coe, norm_eq_of_mem_sphere, one_mul]
 
