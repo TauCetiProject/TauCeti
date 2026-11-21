@@ -16,7 +16,7 @@ $$\Gamma_{\mathbb{R}}(s) = \pi^{-s/2} \Gamma(s/2), \qquad
 Mathlib uses total division for the gamma function, so `Gammaℝ` and `Gammaℂ` take the junk value
 `0` at their poles `-2n` and `-n` (`n : ℕ`) and are nonzero everywhere else; in particular neither
 vanishes off the real axis. Because their reciprocals are entire (`differentiable_Gammaℝ_inv` and
-`differentiable_Gammaℂ_inv`), both factors are complex-differentiable wherever they are nonzero.
+`differentiable_Gammaℂ_inv`), both factors are analytic wherever they are nonzero.
 
 Since the bases `π` and `2π` are positive reals, their complex powers have norms `π ^ (-s.re / 2)`
 and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponential prefactors from
@@ -32,7 +32,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 * `Complex.Gammaℂ_ne_zero_of_re_pos`, `Complex.Gammaℝ_ne_zero_of_im_ne_zero`,
   `Complex.Gammaℂ_ne_zero_of_im_ne_zero`: nonvanishing on the right half-plane and off the real
   axis.
-* `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
+* `Complex.analyticAt_Gammaℝ`, `Complex.analyticAt_Gammaℂ`,
+  `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
 * `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
   `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
@@ -93,6 +94,18 @@ theorem differentiableAt_Gammaℝ {z : ℂ} (hz : Gammaℝ z ≠ 0) : Differenti
 @[fun_prop]
 theorem differentiableAt_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) : DifferentiableAt ℂ Gammaℂ z := by
   simpa only [inv_inv] using (differentiable_Gammaℂ_inv z).fun_inv (inv_ne_zero hz)
+
+/-- `Gammaℝ` is analytic wherever its total value is nonzero. -/
+@[fun_prop]
+theorem analyticAt_Gammaℝ {z : ℂ} (hz : Gammaℝ z ≠ 0) : AnalyticAt ℂ Gammaℝ z := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℝ_inv.analyticAt z).inv (inv_ne_zero hz)
+
+/-- `Gammaℂ` is analytic wherever its total value is nonzero. -/
+@[fun_prop]
+theorem analyticAt_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) : AnalyticAt ℂ Gammaℂ z := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℂ_inv.analyticAt z).inv (inv_ne_zero hz)
 
 /-- `Gammaℝ` is continuous wherever its total value is nonzero. -/
 @[fun_prop]

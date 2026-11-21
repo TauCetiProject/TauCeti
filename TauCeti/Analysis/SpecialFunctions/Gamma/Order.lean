@@ -27,7 +27,9 @@ factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orde
 nonpositive: none has a zero as a meromorphic germ. Their leading Laurent coefficients are
 `2 (-1)^n π^n / n!` at `-2n` and `2 (-1)^n (2π)^n / n!` at `-n`
 (`Complex.meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat`,
-`Complex.meromorphicTrailingCoeffAt_Gammaℂ_neg_nat`).
+`Complex.meromorphicTrailingCoeffAt_Gammaℂ_neg_nat`), in particular `2` at `0`
+(`Complex.meromorphicTrailingCoeffAt_Gammaℝ_zero`,
+`Complex.meromorphicTrailingCoeffAt_Gammaℂ_zero`).
 
 For `n ≥ 1`, the product `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` has a pole of order `d = r₂` at `1 - n` when
 `n` is even and `d = r₁ + r₂` when `n` is odd
@@ -35,9 +37,10 @@ For `n ≥ 1`, the product `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` has a pole of ord
 nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times its leading coefficient at `1 - n`
 (`TauCeti.exists_rat_Gammaℝ_pow_mul_Gammaℂ_pow_eq_mul_meromorphicTrailingCoeffAt`). For the
 signature `(r₁, r₂)` of a number field `F`, this product is the archimedean factor of the
-completed Dedekind zeta function, and through the functional equation these two statements give
-the order `d` of the zero of `ζ_F` at `1 - n` and the power of `π` in its leading coefficient
-there (Borel).
+completed Dedekind zeta function. For `n ≥ 2`, where the completed zeta function is regular and
+nonzero at `n`, the functional equation turns these two statements into the order `d` of the zero
+of `ζ_F` at `1 - n` and the power of `π` in its leading coefficient there (Borel). At `n = 1` the
+pole of the completed zeta function at `0` lowers the order of `ζ_F` at `0` to `r₁ + r₂ - 1`.
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
 therefore use nonzero total values, while the negative-order characterizations identify the
@@ -249,6 +252,16 @@ theorem meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat (n : ℕ) :
     show -(-(2 * n : ℂ)) / 2 = (n : ℂ) by ring, cpow_natCast]
   ring
 
+/-- The leading Laurent coefficient of `Gammaℂ` at `0` is `2`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gammaℂ_zero : meromorphicTrailingCoeffAt Gammaℂ 0 = 2 := by
+  simpa using meromorphicTrailingCoeffAt_Gammaℂ_neg_nat 0
+
+/-- The leading Laurent coefficient of `Gammaℝ` at `0` is `2`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gammaℝ_zero : meromorphicTrailingCoeffAt Gammaℝ 0 = 2 := by
+  simpa using meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat 0
+
 /-- Gamma has no zeros as a meromorphic germ. -/
 theorem meromorphicOrderAt_Gamma_nonpos (s : ℂ) : meromorphicOrderAt Gamma s ≤ 0 := by
   by_cases hs : ∃ n : ℕ, s = -(n : ℂ)
@@ -350,15 +363,12 @@ private theorem exists_rat_Gammaℝ_eq_mul_meromorphicTrailingCoeffAt {n : ℕ} 
     have hv := Gammaℝ_neg_two_mul_nat_sub_one j
     have hne : Gammaℝ (-(2 * j) - 1) ≠ 0 := by
       rw [hv]; simp [hπ, Nat.factorial_ne_zero]
-    have ha : AnalyticAt ℂ Gammaℝ (-(2 * j) - 1) := by
-      simpa only [Pi.inv_def, inv_inv] using
-        (differentiable_Gammaℝ_inv.analyticAt _).inv (inv_ne_zero hne)
     have hj : ((j + 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (j + 1).factorial_ne_zero
     have hj' : ((2 * j + 2)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (2 * j + 2).factorial_ne_zero
     have hif : (if Even (2 * (j + 1)) then 0 else 1 : ℤ) = 0 := by simp
     refine ⟨j ! * (2 * j + 2)! / ((-1) ^ (j + 1) * 4 ^ (j + 1) * (j + 1)!),
       by simp [Nat.factorial_ne_zero], ?_⟩
-    rw [hx, ha.meromorphicTrailingCoeffAt_of_ne_zero hne, hv, hif,
+    rw [hx, (analyticAt_Gammaℝ hne).meromorphicTrailingCoeffAt_of_ne_zero hne, hv, hif,
       show ((0 : ℤ) - ((2 * (j + 1) : ℕ) : ℤ)) = -((2 * j + 2 : ℕ) : ℤ) by push_cast; ring,
       zpow_neg, zpow_natCast,
       show ((2 * (j + 1) : ℕ) : ℂ) = 2 * j + 2 by push_cast; ring, Gammaℝ_two_mul_nat_add_two]
@@ -431,8 +441,9 @@ theorem meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat (r₁ r₂ 
 `n` of `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` is a nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times
 its leading Laurent coefficient at `1 - n`, where `d` is the pole order there: `r₂` for even `n`
 and `r₁ + r₂` for odd `n` (`meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat`). For the
-signature `(r₁, r₂)` of a number field of degree `r₁ + 2 r₂`, this is the archimedean part of the
-leading term of its Dedekind zeta function at `1 - n` (Borel 1977, §1.4). -/
+signature `(r₁, r₂)` of a number field of degree `r₁ + 2 r₂` and `n ≥ 2`, this is the
+archimedean part of the leading term of its Dedekind zeta function at `1 - n` (Borel 1977, §1.4);
+at `n = 1` the pole of the completed zeta function at `0` also contributes. -/
 theorem exists_rat_Gammaℝ_pow_mul_Gammaℂ_pow_eq_mul_meromorphicTrailingCoeffAt
     (r₁ r₂ : ℕ) {n : ℕ} (hn : 1 ≤ n) :
     ∃ q : ℚ, q ≠ 0 ∧ Gammaℝ n ^ r₁ * Gammaℂ n ^ r₂ =
