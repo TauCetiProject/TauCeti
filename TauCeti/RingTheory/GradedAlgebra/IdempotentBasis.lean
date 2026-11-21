@@ -266,16 +266,19 @@ theorem exists_homogeneous_basis_range_idempotent (h𝒜 : ∀ n < 0, 𝒜 n = �
     have h := hent j k
     rwa [h𝒜 _ (by omega), Submodule.mem_bot] at h
   -- The block-diagonal part of `P`, its reduction modulo positive degrees, comes from `R`.
-  have hlift (j k : ι) : ∃ r : R, algebraMap R A r = P.blockDiagonalPart s j k := by
-    rw [blockDiagonalPart_apply]
-    split_ifs with h
-    · exact Algebra.mem_bot.mp (h𝒜₀ _ (by simpa [h] using hent j k))
-    · exact ⟨0, map_zero _⟩
-  choose Q hQ using hlift
-  have hQP : (Matrix.of Q).map (algebraMap R A) = P.blockDiagonalPart s := Matrix.ext hQ
-  have hblock (j k : ι) (h : s j ≠ s k) : Matrix.of Q j k = 0 :=
-    hinj (by rw [of_apply, hQ, blockDiagonalPart_apply, ite_eq_right h, map_zero])
-  have hQQ : IsIdempotentElem (Matrix.of Q) := by
+  have hlift (j k : ι) : ∃ r : R, s j = s k → algebraMap R A r = P j k := by
+    by_cases h : s j = s k
+    · obtain ⟨r, hr⟩ := Algebra.mem_bot.mp (h𝒜₀ _ (by simpa [h] using hent j k))
+      exact ⟨r, fun _ ↦ hr⟩
+    · exact ⟨0, fun h' ↦ absurd h' h⟩
+  choose Q₀ hQ₀ using hlift
+  set Q := (Matrix.of Q₀).blockDiagonalPart s with hQdef
+  have hQP : Q.map (algebraMap R A) = P.blockDiagonalPart s := by
+    rw [hQdef, ← blockDiagonalPart_map _ _ (map_zero _)]
+    ext j k
+    by_cases h : s j = s k <;> simp [h, hQ₀ j k]
+  have hblock (j k : ι) (h : s j ≠ s k) : Q j k = 0 := by simp [hQdef, h]
+  have hQQ : IsIdempotentElem Q := by
     apply Matrix.map_injective hinj
     simpa only [Matrix.map_mul, hQP] using (hBT.isIdempotentElem_blockDiagonalPart hPP).eq
   -- `p` maps the image of the block-diagonal part bijectively onto its own image.

@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
-import TauCeti.LinearAlgebra.Projection.Nilpotent
+import TauCeti.LinearAlgebra.End.Idempotent
 import TauCeti.Order.Preorder.Finite
 
 /-!
@@ -199,58 +199,7 @@ theorem IsUpperUnitriangular.map {S F : Type*} [LT m] [Zero R] [One R] [Zero S] 
 
 section Nilpotence
 
-variable {S : Type*} [Semiring S] {n : ℕ}
-
-/-- For a strictly upper-triangular matrix, `(M ^ k) i j = 0` whenever `j < i + k`. -/
-theorem pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
-    {M : Matrix (Fin n) (Fin n) S} (htri : M.IsUpperTriangular)
-    (hdiag : ∀ i, M i i = 0) (k : ℕ) (i j : Fin n)
-    (hji : j.val < i.val + k) : (M ^ k) i j = 0 := by
-  have hstrict : ∀ a b : Fin n, b ≤ a → M a b = 0 := by
-    intro a b hba
-    obtain hba | rfl := hba.lt_or_eq
-    · exact htri hba
-    · exact hdiag b
-  induction k generalizing i j with
-  | zero =>
-      simp only [pow_zero]
-      rw [one_apply_ne]
-      intro hij
-      subst j
-      omega
-  | succ k ih =>
-      rw [pow_succ, Matrix.mul_apply]
-      apply Finset.sum_eq_zero
-      intro l _
-      by_cases hil : i.val + k ≤ l.val
-      · rw [hstrict l j (by omega), mul_zero]
-      · rw [ih (i := i) (j := l) (by omega), zero_mul]
-
-/-- A strictly upper-triangular matrix has power equal to zero at the cardinality of its index
-type. -/
-theorem pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
-    {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
-    M ^ Fintype.card m = 0 := by
-  let e : Fin (Fintype.card m) ≃o m := Fintype.orderIsoFinOfCardEq m rfl
-  let reindexEquiv := reindexRingEquiv S e.symm.toEquiv
-  apply reindexEquiv.injective
-  rw [map_pow, map_zero]
-  apply ext
-  intro i j
-  apply pow_apply_eq_zero_of_isUpperTriangular_of_diag_eq_zero
-  · intro a b hba
-    exact htri (e.lt_iff_lt.2 hba)
-  · intro i
-    exact hdiag (e i)
-  · omega
-
-/-- A strictly upper-triangular square matrix is nilpotent. -/
-theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
-    {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
-    _root_.IsNilpotent M :=
-  ⟨Fintype.card m, pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero htri hdiag⟩
-
-variable {α : Type*} [LinearOrder α] {b : m → α}
+variable {S α : Type*} [Semiring S] [LinearOrder α] {b : m → α}
 
 /-- The product of a matrix that is block triangular for a ranking `b` with one that vanishes
 wherever `b` does not strictly increase from row to column again vanishes there. -/
@@ -313,6 +262,20 @@ theorem isNilpotent_of_apply_eq_zero_of_le [Fintype m] [DecidableEq m] {M : Matr
     (h : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) : _root_.IsNilpotent M :=
   ⟨Fintype.card m, pow_card_eq_zero_of_apply_eq_zero_of_le h⟩
 
+/-- A strictly upper-triangular matrix has power equal to zero at the cardinality of its index
+type. -/
+theorem pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
+    {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
+    M ^ Fintype.card m = 0 :=
+  pow_card_eq_zero_of_apply_eq_zero_of_le (b := id) fun i _ h ↦
+    h.lt_or_eq.elim (htri ·) fun hji ↦ (congrArg (M i) hji).trans (hdiag i)
+
+/-- A strictly upper-triangular square matrix is nilpotent. -/
+theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrder m]
+    {M : Matrix m m S} (htri : M.IsUpperTriangular) (hdiag : ∀ i, M i i = 0) :
+    _root_.IsNilpotent M :=
+  ⟨Fintype.card m, pow_card_eq_zero_of_isUpperTriangular_of_diag_eq_zero htri hdiag⟩
+
 end Nilpotence
 
 section BlockDiagonalPart
@@ -328,6 +291,13 @@ def blockDiagonalPart [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α
 theorem blockDiagonalPart_apply [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α) (i j : m) :
     M.blockDiagonalPart b i j = if b i = b j then M i j else 0 :=
   (rfl)
+
+@[simp]
+theorem blockDiagonalPart_map [Zero S] [DecidableEq α] {T : Type*} [Zero T] (M : Matrix m m S)
+    (b : m → α) {f : S → T} (hf : f 0 = 0) :
+    (M.map f).blockDiagonalPart b = (M.blockDiagonalPart b).map f := by
+  ext i j
+  by_cases h : b i = b j <;> simp [h, hf]
 
 variable [LinearOrder α]
 
