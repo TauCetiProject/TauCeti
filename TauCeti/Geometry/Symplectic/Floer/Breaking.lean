@@ -566,13 +566,11 @@ theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       (∀ t, x t ∈ K) ∧ v = fun z ↦ x z.2 := by
   have hzs (y : ℝ × ℝ) (r : ℝ) : y + (r, 0) = (y.1 + r, y.2) := by ext <;> simp
-  have hat (z : ℝ × ℝ) : Tendsto (fun k ↦ u k (z + (s k, 0))) atTop (𝓝 (v z)) :=
-    (hv.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ z)
   have hmem (r : ℝ) : ∀ᶠ k in atTop, r + s k ∈ S :=
     (hsS r r).mono fun _ hk ↦ hk ⟨le_rfl, le_rfl⟩
   -- The limit is periodic in `t`, since the translates eventually are at each point.
   have hvper (z : ℝ × ℝ) : v (z.1, z.2 + 1) = v z := by
-    refine tendsto_nhds_unique ((hat (z.1, z.2 + 1)).congr' ?_) (hat z)
+    refine tendsto_nhds_unique ((hv.tendsto_at (z.1, z.2 + 1)).congr' ?_) (hv.tendsto_at z)
     filter_upwards [hmem z.1] with k hk
     simpa only [hzs] using hper k _ hk z.2
   -- On the strip `ℝ × [0, 1]` the limit does not depend on `s`, and `x(t) = v(0, t)` solves
@@ -596,7 +594,7 @@ theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
   set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
   have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
   refine ⟨x, hxper, hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper hder,
-    fun t ↦ hK.mem_of_tendsto (hat (0, t)) ?_, hvx⟩
+    fun t ↦ hK.mem_of_tendsto (hv.tendsto_at (0, t)) ?_, hvx⟩
   filter_upwards [hmem 0] with k hk
   simpa only [hzs] using huK k _ hk t
 
