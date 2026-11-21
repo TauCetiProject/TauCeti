@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
+public import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.RealInterpolation
 import TauCeti.MeasureTheory.Function.Holder
@@ -152,9 +153,9 @@ theorem _root_.TemperedDistribution.memBesov_fourierInv_delta {ξ : E} {j : ℕ}
         TauCeti.toTemperedDistribution_toLp_fourierChar_inner]
 
 /-- **Two plane waves at the same frequency: the resonant term carries the product**
-(Bahouri–Chemin–Danchin, §2.6). Let `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, and let `u, v ∈ 𝒞^s` both
-be the plane wave `e_ξ`, which is its own block `Δ_{j+1}`. Then for every gap `N` the terms of
-both paraproducts `T_u v` and `T_v u` vanish
+(Bahouri–Chemin–Danchin, §2.6). Let `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, and let
+`u ∈ B^s_{∞,q}` and `v ∈ B^{s'}_{∞,q'}` both be the plane wave `e_ξ`, which is its own block
+`Δ_{j+1}`. Then for every gap `N` the terms of both paraproducts `T_u v` and `T_v u` vanish
 (`TauCeti.BesovSpace.lowPass_smul_block_eq_zero_of_block_eq_zero`,
 `TauCeti.BesovSpace.block_smul_lowPass_eq_zero_of_block_eq_zero`), and the resonant part
 `R(u, v)` is the whole product `e_ξ · e_ξ = e_{2ξ}`. -/
@@ -169,7 +170,7 @@ theorem hasSum_block_smul_sum_block_of_toDistr_eq_fourierInv_delta (N : ℕ)
   have hm : (u.block (j + 1) • v.block (j + 1) : Lp ℂ ∞ (volume : Measure E)) =
       (memLp_top_fourierChar_inner ((2 : ℝ) • ξ)).toLp _ := by
     simp only [hu', hv', ↓reduceIte]
-    rw [TauCeti.toLp_fourierChar_inner_smul_toLp_fourierChar_inner, two_smul]
+    rw [toLp_fourierChar_inner_smul_toLp_fourierChar_inner, two_smul]
   convert hasSum_block_smul_sum_block_of_block_eq_zero (r := ∞) (u := u) (v := v) (m := j + 1) N
     (fun k hk ↦ by simp only [hu', hk, ↓reduceIte]) (fun k hk ↦ by simp only [hv', hk, ↓reduceIte])
     using 1
@@ -184,19 +185,18 @@ the volume, which lies in `B^s_{∞,q}` for every `s` and `q`. -/
 theorem _root_.TemperedDistribution.memBesov_toTemperedDistribution_volume (s : ℝ)
     (q : ℝ≥0∞) : (volume : Measure E).toTemperedDistribution.MemBesov φ s ∞ q :=
   memBesov_of_littlewoodPaleyBlock_eq_ite (m := 0) (p := ∞)
-    (f := (memLp_top_const (1 : ℂ)).toLp _)
-    (fun k ↦ by rw [littlewoodPaleyBlock_toTemperedDistribution_volume,
-      Lp.toTemperedDistribution_toLp_const, one_smul])
+    (f := 1) (fun k ↦ by
+      rw [littlewoodPaleyBlock_toTemperedDistribution_volume, Lp.toTemperedDistribution_one])
 
 /-- **The blocks of the constant `1`.** If the tempered distribution of `u ∈ B^s_{∞,q}` is the
 constant function `1`, then `Δ₀ u = 1` and `Δⱼ u = 0` for `j ≥ 1`. -/
 theorem block_eq_ite_of_toDistr_eq_volume {u : BesovSpace ℂ φ s ∞ q}
     (hu : u.toDistr = (volume : Measure E).toTemperedDistribution) (k : ℕ) :
-    u.block k = if k = 0 then (memLp_top_const (1 : ℂ)).toLp _ else 0 :=
+    u.block k = if k = 0 then 1 else 0 :=
   Lp.toTemperedDistribution_injective <| by
     simp only [coe_block, hu, littlewoodPaleyBlock_toTemperedDistribution_volume]
     split_ifs
-    · rw [Lp.toTemperedDistribution_toLp_const, one_smul]
+    · rw [Lp.toTemperedDistribution_one]
     · simp
 
 variable {u : BesovSpace ℂ φ s ∞ q} (hu : u.toDistr = (volume : Measure E).toTemperedDistribution)
@@ -212,7 +212,7 @@ theorem lowPass_smul_block_eq_ite_of_toDistr_eq_volume (j : ℕ) :
     (fun k hk ↦ by rw [block_eq_ite_of_toDistr_eq_volume hu, ite_eq_right hk])]
   by_cases hj : N < j
   · rw [ite_eq_left (by omega), ite_eq_left hj, block_eq_ite_of_toDistr_eq_volume hu,
-      ite_eq_left rfl, Lp.toLp_top_const_smul, one_smul]
+      ite_eq_left rfl, Lp.one_smul]
   · rw [ite_eq_right (by omega), ite_eq_right hj, Lp.zero_smul]
 
 /-- **The paraproduct `T_v 1` vanishes term by term.** If `u` is the constant `1`, then
@@ -232,7 +232,7 @@ theorem block_smul_sum_block_eq_ite_of_toDistr_eq_volume (j : ℕ) :
       if j = 0 then ∑ k ∈ Finset.range (N + 1), v.block k else 0 := by
   rw [block_eq_ite_of_toDistr_eq_volume hu]
   split_ifs with hj
-  · rw [Lp.toLp_top_const_smul, one_smul, hj, Nat.zero_sub, zero_add, Nat.range_succ_eq_Icc_zero]
+  · rw [Lp.one_smul, hj, Nat.zero_sub, zero_add, Nat.range_succ_eq_Icc_zero]
   · rw [Lp.zero_smul]
 
 /-- **The resonant part `R(1, v)`** (Bahouri–Chemin–Danchin, §2.6). If `u` is the constant `1`,
