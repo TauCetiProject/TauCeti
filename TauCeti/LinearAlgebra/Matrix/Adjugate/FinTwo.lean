@@ -193,10 +193,4 @@ theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one [NoZeroDivisors K]
     ext i j
     exact mul_left_cancel₀ h2 (by simpa [smul_eq_mul] using congrFun (congrFun h2A i) j)
 
-/-- **Power form of `Matrix.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one`.** -/
-theorem eq_one_or_eq_neg_one_of_sq_eq_one_of_det_eq_one [NoZeroDivisors K]
-    (h2 : (2 : K) ≠ 0) {A : Matrix (Fin 2) (Fin 2) K} (hA : A ^ 2 = 1) (hdet : A.det = 1) :
-    A = 1 ∨ A = -1 :=
-  eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one h2 (by rwa [← sq]) hdet
-
 end Matrix

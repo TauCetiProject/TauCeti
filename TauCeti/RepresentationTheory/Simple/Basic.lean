@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Simple
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Iso
@@ -212,11 +213,9 @@ open scoped TensorProduct
 variable {k : Type u} {G : Type v} [Field k] [Group G]
 
 /-- Over an algebraically closed field, if a central group element `g₀` has no eigenvalue `1` on
-`V` (witnessed by `(V.ρ g₀ - c₁ • 1) ∘ (V.ρ g₀ - c₂ • 1) = 0` with `c₁, c₂ ≠ 1`), then
-`dim_k Hom_G(X, V ⊗ X) = 0` for every simple object `X : FDRep k G`. -/
+`V`, then `dim_k Hom_G(X, V ⊗ X) = 0` for every simple object `X : FDRep k G`. -/
 theorem FDRep.finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k G}
-    {g₀ : G} (hcomm : ∀ h : G, g₀ * h = h * g₀) {c₁ c₂ : k} (hc₁ : c₁ ≠ 1) (hc₂ : c₂ ≠ 1)
-    (hann : (V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id) = 0)
+    {g₀ : G} (hcomm : ∀ h : G, g₀ * h = h * g₀) (hev : ¬ Module.End.HasEigenvalue (V.ρ g₀) 1)
     (X : FDRep k G) [Simple X] :
     Module.finrank k (X ⟶ V ⊗ X) = 0 := by
   have hX : Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
@@ -243,19 +242,17 @@ theorem FDRep.finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FD
     exact TensorProduct.ext' fun v y ↦ by simp [TensorProduct.tmul_smul]
   rw [htens, LinearMap.smul_apply] at heq
   have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
-  have hz_sub (c : k) : ((V.ρ g₀ - c • LinearMap.id).rTensor X) z = (1 - c) • z := by
-    simp [hz, sub_smul]
-  have hzero : ((1 - c₁) * (1 - c₂)) • z = 0 := by
-    rw [← smul_smul]
-    calc
-      (1 - c₁) • ((1 - c₂) • z) =
-          ((V.ρ g₀ - c₁ • LinearMap.id).rTensor X) ((1 - c₂) • z) := by
-        rw [map_smul, hz_sub c₁, smul_comm]
-      _ = (((V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id)).rTensor X) z := by
-        rw [LinearMap.rTensor_comp, LinearMap.comp_apply, hz_sub c₂]
-      _ = 0 := by rw [hann, LinearMap.rTensor_zero, LinearMap.zero_apply]
-  simpa [z] using (smul_eq_zero.mp hzero).resolve_left
-    (mul_ne_zero (sub_ne_zero.mpr hc₁.symm) (sub_ne_zero.mpr hc₂.symm))
+  have hker : LinearMap.ker (V.ρ g₀ - 1) = ⊥ := by
+    simpa [Module.End.hasEigenvalue_iff, Module.End.eigenspace_def] using hev
+  obtain ⟨L, hL⟩ := (V.ρ g₀ - 1).exists_leftInverse_of_injective hker
+  have hz0 : ((V.ρ g₀ - 1).rTensor X) z = 0 := by simp [hz, Module.End.one_eq_id]
+  change f.hom.hom.hom x = 0
+  calc
+    z = (LinearMap.id.rTensor X) z := by simp
+    _ = ((L ∘ₗ (V.ρ g₀ - 1)).rTensor X) z := by rw [hL]
+    _ = (L.rTensor X) (((V.ρ g₀ - 1).rTensor X) z) := by
+      rw [LinearMap.rTensor_comp, LinearMap.comp_apply]
+    _ = 0 := by rw [hz0, map_zero]
 
 end FDRepCentral
 

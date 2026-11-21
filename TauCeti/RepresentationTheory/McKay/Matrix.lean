@@ -10,8 +10,10 @@ public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import TauCeti.LinearAlgebra.Determinant.FiniteOrder
+import TauCeti.LinearAlgebra.Matrix.Connected
 import TauCeti.RepresentationTheory.CharacterTable.Degree
 import TauCeti.RepresentationTheory.CharacterTable.Regrouping
+import TauCeti.RepresentationTheory.CharacterTable.TensorGeneration
 import TauCeti.RepresentationTheory.Intertwining.DirectSum
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
 import TauCeti.RepresentationTheory.Irreducible
@@ -24,8 +26,9 @@ by `TauCeti.SimpleFDRepClasses k G` whose `(c₁, c₂)` entry is `dim_k Hom_G(X
 representatives `c₁ = [X]` and `c₂ = [Y]`. This file establishes its loop-freeness on faithful
 two-dimensional representations of determinant `1` over an algebraically closed field of
 characteristic zero, its duality `(mckayMatrix V)ᵀ = mckayMatrix (ᘁV)` and symmetry under
-self-duality, the dimension null-vector equation `M δ = (dim V) δ`, and the identification of
-`(mckayMatrix V ^ n) c₁ [Y]` with the multiplicity of `c₁` in `V^⊗n ⊗ Y`.
+self-duality, the dimension null-vector equation `M δ = (dim V) δ`, the identification
+`mckayMatrix (V.tensorPower n) = mckayMatrix V ^ n` with its entry formulas, and reachability to
+the trivial class for faithful complex representations.
 
 ## Main definitions and results
 
@@ -38,8 +41,11 @@ self-duality, the dimension null-vector equation `M δ = (dim V) δ`, and the id
   `TauCeti.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
 * `TauCeti.sum_mckayMatrix_mul_finrank_left` and `TauCeti.sum_mckayMatrix_mul_finrank`:
   column-sum identity and null-vector equation `M δ = (dim V) δ`.
-* `TauCeti.mckayMatrix_pow_apply` and `TauCeti.mckayMatrix_pow_apply_trivial`: powers of
-  `mckayMatrix V` compute tensor-power multiplicities.
+* `TauCeti.mckayMatrix_tensorPower`, `TauCeti.mckayMatrix_pow_apply`, and
+  `TauCeti.mckayMatrix_pow_apply_trivial`: powers of `mckayMatrix V` compute tensor-power
+  multiplicities.
+* `TauCeti.reflTransGen_mckayMatrix_trivial`: reachability to the trivial class for faithful
+  complex representations.
 
 ## References
 
@@ -62,12 +68,11 @@ section LoopFree
 
 variable {k : Type u} {G : Type v} [Field k] [Group G]
 
-private theorem exists_central_annihilator_of_not_simple [Nontrivial G]
+private theorem exists_central_no_eigenvalue_one_of_not_simple [Nontrivial G]
     [NeZero (Nat.card G : k)] {V : FDRep k G} (hdim : Module.finrank k V = 2)
     (hfaithful : Function.Injective V.ρ) (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1)
     (hV : ¬ Simple V) :
-    ∃ (g₀ : G) (c₁ c₂ : k), (∀ h : G, g₀ * h = h * g₀) ∧ c₁ ≠ 1 ∧ c₂ ≠ 1 ∧
-      (V.ρ g₀ - c₁ • LinearMap.id) ∘ₗ (V.ρ g₀ - c₂ • LinearMap.id) = 0 := by
+    ∃ g₀ : G, (∀ h : G, g₀ * h = h * g₀) ∧ ¬ Module.End.HasEigenvalue (V.ρ g₀) 1 := by
   -- Split `V.ρ` by Maschke into two complementary invariant lines on which `G` acts by scalars.
   obtain ⟨W, W', hWW', hW1, hW'1⟩ :=
     Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible hdim
@@ -97,16 +102,25 @@ private theorem exists_central_annihilator_of_not_simple [Nontrivial G]
   have hcomm (g h : G) : g * h = h * g :=
     hfaithful <| LinearMap.ext fun v ↦ eL.injective <| by
       simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
-  -- Any `g₀ ≠ 1` is central with inverse eigenvalues `c₁ g₀, c₂ g₀ ≠ 1` annihilating `V.ρ g₀`.
+  -- Any `g₀ ≠ 1` is central with diagonal eigenvalues `c₁ g₀, c₂ g₀ ≠ 1`.
   obtain ⟨g₀, hg₀⟩ := exists_ne (1 : G)
   have hne_one : ¬ (c₁ g₀ = 1 ∧ c₂ g₀ = 1) := fun ⟨h1, h2⟩ ↦
     hg₀ <| hfaithful <| by
       rw [map_one]; exact LinearMap.ext fun v ↦ eL.injective (by simp [he_apply, h1, h2])
   have hc₁_ne : c₁ g₀ ≠ 1 := fun h1 ↦ hne_one ⟨h1, by simpa [h1] using hdet_prod g₀⟩
   have hc₂_ne : c₂ g₀ ≠ 1 := fun h2 ↦ hne_one ⟨by simpa [h2] using hdet_prod g₀, h2⟩
-  refine ⟨g₀, c₁ g₀, c₂ g₀, fun h ↦ hcomm g₀ h, hc₁_ne, hc₂_ne, LinearMap.ext fun v ↦ ?_⟩
-  apply eL.injective
-  ext <;> simp [he_apply, smul_sub, smul_smul, mul_comm]
+  refine ⟨g₀, fun h ↦ hcomm g₀ h, fun hev ↦ ?_⟩
+  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
+  have hv_fix : V.ρ g₀ v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
+  have hpair := congrArg eL hv_fix
+  rw [he_apply] at hpair
+  have h1 : (eL v).1 = 0 := by
+    by_contra hnz
+    exact hc₁_ne (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
+  have h2 : (eL v).2 = 0 := by
+    by_contra hnz
+    exact hc₂_ne (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
+  exact hv0 (eL.injective (by ext <;> simp [h1, h2]))
 
 /-- **Loop-freeness of the McKay graph.** For a nontrivial finite group `G` and a faithful
 two-dimensional representation `V : FDRep k G` of determinant `1` over an algebraically closed
@@ -127,13 +141,18 @@ theorem finrank_hom_tensor_self_eq_zero [IsAlgClosed k] [CharZero k] [Finite G] 
         (hdet g₀)).resolve_left fun h1 ↦ hg₀_ne (hfaithful (h1.trans (map_one V.ρ).symm))
     have hcomm (h : G) : g₀ * h = h * g₀ := hfaithful <| by
       rw [map_mul, map_mul, hVg₀, neg_one_mul, mul_neg_one]
-    have hneg1 : (-1 : k) ≠ 1 := fun h ↦ (two_ne_zero : (2 : k) ≠ 0) <| by
-      simpa [one_add_one_eq_two] using (congrArg (· + (1 : k)) h).symm
-    exact finrank_hom_tensor_self_eq_zero_of_central hcomm hneg1 hneg1 (by ext; simp [hVg₀]) X
+    have hev : ¬ Module.End.HasEigenvalue (V.ρ g₀) 1 := by
+      intro hev
+      obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
+      have hv_fix : V.ρ g₀ v = v := by simpa using Module.End.mem_eigenspace_iff.mp hv
+      rw [hVg₀, LinearMap.neg_apply, Module.End.one_eq_id, LinearMap.id_apply,
+        neg_eq_iff_add_eq_zero, ← two_smul k v] at hv_fix
+      exact hv0 ((smul_eq_zero.mp hv_fix).resolve_left two_ne_zero)
+    exact finrank_hom_tensor_self_eq_zero_of_central hcomm hev X
   · have : NeZero (Nat.card G : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
-    obtain ⟨g₀, c₁, c₂, hcomm, hc₁, hc₂, hann⟩ :=
-      exists_central_annihilator_of_not_simple hdim hfaithful hdet hV
-    exact finrank_hom_tensor_self_eq_zero_of_central hcomm hc₁ hc₂ hann X
+    obtain ⟨g₀, hcomm, hev⟩ :=
+      exists_central_no_eigenvalue_one_of_not_simple hdim hfaithful hdet hV
+    exact finrank_hom_tensor_self_eq_zero_of_central hcomm hev X
 
 end LoopFree
 
@@ -336,33 +355,53 @@ theorem mckayMatrix_tensor [Fintype (SimpleFDRepClasses k G)] (V W : FDRep k G) 
     refine Finset.sum_congr rfl fun c₃ _ ↦ ?_
     rw [mckayMatrix_apply_mk]
 
+/-- **The McKay matrix of a tensor power is the corresponding power of the McKay matrix.** -/
+@[simp]
+theorem mckayMatrix_tensorPower [Fintype (SimpleFDRepClasses k G)]
+    [DecidableEq (SimpleFDRepClasses k G)] (V : FDRep k G) (n : ℕ) :
+    mckayMatrix (V.tensorPower n) = mckayMatrix V ^ n := by
+  induction n with
+  | zero =>
+    rw [pow_zero, mckayMatrix_congr V.tensorPowerZeroIsoTensorUnit, mckayMatrix_tensorUnit]
+  | succ n ih =>
+    rw [pow_succ', mckayMatrix_congr (V.tensorPowerSuccIso n), mckayMatrix_tensor, ih]
+
 /-- **Powers of the McKay matrix count tensor-power multiplicities.** -/
 theorem mckayMatrix_pow_apply [Fintype (SimpleFDRepClasses k G)]
     [DecidableEq (SimpleFDRepClasses k G)] (V : FDRep k G) (n : ℕ)
     (c₁ : SimpleFDRepClasses k G) (Y : FDRep k G) [Simple Y] :
     (mckayMatrix V ^ n) c₁ (SimpleFDRepClasses.mk Y) =
       c₁.multiplicity (V.tensorPower n ⊗ Y) := by
-  induction n generalizing c₁ with
-  | zero =>
-    rw [pow_zero, Matrix.one_apply,
-      c₁.multiplicity_congr (whiskerRightIso V.tensorPowerZeroIsoTensorUnit Y ≪≫ λ_ Y),
-      c₁.multiplicity_simple Y]
-  | succ n ih =>
-    rw [pow_succ', Matrix.mul_apply]
-    simp_rw [ih]
-    rw [← multiplicity_tensor_eq_sum V (V.tensorPower n ⊗ Y) c₁]
-    exact c₁.multiplicity_congr
-      ((whiskerRightIso (V.tensorPowerSuccIso n) Y ≪≫ α_ V (V.tensorPower n) Y).symm)
+  rw [← mckayMatrix_tensorPower, mckayMatrix_apply_mk]
 
 /-- **Entries at the trivial column of `mckayMatrix V ^ n` count multiplicities in `V^⊗n`.** -/
 theorem mckayMatrix_pow_apply_trivial [Fintype (SimpleFDRepClasses k G)]
     [DecidableEq (SimpleFDRepClasses k G)] (V : FDRep k G) (n : ℕ)
     (c : SimpleFDRepClasses k G) :
     (mckayMatrix V ^ n) c (SimpleFDRepClasses.trivial k G) = c.multiplicity (V.tensorPower n) := by
-  rw [← SimpleFDRepClasses.mk_tensorUnit, mckayMatrix_pow_apply]
-  exact c.multiplicity_congr (ρ_ (V.tensorPower n))
+  rw [← mckayMatrix_tensorPower, mckayMatrix_apply_trivial]
 
 end Semisimple
+
+/-- **Reachability to the trivial class in the McKay graph.** For a finite group `G` and a
+faithful representation `V : FDRep ℂ G`, every simple isomorphism class reaches
+`SimpleFDRepClasses.trivial ℂ G` along distinct positive entries of `mckayMatrix V`. -/
+theorem reflTransGen_mckayMatrix_trivial {G : Type u} [Group G] [Finite G] (V : FDRep ℂ G)
+    (hfaithful : Function.Injective V.ρ) (c : SimpleFDRepClasses ℂ G) :
+    Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < mckayMatrix V x y)
+      c (SimpleFDRepClasses.trivial ℂ G) := by
+  classical
+  have : Invertible (Nat.card G : ℂ) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  let _ := Fintype.ofFinite (SimpleFDRepClasses ℂ G)
+  obtain ⟨n, -, hn⟩ : ∃ n < V.characterValueCount, 0 < c.multiplicity (V.tensorPower n) := by
+    induction c using SimpleFDRepClasses.ind with
+    | h X hX =>
+      simp_rw [SimpleFDRepClasses.multiplicity_mk]
+      exact FDRep.exists_pos_finrank_hom_tensorPower V X hfaithful
+        (FDRep.isIrreducible_of_simple X).finrank_pos
+  rw [← mckayMatrix_pow_apply_trivial V n c] at hn
+  exact Matrix.reflTransGen_ne_and_pos_of_pow_pos (mckayMatrix V) hn
 
 end McKayMatrix
 

@@ -91,12 +91,6 @@ theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one (h2 : (2 : R) ≠ 
   · exact Or.inr ((LinearMap.toMatrix b b).injective
       (h.trans (by rw [map_neg, LinearMap.toMatrix_one])))
 
-/-- **Power form of `LinearMap.eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one`.** -/
-theorem eq_one_or_eq_neg_one_of_sq_eq_one_of_det_eq_one (h2 : (2 : R) ≠ 0)
-    (hdim : Module.finrank R M = 2) {f : M →ₗ[R] M} (hf : f ^ 2 = 1) (hdet : f.det = 1) :
-    f = 1 ∨ f = -1 :=
-  eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one h2 hdim (by rwa [← sq]) hdet
-
 end RankTwo
 
 end LinearMap

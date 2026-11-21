@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.SingularCartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.AffineSubgraph
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.SpecialNodes
 
@@ -133,16 +134,6 @@ private abbrev IsAffineMatrixLabelling (M : Matrix ι ι ℕ) (i₀ : ι) (δ : 
     (∀ x : ι, (δ x : ℤ) = t.marks (e x)) ∧
     e i₀ = t.affineNode
 
-private theorem eq_zero_of_eq_two_of_ne {M : Matrix ι ι ℕ} {δ : ι → ℕ}
-    (hδ_pos : ∀ i, 0 < δ i) {x y : ι} (hsum : ∑ j, M x j * δ j = 2 * δ x)
-    (hMxy : M x y = 2) (hδxy : δ x = δ y) {j : ι} (hj : j ≠ y) : M x j = 0 := by
-  classical
-  have hpair : M x y * δ y + M x j * δ j ≤ 2 * δ x :=
-    hsum ▸ add_le_sum (f := fun k ↦ M x k * δ k) (fun _ _ ↦ Nat.zero_le _)
-      (mem_univ y) (mem_univ j) hj.symm
-  rw [hMxy, hδxy] at hpair
-  exact (Nat.mul_eq_zero.mp (by omega : M x j * δ j = 0)).resolve_right (hδ_pos j).ne'
-
 /-- Multi-edge branch (`2 ≤ M a b`): additive balance forces two vertices with a double edge. -/
 private theorem exists_affineDynkinType_A_one_of_two_le
     (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0) (i₀ : ι)
@@ -165,9 +156,11 @@ private theorem exists_affineDynkinType_A_one_of_two_le
     nlinarith
   have hMba_eq : M b a = 2 := (hSymm.apply a b).trans hMab_eq
   have hMa_other (j : ι) (hjb : j ≠ b) : M a j = 0 :=
-    eq_zero_of_eq_two_of_ne hδ_pos (hδ_sum a) hMab_eq hδ_ab hjb
+    Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
+      (by simpa [Matrix.mulVec, dotProduct, hMab_eq, hδ_ab] using hδ_sum a) hjb (hδ_pos j).ne'
   have hMb_other (j : ι) (hja : j ≠ a) : M b j = 0 :=
-    eq_zero_of_eq_two_of_ne hδ_pos (hδ_sum b) hMba_eq hδ_ab.symm hja
+    Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
+      (by simpa [Matrix.mulVec, dotProduct, hMba_eq, hδ_ab] using hδ_sum b) hja (hδ_pos j).ne'
   have hall_ab (k : ι) : k = a ∨ k = b := by
     suffices ∀ x y : ι, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) x y →
         (x = a ∨ x = b) → (y = a ∨ y = b) from this a k (hReach a k) (Or.inl rfl)

@@ -7,9 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.McKay.Matrix
-import TauCeti.LinearAlgebra.Matrix.Connected
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Recognition
-import TauCeti.RepresentationTheory.CharacterTable.TensorGeneration
 
 /-!
 # The McKay correspondence
@@ -23,9 +21,8 @@ representation at an affine node.
 
 Following Steinberg (1985), `TauCeti.exists_isMcKayLabelling` proves this directly without a prior
 classification of the finite subgroups of `SL₂(ℂ)` by combining symmetry, loop-freeness, the
-dimension null vector, and tensor-power connectedness from
-`TauCeti.RepresentationTheory.McKay.Matrix` with Burnside–Brauer faithful tensor generation
-(`FDRep.exists_pos_finrank_hom_tensorPower`) and matrix affine-diagram recognition
+dimension null vector, and reachability to the trivial class from
+`TauCeti.RepresentationTheory.McKay.Matrix` with matrix affine-diagram recognition
 (`TauCeti.exists_affineDynkinType_of_symm_loopFree_nullVector`).
 
 ## Main definitions and results
@@ -203,23 +200,12 @@ theorem exists_isMcKayLabelling {G : Type u} [Group G] [Finite G] [Nontrivial G]
   have : Invertible (Nat.card G : ℂ) :=
     invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   let _ := Fintype.ofFinite (SimpleFDRepClasses ℂ G)
-  have hConn (c : SimpleFDRepClasses ℂ G) :
-      Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < mckayMatrix V x y)
-        c (SimpleFDRepClasses.trivial ℂ G) := by
-    obtain ⟨n, -, hn⟩ : ∃ n < V.characterValueCount, 0 < c.multiplicity (V.tensorPower n) := by
-      induction c using SimpleFDRepClasses.ind with
-      | h X hX =>
-        simp_rw [SimpleFDRepClasses.multiplicity_mk]
-        exact FDRep.exists_pos_finrank_hom_tensorPower V X hfaithful
-          (FDRep.isIrreducible_of_simple X).finrank_pos
-    rw [← mckayMatrix_pow_apply_trivial V n c] at hn
-    exact Matrix.reflTransGen_ne_and_pos_of_pow_pos (mckayMatrix V) hn
   obtain ⟨t, e, ht, hLab⟩ :=
     exists_affineDynkinType_of_symm_loopFree_nullVector (mckayMatrix V)
       (isSymm_mckayMatrix_of_finrank_eq_two hdim hdet)
       (mckayMatrix_apply_self_eq_zero hdim hfaithful hdet)
-      (SimpleFDRepClasses.trivial ℂ G) hConn SimpleFDRepClasses.finrank
-      SimpleFDRepClasses.finrank_pos SimpleFDRepClasses.finrank_trivial
+      (SimpleFDRepClasses.trivial ℂ G) (reflTransGen_mckayMatrix_trivial V hfaithful)
+      SimpleFDRepClasses.finrank SimpleFDRepClasses.finrank_pos SimpleFDRepClasses.finrank_trivial
       fun c ↦ by simpa [hdim] using sum_mckayMatrix_mul_finrank V c
   exact ⟨t, e, ht, (isMcKayLabelling_iff_mckayMatrix V t e).mpr hLab⟩
 
