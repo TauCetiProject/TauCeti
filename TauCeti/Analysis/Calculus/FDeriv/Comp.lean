@@ -23,6 +23,12 @@ other does, so criticality does not depend on the coordinates.
 At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
 precomposition with the derivative of that map.
 
+Precomposition with an affine change of variables, or with the multiplication by a fixed scalar
+`c` of a division semiring acting on the domain, is differentiated by the chain rule without any
+differentiability assumption. For the latter, the map `w ↦ c • w` must be continuous and commute
+with the scalars `𝕜`; for instance, the real derivative of `w ↦ f (c * w)` on `ℂ` at `w` is
+`v ↦ fderiv ℝ f (c * w) (c * v)`.
+
 ## Main results
 
 * `HasFDerivAt.comp_eq_of_eventuallyEq`: invariance of a germ at a fixed point implies invariance
@@ -39,6 +45,9 @@ precomposition with the derivative of that map.
   assumption.
 * `TauCeti.fderiv_comp_add_smul`: the derivative of `w ↦ f (c + a • w)` is `a` times that of `f`
   at `c + a • w`.
+* `TauCeti.fderiv_comp_smul_apply`: the derivative over `𝕜` of `w ↦ f (c • w)` for a scalar `c`
+  of a division semiring acting on the domain, with each `w ↦ c • w` continuous and commuting
+  with `𝕜`.
 -/
 
 public section
@@ -104,6 +113,23 @@ differentiability of `f`. -/
 theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
     fderiv 𝕜 (fun w ↦ f (c + a • w)) w = a • fderiv 𝕜 f (c + a • w) := by
   rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
+
+/-- **The chain rule for precomposition with a scalar multiplication.** Let `𝕜'` be a division
+semiring acting on `E` so that multiplication `w ↦ c • w` by each fixed scalar `c : 𝕜'` is
+continuous and commutes with the action of `𝕜`. Then the derivative of `w ↦ f (c • w)` at `x`
+sends `v` to the derivative of `f` at `c • x` applied to `c • v`. Multiplication by `c` is
+`𝕜`-linear and, unless `c = 0`, invertible, so no differentiability of `f` is needed, nor a norm
+or additive inverses on `𝕜'`. When `𝕜' = 𝕜` and the action is the given normed-space action, this
+is the pointwise form of `fderiv_comp_smul`; for `𝕜 = ℝ` and `𝕜' = ℂ` it differentiates
+`w ↦ f (c * w)` on `ℂ`, and for `𝕜' = ℝ≥0` it covers nonnegative dilations. -/
+theorem fderiv_comp_smul_apply {𝕜' : Type*} [DivisionSemiring 𝕜'] [Module 𝕜' E]
+    [ContinuousConstSMul 𝕜' E] [SMulCommClass 𝕜' 𝕜 E] (f : E → F) (c : 𝕜') (x v : E) :
+    fderiv 𝕜 (fun w ↦ f (c • w)) x v = fderiv 𝕜 f (c • x) (c • v) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · have h := (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (Units.mk0 c hc)).comp_right_fderiv
+      (f := f) (x := x)
+    simpa [Function.comp_def] using DFunLike.congr_fun h v
 
 /-- For a continuous linear map `g` with a continuous linear right inverse `s`, the derivative of
 `h ∘ g` at `x` is the derivative of `h` at `g x` composed with `g`, for every `h` (no
