@@ -489,6 +489,22 @@ theorem tateSeries.pderiv_mapRingHom (hφ : Continuous φ) (j : Fin N) (f : tate
       tateSeries.mapRingHom hφ (tateSeries.pderiv j f) := by
   apply Subtype.ext; ext ν; simp [MvPowerSeries.coeff_pderiv]
 
+/-- The formal Jacobian matrix commutes entrywise with `tateSeries.mapRingHom`. -/
+@[simp]
+theorem tateSeries.jacobianMatrix_mapRingHom (hφ : Continuous φ) (F : Fin N → tateSeries N A) :
+    tateSeries.jacobianMatrix (fun i ↦ tateSeries.mapRingHom hφ (F i)) =
+      (tateSeries.jacobianMatrix F).map (tateSeries.mapRingHom hφ) := by
+  ext i j
+  simp
+
+/-- The formal Jacobian determinant commutes with `tateSeries.mapRingHom`. -/
+@[simp]
+theorem tateSeries.jacobian_mapRingHom (hφ : Continuous φ) (F : Fin N → tateSeries N A) :
+    tateSeries.jacobian (fun i ↦ tateSeries.mapRingHom hφ (F i)) =
+      tateSeries.mapRingHom hφ (tateSeries.jacobian F) := by
+  rw [tateSeries.jacobian_def, tateSeries.jacobianMatrix_mapRingHom, ← RingHom.mapMatrix_apply,
+    ← RingHom.map_det, tateSeries.jacobian_def]
+
 end Map
 
 /-- **Rescaling a restricted series into an open subring:** if `ϖ` is topologically nilpotent and

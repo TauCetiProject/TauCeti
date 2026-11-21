@@ -11,8 +11,6 @@ import Mathlib.Data.Fin.SuccPred
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
-import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
 # Explicit Jacobian inverses for standard étale presentations
@@ -289,7 +287,7 @@ noncomputable def withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) 
   let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
   have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
   have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.isOpenQuotientMap_π.completeSpace
+  have : CompleteSpace C := P.completeSpace
   let ev := weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
     P.isWeightBounded_withInverseTuple
   exact
@@ -306,7 +304,7 @@ theorem continuous_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus)
   let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
   have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
   have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.isOpenQuotientMap_π.completeSpace
+  have : CompleteSpace C := P.completeSpace
   exact continuous_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
     P.isWeightBounded_withInverseTuple
 
@@ -318,7 +316,7 @@ private theorem withInverseHom_apply
   let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
   have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
   have : T2Space C := P.t2Space
-  have : CompleteSpace C := P.isOpenQuotientMap_π.completeSpace
+  have : CompleteSpace C := P.completeSpace
   exact coe_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
     P.isWeightBounded_withInverseTuple f
 
@@ -341,6 +339,12 @@ theorem withInverseHom_castSuccAlgHom
     · simp [← tateSeries.X_eq_weightedX, withInverseHom_X_apply, withInverseTuple]
   exact congrArg (fun φ : tateSeries P.N A →+* C ↦ φ f) hext
 
+/-- On an original coordinate `i : Fin P.N`, `P.withInverseHom` agrees with `P.π`. -/
+@[simp]
+theorem withInverseHom_X_castSucc (P : StandardEtalePresentation Aplus ϖ Cplus) (i : Fin P.N) :
+    P.withInverseHom (tateSeries.X (P.N + 1) A i.castSucc) = P.π (tateSeries.X P.N A i) := by
+  rw [withInverseHom_X_apply, withInverseTuple, Fin.snoc_castSucc]
+
 /-- On the newly adjoined variable `T_{P.N}`, `P.withInverseHom` satisfies the explicit inverse
 relation `P.withInverseHom T_{P.N} * P.π P.jacobian = algebraMap A C (ϖ ^ P.k)`. -/
 theorem withInverseHom_last_mul_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -348,6 +352,20 @@ theorem withInverseHom_last_mul_jacobian (P : StandardEtalePresentation Aplus ϖ
       algebraMap A C (ϖ ^ P.k) := by
   rw [withInverseHom_X_apply, withInverseTuple, Fin.snoc_last,
     ← P.exists_unit_π_jacobian.choose_spec.1, mul_comm, mul_scaledJacobianInv]
+
+/-- On the newly adjoined variable `T_{P.N}`, `P.withInverseHom` evaluates to the `ϖ ^ P.k`-scaled
+inverse of any unit `u : Cˣ` representing `P.π P.jacobian`. -/
+theorem withInverseHom_last (P : StandardEtalePresentation Aplus ϖ Cplus)
+    {u : Cˣ} (hu : (u : C) = P.π P.jacobian) :
+    P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) =
+      algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ := by
+  apply u.mul_left_inj.mp
+  calc
+    P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) * (u : C)
+      = P.withInverseHom (tateSeries.X (P.N + 1) A (Fin.last P.N)) * P.π P.jacobian := by rw [hu]
+    _ = algebraMap A C (ϖ ^ P.k) := P.withInverseHom_last_mul_jacobian
+    _ = algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ * (u : C) := by
+        rw [mul_assoc, Units.inv_mul, mul_one]
 
 /-- The extended homomorphism `P.withInverseHom` is a topological quotient map. -/
 theorem isQuotientMap_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -492,7 +510,7 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
     · let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
       have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
       have : T2Space C := P.t2Space
-      have : CompleteSpace C := P.isOpenQuotientMap_π.completeSpace
+      have : CompleteSpace C := P.completeSpace
       have := Cplus.isRingOfIntegralElements.isIntegrallyClosedIn
       have hb : IsWeightBounded P.toBasePairHom.toRingHom
           (fun _ : Fin (P.N + 1) ↦ ({1} : Set A)) P.withInverseTuple :=
@@ -511,10 +529,9 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
       exact fun hc ↦ Subring.integralClosure_subring_le_iff.mpr hmap_le
         ((mem_integralClosure_iff _ _).mpr hc)
   exists_unit_jacobian := by
-    let F := explicitInverse A ϖ P.F P.k
     let u : Cˣ := P.exists_unit_π_jacobian.choose
     have hu_eq : (u : C) = P.π P.jacobian := P.exists_unit_π_jacobian.choose_spec.1
-    refine ⟨tateSeries.jacobian F, tateSeries.coe_jacobian F, u ^ 2, ?_, ?_⟩
+    refine ⟨u ^ 2, ?_, ?_⟩
     · rw [Units.val_pow_eq_pow_val, hu_eq, jacobian_explicitInverse, map_pow,
         withInverseHom_castSuccAlgHom, P.jacobian_def]
     · have hu_inv_sq : (↑(u ^ 2)⁻¹ : C) = (↑u⁻¹ : C) ^ 2 := by
@@ -533,15 +550,43 @@ theorem withInverse_N (P : StandardEtalePresentation Aplus ϖ Cplus) :
 theorem withInverse_k (P : StandardEtalePresentation Aplus ϖ Cplus) :
     P.withInverse.k = 2 * P.k := (rfl)
 
-/-- The defining system of `P.withInverse` is `explicitInverse A ϖ P.F P.k` (heterogeneously equal
-along `P.withInverse_N`). -/
-theorem withInverse_F_heq (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    HEq P.withInverse.F (explicitInverse A ϖ P.F P.k) := (HEq.rfl)
+/-- The defining equation family of `P.withInverse` is `explicitInverse A ϖ P.F P.k`
+(transported along `P.withInverse_N`). -/
+@[simp]
+theorem withInverse_F (P : StandardEtalePresentation Aplus ϖ Cplus) :
+    cast (congrArg (fun n ↦ Fin n → tateSeries n A) P.withInverse_N) P.withInverse.F =
+      explicitInverse A ϖ P.F P.k := (rfl)
 
-/-- The presenting map of `P.withInverse` is `P.withInverseHom` (heterogeneously equal along
-`P.withInverse_N`). -/
-theorem withInverse_π_heq (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    HEq P.withInverse.π P.withInverseHom := (HEq.rfl)
+/-- The presenting map of `P.withInverse` evaluates on a series as `P.withInverseHom`
+(transported along `P.withInverse_N`). -/
+@[simp]
+theorem withInverse_π_apply (P : StandardEtalePresentation Aplus ϖ Cplus)
+    (f : tateSeries (P.N + 1) A) :
+    P.withInverse.π (cast (congrArg (tateSeries · A) P.withInverse_N.symm) f) =
+      P.withInverseHom f := (rfl)
+
+omit [IsUniformAddGroup A] [CompleteSpace A] [T2Space A] in
+private theorem tateSeries_X_cast {n m : ℕ} (h : n = m) (j : Fin m) :
+    tateSeries.X n A (Fin.cast h.symm j) =
+      cast (congrArg (tateSeries · A) h.symm) (tateSeries.X m A j) := by
+  subst h; rfl
+
+/-- On an original coordinate `i : Fin P.N`, `P.withInverse.π` agrees with `P.π`. -/
+theorem withInverse_π_X_castSucc (P : StandardEtalePresentation Aplus ϖ Cplus) (i : Fin P.N) :
+    P.withInverse.π (tateSeries.X P.withInverse.N A (Fin.cast P.withInverse_N.symm i.castSucc)) =
+      P.π (tateSeries.X P.N A i) := by
+  rw [tateSeries_X_cast P.withInverse_N i.castSucc, withInverse_π_apply,
+    withInverseHom_X_castSucc]
+
+/-- On the newly adjoined coordinate `T_{P.N}`, `P.withInverse.π` evaluates to the
+`ϖ ^ P.k`-scaled inverse of any unit `u : Cˣ` representing `P.π P.jacobian`. -/
+theorem withInverse_π_X_last (P : StandardEtalePresentation Aplus ϖ Cplus)
+    {u : Cˣ} (hu : (u : C) = P.π P.jacobian) :
+    P.withInverse.π
+        (tateSeries.X P.withInverse.N A (Fin.cast P.withInverse_N.symm (Fin.last P.N))) =
+      algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ := by
+  rw [tateSeries_X_cast P.withInverse_N (Fin.last P.N), withInverse_π_apply]
+  exact P.withInverseHom_last hu
 
 end WithInverse
 

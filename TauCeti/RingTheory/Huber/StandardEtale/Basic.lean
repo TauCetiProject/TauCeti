@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.QuotientMapping
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
+import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
 # Standard étale presentations of Huber pairs over complete Tate pairs
@@ -40,8 +42,8 @@ of `C⁺`, and `k` feeds into `TauCeti.Huber.exists_unique_zero_restrictedPowerS
 
 * `TauCeti.Huber.StandardEtalePresentation.isOpenQuotientMap_π` and `isQuotientMapping`: `π` is an
   open quotient map and a quotient mapping of Huber pairs.
-* `TauCeti.Huber.StandardEtalePresentation.t2Space`: any Huber ring admitting a standard étale
-  presentation over a complete Hausdorff Tate ring is Hausdorff (`T2Space`).
+* `TauCeti.Huber.StandardEtalePresentation.t2Space` and `completeSpace`: any Huber ring admitting a
+  standard étale presentation over a complete Hausdorff Tate ring is complete and Hausdorff.
 
 ## References
 
@@ -86,10 +88,8 @@ structure StandardEtalePresentation {A : Type*} [CommRing A] [UniformSpace A]
   mem_plus_iff : ∀ c : C, c ∈ Cplus.plus ↔
     ((tateSeriesPlus N A Aplus.plus).map (π : tateSeries N A →+* C)).subtype.IsIntegralElem c
   /-- The formal Jacobian determinant maps to a unit `u ∈ Cˣ` with `ϖ ^ k · u⁻¹ ∈ C⁺`. -/
-  exists_unit_jacobian : ∃ J : tateSeries N A,
-    (J : MvPowerSeries (Fin N) A) =
-      (Matrix.of fun i j ↦ MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)).det ∧
-    ∃ u : Cˣ, (u : C) = π J ∧ algebraMap A C (ϖ ^ k) * ↑u⁻¹ ∈ Cplus.plus
+  exists_unit_jacobian : ∃ u : Cˣ,
+    (u : C) = π (tateSeries.jacobian F) ∧ algebraMap A C (ϖ ^ k) * ↑u⁻¹ ∈ Cplus.plus
 
 namespace StandardEtalePresentation
 
@@ -132,11 +132,8 @@ theorem jacobian_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) :
 
 /-- `P.π P.jacobian` is a unit `u ∈ Cˣ` with `algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ ∈ Cplus.plus`. -/
 theorem exists_unit_π_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
-    ∃ u : Cˣ, (u : C) = P.π P.jacobian ∧ algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ ∈ Cplus.plus := by
-  obtain ⟨J, hJ, u, hu, hinv⟩ := P.exists_unit_jacobian
-  have hJeq : J = P.jacobian :=
-    Subtype.ext (hJ.trans (tateSeries.coe_jacobian P.F).symm)
-  exact ⟨u, hJeq ▸ hu, hinv⟩
+    ∃ u : Cˣ, (u : C) = P.π P.jacobian ∧ algebraMap A C (ϖ ^ P.k) * ↑u⁻¹ ∈ Cplus.plus :=
+  P.exists_unit_jacobian
 
 /-- The image `P.π P.jacobian` of the formal Jacobian determinant is a unit of `C`. -/
 theorem isUnit_π_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -241,6 +238,15 @@ theorem t2Space (P : StandardEtalePresentation Aplus ϖ Cplus) : T2Space C := by
   have hhome := (P.π : tateSeries P.N A →+* C).isHomeomorph_kerLift P.isQuotientMap_π
   exact (IsHomeomorph.homeomorph _ hhome).symm.isEmbedding.t2Space
 
+/-- Every Huber `(A, A⁺)`-algebra admitting a standard étale presentation over a complete Hausdorff
+Tate pair is complete (`CompleteSpace`) with respect to its additive right uniformity, since it is
+an open quotient of the complete first-countable ring `tateSeries P.N A`. -/
+theorem completeSpace (P : StandardEtalePresentation Aplus ϖ Cplus) :
+    @CompleteSpace C (IsTopologicalAddGroup.rightUniformSpace C) := by
+  let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
+  have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
+  exact P.isOpenQuotientMap_π.completeSpace
+
 /-- Forward morphism of Huber pairs from the model quotient pair
 `(tateSeriesPair P.N A Aplus).quotient P.ideal` to `Cplus`. -/
 noncomputable def quotientToTarget (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -343,7 +349,7 @@ noncomputable def ofQuotient (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformize
   mem_plus_iff c := by
     rw [Pair.quotient_plus, tateSeriesPair_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff]
     exact Iff.rfl
-  exists_unit_jacobian := ⟨tateSeries.jacobian F, tateSeries.coe_jacobian F, hu⟩
+  exists_unit_jacobian := hu
 
 @[simp]
 theorem ofQuotient_N (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
@@ -412,7 +418,7 @@ noncomputable def identity (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer 
         fun hx ↦ Subring.isIntegrallyClosedIn_iff.mp
           Aplus.isRingOfIntegralElements.isIntegrallyClosedIn hx⟩
     exists_unit_jacobian :=
-      ⟨1, by simp [Matrix.det_isEmpty], 1, by simp, by simp [Aplus.plus.one_mem]⟩ }
+      ⟨1, by simp [tateSeries.jacobian_fin_zero], by simp [Aplus.plus.one_mem]⟩ }
 
 @[simp]
 theorem identity_N (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer ϖ) :
