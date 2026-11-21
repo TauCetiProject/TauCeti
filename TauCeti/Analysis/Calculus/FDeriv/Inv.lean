@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -26,7 +28,8 @@ Multiplication by `-(w ^ 2)⁻¹` scales all norms by `‖w‖⁻²`, so the ope
 is that of the derivative of `u` at `w⁻¹` divided by `‖w‖ ^ 2` (`TauCeti.norm_fderiv_comp_inv`).
 This is how a map near infinity is read off in the coordinate `w = z⁻¹` near zero. No
 differentiability of `u` is assumed: where `u` is not differentiable at `w⁻¹`, neither is
-`w ↦ u w⁻¹` at `w`, and both derivatives are `0`.
+`w ↦ u w⁻¹` at `w`, and both derivatives are `0`. A compactly supported `Cⁿ` map `u` with
+`u 0 = 0` gives a `Cⁿ` map `w ↦ u w⁻¹` (`TauCeti.contDiff_comp_inv`).
 
 For an invertible finite matrix, inversion has differential `H ↦ -(A⁻¹ * H * A⁻¹)`.
 Matrices carry the operator norm, and the scalar field need not be complete.
@@ -132,5 +135,25 @@ theorem norm_fderiv_comp_inv {u : 𝕜' → F} {w : 𝕜'} (hw : w ≠ 0) :
     calc ‖fderiv 𝕜 u w⁻¹‖ * ‖-(w ^ 2)⁻¹‖
         ≤ ‖fderiv 𝕜 (fun w ↦ u w⁻¹) w‖ * ‖-(w ^ 2)⁻¹‖⁻¹ * ‖-(w ^ 2)⁻¹‖ := by gcongr
       _ = ‖fderiv 𝕜 (fun w ↦ u w⁻¹) w‖ := by field_simp
+
+/-- A compactly supported `Cⁿ` map `u` with `u 0 = 0`, read in the coordinate `w = z⁻¹`, is `Cⁿ`:
+near `w = 0` it vanishes, because `u` vanishes near the point at infinity. -/
+theorem contDiff_comp_inv {n : WithTop ℕ∞} {u : 𝕜' → F} (hu : ContDiff 𝕜 n u)
+    (huc : HasCompactSupport u) (h0 : u 0 = 0) : ContDiff 𝕜 n fun w ↦ u w⁻¹ := by
+  obtain ⟨M, hM⟩ := huc.isCompact.isBounded.subset_closedBall 0
+  have hv0 : (fun w ↦ u w⁻¹) =ᶠ[𝓝 0] 0 := by
+    refine mem_of_superset (Metric.ball_mem_nhds 0 (inv_pos.2 (by positivity : 0 < |M| + 1)))
+      fun w hw ↦ ?_
+    rcases eq_or_ne w 0 with rfl | hw0
+    · simpa using h0
+    refine image_eq_zero_of_notMem_tsupport (f := u) (x := w⁻¹) fun h ↦ ?_
+    have h1 := mem_closedBall_zero_iff.1 (hM h)
+    have h2 := (lt_inv_comm₀ (norm_pos_iff.2 hw0) (by positivity)).1 (mem_ball_zero_iff.1 hw)
+    rw [norm_inv] at h1
+    linarith [le_abs_self M]
+  refine contDiff_iff_contDiffAt.2 fun w ↦ ?_
+  rcases eq_or_ne w 0 with rfl | hw
+  · exact contDiffAt_const.congr_of_eventuallyEq hv0
+  · exact hu.contDiffAt.comp w (contDiffAt_inv 𝕜 hw)
 
 end TauCeti

@@ -89,6 +89,8 @@ because that is what Mathlib's versions of them ask for.
 * `TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff` — inversion preserves finite energy: on any
   measurable set `s`, the squared norm of the derivative of `w ↦ u w⁻¹` is integrable on `s`
   exactly when that of `u` is integrable on `s⁻¹`.
+* `TauCeti.integral_inv_sq_norm_sq_smul_eq` — the change of variables formula for the inversion:
+  `∫ |w|⁻⁴ • g w = ∫ g z⁻¹`.
 
 ## References
 
@@ -299,5 +301,20 @@ theorem integrableOn_norm_fderiv_comp_inv_sq_iff {u : ℂ → E} (hs : Measurabl
   have hw : (w : ℂ) ≠ 0 := hw.2
   rw [norm_fderiv_comp_inv hw, deriv_inv, smul_eq_mul, norm_neg, norm_inv, norm_pow]
   field_simp
+
+/-- **The change of variables formula for the inversion.** The area distortion of `z ↦ z⁻¹` is
+`‖z‖⁻⁴`, so the integral over `ℂ` of `g` weighted by `|w|⁻⁴` is the integral of `g` read in the
+coordinate `z = w⁻¹`. As in `TauCeti.integral_image_eq_integral_norm_deriv_sq_smul`, no
+integrability hypothesis is needed. -/
+theorem integral_inv_sq_norm_sq_smul_eq (g : ℂ → E) :
+    ∫ w, ((‖w‖ ^ 2) ^ 2)⁻¹ • g w = ∫ z, g z⁻¹ := by
+  have h := integral_image_eq_integral_norm_deriv_sq_smul (f := (·⁻¹))
+    (fun z (hz : z ∈ ({0}ᶜ : Set ℂ)) ↦ differentiableAt_inv hz)
+    (measurableSet_singleton 0).compl inv_injective.injOn fun w ↦ g w⁻¹
+  rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero, restrict_compl_singleton] at h
+  rw [h]
+  congr 1
+  ext z
+  simp [deriv_inv]
 
 end TauCeti

@@ -36,7 +36,7 @@ Dirichlet energy: if `χ` is `C¹`, compactly supported and vanishes on the disc
 the point at infinity. In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is
 supported in the disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the
 inversion, so the change of variables formula on `ℂ`
-(`TauCeti.integral_image_eq_integral_norm_deriv_sq_smul`) turns the left side into `∫ ‖η‖²`, and
+(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and
 the Dirichlet energy is conformally invariant (`TauCeti.fderiv_comp_inv_apply`). The Poincaré
 inequality on a strip of width `4 / R` containing that disc
 (`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`) then gives the bound.
@@ -55,20 +55,6 @@ open scoped Topology
 open _root_.Complex (equivRealProdCLM volume_preserving_equiv_real_prod I)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-omit [NormedSpace ℝ V] in
-/-- **The weight `|w|⁻⁴` is the Jacobian of the inversion.** The integral of `‖f w‖² / |w|⁴` over
-`ℂ` is the integral of `‖f‖²` read in the coordinate `z = w⁻¹`. -/
-private theorem integral_inv_sq_norm_sq_mul_norm_sq_eq (f : ℂ → V) :
-    ∫ w, ((‖w‖ ^ 2) ^ 2)⁻¹ * ‖f w‖ ^ 2 = ∫ z, ‖f z⁻¹‖ ^ 2 := by
-  have h := integral_image_eq_integral_norm_deriv_sq_smul (f := (·⁻¹))
-    (fun z (hz : z ∈ ({0}ᶜ : Set ℂ)) ↦ differentiableAt_inv hz)
-    (measurableSet_singleton 0).compl inv_injective.injOn fun w ↦ ‖f w⁻¹‖ ^ 2
-  rw [image_inv_eq_inv, compl_inv, inv_singleton, inv_zero, restrict_compl_singleton] at h
-  rw [h]
-  congr 1
-  ext z
-  simp [deriv_inv]
 
 /-- **The Dirichlet energy does not grow under the inversion.** For a `C¹` map `f` of `ℂ` with
 integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in the direction `i` is
@@ -106,26 +92,6 @@ private theorem integral_norm_fderiv_comp_inv_I_sq_le {f : ℂ → V}
     _ = ∫ w in (·⁻¹) '' {0}ᶜ, E w :=
         (integral_image_eq_integral_norm_deriv_sq_smul hd hs inv_injective.injOn E).symm
     _ = ∫ w, E w := by rw [himage, restrict_compl_singleton]
-
-/-- A compactly supported `C¹` map `f` of `ℂ` with `f 0 = 0`, read in the coordinate `z = w⁻¹`,
-is `C¹`: near `z = 0` it vanishes, because `f` vanishes near the point at infinity. -/
-private theorem contDiff_comp_inv {f : ℂ → V} (hf : ContDiff ℝ 1 f)
-    (hfc : HasCompactSupport f) (h0 : f 0 = 0) : ContDiff ℝ 1 fun z ↦ f z⁻¹ := by
-  obtain ⟨M, hM⟩ := hfc.isCompact.isBounded.subset_closedBall 0
-  have hη0 : (fun z ↦ f z⁻¹) =ᶠ[𝓝 0] 0 := by
-    refine mem_of_superset (ball_mem_nhds 0 (inv_pos.2 (by positivity : 0 < |M| + 1)))
-      fun z hz ↦ ?_
-    rcases eq_or_ne z 0 with rfl | hz0
-    · simpa using h0
-    refine image_eq_zero_of_notMem_tsupport (f := f) (x := z⁻¹) fun h ↦ ?_
-    have h1 := mem_closedBall_zero_iff.1 (hM h)
-    have h2 := (lt_inv_comm₀ (norm_pos_iff.2 hz0) (by positivity)).1 (mem_ball_zero_iff.1 hz)
-    rw [norm_inv] at h1
-    linarith [le_abs_self M]
-  refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-  rcases eq_or_ne z 0 with rfl | hz
-  · exact contDiffAt_const.congr_of_eventuallyEq hη0
-  · exact hf.contDiffAt.comp z (contDiffAt_inv ℝ hz)
 
 /-- An integral over `ℝ × ℝ` is the integral over `ℂ` of the integrand read in the real
 coordinates of `ℂ`. -/
@@ -207,7 +173,9 @@ theorem integral_inv_sq_mul_norm_sq_le {χ : ℝ × ℝ → V} {R : ℝ} (hR : 0
   rw [← integral_comp_equivRealProdCLM fun p ↦ ((p.1 ^ 2 + p.2 ^ 2) ^ 2)⁻¹ * ‖χ p‖ ^ 2,
     ← integral_comp_equivRealProdCLM fun p ↦ ‖fderiv ℝ χ p (1, 0)‖ ^ 2 + ‖fderiv ℝ χ p (0, 1)‖ ^ 2]
   simp only [hsq, hfw, ← h1, ← hI, ← hdf]
-  rw [integral_inv_sq_norm_sq_mul_norm_sq_eq f]
+  have hinv := integral_inv_sq_norm_sq_smul_eq fun w ↦ ‖f w‖ ^ 2
+  simp only [smul_eq_mul] at hinv
+  rw [hinv]
   exact integral_norm_sq_comp_inv_le hR (hχ.comp equivRealProdCLM.contDiff)
     (hc.comp_homeomorph equivRealProdCLM.toHomeomorph) fun w hw ↦
       h0 _ (by rw [hsq]; exact pow_lt_pow_left₀ hw (norm_nonneg w) two_ne_zero)
