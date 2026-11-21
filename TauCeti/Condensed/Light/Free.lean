@@ -8,7 +8,6 @@ module
 public import Mathlib.Condensed.Light.Functors
 public import Mathlib.Condensed.Light.Module
 
-import Mathlib.CategoryTheory.Adjunction.Additive
 import TauCeti.CategoryTheory.Sites.FreeYoneda
 
 /-!
@@ -30,33 +29,34 @@ variable {R : Type u} [Ring R] {M : LightCondMod R}
 
 /-- Maps from the free light condensed module on a test space correspond to sections there. -/
 noncomputable def freeModuleHomEquiv (S : LightProfinite.{u}) :
-    ((free R).obj S.toCondensed ⟶ M) ≃+ M.obj.obj (Opposite.op S) where
-  toEquiv := (ModuleCat.adj R).freeYonedaSectionsEquiv (coherentTopology LightProfinite) S M
-  map_add' f g := by
-    let e := (ModuleCat.adj R).freeYonedaSectionsEquiv (coherentTopology LightProfinite) S M
-    change e (f + g) = (e f : M.obj.obj (Opposite.op S)) + e g
-    dsimp only [e]
-    erw [Adjunction.freeYonedaSectionsEquiv_apply, Adjunction.freeYonedaSectionsEquiv_apply,
-      Adjunction.freeYonedaSectionsEquiv_apply]
-    exact congrArg (fun k ↦ yonedaEquiv ((Adjunction.whiskerRight _ _).homEquiv _ _ k))
-      (map_add ((sheafificationAdjunction (coherentTopology LightProfinite)
-        (ModuleCat R)).homAddEquiv _ _) f g)
+    ((free R).obj S.toCondensed ⟶ M) ≃+ M.obj.obj (Opposite.op S) :=
+  (ModuleCat.adj R).freeYonedaSectionsAddEquiv
+    (A := forget₂ (ModuleCat R) AddCommGrpCat) (coherentTopology LightProfinite) S M
 
 /-- Precomposing with the free map induced by `f : S ⟶ T` restricts a section on `T`
 to `S` along `f`. -/
-@[simp]
+@[simp↓] -- Prefer restriction to coefficient naturality on this composite.
 lemma freeModuleHomEquiv_comp {S T : LightProfinite.{u}} (f : S ⟶ T)
     (g : (free R).obj T.toCondensed ⟶ M) :
     S.freeModuleHomEquiv ((free R).map (lightProfiniteToLightCondSet.map f) ≫ g) =
-      M.obj.map f.op (T.freeModuleHomEquiv g) :=
-  (ModuleCat.adj R).freeYonedaSectionsEquiv_naturality_left
-    (coherentTopology LightProfinite) f M g
+      M.obj.map f.op (T.freeModuleHomEquiv g) := by
+  exact (ModuleCat.adj R).freeYonedaSectionsAddEquiv_naturality_left
+    (A := forget₂ (ModuleCat R) AddCommGrpCat) (coherentTopology LightProfinite) f M g
 
 /-- Postcomposition by a module morphism applies its section map to the corresponding section. -/
+@[simp]
 lemma freeModuleHomEquiv_postcomp {S : LightProfinite.{u}} {N : LightCondMod R}
     (g : (free R).obj S.toCondensed ⟶ M) (f : M ⟶ N) :
-    S.freeModuleHomEquiv (g ≫ f) = f.hom.app (Opposite.op S) (S.freeModuleHomEquiv g) :=
-  (ModuleCat.adj R).freeYonedaSectionsEquiv_naturality_right
-    (coherentTopology LightProfinite) g f
+    S.freeModuleHomEquiv (g ≫ f) = f.hom.app (Opposite.op S) (S.freeModuleHomEquiv g) := by
+  exact (ModuleCat.adj R).freeYonedaSectionsAddEquiv_naturality_right
+    (A := forget₂ (ModuleCat R) AddCommGrpCat) (coherentTopology LightProfinite) g f
+
+/-- Postcomposing the map corresponding to a section applies the coefficient morphism. -/
+@[simp]
+lemma freeModuleHomEquiv_symm_postcomp {S : LightProfinite.{u}} {N : LightCondMod R}
+    (s : M.obj.obj (Opposite.op S)) (f : M ⟶ N) :
+    S.freeModuleHomEquiv.symm (f.hom.app (Opposite.op S) s) =
+      S.freeModuleHomEquiv.symm s ≫ f := by
+  rw [AddEquiv.symm_apply_eq, freeModuleHomEquiv_postcomp, AddEquiv.apply_symm_apply]
 
 end LightProfinite

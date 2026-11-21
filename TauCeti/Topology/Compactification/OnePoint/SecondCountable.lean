@@ -11,6 +11,8 @@ import Mathlib.Topology.Compactness.SigmaCompact
 /-!
 # Second-countability of the one-point compactification
 
+Adjoining the point at infinity to a countable type preserves countability.
+
 For a weakly locally compact, second-countable `R₁` space `X`, the Alexandroff one-point
 compactification `OnePoint X` is second-countable: the images of a countable topological basis of
 `X` together with the complements of the closures of a compact exhaustion
@@ -18,6 +20,7 @@ compactification `OnePoint X` is second-countable: the images of a countable top
 
 ## Main results
 
+* `OnePoint.instCountable`: adjoining a point preserves countability.
 * `OnePoint.instSecondCountableTopology`: `SecondCountableTopology (OnePoint X)` for a weakly
   locally compact, second-countable `R₁` space `X`.
 
@@ -33,6 +36,10 @@ open Set TopologicalSpace
 open scoped OnePoint
 
 namespace OnePoint
+
+/-- A countable type remains countable after adjoining the point at infinity. -/
+instance instCountable {X : Type*} [Countable X] : Countable (OnePoint X) :=
+  inferInstanceAs (Countable (Option X))
 
 /-- The one-point compactification of a weakly locally compact, second-countable `R₁` space is
 second-countable. -/

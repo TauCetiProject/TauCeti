@@ -39,8 +39,6 @@ section
 
 variable {α : Type u} [TopologicalSpace α] [DiscreteTopology α] [Countable α]
 
-private instance : Countable (OnePoint α) := inferInstanceAs (Countable (Option α))
-
 private abbrev sequence (α : Type u) [TopologicalSpace α] [DiscreteTopology α]
     [Countable α] : LightProfinite.{u} :=
   LightProfinite.of (OnePoint α)
@@ -126,26 +124,24 @@ private noncomputable def descentCocone {X : LightCondMod R} {S T : LightProfini
   dsimp only [Functor.mapCocone, Limits.Cocone.functoriality, coproductCocone,
     Limits.BinaryCofan.mk]
   rintro ⟨⟨⟩ | ⟨⟩⟩
-  · have hf := kernelPairCover_left_fst π
+  case' left =>
+    have hf := kernelPairCover_left_fst π
     have hs := kernelPairCover_left_snd π
-    dsimp only [coproductCocone, Limits.BinaryCofan.mk] at hf hs
-    simp only [Functor.comp_map,
-      parallelPair_obj_zero, parallelPair_obj_one, parallelPair_map_left, parallelPair_map_right,
-      Preadditive.comp_add, Preadditive.comp_sub, ← map_comp_assoc, ← Functor.map_comp,
-      hf, hs, reassoc_of% hf, reassoc_of% hs]
-  · have hf := kernelPairCover_right_fst π
+  case' right =>
+    have hf := kernelPairCover_right_fst π
     have hs := kernelPairCover_right_snd π
+  all_goals
     dsimp only [coproductCocone, Limits.BinaryCofan.mk] at hf hs
     simp only [Functor.comp_map,
       parallelPair_obj_zero, parallelPair_obj_one, parallelPair_map_left, parallelPair_map_right,
       Preadditive.comp_add, Preadditive.comp_sub, ← map_comp_assoc, ← Functor.map_comp,
       hf, hs, reassoc_of% hf, reassoc_of% hs]
-    simp only [reassoc_of% hr, sub_self, zero_add]
-    apply congrArg (fun k ↦ k ≫ g)
-    apply congrArg (free R).map
-    apply congrArg lightProfiniteToLightCondSet.map
-    ext x
-    exact congrArg (fun z : S × (sequence α) ↦ (σ z.1).val) x.prop
+  simp only [reassoc_of% hr, sub_self, zero_add]
+  apply congrArg (fun k ↦ k ≫ g)
+  apply congrArg (free R).map
+  apply congrArg lightProfiniteToLightCondSet.map
+  ext x
+  exact congrArg (fun z : S × (sequence α) ↦ (σ z.1).val) x.prop
 
 /-- The leg at the target of the kernel-pair diagram is the corrected free map. -/
 private lemma descentCocone_ι_one {X : LightCondMod R} {S T : LightProfinite}

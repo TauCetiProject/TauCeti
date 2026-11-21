@@ -79,7 +79,7 @@ noncomputable def reducedLightFreeHomEquiv
     (X : Under (LightProfinite.of PUnit.{u + 1})) (M : LightCondMod R) :
     ((reducedLightFree R).obj X ⟶ M) ≃+
       (M.obj.map X.hom.op).hom.toAddMonoidHom.ker := by
-  dsimp only [reducedLightFree]
+  rw [reducedLightFree_obj]
   let F := lightProfiniteToLightCondSet ⋙ free R
   refine
     { toFun := fun g ↦ ⟨X.right.freeModuleHomEquiv (cokernel.π (F.map X.hom) ≫ g), ?_⟩
@@ -87,26 +87,26 @@ noncomputable def reducedLightFreeHomEquiv
       left_inv := ?_
       right_inv := ?_
       map_add' := ?_ }
-  · change M.obj.map X.hom.op _ = 0
+  · rw [AddMonoidHom.mem_ker]
+    simp only [LinearMap.toAddMonoidHom_coe]
     dsimp only [F, Functor.comp_map]
     rw [← LightProfinite.freeModuleHomEquiv_comp, cokernel.condition_assoc, zero_comp,
       map_zero]
-  · have hs : M.obj.map X.hom.op s.val = 0 := s.property
+  · have hs := AddMonoidHom.mem_ker.mp s.property
+    simp only [LinearMap.toAddMonoidHom_coe] at hs
     dsimp only [F, Functor.comp_map]
     apply ((LightProfinite.of PUnit.{u + 1}).freeModuleHomEquiv (M := M)).injective
     rw [LightProfinite.freeModuleHomEquiv_comp, AddEquiv.apply_symm_apply, hs, map_zero]
   · intro g
     apply (cancel_epi (cokernel.π (F.map X.hom))).mp
-    simp
+    simp only [cokernel.π_desc, AddEquiv.symm_apply_apply]
   · intro s
     apply Subtype.ext
-    simp
+    simp only [cokernel.π_desc, AddEquiv.apply_symm_apply]
   · intro f g
     apply Subtype.ext
-    change X.right.freeModuleHomEquiv (cokernel.π (F.map X.hom) ≫ (f + g)) =
-      X.right.freeModuleHomEquiv (cokernel.π (F.map X.hom) ≫ f) +
-        X.right.freeModuleHomEquiv (cokernel.π (F.map X.hom) ≫ g)
-    rw [Preadditive.comp_add, map_add]
+    exact (X.right.freeModuleHomEquiv.toAddMonoidHom.comp
+      (Preadditive.leftComp M (cokernel.π (F.map X.hom)))).map_add f g
 
 /-- The underlying section is the free-section comparison after the canonical quotient. -/
 lemma reducedLightFreeHomEquiv_apply_val
@@ -115,8 +115,17 @@ lemma reducedLightFreeHomEquiv_apply_val
     (reducedLightFreeHomEquiv R X M g).val =
       X.right.freeModuleHomEquiv ((toReducedLightFree R).app X ≫ g) := (rfl)
 
+/-- The map constructed from a vanishing section descends its free-module representative. -/
+@[reassoc (attr := simp)]
+lemma toReducedLightFree_comp_reducedLightFreeHomEquiv_symm
+    (X : Under (LightProfinite.of PUnit.{u + 1})) (M : LightCondMod R)
+    (s : (M.obj.map X.hom.op).hom.toAddMonoidHom.ker) :
+    (toReducedLightFree R).app X ≫ (reducedLightFreeHomEquiv R X M).symm s =
+      X.right.freeModuleHomEquiv.symm s.val := by
+  exact cokernel.π_desc _ _ _
+
 /-- Precomposition with a pointed map restricts the corresponding section. -/
-@[simp]
+@[simp↓] -- Prefer restriction to coefficient naturality on this composite.
 lemma reducedLightFreeHomEquiv_comp_val
     {X Y : Under (LightProfinite.of PUnit.{u + 1})} (f : X ⟶ Y)
     {M : LightCondMod R} (g : (reducedLightFree R).obj Y ⟶ M) :
@@ -128,6 +137,7 @@ lemma reducedLightFreeHomEquiv_comp_val
     ((toReducedLightFree R).app Y ≫ g)
 
 /-- Postcomposition maps the values of the section by the coefficient-module morphism. -/
+@[simp]
 lemma reducedLightFreeHomEquiv_postcomp_val
     (X : Under (LightProfinite.of PUnit.{u + 1})) {M N : LightCondMod R}
     (g : (reducedLightFree R).obj X ⟶ M) (h : M ⟶ N) :
@@ -144,7 +154,7 @@ noncomputable def reducedLightFreeRetract (X : Under (LightProfinite.of PUnit.{u
   let F := lightProfiniteToLightCondSet ⋙ free R
   let t := CompHausLike.isTerminalPUnit (P := fun S ↦
     TotallyDisconnectedSpace S ∧ SecondCountableTopology S)
-  change Retract (cokernel (F.map X.hom)) (F.obj X.right)
+  rw [reducedLightFree_obj]
   have ht : F.map X.hom ≫ F.map (t.from X.right) = 𝟙 _ := by
     rw [← F.map_comp, t.hom_ext (X.hom ≫ t.from X.right) (𝟙 _), F.map_id]
   -- The generic split-mono bicone chooses a retraction from an existence proof.

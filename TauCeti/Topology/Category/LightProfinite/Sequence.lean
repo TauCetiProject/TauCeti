@@ -47,6 +47,23 @@ lemma liftedSequenceEquiv_apply_point (n : ℕ) :
 lemma liftedSequenceEquiv_apply_infty :
     liftedSequenceEquiv sequenceInfty.{u} = ∞ := by rfl
 
+/-- Distinct indices give distinct finite points of the lifted sequence. -/
+lemma sequencePoint_injective : Function.Injective sequencePoint.{u} := by
+  intro m n h
+  apply OnePoint.coe_injective
+  simpa only [liftedSequenceEquiv_apply_point] using congrArg liftedSequenceEquiv h
+
+@[simp]
+lemma sequencePoint_inj {m n : ℕ} : sequencePoint.{u} m = sequencePoint n ↔ m = n :=
+  sequencePoint_injective.eq_iff
+
+@[simp]
+lemma sequencePoint_ne_sequenceInfty (n : ℕ) : sequencePoint.{u} n ≠ sequenceInfty := by
+  intro h
+  apply OnePoint.coe_ne_infty n
+  simpa only [liftedSequenceEquiv_apply_point, liftedSequenceEquiv_apply_infty] using
+    congrArg liftedSequenceEquiv h
+
 @[simp]
 lemma liftedSequenceEquiv_symm_apply_coe (n : ℕ) :
     liftedSequenceEquiv.symm (n : OnePoint ℕ) = sequencePoint.{u} n := by rfl
@@ -69,7 +86,7 @@ noncomputable def liftedSequenceHomeomorph : liftedSequence.{u} ≃ₜ OnePoint 
     ((Homeomorph.ulift : ULift.{u} ℕ ≃ₜ ℕ).symm.onePointCongr)
 
 @[simp↓]
-lemma liftedSequenceHomeomorph_apply_coe (n : ℕ) :
+lemma liftedSequenceHomeomorph_apply_sequencePoint (n : ℕ) :
     liftedSequenceHomeomorph (sequencePoint.{u} n) =
       (ULift.up n : ULift.{u} ℕ) := by rfl
 
@@ -79,14 +96,13 @@ lemma liftedSequenceHomeomorph_apply_infty :
 
 /-- Successor on the finite terms of the lifted sequence, fixing infinity. -/
 noncomputable def natShift : liftedSequence.{u} ⟶ liftedSequence.{u} :=
-  ConcreteCategory.ofHom ⟨ULift.map (OnePoint.map Nat.succ), continuous_uliftMap _ (by
-    rw [OnePoint.continuous_iff_from_nat]
-    have h :=
-      (OnePoint.continuous_iff_from_nat (id : OnePoint ℕ → OnePoint ℕ)).mp continuous_id
-    simpa [Function.comp_def] using h.comp (tendsto_add_atTop_nat 1))⟩
+  ConcreteCategory.ofHom ⟨ULift.map (OnePoint.map Nat.succ), continuous_uliftMap _ <|
+    OnePoint.continuous_map continuous_of_discreteTopology (by
+      rw [coclosedCompact_eq_cocompact, cocompact_eq_cofinite]
+      exact Nat.succ_injective.tendsto_cofinite)⟩
 
 @[simp↓]
-lemma natShift_apply_coe (n : ℕ) :
+lemma natShift_apply_sequencePoint (n : ℕ) :
     natShift (sequencePoint.{u} n) =
       sequencePoint (n + 1) := by rfl
 

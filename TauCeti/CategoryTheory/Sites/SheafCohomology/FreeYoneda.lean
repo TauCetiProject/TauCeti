@@ -107,15 +107,7 @@ to the sections of `F` over `U`. -/
 def freeYonedaSheafSectionsEquiv (U : C)
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) :
     ((freeYonedaSheafFunctor J).obj U ⟶ F) ≃+ F.obj.obj (op U) :=
-  { toEquiv := AddCommGrpCat.adj.freeYonedaSectionsEquiv J U F
-    map_add' f g := by
-      let e := AddCommGrpCat.adj.freeYonedaSectionsEquiv J U F
-      change e (f + g) = (e f : F.obj.obj (op U)) + e g
-      dsimp only [e]
-      erw [Adjunction.freeYonedaSectionsEquiv_apply, Adjunction.freeYonedaSectionsEquiv_apply,
-        Adjunction.freeYonedaSectionsEquiv_apply]
-      exact congrArg (fun k ↦ yonedaEquiv ((Adjunction.whiskerRight _ _).homEquiv _ _ k))
-        (map_add ((sheafificationAdjunction J AddCommGrpCat).homAddEquiv _ _) f g) }
+  AddCommGrpCat.adj.freeYonedaSectionsAddEquiv (A := 𝟭 AddCommGrpCat) J U F
 
 /-- The equivalence `freeYonedaSheafSectionsEquiv` is natural in the coefficient sheaf. -/
 @[simp]
@@ -123,8 +115,9 @@ lemma freeYonedaSheafSectionsEquiv_naturality_right {U : C}
     {F G : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}}
     (f : (freeYonedaSheafFunctor J).obj U ⟶ F) (g : F ⟶ G) :
     freeYonedaSheafSectionsEquiv J U G (f ≫ g) =
-      g.hom.app (op U) (freeYonedaSheafSectionsEquiv J U F f) :=
-  AddCommGrpCat.adj.freeYonedaSectionsEquiv_naturality_right J f g
+      g.hom.app (op U) (freeYonedaSheafSectionsEquiv J U F f) := by
+  exact AddCommGrpCat.adj.freeYonedaSectionsAddEquiv_naturality_right
+    (A := 𝟭 AddCommGrpCat) J f g
 
 /-- The inverse of `freeYonedaSheafSectionsEquiv` is natural in the coefficient sheaf. -/
 @[simp]
@@ -155,8 +148,9 @@ lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})
     (f : (freeYonedaSheafFunctor J).obj V ⟶ F) :
     freeYonedaSheafSectionsEquiv J U F ((freeYonedaSheafFunctor J).map i ≫ f) =
-      F.obj.map i.op (freeYonedaSheafSectionsEquiv J V F f) :=
-  AddCommGrpCat.adj.freeYonedaSectionsEquiv_naturality_left J i F f
+      F.obj.map i.op (freeYonedaSheafSectionsEquiv J V F f) := by
+  exact AddCommGrpCat.adj.freeYonedaSectionsAddEquiv_naturality_left
+    (A := 𝟭 AddCommGrpCat) J i F f
 
 section
 
