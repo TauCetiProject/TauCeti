@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TemperateGrowth
+public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Function.Jacobian
 
@@ -36,14 +37,17 @@ chain rule: if `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 `φ^* (∂_v T) = ∑ᵢ (dᵢ ∘ φ) ∂_{bᵢ} (φ^* T)` for the coordinates `dᵢ` of `Dφ⁻¹ v`
 (`compCLM_lineDerivOp`).
 
-If the Jacobian of `φ` is bounded below, `c ≤ |det Dφ|` with `c > 0`, the pullback maps every
-`Lᵖ` space to itself, with norm at most `c^{-1/p}`
-(`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
+If `φ` pushes `μ` forward to at most a finite multiple of `μ`, the pullback of the distribution of
+`u ∈ Lᵖ(μ)` is that of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`
+(`compCLM_toTemperedDistribution_eq_compOfMapLeSmul`). If the Jacobian of `φ` is bounded below,
+`c ≤ |det Dφ|` with `c > 0`, the pullback maps every `Lᵖ` space to itself, with norm at most
+`c^{-1/p}` (`exists_compCLM_toTemperedDistribution_eq_and_norm_le`).
 
-This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s`,
-which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`. It needs no bound on the
-derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of `ℝ²` and its inverse are
-polynomial, with unbounded derivatives, and they pull back tempered distributions.
+This is the global change of variables on `𝓢'` against which the Bessel-potential spaces `H^s` and
+Besov spaces `B^s_{p, q}`, which are subspaces of `𝓢'`, are compared under diffeomorphisms of `E`.
+It needs no bound on the derivatives beyond temperate growth: the shear `(x, y) ↦ (x, y + x³)` of
+`ℝ²` and its inverse are polynomial, with unbounded derivatives, and they pull back tempered
+distributions.
 
 ## References
 
@@ -180,6 +184,24 @@ theorem compCLM_toTemperedDistribution (hφ : (φ : E → E).HasTemperateGrowth)
   ext f
   simp only [compCLM_apply_apply, Function.HasTemperateGrowth.toTemperedDistribution_apply,
     SchwartzMap.integral_pushforwardCLM_smul, Function.comp_apply]
+
+open scoped ENNReal in
+/-- If `φ` pushes `μ` forward to at most `C • μ` with `C < ∞`, pulling back the distribution of
+`u ∈ Lᵖ(μ)` along `φ` gives the distribution of the `Lᵖ` precomposition `Lp.compOfMapLeSmul`, for
+every `1 ≤ p ≤ ∞`. -/
+theorem compCLM_toTemperedDistribution_eq_compOfMapLeSmul [CompleteSpace F] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {C : ℝ≥0∞} (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) (hC : C ≠ ∞) (hmap : μ.map φ ≤ C • μ)
+    (u : Lp F p μ) :
+    compCLM F φ hφ hψ (u : 𝓢'(E, F)) =
+      (Lp.compOfMapLeSmul ℂ hφ.1.continuous.aemeasurable hC hmap u : 𝓢'(E, F)) := by
+  ext f
+  rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
+    SchwartzMap.integral_pushforwardCLM_smul]
+  refine integral_congr_ae
+    ((Lp.coeFn_compOfMapLeSmul (𝕜 := ℂ) hφ.1.continuous.aemeasurable hC hmap u).mono fun x hx ↦ ?_)
+  dsimp only
+  rw [hx, Function.comp_apply]
 
 open scoped ENNReal in
 /-- **The pullback on `Lᵖ`.** If `c ≤ |det Dφ|` everywhere, with `c > 0`, the pullback of the

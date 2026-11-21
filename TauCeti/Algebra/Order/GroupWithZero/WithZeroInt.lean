@@ -119,7 +119,7 @@ theorem two_dvd_log_of_prod_eq_sq {x : I → ℤᵐ⁰} {e : I → ℕ} {c : ℤ
 theorem eventually_lt_exp_pow (R : ℤᵐ⁰) {n : ℕ} (hn : n ≠ 0) :
     ∀ᶠ m : ℕ in Filter.atTop, R < exp (m : ℤ) ^ n := by
   obtain rfl | hR := eq_or_ne R 0
-  · exact Filter.Eventually.of_forall fun _ ↦ pow_pos (zero_lt_iff.mpr exp_ne_zero) n
+  · exact Filter.Eventually.of_forall fun _ ↦ pow_pos (pos_iff_ne_zero.mpr exp_ne_zero) n
   filter_upwards [Filter.eventually_gt_atTop (log R).toNat] with m hm
   -- `R = exp (log R) < exp m ≤ exp m ^ n`
   refine lt_of_lt_of_le ?_ (le_self_pow (one_le_exp_iff.mpr (Int.natCast_nonneg m)) hn)

@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.UniformRing
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 
 import Mathlib.Algebra.Regular.Pi
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Completeness of the weighted restricted power series over a complete base
@@ -73,6 +74,8 @@ specialisations are discharged with.
   bounded, `A⟨X⟩_T` over a Hausdorff base is Hausdorff.
 * `TauCeti.Huber.completeSpace_weightedRestrictedSubring` : Wedhorn 5.49(3) — with every weight
   bounded, `A⟨X⟩_T` over a complete base is complete.
+* `TauCeti.Huber.isDomain_completion_weightedRestrictedSubring` : with every weight bounded,
+  the completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain.
 * `TauCeti.Huber.continuous_coeff_one_weight`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_one_weight`,
   `TauCeti.Huber.uniformContinuous_coeff_one_weight` and
@@ -251,7 +254,8 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
     intro U
     obtain ⟨M, hMF, hM⟩ := exists_mem_forall_coeff_sub_mem_weightMul hF ha U
     obtain ⟨f₀, hf₀⟩ := hF.1.nonempty_of_mem hMF
-    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.2) U] with ν hν
+    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.property) U]
+        with ν hν
     simpa [hg] using sub_mem hν (hM f₀ hf₀ ν)
   refine ⟨⟨g, mem_weightedRestrictedSubring.mpr hres⟩, ?_⟩
   rw [← tendsto_id', ← tendsto_sub_nhds_zero_iff,
@@ -276,6 +280,18 @@ instance completeSpace_weightedRestrictedSubring_one_weight [CompleteSpace A] :
     CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) :=
   completeSpace_weightedRestrictedSubring _ isBounded_weightPow_one_weight
+
+/-- **The completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain**
+whenever every weight is bounded: the uncompleted subring has no zero divisors, and completeness
+and Hausdorffness identify the completion with it. -/
+theorem isDomain_completion_weightedRestrictedSubring [T0Space A] [CompleteSpace A] [IsDomain A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) (hb : ∀ ν, IsBounded (weightPow T ν)) :
+    IsDomain (UniformSpace.Completion (weightedRestrictedSubring T hT)) :=
+  letI : T0Space (weightedRestrictedSubring T hT) := t0Space_weightedRestrictedSubring hT hb
+  letI : CompleteSpace (weightedRestrictedSubring T hT) :=
+    completeSpace_weightedRestrictedSubring hT hb
+  letI : IsDomain (weightedRestrictedSubring T hT) := NoZeroDivisors.to_isDomain _
+  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
 
 end Uniform
 

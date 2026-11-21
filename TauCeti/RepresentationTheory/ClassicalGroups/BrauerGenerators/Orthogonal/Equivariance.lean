@@ -83,13 +83,14 @@ theorem sum_isConstantOnArcs_prod_apply (D : BrauerDiagram k) {A : Matrix ι ι 
     exact if_congr eq_comm rfl rfl
   rw [Finset.sum_subtype (p := D.IsConstantOnArcs) _ (fun m => by simp),
     ← (D.isConstantOnArcsEquiv (ι := ι)).symm.sum_comp]
-  calc ∑ g : {x // D.IsLowerEnd x} → ι, ∏ x, A (ℓ x) ((D.isConstantOnArcsEquiv.symm g).1 x)
+  calc ∑ g : {x // D.IsLowerEnd x} → ι, ∏ x, A (ℓ x) ((D.isConstantOnArcsEquiv.symm g).val x)
       = ∑ g : {x // D.IsLowerEnd x} → ι, ∏ x : {x // D.IsLowerEnd x},
           A (ℓ x) (g x) * A (ℓ (D.val x)) (g x) := by
         refine Fintype.sum_congr _ _ fun g => ?_
         rw [prod_eq_prod_isLowerEnd D]
         refine Fintype.prod_congr _ _ fun x => ?_
-        simp [isConstantOnArcsEquiv_symm_apply, x.2, D.not_isLowerEnd_val x.2, D.apply_apply]
+        simp [isConstantOnArcsEquiv_symm_apply, x.property, D.not_isLowerEnd_val x.property,
+            D.apply_apply]
     _ = ∏ x : {x // D.IsLowerEnd x}, if ℓ (D.val x) = ℓ x then 1 else 0 := by
         exact (Fintype.prod_sum fun (x : {x // D.IsLowerEnd x}) c =>
           A (ℓ x) c * A (ℓ (D.val x)) c).symm.trans (Fintype.prod_congr _ _ fun x => harc x)

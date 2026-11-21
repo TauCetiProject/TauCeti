@@ -48,12 +48,12 @@ theorem mem_range_dualTensorHom_iff {f : M →ₗ[R] N} :
   constructor
   · rintro ⟨t, rfl⟩
     obtain ⟨s, rfl⟩ := TensorProduct.exists_finset t
-    refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).1.1,
-      Fintype.linearCombination R fun i ↦ (s.equivFin.symm i).1.2, LinearMap.ext fun x ↦ ?_⟩
+    refine ⟨s.card, LinearMap.pi fun i ↦ (s.equivFin.symm i).val.1,
+      Fintype.linearCombination R fun i ↦ (s.equivFin.symm i).val.2, LinearMap.ext fun x ↦ ?_⟩
     simp only [LinearMap.comp_apply, LinearMap.pi_apply, Fintype.linearCombination_apply,
       map_sum, LinearMap.sum_apply, dualTensorHom_apply]
     rw [← Finset.sum_coe_sort s]
-    exact Fintype.sum_equiv s.equivFin.symm _ (fun i ↦ i.1.1 x • i.1.2) fun _ ↦ rfl
+    exact Fintype.sum_equiv s.equivFin.symm _ (fun i ↦ i.val.1 x • i.val.2) fun _ ↦ rfl
   · rintro ⟨n, u, v, rfl⟩
     refine ⟨∑ i, (LinearMap.proj i ∘ₗ u) ⊗ₜ v (Pi.single i 1), LinearMap.ext fun x ↦ ?_⟩
     rw [map_sum, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.pi_apply_eq_sum_univ v (u x)]

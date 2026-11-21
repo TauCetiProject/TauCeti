@@ -195,7 +195,7 @@ private lemma evalE₄E₆_component_eq (p : MvPolynomial (Fin 2) ℂ) (n : ℕ)
   rw [← MvPolynomial.support_sum_monomial_coeff q, map_sum, DirectSum.sum_apply]
   refine Finset.sum_eq_zero fun d hd ↦
     evalE₄E₆_monomial_apply_eq_zero_of_ne _ _ _ fun heq ↦ MvPolynomial.mem_support_iff.mp hd ?_
-  rw [hq_def, MvPolynomial.coeff_sub, MvPolynomial.coeff_weightedHomogeneousComponent,
+  rw [hq_def, AddMonoidAlgebra.coeff_sub_apply, MvPolynomial.coeff_weightedHomogeneousComponent,
     ite_eq_left ?_, sub_self]
   rw [weight_eq_4a_6b]
   lia

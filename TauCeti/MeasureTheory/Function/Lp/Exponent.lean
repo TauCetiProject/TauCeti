@@ -53,12 +53,12 @@ variable {α 𝕜 F : Type*} [MeasurableSpace α] {ν : Measure α} [IsFiniteMea
 omit [Fact (1 ≤ q)] in
 /-- The norm bound of the inclusion `L^q(ν) → Lᵖ(ν)`, on the underlying class. -/
 private theorem norm_mk_le (hpq : p ≤ q) (f : Lp F q ν) :
-    ‖(⟨f, Lp.antitone hpq f.2⟩ : Lp F p ν)‖ ≤
+    ‖(⟨f, Lp.antitone hpq f.property⟩ : Lp F p ν)‖ ≤
       (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal * ‖f‖ := by
   have hc : ν Set.univ ^ (1 / p.toReal - 1 / q.toReal) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg
       (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne' hpq) (measure_ne_top ν _)
-  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.2), Lp.norm_def, mul_comm,
+  rw [Lp.norm_def, Lp.coeFn_mk (Lp.antitone hpq f.property), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f) hc)
     (eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpq (Lp.aestronglyMeasurable f))
@@ -73,14 +73,14 @@ most `ν(univ) ^ (1/p - 1/q)`; it does not change the underlying almost everywhe
 class. -/
 def ofExponentLEL (hpq : p ≤ q) : Lp F q ν →L[𝕜] Lp F p ν :=
   LinearMap.mkContinuous
-    { toFun f := ⟨f, Lp.antitone hpq f.2⟩
+    { toFun f := ⟨f, Lp.antitone hpq f.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
     (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal (norm_mk_le hpq)
 
 /-- Lowering the exponent keeps the underlying almost everywhere equivalence class. -/
 theorem ofExponentLEL_apply (hpq : p ≤ q) (f : Lp F q ν) :
-    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.2⟩ :=
+    ofExponentLEL 𝕜 F hpq f = ⟨f, Lp.antitone hpq f.property⟩ :=
   (rfl)
 
 /-- Lowering the exponent does not change the underlying function. -/

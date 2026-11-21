@@ -277,7 +277,7 @@ open sets `V i ⊆ Ω` cover `Ω`, and let `f i : X → W^{k,p}(V i)` be continu
 values agree, almost everywhere on `V i`, with a function `g x` independent of `i`. Then there is a
 continuous linear map `F : X → W^{k,p}(Ω)` whose values equal `g x` almost everywhere on `Ω`. -/
 theorem exists_continuousLinearMap_value_ae_eq [Finite ι] {X : Type*} [TopologicalSpace X]
-    [AddCommGroup X] [Module ℝ X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+    [AddCommMonoid X] [Module ℝ X] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
     (hcov : Omega ≤ ⨆ i, V i) {k : ℕ} (f : ∀ i, X →L[ℝ] Wkp mu (V i) p k) (g : X → E → ℝ)
     (hf : ∀ i x, (value k (f i x) : E → ℝ) =ᵐ[mu.restrict (V i)] g x) :
     ∃ F : X →L[ℝ] Wkp mu Omega p k, ∀ x, (value k (F x) : E → ℝ) =ᵐ[mu.restrict Omega] g x := by

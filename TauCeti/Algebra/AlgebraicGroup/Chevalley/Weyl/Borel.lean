@@ -152,6 +152,16 @@ theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontri
         ((x : Matrix.GeneralLinearGroup (Fin D.dim) A) :
           Matrix (Fin D.dim) (Fin D.dim) A)) h
 
+/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
+stays inside `D.borelSubgroup A`. -/
+theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
+    (s : Fin t.rank → Aˣ) :
+    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
+  D.range_torusPoints_le_borelSubgroup A <|
+    (Subgroup.mem_normalizer_iff.mp
+      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
+      (D.torusPoints A s)).mp ⟨s, rfl⟩
+
 end CommRing
 
 section Field
@@ -290,6 +300,30 @@ theorem mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup
     n ∈ D.borelSubgroup K ↔ n ∈ (D.torusPoints K).range := by
   rw [← D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints K, Subgroup.mem_inf]
   exact (and_iff_left hn).symm
+
+/-- Inside the points of a Chevalley datum over any field, the Weyl subgroup meets the positive
+unipotent subgroup trivially. -/
+@[simp]
+theorem weylSubgroup_inf_positivePoints_eq_bot :
+    D.weylSubgroup K ⊓ D.positivePoints K = ⊥ := by
+  rw [inf_comm, D.positivePoints_inf_weylSubgroup_eq_bot]
+
+/-- Over any field, the intersection of the Weyl subgroup and the positive Borel subgroup of a
+Chevalley datum is the actual weight-lattice torus. -/
+@[simp]
+theorem weylSubgroup_inf_borelSubgroup_eq_range_torusPoints :
+    D.weylSubgroup K ⊓ D.borelSubgroup K = (D.torusPoints K).range := by
+  rw [inf_comm, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints]
+
+/-- Any element of the Weyl subgroup that also belongs to the positive Borel subgroup has trivial
+Weyl projection. -/
+theorem weylProjection_eq_one_of_mem_borelSubgroup {g : D.weylSubgroup K}
+    (hg : (g : D.points K) ∈ D.borelSubgroup K) :
+    D.weylProjection K g = 1 := by
+  obtain ⟨s, hs⟩ := (D.mem_borelSubgroup_iff_mem_range_torusPoints_of_mem_weylSubgroup K
+    g.property).mp hg
+  have hg' : g = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := Subtype.ext hs.symm
+  rw [hg', D.weylProjection_torusPoints]
 
 end Field
 

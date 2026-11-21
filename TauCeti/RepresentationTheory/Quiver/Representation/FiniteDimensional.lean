@@ -258,13 +258,13 @@ instance : EssentiallySmall.{max (max u v) w}
   apply essentiallySmall_of_fully_faithful
     ((ModuleCat.isFG (pathAlgebra k Q)).lift
       ((ObjectProperty.ι (IsFinDim k Q)) ⋙ (quiverRepEquivalence k Q).functor) (fun M => by
-        let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.1) :=
-          module_finite_asModule_of_isFinDim k Q M.1 M.property
+        let hmodule : Module.Finite (pathAlgebra k Q) (QuiverRep.asModule k Q M.obj) :=
+          module_finite_asModule_of_isFinDim k Q M.obj M.property
         let hshrink : Module.Finite (pathAlgebra k Q)
-            (QuiverRep.asModuleShrink k Q M.1) :=
-          Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.1).symm
+            (QuiverRep.asModuleShrink k Q M.obj) :=
+          Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q M.obj).symm
         exact Module.Finite.equiv
-          ((quiverRepEquivalenceFunctorObjShrinkIso k Q M.1).toLinearEquiv.symm)))
+          ((quiverRepEquivalenceFunctorObjShrinkIso k Q M.obj).toLinearEquiv.symm)))
 
 /-- A path algebra module finite-dimensional over the base field gives a representation with
 finite-dimensional vertex spaces. -/

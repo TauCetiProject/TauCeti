@@ -227,7 +227,7 @@ private theorem exists_hom_section_ae_eq_coord
     ∃ φ : ∀ x, V₁ x →L[ℝ] V₂ x, ∀ i,
       (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 i α
         =ᵐ[μ.restrict (A.image i)] (A.hom (𝕜 := ℝ) h).coord i φ := by
-  obtain ⟨φ, hφ⟩ := exists_section_ae_eq_coord (A.hom (𝕜 := ℝ) h) μ p 0 α
+  obtain ⟨φ, hφ⟩ := exists_ae_eq_coord α
   refine ⟨φ, fun i ↦ ?_⟩
   rw [← FiniteBundleAtlas.image_hom (A := A) (h := h) (𝕜 := ℝ) i]
   exact hφ i
@@ -259,7 +259,7 @@ private def pieceHomMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)
       Wkp μ P q 0 :=
   ((ContinuousLinearMap.compL ℝ (SobolevSection A μ q 1) _ _)
     ((ContinuousLinearMap.proj m).comp
-      ((A.ofBaseSet h).transferL μ q 0 ENNReal.coe_ne_top i j hPc hPD hPQ))).comp
+      ((A.ofBaseSet h).transferL μ q 0 i j hPc hPD hPQ))).comp
         (localHomComponentsL A h μ hp hqp i hQc hQ)
 
 omit [T2Space M] in
@@ -281,7 +281,7 @@ private theorem pieceHomMulL_ae_coord (hp : (finrank ℝ E : ℝ≥0) < p) (hqp 
         ((A.ofBaseSet h).coord j (fun x ↦ φ x (s x)) y) m := by
   simp only [pieceHomMulL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
     ContinuousLinearMap.proj_apply]
-  exact (A.ofBaseSet h).value_transferL_ae_of_coord μ q 0 ENNReal.coe_ne_top hP hPc hPD hPQ
+  exact (A.ofBaseSet h).value_transferL_ae_of_coord μ q 0 hP hPc hPD hPQ
     (fun x ↦ φ x (s x)) _
     (localHomComponentsL_ae_coord A h μ hp hqp i hQc hQ α ξ φ s hα hξ) m
 
@@ -300,7 +300,7 @@ private theorem pieceHomMulL_ae (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q �
         ((A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
           (A.sectionChartData.chartValueL μ q 1 j ξ y)) m := by
   obtain ⟨φ, hφ⟩ := exists_hom_section_ae_eq_coord A h μ α
-  obtain ⟨s, hs⟩ := exists_section_ae_eq_coord A μ q 1 ξ
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord ξ
   have ht := pieceHomMulL_ae_coord A h μ hp hqp i j hQc hQ hP hPc hPD hPQ
     α ξ φ s (hφ i) (hs i) m
   have hg := chartHomProduct_ae_coord A h μ α ξ φ s j (hφ j) (hs j)
@@ -326,7 +326,7 @@ private theorem isCompactOperator_pieceHomMulL (hp : (finrank ℝ E : ℝ≥0) <
     simp only [localHomComponentsL, ContinuousLinearMap.piBilin_apply,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply, Function.comp_apply]
   convert hlocal.clm_comp ((ContinuousLinearMap.proj m).comp
-    ((A.ofBaseSet h).transferL μ q 0 ENNReal.coe_ne_top i j hPc hPD hPQ)) using 1
+    ((A.ofBaseSet h).transferL μ q 0 i j hPc hPD hPQ)) using 1
   funext ξ
   simp only [pieceHomMulL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
     Function.comp_apply]
@@ -406,7 +406,7 @@ theorem exists_homMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
   have hmem (α : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0) (ξ : SobolevSection A μ q 1) :
       D α ξ ∈ B.sectionChartData.sobolevSections μ q 0 := by
     obtain ⟨φ, hφ⟩ := exists_hom_section_ae_eq_coord A h μ α
-    obtain ⟨s, hs⟩ := exists_section_ae_eq_coord A μ q 1 ξ
+    obtain ⟨s, hs⟩ := exists_ae_eq_coord ξ
     have hcoord (j : Fin A.n) : B.sectionChartData.chartValueL μ q 0 j (D α ξ)
         =ᵐ[μ.restrict (B.image j)] B.sectionChartData.coord j (fun x ↦ φ x (s x)) := by
       have hg := chartHomProduct_ae_coord A h μ α ξ φ s j (hφ j) (hs j)

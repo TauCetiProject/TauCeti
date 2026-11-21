@@ -40,7 +40,7 @@ def quotientDualEquivAnnihilator (S : Submodule 𝕜 E) :
   toFun f := ⟨f.comp S.mkQL, by
     intro x hx
     simp [(Submodule.Quotient.mk_eq_zero S).mpr hx]⟩
-  invFun f := S.liftQL f.1 (mem_orthogonalBilin_iff_le_ker_flip.mp f.2)
+  invFun f := S.liftQL f.val (mem_orthogonalBilin_iff_le_ker_flip.mp f.property)
   left_inv f := by
     ext x
     obtain ⟨x, rfl⟩ := S.mkQ_surjective x
@@ -48,7 +48,7 @@ def quotientDualEquivAnnihilator (S : Submodule 𝕜 E) :
   right_inv f := by
     apply Subtype.ext
     ext x
-    exact S.liftQ_apply _ (h := mem_orthogonalBilin_iff_le_ker_flip.mp f.2) x
+    exact S.liftQ_apply _ (h := mem_orthogonalBilin_iff_le_ker_flip.mp f.property) x
   map_add' f g := by rfl
   map_smul' c f := by rfl
   norm_map' f := S.norm_comp_mkQL f

@@ -54,7 +54,7 @@ theorem map_uniformOn_perm (s : Finset α) :
   have h := congrArg (fun μ : Measure (Set.powersetCard α s.card) ↦ μ.map Subtype.val)
     (TauCeti.Probability.map_smul_uniformOn_univ (G := Equiv.Perm α)
       (⟨s, rfl⟩ : Set.powersetCard α s.card))
-  rw [Measure.map_map measurable_subtype_coe (measurable_of_countable _), hcoe.map_uniformOn] at h
+  rw [Measure.map_map measurable_subtypeVal (measurable_of_countable _), hcoe.map_uniformOn] at h
   convert h using 1
   congr 1
   funext σ

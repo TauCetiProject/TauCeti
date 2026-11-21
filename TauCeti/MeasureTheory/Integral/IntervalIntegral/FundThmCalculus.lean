@@ -22,6 +22,9 @@ integral equation `x(t) - x(0) = ∫₀ᵗ Y` over a single period `[0, T]`, whe
 `T`-periodic: FTC-1 gives the derivative within `[0, T]`, and periodicity extends it to all of `ℝ`
 (`TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`).
 
+It also records the slope form of FTC-1 at a point of right continuity: the right integral
+averages `(t - a)⁻¹ • ∫ u in a..t, g u` tend to `g a` as `t → a⁺`.
+
 It also records that along a loop `f` (with `f a = f b`) the integral of `B (f x) (f' x)` for a
 continuous bilinear map `B` is unchanged by subtracting a constant from `f`, because `∫ f' = 0`.
 
@@ -31,6 +34,7 @@ Finally, the primitive `u ↦ ∫ t in a..u, f t` of a function continuous on `[
 ## Main declarations
 
 * `TauCeti.intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg`
+* `TauCeti.intervalIntegral.tendsto_sub_inv_smul_integral_nhdsGT`
 * `ContinuousOn.integral_hasDerivAt_of_mem_Ioo`
 * `TauCeti.hasDerivAt_of_periodic_of_sub_eq_integral`
 * `ContinuousLinearMap.intervalIntegral_apply_apply_eq_sub_const`
@@ -39,7 +43,7 @@ Finally, the primitive `u ↦ ∫ t in a..u, f t` of a function continuous on `[
 public section
 
 open MeasureTheory Set
-open scoped Interval
+open scoped Interval Topology
 
 namespace TauCeti
 
@@ -54,6 +58,21 @@ theorem integral_eq_sub_of_hasDerivAt_of_le_of_nonneg {F f : ℝ → ℝ} {a b :
   _root_.intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hab hF hd
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
       (_root_.intervalIntegral.integrableOn_deriv_of_nonneg hF hd hf))
+
+/-- **Right integral averages at a point of right continuity.** If `g` is strongly measurable
+near `a` from the right and continuous at `a` from the right, then the integral averages
+`(t - a)⁻¹ • ∫ u in a..t, g u` tend to `g a` as `t → a⁺`. This is the slope form of FTC-1
+(`intervalIntegral.integral_hasDerivWithinAt_right`). -/
+theorem tendsto_sub_inv_smul_integral_nhdsGT {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} {a : ℝ}
+    (hmeas : StronglyMeasurableAtFilter g (𝓝[>] a) volume)
+    (hg : ContinuousWithinAt g (Ioi a) a) :
+    Filter.Tendsto (fun t ↦ (t - a)⁻¹ • ∫ u in a..t, g u) (𝓝[>] a) (𝓝 (g a)) := by
+  have h : HasDerivWithinAt (fun t ↦ ∫ u in a..t, g u) (g a) (Ioi a) a :=
+    (_root_.intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
+      hg).Ioi_of_Ici
+  refine ((hasDerivWithinAt_iff_tendsto_slope' (by simp : a ∉ Ioi a)).mp h).congr fun t ↦ ?_
+  rw [slope_def_module, _root_.intervalIntegral.integral_same, sub_zero]
 
 end intervalIntegral
 

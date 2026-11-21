@@ -129,7 +129,7 @@ theorem IsJordanSplitting.exists_span_range_sup_span_range_eq [Module.Free R M]
   obtain ⟨m, t₀, G, hG, hGu, hvt, hsup⟩ :=
     (hB.restrict (N k)).exists_orthogonal_isUnit_det_of_isModular (pow_mem hπ k) (h.isModular k)
       (v := v₀) (A := A) (fun i j ↦ by simpa [v₀] using hA i j) hAu
-  refine ⟨m, (N k).subtype ∘ t₀, G, fun j ↦ (t₀ j).2, fun i j ↦ by simpa using hG i j, hGu,
+  refine ⟨m, (N k).subtype ∘ t₀, G, fun j ↦ (t₀ j).property, fun i j ↦ by simpa using hG i j, hGu,
     fun i j ↦ by simpa [v₀] using hvt i j, ?_⟩
   have hv₀ : (N k).subtype ∘ v₀ = v := rfl
   have := congrArg (Submodule.map (N k).subtype) hsup

@@ -53,6 +53,9 @@ everywhere by the Sobolev embedding, so the continuous representative of `h` sat
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup hs`: the group `G_s`, `s > 1`, with its Sobolev
   topology.
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.subOne`: the element `u - 1` of `H^s(ℂ)`.
+* `TauCeti.Vortex.SobolevTopologicalGaugeGroup.reSubOne`,
+  `TauCeti.Vortex.SobolevTopologicalGaugeGroup.imPart`: the elements `Re u - 1` and `Im u` of
+  `H^s(ℂ)`, which depend continuously on `u`.
 
 ## Main results
 
@@ -82,8 +85,8 @@ everywhere by the Sobolev embedding, so the continuous representative of `h` sat
 * `TauCeti.Vortex.SobolevTopologicalGaugeGroup.exists_tendsto_of_cauchySeq`: `G_s` is complete for
   the distance `‖u - v‖_{H^s}`.
 
-The Banach charts of `G_s` and the continuity of its action on the field space `A_m^k` are not
-treated here.
+The Banach charts of `G_s` are not treated here; the continuity of its action on the field space
+`A_m^k` is in `TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient`.
 
 ## References
 
@@ -118,7 +121,9 @@ variable {hs : 1 < s}
 
 private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
 
-instance : Group (SobolevTopologicalGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
+/-- `G_s` is commutative: gauges multiply pointwise. -/
+instance : CommGroup (SobolevTopologicalGaugeGroup hs) :=
+  inferInstanceAs (CommGroup (sobolevGaugeGroup hs))
 
 variable (hs) in
 /-- The identification of `SobolevTopologicalGaugeGroup hs` with the subgroup
@@ -129,14 +134,14 @@ def toSubgroup : SobolevTopologicalGaugeGroup hs ≃* sobolevGaugeGroup hs := Mu
 (`SobolevTopologicalGaugeGroup.coeFn_toLp_inclusion_subOne`). -/
 def subOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
   (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup
-    (toSubgroup hs u).2).choose_spec.2.toBesselPotentialSpace
+    (toSubgroup hs u).property).choose_spec.2.toBesselPotentialSpace
 
 /-- The `L²` function of `subOne u` is `u - 1`. -/
 theorem coeFn_toLp_inclusion_subOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusion h (subOne u)).toLp =ᵐ[volume]
       fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) - 1 := by
   obtain ⟨hae, -⟩ :=
-    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).2).choose_spec
+    (exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup (toSubgroup hs u).property).choose_spec
   rw [subOne, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
 
@@ -151,7 +156,7 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGau
 /-- A Sobolev gauge is continuous as a map into `ℂ`. -/
 theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
     Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+  continuous_subtypeVal.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).property).1
 
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
 theorem subOne_injective :
@@ -307,6 +312,82 @@ theorem continuous_subOne_inv :
     Continuous (fun u : SobolevTopologicalGaugeGroup hs ↦ subOne u⁻¹) :=
   continuous_iff_continuousAt.2 fun u ↦
     tendsto_subOne_inv (f := id) (continuous_subOne.tendsto u)
+
+/-- **The element `Re u - 1` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`, namely
+`((u - 1) + (u⁻¹ - 1)) / 2`: its `L²` function is `Re u - 1`
+(`SobolevTopologicalGaugeGroup.coeFn_inclusionLp_reSubOne`). -/
+def reSubOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
+  (2 : ℂ)⁻¹ • (subOne u + subOne u⁻¹)
+
+/-- **The element `Im u` of `H^s(ℂ)`** of a Sobolev gauge `u ∈ G_s`, namely
+`-i ((u - 1) - (u⁻¹ - 1)) / 2`: its `L²` function is `Im u`
+(`SobolevTopologicalGaugeGroup.coeFn_inclusionLp_imPart`). -/
+def imPart (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
+  (-(Complex.I / 2)) • (subOne u - subOne u⁻¹)
+
+/-- `Re u - 1` is the average `((u - 1) + (u⁻¹ - 1)) / 2` in `H^s(ℂ)`. -/
+theorem reSubOne_def (u : SobolevTopologicalGaugeGroup hs) :
+    reSubOne u = (2 : ℂ)⁻¹ • (subOne u + subOne u⁻¹) :=
+  (rfl)
+
+/-- `Im u` is `-i ((u - 1) - (u⁻¹ - 1)) / 2` in `H^s(ℂ)`. -/
+theorem imPart_def (u : SobolevTopologicalGaugeGroup hs) :
+    imPart u = (-(Complex.I / 2)) • (subOne u - subOne u⁻¹) :=
+  (rfl)
+
+/-- The identity gauge has `Re u - 1 = 0`. -/
+@[simp]
+theorem reSubOne_one : reSubOne (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
+  simp [reSubOne_def]
+
+/-- The identity gauge has `Im u = 0`. -/
+@[simp]
+theorem imPart_one : imPart (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
+  simp [imPart_def]
+
+/-- `u ↦ Re u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_reSubOne :
+    Continuous (reSubOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  unfold reSubOne
+  fun_prop
+
+/-- `u ↦ Im u` is continuous from `G_s` to `H^s(ℂ)`. -/
+@[fun_prop, continuity]
+theorem continuous_imPart :
+    Continuous (imPart : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
+  unfold imPart
+  fun_prop
+
+/-- The `L²` function of `reSubOne u` is `Re u - 1`. -/
+theorem coeFn_inclusionLp_reSubOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusionLp h (reSubOne u)) =ᵐ[volume]
+      fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).re - 1 : ℝ) : ℂ) := by
+  have h₁ := coeFn_toLp_inclusion_subOne h u
+  have h₂ := coeFn_toLp_inclusion_subOne_inv h u
+  rw [toLp_inclusion] at h₁ h₂
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (2 : ℂ)⁻¹
+    (coeFn_inclusionLp_add_ae_eq h h₁ h₂)] with z hz
+  rw [reSubOne_def, hz]
+  apply Complex.ext
+  · simp
+    ring
+  · simp
+
+/-- The `L²` function of `imPart u` is `Im u`. -/
+theorem coeFn_inclusionLp_imPart (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
+    ⇑(inclusionLp h (imPart u)) =ᵐ[volume]
+      fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).im : ℝ) : ℂ) := by
+  have h₁ := coeFn_toLp_inclusion_subOne h u
+  have h₂ := coeFn_toLp_inclusion_subOne_inv h u
+  rw [toLp_inclusion] at h₁ h₂
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (-(Complex.I / 2))
+    (coeFn_inclusionLp_sub_ae_eq h h₁ h₂)] with z hz
+  rw [imPart_def, hz]
+  apply Complex.ext
+  · simp
+    ring
+  · simp
 
 /-- **`G_s` is a topological group** for its Sobolev topology: by `subOne_mul`, multiplication
 acts on `u - 1` by a continuous polynomial map of `H^s(ℂ)`, and inversion is continuous by

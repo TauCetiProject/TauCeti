@@ -80,7 +80,7 @@ end LieTypeIndex
 In particular, its rank is at least two, and neither `B₂(2)`, whose recipe does not produce a
 simple group, nor `B₂(3)`, which the list carries as `²A₃(2)`, is an index of this subtype. The
 Suzuki family `²B₂(2^(2m+1))`, which shares the `B₂` diagram, is not of this subtype either. -/
-abbrev TypeBLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeB}
+abbrev TypeBLieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsTypeB}
 
 namespace TypeBLieIndex
 
@@ -105,14 +105,14 @@ theorem exists_eq_ofB (d : TypeBLieIndex) :
 the type-`B` Cartan matrix at the index's rank. This is the projection of the introduction form
 `TauCeti.TypeBLieIndex.ofB` through `TauCeti.DynkinType.cartanMatrix_B`, stated on entries rather
 than on matrices because the rank occurs in the index types of the two nodes. -/
-theorem dynkinType_cartanMatrix_apply (d : TypeBLieIndex) (i j : Fin d.1.rank) :
-    d.1.dynkinType.cartanMatrix i j = CartanMatrix.B d.1.rank i j := by
+theorem dynkinType_cartanMatrix_apply (d : TypeBLieIndex) (i j : Fin d.val.rank) :
+    d.val.dynkinType.cartanMatrix i j = CartanMatrix.B d.val.rank i j := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofB
   exact congrFun₂ (DynkinType.cartanMatrix_B rank) i j
 
 /-- The rank of a validated type-`B` index is at least two: the `B₁` diagram is `A₁`, and the
 double edge that names the family appears from rank two on. -/
-theorem two_le_rank (d : TypeBLieIndex) : 2 ≤ d.1.rank := by
+theorem two_le_rank (d : TypeBLieIndex) : 2 ≤ d.val.rank := by
   obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofB
   simpa only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType,
     LieTypeIndex.dynkinType_B, DynkinType.rank_B] using
@@ -124,7 +124,7 @@ namespace TypeB2LieIndex
 
 /-- Regard an untwisted rank-two type-`B` index as an index of the general type-`B` family. -/
 abbrev toTypeBLieIndex (d : TypeB2LieIndex) : TypeBLieIndex :=
-  ⟨d.1.1, by
+  ⟨d.val.val, by
     obtain ⟨q, hvalid, rfl⟩ := d.exists_eq_of
     trivial⟩
 

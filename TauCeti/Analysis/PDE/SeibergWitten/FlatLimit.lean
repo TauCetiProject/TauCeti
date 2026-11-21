@@ -7,52 +7,68 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
-public import TauCeti.Analysis.PDE.Vortex.Deformation
+public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 
 /-!
-# The flat limiting Seiberg–Witten equations and plane vortices
+# The flat large-parameter Seiberg–Witten equations and plane vortices
 
-Rescaling a large-parameter Seiberg–Witten solution on a symplectic four-manifold by the length
-scale `h`, with `h² r = 1 / 2`, at points near its zero set gives, in the limit, fields on the flat
-space `V = ℂ_base × ℂ_normal` with a constant orthogonal complex structure `J` and Kähler form
-`ω`. Write the normalized spinor as `χ = α u₀ + β`, where `u₀` is a constant unit spinor in the
-`-2i`-eigenline of `c₂(ω)` (the range of `TauCeti.SeibergWitten.cliffordProjection`), and the
-connection on the line `E` as `a = i b`, with real curvature `F = i F_a = -db`. The flat limiting
-equations are the Dirac equation and the curvature equation
+Let `V = ℂ_base × ℂ_normal` be flat space with a constant orthogonal complex structure `J` and
+Kähler form `ω`. Write the normalized spinor as `χ = α u₀ + β`, where `u₀` is a constant unit
+spinor in the `-2i`-eigenline of `c₂(ω)` (the range of `TauCeti.SeibergWitten.cliffordProjection`),
+and the connection on the line `E` as `a = i b`, with real curvature `F = i F_a = -db`. For a
+parameter `r ≥ 0` the flat large-parameter equations are the Dirac equation and the curvature
+equation
 
-`∑ₖ c(eₖ) ∇_{eₖ} χ = 0`,  `F + ⋆F = ω / 8 - q(χ) / 2`,
+`∑ₖ c(eₖ) ∇_{eₖ} χ = 0`,  `F + ⋆F = (r / 4) ω - q(√r χ)`,
 
 where `q` is the quadratic two-form `TauCeti.SeibergWitten.quadraticTwoForm`, indexed by real
 forms as in `TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature`; the second equation
-is the large-parameter curvature equation `F + ⋆F = (r / 4) ω - q(√r χ)` at `r = 1 / 2`.
+is the large-parameter curvature equation of that file with no background curvature and no
+forcing. These are the leading-order equations of a large-parameter solution in a flat chart.
 
 When the spinor lies on the canonical line, `χ = α u₀`, this file identifies these equations with
-the plane vortex equations:
+the plane vortex equations, and the parameter `r` with a dilation of the plane:
 
-* **Curvature.** Since `q(α u₀) = (|α|² / 4) ω`, the curvature equation says
-  `F + ⋆F = ((1 - |α|²) / 8) ω` (`add_hodgeStar_eq_sub_quadraticTwoForm_iff`). In particular the
-  self-dual part of `F` is a multiple of `ω`: its `(0,2)` component vanishes.
+* **Curvature.** Since `q(√r α u₀) = (r |α|² / 4) ω`, the curvature equation says
+  `F + ⋆F = (r (1 - |α|²) / 4) ω` (`add_hodgeStar_eq_sub_quadraticTwoForm_iff`). In particular
+  the self-dual part of `F` is a multiple of `ω`: its `(0,2)` component vanishes.
 * **Dirac.** Since `u₀` is constant, `∑ₖ c(eₖ) ∇_{eₖ}(α u₀) = ∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`, and by the
   Clifford algebra of the canonical line this vanishes exactly when `∂bar_a α = 0`
   (`sum_covariantDeriv_smul_ι_apply_eq_zero_iff`).
-* **Base-independent fields.** Let `x` be a field of the plane vortex equations
-  (`TauCeti.Vortex.equation`), with connection `i (b₁ ds + b₂ dt)` and section `α`, and pull it back
-  to `V` along the normal coordinate `z = ⟪e₂, ·⟫ + i ⟪e₃, ·⟫` of a positively oriented unitary
-  frame (`normalCoord`, `normalConnection`). The pulled-back pair solves the flat limiting
-  equations at a point exactly when `x` solves the plane vortex equations at its normal coordinate
-  (`sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff`). The curvature of the
+* **Base-independent fields.** Let `x` be a plane vortex field, with connection
+  `i (b₁ ds + b₂ dt)` and section `α`, and pull it back to `V` along the normal coordinate
+  `z = ⟪e₂, ·⟫ + i ⟪e₃, ·⟫` of a positively oriented unitary frame (`normalCoord`,
+  `normalConnection`). The pulled-back pair solves the flat equations at a point exactly when `x`
+  solves the plane vortex equations `∂bar_a α = 0`, `*iF_a = r (1 - |α|²) / 4` at its normal
+  coordinate (`TauCeti.Vortex.coupledEquation (2 * r)`,
+  `sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff`). The curvature of the
   pulled-back connection is `F = -(∂₁ b₂ - ∂₂ b₁) e₂ ∧ e₃`, so `F + ⋆F = -(∂₁ b₂ - ∂₂ b₁) ω`, and
   `∂bar_a α` in the frame is the pair of complex-equation defects of `x`.
+* **Flat scaling.** For `r > 0` put `t = √(2r)`. Pulling back the dilated plane field
+  `TauCeti.Vortex.dilateField t X` is pulling back `X` and then dilating `V` by `t`
+  (`normalConnection_dilateField`), and the pulled-back pair solves the flat equations at `y`
+  exactly when `X` solves the normalized plane vortex equations `∂bar_a α = 0`,
+  `*iF_a = (1 - |α|²) / 8` (`TauCeti.Vortex.equation`) at `z(t y)`
+  (`sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equation_eq_zero`). So in the
+  coordinate `w = √(2r) z` the curvature coefficient `r / 4` becomes `1 / 8`.
+* **Scaled energy.** For a pulled-back field `|F| = |*iF_a|`
+  (`norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection`) and
+  `∑ₖ |∇_{eₖ} α|² = |∇₁ α|² + |∇_i α|²` (`sum_norm_covariantDeriv_normalConnection_sq`) at the
+  normal coordinate. So for the dilated field the integrand `r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²`
+  of Taubes's scaled energy is a plane expression in the normal coordinate, and its integral over
+  the normal plane does not depend on `r`
+  (`TauCeti.Vortex.integral_inv_mul_curvature_dilateField_sq_add`).
 
-So the base-independent solutions of the flat limiting equations with spinor on the canonical
-line and connection along the normal factor are exactly the pullbacks of plane vortices, in the
-normalization `∂bar_a α = 0`, `*i F_a = (1 - |α|²) / 8` of `TauCeti.Vortex.equation`. The gauge
-fixing row and the derivation of the limiting equations from actual rescaled solutions are not
-treated here.
+So the base-independent solutions of the flat equations with spinor on the canonical line and
+connection along the normal factor are exactly the pullbacks of plane vortices of coupling `2r`
+(curvature coefficient `r / 4`), equivalently of normalized plane vortices in the coordinate
+`√(2r) z`. The gauge fixing row and the insertion into a curved normal tube are not treated here.
+That rescaled solutions of the large-parameter equations converge, in the sense of `1`-jets, only
+to solutions of the flat limiting equations is `TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
 
 ## References
 
@@ -96,15 +112,16 @@ variable {ω : ⋀[ℝ]^2 V} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = fin
   (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
 include hQ hω h₂ hρ in
-/-- **The flat curvature equation on the canonical line**: if `P_α ψ = ψ`, then
-`F + ⋆F = ω / 8 - q(ψ) / 2` if and only if `F + ⋆F = ((1 - ‖ψ‖²) / 8) ω`. -/
-theorem add_hodgeStar_eq_sub_quadraticTwoForm_iff {ψ : positiveHalfSpinors o ρ}
-    (hψ : cliffordProjection o ρ ω ψ = ψ) (F : ⋀[ℝ]^2 V) :
+/-- **The flat curvature equation on the canonical line**: if `P_α ψ = ψ` and `0 ≤ r`, then
+`F + ⋆F = (r / 4) ω - q(√r ψ)` if and only if `F + ⋆F = (r (1 - ‖ψ‖²) / 4) ω`. -/
+theorem add_hodgeStar_eq_sub_quadraticTwoForm_iff {r : ℝ} (hr : 0 ≤ r)
+    {ψ : positiveHalfSpinors o ρ} (hψ : cliffordProjection o ρ ω ψ = ψ) (F : ⋀[ℝ]^2 V) :
     F + o.hodgeStar hkl F =
-        (8⁻¹ : ℝ) • ω - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) ↔
-      F + o.hodgeStar hkl F = ((1 - ‖ψ‖ ^ 2) / 8) • ω := by
-  rw [coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω h₂ hρ hψ, smul_smul,
-    ← sub_smul, show (8⁻¹ : ℝ) - 2⁻¹ * (‖ψ‖ ^ 2 / 4) = (1 - ‖ψ‖ ^ 2) / 8 by ring]
+        (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • ψ) : ⋀[ℝ]^2 V) ↔
+      F + o.hodgeStar hkl F = (r * (1 - ‖ψ‖ ^ 2) / 4) • ω := by
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul,
+    coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω h₂ hρ hψ, smul_smul,
+    ← sub_smul, show r / 4 - r * (‖ψ‖ ^ 2 / 4) = r * (1 - ‖ψ‖ ^ 2) / 4 by ring]
 
 end Curvature
 
@@ -158,6 +175,23 @@ theorem normalCoord_apply (v : V) : normalCoord e v = ⟪e 2, v⟫ + ⟪e 3, v�
 theorem normalCoord_apply_two : normalCoord e (e 2) = 1 := by
   apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 2)]
 
+/-- The normal coordinate of `e₀` is `0`. -/
+@[simp]
+theorem normalCoord_apply_zero : normalCoord e (e 0) = 0 := by
+  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 0),
+    e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 0)]
+
+/-- The normal coordinate of `e₁` is `0`. -/
+@[simp]
+theorem normalCoord_apply_one : normalCoord e (e 1) = 0 := by
+  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 1),
+    e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 1)]
+
+/-- The normal coordinate of `e₃` is `i`. -/
+@[simp]
+theorem normalCoord_apply_three : normalCoord e (e 3) = I := by
+  apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 3)]
+
 /-- In a unitary frame the normal coordinate is complex linear: `z (J v) = i z (v)`. -/
 theorem normalCoord_apply_apply (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (v : V) :
     normalCoord e (J v) = I * normalCoord e v := by
@@ -185,6 +219,18 @@ theorem normalConnection_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : V
         x (normalCoord e y) 1 * (normalCoord e v).im := by
   simp [normalConnection]
 
+/-- **Plane dilation is four-dimensional dilation**: the pullback of the dilated plane field
+`TauCeti.Vortex.dilateField t x` is the pullback of `x` composed with the dilation `y ↦ t y` of
+`V`, with the connection form multiplied by `t`. -/
+theorem normalConnection_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
+    normalConnection e (Vortex.dilateField t x) y = t • normalConnection e x (t • y) := by
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [show v = fun _ ↦ v 0 from funext fun i ↦ by rw [Subsingleton.elim i 0]]
+  simp only [ContinuousAlternatingMap.smul_apply, normalConnection_apply,
+    Vortex.dilateField_apply, map_smul, smul_eq_mul, real_smul, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, normalCoord_re, normalCoord_im]
+  ring
+
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
 
 /-- The covariant derivative of the pulled-back section along the pulled-back connection is the
@@ -196,6 +242,20 @@ theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoor
     (normalCoord e).hasFDerivAt).fderiv
   rw [covariantDeriv_apply, Vortex.covariantDerivative_apply, hd, normalConnection_apply]
   simp
+  ring
+
+/-- **The covariant derivative of a pulled-back section has the plane covariant derivative as its
+norm**: summed over the frame, `∑ₖ |∇_{eₖ} α|² = |∇₁ α|² + |∇_i α|²` at `z(y)`, since the normal
+coordinate kills `e₀` and `e₁` and sends `e₂`, `e₃` to `1`, `i`. -/
+theorem sum_norm_covariantDeriv_normalConnection_sq (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    ∑ k, ‖covariantDeriv (normalConnection e x) (Vortex.sectionValue x ∘ normalCoord e) y
+        (e k)‖ ^ 2 =
+      ‖Vortex.covariantDerivative x (normalCoord e y) 1‖ ^ 2 +
+        ‖Vortex.covariantDerivative x (normalCoord e y) I‖ ^ 2 := by
+  have h0 : Vortex.covariantDerivative x (normalCoord e y) 0 = 0 := by
+    rw [Vortex.covariantDerivative_eq_re_mul_add_im_mul]
+    simp
+  simp [Fin.sum_univ_four, covariantDeriv_normalConnection hx, h0]
 
 variable [FiniteDimensional ℝ V]
 
@@ -288,16 +348,18 @@ variable (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
   {x : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
 
 include hQ he h₀ h₂₃ in
-/-- **Base-independent solutions of the flat limiting equations are plane vortices.** Let `x` be a
-plane vortex field, differentiable at the normal coordinate `z(y)` of `y`, and pull its connection
+/-- **Base-independent solutions of the flat equations are plane vortices.** Let `x` be a plane
+vortex field, differentiable at the normal coordinate `z(y)` of `y`, and pull its connection
 `b = b₁ ds + b₂ dt` and section `α` back to `V = ℂ_base × ℂ_normal` along `z`, in a positively
-oriented unitary frame. For a unit spinor `u₀` of the canonical line `P_α u₀ = u₀`, the pair
-`(b, α u₀)` solves the flat limiting Dirac and curvature equations at `y`,
+oriented unitary frame. For `0 ≤ r` and a unit spinor `u₀` of the canonical line `P_α u₀ = u₀`,
+the pair `(b, α u₀)` solves the flat Dirac and large-parameter curvature equations at `y`,
 
-`∑ₖ (∇_a α)(eₖ) c(eₖ) u₀ = 0`,  `F + ⋆F = ω / 8 - q(α u₀) / 2`,  `F = i F_a = -db`,
+`∑ₖ (∇_a α)(eₖ) c(eₖ) u₀ = 0`,  `F + ⋆F = (r / 4) ω - q(√r α u₀)`,  `F = i F_a = -db`,
 
-if and only if `x` solves the plane vortex equations at `z(y)`. -/
-theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
+if and only if `x` solves the plane vortex equations with curvature coefficient `r / 4`,
+`∂bar_a α = 0` and `*iF_a = r (1 - |α|²) / 4` (`TauCeti.Vortex.coupledEquation (2 * r)`), at
+`z(y)`. -/
+theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff {r : ℝ} (hr : 0 ≤ r)
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1)
@@ -306,9 +368,9 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
           ρ (ι Q (e k)) u₀ = 0 ∧
       (alternatingFormEquiv V 2).symm (-extDeriv (normalConnection e x) y) +
           o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv (normalConnection e x) y)) =
-        (8⁻¹ : ℝ) • J.kahlerForm - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl
-          (Vortex.sectionValue x (normalCoord e y) • u₀) : ⋀[ℝ]^2 V)) ↔
-      Vortex.equation x (normalCoord e y) = 0 := by
+        (r / 4) • J.kahlerForm - (quadraticTwoForm o ρ hkl
+          (((√r : ℝ) : ℂ) • (Vortex.sectionValue x (normalCoord e y) • u₀)) : ⋀[ℝ]^2 V)) ↔
+      Vortex.coupledEquation (2 * r) x (normalCoord e y) = 0 := by
   have hu₀' : (u₀ : W) ≠ 0 := by
     have hu : u₀ ≠ 0 := by
       rintro rfl
@@ -332,21 +394,74 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
     rw [map_smul, hu₀]
   rw [sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀',
     covariantDBar_normalConnection_eq_zero_iff h₀ h₂₃ hx,
-    add_hodgeStar_eq_sub_quadraticTwoForm_iff hQ hkl hω h₂ hρ hαu₀,
+    add_hodgeStar_eq_sub_quadraticTwoForm_iff hQ hkl hω h₂ hρ hr hαu₀,
     alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx,
     hsd, smul_left_injective ℝ hω₀ |>.eq_iff,
     norm_smul, hu₀₁, mul_one, Vortex.sq_norm_sectionValue]
-  have hE : Vortex.equation x (normalCoord e y) = 0 ↔ Vortex.equation x (normalCoord e y) 0 = 0 ∧
-      Vortex.equation x (normalCoord e y) 1 = 0 ∧ Vortex.equation x (normalCoord e y) 2 = 0 := by
-    refine ⟨fun h ↦ by simp [h], fun ⟨h0, h1, h2⟩ ↦ ?_⟩
+  have hE : Vortex.coupledEquation (2 * r) x (normalCoord e y) = 0 ↔
+      Vortex.coupledEquation (2 * r) x (normalCoord e y) 0 = 0 ∧
+        Vortex.equation x (normalCoord e y) 1 = 0 ∧ Vortex.equation x (normalCoord e y) 2 = 0 := by
+    refine ⟨fun h ↦ by simp [h, ← Vortex.coupledEquation_apply_one (2 * r),
+      ← Vortex.coupledEquation_apply_two (2 * r)], fun ⟨h0, h1, h2⟩ ↦ ?_⟩
     ext i
     fin_cases i <;> simp [h0, h1, h2]
-  rw [hE, Vortex.equation_apply_zero, Vortex.curvature_apply]
+  rw [hE, Vortex.coupledEquation_apply_zero, Vortex.curvature_apply]
   constructor
   · rintro ⟨⟨h1, h2⟩, h0⟩
     exact ⟨by linarith, h1, h2⟩
   · rintro ⟨h0, h1, h2⟩
     exact ⟨⟨h1, h2⟩, by linarith⟩
+
+include hQ he h₀ h₂₃ in
+/-- **The flat scaling to the plane vortex model.** For `r > 0` put `t = √(2r)`. Let `X` be a
+plane vortex field in the coordinate `w = t z`, differentiable at `t z(y) = z(t y)`, and pull the
+dilated field `TauCeti.Vortex.dilateField t X`, the field `X` written in the coordinate `z`, back
+to `V = ℂ_base × ℂ_normal` as in
+`TauCeti.SeibergWitten.sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff`. The
+pulled-back pair solves the flat Dirac and large-parameter curvature equations
+
+`∑ₖ (∇_a α)(eₖ) c(eₖ) u₀ = 0`,  `F + ⋆F = (r / 4) ω - q(√r α u₀)`
+
+at `y` if and only if `X` solves the normalized plane vortex equations
+`∂bar_a α = 0`, `*iF_a = (1 - |α|²) / 8` (`TauCeti.Vortex.equation`) at `z(t y)`: in the coordinate
+`w = √(2r) z` the curvature coefficient `r / 4` becomes `1 / 8`. -/
+theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equation_eq_zero
+    {r : ℝ} (hr : 0 < r) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
+    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1)
+    {X : ℂ → EuclideanSpace ℝ (Fin 4)} (hX : DifferentiableAt ℝ X (normalCoord e (√(2 * r) • y))) :
+    (∑ k, covariantDeriv (normalConnection e (Vortex.dilateField (√(2 * r)) X))
+          (Vortex.sectionValue (Vortex.dilateField (√(2 * r)) X) ∘ normalCoord e) y (e k) •
+          ρ (ι Q (e k)) u₀ = 0 ∧
+      (alternatingFormEquiv V 2).symm
+          (-extDeriv (normalConnection e (Vortex.dilateField (√(2 * r)) X)) y) +
+          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm
+            (-extDeriv (normalConnection e (Vortex.dilateField (√(2 * r)) X)) y)) =
+        (r / 4) • J.kahlerForm - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) •
+          (Vortex.sectionValue (Vortex.dilateField (√(2 * r)) X) (normalCoord e y) • u₀)) :
+            ⋀[ℝ]^2 V)) ↔
+      Vortex.equation X (normalCoord e (√(2 * r) • y)) = 0 := by
+  have hz : √(2 * r) • normalCoord e y = normalCoord e (√(2 * r) • y) := (map_smul _ _ _).symm
+  have hd := Vortex.coupledEquation_dilateField_eq_zero_iff 1 (√(2 * r))
+    (Real.sqrt_pos.2 (by positivity)).ne' X (normalCoord e y)
+  rw [mul_one, Real.sq_sqrt (by positivity), Vortex.coupledEquation_one, hz] at hd
+  rw [sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ hr.le h₂
+    hρ hu₀ hu₀₁ (Vortex.differentiableAt_dilateField (hz ▸ hX)), hd]
+
+/-! ### The scaled energy density of a pulled-back field -/
+
+include h₀ h₂₃ in
+/-- **The curvature of a pulled-back connection has the plane curvature as its norm**:
+`|F| = |*iF_a|` at `z(y)`, since `F = (*iF_a) e₂ ∧ e₃` and `e₂ ∧ e₃` is a unit two-vector. -/
+theorem norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection
+    (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    ‖(alternatingFormEquiv V 2).symm (-extDeriv (normalConnection e x) y)‖ =
+      |Vortex.curvature x (normalCoord e y)| := by
+  have h := AlmostComplexStructure.norm_ιMulti_apply_sq
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) (e 2)
+  rw [h₂₃, e.orthonormal.1 2, one_pow, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
+  rw [alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx, norm_smul, h, mul_one,
+    Real.norm_eq_abs, abs_neg]
 
 end Equations
 
