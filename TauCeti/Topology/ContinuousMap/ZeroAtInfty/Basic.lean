@@ -20,6 +20,8 @@ needed for scalar actions beyond normed fields, bundled homomorphisms, and Uryso
 * `ZeroAtInftyContinuousMap.instIsBoundedSMul`: a bounded scalar action on `β` induces one on
   `C₀(α, β)`, so for instance `C₀(α, R)` is a module with contractive action over a seminormed
   ring `R`;
+* `ZeroAtInftyContinuousMap.instDistribMulAction`: a continuous distributive monoid action on an
+  additive topological monoid `β` induces a distributive monoid action on `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.instContinuousConstSMul`: a continuous distributive scalar action
   on an additive uniform group `β` induces continuous fixed-scalar multiplication on `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.norm_le` and `ZeroAtInftyContinuousMap.norm_eq_iSup_norm`: the norm
@@ -74,6 +76,13 @@ instance instIsBoundedSMul {𝕜 : Type*} [PseudoMetricSpace 𝕜] [Zero 𝕜] [
   dist_pair_smul' c₁ c₂ f := dist_pair_smul c₁ c₂ f.toBCF
 
 end PseudoMetric
+
+/-- A continuous distributive monoid action on an additive topological monoid induces a pointwise
+distributive monoid action on `C₀(α, β)`. -/
+instance instDistribMulAction [TopologicalSpace β] [AddMonoid β] [ContinuousAdd β]
+    {R : Type*} [Monoid R] [DistribMulAction R β] [ContinuousConstSMul R β] :
+    DistribMulAction R C₀(α, β) :=
+  fast_instance% FunLike.distribMulAction
 
 /-- A continuous distributive scalar action on an additive uniform group induces continuous
 fixed-scalar multiplication on functions vanishing at infinity, with their sup metric. -/
