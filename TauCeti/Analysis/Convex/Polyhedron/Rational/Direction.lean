@@ -110,4 +110,24 @@ theorem exists_direction_eq_inf_ker (hP : IsRationalNormalPolyhedron h P)
     ext v
     simp only [Submodule.mem_iInf, Submodule.mem_inf, LinearMap.mem_ker, Fin.forall_fin_two]
 
+/-- A nonempty codimension-two rational-normal polyhedron and a transverse lattice
+vector determine a nonzero integral normal to the swept direction. The affine
+polyhedron need not contain a lattice point.
+
+Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Joint.lean`, commit
+`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
+theorem exists_swept_joint_normal (hP : IsRationalNormalPolyhedron h P)
+    (hne : P.Nonempty)
+    (hdim : Module.finrank ℝ (affineSpan ℝ P).direction + 2 = Module.finrank ℝ V)
+    (v : N) (hv : i v ∉ (affineSpan ℝ P).direction) :
+    ∃ f g : N →+ ℤ, LinearIndependent ℝ ![h.realCharacter f, h.realCharacter g] ∧
+      (affineSpan ℝ P).direction = (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ∧
+      f v • g - g v • f ≠ 0 ∧
+      (h.realCharacter (f v • g - g v • f)).ker =
+        (affineSpan ℝ P).direction ⊔ ℝ ∙ i v := by
+  obtain ⟨f, g, hind, hfg⟩ := hP.exists_direction_eq_inf_ker hne hdim
+  have hv' := hfg ▸ hv
+  exact ⟨f, g, hind, hfg, h.apply_smul_sub_apply_smul_ne_zero f g v hind hv', by
+    rw [h.ker_realCharacter_apply_smul_sub_apply_smul f g v hv', ← hfg]⟩
+
 end TauCeti.IsRationalNormalPolyhedron
