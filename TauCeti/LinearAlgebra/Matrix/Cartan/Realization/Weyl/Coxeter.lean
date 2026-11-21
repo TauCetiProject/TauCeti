@@ -569,17 +569,9 @@ theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K]
     [AddCommGroup H] [Module K H] {A : Matrix I I K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) :
     Nat.card (R.weylGroup hdiag) = 2 := by
-  let s := R.weylSimple hdiag default
-  have hf : Function.Bijective (fun b : Bool ↦ if b then s else 1) := by
-    refine ⟨fun b₁ b₂ h ↦ ?_,
-      fun w ↦ (R.eq_one_or_weylSimple_of_unique hdiag w).elim (⟨false, ·.symm⟩) (⟨true, ·.symm⟩)⟩
-    cases b₁ <;> cases b₂
-    · rfl
-    · exact absurd h.symm (R.weylSimple_ne_one hdiag default)
-    · exact absurd h (R.weylSimple_ne_one hdiag default)
-    · rfl
-  rw [← Nat.card_congr (Equiv.ofBijective _ hf)]
-  simp
+  have hz : Subgroup.zpowers (R.weylSimple hdiag default) = ⊤ := by
+    rw [Subgroup.zpowers_eq_closure, ← Set.range_unique, R.closure_range_weylSimple]
+  rw [← Subgroup.card_top, ← hz, Nat.card_zpowers, R.orderOf_weylSimple]
 
 /-- **Rank-one minimal realization (`A₁`, `s(ω) = -ω`)**: on the dual of a minimal rank-one
 realization over a field of characteristic not `2`, the unique simple reflection acts by `-id` on
