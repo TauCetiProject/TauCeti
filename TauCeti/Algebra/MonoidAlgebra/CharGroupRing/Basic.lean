@@ -143,7 +143,7 @@ theorem charEval_subgroupCharSum_of_le_ker (χ ψ : G →* Oˣ) (H : Subgroup G)
     (hH : H ≤ (χ * ψ).ker) :
     ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ) H) = Nat.card H := by
   have h (h : H) : ((χ h : Oˣ) : O) * ψ h = 1 := by
-    rw [← Units.val_mul, ← MonoidHom.mul_apply, hH h.2, Units.val_one]
+    rw [← Units.val_mul, ← MonoidHom.mul_apply, hH h.property, Units.val_one]
   simp [TauCeti.subgroupCharSum_def, map_sum, h, Nat.card_eq_fintype_card]
 
 /-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is trivial evaluates
@@ -161,12 +161,12 @@ namespace Set
 /-- The joint evaluation `ev_Ψ : O[G] → ∏_{ψ ∈ Ψ} O`, `x ↦ (ψ(x))_{ψ ∈ Ψ}`, at a set `Ψ` of
 characters of `G`. -/
 noncomputable def jointEval (Ψ : Set (G →* Oˣ)) : MonoidAlgebra O G →ₐ[O] (Ψ → O) :=
-  AlgHom.pi fun ψ ↦ ψ.1.charEval
+  AlgHom.pi fun ψ ↦ ψ.val.charEval
 
 /-- The `ψ`-coordinate of the joint evaluation is the evaluation at `ψ`. -/
 @[simp]
 theorem jointEval_apply (Ψ : Set (G →* Oˣ)) (x : MonoidAlgebra O G) (ψ : Ψ) :
-    jointEval Ψ x ψ = ψ.1.charEval x :=
+    jointEval Ψ x ψ = ψ.val.charEval x :=
   (rfl)
 
 /-- The *character group ring* `R_Ψ` of a set `Ψ` of characters of `G`: the image of the joint
@@ -188,7 +188,7 @@ variable {Ψ : Set (G →* Oˣ)}
 /-- A function on `Ψ` lies in the character group ring exactly when it is the family of values
 of some element of `O[G]` at the members of `Ψ`. -/
 theorem mem_iff {y : Ψ → O} :
-    y ∈ charGroupRing Ψ ↔ ∃ x : MonoidAlgebra O G, ∀ ψ : Ψ, ψ.1.charEval x = y ψ := by
+    y ∈ charGroupRing Ψ ↔ ∃ x : MonoidAlgebra O G, ∀ ψ : Ψ, ψ.val.charEval x = y ψ := by
   simp [charGroupRing, funext_iff]
 
 /-- Two elements of the character group ring are equal when all their `ψ`-coordinates are. -/
@@ -204,7 +204,7 @@ noncomputable def proj : MonoidAlgebra O G →ₐ[O] charGroupRing Ψ :=
 /-- The `ψ`-coordinate of `α_Ψ(x)` is `ψ(x)`. -/
 @[simp]
 theorem coe_proj_apply (x : MonoidAlgebra O G) (ψ : Ψ) :
-    (proj Ψ x : Ψ → O) ψ = ψ.1.charEval x :=
+    (proj Ψ x : Ψ → O) ψ = ψ.val.charEval x :=
   (rfl)
 
 variable (Ψ) in
@@ -239,9 +239,9 @@ theorem ker_proj : RingHom.ker (proj Ψ) = ⨅ ψ ∈ Ψ, RingHom.ker ψ.charEva
 `O`-algebra transition homomorphism `R_Ψ →ₐ[O] R_{Ψ'}` through which `α_{Ψ'}` factors. -/
 def restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
     Ψ.charGroupRing →ₐ[O] Ψ'.charGroupRing where
-  toFun y := ⟨fun ψ ↦ (y : Ψ → O) ⟨ψ.1, h ψ.2⟩, by
-    obtain ⟨x, hx⟩ := mem_iff.mp y.2
-    exact mem_iff.mpr ⟨x, fun ψ ↦ hx ⟨ψ.1, h ψ.2⟩⟩⟩
+  toFun y := ⟨fun ψ ↦ (y : Ψ → O) ⟨ψ.val, h ψ.property⟩, by
+    obtain ⟨x, hx⟩ := mem_iff.mp y.property
+    exact mem_iff.mpr ⟨x, fun ψ ↦ hx ⟨ψ.val, h ψ.property⟩⟩⟩
   map_one' := rfl
   map_mul' _ _ := rfl
   map_zero' := rfl
@@ -252,7 +252,7 @@ def restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
 @[simp]
 theorem coe_restrictAlgHom_apply {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
     (y : Ψ.charGroupRing) (ψ : Ψ') :
-    (restrictAlgHom h y : Ψ' → O) ψ = (y : Ψ → O) ⟨ψ.1, h ψ.2⟩ :=
+    (restrictAlgHom h y : Ψ' → O) ψ = (y : Ψ → O) ⟨ψ.val, h ψ.property⟩ :=
   (rfl)
 
 /-- Restricting a character group ring to itself is the identity algebra homomorphism. -/
@@ -337,7 +337,8 @@ theorem nonempty_of_nontrivial [Nontrivial Ψ.charGroupRing] : Ψ.Nonempty := by
   by_contra h
   rw [Set.not_nonempty_iff_eq_empty] at h
   subst h
-  exact zero_ne_one (ext (y := (0 : (∅ : Set (G →* Oˣ)).charGroupRing)) fun ψ ↦ False.elim ψ.2)
+  exact zero_ne_one
+    (ext (y := (0 : (∅ : Set (G →* Oˣ)).charGroupRing)) fun ψ ↦ False.elim ψ.property)
 
 /-- When `Ψ` is nonempty, `algebraMap O R_Ψ` is a local homomorphism because it has a left inverse
 `evalAlgHom hψ`. -/

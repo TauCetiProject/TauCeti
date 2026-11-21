@@ -87,8 +87,8 @@ private theorem zmodTorsionByEquivHom_bijective (m n : ℕ) [NeZero m] [NeZero n
     Function.Bijective (zmodTorsionByEquivHom m n) := by
   refine ⟨fun a b hab ↦ ZMod.mulCastHom_injective n rfl (NeZero.ne n) (congrArg Subtype.val hab),
     fun y ↦ ?_⟩
-  obtain ⟨x, hx⟩ := (ZMod.exact_mulCastHom_castHom n rfl y.1).1 <|
-    (ZMod.natCast_mul_eq_zero_iff n rfl (NeZero.ne m) y.1).1 (natCast_mul_coe_eq_zero y)
+  obtain ⟨x, hx⟩ := (ZMod.exact_mulCastHom_castHom n rfl y.val).1 <|
+    (ZMod.natCast_mul_eq_zero_iff n rfl (NeZero.ne m) y.val).1 (natCast_mul_coe_eq_zero y)
   exact ⟨x, Subtype.ext hx⟩
 
 /-- For nonzero `m` and `n`, the subgroup of `ZMod (m * n)` killed by `m` is additively
@@ -108,10 +108,10 @@ theorem zmodTorsionByEquiv_apply_coe (m n : ℕ) [NeZero m] [NeZero n] (x : ZMod
 @[simp]
 theorem zmodTorsionByEquiv_symm_apply (m n : ℕ) [NeZero m] [NeZero n]
     (y : AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) :
-    (zmodTorsionByEquiv m n).symm y = ((y.1.val / n : ℕ) : ZMod m) := by
+    (zmodTorsionByEquiv m n).symm y = ((y.val.val / n : ℕ) : ZMod m) := by
   refine (AddEquiv.symm_apply_eq _).2 (Subtype.ext ?_)
   rw [zmodTorsionByEquiv_apply_coe, ZMod.val_natCast, ← Nat.mul_mod_mul_right, ZMod.natCast_mod,
-    Nat.div_mul_cancel ((ZMod.dvd_val_iff_natCast_mul_eq_zero rfl y.1).2
+    Nat.div_mul_cancel ((ZMod.dvd_val_iff_natCast_mul_eq_zero rfl y.val).2
       (natCast_mul_coe_eq_zero y)), ZMod.natCast_zmod_val]
 
 /-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in

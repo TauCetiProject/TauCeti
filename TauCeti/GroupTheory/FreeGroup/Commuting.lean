@@ -16,6 +16,11 @@ An abelian subgroup of a free group is cyclic. This gives an intrinsic character
 commuting pairs: they are integer powers of a common element. The argument uses the
 Nielsen–Schreier theorem and the fact that a free group on two distinct generators is not
 abelian. It applies without choosing reduced-word representatives or a finite basis.
+
+Lifting a free basis gives a test for commutativity of a free group by homomorphisms: if every
+homomorphism to a group `Q` with two noncommuting elements has commutative range, the free group
+is commutative (`IsFreeGroup.isMulCommutative_of_forall_isMulCommutative_range`). Lyndon's theorem
+`IsFreeGroup.isVaught` applies this test with `Q` the dihedral group of order `8`.
 -/
 
 public section
@@ -88,4 +93,26 @@ theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
     congr 1
     omega
 
+/-- A free group is commutative as soon as every homomorphism from it to a fixed group `Q`
+containing two noncommuting elements has commutative range. -/
+theorem isMulCommutative_of_forall_isMulCommutative_range {Q : Type*} [Group Q] {x y : Q}
+    (hxy : ¬Commute x y) (h : ∀ π : G →* Q, IsMulCommutative π.range) : IsMulCommutative G := by
+  classical
+  rcases subsingleton_or_nontrivial (Generators G) with hι | ⟨u, v, huv⟩
+  · have := FreeGroup.isMulCommutative_iff_subsingleton.2 hι
+    exact (toFreeGroup G).symm.surjective.isMulCommutative
+  let π : G →* Q := lift fun i => if i = u then x else if i = v then y else 1
+  have := h π
+  refine absurd ((commute_iff_eq x y).2 ?_) hxy
+  simpa [π, huv.symm] using
+    setLike_mul_comm (π.mem_range.2 ⟨of u, rfl⟩) (π.mem_range.2 ⟨of v, rfl⟩)
+
 end IsFreeGroup
+
+namespace FreeGroup
+
+/-- A free group on at least two generators is nonabelian. -/
+theorem not_isMulCommutative {α : Type*} [Nontrivial α] : ¬ IsMulCommutative (FreeGroup α) :=
+  fun h => not_subsingleton α (isMulCommutative_iff_subsingleton.mp h)
+
+end FreeGroup

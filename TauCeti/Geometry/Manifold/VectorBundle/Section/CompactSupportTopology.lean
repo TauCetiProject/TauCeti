@@ -36,7 +36,8 @@ particular, taking the final topology does not discard the section values. Conve
 single fixed-support stage implies convergence in the test topology.
 
 We reuse `TauCeti.finalLocallyConvexTopology`, rather than the final topology of topological
-spaces. No completeness or strict inductive-limit assertion is made.
+spaces, so the test topology is a locally convex vector topology. No completeness or strict
+inductive-limit assertion is made.
 -/
 
 public noncomputable section
@@ -65,6 +66,34 @@ compact derivative subspace topology. It is not defined as a subspace topology o
 def compactlySupportedTopology : TopologicalSpace (compactlySupported I F n V) :=
   letI := frameTopology (I := I) (n := n) e U hU
   TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
+
+/-- The test topology is the final locally convex topology of the fixed-compact stages. -/
+theorem compactlySupportedTopology_def :
+    compactlySupportedTopology (I := I) (n := n) e U hU =
+      letI := frameTopology (I := I) (n := n) e U hU
+      TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) :=
+  (rfl)
+
+/-- The test topology is a group topology. -/
+theorem isTopologicalAddGroup_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    IsTopologicalAddGroup (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
+
+/-- Real scalar multiplication is continuous for the test topology. -/
+theorem continuousSMul_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousSMul ℝ (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
+
+/-- The test topology is locally convex. -/
+theorem locallyConvexSpace_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    LocallyConvexSpace ℝ (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
 
 /-- Every fixed-compact support inclusion is continuous. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :
@@ -101,7 +130,7 @@ theorem continuous_val_compactlySupportedTopology :
   exact (continuous_compactlySupportedTopology_iff e U hU
     (compactlySupported I F n V).subtype).2 fun K => by
       simpa only [Submodule.coe_subtype, val_comp_ofSupportedIn]
-        using (continuous_subtype_val :
+        using (continuous_subtypeVal :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯))
 
 /-- Each fixed-compact stage retains exactly its compact derivative topology inside the
@@ -134,12 +163,12 @@ theorem compactlySupportedTopology_eq_induced [CompactSpace M] :
     (compactlySupported I F n V).subtype.codRestrict _
       (fun s => mem_supportedIn.2 (subset_univ s.val.tsupport))
   let R : compactlySupported I F n V →L[ℝ] supportedIn I F n V K :=
-    ⟨r, continuous_subtype_val.subtype_mk _⟩
+    ⟨r, continuous_subtypeVal.subtype_mk _⟩
   exact TauCeti.FinalLocallyConvexTopology.eq_of_rightInverse
     (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
     (fun K => continuous_induced_rng.2 (by
       simpa only [val_comp_ofSupportedIn]
-        using (continuous_subtype_val :
+        using (continuous_subtypeVal :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))) K R
     (fun s => Subtype.ext (ofSupportedIn_apply K (R s)))
 
@@ -201,10 +230,10 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     (hK : (K : Set E) ⊆ c.target) (t' : Trivialization F (π F V)) [MemTrivializationAtlas t']
     {U : Opens M} (hU : (U : Set M) ⊆ t'.baseSet) :
     Continuous (fun φ : 𝓓^{n}_{K}(E, F) ↦ t'.frameCoordinates hU
-      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1) := by
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val) := by
   have hL : IsClosed (c.symm '' K) :=
     (K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)).isClosed
-  let val : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let val : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   -- Cover `U` by the chart source, where the coefficients are computed in the chart, and by the
   -- complement of the image of `K`, where they vanish.
   let W : Bool → Opens U := fun b ↦
@@ -223,22 +252,22 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     funext φ
     ext x
     have hx : ((x : U) : M) ∉
-        (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1.tsupport := by
+        (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val.tsupport := by
       rw [tsupport_chartTestSection, TestFunction.coe_ofSupportedIn]
-      exact fun hmem ↦ x.2 (image_mono φ.tsupport_subset hmem)
+      exact fun hmem ↦ x.property (image_mono φ.tsupport_subset hmem)
     rw [ContMDiffMap.restrict_apply, frameCoordinates_apply, eq_zero_of_notMem_tsupport _ hx,
-      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2), map_zero]
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).property), map_zero]
     simp
   | true =>
     -- On the chart source, compose with the chart and apply the transition matrix.
     let j : C^n⟮I, W true; 𝓘(ℝ, E), E⟯ :=
       ⟨fun x ↦ c ((x : U) : M), fun x ↦
-        (hc.contMDiffAt (c.open_source.mem_nhds x.2)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+        (hc.contMDiffAt (c.open_source.mem_nhds x.property)).comp x
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
     let A : C^n⟮I, W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
       ⟨fun x ↦ (t.coordChangeL ℝ t' ((x : U) : M) : F →L[ℝ] F), fun x ↦
-        (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.2) (hU (x : U).2)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+        (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.property) (hU (x : U).property)).comp x
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
     have hincl : Continuous (ContDiffMapSupportedIn.toContMDiffMap :
         𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
       rw [ContMDiffMap.manifoldWeakWhitneyTopology_self]
@@ -249,10 +278,11 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     convert (ContMDiffMap.continuous_clmApplyLinearMap A).comp hcomp using 1
     funext φ
     ext x
-    have hx : ((x : U) : M) ∈ c.source := x.2
+    have hx : ((x : U) : M) ∈ c.source := x.property
     rw [ContMDiffMap.restrict_apply, frameCoordinates_apply,
-      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).2),
-      t.continuousLinearMapAt_chartTestSection_eq_coordChangeL c hc hct t' _ hx (hU (x : U).2)]
+      ← t'.continuousLinearMapAt_apply_of_mem (R := ℝ) (hU (x : U).property),
+      t.continuousLinearMapAt_chartTestSection_eq_coordChangeL c hc hct t' _ hx (hU
+          (x : U).property)]
     simp only [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
       ContMDiffMap.comp_apply, TestFunction.coe_ofSupportedIn,
       ContDiffMapSupportedIn.coe_toContMDiffMap]
@@ -276,7 +306,7 @@ theorem continuous_chartTestSection :
   let K' : Compacts M := ⟨c.symm '' K, K.isCompact.image_of_continuousOn
     (c.continuousOn_symm.mono hK)⟩
   have hval : Continuous fun φ : 𝓓^{n}_{K}(E, F) ↦
-      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).1 :=
+      (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val :=
     (continuous_frameTopology_iff_frameCoordinates e U hU).2 fun i ↦
       continuous_frameCoordinates_chartTestSection_ofSupportedIn t c hc hct hK (e i) (hU i)
   let g : 𝓓^{n}_{K}(E, F) → supportedIn I F n V K' := fun φ ↦

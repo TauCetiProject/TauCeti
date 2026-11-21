@@ -34,7 +34,8 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
 
 ## Main definitions
 
-* `TauCeti.continuationMap R M ν`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `ν`.
+* `TauCeti.continuationMap R M ν`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `ν`, and
+  `TauCeti.continuationMapₗ`: the same map as an `R`-linear map in the matrix.
 * `TauCeti.ContinuationCocycle mP mQ`: continuation cocycles between twisting cocycles, with
   `refl` and `comp`.
 
@@ -104,6 +105,37 @@ theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
   LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
     simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
       Pi.zero_apply]
+
+/-- The continuation map of a finite sum of matrices is the sum of their continuation maps. -/
+theorem continuationMap_sum {ι : Type*} (s : Finset ι) (F : ι → Matrix P Q A) :
+    continuationMap R M (∑ i ∈ s, F i : Matrix P Q A) = ∑ i ∈ s, continuationMap R M (F i) :=
+  map_sum (G := Matrix P Q A →+ (P → M) →ₗ[R] Q → M)
+    ⟨⟨continuationMap R M, continuationMap_zero R M P Q⟩, continuationMap_add⟩ F s
+
+section Linear
+
+variable [Module R A] [IsScalarTower R Aᵐᵒᵖ M]
+
+/-- The continuation map is homogeneous in the matrix. -/
+theorem continuationMap_smul (r : R) (F : Matrix P Q A) :
+    continuationMap R M (r • F) = r • continuationMap R M F :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (r • F) f y).trans <| by
+    simp only [LinearMap.smul_apply, Pi.smul_apply, continuationMap_apply F, Finset.smul_sum,
+      Matrix.smul_apply, op_smul, smul_assoc]
+
+variable (R M P Q) in
+/-- The continuation map as an `R`-linear map in the matrix. -/
+noncomputable def continuationMapₗ : Matrix P Q A →ₗ[R] (P → M) →ₗ[R] Q → M where
+  toFun := continuationMap R M
+  map_add' := continuationMap_add
+  map_smul' := continuationMap_smul
+
+@[simp]
+theorem continuationMapₗ_apply (F : Matrix P Q A) :
+    continuationMapₗ R M P Q F = continuationMap R M F :=
+  (rfl)
+
+end Linear
 
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
@@ -475,17 +507,22 @@ theorem refl_ν_eq_zero_of_lt [DecidableEq P] (hd : d 1 = 0) (m : TwistingCocycl
     {x y : P} (hxy : ind x < ind y) : (refl hd m).ν x y = 0 := by
   rw [refl_ν, Matrix.one_apply_ne fun hxy' ↦ (hxy' ▸ hxy).false]
 
-/-- A composite of continuation cocycles with no entries strictly increasing the index has no
-such entries. -/
-theorem comp_ν_eq_zero_of_lt (h : IsDGAlgebra 𝒜 d) (ν₁ : ContinuationCocycle mP mQ)
-    (ν₂ : ContinuationCocycle mQ mS) (hν₁ : ∀ x y, ind x < indQ y → ν₁.ν x y = 0)
-    (hν₂ : ∀ x y, indQ x < indS y → ν₂.ν x y = 0) {x : P} {y : S} (hxy : ind x < indS y) :
-    (ν₁.comp h ν₂).ν x y = 0 := by
+/-- **Action shifts add under composition.** If `ν₁` raises the action by at most `δ₁` and `ν₂`
+by at most `δ₂`, their composite raises it by at most `δ₁ + δ₂`. -/
+theorem comp_ν_eq_zero_of_add_lt {Γ : Type*} [AddCommGroup Γ] [LinearOrder Γ]
+    [IsOrderedAddMonoid Γ] {actP : P → Γ} {actQ : Q → Γ} {actS : S → Γ} (h : IsDGAlgebra 𝒜 d)
+    (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mS) {δ₁ δ₂ : Γ}
+    (h₁ : ∀ x y, actP x + δ₁ < actQ y → ν₁.ν x y = 0)
+    (h₂ : ∀ y z, actQ y + δ₂ < actS z → ν₂.ν y z = 0) {x : P} {z : S}
+    (hxz : actP x + (δ₁ + δ₂) < actS z) : (ν₁.comp h ν₂).ν x z = 0 := by
   rw [comp_ν, Matrix.mul_apply]
-  refine Finset.sum_eq_zero fun z _ ↦ ?_
-  rcases lt_or_ge (ind x) (indQ z) with hz | hz
-  · rw [Matrix.of_apply, hν₁ x z hz, zero_mul]
-  · rw [Matrix.of_apply, Matrix.of_apply, hν₂ z y (hz.trans_lt hxy), mul_zero]
+  refine Finset.sum_eq_zero fun y _ ↦ ?_
+  by_cases hxy : actP x + δ₁ < actQ y
+  · rw [Matrix.of_apply, h₁ x y hxy, zero_mul]
+  · have : actQ y + δ₂ < actS z := by
+      calc actQ y + δ₂ ≤ actP x + δ₁ + δ₂ := by gcongr; exact not_lt.1 hxy
+        _ < actS z := by rwa [add_assoc]
+    rw [Matrix.of_apply, Matrix.of_apply, h₂ y z this, mul_zero]
 
 section AddCommMonoid
 

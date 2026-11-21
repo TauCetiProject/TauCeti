@@ -37,6 +37,12 @@ Then the lift is continuous and injective on `K`, maps `K` into `K ∩ U`, and f
 `K` at whose image `k` is the identity
 (`ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`). This is the shrinking step in
 M. Brown's proof that the only inverse set of a map of a cell is cellular.
+
+With `U = K`, the continuous inverse reads limits back through `f`: a continuous pointwise limit
+`g` of maps `f ∘ x i`, where the `x i` take values in `K`, is `f ∘ y` for a continuous pointwise
+limit `y` of the `x i` (`IsCompact.exists_tendsto_of_tendsto_comp`). This is how a limit in a
+manifold without a metric is constructed from a limit measured through an embedding into a normed
+space.
 -/
 
 public section
@@ -65,6 +71,29 @@ theorem ContinuousOn.continuousOn_invFunOn_image_of_isCompact [Nonempty α] [T2S
       by_contra hkU
       exact disjoint_left.1 hdisj ⟨k, ⟨hkK, hkU⟩, hky⟩ hy
     rwa [← hky, hinj.leftInvOn_invFunOn hkU]
+
+/-- **Limits read back through an injective map.** Let `f` be continuous and injective on a compact
+set `K`, with values in a Hausdorff space, and let `x i` be maps from a space `T` with values in `K`
+on a set `Ω ⊆ T`. If the maps `f ∘ x i` converge pointwise on `Ω` to a map `g` continuous on `Ω`,
+then `g = f ∘ y` on `Ω` for a map `y` continuous on `Ω` with values in `K`, and the `x i` converge
+pointwise on `Ω` to `y`. -/
+theorem IsCompact.exists_tendsto_of_tendsto_comp [Nonempty α] [T2Space β] {K : Set α}
+    (hK : IsCompact K) {f : α → β} (hf : ContinuousOn f K) (hinj : InjOn f K) {T : Type*}
+    [TopologicalSpace T] {Ω : Set T} {ι : Type*} {l : Filter ι} [l.NeBot] {x : ι → T → α}
+    (hxK : ∀ i, MapsTo (x i) Ω K) {g : T → β} (hg : ContinuousOn g Ω)
+    (hlim : ∀ t ∈ Ω, Tendsto (fun i ↦ f (x i t)) l (𝓝 (g t))) :
+    ∃ y : T → α, ContinuousOn y Ω ∧ MapsTo y Ω K ∧ EqOn (f ∘ y) g Ω ∧
+      ∀ t ∈ Ω, Tendsto (fun i ↦ x i t) l (𝓝 (y t)) := by
+  have hinv := hf.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hinj (by simp)
+  -- The limit takes values in the closed set `f(K)`.
+  have hgK : MapsTo g Ω (f '' K) := fun t ht ↦
+    (hK.image_of_continuousOn hf).isClosed.mem_of_tendsto (hlim t ht)
+      (Eventually.of_forall fun i ↦ mem_image_of_mem f (hxK i ht))
+  refine ⟨invFunOn f K ∘ g, hinv.comp hg hgK, fun t ht ↦ invFunOn_mem (hgK ht),
+    fun t ht ↦ invFunOn_eq (hgK ht), fun t ht ↦ ?_⟩
+  refine ((hinv _ (hgK ht)).tendsto.comp (tendsto_nhdsWithin_iff.2 ⟨hlim t ht,
+    Eventually.of_forall fun i ↦ mem_image_of_mem f (hxK i ht)⟩)).congr fun i ↦ ?_
+  exact hinj.leftInvOn_invFunOn (hxK i ht)
 
 /-- **Lifting a map which is the identity near a point.** Let `f` be continuous on `Q`, with
 values in a `T₁` space, and injective on `P` with inverse continuous on `f '' P`. Let `k` be

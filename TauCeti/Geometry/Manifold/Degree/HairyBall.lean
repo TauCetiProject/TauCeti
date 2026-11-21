@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Degree.Global
+public import TauCeti.Geometry.Manifold.Orientation.Sphere
+public import Mathlib.Topology.Homotopy.Basic
+import Mathlib.Topology.Homotopy.Path
+import TauCeti.AlgebraicTopology.Sphere.Zero
+import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Geometry.Manifold.Degree.Continuous
+import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Sphere.Connected
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+
+/-!
+# The hairy ball theorem
+
+Let `E` be a real inner product space of dimension `n + 1` with `n` even, and let `Sⁿ` be its unit
+sphere. The antipodal map of `Sⁿ` is not homotopic to the identity
+(`TauCeti.not_homotopic_id_neg_sphere`), and so every continuous tangent vector field on `Sⁿ`
+vanishes somewhere. The latter is stated three times: for a continuous map `v : Sⁿ → E` with
+`⟪v x, x⟫ = 0` (`TauCeti.exists_eq_zero_of_continuous_of_inner_eq_zero`), for a map `v : E → E`
+continuous on `Sⁿ` with `⟪v x, x⟫ = 0` there (`TauCeti.exists_eq_zero_of_inner_eq_zero`), and for a
+continuous section of the tangent bundle of Mathlib's manifold `sphere (0 : E) 1`
+(`TauCeti.exists_eq_zero_of_continuous_section`), which the derivative of the inclusion carries to
+a field of the first kind.
+
+For `n ≥ 2` the proof is by the mapping degree. Continuously homotopic smooth maps into the compact
+manifold `Sⁿ` have the same degree (`TauCeti.degree_eq_of_homotopic`), the identity has degree `1`
+and the antipodal map has degree `(-1)^(n+1) = -1`
+(`TauCeti.Manifold.Orientation.degree_neg_sphere`).
+For `n = 0` the sphere is the two points `±x` of a line, and the path `t ↦ H (t, x)` of a homotopy
+`H` would join `x` to `-x`, which lie in distinct path components
+(`TauCeti.zerothHomotopy_mk_neg_ne`). A nowhere-vanishing continuous tangent field `v` gives a
+homotopy from the identity to the antipodal map along great circles,
+`(t, x) ↦ cos (π t) • x + sin (π t) • v x / ‖v x‖`.
+
+The parity hypothesis is needed. In even dimension `n + 1` an orthogonal almost complex structure
+`J` (`TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`), such as
+`(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)`, satisfies `⟪J x, x⟫ = 0`
+(`TauCeti.AlmostComplexStructure.inner_apply_self`) and is a nowhere-vanishing tangent field on
+`Sⁿ`; so `Sⁿ` carries one exactly when `n` is odd
+(`TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`). On the unit circle of `ℂ` it is
+`z ↦ i z`.
+
+## Main results
+
+* `TauCeti.not_homotopic_id_neg_sphere`: the antipodal map of an even-dimensional unit sphere is
+  not homotopic to the identity.
+* `TauCeti.exists_eq_zero_of_continuous_of_inner_eq_zero`: a continuous tangent vector field
+  `v : Sⁿ → E` on an even-dimensional unit sphere vanishes somewhere.
+* `TauCeti.exists_eq_zero_of_inner_eq_zero`: the same for a field `v : E → E` continuous on the
+  even-dimensional unit sphere.
+* `TauCeti.exists_eq_zero_of_continuous_section`: a continuous section of the tangent bundle of an
+  even-dimensional unit sphere vanishes somewhere.
+* `TauCeti.exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd`: the unit sphere `Sⁿ` carries a
+  nowhere-vanishing continuous tangent field exactly when `n` is odd.
+
+## References
+
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
+  Springer, 2013, Problem 16-6 and Chapter 17, section Degree Theory.
+* J. W. Milnor, *Topology from the Differentiable Viewpoint*, University Press of Virginia, 1965,
+  §5, Theorem 1 and its proof by the homotopy from the identity to the antipodal map.
+-/
+
+public section
+
+noncomputable section
+
+open Metric Module Set
+open scoped Manifold ContDiff InnerProductSpace
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)]
+
+/-- For `n ≥ 1`, continuously homotopic smooth maps of `Sⁿ` have the same degree, so a homotopy
+from the identity to the antipodal map forces `n` to be odd. -/
+private theorem not_homotopic_id_neg_sphere_of_neZero [NeZero n] (hn : Even n) :
+    ¬ (ContinuousMap.id (sphere (0 : E) 1)).Homotopic (-ContinuousMap.id _) := fun h ↦ by
+  have hE : finrank ℝ E = n + 1 := Fact.out
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have := connectedSpace_sphere (E := E) n
+  let o := (finBasisOfFinrankEq ℝ E hE).orientation.sphereOrientation
+  have hdeg := degree_eq_of_homotopic o o contMDiff_id contMDiff_neg_sphere h
+  rw [degree_id, Manifold.Orientation.degree_neg_sphere, hn.add_one.neg_one_pow] at hdeg
+  exact absurd hdeg (by decide)
+
+/-- **The antipodal map of an even-dimensional sphere is not homotopic to the identity.** On the
+unit sphere `Sⁿ` of a real inner product space of dimension `n + 1`, with `n` even, the identity
+and the antipodal map `x ↦ -x` are not homotopic. -/
+theorem not_homotopic_id_neg_sphere (hn : Even n) :
+    ¬ (ContinuousMap.id (sphere (0 : E) 1)).Homotopic (-ContinuousMap.id _) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hpos
+  · -- `S⁰` is the two points `±x` of a line, in distinct path components, but along a homotopy
+    -- `H` the path `t ↦ H (t, x)` joins `x` to `-x`.
+    rintro ⟨H⟩
+    have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := 0) Fact.out
+    obtain ⟨x⟩ := ((NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one).to_subtype
+    exact zerothHomotopy_mk_neg_ne Fact.out x (ZerothHomotopy.sound (H.evalAt x)).symm
+  · have : NeZero n := ⟨hpos.ne'⟩
+    exact not_homotopic_id_neg_sphere_of_neZero hn
+
+/-- **The hairy ball theorem, sphere-domain form.** A continuous tangent vector field defined on
+an even-dimensional unit sphere vanishes somewhere: if `v : Sⁿ → E` is continuous on the unit sphere
+`Sⁿ` of a real inner product space `E` of dimension `n + 1`, with `n` even, and `⟪v x, x⟫ = 0` for
+every `x`, then `v x = 0` for some `x`. If `v` vanished nowhere, the great circles
+`t ↦ cos (π t) • x + sin (π t) • v x / ‖v x‖` would be a homotopy from the identity to the antipodal
+map. -/
+theorem exists_eq_zero_of_continuous_of_inner_eq_zero (hn : Even n)
+    {v : sphere (0 : E) 1 → E} (hv : Continuous v) (ht : ∀ x, ⟪v x, (x : E)⟫_ℝ = 0) :
+    ∃ x, v x = 0 := by
+  by_contra! h0
+  -- The unit tangent field `u = v / ‖v‖`.
+  let u := normalizeToSphere v hv h0
+  have hxu (x : sphere (0 : E) 1) : ⟪(x : E), (u x : E)⟫_ℝ = 0 := by
+    rw [coe_normalizeToSphere_apply, NormedSpace.normalize, real_inner_smul_right, real_inner_comm,
+      ht, mul_zero]
+  exact not_homotopic_id_neg_sphere hn ((ContinuousMap.id _).homotopic_neg_of_inner_eq_zero u hxu)
+
+/-- **The hairy ball theorem.** A continuous tangent vector field on an even-dimensional unit
+sphere vanishes somewhere: if `v : E → E` is continuous on the unit sphere `Sⁿ` of a real inner
+product space `E` of dimension `n + 1`, with `n` even, and `⟪v x, x⟫ = 0` for `x ∈ Sⁿ`, then
+`v x = 0` for some `x ∈ Sⁿ`. -/
+theorem exists_eq_zero_of_inner_eq_zero (hn : Even n) {v : E → E}
+    (hv : ContinuousOn v (sphere (0 : E) 1))
+    (ht : ∀ x ∈ sphere (0 : E) 1, ⟪v x, x⟫_ℝ = 0) :
+    ∃ x ∈ sphere (0 : E) 1, v x = 0 := by
+  obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero hn hv.domRestrict
+    fun x ↦ ht x x.property
+  exact ⟨x, x.property, hx⟩
+
+/-- **The hairy ball theorem, section form.** A continuous section of the tangent bundle of the
+unit sphere `Sⁿ` of a real inner product space of dimension `n + 1`, with `n` even, vanishes at
+some point. -/
+theorem exists_eq_zero_of_continuous_section (hn : Even n)
+    {V : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
+    (hV : Continuous fun x ↦ (⟨x, V x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) :
+    ∃ x, V x = 0 := by
+  -- Read in `E` through the derivative of the inclusion, `V` is a tangent field of `Sⁿ`.
+  set ι : sphere (0 : E) 1 → E := (↑)
+  have hv : Continuous fun x ↦ mvfderiv (𝓡 n) ι x (V x) :=
+    ((contMDiff_coe_sphere (m := 1)).contMDiff_mvfderiv_apply (m := 0) le_rfl).continuous.comp hV
+  obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero (n := n) hn hv fun x ↦ by
+    refine Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self (x : E)) ?_
+    rw [← range_mvfderiv_subtypeVal (n := n)]
+    exact LinearMap.mem_range_self _ _
+  exact ⟨x, injective_mvfderiv_subtypeVal_sphere x (hx.trans (map_zero _).symm)⟩
+
+/-- **Tangent fields on spheres.** The unit sphere `Sⁿ` of a real inner product space of dimension
+`n + 1` carries a nowhere-vanishing continuous tangent vector field exactly when `n` is odd. For odd
+`n` one such field is `x ↦ J x` for an orthogonal almost complex structure `J`, which reads
+`(x₁, x₂, x₃, x₄, …) ↦ (-x₂, x₁, -x₄, x₃, …)` in a suitable orthonormal basis. -/
+theorem exists_continuousOn_inner_eq_zero_and_ne_zero_iff_odd :
+    (∃ v : E → E, ContinuousOn v (sphere (0 : E) 1) ∧
+      ∀ x ∈ sphere (0 : E) 1, ⟪v x, x⟫_ℝ = 0 ∧ v x ≠ 0) ↔ Odd n := by
+  refine ⟨fun ⟨v, hv, h⟩ ↦ Nat.not_even_iff_odd.1 fun hn ↦ ?_, fun hn ↦ ?_⟩
+  · obtain ⟨x, hx, h0⟩ := exists_eq_zero_of_inner_eq_zero hn hv fun x hx ↦ (h x hx).1
+    exact (h x hx).2 h0
+  · have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+    obtain ⟨J, hJ⟩ := AlmostComplexStructure.exists_forall_norm_apply_eq (V := E)
+      (by rw [Fact.out (p := finrank ℝ E = n + 1)]; exact hn.add_one)
+    let L : E →ₗᵢ[ℝ] E := ⟨J.toLinearMap, hJ⟩
+    exact ⟨J, L.continuous.continuousOn, fun x hx ↦ ⟨J.inner_apply_self L.inner_map_map x,
+      J.map_ne_zero_iff.2 (ne_zero_of_mem_unit_sphere ⟨x, hx⟩)⟩⟩
+
+end TauCeti

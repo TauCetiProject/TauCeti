@@ -116,13 +116,14 @@ theorem isUnit_iff {y : Ψ.charGroupRing} :
     IsUnit y ↔ ∀ ψ : Ψ, IsUnit ((y : Ψ → O) ψ) := by
   classical
   let := Fintype.ofFinite Ψ
-  refine ⟨fun hy ψ ↦ evalAlgHom_apply ψ.2 y ▸ hy.map (evalAlgHom ψ.2), fun hy ↦ ?_⟩
+  refine ⟨fun hy ψ ↦ evalAlgHom_apply ψ.property y ▸ hy.map (evalAlgHom ψ.property), fun hy ↦ ?_⟩
   let P : Polynomial O := ∏ ψ : Ψ, (Polynomial.X - Polynomial.C ((y : Ψ → O) ψ))
   have hroot : P.eval₂ (algebraMap O Ψ.charGroupRing) y = 0 := by
     rw [← Polynomial.aeval_def]
     refine ext fun χ ↦ ?_
-    rw [← evalAlgHom_apply χ.2, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval,
-      evalAlgHom_apply, Polynomial.eval_prod, Subalgebra.coe_zero, Pi.zero_apply]
+    rw [← evalAlgHom_apply χ.property, ← Polynomial.aeval_algHom_apply,
+      Polynomial.coe_aeval_eq_eval, evalAlgHom_apply, Polynomial.eval_prod, Subalgebra.coe_zero,
+      Pi.zero_apply]
     exact Finset.prod_eq_zero (Finset.mem_univ χ) (by simp)
   have hP0_mem : P.coeff 0 ∈ (Ideal.span {y}).comap (algebraMap O Ψ.charGroupRing) :=
     Ideal.coeff_zero_mem_comap_of_root_mem (Ideal.mem_span_singleton_self y) hroot
@@ -197,7 +198,7 @@ theorem mem_maximalIdeal_iff_forall [IsLocalRing Ψ.charGroupRing] {y : Ψ.charG
     y ∈ IsLocalRing.maximalIdeal Ψ.charGroupRing ↔
       ∀ ψ : Ψ, (y : Ψ → O) ψ ∈ IsLocalRing.maximalIdeal O := by
   obtain ⟨ψ₀, hψ₀⟩ := nonempty_of_nontrivial (Ψ := Ψ)
-  exact ⟨fun hy ψ ↦ (mem_maximalIdeal_iff ψ.2).mp hy,
+  exact ⟨fun hy ψ ↦ (mem_maximalIdeal_iff ψ.property).mp hy,
     fun hy ↦ (mem_maximalIdeal_iff hψ₀).mpr (hy ⟨ψ₀, hψ₀⟩)⟩
 
 /-- When `R_Ψ` is local and `ψ ∈ Ψ`, every `y ∈ R_Ψ` has the same residue modulo
@@ -303,7 +304,7 @@ theorem residue_apply_eq_of_pow_eq
     IsLocalRing.residue O ((y : Ψ → O) ψ₁) = IsLocalRing.residue O ((y : Ψ → O) ψ₂) := by
   obtain ⟨x, rfl⟩ := proj_surjective Ψ y
   rw [coe_proj_apply, coe_proj_apply]
-  exact TauCeti.residue_charEval_eq_of_pow_eq p (hΨ ψ₁.1 ψ₁.2 ψ₂.1 ψ₂.2) x
+  exact TauCeti.residue_charEval_eq_of_pow_eq p (hΨ ψ₁.val ψ₁.property ψ₂.val ψ₂.property) x
 
 /-- **Coordinate evaluation is a local homomorphism**: when `Ψ` is finite and any two characters in
 `Ψ` have equal `p^k`-th powers at each element of `G` for some `k`, coordinate evaluation at

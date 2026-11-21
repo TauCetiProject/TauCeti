@@ -180,7 +180,7 @@ theorem mem_span_subgroupCharSum_one_iff {k G : Type*} [CommSemiring k] [CommGro
       one_smul]
   · intro hx
     obtain ⟨y, rfl⟩ := (exists_mul_subgroupCharSum_one_eq_iff H x).mpr fun h ↦ by
-      rw [mul_comm, hx h h.2]
+      rw [mul_comm, hx h h.property]
     exact ⟨y, mul_comm _ _⟩
 
 end CommSemiring

@@ -129,7 +129,7 @@ variable {O G : Type*} [CommSemiring O] [CommGroup G]
 theorem componentNorm_subset (H I : Subgroup G) (χ : H →* Oˣ) :
     {ψ : G →* Oˣ | ψ.comp H.subtype = χ ∧ ¬ I ≤ ψ.ker} ⊆
       {ψ : G →* Oˣ | ψ.comp H.subtype = χ} :=
-  fun _ h ↦ h.1
+  fun _ h ↦ h.left
 
 /-- For subgroups `H, I` of a finite commutative group `G` and a commutative semiring `O` with
 enough roots of unity of order `exponent G`, there exists a character of `G` extending `χ : H →* Oˣ`
@@ -158,8 +158,8 @@ theorem nonempty_componentNormSet_iff [Finite G]
       obtain ⟨φ, hφH, hφg⟩ := hex
       refine ⟨φ * ψ₀, ?_, fun hle' ↦ hφg ?_⟩
       · refine MonoidHom.ext fun h ↦ ?_
-        rw [MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.mul_apply, hφH h h.2, one_mul,
-          ← Subgroup.coe_subtype, ← MonoidHom.comp_apply, hψ₀']
+        rw [MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.mul_apply, hφH h h.property,
+          one_mul, ← Subgroup.coe_subtype, ← MonoidHom.comp_apply, hψ₀']
       · have h1 := MonoidHom.mem_ker.mp (hle' hgI)
         rw [MonoidHom.mul_apply, MonoidHom.mem_ker.mp (hI hgI), mul_one] at h1
         exact h1
@@ -300,10 +300,10 @@ theorem ker_proj_component_norm (H I : Subgroup G) [Fintype H] [Fintype I]
     · rw [SetLike.mem_coe, RingHom.mem_ker, proj_eq_zero_iff]
       intro ψ hψ
       exact proj_eq_zero_iff.mp (RingHom.mem_ker.mp (one_sub_charIdempotent_mem_ker_proj H hH χ))
-        ψ hψ.1
+        ψ hψ.left
     · rw [Set.mem_singleton_iff.mp hN, SetLike.mem_coe, RingHom.mem_ker, proj_eq_zero_iff]
       intro ψ hψ
-      exact ψ.charEval_subgroupCharSum_one_eq_zero I hψ.2
+      exact ψ.charEval_subgroupCharSum_one_eq_zero I hψ.right
 
 /-- For a finite commutative group `G`, a domain `O` with enough roots of unity of order
 `exponent G`, and subgroups `H, I ≤ G` with `#H` a unit in `O`, the kernel of the restriction

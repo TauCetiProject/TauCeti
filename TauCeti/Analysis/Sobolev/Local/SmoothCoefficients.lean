@@ -75,10 +75,10 @@ components of `Dχ`. -/
 private theorem leibniz_eq (χ : ℂ → ℝ) (u : ℂ → F) (D : ℂ → ℂ →L[ℝ] F) :
     (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) =
       (fun z => χ z • D z) +
-        ((fun z => fderiv ℝ χ z 1 • ContinuousLinearMap.smulRightL ℝ ℂ F Complex.reCLM (u z)) +
+        ((fun z => fderiv ℝ χ z 1 • StrongDual.smulRightL ℝ ℂ F Complex.reCLM (u z)) +
           fun z => fderiv ℝ χ z Complex.I •
-            ContinuousLinearMap.smulRightL ℝ ℂ F Complex.imCLM (u z)) := by
-  have hR (c : ℂ →L[ℝ] ℝ) (w : F) : ContinuousLinearMap.smulRightL ℝ ℂ F c w = c.smulRight w := by
+            StrongDual.smulRightL ℝ ℂ F Complex.imCLM (u z)) := by
+  have hR (c : ℂ →L[ℝ] ℝ) (w : F) : StrongDual.smulRightL ℝ ℂ F c w = c.smulRight w := by
     ext
     simp
   funext z
@@ -214,7 +214,7 @@ theorem MemWkpLoc.smul_contDiffOn [FiniteDimensional ℝ G] {a : ℂ → ℝ} {g
     (ha : MemWkpLoc p U k a) (hg : ContDiffOn ℝ n g Ω) (hk : (k : WithTop ℕ∞) ≤ n)
     (hU : U ⊆ Ω) : MemWkpLoc p U k (fun z => a z • g z) := by
   have h := ha.contDiffOn_clm_apply
-    (((ContinuousLinearMap.smulRightL ℝ ℝ G) (ContinuousLinearMap.id ℝ ℝ)).contDiff.comp_contDiffOn
+    (((StrongDual.smulRightL ℝ ℝ G) (ContinuousLinearMap.id ℝ ℝ)).contDiff.comp_contDiffOn
       hg) hk hU
   simpa using h
 

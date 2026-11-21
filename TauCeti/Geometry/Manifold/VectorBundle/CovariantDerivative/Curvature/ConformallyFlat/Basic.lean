@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Integrability
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Manifold.Riemannian.Scaling
 
 /-!
 # Locally conformally flat metrics
@@ -17,8 +18,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Log
 A smooth Riemannian metric `g` on `M` is *locally conformally flat* if every point has a
 neighbourhood on which some conformal rescaling `f g`, by a smooth positive function `f`, is flat.
 This file defines the notion and proves its first properties: it depends only on the conformal
-class of `g`, flat metrics are locally conformally flat, and away from dimension `2` both the Weyl
-tensor and the Cotton tensor of a locally conformally flat metric vanish identically.
+class of `g`, flat metrics are locally conformally flat, a flattening factor can be normalized to
+take the value `1` at a given point, the Weyl tensor vanishes identically away from dimension `2`,
+and the Cotton tensor vanishes identically in every dimension.
 
 The last statements are one half of the Weyl–Schouten theorem; the converse (vanishing of the Weyl
 tensor in dimension at least `4`, or of the Cotton tensor in dimension `3`, implies local conformal
@@ -26,8 +28,10 @@ flatness) is a Frobenius integrability argument and is not proved here: this fil
 to local solvability of the conformal flattening equation (see below). The proof of the forward
 direction combines two facts: the Weyl tensor of a flat metric vanishes, and the Weyl tensor of
 `f g` is `f` times that of `g`, so its vanishing at a point is a conformal invariant. For the Cotton
-tensor, the Cotton tensor of `f g` vanishes at a point near which `f g` is flat, and it differs
-from that of `g` by a contraction of the Weyl tensor of `g`, which has just been shown to vanish.
+tensor, in dimension `2` both the Schouten and Cotton tensors vanish identically by the
+`(2 - 2)⁻¹ = 0` convention; away from dimension `2`, the Cotton tensor of `f g` vanishes at a point
+near which `f g` is flat, and it differs from that of `g` by a contraction of the Weyl tensor of
+`g`, which has just been shown to vanish.
 
 This file reduces the converse to local solvability of a PDE. In dimension at least `3`, the metric
 `e^(2φ) g` is flat exactly where the Weyl tensor of `g` vanishes and `φ` solves the conformal
@@ -50,24 +54,36 @@ evaluated.
 
 Dimension `2` is excluded from the Weyl statement because there the Schouten tensor carries the
 factor `1 / (n - 2)`, which is `0` by the convention for division by zero, so the Weyl tensor is
-the full curvature tensor.
+the full curvature tensor (while the Cotton tensor vanishes identically).
 
 ## Main declarations
 
-* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat`: local conformal flatness of a smooth
-  Riemannian metric on the tangent bundle.
-* `Bundle.ContMDiffRiemannianMetric.isLocallyConformallyFlat_rescale_iff`: local conformal flatness
+* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlatAt` and
+  `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat`: pointwise and global local conformal
+  flatness of a smooth Riemannian metric on the tangent bundle.
+* `Bundle.ContMDiffRiemannianMetric.isLocallyConformallyFlatAt_rescale_iff` and
+  `Bundle.ContMDiffRiemannianMetric.isLocallyConformallyFlat_rescale_iff`: local conformal flatness
   of `f g` is equivalent to that of `g`.
-* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat.of_mem_conformalClass`: local
+* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlatAt.of_mem_conformalClass` and
+  `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat.of_mem_conformalClass`: local
   conformal flatness depends only on the conformal class.
 * `Bundle.ContMDiffRiemannianMetric.isLocallyConformallyFlat_of_curvatureTensor_eq_zero`: flat
   metrics are locally conformally flat.
+* `IsLocallyConformallyFlatAt.exists_apply_eq_one_and_eventually_curvatureTensor_rescale_eq_zero`
+  and `IsLocallyConformallyFlat.exists_apply_eq_one_and_eventually_curvatureTensor_rescale_eq_zero`
+  (in `Bundle.ContMDiffRiemannianMetric`): normalizing a flattening conformal factor so `f x₀ = 1`.
 * `TauCeti.Manifold.isLocallyConformallyFlat_rescale_model_space`: every metric conformal to the
   Euclidean metric is locally conformally flat.
-* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat.weylTensor_eq_zero`: away from
-  dimension `2`, a locally conformally flat metric has vanishing Weyl tensor.
-* `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat.cottonTensor_eq_zero`: away from
-  dimension `2`, a locally conformally flat metric has vanishing Cotton tensor.
+* `Bundle.ContMDiffRiemannianMetric.weylTensor_eq_zero_of_curvatureTensor_rescale_eq_zero`,
+  `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlatAt.weylTensor_eq_zero`, and
+  `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat.weylTensor_eq_zero`: away from
+  dimension `2`, flatness of a conformal rescaling at a point (hence local conformal flatness)
+  forces the Weyl tensor to vanish.
+* `cottonTensor_eq_zero_of_eventually_curvatureTensor_rescale_eq_zero`,
+  `IsLocallyConformallyFlatAt.cottonTensor_eq_zero`, and
+  `IsLocallyConformallyFlat.cottonTensor_eq_zero` (in `Bundle.ContMDiffRiemannianMetric`): in every
+  dimension, flatness of a conformal rescaling near a point (hence local conformal flatness) forces
+  the Cotton tensor to vanish.
 * `Bundle.ContMDiffRiemannianMetric.curvatureTensor_leviCivitaConnection_rescale_eq_zero_iff`:
   `e^(2φ) g` is flat at `x` exactly when `W = 0` and the conformal flattening equation holds at `x`.
 * `isLocallyConformallyFlat_iff_forall_weylTensor_eq_zero_and_forall_exists_eventually_hessian_eq`
@@ -94,15 +110,52 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
+/-- A smooth Riemannian metric `g` is **locally conformally flat at `x`** if there is a smooth
+positive function `f : M → ℝ` such that the rescaled metric `f g` has vanishing Levi-Civita
+curvature tensor on a neighbourhood of `x`. -/
+def IsLocallyConformallyFlatAt
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : M) : Prop :=
+  ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
+    ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0
+
+/-- Unfolding lemma for `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlatAt`. -/
+theorem isLocallyConformallyFlatAt_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {x : M} :
+    g.IsLocallyConformallyFlatAt x ↔
+      ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
+        ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+            ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+          (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 :=
+  Iff.rfl
+
+/-- Local conformal flatness at `x` holds on a neighbourhood of `x`. -/
+theorem IsLocallyConformallyFlatAt.eventually
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (hg : g.IsLocallyConformallyFlatAt x) :
+    ∀ᶠ y in 𝓝 x, g.IsLocallyConformallyFlatAt y := by
+  obtain ⟨f, hf, hf_pos, hflat⟩ := hg
+  exact hflat.eventually_nhds.mono fun _ hy ↦ ⟨f, hf, hf_pos, hy⟩
+
 /-- A smooth Riemannian metric `g` is **locally conformally flat** if every point `x` has a
 neighbourhood on which a conformal rescaling `f g`, by a smooth positive function `f`, is flat:
 the curvature tensor of the Levi-Civita connection of `f g` vanishes at every point near `x`. -/
 def IsLocallyConformallyFlat
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) : Prop :=
-  ∀ x : M, ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
-    ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0
+  ∀ x : M, g.IsLocallyConformallyFlatAt x
+
+/-- `g` is locally conformally flat if and only if it is locally conformally flat at every point. -/
+theorem isLocallyConformallyFlat_iff_forall_isLocallyConformallyFlatAt
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
+    g.IsLocallyConformallyFlat ↔ ∀ x : M, g.IsLocallyConformallyFlatAt x :=
+  Iff.rfl
+
+/-- A locally conformally flat metric is locally conformally flat at every point. -/
+theorem IsLocallyConformallyFlat.isLocallyConformallyFlatAt
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : g.IsLocallyConformallyFlat) (x : M) : g.IsLocallyConformallyFlatAt x :=
+  hg x
 
 /-- Unfolding lemma for `Bundle.ContMDiffRiemannianMetric.IsLocallyConformallyFlat`. -/
 theorem isLocallyConformallyFlat_iff
@@ -126,14 +179,13 @@ theorem isLocallyConformallyFlat_of_curvatureTensor_eq_zero
     (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [rescale_one]; rfl)
       y).trans (h y)⟩
 
-/-- If `g` is locally conformally flat, then so is every conformal rescaling `h g` of `g`: a
-conformal factor `f` flattening `g` near a point gives the factor `f / h` flattening `h g`. -/
-theorem IsLocallyConformallyFlat.rescale
-    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    (hg : g.IsLocallyConformallyFlat) {h : M → ℝ} (hh : ContMDiff I 𝓘(ℝ) ∞ h)
-    (hh_pos : ∀ x, 0 < h x) : (g.rescale h hh hh_pos).IsLocallyConformallyFlat := by
-  intro x
-  obtain ⟨f, hf, hf_pos, hflat⟩ := hg x
+/-- If `g` is locally conformally flat at `x`, then so is every conformal rescaling `h g` of `g`: a
+conformal factor `f` flattening `g` near `x` gives the factor `f / h` flattening `h g`. -/
+theorem IsLocallyConformallyFlatAt.rescale
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (hg : g.IsLocallyConformallyFlatAt x) {h : M → ℝ} (hh : ContMDiff I 𝓘(ℝ) ∞ h)
+    (hh_pos : ∀ y, 0 < h y) : (g.rescale h hh hh_pos).IsLocallyConformallyFlatAt x := by
+  obtain ⟨f, hf, hf_pos, hflat⟩ := hg
   have hfh : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ f y / h y :=
     hf.div₀ hh fun y ↦ (hh_pos y).ne'
   have hfh_pos (y : M) : 0 < f y / h y := div_pos (hf_pos y) (hh_pos y)
@@ -146,15 +198,39 @@ theorem IsLocallyConformallyFlat.rescale
         ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
       (curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq (by rw [heq]; rfl) _).trans⟩
 
+/-- A conformal rescaling `h g` of `g` is locally conformally flat at `x` exactly when `g` is. -/
+@[simp]
+theorem isLocallyConformallyFlatAt_rescale_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {x : M} {h : M → ℝ}
+    (hh : ContMDiff I 𝓘(ℝ) ∞ h) (hh_pos : ∀ y, 0 < h y) :
+    (g.rescale h hh hh_pos).IsLocallyConformallyFlatAt x ↔ g.IsLocallyConformallyFlatAt x := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.rescale hh hh_pos⟩
+  simpa only [rescale_inv_rescale] using
+    hg.rescale (hh.inv₀ fun y ↦ (hh_pos y).ne') fun y ↦ inv_pos.2 (hh_pos y)
+
+/-- Pointwise local conformal flatness depends only on the conformal class. -/
+theorem IsLocallyConformallyFlatAt.of_mem_conformalClass
+    {g g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (hg : g.IsLocallyConformallyFlatAt x) (hg' : g' ∈ g.conformalClass) :
+    g'.IsLocallyConformallyFlatAt x := by
+  obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 hg'
+  exact hg.rescale hh hh_pos
+
+/-- If `g` is locally conformally flat, then so is every conformal rescaling `h g` of `g`: a
+conformal factor `f` flattening `g` near a point gives the factor `f / h` flattening `h g`. -/
+theorem IsLocallyConformallyFlat.rescale
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : g.IsLocallyConformallyFlat) {h : M → ℝ} (hh : ContMDiff I 𝓘(ℝ) ∞ h)
+    (hh_pos : ∀ x, 0 < h x) : (g.rescale h hh hh_pos).IsLocallyConformallyFlat :=
+  fun x ↦ (hg x).rescale hh hh_pos
+
 /-- A conformal rescaling `h g` of a metric `g` is locally conformally flat exactly when `g` is. -/
 @[simp]
 theorem isLocallyConformallyFlat_rescale_iff
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) {h : M → ℝ}
     (hh : ContMDiff I 𝓘(ℝ) ∞ h) (hh_pos : ∀ x, 0 < h x) :
-    (g.rescale h hh hh_pos).IsLocallyConformallyFlat ↔ g.IsLocallyConformallyFlat := by
-  refine ⟨fun hg ↦ ?_, fun hg ↦ hg.rescale hh hh_pos⟩
-  simpa only [rescale_inv_rescale] using
-    hg.rescale (hh.inv₀ fun x ↦ (hh_pos x).ne') fun x ↦ inv_pos.2 (hh_pos x)
+    (g.rescale h hh hh_pos).IsLocallyConformallyFlat ↔ g.IsLocallyConformallyFlat :=
+  forall_congr' fun _ ↦ g.isLocallyConformallyFlatAt_rescale_iff hh hh_pos
 
 /-- Local conformal flatness depends only on the conformal class: every metric conformal to a
 locally conformally flat metric is locally conformally flat. -/
@@ -165,6 +241,82 @@ theorem IsLocallyConformallyFlat.of_mem_conformalClass
   obtain ⟨h, hh, hh_pos, rfl⟩ := mem_conformalClass_iff.1 hg'
   exact hg.rescale hh hh_pos
 
+namespace IsLocallyConformallyFlatAt
+
+/-- **Pointwise normalization of a local flattening conformal factor.** If `g` is locally
+conformally flat at `x₀`, then rescaling a local flattening factor `f₀` by `(f₀ x₀)⁻¹` yields a
+smooth positive factor `f : M → ℝ` normalized by `f x₀ = 1` such that `f g` is flat near `x₀`. -/
+theorem exists_apply_eq_one_and_eventually_curvatureTensor_rescale_eq_zero
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x₀ : M}
+    (hg : g.IsLocallyConformallyFlatAt x₀) :
+    ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
+      f x₀ = 1 ∧
+      ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
+  obtain ⟨f₀, hf₀, hf₀_pos, hflat⟩ := hg
+  set c : ℝ := (f₀ x₀)⁻¹
+  have hc : 0 < c := inv_pos.2 (hf₀_pos x₀)
+  have hf : ContMDiff I 𝓘(ℝ) ∞ (fun y ↦ c * f₀ y) := contMDiff_const.mul hf₀
+  have hf_pos (y : M) : 0 < c * f₀ y := mul_pos hc (hf₀_pos y)
+  have hEq : g.rescale (fun y ↦ c * f₀ y) hf hf_pos =
+      (g.rescale f₀ hf₀ hf₀_pos).rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc) :=
+    (g.rescale_rescale (hf := hf₀) (hf_pos := hf₀_pos) (fun _ ↦ c) contMDiff_const
+      (fun _ ↦ hc)).symm
+  refine ⟨fun y ↦ c * f₀ y, hf, hf_pos, inv_mul_cancel₀ (hf₀_pos x₀).ne', hflat.mono fun y hy ↦ ?_⟩
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨((g.rescale f₀ hf₀ hf₀_pos).rescale (fun _ ↦ c) contMDiff_const
+      (fun _ ↦ hc)).toRiemannianMetric⟩
+  rw [curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
+      (congrArg ContMDiffRiemannianMetric.toRiemannianMetric hEq.symm) y,
+    (g.rescale f₀ hf₀ hf₀_pos).curvatureTensor_leviCivitaConnection_rescale_const hc y, hy]
+
+end IsLocallyConformallyFlatAt
+
+namespace IsLocallyConformallyFlat
+
+/-- **Pointwise normalization of a flattening conformal factor.** If `g` is locally conformally
+flat, then around every point `x₀` there is a smooth positive conformal factor `f : M → ℝ`
+normalized by `f x₀ = 1` such that `f g` is flat near `x₀`. -/
+theorem exists_apply_eq_one_and_eventually_curvatureTensor_rescale_eq_zero
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : g.IsLocallyConformallyFlat) (x₀ : M) :
+    ∃ (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ y, 0 < f y),
+      f x₀ = 1 ∧
+      ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+          ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 :=
+  (hg x₀).exists_apply_eq_one_and_eventually_curvatureTensor_rescale_eq_zero
+
+end IsLocallyConformallyFlat
+
+/-- **Pointwise Weyl necessity.** Away from dimension `2`, if a conformal rescaling `f g` has
+vanishing curvature tensor at `x`, then the Weyl tensor of `g` vanishes at `x`. -/
+theorem weylTensor_eq_zero_of_curvatureTensor_rescale_eq_zero
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z)
+    (hn : Module.finrank ℝ E ≠ 2) {x : M}
+    (hflat : (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) = 0) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor x) = 0 := by
+  refine (weylTensor_leviCivitaConnection_rescale_eq_zero_iff g hf hf_pos hn x).1 ?_
+  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  exact (CovariantDerivative.leviCivitaConnection I M).weylTensor_eq_zero_of_curvatureTensor_eq_zero
+    x hflat
+
+/-- **Local conformal flatness at `x` forces the Weyl tensor to vanish at `x`.** Away from dimension
+`2`, if `g` is locally conformally flat at `x`, then its Weyl tensor vanishes at `x`. -/
+theorem IsLocallyConformallyFlatAt.weylTensor_eq_zero
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (hg : g.IsLocallyConformallyFlatAt x) (hn : Module.finrank ℝ E ≠ 2) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor x) = 0 := by
+  obtain ⟨f, hf, hf_pos, hflat⟩ := hg
+  exact g.weylTensor_eq_zero_of_curvatureTensor_rescale_eq_zero hf hf_pos hn hflat.self_of_nhds
+
 /-- **Local conformal flatness forces the Weyl tensor to vanish.** Away from dimension `2`, the
 Weyl tensor of a locally conformally flat metric vanishes at every point. This is the easy half of
 the Weyl–Schouten theorem. -/
@@ -172,37 +324,57 @@ theorem IsLocallyConformallyFlat.weylTensor_eq_zero
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     (hg : g.IsLocallyConformallyFlat) (hn : Module.finrank ℝ E ≠ 2) (x : M) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).weylTensor x) = 0 := by
-  obtain ⟨f, hf, hf_pos, hflat⟩ := hg x
-  -- The Weyl tensor of the flat metric `f g` vanishes at `x`, and with it that of `g`.
-  refine (weylTensor_leviCivitaConnection_rescale_eq_zero_iff g hf hf_pos hn x).1 ?_
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-  exact (CovariantDerivative.leviCivitaConnection I M).weylTensor_eq_zero_of_curvatureTensor_eq_zero
-    x hflat.self_of_nhds
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor x) = 0 :=
+  (hg x).weylTensor_eq_zero hn
 
-/-- **Local conformal flatness forces the Cotton tensor to vanish.** Away from dimension `2`, the
-Cotton tensor of a locally conformally flat metric vanishes at every point. In dimension `3` this
-is the easy half of the characterization of local conformal flatness by the Cotton tensor. -/
+/-- **Germ-to-point Cotton necessity.** In every dimension, if a conformal rescaling `f g` is flat
+near `x`, then the Cotton tensor of `g` vanishes at `x` (in dimension `2`, the Schouten and Cotton
+tensors vanish identically by the `(2 - 2)⁻¹ = 0` convention). -/
+theorem cottonTensor_eq_zero_of_eventually_curvatureTensor_rescale_eq_zero
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ z, 0 < f z) {x : M}
+    (hflat : ∀ᶠ y in 𝓝 x, (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0) :
+    (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) = 0 := by
+  by_cases hn : Module.finrank ℝ E = 2
+  · let _ : RiemannianBundle (fun z : M ↦ TangentSpace I z) := ⟨g.toRiemannianMetric⟩
+    exact (CovariantDerivative.leviCivitaConnection I M).cottonTensor_eq_zero_of_finrank_eq_two hn x
+  · have hfφ (y : M) : f y = Real.exp (2 * (Real.log (f y) / 2)) := by
+      rw [mul_div_cancel₀ _ (two_ne_zero' ℝ), Real.exp_log (hf_pos y)]
+    have hC : (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) = 0 :=
+      letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+      CovariantDerivative.cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero _ hflat
+    ext u v w
+    have h := cottonTensor_leviCivitaConnection_rescale g hf hf_pos hfφ hn x u v w
+    rw [hC, g.weylTensor_eq_zero_of_curvatureTensor_rescale_eq_zero hf hf_pos hn
+      hflat.self_of_nhds] at h
+    simpa using h.symm
+
+/-- **Local conformal flatness at `x` forces the Cotton tensor to vanish at `x`.** In every
+dimension, if `g` is locally conformally flat at `x`, then its Cotton tensor vanishes at `x`. -/
+theorem IsLocallyConformallyFlatAt.cottonTensor_eq_zero
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (hg : g.IsLocallyConformallyFlatAt x) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) = 0 := by
+  obtain ⟨f, hf, hf_pos, hflat⟩ := hg
+  exact g.cottonTensor_eq_zero_of_eventually_curvatureTensor_rescale_eq_zero hf hf_pos hflat
+
+/-- **Local conformal flatness forces the Cotton tensor to vanish.** In every dimension, the Cotton
+tensor of a locally conformally flat metric vanishes at every point (in dimension `2`, the Schouten
+and Cotton tensors vanish identically by the `(2 - 2)⁻¹ = 0` convention). In dimension `3` this is
+the easy half of the characterization of local conformal flatness by the Cotton tensor. -/
 theorem IsLocallyConformallyFlat.cottonTensor_eq_zero
     {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-    (hg : g.IsLocallyConformallyFlat) (hn : Module.finrank ℝ E ≠ 2) (x : M) :
+    (hg : g.IsLocallyConformallyFlat) (x : M) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) = 0 := by
-  obtain ⟨f, hf, hf_pos, hflat⟩ := hg x
-  have hfφ (y : M) : f y = Real.exp (2 * (Real.log (f y) / 2)) := by
-    rw [mul_div_cancel₀ _ (two_ne_zero' ℝ), Real.exp_log (hf_pos y)]
-  -- The Cotton tensor of `f g` vanishes at `x`, since `f g` is flat near `x`.
-  have hC : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
       (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) = 0 :=
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
-    CovariantDerivative.cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero _ hflat
-  ext u v w
-  have h := cottonTensor_leviCivitaConnection_rescale g hf hf_pos hfφ hn x u v w
-  rw [hC, hg.weylTensor_eq_zero hn x] at h
-  simpa using h.symm
+  (hg x).cottonTensor_eq_zero
 
 /-- **When `e^(2φ) g` is flat.** In dimension at least `3`, the metric `f g` with `f = e^(2φ)` has
 vanishing curvature tensor at `x` exactly when the Weyl tensor of `g` vanishes at `x` and `φ` solves

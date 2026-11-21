@@ -150,6 +150,10 @@ theorem tildeMul_tmul (x y : S.ideal) : S.tildeMul (x ⊗ₜ y) = x * y :=
 theorem range_tildeMul : LinearMap.range S.tildeMul = S.ideal :=
   (Submodule.mulMap_range S.ideal S.ideal).trans S.isIdempotentElem.eq
 
+/-- Every element of `m` is the image of an element of `m~` under the multiplication map. -/
+theorem exists_tildeMul_eq {ε : V} (hε : ε ∈ S.ideal) : ∃ t, S.tildeMul t = ε :=
+  LinearMap.mem_range.mp (S.range_tildeMul.ge hε)
+
 /-- Induction principle for elements of `m`, using `m = m * m`: a property that holds for all
 products `a * b` with `a, b ∈ m` and is closed under addition holds on `m`. -/
 @[elab_as_elim]
@@ -169,7 +173,7 @@ theorem coe_tildeToIdeal (t : S.tilde) : (S.tildeToIdeal t : V) = S.tildeMul t :
 
 @[simp]
 theorem tildeToIdeal_tmul (x y : S.ideal) :
-    S.tildeToIdeal (x ⊗ₜ y) = ⟨x * y, S.ideal.mul_mem_left _ y.2⟩ :=
+    S.tildeToIdeal (x ⊗ₜ y) = ⟨x * y, S.ideal.mul_mem_left _ y.property⟩ :=
   Subtype.ext (by simp)
 
 theorem tildeToIdeal_surjective : Function.Surjective S.tildeToIdeal := by
@@ -279,7 +283,7 @@ theorem isAlmostZero_iff_isTorsionBySet {M : Type*} [AddCommGroup M] [Module V M
 variable {S} in
 theorem isAlmostZero_iff {M : Type*} [AddCommGroup M] [Module V M] :
     S.IsAlmostZero M ↔ ∀ ε ∈ S.ideal, ∀ x : M, ε • x = 0 :=
-  ⟨fun h ε hε x ↦ @h x ⟨ε, hε⟩, fun h x ε ↦ h ε ε.2 x⟩
+  ⟨fun h ε hε x ↦ @h x ⟨ε, hε⟩, fun h x ε ↦ h ε ε.property x⟩
 
 variable {S} in
 theorem isAlmostZero_iff_le_annihilator {M : Type*} [AddCommGroup M] [Module V M] :
@@ -384,7 +388,8 @@ private theorem subsingleton_ideal_tensor_of_isAlmostZero (N : Type*) [AddCommGr
     induction t using TensorProduct.inductionOn with
     | tmul a b =>
       have hab : S.tildeToIdeal (a ⊗ₜ b) = (a : V) • b := Subtype.ext (by simp)
-      rw [LinearMap.rTensor_tmul, hab, ← smul_tmul', h.smul_eq_zero a.2, LinearMap.zero_apply]
+      rw [LinearMap.rTensor_tmul, hab, ← smul_tmul', h.smul_eq_zero a.property,
+          LinearMap.zero_apply]
     | add t t' ht ht' => simp_all [add_tmul]
   refine ⟨fun y y' ↦ ?_⟩
   obtain ⟨y, rfl⟩ := LinearMap.rTensor_surjective N S.tildeToIdeal_surjective y
