@@ -6,68 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Basic
-public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
-public import TauCeti.Algebra.Module.Submodule.Essential
-public import TauCeti.Algebra.Module.Submodule.Unitization
 public import TauCeti.Algebra.Star.Basic
-public import TauCeti.RingTheory.TwoSidedIdeal.Basic
+public import TauCeti.RingTheory.TwoSidedIdeal.Essential
 public import TauCeti.RingTheory.TwoSidedIdeal.Kernel
 
 /-!
-# Annihilators of two-sided ideals, essential ideals, and unitization actions
+# Annihilators of two-sided ideals
 
-For a two-sided ideal `I` of a possibly nonunital associative ring `R`, the left annihilator
-`I.annihilator = {a : R | ∀ x ∈ I, a * x = 0}` and right annihilator
-`I.rightAnnihilator = {a : R | ∀ x ∈ I, x * a = 0}` are again two-sided ideals: `I.annihilator`
-absorbs multiplication on the left trivially and on the right because `I` is a left ideal, and
-dually for `I.rightAnnihilator`. The pair `(annihilator, rightAnnihilator)` forms an antitone
-Galois connection on `TwoSidedIdeal R`: `J ≤ I.annihilator ↔ I ≤ J.rightAnnihilator`, equivalently
-`(J : Set R) * (I : Set R) = {0}`. Every two-sided ideal disjoint from `I` lies in both
-`I.annihilator` and `I.rightAnnihilator`, so triviality of either annihilator forces `I` to be
-essential (`TwoSidedIdeal.IsEssential`), meaning that `I` meets every nonzero two-sided ideal.
-
-For a unital ring `R`, `I.annihilator` is the module annihilator of `I`, viewed as a left
-`R`-module, made two-sided (`Module.annihilator R I.asIdeal` / `Module.annihilator R I`), and
-`I.rightAnnihilator.asIdealOpposite` coincides with `Module.annihilator Rᵐᵒᵖ I`. When `A` is a
-nonunital `R`-algebra, any `R`-invariant two-sided ideal `I : TwoSidedIdeal A` carries a left
-`Unitization R A`-module structure `(r, a) • x = r • x + a * x` (built via the `Submodule` action
-in `TauCeti.Algebra.Module.Submodule.Unitization`), and pulling back
-`(Module.annihilator (Unitization R A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom R A`
-recovers `I.annihilator`.
-
-In a ring with a proper involution (`star x * x = 0` only for `x = 0`), the annihilator of a
-self-adjoint ideal `I` behaves like a pseudocomplement: it is self-adjoint, it coincides with
-`I.rightAnnihilator`, and it is the largest two-sided ideal disjoint from `I`. Consequently
-`I ≤ I.annihilator.annihilator`, the annihilator is unchanged after three applications, and
-`I.annihilator = ⊥` exactly when `I` is essential.
+Left and right annihilators `TwoSidedIdeal.annihilator` and `TwoSidedIdeal.rightAnnihilator` of a
+two-sided ideal, their antitone Galois connection, unital identifications with `Module.annihilator`,
+and pseudocomplement / essentiality equivalences for self-adjoint ideals in proper star rings.
 
 ## Main declarations
 
-* `TwoSidedIdeal.IsEssential`: a two-sided ideal meeting every nonzero two-sided ideal.
-* `TwoSidedIdeal.annihilator` and `TwoSidedIdeal.rightAnnihilator`: the left and right
-  annihilators of a two-sided ideal, with Galois connection
+* `TwoSidedIdeal.annihilator`, `TwoSidedIdeal.rightAnnihilator`,
   `TwoSidedIdeal.gc_annihilator_rightAnnihilator`.
-* `TwoSidedIdeal.annihilator_eq_toTwoSided_annihilator` and
-  `TwoSidedIdeal.asIdealOpposite_rightAnnihilator`: for unital rings, identifications with
-  `Module.annihilator`.
-* `TwoSidedIdeal.unitizationModuleOfSMulMem`,
-  `TwoSidedIdeal.isScalarTower_unitizationModuleOfSMulMem`, and
-  `TwoSidedIdeal.annihilator_eq_comap_annihilator_unitization_of_smul_mem`: left
-  `Unitization R A`-module action on an `R`-invariant two-sided ideal and unitized annihilator
-  identification.
-* `TwoSidedIdeal.mem_annihilator_iff_mul_left`,
+* `TwoSidedIdeal.annihilator_eq_toTwoSided_annihilator`,
   `TwoSidedIdeal.annihilator_eq_rightAnnihilator_of_star_mem`,
-  `TwoSidedIdeal.le_annihilator_iff_disjoint`, and
-  `TwoSidedIdeal.annihilator_eq_bot_iff_isEssential`: symmetry, pseudocomplementation, and
-  essentiality for self-adjoint ideals in proper star rings.
-
-## References
-
-* B. Blackadar, *Operator Algebras*, II.5.4 (annihilators and essential ideals).
-* G. J. Murphy, *C⋆-Algebras and Operator Theory*, Section 3.1 (essential ideals).
-* T. Y. Lam, *Lectures on Modules and Rings*, Section 3D (essential submodules and annihilators).
+  `TwoSidedIdeal.le_annihilator_iff_disjoint`, `TwoSidedIdeal.annihilator_eq_bot_iff_isEssential`.
 -/
 
 public section
@@ -75,75 +33,6 @@ public section
 open scoped Pointwise
 
 namespace TwoSidedIdeal
-
-section Essential
-
-variable {A : Type*} [NonUnitalNonAssocRing A] {I J : TwoSidedIdeal A}
-
-/-- A two-sided ideal is *essential* when it meets every nonzero two-sided ideal. -/
-def IsEssential (I : TwoSidedIdeal A) : Prop :=
-  ∀ J : TwoSidedIdeal A, Disjoint I J → J = ⊥
-
-theorem isEssential_iff : I.IsEssential ↔ ∀ J : TwoSidedIdeal A, Disjoint I J → J = ⊥ :=
-  Iff.rfl
-
-theorem isEssential_def : I.IsEssential ↔ ∀ J : TwoSidedIdeal A, J ≠ ⊥ → I ⊓ J ≠ ⊥ := by
-  simp only [isEssential_iff, disjoint_iff]
-  exact ⟨fun h J hJ hIJ => hJ (h J hIJ), fun h J hIJ => by_contra fun hJ => h J hJ hIJ⟩
-
-theorem isEssential_iff_inf_eq_bot :
-    I.IsEssential ↔ ∀ J : TwoSidedIdeal A, I ⊓ J = ⊥ → J = ⊥ := by
-  simp only [isEssential_iff, disjoint_iff]
-
-theorem IsEssential.eq_bot_of_disjoint (hI : I.IsEssential) (h : Disjoint I J) : J = ⊥ :=
-  hI J h
-
-theorem isEssential_top : (⊤ : TwoSidedIdeal A).IsEssential :=
-  fun _ h ↦ disjoint_top.1 h.symm
-
-theorem IsEssential.mono (hI : I.IsEssential) (h : I ≤ J) : J.IsEssential :=
-  fun _ hK ↦ hI _ (hK.mono_left h)
-
-theorem IsEssential.inf (hI : I.IsEssential) (hJ : J.IsEssential) : (I ⊓ J).IsEssential :=
-  isEssential_iff_inf_eq_bot.mpr fun K hIJK =>
-    isEssential_iff_inf_eq_bot.mp hJ K <|
-      isEssential_iff_inf_eq_bot.mp hI (J ⊓ K) (by rwa [← inf_assoc])
-
-@[simp]
-theorem isEssential_inf_iff : (I ⊓ J).IsEssential ↔ I.IsEssential ∧ J.IsEssential :=
-  ⟨fun h => ⟨h.mono inf_le_left, h.mono inf_le_right⟩, fun ⟨hI, hJ⟩ => hI.inf hJ⟩
-
-@[simp]
-theorem isEssential_bot_iff : (⊥ : TwoSidedIdeal A).IsEssential ↔ Subsingleton A :=
-  ⟨fun h => subsingleton_iff.mp <|
-      subsingleton_iff_bot_eq_top.mp (isEssential_iff_inf_eq_bot.mp h ⊤ (by simp)).symm,
-   fun _ => isEssential_iff_inf_eq_bot.mpr fun J _ => Subsingleton.elim J ⊥⟩
-
-theorem not_isEssential_bot [Nontrivial A] : ¬ (⊥ : TwoSidedIdeal A).IsEssential := by
-  rw [isEssential_bot_iff]
-  exact not_subsingleton A
-
-theorem IsEssential.ne_bot [Nontrivial A] (hI : I.IsEssential) : I ≠ ⊥ :=
-  fun h => not_isEssential_bot (h ▸ hI)
-
-/-- Pulling back along a ring equivalence preserves and reflects essentiality. -/
-@[simp]
-theorem isEssential_comap_iff {B E : Type*} [NonUnitalNonAssocRing B]
-    [EquivLike E A B] [NonUnitalRingHomClass E A B] (e : E) {I : TwoSidedIdeal B} :
-    (I.comap e).IsEssential ↔ I.IsEssential := by
-  let e' : A ≃+* B := { EquivLike.toEquiv e with map_mul' := map_mul e, map_add' := map_add e }
-  let φ := e'.mapTwoSidedIdeal.symm
-  have hcomap : I.comap e = φ I := by
-    ext a
-    exact (mem_comap e).trans (mem_comap e').symm
-  rw [hcomap, isEssential_iff_inf_eq_bot, isEssential_iff_inf_eq_bot]
-  refine ⟨fun h J hIJ => (map_eq_bot_iff φ).mp (h (φ J) (by rw [← map_inf, hIJ, map_bot])),
-    fun h K hIK => ?_⟩
-  rw [← φ.apply_symm_apply K] at hIK ⊢
-  rw [← map_inf, map_eq_bot_iff] at hIK
-  rw [h (φ.symm K) hIK, map_bot]
-
-end Essential
 
 section NonUnitalRing
 
@@ -363,7 +252,7 @@ theorem le_rightAnnihilator_of_inf_eq_bot (h : I ⊓ J = ⊥) : J ≤ I.rightAnn
 
 /-- An ideal with zero annihilator is essential. -/
 theorem isEssential_of_annihilator_eq_bot (h : I.annihilator = ⊥) : I.IsEssential :=
-  fun _ hJ ↦ eq_bot_iff.2 <| h ▸ le_annihilator_of_disjoint hJ.symm
+  isEssential_iff.mpr fun _ hJ ↦ eq_bot_iff.2 <| h ▸ le_annihilator_of_disjoint hJ.symm
 
 /-- A two-sided ideal with trivial right annihilator is essential. -/
 theorem isEssential_of_rightAnnihilator_eq_bot (h : I.rightAnnihilator = ⊥) : I.IsEssential :=
@@ -439,121 +328,12 @@ theorem le_rightAnnihilator_iff_asIdeal_mul_eq_bot {I J : TwoSidedIdeal R} :
   simp only [mem_asIdeal, Submodule.mem_bot]
   exact ⟨fun h x hx a ha => h a ha x hx, fun h a ha x hx => h x hx a ha⟩
 
-/-- If `I.asIdeal` is essential as a left ideal (`TauCeti.IsEssential`), then `I` is essential as a
-two-sided ideal. -/
-theorem isEssential_of_isEssential_asIdeal {I : TwoSidedIdeal R}
-    (hI : TauCeti.IsEssential I.asIdeal) : I.IsEssential :=
-  isEssential_iff_inf_eq_bot.mpr fun J hIJ =>
-    orderIsoIsTwoSided.injective <| Subtype.ext <|
-      TauCeti.isEssential_iff.mp hI J.asIdeal (by rw [← gc.u_inf, hIJ, bot_asIdeal])
-
-/-- If `I.asIdealOpposite` is essential as a right ideal (`TauCeti.IsEssential`), then `I` is
-essential as a two-sided ideal. -/
-theorem isEssential_of_isEssential_asIdealOpposite {I : TwoSidedIdeal R}
-    (hI : TauCeti.IsEssential I.asIdealOpposite) : I.IsEssential := by
-  refine isEssential_iff_inf_eq_bot.mpr fun J hIJ => ?_
-  have hinf : I.asIdealOpposite ⊓ J.asIdealOpposite = ⊥ := by
-    ext x
-    rw [Submodule.mem_inf, mem_asIdealOpposite, mem_asIdealOpposite, Submodule.mem_bot]
-    refine ⟨fun hx => MulOpposite.unop_injective ?_, fun hx => by simp [hx]⟩
-    exact (mem_bot _).mp (hIJ ▸ (⟨hx.left, hx.right⟩ : x.unop ∈ I ⊓ J))
-  have hJ : J.asIdealOpposite = ⊥ := TauCeti.isEssential_iff.mp hI J.asIdealOpposite hinf
-  ext x
-  have hx : MulOpposite.op x ∈ J.asIdealOpposite ↔ MulOpposite.op x ∈ (⊥ : Ideal Rᵐᵒᵖ) :=
-    SetLike.ext_iff.mp hJ (MulOpposite.op x)
-  simpa [mem_asIdealOpposite, Submodule.mem_bot, mem_bot] using hx
-
 @[simp]
 theorem annihilator_top : (⊤ : TwoSidedIdeal R).annihilator = ⊥ :=
   eq_bot_iff.2 fun a ha ↦ (mem_bot R).2 <| by
     simpa using mul_eq_zero_of_mem_annihilator ha (mem_top R (x := (1 : R)))
 
 end Ring
-
-section CommRing
-
-/-- In a commutative ring, a two-sided ideal is essential if and only if its underlying ideal is
-essential as an `R`-submodule. -/
-theorem isEssential_iff_isEssential_asIdeal {R : Type*} [CommRing R] {I : TwoSidedIdeal R} :
-    I.IsEssential ↔ TauCeti.IsEssential I.asIdeal :=
-  ⟨fun hI => TauCeti.isEssential_iff.mpr fun K hIK => by
-      have hK : Ideal.toTwoSided K = ⊥ := isEssential_iff_inf_eq_bot.mp hI (Ideal.toTwoSided K) <|
-        orderIsoIsTwoSided.injective <| Subtype.ext <| by
-          simp [gc.u_inf, hIK]
-      simpa using congrArg asIdeal hK,
-   isEssential_of_isEssential_asIdeal⟩
-
-end CommRing
-
-section Unitization
-
-section CommSemiring
-
-variable {R A : Type*} [CommSemiring R] [NonUnitalRing A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A]
-
-/-- Left `Unitization R A`-module structure `(r, a) • x = r • x + a * x` on an `R`-invariant
-two-sided ideal `I : TwoSidedIdeal A`. Provided as an `@[instance_reducible]` definition taking the
-scalar-absorption hypothesis explicitly rather than a global instance. -/
-@[instance_reducible]
-def unitizationModuleOfSMulMem (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : Module (Unitization R A) I :=
-  (I.toSubmoduleOfSMulMem hsmul).unitizationModule I.mul_mem_left
-
-@[simp]
-theorem coe_unitizationModuleOfSMulMem_smul (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) (u : Unitization R A) (x : I) :
-    (letI := I.unitizationModuleOfSMulMem hsmul; ((u • x : I) : A)) =
-      u.fst • (x : A) + u.snd * (x : A) :=
-  (I.toSubmoduleOfSMulMem hsmul).coe_unitizationModule_smul I.mul_mem_left u x
-
-/-- Coercing `(r, a) • x` from `I` into `Unitization R A` agrees with multiplication in
-`Unitization R A`. -/
-theorem inr_coe_unitizationModuleOfSMulMem_smul (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) (u : Unitization R A) (x : I) :
-    (letI := I.unitizationModuleOfSMulMem hsmul; (((u • x : I) : A) : Unitization R A)) =
-      u * ((x : A) : Unitization R A) :=
-  (I.toSubmoduleOfSMulMem hsmul).inr_coe_unitizationModule_smul I.mul_mem_left u x
-
-/-- The left `Unitization R A`-module structure on an `R`-invariant two-sided ideal `I` is
-compatible with any `R`-scalar action on `I` agreeing with scalar multiplication in `A`. -/
-theorem isScalarTower_unitizationModuleOfSMulMem (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) [SMul R I]
-    (hcoe : ∀ (r : R) (x : I), ((r • x : I) : A) = r • (x : A)) :
-    letI := I.unitizationModuleOfSMulMem hsmul
-    IsScalarTower R (Unitization R A) I := by
-  let _ := I.unitizationModuleOfSMulMem hsmul
-  have hL := (I.toSubmoduleOfSMulMem hsmul).isScalarTower_unitizationModule I.mul_mem_left
-  refine ⟨fun r u x => Subtype.ext ?_⟩
-  rw [hcoe]
-  exact (congrArg Subtype.val (hL.smul_assoc r u x)).trans
-    (Submodule.coe_smul (p := I.toSubmoduleOfSMulMem hsmul) r (u • x))
-
-theorem mem_annihilator_unitizationOfSMulMem_iff (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) {u : Unitization R A} :
-    (letI := I.unitizationModuleOfSMulMem hsmul; u ∈ Module.annihilator (Unitization R A) I) ↔
-      ∀ x ∈ I, u.fst • x + u.snd * x = 0 :=
-  (I.toSubmoduleOfSMulMem hsmul).mem_annihilator_unitization_iff I.mul_mem_left
-
-end CommSemiring
-
-/-- For an `R`-invariant two-sided ideal `I` of a nonunital `R`-algebra `A`, `I.annihilator` is
-the preimage of `(Module.annihilator (Unitization R A) I).toTwoSided` under
-`Unitization.inrNonUnitalAlgHom R A`. -/
-theorem annihilator_eq_comap_annihilator_unitization_of_smul_mem {R A : Type*} [CommRing R]
-    [NonUnitalRing A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
-    (I : TwoSidedIdeal A) (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) :
-    letI := I.unitizationModuleOfSMulMem hsmul
-    I.annihilator =
-      TwoSidedIdeal.comap (Unitization.inrNonUnitalAlgHom R A)
-        (Module.annihilator (Unitization R A) I).toTwoSided := by
-  let _ := I.unitizationModuleOfSMulMem hsmul
-  ext a
-  rw [mem_annihilator, mem_comap, Ideal.mem_toTwoSided,
-    I.mem_annihilator_unitizationOfSMulMem_iff hsmul]
-  simp
-
-end Unitization
 
 section IsProperStar
 
@@ -642,7 +422,7 @@ theorem annihilator_top_of_isProperStar : (⊤ : TwoSidedIdeal R).annihilator = 
 /-- A self-adjoint ideal is essential exactly when its annihilator vanishes. -/
 theorem annihilator_eq_bot_iff_isEssential (hI : ∀ x ∈ I, star x ∈ I) :
     I.annihilator = ⊥ ↔ I.IsEssential :=
-  ⟨isEssential_of_annihilator_eq_bot, fun h ↦ h _ (disjoint_annihilator hI)⟩
+  ⟨isEssential_of_annihilator_eq_bot, fun h ↦ h.eq_bot_of_disjoint (disjoint_annihilator hI)⟩
 
 theorem isEssential_iff_rightAnnihilator_eq_bot_of_star_mem (hI : ∀ x ∈ I, star x ∈ I) :
     I.IsEssential ↔ I.rightAnnihilator = ⊥ := by
@@ -651,48 +431,6 @@ theorem isEssential_iff_rightAnnihilator_eq_bot_of_star_mem (hI : ∀ x ∈ I, s
 end IsProperStar
 
 section Prod
-
-/-- In a product `A × B`, the first-factor ideal `A × {0} = ker snd` is essential if and only if `B`
-is a subsingleton. -/
-@[simp]
-theorem isEssential_ker_snd_iff {A B : Type*} [NonUnitalNonAssocRing A]
-    [NonUnitalNonAssocRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).IsEssential ↔ Subsingleton B := by
-  refine ⟨fun h => ker_fst_eq_bot_iff.mp (isEssential_iff_inf_eq_bot.mp h _ ker_snd_inf_ker_fst),
-    fun _ => ?_⟩
-  have htop : TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) = ⊤ := by
-    ext p
-    simp [mem_ker, NonUnitalRingHom.coe_snd, Subsingleton.elim p.snd 0]
-  rw [htop]
-  exact isEssential_top
-
-/-- In a product `A × B`, the second-factor ideal `{0} × B = ker fst` is essential if and only if
-`A` is a subsingleton. -/
-@[simp]
-theorem isEssential_ker_fst_iff {A B : Type*} [NonUnitalNonAssocRing A]
-    [NonUnitalNonAssocRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).IsEssential ↔ Subsingleton A := by
-  refine ⟨fun h => ker_snd_eq_bot_iff.mp (isEssential_iff_inf_eq_bot.mp h _ ker_fst_inf_ker_snd),
-    fun _ => ?_⟩
-  have htop : TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) = ⊤ := by
-    ext p
-    simp [mem_ker, NonUnitalRingHom.coe_fst, Subsingleton.elim p.fst 0]
-  rw [htop]
-  exact isEssential_top
-
-@[simp]
-theorem isEssential_ker_snd_nonUnitalStarAlgHom_iff {R A B : Type*} [Monoid R]
-    [NonUnitalNonAssocRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B)).IsEssential ↔ Subsingleton B := by
-  rw [ker_nonUnitalStarAlgHom_snd, isEssential_ker_snd_iff]
-
-@[simp]
-theorem isEssential_ker_fst_nonUnitalStarAlgHom_iff {R A B : Type*} [Monoid R]
-    [NonUnitalNonAssocRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B)).IsEssential ↔ Subsingleton A := by
-  rw [ker_nonUnitalStarAlgHom_fst, isEssential_ker_fst_iff]
 
 /-- In a product `A × B` of nonunital rings, the left annihilator of `ker snd = A × {0}` is the
 preimage of `(⊤ : TwoSidedIdeal A).annihilator` along `fst`. -/

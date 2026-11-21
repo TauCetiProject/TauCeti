@@ -8,33 +8,17 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Topology.UnitInterval
+public import TauCeti.Algebra.Module.Submodule.Unitization
 public import TauCeti.Analysis.CStarAlgebra.Annihilator
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Ideal
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
 /-!
 # Concrete examples of ideal annihilators and essential ideals in C⋆-algebras
 
-This file exercises the two-sided ideal annihilator, essential-ideal, unitization-action, and
-multiplier-homomorphism API across four distinct C⋆-algebraic regimes:
-
-1. **Noncommutative unital matrix algebra** `CStarMatrix (Fin 2) (Fin 2) ℂ`:
-   `(⊥).annihilator = ⊤`, `(⊤).annihilator = ⊥`, `¬ (⊥).IsClosedEssential`, and
-   `(⊤).IsClosedEssential`.
-2. **Direct product** `ℂ × ℂ`:
-   the first-factor ideal `ℂ × {0} = ker snd` is a nontrivial proper closed ideal whose
-   annihilator is `{0} × ℂ = ker fst ≠ ⊥`, so it is *not* essential and equals its own double
-   annihilator, while `multiplierHom` is not injective.
-3. **Genuinely nonunital algebra** `C₀(ℕ, ℂ)` of null complex sequences:
-   `C₀(ℕ, ℂ)` has no left multiplicative identity, `(⊤).annihilator = ⊥`, and
-   `ZeroAtInftyContinuousMap.single 0 1` lies in the annihilator of
-   `{f ∈ C₀(ℕ, ℂ) | f 0 = 0}`, witnessing non-essentiality and exercising both
-   `TwoSidedIdeal.annihilator_eq_comap_toTwoSided_annihilator` and
-   `Submodule.unitizationModule` on a genuinely nonunital C⋆-algebra.
-4. **Proper essential closed ideal** in `C(unitInterval, ℂ)`:
-   `ker (evalStarAlgHom ℂ ℂ 0) = {f ∈ C([0, 1], ℂ) | f 0 = 0}` is a nonzero proper closed ideal
-   whose annihilator is `⊥` by density of `(0, 1]` in `[0, 1]`; hence it is essential, embeds
-   `C(unitInterval, ℂ)` isometrically into its multiplier algebra, and satisfies the strict
-   inclusion `I < I.annihilator.annihilator = ⊤`.
+Exercises annihilators, essentiality, unitization actions, and `multiplierHom` across:
+`CStarMatrix (Fin 2) (Fin 2) ℂ`, `ℂ × ℂ`, `C₀(ℕ, ℂ)` (genuinely nonunital), and
+`C(unitInterval, ℂ)` (proper essential ideal with `I < I.annihilator.annihilator`).
 -/
 
 public section
