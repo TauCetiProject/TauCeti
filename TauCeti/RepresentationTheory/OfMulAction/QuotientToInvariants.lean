@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Perm.Partition
 public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.RepresentationTheory.CharacterTable.FixedPointCount
+import TauCeti.LinearAlgebra.Charpoly.Permutation
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -29,14 +31,16 @@ fixed-point counts. So if `k[X]` and `k[Y]` are equivalent, every element of `D 
 many `I`-orbits of `X` as of `Y`. For a finite group `D`, equivalence of the permutation
 representations is equality of the fixed-point counts of every element of `D`, so the
 statement becomes purely combinatorial: if every element of `D` fixes as many points of `X` as
-of `Y`, then every element of `D ⧸ I` fixes as many `I`-orbits of `X` as of `Y`.
+of `Y`, then every element of `D ⧸ I` fixes as many `I`-orbits of `X` as of `Y`. More strongly,
+comparing reversed characteristic polynomials via `Representation.Equiv.fullCycleType_toPerm_eq`
+shows that every element of `D ⧸ I` acts with the same full cycle type on `X/I` and on `Y/I`.
 
 The motivating instance is the arithmetic of Gassmann triples. There `D` and `I` are the
 decomposition and inertia groups of a prime in a Galois group `G`, and `X` and `Y` are the coset
 spaces `G ⧸ H` and `G ⧸ K` of two almost conjugate subgroups. The cycles of a Frobenius element
 on the `I`-orbits correspond to the primes above, and their lengths are the residue degrees.
-The fixed-point counts of the powers of Frobenius on the `I`-orbits determine these cycle
-lengths, so equal counts give the same residue degrees, counted with multiplicity.
+The fixed-point counts on `X` and `Y` determine the full cycle type of Frobenius on the
+`I`-orbits, giving the same residue degrees counted with multiplicity.
 
 ## Main definitions
 
@@ -54,6 +58,11 @@ lengths, so equal counts give the same residue degrees, counted with multiplicit
   counts under `D ⧸ I`.
 * `TauCeti.natCard_fixedBy_orbitRelQuotient_eq`: equal fixed-point counts
   on `X` and `Y` give equal fixed-point counts on the `I`-orbit spaces.
+* `TauCeti.fullCycleType_toPerm_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction`: in
+  characteristic zero, equivalent permutation representations of `D` induce the same full cycle
+  type on the `I`-orbit spaces for every element of `D ⧸ I`.
+* `TauCeti.fullCycleType_toPerm_orbitRelQuotient_eq`: equal fixed-point counts on `X` and `Y`
+  give equal full cycle types on the `I`-orbit spaces for every element of `D ⧸ I`.
 
 ## References
 
@@ -132,6 +141,37 @@ theorem natCard_fixedBy_orbitRelQuotient_eq
     (d : D ⧸ I) :
     Nat.card (fixedBy (orbitRel.Quotient I X) d) = Nat.card (fixedBy (orbitRel.Quotient I Y) d) :=
   natCard_fixedBy_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction ℚ
+    ((nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq ℚ).2 h) I d
+
+/-- **Cycle types on orbit spaces of equivalent permutation representations.** Over a commutative
+ring `k` of characteristic zero, if the permutation representations `k[X]` and `k[Y]` of `D` are
+equivalent, then for every normal subgroup `I` of `D`, every element of `D ⧸ I` acts with the same
+full cycle type on the `I`-orbits of `X` and of `Y`. -/
+theorem fullCycleType_toPerm_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction
+    {X Y : Type*} [MulAction D X] [MulAction D Y] [Finite X] [Finite Y]
+    (k : Type*) [CommRing k] [CharZero k]
+    (h : Nonempty ((ofMulAction k D X).Equiv (ofMulAction k D Y)))
+    (I : Subgroup D) [I.Normal]
+    [Fintype (orbitRel.Quotient I X)] [DecidableEq (orbitRel.Quotient I X)]
+    [Fintype (orbitRel.Quotient I Y)] [DecidableEq (orbitRel.Quotient I Y)]
+    (d : D ⧸ I) :
+    (toPerm d : Equiv.Perm (orbitRel.Quotient I X)).fullCycleType =
+      (toPerm d : Equiv.Perm (orbitRel.Quotient I Y)).fullCycleType := by
+  obtain ⟨e⟩ := h
+  exact (e.ofMulActionOrbitRelQuotient I).fullCycleType_toPerm_eq d
+
+/-- **Equal fixed-point counts imply equal cycle types on orbit spaces.** For a group `D` acting on
+finite types `X` and `Y` such that every element of `D` fixes as many points of `X` as of `Y`, and
+for every normal subgroup `I` of `D`, every element of `D ⧸ I` acts with the same full cycle type
+on the `I`-orbits of `X` and of `Y`. -/
+theorem fullCycleType_toPerm_orbitRelQuotient_eq
+    (h : ∀ d : D, Nat.card (fixedBy X d) = Nat.card (fixedBy Y d)) (I : Subgroup D) [I.Normal]
+    [Fintype (orbitRel.Quotient I X)] [DecidableEq (orbitRel.Quotient I X)]
+    [Fintype (orbitRel.Quotient I Y)] [DecidableEq (orbitRel.Quotient I Y)]
+    (d : D ⧸ I) :
+    (toPerm d : Equiv.Perm (orbitRel.Quotient I X)).fullCycleType =
+      (toPerm d : Equiv.Perm (orbitRel.Quotient I Y)).fullCycleType :=
+  fullCycleType_toPerm_orbitRelQuotient_eq_of_nonempty_equiv_ofMulAction ℚ
     ((nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq ℚ).2 h) I d
 
 end TauCeti
