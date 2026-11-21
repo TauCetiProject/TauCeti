@@ -52,6 +52,24 @@ theorem entropy_zero_measure {α : Type*} {mα : MeasurableSpace α} (g : α →
     entropy (0 : Measure α) g = 0 := by
   simp [entropy]
 
+/-- The entropy of a constant under an arbitrary measure. -/
+theorem entropy_const {α : Type*} [MeasurableSpace α] (μ : Measure α) (c : ℝ) :
+    entropy μ (fun _ ↦ c) =
+      μ.real univ * (c * Real.log c) -
+        (μ.real univ * c) * Real.log (μ.real univ * c) := by
+  simp [entropy_def, integral_const, smul_eq_mul]
+
+@[simp]
+theorem entropy_const_of_isProbabilityMeasure {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsProbabilityMeasure μ] (c : ℝ) :
+    entropy μ (fun _ ↦ c) = 0 := by
+  simp [entropy_const, probReal_univ]
+
+@[simp]
+theorem entropy_dirac {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    (a : α) (g : α → ℝ) : entropy (dirac a) g = 0 := by
+  simp [entropy_def]
+
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
 function, when the function and its `x log x` transform are integrable. -/
 theorem entropy_nonneg {α : Type*} [MeasurableSpace α] (μ : Measure α)

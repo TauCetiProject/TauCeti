@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Convexity of relative entropy
@@ -28,6 +29,10 @@ values to be finite. Equality for an interior mixture holds exactly when the mea
 For absolutely continuous measures, relative entropy is the integral of
 `InformationTheory.klFun` of the Radon–Nikodym density. Strict convexity of this integrand
 on `[0, ∞)` forces those densities to agree almost everywhere in the equality case.
+
+`MeasureTheory.Measure.integral_log_sum_le` gives an integral log-sum inequality for nonnegative
+densities when the first vanishes almost everywhere where the second does and the weighted
+logarithmic difference is integrable.
 
 Strict convexity also holds quantitatively. The midpoint convexity defect of `klFun` at two
 nonnegative reals bounds the square of their distance relative to their sum, and integrating
@@ -51,6 +56,86 @@ public section
 
 open MeasureTheory InformationTheory Set Real
 open scoped ENNReal NNReal
+
+namespace MeasureTheory.Measure
+
+/-- The log-sum of two nonnegative integrable functions is bounded by the integrated weighted
+logarithmic difference. A zero of the second function must also be a zero of the first almost
+everywhere. Integrability is required for the difference, not for each logarithmic term. -/
+theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
+    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
+    (hfi : Integrable f μ) (hhi : Integrable h μ)
+    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
+    (∫ x, f x ∂μ) * Real.log ((∫ x, f x ∂μ) / (∫ x, h x ∂μ)) ≤
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  let F : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x)
+  let H : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (h x)
+  let R : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x / h x)
+  let ρ := μ.withDensity F
+  let σ := μ.withDensity H
+  have hHm : AEMeasurable H μ := hhi.aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  have hRm : AEMeasurable R μ :=
+    (hfi.aestronglyMeasurable.aemeasurable.div
+      hhi.aestronglyMeasurable.aemeasurable).ennreal_ofReal
+  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.hasFiniteIntegral
+  have : IsFiniteMeasure σ := isFiniteMeasure_withDensity_ofReal hhi.hasFiniteIntegral
+  have hmul : H * R =ᵐ[μ] F := by
+    filter_upwards [hh, hzero] with x hhx hz
+    by_cases h0 : h x = 0
+    · simp [F, H, R, h0, hz h0]
+    · simp only [Pi.mul_apply, F, H, R, ← ENNReal.ofReal_mul hhx]
+      congr 1
+      field_simp
+  have heq : ρ = σ.withDensity R := by
+    dsimp [ρ, σ]
+    rw [← withDensity_mul₀ hHm hRm, withDensity_congr_ae hmul]
+  have hac : ρ ≪ σ := by
+    rw [heq]
+    exact withDensity_absolutelyContinuous _ _
+  have hrn : ρ.rnDeriv σ =ᵐ[σ] R := by
+    rw [heq]
+    exact Measure.rnDeriv_withDensity₀ σ (hRm.mono_ac (withDensity_absolutelyContinuous μ H))
+  have hratio : llr ρ σ =ᵐ[ρ] fun x ↦ Real.log (f x / h x) := by
+    filter_upwards [hac.ae_le hrn, (withDensity_absolutelyContinuous μ F).ae_le hf,
+      (withDensity_absolutelyContinuous μ F).ae_le hh] with x hx hfx hhx
+    simp only [llr_def, hx, R, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
+  have hdiff_eq : (fun x ↦ f x * Real.log (f x / h x)) =ᵐ[μ]
+      (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) := by
+    filter_upwards [hzero] with x hz
+    by_cases hf0 : f x = 0
+    · simp [hf0]
+    · have hh0 : h x ≠ 0 := fun hh0 ↦ hf0 (hz hh0)
+      rw [Real.log_div hf0 hh0]
+      ring
+  have hweighted : Integrable (fun x ↦ Real.log (f x / h x)) ρ := by
+    dsimp [ρ, F]
+    rw [TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
+      hfi.aestronglyMeasurable.aemeasurable hf]
+    exact hdiff.congr (by simpa only [smul_eq_mul] using hdiff_eq.symm)
+  have hllr : Integrable (llr ρ σ) ρ := hweighted.congr hratio.symm
+  have hmass (u : α → ℝ) (hu : 0 ≤ᵐ[μ] u) (hui : Integrable u μ) :
+      (μ.withDensity (fun x ↦ ENNReal.ofReal (u x))).real univ = ∫ x, u x ∂μ := by
+    simpa only [Measure.restrict_univ, setIntegral_univ] using
+      (TauCeti.MeasureTheory.measureReal_withDensity_ofReal (μ := μ) (s := univ)
+        (ρ := u) (by simpa using hu) MeasurableSet.univ.nullMeasurableSet
+        (by simpa using hui.aestronglyMeasurable.aemeasurable))
+  have hmassf : ρ.real univ = ∫ x, f x ∂μ := hmass f hf hfi
+  have hmassh : σ.real univ = ∫ x, h x ∂μ := hmass h hh hhi
+  have hint : (∫ x, llr ρ σ x ∂ρ) =
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+    calc
+      _ = ∫ x, Real.log (f x / h x) ∂ρ := integral_congr_ae hratio
+      _ = ∫ x, f x * Real.log (f x / h x) ∂μ := by
+        simpa only [ρ, F, smul_eq_mul] using
+          (TauCeti.MeasureTheory.integral_withDensity_ofReal
+            hfi.aestronglyMeasurable.aemeasurable hf (fun x ↦ Real.log (f x / h x)))
+      _ = _ := integral_congr_ae hdiff_eq
+  have hkl := InformationTheory.mul_log_le_toReal_klDiv hac hllr
+  rw [InformationTheory.toReal_klDiv hac hllr, hmassf, hmassh, hint] at hkl
+  linarith
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 
