@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.Algebra.Tower
 
 /-!
@@ -24,7 +25,9 @@ element, and its annihilator to the annihilator of that ideal. The principal-ide
 to ideals extended from a common commutative semiring, without assuming the algebras commutative.
 
 If `t ∈ I` and `r • I ≤ (t)`, then `I` extends to the principal ideal `(f t)` along every ring
-homomorphism `f` for which `f r` is a unit.
+homomorphism `f` for which `f r` is a unit. Moreover, if `B → F` factors through both `B ⧸ P`
+and a `B`-algebra `S`, then `P.map (algebraMap B S)` lies in the kernel of `algebraMap S F`
+(`Ideal.map_le_ker_of_isScalarTower_quotient`).
 -/
 
 public section
@@ -105,6 +108,17 @@ theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semir
     ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
   have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
   rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
+
+/-- If `B → F` factors through both `B ⧸ P` and a `B`-algebra `S`, then `P.map (algebraMap B S)`
+lies in the kernel of `algebraMap S F`. -/
+theorem map_le_ker_of_isScalarTower_quotient {B S F : Type*} [CommRing B] {P : Ideal B}
+    [CommRing S] [Algebra B S] [CommRing F] [Algebra B F] [Algebra (B ⧸ P) F]
+    [IsScalarTower B (B ⧸ P) F] [Algebra S F] [IsScalarTower B S F] :
+    P.map (algebraMap B S) ≤ RingHom.ker (algebraMap S F) :=
+  map_le_iff_le_comap.mpr fun _ hy ↦ by
+    rw [mem_comap, RingHom.mem_ker, ← IsScalarTower.algebraMap_apply B S F,
+      IsScalarTower.algebraMap_apply B (B ⧸ P) F, Ideal.Quotient.algebraMap_eq,
+      Ideal.Quotient.eq_zero_iff_mem.mpr hy, map_zero]
 
 end Ideal
 

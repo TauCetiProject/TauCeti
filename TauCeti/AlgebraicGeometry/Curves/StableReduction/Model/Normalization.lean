@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Normalization.Basic
 public import TauCeti.AlgebraicGeometry.Normalization.Finite
 public import TauCeti.AlgebraicGeometry.Normalization.IsIso
@@ -15,7 +14,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
-import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Localization.Integral
@@ -58,6 +56,8 @@ ring `R` with no excellence or Japanese assumption
 * `TauCeti.Model.normalizationHom M`: the normalization morphism, as a morphism of models.
 * `TauCeti.Model.normalizationLift`: the morphism of models out of the normalization given by the
   universal property of relative normalization.
+* `TauCeti.Model.liftToNormalization`: the unique factorization through `M.normalization` of any
+  morphism of models `N ⟶ M` whose source has normal total space.
 
 ## Main results
 
@@ -70,8 +70,11 @@ ring `R` with no excellence or Japanese assumption
   property of the normalization, in the category of models.
 * `TauCeti.Model.isNormalScheme_normalization_of_smooth`: normalizing a model with smooth generic
   fibre gives a normal total space, including for disconnected generic fibres.
-* `TauCeti.Model.isIso_normalizationHom_of_isNormalScheme`: when the total space of `M` is already
-  normal, `M.normalizationHom` is an isomorphism.
+* `TauCeti.Model.isIso_fromNormalization_of_isNormalScheme` and
+  `TauCeti.Model.isIso_normalizationHom_of_isNormalScheme`: when the total space of `M` is already
+  normal, `M.genericι.fromNormalization` and `M.normalizationHom` are isomorphisms.
+* `TauCeti.Model.liftToNormalization_normalizationHom` and `TauCeti.Model.eq_liftToNormalization`:
+  any morphism from a normal model factors uniquely through `M.normalization`.
 
 ## References
 
@@ -88,7 +91,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits
 open AlgebraicGeometry
 open scoped nonZeroDivisors
 
@@ -131,6 +134,38 @@ instance isNormalScheme_normalization_of_smooth [Smooth toK] :
     AlgebraicGeometry.IsNormalScheme M.genericι.normalization := by
   have := AlgebraicGeometry.IsRegular.of_smooth toK
   exact M.genericι.isNormalScheme_normalization
+
+/-- If the total space of `M` is already normal, then `M.genericι.fromNormalization` is an
+isomorphism. -/
+theorem isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
+    IsIso M.genericι.fromNormalization := by
+  rw [Scheme.Hom.isIso_fromNormalization_iff]
+  refine fun U hU ↦ ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
+  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
+  have : IsNoetherianRing Γ(M.total, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
+  have hnorm := (AlgebraicGeometry.isNormalScheme_Spec_iff_forall_localization Γ(M.total, U)).mp
+    (AlgebraicGeometry.isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩)
+  obtain ⟨hR, hS⟩ :=
+    forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.mp hnorm
+  have : IsIntegrallyClosed Γ(M.total, U) :=
+    isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR hS
+  let : M.total.Over (Spec (.of R)) := ⟨M.toBase⟩
+  let : C.Over (Spec (.of K)) := ⟨toK⟩
+  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
+    (R := R) (S := K) (Y := C) M.isPullback_genericι hU fun hpush _ _ hXY ↦ ?_
+  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) := hpush.symm
+  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
+  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) :=
+    hπ.isLocalizationAway_of_isPushout (K := K)
+  have hsub : Submonoid.powers (algebraMap R Γ(M.total, U) π) ≤ Γ(M.total, U)⁰ :=
+    fun c hc ↦ isRegular_iff_mem_nonZeroDivisors.mp <|
+      (_root_.IsLocalization.injective_iff_isRegular (S := Γ(C, M.genericι ⁻¹ᵁ U))
+        (Submonoid.powers (algebraMap R Γ(M.total, U) π))).mp
+        (hXY ▸ M.genericι.app_injective U) ⟨c, hc⟩
+  have hclosed : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) :=
+    TauCeti.IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed
+      (Submonoid.powers (algebraMap R Γ(M.total, U) π)) hsub
+  exact (hXY ▸ (isIntegrallyClosedIn_iff.mp hclosed).2) hs
 
 variable [IsFinite M.genericι.fromNormalization]
 
@@ -212,46 +247,8 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
 /-- If the total space of `M` is already normal, then `M.normalizationHom` is an isomorphism. -/
 theorem isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.normalizationHom := by
-  refine M.isIso_normalizationHom_iff.mpr fun U hU s hs ↦ ?_
-  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
-  have : IsNoetherianRing Γ(M.total, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  have hnorm := (AlgebraicGeometry.isNormalScheme_Spec_iff_forall_localization Γ(M.total, U)).mp
-    (AlgebraicGeometry.isNormalScheme_iff_forall_affineOpens.mp ‹_› ⟨U, hU⟩)
-  obtain ⟨hR, hS⟩ :=
-    forall_isDomain_and_isIntegrallyClosed_iff_satisfiesSerreR_one_and_satisfiesSerreS_two.mp hnorm
-  have : IsIntegrallyClosed Γ(M.total, U) :=
-    isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two hR hS
-  let : M.total.Over (Spec (.of R)) := ⟨M.toBase⟩
-  let : C.Over (Spec (.of K)) := ⟨toK⟩
-  let : Algebra R Γ(M.total, U) :=
-    ((M.total.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    ((C.baseRingToStructurePresheaf K).app (op (M.genericι ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := (M.genericι.app U).hom.toAlgebra
-  let : Algebra R Γ(C, M.genericι ⁻¹ᵁ U) :=
-    ((M.genericι.app U).hom.comp (algebraMap R Γ(M.total, U))).toAlgebra
-  have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app M.genericι U
-      M.isPullback_genericι.toCommSq
-  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-      M.isPullback_genericι hU).symm
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  have : IsLocalization.Away π K := hπ.isLocalizationAway_fractionRing
-  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
-    rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers,
-      Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K)]
-    infer_instance
-  have hsub : Submonoid.powers (algebraMap R Γ(M.total, U) π) ≤ Γ(M.total, U)⁰ :=
-    fun c hc ↦ isRegular_iff_mem_nonZeroDivisors.mp <|
-      (_root_.IsLocalization.injective_iff_isRegular (S := Γ(C, M.genericι ⁻¹ᵁ U))
-        (Submonoid.powers (algebraMap R Γ(M.total, U) π))).mp
-        (M.genericι.app_injective U) ⟨c, hc⟩
-  have hclosed : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) :=
-    TauCeti.IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed
-      (Submonoid.powers (algebraMap R Γ(M.total, U) π)) hsub
-  exact (isIntegrallyClosedIn_iff.mp hclosed).2 hs
+  rw [isIso_iff_isIso_hom, normalizationHom_hom]
+  exact M.isIso_fromNormalization_of_isNormalScheme
 
 variable {M} {N : Model R K C toK}
 
@@ -288,6 +285,51 @@ theorem eq_normalizationLift {f : N ⟶ M} [IsIntegralHom f.hom] {g : M.normaliz
   · rw [← genericι_normalization, genericι_hom, genericι_hom]
   · rw [← comp_hom, hg, normalizationHom_hom]
   · rw [← comp_hom, normalizationLift_comp, normalizationHom_hom]
+
+/-- **Factorization through the normalization from a normal model: the lift.** Any morphism of
+models `f : N ⟶ M` from a model `N` with normal total space factors uniquely through
+`M.normalization`. -/
+def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
+    N ⟶ M.normalization where
+  hom :=
+    have := N.isIso_fromNormalization_of_isNormalScheme
+    inv N.genericι.fromNormalization ≫
+      N.genericι.normalizationDesc (pullback.lift M.genericι.toNormalization N.genericι (by simp))
+        (pullback.snd M.genericι.fromNormalization f.hom) (pullback.lift_snd _ _ _).symm ≫
+      pullback.fst M.genericι.fromNormalization f.hom
+  overBase := by
+    have := N.isIso_fromNormalization_of_isNormalScheme
+    rw [normalization_toBase, Category.assoc, Category.assoc,
+      pullback.condition_assoc, Scheme.Hom.normalizationDesc_comp_assoc,
+      IsIso.inv_hom_id_assoc, f.overBase]
+  genericFiber := by
+    have := N.isIso_fromNormalization_of_isNormalScheme
+    refine baseChangeHom_genericFiberIso_hom_left _ _ ?_
+    have hgeneric : N.genericι ≫ inv N.genericι.fromNormalization = N.genericι.toNormalization := by
+      rw [IsIso.comp_inv_eq, Scheme.Hom.toNormalization_fromNormalization]
+    rw [← Category.assoc, ← Category.assoc, hgeneric,
+      Scheme.Hom.toNormalization_normalizationDesc, pullback.lift_fst,
+      genericι_normalization]
+
+/-- The lift of `f` to `M.normalization` commutes with `M.normalizationHom`. -/
+@[reassoc (attr := simp)]
+lemma liftToNormalization_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) :
+    liftToNormalization f ≫ M.normalizationHom = f := by
+  have := N.isIso_fromNormalization_of_isNormalScheme
+  refine Hom.ext ?_
+  simp only [comp_hom, liftToNormalization, normalizationHom_hom, Category.assoc,
+    pullback.condition, Scheme.Hom.normalizationDesc_comp_assoc, IsIso.inv_hom_id_assoc]
+
+/-- **Uniqueness of factorization into the normalization model.** Every morphism of models
+`g : N ⟶ M.normalization` over `M` agrees with `liftToNormalization f`. -/
+theorem eq_liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] {f : N ⟶ M}
+    {g : N ⟶ M.normalization} (hg : g ≫ M.normalizationHom = f) :
+    g = liftToNormalization f := by
+  refine Hom.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant N.genericι M.normalizationHom.hom
+    ?_ ?_)
+  · rw [← comp_hom, hg, ← comp_hom, liftToNormalization_normalizationHom]
+  · simp
 
 end Model
 

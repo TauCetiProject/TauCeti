@@ -12,21 +12,21 @@ public import Mathlib.RingTheory.RingHom.Locally
 public import Mathlib.RingTheory.RingHom.StandardSmooth
 public import TauCeti.FieldTheory.FunctionField.Basic
 
-import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.IntegralClosure.MvPolynomial
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.QuasiFinite
-import TauCeti.RingTheory.Japanese
+import TauCeti.RingTheory.Kaehler.FormallyEtale
 import TauCeti.RingTheory.Kaehler.SeparatingLift
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.Localization.Away.Quotient
 import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Localization.Integral
-import TauCeti.RingTheory.QuasiFinite.Quotient
+import TauCeti.RingTheory.Localization.TensorProduct
+import TauCeti.RingTheory.QuasiFinite.Parameter
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.RingTheory.Smooth.KrullDimension
 
@@ -168,11 +168,7 @@ private lemma finite_integralClosure_of_isTorsionFree [IsReduced B]
       Module.finrank P.ResidueField Ω[P.ResidueField⁄K] = 1) :
     Module.Finite A (integralClosure A B) := by
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  have : IsLocalization.Away π K := hπ.isLocalizationAway_fractionRing
-  have : IsLocalization.Away (algebraMap R A π) B := by
-    rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers,
-      Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K)]
-    infer_instance
+  have : IsLocalization.Away (algebraMap R A π) B := hπ.isLocalizationAway_of_isPushout (K := K)
   have : Algebra.IsPushout R K A B := Algebra.IsPushout.symm ‹_›
   have : Algebra.FiniteType K B :=
     .of_surjective (Algebra.IsPushout.equiv R K A B).toAlgHom
@@ -237,10 +233,7 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
   -- Quotient out `ker (A → B)` to reduce to an `R`-torsion-free base `A'` without changing `B`.
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   have : IsLocalization.Away π K := hπ.isLocalizationAway_fractionRing
-  have : IsLocalization.Away (algebraMap R A π) B := by
-    rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers,
-      Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K)]
-    infer_instance
+  have : IsLocalization.Away (algebraMap R A π) B := hπ.isLocalizationAway_of_isPushout (K := K)
   let I := RingHom.ker (algebraMap A B)
   let A' := A ⧸ I
   let f' : A' →ₐ[R] B := Ideal.Quotient.liftₐ I (IsScalarTower.toAlgHom R A B) fun _ h ↦ h
@@ -258,9 +251,8 @@ theorem finite_integralClosure_of_isReduced_of_isFunctionField [IsReduced B]
   have : IsLocalization.Away (algebraMap R A' π) B := by
     rw [IsScalarTower.algebraMap_apply R A A', Ideal.Quotient.algebraMap_eq]
     exact IsLocalization.Away.of_quotient (algebraMap R A π) I
-  have : Algebra.IsPushout R A' K B := by
-    rwa [← Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K),
-      Algebra.algebraMapSubmonoid_powers]
+  have : Algebra.IsPushout R A' K B :=
+    (Algebra.isLocalization_away_iff_isPushout (A := K) π).mp inferInstance
   have hfinA' : Module.Finite A' (integralClosure A' B) :=
     finite_integralClosure_of_isTorsionFree (R := R) (K := K) (A := A') (B := B) hF hΩ
   have hAA' : (algebraMap A A').Finite :=

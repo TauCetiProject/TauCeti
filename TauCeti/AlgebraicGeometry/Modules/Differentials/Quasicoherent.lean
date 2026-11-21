@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.RingTheory.Extension.Cotangent.Basic
@@ -158,21 +159,6 @@ instance isFinitePresentation_relativeDifferentials
     exact (exists_finiteAffinePresentation R X U).choose_spec
   exact SheafOfModules.IsFinitePresentation.mk (M := X.relativeDifferentials R)
     ⟨q, inferInstance⟩
-
-/-- If `X` is locally of finite type over `Spec R`, then the ring of functions `Γ(X, U)` on every
-affine open `U` is a finitely generated `R`-algebra. -/
-theorem finiteType_sections_of_locallyOfFiniteType [LocallyOfFiniteType (X ↘ Spec (.of R))]
-    (U : X.affineOpens) :
-    letI : Algebra R Γ(X, U) :=
-      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-    Algebra.FiniteType R Γ(X, U) := by
-  let : Algebra R Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-  let : U.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X U
-  have : IsOpenImmersion U.property.fromSpec := IsAffineOpen.isOpenImmersion_fromSpec U.property
-  have hc : LocallyOfFiniteType (U.property.fromSpec ≫ X ↘ Spec (.of R)) := inferInstance
-  rw [HomIsOver.comp_over (f := U.property.fromSpec) (S := Spec (.of R))] at hc
-  exact RingHom.finiteType_algebraMap.mp (HasRingHomProperty.Spec_iff.mp hc)
 
 /-- Over an affine open `U`, the sections of the sheaf of relative differentials are the Kähler
 differentials of the ring of functions: `Ω[Γ(X, U)⁄R] ≃ Γ(Ω_{X/R}, U)`, sending `D a` to `d a`

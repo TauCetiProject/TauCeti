@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+import Mathlib.RingTheory.Localization.LocalizationLocalization
 
 /-!
 # Minimal primes and localization
@@ -131,6 +132,31 @@ theorem isLocalization_atPrime_residueField_of_mem_minimalPrimes {B : Type*} [Co
     exact ⟨(RingHom.injective_iff_ker_eq_bot _).mpr (IsLocalRing.ker_residue.trans hmax),
       IsLocalRing.residue_surjective⟩
   exact IsLocalization.isLocalization_of_algEquiv P.primeCompl (AlgEquiv.ofBijective _ hbij)
+
+/-- For a minimal prime `P` of a reduced `R`-algebra `B` and a submonoid `M ≤ P.primeCompl`,
+`P.ResidueField` is a localization of `B` at `P` and of `S = M⁻¹ B` at the image of `P.primeCompl`,
+compatibly with the `R → B → S` scalar tower. -/
+theorem with_residueField_isLocalization_of_mem_minimalPrimes {R B S : Type*} [CommRing R]
+    [CommRing B] [Algebra R B] [IsReduced B] {P : Ideal B} [P.IsPrime]
+    (hP : P ∈ minimalPrimes B) (M : Submonoid B) (hM : M ≤ P.primeCompl)
+    [CommRing S] [Algebra R S] [Algebra B S] [IsScalarTower R B S] [IsLocalization M S]
+    {C : Prop}
+    (h : [IsLocalization.AtPrime P.ResidueField P] → [Algebra S P.ResidueField] →
+      [IsScalarTower B S P.ResidueField] → [IsScalarTower R S P.ResidueField] →
+      [IsLocalization (P.primeCompl.map (algebraMap B S)) P.ResidueField] → C) : C := by
+  have : IsLocalization.AtPrime P.ResidueField P :=
+    isLocalization_atPrime_residueField_of_mem_minimalPrimes hP
+  let : Algebra S P.ResidueField :=
+    IsLocalization.localizationAlgebraOfSubmonoidLe S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower B S P.ResidueField :=
+    IsLocalization.localization_isScalarTower_of_submonoid_le S P.ResidueField M P.primeCompl hM
+  have : IsScalarTower R S P.ResidueField := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply R B P.ResidueField,
+      IsScalarTower.algebraMap_apply B S P.ResidueField,
+      ← IsScalarTower.algebraMap_apply R B S]
+  have : IsLocalization (P.primeCompl.map (algebraMap B S)) P.ResidueField :=
+    IsLocalization.isLocalization_of_submonoid_le S P.ResidueField M P.primeCompl hM
+  exact h
 
 end TauCeti
 

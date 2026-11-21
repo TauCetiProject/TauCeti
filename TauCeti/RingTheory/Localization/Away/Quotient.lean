@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.Ideal
+public import TauCeti.RingTheory.Localization.Ideal
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -18,8 +19,8 @@ of `B` away from `b`.
 
 In the other direction, localization away from an element commutes with quotients: if `S` is a
 localization of `R` away from `f`, then `S ⧸ I S` is a localization of `R ⧸ I` away from the
-image of `f`. Moreover, if `A → B` is a localization at `M` factoring through `A ⧸ I`, then `B` is
-a localization of `A ⧸ I` at the image of `M`.
+image of `f`. Moreover, if `A → B` is a localization away from `r` factoring through `A ⧸ I`, then
+`B` is a localization of `A ⧸ I` away from the image of `r`.
 
 ## Main results
 
@@ -27,9 +28,8 @@ a localization of `A ⧸ I` at the image of `M`.
   of `b` is a localization of `B` away from `b`.
 * `IsLocalization.Away.quotient`: `S ⧸ I S` is a localization of `R ⧸ I` away from the image of
   `f` whenever `S` is a localization of `R` away from `f`.
-* `IsLocalization.of_quotient` and `IsLocalization.Away.of_quotient`: if a localization `B` of `A`
-  at `M` (or away from `r`) factors through `A ⧸ I`, then `B` is a localization of `A ⧸ I` at the
-  image of `M` (or away from the image of `r`).
+* `IsLocalization.Away.of_quotient`: if a localization `B` of `A` away from `r` factors through
+  `A ⧸ I`, then `B` is a localization of `A ⧸ I` away from the image of `r`.
 -/
 
 public section
@@ -61,17 +61,6 @@ instance IsLocalization.Away.quotient {R S : Type*} [CommRing R] [CommRing S] [A
   have := (inferInstance : IsLocalization
     (Algebra.algebraMapSubmonoid (R ⧸ I) (Submonoid.powers f)) (S ⧸ I.map (algebraMap R S)))
   rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers] at this
-
-/-- If `B` is a localization of `A` at `M` and `A → B` factors through `A ⧸ I`, then `B` is a
-localization of `A ⧸ I` at the image of `M`. -/
-theorem IsLocalization.of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    (M : Submonoid A) [IsLocalization M B] (I : Ideal A) [Algebra (A ⧸ I) B]
-    [IsScalarTower A (A ⧸ I) B] :
-    IsLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M) B :=
-  IsLocalization.of_surjective M B (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
-    (RingHom.id B) Function.surjective_id
-    (RingHom.ext fun a ↦ IsScalarTower.algebraMap_apply A (A ⧸ I) B a)
-    (by intro x hx; rw [RingHom.mem_ker, RingHom.id_apply] at hx; exact hx.symm ▸ Ideal.zero_mem _)
 
 /-- If `B` is a localization of `A` away from `r` and `A → B` factors through `A ⧸ I`, then `B` is
 a localization of `A ⧸ I` away from the image of `r`. -/

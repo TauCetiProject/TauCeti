@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import Mathlib.RingTheory.Localization.Ideal
 public import Mathlib.RingTheory.Noetherian.Defs
 import TauCeti.RingTheory.Support.Basic
 import Mathlib.Algebra.GroupWithZero.Action.Regular
@@ -43,6 +44,8 @@ power of `r` multiplies into the ideal, that is, the saturation of the ideal by 
 When `R` is localized at a submonoid containing every positive integer, for instance to a total
 ring of fractions of `R` when every positive integer is a non-zero-divisor of `R`, every quotient
 of the localization by a proper ideal has characteristic zero (`IsLocalization.charZero_quotient`).
+If a localization `B` of `A` at `M` factors through `A ⧸ I`, then `B` is a localization of
+`A ⧸ I` at the image of `M` (`IsLocalization.of_quotient`).
 -/
 
 public section
@@ -166,5 +169,16 @@ theorem charZero_quotient (h : ∀ n : ℕ, n ≠ 0 → (n : A) ∈ M) {I : Idea
     simpa using map_units K ⟨(n : A), h n h0⟩
   have := Ideal.Quotient.nontrivial_iff.mpr hI
   exact (hu.map (Ideal.Quotient.mk I)).ne_zero (by simpa using hn)
+
+/-- If `B` is a localization of `A` at `M` and `A → B` factors through `A ⧸ I`, then `B` is a
+localization of `A ⧸ I` at the image of `M`. -/
+theorem of_quotient {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    (M : Submonoid A) [IsLocalization M B] (I : Ideal A) [Algebra (A ⧸ I) B]
+    [IsScalarTower A (A ⧸ I) B] :
+    IsLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M) B :=
+  IsLocalization.of_surjective M B (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
+    (RingHom.id B) Function.surjective_id
+    (RingHom.ext fun a ↦ IsScalarTower.algebraMap_apply A (A ⧸ I) B a)
+    (by intro x hx; rw [RingHom.mem_ker, RingHom.id_apply] at hx; exact hx.symm ▸ Ideal.zero_mem _)
 
 end IsLocalization

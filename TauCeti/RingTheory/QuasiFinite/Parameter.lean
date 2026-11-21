@@ -5,14 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import TauCeti.RingTheory.QuasiFinite.Quotient
 public import TauCeti.RingTheory.KrullDimension.Parameter
+
+import Mathlib.RingTheory.FiniteStability
+import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Quasi-finite coordinates at closed points
 
 A function on an affine scheme of finite type over a ring `k` whose zero fibre is quasi-finite
 over `k` defines a quasi-finite map to the affine line over `k` at every point of that fibre.
+
+Similarly, combining `Algebra.QuasiFiniteAt.of_quasiFinite_quotient` with one-dimensional Noether
+normalization (`TauCeti.exists_finite_aeval_of_krullDimLE_one`) yields a quasi-finite polynomial
+parameter lift modulo a maximal ideal `𝔪` of `R`: when `A` is of finite type over `R` and
+`A ⧸ 𝔪 A` has Krull dimension at most `1`, there exists `a : A` such that for every `x : A`
+congruent to `a` modulo `𝔪 A`, `A` is quasi-finite over `R[X]` (via `X ↦ x`) at every prime
+containing `𝔪 A` (`TauCeti.exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient`).
 
 ## Main results
 
@@ -23,10 +34,15 @@ over `k` defines a quasi-finite map to the affine line over `k` at every point o
 * `Ideal.exists_mem_quasiFiniteAt_aeval`: every closed point of an affine scheme of dimension at
   most one and finite type over a Noetherian ring admits such a coordinate vanishing there. Over
   a field this includes closed points of affine curves over finite fields.
+* `TauCeti.exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient`: lifting a Noether
+  normalization parameter modulo `𝔪 A` produces `a : A` making every `x ≡ a (mod 𝔪 A)` quasi-finite
+  over `R[X]` at all primes above `𝔪`.
 
 ## References
 
 * The Stacks Project, Lemma 55.8.2, https://stacks.math.columbia.edu/tag/0C2T.
+* [Stacks Project, Lemma 55.8.3 (0C2U)](https://stacks.math.columbia.edu/tag/0C2U), choosing a
+  parameter `x ∈ A` modulo `𝔪_R A` that is quasi-finite along the special fibre.
 -/
 
 public section
@@ -99,3 +115,54 @@ theorem exists_mem_quasiFiniteAt_aeval {k A : Type*} [CommRing k] [IsNoetherianR
       exact bot_le)⟩
 
 end Ideal
+
+namespace TauCeti
+
+/-- Let `A` be a finite-type `R`-algebra and `𝔪` a maximal ideal of `R` such that `A ⧸ 𝔪 A` has
+Krull dimension at most `1`. Then there exists `a : A` such that for every `x : A` with
+`x - a ∈ 𝔪 A` and every prime `q` of `A` containing `𝔪 A`, `A` is quasi-finite over `R[X]` (via
+`X ↦ x`) at `q`. -/
+@[stacks 0C2U]
+theorem exists_forall_quasiFiniteAt_of_krullDimLE_one_quotient {R A : Type*} [CommRing R]
+    [CommRing A] [Algebra R A] [Algebra.FiniteType R A] (𝔪 : Ideal R) [𝔪.IsMaximal]
+    [Ring.KrullDimLE 1 (A ⧸ 𝔪.map (algebraMap R A))] :
+    ∃ a : A, ∀ x : A, x - a ∈ 𝔪.map (algebraMap R A) →
+      ∀ q : Ideal A, [q.IsPrime] → 𝔪.map (algebraMap R A) ≤ q →
+        letI : Algebra R[X] A := (Polynomial.aeval (R := R) x).toRingHom.toAlgebra
+        Algebra.QuasiFiniteAt R[X] q := by
+  let J := 𝔪.map (algebraMap R A)
+  let : Field (R ⧸ 𝔪) := Ideal.Quotient.field 𝔪
+  let : Algebra (R ⧸ 𝔪) (A ⧸ J) := Ideal.Quotient.algebraQuotientOfLEComap Ideal.le_comap_map
+  have : IsScalarTower R (R ⧸ 𝔪) (A ⧸ J) := .of_algebraMap_eq fun _ ↦ rfl
+  have : Algebra.FiniteType (R ⧸ 𝔪) (A ⧸ J) := .of_restrictScalars_finiteType R (R ⧸ 𝔪) (A ⧸ J)
+  obtain ⟨x₀, hx₀⟩ := exists_finite_aeval_of_krullDimLE_one (R ⧸ 𝔪) (A ⧸ J)
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (I := J) x₀
+  refine ⟨a, fun x hxa q _ hq ↦ ?_⟩
+  let : Algebra R[X] A := (Polynomial.aeval (R := R) x).toRingHom.toAlgebra
+  have : IsScalarTower R R[X] A := .of_algebraMap_eq fun r ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  have : Algebra.FiniteType R[X] A := .of_restrictScalars_finiteType R R[X] A
+  have hx_mk : Ideal.Quotient.mk J x = x₀ := by
+    rw [← ha, Ideal.Quotient.eq]
+    exact hxa
+  have hfin_quot : (algebraMap R[X] (A ⧸ J)).Finite := by
+    have hfac : algebraMap R[X] (A ⧸ J) =
+        (Polynomial.aeval (R := R ⧸ 𝔪) x₀).toRingHom.comp
+          (Polynomial.mapRingHom (Ideal.Quotient.mk 𝔪)) := by
+      rw [IsScalarTower.algebraMap_eq R[X] A (A ⧸ J), RingHom.algebraMap_toAlgebra]
+      ext r
+      · simpa using IsScalarTower.algebraMap_apply R (R ⧸ 𝔪) (A ⧸ J) r
+      · simpa using hx_mk
+    rw [hfac]
+    exact hx₀.comp
+      (RingHom.Finite.of_surjective _ (Polynomial.map_surjective _ Ideal.Quotient.mk_surjective))
+  have : Module.Finite R[X] (A ⧸ J) := hfin_quot
+  have hJ : J ≤ (q.under R[X]).map (algebraMap R[X] A) := by
+    dsimp only [J]
+    rw [IsScalarTower.algebraMap_eq R R[X] A, ← Ideal.map_map]
+    refine Ideal.map_mono (Ideal.map_le_iff_le_comap.mpr ?_)
+    rw [Ideal.comap_comap, ← IsScalarTower.algebraMap_eq R R[X] A]
+    exact Ideal.map_le_iff_le_comap.mp hq
+  exact Algebra.QuasiFiniteAt.of_quasiFinite_quotient q J hJ
+
+end TauCeti

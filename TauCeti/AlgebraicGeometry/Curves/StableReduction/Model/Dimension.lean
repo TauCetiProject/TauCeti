@@ -9,8 +9,9 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
-import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 
 /-!
@@ -50,7 +51,7 @@ a smooth curve over `K` is a family of curves over `Spec R`.
 
 public section
 
-open CategoryTheory Limits Opposite AlgebraicGeometry TauCeti.AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry
 
 namespace TauCeti
 
@@ -71,36 +72,28 @@ private lemma relativeDimensionLE_fromSpec_toBase (M : Model R K C toK) {d : ℕ
   let : C.Over (Spec (.of K)) := ⟨toK⟩
   have : LocallyOfFiniteType (M.total ↘ Spec (.of R)) :=
     inferInstanceAs (LocallyOfFiniteType M.toBase)
-  let : Algebra R Γ(M.total, U) :=
-    ((M.total.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : hU.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R M.total ⟨U, hU⟩
   have hV : IsAffineOpen (M.genericι ⁻¹ᵁ U) := hU.preimage M.genericι
-  let : Algebra K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    ((C.baseRingToStructurePresheaf K).app (op (M.genericι ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := (M.genericι.app U).hom.toAlgebra
-  let : Algebra R Γ(C, M.genericι ⁻¹ᵁ U) :=
-    ((M.genericι.app U).hom.comp (algebraMap R Γ(M.total, U))).toAlgebra
-  have : IsScalarTower R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have : IsScalarTower R K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app M.genericι U
-      M.isPullback_genericι.toCommSq
-  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) :=
-    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-      M.isPullback_genericι hU).symm
+  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
+    (R := R) (S := K) (Y := C) M.isPullback_genericι hU fun hpush hRX _ hXY ↦ ?_
+  have : Algebra.IsPushout R Γ(M.total, U) K Γ(C, M.genericι ⁻¹ᵁ U) := hpush.symm
   have : Algebra.FiniteType R Γ(M.total, U) :=
-    finiteType_sections_of_locallyOfFiniteType R M.total ⟨U, hU⟩
+    hRX ▸ finiteType_sections_of_locallyOfFiniteType R M.total ⟨U, hU⟩
   have : FaithfulSMul R K :=
     (faithfulSMul_iff_algebraMap_injective R K).mpr (IsFractionRing.injective R K)
   have : Module.IsTorsionFree R Γ(C, M.genericι ⁻¹ᵁ U) := .trans K
-  have : Module.IsTorsionFree R Γ(M.total, U) := (M.genericι.app_injective U).moduleIsTorsionFree
-    (IsScalarTower.toAlgHom R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U)) (map_smul _)
+  have hinj : Function.Injective (IsScalarTower.toAlgHom R Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U)) :=
+    hXY ▸ M.genericι.app_injective U
+  have : Module.IsTorsionFree R Γ(M.total, U) := hinj.moduleIsTorsionFree _ (map_smul _)
   have hdimB : ringKrullDim Γ(C, M.genericι ⁻¹ᵁ U) ≤ d := by
     rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
     exact hV.fromSpec.isOpenEmbedding.isInducing.topologicalKrullDim_le.trans
       ((relativeDimensionLE_iff_of_field toK).mp inferInstance)
   have hcomp : hU.fromSpec ≫ M.toBase =
-      Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U))) :=
-    HomIsOver.comp_over (f := hU.fromSpec) (S := Spec (.of R))
+      Spec.map (CommRingCat.ofHom (algebraMap R Γ(M.total, U))) := by
+    refine (hU.fromSpec_comp_eq_SpecMap M.toBase).trans ?_
+    congr 1
+    rw [hRX, RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+    rfl
   rw [hcomp]
   refine (relativeDimensionLE_SpecMap_iff R Γ(M.total, U)).mpr fun p _ ↦
     (TauCeti.IsDiscreteValuationRing.ringKrullDim_fiber_le

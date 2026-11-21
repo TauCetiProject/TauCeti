@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.Topology.JacobsonSpace
 
 /-!
@@ -19,8 +20,10 @@ on closed points is exactly the closed-point part of its full topological image.
 The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
 every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
 (`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
-finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`). For a quasi-compact
-source, `Scheme.Hom.exists_finite_affine_charts` gives a finite family of such charts. The structure
+finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`, and
+`TauCeti.AlgebraicGeometry.finiteType_sections_of_locallyOfFiniteType` for a scheme over
+`Spec R`). For a quasi-compact source, `Scheme.Hom.exists_finite_affine_charts` gives a finite
+family of such charts. The structure
 morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type exactly when `B` is of
 finite type over `k` (`LocallyOfFiniteType.Spec_algebraMap_iff`, a case of
 `LocallyOfFiniteType.SpecMap_iff` for any ring map), and it is registered as an instance in the
@@ -130,3 +133,22 @@ theorem image_closedPoints_eq_range_inter_closedPoints :
     exact ⟨x, hx, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry Opposite
+
+/-- If `X` is locally of finite type over `Spec R`, then the ring of functions `Γ(X, U)` on every
+affine open `U` is a finitely generated `R`-algebra. -/
+theorem finiteType_sections_of_locallyOfFiniteType (R : Type u) [CommRing R] (X : Scheme.{u})
+    [X.Over (Spec (.of R))] [LocallyOfFiniteType (X ↘ Spec (.of R))] (U : X.affineOpens) :
+    letI : Algebra R Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+    Algebra.FiniteType R Γ(X, U) := by
+  let : Algebra R Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
+  refine RingHom.finiteType_algebraMap.mp ?_
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact (X ↘ Spec (.of R)).finiteType_ΓSpecIso_inv_comp_appLE U.property
+
+end TauCeti.AlgebraicGeometry

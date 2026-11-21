@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
-import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # A fraction ring of a localization is a fraction ring of the base
@@ -44,17 +43,6 @@ theorem of_isLocalization_of_isFractionRing [IsLocalization M S] [IsFractionRing
     (nonZeroDivisors S) T fun _ hx ↦ hx.mem_nonZeroDivisors
   rwa [le_antisymm (comap_nonZeroDivisors_le_of_injective (IsLocalization.injective S hM))
     (IsLocalization.nonZeroDivisors_le_comap M S)] at this
-
-/-- If `B → F` factors through both `B ⧸ P` and a `B`-algebra `S`, then `P.map (algebraMap B S)`
-lies in the kernel of `algebraMap S F`. -/
-theorem map_le_ker_of_isScalarTower_quotient {B S F : Type*} [CommRing B] {P : Ideal B}
-    [CommRing S] [Algebra B S] [CommRing F] [Algebra B F] [Algebra (B ⧸ P) F]
-    [IsScalarTower B (B ⧸ P) F] [Algebra S F] [IsScalarTower B S F] :
-    P.map (algebraMap B S) ≤ RingHom.ker (algebraMap S F) :=
-  Ideal.map_le_iff_le_comap.mpr fun _ hy ↦ by
-    rw [Ideal.mem_comap, RingHom.mem_ker, ← IsScalarTower.algebraMap_apply B S F,
-      IsScalarTower.algebraMap_apply B (B ⧸ P) F, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem.mpr hy, map_zero]
 
 open scoped nonZeroDivisors in
 /-- If `P` is a prime of `B` disjoint from `M`, `S` is a localization of `B` at `M`, and `F` is a

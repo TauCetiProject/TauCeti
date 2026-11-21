@@ -12,16 +12,12 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.RingTheory.Localization.BaseChange
-import Mathlib.RingTheory.NoetherNormalization
-import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.RingTheory.TensorProduct.Quotient
+import TauCeti.RingTheory.AlgebraicIndependent.DiscreteValuationRing
 import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.KrullDimension.FiniteType
-import TauCeti.RingTheory.KrullDimension.Quotient
-import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Special-fibre Krull dimension over a discrete valuation ring
@@ -68,92 +64,6 @@ open scoped TensorProduct nonZeroDivisors
 
 namespace TauCeti.IsDiscreteValuationRing
 
-section AlgebraicIndependent
-
-/-- A nonzero multivariate polynomial over a discrete valuation ring factors out a power of a
-uniformizer so that at least one coefficient is not divisible by the uniformizer. -/
-private lemma exists_C_pow_mul_and_not_dvd_coeff {R ι : Type*} [CommRing R] [IsDomain R]
-    [_root_.IsDiscreteValuationRing R] {π : R} (hπ : Irreducible π)
-    {f : MvPolynomial ι R} (hf : f ≠ 0) :
-    ∃ (n : ℕ) (g : MvPolynomial ι R) (m : ι →₀ ℕ),
-      f = MvPolynomial.C (π ^ n) * g ∧ ¬ π ∣ g.coeff m := by
-  classical
-  obtain ⟨m₀, hm₀, hmin⟩ :=
-    f.support.exists_min_image (fun m ↦ (_root_.IsDiscreteValuationRing.addVal R (f.coeff m)).toNat)
-      (MvPolynomial.support_nonempty.mpr hf)
-  set n := (_root_.IsDiscreteValuationRing.addVal R (f.coeff m₀)).toNat
-  have hval_m₀ : _root_.IsDiscreteValuationRing.addVal R (f.coeff m₀) = n :=
-    (ENat.natCast_toNat (_root_.IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr
-      (MvPolynomial.mem_support_iff.mp hm₀))).symm
-  have hdvd (m : ι →₀ ℕ) : π ^ n ∣ f.coeff m := by
-    by_cases hm : m ∈ f.support
-    · rw [← _root_.IsDiscreteValuationRing.addVal_le_iff_dvd, hπ.addVal_pow]
-      have hne : _root_.IsDiscreteValuationRing.addVal R (f.coeff m) ≠ ⊤ :=
-        _root_.IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr
-          (MvPolynomial.mem_support_iff.mp hm)
-      rw [← ENat.natCast_toNat hne]
-      exact mod_cast hmin m hm
-    · rw [MvPolynomial.notMem_support_iff.mp hm]
-      exact dvd_zero _
-  choose c hc using hdvd
-  let g : MvPolynomial ι R := ∑ m ∈ f.support, MvPolynomial.monomial m (c m)
-  have hg {m : ι →₀ ℕ} (hm : m ∈ f.support) : g.coeff m = c m := by
-    simp [g, MvPolynomial.coeff_monomial, hm]
-  refine ⟨n, g, m₀, MvPolynomial.ext _ _ fun m ↦ ?_, fun ⟨d, hd⟩ ↦ ?_⟩
-  · rw [MvPolynomial.coeff_C_mul]
-    by_cases hm : m ∈ f.support
-    · rw [hg hm, ← hc]
-    · simp [g, MvPolynomial.coeff_monomial, hm, MvPolynomial.notMem_support_iff.mp hm]
-  · have hle : ((n + 1 : ℕ) : ℕ∞) ≤ _root_.IsDiscreteValuationRing.addVal R (f.coeff m₀) := by
-      rw [← hπ.addVal_pow, _root_.IsDiscreteValuationRing.addVal_le_iff_dvd]
-      exact ⟨d, by rw [hc m₀, ← hg hm₀, hd, pow_succ, mul_assoc]⟩
-    rw [hval_m₀] at hle
-    exact Nat.not_succ_le_self n (ENat.natCast_le_natCast.mp hle)
-
-/-- Elements of a domain `D` over a discrete valuation ring `R` whose residues modulo an ideal `q`
-above `maximalIdeal R` are algebraically independent over `ResidueField R` have images in `E`
-algebraically independent over `K`, provided `π` maps to a nonzero element of `D` and `D → E` is
-injective. -/
-private lemma algebraicIndependent_of_injective_quotient {R K D E ι : Type*}
-    [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
-    [Field K] [Algebra R K] [IsFractionRing R K]
-    [CommRing D] [IsDomain D] [Algebra R D]
-    [CommRing E] [Algebra R E] [Algebra K E] [Algebra D E]
-    [IsScalarTower R K E] [IsScalarTower R D E]
-    {π : R} (hπ : Irreducible π) (hπD : algebraMap R D π ≠ 0)
-    (hinj : Function.Injective (algebraMap D E)) (q : Ideal D)
-    [Algebra (IsLocalRing.ResidueField R) (D ⧸ q)]
-    [IsScalarTower R (IsLocalRing.ResidueField R) (D ⧸ q)] (y : ι → D)
-    (hy : Function.Injective
-      (MvPolynomial.aeval (R := IsLocalRing.ResidueField R) fun i ↦ Ideal.Quotient.mk q (y i))) :
-    AlgebraicIndependent K (fun i ↦ algebraMap D E (y i)) := by
-  rw [algebraicIndependent_iff]
-  intro f heval
-  by_contra hf
-  obtain ⟨f₁, hf₁, heval₁⟩ :=
-    MvPolynomial.exists_ne_zero_and_aeval_eq_zero_of_isLocalization R⁰ hinj y hf heval
-  obtain ⟨n, g, m₀, rfl, hndvd⟩ := exists_C_pow_mul_and_not_dvd_coeff hπ hf₁
-  rw [map_mul, MvPolynomial.aeval_C, map_pow, mul_eq_zero] at heval₁
-  have hg0 : MvPolynomial.aeval y g = 0 := heval₁.resolve_left (pow_ne_zero n hπD)
-  let φ : D →+* D ⧸ q := Ideal.Quotient.mk q
-  have hcomm : φ.comp (algebraMap R D) =
-      (algebraMap (IsLocalRing.ResidueField R) (D ⧸ q)).comp (IsLocalRing.residue R) := by
-    ext r
-    exact IsScalarTower.algebraMap_apply R (IsLocalRing.ResidueField R) (D ⧸ q) r
-  have hres : MvPolynomial.aeval (R := IsLocalRing.ResidueField R) (fun i ↦ φ (y i))
-      (MvPolynomial.map (IsLocalRing.residue R) g) = 0 := by
-    rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_map, ← hcomm, ← MvPolynomial.hom_eval₂,
-      ← MvPolynomial.aeval_def, hg0, map_zero]
-  have hg_map : MvPolynomial.map (IsLocalRing.residue R) g = 0 :=
-    hy (hres.trans (map_zero _).symm)
-  have hm₀_zero : IsLocalRing.residue R (g.coeff m₀) = 0 := by
-    rw [← MvPolynomial.coeff_map, hg_map]
-    rfl
-  rw [IsLocalRing.residue_eq_zero_iff, hπ.maximalIdeal_eq, Ideal.mem_span_singleton] at hm₀_zero
-  exact hndvd hm₀_zero
-
-end AlgebraicIndependent
-
 section Dimension
 
 variable {R K A B : Type*} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
@@ -169,11 +79,7 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
     (hq : (IsLocalRing.maximalIdeal R).map (algebraMap R A) ≤ q) :
     ringKrullDim (A ⧸ q) ≤ ringKrullDim B := by
   obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  have : IsLocalization.Away π K := hπ.isLocalizationAway_fractionRing
-  have : IsLocalization.Away (algebraMap R A π) B := by
-    rw [IsLocalization.Away, ← Algebra.algebraMapSubmonoid_powers,
-      Algebra.isLocalization_iff_isPushout (S := Submonoid.powers π) (A := K)]
-    infer_instance
+  have : IsLocalization.Away (algebraMap R A π) B := hπ.isLocalizationAway_of_isPushout (K := K)
   have hπ_nzd : algebraMap R A π ∈ A⁰ := by
     rw [mem_nonZeroDivisors_iff_left]
     intro a ha
@@ -190,8 +96,7 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
   have : IsScalarTower R (A ⧸ p) (B ⧸ pB) := .of_algebraMap_eq fun r ↦ by
     simpa [RingHom.algebraMap_toAlgebra] using IsScalarTower.algebraMap_apply R A (B ⧸ pB) r
   let qD : Ideal (A ⧸ p) := q.map (Ideal.Quotient.mk p)
-  have : qD.IsPrime := Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective
-    (by rwa [Ideal.mk_ker])
+  have : qD.IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hpq
   have hqD : (IsLocalRing.maximalIdeal R).map (algebraMap R (A ⧸ p)) ≤ qD := by
     rw [IsScalarTower.algebraMap_eq R A (A ⧸ p), Ideal.Quotient.algebraMap_eq, ← Ideal.map_map]
     exact Ideal.map_mono hq
@@ -203,9 +108,10 @@ private lemma ringKrullDim_quotient_le_of_maximalIdeal_le (q : Ideal A) [q.IsPri
   obtain ⟨s, g, hginj, hgint⟩ := exists_integral_inj_algHom_of_fg κ ((A ⧸ p) ⧸ qD)
   choose y hy using fun i : Fin s ↦ Ideal.Quotient.mk_surjective (I := qD) (g (MvPolynomial.X i))
   have hindep : AlgebraicIndependent K (fun i ↦ algebraMap (A ⧸ p) (B ⧸ pB) (y i)) := by
-    refine algebraicIndependent_of_injective_quotient (R := R) (K := K) hπ
+    refine AlgebraicIndependent.of_quotient_residueField (R := R) (K := K) hπ
       (fun h0 ↦ hπp (Ideal.Quotient.eq_zero_iff_mem.mp h0))
       (Ideal.quotientMap_injective' hp_comap.le) qD y ?_
+    rw [algebraicIndependent_iff_injective_aeval]
     convert hginj
     ext i
     simp [hy i]

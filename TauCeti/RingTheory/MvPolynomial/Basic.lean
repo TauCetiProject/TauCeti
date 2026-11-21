@@ -66,9 +66,8 @@ theorem exists_map_eq_smul_of_isLocalization {R K ι : Type*}
   let := MvPolynomial.algebraMvPolynomial (R := R) (S := K) (σ := ι)
   obtain ⟨⟨f₁, _, d, hd, rfl⟩, h⟩ := IsLocalization.surj (M.map (MvPolynomial.C (σ := ι))) f
   refine ⟨⟨d, hd⟩, f₁, ?_⟩
-  change f * MvPolynomial.map (algebraMap R K) (MvPolynomial.C d) =
-    MvPolynomial.map (algebraMap R K) f₁ at h
-  rw [MvPolynomial.map_C, mul_comm, ← MvPolynomial.smul_eq_C_mul] at h
+  dsimp only at h
+  rw [MvPolynomial.algebraMap_def, MvPolynomial.map_C, mul_comm, ← MvPolynomial.smul_eq_C_mul] at h
   exact h.symm
 
 end MvPolynomial

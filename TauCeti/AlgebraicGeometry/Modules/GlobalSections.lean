@@ -516,6 +516,30 @@ theorem algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
   exact CommRingCat.isPushout_iff_isPushout.mp
     (isPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU)
 
+/-- Continuation-passing helper installing the canonical section-ring algebra structures, scalar
+towers, and pushout instance on an affine open `U` in a cartesian square over `Spec S ⟶ Spec R`. -/
+theorem with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
+    (H : IsPullback g (Y ↘ Spec (.of S)) (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+    {U : X.Opens} (hU : IsAffineOpen U) {P : Prop}
+    (hP : ∀ [instRX : Algebra R Γ(X, U)] [instSY : Algebra S Γ(Y, g ⁻¹ᵁ U)]
+      [instXY : Algebra Γ(X, U) Γ(Y, g ⁻¹ᵁ U)] [Algebra R Γ(Y, g ⁻¹ᵁ U)]
+      [IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U)]
+      [IsScalarTower R S Γ(Y, g ⁻¹ᵁ U)],
+      Algebra.IsPushout R S Γ(X, U) Γ(Y, g ⁻¹ᵁ U) →
+      instRX = ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra →
+      instSY = ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra →
+      instXY = (g.app U).hom.toAlgebra → P) : P :=
+  letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
+  letI : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
+    ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
+  letI : Algebra Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
+  letI : Algebra R Γ(Y, g ⁻¹ᵁ U) := ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
+  letI : IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
+  letI : IsScalarTower R S Γ(Y, g ⁻¹ᵁ U) :=
+    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
+  hP (algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU) rfl rfl rfl
+
 end AlgebraicGeometry.Scheme
 
 end

@@ -363,8 +363,6 @@ submonoid of non-zero-divisors. -/
 theorem IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed {A B : Type*} [CommRing A]
     [IsIntegrallyClosed A] [CommRing B] [Algebra A B] (M : Submonoid A) [IsLocalization M B]
     (hM : M ≤ A⁰) : IsIntegrallyClosedIn A B := by
-  rw [isIntegrallyClosedIn_iff]
-  refine ⟨_root_.IsLocalization.injective B hM, fun {s} hs ↦ ?_⟩
   let _ : Algebra B (FractionRing A) :=
     _root_.IsLocalization.localizationAlgebraOfSubmonoidLe B (FractionRing A) M A⁰ hM
   have : IsScalarTower A B (FractionRing A) :=
@@ -376,9 +374,7 @@ theorem IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed {A B : Type*} 
       ← IsScalarTower.algebraMap_apply A B (FractionRing A),
       (IsFractionRing.injective A (FractionRing A)).eq_iff,
       (_root_.IsLocalization.injective B hM).eq_iff]
-  obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp
-    (hs.map (IsScalarTower.toAlgHom A B (FractionRing A)))
-  exact ⟨a, hinj (by simpa [IsScalarTower.algebraMap_apply A B (FractionRing A)] using ha)⟩
+  exact AlgHom.isIntegrallyClosedIn (IsScalarTower.toAlgHom A B (FractionRing A)) hinj inferInstance
 
 end LocalizedModule
 

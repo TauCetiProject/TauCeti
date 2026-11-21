@@ -14,8 +14,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.RingTheory.UniversallyJapanese
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
-import Mathlib.RingTheory.Localization.BaseChange
-import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.RingTheory.IntegralClosure.DiscreteValuationRing
 
@@ -165,7 +163,7 @@ theorem isFinite_fromNormalization_of_isJapanese
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
 
-open Limits Opposite in
+open Limits in
 /-- **Finiteness of normalization in a smooth generic fibre of relative dimension one.** Let `R` be
 a discrete valuation ring with fraction field `K`, let `X` be a scheme locally of finite type over
 `Spec R`, and let `C` be its generic fibre over `Spec K`, with projection `g : C ⟶ X`. If `C` is
@@ -187,17 +185,11 @@ theorem isFinite_fromNormalization_of_isPullback
   let : C.Over (Spec (.of K)) := ⟨toK⟩
   have : LocallyOfFiniteType (X ↘ Spec (.of R)) := inferInstanceAs (LocallyOfFiniteType toBase)
   have hV : IsAffineOpen (g ⁻¹ᵁ U) := hU.preimage g
-  let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  let : Algebra K Γ(C, g ⁻¹ᵁ U) :=
-    ((C.baseRingToStructurePresheaf K).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
-  let : Algebra Γ(X, U) Γ(C, g ⁻¹ᵁ U) := (g.app U).hom.toAlgebra
-  let : Algebra R Γ(C, g ⁻¹ᵁ U) := ((g.app U).hom.comp (algebraMap R Γ(X, U))).toAlgebra
-  have : IsScalarTower R Γ(X, U) Γ(C, g ⁻¹ᵁ U) := .of_algebraMap_eq' rfl
-  have : IsScalarTower R K Γ(C, g ⁻¹ᵁ U) :=
-    Scheme.Modules.isScalarTower_baseRingToStructurePresheaf_app g U H.toCommSq
-  have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) :=
-    (Scheme.algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen H hU).symm
-  have : Algebra.FiniteType R Γ(X, U) := finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
+  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
+    (R := R) (S := K) (Y := C) H hU fun hpush hRX hSY hXY ↦ ?_
+  have : Algebra.IsPushout R Γ(X, U) K Γ(C, g ⁻¹ᵁ U) := hpush.symm
+  have : Algebra.FiniteType R Γ(X, U) :=
+    hRX ▸ finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have hsm : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (toK.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom :=
     HasRingHomProperty.appLE (P := @SmoothOfRelativeDimension 1)
@@ -205,13 +197,14 @@ theorem isFinite_fromNormalization_of_isPullback
       (f := toK) ‹_› ⟨⊤, isAffineOpen_top _⟩ ⟨g ⁻¹ᵁ U, hV⟩ le_top
   have hloc : RingHom.Locally (RingHom.IsStandardSmoothOfRelativeDimension 1)
       (algebraMap K Γ(C, g ⁻¹ᵁ U)) := by
-    rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE,
+    rw [hSY]
+    simp only [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE,
       CommRingCat.hom_comp]
     exact (RingHom.locally_respectsIso
       (RingHom.isStandardSmoothOfRelativeDimension_respectsIso (n := 1))).right _
       (Scheme.ΓSpecIso (.of K)).symm.commRingCatIsoToRingEquiv hsm
   open TauCeti.IsDiscreteValuationRing in
-  exact finite_integralClosure_of_locally_isStandardSmoothOfRelativeDimension_one
+  exact hXY ▸ finite_integralClosure_of_locally_isStandardSmoothOfRelativeDimension_one
     (R := R) (K := K) hloc
 
 section UniversallyJapanese

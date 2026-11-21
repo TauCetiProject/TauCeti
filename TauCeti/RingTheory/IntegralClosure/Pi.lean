@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 
-import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 import Mathlib.RingTheory.Noetherian.Basic
 import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Blowup
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.CartierDivisor
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Normalization
 
 /-!
@@ -24,13 +25,17 @@ Liu's resolution procedure producing a regular proper model of a smooth proper c
 This file establishes the basic properties of a single normalized-blowup step:
 
 * every effective Cartier divisor on a model pulls back to an effective Cartier divisor along every
-  morphism of models (`TauCeti.Model.isEffectiveCartier_comap_hom`), without assuming flatness of
-  the morphism, integrality of the source, or a support restriction;
+  morphism of models (`TauCeti.Model.isEffectiveCartier_comap_hom`, in `Model.CartierDivisor`),
+  without assuming flatness of the morphism, integrality of the source, or a support restriction;
 * consequently, the centre `I` pulls back to an effective Cartier divisor on the normalized blowup
   (`TauCeti.Model.isEffectiveCartier_comap_normalizedBlowupHom`);
 * as an abbreviation for `(M.blowup I hC).normalization`, the normalized blowup preserves
   properness via `TauCeti.Model.isProper_normalization` and has normal total space when `C` is
   smooth over `K` via `TauCeti.Model.isNormalScheme_normalization_of_smooth`;
+* any morphism from a normal model along which `I` pulls back to an effective Cartier divisor
+  factors uniquely through `M.normalizedBlowup I hC` (`TauCeti.Model.normalizedBlowupLift`,
+  `TauCeti.Model.normalizedBlowupLift_normalizedBlowupHom`, and
+  `TauCeti.Model.eq_normalizedBlowupLift`);
 * when `M.total` is already normal, `M.normalizedBlowupHom I hC` is an isomorphism if and only if
   `I` is already an effective Cartier divisor on `M.total`
   (`TauCeti.Model.isIso_normalizedBlowupHom_iff`).
@@ -56,46 +61,6 @@ variable {R K : Type u} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRin
   [Field K] [Algebra R K] [IsFractionRing R K]
   {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 
-/-- Along any morphism of models `f : N ⟶ M`, every effective Cartier divisor `E` on `M.total`
-pulls back to an effective Cartier divisor on `N.total`. Neither flatness of `f.hom`, integrality
-of `N.total`, nor a support restriction is required: local equations remain regular on the common
-generic fibre by flatness of `M.genericι`, and the generic fibre is scheme-theoretically dense in
-`N.total`. -/
-theorem isEffectiveCartier_comap_hom {M N : Model R K C toK} (f : N ⟶ M)
-    {E : M.total.IdealSheafData} (hE : E.IsEffectiveCartier) :
-    (E.comap f.hom).IsEffectiveCartier := by
-  rw [Scheme.IdealSheafData.isEffectiveCartier_iff]
-  intro x
-  obtain ⟨U, hxU, a, ha, hUa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff E).mp hE (f.hom x)
-  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU'⟩ :=
-    N.total.isBasis_affineOpens.exists_subset_of_mem_open hxU (f.hom ⁻¹ᵁ U.val).isOpen
-  have hVU : V ≤ f.hom ⁻¹ᵁ U.val := hVU'
-  let b : Γ(N.total, V) := f.hom.appLE U.val V hVU a
-  have hEV : (E.comap f.hom).ideal ⟨V, hV⟩ = Ideal.span {b} := by
-    rw [E.ideal_comap_of_le f.hom U ⟨V, hV⟩ hVU, hUa, Ideal.map_span, Set.image_singleton]
-  refine ⟨⟨V, hV⟩, hxV, b, fun u v huv ↦ N.genericι.app_injective V ?_, hEV⟩
-  have hflat : Flat (N.genericι ≫ f.hom) := by
-    rw [genericι_hom]
-    have := M.isOpenImmersion_genericι
-    infer_instance
-  have hWU : N.genericι ⁻¹ᵁ V ≤ (N.genericι ≫ f.hom) ⁻¹ᵁ U.val := N.genericι.preimage_mono hVU
-  let : Algebra Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) :=
-    ((N.genericι ≫ f.hom).appLE U.val (N.genericι ⁻¹ᵁ V) hWU).hom.toAlgebra
-  have : Module.Flat Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) :=
-    (N.genericι ≫ f.hom).flat_appLE U.property (hV.preimage N.genericι) hWU
-  have hreg : IsSMulRegular Γ(C, N.genericι ⁻¹ᵁ V) (N.genericι.app V b) := by
-    have hcomm : N.genericι.app V b =
-        algebraMap Γ(M.total, U.val) Γ(C, N.genericι ⁻¹ᵁ V) a := by
-      rw [RingHom.algebraMap_toAlgebra]
-      have hnat : f.hom.appLE U.val V hVU ≫ N.genericι.app V =
-          (N.genericι ≫ f.hom).appLE U.val (N.genericι ⁻¹ᵁ V) hWU := by
-        rw [N.genericι.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
-      exact ConcreteCategory.congr_hom hnat a
-    rw [hcomm]
-    intro y z hyz
-    exact ha.of_flat (S := Γ(C, N.genericι ⁻¹ᵁ V)) (by simpa [Algebra.smul_def] using hyz)
-  exact hreg (by simpa [smul_eq_mul, map_mul] using congrArg (N.genericι.app V) huv)
-
 variable (M : Model R K C toK) (I : M.total.IdealSheafData)
   (hC : Disjoint (Set.range M.genericι) (I.support : Set M.total))
   [IsFinite (M.blowup I hC).genericι.fromNormalization]
@@ -109,6 +74,21 @@ abbrev normalizedBlowup : Model R K C toK :=
 /-- **The normalized-blowup morphism of models** `M.normalizedBlowup I hC ⟶ M`. -/
 def normalizedBlowupHom : M.normalizedBlowup I hC ⟶ M :=
   (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC
+
+/-- The normalized-blowup morphism of models has the composite of the normalization and blowup
+morphisms as its underlying scheme morphism. -/
+@[simp]
+lemma normalizedBlowupHom_hom :
+    (M.normalizedBlowupHom I hC).hom =
+      (M.blowup I hC).genericι.fromNormalization ≫ I.blowupToBase := by
+  rw [normalizedBlowupHom, comp_hom, normalizationHom_hom, blowupHom_hom]
+
+/-- The normalized-blowup morphism of models is proper on total spaces. -/
+instance isProper_normalizedBlowupHom_hom :
+    AlgebraicGeometry.IsProper (M.normalizedBlowupHom I hC).hom := by
+  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
+  rw [normalizedBlowupHom_hom]
+  infer_instance
 
 /-- The centre `I` pulls back to an effective Cartier divisor on the normalized blowup. -/
 theorem isEffectiveCartier_comap_normalizedBlowupHom :
@@ -135,5 +115,34 @@ theorem isIso_normalizedBlowupHom_iff [TauCeti.AlgebraicGeometry.IsNormalScheme 
       (M.blowup I hC).isIso_normalizationHom_of_isNormalScheme
     rw [normalizedBlowupHom]
     infer_instance
+
+variable {M I hC} {N : Model R K C toK}
+
+/-- **The universal property of the normalized blowup: the lift.** A morphism of models
+`f : N ⟶ M` from a normal model `N` along which `I` pulls back to an effective Cartier divisor
+factors through `M.normalizedBlowup I hC`. -/
+def normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
+    N ⟶ M.normalizedBlowup I hC :=
+  liftToNormalization (blowupLift (hC := hC) f hf)
+
+/-- The lift to the normalized blowup commutes with `M.normalizedBlowupHom I hC`. -/
+@[reassoc (attr := simp)]
+lemma normalizedBlowupLift_normalizedBlowupHom
+    [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
+    normalizedBlowupLift (hC := hC) f hf ≫ M.normalizedBlowupHom I hC = f := by
+  rw [normalizedBlowupLift, normalizedBlowupHom, ← Category.assoc,
+    liftToNormalization_normalizationHom, blowupLift_blowupHom]
+
+/-- **The universal property of the normalized blowup: uniqueness.** Every morphism of models
+from a normal model `N` to `M.normalizedBlowup I hC` lying over `f : N ⟶ M` equals
+`normalizedBlowupLift`. -/
+theorem eq_normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    {f : N ⟶ M} (hf : (I.comap f.hom).IsEffectiveCartier)
+    {g : N ⟶ M.normalizedBlowup I hC} (hg : g ≫ M.normalizedBlowupHom I hC = f) :
+    g = normalizedBlowupLift f hf := by
+  refine eq_liftToNormalization (eq_blowupLift hf ?_)
+  simpa [normalizedBlowupHom, Category.assoc] using hg
 
 end TauCeti.Model
