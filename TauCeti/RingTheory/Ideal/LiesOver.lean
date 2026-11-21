@@ -32,6 +32,8 @@ For a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C`,
 
 * `Ideal.algebraMap_mem_iff_dvd_of_liesOver`: `algebraMap R S m ∈ Q ↔ a ∣ m`.
 * `Ideal.finite_quotient_of_liesOver`: if `B ⧸ P` is finite for `P` over `p`, so is `R ⧸ p`.
+* `Ideal.ne_bot_of_finite_quotient_of_liesOver`: if `B ⧸ P` is finite for `P` over `p` and `R` is
+  infinite, then `p ≠ ⊥`.
 * `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`.
 * `Ideal.prime_of_isMaximal_of_liesOver`: a maximal ideal over `(p)` of a ring integral over `ℤ`
   forces `p` to be prime.
@@ -58,6 +60,18 @@ theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [CommRing B] [Alg
     (p : Ideal R) (P : Ideal B) [P.LiesOver p] [Finite (B ⧸ P)] : Finite (R ⧸ p) :=
   .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := p) (P := P)).le)
     (quotientMap_injective' (LiesOver.over (p := p) (P := P)).ge)
+
+/-- If an ideal `P` of `B` with finite quotient `B ⧸ P` lies over an ideal `p` of an infinite
+commutative ring `R`, then `p ≠ ⊥`. -/
+theorem ne_bot_of_finite_quotient_of_liesOver {R B : Type*} [CommRing R] [Ring B] [Algebra R B]
+    [Infinite R] (p : Ideal R) (P : Ideal B) [P.IsTwoSided] [P.LiesOver p] [Finite (B ⧸ P)] :
+    p ≠ ⊥ := by
+  rintro rfl
+  have : Finite (R ⧸ (⊥ : Ideal R)) :=
+    .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := ⊥) (P := P)).le)
+      (quotientMap_injective' (LiesOver.over (p := ⊥) (P := P)).ge)
+  have : Finite R := .of_equiv _ (RingEquiv.quotientBot R).toEquiv
+  exact not_finite R
 
 /-- The base residue ring of an ideal lying over the integer ideal `(n)` has `Nat.card` equal
 to `n`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`. For `n ≠ 0` this says the residue ring has

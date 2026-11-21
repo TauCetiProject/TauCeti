@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.LocalField.Haar.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # Normalized additive Haar measure and character on adic completions of Dedekind domains
@@ -102,18 +103,6 @@ theorem distribHaarChar_adicCompletion_of_isUniformizer_of_liesOver
       Module.natCard_eq_pow_finrank (K := A ⧸ p) (V := R ⧸ v.asIdeal)]
   rw [v.distribHaarChar_adicCompletion_of_isUniformizer hϖ, hnorm, Nat.cast_pow]
 
-omit [IsDedekindDomain R] in
-/-- Any ideal of `ℤ` lying under a height-one prime with finite residue field is nonzero, since `ℤ`
-is infinite and injects into `R ⧸ v.asIdeal` whenever `v.asIdeal` lies over `⊥`. -/
-private theorem span_intCast_ne_bot_of_liesOver [Finite (R ⧸ v.asIdeal)] (p : ℕ)
-    [v.asIdeal.LiesOver (Ideal.span {(p : ℤ)})] : (Ideal.span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-  intro hbot
-  have _ : v.asIdeal.LiesOver (⊥ : Ideal ℤ) := hbot ▸ inferInstance
-  have hinj := FaithfulSMul.algebraMap_injective (ℤ ⧸ (⊥ : Ideal ℤ)) (R ⧸ v.asIdeal)
-  have : Finite (ℤ ⧸ (⊥ : Ideal ℤ)) := Finite.of_injective _ hinj
-  have : Finite ℤ := Finite.of_equiv _ (RingEquiv.quotientBot ℤ).toEquiv
-  exact not_finite ℤ
-
 /-- If `v.asIdeal` lies over `Ideal.span {(p : ℤ)}`, then any uniformizer `ϖ` of
 `v.adicCompletion K` has distributive Haar character `p ^ (-f)`, where
 `f = v.asIdeal.inertiaDeg ℤ`. -/
@@ -122,7 +111,7 @@ theorem distribHaarChar_adicCompletion_of_isUniformizer_of_liesOver_span
     {ϖ : (v.adicCompletion K)ˣ} (hϖ : IsUniformizer (v.adicCompletion K) ϖ) :
     distribHaarChar (v.adicCompletion K) ϖ = ((p : ℝ≥0) ^ v.asIdeal.inertiaDeg ℤ)⁻¹ := by
   simpa using v.distribHaarChar_adicCompletion_of_isUniformizer_of_liesOver
-    (v.span_intCast_ne_bot_of_liesOver p) hϖ
+    (Ideal.ne_bot_of_finite_quotient_of_liesOver (Ideal.span {(p : ℤ)}) v.asIdeal) hϖ
 
 /-- Sanity check: when `v.asIdeal` lies over `(p)` with inertia degree `f > 1`, a uniformizer of
 `v.adicCompletion K` has distributive Haar character strictly smaller than `p⁻¹`. -/
@@ -135,7 +124,8 @@ example [Finite (R ⧸ v.asIdeal)] (p : ℕ) [v.asIdeal.LiesOver (Ideal.span {(p
     Ideal.isPrime_of_liesOver v.asIdeal (Ideal.span {(p : ℤ)})
   have hp0 : p ≠ 0 := by
     rintro rfl
-    exact v.span_intCast_ne_bot_of_liesOver 0 (by simp)
+    exact Ideal.ne_bot_of_finite_quotient_of_liesOver (Ideal.span {((0 : ℕ) : ℤ)}) v.asIdeal
+      (by simp)
   have hp1 : p ≠ 1 := by
     rintro rfl
     exact hp_prime.ne_top (by simp)
