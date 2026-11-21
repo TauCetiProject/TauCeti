@@ -9,13 +9,11 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-public import TauCeti.LinearAlgebra.Matrix.Defs
+public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix
 import Mathlib.Analysis.Calculus.FDeriv.Star
-import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
-import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Local spectral coordinates for self-adjoint matrices
@@ -42,78 +40,6 @@ open scoped Matrix TauCeti.SelfAdjointMatrix
 namespace Matrix
 
 variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
-
-/-- Real diagonal coordinates paired with strict upper-triangular entries. -/
-abbrev SelfAdjointCoordinates (n : ℕ) (𝕜 : Type*) := (Fin n → ℝ) × (StrictUpperFin n → 𝕜)
-
-/-- Read the real parts of the diagonal and the entries strictly above it. -/
-def selfAdjointCoordinatesLinearMap :
-    Matrix (Fin n) (Fin n) 𝕜 →L[ℝ] SelfAdjointCoordinates n 𝕜 :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun A ↦ (fun i ↦ RCLike.re (A i i), fun ij ↦ A ij.val.1 ij.val.2)
-      map_add' := fun A B ↦ by ext <;> simp
-      map_smul' := fun c A ↦ by ext <;> simp [RCLike.smul_re] }
-
-/-- The diagonal coordinate is the real part of the corresponding diagonal entry. -/
-@[simp] theorem selfAdjointCoordinatesLinearMap_fst (A : Matrix (Fin n) (Fin n) 𝕜) (i : Fin n) :
-    (selfAdjointCoordinatesLinearMap A).1 i = RCLike.re (A i i) := (rfl)
-
-/-- The angular coordinate reads the corresponding strict upper entry. -/
-@[simp] theorem selfAdjointCoordinatesLinearMap_snd (A : Matrix (Fin n) (Fin n) 𝕜)
-    (ij : StrictUpperFin n) :
-    (selfAdjointCoordinatesLinearMap A).2 ij = A ij.val.1 ij.val.2 := (rfl)
-
-/-- On the self-adjoint subspace, the real diagonal and strict upper coordinates
-determine the matrix by conjugate reflection. -/
-def selfAdjointCoordinates :
-    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) ≃L[ℝ] SelfAdjointCoordinates n 𝕜 :=
-  LinearEquiv.toContinuousLinearEquiv
-    { selfAdjointCoordinatesLinearMap.toLinearMap.comp (selfAdjoint.submodule ℝ _).subtype with
-      invFun := fun x ↦ ⟨Matrix.of fun i j ↦
-        if hij : i < j then x.2 ⟨(i, j), hij⟩
-        else if hji : j < i then star (x.2 ⟨(j, i), hji⟩)
-        else (x.1 i : 𝕜), by
-          refine Matrix.IsHermitian.ext fun i j ↦ ?_
-          rcases lt_trichotomy i j with h | rfl | h
-          · simp [h, h.not_gt]
-          · simp
-          · simp [h, h.not_gt]⟩
-      left_inv := fun A ↦ Subtype.ext (by
-        ext i j
-        rcases lt_trichotomy i j with h | rfl | h
-        · simp [h]
-        · simpa using RCLike.conj_eq_iff_re.mp ((selfAdjoint.isHermitian_coe A).apply i i)
-        · simpa [h, h.not_gt] using (selfAdjoint.isHermitian_coe A).apply i j)
-      right_inv := fun x ↦ by
-        apply Prod.ext
-        · funext i
-          simp
-        · funext ij
-          simp [Fin.lt_def.mpr ij.property] }
-
-/-- Evaluating the self-adjoint coordinate equivalence uses the ambient coordinate map. -/
-theorem selfAdjointCoordinates_apply
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
-    selfAdjointCoordinates A = selfAdjointCoordinatesLinearMap (A : Matrix (Fin n) (Fin n) 𝕜) :=
-  (rfl)
-
-/-- The inverse coordinate map restores the real diagonal. -/
-@[simp] theorem coe_selfAdjointCoordinates_symm_apply_diag
-    (x : SelfAdjointCoordinates n 𝕜) (i : Fin n) :
-    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i i = (x.1 i : 𝕜) := by
-  simp [selfAdjointCoordinates]
-
-/-- The inverse coordinate map reads a strict upper entry from the second component. -/
-@[simp] theorem coe_selfAdjointCoordinates_symm_apply_of_lt
-    (x : SelfAdjointCoordinates n 𝕜) {i j : Fin n} (h : i < j) :
-    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i j = x.2 ⟨(i, j), h⟩ := by
-  simp [selfAdjointCoordinates, h]
-
-/-- The lower entries of the inverse coordinate map are conjugate reflections. -/
-@[simp] theorem coe_selfAdjointCoordinates_symm_apply_of_gt
-    (x : SelfAdjointCoordinates n 𝕜) {i j : Fin n} (h : j < i) :
-    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i j = star (x.2 ⟨(j, i), h⟩) := by
-  simp [selfAdjointCoordinates, h, h.not_gt]
 
 /-- Extend strict upper coordinates to a skew-adjoint matrix with zero diagonal. -/
 def skewAdjointOfStrictUpper :
@@ -237,38 +163,6 @@ theorem det_spectralGapMap (d : Fin n → ℝ) :
     LinearMap.det_pi]
   simp [f, LinearMap.det_smul]
 
-/-- Coordinate change induced by conjugation with a unitary frame. -/
-def unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
-    SelfAdjointCoordinates n 𝕜 ≃L[ℝ] SelfAdjointCoordinates n 𝕜 :=
-  selfAdjointCoordinates.symm.trans
-    ((UnitaryGroup.selfAdjointConj U).toLinearEquiv.toContinuousLinearEquiv.trans
-      selfAdjointCoordinates)
-
-/-- The conjugation in self-adjoint matrix coordinates has absolute determinant one. -/
-theorem abs_det_unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
-    |(unitaryConjCoordinates U).toContinuousLinearMap.det| = 1 := by
-  let e := (selfAdjointCoordinates (n := n) (𝕜 := 𝕜)).toLinearEquiv
-  let T := UnitaryGroup.selfAdjointConj U
-  have h : (unitaryConjCoordinates U).toContinuousLinearMap.toLinearMap =
-      (e.symm.trans (T.toLinearEquiv.trans e)).toLinearMap := rfl
-  rw [ContinuousLinearMap.det, h]
-  -- Conjugating the real linear isometry by a coordinate equivalence preserves its determinant.
-  have he : (e.symm.trans (T.toLinearEquiv.trans e)).toLinearMap =
-      e.toLinearMap ∘ₗ T.toLinearEquiv.toLinearMap ∘ₗ e.symm.toLinearMap := rfl
-  rw [he, LinearMap.det_conj, ← LinearMap.normDet_eq_abs_det]
-  exact T.toLinearIsometry.normDet_eq_one
-
-/-- Conjugating the coordinates of a self-adjoint matrix gives the coordinates of its
-unitary conjugate. -/
-theorem unitaryConjCoordinates_read (U : unitaryGroup (Fin n) 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
-    unitaryConjCoordinates U (selfAdjointCoordinatesLinearMap A.val) =
-      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
-  rw [← selfAdjointCoordinates_apply A, unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
-    selfAdjointCoordinates_apply]
-  exact congrArg selfAdjointCoordinatesLinearMap (UnitaryGroup.coe_selfAdjointConj_apply U A)
-
 private theorem diagonalRealL_isHermitian (d : Fin n → ℝ) :
     (diagonalRealL (𝕜 := 𝕜) d).IsHermitian := by
   rw [diagonalRealL_apply]
@@ -298,13 +192,22 @@ def spectralAngularFDeriv (a : StrictUpperFin n → 𝕜) :
     (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
       (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜))).2) a
 
+/-- The angular differential is the derivative of the strict upper entries of the unitary
+frame relative to the frame at the base angle. -/
+theorem _root_.TauCeti.spectralAngularFDeriv_def (a : StrictUpperFin n → 𝕜) :
+    spectralAngularFDeriv a =
+      fderiv ℝ (fun b ↦ (selfAdjointCoordinatesLinearMap
+        (star (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜) *
+          (expStrictUpper b : Matrix (Fin n) (Fin n) 𝕜))).2) a := (rfl)
+
 section Differentiation
 
 open scoped Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
-private theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
+/-- The underlying matrix of the transverse unitary exponential is smooth in the angles. -/
+theorem contDiff_expStrictUpper {k : WithTop ℕ∞} :
     ContDiff ℝ k (fun a : StrictUpperFin n → 𝕜 ↦
       (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) := by
   simp only [coe_expStrictUpper]
@@ -317,7 +220,9 @@ private theorem contDiff_relativeFrame (a : StrictUpperFin n → 𝕜) {k : With
   simp only [coe_relativeFrame]
   exact contDiff_const.mul contDiff_expStrictUpper
 
-private theorem hasFDerivAt_expStrictUpper_zero :
+/-- At zero, the derivative of the underlying matrix is the skew-adjoint extension of the
+strict upper coordinates. -/
+theorem hasFDerivAt_expStrictUpper_zero :
     HasFDerivAt (fun a : StrictUpperFin n → 𝕜 ↦
       (expStrictUpper a : Matrix (Fin n) (Fin n) 𝕜)) skewAdjointOfStrictUpper 0 := by
   let K := skewAdjointOfStrictUpper (n := n) (𝕜 := 𝕜)
@@ -338,8 +243,8 @@ private theorem hasFDerivAt_expStrictUpper_zero :
   have hr : read.comp skewAdjointOfStrictUpper = ContinuousLinearMap.id ℝ _ := by
     ext v ij
     simp [read, Fin.lt_def.mpr ij.property]
-  simpa only [spectralAngularFDeriv, expStrictUpper_zero, OneMemClass.coe_one, star_one,
-    Matrix.one_mul, Function.comp_def, read, ContinuousLinearMap.comp_apply,
+  simpa only [TauCeti.spectralAngularFDeriv_def, expStrictUpper_zero, OneMemClass.coe_one,
+    star_one, Matrix.one_mul, Function.comp_def, read, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_snd'] using h.fderiv.trans hr
 
 private theorem star_fderiv_relativeFrame (a v : StrictUpperFin n → 𝕜) :
@@ -402,10 +307,12 @@ private theorem hasFDerivAt_spectralCoordinates_relative (x : SelfAdjointCoordin
 /-- The spectral parametrization is smooth in the diagonal and angular variables. -/
 theorem contDiff_spectralCoordinates {k : WithTop ℕ∞} :
     ContDiff ℝ k (spectralCoordinates (n := n) (𝕜 := 𝕜)) := by
-  rw [show spectralCoordinates (n := n) (𝕜 := 𝕜) = fun x ↦
+  have hparam : spectralCoordinates (n := n) (𝕜 := 𝕜) = fun x ↦
       selfAdjointCoordinatesLinearMap ((expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜) *
-        diagonalRealL x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) by
-    funext x; rw [spectralCoordinates_apply, diagonalRealL_apply]]
+        diagonalRealL x.1 * star (expStrictUpper x.2 : Matrix (Fin n) (Fin n) 𝕜)) := by
+    funext x
+    rw [spectralCoordinates_apply, diagonalRealL_apply]
+  rw [hparam]
   have h := (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜) (k := k)).comp
     (contDiff_snd : ContDiff ℝ k (Prod.snd : SelfAdjointCoordinates n 𝕜 → _))
   let S := (starL' ℝ : Matrix (Fin n) (Fin n) 𝕜 ≃L[ℝ] _).toContinuousLinearMap

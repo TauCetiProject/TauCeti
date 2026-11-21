@@ -86,16 +86,17 @@ private theorem exists_re_charpoly_discr_ne_zero :
     ∃ A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜),
       RCLike.re A.val.charpoly.discr ≠ 0 := by
   let d (i : Fin n) := (i.val : ℝ)
-  let A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
-    ⟨Matrix.diagonal fun i ↦ (d i : 𝕜),
-      Matrix.isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)⟩
-  refine ⟨A, ?_⟩
-  have hA : A.val.charpoly.discr = ((∏ i, ∏ j ∈ Ioi i, (d i - d j) ^ 2 : ℝ) : 𝕜) := by
-    rw [show A.val = Matrix.diagonal (fun i ↦ (d i : 𝕜)) from rfl, Matrix.charpoly_diagonal,
-      discr_prod_X_sub_C]
+  let D := Matrix.diagonal fun i ↦ (d i : 𝕜)
+  have hD : D.IsHermitian :=
+    Matrix.isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)
+  refine ⟨⟨D, hD⟩, ?_⟩
+  have hdiscr : D.charpoly.discr = ((∏ i, ∏ j ∈ Ioi i, (d i - d j) ^ 2 : ℝ) : 𝕜) := by
+    dsimp only [D]
+    rw [Matrix.charpoly_diagonal, discr_prod_X_sub_C]
     push_cast
     rfl
-  rw [hA, RCLike.ofReal_re]
+  dsimp only
+  rw [hdiscr, RCLike.ofReal_re]
   exact prod_ne_zero_iff.mpr fun i _ ↦ prod_ne_zero_iff.mpr fun j hj ↦
     pow_ne_zero _ (sub_ne_zero.mpr fun h ↦ (mem_Ioi.mp hj).ne (Fin.ext (by
       have h' : (i.val : ℝ) = (j.val : ℝ) := h

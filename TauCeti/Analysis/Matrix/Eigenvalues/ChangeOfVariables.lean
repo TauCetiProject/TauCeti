@@ -141,10 +141,10 @@ theorem lintegral_image_spectralMatrix (U : unitaryGroup (Fin n) 𝕜)
   have hinj : Set.InjOn spectralCoordinates s := fun x hx y hy hxy ↦ h hx hy
     (congrArg (selfAdjointCoordinates.symm ∘ unitaryConjCoordinates U) hxy)
   have hchange := lintegral_image_spectralCoordinates μ U hs hinj (g ∘ e.symm)
-  rw [show μ.restrict (F '' s) = (volume.restrict (spectralMatrix U '' s)).map e by
+  have hrestrict : μ.restrict (F '' s) = (volume.restrict (spectralMatrix U '' s)).map e := by
     rw [← hp]
-    exact e.restrict_map volume (F '' s),
-    lintegral_map_equiv (g ∘ e.symm) e] at hchange
+    exact e.restrict_map volume (F '' s)
+  rw [hrestrict, lintegral_map_equiv (g ∘ e.symm) e] at hchange
   simpa [Function.comp_def, e, μ, c, spectralMatrix] using hchange
 
 end Measure
