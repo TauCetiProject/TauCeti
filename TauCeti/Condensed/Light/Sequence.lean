@@ -9,6 +9,7 @@ public import TauCeti.Topology.Category.LightProfinite.Sequence
 public import Mathlib.Condensed.Light.InternallyProjective
 public import Mathlib.Topology.Connected.Separation
 public import Mathlib.Topology.AlexandrovDiscrete
+public import TauCeti.Topology.Compactification.OnePoint.Card
 public import TauCeti.Topology.Compactification.OnePoint.SecondCountable
 
 import all Mathlib.Condensed.Light.Sequence
