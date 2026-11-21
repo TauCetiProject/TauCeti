@@ -159,8 +159,8 @@ theorem stepGraphon_inj (P : Finpartition (Set.univ : Set Ω))
   constructor
   · intro h
     funext p q
-    obtain ⟨x, hxp⟩ := Set.nonempty_iff_ne_empty.mpr (P.ne_bot p.property)
-    obtain ⟨y, hyq⟩ := Set.nonempty_iff_ne_empty.mpr (P.ne_bot q.property)
+    obtain ⟨x, hxp⟩ := Set.ne_empty_iff_nonempty.mp (P.ne_bot p.property)
+    obtain ⟨y, hyq⟩ := Set.ne_empty_iff_nonempty.mp (P.ne_bot q.property)
     apply Subtype.ext
     simpa only [stepGraphon_apply P hP val hsymm hxp hyq,
       stepGraphon_apply P hP val' hsymm' hxp hyq] using

@@ -56,7 +56,7 @@ private theorem integralMatrixBasis_carrier_le (P : Matrix (Fin 2) (Fin 2) ℤ)
 
 private noncomputable def integralMatrixSublattice (P : Matrix (Fin 2) (Fin 2) ℤ)
     (hP : IsUnit (P.map (Int.castRingHom ℚ)).det) : IntegralLattice (Fin 2 → ℚ) := by
-  letI := isLattice_span_basis (integralMatrixBasis P hP)
+  letI := isFullLattice_span_basis (integralMatrixBasis P hP)
   exact (unitLattice (Fin 2)).restrictFull
     (Submodule.span ℤ (Set.range (integralMatrixBasis P hP)))
     (integralMatrixBasis_carrier_le P hP)

@@ -15,7 +15,7 @@ If `Zⱼ`, for `j` in a nonempty finite set `s` of `N` indices, each satisfy a s
 moment-generating function bound with variance proxy `c`, then, with no independence assumed,
 `μ {√(2c(log N + t)) < maxⱼ |Zⱼ|} ≤ 2 exp (-t)` for every real `t` (for `t < 0` the right side
 exceeds `1`). The proof is a union bound over the two-sided sub-Gaussian tails of the `Zⱼ`
-(`TauCeti.Probability.measureReal_abs_ge_le_of_hasSubgaussianMGF`). The measure `μ` need not be
+(`ProbabilityTheory.HasSubgaussianMGF.measureReal_abs_ge_le`). The measure `μ` need not be
 normalized; the sub-Gaussian bound forces `μ univ ≤ 1`.
 
 The exceedance is strict: for `c = 0` every `Zⱼ` vanishes almost everywhere, so the strict event
@@ -73,7 +73,7 @@ theorem measure_max_abs_gt_le {s : Finset ι} (hs : s.Nonempty) {Z : ι → Ω �
     calc μ.real {ω | r < |Z j ω|}
         ≤ μ.real {ω | r ≤ |Z j ω|} := measureReal_mono fun ω (hω : r < |Z j ω|) ↦ hω.le
       _ ≤ 2 * exp (-r ^ 2 / (2 * c)) :=
-        Probability.measureReal_abs_ge_le_of_hasSubgaussianMGF (hZ j hj) (Real.sqrt_nonneg _)
+        (hZ j hj).measureReal_abs_ge_le (Real.sqrt_nonneg _)
       _ = 2 * exp (-(L + t)) := by
         rw [Real.sq_sqrt (by positivity)]
         field_simp [NNReal.coe_ne_zero.2 hc0]

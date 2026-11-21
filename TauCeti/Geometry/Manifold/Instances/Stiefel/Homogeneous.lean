@@ -68,20 +68,21 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
 
 /-- Linear isometries of `E` act on orthonormal `k`-frames of `E`, vector by vector. -/
 instance stiefel.instMulAction : MulAction (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
-  smul e v := ⟨e ∘ v.1, mem_stiefel_iff.2 ((mem_stiefel_iff.1 v.2).comp_linearIsometryEquiv e)⟩
+  smul e v := ⟨e ∘ v.val, mem_stiefel_iff.2 ((mem_stiefel_iff.1 v.property).comp_linearIsometryEquiv
+      e)⟩
   one_smul _ := rfl
   mul_smul _ _ _ := rfl
 
 /-- A linear isometry moves a frame by moving each of its vectors. -/
 @[simp]
 theorem stiefel.coe_smul (e : E ≃ₗᵢ[ℝ] E) (v : stiefel E k) :
-    ((e • v : stiefel E k) : Fin k → E) = e ∘ v.1 :=
+    ((e • v : stiefel E k) : Fin k → E) = e ∘ v.val :=
   (rfl)
 
 /-- Each linear isometry acts continuously on orthonormal frames. -/
 instance stiefel.instContinuousConstSMul : ContinuousConstSMul (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
   continuous_const_smul e := continuous_induced_rng.2 <| continuous_pi fun i ↦
-    e.continuous.comp ((continuous_apply i).comp continuous_subtype_val)
+    e.continuous.comp ((continuous_apply i).comp continuous_subtypeVal)
 
 /-- Projecting a frame to one of its vectors, a point of the unit sphere, is equivariant for the
 actions of linear isometries on frames and on the sphere. -/
@@ -96,9 +97,9 @@ instance stiefel.instIsPretransitive [FiniteDimensional ℝ E] :
     IsPretransitive (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
   exists_smul_eq v w := by
     classical
-    obtain ⟨e, he⟩ := exists_linearIsometryEquiv_of_inner_eq (𝕜 := ℝ) (v := v.1) (w := w.1)
-      fun i j ↦ by rw [orthonormal_iff_ite.1 (mem_stiefel_iff.1 v.2),
-        orthonormal_iff_ite.1 (mem_stiefel_iff.1 w.2)]
+    obtain ⟨e, he⟩ := exists_linearIsometryEquiv_of_inner_eq (𝕜 := ℝ) (v := v.val) (w := w.val)
+      fun i j ↦ by rw [orthonormal_iff_ite.1 (mem_stiefel_iff.1 v.property),
+        orthonormal_iff_ite.1 (mem_stiefel_iff.1 w.property)]
     exact ⟨e, Subtype.ext (funext he)⟩
 
 end Action
@@ -121,14 +122,14 @@ variable {r N}
 @[simp]
 theorem stiefel.coe_finiteOrthonormalFrameHomeomorph_apply
     (v : stiefel (EuclideanSpace ℝ (Fin N)) r) (i : Fin r) :
-    (finiteOrthonormalFrameHomeomorph r N v : Fin r → Fin N → ℝ) i = (v.1 i).ofLp :=
+    (finiteOrthonormalFrameHomeomorph r N v : Fin r → Fin N → ℝ) i = (v.val i).ofLp :=
   (rfl)
 
 @[simp]
 theorem stiefel.coe_finiteOrthonormalFrameHomeomorph_symm_apply
     (f : finiteOrthonormalFrame ℝ r N) (i : Fin r) :
     ((finiteOrthonormalFrameHomeomorph r N).symm f : Fin r → EuclideanSpace ℝ (Fin N)) i =
-      WithLp.toLp 2 (f.1 i) :=
+      WithLp.toLp 2 (f.val i) :=
   (rfl)
 
 /-- The comparison homeomorphism intertwines the action of an orthogonal matrix on the Stiefel

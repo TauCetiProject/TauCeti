@@ -11,15 +11,18 @@ import TauCeti.MeasureTheory.Measure.Tail
 /-!
 # Two-sided sub-Gaussian tails
 
-For `ε ≥ 0`, the event `ε ≤ |X|` for a sub-Gaussian variable `X` with variance proxy `σ` has
-measure at most `2 exp (-ε² / (2σ))`. If `g - c` is sub-Gaussian with variance proxy `σ` and the
-center `c` is within `ε / 2` of a target `t`, then `g` deviates from `t` by at least `ε` with
-probability at most `2 exp (-(ε / 2)² / (2σ))`. This is how a concentration bound centered at the
-mean transfers to a nearby target value.
+A random variable `X` that is sub-Gaussian with variance proxy `c` satisfies the two-sided Chernoff
+bound `P(ε ≤ |X|) ≤ 2 exp (-ε² / (2c))` for `ε ≥ 0`, the sum of Mathlib's upper-tail bound for `X`
+and for `-X`.
+
+If `g - c` is sub-Gaussian with variance proxy `σ` and the center `c` is within `ε / 2` of a
+target `t`, then `g` deviates from `t` by at least `ε` with probability at most
+`2 exp (-(ε / 2)² / (2σ))`. This is how a concentration bound centered at the mean transfers to a
+nearby target value.
 
 ## Main results
 
-* `TauCeti.Probability.measureReal_abs_ge_le_of_hasSubgaussianMGF`
+* `ProbabilityTheory.HasSubgaussianMGF.measureReal_abs_ge_le`
 * `TauCeti.Probability.measureReal_abs_sub_ge_le_of_hasSubgaussianMGF`
 
 ## References
@@ -32,24 +35,26 @@ mean transfers to a nearby target value.
 
 public section
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory Real Set
 
 open scoped NNReal
 
-namespace TauCeti.Probability
+namespace ProbabilityTheory.HasSubgaussianMGF
 
-/-- Two-sided sub-Gaussian tail: if `X` is sub-Gaussian with variance proxy `σ`, then for
-`ε ≥ 0` the event `ε ≤ |X|` has measure at most `2 exp (-ε² / (2σ))`. -/
-theorem measureReal_abs_ge_le_of_hasSubgaussianMGF {α : Type*} [MeasurableSpace α]
-    {P : Measure α} {X : α → ℝ} {σ : ℝ≥0} (h : ProbabilityTheory.HasSubgaussianMGF X σ P)
-    {ε : ℝ} (hε : 0 ≤ ε) :
-    P.real {x | ε ≤ |X x|} ≤ 2 * Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) :=
-  calc
-    P.real {x | ε ≤ |X x|} ≤ P.real {x | ε ≤ X x} + P.real {x | ε ≤ -X x} :=
-      TauCeti.measureReal_le_abs_le_add
-    _ ≤ Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) + Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) :=
-      add_le_add (h.measure_ge_le hε) (h.neg.measure_ge_le hε)
-    _ = 2 * Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) := by ring
+/-- **Two-sided Chernoff bound** for a sub-Gaussian random variable: if `X` is sub-Gaussian with
+variance proxy `c`, then `|X| ≥ ε` has probability at most `2 exp (-ε² / (2c))` for `ε ≥ 0`. -/
+theorem measureReal_abs_ge_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ}
+    {c : ℝ≥0} (h : HasSubgaussianMGF X c μ) {ε : ℝ} (hε : 0 ≤ ε) :
+    μ.real {ω | ε ≤ |X ω|} ≤ 2 * Real.exp (-ε ^ 2 / (2 * c)) :=
+  calc μ.real {ω | ε ≤ |X ω|} ≤ μ.real {ω | ε ≤ X ω} + μ.real {ω | ε ≤ -X ω} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ Real.exp (-ε ^ 2 / (2 * c)) + Real.exp (-ε ^ 2 / (2 * c)) :=
+        add_le_add (h.measure_ge_le hε) (h.neg.measure_ge_le hε)
+    _ = 2 * Real.exp (-ε ^ 2 / (2 * c)) := by ring
+
+end ProbabilityTheory.HasSubgaussianMGF
+
+namespace TauCeti.Probability
 
 /-- Two-sided sub-Gaussian tail around a shifted center: if `g - c` is sub-Gaussian with variance
 proxy `σ` and the center `c` is within `ε / 2` of the target `t`, then `g` deviates from `t` by at
@@ -66,7 +71,6 @@ theorem measureReal_abs_sub_ge_le_of_hasSubgaussianMGF {α : Type*} [MeasurableS
     rw [Set.mem_ofPred_eq] at hx ⊢
     have htri : |g x - t| ≤ |g x - c| + |c - t| := abs_sub_le _ _ _
     linarith
-  exact (measureReal_mono hincl).trans
-    (measureReal_abs_ge_le_of_hasSubgaussianMGF h (by positivity))
+  exact (measureReal_mono hincl).trans (h.measureReal_abs_ge_le (by positivity))
 
 end TauCeti.Probability

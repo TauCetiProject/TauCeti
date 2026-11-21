@@ -15,11 +15,11 @@ public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 /-!
 # Jointly continuous representations
 
-A *continuous representation* of a topological monoid `Γ` on a topological `A`-module `M`, in the
-sense used for Galois representations, is a linear representation `Γ →* End_A M` whose action map
-`Γ × M → M` is jointly continuous. This is stronger than asking each operator to be continuous,
-which is what Mathlib's `ContRepresentation` records: for instance the multiplication action of
-`ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
+A *continuous representation* of a monoid `Γ` with a topology on an `A`-module `M` with a topology,
+in the sense used for Galois representations, is a linear representation `Γ →* End_A M` whose
+action map `Γ × M → M` is jointly continuous. This is stronger than asking each operator to be
+continuous, which is what Mathlib's `ContRepresentation` records: for instance the multiplication
+action of `ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
 continuous. This file packages such an action as `TauCeti.ContinuousRep Γ A M` and develops the
 elementary operations needed to build integral models of `ℓ`-adic representations: isomorphisms,
 invariant submodules and quotients, the line attached to a continuous character, and extension
@@ -93,8 +93,10 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- **A jointly continuous representation.** A linear representation of the topological monoid
-`Γ` on the topological `A`-module `M` whose action map `Γ × M → M` is continuous. -/
+/-- **A jointly continuous representation.** A linear representation of the monoid `Γ` with a
+topology on the `A`-module `M` with a topology, whose action map `Γ × M → M` is continuous. The
+structure assumes no further compatibility of the topologies with the algebraic structure
+(`A` carries no topology here); the declarations that need more state it themselves. -/
 structure ContinuousRep (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
     [AddCommMonoid M] [Module A M] [TopologicalSpace M] where
   /-- The underlying linear representation. -/
@@ -163,7 +165,7 @@ def subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
     (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ A W where
   toRepresentation := ρ.toRepresentation.subrepresentation W hW
   continuous_action := (ρ.continuous_action.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 @[simp]
 theorem toRepresentation_subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)

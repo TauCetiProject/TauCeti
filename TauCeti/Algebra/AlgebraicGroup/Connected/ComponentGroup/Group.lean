@@ -65,6 +65,15 @@ noncomputable instance instGroupConnectedComponents
     Group (ConnectedComponents (PrimeSpectrum H)) :=
   (componentGroupPointsEquivConnectedComponents H).symm.group
 
+/-- The component group of the closed subgroup cut out by a Hopf ideal `I`. This is
+`instGroupConnectedComponents` for the quotient: `FiniteTypeCommHopfAlgCat.quotient` is
+reducible, so instance search sees the quotient ring rather than a bundled finite-type Hopf
+algebra and does not find the general instance by itself. -/
+noncomputable instance instGroupConnectedComponentsQuotient
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (I : HopfIdeal k H) :
+    Group (ConnectedComponents (PrimeSpectrum (quotient H I))) :=
+  instGroupConnectedComponents (quotient H I)
+
 /-- The canonical equivalence from the rational pointwise component group to the connected
 components of the spectrum, as a multiplicative equivalence. -/
 noncomputable def componentGroupPointsMulEquivConnectedComponents

@@ -212,7 +212,7 @@ theorem map_gradedCohomologyClass {M : TopRep.{max v w} k G} {ℳ : ℤ → Subm
     (f : TopRep.res (φ : H →* G) X ⟶ Y) (F : TopRep.res (φ : H →* G) M ⟶ M')
     (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0)
     (hFd : (resFunctor (φ : H →* G)).map d ≫ F = F ≫ d')
-    (hι : ∀ x, F.hom (c.ι.hom x).1 = (c'.ι.hom (f.hom x)).1)
+    (hι : ∀ x, F.hom (c.ι.hom x).val = (c'.ι.hom (f.hom x)).val)
     {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
     _root_.ContinuousCohomology.map φ f n (c.gradedCohomologyClass z hz hinv hdz) =
       c'.gradedCohomologyClass (F.hom z)

@@ -73,9 +73,9 @@ private theorem exists_isOpen_of_le_of_ne_zero {π f g : A} {x y : Spv A}
   let := y.toValuativeRel
   have hf : y.valuation f ≠ 0 := (zero_le.trans_lt hgf).ne'
   -- the value group of `y` is archimedean, so `(y(g) / y(f))ⁿ < y(π)²` for some `n`
-  obtain ⟨n, hn⟩ := exists_pow_lt₀ ((div_lt_one₀ (zero_lt_iff.mpr hf)).mpr hgf)
+  obtain ⟨n, hn⟩ := exists_pow_lt₀ ((div_lt_one₀ (pos_iff_ne_zero.mpr hf)).mpr hgf)
     (Units.mk0 _ (pow_ne_zero 2 hyπ))
-  rw [Units.val_mk0, div_pow, div_lt_iff₀ (pow_pos (zero_lt_iff.mpr hf) n)] at hn
+  rw [Units.val_mk0, div_pow, div_lt_iff₀ (pow_pos (pos_iff_ne_zero.mpr hf) n)] at hn
   refine ⟨basicOpen (π * f ^ n) (g ^ n), basicOpen (g ^ n) (π ^ 2 * f ^ n), isOpen_basicOpen _ _,
     isOpen_basicOpen _ _, ?_, ?_, ?_⟩
   · rw [mem_basicOpen_iff_valuation, map_mul, map_pow, map_pow]
@@ -92,7 +92,7 @@ private theorem exists_isOpen_of_le_of_ne_zero {π f g : A} {x y : Spv A}
       rw [mul_one, ← map_mul, mul_comm _ π, ← mul_assoc, ← pow_two]
       exact hU.1.trans hV.1
     rw [Set.mem_ofPred_eq, ← valuation_le_iff, map_one]
-    exact le_of_mul_le_mul_left hle (zero_lt_iff.mpr hne)
+    exact le_of_mul_le_mul_left hle (pos_iff_ne_zero.mpr hne)
 
 /-- **Separating along one comparison, in general.** If `x(f) ≤ x(g)` and `y(g) < y(f)`, where `y`
 has rank at most one, `0 < x(π) ≤ 1` and `0 < y(π) < 1`, then `x` and `y` have open
@@ -126,7 +126,7 @@ theorem exists_isOpen_inter_subset_setOf_one_vle_of_ne {π : A} {x y : Spv A} (h
     (hyπ₀ : ¬ y.toValuativeRel.vle π 0) (hyπ : y.toValuativeRel.vlt π 1) :
     ∃ U V : Set (Spv A), IsOpen U ∧ IsOpen V ∧ x ∈ U ∧ y ∈ V ∧
       U ∩ V ⊆ {v | v.toValuativeRel.vle 1 π} := by
-  rw [← valuation_le_iff, map_zero, le_zero_iff] at hxπ₀ hyπ₀
+  rw [← valuation_le_iff, map_zero, nonpos_iff_eq_zero] at hxπ₀ hyπ₀
   rw [← valuation_lt_iff, map_one] at hxπ hyπ
   -- the two valuative relations differ at some pair `(f, g)`
   obtain ⟨f, g, hfg⟩ :
@@ -147,22 +147,22 @@ topologically nilpotent unit, as every Tate ring does. For the closed unit disc 
 algebraically closed field this subspace is the Berkovich disc of Wedhorn's Example 7.57. -/
 theorem t2Space_spa_isRankLeOne {π : A} (hπ : Huber.IsPseudoUniformizer π)
     (Aplus : Subring A) :
-    T2Space {x : spa Aplus // @ValuativeRel.IsRankLeOne A _ x.1.toValuativeRel} := by
+    T2Space {x : spa Aplus // @ValuativeRel.IsRankLeOne A _ x.val.toValuativeRel} := by
   -- at every point of `Spa(A, A⁺)`, `0 < v(π) < 1`
-  have hπv (v : spa Aplus) : ¬ v.1.toValuativeRel.vle π 0 ∧ v.1.toValuativeRel.vlt π 1 := by
-    have hcont := (isContinuous_def v.1).mp ((mem_spa_iff Aplus v.1).mp v.2).1
-    rw [← valuation_le_iff, ← valuation_lt_iff, map_zero, map_one, le_zero_iff]
-    exact ⟨(hπ.isUnit.map v.1.valuation).ne_zero,
+  have hπv (v : spa Aplus) : ¬ v.val.toValuativeRel.vle π 0 ∧ v.val.toValuativeRel.vlt π 1 := by
+    have hcont := (isContinuous_def v.val).mp ((mem_spa_iff Aplus v.val).mp v.property).1
+    rw [← valuation_le_iff, ← valuation_lt_iff, map_zero, map_one, nonpos_iff_eq_zero]
+    exact ⟨(hπ.isUnit.map v.val.valuation).ne_zero,
       hcont.lt_one_of_isTopologicallyNilpotent hπ.isTopologicallyNilpotent⟩
   refine ⟨fun x y hxy ↦ ?_⟩
-  have hne : x.1.1 ≠ y.1.1 := fun h ↦ hxy (Subtype.ext (Subtype.ext h))
+  have hne : x.val.val ≠ y.val.val := fun h ↦ hxy (Subtype.ext (Subtype.ext h))
   obtain ⟨U, V, hU, hV, hxU, hyV, hUV⟩ := exists_isOpen_inter_subset_setOf_one_vle_of_ne hne
-    x.2 y.2 (hπv x.1).1 (hπv x.1).2 (hπv y.1).1 (hπv y.1).2
-  have hc := (continuous_subtype_val (p := (· ∈ spa Aplus))).comp
-    (continuous_subtype_val (p := fun x : spa Aplus ↦
-      @ValuativeRel.IsRankLeOne A _ x.1.toValuativeRel))
+    x.property y.property (hπv x.val).1 (hπv x.val).2 (hπv y.val).1 (hπv y.val).2
+  have hc := (continuous_subtypeVal (p := (· ∈ spa Aplus))).comp
+    (continuous_subtypeVal (p := fun x : spa Aplus ↦
+      @ValuativeRel.IsRankLeOne A _ x.val.toValuativeRel))
   refine ⟨_, _, hU.preimage hc, hV.preimage hc, hxU, hyV,
     Set.disjoint_left.mpr fun z hzU hzV ↦ ?_⟩
-  exact (hπv z.1).2 (hUV ⟨hzU, hzV⟩)
+  exact (hπv z.val).2 (hUV ⟨hzU, hzV⟩)
 
 end TauCeti.ValuationSpectrum

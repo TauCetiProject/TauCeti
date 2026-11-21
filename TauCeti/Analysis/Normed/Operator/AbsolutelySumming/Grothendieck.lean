@@ -187,19 +187,19 @@ private theorem sum_norm_apply_le_of_simpleFunc {ι : Type*} [Fintype ι] {K : �
     (x : ι → Lp 𝕜 1 μ) (hx : ∀ i, x i =ᵐ[μ] fun a ↦ G a i) :
     ∑ i, ‖T (x i)‖ ≤ K * ‖T‖ * TauCeti.weakLpNorm (𝕜 := 𝕜) 1 x := by
   set S : Finset (ι → 𝕜) := G.range.filter fun w ↦ w ≠ 0
-  have hA (w : S) : MeasurableSet (G ⁻¹' {w.1}) := G.measurableSet_fiber _
-  have hAμ (w : S) : μ (G ⁻¹' {w.1}) ≠ ∞ :=
-    (G.measure_preimage_lt_top_of_integrable hG (Finset.mem_filter.1 w.2).2).ne
-  have hd : Pairwise (Function.onFun Disjoint fun w : S ↦ G ⁻¹' {w.1}) := fun w w' hww' ↦
+  have hA (w : S) : MeasurableSet (G ⁻¹' {w.val}) := G.measurableSet_fiber _
+  have hAμ (w : S) : μ (G ⁻¹' {w.val}) ≠ ∞ :=
+    (G.measure_preimage_lt_top_of_integrable hG (Finset.mem_filter.1 w.property).2).ne
+  have hd : Pairwise (Function.onFun Disjoint fun w : S ↦ G ⁻¹' {w.val}) := fun w w' hww' ↦
     (Set.disjoint_singleton.2 (Subtype.coe_injective.ne hww')).preimage G
   -- Each `x i` is the combination of the indicator functions of the fibres with coefficients
   -- the `i`-th coordinates of the values.
-  have hrepr (i : ι) : x i = ∑ w : S, w.1 i • indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜) := by
+  have hrepr (i : ι) : x i = ∑ w : S, w.val i • indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜) := by
     rw [TauCeti.eq_sum_indicatorConstLp_fiber (φ := fun w ↦ w i)
       (fun a ha ↦ by simp [S, G.mem_range_self a] at ha; simp [ha]) hAμ (hx i)]
     simp only [← TauCeti.indicatorConstLp_smul, smul_eq_mul, mul_one]
   obtain rfl : x = _ := funext hrepr
-  exact sum_norm_apply_sum_smul_indicatorConstLp_le hA hAμ (hK S) hd T fun i w ↦ w.1 i
+  exact sum_norm_apply_sum_smul_indicatorConstLp_le hA hAμ (hK S) hd T fun i w ↦ w.val i
 
 /-- Grothendieck's theorem for `L¹` follows from any matrix inequality with a constant `K`, by
 density of simple functions. -/

@@ -78,18 +78,18 @@ theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}
   | cons p e ih =>
     cases p with
     | nil => simpa only [word_cons, word_nil, List.nil_append] using
-        (FreeGroup.IsReduced.singleton (a := S.label e.1))
+        (FreeGroup.IsReduced.singleton (a := S.label e.val))
     | cons p f =>
       obtain ⟨hprev, hne⟩ := (SerreGraph.Path.isReduced_cons_cons S.graph p f e).mp hp
       have hword := ih hprev
-      have hlocal : (S.label f.1).1 = (S.label e.1).1 →
-          (S.label f.1).2 = (S.label e.1).2 := by
+      have hlocal : (S.label f.val).1 = (S.label e.val).1 →
+          (S.label f.val).2 = (S.label e.val).2 := by
         intro ha
         by_contra hb
-        apply IsFolded.labels_not_inverse S hS (e.2.1.trans f.2.2.symm) hne
+        apply IsFolded.labels_not_inverse S hS (e.property.1.trans f.property.2.symm) hne
         apply Prod.ext
         · exact ha.symm
-        · cases he : (S.label e.1).2 <;> cases hf : (S.label f.1).2 <;>
+        · cases he : (S.label e.val).2 <;> cases hf : (S.label f.val).2 <;>
             simp_all
       simp only [word_cons, List.append_assoc, List.singleton_append,
         FreeGroup.IsReduced, List.isChain_append_cons_cons, List.isChain_singleton,
@@ -111,10 +111,10 @@ theorem IsFolded.path_eq_of_word_eq (hS : S.IsFolded) {a b : S.graph.V}
       simp only [word_cons] at h
       obtain ⟨hword, hlabel⟩ := List.append_inj' h (by simp)
       simp only [List.singleton_inj] at hlabel
-      have he : e.1 = f.1 := IsFolded.eq_of_tgt_label S hS
-        (e.2.2.trans f.2.2.symm) hlabel
+      have he : e.val = f.val := IsFolded.eq_of_tgt_label S hS
+        (e.property.2.trans f.property.2.symm) hlabel
       have hsrc : _ := congrArg S.graph.src he
-      simp only [e.2.1, f.2.1] at hsrc
+      simp only [e.property.1, f.property.1] at hsrc
       cases hsrc
       have hef : e = f := Subtype.ext he
       cases hef
@@ -137,9 +137,9 @@ theorem IsFolded.eq_tgt_of_word_eq (hS : S.IsFolded) {a b c : S.graph.V}
       simp only [word_cons] at h
       obtain ⟨hw, hl⟩ := List.append_inj' h (by simp)
       obtain rfl := ih q hw
-      have he : e.1 = f.1 := hS _ _ (e.2.1.trans f.2.1.symm)
+      have he : e.val = f.val := hS _ _ (e.property.1.trans f.property.1.symm)
         (List.singleton_inj.mp hl)
-      exact e.2.2.symm.trans ((congrArg S.graph.tgt he).trans f.2.2)
+      exact e.property.2.symm.trans ((congrArg S.graph.tgt he).trans f.property.2)
 
 /-- The reduced word of a reduced path's reading is its actual label word. -/
 @[simp] theorem IsFolded.toWord_read_eq_word [DecidableEq α] (hS : S.IsFolded)

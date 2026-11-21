@@ -122,10 +122,10 @@ and `k` is again transverse, and on the fibre-product manifold `L₁ ×_{M₂} (
 `(x, (y, z)) ↦ ((f x).1, (k z).2)` is a Lagrangian map for `pr₁*σ₁ - pr₂*σ₄`. -/
 theorem IsLagrangianMap.relComp_assoc_transverseFiberProduct
     (hL : letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst h₁₂
-      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.1.2).2 = (k p.2).1 →
-        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.1.2).2)
+      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.val.2).2 = (k p.2).1 →
+        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.val.2).2)
           p.1).range ⊔
-        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.1.2).2).toContinuousLinearMap).comp
+        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.val.2).2).toContinuousLinearMap).comp
           (mfderiv K₃ I₃ (fun z ↦ (k z).1) p.2)).range = ⊤)
     (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
     (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g)
@@ -136,8 +136,8 @@ theorem IsLagrangianMap.relComp_assoc_transverseFiberProduct
       (contMDiff_relComp_transverseFiberProduct hg hk h₂₃).fst
       ((transverse_fiberProduct_assoc_iff (by simp) hf.snd hg.fst hg.snd hk.fst h₁₂ h₂₃).1 hL)
     (hσ₁.twistedProd hσ₄).IsLagrangianMap KR
-      (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.1.1).1} ↦
-        ((f p.1.1).1, (k p.1.2.1.2).2)) := by
+      (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.val.1).1} ↦
+        ((f p.val.1).1, (k p.val.2.val.2).2)) := by
   let := transverseFiberProductChartedSpace (by simp) hg.snd hk.fst h₂₃
   have := isManifold_transverseFiberProduct (by simp) hg.snd hk.fst h₂₃
   exact IsLagrangianMap.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₄) hf
@@ -165,10 +165,10 @@ theorem IsLagrangianImmersion.relComp_assoc_transverseFiberProduct
     (hL :
       letI := transverseFiberProductChartedSpace (by simp)
         hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst h₁₂
-      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.1.2).2 = (k p.2).1 →
-        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.1.2).2)
+      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.val.2).2 = (k p.2).1 →
+        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.val.2).2)
           p.1).range ⊔
-        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.1.2).2).toContinuousLinearMap).comp
+        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.val.2).2).toContinuousLinearMap).comp
           (mfderiv K₃ I₃ (fun z ↦ (k z).1) p.2)).range = ⊤) :
     letI := transverseFiberProductChartedSpace (by simp)
       hgL.isImmersion.contMDiff.snd hkL.isImmersion.contMDiff.fst h₂₃
@@ -181,8 +181,8 @@ theorem IsLagrangianImmersion.relComp_assoc_transverseFiberProduct
         hgL.isImmersion.contMDiff.fst hgL.isImmersion.contMDiff.snd hkL.isImmersion.contMDiff.fst
         h₁₂ h₂₃).1 hL)
     (hσ₁.twistedProd hσ₄).IsLagrangianImmersion KR
-      (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.1.1).1} ↦
-        ((f p.1.1).1, (k p.1.2.1.2).2)) := by
+      (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.val.1).1} ↦
+        ((f p.val.1).1, (k p.val.2.val.2).2)) := by
   have hf := hfL.isImmersion.contMDiff
   have hg := hgL.isImmersion.contMDiff
   have hk := hkL.isImmersion.contMDiff
@@ -207,10 +207,10 @@ theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_assoc_transverseFibe
     (hL :
       letI := transverseFiberProductChartedSpace (by simp)
         hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst h₁₂
-      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.1.2).2 = (k p.2).1 →
-        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.1.2).2)
+      ∀ p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} × L₃, (g p.1.val.2).2 = (k p.2).1 →
+        (mfderiv K₁₂ I₃ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ (g q.val.2).2)
           p.1).range ⊔
-        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.1.2).2).toContinuousLinearMap).comp
+        (((tangentSpaceCast I₃ (k p.2).1 (g p.1.val.2).2).toContinuousLinearMap).comp
           (mfderiv K₃ I₃ (fun z ↦ (k z).1) p.2)).range = ⊤) :
     letI := transverseFiberProductChartedSpace (by simp)
       hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst h₁₂
@@ -230,11 +230,11 @@ theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_assoc_transverseFibe
         hgL.isImmersion.contMDiff.fst hgL.isImmersion.contMDiff.snd hkL.isImmersion.contMDiff.fst
         h₁₂ h₂₃).1 hL)
     (hσ₁.twistedProd hσ₄).IsLagrangianEmbedding KL
-        (fun p : {p : {q : L₁ × L₂ // (f q.1).2 = (g q.2).1} × L₃ // (g p.1.1.2).2 = (k p.2).1} ↦
-          ((f p.1.1.1.1).1, (k p.1.2).2)) ↔
+        (fun p : {p : {q : L₁ × L₂ // (f q.1).2 = (g q.2).1} × L₃ // (g p.1.val.2).2 = (k p.2).1} ↦
+          ((f p.val.1.val.1).1, (k p.val.2).2)) ↔
       (hσ₁.twistedProd hσ₄).IsLagrangianEmbedding KR
-        (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.1.1).1} ↦
-          ((f p.1.1).1, (k p.1.2.1.2).2)) := by
+        (fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.val.1).1} ↦
+          ((f p.val.1).1, (k p.val.2.val.2).2)) := by
   have hf := hfL.isImmersion.contMDiff
   have hg := hgL.isImmersion.contMDiff
   have hk := hkL.isImmersion.contMDiff
@@ -265,8 +265,8 @@ theorem IsLagrangianImmersion.isLagrangianEmbedding_relComp_assoc_transverseFibe
     (isSmoothEmbedding_coe_transverseFiberProduct (by simp) hF.snd hk.fst hL)
     (isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hG.fst hR)
   refine Iff.trans (iff_of_eq (congrArg _ (funext fun p ↦ ?_))) (e.toHomeomorph.isEmbedding_comp_iff
-    (f := fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.1.1).1} ↦
-      ((f p.1.1).1, (k p.1.2.1.2).2)))
+    (f := fun p : {p : L₁ × {q : L₂ × L₃ // (g q.1).2 = (k q.2).1} // (f p.1).2 = (g p.2.val.1).1} ↦
+      ((f p.val.1).1, (k p.val.2.val.2).2)))
   simp [e]
 
 end Immersion

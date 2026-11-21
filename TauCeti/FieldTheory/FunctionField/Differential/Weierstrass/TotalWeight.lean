@@ -116,7 +116,7 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
     P.ord ((derivativeOfSeparating hx).wronskian (fun i ↦ (b i : F))) =
       P.weierstrassWeight - (genus k F : ℤ) * W.coeff P -
         ((genus k F).choose 2 : ℤ) * weilDifferentialOrder hF hex
-          (weilDifferentialOfSeparating hF hx).2
+          (weilDifferentialOfSeparating hF hx).property
           (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P := by
   let _ := weilDifferentialSpaceModule hF
   -- Change the parameter to a separating prime element `t` at `P`.
@@ -153,7 +153,7 @@ private theorem exists_divisor_coeff_eq_weierstrassWeight (hF : IsFunctionField 
       Divisor.degree D = genus k F * (2 * genus k F - 2) +
         (genus k F).choose 2 * (2 * genus k F - 2) := by
   obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
-  have hmem := (weilDifferentialOfSeparating hF hx).2
+  have hmem := (weilDifferentialOfSeparating hF hx).property
   have hne : (weilDifferentialOfSeparating hF hx : Module.Dual k ↥(repartitionSpace k F)) ≠ 0 :=
     by simpa using weilDifferentialOfSeparating_ne_zero hF hx
   set W := weilDifferentialDivisor hF hex hmem hne
