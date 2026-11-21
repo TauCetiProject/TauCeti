@@ -210,7 +210,7 @@ def basisPermFixedBasis :
 /-- The coordinate of a fixed vector at the cycle `⟦j⟧` in `basisPermFixedBasis` equals its
 `j`-th coordinate in `B`. -/
 @[simp] theorem basisPermFixedBasis_repr (u : e.toLinearMap.fixedSubmodule) (j : J) :
-    (basisPermFixedBasis B e π he).repr u ⟦j⟧ = B.repr u.1 j := by simp [basisPermFixedBasis]
+    (basisPermFixedBasis B e π he).repr u ⟦j⟧ = B.repr u.val j := by simp [basisPermFixedBasis]
 
 /-- Each basis vector of `basisPermFixedBasis` is the sum of the basis vectors of `B` in its
 cycle. -/

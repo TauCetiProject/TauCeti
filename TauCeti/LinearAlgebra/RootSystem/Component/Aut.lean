@@ -110,7 +110,7 @@ variable (e : P.Equiv Q)
 
 /-- The bijection `C.supp ≃ (e.componentEquiv C).supp` induced by an equivalence. -/
 def Equiv.suppEquiv (C : P.Component) : C.supp ≃ (e.componentEquiv C).supp where
-  toFun i := ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr i.2⟩
+  toFun i := ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr i.property⟩
   invFun j := ⟨e.indexEquiv.symm j, e.indexEquiv_mem_supp_iff.mp (by simp)⟩
   left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
   right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
@@ -183,8 +183,8 @@ variable (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
 
 /-- The bijection `b.support ≃ b'.support` induced by a base-preserving equivalence. -/
 def Equiv.supportEquiv : b.support ≃ b'.support where
-  toFun i := ⟨e.indexEquiv i, (hb i).mp i.2⟩
-  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.2])⟩
+  toFun i := ⟨e.indexEquiv i, (hb i).mp i.property⟩
+  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.property])⟩
   left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
   right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
 
