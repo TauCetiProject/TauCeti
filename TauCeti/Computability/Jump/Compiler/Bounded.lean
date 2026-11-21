@@ -27,18 +27,14 @@ theorem exists_forall_evaln_jumpProgram_eq_map (d : Code) (e : ℕ) :
     ∃ K, ∀ (σ : ℕ → Option ℕ) (k : ℕ), K ≤ k →
       evaln σ k d.jumpProgram e = (σ (d.jumpIndex e)).map (fun y => ⟨y, d.jumpIndex e + 1⟩) := by
   obtain ⟨t, ht, htranslate⟩ := exists_jumpProgram_eq_comp_oracle d
-  have hmem : d.jumpIndex e ∈ eval (fun _ => Part.none) t e := by
-    rw [htranslate, Part.mem_some_iff]
   rw [ht]
-  exact exists_forall_evaln_comp_oracle_eq_map hmem
+  exact exists_forall_evaln_comp_oracle_eq_map (htranslate _ e ▸ Part.mem_some _)
 
 /-- A successful bounded run of the jump program has use one more than the translated index. -/
 theorem evaln_jumpProgram_use {σ : ℕ → Option ℕ} {k e : ℕ} {d : Code} {r : Halt}
     (h : evaln σ k d.jumpProgram e = some r) : r.use = d.jumpIndex e + 1 := by
-  obtain ⟨K, hK⟩ := exists_forall_evaln_jumpProgram_eq_map d e
-  have hr := evaln_mono (le_max_left k K) h
-  rw [hK σ _ (le_max_right k K)] at hr
-  obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.1 hr
-  rfl
+  obtain ⟨t, ht, htranslate⟩ := exists_jumpProgram_eq_comp_oracle d
+  rw [ht] at h
+  exact evaln_comp_oracle_use (htranslate _ e ▸ Part.mem_some _) h
 
 end TauCeti.Oracle.Single.Code

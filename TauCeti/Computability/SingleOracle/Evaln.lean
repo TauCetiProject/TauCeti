@@ -638,6 +638,17 @@ theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
   have hq : q < k := (le_max_right j (q + 1)).trans hk
   simp [evaln_comp_oracle, hrun, hq]
 
+/-- If `t` computes the address `q` on the everywhere undefined oracle, then every successful
+bounded run of `comp oracle t` has use `q + 1`, for every answer table and fuel. -/
+theorem evaln_comp_oracle_use {t : Code} {x q k : ℕ} {r : Halt}
+    (ht : q ∈ eval (fun _ => Part.none) t x) (h : evaln σ k (comp oracle t) x = some r) :
+    r.use = q + 1 := by
+  obtain ⟨K, hK⟩ := exists_forall_evaln_comp_oracle_eq_map ht
+  have hr := evaln_mono (le_max_left k K) h
+  rw [hK σ _ (le_max_right k K)] at hr
+  obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.1 hr
+  rfl
+
 /-! ### Bounded oracle answers -/
 
 section BoundedAnswers
@@ -654,6 +665,11 @@ theorem boundedAnswers_def (d : Code) (σ : ℕ → Option ℕ) (k u x : ℕ) :
       (evaln σ k d x).bind (fun h => Option.guard (fun _ => h.use ≤ u) h.output) := (rfl)
 
 variable {d : Code} {j u x y : ℕ}
+
+/-- No bounded answer is supplied with zero fuel. -/
+@[simp]
+theorem boundedAnswers_zero : d.boundedAnswers σ 0 u x = none := by
+  simp [boundedAnswers]
 
 /-- A bounded answer is supplied precisely by a successful run within the use bound. -/
 @[simp]

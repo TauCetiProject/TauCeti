@@ -544,6 +544,12 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
 def curry (c : Code) (a : ℕ) : Code :=
   comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right))
 
+/-- Specialization composes the program with the pairing of the ordinary constant program for
+the parameter and the identity program. -/
+theorem curry_def (c : Code) (a : ℕ) :
+    c.curry a = comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right)) :=
+  (rfl)
+
 /-- Parameter specialization preserves evaluation, uniformly for every partial oracle. -/
 @[simp]
 theorem eval_curry (O : ℕ →. ℕ) (c : Code) (a x : ℕ) :
@@ -572,6 +578,17 @@ def fixInput (c : Code) (x : ℕ) : Code :=
 theorem fixInput_def (c : Code) (x : ℕ) :
     c.fixInput x = comp c (Nat.Partrec.Code.const x).toSingleOracleCode :=
   (rfl)
+
+/-- Fixing an input retains both the source program and the input in its syntax. -/
+@[simp]
+theorem fixInput_inj {c d : Code} {x y : ℕ} : c.fixInput x = d.fixInput y ↔ c = d ∧ x = y := by
+  constructor
+  · intro h
+    rw [fixInput, fixInput, Code.comp.injEq] at h
+    exact ⟨h.1, Nat.Partrec.Code.const_inj
+      (Nat.Partrec.Code.toSingleOracleCode_injective h.2)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
 
 /-- Fixing an input is primitive recursive in the program and the input. -/
 theorem primrec₂_fixInput : Primrec₂ fixInput :=
@@ -604,13 +621,7 @@ theorem primrec₂_haltingIndex : Primrec₂ haltingIndex :=
 @[simp]
 theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
     haltingIndex c x = haltingIndex d y ↔ c = d ∧ x = y := by
-  constructor
-  · intro h
-    rw [haltingIndex, haltingIndex, encode_inj, fixInput, fixInput, Code.comp.injEq] at h
-    exact ⟨h.1, Nat.Partrec.Code.const_inj
-      (Nat.Partrec.Code.toSingleOracleCode_injective h.2)⟩
-  · rintro ⟨rfl, rfl⟩
-    rfl
+  rw [haltingIndex, haltingIndex, encode_inj, fixInput_inj]
 
 /-- Every partial recursive function is computed by one program relative to every oracle: the
 query-free program of an ordinary code computing it. -/
@@ -619,10 +630,9 @@ theorem exists_forall_eval_eq_of_partrec {f : ℕ →. ℕ} (hf : Nat.Partrec f)
   obtain ⟨c, rfl⟩ := Nat.Partrec.Code.exists_code.1 hf
   exact ⟨c.toSingleOracleCode, fun O => eval_toSingleOracleCode O c⟩
 
-/-- A primitive recursive function is computed by one program relative to every oracle. -/
-theorem exists_code_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
+/-- A computable function is computed by one program relative to every oracle. -/
+theorem exists_code_of_computable {g : ℕ → ℕ} (hg : Computable g) :
     ∃ c : Code, ∀ O n, eval O c n = Part.some (g n) :=
-  (exists_forall_eval_eq_of_partrec (Nat.Partrec.of_primrec (Primrec.nat_iff.1 hg))).imp
-    fun _ h O n => by simp [h O]
+  (exists_forall_eval_eq_of_partrec (Partrec.nat_iff.1 hg)).imp fun _ h O n => by simp [h O]
 
 end TauCeti.Oracle.Single.Code

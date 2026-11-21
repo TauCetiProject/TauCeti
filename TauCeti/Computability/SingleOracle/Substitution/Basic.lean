@@ -18,10 +18,6 @@ holds simultaneously for all partial oracles.
 The semantic closure under substitution is the indexed counterpart of
 `Nat.RecursiveIn.subst`. See R. I. Soare, *Recursively Enumerable Sets and Degrees*,
 Springer, 1987, Chapter III.1.
-
-The proof of primitive recursiveness uses Mathlib's `Primrec.nat_strong_rec`.
-The recursion table is analogous to the one in `Nat.Partrec.Code.primrec_recOn'`
-for ordinary programs.
 -/
 
 public section
@@ -111,6 +107,8 @@ private theorem primrec_lookup_subst (ctor : Code → Code → Code) (hctor : Pr
   unfold Option.map₂
   exact (option_bind hf (option_map (hg.comp fst) (hctor.comp (snd.comp fst) snd).to₂).to₂).to₂
 
+-- The proof uses Mathlib's `Primrec.nat_strong_rec`. The recursion table is analogous to the
+-- one in `Nat.Partrec.Code.primrec_recOn'` for ordinary programs.
 /-- Query substitution is primitive recursive jointly in the source and query programs. -/
 theorem primrec₂_subst : Primrec₂ subst := by
   let step (p : Code × List Code) : Option Code :=
@@ -149,3 +147,19 @@ theorem toSingleOracleCode_subst (c : Nat.Partrec.Code) (d : TauCeti.Oracle.Sing
   induction c <;> rw [toSingleOracleCode_def] <;> simp_all
 
 end Nat.Partrec.Code
+
+namespace TauCeti.Oracle.Single.Code
+
+/-- Substitution commutes with fixing an input, since the constant program makes no query. -/
+@[simp]
+theorem fixInput_subst (c d : Code) (x : ℕ) :
+    (c.fixInput x).subst d = (c.subst d).fixInput x := by
+  simp [fixInput_def]
+
+/-- Substitution commutes with parameter specialization, since the program supplying the
+parameter makes no query. -/
+@[simp]
+theorem curry_subst (c d : Code) (a : ℕ) : (c.curry a).subst d = (c.subst d).curry a := by
+  simp [curry_def]
+
+end TauCeti.Oracle.Single.Code

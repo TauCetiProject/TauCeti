@@ -61,8 +61,8 @@ private theorem exists_code_answers : ∃ c : Code, ∀ (O : ℕ → ℕ) a k,
     eval (O : ℕ →. ℕ) c (Nat.pair a k) =
       Part.some (encode ((List.range k).map O)) := by
   -- appending a number to a coded string is primitive recursive
-  obtain ⟨cs, hcs⟩ := exists_code_of_primrec (g := fun m =>
-      encode (ofNat (List ℕ) m.unpair.1 ++ [m.unpair.2])) <|
+  obtain ⟨cs, hcs⟩ := exists_code_of_computable (g := fun m =>
+      encode (ofNat (List ℕ) m.unpair.1 ++ [m.unpair.2])) <| Primrec.to_comp <|
     Primrec.encode.comp <| list_append.comp ((Primrec.ofNat _).comp (fst.comp Primrec.unpair))
       (list_cons.comp (snd.comp Primrec.unpair) (const []))
   -- by recursion on `k`, append the answer of the oracle at `k`
@@ -80,9 +80,9 @@ private theorem exists_code_answers_apply {g : ℕ × ℕ × List ℕ → ℕ} (
     ∃ c : Code, ∀ (O : ℕ → ℕ) n k, eval (O : ℕ →. ℕ) c (Nat.pair n k) =
       Part.some (g (n, k, (List.range k).map O)) := by
   obtain ⟨ca, hca⟩ := exists_code_answers
-  obtain ⟨cg, hcg⟩ := exists_code_of_primrec (g := fun m =>
+  obtain ⟨cg, hcg⟩ := exists_code_of_computable (g := fun m =>
       g (m.unpair.1.unpair.1, m.unpair.1.unpair.2, ofNat (List ℕ) m.unpair.2)) <|
-    hg.comp <| (fst.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
+    Primrec.to_comp <| hg.comp <| (fst.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
       (snd.comp (Primrec.unpair.comp (fst.comp Primrec.unpair))).pair <|
         (Primrec.ofNat _).comp (snd.comp Primrec.unpair)
   refine ⟨comp cg (pair (pair left right) ca), fun O n k => ?_⟩

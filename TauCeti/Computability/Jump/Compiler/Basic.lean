@@ -26,7 +26,7 @@ namespace TauCeti.Oracle.Single.Code
 
 private theorem exists_jumpIndexCode : ∃ c : Code, ∀ O n,
     eval O c n = Part.some ((ofNat Code n.unpair.1).jumpIndex n.unpair.2) :=
-  exists_code_of_primrec <|
+  exists_code_of_computable <| Primrec.to_comp <|
     primrec₂_jumpIndex.comp ((Primrec.ofNat Code).comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.snd.comp Primrec.unpair)
 
@@ -41,11 +41,11 @@ private theorem eval_jumpIndexTranslator (O : ℕ →. ℕ) (d : Code) (e : ℕ)
   simp only [eval_curry, exists_jumpIndexCode.choose_spec, Nat.unpair_pair, ofNat_encode]
 
 /-- The compiled jump program composes one oracle query with a translator that returns the
-translated index even on the nowhere-defined oracle. -/
+translated index relative to every partial oracle, including the nowhere-defined one. -/
 theorem exists_jumpProgram_eq_comp_oracle (d : Code) :
     ∃ t : Code, d.jumpProgram = comp oracle t ∧
-      ∀ e, eval (fun _ => Part.none) t e = Part.some (d.jumpIndex e) :=
-  ⟨_, rfl, eval_jumpIndexTranslator _ d⟩
+      ∀ (O : ℕ →. ℕ) (e : ℕ), eval O t e = Part.some (d.jumpIndex e) :=
+  ⟨_, rfl, fun O => eval_jumpIndexTranslator O d⟩
 
 /-- The jump program compiler is primitive recursive in the supplied reduction program. -/
 theorem primrec_jumpProgram : Primrec jumpProgram :=
