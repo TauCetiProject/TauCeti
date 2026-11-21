@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import Mathlib.Topology.MetricSpace.Sequences
+import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -34,7 +37,10 @@ Fourier transform of a tensor product inherits the decay of one of its factors.
 In a proper space, if every unit vector of a closed cone lies in an open cone, finitely many of
 these cones cover the nonzero vectors of the closed cone, by compactness of the unit sphere. This
 is how conditions imposed direction by direction combine into one condition on a whole closed
-cone of frequencies.
+cone of frequencies. By the same compactness, a continuous linear map `L` with no zeros on the
+nonzero vectors of a closed cone `V` is bounded below there, `‖η‖ ≤ c ‖L η‖`, and maps `V` to a
+closed cone. This is how a closed cone of frequencies is transported along the transpose of a
+linear map.
 
 ## Main results
 
@@ -53,6 +59,9 @@ cone of frequencies.
 * `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
   lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
   `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
+* `TauCeti.exists_norm_le_mul_norm_apply_of_isClosed`,
+  `TauCeti.isClosed_image_of_isClosed`: a continuous linear map without zeros on the nonzero
+  vectors of a closed cone is bounded below on it and maps it to a closed set.
 * `TauCeti.exists_forall_le_of_diff_singleton_subset_biUnion`: bounds on finitely many sets
   covering the nonzero elements of `V` combine into one bound on `V`.
 
@@ -340,5 +349,63 @@ theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X
     _ ≤ |C ξ| := le_abs_self _
     _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
     _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
+
+section LinearMap
+
+variable [NormedSpace ℝ E] [ProperSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : Set E}
+
+/-- **A linear map is bounded below on a closed cone where it has no zeros.** Let `V` be a closed
+subset of a proper real normed space closed under multiplication by positive reals. If a
+continuous linear map `L` vanishes on no nonzero vector of `V`, then `‖η‖ ≤ c ‖L η‖` on `V` for
+some `c ≥ 0`: the norm of `L` has a positive minimum on the compact set of unit vectors of `V`. -/
+theorem exists_norm_le_mul_norm_apply_of_isClosed (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V) (L : E →L[ℝ] F)
+    (hL : ∀ η ∈ V, L η = 0 → η = 0) : ∃ c, 0 ≤ c ∧ ∀ η ∈ V, ‖η‖ ≤ c * ‖L η‖ := by
+  set S := V ∩ sphere (0 : E) 1
+  -- The direction of a nonzero vector of `V` is a unit vector of `V`.
+  have hdir {η : E} (hη : η ∈ V) (hη0 : η ≠ 0) : ‖η‖⁻¹ • η ∈ S :=
+    ⟨hVcone _ (inv_pos.2 (norm_pos_iff.2 hη0)) η hη,
+      by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hη0)]⟩
+  rcases S.eq_empty_or_nonempty with hS | hS
+  · -- Here `V ⊆ {0}`.
+    refine ⟨0, le_rfl, fun η hη ↦ ?_⟩
+    by_contra h
+    have hη0 : η ≠ 0 := fun h0 ↦ h (by simp [h0])
+    exact (hS ▸ hdir hη hη0 : _ ∈ (∅ : Set E))
+  obtain ⟨ξ₀, hξ₀, hmin⟩ := ((isCompact_sphere (0 : E) 1).inter_left hV).exists_isMinOn hS
+    (continuous_norm.comp L.continuous).continuousOn
+  have hm : 0 < ‖L ξ₀‖ := norm_pos_iff.2 fun h ↦ by
+    simpa [hL ξ₀ hξ₀.1 h] using hξ₀.2
+  refine ⟨‖L ξ₀‖⁻¹, inv_nonneg.2 hm.le, fun η hη ↦ ?_⟩
+  rcases eq_or_ne η 0 with rfl | hη0
+  · simp
+  have h := hmin (hdir hη hη0)
+  simp only [mem_ofPred_eq, Function.comp_apply, map_smul, norm_smul, norm_inv, norm_norm] at h
+  rw [inv_mul_eq_div, le_div_iff₀ (norm_pos_iff.2 hη0)] at h
+  rw [inv_mul_eq_div, le_div_iff₀ hm, mul_comm]
+  exact h
+
+/-- **The image of a closed cone under a linear map without zeros on it is closed.** If a
+continuous linear map `L` on a proper real normed space vanishes on no nonzero vector of a closed
+cone `V`, then `L '' V` is closed: `L` is bounded below on `V`
+(`TauCeti.exists_norm_le_mul_norm_apply_of_isClosed`), so preimages in `V` of convergent sequences
+are bounded and have convergent subsequences. -/
+theorem isClosed_image_of_isClosed (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V) (L : E →L[ℝ] F)
+    (hL : ∀ η ∈ V, L η = 0 → η = 0) : IsClosed (L '' V) := by
+  obtain ⟨c, hc, hle⟩ := exists_norm_le_mul_norm_apply_of_isClosed hV hVcone L hL
+  refine isSeqClosed_iff_isClosed.1 fun x ξ hx hξ ↦ ?_
+  choose η hηV hηx using hx
+  obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 (isBounded_range_of_tendsto x hξ)
+  have hη : ∀ n, η n ∈ closedBall (0 : E) (c * R) := fun n ↦ by
+    rw [mem_closedBall_zero_iff]
+    exact (hle _ (hηV n)).trans (by rw [hηx]; gcongr; exact hR _ (mem_range_self n))
+  obtain ⟨a, -, φ, hφ, ha⟩ := tendsto_subseq_of_bounded isBounded_closedBall hη
+  refine ⟨a, hV.mem_of_tendsto ha (.of_forall fun n ↦ hηV _), tendsto_nhds_unique
+    ((L.continuous.tendsto a).comp ha) ?_⟩
+  simpa only [Function.comp_def, hηx] using hξ.comp hφ.tendsto_atTop
+
+end LinearMap
 
 end TauCeti
