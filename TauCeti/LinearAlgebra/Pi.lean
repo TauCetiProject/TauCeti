@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Group.Pi.Finset
 public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.Logic.Equiv.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -18,7 +19,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
+predicate on the indices, the extension of a linear automorphism of `κ → M` to `ι → M` along an
+injective map `κ → ι`, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
 segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
 determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
 finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
@@ -50,6 +52,8 @@ weights.
   with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
+* `LinearEquiv.piExtendOfInjective`: a linear automorphism of `κ → M` extended along an injective
+  map `κ → ι` to `ι → M`, fixing the coordinates outside the range.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
@@ -236,6 +240,49 @@ public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : 
   LinearMap.ext fun v ↦ by simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
 
 end FinAppend
+
+section ExtendOfInjective
+
+variable {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {f : κ → ι}
+
+/-- Extends a linear automorphism `e` of `κ → M` along an injective map `f : κ → ι` to a linear
+automorphism of `ι → M`, acting by `e` on the coordinates in the range of `f`
+(`piExtendOfInjective_apply_apply`) and fixing the others (`piExtendOfInjective_apply_of_notMem`).
+It splits `ι → M` as `(κ → M) × ((Set.range f)ᶜ → M)` along `Equiv.ofInjectiveSumCompl` and
+applies `e` to the first factor. -/
+public noncomputable def piExtendOfInjective (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (ι → M) ≃ₗ[R] (ι → M) :=
+  let L := funCongrLeft R M (Equiv.ofInjectiveSumCompl f hf) ≪≫ₗ sumArrowLequivProdArrow _ _ R M
+  L ≪≫ₗ e.prodCongr (.refl R _) ≪≫ₗ L.symm
+
+/-- The extension of `e` along `f` acts by `e` on the coordinates in the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_apply (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective)
+    (x : ι → M) (k : κ) :
+    e.piExtendOfInjective hf x (f k) = e (x ∘ f) k := by
+  -- The first factor of the split of `x` is `x ∘ f`.
+  have h : (sumArrowLequivProdArrow κ _ R M
+      (LinearMap.funLeft R M (Equiv.ofInjectiveSumCompl f hf) x)).1 = x ∘ f := by
+    ext k'
+    simp [LinearMap.funLeft_apply]
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply, h]
+
+/-- The extension of `e` along `f` fixes the coordinates outside the range of `f`. -/
+@[simp]
+public theorem piExtendOfInjective_apply_of_notMem (e : (κ → M) ≃ₗ[R] (κ → M))
+    (hf : f.Injective) (x : ι → M) {i : ι} (hi : i ∉ Set.range f) :
+    e.piExtendOfInjective hf x i = x i := by
+  lift i to ↥(Set.range f)ᶜ using hi
+  simp [piExtendOfInjective, funCongrLeft_apply, LinearMap.funLeft_apply]
+
+/-- The inverse of the extension of `e` along `f` is the extension of `e.symm`. -/
+@[simp]
+public theorem piExtendOfInjective_symm (e : (κ → M) ≃ₗ[R] (κ → M)) (hf : f.Injective) :
+    (e.piExtendOfInjective hf).symm = e.symm.piExtendOfInjective hf := by
+  simp only [piExtendOfInjective, trans_symm, prodCongr_symm, symm_symm, refl_symm]
+  exact (trans_assoc _ _ _).symm
+
+end ExtendOfInjective
 
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
