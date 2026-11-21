@@ -777,6 +777,54 @@ noncomputable def couponCount (g₀ : S.Coupon) {X Y : S.FreeRigid} (f : X ⟶ Y
 theorem couponCount_id (g₀ : S.Coupon) (X : S.FreeRigid) : couponCount g₀ (𝟙 X) = 0 := by rfl
 
 @[simp]
+theorem couponCount_associator_hom (g₀ : S.Coupon) (X Y Z : S.FreeRigid) :
+    couponCount g₀ (α_ X Y Z).hom = 0 := by rfl
+
+@[simp]
+theorem couponCount_associator_inv (g₀ : S.Coupon) (X Y Z : S.FreeRigid) :
+    couponCount g₀ (α_ X Y Z).inv = 0 := by rfl
+
+@[simp]
+theorem couponCount_leftUnitor_hom (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀ (λ_ X).hom = 0 := by rfl
+
+@[simp]
+theorem couponCount_leftUnitor_inv (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀ (λ_ X).inv = 0 := by rfl
+
+@[simp]
+theorem couponCount_rightUnitor_hom (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀ (ρ_ X).hom = 0 := by rfl
+
+@[simp]
+theorem couponCount_rightUnitor_inv (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀ (ρ_ X).inv = 0 := by rfl
+
+@[simp]
+theorem couponCount_coevaluation_right (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀
+        (@ExactPairing.coevaluation S.FreeRigid _ _ X _ (RightRigidCategory.rightDual X).exact) =
+      0 := by rfl
+
+@[simp]
+theorem couponCount_evaluation_right (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀
+        (@ExactPairing.evaluation S.FreeRigid _ _ X _ (RightRigidCategory.rightDual X).exact) =
+      0 := by rfl
+
+@[simp]
+theorem couponCount_coevaluation_left (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀
+        (@ExactPairing.coevaluation S.FreeRigid _ _ _ X (LeftRigidCategory.leftDual X).exact) =
+      0 := by rfl
+
+@[simp]
+theorem couponCount_evaluation_left (g₀ : S.Coupon) (X : S.FreeRigid) :
+    couponCount g₀
+        (@ExactPairing.evaluation S.FreeRigid _ _ _ X (LeftRigidCategory.leftDual X).exact) =
+      0 := by rfl
+
+@[simp]
 theorem couponCount_comp (g₀ : S.Coupon) {X Y Z : S.FreeRigid} (f : X ⟶ Y) (g : Y ⟶ Z) :
     couponCount g₀ (f ≫ g) = couponCount g₀ f + couponCount g₀ g := by
   induction f using Quotient.inductionOn

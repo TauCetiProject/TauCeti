@@ -82,7 +82,9 @@ equivalence.
 * `CategoryTheory.NatTrans.app_comp_rightMate_of_exactPairing`,
   `CategoryTheory.NatTrans.rightMate_comp_app_of_exactPairing`,
   `CategoryTheory.NatTrans.app_comp_leftMate_of_exactPairing`,
-  `CategoryTheory.NatTrans.leftMate_comp_app_of_exactPairing`, and
+  `CategoryTheory.NatTrans.leftMate_comp_app_of_exactPairing`,
+  `CategoryTheory.NatTrans.app_right_eq_of_exactPairing`,
+  `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`, and
   `CategoryTheory.NatTrans.isIso_of_rightRigid` / `CategoryTheory.NatTrans.isIso_of_leftRigid`:
   a monoidal natural transformation between strong monoidal functors is invertible at both objects
   of any exact pairing, with inverse given by the adjoint mate of the opposite component
@@ -447,20 +449,15 @@ theorem NatTrans.rightMate_comp_app_of_exactPairing (τ : F ⟶ G) [τ.IsMonoida
   let : ExactPairing (G.obj X) (G.obj Y) := G.mapExactPairing X Y
   set f := ExactPairing.rightMate (F.mapExactPairing X Y) (G.mapExactPairing X Y) (τ.app X) ≫
     τ.app Y
-  have h : η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ f = η_ (G.obj X) (G.obj Y) := by
+  have h : η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ f =
+      η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ 𝟙 (G.obj Y) := by
     rw [MonoidalCategory.whiskerLeft_comp, ExactPairing.coevaluation_comp_rightMate_assoc,
-      ← tensorHom_def, NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app]
-  calc
-    f = 𝟙 _ ⊗≫ (G.obj Y ◁ η_ (G.obj X) (G.obj Y) ⊗≫ ε_ (G.obj X) (G.obj Y) ▷ G.obj Y) ⊗≫ f := by
-      rw [ExactPairing.coevaluation_evaluation'']; monoidal
-    _ = 𝟙 _ ⊗≫ G.obj Y ◁ η_ (G.obj X) (G.obj Y) ⊗≫
-          (ε_ (G.obj X) (G.obj Y) ▷ G.obj Y ≫ 𝟙_ D ◁ f) ⊗≫ 𝟙 _ := by
-      monoidal
-    _ = 𝟙 _ ⊗≫ (G.obj Y ◁ (η_ (G.obj X) (G.obj Y) ≫ G.obj X ◁ f) ⊗≫
-          ε_ (G.obj X) (G.obj Y) ▷ G.obj Y) ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]; monoidal
-    _ = 𝟙 (G.obj Y) := by
-      rw [h, ExactPairing.coevaluation_evaluation'']; monoidal
+      ← tensorHom_def, NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app,
+      MonoidalCategory.whiskerLeft_id, Category.comp_id]
+  have h' := congrArg (tensorLeftHomEquiv (𝟙_ D) (G.obj X) (G.obj Y) (G.obj Y)).symm h
+  rw [tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft,
+    tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft, cancel_epi] at h'
+  exact h'
 
 /-- For an exact pairing `(X, Y)` in `C`, the left mate of `τ.app Y` with respect to the image
 pairings is a right inverse to `τ.app X`. -/
@@ -486,6 +483,20 @@ theorem NatTrans.leftMate_comp_app_of_exactPairing (τ : F ⟶ G) [τ.IsMonoidal
   refine ExactPairing.leftHom_ext (Y := G.obj Y) ?_
   rw [comp_whiskerRight, ExactPairing.coevaluation_comp_leftMate_assoc, ← tensorHom_def',
     NatTrans.mapExactPairing_coevaluation_comp_tensorHom_app, id_whiskerRight, Category.comp_id]
+
+/-- If two monoidal natural transformations between strong monoidal functors agree on the left
+member of an exact pairing, they also agree on the right member. -/
+theorem NatTrans.app_right_eq_of_exactPairing {α β : F ⟶ G} [α.IsMonoidal] [β.IsMonoidal]
+    (X Y : C) [ExactPairing X Y] (h : α.app X = β.app X) : α.app Y = β.app Y := by
+  rw [← Category.comp_id (α.app Y), ← NatTrans.rightMate_comp_app_of_exactPairing β X Y,
+    ← Category.assoc, ← h, NatTrans.app_comp_rightMate_of_exactPairing α X Y, Category.id_comp]
+
+/-- If two monoidal natural transformations between strong monoidal functors agree on the right
+member of an exact pairing, they also agree on the left member. -/
+theorem NatTrans.app_left_eq_of_exactPairing {α β : F ⟶ G} [α.IsMonoidal] [β.IsMonoidal]
+    (X Y : C) [ExactPairing X Y] (h : α.app Y = β.app Y) : α.app X = β.app X := by
+  rw [← Category.comp_id (α.app X), ← NatTrans.leftMate_comp_app_of_exactPairing β X Y,
+    ← Category.assoc, ← h, NatTrans.app_comp_leftMate_of_exactPairing α X Y, Category.id_comp]
 
 /-- A monoidal natural transformation between strong monoidal functors is invertible at the left
 member of any exact pairing. -/

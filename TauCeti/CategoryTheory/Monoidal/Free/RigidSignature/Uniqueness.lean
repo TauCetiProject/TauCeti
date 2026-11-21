@@ -72,39 +72,11 @@ theorem natTrans_ext {F G : S.FreeRigid ⥤ D} [F.Monoidal] [G.Monoidal] {α β 
   | rightDual X hX =>
     let : ExactPairing (⟨X⟩ : S.FreeRigid) (⟨X.rightDual⟩ : S.FreeRigid) :=
       (RightRigidCategory.rightDual (⟨X⟩ : S.FreeRigid)).exact
-    calc
-      α.app ⟨X.rightDual⟩ = α.app ⟨X.rightDual⟩ ≫ 𝟙 _ := (Category.comp_id _).symm
-      _ = α.app ⟨X.rightDual⟩ ≫
-            (ExactPairing.rightMate (F.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩)
-              (G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩) (β.app ⟨X⟩) ≫
-              β.app ⟨X.rightDual⟩) := by
-        rw [NatTrans.rightMate_comp_app_of_exactPairing β (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩]
-      _ = (α.app ⟨X.rightDual⟩ ≫
-            ExactPairing.rightMate (F.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩)
-              (G.mapExactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩) (α.app ⟨X⟩)) ≫
-            β.app ⟨X.rightDual⟩ := by
-        rw [← Category.assoc, hX]
-      _ = β.app ⟨X.rightDual⟩ := by
-        rw [NatTrans.app_comp_rightMate_of_exactPairing α (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩,
-          Category.id_comp]
+    exact NatTrans.app_right_eq_of_exactPairing (⟨X⟩ : S.FreeRigid) ⟨X.rightDual⟩ hX
   | leftDual X hX =>
     let : ExactPairing (⟨X.leftDual⟩ : S.FreeRigid) (⟨X⟩ : S.FreeRigid) :=
       (LeftRigidCategory.leftDual (⟨X⟩ : S.FreeRigid)).exact
-    calc
-      α.app ⟨X.leftDual⟩ = α.app ⟨X.leftDual⟩ ≫ 𝟙 _ := (Category.comp_id _).symm
-      _ = α.app ⟨X.leftDual⟩ ≫
-            (ExactPairing.leftMate (F.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩)
-              (G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩) (β.app ⟨X⟩) ≫
-              β.app ⟨X.leftDual⟩) := by
-        rw [NatTrans.leftMate_comp_app_of_exactPairing β (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩]
-      _ = (α.app ⟨X.leftDual⟩ ≫
-            ExactPairing.leftMate (F.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩)
-              (G.mapExactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩) (α.app ⟨X⟩)) ≫
-            β.app ⟨X.leftDual⟩ := by
-        rw [← Category.assoc, hX]
-      _ = β.app ⟨X.leftDual⟩ := by
-        rw [NatTrans.app_comp_leftMate_of_exactPairing α (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩,
-          Category.id_comp]
+    exact NatTrans.app_left_eq_of_exactPairing (⟨X.leftDual⟩ : S.FreeRigid) ⟨X⟩ hX
 
 variable (F G : S.FreeRigid ⥤ D) [F.Monoidal] [G.Monoidal] (e : ∀ a, F.obj (of a) ≅ G.obj (of a))
 
