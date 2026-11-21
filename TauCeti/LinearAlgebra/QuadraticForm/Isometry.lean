@@ -27,6 +27,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
   whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
+* `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
+  bilinear form of the target back to that of the source.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -108,6 +110,16 @@ theorem _root_.QuadraticMap.IsometryEquiv.polar_apply {R : Type u} {M₁ : Type 
     [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) (x y : M₁) : polar Q₂ (e x) (e y) = polar Q₁ x y := by
   simpa using e.toIsometry.polar_apply x y
+
+/-- An isometric equivalence pulls the polar bilinear form of the target back to the polar
+bilinear form of the source. -/
+theorem _root_.QuadraticMap.IsometryEquiv.polarBilin_compl₁₂ {R : Type u} {M₁ : Type v}
+    {M₂ : Type*} {N : Type w} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+    [Module R M₂] [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (e : Q₁.IsometryEquiv Q₂) :
+    (polarBilin Q₂).compl₁₂ (e.toLinearEquiv : M₁ →ₗ[R] M₂) e.toLinearEquiv = polarBilin Q₁ := by
+  ext x y
+  exact e.polar_apply x y
 
 /-- An isometric equivalence maps the kernel of polarization against `x` onto the kernel of
 polarization against its image. -/
