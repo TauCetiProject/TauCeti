@@ -41,6 +41,6 @@ example : ¬ (⊥ : Setoid (ℕ → Bool)).IsolatedBy
   have hE : Setoid.ker (fun x : ℕ → Bool => fun i : Fin n => x i) (fun _ => false)
       (Function.update (fun _ => false) n true) := by
     funext i
-    simp [Function.update_of_ne (Nat.ne_of_lt i.2)]
+    simp [Function.update_of_ne (Nat.ne_of_lt i.isLt)]
   have := hn _ hE
   simpa [Setoid.bot_def] using congrFun this n

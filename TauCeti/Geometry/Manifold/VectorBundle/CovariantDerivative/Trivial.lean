@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The canonical connection on a trivial bundle
@@ -42,13 +43,11 @@ def trivial : CovariantDerivative I F (Bundle.Trivial M F) where
   isCovariantDerivativeOnUniv := {
     add := by
       intro σ τ x hσ hτ _
-      simp only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-        Trivial.trivialization_apply] at hσ hτ
+      rw [Trivial.mdifferentiableAt_section_iff] at hσ hτ
       exact mvfderiv_add hσ hτ
     leibniz := by
       intro σ f x hσ hf _
-      simp only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-        Trivial.trivialization_apply] at hσ
+      rw [Trivial.mdifferentiableAt_section_iff] at hσ
       exact mvfderiv_smul hf hσ }
 
 /-- The canonical trivial-bundle connection evaluates as ordinary differentiation. -/

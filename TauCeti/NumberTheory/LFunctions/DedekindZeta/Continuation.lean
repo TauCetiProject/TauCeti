@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
 import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -68,11 +69,6 @@ variable {K : Type*} [Field K] [NumberField K]
 private theorem discr_abs_cast_ne_zero (K : Type*) [Field K] [NumberField K] :
     ((|discr K| : ℤ) : ℂ) ≠ 0 :=
   Int.cast_ne_zero.mpr (abs_ne_zero.mpr (discr_ne_zero K))
-
-private theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by
-  rw [← Gammaℝ_mul_Gammaℝ_add_one]
-  exact mul_ne_zero (Gammaℝ_ne_zero_of_re_pos hs)
-    (Gammaℝ_ne_zero_of_re_pos (by simp; linarith))
 
 /-- The reciprocal archimedean factor `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂` is entire. -/
 private theorem differentiable_archInvFactor (K : Type*) [Field K] [NumberField K] :
@@ -433,17 +429,6 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
 
 /-! ### Reflection symmetry -/
 
-private theorem meromorphicNFOn_conj_conj_dedekindZetaC (K : Type*) [Field K] [NumberField K] :
-    MeromorphicNFOn (conj ∘ dedekindZetaC K ∘ conj) univ := by
-  intro z _
-  rw [meromorphicNFAt_iff_analyticAt_or]
-  rcases meromorphicNFAt_iff_analyticAt_or.mp
-      (meromorphicNFOn_dedekindZetaC K (mem_univ (conj z))) with hA | ⟨hM, hlt, h0⟩
-  · exact Or.inl (TauCeti.analyticAt_conj_conj_iff.mpr hA)
-  · refine Or.inr ⟨TauCeti.meromorphicAt_conj_conj_iff.mpr hM, ?_, ?_⟩
-    · rwa [TauCeti.meromorphicOrderAt_conj_conj]
-    · simp only [Function.comp_apply, h0, map_zero]
-
 variable (K) in
 /-- **Reflection symmetry of the continued Dedekind zeta function**:
 `conj (dedekindZetaC K (conj s)) = dedekindZetaC K s` for every `s : ℂ`. -/
@@ -451,7 +436,8 @@ theorem dedekindZetaC_conj (s : ℂ) :
     conj (dedekindZetaC K (conj s)) = dedekindZetaC K s := by
   have hfun : conj ∘ dedekindZetaC K ∘ conj = dedekindZetaC K := by
     refine eq_of_meromorphicNFOn_of_eqOn_halfPlane (σ := 1)
-      (meromorphicNFOn_conj_conj_dedekindZetaC K) (meromorphicNFOn_dedekindZetaC K) fun z hz ↦ ?_
+      (TauCeti.meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_dedekindZetaC K))
+      (meromorphicNFOn_dedekindZetaC K) fun z hz ↦ ?_
     have h0 : z ≠ 0 := by rintro rfl; norm_num at hz
     have h1 : z ≠ 1 := by rintro rfl; norm_num at hz
     have hc0 : conj z ≠ 0 := by rintro h; exact h0 (by simpa using congrArg conj h)

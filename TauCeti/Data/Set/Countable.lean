@@ -26,6 +26,9 @@ values of countably many sentences.
   countable range.
 * `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
   has countable range.
+* `Function.Injective.exists_injOn_comp_eq_inl`: an injective map `g : α → β` has a left inverse
+  `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with a given
+  countable set.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -65,6 +68,28 @@ theorem Finset.countable_range_sup {κ α Ω : Type*} [SemilatticeSup α] [Order
       exact ⟨a ω, ⟨ω, rfl⟩, b ω, ⟨ω, rfl⟩, rfl⟩)) hf
   have heq : s.sup f = fun ω ↦ s.sup (fun j ↦ f j ω) := funext (s.sup_apply f)
   exact heq ▸ h
+
+/-- An injective map `g : α → β` has a left inverse `β → α ⊕ ℕ`, through `Sum.inl`, that is
+injective on the range of `g` together with a given countable set. -/
+theorem Function.Injective.exists_injOn_comp_eq_inl {α β : Type*} {g : α → β}
+    (hg : Function.Injective g) {S : Set β} (hS : S.Countable) :
+    ∃ p : β → α ⊕ ℕ, (Set.range g ∪ S).InjOn p ∧ p ∘ g = Sum.inl := by
+  classical
+  obtain ⟨e, he⟩ := Set.countable_iff_exists_injOn.mp hS
+  refine ⟨Function.extend g Sum.inl (Sum.inr ∘ e), fun y hy z hz hyz => ?_,
+    funext fun x => hg.extend_apply _ _ x⟩
+  by_cases hy' : ∃ x, g x = y <;> by_cases hz' : ∃ x, g x = z
+  · obtain ⟨x, rfl⟩ := hy'
+    obtain ⟨x', rfl⟩ := hz'
+    rw [hg.extend_apply, hg.extend_apply, Sum.inl.injEq] at hyz
+    rw [hyz]
+  · obtain ⟨x, rfl⟩ := hy'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hz'] at hyz
+  · obtain ⟨x, rfl⟩ := hz'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hy'] at hyz
+  · simp only [Function.extend_apply' _ _ _ hy', Function.extend_apply' _ _ _ hz',
+      Function.comp_apply, Sum.inr.injEq] at hyz
+    exact he (hy.resolve_left hy') (hz.resolve_left hz') hyz
 
 namespace TauCeti
 

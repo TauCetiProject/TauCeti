@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
+import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
@@ -201,10 +202,7 @@ theorem ofSeries_dedekindZetaData :
   have hd : ((|discr K| : ℤ) : ℂ) ^ ((2 : ℂ) / 2) ≠ 0 :=
     cpow_ne_zero_iff.mpr (Or.inl (Int.cast_ne_zero.mpr (abs_ne_zero.mpr (discr_ne_zero K))))
   have hΓℝ : Gammaℝ 2 ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by norm_num)
-  have hΓℂ : Gammaℂ 2 ≠ 0 := by
-    rw [← Gammaℝ_mul_Gammaℝ_add_one]
-    exact mul_ne_zero (Gammaℝ_ne_zero_of_re_pos (by norm_num))
-      (Gammaℝ_ne_zero_of_re_pos (by norm_num))
+  have hΓℂ : Gammaℂ 2 ≠ 0 := Gammaℂ_ne_zero_of_re_pos (by norm_num)
   have hζ : NumberField.dedekindZeta K 2 ≠ 0 :=
     TauCeti.dedekindZeta_ne_zero_of_one_lt_re (by norm_num)
   exact mul_ne_zero (mul_ne_zero (mul_ne_zero hd (pow_ne_zero _ hΓℝ)) (pow_ne_zero _ hΓℂ)) hζ
