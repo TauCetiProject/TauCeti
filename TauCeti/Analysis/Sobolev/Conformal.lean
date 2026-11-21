@@ -59,6 +59,11 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   into sections of the plane of bounded `W^{1,2}(ℝ²)` norm supported in a fixed compact set, to
   which the Fréchet–Kolmogorov criterion `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`
   applies; on `K` the weight `√ρ` is a bounded multiplier.
+* **First-order operators.** A coefficient field `M : U → L(V × V × V, W)`, essentially bounded on
+  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.ConformalSobolev.jetOperator`). On the jet of a
+  test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
+  (`TauCeti.ConformalSobolev.jetOperator_toLp_jet_ae_eq`), and its restriction to `H1` is the
+  realization of that operator from `W^{1,2}_0(U, V)` to `L²(U, W)`.
 * **Peetre's argument.** An operator `D` on `H1` satisfying an estimate
   `‖x‖ ≤ C (‖D x‖ + ‖√ρ ξ‖_{L²(K)})` on the jets `x` of test sections `ξ` has finite-dimensional
   kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
@@ -606,6 +611,52 @@ theorem isCompactOperator_restrictWeightedValue_comp_subtypeL [FiniteDimensional
   exact closure_mono hsub (image_closure_subset_closure_image
     (restrictWeightedValue V U K).continuous
       ⟨_, mem_closure_setOf_norm_lt x ((mem_ball_zero_iff.1 hx).trans one_lt_two), rfl⟩)
+
+/-! ### First-order operators with bounded coefficients -/
+
+section Operator
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+variable (U) in
+open scoped Classical in
+/-- The first-order operator `f ↦ (z ↦ M z (f z))` on `L²` jets over `U`, for a coefficient field
+`M` essentially bounded on `U`. On the jet `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` it is
+`ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`. If `M` is not essentially bounded on `U`, it is `0` by convention. -/
+def jetOperator (M : ℝ × ℝ → V × V × V →L[ℝ] W) :
+    Lp (V × V × V) 2 (volume.restrict U) →L[ℝ] Lp W 2 (volume.restrict U) :=
+  if hM : MemLp M ∞ (volume.restrict U) then
+    (ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).holderL (volume.restrict U) ∞ 2 2
+      (hM.toLp M)
+  else 0
+
+/-- The first-order operator of a coefficient field that is not essentially bounded on `U` is
+`0`. -/
+theorem jetOperator_of_not_memLp {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : ¬ MemLp M ∞ (volume.restrict U)) : jetOperator U M = 0 := by
+  simp [jetOperator, hM]
+
+/-- The first-order operator of a coefficient field essentially bounded on `U` acts pointwise on
+`L²` jets. -/
+theorem coeFn_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ (volume.restrict U))
+    (f : Lp (V × V × V) 2 (volume.restrict U)) :
+    jetOperator U M f =ᵐ[volume.restrict U] fun z ↦ M z (f z) := by
+  simp only [jetOperator, hM, ↓reduceDIte, ContinuousLinearMap.holderL_apply_apply]
+  filter_upwards [(ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).coeFn_holder (r := 2)
+    (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
+  rw [h₁, ContinuousLinearMap.id_apply, h₂]
+
+/-- On the `L²` class of the jet of a test section `ξ`, the first-order operator of a coefficient
+field `M` is `z ↦ M z (√ρ ξ z, ∂s ξ z, ∂t ξ z)`. -/
+theorem jetOperator_toLp_jet_ae_eq (hρ : IsWeight U ρ) {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ (volume.restrict U)) (hξ : ξ ∈ testSection V U) :
+    jetOperator U M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
+      fun z ↦ M z (jet ρ ξ z) := by
+  filter_upwards [coeFn_jetOperator hM ((memLp_jet hρ hξ).toLp (jet ρ ξ)),
+    (memLp_jet hρ hξ).coeFn_toLp] with z h₁ h₂
+  rw [h₁, h₂]
+
+end Operator
 
 /-! ### Peetre's argument -/
 

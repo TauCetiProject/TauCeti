@@ -35,7 +35,11 @@ independent of `s`) are the case `R = 0`, and continuation cylinders are treated
   it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`). At `z` it depends on the data only
   through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`), and it is
   continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
-  (`TauCeti.SymplecticForm.continuous_floerJetCoeff`).
+  (`TauCeti.SymplecticForm.continuous_floerJetCoeff`). Its components bound the leading and
+  zeroth-order coefficients (`TauCeti.SymplecticForm.norm_apply_le_norm_floerJetCoeff`,
+  `TauCeti.SymplecticForm.norm_floerLinearizationCoeff_le_norm_floerJetCoeff`), and for the datum
+  `H_t dt` it is bounded where `u` and the slice defect `∂t u - X_{H_t}(u)` are
+  (`TauCeti.SymplecticForm.exists_forall_norm_floerJetCoeff_le`).
 * `TauCeti.SymplecticForm.floerSobolevOperator` is the resulting operator on the Sobolev space
   `TauCeti.CylinderSobolev.H1` (`TauCeti.SymplecticForm.floerSobolevOperator_def`). It acts
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
@@ -116,6 +120,28 @@ theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V �
     ω.floerJetCoeff J Ks Kt u z (jet ξ z) = ω.floerLinearization J Ks Kt u ξ z := by
   simp only [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
+
+/-- The zeroth-order part of the linearized Floer operator is a component of its coefficient field
+on jets: `C(z) v` is the value of the field on `(v, 0, 0)`. -/
+theorem norm_floerLinearizationCoeff_le_norm_floerJetCoeff (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖ω.floerLinearizationCoeff J Ks Kt u z‖ ≤ ‖ω.floerJetCoeff J Ks Kt u z‖ :=
+  opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+    have h : ω.floerJetCoeff J Ks Kt u z (v, 0, 0) = ω.floerLinearizationCoeff J Ks Kt u z v := by
+      simp [floerJetCoeff_apply]
+    rw [← h]
+    exact (le_opNorm _ _).trans_eq (by simp [Prod.norm_def])
+
+/-- The leading coefficient `J(z, u z)` of the linearized Floer operator is a component of its
+coefficient field on jets: `J(z, u z) v` is the value of the field on `(0, 0, v)`. -/
+theorem norm_apply_le_norm_floerJetCoeff (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖J z (u z)‖ ≤ ‖ω.floerJetCoeff J Ks Kt u z‖ :=
+  opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+    have h : ω.floerJetCoeff J Ks Kt u z (0, 0, v) = J z (u z) v := by
+      simp [floerJetCoeff_apply]
+    rw [← h]
+    exact (le_opNorm _ _).trans_eq (by simp [Prod.norm_def])
 
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
 `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0` by convention
@@ -218,7 +244,7 @@ private theorem norm_floerLinearizationCoeff_le (ω : SymplecticForm V) {H : ℝ
 /-- For the datum `K = H_t dt` with `H` jointly `C²` and `J_t(y)` a `C¹` family, the coefficient
 field of the linearized Floer operator on jets is bounded at the points of the strip where `u` and
 its slice defect `∂t u - X_{H_t}(u)` are bounded. -/
-private theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
     (u : ℝ × ℝ → V) (Cu Cδ : ℝ) :

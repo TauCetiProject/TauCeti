@@ -45,7 +45,11 @@ times the Jacobian agree up to the factors `2` and `20π²`
 `ζ` over the band agree up to the same factors
 (`TauCeti.Floer.lintegral_comp_endChart_le`, `TauCeti.Floer.lintegral_image_endChart_le`). So
 estimates stated in the end coordinates, such as the semi-Fredholm estimate of the linearized
-Floer operator along a Floer pair of pants, transfer to the norm of `H1`.
+Floer operator along a Floer pair of pants, transfer to the norm of `H1`. Pointwise, the weight is
+at least `|w - c_q|⁻²` for the center `c_q` of every end
+(`TauCeti.Floer.inv_norm_sub_endCenter_sq_le_cylindricalWeight`,
+`TauCeti.Floer.inv_sqrt_cylindricalWeight_le_norm_sub_endCenter`): the distance `|w - c_q|` to the
+puncture is, up to the constant `2π`, the conformal factor of the end chart.
 
 ## References
 
@@ -159,6 +163,32 @@ theorem cylindricalWeight_endChart_mul_det_fderiv_mem_Icc (q : Puncture) {z : �
       have := norm_sub_norm_le w 1
       rwa [norm_one] at this
     exact inv_sq_add_inv_sq_mul_mem_Icc (by linarith) (by linarith)
+
+/-- The cylindrical weight of the pair of pants is at least `|z - c_q|⁻²` for the center `c_q` of
+every end: `0` for the ends at `0` and `∞`, and `1` for the end at `1`. -/
+theorem inv_norm_sub_endCenter_sq_le_cylindricalWeight (q : Puncture) (z : ℝ × ℝ) :
+    (‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2)⁻¹ ≤ cylindricalWeight z := by
+  rw [cylindricalWeight_apply, Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq]
+  have h₀ : 0 ≤ (‖Complex.equivRealProdCLM.symm z‖ ^ 2)⁻¹ := by positivity
+  have h₁ : 0 ≤ (‖Complex.equivRealProdCLM.symm z - 1‖ ^ 2)⁻¹ := by positivity
+  cases q
+  · simp only [endCenter_zero, sub_zero]
+    linarith
+  · simp only [endCenter_one]
+    linarith
+  · simp only [endCenter_inf, sub_zero]
+    linarith
+
+/-- Away from the center `c_q` of an end, the inverse square root of the cylindrical weight is at
+most the distance `|z - c_q|`. -/
+theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    (√(cylindricalWeight z))⁻¹ ≤ ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ := by
+  have hd : 0 < ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ :=
+    norm_pos_iff.2 (sub_ne_zero.2 hz)
+  have h := Real.sqrt_le_sqrt (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
+  rw [Real.sqrt_inv, Real.sqrt_sq hd.le] at h
+  simpa using inv_anti₀ (inv_pos.2 hd) h
 
 /-- The partial derivatives of `ξ ∘ φ_q` are those of `ξ` composed with the conformal derivative
 `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)` of the end chart, whose Jacobian is `a² + b²`. -/
