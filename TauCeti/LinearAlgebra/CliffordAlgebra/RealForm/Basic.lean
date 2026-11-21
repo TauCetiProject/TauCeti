@@ -142,12 +142,9 @@ theorem realCliffordWeight_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : 
 are isometric. -/
 theorem equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
     (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
-  have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
-      Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
-    funext x
-    cases x <;> simp
   rw [_root_.QuadraticForm.realSignatureForm_def, realCliffordForm_def]
-  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
+  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv fun x ↦ by
+    cases x <;> simp
 
 @[simp]
 theorem realCliffordWeight_mul_self (p q : ℕ) (i : Fin (p + q)) :
