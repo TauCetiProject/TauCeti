@@ -61,35 +61,6 @@ variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
 
 /-! ### Admissibility and construction of the normal crystal on `LSPath P b λ` -/
 
-private noncomputable abbrev toRatPLPath (π : LSPath P b lam) : PLPath ℚ (ℚ ⊗[ℤ] X) :=
-  π.toPLPath ℚ (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-
-omit [Finite ι] [P.IsReduced] in
-private theorem injective_mkRatAddHom (P : RootDatum ι X Y) :
-    Function.Injective (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom := by
-  simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ
-
-omit [Finite ι] [P.IsReduced] in
-private theorem baseChange_coroot'_mkRat (i : b.support) (x : X) :
-    (Module.Dual.baseChange ℚ (P.coroot' i) : Module.Dual ℚ (ℚ ⊗[ℤ] X))
-      ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) := by
-  simp [TensorProduct.mk_apply]
-
-private theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
-    Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
-  have := P.finite_weylGroup_of_base b
-  exact toPLPath_injective hlam (injective_mkRatAddHom P).injOn
-    (by simpa only [LinearMap.toAddMonoidHom_coe] using
-      P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam)
-
-private theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : X →+ V) (π : LSPath P b lam) :
-    (toRatPLPath π).mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
-      π.toPLPath 𝕜 f := by
-  have hcomp : (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)).toAddMonoidHom.comp
-      (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom = f := by ext x; simp [TensorProduct.mk_apply]
-  rw [toRatPLPath, mapSemilinear_toPLPath ℚ _ _ (Rat.cast_mono (K := 𝕜)), hcomp]
-
 section Admissibility
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
@@ -116,8 +87,12 @@ private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
   PLPath.normalCrystalOn (P := P) (b := b) (𝕜 := ℚ) (V := ℚ ⊗[ℤ] X)
     (f := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom)
     (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
-    (injective_mkRatAddHom P) baseChange_coroot'_mkRat
-    (isCrystalSet_range_toPLPath hlam _ baseChange_coroot'_mkRat)
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ)
+    (fun i x ↦ by simpa only [LinearMap.toAddMonoidHom_coe, eq_intCast] using
+      P.dual_baseChange_coroot'_tensorProduct_mk ℚ i x)
+    (isCrystalSet_range_toPLPath hlam _ fun i x ↦ by
+      simpa only [LinearMap.toAddMonoidHom_coe, eq_intCast] using
+        P.dual_baseChange_coroot'_tensorProduct_mk ℚ i x)
 
 private noncomputable abbrev toRatRangeEquiv (hlam : lam ∈ dominantChamber P b) :
     LSPath P b lam ≃ Set.range (toRatPLPath (P := P) (b := b) (lam := lam)) :=
@@ -130,23 +105,26 @@ noncomputable def crystal (hlam : lam ∈ dominantChamber P b) :
     NormalCrystal P b (LSPath P b lam) :=
   (ratCrystalOn hlam).transport (toRatRangeEquiv hlam).symm
 
+private theorem map_toRatPLPath_symm (hlam : lam ∈ dominantChamber P b)
+    (y : Option (Set.range (toRatPLPath (P := P) (b := b) (lam := lam)))) :
+    (y.map (toRatRangeEquiv hlam).symm).map toRatPLPath = y.unattach := by
+  rw [Option.map_map, toRatRangeEquiv, Equiv.self_comp_ofInjective_symm, ← Option.unattach]
+
 private theorem map_toRatPLPath_crystal_e (hlam : lam ∈ dominantChamber P b) (i : b.support)
     (π : LSPath P b lam) :
     ((crystal hlam).e i π).map toRatPLPath =
       PLPath.raise (Module.Dual.baseChange ℚ (P.coroot' i))
         ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) (toRatPLPath π) := by
-  rw [crystal, NormalCrystal.transport_e, Equiv.symm_symm, ratCrystalOn, Option.map_map,
-    toRatRangeEquiv, Equiv.self_comp_ofInjective_symm, ← Option.unattach,
-    PLPath.unattach_normalCrystalOn_e, Equiv.ofInjective_apply]
+  rw [crystal, NormalCrystal.transport_e, Equiv.symm_symm, map_toRatPLPath_symm, ratCrystalOn,
+    PLPath.unattach_normalCrystalOn_e, toRatRangeEquiv, Equiv.ofInjective_apply]
 
 private theorem map_toRatPLPath_crystal_f (hlam : lam ∈ dominantChamber P b) (i : b.support)
     (π : LSPath P b lam) :
     ((crystal hlam).f i π).map toRatPLPath =
       PLPath.lower (Module.Dual.baseChange ℚ (P.coroot' i))
         ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) (toRatPLPath π) := by
-  rw [crystal, NormalCrystal.transport_f, Equiv.symm_symm, ratCrystalOn, Option.map_map,
-    toRatRangeEquiv, Equiv.self_comp_ofInjective_symm, ← Option.unattach,
-    PLPath.unattach_normalCrystalOn_f, Equiv.ofInjective_apply]
+  rw [crystal, NormalCrystal.transport_f, Equiv.symm_symm, map_toRatPLPath_symm, ratCrystalOn,
+    PLPath.unattach_normalCrystalOn_f, toRatRangeEquiv, Equiv.ofInjective_apply]
 
 /-! ### Universal compatibility with realizations -/
 
@@ -170,6 +148,18 @@ section SingleRoot
 
 variable (i : b.support) (F : Module.Dual 𝕜 V) (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜))
 
+omit [Finite ι] [P.IsReduced] in
+private theorem dual_baseChange_coroot'_apply_liftBaseChangeSemilinear
+    (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (z : ℚ ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear (Rat.castHom 𝕜) z) =
+      ((Module.Dual.baseChange ℚ (P.coroot' i) z : ℚ) : 𝕜) := by
+  simpa only [Rat.coe_castHom, RingHom.coe_coe] using
+    f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
+      (Module.Dual.baseChange ℚ (P.coroot' i)) (fun x ↦ by
+        have hx := P.dual_baseChange_coroot'_tensorProduct_mk ℚ i x
+        rw [TensorProduct.mk_apply] at hx
+        simpa [hx] using hF x) z
+
 include hF
 
 /-- **Universal compatibility of `crystal.e` with `PLPath.raise`** in any realization `(𝕜, V, f)`.
@@ -177,8 +167,7 @@ include hF
 theorem raise_toPLPath (π : LSPath P b lam) :
     PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((crystal hlam).e i π).map (·.toPLPath 𝕜 f) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
-    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hFG := dual_baseChange_coroot'_apply_liftBaseChangeSemilinear f i F hF
   have hroot : f (P.root i) = f.liftBaseChangeSemilinear (Rat.castHom 𝕜)
       ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) := by simp [TensorProduct.mk_apply]
   rw [← mapSemilinear_toRatPLPath f π, hroot,
@@ -191,8 +180,7 @@ theorem raise_toPLPath (π : LSPath P b lam) :
 theorem lower_toPLPath (π : LSPath P b lam) :
     PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) =
       ((crystal hlam).f i π).map (·.toPLPath 𝕜 f) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
-    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hFG := dual_baseChange_coroot'_apply_liftBaseChangeSemilinear f i F hF
   have hroot : f (P.root i) = f.liftBaseChangeSemilinear (Rat.castHom 𝕜)
       ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom (P.root i)) := by simp [TensorProduct.mk_apply]
   rw [← mapSemilinear_toRatPLPath f π, hroot,
@@ -203,8 +191,7 @@ theorem lower_toPLPath (π : LSPath P b lam) :
 /-- Universal compatibility of `crystal.ε` with `PLPath.minHeight` in any realization. -/
 theorem minHeight_toPLPath_eq_neg_crystal_ε (π : LSPath P b lam) :
     (π.toPLPath 𝕜 f).minHeight F = -((crystal hlam).ε i π : 𝕜) := by
-  have hFG := f.apply_liftBaseChangeSemilinear (Rat.castHom 𝕜) F
-    (Module.Dual.baseChange ℚ (P.coroot' i)) fun x ↦ by simp [hF]
+  have hFG := dual_baseChange_coroot'_apply_liftBaseChangeSemilinear f i F hF
   have hε : ((crystal hlam).ε i π : ℚ) =
       -(toRatPLPath π).minHeight (Module.Dual.baseChange ℚ (P.coroot' i)) := by
     simp [crystal, ratCrystalOn, toRatRangeEquiv]
@@ -220,49 +207,61 @@ theorem apply_endpoint_sub_minHeight_toPLPath_eq_crystal_φ (π : LSPath P b lam
     simpa [crystal_wt] using congrArg (Int.cast (R := 𝕜)) ((crystal hlam).φ_sub_ε i π)
   linarith
 
-/-- Iterated raising on realized LS paths agrees with `(crystal hlam).eIter`. -/
-theorem raiseIter_toPLPath (n : ℕ) (π : LSPath P b lam) :
-    PLPath.raiseIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
-      ((crystal hlam).eIter i n π).map (·.toPLPath 𝕜 f) := by
-  induction n generalizing π with
-  | zero => simp
-  | succ n ih =>
-    rw [PLPath.raiseIter_succ, NormalCrystal.eIter_succ, raise_toPLPath hlam f i F hF]
-    cases (crystal hlam).e i π <;> simp [ih]
-
-/-- Iterated lowering on realized LS paths agrees with `(crystal hlam).fIter`. -/
-theorem lowerIter_toPLPath (n : ℕ) (π : LSPath P b lam) :
-    PLPath.lowerIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
-      ((crystal hlam).fIter i n π).map (·.toPLPath 𝕜 f) := by
-  induction n generalizing π with
-  | zero => simp
-  | succ n ih =>
-    rw [PLPath.lowerIter_succ, NormalCrystal.fIter_succ, lower_toPLPath hlam f i F hF]
-    cases (crystal hlam).f i π <;> simp [ih]
-
 end SingleRoot
 
-/-- Raising along a word on realized LS paths agrees with `(crystal hlam).eWord`. -/
-theorem raiseWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
-    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
+private theorem raiseWord_toPLPath_of_mem {w : List b.support} {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ i ∈ w, ∀ x, F i (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
     PLPath.raiseWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
       ((crystal hlam).eWord w π).map (·.toPLPath 𝕜 f) := by
   induction w generalizing π with
   | nil => simp
   | cons i w ih =>
-    rw [PLPath.raiseWord_cons, NormalCrystal.eWord_cons, raise_toPLPath hlam f i (F i) (hF i)]
-    cases (crystal hlam).e i π <;> simp [ih]
+    rw [PLPath.raiseWord_cons, NormalCrystal.eWord_cons,
+      raise_toPLPath hlam f i (F i) (hF i List.mem_cons_self)]
+    cases (crystal hlam).e i π <;> simp [ih fun j hj ↦ hF j (List.mem_cons_of_mem i hj)]
 
-/-- Lowering along a word on realized LS paths agrees with `(crystal hlam).fWord`. -/
-theorem lowerWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
-    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
+private theorem lowerWord_toPLPath_of_mem {w : List b.support} {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ i ∈ w, ∀ x, F i (f x) = (P.coroot' i x : 𝕜)) (π : LSPath P b lam) :
     PLPath.lowerWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
       ((crystal hlam).fWord w π).map (·.toPLPath 𝕜 f) := by
   induction w generalizing π with
   | nil => simp
   | cons i w ih =>
-    rw [PLPath.lowerWord_cons, NormalCrystal.fWord_cons, lower_toPLPath hlam f i (F i) (hF i)]
-    cases (crystal hlam).f i π <;> simp [ih]
+    rw [PLPath.lowerWord_cons, NormalCrystal.fWord_cons,
+      lower_toPLPath hlam f i (F i) (hF i List.mem_cons_self)]
+    cases (crystal hlam).f i π <;> simp [ih fun j hj ↦ hF j (List.mem_cons_of_mem i hj)]
+
+/-- Iterated raising on realized LS paths agrees with `(crystal hlam).eIter`. -/
+theorem raiseIter_toPLPath (i : b.support) (F : Module.Dual 𝕜 V)
+    (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (n : ℕ) (π : LSPath P b lam) :
+    PLPath.raiseIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
+      ((crystal hlam).eIter i n π).map (·.toPLPath 𝕜 f) := by
+  simpa [PLPath.raiseWord_replicate, NormalCrystal.eWord_replicate] using
+    raiseWord_toPLPath_of_mem hlam f (w := List.replicate n i) (F := fun _ ↦ F)
+      (fun _ hj x ↦ (List.mem_replicate.mp hj).2 ▸ hF x) π
+
+/-- Iterated lowering on realized LS paths agrees with `(crystal hlam).fIter`. -/
+theorem lowerIter_toPLPath (i : b.support) (F : Module.Dual 𝕜 V)
+    (hF : ∀ x, F (f x) = (P.coroot' i x : 𝕜)) (n : ℕ) (π : LSPath P b lam) :
+    PLPath.lowerIter F (f (P.root i)) n (π.toPLPath 𝕜 f) =
+      ((crystal hlam).fIter i n π).map (·.toPLPath 𝕜 f) := by
+  simpa [PLPath.lowerWord_replicate, NormalCrystal.fWord_replicate] using
+    lowerWord_toPLPath_of_mem hlam f (w := List.replicate n i) (F := fun _ ↦ F)
+      (fun _ hj x ↦ (List.mem_replicate.mp hj).2 ▸ hF x) π
+
+/-- Raising along a word on realized LS paths agrees with `(crystal hlam).eWord`. -/
+theorem raiseWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
+    PLPath.raiseWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
+      ((crystal hlam).eWord w π).map (·.toPLPath 𝕜 f) :=
+  raiseWord_toPLPath_of_mem hlam f (fun i _ ↦ hF i) π
+
+/-- Lowering along a word on realized LS paths agrees with `(crystal hlam).fWord`. -/
+theorem lowerWord_toPLPath (F : b.support → Module.Dual 𝕜 V)
+    (hF : ∀ i x, F i (f x) = (P.coroot' i x : 𝕜)) (w : List b.support) (π : LSPath P b lam) :
+    PLPath.lowerWord F (fun i ↦ f (P.root i)) w (π.toPLPath 𝕜 f) =
+      ((crystal hlam).fWord w π).map (·.toPLPath 𝕜 f) :=
+  lowerWord_toPLPath_of_mem hlam f (fun i _ ↦ hF i) π
 
 end ArbitraryRealization
 
@@ -353,8 +352,9 @@ noncomputable def dualIso (hlam : lam ∈ dominantChamber P b)
   e_toFun i π := by
     simp only [Equiv.toFun_as_coe]
     apply Option.map_injective (toRatPLPath_injective hlam')
-    rw [← raise_toPLPath hlam' _ i _ (baseChange_coroot'_mkRat i), toPLPath_dual,
-      PLPath.raise_reverse, lower_toPLPath hlam _ i _ (baseChange_coroot'_mkRat i),
+    rw [← raise_toPLPath hlam' _ i _ (P.dual_baseChange_coroot'_tensorProduct_mk ℚ i),
+      toPLPath_dual, PLPath.raise_reverse,
+      lower_toPLPath hlam _ i _ (P.dual_baseChange_coroot'_tensorProduct_mk ℚ i),
       NormalCrystal.dual_e, Option.map_map, Option.map_map]
     exact congrArg (Option.map · _) (funext fun ρ : LSPath P b lam ↦ (toPLPath_dual ρ ℚ _).symm)
 
@@ -381,9 +381,11 @@ theorem forall_crystal_e_eq_none_iff (π : LSPath P b lam) :
     (∀ i, (crystal hlam).e i π = none) ↔ π = straight lam := by
   have := P.flip_isReduced
   rw [← π.forall_raise_eq_none_iff hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-    (fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i)) baseChange_coroot'_mkRat]
+    (fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
+    fun i ↦ P.dual_baseChange_coroot'_tensorProduct_mk ℚ i]
   exact forall_congr' fun i ↦ by
-    rw [raise_toPLPath hlam _ i _ (baseChange_coroot'_mkRat i), Option.map_eq_none_iff]
+    rw [raise_toPLPath hlam _ i _ (P.dual_baseChange_coroot'_tensorProduct_mk ℚ i),
+      Option.map_eq_none_iff]
 
 @[simp]
 theorem crystal_e_straight (i : b.support) : (crystal hlam).e i (straight lam) = none :=

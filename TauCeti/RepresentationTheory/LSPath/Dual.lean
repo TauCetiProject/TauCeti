@@ -92,7 +92,12 @@ private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
   · simp only [dir_congr, dualAux, Fin.rev_rev, hwall]
     exact ((P.isLongest_longestElement b).minimalCosetRep_mul_minimalCosetRep_mul
       (conj_longestElement_mem_parabolic_wallIndices_iff lam) (π.dir j).property).symm
-  · simp [time_congr, dualAux]; rfl
+  · have htime (m : Fin ((dualAux (dualAux π)).length + 2)) :
+        (dualAux (dualAux π)).time m = π.time m.rev.rev := by
+      dsimp only [dualAux]
+      exact sub_sub_cancel _ _
+    rw [time_congr, htime, Fin.rev_rev]
+    exact congrArg π.time (Fin.ext (by simp))
 
 /-- **Littelmann's dual Lakshmibai–Seshadri path** `LSPath P b λ ≃ LSPath P b (-(w₀ • λ))`,
 realizing path reversal on `TauCeti.PLPath` (`TauCeti.LSPath.toPLPath_dual`). -/
@@ -123,13 +128,9 @@ theorem time_dual (k : Fin ((dual π).length + 2)) :
 @[simp]
 theorem duration_dual (j : Fin ((dual π).length + 1)) :
     (dual π).duration j = π.duration (j.cast (by rw [length_dual])).rev := by
-  rw [duration_def, time_dual, time_dual, duration_def]
-  have h₁ : (j.succ.cast (congrArg (· + 2) (length_dual π))).rev =
-      (j.cast (congrArg (· + 1) (length_dual π))).rev.castSucc := Fin.ext (by simp [Fin.val_rev])
-  have h₂ : (j.castSucc.cast (congrArg (· + 2) (length_dual π))).rev =
-      (j.cast (congrArg (· + 1) (length_dual π))).rev.succ :=
-    Fin.ext (by simp [Fin.val_rev]; have := j.isLt; simp [length_dual] at this; omega)
-  rw [h₁, h₂]; ring
+  rw [duration_def, time_dual, time_dual, duration_def, Fin.cast_succ_eq, Fin.rev_succ,
+    Fin.cast_castSucc, Fin.rev_castSucc]
+  ring
 
 /-- The inverse of `dual` is `dual` followed by shape transport along `-(w₀ • -(w₀ • λ)) = λ`. -/
 theorem dual_symm_eq_congr_dual (π' : LSPath P b (-(longestElement P b • lam))) :

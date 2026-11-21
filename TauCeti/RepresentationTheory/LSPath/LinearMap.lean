@@ -26,29 +26,11 @@ namespace TauCeti.PLPath
 
 open Module
 
-/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism. -/
-theorem listMinHeight_mapSemilinear {𝕜 𝕜' V W : Type*} [Semiring 𝕜] [LinearOrder 𝕜]
-    [Semiring 𝕜'] [LinearOrder 𝕜'] [AddCommMonoid V] [Module 𝕜 V] [AddCommMonoid W] [Module 𝕜' W]
-    {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
-    {f : Dual 𝕜 V} {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (l : List V) :
-    listMinHeight f' (l.map g) = σ (listMinHeight f l) := by
-  induction l with
-  | nil => simp
-  | cons v l ih =>
-    rw [List.map_cons, listMinHeight_cons, listMinHeight_cons, hf v, ih, ← map_add, ← map_zero σ,
-      ← hσ.map_min]
-
 section Semilinear
 
 variable {𝕜 𝕜' V W : Type*} [Field 𝕜] [LinearOrder 𝕜] [Field 𝕜'] [LinearOrder 𝕜']
   [AddCommGroup V] [Module 𝕜 V] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'}
   {g : V →ₛₗ[σ] W} {f : Dual 𝕜 V} {f' : Dual 𝕜' W}
-
-/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism. -/
-theorem minHeight_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
-    (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :
-    (p.mapSemilinear g).minHeight f' = σ (p.minHeight f) := by
-  rw [mapSemilinear_def, minHeight_ofSegments, listMinHeight_mapSemilinear hσ hf, ← minHeight_def]
 
 /-- Capped record reflection commutes with a semilinear map along a monotone ring homomorphism. -/
 theorem reflectRecords_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v))

@@ -116,9 +116,11 @@ theorem conj_longestElement_simple {ι R M N : Type*} [CommRing R] [CharZero R] 
   nth_rw 2 [← longestElement_inv P b]
   rw [weylCoxeterSystem_simple, weylCoxeterSystem_simple, coe_oppositionPerm,
     ← weylGroup.ofIdx_weylGroupToPerm_eq_conj]
-  refine weylGroup.ext fun x ↦ ?_
-  rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
-    reflection_apply, reflection_apply, coroot'_opposition, ← coroot'_smul_longestElement,
-    root_opposition, ← P.weylGroup_apply_root, neg_smul_neg]
+  let := P.indexNeg
+  have hneg : opposition P b ↑i = -(P.weylGroupToPerm (longestElement P b) ↑i) :=
+    P.root.injective <| by
+      rw [root_opposition, RootPairing.indexNeg_neg, RootPairing.root_reflectionPerm,
+        RootPairing.reflection_apply_self, P.weylGroup_apply_root]
+  rw [hneg, weylGroup.ofIdx_neg]
 
 end TauCeti

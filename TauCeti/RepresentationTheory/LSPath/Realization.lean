@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
+public import TauCeti.RepresentationTheory.LSPath.Weight
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 
 /-!
 # Faithful realization of Lakshmibai–Seshadri encodings
@@ -112,5 +115,13 @@ theorem toPLPath_inj (hlam : lam ∈ dominantChamber P b)
       fun u v ↦ ¬ SameRay 𝕜 u v) {π π' : LSPath P b lam} :
     π.toPLPath 𝕜 f = π'.toPLPath 𝕜 f ↔ π = π' :=
   (toPLPath_injective hlam hf hS).eq_iff
+
+/-- The canonical rational realization `LSPath.toRatPLPath` is injective for any dominant shape. -/
+theorem toRatPLPath_injective (hlam : lam ∈ dominantChamber P b) :
+    Function.Injective (toRatPLPath (P := P) (b := b) (lam := lam)) := by
+  have := P.finite_weylGroup_of_base b
+  exact toPLPath_injective hlam (P.tensorProduct_mk_injective ℚ).injOn
+    (by simpa only [LinearMap.toAddMonoidHom_coe] using
+      P.pairwise_not_sameRay_tensorProduct_mk_orbit ℚ lam)
 
 end TauCeti.LSPath

@@ -123,14 +123,23 @@ theorem listMinHeight_cons (v : V) (l : List V) :
     listMinHeight f (v :: l) = min 0 (f v + listMinHeight f l) :=
   (rfl)
 
+/-- Running minimum height commutes with a semilinear map along a monotone ring homomorphism. -/
+theorem listMinHeight_mapSemilinear {𝕜' W : Type*} [Semiring 𝕜'] [LinearOrder 𝕜']
+    [AddCommMonoid W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W} (hσ : Monotone σ)
+    {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (l : List V) :
+    listMinHeight f' (l.map g) = σ (listMinHeight f l) := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    rw [List.map_cons, listMinHeight_cons, listMinHeight_cons, hf v, ih, ← map_add, ← map_zero σ,
+      ← hσ.map_min]
+
 /-- The vertex heights of a linear image are computed by the pulled-back form. -/
 @[simp]
 theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
     (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) (l : List V) :
-    listMinHeight f' (l.map g) = listMinHeight (f'.comp g) l := by
-  induction l with
-  | nil => simp
-  | cons v l ih => simp [listMinHeight_cons, ih]
+    listMinHeight f' (l.map g) = listMinHeight (f'.comp g) l :=
+  listMinHeight_mapSemilinear monotone_id (fun _ ↦ rfl) l
 
 /-- Nonnegative dilation multiplies every vertex height and its minimum by the same scalar. -/
 theorem listMinHeight_map_smul [PosMulMono 𝕜] {a : 𝕜} (ha : 0 ≤ a) (l : List V) :
@@ -277,13 +286,20 @@ theorem minHeight_def (p : PLPath 𝕜 V) : p.minHeight f = listMinHeight f p.se
 theorem minHeight_ofSegments (l : List V) : (ofSegments 𝕜 l).minHeight f = listMinHeight f l := by
   rw [minHeight_def, segments_ofSegments, listMinHeight_normalize]
 
+/-- Minimum height commutes with a semilinear image along a monotone ring homomorphism. -/
+theorem minHeight_mapSemilinear {𝕜' W : Type*} [Field 𝕜'] [LinearOrder 𝕜']
+    [IsStrictOrderedRing 𝕜'] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W}
+    (hσ : Monotone σ) {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :
+    (p.mapSemilinear g).minHeight f' = σ (p.minHeight f) := by
+  rw [mapSemilinear_def, minHeight_ofSegments, listMinHeight_mapSemilinear hσ hf, ← minHeight_def]
+
 /-- Minimum height is natural under arbitrary linear maps. -/
 @[simp]
 theorem minHeight_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
     (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) :
     (p.map g).minHeight f' = p.minHeight (f'.comp g) := by
-  obtain ⟨l, rfl⟩ := ofSegments_surjective p
-  simp only [map_ofSegments, minHeight_ofSegments, listMinHeight_map]
+  simpa only [mapSemilinear_eq_map, RingHom.id_apply] using
+    minHeight_mapSemilinear (g := g) (f := f'.comp g) monotone_id (fun _ ↦ rfl) p
 
 /-- Nonnegative dilation scales the minimum running height. -/
 theorem minHeight_map_smul {a : 𝕜} (ha : 0 ≤ a) (p : PLPath 𝕜 V) :
