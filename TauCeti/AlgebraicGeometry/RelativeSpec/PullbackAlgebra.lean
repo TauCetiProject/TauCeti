@@ -402,7 +402,9 @@ theorem pullbackCongr_hom_app_hom_hom_hom {f g : X ⟶ Y} (h : f = g) (A : Quasi
       eqToHom (pullback_obj_X f A) ≫ (Scheme.Modules.pullbackCongr h).hom.app A.obj.X ≫
         eqToHom (pullback_obj_X g A).symm := by
   subst h
-  simp [pullbackCongr, Scheme.Modules.pullbackCongr]
+  simp [pullbackCongr, Scheme.Modules.pullbackCongr, ObjectProperty.FullSubcategory.id_hom,
+    CommMon.id_hom]
+  -- Identical up to unfolding `Scheme.Modules` to `SheafOfModules X.ringCatSheaf`.
   rfl
 
 /-- On underlying modules, the inverse of `pullbackCongr` is the inverse of Mathlib's
@@ -413,35 +415,38 @@ theorem pullbackCongr_inv_app_hom_hom_hom {f g : X ⟶ Y} (h : f = g) (A : Quasi
       eqToHom (pullback_obj_X g A) ≫ (Scheme.Modules.pullbackCongr h).inv.app A.obj.X ≫
         eqToHom (pullback_obj_X f A).symm := by
   subst h
-  simp [pullbackCongr, Scheme.Modules.pullbackCongr]
+  simp [pullbackCongr, Scheme.Modules.pullbackCongr, ObjectProperty.FullSubcategory.id_hom,
+    CommMon.id_hom]
+  -- Identical up to unfolding `Scheme.Modules` to `SheafOfModules X.ringCatSheaf`.
   rfl
 
-/-- The composition comparison of algebra pullback followed by `eqToIso` along a commuting triangle
-`f ≫ g = h` agrees with the corresponding module pullback comparison on underlying modules. -/
-theorem pullbackComp_eqToIso_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
+/-- The composition comparison of algebra pullback followed by `pullbackCongr` along a commuting
+triangle `f ≫ g = h` agrees with the corresponding module pullback comparison on underlying
+modules. -/
+theorem pullbackComp_pullbackCongr_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
     (hfg : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
-    ((pullbackComp f g ≪≫ eqToIso (congrArg pullback hfg)).hom.app A).hom.hom.hom =
+    ((pullbackComp f g ≪≫ pullbackCongr hfg).hom.app A).hom.hom.hom =
       eqToHom ((pullback_obj_X f _).trans
         (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_X g A))) ≫
         ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hfg).app A.obj.X).hom ≫
           eqToHom (pullback_obj_X h A).symm := by
   subst hfg
-  simp only [eqToIso_refl, Iso.trans_refl, pullbackComp_hom_app_hom_hom_hom,
+  simp only [pullbackCongr_refl, Iso.trans_refl, pullbackComp_hom_app_hom_hom_hom,
     Scheme.Modules.pullbackCongr, Iso.app_hom]
   rfl
 
-/-- The inverse composition comparison of algebra pullback preceded by `eqToIso` along a commuting
-triangle `f ≫ g = h` agrees with the corresponding inverse module pullback comparison on underlying
-modules. -/
-theorem pullbackComp_eqToIso_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
+/-- The inverse composition comparison of algebra pullback preceded by `pullbackCongr` along a
+commuting triangle `f ≫ g = h` agrees with the corresponding inverse module pullback comparison on
+underlying modules. -/
+theorem pullbackComp_pullbackCongr_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
     (hfg : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
-    ((pullbackComp f g ≪≫ eqToIso (congrArg pullback hfg)).inv.app A).hom.hom.hom =
+    ((pullbackComp f g ≪≫ pullbackCongr hfg).inv.app A).hom.hom.hom =
       eqToHom (pullback_obj_X h A) ≫
         ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hfg).app A.obj.X).inv ≫
           eqToHom ((pullback_obj_X f _).trans
             (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_X g A))).symm := by
   subst hfg
-  simp only [eqToIso_refl, Iso.trans_refl, pullbackComp_inv_app_hom_hom_hom,
+  simp only [pullbackCongr_refl, Iso.trans_refl, pullbackComp_inv_app_hom_hom_hom,
     Scheme.Modules.pullbackCongr, Iso.app_inv]
   rfl
 

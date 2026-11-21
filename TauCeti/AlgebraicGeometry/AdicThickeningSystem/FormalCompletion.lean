@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Spf
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # The formal completion of a scheme along a closed subscheme
@@ -42,9 +43,14 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `V(I ^ (n + 1)) ⟶ X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.toOfScheme`: the canonical morphism from `X/V(I)` to
   the constant adic thickening system of `X`.
-* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero`: the canonical isomorphism
-  `V(I) ≅ (X.formalCompletion I).X 0` over `X`.
+* `AlgebraicGeometry.Scheme.formalCompletion.subschemeIsoLevelZero` and
+  `AlgebraicGeometry.Scheme.formalCompletion.isoLevelZeroOfKerEq`: canonical isomorphisms
+  identifying `V(I)` (or any closed immersion `j : X₀ ⟶ X` with `j.ker = I`) with
+  `(X.formalCompletion I).X 0` over `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.map`: functoriality in pairs `(X, I)`.
+* `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback`: levelwise identification of
+  `X.formalCompletion I` with the base change `(Over.pullback (toScheme Y J n)).obj (Over.mk f)`
+  when `J.comap f = I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.botIso`: the formal completion along `V(⊥)` is the
   constant system of `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.specIso`: the formal completion of `Spec R` along
@@ -66,6 +72,8 @@ same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
   `J.comap f = I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.isPullback_map_app`: when `J.comap f = I`, the level
   `V(I ^ (n + 1))` is the inverse image of `V(J ^ (n + 1))` under `f`.
+* `AlgebraicGeometry.Scheme.formalCompletion.levelIsoPullback_hom_map`: naturality of
+  `levelIsoPullback` on `Over` morphisms.
 * `AlgebraicGeometry.Scheme.formalCompletion.isOpenImmersion_map_app`,
   `AlgebraicGeometry.Scheme.formalCompletion.opensRange_map_app`: for an open immersion `f`, the
   levels of `formalCompletion.map f` are open immersions onto the inverse images of the image
@@ -204,6 +212,27 @@ theorem subschemeIsoLevelZero_hom_toScheme :
 theorem subschemeIsoLevelZero_inv_subschemeι :
     (subschemeIsoLevelZero X I).inv ≫ I.subschemeι = toScheme X I 0 :=
   inclusion_subschemeι (pow_one I).ge
+
+/-- Factoring a closed immersion `j : X₀ ⟶ X` with `j.ker = I` through the zeroth level
+`toScheme X I 0 : V(I ^ 1) ⟶ X` of `X.formalCompletion I` via an isomorphism `X₀ ≅ V(I ^ 1)`. -/
+noncomputable def isoLevelZeroOfKerEq {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
+    [IsClosedImmersion j] (hj : j.ker = I) :
+    X₀ ≅ (X.formalCompletion I).X 0 := by
+  subst hj
+  exact asIso j.toImage ≪≫ subschemeIsoLevelZero X j.ker
+
+@[reassoc (attr := simp)]
+theorem isoLevelZeroOfKerEq_hom_toScheme {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
+    [IsClosedImmersion j] (hj : j.ker = I) :
+    (isoLevelZeroOfKerEq j hj).hom ≫ toScheme X I 0 = j := by
+  subst hj
+  simp [isoLevelZeroOfKerEq]
+
+@[reassoc (attr := simp)]
+theorem isoLevelZeroOfKerEq_inv_comp {X X₀ : Scheme.{u}} {I : X.IdealSheafData} (j : X₀ ⟶ X)
+    [IsClosedImmersion j] (hj : j.ker = I) :
+    (isoLevelZeroOfKerEq j hj).inv ≫ j = toScheme X I 0 := by
+  rw [Iso.inv_comp_eq, isoLevelZeroOfKerEq_hom_toScheme]
 
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
@@ -371,6 +400,63 @@ theorem opensRange_map_app (f : X ⟶ Y) [IsOpenImmersion f] (n : ℕ) :
           congr 1
           exact H.isoPullback_hom_snd.symm
     _ = _ := (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Scheme.Hom.opensRange_pullbackSnd _ _)
+
+/-- Identification of the `n`-th level of `X.formalCompletion I` (when `J.comap f = I`) with the
+base change `((Over.pullback (toScheme Y J n)).obj (Over.mk f)).left`. -/
+noncomputable def levelIsoPullback (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    (X.formalCompletion I).X n ≅
+      ((Over.pullback (toScheme Y J n)).obj (Over.mk f)).left :=
+  (isPullback_map_app f hf n).isoIsPullback _ _
+    (Over.isPullback_pullback_obj_mk (toScheme Y J n) f)
+
+@[reassoc (attr := simp)]
+theorem levelIsoPullback_hom_fst (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    (levelIsoPullback f hf n).hom ≫ Limits.pullback.fst f (toScheme Y J n) =
+      toScheme X I n :=
+  IsPullback.isoIsPullback_hom_fst _ _ _ _
+
+@[reassoc (attr := simp)]
+theorem levelIsoPullback_hom_snd (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    (levelIsoPullback f hf n).hom ≫ Limits.pullback.snd f (toScheme Y J n) =
+      (map f hf.le).app n := by
+  simpa only [levelIsoPullback, Over.pullback_obj_hom, Over.mk_hom] using
+    IsPullback.isoIsPullback_hom_snd _ _ _ _
+
+@[reassoc (attr := simp)]
+theorem levelIsoPullback_inv_fst (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    (levelIsoPullback f hf n).inv ≫ toScheme X I n =
+      Limits.pullback.fst f (toScheme Y J n) :=
+  IsPullback.isoIsPullback_inv_fst _ _ _ _
+
+@[reassoc (attr := simp)]
+theorem levelIsoPullback_inv_snd (f : X ⟶ Y) (hf : J.comap f = I) (n : ℕ) :
+    (levelIsoPullback f hf n).inv ≫ (map f hf.le).app n =
+      Limits.pullback.snd f (toScheme Y J n) := by
+  simpa only [levelIsoPullback, Over.pullback_obj_hom, Over.mk_hom] using
+    IsPullback.isoIsPullback_inv_snd _ _ _ _
+
+/-- Naturality of `levelIsoPullback` with respect to morphisms `g : Over.mk p ⟶ Over.mk q` over
+`Z`. -/
+@[reassoc]
+theorem levelIsoPullback_hom_map {p : X ⟶ Z} {q : Y ⟶ Z} (hp : K.comap p = I)
+    (hq : K.comap q = J) (g : Over.mk p ⟶ Over.mk q) (n : ℕ) :
+    (map (I := I) (J := J) g.left
+        (by
+          rw [← hp, ← hq, ← comap_comp]
+          exact le_of_eq (congrArg K.comap (by simpa only [Over.mk_hom] using Over.w g)))).app n ≫
+      (levelIsoPullback q hq n).hom =
+      (levelIsoPullback p hp n).hom ≫ ((Over.pullback (toScheme Z K n)).map g).left := by
+  refine (Over.isPullback_pullback_obj_mk (toScheme Z K n) q).hom_ext ?_ ?_
+  · have hfst :
+        ((Over.pullback (toScheme Z K n)).map g).left ≫ Limits.pullback.fst q (toScheme Z K n) =
+          Limits.pullback.fst p (toScheme Z K n) ≫ g.left := by
+      simpa only [Over.mk_hom] using Over.pullback_map_left_fst (toScheme Z K n) g
+    rw [Category.assoc, Category.assoc, levelIsoPullback_hom_fst, map_app_toScheme,
+      hfst, levelIsoPullback_hom_fst_assoc]
+  · rw [Category.assoc, Category.assoc, Over.w]
+    simp only [Over.pullback_obj_hom, Over.mk_hom, levelIsoPullback_hom_snd]
+    exact congrArg (·.app n) (map_comp_eq (I := I) (J := J) (K := K)
+      (by simpa only [Over.mk_hom] using Over.w g) _ hq.le hp.le)
 
 end formalCompletion
 
