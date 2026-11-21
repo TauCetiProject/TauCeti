@@ -63,7 +63,7 @@ injectivity holds for every group with that property
 
 public section
 
-open Monoid.Coprod Subgroup TauCeti.GroupAlgGeom TauCeti.GraphOfGroups
+open Monoid.Coprod Subgroup TauCeti.GroupAlgGeom
 
 universe u
 
@@ -121,11 +121,12 @@ example (ρ δ : G) :
 Write `C = C_G(ρ)`, `Q = C_G(δ)` and `K = G(ρ, s)`. The homomorphism `θ : G ∗ Q →* K` that is the
 inclusion on `G` and `q ↦ s q s⁻¹` on `Q` is injective when `C` and `Q` generate their free product
 in `G` ([VAR-I] Lemma 21): `G ∗ Q` is the amalgam `G ∗_C (C ∗ Q)`
-(`Monoid.PushoutI.freeFactorEquiv`), which embeds in the double `G ∗_C G`, and the double embeds
-in `K`. In `G ∗ Q` the centralizer of `δ` in the free factor `Q` is that factor, and the
-centralizer of `δ ∈ G` is the copy of `Q` in `G` (`Monoid.Coprod.centralizer_inr_eq_map`,
-`Monoid.Coprod.centralizer_inl_eq_map`); this needs `δ ≠ 1`, and for `δ = 1` the hypothesis forces
-`G = 1`, where `twoLetterHom` is `ℤ → ℤ²`, `z ↦ (1, 1)`. The HNN extension of `G ∗ Q` along
+(`Monoid.PushoutI.freeFactorEquiv`), which embeds in the double `G ∗_C G`
+(`Monoid.PushoutI.freeFactorToDouble_injective`), and the double embeds in `K`. In `G ∗ Q` the
+centralizer of `δ` in the free factor `Q` is that factor, and the centralizer of `δ ∈ G` is the
+copy of `Q` in `G` (`Monoid.Coprod.centralizer_inr_eq_map`, `Monoid.Coprod.centralizer_inl_eq_map`);
+this needs `δ ≠ 1`, and for `δ = 1` the hypothesis forces `G = 1`, where `twoLetterHom` is
+`ℤ → ℤ²`, `z ↦ (1, 1)`. The HNN extension of `G ∗ Q` along
 `inr q ↦ inl q`, with relations `t q t⁻¹ = q` from the free factor to `G`, is `G[z]` with
 `t = z⁻¹` (`HNNExtension.equivCoprodFreeGroup`). After `θ`, the identification `inr q ↦ inl q`
 becomes `x ↦ s⁻¹ x s` from the image `s q s⁻¹` of the free factor to the image `q` of `G`, so the
@@ -138,50 +139,26 @@ open Monoid.PushoutI
 
 variable (ρ δ : G)
 
-/-- The homomorphisms from the factors `G` and `C_G(ρ) ∗ C_G(δ)` of the amalgam
-`G ∗_{C_G(ρ)} (C_G(ρ) ∗ C_G(δ))` to `G`: the identity, and the inclusions of the centralizers. -/
-private def doubleFactorHom : ∀ b, FreeFactor G (centralizer {ρ}) (centralizer {δ}) b →* G
-  | false => .id G
-  | true => Monoid.Coprod.lift (centralizer {ρ}).subtype (centralizer {δ}).subtype
-
-/-- The homomorphism `G ∗_{C_G(ρ)} (C_G(ρ) ∗ C_G(δ)) → G ∗_{C_G(ρ)} G` to the double of `G` along
-`C_G(ρ)` that is the identity on the first factor and the inclusion of `C_G(ρ)` and `C_G(δ)` on the
-second. -/
-private def amalgToDouble :
-    Monoid.PushoutI (freeFactorMap (Q := centralizer {δ}) (centralizer {ρ}).subtype) →*
-      Monoid.PushoutI fun _ : Bool => (centralizer {ρ}).subtype :=
-  map (doubleFactorHom ρ δ) (.id _) fun b => by cases b <;> ext <;> simp [doubleFactorHom]
-
-private theorem amalgToDouble_injective
-    (hinj : Function.Injective (Monoid.Coprod.lift (centralizer {ρ}).subtype
-      (centralizer {δ}).subtype)) :
-    Function.Injective (amalgToDouble ρ δ) := by
-  refine map_injective _ (fun _ => Subtype.val_injective) Function.injective_id fun b g hg => ?_
-  cases b
-  · simpa [doubleFactorHom] using hg
-  · -- An element of `C_G(ρ) ∗ C_G(δ)` mapped into `C_G(ρ)` lies in the first factor.
-    obtain ⟨c, hc⟩ := hg
-    exact ⟨c, hinj (by simpa [doubleFactorHom] using hc)⟩
-
 /-- The homomorphism `θ : G ∗ C_G(δ) →* G(ρ, s)` that is the inclusion on `G` and `q ↦ s q s⁻¹` on
 `C_G(δ)`. -/
 private def baseHom : G ∗ centralizer {δ} →* CentralizerExt ρ 1 :=
   (equivHNNExtension (u := ρ)).symm.toMonoidHom.comp <| (HNNExtension.ofDouble _).comp <|
-    (amalgToDouble ρ δ).comp (freeFactorEquiv (centralizer {ρ}).subtype).symm.toMonoidHom
+    (freeFactorToDouble (centralizer {ρ}).subtype (centralizer {δ}).subtype).comp
+      (freeFactorEquiv (centralizer {ρ}).subtype).symm.toMonoidHom
 
 private theorem baseHom_inl (g : G) : baseHom ρ δ (inl g) = of g := by
-  simp [baseHom, amalgToDouble, doubleFactorHom]
+  simp [baseHom]
 
 private theorem baseHom_inr (q : centralizer {δ}) :
     baseHom ρ δ (inr q) = t 0 * of (q : G) * (t 0)⁻¹ := by
-  simp [baseHom, amalgToDouble, doubleFactorHom]
+  simp [baseHom]
 
 private theorem baseHom_injective
     (hinj : Function.Injective (Monoid.Coprod.lift (centralizer {ρ}).subtype
       (centralizer {δ}).subtype)) :
     Function.Injective (baseHom ρ δ) :=
   (equivHNNExtension (u := ρ)).symm.injective.comp <| (HNNExtension.ofDouble_injective _).comp <|
-    (amalgToDouble_injective ρ δ hinj).comp (freeFactorEquiv _).symm.injective
+    (freeFactorToDouble_injective hinj).comp (freeFactorEquiv _).symm.injective
 
 /-- The element `δ` of its centralizer `C_G(δ)`. -/
 private abbrev deltaQ : centralizer {δ} :=
@@ -209,7 +186,7 @@ private noncomputable def hnnEquiv (hδ : δ ≠ 1) :
     centralizer {(inr (deltaQ δ) : G ∗ centralizer {δ})} ≃*
       centralizer {(inl δ : G ∗ centralizer {δ})} :=
   (MulEquiv.subgroupCongr (centralizer_inr_deltaQ hδ)).trans <|
-    (loopEquiv _ (inl.comp (centralizer {δ}).subtype) inr_injective
+    (MonoidHom.rangeEquivRange _ (inl.comp (centralizer {δ}).subtype) inr_injective
       (inl_injective.comp (centralizer {δ}).subtype_injective)).trans
       (MulEquiv.subgroupCongr (centralizer_inl_delta hδ).symm)
 
@@ -252,21 +229,14 @@ end Injective
 injective. -/
 private theorem twoLetterHom_injective_of_subsingleton [Subsingleton G] (ρ δ : G) :
     Function.Injective (twoLetterHom ρ δ) := by
-  -- The homomorphism `G(ρ, s)(δ, u) →* ℤ` sending `u` to `1` and killing `G(ρ, s)`.
-  let ψ : CentralizerExt (of δ : CentralizerExt ρ 1) 1 →* Multiplicative ℤ :=
-    lift 1 (fun _ => .ofAdd 1) (fun _ _ => .all _ _) fun _ _ _ => .all _ _
-  -- Every element of `G[z]` is a power of `z`.
-  have hz (w : GX G Unit) : ∃ n : ℤ, w = inr (FreeGroup.of ()) ^ n := by
-    obtain ⟨x, rfl⟩ := inr_surjective w
-    refine ⟨FreeGroup.freeGroupUnitEquivInt x, ?_⟩
-    rw [← map_zpow]
-    -- `freeGroupUnitEquivInt.symm n` is `of () ^ n` by definition.
-    exact congrArg inr (FreeGroup.freeGroupUnitEquivInt.symm_apply_apply x).symm
-  intro w₁ w₂ h
-  obtain ⟨n, rfl⟩ := hz w₁
-  obtain ⟨m, rfl⟩ := hz w₂
-  obtain rfl : n = m := by simpa [ψ] using congrArg ψ h
-  rfl
+  -- The homomorphism `G(ρ, s)(δ, u) →* ⟨z⟩` sending `u` to `z` and killing `G(ρ, s)` is a left
+  -- inverse of `twoLetterHom` on `⟨z⟩`, which is all of `G[z]`.
+  let ψ : CentralizerExt (of δ : CentralizerExt ρ 1) 1 →* FreeGroup Unit :=
+    lift 1 (fun _ => FreeGroup.of ()) (fun _ _ => .refl _) fun _ _ _ => .one_left _
+  have hψ : ψ.comp ((twoLetterHom ρ δ).comp inr) = .id _ :=
+    FreeGroup.ext_hom _ _ fun _ => by simp [ψ]
+  exact (Function.Injective.of_comp_iff' _ inr_bijective).1
+    (Function.LeftInverse.injective (DFunLike.congr_fun hψ))
 
 /-- **The product of the two new letters is free over the base.** If the centralizers of `ρ` and
 `δ` generate their free product in `G`, the homomorphism `G[z] → G(ρ, s)(δ, u)`, `z ↦ s u`, is

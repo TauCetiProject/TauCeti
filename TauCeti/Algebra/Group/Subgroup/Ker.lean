@@ -11,8 +11,9 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 # Ranges and equality loci of group homomorphisms
 
 This file supplies the characteristic membership equation for the subgroup equality locus, the
-invariance of the range of a group homomorphism under precomposition with a surjection, and the
-range and kernel of the pointwise inverse of a homomorphism into a commutative group.
+invariance of the range of a group homomorphism under precomposition with a surjection, the
+range and kernel of the pointwise inverse of a homomorphism into a commutative group, and the
+isomorphism between the ranges of two injective homomorphisms out of the same group.
 
 ## Main results
 
@@ -20,6 +21,8 @@ range and kernel of the pointwise inverse of a homomorphism into a commutative g
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.rangeEquivRange`: for injective `f : C →* N` and `g : C →* N'`, the isomorphism
+  `f.range ≃* g.range` sending `f c` to `g c`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -56,6 +59,30 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+section rangeEquivRange
+
+variable {C N N' : Type*} [Group C] [Group N] [Group N'] (f : C →* N) (g : C →* N')
+  (hf : Function.Injective f) (hg : Function.Injective g)
+
+/-- For injective homomorphisms `f : C →* N` and `g : C →* N'`, the isomorphism
+`f.range ≃* g.range` sending `f c` to `g c`. -/
+@[to_additive /-- For injective additive homomorphisms `f : C →+ N` and `g : C →+ N'`, the
+isomorphism `f.range ≃+ g.range` sending `f c` to `g c`. -/]
+noncomputable def rangeEquivRange : f.range ≃* g.range :=
+  (ofInjective hf).symm.trans (ofInjective hg)
+
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_ofInjective (c : C) :
+    rangeEquivRange f g hf hg (ofInjective hf c) = ofInjective hg c := by
+  simp [rangeEquivRange]
+
+@[to_additive (attr := simp)]
+theorem rangeEquivRange_symm_ofInjective (c : C) :
+    (rangeEquivRange f g hf hg).symm (ofInjective hg c) = ofInjective hf c := by
+  simp [rangeEquivRange]
+
+end rangeEquivRange
 
 end MonoidHom
 

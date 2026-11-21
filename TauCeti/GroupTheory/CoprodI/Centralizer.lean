@@ -46,15 +46,10 @@ theorem centralizer_of_eq_map {i : ι} {g : G i} (hg : g ≠ 1) :
     centralizer {(of g : CoprodI G)} = (centralizer {g}).map of := by
   -- `CoprodI G` is the amalgamated product `PushoutI φ` of the factors over the trivial group.
   let φ : ∀ i, Unit →* G i := fun _ => 1
-  let e : PushoutI φ ≃* CoprodI G := PushoutI.equivCoprodI φ
-  have he : (e : PushoutI φ →* CoprodI G).comp (PushoutI.of i) = of := by
-    ext
-    simp [e]
   -- A conjugate of `g ≠ 1` is not in the trivial amalgamated subgroup.
   have hg' (k : G i) : k * g * k⁻¹ ∉ (φ i).range := fun ⟨_, hk⟩ => hg (conj_eq_one_iff.1 hk.symm)
-  rw [← he, ← map_map, ← PushoutI.centralizer_of_eq_map
-    (fun _ => Function.injective_of_subsingleton _) hg', MulEquiv.map_centralizer,
-    Set.image_singleton]
-  simp [e]
+  exact MulEquiv.centralizer_singleton_eq_map (.id _) (PushoutI.equivCoprodI φ)
+    (fun _ => PushoutI.equivCoprodI_of _ _)
+    (PushoutI.centralizer_of_eq_map (fun _ => Function.injective_of_subsingleton _) hg')
 
 end Monoid.CoprodI

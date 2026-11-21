@@ -648,7 +648,7 @@ nontrivial. -/
 theorem AlternatingPath.IsReduced.equivHNNExtension_toπ₁Tree_toPath_mem_range_of_iff
     {p : (loop f g hf hg).AlternatingPath v v} (hp : p.IsReduced) :
     π₁Tree.equivHNNExtension f g hf hg (p.toPath.toπ₁Tree ∅) ∈
-      (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range ↔
+      (HNNExtension.of : G →* HNNExtension G f.range g.range (f.rangeEquivRange g hf hg)).range ↔
       p.length = 0 := by
   rw [← hp.toπ₁Tree_toPath_mem_range_of_iff (SerreGraph.roseTree Unit) (Set.empty_subset _)]
   constructor
@@ -664,8 +664,8 @@ extension of the loop whose product lies in `G` has no letter `t^{±1}`. This is
 `HNNExtension.ReducedWord.toList_eq_nil_of_mem_of_range`, derived here from Britton's lemma for
 the loop and the path spelled by the word. -/
 example (w : HNNExtension.NormalWord.ReducedWord G f.range g.range)
-    (hw : w.prod (loopEquiv f g hf hg) ∈
-      (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range) :
+    (hw : w.prod (f.rangeEquivRange g hf hg) ∈
+      (HNNExtension.of : G →* HNNExtension G f.range g.range (f.rangeEquivRange g hf hg)).range) :
     w.toList = [] := by
   -- Read `w` as a closed path at the vertex `v` of the loop.
   suffices ∀ _ : (SerreGraph.rose Unit).V, w.toList = [] from this ()
@@ -673,7 +673,7 @@ example (w : HNNExtension.NormalWord.ReducedWord G f.range g.range)
   -- The path spelled by `w` spells the product of `w`.
   have hprod : π₁Tree.equivHNNExtension f g hf hg
       ((loopPath f g hf hg w.head w.toList : (loop f g hf hg).AlternatingPath v v).toPath.toπ₁Tree
-        ∅) = w.prod (loopEquiv f g hf hg) := by
+        ∅) = w.prod (f.rangeEquivRange g hf hg) := by
     simp [HNNExtension.NormalWord.ReducedWord.prod]
   rw [← List.length_eq_zero_iff, ← length_loopPath (f := f) (g := g) (hf := hf) (hg := hg)
     (v := v) w.head, ← ((isReduced_loopPath_iff w.head w.toList).2
