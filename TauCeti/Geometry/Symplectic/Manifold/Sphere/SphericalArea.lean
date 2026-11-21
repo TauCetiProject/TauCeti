@@ -15,7 +15,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 import TauCeti.Topology.Homotopy.Cube.Radius
@@ -462,12 +461,13 @@ private theorem norm_sq_le_radSq (p : ℝ × ℝ) : ‖p‖ ^ 2 ≤ radSq p := b
     nlinarith [sq_nonneg p.2]
 
 /-- A point of the cube `I²` as a point of the square `[-1, 1]²`, through the affine homeomorphism
-`TauCeti.cubeHomeomorphClosedBall` onto the closed unit ball of the sup norm. -/
+`TauCeti.cubeHomeomorphClosedBall` onto the closed unit ball of the sup norm and the isometry
+`IsometryEquiv.piFinTwo` from `Fin 2 → ℝ` to `ℝ × ℝ`. -/
 private def cubeSquare (y : Fin 2 → I) : ℝ × ℝ :=
-  ContinuousLinearEquiv.finTwoArrow ℝ ℝ (cubeHomeomorphClosedBall (Fin 2) y)
+  IsometryEquiv.piFinTwo (fun _ ↦ ℝ) (cubeHomeomorphClosedBall (Fin 2) y)
 
 private theorem continuous_cubeSquare : Continuous cubeSquare :=
-  (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).continuous.comp
+  (IsometryEquiv.piFinTwo fun _ ↦ ℝ).continuous.comp
     (continuous_subtypeVal.comp (cubeHomeomorphClosedBall (Fin 2)).continuous)
 
 private theorem cubeSquare_eq_squareCoord (y : Fin 2 → I) :
@@ -476,11 +476,11 @@ private theorem cubeSquare_eq_squareCoord (y : Fin 2 → I) :
 
 private theorem norm_cubeSquare_eq_one_iff {y : Fin 2 → I} :
     ‖cubeSquare y‖ = 1 ↔ y ∈ Cube.boundary (Fin 2) := by
-  rw [cubeSquare, ContinuousLinearEquiv.norm_finTwoArrow ℝ,
+  rw [cubeSquare, (IsometryEquiv.piFinTwo fun _ ↦ ℝ).isometry.norm_map_of_map_zero rfl,
     norm_cubeHomeomorphClosedBall_eq_one_iff]
 
 private theorem cubeSquare_injective : Function.Injective cubeSquare :=
-  (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).injective.comp
+  (IsometryEquiv.piFinTwo fun _ ↦ ℝ).injective.comp
     (Subtype.val_injective.comp (cubeHomeomorphClosedBall (Fin 2)).injective)
 
 /-- The generalized loop of the smooth sphere `collapseSphere`. -/
@@ -505,13 +505,14 @@ private theorem bijOn_toSphere_collapseLoop :
     rw [Ne, collapse_eq_sphereNorthPole_iff, not_le] at hs hs'
     rw [cubeSquare_injective (collapse_injOn hs hs' h)]
   · obtain ⟨p, hp, rfl⟩ := exists_collapse_eq hs
-    have hp1 : (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm p ∈ Metric.closedBall 0 1 := by
-      rw [mem_closedBall_zero_iff, ← ContinuousLinearEquiv.norm_finTwoArrow ℝ,
-        ContinuousLinearEquiv.apply_symm_apply]
+    have hp1 : (IsometryEquiv.piFinTwo fun _ ↦ ℝ).symm p ∈ Metric.closedBall 0 1 := by
+      rw [mem_closedBall_zero_iff,
+        ← (IsometryEquiv.piFinTwo fun _ ↦ ℝ).isometry.norm_map_of_map_zero rfl,
+        IsometryEquiv.apply_symm_apply]
       nlinarith [norm_sq_le_radSq p, norm_nonneg p]
     have hy : collapseLoop ((cubeHomeomorphClosedBall (Fin 2)).symm ⟨_, hp1⟩) = collapse p := by
       rw [collapseLoop_apply, cubeSquare, Homeomorph.apply_symm_apply,
-        ContinuousLinearEquiv.apply_symm_apply]
+        IsometryEquiv.apply_symm_apply]
     refine ⟨cubeToSphere _ ((cubeHomeomorphClosedBall (Fin 2)).symm ⟨_, hp1⟩), ?_, ?_⟩
     · rwa [mem_preimage, GenLoop.toSphere_cubeToSphere, hy]
     · rw [GenLoop.toSphere_cubeToSphere, hy]
