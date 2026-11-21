@@ -64,27 +64,27 @@ namespace CongruenceSubgroup
 variable {Γ : Subgroup SL(2, ℤ)}
 
 /-- Conjugation fixes the central element `-I`, so it lies in `g⁻¹ Γ g ∩ SL(2, ℤ)` exactly when it
-lies in `Γ`. -/
+lies in `Γ`. High priority, so that it fires before Mathlib's `mem_conjGL` unfolds the membership
+into an existential. -/
+@[simp high]
 theorem neg_one_mem_conjGL_iff {g : GL (Fin 2) ℝ} : -1 ∈ conjGL Γ g ↔ -1 ∈ Γ := by
-  have h : mapGL ℝ (-1 : SL(2, ℤ)) = -1 := by ext i j; simp
   have hg : g * mapGL ℝ (-1 : SL(2, ℤ)) * g⁻¹ = mapGL ℝ (-1 : SL(2, ℤ)) := by
-    rw [h, mul_neg, mul_one, neg_mul, mul_inv_cancel]
+    rw [mapGL_neg_one, mul_neg, mul_one, neg_mul, mul_inv_cancel]
   simp only [mem_conjGL, coe_GL_eq_mapGL, hg, mapGL_injective.eq_iff, exists_eq_right]
 
 /-- Adjoining `±I` commutes with conjugation: `g⁻¹ (±Γ) g ∩ SL(2, ℤ) = ±(g⁻¹ Γ g ∩ SL(2, ℤ))`. -/
 theorem conjGL_withCenter (Γ : Subgroup SL(2, ℤ)) (g : GL (Fin 2) ℝ) :
     conjGL Γ.withCenter g = (conjGL Γ g).withCenter := by
-  have hneg (x : SL(2, ℤ)) : mapGL ℝ (-x) = -mapGL ℝ x := by ext i j; simp
   ext x
   simp only [mem_conjGL, Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg, coe_GL_eq_mapGL]
   constructor
   · rintro ⟨y, ⟨y', hy', rfl | rfl⟩, hx⟩
     · exact ⟨x, ⟨_, hy', hx⟩, Or.inl rfl⟩
     · refine ⟨-x, ⟨y', hy', ?_⟩, Or.inr (neg_neg x).symm⟩
-      rw [hneg, mul_neg, neg_mul, ← hx, hneg, neg_neg]
+      rw [mapGL_neg, mul_neg, neg_mul, ← hx, mapGL_neg, neg_neg]
   · rintro ⟨x', ⟨y, hy, hx'⟩, rfl | rfl⟩
     · exact ⟨y, ⟨y, hy, Or.inl rfl⟩, hx'⟩
-    · exact ⟨-y, ⟨y, hy, Or.inr rfl⟩, by rw [hneg, hneg, hx', mul_neg, neg_mul]⟩
+    · exact ⟨-y, ⟨y, hy, Or.inr rfl⟩, by rw [mapGL_neg, mapGL_neg, hx', mul_neg, neg_mul]⟩
 
 /-- If `Γ` has finite index in `SL(2, ℤ)`, then so does `g⁻¹ Γ g ∩ SL(2, ℤ)` for every rational
 `g`. This extends Mathlib's `CongruenceSubgroup.finiteIndex_conjGL`, the case `Γ = ⊤`. -/
