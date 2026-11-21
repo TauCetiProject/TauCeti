@@ -39,7 +39,7 @@ module, and perfectness under reflexivity.
 
 * `TauCeti.nakayamaHomEquiv_symm_apply_eq_nakayamaTrace`: the functional on `Hom_A(P, M)`
   corresponding to `g : M → ν(P)` is `f ↦ tr_P(g ∘ f)`.
-* `TauCeti.nakayamaTrace_comp`: the Nakayama trace is cyclic, `tr_Q(h ∘ u) = tr_P(ν(u) ∘ h)`.
+* `TauCeti.nakayamaTrace_comp_comm`: the Nakayama trace is cyclic, `tr_Q(h ∘ u) = tr_P(ν(u) ∘ h)`.
 * `TauCeti.nakayamaSerrePairing_comp_left` and `TauCeti.nakayamaSerrePairing_comp_right`:
   naturality of the Serre pairing in the module `M` and in the projective module `P`.
 * `TauCeti.nakayamaSerrePairing.instIsPerfPair`: Serre duality, the Serre pairing is perfect
@@ -72,7 +72,6 @@ noncomputable def nakayamaTrace : (P →ₗ[A] NakayamaModule k A P) →ₗ[k] k
   Module.Dual.eval k (P →ₗ[A] P) LinearMap.id ∘ₗ (nakayamaHomEquiv k A P P).symm.toLinearMap
 
 /-- The Nakayama trace evaluates the functional corresponding to a map at the identity. -/
-@[simp]
 theorem nakayamaTrace_apply (h : P →ₗ[A] NakayamaModule k A P) :
     nakayamaTrace k A P h = (nakayamaHomEquiv k A P P).symm h LinearMap.id :=
   (rfl)
@@ -110,7 +109,7 @@ theorem nakayamaHomEquiv_symm_apply_eq_nakayamaTrace (g : M →ₗ[A] NakayamaMo
 /-- **The Nakayama trace is cyclic.** For finite projective modules `P` and `Q`, a map
 `u : Q → P` and a map `h : P → ν(Q)`, the Nakayama trace of `h ∘ u` on `Q` is the Nakayama trace
 of `ν(u) ∘ h` on `P`. -/
-theorem nakayamaTrace_comp (u : Q →ₗ[A] P) (h : P →ₗ[A] NakayamaModule k A Q) :
+theorem nakayamaTrace_comp_comm (u : Q →ₗ[A] P) (h : P →ₗ[A] NakayamaModule k A Q) :
     nakayamaTrace k A Q (h ∘ₗ u) = nakayamaTrace k A P (u.nakayamaMap ∘ₗ h) := by
   -- Both sides equal the functional corresponding to `h` on `Hom_A(Q, P)`, evaluated at `u`.
   have h' : (nakayamaHomEquiv k A P P).symm (u.nakayamaMap ∘ₗ h) =
@@ -160,6 +159,6 @@ theorem nakayamaSerrePairing_comp_right (u : Q →ₗ[A] P) (f : P →ₗ[A] M)
     (g : M →ₗ[A] NakayamaModule k A Q) :
     nakayamaSerrePairing k A Q M (f ∘ₗ u) g =
       nakayamaSerrePairing k A P M f (u.nakayamaMap ∘ₗ g) := by
-  simp only [nakayamaSerrePairing_apply, ← LinearMap.comp_assoc, nakayamaTrace_comp]
+  simp only [nakayamaSerrePairing_apply, ← LinearMap.comp_assoc, nakayamaTrace_comp_comm]
 
 end TauCeti
