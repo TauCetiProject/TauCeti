@@ -437,7 +437,7 @@ private theorem forall_mem_zpowers_a5FourthD4BlockRot
     (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
     g ∈ Subgroup.zpowers ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ := by
   obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
-    ((SetLike.ext_iff.mp symmetries_cyclic_a5FourthD4 g.1).mp g.2)
+    ((SetLike.ext_iff.mp symmetries_cyclic_a5FourthD4 g.val).mp g.property)
   exact ⟨k, Subtype.ext hk⟩
 
 private theorem orderOf_a5FourthD4BlockRot_mk_eq_orderOf_a5FourthD4TrialityRotation_mk :

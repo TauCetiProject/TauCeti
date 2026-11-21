@@ -345,7 +345,7 @@ private noncomputable def kerToSimplyBlockedCycles {G : GridDiagram n} (hG : G.I
     LinearMap.ker (G.dHat₂ i) →+ hG.simplyBlockedCycles F i where
   toFun z := ⟨(G.simplyBlockedChainEquiv F i).symm z, by
     rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
-    exact z.2⟩
+    exact z.property⟩
   map_zero' := Subtype.ext (map_zero (G.simplyBlockedChainEquiv F i).symm)
   map_add' z z' := Subtype.ext
     (map_add (G.simplyBlockedChainEquiv F i).symm (z : GridChainHat F n i) z')
@@ -389,7 +389,7 @@ private theorem simplyBlockedClass₂_surjective {G : GridDiagram n} (hG : G.IsK
   obtain ⟨c, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective F i y
   refine ⟨⟨G.simplyBlockedChainEquiv F i c, ?_⟩, ?_⟩
   · rw [LinearMap.mem_ker]
-    exact (G.mem_ker_simplyBlockedComplex_d_iff F i c).mp c.2
+    exact (G.mem_ker_simplyBlockedComplex_d_iff F i c).mp c.property
   · rw [simplyBlockedClass₂_apply]
     congr 1
     ext1

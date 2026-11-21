@@ -91,24 +91,24 @@ variable {A : Type*}
 For `I = ∅` it is the zero set of all of `s_J`, and for `J ⊆ I` it is all of `X_J`. -/
 def kuranishiZeroSet {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
     (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) : Set (T J) :=
-  {x | ∀ α : J, α.1 ∉ I → s J α x = 0}
+  {x | ∀ α : J, α.val ∉ I → s J α x = 0}
 
 @[simp]
 theorem mem_kuranishiZeroSet {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
     {s : ∀ (J : Finset A) (α : J), T J → E α} {I J : Finset A} {x : T J} :
-    x ∈ kuranishiZeroSet s I J ↔ ∀ α : J, α.1 ∉ I → s J α x = 0 :=
+    x ∈ kuranishiZeroSet s I J ↔ ∀ α : J, α.val ∉ I → s J α x = 0 :=
   Iff.rfl
 
 theorem kuranishiZeroSet_eq_univ {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
     (s : ∀ (J : Finset A) (α : J), T J → E α) {I J : Finset A} (h : J ⊆ I) :
     kuranishiZeroSet s I J = univ :=
-  eq_univ_of_forall fun _ ↦ mem_kuranishiZeroSet.2 fun α hα ↦ (hα (h α.2)).elim
+  eq_univ_of_forall fun _ ↦ mem_kuranishiZeroSet.2 fun α hα ↦ (hα (h α.property)).elim
 
 /-- Every point of `X_I` lies in `Z_II`, the domain of the footprint map `ψ_II`. -/
 theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
     (s : ∀ (J : Finset A) (α : J), T J → E α) {I : Finset A} (x : T I) :
     x ∈ kuranishiZeroSet s I I :=
-  mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.2).elim
+  mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.property).elim
 
 /-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
 isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
@@ -149,12 +149,12 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
   footprintMap_footprintMap : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet kuranishi J K)
     (hx : footprintMap hJK x ∈ kuranishiZeroSet kuranishi I J)
-    (hx' : x.1 ∈ kuranishiZeroSet kuranishi I K),
+    (hx' : x.val ∈ kuranishiZeroSet kuranishi I K),
     footprintMap hIJ ⟨footprintMap hJK x, hx⟩ = footprintMap (hIJ.trans hJK) ⟨x, hx'⟩
   /-- The Kuranishi maps are compatible with the footprint maps: `s_I ∘ ψ_IJ = s_I`. -/
   kuranishi_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J)
     (α : I),
-    kuranishi I α (footprintMap h x) = kuranishi J ⟨α, h α.2⟩ x
+    kuranishi I α (footprintMap h x) = kuranishi J ⟨α, h α.property⟩ x
   isOpen_range_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J), IsOpen (range (footprintMap h))
   /-- `U_IJ₁ ∩ U_IJ₂ = U_I(J₁ ∪ J₂)`. -/
   range_footprintMap_inter : ∀ ⦃I J₁ J₂ : Finset A⦄ (h₁ : I ⊆ J₁) (h₂ : I ⊆ J₂),
@@ -163,7 +163,7 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
   /-- `ψ_IJ⁻¹(U_IK) = U_JK ∩ Z_IJ`. -/
   footprintMap_mem_range_iff : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet kuranishi I J),
-    footprintMap hIJ x ∈ range (footprintMap (hIJ.trans hJK)) ↔ x.1 ∈ range (footprintMap hJK)
+    footprintMap hIJ x ∈ range (footprintMap (hIJ.trans hJK)) ↔ x.val ∈ range (footprintMap hJK)
   /-- The footprint map is a quotient map onto its image `U_IJ`. -/
   isQuotientMap_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J),
     IsQuotientMap (rangeFactorization (footprintMap h))
@@ -175,7 +175,7 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
   /-- `ψ_IJ⁻¹(X_I^reg) ⊆ X_J^reg`. -/
   mem_regLocus_of_footprintMap_mem : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet kuranishi I J),
-    footprintMap h x ∈ regLocus I → x.1 ∈ regLocus J
+    footprintMap h x ∈ regLocus I → x.val ∈ regLocus J
   /-- `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
   eq_one_of_act_eq : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J),
     footprintMap h x ∈ regLocus I → ∀ g : (α : J) → Γ α,
@@ -187,11 +187,11 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
     footprintMap h x ∈ regLocus I → ∃ n : ℕ,
       (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
       ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
-        x.1 ∈ e.source ∧ ∀ y ∈ e.source,
-          (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y
+        x.val ∈ e.source ∧ ∀ y ∈ e.source,
+          (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
   /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
   exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
-    x.1 ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
+    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
 
 namespace ImplicitAtlas
 
@@ -212,20 +212,20 @@ theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : 
 `Z_IK` exactly when `ψ_JK x` lies in `Z_IJ`. -/
 theorem mem_kuranishiZeroSet_iff_footprintMap_mem {I J K : Finset A} (hJK : J ⊆ K)
     (x : kuranishiZeroSet 𝒜.kuranishi J K) :
-    x.1 ∈ kuranishiZeroSet 𝒜.kuranishi I K ↔
+    x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K ↔
       𝒜.footprintMap hJK x ∈ kuranishiZeroSet 𝒜.kuranishi I J := by
   simp only [mem_kuranishiZeroSet]
   refine ⟨fun hx α hα ↦ ?_, fun hx α hα ↦ ?_⟩
   · rw [𝒜.kuranishi_footprintMap]
     exact hx _ hα
-  · by_cases hαJ : α.1 ∈ J
+  · by_cases hαJ : α.val ∈ J
     · simpa [𝒜.kuranishi_footprintMap] using hx ⟨α, hαJ⟩ hα
-    · exact mem_kuranishiZeroSet.1 x.2 α hαJ
+    · exact mem_kuranishiZeroSet.1 x.property α hαJ
 
 /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK`, with the domain of `ψ_IJ` supplied by
 `ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
 theorem footprintMap_footprintMap_mk {I J K : Finset A} (hIJ : I ⊆ J) (hJK : J ⊆ K)
-    (x : kuranishiZeroSet 𝒜.kuranishi J K) (hx : x.1 ∈ kuranishiZeroSet 𝒜.kuranishi I K) :
+    (x : kuranishiZeroSet 𝒜.kuranishi J K) (hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K) :
     𝒜.footprintMap hIJ
         ⟨𝒜.footprintMap hJK x, (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hJK x).1 hx⟩ =
       𝒜.footprintMap (hIJ.trans hJK) ⟨x, hx⟩ :=
@@ -242,7 +242,7 @@ theorem act_mem_range_footprintMap {I J : Finset A} (h : I ⊆ J) (g : (α : I) 
     (hy : y ∈ range (𝒜.footprintMap h)) : act I g y ∈ range (𝒜.footprintMap h) := by
   obtain ⟨x, rfl⟩ := hy
   refine ⟨⟨act J (J.restrict (Function.updateFinset 1 I g)) x,
-    𝒜.act_mem_kuranishiZeroSet _ x.2⟩, ?_⟩
+    𝒜.act_mem_kuranishiZeroSet _ x.property⟩, ?_⟩
   rw [𝒜.footprintMap_act, ← Function.comp_apply (f := Finset.restrict₂ h),
     Finset.restrict₂_comp_restrict, Function.restrict_updateFinset]
 
@@ -250,18 +250,18 @@ theorem act_mem_range_footprintMap {I J : Finset A} (h : I ⊆ J) (g : (α : I) 
 outside it, since they lie in one orbit and the regular locus is invariant. -/
 theorem mem_regLocus_of_footprintMap_eq {I J : Finset A} (h : I ⊆ J)
     {x y : kuranishiZeroSet 𝒜.kuranishi I J} (hxy : 𝒜.footprintMap h x = 𝒜.footprintMap h y)
-    (hx : x.1 ∈ 𝒜.regLocus J) : y.1 ∈ 𝒜.regLocus J := by
+    (hx : x.val ∈ 𝒜.regLocus J) : y.val ∈ 𝒜.regLocus J := by
   obtain ⟨g, -, hg⟩ := (𝒜.footprintMap_eq_footprintMap_iff h x y).1 hxy
   exact hg ▸ 𝒜.act_mem_regLocus J g x hx
 
 /-- The regular footprint `V_I = ψ_∅I(X_I^reg ∩ Z_∅I) ⊆ X`. -/
 def footprint (I : Finset A) : Set X :=
-  𝒜.baseHomeomorph '' (𝒜.footprintMap (Finset.empty_subset I) '' {x | x.1 ∈ 𝒜.regLocus I})
+  𝒜.baseHomeomorph '' (𝒜.footprintMap (Finset.empty_subset I) '' {x | x.val ∈ 𝒜.regLocus I})
 
 @[simp]
 theorem mem_footprint {I : Finset A} {y : X} :
     y ∈ 𝒜.footprint I ↔ ∃ x : kuranishiZeroSet 𝒜.kuranishi ∅ I,
-      x.1 ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
+      x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
   simp [footprint]
 
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
@@ -269,8 +269,8 @@ of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, 
 `X_∅ ≃ₜ X`. -/
 theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
   set ψ := 𝒜.footprintMap (Finset.empty_subset I)
-  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.1 ∈ 𝒜.regLocus I}
-  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
+  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.val ∈ 𝒜.regLocus I}
+  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtypeVal
   -- `W` is saturated for `ψ`, so its image in `range ψ` is open.
   have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
     refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
@@ -280,7 +280,7 @@ theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
   have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
     simp only [image_image, rangeFactorization_coe]
   exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
-    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
+    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtypeVal _ hopen)
 
 /-- The regular footprints cover `X`. -/
 theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=

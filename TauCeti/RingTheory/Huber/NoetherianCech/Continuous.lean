@@ -41,13 +41,14 @@ variable [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition B)
   (hf : Ideal.span (Set.range f) = ⊤)
 
 private theorem continuous_eraseRingHom [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
-    @Continuous _ _ (faceTopology f P hf p (S.erase a.1)) (faceTopology f P hf (p + 1) S)
+    @Continuous _ _ (faceTopology f P hf p (S.erase a.val)) (faceTopology f P hf (p + 1) S)
       (cechLocalizationEraseRingHom f S a) := by
   rw [faceTopology_eq_locTopology, faceTopology_eq_locTopology,
     cechLocalizationEraseRingHom_eq_awayLift]
-  exact P.continuous_awayLift_locTopology _ _ _ (hasDenominatorPower f P hf p (S.erase a.1))
-    _ _ _ (hasDenominatorPower f P hf (p + 1) S) (f a.1) ((Finset.prod_erase_mul S f a.2).symm)
-    fun _ ht ↦ mul_mem_numerators f ht a.1
+  exact P.continuous_awayLift_locTopology _ _ _ (hasDenominatorPower f P hf p (S.erase a.val))
+    _ _ _ (hasDenominatorPower f P hf (p + 1) S) (f a.val)
+        ((Finset.prod_erase_mul S f a.property).symm)
+    fun _ ht ↦ mul_mem_numerators f ht a.val
 
 variable (M : Type*) [AddCommGroup M] [Module B M]
 
@@ -55,17 +56,17 @@ variable (M : Type*) [AddCommGroup M] [Module B M]
 uncompleted rational localizations. -/
 theorem continuous_cechLocalizationRestriction_erase [DecidableEq ι] (p : ℕ) (S : Finset ι)
     (a : S) :
-    @Continuous _ _ (faceModuleTopology f P M hf p (S.erase a.1))
+    @Continuous _ _ (faceModuleTopology f P M hf p (S.erase a.val))
       (faceModuleTopology f P M hf (p + 1) S)
-      (cechLocalizationRestriction M f (S.erase_subset a.1)) := by
-  let R := Localization.Away (∏ i ∈ S.erase a.1, f i)
+      (cechLocalizationRestriction M f (S.erase_subset a.val)) := by
+  let R := Localization.Away (∏ i ∈ S.erase a.val, f i)
   let T := Localization.Away (∏ i ∈ S, f i)
   let N := LocalizedModule (.powers (∏ i ∈ S, f i)) M
-  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf p (S.erase a.val)
   let _ := faceTopology f P hf (p + 1) S
-  let _ := faceModuleTopology f P M hf p (S.erase a.1)
+  let _ := faceModuleTopology f P M hf p (S.erase a.val)
   let _ := faceModuleTopology f P M hf (p + 1) S
-  have := isModuleTopology_faceModuleTopology f P M hf p (S.erase a.1)
+  have := isModuleTopology_faceModuleTopology f P M hf p (S.erase a.val)
   have := isModuleTopology_faceModuleTopology f P M hf (p + 1) S
   have := IsModuleTopology.isTopologicalAddGroup T N
   have := IsModuleTopology.toContinuousSMul T N
@@ -75,8 +76,8 @@ theorem continuous_cechLocalizationRestriction_erase [DecidableEq ι] (p : ℕ) 
   have : ContinuousSMul R N := ⟨((continuous_eraseRingHom f P hf p S a).comp
     continuous_fst).smul continuous_snd⟩
   exact IsModuleTopology.continuous_of_linearMap
-    ((cechLocalizationRestriction M f (S.erase_subset a.1)).extendScalarsOfIsLocalization
-      (.powers (∏ i ∈ S.erase a.1, f i)) R)
+    ((cechLocalizationRestriction M f (S.erase_subset a.val)).extendScalarsOfIsLocalization
+      (.powers (∏ i ∈ S.erase a.val, f i)) R)
 
 /-- The augmentation of the rational-localization Čech complex is continuous. -/
 theorem continuous_cechLocalizationAugmentation [TopologicalSpace M] [IsModuleTopology B M] :
@@ -84,14 +85,14 @@ theorem continuous_cechLocalizationAugmentation [TopologicalSpace M] [IsModuleTo
   let _ := termTopology f P M hf 0
   rw [termTopology_eq_pi]
   refine @continuous_pi M {S : Finset ι // S.card = 0 + 1}
-    (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M) _
-    (fun S ↦ faceModuleTopology f P M hf 0 S.1) (cechLocalizationAugmentation M f) ?_
+    (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M) _
+    (fun S ↦ faceModuleTopology f P M hf 0 S.val) (cechLocalizationAugmentation M f) ?_
   intro S
-  let _ := faceTopology f P hf 0 S.1
-  let _ := faceModuleTopology f P M hf 0 S.1
-  have := isModuleTopology_faceModuleTopology f P M hf 0 S.1
-  have := isTopologicalAddGroup_faceModuleTopology f P M hf 0 S.1
-  have := continuousSMul_faceModuleTopology f P M hf 0 S.1
+  let _ := faceTopology f P hf 0 S.val
+  let _ := faceModuleTopology f P M hf 0 S.val
+  have := isModuleTopology_faceModuleTopology f P M hf 0 S.val
+  have := isTopologicalAddGroup_faceModuleTopology f P M hf 0 S.val
+  have := continuousSMul_faceModuleTopology f P M hf 0 S.val
   simp_rw [cechLocalizationAugmentation_apply]
   exact IsModuleTopology.continuous_of_linearMap (mkLinearMap _ M)
 
@@ -103,25 +104,25 @@ theorem continuous_cechLocalizationDifferential [LinearOrder ι] (p : ℕ) :
   let _ := termTopology f P M hf (p + 1)
   rw [termTopology_eq_pi f P M hf (p + 1)]
   refine @continuous_pi (cechLocalizationTerm M f p) {S : Finset ι // S.card = p + 1 + 1}
-    (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M) (termTopology f P M hf p)
-    (fun S ↦ faceModuleTopology f P M hf (p + 1) S.1) (cechLocalizationDifferential M f p) ?_
+    (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M) (termTopology f P M hf p)
+    (fun S ↦ faceModuleTopology f P M hf (p + 1) S.val) (cechLocalizationDifferential M f p) ?_
   intro S
-  let _ := faceModuleTopology f P M hf (p + 1) S.1
-  have := isTopologicalAddGroup_faceModuleTopology f P M hf (p + 1) S.1
-  have := continuousSMul_faceModuleTopology f P M hf (p + 1) S.1
+  let _ := faceModuleTopology f P M hf (p + 1) S.val
+  have := isTopologicalAddGroup_faceModuleTopology f P M hf (p + 1) S.val
+  have := continuousSMul_faceModuleTopology f P M hf (p + 1) S.val
   simp_rw [cechLocalizationDifferential_apply]
   apply continuous_finsetSum
   intro a _
-  let _ := faceModuleTopology f P M hf p (S.1.erase a.1)
-  have hres := continuous_cechLocalizationRestriction_erase f P hf M p S.1 a
+  let _ := faceModuleTopology f P M hf p (S.val.erase a.val)
+  have hres := continuous_cechLocalizationRestriction_erase f P hf M p S.val a
   have hproj : @Continuous _ _ (termTopology f P M hf p)
-      (faceModuleTopology f P M hf p (S.1.erase a.1))
+      (faceModuleTopology f P M hf p (S.val.erase a.val))
       (fun x : cechLocalizationTerm M f p ↦
-        x ⟨S.1.erase a.1, by rw [Finset.card_erase_of_mem a.2, S.2]; rfl⟩) := by
+        x ⟨S.val.erase a.val, by rw [Finset.card_erase_of_mem a.property, S.property]; rfl⟩) := by
     rw [termTopology_eq_pi]
     exact @continuous_apply {S : Finset ι // S.card = p + 1}
-      (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.1, f i)) M)
-      (fun S ↦ faceModuleTopology f P M hf p S.1) _
-  exact (hres.comp hproj).const_smul (((-1) ^ (S.1.filter (· < a.1)).card) : B)
+      (fun S ↦ LocalizedModule (.powers (∏ i ∈ S.val, f i)) M)
+      (fun S ↦ faceModuleTopology f P M hf p S.val) _
+  exact (hres.comp hproj).const_smul (((-1) ^ (S.val.filter (· < a.val)).card) : B)
 
 end TauCeti.Huber.NoetherianCech

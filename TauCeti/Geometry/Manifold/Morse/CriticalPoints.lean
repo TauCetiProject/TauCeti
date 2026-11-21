@@ -172,6 +172,11 @@ def criticalPoints (f : M → ℝ) : Set M :=
 theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
   Iff.rfl
 
+/-- Whether `x` is a critical point of `f` depends only on the germ of `f` at `x`. -/
+theorem _root_.Filter.EventuallyEq.mem_criticalPoints_iff {f₁ f₂ : M → ℝ}
+    (h : f₁ =ᶠ[𝓝 x] f₂) : x ∈ criticalPoints I f₁ ↔ x ∈ criticalPoints I f₂ := by
+  rw [mem_criticalPoints, mem_criticalPoints, h.mvfderiv_eq]
+
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
     x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
@@ -503,7 +508,7 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
       (fun x hx ↦ by
         have hlt : f x < b := hx
         simpa using hlt.le)
-      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
   exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
@@ -652,11 +657,20 @@ and a critical point of index `m` in `S` exist. -/
 theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
     Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
   have := hS.to_subtype
-  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+  .of_injective (fun x ↦ (⟨x.2, x.2.property.1⟩ : ↥(criticalPoints I f ∩ S)))
     fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
       cases Subtype.ext_iff.1 hxy
       cases hx.2.symm.trans hy.2
       rfl
+
+omit [IsManifold I 1 M] in
+/-- If `f` has only finitely many critical points, then only finitely many pairs of an index `m`
+and a critical point of index `m` exist. -/
+theorem finite_sigma_criticalPoints (h : (criticalPoints I f).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) :=
+  have := finite_sigma_criticalPoints_inter (I := I) (f := f) (S := univ) (by simpa using h)
+  .of_equiv (Σ m, ↥{x ∈ criticalPoints I f ∩ univ | manifoldMorseIndex I f x = m})
+    (Equiv.sigmaCongrRight fun _ ↦ Set.equivOfEq (by simp))
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
@@ -1048,7 +1062,7 @@ theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] 
   have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
+  exact two_le_totalCriticalCount (hf.comp continuous_subtypeVal)
 
 /-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
 than four critical points is preconnected, hence connected when nonempty: each connected component
@@ -1182,7 +1196,7 @@ def IsMorse.criticalPointsIndexNegEquiv (hf : IsMorse I f) {j k : ℕ}
       {p : criticalPoints I f // manifoldMorseIndex I f p = k} :=
   (Set.equivOfEq criticalPoints_neg).subtypeEquiv fun p ↦ by
     have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using p.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      (by simpa using p.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     simp only [Set.equivOfEq_apply]
     omega
 
