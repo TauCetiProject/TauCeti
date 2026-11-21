@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.Geometry.Manifold.Riemannian.Poisson
+public import TauCeti.Geometry.Manifold.Riemannian.Poisson.Basic
 
 /-!
 # Schrödinger operators with a nonnegative potential on a closed manifold

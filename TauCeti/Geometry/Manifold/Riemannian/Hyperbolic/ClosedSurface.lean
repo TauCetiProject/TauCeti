@@ -38,10 +38,9 @@ minimization of the Liouville energy on `H¹(M)` produces a weak solution `w ∈
 `Δ⁺w + K + e^(2w) = 0`
 (`TauCeti.Manifold.SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul`). By
 Trudinger's exponential integrability (`TauCeti.Manifold.SobolevH1.memLp_exp_mul`), `e^(2w)` lies
-in `L²(M)`, so De Giorgi regularity
-(`TauCeti.Manifold.SobolevH1.exists_continuous_ae_eq_of_dirichletForm_eq`) makes `w` continuous and
-the semilinear bootstrap (`TauCeti.Manifold.SobolevH1.contMDiff_of_dirichletForm_eq_semilinear`)
-upgrades it to a smooth classical solution. The comparison principle makes it unique
+in `L²(M)`, so the semilinear elliptic regularity theorem
+(`SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq`)
+upgrades `w` directly to a smooth classical solution. The comparison principle makes it unique
 (`TauCeti.Manifold.eq_of_neg_laplaceBeltrami_add_add_exp_eq_zero`).
 Conversely, conformal invariance of total curvature implies `∫ Scal^g dV_g < 0` whenever a nonempty
 closed surface carries a conformal hyperbolic metric, and its area is `-∫ K dV_g`.
@@ -116,35 +115,27 @@ private theorem exists_contMDiff_neg_laplaceBeltrami_add_add_exp_eq_zero
   have hKLp_neg : ∫ x, KLp x ∂riemannianVolume I M < 0 := by rwa [integral_congr_ae hKLp_ae]
   obtain ⟨w, hw⟩ := SobolevH1.exists_forall_dirichletForm_eq_integral_neg_add_exp_mul
     hE KLp hKLp_neg
-  -- By Trudinger's inequality, `-(K + e^(2w))` lies in `L²(M)`, so De Giorgi gives continuity.
-  let f₀ : M → ℝ := fun x ↦ -(K x + Real.exp (2 * SobolevH1.toLp w x))
-  have hf₀_memLp : MemLp f₀ (2 : ℝ≥0) (riemannianVolume I M) :=
-    (((Lp.memLp KLp).ae_eq hKLp_ae).add
-      (SobolevH1.memLp_exp_mul hE w 2 (p := (2 : ℝ≥0)) ENNReal.coe_ne_top)).neg
-  have hw_f₀ : ∀ ψ : C^∞⟮I, M; ℝ⟯,
+  -- By Trudinger's inequality, `(-1) * e^(2w) + (-K)` lies in `L²(M)`, so the semilinear bootstrap
+  -- gives smoothness and the classical equation directly.
+  have hF : MemLp (fun x ↦ (-1 : ℝ) * Real.exp (2 * SobolevH1.toLp w x) + -K x) (2 : ℝ≥0)
+      (riemannianVolume I M) :=
+    ((((Lp.memLp KLp).ae_eq hKLp_ae).add
+      (SobolevH1.memLp_exp_mul hE w 2 (p := (2 : ℝ≥0)) ENNReal.coe_ne_top)).neg).ae_eq
+      (Filter.Eventually.of_forall fun x ↦ by simp only [Pi.neg_apply, Pi.add_apply]; ring)
+  have hw_semi : ∀ ψ : C^∞⟮I, M; ℝ⟯,
       SobolevH1.dirichletForm w (SobolevH1.ofSmooth ψ) =
-        ∫ x, f₀ x * ψ x ∂riemannianVolume I M := fun ψ ↦ by
+        ∫ x, ((-1 : ℝ) * Real.exp (2 * SobolevH1.toLp w x) + -K x) * ψ x
+          ∂riemannianVolume I M := fun ψ ↦ by
     rw [hw]
     refine integral_congr_ae ?_
     filter_upwards [hKLp_ae, SobolevH1.toLp_ofSmooth_ae_eq ψ] with x hxK hxψ
-    dsimp only [f₀]
     rw [hxK, hxψ]
-  obtain ⟨φ, hφ_cont, hwφ⟩ := SobolevH1.exists_continuous_ae_eq_of_dirichletForm_eq
-    (r := 2) le_rfl (by rw [hE]; norm_num) hf₀_memLp hw_f₀
-  -- Rewrite the weak right-hand side in terms of `φ` and bootstrap to `C^∞`.
-  have hw_semi : ∀ ψ : C^∞⟮I, M; ℝ⟯,
-      SobolevH1.dirichletForm w (SobolevH1.ofSmooth ψ) =
-        ∫ x, ((-1 : ℝ) * Real.exp (2 * φ x) + -K x) * ψ x ∂riemannianVolume I M := fun ψ ↦ by
-    rw [hw_f₀]
-    refine integral_congr_ae ?_
-    filter_upwards [hwφ] with x hx
-    dsimp only [f₀]
-    rw [hx]
     ring
-  obtain ⟨hφ_smooth, hΔ⟩ := SobolevH1.contMDiff_of_dirichletForm_eq_semilinear
-    (Φ := fun t ↦ Real.exp (2 * t)) (by omega) contMDiff_const hK.neg (by fun_prop)
-    hφ_cont hwφ hw_semi
-  exact ⟨φ, hφ_smooth, fun x ↦ by linarith [hΔ x]⟩
+  obtain ⟨φ, -, hΔ⟩ :=
+    SobolevH1.exists_eq_ofSmooth_and_neg_laplaceBeltrami_eq_mul_comp_add_of_dirichletForm_eq
+      (Φ := fun t ↦ Real.exp (2 * t)) (by omega) contMDiff_const hK.neg (by fun_prop)
+      hF hw_semi
+  exact ⟨φ, φ.contMDiff, fun x ↦ by linarith [hΔ x]⟩
 
 /-- **Smooth solvability and uniqueness of the constant negative curvature equation on a closed
 surface.** On a closed connected smooth Riemannian surface, for every smooth function `K : M → ℝ`
