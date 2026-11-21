@@ -136,8 +136,7 @@ theorem isAdmissibleCosinePolynomial_threeFourOne :
   lt := by norm_num
   isNonnegativeTrigonometricCombination z hz := by
     have h := LSeries.isNonnegativeTrigonometricCombination_threeFourOne z hz
-    simp only [trigonometricCombination_def, LSeries.threeFourOneWeight_apply,
-      LSeries.threeFourOneFrequency_apply] at h
+    simp only [trigonometricCombination_def, LSeries.threeFourOneWeight_apply] at h
     rwa [trigonometricCombination_def, ← Fin.sum_univ_eq_sum_range
       (fun k ↦ ((LSeries.threeFourOneCoeff k : ℂ) * z ^ id k).re)]
 

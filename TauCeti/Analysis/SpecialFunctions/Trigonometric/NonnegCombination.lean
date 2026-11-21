@@ -76,10 +76,7 @@ theorem trigonometricCombination_ofReal_exp_mul_I
   rw [trigonometricCombination_def]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hexp : exp (θ * I) ^ m i = exp (((m i * θ : ℝ) : ℂ) * I) := by
-    rw [← Complex.exp_natCast_mul]
-    congr 1
-    push_cast
-    ring
+    simpa [circleMap_zero] using circleMap_zero_pow (m i) 1 θ
   rw [hexp, re_ofReal_mul, exp_ofReal_mul_I_re]
 
 /-- The assertion that a finite trigonometric combination is nonnegative at every complex phase
