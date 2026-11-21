@@ -69,7 +69,7 @@ theorem exists_forall_norm_add_rpow_le (hq : 1 < q) (hη : 0 < η) :
   -- The case `‖b‖ ≤ ‖a‖`: rescale `a` to the unit sphere and apply uniform convexity.
   have key (a b : E) (hba : ‖b‖ ≤ ‖a‖) (hab : η * (‖a‖ ^ q + ‖b‖ ^ q) ≤ ‖a - b‖ ^ q) :
       ‖a + b‖ ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (‖a‖ ^ q + ‖b‖ ^ q) := by
-    refine hreal _ _ _ (norm_nonneg b) hba (norm_nonneg _) (norm_add_le a b) ?_
+    refine hreal _ _ _ (norm_nonneg a) (norm_nonneg b) (norm_nonneg _) (norm_add_le a b) ?_
     rcases (norm_nonneg a).eq_or_lt with ha | ha
     · have hb : ‖b‖ = 0 := le_antisymm (ha ▸ hba) (norm_nonneg b)
       have := norm_add_le a b

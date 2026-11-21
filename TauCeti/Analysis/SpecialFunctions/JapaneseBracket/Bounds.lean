@@ -65,18 +65,19 @@ theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) 
     have h2 : (1 + t ^ 2) / 2 ≤ t ^ 2 := by nlinarith
     calc (t ^ 2) ^ (r / 2) ≤ ((1 + t ^ 2) / 2) ^ (r / 2) :=
           rpow_le_rpow_of_nonpos (by positivity) h2 (by linarith)
+      _ = (1 + t ^ 2) ^ (r / 2) / 2 ^ (r / 2) := div_rpow hs.le zero_le_two _
       _ = 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-          rw [div_rpow hs.le (by norm_num), abs_of_nonpos hr, neg_div, rpow_neg (by norm_num),
-            div_eq_inv_mul]
+          rw [abs_of_nonpos hr, neg_div, rpow_neg zero_le_two, inv_mul_eq_div]
 
 /-- For `t ≥ 1` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`. -/
 theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
     (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * t ^ r := by
+  have ht0 : 0 < t := by linarith
   have h := rpow_le_two_rpow_mul_one_add_sq_rpow ht (-r)
-  rw [abs_neg, neg_div, rpow_neg (by linarith), rpow_neg (by positivity), ← one_div,
-    ← div_eq_mul_inv, div_le_div_iff₀ (rpow_pos_of_pos (by linarith) r) (by positivity),
-    one_mul] at h
-  exact h
+  -- `h` reads `1 / t ^ r ≤ 2 ^ (|r| / 2) / (1 + t ^ 2) ^ (r / 2)`; clear the denominators.
+  simp only [abs_neg, neg_div, rpow_neg ht0.le, rpow_neg (by positivity : (0 : ℝ) ≤ 1 + t ^ 2),
+    ← one_div, mul_one_div] at h
+  rwa [div_le_div_iff₀ (rpow_pos_of_pos ht0 r) (by positivity), one_mul] at h
 
 /-- For `|t| ≤ R` and an exponent `r` of either sign, the Japanese bracket power
 `(1 + t ^ 2) ^ (r / 2)` is at least `(1 + R ^ 2) ^ (-|r| / 2)`, in the multiplicative form
@@ -90,9 +91,9 @@ theorem one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow (t : ℝ) {R : ℝ} (ht :
   rcases le_or_gt 0 r with hr | hr
   · exact one_le_mul_of_one_le_of_one_le (one_le_rpow (ht1.trans hR) (by positivity))
       (one_le_rpow ht1 (by linarith))
-  · calc (1 : ℝ) = (1 + t ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
-          rw [← rpow_add (by positivity), abs_of_neg hr, ← add_div, neg_add_cancel, zero_div,
-            rpow_zero]
+  · calc (1 : ℝ) = (1 + t ^ 2) ^ (|r| / 2 + r / 2) := by
+          rw [abs_of_neg hr, neg_div, neg_add_cancel, rpow_zero]
+      _ = (1 + t ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := rpow_add (by positivity) _ _
       _ ≤ _ := by gcongr
 
 /-- For `|t| ≤ R`, every constant is at most a multiple of each power of the Japanese bracket:

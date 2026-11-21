@@ -53,7 +53,9 @@ which is the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
 For `0 ≤ p ≤ 1`, a nonnegative quantity `r ≤ 2 h` has `r ^ p ≤ 2 h ^ p`. This is how, in a
 temporal Hölder estimate with exponent `p`, a time at most twice the time step `h` is bounded by
-a multiple of `h ^ p`.
+a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric space lie within
+`c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ t ≤ 2 h` and `0 ≤ t' ≤ h`, then
+`dist x y ≤ 3 c h ^ p`.
 
 If `2 ≤ q ≤ q'` and `q ^ p < q (q + q')`, then `q ^ (p - 1) < 2 q'`, so
 `(p - 1) log q < log 2 + log q'`. Hence `t < log q' / log q` once `log 2 < (p - 1 - t) log q`.
@@ -475,6 +477,20 @@ theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ �
   have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
   simp only [add_zero] at hlim
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
+/-- If `x` lies within `c t ^ β` and `y` within `c t' ^ β` of a point `z`, where `0 ≤ c`,
+`0 ≤ β ≤ 1`, `0 ≤ t ≤ 2 h` and `0 ≤ t' ≤ h`, then `dist x y ≤ 3 c h ^ β`. -/
+theorem dist_le_three_mul_rpow_of_le_two_mul {X : Type*} [PseudoMetricSpace X] {x y z : X}
+    {c β h t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht : 0 ≤ t) (hth : t ≤ 2 * h)
+    (ht' : 0 ≤ t') (ht'h : t' ≤ h) (hx : dist x z ≤ c * t ^ β) (hy : dist y z ≤ c * t' ^ β) :
+    dist x y ≤ 3 * c * h ^ β := by
+  have h₁ : t ^ β ≤ 2 * h ^ β := Real.rpow_le_two_mul_rpow_of_le_two_mul ht hth hβ₀ hβ₁
+  have h₂ : t' ^ β ≤ h ^ β := Real.rpow_le_rpow ht' ht'h hβ₀
+  calc dist x y ≤ dist x z + dist y z := dist_triangle_right x y z
+    _ ≤ c * (2 * h ^ β) + c * h ^ β :=
+        add_le_add (hx.trans (mul_le_mul_of_nonneg_left h₁ hc))
+          (hy.trans (mul_le_mul_of_nonneg_left h₂ hc))
+    _ = 3 * c * h ^ β := by ring
 
 end TauCeti
 

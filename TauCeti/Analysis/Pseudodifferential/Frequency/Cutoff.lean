@@ -227,8 +227,7 @@ private theorem abs_inv_pow_le_mul_weight {R : ℝ} {k : ℕ} {ξ : E}
     linarith
   have hw := Real.one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow ‖ξ‖
     ((abs_norm ξ).trans_le hξ.le) ((0 : ℝ) - k)
-  rw [zero_sub, abs_neg, Nat.abs_cast, mul_pow, sq_abs, ← zero_sub] at hw
-  norm_num only at hw
+  norm_num only [zero_sub, abs_neg, Nat.abs_cast, mul_pow, sq_abs] at hw ⊢
   exact hw
 
 /-- The dilated cutoff `ξ ↦ χ (R⁻¹ • ξ)` at any radius `R` satisfies the order-zero symbol

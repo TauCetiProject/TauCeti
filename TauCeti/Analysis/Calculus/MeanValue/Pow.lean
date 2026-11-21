@@ -19,24 +19,26 @@ that is Hölder in time with exponent `β` and whose derivative grows at most li
 near `0`.
 
 For `a > 0` and `a / 2 ≤ b`, the mean value inequality gives the bound from a derivative of norm
-at most `D r ^ (β - 1)` at every `r > 0`.
+at most `D r ^ (β - 1)` at every `r` between `a` and `b`.
 
 The two other cases need no derivative, only data at the two endpoints, so they are stated for
 two points `x` and `y` of a pseudometric space, the values of `u` at `b` and `a`. For `a < 0`,
 `0 ≤ β ≤ 1` and `0 ≤ K`, the data are that `dist x y` vanishes if `b ≤ 0` and is at most `K b ^ β`
 if `0 < b`. For `0 < a` and `b ≤ a / 2`, they are that `x` and `y` both lie within `K a ^ β` of a
-point `c`. A function equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0` meets
-both, for `x = u b` and `y = u a`.
+point `c`. When `0 ≤ β`, a function equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for
+`r ≥ 0` meets both, for `x = u b` and `y = u a`.
 
 ## Main results
 
-* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`:
+* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt`:
   `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `0 < a`, `a / 2 ≤ b` and `0 ≤ β ≤ 1` when
-  `‖u' r‖ ≤ D r ^ (β - 1)` for `r > 0`.
+  `u` has derivative `u' r` within `[[a, b]]` with `‖u' r‖ ≤ D r ^ (β - 1)` at every
+  `r ∈ [[a, b]]`.
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right`: `dist x y ≤ K |b - a| (-a) ^ (β - 1)`
-  for `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`.
+  for `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, when `dist x y = 0` if `b ≤ 0` and
+  `dist x y ≤ K b ^ β` if `0 < b`.
 * `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_half`: `dist x y ≤ 4 K |b - a| a ^ (β - 1)` for
-  `0 < a` and `b ≤ a / 2`.
+  `0 < a` and `b ≤ a / 2`, when `dist x c ≤ K a ^ β` and `dist y c ≤ K a ^ β`.
 -/
 
 public section
@@ -45,20 +47,24 @@ namespace TauCeti
 
 open Real Set
 
-/-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
-every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
-theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
-    {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
+/-- Mean value bound near `a > 0`: if `a / 2 ≤ b` and `u` has derivative `f' r` within
+`[[a, b]]` of norm at most `D r^(β - 1)` at every `r ∈ [[a, b]]` (`0 ≤ β ≤ 1`), then
+`‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivWithinAt {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u f' : ℝ → F} {β D a b : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0) (ha : 0 < a)
+    (hb : a / 2 ≤ b) (hderiv : ∀ r ∈ uIcc a b, HasDerivWithinAt u (f' r) (uIcc a b) r)
+    (hbound : ∀ r ∈ uIcc a b, ‖f' r‖ ≤ D * r ^ (β - 1)) :
+    ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
   have ha2 : 0 < a / 2 := half_pos ha
-  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hbound 1 one_pos)
-  have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
-    (f' := f') (C := D * (a / 2) ^ (β - 1))
-    (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
-    (fun r hr => (hbound r (ha2.trans_le hr)).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 hr hβ₁) hD))
-    (convex_Ici _) (x := a) (y := b) (mem_Ici.2 (by linarith)) (mem_Ici.2 hb)
+  have hD : 0 ≤ D := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hbound a left_mem_uIcc))
+    (rpow_pos_of_pos ha _)
+  have hr2 (r : ℝ) (hr : r ∈ uIcc a b) : a / 2 ≤ r := by
+    rcases mem_uIcc.1 hr with h | h <;> linarith [h.1]
+  have hmv := (convex_uIcc a b).norm_image_sub_le_of_norm_hasDerivWithin_le (f := u)
+    (f' := f') (C := D * (a / 2) ^ (β - 1)) hderiv
+    (fun r hr => (hbound r hr).trans
+      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 (hr2 r hr) hβ₁) hD))
+    left_mem_uIcc right_mem_uIcc
   have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
     rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
     gcongr

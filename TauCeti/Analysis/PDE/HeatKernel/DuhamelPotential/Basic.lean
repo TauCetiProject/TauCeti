@@ -628,24 +628,6 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
   rw [hexp, show t - s - (t' - s) = t - t' by ring] at this
   linarith
 
-/-- If `dist x z ≤ c t ^ β` and `dist y z ≤ c t' ^ β` with `0 ≤ β ≤ 1`, `0 ≤ t'` and
-`t' ≤ t - t'`, then `dist x y ≤ 3 c (t - t') ^ β`, since then `t ≤ 2 (t - t')`. (For `c < 0` the
-hypotheses force both distances, and the bound, to vanish.) -/
-private theorem dist_le_three_mul_rpow_of_le_sub {X : Type*} [PseudoMetricSpace X] {x y z : X}
-    {c β t t' : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht' : 0 ≤ t') (hsmall : t' ≤ t - t')
-    (h₁ : dist x z ≤ c * t ^ β) (h₂ : dist y z ≤ c * t' ^ β) :
-    dist x y ≤ 3 * c * (t - t') ^ β := by
-  have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
-    Real.rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
-  have h₄ : t' ^ β ≤ (t - t') ^ β := Real.rpow_le_rpow ht' hsmall hβ₀
-  have hxy := dist_triangle_right x y z
-  rcases le_total 0 c with hc | hc
-  · nlinarith [mul_le_mul_of_nonneg_left h₃ hc, mul_le_mul_of_nonneg_left h₄ hc]
-  · -- For `c ≤ 0`, `0 ≤ c t ^ β ≤ c (t - t') ^ β ≤ c t' ^ β ≤ 0`.
-    have h₅ : (t - t') ^ β ≤ t ^ β := Real.rpow_le_rpow (by linarith) (by linarith) hβ₀
-    nlinarith [mul_le_mul_of_nonpos_left h₅ hc, mul_le_mul_of_nonpos_left h₄ hc,
-      mul_nonpos_of_nonpos_of_nonneg hc (Real.rpow_nonneg ht' β), dist_nonneg.trans h₁]
-
 /-- The temporal increment of the Hessian of the Duhamel potential between times `t' ≤ t` is
 `O(H (t - t')^(α/2))`, for `0 < α < 2`. -/
 private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α : ℝ≥0}
@@ -688,9 +670,9 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
-    have hb := dist_le_three_mul_rpow_of_le_sub (x := ∫ s in 0..t, Φ t s)
+    have hb := dist_le_three_mul_rpow_of_le_two_mul (x := ∫ s in 0..t, Φ t s)
       (y := ∫ s in 0..t', Φ t' s) (z := 0) (c := C₁ * H) (β := (α : ℝ) / 2)
-      (by positivity) (by linarith) ht' hsmall
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht.le (by linarith) ht' hsmall
       (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
     rw [dist_eq_norm] at hb
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
