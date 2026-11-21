@@ -157,9 +157,10 @@ range, so the value is a `dite` rather than a plain application.
   ends below it and never equals it drops below the level at some step.
 * `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
   two consecutive values meets the closed interval of no other step.
-* `Fin.append_init_castLE`, `Fin.append_init_eq_or_eq`, `Fin.forall_append_init_castSucc_succ`:
-  two chains with a common point glue to the chain `Fin.append (Fin.init x₁) x₂`, whose points and
-  steps are those of the two chains.
+* `Fin.append_init_castLE`, `Fin.append_init_zero`, `Fin.append_init_last`,
+  `Fin.append_init_eq_or_eq`, `Fin.forall_append_init_castSucc_succ`: two chains with a common
+  point glue to the chain `Fin.append (Fin.init x₁) x₂`, whose endpoints, points and steps are
+  those of the two chains.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
@@ -978,8 +979,18 @@ variable {α β : Type*} {k₁ k₂ : ℕ} {x₁ : Fin (k₁ + 1) → α} {x₂ 
 theorem append_init_castLE (h : x₁ (last k₁) = x₂ 0) (l : Fin (k₁ + 1)) :
     append (init x₁) x₂ (castLE (by omega) l : Fin (k₁ + k₂ + 1)) = x₁ l := by
   rcases eq_castSucc_or_eq_last l with ⟨l, rfl⟩ | rfl
-  · exact append_left (init x₁) x₂ l
-  · exact (append_right (init x₁) x₂ 0).trans h.symm
+  · rw [castLE_castSucc, append_left', init]
+  · rw [show (castLE (by omega) (last k₁) : Fin (k₁ + (k₂ + 1))) = natAdd k₁ 0 from
+      Fin.ext (by simp), append_right, h]
+
+/-- Two chains glued at a common point start where the first one starts. -/
+theorem append_init_zero (h : x₁ (last k₁) = x₂ 0) :
+    append (init x₁) x₂ (0 : Fin (k₁ + k₂ + 1)) = x₁ 0 := by
+  rw [← castLE_zero (show k₁ + 1 ≤ k₁ + k₂ + 1 by omega), append_init_castLE h]
+
+/-- Two chains glued at a common point end where the second one ends. -/
+theorem append_init_last : append (init x₁) x₂ (last (k₁ + k₂)) = x₂ (last k₂) := by
+  rw [← natAdd_last, append_right]
 
 /-- Every point of two chains glued together is a point of one of them. -/
 theorem append_init_eq_or_eq (l : Fin (k₁ + k₂ + 1)) :
@@ -1000,8 +1011,9 @@ theorem forall_append_init_castSucc_succ {z₁ : Fin k₁ → β} {z₂ : Fin k�
   refine addCases (motive := fun j : Fin (k₁ + k₂) ↦
     P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j))
     (fun j ↦ ?_) (fun j ↦ ?_) j
-  · rw [castSucc_castAdd, append_left, append_left,
-      show (castAdd k₂ j).succ = castLE (by omega) j.succ from rfl, append_init_castLE h]
+  · rw [castSucc_castAdd, append_left, append_left, init,
+      show (castAdd k₂ j).succ = (castLE (by omega) j.succ : Fin (k₁ + k₂ + 1)) from
+        Fin.ext (by simp), append_init_castLE h]
     exact h₁ j
   · rw [← natAdd_castSucc, succ_natAdd, append_right, append_right, append_right]
     exact h₂ j

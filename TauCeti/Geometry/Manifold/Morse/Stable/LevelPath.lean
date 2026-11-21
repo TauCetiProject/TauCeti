@@ -771,7 +771,7 @@ private theorem exists_chain_concatLevelRecords {k₁ : ℕ} {x₁ : Fin (k₁ +
   -- The broken trajectory runs through the first one up to `q`, and then through the second one.
   have h₁₂ : x₁ (Fin.last k₁) = x₂ 0 := hxk₁.trans hx0₂.symm
   refine ⟨(Fin.append (Fin.init x₁) x₂ :), Fin.append z₁ z₂,
-    (Fin.append_init_castLE h₁₂ 0).trans hx0₁, (Fin.append_right _ _ (Fin.last k₂)).trans hxk₂,
+    (Fin.append_init_zero h₁₂).trans hx0₁, Fin.append_init_last.trans hxk₂,
     fun l ↦ ?_,
     Fin.forall_append_init_castSucc_succ (z₁ := z₁) (z₂ := z₂) (P := fun a b _ ↦ a ≠ b) h₁₂
       hxne₁ hxne₂,
