@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Order.PartialSups
 import Mathlib.Order.SuccPred.Nat
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Path-connected unions and intersections
@@ -27,6 +28,9 @@ member meets the preceding union. The partial unions use Mathlib's `partialSups`
 If a set is covered by two path-connected subsets but is not itself path connected, then each of
 the two subsets is a path component of it.
 
+A function which, near each point of a path, agrees with its value at that point takes the same
+value at the two ends of the path.
+
 ## Main declarations
 
 * `TauCeti.isPathConnected_inter_of_pairwise`: pairwise intersections of such a family are path
@@ -35,11 +39,13 @@ the two subsets is a path component of it.
 * `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
   is covered by two path-connected subsets, each of them is one of its path components.
 * `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
+* `Path.eq_of_eventually_eq`: a function locally constant along a path takes the same value at its
+  two ends.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
@@ -91,3 +97,9 @@ theorem exists_pathComponent_representative :
     fun h ↦ congrArg Quotient.out (Quotient.sound (s := pathSetoid X) h)⟩
 
 end TauCeti
+
+/-- A function which, near each point of a path, agrees with its value at that point takes the
+same value at the two ends of the path. -/
+theorem Path.eq_of_eventually_eq {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
+    (γ : Path x y) (h : ∀ t, ∀ᶠ s in 𝓝 t, f (γ s) = f (γ t)) : f x = f y := by
+  simpa using ((IsLocallyConstant.iff_eventually_eq _).2 h).apply_eq_of_preconnectedSpace 0 1

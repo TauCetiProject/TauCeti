@@ -100,6 +100,11 @@ for all times (`TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMD
   `TauCeti.SmoothMappingTorus.contMDiff_seamFamily_family_of_contMDiff`: they are jointly smooth
   everywhere when all the structures `(Φ p ^ k)^* K₀ p` are, in particular when `Φ p` and its
   inverse depend smoothly on `p`.
+* `TauCeti.SmoothMappingTorus.seamStructure_pullback`,
+  `TauCeti.SmoothMappingTorus.seamPath_eq_pullback`,
+  `TauCeti.SmoothMappingTorus.mfderiv_seamFamily_of_semiconj`: for a diffeomorphism `e`
+  conjugating `φ` to `ψ`, the construction from `e^* J₀'` for `φ` is the pullback along `e` of the
+  construction from `J₀'` for `ψ`, so `de` intertwines the two vertical families.
 
 ## References
 
@@ -162,8 +167,8 @@ theorem seamStructure_one : seamStructure φ J₀ 1 = J₀.pullback φ := by
 /-- The piece of the vertical family on the time interval `[k, k + 1]`: the smooth Cayley path
 from `J_k` to `J_(k + 1)`, constant for `t ≤ k + 1/3` and for `t ≥ k + 2/3`. -/
 def seamPath (k : ℤ) (t : ℝ) : SmoothAlmostComplexStructure I M :=
-  (compatible_seamStructure hσ hJ₀ k).cayleyPath (compatible_seamStructure hσ hJ₀ (k + 1))
-    (3 * (t - k) - 1)
+  (compatible_seamStructure hσ hJ₀ k).cayleyPath
+    (compatible_seamStructure hσ hJ₀ (k + 1)).tames (3 * (t - k) - 1)
 
 /-- On the collar `t ≤ k + 1/3` the piece on `[k, k + 1]` is `J_k`. -/
 theorem seamPath_of_le {k : ℤ} {t : ℝ} (ht : t ≤ k + 1 / 3) :
@@ -186,8 +191,9 @@ theorem seamPath_add_one (k : ℤ) (t : ℝ) :
     seamPath hσ hJ₀ (k + 1) (t + 1) = (seamPath hσ hJ₀ k t).pullback φ := by
   rw [seamPath, seamPath, SmoothTwoForm.Compatible.pullback_cayleyPath]
   refine (SmoothTwoForm.Compatible.cayleyPath_congr (compatible_seamStructure hσ hJ₀ (k + 1))
-    (compatible_seamStructure hσ hJ₀ (k + 1 + 1)) ((compatible_seamStructure hσ hJ₀ k).pullback φ)
-    ((compatible_seamStructure hσ hJ₀ (k + 1)).pullback φ) (seamStructure_add_one k)
+    (compatible_seamStructure hσ hJ₀ (k + 1 + 1)).tames
+    ((compatible_seamStructure hσ hJ₀ k).pullback φ)
+    ((compatible_seamStructure hσ hJ₀ (k + 1)).tames.pullback φ) (seamStructure_add_one k)
     (seamStructure_add_one (k + 1)) _).trans ?_
   congr 1
   push_cast
@@ -263,7 +269,7 @@ theorem contMDiffOn_seamFamily_family (k : ℤ)
     (K₀ := fun r : P × (ℝ × ℝ) ↦ seamStructure (Φ r.1) (K₀ r.1) k)
     (K₁ := fun r : P × (ℝ × ℝ) ↦ seamStructure (Φ r.1) (K₀ r.1) (k + 1))
     (fun r ↦ compatible_seamStructure (hΦ r.1) (hK₀ r.1) k)
-    (fun r ↦ compatible_seamStructure (hΦ r.1) (hK₀ r.1) (k + 1))
+    (fun r ↦ (compatible_seamStructure (hΦ r.1) (hK₀ r.1) (k + 1)).tames)
     (hk.comp hreassoc) (hk₁.comp hreassoc) hc).comp
       (((contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
         (contMDiff_snd.comp contMDiff_snd)) :
@@ -378,7 +384,8 @@ include hJ₀ in
 /-- Every member of the vertical family is compatible with `σ`. -/
 theorem compatible_seamFamily (hσn : σ.IsNondegenerate) (p : (ℝ × ℝ) × M) :
     (hσn.symplecticFormAt p.2).Compatible (seamFamily hσ hJ₀ p) :=
-  ((compatible_seamStructure hσ hJ₀ _).compatible_cayleyPath _ _).compatibleAt p.2
+  ((compatible_seamStructure hσ hJ₀ _).compatible_cayleyPath
+    (compatible_seamStructure hσ hJ₀ (⌊p.1.2⌋ + 1)) _).compatibleAt p.2
 
 /-- On the collar of width `1/3` around the integer time `k`, the vertical family is
 `J_k = (φ ^ k)^* J₀`. -/
@@ -397,6 +404,50 @@ theorem seamFamily_of_mem_Icc {k : ℤ} {s t : ℝ} (ht : t ∈ Icc ((k : ℝ) -
 theorem seamFamily_eq_of_mem_Icc {s t : ℝ} (ht : t ∈ Icc (-(1 / 3) : ℝ) (1 / 3)) (x : M) :
     seamFamily hσ hJ₀ ((s, t), x) = J₀.almostComplexStructureAt x := by
   rw [seamFamily_of_mem_Icc hσ hJ₀ (k := 0) (by simpa using ht), seamStructure_zero]
+
+/-! ### Conjugacies -/
+
+section Conjugacy
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N] {ψ : N ≃ₘ⟮I', I'⟯ N}
+  {τ : SmoothTwoForm I' N} (hτ : SmoothForm.mpullback ψ ψ.contMDiff τ = τ)
+  {J₀' : SmoothAlmostComplexStructure I' N} (hJ₀' : τ.Compatible J₀')
+  (e : M ≃ₘ⟮I, I'⟯ N) (h : Semiconj e φ ψ)
+
+include h in
+/-- For a conjugacy `e` from `φ` to `ψ`, the structures `(φ ^ k)^* (e^* J₀')` are the pullbacks
+along `e` of the structures `(ψ ^ k)^* J₀'`. -/
+theorem seamStructure_pullback (k : ℤ) :
+    seamStructure φ (J₀'.pullback e) k = (seamStructure ψ J₀' k).pullback e := by
+  have htrans : (φ ^ k).trans e = e.trans (ψ ^ k) :=
+    Diffeomorph.ext fun x ↦ by simp [h.diffeomorph_zpow_right k x]
+  rw [seamStructure, seamStructure, ← SmoothAlmostComplexStructure.pullback_trans,
+    ← SmoothAlmostComplexStructure.pullback_trans, htrans]
+
+include h in
+/-- For a conjugacy `e` from `φ` to `ψ` pulling `J₀'` back to `J₀`, each piece of the seam family
+of `(φ, J₀)` is the pullback along `e` of the corresponding piece of the seam family of
+`(ψ, J₀')`. The two-forms need not be related: the Cayley path only depends on its endpoints. -/
+theorem seamPath_eq_pullback (heJ : J₀'.pullback e = J₀) (k : ℤ) (t : ℝ) :
+    seamPath hσ hJ₀ k t = (seamPath hτ hJ₀' k t).pullback e := by
+  subst heJ
+  rw [seamPath, seamPath, SmoothTwoForm.Compatible.pullback_cayleyPath]
+  exact SmoothTwoForm.Compatible.cayleyPath_congr _ _ _ _ (seamStructure_pullback e h k)
+    (seamStructure_pullback e h (k + 1)) _
+
+include h in
+/-- For a conjugacy `e` from `φ` to `ψ` pulling `J₀'` back to `J₀`, the differentials of `e`
+intertwine the seam family of `(φ, J₀)` with the seam family of `(ψ, J₀')`. -/
+theorem mfderiv_seamFamily_of_semiconj (heJ : J₀'.pullback e = J₀) (p : (ℝ × ℝ) × M)
+    (v : TangentSpace I p.2) :
+    mfderiv I I' e p.2 (seamFamily hσ hJ₀ p v) =
+      seamFamily hτ hJ₀' (p.1, e p.2) (mfderiv I I' e p.2 v) := by
+  rw [seamFamily_apply, seamFamily_apply, seamPath_eq_pullback hσ hJ₀ hτ hJ₀' e h heJ,
+    SmoothAlmostComplexStructure.mfderiv_pullback_apply]
+
+end Conjugacy
 
 /-! ### The descended structure -/
 

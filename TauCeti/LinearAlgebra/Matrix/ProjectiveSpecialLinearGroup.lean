@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 
 /-!
@@ -31,12 +32,11 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   `Γ'.map psl2zToPSL2R` (`Subgroup.map_liftSL_sl2zToPSL2R`) with relative index `Γ'.index`
   (`Subgroup.relIndex_map_psl2zToPSL2R`, `Subgroup.isFiniteRelIndex_map_psl2zToPSL2R`). When `H`
   is normal, its image is normalized by the image of `SL(2, ℤ)`
-  (`Subgroup.conjAct_sl2zToPSL2R_smul_map`).
+  (`Subgroup.conjAct_sl2zToPSL2R_smul_map`), so it is a normal subgroup of the level-one group
+  (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
-* `Matrix.ProjectiveSpecialLinearGroup.mk_neg` — negating a matrix of `SL(2, S)` does not
-  change its class in `PSL(2, S)`.
 * `TauCeti.pslS : PSL(2, ℝ)` — the image of `ModularGroup.S`, squaring to the identity
   (`pslS_mul_self`, `pslS_inv`).
 
@@ -196,6 +196,13 @@ theorem conjAct_sl2zToPSL2R_smul_map [H.Normal] (γ : SL(2, ℤ)) :
   conjAct_pointwise_smul_eq_self (le_normalizer_map sl2zToPSL2R
     (mem_map_of_mem _ (by rw [normalizer_eq_top]; trivial)))
 
+/-- The image in `PSL(2, ℝ)` of a normal subgroup of `SL(2, ℤ)` is normal in the level-one
+group, which is the range of `sl2zToPSL2R` (`Subgroup.normal_subgroupOf_map_range`). -/
+instance normal_subgroupOf_map_sl2zToPSL2R [H.Normal] :
+    ((H.map sl2zToPSL2R).subgroupOf psl2zToPSL2R.range).Normal := by
+  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
+  infer_instance
+
 /-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
 instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :
     (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
@@ -221,22 +228,6 @@ instance isFiniteRelIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.Fin
   ⟨Γ'.relIndex_map_psl2zToPSL2R.symm ▸ FiniteIndex.index_ne_zero⟩
 
 end Subgroup
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-variable {S : Type*} [CommRing S]
-
-/-- Negating a special linear matrix does not change its class in `PSL(2, S)`. -/
-@[simp]
-theorem mk_neg (A : SL(2, S)) : ((-A : SL(2, S)) : PSL(2, S)) = A := by
-  rw [QuotientGroup.eq_iff_div_mem]
-  have h : (-A) / A = (-1 : SL(2, S)) := by
-    rw [← neg_one_mul A]
-    exact mul_div_cancel_right _ _
-  rw [h]
-  exact Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
-
-end Matrix.ProjectiveSpecialLinearGroup
 
 namespace ModularGroup
 

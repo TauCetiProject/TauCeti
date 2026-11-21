@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.LocalBasis
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Map
+public import TauCeti.AlgebraicGeometry.RelativeProj.ClosedImmersion
 
 /-!
 # Pulling back the twisting sheaves of a relative `Proj`
@@ -38,6 +39,13 @@ bundle sending local sections onto local bases is an isomorphism
   hypothesis makes the pullback of `𝒪(n)` invertible.
 * `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap`: the glued morphism
   `f^* 𝒪(n) ⟶ 𝒪(n)` is an isomorphism under the covering hypothesis above.
+
+* `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one`: the comparison is an
+  isomorphism for a map epimorphic in degree one onto an algebra generated in degree one.
+* `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne`: the
+  comparison is an isomorphism for every map out of an algebra generated in degree one.
+* `TauCeti.AlgebraicGeometry.isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra`: any
+  graded morphism out of `Sym F` inducing a relative `Proj` morphism pulls `𝒪(n)` back to `𝒪(n)`.
 
 ## Implementation notes
 
@@ -149,7 +157,7 @@ theorem _root_.CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_ch
   -- the chart component sends `bⁿ` to `(φ b)ⁿ`
   refine (congrArg (fun z ↦ res
     ((Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf.map _ z))
-    (Proj.twistingSheafMap_app_chartGenerator _ (hφ U.toOpens U.2) n hb _)).trans ?_
+    (Proj.twistingSheafMap_app_chartGenerator _ (hφ U.toOpens U.property) n hb _)).trans ?_
   -- and `(φ b)ⁿ` restricts to `(φ b)ⁿ`
   exact (Functor.map_comp_apply (Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf
     _ (homOfLE (Scheme.Hom.preimage_mono _ (i.le.trans hVA))).op _).symm.trans
@@ -248,4 +256,52 @@ theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap
     ((Proj.twistingSheaf.chartSectionsLinearEquiv n _ (Graded.map_mem _ hb) _ hW).bijective.comp
       (ConcreteCategory.bijective_of_isIso ((colimit.ι A.relativeProjGluingData.functor U).app W)))
 
+/-- A graded map that is an epimorphism in degree one onto an algebra generated in degree one
+pulls each twisting sheaf back isomorphically. -/
+@[stacks 01N1]
+theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_epi_one
+    [Epi (φ.hom.hom 1)] (h : A.IsGeneratedInDegreeOne) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) :=
+  CommMon.isIso_relativeProjTwistingSheafMap φ hφ n fun U ↦
+    CommMon.exists_mem_basicOpen_gradedSectionsGradedHom_of_epi_one φ U.toOpens U.property
+      (CommMon.isGeneratedInDegreeOne_iff_adjoin_zero_union_one_eq_top.mp h U.toOpens U.property)
+
+/-- A graded map out of an algebra generated in degree one pulls each twisting sheaf back
+isomorphically, whenever it induces a morphism on relative `Proj`. -/
+theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne
+    (hB : B.IsGeneratedInDegreeOne) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) := by
+  refine CommMon.isIso_relativeProjTwistingSheafMap φ hφ n fun U y ↦ ?_
+  obtain ⟨⟨b, hb⟩, hy⟩ := TopologicalSpace.Opens.mem_iSup.mp
+    ((Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top _
+      (CommMon.isGeneratedInDegreeOne_iff.mp hB U.toOpens U.property)).ge
+        (Set.mem_univ (Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens)
+          (hφ U.toOpens U.property) y)))
+  rw [← Scheme.Hom.mem_preimage, Proj.map_preimage_basicOpen] at hy
+  exact ⟨b, hb, hy⟩
+
 end TauCeti
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+universe u
+
+variable {X : Scheme.{u}}
+
+/-- Any graded morphism out of `Sym F` inducing a relative `Proj` morphism pulls each twisting
+sheaf back isomorphically. -/
+instance isIso_relativeProjTwistingSheafMap_gradedSymmetricAlgebra
+    (F : QuasicoherentSheaf X) {A : CommMon (GradedObject ℕ X.Modules)}
+    [∀ n, (A.X n).IsQuasicoherent] (φ : ((gradedSymmetricAlgebra X).obj F).obj ⟶ A)
+    (hφ : ∀ U : X.Opens, IsAffineOpen U →
+      HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+        (HomogeneousIdeal.irrelevant
+          (((gradedSymmetricAlgebra X).obj F).obj.gradedSectionsGrading U)).map
+            (CommMon.gradedSectionsGradedHom φ U)) (n : ℤ) :
+    IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) :=
+  CommMon.isIso_relativeProjTwistingSheafMap_of_isGeneratedInDegreeOne φ hφ n
+    (isGeneratedInDegreeOne_gradedSymmetricAlgebra F)
+
+end TauCeti.AlgebraicGeometry

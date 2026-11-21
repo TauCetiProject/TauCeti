@@ -163,7 +163,7 @@ instance instChartedSpaceBorderedInterior : ChartedSpace ℂ (borderedInterior M
   mem_chart_source x := by
     refine ⟨mem_chart_source _ x, ?_⟩
     simpa [Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_coe] using
-      mem_borderedInterior_iff_im_chartAt_pos.1 x.2
+      mem_borderedInterior_iff_im_chartAt_pos.1 x.property
   chart_mem_atlas x := mem_range_self x
 
 /-- The chart of the interior at `x` is the open-subset chart at `x` read in `ℂ`. -/
@@ -187,7 +187,7 @@ theorem chartAt_borderedInterior_source (x : borderedInterior M) :
     mem_preimage, TopologicalSpace.Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_source,
     upperHalfPlaneChart_source, mem_ofPred_eq]
   refine ⟨And.left, fun hy ↦ ⟨hy, ?_⟩⟩
-  exact (mem_borderedInterior_iff_im_pos (IsManifold.chart_mem_maximalAtlas _) hy).1 y.2
+  exact (mem_borderedInterior_iff_im_pos (IsManifold.chart_mem_maximalAtlas _) hy).1 y.property
 
 /-- The restriction of a chart `e` of the maximal atlas of `M` to the interior, read in `ℂ`, takes
 values in the points of positive imaginary part whose model inverse lies in the target of `e`. -/
@@ -263,12 +263,12 @@ theorem subtypeRestr_trans_upperHalfPlaneChart_mem_maximalAtlas
           borderedHolomorphicGroupoid := fun x ↦
     ⟨borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
         (he _ (chart_mem_atlas _ (x : M))).1
-          (e.isOpen_inter_preimage_symm (borderedInterior M).2))
+          (e.isOpen_inter_preimage_symm (borderedInterior M).is_open'))
         (e.subtypeRestr_symm_trans_subtypeRestr hs _),
       borderedHolomorphicGroupoid.mem_of_eqOnSource (closedUnderRestriction'
         (he _ (chart_mem_atlas _ (x : M))).2
           ((chartAt ClosedUpperHalfPlane (x : M)).isOpen_inter_preimage_symm
-            (borderedInterior M).2))
+            (borderedInterior M).is_open'))
         ((chartAt ClosedUpperHalfPlane (x : M)).subtypeRestr_symm_trans_subtypeRestr hs e)⟩
   rintro _ ⟨x, rfl⟩
   have h₁ := upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid (key x).1

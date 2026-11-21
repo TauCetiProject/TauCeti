@@ -80,7 +80,7 @@ theorem formClass_atRealPlace_eq_nsmul_hyperbolicClass [Invertible (2 : K)]
     {Q : _root_.QuadraticForm K V} {hQ : Q.Nondegenerate} {m : ℕ}
     (h : formClass Q hQ = m • hyperbolicClass K) (w : {w : InfinitePlace K // w.IsReal}) :
     formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) = m • hyperbolicClass ℝ := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   have hb := formClass_atRealPlace Q hQ w
   rwa [h, RegularFormClass.baseChange_nsmul, RegularFormClass.baseChange_hyperbolicClass] at hb
 

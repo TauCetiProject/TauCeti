@@ -35,6 +35,7 @@ along a middle boundary and counts the circles closed there, is not defined here
 ## Main definitions
 
 * `TauCeti.TLDiagram n m`: Temperley–Lieb diagrams `n → m`.
+* `TauCeti.TLDiagram.cast`: transport of diagrams along equalities of the numbers of points.
 * `TauCeti.TLDiagram.rotate n m`: rotation, a permutation of `TLDiagram n m`.
 * `TauCeti.TLDiagram.dragRight n m`, `TauCeti.TLDiagram.dragLeft n m`: dragging the bottom-right
   or bottom-left corner point to the top, `TLDiagram (n + 1) m ≃ TLDiagram n (m + 1)`.
@@ -113,6 +114,37 @@ private theorem circles_congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatc
 @[simp]
 private theorem congrMatching_symm (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
     (congrMatching e).symm = congrMatching e.symm := (rfl)
+
+/-! ### Changing the number of points -/
+
+/-- Transport of diagrams along equalities `n = n'` and `m = m'` of the numbers of bottom and top
+points, keeping every label and the circles. -/
+def cast (hn : n = n') (hm : m = m') : TLDiagram n m ≃ TLDiagram n' m' :=
+  congrMatching (PlanarMatching.cast (by rw [hn, hm]))
+
+@[simp]
+theorem matching_cast (hn : n = n') (hm : m = m') (x : TLDiagram n m) :
+    (cast hn hm x).matching = PlanarMatching.cast (by rw [hn, hm]) x.matching := (rfl)
+
+@[simp]
+theorem circles_cast (hn : n = n') (hm : m = m') (x : TLDiagram n m) :
+    (cast hn hm x).circles = x.circles := (rfl)
+
+/-- Transport along `n = n` and `m = m` is the identity. -/
+@[simp]
+theorem cast_refl (hn : n = n) (hm : m = m) : cast hn hm = Equiv.refl (TLDiagram n m) :=
+  Equiv.ext fun x => TLDiagram.ext (by simp) (by simp)
+
+/-- Transporting back along `n = n'` and `m = m'` is transporting along `n' = n` and `m' = m`. -/
+@[simp]
+theorem cast_symm (hn : n = n') (hm : m = m') : (cast hn hm).symm = cast hn.symm hm.symm :=
+  Equiv.ext fun x => TLDiagram.ext (by simp [cast]) (by simp [cast])
+
+/-- Transports compose. -/
+@[simp]
+theorem cast_cast {n'' m'' : ℕ} (hn : n = n') (hm : m = m') (hn' : n' = n'') (hm' : m' = m'')
+    (x : TLDiagram n m) : cast hn' hm' (cast hn hm x) = cast (hn.trans hn') (hm.trans hm') x :=
+  TLDiagram.ext (by simp) (by simp)
 
 /-! ### Rotation -/
 
@@ -231,8 +263,8 @@ theorem matching_verticalReflect (x : TLDiagram n m) :
 
 /-- Vertical reflection sends a partner to its reflected boundary label. -/
 theorem coe_verticalReflect_matching_val_apply (D : TLDiagram n m) (i : Fin (m + n)) :
-    ((verticalReflect n m D).matching.1.val i : ℕ) =
-      n + m - 1 - (D.matching.1.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
+    ((verticalReflect n m D).matching.val.val i : ℕ) =
+      n + m - 1 - (D.matching.val.val ⟨n + m - 1 - i, by omega⟩ : ℕ) := by
   simp [matching_verticalReflect, PlanarMatching.coe_cast_apply,
     PlanarMatching.coe_reflect_apply, PerfectMatching.congr_val, Fin.rev, Nat.sub_sub, Nat.add_comm]
 
@@ -355,7 +387,7 @@ def id (n : ℕ) : TLDiagram n n :=
 @[simp]
 theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
 
-theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
+theorem id_matching_val (n : ℕ) : (id n).matching.val.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 
 @[simp]
@@ -374,7 +406,7 @@ def cup : TLDiagram 0 2 :=
   ⟨⟨⟨swap 0 1, by decide⟩, by decide⟩, 0⟩
 
 @[simp]
-theorem cup_matching_val : cup.matching.1.val = swap 0 1 := (rfl)
+theorem cup_matching_val : cup.matching.val.val = swap 0 1 := (rfl)
 
 @[simp]
 theorem circles_cup : cup.circles = 0 := (rfl)
@@ -384,7 +416,7 @@ def cap : TLDiagram 2 0 :=
   ⟨⟨⟨swap 0 1, by decide⟩, by decide⟩, 0⟩
 
 @[simp]
-theorem cap_matching_val : cap.matching.1.val = swap 0 1 := (rfl)
+theorem cap_matching_val : cap.matching.val.val = swap 0 1 := (rfl)
 
 @[simp]
 theorem circles_cap : cap.circles = 0 := (rfl)
@@ -444,8 +476,8 @@ end TLDiagram
 /-- Horizontal reflection exchanges the two distinct diagrams `3 → 1` built from a cap and a
 strand: it sends the cap on the two left points, `{0, 1}, {2, 3}`, to the cap on the two right
 points, `{0, 3}, {1, 2}`. So it does not fix every diagram built from cups, caps and strands. -/
-example (x y : TLDiagram 3 1) (hx : x.matching.1.val = swap 0 1 * swap 2 3)
-    (hy : y.matching.1.val = swap 0 3 * swap 1 2) (hc : x.circles = y.circles) :
+example (x y : TLDiagram 3 1) (hx : x.matching.val.val = swap 0 1 * swap 2 3)
+    (hy : y.matching.val.val = swap 0 3 * swap 1 2) (hc : x.circles = y.circles) :
     TLDiagram.reflect 3 1 x = y ∧ x ≠ y := by
   refine ⟨TLDiagram.ext (PlanarMatching.ext fun a => ?_) hc, fun h => ?_⟩
   · simp only [TLDiagram.matching_reflect, PlanarMatching.coe_rotate_pow_apply,
@@ -453,13 +485,13 @@ example (x y : TLDiagram 3 1) (hx : x.matching.1.val = swap 0 1 * swap 2 3)
       hx, hy]
     revert a
     decide
-  · have := congrArg (fun z : TLDiagram 3 1 => z.matching.1.val 0) h
+  · have := congrArg (fun z : TLDiagram 3 1 => z.matching.val.val 0) h
     simp only [hx, hy] at this
     exact absurd this (by decide)
 
 /-- The rotation of the identity diagram on two strands, `{0, 3}, {1, 2}`, is the diagram
 `{1, 0}, {2, 3}`: a cap on the bottom points followed by a cup on the top points. -/
-example : (TLDiagram.rotate 2 2 (TLDiagram.id 2)).matching.1.val = swap 0 1 * swap 2 3 := by
+example : (TLDiagram.rotate 2 2 (TLDiagram.id 2)).matching.val.val = swap 0 1 * swap 2 3 := by
   simp only [TLDiagram.matching_rotate, PlanarMatching.coe_rotate_apply, PerfectMatching.congr_val,
     TLDiagram.id_matching_val]
   decide

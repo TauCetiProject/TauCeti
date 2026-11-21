@@ -5,35 +5,61 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Flow
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Space
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.InitialData
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Extension
+import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Flow
+import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Reparametrization
+import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Smoothness
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.InitialData
+import TauCeti.Geometry.Manifold.VectorBundle.Section.LinearFamily
 
 /-!
 # Jacobi fields with prescribed initial data
 
-Every pair of initial value and covariant velocity is realized by a Jacobi field on the entire
-natural interval of a maximal geodesic. The construction differentiates the geodesic flow in a
-curve of initial tangent vectors, using
-`CovariantDerivative.exists_contMDiffAt_tangentCurve_initialData` and the initial-data formulas
-for the geodesic-flow variation field.
+Along any geodesic on a preconnected parameter set, every pair of initial value and initial
+covariant derivative at a chosen parameter is attained by a Jacobi field on that set. The proof
+first solves the initial-value problem on the entire natural interval of a maximal geodesic by
+differentiating the geodesic flow along a curve of initial tangent vectors supplied by
+`CovariantDerivative.exists_contMDiffAt_tangentCurve_initialData`, and then transfers the solution
+to an arbitrary geodesic via `IsGeodesicCurveOn.maximalGeodesic_sub_eq_of_isPreconnected` and
+affine time translation.
 
-On any nonempty preconnected parameter subset having unique derivatives, the existing initial-data
-map at any parameter is therefore a linear equivalence. Its domain is the existing space of
-canonically zero-extended interval sections, so the dimension is exactly twice the manifold
-dimension. There are no arbitrary values outside the interval. Neither completeness nor a curvature
-bound is needed.
+Together with initial-data uniqueness, evaluation of the value and covariant derivative at any
+parameter identifies `jacobiFieldSpace` on a nonempty preconnected parameter set with two copies of
+the tangent space there, so its dimension is `2 * dim M`. Representing interval sections by their
+canonical zero extensions avoids any unconstrained values outside the parameter set. Expanding the
+inverse equivalence in a basis of the initial-data space shows that both the Jacobi field and its
+covariant derivative depend smoothly on the initial data and parameter jointly. Neither
+completeness of the metric nor a curvature bound is assumed.
+
+## Main definitions and results
+
+* `TauCeti.Manifold.IsGeodesicCurveOn.exists_isJacobiFieldOn` and
+  `TauCeti.Manifold.IsGeodesicCurveOn.exists_isJacobiFieldOn_Icc`: global solvability of the Jacobi
+  equation with prescribed initial data on any preconnected geodesic parameter set, and in
+  particular at the left endpoint of `[a, b]`.
+* `TauCeti.Manifold.jacobiInitialData_surjective` and `TauCeti.Manifold.jacobiInitialDataEquiv`:
+  the initial-data map at any parameter of a preconnected geodesic is a linear equivalence onto two
+  copies of the tangent space there.
+* `TauCeti.Manifold.finrank_jacobiFieldSpace`: the space of Jacobi fields on a nonempty
+  preconnected parameter set has dimension `2 * Module.finrank ℝ E`.
+* `TauCeti.Manifold.contMDiffOn_jacobiInitialDataEquiv_symm` and
+  `TauCeti.Manifold.contMDiffOn_alongCurveWithin_jacobiInitialDataEquiv_symm`: joint smoothness of
+  the initial-data solution and its covariant derivative in the initial data and time.
 
 ## References
 
-* J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 10
+* J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 10
   (existence and uniqueness of Jacobi fields, and realization by geodesic variations).
+* J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press (1963),
+  §14, p. 77 (identification of Jacobi fields on an interval with two copies of the initial tangent
+  space; note Milnor writes `R(γ', X)γ'` where we write `R(X, γ')γ'`).
 -/
 
 public section
 
-open Bundle CovariantDerivative Set
+open Bundle CovariantDerivative Filter Set
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -63,118 +89,159 @@ private theorem exists_isJacobiFieldOn_maximalGeodesic_initialData
   have hD := alongCurveWithin_variationField_maximalGeodesic_zero (hσ.of_le (by norm_num))
   rw [hw] at hD
   rw [hσ₀] at hJ hD
-  refine ⟨variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2), hJ, ?_, hD⟩
+  refine ⟨variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd), hJ, ?_, hD⟩
   rw [variationField_maximalGeodesic_zero, hu]
 
-/-- Surjectivity at zero on the full natural interval is the starting point for changing the
-initial time by finite-dimensional linear algebra. -/
-private theorem jacobiInitialData_surjective_maximalGeodesic_zero
-    (p : M) (v : TangentSpace I p) :
-    Function.Surjective (jacobiInitialData
-      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
-      zero_mem_geodesicInterval) := by
+/-! ### Arbitrary geodesics on preconnected parameter sets -/
+
+/-- **Existence of Jacobi fields with prescribed initial data.** Along any geodesic `γ` on a
+preconnected parameter set `s`, every initial value `u` and initial covariant derivative `w` at any
+parameter `a ∈ s` is attained by a Jacobi field on `s`. -/
+theorem IsGeodesicCurveOn.exists_isJacobiFieldOn
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) (u w : TangentSpace I (γ a)) :
+    ∃ X : ∀ t, TangentSpace I (γ t),
+      IsJacobiFieldOn I γ X s ∧ X a = u ∧
+      alongCurveWithin (leviCivitaConnection I M) γ X s a = w := by
+  let p := γ a
+  let v := curveVelocityWithin I γ s a
+  obtain ⟨V₀, hV₀, hu₀, hw₀⟩ := exists_isJacobiFieldOn_maximalGeodesic_initialData p v u w
+  have hmaps : MapsTo (fun t : ℝ ↦ t - a) s (geodesicInterval I M p v) :=
+    fun _ ht ↦ hγ.sub_mem_geodesicInterval_of_isPreconnected hs ha ht
+  have hcurve : EqOn γ (fun t ↦ maximalGeodesic I M p v (t - a)) s :=
+    fun _ ht ↦ (hγ.maximalGeodesic_sub_eq_of_isPreconnected hs ha ht).symm
+  have h0 : γ a = maximalGeodesic I M p v 0 := by simpa only [sub_self] using hcurve ha
+  have hXa : tangentSpaceCast I (maximalGeodesic I M p v (a - a)) (γ a) (V₀ (a - a)) = u := by
+    rw [congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a) (V₀ x)) (sub_self a)]
+    exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hu₀))
+  have hDXa : alongCurveWithin (leviCivitaConnection I M) γ
+      (fun t ↦ tangentSpaceCast I (maximalGeodesic I M p v (t - a)) (γ t) (V₀ (t - a))) s a =
+        w := by
+    rw [hV₀.alongCurveWithin_comp_sub_const_of_eqOn a (hγ.uniqueDiffOn a ha) hmaps hcurve ha,
+      congrArg (fun x ↦ tangentSpaceCast I (maximalGeodesic I M p v x) (γ a)
+        (alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v) V₀
+          (geodesicInterval I M p v) x)) (sub_self a)]
+    exact eq_of_heq ((TauCeti.heq_tangentSpaceCast h0.symm _).trans (heq_of_eq hw₀))
+  exact ⟨fun t ↦ tangentSpaceCast I (maximalGeodesic I M p v (t - a)) (γ t) (V₀ (t - a)),
+    hV₀.comp_sub_const_of_eqOn a hγ.uniqueDiffOn hmaps hcurve, hXa, hDXa⟩
+
+/-- Along a geodesic on a nondegenerate closed interval `[a, b]`, every initial value and initial
+covariant derivative at `a` is attained by a Jacobi field on `[a, b]`. -/
+theorem IsGeodesicCurveOn.exists_isJacobiFieldOn_Icc
+    {γ : ℝ → M} {a b : ℝ} (hab : a < b) (hγ : IsGeodesicCurveOn I γ (Icc a b))
+    (u w : TangentSpace I (γ a)) :
+    ∃ X : ∀ t, TangentSpace I (γ t),
+      IsJacobiFieldOn I γ X (Icc a b) ∧ X a = u ∧
+      alongCurveWithin (leviCivitaConnection I M) γ X (Icc a b) a = w :=
+  hγ.exists_isJacobiFieldOn isPreconnected_Icc (left_mem_Icc.2 hab.le) u w
+
+/-- The initial-data map at any parameter of a geodesic on a preconnected parameter set is
+surjective. -/
+theorem jacobiInitialData_surjective
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    Function.Surjective (jacobiInitialData hγ ha) := by
   rintro ⟨u, w⟩
-  obtain ⟨V, hV, hu, hw⟩ := exists_isJacobiFieldOn_maximalGeodesic_initialData p v u w
-  refine ⟨hV.toJacobiFieldSpace, ?_⟩
-  rw [jacobiInitialData_apply, hV.toJacobiFieldSpace_apply zero_mem_geodesicInterval,
-    hV.alongCurveWithin_toJacobiFieldSpace zero_mem_geodesicInterval, hu, hw]
+  obtain ⟨X, hX, hu, hw⟩ := hγ.exists_isJacobiFieldOn hs ha u w
+  refine ⟨hX.toJacobiFieldSpace, ?_⟩
+  rw [jacobiInitialData_apply, hX.toJacobiFieldSpace_apply ha,
+    hX.alongCurveWithin_toJacobiFieldSpace ha, hu, hw]
 
-/-- The full natural interval has the expected dimension, before choosing any initial time. -/
-private theorem finrank_jacobiFieldSpace_maximalGeodesic_full
-    (p : M) (v : TangentSpace I p) :
-    Module.finrank ℝ (jacobiFieldSpace
-      (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn) =
-        2 * Module.finrank ℝ E := by
-  let e := LinearEquiv.ofBijective (jacobiInitialData
-    (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn zero_mem_geodesicInterval)
-    ⟨jacobiInitialData_injective _ isPreconnected_geodesicInterval zero_mem_geodesicInterval,
-      jacobiInitialData_surjective_maximalGeodesic_zero p v⟩
-  simpa [Module.finrank_prod, TauCeti.finrank_tangentSpace, two_mul] using e.finrank_eq
+/-- **Initial-data equivalence for Jacobi fields.** Initial value and covariant derivative at any
+parameter identify the space of Jacobi fields along a geodesic on a preconnected parameter set with
+two copies of the tangent space at that parameter. -/
+def jacobiInitialDataEquiv
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    jacobiFieldSpace hγ ≃ₗ[ℝ] TangentSpace I (γ a) × TangentSpace I (γ a) :=
+  LinearEquiv.ofBijective (jacobiInitialData hγ ha)
+    ⟨jacobiInitialData_injective hγ hs ha, jacobiInitialData_surjective hγ hs ha⟩
 
-/-- At every initial time, arbitrary Jacobi data are realized on any subset of the maximal
-geodesic interval having unique derivatives. The subset need not contain time zero or be
-preconnected: restrict the solution from the full natural interval. -/
-theorem jacobiInitialData_surjective_maximalGeodesic
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s) :
-    Function.Surjective (jacobiInitialData
-      ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono hs hsub) ha) := by
-  let hγ := (isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn
-  let := finiteDimensional_jacobiFieldSpace hγ isPreconnected_geodesicInterval
-    zero_mem_geodesicInterval
-  have hdim : Module.finrank ℝ (jacobiFieldSpace hγ) =
-      Module.finrank ℝ (TangentSpace I (maximalGeodesic I M p v a) ×
-        TangentSpace I (maximalGeodesic I M p v a)) := by
-    rw [finrank_jacobiFieldSpace_maximalGeodesic_full, Module.finrank_prod,
-      TauCeti.finrank_tangentSpace, two_mul]
-  have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp
-    (jacobiInitialData_injective hγ isPreconnected_geodesicInterval (hsub ha))
-  rintro ⟨u, w⟩
-  obtain ⟨V, hV⟩ := hsurj (u, w)
-  have hJ := isJacobiFieldOn_of_mem_jacobiFieldSpace V
-  have hJs := hJ.mono hs hsub
-  refine ⟨hJs.toJacobiFieldSpace, ?_⟩
-  rw [jacobiInitialData_apply, hJs.toJacobiFieldSpace_apply ha,
-    hJs.alongCurveWithin_toJacobiFieldSpace ha, hJ.alongCurveWithin_subset (hs a ha) hsub ha]
-  simpa only [jacobiInitialData_apply] using hV
-
-/-- Initial value and covariant velocity at any parameter identify the space of Jacobi fields
-on a preconnected subset of a maximal geodesic interval with two copies of that tangent space. -/
-def maximalGeodesicJacobiInitialDataEquiv
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hconn : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s) :
-    jacobiFieldSpace
-        ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono hs hsub) ≃ₗ[ℝ]
-      TangentSpace I (maximalGeodesic I M p v a) ×
-        TangentSpace I (maximalGeodesic I M p v a) :=
-  LinearEquiv.ofBijective (jacobiInitialData _ ha)
-    ⟨jacobiInitialData_injective _ hconn ha,
-      jacobiInitialData_surjective_maximalGeodesic p v hs hsub ha⟩
-
-/-- The initial-data equivalence evaluates to the value and covariant velocity of the field. -/
+/-- Coercing `jacobiInitialDataEquiv` to a linear map recovers `jacobiInitialData`. -/
 @[simp]
-theorem maximalGeodesicJacobiInitialDataEquiv_apply
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hconn : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s)
-    (V : jacobiFieldSpace
-      ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono hs hsub)) :
-    maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha V =
-      (V.val a, alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v)
-        V.val s a) :=
-  jacobiInitialData_apply _ ha V
+theorem toLinearMap_jacobiInitialDataEquiv
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    (jacobiInitialDataEquiv hγ hs ha).toLinearMap = jacobiInitialData hγ ha :=
+  (rfl)
+
+/-- The initial-data equivalence evaluates to the value and covariant derivative of the field. -/
+@[simp]
+theorem jacobiInitialDataEquiv_apply
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) (V : jacobiFieldSpace hγ) :
+    jacobiInitialDataEquiv hγ hs ha V =
+      (V.val a, alongCurveWithin (leviCivitaConnection I M) γ V.val s a) :=
+  jacobiInitialData_apply hγ ha V
 
 /-- The inverse initial-data equivalence has the prescribed value at the initial parameter. -/
 @[simp]
-theorem maximalGeodesicJacobiInitialDataEquiv_symm_apply_value
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hconn : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s)
-    (u w : TangentSpace I (maximalGeodesic I M p v a)) :
-    ((maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha).symm (u, w)).val a = u := by
-  have h := (maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha).apply_symm_apply (u, w)
-  rw [maximalGeodesicJacobiInitialDataEquiv_apply] at h
+theorem jacobiInitialDataEquiv_symm_apply_self
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) (d : TangentSpace I (γ a) × TangentSpace I (γ a)) :
+    ((jacobiInitialDataEquiv hγ hs ha).symm d).val a = d.1 := by
+  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply d
+  rw [jacobiInitialDataEquiv_apply] at h
   exact congrArg Prod.fst h
 
-/-- The inverse initial-data equivalence has the prescribed covariant velocity. -/
+/-- The inverse initial-data equivalence has the prescribed covariant derivative at the initial
+parameter. -/
 @[simp]
-theorem alongCurveWithin_maximalGeodesicJacobiInitialDataEquiv_symm
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hconn : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s)
-    (u w : TangentSpace I (maximalGeodesic I M p v a)) :
-    alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v)
-      ((maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha).symm (u, w)).val s a = w := by
-  have h := (maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha).apply_symm_apply (u, w)
-  rw [maximalGeodesicJacobiInitialDataEquiv_apply] at h
+theorem alongCurveWithin_jacobiInitialDataEquiv_symm_self
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) (d : TangentSpace I (γ a) × TangentSpace I (γ a)) :
+    alongCurveWithin (leviCivitaConnection I M) γ
+      ((jacobiInitialDataEquiv hγ hs ha).symm d).val s a = d.2 := by
+  have h := (jacobiInitialDataEquiv hγ hs ha).apply_symm_apply d
+  rw [jacobiInitialDataEquiv_apply] at h
   exact congrArg Prod.snd h
 
-/-- The dimension of Jacobi fields on a nonempty preconnected portion of a maximal geodesic
-is exactly twice the manifold dimension, including zero-dimensional and constant geodesics. -/
-theorem finrank_jacobiFieldSpace_maximalGeodesic
-    (p : M) (v : TangentSpace I p) {s : Set ℝ} (hs : UniqueDiffOn ℝ s)
-    (hconn : IsPreconnected s) (hsub : s ⊆ geodesicInterval I M p v) {a : ℝ} (ha : a ∈ s) :
-    Module.finrank ℝ (jacobiFieldSpace
-      ((isGeodesicCurveOnFrom_maximalGeodesic p v).isGeodesicCurveOn.mono hs hsub)) =
-        2 * Module.finrank ℝ E := by
+/-- **Dimension of the space of Jacobi fields.** On any nonempty preconnected parameter set, the
+space of Jacobi fields along a geodesic has dimension `2 * dim M`, including zero-dimensional
+manifolds and constant geodesics. -/
+theorem finrank_jacobiFieldSpace
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    Module.finrank ℝ (jacobiFieldSpace hγ) = 2 * Module.finrank ℝ E := by
   simpa [Module.finrank_prod, TauCeti.finrank_tangentSpace, two_mul] using
-    (maximalGeodesicJacobiInitialDataEquiv p v hs hconn hsub ha).finrank_eq
+    (jacobiInitialDataEquiv hγ hs ha).finrank_eq
+
+/-! ### Smooth dependence on initial data -/
+
+/-- **Smooth dependence of Jacobi fields on initial data.** Along a geodesic on a preconnected
+parameter set `s`, the tangent-bundle lift of the Jacobi field with prescribed initial data at
+`a ∈ s` is jointly smooth in the initial data and the parameter on `univ ×ˢ s`. -/
+theorem contMDiffOn_jacobiInitialDataEquiv_symm
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    ContMDiffOn 𝓘(ℝ, (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ) I.tangent ∞
+      (fun q : (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ ↦
+        TotalSpace.mk' E (γ q.2) (((jacobiInitialDataEquiv hγ hs ha).symm q.1).val q.2))
+      (univ ×ˢ s) :=
+  TauCeti.contMDiffOn_totalSpaceMk_of_linear
+    (fun d t ↦ ((jacobiInitialDataEquiv hγ hs ha).symm d).val t)
+    (fun _ ht ↦ ⟨((LinearMap.fst ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap, fun _ ↦ by simp⟩)
+    (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_infty)
+
+/-- **Smooth dependence of the covariant derivative on Jacobi initial data.** Along a geodesic on
+a preconnected parameter set `s`, the tangent-bundle lift of the covariant derivative of the
+initial-data Jacobi field is jointly smooth in the initial data and the parameter on
+`univ ×ˢ s`. -/
+theorem contMDiffOn_alongCurveWithin_jacobiInitialDataEquiv_symm
+    {γ : ℝ → M} {s : Set ℝ} (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
+    {a : ℝ} (ha : a ∈ s) :
+    ContMDiffOn 𝓘(ℝ, (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ) I.tangent ∞
+      (fun q : (TangentSpace I (γ a) × TangentSpace I (γ a)) × ℝ ↦
+        TotalSpace.mk' E (γ q.2)
+          (alongCurveWithin (leviCivitaConnection I M) γ
+            ((jacobiInitialDataEquiv hγ hs ha).symm q.1).val s q.2))
+      (univ ×ˢ s) :=
+  TauCeti.contMDiffOn_totalSpaceMk_of_linear
+    (fun d t ↦ alongCurveWithin (leviCivitaConnection I M) γ
+      ((jacobiInitialDataEquiv hγ hs ha).symm d).val s t)
+    (fun _ ht ↦ ⟨((LinearMap.snd ℝ _ _).comp (jacobiInitialData hγ ht)).comp
+      (jacobiInitialDataEquiv hγ hs ha).symm.toLinearMap, fun _ ↦ by simp⟩)
+    (fun _ ↦ (isJacobiFieldOn_of_mem_jacobiFieldSpace _).contMDiffOn_alongCurveWithin_infty)
 
 end TauCeti.Manifold

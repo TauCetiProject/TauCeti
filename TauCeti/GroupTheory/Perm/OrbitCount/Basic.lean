@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
 # The number of orbits of a permutation
@@ -47,10 +48,11 @@ permutations of the same type.
   within its cycle of `π` has at least as many orbits as `π`.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
   order of the permutation times its number of orbits, each orbit length dividing the order.
-* `Equiv.Perm.prime_mul_orbitCount_of_pow_eq_one`: for a permutation of prime-dividing order `p`,
-  every orbit has size `1` or `p`, so `p * orbitCount σ = |α| + (p - 1) * |Fix σ|`.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
+* `Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one`: if `σ ^ p = 1` for a prime `p`, then
+  `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+  points.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
@@ -93,6 +95,7 @@ public section
 namespace TauCeti
 
 open Equiv Equiv.Perm
+open scoped Finset
 
 variable {α β : Type*}
 
@@ -216,18 +219,9 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
 has one copy of each orbit of `τ` over every point of `α`. -/
 theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
     orbitCount (Equiv.prodCongrRight fun _ : α ↦ τ) = Nat.card α * orbitCount τ := by
-  let f : Equiv.Perm β →* Equiv.Perm (α × β) :=
-    { toFun := fun σ ↦ Equiv.prodCongrRight fun _ ↦ σ
-      map_one' := rfl
-      map_mul' := fun _ _ ↦ rfl }
   have hsc : ∀ x y : α × β, SameCycle (Equiv.prodCongrRight fun _ : α ↦ τ) x y ↔
-      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := by
-    rintro ⟨a, b⟩ ⟨a', b'⟩
-    have hpow (k : ℤ) :
-        (Equiv.prodCongrRight fun _ : α ↦ τ) ^ k = Equiv.prodCongrRight fun _ ↦ τ ^ k :=
-      (map_zpow f τ k).symm
-    simp only [SameCycle, hpow, Equiv.prodCongrRight_apply, Prod.mk.injEq, one_zpow, one_apply]
-    exact ⟨fun ⟨k, ha, hb⟩ ↦ ⟨⟨0, ha⟩, k, hb⟩, fun ⟨⟨_, ha⟩, k, hb⟩ ↦ ⟨k, ha, hb⟩⟩
+      (1 : Equiv.Perm α).SameCycle x.1 y.1 ∧ τ.SameCycle x.2 y.2 := fun _ _ ↦
+    (sameCycle_prodCongrRight_iff _).trans (and_congr_left' sameCycle_one.symm)
   rw [orbitCount_def, Nat.card_congr ((Quotient.congr (rb := (SameCycle.setoid 1).prod
     (SameCycle.setoid τ)) (Equiv.refl _) hsc).trans (Setoid.prodQuotientEquiv _ _).symm),
     Nat.card_prod, ← orbitCount_def, ← orbitCount_def, orbitCount_one]
@@ -259,6 +253,22 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
   rw [h, pow_add, pow_mul]
   simp
 
+/-- If `σ ^ p = 1` for a prime `p`, every orbit of `σ` is a fixed point or has exactly `p` points,
+so `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+points. -/
+theorem _root_.Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one {p : ℕ} [Fact p.Prime]
+    {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    p * orbitCount σ = Fintype.card α + (p - 1) * #{x | σ x = x} := by
+  have hfix : #{x | σ x = x} = Fintype.card α - #σ.support := by
+    rw [← count_one_fullCycleType_eq_card_filter, count_one_fullCycleType]
+  have hsum := σ.sum_cycleType
+  rw [cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate, smul_eq_mul] at hsum
+  obtain ⟨F, hF⟩ := Nat.exists_eq_add_of_le (Finset.card_le_univ σ.support)
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_lt (Fact.out : p.Prime).pos
+  rw [orbitCount_eq_card_parts_partition, card_parts_partition, hfix, hF, ← hsum]
+  simp only [zero_add, Nat.add_sub_cancel_left, Nat.add_sub_cancel]
+  ring
+
 end Finite
 
 /-- A permutation of a finite type has at least `Nat.card α / orderOf σ` orbits: every orbit has
@@ -270,27 +280,6 @@ theorem _root_.Equiv.Perm.card_le_orderOf_mul_orbitCount [Finite α] (σ : Equiv
   rw [Nat.card_eq_fintype_card, orbitCount_eq_card_parts_partition, mul_comm, ← smul_eq_mul]
   exact σ.partition.parts_sum.symm.le.trans <| Multiset.sum_le_card_nsmul _ _ fun k hk ↦
     Nat.le_of_dvd (orderOf_pos σ) (dvd_of_mem_parts_partition hk)
-
-/-- For a permutation `σ` of a finite type satisfying `σ ^ p = 1` with `p` prime, every orbit has
-size `1` (a fixed point) or `p`, so
-`p * orbitCount σ = Nat.card α + (p - 1) * Nat.card {x : α // σ x = x}`. -/
-theorem _root_.Equiv.Perm.prime_mul_orbitCount_of_pow_eq_one [Finite α]
-    {p : ℕ} (hp : p.Prime) {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
-    p * orbitCount σ = Nat.card α + (p - 1) * Nat.card {x : α // σ x = x} := by
-  classical
-  have := Fintype.ofFinite α
-  have : Fact p.Prime := ⟨hp⟩
-  have hsum : σ.support.card = p * σ.cycleType.card := by
-    rw [← sum_cycleType, cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate,
-      Multiset.card_replicate, smul_eq_mul, mul_comm]
-  have hfix : Nat.card {x : α // σ x = x} = Fintype.card α - σ.support.card := by
-    rw [← card_subtype_apply_eq]
-    exact Nat.card_eq_fintype_card
-  rw [Nat.card_eq_fintype_card, hfix, orbitCount_eq_card_parts_partition,
-    card_parts_partition, mul_add, ← hsum]
-  conv_lhs =>
-    rw [← Nat.add_sub_of_le hp.one_le, add_mul, one_mul, ← add_assoc,
-      Nat.add_sub_of_le (Finset.card_le_univ _)]
 
 /-- Propagate a one-step comparison over all integer powers: if every point `x` of `β` lies in the
 same `π`-cycle as its image `g x` does after one step of `σ`, then it lies in the same `π`-cycle
@@ -338,7 +327,7 @@ theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
       apply Quotient.sound
       rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
       obtain ⟨g, rfl⟩ := hab
-      exact (hH g g.2 b).symm
+      exact (hH g g.property b).symm
   have hf : Function.Surjective f := by
     intro q
     induction q using Quotient.inductionOn'

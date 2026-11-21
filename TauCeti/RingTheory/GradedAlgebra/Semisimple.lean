@@ -53,7 +53,7 @@ theorem isSemisimpleRing_gradeZero_of_completeOrthogonalIdempotents [SetLike.Gra
       map_zero' := Subtype.ext <| by simp
       map_add' c c' := Subtype.ext <| by simp [add_smul, Finset.sum_add_distrib] }
   refine RingHom.isSemisimpleRing_of_surjective f fun x => ?_
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp (hspan x.2)
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp (hspan x.property)
   exact ⟨c, Subtype.ext hc⟩
 
 end TauCeti

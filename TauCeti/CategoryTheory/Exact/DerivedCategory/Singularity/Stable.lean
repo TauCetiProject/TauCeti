@@ -27,7 +27,11 @@ For a Frobenius exact structure this is the Keller–Vossieck comparison functor
 * `TauCeti.ExactStructure.singleToSingularity`: the functor `C ⥤ D_sg(E)` placing an object in
   degree zero, with its defining equation `singleToSingularity_eq`.
 * `TauCeti.ExactStructure.stableToSingularity`: the induced functor `stable(E) ⥤ D_sg(E)`, with
-  the factorization `projectiveStableFunctor_comp_stableToSingularity`.
+  its defining equation `stableToSingularity_eq` and the factorization
+  `projectiveStableFunctor_comp_stableToSingularity`.
+* `TauCeti.ExactStructure.stableToSingularityObjIso`: the identification of its values with
+  objects placed in degree zero, natural by
+  `stableToSingularity_map_comp_stableToSingularityObjIso_hom`.
 
 ## References
 
@@ -58,6 +62,18 @@ theorem singleToSingularity_eq : E.singleToSingularity =
       SingularityCategory.Q E :=
   (rfl)
 
+theorem singleToSingularity_obj (X : C) :
+    E.singleToSingularity.obj X = (SingularityCategory.Q E).obj
+      ((BoundedDerivedCategory.Q E).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj X)) :=
+  (rfl)
+
+theorem singleToSingularity_map {X Y : C} (f : X ⟶ Y) :
+    E.singleToSingularity.map f = eqToHom (E.singleToSingularity_obj X) ≫
+      (SingularityCategory.Q E).map
+        ((BoundedDerivedCategory.Q E).map ((HomotopyCategory.Bounded.singleFunctor C 0).map f)) ≫
+          eqToHom (E.singleToSingularity_obj Y).symm := by
+  simp [Functor.congr_hom E.singleToSingularity_eq f]
+
 instance : E.singleToSingularity.Additive := by
   dsimp only [singleToSingularity]
   infer_instance
@@ -76,11 +92,23 @@ theorem singleToSingularity_map_eq_zero {X Y : C} {f : X ⟶ Y}
   rw [Functor.map_comp,
     (E.isZero_singleToSingularity_obj hP).eq_of_src (E.singleToSingularity.map q) 0, comp_zero]
 
+/-- Morphisms factoring through a projective object lie in the kernel of `C ⥤ D_sg(E)`. -/
+theorem projectiveStableIdeal_le_kerIdeal_singleToSingularity :
+    E.projectiveStableIdeal ≤ E.singleToSingularity.kerIdeal := fun _ _ _ hf ↦
+  (Functor.mem_kerIdeal_hom _).2 (E.singleToSingularity_map_eq_zero hf)
+
 /-- The functor `stable(E) ⥤ D_sg(E)` induced by placing objects in degree zero. -/
 noncomputable def stableToSingularity :
     E.ProjectiveStableCategory ⥤ E.SingularityCategory :=
-  E.projectiveStableIdeal.lift E.singleToSingularity fun _ _ _ hf ↦
-    (Functor.mem_kerIdeal_hom _).2 (E.singleToSingularity_map_eq_zero hf)
+  E.projectiveStableIdeal.lift E.singleToSingularity
+    E.projectiveStableIdeal_le_kerIdeal_singleToSingularity
+
+/-- The functor `stable(E) ⥤ D_sg(E)` is the functor induced by `singleToSingularity` on the
+quotient by the projective stable ideal. -/
+theorem stableToSingularity_eq : E.stableToSingularity =
+    E.projectiveStableIdeal.lift E.singleToSingularity
+      E.projectiveStableIdeal_le_kerIdeal_singleToSingularity :=
+  (rfl)
 
 instance : E.stableToSingularity.Additive := by
   dsimp only [stableToSingularity]
@@ -105,5 +133,38 @@ theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶
         E.singleToSingularity.map f ≫
           eqToHom (E.stableToSingularity_obj_projectiveStableFunctor_obj Y).symm :=
   Functor.congr_hom E.projectiveStableFunctor_comp_stableToSingularity f
+
+/-- The image of an object of the stable category in the singularity category is the object
+placed in degree zero. -/
+noncomputable def stableToSingularityObjIso (X : C) :
+    E.stableToSingularity.obj (E.projectiveStableFunctor.obj X) ≅
+      (SingularityCategory.Q E).obj ((BoundedDerivedCategory.Q E).obj
+        ((HomotopyCategory.Bounded.singleFunctor C 0).obj X)) :=
+  eqToIso ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+    (E.singleToSingularity_obj X))
+
+@[simp]
+theorem stableToSingularityObjIso_hom (X : C) :
+    (E.stableToSingularityObjIso X).hom = eqToHom
+      ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+        (E.singleToSingularity_obj X)) :=
+  (rfl)
+
+@[simp]
+theorem stableToSingularityObjIso_inv (X : C) :
+    (E.stableToSingularityObjIso X).inv = eqToHom
+      ((E.stableToSingularity_obj_projectiveStableFunctor_obj X).trans
+        (E.singleToSingularity_obj X)).symm :=
+  (rfl)
+
+/-- The identification `stableToSingularityObjIso` is natural. -/
+@[reassoc]
+theorem stableToSingularity_map_comp_stableToSingularityObjIso_hom {X Y : C} (f : X ⟶ Y) :
+    E.stableToSingularity.map (E.projectiveStableFunctor.map f) ≫
+        (E.stableToSingularityObjIso Y).hom =
+      (E.stableToSingularityObjIso X).hom ≫ (SingularityCategory.Q E).map
+        ((BoundedDerivedCategory.Q E).map
+          ((HomotopyCategory.Bounded.singleFunctor C 0).map f)) := by
+  simp [Functor.congr_hom E.singleToSingularity_eq f]
 
 end TauCeti.ExactStructure

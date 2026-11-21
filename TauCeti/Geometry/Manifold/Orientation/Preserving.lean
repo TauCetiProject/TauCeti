@@ -183,6 +183,22 @@ theorem isOrientationPreservingAt_iff_map_eq [IsManifold I 1 M] [IsManifold I' 1
   rw [hmap]
   exact ((trivializationAt E' (TangentSpace I') b).mapOrientation ι hp).injective.eq_iff.symm
 
+/-- Read through a map `g` preserving the orientations `o` and `o'` at `x`, a linear isomorphism
+`F` onto the tangent space at `x` carries an orientation `ov` to that of `M` exactly when its
+composite with the derivative of `g` carries `ov` to that of `M'`. -/
+theorem IsOrientationPreservingAt.exists_map_eq_orientationAt_iff [IsManifold I 1 M]
+    [IsManifold I' 1 M'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {g : M → M'} {x : M} (hg : IsOrientationPreservingAt o o' g x) {V : Type*} [AddCommGroup V]
+    [Module ℝ V] (F : V ≃ₗ[ℝ] TangentSpace I x) (ov : _root_.Orientation ℝ V ι) :
+    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (g x),
+      (e : TangentSpace I x →L[ℝ] TangentSpace I' (g x)) = mfderiv I I' g x ∧
+      (_root_.Orientation.map ι F ov = o.orientationAt x ↔
+        _root_.Orientation.map ι (F.trans e.toLinearEquiv) ov = o'.orientationAt (g x)) := by
+  obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hg
+  refine ⟨e, he, ?_⟩
+  rw [_root_.Orientation.map_trans, ← hmap]
+  exact (_root_.Orientation.map ι e.toLinearEquiv).injective.eq_iff.symm
+
 /-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
 the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
 both positively or both negatively oriented. -/
@@ -197,13 +213,14 @@ theorem isOrientationPreservingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I'
   have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
     rw [← Module.Basis.orientation_map, hbe]
   rw [isOrientationPreservingAt_iff_of_coe_eq o o' f x e he]
-  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
-    h | h
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation
+    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq x).symm) with h | h
   · rw [h, hmap, iff_true_left rfl]
   · rw [h, _root_.Orientation.map_neg, hmap,
       neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
       iff_false_left (Module.Ray.ne_neg_self _),
-      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne]
+      ← _root_.Orientation.ne_iff_eq_neg _ _
+        (Nat.card_eq_fintype_card.trans (o'.finrank_tangentSpace_eq (f x)).symm), Ne]
 
 /-- Given a continuous linear equivalence representing the derivative, every map is either
 orientation-preserving or orientation-reversing at the point. -/
@@ -212,8 +229,8 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
     (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
     (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
     IsOrientationPreservingAt o o' f x ∨ IsOrientationReversingAt o o' f x := by
-  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
-    simpa only [TauCeti.finrank_tangentSpace] using o'.card_eq
+  have hcard : Nat.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
+    simpa only [Nat.card_eq_fintype_card, TauCeti.finrank_tangentSpace] using o'.card_eq
   rcases _root_.Orientation.eq_or_eq_neg
     (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x))
     (o'.orientationAt (f x)) hcard with h | h
@@ -342,6 +359,16 @@ theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M
     (o : Manifold.Orientation I M ι) (x : M) :
     IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x :=
   isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o rfl mfderiv_id
+
+/-- Reindexing both orientations along the same equivalence of index types does not change
+whether a map reverses them. -/
+theorem IsOrientationReversingAt.reindex [IsManifold I 1 M] [IsManifold I' 1 M'] {ι' : Type*}
+    [Fintype ι'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι} {f : M → M'}
+    {x : M} (h : IsOrientationReversingAt o o' f x) (σ : ι ≃ ι') :
+    IsOrientationReversingAt (o.reindex σ) (o'.reindex σ) f x := by
+  obtain ⟨e, he, hmap⟩ := h
+  exact ⟨e, he, by rw [orientationAt_reindex, orientationAt_reindex,
+    _root_.Orientation.map_reindex, hmap, _root_.Orientation.reindex_neg]⟩
 
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]

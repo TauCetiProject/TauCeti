@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.FreeLocus
-import TauCeti.Geometry.Manifold.Triangulation.Complex
+import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 
 /-!
 # The signature of the level-one modular curve
@@ -84,7 +84,8 @@ instance finiteCWType_freeLocus_psl2zToPSL2RRange :
   have : FiniteCWType ↥(jBiholomorph.toHomeomorph ''
       (Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
         Set.range Subgroup.CompactifiedQuotient.ofCusp))ᶜ :=
-    hS.finiteCWType_compl_onePoint_complex
+    have := hS.to_subtype
+    inferInstance
   let hcompl : ↥(Subgroup.CompactifiedQuotient.ofQuotient '' psl2zToPSL2R.range.ellipticOrbits ∪
       Set.range Subgroup.CompactifiedQuotient.ofCusp)ᶜ ≃ₜ
       ↥(jBiholomorph.toHomeomorph ''

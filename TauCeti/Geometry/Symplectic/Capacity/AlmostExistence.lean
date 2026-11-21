@@ -185,14 +185,14 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
   have hul : (u : Filter {c // P c}) ≤ l := Ultrafilter.of_le l
   have hc : Tendsto (fun c : {c // P c} ↦ (c : ℝ)) u (𝓝 s) := tendsto_comap.mono_left hul
   choose T γ hT hTK hγ hper _ hlev g hg hgγ using
-    fun c : {c // P c} ↦ hasContractibleClosedCharacteristicOfPeriodLE_iff.1 c.2.1
+    fun c : {c // P c} ↦ hasContractibleClosedCharacteristicOfPeriodLE_iff.1 c.property.1
   -- The orbits are orbits of `ϕ`, which return to their base points.
   have hϕγ (c : {c // P c}) (t : ℝ) : ϕ t (γ c 0) = γ c t :=
     globalFlow_eq_of_isMIntegralCurve hv hcomplete
-      (fun t ↦ hvX (γ c t) ((hlev c t).trans_le c.2.2.le) ▸ hγ c t) t
+      (fun t ↦ hvX (γ c t) ((hlev c t).trans_le c.property.2.le) ▸ hγ c t) t
   have hret (c : {c // P c}) : ϕ (T c) (γ c 0) = γ c 0 :=
     (hϕγ c (T c)).trans (by simpa using hper c 0)
-  have hxU (c : {c // P c}) : F (γ c 0) < b := (hlev c 0).trans_lt (c.2.2.trans hmb)
+  have hxU (c : {c // P c}) : F (γ c 0) < b := (hlev c 0).trans_lt (c.property.2.trans hmb)
   -- By compactness, the periods and base points converge along `u`.
   obtain ⟨⟨T₀, x₀⟩, -, hlim⟩ := (isCompact_Icc.prod hcpt).ultrafilter_le_nhds
     (u.map fun c ↦ (T c, γ c 0)) (le_principal_iff.2 (Ultrafilter.mem_map.2
