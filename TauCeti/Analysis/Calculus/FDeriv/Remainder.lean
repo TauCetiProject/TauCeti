@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The punctured remainder form of the Fréchet derivative
@@ -108,20 +108,10 @@ theorem IsCompact.exists_pos_forall_norm_fderiv_sub_le (hK : IsCompact K)
     (hF : ∀ p ∈ K, ContDiffAt ℝ 1 (Function.uncurry F) (p, x p)) (hx : ContinuousOn x K)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ p ∈ K, ∀ y : E, ‖y - x p‖ ≤ δ →
-      ‖fderiv ℝ (F p) y - fderiv ℝ (F p) (x p)‖ ≤ ε := by
-  -- The derivative is uniformly continuous at the compact graph `{(p, x p) | p ∈ K}`.
-  set Q : Set (P × E) := (fun p => (p, x p)) '' K
-  have hQ : IsCompact Q := hK.image_of_continuousOn (continuousOn_id.prodMk hx)
-  have hD : ∀ q ∈ Q, ContinuousAt (fun q : P × E => fderiv ℝ (F q.1) q.2) q := by
-    rintro _ ⟨p, hp, rfl⟩
-    exact (contDiffAt_fderiv_uncurry (m := 0) (hF p hp) (by simp)).continuousAt
-  obtain ⟨δ, hδ, hD'⟩ := Metric.mem_uniformity_dist.1
-    (hQ.uniformContinuousAt_of_continuousAt _ hD (Metric.dist_mem_uniformity hε))
-  refine ⟨δ / 2, by positivity, fun p hp y hy => ?_⟩
-  rw [← dist_eq_norm, dist_comm]
-  refine (hD' (a := (p, x p)) (b := (p, y)) ?_ ⟨p, hp, rfl⟩).le
-  rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_comm, dist_eq_norm]
-  linarith
+      ‖fderiv ℝ (F p) y - fderiv ℝ (F p) (x p)‖ ≤ ε :=
+  -- The derivative is continuous, so uniformly continuous, at the compact graph of `x`.
+  hK.exists_pos_forall_norm_sub_le (Φ := fun q : P × E => fderiv ℝ (F q.1) q.2) hx
+    (fun p hp => (contDiffAt_fderiv_uncurry (m := 0) (hF p hp) (by simp)).continuousAt) hε
 
 /-- **Uniform first-order approximation over a compact parameter set.** Let `F : P → E → G` be
 jointly `C¹` at the points `(p, x p)`, where `x : P → E` is continuous on a compact set `K` and
