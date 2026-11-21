@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.GeometricArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.ArtinMap
 import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.ArtinMap
 
@@ -30,10 +31,17 @@ In characteristic `p` the map `weilArtinMap K` is still a continuous open surjec
 injectivity would need the existence of the `p`-primary abelian extensions, so no isomorphism is
 stated there.
 
+Composing `localWeilArtinEquiv K` with inversion in `W_K^ab` gives the **geometric** normalization
+`localWeilGeometricArtinEquiv K : Kˣ ≃ₜ* W_K^ab`, compatible with `geometricArtinMap K` and
+sending uniformizers to classes of geometric Frobenius lifts (inverses of arithmetic Frobenius
+lifts).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.localWeilArtinEquiv`: in characteristic zero, the isomorphism of
-  topological groups `Kˣ ≃ₜ* W_K^ab`.
+  topological groups `Kˣ ≃ₜ* W_K^ab` under the arithmetic Frobenius normalization.
+* `TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv`: in characteristic zero, the isomorphism
+  `Kˣ ≃ₜ* W_K^ab` under the geometric Frobenius normalization.
 
 ## Main results
 
@@ -41,6 +49,11 @@ stated there.
   `Kˣ → W_K^ab` is injective.
 * `TauCeti.ClassFieldTheory.localWeilArtinEquiv_compat`: the class in `G_K^ab` of a Weil element
   representing `localWeilArtinEquiv K x` is the Artin symbol of `x`.
+* `TauCeti.ClassFieldTheory.localWeilGeometricArtinEquiv_compat`: the class in `G_K^ab` of a Weil
+  element representing `localWeilGeometricArtinEquiv K x` is `geometricArtinMap K x`.
+* `isArithFrobeniusLift_inv_of_mk_eq_localWeilGeometricArtinEquiv_uniformizer`: every Weil
+  representative of `localWeilGeometricArtinEquiv K π` for a uniformizer `π` maps to a geometric
+  Frobenius in `G_K`.
 
 ## References
 
@@ -86,5 +99,68 @@ theorem localWeilArtinEquiv_compat (x : Kˣ) (w : WeilGroup K)
       artinMap K x := by
   rw [← weilToAbsoluteAbelianization_mk, hw, localWeilArtinEquiv_apply,
     weilToAbsoluteAbelianization_weilArtinMap]
+
+/-- **Geometric local reciprocity for the Weil group.** For a characteristic-zero nonarchimedean
+local field `K`, this is the isomorphism `Kˣ ≃ₜ* W_K^{ab}` obtained by composing
+`localWeilArtinEquiv K` with inversion in the commutative group `W_K^{ab}`. It sends a uniformizer
+to the class of a geometric Frobenius (the inverse of an arithmetic Frobenius lift). -/
+def localWeilGeometricArtinEquiv : Kˣ ≃ₜ* TopologicalAbelianization (WeilGroup K) :=
+  (localWeilArtinEquiv K).trans
+    { toMulEquiv := MulEquiv.inv (TopologicalAbelianization (WeilGroup K))
+      continuous_toFun := continuous_inv
+      continuous_invFun := continuous_inv }
+
+/-- The geometric Weil reciprocity isomorphism sends `x` to `(localWeilArtinEquiv K x)⁻¹`. -/
+@[simp]
+theorem localWeilGeometricArtinEquiv_apply (x : Kˣ) :
+    localWeilGeometricArtinEquiv K x = (localWeilArtinEquiv K x)⁻¹ :=
+  (rfl)
+
+/-- The inverse of `localWeilGeometricArtinEquiv K` sends `y` to
+`((localWeilArtinEquiv K).symm y)⁻¹`. -/
+@[simp]
+theorem localWeilGeometricArtinEquiv_symm_apply
+    (y : TopologicalAbelianization (WeilGroup K)) :
+    (localWeilGeometricArtinEquiv K).symm y = ((localWeilArtinEquiv K).symm y)⁻¹ := by
+  -- Unfold the composition with `MulEquiv.inv` on the inverse direction.
+  change (localWeilArtinEquiv K).symm y⁻¹ = _
+  rw [map_inv]
+
+/-- Mapping `localWeilGeometricArtinEquiv K x` into `G_K^{ab}` yields the geometric Artin symbol
+`geometricArtinMap K x`. -/
+theorem weilToAbsoluteAbelianization_localWeilGeometricArtinEquiv (x : Kˣ) :
+    weilToAbsoluteAbelianization K (localWeilGeometricArtinEquiv K x) =
+      geometricArtinMap K x := by
+  rw [localWeilGeometricArtinEquiv_apply, map_inv, localWeilArtinEquiv_apply,
+    weilToAbsoluteAbelianization_weilArtinMap, geometricArtinMap_apply]
+
+/-- The abelianized Weil degree of `localWeilGeometricArtinEquiv K x` is
+`(normalizedValuation K x)⁻¹`. -/
+theorem weilDegreeAbelianization_localWeilGeometricArtinEquiv (x : Kˣ) :
+    weilDegreeAbelianization K (localWeilGeometricArtinEquiv K x) =
+      (normalizedValuation K x)⁻¹ := by
+  rw [localWeilGeometricArtinEquiv_apply, map_inv, localWeilArtinEquiv_apply,
+    weilDegreeAbelianization_weilArtinMap]
+
+/-- **Compatibility with the absolute geometric Artin map.** If a Weil element `w` represents
+`localWeilGeometricArtinEquiv K x`, then its class in `G_K^{ab}` is `geometricArtinMap K x`. -/
+theorem localWeilGeometricArtinEquiv_compat (x : Kˣ) (w : WeilGroup K)
+    (hw : (QuotientGroup.mk w : TopologicalAbelianization (WeilGroup K)) =
+      localWeilGeometricArtinEquiv K x) :
+    (QuotientGroup.mk (weilToAbsolute K w) : Field.absoluteGaloisGroupAbelianization K) =
+      geometricArtinMap K x := by
+  rw [← weilToAbsoluteAbelianization_mk, hw,
+    weilToAbsoluteAbelianization_localWeilGeometricArtinEquiv]
+
+/-- **Geometric Frobenius normalization.** Every Weil element representing
+`localWeilGeometricArtinEquiv K π` for a uniformizer `π` maps to a geometric Frobenius in `G_K`:
+the inverse of its image is an arithmetic Frobenius lift. -/
+theorem isArithFrobeniusLift_inv_of_mk_eq_localWeilGeometricArtinEquiv_uniformizer {π : Kˣ}
+    (hπ : IsUniformizer K π) (w : WeilGroup K)
+    (hw : (QuotientGroup.mk w : TopologicalAbelianization (WeilGroup K)) =
+      localWeilGeometricArtinEquiv K π) :
+    IsArithFrobeniusLift K (weilToAbsolute K w)⁻¹ :=
+  isArithFrobeniusLift_inv_of_mk_eq_geometricArtinMap_uniformizer K hπ (weilToAbsolute K w)
+    (localWeilGeometricArtinEquiv_compat K π w hw)
 
 end TauCeti.ClassFieldTheory
