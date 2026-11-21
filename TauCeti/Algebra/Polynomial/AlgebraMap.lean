@@ -27,6 +27,9 @@ splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
 `A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+
+An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in the
+algebra is a unit (`Polynomial.isUnit_of_aeval_eq_zero`).
 -/
 
 public section
@@ -95,5 +98,33 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in
+the algebra is a unit. -/
+theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {x : A}
+    {p : R[X]} (hp : IsUnit (algebraMap R A (p.coeff 0))) (hx : aeval x p = 0) : IsUnit x := by
+  have hdiv := congrArg (aeval x) (X_mul_divX_add p)
+  simp only [map_add, map_mul, aeval_X, aeval_C, hx] at hdiv
+  let c : A := (hp.unit⁻¹ : Aˣ)
+  have hc : c * algebraMap R A (p.coeff 0) = 1 := by
+    simp [c]
+  have hcx : Commute c x := by
+    have hcomm : Commute (hp.unit : A) x := by
+      simpa only [IsUnit.unit_spec] using Algebra.commute_algebraMap_left (p.coeff 0) x
+    exact hcomm.units_inv_left
+  let y : A := c * aeval x p.divX
+  have hcomm : Commute x y :=
+    hcx.symm.mul_right
+      (by simpa only [aeval_X] using (Commute.all (X : R[X]) p.divX).map (aeval x))
+  have he : x * y + 1 = 0 := by
+    have hmul := congrArg (c * ·) hdiv
+    rw [mul_zero, mul_add, hc, ← mul_assoc, hcx.eq, mul_assoc] at hmul
+    exact hmul
+  have hee : (x * y) * (x * y) = 1 := by
+    calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
+      _ = (x * y) * (x * y + 1) + 1 := by rw [← add_assoc, mul_add, mul_one]
+      _ = 1 := by rw [he, mul_zero, zero_add]
+  refine isUnit_iff_exists.mpr ⟨y * (x * y), by rw [← mul_assoc, hee], ?_⟩
+  rw [← mul_assoc y x y, mul_assoc (y * x), ← hcomm.eq, hee]
 
 end Polynomial

@@ -95,6 +95,8 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
+* `TauCeti.PowerSeries.dvd_of_coe_eq_coe_mul_entire`: divisibility of polynomials in the ring of
+  entire power series by a polynomial with invertible leading coefficient descends to `R[X]`.
 * `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
   `TauCeti.PowerSeries.coe_subring_dvd_iff`, and
   `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: left cancellation of polynomials with
@@ -776,6 +778,42 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
+
+omit [CompleteSpace R] in
+/-- If a polynomial with invertible leading coefficient divides another polynomial in the ring of
+entire power series, then it divides it in the polynomial ring. Completeness of `R` is not
+needed. -/
+theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧} (hp : IsUnit p.leadingCoeff)
+    (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) : p ∣ g := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  let u := hp.unit
+  let P : Polynomial R := u⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hP_mul : (g : R⟦X⟧) = (P : R⟦X⟧) * ((u : R) • q) := by
+    have hcoe : (P : R⟦X⟧) = (↑u⁻¹ : R) • (p : R⟦X⟧) := by simp [P, Units.smul_def]
+    rw [h, hcoe, smul_mul_smul_comm, Units.inv_mul, one_smul]
+  have hdist := hP.isDistinguished_one_add_sum_norm_coeff
+  set c := 1 + ∑ i ∈ P.support, ‖P.coeff i‖
+  have hc0 : 0 < c := by positivity
+  have hmul : ∀ x, ‖x * coeff P.natDegree (P : R⟦X⟧)‖ = ‖x‖ * ‖coeff P.natDegree (P : R⟦X⟧)‖ := by
+    simp [hP.coeff_natDegree]
+  have hrem : ∀ m, P.natDegree ≤ m → coeff m ((g %ₘ P : Polynomial R) : R⟦X⟧) = 0 := fun m hm ↦ by
+    rw [Polynomial.coeff_coe]
+    exact Polynomial.coeff_eq_zero_of_degree_lt
+      ((Polynomial.degree_modByMonic_lt g hP).trans_le
+        (Polynomial.degree_le_natDegree.trans (by exact_mod_cast hm)))
+  have heq : ((g /ₘ P : Polynomial R) : R⟦X⟧) * (P : R⟦X⟧) + ((g %ₘ P : Polynomial R) : R⟦X⟧) =
+      ((u : R) • q) * (P : R⟦X⟧) + 0 := by
+    have hdiv : ((g %ₘ P : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * ((g /ₘ P : Polynomial R) : R⟦X⟧) =
+        (g : R⟦X⟧) := by
+      rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div]
+    rw [add_zero, mul_comm ((u : R) • q), ← hP_mul, ← hdiv, add_comm, mul_comm (P : R⟦X⟧)]
+  obtain ⟨-, hmod_coe⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
+    hc0 hmul ((isEntire_coe (g /ₘ P)).isRestricted c) ((hq.smul (u : R)).isRestricted c) hrem
+    (fun _ _ ↦ map_zero _) heq
+  have hmod : g %ₘ P = 0 := Polynomial.coe_inj.mp (by simpa using hmod_coe)
+  obtain ⟨k, hk⟩ := (Polynomial.modByMonic_eq_zero_iff_dvd hP).mp hmod
+  exact ⟨u⁻¹ • k, by simpa only [P, smul_mul_assoc, mul_smul_comm] using hk⟩
 
 /-- A polynomial `Q` with invertible leading coefficient cancels on the left against entire power
 series, over a complete ultrametric norm-one ring. -/

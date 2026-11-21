@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
+public import TauCeti.Analysis.Normed.Operator.RingOpNorm.SpectralProjection
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
@@ -23,8 +24,9 @@ that `a` is a *good zero* of order `h` of `H_u`: the Hasse derivatives `ΔʲH_u(
 A **Riesz projection** of `u` at `a` of order `h` (`ContinuousLinearMap.IsRieszProjection`) is an
 idempotent `E`, commuting with `u` and an operator-norm limit of polynomials in `u`, with
 `C ^ h * E = 0`, such that `C` is invertible on the complementary summand: there is `w`, again a
-limit of polynomials in `u`, with `C w = w C = 1 - E` and `E w = w E = 0`. Thus `E` splits
-`C₀(I, R)` into the generalised eigenspace `range E = ker C ^ h`
+limit of polynomials in `u`, with `C w = w C = 1 - E` and `E w = w E = 0` — that is, a spectral
+projection (`ContinuousLinearMap.IsSpectralProjection`) of `u` for `C = 1 - a • u` of order `h`.
+Thus `E` splits `C₀(I, R)` into the generalised eigenspace `range E = ker C ^ h`
 (`ContinuousLinearMap.IsRieszProjection.range_eq_ker`), on which `C` is nilpotent, and a stable
 complement `range (1 - E)` on which `C` is invertible. Such a splitting is unique
 (`ContinuousLinearMap.IsRieszProjection.unique`); at order `0` it is `E = 0`. The definition and
@@ -58,8 +60,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 
 ## Main definitions
 
-* `ContinuousLinearMap.IsRieszProjection`: the finite spectral projector of `u` at `a` of order
-  `h`.
+* `ContinuousLinearMap.IsRieszProjection`: the spectral projector of `u` at `a` of order `h`,
+  instantiating `ContinuousLinearMap.IsSpectralProjection` at `1 - a • u`.
 * `ContinuousLinearMap.IsRieszProjection.inverse`: the inverse of `C` on the complementary
   summand, extended by zero.
 * `ContinuousLinearMap.rieszProjection`: the explicit projector `1 - (C b) ^ h`.
@@ -106,163 +108,109 @@ section Module
 variable {M : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
 
 /-- A **Riesz projection** of an endomorphism `u` of a seminormed `R`-module `M` at the scalar
-`a`, of order `h`: an idempotent `E` commuting with `u` and lying in the operator-norm closure of
-the polynomials in `u`, such that `(1 - a • u) ^ h * E = 0` and `1 - a • u` is invertible on the
-complementary summand `range (1 - E)`, with inverse again in the closure of the polynomials in
-`u`. For a good zero `a` of order `h` of the Fredholm determinant of a row-compact `u`, the range
-of `E` is the generalised eigenspace `ker (1 - a • u) ^ h`, and `E` is the finite spectral
-projector onto it. -/
-structure IsRieszProjection (u : M →L[R] M) (a : R) (h : ℕ) (E : M →L[R] M) : Prop where
-  /-- A Riesz projection is idempotent. -/
-  isIdempotentElem : IsIdempotentElem E
-  /-- A Riesz projection commutes with the operator. -/
-  commute : Commute u E
-  /-- A Riesz projection is an operator-norm limit of polynomials in the operator. -/
-  mem_closure_adjoin : E ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M))
-  /-- `(1 - a • u) ^ h` vanishes on the range of a Riesz projection. -/
-  pow_mul_eq_zero : (1 - a • u) ^ h * E = 0
-  /-- `1 - a • u` is invertible on the complementary summand, with inverse an operator-norm limit
-  of polynomials in the operator. -/
-  exists_inverse : ∃ w : M →L[R] M, (1 - a • u) * w = 1 - E ∧
-    w * (1 - a • u) = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧
-    w ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M))
+`a`, of order `h`: a spectral projection (`ContinuousLinearMap.IsSpectralProjection`) of `u` for
+`1 - a • u` of order `h`. For a good zero `a` of order `h` of the Fredholm determinant of a
+row-compact `u`, the range of `E` is the generalised eigenspace `ker (1 - a • u) ^ h`, and `E` is
+the spectral projector onto it. -/
+@[expose] def IsRieszProjection (u : M →L[R] M) (a : R) (h : ℕ) (E : M →L[R] M) : Prop :=
+  IsSpectralProjection u (1 - a • u) h E
 
 namespace IsRieszProjection
 
 variable {u E : M →L[R] M} {a : R} {h : ℕ}
 
 /-- A Riesz projection of order `0` is zero. -/
-theorem eq_zero_of_order_zero (hE : IsRieszProjection u a 0 E) : E = 0 := by
-  simpa using hE.pow_mul_eq_zero
+theorem eq_zero_of_order_zero (hE : IsRieszProjection u a 0 E) : E = 0 :=
+  IsSpectralProjection.eq_zero_of_order_zero hE
 
 /-- A Riesz projection commutes with `1 - a • u`. -/
 theorem commute_one_sub_smul (hE : IsRieszProjection u a h E) : Commute (1 - a • u) E :=
-  hE.commute.one_sub_smul_left (A := M →L[R] M) a
+  IsSpectralProjection.commute_spectral hE
 
 /-- A Riesz projection remains one when its nilpotence bound is increased. -/
 theorem of_le (hE : IsRieszProjection u a h E) {n : ℕ} (hn : h ≤ n) :
-    IsRieszProjection u a n E := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  refine { hE with pow_mul_eq_zero := ?_ }
-  rw [add_comm h k, pow_add, mul_assoc, hE.pow_mul_eq_zero, mul_zero]
+    IsRieszProjection u a n E :=
+  IsSpectralProjection.of_le hE hn
 
 /-- The operator preserves the kernel of its Riesz projection. -/
-theorem mapsTo_ker (hE : IsRieszProjection u a h E) : Set.MapsTo u E.ker E.ker := by
-  intro x hx
-  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
-  apply LinearMap.mem_ker.mpr
-  simpa only [coe_coe, mul_apply_eq_comp, hx', map_zero] using
-    congr($(hE.commute.eq.symm) x)
+theorem mapsTo_ker (hE : IsRieszProjection u a h E) : Set.MapsTo u E.ker E.ker :=
+  IsSpectralProjection.mapsTo_ker hE
 
 /-- The operator preserves the range of its Riesz projection. -/
-theorem mapsTo_range (hE : IsRieszProjection u a h E) : Set.MapsTo u E.range E.range := by
-  rw [LinearMap.coe_range, coe_coe]
-  exact Function.Semiconj.mapsTo_range fun x ↦ congr($(hE.commute.eq.symm) x)
+theorem mapsTo_range (hE : IsRieszProjection u a h E) : Set.MapsTo u E.range E.range :=
+  IsSpectralProjection.mapsTo_range hE
 
 /-- The spectral operator preserves the kernel of its Riesz projection. -/
 theorem mapsTo_ker_one_sub_smul (hE : IsRieszProjection u a h E) :
-    Set.MapsTo (1 - a • u : M →L[R] M) E.ker E.ker := by
-  intro x hx
-  simpa only [sub_apply, one_apply_eq_self, smul_apply, SetLike.mem_coe] using
-    E.ker.sub_mem hx (E.ker.smul_mem a (hE.mapsTo_ker hx))
+    Set.MapsTo (1 - a • u : M →L[R] M) E.ker E.ker :=
+  IsSpectralProjection.mapsTo_ker_spectral hE
 
 /-- The spectral operator preserves the range of its Riesz projection. -/
 theorem mapsTo_range_one_sub_smul (hE : IsRieszProjection u a h E) :
-    Set.MapsTo (1 - a • u : M →L[R] M) E.range E.range := by
-  rw [LinearMap.coe_range, coe_coe]
-  exact Function.Semiconj.mapsTo_range fun x ↦ congr($(hE.commute_one_sub_smul.eq.symm) x)
+    Set.MapsTo (1 - a • u : M →L[R] M) E.range E.range :=
+  IsSpectralProjection.mapsTo_range_spectral hE
 
 /-- The **complementary inverse** of a Riesz projection: the inverse of `1 - a • u` on the
 complementary summand `range (1 - E)`, extended by zero on `range E`, chosen from
-`IsRieszProjection.exists_inverse`. -/
+`IsSpectralProjection.exists_inverse`. -/
 noncomputable def inverse (hE : IsRieszProjection u a h E) : M →L[R] M :=
-  hE.exists_inverse.choose
+  IsSpectralProjection.inverse hE
 
 /-- The complementary inverse is a right inverse of `1 - a • u` up to `1 - E`. -/
 theorem one_sub_smul_mul_inverse (hE : IsRieszProjection u a h E) :
-    (1 - a • u) * hE.inverse = 1 - E := by
-  obtain ⟨hw, -, -, -, -⟩ := hE.exists_inverse.choose_spec
-  exact hw
+    (1 - a • u) * hE.inverse = 1 - E :=
+  IsSpectralProjection.spectral_mul_inverse hE
 
 /-- The complementary inverse is a left inverse of `1 - a • u` up to `1 - E`. -/
 theorem inverse_mul_one_sub_smul (hE : IsRieszProjection u a h E) :
-    hE.inverse * (1 - a • u) = 1 - E := by
-  obtain ⟨-, hw, -, -, -⟩ := hE.exists_inverse.choose_spec
-  exact hw
+    hE.inverse * (1 - a • u) = 1 - E :=
+  IsSpectralProjection.inverse_mul_spectral hE
 
 /-- The complementary inverse takes values in the kernel of the Riesz projection. -/
 @[simp]
-theorem mul_inverse_eq_zero (hE : IsRieszProjection u a h E) : E * hE.inverse = 0 := by
-  obtain ⟨-, -, hw, -, -⟩ := hE.exists_inverse.choose_spec
-  exact hw
+theorem mul_inverse_eq_zero (hE : IsRieszProjection u a h E) : E * hE.inverse = 0 :=
+  IsSpectralProjection.mul_inverse_eq_zero hE
 
 /-- The complementary inverse vanishes on the range of the Riesz projection. -/
 @[simp]
-theorem inverse_mul_eq_zero (hE : IsRieszProjection u a h E) : hE.inverse * E = 0 := by
-  obtain ⟨-, -, -, hw, -⟩ := hE.exists_inverse.choose_spec
-  exact hw
+theorem inverse_mul_eq_zero (hE : IsRieszProjection u a h E) : hE.inverse * E = 0 :=
+  IsSpectralProjection.inverse_mul_eq_zero hE
 
 /-- The complementary inverse is an operator-norm limit of polynomials in the operator. -/
 theorem inverse_mem_closure_adjoin (hE : IsRieszProjection u a h E) :
-    hE.inverse ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
-  obtain ⟨-, -, -, -, hw⟩ := hE.exists_inverse.choose_spec
-  exact hw
+    hE.inverse ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) :=
+  IsSpectralProjection.inverse_mem_closure_adjoin hE
 
 /-- The complementary inverse is the unique right inverse of `1 - a • u` up to `1 - E` that
 takes values in the kernel of the Riesz projection. -/
 theorem eq_inverse (hE : IsRieszProjection u a h E) {w : M →L[R] M}
-    (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0) : w = hE.inverse := by
-  calc w = (1 - E) * w := by
-        rw [sub_mul (α := M →L[R] M), one_mul, hEw, sub_zero w]
-    _ = hE.inverse * ((1 - a • u) * w) := by rw [← mul_assoc, hE.inverse_mul_one_sub_smul]
-    _ = hE.inverse := by
-        rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero,
-          sub_zero hE.inverse]
+    (hw : (1 - a • u) * w = 1 - E) (hEw : E * w = 0) : w = hE.inverse :=
+  IsSpectralProjection.eq_inverse hE hw hEw
 
 /-- The complementary inverse preserves the kernel of the Riesz projection. -/
 theorem mapsTo_ker_inverse (hE : IsRieszProjection u a h E) :
-    Set.MapsTo hE.inverse E.ker E.ker := by
-  intro x _
-  apply LinearMap.mem_ker.mpr
-  simpa only [coe_coe, mul_apply_eq_comp, zero_apply] using
-    congr($(hE.mul_inverse_eq_zero) x)
+    Set.MapsTo hE.inverse E.ker E.ker :=
+  IsSpectralProjection.mapsTo_ker_inverse hE
 
 /-- On the complementary summand, the complementary inverse is a left inverse of the
 spectral operator. -/
 theorem inverse_one_sub_smul_apply (hE : IsRieszProjection u a h E)
     {x : M} (hx : x ∈ E.ker) :
-    hE.inverse ((1 - a • u) x) = x := by
-  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
-  simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
-    congr($(hE.inverse_mul_one_sub_smul) x)
+    hE.inverse ((1 - a • u) x) = x :=
+  IsSpectralProjection.inverse_spectral_apply hE hx
 
 /-- On the complementary summand, the complementary inverse is a right inverse of the
 spectral operator. -/
 theorem one_sub_smul_apply_inverse (hE : IsRieszProjection u a h E)
     {x : M} (hx : x ∈ E.ker) :
-    (1 - a • u) (hE.inverse x) = x := by
-  have hx' : E x = 0 := LinearMap.mem_ker.mp hx
-  simpa only [mul_apply_eq_comp, sub_apply, one_apply_eq_self, hx', sub_zero] using
-    congr($(hE.one_sub_smul_mul_inverse) x)
+    (1 - a • u) (hE.inverse x) = x :=
+  IsSpectralProjection.spectral_apply_inverse hE hx
 
 /-- **The range of a Riesz projection is the generalised eigenspace** `ker (1 - a • u) ^ h`. -/
 theorem range_eq_ker (hE : IsRieszProjection u a h E) :
     LinearMap.range (E : M →ₗ[R] M) =
-      LinearMap.ker (((1 - a • u) ^ h : M →L[R] M) : M →ₗ[R] M) := by
-  obtain ⟨w, hw, hw', -⟩ := hE.exists_inverse
-  have hCw : Commute (1 - a • u) w := hw.trans hw'.symm
-  -- `1 - E = w ^ h * (1 - a • u) ^ h` kills the generalised eigenspace.
-  have h1 := hE.isIdempotentElem.one_sub_eq_pow_mul_pow (A := M →L[R] M)
-    hE.pow_mul_eq_zero hw hw'
-  rw [(hCw.pow_pow h h).eq] at h1
-  ext x
-  simp only [LinearMap.mem_range, LinearMap.mem_ker, coe_coe]
-  refine ⟨?_, fun hx ↦ ⟨x, ?_⟩⟩
-  · rintro ⟨y, rfl⟩
-    simpa using congr($(hE.pow_mul_eq_zero) y)
-  · have := congr($h1 x)
-    simp only [sub_apply, one_apply_eq_self, mul_apply_eq_comp, hx, map_zero, sub_eq_zero] at this
-    exact this.symm
+      LinearMap.ker (((1 - a • u) ^ h : M →L[R] M) : M →ₗ[R] M) :=
+  IsSpectralProjection.range_eq_ker hE
 
 /-- **The range of a Riesz projection is the maximal generalised eigenspace.** If `a * μ = 1`,
 the range of a Riesz projection of `u` at `a` is the space of all vectors killed by some power of
@@ -288,11 +236,8 @@ theorem maxGenEigenspace_eq_range (hE : IsRieszProjection u a h E) {μ : R} (hμ
 /-- **Uniqueness of the Riesz projection.** Two Riesz projections of `u` at `a` of the same order
 are equal. -/
 theorem unique {E' : M →L[R] M} (hE : IsRieszProjection u a h E)
-    (hE' : IsRieszProjection u a h E') : E = E' := by
-  obtain ⟨w, hw, hw', -⟩ := hE.exists_inverse
-  obtain ⟨w', hw₂, hw₂', -⟩ := hE'.exists_inverse
-  exact hE.isIdempotentElem.eq_of_pow_mul_eq_zero hE'.isIdempotentElem hE.pow_mul_eq_zero
-    hE'.pow_mul_eq_zero hw hw' hw₂ hw₂'
+    (hE' : IsRieszProjection u a h E') : E = E' :=
+  IsSpectralProjection.unique hE hE'
 
 end IsRieszProjection
 
@@ -311,32 +256,9 @@ theorem IsRieszProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {a : R
     {E : N →L[R] N} (hE : IsRieszProjection (i.comp (u.comp r)) a h E) :
     IsRieszProjection u a h (r.comp (E.comp i)) := by
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  -- `r` intertwines the extension `i ∘ u ∘ r` with `u`.
   have hr : Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  have hE' := apply_comp_apply_of_mem_closure_adjoin hri hE.mem_closure_adjoin
-  have hw' := apply_comp_apply_of_mem_closure_adjoin hri hw
-  have hEE (y : N) : E (E y) = E y := congr($hE.isIdempotentElem.eq y)
-  have hEv (y : N) : E (i (u (r y))) = i (u (r (E y))) := congr($hE.commute.eq y).symm
-  have hpow (y : N) : ((1 - a • i.comp (u.comp r)) ^ h) (E y) = 0 :=
-    congr($hE.pow_mul_eq_zero y)
-  refine ⟨?_, ?_, comp_comp_mem_closure_adjoin hri hE.mem_closure_adjoin, ?_,
-    ⟨r.comp (w.comp i), ?_, ?_, ?_, ?_, comp_comp_mem_closure_adjoin hri hw⟩⟩
-  · ext x
-    simp [hE', hri', hEE]
-  · ext x
-    simpa [hri'] using congr(r $(hEv (i x))).symm
-  · ext x
-    simpa [hpow] using (hr.one_sub_smul_pow a h (E (i x))).symm
-  · ext x
-    simpa [hri'] using
-      (hr.one_sub_smul a (w (i x))).symm.trans congr(r $(DFunLike.congr_fun hw₁ (i x)))
-  · ext x
-    simpa [hri'] using congr(r $(DFunLike.congr_fun hw₂ (i x)))
-  · ext x
-    simpa [hw', hri'] using congr(r $(DFunLike.congr_fun hw₃ (i x)))
-  · ext x
-    simpa [hE', hri'] using congr(r $(DFunLike.congr_fun hw₄ (i x)))
+  have hi : Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
+  exact IsSpectralProjection.comp_comp_of_retract hri (hr.one_sub_smul a) (hi.one_sub_smul a) hE
 
 end Retract
 

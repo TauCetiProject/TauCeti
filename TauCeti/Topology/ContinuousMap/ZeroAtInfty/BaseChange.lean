@@ -187,6 +187,22 @@ theorem aeval_mapCoeffs (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
       Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
       smul_mul_assoc, one_mul, mapCoeffs_smul, mapCoeffs_pow]
 
+/-- Coefficient extension on endomorphisms of a model space, bundled as a ring homomorphism. -/
+noncomputable def mapCoeffsRingHom (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (C₀(J, R) →L[R] C₀(J, R)) →+* (C₀(J, S) →L[S] C₀(J, S)) where
+  toFun u := u.mapCoeffs f hf
+  map_one' := mapCoeffs_one f hf
+  map_mul' u v := mapCoeffs_mul u v f hf
+  map_zero' := mapCoeffs_zero f hf
+  map_add' u v := mapCoeffs_add u v f hf
+
+/-- Applying `mapCoeffsRingHom` is coefficient extension `mapCoeffs`. -/
+@[simp]
+theorem mapCoeffsRingHom_apply (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖)
+    (u : C₀(J, R) →L[R] C₀(J, R)) :
+    mapCoeffsRingHom f hf u = u.mapCoeffs f hf :=
+  (rfl)
+
 section Topology
 
 variable [TauCeti.NormedRing.IsTate S]
