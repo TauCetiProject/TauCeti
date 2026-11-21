@@ -83,8 +83,8 @@ private theorem exists_memLpLoc_inv_le_inv_sub [FiniteDimensional ℝ V]
   set r' : ℝ≥0∞ := (p⁻¹ + s⁻¹)⁻¹
   have hr'_inv : r'⁻¹ = p⁻¹ + s⁻¹ := inv_inv _
   have hr'1 : 1 < r' := ENNReal.one_lt_inv.2 ((add_le_add le_rfl hsq).trans_lt hpq)
-  have hw : MemWkpLoc r' Ω 1 ξ := (isWeakCRSolution_iff.2 ⟨hs, (isWeakCRSolution_iff.1 h).2⟩)
-    |>.memWkpLoc_one hc hp hJ2 hr'1 (ENNReal.inv_ne_top.2 (pos_of_gt hsr).ne') hr'_inv.ge
+  have hw : MemWkpLoc r' Ω 1 ξ := (h.of_memLpLoc hs).memWkpLoc_one hc hp hJ2 hr'1
+    (ENNReal.inv_ne_top.2 (pos_of_gt hsr).ne') hr'_inv.ge
       (hη.mono_exponent (ENNReal.inv_le_inv.1 (hr'_inv ▸ hsr.le)))
   by_cases h2r' : 2 < r'
   · -- Morrey: `ξ` is locally bounded.
@@ -126,8 +126,7 @@ theorem memWkpLoc_one_of_le [FiniteDimensional ℝ V] (h : IsWeakCRSolution q Ω
   have hd_top : d ≠ ⊤ := ENNReal.div_ne_top (by finiteness) two_ne_zero
   -- The last step: once `1/p + 1/s ≤ 1/r`, the order-zero lemma gives `W^{1,r}_loc`.
   have hlast : ∀ s : ℝ≥0∞, MemLpLoc s Ω ξ → p⁻¹ + s⁻¹ ≤ r⁻¹ → MemWkpLoc r Ω 1 ξ :=
-    fun s hs hsr => (isWeakCRSolution_iff.2 ⟨hs, (isWeakCRSolution_iff.1 h).2⟩).memWkpLoc_one
-      hc hp hJ2 hr hr_top hsr hη
+    fun s hs hsr => (h.of_memLpLoc hs).memWkpLoc_one hc hp hJ2 hr hr_top hsr hη
   -- After `n` more rungs the last step applies.
   suffices H : ∀ n : ℕ, ∀ s : ℝ≥0∞, s⁻¹ ≤ q⁻¹ → MemLpLoc s Ω ξ →
       s⁻¹ ≤ r⁻¹ - p⁻¹ + n * d → MemWkpLoc r Ω 1 ξ by

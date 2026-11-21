@@ -196,8 +196,8 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : 
   · rw [← ENNReal.coe_le_coe, ENNReal.coe_toNNReal hr_top]
     exact_mod_cast hr
   · have h := ENNReal.toReal_mono (by finiteness) (tsub_le_iff_right.1 hgap)
-    rw [ENNReal.toReal_add (by finiteness) (ENNReal.inv_ne_top.2 ht0), ENNReal.toReal_inv,
-      ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
+    simp only [ne_eq, ENNReal.inv_eq_top, ht0, not_false_eq_true, OfNat.ofNat_ne_zero,
+      ENNReal.toReal_add, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
     simp only [ENNReal.coe_toNNReal_eq_toReal]
     linarith
 
