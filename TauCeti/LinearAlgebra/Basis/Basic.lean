@@ -28,17 +28,18 @@ vectors indexed by `ι`.
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.iSup_span_singleton_eq_top`: the supremum of the spans of the basis vectors is
+  the whole module.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
-* `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
-  module, span `U`.
-* `Module.Basis.span_range_map_coe`, `Module.Basis.linearIndependent_map_coe_basis`: their images
-  under a linear map `f` span the image of `U`, and are linearly independent when `f` is injective
-  on `U`.
+* `Module.Basis.span_range_coe`, `Module.Basis.span_range_map_coe`,
+  `Module.Basis.linearIndependent_map_coe_basis`: the vectors of a basis of a submodule `U`, viewed
+  in the ambient module, span `U`, and their images under a linear map `f` span the image of `U`
+  and are linearly independent when `f` is injective on `U`.
 * `Module.Basis.range_eq_span_comp`: the range of a linear map is spanned by its values on a basis.
 * `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
@@ -78,6 +79,12 @@ theorem eq_smul_of_repr_support_subset_singleton (b : Module.Basis ι K V) {w : 
     _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
         congrArg _ (Finsupp.support_subset_singleton.1 h)
     _ = b.repr w i • b i := b.repr_symm_single i _
+
+/-- The supremum of the submodules spanned by the individual vectors of a basis is the whole
+module. -/
+theorem iSup_span_singleton_eq_top (b : Module.Basis ι K V) :
+    (⨆ i : ι, Submodule.span K {b i}) = ⊤ := by
+  rw [← Submodule.span_iUnion, Set.iUnion_singleton_eq_range, b.span_eq]
 
 /-- A linear map carrying one basis to another preserves the corresponding coordinates. -/
 theorem repr_map_eq_of_map_basis

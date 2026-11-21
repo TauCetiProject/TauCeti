@@ -435,6 +435,7 @@ section DirectSum
 variable {κ : Type*} {P : κ → Type*} [∀ j, AddCommGroup (P j)] [∀ j, Module K (P j)]
   [∀ j, Module (Enveloping R) (P j)] [∀ j, IsScalarTower K (Enveloping R) (P j)]
 
+@[simp]
 theorem mem_weightSpace_directSum_iff {μ : Dual K H} {v : ⨁ j, P j} :
     v ∈ weightSpace R (⨁ j, P j) μ ↔ ∀ j, v j ∈ weightSpace R (P j) μ := by
   simp only [mem_weightSpace_iff]

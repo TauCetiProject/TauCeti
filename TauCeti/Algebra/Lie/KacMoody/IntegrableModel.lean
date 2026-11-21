@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.KacMoody.Integrable
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Standard
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Concrete simple integrable Kac–Moody modules
@@ -17,14 +18,17 @@ for a realization `R` of an integral square matrix `A`:
 1. **One-dimensional modules (`TauCeti.KacMoody.OneDimModule`).** For an arbitrary index type `I`
    and any weight `lam : Dual K H` vanishing on all simple coroots (`∀ i, lam (R.coroot i) = 0`),
    `OneDimModule R lam hlam` realizes the one-dimensional simple `IsIntegrableO` module of weight
-   `lam` (covering `[IsEmpty I]` via `isEmptyElim`, trivial modules, and affine level-zero
-   modules).
+   `lam` (covering `[IsEmpty I]` via `isEmptyElim`, trivial modules, and one-dimensional affine
+   characters vanishing on all simple coroots, and hence having level zero). Its weight support is
+   identified by `OneDimModule.weightSpace_self` and `OneDimModule.weightSpace_eq_bot_of_ne`.
 2. **Rank-one standard modules (`TauCeti.KacMoody.RankOneModule`).** For rank one (`[Unique I]`,
    `A default default = 2`), `RankOneModule R hA lam n hlam` equips `TauCeti.Sl2Std K n` over a
    field of characteristic zero (`[CharZero K]`) with an `Enveloping R`-action for any realization
    `H` and any weight `lam` with `lam (R.coroot default) = n`, giving an `(n + 1)`-dimensional
-   simple `IsIntegrableO` module on which `simpleWeylIntertwiner` agrees with
-   `TauCeti.Sl2Std.weylUnit` and squares to `(-1) ^ n`.
+   simple `IsIntegrableO` module whose full weight support is determined by
+   `RankOneModule.weightSpace_sub_nsmul_root` and `RankOneModule.weightSpace_eq_bot_of_forall_ne`,
+   and on which `simpleWeylIntertwiner` agrees with `TauCeti.Sl2Std.weylUnit` and squares to
+   `(-1) ^ n`.
 
 ## Main definitions
 
@@ -38,13 +42,20 @@ for a realization `R` of an integral square matrix `A`:
 
 ## Main results
 
-* `TauCeti.KacMoody.OneDimModule.isSimpleModule`, `TauCeti.KacMoody.OneDimModule.isIntegrableO`:
-  simplicity and integrability in category `O` for `OneDimModule`.
+* `TauCeti.KacMoody.OneDimModule.isSimpleModule`, `TauCeti.KacMoody.OneDimModule.isIntegrableO`,
+  `TauCeti.KacMoody.OneDimModule.weightSpace_self`, and
+  `TauCeti.KacMoody.OneDimModule.weightSpace_eq_bot_of_ne`: simplicity, integrability in category
+  `O`, and full weight-support characterization for `OneDimModule`.
 * `TauCeti.KacMoody.RankOneModule.isSimpleModule`, `TauCeti.KacMoody.RankOneModule.isIntegrableO`,
+  `TauCeti.KacMoody.RankOneModule.weightSpace_sub_nsmul_root`,
+  `TauCeti.KacMoody.RankOneModule.weightSpace_eq_bot_of_forall_ne`,
+  `TauCeti.KacMoody.RankOneModule.isNilpotent_positiveAction`,
+  `TauCeti.KacMoody.RankOneModule.isNilpotent_negativeAction`,
   `TauCeti.KacMoody.RankOneModule.equiv_simpleWeylIntertwiner_apply`,
   `TauCeti.KacMoody.RankOneModule.simpleWeylIntertwiner_basis`, and
   `TauCeti.KacMoody.RankOneModule.simpleWeylIntertwiner_simpleWeylIntertwiner_apply`: simplicity,
-  integrability, and the Weyl square `(-1) ^ n` on the rank-one models.
+  integrability, full weight-support characterization, nilpotence of the Chevalley actions, and
+  the Weyl square `(-1) ^ n` on the rank-one models.
 
 ## References
 
@@ -64,19 +75,13 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
 
-private theorem root_coroot_eq_two_model {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
-    {i : I} (hA : A i i = 2) : R.root i (R.coroot i) = 2 := by
-  have hp := R.root_coroot i i
-  rw [Matrix.map_apply, hA, Int.cast_two] at hp
-  exact hp
-
 section OneDimModule
 
 /-- **The one-dimensional module `K_λ`** for any weight `lam : Dual K H` vanishing on all simple
-coroots (`∀ i : I, lam (R.coroot i) = 0`). It is an exposed type synonym for `K` on which
-`cartanElement R x` acts by `lam x` and every Chevalley generator `eᵢ`, `fᵢ` acts by `0`. When
-`I` is empty, the coroot-vanishing condition holds vacuously via `isEmptyElim`. -/
-@[expose] def OneDimModule (_R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
+coroots (`∀ i : I, lam (R.coroot i) = 0`). On it, `cartanElement R x` acts by `lam x` and every
+Chevalley generator `eᵢ`, `fᵢ` acts by `0`. When `I` is empty, the coroot-vanishing condition holds
+vacuously via `isEmptyElim`. -/
+def OneDimModule (_R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
     (_lam : Dual K H) (_hlam : ∀ i : I, _lam (_R.coroot i) = 0) : Type _ := K
 
 namespace OneDimModule
@@ -84,26 +89,20 @@ namespace OneDimModule
 variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) (lam : Dual K H)
   (hlam : ∀ i : I, lam (R.coroot i) = 0)
 
-instance : AddCommGroup (OneDimModule R lam hlam) := inferInstanceAs (AddCommGroup K)
-instance : Module K (OneDimModule R lam hlam) := inferInstanceAs (Module K K)
+noncomputable instance : AddCommGroup (OneDimModule R lam hlam) := inferInstanceAs (AddCommGroup K)
+noncomputable instance : Module K (OneDimModule R lam hlam) := inferInstanceAs (Module K K)
 instance : FiniteDimensional K (OneDimModule R lam hlam) :=
   inferInstanceAs (FiniteDimensional K K)
 instance : Nontrivial (OneDimModule R lam hlam) := inferInstanceAs (Nontrivial K)
 
-/-- The identity `K`-linear equivalence `OneDimModule R lam hlam ≃ₗ[K] K`. -/
-def equiv : OneDimModule R lam hlam ≃ₗ[K] K := LinearEquiv.refl K K
-
-@[simp]
-theorem equiv_apply (v : OneDimModule R lam hlam) : equiv R lam hlam v = v := (rfl)
-
-@[simp]
-theorem equiv_symm_apply (c : K) : (equiv R lam hlam).symm c = c := (rfl)
+/-- The canonical `K`-linear equivalence `OneDimModule R lam hlam ≃ₗ[K] K`. -/
+noncomputable def equiv : OneDimModule R lam hlam ≃ₗ[K] K := LinearEquiv.refl K K
 
 @[simp]
 theorem finrank_eq_one : Module.finrank K (OneDimModule R lam hlam) = 1 :=
   Module.finrank_self K
 
-private def cartanHom : H →ₗ[K] Module.End K (OneDimModule R lam hlam) :=
+private noncomputable def cartanHom : H →ₗ[K] Module.End K (OneDimModule R lam hlam) :=
   lam.smulRight 1
 
 private theorem satisfiesRelations :
@@ -139,24 +138,51 @@ instance : IsScalarTower K (Enveloping R) (OneDimModule R lam hlam) where
   smul_assoc c u v := by
     rw [smul_def, smul_def, AlgHom.map_smul_of_tower, LinearMap.smul_apply]
 
+/-- On `OneDimModule R lam hlam`, `cartanAction` acts by scalar multiplication by `lam x`. -/
 @[simp]
 theorem cartanAction_apply_eq (x : H) (v : OneDimModule R lam hlam) :
     cartanAction R (OneDimModule R lam hlam) x v = lam x • v := by
   rw [cartanAction_apply, smul_def]
   simp [rep, cartanHom]
 
+/-- On `OneDimModule R lam hlam`, `positiveAction` acts by `0`. -/
 @[simp]
 theorem positiveAction_apply_eq (i : I) (v : OneDimModule R lam hlam) :
     positiveAction R (OneDimModule R lam hlam) i v = 0 := by
   rw [positiveAction_apply, smul_def]
   simp [rep]
 
+/-- On `OneDimModule R lam hlam`, `negativeAction` acts by `0`. -/
 @[simp]
 theorem negativeAction_apply_eq (i : I) (v : OneDimModule R lam hlam) :
     negativeAction R (OneDimModule R lam hlam) i v = 0 := by
   rw [negativeAction_apply, smul_def]
   simp [rep]
 
+/-- Transporting `cartanAction` on `OneDimModule R lam hlam` along `equiv` multiplies by `lam x`. -/
+theorem equiv_cartanAction_apply (x : H) (v : OneDimModule R lam hlam) :
+    equiv R lam hlam (cartanAction R (OneDimModule R lam hlam) x v) =
+      lam x * equiv R lam hlam v := by
+  rw [cartanAction_apply_eq, map_smul, smul_eq_mul]
+
+/-- Transporting `positiveAction` on `OneDimModule R lam hlam` along `equiv` gives `0`. -/
+theorem equiv_positiveAction_apply (i : I) (v : OneDimModule R lam hlam) :
+    equiv R lam hlam (positiveAction R (OneDimModule R lam hlam) i v) = 0 := by
+  rw [positiveAction_apply_eq, map_zero]
+
+/-- Transporting `negativeAction` on `OneDimModule R lam hlam` along `equiv` gives `0`. -/
+theorem equiv_negativeAction_apply (i : I) (v : OneDimModule R lam hlam) :
+    equiv R lam hlam (negativeAction R (OneDimModule R lam hlam) i v) = 0 := by
+  rw [negativeAction_apply_eq, map_zero]
+
+/-- Transporting a scalar `c : K` into `OneDimModule R lam hlam` via `equiv.symm` interacts with
+`cartanAction` by multiplication by `lam x`. -/
+theorem cartanAction_equiv_symm (x : H) (c : K) :
+    cartanAction R (OneDimModule R lam hlam) x ((equiv R lam hlam).symm c) =
+      (equiv R lam hlam).symm (lam x * c) := by
+  rw [cartanAction_apply_eq, ← map_smul, smul_eq_mul]
+
+/-- The `lam`-weight space of `OneDimModule R lam hlam` is the whole module `⊤`. -/
 @[simp]
 theorem weightSpace_self : weightSpace R (OneDimModule R lam hlam) lam = ⊤ := by
   rw [eq_top_iff]
@@ -164,6 +190,7 @@ theorem weightSpace_self : weightSpace R (OneDimModule R lam hlam) lam = ⊤ := 
   rw [mem_weightSpace_iff]
   exact fun x ↦ cartanAction_apply_eq R lam hlam x v
 
+/-- Every weight space of `OneDimModule R lam hlam` at a weight `μ ≠ lam` is trivial (`⊥`). -/
 theorem weightSpace_eq_bot_of_ne {μ : Dual K H} (hμ : μ ≠ lam) :
     weightSpace R (OneDimModule R lam hlam) μ = ⊥ :=
   weightSpace_eq_bot_of_iSup_eq_top R (OneDimModule R lam hlam)
@@ -206,7 +233,7 @@ field of characteristic zero (`[CharZero K]`), it equips `TauCeti.Sl2Std K n` wi
 `Enveloping R` for an arbitrary realization `H` of `A` (including realizations with central or
 scaling directions), extending `Sl2Std.diag K n` from `R.coroot default` to all of `H` via `lam`,
 yielding a simple module in `IsIntegrableO R`. -/
-@[expose] def RankOneModule (_R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
+def RankOneModule (_R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
     (_hA : A default default = 2) (_lam : Dual K H) (n : ℕ)
     (_hlam : _lam (_R.coroot default) = n) : Type _ :=
   Sl2Std K n
@@ -216,13 +243,13 @@ namespace RankOneModule
 variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) (hA : A default default = 2)
   (lam : Dual K H) (n : ℕ) (hlam : lam (R.coroot default) = n)
 
-instance : AddCommGroup (RankOneModule R hA lam n hlam) :=
+noncomputable instance : AddCommGroup (RankOneModule R hA lam n hlam) :=
   inferInstanceAs (AddCommGroup (Sl2Std K n))
 
-instance : Module K (RankOneModule R hA lam n hlam) :=
+noncomputable instance : Module K (RankOneModule R hA lam n hlam) :=
   inferInstanceAs (Module K (Sl2Std K n))
 
-instance [CharZero K] : Module ℚ (RankOneModule R hA lam n hlam) :=
+noncomputable instance [CharZero K] : Module ℚ (RankOneModule R hA lam n hlam) :=
   inferInstanceAs (Module ℚ (Sl2Std K n))
 
 instance : FiniteDimensional K (RankOneModule R hA lam n hlam) :=
@@ -231,8 +258,8 @@ instance : FiniteDimensional K (RankOneModule R hA lam n hlam) :=
 instance : Nontrivial (RankOneModule R hA lam n hlam) :=
   inferInstanceAs (Nontrivial (Sl2Std K n))
 
-/-- The identity `K`-linear equivalence `RankOneModule R hA lam n hlam ≃ₗ[K] Sl2Std K n`. -/
-def equiv : RankOneModule R hA lam n hlam ≃ₗ[K] Sl2Std K n :=
+/-- The canonical `K`-linear equivalence `RankOneModule R hA lam n hlam ≃ₗ[K] Sl2Std K n`. -/
+noncomputable def equiv : RankOneModule R hA lam n hlam ≃ₗ[K] Sl2Std K n :=
   LinearEquiv.refl K (Sl2Std K n)
 
 /-- The coordinate basis of `RankOneModule R hA lam n hlam` transported from `Sl2Std.basis K n`. -/
@@ -259,7 +286,7 @@ private noncomputable def sl2CartanHom : H →ₗ[K] Module.End K (Sl2Std K n) :
 private theorem sl2CartanHom_coroot (hA : A default default = 2) :
     sl2CartanHom R lam n (R.coroot default) =
       ((lam (R.coroot default) - (n : K)) • (1 : Module.End K (Sl2Std K n))) + Sl2Std.diag K n := by
-  have hrc : R.root default (R.coroot default) = 2 := root_coroot_eq_two_model (R := R) hA
+  have hrc : R.root default (R.coroot default) = 2 := R.root_coroot_eq_two hA
   simp only [sl2CartanHom, LinearMap.add_apply, LinearMap.smulRight_apply, LinearMap.sub_apply,
     LinearMap.smul_apply, hrc, smul_eq_mul]
   rw [mul_assoc (n : K) 2⁻¹ 2, inv_mul_cancel₀ two_ne_zero, mul_one, one_smul]
@@ -332,6 +359,16 @@ theorem negativeAction_eq (i : I) :
   rw [negativeAction_apply, smul_def]
   simp [rep, sl2Rep]
 
+/-- `positiveAction R (RankOneModule R hA lam n hlam) i` is nilpotent. -/
+theorem isNilpotent_positiveAction (i : I) :
+    IsNilpotent (positiveAction R (RankOneModule R hA lam n hlam) i) :=
+  ⟨n + 1, by rw [positiveAction_eq, ← map_pow, Sl2Std.raise_pow_eq_zero, map_zero]⟩
+
+/-- `negativeAction R (RankOneModule R hA lam n hlam) i` is nilpotent. -/
+theorem isNilpotent_negativeAction (i : I) :
+    IsNilpotent (negativeAction R (RankOneModule R hA lam n hlam) i) :=
+  ⟨n + 1, by rw [negativeAction_eq, ← map_pow, Sl2Std.lower_pow_eq_zero, map_zero]⟩
+
 /-- The Cartan action of an arbitrary `x : H` on `RankOneModule R hA lam n hlam`. -/
 theorem cartanAction_eq (x : H) :
     cartanAction R (RankOneModule R hA lam n hlam) x =
@@ -347,7 +384,7 @@ theorem cartanAction_coroot (i : I) :
       (equiv R hA lam n hlam).symm.conjAlgEquiv K (Sl2Std.diag K n) := by
   rw [Unique.eq_default i, cartanAction_eq]
   congr 1
-  have hrc := root_coroot_eq_two_model (R := R) hA
+  have hrc := R.root_coroot_eq_two hA
   rw [hrc, hlam, mul_assoc (n : K) 2⁻¹ 2, inv_mul_cancel₀ two_ne_zero, mul_one, sub_self,
     zero_smul, zero_add, one_smul]
 
@@ -393,11 +430,6 @@ theorem basis_mem_weightSpace (i : I) (k : Fin (n + 1)) :
   have h2 : (2⁻¹ : K) * 2 = 1 := inv_mul_cancel₀ two_ne_zero
   linear_combination ((n : K) * R.root default x - 2 * (k : K) * R.root default x) * h2
 
-omit [CharZero K] in
-private theorem iSup_span_basis_eq_top :
-    (⨆ k : Fin (n + 1), K ∙ basis R hA lam n hlam k) = ⊤ := by
-  rw [← Submodule.span_iUnion, Set.iUnion_singleton_eq_range, (basis R hA lam n hlam).span_eq]
-
 include hA in
 private theorem sub_nsmul_root_injective (i : I) :
     Function.Injective (fun k : Fin (n + 1) ↦ lam - (k : ℕ) • R.root i) := by
@@ -405,7 +437,7 @@ private theorem sub_nsmul_root_injective (i : I) :
   intro k₁ k₂ hk
   have hsub : (k₁ : ℕ) • R.root default = (k₂ : ℕ) • R.root default := sub_right_inj.mp hk
   have hev := congrArg (fun φ : Dual K H ↦ φ (R.coroot default)) hsub
-  simp only [LinearMap.smul_apply, root_coroot_eq_two_model (R := R) hA, nsmul_eq_mul] at hev
+  simp only [LinearMap.smul_apply, R.root_coroot_eq_two hA, nsmul_eq_mul] at hev
   exact Fin.ext (Nat.cast_injective (mul_right_cancel₀ (two_ne_zero (α := K)) hev))
 
 /-- Each weight space `lam - k • αᵢ` of `RankOneModule` is the line spanned by `basis k`. -/
@@ -417,7 +449,7 @@ theorem weightSpace_sub_nsmul_root (i : I) (k : Fin (n + 1)) :
     (w := fun j : Fin (n + 1) ↦ lam - (j : ℕ) • R.root i)
     (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr
       (basis_mem_weightSpace R hA lam n hlam i j))
-    (iSup_span_basis_eq_top R hA lam n hlam) (sub_nsmul_root_injective R hA lam n i) k
+    (basis R hA lam n hlam).iSup_span_singleton_eq_top (sub_nsmul_root_injective R hA lam n i) k
 
 /-- Every weight space `lam - k • αᵢ` of `RankOneModule` is one-dimensional. -/
 @[simp]
@@ -427,6 +459,8 @@ theorem finrank_weightSpace_sub_nsmul_root (i : I) (k : Fin (n + 1)) :
   rw [weightSpace_sub_nsmul_root]
   exact finrank_span_singleton ((basis R hA lam n hlam).ne_zero k)
 
+/-- Every weight space of `RankOneModule` at a weight not of the form `lam - k • αᵢ`
+(`k : Fin (n + 1)`) is trivial (`⊥`). -/
 theorem weightSpace_eq_bot_of_forall_ne {i : I} {μ : Dual K H}
     (hμ : ∀ k : Fin (n + 1), μ ≠ lam - (k : ℕ) • R.root i) :
     weightSpace R (RankOneModule R hA lam n hlam) μ = ⊥ :=
@@ -435,7 +469,7 @@ theorem weightSpace_eq_bot_of_forall_ne {i : I} {μ : Dual K H}
     (w := fun j : Fin (n + 1) ↦ lam - (j : ℕ) • R.root i)
     (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr
       (basis_mem_weightSpace R hA lam n hlam i j))
-    (iSup_span_basis_eq_top R hA lam n hlam) fun ⟨k, hk⟩ ↦ hμ k hk.symm
+    (basis R hA lam n hlam).iSup_span_singleton_eq_top fun ⟨k, hk⟩ ↦ hμ k hk.symm
 
 /-- **`RankOneModule R hA lam n hlam` is a simple `Enveloping R`-module.** -/
 instance isSimpleModule :
@@ -476,10 +510,10 @@ theorem isIntegrableO : IsIntegrableO R (RankOneModule R hA lam n hlam) where
     refine hμ (weightSpace_eq_bot_of_forall_ne R hA lam n hlam (i := default) fun k hk ↦ hle ?_)
     rw [hk, CartanRealization.rootLE_iff, sub_sub_cancel]
     exact nsmul_mem (R.root_mem_posRootCone default) k⟩⟩
-  locallyNilpotent_positiveAction i v := ⟨n + 1, by
-    rw [positiveAction_eq, ← map_pow, Sl2Std.raise_pow_eq_zero, map_zero, LinearMap.zero_apply]⟩
-  locallyNilpotent_negativeAction i v := ⟨n + 1, by
-    rw [negativeAction_eq, ← map_pow, Sl2Std.lower_pow_eq_zero, map_zero, LinearMap.zero_apply]⟩
+  locallyNilpotent_positiveAction i :=
+    (isNilpotent_positiveAction R hA lam n hlam i).exists_pow_apply_eq_zero
+  locallyNilpotent_negativeAction i :=
+    (isNilpotent_negativeAction R hA lam n hlam i).exists_pow_apply_eq_zero
 
 /-- On `RankOneModule R hA lam n hlam`, `simpleWeylIntertwiner` corresponds under `equiv` to
 `TauCeti.Sl2Std.weylUnit K n`. -/
@@ -493,24 +527,18 @@ theorem equiv_simpleWeylIntertwiner_apply {i : I}
     equiv R hA lam n hlam (simpleWeylIntertwiner he hf v) =
       (Sl2Std.weylUnit K n : Module.End K (Sl2Std K n)) (equiv R hA lam n hlam v) := by
   let φ := (equiv R hA lam n hlam).symm.conjAlgEquiv K
-  have hpos_nil : IsNilpotent (positiveAction R (RankOneModule R hA lam n hlam) i) :=
-    ⟨n + 1, by rw [positiveAction_eq, ← map_pow, Sl2Std.raise_pow_eq_zero, map_zero]⟩
-  have hneg_nil : IsNilpotent (-negativeAction R (RankOneModule R hA lam n hlam) i) :=
-    ⟨n + 1, by
-      rw [negativeAction_eq, ← map_neg, ← map_pow, neg_pow, Sl2Std.lower_pow_eq_zero, mul_zero,
-        map_zero]⟩
   have hep : (Module.End.locallyNilpotentExp
       (positiveAction R (RankOneModule R hA lam n hlam) i) he).toLinearMap =
       φ (IsNilpotent.exp (Sl2Std.raise K n)) := by
-    rw [Module.End.locallyNilpotentExp_eq_exp _ hpos_nil, positiveAction_eq,
-      IsNilpotent.map_exp Sl2Std.isNilpotent_raise φ]
+    rw [Module.End.locallyNilpotentExp_eq_exp _ (isNilpotent_positiveAction R hA lam n hlam i),
+      positiveAction_eq, IsNilpotent.map_exp Sl2Std.isNilpotent_raise φ]
   have hfn : (Module.End.locallyNilpotentExp
       (-negativeAction R (RankOneModule R hA lam n hlam) i)
       (fun x ↦ by
         simpa [Module.End.neg_pow_apply_eq_zero_iff] using hf x)).toLinearMap =
       φ (IsNilpotent.exp (-(Sl2Std.lower K n))) := by
-    rw [Module.End.locallyNilpotentExp_eq_exp _ hneg_nil, negativeAction_eq, ← map_neg,
-      IsNilpotent.map_exp Sl2Std.isNilpotent_lower.neg φ]
+    rw [Module.End.locallyNilpotentExp_eq_exp _ (isNilpotent_negativeAction R hA lam n hlam i).neg,
+      negativeAction_eq, ← map_neg, IsNilpotent.map_exp Sl2Std.isNilpotent_lower.neg φ]
   have hweyl : (simpleWeylIntertwiner he hf).toLinearMap =
       φ (Sl2Std.weylUnit K n : Module.End K (Sl2Std K n)) := by
     ext x

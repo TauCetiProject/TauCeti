@@ -346,9 +346,11 @@ end DomainScalars
 
 /-! ### Invariant submodules of a sum of joint eigenspaces
 
-Over any field, with no commutation, semisimplicity, finite-dimensionality or algebraic-closedness
-hypothesis: descending the family to the quotient `V ⧸ p` turns the congruence into a vanishing sum
-of joint eigenvectors, to which joint-eigenspace independence applies directly.
+Over any field, with no commutation, semisimplicity, finite-dimensionality, or algebraic-closedness
+hypothesis, membership of a finite sum of distinct joint-weight components in an invariant subspace
+forces membership of each component, even if the joint eigenspaces do not span the ambient space.
+Consequently, the intersection of an invariant subspace with the sum of all joint eigenspaces is
+spanned by its intersections with the individual joint eigenspaces.
 -/
 
 section InvariantSubmodule

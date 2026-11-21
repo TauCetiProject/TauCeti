@@ -279,30 +279,15 @@ theorem exists_maximal_of_rootLE_finset {Q : Dual K H → Prop} {S : Finset (Dua
     have hb : bound lam = (h₀.trans hνlam).height := dite_eq_left (h₀.trans hνlam)
     have hht := h₀.height_trans hνlam
     omega
-  suffices ∀ d ν, Q ν → ∀ (h₀ : R.RootLE μ₀ ν), B - h₀.height ≤ d →
-      ∃ μ, Q μ ∧ R.RootLE ν μ ∧ ∀ ν', Q ν' → R.RootLE μ ν' → ν' = μ from
-    this B μ₀ hμ₀ (rootLE_refl μ₀) (Nat.sub_le _ _)
-  intro d
-  induction d with
-  | zero =>
-    intro ν hQ h₀ hd
-    refine ⟨ν, hQ, rootLE_refl ν, fun ν' hQ' hν' ↦ ?_⟩
-    by_contra hne
-    have := hν'.height_pos_of_ne (Ne.symm hne)
-    have := h₀.height_trans hν'
-    have := hle_B ν' hQ' (h₀.trans hν')
-    omega
-  | succ d ih =>
-    intro ν hQ h₀ hd
-    by_cases hmax : ∀ ν', Q ν' → R.RootLE ν ν' → ν' = ν
-    · exact ⟨ν, hQ, rootLE_refl ν, hmax⟩
-    · push Not at hmax
-      obtain ⟨ν₁, hQ₁, h₁, hne⟩ := hmax
-      have := h₁.height_pos_of_ne (Ne.symm hne)
-      have := h₀.height_trans h₁
-      have := hle_B ν₁ hQ₁ (h₀.trans h₁)
-      obtain ⟨μ, hQμ, h₁μ, hμmax⟩ := ih ν₁ hQ₁ (h₀.trans h₁) (by omega)
-      exact ⟨μ, hQμ, h₁.trans h₁μ, hμmax⟩
+  let P : ℕ → Prop := fun k ↦ ∃ μ, Q μ ∧ ∃ h₀ : R.RootLE μ₀ μ, h₀.height = k
+  have hP0 : P 0 := ⟨μ₀, hμ₀, rootLE_refl μ₀, RootLE.height_refl μ₀⟩
+  obtain ⟨μ, hQμ, h₀μ, hk⟩ := Nat.findGreatest_spec (P := P) (Nat.zero_le B) hP0
+  refine ⟨μ, hQμ, h₀μ, fun ν hQν hν ↦ ?_⟩
+  by_contra hne
+  have hpos := hν.height_pos_of_ne (Ne.symm hne)
+  have htrans := h₀μ.height_trans hν
+  have hle := Nat.le_findGreatest (P := P) (hle_B ν hQν (h₀μ.trans hν)) ⟨ν, hQν, h₀μ.trans hν, rfl⟩
+  omega
 
 end RootLEHeight
 
