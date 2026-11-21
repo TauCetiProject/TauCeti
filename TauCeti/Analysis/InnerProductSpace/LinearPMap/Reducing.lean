@@ -72,7 +72,7 @@ theorem IsFormalAdjoint.restrict {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E}
     (hA : A.IsFormalAdjoint A) (hU : A.IsInvariant U) :
     (A.restrict hU.apply_mem).IsFormalAdjoint (A.restrict hU.apply_mem) := fun x y ↦ by
   simp only [Submodule.coe_inner, coe_restrict_apply]
-  exact hA ⟨x, (mem_restrict_domain _).1 x.2⟩ ⟨y, (mem_restrict_domain _).1 y.2⟩
+  exact hA ⟨x, (mem_restrict_domain _).1 x.property⟩ ⟨y, (mem_restrict_domain _).1 y.property⟩
 
 variable {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
 
@@ -107,8 +107,8 @@ theorem isReducing_iff_starProjection_mem_graph :
   refine ⟨fun hR x y hxy ↦ ?_, fun h ↦
     ⟨fun {x} hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_⟩⟩
   · obtain ⟨z, rfl, rfl⟩ := A.mem_graph_iff.1 hxy
-    let p : A.domain := ⟨_, hR.starProjection_mem_domain z.2⟩
-    let q : A.domain := ⟨_, hR.sub_starProjection_mem_domain z.2⟩
+    let p : A.domain := ⟨_, hR.starProjection_mem_domain z.property⟩
+    let q : A.domain := ⟨_, hR.sub_starProjection_mem_domain z.property⟩
     have hsplit : A z = A p + A q := by
       rw [← map_add]
       congr 1
@@ -154,17 +154,17 @@ private theorem IsReducing.coe_mem_adjoint_domain [CompleteSpace E] {U : Submodu
     (hy : y ∈ (A.restrict hR.isInvariant.apply_mem)†.domain) : (y : E) ∈ A†.domain := by
   set z : U := (A.restrict hR.isInvariant.apply_mem)† ⟨y, hy⟩
   refine mem_adjoint_domain_of_exists _ ⟨z, fun x ↦ ?_⟩
-  have hp := hR.starProjection_mem_domain x.2
-  have hq := hR.sub_starProjection_mem_domain x.2
+  have hp := hR.starProjection_mem_domain x.property
+  have hq := hR.sub_starProjection_mem_domain x.property
   have hsplit : A x = A ⟨_, hp⟩ + A ⟨_, hq⟩ := by
     rw [← map_add]
     congr 1
     exact Subtype.ext (add_sub_cancel _ _).symm
   have hzx : ⟪(z : E), (x : E)⟫_𝕜 = ⟪(z : E), U.starProjection x⟫_𝕜 := by
     rw [← Submodule.inner_starProjection_left_eq_right,
-      Submodule.starProjection_eq_self_iff.mpr z.2]
+      Submodule.starProjection_eq_self_iff.mpr z.property]
   have hy0 : ⟪(y : E), A ⟨_, hq⟩⟫_𝕜 = 0 :=
-    Submodule.inner_right_of_mem_orthogonal y.2
+    Submodule.inner_right_of_mem_orthogonal y.property
       (hR.isInvariant_orthogonal.apply_mem _ (U.sub_starProjection_mem_orthogonal x))
   have hz := adjoint_isFormalAdjoint (hR.dense_restrict_domain hA) ⟨y, hy⟩
     ⟨⟨_, U.starProjection_apply_mem x⟩, (mem_restrict_domain _).2 hp⟩

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # Basic API for the complex unit disc
@@ -24,8 +25,8 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff. A point outside a
   set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
   (`Complex.UnitDisc.exists_pos_forall_notMem_ball`).
-* The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space,
-  homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
+* The closed unit disc `Complex.UnitClosedDisc` is a compact, contractible, second countable
+  Hausdorff space, homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
   (`Complex.UnitClosedDisc.homeomorphClosedBall`).
 * Transport between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it:
   such a representative maps `Metric.ball 0 1` into itself
@@ -129,6 +130,11 @@ instance instSecondCountableTopology : SecondCountableTopology 𝕔𝔻 :=
 /-- The closed unit disc is compact. -/
 instance instCompactSpace : CompactSpace 𝕔𝔻 :=
   inferInstanceAs <| CompactSpace (closedBall (0 : ℂ) 1)
+
+/-- The closed unit disc is contractible, being a closed ball. -/
+instance instContractibleSpace : ContractibleSpace 𝕔𝔻 :=
+  have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
+  homeomorphClosedBall.contractibleSpace
 
 end Complex.UnitClosedDisc
 

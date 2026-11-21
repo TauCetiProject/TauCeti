@@ -80,7 +80,7 @@ theorem map_center_le_comap_center (f : R →+* S) :
   · rw [Matrix.SpecialLinearGroup.map_apply_coe, ← hrg]
     ext i j
     by_cases hij : i = j <;>
-      simp [RingHom.mapMatrix_apply, Matrix.scalar_apply, hij]
+      simp [Matrix.scalar_apply, hij]
 
 /-- Extension of scalars on projective special linear groups. -/
 noncomputable def projectiveMap (f : R →+* S) :

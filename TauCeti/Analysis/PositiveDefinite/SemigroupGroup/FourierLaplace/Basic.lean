@@ -75,9 +75,10 @@ theorem laplaceAtom_add (p t u : ℝ≥0) :
 /-- The time kernel supplied by a Laplace atom is positive definite. -/
 theorem posSemidef_laplaceAtom (p : ℝ≥0) :
     Matrix.PosSemidef fun t u : ℝ≥0 => laplaceAtom p (t + u) := by
-  simp_rw [laplaceAtom_add]
-  simpa only [RCLike.star_def] using
-    posSemidef_rankOne (fun t : ℝ≥0 => laplaceAtom p t)
+  refine (congrArg Matrix.PosSemidef ?_).mp
+    (Matrix.posSemidef_vecMulVec_star_self fun t : ℝ≥0 => laplaceAtom p t)
+  ext t u
+  rw [Matrix.vecMulVec_apply, Pi.star_apply, RCLike.star_def, ← laplaceAtom_add]
 
 /-- Laplace atoms are continuous in the nonnegative time variable. -/
 theorem continuous_laplaceAtom (p : ℝ≥0) : Continuous (laplaceAtom p) := by

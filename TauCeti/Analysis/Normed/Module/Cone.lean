@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Rapid decay in conic neighbourhoods
@@ -30,22 +31,30 @@ variables: if `g` decays rapidly on a cone around `a ζ₀ ≠ 0`, then `g (a ζ
 on the cone of those `ζ` with `a ζ` in that cone and `‖b ζ‖ < c ‖a ζ‖`. This is how the localized
 Fourier transform of a tensor product inherits the decay of one of its factors.
 
-In a proper space, if every unit vector lies in an open cone, finitely many of these cones cover
-the nonzero vectors, by compactness of the unit sphere. This is how conditions imposed direction by
-direction combine into one condition on the whole frequency space.
+In a proper space, if every unit vector of a closed cone lies in an open cone, finitely many of
+these cones cover the nonzero vectors of the closed cone, by compactness of the unit sphere. This
+is how conditions imposed direction by direction combine into one condition on a whole closed
+cone of frequencies.
 
 ## Main results
 
+* `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_apply_sub_le`: the pointwise bound behind it, and
+  behind its integral form: for `η ∈ Γ'` and every shift `θ`,
+  `(1 + ‖η‖) ^ N (1 + ‖η - θ‖) ^ M ‖F (η - θ)‖` is at most a constant times a power of `1 + ‖θ‖`.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
-* `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
-  cone, finitely many of these cones cover the nonzero vectors.
+* `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
+  lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
+  `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
+* `TauCeti.exists_forall_le_of_diff_singleton_subset_biUnion`: bounds on finitely many sets
+  covering the nonzero elements of `V` combine into one bound on `V`.
 
 ## References
 
@@ -61,6 +70,19 @@ namespace IsOpen
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- The cone over an open set: if `V` is open and contains `ξ`, there is an open set `Γ`
+containing `ξ` and closed under multiplication by positive reals, every element of which is
+rescaled by some `t > 0` into `V`. -/
+theorem exists_cone_exists_smul_mem {V : Set E} (hV : IsOpen V) {ξ : E} (hξ : ξ ∈ V) :
+    ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ η ∈ Γ, ∃ t : ℝ, 0 < t ∧ t • η ∈ V := by
+  set Γ : Set E := ⋃ t ∈ Ioi (0 : ℝ), (t • ·) ⁻¹' V
+  have hmem {η : E} : η ∈ Γ ↔ ∃ t : ℝ, 0 < t ∧ t • η ∈ V := by simp [Γ]
+  refine ⟨Γ, isOpen_biUnion fun t _ ↦ hV.preimage (continuous_const_smul t),
+    hmem.2 ⟨1, one_pos, by simpa using hξ⟩, fun s hs η hη ↦ ?_, fun η ↦ hmem.1⟩
+  obtain ⟨t, ht, htη⟩ := hmem.1 hη
+  exact hmem.2 ⟨t / s, div_pos ht hs, by rwa [smul_smul, div_mul_cancel₀ _ hs.ne']⟩
+
 /-- An open set `Γ` closed under multiplication by positive reals contains, around each of its
 points `ξ`, a smaller open set `Γ'` closed under multiplication by positive reals such that, for
 some `c > 0`, the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in `Γ`. -/
@@ -70,43 +92,94 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
       ∃ c > 0, ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ := by
   obtain ⟨r, hr, hball⟩ := isOpen_iff.1 hΓ ξ hξ
   -- `Γ'` is the cone over the ball of radius `r / 2` about `ξ`.
-  set Γ' : Set E := ⋃ t ∈ Ioi (0 : ℝ), (t • ·) ⁻¹' ball ξ (r / 2)
-  have hmem {η : E} : η ∈ Γ' ↔ ∃ t : ℝ, 0 < t ∧ dist (t • η) ξ < r / 2 := by
-    simp [Γ']
-  refine ⟨Γ', isOpen_biUnion fun t _ ↦ isOpen_ball.preimage (continuous_const_smul t),
-    hmem.2 ⟨1, one_pos, by simpa using half_pos hr⟩, fun s hs η hη ↦ ?_,
-    r / (2 * ‖ξ‖ + r), by positivity, fun η hη ζ hζ ↦ ?_⟩
-  · obtain ⟨t, ht, htη⟩ := hmem.1 hη
-    exact hmem.2 ⟨t / s, div_pos ht hs, by rwa [smul_smul, div_mul_cancel₀ _ hs.ne']⟩
-  · obtain ⟨t, ht, htη⟩ := hmem.1 hη
-    -- Rescaled by `t`, the point `ζ` is within `r` of `ξ`, since `t ‖η‖ < ‖ξ‖ + r / 2`.
-    have hnorm : t * ‖η‖ < ‖ξ‖ + r / 2 := by
-      have h := norm_le_norm_add_norm_sub' (t • η) ξ
-      rw [norm_smul, Real.norm_of_nonneg ht.le, ← dist_eq_norm] at h
-      linarith
-    have hζη : t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := by
-      rw [mem_closedBall] at hζ
-      nlinarith
-    have hr' : r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) = r / 2 := by
-      field_simp
-    have htζ : t • ζ ∈ Γ := by
-      refine hball (mem_ball.2 ?_)
-      calc dist (t • ζ) ξ ≤ dist (t • ζ) (t • η) + dist (t • η) ξ := dist_triangle _ _ _
-        _ = t * dist ζ η + dist (t • η) ξ := by
-          rw [dist_smul₀, Real.norm_of_nonneg ht.le]
-        _ < r / 2 + r / 2 := by
-          refine add_lt_add_of_le_of_lt ?_ htη
-          calc t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := hζη
-            _ ≤ r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) := by gcongr
-            _ = r / 2 := hr'
-        _ = r := add_halves r
-    simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
+  obtain ⟨Γ', hΓ'o, hξ', hcone', hmem⟩ :=
+    exists_cone_exists_smul_mem (isOpen_ball (x := ξ)) (mem_ball_self (half_pos hr))
+  refine ⟨Γ', hΓ'o, hξ', hcone', r / (2 * ‖ξ‖ + r), by positivity, fun η hη ζ hζ ↦ ?_⟩
+  obtain ⟨t, ht, htη⟩ := hmem η hη
+  rw [mem_ball] at htη
+  -- Rescaled by `t`, the point `ζ` is within `r` of `ξ`, since `t ‖η‖ < ‖ξ‖ + r / 2`.
+  have hnorm : t * ‖η‖ < ‖ξ‖ + r / 2 := by
+    have h := norm_le_norm_add_norm_sub' (t • η) ξ
+    rw [norm_smul, Real.norm_of_nonneg ht.le, ← dist_eq_norm] at h
+    linarith
+  have hζη : t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := by
+    rw [mem_closedBall] at hζ
+    nlinarith
+  have hr' : r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) = r / 2 := by
+    field_simp
+  have htζ : t • ζ ∈ Γ := by
+    refine hball (mem_ball.2 ?_)
+    calc dist (t • ζ) ξ ≤ dist (t • ζ) (t • η) + dist (t • η) ξ := dist_triangle _ _ _
+      _ = t * dist ζ η + dist (t • η) ξ := by
+        rw [dist_smul₀, Real.norm_of_nonneg ht.le]
+      _ < r / 2 + r / 2 := by
+        refine add_lt_add_of_le_of_lt ?_ htη
+        calc t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := hζη
+          _ ≤ r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) := by gcongr
+          _ = r / 2 := hr'
+      _ = r := add_halves r
+  simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
 
 end IsOpen
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+/-- **The pointwise bound behind rapid decay on a smaller cone.** Let `F` grow at most polynomially
+and let `(1 + ‖η‖) ^ (N + M) ‖F η‖` be bounded on a set `Γ`. If the closed ball of radius `c ‖η‖`
+about every `η ∈ Γ'` lies in `Γ`, then `(1 + ‖η‖) ^ N (1 + ‖η - θ‖) ^ M ‖F (η - θ)‖` is at most a
+constant times `(1 + ‖θ‖) ^ (N + 2 (M + k))`, for `η ∈ Γ'` and every shift `θ`. Shifts with
+`‖θ‖ ≤ c ‖η‖` evaluate `F` at points of `Γ` of size comparable to `‖η‖`, and the remaining shifts
+have `1 + ‖η‖` and `1 + ‖η - θ‖` controlled by powers of `1 + ‖θ‖`. -/
+theorem exists_one_add_norm_pow_mul_norm_apply_sub_le {G : Type*} [SeminormedAddGroup G]
+    {F : E → G} {C₀ : ℝ} {k : ℕ} (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ}
+    (hc : 0 < c) (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ) {N M : ℕ}
+    (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ (N + M) * ‖F η‖ ≤ C) :
+    ∃ D, 0 ≤ D ∧ ∀ η ∈ Γ', ∀ θ,
+      (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖) ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by
+  have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
+  set c' := min c (1 / 2)
+  have hc' : 0 < c' := lt_min hc (by norm_num)
+  have hc'1 : c' ≤ 1 / 2 := min_le_right _ _
+  obtain ⟨C₁, hC₁⟩ := hdecay
+  set D := max (2 ^ N * C₁) (C₀ * c'⁻¹ ^ (N + M + k))
+  have hD : 0 ≤ D := le_max_of_le_right (by positivity)
+  refine ⟨D, hD, fun η hη θ ↦ ?_⟩
+  by_cases hθ : ‖θ‖ ≤ c' * ‖η‖
+  · -- Small shifts stay in `Γ`, where `F` decays rapidly, and `‖η - θ‖ ≥ ‖η‖ / 2`.
+    have hmem : η - θ ∈ Γ := by
+      refine hΓ' η hη (mem_closedBall.2 ?_)
+      rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+      exact hθ.trans (by gcongr; exact min_le_left _ _)
+    have hle : 1 + ‖η‖ ≤ 2 * (1 + ‖η - θ‖) := by
+      have := norm_sub_norm_le η θ
+      nlinarith [norm_nonneg η]
+    calc (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖)
+        ≤ (2 * (1 + ‖η - θ‖)) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖) := by gcongr
+      _ = 2 ^ N * ((1 + ‖η - θ‖) ^ (N + M) * ‖F (η - θ)‖) := by rw [mul_pow, pow_add]; ring
+      _ ≤ 2 ^ N * C₁ := by gcongr; exact hC₁ _ hmem
+      _ ≤ D := le_max_left _ _
+      _ ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) :=
+        le_mul_of_one_le_right hD (one_le_pow₀ (by linarith [norm_nonneg θ]))
+  · -- Large shifts have `1 + ‖η‖ ≤ c'⁻¹ (1 + ‖θ‖)`; use the polynomial growth of `F`.
+    push Not at hθ
+    have hle : 1 + ‖η‖ ≤ c'⁻¹ * (1 + ‖θ‖) := by
+      rw [le_inv_mul_iff₀ hc']
+      nlinarith [norm_nonneg η]
+    have hle' : 1 + ‖η - θ‖ ≤ c'⁻¹ * (1 + ‖θ‖) ^ 2 :=
+      calc 1 + ‖η - θ‖ ≤ (1 + ‖η‖) * (1 + ‖θ‖) := by
+            simpa only [sub_eq_add_neg, norm_neg] using one_add_norm_add_le η (-θ)
+        _ ≤ c'⁻¹ * (1 + ‖θ‖) * (1 + ‖θ‖) := by gcongr
+        _ = c'⁻¹ * (1 + ‖θ‖) ^ 2 := by ring
+    calc (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * ‖F (η - θ)‖)
+        ≤ (1 + ‖η‖) ^ N * ((1 + ‖η - θ‖) ^ M * (C₀ * (1 + ‖η - θ‖) ^ k)) := by
+          gcongr; exact hF _
+      _ = C₀ * ((1 + ‖η‖) ^ N * (1 + ‖η - θ‖) ^ (M + k)) := by ring
+      _ ≤ C₀ * ((c'⁻¹ * (1 + ‖θ‖)) ^ N * (c'⁻¹ * (1 + ‖θ‖) ^ 2) ^ (M + k)) := by gcongr
+      _ = C₀ * c'⁻¹ ^ (N + M + k) * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by
+          rw [mul_pow, mul_pow, ← pow_mul]; ring
+      _ ≤ D * (1 + ‖θ‖) ^ (N + 2 * (M + k)) := by gcongr; exact le_max_right _ _
 
 /-- **Rapid decay of a discrete convolution on a smaller cone.** A superposition
 `∑ i, a i • F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
@@ -221,6 +294,26 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
 
 
+/-- **Finitely many open cones cover a closed cone.** Let `V` be a closed subset of a proper real
+normed space closed under multiplication by positive reals. If every unit vector `ξ` of `V` lies
+in an open set `Γ ξ` closed under multiplication by positive reals, then finitely many of these
+cones cover every nonzero vector of `V`: the unit vectors of `V` form a compact set. -/
+theorem exists_finset_diff_singleton_subset_biUnion [NormedSpace ℝ E] [ProperSpace E] {V : Set E}
+    (hV : IsClosed V) (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V)
+    {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ))
+    (hξΓ : ∀ ξ : sphere (0 : E) 1, (ξ : E) ∈ V → (ξ : E) ∈ Γ ξ)
+    (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
+    ∃ t : Finset (sphere (0 : E) 1), V \ {0} ⊆ ⋃ ξ ∈ t, Γ ξ := by
+  obtain ⟨t, ht⟩ := ((isCompact_sphere (0 : E) 1).inter_left hV).elim_finite_subcover Γ hΓ
+    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ.2⟩, hξΓ _ hζ.1⟩
+  refine ⟨t, fun η hη ↦ ?_⟩
+  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
+  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη.2
+  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ V ∩ sphere (0 : E) 1 from
+    ⟨hVcone _ (inv_pos.2 hη') η hη.1, by simp [norm_smul, inv_mul_cancel₀ hη'.ne']⟩))
+  exact mem_iUnion₂.2 ⟨ξ, hξt, by
+    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+
 /-- **Finitely many open cones cover the nonzero vectors.** If every unit vector `ξ` of a proper
 real normed space lies in an open set `Γ ξ` closed under multiplication by positive reals, then
 finitely many of these cones cover every nonzero vector: the unit sphere is compact. -/
@@ -228,14 +321,24 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ)) (hξΓ : ∀ ξ, (ξ : E) ∈ Γ ξ)
     (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
     ∃ t : Finset (sphere (0 : E) 1), {0}ᶜ ⊆ ⋃ ξ ∈ t, Γ ξ := by
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
-    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
-  refine ⟨t, fun η hη ↦ ?_⟩
-  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
-  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
-  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
-    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
-  exact mem_iUnion₂.2 ⟨ξ, hξt, by
-    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+  simpa [compl_eq_univ_sdiff] using exists_finset_diff_singleton_subset_biUnion isClosed_univ
+    (fun _ _ _ _ ↦ mem_univ _) hΓ (fun ξ _ ↦ hξΓ ξ) hcone
+
+/-- **A uniform bound from a finite cover.** If finitely many sets `Γ ξ` cover the nonzero
+elements of `V` and `f` is bounded by `C ξ` on each `Γ ξ`, then `f` is bounded on all of `V` by a
+nonnegative constant. Combined with `TauCeti.exists_finset_diff_singleton_subset_biUnion`, this
+turns estimates on open cones around each direction into one estimate on a closed cone. -/
+theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X] {V : Set X}
+    {t : Finset ι} {Γ : ι → Set X} (ht : V \ {0} ⊆ ⋃ ξ ∈ t, Γ ξ) {f : X → ℝ} {C : ι → ℝ}
+    (hC : ∀ ξ ∈ t, ∀ η ∈ Γ ξ, f η ≤ C ξ) : ∃ C, 0 ≤ C ∧ ∀ η ∈ V, f η ≤ C := by
+  have hsum : 0 ≤ ∑ ξ ∈ t, |C ξ| := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
+  refine ⟨|f 0| + ∑ ξ ∈ t, |C ξ|, add_nonneg (abs_nonneg _) hsum, fun η hη ↦ ?_⟩
+  rcases eq_or_ne η 0 with rfl | hη0
+  · exact (le_abs_self _).trans (le_add_of_nonneg_right hsum)
+  obtain ⟨ξ, hξt, hηΓ⟩ := mem_iUnion₂.1 (ht ⟨hη, hη0⟩)
+  calc f η ≤ C ξ := hC ξ hξt η hηΓ
+    _ ≤ |C ξ| := le_abs_self _
+    _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
+    _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
 
 end TauCeti

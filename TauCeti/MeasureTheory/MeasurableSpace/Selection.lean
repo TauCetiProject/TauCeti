@@ -201,7 +201,7 @@ theorem _root_.Continuous.exists_measurable_isMinOn [TopologicalSpace Z] [Measur
   have hK {K : Set X} (hK : IsCompact K) : IsClosed {z | (M z ∩ K).Nonempty} := by
     have : CompactSpace K := isCompact_iff_compactSpace.1 hK
     have hclosed : IsClosed {q : Z × K | (q.2 : X) ∈ M q.1} :=
-      hS.preimage (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      hS.preimage (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     convert isClosedMap_fst_of_compactSpace _ hclosed using 1
     ext z
     simp only [mem_ofPred_eq, mem_image, Prod.exists, exists_and_right, exists_eq_right,

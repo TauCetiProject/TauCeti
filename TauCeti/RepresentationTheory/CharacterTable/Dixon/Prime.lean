@@ -313,11 +313,11 @@ def ofPrime? (p : ℕ) : Option (DixonPrimeData G) :=
   if hp : p.Prime ∧ ¬p ∣ n ∧ e ∣ p - 1 ∧ 2 * Nat.sqrt n < p then
     (ZMod.primitiveRoot? p e).map fun ζ ↦
       { p
-        root := ζ.1
+        root := ζ.val
         isGoodDixonPrime := by
           subst he hn
           exact ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2⟩
-        isPrimitiveRoot_root := he ▸ ζ.2 }
+        isPrimitiveRoot_root := he ▸ ζ.property }
   else none
 
 variable {e he n hn}

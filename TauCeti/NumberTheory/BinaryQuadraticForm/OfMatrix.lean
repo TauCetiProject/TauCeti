@@ -172,10 +172,10 @@ theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
 lower right entry is `(t + b) / 2`. -/
 def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t ∧ M.det = n} ≃
     {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n} where
-  toFun M := ⟨ofMatrix M.1, by rw [discrim_ofMatrix, M.2.1, M.2.2]⟩
-  invFun f := ⟨!![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2], by
+  toFun M := ⟨ofMatrix M.val, by rw [discrim_ofMatrix, M.property.1, M.property.2]⟩
+  invFun f := ⟨!![(t - f.val.b) / 2, -f.val.c; f.val.a, t - (t - f.val.b) / 2], by
     rw [trace_fin_two_of, det_fin_two_of]
-    grind [two_mul_ediv_two_of_discrim_eq f.2, discrim_def, discrim]⟩
+    grind [two_mul_ediv_two_of_discrim_eq f.property, discrim_def, discrim]⟩
   left_inv M := by
     obtain ⟨M, rfl, -⟩ := M
     ext i j
@@ -183,7 +183,7 @@ def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t �
       simp only [trace_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg, Fin.zero_eta,
         Fin.mk_one, of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> omega
   right_inv f := by
-    ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.2]
+    ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.property]
 
 /-- `ofMatrixEquiv t n` sends a matrix `M` to its form `Q_M`. -/
 @[simp]
@@ -198,7 +198,7 @@ theorem coe_ofMatrixEquiv_apply {t n : ℤ}
 theorem coe_ofMatrixEquiv_symm_apply {t n : ℤ}
     (f : {f : BinaryQuadraticForm ℤ // f.discrim = t ^ 2 - 4 * n}) :
     ((ofMatrixEquiv t n).symm f : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2] :=
+      !![(t - f.val.b) / 2, -f.val.c; f.val.a, t - (t - f.val.b) / 2] :=
   (rfl)
 
 end BinaryQuadraticForm

@@ -185,7 +185,7 @@ private theorem measurable_lkjPDFReal_comp {γ : Type*} [MeasurableSpace γ]
     Measurable fun c ↦ lkjPDFReal p (f c) (g c) := by
   classical
   have hg' : Measurable fun c ↦ (g c : Matrix (Fin p) (Fin p) ℝ) :=
-    measurable_subtype_coe.comp hg
+    measurable_subtypeVal.comp hg
   have hdet : Measurable fun c ↦ (g c : Matrix (Fin p) (Fin p) ℝ).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hg'
   have hrpow : Measurable fun z : ℝ × ℝ ↦ z.1 ^ z.2 := by fun_prop
@@ -278,7 +278,7 @@ theorem map_subtype_val_comap_lkjMeasure (p : ℕ) (η : ℝ) :
     ((lkjMeasure p η).comap
         (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
         Subtype.val = lkjMeasure p η :=
-  (map_comap_subtype_coe (measurableSet_posDefMatrix p) _).trans
+  (map_comap_subtypeVal (measurableSet_posDefMatrix p) _).trans
     (Measure.restrict_eq_self_of_ae_mem (ae_posDef_lkjMeasure p η))
 
 /-- A matrix sampled from an LKJ measure has unit diagonal almost surely. -/
@@ -333,7 +333,7 @@ theorem isProbabilityMeasure_comap_lkjMeasure (hη : 0 < η) :
       (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
   apply (Measure.isProbabilityMeasure_map_iff
     (f := (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
-    measurable_subtype_coe.aemeasurable).mp
+    measurable_subtypeVal.aemeasurable).mp
   rw [map_subtype_val_comap_lkjMeasure]
   exact isProbabilityMeasure_lkjMeasure hη
 

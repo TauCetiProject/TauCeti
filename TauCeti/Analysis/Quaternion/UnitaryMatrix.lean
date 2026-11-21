@@ -153,19 +153,19 @@ unitary matrix `A` acts on `ℍⁿ = PiLp 2 (fun _ : ι ↦ ℍ)` by `x ↦ A x`
 def quaternionUnitaryIsometry :
     unitary (Matrix ι ι ℍ) →* (PiLp 2 fun _ : ι ↦ ℍ) ≃ₗᵢ[ℝ] PiLp 2 fun _ : ι ↦ ℍ where
   toFun A :=
-    { mulVecLinearMap A.1 with
-      invFun := mulVecLinearMap (star A).1
+    { mulVecLinearMap A.val with
+      invFun := mulVecLinearMap (star A).val
       left_inv x := by
-        simp [mulVecLinearMap, Matrix.mulVec_mulVec, A.2.1]
+        simp [mulVecLinearMap, Matrix.mulVec_mulVec, A.property.1]
       right_inv x := by
-        simp [mulVecLinearMap, Matrix.mulVec_mulVec, A.2.2]
+        simp [mulVecLinearMap, Matrix.mulVec_mulVec, A.property.2]
       norm_map' x := by
         -- `A` preserves the quaternionic Hermitian square, which is the squared norm.
-        have h : star (A.1 *ᵥ WithLp.ofLp x) ⬝ᵥ (A.1 *ᵥ WithLp.ofLp x) =
+        have h : star (A.val *ᵥ WithLp.ofLp x) ⬝ᵥ (A.val *ᵥ WithLp.ofLp x) =
             star (WithLp.ofLp x) ⬝ᵥ WithLp.ofLp x := by
           rw [Matrix.star_mulVec, Matrix.dotProduct_mulVec, Matrix.vecMul_vecMul,
-            ← Matrix.star_eq_conjTranspose, A.2.1, Matrix.vecMul_one]
-        rw [← WithLp.ofLp_toLp 2 (A.1 *ᵥ WithLp.ofLp x),
+            ← Matrix.star_eq_conjTranspose, A.property.1, Matrix.vecMul_one]
+        rw [← WithLp.ofLp_toLp 2 (A.val *ᵥ WithLp.ofLp x),
           star_dotProduct_self_ofLp, star_dotProduct_self_ofLp, Quaternion.coe_inj] at h
         exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h }
   map_one' := by
@@ -179,7 +179,7 @@ def quaternionUnitaryIsometry :
 @[simp]
 theorem quaternionUnitaryIsometry_apply (A : unitary (Matrix ι ι ℍ))
     (x : PiLp 2 fun _ : ι ↦ ℍ) :
-    quaternionUnitaryIsometry ι A x = WithLp.toLp 2 (A.1 *ᵥ WithLp.ofLp x) :=
+    quaternionUnitaryIsometry ι A x = WithLp.toLp 2 (A.val *ᵥ WithLp.ofLp x) :=
   (rfl)
 
 /-- The inverse of the action of a quaternionic unitary matrix `A` on `ℍⁿ` multiplies column
@@ -187,7 +187,7 @@ vectors by the conjugate transpose `star A`. -/
 @[simp]
 theorem quaternionUnitaryIsometry_symm_apply (A : unitary (Matrix ι ι ℍ))
     (x : PiLp 2 fun _ : ι ↦ ℍ) :
-    (quaternionUnitaryIsometry ι A).symm x = WithLp.toLp 2 ((star A).1 *ᵥ WithLp.ofLp x) :=
+    (quaternionUnitaryIsometry ι A).symm x = WithLp.toLp 2 ((star A).val *ᵥ WithLp.ofLp x) :=
   (rfl)
 
 /-- The action of a quaternionic unitary matrix on `ℍⁿ` commutes with quaternionic scalars acting
@@ -203,7 +203,7 @@ theorem continuous_quaternionUnitaryIsometry_apply :
       quaternionUnitaryIsometry ι p.1 p.2 := by
   simp only [quaternionUnitaryIsometry_apply]
   exact (PiLp.continuous_toLp 2 _).comp
-    ((continuous_subtype_val.comp continuous_fst).matrix_mulVec
+    ((continuous_subtypeVal.comp continuous_fst).matrix_mulVec
       ((PiLp.continuous_ofLp 2 _).comp continuous_snd))
 
 end Isometry
@@ -417,7 +417,7 @@ instance instContinuousSMulUnitaryMatrixQuaternionSphere :
     ContinuousSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
   continuous_smul := continuous_induced_rng.2 <|
     (continuous_quaternionUnitaryIsometry_apply.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).congr fun p ↦
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦
         (coe_quaternionUnitary_smul_sphere p.1 p.2).symm
 
 /-- The compact symplectic group `Sp(ι)` acts transitively on the unit sphere of `ℍⁿ` (vacuously
@@ -428,10 +428,10 @@ instance instIsPretransitiveUnitaryMatrixQuaternionSphere :
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
   · refine ⟨fun x ↦ False.elim ?_⟩
     have hx : (x : PiLp 2 fun _ : ι ↦ ℍ) = 0 := Subsingleton.elim _ _
-    simpa [hx] using mem_sphere_zero_iff_norm.1 x.2
+    simpa [hx] using mem_sphere_zero_iff_norm.1 x.property
   · refine .of_orbit (x₀ := ⟨WithLp.toLp 2 (Pi.single i 1), by simp⟩) fun x ↦ ?_
     obtain ⟨A, hA⟩ := exists_quaternionUnitaryIsometry_apply_single_eq i
-      (mem_sphere_zero_iff_norm.1 x.2)
+      (mem_sphere_zero_iff_norm.1 x.property)
     exact ⟨A, Subtype.ext ((coe_quaternionUnitary_smul_sphere A _).trans hA)⟩
 
 end SphereAction

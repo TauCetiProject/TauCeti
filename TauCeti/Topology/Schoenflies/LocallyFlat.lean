@@ -136,7 +136,7 @@ range `closure (connectedComponentIn (range σ)ᶜ y)` carrying `ball (0 : E) 1`
 theorem exists_isClosedEmbedding_closedBall (hf : IsLocallyFlat H ℝ σ)
     (hEF : finrank ℝ F = finrank ℝ E + 1) {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
     ∃ g : closedBall (0 : E) 1 → sphere (0 : F) 1, IsClosedEmbedding g ∧
-      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.2⟩ = σ x) ∧
+      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.property⟩ = σ x) ∧
       range g = closure (connectedComponentIn (range σ)ᶜ y) ∧
       (∀ z : closedBall (0 : E) 1,
         (z : E) ∈ ball (0 : E) 1 ↔ g z ∈ connectedComponentIn (range σ)ᶜ y) :=

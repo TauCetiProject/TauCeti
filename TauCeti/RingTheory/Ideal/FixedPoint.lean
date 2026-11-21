@@ -126,8 +126,8 @@ def fixedPointQuotientAlgHomEquiv (B : Type*) [Semiring B] [Algebra R B] :
     (A ⧸ fixedPointIdeal Γ A →ₐ[R] B) ≃
       {φ : A →ₐ[R] B // ∀ γ : Γ, φ.comp (MulSemiringAction.toAlgHom R A γ) = φ} where
   toFun ψ := ⟨ψ.comp (Ideal.Quotient.mkₐ R (fixedPointIdeal Γ A)), fun _ ↦ by ext; simp⟩
-  invFun φ := Ideal.Quotient.liftₐ (fixedPointIdeal Γ A) φ.1 fun _ ha ↦
-    RingHom.mem_ker.mp ((fixedPointIdeal_le_ker_algHom_iff φ.1).mpr φ.2 ha)
+  invFun φ := Ideal.Quotient.liftₐ (fixedPointIdeal Γ A) φ.val fun _ ha ↦
+    RingHom.mem_ker.mp ((fixedPointIdeal_le_ker_algHom_iff φ.val).mpr φ.property ha)
   left_inv _ := Ideal.Quotient.algHom_ext R rfl
   right_inv _ := Subtype.ext (Ideal.Quotient.liftₐ_comp _ _ _)
 
@@ -143,7 +143,7 @@ theorem fixedPointQuotientAlgHomEquiv_apply {B : Type*} [Semiring B] [Algebra R 
 theorem fixedPointQuotientAlgHomEquiv_symm_apply_mk {B : Type*} [Semiring B] [Algebra R B]
     (φ : {φ : A →ₐ[R] B // ∀ γ : Γ, φ.comp (MulSemiringAction.toAlgHom R A γ) = φ}) (a : A) :
     (fixedPointQuotientAlgHomEquiv R Γ A B).symm φ (Ideal.Quotient.mk (fixedPointIdeal Γ A) a) =
-      φ.1 a := (rfl)
+      φ.val a := (rfl)
 
 /-- If `s` generates `A` as an `R`-algebra, the displacements of `s` span `fixedPointIdeal Γ A`. -/
 theorem fixedPointIdeal_eq_span_of_adjoin_eq_top {s : Set A} (hs : Algebra.adjoin R s = ⊤) :
