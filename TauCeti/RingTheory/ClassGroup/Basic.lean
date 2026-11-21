@@ -30,6 +30,7 @@ trivial class, and the class `[v]` of a height one prime.
   holds over any domain.
 * `ClassGroup.mk_num`: an invertible fractional ideal and its integral numerator have the
   same class, over any domain and any choice of fraction field.
+* `ClassGroup.mk_surjective`: `ClassGroup.mk K` is surjective over any domain and fraction field.
 * `TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup`: a Dedekind domain is a principal
   ideal ring exactly when its class group is trivial, with no finiteness of the class group
   assumed.
@@ -42,7 +43,8 @@ trivial class, and the class `[v]` of a height one prime.
 * `ClassGroup.mk0_eq_inv_mk_iff`: a nonzero ideal `J` has class `[I]⁻¹` exactly when `J * I` is
   principal, with the generator delivered as a unit of `K`.
 
-The two class-triviality results use `[IsDomain R]`, since neither is Dedekind-specific. None
+The class-triviality and surjectivity results use `[IsDomain R]`, since none is
+Dedekind-specific. None
 of them needs the factorization of a fractional ideal into primes, so this file does not import
 it; the results that do live in
 `TauCeti.RingTheory.ClassGroup.HeightOneSpectrum`, which every consumer of *those* pays for and
@@ -97,6 +99,13 @@ theorem ClassGroup.mk_num {R : Type*} [CommRing R] [IsDomain R] {K : Type*} [Fie
     simp only [IsUnit.unit_spec, Units.val_mul, coe_toPrincipalIdeal, u]
     exact (FractionalIdeal.den_mul_self_eq_num' R⁰ K I.val).symm
   rw [hnum, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul]
+
+/-- The ideal class map `ClassGroup.mk K` from invertible fractional ideals to `ClassGroup R`
+is surjective over any domain and fraction field `K`. -/
+theorem ClassGroup.mk_surjective (R K : Type*) [CommRing R] [IsDomain R] [Field K]
+    [Algebra R K] [IsFractionRing R K] :
+    Function.Surjective (ClassGroup.mk (R := R) K) :=
+  fun c ↦ ClassGroup.induction K (fun I ↦ ⟨I, rfl⟩) c
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 

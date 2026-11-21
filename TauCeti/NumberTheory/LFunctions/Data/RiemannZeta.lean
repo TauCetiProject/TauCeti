@@ -97,15 +97,14 @@ theorem riemannZetaData_hasAverageCoefficientGrowth :
 /-- The Riemann zeta card is its own dual. -/
 @[simp]
 theorem riemannZetaData_dual : riemannZetaData.dual = riemannZetaData := by
-  ext
+  ext s
   · simp
   · simp
   · simp
   · simp
   · simp
   · simp [completedRiemannZeta_conj]
-  · simp [Finsupp.single_apply, eq_comm (a := (0 : ℂ)), eq_comm (a := (1 : ℂ)),
-      map_eq_one_iff _ (starRingEnd ℂ).injective]
+  · simp [AnalyticLFunctionData.single_zero_add_single_one_conj]
 
 /-- On `Re s > 1`, the completed Riemann zeta function is `Γ_ℝ(s) ζ(s)`, the completion of the
 Dirichlet series with all coefficients `1`. -/
@@ -125,31 +124,19 @@ theorem riemannZetaData_hasDirichletAgreement : riemannZetaData.HasDirichletAgre
 /-- The completed Riemann zeta function is meromorphic, with simple poles at `0` and `1` and no
 others. -/
 theorem riemannZetaData_hasMeromorphicContinuation :
-    riemannZetaData.HasMeromorphicContinuation where
-  meromorphic := meromorphic_completedRiemannZeta
-  meromorphicOrderAt_eq p hp := by
-    by_cases h0 : p = 0
-    · subst h0
-      simp [meromorphicOrderAt_completedRiemannZeta_zero]
-    by_cases h1 : p = 1
-    · subst h1
-      simp [meromorphicOrderAt_completedRiemannZeta_one]
-    simp [Ne.symm h0, Ne.symm h1] at hp
-  analyticAt p hp := by
-    refine analyticAt_completedRiemannZeta ?_ ?_ <;> rintro rfl <;> simp at hp
+    riemannZetaData.HasMeromorphicContinuation :=
+  AnalyticLFunctionData.hasMeromorphicContinuation_of_simple_poles_zero_one
+    riemannZetaData_polarOrder meromorphic_completedRiemannZeta
+    meromorphicOrderAt_completedRiemannZeta_zero meromorphicOrderAt_completedRiemannZeta_one
+    fun _ h0 h1 ↦ analyticAt_completedRiemannZeta h0 h1
 
 /-- The functional equation `Λ(s) = Λ(1 - s)` of the completed Riemann zeta function, with root
 number `1`. -/
 theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEquation where
   norm_rootNumber := by simp
   polarOrder_one_sub_conj s := by
-    have hconj (z : ℂ) : riemannZetaData.polarOrder (conj z) = riemannZetaData.polarOrder z := by
-      rw [← AnalyticLFunctionData.dual_polarOrder_apply, riemannZetaData_dual]
-    have e0 : (0 : ℂ) = 1 - s ↔ 1 = s := by rw [eq_comm, sub_eq_zero]
-    have e1 : (1 : ℂ) = 1 - s ↔ 0 = s := by rw [eq_comm, sub_eq_self, eq_comm]
-    rw [← map_one (starRingEnd ℂ), ← map_sub, hconj]
-    simp only [riemannZetaData_polarOrder, Finsupp.add_apply, Finsupp.single_apply, e0, e1]
-    rw [add_comm]
+    simpa only [riemannZetaData_polarOrder] using
+      AnalyticLFunctionData.single_zero_add_single_one_one_sub_conj s
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]
