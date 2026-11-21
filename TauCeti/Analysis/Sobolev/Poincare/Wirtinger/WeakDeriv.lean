@@ -11,13 +11,12 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convex.Exhaustion
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Sobolev.Mollification.Local
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyAEConst
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.MeasureTheory.Integral.Average
@@ -50,7 +49,7 @@ At the borderline exponent `p = n` (in positive dimension `n ≥ 1`), the radius
 yielding a scale-invariant mean-oscillation bound. Two classical consequences follow immediately:
 
 * A weakly differentiable function with vanishing weak derivative on a preconnected open set is
-  almost everywhere constant (`TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_isPreconnected`).
+  almost everywhere constant (`TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero`).
 * Globally defined weakly differentiable functions with `Du ∈ Lⁿ` have bounded and vanishing mean
   oscillation: `W^{1,n} ⊆ VMO ⊆ BMO` (`TauCeti.HasWeakFDerivOn.memBMO`,
   `TauCeti.HasWeakFDerivOn.memVMO`).
@@ -69,7 +68,7 @@ yielding a scale-invariant mean-oscillation bound. Two classical consequences fo
   `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_setAverage_ball_le_mul_rpow`, and
   `TauCeti.HasWeakFDerivOn.setLAverage_enorm_sub_setAverage_ball_le`: mean oscillation bounds on
   balls for all `1 ≤ p ≤ ∞` and at the scale-invariant exponent `p = n`.
-* `TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_isPreconnected`: constancy on preconnected open
+* `TauCeti.HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero`: constancy on preconnected open
   sets when `Du = 0` a.e.
 * `TauCeti.HasWeakFDerivOn.bmoSeminorm_le`, `TauCeti.HasWeakFDerivOn.memBMO`,
   `TauCeti.HasWeakFDerivOn.vmoModulus_le`, and `TauCeti.HasWeakFDerivOn.memVMO`: `W^{1,n}` embeds
@@ -91,7 +90,7 @@ noncomputable section
 namespace TauCeti
 
 open ContinuousLinearMap Filter MeasureTheory Metric Module Set TopologicalSpace
-open scoped Convolution ENNReal Topology
+open scoped Convolution ENNReal NNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
@@ -110,52 +109,22 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
       ENNReal.ofReal (μ.real (ball 0 1) * diam (U : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
         eLpNorm Du p (μ.restrict Ω) := by
   have : CompleteSpace F := hu.completeSpace
-  have : Fact (1 ≤ p) := ⟨hp1⟩
   have hUb : Bornology.IsBounded (U : Set E) := hUcomp.isBounded.subset subset_closure
-  -- Pick a slightly thicker relatively compact open set `V` between `closure U` and `Ω`.
-  obtain ⟨δ, hδ, hδΩ⟩ := hUcomp.exists_cthickening_subset_open Ω.isOpen hUΩ
-  let V : Opens E := ⟨thickening (δ / 2) (closure (U : Set E)), isOpen_thickening⟩
-  have hUV : (U : Set E) ⊆ V :=
-    subset_closure.trans (self_subset_thickening (half_pos hδ) _)
-  have hVΩ : closure (V : Set E) ⊆ Ω :=
-    (closure_thickening_subset_cthickening _ _).trans
-      ((cthickening_mono (half_le_self hδ.le) _).trans hδΩ)
-  have hVcomp : IsCompact (closure (V : Set E)) :=
-    hUcomp.isBounded.thickening.isCompact_closure
-  have hVsub : (V : Set E) ⊆ Ω := subset_closure.trans hVΩ
-  -- Shrinking bumps whose closed balls around points of `U` stay inside `V`.
-  let φ (n : ℕ) : ContDiffBump (0 : E) := ContDiffBump.shrinking (show 0 < δ / 4 by positivity) n
-  have hballV (n : ℕ) {x : E} (hx : x ∈ (U : Set E)) : closedBall x (φ n).rOut ⊆ V := fun y hy =>
-    mem_thickening_iff.2 ⟨x, subset_closure hx, (mem_closedBall.1 hy).trans_lt <| by
-      simp only [φ, ContDiffBump.rOut_shrinking]
-      exact (div_le_self (by positivity) (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
-        (by linarith)⟩
-  -- Mollifications of `V.indicator u`: globally smooth with uniformly bounded `Lᵖ(U)` derivatives.
-  let v (n : ℕ) : E → F := (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] (V : Set E).indicator u
-  have hv_cd (n : ℕ) : ContDiff ℝ 1 (v n) :=
-    (hu.contDiff_normed_convolution_indicator hVcomp hVΩ (φ n)).of_le (by simp)
-  have hDuV : MemLp Du p (μ.restrict V) := hDu.mono_measure (Measure.restrict_mono hVsub le_rfl)
-  have hv_deriv (n : ℕ) :
-      eLpNorm (fderiv ℝ (v n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict Ω) :=
-    (hu.eLpNorm_fderiv_normed_convolution_indicator_le hVcomp hVΩ U.isOpen.measurableSet (φ n)
-      (fun x hx => hballV n hx) hp1 hp hDuV).trans
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hVsub le_rfl))
-  -- `L¹(U)` convergence of `v n` to `u`, and hence convergence of averages over `S ⊆ U`.
-  have huV : MemLp u 1 (μ.restrict V) := memLp_one_iff_integrable.2 <|
-    (hu.locallyIntegrableOn.integrableOn_compact_subset hVΩ hVcomp).mono_set subset_closure
-  have hv_L1 : Tendsto (fun n => eLpNorm (v n - u) 1 (μ.restrict U)) atTop (𝓝 0) :=
-    tendsto_eLpNorm_normed_convolution_indicator_sub ENNReal.one_ne_top
-      (ContDiffBump.tendsto_rOut_shrinking _) V.isOpen.measurableSet hUV huV
-  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) :=
-    tendsto_setAverage_of_tendsto_eLpNorm_one hS0
-      ((hu.locallyIntegrableOn.integrableOn_compact_subset hUΩ hUcomp).mono_set
-        (hSU.trans subset_closure))
+  obtain ⟨-, -, V, hUV, hVΩ, -, huV, -, -, -, -⟩ := hu.exists_open_memLp_indicator hUcomp hUΩ
+  have hDuV : MemLp Du p (μ.restrict V) := hDu.mono_measure (Measure.restrict_mono hVΩ le_rfl)
+  obtain ⟨v, hv_cd, hv_deriv, hv_L1, -⟩ :=
+    hu.exists_contDiff_tendsto_eLpNorm hUcomp hUV hVΩ le_rfl ENNReal.one_ne_top huV hp1 hp hDuV
+  have hv_S : Tendsto (fun n => eLpNorm (v n - u) 1 (μ.restrict S)) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hv_L1 (fun _ => zero_le)
+      fun n => eLpNorm_mono_measure _ (Measure.restrict_mono hSU le_rfl)
+  have hint : Tendsto (fun n => ∫ y in S, v n y ∂μ) atTop (𝓝 (∫ y in S, u y ∂μ)) :=
+    tendsto_integral_of_L1' u
       (.of_forall fun n =>
         ((hv_cd n).continuous.continuousOn.integrableOn_compact hUcomp).mono_set
           (hSU.trans subset_closure))
-      (tendsto_eLpNorm_normed_convolution_indicator_sub ENNReal.one_ne_top
-        (ContDiffBump.tendsto_rOut_shrinking _) V.isOpen.measurableSet (hSU.trans hUV) huV)
-  -- Extract an a.e. convergent subsequence on `U` and pass the `C¹` bound to the limit by Fatou.
+      hv_S
+  have havg : Tendsto (fun n => ⨍ y in S, v n y ∂μ) atTop (𝓝 (⨍ y in S, u y ∂μ)) := by
+    simpa only [setAverage_eq] using hint.const_smul (μ.real S)⁻¹
   have hum : AEStronglyMeasurable u (μ.restrict U) :=
     hu.locallyIntegrableOn.aestronglyMeasurable.mono_measure
       (Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl)
@@ -172,8 +141,10 @@ private theorem eLpNorm_sub_setAverage_le_of_isCompact_closure (hu : HasWeakFDer
           ENNReal.ofReal (μ.real (ball 0 1) * diam (U : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
             eLpNorm Du p (μ.restrict Ω) :=
         liminf_le_liminf (.of_forall fun k =>
-          (eLpNorm_sub_setAverage_le_of_convex hUc hUb (hv_cd (ns k)).contDiffOn hSU hS0 hp1
-            hp).trans (mul_le_mul_right (hv_deriv (ns k)) _))
+          (eLpNorm_sub_setAverage_le_of_convex hUc hUb
+            ((hv_cd (ns k)).of_le (by simp)).contDiffOn hSU hS0 hp1 hp).trans
+            (mul_le_mul_right ((hv_deriv (ns k)).trans
+              (eLpNorm_mono_measure _ (Measure.restrict_mono hVΩ le_rfl))) _))
     _ = _ := liminf_const _
 
 /-- The Poincaré–Wirtinger inequality on a bounded convex open set `Ω`, assuming `u` is integrable
@@ -297,19 +268,7 @@ theorem HasWeakFDerivOn.eLpNorm_sub_setAverage_le_of_convex (hu : HasWeakFDerivO
   · -- In positive dimension a nonempty open set has positive diameter, so the RHS is `∞`.
     have hSne : S.Nonempty := nonempty_of_measure_ne_zero hS0
     obtain ⟨x₀, hx₀S⟩ := hSne
-    obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x₀ (hS hx₀S)
-    obtain ⟨v, hv⟩ := exists_ne (0 : E)
-    have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
-    set x₁ : E := x₀ + ((r / 2) / ‖v‖) • v
-    have hx₁ : x₁ ∈ (Ω : Set E) := hrΩ <| by
-      rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul,
-        Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hv0.ne']
-      exact half_lt_self hr
-    have hdiam_pos : 0 < diam (Ω : Set E) := by
-      have hdist : dist x₁ x₀ = r / 2 := by
-        rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg (by positivity),
-          div_mul_cancel₀ _ hv0.ne']
-      exact (half_pos hr).trans_le (hdist ▸ dist_le_diam_of_mem hΩb hx₁ (hS hx₀S))
+    have hdiam_pos : 0 < diam (Ω : Set E) := Ω.isOpen.diam_pos hΩb (hS hx₀S)
     have hball_pos : 0 < μ.real (ball (0 : E) 1) :=
       ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
     have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS0 hSfin
@@ -335,33 +294,19 @@ theorem HasWeakFDerivOn.lintegral_enorm_sub_setAverage_rpow_le_of_convex
       ENNReal.ofReal ((μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) ^ p) *
         ∫⁻ y in (Ω : Set E), ‖Du y‖ₑ ^ p ∂μ := by
   have hp0 : 0 < p := zero_lt_one.trans_le hp
-  have hq1 : (1 : ℝ≥0∞) ≤ ENNReal.ofReal p := by simpa using ENNReal.ofReal_le_ofReal hp
-  have hq0 : ENNReal.ofReal p ≠ 0 := (ENNReal.ofReal_pos.2 hp0).ne'
-  have hqtop : ENNReal.ofReal p ≠ ∞ := ENNReal.ofReal_ne_top
-  have htoReal : (ENNReal.ofReal p).toReal = p := ENNReal.toReal_ofReal hp0.le
-  have hbase := hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hS hS0 hq1 hqtop
-  have hpow := ENNReal.rpow_le_rpow hbase hp0.le
+  let q : ℝ≥0 := ⟨p, hp0.le⟩
+  have hq0 : q ≠ 0 := NNReal.coe_ne_zero.1 hp0.ne'
+  have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hp
+  have hbase := hu.eLpNorm_sub_setAverage_le_of_convex hΩc hΩb hS hS0 hq1 ENNReal.coe_ne_top
+  have hpow := ENNReal.rpow_le_rpow hbase q.coe_nonneg
   have hC0 : 0 ≤ μ.real (ball (0 : E) 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S :=
     div_nonneg (mul_nonneg measureReal_nonneg (pow_nonneg diam_nonneg _)) measureReal_nonneg
   have hum : AEStronglyMeasurable (fun x => u x - ⨍ y in S, u y ∂μ) (μ.restrict Ω) :=
     hu.locallyIntegrableOn.aestronglyMeasurable.sub aestronglyMeasurable_const
-  have hlhs : eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) (ENNReal.ofReal p) (μ.restrict Ω) ^ p =
-      ∫⁻ x in (Ω : Set E), ‖u x - ⨍ y in S, u y ∂μ‖ₑ ^ p ∂μ := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqtop hum, htoReal, ← ENNReal.rpow_mul,
-      one_div_mul_cancel hp0.ne', ENNReal.rpow_one]
-  have hrhs : eLpNorm Du (ENNReal.ofReal p) (μ.restrict Ω) ^ p =
-      ∫⁻ y in (Ω : Set E), ‖Du y‖ₑ ^ p ∂μ := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hqtop
-      hu.locallyIntegrableOn_deriv.aestronglyMeasurable, htoReal, ← ENNReal.rpow_mul,
-      one_div_mul_cancel hp0.ne', ENNReal.rpow_one]
-  calc ∫⁻ x in (Ω : Set E), ‖u x - ⨍ y in S, u y ∂μ‖ₑ ^ p ∂μ
-      = eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) (ENNReal.ofReal p) (μ.restrict Ω) ^ p :=
-        hlhs.symm
-    _ ≤ (ENNReal.ofReal (μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) *
-          eLpNorm Du (ENNReal.ofReal p) (μ.restrict Ω)) ^ p := hpow
-    _ = ENNReal.ofReal ((μ.real (ball 0 1) * diam (Ω : Set E) ^ (finrank ℝ E + 1) / μ.real S) ^ p) *
-          ∫⁻ y in (Ω : Set E), ‖Du y‖ₑ ^ p ∂μ := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ hp0.le, ENNReal.ofReal_rpow_of_nonneg hC0 hp0.le, hrhs]
+  rw [eLpNorm_nnreal_pow_eq_lintegral hq0 hum,
+    ENNReal.mul_rpow_of_nonneg _ _ q.coe_nonneg, ENNReal.ofReal_rpow_of_nonneg hC0 q.coe_nonneg,
+    eLpNorm_nnreal_pow_eq_lintegral hq0 hu.locallyIntegrableOn_deriv.aestronglyMeasurable] at hpow
+  exact hpow
 
 /-! ### Inequalities on balls and mean oscillation bounds -/
 
@@ -496,7 +441,7 @@ theorem HasWeakFDerivOn.setLAverage_enorm_sub_setAverage_ball_le [Nontrivial E]
 
 /-- **A weakly differentiable function with vanishing weak derivative on a preconnected open set
 is almost everywhere constant.** -/
-theorem HasWeakFDerivOn.exists_ae_eq_const_of_isPreconnected (hu : HasWeakFDerivOn μ Ω u Du)
+theorem HasWeakFDerivOn.exists_ae_eq_const_of_deriv_ae_eq_zero (hu : HasWeakFDerivOn μ Ω u Du)
     (hΩ : IsPreconnected (Ω : Set E)) (hDu : Du =ᵐ[μ.restrict Ω] 0) :
     ∃ c : F, ∀ᵐ x ∂μ.restrict Ω, u x = c := by
   refine hΩ.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)

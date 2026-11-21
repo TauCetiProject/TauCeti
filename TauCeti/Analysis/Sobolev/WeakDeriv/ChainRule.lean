@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.Analysis.Sobolev.Mollification.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
@@ -34,10 +32,11 @@ also matters for the `W^{1,p}` form: for `p = 4/3` the function `u = |z|^{-2/5}`
 
 ## Proof
 
-On an open set `V` with compact closure in `Ω`, mollify the zero extension of `u` from a slightly
-larger open set. The mollifications converge to `u` uniformly on `closure V`
-(`ContDiffBump.tendstoUniformlyOn_normed_convolution`), and their derivatives, the mollifications
-of `Du`, converge to `Du` in `L¹(V)`. The classical chain rule applies to each mollification.
+On an open set `V` with compact closure in `Ω`, local mollification
+(`TauCeti.HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn`, after cutting off to a relatively
+compact neighbourhood via `TauCeti.HasWeakFDerivOn.exists_open_memLp_indicator`) produces smooth
+approximations converging uniformly to `u` on `closure V` whose derivatives converge to `Du` in
+`L¹(V)`. The classical chain rule applies to each mollification.
 Since `u '' closure V` is compact, uniform convergence carries `g` and `Dg` along
 (`IsCompact.comp_tendstoUniformlyOn`), and the compositions converge in `L¹(V)`
 (`TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub`). The weak derivatives pass to that
@@ -73,79 +72,6 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
   {Ω : Opens E} {u : E → F} {Du : E → E →L[ℝ] F} {g : F → G} {W : Set F}
 
-/-- **Smooth approximation on a relatively compact subset.** On an open set `V` with compact
-closure in `Ω`, a continuous `u` with weak derivative `Du` is the uniform limit on `closure V` of
-continuous maps `uₙ` that are differentiable on `V` with continuous derivatives `Duₙ` converging
-to `Du` in `L¹(V)`. The maps are mollifications of the zero extension of `u` from a neighbourhood
-of `closure V`. -/
-private theorem exists_smooth_approx_of_isCompact_closure (hu : HasWeakFDerivOn μ Ω u Du)
-    (huc : ContinuousOn u Ω) (V : Opens E) (hVc : IsCompact (closure (V : Set E)))
-    (hVΩ : closure (V : Set E) ⊆ Ω) :
-    ∃ (un : ℕ → E → F) (Dn : ℕ → E → E →L[ℝ] F), (∀ n, Continuous (un n)) ∧
-      (∀ n, Continuous (Dn n)) ∧ (∀ n, ∀ x ∈ (V : Set E), HasFDerivAt (un n) (Dn n x) x) ∧
-      TendstoUniformlyOn un u atTop (closure (V : Set E)) ∧
-      Tendsto (fun n => ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ) atTop (𝓝 0) := by
-  have : CompleteSpace F := hu.completeSpace
-  set S := closure (V : Set E)
-  -- A compact neighbourhood of `S` inside `Ω`, and an open set `Ω'` between them.
-  obtain ⟨δ, hδ, hδΩ⟩ := hVc.exists_cthickening_subset_open Ω.isOpen hVΩ
-  have hK : IsCompact (cthickening δ S) := hVc.cthickening
-  let Ω' : Opens E := ⟨thickening δ S, isOpen_thickening⟩
-  have hΩ'K : (Ω' : Set E) ⊆ cthickening δ S := thickening_subset_cthickening δ S
-  have hSΩ' : S ⊆ Ω' := self_subset_thickening hδ S
-  have huK : IntegrableOn u (cthickening δ S) μ :=
-    hu.locallyIntegrableOn.integrableOn_compact_subset hδΩ hK
-  have hDuK : IntegrableOn Du (cthickening δ S) μ :=
-    hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hδΩ hK
-  -- Mollifiers of outer radius `δ / 2 / (n + 1) < δ`.
-  let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking (half_pos hδ)
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) :=
-    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ)
-  have hball (n : ℕ) (x : E) (hx : x ∈ S) : closedBall x (φ n).rOut ⊆ Ω' := fun y hy => by
-    have hr : (φ n).rOut < δ := by
-      simp only [φ, ContDiffBump.rOut_shrinking]
-      exact (div_le_self (half_pos hδ).le (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
-        (half_lt_self hδ)
-    exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hr⟩
-  set uext := (Ω' : Set E).indicator u
-  set Dext := (Ω' : Set E).indicator Du
-  have huext : Integrable uext μ :=
-    (huK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
-  have hDext : Integrable Dext μ :=
-    (hDuK.mono_set hΩ'K).integrable_indicator Ω'.isOpen.measurableSet
-  refine ⟨fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] uext,
-    fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext,
-    fun n => (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
-      huext.locallyIntegrable,
-    fun n => (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
-      hDext.locallyIntegrable, fun n x hx => ?_, ?_, ?_⟩
-  · -- The classical derivative of a mollification is the mollified weak derivative.
-    have h := (hu.mono (hΩ'K.trans hδΩ)).hasFDerivAt_indicator_convolution_normed (p := 1)
-      (q := 1) (memLp_one_iff_integrable.2 (huK.mono_set hΩ'K))
-      (memLp_one_iff_integrable.2 (hDuK.mono_set hΩ'K)) le_rfl le_rfl (φ n) x
-      (hball n x (subset_closure hx))
-    simpa only [convolution_flip] using h
-  · -- Uniform convergence on `S`, from uniform continuity of `u` on `cthickening δ S`.
-    have hUC : UniformContinuousOn uext Ω' := by
-      refine Metric.uniformContinuousOn_iff.2 fun ε hε =>
-        (Metric.uniformContinuousOn_iff.1 (hK.uniformContinuousOn_of_continuous
-          (huc.mono hδΩ)) ε hε).imp fun η ⟨hη, h⟩ => ⟨hη, fun x hx y hy hxy => ?_⟩
-      simpa only [uext, indicator_of_mem hx, indicator_of_mem hy] using
-        h x (hΩ'K hx) y (hΩ'K hy) hxy
-    refine (ContDiffBump.tendstoUniformlyOn_normed_convolution
-      hφ hδ hUC huext.aestronglyMeasurable).congr_right
-      fun x hx => ?_
-    simp only [uext, indicator_of_mem (hSΩ' hx)]
-  · -- `L¹(V)` convergence of the derivatives.
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (tendsto_setLIntegral_enorm_normed_convolution_sub hφ
-        hDext.locallyIntegrable hVc) (fun _ => zero_le) fun n => ?_
-    calc ∫⁻ x in V, ‖((φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext) x - Du x‖ₑ ∂μ
-        = ∫⁻ x in V, ‖((φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] Dext) x - Dext x‖ₑ ∂μ :=
-          setLIntegral_congr_fun V.isOpen.measurableSet fun x hx => by
-            simp only [Dext, indicator_of_mem (hSΩ' (subset_closure hx))]
-      _ ≤ _ := lintegral_mono_set subset_closure
-
 variable [CompleteSpace G]
 
 /-- The classical chain rule for a continuous map `v` that is differentiable on `V` with
@@ -173,10 +99,20 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
     HasWeakFDerivOn μ V (fun x => g (u x)) fun x => (fderiv ℝ g (u x)).comp (Du x) := by
   set S := closure (V : Set E)
   have hVS : (V : Set E) ⊆ S := subset_closure
-  obtain ⟨un, Dn, hun, hDn, hderiv, huu, hDD⟩ :=
-    exists_smooth_approx_of_isCompact_closure hu huc V hVc hVΩ
+  obtain ⟨-, -, O, hSO, hOΩ, -, -, hDuO, -, -, -⟩ :=
+    hu.exists_open_memLp_indicator hVc hVΩ
+  obtain ⟨un, hcd, huu, -, -, hDD_Lp⟩ :=
+    hu.exists_contDiff_tendstoUniformlyOn huc hVc hSO hOΩ le_rfl ENNReal.one_ne_top hDuO
+  let Dn : ℕ → E → E →L[ℝ] F := fun n => fderiv ℝ (un n)
+  have hun : ∀ n, Continuous (un n) := fun n => (hcd n).continuous
+  have hDn : ∀ n, Continuous (Dn n) := fun n => (hcd n).continuous_fderiv (by simp)
+  have hderiv : ∀ n, ∀ x ∈ (V : Set E), HasFDerivAt (un n) (Dn n x) x :=
+    fun n x _ => ((hcd n).differentiable (by simp) x).hasFDerivAt
   have hDuS : IntegrableOn Du S μ :=
     hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hVΩ hVc
+  have hDD : Tendsto (fun n => ∫⁻ x in V, ‖Dn n x - Du x‖ₑ ∂μ) atTop (𝓝 0) :=
+    hDD_Lp.congr fun n => eLpNorm_one_eq_lintegral_eNorm
+      ((hDn n).aestronglyMeasurable.sub (hDuS.mono_set hVS).aestronglyMeasurable)
   have hgc : ContinuousOn g W := hg.continuousOn
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
   have huSW : u '' S ⊆ W := (huW.mono_left hVΩ).image_subset

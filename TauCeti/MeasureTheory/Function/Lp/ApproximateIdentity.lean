@@ -361,21 +361,22 @@ theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : T
     exact hy.trans hi
   exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
-/-- **Local `Lᵖ` convergence of zero-extended mollifications.** If `f ∈ Lᵖ(V)` for a measurable
-set `V` and `s ⊆ V`, then for `1 ≤ p < ∞` the mollifications of `V.indicator f` converge to `f`
-in `Lᵖ(s)` as the bump radii tend to zero. No measurability assumption on `s` is required. -/
+/-- **Local `Lᵖ` convergence of zero-extended mollifications.** If `f ∈ Lᵖ(V)` for a
+null-measurable set `V` and `s ⊆ V`, then for `1 ≤ p < ∞` the mollifications of `V.indicator f`
+converge to `f` in `Lᵖ(s)` as the bump radii tend to zero. No measurability assumption on `s` is
+required. -/
 theorem tendsto_eLpNorm_normed_convolution_indicator_sub [CompleteSpace F] {I : Type*}
     {l : Filter I} (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} {V s : Set E}
-    (hV : MeasurableSet V) (hsV : s ⊆ V) (hf : MemLp f p (mu.restrict V)) :
+    (hV : NullMeasurableSet V mu) (hsV : s ⊆ V) (hf : MemLp f p (mu.restrict V)) :
     Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] V.indicator f - f) p
       (mu.restrict s)) l (nhds 0) := by
-  have hfV : MemLp (V.indicator f) p mu := (memLp_indicator_iff_restrict hV.nullMeasurableSet).2 hf
+  have hfV : MemLp (V.indicator f) p mu := (memLp_indicator_iff_restrict hV).2 hf
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (tendsto_eLpNorm_normed_convolution_sub hp hphi hfV) (fun _ ↦ zero_le) fun i ↦ ?_
   have heq : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] V.indicator f - f) =ᵐ[mu.restrict s]
       ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] V.indicator f - V.indicator f) := by
-    filter_upwards [(ae_restrict_mem hV).filter_mono
+    filter_upwards [(ae_restrict_mem₀ hV).filter_mono
       (ae_mono (Measure.restrict_mono hsV le_rfl))] with x hx
     simp only [Pi.sub_apply, indicator_of_mem hx]
   exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)

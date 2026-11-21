@@ -294,10 +294,11 @@ theorem normed_convolution_indicator_eq_of_ball_subset (φ : ContDiffBump (0 : G
   convolution_indicator_eq_of_forall_sub_mem (lsmul ℝ ℝ) fun t ht =>
     hs (by simpa [mem_ball, dist_eq_norm] using φ.support_normed_eq.subset ht)
 
-/-- **Uniform convergence of zero-extended interior mollifications.** If `V` is a measurable set
-with compact closure on which `g` is continuous, and `thickening δ s ⊆ V` with `0 < δ`, then the
-mollifications `φᵢ.normed μ ⋆ V.indicator g` converge uniformly to `g` on `s` as `(φᵢ).rOut → 0`. -/
-theorem tendstoUniformlyOn_normed_convolution_indicator {V : Set G} (hV : MeasurableSet V)
+/-- **Uniform convergence of zero-extended interior mollifications.** If `V` is a null-measurable
+set with compact closure on which `g` is continuous, and `thickening δ s ⊆ V` with `0 < δ`, then
+the mollifications `φᵢ.normed μ ⋆ V.indicator g` converge uniformly to `g` on `s` as
+`(φᵢ).rOut → 0`. -/
+theorem tendstoUniformlyOn_normed_convolution_indicator {V : Set G} (hV : NullMeasurableSet V μ)
     (hVc : IsCompact (closure V)) (hgc : ContinuousOn g (closure V))
     {s : Set G} {δ : ℝ} (hδ : 0 < δ) (hsV : thickening δ s ⊆ V)
     {ι : Type*} {l : Filter ι} {φ : ι → ContDiffBump (0 : G)}
@@ -310,7 +311,9 @@ theorem tendstoUniformlyOn_normed_convolution_indicator {V : Set G} (hV : Measur
     simpa only [Set.indicator_of_mem (hsV hx), Set.indicator_of_mem (hsV hy)] using
       h x (subset_closure (hsV hx)) y (subset_closure (hsV hy)) hxy
   have hmeas : AEStronglyMeasurable (V.indicator g) μ :=
-    (aestronglyMeasurable_indicator_iff hV).2 ((hgc.mono subset_closure).aestronglyMeasurable hV)
+    (aestronglyMeasurable_indicator_iff₀ hV).2
+      ((hgc.aestronglyMeasurable isClosed_closure.measurableSet).mono_measure
+        (Measure.restrict_mono subset_closure le_rfl))
   refine (tendstoUniformlyOn_normed_convolution hφ hδ hUC hmeas).congr_right fun x hx => ?_
   exact Set.indicator_of_mem (hsV (self_subset_thickening hδ s hx)) g
 

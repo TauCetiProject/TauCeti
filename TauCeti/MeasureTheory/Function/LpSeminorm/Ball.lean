@@ -150,10 +150,8 @@ theorem tendsto_iSup_eLpNorm_restrict_ball_zero_of_tendsto_measure {ι : Type*} 
     Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf
-  have hint : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ := by
-    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hfm] at hf
-    intro htop
-    exact hf (by rw [htop, ENNReal.top_rpow_of_pos (one_div_pos.2 hq)])
+  have hint : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ :=
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (lt_top_iff_ne_top.2 hf)).ne
   refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
   have hεp : 0 < ε ^ p.toReal := ENNReal.rpow_pos_of_nonneg hε hq.le
   obtain ⟨δ, hδ, hδint⟩ := exists_pos_setLIntegral_lt_of_measure_lt hint hεp.ne'

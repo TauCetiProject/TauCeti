@@ -161,8 +161,6 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn`: the deviation of `u` from its
   mean over `T` on `A ⊆ U` is at most that of an approximation `v`, plus `(1 + μ(U) / μ(T))` times
   the `L¹(U)` distance from `v` to `u`.
-* `TauCeti.tendsto_setAverage_of_tendsto_eLpNorm_one`: `L¹(S)` convergence implies convergence of
-  set averages over `S` when `μ S ≠ 0`.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
 * `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
@@ -1316,34 +1314,6 @@ theorem setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn {U T A : Set X}
     _ = e + μ U / μ T * e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
         simp only [div_eq_mul_inv]
         ring
-
-/-- **Convergence of set averages under `L¹` convergence.** If `v i → u` in `L¹(S)` along a filter
-`l` (where `u` and each `v i` are integrable on `S` and `μ S ≠ 0`), then `⨍_S v i → ⨍_S u`. -/
-theorem tendsto_setAverage_of_tendsto_eLpNorm_one {ι : Type*} {l : Filter ι} {S : Set X}
-    (hS0 : μ S ≠ 0) (huS : IntegrableOn u S μ) {v : ι → X → F}
-    (hvS : ∀ᶠ i in l, IntegrableOn (v i) S μ)
-    (hv : Filter.Tendsto (fun i => eLpNorm (v i - u) 1 (μ.restrict S)) l (nhds 0)) :
-    Filter.Tendsto (fun i => ⨍ y in S, v i y ∂μ) l (nhds (⨍ y in S, u y ∂μ)) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hmul : Filter.Tendsto (fun i => (μ S)⁻¹ * eLpNorm (v i - u) 1 (μ.restrict S)) l
-      (nhds 0) := by
-    simpa using ENNReal.Tendsto.const_mul hv (Or.inr (ENNReal.inv_ne_top.2 hS0))
-  have henorm : Filter.Tendsto (fun i => ‖(⨍ y in S, v i y ∂μ) - (⨍ y in S, u y ∂μ)‖ₑ) l
-      (nhds 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hmul
-      (.of_forall fun _ => zero_le) ?_
-    filter_upwards [hvS] with i hi
-    have hsub : (⨍ y in S, v i y ∂μ) - (⨍ y in S, u y ∂μ) = ⨍ y in S, (v i y - u y) ∂μ := by
-      simp only [setAverage_eq, ← smul_sub, ← integral_sub hi huS]
-    rw [hsub]
-    calc ‖⨍ y in S, (v i y - u y) ∂μ‖ₑ
-        ≤ ⨍⁻ y in S, ‖v i y - u y‖ₑ ∂μ := enorm_setAverage_le_setLAverage μ _ S
-      _ = (μ S)⁻¹ * ∫⁻ y in S, ‖v i y - u y‖ₑ ∂μ := by rw [setLAverage_eq, ENNReal.div_eq_inv_mul]
-      _ = (μ S)⁻¹ * eLpNorm (v i - u) 1 (μ.restrict S) := by
-          rw [eLpNorm_one_eq_lintegral_eNorm (hi.sub huS).aestronglyMeasurable]
-          rfl
-  simpa [Function.comp_def, toReal_eNorm] using
-    (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp henorm
 
 end Approximation
 
