@@ -63,6 +63,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
+* `TauCeti.Huber.not_isBounded_univ_of_nontriviallyNormedField`: a nontrivially normed field is
+  not bounded in its own topology.
 * `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
   `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
   closed unit ball, equal as a subring to `𝒪[K]`.
@@ -245,6 +247,13 @@ theorem isPseudoUniformizer_iff_norm_lt_one {ϖ : K} :
   exact and_congr_right fun _ ↦ tendsto_pow_atTop_nhds_zero_iff_norm_lt_one
 
 end NormedDivisionRing
+
+/-- **A nontrivially normed field is not bounded in its own topology** (in the sense of
+`TauCeti.Huber.IsBounded`): it admits a pseudouniformiser, so `Set.univ` cannot be bounded. -/
+theorem not_isBounded_univ_of_nontriviallyNormedField (K : Type*) [NontriviallyNormedField K] :
+    ¬ IsBounded (Set.univ : Set K) := by
+  obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
+  exact (isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp hϖ0, hϖ1⟩).not_isBounded_univ
 
 section UltrametricDvd
 
