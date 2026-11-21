@@ -36,8 +36,9 @@ Dirichlet energy: if `χ` is `C¹`, compactly supported and vanishes on the disc
 the point at infinity. In the coordinate `z = w⁻¹` centred at infinity, the map `η = χ ∘ (·⁻¹)` is
 supported in the disc `|z| ≤ 1 / R`. The weight `|w|⁻⁴` is the area distortion `‖(w⁻¹)'‖²` of the
 inversion, so the change of variables formula on `ℂ`
-(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and the Dirichlet
-energy does not grow under the inversion (`TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le`).
+(`TauCeti.integral_inv_sq_norm_sq_smul_eq`) turns the left side into `∫ ‖η‖²`, and the energy of
+`∂_i η` is bounded by the Dirichlet energy of `χ`
+(`TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le`).
 The Poincaré inequality on a strip of width `4 / R` containing that disc
 (`TauCeti.integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd`) then gives the bound.
 -/

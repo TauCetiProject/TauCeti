@@ -92,8 +92,9 @@ because that is what Mathlib's versions of them ask for.
   exactly when that of `u` is integrable on `s⁻¹`.
 * `TauCeti.integral_inv_sq_norm_sq_smul_eq` — the change of variables formula for the inversion:
   `∫ |w|⁻⁴ • g w = ∫ g z⁻¹`.
-* `TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le` — the Dirichlet energy does not grow under
-  the inversion: `∫ ‖∂_v (f ∘ (·⁻¹))‖² ≤ ‖v‖² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`.
+* `TauCeti.integral_norm_fderiv_comp_inv_apply_sq_le` — each directional energy after the
+  inversion is bounded by the Dirichlet energy:
+  `∫ ‖∂_v (f ∘ (·⁻¹))‖² ≤ ‖v‖² ∫ (‖∂₁ f‖² + ‖∂_i f‖²)`.
 
 ## References
 
@@ -320,10 +321,11 @@ theorem integral_inv_sq_norm_sq_smul_eq (g : ℂ → E) :
   ext z
   simp [deriv_inv]
 
-/-- **The Dirichlet energy does not grow under the inversion.** For a map `f` of `ℂ` with
-integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in a direction `v` is at
-most `‖v‖ ^ 2` times the Dirichlet energy of `f`. The target norm is arbitrary, so the bound comes
-from Cauchy–Schwarz (`TauCeti.norm_smul_add_smul_sq_le`) rather than from conformal invariance. -/
+/-- **Each directional energy after the inversion is bounded by the Dirichlet energy.** For a map
+`f` of `ℂ` with integrable Dirichlet energy, the energy of the derivative of `z ↦ f z⁻¹` in a
+direction `v` is at most `‖v‖ ^ 2` times the Dirichlet energy of `f`. The target norm is
+arbitrary, so the bound comes from Cauchy–Schwarz (`TauCeti.norm_smul_add_smul_sq_le`) rather than
+from conformal invariance. -/
 theorem integral_norm_fderiv_comp_inv_apply_sq_le {f : ℂ → E} (v : ℂ)
     (hE : Integrable fun w ↦ ‖fderiv ℝ f w 1‖ ^ 2 + ‖fderiv ℝ f w I‖ ^ 2) :
     ∫ z, ‖fderiv ℝ (fun z ↦ f z⁻¹) z v‖ ^ 2 ≤
