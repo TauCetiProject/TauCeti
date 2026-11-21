@@ -82,7 +82,7 @@ private theorem abs_toReal_sub_mul_self_le_of_symmDiff_le
             _ = 2 * e := (two_mul e).symm))
   have hprod : |μ.real t * μ.real t' - μ.real s * μ.real s| ≤
       e * (2 * μ.real s + e) :=
-    TauCeti.abs_mul_sub_mul_self_le hbt hbt' ENNReal.toReal_nonneg (.all _ _)
+    TauCeti.abs_mul_sub_mul_self_le hbt hbt' ENNReal.toReal_nonneg (mul_comm _ _).le
   rw [hinter] at hbi
   have hsplit : μ.real s - μ.real s * μ.real s =
       (μ.real s - μ.real t * μ.real t') +
