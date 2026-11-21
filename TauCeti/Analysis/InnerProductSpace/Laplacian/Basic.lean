@@ -81,6 +81,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
+* `TauCeti.laplacian_sum`: the Laplacian of a finite sum of `C²` functions is the sum of their
+  Laplacians.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences.
 * `ContDiffOn.continuousOn_laplacian`: the Laplacian of a `C²` function on an open set is
@@ -161,6 +163,13 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
     Δ f x = (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+
+/-- The Laplacian of a finite sum of `C²` functions is the sum of their Laplacians. -/
+theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F}
+    (hf : ∀ i ∈ s, ContDiff ℝ 2 (f i)) (x : E) :
+    Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
+  simp only [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_sum hf, Finset.sum_apply,
+    map_sum]
 
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
