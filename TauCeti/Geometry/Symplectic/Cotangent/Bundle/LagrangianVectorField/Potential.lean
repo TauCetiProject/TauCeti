@@ -102,6 +102,9 @@ theorem mfderiv_proj_potentialForce (L : TangentBundle I M → ℝ) (V : M → �
     (v : TangentBundle I M) :
     mfderiv I.tangent I (π E (TangentSpace I)) v (potentialForce L V v) = 0 := by
   rw [Bundle.mfderiv_proj, potentialForce_def]
+  -- `mfderiv` of the projection is `ContinuousLinearMap.fst ℝ E E`, typed on the `TangentSpace`
+  -- synonyms of `E × E` and `E`; `coe_fst'` does not match there as a rewrite (nor as `simp`), so
+  -- apply it pointwise, which unfolds the synonyms by definition.
   exact congrFun (ContinuousLinearMap.coe_fst' (R := ℝ) (M₁ := E) (M₂ := E)) _
 
 /-- The force of a potential, with its fibre component read in the trivialization of `TM` at the
@@ -209,10 +212,7 @@ theorem hamiltonianVectorField_lagrangianEnergy_comp_snd_sub
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- `f` is smooth: up to the constant `V 0`, it is `L` along the fibre of `TE` over `0`.
   have hf' : ContDiff ℝ ∞ f := by
-    have h := (hLV.contDiff_tangentBundle_mk_constBase 0).add (contDiff_const (c := V 0))
-    convert h using 1
-    funext w
-    simp
+    simpa using (hLV.contDiff_tangentBundle_mk_constBase 0).add (contDiff_const (c := V 0))
   have hL : ContMDiff 𝓘(ℝ, E).tangent 𝓘(ℝ, ℝ) ∞ fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd :=
     hf'.contMDiff.comp (contMDiff_snd_tangentBundle_modelSpace E 𝓘(ℝ, E))
   have hreg : IsRegularLagrangian fun v : TangentBundle 𝓘(ℝ, E) E ↦ f v.snd :=
