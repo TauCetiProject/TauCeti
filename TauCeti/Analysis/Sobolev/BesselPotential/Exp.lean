@@ -121,28 +121,14 @@ theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
     ∃ C, ∀ v : H^{s}(E), ‖v‖ ≤ 1 → ‖expSubOne hs v - v‖ ≤ C * ‖v‖ ^ 2 := by
   have h := nonneg_of_finrank_lt hs
   obtain ⟨C, hC, hser⟩ := exists_hasSum_mul_pow (E := E) hs
-  set a := Complex.expRemainderCoeff
-  have hsumC : Summable fun n ↦ ‖a n‖ * C ^ n :=
-    (Real.summable_pow_div_factorial C).of_nonneg_of_le (fun n ↦ by positivity)
-      fun n ↦ by rw [div_eq_inv_mul]; gcongr; exact Complex.norm_expRemainderCoeff_le n
-  refine ⟨∑' n, ‖a n‖ * C ^ n, fun v hv ↦ ?_⟩
+  refine ⟨C * Real.exp C, fun v hv ↦ ?_⟩
   set r := ‖v‖
   have hr : 0 ≤ r := norm_nonneg _
   have hu := memSobolev_toLp_inclusion h v
   have hur : ‖hu.toBesselPotentialSpace‖ = r := by
     rw [toBesselPotentialSpace_memSobolev_toLp_inclusion]
-  -- Since `a₀ = 0` and `r ≤ 1`, the majorant series is at most `r ∑ₙ |aₙ| Cⁿ`.
-  have hterm (n : ℕ) : ‖a n‖ * (C * r) ^ n ≤ r * (‖a n‖ * C ^ n) := by
-    rcases n with _ | n
-    · simp [a, Complex.expRemainderCoeff_zero]
-    · rw [mul_pow, pow_succ r n]
-      have : r ^ n ≤ 1 := pow_le_one₀ hr hv
-      have h₀ : 0 ≤ ‖a (n + 1)‖ * C ^ (n + 1) := by positivity
-      nlinarith [mul_nonneg h₀ hr]
-  have hsum : Summable fun n ↦ ‖a n‖ * (C * ‖hu.toBesselPotentialSpace‖) ^ n := by
-    rw [hur]
-    exact (hsumC.mul_left r).of_nonneg_of_le (fun n ↦ by positivity) hterm
-  obtain ⟨w, hw, hws, hwn⟩ := hser hu hsum
+  obtain ⟨hsum, hle⟩ := Complex.summable_and_tsum_norm_expRemainderCoeff_le (mul_nonneg hC hr)
+  obtain ⟨w, hw, hws, hwn⟩ := hser hu (by rwa [hur])
   -- The element of `w` is `(exp v - 1) - v`.
   have hweq : hws.toBesselPotentialSpace = expSubOne hs v - v := by
     refine toLp_inclusion_injective h (Lp.ext ?_)
@@ -154,13 +140,10 @@ theorem exists_norm_expSubOne_sub_le (hs : finrank ℝ E < 2 * s) :
     exact hx.unique (Complex.hasSum_expRemainderCoeff _)
   rw [← hweq]
   calc ‖hws.toBesselPotentialSpace‖
-      ≤ ‖hu.toBesselPotentialSpace‖ * ∑' n, ‖a n‖ * (C * ‖hu.toBesselPotentialSpace‖) ^ n := hwn
-    _ ≤ r * (r * ∑' n, ‖a n‖ * C ^ n) := by
-      rw [hur]
-      gcongr
-      rw [← tsum_mul_left]
-      exact (hsum.congr fun n ↦ by rw [hur]).tsum_le_tsum hterm (hsumC.mul_left r)
-    _ = (∑' n, ‖a n‖ * C ^ n) * r ^ 2 := by ring
+      ≤ r * ∑' n, ‖Complex.expRemainderCoeff n‖ * (C * r) ^ n := by rw [← hur]; exact hwn
+    _ ≤ r * ((C * r) * Real.exp (C * r)) := by gcongr
+    _ ≤ r * ((C * r) * Real.exp C) := by gcongr; exact mul_le_of_le_one_right hC hv
+    _ = C * Real.exp C * r ^ 2 := by ring
 
 /-- **The derivative of `exp - 1` on `H^s(E)`**: at `u`, the derivative of `expSubOne hs` is
 multiplication by `exp u`, `v ↦ v + (exp u - 1) v`. -/

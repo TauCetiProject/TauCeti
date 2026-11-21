@@ -128,12 +128,9 @@ private theorem coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect (hm : 0 < P
   have hφx := coeFn_toLp_inclusion_mulCLM (finrank_real_complex_lt_two_mul hs) h0
     (sobolevBackgroundDefect hm h0) x
   simp only [toLp_inclusion] at hφx
-  rw [map_sub]
-  filter_upwards [Lp.coeFn_sub (inclusionLp h0 x)
-      (inclusionLp h0
-        (mulCLM (finrank_real_complex_lt_two_mul hs) (sobolevBackgroundDefect hm h0) x)),
-    hφx, coeFn_inclusionLp_sobolevBackgroundDefect hm h0] with z h₁ h₂ h₃
-  simp only [h₁, Pi.sub_apply, h₂, h₃]
+  filter_upwards [coeFn_inclusionLp_sub_ae_eq h0 EventuallyEq.rfl hφx,
+    coeFn_inclusionLp_sobolevBackgroundDefect hm h0] with z h₁ h₂
+  rw [h₁, h₂]
   have hN : (1 + (‖P.eval z‖ : ℂ) ^ 2) ≠ 0 := by exact_mod_cast (by positivity :
       (1 + ‖P.eval z‖ ^ 2 : ℝ) ≠ 0)
   simp only [backgroundWeight_def]
@@ -218,9 +215,9 @@ private theorem coeFn_inclusionLp_expSubOne_two_smul (hs : 1 < s) (w : H^{s + 2}
   have he := coeFn_toLp_inclusion_expSubOne (finrank_real_complex_lt_two_mul hs) h0
     ((2 : ℂ) • inclusion hι w)
   simp only [toLp_inclusion] at he
-  filter_upwards [he, Lp.coeFn_smul (2 : ℂ) (inclusionLp h0 (inclusion hι w))] with z h₁ h₂
-  simp only [map_smul] at h₁
-  rw [h₁, h₂, Pi.smul_apply, smul_eq_mul, inclusionLp_inclusion]
+  filter_upwards [he, coeFn_inclusionLp_smul_ae_eq h0 (2 : ℂ) (u := inclusion hι w)
+    EventuallyEq.rfl] with z h₁ h₂
+  rw [h₁, h₂, smul_eq_mul, inclusionLp_inclusion]
 
 /-- The `L²` function of `TauCeti.Vortex.reducedEquationMap`: for `w ∈ H^(s+2)(ℂ)`, with `L²`
 function `w(z)`, the `L²` function of `N(w)` is `-Δw + h (exp (2w) - 1) / 8 + k`, where
@@ -238,20 +235,18 @@ theorem coeFn_inclusionLp_reducedEquationMap (hm : 0 < P.natDegree) (hs : 1 < s)
   have h0 : (0 : ℝ) ≤ s := by linarith
   have he := coeFn_inclusionLp_expSubOne_two_smul hs w
   set e := expSubOne hs' ((2 : ℂ) • inclusion (by linarith) w)
+  have hneg : ⇑(inclusionLp h0 (-laplacianCLM s w)) =ᵐ[(volume : Measure ℂ)]
+      fun z ↦ -inclusionLp h0 (laplacianCLM s w) z := by
+    rw [map_neg]
+    exact Lp.coeFn_neg _
+  have hN := coeFn_inclusionLp_add_ae_eq h0 (coeFn_inclusionLp_add_ae_eq h0 hneg
+    (coeFn_inclusionLp_smul_ae_eq h0 8⁻¹
+      (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs e)))
+    (coeFn_inclusionLp_sobolevBackgroundSource hm h0)
+  filter_upwards [hN, he] with z h₁ h₂
   rw [reducedEquationMap]
-  simp only [_root_.sub_apply, ContinuousLinearMap.id_apply, map_add, map_neg, map_smul]
-  filter_upwards [Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s w) +
-      (8⁻¹ : ℂ) • inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e))
-      (inclusionLp h0 (sobolevBackgroundSource hm h0)),
-    Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s w))
-      ((8⁻¹ : ℂ) • inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e)),
-    Lp.coeFn_neg (inclusionLp h0 (laplacianCLM s w)),
-    Lp.coeFn_smul (8⁻¹ : ℂ) (inclusionLp h0 (e - mulCLM hs' (sobolevBackgroundDefect hm h0) e)),
-    coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs e, he,
-    coeFn_inclusionLp_sobolevBackgroundSource hm h0] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
-  -- `simp` does not fire on the outermost sum, so it is split by `rw` first.
-  rw [h₁, Pi.add_apply]
-  simp only [h₂, h₃, h₄, h₅, h₆, h₇, Pi.add_apply, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]
+  simp only [_root_.sub_apply, ContinuousLinearMap.id_apply]
+  rw [h₁, h₂, smul_eq_mul]
   ring
 
 /-- The `L²` function of `TauCeti.Vortex.reducedEquationDeriv`: for `w, v ∈ H^(s+2)(ℂ)`, with `L²`
@@ -274,25 +269,21 @@ theorem coeFn_inclusionLp_reducedEquationDeriv (hm : 0 < P.natDegree) (hs : 1 < 
       fun z ↦ Complex.exp (2 * inclusionLp (by linarith) w z) * inclusionLp (by linarith) v z := by
     have heι := coeFn_toLp_inclusion_mulCLM hs' h0 e (ι v)
     simp only [toLp_inclusion] at heι
-    rw [map_add]
-    filter_upwards [Lp.coeFn_add (inclusionLp h0 (ι v)) (inclusionLp h0 (mulCLM hs' e (ι v))), heι,
-      he] with z h₁ h₂ h₃
-    rw [h₁, Pi.add_apply, h₂, h₃, inclusionLp_inclusion]
+    filter_upwards [coeFn_inclusionLp_add_ae_eq h0 EventuallyEq.rfl heι, he] with z h₁ h₂
+    rw [h₁, h₂, inclusionLp_inclusion]
     ring
   have hD : reducedEquationDeriv hm hs w v =
       -laplacianCLM s v + (4⁻¹ : ℂ) • (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X) := by
     simp only [reducedEquationDeriv, _root_.add_apply, _root_.neg_apply, _root_.smul_apply,
       _root_.sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, X, e, ι]
+  have hneg : ⇑(inclusionLp h0 (-laplacianCLM s v)) =ᵐ[(volume : Measure ℂ)]
+      fun z ↦ -inclusionLp h0 (laplacianCLM s v) z := by
+    rw [map_neg]
+    exact Lp.coeFn_neg _
   rw [hD]
-  simp only [map_add, map_neg, map_smul]
-  filter_upwards [Lp.coeFn_add (-inclusionLp h0 (laplacianCLM s v))
-      ((4⁻¹ : ℂ) • inclusionLp h0 (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X)),
-    Lp.coeFn_neg (inclusionLp h0 (laplacianCLM s v)),
-    Lp.coeFn_smul (4⁻¹ : ℂ) (inclusionLp h0 (X - mulCLM hs' (sobolevBackgroundDefect hm h0) X)),
-    coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs X, hX] with z h₁ h₂ h₃ h₄ h₅
-  -- `simp` does not fire on the outermost sum, so it is split by `rw` first.
-  rw [h₁, Pi.add_apply]
-  simp only [h₂, h₃, h₄, h₅, Pi.neg_apply, Pi.smul_apply, smul_eq_mul]
+  filter_upwards [coeFn_inclusionLp_add_ae_eq h0 hneg (coeFn_inclusionLp_smul_ae_eq h0 4⁻¹
+    (coeFn_inclusionLp_sub_mulCLM_sobolevBackgroundDefect hm hs X)), hX] with z h₁ h₂
+  rw [h₁, h₂, smul_eq_mul]
   ring
 
 /-- **Solutions of the reduced equation are zeros of `TauCeti.Vortex.reducedEquationMap`.** Let
@@ -307,11 +298,9 @@ theorem reducedEquationMap_eq_zero_of_laplacian_eq (hm : 0 < P.natDegree) (hs : 
   have hN := coeFn_inclusionLp_reducedEquationMap hm hs W
   -- The source is square integrable, as the `L²` function of `N(W) + ΔW`.
   have hsrc : MemLp (fun z ↦ (reducedSource P w z : ℂ)) 2 volume := by
-    refine (Lp.memLp (inclusionLp h0 (reducedEquationMap hm hs W) +
-      inclusionLp h0 (laplacianCLM s W))).ae_eq ?_
-    filter_upwards [Lp.coeFn_add (inclusionLp h0 (reducedEquationMap hm hs W))
-      (inclusionLp h0 (laplacianCLM s W)), hN, hW] with z h₁ h₂ h₃
-    rw [h₁, Pi.add_apply, h₂, h₃, reducedSource_def]
+    refine (Lp.memLp (inclusionLp h0 (reducedEquationMap hm hs W + laplacianCLM s W))).ae_eq ?_
+    filter_upwards [coeFn_inclusionLp_add_ae_eq h0 hN EventuallyEq.rfl, hW] with z h₁ h₂
+    rw [h₁, h₂, reducedSource_def]
     push_cast
     ring
   have hΔ2 : MemLp (Δ w) 2 volume := by

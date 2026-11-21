@@ -23,7 +23,6 @@ Dropping the linear term too gives the remainder `exp z - 1 - z = ∑ₙ bₙ z 
 
 * `Complex.hasSum_exp_sub_one`: `exp z - 1 = ∑ₙ z ^ (n + 1) / (n + 1)!` for every complex `z`.
 * `Complex.hasSum_expRemainderCoeff`: `exp z - 1 - z = ∑ₙ bₙ z ^ (n + 1)`.
-* `Complex.norm_expRemainderCoeff_le`: the coefficients are bounded by `‖bₙ‖ ≤ 1 / n!`.
 * `Complex.summable_and_tsum_norm_expRemainderCoeff_le`: the majorant `∑ₙ ‖bₙ‖ xⁿ` is at most
   `x exp x` for `x ≥ 0`.
 -/
@@ -51,14 +50,6 @@ theorem expRemainderCoeff_zero : expRemainderCoeff 0 = 0 := by simp [expRemainde
 @[simp]
 theorem expRemainderCoeff_succ (n : ℕ) : expRemainderCoeff (n + 1) = (((n + 2)! : ℂ))⁻¹ := by
   simp [expRemainderCoeff]
-
-/-- The coefficients of the series of `exp z - 1 - z` are bounded by `‖bₙ‖ ≤ 1 / n!`. -/
-theorem norm_expRemainderCoeff_le (n : ℕ) : ‖expRemainderCoeff n‖ ≤ ((n ! : ℝ))⁻¹ := by
-  rcases n with _ | n
-  · simp
-  · rw [expRemainderCoeff_succ, norm_inv, norm_natCast]
-    gcongr
-    omega
 
 /-- The exponential series without its constant and linear terms:
 `exp z - 1 - z = ∑ₙ bₙ z ^ (n + 1)`. -/
