@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Topology.MetricSpace.Thickening
@@ -114,8 +113,7 @@ private theorem integral_mul_transposeUniformCLM_cutoff_comp (ha : a.HasNearDiag
   -- On `u`, `Op(ψ a) u = Op(a) u`, since `Op(a) u` is supported where `ψ = 1`.
   have hu : TestFunction.toSchwartzMapCLM ℝ u = u.hasCompactSupport.toSchwartzMap u.contDiff := by
     ext y
-    rw [TestFunction.toSchwartzMapCLM_apply]
-    rfl
+    rw [TestFunction.toSchwartzMapCLM_apply, HasCompactSupport.toSchwartzMap_toFun]
   have hop (x : CoordinateSpace n) :
       quantizeUniformCLM _ hb (TestFunction.toSchwartzMapCLM ℝ u) x =
         quantizeTestFunctionCLM ha u x := by
@@ -134,8 +132,8 @@ private theorem integral_mul_transposeUniformCLM_cutoff_comp (ha : a.HasNearDiag
     _ = ∫ x, (φ x : ℂ) * quantizeTestFunctionCLM ha u x := by
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
         dsimp only
-        rw [hop x, TestFunction.toSchwartzMapCLM_apply, TestFunction.postcompCLM_apply]
-        rfl
+        rw [hop x, TestFunction.toSchwartzMapCLM_apply, TestFunction.postcompCLM_apply,
+          Function.comp_apply, Complex.ofRealCLM_apply]
 
 /-- **Transposes are local.** If `ψ = 1` on the closed `R`-neighbourhood of an open set `U`, then
 the transposes of `Op(a)` and of `Op(ψ a)` agree on `U`: both operators agree on the test functions
@@ -150,31 +148,22 @@ private theorem eqOn_transposeTest (ha : a.HasNearDiagonalKernel R) {ψ : Coordi
   set b := transposeUniformCLM ((cutoff ℂ hψ).comp a)
     ((hasCompactSpatialSupport_cutoff hψ hψc).comp_right a).isUniform
     (TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM Complex.ofRealCLM φ))
-  set f : CoordinateSpace n → ℂ := fun x ↦ transposeTest ha φ x - b x
-  have hfc : Continuous f := (transposeTest ha φ).continuous.sub b.continuous
-  -- `f` integrates to zero against every smooth function supported in `U`.
-  have hf : ∀ g : CoordinateSpace n → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ U →
-      ∫ x, g x • f x = 0 := by
-    intro g hg hgc hgU
-    let u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-      ⟨fun x ↦ (g x : ℂ), ofRealCLM.contDiff.comp hg, hgc.comp_left ofReal_zero, subset_univ _⟩
-    have hux (x : CoordinateSpace n) : u x = g x := (rfl)
-    have hint (h : CoordinateSpace n → ℂ) (hh : Continuous h) : Integrable fun x ↦ h x * u x :=
-      (hh.mul u.continuous).integrable_of_hasCompactSupport u.hasCompactSupport.mul_left
-    calc ∫ x, g x • f x
-        = (∫ x, transposeTest ha φ x * u x) - ∫ x, b x * u x := by
-          rw [← integral_sub (hint _ (transposeTest ha φ).continuous) (hint _ b.continuous)]
-          refine integral_congr_ae (.of_forall fun x ↦ ?_)
-          simp only [f, hux, Complex.real_smul]
-          ring
-      _ = 0 := by
-          rw [integral_mul_transposeTest, integral_mul_transposeUniformCLM_cutoff_comp ha hψ hψc
-            hψU φ ((tsupport_comp_subset ofReal_zero _).trans hgU), sub_self]
-  have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-    (hfc.locallyIntegrable.locallyIntegrableOn U) hf
-  have hfU : EqOn f 0 U := Measure.eqOn_open_of_ae_eq
-    ((ae_restrict_iff' hU.measurableSet).2 hae) hU hfc.continuousOn continuousOn_const
-  exact fun x hx ↦ sub_eq_zero.1 (hfU hx)
+  -- Compare the multiplication operators by the two transposes, tested against every compactly
+  -- supported Schwartz function `u` supported in `U`, viewed as a test function.
+  have hK {g : CoordinateSpace n → ℂ} (hg : Continuous g) :
+      ContinuousOn (fun y ↦ ContinuousLinearMap.mul ℂ ℂ (g y)) U :=
+    ((ContinuousLinearMap.mul ℂ ℂ).continuous.comp hg).continuousOn
+  intro x hx
+  have h := hU.eqOn_of_integral_clm_apply_eq (μ := volume) (hK (transposeTest ha φ).continuous)
+    (hK b.continuous) (fun u hu huU ↦ ?_) hx
+  · simpa using congr($h 1)
+  set v : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) := u.toTestFunction hu (subset_univ _)
+  have hv : ⇑v = u := SchwartzMap.coe_toTestFunction u hu _
+  have h₁ := integral_mul_transposeTest ha φ v
+  have h₂ := integral_mul_transposeUniformCLM_cutoff_comp ha hψ hψc hψU φ (u := v) (hv ▸ huU)
+  rw [hv] at h₁ h₂
+  simp only [ContinuousLinearMap.mul_apply']
+  rw [h₁, h₂]
 
 /-- **Localizing a properly supported operator.** Let `χ` be a test function supported in an open
 set `U`, and `ψ` a compactly supported smooth function equal to `1` on the closed `R`-neighbourhood
@@ -249,14 +238,15 @@ theorem waveFrontSet_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R
   let χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
     ⟨fun x ↦ (ρ x : ℂ), ofRealCLM.contDiff.comp ρ.contDiff,
       ρ.hasCompactSupport.comp_left ofReal_zero, subset_univ _⟩
+  -- `χ` is the bump function `ρ`, viewed as a complex-valued test function.
+  have hχx (x : CoordinateSpace n) : χ x = ρ x := (rfl)
   set D := toDistribution ⊤ (T.cutoffTempered χ)
   -- `T - χ T` vanishes on `ball x₀ r`.
   have hdsupp : dsupport (T - D) ⊆ (ball x₀ r)ᶜ := by
     refine subset_compl_comm.1 fun x hx hx' ↦
       ((T.isVanishingOn_sub_toDistribution_cutoffTempered fun y hy ↦ ?_).disjoint_dsupport
         isOpen_ball).ne_of_mem hx hx' rfl
-    change ((ρ y : ℝ) : ℂ) = 1
-    rw [ρ.one_of_mem_closedBall (ball_subset_closedBall hy), ofReal_one]
+    rw [hχx, ρ.one_of_mem_closedBall (ball_subset_closedBall hy), ofReal_one]
   -- So `χ T` is microlocally smooth at `(x₀, ξ₀)`, and `Op(a) (T - χ T)` vanishes near `x₀`.
   have hTD : (T - D).IsMicrolocallySmoothAt x₀ ξ₀ :=
     isMicrolocallySmoothAt_of_notMem_dsupport trivial
