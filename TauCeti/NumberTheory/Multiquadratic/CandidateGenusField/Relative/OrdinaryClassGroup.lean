@@ -167,11 +167,9 @@ private theorem ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect
       (NarrowClassGroup.toClassGroup (K := candidateGenusFieldBase hd))
       NarrowClassGroup.toClassGroup_surjective hxmap
     rw [← hC'C]
-    rw [NarrowClassGroup.toClassGroup_ker] at hC'
-    obtain ⟨u, rfl⟩ := hC'
-    rcases mkPrincipal_eq_one_or_eq_mkPrincipal_gen
+    rcases (NarrowClassGroup.toClassGroup_eq_one_iff
         (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) u with hu | hu
+        (adjoin_candidateGenusFieldBaseGen_eq_top hd)).mp hC' with hu | hu
     · rw [hu, TauCeti.elementaryTwoQuotientMk_one]
       exact Submodule.zero_mem _
     · rw [hu]

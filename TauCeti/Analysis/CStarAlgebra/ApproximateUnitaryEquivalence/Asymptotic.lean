@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Sequential
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import Mathlib.Topology.Algebra.Star.Unitary
 
 /-!
-# Asymptotic unitary equivalence in a unital target
+# Asymptotic unitary equivalence
 
 Two possibly nonunital star homomorphisms `φ ψ : A → B` into a unital C⋆-algebra are
 asymptotically unitarily equivalent when a norm-continuous path `u : [0, ∞) → U(B)` of target
@@ -25,19 +25,28 @@ precomposition by any map (in particular restriction to a subalgebra) and with p
 by a unital map. It is enough to check the convergence on a set whose generated star subalgebra
 is dense (`of_dense_adjoin`).
 
+For a possibly nonunital target `B`, `MultiplierAsymptoticallyUnitarilyEquivalent` takes the
+path in the unitary group of the multiplier algebra `𝓜(ℂ, B)`, continuous for the norm of
+`𝓜(ℂ, B)`. It is the unital-target relation for the composites with `B → 𝓜(ℂ, B)`; it is an
+equivalence relation, preserved by precomposition and by postcomposition with a nondegenerate
+map, and it implies `MultiplierApproximatelyUnitarilyEquivalent`. For a unital target the two
+versions coincide
+(`multiplierAsymptoticallyUnitarilyEquivalent_iff_asymptoticallyUnitarilyEquivalent`).
+
 This is the asymptotic counterpart of approximate unitary equivalence (Rørdam,
 *Classification of nuclear, simple C*-algebras*, Encyclopaedia Math. Sci. 126, Definition
 1.1.15), with the path indexed by `[0, ∞)` as in Phillips, *A classification theorem for
-nuclear purely infinite simple C*-algebras*, Doc. Math. 5 (2000), and with unitaries of the
-unital target rather than of the multiplier algebra.
+nuclear purely infinite simple C*-algebras*, Doc. Math. 5 (2000).
 -/
 
 public section
 
 open Filter Topology
-open scoped NNReal CStarAlgebra
+open scoped NNReal CStarAlgebra MultiplierAlgebra
 
 namespace TauCeti
+
+section Unital
 
 variable {A B C : Type*} [NonUnitalCStarAlgebra A] [CStarAlgebra B]
 
@@ -151,6 +160,17 @@ theorem postcomp [CStarAlgebra C] (h : AsymptoticallyUnitarilyEquivalent φ ψ)
     StarAlgHom.coe_toNonUnitalStarAlgHom, Function.comp_def, map_mul, map_star] using
     ((map_continuous ρ).tendsto (ψ a)).comp (hu a)
 
+/-- Unital postcomposition along a factorization `ρ ∘ ι = κ` carries asymptotic unitary
+equivalence of the composites with `ι` to asymptotic unitary equivalence of the composites
+with `κ`. -/
+theorem postcomp_of_comp_eq [CStarAlgebra C] {D : Type*} [NonUnitalCStarAlgebra D]
+    {φ ψ : A →⋆ₙₐ[ℂ] D} {ι : D →⋆ₙₐ[ℂ] B} {κ : D →⋆ₙₐ[ℂ] C}
+    (h : AsymptoticallyUnitarilyEquivalent (ι.comp φ) (ι.comp ψ)) (ρ : B →⋆ₐ[ℂ] C)
+    (hρ : ρ.toNonUnitalStarAlgHom.comp ι = κ) :
+    AsymptoticallyUnitarilyEquivalent (κ.comp φ) (κ.comp ψ) := by
+  subst hρ
+  simpa only [NonUnitalStarAlgHom.comp_assoc] using h.postcomp ρ
+
 /-- Asymptotically unitarily equivalent maps have the same pointwise norm. -/
 theorem norm_eq (h : AsymptoticallyUnitarilyEquivalent φ ψ) (a : A) : ‖φ a‖ = ‖ψ a‖ :=
   h.approximatelyUnitarilyEquivalent.norm_eq a
@@ -161,5 +181,125 @@ theorem injective_iff (h : AsymptoticallyUnitarilyEquivalent φ ψ) :
   h.approximatelyUnitarilyEquivalent.injective_iff
 
 end AsymptoticallyUnitarilyEquivalent
+
+end Unital
+
+section Multiplier
+
+variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  [NonUnitalCStarAlgebra C]
+
+/-- Asymptotic unitary equivalence implemented by a norm-continuous path `u : [0, ∞) → U(𝓜(ℂ, B))`
+of unitary multipliers: conjugation of `φ` by `u t` converges pointwise to `ψ` as `t → ∞`. It is
+the target-unitary relation for the composites with the inclusion `B → 𝓜(ℂ, B)`. -/
+def MultiplierAsymptoticallyUnitarilyEquivalent (φ ψ : A →⋆ₙₐ[ℂ] B) : Prop :=
+  AsymptoticallyUnitarilyEquivalent ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp φ)
+    ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ)
+
+/-- The multiplier-unitary relation is the target-unitary relation inside `𝓜(ℂ, B)`. -/
+theorem multiplierAsymptoticallyUnitarilyEquivalent_iff_coeHom (φ ψ : A →⋆ₙₐ[ℂ] B) :
+    MultiplierAsymptoticallyUnitarilyEquivalent φ ψ ↔
+      AsymptoticallyUnitarilyEquivalent ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp φ)
+        ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ) :=
+  Iff.rfl
+
+/-- Path characterization of the multiplier-unitary relation, with the conjugates computed
+in `B`. -/
+theorem multiplierAsymptoticallyUnitarilyEquivalent_iff (φ ψ : A →⋆ₙₐ[ℂ] B) :
+    MultiplierAsymptoticallyUnitarilyEquivalent φ ψ ↔
+      ∃ u : C(ℝ≥0, unitary 𝓜(ℂ, B)), ∀ a,
+        Tendsto (fun t ↦ DoubleCentralizer.conjStarAlgAut (u t) (φ a)) atTop (𝓝 (ψ a)) := by
+  simp only [multiplierAsymptoticallyUnitarilyEquivalent_iff_coeHom,
+    asymptoticallyUnitarilyEquivalent_def, NonUnitalStarAlgHom.comp_apply,
+    DoubleCentralizer.coeHom_apply, ← DoubleCentralizer.coe_conjStarAlgAut_apply,
+    DoubleCentralizer.tendsto_coe_iff]
+
+namespace MultiplierAsymptoticallyUnitarilyEquivalent
+
+variable {φ ψ χ : A →⋆ₙₐ[ℂ] B}
+
+/-- Conjugacy by a fixed unitary multiplier gives the multiplier-unitary relation, through the
+constant path. -/
+theorem of_unitary (u : unitary 𝓜(ℂ, B))
+    (h : ∀ a, DoubleCentralizer.conjStarAlgAut u (φ a) = ψ a) :
+    MultiplierAsymptoticallyUnitarilyEquivalent φ ψ :=
+  (multiplierAsymptoticallyUnitarilyEquivalent_iff φ ψ).2
+    ⟨ContinuousMap.const _ u, fun a ↦ by simpa only [ContinuousMap.const_apply, h a] using
+      tendsto_const_nhds⟩
+
+/-- The multiplier-unitary relation is reflexive. -/
+@[refl, simp]
+theorem refl (φ : A →⋆ₙₐ[ℂ] B) : MultiplierAsymptoticallyUnitarilyEquivalent φ φ :=
+  AsymptoticallyUnitarilyEquivalent.refl _
+
+/-- The multiplier-unitary relation is symmetric. -/
+@[symm]
+theorem symm (h : MultiplierAsymptoticallyUnitarilyEquivalent φ ψ) :
+    MultiplierAsymptoticallyUnitarilyEquivalent ψ φ :=
+  AsymptoticallyUnitarilyEquivalent.symm h
+
+/-- The multiplier-unitary relation is transitive. -/
+@[trans]
+theorem trans (h₁ : MultiplierAsymptoticallyUnitarilyEquivalent φ ψ)
+    (h₂ : MultiplierAsymptoticallyUnitarilyEquivalent ψ χ) :
+    MultiplierAsymptoticallyUnitarilyEquivalent φ χ :=
+  AsymptoticallyUnitarilyEquivalent.trans h₁ h₂
+
+/-- The multiplier-unitary relation is an equivalence relation. -/
+theorem equivalence :
+    Equivalence (MultiplierAsymptoticallyUnitarilyEquivalent (A := A) (B := B)) :=
+  ⟨refl, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
+
+/-- Precomposition with any star homomorphism preserves the multiplier-unitary relation. -/
+theorem precomp (h : MultiplierAsymptoticallyUnitarilyEquivalent φ ψ) (ρ : C →⋆ₙₐ[ℂ] A) :
+    MultiplierAsymptoticallyUnitarilyEquivalent (φ.comp ρ) (ψ.comp ρ) := by
+  rw [multiplierAsymptoticallyUnitarilyEquivalent_iff_coeHom, ← NonUnitalStarAlgHom.comp_assoc,
+    ← NonUnitalStarAlgHom.comp_assoc]
+  exact AsymptoticallyUnitarilyEquivalent.precomp h ρ
+
+/-- Postcomposition with a nondegenerate star homomorphism `ρ : B → C` preserves the
+multiplier-unitary relation: the unital extension of `ρ` to the multiplier algebras carries
+implementing paths to implementing paths. -/
+theorem postcomp (h : MultiplierAsymptoticallyUnitarilyEquivalent φ ψ) (ρ : B →⋆ₙₐ[ℂ] C)
+    (hρ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ).IsMultiplierNondegenerate) :
+    MultiplierAsymptoticallyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
+  have hcomp : (((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ).extendToMultiplier
+      hρ).toNonUnitalStarAlgHom.comp (DoubleCentralizer.coeHom (𝕜 := ℂ)) =
+      (DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ := by
+    refine NonUnitalStarAlgHom.ext fun b ↦ ?_
+    simp
+  simpa only [multiplierAsymptoticallyUnitarilyEquivalent_iff_coeHom,
+    NonUnitalStarAlgHom.comp_assoc] using
+    AsymptoticallyUnitarilyEquivalent.postcomp_of_comp_eq h _ hcomp
+
+/-- The multiplier-unitary asymptotic relation implies the multiplier-unitary approximate
+relation. -/
+theorem multiplierApproximatelyUnitarilyEquivalent
+    (h : MultiplierAsymptoticallyUnitarilyEquivalent φ ψ) :
+    MultiplierApproximatelyUnitarilyEquivalent φ ψ :=
+  (multiplierApproximatelyUnitarilyEquivalent_iff_coeHom φ ψ).2
+    (AsymptoticallyUnitarilyEquivalent.approximatelyUnitarilyEquivalent h)
+
+end MultiplierAsymptoticallyUnitarilyEquivalent
+
+/-- For a unital target, implementing paths may be taken in `U(B)` or in `U(𝓜(ℂ, B))`: the
+multiplier-unitary relation coincides with the target-unitary relation, since `B` is isomorphic
+to its multiplier algebra. -/
+theorem multiplierAsymptoticallyUnitarilyEquivalent_iff_asymptoticallyUnitarilyEquivalent
+    {B : Type*} [CStarAlgebra B] {φ ψ : A →⋆ₙₐ[ℂ] B} :
+    MultiplierAsymptoticallyUnitarilyEquivalent φ ψ ↔ AsymptoticallyUnitarilyEquivalent φ ψ := by
+  rw [multiplierAsymptoticallyUnitarilyEquivalent_iff_coeHom]
+  constructor
+  · intro h
+    simpa only [NonUnitalStarAlgHom.id_comp] using
+      AsymptoticallyUnitarilyEquivalent.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B) h
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).symm.toStarAlgHom (by simp)
+  · intro h
+    simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
+      DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
+      AsymptoticallyUnitarilyEquivalent.postcomp h
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toStarAlgHom
+
+end Multiplier
 
 end TauCeti
