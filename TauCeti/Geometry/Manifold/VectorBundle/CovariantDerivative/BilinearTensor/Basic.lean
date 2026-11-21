@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The covariant derivative of a field of bilinear forms
@@ -31,7 +35,13 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
 * `CovariantDerivative.derivBilinearTensor_apply`: its value on differentiable sections.
 * `CovariantDerivative.derivBilinearTensor_eq_zero_iff`: `∇b` vanishes exactly when `∇` satisfies
   the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)`.
-* `CovariantDerivative.derivBilinearTensor_apply_comm`: `∇b` is symmetric when `b` is.
+* `CovariantDerivative.derivBilinearTensor_apply_comm`,
+  `CovariantDerivative.derivBilinearTensor_apply_anticomm`: `∇b` is symmetric, respectively
+  skew-symmetric, when `b` is.
+* `CovariantDerivative.derivBilinearTensor_apply_sub_derivBilinearTensor_apply`: changing the
+  connection changes `∇b` by `-b(Δ ·, ·) - b(·, Δ ·)`, for the difference tensor `Δ`.
+* `CovariantDerivative.contMDiff_derivBilinearTensor_apply`: for a smooth connection, a smooth `b`,
+  smooth sections and a smooth vector field, `(∇_X b)(σ, τ)` is a smooth function.
 * `CovariantDerivative.derivBilinearTensor_eq_derivMetricTensor`: for the inner product of a
   Riemannian bundle, `∇b` is `CovariantDerivative.derivMetricTensor`.
 * `CovariantDerivative.IsMetricCompatible.derivBilinearTensor_eq_zero_of_eq_mul_inner`: for a
@@ -196,6 +206,40 @@ theorem derivBilinearTensor_apply_comm (hsymm : ∀ y (v w : V y), b y v w = b y
     ring
   · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
 
+/-- The covariant derivative of a skew-symmetric field of bilinear forms is skew-symmetric in its
+two fibre arguments. -/
+theorem derivBilinearTensor_apply_anticomm (hskew : ∀ y (v w : V y), b y v w = -b y w v)
+    (σ₀ τ₀ : V x) :
+    cov.derivBilinearTensor b x σ₀ τ₀ = -cov.derivBilinearTensor b x τ₀ σ₀ := by
+  by_cases hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x
+  · ext v
+    have hpair : (fun y ↦ b y (extend F σ₀ y) (extend F τ₀ y)) =
+        -fun y ↦ b y (extend F τ₀ y) (extend F σ₀ y) :=
+      funext fun y ↦ hskew y _ _
+    rw [neg_apply, cov.derivBilinearTensor_apply_eq_extend hb,
+      cov.derivBilinearTensor_apply_eq_extend hb, hpair, mvfderiv_neg, hskew x σ₀,
+      hskew x (cov (extend F σ₀) x v)]
+    simp only [neg_apply]
+    ring
+  · simp [cov.derivBilinearTensor_eq_zero_of_not hb]
+
+/-- **Changing the connection changes `∇b` by the difference tensor.** For a field of bilinear
+forms `b` differentiable at `x`, replacing `∇'` by `∇` changes `(∇_v b)(σ₀, τ₀)` by
+`-b(Δ(σ₀, v), τ₀) - b(σ₀, Δ(τ₀, v))`, where `Δ` is the difference tensor
+`CovariantDerivative.difference` of the two connections. -/
+theorem derivBilinearTensor_apply_sub_derivBilinearTensor_apply
+    (cov' : CovariantDerivative I F V)
+    (hb : ∀ ⦃σ τ : Π x : M, V x⦄, MDiffAt (T% σ) x → MDiffAt (T% τ) x →
+      MDiffAt (fun y ↦ b y (σ y) (τ y)) x)
+    (σ₀ τ₀ : V x) (v : TangentSpace I x) :
+    cov.derivBilinearTensor b x σ₀ τ₀ v - cov'.derivBilinearTensor b x σ₀ τ₀ v =
+      -b x (cov.difference cov' x σ₀ v) τ₀ - b x σ₀ (cov.difference cov' x τ₀ v) := by
+  rw [cov.derivBilinearTensor_apply_eq_extend hb, cov'.derivBilinearTensor_apply_eq_extend hb,
+    difference_apply_eq_extend, difference_apply_eq_extend]
+  simp only [sub_apply, map_sub]
+  ring
+
 /-- The covariant derivative of a field of bilinear forms `b` vanishes everywhere exactly when `∇`
 satisfies the product rule `v (b(σ, τ)) = b(∇_v σ, τ) + b(σ, ∇_v τ)` for all sections `σ`, `τ`
 differentiable at the base point. -/
@@ -216,6 +260,29 @@ theorem derivBilinearTensor_eq_zero_iff
     rw [cov.derivBilinearTensor_apply_eq_extend (hb x),
       h (mdifferentiableAt_extend I F σ₀) (mdifferentiableAt_extend I F τ₀) v]
     simp
+
+/-- The pairing `y ↦ (∇_{X y} b)(σ y, τ y)` of the covariant derivative of a smooth field of
+bilinear forms with smooth sections and a smooth vector field is smooth. -/
+theorem contMDiff_derivBilinearTensor_apply [IsManifold I 1 M]
+    [ContMDiffCovariantDerivative cov ∞]
+    (hbs : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) ∞
+      (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x (b x)))
+    {σ τ : Π x : M, V x} (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
+    {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)) :
+    ContMDiff I 𝓘(ℝ) ∞ fun y ↦ cov.derivBilinearTensor b y (σ y) (τ y) (X y) := by
+  have hpair {α β : Π x : M, V x} (hα : CMDiff ∞ (T% α)) (hβ : CMDiff ∞ (T% β)) :
+      ContMDiff I 𝓘(ℝ) ∞ fun y ↦ b y (α y) (β y) :=
+    (Bundle.Trivial.contMDiff_mk_iff.1 ((hbs.clm_bundle_apply hα).clm_bundle_apply hβ)).2
+  have hd : ContMDiff I 𝓘(ℝ) ∞ fun y ↦ mvfderiv I (fun z ↦ b z (σ z) (τ z)) y (X y) :=
+    (Bundle.Trivial.contMDiff_mk_iff.1
+      (((by simpa using hpair hσ hτ : ContMDiff I 𝓘(ℝ) (∞ + 1) _).contMDiff_totalSpaceMk_mvfderiv)
+        |>.clm_bundle_apply hX)).2
+  refine ((hd.sub (hpair (cov.contMDiff_apply hX (by simpa using hσ)) hτ)).sub
+    (hpair hσ (cov.contMDiff_apply hX (by simpa using hτ)))).congr fun y ↦ ?_
+  rw [cov.derivBilinearTensor_apply (fun α β hα hβ ↦ ?_) (hσ.mdifferentiableAt (by simp))
+    (hτ.mdifferentiableAt (by simp))]
+  exact (Bundle.Trivial.mdifferentiableAt_section_iff.1
+    (((hbs.mdifferentiableAt (by simp)).clm_bundle_apply hα).clm_bundle_apply hβ))
 
 end General
 
