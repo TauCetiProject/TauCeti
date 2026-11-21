@@ -20,6 +20,10 @@ The evaluation action of bounded operators on a seminormed space is bounded
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
+
+Bounded operators act jointly continuously on their domain for the operator norm topology
+(`ContinuousLinearMap.instContinuousSMulApply`), and so does every submonoid of them, such as a
+unitary group.
 -/
 
 public section
@@ -72,5 +76,12 @@ theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [Nontrivially
   have h : ContinuousAt (fun z : X × E ↦ e z.1 z.2) (a, 0) :=
     (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
   simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+
+
+/-- Bounded operators act jointly continuously on their domain, for the operator norm topology. -/
+instance ContinuousLinearMap.instContinuousSMulApply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : ContinuousSMul (E →L[𝕜] E) E :=
+  ⟨by simpa only [ContinuousLinearMap.smul_def] using
+    (isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := E) (F := E)).continuous⟩
 
 end

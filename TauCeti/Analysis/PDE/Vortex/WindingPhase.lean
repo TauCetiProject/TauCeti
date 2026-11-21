@@ -73,6 +73,8 @@ derivatives of every order is
 * `TauCeti.Vortex.gaugeForm_windingPhase`: the logarithmic derivative of the winding phase.
 * `TauCeti.Vortex.gaugeTransform_inv_windingPhase_referenceField`: the end trivialization takes
   the reference field to the vacuum outside the cutoff disc.
+* `TauCeti.Vortex.sub_referenceField_apply_eq`: outside the cutoff disc, `x - x_ref` is the end
+  trivialization of `x` minus the vacuum, with its section part rotated by the winding phase.
 * `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`: a vortex normalized at its end
   converges exponentially to the reference field.
 * `TauCeti.Vortex.gaugeTransform_inv_windingPhase_apply_zero_of_equation_eq_zero`,
@@ -445,18 +447,34 @@ theorem gaugeTransform_inv_windingPhase_apply_one_of_equation_eq_zero {z : ℂ} 
       fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z 1 / 2 :=
   (gaugeTransform_inv_windingPhase_apply_zero_one hz hp hq h₁ h₂ hphase hα).2
 
+/-- **`x - x_ref` outside the cutoff disc.** Since the end trivialization of the reference field
+is the vacuum, outside the cutoff disc `x - x_ref` is `g = u⁻¹ · x - vacuum` with its section part
+rotated by the winding phase `u`, which there equals the reference section `s`: its connection
+coefficients are those of `g`, and its section is `s` times the section of `g`. -/
+theorem sub_referenceField_apply_eq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hrOut : f.rOut ≤ ‖z‖ ^ 2) {g : EuclideanSpace ℝ (Fin 4)}
+    (hg : gaugeTransform (windingPhase m)⁻¹ x z - vacuumField z = g) :
+    (x - referenceField f m) z =
+      !₂[g 0, g 1, (referenceSection f m z).re * g 2 - (referenceSection f m z).im * g 3,
+        (referenceSection f m z).im * g 2 + (referenceSection f m z).re * g 3] := by
+  have hsub : x - referenceField f m = gaugeLinearAction (windingPhase m)
+      (gaugeTransform (windingPhase m)⁻¹ x - gaugeTransform (windingPhase m)⁻¹ (referenceField f m))
+      := by
+    rw [gaugeTransform_sub_gaugeTransform, gaugeLinearAction_gaugeLinearAction_inv]
+  have hs : referenceSection f m z = windingPhase m z := by
+    rw [referenceSection_eq_phase f m hrOut,
+      coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f hrOut)]
+  rw [hsub, gaugeLinearAction_apply, Pi.sub_apply,
+    gaugeTransform_inv_windingPhase_referenceField f m hrOut, hg, hs]
+
 /-- Outside the cutoff disc, the connection coefficients of `x - x_ref` are those of the end
 trivialization of `x`, since the end trivialization of the reference field is the vacuum. -/
 private theorem sub_referenceField_apply_eq_gaugeTransform_inv_windingPhase_apply
     (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hrOut : f.rOut ≤ ‖z‖ ^ 2) {i : Fin 4}
     (hi : i = 0 ∨ i = 1) :
     (x - referenceField f m) z i = gaugeTransform (windingPhase m)⁻¹ x z i := by
-  have h := congrFun (gaugeTransform_sub_gaugeTransform (windingPhase m)⁻¹ x (referenceField f m))
-    z
-  rw [Pi.sub_apply, gaugeTransform_inv_windingPhase_referenceField f m hrOut,
-    gaugeLinearAction_apply] at h
-  have hi' := congrArg (· i) h
-  rcases hi with rfl | rfl <;> simpa [vacuumField_apply] using hi'.symm
+  rw [sub_referenceField_apply_eq f hrOut rfl]
+  rcases hi with rfl | rfl <;> simp [vacuumField_apply]
 
 /-- **The connection of an end-normalized vortex.** At a point `z` outside the cutoff disc near
 which the section of `x` is `|α|` times the winding phase, where `α (z) ≠ 0` and `∂bar_a α = 0`,

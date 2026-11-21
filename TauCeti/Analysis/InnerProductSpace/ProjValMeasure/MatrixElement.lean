@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Variation
 public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Matrix elements of the integral against a projection-valued measure
@@ -33,6 +35,16 @@ against `μ_(ξ,ξ)` gives the Bochner integral against `P.diag ξ`.
   `⟪ψ, (∫ f dP) ξ⟫` is the integral of `f` against `μ_(ψ,ξ)`.
 * `ProjValMeasure.integral_polarizedComplexMeasure_self`: integration of any `f : X → ℂ` against
   `μ_(ξ,ξ)` is the Bochner integral against `P.diag ξ`.
+* `ProjValMeasure.polarizedComplexMeasure_integral_right` and
+  `ProjValMeasure.polarizedComplexMeasure_integral_left`: applying `∫ g dP` to either vector
+  weights `μ_(ψ,ξ)` by `g` or `star g`.
+* `ProjValMeasure.lintegral_enorm_variation_polarizedComplexMeasure_le`,
+  `ProjValMeasure.lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm`,
+  `ProjValMeasure.integrable_polarizedComplexMeasure_of_memLp`,
+  `ProjValMeasure.integrable_polarizedComplexMeasure_of_memLp_left`,
+  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le`, and
+  `ProjValMeasure.integral_norm_variation_polarizedComplexMeasure_le_left`: Cauchy–Schwarz variation
+  estimates and `L²`-to-`L¹(|μ_(ψ,ξ)|)` integrability for polarized spectral measures.
 
 ## References
 
@@ -44,7 +56,7 @@ against `μ_(ξ,ξ)` gives the Bochner integral against `P.diag ξ`.
 public section
 
 open MeasureTheory Filter Topology
-open scoped InnerProductSpace
+open scoped InnerProductSpace ENNReal
 
 namespace TauCeti
 namespace ProjValMeasure
@@ -109,6 +121,124 @@ theorem integral_polarizedComplexMeasure_self (P : ProjValMeasure X H) (f : X �
     ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ξ] =
       ∫ x, f x ∂(P.diag ξ) := by
   rw [polarizedComplexMeasure_self_eq_withDensityᵥ, VectorMeasure.integral_mul_withDensityᵥ_one]
+
+/-- Applying `∫ g dP` in the linear argument weights the polarized complex measure by `g`. -/
+theorem polarizedComplexMeasure_integral_right (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure ψ (P.integral g ξ) =
+      (P.polarizedComplexMeasure ψ ξ).withDensity g (ContinuousLinearMap.mul ℝ ℂ) := by
+  ext B hB
+  rw [P.polarizedComplexMeasure_apply ψ (P.integral g ξ) B hB, P.proj_integral_apply hB g ξ,
+    ← P.integral_polarizedComplexMeasure_eq_inner_integral,
+    BoundedBorelFunction.coe_indicator, VectorMeasure.integral_indicator hB,
+    VectorMeasure.withDensity_apply (g.integrable _)]
+
+/-- Applying `∫ g dP` in the conjugate-linear argument weights the polarized complex measure by
+`star g`. -/
+theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    P.polarizedComplexMeasure (P.integral g ψ) ξ =
+      (P.polarizedComplexMeasure ψ ξ).withDensity (star g) (ContinuousLinearMap.mul ℝ ℂ) := by
+  have heq : P.polarizedComplexMeasure (P.integral g ψ) ξ =
+      P.polarizedComplexMeasure ψ (P.integral (star g) ξ) := by
+    ext B hB
+    rw [P.polarizedComplexMeasure_apply _ _ B hB, P.polarizedComplexMeasure_apply _ _ B hB,
+      ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
+      ← map_star, P.integral_proj_apply (star g) hB ξ, P.proj_integral_apply hB (star g) ξ]
+  rw [heq, P.polarizedComplexMeasure_integral_right (star g) ψ ξ, BoundedBorelFunction.coe_star]
+
+/-- For a bounded Borel symbol `g`, the lower Lebesgue integral of `‖g‖ₑ` against the variation of
+`μ_(ψ,ξ)` is bounded by `‖ψ‖ * ‖(∫ g dP) ξ‖`. -/
+theorem lintegral_enorm_variation_polarizedComplexMeasure_le (P : ProjValMeasure X H)
+    (g : BoundedBorelFunction X) (ψ ξ : H) :
+    ∫⁻ t, ‖g t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
+      ENNReal.ofReal (‖ψ‖ * ‖P.integral g ξ‖) := by
+  have hvar := P.polarizedComplexMeasure_variation_univ_le ψ (P.integral g ξ)
+  rwa [P.polarizedComplexMeasure_integral_right g ψ ξ,
+    VectorMeasure.variation_withDensity_mul (g.integrable _),
+    withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hvar
+
+/-- For any function `f : X → E` that is almost everywhere strongly measurable for `P.diag ξ`,
+the lower Lebesgue integral of `‖f‖ₑ` against the variation of `P.polarizedComplexMeasure ψ ξ` is
+bounded by `‖ψ‖ₑ * eLpNorm f 2 (P.diag ξ)`. -/
+theorem lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm {E : Type*}
+    [NormedAddCommGroup E] (P : ProjValMeasure X H) {f : X → E} {ξ : H}
+    (hf : AEStronglyMeasurable f (P.diag ξ)) (ψ : H) :
+    ∫⁻ t, ‖f t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
+      ‖ψ‖ₑ * eLpNorm f 2 (P.diag ξ) := by
+  have hac := P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ψ ξ
+  let φ : X → ℂ := fun t => (‖hf.mk f t‖ : ℂ)
+  have hφ : Measurable φ :=
+    Complex.continuous_ofReal.measurable.comp hf.stronglyMeasurable_mk.norm.measurable
+  have hφ_enorm (t : X) : ‖φ t‖ₑ = ‖hf.mk f t‖ₑ := by
+    simp [φ, ← ofReal_norm]
+  calc
+    ∫⁻ t, ‖f t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation
+        = ∫⁻ t, ‖φ t‖ₑ ∂(P.polarizedComplexMeasure ψ ξ).variation :=
+      lintegral_congr_ae ((hac.ae_eq hf.ae_eq_mk).mono fun t ht => by
+        dsimp only; rw [ht, hφ_enorm])
+    _ = ⨆ n : ℕ, ∫⁻ t, ‖BoundedBorelFunction.truncate φ hφ n t‖ₑ
+          ∂(P.polarizedComplexMeasure ψ ξ).variation := by
+      simpa only [pow_one] using
+        (BoundedBorelFunction.iSup_lintegral_enorm_pow_truncate hφ 1 _).symm
+    _ ≤ ‖ψ‖ₑ * eLpNorm f 2 (P.diag ξ) := by
+      refine iSup_le fun n =>
+        (P.lintegral_enorm_variation_polarizedComplexMeasure_le
+          (BoundedBorelFunction.truncate φ hφ n) ψ ξ).trans ?_
+      rw [ENNReal.ofReal_mul (norm_nonneg ψ), ofReal_norm, ofReal_norm]
+      gcongr
+      refine (ENNReal.rpow_le_rpow_iff (show (0 : ℝ) < 2 by norm_num)).1 ?_
+      have heLp_sq : eLpNorm f 2 (P.diag ξ) ^ 2 = ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) := by
+        simpa only [Nat.cast_ofNat] using
+          (TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow (n := 2) two_ne_zero hf).symm
+      rw [ENNReal.rpow_two, ENNReal.rpow_two, ← P.diag_univ, P.diag_integral,
+        withDensity_apply _ MeasurableSet.univ, setLIntegral_univ, heLp_sq]
+      calc
+        ∫⁻ t, ‖BoundedBorelFunction.truncate φ hφ n t‖ₑ ^ 2 ∂(P.diag ξ)
+            ≤ ∫⁻ t, ‖φ t‖ₑ ^ 2 ∂(P.diag ξ) :=
+          lintegral_mono fun t => pow_le_pow_left'
+            (eNorm_le_iff_norm_le.2 (BoundedBorelFunction.norm_truncate_apply_le φ hφ n t)) 2
+        _ = ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) :=
+          lintegral_congr_ae (hf.ae_eq_mk.mono fun t ht => by
+            dsimp only; rw [ht, hφ_enorm])
+
+/-- Every function in `L²(P.diag ξ)` is integrable against `P.polarizedComplexMeasure ψ ξ`. -/
+theorem integrable_polarizedComplexMeasure_of_memLp {E : Type*} [NormedAddCommGroup E]
+    (P : ProjValMeasure X H) {f : X → E} {ξ : H} (hf : MemLp f 2 (P.diag ξ)) (ψ : H) :
+    (P.polarizedComplexMeasure ψ ξ).Integrable f :=
+  ⟨hf.aestronglyMeasurable.mono_ac
+      (P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ψ ξ),
+    (P.lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm
+      hf.aestronglyMeasurable ψ).trans_lt (ENNReal.mul_lt_top eNorm_lt_top hf.eLpNorm_lt_top)⟩
+
+/-- Every function in `L²(P.diag ψ)` is integrable against `P.polarizedComplexMeasure ψ ξ`. -/
+theorem integrable_polarizedComplexMeasure_of_memLp_left {E : Type*} [NormedAddCommGroup E]
+    (P : ProjValMeasure X H) {f : X → E} {ψ : H} (hf : MemLp f 2 (P.diag ψ)) (ξ : H) :
+    (P.polarizedComplexMeasure ψ ξ).Integrable f := by
+  rw [VectorMeasure.Integrable, P.variation_polarizedComplexMeasure_comm ψ ξ]
+  exact P.integrable_polarizedComplexMeasure_of_memLp hf ξ
+
+/-- **Cauchy–Schwarz variation estimate** for the polarized spectral measure: for `f ∈ L²(P.diag ξ)`
+and any `ψ : H`, `∫ t, ‖f t‖ ∂|μ_(ψ,ξ)| ≤ ‖ψ‖ * √(∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ))`. -/
+theorem integral_norm_variation_polarizedComplexMeasure_le {E : Type*} [NormedAddCommGroup E]
+    (P : ProjValMeasure X H) {f : X → E} {ξ : H} (hf : MemLp f 2 (P.diag ξ)) (ψ : H) :
+    ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
+      ‖ψ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ξ)) := by
+  have hac := P.variation_polarizedComplexMeasure_absolutelyContinuous_diag ψ ξ
+  rw [integral_norm_eq_lintegral_eNorm (hf.aestronglyMeasurable.mono_ac hac)]
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  rw [ENNReal.ofReal_mul (norm_nonneg ψ), ofReal_norm, ← hf.eLpNorm_two_eq_ofReal_sqrt_integral]
+  exact P.lintegral_enorm_variation_polarizedComplexMeasure_le_eLpNorm hf.aestronglyMeasurable ψ
+
+/-- **Left-slot Cauchy–Schwarz variation estimate** for the polarized spectral measure: for
+`f ∈ L²(P.diag ψ)` and any `ξ : H`,
+`∫ t, ‖f t‖ ∂|μ_(ψ,ξ)| ≤ ‖ξ‖ * √(∫ t, ‖f t‖ ^ 2 ∂(P.diag ψ))`. -/
+theorem integral_norm_variation_polarizedComplexMeasure_le_left {E : Type*} [NormedAddCommGroup E]
+    (P : ProjValMeasure X H) {f : X → E} {ψ : H} (hf : MemLp f 2 (P.diag ψ)) (ξ : H) :
+    ∫ t, ‖f t‖ ∂(P.polarizedComplexMeasure ψ ξ).variation ≤
+      ‖ξ‖ * Real.sqrt (∫ t, ‖f t‖ ^ 2 ∂(P.diag ψ)) := by
+  rw [P.variation_polarizedComplexMeasure_comm ψ ξ]
+  exact P.integral_norm_variation_polarizedComplexMeasure_le hf ξ
 
 end ProjValMeasure
 end TauCeti

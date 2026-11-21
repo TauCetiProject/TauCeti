@@ -43,7 +43,7 @@ variable {G B F : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace B]
 /-- The function of frames representing a section, characterized by
 `mk G p (sectionFunction s ⟨b,p⟩) = s b`. -/
 noncomputable def sectionFunction (s : ∀ b, AssociatedBundle G P F b) (p : TotalSpace G P) : F :=
-  (Equiv.ofBijective (mk G p.2) (mk_bijective p.2)).symm (s p.proj)
+  (Equiv.ofBijective (mk G p.snd) (mk_bijective p.snd)).symm (s p.proj)
 
 /-- Reconstruct a section in any frame, not just a preferred local frame. -/
 @[simp]
@@ -84,7 +84,7 @@ noncomputable def sectionEquiv :
         u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩} where
   toFun s := ⟨sectionFunction s, fun _ p g ↦ sectionFunction_smul s p g⟩
   invFun u b := mk G ((FiberBundle.homeomorphAt G P b).symm 1)
-    (u.1 ⟨b, (FiberBundle.homeomorphAt G P b).symm 1⟩)
+    (u.val ⟨b, (FiberBundle.homeomorphAt G P b).symm 1⟩)
   left_inv s := by
     funext b
     exact mk_sectionFunction s _
@@ -94,16 +94,16 @@ noncomputable def sectionEquiv :
     apply (mk_bijective (G := G) (F := F) p).1
     rw [mk_sectionFunction]
     set q := (FiberBundle.homeomorphAt G P b).symm 1
-    have h := u.2 b q (PrincipalBundle.division G q p)
+    have h := u.property b q (PrincipalBundle.division G q p)
     rw [PrincipalBundle.smul_division] at h
     rw [h]
     simpa only [PrincipalBundle.smul_division] using
-      (mk_smul_inv_smul q (PrincipalBundle.division G q p) (u.1 ⟨b, q⟩)).symm
+      (mk_smul_inv_smul q (PrincipalBundle.division G q p) (u.val ⟨b, q⟩)).symm
 
 /-- The forward section correspondence is the representing function. -/
 @[simp]
 theorem sectionEquiv_apply (s : ∀ b, AssociatedBundle G P F b) :
-    (sectionEquiv s).1 = sectionFunction s :=
+    (sectionEquiv s).val = sectionFunction s :=
   (rfl)
 
 /-- The representing function of the inverse correspondence is the original function. -/
@@ -111,14 +111,14 @@ theorem sectionEquiv_apply (s : ∀ b, AssociatedBundle G P F b) :
 theorem sectionFunction_sectionEquiv_symm
     (u : {u : TotalSpace G P → F // ∀ (b : B) (p : P b) (g : G),
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) :
-    sectionFunction (sectionEquiv.symm u) = u.1 :=
+    sectionFunction (sectionEquiv.symm u) = u.val :=
   congrArg Subtype.val (sectionEquiv.apply_symm_apply u)
 
 /-- The inverse section correspondence can be evaluated using any frame. -/
 theorem sectionEquiv_symm_apply
     (u : {u : TotalSpace G P → F // ∀ (b : B) (p : P b) (g : G),
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) {b : B} (p : P b) :
-    sectionEquiv.symm u b = mk G p (u.1 ⟨b, p⟩) := by
+    sectionEquiv.symm u b = mk G p (u.val ⟨b, p⟩) := by
   rw [← mk_sectionFunction (sectionEquiv.symm u) p]
   exact congrArg (mk G p) (congrFun (congrArg Subtype.val (sectionEquiv.apply_symm_apply u)) ⟨b, p⟩)
 
@@ -147,7 +147,7 @@ theorem continuous_sectionFunction (s : ∀ b, AssociatedBundle G P F b)
   refine (hp.snd.inv.smul hs'.snd).congr_of_eventuallyEq ?_
   filter_upwards [hπ.continuousAt ((trivializationAt G P p.proj).open_baseSet.mem_nhds hb)]
     with q hq
-  exact sectionFunction_eq_inv_smul s hq q.2
+  exact sectionFunction_eq_inv_smul s hq q.snd
 
 /-- Continuity of a section is equivalent to continuity of its representing function. -/
 theorem continuous_sectionFunction_iff (s : ∀ b, AssociatedBundle G P F b) :
@@ -165,16 +165,16 @@ noncomputable def continuousSectionEquiv :
       Continuous fun b ↦ (⟨b, s b⟩ : TotalSpace F (AssociatedBundle G P F))} ≃
     {u : C(TotalSpace G P, F) // ∀ (b : B) (p : P b) (g : G),
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩} where
-  toFun s := ⟨⟨sectionFunction s.1, continuous_sectionFunction s.1 s.2⟩,
-    fun _ p g ↦ sectionFunction_smul s.1 p g⟩
-  invFun u := ⟨sectionEquiv.symm ⟨u.1, u.2⟩, by
+  toFun s := ⟨⟨sectionFunction s.val, continuous_sectionFunction s.val s.property⟩,
+    fun _ p g ↦ sectionFunction_smul s.val p g⟩
+  invFun u := ⟨sectionEquiv.symm ⟨u.val, u.property⟩, by
     apply (continuous_sectionFunction_iff _).1
-    simpa only [sectionFunction_sectionEquiv_symm] using u.1.continuous⟩
-  left_inv s := Subtype.ext (sectionEquiv.symm_apply_apply s.1)
+    simpa only [sectionFunction_sectionEquiv_symm] using u.val.continuous⟩
+  left_inv s := Subtype.ext (sectionEquiv.symm_apply_apply s.val)
   right_inv u := by
     apply Subtype.ext
     apply ContinuousMap.ext
-    exact congrFun (congrArg Subtype.val (sectionEquiv.apply_symm_apply ⟨u.1, u.2⟩))
+    exact congrFun (congrArg Subtype.val (sectionEquiv.apply_symm_apply ⟨u.val, u.property⟩))
 
 /-- The continuous correspondence has the same underlying representing function. -/
 @[simp]
@@ -182,7 +182,7 @@ theorem continuousSectionEquiv_apply
     (s : {s : ∀ b, AssociatedBundle G P F b //
       Continuous fun b ↦ (⟨b, s b⟩ : TotalSpace F (AssociatedBundle G P F))})
     (p : TotalSpace G P) :
-    (continuousSectionEquiv s).1 p = sectionFunction s.1 p :=
+    (continuousSectionEquiv s).val p = sectionFunction s.val p :=
   (rfl)
 
 /-- The continuous inverse correspondence has the same underlying section as the raw one. -/
@@ -190,15 +190,15 @@ theorem continuousSectionEquiv_apply
 theorem continuousSectionEquiv_symm_val
     (u : {u : C(TotalSpace G P, F) // ∀ (b : B) (p : P b) (g : G),
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) :
-    (continuousSectionEquiv.symm u).1 = sectionEquiv.symm ⟨u.1, u.2⟩ :=
+    (continuousSectionEquiv.symm u).val = sectionEquiv.symm ⟨u.val, u.property⟩ :=
   (rfl)
 
 /-- Evaluate the continuous inverse correspondence in any frame. -/
 theorem continuousSectionEquiv_symm_apply
     (u : {u : C(TotalSpace G P, F) // ∀ (b : B) (p : P b) (g : G),
       u ⟨b, op g • p⟩ = g⁻¹ • u ⟨b, p⟩}) {b : B} (p : P b) :
-    (continuousSectionEquiv.symm u).1 b = mk G p (u.1 ⟨b, p⟩) :=
-  sectionEquiv_symm_apply ⟨u.1, u.2⟩ p
+    (continuousSectionEquiv.symm u).val b = mk G p (u.val ⟨b, p⟩) :=
+  sectionEquiv_symm_apply ⟨u.val, u.property⟩ p
 
 /-! ### Global sections of the principal bundle -/
 

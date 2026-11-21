@@ -60,7 +60,7 @@ variable {n : Type*} [DecidableEq n] [Fintype n] {α : Type*} [CommRing α] [Sta
 /-- The inclusion of the special unitary group into the special linear group: a special unitary
 matrix has determinant one. -/
 def toSL : specialUnitaryGroup n α →* SpecialLinearGroup n α where
-  toFun A := ⟨A, (mem_specialUnitaryGroup_iff.mp A.2).2⟩
+  toFun A := ⟨A, (mem_specialUnitaryGroup_iff.mp A.property).2⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
@@ -84,9 +84,9 @@ theorem toSL_injective : Function.Injective (toSL : specialUnitaryGroup n α →
 unitary. -/
 theorem mem_range_toSL_iff {A : SpecialLinearGroup n α} :
     A ∈ (toSL : specialUnitaryGroup n α →* _).range ↔ (A : Matrix n n α) ∈ unitaryGroup n α := by
-  refine ⟨?_, fun hA => ⟨⟨A, hA, A.2⟩, rfl⟩⟩
+  refine ⟨?_, fun hA => ⟨⟨A, hA, A.property⟩, rfl⟩⟩
   rintro ⟨B, rfl⟩
-  exact (mem_specialUnitaryGroup_iff.mp B.2).1
+  exact (mem_specialUnitaryGroup_iff.mp B.property).1
 
 /-- The homomorphism from the special unitary group to the projective special linear group,
 the inclusion into `SL(n, α)` followed by the quotient by its center. Its range is the projective
@@ -149,7 +149,7 @@ matrix of `SL(n, 𝕜)` lies in the range `PSU(n)` of `SU(n)` exactly when the m
 theorem mk_mem_range_toPSL_iff {A : SpecialLinearGroup n 𝕜} :
     (A : ProjectiveSpecialLinearGroup n 𝕜) ∈ (toPSL : specialUnitaryGroup n 𝕜 →* _).range ↔
       (A : Matrix n n 𝕜) ∈ unitaryGroup n 𝕜 := by
-  refine ⟨?_, fun hA => ⟨⟨A, hA, A.2⟩, rfl⟩⟩
+  refine ⟨?_, fun hA => ⟨⟨A, hA, A.property⟩, rfl⟩⟩
   rintro ⟨B, hB⟩
   have hcen : (toSL B)⁻¹ * A ∈ (toSL : specialUnitaryGroup n 𝕜 →* _).range :=
     center_le_range_toSL (QuotientGroup.eq.mp hB)

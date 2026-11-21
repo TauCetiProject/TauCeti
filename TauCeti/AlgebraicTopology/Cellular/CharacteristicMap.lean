@@ -95,12 +95,12 @@ private abbrev sigmaOpenShellPair : TopPair.{w} :=
 
 private lemma continuous_norm_sigma_snd :
     Continuous fun p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 ↦ ‖(p.2 : Fin n → ℝ)‖ :=
-  continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtype_val
+  continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtypeVal
 
 private lemma radialPush_mem_closedBall (t : I) (y : closedBall (0 : Fin n → ℝ) 1) :
     radialPush 2⁻¹ t (y : Fin n → ℝ) ∈ closedBall (0 : Fin n → ℝ) 1 :=
   mem_closedBall_zero_iff.2 <|
-    norm_radialPush_le_one t (mem_closedBall_zero_iff.1 y.2)
+    norm_radialPush_le_one t (mem_closedBall_zero_iff.1 y.property)
 
 /-- The radial deformation `TauCeti.radialPush 2⁻¹`, applied in every disk of `∐ᵢ Dⁿ`. -/
 def sigmaRadialPush :
@@ -115,7 +115,7 @@ def sigmaRadialPush :
       ((Homeomorph.sigmaProdDistrib (ι := ι) (X := fun _ ↦ closedBall (0 : Fin n → ℝ) 1)
         (Y := I)).continuous.comp continuous_swap)
     exact Continuous.subtype_mk ((continuous_radialPush (by norm_num)).comp
-      (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst))) _
+      (continuous_snd.prodMk (continuous_subtypeVal.comp continuous_fst))) _
 
 /-- The radial deformation of the disks, from the identity to the map pushing the shells onto the
 boundary spheres. -/
@@ -146,7 +146,7 @@ lemma sigmaRadialHomotopy_apply_of_norm_eq_one (t : I) {p : Σ _ : ι, closedBal
 /-- `TauCeti.sigmaRadialHomotopy` does not decrease the norm of the disk coordinate. -/
 lemma norm_le_norm_sigmaRadialHomotopy (t : I) (p : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :
     ‖(p.2 : Fin n → ℝ)‖ ≤ ‖((sigmaRadialHomotopy ι n (t, p)).2 : Fin n → ℝ)‖ :=
-  norm_le_norm_radialPush (by norm_num) (by norm_num) _ (mem_closedBall_zero_iff.1 p.2.2)
+  norm_le_norm_radialPush (by norm_num) (by norm_num) _ (mem_closedBall_zero_iff.1 p.2.property)
 
 /-- At time `1`, `TauCeti.sigmaRadialHomotopy` pushes the shells `2⁻¹ ≤ ‖y‖ ≤ 1` onto the
 boundary spheres. -/
@@ -227,9 +227,10 @@ private lemma isIso_singularHomologyMap_sigmaDiskPairToShellPair
 private def sigmaOpenShellPairToShellPair : sigmaOpenShellPair ι n ⟶ sigmaShellPair ι n :=
   TopPair.ofHom (TopCat.ofHom ⟨Sigma.map id fun _ ↦ inclusion ball_subset_closedBall,
       continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall⟩)
-    (TopCat.ofHom ⟨fun p ↦ ⟨Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall) p.1, p.2⟩,
+    (TopCat.ofHom ⟨fun p ↦ ⟨Sigma.map id (fun _ ↦ inclusion ball_subset_closedBall) p.val,
+        p.property⟩,
       (continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall).comp
-        continuous_subtype_val |>.subtype_mk _⟩)
+        continuous_subtypeVal |>.subtype_mk _⟩)
     rfl
 
 /-- The open cover of `∐ᵢ Dⁿ` by the open balls `‖y‖ < 1` and the open shells `2⁻¹ < ‖y‖`, along
@@ -302,7 +303,8 @@ lemma sigmaCellMap_apply (n : ℕ) (q : Σ _ : cell C n, closedBall (0 : Fin n �
 /-- `TauCeti.sigmaCellMap`, with its values in the `n`-skeleton `Xⁿ = skeletonLT C (n + 1)`. -/
 private def sigmaCharacteristicMap (n : ℕ) :
     C(Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1, skeletonLT C ((n + 1 : ℕ) : ℕ∞)) where
-  toFun p := ⟨sigmaCellMap C n p, map_mem_skeletonLT_succ p.1 (mem_closedBall_zero_iff.1 p.2.2)⟩
+  toFun p := ⟨sigmaCellMap C n p, map_mem_skeletonLT_succ p.1
+      (mem_closedBall_zero_iff.1 p.2.property)⟩
   continuous_toFun := (sigmaCellMap C n).continuous.subtype_mk _
 
 /-- **The characteristic maps of the `n`-cells, as a map of pairs** `∐ⱼ (Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)`
@@ -310,24 +312,24 @@ from `TauCeti.sigmaDiskPair` to the skeletal pair `TauCeti.skeletonPair C n`.  T
 sphere of each disk lands in `Xⁿ⁻¹ = skeletonLT C n` because the frontier of an `n`-cell does. -/
 def characteristicPairMap (n : ℕ) : sigmaDiskPair (cell C n) n ⟶ skeletonPair C n :=
   TopPair.ofHom (TopCat.ofHom (sigmaCharacteristicMap C n))
-    (TopCat.ofHom ⟨fun p ↦ ⟨map n p.1.1 p.1.2, cellFrontier_subset_skeletonLT n p.1.1
-      ⟨p.1.2, mem_sphere_zero_iff_norm.2 p.2, rfl⟩⟩,
-      (continuous_subtype_val.comp ((sigmaCharacteristicMap C n).continuous.comp
-        continuous_subtype_val)).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun p ↦ ⟨map n p.val.1 p.val.2, cellFrontier_subset_skeletonLT n p.val.1
+      ⟨p.val.2, mem_sphere_zero_iff_norm.2 p.property, rfl⟩⟩,
+      (continuous_subtypeVal.comp ((sigmaCharacteristicMap C n).continuous.comp
+        continuous_subtypeVal)).subtype_mk _⟩)
     rfl
 
 @[simp]
 lemma characteristicPairMap_fst_apply (n : ℕ)
     (p : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
     (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C (n + 1)))
-      (TopPair.Hom.fst (characteristicPairMap C n)) p).1 = map n p.1 p.2 :=
+      (TopPair.Hom.fst (characteristicPairMap C n)) p).val = map n p.1 p.2 :=
   (rfl)
 
 @[simp]
 lemma characteristicPairMap_snd_apply (n : ℕ)
     (p : {p : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 // ‖(p.2 : Fin n → ℝ)‖ = 1}) :
     (ConcreteCategory.hom (Y := TopCat.of (skeletonLT C n))
-      (TopPair.Hom.snd (characteristicPairMap C n)) p).1 = map n p.1.1 p.1.2 :=
+      (TopPair.Hom.snd (characteristicPairMap C n)) p).val = map n p.val.1 p.val.2 :=
   (rfl)
 
 /-- The characteristic maps, as a map of pairs from the disks relative to their shells to the
@@ -335,10 +337,10 @@ lemma characteristicPairMap_snd_apply (n : ℕ)
 private def sigmaShellPairToNeighborhoodPair (n : ℕ) :
     sigmaShellPair (cell C n) n ⟶ skeletonNeighborhoodPair C n :=
   TopPair.ofHom (TopCat.ofHom (sigmaCharacteristicMap C n))
-    (TopCat.ofHom ⟨fun p ↦ ⟨map n p.1.1 p.1.2, (map_mem_skeletonNeighborhood_iff p.1.1
-      (mem_closedBall_zero_iff.1 p.1.2.2)).2 p.2⟩,
-      (continuous_subtype_val.comp ((sigmaCharacteristicMap C n).continuous.comp
-        continuous_subtype_val)).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun p ↦ ⟨map n p.val.1 p.val.2, (map_mem_skeletonNeighborhood_iff p.val.1
+      (mem_closedBall_zero_iff.1 p.val.2.property)).2 p.property⟩,
+      (continuous_subtypeVal.comp ((sigmaCharacteristicMap C n).continuous.comp
+        continuous_subtypeVal)).subtype_mk _⟩)
     rfl
 
 /-- The open cover of `Xⁿ` by the complement of `Xⁿ⁻¹` and the interior of
@@ -379,10 +381,11 @@ private lemma excisive_sigmaOpenShellPairToNeighborhoodPair (n : ℕ) :
     have hy : map n j y ∈ skeletonNeighborhood C n := by
       have : q = map n j y := congrArg Subtype.val hq
       exact this ▸ hqN
-    exact ⟨⟨⟨j, y⟩, (map_mem_skeletonNeighborhood_iff j (mem_ball_zero_iff.1 y.2).le).1 hy⟩, rfl⟩
+    exact ⟨⟨⟨j, y⟩, (map_mem_skeletonNeighborhood_iff j (mem_ball_zero_iff.1 y.property).le).1 hy⟩,
+        rfl⟩
   · cases b
     · exact isOpen_interior
-    · exact ((skeletonLT C n).closed.preimage continuous_subtype_val).isOpen_compl
+    · exact ((skeletonLT C n).closed.preimage continuous_subtypeVal).isOpen_compl
   · refine eq_univ_of_forall fun (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) ↦
       mem_iUnion.2 ?_
     by_cases hx : (x : X) ∈ (skeletonLT C n : Set X)
@@ -391,10 +394,10 @@ private lemma excisive_sigmaOpenShellPairToNeighborhoodPair (n : ℕ) :
   · cases b
     · exact Or.inl fun (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
         (hx : x ∈ interior (Subtype.val ⁻¹' skeletonNeighborhood C n)) ↦
-          ⟨⟨x.1, interior_subset (s := Subtype.val ⁻¹' skeletonNeighborhood C n) hx⟩, rfl⟩
+          ⟨⟨x.val, interior_subset (s := Subtype.val ⁻¹' skeletonNeighborhood C n) hx⟩, rfl⟩
     · -- A point of `Xⁿ` outside `Xⁿ⁻¹` lies in an open `n`-cell.
       refine Or.inr fun (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) hx ↦ ?_
-      obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+      obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
       · exact (hx hx').elim
       · exact ⟨⟨j, y, mem_ball_zero_iff.2 hy⟩, Subtype.ext hxy⟩
 
@@ -417,7 +420,7 @@ private lemma characteristicPairMap_comp_skeletonPairToNeighborhood (n : ℕ) :
   ext x : 2
   · obtain ⟨⟨j, y⟩, hy⟩ := x
     have ha :
-        (TopPair.Hom.snd (sigmaDiskPairToShellPair (cell C n) n) ⟨⟨j, y⟩, hy⟩).1 = ⟨j, y⟩ :=
+        (TopPair.Hom.snd (sigmaDiskPairToShellPair (cell C n) n) ⟨⟨j, y⟩, hy⟩).val = ⟨j, y⟩ :=
       TopPair.ofSubsetMap_snd_apply _ _ _
     exact Subtype.ext ((skeletonPairToNeighborhood_snd_apply C n _).trans (congrArg
       (fun p : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 ↦ map n p.1 p.2) ha.symm))

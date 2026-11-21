@@ -44,6 +44,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
   invariance.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
+* `LinearMap.BilinForm.lieInvariant.lie_apply_eq`: an invariant form intertwines a Lie module with
+  its dual, `⁅x, Φ y⁆ = Φ ⁅x, y⁆`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -89,6 +91,24 @@ bracket and a third argument: `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. -/
 theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L) :
     Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
+
+end LinearMap.BilinForm.lieInvariant
+
+/-! ### Invariant forms intertwine a module with its dual -/
+
+namespace LinearMap.BilinForm.lieInvariant
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M] {Φ : LinearMap.BilinForm R M}
+
+/-- An invariant bilinear form intertwines the action on `M` with the dual action on `M*`:
+`⁅x, Φ y⁆ = Φ ⁅x, y⁆`. On the adjoint module, the orbit derivative `⁅x, Φ p⁆` of `Φ p` is thus
+`Φ ⁅x, p⁆`. No nondegeneracy is needed;
+for a nondegenerate form on a finite-dimensional module this is the bracket compatibility of
+`LinearMap.BilinForm.lieModuleEquivDual`. -/
+theorem lie_apply_eq (hΦ : Φ.lieInvariant L) (x : L) (y : M) : ⁅x, Φ y⁆ = Φ ⁅x, y⁆ := by
+  ext z
+  rw [Module.Dual.lie_apply, hΦ]
 
 end LinearMap.BilinForm.lieInvariant
 

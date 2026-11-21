@@ -330,7 +330,7 @@ def supportedModuleHEdgeEquiv (h : ∀ q < n, IsZero (F.supportedModuleHSheaf S 
           (F.exact_supportedModuleHPresheafMap_app_supportedModuleHPresheaf_map hZS W n y).1 <|
             (F.supportedModuleHSectionsEquiv S h _).injective <| by
               rw [supportedModuleHSectionsEquiv_map, hy]
-              exact ((mem_supportedSubmodule_iff _).1 s.2).trans (map_zero _).symm
+              exact ((mem_supportedSubmodule_iff _).1 s.property).trans (map_zero _).symm
         exact ⟨x, Subtype.ext hy⟩⟩
 
 /-- The degenerate edge comparison enlarges the support from `Z` to `S` and then applies the
