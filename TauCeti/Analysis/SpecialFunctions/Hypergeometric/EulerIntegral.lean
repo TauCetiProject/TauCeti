@@ -26,6 +26,9 @@ principal complex powers and prove convergence for every `z` in the cut plane
 Beta integral; the remaining power is continuous on the closed integration interval.
 For fixed `b`, `c` in that range the integral is jointly holomorphic in `(a, z)` on
 this cut plane, by the compact-parameter theorem `TauCeti.analyticAt_integral_smul`.
+When the first parameter is a nonpositive integer `-n`, expanding `(1 - z t) ^ n`
+termwise identifies `eulerIntegral (-n) b c z` with the terminating polynomial
+`regularizedGaussHGFun (-n) b c z` at every complex `z`, including points on `[1, ∞)`.
 
 On the open unit disk `‖z‖ < 1`, expanding `(1 - z t) ^ (-a)` in its binomial series and
 integrating term by term against the Beta weight identifies `Complex.regularizedGaussHGFun a b c z`
@@ -44,6 +47,8 @@ value can vanish when a Gamma factor has a pole.
 * `Complex.eulerIntegral` — Euler's normalized integral representation.
 * `Complex.analyticOnNhd_eulerIntegral` — joint holomorphy in `(a, z)` on
   `{p | 1 - p.2 ∈ slitPlane}` when `0 < b.re < c.re`.
+* `Complex.eulerIntegral_neg_natCast` — agreement with `regularizedGaussHGFun (-n) b c z` at
+  every complex `z` when `0 < b.re < c.re` (DLMF 15.2.4).
 * `Complex.regularizedGaussHGFun_eq_eulerIntegral` — `𝐅(a, b; c; z) = eulerIntegral a b c z` on
   `‖z‖ < 1` when `0 < b.re < c.re` (DLMF 15.6.1).
 * `Complex.eulerIntegral_one` — `eulerIntegral a b c 1 = Γ(c - a - b) / (Γ(c - a) Γ(c - b))` when
@@ -56,8 +61,8 @@ value can vanish when a Gamma factor has a pole.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §15.4 (equation 15.4.20) and §15.6 (equation
-  15.6.1).
+* NIST Digital Library of Mathematical Functions, §15.2.4, §15.4 (equation 15.4.20), and §15.6
+  (equation 15.6.1).
 -/
 
 public section
@@ -160,6 +165,44 @@ theorem eulerIntegral_zero_left {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) 
 theorem eulerIntegral_zero (a : ℂ) {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) :
     eulerIntegral a b c 0 = (Gamma c)⁻¹ := by
   simpa [eulerIntegral_def] using eulerIntegral_zero_left hb hcb 0
+
+/-- When the first upper parameter is `-n` and `0 < b.re < c.re`, the normalized Euler integral
+`eulerIntegral (-n) b c z` equals the terminating series `regularizedGaussHGFun (-n) b c z` at
+every complex `z`, including points on `[1, ∞)` where the non-polynomial kernel has a cut. -/
+theorem eulerIntegral_neg_natCast {b c : ℂ} (hb : 0 < b.re) (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :
+    eulerIntegral (-n) b c z = regularizedGaussHGFun (-n) b c z := by
+  have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
+  have hbk (k : ℕ) : 0 < (b + k).re := by simp; linarith [k.cast_nonneg (α := ℝ)]
+  rw [eulerIntegral_def, regularizedGaussHGFun_neg_natCast]
+  have hae : EqOn
+      (fun t : ℝ => (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
+        (1 - z * (t : ℂ)) ^ (-(-(n : ℂ))))
+      (fun t : ℝ => ∑ k ∈ Finset.range (n + 1),
+        (-1) ^ k * n.choose k * z ^ k *
+          ((t : ℂ) ^ (b + k - 1) * (1 - (t : ℂ)) ^ (c - b - 1))) (uIoc 0 1) := by
+    intro t ht
+    rw [uIoc_of_le zero_le_one] at ht
+    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.1.ne'
+    have h1zt : (1 : ℂ) - z * (t : ℂ) = -z * (t : ℂ) + 1 := by ring
+    dsimp only
+    rw [neg_neg, cpow_natCast, h1zt, (Commute.all (-z * (t : ℂ)) 1).add_pow, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    have hpow : (t : ℂ) ^ (b - 1) * (t : ℂ) ^ k = (t : ℂ) ^ (b + k - 1) := by
+      rw [← cpow_natCast, ← cpow_add _ _ ht0]
+      congr 1; ring
+    rw [one_pow, mul_one, mul_pow, neg_eq_neg_one_mul, mul_pow]
+    linear_combination (-1) ^ k * n.choose k * z ^ k * (1 - (t : ℂ)) ^ (c - b - 1) * hpow
+  rw [intervalIntegral.integral_congr_ae (ae_of_all _ hae),
+    intervalIntegral.integral_finsetSum fun k _ =>
+      (betaIntegral_convergent (hbk k) hcb).const_mul _, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [intervalIntegral.integral_const_mul, ← betaIntegral,
+    betaIntegral_eq_Gamma_mul_div (b + k) (c - b) (hbk k) hcb, add_right_comm b (k : ℂ) (c - b),
+    add_sub_cancel]
+  have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
+  have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
+  rw [← Gamma_add_nat_div_Gamma_eq (n := k) b (ne_neg_natCast_of_re_pos hb)]
+  field
 
 private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ} (hb : 0 < b.re)
     (hbc : b.re < c.re) (z : ℂ) (n : ℕ) :

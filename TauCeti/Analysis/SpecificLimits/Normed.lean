@@ -20,7 +20,9 @@ test; conversely, norm divergence of partial sums over `Ico N n` does not depend
 index `N`, and if consecutive norms eventually expand by a factor `c > 2` (with infinitely many
 terms of positive norm), each term dominates the sum of its predecessors and the partial sums
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
-series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`.
+series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. Likewise, in a complete normed
+division ring, a power series converging at `w` remains summable at every `z` with `‖z‖ < ‖w‖`
+after multiplying its coefficients by `n ^ k`.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
@@ -191,6 +193,29 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← mul_assoc, ← Nat.cast_pow, (Nat.cast_commute (n ^ i) _).symm.eq, Nat.cast_pow,
     ← mul_assoc]
+
+/-- If a power series converges at `w`, then multiplying its coefficients by `n ^ k` preserves
+summability at all `z` of smaller norm. -/
+theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
+    [CompleteSpace α] (k : ℕ) {f : ℕ → α} {w z : α}
+    (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
+    Summable fun n : ℕ ↦ (n : α) ^ k * f n * z ^ n := by
+  have hw : 0 < ‖w‖ := (norm_nonneg z).trans_lt hz
+  obtain ⟨C, hC⟩ := exists_norm_le_of_cauchySeq h
+  have hgeom : Summable fun n : ℕ ↦ C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) :=
+    (summable_pow_mul_geometric_of_norm_lt_one k
+      (by rwa [Real.norm_of_nonneg (by positivity), div_lt_one hw])).mul_left C
+  refine Summable.of_norm_bounded hgeom fun n ↦ ?_
+  have hn : ‖((n : α) ^ k : α)‖ ≤ (n : ℝ) ^ k := by
+    rw [norm_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using Nat.norm_cast_le (α := α) n) k
+  have hf : ‖f n‖ ≤ C / ‖w‖ ^ n := by
+    have h1 := hC n
+    rwa [norm_mul, norm_pow, ← le_div_iff₀ (pow_pos hw n)] at h1
+  calc ‖(n : α) ^ k * f n * z ^ n‖
+      = ‖(n : α) ^ k‖ * ‖f n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_mul, norm_pow z]
+    _ ≤ (n : ℝ) ^ k * (C / ‖w‖ ^ n) * ‖z‖ ^ n := by gcongr
+    _ = C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) := by rw [div_pow]; ring
 
 variable {K : Type*} [NormedField K]
 
