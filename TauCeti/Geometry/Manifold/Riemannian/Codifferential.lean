@@ -89,6 +89,8 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
   `Δf = -div grad f`.
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`: the Leibniz rule
   `d*(f β) = f d*β - ι_(grad f) β`.
+* `TauCeti.SmoothForm.codifferential_lie_lie_funSMulₗ_eq_zero`: `d*` has order one,
+  `[[d*, f], g] = 0`.
 * `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ`,
   `TauCeti.SmoothForm.coe_lie_lie_hodgeLaplacian_funSMulₗ_self`: the principal symbol of the Hodge
   Laplacian, `[[Δ, f], g] = -2 ⟪df, dg⟫` and `[[Δ, f], f] = -2 |df|²`.
@@ -667,6 +669,23 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
     exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
   rw [← key, map_smul, smul_smul, hsign]
   exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+
+/-- **The codifferential has order one**: its double commutator with multiplication by smooth
+functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise
+(`TauCeti.SmoothForm.coe_codifferential_funSMulₗ`). Since `d*` changes the degree, the commutators
+are written out as differences of composites. -/
+theorem codifferential_lie_lie_funSMulₗ_eq_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) (f g : C^∞⟮I, M; ℝ⟯) :
+    (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) ∘ₗ funSMulₗ g -
+      funSMulₗ g ∘ₗ (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) =
+      0 := by
+  refine LinearMap.ext fun β ↦ Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, coe_codifferential_funSMulₗ, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.interior_apply]
+  ring
 
 /-- `[d*, f] = -ι_(grad f)`, in the form consumed by the double commutator computation. -/
 private theorem codifferential_funSMulₗ_apply (o : Manifold.Orientation I M (Fin m))

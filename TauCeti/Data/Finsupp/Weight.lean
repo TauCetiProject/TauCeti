@@ -15,6 +15,8 @@ import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Sym.NatCard
 
+import Mathlib.Algebra.BigOperators.Fin
+
 /-!
 # Weights of finitely supported functions
 
@@ -73,6 +75,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   `n`.
 * `Finsupp.weight_vecCons_one`, `Finsupp.injOn_weight_vecCons_one`: the weight `![1, B]` sends
   `μ : Fin 2 →₀ ℕ` to `μ 0 + B * μ 1`, and is injective on the exponents with `μ 0 < B`.
+* `Finsupp.injOn_weight_pow`: uniqueness of base-`B` digits; the weight `i ↦ B ^ i` on `Fin m`,
+  `d ↦ ∑ i, d i * B ^ i`, is injective on the exponent vectors with entries `< B`.
 * `Finsupp.finite_weightedStrip`: the weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` is
   finite. Polynomials in `Z = X 0` and `W = X 1` supported on it have `Z`-degree below `B`, which
   is the condition under which the power substitution `Z ↦ X, W ↦ X ^ B` is injective.
@@ -292,12 +296,12 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree at most `n`
-form a fintype, enumerated by the union of `Finset.finsuppAntidiag` up to `n`. -/
+form a fintype, enumerated degree by degree by `Finset.finsuppAntidiag`. -/
 instance fintypeDegreeLe {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree ≤ n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree ≤ n})
-    ((Finset.range (n + 1)).biUnion (Finset.univ : Finset σ).finsuppAntidiag)
-    fun s ↦ by simp [Finset.mem_finsuppAntidiag, ← degree_eq_sum]
+    ((Finset.range (n + 1)).biUnion fun m ↦ (Finset.univ : Finset σ).finsuppAntidiag m)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
 /-- The number of exponent vectors of degree `n` in `Fintype.card σ` variables is
 `(Fintype.card σ).multichoose n`. -/
@@ -372,6 +376,19 @@ theorem injOn_weight_vecCons_one (B : ℕ) :
     simpa [Nat.add_mul_div_left _ _ hB, Nat.div_eq_of_lt hμ, Nat.div_eq_of_lt hν] using
       congrArg (· / B) h
   exact Finsupp.ext (Fin.forall_fin_two.mpr ⟨h0, h1⟩)
+
+/-- **Uniqueness of base-`B` digits.** The base-`B` weight `d ↦ ∑ i, d i * B ^ i` of exponent
+vectors in `m` variables is injective on the vectors all of whose entries are `< B`. For `B ≤ 1`
+this box has at most one element. -/
+theorem injOn_weight_pow (m B : ℕ) :
+    Set.InjOn (weight fun i : Fin m ↦ B ^ (i : ℕ)) {d | ∀ i, d i < B} := by
+  have key (d : Fin m →₀ ℕ) (hd : ∀ i, d i < B) :
+      weight (fun i : Fin m ↦ B ^ (i : ℕ)) d =
+        finFunctionFinEquiv fun i ↦ (⟨d i, hd i⟩ : Fin B) := by
+    simp [weight_eq_sum]
+  intro d hd d' hd' h
+  have := finFunctionFinEquiv.injective (Fin.ext ((key d hd).symm.trans (h.trans (key d' hd'))))
+  exact Finsupp.ext fun i ↦ congrArg Fin.val (congrFun this i)
 
 /-- The weighted strip `{μ | μ 0 < B ∧ weight ![1, B] μ < N}` of two-variable exponents is
 finite. It is empty when `B = 0`; otherwise both weights are nonzero. -/

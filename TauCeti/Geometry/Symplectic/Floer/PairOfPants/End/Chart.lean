@@ -74,6 +74,8 @@ apply to all three ends.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
+* `TauCeti.Floer.det_fderiv_endChart`: the Jacobian of the end chart `φ_q` is
+  `4π² |φ_q - c_q|²`, for the center `c_q` of the end.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
@@ -617,6 +619,15 @@ theorem exists_subset_image_endChart_Icc_prod_Ico {q : Puncture} {D : Set (ℝ �
   exact ⟨N, fun z hz ↦ ⟨_, ⟨abs_le.1 ((Real.norm_eq_abs _).symm.trans_le (hN z hz)),
     Int.fract_nonneg _, Int.fract_lt_one _⟩, endChart_re_endCoord_fract_im_endCoord (hDq z hz)⟩⟩
 
+/-- A set of points other than the center of the end `q` is the image under the end chart of the
+part of the band `ℝ × [0, 1)` lying over it. -/
+theorem image_endChart_preimage_inter_univ_prod_Ico {q : Puncture} {Ω : Set (ℝ × ℝ)}
+    (hΩ : ∀ z ∈ Ω, Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    endChart q '' (endChart q ⁻¹' Ω ∩ univ ×ˢ Ico 0 1) = Ω := by
+  rw [image_preimage_inter, inter_eq_left]
+  exact fun z hz ↦ ⟨_, ⟨mem_univ _, Int.fract_nonneg _, Int.fract_lt_one _⟩,
+    endChart_re_endCoord_fract_im_endCoord (hΩ z hz)⟩
+
 /-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
 end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
 theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : ℝ} (hc : 0 ≤ c)
@@ -657,6 +668,17 @@ theorem det_fderiv_endChart_pos (q : Puncture) (ζ : ℝ × ℝ) :
   rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
     (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt]
   exact Complex.normSq_pos.2 (q.deriv_cylindricalEndLift_ne_zero _)
+
+/-- The Jacobian of the end chart of `q` at `z` is `4π² |φ_q(z) - c_q|²`. -/
+theorem det_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
+    (fderiv ℝ (endChart q) z).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm (endChart q z) - q.endCenter‖ ^ 2 := by
+  rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, deriv_cylindricalEndLift,
+    ← endChart_eq_realChart, equivRealProdCLM_symm_endChart, Complex.normSq_eq_norm_sq]
+  simp only [norm_neg, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real, norm_eq_abs,
+    abs_of_pos pi_pos]
+  ring
 
 /-- The three end strips have disjoint images. -/
 theorem pairwise_disjoint_image_endChart :
