@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Dual
+public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 
@@ -163,6 +164,27 @@ theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
   exact hprod.trans
     ⟨{ toLinearEquiv := LinearEquiv.ofBijective _ hbij
        map_app' p := (QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R)).map_app p }⟩
+
+/-- Extending scalars identifies the base change of the hyperbolic plane with the hyperbolic
+plane over the target ring. -/
+noncomputable def baseChangeHyperbolicPlane {R : Type u} {A : Type v} [CommRing R] [CommRing A]
+    [Algebra R A] [Invertible (2 : R)] [Invertible (2 : A)] :
+    ((hyperbolicPlane R).baseChange A).IsometryEquiv (hyperbolicPlane A) :=
+  let e := QuadraticForm.baseChangeWeightedSumSquares (A := A) ![(1 : R), -1]
+  have h1 : hyperbolicPlane R = weightedSumSquares R ![(1 : R), -1] := rfl
+  have h2 : weightedSumSquares A (fun i : Fin 2 ↦ algebraMap R A (![(1 : R), -1] i)) =
+      hyperbolicPlane A := by
+    rw [hyperbolicPlane]
+    congr 1; ext i; fin_cases i <;> simp
+  { toLinearEquiv := e.toLinearEquiv
+    map_app' := fun x ↦ by rw [h1, ← h2]; exact e.map_app x }
+
+/-- Extending scalars carries the hyperbolic plane to an isometric copy of the hyperbolic plane
+over the target ring. -/
+theorem baseChange_hyperbolicPlane_equivalent {R : Type u} {A : Type v} [CommRing R] [CommRing A]
+    [Algebra R A] [Invertible (2 : R)] [Invertible (2 : A)] :
+    ((hyperbolicPlane R).baseChange A).Equivalent (hyperbolicPlane A) :=
+  ⟨baseChangeHyperbolicPlane⟩
 
 end CommRing
 

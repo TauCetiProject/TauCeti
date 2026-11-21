@@ -357,6 +357,21 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
       fun place ↦ ((hQlocal.2 place).isRepresentedBy_congr
         (hRlocal.2 place)).mpr (h.2 place)⟩
 
+/-- Scaling a locally isotropic quadratic form by any scalar produces a locally isotropic form. -/
+theorem isLocallyIsotropic_smul {Q : _root_.QuadraticForm K V} (c : K) (h : Q.IsLocallyIsotropic) :
+    (c • Q).IsLocallyIsotropic := by
+  refine (isLocallyIsotropic_iff _).mpr ⟨fun v hani ↦ ?_, fun w hani ↦ ?_⟩
+  · refine ((isLocallyIsotropic_iff _).mp h).1 v fun x hx ↦ hani x ?_
+    rw [atFinitePlace_smul, _root_.smul_apply, hx, smul_zero]
+  · refine ((isLocallyIsotropic_iff _).mp h).2 w fun x hx ↦ hani x ?_
+    rw [atRealPlace_smul, _root_.smul_apply, hx, smul_zero]
+
+/-- Scaling a quadratic form by a nonzero scalar preserves local isotropy. -/
+theorem isLocallyIsotropic_smul_iff {Q : _root_.QuadraticForm K V} {c : K} (hc : c ≠ 0) :
+    (c • Q).IsLocallyIsotropic ↔ Q.IsLocallyIsotropic :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using isLocallyIsotropic_smul c⁻¹ h,
+    isLocallyIsotropic_smul c⟩
+
 /-- Locally equivalent quadratic forms have the same global rank. -/
 theorem LocallyEquivalent.finrank_eq
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
@@ -374,5 +389,20 @@ theorem LocallyRepresents.finrank_le [FiniteDimensional K W]
   obtain ⟨f, hf, -⟩ := hp
   simpa only [Module.finrank_baseChange] using
     LinearMap.finrank_le_finrank_of_injective hf
+
+/-- A quadratic space locally represented by a finite-dimensional quadratic space over a number
+field is itself finite-dimensional. -/
+theorem finiteDimensional_of_locallyRepresents [FiniteDimensional K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
+    (h : Q.LocallyRepresents R) : FiniteDimensional K V := by
+  let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
+  obtain ⟨f, hf, -⟩ :=
+    (QuadraticMap.isRepresentedBy_iff _ _).mp (((locallyRepresents_iff Q R).mp h).1 v)
+  have : Module.Finite (v.adicCompletion K) (v.adicCompletion K ⊗[K] V) :=
+    Module.Finite.of_injective f hf
+  let b := Module.Basis.ofVectorSpace K V
+  have : Finite (Module.Basis.ofVectorSpaceIndex K V) :=
+    Module.Finite.finite_basis (b.baseChange (v.adicCompletion K))
+  exact Module.Finite.of_basis b
 
 end QuadraticForm

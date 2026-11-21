@@ -858,6 +858,39 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
   refine hx.resolve_left fun h ↦ b.ne_zero i (hQ _ ?_)
   exact (FaithfulSMul.algebraMap_injective K A).eq_iff.mp (h.trans (map_zero _).symm)
 
+/-- After scalar extension to a field `L`, projecting an embedding of `0_U` into `0_Z ⊥ T` onto
+`T` produces an embedding of `0_{U'}` whenever `dim U' + dim Z ≤ dim U`. -/
+theorem zero_baseChange_isRepresentedBy_of_zero_prod [Invertible (2 : K)]
+    {U' U Z M : Type*} [AddCommGroup U'] [Module K U'] [FiniteDimensional K U']
+    [AddCommGroup U] [Module K U] [FiniteDimensional K U]
+    [AddCommGroup Z] [Module K Z] [FiniteDimensional K Z]
+    [AddCommGroup M] [Module K M]
+    {T : QuadraticForm K M}
+    (h : ((0 : QuadraticForm K U).baseChange L).IsRepresentedBy
+      (QuadraticForm.baseChange L ((0 : QuadraticForm K Z).prod T)))
+    (hk : Module.finrank K U' + Module.finrank K Z ≤ Module.finrank K U) :
+    ((0 : QuadraticForm K U').baseChange L).IsRepresentedBy (T.baseChange L) := by
+  have hstep : ((0 : QuadraticForm K U).baseChange L).IsRepresentedBy
+      (((0 : QuadraticForm K Z).baseChange L).prod (T.baseChange L)) :=
+    h.trans (QuadraticMap.Equivalent.isRepresentedBy ⟨baseChangeProd (A := L) _ T⟩)
+  simp only [baseChange_zero] at hstep ⊢
+  exact QuadraticMap.zero_isRepresentedBy_of_zero_isRepresentedBy_zero_prod hstep
+    (by simpa [Module.finrank_baseChange] using hk)
+
+/-- After scalar extension to a field `L`, projecting an embedding of a regular form `Q₁` into
+`0_Z ⊥ R₂` onto `R₂` remains an injective isometry. -/
+theorem baseChange_isRepresentedBy_of_zero_prod [Invertible (2 : K)]
+    {M₁ Z M₂ : Type*} [AddCommGroup M₁] [Module K M₁] [FiniteDimensional K M₁]
+    [AddCommGroup Z] [Module K Z] [AddCommGroup M₂] [Module K M₂]
+    {Q₁ : QuadraticForm K M₁} (hQ₁ : Q₁.Nondegenerate) {R₂ : QuadraticForm K M₂}
+    (h : (Q₁.baseChange L).IsRepresentedBy
+      (QuadraticForm.baseChange L ((0 : QuadraticForm K Z).prod R₂))) :
+    (Q₁.baseChange L).IsRepresentedBy (R₂.baseChange L) := by
+  have hstep := h.trans (QuadraticMap.Equivalent.isRepresentedBy ⟨baseChangeProd (A := L) _ R₂⟩)
+  rw [baseChange_zero] at hstep
+  exact QuadraticMap.isRepresentedBy_of_isRepresentedBy_zero_prod
+    (Nondegenerate.baseChange hQ₁).radical_eq_bot hstep
+
 end QuadraticForm
 
 end Field

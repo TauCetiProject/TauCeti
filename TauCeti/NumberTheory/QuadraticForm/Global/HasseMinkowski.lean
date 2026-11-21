@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.Cancellation
 import TauCeti.NumberTheory.ClassFieldTheory.Global.HasseNorm.Quadratic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+import TauCeti.NumberTheory.QuadraticForm.Global.Cancellation
 import TauCeti.NumberTheory.QuadraticForm.Global.HigherRank
 import TauCeti.NumberTheory.QuadraticForm.Global.LowRank
 import TauCeti.NumberTheory.QuadraticForm.Global.Quaternary
@@ -30,8 +31,10 @@ nondegeneracy hypothesis on any form:
 * **Form representation** (O'Meara 66:3): a quadratic form `Q` admits an injective isometry into a
   quadratic form `R` on a finite-dimensional space if and only if it does so at every finite and
   every real place (finite-dimensionality of the domain of `Q` follows from local representation).
-* **Isometry** (O'Meara 66:4; Milne, Chapter VIII, Theorem 6.3): two quadratic forms are
-  isometric over `K` if and only if they are isometric at every finite and every real place.
+* **Isometry** (O'Meara 66:4; Milne, Chapter VIII, Theorem 6.3): a quadratic form `Q` is
+  isometric over `K` to a quadratic form `R` on a finite-dimensional space if and only if they are
+  isometric at every finite and every real place (finite-dimensionality of the domain of `Q`
+  follows from local equivalence).
 
 ## Proof outline
 
@@ -133,16 +136,6 @@ private theorem represents_weightedSumSquares_one_neg_of_locallyRepresentsScalar
   simp only [weightedSumSquares_fin_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   simp only [Units.val_mk0] at hxy
   linear_combination -hxy
-
-/-- Scaling a locally isotropic quadratic form by any scalar produces a locally isotropic form. -/
-private theorem isLocallyIsotropic_smul {M : Type*} [AddCommGroup M] [Module K M]
-    {Q : _root_.QuadraticForm K M} (c : K) (h : Q.IsLocallyIsotropic) :
-    (c • Q).IsLocallyIsotropic := by
-  refine (isLocallyIsotropic_iff _).mpr ⟨fun v hani => ?_, fun w hani => ?_⟩
-  · refine ((isLocallyIsotropic_iff _).mp h).1 v fun x hx => hani x ?_
-    rw [atFinitePlace_smul, _root_.smul_apply, hx, smul_zero]
-  · refine ((isLocallyIsotropic_iff _).mp h).2 w fun x hx => hani x ?_
-    rw [atRealPlace_smul, _root_.smul_apply, hx, smul_zero]
 
 /-- **Ternary Hasse–Minkowski for diagonal forms.** Every locally isotropic diagonal regular form
 of rank three over a number field is isotropic. -/
@@ -304,35 +297,6 @@ theorem represents_iff_locallyRepresentsScalar [FiniteDimensional K V]
     Represents Q a ↔ Q.LocallyRepresentsScalar a :=
   ⟨LocallyRepresentsScalar.of_represents, LocallyRepresentsScalar.represents⟩
 
-/-- A vector with nonzero quadratic value `c` embeds the rank-one form `⟨c⟩` into `Q`. -/
-private theorem isRepresentedBy_smul_sq_of_apply_eq {F : Type*} [Field F]
-    {M : Type*} [AddCommGroup M] [Module F M]
-    {Q : _root_.QuadraticForm F M} {x : M} {c : F} (hx : Q x = c) (hc : c ≠ 0) :
-    (c • (sq : _root_.QuadraticForm F F)).IsRepresentedBy Q := by
-  have hx_ne : x ≠ 0 := fun h0 => hc (by simpa [h0] using hx.symm)
-  exact (isRepresentedBy_iff _ Q).mpr ⟨LinearMap.toSpanSingleton F M x,
-    fun _ _ hxy => smul_left_injective F hx_ne hxy,
-    fun t => by simp [← hx, Q.map_smul, smul_eq_mul, mul_comm]⟩
-
-/-- Local Witt cancellation for representation: a regular finite-dimensional summand cancels from
-a local representation of orthogonal sums. -/
-private theorem locallyRepresents_of_prod_locallyRepresents_prod
-    {V₀ V₁ V₂ : Type*} [AddCommGroup V₀] [Module K V₀] [FiniteDimensional K V₀]
-    [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
-    {Q₀ : _root_.QuadraticForm K V₀} (hQ₀ : Q₀.Nondegenerate)
-    {Q₁ : _root_.QuadraticForm K V₁} {Q₂ : _root_.QuadraticForm K V₂}
-    (h : LocallyRepresents (Q₀.prod Q₁) (Q₀.prod Q₂)) :
-    Q₁.LocallyRepresents Q₂ := by
-  refine (locallyRepresents_iff Q₁ Q₂).mpr ⟨fun v => ?_, fun w => ?_⟩
-  · let _ : Invertible (2 : v.adicCompletion K) := invertibleOfNonzero two_ne_zero
-    refine isRepresentedBy_of_prod_isRepresentedBy_prod (Nondegenerate.atFinitePlace hQ₀ v) ?_
-    exact (Equivalent.isRepresentedBy_congr ⟨atFinitePlaceProd Q₀ Q₁ v⟩
-      ⟨atFinitePlaceProd Q₀ Q₂ v⟩).mp (((locallyRepresents_iff _ _).mp h).1 v)
-  · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    refine isRepresentedBy_of_prod_isRepresentedBy_prod (Nondegenerate.atRealPlace hQ₀ w) ?_
-    exact (Equivalent.isRepresentedBy_congr ⟨atRealPlaceProd Q₀ Q₁ w⟩
-      ⟨atRealPlaceProd Q₀ Q₂ w⟩).mp (((locallyRepresents_iff _ _).mp h).2 w)
-
 /-- **Hasse–Minkowski theorem for representation of forms** (O'Meara 66:3), when both forms are
 regular, proved by induction on the dimension of the represented form. -/
 private theorem isRepresentedBy_of_locallyRepresents_of_nondegenerate_aux :
@@ -383,148 +347,6 @@ private theorem isRepresentedBy_of_locallyRepresents_of_nondegenerate_aux :
         fun ⟨x, y⟩ => by simp [QuadraticMap.prod_apply, hfQ]⟩
     exact (hQP.isRepresentedBy_congr hRS).mpr hprod_rep
 
-/-- Any zero quadratic form on a finite-dimensional space is isometric to the zero form on a
-space of the same dimension. -/
-private theorem zero_equivalent_zero_of_finrank_eq {F : Type*} [Field F]
-    {M₁ M₂ : Type*} [AddCommGroup M₁] [Module F M₁] [FiniteDimensional F M₁]
-    [AddCommGroup M₂] [Module F M₂] [FiniteDimensional F M₂]
-    (h : Module.finrank F M₁ = Module.finrank F M₂) :
-    (0 : _root_.QuadraticForm F M₁).Equivalent (0 : _root_.QuadraticForm F M₂) :=
-  ⟨{ toLinearEquiv := LinearEquiv.ofFinrankEq M₁ M₂ h
-     map_app' := fun _ => rfl }⟩
-
-/-- A zero quadratic form on a finite-dimensional space is represented by the zero form on any
-finite-dimensional space of at least as large dimension. -/
-private theorem zero_isRepresentedBy_zero_of_finrank_le {F : Type*} [Field F]
-    {M₁ M₂ : Type*} [AddCommGroup M₁] [Module F M₁] [FiniteDimensional F M₁]
-    [AddCommGroup M₂] [Module F M₂] [FiniteDimensional F M₂]
-    (h : Module.finrank F M₁ ≤ Module.finrank F M₂) :
-    (0 : _root_.QuadraticForm F M₁).IsRepresentedBy (0 : _root_.QuadraticForm F M₂) := by
-  let b₁ := Module.finBasis F M₁
-  let b₂ := Module.finBasis F M₂
-  let f : M₁ →ₗ[F] M₂ :=
-    (Fintype.linearCombination F (b₂ ∘ Fin.castLE h)).comp b₁.equivFun.toLinearMap
-  have hf : Function.Injective f :=
-    (linearIndependent_iff_injective_fintypeLinearCombination.mp
-      (b₂.linearIndependent.comp (Fin.castLE h) (Fin.castLE_injective h))).comp
-      b₁.equivFun.injective
-  exact (isRepresentedBy_iff _ _).mpr ⟨f, hf, fun _ => rfl⟩
-
-/-- Cancelling a hyperbolic plane from an embedding of a totally isotropic space into `H ⊥ Q`
-reduces its dimension by one. -/
-private theorem zero_fin_isRepresentedBy_of_hyperbolicPlane_prod {F : Type*} [Field F]
-    [Invertible (2 : F)] {M : Type*} [AddCommGroup M] [Module F M]
-    {Q : _root_.QuadraticForm F M} (hQ : Q.Nondegenerate) {k : ℕ}
-    (h : (0 : _root_.QuadraticForm F (Fin (k + 1) → F)).IsRepresentedBy
-      ((hyperbolicPlane F).prod Q)) :
-    (0 : _root_.QuadraticForm F (Fin k → F)).IsRepresentedBy Q := by
-  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
-  let HQ : _root_.QuadraticForm F ((Fin 2 → F) × M) := (hyperbolicPlane F).prod Q
-  have hHQ : HQ.Nondegenerate := nondegenerate_hyperbolicPlane.prod hQ
-  have hsingle : (Pi.single (0 : Fin (k + 1)) (1 : F) : Fin (k + 1) → F) ≠ 0 := fun h0 => by
-    have h1 := congrFun h0 0; simp at h1
-  let x := f (Pi.single 0 1)
-  have hx : x ≠ 0 := fun h0 => hsingle (hf (h0.trans (map_zero f).symm))
-  have hxQ : HQ x = 0 := hfQ (Pi.single 0 1)
-  obtain ⟨y, hyQ, hxy⟩ :=
-    exists_isotropic_polar_eq_one_of_radical_eq_bot hHQ.radical_eq_bot hx hxQ
-  let P := LinearMap.BilinForm.orthogonal HQ.polarBilin (Submodule.span F ({x, y} : Set _))
-  have hQP : Q.Equivalent (HQ.restrict P) :=
-    equivalent_of_equivalent_prod nondegenerate_hyperbolicPlane
-      (HQ.equivalent_hyperbolicPlane_prod_restrict_orthogonal hxQ hyQ hxy)
-  let φ : (Fin (k + 1) → F) →ₗ[F] F := (HQ.polarBilin y).comp f
-  have hker_dim : k ≤ Module.finrank F (LinearMap.ker φ) := by
-    have hsum := LinearMap.finrank_range_add_finrank_ker φ
-    have hrange : Module.finrank F (LinearMap.range φ) ≤ 1 := by
-      simpa using Submodule.finrank_le (LinearMap.range φ)
-    rw [Module.finrank_fin_fun] at hsum; omega
-  have hker_mem : ∀ v : LinearMap.ker φ, f v ∈ P := by
-    intro v
-    rw [LinearMap.BilinForm.mem_orthogonal_iff]
-    intro u hu
-    refine Submodule.span_induction ?_ (by simp) (fun _ _ _ _ ha hb => by simp [ha, hb])
-      (fun _ _ _ ha => by simp [ha]) hu
-    rintro z (rfl | rfl)
-    · dsimp only [x, HQ]
-      rw [polarBilin_apply_apply, polar, ← map_add, hfQ, hfQ, hfQ]; simp
-    · exact v.2
-  let g : LinearMap.ker φ →ₗ[F] P := (f.comp (LinearMap.ker φ).subtype).codRestrict P hker_mem
-  have hker_P : (0 : _root_.QuadraticForm F (LinearMap.ker φ)).IsRepresentedBy (HQ.restrict P) :=
-    (isRepresentedBy_iff _ _).mpr ⟨g, fun _ _ hv => Subtype.ext (hf (congrArg Subtype.val hv)),
-      fun v => hfQ v.1⟩
-  exact ((zero_isRepresentedBy_zero_of_finrank_le (by simpa using hker_dim)).trans hker_P).trans
-    hQP.symm.isRepresentedBy
-
-/-- Projecting an embedding of a zero form into `0_Z ⊥ T` onto `T` drops its dimension by at most
-`dim Z`. -/
-private theorem zero_fin_isRepresentedBy_of_zero_isRepresentedBy_zero_prod
-    {F : Type*} [Field F]
-    {U Z M : Type*} [AddCommGroup U] [Module F U] [FiniteDimensional F U]
-    [AddCommGroup Z] [Module F Z] [FiniteDimensional F Z]
-    [AddCommGroup M] [Module F M]
-    {T : _root_.QuadraticForm F M} {k : ℕ}
-    (hk : k + Module.finrank F Z ≤ Module.finrank F U)
-    (h : (0 : _root_.QuadraticForm F U).IsRepresentedBy
-      ((0 : _root_.QuadraticForm F Z).prod T)) :
-    (0 : _root_.QuadraticForm F (Fin k → F)).IsRepresentedBy T := by
-  obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp h
-  let g : U →ₗ[F] M := (LinearMap.snd F Z M).comp f
-  have hker_le : Module.finrank F (LinearMap.ker g) ≤ Module.finrank F Z := by
-    let p : LinearMap.ker g →ₗ[F] Z := (LinearMap.fst F Z M).comp (f.comp (LinearMap.ker g).subtype)
-    have hp : Function.Injective p := fun x y hxy =>
-      Subtype.ext (hf (Prod.ext hxy (x.2.trans y.2.symm)))
-    exact LinearMap.finrank_le_finrank_of_injective hp
-  have hrange_ge : k ≤ Module.finrank F (LinearMap.range g) := by
-    have hsum := LinearMap.finrank_range_add_finrank_ker g
-    omega
-  have hzero_range : (0 : _root_.QuadraticForm F (Fin k → F)).IsRepresentedBy
-      (0 : _root_.QuadraticForm F (LinearMap.range g)) :=
-    zero_isRepresentedBy_zero_of_finrank_le (by simpa using hrange_ge)
-  have hrange_T : (0 : _root_.QuadraticForm F (LinearMap.range g)).IsRepresentedBy T :=
-    (isRepresentedBy_iff _ _).mpr ⟨(LinearMap.range g).subtype, Subtype.coe_injective, by
-      rintro ⟨_, u, rfl⟩
-      simpa [g, QuadraticMap.prod_apply] using hfQ u⟩
-  exact hzero_range.trans hrange_T
-
-/-- The hyperbolic plane base-changes to the hyperbolic plane over any field extension of
-characteristic not two. -/
-private theorem baseChange_hyperbolicPlane_equivalent {F : Type*} [Field F]
-    {A : Type*} [Field A] [Algebra F A] [Invertible (2 : F)] [Invertible (2 : A)] :
-    ((hyperbolicPlane F).baseChange A).Equivalent (hyperbolicPlane A) := by
-  have h1 : hyperbolicPlane F = weightedSumSquares F ![(1 : F), -1] := by
-    rw [← presentedForm_one_neg_one, presentedForm_eq_weightedSumSquares_coe]
-    congr 1; ext i; fin_cases i <;> simp
-  have h2 : weightedSumSquares A (fun i : Fin 2 => algebraMap F A (![(1 : F), -1] i)) =
-      hyperbolicPlane A := by
-    rw [← presentedForm_one_neg_one, presentedForm_eq_weightedSumSquares_coe]
-    congr 1; ext i; fin_cases i <;> simp
-  rw [h1, ← h2]
-  exact ⟨baseChangeWeightedSumSquares (A := A) ![(1 : F), -1]⟩
-
-/-- After scalar extension to a field `A`, cancelling a hyperbolic plane from an embedding of a
-totally isotropic space reduces its dimension by one. -/
-private theorem zero_fin_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
-    {F : Type*} [Field F] {A : Type*} [Field A] [Algebra F A]
-    [Invertible (2 : F)] [Invertible (2 : A)]
-    {M : Type*} [AddCommGroup M] [Module F M] [FiniteDimensional F M]
-    {Q : _root_.QuadraticForm F M} (hQ : Q.Nondegenerate) {k : ℕ}
-    (h : ((0 : _root_.QuadraticForm F (Fin (k + 1) → F)).baseChange A).IsRepresentedBy
-      (QuadraticForm.baseChange A ((hyperbolicPlane F).prod Q))) :
-    ((0 : _root_.QuadraticForm F (Fin k → F)).baseChange A).IsRepresentedBy (Q.baseChange A) := by
-  have h0 : ((0 : _root_.QuadraticForm F (Fin (k + 1) → F)).baseChange A).Equivalent
-      (0 : _root_.QuadraticForm A (Fin (k + 1) → A)) := by
-    rw [baseChange_zero]; exact zero_equivalent_zero_of_finrank_eq (by simp)
-  have h1 : ((0 : _root_.QuadraticForm F (Fin k → F)).baseChange A).Equivalent
-      (0 : _root_.QuadraticForm A (Fin k → A)) := by
-    rw [baseChange_zero]; exact zero_equivalent_zero_of_finrank_eq (by simp)
-  have hH : (QuadraticForm.baseChange A ((hyperbolicPlane F).prod Q)).Equivalent
-      ((hyperbolicPlane A).prod (Q.baseChange A)) :=
-    Equivalent.trans ⟨baseChangeProd (A := A) (hyperbolicPlane F) Q⟩
-      (baseChange_hyperbolicPlane_equivalent.prod (.refl _))
-  exact h1.isRepresentedBy.trans <|
-    zero_fin_isRepresentedBy_of_hyperbolicPlane_prod (Nondegenerate.baseChange hQ)
-      ((h0.isRepresentedBy_congr hH).mp h)
-
 /-- A zero form on `Fin k → K` that is locally represented by a diagonal regular form is globally
 represented by it, proved by induction on `k` via isotropy and hyperbolic-plane splitting. -/
 private theorem zero_fin_isRepresentedBy_presentedForm :
@@ -556,14 +378,16 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
       refine (locallyRepresents_iff _ _).mpr ⟨fun v => ?_, fun w => ?_⟩
       · let _ : Invertible (2 : v.adicCompletion K) := invertibleOfNonzero two_ne_zero
         rw [atFinitePlace_def, atFinitePlace_def]
-        exact zero_fin_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
+        exact zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
           (nondegenerate_presentedForm q)
           (by simpa only [atFinitePlace_def] using ((locallyRepresents_iff _ _).mp hprod_loc).1 v)
+          (by simp)
       · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
         rw [atRealPlace_def, atRealPlace_def]
-        exact zero_fin_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
+        exact zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
           (nondegenerate_presentedForm q)
           (by simpa only [atRealPlace_def] using ((locallyRepresents_iff _ _).mp hprod_loc).2 w)
+          (by simp)
     obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff _ _).mp (ih q hq_loc)
     let hline : K →ₗ[K] (Fin 2 → K) :=
       { toFun := fun t => ![t, t]
@@ -584,28 +408,6 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
            map_app' := fun _ => by simp [QuadraticMap.prod_apply] }⟩
     exact (hzero_split.isRepresentedBy_congr hq).mpr hprod_rep
 
-/-- After scalar extension to a field `A`, projecting an embedding of `0_U` into `0_Z ⊥ T` onto `T`
-produces an embedding of `0_{Fin k}` where `k + dim Z = dim U`. -/
-private theorem zero_fin_baseChange_isRepresentedBy_of_zero_prod
-    {F : Type*} [Field F] {A : Type*} [Field A] [Algebra F A] [Invertible (2 : F)]
-    {U Z M : Type*} [AddCommGroup U] [Module F U] [FiniteDimensional F U]
-    [AddCommGroup Z] [Module F Z] [FiniteDimensional F Z]
-    [AddCommGroup M] [Module F M]
-    {T : _root_.QuadraticForm F M} {k : ℕ}
-    (hk : k + Module.finrank F Z = Module.finrank F U)
-    (h : ((0 : _root_.QuadraticForm F U).baseChange A).IsRepresentedBy
-      (QuadraticForm.baseChange A ((0 : _root_.QuadraticForm F Z).prod T))) :
-    ((0 : _root_.QuadraticForm F (Fin k → F)).baseChange A).IsRepresentedBy (T.baseChange A) := by
-  have h0 : ((0 : _root_.QuadraticForm F (Fin k → F)).baseChange A).Equivalent
-      (0 : _root_.QuadraticForm A (Fin k → A)) := by
-    rw [baseChange_zero]; exact zero_equivalent_zero_of_finrank_eq (by simp)
-  have hstep : ((0 : _root_.QuadraticForm F U).baseChange A).IsRepresentedBy
-      (((0 : _root_.QuadraticForm F Z).baseChange A).prod (T.baseChange A)) :=
-    h.trans (Equivalent.isRepresentedBy ⟨baseChangeProd (A := A) _ T⟩)
-  rw [baseChange_zero, baseChange_zero] at hstep
-  exact h0.isRepresentedBy.trans <|
-    zero_fin_isRepresentedBy_of_zero_isRepresentedBy_zero_prod (by simp [hk]) hstep
-
 /-- A zero form locally represented by `0_Z ⊥ T` (with `T` regular) is globally represented by
 `0_Z ⊥ T`. -/
 private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
@@ -624,12 +426,14 @@ private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
     have hT_loc : LocallyRepresents (0 : _root_.QuadraticForm K (Fin k → K)) T := by
       refine (locallyRepresents_iff _ T).mpr ⟨fun v => ?_, fun w => ?_⟩
       · rw [atFinitePlace_def, atFinitePlace_def]
-        exact zero_fin_baseChange_isRepresentedBy_of_zero_prod hk
+        exact zero_baseChange_isRepresentedBy_of_zero_prod
           (by simpa only [atFinitePlace_def] using ((locallyRepresents_iff _ _).mp hloc).1 v)
+          (by simp [hk])
       · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
         rw [atRealPlace_def, atRealPlace_def]
-        exact zero_fin_baseChange_isRepresentedBy_of_zero_prod hk
+        exact zero_baseChange_isRepresentedBy_of_zero_prod
           (by simpa only [atRealPlace_def] using ((locallyRepresents_iff _ _).mp hloc).2 w)
+          (by simp [hk])
     obtain ⟨p, hp⟩ := exists_presentedForm_equivalent T hT
     have hp_loc : LocallyRepresents (0 : _root_.QuadraticForm K (Fin k → K)) (presentedForm p) :=
       (QuadraticForm.QuadraticMap.Equivalent.locallyRepresents_congr (.refl _) hp).mp hT_loc
@@ -644,37 +448,6 @@ private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
       (isRepresentedBy_iff _ _).mpr ⟨LinearMap.id.prodMap f,
         Prod.map_injective.mpr ⟨Function.injective_id, hf⟩,
         fun ⟨z, x⟩ => by simp [QuadraticMap.prod_apply, hfQ]⟩
-
-/-- After scalar extension to a field `A`, projecting an embedding of a regular form `Q₁` into
-`0_Z ⊥ R₂` onto `R₂` remains an injective isometry. -/
-private theorem baseChange_isRepresentedBy_of_zero_prod
-    {F : Type*} [Field F] {A : Type*} [Field A] [Algebra F A] [Invertible (2 : F)]
-    {M₁ Z M₂ : Type*} [AddCommGroup M₁] [Module F M₁] [FiniteDimensional F M₁]
-    [AddCommGroup Z] [Module F Z] [AddCommGroup M₂] [Module F M₂]
-    {Q₁ : _root_.QuadraticForm F M₁} (hQ₁ : Q₁.Nondegenerate) {R₂ : _root_.QuadraticForm F M₂}
-    (h : (Q₁.baseChange A).IsRepresentedBy
-      (QuadraticForm.baseChange A ((0 : _root_.QuadraticForm F Z).prod R₂))) :
-    (Q₁.baseChange A).IsRepresentedBy (R₂.baseChange A) := by
-  have hstep := h.trans (Equivalent.isRepresentedBy ⟨baseChangeProd (A := A) _ R₂⟩)
-  obtain ⟨f, -, hfQ⟩ := (isRepresentedBy_iff _ _).mp hstep
-  let g : (Q₁.baseChange A) →qᵢ (R₂.baseChange A) :=
-    { toLinearMap := (LinearMap.snd _ _ _).comp f
-      map_app' := fun x => by simpa [baseChange_zero] using hfQ x }
-  exact (isRepresentedBy_iff _ _).mpr ⟨g.toLinearMap,
-    g.injective_of_radical_eq_bot (Nondegenerate.baseChange hQ₁).radical_eq_bot, g.map_app⟩
-
-/-- A quadratic space locally represented by a finite-dimensional quadratic space over a number
-field is itself finite-dimensional. -/
-private theorem finiteDimensional_of_locallyRepresents {Q : _root_.QuadraticForm K V}
-    {R : _root_.QuadraticForm K W} (h : Q.LocallyRepresents R) : FiniteDimensional K V := by
-  let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
-  obtain ⟨f, hf, -⟩ := (isRepresentedBy_iff _ _).mp (((locallyRepresents_iff Q R).mp h).1 v)
-  have : Module.Finite (v.adicCompletion K) (v.adicCompletion K ⊗[K] V) :=
-    Module.Finite.of_injective f hf
-  let b := Module.Basis.ofVectorSpace K V
-  have : Finite (Module.Basis.ofVectorSpaceIndex K V) :=
-    Module.Finite.finite_basis (b.baseChange (v.adicCompletion K))
-  exact Module.Finite.of_basis b
 
 /-- **Hasse–Minkowski theorem for representation of forms** (O'Meara 66:3): a quadratic form over a
 number field is represented by a finite-dimensional quadratic form `R` if it is locally represented
@@ -738,19 +511,22 @@ theorem isRepresentedBy_iff_locallyRepresents (Q : _root_.QuadraticForm K V)
   ⟨LocallyRepresents.of_isRepresentedBy, LocallyRepresents.isRepresentedBy⟩
 
 /-- **Hasse–Minkowski theorem for isometry** (O'Meara 66:4; Milne, Chapter VIII, Theorem 6.3):
-two quadratic forms on finite-dimensional spaces over a number field that are isometric at every
-finite and every real place are isometric over `K`. No nondegeneracy hypothesis is needed. -/
-theorem LocallyEquivalent.equivalent [FiniteDimensional K V] {Q : _root_.QuadraticForm K V}
+two quadratic forms over a number field, with target space finite-dimensional, that are isometric at
+every finite and every real place are isometric over `K` (finite-dimensionality of `V` follows from
+local equivalence). No nondegeneracy hypothesis is needed. -/
+theorem LocallyEquivalent.equivalent {Q : _root_.QuadraticForm K V}
     {R : _root_.QuadraticForm K W} (h : Q.LocallyEquivalent R) : Q.Equivalent R := by
+  have : FiniteDimensional K V := finiteDimensional_of_locallyRepresents h.locallyRepresents
   obtain ⟨f, hf, hfQ⟩ := (isRepresentedBy_iff Q R).mp h.locallyRepresents.isRepresentedBy
   exact ⟨{ toLinearEquiv := LinearEquiv.ofBijective f
              ⟨hf, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h.finrank_eq).mp hf⟩
            map_app' := hfQ }⟩
 
 /-- **Hasse–Minkowski theorem for isometry** (O'Meara 66:4; Milne, Chapter VIII, Theorem 6.3):
-two quadratic forms on finite-dimensional spaces over a number field are isometric if and only if
-they are isometric at every finite and every real place. No nondegeneracy hypothesis is needed. -/
-theorem equivalent_iff_locallyEquivalent [FiniteDimensional K V] (Q : _root_.QuadraticForm K V)
+two quadratic forms over a number field, with target space finite-dimensional, are isometric if and
+only if they are isometric at every finite and every real place (finite-dimensionality of `V`
+follows from local equivalence). No nondegeneracy hypothesis is needed. -/
+theorem equivalent_iff_locallyEquivalent (Q : _root_.QuadraticForm K V)
     (R : _root_.QuadraticForm K W) :
     Q.Equivalent R ↔ Q.LocallyEquivalent R :=
   ⟨LocallyEquivalent.of_equivalent, LocallyEquivalent.equivalent⟩
