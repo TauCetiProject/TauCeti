@@ -35,6 +35,8 @@ taking invariants under it.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+* `Representation.IntertwiningMap.prodEquiv`: intertwining maps into a product are pairs of
+  intertwining maps into the factors.
 * `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
   intertwining map of the conjugation representations `Representation.linHom`.
 * `Representation.IntertwiningMap.res` and `Representation.Equiv.res`: restriction of an
@@ -82,6 +84,35 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
+section prodEquiv
+
+variable {A G V W U : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
+  {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
+
+/-- **Intertwining maps into a product are pairs of intertwining maps**: the representation
+counterpart of `LinearMap.prodEquiv`, sending a pair `(f, g)` to `IntertwiningMap.prod f g`. -/
+noncomputable def prodEquiv :
+    (IntertwiningMap ρ σ × IntertwiningMap ρ τ) ≃ₗ[A] IntertwiningMap ρ (σ.prod τ) where
+  toFun f := f.1.prod f.2
+  invFun f := ((fst A σ τ).comp f, (snd A σ τ).comp f)
+  left_inv f := by simp
+  right_inv f := by ext <;> rfl
+  map_add' f g := by ext <;> rfl
+  map_smul' c f := by ext <;> rfl
+
+@[simp]
+theorem prodEquiv_apply (f : IntertwiningMap ρ σ × IntertwiningMap ρ τ) :
+    prodEquiv f = f.1.prod f.2 :=
+  (rfl)
+
+@[simp]
+theorem prodEquiv_symm_apply (f : IntertwiningMap ρ (σ.prod τ)) :
+    prodEquiv.symm f = ((fst A σ τ).comp f, (snd A σ τ).comp f) :=
+  (rfl)
+
+end prodEquiv
+
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
 types, so it too may be erased from an application. -/
@@ -114,21 +145,28 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
 
-end codRestrict
-
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
 noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) :
     ρ.Equiv P.toRepresentation :=
-  (f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)).ofBijective
+  let f' := f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)
+  .mk (LinearEquiv.ofBijective f'.toLinearMap
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
-      obtain ⟨v, hv⟩ := hP.ge w.2
-      exact ⟨v, Subtype.ext (by exact hv)⟩⟩
+      obtain ⟨v, hv⟩ := hP.ge w.property
+      exact ⟨v, Subtype.ext (by exact hv)⟩⟩) f'.isIntertwining'
+
+@[simp]
+theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
+    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
+  rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
 the group elements. -/
@@ -136,12 +174,6 @@ the group elements. -/
 theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
     f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
   (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
-
-@[simp]
-theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
-    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
-    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
-  rfl
 
 section lcomp
 

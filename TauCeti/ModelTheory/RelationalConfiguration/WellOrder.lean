@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
-public import TauCeti.SetTheory.Descriptive.Tree
+public import TauCeti.SetTheory.Descriptive.Tree.Descending
 
 /-!
 # The coded well-orders
@@ -22,9 +22,9 @@ relations with a descending sequence are a projection of a closed subset of the 
 (`analyticSet_compl_wellOrderClass`, for countably many relation symbols). On a countably infinite
 carrier it is not analytic. The tree of finite descending sequences of `codeRel lt c` has clopen
 node sets in `c`, it is well-founded exactly when `codeRel lt c` is, and for a well-order its rank
-exceeds the order type (`Descriptive.Tree.type_lt_rank_descending`). By the boundedness theorem for
-analytic families of well-founded trees, the order types of an analytic set of coded well-orders are
-bounded below `ω₁` (`exists_type_lt_omega_one_of_analyticSet`), whereas on a countably infinite
+bounds the order type (`Descriptive.Tree.type_le_rank_descendingTree`). By the boundedness theorem
+for analytic families of well-founded trees, the order types of an analytic set of coded well-orders
+are bounded below `ω₁` (`exists_type_lt_omega_one_of_analyticSet`), whereas on a countably infinite
 carrier every countable infinite order type occurs (`exists_mem_wellOrderClass_type_eq`). Hence the
 class is not analytic (`not_analyticSet_wellOrderClass`), not measurable for the product σ-algebra
 (`not_measurableSet_wellOrderClass`), and not the model class of any `L_{ω₁ω}` sentence
@@ -149,15 +149,15 @@ theorem isomorphismInvariant_wellOrderClass [L.IsRelational] (lt : L.Relations 2
 
 /-- Each node of the tree of descending sequences of `codeRel lt c` is present for a clopen set of
 configurations `c`. -/
-theorem isClopen_setOf_mem_descending_codeRel (lt : L.Relations 2) (u : List V) :
-    IsClopen {c : RelationalConfiguration L V | u ∈ descending (codeRel lt c)} := by
+theorem isClopen_setOf_mem_descendingTree_codeRel (lt : L.Relations 2) (u : List V) :
+    IsClopen {c : RelationalConfiguration L V | u ∈ descendingTree (codeRel lt c)} := by
   induction u with
   | nil => simp [isClopen_univ]
   | cons a u ih =>
     cases u with
     | nil => simp [isClopen_univ]
     | cons b u =>
-      simp only [mem_descending, List.isChain_cons_cons, flip, codeRel_iff, ofPred_and] at ih ⊢
+      simp only [mem_descendingTree, List.isChain_cons_cons, codeRel_iff, ofPred_and] at ih ⊢
       exact (isClopen_setOf_eval (atom lt ![b, a]) true).inter ih
 
 /-- On a countable carrier, in a language with countably many relation symbols, the coded
@@ -236,11 +236,11 @@ theorem exists_type_lt_omega_one_of_analyticSet [Countable V] {lt : L.Relations 
     ∃ β < ω₁, ∀ c (hc : c ∈ A),
       @Ordinal.type V (codeRel lt c) (mem_wellOrderClass.1 (hAW hc)) < β := by
   obtain ⟨β, hβ, hb⟩ := hA.exists_treeRank_lt_omega_one_of_isClosed
-    (fun c => descending (codeRel lt c))
-    (fun c hc => isWellFounded_descending_iff.2 (@IsWellOrder.wf _ _ (hAW hc)))
-    (fun u => (isClopen_setOf_mem_descending_codeRel lt u).isClosed)
+    (fun c => descendingTree (codeRel lt c))
+    (fun c hc => isWellFounded_descendingTree_iff.2 (@IsWellOrder.wf _ _ (hAW hc)))
+    (fun u => (isClopen_setOf_mem_descendingTree_codeRel lt u).isClosed)
   exact ⟨β, hβ, fun c hc =>
-    (@type_lt_rank_descending V (codeRel lt c) (hAW hc)).trans (hb c hc)⟩
+    (@type_le_rank_descendingTree V (codeRel lt c) (hAW hc)).trans_lt (hb c hc)⟩
 
 /-! ### The coded well-orders are not analytic, not measurable and not definable -/
 

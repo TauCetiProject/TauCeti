@@ -200,7 +200,7 @@ theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} 
       ((p.out * (k.out : G) : G) : G ⧸ K).out • m = p.out • m := by
     intro p k
     obtain ⟨z, hz⟩ := QuotientGroup.mk_out_eq_mul K (p.out * (k.out : G))
-    rw [hz, mul_smul, mul_smul, hm _ (hKH z.2), hm _ k.out.2]
+    rw [hz, mul_smul, mul_smul, hm _ (hKH z.property), hm _ k.out.property]
   simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
     Nat.card_eq_fintype_card]
 
@@ -338,7 +338,7 @@ theorem iUnion_out_smul_eq (hH : ∀ h ∈ H, h • V = V) :
   obtain ⟨h, hh⟩ := mk_out_eq_mul H g
   -- `g = out * h⁻¹`, and `h⁻¹` maps `V` onto itself.
   have hg : g • V = ((g : G ⧸ H).out : G) • V := by
-    rw [hh, mul_smul, hH _ h.2]
+    rw [hh, mul_smul, hH _ h.property]
   exact hg ▸ Set.subset_iUnion (fun q : G ⧸ H => (q.out : G) • V) _
 
 /-- Translates of `V` by distinct chosen coset representatives are disjoint, when every `g ∉ H`

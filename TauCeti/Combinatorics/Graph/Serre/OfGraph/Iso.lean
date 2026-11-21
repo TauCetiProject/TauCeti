@@ -62,21 +62,21 @@ noncomputable def toGraphToSerreGraphIso (Γ : SerreGraph.{u, v}) : Γ.toGraph.t
 
 /-- The isomorphism `Γ.toGraph.toSerreGraph ≅ Γ` is the identity on vertices. -/
 @[simp] theorem toGraphToSerreGraphIso_equivV_apply (Γ : SerreGraph.{u, v})
-    (a : Γ.toGraph.toSerreGraph.V) : Γ.toGraphToSerreGraphIso.equivV a = a.1 := by
+    (a : Γ.toGraph.toSerreGraph.V) : Γ.toGraphToSerreGraphIso.equivV a = a.val := by
   simp [toGraphToSerreGraphIso]
 
 @[simp] theorem coe_toGraphToSerreGraphIso_equivV_symm_apply (Γ : SerreGraph.{u, v}) (v : Γ.V) :
-    (Γ.toGraphToSerreGraphIso.equivV.symm v).1 = v := by
+    (Γ.toGraphToSerreGraphIso.equivV.symm v).val = v := by
   simp [toGraphToSerreGraphIso]
 
 /-- The isomorphism `Γ.toGraph.toSerreGraph ≅ Γ` sends a dart over an edge of `Γ.toGraph` into
 that reversal orbit. -/
 @[simp] theorem edge_toGraphToSerreGraphIso_equivE (Γ : SerreGraph.{u, v})
-    (d : Γ.toGraph.toSerreGraph.E) : Γ.edge (Γ.toGraphToSerreGraphIso.equivE d) = d.1.1 := by
+    (d : Γ.toGraph.toSerreGraph.E) : Γ.edge (Γ.toGraphToSerreGraphIso.equivE d) = d.1.val := by
   simp [toGraphToSerreGraphIso]
 
 @[simp] theorem coe_fst_toGraphToSerreGraphIso_equivE_symm (Γ : SerreGraph.{u, v}) (e : Γ.E) :
-    (Γ.toGraphToSerreGraphIso.equivE.symm e).1.1 = Γ.edge e := by
+    (Γ.toGraphToSerreGraphIso.equivE.symm e).1.val = Γ.edge e := by
   simpa using (Γ.edge_toGraphToSerreGraphIso_equivE (Γ.toGraphToSerreGraphIso.equivE.symm e)).symm
 
 /-- The isomorphism `Γ.toGraph.toSerreGraph ≅ Γ` induces the isomorphism

@@ -88,7 +88,7 @@ instance instDecompositionTrivialGrading : DirectSum.Decomposition (trivialGradi
       · subst hp
         exact congrArg _ (Subtype.ext (coe_toTrivialGradingZero R A y))
       · have hy : y = 0 :=
-          Subtype.ext (((mem_trivialGrading_iff R A).mp y.2).resolve_left hp)
+          Subtype.ext (((mem_trivialGrading_iff R A).mp y.property).resolve_left hp)
         rw [hy]
         simp
     | add x y hx hy => simp only [map_add, hx, hy]

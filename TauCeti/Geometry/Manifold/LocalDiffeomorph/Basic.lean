@@ -510,7 +510,8 @@ theorem _root_.IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt [IsMa
   rcases isEmpty_or_nonempty M with hM | hM
   · exact fun z _ ↦ isEmptyElim (e.symm z)
   -- On the target, the inverse of `e` agrees with its inverse on the injective open source.
-  have hinv := IsLocalDiffeomorphOn.contMDiffOn_invFunOn (fun x ↦ h x x.2) e.open_source e.injOn
+  have hinv := IsLocalDiffeomorphOn.contMDiffOn_invFunOn (fun x ↦ h x x.property) e.open_source
+      e.injOn
   rw [e.image_source_eq_target] at hinv
   refine hinv.congr fun z hz ↦ ?_
   conv_rhs => rw [← e.right_inv hz]
@@ -603,7 +604,7 @@ theorem _root_.Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn [T2Space N]
   have hloc : ∀ᶠ y in 𝓝ˢ K, IsLocalDiffeomorphAt I J n f y :=
     eventually_nhdsSet_iff_forall.mpr fun x hx ↦ (hf x hx).eventually
   obtain ⟨U, hUo, hKU, hU⟩ := mem_nhdsSet_iff_exists.mp (Filter.inter_mem ht hloc)
-  exact ⟨U, hUo, hKU, hinj.mono fun y hy ↦ (hU hy).1, fun y ↦ (hU y.2).2⟩
+  exact ⟨U, hUo, hKU, hinj.mono fun y hy ↦ (hU hy).1, fun y ↦ (hU y.property).2⟩
 
 /-- **Cancelling a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism at
 `x` and `f ∘ e` is a `C^n` local diffeomorphism at `x`, then `f` is a `C^n` local diffeomorphism at

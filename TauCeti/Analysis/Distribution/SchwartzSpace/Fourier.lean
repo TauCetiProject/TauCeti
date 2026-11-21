@@ -391,7 +391,7 @@ theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
   have hq : Continuous ((SchwartzMap.seminorm ℂ k 0).comp (fourierCLM ℂ 𝓢(E, F)).toLinearMap) :=
     ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (k, 0)).comp (fourierCLM ℂ _).continuous
   obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
-  refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
+  refine ⟨s, c, c.property, fun g ↦ (hc g).trans_eq ?_⟩
   simp [schwartzSeminormFamily, NNReal.smul_def]
 
 /-- The Fourier transform of a Schwartz function commutes with postcomposition by a continuous

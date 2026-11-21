@@ -40,7 +40,8 @@ variable {R σ ι : Type*} [CommSemiring R] {p : MvPolynomial σ R}
 theorem smul_left_injective_of_sum_coeff_mul_eq_one (s : Finset ι) (m : ι → σ →₀ ℕ) (c : ι → R)
     (hc : ∑ i ∈ s, p.coeff (m i) * c i = 1) : Function.Injective fun r : R => r • p :=
   Function.LeftInverse.injective (g := fun q => ∑ i ∈ s, q.coeff (m i) * c i) fun r => by
-    simp only [coeff_smul, smul_eq_mul, mul_assoc, ← Finset.mul_sum, hc, mul_one]
+    simp only [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, hc,
+      mul_one]
 
 /-- If some combination `∑ i ∈ s, p.coeff (m i) * c i` of coefficients of `p` is `1`, then
 `r • p = 0` if and only if `r = 0`. -/
