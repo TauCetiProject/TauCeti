@@ -58,6 +58,7 @@ finite-dimensional real Lie group `G`:
   that brackets to zero with `Lie(T)` lies in `Lie(T)`.
 * `TauCeti.Lie.IsMaximalTorus.eq_lieSubalgebraOfSubgroup_of_isLieAbelian`: `Lie(T)` is a maximal
   abelian Lie subalgebra of `𝔤`.
+* `TauCeti.Lie.IsMaximalTorus.iInf_ker_ad_eq`: the centralizer of `Lie(T)` in `𝔤` is `Lie(T)`.
 
 ## References
 
@@ -366,5 +367,19 @@ theorem IsMaximalTorus.eq_lieSubalgebraOfSubgroup_of_isLieAbelian {T : Subgroup 
     (fun _ hX => hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun _ hY =>
       LieSubalgebra.lie_eq_zero_of_mem hX (h𝔞 hY))
     h𝔞
+
+/-- **The centralizer of the Lie algebra of a maximal torus is that Lie algebra**: a left-invariant
+derivation commutes with every element of `𝔱` exactly when it lies in `𝔱`. -/
+theorem IsMaximalTorus.iInf_ker_ad_eq {T : Subgroup G} (hT : IsMaximalTorus T) :
+    ⨅ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
+        LinearMap.ker (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X) =
+      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule := by
+  have := hT.isTorus.isMulCommutative
+  ext Y
+  simp only [Submodule.mem_iInf, LinearMap.mem_ker, LieAlgebra.ad_apply,
+    LieSubalgebra.mem_toSubmodule, Subtype.forall]
+  exact ⟨fun h ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun X hX ↦ by
+      rw [← lie_skew, h X hX, neg_zero],
+    fun hY X hX ↦ lie_eq_zero_of_mem_lieSubalgebraOfSubgroup hX hY⟩
 
 end TauCeti.Lie

@@ -26,12 +26,10 @@ complex structure `J_k` (`TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPla
 This is the root-plane decomposition of a commutative subspace
 (`TauCeti.exists_isInternal_isRootPlane`) for `t = 𝔱`: the centralizer of `𝔱` in `𝔤` is `𝔱` itself,
 because the Lie algebra of a maximal torus is a maximal abelian subalgebra
-(`TauCeti.Lie.IsMaximalTorus.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero`).
+(`TauCeti.Lie.IsMaximalTorus.iInf_ker_ad_eq`).
 
 ## Main results
 
-* `TauCeti.Lie.IsMaximalTorus.iInf_ker_ad_eq`: the centralizer of the Lie algebra of a maximal
-  torus is that Lie algebra.
 * `TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`: the real root decomposition of the
   Lie algebra of a compact Lie group with respect to a maximal torus.
 
@@ -57,20 +55,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
-
-/-- **The centralizer of the Lie algebra of a maximal torus is that Lie algebra**: a left-invariant
-derivation commutes with every element of `𝔱` exactly when it lies in `𝔱`. -/
-theorem IsMaximalTorus.iInf_ker_ad_eq {T : Subgroup G} (hT : IsMaximalTorus T) :
-    ⨅ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
-        LinearMap.ker (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X) =
-      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule := by
-  have := hT.isTorus.isMulCommutative
-  ext Y
-  simp only [Submodule.mem_iInf, LinearMap.mem_ker, LieAlgebra.ad_apply,
-    LieSubalgebra.mem_toSubmodule, Subtype.forall]
-  exact ⟨fun h ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun X hX ↦ by
-      rw [← lie_skew, h X hX, neg_zero],
-    fun hY X hX ↦ lie_eq_zero_of_mem_lieSubalgebraOfSubgroup hX hY⟩
 
 /-- **Real root decomposition of a compact Lie algebra.** For a maximal torus `T` of a compact Lie
 group `G` and a symmetric positive definite invariant form `B` on its Lie algebra `𝔤`, the Lie
