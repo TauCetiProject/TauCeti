@@ -90,6 +90,7 @@ theorem nonneg (h : C1BoundedOn d f K) : 0 ≤ K := by
   obtain ⟨x, hx⟩ := (interior_orderedSimplex_nonempty d).mono interior_subset
   exact (norm_nonneg _).trans (h.norm_le hx)
 
+/-- The bound is monotone in `K`. -/
 theorem mono (h : C1BoundedOn d f K) (hKL : K ≤ L) : C1BoundedOn d f L :=
   ⟨h.1, fun x hx ↦ (h.2 x hx).trans hKL⟩
 
@@ -100,6 +101,7 @@ theorem congr (h : C1BoundedOn d f K) (hfg : EqOn f g (orderedSimplex d)) :
   rw [← hfg hx, fderivWithin_congr' (fun y hy ↦ (hfg hy).symm) hx]
   exact h.2 x hx
 
+/-- Bounds add under sums. -/
 theorem add (hf : C1BoundedOn d f K) (hg : C1BoundedOn d g L) : C1BoundedOn d (f + g) (K + L) := by
   refine ⟨hf.1.add hg.1, fun x hx ↦ ?_⟩
   rw [fderivWithin_add (uniqueDiffOn_orderedSimplex d x hx)
@@ -113,6 +115,7 @@ theorem add (hf : C1BoundedOn d f K) (hg : C1BoundedOn d g L) : C1BoundedOn d (f
           (fderivWithin ℝ g (orderedSimplex d) x)]
     _ ≤ K + L := add_le_add (hf.2 x hx) (hg.2 x hx)
 
+/-- Multiplication by `c` scales the bound by `‖c‖`. -/
 theorem const_mul (h : C1BoundedOn d f K) (c : ℂ) :
     C1BoundedOn d (fun x ↦ c * f x) (‖c‖ * K) := by
   refine ⟨contDiffOn_const.mul h.1, fun x hx ↦ ?_⟩

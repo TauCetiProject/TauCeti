@@ -47,6 +47,9 @@ it is determined by the values (`TauCeti.C1Jet.ext_value`) and the jets are exac
   `WithLp 1 (C(K, V) × C(K, E →L[ℝ] V))`.
 * `TauCeti.C1Jet 𝕜 K V`: the normed `𝕜`-space of jets, with components `TauCeti.C1Jet.value`
   and `TauCeti.C1Jet.deriv`.
+* `TauCeti.C1Jet.toProdₗᵢ`: the embedding of the jets into the `ℓ¹` product, a linear isometry.
+* `TauCeti.C1Jet.valueCLM`, `TauCeti.C1Jet.derivCLM`: the value and derivative components, as
+  continuous linear maps.
 * `TauCeti.C1Jet.evalCLM`, `TauCeti.C1Jet.derivEvalCLM`: evaluation of the value and of the
   derivative at a point, continuous linear maps of norm at most one.
 * `TauCeti.C1Jet.ofContDiffOn`: the jet `(f, fderivWithin ℝ f K)` of a function `C¹` on `K`.
@@ -87,6 +90,26 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 section Submodule
 
+omit [CompactSpace K] in
+/-- The integrand `t ↦ D (x + t (y - x)) (y - x)` along a segment `[x, y]` contained in `K` is
+integrable on the unit interval. -/
+private theorem integrable_segment {x y : K} (h : segment ℝ (x : E) y ⊆ K)
+    (D : C(K, E →L[ℝ] V)) :
+    Integrable (fun t : I ↦
+      D ⟨lineMap (x : E) y (t : ℝ), h (lineMap_mem_segment ℝ _ _ t.property)⟩ ((y : E) - x)) :=
+  (by fun_prop : Continuous _).integrable_of_hasCompactSupport (.of_compactSpace _)
+
+omit [CompactSpace K] in
+/-- If `‖D z‖ ≤ C` at every point `z` of a segment `[x, y]` in `K`, then
+`‖∫₀¹ D (x + t (y - x)) (y - x) dt‖ ≤ C ‖y - x‖`. -/
+private theorem norm_integral_segment_le {x y : K} (h : segment ℝ (x : E) y ⊆ K)
+    (D : C(K, E →L[ℝ] V)) {C : ℝ} (hC : ∀ z : K, (z : E) ∈ segment ℝ (x : E) y → ‖D z‖ ≤ C) :
+    ‖∫ t : I, D ⟨lineMap (x : E) y (t : ℝ), h (lineMap_mem_segment ℝ _ _ t.property)⟩
+        ((y : E) - x)‖ ≤ C * ‖(y : E) - x‖ :=
+  (norm_integral_le_of_norm_le_const (.of_forall fun t ↦ (ContinuousLinearMap.le_opNorm _ _).trans
+    (mul_le_mul_of_nonneg_right (hC _ (lineMap_mem_segment ℝ _ _ t.property))
+      (norm_nonneg _)))).trans (by simp)
+
 variable (𝕜 V) in
 /-- The integral `∫₀¹ D (x + t (y - x)) (y - x) dt` along a segment `[x, y]` contained in `K`,
 as a linear functional of `D`. -/
@@ -96,8 +119,7 @@ private def segmentIntegralₗ {x y : K} (h : segment ℝ (x : E) y ⊆ K) :
     ∫ t : I, D ⟨lineMap (x : E) y (t : ℝ), h (lineMap_mem_segment ℝ _ _ t.property)⟩ ((y : E) - x)
   map_add' D D' := by
     simp only [ContinuousMap.add_apply, add_apply]
-    refine integral_add ?_ ?_ <;>
-      exact (by fun_prop : Continuous _).integrable_of_hasCompactSupport (.of_compactSpace _)
+    exact integral_add (integrable_segment h D) (integrable_segment h D')
   map_smul' c D := by
     simp only [ContinuousMap.smul_apply, smul_apply, RingHom.id_apply]
     exact integral_smul c _
@@ -107,12 +129,8 @@ variable (𝕜 V) in
 as a continuous linear functional of `D`. -/
 private def segmentIntegral {x y : K} (h : segment ℝ (x : E) y ⊆ K) :
     C(K, E →L[ℝ] V) →L[𝕜] V :=
-  (segmentIntegralₗ 𝕜 V h).mkContinuous ‖(y : E) - x‖ fun D : C(K, E →L[ℝ] V) ↦ by
-    refine (norm_integral_le_of_norm_le_const (C := ‖D‖ * ‖(y : E) - x‖)
-      (.of_forall fun t ↦ ?_)).trans ?_
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans
-        (mul_le_mul_of_nonneg_right (D.norm_coe_le_norm _) (norm_nonneg _))
-    · simp [mul_comm]
+  (segmentIntegralₗ 𝕜 V h).mkContinuous ‖(y : E) - x‖ fun D : C(K, E →L[ℝ] V) ↦
+    (norm_integral_segment_le h D fun z _ ↦ D.norm_coe_le_norm z).trans_eq (mul_comm _ _)
 
 private theorem segmentIntegral_apply {x y : K} (h : segment ℝ (x : E) y ⊆ K)
     (D : C(K, E →L[ℝ] V)) :
@@ -144,6 +162,7 @@ theorem mem_c1JetSubmodule_iff {J : WithLp 1 (C(K, V) × C(K, E →L[ℝ] V))} :
     segmentDefect, sub_apply, ContinuousLinearMap.comp_apply, WithLp.fstL_apply,
     WithLp.sndL_apply, ContinuousMap.evalCLM_apply, segmentIntegral_apply, sub_eq_zero]
 
+/-- The jets form a closed subspace of the `ℓ¹` product `C(K, V) × C(K, E →L[ℝ] V)`. -/
 theorem isClosed_c1JetSubmodule :
     IsClosed (c1JetSubmodule 𝕜 K V : Set (WithLp 1 (C(K, V) × C(K, E →L[ℝ] V)))) := by
   simp only [c1JetSubmodule, Submodule.coe_iInf]
@@ -170,6 +189,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (C1Jet 𝕜 K V) :=
 /-- The jets on `K` form a normed `𝕜`-space. -/
 instance instNormedSpace : NormedSpace 𝕜 (C1Jet 𝕜 K V) where
   toModule := inferInstanceAs (Module 𝕜 (c1JetSubmodule 𝕜 K V))
+  -- The `show` unfolds the type synonym `C1Jet` to the submodule, as in `toProd` below.
   norm_smul_le c j :=
     norm_smul_le c ((show c1JetSubmodule 𝕜 K V from j) : WithLp 1 (C(K, V) × C(K, E →L[ℝ] V)))
 
@@ -292,6 +312,49 @@ theorem norm_deriv_apply_le (j : C1Jet 𝕜 K V) (x : K) : ‖j.deriv x‖ ≤ �
 instance instCompleteSpace [CompleteSpace V] : CompleteSpace (C1Jet 𝕜 K V) :=
   isClosed_c1JetSubmodule.completeSpace_coe
 
+/-! ### Linear maps -/
+
+variable (𝕜 K V) in
+/-- The embedding of the jets into the `ℓ¹` product `C(K, V) × C(K, E →L[ℝ] V)`, as a linear
+isometry. -/
+def toProdₗᵢ : C1Jet 𝕜 K V →ₗᵢ[𝕜] WithLp 1 (C(K, V) × C(K, E →L[ℝ] V)) where
+  toFun := toProd
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  norm_map' := norm_toProd
+
+@[simp]
+theorem fst_toProdₗᵢ (j : C1Jet 𝕜 K V) : (toProdₗᵢ 𝕜 K V j).fst = j.value :=
+  (rfl)
+
+@[simp]
+theorem snd_toProdₗᵢ (j : C1Jet 𝕜 K V) : (toProdₗᵢ 𝕜 K V j).snd = j.deriv :=
+  (rfl)
+
+theorem toProdₗᵢ_mem (j : C1Jet 𝕜 K V) : toProdₗᵢ 𝕜 K V j ∈ c1JetSubmodule 𝕜 K V :=
+  toProd_mem j
+
+variable (𝕜 K V) in
+/-- The value component of a jet, as a continuous linear map of norm at most one. -/
+def valueCLM : C1Jet 𝕜 K V →L[𝕜] C(K, V) :=
+  (WithLp.fstL 1 𝕜 _ _).comp (toProdₗᵢ 𝕜 K V).toContinuousLinearMap
+
+variable (𝕜 K V) in
+/-- The derivative component of a jet, as a continuous linear map. -/
+def derivCLM : C1Jet 𝕜 K V →L[𝕜] C(K, E →L[ℝ] V) :=
+  (WithLp.sndL 1 𝕜 _ _).comp (toProdₗᵢ 𝕜 K V).toContinuousLinearMap
+
+@[simp]
+theorem valueCLM_apply (j : C1Jet 𝕜 K V) : valueCLM 𝕜 K V j = j.value :=
+  (rfl)
+
+@[simp]
+theorem derivCLM_apply (j : C1Jet 𝕜 K V) : derivCLM 𝕜 K V j = j.deriv :=
+  (rfl)
+
+theorem norm_valueCLM_le : ‖valueCLM 𝕜 K V‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun j ↦ by simpa using j.norm_value_le
+
 /-! ### Evaluation -/
 
 variable (𝕜) in
@@ -334,12 +397,8 @@ theorem norm_derivEvalCLM_le (x : K) :
 /-- **The Lipschitz bound**: along a segment `[x, y]` in `K`, the value of a jet changes by at
 most `‖D‖_∞ ‖y - x‖`. -/
 theorem norm_value_sub_le (j : C1Jet 𝕜 K V) {x y : K} (h : segment ℝ (x : E) y ⊆ K) :
-    ‖j.value y - j.value x‖ ≤ ‖j.deriv‖ * ‖(y : E) - x‖ := by
-  rw [j.sub_eq_integral h]
-  refine (norm_integral_le_of_norm_le_const (C := ‖j.deriv‖ * ‖(y : E) - x‖)
-    (.of_forall fun t ↦ ?_)).trans (by simp)
-  exact (ContinuousLinearMap.le_opNorm _ _).trans
-    (mul_le_mul_of_nonneg_right (j.deriv.norm_coe_le_norm _) (norm_nonneg _))
+    ‖j.value y - j.value x‖ ≤ ‖j.deriv‖ * ‖(y : E) - x‖ :=
+  j.sub_eq_integral h ▸ norm_integral_segment_le h j.deriv fun z _ ↦ j.deriv.norm_coe_le_norm z
 
 /-- On a convex set, the value of a jet is Lipschitz with constant `‖D‖_∞`. -/
 theorem lipschitzWith_value (j : C1Jet 𝕜 K V) (hK : Convex ℝ K) :
@@ -354,17 +413,15 @@ theorem norm_value_sub_sub_deriv_le [CompleteSpace V] (j : C1Jet 𝕜 K V) {x y 
     (h : segment ℝ (x : E) y ⊆ K) {C : ℝ}
     (hC : ∀ z : K, (z : E) ∈ segment ℝ (x : E) y → ‖j.deriv z - j.deriv x‖ ≤ C) :
     ‖j.value y - j.value x - j.deriv x ((y : E) - x)‖ ≤ C * ‖(y : E) - x‖ := by
-  have hint (D : C(K, E →L[ℝ] V)) : Integrable (fun t : I ↦
-      D ⟨lineMap (x : E) y (t : ℝ), h (lineMap_mem_segment ℝ _ _ t.property)⟩ ((y : E) - x)) :=
-    (by fun_prop : Continuous _).integrable_of_hasCompactSupport (.of_compactSpace _)
   have hconst : j.deriv x ((y : E) - x) = ∫ _ : I, j.deriv x ((y : E) - x) := by
     rw [integral_const, probReal_univ, one_smul]
-  rw [j.sub_eq_integral h, hconst, ← integral_sub (hint _) (integrable_const _)]
-  refine (norm_integral_le_of_norm_le_const (C := C * ‖(y : E) - x‖)
-    (.of_forall fun t ↦ ?_)).trans (by simp)
-  rw [← sub_apply]
-  exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
-    (hC _ (lineMap_mem_segment ℝ _ _ t.property)) (norm_nonneg _))
+  rw [j.sub_eq_integral h, hconst, ← integral_sub (integrable_segment h _) (integrable_const _)]
+  -- The integrand is that of the segment integral of `D - D x`.
+  have hD := norm_integral_segment_le h (j.deriv - .const K (j.deriv x)) fun z hz ↦ by
+    simpa using hC z hz
+  simp only [ContinuousMap.coe_sub, ContinuousMap.coe_const, Pi.sub_apply, Function.const_apply,
+    sub_apply] at hD
+  exact hD
 
 /-! ### Jets and derivatives within `K` -/
 
@@ -451,6 +508,8 @@ theorem ofContDiffOn_eq [CompleteSpace V] (j : C1Jet 𝕜 K V) (hK : Convex ℝ 
     (hKu : UniqueDiffOn ℝ K) {g : E → V} (hg : ∀ x : K, g x = j.value x) :
     ofContDiffOn 𝕜 hKu (j.contDiffOn hK hg) = j :=
   ext_value hK hKu (ContinuousMap.ext fun x ↦ (value_ofContDiffOn_apply hKu _ x).trans (hg x))
+
+attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.C1Jet
 
 end C1Jet
 
