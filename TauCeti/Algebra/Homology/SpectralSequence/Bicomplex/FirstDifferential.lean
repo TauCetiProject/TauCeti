@@ -260,6 +260,10 @@ private def rowFiltrationShortComplexHom (s : ℕ) :
     (K.rowFiltrationGradedToTotalRow_comp_extendMap_totalRowι s)
     (K.rowFiltrationCokernelToTotalRowsGE_comp_extendMap_totalRowsGEMap s)
 
+private lemma rowFiltrationShortComplexHom_τ₁ (s : ℕ) :
+    (K.rowFiltrationShortComplexHom s).τ₁ = K.rowFiltrationGradedToTotalRow s :=
+  (rfl)
+
 private lemma rowFiltrationShortComplexHom_τ₃ (s : ℕ) :
     (K.rowFiltrationShortComplexHom s).τ₃ = (K.rowFiltrationGradedIso (s + 1)).hom ≫
       HomologicalComplex.extendMap (K.totalRowι (s + 1)) embeddingDownNat :=
@@ -303,8 +307,8 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow (p : ℤ) (s : ℕ) :
     rw [rowFiltrationShortComplexHom_τ₃]
     exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
       (congrArg (HomologicalComplex.homologyMap · _) (Iso.inv_hom_id_assoc _ _))
-  rw [← hτ₃, Category.assoc, ← hφ, ← HomologicalComplex.homologyMap_comp]
-  rfl
+  rw [← hτ₃, Category.assoc, ← hφ, rowFiltrationShortComplexHom_τ₁, rowFiltrationGradedToTotalRow,
+    ← HomologicalComplex.homologyMap_comp]
 
 /-- The form of `HomologicalComplex₂.rowFiltrationSpectralSequence_page_two_d_totalRow` in which
 the homology of the rows placed in the degrees of the total complex, regarded as cochain
