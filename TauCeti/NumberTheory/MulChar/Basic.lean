@@ -44,7 +44,9 @@ under multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 
 A character satisfies `χ ^ d = 1` if and only if it is trivial on the `d`-th powers of units
-(`MulChar.pow_eq_one_iff_forall_mem_range`).
+(`MulChar.pow_eq_one_iff_forall_mem_range`). With values in a domain, the sum of a character over
+a finite commutative monoid `M` is the cast of `#Mˣ` for the trivial character and zero otherwise
+(`MulChar.sum_apply_eq_ite`).
 -/
 
 public section
@@ -162,6 +164,18 @@ theorem pow_eq_one_iff_forall_mem_range {M R : Type*} [CommMonoid M] [CommMonoid
   refine ⟨fun hχ y ↦ ?_, fun hχ ↦ ext fun y ↦ ?_⟩
   · simpa [pow_apply_coe] using congr_fun (congrArg DFunLike.coe hχ) (y : M)
   · simpa [pow_apply_coe] using hχ y
+
+/-- The sum of a character over a finite commutative monoid `M` is the cast of the number of
+units of `M` for the trivial character and zero otherwise. This puts Mathlib's
+`MulChar.sum_eq_zero_of_ne_one` and `MulChar.sum_one_eq_card_units` into one statement. -/
+@[simp]
+theorem sum_apply_eq_ite {M R : Type*} [CommMonoid M] [Fintype M] [CommRing R] [IsDomain R]
+    (χ : MulChar M R) [Decidable (χ = 1)] :
+    ∑ a, χ a = if χ = 1 then (Nat.card Mˣ : R) else 0 := by
+  classical
+  split_ifs with hχ
+  · rw [hχ, sum_one_eq_card_units, Nat.card_eq_fintype_card]
+  · exact sum_eq_zero_of_ne_one hχ
 
 section Transport
 
