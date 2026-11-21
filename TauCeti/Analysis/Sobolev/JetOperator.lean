@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # First-order operators on `L²` jets
@@ -16,6 +18,11 @@ A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V,
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
 `μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), built
 from Mathlib's Hölder pairing `ContinuousLinearMap.holderL`.
+
+The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
+have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.jetCoeff`), whose norm is
+at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_jetCoeff_le`) and which depends continuously on `A` and `C`
+(`TauCeti.continuousAt_jetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
 of the plane (with Lebesgue measure restricted to the domain) both realize first-order operators
@@ -63,5 +70,35 @@ theorem coeFn_jetOperator {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V
   filter_upwards [(ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).coeFn_holder (r := 2)
     (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, ContinuousLinearMap.id_apply, h₂]
+
+/-- The coefficient field `(a, b, c) ↦ b + A c + C a` on jets `(a, b, c)` of the operator
+`∂s + A ∂t + C`, where `b` and `c` are the slots of the partial derivatives `∂s` and `∂t`. -/
+def jetCoeff (A C : V →L[ℝ] V) : V × V × V →L[ℝ] V :=
+  (ContinuousLinearMap.fst ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)) +
+    A.comp ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V))) +
+      C.comp (ContinuousLinearMap.fst ℝ V (V × V))
+
+/-- The coefficient field of `∂s + A ∂t + C`, evaluated on a jet. -/
+theorem jetCoeff_apply (A C : V →L[ℝ] V) (v : V × V × V) :
+    jetCoeff A C v = v.2.1 + A v.2.2 + C v.1 :=
+  (rfl)
+
+/-- The norm of the coefficient field of `∂s + A ∂t + C` on jets is at most `1 + ‖A‖ + ‖C‖`. -/
+theorem norm_jetCoeff_le (A C : V →L[ℝ] V) : ‖jetCoeff A C‖ ≤ 1 + ‖A‖ + ‖C‖ := by
+  open ContinuousLinearMap in
+  refine norm_add₃_le.trans (add_le_add (add_le_add ?_ ?_) ?_)
+  · exact (opNorm_comp_le _ _).trans ((mul_le_of_le_one_left (norm_nonneg _)
+      (norm_fst_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
+  · refine (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) ?_)
+    exact (opNorm_comp_le _ _).trans ((mul_le_of_le_one_left (norm_nonneg _)
+      (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
+  · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
+      (norm_fst_le ℝ V (V × V)))
+
+/-- The coefficient field of `∂s + A ∂t + C` on jets depends continuously on `A` and `C`. -/
+theorem continuousAt_jetCoeff {X : Type*} [TopologicalSpace X] {A C : X → V →L[ℝ] V} {x : X}
+    (hA : ContinuousAt A x) (hC : ContinuousAt C x) :
+    ContinuousAt (fun x ↦ jetCoeff (A x) (C x)) x :=
+  (continuousAt_const.add (hA.clm_comp continuousAt_const)).add (hC.clm_comp continuousAt_const)
 
 end TauCeti
