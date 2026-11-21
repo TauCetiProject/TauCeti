@@ -552,6 +552,17 @@ theorem isCoxeterGroup_weylGroup.{u} {I K H : Type u} [Field K] [CharZero K]
 
 section RankOne
 
+/-- **Rank-one element dichotomy (`|I| = 1`)**: every element of the Weyl group of a rank-one
+realization is either `1` or the unique simple reflection `R.weylSimple hdiag default`. -/
+theorem eq_one_or_weylSimple_of_unique {I K H : Type*} [Unique I] [Field K]
+    [AddCommGroup H] [Module K H] {A : Matrix I I K}
+    (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) (w : R.weylGroup hdiag) :
+    w = 1 ∨ w = R.weylSimple hdiag default := by
+  refine R.weylGroup_induction hdiag (P := fun w ↦ w = 1 ∨ w = R.weylSimple hdiag default)
+    (Or.inl rfl)
+    (fun i ↦ Or.inr (congrArg (R.weylSimple hdiag) (Subsingleton.elim i default))) ?_ w
+  rintro u v (rfl | rfl) (rfl | rfl) <;> simp
+
 /-- **Rank-one Weyl group (`|I| = 1`, e.g. type `A₁`)**: over any field, the Weyl group has
 cardinality `2`. -/
 theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K]
@@ -559,15 +570,9 @@ theorem card_weylGroup_of_unique {I K H : Type*} [Unique I] [Field K]
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) :
     Nat.card (R.weylGroup hdiag) = 2 := by
   let s := R.weylSimple hdiag default
-  have hmem (w : R.weylGroup hdiag) : w = 1 ∨ w = s := by
-    induction w using R.weylGroup_induction with
-    | one => exact Or.inl rfl
-    | simple i => rw [Subsingleton.elim i default]; exact Or.inr rfl
-    | mul u v ihu ihv =>
-      rcases ihu with rfl | rfl <;> rcases ihv with rfl | rfl <;>
-        simp [s, R.weylSimple_mul_self]
   have hf : Function.Bijective (fun b : Bool ↦ if b then s else 1) := by
-    refine ⟨fun b₁ b₂ h ↦ ?_, fun w ↦ (hmem w).elim (⟨false, ·.symm⟩) (⟨true, ·.symm⟩)⟩
+    refine ⟨fun b₁ b₂ h ↦ ?_,
+      fun w ↦ (R.eq_one_or_weylSimple_of_unique hdiag w).elim (⟨false, ·.symm⟩) (⟨true, ·.symm⟩)⟩
     cases b₁ <;> cases b₂
     · rfl
     · exact absurd h.symm (R.weylSimple_ne_one hdiag default)
@@ -583,28 +588,17 @@ theorem simpleReflection_eq_neg_of_isMinimal {I K H : Type*} [Unique I] [Field K
     [AddCommGroup H] [Module K H] {A : Matrix I I K}
     (R : CartanRealization A H) (hdiag : ∀ i, A i i = 2) (hmin : R.IsMinimal)
     (φ : Dual K H) : R.simpleReflection hdiag default φ = -φ := by
-  have hspan (h : H) : h = (2⁻¹ * R.root default h) • R.coroot default := by
-    let z : H := h - (2⁻¹ * R.root default h) • R.coroot default
-    have hz_center : z ∈ R.cartanCenter := by
-      rw [R.mem_cartanCenter_iff]
-      intro i
-      rw [Subsingleton.elim i default]
-      dsimp only [z]
-      rw [map_sub, map_smul, R.root_coroot, hdiag default, smul_eq_mul, mul_right_comm,
-        inv_mul_cancel₀ two_ne_zero, one_mul, sub_self]
-    obtain ⟨c, hc⟩ := (R.mem_corootSpan_iff z).mp
-      (R.isMinimal_iff_cartanCenter_le_corootSpan.mp hmin hz_center)
-    have hcz : z = c default • R.coroot default := by
-      rw [← hc, corootMap_apply, Fintype.sum_unique]
-    have hc0 : c default = 0 := by
-      have hr := (R.mem_cartanCenter_iff z).mp hz_center default
-      rw [hcz, map_smul, R.root_coroot, hdiag default, smul_eq_mul, mul_eq_zero] at hr
-      exact hr.resolve_right two_ne_zero
-    have hz0 : z = 0 := by rw [hcz, hc0, zero_smul]
-    exact sub_eq_zero.mp hz0
+  classical
+  have hunit : IsUnit A := ⟨⟨A, Matrix.of fun _ _ ↦ (2 : K)⁻¹,
+    by ext i j; rw [Subsingleton.elim i default, Subsingleton.elim j default]
+       simp [Matrix.mul_apply, hdiag, two_ne_zero],
+    by ext i j; rw [Subsingleton.elim i default, Subsingleton.elim j default]
+       simp [Matrix.mul_apply, hdiag, two_ne_zero]⟩, rfl⟩
+  have htop : R.corootSpan = ⊤ := (R.isMinimal_iff_corootSpan_eq_top hunit).mp hmin
   ext h
-  rw [R.simpleReflection_apply_apply, hspan h, map_smul, simpleCoreflection_coroot_self,
-    smul_neg, map_neg, ← hspan h, LinearMap.neg_apply]
+  obtain ⟨c, hc⟩ := (R.mem_corootSpan_iff h).mp (htop ▸ Submodule.mem_top)
+  rw [← hc, corootMap_apply, Fintype.sum_unique, R.simpleReflection_apply_apply, map_smul,
+    simpleCoreflection_coroot_self, smul_neg, map_neg, LinearMap.neg_apply]
 
 /-- **Type `A₁` check (`CartanMatrix.A 1`)**: over any field, the Weyl group has order `2`. -/
 theorem card_weylGroup_A_one {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
@@ -624,10 +618,7 @@ example {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
     orderOf (R.weylSimple hd 0) = 2 ∧
       ∀ w : R.weylGroup hd, w = 1 ∨ w = R.weylSimple hd 0 := by
   intro hd
-  refine ⟨R.orderOf_weylSimple hd 0, ?_⟩
-  refine R.weylGroup_induction hd (P := fun w ↦ w = 1 ∨ w = R.weylSimple hd 0)
-    (Or.inl rfl) (fun i ↦ Or.inr (congrArg (R.weylSimple hd) (Subsingleton.elim i 0))) ?_
-  rintro u v (rfl | rfl) (rfl | rfl) <;> simp
+  exact ⟨R.orderOf_weylSimple hd 0, R.eq_one_or_weylSimple_of_unique hd⟩
 
 /-- Empty index set: the Weyl group is trivial and every element has word length `0`. -/
 example {K H : Type*} [Field K] [AddCommGroup H] [Module K H]

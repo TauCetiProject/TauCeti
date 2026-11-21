@@ -54,13 +54,14 @@ namespace TauCeti.CartanRealization
 section RankTwo
 
 /-- **Order of a product of two simple reflections in `R.weylGroup`**: `orderOf (sᵢ * sⱼ)` equals
-the Coxeter matrix entry `coxeterMatrixOfGeneralizedCartanMatrix A i j`. -/
+the Coxeter matrix entry `coxeterMatrixOfGeneralizedCartanMatrix A i j` over a characteristic-zero
+field whenever `A i j = 0 ↔ A j i = 0` and `0 ≤ A i j * A j i`. -/
 @[simp]
 theorem orderOf_weylSimple_mul_weylSimple {I K H : Type*} [DecidableEq I] [Field K] [CharZero K]
     [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
     (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-    (hdiag : ∀ i, A i i = 2) (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
-    (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (i j : I) :
+    (hdiag : ∀ i, A i i = 2) {i j : I} (hzero : A i j = 0 ↔ A j i = 0)
+    (hprod : 0 ≤ A i j * A j i) :
     orderOf (R.weylSimple (diag_map_intCast hdiag) i *
         R.weylSimple (diag_map_intCast hdiag) j) =
       coxeterMatrixOfGeneralizedCartanMatrix A i j := by
@@ -73,21 +74,19 @@ theorem orderOf_weylSimple_mul_weylSimple {I K H : Type*} [DecidableEq I] [Field
         R.weylSimple (diag_map_intCast hdiag) j),
       map_mul, Subgroup.coe_subtype, coe_weylSimple, coe_weylSimple]
   rw [hcoe]
-  refine R.orderOf_simpleReflection_mul_simpleReflection (diag_map_intCast hdiag)
-    (hzero i j) ?_
-  rcases eq_or_ne i j with rfl | hij
-  · exact mul_self_nonneg _
-  · exact mul_nonneg_of_nonpos_of_nonpos (hoff i j hij) (hoff j i hij.symm)
+  exact R.orderOf_simpleReflection_mul_simpleReflection (diag_map_intCast hdiag) hzero hprod
 
-/-- **Rank-two Weyl groups are dihedral**: for any generalized Cartan matrix on `{i, j}` over a
-characteristic-zero field, `R.weylGroup` is isomorphic to
-`DihedralGroup (coxeterMatrixOfGeneralizedCartanMatrix A i j)` — finite of order `2 * mᵢⱼ` when
-`aᵢⱼ aⱼᵢ ≤ 3`, and the infinite dihedral group `DihedralGroup 0` when `aᵢⱼ aⱼᵢ ≥ 4`. -/
+/-- **Rank-two Weyl groups are dihedral**: for a realization of an integral matrix `A` with
+diagonal `2` on `{i, j}` over a characteristic-zero field satisfying `A i j = 0 ↔ A j i = 0` and
+`0 ≤ A i j * A j i` (in particular, any generalized Cartan matrix on `{i, j}`), `R.weylGroup` is
+isomorphic to `DihedralGroup (coxeterMatrixOfGeneralizedCartanMatrix A i j)` — finite of order
+`2 * mᵢⱼ` when `aᵢⱼ aⱼᵢ ≤ 3`, and the infinite dihedral group `DihedralGroup 0` when
+`aᵢⱼ aⱼᵢ ≥ 4`. -/
 noncomputable def dihedralGroupMulEquivWeyl {I K H : Type*} [DecidableEq I] [Field K] [CharZero K]
     [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}
     (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
-    (hdiag : ∀ k, A k k = 2) (hoff : ∀ k l, k ≠ l → A k l ≤ 0)
-    (hzero : ∀ k l, A k l = 0 ↔ A l k = 0) {i j : I} (hpair : ∀ k : I, k = i ∨ k = j) :
+    (hdiag : ∀ k, A k k = 2) {i j : I} (hzero : A i j = 0 ↔ A j i = 0)
+    (hprod : 0 ≤ A i j * A j i) (hpair : ∀ k : I, k = i ∨ k = j) :
     DihedralGroup (coxeterMatrixOfGeneralizedCartanMatrix A i j) ≃*
       R.weylGroup (diag_map_intCast hdiag) := by
   have hrange : ({R.weylSimple (diag_map_intCast hdiag) i,
@@ -101,7 +100,7 @@ noncomputable def dihedralGroupMulEquivWeyl {I K H : Type*} [DecidableEq I] [Fie
     · exact Or.inr hk.symm
   exact TauCeti.dihedralGroupMulEquiv (R.weylSimple_mul_self _ i) (R.weylSimple_mul_self _ j)
     (R.weylSimple_ne_one _ i) (R.weylSimple_ne_one _ j)
-    (R.orderOf_weylSimple_mul_weylSimple hdiag hoff hzero i j)
+    (R.orderOf_weylSimple_mul_weylSimple hdiag hzero hprod)
     (by rw [hrange, R.closure_range_weylSimple])
 
 private theorem coxeterMatrix_B_two_zero_one :
@@ -119,9 +118,9 @@ noncomputable def dihedralGroupFourEquivWeylBTwo {K H : Type*} [Field K] [CharZe
   (by rw [coxeterMatrix_B_two_zero_one] :
       DihedralGroup 4 ≃* DihedralGroup (coxeterMatrixOfGeneralizedCartanMatrix
         (CartanMatrix.B 2) 0 1)).trans <|
-    R.dihedralGroupMulEquivWeyl (CartanMatrix.B_diag 2) (CartanMatrix.B_off_diag_nonpos 2)
-      (by rw [CartanMatrix.B_two]; simp [Fin.forall_fin_two])
-      (i := 0) (j := 1) (fun k ↦ by fin_cases k <;> simp)
+    R.dihedralGroupMulEquivWeyl (CartanMatrix.B_diag 2)
+      (by rw [CartanMatrix.B_two]; decide) (by rw [CartanMatrix.B_two]; decide)
+      (fun k ↦ by fin_cases k <;> simp)
 
 /-- **Type `B₂` cardinality check**: `|W(B₂)| = 8`. -/
 theorem card_weylGroup_B_two {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
@@ -143,8 +142,8 @@ noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [
       DihedralGroup 0 ≃*
         DihedralGroup (coxeterMatrixOfGeneralizedCartanMatrix
           !![(2 : ℤ), -2; -2, 2] 0 1)).trans <|
-    R.dihedralGroupMulEquivWeyl (by decide) (by simp [Fin.forall_fin_two])
-      (by simp [Fin.forall_fin_two]) (i := 0) (j := 1) (fun k ↦ by fin_cases k <;> simp)
+    R.dihedralGroupMulEquivWeyl (by decide) (by decide) (by decide)
+      (fun k ↦ by fin_cases k <;> simp)
 
 /-- **Affine `A₁⁽¹⁾` infinite-order check**: `s₀ s₁` has infinite order (`orderOf = 0`). -/
 theorem orderOf_weylSimple_mul_affine_A_one {K H : Type*} [Field K] [CharZero K]
@@ -152,8 +151,8 @@ theorem orderOf_weylSimple_mul_affine_A_one {K H : Type*} [Field K] [CharZero K]
     (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H) :
     orderOf (R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0 *
         R.weylSimple (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1) = 0 := by
-  rw [R.orderOf_weylSimple_mul_weylSimple (by decide) (by simp [Fin.forall_fin_two])
-    (by simp [Fin.forall_fin_two]) 0 1, coxeterMatrix_affine_A_one_zero_one]
+  rw [R.orderOf_weylSimple_mul_weylSimple (by decide) (by decide) (by decide),
+    coxeterMatrix_affine_A_one_zero_one]
 
 /-- The Weyl group of affine `A₁⁽¹⁾` is infinite. -/
 instance instInfiniteWeylGroupAffineAOne {K H : Type*} [Field K] [CharZero K]
