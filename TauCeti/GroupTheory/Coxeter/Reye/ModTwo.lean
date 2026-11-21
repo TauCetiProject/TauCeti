@@ -77,8 +77,8 @@ of the Coxeter system through `CoxeterMatrix.isLiftable_preReflection_map`.
 public section
 
 open QuadraticMap
-open TauCeti.QuadraticMap (orthogonalGroup reflection reflectionOrthogonal reflection_apply
-  coe_reflectionOrthogonal)
+open TauCeti.QuadraticMap (orthogonalGroup reflection reflectionOrthogonal
+  reflection_apply_of_charTwo coe_reflectionOrthogonal)
 
 namespace TauCeti
 
@@ -165,19 +165,12 @@ def reyeRadicalU : ReyeReduction := ![1, 0, 0, 0, 0, 1, 0, 1, 0, 1]
 @[expose]
 def reyeRadicalZ : ReyeReduction := ![0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
 
-private theorem polarBilin_reyeRadicalU : polarBilin reyeQuadratic reyeRadicalU = 0 := by
-  ext i
-  simp only [LinearMap.comp_apply, LinearMap.single_apply, polarBilin_apply_apply,
-    polar_reyeQuadratic, LinearMap.zero_apply]
-  revert i
-  decide
-
-private theorem polarBilin_reyeRadicalZ : polarBilin reyeQuadratic reyeRadicalZ = 0 := by
-  ext i
-  simp only [LinearMap.comp_apply, LinearMap.single_apply, polarBilin_apply_apply,
-    polar_reyeQuadratic, LinearMap.zero_apply]
-  revert i
-  decide
+private theorem polarBilin_reyeRadicalU_and_reyeRadicalZ :
+    polarBilin reyeQuadratic reyeRadicalU = 0 ∧ polarBilin reyeQuadratic reyeRadicalZ = 0 := by
+  constructor <;> ext i <;>
+    simp only [LinearMap.comp_apply, LinearMap.single_apply, polarBilin_apply_apply,
+      polar_reyeQuadratic, LinearMap.zero_apply] <;>
+    revert i <;> decide
 
 /-- A vector orthogonal to every simple root is the combination `(x₅ + x₁) u + x₁ z`. -/
 private theorem smul_reyeRadicalU_add_smul_reyeRadicalZ_of_polarBilin_eq_zero
@@ -200,10 +193,10 @@ theorem ker_polarBilin_reyeQuadratic :
   rw [LinearMap.mem_ker, Submodule.mem_span_pair]
   refine ⟨fun hx ↦ ⟨_, _, smul_reyeRadicalU_add_smul_reyeRadicalZ_of_polarBilin_eq_zero hx⟩, ?_⟩
   rintro ⟨a, b, rfl⟩
-  simp [polarBilin_reyeRadicalU, polarBilin_reyeRadicalZ]
+  simp [polarBilin_reyeRadicalU_and_reyeRadicalZ]
 
 /-- The vectors `u` and `z` are linearly independent, so the polar radical is a plane. -/
-theorem linearIndependent_reyeRadical :
+theorem linearIndependent_reyeRadicalU_reyeRadicalZ :
     LinearIndependent (ZMod 2) ![reyeRadicalU, reyeRadicalZ] := by
   rw [LinearIndependent.pair_iff]
   intro s t hst
@@ -214,7 +207,7 @@ a nondegenerate alternating form on an eight-dimensional quotient. -/
 theorem finrank_ker_polarBilin_reyeQuadratic :
     Module.finrank (ZMod 2) (LinearMap.ker (polarBilin reyeQuadratic)) = 2 := by
   rw [ker_polarBilin_reyeQuadratic, ← Matrix.range_cons_cons_empty _ _ ![],
-    finrank_span_eq_card linearIndependent_reyeRadical, Fintype.card_fin]
+    finrank_span_eq_card linearIndependent_reyeRadicalU_reyeRadicalZ, Fintype.card_fin]
 
 /-- **`q` is not constant on the cosets of the polar radical**: `q(a u + b z) = b`. -/
 theorem reyeQuadratic_smul_add_smul (a b : ZMod 2) :
@@ -238,7 +231,7 @@ instance (i : Fin 10) : Invertible (reyeQuadratic (Pi.single i 1)) where
 theorem reflection_reyeQuadratic_single_apply (i : Fin 10) (x : ReyeReduction) :
     reflection reyeQuadratic (Pi.single i 1) x =
       x + polar reyeQuadratic x (Pi.single i 1) • Pi.single i 1 := by
-  rw [reflection_apply, polar_comm, sub_eq_add_neg, ← neg_smul, ZMod.neg_eq_self_mod_two]
+  rw [reflection_apply_of_charTwo, polar_comm]
   congr 2
   exact one_mul _
 
@@ -255,11 +248,9 @@ private theorem reflection_reyeQuadratic_single_coe (i : Fin 10) (y : Fin 10 →
       (Finsupp.linearCombination (ZMod 2)
         (reyeDiagram.integralGramMatrix.map (Int.castRingHom (ZMod 2)) i))) fun k ↦
     LinearMap.ext_ring <| by
-      simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, Finsupp.lcoeFun_apply,
-        LinearEquiv.coe_coe, reflection_reyeQuadratic_single_apply, Module.preReflection_apply,
-        Finsupp.single_eq_pi_single, Finsupp.linearCombination_single, Matrix.map_apply,
-        polar_comm _ (Pi.single k 1), polar_reyeQuadratic_single_single, one_smul,
-        sub_eq_add_neg, ← neg_smul, ZMod.neg_eq_self_mod_two, Finsupp.coe_add, Finsupp.coe_smul]
+      simp [Module.preReflection_apply, Finsupp.single_eq_pi_single,
+        polar_comm _ (Pi.single k 1), polar_reyeQuadratic_single_single, sub_eq_add_neg,
+        ← Pi.single_neg, ← Pi.single_smul', ZMod.neg_eq_self_mod_two]
   exact LinearMap.congr_fun h y
 
 /-- The orthogonal reflections of `reyeQuadratic` in the simple roots satisfy the Coxeter relations
@@ -283,10 +274,9 @@ theorem isLiftable_reflectionOrthogonal_reyeQuadratic :
       Module.preReflection (Finsupp.single i 1) (Finsupp.linearCombination (ZMod 2)
         (reyeDiagram.integralGramMatrix.map (Int.castRingHom (ZMod 2)) i)) := by
     refine LinearMap.ext fun y ↦ DFunLike.coe_injective ?_
-    simp only [ψ, e, MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.coe_ofClass,
-      LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply,
-      LinearEquiv.conjRingEquiv_apply_apply, LinearEquiv.coe_coe,
-      Finsupp.linearEquivFunOnFinite_symm_apply, LinearEquiv.symm_symm, coe_reflectionOrthogonal]
+    change ⇑(e.symm ((reflectionOrthogonal reyeQuadratic (Pi.single i 1) :
+      ReyeReduction ≃ₗ[ZMod 2] ReyeReduction) (e y))) = _
+    rw [coe_reflectionOrthogonal]
     exact reflection_reyeQuadratic_single_coe i y
   intro i j
   apply hψ
@@ -330,7 +320,7 @@ private theorem reyeReductionAction_apply_coe (w : reyeDiagram.Group) (y : Fin 1
       reyeReductionAction_simple, coe_reflectionOrthogonal, reflection_reyeQuadratic_single_coe]
   | one => simp
   | mul w₁ w₂ hw₁ hw₂ =>
-    simp only [map_mul, Subgroup.coe_mul, mul_apply_eq_comp, mul_apply_eq_comp, hw₂, hw₁]
+    simp only [map_mul, Subgroup.coe_mul, mul_apply_eq_comp, hw₂, hw₁]
 
 /-- **The action on `F₂¹⁰` is the reduction modulo `2` of the integral action** of the T246
 Coxeter group on `ℤ¹⁰`, the reflection representation of its integral Gram matrix, which is the
