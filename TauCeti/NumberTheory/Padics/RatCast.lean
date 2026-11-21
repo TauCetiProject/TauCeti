@@ -20,7 +20,9 @@ make a rational object, such as a rational basis or a rational isometry, integra
 completion outside a finite set of primes. Conversely, a rational number that is a `p`-adic integer
 at every prime is an integer, and so is a rational number whose denominator is a power of `p` and
 which is a `p`-adic integer. Consequently two rational numbers agree in `ℚ/ℤ` when their
-difference has `p`-power denominator and is a `p`-adic integer.
+difference has `p`-power denominator and is a `p`-adic integer. Finally, for a prime `l`, the
+rational numbers that are `p`-adic units at every prime `p ≠ l` are exactly the numbers `± lⁿ`,
+`n ∈ ℤ`.
 
 ## Main results
 
@@ -33,6 +35,8 @@ difference has `p`-power denominator and is a `p`-adic integer.
   is a `p`-adic integer at every prime.
 * `Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`: a `p`-adic integer whose product with a
   power of `p` is an integer is an integer.
+* `Padic.forall_norm_rat_eq_one_iff_exists_zpow`: a rational number is a `p`-adic unit at every
+  prime `p ≠ l` exactly when it is `± lⁿ` for an integer `n`.
 * `Padic.addCircle_coe_eq_coe_of_eq_add_algebraMap`: two rational numbers agree in `ℚ/ℤ` when their
   difference has `p`-power denominator and lies in `ℤ_p`.
 -/
@@ -90,6 +94,56 @@ theorem den_eq_one_of_pow_mul_eq_of_norm_rat_le_one {p : ℕ} [Fact p.Prime] {q 
   have hp : (p : ℚ) ^ k ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
   have hqm : q = m := mul_left_cancel₀ hp (by rw [hn]; push_cast; ring)
   rw [hqm, Rat.den_intCast]
+
+/-- For a prime `l`, a rational number is a `p`-adic unit at every prime `p ≠ l` exactly when it
+is `± lⁿ` for an integer `n`. -/
+theorem forall_norm_rat_eq_one_iff_exists_zpow {l : ℕ} [Fact l.Prime] {q : ℚ} :
+    (∀ p : Nat.Primes, (p : ℕ) ≠ l → ‖(q : ℚ_[p])‖ = 1) ↔
+      ∃ n : ℤ, q = (l : ℚ) ^ n ∨ q = -(l : ℚ) ^ n := by
+  have hl : l.Prime := Fact.out
+  have hnorm_l {p : Nat.Primes} (hp : (p : ℕ) ≠ l) : ‖((l : ℚ) : ℚ_[p])‖ = 1 := by
+    rw [Rat.cast_natCast, norm_natCast_eq_one_iff]
+    exact (Nat.coprime_primes p.prop hl).mpr hp
+  constructor
+  · intro h
+    have hq : q ≠ 0 := by
+      obtain ⟨p, hlp, hp⟩ := Nat.exists_infinite_primes (l + 1)
+      rintro rfl
+      simpa using h ⟨p, hp⟩ (show p ≠ l by omega)
+    -- Dividing by the `l`-part leaves a rational number `r` of norm one at every prime.
+    set n := padicValRat l q
+    have hl0 : (l : ℚ) ^ n ≠ 0 := zpow_ne_zero _ (Nat.cast_ne_zero.mpr hl.ne_zero)
+    set r := q / (l : ℚ) ^ n with hr_def
+    have hr (p : Nat.Primes) : ‖(r : ℚ_[p])‖ = 1 := by
+      rw [hr_def, Rat.cast_div, norm_div, Rat.cast_zpow, norm_zpow]
+      by_cases hp : (p : ℕ) = l
+      · obtain ⟨p, hp'⟩ := p
+        subst hp
+        rw [eq_padicNorm, padicNorm.eq_zpow_of_ne_zero hq, Rat.cast_natCast, ← norm_zpow,
+          norm_p_zpow]
+        push_cast
+        exact div_self (zpow_ne_zero _ (Nat.cast_ne_zero.mpr hl.ne_zero))
+      · rw [h p hp, hnorm_l hp, one_zpow, div_one]
+    have hden : r.den = 1 := forall_norm_rat_le_one_iff_den_eq_one.mp fun p ↦ (hr p).le
+    have hden' : r⁻¹.den = 1 := forall_norm_rat_le_one_iff_den_eq_one.mp fun p ↦ by
+      rw [Rat.cast_inv, norm_inv, hr p, inv_one]
+    -- Both `r` and `r⁻¹` are integers, so `r = ±1`.
+    have hmul : r.num * r⁻¹.num = 1 := by
+      have h1 : (r.num : ℚ) * (r⁻¹.num : ℚ) = 1 := by
+        rw [(Rat.den_eq_one_iff r).mp hden, (Rat.den_eq_one_iff _).mp hden',
+          mul_inv_cancel₀ (div_ne_zero hq hl0)]
+      exact_mod_cast h1
+    have hq_eq : q = r.num * (l : ℚ) ^ n := by
+      rw [(Rat.den_eq_one_iff r).mp hden, hr_def, div_mul_cancel₀ q hl0]
+    refine ⟨n, ?_⟩
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one hmul with h1 | h1
+    · left
+      rw [hq_eq, h1, Int.cast_one, one_mul]
+    · right
+      rw [hq_eq, h1, Int.cast_neg, Int.cast_one, neg_one_mul]
+  · rintro ⟨n, rfl | rfl⟩ p hp
+    · rw [Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
+    · rw [Rat.cast_neg, norm_neg, Rat.cast_zpow, norm_zpow, hnorm_l hp, one_zpow]
 
 /-- Two rational numbers agree modulo `ℤ` when their difference has `p`-power denominator and
 lies in `ℤ_p`. -/
