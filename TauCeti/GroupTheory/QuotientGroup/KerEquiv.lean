@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -38,6 +39,9 @@ Mathlib.
 * `TauCeti.QuotientGroup.quotientKerEquivRange_symm_apply`: the inverse sends `φ g` back to the
   class of `g`; its additive counterpart is
   `TauCeti.QuotientAddGroup.quotientKerEquivRange_symm_apply`.
+* `AddSubgroup.kerCompHomSubtypeMulEquiv` and `AddSubgroup.kerCompHomInclusionMulEquiv`:
+  characters of an abelian group trivial on a subgroup correspond multiplicatively to characters of
+  the quotient, transferred from Mathlib's `AddMonoidHom.domRestrictHomKerEquiv`.
 
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
@@ -109,3 +113,96 @@ theorem coe_quotientSubgroupOfMulEquivMap_mk {G : Type*} [Group G] (N H : Subgro
   (rfl)
 
 end Subgroup
+
+namespace AddSubgroup
+
+/-- Characters of an abelian group `G` into `U` that vanish on an additive subgroup `N`
+correspond multiplicatively to characters of the quotient `G ⧸ N`, via
+`AddMonoidHom.domRestrictHomKerEquiv`. -/
+def kerCompHomSubtypeMulEquiv {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
+    (U : Type*) [CommGroup U] :
+    (MonoidHom.compHom' (P := U) N.subtype.toMultiplicative).ker ≃*
+      (Multiplicative (G ⧸ N) →* U) where
+  toFun ψ := AddMonoidHom.toMultiplicativeLeft <|
+    AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
+      ⟨ψ.1.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
+        congrArg Additive.ofMul (DFunLike.congr_fun ψ.2 (.ofAdd x))⟩
+  invFun η :=
+    ⟨((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm
+        η.toAdditiveRight).1.toMultiplicativeLeft,
+      MonoidHom.mem_ker.2 <| MonoidHom.ext fun x ↦ by
+        simpa using congrArg Additive.toMul <| DFunLike.congr_fun
+          ((AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm η.toAdditiveRight).2 x.toAdd⟩
+  left_inv ψ := Subtype.ext <| MonoidHom.ext fun x ↦ by
+    have := (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).symm_apply_apply
+      ⟨ψ.1.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun y ↦
+        congrArg Additive.ofMul (DFunLike.congr_fun ψ.2 (.ofAdd y))⟩
+    exact congrArg Additive.toMul (DFunLike.congr_fun (congrArg Subtype.val this) x.toAdd)
+  right_inv η := MonoidHom.ext fun q ↦ by
+    have := (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).apply_symm_apply
+      η.toAdditiveRight
+    exact congrArg Additive.toMul (DFunLike.congr_fun this q.toAdd)
+  map_mul' ψ₁ ψ₂ := MonoidHom.ext fun q ↦ by
+    have hmap : AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
+          ⟨(ψ₁ * ψ₂).1.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
+            congrArg Additive.ofMul (DFunLike.congr_fun (ψ₁ * ψ₂).2 (.ofAdd x))⟩ =
+        AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
+          ⟨ψ₁.1.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
+            congrArg Additive.ofMul (DFunLike.congr_fun ψ₁.2 (.ofAdd x))⟩ +
+        AddMonoidHom.domRestrictHomKerEquiv (Additive U) N
+          ⟨ψ₂.1.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
+            congrArg Additive.ofMul (DFunLike.congr_fun ψ₂.2 (.ofAdd x))⟩ :=
+      (AddMonoidHom.domRestrictHomKerEquiv (Additive U) N).map_add
+        ⟨ψ₁.1.toAdditiveRight, _⟩ ⟨ψ₂.1.toAdditiveRight, _⟩
+    exact congrArg Additive.toMul (DFunLike.congr_fun hmap q.toAdd)
+
+/-- `kerCompHomSubtypeMulEquiv` evaluates on the class of `x : G` as `ψ.1 (.ofAdd x)`. -/
+@[simp]
+theorem kerCompHomSubtypeMulEquiv_apply {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
+    (U : Type*) [CommGroup U]
+    (ψ : (MonoidHom.compHom' (P := U) N.subtype.toMultiplicative).ker) (x : G) :
+    kerCompHomSubtypeMulEquiv N U ψ (.ofAdd (QuotientAddGroup.mk x)) = ψ.1 (.ofAdd x) := (rfl)
+
+/-- The inverse of `kerCompHomSubtypeMulEquiv` precomposes with the quotient map. -/
+@[simp]
+theorem kerCompHomSubtypeMulEquiv_symm_apply_coe {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
+    (U : Type*) [CommGroup U] (η : Multiplicative (G ⧸ N) →* U) :
+    ((kerCompHomSubtypeMulEquiv N U).symm η : Multiplicative G →* U) =
+      η.comp (QuotientAddGroup.mk' N).toMultiplicative := by
+  ext x
+  rfl
+
+/-- For nested additive subgroups `H ≤ M` and a commutative group `U`, characters of `M` trivial on
+`H` correspond multiplicatively to characters of `M ⧸ H.addSubgroupOf M`. -/
+def kerCompHomInclusionMulEquiv {L : Type*} [AddCommGroup L] {H M : AddSubgroup L} (hHM : H ≤ M)
+    (U : Type*) [CommGroup U] :
+    (MonoidHom.compHom' (P := U) (AddSubgroup.inclusion hHM).toMultiplicative).ker ≃*
+      (Multiplicative (M ⧸ H.addSubgroupOf M) →* U) :=
+  (MulEquiv.subgroupCongr (by
+    ext ψ
+    rw [MonoidHom.mem_ker, MonoidHom.mem_ker]
+    refine ⟨fun h ↦ MonoidHom.ext fun a ↦
+        DFunLike.congr_fun h (.ofAdd ⟨a.toAdd.1, a.toAdd.2⟩),
+      fun h ↦ MonoidHom.ext fun a ↦
+        DFunLike.congr_fun h (.ofAdd ⟨⟨a.toAdd.1, hHM a.toAdd.2⟩, a.toAdd.2⟩)⟩)).trans
+    ((H.addSubgroupOf M).kerCompHomSubtypeMulEquiv U)
+
+/-- `kerCompHomInclusionMulEquiv` evaluates on the class of `x : M` as `ψ.1 (.ofAdd x)`. -/
+@[simp]
+theorem kerCompHomInclusionMulEquiv_apply {L : Type*} [AddCommGroup L] {H M : AddSubgroup L}
+    (hHM : H ≤ M) (U : Type*) [CommGroup U]
+    (ψ : (MonoidHom.compHom' (P := U) (AddSubgroup.inclusion hHM).toMultiplicative).ker)
+    (x : M) :
+    kerCompHomInclusionMulEquiv hHM U ψ (.ofAdd (QuotientAddGroup.mk x)) = ψ.1 (.ofAdd x) := (rfl)
+
+/-- The inverse of `kerCompHomInclusionMulEquiv` precomposes with the quotient map. -/
+@[simp]
+theorem kerCompHomInclusionMulEquiv_symm_apply_coe {L : Type*} [AddCommGroup L]
+    {H M : AddSubgroup L} (hHM : H ≤ M) (U : Type*) [CommGroup U]
+    (η : Multiplicative (M ⧸ H.addSubgroupOf M) →* U) :
+    ((kerCompHomInclusionMulEquiv hHM U).symm η : Multiplicative M →* U) =
+      η.comp (QuotientAddGroup.mk' (H.addSubgroupOf M)).toMultiplicative := by
+  ext x
+  rfl
+
+end AddSubgroup

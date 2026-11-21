@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import TauCeti.Algebra.MonoidAlgebra.Face.Coaction
 import Mathlib.RingTheory.Spectrum.Prime.RingHom
-import TauCeti.Algebra.Group.UniqueProds.TorsionFree
 
 /-!
 # Closed face subschemes, localized torus orbits, and the orbit closure order
@@ -27,8 +26,8 @@ constructs the scheme-level face and torus-orbit morphisms on `Spec R[S]`:
    `Set.range (F.closedFaceHom R) = PrimeSpectrum.zeroLocus (F.toAddSubmonoid.faceIdeal R)`. In
    particular, the ambient torus morphism `S.torusHom R : Spec R[AddSubgroup.closure S] ⟶ Spec R[S]`
    has dense image over every commutative ring `R` and is an open immersion when `S.FG`.
-3. **Closure order on orbits.** When `G` is torsion-free (`HasUniqueDiv G`) and `R` is an integral
-   domain, the face ideals are prime (hence radical), and for any faces `F₁, F₂` of `S`,
+3. **Closure order on orbits.** Over any nontrivial commutative ring `R` and any abelian group `G`,
+   for any faces `F₁, F₂` of `S`,
    `Set.range (F₁.orbitHom R) ⊆ closure (Set.range (F₂.orbitHom R)) ↔ F₁ ≤ F₂`
    (matching the exponent-semigroup face order, dual to the fan cone order).
 
@@ -44,6 +43,36 @@ public section
 open AlgebraicGeometry CategoryTheory AddMonoidAlgebra
 
 universe u
+
+/-- `Spec.map (CommRingCat.ofHom f)` has underlying map `PrimeSpectrum.comap f` on `Spec (.of _)`,
+so its range for surjective `f` is `PrimeSpectrum.zeroLocus I` when `RingHom.ker f = I`. -/
+private theorem range_specMap_ofHom_of_surjective {A B : Type u} [CommRing A] [CommRing B]
+    (f : A →+* B) (hf : Function.Surjective f) {I : Ideal A} (hker : RingHom.ker f = I) :
+    Set.range (Spec.map (CommRingCat.ofHom f)) = PrimeSpectrum.zeroLocus (I : Set A) := by
+  rw [← hker]
+  exact range_comap_of_surjective _ _ hf
+
+/-- The Zariski closure of the range of `Spec.map (CommRingCat.ofHom f)` on `Spec (.of A)` is
+`PrimeSpectrum.zeroLocus I` when `RingHom.ker f = I`. -/
+private theorem closure_range_specMap_ofHom {A B : Type u} [CommRing A] [CommRing B]
+    (f : A →+* B) {I : Ideal A} (hker : RingHom.ker f = I) :
+    closure (Set.range (Spec.map (CommRingCat.ofHom f))) = PrimeSpectrum.zeroLocus (I : Set A) := by
+  rw [← hker]
+  exact PrimeSpectrum.closure_range_comap f
+
+/-- Ideal radical characterization of `zeroLocus` inclusion stated at the carrier type
+`Spec (.of A)`. -/
+private theorem zeroLocus_subset_zeroLocus_iff_spec {A : Type u} [CommRing A] (I J : Ideal A) :
+    @LE.le (Set (Spec (.of A))) _ (PrimeSpectrum.zeroLocus (I : Set A))
+        (PrimeSpectrum.zeroLocus (J : Set A)) ↔
+      J ≤ I.radical :=
+  PrimeSpectrum.zeroLocus_subset_zeroLocus_iff I J
+
+/-- Dense-range characterization of `Spec.map (CommRingCat.ofHom f)` via `nilradical A`. -/
+private theorem denseRange_specMap_ofHom_iff {A B : Type u} [CommRing A] [CommRing B]
+    (f : A →+* B) :
+    DenseRange (Spec.map (CommRingCat.ofHom f)) ↔ RingHom.ker f ≤ nilradical A :=
+  PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical (f := f)
 
 namespace SaturatedAddSubmonoid
 
@@ -71,14 +100,10 @@ instance instIsClosedImmersionClosedFaceHom : IsClosedImmersion (F.closedFaceHom
 /-- The set-theoretic image of `F.closedFaceHom R` is the zero locus of `F.faceIdeal R`. -/
 theorem range_closedFaceHom :
     Set.range (F.closedFaceHom R) =
-      PrimeSpectrum.zeroLocus (F.toAddSubmonoid.faceIdeal R : Set (AddMonoidAlgebra R S)) := by
-  have hker : RingHom.ker (F.toAddSubmonoid.faceRestriction F.addSaturated R).toRingHom =
-      F.toAddSubmonoid.faceIdeal R :=
-    F.toAddSubmonoid.ker_faceRestriction F.addSaturated
-  change Set.range (PrimeSpectrum.comap
-    (F.toAddSubmonoid.faceRestriction F.addSaturated R).toRingHom) = _
-  rw [range_comap_of_surjective _ _
-    (F.toAddSubmonoid.faceRestriction_surjective F.addSaturated), hker]
+      PrimeSpectrum.zeroLocus (F.toAddSubmonoid.faceIdeal R : Set (AddMonoidAlgebra R S)) :=
+  (closedFaceHom_def F R).symm ▸ range_specMap_ofHom_of_surjective _
+    (F.toAddSubmonoid.faceRestriction_surjective F.addSaturated)
+    (F.toAddSubmonoid.ker_faceRestriction F.addSaturated)
 
 /-- The canonical morphism `Spec R[F.faceSubgroup] ⟶ Spec R[F]` from the localized `F`-orbit into
 its closed face scheme. -/
@@ -98,8 +123,9 @@ theorem isOpenImmersion_orbitOpenHom (hS : S.FG) : IsOpenImmersion (F.orbitOpenH
   obtain ⟨u, _⟩ := F.exists_isLocalization_away_faceSubgroup hS R
   exact IsOpenImmersion.of_isLocalization (single u (1 : R))
 
-/-- The locally closed orbit morphism `Spec R[F.faceSubgroup] ⟶ Spec R[S]` induced by
-`F.orbitMap R`. -/
+/-- The orbit morphism `Spec R[F.faceSubgroup] ⟶ Spec R[S]` induced by `F.orbitMap R` (which is a
+locally closed immersion when `S.FG`, factoring through the open immersion
+`isOpenImmersion_orbitOpenHom` and the closed immersion `closedFaceHom`). -/
 noncomputable def orbitHom :
     Spec (.of (AddMonoidAlgebra R F.faceSubgroup)) ⟶ Spec (.of (AddMonoidAlgebra R S)) :=
   Spec.map (CommRingCat.ofHom (F.orbitMap R).toRingHom)
@@ -121,11 +147,8 @@ theorem orbitOpenHom_comp_closedFaceHom :
 zero locus of `F.faceIdeal R`. -/
 theorem closure_range_orbitHom_eq_zeroLocus :
     closure (Set.range (F.orbitHom R)) =
-      PrimeSpectrum.zeroLocus (F.toAddSubmonoid.faceIdeal R : Set (AddMonoidAlgebra R S)) := by
-  have hker : RingHom.ker (F.orbitMap R).toRingHom = F.toAddSubmonoid.faceIdeal R :=
-    F.ker_orbitMap R
-  change closure (Set.range (PrimeSpectrum.comap (F.orbitMap R).toRingHom)) = _
-  rw [PrimeSpectrum.closure_range_comap, hker]
+      PrimeSpectrum.zeroLocus (F.toAddSubmonoid.faceIdeal R : Set (AddMonoidAlgebra R S)) :=
+  (orbitHom_def F R).symm ▸ closure_range_specMap_ofHom _ (F.ker_orbitMap R)
 
 /-- Over any commutative ring `R`, the Zariski closure of the `F`-orbit in `Spec R[S]` equals the
 image of the closed face subscheme `F.closedFaceHom R`. -/
@@ -137,28 +160,28 @@ end CommRing
 
 section ClosureOrder
 
-variable {G : Type u} [AddCommGroup G] [HasUniqueDiv G] {S : AddSubmonoid G}
-  (R : Type u) [CommRing R] [IsDomain R]
+variable {G : Type u} [AddCommGroup G] {S : AddSubmonoid G} (R : Type u) [CommRing R] [Nontrivial R]
 
-/-- Over an integral domain `R` and a torsion-free ambient group `G`, inclusion of orbit closures
+/-- Over any nontrivial commutative ring `R` and any abelian group `G`, inclusion of orbit closures
 in `Spec R[S]` is equivalent to inclusion of semigroup faces. -/
 @[simp]
 theorem closure_range_orbitHom_subset_iff (F₁ F₂ : SaturatedAddSubmonoid S) :
     closure (Set.range (F₁.orbitHom R)) ⊆ closure (Set.range (F₂.orbitHom R)) ↔ F₁ ≤ F₂ := by
-  have : UniqueSums F₁ :=
-    UniqueSums.of_injective_addHom (S.subtype.comp F₁.toAddSubmonoid.subtype).toAddHom
-      (Subtype.val_injective.comp Subtype.val_injective) inferInstance
-  have hp : (F₁.toAddSubmonoid.faceIdeal R).IsPrime :=
-    F₁.toAddSubmonoid.faceIdeal_isPrime F₁.addSaturated
-  rw [F₁.closure_range_orbitHom_eq_zeroLocus R, F₂.closure_range_orbitHom_eq_zeroLocus R]
-  change (PrimeSpectrum.zeroLocus (F₁.toAddSubmonoid.faceIdeal R : Set _) :
-      Set (PrimeSpectrum (AddMonoidAlgebra R S))) ⊆
-    PrimeSpectrum.zeroLocus (F₂.toAddSubmonoid.faceIdeal R : Set _) ↔ F₁ ≤ F₂
-  rw [PrimeSpectrum.zeroLocus_subset_zeroLocus_iff, hp.radical,
-    F₂.toAddSubmonoid.faceIdeal_le_faceIdeal_iff F₁.toAddSubmonoid F₁.addSaturated]
-  rfl
+  rw [F₁.closure_range_orbitHom_eq_zeroLocus R, F₂.closure_range_orbitHom_eq_zeroLocus R,
+    zeroLocus_subset_zeroLocus_iff_spec]
+  refine ⟨fun h s hs₁ ↦ by_contra fun hs₂ ↦ ?_, fun h ↦ ?_⟩
+  · have hmem : single s (1 : R) ∈ (F₁.toAddSubmonoid.faceIdeal R).radical :=
+      h ((F₂.toAddSubmonoid.single_mem_faceIdeal_iff F₂.addSaturated s 1).2 (Or.inr hs₂))
+    obtain ⟨n, hn⟩ := hmem
+    have hpow : (single s (1 : R)) ^ n = single (n • s) (1 : R) := by rw [single_pow, one_pow]
+    rw [hpow, F₁.toAddSubmonoid.single_mem_faceIdeal_iff F₁.addSaturated] at hn
+    rcases hn with h0 | hnot
+    · exact one_ne_zero h0
+    · exact hnot (nsmul_mem hs₁ n)
+  · exact ((F₂.toAddSubmonoid.faceIdeal_le_faceIdeal_iff F₁.toAddSubmonoid F₁.addSaturated).2
+      (SaturatedAddSubmonoid.toAddSubmonoid_le_iff.2 h)).trans Ideal.le_radical
 
-/-- Over an integral domain `R` and a torsion-free ambient group `G`, the `F₁`-orbit lies in the
+/-- Over any nontrivial commutative ring `R` and any abelian group `G`, the `F₁`-orbit lies in the
 Zariski closure of the `F₂`-orbit if and only if `F₁ ≤ F₂`. -/
 @[simp]
 theorem range_orbitHom_subset_closure_iff (F₁ F₂ : SaturatedAddSubmonoid S) :
@@ -194,8 +217,7 @@ theorem isOpenImmersion_torusHom (hS : S.FG) : IsOpenImmersion (S.torusHom R) :=
 /-- Over every commutative ring `R`, the ambient torus `Spec R[AddSubgroup.closure S]` has dense
 image in `Spec R[S]`. -/
 theorem denseRange_torusHom : DenseRange (S.torusHom R) := by
-  change DenseRange (PrimeSpectrum.comap (mapDomainRingHom R S.toGroupClosure))
-  rw [PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical]
+  rw [torusHom_def, denseRange_specMap_ofHom_iff]
   intro p hp
   have hp0 : p = 0 := mapDomain_injective S.toGroupClosure_injective (by
     rw [← mapDomainRingHom_apply R S.toGroupClosure, RingHom.mem_ker.1 hp, mapDomain_zero])

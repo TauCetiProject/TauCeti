@@ -81,10 +81,15 @@ theorem faceRestriction_eq_comapDomain (p : AddMonoidAlgebra R M) :
     simp [hp]
 
 /-- Restriction retains a monomial on the face. -/
-@[simp]
 theorem faceRestriction_single_mem (a : F) (r : R) :
     F.faceRestriction hF R (single (a : M) r) = single a r := by
   rw [faceRestriction_eq_comapDomain, comapDomain_single_map]
+
+/-- Restriction retains a monomial whose exponent lies in the face. -/
+@[simp]
+theorem faceRestriction_single_of_mem {a : M} (ha : a ∈ F) (r : R) :
+    F.faceRestriction hF R (single a r) = single ⟨a, ha⟩ r :=
+  F.faceRestriction_single_mem hF ⟨a, ha⟩ r
 
 /-- Restriction kills a monomial outside the face. -/
 @[simp]

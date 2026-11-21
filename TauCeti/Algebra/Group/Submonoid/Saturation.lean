@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
-public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
-public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
+public import TauCeti.Algebra.Group.Subgroup.PowSaturation
 
 /-!
 # Faces of monoids, positive-power invariance, and generated subgroups of faces
@@ -36,8 +35,6 @@ order, and under normalization is replaced by `F.faceSubgroup.nsmulSaturation`, 
   `SaturatedSubmonoid.instFinite`: positive-power saturation and finiteness for FG monoids.
 * `SaturatedSubmonoid.comapOrderIsoOfPowSaturation` and
   `AddSubmonoid.nsmulSaturationInfClosureFaceOrderIso`: invariance of faces under normalization.
-* `Subgroup.powSaturation`, `AddSubgroup.nsmulSaturation`, and
-  `Subgroup.isMulTorsion_quotient_powSaturation`: subgroup saturation and torsion quotient.
 * `SaturatedAddSubmonoid.faceSubgroup`, `SaturatedAddSubmonoid.toFaceSubgroup`, and
   `SaturatedAddSubmonoid.faceSubgroupNSMulSaturationEquiv`: generated face subgroups and
   identification under normalization.
@@ -131,6 +128,13 @@ theorem comap_comp (g : N →* P) (f : M →* N) (F : SaturatedSubmonoid P) :
 /-- Pullback of saturated additive submonoids is monotone. -/]
 theorem comap_mono {f : M →* N} {F₁ F₂ : SaturatedSubmonoid N} (h : F₁ ≤ F₂) :
     F₁.comap f ≤ F₂.comap f := fun _ hx ↦ h hx
+
+/-- Inclusion of saturated submonoids is equivalent to inclusion of their underlying submonoids. -/
+@[to_additive (attr := simp)
+/-- Inclusion of saturated additive submonoids is equivalent to inclusion of their underlying
+additive submonoids. -/]
+theorem toSubmonoid_le_iff {F₁ F₂ : SaturatedSubmonoid M} :
+    F₁.toSubmonoid ≤ F₂.toSubmonoid ↔ F₁ ≤ F₂ := Iff.rfl
 
 end Pullback
 
@@ -263,72 +267,6 @@ end PowSaturation
 
 end SaturatedSubmonoid
 
-namespace Subgroup
-
-variable {G : Type*} [CommGroup G] (H : Subgroup G)
-
-/-- The positive-power saturation of a subgroup `H` of a commutative group `G`, consisting of all
-elements `g : G` with `g ^ n ∈ H` for some `n > 0`. -/
-@[to_additive
-/-- The positive-multiple saturation of an additive subgroup `H` of an abelian group `G`, consisting
-of all elements `g : G` with `n • g ∈ H` for some `n > 0`. -/]
-def powSaturation : Subgroup G where
-  toSubmonoid := H.toSubmonoid.powSaturation
-  inv_mem' {x} hx := by
-    obtain ⟨n, hn, hxn⟩ := Submonoid.mem_powSaturation.1 hx
-    exact Submonoid.mem_powSaturation.2 ⟨n, hn, inv_pow x n ▸ H.inv_mem hxn⟩
-
-/-- The underlying submonoid of `H.powSaturation` is `H.toSubmonoid.powSaturation`. -/
-@[to_additive (attr := simp)
-/-- The underlying add-submonoid of `H.nsmulSaturation` is `H.toAddSubmonoid.nsmulSaturation`. -/]
-theorem toSubmonoid_powSaturation :
-    H.powSaturation.toSubmonoid = H.toSubmonoid.powSaturation := (rfl)
-
-/-- An element belongs to `H.powSaturation` iff some positive power belongs to `H`. -/
-@[to_additive (attr := simp)
-/-- An element belongs to `H.nsmulSaturation` iff some positive multiple belongs to `H`. -/]
-theorem mem_powSaturation {g : G} : g ∈ H.powSaturation ↔ ∃ n, 0 < n ∧ g ^ n ∈ H :=
-  Submonoid.mem_powSaturation
-
-/-- Every subgroup is contained in its positive-power saturation. -/
-@[to_additive (attr := simp)
-/-- Every additive subgroup is contained in its positive-multiple saturation. -/]
-theorem le_powSaturation : H ≤ H.powSaturation := H.toSubmonoid.le_powSaturation
-
-/-- The positive-power saturation of a subgroup is `PowSaturated`. -/
-@[to_additive
-/-- The positive-multiple saturation of an additive subgroup is `NSMulSaturated`. -/]
-theorem powSaturated_powSaturation : H.powSaturation.PowSaturated :=
-  H.toSubmonoid.powSaturated_powSaturation
-
-/-- Positive-power saturation of subgroups is monotone. -/
-@[to_additive (attr := gcongr)
-/-- Positive-multiple saturation of additive subgroups is monotone. -/]
-theorem powSaturation_mono {H₁ H₂ : Subgroup G} (h : H₁ ≤ H₂) :
-    H₁.powSaturation ≤ H₂.powSaturation := Submonoid.powSaturation_mono h
-
-/-- Every element of `H.powSaturation ⧸ H.subgroupOf H.powSaturation` has finite order. -/
-@[to_additive
-/-- Every element of `H.nsmulSaturation ⧸ H.addSubgroupOf H.nsmulSaturation` is torsion. -/]
-theorem isMulTorsion_quotient_powSaturation :
-    IsMulTorsion (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
-  fun q ↦ QuotientGroup.induction_on q fun x ↦ by
-    obtain ⟨n, hn, hxn⟩ := (mem_powSaturation H).1 x.2
-    exact isOfFinOrder_iff_pow_eq_one.2
-      ⟨n, hn, by rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]; exact hxn⟩
-
-/-- When `H.powSaturation` is finitely generated, `H` has finite index in `H.powSaturation`. -/
-@[to_additive
-/-- When `H.nsmulSaturation` is FG, `H` has finite quotient in `H.nsmulSaturation`. -/]
-theorem finite_quotient_powSaturation (hfg : H.powSaturation.FG) :
-    Finite (H.powSaturation ⧸ H.subgroupOf H.powSaturation) := by
-  have : Group.FG H.powSaturation := (Group.fg_iff_subgroup_fg H.powSaturation).2 hfg
-  have : Group.FG (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
-    Group.fg_of_surjective (QuotientGroup.mk'_surjective _)
-  exact CommGroup.finite_of_fg_isMulTorsion _ H.isMulTorsion_quotient_powSaturation
-
-end Subgroup
-
 namespace AddSubmonoid
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
@@ -448,6 +386,44 @@ theorem faceSubgroup_le_faceSubgroup_iff {F₁ F₂ : SaturatedAddSubmonoid S} :
   ⟨fun h _ hs ↦ F₂.toGroupClosure_mem_faceSubgroup_iff.1
     (h (F₁.toGroupClosure_mem_faceSubgroup_iff.2 hs)), faceSubgroup_mono⟩
 
+/-- Helper for the `≥` inclusion in `closure_nsmulSaturationInfClosure_eq_nsmulSaturation`:
+given `n > 0` with `n • z ∈ F.faceSubgroup`, shifting `z` by an element `b ∈ F` places `z + b`
+and `b` inside the normalized face `(S.nsmulSaturationInfClosureFaceOrderIso).symm F`. -/
+private theorem mem_closure_nsmulSaturationInfClosure_of_mem_nsmulSaturation
+    (F : SaturatedAddSubmonoid S) {z : AddSubgroup.closure (S : Set G)}
+    (hz : z ∈ F.faceSubgroup.nsmulSaturation) :
+    z ∈ AddSubgroup.closure
+      (S.nsmulSaturationInfClosureToGroupClosure ''
+        (((S.nsmulSaturationInfClosureFaceOrderIso).symm F : SaturatedAddSubmonoid _) :
+          Set _)) := by
+  let inc := AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+  obtain ⟨n, hn, hnz⟩ := (AddSubgroup.mem_nsmulSaturation _).1 hz
+  obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 hnz
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  -- Clear the difference `n • z = a - b` by shifting `z` by `b`: `(k + 1) • (z + b) = a + k • b`.
+  have hzb : (k + 1) • (z + S.toGroupClosure b.1).1 = (a.1 : G) + (k • b.1 : S) := by
+    have h1 : (k + 1) • (z + S.toGroupClosure b.1) =
+        S.toGroupClosure a.1 + k • S.toGroupClosure b.1 := by
+      rw [smul_add, hab, succ_nsmul']; abel
+    simpa [map_add, map_nsmul] using congrArg Subtype.val h1
+  let w : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :=
+    ⟨(z + S.toGroupClosure b.1).1,
+      ⟨AddSubmonoid.mem_nsmulSaturation.2
+        ⟨k + 1, Nat.succ_pos k, hzb ▸ add_mem a.1.2 (nsmul_mem b.1.2 k)⟩,
+        (z + S.toGroupClosure b.1).2⟩⟩
+  have hw : w ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
+    (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
+      ⟨k + 1, Nat.succ_pos k, AddSubmonoid.mem_map.2
+        ⟨a.1 + k • b.1, add_mem a.2 (nsmul_mem b.2 k), Subtype.ext hzb.symm⟩⟩
+  have hb : inc b.1 ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
+    (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
+      ⟨1, Nat.one_pos, AddSubmonoid.mem_map.2 ⟨b.1, b.2, (one_nsmul (inc b.1)).symm⟩⟩
+  -- Express `z = w - b` inside `AddSubgroup.closure S`.
+  have hz_eq : z = S.nsmulSaturationInfClosureToGroupClosure w -
+      S.nsmulSaturationInfClosureToGroupClosure (inc b.1) := Subtype.ext (by simp [w, inc])
+  exact hz_eq ▸ sub_mem (AddSubgroup.subset_closure ⟨w, hw, rfl⟩)
+    (AddSubgroup.subset_closure ⟨inc b.1, hb, rfl⟩)
+
 /-- Under `S.nsmulSaturationInfClosureToGroupClosure`, the subgroup of
 `AddSubgroup.closure (S : Set G)` generated by the face of the normalization of `S` corresponding
 to `F` equals the subgroup saturation `F.faceSubgroup.nsmulSaturation`. -/
@@ -456,40 +432,16 @@ theorem closure_nsmulSaturationInfClosure_eq_nsmulSaturation (F : SaturatedAddSu
       (S.nsmulSaturationInfClosureToGroupClosure ''
         (((S.nsmulSaturationInfClosureFaceOrderIso).symm F : SaturatedAddSubmonoid _) : Set _)) =
       F.faceSubgroup.nsmulSaturation := by
-  let inc := AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
-  refine le_antisymm ?_ ?_
-  · rw [AddSubgroup.closure_le]
-    rintro _ ⟨y, hy, rfl⟩
-    obtain ⟨n, hn, hmap⟩ := (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).1 hy
-    obtain ⟨s, hsF, hfs⟩ := AddSubmonoid.mem_map.1 hmap
-    refine (AddSubgroup.mem_nsmulSaturation _).2 ⟨n, hn, ?_⟩
-    rw [← map_nsmul, ← hfs, S.nsmulSaturationInfClosureToGroupClosure_inclusion_apply]
-    exact F.toGroupClosure_mem_faceSubgroup_iff.2 hsF
-  · intro z hz
-    obtain ⟨n, hn, hnz⟩ := (AddSubgroup.mem_nsmulSaturation _).1 hz
-    obtain ⟨a, b, hab⟩ := F.mem_faceSubgroup_iff.1 hnz
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-    have hzb : (k + 1) • (z + S.toGroupClosure b.1).1 = (a.1 : G) + (k • b.1 : S) := by
-      have h1 : (k + 1) • (z + S.toGroupClosure b.1) =
-          S.toGroupClosure a.1 + k • S.toGroupClosure b.1 := by
-        rw [smul_add, hab, succ_nsmul']; abel
-      simpa [map_add, map_nsmul] using congrArg Subtype.val h1
-    let w : ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) :=
-      ⟨(z + S.toGroupClosure b.1).1,
-        ⟨AddSubmonoid.mem_nsmulSaturation.2
-          ⟨k + 1, Nat.succ_pos k, hzb ▸ add_mem a.1.2 (nsmul_mem b.1.2 k)⟩,
-          (z + S.toGroupClosure b.1).2⟩⟩
-    have hw : w ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
-      (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
-        ⟨k + 1, Nat.succ_pos k, AddSubmonoid.mem_map.2
-          ⟨a.1 + k • b.1, add_mem a.2 (nsmul_mem b.2 k), Subtype.ext hzb.symm⟩⟩
-    have hb : inc b.1 ∈ (S.nsmulSaturationInfClosureFaceOrderIso).symm F :=
-      (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).2
-        ⟨1, Nat.one_pos, AddSubmonoid.mem_map.2 ⟨b.1, b.2, (one_nsmul (inc b.1)).symm⟩⟩
-    have hz_eq : z = S.nsmulSaturationInfClosureToGroupClosure w -
-        S.nsmulSaturationInfClosureToGroupClosure (inc b.1) := Subtype.ext (by simp [w, inc])
-    exact hz_eq ▸ sub_mem (AddSubgroup.subset_closure ⟨w, hw, rfl⟩)
-      (AddSubgroup.subset_closure ⟨inc b.1, hb, rfl⟩)
+  refine le_antisymm ?_ fun _ hz ↦
+    F.mem_closure_nsmulSaturationInfClosure_of_mem_nsmulSaturation hz
+  -- `≤` direction: every generator has a positive multiple in `F`.
+  rw [AddSubgroup.closure_le]
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨n, hn, hmap⟩ := (S.mem_nsmulSaturationInfClosureFaceOrderIso_symm F).1 hy
+  obtain ⟨s, hsF, hfs⟩ := AddSubmonoid.mem_map.1 hmap
+  refine (AddSubgroup.mem_nsmulSaturation _).2 ⟨n, hn, ?_⟩
+  rw [← map_nsmul, ← hfs, S.nsmulSaturationInfClosureToGroupClosure_inclusion_apply]
+  exact F.toGroupClosure_mem_faceSubgroup_iff.2 hsF
 
 /-- Canonical additive equivalence between the face subgroup of the normalized face
 `(S.nsmulSaturationInfClosureFaceOrderIso).symm F` and the subgroup saturation
@@ -513,6 +465,15 @@ theorem coe_faceSubgroupNSMulSaturationEquiv_apply (F : SaturatedAddSubmonoid S)
     (x : ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).faceSubgroup) :
     ((F.faceSubgroupNSMulSaturationEquiv x : AddSubgroup.closure (S : Set G)) : G) = x.1.1 := by
   simp [faceSubgroupNSMulSaturationEquiv]
+
+/-- The inverse of `faceSubgroupNSMulSaturationEquiv` preserves the underlying element of the
+ambient group `G`. -/
+theorem coe_faceSubgroupNSMulSaturationEquiv_symm_apply (F : SaturatedAddSubmonoid S)
+    (y : F.faceSubgroup.nsmulSaturation) :
+    ((F.faceSubgroupNSMulSaturationEquiv.symm y).1.1 : G) =
+      ((y : AddSubgroup.closure (S : Set G)) : G) := by
+  simpa using (F.coe_faceSubgroupNSMulSaturationEquiv_apply
+    (F.faceSubgroupNSMulSaturationEquiv.symm y)).symm
 
 /-- When `S` is finitely generated, `F.faceSubgroup` has finite quotient in its positive-multiple
 saturation inside `AddSubgroup.closure (S : Set G)`. -/
