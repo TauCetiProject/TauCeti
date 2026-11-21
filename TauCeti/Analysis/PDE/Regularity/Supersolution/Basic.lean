@@ -240,7 +240,7 @@ theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
       continuous_const
   have hsub := w1p0Submodule_subset_of_isClosed hclosed fun φ =>
     energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos h ha hu hF hM hM' hF0 hum hF' hF'' φ
-  have := hsub v.2
+  have := hsub v.property
   rwa [mem_ofPred_eq, W1p.posPart_eq_self_of_ae_nonneg hp hv] at this
 
 /-! ### The lower bound for positive supersolutions -/

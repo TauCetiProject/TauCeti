@@ -63,7 +63,7 @@ theorem shiftCoeff_apply {X Y : DGShiftClosure (DGSingleObj h)} {n : ℤ} (f : D
 /-- The underlying element of a morphism `⋆[r] ⟶ ⋆[s]` of degree `n` has degree `n + s - r`. -/
 theorem shiftCoeff_mem {X Y : DGShiftClosure (DGSingleObj h)} {n : ℤ} (f : DGHom R n X Y) :
     shiftCoeff f ∈ 𝒜 (n + (Y.shift - X.shift)) :=
-  (dgHomEquiv X.obj Y.obj _ (DGShiftClosure.dgHomEquiv R X Y n f)).2
+  (dgHomEquiv X.obj Y.obj _ (DGShiftClosure.dgHomEquiv R X Y n f)).property
 
 /-- A morphism of the shift closure is determined by its underlying element. -/
 theorem shiftCoeff_injective {X Y : DGShiftClosure (DGSingleObj h)} {n : ℤ} :

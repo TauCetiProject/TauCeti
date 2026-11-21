@@ -138,7 +138,7 @@ noncomputable def dualLatticePairing (N : Submodule R V) :
     N.dualLattice K →ₗ[R] N →ₗ[R] R :=
   LinearMap.restrictScalarsRange₂ (N.dualLattice K).subtype N.subtype (Algebra.linearMap R K)
     (FaithfulSMul.algebraMap_injective R K) LinearMap.id fun φ x ↦
-      Submodule.mem_one.mp ((mem_dualLattice N _).mp φ.2 x x.2)
+      Submodule.mem_one.mp ((mem_dualLattice N _).mp φ.property x x.property)
 
 /-- The integral pairing is evaluation, read back in `K`. -/
 @[simp]

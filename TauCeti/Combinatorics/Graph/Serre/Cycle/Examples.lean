@@ -65,7 +65,7 @@ theorem finrank_ker_incidenceBoundary_rose [StrongRankCondition R] :
     Module.finrank R ((rose α).incidenceBoundary {e | e.2 = true} R).ker = Nat.card α := by
   rw [finrank_ker_incidenceBoundary_of_forall_src_eq_tgt fun _ _ => rfl]
   exact Nat.card_congr
-    ⟨fun e => e.1.1, fun a => ⟨(a, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
+    ⟨fun e => e.val.1, fun a => ⟨(a, true), rfl⟩, fun ⟨⟨_, _⟩, h⟩ => by cases h; rfl,
       fun _ => rfl⟩
 
 /- The integral unit cycle on a petal reduces modulo two to the binary unit cycle, in finitely

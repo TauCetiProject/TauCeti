@@ -12,6 +12,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Hölder bounds for local derivative fields
@@ -20,7 +22,9 @@ On an open convex set, bounds for a derivative field and its next derivative giv
 bound for every exponent at most one. Thus local `C^{k,α}` data need a separate Hölder
 hypothesis only at their top derivative. On the whole space, a uniform bound on the next
 derivative makes a derivative field Lipschitz (`ContDiff.lipschitzWith_iteratedFDeriv`).
-Currying preserves these bounds exactly.
+Currying preserves these bounds exactly. On an open set that need not be convex, a `C^1` map is
+locally Lipschitz, hence Hölder on every compact subset, so one more derivative makes the top
+derivative Hölder there.
 -/
 
 public section
@@ -75,5 +79,34 @@ theorem _root_.ContDiff.lipschitzWith_iteratedFDeriv {k j : ℕ} {f : E → F} {
       have h := hnext x
       rw [← norm_fderiv_iteratedFDeriv] at h
       exact_mod_cast h
+
+/-- A map of class `C^1` on an open set `s` is locally Lipschitz on `s`. Compare Mathlib's
+`ContDiffOn.locallyLipschitzOn`, which assumes `s` convex instead of open. -/
+theorem _root_.ContDiffOn.locallyLipschitzOn_of_isOpen {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {s : Set E'} {g : E' → F'} (hg : ContDiffOn 𝕂 1 g s) (hs : IsOpen s) :
+    LocallyLipschitzOn s g := by
+  intro x hx
+  obtain ⟨L, t, ht, hLt⟩ := (hg.contDiffAt (hs.mem_nhds hx)).exists_lipschitzOnWith
+  exact ⟨L, t, mem_nhdsWithin_of_mem_nhds ht, hLt⟩
+
+/-- A map of class `C^1` on an open set `s` is `α`-Hölder on each compact subset of `s`, for every
+`α ≤ 1`. Compare `ContDiffOn.exists_holderOnWith`, for a compact convex set. -/
+theorem _root_.ContDiffOn.exists_holderOnWith_of_isOpen {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {s K : Set E'} {g : E' → F'} {α : ℝ≥0} (hg : ContDiffOn 𝕂 1 g s) (hs : IsOpen s)
+    (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) : ∃ C, HolderOnWith C α g K :=
+  (hg.locallyLipschitzOn_of_isOpen hs).exists_holderOnWith_of_isCompact hα hK hKs
+
+/-- For a map of class `C^{k+1}` on an open set `s`, the `k`-th derivative is `α`-Hölder on each
+compact subset of `s`, for every `α ≤ 1`. -/
+theorem _root_.ContDiffOn.exists_holderOnWith_iteratedFDeriv {𝕂 E' F' : Type*} [RCLike 𝕂]
+    [NormedAddCommGroup E'] [NormedSpace 𝕂 E'] [NormedAddCommGroup F'] [NormedSpace 𝕂 F']
+    {k : ℕ} {s K : Set E'} {f : E' → F'} {α : ℝ≥0} (hf : ContDiffOn 𝕂 (k + 1) f s)
+    (hs : IsOpen s) (hα : α ≤ 1) (hK : IsCompact K) (hKs : K ⊆ s) :
+    ∃ C, HolderOnWith C α (iteratedFDeriv 𝕂 k f) K :=
+  ContDiffOn.exists_holderOnWith_of_isOpen (fun _ hx ↦
+    ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDeriv_right (add_comm _ _).le).contDiffWithinAt)
+    hs hα hK hKs
 
 end TauCeti

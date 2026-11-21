@@ -965,8 +965,8 @@ theorem exists_convexPolygon_carrier_eq_iInter_closure_leftHalfPlane {ι ι' : T
     simp [L']
   have hess' (k : s) :
       ∃ u : ℝ, ∀ j : s, j ≠ k → geodesicLine (L' k) u ∈ leftHalfPlane (L' j) := by
-    obtain ⟨u, hu⟩ := hess k k.2
-    exact ⟨u, fun j hj ↦ hu j j.2 (Subtype.coe_injective.ne hj)⟩
+    obtain ⟨u, hu⟩ := hess k k.property
+    exact ⟨u, fun j hj ↦ hu j j.property (Subtype.coe_injective.ne hj)⟩
   choose u hu using hess'
   -- an empty family would leave all of `ℍ`, which stays unbounded after removing the horodiscs
   have : Nonempty s := by
@@ -979,7 +979,7 @@ theorem exists_convexPolygon_carrier_eq_iInter_closure_leftHalfPlane {ι ι' : T
   obtain ⟨n, _, P, hPK, hPs, hPv⟩ := exists_convexPolygon_of_faces hK hu g hA (hK ▸ hb)
   refine ⟨n, inferInstance, P, hPK, fun i ↦ ?_, hPv⟩
   obtain ⟨k, h₁, h₂⟩ := hPs i
-  exact ⟨k, hst k.2, h₁, h₂⟩
+  exact ⟨k, hst k.property, h₁, h₂⟩
 
 /-- **A bounded intersection of finitely many closed half-planes is a compact convex polygon.**
 Let `K` be the intersection of the closed left half-planes of the geodesic lines `L k`, `k ∈ t`,
