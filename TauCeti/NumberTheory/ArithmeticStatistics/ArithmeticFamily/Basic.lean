@@ -143,6 +143,32 @@ theorem count_union_of_disjoint {S T : Set ι} (h : Disjoint S T) (X : ℝ) :
   exact Finset.disjoint_left.mpr fun i hi hj ↦
     Set.disjoint_left.mp h (Finset.mem_filter.mp hi).2 (Finset.mem_filter.mp hj).2
 
+/-- Counts are subadditive. -/
+theorem count_union_le (S T : Set ι) (X : ℝ) :
+    F.count (S ∪ T) X ≤ F.count S X + F.count T X := by
+  classical
+  simp only [count, Set.mem_union, Finset.filter_or]
+  exact Finset.card_union_le _ _
+
+/-- A count splits into the parts inside and outside a second subfamily. -/
+theorem count_inter_add_count_sdiff (S T : Set ι) (X : ℝ) :
+    F.count (S ∩ T) X + F.count (S \ T) X = F.count S X := by
+  rw [← count_union_of_disjoint _ Set.disjoint_sdiff_inter.symm, Set.inter_union_sdiff]
+
+/-- A finite subfamily has count at most its cardinality. -/
+theorem count_le_ncard {S : Set ι} (hS : S.Finite) (X : ℝ) : F.count S X ≤ S.ncard := by
+  rw [count_eq_ncard]
+  exact Set.ncard_le_ncard (Set.sep_subset _ _) hS
+
+/-- A nonempty subfamily has positive count at every large enough cutoff. -/
+theorem eventually_count_pos {S : Set ι} (hS : S.Nonempty) :
+    ∀ᶠ X in Filter.atTop, 0 < F.count S X := by
+  obtain ⟨i, hi⟩ := hS
+  filter_upwards [Filter.eventually_ge_atTop (F.height i)] with X hX
+  have hfin : {j ∈ S | F.height j ≤ X}.Finite := (F.finite_height_le X).subset fun _ hj ↦ hj.2
+  rw [count_eq_ncard, Set.ncard_pos hfin]
+  exact ⟨i, hi, hX⟩
+
 /-- Below a uniform lower bound for the height, every subfamily has count zero. -/
 theorem count_eq_zero_of_lt {b X : ℝ} (hb : ∀ i, b ≤ F.height i) (hX : X < b)
     (S : Set ι) : F.count S X = 0 := by
