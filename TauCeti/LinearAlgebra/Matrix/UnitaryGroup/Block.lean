@@ -17,7 +17,8 @@ For natural numbers `r` and `m`, a matrix `B` of size `m` gives the block-diagon
 `diag(1_r, B)` of size `r + m`, the identity block occupying the first `r` coordinates of
 `Fin (r + m)` (through `finSumFinEquiv`). This is a block matrix `Matrix.fromBlocks 1 0 0 B`,
 and it is unitary, respectively special orthogonal, exactly when `B` is. So it embeds `U(m)` in
-`U(r + m)` and `SO(m)` in `SO(r + m)`.
+`U(r + m)` and `SO(m)` in `SO(r + m)`. It preserves determinants, so it also embeds `SU(m)` in
+`SU(r + m)`.
 
 Its image is the subgroup fixing the first `r` standard basis vectors
 (`Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
@@ -36,6 +37,7 @@ spanned by `e₀`.
 ## Main definitions
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
+* `Matrix.specialUnitaryGroup.fromBlocksOne`: the embedding of `SU(m)` in `SU(r + m)`.
 * `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
 * `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices, as a
   group morphism `U(n) × U(m) →* U(n + m)`.
@@ -131,6 +133,13 @@ theorem fromBlocksOne_apply_natAdd_natAdd (B : unitaryGroup (Fin m) α) (k l : F
 theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := fun A B h ↦
   UnitaryGroup.ext A B fun k l ↦ by
     simpa using congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
+
+/-- The block-diagonal embedding preserves determinants: `det (diag(1_r, B)) = det B`. -/
+@[simp]
+theorem det_fromBlocksOne (B : unitaryGroup (Fin m) α) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α).det =
+      (B : Matrix (Fin m) (Fin m) α).det := by
+  rw [coe_fromBlocksOne, det_reindex_self, det_fromBlocks_zero₂₁, det_one, one_mul]
 
 variable {α r}
 
@@ -299,6 +308,37 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
 end Succ
 
 end UnitaryGroup
+
+namespace specialUnitaryGroup
+
+variable (α) (r : ℕ) {m : ℕ}
+
+variable (m) in
+/-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special unitary group `SU(m)` in
+`SU(r + m)`: the restriction of `Matrix.UnitaryGroup.fromBlocksOne`, which preserves
+determinants. -/
+def fromBlocksOne : specialUnitaryGroup (Fin m) α →* specialUnitaryGroup (Fin (r + m)) α where
+  toFun B := ⟨UnitaryGroup.fromBlocksOne α r m
+      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup B),
+    mem_specialUnitaryGroup_iff.2 ⟨Subtype.prop _, by
+      rw [UnitaryGroup.det_fromBlocksOne]
+      exact (mem_specialUnitaryGroup_iff.1 B.property).2⟩⟩
+  map_one' := Subtype.ext <| by simp
+  map_mul' A B := Subtype.ext <| by simp
+
+@[simp]
+theorem coe_fromBlocksOne (B : specialUnitaryGroup (Fin m) α) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) =
+      UnitaryGroup.fromBlocksOne α r m
+        (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup B) :=
+  (rfl)
+
+/-- The block-diagonal embedding of special unitary groups is injective. -/
+theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := fun _ _ h ↦
+  Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup <|
+    UnitaryGroup.fromBlocksOne_injective α r <| Subtype.ext (Subtype.ext_iff.1 h :)
+
+end specialUnitaryGroup
 
 namespace UnitaryGroup
 
