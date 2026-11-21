@@ -16,8 +16,8 @@ and kernel theorems developed for general scheme morphisms in
 `TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.SpecialFiber`.
 
 For a proper integral regular model `M` of relative dimension at most one over a discrete valuation
-ring `R` with connected special fibre and finite-dimensional `H¹` on each reduced irreducible
-component of the special fibre with trivial `H⁰`, write `T = M.numericalType hC hconn`.
+ring `R` with connected special fibre and finite-dimensional `H¹(Cᵢ, 𝒪_{Cᵢ})` on each reduced
+irreducible component `Cᵢ` of the special fibre, write `T = M.numericalType hC hconn`.
 
 ## Main declarations
 

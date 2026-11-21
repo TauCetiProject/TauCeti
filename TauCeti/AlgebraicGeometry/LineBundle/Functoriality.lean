@@ -30,10 +30,10 @@ Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on mo
 is invertible because line bundles are quasicoherent
 (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
 groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`, a
-`ℤ`-linear map on the additively written Picard groups (`LineBundleClass.pullbackLinearMap`,
-upgraded to `LineBundleClass.pullbackLinearEquiv` for scheme isomorphisms), and an isomorphism of
-schemes induces an equivalence of categories of line bundles (`InvertibleSheaf.pullbackEquiv`) and
-a group isomorphism of Picard groups (`LineBundleClass.pullbackEquiv`).
+`ℤ`-linear map on the additively written Picard groups (`LineBundleClass.pullbackLinearMap`), and an
+isomorphism of schemes induces an equivalence of categories of line bundles
+(`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
+(`LineBundleClass.pullbackEquiv`).
 
 The identity and composition comparisons are restrictions of Mathlib's
 `Scheme.Modules.pullbackId` and `Scheme.Modules.pullbackComp`. The tensor comparison is natural
@@ -475,33 +475,6 @@ lemma pullbackLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     pullbackLinearMap (f ≫ g) = pullbackLinearMap f ∘ₗ pullbackLinearMap g := by
   ext a
   simp [pullback_comp]
-
-/-- An isomorphism of schemes induces a `ℤ`-linear equivalence of additively written Picard
-groups. -/
-def pullbackLinearEquiv (e : X ≅ Y) :
-    Additive (LineBundleClass Y) ≃ₗ[ℤ] Additive (LineBundleClass X) :=
-  LinearEquiv.ofLinearMap (pullbackLinearMap e.hom) (pullbackLinearMap e.inv)
-    (by rw [← pullbackLinearMap_comp, e.hom_inv_id, pullbackLinearMap_id])
-    (by rw [← pullbackLinearMap_comp, e.inv_hom_id, pullbackLinearMap_id])
-
-/-- The underlying `ℤ`-linear map of `pullbackLinearEquiv e` is `pullbackLinearMap e.hom`. -/
-lemma toLinearMap_pullbackLinearEquiv (e : X ≅ Y) :
-    (pullbackLinearEquiv e).toLinearMap = pullbackLinearMap e.hom := by
-  ext a
-  simp [pullbackLinearEquiv]
-
-/-- Applying `pullbackLinearEquiv e` agrees with `pullbackLinearMap e.hom`. -/
-@[simp]
-lemma pullbackLinearEquiv_apply (e : X ≅ Y) (a : Additive (LineBundleClass Y)) :
-    pullbackLinearEquiv e a = pullbackLinearMap e.hom a := by
-  simp [pullbackLinearEquiv]
-
-/-- The inverse of `pullbackLinearEquiv e` is `pullbackLinearEquiv e.symm`. -/
-@[simp]
-lemma pullbackLinearEquiv_symm (e : X ≅ Y) :
-    (pullbackLinearEquiv e).symm = pullbackLinearEquiv e.symm := by
-  ext a
-  simp [pullbackLinearEquiv]
 
 end LineBundleClass
 

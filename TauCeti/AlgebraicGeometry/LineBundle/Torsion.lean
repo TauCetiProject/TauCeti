@@ -65,8 +65,8 @@ lemma coe_pullbackTorsionLinearMap_apply (f : X ⟶ Y) (N : ℕ)
 @[simp]
 lemma pullbackTorsionLinearMap_id (X : Scheme.{u}) (N : ℕ) :
     pullbackTorsionLinearMap (𝟙 X) N = LinearMap.id := by
-  ext a
-  simp
+  rw [pullbackTorsionLinearMap, pullbackLinearMap_id]
+  exact AddMonoidHom.torsionByZModLinearMap_id N
 
 /-- `pullbackTorsionLinearMap` is contravariantly functorial under composition of scheme morphisms.
 -/
@@ -74,8 +74,21 @@ lemma pullbackTorsionLinearMap_id (X : Scheme.{u}) (N : ℕ) :
 lemma pullbackTorsionLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (N : ℕ) :
     pullbackTorsionLinearMap (f ≫ g) N =
       pullbackTorsionLinearMap f N ∘ₗ pullbackTorsionLinearMap g N := by
-  ext a
-  simp [pullback_comp]
+  rw [pullbackTorsionLinearMap, pullbackTorsionLinearMap, pullbackTorsionLinearMap,
+    pullbackLinearMap_comp]
+  exact AddMonoidHom.torsionByZModLinearMap_comp
+    (pullbackLinearMap f).toAddMonoidHom (pullbackLinearMap g).toAddMonoidHom N
+
+/-- Post-composing `pullbackTorsionLinearMap g N` with a `ZMod N`-torsion restriction of `φ`
+agrees with restricting `φ ∘ₗ pullbackLinearMap g`. -/
+lemma torsionByZModLinearMap_comp_pullbackTorsionLinearMap {A : Type*} [AddCommGroup A]
+    (N : ℕ) [Module (ZMod N) (AddSubgroup.torsionBy A (N : ℤ))]
+    (φ : Additive (LineBundleClass X) →ₗ[ℤ] A) (g : X ⟶ Y) :
+    φ.toAddMonoidHom.torsionByZModLinearMap N ∘ₗ pullbackTorsionLinearMap g N =
+      (φ ∘ₗ pullbackLinearMap g).toAddMonoidHom.torsionByZModLinearMap N := by
+  rw [pullbackTorsionLinearMap]
+  exact (AddMonoidHom.torsionByZModLinearMap_comp
+    φ.toAddMonoidHom (pullbackLinearMap g).toAddMonoidHom N).symm
 
 /-- An isomorphism of schemes induces a `ZMod N`-linear equivalence on `N`-torsion Picard subgroups.
 -/

@@ -63,23 +63,20 @@ multiplicities. -/
 theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
     (hspan : Ideal.span {π} = Ideal.span {π'}) (x : CodimensionOnePoint X) :
     toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
-  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton.mp (hspan ▸ Ideal.mem_span_singleton_self π')
-  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton.mp (hspan.symm ▸ Ideal.mem_span_singleton_self π)
   let φ : R →+* Γ(X, ⊤) := toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom
   have hφ (r : R) : toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv r) = φ r := rfl
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
+  have hφ_span : Ideal.span {φ π} = Ideal.span {φ π'} := by
+    simpa only [Ideal.map_span, Set.image_singleton] using congrArg (Ideal.map φ) hspan
+  obtain ⟨u, hu⟩ := Ideal.span_singleton_eq_span_singleton.mp hφ_span
   apply Nat.cast_injective (R := ℤ)
-  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe, hφ, hφ, map_mul,
-    map_mul]
+  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe, hφ, hφ]
   rcases eq_or_ne (φ π) 0 with hπ0 | hπ0
-  · simp [hπ0]
-  · have hφab : φ a * φ b = 1 := mul_left_cancel₀ hπ0 <| by
-      rw [← mul_assoc, ← map_mul, ← map_mul, ← hb, mul_one]
-    have ha_unit : IsUnit (φ a) := IsUnit.of_mul_eq_one (φ b) hφab
-    have hπ0' : X.germToFunctionField ⊤ (φ π) ≠ 0 :=
-      (map_ne_zero_iff _ (X.germToFunctionField_injective ⊤)).mpr hπ0
-    have ha0' : X.germToFunctionField ⊤ (φ a) ≠ 0 :=
-      (ha_unit.map (X.germToFunctionField ⊤).hom).ne_zero
-    rw [X.ord_mul hπ0' ha0', X.ord_of_isUnit ha_unit trivial, add_zero]
+  · rw [← hu, hπ0, zero_mul]
+  · rw [← hu, map_mul,
+      X.ord_mul ((map_ne_zero_iff _ (X.germToFunctionField_injective ⊤)).mpr hπ0)
+        (u.isUnit.map (X.germToFunctionField ⊤).hom).ne_zero,
+      X.ord_of_isUnit u.isUnit trivial, add_zero]
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Associated elements of the base ring define the same special-fibre multiplicities: multiplying
