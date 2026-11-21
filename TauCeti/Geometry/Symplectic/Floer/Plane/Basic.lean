@@ -410,6 +410,18 @@ theorem perturbation_negative (H : ℝ → M → ℝ) :
   congr 1
   ring
 
+/-- **Normalizing the Hamiltonian.** Adding a function `c` of time to the Hamiltonian adds the
+perturbation of the target-independent Hamiltonian `c`. -/
+theorem perturbation_add_const (p : PSSPlane) (H : ℝ → M → ℝ) (c : ℝ → ℝ) (w : ℂ) (x : M) :
+    p.perturbation (fun t y ↦ H t y + c t) w x =
+      p.perturbation H w x + p.perturbation (fun t (_ : M) ↦ c t) w x := by
+  simp only [perturbation_def, mul_add, add_smul]
+
+/-- The perturbation of a target-independent Hamiltonian does not depend on the target point. -/
+theorem perturbation_const_target (p : PSSPlane) (c : ℝ → ℝ) (w : ℂ) (x y : M) :
+    p.perturbation (fun t (_ : M) ↦ c t) w x = p.perturbation (fun t (_ : M) ↦ c t) w y := by
+  simp only [perturbation_def]
+
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
 /-- **The perturbation vanishes on the pole disc.** On the closed disc `‖w‖ ≤ exp (2π)` about the
