@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RepresentationTheory.Invariants
@@ -21,10 +22,14 @@ invariant for it is exactly one that the action of `G` on the space leaves uncha
 `ψ (ρ g u) = ψ u`.  That characterization of membership in `ρ.dual.invariants` is all a
 construction out of an invariant functional, or of one, ever needs.
 
-Counting those invariants needs only an invertible `|G|`. An invariant functional factors through
-the averaging projection onto `ρ.invariants`, and every functional on `ρ.invariants` extends
-through it, so the invariant functionals are the `k`-dual of `ρ.invariants`: the dual has as many
-invariants as the representation itself.
+Over a field and in finite dimensions, the invariant functionals are exactly the functionals
+killing the coinvariant kernel, so they are the `k`-dual of the coinvariants `V ⧸ ⟨ρ g v - v⟩`;
+in particular there are as many of them as the dimension of the coinvariants, for every group.
+
+Counting those invariants against `ρ.invariants` needs only an invertible `|G|`. An invariant
+functional factors through the averaging projection onto `ρ.invariants`, and every functional on
+`ρ.invariants` extends through it, so the invariant functionals are the `k`-dual of
+`ρ.invariants`: the dual has as many invariants as the representation itself.
 
 For a one-dimensional representation the dual is the inverse character: `Dual V ⊗ V` is the trivial
 line.
@@ -42,6 +47,10 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
 * `TauCeti.Representation.mem_invariants_dual_iff`: a functional is invariant for `ρ.dual` exactly
   when the action of `G` leaves it unchanged, with
   `TauCeti.Representation.apply_of_mem_invariants_dual` the elimination direction.
+* `TauCeti.Representation.dualAnnihilator_coinvariantsKer`,
+  `TauCeti.Representation.finrank_coinvariants_eq_finrank_invariants_dual`: the invariant
+  functionals are the annihilator of the coinvariant kernel, so **the coinvariants have as many
+  dimensions as the dual has invariants**, for any group.
 * `TauCeti.Representation.finrank_invariants_dual`: **the dual of a representation has as many
   invariants as the representation** whenever `|G|` is invertible in `k`.
 * `Representation.sub_dual_apply_mem_span_singleton`: if `g` fixes the hyperplane `ker ℓ`
@@ -188,6 +197,42 @@ theorem apply_of_mem_invariants_dual {ρ : Representation k G V} {ψ : Module.Du
   mem_invariants_dual_iff.mp hψ g u
 
 end Group
+
+/-! ### Coinvariants and invariant functionals -/
+
+section Coinvariants
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- **The invariant functionals are the annihilator of the coinvariant kernel**: a functional is
+invariant for `ρ.dual` exactly when it kills every `ρ g v - v`. -/
+theorem dualAnnihilator_coinvariantsKer (ρ : Representation k G V) :
+    (Representation.Coinvariants.ker ρ).dualAnnihilator = ρ.dual.invariants := by
+  ext ψ
+  rw [Submodule.mem_dualAnnihilator, mem_invariants_dual_iff]
+  constructor
+  · intro h g u
+    have := h (ρ g u - u) (Representation.Coinvariants.sub_mem_ker g u)
+    rwa [map_sub, sub_eq_zero] at this
+  · intro h w (hw : w ∈ Submodule.span k _)
+    induction hw using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨⟨g, u⟩, rfl⟩ := hx
+      simp [h]
+    | zero => simp
+    | add x y _ _ hx hy => simp [hx, hy]
+    | smul a x _ hx => simp [hx]
+
+/-- **The coinvariants are dual to the invariant functionals.** In finite dimensions over a field,
+the coinvariants `V ⧸ ⟨ρ g v - v⟩` have the dimension of the space of invariants of the dual
+representation, for any group `G`. -/
+theorem finrank_coinvariants_eq_finrank_invariants_dual [FiniteDimensional k V]
+    (ρ : Representation k G V) :
+    finrank k ρ.Coinvariants = finrank k ρ.dual.invariants := by
+  rw [← dualAnnihilator_coinvariantsKer]
+  exact (Subspace.quotEquivAnnihilator (Representation.Coinvariants.ker ρ)).finrank_eq
+
+end Coinvariants
 
 /-! ### Counting the invariants of a dual -/
 
