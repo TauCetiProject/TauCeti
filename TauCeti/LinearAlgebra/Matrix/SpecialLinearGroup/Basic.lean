@@ -90,6 +90,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
   `Matrix.SpecialLinearGroup.center_eq_zpowers_neg_one`: the centre of `SL₂` is `{±I}`, i.e.
   `Subgroup.zpowers (-1)`, when `R` has no zero divisors.
+* `Matrix.SpecialLinearGroup.neg_one_eq_one_iff` and
+  `Matrix.SpecialLinearGroup.neg_one_ne_one`: for nonempty even `n`, `-1 = 1` in `SL(n, R)` holds
+  if and only if `(2 : R) = 0`.
 * `Matrix.SpecialLinearGroup.not_exists_isComplement'_center`: over any commutative ring `R` with
   `(2 : R) ≠ 0`, the centre of `SL₂(R)` admits no complement in `SL₂(R)`.
 * `Matrix.SpecialLinearGroup.finite_center` and
@@ -387,16 +390,28 @@ theorem card_center_le_two [NoZeroDivisors R] :
   rw [h, Nat.card_coe_set_eq]
   exact (Set.ncard_insert_le _ _).trans (by simp)
 
-/-- `-I ≠ I` in `SL₂` is exactly `(2 : R) ≠ 0`, read off the `(0,0)` entry. Stated as a helper so
-the `@[simp]` lemmas below can take `[NeZero (2 : R)]`, which simp's discharger can settle by
-typeclass synthesis, rather than an explicit hypothesis, which it cannot. -/
-private theorem neg_one_ne_one_of_neZero_two [NeZero (2 : R)] :
-    (-1 : SpecialLinearGroup (Fin 2) R) ≠ 1 := fun h ↦ by
-  have h00 := congrArg (fun g : SpecialLinearGroup (Fin 2) R ↦
-    (g : Matrix (Fin 2) (Fin 2) R) 0 0) h
-  simp only [Fin.isValue, SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one,
-    Matrix.neg_apply, one_apply_eq] at h00
-  exact NeZero.ne (2 : R) (by linear_combination -h00)
+/-- In `SL(n, R)` for nonempty even `n`, `-1 = 1` holds if and only if `(2 : R) = 0`. -/
+@[simp]
+theorem neg_one_eq_one_iff {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+    [Fact (Even (Fintype.card n))] :
+    (-1 : SpecialLinearGroup n R) = 1 ↔ (2 : R) = 0 := by
+  constructor
+  · intro h
+    obtain ⟨i⟩ := ‹Nonempty n›
+    have hi := congrArg (fun g : SpecialLinearGroup n R ↦ (g : Matrix n n R) i i) h
+    simp only [coe_neg, coe_one, Matrix.neg_apply, Matrix.one_apply_eq] at hi
+    linear_combination -hi
+  · intro h2
+    apply Subtype.ext
+    ext i j
+    simp only [coe_neg, coe_one, Matrix.neg_apply]
+    linear_combination -((1 : Matrix n n R) i j) * h2
+
+/-- In `SL(n, R)` for nonempty even `n`, `-1 ≠ 1` whenever `(2 : R) ≠ 0`. -/
+theorem neg_one_ne_one {n : Type*} [Fintype n] [DecidableEq n] [Nonempty n]
+    [Fact (Even (Fintype.card n))] [NeZero (2 : R)] :
+    (-1 : SpecialLinearGroup n R) ≠ 1 :=
+  neg_one_eq_one_iff.not.mpr (NeZero.ne 2)
 
 /-- **Non-splitting of `SL₂(R)` over its centre.** Over any commutative ring `R` with
 `(2 : R) ≠ 0`, the centre of `SL₂(R)` admits no complement in `SL₂(R)`: every central element
@@ -425,7 +440,7 @@ theorem not_exists_isComplement'_center [NeZero (2 : R)] :
   have hnegZ : (-1 : SpecialLinearGroup (Fin 2) R) ∈
       Subgroup.center (SpecialLinearGroup (Fin 2) R) :=
     Subgroup.mem_center_iff.mpr fun g ↦ by rw [neg_one_mul, mul_neg_one]
-  exact neg_one_ne_one_of_neZero_two
+  exact neg_one_ne_one
     (Subgroup.disjoint_def.mp hD.disjoint hnegZ (hd2 ▸ pow_mem hd 2))
 
 /-- **The centre of `SL₂` has exactly two elements** once `-I ≠ I`. `card_center_le_two` is the
@@ -480,7 +495,7 @@ theorem card_center_subgroupOf_eq_one_iff [NoZeroDivisors R] [NeZero (2 : R)]
     -- `-I` would be a second element, so triviality forces it out of `Γ`
     have hx := (Subgroup.eq_bot_iff_forall _).mp h (⟨-1, hneg⟩ : Γ)
       (Subgroup.mem_subgroupOf.mpr (mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl)))
-    exact neg_one_ne_one_of_neZero_two (by simpa using Subtype.ext_iff.mp hx)
+    exact neg_one_ne_one (by simpa only [Subgroup.coe_one] using Subtype.ext_iff.mp hx)
   · intro hneg
     refine (Subgroup.eq_bot_iff_forall _).mpr fun x hx ↦ ?_
     rcases mem_center_iff_eq_one_or_eq_neg_one.mp (Subgroup.mem_subgroupOf.mp hx) with hx1 | hx1
