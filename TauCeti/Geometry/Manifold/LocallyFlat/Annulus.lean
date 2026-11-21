@@ -9,8 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Analysis.Complex.Conformal.Jordan.Annulus
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
@@ -135,10 +137,8 @@ theorem CoboundAnnulus.comp_homeomorph {Y : Type*} [TopologicalSpace Y] {f g : X
   obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
   let ψ : Y × I ≃ₜ X × I := e.prodCongr (Homeomorph.refl I)
   have himg (t : I) : ψ '' (univ ×ˢ {t}) = univ ×ˢ {t} := by
-    refine Subset.antisymm ?_ ?_
-    · rintro _ ⟨⟨y, s⟩, ⟨-, rfl⟩, rfl⟩; exact ⟨trivial, rfl⟩
-    · rintro ⟨x, s⟩ ⟨-, hs⟩
-      exact ⟨(e.symm x, s), ⟨trivial, hs⟩, Prod.ext (e.apply_symm_apply x) rfl⟩
+    rw [Homeomorph.coe_prodCongr, Set.prodMap_image_prod, Set.image_univ, e.surjective.range_eq]
+    simp
   refine ⟨φ ∘ ψ, hφ.comp ψ.isEmbedding, ?_, ?_, ?_⟩
   · rw [ψ.surjective.range_comp, e.surjective.range_comp, e.surjective.range_comp, hrange]
   · rw [image_comp, himg, h0, e.surjective.range_comp]
@@ -295,10 +295,7 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
   let um : sphere (0 : ℝ) 1 := ⟨-1, by simp⟩
   let up : sphere (0 : ℝ) 1 := ⟨1, by simp⟩
   have hu_eq (u : sphere (0 : ℝ) 1) : u = um ∨ u = up := by
-    have hnorm : |(u : ℝ)| = 1 := Real.norm_eq_abs (u : ℝ) ▸ norm_eq_of_mem_sphere u
-    rcases abs_eq zero_le_one |>.mp hnorm with h | h
-    · exact Or.inr (Subtype.ext h)
-    · exact Or.inl (Subtype.ext h)
+    simpa [Subtype.ext_iff, um, up] using (Real.sphere_eq_pair 0 zero_le_one).subset u.property
   have hu_ne : um ≠ up := by intro h; have := congrArg Subtype.val h; norm_num [um, up] at this
   have hrange_pair (k : sphere (0 : ℝ) 1 → ℝ) :
       range k = {min (k um) (k up), max (k um) (k up)} := by
@@ -314,105 +311,72 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
   set b : ℝ := max (f um) (f up)
   set c : ℝ := min (g um) (g up)
   set d : ℝ := max (g um) (g up)
-  have hab : a < b := lt_of_le_of_ne (min_le_max) fun h => by
-    have hfeq : f um = f up := by
-      rcases le_total (f um) (f up) with hle | hle
-      · simpa [a, b, min_eq_left hle, max_eq_right hle] using h
-      · simpa [a, b, min_eq_right hle, max_eq_left hle] using h.symm
-    exact hu_ne (hf hfeq)
-  have hcd : c < d := lt_of_le_of_ne (min_le_max) fun h => by
-    have hgeq : g um = g up := by
-      rcases le_total (g um) (g up) with hle | hle
-      · simpa [c, d, min_eq_left hle, max_eq_right hle] using h
-      · simpa [c, d, min_eq_right hle, max_eq_left hle] using h.symm
-    exact hu_ne (hg hgeq)
+  have hab : a < b := min_lt_max.mpr (hf.ne hu_ne)
+  have hcd : c < d := min_lt_max.mpr (hg.ne hu_ne)
   have hrf : range f = {a, b} := hrange_pair f
   have hrg : range g = {c, d} := hrange_pair g
   have hfhf : filledHull (range f) = Icc a b := by
     rw [hrf, filledHull_pair, uIcc_of_le hab.le]
   have hfhg : filledHull (range g) = Icc c d := by
     rw [hrg, filledHull_pair, uIcc_of_le hcd.le]
-  have hsdiff_eq {x y : ℝ} : Icc x y \ {x, y} = Ioo x y := by
-    ext z
-    simp only [mem_sdiff, mem_Icc, mem_insert_iff, mem_singleton_iff, mem_Ioo, not_or]
-    exact ⟨fun ⟨⟨hx, hy⟩, hnx, hny⟩ => ⟨lt_of_le_of_ne hx (Ne.symm hnx), lt_of_le_of_ne hy hny⟩,
-      fun ⟨hx, hy⟩ => ⟨⟨hx.le, hy.le⟩, hx.ne', hy.ne⟩⟩
   have hf_open : filledHull (range f) \ range f = Ioo a b := by
-    rw [hfhf, hrf, hsdiff_eq]
+    rw [hfhf, hrf, Icc_sdiff_both]
   have hg_open : filledHull (range g) \ range g = Ioo c d := by
-    rw [hfhg, hrg, hsdiff_eq]
+    rw [hfhg, hrg, Icc_sdiff_both]
   have hac : a < c := (hf_open ▸ hsub (hrg ▸ mem_insert c {d})).1
   have hdb : d < b := (hf_open ▸ hsub (hrg ▸ mem_insert_of_mem c (mem_singleton d))).2
-  -- Parametrize `[a, c]` on `{um} × I` and `[d, b]` on `{up} × I` linearly.
+  -- Parametrize `[a, c]` on `{um} × I` and `[d, b]` on `{up} × I` via `Path.segment`.
   let h : sphere (0 : ℝ) 1 × I → ℝ := fun p =>
-    if (p.1 : ℝ) ≤ 0 then (1 - (p.2 : ℝ)) * a + (p.2 : ℝ) * c
-    else (1 - (p.2 : ℝ)) * b + (p.2 : ℝ) * d
-  have hh_neg (t : I) : h (um, t) = (1 - (t : ℝ)) * a + (t : ℝ) * c := by simp [h, um]
-  have hh_pos (t : I) : h (up, t) = (1 - (t : ℝ)) * b + (t : ℝ) * d := by simp [h, up]
+    if (p.1 : ℝ) ≤ 0 then Path.segment a c p.2 else Path.segment b d p.2
+  have hh_neg (t : I) : h (um, t) = Path.segment a c t := by simp [h, um]
+  have hh_pos (t : I) : h (up, t) = Path.segment b d t := by simp [h, up]
+  have := discreteTopology_sphere_of_finrank_eq_one (Module.finrank_self ℝ) (0 : ℝ) 1
   have hh_cont : Continuous h := by
-    rw [← continuousOn_univ]
-    have hcov : (univ : Set (sphere (0 : ℝ) 1 × I)) =
-        {p | p.1 = um} ∪ {p | p.1 = up} := by
-      ext p; simp [hu_eq p.1]
-    rw [hcov]
-    have h1 : ContinuousOn h {p : sphere (0 : ℝ) 1 × I | p.1 = um} := by
-      refine (Continuous.continuousOn (f := fun p : sphere (0 : ℝ) 1 × I =>
-          (1 - (p.2 : ℝ)) * a + (p.2 : ℝ) * c) (by fun_prop)).congr fun p hp => ?_
-      rcases p with ⟨u, t⟩; dsimp at hp; subst hp; exact hh_neg t
-    have h2 : ContinuousOn h {p : sphere (0 : ℝ) 1 × I | p.1 = up} := by
-      refine (Continuous.continuousOn (f := fun p : sphere (0 : ℝ) 1 × I =>
-          (1 - (p.2 : ℝ)) * b + (p.2 : ℝ) * d) (by fun_prop)).congr fun p hp => ?_
-      rcases p with ⟨u, t⟩; dsimp at hp; subst hp; exact hh_pos t
-    exact h1.union_of_isClosed h2 (isClosed_eq continuous_fst continuous_const)
-      (isClosed_eq continuous_fst continuous_const)
+    rw [continuous_prod_of_discrete_left]
+    intro u
+    rcases hu_eq u with rfl | rfl
+    · simpa only [hh_neg] using (Path.segment a c).continuous
+    · simpa only [hh_pos] using (Path.segment b d).continuous
+  have hrange_ac : range (Path.segment a c) = Icc a c := by
+    rw [Path.range_segment, segment_eq_uIcc, uIcc_of_le hac.le]
+  have hrange_bd : range (Path.segment b d) = Icc d b := by
+    rw [Path.range_segment, segment_eq_uIcc, uIcc_comm, uIcc_of_le hdb.le]
+  have hdisj : Disjoint (range (Path.segment a c)) (range (Path.segment b d)) := by
+    rw [hrange_ac, hrange_bd]
+    exact Set.disjoint_left.mpr fun _ h1 h2 => by linarith [h1.2, h2.1]
   have hh_inj : Injective h := by
     rintro ⟨u₁, t₁⟩ ⟨u₂, t₂⟩ heq
     rcases hu_eq u₁ with rfl | rfl <;> rcases hu_eq u₂ with rfl | rfl
     · rw [hh_neg, hh_neg] at heq
-      exact Prod.ext rfl (Subtype.ext (by nlinarith : (t₁ : ℝ) = t₂))
+      exact Prod.ext rfl (Path.segment_injective_of_ne hac.ne heq)
     · rw [hh_neg, hh_pos] at heq
-      have hle : (1 - (t₁ : ℝ)) * a + (t₁ : ℝ) * c ≤ c := by
-        nlinarith [t₁.property.1, t₁.property.2]
-      have hge : d ≤ (1 - (t₂ : ℝ)) * b + (t₂ : ℝ) * d := by
-        nlinarith [t₂.property.1, t₂.property.2]
-      linarith
+      exact (hdisj.ne_of_mem (mem_range_self t₁) (mem_range_self t₂) heq).elim
     · rw [hh_pos, hh_neg] at heq
-      have hle : (1 - (t₂ : ℝ)) * a + (t₂ : ℝ) * c ≤ c := by
-        nlinarith [t₂.property.1, t₂.property.2]
-      have hge : d ≤ (1 - (t₁ : ℝ)) * b + (t₁ : ℝ) * d := by
-        nlinarith [t₁.property.1, t₁.property.2]
-      linarith
+      exact (hdisj.ne_of_mem (mem_range_self t₂) (mem_range_self t₁) heq.symm).elim
     · rw [hh_pos, hh_pos] at heq
-      exact Prod.ext rfl (Subtype.ext (by nlinarith : (t₁ : ℝ) = t₂))
+      exact Prod.ext rfl (Path.segment_injective_of_ne hdb.ne' heq)
   have : CompactSpace (sphere (0 : ℝ) 1) := isCompact_iff_compactSpace.mp (isCompact_sphere 0 1)
   refine ⟨h, (hh_cont.isClosedEmbedding hh_inj).isEmbedding, ?_, ?_, ?_⟩
-  · rw [hfhf, hg_open]
+  · have hrange_h : range h = range (Path.segment a c) ∪ range (Path.segment b d) := by
+      refine Subset.antisymm ?_ ?_
+      · rintro _ ⟨⟨u, t⟩, rfl⟩
+        rcases hu_eq u with rfl | rfl
+        · exact Or.inl ⟨t, (hh_neg t).symm⟩
+        · exact Or.inr ⟨t, (hh_pos t).symm⟩
+      · rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
+        · exact ⟨(um, t), hh_neg t⟩
+        · exact ⟨(up, t), hh_pos t⟩
+    rw [hrange_h, hrange_ac, hrange_bd, hfhf, hg_open]
     ext x
-    simp only [mem_range, Prod.exists, mem_sdiff, mem_Icc, mem_Ioo, not_and, not_lt]
+    simp only [mem_union, mem_Icc, mem_sdiff, mem_Ioo, not_and, not_lt]
     constructor
-    · rintro ⟨u, t, rfl⟩
-      rcases hu_eq u with rfl | rfl
-      · rw [hh_neg]
-        refine ⟨⟨by nlinarith [t.property.1, t.property.2],
-          by nlinarith [t.property.1, t.property.2]⟩, fun hcx => ?_⟩
-        exfalso; nlinarith [t.property.1, t.property.2]
-      · rw [hh_pos]
-        exact ⟨⟨by nlinarith [t.property.1, t.property.2],
-          by nlinarith [t.property.1, t.property.2]⟩,
-          fun _ => by nlinarith [t.property.1, t.property.2]⟩
+    · rintro (⟨hax, hxc⟩ | ⟨hdx, hxb⟩)
+      · exact ⟨⟨hax, hxc.trans (hcd.le.trans hdb.le)⟩, fun hc => absurd hc (not_lt.mpr hxc)⟩
+      · exact ⟨⟨hac.le.trans (hcd.le.trans hdx), hxb⟩, fun _ => hdx⟩
     · rintro ⟨⟨hax, hxb⟩, hnot⟩
       by_cases hxc : x ≤ c
-      · refine ⟨um, ⟨(x - a) / (c - a), div_nonneg (by linarith) (by linarith),
-          (div_le_one (by linarith)).mpr (by linarith)⟩, ?_⟩
-        rw [hh_neg]
-        field_simp [sub_ne_zero.mpr hac.ne']
-        ring
-      · have hdx : d ≤ x := hnot (not_le.mp hxc)
-        refine ⟨up, ⟨(b - x) / (b - d), div_nonneg (by linarith) (by linarith),
-          (div_le_one (by linarith)).mpr (by linarith)⟩, ?_⟩
-        rw [hh_pos]
-        field_simp [sub_ne_zero.mpr hdb.ne']
-        ring
+      · exact Or.inl ⟨hax, hxc⟩
+      · exact Or.inr ⟨hnot (not_le.mp hxc), hxb⟩
   · rw [hrf]
     ext x
     simp only [mem_image, mem_prod, mem_univ, mem_singleton_iff, true_and, Prod.exists,

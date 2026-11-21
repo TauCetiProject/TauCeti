@@ -83,13 +83,10 @@ omit [T2Space X] in
 /-- Reversing a path preserves injectivity. -/
 @[simp]
 theorem injective_symm_iff {γ : Path x y} : Injective γ.symm ↔ Injective γ := by
-  constructor
-  · intro h s t hst
-    have h' := h (a₁ := unitInterval.symm s) (a₂ := unitInterval.symm t) (by
-      simpa only [Path.symm_apply, Function.comp_apply, unitInterval.symm_symm] using hst)
-    exact unitInterval.symm_involutive.injective h'
-  · intro h s t hst
-    exact unitInterval.symm_involutive.injective (h hst)
+  have h : (γ.symm : unitInterval → X) = γ ∘ unitInterval.symmHomeomorph.toEquiv :=
+    funext γ.symm_apply
+  rw [h]
+  exact unitInterval.symmHomeomorph.toEquiv.injective_comp γ
 
 omit [T2Space X] in
 /-- Concatenating two injective paths whose ranges meet only at their shared endpoint gives an

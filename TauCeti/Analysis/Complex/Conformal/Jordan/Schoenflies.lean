@@ -154,18 +154,14 @@ theorem IsJordanCurve.exists_homeomorph_sphere_eq_of_mem (hC : IsJordanCurve C)
     have hcoe : (ψ (τ u) : ℂ) = e₀ (τ u) := rfl
     rw [Homeomorph.trans_apply, Homeomorph.sphereCone_apply_coe, ← hcoe, hψ]
   · have hS : τ.sphereCone '' sphere (0 : ℂ) 1 = sphere (0 : ℂ) 1 := by
+      rw [Homeomorph.image_eq_preimage_symm]
       ext z
-      refine ⟨fun ⟨w, hw, hzw⟩ => ?_, fun hz => ⟨τ.sphereCone.symm z, ?_,
-        τ.sphereCone.apply_symm_apply z⟩⟩
-      · subst hzw; simpa using hw
-      · simpa using hz
+      simp
     rw [hcomp, hS, he₀S]
   · have hB : τ.sphereCone '' ball (0 : ℂ) 1 = ball (0 : ℂ) 1 := by
+      rw [Homeomorph.image_eq_preimage_symm]
       ext z
-      refine ⟨fun ⟨w, hw, hzw⟩ => ?_, fun hz => ⟨τ.sphereCone.symm z, ?_,
-        τ.sphereCone.apply_symm_apply z⟩⟩
-      · subst hzw; simpa using hw
-      · simpa using hz
+      simp
     rw [hcomp, hB, he₀B]
   · rw [hcomp, (τ.bijOn_sphereCone_closedBall 1).image_eq, he₀CB]
 

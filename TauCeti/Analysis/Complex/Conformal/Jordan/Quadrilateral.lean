@@ -11,6 +11,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Topology.Homotopy.Cube.Radius
 
 /-!
 # Four-sided Jordan domains in the plane
@@ -77,40 +78,12 @@ private def squareHomeomorphClosedBall : (I × I) ≃ₜ closedBall (0 : ℂ) 1 
 
 private theorem norm_squareHomeomorphClosedBall_eq_one_iff (p : I × I) :
     ‖(squareHomeomorphClosedBall p : ℂ)‖ = 1 ↔ p ∈ squareBoundary := by
-  set y : Fin 2 → I := Homeomorph.finTwoArrow.symm p
-  set v : closedBall (0 : Fin 2 → ℝ) 1 := cubeHomeomorphClosedBall (Fin 2) y
-  have hnorm : ‖(squareHomeomorphClosedBall p : ℂ)‖ = 1 ↔ ‖(v : Fin 2 → ℝ)‖ = 1 := by
-    simp only [squareHomeomorphClosedBall, Homeomorph.trans_apply,
-      coe_closedBallHomeomorphOfFinrankEq_apply,
-      ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, v, y]
-  rw [hnorm]
-  have hvle : ‖(v : Fin 2 → ℝ)‖ ≤ 1 := mem_closedBall_zero_iff.mp v.property
-  have hv0 : (v : Fin 2 → ℝ) 0 = 2 * (p.1 : ℝ) - 1 := by simp [v, y]
-  have hv1 : (v : Fin 2 → ℝ) 1 = 2 * (p.2 : ℝ) - 1 := by simp [v, y]
-  have hcoord (t : I) : ‖2 * (t : ℝ) - 1‖ = 1 ↔ t = 0 ∨ t = 1 := by
-    rw [Real.norm_eq_abs, abs_eq zero_le_one]
-    constructor
-    · rintro (h | h)
-      · exact Or.inr (Subtype.ext (show (t : ℝ) = 1 by linarith))
-      · exact Or.inl (Subtype.ext (show (t : ℝ) = 0 by linarith))
-    · rintro (rfl | rfl) <;> norm_num
-  have hpi : ‖(v : Fin 2 → ℝ)‖ = 1 ↔ ‖(v : Fin 2 → ℝ) 0‖ = 1 ∨ ‖(v : Fin 2 → ℝ) 1‖ = 1 := by
-    constructor
-    · intro h1
-      by_contra h
-      push Not at h
-      have h0lt : ‖(v : Fin 2 → ℝ) 0‖ < 1 := lt_of_le_of_ne ((norm_le_pi_norm _ 0).trans hvle) h.1
-      have h1lt : ‖(v : Fin 2 → ℝ) 1‖ < 1 := lt_of_le_of_ne ((norm_le_pi_norm _ 1).trans hvle) h.2
-      have hlt : ‖(v : Fin 2 → ℝ)‖ < 1 := by
-        rw [pi_norm_lt_iff zero_lt_one]
-        intro i
-        fin_cases i <;> assumption
-      exact hlt.ne h1
-    · rintro (h0 | h1)
-      · exact le_antisymm hvle (h0.symm.le.trans (norm_le_pi_norm (v : Fin 2 → ℝ) 0))
-      · exact le_antisymm hvle (h1.symm.le.trans (norm_le_pi_norm (v : Fin 2 → ℝ) 1))
-  rw [hpi, hv0, hv1, hcoord, hcoord]
-  simp only [squareBoundary, mem_ofPred_eq, or_assoc]
+  simp only [squareHomeomorphClosedBall, Homeomorph.trans_apply,
+    coe_closedBallHomeomorphOfFinrankEq_apply,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff,
+    norm_cubeHomeomorphClosedBall_eq_one_iff, Cube.boundary, Fin.exists_fin_two,
+    Homeomorph.finTwoArrow_symm_apply, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, squareBoundary, mem_ofPred_eq, or_assoc]
 
 /-- **Four-sided Jordan domains are homeomorphic to the unit square.** Given four injective paths
 `top : Path a b`, `bot : Path c d`, `left : Path a c`, and `right : Path b d` in `ℂ` whose opposite
@@ -242,18 +215,14 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
   let ψ : squareBoundary ≃ₜ C :=
     Continuous.homeoOfEquivCompactToT2 (f := hbij.equiv f) (hfc.mapsToRestrict hbij.mapsTo)
   -- Restrict `squareHomeomorphClosedBall` to a boundary homeomorphism `∂(I × I) ≃ₜ S¹`.
+  let eSub : {z : closedBall (0 : ℂ) 1 // (z : ℂ) ∈ sphere (0 : ℂ) 1} ≃ₜ sphere (0 : ℂ) 1 :=
+    { toEquiv := Equiv.subtypeSubtypeEquivSubtype fun hx => sphere_subset_closedBall hx
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let eQ : squareBoundary ≃ₜ sphere (0 : ℂ) 1 :=
-    { toFun := fun p => ⟨squareHomeomorphClosedBall p.val,
-        mem_sphere_zero_iff_norm.mpr
-          ((norm_squareHomeomorphClosedBall_eq_one_iff p.val).mpr p.property)⟩
-      invFun := fun u =>
-        ⟨squareHomeomorphClosedBall.symm ⟨u.val, sphere_subset_closedBall u.property⟩, by
-        rw [← norm_squareHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
-        exact norm_eq_of_mem_sphere u⟩
-      left_inv := fun p => Subtype.ext (squareHomeomorphClosedBall.symm_apply_apply p.val)
-      right_inv := fun u => Subtype.ext (by simp)
-      continuous_toFun := by fun_prop
-      continuous_invFun := by fun_prop }
+    (squareHomeomorphClosedBall.subtype fun p =>
+      (norm_squareHomeomorphClosedBall_eq_one_iff p).symm.trans
+        mem_sphere_zero_iff_norm.symm).trans eSub
   let φ : sphere (0 : ℂ) 1 ≃ₜ C := eQ.symm.trans ψ
   have hC : IsJordanCurve C :=
     isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
