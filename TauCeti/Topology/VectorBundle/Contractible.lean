@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
 import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Vector bundles over contractible bases are trivial
@@ -30,7 +31,9 @@ isomorphic. The first pullback is `E` itself and the second is the product bundl
 
 Pulling back along a continuous map `f : B → X` gives a **frame of `E` along `f`**, a family of
 linear isomorphisms `φ y : F ≃ E (f y)` for which `(y, v) ↦ φ y v` is continuous into the total
-space of `E` (`TauCeti.exists_continuous_frame`).
+space of `E` (`TauCeti.exists_continuous_frame`). Read in a linear trivialization `e`, such a
+frame is a family `e ∘ φ y` of endomorphisms of `F`, continuous where `e` is defined when `F` is
+finite-dimensional (`TauCeti.continuousOn_continuousLinearMapAt_comp`).
 
 For a finite-rank real bundle with a continuous fibre metric, Gram–Schmidt applied to such a
 global trivialization (`Bundle.Trivialization.orthonormal`) makes it isometric on every fibre
@@ -159,6 +162,22 @@ theorem continuous_of_continuous_frame {φ : ∀ y, F ≃L[𝕜] E (f y)}
     (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) : Continuous f :=
   (FiberBundle.continuous_proj F E).comp (hφ.comp (Continuous.prodMk_left 0))
 
+/-- **A frame in a trivialization.** Read in a linear trivialization `e`, a continuous frame `φ`
+along `f` with finite-dimensional model fibre is a family of endomorphisms `e ∘ φ y` of `F` that is
+continuous wherever `e` is defined. -/
+theorem continuousOn_continuousLinearMapAt_comp [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {φ : ∀ y, F ≃L[𝕜] E (f y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2))
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] :
+    ContinuousOn (fun y ↦ (e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)))
+      (f ⁻¹' e.baseSet) := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  have hc : ContinuousOn (fun y ↦ (e (TotalSpace.mk' F (f y) (φ y v))).2) (f ⁻¹' e.baseSet) :=
+    continuous_snd.comp_continuousOn (e.continuousOn.comp
+      (hφ.comp (Continuous.prodMk_left v)).continuousOn fun y hy ↦ e.mem_source.2 hy)
+  refine hc.congr fun y (hy : f y ∈ e.baseSet) ↦ ?_
+  simp [e.coe_linearMapAt_of_mem hy]
+
 /-- **Frames over contractible spaces.** Along every continuous map `f` from a contractible
 paracompact R₁ space, for instance a cube, a vector bundle `E` has a frame: linear isomorphisms
 `φ y : F ≃ E (f y)` depending continuously on `y`. This is the triviality of the pullback bundle
@@ -216,8 +235,8 @@ theorem exists_homeomorph_prod_of_contractibleSpace :
   let L : ∀ b, E b ≃ₗᵢ[ℝ] F := fun b ↦
     { toLinearEquiv := e.linearEquivAt ℝ b (he ▸ mem_univ b)
       norm_map' := hiso b }
-  refine ⟨e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
-    (by simp [e.target_eq, he]), L, fun b v ↦ ?_⟩
+  refine ⟨e.toHomeomorphOfBaseSetEqUniv he, L, fun b v ↦ ?_⟩
+  rw [Trivialization.coe_toHomeomorphOfBaseSetEqUniv]
   exact e.apply_eq_prod_continuousLinearEquivAt ℝ b (he ▸ mem_univ b) v
 
 end Riemannian

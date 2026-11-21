@@ -137,7 +137,9 @@ private theorem isInvertible_fderiv_chartLevel (h : HittingData v g T p) :
   rw [fderiv_chartLevel_comp_inr h.1 h.2.1 h.2.2.1]
   refine ⟨ContinuousLinearEquiv.unitsEquivAut ℝ (Units.mk0 _ h.2.2.2), ?_⟩
   ext
-  simp
+  simp only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.unitsEquivAut_apply,
+    Units.val_mk0, ContinuousLinearMap.smulRight_apply, one_apply_eq_self,
+    one_mul, one_smul]
 
 open Classical in
 /-- **The hitting time of a transverse section.** Let `v` be a `C¹` vector field whose flow carries
