@@ -167,6 +167,30 @@ theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (
   rw [funext airyBi_def, h.deriv]
   convert airy_derivative_coefficient (-5 / 6) using 1 <;> norm_num [div_eq_mul_inv]
 
+/-- `Ai` does not vanish at the origin. -/
+theorem airyAi_zero_ne_zero : airyAi 0 ≠ 0 := by
+  rw [airyAi_zero]
+  exact div_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (by norm_num)))
+    (Gamma_ne_zero_of_re_pos (by norm_num))
+
+/-- `Bi` does not vanish at the origin. -/
+theorem airyBi_zero_ne_zero : airyBi 0 ≠ 0 := by
+  rw [airyBi_zero]
+  exact div_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (by norm_num)))
+    (Gamma_ne_zero_of_re_pos (by norm_num))
+
+/-- `Ai′` does not vanish at the origin. -/
+theorem deriv_airyAi_zero_ne_zero : deriv airyAi 0 ≠ 0 := by
+  rw [deriv_airyAi_zero]
+  exact div_ne_zero (neg_ne_zero.mpr (cpow_ne_zero_iff.mpr (Or.inl (by norm_num))))
+    (Gamma_ne_zero_of_re_pos (by norm_num))
+
+/-- `Bi′` does not vanish at the origin. -/
+theorem deriv_airyBi_zero_ne_zero : deriv airyBi 0 ≠ 0 := by
+  rw [deriv_airyBi_zero]
+  exact div_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (by norm_num)))
+    (Gamma_ne_zero_of_re_pos (by norm_num))
+
 /-- `Bi(0) = √3 Ai(0)`. -/
 theorem airyBi_zero_eq_cpow_mul_airyAi_zero : airyBi 0 = (3 : ℂ) ^ (1 / 2 : ℂ) * airyAi 0 := by
   rw [airyAi_zero, airyBi_zero, ← mul_div_assoc, ← cpow_add _ _ (by norm_num)]

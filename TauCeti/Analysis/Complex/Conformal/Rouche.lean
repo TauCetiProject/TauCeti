@@ -90,6 +90,11 @@ other. That transfer, not the numerical equality, is how Rouché is normally use
 * `TauCeti.rouche_symm_exists_eq_zero_iff`, `TauCeti.rouche_exists_eq_zero_iff`,
   `TauCeti.rouche_add_exists_eq_zero_iff` — under the respective hypotheses, `f` has a zero in
   `ball c R` if and only if the function compared to it does.
+* `TauCeti.rouche_symm_existsUnique_eq_zero_and_deriv_ne_zero_iff`,
+  `TauCeti.rouche_existsUnique_eq_zero_and_deriv_ne_zero_iff`,
+  `TauCeti.rouche_add_existsUnique_eq_zero_and_deriv_ne_zero_iff` — under the respective
+  hypotheses, `f` has a unique zero in `ball c R` and a nonvanishing derivative there if and only
+  if the function compared to it does.
 * `TauCeti.rouche_symm_nullHomologous` — the homology form, for meromorphic `f` and `g`: across an
   arbitrary closed piecewise-`C¹` curve, null-homologous in an open set carrying both functions,
   the enclosed zeros minus poles agree, counted by multiplicity *and* by the winding number of the
@@ -344,6 +349,40 @@ theorem rouche_add_exists_eq_zero_iff
     (hs : ∀ z ∈ sphere c R, ‖g z‖ < ‖f z‖) :
     (∃ z ∈ ball c R, f z = 0) ↔ ∃ z ∈ ball c R, f z + g z = 0 :=
   rouche_exists_eq_zero_iff hf (hf.add hg) fun z hz => by simpa using hs z hz
+
+/-- **Rouché's theorem for a unique simple zero**, symmetric form. Under
+`‖f z - g z‖ < ‖f z‖ + ‖g z‖` on `sphere c R`, `f` has a unique zero in `ball c R` and a
+nonvanishing derivative there if and only if `g` does. Simplicity cannot be omitted: a double zero
+splits into two simple zeros under perturbation without changing the zero count. -/
+theorem rouche_symm_existsUnique_eq_zero_and_deriv_ne_zero_iff
+    (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
+    (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖ + ‖g z‖) :
+    ((∃! z, z ∈ ball c R ∧ f z = 0) ∧ ∀ z ∈ ball c R, f z = 0 → deriv f z ≠ 0) ↔
+      (∃! z, z ∈ ball c R ∧ g z = 0) ∧ ∀ z ∈ ball c R, g z = 0 → deriv g z ≠ 0 := by
+  rw [← hf.finsum_analyticOrderNatAt_ball_eq_one_iff_deriv_ne_zero,
+    ← hg.finsum_analyticOrderNatAt_ball_eq_one_iff_deriv_ne_zero, rouche_symm hf hg hs]
+
+/-- **Rouché's theorem for a unique simple zero**, classical form: under `‖f z - g z‖ < ‖f z‖` on
+`sphere c R`, `f` has a unique zero in `ball c R` with nonvanishing derivative there if and only if
+`g` does. -/
+theorem rouche_existsUnique_eq_zero_and_deriv_ne_zero_iff
+    (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
+    (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖) :
+    ((∃! z, z ∈ ball c R ∧ f z = 0) ∧ ∀ z ∈ ball c R, f z = 0 → deriv f z ≠ 0) ↔
+      (∃! z, z ∈ ball c R ∧ g z = 0) ∧ ∀ z ∈ ball c R, g z = 0 → deriv g z ≠ 0 :=
+  rouche_symm_existsUnique_eq_zero_and_deriv_ne_zero_iff hf hg fun z hz =>
+    (hs z hz).trans_le (le_add_of_nonneg_right (norm_nonneg _))
+
+/-- **Rouché's theorem for a unique simple zero**, additive form: a holomorphic perturbation `g`
+dominated by `f` on `sphere c R` preserves the existence of a unique simple zero in `ball c R`. -/
+theorem rouche_add_existsUnique_eq_zero_and_deriv_ne_zero_iff
+    (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
+    (hs : ∀ z ∈ sphere c R, ‖g z‖ < ‖f z‖) :
+    ((∃! z, z ∈ ball c R ∧ f z = 0) ∧ ∀ z ∈ ball c R, f z = 0 → deriv f z ≠ 0) ↔
+      (∃! z, z ∈ ball c R ∧ f z + g z = 0) ∧
+        ∀ z ∈ ball c R, f z + g z = 0 → deriv (fun w => f w + g w) z ≠ 0 :=
+  rouche_existsUnique_eq_zero_and_deriv_ne_zero_iff hf (hf.add hg) fun z hz => by
+    simpa using hs z hz
 
 /-!
 ## Rouché's theorem for a null-homologous cycle
