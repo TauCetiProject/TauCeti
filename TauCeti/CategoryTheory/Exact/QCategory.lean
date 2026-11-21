@@ -239,12 +239,26 @@ theorem homMk_eq_id_iff {X M : C} {p i : M ⟶ X} (hp : E.IsDeflation p) (hi : E
   · rintro ⟨_, rfl⟩
     exact ⟨asIso p, by simp, by simp⟩
 
+/-- For an isomorphism `e` of `C`, the inflation `e.hom` followed by the inflation `e.inv` is the
+identity of `Q(E)`. -/
+@[reassoc (attr := simp)]
+theorem ofInflation_hom_inv_id {X Y : C} (e : X ≅ Y) (h : E.IsInflation e.hom)
+    (h' : E.IsInflation e.inv) : ofInflation e.hom h ≫ ofInflation e.inv h' = 𝟙 (mk X) := by
+  simp [← ofInflation_comp]
+
+/-- For an isomorphism `e` of `C`, the inflation `e.inv` followed by the inflation `e.hom` is the
+identity of `Q(E)`. -/
+@[reassoc (attr := simp)]
+theorem ofInflation_inv_hom_id {X Y : C} (e : X ≅ Y) (h : E.IsInflation e.inv)
+    (h' : E.IsInflation e.hom) : ofInflation e.inv h ≫ ofInflation e.hom h' = 𝟙 (mk Y) := by
+  simp [← ofInflation_comp]
+
 /-- The isomorphism of `Q(E)` attached to an isomorphism of `C`. -/
 noncomputable def ofIso {X Y : C} (e : X ≅ Y) : (mk X : E.QCategory) ≅ mk Y where
   hom := ofInflation e.hom (E.inflations.of_isIso _)
   inv := ofInflation e.inv (E.inflations.of_isIso _)
-  hom_inv_id := by simp [← ofInflation_comp]
-  inv_hom_id := by simp [← ofInflation_comp]
+  hom_inv_id := ofInflation_hom_inv_id e _ _
+  inv_hom_id := ofInflation_inv_hom_id e _ _
 
 @[simp]
 theorem ofIso_hom {X Y : C} (e : X ≅ Y) :

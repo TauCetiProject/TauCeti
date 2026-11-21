@@ -21,22 +21,26 @@ category `Q(E)` of an exact category, arise in this way from a bicategory of spa
 
 ## Main definitions
 
-* `CategoryTheory.Bicategory.HomotopyCategory B`: a type wrapper for the objects of `B`, with its
+* `TauCeti.Bicategory.HomotopyCategory B`: a type wrapper for the objects of `B`, with its
   category structure.
-* `CategoryTheory.Bicategory.HomotopyCategory.homMk`: the class of a `1`-morphism.
-* `CategoryTheory.Bicategory.HomotopyCategory.homEquiv`: morphisms of the homotopy category are
+* `TauCeti.Bicategory.HomotopyCategory.homMk`: the class of a `1`-morphism.
+* `TauCeti.Bicategory.HomotopyCategory.homEquiv`: morphisms of the homotopy category are
   the quotient of `1`-morphisms by the relation of being isomorphic.
 
 ## Main statements
 
-* `CategoryTheory.Bicategory.HomotopyCategory.homMk_eq_homMk_iff`: two `1`-morphisms have the
+* `TauCeti.Bicategory.HomotopyCategory.homMk_eq_homMk_iff`: two `1`-morphisms have the
   same class exactly when they are isomorphic.
-* `CategoryTheory.Bicategory.HomotopyCategory.homMk_comp`: classes compose as `1`-morphisms do.
+* `TauCeti.Bicategory.HomotopyCategory.homMk_comp`: classes compose as `1`-morphisms do.
 -/
 
 public section
 
-namespace CategoryTheory.Bicategory
+namespace TauCeti
+
+open CategoryTheory Bicategory
+
+namespace Bicategory
 
 universe w v u
 
@@ -110,4 +114,6 @@ theorem homMk_comp {X Y Z : HomotopyCategory B} (f : X.as ‚ü∂ Y.as) (g : Y.as ‚ü
 
 end HomotopyCategory
 
-end CategoryTheory.Bicategory
+end Bicategory
+
+end TauCeti
