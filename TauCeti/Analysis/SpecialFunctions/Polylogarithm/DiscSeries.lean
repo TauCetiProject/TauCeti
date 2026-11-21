@@ -27,16 +27,18 @@ term-by-term derivative gives `deriv (polylog n) 0 = 1` in every integer weight 
 open-disc Euler differential relation that analytically continues across `{z | 1 - z ∈ slitPlane}`.
 
 In weight `n ≥ 2` the termwise integration of the radial integral is dominated by the series at
-`z = 1`, so the expansion holds on the whole closed unit disc `‖z‖ ≤ 1`.
+`z = 1`, so the expansion holds, absolutely, on the whole closed unit disc `‖z‖ ≤ 1`.
 
 ## Main results
 
 * `TauCeti.Polylog.hasSum_polylog` and `TauCeti.Polylog.polylog_eq_tsum`:
   `HasSum (fun k : ℕ ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n z)` for `‖z‖ < 1`.
-* `TauCeti.Polylog.hasSum_polylog_of_norm_le_one`: the same expansion on the closed unit disc
+* `TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
+  `TauCeti.Polylog.polylog_eq_tsum_of_norm_le_one`: the same expansion on the closed unit disc
   `‖z‖ ≤ 1` in weight `n ≥ 2`.
-* `TauCeti.Polylog.hasSum_norm_polylog`: absolute convergence on the open unit disc, identifying
-  the sum of norms with `(polylog n ‖z‖).re`.
+* `TauCeti.Polylog.hasSum_norm_polylog` and `TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`:
+  absolute convergence on the open unit disc, and on the closed unit disc in weight `n ≥ 2`,
+  identifying the sum of norms with `(polylog n ‖z‖).re`.
 * `TauCeti.Polylog.tendstoUniformlyOn_polylog_closedBall` and
   `TauCeti.Polylog.tendstoLocallyUniformlyOn_polylog_ball`: uniform convergence on closed subdiscs
   `r < 1` and locally uniform convergence on `Metric.ball 0 1`.
@@ -85,11 +87,11 @@ private lemma hasSum_radialMajorant (k : ℕ) {t : ℝ} (ht : t ∈ Ioo (0 : ℝ
       ‖((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * 1)) / t‖ := by
   have h1t : 0 < 1 - t := sub_pos.mpr ht.2
   have hlog : ‖Complex.log (1 - (t : ℂ) * 1)‖ = -Real.log (1 - t) := by
-    rw [mul_one, ← Complex.ofReal_one, ← Complex.ofReal_sub, ← Complex.ofReal_log h1t.le,
-      Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonpos (Real.log_nonpos h1t.le (by linarith [ht.1]))]
-  rw [norm_div, norm_mul, norm_pow, norm_neg, hlog, Complex.norm_real, Complex.norm_real,
-    Real.norm_eq_abs, Real.norm_of_nonneg ht.1.le, abs_neg]
+    have h := Complex.ofReal_log h1t.le
+    push_cast at h
+    simp [← h, abs_of_nonpos (Real.log_nonpos h1t.le (by linarith [ht.1]))]
+  simp only [norm_div, norm_mul, norm_pow, norm_neg, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos ht.1, hlog]
   exact ((Real.hasSum_pow_div_log_of_abs_lt_one (by rw [abs_of_pos ht.1]; exact ht.2)).mul_left
     (|Real.log t| ^ k)).div_const t
 
@@ -243,18 +245,37 @@ theorem polylog_eq_tsum (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
     polylog n z = ∑' k : ℕ, z ^ (k + 1) / (k + 1 : ℂ) ^ n :=
   (hasSum_polylog n hz).tsum_eq.symm
 
-/-- The polylogarithm disc series converges absolutely for `‖z‖ < 1`, and the sum of the norms of
-its terms equals `(polylog n ‖z‖).re`. -/
-theorem hasSum_norm_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+/-- In weight `n ≥ 2`, on the closed unit disc `‖z‖ ≤ 1`, `polylog n z` equals the sum of its
+power series. -/
+theorem polylog_eq_tsum_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    polylog n z = ∑' k : ℕ, z ^ (k + 1) / (k + 1 : ℂ) ^ n :=
+  (hasSum_polylog_of_norm_le_one hn hz).tsum_eq.symm
+
+/-- Taking real parts of the disc series at the real point `‖z‖` gives the sum of the norms of
+the terms at `z`. -/
+private lemma hasSum_norm_of_hasSum_polylog_norm {n : ℤ} {z : ℂ}
+    (h : HasSum (fun k : ℕ ↦ (‖z‖ : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n ‖z‖)) :
     HasSum (fun k : ℕ ↦ ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖) (polylog n ‖z‖).re := by
-  have hz' : ‖(‖z‖ : ℂ)‖ < 1 := by
-    simpa only [Complex.norm_real, Real.norm_eq_abs, abs_norm] using hz
-  refine (Complex.reCLM.hasSum (hasSum_polylog n hz')).congr_fun fun k ↦ ?_
+  refine (Complex.reCLM.hasSum h).congr_fun fun k ↦ ?_
   have hreal : ((‖z‖ ^ (k + 1) / (k + 1 : ℝ) ^ n : ℝ) : ℂ) =
       (‖z‖ : ℂ) ^ (k + 1) / (k + 1 : ℂ) ^ n := by simp
   have hnorm_k : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by exact_mod_cast Complex.norm_natCast (k + 1)
   rw [Complex.reCLM_apply, ← hreal, Complex.ofReal_re]
   simp [norm_zpow, hnorm_k]
+
+/-- The polylogarithm disc series converges absolutely for `‖z‖ < 1`, and the sum of the norms of
+its terms equals `(polylog n ‖z‖).re`. -/
+theorem hasSum_norm_polylog (n : ℤ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun k : ℕ ↦ ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖) (polylog n ‖z‖).re :=
+  hasSum_norm_of_hasSum_polylog_norm <| hasSum_polylog n <| by
+    simpa only [Complex.norm_real, Real.norm_eq_abs, abs_norm] using hz
+
+/-- In weight `n ≥ 2`, the polylogarithm disc series converges absolutely on the closed unit disc
+`‖z‖ ≤ 1`, and the sum of the norms of its terms equals `(polylog n ‖z‖).re`. -/
+theorem hasSum_norm_polylog_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    HasSum (fun k : ℕ ↦ ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖) (polylog n ‖z‖).re :=
+  hasSum_norm_of_hasSum_polylog_norm <| hasSum_polylog_of_norm_le_one hn <| by
+    simpa only [Complex.norm_real, Real.norm_eq_abs, abs_norm] using hz
 
 /-- On every closed subdisc `Metric.closedBall 0 r` with `r < 1`, the partial sums of the
 polylogarithm power series converge uniformly to `polylog n`. -/

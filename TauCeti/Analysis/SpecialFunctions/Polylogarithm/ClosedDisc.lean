@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
-import Mathlib.Analysis.PSeries
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 
 /-!
@@ -15,8 +14,9 @@ import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 
 In every weight `n ≥ 2` the polylogarithm series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` is
 dominated on the closed unit disc `‖z‖ ≤ 1` by the convergent `p`-series `∑ (k + 1) ^ (-n)`, and
-it converges to the principal polylogarithm `Liₙ(z)` there
-(`TauCeti.Polylog.hasSum_polylog_of_norm_le_one`). This file draws the consequences:
+it converges absolutely to the principal polylogarithm `Liₙ(z)` there
+(`TauCeti.Polylog.hasSum_polylog_of_norm_le_one` and
+`TauCeti.Polylog.hasSum_norm_polylog_of_norm_le_one`). This file draws the consequences:
 
 * the partial sums converge uniformly to `Liₙ` on the closed unit disc, so `Liₙ` is continuous
   there, in particular at `1` for approach from inside the disc;
@@ -59,14 +59,10 @@ theorem tendstoUniformlyOn_polylog_closedBall_one {n : ℤ} (hn : 2 ≤ n) :
     TendstoUniformlyOn
       (fun N (z : ℂ) ↦ ∑ k ∈ Finset.range N, z ^ (k + 1) / (k + 1 : ℂ) ^ n)
       (polylog n) atTop (closedBall 0 1) := by
-  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
-  have hu : Summable (fun k : ℕ ↦ 1 / ((k : ℝ) + 1) ^ m) := by
-    have h := (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_pow.mpr (by omega : 1 < m))
-    simpa only [Nat.cast_add_one] using h
+  have hu := (hasSum_norm_polylog_of_norm_le_one hn (z := 1) (by simp)).summable
   refine (tendstoUniformlyOn_tsum_nat hu fun k z hz ↦ ?_).congr_right fun z hz ↦
-    (hasSum_polylog_of_norm_le_one hn (mem_closedBall_zero_iff.mp hz)).tsum_eq
-  have hcast : ‖(k + 1 : ℂ)‖ = (k : ℝ) + 1 := by exact_mod_cast Complex.norm_natCast (k + 1)
-  rw [zpow_natCast, norm_div, norm_pow, norm_pow, hcast]
+    (polylog_eq_tsum_of_norm_le_one hn (mem_closedBall_zero_iff.mp hz)).symm
+  simp only [norm_div, norm_pow, norm_one, one_pow]
   gcongr
   exact pow_le_one₀ (norm_nonneg z) (mem_closedBall_zero_iff.mp hz)
 
@@ -81,7 +77,7 @@ theorem continuousOn_polylog_closedBall_one {n : ℤ} (hn : 2 ≤ n) :
 `Liₙ(1) = ζ(n)`. -/
 theorem polylog_eq_riemannZeta {n : ℤ} (hn : 2 ≤ n) : polylog n 1 = riemannZeta n := by
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by rw [Complex.intCast_re]; exact_mod_cast hn),
-    ← (hasSum_polylog_of_norm_le_one hn (by simp)).tsum_eq]
+    polylog_eq_tsum_of_norm_le_one hn (by simp)]
   simp only [one_pow, Complex.cpow_intCast]
 
 /-- Euler's value of the dilogarithm at `1`: `Li₂(1) = ζ(2) = π ^ 2 / 6`. -/
