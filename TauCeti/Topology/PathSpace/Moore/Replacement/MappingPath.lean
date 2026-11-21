@@ -293,68 +293,55 @@ theorem actOfMappingPathFiber_apply (q : MappingPathFiber p b × Path b b) :
     actOfMappingPathFiber p b q = (ofMappingPathFiber q.1).act q.2.toMooreLoop :=
   (rfl)
 
-/-- The stage `s` of `transLoopHomotopy`: the Moore path of `y.trans ℓ` reparametrized from
-length one to length `1 + s`. -/
-private def transLoopRescale (q : I × (MappingPathFiber p b × Path b b)) : Fiber p b :=
-  mk' (MooreReplacement.mk q.2.1.val.1
-    ((MoorePath.ofUnitPath (MappingPathFiber.transLoop p b q.2.1 q.2.2).val.2).rescale
-      (1 + toNNReal q.1))
-    (by rw [MoorePath.source_rescale, MoorePath.source_ofUnitPath,
-      (MappingPathFiber.transLoop p b q.2.1 q.2.2).property.1, MappingPathFiber.transLoop_val_fst]))
-    (by rw [path_mk, MoorePath.target_rescale _ (add_pos_of_pos_of_nonneg one_pos zero_le).ne',
-      MoorePath.target_ofUnitPath, (MappingPathFiber.transLoop p b q.2.1 q.2.2).property.2])
-
-private theorem point_transLoopRescale (q : I × (MappingPathFiber p b × Path b b)) :
-    (transLoopRescale q).val.point = q.2.1.val.1 := by
-  rw [transLoopRescale, val_mk', point_mk]
-
-private theorem path_transLoopRescale (q : I × (MappingPathFiber p b × Path b b)) :
-    (transLoopRescale q).val.path =
-      (MoorePath.ofUnitPath (MappingPathFiber.transLoop p b q.2.1 q.2.2).val.2).rescale
-        (1 + toNNReal q.1) := by
-  rw [transLoopRescale, val_mk', path_mk]
-
-private theorem continuous_transLoopRescale :
-    Continuous (transLoopRescale : I × (MappingPathFiber p b × Path b b) → Fiber p b) := by
-  refine continuous_mk' (continuous_mk ?_ (Continuous.moorePath_rescale ?_ ?_ ?_) _) _
-  · fun_prop
-  · exact MoorePath.continuous_ofUnitPath.comp (continuous_subtypeVal.snd.comp
-      ((MappingPathFiber.continuous_transLoop p b).comp continuous_snd))
-  · fun_prop
-  · exact fun _ ↦ (add_pos_of_pos_of_nonneg one_pos zero_le).ne'
+/-- The stage `s` of `Path.transMoorePathHomotopy` at the path of `y` and the loop `ℓ` is the
+Moore path of `y.trans ℓ`, as a point of the mapping-path fibre, reparametrized to length `1 + s`:
+this form is continuous in `(y, ℓ)`, although the starting point of the path of `y` varies. -/
+private theorem transMoorePathHomotopy_toPath (s : I) (y : MappingPathFiber p b) (ℓ : Path b b) :
+    Path.transMoorePathHomotopy _ b b (s, (MappingPathFiber.toPath p b y, ℓ)) =
+      (MoorePath.ofUnitPath (MappingPathFiber.transLoop p b y ℓ).val.2).rescale
+        (1 + toNNReal s) := by
+  rw [Path.transMoorePathHomotopy_apply, ← MappingPathFiber.toMoorePath_toPath,
+    MappingPathFiber.toPath_transLoop, Path.toMoorePath_cast]
 
 /-- **The comparison with the mapping-path fibre is compatible with the actions, from the
 fixed-interval side**: the Moore form of `y.trans ℓ` is homotopic, continuously in `(y, ℓ)`, to
-the Moore form of `y` acted on by the Moore loop of `ℓ`. The homotopy reparametrizes the Moore
-path of `y.trans ℓ` from length `1` to length `2`, as `Path.transMoorePathHomotopy` does; it keeps
-the point of `E` (`point_transLoopHomotopy`). -/
+the Moore form of `y` acted on by the Moore loop of `ℓ`. The homotopy is
+`Path.transMoorePathHomotopy` on the path of `y` and the loop `ℓ`, which reparametrizes the Moore
+path of `y.trans ℓ` from length `1` to length `2`; it keeps the point of `E`
+(`point_transLoopHomotopy`). -/
 def transLoopHomotopy (p : C(E, B)) (b : B) :
     ContinuousMap.Homotopy (ofMappingPathFiberTransLoop p b) (actOfMappingPathFiber p b) where
-  toFun := transLoopRescale
-  continuous_toFun := continuous_transLoopRescale
+  toFun q := mk' (MooreReplacement.mk q.2.1.val.1
+      (Path.transMoorePathHomotopy _ b b (q.1, (MappingPathFiber.toPath p b q.2.1, q.2.2)))
+      (Path.transMoorePathHomotopy_source _ _))
+    (by rw [path_mk, Path.transMoorePathHomotopy_target])
+  continuous_toFun := by
+    refine continuous_mk' (continuous_mk ?_ ?_ _) _
+    · fun_prop
+    · simp only [transMoorePathHomotopy_toPath]
+      exact (MoorePath.continuous_ofUnitPath.comp (continuous_subtypeVal.snd.comp
+        ((MappingPathFiber.continuous_transLoop p b).comp continuous_snd))).moorePath_rescale
+          (by fun_prop) fun _ ↦ (add_pos_of_pos_of_nonneg one_pos zero_le).ne'
   map_zero_left q := ext (MooreReplacement.ext
-    (by rw [point_transLoopRescale, ofMappingPathFiberTransLoop_apply, point_ofMappingPathFiber,
+    (by rw [val_mk', point_mk, ofMappingPathFiberTransLoop_apply, point_ofMappingPathFiber,
       MappingPathFiber.transLoop_val_fst])
     (by
-      rw [path_transLoopRescale, toNNReal_zero, add_zero, ofMappingPathFiberTransLoop_apply,
-        path_ofMappingPathFiber, ← MoorePath.length_ofUnitPath
-          (MappingPathFiber.transLoop p b q.1 q.2).val.2, MoorePath.rescale_length]))
+      rw [val_mk', path_mk, (Path.transMoorePathHomotopy _ b b).apply_zero,
+        Path.moorePathTrans_apply, ofMappingPathFiberTransLoop_apply, path_ofMappingPathFiber,
+        ← MappingPathFiber.toMoorePath_toPath, MappingPathFiber.toPath_transLoop,
+        Path.toMoorePath_cast]))
   map_one_left q := ext (MooreReplacement.ext
-    (by rw [point_transLoopRescale, actOfMappingPathFiber_apply, point_act,
-      point_ofMappingPathFiber])
+    (by rw [val_mk', point_mk, actOfMappingPathFiber_apply, point_act, point_ofMappingPathFiber])
     (by
-      have hy : (ofMappingPathFiber q.1).val.path =
-          (MappingPathFiber.toPath p b q.1).toMoorePath := by
-        rw [path_ofMappingPathFiber, MappingPathFiber.toMoorePath_toPath]
-      rw [path_transLoopRescale, toNNReal_one, one_add_one_eq_two, actOfMappingPathFiber_apply]
-      simp only [path_act, hy, Path.toMoorePath_toMooreLoop]
-      rw [Path.transMoorePath_eq_rescale, ← MappingPathFiber.toMoorePath_toPath,
-        MappingPathFiber.toPath_transLoop, Path.toMoorePath_cast]))
+      rw [val_mk', path_mk, (Path.transMoorePathHomotopy _ b b).apply_one,
+        Path.transMoorePath_apply, actOfMappingPathFiber_apply]
+      simp only [path_act, path_ofMappingPathFiber, MappingPathFiber.toMoorePath_toPath,
+        Path.toMoorePath_toMooreLoop]))
 
 @[simp]
 theorem point_transLoopHomotopy (s : I) (q : MappingPathFiber p b × Path b b) :
     (transLoopHomotopy p b (s, q)).val.point = q.1.val.1 :=
-  point_transLoopRescale (s, q)
+  congrArg MooreReplacement.point (val_mk' _ _) |>.trans (point_mk _ _ _)
 
 /-- The Moore form of `y.trans ℓ` is homotopic to the Moore form of `y` acted on by the Moore
 loop of `ℓ`. -/
