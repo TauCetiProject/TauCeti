@@ -58,11 +58,10 @@ section DiagonalWeak
 
 variable {ι 𝕜 : Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Over a complete nontrivially normed field, a bounded diagonal multiplier on `ℓ^p(ι, 𝕜)` is
-globally weak-to-norm continuous if and only if only finitely many of its coefficients are
-nonzero. -/
+/-- Over a nontrivially normed field, a bounded diagonal multiplier on `ℓ^p(ι, 𝕜)` is globally
+weak-to-norm continuous if and only if only finitely many of its coefficients are nonzero. -/
 theorem continuous_diagonalCLM_comp_toWeakSpace_symm_iff [NontriviallyNormedField 𝕜]
-    [CompleteSpace 𝕜] (d : ℓ^∞(ι, 𝕜)) :
+    (d : ℓ^∞(ι, 𝕜)) :
     Continuous (fun w : WeakSpace 𝕜 ℓ^p(ι, 𝕜) ↦
       diagonalCLM (p := p) d ((toWeakSpace 𝕜 ℓ^p(ι, 𝕜)).symm w)) ↔ {i : ι | d i ≠ 0}.Finite := by
   have : SeparatingDual 𝕜 ℓ^p(ι, 𝕜) := ⟨fun x hx ↦ by

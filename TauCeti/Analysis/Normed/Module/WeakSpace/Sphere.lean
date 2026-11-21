@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Topology.Algebra.Module.WeakSpace
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -28,8 +27,8 @@ infinite dimensions:
 
 * Over a nontrivially normed field, `w ↦ J ((toWeakSpace 𝕜 E).symm w)` is discontinuous at every
   point whenever `J` has infinite-dimensional range
-  (`LinearMap.not_continuousAt_comp_toWeakSpace_symm`). Over a complete nontrivially normed field
-  with Hausdorff target weak topology, a continuous linear map `J : E →L[𝕜] F` is globally
+  (`LinearMap.not_continuousAt_comp_toWeakSpace_symm`). Over a nontrivially normed field with
+  Hausdorff target weak topology, a continuous linear map `J : E →L[𝕜] F` is globally
   weak-to-norm continuous if and only if its range is finite-dimensional
   (`ContinuousLinearMap.continuous_comp_toWeakSpace_symm_iff`); in particular,
   `(toWeakSpace 𝕜 E).symm` is continuous if and only if `E` is finite-dimensional
@@ -96,12 +95,12 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [T2Space (WeakSpace 𝕜 F)]
 
-/-- Over a complete nontrivially normed field, a continuous linear map into a normed space with
-Hausdorff weak topology is globally weak-to-norm continuous if and only if its range is
+/-- Over a nontrivially normed field, a continuous linear map into a normed space with Hausdorff
+weak topology is globally weak-to-norm continuous if and only if its range is
 finite-dimensional. -/
 theorem continuous_comp_toWeakSpace_symm_iff (J : E →L[𝕜] F) :
     Continuous (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) ↔
@@ -109,28 +108,50 @@ theorem continuous_comp_toWeakSpace_symm_iff (J : E →L[𝕜] F) :
   refine ⟨fun h ↦ ?_, fun hfin ↦ ?_⟩
   · by_contra hJ
     exact J.toLinearMap.not_continuousAt_comp_toWeakSpace_symm hJ 0 h.continuousAt
-  · -- Factor through the finite-dimensional range inside `WeakSpace 𝕜 F`, where every linear
-    -- map is continuous.
-    let R : Submodule 𝕜 (WeakSpace 𝕜 F) := J.range.map (toWeakSpace 𝕜 F).toLinearMap
-    have : FiniteDimensional 𝕜 R :=
-      ((toWeakSpace 𝕜 F).submoduleMap J.range).finiteDimensional
-    let g : R →ₗ[𝕜] F := ((toWeakSpace 𝕜 F).symm : WeakSpace 𝕜 F →ₗ[𝕜] F).comp R.subtype
-    have hg : Continuous g := LinearMap.continuous_of_finiteDimensional (E := R) (F' := F) g
-    have hφ : Continuous (fun w : WeakSpace 𝕜 E ↦
-        (⟨WeakSpace.map J w, ⟨J ((toWeakSpace 𝕜 E).symm w), ⟨(toWeakSpace 𝕜 E).symm w, rfl⟩,
-          rfl⟩⟩ : R)) :=
-      (WeakSpace.map J).continuous.subtype_mk _
-    exact hg.comp hφ
+  · -- Deduce dual separation from `T2Space (WeakSpace 𝕜 F)`, extend basis coordinates on the
+    -- finite-dimensional range to `StrongDual 𝕜 F`, and reconstruct `J` as a finite sum.
+    have : SeparatingDual 𝕜 F := ⟨fun y hy ↦ by
+      by_contra! h
+      have hinsep : Inseparable (toWeakSpace 𝕜 F y) 0 := by
+        have hind : IsInducing
+            (fun (w : WeakSpace 𝕜 F) (f : StrongDual 𝕜 F) ↦ f ((toWeakSpace 𝕜 F).symm w)) :=
+          ⟨rfl⟩
+        rw [← hind.inseparable_iff]
+        simp [h]
+      exact hy ((toWeakSpace 𝕜 F).injective (by simpa using hinsep.eq))⟩
+    have := hfin
+    let b := Module.finBasis 𝕜 J.range
+    have hsurj : Function.Surjective
+        (J.range.subtype.dualMap ∘ ContinuousLinearMap.toLinearMap) :=
+      SeparatingDual.dualMap_surjective_iff.2 Subtype.val_injective
+    choose φ hφ using fun i ↦ hsurj (b.coord i)
+    have hsum : (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) =
+        fun w : WeakSpace 𝕜 E ↦
+          ∑ i, ((φ i ∘L J) ((toWeakSpace 𝕜 E).symm w)) • (b i : F) := by
+      ext w
+      set x : E := (toWeakSpace 𝕜 E).symm w
+      have hrepr := congrArg Subtype.val (b.sum_repr ⟨J x, LinearMap.mem_range_self _ x⟩)
+      simp only [Submodule.coe_sum, SetLike.val_smul] at hrepr
+      rw [← hrepr]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      congr 1
+      exact (LinearMap.congr_fun (hφ i) ⟨J x, LinearMap.mem_range_self _ x⟩).symm
+    rw [hsum]
+    refine continuous_finsetSum _ fun i _ ↦ ?_
+    have heval : Continuous (fun w : WeakSpace 𝕜 E ↦ (φ i ∘L J) ((toWeakSpace 𝕜 E).symm w)) :=
+      WeakBilin.eval_continuous (topDualPairing 𝕜 E).flip (φ i ∘L J)
+    exact heval.smul continuous_const
 
 end ContinuousLinearMap
 
 namespace TauCeti
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [T2Space (WeakSpace 𝕜 E)]
 
-/-- Over a complete nontrivially normed field, the identity from the weak topology to the norm
-topology is continuous if and only if the space is finite-dimensional. -/
+/-- Over a nontrivially normed field, for a normed space with Hausdorff weak topology, the identity
+from the weak topology to the norm topology is continuous if and only if the space is
+finite-dimensional. -/
 theorem continuous_toWeakSpace_symm_iff :
     Continuous (toWeakSpace 𝕜 E).symm ↔ FiniteDimensional 𝕜 E :=
   (ContinuousLinearMap.id 𝕜 E).continuous_comp_toWeakSpace_symm_iff.trans
