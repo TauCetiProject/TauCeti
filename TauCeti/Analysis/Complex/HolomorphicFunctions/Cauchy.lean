@@ -19,8 +19,9 @@ This file approximates holomorphic functions near a compact subset `K ⊆ U` on 
 neighbourhood `V` by finite complex-linear combinations of Cauchy kernels `(w - ·)⁻¹` in the
 compact-open topology, without invoking Runge's theorem. Because any algebra homomorphism on
 `holomorphicGerms K` sending the coordinate germ to an element `a` of a Banach algebra is forced to
-send Cauchy kernels to resolvents, these approximations feed uniqueness of continuous algebra
-homomorphisms on `holomorphicGerms K` (such as `holomorphicCalculus`).
+send Cauchy kernels to resolvents, these approximations feed uniqueness of algebra homomorphisms
+on `holomorphicGerms K` (such as `holomorphicCalculus`) whose precomposition with `toGerm` is
+continuous on each open neighbourhood of `K` for the compact-open topology.
 
 For a pole `w` outside an open set `V ⊆ ℂ`, `HolomorphicFunctions.cauchyKernel V w hw` is the
 holomorphic function `z ↦ (w - z)⁻¹` on `V`. Given a finite family `E` of closed segments disjoint

@@ -189,8 +189,11 @@ variable {𝕜 A} in
 part. -/
 theorem unitizationInrL_unitizationSndL_of_fst_eq_zero {u : WithLp 1 (Unitization 𝕜 A)}
     (hu : (ofLp u).fst = 0) :
-    unitizationInrL 𝕜 A (unitizationSndL 𝕜 A u) = u :=
-  WithLp.ofLp_injective 1 (Unitization.ext (by simp [hu]) rfl)
+    unitizationInrL 𝕜 A (unitizationSndL 𝕜 A u) = u := by
+  apply WithLp.ofLp_injective 1
+  rw [unitizationInrL_apply, ofLp_toLp, unitizationSndL_apply]
+  simpa only [hu, Unitization.inl_zero, zero_add] using
+    Unitization.inl_fst_add_inr_snd_eq (ofLp u)
 
 variable [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
@@ -232,6 +235,7 @@ theorem mem_range_unitizationInrL_iff {u : WithLp 1 (Unitization 𝕜 A)} :
   · rintro ⟨a, rfl⟩
     simp
   · intro h
+    rw [unitizationFstA_apply] at h
     exact ⟨unitizationSndL 𝕜 A u, unitizationInrL_unitizationSndL_of_fst_eq_zero h⟩
 
 /-- The spectrum of an element embedded into the ℓ¹ unitization is its quasispectrum. -/

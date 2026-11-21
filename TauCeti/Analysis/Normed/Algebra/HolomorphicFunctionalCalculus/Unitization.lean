@@ -23,6 +23,8 @@ holomorphic calculus of `a` at `f` lies in `A` if and only if `f(0) = 0`.
 * `TauCeti.holomorphicCalculus_unitizationInrL_mem_range_iff` and
   `TauCeti.holomorphicCalculusOn_unitizationInrL_mem_range_iff`: membership in the image of `A` is
   equivalent to vanishing at `0`.
+* `TauCeti.unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero`: projecting and
+  re-embedding recovers the unitized calculus value when the germ vanishes at `0`.
 
 ## References
 
@@ -49,6 +51,18 @@ theorem unitizationFstA_holomorphicCalculus_unitizationInrL (a : A)
   rw [ContinuousAlgHom.map_holomorphicCalculus, holomorphicCalculus_complex]
   obtain ⟨U, haU, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
   simp
+
+/-- When a holomorphic germ vanishes at `0`, projecting its unitized calculus value to `A` and
+re-embedding recovers the unitized calculus value. -/
+theorem unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero (a : A)
+    {g : holomorphicGerms (spectrum ℂ (WithLp.unitizationInrL ℂ A a))}
+    (hg : holomorphicGerms.eval 0 (WithLp.zero_mem_spectrum_unitizationInrL a) g = 0) :
+    WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
+        (holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g)) =
+      holomorphicCalculus (WithLp.unitizationInrL ℂ A a) g :=
+  WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
+    simpa only [WithLp.unitizationFstA_apply] using
+      (unitizationFstA_holomorphicCalculus_unitizationInrL a g).trans hg
 
 /-- **Nonunital holomorphic calculus criterion (germ form).** For `a` in a nonunital complex Banach
 algebra `A`, the holomorphic calculus of `WithLp.unitizationInrL ℂ A a` in the `ℓ¹` unitization
