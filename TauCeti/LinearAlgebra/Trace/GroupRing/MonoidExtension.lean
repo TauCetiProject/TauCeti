@@ -76,20 +76,20 @@ theorem singleOneSMulLinearMap_single_smul [Module Λ P]
     [IsScalarTower Λ Λ[nonnegSubmonoid deg] P] (hι : Function.Injective ι)
     (γ : nonnegSubmonoid deg) (g : G) (p : P) :
     singleOneSMulLinearMap Λ P γ ((single g (1 : Λ) : Λ[G]) • p) =
-      (single (conjAut ι deg hι hker γ.1 g) (1 : Λ) : Λ[G]) •
+      (single (conjAut ι deg hι hker γ.val g) (1 : Λ) : Λ[G]) •
         singleOneSMulLinearMap Λ P γ p := by
   rw [singleOneSMulLinearMap_apply, singleOneSMulLinearMap_apply,
     ← single_mul_toNonnegSubmonoid_smul hPG, mul_toNonnegSubmonoid ι deg hι hker,
     single_toNonnegSubmonoid_mul_smul hPG]
 
 section CentralizerEnd
-variable (γ : nonnegSubmonoid deg) [Module Λ[centralizerSubgroup ι γ.1] P]
-  (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.1]) (p : P),
-    r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.1).subtype r • p)
+variable (γ : nonnegSubmonoid deg) [Module Λ[centralizerSubgroup ι γ.val] P]
+  (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.val]) (p : P),
+    r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype r • p)
 
 /-- The action of `single γ 1` as a `Λ[Z_γ]`-linear endomorphism of `P`. -/
-def centralizerEnd : Module.End Λ[centralizerSubgroup ι γ.1] P :=
-  ((toNonnegSubmonoid ι deg hker).comp (centralizerSubgroup ι γ.1).subtype).singleSMulLinearMap
+def centralizerEnd : Module.End Λ[centralizerSubgroup ι γ.val] P :=
+  ((toNonnegSubmonoid ι deg hker).comp (centralizerSubgroup ι γ.val).subtype).singleSMulLinearMap
     (commute_toNonnegSubmonoid_comp_subtype ι deg hker γ) P fun r p ↦ by
       rw [hPZ, hPG]; simp [mapDomainRingHom_apply, mapDomain_mapDomain]
 
@@ -111,22 +111,23 @@ variable [Finite G] [Module.Finite Λ[G] P] [Module.Projective Λ[G] P]
 
 omit [Module Λ[nonnegSubmonoid deg] P] in
 private theorem centralizer_finite_projective (γ : nonnegSubmonoid deg) :
-    let _ : Module Λ[centralizerSubgroup ι γ.1] P :=
-      Module.compHom P (mapDomainRingHom Λ (centralizerSubgroup ι γ.1).subtype)
-    Module.Finite Λ[centralizerSubgroup ι γ.1] P ∧
-      Module.Projective Λ[centralizerSubgroup ι γ.1] P := by
-  let Z := centralizerSubgroup ι γ.1; let φZ := mapDomainRingHom Λ Z.subtype
+    let _ : Module Λ[centralizerSubgroup ι γ.val] P :=
+      Module.compHom P (mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype)
+    Module.Finite Λ[centralizerSubgroup ι γ.val] P ∧
+      Module.Projective Λ[centralizerSubgroup ι γ.val] P := by
+  let Z := centralizerSubgroup ι γ.val; let φZ := mapDomainRingHom Λ Z.subtype
   let _ : Module Λ[Z] Λ[G] := φZ.toModule; let _ : Module Λ[Z] P := Module.compHom P φZ
-  have h := Subgroup.restrictSubgroup_finite_projective (R := Λ) Z (fun _ _ ↦ rfl) P fun _ _ ↦ rfl
-  exact ⟨h.2.2.1, h.2.2.2⟩
+  have ⟨_, _, hfin, hproj⟩ :=
+    Subgroup.restrictSubgroup_finite_projective (R := Λ) Z (fun _ _ ↦ rfl) P fun _ _ ↦ rfl
+  exact ⟨hfin, hproj⟩
 
 /-- **The centralizer group-ring trace** `Tr_Λ^{Z_γ}(γ, P) ∈ Λ / [Λ, Λ]` of `γ ∈ Γ` on `P`,
-restricted to `Z_γ = centralizerSubgroup ι γ.1`. -/
+restricted to `Z_γ = centralizerSubgroup ι γ.val`. -/
 def centralizerGroupTrace (γ : nonnegSubmonoid deg) : TauCeti.cyclicQuotient ℤ Λ :=
-  let Z := centralizerSubgroup ι γ.1
+  let Z := centralizerSubgroup ι γ.val
   let _ : Module Λ[Z] P := Module.compHom P (mapDomainRingHom Λ Z.subtype)
   have h := centralizer_finite_projective Λ ι deg (P := P) γ
-  have _ := h.1; have _ := h.2
+  have _ := h.left; have _ := h.right
   LinearMap.hattoriStallingsGroupTrace Λ Z P (centralizerEnd hPG γ fun _ _ ↦ rfl)
 
 section Implicit
@@ -135,28 +136,32 @@ variable {Λ ι deg hker}
 /-- Agreement of `centralizerGroupTrace` with `hattoriStallingsGroupTrace` whenever `P` already
 carries a compatible `Λ[Z_γ]`-module structure. -/
 theorem centralizerGroupTrace_eq_hattoriStallingsGroupTrace (γ : nonnegSubmonoid deg)
-    [instZ : Module Λ[centralizerSubgroup ι γ.1] P] [Module.Finite Λ[centralizerSubgroup ι γ.1] P]
-    [Module.Projective Λ[centralizerSubgroup ι γ.1] P]
-    (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.1]) (p : P),
-      r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.1).subtype r • p)
-    (u_Z : Module.End Λ[centralizerSubgroup ι γ.1] P) (huZ : ∀ p, u_Z p = single γ (1 : Λ) • p) :
+    [instZ : Module Λ[centralizerSubgroup ι γ.val] P]
+    [Module.Finite Λ[centralizerSubgroup ι γ.val] P]
+    [Module.Projective Λ[centralizerSubgroup ι γ.val] P]
+    (hPZ : ∀ (r : Λ[centralizerSubgroup ι γ.val]) (p : P),
+      r • p = mapDomainRingHom Λ (centralizerSubgroup ι γ.val).subtype r • p)
+    (u_Z : Module.End Λ[centralizerSubgroup ι γ.val] P)
+    (huZ : ∀ p, u_Z p = single γ (1 : Λ) • p) :
     centralizerGroupTrace Λ ι deg hker hPG γ =
-      LinearMap.hattoriStallingsGroupTrace Λ (centralizerSubgroup ι γ.1) P u_Z := by
-  let Z := centralizerSubgroup ι γ.1; let φZ := mapDomainRingHom Λ Z.subtype
+      LinearMap.hattoriStallingsGroupTrace Λ (centralizerSubgroup ι γ.val) P u_Z := by
+  let Z := centralizerSubgroup ι γ.val; let φZ := mapDomainRingHom Λ Z.subtype
   obtain rfl : instZ = Module.compHom P φZ := Module.ext' _ _ hPZ
   let _ : Module Λ[Z] P := Module.compHom P φZ
-  rw [centralizerGroupTrace]; congr 1; ext p; simp [huZ]
+  have hu : centralizerEnd hPG γ (fun _ _ ↦ rfl) = u_Z := by ext p; simp [huZ]
+  dsimp only [centralizerGroupTrace]
+  rw [hu]
 
 /-- Expanding `centralizerGroupTrace` on a `Λ[G]`-free retract `(π, i)` of `P`. -/
 private theorem centralizerGroupTrace_eq_mkQ_sum_of_retract
     {r : ℕ} (π : (Fin r → Λ[G]) →ₗ[Λ[G]] P) (i : P →ₗ[Λ[G]] Fin r → Λ[G]) (hπi : π ∘ₗ i = .id)
-    (γ : nonnegSubmonoid deg) [Fintype (G ⧸ (centralizerSubgroup ι γ.1).subtype.range)] :
+    (γ : nonnegSubmonoid deg) [Fintype (G ⧸ (centralizerSubgroup ι γ.val).subtype.range)] :
     centralizerGroupTrace Λ ι deg hker hPG γ =
       (TauCeti.commutatorSubmodule ℤ Λ).mkQ
-        (∑ k : Fin r, ∑ q : G ⧸ (centralizerSubgroup ι γ.1).subtype.range,
+        (∑ k : Fin r, ∑ q : G ⧸ (centralizerSubgroup ι γ.val).subtype.range,
           (i (single γ (1 : Λ) •
             ((single q.out⁻¹ (1 : Λ) : Λ[G]) • π (Pi.single k 1))) k).coeff q.out⁻¹) := by
-  let Z := centralizerSubgroup ι γ.1
+  let Z := centralizerSubgroup ι γ.val
   let _ : Module Λ[Z] P := Module.compHom P (mapDomainRingHom Λ Z.subtype)
   obtain ⟨_, _⟩ := centralizer_finite_projective Λ ι deg (P := P) γ
   let uZ := centralizerEnd hPG γ fun _ _ ↦ rfl
@@ -172,13 +177,14 @@ theorem hattoriStallingsTrace_singleOneSMulLinearMap_eq_card_centralizer_nsmul
     [IsScalarTower Λ Λ[nonnegSubmonoid deg] P] [Module.Finite Λ P] [Module.Projective Λ P]
     (γ : nonnegSubmonoid deg) :
     LinearMap.hattoriStallingsTrace Λ P (singleOneSMulLinearMap Λ P γ) =
-      Nat.card (centralizerSubgroup ι γ.1) • centralizerGroupTrace Λ ι deg hker hPG γ := by
-  let Z := centralizerSubgroup ι γ.1
+      Nat.card (centralizerSubgroup ι γ.val) • centralizerGroupTrace Λ ι deg hker hPG γ := by
+  let Z := centralizerSubgroup ι γ.val
   let _ : Module Λ[Z] P := Module.compHom P (mapDomainRingHom Λ Z.subtype)
   obtain ⟨_, _⟩ := centralizer_finite_projective Λ ι deg (P := P) γ
   let φ_Z := centralizerEnd hPG γ fun _ _ ↦ rfl
   rw [LinearMap.hattoriStallingsTrace_eq_card_nsmul_hattoriStallingsGroupTrace_of_eqLocus
-      (eqLocus_conjAut ι deg hι hker γ.1).symm (fun _ _ ↦ rfl) (singleOneSMulLinearMap Λ P γ) φ_Z
+      (eqLocus_conjAut ι deg hι hker γ.val).symm (fun _ _ ↦ rfl)
+      (singleOneSMulLinearMap Λ P γ) φ_Z
       (singleOneSMulLinearMap_single_smul hPG hι γ) (fun p ↦ by simp [φ_Z]),
     centralizerGroupTrace_eq_hattoriStallingsGroupTrace hPG γ (fun _ _ ↦ rfl) φ_Z
       (centralizerEnd_apply hPG γ _)]
@@ -188,7 +194,7 @@ theorem centralizerGroupTrace_conjNonneg (k : G) (γ : nonnegSubmonoid deg) :
     centralizerGroupTrace Λ ι deg hker hPG (conjNonneg ι deg k γ) =
       centralizerGroupTrace Λ ι deg hker hPG γ := by
   let γ' := conjNonneg ι deg k γ
-  let Z := centralizerSubgroup ι γ.1; let Z' := centralizerSubgroup ι γ'.1
+  let Z := centralizerSubgroup ι γ.val; let Z' := centralizerSubgroup ι γ'.val
   let _ : Module Λ[Z] P := Module.compHom P (mapDomainRingHom Λ Z.subtype)
   let _ : Module Λ[Z'] P := Module.compHom P (mapDomainRingHom Λ Z'.subtype)
   obtain ⟨_, _⟩ := centralizer_finite_projective Λ ι deg (P := P) γ
@@ -247,7 +253,7 @@ variable [Module Λ P] [IsScalarTower Λ Λ[nonnegSubmonoid deg] P]
 /-- The `Λ`-linear endomorphism of `Coinvariants Λ G P` induced by `γ₀ ∈ Γ`. -/
 def coinvariantEnd (γ₀ : nonnegSubmonoid deg) : Module.End Λ (Coinvariants Λ G P) :=
   Coinvariants.lift ((Coinvariants.mk Λ G P).comp (singleOneSMulLinearMap Λ P γ₀)) fun g p ↦ by
-    obtain ⟨g', hg'⟩ := (hker ▸ deg.normal_ker).conj_mem (ι g) ⟨g, rfl⟩ γ₀.1
+    obtain ⟨g', hg'⟩ := (hker ▸ deg.normal_ker).conj_mem (ι g) ⟨g, rfl⟩ γ₀.val
     have hrel : γ₀ * toNonnegSubmonoid ι deg hker g = toNonnegSubmonoid ι deg hker g' * γ₀ := by
       ext; simp [hg', mul_assoc]
     simp only [LinearMap.comp_apply, singleOneSMulLinearMap_apply,
@@ -275,7 +281,7 @@ theorem map_coinvariantEnd [IsScalarTower Λ Λ[G] P]
       coinvariantEnd Λ ι deg hker hQG γ₀ ∘ₗ Coinvariants.map (Λ := Λ) f := by ext p; simp [hf]
 
 /-- Elements of `Γ` of the same degree induce the same endomorphism on `Coinvariants Λ G P`. -/
-theorem coinvariantEnd_eq_of_map_eq {γ₁ γ₀ : nonnegSubmonoid deg} (hdeg : deg γ₁.1 = deg γ₀.1) :
+theorem coinvariantEnd_eq_of_map_eq {γ₁ γ₀ : nonnegSubmonoid deg} (hdeg : deg γ₁.val = deg γ₀.val) :
     coinvariantEnd Λ ι deg hker hPG γ₁ = coinvariantEnd Λ ι deg hker hPG γ₀ := by
   ext p; simp only [coinvariantEnd_mk]
   obtain ⟨g, hg⟩ := MonoidHom.mem_range.1 (hker.symm ▸ deg.div_mem_ker_iff.2 hdeg)
@@ -312,10 +318,10 @@ omit [IsScalarTower Λ Λ[G] P] in
 private theorem conjClassGroupTrace_eq_mkQ_sum_cosets [Finite G] (hι : Function.Injective ι)
     {r d : ℕ} (π : (Fin r → Λ[G]) →ₗ[Λ[G]] P) (i : P →ₗ[Λ[G]] Fin r → Λ[G]) (hπi : π ∘ₗ i = .id)
     (γ₀ : DegreeFiber deg d) (c : ConjClasses ι deg d)
-    [Fintype (G ⧸ (centralizerSubgroup ι c.out.val.1).subtype.range)] :
+    [Fintype (G ⧸ (centralizerSubgroup ι c.out.val.val).subtype.range)] :
     conjClassGroupTrace Λ ι deg hker hPG d c =
       (TauCeti.commutatorSubmodule ℤ Λ).mkQ
-        (∑ k : Fin r, ∑ q : G ⧸ (centralizerSubgroup ι c.out.val.1).subtype.range,
+        (∑ k : Fin r, ∑ q : G ⧸ (centralizerSubgroup ι c.out.val.val).subtype.range,
           (i (single γ₀.val (1 : Λ) • π (Pi.single k 1)) k).coeff
             (degreeFiberEquivGroup hι hker γ₀ (DegreeFiber.conj ι q.out c.out))) := by
   conv_lhs => rw [← Quotient.out_eq c, conjClassGroupTrace_mk]
@@ -325,7 +331,7 @@ private theorem conjClassGroupTrace_eq_mkQ_sum_cosets [Finite G] (hι : Function
   have hγ_eq : γ.val = toNonnegSubmonoid ι deg hker gγ⁻¹ * γ₀.val :=
     Subtype.ext (by simp [gγ, eq_inv_mul_of_mul_eq (apply_degreeFiberEquivGroup_mul hι hker γ₀ γ)])
   have himg : i (single γ.val (1 : Λ) • ((single q.out⁻¹ (1 : Λ) : Λ[G]) • π (Pi.single k 1))) k =
-      single (conjAut ι deg hι hker γ.val.1 q.out⁻¹ * gγ⁻¹) (1 : Λ) *
+      single (conjAut ι deg hι hker γ.val.val q.out⁻¹ * gγ⁻¹) (1 : Λ) *
         i (single γ₀.val (1 : Λ) • π (Pi.single k 1)) k := by
     have htwist := singleOneSMulLinearMap_single_smul hPG hι γ.val q.out⁻¹ (π (Pi.single k 1))
     simp only [singleOneSMulLinearMap_apply] at htwist
@@ -348,7 +354,7 @@ theorem hattoriStallingsTrace_coinvariantEnd_eq_sum_conjClasses [Finite G]
   let _ : Fintype G := Fintype.ofFinite G; let _ : Fintype (DegreeFiber deg d) := Fintype.ofFinite _
   let _ : Fintype (ConjClasses ι deg d) := Fintype.ofFinite _
   let _ (c : ConjClasses ι deg d) :
-      Fintype (G ⧸ (centralizerSubgroup ι c.out.val.1).subtype.range) := Fintype.ofFinite _
+      Fintype (G ⧸ (centralizerSubgroup ι c.out.val.val).subtype.range) := Fintype.ofFinite _
   obtain ⟨r, π, i, -, -, hπi⟩ := Module.Finite.exists_comp_eq_id_of_projective Λ[G] P
   rw [finsum_eq_sum_of_fintype, hattoriStallingsTrace_coinvariantEnd_of_retract hPG π i hπi γ₀.val]
   simp only [conjClassGroupTrace_eq_mkQ_sum_cosets hPG hι π i hπi γ₀, ← map_sum]
@@ -356,10 +362,10 @@ theorem hattoriStallingsTrace_coinvariantEnd_eq_sum_conjClasses [Finite G]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   let yk := i (single γ₀.val (1 : Λ) • π (Pi.single k 1)) k
   let eQ (c : ConjClasses ι deg d) :=
-    Subgroup.quotientEquivOfEq (centralizerSubgroup ι c.out.val.1).range_subtype
+    Subgroup.quotientEquivOfEq (centralizerSubgroup ι c.out.val.val).range_subtype
   rw [← Fintype.sum_sigma (f := fun p :
-      (c : ConjClasses ι deg d) × G ⧸ (centralizerSubgroup ι c.out.val.1).subtype.range ↦
-    yk.coeff (degreeFiberEquivGroup hι hker γ₀ (DegreeFiber.conj ι p.2.out p.1.out)))]
+      (c : ConjClasses ι deg d) × G ⧸ (centralizerSubgroup ι c.out.val.val).subtype.range ↦
+    yk.coeff (degreeFiberEquivGroup hι hker γ₀ (DegreeFiber.conj ι p.snd.out p.fst.out)))]
   refine (Fintype.sum_equiv (((Equiv.sigmaCongrRight eQ).trans
     (orbitStabilizerEquiv ι deg d).symm).trans (degreeFiberEquivGroup hι hker γ₀)) _ _ ?_).symm
   rintro ⟨c, q⟩
@@ -412,13 +418,14 @@ theorem conjClassGroupTrace_eq_mkQ_conjClassProjectiveGroupTrace (d : ℕ) (c : 
 /-- Agreement of `centralizerProjectiveGroupTrace` with `projectiveGroupTrace` whenever `P` already
 carries a compatible `A[Z_γ]`-module structure. -/
 theorem centralizerProjectiveGroupTrace_eq_projectiveGroupTrace (γ : nonnegSubmonoid deg)
-    [Module A[centralizerSubgroup ι γ.1] P] [Module.Finite A[centralizerSubgroup ι γ.1] P]
-    [Module.Projective A[centralizerSubgroup ι γ.1] P]
-    (hPZ : ∀ (r : A[centralizerSubgroup ι γ.1]) (p : P),
-      r • p = mapDomainRingHom A (centralizerSubgroup ι γ.1).subtype r • p)
-    (u_Z : Module.End A[centralizerSubgroup ι γ.1] P) (huZ : ∀ p, u_Z p = single γ (1 : A) • p) :
+    [Module A[centralizerSubgroup ι γ.val] P] [Module.Finite A[centralizerSubgroup ι γ.val] P]
+    [Module.Projective A[centralizerSubgroup ι γ.val] P]
+    (hPZ : ∀ (r : A[centralizerSubgroup ι γ.val]) (p : P),
+      r • p = mapDomainRingHom A (centralizerSubgroup ι γ.val).subtype r • p)
+    (u_Z : Module.End A[centralizerSubgroup ι γ.val] P)
+    (huZ : ∀ p, u_Z p = single γ (1 : A) • p) :
     centralizerProjectiveGroupTrace A ι deg hker hPG γ =
-      LinearMap.projectiveGroupTrace A (centralizerSubgroup ι γ.1) P u_Z := by
+      LinearMap.projectiveGroupTrace A (centralizerSubgroup ι γ.val) P u_Z := by
   rw [centralizerProjectiveGroupTrace_apply, LinearMap.projectiveGroupTrace_apply,
     centralizerGroupTrace_eq_hattoriStallingsGroupTrace hPG γ hPZ u_Z huZ]
 
@@ -435,7 +442,7 @@ theorem projectiveTrace_singleOneSMulLinearMap_eq_card_centralizer_mul
     [IsScalarTower A A[nonnegSubmonoid deg] P] [Module.Finite A P] [Module.Projective A P]
     (γ : nonnegSubmonoid deg) :
     LinearMap.projectiveTrace A P (singleOneSMulLinearMap A P γ) =
-      (Nat.card (centralizerSubgroup ι γ.1) : A) *
+      (Nat.card (centralizerSubgroup ι γ.val) : A) *
         centralizerProjectiveGroupTrace A ι deg hker hPG γ := by
   simpa [LinearMap.hattoriStallingsTrace_eq_projectiveTrace,
     centralizerGroupTrace_eq_mkQ_centralizerProjectiveGroupTrace, map_nsmul, nsmul_eq_mul] using

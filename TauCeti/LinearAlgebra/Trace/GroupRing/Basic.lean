@@ -261,7 +261,7 @@ private theorem sum_coeff_twisted_eq_card_nsmul (σ : G ≃* G) [Fintype G]
       (σ (eCoset (q, z)))⁻¹ * eCoset (q, z) = (σ q.out⁻¹)⁻¹ * q.out⁻¹ := by
     have he : eCoset (q, z) = (z : G) * q.out⁻¹ := by
       simp [eCoset, Subgroup.groupEquivQuotientProdSubgroup_symm_apply, MonoidHom.ofInjective_apply]
-    have hz : σ (z : G) = (z : G) := MonoidHom.mem_eqLocusM.1 z.2
+    have hz : σ (z : G) = (z : G) := MonoidHom.mem_eqLocusM.1 z.property
     rw [he, map_mul, hz, mul_inv_rev, mul_assoc, inv_mul_cancel_left]
   rw [← eCoset.sum_comp, Fintype.sum_prod_type_right]
   simp only [hinv, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, Z]

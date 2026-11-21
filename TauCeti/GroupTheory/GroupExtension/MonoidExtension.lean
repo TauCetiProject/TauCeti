@@ -111,22 +111,24 @@ theorem eqLocus_conjAut (γ : Γtilde) :
 /-- Commuting a `G`-element past `γ ∈ nonnegSubmonoid deg` conjugates it by `conjAut`. -/
 theorem mul_toNonnegSubmonoid (γ : nonnegSubmonoid deg) (g : G) :
     γ * toNonnegSubmonoid ι deg hker g =
-      toNonnegSubmonoid ι deg hker (conjAut ι deg hι hker γ.1 g) * γ := by ext; simp [mul_assoc]
+      toNonnegSubmonoid ι deg hker (conjAut ι deg hι hker γ.val g) * γ := by
+  ext; simp [mul_assoc]
 end ConjAut
 
-/-- Elements of `centralizerSubgroup ι γ.1` commute with `γ` inside `nonnegSubmonoid deg`. -/
+/-- Elements of `centralizerSubgroup ι γ.val` commute with `γ` inside `nonnegSubmonoid deg`. -/
 theorem commute_toNonnegSubmonoid_comp_subtype (hker : ι.range = deg.ker)
-    (γ : nonnegSubmonoid deg) (z : centralizerSubgroup ι γ.1) :
-    Commute ((toNonnegSubmonoid ι deg hker).comp (centralizerSubgroup ι γ.1).subtype z) γ :=
-  Subtype.ext <| by simpa using mem_centralizerSubgroup.1 z.2
+    (γ : nonnegSubmonoid deg) (z : centralizerSubgroup ι γ.val) :
+    Commute ((toNonnegSubmonoid ι deg hker).comp (centralizerSubgroup ι γ.val).subtype z) γ :=
+  Subtype.ext <| by simpa using mem_centralizerSubgroup.1 z.property
 
 /-- Conjugation of `γ : nonnegSubmonoid deg` by `k : G` preserves `nonnegSubmonoid deg`. -/
 def conjNonneg (k : G) (γ : nonnegSubmonoid deg) : nonnegSubmonoid deg :=
-  ⟨ι k * γ.1 * (ι k)⁻¹, by
-    rw [mem_nonnegSubmonoid, deg.map_mul, deg.map_mul, deg.map_inv, mul_inv_cancel_comm]; exact γ.2⟩
+  ⟨ι k * γ.val * (ι k)⁻¹, by
+    rw [mem_nonnegSubmonoid, deg.map_mul, deg.map_mul, deg.map_inv, mul_inv_cancel_comm]
+    exact γ.property⟩
 
 @[simp] theorem coe_conjNonneg (k : G) (γ : nonnegSubmonoid deg) :
-    (conjNonneg ι deg k γ : Γtilde) = ι k * γ.1 * (ι k)⁻¹ := by rfl
+    (conjNonneg ι deg k γ : Γtilde) = ι k * γ.val * (ι k)⁻¹ := by rfl
 
 /-- Conjugating `γ` by `k : G` inside `nonnegSubmonoid deg` satisfies `(k γ k⁻¹) * k = k * γ`. -/
 theorem conjNonneg_mul_toNonnegSubmonoid (hker : ι.range = deg.ker) (k : G)
@@ -136,7 +138,7 @@ theorem conjNonneg_mul_toNonnegSubmonoid (hker : ι.range = deg.ker) (k : G)
 
 /-- Conjugation by `k : G` identifies `Z_γ` with `Z_{k γ k⁻¹}`. -/
 def conjCentralizerEquiv (k : G) (γ : nonnegSubmonoid deg) :
-    centralizerSubgroup ι γ.1 ≃* centralizerSubgroup ι (conjNonneg ι deg k γ).1 :=
+    centralizerSubgroup ι γ.val ≃* centralizerSubgroup ι (conjNonneg ι deg k γ).val :=
   TauCeti.Subgroup.congrOfMapEq (MulAut.conj k) <| by
     ext x; simp only [Subgroup.mem_map, mem_centralizerSubgroup, coe_conjNonneg]
     refine ⟨?_, fun hx ↦ ⟨k⁻¹ * x * k, ?_, by simp [MulAut.conj_apply, mul_assoc]⟩⟩
@@ -146,11 +148,12 @@ def conjCentralizerEquiv (k : G) (γ : nonnegSubmonoid deg) :
     · simpa [map_mul, map_inv, mul_assoc] using congrArg (fun y ↦ (ι k)⁻¹ * y * ι k) hx
 
 @[simp] theorem coe_conjCentralizerEquiv_apply (k : G) (γ : nonnegSubmonoid deg)
-    (z : centralizerSubgroup ι γ.1) : (conjCentralizerEquiv ι deg k γ z : G) = k * z.1 * k⁻¹ := by
+    (z : centralizerSubgroup ι γ.val) :
+    (conjCentralizerEquiv ι deg k γ z : G) = k * z.val * k⁻¹ := by
   simp [conjCentralizerEquiv, TauCeti.Subgroup.coe_congrOfMapEq_apply]
 @[simp] theorem coe_conjCentralizerEquiv_symm_apply (k : G) (γ : nonnegSubmonoid deg)
-    (z : centralizerSubgroup ι (conjNonneg ι deg k γ).1) :
-    ((conjCentralizerEquiv ι deg k γ).symm z : G) = k⁻¹ * z.1 * k := by
+    (z : centralizerSubgroup ι (conjNonneg ι deg k γ).val) :
+    ((conjCentralizerEquiv ι deg k γ).symm z : G) = k⁻¹ * z.val * k := by
   simp [conjCentralizerEquiv, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 end ExtensionMaps
 
@@ -161,8 +164,8 @@ structure DegreeFiber {Γtilde : Type*} [Monoid Γtilde]
     (deg : Γtilde →* Multiplicative ℤ) (d : ℕ) where
   /-- Underlying element of `nonnegSubmonoid deg`. -/
   val : nonnegSubmonoid deg
-  /-- Degree condition `deg val.1 = Multiplicative.ofAdd d`. -/
-  deg_eq : deg val.1 = Multiplicative.ofAdd (d : ℤ)
+  /-- Degree condition `deg val.val = Multiplicative.ofAdd d`. -/
+  deg_eq : deg val.val = Multiplicative.ofAdd (d : ℤ)
 
 namespace DegreeFiber
 
@@ -170,12 +173,12 @@ namespace DegreeFiber
 instance instMulActionConjAct (deg : Γtilde →* Multiplicative ℤ) (d : ℕ) :
     MulAction (ConjAct Γtilde) (DegreeFiber deg d) where
   smul g γ :=
-    ⟨⟨g • γ.val.1, by
+    ⟨⟨g • γ.val.val, by
         rw [mem_nonnegSubmonoid, ConjAct.smul_def, deg.map_mul, deg.map_mul, deg.map_inv,
-          mul_inv_cancel_comm]; exact γ.val.2⟩,
+          mul_inv_cancel_comm]; exact γ.val.property⟩,
       by simp only [ConjAct.smul_def, deg.map_mul, deg.map_inv, mul_inv_cancel_comm, γ.deg_eq]⟩
-  one_smul γ := DegreeFiber.ext <| Subtype.ext <| one_smul (ConjAct Γtilde) γ.val.1
-  mul_smul g₁ g₂ γ := DegreeFiber.ext <| Subtype.ext <| mul_smul g₁ g₂ γ.val.1
+  one_smul γ := DegreeFiber.ext <| Subtype.ext <| one_smul (ConjAct Γtilde) γ.val.val
+  mul_smul g₁ g₂ γ := DegreeFiber.ext <| Subtype.ext <| mul_smul g₁ g₂ γ.val.val
 
 /-- Conjugation action of `G` on `DegreeFiber deg d` induced by `ι : G →* Γtilde`. -/
 @[instance_reducible]
@@ -186,7 +189,7 @@ def conjAction (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ) (d 
 variable {deg : Γtilde →* Multiplicative ℤ} {d : ℕ}
 
 @[simp] theorem conjAct_smul_val (g : ConjAct Γtilde) (γ : DegreeFiber deg d) :
-    (g • γ).val.1 = g • γ.val.1 := by rfl
+    (g • γ).val.val = g • γ.val.val := by rfl
 
 /-- Conjugation of an element of `DegreeFiber deg d` by `k : G`. -/
 def conj (ι : G →* Γtilde) (k : G) (γ : DegreeFiber deg d) : DegreeFiber deg d :=
@@ -200,7 +203,7 @@ theorem finite [Finite G] (ι : G →* Γtilde) (hker : ι.range = deg.ker) (d :
     Finite (DegreeFiber deg d) := by
   have : Finite deg.ker := hker ▸ Finite.of_surjective ι.rangeRestrict ι.rangeRestrict_surjective
   have := deg.finite_fiber (Multiplicative.ofAdd (d : ℤ))
-  exact .of_injective (fun x : DegreeFiber deg d ↦ (⟨x.val.1, x.deg_eq⟩ : { γ // deg γ = _ }))
+  exact .of_injective (fun x : DegreeFiber deg d ↦ (⟨x.val.val, x.deg_eq⟩ : { γ // deg γ = _ }))
     fun _ _ h ↦ DegreeFiber.ext <| Subtype.ext <| Subtype.mk.inj h
 
 end DegreeFiber
@@ -216,7 +219,7 @@ def conjSetoid : Setoid (DegreeFiber deg d) :=
 abbrev ConjClasses : Type _ := Quotient (conjSetoid ι deg d)
 
 @[simp] theorem conjSetoid_rel (γ₁ γ₂ : DegreeFiber deg d) :
-    (conjSetoid ι deg d) γ₁ γ₂ ↔ ∃ k : G, γ₁.val.1 = ι k * γ₂.val.1 * (ι k)⁻¹ := by
+    (conjSetoid ι deg d) γ₁ γ₂ ↔ ∃ k : G, γ₁.val.val = ι k * γ₂.val.val * (ι k)⁻¹ := by
   let _ := DegreeFiber.conjAction ι deg d
   rw [conjSetoid, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   refine ⟨fun ⟨k, hk⟩ ↦ ⟨k, hk ▸ congrArg Subtype.val (DegreeFiber.val_conj ι k γ₂)⟩,
@@ -226,18 +229,18 @@ abbrev ConjClasses : Type _ := Quotient (conjSetoid ι deg d)
 theorem conjClasses_mk_eq_iff {γ₁ γ₂ : DegreeFiber deg d} :
     (Quotient.mk (conjSetoid ι deg d) γ₁ : ConjClasses ι deg d) =
         Quotient.mk (conjSetoid ι deg d) γ₂ ↔
-      ∃ k : G, γ₁.val.1 = ι k * γ₂.val.1 * (ι k)⁻¹ := by rw [Quotient.eq, conjSetoid_rel]
+      ∃ k : G, γ₁.val.val = ι k * γ₂.val.val * (ι k)⁻¹ := by rw [Quotient.eq, conjSetoid_rel]
 
 @[simp] theorem mk_conj (k : G) (γ : DegreeFiber deg d) :
     (Quotient.mk (conjSetoid ι deg d) (DegreeFiber.conj ι k γ) : ConjClasses ι deg d) =
       Quotient.mk (conjSetoid ι deg d) γ := (conjClasses_mk_eq_iff ι deg d).2 ⟨k, by simp⟩
 
-/-- The stabilizer of `γ` under `DegreeFiber.conjAction` is `centralizerSubgroup ι γ.val.1`. -/
+/-- The stabilizer of `γ` under `DegreeFiber.conjAction` is `centralizerSubgroup ι γ.val.val`. -/
 theorem stabilizer_conjAction_eq (γ : DegreeFiber deg d) :
     let _ := DegreeFiber.conjAction ι deg d
-    MulAction.stabilizer G γ = centralizerSubgroup ι γ.val.1 := by
+    MulAction.stabilizer G γ = centralizerSubgroup ι γ.val.val := by
   let _ := DegreeFiber.conjAction ι deg d; ext g
-  have hval : (g • γ).val.1 = ι g * γ.val.1 * (ι g)⁻¹ :=
+  have hval : (g • γ).val.val = ι g * γ.val.val * (ι g)⁻¹ :=
     congrArg Subtype.val (DegreeFiber.val_conj ι g γ)
   rw [MulAction.mem_stabilizer_iff, mem_centralizerSubgroup, DegreeFiber.ext_iff, Subtype.ext_iff,
     hval, mul_inv_eq_iff_eq_mul]
@@ -255,9 +258,9 @@ section Basepoint
 variable (hι : Function.Injective ι) (hker : ι.range = deg.ker) {d : ℕ}
 
 /-- Given a basepoint `γ₀ : DegreeFiber deg d`, `DegreeFiber deg d` identifies with `G` via the
-unique `g : G` satisfying `ι g * γ.val.1 = γ₀.val.1`. -/
+unique `g : G` satisfying `ι g * γ.val.val = γ₀.val.val`. -/
 def degreeFiberEquivGroup (γ₀ : DegreeFiber deg d) : DegreeFiber deg d ≃ G :=
-  let hmem (γ : DegreeFiber deg d) : γ₀.val.1 / γ.val.1 ∈ ι.range :=
+  let hmem (γ : DegreeFiber deg d) : γ₀.val.val / γ.val.val ∈ ι.range :=
     hker.symm ▸ deg.div_mem_ker_iff.2 (γ₀.deg_eq.trans γ.deg_eq.symm)
   let inv (g : G) : DegreeFiber deg d := ⟨toNonnegSubmonoid ι deg hker g⁻¹ * γ₀.val, by
     simpa [MonoidHom.mem_ker.1 (hker ▸ MonoidHom.mem_range.2 ⟨g, rfl⟩)] using γ₀.deg_eq⟩
@@ -274,7 +277,7 @@ def degreeFiberEquivGroup (γ₀ : DegreeFiber deg d) : DegreeFiber deg d ≃ G 
 
 /-- Characteristic relation of `degreeFiberEquivGroup`: `ι (e γ) * γ = γ₀`. -/
 theorem apply_degreeFiberEquivGroup_mul (γ₀ γ : DegreeFiber deg d) :
-    ι (degreeFiberEquivGroup hι hker γ₀ γ) * γ.val.1 = γ₀.val.1 := by
+    ι (degreeFiberEquivGroup hι hker γ₀ γ) * γ.val.val = γ₀.val.val := by
   have h := (MonoidHom.mem_range.1 (hker.symm ▸ deg.div_mem_ker_iff.2
     (γ₀.deg_eq.trans γ.deg_eq.symm))).choose_spec
   dsimp only [degreeFiberEquivGroup]; rw [Equiv.coe_fn_mk, h, div_mul_cancel]
@@ -289,8 +292,8 @@ theorem apply_degreeFiberEquivGroup_mul (γ₀ γ : DegreeFiber deg d) :
 /-- How `degreeFiberEquivGroup` transforms under `G`-conjugation on `DegreeFiber deg d`. -/
 theorem degreeFiberEquivGroup_conj {hker : ι.range = deg.ker} (γ₀ γ : DegreeFiber deg d) (g : G) :
     degreeFiberEquivGroup hι hker γ₀ (DegreeFiber.conj ι g γ) =
-      degreeFiberEquivGroup hι hker γ₀ γ * conjAut ι deg hι hker γ.val.1 g * g⁻¹ := by
-  apply hι; apply mul_right_cancel (b := (DegreeFiber.conj ι g γ).val.1)
+      degreeFiberEquivGroup hι hker γ₀ γ * conjAut ι deg hι hker γ.val.val g * g⁻¹ := by
+  apply hι; apply mul_right_cancel (b := (DegreeFiber.conj ι g γ).val.val)
   rw [apply_degreeFiberEquivGroup_mul, ← apply_degreeFiberEquivGroup_mul hι hker γ₀ γ]
   simp only [DegreeFiber.val_conj, coe_conjNonneg, map_mul, map_inv, apply_conjAut]; group
 end Basepoint
@@ -299,7 +302,7 @@ end Basepoint
 centralizer cosets. -/
 def orbitStabilizerEquiv (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ) (d : ℕ) :
     DegreeFiber deg d ≃
-      (c : ConjClasses ι deg d) × G ⧸ centralizerSubgroup ι c.out.val.1 :=
+      (c : ConjClasses ι deg d) × G ⧸ centralizerSubgroup ι c.out.val.val :=
   letI := DegreeFiber.conjAction ι deg d
   (MulAction.selfEquivSigmaOrbitsQuotientStabilizer G (DegreeFiber deg d)).trans <|
     Equiv.sigmaCongrRight fun c : MulAction.orbitRel.Quotient G (DegreeFiber deg d) ↦
@@ -325,9 +328,9 @@ def orbitStabilizerEquiv (ι : G →* Γtilde) (deg : Γtilde →* Multiplicativ
 
 @[simp] theorem fst_orbitStabilizerEquiv (ι : G →* Γtilde) (deg : Γtilde →* Multiplicative ℤ)
     {d : ℕ} (γ : DegreeFiber deg d) :
-    (orbitStabilizerEquiv ι deg d γ).1 = Quotient.mk (conjSetoid ι deg d) γ := by
-  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (orbitStabilizerEquiv ι deg d γ).2
-  have hγ : DegreeFiber.conj ι g (orbitStabilizerEquiv ι deg d γ).1.out = γ := by
+    (orbitStabilizerEquiv ι deg d γ).fst = Quotient.mk (conjSetoid ι deg d) γ := by
+  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (orbitStabilizerEquiv ι deg d γ).snd
+  have hγ : DegreeFiber.conj ι g (orbitStabilizerEquiv ι deg d γ).fst.out = γ := by
     rw [← orbitStabilizerEquiv_symm_mk, hg, Sigma.eta, Equiv.symm_apply_apply]
   conv_rhs => rw [← hγ, mk_conj, Quotient.out_eq]
 
