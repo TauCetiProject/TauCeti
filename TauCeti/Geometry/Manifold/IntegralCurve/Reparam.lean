@@ -95,7 +95,7 @@ theorem exists_orderIso_isMIntegralCurve_comp (hγ : IsMIntegralCurve γ X) (hh 
     (hpos : ∀ t, 0 < h t) {c : ℝ} (hc : ∀ t, h t ≤ c) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
     ∃ ψ : ℝ ≃o ℝ, ψ 0 = 0 ∧ IsMIntegralCurve (γ ∘ ψ) Y := by
   -- The inverse of the new time `θ t = ∫₀ᵗ 1 / h`, where `1 / h ≥ 1 / c > 0`.
-  obtain ⟨ψ, -, hψθ, -, hψd⟩ := TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral
+  obtain ⟨ψ, -, -, hψθ, -, hψd⟩ := TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral
     (hh.inv₀ fun t ↦ (hpos t).ne') (inv_pos.2 ((hpos 0).trans_le (hc 0)))
     (fun t ↦ inv_anti₀ (hpos t) (hc t)) 0
   exact ⟨ψ, by simpa using hψθ 0, hγ.comp_of_hasDerivAt hY fun s ↦ by simpa using hψd s⟩

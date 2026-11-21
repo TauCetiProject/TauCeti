@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -47,6 +48,8 @@ hence everywhere.
   `HomotopyGroup.bijective_hurewicz_ulift`, and `HomotopyGroup.hurewiczUliftAddEquiv`: **the
   Hurewicz theorem**, `πₙ₊₂(X, x) ≅ Hₙ₊₂(X; ℤ)` for an `(n + 1)`-connected space in `Type 0` and
   in an arbitrary universe `u`.
+* `HomotopyGroup.bijective_hurewiczIntHom_of_simplyConnectedSpace`: its degree-two case,
+  `π₂(X, x) ≅ H₂(X; ℤ)` for a simply connected space.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`,
   `HomotopyGroup.isIso_hurewicz_ulift_iff_bijective_zmultiplesHom`: in that range, the Hurewicz
   class of a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class
@@ -192,6 +195,15 @@ theorem hurewiczAddEquiv_apply_eq_hurewiczIntHom
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = hurewiczIntHom X x (n + 1) a :=
   AddEquiv.ofBijective_apply _ _ _
+
+/-- **The Hurewicz theorem in degree two for a simply connected space**: the integral Hurewicz
+homomorphism `π₂(X, x) → H₂(X; ℤ)` is bijective at every base point. -/
+theorem bijective_hurewiczIntHom_of_simplyConnectedSpace [SimplyConnectedSpace X] (x : X) :
+    Function.Bijective (hurewiczIntHom X x 1) := by
+  convert (hurewiczAddEquiv (n := 0) fun _ => subsingleton_homotopyGroup_of_lt_two x).bijective
+    using 1
+  funext a
+  exact (hurewiczAddEquiv_apply_eq_hurewiczIntHom _ a).symm
 
 /-- The Hurewicz isomorphism sends the class of a generalized loop `p` to its Hurewicz class
 `GenLoop.hurewicz`, evaluated at `1 : ℤ`. -/
