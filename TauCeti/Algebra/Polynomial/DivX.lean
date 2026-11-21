@@ -112,6 +112,7 @@ theorem divX_map {S : Type*} [Semiring S] (f : R →+* S) (p : R[X]) :
 
 /-- Evaluation of the decomposition `p = divX p * X + C (p.coeff 0)` at any point of any
 semiring. -/
+@[simp]
 theorem eval₂_divX_mul_add {S : Type*} [Semiring S] (f : R →+* S) (x : S) (p : R[X]) :
     p.divX.eval₂ f x * x + f (p.coeff 0) = p.eval₂ f x := by
   conv_rhs => rw [← divX_mul_X_add p]
