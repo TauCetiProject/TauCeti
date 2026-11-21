@@ -60,7 +60,7 @@ theorem coe_mem_right_iff (hE : finrank ℝ E = 3) (e : s.left ≃ₜ handlebody
     (x : s.left) : (x : M) ∈ s.right ↔ (e x : ℂ × ℝ) ∈ frontier (handlebody s.genus) := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   rw [e.coe_apply_mem_frontier_iff (finrank_eq_finrank_complex_prod_real hE),
-    ← s.inter_eq_frontier_left, Set.mem_inter_iff, and_iff_right x.2]
+    ← s.inter_eq_frontier_left, Set.mem_inter_iff, and_iff_right x.property]
 
 /-- **The two handlebodies of a splitting of a `3`-manifold meet in their boundary surface.** In a
 Heegaard splitting of a manifold without boundary charted on a three-dimensional real normed

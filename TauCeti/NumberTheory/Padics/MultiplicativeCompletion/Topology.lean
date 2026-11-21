@@ -45,9 +45,9 @@ instance padicCompletionUnitsContinuousSMul :
       (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) ↦ y.2 ^ y.1.val) :=
     continuous_of_discreteTopology
   have hc : Continuous fun y : ℤ_[p] × Additive ↑(padicCompletionUnits p L) ↦
-      (PadicInt.toZModPow m y.1, y.2.toMul.1 m) :=
+      (PadicInt.toZModPow m y.1, y.2.toMul.val m) :=
     ((PadicInt.continuous_toZModPow m).comp continuous_fst).prodMk
-      ((continuous_apply m).comp (continuous_subtype_val.comp
+      ((continuous_apply m).comp (continuous_subtypeVal.comp
         (continuous_toMul.comp continuous_snd)))
   exact (hpow.comp hc).congr fun y ↦ by
     simp only [Function.comp_apply, PadicInt.val_toZModPow_eq_appr]
@@ -61,8 +61,8 @@ theorem continuous_padicCompletionUnitsAut (K : Type*) [Field K] [Algebra K L]
   intro m
   have hσ : Continuous (padicCompletionPowerClassMap p L K σ m) :=
     continuous_of_discreteTopology
-  have hm : Continuous (fun x : ↑(padicCompletionUnits p L) ↦ x.1 m) :=
-    (continuous_apply m).comp continuous_subtype_val
+  have hm : Continuous (fun x : ↑(padicCompletionUnits p L) ↦ x.val m) :=
+    (continuous_apply m).comp continuous_subtypeVal
   exact (hσ.comp hm).congr fun x ↦ (padicCompletionUnitsAut_apply p L K σ x m).symm
 
 private theorem isClosed_padicCompletionUnits :
@@ -94,12 +94,12 @@ omit [Fact p.Prime] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [CharZero L] in
 private theorem padicCompletionUnits_apply_eq_mk_of_le
     (x : ↑(padicCompletionUnits p L)) {n m : ℕ} (hnm : n ≤ m) (u : Lˣ)
-    (hu : x.1 m = QuotientGroup.mk' _ u) : x.1 n = QuotientGroup.mk' _ u := by
+    (hu : x.val m = QuotientGroup.mk' _ u) : x.val n = QuotientGroup.mk' _ u := by
   induction m, hnm using Nat.le_induction with
   | base => exact hu
   | succ m _ ih =>
       apply ih
-      rw [← (mem_padicCompletionUnits_iff p L x.1).mp x.2 m, hu]
+      rw [← (mem_padicCompletionUnits_iff p L x.val).mp x.property m, hu]
       exact padicCompletionTransition_mk p L m u
 
 omit [Fact p.Prime] [ValuativeRel L] [IsNonarchimedeanLocalField L] [CharZero L] in
@@ -108,9 +108,9 @@ theorem denseRange_padicCompletionUnitsOf : DenseRange (padicCompletionUnitsOf p
   rw [DenseRange, dense_iff_inter_open]
   rintro U ⟨s, hs, hsU⟩ ⟨x, hx⟩
   rw [← hsU, Set.mem_preimage] at hx
-  obtain ⟨I, t, ht, htU⟩ := isOpen_pi_iff.mp hs x.1 hx
+  obtain ⟨I, t, ht, htU⟩ := isOpen_pi_iff.mp hs x.val hx
   let m := I.sup id
-  obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (x.1 m)
+  obtain ⟨u, hu⟩ := QuotientGroup.mk_surjective (x.val m)
   refine ⟨padicCompletionUnitsOf p L u, ?_, u, rfl⟩
   rw [← hsU]
   apply htU
@@ -118,7 +118,7 @@ theorem denseRange_padicCompletionUnitsOf : DenseRange (padicCompletionUnitsOf p
   rw [padicCompletionUnitsOf_apply]
   have hcoord := padicCompletionUnits_apply_eq_mk_of_le p L x
     (Finset.le_sup hn) u hu.symm
-  have hcoord' : x.1 n = QuotientGroup.mk' _ u := by simpa [m] using hcoord
+  have hcoord' : x.val n = QuotientGroup.mk' _ u := by simpa [m] using hcoord
   rw [← hcoord']
   exact (ht n hn).2
 

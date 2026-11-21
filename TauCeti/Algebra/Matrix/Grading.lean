@@ -121,7 +121,7 @@ theorem mem_homogeneousMatrices_smul_smul_iff {k : G} (hk : k ∈ Subgroup.cente
       mul_smul, mul_smul, smul_left_cancel_iff]
   simp only [mem_homogeneousMatrices_iff]
   refine forall₂_congr fun x x' ↦ ?_
-  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.1) (g := fun g ↦ Ag g.1)
+  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val)
     fun _ ↦ rfl]
 
 /-- **Translating the column grading by a central element `k`** multiplies the degree of a
@@ -135,7 +135,7 @@ theorem mem_homogeneousMatrices_smul_right_iff {k : G} (hk : k ∈ Subgroup.cent
     rw [smul_smul, Subgroup.mem_center_iff.mp hk g, mul_smul, mul_smul, smul_left_cancel_iff]
   simp only [mem_homogeneousMatrices_iff]
   refine forall₂_congr fun x x' ↦ ?_
-  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.1) (g := fun g ↦ Ag g.1)
+  rw [(Equiv.subtypeEquivRight (h x x')).iSup_congr (f := fun g ↦ Ag g.val) (g := fun g ↦ Ag g.val)
     fun _ ↦ rfl]
 
 /-- A **block matrix** is homogeneous of degree `c` for the gradings of the sums of the index

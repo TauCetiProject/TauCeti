@@ -129,12 +129,12 @@ private noncomputable def homPos : ∀ k : ℕ,
       hA.i ((k : ℤ) + 1) ≫ (φ.f ((k : ℤ) + 1) - h ≫ I.d k (k + 1)) = 0 }
   | 0 => ⟨hA.homotopyStep φ (hI _) 0 (i_comp_sub_eq_zero_zero hA φ),
       hA.i_comp_sub_homotopyStep_comp_d φ (hI _) 0 (i_comp_sub_eq_zero_zero hA φ)⟩
-  | k + 1 => ⟨hA.homotopyStep φ (hI _) (homPos k).1 (homPos k).2,
-      hA.i_comp_sub_homotopyStep_comp_d φ (hI _) (homPos k).1 (homPos k).2⟩
+  | k + 1 => ⟨hA.homotopyStep φ (hI _) (homPos k).val (homPos k).property,
+      hA.i_comp_sub_homotopyStep_comp_d φ (hI _) (homPos k).val (homPos k).property⟩
 
 /-- The components `Aⁿ⁺¹ ⟶ Iⁿ` of the null-homotopy: zero in negative degrees, where `I` is zero. -/
 private noncomputable def homotopyHom : ∀ n : ℤ, A.X (n + 1) ⟶ I.X n
-  | Int.ofNat k => (homPos hA φ hI k).1
+  | Int.ofNat k => (homPos hA φ hI k).val
   | Int.negSucc _ => 0
 
 private theorem comm_ofNat (k : ℕ) :
@@ -142,7 +142,7 @@ private theorem comm_ofNat (k : ℕ) :
       homotopyHom hA φ hI (Int.ofNat k + 1) +
         homotopyHom hA φ hI (Int.ofNat k) ≫ I.d (Int.ofNat k) (Int.ofNat k + 1) := by
   rw [← sub_eq_iff_eq_add]
-  exact (hA.d_comp_homotopyStep φ (hI _) _ (homPos hA φ hI k).2).symm
+  exact (hA.d_comp_homotopyStep φ (hI _) _ (homPos hA φ hI k).property).symm
 
 private theorem comm_negSucc_zero :
     φ.f (Int.negSucc 0 + 1) = A.d (Int.negSucc 0 + 1) (Int.negSucc 0 + 1 + 1) ≫

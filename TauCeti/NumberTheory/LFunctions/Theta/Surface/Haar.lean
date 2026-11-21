@@ -165,7 +165,7 @@ theorem surfaceHaar_apply {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
       archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' Icc 1 (Real.exp 1)) := by
   have hA' : MeasurableSet (Subtype.val '' A) :=
     (measurableSet_normOneSurface K).subtype_image hA
-  rw [surfaceHaar, (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).comap_apply,
+  rw [surfaceHaar, (MeasurableEmbedding.subtypeVal (measurableSet_normOneSurface K)).comap_apply,
     map_apply measurable_surfacePart hA',
     Measure.restrict_apply (measurable_surfacePart hA')]
 
@@ -175,7 +175,7 @@ private def surfaceBox (k : ℕ) : Set (normOneSurface K) :=
   Subtype.val ⁻¹' univ.pi fun _ ↦ Icc ((k + 1 : ℝ)⁻¹) (k + 1)
 
 private theorem measurableSet_surfaceBox (k : ℕ) : MeasurableSet (surfaceBox (K := K) k) :=
-  measurable_subtype_coe (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)
+  measurable_subtypeVal (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)
 
 private theorem surfaceHaar_surfaceBox_lt_top (k : ℕ) : surfaceHaar K (surfaceBox k) < ∞ := by
   have hk : (0 : ℝ) < k + 1 := by positivity
@@ -210,7 +210,7 @@ private theorem surfaceHaar_surfaceBox_lt_top (k : ℕ) : surfaceHaar K (surface
 
 private theorem iUnion_surfaceBox : ⋃ k, surfaceBox (K := K) k = univ := by
   refine eq_univ_of_forall fun x ↦ ?_
-  have hx := (mem_normOneSurface.mp x.2).1
+  have hx := (mem_normOneSurface.mp x.property).1
   obtain ⟨k, hk⟩ := exists_nat_ge (∑ w, ((x : realSpace K) w + ((x : realSpace K) w)⁻¹))
   have hle (w : InfinitePlace K) :
       (x : realSpace K) w + ((x : realSpace K) w)⁻¹ ≤ k + 1 :=
@@ -369,7 +369,7 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
 /-- Radial scaling is measurable in the surface point and the radial parameter. -/
 theorem measurable_surfaceScale_prod :
     Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
-  continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
+  continuous_surfaceScale.measurable.comp (measurable_subtypeVal.prodMap measurable_id)
 
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under

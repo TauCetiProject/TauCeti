@@ -37,6 +37,8 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
   that agree on the image of `μ` are equal.
 * `TauCeti.IsExponentialGroup.IsCompletion.eq_mulEquiv`: the isomorphism between two
   `A`-completions is the only one commuting with the completion maps and with exponentiation.
+* `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective`: the map of an `A`-completion
+  of `G` is injective as soon as `G` embeds in some `A`-group.
 * `TauCeti.IsExponentialGroup.isCompletion_intCast`: for a commutative ring `A`, the map
   `Multiplicative ℤ →* Multiplicative A`, `n ↦ (n : A)`, is an `A`-completion.
 
@@ -133,6 +135,12 @@ theorem comp_lift (h : IsCompletion.{w} A μ) {H' : Type w} [Group H'] [Pow H' A
     [IsExponentialGroup A H'] (f : ExponentialHom A H H') (φ : G →* H) :
     f.comp (h.lift φ) = h.lift (f.toMonoidHom.comp φ) :=
   h.eq_lift <| by rw [ExponentialHom.toMonoidHom_comp, MonoidHom.comp_assoc, lift_comp]
+
+/-- The map `μ : G →* K` of an `A`-completion is injective as soon as `G` embeds in some `A`-group
+`H` in the universe `w` of the universal property. -/
+theorem injective_of_injective (h : IsCompletion.{w} A μ) {φ : G →* H} (hφ : Function.Injective φ) :
+    Function.Injective μ :=
+  .of_comp (f := h.lift φ) fun _ _ hg => hφ (by simpa using hg)
 
 end Lift
 

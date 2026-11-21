@@ -163,7 +163,7 @@ theorem tsum_eq_tsum_idealPrimePower_of_support_subset (hfm : Summable f)
     ∑' A : (Ideal (𝓞 K))⁰, f A
       = ∑' (P : HeightOneSpectrum (𝓞 K)) (k : ℕ),
           f (P.idealPrimePowerOf k : (Ideal (𝓞 K))⁰) := by
-  rw [tsum_idealPrimePower_eq (g := fun A : IdealPrimePower K ↦ f A.1) (hfm.subtype _)]
+  rw [tsum_idealPrimePower_eq (g := fun A : IdealPrimePower K ↦ f A.val) (hfm.subtype _)]
   exact (tsum_subtype_eq_of_support_subset hf).symm
 
 end TauCeti
