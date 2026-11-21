@@ -23,36 +23,12 @@ public section
 
 noncomputable section
 
-open scoped TensorProduct LaurentSeries
-open LieAlgebra.ofTwoCocycle (envelopingι)
+open scoped LaurentSeries
 
 namespace TauCeti.CurrentAlgebra
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
--- Match the coefficientwise scalar action in the current-algebra tensor product.
-attribute [local instance 1100] HahnSeries.instAlgebra
-
 variable (Φ : LinearMap.BilinForm K L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : K)
-
-/-- A formal homothety scales the current generator of mode `m` by `u ^ m`. -/
--- Run before the generic generator rule replaces the left-hand side by Laurent substitution.
-@[simp↓]
-theorem coordinateEnvelopingAut_homothety_envelopingι (u : Kˣ) (m : ℤ) (x : L) :
-    coordinateEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
-        (envelopingι (twoCocycleOfBilinear K L Φ hΦ hΦs) a
-          (HahnSeries.single m (1 : K) ⊗ₜ[K] x)) =
-      (u : K) ^ m • envelopingι (twoCocycleOfBilinear K L Φ hΦ hΦs) a
-        (HahnSeries.single m (1 : K) ⊗ₜ[K] x) := by
-  have hs : LaurentSeries.substAlgEquiv (FormalCoordinate.homothety u)
-      (HahnSeries.single m (1 : K)) = (u : K) ^ m • HahnSeries.single m (1 : K) := by
-    rw [LaurentSeries.coe_substAlgEquiv]
-    simp only [FormalCoordinate.toPowerSeries_homothety, PowerSeries.smul_eq_C_mul,
-      ← LaurentSeries.rescale_toAlgHom u, AlgEquiv.coe_toAlgHom,
-      LaurentSeries.rescale_single, mul_one, Units.val_zpow_eq_zpow_val]
-    ext k
-    by_cases hk : k = m <;> simp [HahnSeries.coeff_smul, hk]
-  simp only [coordinateEnvelopingAut_envelopingι, FormalCoordinate.ofAlgEquiv_substAlgEquiv,
-    substLieEquiv_tmul, hs, ← TensorProduct.smul_tmul', map_smul]
 
 /-- Every summand of a normally ordered mode scales with its total mode, at any cut. -/
 @[simp]

@@ -53,6 +53,8 @@ algebra `lim_N U / I_N`. The lifts commute with the level comparison
   compose covariantly.
 * `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_envelopingι`: the lift to the enveloping algebra
   substitutes in the current generators.
+* `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_homothety_envelopingι`: a homothety by `u`
+  scales each generator of mode `m` by `u ^ m`.
 * `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_mem_orderLeftIdeal_iff`: the lift preserves each
   left ideal `I_N`.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv_coordinateEnvelopingAut`: the lift commutes with
@@ -189,6 +191,30 @@ theorem coordinateEnvelopingAut_envelopingι (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧) 
       envelopingι cΦ a (substLieEquiv (FormalCoordinate.ofAlgEquiv σ) u) := by
   rw [envelopingι_apply, coordinateEnvelopingAut_ι, coordinateExtensionLieEquiv_ofProd,
     envelopingι_apply]
+
+section Homothety
+
+open scoped TensorProduct
+
+-- Match the coefficientwise scalar action in the current-algebra tensor product.
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+/-- A formal homothety scales every monomial current generator of mode `m` by `u ^ m`. -/
+-- Run before the generic generator rule replaces the left-hand side by Laurent substitution.
+@[simp↓]
+theorem coordinateEnvelopingAut_homothety_envelopingι (u : Kˣ) (m : ℤ) (c : K) (x : L) :
+    coordinateEnvelopingAut Φ hΦ hΦs a (FormalCoordinate.homothety u).substAlgEquiv
+        (envelopingι cΦ a (HahnSeries.single m c ⊗ₜ[K] x)) =
+      (u : K) ^ m • envelopingι cΦ a (HahnSeries.single m c ⊗ₜ[K] x) := by
+  have hs : HahnSeries.single m ((u : K) ^ m * c) =
+      (u : K) ^ m • HahnSeries.single m c := by
+    simpa [HahnSeries.single.addMonoidHom] using
+      map_smul (HahnSeries.single.linearMap m) ((u : K) ^ m) c
+  simp only [coordinateEnvelopingAut_envelopingι, FormalCoordinate.ofAlgEquiv_substAlgEquiv,
+    substLieEquiv_tmul, LaurentSeries.substAlgEquiv_homothety_single, hs,
+    ← TensorProduct.smul_tmul', map_smul]
+
+end Homothety
 
 variable {Φ hΦ hΦs a}
 

@@ -60,6 +60,8 @@ coefficient, carries `f (φ)` to the substitution of the image of `φ` into the 
 * `TauCeti.LaurentSeries.substAlgHom_comp_substAlgHom`: `(f (φ)) (ψ) = f (φ (ψ))`.
 * `TauCeti.LaurentSeries.coe_substAlgEquiv`: for a formal coordinate, the substitution automorphism
   `substAlgEquiv φ` is `substAlgHom`.
+* `TauCeti.LaurentSeries.substAlgEquiv_homothety_single`: a homothety scales the coefficient of
+  a Laurent monomial of degree `n` by `u ^ n`.
 * `TauCeti.LaurentSeries.mapRingHom_substAlgHom`: naturality of substitution under
   coefficient-field embeddings.
 * `TauCeti.LaurentSeries.substAlgHom_X_pow`: the substitution `X ↦ X ^ e` is
@@ -434,6 +436,18 @@ theorem coe_substAlgEquiv (φ : FormalCoordinate K) :
     ⇑(substAlgEquiv φ) = substAlgHom φ.constantCoeff_toPowerSeries φ.toPowerSeries_ne_zero :=
   congr($((algHom_eq_substAlgEquiv φ _ fun f ↦ by
     rw [substAlgHom_coe, FormalCoordinate.substAlgEquiv_apply]).symm))
+
+/-- A formal homothety scales the coefficient of a Laurent monomial of degree `n` by `u ^ n`. -/
+-- Match before the generic variable rule rewrites degree one to the coordinate itself.
+@[simp↓]
+theorem substAlgEquiv_homothety_single (u : Kˣ) (n : ℤ) (c : K) :
+    substAlgEquiv (FormalCoordinate.homothety u) (single n c) =
+      single n ((u : K) ^ n * c) := by
+  ext k
+  rw [coe_substAlgEquiv]
+  simp only [FormalCoordinate.toPowerSeries_homothety, PowerSeries.smul_eq_C_mul]
+  rw [coeff_substAlgHom_C_mul_X u.ne_zero]
+  by_cases hk : k = n <;> simp [hk]
 
 /-- A two-variable power series `f ∈ R⟦X₀, X₁⟧` over a commutative ring `R` whose substitution
 along `(X, T X)` in `R⸨T⸩⟦X⟧` (with `T = HahnSeries.single 1 1`) vanishes is zero. -/
