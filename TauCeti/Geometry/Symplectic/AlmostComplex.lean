@@ -180,6 +180,12 @@ lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
   have h' : J (J v) = J (J w) := congrArg J h
   simpa using h'
 
+/-- An almost complex structure is injective on every subspace. This is the injectivity hypothesis
+of the totally real API, such as `TauCeti.IsMaximalTotallyReal.normalEquiv`. -/
+theorem injective_domRestrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) :
+    Function.Injective (J.toLinearMap.domRestrict L) :=
+  J.injective.comp L.subtype_injective
+
 /-- The underlying linear map of an almost complex structure is surjective. -/
 lemma surjective (J : AlmostComplexStructure V) : Function.Surjective J := by
   intro v
