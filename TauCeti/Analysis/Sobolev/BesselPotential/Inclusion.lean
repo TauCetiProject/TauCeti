@@ -34,7 +34,9 @@ inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`.
 For `p = 2` and a complex Hilbert space `F` the inclusion `H^s(E, F) ⊆ H^r(E, F)` has norm at most
 `1`. This is Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`
 (`BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`), where `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`,
-and `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u` with `0 < ⟨ξ⟩ ^ (r - s) ≤ 1`.
+and `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u` with `0 < ⟨ξ⟩ ^ (r - s) ≤ 1`. The same computation
+bounds every Fourier multiplier `H^s → H^r` whose symbol `g` satisfies
+`‖g ξ‖ ⟨ξ⟩ ^ r ≤ C ⟨ξ⟩ ^ s` (`BesselPotentialSpace.norm_le_of_toDistr_eq_fourierMultiplierCLM`).
 
 Compactness properties of the inclusion, such as the Rellich theorem for distributions with a
 common compact support, are statements about this map.
@@ -79,6 +81,9 @@ common compact support, are statements about this map.
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
   of `u ∈ H^s` has norm at most `‖u‖`.
+* `BesselPotentialSpace.norm_le_of_toDistr_eq_fourierMultiplierCLM`: for `p = 2`, the norm bound
+  `‖v‖ ≤ C ‖u‖` when `v ∈ H^r` is the image of `u ∈ H^s` under a Fourier multiplier with symbol
+  bounded by `C ⟨ξ⟩ ^ (s - r)`.
 -/
 
 public section
@@ -305,51 +310,62 @@ theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, G)} (h
 
 section Hilbert
 
-/-- The weighted Fourier transform of `u ∈ H^s` has, at every lower order `r ≤ s`, an `L²`
-representative of norm at most `‖u‖`. -/
-private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{s}(E, F)) :
-    ∃ G : Lp F 2 (volume : Measure E),
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G ∧
-        ‖G‖ ≤ ‖u‖ := by
-  set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
+/-- **Fourier multipliers between the Hilbert Bessel-potential spaces.** Let `g` be a symbol of
+temperate growth with `‖g ξ‖ ⟨ξ⟩ ^ r ≤ C ⟨ξ⟩ ^ s` for every frequency `ξ`, where
+`⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. If `v ∈ H^r` is the image of `u ∈ H^s` under the Fourier
+multiplier with symbol `g`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem norm_le_of_toDistr_eq_fourierMultiplierCLM {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    {C : ℝ} (hC : ∀ ξ : E, ‖g ξ‖ * (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2))
+    {u : H^{s}(E, F)} {v : H^{r}(E, F)}
+    (huv : v.toDistr = fourierMultiplierCLM F g u.toDistr) : ‖v‖ ≤ C * ‖u‖ := by
+  -- The weighted Fourier transform of `v` is `w • 𝓕 u.toLp`, with `w = g ⟨ξ⟩ ^ (r - s)`.
+  set w : E → ℂ := fun ξ ↦ g ξ * (((1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
   have hw : w.HasTemperateGrowth := by fun_prop
-  have hw_le (x : E) : ‖w x‖ ≤ 1 := by
-    rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-    exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
-      (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
-  -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
+  have hw_le (ξ : E) : ‖w ξ‖ ≤ C := by
+    have hpos : 0 < (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by positivity
+    have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) =
+        (1 + ‖ξ‖ ^ 2) ^ (r / 2) / (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+      rw [eq_div_iff hpos.ne', ← TauCeti.one_add_norm_sq_rpow_add, sub_add_cancel]
+    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity), hsplit, ← mul_div_assoc,
+      div_le_iff₀ hpos]
+    exact hC ξ
   set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
   have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
       G₀ :=
     (toTemperedDistribution_fourier_toLp u).symm
   have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
-    (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
+    (Lp.memLp G₀).of_le_mul ((hw.1.continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
         rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x))
-  refine ⟨hmem.toLp, ?_, ?_⟩
-  · -- `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u = w • G₀`.
-    have hweight : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
-      ext x
-      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add]
-      congr 2
-      ring
-    rw [hweight, ← smulLeftCLM_smulLeftCLM_apply
-      (g₁ := fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop) hw, hG₀]
+        exact mul_le_mul_of_nonneg_right (hw_le x) (norm_nonneg _))
+  have hweight : g * (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
+      (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
+    ext x
+    simp only [w, Pi.mul_apply]
+    rw [mul_left_comm, ← Complex.ofReal_mul, ← TauCeti.one_add_norm_sq_rpow_add]
+    congr 3
+    ring
+  have hfourier : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ))
+      (𝓕 v.toDistr) = hmem.toLp := by
+    rw [huv, fourierMultiplierCLM_apply, fourier_fourierInv_eq,
+      smulLeftCLM_smulLeftCLM_apply hg (by fun_prop), hweight,
+      ← smulLeftCLM_smulLeftCLM_apply (by fun_prop) hw, hG₀]
     ext φ
     rw [Lp.smulLeftCLM_toTemperedDistribution_apply hw, Lp.toTemperedDistribution_apply]
     exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
-  · rw [← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
-    refine Lp.norm_le_norm_of_ae_le (hmem.coeFn_toLp.mono fun x hx ↦ ?_)
+  rw [norm_eq_of_smulLeftCLM_fourier_eq hfourier, ← norm_fourier_toLp_eq u]
+  exact Lp.norm_le_mul_norm_of_ae_le_mul (hmem.coeFn_toLp.mono fun x hx ↦ by
     rw [hx, norm_smul]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x)
+    exact mul_le_mul_of_nonneg_right (hw_le x) (norm_nonneg _))
 
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` does not increase norms. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h u‖ ≤ ‖u‖ := by
-  obtain ⟨g, hg, hle⟩ := exists_smulLeftCLM_fourier_eq_and_norm_le h u
-  refine (norm_eq_of_smulLeftCLM_fourier_eq ?_).trans_le hle
-  rwa [toDistr_inclusion]
+  -- The inclusion is the Fourier multiplier with symbol `1`, and `⟨ξ⟩ ^ r ≤ ⟨ξ⟩ ^ s`.
+  have hle (ξ : E) : ‖(1 : ℂ)‖ * (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 1 * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+    rw [norm_one, one_mul, one_mul]
+    exact Real.rpow_le_rpow_of_exponent_le (le_add_of_nonneg_right (by positivity)) (by linarith)
+  simpa using norm_le_of_toDistr_eq_fourierMultiplierCLM (g := fun _ ↦ 1) (by fun_prop) hle
+    (u := u) (v := inclusion h u) (by simp)
 
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` has operator norm at most `1`. -/
 theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 1 :=
