@@ -125,10 +125,9 @@ namespace ContinuousLinearMap
 open MeasureTheory
 
 variable {α 𝕜 E F G : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
-  [T2Space α] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G] {μ : Measure α}
 
-omit [T2Space α] in
 /-- A continuous bilinear pairing of a function integrable on a measurable set `s` with a function
 continuous on a compact set `K ⊇ s` is integrable on `s`. -/
 theorem integrableOn_of_bilin_of_continuousOn_of_subset (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
@@ -141,12 +140,29 @@ theorem integrableOn_of_bilin_of_continuousOn_of_subset (B : E →L[𝕜] F →L
     (ae_restrict_of_forall_mem hs fun x hx ↦ hC x (hsK hx))
 
 /-- A continuous bilinear pairing of a function integrable on a compact set `K` and vanishing
-almost everywhere off `K` with a function continuous on `K` is integrable. -/
+almost everywhere off `K` with a function continuous on `K` is integrable.
+
+The domain need not be Hausdorff, so `K` need not be measurable: the proof applies
+`integrableOn_of_bilin_of_continuousOn_of_subset` on a measurable carrier `S ⊆ K` of a strongly
+measurable representative of `f`. -/
 theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E} {K : Set α}
     (hf : IntegrableOn f K μ) (hK : IsCompact K) (hfK : ∀ᵐ x ∂μ, x ∉ K → f x = 0) {g : α → F}
-    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ :=
-  (B.integrableOn_of_bilin_of_continuousOn_of_subset hf hg hK.measurableSet hK
-    Set.Subset.rfl).integrable_of_ae_notMem_eq_zero <| hfK.mono fun x hx hxK ↦ by simp [hx hxK]
+    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ := by
+  have hfi := hf.integrable_of_ae_notMem_eq_zero hfK
+  set f' := hfi.aestronglyMeasurable.mk f
+  have hff' : f =ᵐ[μ] f' := hfi.aestronglyMeasurable.ae_eq_mk
+  obtain ⟨T, hTae, hTm, hT⟩ := (Filter.Eventually.and hff' hfK).exists_measurable_mem
+  set S := T ∩ Function.support f'
+  have hSK : S ⊆ K := fun x ⟨hxT, hx⟩ ↦ by_contra fun hxK ↦ hx <| by
+    rw [← (hT x hxT).1, (hT x hxT).2 hxK]
+  have hS := B.integrableOn_of_bilin_of_continuousOn_of_subset
+    ((hfi.congr hff').integrableOn (s := S)) hg
+    (hTm.inter hfi.aestronglyMeasurable.stronglyMeasurable_mk.measurableSet_support) hK hSK
+  refine (hS.integrable_of_ae_notMem_eq_zero ?_).congr ?_
+  · filter_upwards [hTae] with x hxT hxS
+    simp [show f' x = 0 from by_contra fun hx ↦ hxS ⟨hxT, hx⟩]
+  · filter_upwards [hff'] with x hx
+    rw [hx]
 
 end ContinuousLinearMap
 

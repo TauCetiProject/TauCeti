@@ -9,6 +9,7 @@ public import Mathlib.Analysis.ODE.PicardLindelof
 import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
@@ -96,8 +97,7 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
     set Z := (next hab hM hF x₀)^[n] z
     have hint : ∀ W : C(Icc a b, E), IntervalIntegrable
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
-      (intervalIntegrable_iff_integrableOn_Ioo_of_le t.property.1).2
-        ((integrableOn_Ioo hab hM hF W).mono_set (Ioo_subset_Ioo_right t.property.2))
+      (integrableOn_Ioo hab hM hF W).intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hab) t.property
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     simp only [iterate_succ_apply', next_apply, ODE.picard_apply]
