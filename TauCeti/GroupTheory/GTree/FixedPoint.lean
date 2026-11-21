@@ -39,12 +39,9 @@ The proof has two steps.
   the lemma for elements, the case of subgroups is the lemma for joins of subgroups
   (`GTree.isEllipticSubgroup_iSup`).
 
-An element `g` of finite order is elliptic: at a vertex `x` moved by the translation length
-`ℓ(g)`, the reduced path from `x` to `g • x` is followed by its translate under `g` without
-backtracking (`GTree.smul_ne_rev_of_dist_smul_eq_translationLength`), so `gⁿ` moves `x` by
-`n ℓ(g)` (`GTree.dist_pow_smul_eq_mul`), and `gⁿ = 1` for some `n > 0` forces `ℓ(g) = 0`. A finite
-group is finitely generated, so Serre's lemma shows that finite groups have Serre's property (FA):
-a finite subgroup fixes a vertex.
+An element of finite order is elliptic (`GTree.isElliptic_of_isOfFinOrder`, from
+`TauCeti.GroupTheory.GTree.Basic`), and a finite group is finitely generated, so Serre's lemma
+shows that finite groups have Serre's property (FA): a finite subgroup fixes a vertex.
 
 ## Main results
 
@@ -59,8 +56,7 @@ a finite subgroup fixes a vertex.
   elements whose pairwise products are elliptic fixes a vertex.
 * `TauCeti.GTree.isEllipticSubgroup_iff_forall_isElliptic`: a finitely generated subgroup fixes a
   vertex exactly when each of its elements does.
-* `TauCeti.GTree.isElliptic_of_isOfFinOrder`, `TauCeti.GTree.isEllipticSubgroup_of_finite`: an
-  element of finite order fixes a vertex, and so does a finite subgroup.
+* `TauCeti.GTree.isEllipticSubgroup_of_finite`: a finite subgroup fixes a vertex.
 
 ## References
 
@@ -253,16 +249,6 @@ theorem isEllipticSubgroup_iff_forall_isElliptic {H : Subgroup G} (hH : H.FG) :
   ⟨fun h _ hg => h.isElliptic hg, IsEllipticSubgroup.of_fg hH⟩
 
 /-! ### Finite groups -/
-
-/-- An element of finite order is elliptic: it fixes a vertex. -/
-theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
-  -- At a vertex `x` moved by `ℓ(g)`, the power `gⁿ = 1` moves `x` by `n ℓ(g)`.
-  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
-  obtain ⟨x, hx⟩ := exists_dist_eq_translationLength (T := T) g
-  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced x (g • x)
-  have h := dist_pow_smul_eq_mul hp (smul_ne_rev_of_dist_smul_eq_translationLength hx hp) n
-  rw [hgn, one_smul, dist_self, hx, eq_comm, mul_eq_zero] at h
-  exact translationLength_eq_zero_iff.mp (h.resolve_left hn.ne')
 
 /-- **Finite groups have property (FA).** A finite subgroup of a group acting on a tree without
 inversions fixes a vertex. -/

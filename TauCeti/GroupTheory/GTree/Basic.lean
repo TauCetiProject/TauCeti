@@ -31,7 +31,8 @@ such actions.
   inversion. A vertex `x` is moved by exactly `ℓ(g)` if and only if the reduced path from `x` to
   `g • x` is followed by its translate under `g` without backtracking; the translates of the path
   by the powers of `g` then line up into a reduced path, so `d(x, gⁿ x) = n d(x, g x)`, and `g` is
-  hyperbolic as soon as it moves `x`. The action maps convex sets of vertices to convex sets and
+  hyperbolic as soon as it moves `x`. In particular an element of finite order is elliptic. The
+  action maps convex sets of vertices to convex sets and
   commutes with convex hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]`
   and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
@@ -66,6 +67,7 @@ exchanges the endpoints of a dart.
 * `TauCeti.GTree.isHyperbolic_of_isReduced`: a criterion for hyperbolicity, with the vertices
   moved by the translation length (`TauCeti.GTree.dist_smul_eq_translationLength_of_isReduced`,
   `TauCeti.GTree.smul_ne_rev_of_dist_smul_eq_translationLength`).
+* `TauCeti.GTree.isElliptic_of_isOfFinOrder`: an element of finite order is elliptic.
 * `TauCeti.GTree.IsMinimal`, `TauCeti.GTree.IsRelative`: minimal and relative trees.
 * `TauCeti.GTree.incidentSubgroups`: the stabilizers of the darts at a vertex and the
   intersections of its stabilizer with the conjugates of the members of a family `ℋ`.
@@ -728,6 +730,16 @@ theorem isHyperbolic_of_isReduced {g : G} {x : T.V} (hx : g • x ≠ x) {p : T.
     T.IsHyperbolic g := by
   rw [← translationLength_pos_iff, ← dist_smul_eq_translationLength_of_isReduced hp hg]
   exact Nat.pos_of_ne_zero fun h => hx ((dist_eq_zero_iff (T.nonempty_path _ _)).mp h).symm
+
+/-- An element of finite order is elliptic: it fixes a vertex. -/
+theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
+  -- At a vertex `x` moved by `ℓ(g)`, the power `gⁿ = 1` moves `x` by `n ℓ(g)`.
+  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
+  obtain ⟨x, hx⟩ := exists_dist_eq_translationLength (T := T) g
+  obtain ⟨p, hp, -⟩ := T.isTree.existsUnique_isReduced x (g • x)
+  have h := dist_pow_smul_eq_mul hp (smul_ne_rev_of_dist_smul_eq_translationLength hx hp) n
+  rw [hgn, one_smul, dist_self, hx, eq_comm, mul_eq_zero] at h
+  exact translationLength_eq_zero_iff.mp (h.resolve_left hn.ne')
 
 end TranslationLength
 
