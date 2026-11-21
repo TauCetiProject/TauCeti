@@ -105,15 +105,6 @@ theorem fiberMap_monodromy (hp : _root_.IsCoveringMap p)
   rw [hp.map_liftPathQuotient a e]
   exact (Path.Homotopic.Quotient.cast_heq _ _).trans (Path.Homotopic.Quotient.cast_heq _ _).symm
 
-/-- Monodromy along a path carries the value of a continuous section of the covering at the start
-of the path to its value at the end: the section lifts the path. -/
-theorem monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
-    (hs : Continuous s) (hps : ∀ x, s x ∈ p ⁻¹' {x}) {x y : X} (a : Path.Homotopic.Quotient x y) :
-    hp.monodromy a ⟨s x, hps x⟩ = ⟨s y, hps y⟩ := by
-  obtain ⟨γ⟩ := a
-  refine Subtype.ext ((hp.monodromy_eq_apply_one (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
-    (funext fun t ↦ hps (γ t)) ?_).trans ?_) <;> simp
-
 /-- Monodromy along the image of a path under a map `g` carries the value at the start of the path
 of a continuous lift `s` of `g` through the covering to its value at the end: the lift lifts the
 image path. For `g` the identity this is `IsCoveringMap.monodromy_section`. -/
@@ -126,6 +117,17 @@ theorem monodromy_map_of_lift (hp : _root_.IsCoveringMap p) {Y : Type*} [Topolog
   refine Subtype.ext ((hp.monodromy_eq_apply_one (γ := γ.map g.continuous)
     (Γ := ⟨s ∘ γ, hs.comp γ.continuous⟩)
     (funext fun t ↦ Set.mem_singleton_iff.1 (hps (γ t))) ?_).trans ?_) <;> simp
+
+/-- Monodromy along a path carries the value of a continuous section of the covering at the start
+of the path to its value at the end: the section lifts the path. -/
+theorem monodromy_section (hp : _root_.IsCoveringMap p) {s : X → E}
+    (hs : Continuous s) (hps : ∀ x, s x ∈ p ⁻¹' {x}) {x y : X} (a : Path.Homotopic.Quotient x y) :
+    hp.monodromy a ⟨s x, hps x⟩ = ⟨s y, hps y⟩ := by
+  have h := hp.monodromy_map_of_lift (g := ContinuousMap.id X) hs hps a
+  induction a using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  rw [← Path.Homotopic.Quotient.mk_map] at h
+  -- `γ.map (ContinuousMap.id X).continuous` is `γ` up to eta for the structure `Path`.
+  exact h
 
 /-- A map of covers that preserves the numberings of two fibres identifies their numbered
 monodromy representations. -/
