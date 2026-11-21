@@ -337,10 +337,10 @@ def chartSection (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hV : (V : S
           (map_mem_imageOpens (hV hx) hx))).mdifferentiableAt).contMDiff
   map_add' u v := by
     ext x
-    simp [BergmanSpace.representative_add _ _ (map_mem_imageOpens (hV x.2) x.2)]
+    simp [BergmanSpace.representative_add _ _ (map_mem_imageOpens (hV x.property) x.property)]
   map_smul' c u := by
     ext x
-    simp [BergmanSpace.representative_smul _ _ (map_mem_imageOpens (hV x.2) x.2)]
+    simp [BergmanSpace.representative_smul _ _ (map_mem_imageOpens (hV x.property) x.property)]
 
 @[simp]
 theorem chartSection_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
@@ -369,7 +369,7 @@ theorem chartSection_restrict (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
   ext x
   rw [holomorphicStructureSheafModules.map_apply, chartSection_apply, chartSection_apply]
   exact BergmanSpace.representative_restrict _ _
-    (map_mem_imageOpens (hV (h x.2)) x.2)
+    (map_mem_imageOpens (hV (h x.property)) x.property)
 
 namespace ChartBergman
 

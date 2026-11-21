@@ -17,16 +17,17 @@ This file records how the dual, the covolume, the determinant and the integralit
 unimodularity of a lattice in a real inner product space behave under scaling.
 
 For `c ≠ 0` the lattice `c • L` is the pullback of `L` along the linear automorphism `c⁻¹ • ·`
-(`ZLattice.smul_eq_comap`), so a full lattice scales to a full lattice, with dual
-`(c • L)^∨ = c⁻¹ • L^∨`, covolume `|c|ⁿ covolume L` and determinant `c²ⁿ det L` in dimension `n`.
-A negative scalar gives the same lattice as its absolute value (`Submodule.neg_smul_eq_smul`).
+(`ZLattice.smul_eq_comap`), so a full lattice scales to a full lattice (and a discrete lattice
+scales to a discrete lattice for every `c`), with dual `(c • L)^∨ = c⁻¹ • L^∨`, covolume
+`|c|ⁿ covolume L` and determinant `c²ⁿ det L` in dimension `n`. A negative scalar gives the same
+lattice as its absolute value (`Submodule.neg_smul_eq_smul`).
 
 Scaling is not an invariance of any of the three predicates. The lattice `c • L` is integral
 exactly when `c² ⟪x, y⟫ ∈ ℤ` for all `x, y ∈ L` (`ZLattice.isIntegral_smul_iff`), and even exactly
 when `c² ‖x‖² ∈ 2ℤ` for all `x ∈ L` (`ZLattice.isEven_smul_iff`). In particular, scaling by `√m`
 for a natural number `m` preserves integrality: `√m • L` is integral when `L` is, and even when `L`
-is even or when `L` is integral and `m` is even, with `det (√m • L) = mⁿ det L`. Thus `√2 • E₈` is
-even and integral.
+is even or when `L` is integral and `m` is even, with `det (√m • L) = mⁿ det L` (and `√m • L` is a
+full lattice whenever `L` is full and `m ≠ 0`). Thus `√2 • E₈` is even and integral.
 
 In positive dimension, scaling an integral lattice by `|c| > 1` never produces a unimodular
 lattice, since its determinant is `c²ⁿ det L ≥ c²ⁿ > 1`; in particular `√m • L` is not unimodular
@@ -124,10 +125,13 @@ theorem smul_eq_comap {c : 𝕜} (hc : c ≠ 0) :
     ← SetLike.mem_coe, coe_comap]
   simp [Units.smul_def]
 
-/-- Scaling a discrete lattice by a nonzero scalar gives a discrete lattice. -/
-instance [DiscreteTopology L] (c : 𝕜) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
-  rw [smul_eq_comap L (NeZero.ne c)]
-  infer_instance
+/-- Scaling a discrete lattice by any scalar gives a discrete lattice. -/
+instance [DiscreteTopology L] (c : 𝕜) : DiscreteTopology (c • L : Submodule ℤ E) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [zero_smul, zero_eq_bot]
+    infer_instance
+  · rw [smul_eq_comap L hc]
+    infer_instance
 
 /-- Scaling a full lattice by a nonzero scalar gives a full lattice. -/
 instance [DiscreteTopology L] [IsZLattice ℝ L] (c : 𝕜) [NeZero c] :
@@ -137,6 +141,12 @@ instance [DiscreteTopology L] [IsZLattice ℝ L] (c : 𝕜) [NeZero c] :
     exact IsZLattice.span_top
 
 end Scalar
+
+/-- Scaling a full lattice by `√m`, for a nonzero natural number `m`, gives a full lattice. -/
+instance [DiscreteTopology L] [IsZLattice ℝ L] (m : ℕ) [NeZero m] :
+    IsZLattice ℝ (√(m : ℝ) • L : Submodule ℤ E) :=
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (NeZero.pos m))⟩
+  inferInstance
 
 section Basis
 
