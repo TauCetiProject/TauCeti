@@ -36,6 +36,8 @@ into it.
   `closure B \ B` is not contained in `A ∪ {y₀}` for any `A` disjoint from `B`.
 * `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
   it.
+* `Dense.subset_closure_range_domRestrict_preimage`: the values of a family with dense range that
+  lie in an open set are dense in it.
 -/
 
 public section
@@ -85,3 +87,10 @@ theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] 
   fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
 
 end TauCeti
+
+/-- When the values of `c` are dense, the values lying in an open set `s` are dense in `s`. -/
+theorem Dense.subset_closure_range_domRestrict_preimage {α X : Type*} [TopologicalSpace X]
+    {c : α → X} (hc : Dense (range c)) {s : Set X} (hs : IsOpen s) :
+    s ⊆ closure (range ((c ⁻¹' s).domRestrict c)) := by
+  rw [range_domRestrict, image_preimage_eq_inter_range]
+  exact hc.open_subset_closure_inter hs

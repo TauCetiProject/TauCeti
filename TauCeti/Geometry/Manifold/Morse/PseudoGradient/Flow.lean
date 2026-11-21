@@ -34,6 +34,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_flow_ne_zero`: so the orbit of a regular point consists
+  of regular points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
   orbit.
 * `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_of_isMIntegralCurve`: an
@@ -148,6 +150,13 @@ theorem flow_apply_of_mfderiv_eq_zero {x : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
     hX.flow t x = x :=
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField
     (isMIntegralCurve_const (hX.eq_zero_of_mfderiv_eq_zero hx)) t
+
+/-- The orbit of a regular point consists of regular points: critical points are rest points. -/
+theorem mfderiv_flow_ne_zero {y : M} (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) (t : ℝ) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t y) ≠ 0 := fun h ↦ hy <| by
+  have := hX.flow_apply_of_mfderiv_eq_zero h (-t)
+  rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
+  rwa [this]
 
 /-- **Integral curves are orbits.** Every integral curve of an adapted pseudo-gradient on a compact
 boundaryless manifold is the orbit of its value at time `0`. -/
