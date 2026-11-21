@@ -70,10 +70,11 @@ theorem ofLetter_eq_of_tprod (a : M) :
   rfl
 
 /-- A pure tensor word of length one equals the single letter at index `0`. -/
-theorem of_one_tprod {hn : 0 < 1} (x : Fin 1 → M) :
-    of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
+@[simp]
+theorem of_one_tprod (x : Fin 1 → M) :
+    of R M (1 : ℕ+) (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
   rw [ofLetter_eq_of_tprod]
-  exact of_tprod_congr R M hn rfl <| Fin.forall_fin_one.2 rfl
+  exact of_tprod_congr R M Nat.one_pos rfl <| Fin.forall_fin_one.2 rfl
 
 /-- A pure tensor word of length two equals the two-letter word on its two entries. -/
 theorem of_two_tprod {hn : 0 < 2} (x : Fin 2 → M) :
@@ -218,6 +219,7 @@ theorem letter_of_tprod {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
 
 /-- Applying `letter ⊗ letter` to the deconcatenation of a pure word of length other than two gives
 zero, because every nontrivial cut leaves a factor of length at least two. -/
+@[simp↓]
 theorem map_letter_letter_deconcatenation_of_ne_two (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2)
     (x : Fin n.val → M) :
     TensorProduct.map (letter R M) (letter R M)
@@ -316,7 +318,7 @@ theorem linearMap_ext_ofLetter_prepend {N : Type*} [AddCommMonoid N] [Module R N
     (h2 : ∀ a w, f (prepend R M a w) = g (prepend R M a w)) : f = g :=
   linearMap_ext R M fun ⟨n, hn⟩ x ↦ by match n with
     | 0 => omega
-    | 1 => rw [of_one_tprod R M, h1]
+    | 1 => dsimp only at x; simp [h1]
     | k + 2 =>
       have hx : of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
           (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) := by
