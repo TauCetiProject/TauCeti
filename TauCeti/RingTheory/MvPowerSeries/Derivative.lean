@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Partial derivatives of multivariate power series: order and the chain rule
@@ -30,6 +33,11 @@ continuous in `f` for the coefficientwise topology, in which polynomials are den
 one-variable case of Mathlib, `PowerSeries.derivative_subst`, substitutes into a one-variable
 series only; here the substituted series may have any number of variables.
 
+When a substitutable family `a` is perturbed by a family `h` whose entries pairwise multiply to
+zero, such as series with coefficients in an ideal of square zero, substitution obeys the
+**first-order Taylor formula** `f ∘ (a + h) = f ∘ a + ∑ᵢ hᵢ · (∂ᵢ f ∘ a)`, extending
+`PowerSeries.subst_add_of_sq_eq_zero` to finitely many variables.
+
 ## Main results
 
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
@@ -42,6 +50,10 @@ series only; here the substituted series may have any number of variables.
 * `MvPowerSeries.WithPiTopology.continuous_pderiv`: a partial derivative is continuous for the
   coefficientwise topology.
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
+* `MvPowerSeries.subst_add_of_mul_eq_zero`, `MvPowerSeries.subst_X_add_of_mul_eq_zero`: the
+  first-order Taylor formula for perturbations whose entries pairwise multiply to zero.
+* `MvPowerSeries.sum_mul_pderiv_subst_eq_zero`: the first-order Taylor correction vanishes when the
+  perturbation and series coefficients lie in ideals whose product is zero.
 * `PowerSeries.pderiv_subst`: the chain rule for substitution of a multivariate power series into
   a one-variable power series.
 -/
@@ -177,6 +189,60 @@ theorem pderiv_subst [CommRing R] [Fintype σ] {a : σ → MvPowerSeries τ R} (
       Derivation.leibniz, smul_eq_mul, subst_add ha] at hp ⊢
     simp [hp, pderiv_X, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum,
       Pi.single_apply, apply_ite (subst a), h0, h1]
+
+open WithPiTopology in
+/-- **The first-order Taylor formula** for multivariate power series: if `a` can be substituted
+and the perturbations `h i` pairwise multiply to zero, then
+`f(a + h) = f(a) + ∑ᵢ hᵢ · (∂ᵢ f)(a)`. -/
+theorem subst_add_of_mul_eq_zero {S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Fintype σ]
+    {a h : σ → MvPowerSeries τ S} (ha : HasSubst a) (hh : ∀ i j, h i * h j = 0)
+    (f : MvPowerSeries σ R) :
+    subst (a + h) f = subst a f + ∑ i, h i * subst a (pderiv i f) := by
+  classical
+  let : UniformSpace R := ⊥; have : DiscreteUniformity R := ⟨rfl⟩
+  let : UniformSpace S := ⊥; have : DiscreteUniformity S := ⟨rfl⟩
+  have hah : HasSubst (a + h) := ha.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])
+  revert f
+  rw [← funext_iff]
+  refine Continuous.ext_on denseRange_toMvPowerSeries (continuous_subst hah)
+    ((continuous_subst ha).add (continuous_finsetSum _ fun i _ ↦
+      continuous_const.mul ((continuous_subst ha).comp (continuous_pderiv i)))) ?_
+  have h0 : subst a (0 : MvPowerSeries σ R) = 0 := by rw [← coe_substAlgHom ha, map_zero]
+  rintro _ ⟨p, rfl⟩
+  induction p using MvPolynomial.induction_on with
+  | C r => dsimp only; rw [subst_coe, subst_coe]; simp [h0]
+  | add p q hp hq =>
+    simp only [MvPolynomial.coe_add, map_add, subst_add hah, subst_add ha] at hp hq ⊢
+    rw [hp, hq]
+    simp only [mul_add, Finset.sum_add_distrib]
+    ring
+  | mul_X p j hp =>
+    have hmul : (∑ i, h i * subst a (pderiv i (p : MvPowerSeries σ R))) * h j = 0 := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_eq_zero fun i _ ↦ by rw [mul_right_comm, hh i j, zero_mul]
+    simp only [MvPolynomial.coe_mul, MvPolynomial.coe_X, subst_mul hah, subst_X hah, Pi.add_apply,
+      subst_mul ha, subst_X ha, Derivation.leibniz, smul_eq_mul, subst_add ha, pderiv_X,
+      Pi.single_apply, apply_ite (subst a), h0, mul_add, mul_ite, mul_one, mul_zero,
+      Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] at hp ⊢
+    rw [hp, add_mul, add_mul, hmul, add_zero, Finset.sum_mul]
+    simp_rw [mul_assoc, mul_comm (subst a (pderiv _ _)) (a j)]
+    ring
+
+/-- **The first-order Taylor formula at `X`**: if the perturbations `h i` pairwise multiply to
+zero, then `f(X + h) = f + ∑ᵢ hᵢ · ∂ᵢ f`. -/
+theorem subst_X_add_of_mul_eq_zero [CommRing R] [Fintype σ] {h : σ → MvPowerSeries σ R}
+    (hh : ∀ i j, h i * h j = 0) (f : MvPowerSeries σ R) :
+    subst (X + h) f = f + ∑ i, h i * pderiv i f := by
+  rw [subst_add_of_mul_eq_zero HasSubst.X hh, subst_self]; simp
+
+/-- If `I * J = ⊥`, every perturbation `δ i` has coefficients in `I`, and `Δ` has coefficients in
+`J`, then the first-order Taylor correction `∑ i, δ i * (pderiv i Δ).subst a` vanishes. -/
+theorem sum_mul_pderiv_subst_eq_zero [CommRing R] [Fintype σ] {I J : Ideal R} (hIJ : I * J = ⊥)
+    {a δ : σ → MvPowerSeries τ R} (ha : HasSubst a) (hδI : ∀ i d, coeff d (δ i) ∈ I)
+    {Δ : MvPowerSeries σ R} (hΔJ : ∀ d, coeff d Δ ∈ J) :
+    ∑ i, δ i * (pderiv i Δ).subst a = 0 :=
+  Finset.sum_eq_zero fun i _ ↦ mul_eq_zero_of_coeff_mem hIJ (hδI i) fun d ↦
+    coeff_subst_mem_of_coeff_mem ha (coeff_pderiv_mem hΔJ i) d
 
 end MvPowerSeries
 
