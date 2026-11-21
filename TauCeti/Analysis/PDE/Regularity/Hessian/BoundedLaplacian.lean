@@ -163,7 +163,7 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
       rw [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hck)]
       nlinarith [norm_nonneg x]
     simp [hψ_def, hφ0 _ this]
-  · rw [laplacian_sum hψ2]
+  · rw [laplacian_sum fun k hk ↦ (hψ2 k hk).contDiffAt]
     simp only [hψ_def, laplacian_smul_comp_smul hφ2 (hc0 _)]
     exact abs_sum_comp_four_pow_smul_le hΔφ hM0 hM _ x
   · calc |∑ k ∈ range N, ψ k x| ≤ ∑ k ∈ range N, |ψ k x| := Finset.abs_sum_le_sum_abs _ _
@@ -171,8 +171,10 @@ private theorem exists_lacunary_sum {φ : V → ℝ} (hφ : ContDiff ℝ ∞ φ)
           simp only [hψ_def, Pi.smul_apply, smul_eq_mul, abs_mul]
           refine mul_le_mul ?_ (hP _) (abs_nonneg _) (by positivity)
           -- `16⁻ᵏ ≤ 2⁻ᵏ`.
-          rw [abs_of_pos (by positivity), ← pow_mul, mul_comm, pow_mul, ← inv_pow]
-          exact pow_le_pow_left₀ (by positivity) (by norm_num) k
+          rw [abs_of_pos (by positivity), one_div, inv_pow]
+          gcongr
+          calc (2 : ℝ) ^ k ≤ 4 ^ k := by gcongr; norm_num
+            _ ≤ (4 ^ k) ^ 2 := le_self_pow₀ (one_le_pow₀ (by norm_num)) two_ne_zero
       _ = (∑ k ∈ range N, (1 / 2 : ℝ) ^ k) * P := by rw [Finset.sum_mul]
       _ ≤ 2 * P := mul_le_mul_of_nonneg_right (sum_geometric_two_le N)
           ((abs_nonneg _).trans (hP 0))
@@ -271,10 +273,9 @@ theorem not_exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_add_eLpNorm_t
   have h0 : ‖iteratedFDeriv ℝ 2 u 0‖ₑ ≤ eLpNorm (iteratedFDeriv ℝ 2 u) ∞ volume :=
     (hu2.continuous_iteratedFDeriv le_rfl).continuousAt.eNorm_le_eLpNorm_top
   have h := h0.trans ((hC u hu huc).trans (mul_le_mul_right (add_le_add hΔ' hb') _))
-  rw [← ofReal_norm, one_add_one_eq_two, mul_comm, ← ENNReal.ofReal_ofNat,
-    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by norm_num),
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at h
-  exact (lt_irrefl _ (hlt.trans_le h))
+  have h' : ‖iteratedFDeriv ℝ 2 u 0‖ ≤ C * 2 := by
+    simpa [one_add_one_eq_two] using ENNReal.toReal_mono (by finiteness) h
+  linarith
 
 /-- **The Calderón–Zygmund estimate fails at `p = ∞`.** In dimension at least two there is no
 constant `C` with `‖D²u‖_{L^∞} ≤ C ‖Δu‖_{L^∞}` for all real Schwartz functions `u`, in contrast to

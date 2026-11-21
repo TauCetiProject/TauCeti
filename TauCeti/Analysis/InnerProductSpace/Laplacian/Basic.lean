@@ -164,12 +164,12 @@ theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
 
-/-- The Laplacian of a finite sum of `C²` functions is the sum of their Laplacians. -/
-theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F}
-    (hf : ∀ i ∈ s, ContDiff ℝ 2 (f i)) (x : E) :
+/-- The Laplacian at `x` of a finite sum of functions that are `C²` at `x` is the sum of their
+Laplacians. -/
+theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
     Δ (fun y ↦ ∑ i ∈ s, f i y) x = ∑ i ∈ s, Δ (f i) x := by
-  simp only [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_sum hf, Finset.sum_apply,
-    map_sum]
+  simp only [laplacian_eq_traceL_iteratedFDeriv, iteratedFDeriv_fun_sum_apply hf, map_sum]
 
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
