@@ -36,10 +36,10 @@ facts about it used below.
 * `Sym.isOpenMap_ofFn`, `Sym.isClosedMap_ofFn` and
   `Sym.isOpenQuotientMap_ofFn`: the quotient map is open and closed, the permutation group
   being finite.
-* `Sym.continuous_map`, `Sym.isOpenMap_map` and
-  `Sym.isOpenEmbedding_map`: the `n`-th symmetric power of a continuous, open, or open
-  embedding map is again one; in particular the symmetric power of an open subspace is an open
-  subspace of the symmetric power.
+* `Sym.continuous_map`, `Sym.isOpenMap_map`, `Sym.isEmbedding_map` and
+  `Sym.isOpenEmbedding_map`: taking symmetric powers preserves continuity, openness and
+  embeddings. In particular the symmetric power of an open subspace is an open subspace of
+  the symmetric power.
 * `Sym.isOpen_setOf_forall_mem`: the tuples with all their points in an open set form an
   open set.
 * `Sym.continuous_append` and `Sym.isOpenMap_append`: concatenation of symmetric
@@ -136,6 +136,19 @@ theorem isOpenEmbedding_map {f : α → β} (hf : IsOpenEmbedding f) :
     IsOpenEmbedding (Sym.map f : Sym α n → Sym β n) :=
   .of_continuous_injective_isOpenMap (continuous_map hf.continuous)
     (Sym.map_injective hf.injective n) (isOpenMap_map hf.isOpenMap)
+
+/-- Taking the `n`-th symmetric power preserves topological embeddings, even when the original
+map is not open. -/
+theorem isEmbedding_map {f : α → β} (hf : IsEmbedding f) :
+    IsEmbedding (Sym.map f : Sym α n → Sym β n) := by
+  refine isEmbedding_of_isOpenQuotientMap_of_isInducing _ _ _ _ (map_comp_ofFn f)
+    (IsInducing.piMap fun _ : Fin n ↦ hf.isInducing) isQuotientMap_ofFn
+    isOpenQuotientMap_ofFn (Sym.map_injective hf.injective n) ?_
+  -- Membership in the range of the coordinatewise map is invariant under reordering.
+  rw [preimage_image_ofFn, Set.iUnion_subset_iff]
+  intro σ y hy
+  simp only [Set.mem_preimage, Set.range_piMap, Set.mem_univ_pi, Function.comp_apply] at hy ⊢
+  exact fun i ↦ by simpa only [σ.apply_symm_apply] using hy (σ.symm i)
 
 /-- The unordered tuples all of whose points lie in an open set form an open subset of the
 symmetric power: the range of the symmetric power of the inclusion of that open set. -/
