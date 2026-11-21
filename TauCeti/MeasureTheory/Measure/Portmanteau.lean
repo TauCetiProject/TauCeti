@@ -25,11 +25,15 @@ Weak convergence of finite measures also implies convergence of their masses on 
 null boundary, including when the limit measure is zero. This extends the probability-measure
 portmanteau API and is useful when localizing locally finite measures.
 
+Finally, this file provides arbitrary-filter versions of the open-set (`(O) ⇒ (T)`) and bounded
+Lipschitz (`(T) ⇔ (Lip)`) portmanteau criteria for `MeasureTheory.ProbabilityMeasure`, removing the
+`Filter.IsCountablyGenerated` hypothesis of Mathlib's versions via finite Riemann-sum
+approximations of nonnegative bounded continuous functions.
+
 ## Main statements
 
 * `MeasureTheory.FiniteMeasure.tendsto_measure_of_null_frontier_of_tendsto` — weak convergence
   of finite measures implies convergence on every continuity set of the limit measure.
-
 * `MeasureTheory.Measure.exists_forall_null_frontier_thickening` — for countably many sets, some
   radius in any nonempty open interval gives thickenings whose boundaries are all null.
 * `MeasureTheory.Measure.exists_partition_null_frontier_small_last` — a finite measure on a
@@ -40,6 +44,23 @@ portmanteau API and is useful when localizing locally finite measures.
 * `MeasureTheory.ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto` — along a weakly
   convergent family of probability measures, the mass outside some ball about a basepoint is
   eventually at most any prescribed `ε > 0`.
+* `MeasureTheory.ProbabilityMeasure.tendsto_of_forall_isOpen_le_liminf` — open-set portmanteau
+  implication `(O) ⇒ (T)` along an arbitrary filter, without countable generation.
+* `MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto` — bounded
+  Lipschitz portmanteau characterization `(T) ⇔ (Lip)` along an arbitrary filter, without countable
+  generation.
+
+## Source
+
+* `MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto` is adapted from
+  Mathlib's proof of `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`
+  (`Mathlib/MeasureTheory/Measure/Portmanteau.lean`), replacing the countably generated closed-set
+  portmanteau step with the arbitrary-filter finite Riemann-sum `(O) ⇒ (T)` argument in
+  `MeasureTheory.ProbabilityMeasure.tendsto_of_forall_isOpen_le_liminf`.
+
+## References
+
+* P. Billingsley, *Convergence of Probability Measures*, 2nd ed., Wiley, 1999, Theorem 2.1.
 -/
 
 public section
@@ -248,5 +269,189 @@ theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
     _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
       integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
         (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
+
+end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory.ProbabilityMeasure
+
+/-- Pointwise Riemann-sum sandwich for `y ∈ [0, k * a]` with step size `a > 0`. -/
+private theorem mul_card_filter_range_bounds {k : ℕ} {a y : ℝ} (ha : 0 < a) (hy0 : 0 ≤ y)
+    (hyk : y ≤ k * a) :
+    y ≤ a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ∧
+      a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y).card : ℝ) ≤ y + a := by
+  have hceil : ⌈y / a⌉₊ ≤ k := Nat.ceil_le.2 ((div_le_iff₀ ha).2 hyk)
+  have hfilter : ((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < y) = Finset.range ⌈y / a⌉₊ := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_range, ← lt_div_iff₀ ha, ← Nat.lt_ceil]
+    exact ⟨fun ⟨_, hj⟩ ↦ hj, fun hj ↦ ⟨hj.trans_le hceil, hj⟩⟩
+  rw [hfilter, Finset.card_range]
+  refine ⟨(div_le_iff₀' ha).1 (Nat.le_ceil _), ?_⟩
+  have hlt := mul_lt_mul_of_pos_left (Nat.ceil_lt_add_one (div_nonneg hy0 ha.le)) ha
+  rw [mul_add, mul_div_cancel₀ _ ha.ne', mul_one] at hlt
+  exact hlt.le
+
+/-- Finite layer-cake approximation of the integral of a nonnegative bounded continuous function by
+a Riemann sum of open superlevel-set probabilities. -/
+private theorem integral_bounds_mul_sum_measureReal_gt
+    {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+    (ν : Measure X) [IsProbabilityMeasure ν] (f : BoundedContinuousFunction X ℝ) (hf : 0 ≤ f)
+    {k : ℕ} {a : ℝ} (ha : 0 < a) (hka : ∀ x, f x ≤ k * a) :
+    ∫ x, f x ∂ν ≤ a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ∧
+      a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ≤ (∫ x, f x ∂ν) + a := by
+  classical
+  let g : X → ℝ := fun x ↦
+    a * ∑ j ∈ Finset.range k, ({x | (j : ℝ) * a < f x}.indicator (fun _ ↦ (1 : ℝ)) x)
+  have hgx (x : X) :
+      g x = a * (((Finset.range k).filter fun j : ℕ ↦ (j : ℝ) * a < f x).card : ℝ) := by
+    simp only [g, Set.indicator_apply, Set.mem_ofPred_eq, Finset.sum_boole]
+  have hU (j : ℕ) : IsOpen {x | (j : ℝ) * a < f x} := isOpen_lt continuous_const f.continuous
+  have hind (j : ℕ) : Integrable ({x | (j : ℝ) * a < f x}.indicator (fun _ ↦ (1 : ℝ))) ν :=
+    (integrable_indicator_iff (hU j).measurableSet).2 (integrable_const _).integrableOn
+  have hg_int : Integrable g ν := (integrable_finsetSum _ fun j _ ↦ hind j).const_mul a
+  have hg_eq : ∫ x, g x ∂ν = a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} := by
+    simp only [g, integral_const_mul]
+    rw [integral_finsetSum _ fun j _ ↦ hind j]
+    congr 1
+    exact Finset.sum_congr rfl fun j _ ↦ integral_indicator_one (hU j).measurableSet
+  rw [← hg_eq]
+  refine ⟨integral_mono (f.integrable ν) hg_int fun x ↦ ?_, ?_⟩
+  · rw [hgx]
+    exact (mul_card_filter_range_bounds ha (hf x) (hka x)).1
+  · have hadd : ∫ x, (f x + a) ∂ν = (∫ x, f x ∂ν) + a := by
+      rw [integral_add (f.integrable ν) (integrable_const a), integral_const]
+      simp
+    rw [← hadd]
+    exact integral_mono hg_int ((f.integrable ν).add (integrable_const a)) fun x ↦ by
+      rw [hgx]
+      exact (mul_card_filter_range_bounds ha (hf x) (hka x)).2
+
+/-- Unpack a `liminf` lower bound for `ProbabilityMeasure` into an eventual real-valued bound. -/
+private theorem eventually_measureReal_sub_lt_of_le_liminf
+    {X ι : Type*} [MeasurableSpace X]
+    {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
+    {U : Set X} (hU : μ U ≤ L.liminf (fun i ↦ μs i U)) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ i in L, (μ : Measure X).real U - δ < (μs i : Measure X).real U := by
+  have hU' : (μ U : ℝ) ≤ L.liminf (fun i ↦ (μs i U : ℝ)) := by
+    rw [NNReal.toReal_liminf]
+    exact NNReal.coe_le_coe.2 hU
+  simpa only [measureReal_eq_coe_coeFn] using Filter.eventually_lt_of_lt_liminf
+    ((sub_lt_self _ hδ).trans_le hU') (isBoundedUnder_of ⟨0, fun _ ↦ NNReal.coe_nonneg _⟩)
+
+/-- **Portmanteau `(O) ⇒ (T)` for an arbitrary filter.** If `μ U ≤ liminf (μs · U)` along an
+arbitrary filter `L` for every open set `U`, then `μs` converges weakly to `μ`. Unlike Mathlib's
+`MeasureTheory.tendsto_of_forall_isOpen_le_liminf`, no countable-generation assumption on `L` is
+required; the proof replaces Fatou's lemma along sequences with finite Riemann-sum approximations of
+nonnegative bounded continuous functions. -/
+theorem tendsto_of_forall_isOpen_le_liminf
+    {X ι : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+    {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
+    (hopen : ∀ U : Set X, IsOpen U → μ U ≤ L.liminf (fun i ↦ μs i U)) :
+    Tendsto μs L (𝓝 μ) := by
+  rcases L.eq_or_neBot with rfl | _
+  · simp
+  refine ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 ?_
+  refine BoundedContinuousFunction.tendsto_integral_of_forall_integral_le_liminf_integral
+    fun f hf ↦ ?_
+  have hbd_above : IsBoundedUnder (· ≤ ·) L (fun i ↦ ∫ x, f x ∂(μs i : Measure X)) :=
+    BddAbove.isBoundedUnder L.univ_mem <| by
+      simpa using (BoundedContinuousFunction.isBounded_range_integral
+        (fun i ↦ (μs i : Measure X)) f).bddAbove
+  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+  set M : ℝ := ‖f‖ + 1
+  have hM : 0 < M := by positivity
+  obtain ⟨m, hm⟩ := exists_nat_gt (2 * M / ε)
+  set k : ℕ := m + 1
+  have hk_pos : (0 : ℝ) < k := Nat.cast_pos.2 (Nat.succ_pos m)
+  set a : ℝ := M / k
+  have ha : 0 < a := by positivity
+  have ha_lt : a < ε / 2 := by
+    rw [show a = M / (k : ℝ) from rfl, div_lt_iff₀ hk_pos]
+    nlinarith [(div_lt_iff₀ hε).1 hm, show (m : ℝ) < k from Nat.cast_lt.2 (Nat.lt_succ_self m)]
+  have hka (x : X) : f x ≤ k * a := by
+    rw [show (k : ℝ) * a = M from mul_div_cancel₀ M hk_pos.ne']
+    linarith [le_trans (le_abs_self _) (f.norm_coe_le_norm x)]
+  have hev : ∀ᶠ i in L, ∀ j ∈ Finset.range k,
+      (μ : Measure X).real {x | (j : ℝ) * a < f x} - ε / (2 * M) <
+        (μs i : Measure X).real {x | (j : ℝ) * a < f x} :=
+    (Filter.eventually_all_finset (Finset.range k)).2 fun j _ ↦
+      eventually_measureReal_sub_lt_of_le_liminf
+        (hopen _ (isOpen_lt continuous_const f.continuous)) (by positivity)
+  have hev_int : ∀ᶠ i in L, ∫ x, f x ∂(μ : Measure X) - ε ≤ ∫ x, f x ∂(μs i : Measure X) := by
+    filter_upwards [hev] with i hi
+    have hμ_le := (integral_bounds_mul_sum_measureReal_gt (μ : Measure X) f hf ha hka).1
+    have hμi_ge := (integral_bounds_mul_sum_measureReal_gt (μs i : Measure X) f hf ha hka).2
+    have hsum : ∑ j ∈ Finset.range k,
+        ((μ : Measure X).real {x | (j : ℝ) * a < f x} - ε / (2 * M)) ≤
+        ∑ j ∈ Finset.range k, (μs i : Measure X).real {x | (j : ℝ) * a < f x} :=
+      Finset.sum_le_sum fun j hj ↦ (hi j hj).le
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul] at hsum
+    have hmul := mul_le_mul_of_nonneg_left hsum ha.le
+    have hcancel : a * ((k : ℝ) * (ε / (2 * M))) = ε / 2 := by dsimp [a]; field_simp
+    linarith
+  linarith [Filter.le_liminf_of_le hbd_above.isCobounded_ge hev_int]
+
+/-- **Portmanteau `(T) ⇔ (Lip)` for an arbitrary filter.** Weak convergence of probability measures
+along an arbitrary filter `L` on a pseudo-emetric space with opens-measurable structure is
+equivalent to convergence of integrals of all bounded Lipschitz functions. Adapted from Mathlib's
+proof of `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`, replacing the countably
+generated closed-set criterion with `tendsto_of_forall_isOpen_le_liminf`. -/
+theorem tendsto_iff_forall_lipschitz_integral_tendsto
+    {X ι : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {L : Filter ι} {μs : ι → ProbabilityMeasure X} {μ : ProbabilityMeasure X} :
+    Tendsto μs L (𝓝 μ) ↔
+      ∀ F : X → ℝ, (∃ M, ∀ x y, dist (F x) (F y) ≤ M) → (∃ K, LipschitzWith K F) →
+        Tendsto (fun i ↦ ∫ x, F x ∂(μs i : Measure X)) L (𝓝 (∫ x, F x ∂(μ : Measure X))) := by
+  constructor
+  · intro h F hF_bd hF_lip
+    let F' : BoundedContinuousFunction X ℝ :=
+      { toFun := F
+        continuous_toFun := hF_lip.choose_spec.continuous
+        map_bounded' := hF_bd }
+    simpa [F'] using ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 h F'
+  intro h
+  rcases L.eq_or_neBot with rfl | _
+  · simp
+  have hclosed_real (s : Set X) (hs : IsClosed s) :
+      L.limsup (fun i ↦ (μs i : Measure X).real s) ≤ (μ : Measure X).real s := by
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    let fs : ℕ → BoundedContinuousFunction X ℝ≥0 := fun n ↦
+      thickenedIndicator (δ := (1 : ℝ) / (n + 1)) (by positivity) s
+    have key₁ : Tendsto (fun n ↦ ∫ x, (fs n x : ℝ) ∂(μ : Measure X)) atTop
+        (𝓝 ((μ : Measure X).real s)) :=
+      tendsto_integral_thickenedIndicator_of_isClosed (μ : Measure X) hs
+        (δs := fun n ↦ (1 : ℝ) / (n + 1)) (fun _ ↦ by positivity)
+        tendsto_one_div_add_atTop_nhds_zero_nat
+    obtain ⟨M, hM⟩ := eventually_atTop.1
+      (key₁.eventually_lt_const (lt_add_of_pos_right _ (half_pos hε)))
+    have hbd : ∃ C, ∀ x y, dist (fs M x : ℝ) (fs M y : ℝ) ≤ C := ⟨1, fun x y ↦ by
+      rw [Real.dist_eq, abs_le]
+      have h1 (z : X) : (fs M z : ℝ) ≤ 1 := thickenedIndicator_le_one _ _ _
+      have h2 (z : X) : 0 ≤ (fs M z : ℝ) := (fs M z).coe_nonneg
+      constructor <;> linarith [h1 x, h1 y, h2 x, h2 y]⟩
+    have hlip : ∃ K, LipschitzWith K (fun x ↦ (fs M x : ℝ)) :=
+      ⟨_, lipschitzWith_thickenedIndicator (δ := (1 : ℝ) / (M + 1)) (by positivity) s⟩
+    have ev_near : ∀ᶠ i in L,
+        (μs i : Measure X).real s ≤ (∫ x, (fs M x : ℝ) ∂(μ : Measure X)) + ε / 2 := by
+      refine ((h (fun x ↦ (fs M x : ℝ)) hbd hlip).eventually_lt_const
+        (lt_add_of_pos_right _ (half_pos hε))).mono fun i hi ↦ le_trans ?_ hi.le
+      have hle := ENNReal.toReal_mono ((fs M).lintegral_lt_top_of_nnreal _).ne
+        (measure_le_lintegral_thickenedIndicator (μs i : Measure X) hs.measurableSet
+          (by positivity : (0 : ℝ) < 1 / (M + 1)))
+      rwa [BoundedContinuousFunction.toReal_lintegral_coe_eq_integral] at hle
+    exact (Filter.limsup_le_of_le (isCoboundedUnder_le_of_le L (x := 0) (by simp)) ev_near).trans
+      (by linarith [hM M le_rfl])
+  have hclosed : ∀ s : Set X, IsClosed s →
+      L.limsup (fun i ↦ (μs i : Measure X) s) ≤ (μ : Measure X) s := fun s hs ↦ by
+    have hle := ENNReal.ofReal_le_ofReal (hclosed_real s hs)
+    simp only [measureReal_def] at hle
+    rwa [ENNReal.ofReal_limsup_toReal (C := 1) (Eventually.of_forall fun _ ↦ prob_le_one),
+      ENNReal.ofReal_toReal (measure_ne_top _ _)] at hle
+  have hopen := limsup_measure_closed_le_iff_liminf_measure_open_ge.mp hclosed
+  refine tendsto_of_forall_isOpen_le_liminf fun U hU ↦ ENNReal.coe_le_coe.1 ?_
+  have aux : ENNReal.ofNNReal (L.liminf fun i ↦ μs i U) =
+      L.liminf (ENNReal.ofNNReal ∘ fun i ↦ μs i U) :=
+    Monotone.map_liminf_of_continuousAt ENNReal.coe_mono (μs · U) (by fun_prop)
+      (isBoundedUnder_of ⟨1, fun _ ↦ apply_le_one _ _⟩).isCoboundedUnder_ge ⟨0, by simp⟩
+  simpa only [aux, Function.comp_def, ennreal_coeFn_eq_coeFn_toMeasure] using hopen U hU
 
 end MeasureTheory.ProbabilityMeasure

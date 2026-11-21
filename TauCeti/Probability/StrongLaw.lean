@@ -11,7 +11,7 @@ public import Mathlib.Probability.Independence.InfinitePi
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import TauCeti.Probability.Independence.InfinitePi
+import TauCeti.Probability.Independence.IID
 
 /-!
 # Strong laws of large numbers
@@ -44,19 +44,11 @@ all diverging thresholds; this is useful for removing large entries by rank boun
 
 ## Implementation
 
-Independence and identical distribution of the coordinates are
-`TauCeti.Probability.iIndepFun_eval_infinitePi` and
-`MeasureTheory.Measure.identDistrib_eval_infinitePi`. Nothing is reproved about product measures.
-
-The strong law itself is then Mathlib's, applied to `x ↦ f (x i)`: the three hypotheses come from
-those coordinate facts and from `measurePreserving_eval_infinitePi`, which transports
-integrability and identifies the limit `𝔼[f ∘ eval 0]` with `∫ f dQ`.
-
-`f` need only be almost-everywhere strongly measurable, as `Integrable f Q` gives: since every
-coordinate has law `Q`, `f` is almost-everywhere measurable for each coordinate's law, which is
-what `IdentDistrib.comp_of_aemeasurable` and `iIndepFun.comp₀` need to transfer identical
-distribution and independence to the summands. The measurable tagged form below still assumes `f`
-measurable, as measurability of its convergence event requires.
+`strong_law_ae_infinitePi` specializes `TauCeti.ae_tendsto_sampleMean_of_iid` to the canonical
+i.i.d. coordinate family `TauCeti.isIndependentIdenticallyDistributed_eval_infinitePi` on
+`Measure.infinitePi fun _ : ℕ => Q`. Nothing is reproved about product measures, and `f` need only
+be almost-everywhere strongly measurable, as `Integrable f Q` gives. The measurable tagged form
+below still assumes `f` measurable, as measurability of its convergence event requires.
 
 The measurable tagged form packages the same theorem for integration over a random law. This is
 general probability theory with no exchangeability in its statements. It is used by the conditional
@@ -93,36 +85,15 @@ variable {α : Type*} [MeasurableSpace α] {E : Type*} [NormedAddCommGroup E] [N
 against `Q`, the averages of `f` along the coordinates of `Q^{⊗ℕ}` converge almost
 everywhere to `∫ f dQ`.
 
-This is Mathlib's `ProbabilityTheory.strong_law_ae` for the coordinate process of a countable
+This specializes `TauCeti.ae_tendsto_sampleMean_of_iid` to the coordinate process of a countable
 power; it is the form in which a statement about *some* i.i.d. sequence becomes a statement about
 the product measure itself, and so can be integrated over a mixing law. -/
 theorem strong_law_ae_infinitePi (Q : Measure α) [IsProbabilityMeasure Q] {f : α → E}
     (hint : Integrable f Q) :
     ∀ᵐ x ∂(Measure.infinitePi fun _ : ℕ => Q),
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, f (x i)) atTop
-        (𝓝 (∫ y, f y ∂Q)) := by
-  set P : Measure (ℕ → α) := Measure.infinitePi fun _ : ℕ => Q
-  -- Every coordinate is measure preserving onto `Q`; integrability, identical distribution and the
-  -- value of the limit all come from that one fact.
-  have heval : ∀ i : ℕ, MeasurePreserving (fun x : ℕ → α => x i) P Q := fun i =>
-    measurePreserving_eval_infinitePi (fun _ : ℕ => Q) i
-  have hf : ∀ i : ℕ, AEMeasurable f (P.map fun x : ℕ → α => x i) := fun i => by
-    rw [(heval i).map_eq]
-    exact hint.1.aemeasurable
-  have hident : ∀ i : ℕ,
-      IdentDistrib (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x 0)) P P := fun i =>
-    (Q.identDistrib_eval_infinitePi i 0).comp_of_aemeasurable (hf i)
-  have hindep : ∀ i j : ℕ, i ≠ j →
-      IndepFun (fun x : ℕ → α => f (x i)) (fun x : ℕ → α => f (x j)) P :=
-    fun _ _ hij =>
-      ((iIndepFun_eval_infinitePi _).comp₀ (fun _ => f)
-        (fun i => (measurable_pi_apply i).aemeasurable) hf).indepFun hij
-  have hlimit : ∫ x, f (x 0) ∂P = ∫ y, f y ∂Q := by
-    rw [← (heval 0).map_eq, integral_map (measurable_pi_apply 0).aemeasurable
-      (by rw [(heval 0).map_eq]; exact hint.1)]
-  simpa only [hlimit] using
-    strong_law_ae (fun i (x : ℕ → α) => f (x i)) (((heval 0).integrable_comp hint.1).2 hint)
-      hindep hident
+        (𝓝 (∫ y, f y ∂Q)) :=
+  ae_tendsto_sampleMean_of_iid (isIndependentIdenticallyDistributed_eval_infinitePi Q) hint
 
 variable [SecondCountableTopology E]
 

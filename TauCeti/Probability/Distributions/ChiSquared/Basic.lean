@@ -43,8 +43,10 @@ formulas rather than a density.
 ## Main results
 
 * `TauCeti.Probability.chiSquaredMeasure_eq_gammaMeasure` — the bridge to the gamma law;
-* `TauCeti.Probability.isProbabilityMeasure_chiSquaredMeasure` — it is a probability measure for
-  every `0 ≤ k`, the boundary `k = 0` included;
+* `TauCeti.Probability.isProbabilityMeasure_chiSquaredMeasure` and
+  `TauCeti.Probability.isProbabilityMeasure_chiSquaredMeasure_nat` — it is a probability measure
+  for every `0 ≤ k` (the boundary `k = 0` included), with an instance for natural degrees of
+  freedom;
 * `TauCeti.Probability.chiSquaredMeasure_eq_withDensity`,
   `TauCeti.Probability.hasPDF_of_hasLaw_chiSquaredMeasure` and
   `TauCeti.Probability.rnDeriv_chiSquaredMeasure` — the density, as a `withDensity`
@@ -229,6 +231,11 @@ theorem isProbabilityMeasure_chiSquaredMeasure (hk : 0 ≤ k) :
     infer_instance
   · rw [chiSquaredMeasure_eq_gammaMeasure h]
     exact isProbabilityMeasure_gammaMeasure (by positivity) one_half_pos
+
+/-- The chi-squared law with a natural number of degrees of freedom is a probability measure. -/
+instance isProbabilityMeasure_chiSquaredMeasure_nat (k : ℕ) :
+    IsProbabilityMeasure (chiSquaredMeasure (k : ℝ)) :=
+  isProbabilityMeasure_chiSquaredMeasure (Nat.cast_nonneg k)
 
 /-- A chi-squared law of positive degree has no atoms. -/
 theorem nullSingletonClass_chiSquaredMeasure {k : ℝ} (hk : 0 < k) :
