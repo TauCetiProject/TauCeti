@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
+public import TauCeti.Analysis.Convex.Sequence.Asymptotic
 public import TauCeti.Analysis.Convex.Sequence.Face
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
 public import TauCeti.NumberTheory.Padics.LogGauge
@@ -72,60 +73,9 @@ indices, not from the shape of the polygon.
 
 public section
 
-open Filter Topology _root_.PowerSeries TauCeti TauCeti.PowerSeries
+open Filter Topology LinearGrowth _root_.PowerSeries TauCeti TauCeti.PowerSeries
 
 namespace TauCeti.NewtonPolygonBoundaryZeroExample
-
-/-! ### The horizontal-ray envelope -/
-
-/-- A height sequence that is nonnegative, vanishes at `0`, and has height at most `M` at every
-square `M ^ 2` with `M ≥ 2` has the identically zero sequence as its lower convex envelope: a
-convex minorant starting at height at most `0` with a positive height somewhere would grow
-linearly, faster than `√n`. -/
-private theorem isLowerConvexEnvelope_zero {a : ℕ → WithTop ℝ} (h0 : a 0 = 0)
-    (hnonneg : ∀ n, 0 ≤ a n) (hsq : ∀ M : ℕ, 2 ≤ M → a (M ^ 2) ≤ ((M : ℝ) : WithTop ℝ)) :
-    IsLowerConvexEnvelope a 0 := by
-  refine ⟨by simpa [Pi.zero_def] using isConvexSeq_affine 0 0, fun n ↦ hnonneg n,
-    fun g hg hga n ↦ ?_⟩
-  rw [Pi.zero_apply]
-  -- The minorant is finite at `0` and at every square `M ^ 2` with `M ≥ 2`, hence everywhere,
-  -- with heights at most `0` at `0` and at most `M` at `M ^ 2`.
-  have hg0 : g 0 ≠ ⊤ := ne_top_of_le_ne_top (by rw [h0]; exact WithTop.zero_ne_top) (hga 0)
-  have hg0le : (g 0).untop₀ ≤ 0 := by
-    have h := hga 0
-    rwa [h0, ← WithTop.coe_untop₀_of_ne_top hg0, ← WithTop.coe_zero, WithTop.coe_le_coe] at h
-  have hgM {M : ℕ} (hM : 2 ≤ M) : g (M ^ 2) ≠ ⊤ :=
-    ne_top_of_le_ne_top WithTop.coe_ne_top ((hga _).trans (hsq M hM))
-  have hgMle {M : ℕ} (hM : 2 ≤ M) : (g (M ^ 2)).untop₀ ≤ M := by
-    have h := (hga _).trans (hsq M hM)
-    rwa [← WithTop.coe_untop₀_of_ne_top (hgM hM), WithTop.coe_le_coe] at h
-  have hsq_le {M : ℕ} (hM : n + 2 ≤ M) : n ≤ M ^ 2 :=
-    (by omega : n ≤ M).trans (Nat.le_self_pow two_ne_zero M)
-  have hgn : g n ≠ ⊤ :=
-    hg.ne_top_of_le_of_le hg0 (hgM (by omega : 2 ≤ n + 2)) (Nat.zero_le n) (hsq_le le_rfl)
-  by_contra hlt
-  rw [not_le, ← WithTop.coe_untop₀_of_ne_top hgn, ← WithTop.coe_zero, WithTop.coe_lt_coe] at hlt
-  -- Choose `M ≥ n + 2` with `M * g n > n`.
-  set t := (g n).untop₀
-  set M := n + ⌈(n : ℝ) / t⌉₊ + 2
-  have hM2 : 2 ≤ M := by omega
-  have hMt : (n : ℝ) < M * t := by
-    have hceil := Nat.le_ceil ((n : ℝ) / t)
-    rw [div_le_iff₀ hlt] at hceil
-    simp only [M]
-    push_cast
-    nlinarith
-  -- The chord from `0` to `M ^ 2` through `n` forces `M ^ 2 * g n ≤ n * M`, so `M * g n ≤ n`.
-  have hchord := hg.chord_inequality hg0 (hgM hM2) (Nat.zero_le n) (hsq_le (by omega))
-  push_cast at hchord
-  have hM : (0 : ℝ) < M := by exact_mod_cast (show 0 < M by omega)
-  have hnM : (n : ℝ) ≤ (M : ℝ) ^ 2 := by exact_mod_cast hsq_le (by omega)
-  have h1 : ((M : ℝ) ^ 2 - n) * (g 0).untop₀ ≤ 0 :=
-    mul_nonpos_of_nonneg_of_nonpos (by linarith) hg0le
-  have h2 : (n : ℝ) * (g (M ^ 2)).untop₀ ≤ n * M :=
-    mul_le_mul_of_nonneg_left (hgMle hM2) (Nat.cast_nonneg n)
-  have h3 : 0 < (M : ℝ) * (M * t - n) := mul_pos hM (by linarith)
-  nlinarith
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -200,17 +150,36 @@ private theorem padicRealValuation_coeff_sq_ceilSqrtSeries (M : ℕ) :
   rw [padicRealValuation_coeff_ceilSqrtSeries, Nat.cast_pow, Real.sqrt_sq (Nat.cast_nonneg M),
     Nat.ceil_natCast]
 
+/-- The coefficient heights `⌈√n⌉` of `ceilSqrtSeries p` have lower linear growth at most `0`:
+at each square index `M ^ 2` the height is only `M`. -/
+private theorem linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos :
+    linearGrowthInf (fun n ↦ (padicRealValuation p (coeff n (ceilSqrtSeries p))).toEReal) ≤ 0 := by
+  refine linearGrowthInf_le_iff.mpr fun b hb ↦ frequently_atTop.mpr fun N ↦ ?_
+  obtain ⟨ε, hε, hεb⟩ := EReal.exists_between_coe_real hb
+  have hε : 0 < ε := EReal.coe_pos.mp hε
+  set M := N + ⌈ε⁻¹⌉₊ + 1
+  have hεM : 1 ≤ ε * M := by
+    have h := Nat.le_ceil ε⁻¹
+    rw [inv_le_iff_one_le_mul₀' hε] at h
+    exact h.trans (mul_le_mul_of_nonneg_left (by simp [M]; linarith) hε.le)
+  refine ⟨M ^ 2, (by omega : N ≤ M).trans (Nat.le_self_pow two_ne_zero M), ?_⟩
+  rw [padicRealValuation_coeff_sq_ceilSqrtSeries, WithTop.toEReal_coe]
+  calc ((M : ℝ) : EReal) ≤ ((ε * ((M ^ 2 : ℕ) : ℝ) : ℝ) : EReal) :=
+        EReal.coe_le_coe_iff.mpr (by push_cast; nlinarith [(Nat.cast_nonneg M : (0 : ℝ) ≤ M)])
+    _ = (ε : EReal) * ((M ^ 2 : ℕ) : EReal) := by rw [EReal.coe_mul, EReal.coe_natCast]
+    _ ≤ b * ((M ^ 2 : ℕ) : EReal) := by gcongr
+
 /-- **The Newton polygon of `1 + ∑_{n ≥ 1} p ^ ⌈√n⌉ Xⁿ` is a horizontal ray.** Its heights are
 identically `0`, although no coefficient after the constant one lies on the ray. -/
 theorem newtonPolygon_ceilSqrtSeries :
     (ceilSqrtSeries p).newtonPolygon (padicRealValuation p) = 0 := by
   have h :
       IsLowerConvexEnvelope (fun n ↦ padicRealValuation p (coeff n (ceilSqrtSeries p))) 0 := by
-    refine isLowerConvexEnvelope_zero ?_ (fun n ↦ ?_) fun M _ ↦
-      (padicRealValuation_coeff_sq_ceilSqrtSeries M).le
+    refine isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos ?_ (fun n ↦ ?_)
+      linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos
     · simp
-    · rw [padicRealValuation_coeff_ceilSqrtSeries]
-      exact_mod_cast Nat.cast_nonneg (α := ℝ) _
+    · rw [Pi.zero_apply, padicRealValuation_coeff_ceilSqrtSeries]
+      exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
   rw [newtonPolygon_def, ← h.eq_lowerConvexEnvelope]
 
 /-- The horizontal Newton polygon of `ceilSqrtSeries p` has no finite face of slope `0`: every
@@ -310,14 +279,20 @@ theorem newtonPolygon_boundaryZeroSeries :
     (boundaryZeroSeries p).newtonPolygon (padicRealValuation p) = 0 := by
   have h :
       IsLowerConvexEnvelope (fun n ↦ padicRealValuation p (coeff n (boundaryZeroSeries p))) 0 := by
-    refine isLowerConvexEnvelope_zero ?_ (fun n ↦ ?_) fun M hM ↦ ?_
+    refine isLowerConvexEnvelope_zero_of_linearGrowthInf_nonpos ?_ (fun n ↦ ?_)
+      ((linearGrowthInf_monotone fun n ↦ WithTop.toEReal_le_toEReal_iff.mpr ?_).trans
+        (linearGrowthInf_padicRealValuation_coeff_ceilSqrtSeries_nonpos (p := p)))
     · simp
     · rcases eq_or_ne n 1 with rfl | hn
-      · rw [coeff_one_boundaryZeroSeries, (padicRealValuation p).map_one]
-      · rw [coeff_boundaryZeroSeries_of_ne_one hn, padicRealValuation_coeff_ceilSqrtSeries]
-        exact_mod_cast Nat.cast_nonneg (α := ℝ) _
-    · rw [coeff_boundaryZeroSeries_of_ne_one (by nlinarith),
-        padicRealValuation_coeff_sq_ceilSqrtSeries]
+      · rw [Pi.zero_apply, coeff_one_boundaryZeroSeries, (padicRealValuation p).map_one]
+      · rw [Pi.zero_apply, coeff_boundaryZeroSeries_of_ne_one hn,
+          padicRealValuation_coeff_ceilSqrtSeries]
+        exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
+    · rcases eq_or_ne n 1 with rfl | hn
+      · rw [coeff_one_boundaryZeroSeries, (padicRealValuation p).map_one,
+          padicRealValuation_coeff_ceilSqrtSeries]
+        exact WithTop.coe_nonneg.mpr (Nat.cast_nonneg _)
+      · rw [coeff_boundaryZeroSeries_of_ne_one hn]
   rw [newtonPolygon_def, ← h.eq_lowerConvexEnvelope]
 
 /-- **Equal Newton polygons.** The two series have the same Newton polygon. -/
