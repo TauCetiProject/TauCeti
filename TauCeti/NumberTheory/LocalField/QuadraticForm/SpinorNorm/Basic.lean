@@ -62,9 +62,8 @@ theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticFo
   rw [weightedSumSquares_units] at hw
   let e : Fin 2 ≃ Fin (Module.finrank K V) := finCongr hV.symm
   have h : Q.Equivalent (weightedSumSquares K ![(w (e 0) : K), (w (e 1) : K)]) :=
-    hw.trans (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq e (by
-      funext i
-      fin_cases i <;> rfl)).symm
+    hw.trans (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq e fun i ↦ by
+      fin_cases i <;> rfl).symm
   -- An anisotropic binary form has nonsquare discriminant `-a b`: if `-a b = t²`, then
   -- `(t, a)` is an isotropic vector of `⟨a, b⟩`.
   have hsq : ¬IsSquare (-(w (e 0) * w (e 1))) := by
