@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Finset.Update
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Implicit atlases
@@ -21,13 +22,13 @@ It is the input from which virtual fundamental cycles are built. Its data are:
   (the *obstruction space*), given here as parameters `Γ`, `E` and `ρ`;
 * for every finite `I ⊆ A`, a Hausdorff space `X_I` (the *thickening*) with a continuous action
   of `Γ_I = ∏_(α ∈ I) Γ_α`, given here as parameters `T` and `act`, and an identification
-  `X_∅ ≃ₜ X` (`ImplicitAtlas.baseHomeomorph`);
+  `X_∅ ≃ₜ X` (`PreImplicitAtlas.baseHomeomorph`);
 * for every `α ∈ I`, a continuous equivariant *Kuranishi map* `s_α : X_I → E_α`
-  (`ImplicitAtlas.kuranishi`), on which the factors `Γ_β` with `β ≠ α` act trivially;
+  (`PreImplicitAtlas.kuranishi`), on which the factors `Γ_β` with `β ≠ α` act trivially;
 * for every finite `I`, an invariant open *regular locus* `X_I^reg ⊆ X_I`
-  (`ImplicitAtlas.regLocus`), on which the thickening is a topological manifold;
+  (`PreImplicitAtlas.regLocus`), on which the thickening is a topological manifold;
 * for finite `I ⊆ J`, an equivariant continuous *footprint map*
-  `ψ_IJ : Z_IJ → X_I` (`ImplicitAtlas.footprintMap`) defined on the zero set
+  `ψ_IJ : Z_IJ → X_I` (`PreImplicitAtlas.footprintMap`) defined on the zero set
   `Z_IJ = {x ∈ X_J | s_α(x) = 0 for all α ∈ J \ I}` (`TauCeti.kuranishiZeroSet`).
 
 The axioms say that the footprint maps form a cocycle compatible with the Kuranishi maps, that
@@ -41,14 +42,15 @@ The regular locus is part of the data; outside it the thickening need not be a m
 action need not be free.
 
 This file states the definition (`TauCeti.ImplicitAtlas`) and proves its first consequences: the
-zero sets are invariant (`TauCeti.ImplicitAtlas.act_mem_kuranishiZeroSet`), the images `U_IJ`
-are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`), the zero-set
+zero sets are invariant (`TauCeti.PreImplicitAtlas.act_mem_kuranishiZeroSet`), the images `U_IJ`
+are invariant under `Γ_I` (`TauCeti.PreImplicitAtlas.act_mem_range_footprintMap`), the zero-set
 domains of the cocycle condition match
-(`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
-cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
-and the regular locus is empty where the expected dimension `d + m_I` is negative
-(`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
-whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+(`TauCeti.PreImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open
+and cover `X` (`TauCeti.PreImplicitAtlas.isOpen_footprint`,
+`TauCeti.PreImplicitAtlas.iUnion_footprint`), and the regular locus is empty where the expected
+dimension `d + m_I` is negative (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a
+nonempty space carries no atlas whose expected dimensions are all negative
+(`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
@@ -56,6 +58,10 @@ Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 * The groups, obstruction spaces, thickenings and actions are parameters, and the action of `Γ_I`
   on `X_I` is a homomorphism `act I` into the group of homeomorphisms of `X_I`, that is, a
   continuous action of the discrete group `Γ_I`.
+* All the data and the axioms other than the product axiom over the regular locus form the
+  structure `TauCeti.PreImplicitAtlas`, which `TauCeti.ImplicitAtlas` extends. Implicit atlases
+  with boundary extend it too, with a different product axiom, so the consequences that do not
+  use the product axiom are stated once, for pre-implicit atlases.
 * The quotient axiom is stated as two conditions: `ψ_IJ` corestricted to its range is a quotient
   map, and its fibres are the orbits of the subgroup `Γ_(J \ I) = {g ∈ Γ_J | g|_I = 1}`. Together
   they say that `ψ_IJ` induces a homeomorphism `Z_IJ / Γ_(J \ I) ≃ₜ U_IJ`.
@@ -110,16 +116,19 @@ theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [�
     x ∈ kuranishiZeroSet s I I :=
   mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.property).elim
 
-/-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
-isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
-`act I` of `Γ_I = ∏_(α ∈ I) Γ α` on them. See the module docstring for the meaning of each field.
-The image `U_IJ` of the footprint map `ψ_IJ` is `Set.range (footprintMap h)`. -/
-structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
+/-- A **pre-implicit atlas** on `X`, with isotropy groups `Γ α`, obstruction representations `ρ α`
+on `E α`, thickenings `T I` and actions `act I` of `Γ_I = ∏_(α ∈ I) Γ α` on them: the data and
+axioms of an implicit atlas other than the local product axiom over the regular locus, which is the
+only axiom involving the virtual dimension. Implicit atlases (`TauCeti.ImplicitAtlas`) and implicit
+atlases with boundary (`TauCeti.ImplicitAtlasWithBoundary`) extend it by their product axioms. See
+the module docstring for the meaning of each field. The image `U_IJ` of the footprint map `ψ_IJ` is
+`Set.range (footprintMap h)`. -/
+structure PreImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
     (E : A → Type*) [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
-    [∀ α, FiniteDimensional ℝ (E α)] (ρ : ∀ α, Representation ℝ (Γ α) (E α))
-    (T : Finset A → Type*) [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+    (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+    (T : Finset A → Type*) [∀ I, TopologicalSpace (T I)]
     (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I))
-    (X : Type*) [TopologicalSpace X] (d : ℤ) where
+    (X : Type*) [TopologicalSpace X] where
   /-- The identification `X_∅ ≃ₜ X` of the thickening at the empty index set. -/
   baseHomeomorph : T ∅ ≃ₜ X
   /-- The Kuranishi map `s_α : X_I → E_α`, for `α ∈ I`. -/
@@ -180,6 +189,21 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
   eq_one_of_act_eq : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J),
     footprintMap h x ∈ regLocus I → ∀ g : (α : J) → Γ α,
       Finset.restrict₂ (π := Γ) h g = 1 → act J g x = x → g = 1
+  /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
+  exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
+    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
+
+/-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
+isotropy groups `Γ α`, obstruction representations `ρ α` on finite-dimensional spaces `E α`,
+Hausdorff thickenings `T I` and actions `act I` of `Γ_I = ∏_(α ∈ I) Γ α` on them: a pre-implicit
+atlas (`TauCeti.PreImplicitAtlas`) satisfying the local product axiom. See the module docstring for
+the meaning of each field. -/
+structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
+    (E : A → Type*) [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
+    [∀ α, FiniteDimensional ℝ (E α)] (ρ : ∀ α, Representation ℝ (Γ α) (E α))
+    (T : Finset A → Type*) [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+    (act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I))
+    (X : Type*) [TopologicalSpace X] (d : ℤ) extends PreImplicitAtlas Γ E ρ T act X where
   /-- Over `ψ_IJ⁻¹(X_I^reg)`, the map `s_(J \ I) : X_J → E_(J \ I)` is locally a product
   projection `ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)`. -/
   exists_openPartialHomeomorph : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
@@ -189,18 +213,15 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
       ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
         x.val ∈ e.source ∧ ∀ y ∈ e.source,
           (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
-  /-- The regular footprints `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. -/
-  exists_footprintMap_eq : ∀ y : X, ∃ (I : Finset A) (x : kuranishiZeroSet kuranishi ∅ I),
-    x.val ∈ regLocus I ∧ baseHomeomorph (footprintMap (Finset.empty_subset I) x) = y
 
-namespace ImplicitAtlas
+namespace PreImplicitAtlas
 
-variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
+variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)]
   {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
-  [∀ α, FiniteDimensional ℝ (E α)] {ρ : ∀ α, Representation ℝ (Γ α) (E α)}
-  {T : Finset A → Type*} [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+  {ρ : ∀ α, Representation ℝ (Γ α) (E α)}
+  {T : Finset A → Type*} [∀ I, TopologicalSpace (T I)]
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
-  {X : Type*} [TopologicalSpace X] {d : ℤ} (𝒜 : ImplicitAtlas Γ E ρ T act X d)
+  {X : Type*} [TopologicalSpace X] (𝒜 : PreImplicitAtlas Γ E ρ T act X)
 
 /-- The zero sets `Z_IJ` are invariant under `Γ_J`. -/
 theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : T J}
@@ -223,7 +244,7 @@ theorem mem_kuranishiZeroSet_iff_footprintMap_mem {I J K : Finset A} (hJK : J �
     · exact mem_kuranishiZeroSet.1 x.property α hαJ
 
 /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK`, with the domain of `ψ_IJ` supplied by
-`ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
+`PreImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
 theorem footprintMap_footprintMap_mk {I J K : Finset A} (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet 𝒜.kuranishi J K) (hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K) :
     𝒜.footprintMap hIJ
@@ -267,26 +288,27 @@ theorem mem_footprint {I : Finset A} {y : X} :
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in
 `X_∅ ≃ₜ X`. -/
-theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
-  set ψ := 𝒜.footprintMap (Finset.empty_subset I)
-  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.val ∈ 𝒜.regLocus I}
-  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtypeVal
-  -- `W` is saturated for `ψ`, so its image in `range ψ` is open.
-  have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
-    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
-    exact 𝒜.mem_regLocus_of_footprintMap_eq _ (congrArg Subtype.val hyx) hy
-  have hopen : IsOpen (rangeFactorization ψ '' W) :=
-    ((𝒜.isQuotientMap_footprintMap _).isOpen_preimage).1 (by rwa [hsat])
-  have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
-    simp only [image_image, rangeFactorization_coe]
-  exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
-    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtypeVal _ hopen)
+theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) :=
+  𝒜.baseHomeomorph.isOpenMap _ <| (𝒜.isQuotientMap_footprintMap _).isOpen_image_of_saturated
+    (𝒜.isOpen_range_footprintMap _) ((𝒜.isOpen_regLocus I).preimage continuous_subtypeVal)
+    fun _ _ hxy hx ↦ 𝒜.mem_regLocus_of_footprintMap_eq _ hxy hx
 
 /-- The regular footprints cover `X`. -/
 theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
   eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
     let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
     ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
+
+end PreImplicitAtlas
+
+namespace ImplicitAtlas
+
+variable [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
+  {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
+  [∀ α, FiniteDimensional ℝ (E α)] {ρ : ∀ α, Representation ℝ (Γ α) (E α)}
+  {T : Finset A → Type*} [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+  {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
+  {X : Type*} [TopologicalSpace X] {d : ℤ} (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
 /-- The expected dimension `d + m_I` is nonnegative wherever the regular locus `X_I^reg` is
 nonempty: there it is the dimension of a topological manifold. -/
