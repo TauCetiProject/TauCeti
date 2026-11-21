@@ -31,7 +31,8 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
 * `TauCeti.IsExponentialGroup.IsCompletion.mulEquiv`: the isomorphism between two
   `A`-completions of one group.
 * `TauCeti.IsExponentialGroup.IsCompletion.retraction`: for a ring homomorphism `f : A →+* ℤ`,
-  the retraction `r` of an `A`-completion onto `G`, with `r (x ^ a) = r x ^ f a`.
+  the retraction `r` of an `A`-completion onto `G`, with `r (x ^ a) = r x ^ f a`, when `G` lies in
+  the universe `w` of the universal property.
 
 ## Main results
 
@@ -40,11 +41,15 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
 * `TauCeti.IsExponentialGroup.IsCompletion.eq_mulEquiv`: the isomorphism between two
   `A`-completions is the only one commuting with the completion maps and with exponentiation.
 * `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective`: the map of an `A`-completion
-  of `G` is injective as soon as `G` embeds in some `A`-group.
+  of `G` is injective as soon as `G` embeds in some `A`-group in the universe `w` of the universal
+  property.
+* `TauCeti.IsExponentialGroup.IsCompletion.eq_retraction`: the retraction is the only
+  homomorphism `r` with `r ∘ μ = id` and `r (x ^ a) = r x ^ f a`.
 * `TauCeti.IsExponentialGroup.IsCompletion.pow_ne_one_of_pow_ne_one`: a power `μ g ^ a` in an
   `A`-completion is nontrivial as soon as `φ g ^ a` is nontrivial for some homomorphism `φ` from
-  `G` to an `A`-group, and `pow_ne_one_of_zpow_ne_one` is the case of the exponentiation
-  `g ^ a = g ^ f a` of `G` given by a ring homomorphism `f : A →+* ℤ`.
+  `G` to an `A`-group in the universe `w` of the universal property. For `G` itself in the
+  universe `w`, `pow_ne_one_of_zpow_ne_one` is the case of the exponentiation `g ^ a = g ^ f a` of
+  `G` given by a ring homomorphism `f : A →+* ℤ`.
 * `TauCeti.IsExponentialGroup.isCompletion_intCast`: for a commutative ring `A`, the map
   `Multiplicative ℤ →* Multiplicative A`, `n ↦ (n : A)`, is an `A`-completion.
 
@@ -52,7 +57,8 @@ additive group of `A`, with `n ↦ (n : A)`: the free `A`-group on one generator
 
 The universal property quantifies over the `A`-groups `H` of one universe, which is a universe
 parameter of `IsCompletion` (the first one). The comparison isomorphism `IsCompletion.mulEquiv` is
-therefore stated for two completions living in that universe.
+therefore stated for two completions living in that universe, and the retraction onto `G`, which
+extends the identity of `G`, for groups `G` in that universe.
 
 `IsCompletion` is a structure, whose target `K` carries its `A`-group structure as an instance
 argument: the universal property itself mentions only the exponentiation of `K`.
@@ -153,7 +159,7 @@ theorem injective_of_injective (h : IsCompletion.{w} A μ) {φ : G →* H} (hφ 
 `w` of the universal property. -/
 theorem pow_ne_one_of_pow_ne_one (h : IsCompletion.{w} A μ) (φ : G →* H) {g : G} {a : A}
     (hg : φ g ^ a ≠ 1) : μ g ^ a ≠ 1 :=
-  fun h' => hg (by simpa [ExponentialHom.map_pow] using congrArg (h.lift φ) h')
+  ne_one_of_map (f := h.lift φ) (by simpa only [ExponentialHom.map_pow, lift_eq] using hg)
 
 end Lift
 
@@ -229,32 +235,22 @@ section Retraction
 variable {A : Type uA} [Semiring A] {G : Type w} [Group G] {K : Type uK} [Group K] [Pow K A]
   [IsExponentialGroup A K] {μ : G →* K}
 
-/-- For a ring homomorphism `f : A →+* ℤ`, a group `G` is an `A`-group with `g ^ a = g ^ f a`. -/
-private theorem isExponentialGroup_zpow_ringHom (f : A →+* ℤ) :
-    letI : Pow G A := ⟨fun g a => g ^ f a⟩
-    IsExponentialGroup A G :=
-  letI : Pow G A := ⟨fun g a => g ^ f a⟩
-  { pow_one g := (congrArg (g ^ ·) (map_one f)).trans (zpow_one g)
-    pow_add g a b := (congrArg (g ^ ·) (map_add f a b)).trans (zpow_add g _ _)
-    pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (zpow_mul g _ _)
-    conj_pow _ _ _ := conj_zpow
-    mul_pow hc a := hc.mul_zpow (f a) }
-
 namespace IsCompletion
 
-/-- For a ring homomorphism `f : A →+* ℤ`, an `A`-completion `μ : G →* K` retracts onto `G`: the
-retraction is the homomorphism extending the identity of `G`, where `G` is an `A`-group with
-`g ^ a = g ^ f a`. -/
+/-- For a ring homomorphism `f : A →+* ℤ`, an `A`-completion `μ : G →* K` of a group `G` in the
+universe `w` of its universal property retracts onto `G`: the retraction is the homomorphism
+extending the identity of `G`, where `G` is the `A`-group with `g ^ a = g ^ f a`
+(`TauCeti.IsExponentialGroup.compPow`). -/
 noncomputable def retraction (h : IsCompletion.{w} A μ) (f : A →+* ℤ) : K →* G :=
-  letI : Pow G A := ⟨fun g a => g ^ f a⟩
-  haveI := isExponentialGroup_zpow_ringHom (G := G) f
+  letI := compPow G f
+  haveI := isExponentialGroup_compPow G f
   (h.lift (.id G)).toMonoidHom
 
 @[simp]
 theorem retraction_comp (h : IsCompletion.{w} A μ) (f : A →+* ℤ) :
     (h.retraction f).comp μ = .id G :=
-  letI : Pow G A := ⟨fun g a => g ^ f a⟩
-  haveI := isExponentialGroup_zpow_ringHom (G := G) f
+  letI := compPow G f
+  haveI := isExponentialGroup_compPow G f
   h.lift_comp (.id G)
 
 @[simp]
@@ -266,15 +262,27 @@ theorem retraction_apply (h : IsCompletion.{w} A μ) (f : A →+* ℤ) (g : G) :
 @[simp]
 theorem retraction_pow (h : IsCompletion.{w} A μ) (f : A →+* ℤ) (x : K) (a : A) :
     h.retraction f (x ^ a) = h.retraction f x ^ f a :=
-  letI : Pow G A := ⟨fun g a => g ^ f a⟩
-  haveI := isExponentialGroup_zpow_ringHom (G := G) f
+  letI := compPow G f
+  haveI := isExponentialGroup_compPow G f
   (h.lift (.id G)).map_pow x a
 
-/-- In an `A`-completion `μ : G →* K`, the power `μ g ^ a` is not the identity as soon as
-`g ^ f a ≠ 1` in `G` for a ring homomorphism `f : A →+* ℤ`. -/
+/-- The retraction of an `A`-completion `μ : G →* K` along `f : A →+* ℤ` is the only homomorphism
+`r : K →* G` with `r ∘ μ = id` and `r (x ^ a) = r x ^ f a`. -/
+theorem eq_retraction (h : IsCompletion.{w} A μ) (f : A →+* ℤ) {r : K →* G}
+    (hr : r.comp μ = .id G) (hpow : ∀ (x : K) (a : A), r (x ^ a) = r x ^ f a) :
+    r = h.retraction f :=
+  letI := compPow G f
+  haveI := isExponentialGroup_compPow G f
+  congrArg ExponentialHom.toMonoidHom (h.eq_lift (ψ := ⟨r, hpow⟩) hr)
+
+/-- In an `A`-completion `μ : G →* K` of a group `G` in the universe `w` of its universal property,
+the power `μ g ^ a` is not the identity as soon as `g ^ f a ≠ 1` in `G` for a ring homomorphism
+`f : A →+* ℤ`. -/
 theorem pow_ne_one_of_zpow_ne_one (h : IsCompletion.{w} A μ) (f : A →+* ℤ) {g : G} {a : A}
     (hg : g ^ f a ≠ 1) : μ g ^ a ≠ 1 :=
-  fun h' => hg (by simpa using congrArg (h.retraction f) h')
+  letI := compPow G f
+  haveI := isExponentialGroup_compPow G f
+  h.pow_ne_one_of_pow_ne_one (.id G) hg
 
 end IsCompletion
 

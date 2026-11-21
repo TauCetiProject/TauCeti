@@ -34,7 +34,7 @@ structure, with `g ^ (∑ nᵢ tⁱ) = ∏ (Tⁱ g) ^ nᵢ`. For `T g = g ^ m` t
 * `TauCeti.IsExponentialGroup.isExponentialGroup_polynomialPow`: this is a `ℤ[t]`-group structure
   when `T` commutes with conjugation and is multiplicative on commuting elements.
 * `TauCeti.IsExponentialGroup.eq_polynomialPow`: every `ℤ[t]`-group structure is the one
-  determined by its `t`-th power.
+  determined by its `t`-th power; `pow_eq_polynomialPow` is the pointwise statement.
 * `TauCeti.IsExponentialGroup.polynomialPow_zpow`: for `T g = g ^ m` it is `g ^ p = g ^ p(m)`.
 * `MonoidHom.map_polynomialPow`: a homomorphism `φ` with `φ ∘ T' = T ∘ φ` commutes with the
   exponentiations determined by `T'` and `T`.
@@ -252,22 +252,26 @@ theorem isExponentialGroup_polynomialPow (hconj : ∀ g h : G, T (g * h * g⁻¹
 
 end Hyp
 
-/-- Every `ℤ[t]`-group structure is the exponentiation determined by its `t`-th power. -/
-theorem eq_polynomialPow [inst : Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] :
-    inst = polynomialPow fun g : G => g ^ (X : ℤ[X]) := by
+/-- In a `ℤ[t]`-group, every power `g ^ p` is the power for the exponentiation determined by the
+`t`-th power. -/
+theorem pow_eq_polynomialPow [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] (g : G) (p : ℤ[X]) :
+    g ^ p = (letI := polynomialPow fun g : G => g ^ (X : ℤ[X]); g ^ p) := by
   let T (g : G) := g ^ (X : ℤ[X])
   have hT := isExponentialGroup_polynomialPow (T := T) (IsExponentialGroup.conj_pow · · X)
     fun _ _ hc => IsExponentialGroup.mul_pow hc X
   -- both exponentiations agree on constants and respect sums and multiplication by `t`
-  have key (g : G) (p : ℤ[X]) : g ^ p = (letI := polynomialPow T; g ^ p) := by
-    induction p using Polynomial.induction_on with
-    | C a => rw [polynomialPow_C, eq_intCast C a, pow_intCast]
-    | add p q hp hq =>
-      rw [IsExponentialGroup.pow_add, hp, hq, @IsExponentialGroup.pow_add _ _ _ _ _ hT]
-    | monomial n a ih =>
-      rw [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul g _ X, ih,
-        @IsExponentialGroup.pow_mul _ _ _ _ _ hT g _ X, polynomialPow_X]
-  exact congrArg Pow.mk (funext₂ key)
+  induction p using Polynomial.induction_on with
+  | C a => rw [polynomialPow_C, eq_intCast C a, pow_intCast]
+  | add p q hp hq =>
+    rw [IsExponentialGroup.pow_add, hp, hq, @IsExponentialGroup.pow_add _ _ _ _ _ hT]
+  | monomial n a ih =>
+    rw [pow_succ, ← mul_assoc, IsExponentialGroup.pow_mul g _ X, ih,
+      @IsExponentialGroup.pow_mul _ _ _ _ _ hT g _ X, polynomialPow_X]
+
+/-- Every `ℤ[t]`-group structure is the exponentiation determined by its `t`-th power. -/
+theorem eq_polynomialPow [inst : Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] :
+    inst = polynomialPow fun g : G => g ^ (X : ℤ[X]) :=
+  congrArg Pow.mk (funext₂ pow_eq_polynomialPow)
 
 /-- The exponentiation determined by the `m`-th power map is `g ^ p = g ^ p(m)`. -/
 @[simp]
@@ -289,7 +293,7 @@ theorem pow_mem_of_pow_X_mem [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] {S : S
   -- the inclusion of `S` commutes with the exponentiation determined by the restricted `t`-th power
   have h := S.subtype.map_polynomialPow (T := fun g : G => g ^ (X : ℤ[X]))
     (T' := fun x : S => ⟨x ^ (X : ℤ[X]), hS x x.property⟩) (fun _ => rfl) ⟨g, hg⟩ p
-  rw [← eq_polynomialPow] at h
+  rw [pow_eq_polynomialPow g p]
   exact h ▸ Subtype.property _
 
 end TauCeti.IsExponentialGroup
@@ -306,7 +310,7 @@ theorem map_pow_of_map_pow_X [Pow G ℤ[X]] [IsExponentialGroup ℤ[X] G] [Pow H
     [IsExponentialGroup ℤ[X] H] (ψ : G →* H)
     (hψ : ∀ g : G, ψ (g ^ (X : ℤ[X])) = ψ g ^ (X : ℤ[X])) (g : G) (p : ℤ[X]) :
     ψ (g ^ p) = ψ g ^ p := by
-  have h := ψ.map_polynomialPow (T := (· ^ (X : ℤ[X]))) (T' := (· ^ (X : ℤ[X]))) hψ g p
-  rwa [← eq_polynomialPow, ← eq_polynomialPow] at h
+  rw [pow_eq_polynomialPow g p, pow_eq_polynomialPow (ψ g) p]
+  exact ψ.map_polynomialPow hψ g p
 
 end MonoidHom

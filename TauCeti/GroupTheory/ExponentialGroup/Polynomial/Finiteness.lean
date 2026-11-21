@@ -49,12 +49,13 @@ theorem not_fg_closure_range_pow_X_pow {x : G} (hx : Function.Injective (powHom 
       Set.range fun k : ℕ => x ^ (X ^ k : ℤ[X]) := by
     ext
     simp [φ, powHom_apply]
-  rw [← hS, ← MonoidHom.map_closure, ← AddSubgroup.toSubgroup_closure, hX, OrderIso.map_top,
-    ← MonoidHom.range_eq_map, ← Group.fg_iff_subgroup_fg]
+  have hrange : Subgroup.closure (Set.range fun k : ℕ => x ^ (X ^ k : ℤ[X])) = φ.range := by
+    rw [← hS, ← MonoidHom.map_closure, ← AddSubgroup.toSubgroup_closure, hX, OrderIso.map_top,
+      MonoidHom.range_eq_map]
   -- the range of `φ` is isomorphic to the additive group of `ℤ[t]`, which is not finitely generated
-  intro
-  have : Group.FG (Multiplicative ℤ[X]) := Group.fg_of_surjective
-    (f := (MonoidHom.ofInjective hφ).symm.toMonoidHom) (MonoidHom.ofInjective hφ).symm.surjective
-  exact Polynomial.not_finite (Module.Finite.iff_addGroup_fg.2 (AddGroup.fg_iff_mul_fg.2 this))
+  rw [hrange, ← Group.fg_iff_subgroup_fg]
+  intro hfg
+  exact Polynomial.not_finite <| Module.Finite.iff_addGroup_fg.2 <|
+    isMulFG_multiplicative_iff.1 <| (isMulFG_congr (MonoidHom.ofInjective hφ)).2 hfg
 
 end TauCeti.IsExponentialGroup

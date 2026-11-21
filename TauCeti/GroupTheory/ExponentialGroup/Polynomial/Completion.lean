@@ -14,13 +14,15 @@ public import TauCeti.GroupTheory.ExponentialGroup.Polynomial.Basic
 A `ℤ[t]`-group structure is determined by its `t`-th power, which can be any map that commutes with
 conjugation and is multiplicative on commuting elements
 (`TauCeti.IsExponentialGroup.isExponentialGroup_polynomialPow`). So a `ℤ[t]`-completion
-`μ : G →* K` of a group `G` is universal among groups with such a map: every homomorphism
-`φ : G →* H` extends uniquely along `μ` to a homomorphism `K →* H` that takes the `t`-th power of
-`K` to a given such map `T : H → H`.
+`μ : G →* K` of a group `G` is universal among the groups `H` with such a map, in the universe `w`
+of its universal property: every homomorphism `φ : G →* H` extends uniquely along `μ` to a
+homomorphism `K →* H` that takes the `t`-th power of `K` to a given such map `T : H → H`.
 
 ## Main definitions
 
-* `TauCeti.IsExponentialGroup.IsCompletion.liftMapPowX`: that extension.
+* `TauCeti.IsExponentialGroup.IsCompletion.liftMapPowX`: that extension, for `H` in the universe
+  `w`. It takes `x ^ p` to the power of its image for the exponentiation determined by `T`
+  (`liftMapPowX_pow`).
 
 ## Main results
 
@@ -49,9 +51,9 @@ variable {G K : Type*} [Group G] [Group K] [Pow K ℤ[X]] [IsExponentialGroup �
   (hconj : ∀ g h : H, T (g * h * g⁻¹) = g * T h * g⁻¹)
   (hmul : ∀ g h : H, Commute g h → T (g * h) = T g * T h)
 
-/-- For a `ℤ[t]`-completion `μ : G →* K` and a map `T : H → H` that commutes with conjugation and is
-multiplicative on commuting elements, the homomorphism `K →* H` extending `φ : G →* H` along `μ`
-and taking the `t`-th power to `T`. -/
+/-- For a `ℤ[t]`-completion `μ : G →* K`, a group `H` in the universe `w` of its universal property
+and a map `T : H → H` that commutes with conjugation and is multiplicative on commuting elements,
+the homomorphism `K →* H` extending `φ : G →* H` along `μ` and taking the `t`-th power to `T`. -/
 noncomputable def liftMapPowX (φ : G →* H) : K →* H :=
   letI := polynomialPow T
   haveI := isExponentialGroup_polynomialPow hconj hmul
@@ -67,13 +69,20 @@ theorem liftMapPowX_comp (φ : G →* H) : (hμ.liftMapPowX hconj hmul φ).comp 
 theorem liftMapPowX_eq (φ : G →* H) (g : G) : hμ.liftMapPowX hconj hmul φ (μ g) = φ g :=
   DFunLike.congr_fun (hμ.liftMapPowX_comp hconj hmul φ) g
 
-/-- The extension `liftMapPowX` takes the `t`-th power to `T`. -/
+/-- The extension `liftMapPowX` takes the power `x ^ p` to the power of its image for the
+exponentiation determined by `T`. -/
 @[simp]
-theorem liftMapPowX_pow_X (φ : G →* H) (x : K) :
-    hμ.liftMapPowX hconj hmul φ (x ^ (X : ℤ[X])) = T (hμ.liftMapPowX hconj hmul φ x) :=
+theorem liftMapPowX_pow (φ : G →* H) (x : K) (p : ℤ[X]) :
+    hμ.liftMapPowX hconj hmul φ (x ^ p) =
+      (letI := polynomialPow T; hμ.liftMapPowX hconj hmul φ x ^ p) :=
   letI := polynomialPow T
   haveI := isExponentialGroup_polynomialPow hconj hmul
-  ((hμ.lift φ).map_pow x X).trans (polynomialPow_X T _)
+  (hμ.lift φ).map_pow x p
+
+/-- The extension `liftMapPowX` takes the `t`-th power to `T`. -/
+theorem liftMapPowX_pow_X (φ : G →* H) (x : K) :
+    hμ.liftMapPowX hconj hmul φ (x ^ (X : ℤ[X])) = T (hμ.liftMapPowX hconj hmul φ x) :=
+  (hμ.liftMapPowX_pow hconj hmul φ x X).trans (polynomialPow_X T _)
 
 /-- The extension `liftMapPowX` is the only homomorphism extending `φ` along `μ` that takes the
 `t`-th power to `T`. -/
@@ -86,9 +95,10 @@ theorem eq_liftMapPowX {φ : G →* H} {ψ : K →* H} (hψ : ψ.comp μ = φ)
 
 include hμ hconj hmul in
 /-- **The universal property of a `ℤ[t]`-completion in terms of the `t`-th power.** For a
-`ℤ[t]`-completion `μ : G →* K` and a map `T : H → H` that commutes with conjugation and is
-multiplicative on commuting elements, every homomorphism `φ : G →* H` extends uniquely along `μ`
-to a homomorphism `ψ : K →* H` with `ψ (x ^ t) = T (ψ x)`. -/
+`ℤ[t]`-completion `μ : G →* K`, a group `H` in the universe `w` of its universal property and a map
+`T : H → H` that commutes with conjugation and is multiplicative on commuting elements, every
+homomorphism `φ : G →* H` extends uniquely along `μ` to a homomorphism `ψ : K →* H` with
+`ψ (x ^ t) = T (ψ x)`. -/
 theorem existsUnique_lift_map_pow_X (φ : G →* H) :
     ∃! ψ : K →* H, ψ.comp μ = φ ∧ ∀ x : K, ψ (x ^ (X : ℤ[X])) = T (ψ x) :=
   ⟨hμ.liftMapPowX hconj hmul φ,
