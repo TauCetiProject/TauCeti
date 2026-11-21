@@ -114,48 +114,6 @@ private theorem exists_subset_interior_realStage {C : Set ℝ} (hC : IsCompact C
   exact ⟨n, (image_subset_iff.1 hn).trans (preimage_interior_subset_interior_preimage
     continuous_ofReal)⟩
 
-variable {U}
-
-/-- A series whose `k`-th term is bounded by `2⁻ᵏ` on `Lₖ` converges at every point of `W(U)`. -/
-private theorem summable_of_forall_norm_le {t : ℕ → ℂ → ℂ}
-    (hb : ∀ k, ∀ z ∈ complexStage U k, ‖t k z‖ ≤ (1 / 2 : ℝ) ^ k) {z : ℂ}
-    (hz : z ∈ complexNeighborhood U) : Summable fun k ↦ t k z := by
-  obtain ⟨j, hj⟩ : ∃ j, z ∈ complexStage U j := mem_iUnion.1 <| by
-    rw [(complexNeighborhood U).isOpen.iUnion_filledExhaustion]
-    exact hz
-  exact (summable_nat_add_iff j).1 <| .of_norm_bounded
-    ((summable_nat_add_iff j).2 summable_geometric_two) fun k ↦
-      hb _ z (filledExhaustion_mono (Nat.le_add_left j k) hj)
-
-/-- A series of functions holomorphic on an open `Y ⊆ W(U)`, whose `k`-th term is bounded by `2⁻ᵏ`
-on `Lₖ`, has a holomorphic sum on `Y`: near each point of `Y`, all but finitely many terms are
-uniformly small. -/
-private theorem differentiableOn_tsum_of_forall_norm_le {Y : Set ℂ} (hY : IsOpen Y)
-    (hYU : Y ⊆ complexNeighborhood U) {t : ℕ → ℂ → ℂ} (ht : ∀ k, DifferentiableOn ℂ (t k) Y)
-    (hb : ∀ k, ∀ z ∈ complexStage U k, ‖t k z‖ ≤ (1 / 2 : ℝ) ^ k) :
-    DifferentiableOn ℂ (fun z ↦ ∑' k, t k z) Y := by
-  intro z hz
-  obtain ⟨j, hj⟩ : ∃ j, z ∈ complexStage U j := mem_iUnion.1 <| by
-    rw [(complexNeighborhood U).isOpen.iUnion_filledExhaustion]
-    exact hYU hz
-  -- On the open set `A = interior Lⱼ₊₁ ∩ Y`, the terms from index `j + 1` on are below `2⁻ᵏ`.
-  set A := interior (complexStage U (j + 1)) ∩ Y
-  have hA : IsOpen A := isOpen_interior.inter hY
-  have hzA : z ∈ A := ⟨filledExhaustion_subset_interior_succ _ j hj, hz⟩
-  have hle : ∀ k, ∀ w ∈ A, ‖t (k + (j + 1)) w‖ ≤ (1 / 2 : ℝ) ^ (k + (j + 1)) := fun k w hw ↦
-    hb _ w (filledExhaustion_mono (Nat.le_add_left _ k) (interior_subset hw.1))
-  have hsum : Summable fun k : ℕ ↦ (1 / 2 : ℝ) ^ (k + (j + 1)) :=
-    (summable_nat_add_iff (j + 1)).2 summable_geometric_two
-  have hfin : DifferentiableOn ℂ (fun w ↦ ∑ k ∈ Finset.range (j + 1), t k w) A :=
-    DifferentiableOn.fun_sum fun k _ ↦ (ht k).mono inter_subset_right
-  have htail : DifferentiableOn ℂ (fun w ↦ ∑' k, t (k + (j + 1)) w) A :=
-    differentiableOn_tsum_of_summable_norm hsum (fun k ↦ (ht _).mono inter_subset_right) hA hle
-  refine (((hfin.add htail).differentiableAt (hA.mem_nhds hzA)).congr_of_eventuallyEq ?_)
-    |>.differentiableWithinAt
-  filter_upwards [hA.mem_nhds hzA] with w hw
-  exact (((summable_nat_add_iff (j + 1)).1 (.of_norm_bounded hsum fun k ↦ hle k w hw)
-    ).sum_add_tsum_nat_add (j + 1)).symm
-
 end Stages
 
 /-! ### Existence of a global class -/
@@ -222,13 +180,14 @@ private theorem exists_differentiableOn_eq_tsum_sub (u : 𝓓'(U, ℂ)) {ψ : �
       ((hRd _).mono (complexNeighborhood_mono hIU))
   refine ⟨fun z ↦ ∑' k, (G (k + (m + 1)) z - R (k + (m + 1)) z) -
       ∑ k ∈ Finset.range (m + 1), R k z, ?_, fun z hz ↦ ?_⟩
-  · exact (differentiableOn_tsum_of_forall_norm_le (complexNeighborhood I).isOpen
-      (complexNeighborhood_mono hIU) htd fun k z hz ↦
+  · exact (differentiableOn_tsum_of_forall_norm_le_filledExhaustion (complexNeighborhood I).isOpen
+      (complexNeighborhood_mono hIU) summable_geometric_two htd fun k z hz ↦
         (htb _ z (filledExhaustion_mono (Nat.le_add_right k _) hz)).trans
           (pow_le_pow_of_le_one (by norm_num) (by norm_num) (Nat.le_add_right k _))).sub
       (DifferentiableOn.fun_sum fun k _ ↦ (hRd k).mono (complexNeighborhood_mono hIU))
   have hs : Summable fun k ↦ G k z - R k z :=
-    summable_of_forall_norm_le htb (nonRealOpen_le_complexNeighborhood U hz)
+    summable_of_forall_norm_le_filledExhaustion summable_geometric_two htb
+      ((complexNeighborhood U).isOpen.interior_eq.symm ▸ nonRealOpen_le_complexNeighborhood U hz)
   -- Telescoping: `∑_{k ≤ m} (Gₖ - Rₖ) = Cₘ₊₁ - C₀ - ∑_{k ≤ m} Rₖ` off the real line.
   have htel : ∑ k ∈ Finset.range (m + 1), (G k z - R k z) = cauchyTransform u (ψ (m + 1)) z -
       cauchyTransform u (ψ 0) z - ∑ k ∈ Finset.range (m + 1), R k z := by
@@ -249,8 +208,8 @@ private theorem exists_forall_oneDimBoundaryRestrict_eq_cauchyClass (u : 𝓓'(U
   let F₀ : ℂ → ℂ := fun z ↦ cauchyTransform u (ψ 0) z + ∑' k, (G k z - R k z)
   have hF₀ : DifferentiableOn ℂ F₀ nonRealOpen :=
     (mem_holomorphicSections_iff.1 (cauchyTransform_mem_holomorphicSections u (ψ 0))).1.add <|
-      differentiableOn_tsum_of_forall_norm_le nonRealOpen.isOpen
-        (nonRealOpen_le_complexNeighborhood U) (fun k ↦ ((hGd k).mono
+      differentiableOn_tsum_of_forall_norm_le_filledExhaustion nonRealOpen.isOpen
+        (nonRealOpen_le_complexNeighborhood U) summable_geometric_two (fun k ↦ ((hGd k).mono
           (nonRealOpen_le_complexNeighborhood _)).sub
           ((hRd k).mono (nonRealOpen_le_complexNeighborhood U))) fun k z hz ↦ (hRb k z hz).le
   have hF : (nonRealOpen : Set ℂ).indicator F₀ ∈ holomorphicSections nonRealOpen :=
