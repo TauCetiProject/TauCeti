@@ -254,7 +254,7 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ = _ := by dsimp [M]; ring
 
 /-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
-theorem pow_mul_rpow_lt_one_of_four_mul_sq_le {C : ℝ} {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
+theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
     C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
   rcases Nat.eq_zero_or_pos r with rfl | hr
   · norm_num
@@ -266,9 +266,8 @@ theorem pow_mul_rpow_lt_one_of_four_mul_sq_le {C : ℝ} {r : ℕ} (hCr : 4 * C ^
   -- `2 |C| ≤ s`, since `(2 |C|) ^ 2 = 4 C ^ 2 ≤ r`.
   have hCs : 2 * |C| ≤ s := le_sqrt_of_sq_le (by rw [mul_pow, sq_abs]; linarith)
   -- `r ^ ((1 - r) / 2) = s ^ (1 - r) = s / s ^ r`.
-  have hexp : (1 - (r : ℝ)) / 2 = 1 / 2 * (1 - r) := by ring
   have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
-    rw [hexp, rpow_mul hr₀.le, ← sqrt_eq_rpow, rpow_sub hs₀]
+    rw [rpow_div_two_eq_sqrt _ hr₀.le, rpow_sub hs₀]
     simp
   have hCs' : |C| / s ≤ 1 / 2 := by
     rw [div_le_div_iff₀ hs₀ two_pos]

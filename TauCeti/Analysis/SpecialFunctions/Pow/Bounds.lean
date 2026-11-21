@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on real powers
@@ -68,15 +67,6 @@ nonpositive exponent `p` and points at distance at most `1`, the weight `(1 + �
 is at most `2 ^ (-p)` times the weight at `y`; this compares a weight on a unit interval with its
 value at an endpoint.
 
-For `u : ℝ → X` into a pseudometric space, data at the two times `a` and `b` bound the increment
-`dist (u b) (u a)` by a multiple of `|b - a| |a| ^ (β - 1)`. For `a < 0` and `0 ≤ β ≤ 1`, the
-data are that the increment vanishes if `b ≤ 0` and is at most `K b ^ β` if `0 < b`. For `0 < a`,
-`b ≤ a / 2` and `0 ≤ β`, they are that `u a` is within `K a ^ β` of a point `c`, and `u b` is
-within `K b ^ β` of `c` if `0 < b` and at distance `0` from it otherwise. A function constant
-equal to `c` on `(-∞, 0]` with `dist (u r) c ≤ K r ^ β` for `r ≥ 0` meets both for all such `a`
-and `b`. This is the part of a time-Lipschitz estimate for a Hölder-in-time function that does
-not need a derivative.
-
 For nonpositive exponents `α ≤ 0`, `t ↦ t ^ α` is antitone on `(0, ∞)`, so unit-step differences
 of the antiderivative `t ↦ t ^ (α + 1) / (α + 1)` bracket `x ^ α`:
 `((x + 1) ^ (α + 1) - x ^ (α + 1)) / (α + 1) ≤ x ^ α` for every `0 < x` and `α ≤ 0`, and
@@ -124,10 +114,6 @@ dyadic intervals.
 * `TauCeti.one_add_norm_rpow_le_two_rpow_mul_of_norm_sub_le_one` and
   `TauCeti.one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one`:
   `(1 + ‖x‖) ^ p ≤ 2 ^ |p| (1 + ‖y‖) ^ p` when `x` and `y` are at distance at most `1`.
-* `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_neg_right` and
-  `TauCeti.dist_le_mul_abs_sub_mul_rpow_of_le_half`: increment bounds
-  `dist (u b) (u a) ≲ |b - a| |a| ^ (β - 1)` from bounds at `a` and `b`: when `a < 0`,
-  `0 ≤ β ≤ 1` and `0 ≤ K`, respectively when `0 < a`, `b ≤ a / 2` and `0 ≤ β`.
 * `TauCeti.rpow_mul_rpow_le_max`, `Prod.norm_fst_rpow_mul_norm_snd_rpow_le`, and
   `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
   product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
@@ -464,55 +450,6 @@ theorem one_add_norm_rpow_le_two_rpow_abs_mul_of_norm_sub_le_one {E : Type*}
     _ ≤ (2 : ℝ) ^ |p| * (1 + ‖y‖) ^ p := by
         gcongr
         linarith
-
-open Real in
-/-- If `a < 0`, `0 ≤ β ≤ 1` and `0 ≤ K`, and the increment `dist (u b) (u a)` vanishes when
-`b ≤ 0` and is at most `K b ^ β` when `0 < b`, then
-`dist (u b) (u a) ≤ K |b - a| (-a) ^ (β - 1)`. This applies when `u` is constant on `(-∞, 0]` and
-moves away from that constant value at rate `K r ^ β` for `r ≥ 0`. -/
-theorem dist_le_mul_abs_sub_mul_rpow_of_neg_right {X : Type*} [PseudoMetricSpace X]
-    {u : ℝ → X} {β K a b : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0) (hK : 0 ≤ K) (ha : a < 0)
-    (hneg : b ≤ 0 → dist (u b) (u a) = 0) (hpos : 0 < b → dist (u b) (u a) ≤ K * b ^ β) :
-    dist (u b) (u a) ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
-  have hd : 0 < -a := neg_pos.2 ha
-  rcases le_or_gt b 0 with hb | hb
-  · rw [hneg hb]
-    positivity
-  have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) :=
-    calc b ^ β ≤ (b - a) ^ β := rpow_le_rpow hb.le (by linarith) hβ₀
-      _ ≤ (-a) ^ (β - 1) * (b - a) ^ (1 : ℝ) :=
-          rpow_le_rpow_sub_mul_rpow_of_exponent_le hd (by linarith) (by linarith)
-      _ = |b - a| * (-a) ^ (β - 1) := by
-          rw [rpow_one, abs_of_pos (by linarith), mul_comm]
-  exact (hpos hb).trans (by gcongr)
-
-open Real in
-/-- If `0 < a`, `b ≤ a / 2`, `0 ≤ β` and `dist (u a) c ≤ K a ^ β`, and `dist (u b) c` vanishes
-when `b ≤ 0` and is at most `K b ^ β` when `0 < b`, then
-`dist (u b) (u a) ≤ 4 K |b - a| a ^ (β - 1)`. This applies when `u` is constant equal to `c` on
-`(-∞, 0]` and `dist (u r) c ≤ K r ^ β` for `r ≥ 0`. -/
-theorem dist_le_mul_abs_sub_mul_rpow_of_le_half {X : Type*} [PseudoMetricSpace X]
-    {u : ℝ → X} {c : X} {β K a b : ℝ} (hβ₀ : 0 ≤ β) (ha : 0 < a) (hb : b ≤ a / 2)
-    (hua : dist (u a) c ≤ K * a ^ β) (hneg : b ≤ 0 → dist (u b) c = 0)
-    (hpos : 0 < b → dist (u b) c ≤ K * b ^ β) :
-    dist (u b) (u a) ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
-  have hK : 0 ≤ K :=
-    nonneg_of_mul_nonneg_left (dist_nonneg.trans hua) (rpow_pos_of_pos ha β)
-  have h1 : dist (u b) c ≤ K * a ^ β := by
-    rcases le_or_gt b 0 with hb0 | hb0
-    · rw [hneg hb0]
-      positivity
-    · exact (hpos hb0).trans (by gcongr; linarith)
-  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
-    have hpow : a ^ β = a * a ^ (β - 1) := by
-      simpa only [sub_add_cancel, mul_comm] using (rpow_add_one ha.ne' (β - 1))
-    rw [hpow, abs_of_neg (by linarith : b - a < 0)]
-    have : 0 ≤ a ^ (β - 1) := by positivity
-    nlinarith
-  calc dist (u b) (u a) ≤ dist (u b) c + dist (u a) c := dist_triangle_right _ _ _
-    _ ≤ 2 * (K * a ^ β) := by linarith
-    _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
-    _ = _ := by ring
 
 /-- For `0 ≤ a`, `0 ≤ b`, and `x ∈ [0, 1]`, the geometric interpolant `a ^ (1 - x) * b ^ x` is at
 most `max a b`. -/

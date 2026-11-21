@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
-import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue.Pow
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -550,12 +550,17 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
       _ = _ := by ring
   · calc ‖u b - u a‖ = dist (u b) (u a) := (dist_eq_norm _ _).symm
       _ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          dist_le_mul_abs_sub_mul_rpow_of_le_half hβ₀ ha hb.le (hrate a ha.le)
-            (fun hb ↦ by rw [hneg b hb, dist_self]) (fun hb ↦ hrate b hb.le)
+          dist_le_mul_abs_sub_mul_rpow_of_le_half ha hb.le ?_ (hrate a ha.le)
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr
         nlinarith
       _ = _ := by ring
+    -- `u b` is within `H Mα b ^ β ≤ H Mα a ^ β` of `g x`, and equals it if `b ≤ 0`.
+    rcases le_or_gt b 0 with hb0 | hb0
+    · rw [hneg b hb0, dist_self]
+      exact mul_nonneg (mul_nonneg H.coe_nonneg hMα) (rpow_nonneg ha.le β)
+    · exact (hrate b hb0.le).trans (mul_le_mul_of_nonneg_left
+        (rpow_le_rpow hb0.le (by linarith) hβ₀) (mul_nonneg H.coe_nonneg hMα))
 
 end TauCeti

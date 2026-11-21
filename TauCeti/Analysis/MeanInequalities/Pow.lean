@@ -15,15 +15,21 @@ import Mathlib.Topology.Order.Compact
 
 For `1 ≤ q` and nonnegative `s`, `t`, the power mean inequality
 `(s + t) ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` is `NNReal.rpow_add_le_mul_rpow_add_rpow`. For
-`1 < q` it improves by a uniform factor `1 - κ` once the left side is also bounded away from
-`2 * s`: for each `0 < δ` there is `κ > 0` with
-`u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ t ≤ s`, `0 ≤ u ≤ s + t` and
-`u ≤ (2 - δ) * s`. Strict convexity of `t ↦ t ^ q` gives the improvement for each ratio `t / s`,
-and compactness of `[0, 1]` makes it uniform. This is the scalar step in showing that `q`-th
-powers of norms on a uniformly convex space are uniformly convex.
+`1 < q` it is strict for every `0 ≤ u ≤ s + t` with `u < 2 * s`: if `s ≠ t`, by strict convexity
+of `t ↦ t ^ q`, and if `s = t`, because `u < 2 * s = s + t`.
+
+The improvement is uniform once `u` is bounded away from `2 * s`: for each `0 < δ` there is
+`κ > 0` with `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ t ≤ s`,
+`0 ≤ u ≤ s + t` and `u ≤ (2 - δ) * s`. For `s > 0`, the strict inequality at
+`u = min (s + t) ((2 - δ) * s)` comes from strict convexity when `t / s < 1`, and from the cutoff
+`u ≤ (2 - δ) * s` when `t / s = 1`; compactness of `[0, 1]` makes it uniform in the ratio
+`t / s`. This is the scalar step in showing that `q`-th powers of norms on a uniformly convex
+space are uniformly convex.
 
 ## Main results
 
+* `Real.rpow_lt_of_le_add_of_lt_two_mul`: `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)` for `1 < q`,
+  `0 ≤ t`, `0 ≤ u ≤ s + t` and `u < 2 * s`.
 * `Real.exists_rpow_le_of_le_add_of_le_two_sub_mul`: for `1 < q` and `0 < δ` there is `κ > 0`
   with `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever `0 ≤ t ≤ s`, `0 ≤ u ≤ s + t`
   and `u ≤ (2 - δ) * s`.
@@ -33,36 +39,32 @@ public section
 
 namespace Real
 
-/-- For `1 < q`, `0 < δ ≤ 2` and `0 ≤ r`,
-`(min (1 + r) (2 - δ)) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`. -/
-private theorem min_rpow_lt_two_rpow_sub_one_mul {q δ r : ℝ} (hq : 1 < q) (hδ : 0 < δ)
-    (hδ2 : δ ≤ 2) (hr0 : 0 ≤ r) :
-    min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q) := by
+/-- **A strict power mean inequality.** For `1 < q`, `0 ≤ t` and `0 ≤ u ≤ s + t` with
+`u < 2 * s`, `u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q)`. -/
+theorem rpow_lt_of_le_add_of_lt_two_mul {q s t u : ℝ} (hq : 1 < q) (ht : 0 ≤ t) (hu : 0 ≤ u)
+    (hus : u ≤ s + t) (hu2 : u < 2 * s) : u ^ q < 2 ^ (q - 1) * (s ^ q + t ^ q) := by
   have hq0 : 0 < q := by linarith
+  have hs : 0 < s := by linarith
   have h2sub : (2 : ℝ) ^ (q - 1) = 2 ^ q / 2 := rpow_sub_one two_ne_zero q
-  have hmin0 : 0 ≤ min (1 + r) (2 - δ) := le_min (by linarith) (by linarith)
-  rcases lt_or_ge r 1 with hr1 | hr1
-  · have hstrict := (strictConvexOn_rpow hq).2 (Set.mem_Ici.2 zero_le_one) (Set.mem_Ici.2 hr0)
-      hr1.ne' (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
-    simp only [smul_eq_mul, one_rpow] at hstrict
-    have hle : min (1 + r) (2 - δ) ^ q ≤ (1 + r) ^ q :=
-      rpow_le_rpow hmin0 (min_le_left _ _) hq0.le
-    have hhalf : (1 + r) ^ q = 2 ^ q * (1 / 2 * 1 + 1 / 2 * r) ^ q := by
-      rw [← mul_rpow zero_le_two (by positivity)]
-      ring_nf
-    have := mul_lt_mul_of_pos_left hstrict (by positivity : (0 : ℝ) < 2 ^ q)
-    rw [h2sub]
-    nlinarith
-  · calc min (1 + r) (2 - δ) ^ q < 2 ^ q :=
-          rpow_lt_rpow hmin0 ((min_le_right _ _).trans_lt (by linarith)) hq0
-      _ = 2 ^ (q - 1) * (1 + 1) := by rw [h2sub]; ring
-      _ ≤ 2 ^ (q - 1) * (1 + r ^ q) := by gcongr; exact one_le_rpow hr1 hq0.le
+  rcases eq_or_ne s t with rfl | hst
+  · calc u ^ q < (2 * s) ^ q := rpow_lt_rpow hu hu2 hq0
+      _ = 2 ^ (q - 1) * (s ^ q + s ^ q) := by rw [mul_rpow zero_le_two hs.le, h2sub]; ring
+  have hstrict := (strictConvexOn_rpow hq).2 (Set.mem_Ici.2 hs.le) (Set.mem_Ici.2 ht) hst
+    (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
+  simp only [smul_eq_mul] at hstrict
+  have hhalf : (s + t) ^ q = 2 ^ q * (1 / 2 * s + 1 / 2 * t) ^ q := by
+    rw [← mul_rpow zero_le_two (by positivity)]
+    ring_nf
+  have := mul_lt_mul_of_pos_left hstrict (by positivity : (0 : ℝ) < 2 ^ q)
+  calc u ^ q ≤ (s + t) ^ q := rpow_le_rpow hu hus hq0.le
+    _ < 2 ^ (q - 1) * (s ^ q + t ^ q) := by
+      rw [hhalf, h2sub]
+      linarith
 
 /-- **A uniform strict power mean inequality.** For `1 < q` and `0 < δ` there is `κ > 0`
 such that `u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q)` whenever
-`0 ≤ t ≤ s` and `0 ≤ u ≤ min (s + t) ((2 - δ) * s)`. After rescaling to `s = 1`, the gap
-between the two sides is a continuous positive function of `t ∈ [0, 1]`, so it has a positive
-minimum. This is the scalar part of `TauCeti.exists_forall_norm_add_rpow_le`. -/
+`0 ≤ t ≤ s` and `0 ≤ u ≤ min (s + t) ((2 - δ) * s)`. This is the scalar part of
+`TauCeti.exists_forall_norm_add_rpow_le`. -/
 theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (hδ : 0 < δ) :
     ∃ κ, 0 < κ ∧ ∀ s t u : ℝ, 0 ≤ t → t ≤ s → 0 ≤ u → u ≤ s + t → u ≤ (2 - δ) * s →
       u ^ q ≤ (1 - κ) * 2 ^ (q - 1) * (s ^ q + t ^ q) := by
@@ -81,7 +83,11 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
   obtain ⟨r₀, hr₀, hmin⟩ :=
     isCompact_Icc.exists_isMinOn (Set.nonempty_Icc.2 zero_le_one) hφc.continuousOn
   have hm : 0 < φ r₀ := by
-    simpa only [hφ] using sub_pos.2 (min_rpow_lt_two_rpow_sub_one_mul hq hδ (by linarith) hr₀.1)
+    have h := rpow_lt_of_le_add_of_lt_two_mul (s := 1) (u := min (1 + r₀) (2 - δ)) hq hr₀.1
+      (le_min (by linarith [hr₀.1]) (by linarith)) (min_le_left _ _)
+      ((min_le_right _ _).trans_lt (by linarith))
+    rw [one_rpow] at h
+    simpa only [hφ] using sub_pos.2 h
   refine ⟨φ r₀ / 2 ^ q, by positivity, fun s t u ht hts hu hus hu2 ↦ ?_⟩
   rcases (ht.trans hts).eq_or_lt with rfl | hs
   · obtain rfl : t = 0 := le_antisymm hts ht

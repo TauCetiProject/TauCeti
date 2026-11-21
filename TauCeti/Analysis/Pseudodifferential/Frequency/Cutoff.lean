@@ -225,14 +225,11 @@ private theorem abs_inv_pow_le_mul_weight {R : ℝ} {k : ℕ} {ξ : E}
   have hξ : ‖ξ‖ < 2 * |R| := by
     have := (inv_mul_lt_iff₀ (abs_pos.2 hR)).1 hlt
     linarith
-  have hw := Real.one_add_sq_rpow_neg_abs_le_one_add_sq_rpow ‖ξ‖ ((abs_norm ξ).trans_le hξ.le)
-    ((0 : ℝ) - k)
+  have hw := Real.one_le_one_add_sq_rpow_abs_mul_one_add_sq_rpow ‖ξ‖
+    ((abs_norm ξ).trans_le hξ.le) ((0 : ℝ) - k)
   rw [zero_sub, abs_neg, Nat.abs_cast, mul_pow, sq_abs, ← zero_sub] at hw
   norm_num only at hw
-  calc (1 : ℝ) = (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + 4 * R ^ 2) ^ (((0 : ℝ) - k) / 2) := by
-        rw [← Real.rpow_add (by positivity), show (k : ℝ) / 2 + (0 - k) / 2 = 0 by ring,
-          Real.rpow_zero]
-    _ ≤ _ := mul_le_mul_of_nonneg_left hw (by positivity)
+  exact hw
 
 /-- The dilated cutoff `ξ ↦ χ (R⁻¹ • ξ)` at any radius `R` satisfies the order-zero symbol
 estimates: a bound `B` on `D^k χ` gives `‖D^k (χ (R⁻¹ • ·)) ξ‖ ≤ B |R⁻¹|^k ⟨2R⟩^k ⟨ξ⟩^(-k)`,
