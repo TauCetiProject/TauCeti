@@ -357,7 +357,7 @@ theorem mem_componentCycleFoldedIndices {x : M} :
 variable {P σ C} in
 theorem orbitSum_mem_componentCycleFoldedIndices_of_mem_supp (i : C.supp) :
     P.orbitSum σ (i : ι) ∈ P.componentCycleFoldedIndices σ C :=
-  ⟨i, by rw [show P.componentOf (i : ι) = C from i.2], rfl⟩
+  ⟨i, by have hi : P.componentOf (i : ι) = C := (C.mem_supp_iff (i : ι)).mp i.2; rw [hi], rfl⟩
 
 /-- Every folded vector on the `σ`-cycle of `C` is the `σ`-orbit sum of a root in `C.supp`. -/
 theorem componentCycleFoldedIndices_eq_range_supp :
@@ -420,13 +420,11 @@ theorem pairwise_disjoint_componentCycleFoldedIndices_of_base [CharZero R] [P.Is
 
 end FiniteRoots
 
-/-! #### Empty root systems and canonical root-form orthogonality -/
+/-! #### Empty root systems -/
 
 section Empty
 
 variable [IsEmpty ι]
-
-@[simp] theorem foldedIndices_eq_empty : P.foldedIndices σ = ∅ := by ext x; simp
 
 theorem subsingleton_fixedSubmodule_of_isEmpty [P.IsRootSystem] :
     Subsingleton (LinearMap.fixedSubmodule σ.weightMap) := by
@@ -437,17 +435,6 @@ theorem subsingleton_fixedSubmodule_of_isEmpty [P.IsRootSystem] :
   infer_instance
 
 end Empty
-
-variable {P} in
-/-- Different component spaces are orthogonal under `P.RootForm` over any commutative ring. -/
-theorem rootForm_apply_eq_zero_of_mem_componentSpace [Fintype ι] {C D : P.Component}
-    (hCD : C ≠ D) {x y : M} (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace D) :
-    P.RootForm x y = 0 := by
-  rw [P.rootForm_apply_apply]
-  refine Finset.sum_eq_zero fun k _ ↦ ?_
-  by_cases hk : P.componentOf k = C
-  · rw [P.coroot'_eq_zero_of_mem_componentSpace (hk ▸ hCD) hy, mul_zero]
-  · rw [P.coroot'_eq_zero_of_mem_componentSpace hk hx, zero_mul]
 
 end CommRing
 
@@ -539,7 +526,7 @@ noncomputable def componentCycleDiag :
       P.componentCycleFixedSubmodule σ C where
   toFun u := ⟨⟨∑ r ∈ range (minimalPeriod σ.componentEquiv C), (σ.weightMap ^ r) (u : M),
       P.sum_range_pow_weightMap_mem_fixedSubmodule σ C u⟩, by
-    change ∑ r ∈ range _, _ ∈ P.componentCycleSpace σ C
+    rw [P.mem_componentCycleFixedSubmodule, Submodule.coe_mk]
     exact Submodule.sum_mem _ fun r _ ↦ P.pow_weightMap_mem_componentCycleSpace
       (P.self_componentSpace_le_componentCycleSpace σ C u.1.2) r⟩
   map_add' _ _ := Subtype.ext <| Subtype.ext <| by simp [Finset.sum_add_distrib]
@@ -608,7 +595,8 @@ theorem minimalPeriod_componentReturnAut_indexEquiv (i : C.supp) :
 theorem minimalPeriod_indexEquiv_eq_mul_componentReturnAut (i : C.supp) :
     minimalPeriod σ.indexEquiv (i : ι) =
       minimalPeriod σ.componentEquiv C * minimalPeriod (P.componentReturnAut σ C).indexEquiv i := by
-  rw [P.minimalPeriod_indexEquiv_eq_mul σ (i : ι), show P.componentOf (i : ι) = C from i.2,
+  have hi : P.componentOf (i : ι) = C := (C.mem_supp_iff (i : ι)).mp i.2
+  rw [P.minimalPeriod_indexEquiv_eq_mul σ (i : ι), hi,
     P.minimalPeriod_componentReturnAut_indexEquiv σ C i]
 
 /-- **Orbit-size factorization** via the return automorphism on `P.componentPairing C`. -/
@@ -737,21 +725,22 @@ theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantF
     B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * (B.restrictComponent C).form u.1 v.1 := by
-  rw [B.restrictComponent_form_apply]
-  exact P.bilinear_componentCycleDiag σ C B.form hB
+  rw [B.restrictComponent_form_apply]; exact P.bilinear_componentCycleDiag σ C B.form hB
     (fun h _ _ hx hy ↦ B.apply_eq_zero_of_mem_componentSpace h hx hy) u v
 
-/-- **Cartan ratios for a `σ`-invariant `B : P.InvariantForm` are preserved** in char. zero. -/
-theorem InvariantForm.cartanRatio_componentCycleDiag [CharZero K] (B : P.InvariantForm)
+/-- **Cartan ratios for a `σ`-invariant `B : P.InvariantForm` are preserved** when the cycle length
+is nonzero in `K`. -/
+theorem InvariantForm.cartanRatio_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm)
     {σ : P.Aut} (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y)
-    (C : P.Component) (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (C : P.Component) (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
+    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
     2 * B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
         B.form ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       2 * (B.restrictComponent C).form u.1 v.1 / (B.restrictComponent C).form v.1 v.1 := by
   rw [B.form_componentCycleDiag P hB C, B.form_componentCycleDiag P hB C, mul_left_comm (2 : K),
-    mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr (P.minimalPeriod_componentEquiv_pos σ C).ne')]
+    mul_div_mul_left _ _ hc]
 
 /-! ### Independence of the starting component and product assembly across cycles -/
 
@@ -761,11 +750,9 @@ theorem autCongr_componentReturnAut_pow (k : ℕ) :
       P.componentReturnAut σ ((σ ^ k).componentEquiv C) := by
   rw [componentReturnAut, (σ ^ k).autCongr_restrictComponentAut, componentReturnAut]
   refine Equiv.restrictComponentAut_congr ?_ _ _
-  rw [Equiv.autCongr_apply]
-  change (σ ^ k) * (σ ^ minimalPeriod σ.componentEquiv C) * (σ ^ k)⁻¹ =
-    σ ^ minimalPeriod σ.componentEquiv ((σ ^ k).componentEquiv C)
-  rw [P.minimalPeriod_componentEquiv_pow_apply σ C k, (Commute.pow_pow_self σ k _).eq,
-    mul_inv_cancel_right]
+  rw [Equiv.autCongr_apply, P.minimalPeriod_componentEquiv_pow_apply σ C k, ← Equiv.comp_assoc,
+    ← Equiv.mul_eq_comp (σ ^ k), (Commute.pow_pow_self σ k _).eq, Equiv.mul_eq_comp,
+    Equiv.comp_assoc, Equiv.self_comp_symm, Equiv.id_comp]
 
 /-- Shift of return fixed vectors from `C` to `(σ ^ k).componentEquiv C` via `σ.weightMap ^ k`. -/
 noncomputable def componentReturnFixedShift (k : ℕ) :
@@ -869,8 +856,10 @@ theorem rootForm_componentCycleDiag [Fintype C.supp]
     (fun h _ _ hx hy ↦ P.rootForm_apply_eq_zero_of_mem_componentSpace h hx hy) u v,
     P.rootForm_componentPairing C]; rfl
 
-/-- **Cartan ratios for `P.RootForm` are preserved by `componentCycleDiag`** in char. zero. -/
-theorem rootForm_cartanRatio_componentCycleDiag [CharZero K] [Fintype C.supp]
+/-- **Cartan ratios for `P.RootForm` are preserved by `componentCycleDiag`** when the cycle
+length is nonzero in `K`. -/
+theorem rootForm_cartanRatio_componentCycleDiag [Fintype C.supp]
+    (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
     (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
     2 * P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
@@ -878,7 +867,7 @@ theorem rootForm_cartanRatio_componentCycleDiag [CharZero K] [Fintype C.supp]
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       2 * (P.componentPairing C).RootForm u.1 v.1 / (P.componentPairing C).RootForm v.1 v.1 := by
   rw [P.rootForm_componentCycleDiag σ C, P.rootForm_componentCycleDiag σ C, mul_left_comm (2 : K),
-    mul_div_mul_left _ _ (Nat.cast_ne_zero.mpr (P.minimalPeriod_componentEquiv_pos σ C).ne')]
+    mul_div_mul_left _ _ hc]
 
 /-- **Orthogonal decomposition of `P.RootForm` on `σ`-fixed weights across component cycles.** -/
 theorem rootForm_eq_sum_componentCycleFixedProj

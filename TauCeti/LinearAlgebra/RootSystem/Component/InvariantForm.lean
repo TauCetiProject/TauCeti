@@ -87,6 +87,16 @@ theorem rootForm_componentPairing {ι K M N : Type*} [Field K] [AddCommGroup M] 
     rw [coroot'_eq_zero_of_mem_componentSpace (fun h' ↦ hi ((C.mem_supp_iff i).mpr h')) x.2,
       zero_mul]
 
+/-- Different component spaces are orthogonal under `P.RootForm` over any commutative ring. -/
+theorem rootForm_apply_eq_zero_of_mem_componentSpace {ι R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+    [Fintype ι] {C D : P.Component} (hCD : C ≠ D) {x y : M} (hx : x ∈ P.componentSpace C)
+    (hy : y ∈ P.componentSpace D) : P.RootForm x y = 0 := by
+  rw [P.rootForm_apply_apply]; refine Finset.sum_eq_zero fun k _ ↦ ?_
+  by_cases hk : P.componentOf k = C
+  · rw [P.coroot'_eq_zero_of_mem_componentSpace (hk ▸ hCD) hy, mul_zero]
+  · rw [P.coroot'_eq_zero_of_mem_componentSpace hk hx, zero_mul]
+
 /-! ### Restriction and orthogonal reconstruction -/
 
 namespace InvariantForm

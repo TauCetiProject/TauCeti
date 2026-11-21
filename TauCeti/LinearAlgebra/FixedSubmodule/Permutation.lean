@@ -184,6 +184,47 @@ theorem permutationFixedProjection_comp_subtype (σ : Perm I)
   ext v i
   exact congrFun (congrArg Subtype.val (permutationFixedProjection_fixed σ r hr v)) i
 
+section BasisPerm
+
+variable {J U : Type*} [Fintype J] [AddCommMonoid U] [Module R U]
+  (B : Module.Basis J R U) (e : U ≃ₗ[R] U) (π : Perm J) (he : ∀ j, e (B j) = B (π j))
+
+/-- Given a finite basis `B` of `U` permuted by a linear automorphism `e` according to `π`, the
+cycle sums of `B` form a basis of the fixed submodule of `e`. -/
+def basisPermFixedBasis :
+    Module.Basis (Quotient (SameCycle.setoid π)) R e.toLinearMap.fixedSubmodule :=
+  have hint : B.equivFun.toLinearMap ∘ₗ e.symm.toLinearMap =
+      (funCongrLeft R R π).toLinearMap ∘ₗ B.equivFun.toLinearMap :=
+    B.ext fun k ↦ funext fun j ↦ by
+      have hsymm : e.symm (B k) = B (π.symm k) :=
+        e.injective (by rw [e.apply_symm_apply, he, π.apply_symm_apply])
+      classical
+      simp only [LinearMap.coe_comp, Function.comp_apply, coe_coe,
+        Module.Basis.equivFun_apply, hsymm, funCongrLeft_apply,
+        LinearMap.funLeft_apply, Module.Basis.repr_self, Finsupp.single_apply]
+      exact if_congr π.symm_apply_eq rfl rfl
+  (permutationFixedBasis (R := R) π).map
+    ((B.equivFun.fixedSubmoduleCongr hint).symm.trans
+      (ofEq _ _ (fixedSubmodule_symm_eq e)))
+
+/-- The coordinate of a fixed vector at the cycle `⟦j⟧` in `basisPermFixedBasis` equals its
+`j`-th coordinate in `B`. -/
+@[simp] theorem basisPermFixedBasis_repr (u : e.toLinearMap.fixedSubmodule) (j : J) :
+    (basisPermFixedBasis B e π he).repr u ⟦j⟧ = B.repr u.1 j := by simp [basisPermFixedBasis]
+
+/-- Each basis vector of `basisPermFixedBasis` is the sum of the basis vectors of `B` in its
+cycle. -/
+theorem coe_basisPermFixedBasis_apply [DecidableEq (Quotient (SameCycle.setoid π))]
+    (o : Quotient (SameCycle.setoid π)) :
+    (basisPermFixedBasis B e π he o : U) =
+      ∑ j ∈ Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient _) = o), B j := by
+  classical
+  rw [basisPermFixedBasis, Module.Basis.map_apply, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.fixedSubmoduleCongr_symm_apply,
+    permutationFixedBasis_eq_sum, map_sum]; simp [Module.Basis.equivFun_symm_apply]
+
+end BasisPerm
+
 /-! ### Orbit means -/
 
 section OrbitMean

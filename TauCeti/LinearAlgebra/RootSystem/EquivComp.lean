@@ -44,6 +44,8 @@ instance, so they are not restated here.
   the index permutation of a conjugated automorphism are the conjugates of the originals.
 * `RootPairing.Equiv.smul_index_eq_indexEquiv`: an automorphism acts on root indices through its
   index permutation.
+* `RootPairing.Equiv.weightMap_pow` and `RootPairing.Equiv.indexEquiv_pow`: powers of an
+  automorphism act by powers of its weight map and index permutation.
 * `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
@@ -107,6 +109,14 @@ Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
 theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
   (rfl)
+
+/-- Powers of an automorphism act on weights as powers of its weight map. -/
+@[simp] theorem weightMap_pow (σ : Aut P) (n : ℕ) : (σ ^ n).weightMap = σ.weightMap ^ n := by
+  induction n with | zero => rfl | succ n ih => ext x; simp [pow_succ, ih]
+
+/-- Powers of an automorphism act on root indices as powers of its index permutation. -/
+@[simp] theorem indexEquiv_pow (σ : Aut P) (n : ℕ) : (σ ^ n).indexEquiv = σ.indexEquiv ^ n :=
+  (indexHom P).map_pow σ n
 
 noncomputable section Conjugation
 

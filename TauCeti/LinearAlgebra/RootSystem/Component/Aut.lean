@@ -96,14 +96,6 @@ variable (σ : P.Aut)
 @[simp] theorem Equiv.componentEquiv_zpow (z : ℤ) : (σ ^ z).componentEquiv = σ.componentEquiv ^ z :=
   (Equiv.componentHom P).map_zpow σ z
 
-/-- Powers of an automorphism act on weights as powers of its weight map. -/
-@[simp] theorem Equiv.weightMap_pow (n : ℕ) : (σ ^ n).weightMap = σ.weightMap ^ n := by
-  induction n with | zero => rfl | succ n ih => ext x; simp [pow_succ, ih]
-
-/-- Powers of an automorphism act on root indices as powers of its index permutation. -/
-@[simp] theorem Equiv.indexEquiv_pow (n : ℕ) : (σ ^ n).indexEquiv = σ.indexEquiv ^ n :=
-  (Equiv.indexHom P).map_pow σ n
-
 end AutPowers
 
 /-- Every root reflection fixes every irreducible component. -/

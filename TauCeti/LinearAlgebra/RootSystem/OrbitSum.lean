@@ -341,4 +341,7 @@ theorem zero_notMem_foldedIndices [CharZero R] {b : P.Base}
   rintro ⟨i, hi⟩
   exact orbitSum_ne_zero hσ i hi
 
+/-- An empty root pairing has no folded indices. -/
+@[simp] theorem foldedIndices_eq_empty [IsEmpty ι] : P.foldedIndices σ = ∅ := by ext x; simp
+
 end RootPairing

@@ -253,4 +253,28 @@ theorem prod_quotient_sameCycle_prod_range [Fintype α] [Fintype (Quotient (Same
   exact Finset.prod_congr rfl fun q _ ↦
     (σ.prod_sigmaCycleEquiv_eq_prod_range Quotient.out σ.existsUnique_sameCycle_out f q).symm
 
+/-- A product over the elements in a cycle `O` along an injective map intertwining `π` and `τ`
+equals the product over the `τ`-iterates of `f O.out` below `minimalPeriod τ (f O.out)`. -/
+@[to_additive
+  /-- A sum over the elements in a cycle `O` along an injective map intertwining `π` and `τ`
+  equals the sum over the `τ`-iterates of `f O.out` below `minimalPeriod τ (f O.out)`. -/]
+theorem prod_filter_quotient_eq_prod_range {J β M : Type*} [Fintype J] [CommMonoid M]
+    (π : Perm J) (f : J → β) (hf : Injective f) (τ : Perm β)
+    (hτ : Semiconj f π τ) (g : β → M)
+    (O : Quotient (SameCycle.setoid π))
+    [DecidablePred fun j : J ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O] :
+    ∏ j ∈ Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O), g (f j) =
+      ∏ r ∈ Finset.range (minimalPeriod τ (f O.out)), g ((τ ^ r) (f O.out)) := by
+  classical
+  have hτ_pow (k : ℕ) (j : J) : f ((π ^ k) j) = (τ ^ k) (f j) := by
+    simpa only [coe_pow] using hτ.iterate_right k j
+  have hper : minimalPeriod π O.out = minimalPeriod τ (f O.out) :=
+    minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ by
+      simp only [IsPeriodicPt, IsFixedPt, ← coe_pow, ← hf.eq_iff, hτ_pow]
+  have hfilt : Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O) =
+      Finset.univ.filter (SameCycle π O.out) := by
+    ext j; simp [sameCycle_out_iff]
+  rw [hfilt, ← prod_range_minimalPeriod π (fun j ↦ g (f j)) O.out, hper]
+  exact Finset.prod_congr rfl fun r _ ↦ by rw [hτ_pow]
+
 end Equiv.Perm
