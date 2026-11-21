@@ -36,9 +36,11 @@ the structure sheaf.
 
 * `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.localizationsMap f hf y`: the map of
   localizations `A_{f⁻¹ y} → B_y` at a point `y` of `Proj ℬ`.
-* `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun`: the pullback of local fractions
-  along a continuous map and a ring homomorphism contracting prime ideals, possibly scaling
-  degrees; it also gives the pullback along `Proj A ≅ Proj A^{(d)}` for a Veronese subalgebra.
+* `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun`: the pointwise pullback of
+  localization-valued functions along a continuous map and a ring homomorphism contracting prime
+  ideals. `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.isLocallyFraction_comapFun` proves
+  preservation of local fractions with a specified degree change; together they also give the
+  pullback along `Proj A ≅ Proj A^{(d)}` for a Veronese subalgebra.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap f hf hUV`: the map
   `Γ(U, 𝒪_{Proj 𝒜}(n)) → Γ(V, 𝒪_{Proj ℬ}(n))` for `V` contained in the preimage of `U`.
 * `AlgebraicGeometry.Proj.twistingSheafMap f hf n`: the morphism of sheaves of modules
@@ -127,12 +129,23 @@ theorem localizationsMap_id (x : ProjectiveSpectrum 𝒜)
 point `y` to that of `φ y`: the value at `y ∈ V` is the image of the value at `φ y` under the map
 of localizations `A_{φ y} → B_y` induced by `g`. For `Proj.map f hf` this is `φ = f⁻¹` and
 `g = f`. -/
-@[expose] def comapFun (φ : C(ProjectiveSpectrum.top ℬ, ProjectiveSpectrum.top 𝒜)) (g : A →+* B)
+def comapFun (φ : C(ProjectiveSpectrum.top ℬ, ProjectiveSpectrum.top 𝒜)) (g : A →+* B)
     (hφ : ∀ y, (φ y).asHomogeneousIdeal.toIdeal = y.asHomogeneousIdeal.toIdeal.comap g)
     {U : Opens (ProjectiveSpectrum.top 𝒜)} {V : Opens (ProjectiveSpectrum.top ℬ)}
     (hUV : V.carrier ⊆ φ ⁻¹' U.carrier) (s : ∀ x : U, Localizations 𝒜 x.val) (y : V) :
     Localizations ℬ y.val :=
   Localization.localRingHom _ _ g (hφ y.val) (s ⟨φ y.val, hUV y.property⟩)
+
+/-- The value of a pulled-back function is the image of its value at the corresponding point
+under the induced map of localizations. -/
+@[simp]
+theorem comapFun_apply (φ : C(ProjectiveSpectrum.top ℬ, ProjectiveSpectrum.top 𝒜)) (g : A →+* B)
+    (hφ : ∀ y, (φ y).asHomogeneousIdeal.toIdeal = y.asHomogeneousIdeal.toIdeal.comap g)
+    {U : Opens (ProjectiveSpectrum.top 𝒜)} {V : Opens (ProjectiveSpectrum.top ℬ)}
+    (hUV : V.carrier ⊆ φ ⁻¹' U.carrier) (s : ∀ x : U, Localizations 𝒜 x.val) (y : V) :
+    comapFun φ g hφ hUV s y =
+      Localization.localRingHom _ _ g (hφ y.val) (s ⟨φ y.val, hUV y.property⟩) :=
+  (rfl)
 
 /-- If `g` sends `𝒜 i` into `ℬ (δ i)` for a map `δ : ℕ → ℕ` sending degree differences `n` to
 `n'`, the pullback of a local fraction of degree `n` is a local fraction of degree `n'`. -/
@@ -179,6 +192,8 @@ def comap : Γ(twistingSheaf 𝒜 n, U) →+ Γ(twistingSheaf ℬ n, V) where
     isLocallyFraction_comapFun (δ := fun i ↦ i) (fun _ _ ha ↦ Graded.map_mem f ha) (fun _ _ h ↦ h)
       s.property⟩
   map_zero' := ext fun _ ↦ map_zero _
+  -- Section addition reduces pointwise here. `add_apply` does not unify with the codomain's
+  -- inferred addition through the unexposed localization addition instance.
   map_add' _ _ := ext fun _ ↦ map_add _ _ _
 
 /-- The value of a pulled-back section at `y` is the image of the value at `f⁻¹ y`. -/

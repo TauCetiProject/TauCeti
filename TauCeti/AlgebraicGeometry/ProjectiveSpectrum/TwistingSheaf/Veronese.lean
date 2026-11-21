@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Veronese
 # Twisting sheaves and Veronese subalgebras
 
 Let `A = ⨁ₙ 𝒜 n` be an `ℕ`-graded commutative `R`-algebra, `d ≠ 0`, and let
-`A^{(d)} = ⨁ₖ 𝒜 (d k)` be its Veronese subalgebra (`TauCeti.GradedAlgebra.veroneseGrading`).
+`A^{(d)} = ⨁ₖ 𝒜 (d k)` be its Veronese subalgebra (`TauCeti.GradedAlgebra.veronese`),
+with grading `TauCeti.GradedAlgebra.veroneseGrading`.
 The inverse of the isomorphism `AlgebraicGeometry.Proj.veroneseIso : Proj A^{(d)} ≅ Proj A`
 sends a point `q` of `Proj A` to its contraction `q ∩ A^{(d)}`
 (`AlgebraicGeometry.Proj.toIdeal_asHomogeneousIdeal_veroneseIso_inv`).
@@ -26,7 +27,7 @@ sections of twisting sheaves
 
 for `V` contained in the preimage of `U` (`AlgebraicGeometry.Proj.twistingSheaf.comapVeronese`):
 it applies the maps of localizations `A^{(d)}_{q ∩ A^{(d)}} → A_q`
-(`AlgebraicGeometry.Proj.veroneseLocalizationsMap`) pointwise. This is the map underlying the
+(`Localization.localRingHom`) pointwise. This is the map underlying the
 identification of `𝒪(n)` on `Proj A^{(d)}` with `𝒪(d n)` on `Proj A`
 (Stacks, Lemma 27.11.8 (0B5J)). Let `g ∈ A^{(d)}` be homogeneous of positive degree `e` in the
 grading of `A^{(d)}`, so of degree `d e` in `A`. For `U = D₊(g) ⊆ Proj A^{(d)}` and `V` its full
@@ -34,9 +35,12 @@ preimage `D₊(g) ⊆ Proj A`, the pullback is bijective
 (`AlgebraicGeometry.Proj.twistingSheaf.bijective_comapVeronese_basicOpen`): both sides are the
 fractions `r / gᵏ` with `r ∈ 𝒜 (d (k e + n))`.
 
-The construction is the pullback of local fractions along a continuous map and a ring homomorphism
-contracting prime ideals (`AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun`), which
-also gives the pullback along `Proj.map` (`AlgebraicGeometry.Proj.twistingSheaf.comap`); here the
+The construction uses the pointwise pullback of localization-valued functions along a continuous
+map and a ring homomorphism contracting prime ideals
+(`AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun`). Preservation of local fractions
+with the specified degree change is proved by
+`AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.isLocallyFraction_comapFun`. Together these
+also give the pullback along `Proj.map` (`AlgebraicGeometry.Proj.twistingSheaf.comap`); here the
 inclusion `A^{(d)} → A` multiplies degrees by `d`.
 
 ## Main definitions
@@ -55,8 +59,6 @@ inclusion `A^{(d)} → A` multiplies degrees by `d`.
 ## References
 
 * [Stacks, Lemma 27.11.8 (0B5J)](https://stacks.math.columbia.edu/tag/0B5J)
-* Ported from split 6 of the Tau Ceti lookahead branch
-  `lookahead/SchemeAndStackFoundations/relative-proj-veronese`.
 -/
 
 public section
@@ -87,16 +89,20 @@ def comapVeronese :
       (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d) hUV s.val,
     isLocallyFraction_comapFun (δ := (d * ·)) (fun _ _ ↦ mem_veroneseGrading.mp)
       (fun i j h ↦ by push_cast; rw [h]; ring) s.property⟩
-  map_zero' := ext fun _ ↦ by simp only [zero_apply]; exact map_zero _
-  map_add' _ _ := ext fun _ ↦ map_add _ _ _
+  map_zero' := ext fun _ ↦ (comapFun_apply ..).trans (map_zero _)
+  -- Section addition reduces pointwise here. `add_apply` does not unify with the codomain's
+  -- inferred addition through the unexposed localization addition instance.
+  map_add' _ _ := ext fun _ ↦ (comapFun_apply ..).trans
+    ((map_add _ _ _).trans (congrArg₂ (· + ·) (comapFun_apply ..).symm (comapFun_apply ..).symm))
 
 /-- The value of a pulled-back section at `q` is the image of its value at `q ∩ A^{(d)}`. -/
 @[simp]
 theorem comapVeronese_apply (s : Γ(twistingSheaf (veroneseGrading 𝒜 d) n, U)) (q : V) :
     (comapVeronese hUV s).val q =
-      veroneseLocalizationsMap 𝒜 d q.val
+      Localization.localRingHom _ _ (veronese 𝒜 d).val.toRingHom
+        (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d q.val)
         (s.val (⟨(veroneseIso 𝒜 d).inv q.val, hUV q.property⟩ : U)) :=
-  (rfl)
+  comapFun_apply ..
 
 /-- The pullback along the Veronese contraction commutes with restriction. -/
 @[simp]
@@ -131,7 +137,7 @@ theorem comapVeronese_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : veronese 
           (veroneseIso_inv_preimage_basicOpen 𝒜 d s).le) := by
   refine ext fun (q : V) ↦ ?_
   simp only [comapVeronese_apply, const_apply]
-  exact veroneseLocalizationsMap_mk ..
+  exact Localization.localRingHom_mk ..
 
 /-- The pullback along the Veronese contraction is multiplicative: the product of sections of
 degrees `m` and `n` over `A^{(d)}` pulls back to the product of their pullbacks, of degrees `d m`
@@ -165,9 +171,10 @@ theorem bijective_comapVeronese_basicOpen {e : ℕ} {g : veronese 𝒜 d}
   · obtain ⟨k, j, h, r, hr, rfl⟩ := exists_eq_const_basicOpen (𝒜 := 𝒜) hgA hde t
     -- the numerator has degree `j = d (k e + n)`, so it lies in `A^{(d)}`
     have hnn : (0 : ℤ) ≤ k * e + n := by
-      have := Int.natCast_nonneg j
+      have hj := Int.natCast_nonneg j
       push_cast at h
-      nlinarith [NeZero.pos d]
+      rw [h, mul_left_comm (k : ℤ), ← mul_add] at hj
+      exact nonneg_of_mul_nonneg_right hj (by exact_mod_cast NeZero.pos d)
     have hj' : ((k * e + n).toNat : ℤ) = k * e + n := Int.toNat_of_nonneg hnn
     have hjd' : (j : ℤ) = d * (k * e + n).toNat := by rw [h, hj']; push_cast; ring
     have hjd : j = d * (k * e + n).toNat := by exact_mod_cast hjd'
