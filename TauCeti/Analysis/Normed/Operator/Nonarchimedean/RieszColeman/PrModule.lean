@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Decomposition
-import TauCeti.LinearAlgebra.End.Split
 import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
@@ -101,14 +100,16 @@ projection of a `(Pr)`-compact operator is finitely generated. -/
 theorem IsRieszColemanProjection.finite_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R E.range :=
-  (hE.isPrCompact hQ hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  (hE.isPrCompact hQ hu).finite_range_of_isIdempotentElem
+    (isRieszColemanProjection_def.mp hE).isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, the range of a Riesz–Coleman
 projection of a `(Pr)`-compact operator is projective over the coefficient ring. -/
 theorem IsRieszColemanProjection.projective_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R E.range :=
-  (hE.isPrCompact hQ hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  (hE.isPrCompact hQ hu).projective_range_of_isIdempotentElem
+    (isRieszColemanProjection_def.mp hE).isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
 Riesz–Coleman projection of a `(Pr)`-compact operator is finitely generated. -/
@@ -151,50 +152,8 @@ theorem IsPrCompact.rankAtStalk_ker_aeval_reverse {u : M →L[R] M} (hu : u.IsPr
   obtain ⟨J, _, _, i, r, hri⟩ := (TauCeti.hasPr_def R M).mp hu.hasPr_source
   have hv := hu.isRowCompact_comp i r
   rw [hu.charPowerSeries_eq hri] at hQS
-  set c := Ring.inverse Q.leadingCoeff
-  have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-  set B : R[X] := 1 - Polynomial.C c * Q.reverse
-  have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse hc
-  have hri' : r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
-    simpa only [toLinearMap_comp, coe_id] using
-      congrArg ContinuousLinearMap.toLinearMap hri
-  -- `1 - B(v) = c • Q*(v)` is the split extension of `1 - B(u) = c • Q*(u)`, and scaling by the
-  -- unit `c` preserves kernels.
-  have hker_u : LinearMap.ker (c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap) =
-      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap :=
-    le_antisymm
-      ((LinearMap.ker_le_ker_smul _ Q.leadingCoeff).trans_eq
-        (by rw [smul_smul, mul_comm, hc, one_smul]))
-      (LinearMap.ker_le_ker_smul _ c)
-  have hker_v : LinearMap.ker (c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-        C₀(J, R) →L[R] C₀(J, R)).toLinearMap) =
-      LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-        C₀(J, R) →L[R] C₀(J, R)).toLinearMap :=
-    le_antisymm
-      ((LinearMap.ker_le_ker_smul _ Q.leadingCoeff).trans_eq
-        (by rw [smul_smul, mul_comm, hc, one_smul]))
-      (LinearMap.ker_le_ker_smul _ c)
-  have h1u : (1 - (Polynomial.aeval u B).toLinearMap : Module.End R M) =
-      c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
-    rw [← toLinearMap_one, ← toLinearMap_sub, ← toLinearMap_smul]
-    congr 1
-    simp [B, Algebra.algebraMap_eq_smul_one]
-  have h1v : LinearMap.splitEnd r.toLinearMap i.toLinearMap hri'
-      (1 - (Polynomial.aeval u B).toLinearMap) =
-      c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-        C₀(J, R) →L[R] C₀(J, R)).toLinearMap := by
-    rw [LinearMap.splitEnd_one_sub, ← toLinearMap_comp, ← toLinearMap_comp,
-      ← aeval_comp_comp_of_retract hri u hB0, ← toLinearMap_one, ← toLinearMap_sub,
-      ← toLinearMap_smul]
-    congr 1
-    simp [B, Algebra.algebraMap_eq_smul_one]
-  have heq : LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-      C₀(J, R) →L[R] C₀(J, R)).toLinearMap ≃ₗ[R]
-      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
-    have e := LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
-      (1 - (Polynomial.aeval u B).toLinearMap)
-    rw [h1v, h1u, hker_v, hker_u] at e
-    exact e
+  have heq := (ContinuousLinearMap.kerAevalEquivOfRetract hri u (P := Q.reverse)
+    (by simpa only [coeff_zero_reverse] using hQ)).toLinearEquiv
   have hrank : Module.rankAtStalk (R := R) (Polynomial.aeval u Q.reverse : M →L[R] M).ker =
       Module.rankAtStalk (R := R)
         (Polynomial.aeval (i.comp (u.comp r)) Q.reverse : C₀(J, R) →L[R] C₀(J, R)).ker := by
@@ -335,14 +294,15 @@ theorem charPowerSeries_restrict_range {u E : M →L[R] M} {Q : R[X]} {S : R⟦X
   have hfix (x : E.range) : E x = x := by
     obtain ⟨y, hy⟩ := x.property
     simpa only [← hy, coe_coe, mul_apply_eq_comp, comp_apply] using
-      congr($(hE.isIdempotentElem.eq) y)
+      congr($((isRieszColemanProjection_def.mp hE).isIdempotentElem.eq) y)
   have hri : E.rangeRestrict.comp E.range.subtypeL = .id R E.range :=
     ext fun x ↦ Subtype.ext (hfix x)
   have hM : TauCeti.HasPr R E.range := hu.hasPr_source.of_retract _ _ hri
   have hleft : E.rangeRestrict.comp (u.comp E.range.subtypeL) =
       u.restrict (fun _ hx ↦ hE.mapsTo_range hx) := by
     ext x
-    exact (congr($(hE.commute.eq) (x : M)).symm).trans (congrArg u (hfix x))
+    exact (congr($((isRieszColemanProjection_def.mp hE).commute.eq) (x : M)).symm).trans
+      (congrArg u (hfix x))
   have hright : (u.comp E.range.subtypeL).comp E.rangeRestrict = u * E := by
     rw [comp_assoc, rangeRestrict, subtypeL_comp_codRestrict, mul_def]
   rw [← hleft, ← (hu.comp_clm E.range.subtypeL hM).charPowerSeries_comp_comm E.rangeRestrict,
@@ -362,7 +322,7 @@ theorem charPowerSeries_restrict_ker {u E : M →L[R] M} {Q : R[X]} {S : R⟦X�
   have hmem (x : M) : (1 - E) x ∈ E.ker := by
     apply LinearMap.mem_ker.mpr
     simp only [coe_coe, sub_apply, one_apply_eq_self, map_sub, sub_eq_zero]
-    exact (congr($(hE.isIdempotentElem.eq) x)).symm
+    exact (congr($((isRieszColemanProjection_def.mp hE).isIdempotentElem.eq) x)).symm
   let rK : M →L[R] E.ker := (1 - E).codRestrict E.ker hmem
   have hri : rK.comp E.ker.subtypeL = .id R E.ker := by
     ext x

@@ -59,8 +59,12 @@ properties depend only on this structure:
 * `ContinuousLinearMap.IsSpectralProjection.semiconj`,
   `ContinuousLinearMap.IsSpectralProjection.semiconj_inverse`,
   `ContinuousLinearMap.IsSpectralProjection.commute_of_commute`: functoriality and commutants.
-* `ContinuousLinearMap.IsSpectralProjection.comp_comp_of_retract`: retract compression.
-* `ContinuousLinearMap.IsSpectralProjection.map`: transport along ring homomorphisms.
+* `ContinuousLinearMap.IsSpectralProjection.comp_comp_of_retract`,
+  `ContinuousLinearMap.IsSpectralProjection.inverse_comp_comp_of_retract`: retract compression
+  and its complementary inverse.
+* `ContinuousLinearMap.IsSpectralProjection.map`,
+  `ContinuousLinearMap.IsSpectralProjection.inverse_map`: transport along ring homomorphisms
+  and its complementary inverse.
 
 ## References
 
@@ -495,6 +499,29 @@ theorem IsSpectralProjection.comp_comp_of_retract (hri : r.comp i = .id R M)
     simp only [mul_apply_eq_comp, comp_apply, hE', hri', zero_apply]
     rw [← mul_apply_eq_comp, hE.inverse_mul_eq_zero, zero_apply, map_zero]
 
+/-- The complementary inverse of the retract-compressed spectral projection is the retract
+compression `r ∘ hE.inverse ∘ i` of the original complementary inverse. -/
+theorem IsSpectralProjection.inverse_comp_comp_of_retract (hri : r.comp i = .id R M)
+    {C : M →L[R] M} {D : N →L[R] N} {h : ℕ} {E : N →L[R] N}
+    (hr : Function.Semiconj (r : N →ₗ[R] M) D C)
+    (hi : Function.Semiconj (i : M →ₗ[R] N) C D)
+    (hE : IsSpectralProjection (i.comp (u.comp r)) D h E) :
+    (hE.comp_comp_of_retract hri hr hi).inverse = r.comp (hE.inverse.comp i) := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have hir_comm : Commute (i.comp r) D := by
+    ext y
+    simp only [mul_apply_eq_comp, comp_apply]
+    exact (congrArg i (hr y)).trans (hi (r y))
+  have hw' (y : N) : i (r (hE.inverse y)) = hE.inverse (i (r y)) :=
+    congr($(hE.commute_inverse_of_commute hir_comm) y)
+  refine ((hE.comp_comp_of_retract hri hr hi).eq_inverse ?_ ?_).symm
+  · ext x
+    simpa [hri'] using
+      (hr (hE.inverse (i x))).symm.trans congr(r $(congr($(hE.spectral_mul_inverse) (i x))))
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, hw', hri', zero_apply]
+    rw [← mul_apply_eq_comp, hE.mul_inverse_eq_zero, zero_apply, map_zero]
+
 end Retract
 
 section Map
@@ -521,6 +548,17 @@ theorem IsSpectralProjection.map {u C E : M →L[R] M} {h : ℕ}
   · simpa only [map_mul, map_sub, map_one] using congrArg φ hw₂
   · simpa only [map_mul, map_zero] using congrArg φ hw₃
   · simpa only [map_mul, map_zero] using congrArg φ hw₄
+
+/-- The complementary inverse of a spectral projection transported along a ring homomorphism `φ`
+is the image `φ hE.inverse` of the original complementary inverse. -/
+theorem IsSpectralProjection.inverse_map {u C E : M →L[R] M} {h : ℕ}
+    (hE : IsSpectralProjection u C h E) (φ : (M →L[R] M) →+* (N →L[S] N))
+    (hφ : ∀ {v}, v ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) →
+      φ v ∈ closure (Algebra.adjoin S {φ u} : Set (N →L[S] N))) :
+    (hE.map φ hφ).inverse = φ hE.inverse := by
+  refine ((hE.map φ hφ).eq_inverse ?_ ?_).symm
+  · simpa only [map_mul, map_sub, map_one] using congrArg φ hE.spectral_mul_inverse
+  · simpa only [map_mul, map_zero] using congrArg φ hE.mul_inverse_eq_zero
 
 end Map
 

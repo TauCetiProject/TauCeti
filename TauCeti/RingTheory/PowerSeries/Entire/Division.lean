@@ -95,8 +95,6 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
-* `TauCeti.PowerSeries.dvd_of_coe_eq_coe_mul_entire`: divisibility of polynomials in the ring of
-  entire power series by a polynomial with invertible leading coefficient descends to `R[X]`.
 * `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
   `TauCeti.PowerSeries.coe_subring_dvd_iff`, and
   `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: left cancellation of polynomials with
@@ -783,8 +781,9 @@ omit [CompleteSpace R] in
 /-- If a polynomial with invertible leading coefficient divides another polynomial in the ring of
 entire power series, then it divides it in the polynomial ring. Completeness of `R` is not
 needed. -/
-theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧} (hp : IsUnit p.leadingCoeff)
-    (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) : p ∣ g := by
+private theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
+    (hp : IsUnit p.leadingCoeff) (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) :
+    p ∣ g := by
   have : Nontrivial R := NormOneClass.nontrivial
   let u := hp.unit
   let P : Polynomial R := u⁻¹ • p
@@ -828,39 +827,23 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
     (by rw [Polynomial.coe_zero, add_zero])
     (by rw [Polynomial.coe_zero, add_zero]; exact heq.symm)).1
 
-/-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
+omit [CompleteSpace R] in
+/-- Over an ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
     (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
       ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩ ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩
-  · set c := Ring.inverse Q.leadingCoeff
-    have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-    set Q₁ : Polynomial R := Polynomial.C c * Q
-    have hq₁ : Q₁.Monic := Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one hc
-    rintro ⟨⟨G, hG⟩, hPG⟩
-    replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
-    have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
-      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := congrArg Subtype.val hPG
-      have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
-        calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
-            = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
-              simp only [Q₁, Polynomial.coe_mul, Polynomial.coe_C, map_mul]; ring
-          _ = (Q : R⟦X⟧) := by rw [hc, map_one, one_mul]
-      rw [h1, ← h2, mul_assoc]
-    have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hPG'
-    rw [PowerSeries.divByMonic_coe P hq₁,
-      ((isEntire_C Q.leadingCoeff).mul hG).coe_mul_divByMonic_cancel_left hq₁] at hdiv
-    have hPK : P = Q₁ * (P /ₘ Q₁) :=
-      Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
-    exact ⟨Polynomial.C c * (P /ₘ Q₁), by simpa only [Q₁, mul_assoc, mul_left_comm] using hPK⟩
+  · rintro ⟨⟨G, hG⟩, hPG⟩
+    exact dvd_of_coe_eq_coe_mul_entire hQ (IsEntire.mem_subring.mp hG) (congrArg Subtype.val hPG)
   · rintro ⟨K, rfl⟩
     exact ⟨⟨K, IsEntire.mem_subring.mpr (isEntire_coe K)⟩, Subtype.ext (Polynomial.coe_mul Q K)⟩
 
-/-- Over a complete ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q`
-divides `P` in the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q`
-share a left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
+omit [CompleteSpace R] in
+/-- Over an ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q` divides `P` in
+the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q` share a
+left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
 theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
     (hdvd : (⟨Q, IsEntire.mem_subring.mpr (isEntire_coe Q)⟩ : IsEntire.subring R) ∣
       ⟨P, IsEntire.mem_subring.mpr (isEntire_coe P)⟩)

@@ -65,7 +65,7 @@ theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E
     IsUnit ((u * (1 - E)).matrixCoeff.charPowerSeries.evalAt a) := by
   apply (hu.comp_clm (1 - E)).isUnit_evalAt_charPowerSeries_of_isUnit_one_sub_smul
   have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
-    (A := C₀(I, R) →L[R] C₀(I, R)) hE.isIdempotentElem
+    (A := C₀(I, R) →L[R] C₀(I, R)) (isRieszProjection_def.mp hE).isIdempotentElem
     hE.one_sub_smul_mul_inverse hE.inverse_mul_one_sub_smul
   convert hunit using 1
   ext x : 1
@@ -77,7 +77,8 @@ with the same order, because the complementary factor is a unit there. -/
 theorem isGoodZero_charPowerSeries_matrixCoeff_mul (hE : IsRieszProjection u a h E)
     (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
     (u * E).matrixCoeff.charPowerSeries.IsGoodZero a h := by
-  rw [hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute] at hH
+  rw [hu.charPowerSeries_matrixCoeff_eq_mul_of_commute
+    (isRieszProjection_def.mp hE).isIdempotentElem (isRieszProjection_def.mp hE).commute] at hH
   exact ((hu.comp_clm E).isEntire_charPowerSeries.isGoodZero_mul_iff_of_isUnit
     (hu.comp_clm (1 - E)).isEntire_charPowerSeries
     (hE.isUnit_evalAt_charPowerSeries_complement hu)).mp hH
@@ -95,15 +96,18 @@ private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszPro
   -- Fix the additive group before forming endomorphisms of the range, so their ring
   -- structure uses the same additive monoid as the submodule and its normed structure.
   let : AddCommGroup E.range := inferInstance
-  have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
-  have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
+  have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
   have hfix (x : E.range) : E x = x :=
     (LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+        (isRieszProjection_def.mp hE).isIdempotentElem)).mp x.property
   let f : Module.End R E.range := (u.restrict hE.mapsTo_range).toLinearMap
   refine ⟨inferInstance, inferInstance, f, ?_,
     (hE.isRowCompact hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-      hE.isIdempotentElem hE.mapsTo_range⟩
+      (isRieszProjection_def.mp hE).isIdempotentElem hE.mapsTo_range⟩
   -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
   have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
     refine ⟨h, ?_⟩
@@ -117,7 +121,7 @@ private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszPro
       (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
     ext x : 1
     apply Subtype.ext
-    have hx := congr($(hE.pow_mul_eq_zero) (x : C₀(I, R)))
+    have hx := congr($((isRieszProjection_def.mp hE).pow_mul_eq_zero) (x : C₀(I, R)))
     simpa only [LinearMap.coe_restrict_apply, ← toLinearMap_pow, coe_coe,
       mul_apply_eq_comp, hfix, zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] using hx
   have hscale : f - μ • (1 : Module.End R E.range) =
@@ -176,7 +180,8 @@ theorem charPowerSeries_matrixCoeff_eq_pow_mul (hE : IsRieszProjection u a h E)
       (1 - PowerSeries.C (Ring.inverse a) * PowerSeries.X) ^ h *
         (u * (1 - E)).matrixCoeff.charPowerSeries := by
   rw [← hE.charPowerSeries_matrixCoeff_mul_eq_pow hu hH,
-    hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute]
+    hu.charPowerSeries_matrixCoeff_eq_mul_of_commute
+      (isRieszProjection_def.mp hE).isIdempotentElem (isRieszProjection_def.mp hE).commute]
 
 end Ring
 
@@ -196,7 +201,8 @@ theorem charPowerSeries_matrixCoeff_mul_eq_pow_finrank (hE : IsRieszProjection u
   · have hC : (1 - a • u : C₀(I, K) →L[K] C₀(I, K)) = 1 := by
       ext x
       simp [ha]
-    have hzero : E = 0 := by simpa only [hC, one_pow, one_mul] using hE.pow_mul_eq_zero
+    have hzero : E = 0 := by
+      simpa only [hC, one_pow, one_mul] using (isRieszProjection_def.mp hE).pow_mul_eq_zero
     simp [ha, hzero]
   let : AddCommGroup E.range := inferInstance
   obtain ⟨_, _, f, hf, hchar⟩ :=

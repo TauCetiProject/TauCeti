@@ -31,7 +31,8 @@ For row-compact `u` the whole spectral calculus at a scalar `a` follows, at the 
   (`ContinuousLinearMap.IsRowCompact.resolventHasseDerivAt_mapCoeffs`), since coefficient
   extension is a continuous ring homomorphism on endomorphisms;
 * when `S` is Tate, Riesz projections, which need no compactness at all
-  (`ContinuousLinearMap.IsRieszProjection.mapCoeffs`), and the explicit Riesz projector
+  (`ContinuousLinearMap.IsRieszProjection.mapCoeffs`,
+  `ContinuousLinearMap.IsRieszProjection.inverse_mapCoeffs`), and the explicit Riesz projector
   (`ContinuousLinearMap.IsRowCompact.rieszProjection_mapCoeffs`).
 
 This comparison allows coefficient rings without a common ground field and does not require
@@ -162,10 +163,26 @@ the same order. No compactness is needed. -/
 theorem IsRieszProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) := by
-  simpa only [IsRieszProjection, mapCoeffsRingHom_apply, mapCoeffs_sub, mapCoeffs_one,
-    mapCoeffs_smul] using
-    IsSpectralProjection.map hE (mapCoeffsRingHom f hf)
-      (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+    IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) :=
+  isRieszProjection_def.mpr <| by
+    simpa only [mapCoeffsRingHom_apply, mapCoeffs_sub, mapCoeffs_one, mapCoeffs_smul] using
+      IsSpectralProjection.map (isRieszProjection_def.mp hE) (mapCoeffsRingHom f hf)
+        (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+
+/-- Bounded coefficient extension commutes with taking the complementary inverse of a Riesz
+projection. -/
+theorem IsRieszProjection.inverse_mapCoeffs [TauCeti.NormedRing.IsTate S]
+    {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
+    (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
+    (isRieszProjection_def.mp (hE.mapCoeffs f hf)).inverse =
+      (isRieszProjection_def.mp hE).inverse.mapCoeffs f hf := by
+  have hinv := (isRieszProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
+    (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+  have heq : ∀ {u' C' E'} (_ : u' = u.mapCoeffs f hf) (_ : C' = 1 - f a • u.mapCoeffs f hf)
+      (_ : E' = E.mapCoeffs f hf) (h' : IsSpectralProjection u' C' h E'),
+      h'.inverse = (isRieszProjection_def.mp (hE.mapCoeffs f hf)).inverse := by
+    rintro _ _ _ rfl rfl rfl _; rfl
+  exact (heq (mapCoeffsRingHom_apply _ _ _) (by simp [mapCoeffsRingHom_apply])
+    (mapCoeffsRingHom_apply _ _ _) _).symm.trans (hinv.trans (mapCoeffsRingHom_apply _ _ _))
 
 end ContinuousLinearMap

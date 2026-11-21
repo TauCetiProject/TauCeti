@@ -547,17 +547,12 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
   let Φ := completedBaseChangeRingHom α
   have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
     simp [Φ, completedBaseChangeRingHom]
-  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
-  refine ⟨by simpa [IsIdempotentElem, Φ] using congrArg Φ hE.isIdempotentElem.eq,
-    by simpa [Commute, SemiconjBy, Φ] using congrArg Φ hE.commute.eq,
-    completedBaseChange_mem_closure_adjoin hS hM α hE.mem_closure_adjoin,
-    by simpa [Φ, map_mul, map_pow, h1sub] using congrArg Φ hE.pow_mul_eq_zero,
-    ⟨w.completedBaseChange α α,
-      by simpa [Φ, map_mul, map_sub, map_one, h1sub] using congrArg Φ hw₁,
-      by simpa [Φ, map_mul, map_sub, map_one, h1sub] using congrArg Φ hw₂,
-      by simpa [Φ, map_mul] using congrArg Φ hw₃,
-      by simpa [Φ, map_mul] using congrArg Φ hw₄,
-      completedBaseChange_mem_closure_adjoin hS hM α hw⟩⟩
+  have hu' : Φ u = u.completedBaseChange α α := rfl
+  have hE' : Φ E = E.completedBaseChange α α := rfl
+  exact isRieszProjection_def.mpr <| by
+    simpa only [hu', h1sub, hE'] using
+      (isRieszProjection_def.mp hE).map Φ fun {v} hv ↦
+        completedBaseChange_mem_closure_adjoin hS hM α hv
 
 end PrTransport
 

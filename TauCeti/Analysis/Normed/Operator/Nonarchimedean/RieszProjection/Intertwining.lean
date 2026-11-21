@@ -44,33 +44,29 @@ nilpotence bounds may differ, and the intertwiner need not be continuous. -/
 theorem semiconj (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k F)
     (f : C₀(I, R) →ₗ[R] C₀(J, R)) (hf : Function.Semiconj f u v) :
     Function.Semiconj f E F :=
-  IsSpectralProjection.semiconj hE hF f (hf.one_sub_smul a)
+  (isRieszProjection_def.mp hE).semiconj (isRieszProjection_def.mp hF) f (hf.one_sub_smul a)
 
 /-- An intertwiner sends the nilpotent spectral summand into the corresponding summand. -/
 theorem mapsTo_range_of_semiconj (hE : IsRieszProjection u a h E)
     (hF : IsRieszProjection v a k F) (f : C₀(I, R) →ₗ[R] C₀(J, R))
     (hf : Function.Semiconj f u v) : Set.MapsTo f E.range F.range :=
-  IsSpectralProjection.mapsTo_range_of_semiconj hE hF f (hf.one_sub_smul a)
+  (isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hF) f
+    (hf.one_sub_smul a)
 
 /-- An intertwiner sends the complementary spectral summand into the corresponding summand. -/
 theorem mapsTo_ker_of_semiconj (hE : IsRieszProjection u a h E)
     (hF : IsRieszProjection v a k F) (f : C₀(I, R) →ₗ[R] C₀(J, R))
     (hf : Function.Semiconj f u v) : Set.MapsTo f E.ker F.ker :=
-  IsSpectralProjection.mapsTo_ker_of_semiconj hE hF f (hf.one_sub_smul a)
+  (isRieszProjection_def.mp hE).mapsTo_ker_of_semiconj (isRieszProjection_def.mp hF) f
+    (hf.one_sub_smul a)
 
 /-- Intertwiners also carry the complementary inverses of the spectral operators to one
 another. This includes order zero, when the complementary inverse is the full inverse. -/
 theorem semiconj_inverse (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k F)
     (f : C₀(I, R) →ₗ[R] C₀(J, R)) (hf : Function.Semiconj f u v) :
-    Function.Semiconj f hE.inverse hF.inverse := by
-  have hE_inv : IsSpectralProjection.inverse hE = hE.inverse :=
-    hE.eq_inverse (IsSpectralProjection.spectral_mul_inverse hE)
-      (IsSpectralProjection.mul_inverse_eq_zero hE)
-  have hF_inv : IsSpectralProjection.inverse hF = hF.inverse :=
-    hF.eq_inverse (IsSpectralProjection.spectral_mul_inverse hF)
-      (IsSpectralProjection.mul_inverse_eq_zero hF)
-  simpa only [hE_inv, hF_inv] using
-    IsSpectralProjection.semiconj_inverse hE hF f (hf.one_sub_smul a)
+    Function.Semiconj f (isRieszProjection_def.mp hE).inverse
+      (isRieszProjection_def.mp hF).inverse :=
+  (isRieszProjection_def.mp hE).semiconj_inverse (isRieszProjection_def.mp hF) f (hf.one_sub_smul a)
 
 /-- A bounded operator commuting with `u` commutes with every Riesz projector of `u`. -/
 theorem commute_of_commute (hE : IsRieszProjection u a h E)
@@ -80,7 +76,8 @@ theorem commute_of_commute (hE : IsRieszProjection u a h E)
 /-- A bounded operator commuting with `u` commutes with the complementary inverse of any
 Riesz projector of `u`. -/
 theorem commute_inverse_of_commute (hE : IsRieszProjection u a h E)
-    {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) : Commute w hE.inverse :=
+    {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) :
+    Commute w (isRieszProjection_def.mp hE).inverse :=
   ext fun x ↦ hE.semiconj_inverse hE w.toLinearMap (fun y ↦ congr($(hw.eq) y)) x
 
 end ContinuousLinearMap.IsRieszProjection

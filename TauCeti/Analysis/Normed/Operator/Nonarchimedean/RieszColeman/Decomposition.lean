@@ -120,10 +120,8 @@ theorem rieszColemanProjection_one (u : C₀(I, R) →L[R] C₀(I, R)) :
     u.rieszColemanProjection 1 = 0 := by
   simp [rieszColemanProjection_def]
 
-/-- Scaling a polynomial with invertible leading coefficient by a unit of `R` leaves
-`u.rieszColemanProjection` unchanged. -/
-theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]}
-    (hQ : IsUnit Q.leadingCoeff) (c : Rˣ) :
+/-- Scaling a polynomial by a unit of `R` leaves `u.rieszColemanProjection` unchanged. -/
+theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q : R[X]} (c : Rˣ) :
     u.rieszColemanProjection (c • Q) = u.rieszColemanProjection Q := by
   have hdeg : (c • Q).natDegree = Q.natDegree :=
     Polynomial.natDegree_smul_of_smul_regular Q (IsSMulRegular.all _)
@@ -131,19 +129,7 @@ theorem rieszColemanProjection_units_smul (u : C₀(I, R) →L[R] C₀(I, R)) {Q
     rw [Polynomial.leadingCoeff_smul_of_smul_regular Q (IsSMulRegular.all _), Units.smul_def,
       smul_eq_mul]
   have hinv : Ring.inverse (c • Q).leadingCoeff = (↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff := by
-    have hmul : ((c : R) * Q.leadingCoeff) * ((↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff) = 1 := by
-      calc ((c : R) * Q.leadingCoeff) * ((↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff)
-          = ((c : R) * (↑c⁻¹ : R)) * (Q.leadingCoeff * Ring.inverse Q.leadingCoeff) := by ring
-        _ = 1 := by rw [Units.mul_inv, Ring.mul_inverse_cancel _ hQ, one_mul]
-    rw [hlc]
-    calc Ring.inverse ((c : R) * Q.leadingCoeff)
-        = Ring.inverse ((c : R) * Q.leadingCoeff) *
-            (((c : R) * Q.leadingCoeff) * ((↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff)) := by
-          rw [hmul, mul_one]
-      _ = (Ring.inverse ((c : R) * Q.leadingCoeff) * ((c : R) * Q.leadingCoeff)) *
-            ((↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff) := by rw [← mul_assoc]
-      _ = (↑c⁻¹ : R) * Ring.inverse Q.leadingCoeff := by
-          rw [Ring.inverse_mul_cancel _ (c.isUnit.mul hQ), one_mul]
+    rw [hlc, Ring.inverse_mul (Or.inl c.isUnit), Ring.inverse_unit, mul_comm]
   have hrev : (c • Q).reverse = Polynomial.C (c : R) * Q.reverse := by
     rw [Polynomial.reverse, hdeg]
     simp [Polynomial.reverse, Units.smul_def, Polynomial.smul_eq_C_mul]
@@ -224,7 +210,7 @@ private theorem isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection
       c • Polynomial.aeval u Q.reverse := by
     simp [Algebra.algebraMap_eq_smul_one]
   have hunit := _root_.IsIdempotentElem.isUnit_add_mul_one_sub
-    (A := M →L[R] M) hEv.isIdempotentElem
+    (A := M →L[R] M) (isRieszProjection_def.mp hEv).isIdempotentElem
     hEv.one_sub_smul_mul_inverse hEv.inverse_mul_one_sub_smul
   rw [h1v] at hunit
   have hulc : IsUnit (Q.leadingCoeff • (1 : M →L[R] M)) :=
@@ -233,8 +219,9 @@ private theorem isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection
   have heq : (Q.leadingCoeff • (1 : M →L[R] M)) *
       (E + (c • Polynomial.aeval u Q.reverse) * (1 - E)) =
       Polynomial.aeval (u * (1 - E)) Q.reverse := by
-    rw [aeval_mul_one_sub_of_isIdempotentElem hEv.isIdempotentElem hEu, coeff_zero_reverse,
-      smul_one_mul, smul_add, smul_mul_assoc, smul_smul, hcq, one_smul, add_comm]
+    rw [aeval_mul_one_sub_of_isIdempotentElem (isRieszProjection_def.mp hEv).isIdempotentElem hEu,
+      coeff_zero_reverse, smul_one_mul, smul_add, smul_mul_assoc, smul_smul, hcq, one_smul,
+      add_comm]
   exact heq ▸ hulc.mul hunit
 
 /-- Algebraic properties of `E = u.rieszColemanProjection Q` inherited directly from its definition
@@ -271,7 +258,7 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
   set T := (Algebra.adjoin R {u}).topologicalClosure
   have hET : E ∈ T := by
     rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-    exact hsub hEv.mem_closure_adjoin
+    exact hsub (isRieszProjection_def.mp hEv).mem_closure_adjoin
   have hEu : Commute u E := by
     rw [Commute, SemiconjBy]
     exact (Subalgebra.mem_centralizer_iff R).mp
@@ -279,17 +266,19 @@ private theorem rieszColemanProjection_aux {u : C₀(I, R) →L[R] C₀(I, R)} (
       ((Subalgebra.mem_centralizer_iff R).mpr fun _ hy ↦ by rw [Set.mem_singleton_iff.mp hy])
   have h1v : (1 - (1 : R) • v : C₀(I, R) →L[R] C₀(I, R)) = c • Polynomial.aeval u Q.reverse := by
     simp [v, B, Algebra.algebraMap_eq_smul_one]
-  have hwT : c • hEv.inverse ∈ closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
+  have hwT : c • (isRieszProjection_def.mp hEv).inverse ∈
+      closure (Algebra.adjoin R {u} : Set (C₀(I, R) →L[R] C₀(I, R))) := by
     rw [← Subalgebra.topologicalClosure_coe]
     refine T.smul_mem ?_ c
     rw [← SetLike.mem_coe, Subalgebra.topologicalClosure_coe]
-    exact hsub hEv.inverse_mem_closure_adjoin
-  refine ⟨hEv, hEu, hsub hEv.mem_closure_adjoin, ⟨c • hEv.inverse, ?_, ?_, ?_, ?_, hwT⟩,
+    exact hsub (isRieszProjection_def.mp hEv).inverse_mem_closure_adjoin
+  refine ⟨hEv, hEu, hsub (isRieszProjection_def.mp hEv).mem_closure_adjoin,
+    ⟨c • (isRieszProjection_def.mp hEv).inverse, ?_, ?_, ?_, ?_, hwT⟩,
     isUnit_aeval_mul_one_sub_reverse_of_isRieszProjection hQ hEv hEu⟩
   · rw [mul_smul_comm, ← smul_mul_assoc, ← h1v, hEv.one_sub_smul_mul_inverse]
   · rw [smul_mul_assoc, ← mul_smul_comm, ← h1v, hEv.inverse_mul_one_sub_smul]
-  · rw [mul_smul_comm, hEv.mul_inverse_eq_zero]; ext x : 1; simp
-  · rw [smul_mul_assoc, hEv.inverse_mul_eq_zero]; ext x : 1; simp
+  · rw [mul_smul_comm, (isRieszProjection_def.mp hEv).mul_inverse_eq_zero]; ext x : 1; simp
+  · rw [smul_mul_assoc, (isRieszProjection_def.mp hEv).inverse_mul_eq_zero]; ext x : 1; simp
 
 /-- Core determinant and Cayley–Hamilton step: for `E = u.rieszColemanProjection Q`, the Fredholm
 factors satisfy `H_(uE) = Q` and `H_(u(1-E)) = S`, and `Q*(u) * E = 0`. -/
@@ -314,20 +303,23 @@ private theorem charPowerSeries_and_aeval_reverse_rieszColemanProjection
   have hrank : ∀ p : PrimeSpectrum R, Module.rankAtStalk (R := R) E.range p = Q.natDegree :=
     hEv.rankAtStalk_range hv hv_good
   let : AddCommGroup E.range := inferInstance
-  have := (hEv.isRowCompact hv).finite_range_of_isIdempotentElem hEv.isIdempotentElem
-  have := (hEv.isRowCompact hv).projective_range_of_isIdempotentElem hEv.isIdempotentElem
+  have := (hEv.isRowCompact hv).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hEv).isIdempotentElem
+  have := (hEv.isRowCompact hv).projective_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hEv).isIdempotentElem
   have hu_maps : ∀ x ∈ E.range, u x ∈ E.range := by
     rintro _ ⟨y, rfl⟩
     exact ⟨u y, congr($(hEu.eq.symm) y)⟩
   let f : Module.End R E.range := (u.restrict hu_maps).toLinearMap
   have hcharE : (u * E).matrixCoeff.charPowerSeries = (f.projectiveCharpolyRev : R⟦X⟧) :=
     (hEv.isRowCompact hv).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-      hEv.isIdempotentElem hu_maps
+      (isRieszProjection_def.mp hEv).isIdempotentElem hu_maps
   set P := f.projectiveCharpolyRev
   set S' := (u * (1 - E)).matrixCoeff.charPowerSeries
   have hS' : S'.IsEntire := (hu.comp_clm (1 - E)).isEntire_charPowerSeries
   have hsplit : (Q : R⟦X⟧) * S = (P : R⟦X⟧) * S' := by
-    rw [← hQS, hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hEv.isIdempotentElem hEu, hcharE]
+    rw [← hQS, hu.charPowerSeries_matrixCoeff_eq_mul_of_commute
+      (isRieszProjection_def.mp hEv).isIdempotentElem hEu, hcharE]
   have hcop' := ((hu.comp_clm (1 - E)).isUnit_aeval_reverse_iff hQ).mp hunit_compl
   have hdvd : (⟨Q, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe Q)⟩ : IsEntire.subring R) ∣
       ⟨P, IsEntire.mem_subring.mpr (PowerSeries.isEntire_coe P)⟩ :=
@@ -423,8 +415,10 @@ theorem IsRowCompact.isRieszColemanProjection_rieszColemanProjection
   obtain ⟨-, -, hzero⟩ :=
     charPowerSeries_and_aeval_reverse_rieszColemanProjection hu hQ'0 hQ'lc hS' hH' hcop'
   have hproj : IsRieszColemanProjection u (c⁻¹ • Q) (u.rieszColemanProjection (c⁻¹ • Q)) :=
-    ⟨hEv.isIdempotentElem, hEu, hEmem, by simpa only [pow_one] using hzero, hex⟩
-  rw [rieszColemanProjection_units_smul u hQ c⁻¹] at hproj
+    isRieszColemanProjection_def.mpr
+      ⟨(isRieszProjection_def.mp hEv).isIdempotentElem, hEu, hEmem,
+        by simpa only [pow_one] using hzero, hex⟩
+  rw [rieszColemanProjection_units_smul u c⁻¹] at hproj
   exact (IsRieszColemanProjection.units_smul_iff c⁻¹).mp hproj
 
 /-- **Existence of the Riesz–Coleman projection on model spaces.** Let `u` be row compact on
@@ -525,7 +519,7 @@ theorem projectiveCharpolyRev_restrict_range {u E : C₀(I, R) →L[R] C₀(I, R
   have := hE.projective_range hQ hu
   apply Polynomial.coe_inj.mp
   rw [← (hE.isRowCompact hQ hu).charPowerSeries_matrixCoeff_mul_eq_projectiveCharpolyRev
-    hE.isIdempotentElem fun _ hx ↦ hE.mapsTo_range hx]
+    (isRieszColemanProjection_def.mp hE).isIdempotentElem fun _ hx ↦ hE.mapsTo_range hx]
   exact hE.charPowerSeries_matrixCoeff_mul hu hQ0 hQ hS hQS hcop
 
 end IsRieszColemanProjection
@@ -631,13 +625,10 @@ theorem IsRowCompact.rieszColemanProjection_mapCoeffs [IsUltrametricDist R]
     hu.aeval (coeff_zero_one_sub_C_mul_reverse hc)
   have hv_good :=
     isGoodZero_charPowerSeries_aeval_one_sub_C_mul_reverse hu hQ'0 hQ'lc hS'' hH' hcop'
-  have hQmap : IsUnit (Q.map f).leadingCoeff := by
-    rw [leadingCoeff_map_of_leadingCoeff_ne_zero f (hQ.map f).ne_zero]
-    exact hQ.map f
   have hmap_smul : ((c⁻¹ • Q).map f) = Units.map (f : R →* S) c⁻¹ • Q.map f := by
     ext n; simp [Units.smul_def, Polynomial.smul_eq_C_mul]
-  rw [← rieszColemanProjection_units_smul u hQ c⁻¹,
-    ← rieszColemanProjection_units_smul (u.mapCoeffs f hf) hQmap (Units.map (f : R →* S) c⁻¹),
+  rw [← rieszColemanProjection_units_smul u c⁻¹,
+    ← rieszColemanProjection_units_smul (u.mapCoeffs f hf) (Units.map (f : R →* S) c⁻¹),
     ← hmap_smul, rieszColemanProjection_def, rieszColemanProjection_def, hdeg, hBmap,
     aeval_mapCoeffs, ← map_one f,
     hv.rieszProjection_mapCoeffs f hf hv_good.isUnit_evalAt_hasseDeriv]

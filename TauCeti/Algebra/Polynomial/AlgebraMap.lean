@@ -124,7 +124,9 @@ theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Alg
     calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
       _ = (x * y) * (x * y + 1) + 1 := by rw [← add_assoc, mul_add, mul_one]
       _ = 1 := by rw [he, mul_zero, zero_add]
-  refine isUnit_iff_exists.mpr ⟨y * (x * y), by rw [← mul_assoc, hee], ?_⟩
-  rw [← mul_assoc y x y, mul_assoc (y * x), ← hcomm.eq, hee]
+  have hxy : IsUnit (x * y) := (isUnit_pow_iff (by decide : 2 ≠ 0)).mp <| by
+    rw [pow_two, hee]
+    exact isUnit_one
+  exact (hcomm.isUnit_mul_iff.mp hxy).1
 
 end Polynomial

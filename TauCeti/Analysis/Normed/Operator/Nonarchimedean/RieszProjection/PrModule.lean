@@ -97,7 +97,7 @@ theorem IsRieszProjection.isPrCompact (hE : IsRieszProjection u a h E) (hu : u.I
   -- The geometric sum expresses `E` as the row-compact factor `a • u` followed by bounded maps.
   have hEq : E = (1 - C) * (∑ i ∈ Finset.range h, C ^ i) * E := by
     rw [mul_neg_geom_sum C h]
-    simp only [C, sub_mul (α := M →L[R] M), one_mul, hE.pow_mul_eq_zero,
+    simp only [C, sub_mul (α := M →L[R] M), one_mul, (isRieszProjection_def.mp hE).pow_mul_eq_zero,
       sub_zero (G := M →L[R] M)]
   have hc : (1 - C).IsPrCompact := by
     simpa only [C, sub_sub_cancel (1 : M →L[R] M) (a • u)] using hu.smul a
@@ -111,7 +111,8 @@ theorem IsRieszProjection.finite_ker_pow_of_isPrCompact (hE : IsRieszProjection 
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
   rw [← (hE.of_le hn).range_eq_ker]
-  exact (hE.isPrCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  exact (hE.isPrCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
 
 /-- The stabilised generalised eigenspace `ker (1 - a • u) ^ n`, `n ≥ h`, of a row-compact
 endomorphism of a module with property (Pr) is projective over the coefficient ring. -/
@@ -119,7 +120,8 @@ theorem IsRieszProjection.projective_ker_pow_of_isPrCompact (hE : IsRieszProject
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
   rw [← (hE.of_le hn).range_eq_ker]
-  exact (hE.isPrCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  exact (hE.isPrCompact hu).projective_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
 
 end PrModule
 

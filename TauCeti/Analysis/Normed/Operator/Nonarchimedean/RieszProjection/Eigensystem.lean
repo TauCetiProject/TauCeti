@@ -52,7 +52,8 @@ theorem exists_jointEigenvector (hE : IsRieszProjection u a h E) (hu : u.IsRowCo
       (hE.mapsTo_range_of_semiconj hE (f i) (hfu i))) μ = ⊤) :
     ∃ (χ : ι → K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ i, f i v = χ i • v := by
-  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
   have hrange : E.range ≠ ⊥ := by
     intro hz
     apply hE0
@@ -76,7 +77,8 @@ theorem exists_jointEigenvector_of_isAlgClosed [IsAlgClosed K]
     (hfu : ∀ i, Function.Semiconj (f i) u u) :
     ∃ (χ : ι → K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ i, f i v = χ i • v := by
-  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
   exact hE.exists_jointEigenvector hu hE0 f hcomm hfu
     (fun _ ↦ Module.End.iSup_maxGenEigenspace_eq_top _)
 
@@ -108,7 +110,8 @@ theorem exists_eigenvalueHom_of_isAlgClosed [IsAlgClosed K]
     (hρu : ∀ b, Function.Semiconj (ρ b) u u) :
     ∃ (χ : A →ₐ[K] K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ b, ρ b v = χ b • v := by
-  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
   exact hE.exists_eigenvalueHom hu hE0 ρ hρu
     (fun _ ↦ Module.End.iSup_maxGenEigenspace_eq_top _)
 

@@ -16,10 +16,6 @@ For a Riesz projection `E` of `u` at `a` with nilpotence bound `h`, put `C = 1 -
 For every `n ≥ h`, the kernel of `C ^ n` is `range E` and its range is `ker E`.
 These are topological complements, so the decomposition into the nilpotent and invertible
 parts is a decomposition by closed submodules. In particular both kernels and ranges stabilise
-at `h`, without any finite-dimensional or Noetherian assumption. The named automorphism
-`ContinuousLinearMap.IsRieszProjection.equivKer` restricts `C` to the complementary summand
-`ker E`; its forward and inverse application lemmas identify both maps.
-
 For any Riesz projection of a row-compact operator, with no good-zero hypothesis, the stabilised
 kernel is finitely generated and projective. This applies over coefficient rings with nilpotents
 and includes order zero, when the kernel is zero and the complementary range is the whole module.
@@ -54,14 +50,14 @@ theorem ker_pow_eq (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
       C₀(I, R) →ₗ[R] C₀(I, R)) =
     LinearMap.ker (((1 - a • u) ^ h : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  IsSpectralProjection.ker_pow_eq hE hn
+  (isRieszProjection_def.mp hE).ker_pow_eq hn
 
 /-- The range of every sufficiently large power of `1 - a • u` is the kernel of its
 Riesz projection, hence the complementary spectral summand. -/
 theorem range_pow_eq_ker (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
     LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R)) = LinearMap.ker (E : C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  IsSpectralProjection.range_pow_eq_ker hE hn
+  (isRieszProjection_def.mp hE).range_pow_eq_ker hn
 
 /-- The ranges of the powers of `1 - a • u` stabilise at the nilpotence bound of a
 Riesz projection. -/
@@ -70,7 +66,7 @@ theorem range_pow_eq (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
       C₀(I, R) →ₗ[R] C₀(I, R)) =
     LinearMap.range (((1 - a • u) ^ h : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R)) :=
-  IsSpectralProjection.range_pow_eq hE hn
+  (isRieszProjection_def.mp hE).range_pow_eq hn
 
 /-- The generalised eigenspace and the stabilised range of `1 - a • u` are topological
 complements. -/
@@ -79,37 +75,14 @@ theorem isTopCompl_ker_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n)
       C₀(I, R) →ₗ[R] C₀(I, R))).IsTopCompl
     (LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) :=
-  IsSpectralProjection.isTopCompl_ker_range_pow hE hn
+  (isRieszProjection_def.mp hE).isTopCompl_ker_range_pow hn
 
 /-- Every stabilised range of `1 - a • u` is closed, even when the ambient module is
 infinite-dimensional. -/
 theorem isClosed_range_pow (hE : IsRieszProjection u a h E) (hn : h ≤ n) :
     IsClosed (LinearMap.range (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R)) : Set C₀(I, R)) :=
-  IsSpectralProjection.isClosed_range_pow hE hn
-
-/-- The spectral operator `1 - a • u` as a continuous linear automorphism of the
-complementary summand `ker E`, identified with every stabilised range by `range_pow_eq_ker`.
-Its inverse is the restriction of the complementary inverse `IsRieszProjection.inverse`. -/
-noncomputable def equivKer (hE : IsRieszProjection u a h E) : E.ker ≃L[R] E.ker :=
-  IsSpectralProjection.equivKer hE
-
-/-- The complementary automorphism acts by the spectral operator. -/
-@[simp]
-theorem coe_equivKer_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
-    (hE.equivKer x : C₀(I, R)) = (1 - a • u) x :=
-  IsSpectralProjection.coe_equivKer_apply hE x
-
-/-- The inverse complementary automorphism acts by the complementary inverse
-`IsRieszProjection.inverse`, which `IsRieszProjection.eq_inverse` identifies with any operator
-`w` satisfying `(1 - a • u) * w = 1 - E` and `E * w = 0`. -/
-@[simp]
-theorem coe_equivKer_symm_apply (hE : IsRieszProjection u a h E) (x : E.ker) :
-    (hE.equivKer.symm x : C₀(I, R)) = hE.inverse x := by
-  have heq : IsSpectralProjection.inverse hE = hE.inverse :=
-    hE.eq_inverse (IsSpectralProjection.spectral_mul_inverse hE)
-      (IsSpectralProjection.mul_inverse_eq_zero hE)
-  exact (IsSpectralProjection.coe_equivKer_symm_apply hE x).trans (congrArg (fun f ↦ f x) heq)
+  (isRieszProjection_def.mp hE).isClosed_range_pow hn
 
 variable [DiscreteTopology I] [DecidableEq I] [IsUltrametricDist R]
 
@@ -120,7 +93,8 @@ theorem finite_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) (h
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
   rw [← (hE.of_le hn).range_eq_ker]
-  exact (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  exact (hE.isRowCompact hu).finite_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
 
 /-- The stabilised generalised eigenspace of a row-compact operator is projective over the
 coefficient ring. No Noetherian hypothesis is needed. -/
@@ -128,7 +102,8 @@ theorem projective_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
   rw [← (hE.of_le hn).range_eq_ker]
-  exact (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  exact (hE.isRowCompact hu).projective_range_of_isIdempotentElem
+    (isRieszProjection_def.mp hE).isIdempotentElem
 
 end IsRieszProjection
 
