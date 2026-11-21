@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Normalization
 import TauCeti.RingTheory.Polynomial.RootEnumeration
 public import TauCeti.Algebra.Polynomial.Reverse
@@ -45,7 +46,7 @@ variable {R : Type*} [CommRing R]
 
 /- The passage from split fields to arbitrary rings uses Mathlib's
 `Polynomial.induction_of_Splits_of_injective_of_surjective`. Translation uses
-`Polynomial.resultant_taylor` and `Polynomial.resultant_deriv`; the reversal root calculations
+`Polynomial.resultant_taylor_deriv` and `Polynomial.resultant_deriv`; the reversal root calculations
 use `Polynomial.discr_prod_X_sub_C` and `TauCeti.discr_C_mul`. -/
 
 private theorem discr_comp_X_add_C_of_field {K : Type*} [Field K] (f : K[X])
@@ -54,25 +55,8 @@ private theorem discr_comp_X_add_C_of_field {K : Type*} [Field K] (f : K[X])
   · rw [eq_C_of_natDegree_eq_zero hn]
     simp
   have hpos : 0 < f.degree := natDegree_pos_iff_degree_pos.mp (Nat.pos_of_ne_zero hn)
-  have hder : (taylor a f).derivative = taylor a f.derivative := by
-    simp [taylor_apply, derivative_comp]
-  -- The derivative can have degree less than `n - 1` in positive characteristic.
-  -- Extend the resultant's degree bound before applying `resultant_deriv`.
-  have hres :
-      resultant (taylor a f) (taylor a f.derivative) f.natDegree (f.natDegree - 1) =
-        resultant f f.derivative f.natDegree (f.natDegree - 1) := by
-    calc
-      _ = f.leadingCoeff ^ (f.natDegree - 1 - f.derivative.natDegree) *
-          resultant (taylor a f) (taylor a f.derivative) := by
-        conv_lhs => rw [← Nat.add_sub_of_le (natDegree_derivative_le f)]
-        rw [resultant_add_right_deg _ _ _ _ _ (by simp), coeff_taylor_natDegree]
-        simp only [natDegree_taylor]
-      _ = f.leadingCoeff ^ (f.natDegree - 1 - f.derivative.natDegree) *
-          resultant f f.derivative := by rw [resultant_taylor]
-      _ = _ := by
-        conv_rhs => rw [← Nat.add_sub_of_le (natDegree_derivative_le f)]
-        rw [resultant_add_right_deg _ _ _ _ _ le_rfl, coeff_natDegree]
-  rw [← hder, ← natDegree_taylor f a,
+  have hres := resultant_taylor_deriv f a
+  rw [← natDegree_taylor f a,
     resultant_deriv (by simpa only [degree_taylor] using hpos), natDegree_taylor,
     leadingCoeff_taylor, resultant_deriv hpos] at hres
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr (by
