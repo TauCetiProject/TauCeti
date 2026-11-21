@@ -28,6 +28,10 @@ identities in any additive commutative monoid when the replaced entry already eq
 
 * `TauCeti.duplicateAt_def`: explicit formula via `Fin.insertNth` and `Function.update`.
 * `TauCeti.duplicateAt_apply`: coordinate formula on `Fin (L + 1)`.
+* `TauCeti.duplicateAt_castSucc`, `TauCeti.duplicateAt_succ`: the two duplicated coordinates equal
+  `e`.
+* `TauCeti.duplicateAt_castSucc_of_lt`, `TauCeti.duplicateAt_succ_of_gt`: coordinates away from `j`
+  recover `z`.
 * `TauCeti.sum_duplicateAt`: total sum of `duplicateAt a j z` when `z j = a`.
 * `TauCeti.sum_duplicateAt_range_le`: prefix sums of length at most `j` agree with those of `z`.
 * `TauCeti.sum_duplicateAt_range_succ_ge`: prefix sums of length `q + 1` with `j ≤ q ≤ L` exceed
@@ -68,6 +72,29 @@ theorem duplicateAt_apply {α : Sort*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L
         dite_eq_right (by rw [Fin.val_succ]; omega), ite_eq_right (by rw [Fin.val_succ]; omega)]
       exact congrArg z (Fin.ext (by simp))
 
+/-- The first of the two duplicated coordinates (`j.castSucc`) equals `e`. -/
+@[simp]
+theorem duplicateAt_castSucc {α : Sort*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) :
+    duplicateAt e j z j.castSucc = e := by
+  rw [duplicateAt_apply]; simp
+
+/-- The second of the two duplicated coordinates (`j.succ`) equals `e`. -/
+@[simp]
+theorem duplicateAt_succ {α : Sort*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α) :
+    duplicateAt e j z j.succ = e := by
+  rw [duplicateAt_apply]; simp
+
+/-- Coordinates strictly before `j` are unchanged by `duplicateAt e j`. -/
+theorem duplicateAt_castSucc_of_lt {α : Sort*} (e : α) {L : ℕ} {j : Fin L} (z : Fin L → α)
+    {i : Fin L} (hij : i < j) : duplicateAt e j z i.castSucc = z i := by
+  rw [duplicateAt_apply, dite_eq_left (by simpa using hij)]; simp
+
+/-- Coordinates strictly after `j` in `z` sit one position higher in `duplicateAt e j z`. -/
+theorem duplicateAt_succ_of_gt {α : Sort*} (e : α) {L : ℕ} {j : Fin L} (z : Fin L → α)
+    {i : Fin L} (hji : j < i) : duplicateAt e j z i.succ = z i := by
+  rw [duplicateAt_apply, dite_eq_right (by simp; omega), ite_eq_right (by simp; omega)]
+  exact congrArg z (Fin.ext (by simp))
+
 /-- Sum of `duplicateAt a j z` when `z j = a`: replacing `a` at `j` by two copies adds `a`. -/
 theorem sum_duplicateAt {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a : M}
     {z : Fin L → M} (hzj : z j = a) :
@@ -85,8 +112,9 @@ theorem sum_duplicateAt_range_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M)
       ∑ r ∈ Finset.range p, if h : r < L then z ⟨r, h⟩ else 0 :=
   Finset.sum_congr rfl fun r hr ↦ by
     rw [Finset.mem_range] at hr
-    rw [dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply,
-      dite_eq_left (by rw [Fin.val_mk]; omega)]
+    rw [dite_eq_left (by omega), dite_eq_left (by omega)]
+    have hr_cast : (⟨r, by omega⟩ : Fin (L + 1)) = (⟨r, by omega⟩ : Fin L).castSucc := rfl
+    rw [hr_cast, duplicateAt_castSucc_of_lt a z (Fin.lt_def.2 (by simp; omega))]
 
 /-- Prefix sums of `duplicateAt a j z` of length `q + 1` with `j ≤ q ≤ L` exceed the length-`q`
 prefix sum of `z` by `a` when `z j = a`. -/
@@ -98,17 +126,18 @@ theorem sum_duplicateAt_range_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j
   induction q, hq₁ using Nat.le_induction with
   | base =>
     intro _
-    rw [Finset.sum_range_succ, sum_duplicateAt_range_le a j z le_rfl, dite_eq_left (by omega),
-      duplicateAt_apply, dite_eq_right (lt_irrefl _), ite_eq_left (.inl rfl)]
+    rw [Finset.sum_range_succ, sum_duplicateAt_range_le a j z le_rfl, dite_eq_left (by omega)]
+    have hj_cast : (⟨j.val, by omega⟩ : Fin (L + 1)) = j.castSucc := rfl
+    rw [hj_cast, duplicateAt_castSucc]
   | succ q hjq ih =>
     intro hq₂
     rw [Finset.sum_range_succ _ (q + 1), ih (by omega), Finset.sum_range_succ _ q,
-      dite_eq_left (by omega), dite_eq_left (by omega), duplicateAt_apply]
-    rcases eq_or_lt_of_le hjq with heq | hlt
-    · rw [show (⟨q, by omega⟩ : Fin L) = j from Fin.ext heq.symm, hzj,
-        dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_left (.inr (by rw [Fin.val_mk]; omega))]
-    · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega),
-        show (⟨(⟨q + 1, by omega⟩ : Fin (L + 1)).val - 1, by omega⟩ : Fin L) = ⟨q, by omega⟩
-          from Fin.ext (by simp), add_right_comm]
+      dite_eq_left (by omega), dite_eq_left (by omega)]
+    rcases eq_or_lt_of_le hjq with rfl | hlt
+    · rw [Fin.eta, hzj]
+      have hj_succ : (⟨j.val + 1, by omega⟩ : Fin (L + 1)) = j.succ := rfl
+      rw [hj_succ, duplicateAt_succ]
+    · have hq_succ : (⟨q + 1, by omega⟩ : Fin (L + 1)) = (⟨q, by omega⟩ : Fin L).succ := rfl
+      rw [hq_succ, duplicateAt_succ_of_gt a z (Fin.lt_def.2 hlt), add_right_comm]
 
 end TauCeti

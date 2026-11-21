@@ -27,15 +27,11 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-<<<<<<< HEAD
 (`degenerateWords_le_iff_of_mem_piece`), and duplicating a homogeneous letter `e` preserves
-slotwise homogeneity (`duplicateAt_mem_piece`).
-=======
-(`degenerateWords_le_iff_of_mem_piece`).  Letterwise maps killing `e` vanish on degenerate words
-(`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear endomorphism that
-modifies every element by a scalar multiple of `e` lands in the degenerate words
+slotwise homogeneity (`duplicateAt_mem_piece`).  Letterwise maps killing `e` vanish on
+degenerate words (`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear
+endomorphism that modifies every element by a scalar multiple of `e` lands in the degenerate words
 (`sub_map_mem_degenerateWords`).
->>>>>>> origin/main
 
 ## References
 

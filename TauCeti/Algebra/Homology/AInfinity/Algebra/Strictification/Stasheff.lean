@@ -162,7 +162,7 @@ private theorem taylor_splice_duplicateAt_eq_zero_of_ne {𝒜 : AInfinityAlgebra
   -- Intermediate collapses (`d ≤ m + 2`, `d ≠ 2`): the copy of `e` at `j.castSucc` either lies
   -- inside the collapsed block or survives outside in a non-binary word of length `≤ m + 2`.
   have hdle : d ≤ m + 2 := by omega
-  have heY : duplicateAt e j w j.castSucc = e := by rw [duplicateAt_apply]; simp
+  have heY : duplicateAt e j w j.castSucc = e := duplicateAt_castSucc e j w
   by_cases hblock : p ≤ j.val ∧ j.val < p + d
   · have hz : 𝒜.taylor (subword R (duplicateAt e j w) p d) = 0 := by
       rw [subword_eq_of_tprod R _ hfit.1 hfit.2]
@@ -201,14 +201,14 @@ private theorem taylor_barDifferential_duplicateAt_m_add_three {𝒜 : AInfinity
   · -- Tail `(m + 3)`-collapse (`p = 1`): survives as `-m(w)` at `j = 0`, vanishes for `j ≥ 1`.
     obtain rfl : p = 1 := by omega
     rcases Nat.eq_zero_or_pos j.val with hj0 | hjpos
-    · have hw0 : w 0 = e := (congrArg w (Fin.ext hj0.symm)).trans hwj
-      have hY0 : duplicateAt e j w 0 = e := by rw [duplicateAt_apply]; simp [hj0]
-      rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, hj0⟩, zero_add, Finset.sum_range_one,
-        dite_eq_left (by omega : 0 < m + 4), duplicateAt_apply]
-      simp only [hj0, lt_irrefl, dite_false, true_or, ite_true, negOnePowCast_neg,
-        negOnePowCast_one, neg_one_smul]
-      rw [splice_collapse_tail_eq R (by omega : 0 < m + 3), hY0,
-        subword_tail_duplicateAt_zero R hj0 hw0, h𝒜.taylor_of_two_cohomologicalUnit_left he]
+    · obtain rfl : j = 0 := Fin.ext hj0
+      have hY0 : duplicateAt e 0 w 0 = e := duplicateAt_castSucc e 0 w
+      have hD0 : duplicateAt (-1 : ℤ) 0 𝒟 ⟨0, by omega⟩ = -1 := duplicateAt_castSucc (-1 : ℤ) 0 𝒟
+      rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, Fin.val_zero _⟩, zero_add,
+        Finset.sum_range_one, dite_eq_left (by omega : 0 < m + 4), hD0, negOnePowCast_neg,
+        negOnePowCast_one, neg_one_smul, splice_collapse_tail_eq R (by omega : 0 < m + 3), hY0,
+        subword_tail_duplicateAt_zero R (Fin.val_zero _) hwj,
+        h𝒜.taylor_of_two_cohomologicalUnit_left he]
     · obtain ⟨u, hu, hsub⟩ := subword_tail_duplicateAt_of_pos R e hjpos w
       rw [hsub, hIH u ⟨j.val - 1, by omega⟩ (by dsimp only; omega) hu, splice_zero, map_zero,
         smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
@@ -247,24 +247,26 @@ private theorem taylor_barDifferential_duplicateAt_binary_prefix {𝒜 : AInfini
   have hjlt := j.isLt
   rcases Nat.eq_zero_or_pos j.val with hj0 | hjpos
   · -- At `j = 0`, collapsing `[e, e]` at slot `0` leaves `m(w)`.
+    obtain rfl : j = 0 := Fin.ext hj0
     have hsp := splice_two_duplicateAt_self R hwj
-    rw [hj0] at hsp
-    rw [ite_eq_left hj0, show Finset.range (j.val + 1) = Finset.range 1 from congrArg _ (by omega),
-      Finset.sum_range_one, Finset.sum_range_zero, negOnePowCast_zero, one_smul,
-      subword_two_eq R _ (by omega),
-      show duplicateAt e j w ⟨0, by omega⟩ = e by rw [duplicateAt_apply]; simp [hj0],
-      show duplicateAt e j w ⟨1, by omega⟩ = e by rw [duplicateAt_apply]; simp [hj0],
+    simp only [Fin.val_zero] at hsp
+    have hY0 : duplicateAt e 0 w ⟨0, by omega⟩ = e := duplicateAt_castSucc e 0 w
+    have hY1 : duplicateAt e 0 w ⟨0 + 1, by omega⟩ = e := duplicateAt_succ e 0 w
+    rw [ite_eq_left (Fin.val_zero _), Fin.val_zero, zero_add, Finset.sum_range_one,
+      Finset.sum_range_zero, negOnePowCast_zero, one_smul, subword_two_eq R _ (by omega), hY0, hY1,
       h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp]
   · -- For `j > 0`, binary collapses before `j - 1` vanish by `hIH`, and slots `j - 1` and `j`
     -- cancel around the interior unit `duplicateAt e j w j = e`.
-    have hj_pred : (j.val - 1) + 1 = j.val := by omega
+    have hj_pred : (j.val - 1) + 1 = j.val := Nat.sub_add_cancel hjpos
     have hcancel := h𝒜.negOnePowCast_smul_splice_two_add_succ_eq_zero he (n := m + 3)
       (p := j.val - 1) (x := duplicateAt e j w) (𝒟 := duplicateAt (-1 : ℤ) j 𝒟) (by omega)
       (duplicateAt_mem_piece he.mem_shift_one_piece j hw ⟨j.val - 1, by omega⟩)
-      (by rw [duplicateAt_apply]; simp [hj_pred])
-    rw [ite_eq_right (Nat.ne_of_gt hjpos),
-      show Finset.range (j.val + 1) = Finset.range ((j.val - 1) + 1 + 1) from congrArg _ (by omega),
-      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_eq_zero fun p hp ↦ by
+      (by
+        have hj_cast : (⟨(j.val - 1) + 1, by omega⟩ : Fin (m + 4)) = j.castSucc :=
+          Fin.ext (by simp [hj_pred])
+        rw [hj_cast, duplicateAt_castSucc])
+    rw [ite_eq_right (Nat.ne_of_gt hjpos), Finset.sum_range_succ, ← hj_pred,
+      Finset.sum_range_succ, Finset.sum_eq_zero fun p hp ↦ by
         rw [Finset.mem_range] at hp
         obtain ⟨u, hu, hsp⟩ := splice_two_duplicateAt_of_lt R e (by omega : p + 2 ≤ j.val) w
           (𝒜.taylor (subword R (duplicateAt e j w) p 2))
@@ -340,17 +342,16 @@ theorem IsMinimal.taylor_barDifferential_duplicateAt {𝒜 : AInfinityAlgebra R 
             (𝒜.taylor (subword R w (j.val + t) 2)))) :=
     Finset.sum_congr rfl fun t ht ↦ by
       rw [Finset.mem_range] at ht
-      rw [show j.val + 1 + t = (j.val + t) + 1 by omega,
+      rw [Nat.add_right_comm j.val 1 t,
         sum_duplicateAt_range_succ_ge j h𝒟j (by omega) (by omega),
         subword_two_duplicateAt_ge R (by omega) (by omega) hwj, negOnePowCast_add,
         negOnePowCast_neg, negOnePowCast_one, mul_neg_one, neg_smul]
   -- Step 3: Split the binary sum at `j + 1` and cancel the `j = 0` boundary terms.
   rw [Finset.sum_range_succ _ (m + 3),
     splice_eq_zero_of_not_fits R _ _ (by omega : ¬ (0 < 2 ∧ (m + 3) + 2 ≤ m + 4)), map_zero,
-    smul_zero, add_zero,
-    show Finset.range (m + 3) = Finset.range ((j.val + 1) + (m + 2 - j.val)) from
-      congrArg _ (by omega),
-    Finset.sum_range_add, taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj,
+    smul_zero, add_zero] at hzero
+  nth_rw 1 [← Nat.add_sub_of_le (Nat.succ_le_of_lt hjlt), Nat.succ_sub_succ] at hzero
+  rw [Finset.sum_range_add, taylor_barDifferential_duplicateAt_binary_prefix h𝒜 he j hIH hw hwj,
     htail] at hzero
   by_cases hj0 : j.val = 0 <;>
     [rw [ite_eq_left hj0, ite_eq_left hj0] at hzero;
@@ -371,7 +372,8 @@ theorem IsMinimal.taylor_of_tprod_last_eq_zero {𝒜 : AInfinityAlgebra R A} (h�
   have hst := h𝒜.taylor_barDifferential_duplicateAt he hlow (Fin.last (m + 2))
     (by simpa only [Fin.val_last] using hIH) hw hwlast h𝒟last
   have hYlast : duplicateAt e (Fin.last (m + 2)) w (Fin.last (m + 3)) = e := by
-    rw [duplicateAt_apply]; simp
+    nth_rw 2 [← Fin.succ_last]
+    exact duplicateAt_succ e (Fin.last (m + 2)) w
   rw [Fin.val_last, Nat.sub_self, Finset.sum_range_zero, add_zero,
     subword_init_duplicateAt_last R hwlast, hYlast,
     h𝒜.taylor_of_two_cohomologicalUnit_right he] at hst
