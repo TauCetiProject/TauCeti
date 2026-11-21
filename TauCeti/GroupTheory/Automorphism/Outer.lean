@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Equiv.Opposite
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
+public import TauCeti.Algebra.Group.End
 
 /-!
 # The outer automorphism group of a group
@@ -41,12 +42,12 @@ For commutative `G` every inner automorphism is trivial, and `OuterAut G` is `Mu
 
 ## Main results
 
-* `MulAut.mul_conj_mul_inv`: `φ * conj g * φ⁻¹ = conj (φ g)`, so the inner automorphisms form a
-  normal subgroup (`MulAut.normal_range_conj`).
+* `MulAut.normal_range_conj`: the inner automorphisms form a normal subgroup, because
+  `φ * conj g * φ⁻¹ = conj (φ g)` (`MulAut.mul_conj_mul_inv`).
 * `MulAut.ker_conj`: the kernel of `MulAut.conj` is the centre, and the inner automorphisms are
   all trivial exactly when `G` is commutative (`MulAut.range_conj_eq_bot_iff`).
-* `MulAut.congr_conj`: transport along an isomorphism `e` sends `conj g` to `conj (e g)`, and
-  `MulAut.map_congr_range_conj` identifies the inner automorphism subgroups.
+* `MulAut.map_congr_range_conj`: transport along an isomorphism `e`, which sends `conj g` to
+  `conj (e g)` (`MulAut.congr_conj`), identifies the inner automorphism subgroups.
 * `MulAut.congr_inv'`: transport along the inversion `G ≃* Gᵐᵒᵖ` is `MulEquiv.op`.
 * `TauCeti.OuterAut.mk_eq_one_iff` and `TauCeti.OuterAut.mk_eq_mk_iff`: two automorphisms have the
   same outer class exactly when they differ by an inner automorphism.
@@ -63,13 +64,7 @@ open MulOpposite
 
 namespace MulAut
 
-variable {G H K : Type*} [Group G] [Group H] [Group K]
-
-/-- Conjugating the inner automorphism by `g` by an automorphism `φ` gives the inner automorphism
-by `φ g`. -/
-theorem mul_conj_mul_inv (φ : MulAut G) (g : G) : φ * conj g * φ⁻¹ = conj (φ g) := by
-  ext x
-  simp
+variable {G H : Type*} [Group G] [Group H]
 
 /-- The inner automorphisms form a normal subgroup of the automorphism group. -/
 instance normal_range_conj : (conj : G →* MulAut G).range.Normal where
@@ -89,12 +84,6 @@ theorem range_conj_eq_bot_iff : (conj : G →* MulAut G).range = ⊥ ↔ IsMulCo
   rw [MonoidHom.range_eq_bot_iff, ← MonoidHom.ker_eq_top_iff, ker_conj,
     Subgroup.center_eq_top_iff]
 
-/-- Transporting the inner automorphism by `g` along an isomorphism `e` gives the inner
-automorphism by `e g`. -/
-theorem congr_conj (e : G ≃* H) (g : G) : congr e (conj g) = conj (e g) := by
-  ext x
-  simp
-
 /-- Transport along an isomorphism `e` carries the inner automorphisms of `G` onto those of
 `H`. -/
 theorem map_congr_range_conj (e : G ≃* H) :
@@ -107,20 +96,6 @@ theorem map_congr_range_conj (e : G ≃* H) :
     exact ⟨e g, (congr_conj e g).symm⟩
   · rintro ⟨h, rfl⟩
     exact ⟨e.symm h, (congr_conj e _).trans (by rw [MulEquiv.apply_symm_apply])⟩
-
-@[simp]
-theorem congr_refl : congr (MulEquiv.refl G) = MulEquiv.refl (MulAut G) := by
-  ext φ x
-  simp
-
-@[simp]
-theorem congr_symm (e : G ≃* H) : (congr e).symm = congr e.symm :=
-  (rfl)
-
-@[simp]
-theorem congr_trans (e : G ≃* H) (f : H ≃* K) : congr (e.trans f) = (congr e).trans (congr f) := by
-  ext φ x
-  simp
 
 /-- Transport along the inversion `g ↦ op g⁻¹` from `G` to its opposite group is the
 identification `φ ↦ MulEquiv.op φ` of automorphisms: an automorphism commutes with inversion. -/
@@ -178,10 +153,8 @@ theorem congr_refl : congr (MulEquiv.refl G) = MulEquiv.refl (OuterAut G) := by
   simp
 
 @[simp]
-theorem congr_symm (e : G ≃* H) : (congr e).symm = congr e.symm := by
-  ext φ
-  obtain ⟨φ, rfl⟩ := QuotientGroup.mk_surjective φ
-  rw [MulEquiv.symm_apply_eq, congr_mk, congr_mk, ← MulAut.congr_symm, MulEquiv.apply_symm_apply]
+theorem congr_symm (e : G ≃* H) : (congr e).symm = congr e.symm :=
+  (rfl)
 
 @[simp]
 theorem congr_trans (e : G ≃* H) (f : H ≃* K) : congr (e.trans f) = (congr e).trans (congr f) := by
@@ -203,9 +176,8 @@ def mulEquivOfIsMulCommutative [IsMulCommutative G] : OuterAut G ≃* MulAut G :
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_mk [IsMulCommutative G] (φ : MulAut G) :
-    mulEquivOfIsMulCommutative (φ : OuterAut G) = φ := by
-  rw [mulEquivOfIsMulCommutative, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    ← MulEquiv.eq_symm_apply, QuotientGroup.quotientBot_symm_apply]
+    mulEquivOfIsMulCommutative (φ : OuterAut G) = φ :=
+  (rfl)
 
 @[simp]
 theorem mulEquivOfIsMulCommutative_symm_apply [IsMulCommutative G] (φ : MulAut G) :

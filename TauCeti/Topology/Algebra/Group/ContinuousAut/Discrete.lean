@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Automorphism.Outer
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
