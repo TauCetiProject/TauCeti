@@ -142,6 +142,14 @@ theorem map_descend (hf : ∀ n ∈ N, f n = 1) :
       (ContinuousMonoidHom.subgroupSubtype _) (subgroupSubtype_quotientMk_smul N) = f :=
   ext fun g ↦ by simp
 
+variable {N} in
+/-- Two cocycles of `G ⧸ N` with values in `Aᴺ` are equal when their values, as elements of `A`,
+agree at the class of every `g : G`. -/
+theorem ext_quotientMk {d d' : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)}
+    (h : ∀ g : G, (d g : A) = d' g) : d = d' :=
+  ext fun q ↦ by
+    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (h g)
+
 end Cocycle
 
 /-- The class of a cocycle trivial on `N` is the inflation of the class of its descent. -/

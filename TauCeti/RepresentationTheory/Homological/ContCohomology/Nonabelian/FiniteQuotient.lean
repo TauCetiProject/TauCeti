@@ -97,15 +97,13 @@ theorem coe_inflOfLE_apply (hMN : M ≤ N) (d : Cocycle (G ⧸ N) (FixedPoints.s
 @[simp]
 theorem inflOfLE_one (hMN : M ≤ N) :
     (1 : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)).inflOfLE hMN = 1 :=
-  ext fun q ↦ by
-    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (by simp)
+  ext_quotientMk fun g ↦ by simp
 
 /-- The transition from a normal subgroup to itself is the identity. -/
 @[simp]
 theorem inflOfLE_refl (d : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
     d.inflOfLE (le_refl N) = d :=
-  ext fun q ↦ by
-    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (by simp)
+  ext_quotientMk fun g ↦ by simp
 
 /-- For `P ≤ M ≤ N`, the transition from `N` to `P` is the composite of the transitions through
 `M`. -/
@@ -113,8 +111,7 @@ theorem inflOfLE_refl (d : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
 theorem inflOfLE_inflOfLE (hPM : P ≤ M) (hMN : M ≤ N)
     (d : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
     (d.inflOfLE hMN).inflOfLE hPM = d.inflOfLE (hPM.trans hMN) :=
-  ext fun q ↦ by
-    induction q using QuotientGroup.induction_on with | H g => exact Subtype.ext (by simp)
+  ext_quotientMk fun g ↦ by simp
 
 /-- Inflation to `G` commutes with the transitions: inflating a cocycle of `G ⧸ N` through
 `G ⧸ M` is inflating it directly. -/
@@ -129,9 +126,7 @@ theorem map_inflOfLE (hMN : M ≤ N) (d : Cocycle (G ⧸ N) (FixedPoints.subgrou
 /-- The transition of cocycles is injective. -/
 theorem inflOfLE_injective (hMN : M ≤ N) :
     Function.Injective (inflOfLE (A := A) hMN) := fun d d' h ↦
-  ext fun q ↦ by
-    induction q using QuotientGroup.induction_on with | H g =>
-    exact Subtype.ext (by simpa using congrArg (fun e ↦ (e (g : G ⧸ M) : A)) h)
+  ext_quotientMk fun g ↦ by simpa using congrArg (fun e ↦ (e (g : G ⧸ M) : A)) h
 
 end Cocycle
 
@@ -229,7 +224,18 @@ at `N` is inflation `H¹(G ⧸ N, Aᴺ) → H¹(G, A)`. -/
         ext c
         exact infl_inflOfLE (leOfHom f.unop) c }
 
-/-- The legs of the inflation cocone are the inflation maps. -/
+/-- The apex of the inflation cocone is `H¹(G, A)`. -/
+@[simp]
+theorem inflCocone_pt : (inflCocone G A).pt = NonabelianH1 G A :=
+  (rfl)
+
+/-- The leg of the inflation cocone at `N` is inflation from `H¹(G ⧸ N, Aᴺ)`. -/
+@[simp]
+theorem inflCocone_ι_app (N : (OpenNormalSubgroup G)ᵒᵖ) :
+    (inflCocone G A).ι.app N = ↾(infl N.unop.toSubgroup) :=
+  (rfl)
+
+/-- The legs of the inflation cocone are the inflation maps, pointwise. -/
 -- Not `@[simp]`: `simp` rewrites the codomain `((Functor.const _).obj _).obj N` of the leg, which
 -- occurs in the coercion of the left-hand side, to the apex, so the left-hand side is not in simp
 -- normal form.
