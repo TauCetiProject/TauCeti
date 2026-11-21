@@ -22,6 +22,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Wirtinger derivatives
@@ -72,12 +73,16 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
   commute with complex scalar multiplication.
+* `TauCeti.wirtingerDeriv_apply_one_ofReal_im`, `TauCeti.conjWirtingerDeriv_apply_one_ofReal_im`:
+  the Wirtinger derivatives of the imaginary part are `∂ Im = -i/2` and `\bar∂ Im = i/2`.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
   pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
-  holomorphic map `φ`.
+  holomorphic map `φ`, and `TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv`, the chain rule
+  `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)` before a holomorphic map `g`; in one variable
+  `TauCeti.conjWirtingerDeriv_comp_eq_conj_smul` writes it as `\bar∂(φ ∘ g) = \bar{g'} \bar∂φ`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
@@ -485,6 +490,40 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
     fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
     ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
 
+/-- **The chain rule for the conjugate Wirtinger derivative** before a complex-linear change of
+variables: `\bar∂(g ∘ e) = \bar∂g(e x) ∘ e`. No differentiability is needed, since `e` is an
+isomorphism. -/
+theorem conjWirtingerDeriv_comp_continuousLinearEquiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] (e : X ≃L[ℂ] V) (g : V → W) (x : X) :
+    conjWirtingerDeriv (g ∘ e) x = (conjWirtingerDeriv g (e x)).comp (e : X →L[ℂ] V) := by
+  have h := (e.restrictScalars' ℝ).comp_right_fderiv (f := g) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars'] at h
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart, h,
+    ← ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+  -- The real map underlying `e.restrictScalars' ℝ` is `e` with scalars restricted.
+  congr 2
+  ext
+  simp
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a holomorphic map: if `g` is
+complex differentiable at `x`, then `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)`. -/
+theorem conjWirtingerDeriv_comp_eq_comp_fderiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] {φ : W → X} {g : V → W} {x : V} (hφ : DifferentiableAt ℝ φ (g x))
+    (hg : DifferentiableAt ℂ g x) :
+    conjWirtingerDeriv (φ ∘ g) x = (conjWirtingerDeriv φ (g x)).comp (fderiv ℂ g x) := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
+    fderiv_comp x hφ (hg.restrictScalars ℝ), hg.fderiv_restrictScalars ℝ,
+    ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a holomorphic function of one
+variable: if `g` has complex derivative `a` at `x`, then `\bar∂(φ ∘ g)(x) = \bar a \bar∂φ(g x)`. -/
+theorem conjWirtingerDeriv_comp_eq_conj_smul {φ : ℂ → W} {g : ℂ → ℂ} {x a : ℂ}
+    (hφ : DifferentiableAt ℝ φ (g x)) (hg : HasDerivAt g a x) :
+    conjWirtingerDeriv (φ ∘ g) x = conj a • conjWirtingerDeriv φ (g x) := by
+  ext v
+  rw [conjWirtingerDeriv_comp_eq_comp_fderiv hφ hg.differentiableAt, hg.hasFDerivAt.fderiv]
+  simpa [mul_comm] using map_smulₛₗ (conjWirtingerDeriv φ (g x)) a v
+
 section Mul
 
 variable {f g : V → ℂ} {x : V}
@@ -566,6 +605,20 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
   · intro h
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
+/-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
+@[simp]
+theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
+  rw [wirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
+
+/-- The conjugate Wirtinger derivative of the imaginary part: `\bar∂ Im = i/2`. -/
+@[simp]
+theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
+  rw [conjWirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
 
 /-! ### The twisted exponentials `exp (a z - conj a conj z)` -/
 

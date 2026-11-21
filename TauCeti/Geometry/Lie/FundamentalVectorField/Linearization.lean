@@ -86,6 +86,20 @@ theorem flowOf_fundamentalVectorField [IsManifold I' 1 M] [BoundarylessManifold 
     (contMDiff_fundamentalVectorField (m := 1) (n := 2) (by norm_num) ξ)
     (isMIntegralCurve_mulInvariantExp_smul_smul (I' := I') ξ x) t
 
+omit [CompleteSpace E'] [T2Space M] in
+/-- The time-zero map `x ↦ exp (0 • ξ) • x` is the identity, so its differential at every point is
+the identity operator. -/
+theorem mfderiv_mulInvariantExp_zero_smul_smul (ξ : GroupLieAlgebra I G) (p : M) :
+    mfderiv I' I' (fun y : M ↦ mulInvariantExp ((0 : ℝ) • ξ) • y) p = (1 : E' →L[ℝ] E') := by
+  have hid : (fun y : M ↦ mulInvariantExp ((0 : ℝ) • ξ) • y) = id := by
+    funext y
+    rw [zero_smul, mulInvariantExp_zero, one_smul, id]
+  -- The two differentials are compared as operators on the model space `E'`.
+  have h : (mfderiv I' I' (fun y : M ↦ mulInvariantExp ((0 : ℝ) • ξ) • y) p : E' →L[ℝ] E') =
+      mfderiv I' I' id p := by
+    rw [hid]
+  exact h.trans mfderiv_id
+
 variable [I'.Boundaryless] [IsManifold I' 2 M] [ContMDiffSMul I I' 3 G M]
   {ξ : GroupLieAlgebra I G} {p : M}
 
@@ -124,15 +138,13 @@ theorem fderiv_mpullbackWithin_fundamentalVectorField_apply_eq_zero_iff
   -- The differentials `d(exp (t ξ))_p` are the tangent representation of the stabilizer of `p`
   -- along the one-parameter subgroup, so they form a one-parameter group of operators on `E'`.
   let φ : ℝ → MulAction.stabilizer G p := fun t ↦ ⟨_, hfix t⟩
-  have hφ0 : φ 0 = 1 := Subtype.ext (by simp [φ, mulInvariantExp_zero])
   have hφadd (s t : ℝ) : φ (s + t) = φ s * φ t := Subtype.ext (mulInvariantExp_add_smul ξ s t)
   have hrep (t : ℝ) := tangentRepresentation_apply hd (φ t)
-  -- `ContinuousLinearMap.one_def` and `ContinuousLinearMap.mul_def` turn `1` and `*` into the
-  -- identity and composition. The closing `rfl`s only unfold `TangentSpace I' p` to `E'`, which
-  -- holds by definition, and the coercion of `φ t` to `mulInvariantExp (t • ξ)`.
+  -- `ContinuousLinearMap.mul_def` turns `*` into composition. The closing `rfl` only unfolds
+  -- `TangentSpace I' p` to `E'`, which holds by definition, and the coercion of `φ t` to
+  -- `mulInvariantExp (t • ξ)`.
   exact HasDerivAt.apply_eq_zero_iff_forall_apply_eq_self (F := E')
-    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp)
-    ((hrep 0).symm.trans (by rw [hφ0, map_one, ContinuousLinearMap.one_def]; rfl))
+    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp) (mfderiv_mulInvariantExp_zero_smul_smul ξ p)
     (fun s t ↦ (hrep (s + t)).symm.trans
       (by rw [hφadd, map_mul, ContinuousLinearMap.mul_def, hrep, hrep]; rfl)) (v : E')
 

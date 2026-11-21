@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
@@ -39,6 +40,8 @@ not belong to any particular application.
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_tendsto_prod`: if `F i x → 0` along
   `l ×ˢ 𝓟 (uIcc a b)`, then `∫ x in a..b, F i x ∂μ → 0` along `l`.
+* `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
+  function leaves a function of integral zero over `a..b`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -403,6 +406,15 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
   simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
   rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+/-- Subtracting its average over `a..b` from a function leaves a function of integral zero over
+`a..b`. -/
+theorem intervalIntegral_sub_intervalAverage {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) (a b : ℝ) :
+    ∫ t in a..b, (f t - ⨍ t in a..b, f t) = 0 := by
+  have : IsFiniteMeasure (volume.restrict (uIoc a b)) :=
+    isFiniteMeasure_restrict.2 measure_Ioc_lt_top.ne
+  rw [_root_.intervalIntegral.intervalIntegral_eq_integral_uIoc, integral_sub_average, smul_zero]
 
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below

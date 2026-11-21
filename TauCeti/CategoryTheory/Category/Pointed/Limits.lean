@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Pointed
-public import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 public import Mathlib.CategoryTheory.Limits.Over
+public import Mathlib.CategoryTheory.WithTerminal.Cone
 
 /-!
 # Limits and colimits of pointed types
@@ -18,13 +18,14 @@ all limits and colimits.
 ## Main definitions
 
 * `Pointed.equivUnderPUnit`: the equivalence of `Pointed` with types under `PUnit`.
-* The instances `HasLimitsOfSize.{w, w} Pointed.{u}` and `HasColimitsOfSize.{w, w} Pointed.{u}`
-  whenever `UnivLE.{w, u}`.
+* `Pointed.hasLimitsOfSize`, `Pointed.hasColimitsOfSize`: whenever `UnivLE.{w, u}`, the category
+  `Pointed.{u}` has all limits and colimits of diagrams indexed by categories whose type of objects
+  lives in `Type w`, with no constraint on the universe of their morphisms (as for `Type u`).
 -/
 
 public section
 
-universe w u
+universe w w' u
 
 open CategoryTheory Limits
 
@@ -57,11 +58,15 @@ lemma equivUnderPUnit_functor_map_right_hom_apply {X Y : Pointed.{u}} (f : X ⟶
     (equivUnderPUnit.functor.map f).right a = f.toFun a :=
   rfl
 
-instance [UnivLE.{w, u}] : HasColimitsOfSize.{w, w} Pointed.{u} :=
+/-- `Pointed.{u}` has all colimits of diagrams whose index category has its objects in `Type w`,
+whenever `UnivLE.{w, u}`. -/
+instance hasColimitsOfSize [UnivLE.{w, u}] : HasColimitsOfSize.{w', w} Pointed.{u} :=
   Adjunction.has_colimits_of_equivalence equivUnderPUnit.functor
 
-instance [UnivLE.{w, u}] : HasLimitsOfSize.{w, w} Pointed.{u} :=
-  have : HasLimitsOfSize.{w, w} (Under (PUnit.{u + 1} : Type u)) := ⟨fun _ _ ↦ inferInstance⟩
-  Adjunction.has_limits_of_equivalence equivUnderPUnit.functor
+/-- `Pointed.{u}` has all limits of diagrams whose index category has its objects in `Type w`,
+whenever `UnivLE.{w, u}`. -/
+instance hasLimitsOfSize [UnivLE.{w, u}] : HasLimitsOfSize.{w', w} Pointed.{u} where
+  -- Mathlib provides limits in `Under X` shape by shape, so transfer them shape by shape.
+  has_limits_of_shape _ _ := Adjunction.hasLimitsOfShape_of_equivalence equivUnderPUnit.functor
 
 end Pointed
