@@ -9,6 +9,7 @@ public import TauCeti.Algebra.HopfAlgebra.Integral
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Algebra.HopfAlgebra.HopfModule.Dual
+import TauCeti.Algebra.Module.Injective.Frobenius
 
 /-!
 # Frobenius structure, integrals, and cointegrals of finite-dimensional Hopf algebras
@@ -37,6 +38,8 @@ for any finite-dimensional Hopf algebra `H` over a field `k`:
 * `TauCeti.antipode_bijective`: the antipode of `H` is bijective;
 * `TauCeti.moduleInjective_self_of_hopfAlgebra` and
   `TauCeti.moduleInjective_op_self_of_hopfAlgebra`: `H` is left and right self-injective.
+* `TauCeti.moduleProjective_iff_moduleInjective_of_hopfAlgebra`: projective and injective left
+  `H`-modules coincide.
 
 ## References
 
@@ -294,5 +297,20 @@ include k in
 theorem moduleInjective_op_self_of_hopfAlgebra : Module.Injective Hᵐᵒᵖ H := by
   obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional_of_hopfAlgebra k H
   exact hφ.moduleInjective_op_self
+
+section ProjectiveIffInjective
+
+universe w
+
+include k in
+/-- Over a finite-dimensional Hopf algebra, a left module (not necessarily finitely generated) is
+projective if and only if it is injective. -/
+theorem moduleProjective_iff_moduleInjective_of_hopfAlgebra [Small.{w} H] (M : Type w)
+    [AddCommGroup M] [Module H M] :
+    Module.Projective H M ↔ Module.Injective H M := by
+  obtain ⟨_, hφ⟩ := exists_isFrobeniusFunctional_of_hopfAlgebra k H
+  exact hφ.moduleProjective_iff_moduleInjective M
+
+end ProjectiveIffInjective
 
 end TauCeti

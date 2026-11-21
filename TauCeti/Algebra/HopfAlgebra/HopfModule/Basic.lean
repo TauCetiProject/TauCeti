@@ -42,6 +42,8 @@ sending `n ⊗ h` to `n ◃ h`, and intertwining both the right `H`-actions and 
 
 * `TauCeti.RightHopfModule.opSMulTensor`: the right `H`-action bundled as `M ⊗[R] H →ₗ[R] M`.
 * `TauCeti.IsRightHopfModule`: Prop-valued compatibility class making `M` a right `H`-Hopf module.
+* `TauCeti.RightHopfModule.instSelf`, `TauCeti.RightHopfModule.mem_fixedSubcomodule_self`: the
+  regular right `H`-Hopf module structure on `H` and its coinvariants.
 * `TauCeti.Comodule.cofreeRightModule`, `TauCeti.Comodule.isRightHopfModule_cofree`: the model
   right `H`-Hopf module structure on `N ⊗[R] H`.
 * `TauCeti.RightHopfModule.coinvariantProj` and `TauCeti.RightHopfModule.toFixedSubcomodule`: the
@@ -187,6 +189,45 @@ theorem opSMulHom_apply (z : M ⊗[R] H) :
     opSMulHom R H M z = opSMulTensor R H M z := (rfl)
 
 end Bialgebra
+
+section Self
+
+variable {R : Type u} {H : Type v}
+variable [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- The regular right `H`-Hopf module of a bialgebra over itself, with right multiplication as the
+action and comultiplication as the coaction. -/
+instance instSelf : IsRightHopfModule R H H where
+  coact_op_smul h m := by
+    have hmul :
+        (opSMulTensor R H H).rTensor H
+            (Comodule.tensorCombine (R := R) (C := H) (M := H) (N := H)
+              (Coalgebra.comul (R := R) m ⊗ₜ[R] Coalgebra.comul (R := R) h)) =
+          Coalgebra.comul (R := R) m * Coalgebra.comul (R := R) h := by
+      induction Coalgebra.comul (R := R) m using TensorProduct.inductionOn with
+      | add x y hx hy =>
+        simp only [TensorProduct.add_tmul, map_add, add_mul, hx, hy]
+      | tmul m₁ m₂ =>
+        induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
+        | add x y hx hy =>
+          simp only [TensorProduct.tmul_add, map_add, mul_add, hx, hy]
+        | tmul h₁ h₂ =>
+          simp [Algebra.TensorProduct.tmul_mul_tmul]
+    simpa [Comodule.instSelf_coact, Bialgebra.comul_mul] using hmul.symm
+
+/-- The coinvariants of the regular right comodule `H` over itself are the scalar multiples of
+`1`. -/
+theorem mem_fixedSubcomodule_self {x : H} :
+    x ∈ Comodule.fixedSubcomodule R H H ↔ x = algebraMap R H (Coalgebra.counit (R := R) x) := by
+  rw [Comodule.mem_fixedSubcomodule, Comodule.instSelf_coact]
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · have h := congrArg
+      ((TensorProduct.lid R H).toLinearMap ∘ₗ (Coalgebra.counit (R := R)).rTensor H) hx
+    simpa [Coalgebra.rTensor_counit_comul, Algebra.algebraMap_eq_smul_one] using h
+  · rw [hx, Algebra.algebraMap_eq_smul_one, map_smul, Bialgebra.comul_one,
+      Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']
+
+end Self
 
 end RightHopfModule
 

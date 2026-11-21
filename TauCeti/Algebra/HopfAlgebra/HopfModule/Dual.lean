@@ -44,6 +44,8 @@ commutative semiring `R`, `rightCointegrals R H` is a finitely generated project
   `rightCointegrals R H ⊗[R] H ≃ₗ[R] Module.Dual R H`, equivariant for right `H`-multiplication.
 * `TauCeti.instModuleProjectiveRightCointegrals`, `TauCeti.instModuleFiniteRightCointegrals`:
   `rightCointegrals R H` is finitely generated and projective over `R`.
+* `TauCeti.exists_isRightCointegral_ne_zero_of_projective`: existence of a nonzero right
+  cointegral over any nontrivial commutative semiring.
 
 ## References
 
@@ -340,6 +342,27 @@ instance instModuleFiniteRightCointegrals : Module.Finite R (rightCointegrals R 
   haveI := RightHopfModule.isRightHopfModule_dual R H
   haveI := RightHopfModule.finite_fixedSubcomodule R H (Module.Dual R H)
   Module.Finite.equiv (RightHopfModule.dualFixedEquivRightCointegrals R H)
+
+/-- Every finite projective Hopf algebra over a nontrivial commutative semiring admits a nonzero
+right cointegral. -/
+theorem exists_isRightCointegral_ne_zero_of_projective [Nontrivial R] :
+    ∃ φ : Module.Dual R H, IsRightCointegral φ ∧ φ ≠ 0 := by
+  by_contra h
+  push Not at h
+  have hsub (x : rightCointegrals R H) : x = 0 :=
+    Subtype.ext (h x.val ((mem_rightCointegrals _).mp x.property))
+  have hzero (t : rightCointegrals R H ⊗[R] H) : t = 0 := by
+    induction t using TensorProduct.inductionOn with
+    | add t₁ t₂ ht₁ ht₂ => simp [ht₁, ht₂]
+    | tmul x y => rw [hsub x, TensorProduct.zero_tmul]
+  have hcounit : Coalgebra.counit (R := R) (A := H) = 0 := by
+    have hsymm := hzero ((rightCointegralsTensorEquivDual R H).symm
+      (Coalgebra.counit (R := R) (A := H)))
+    simpa [hsymm] using
+      ((rightCointegralsTensorEquivDual R H).apply_symm_apply
+        (Coalgebra.counit (R := R) (A := H))).symm
+  have h1 := LinearMap.congr_fun hcounit (1 : H)
+  simp at h1
 
 end CointegralDecomposition
 
