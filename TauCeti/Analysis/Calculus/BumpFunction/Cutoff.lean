@@ -40,6 +40,7 @@ approximation on a domain. Multiplying by a cutoff turns a
 function which is `C^k` on an open set containing its support into a `C^k` function on the whole
 space (`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G`
 agrees, at positions near a compact subset of `U`, with a function `C^k` on the whole product
+which keeps its periods in the second coordinate
 (`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
@@ -259,19 +260,23 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
   exact L.contDiff_of_tsupport_subset_right hg hψ hs hψs
 
 /-- A function `C^k` on `U ×ˢ univ`, for an open set `U`, agrees with a function `C^k` on the
-whole product at every point `(y, η)` with `y` near a compact set `K ⊆ U`, for all `η`. -/
+whole product at every point `(y, η)` with `y` near a compact set `K ⊆ U`, for all `η`. The
+function on the whole product keeps every period of `f` in `η`. -/
 theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] {G F : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ∞} {f : E × G → F} {K U : Set E}
     (hf : ContDiffOn ℝ k f (U ×ˢ univ)) (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ g : E × G → F, ContDiff ℝ k g ∧ ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
+    ∃ g : E × G → F, ContDiff ℝ k g ∧ (∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η)) ∧
+      ∀ T : G, (∀ y, Function.Periodic (fun η => f (y, η)) T) →
+        ∀ y, Function.Periodic (fun η => g (y, η)) T := by
   obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hψU' : tsupport (fun p : E × G => ψ p.1) ⊆ U ×ˢ univ :=
     (closure_minimal (t := tsupport ψ ×ˢ (univ : Set G))
       (fun p hp => ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
       ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψU subset_rfl)
   refine ⟨fun p => ψ p.1 • f p, hf.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
-    ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
+    ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_,
+    fun T hT y η => congrArg (ψ y • ·) (hT y η)⟩
   filter_upwards [hψone x hx] with y hy η
   rw [hy, one_smul]
 
