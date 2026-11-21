@@ -275,7 +275,8 @@ theorem dualAnnihilator_coinvariantsKer (ρ : Representation k G V) :
   · intro h g u
     have := h (ρ g u - u) (Coinvariants.sub_mem_ker g u)
     rwa [map_sub, sub_eq_zero] at this
-  · intro h w (hw : w ∈ Submodule.span k _)
+  · intro h w hw
+    rw [Coinvariants.ker] at hw
     induction hw using Submodule.span_induction with
     | mem x hx =>
       obtain ⟨⟨g, u⟩, rfl⟩ := hx
@@ -295,6 +296,7 @@ theorem finrank_coinvariants_eq_finrank_invariants_dual [FiniteDimensional k V]
     (ρ : Representation k G V) :
     finrank k ρ.Coinvariants = finrank k ρ.dual.invariants := by
   rw [← dualAnnihilator_coinvariantsKer]
+  -- `ρ.Coinvariants` is by definition the quotient `V ⧸ Coinvariants.ker ρ`.
   exact (Subspace.quotEquivAnnihilator (Coinvariants.ker ρ)).finrank_eq
 
 end Representation

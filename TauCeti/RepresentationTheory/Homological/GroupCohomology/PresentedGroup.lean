@@ -76,10 +76,13 @@ private theorem linear_freeAffineHom (v : X → V) (w : FreeGroup X) (y : V) :
     FreeGroup.ext_hom _ _ fun x ↦ LinearEquiv.ext fun y ↦ by
       simp only [freeAffineHom, MonoidHom.coe_comp, Function.comp_apply, FreeGroup.lift_apply_of,
         AffineEquiv.linearHom_apply, MulEquiv.coe_toMonoidHom]
-      -- Mathlib has no lemmas for the linear parts of `AffineEquiv.trans`,
-      -- `AffineEquiv.constVAdd` and `LinearEquiv.toAffineEquiv`; by definition they are the
-      -- composite, the identity and the linear equivalence itself, so the linear part of the
-      -- generator's image is the unit `generalLinearEquiv k V (ρ.asGroupHom (of x))`.
+      -- Mathlib has no lemmas for the linear parts of `AffineEquiv.trans` and
+      -- `LinearEquiv.toAffineEquiv`; by definition they are the composite and the linear
+      -- equivalence itself. The `change` unfolds the first and the closing `rfl` the second.
+      change ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V
+        (ρ.asGroupHom (FreeGroup.of x))).toAffineEquiv.linear.trans
+          (AffineEquiv.constVAdd k V (v x)).linear) y = _
+      rw [AffineEquiv.linear_constVAdd, LinearEquiv.trans_refl]
       rfl
   simpa [asGroupHom_apply] using congrArg (fun φ ↦ (φ w : V ≃ₗ[k] V) y) this
 
