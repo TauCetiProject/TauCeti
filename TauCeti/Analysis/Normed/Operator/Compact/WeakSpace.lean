@@ -7,14 +7,13 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.Topology.Algebra.Module.WeakSpace
+public import TauCeti.Topology.Semicontinuity.Sequences
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
-import TauCeti.Topology.Semicontinuity.Sequences
 
 /-!
 # Compact operators on bounded sets in the weak topology
@@ -40,8 +39,8 @@ This bounded-set weak-to-norm continuity yields:
   every closed or sequentially closed `C ⊆ F` (`IsCompactOperator.isSeqClosed_toWeakSpace_preimage`,
   `IsCompactOperator.isSeqClosed_toWeakSpace_preimage_of_isSeqClosed`), and sequential weak lower
   semicontinuity of compact perturbations
-  (`IsCompactOperator.le_of_tendsto_add_comp_of_tendsto_toWeakSpace`), because weakly convergent
-  sequences are norm-bounded (`Filter.Tendsto.isBounded_range_of_toWeakSpace`).
+  (`IsCompactOperator.seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm`), because weakly
+  convergent sequences are norm-bounded (`Filter.Tendsto.isBounded_range_of_toWeakSpace`).
 
 The restriction to bounded sets cannot be dropped: a linear map with infinite-dimensional range
 into a normed space is never continuous from the weak topology to the norm topology
@@ -63,7 +62,7 @@ are weakly sequentially closed yet not weakly closed, see
   `S ∩ J ⁻¹' C` for bounded weakly closed or weakly compact `S` and closed `C`.
 * `IsCompactOperator.isSeqClosed_toWeakSpace_preimage`: sequential weak closedness of `J ⁻¹' C` for
   a compact operator `J` and a closed set `C`.
-* `IsCompactOperator.le_of_tendsto_add_comp_of_tendsto_toWeakSpace`: sequential weak lower
+* `IsCompactOperator.seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm`: sequential weak lower
   semicontinuity of `u ↦ E₀ u + g (J u)`.
 
 ## References
@@ -259,35 +258,26 @@ theorem isSeqClosed_toWeakSpace_preimage (hJ : IsCompactOperator J) {C : Set F}
   hJ.isSeqClosed_toWeakSpace_preimage_of_isSeqClosed hC.isSeqClosed
 
 /-- **Sequential weak lower semicontinuity of a compact perturbation.** Over `ℝ` or `ℂ`, if
-`u n → a` weakly in `V` along a sequence in `S`, `E₀` is weakly lower semicontinuous within `S` at
-`a`, `J` is compact, and `g` is lower semicontinuous within `J '' S` at `J a`, then every limit `l`
-of `E₀ (u n) + g (J (u n))` satisfies `E₀ a + g (J a) ≤ l`. -/
-theorem le_of_tendsto_add_comp_of_tendsto_toWeakSpace {β : Type*}
+`E₀` is sequentially weakly lower semicontinuous on `S`, `J : V →L[𝕜] F` is compact, and `g` is
+sequentially lower semicontinuous on `J '' S`, then `u ↦ E₀ u + g (J u)` is sequentially weakly
+lower semicontinuous on `S`. -/
+theorem seqLowerSemicontinuousOn_add_comp_toWeakSpace_symm {β : Type*}
     [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
     [TopologicalSpace β] [OrderTopology β] [ContinuousAdd β]
-    (hJ : IsCompactOperator J) {E₀ : V → β} {g : F → β} {S : Set V} {u : ℕ → V} {a : V}
-    (huS : ∀ n, u n ∈ S)
-    (hE₀ : LowerSemicontinuousWithinAt
+    (hJ : IsCompactOperator J) {E₀ : V → β} {g : F → β} {S : Set V}
+    (hE₀ : TauCeti.SeqLowerSemicontinuousOn
       (fun w : WeakSpace 𝕜 V ↦ E₀ ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' S) (toWeakSpace 𝕜 V a))
-    (hg : LowerSemicontinuousWithinAt g (J '' S) (J a))
-    (hu : Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop (𝓝 (toWeakSpace 𝕜 V a)))
-    {l : β} (hl : Tendsto (fun n ↦ E₀ (u n) + g (J (u n))) atTop (𝓝 l)) :
-    E₀ a + g (J a) ≤ l := by
-  have hg_at : TauCeti.SeqLowerSemicontinuousWithinAt g (J '' S)
-      (J ((toWeakSpace 𝕜 V).symm (toWeakSpace 𝕜 V a))) := by
-    simpa only [LinearEquiv.symm_apply_apply] using hg.seqLowerSemicontinuousWithinAt
+      (toWeakSpace 𝕜 V '' S))
+    (hg : TauCeti.SeqLowerSemicontinuousOn g (J '' S)) :
+    TauCeti.SeqLowerSemicontinuousOn
+      (fun w : WeakSpace 𝕜 V ↦
+        E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
+      (toWeakSpace 𝕜 V '' S) := by
   have hmaps : MapsTo (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
       (toWeakSpace 𝕜 V '' S) (J '' S) := by
     rw [mapsTo_image_iff]
     simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J S
-  have hsum := hE₀.seqLowerSemicontinuousWithinAt.add
-    (TauCeti.SeqLowerSemicontinuousWithinAt.comp_seqContinuous
-      (g := fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
-      hg_at hJ.seqContinuous_toWeakSpace_symm hmaps)
-  simpa only [Function.comp_apply, LinearEquiv.symm_apply_apply] using
-    hsum.le_of_tendsto (fun n ↦ mem_image_of_mem _ (huS n)) hu <| by
-      simpa only [Function.comp_apply, LinearEquiv.symm_apply_apply] using hl
+  exact hE₀.add (hg.comp_seqContinuous hJ.seqContinuous_toWeakSpace_symm hmaps)
 
 end RCLike
 

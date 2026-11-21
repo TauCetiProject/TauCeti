@@ -15,11 +15,12 @@ import Mathlib.Analysis.RCLike.Lemmas
 /-!
 # Spheres and harmonic diagonal counterexample in the weak topology on `ℓ^p`
 
-For a bounded scalar family `d` indexed by an infinite type, the diagonal operator
+For a bounded scalar family `d` on `ι`, the diagonal operator
 `lp.diagonalCLM d` on `ℓ^p(ι, 𝕜)` is injective when no coefficient vanishes
-(`lp.injective_diagonalCLM_iff`), and compact when the coefficients tend to zero
-(`lp.isCompactOperator_diagonalCLM`). For such an operator the sphere
-`{u | ‖lp.diagonalCLM d u‖ = r}` of positive radius is weakly sequentially closed
+(`lp.injective_diagonalCLM_iff`), compact when the coefficients tend to zero
+(`lp.isCompactOperator_diagonalCLM`), and has infinite-dimensional range when infinitely many
+coefficients are nonzero (`lp.finiteDimensional_range_diagonalCLM_iff`). For such an operator the
+sphere `{u | ‖lp.diagonalCLM d u‖ = r}` of positive radius is weakly sequentially closed
 (`lp.isSeqClosed_toWeakSpace_setOf_norm_diagonalCLM_eq`) but not weakly closed
 (`lp.not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq`).
 
@@ -55,18 +56,13 @@ section GeneralDiagonal
 
 variable {ι 𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)] {d : ℓ^∞(ι, 𝕜)}
 
-/-- For an infinite index type and nonvanishing coefficients, a sphere of positive radius of a
-diagonal operator is not weakly closed. -/
-theorem not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq [Infinite ι] (hd : ∀ i, d i ≠ 0)
+/-- When infinitely many coefficients are nonzero, a sphere of positive radius of a diagonal
+operator is not weakly closed. -/
+theorem not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq (hd : {i | d i ≠ 0}.Infinite)
     {r : ℝ} (hr : 0 < r) :
     ¬ IsClosed (toWeakSpace 𝕜 ℓ^p(ι, 𝕜) '' {u | ‖diagonalCLM d u‖ = r}) :=
   TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq (j := diagonalCLM (p := p) d)
-    (by
-      change ¬ FiniteDimensional 𝕜 (LinearMap.range (diagonalCLM (p := p) d).toLinearMap)
-      rw [finiteDimensional_range_diagonalCLM_iff,
-        show {i | d i ≠ 0} = Set.univ from Set.eq_univ_iff_forall.2 hd]
-      exact Set.infinite_univ)
-    hr
+    ((finiteDimensional_range_diagonalCLM_iff (p := p) d).not.2 hd) hr
 
 /-- If the coefficients tend to zero, every sphere of a diagonal operator is weakly sequentially
 closed. -/
@@ -91,17 +87,16 @@ example (𝕜 : Type*) [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r : ℝ}
       ¬ IsClosed (toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜) '' {u | ‖J u‖ = r}) ∧
       ¬ Continuous fun w : WeakSpace 𝕜 ℓ^p(ℕ, 𝕜) ↦ J ((toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜)).symm w) := by
   intro J
-  have hd_ne : ∀ n : ℕ, invNatSucc 𝕜 n ≠ 0 :=
-    (injective_diagonalCLM_iff _).mp (injective_diagonalCLM_invNatSucc (p := p) 𝕜)
   have hJ_inf :
       ¬ FiniteDimensional 𝕜 (LinearMap.range (J : ℓ^p(ℕ, 𝕜) →ₗ[𝕜] ℓ^p(ℕ, 𝕜))) := by
     rw [finiteDimensional_range_diagonalCLM_iff,
-      show {i | invNatSucc 𝕜 i ≠ 0} = Set.univ from Set.eq_univ_iff_forall.2 hd_ne]
+      show {i | invNatSucc 𝕜 i ≠ 0} = Set.univ from Set.eq_univ_iff_forall.2
+        ((injective_diagonalCLM_iff _).mp (injective_diagonalCLM_invNatSucc (p := p) 𝕜))]
     exact Set.infinite_univ
   refine ⟨isCompactOperator_diagonalCLM_invNatSucc 𝕜,
     (isCompactOperator_diagonalCLM_invNatSucc 𝕜).isSeqClosed_toWeakSpace_setOf_norm_eq r,
     TauCeti.zero_mem_closure_toWeakSpace_setOf_norm_eq hJ_inf hr.le,
-    not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq hd_ne hr,
+    TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq hJ_inf hr,
     TauCeti.not_continuous_comp_toWeakSpace_symm hJ_inf⟩
 
 end HarmonicDiagonalCounterexample

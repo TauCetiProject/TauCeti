@@ -95,13 +95,6 @@ theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
   · ext i
     exact mul_left_cancel₀ (hd i) (by simpa using congrArg (fun z : ℓ^p(ι, 𝕜) ↦ z i) hxy)
 
-/-- The kernel of a bounded diagonal operator on `ℓ^p(ι, 𝕜)` is trivial if and only if every
-coefficient is nonzero. -/
-@[simp]
-theorem ker_diagonalCLM_eq_bot_iff (d : ℓ^∞(ι, 𝕜)) :
-    LinearMap.ker (diagonalCLM (p := p) d).toLinearMap = ⊥ ↔ ∀ i, d i ≠ 0 :=
-  LinearMap.ker_eq_bot.trans (injective_diagonalCLM_iff d)
-
 /-- The diagonal multiplier with all coefficients zero is zero. -/
 @[simp]
 theorem diagonalCLM_zero : diagonalCLM (p := p) (0 : ℓ^∞(ι, 𝕜)) = 0 := by
@@ -333,15 +326,6 @@ open scoped ComplexOrder in
 /-- Every entry of `lp.ofAntitone 𝕜 hc` is nonnegative in the `RCLike` order. -/
 theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
     0 ≤ ofAntitone 𝕜 hc n := by simp
-
-/-- If an antitone sequence `c : ℕ → ℝ≥0` tends to zero, its diagonal operator on `ℓ^p(ℕ, 𝕜)` is
-compact. -/
-theorem isCompactOperator_diagonalCLM_ofAntitone {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {c : ℕ → ℝ≥0} (hc : Antitone c) (h0 : Tendsto c atTop (𝓝 0)) :
-    IsCompactOperator (diagonalCLM (p := p) (ofAntitone 𝕜 hc)) := by
-  refine isCompactOperator_diagonalCLM _ ?_
-  rw [Nat.cofinite_eq_atTop]
-  simpa only [norm_ofAntitone_apply, NNReal.coe_zero] using NNReal.tendsto_coe.2 h0
 
 /-- The bounded harmonic multiplier sequence `n ↦ ((n + 1 : 𝕜)⁻¹)` in `ℓ^∞(ℕ, 𝕜)`. -/
 noncomputable def invNatSucc (𝕜 : Type*) [RCLike 𝕜] : ℓ^∞(ℕ, 𝕜) :=

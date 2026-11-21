@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Spheres of linear maps of infinite rank in the weak topology
@@ -91,13 +92,13 @@ theorem not_continuousAt_comp_toWeakSpace_symm {𝕜 V F G : Type*} [Nontriviall
     hc.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos)
   obtain ⟨v, hv, hline⟩ :=
     (j : V →ₗ[𝕜] F).exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hj hU
-  have hjv : 0 < ‖j v‖ := norm_pos_iff.2 hv
-  obtain ⟨c, hc_norm⟩ := NormedField.exists_lt_norm 𝕜 (1 / ‖j v‖)
-  have hlt : ‖c‖ * ‖j v‖ < 1 := by
-    have h : j (x + c • v) ∈ Metric.ball (j x) 1 := by
-      simpa only [mem_preimage, LinearEquiv.symm_apply_apply] using hline c
-    rwa [Metric.mem_ball, dist_eq_norm, map_add, map_smul, add_sub_cancel_left, norm_smul] at h
-  exact ((div_lt_iff₀ hjv).1 hc_norm).not_ge hlt.le
+  have hzero : LinearMap.toSpanSingleton 𝕜 F (j v) = 0 :=
+    LinearMap.eq_zero_of_forall_norm_apply_le (C := 1) fun c ↦ by
+      have h : j (x + c • v) ∈ Metric.ball (j x) 1 := by
+        simpa only [mem_preimage, LinearEquiv.symm_apply_apply] using hline c
+      rw [Metric.mem_ball, dist_eq_norm, map_add, map_smul, add_sub_cancel_left] at h
+      exact h.le
+  exact hv (by simpa using congrArg (· (1 : 𝕜)) hzero)
 
 /-- A linear map `j` with infinite-dimensional range into a normed space is not continuous from
 the weak topology to the norm topology. -/

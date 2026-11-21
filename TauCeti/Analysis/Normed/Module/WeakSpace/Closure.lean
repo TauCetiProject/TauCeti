@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
@@ -108,13 +109,12 @@ theorem interior_toWeakSpace_eq_empty_of_isBounded {𝕜 V : Type*} [Nontriviall
   obtain ⟨v, hv, hline⟩ :=
     exists_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hV (mem_interior_iff_mem_nhds.1 hw)
   obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall x).1 hs
-  have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv
-  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 (R / ‖v‖)
-  have hx_mem : x + c • v ∈ s := (toWeakSpace 𝕜 V).injective.mem_set_image.1 (hline c)
-  have hdist : ‖c‖ * ‖v‖ ≤ R := by
-    have h := mem_closedBall.1 (hR hx_mem)
-    rwa [dist_eq_norm, add_sub_cancel_left, norm_smul] at h
-  exact ((div_lt_iff₀ hv_pos).1 hc).not_ge hdist
+  have hzero : LinearMap.toSpanSingleton 𝕜 V v = 0 :=
+    LinearMap.eq_zero_of_forall_norm_apply_le (C := R) fun c ↦ by
+      have hx_mem : x + c • v ∈ s := (toWeakSpace 𝕜 V).injective.mem_set_image.1 (hline c)
+      have h := mem_closedBall.1 (hR hx_mem)
+      rwa [dist_eq_norm, add_sub_cancel_left] at h
+  exact hv (by simpa using congrArg (· (1 : 𝕜)) hzero)
 
 end InfiniteDimensionalLines
 
