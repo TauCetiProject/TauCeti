@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Measure.Support
 
 /-!
 # Continuous functions and the `L^∞` seminorm
@@ -30,7 +33,9 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`).
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). In particular, on a nonempty
+open interval `(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
+(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`).
 -/
 
 public section
@@ -93,3 +98,24 @@ theorem Continuous.eLpNorm_eq_integral_rpow_norm {F : Type*} [NormedAddCommGroup
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
     eLpNorm f p μ = ENNReal.ofReal ((∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹) :=
   (hf.memLp_of_hasCompactSupport (.of_compactSpace f)).eLpNorm_eq_integral_rpow_norm hp0 hpt
+
+/-- For an open-positive measure `μ` on `ℝ` and a nonempty open interval `(a, b)`, the real-valued
+`L^∞` norm of the identity function is `max |a| |b|`. -/
+@[simp]
+theorem MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo (μ : Measure ℝ)
+    [μ.IsOpenPosMeasure] {a b : ℝ} (hab : a < b) :
+    lpNorm (id : ℝ → ℝ) ∞ (μ.restrict (Set.Ioo a b)) = max |a| |b| := by
+  rw [← toReal_eLpNorm, eLpNorm_exponent_top continuous_id.aestronglyMeasurable,
+    eLpNormEssSup_eq_essSup_eNorm]
+  simp only [id_eq]
+  rw [TauCeti.essSup_eq_iSup_support _ continuous_eNorm.lowerSemicontinuous Measure.support_mem_ae,
+    Measure.support_restrict_of_isOpen μ isOpen_Ioo, closure_Ioo hab.ne]
+  have hsup : (⨆ x ∈ Set.Icc a b, ‖x‖ₑ) = ENNReal.ofReal (max |a| |b|) := by
+    refine le_antisymm (iSup₂_le fun x hx => ?_) ?_
+    · rw [Real.eNorm_eq_ofReal_abs]
+      exact ENNReal.ofReal_le_ofReal (abs_le_max_abs_abs hx.1 hx.2)
+    · rw [ENNReal.ofReal_max]
+      exact max_le
+        (le_iSup₂_of_le a (Set.left_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs a).ge)
+        (le_iSup₂_of_le b (Set.right_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs b).ge)
+  rw [hsup, ENNReal.toReal_ofReal (le_max_of_le_left (abs_nonneg a))]

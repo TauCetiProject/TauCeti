@@ -24,11 +24,11 @@ equivalence `TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ` between
 maps, sending `TauCeti.iteratedGradientChain f j x` to `iteratedFDeriv ℝ (j + 1) f x` without any
 differentiability hypothesis.
 
-Evaluating on a constant tuple `(fun _ => h)` recovers `TauCeti.IteratedGradient.fullContractL`,
-and precomposing with a single outer contraction `TauCeti.IteratedGradient.contractL j 1 h`
-prepends `h` to the direction tuple. Along a finite orthonormal basis `b` of `E`, the operator norm
-of an iterated gradient and the sum of the norms of its basis entries are comparable with explicit
-constants (`1` and `(card ι) ^ (j + 1)`).
+Precomposing with a single outer contraction `TauCeti.IteratedGradient.contractL j 1 h` curries `h`
+into the first argument of the corresponding continuous multilinear map
+(`TauCeti.IteratedGradient.toContinuousMultilinearMapₗᵢ_contractL_one`). Along a finite orthonormal
+basis `b` of `E`, the operator norm of an iterated gradient and the sum of the norms of its basis
+entries are comparable with explicit constants (`1` and `(card ι) ^ (j + 1)`).
 
 ## Main declarations
 
@@ -52,31 +52,6 @@ open scoped InnerProductSpace
 section InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Pointwise evaluation after contracting one outermost slot at `h` evaluates at `Fin.cons h m`. -/
-theorem evalL_contractL_one_apply (j : ℕ) (h : E) (m : Fin (j + 1) → E)
-    (G : IteratedGradient E (j + 1)) :
-    evalL j m (contractL j 1 h G) = evalL (j + 1) (Fin.cons h m) G := by
-  rw [contractL_one_apply, evalL_succ_apply, Fin.cons_zero, Fin.tail_cons]
-
-/-- Contracting one outermost slot at `h` and evaluating at `m` evaluates at `Fin.cons h m`. -/
-theorem evalL_comp_contractL_one (j : ℕ) (h : E) (m : Fin (j + 1) → E) :
-    (evalL j m).comp (contractL j 1 h) = evalL (j + 1) (Fin.cons h m) := by
-  ext G
-  exact evalL_contractL_one_apply j h m G
-
-/-- Two iterated gradients are equal when they agree on every tuple of directions. -/
-theorem ext_evalL {j : ℕ} {G₁ G₂ : IteratedGradient E j}
-    (h : ∀ m : Fin (j + 1) → E, evalL j m G₁ = evalL j m G₂) :
-    G₁ = G₂ := by
-  induction j with
-  | zero =>
-      exact ext_inner_left ℝ fun v => by simpa [evalL_zero_apply] using h (fun _ => v)
-  | succ j ih =>
-      ext v
-      refine ih fun m => ?_
-      have hm := h (Fin.cons v m)
-      rwa [evalL_succ_apply, evalL_succ_apply, Fin.cons_zero, Fin.tail_cons] at hm
 
 /-- Any entry of an iterated gradient along vectors of an orthonormal basis has norm at most the
 operator norm of the field. -/
@@ -189,13 +164,6 @@ theorem toContinuousMultilinearMapₗᵢ_iteratedGradientChain (f : E → ℝ) (
 theorem evalL_iteratedGradientChain (f : E → ℝ) (j : ℕ) (x : E) (m : Fin (j + 1) → E) :
     evalL j m (iteratedGradientChain f j x) = iteratedFDeriv ℝ (j + 1) f x m := by
   rw [← toContinuousMultilinearMapₗᵢ_apply, toContinuousMultilinearMapₗᵢ_iteratedGradientChain]
-
-/-- Full contraction of `iteratedGradientChain f j x` in direction `h` evaluates
-`iteratedFDeriv ℝ (j + 1) f x` on the constant tuple `(fun _ => h)`. -/
-theorem fullContractL_iteratedGradientChain (f : E → ℝ) (j : ℕ) (x h : E) :
-    fullContractL j h (iteratedGradientChain f j x) =
-      iteratedFDeriv ℝ (j + 1) f x (fun _ => h) := by
-  rw [← evalL_const, evalL_iteratedGradientChain]
 
 end CompleteSpace
 

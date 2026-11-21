@@ -9,12 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
-import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Measure.Support
 
 /-!
-# Pointwise bounds and `L^∞` interval norms for the real-valued `Lᵖ` norm
+# Pointwise bounds for the real-valued `Lᵖ` norm
 
 A pointwise bound `‖f x‖ ≤ c ‖g x‖` almost everywhere bounds the real-valued `Lᵖ` norm:
 `lpNorm f p μ ≤ c * lpNorm g p μ` (`MeasureTheory.lpNorm_le_mul_lpNorm_of_ae_le_mul`). This is
@@ -29,12 +27,6 @@ most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, th
 `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
 (`MeasureTheory.Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq`).
-
-For an open-positive measure `μ` on `ℝ` and a nonempty open interval `(a, b)`, the real-valued
-`L^∞` norm of the identity function equals `max |a| |b|`
-(`MeasureTheory.lpNorm_id_exponent_top_restrict_Ioo`). Combined with
-`MeasureTheory.lpNorm_const_smul`, this computes the `L^∞` norm of any linear map `x ↦ c * x` on
-`(a, b)`.
 
 For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
 integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
@@ -62,27 +54,6 @@ theorem lpNorm_le_mul_lpNorm_of_ae_le_mul {f : α → F} {g : α → G} {c : ℝ
   rw [← toReal_eLpNorm, ← toReal_eLpNorm, ← ENNReal.toReal_ofReal hc, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hg.eLpNorm_ne_top)
     (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hf h p)
-
-/-- For an open-positive measure `μ` on `ℝ` and a nonempty open interval `(a, b)`, the real-valued
-`L^∞` norm of the identity function is `max |a| |b|`. -/
-@[simp]
-theorem lpNorm_id_exponent_top_restrict_Ioo (μ : Measure ℝ) [μ.IsOpenPosMeasure]
-    {a b : ℝ} (hab : a < b) :
-    lpNorm (id : ℝ → ℝ) ∞ (μ.restrict (Set.Ioo a b)) = max |a| |b| := by
-  rw [← toReal_eLpNorm, eLpNorm_exponent_top continuous_id.aestronglyMeasurable,
-    eLpNormEssSup_eq_essSup_eNorm]
-  simp only [id_eq]
-  rw [TauCeti.essSup_eq_iSup_support _ continuous_eNorm.lowerSemicontinuous Measure.support_mem_ae,
-    Measure.support_restrict_of_isOpen μ isOpen_Ioo, closure_Ioo hab.ne]
-  have hsup : (⨆ x ∈ Set.Icc a b, ‖x‖ₑ) = ENNReal.ofReal (max |a| |b|) := by
-    refine le_antisymm (iSup₂_le fun x hx => ?_) ?_
-    · rw [Real.eNorm_eq_ofReal_abs]
-      exact ENNReal.ofReal_le_ofReal (abs_le_max_abs_abs hx.1 hx.2)
-    · rw [ENNReal.ofReal_max]
-      exact max_le
-        (le_iSup₂_of_le a (Set.left_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs a).ge)
-        (le_iSup₂_of_le b (Set.right_mem_Icc.2 hab.le) (Real.eNorm_eq_ofReal_abs b).ge)
-  rw [hsup, ENNReal.toReal_ofReal (le_max_of_le_left (abs_nonneg a))]
 
 /-- **Multiplying by a bounded function.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ c` for almost every `x`,
 then `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/

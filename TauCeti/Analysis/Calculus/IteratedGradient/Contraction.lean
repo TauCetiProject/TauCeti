@@ -20,7 +20,11 @@ directional expressions used in Taylor polynomials, without choosing coordinates
 
 Both operations are continuous linear in the field. Partial contraction of `i` slots is
 homogeneous of degree `i` in the direction and has norm at most `‖h‖ ^ i`; full contraction of
-`IteratedGradient E j` has degree `j + 1` and norm at most `‖h‖ ^ (j + 1)`.
+`IteratedGradient E j` has degree `j + 1` and norm at most `‖h‖ ^ (j + 1)`. Precomposing `evalL`
+with a single outer contraction `contractL j 1 h` prepends `h` to the direction tuple
+(`TauCeti.IteratedGradient.evalL_comp_contractL_one`), `evalL` is multilinear in each slot
+(`TauCeti.IteratedGradient.evalL_update_add`, `TauCeti.IteratedGradient.evalL_update_smul`), and two
+iterated gradients agree when they have the same `evalL` values (`TauCeti.IteratedGradient.ext`).
 -/
 
 public section
@@ -126,6 +130,92 @@ theorem evalL_zero_apply (m : Fin 1 → E) (G : IteratedGradient E 0) :
 theorem evalL_succ_apply (j : ℕ) (m : Fin (j + 1 + 1) → E) (G : IteratedGradient E (j + 1)) :
     evalL (j + 1) m G = evalL j (Fin.tail m) (G (m 0)) :=
   (rfl)
+
+/-- Pointwise evaluation after contracting one outermost slot at `h` evaluates at `Fin.cons h m`. -/
+theorem evalL_contractL_one_apply (j : ℕ) (h : E) (m : Fin (j + 1) → E)
+    (G : IteratedGradient E (j + 1)) :
+    evalL j m (contractL j 1 h G) = evalL (j + 1) (Fin.cons h m) G := by
+  rw [contractL_one_apply, evalL_succ_apply, Fin.cons_zero, Fin.tail_cons]
+
+/-- Contracting one outermost slot at `h` and evaluating at `m` evaluates at `Fin.cons h m`. -/
+theorem evalL_comp_contractL_one (j : ℕ) (h : E) (m : Fin (j + 1) → E) :
+    (evalL j m).comp (contractL j 1 h) = evalL (j + 1) (Fin.cons h m) := by
+  ext G
+  exact evalL_contractL_one_apply j h m G
+
+/-- Two iterated gradients are equal when they agree on every tuple of directions. -/
+@[ext]
+theorem ext {j : ℕ} {G₁ G₂ : IteratedGradient E j}
+    (h : ∀ m : Fin (j + 1) → E, evalL j m G₁ = evalL j m G₂) :
+    G₁ = G₂ := by
+  induction j with
+  | zero =>
+      refine ext_inner_left ℝ fun v => ?_
+      have hv := h (fun _ => v)
+      rwa [evalL_zero_apply, evalL_zero_apply] at hv
+  | succ j ih =>
+      refine ContinuousLinearMap.ext fun v => ih fun m => ?_
+      have hm := h (Fin.cons v m)
+      rwa [evalL_succ_apply, evalL_succ_apply, Fin.cons_zero, Fin.tail_cons] at hm
+
+/-- Evaluating `evalL` at a tuple updated in slot `i` with `v₁ + v₂` is the sum of the
+evaluations at `v₁` and `v₂`. -/
+theorem evalL_update_add (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (v₁ v₂ : E) :
+    evalL j (Function.update m i (v₁ + v₂)) =
+      evalL j (Function.update m i v₁) + evalL j (Function.update m i v₂) := by
+  induction j with
+  | zero =>
+      obtain rfl : i = 0 := Fin.eq_zero i
+      refine ContinuousLinearMap.ext fun G => ?_
+      rw [add_apply, evalL_zero_apply, evalL_zero_apply, evalL_zero_apply,
+        Function.update_self, Function.update_self, Function.update_self, inner_add_left]
+  | succ j ih =>
+      cases i using Fin.cases with
+      | zero =>
+          refine ContinuousLinearMap.ext fun G => ?_
+          have htail (v : E) : Fin.tail (Function.update m 0 v) = Fin.tail m :=
+            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) v m
+          rw [add_apply, evalL_succ_apply, evalL_succ_apply, evalL_succ_apply,
+            Function.update_self, Function.update_self, Function.update_self,
+            htail, htail, htail, map_add, map_add]
+      | succ i =>
+          refine ContinuousLinearMap.ext fun G => ?_
+          have htail (v : E) :
+              Fin.tail (Function.update m i.succ v) = Function.update (Fin.tail m) i v :=
+            funext fun r => by simp [Fin.tail, Function.update_apply]
+          rw [add_apply, evalL_succ_apply, evalL_succ_apply, evalL_succ_apply,
+            Function.update_of_ne (Fin.succ_ne_zero i).symm,
+            Function.update_of_ne (Fin.succ_ne_zero i).symm,
+            Function.update_of_ne (Fin.succ_ne_zero i).symm,
+            htail, htail, htail, ih, add_apply]
+
+/-- Evaluating `evalL` at a tuple updated in slot `i` with `c • v` scales the evaluation by
+`c`. -/
+theorem evalL_update_smul (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (c : ℝ) (v : E) :
+    evalL j (Function.update m i (c • v)) = c • evalL j (Function.update m i v) := by
+  induction j with
+  | zero =>
+      obtain rfl : i = 0 := Fin.eq_zero i
+      refine ContinuousLinearMap.ext fun G => ?_
+      rw [smul_apply, evalL_zero_apply, evalL_zero_apply,
+        Function.update_self, Function.update_self, inner_smul_left, conj_trivial, smul_eq_mul]
+  | succ j ih =>
+      cases i using Fin.cases with
+      | zero =>
+          refine ContinuousLinearMap.ext fun G => ?_
+          have htail (w : E) : Fin.tail (Function.update m 0 w) = Fin.tail m :=
+            funext fun r => Function.update_of_ne (Fin.succ_ne_zero r) w m
+          rw [smul_apply, evalL_succ_apply, evalL_succ_apply,
+            Function.update_self, Function.update_self, htail, htail, map_smul, map_smul]
+      | succ i =>
+          refine ContinuousLinearMap.ext fun G => ?_
+          have htail (w : E) :
+              Fin.tail (Function.update m i.succ w) = Function.update (Fin.tail m) i w :=
+            funext fun r => by simp [Fin.tail, Function.update_apply]
+          rw [smul_apply, evalL_succ_apply, evalL_succ_apply,
+            Function.update_of_ne (Fin.succ_ne_zero i).symm,
+            Function.update_of_ne (Fin.succ_ne_zero i).symm,
+            htail, htail, ih, smul_apply]
 
 /-- Pointwise operator-norm bound for multilinear evaluation of an iterated gradient. -/
 theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradient E j) :
