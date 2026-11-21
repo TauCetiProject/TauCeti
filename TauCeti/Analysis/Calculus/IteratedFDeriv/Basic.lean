@@ -45,7 +45,9 @@ most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right trans
 a continuous linear map `L` are constant (`ContinuousLinearMap.iteratedFDeriv_succ_eq`), so
 adding `L` to a differentiable function adds them to its derivatives of positive order
 (`ContinuousLinearMap.iteratedFDeriv_succ_add_apply`) and does not change their Hölder constants
-(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`).
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_succ_add_left_iff`). For `f` of class `C^n` and
+`m < n`, the derivative of `D^m f` is `D^(m + 1) f`, curried on the left
+(`ContDiff.hasFDerivAt_iteratedFDeriv`).
 -/
 
 public section
@@ -317,6 +319,13 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     filter_upwards [hζ] with y hy
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
+/-- For a function of class `C^n` and `m < n`, the derivative of `D^m f` at `x` is
+`D^(m + 1) f x`, curried on the left. -/
+theorem _root_.ContDiff.hasFDerivAt_iteratedFDeriv {n : WithTop ℕ∞} {f : E → F} {m : ℕ}
+    (hm : m < n) (hf : ContDiff 𝕜 n f) (x : E) :
+    HasFDerivAt (iteratedFDeriv 𝕜 m f) (iteratedFDeriv 𝕜 (m + 1) f x).curryLeft x :=
+  hf.ftaylorSeries.fderiv m hm x
 
 /-- At a point of which `s` is a neighbourhood, every iterated derivative of `s.indicator g` is
 that of `g`. -/
