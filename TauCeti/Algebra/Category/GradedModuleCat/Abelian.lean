@@ -41,6 +41,9 @@ graded abelian category, whose canonical exact structure is
 * `TauCeti.GradedModuleCat.cokernelObj`, `TauCeti.GradedModuleCat.cokernelπ` and
   `TauCeti.GradedModuleCat.cokernelCocone`: the cokernel of a morphism of graded modules, the
   projection onto it and the corresponding cokernel cofork.
+* `TauCeti.GradedModuleCat.rangeObj`, `TauCeti.GradedModuleCat.rangeι` and
+  `TauCeti.GradedModuleCat.rangeRestrict`: the image of a morphism of graded modules, its inclusion
+  and corestriction.
 * `TauCeti.GradedModuleCat.directSumObj` and `TauCeti.GradedModuleCat.productFan`: the direct sum
   of a family of graded modules, graded degreewise, and the product fan it forms.
 
@@ -212,6 +215,55 @@ instance : PreservesColimit (parallelPair f 0) toModuleCat :=
       (ModuleCat.cokernelIsColimit (toModuleCat.map f)))
 
 end Cokernel
+
+section Range
+
+/-- The image of a morphism of graded modules, equipped with the induced grading from the
+codomain. -/
+noncomputable abbrev rangeObj : GradedModuleCat.{v} 𝒜 where
+  carrier := LinearMap.range f.hom
+  isAddCommGroup := Submodule.addCommGroup _
+  isModule := Submodule.module _
+  isModuleBase := Submodule.module' _
+  grading := N.grading.submodule (LinearMap.range f.hom) f.isHomogeneous.isHomogeneous_range
+  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.mem_submodule_piece] at hx ⊢
+    exact SetLike.GradedSMul.smul_mem (B := N.grading.piece) ha hx⟩
+
+/-- An element of `rangeObj f` has degree `p` iff its coercion to `N` has degree `p`. -/
+theorem mem_rangeObj_piece_iff {p : ℤ} {x : rangeObj f} :
+    x ∈ (rangeObj f).grading.piece p ↔ (x : N) ∈ N.grading.piece p :=
+  InternalGrading.mem_submodule_piece ..
+
+/-- The degree-zero inclusion of the image of `f` into its codomain. -/
+noncomputable def rangeι : rangeObj f ⟶ N :=
+  ofHom (LinearMap.range f.hom).subtype <|
+    LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+      simpa only [add_zero, Submodule.subtype_apply] using (mem_rangeObj_piece_iff f).mp hx
+
+/-- The underlying linear map of `rangeι f` is the submodule inclusion. -/
+@[simp]
+theorem hom_rangeι : (rangeι f).hom = (LinearMap.range f.hom).subtype := by
+  rfl
+
+/-- The degree-zero corestriction of `f` onto its image. -/
+noncomputable def rangeRestrict : M ⟶ rangeObj f :=
+  ofHom f.hom.rangeRestrict <|
+    InternalGrading.isHomogeneous_rangeRestrict N.grading f.isHomogeneous
+
+/-- The underlying linear map of `rangeRestrict f` is `LinearMap.rangeRestrict`. -/
+@[simp]
+theorem hom_rangeRestrict : (rangeRestrict f).hom = f.hom.rangeRestrict := by
+  rfl
+
+/-- Factoring `f` through its graded image recovers `f`. -/
+@[reassoc (attr := simp)]
+theorem rangeRestrict_comp_rangeι : rangeRestrict f ≫ rangeι f = f := by
+  apply hom_ext
+  ext x
+  simp
+
+end Range
 
 section DirectSum
 

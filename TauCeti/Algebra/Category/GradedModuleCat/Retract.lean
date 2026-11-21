@@ -39,11 +39,6 @@ No commutativity assumption on `A` is needed, and the theorem holds over any PID
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.freeBasis`: the standard homogeneous `A`-basis of `free 𝒜 d`.
-* `TauCeti.GradedModuleCat.freeBasisOfIso`: the homogeneous `A`-basis of a graded module equipped
-  with a graded isomorphism from `free 𝒜 d`.
-* `TauCeti.GradedModuleCat.rangeObj`: the image of a graded morphism as a graded module, with
-  inclusion `rangeι` and corestriction `rangeRestrict`.
 * `TauCeti.GradedModuleCat.retractRangeObj`: the retract structure on `rangeObj p` for a
   degree-zero idempotent `p`.
 
@@ -85,115 +80,10 @@ namespace TauCeti.GradedModuleCat
 
 universe uk uA v uI
 
-section FreeBasis
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
-
-/-- The standard homogeneous `A`-basis of a graded free module `free 𝒜 d`, sending `i` to
-`freeGenerator i`. -/
-def freeBasis {I : Type uI} (d : I → ℤ) : Module.Basis I A (free 𝒜 d) := by
-  classical
-  exact Module.Basis.ofRepr (finsuppLequivDFinsupp A).symm
-
-/-- The `i`-th coordinate of `x : free 𝒜 d` in the standard basis is `x i`. -/
-@[simp]
-theorem freeBasis_repr_apply {I : Type uI} (d : I → ℤ) (x : free 𝒜 d) (i : I) :
-    (freeBasis 𝒜 d).repr x i = x i := by
-  classical
-  unfold freeBasis
-  rfl
-
-/-- The `i`-th element of the standard basis of `free 𝒜 d` is `freeGenerator i`. -/
-@[simp]
-theorem freeBasis_apply {I : Type uI} (d : I → ℤ) (i : I) :
-    freeBasis 𝒜 d i = freeGenerator (𝒜 := 𝒜) (d := d) i := by
-  classical
-  ext j
-  rw [← freeBasis_repr_apply 𝒜 d (freeBasis 𝒜 d i) j, Module.Basis.repr_self,
-    Finsupp.single_apply, freeGenerator_apply]
-
-/-- The `i`-th standard basis vector of `free 𝒜 d` lies in degree `d i`. -/
-theorem freeBasis_mem_piece {I : Type uI} (d : I → ℤ) (i : I) :
-    freeBasis 𝒜 d i ∈ (free 𝒜 d).grading.piece (d i) := by
-  rw [freeBasis_apply]
-  exact freeGenerator_mem_free_piece i
-
-variable {𝒜}
-
-/-- Transport the standard homogeneous `A`-basis of `free 𝒜 d` along a graded isomorphism. -/
-def freeBasisOfIso {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
-    (e : free 𝒜 d ≅ M) : Module.Basis I A M :=
-  (freeBasis 𝒜 d).map <|
-    LinearEquiv.ofLinearMap e.hom.hom e.inv.hom
-      (congrArg Hom.hom e.inv_hom_id) (congrArg Hom.hom e.hom_inv_id)
-
-/-- The `i`-th basis vector obtained from `e : free 𝒜 d ≅ M` is the image of `freeGenerator i`. -/
-@[simp]
-theorem freeBasisOfIso_apply {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
-    (e : free 𝒜 d ≅ M) (i : I) :
-    freeBasisOfIso e i = e.hom.hom (freeGenerator (𝒜 := 𝒜) (d := d) i) := by
-  rw [freeBasisOfIso, Module.Basis.map_apply, freeBasis_apply]
-  rfl
-
-/-- The `i`-th basis vector obtained from `e : free 𝒜 d ≅ M` has degree `d i`. -/
-theorem freeBasisOfIso_mem_piece {I : Type uI} {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
-    (e : free 𝒜 d ≅ M) (i : I) :
-    freeBasisOfIso e i ∈ M.grading.piece (d i) := by
-  rw [freeBasisOfIso_apply]
-  exact map_mem e.hom (freeGenerator_mem_free_piece i)
-
-end FreeBasis
-
 section Range
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} {M N : GradedModuleCat.{v} 𝒜}
-
-/-- The image of a morphism of graded modules, equipped with the induced grading from the
-codomain. -/
-abbrev rangeObj (f : M ⟶ N) : GradedModuleCat.{v} 𝒜 where
-  carrier := LinearMap.range f.hom
-  isAddCommGroup := Submodule.addCommGroup _
-  isModule := Submodule.module _
-  isModuleBase := Submodule.module' _
-  grading := N.grading.submodule (LinearMap.range f.hom) f.isHomogeneous.isHomogeneous_range
-  gradedSMul := ⟨fun {_ _} _ _ ha hx => by
-    rw [InternalGrading.mem_submodule_piece] at hx ⊢
-    exact SetLike.GradedSMul.smul_mem (B := N.grading.piece) ha hx⟩
-
-/-- An element of `rangeObj f` has degree `p` iff its coercion to `N` has degree `p`. -/
-theorem mem_rangeObj_piece_iff (f : M ⟶ N) {p : ℤ} {x : rangeObj f} :
-    x ∈ (rangeObj f).grading.piece p ↔ (x : N) ∈ N.grading.piece p :=
-  InternalGrading.mem_submodule_piece ..
-
-/-- The degree-zero inclusion of the image of `f` into its codomain. -/
-def rangeι (f : M ⟶ N) : rangeObj f ⟶ N :=
-  ofHom (LinearMap.range f.hom).subtype <|
-    LinearMap.isHomogeneous_def.mpr fun _ _ hx => by
-      simpa only [add_zero, Submodule.subtype_apply] using (mem_rangeObj_piece_iff f).mp hx
-
-/-- The underlying linear map of `rangeι f` is the submodule inclusion. -/
-@[simp]
-theorem hom_rangeι (f : M ⟶ N) : (rangeι f).hom = (LinearMap.range f.hom).subtype := by
-  rfl
-
-/-- The degree-zero corestriction of `f` onto its image. -/
-def rangeRestrict (f : M ⟶ N) : M ⟶ rangeObj f :=
-  ofHom f.hom.rangeRestrict <|
-    InternalGrading.isHomogeneous_rangeRestrict N.grading f.isHomogeneous
-
-/-- The underlying linear map of `rangeRestrict f` is `LinearMap.rangeRestrict`. -/
-@[simp]
-theorem hom_rangeRestrict (f : M ⟶ N) : (rangeRestrict f).hom = f.hom.rangeRestrict := by
-  rfl
-
-/-- Factoring `f` through its graded image recovers `f`. -/
-@[reassoc (attr := simp)]
-theorem rangeRestrict_comp_rangeι (f : M ⟶ N) : rangeRestrict f ≫ rangeι f = f := by
-  apply hom_ext
-  ext x
-  simp
 
 /-- The image of a degree-zero idempotent `p : M ⟶ M` is a graded retract of `M`. -/
 def retractRangeObj (p : M ⟶ M) (hp : p ≫ p = p) : Retract (rangeObj p) M where
@@ -622,17 +512,39 @@ private def piEndToFree {I : Type uI} {m : ℕ} (eI : I ≃ Fin m) (s : I → �
         LinearEquiv.coe_toLinearMap, freeEquivPi_symm_apply]
       exact hhom d (e x) hx' (eI.symm t)
 
+private theorem hom_piEndToFree {I : Type uI} {m : ℕ} (eI : I ≃ Fin m) (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
+    (piEndToFree (𝒜 := 𝒜) eI s p hhom).hom =
+      (freeEquivPi (𝒜 := 𝒜) eI s).symm.toLinearMap.comp
+        (p.comp (freeEquivPi (𝒜 := 𝒜) eI s).toLinearMap) :=
+  rfl
+
+private theorem freeEquivPi_piEndToFree {I : Type uI} {m : ℕ} (eI : I ≃ Fin m) (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j))
+    (x : free 𝒜 (s ∘ eI.symm)) :
+    freeEquivPi (𝒜 := 𝒜) eI s ((piEndToFree (𝒜 := 𝒜) eI s p hhom).hom x) =
+      p (freeEquivPi (𝒜 := 𝒜) eI s x) := by
+  rw [hom_piEndToFree, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.coe_toLinearMap, LinearEquiv.apply_symm_apply]
+
+private theorem freeEquivPi_comp_hom_piEndToFree {I : Type uI} {m : ℕ} (eI : I ≃ Fin m) (s : I → ℤ)
+    (p : (I → A) →ₗ[A] (I → A))
+    (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
+    (freeEquivPi (𝒜 := 𝒜) eI s).toLinearMap.comp (piEndToFree (𝒜 := 𝒜) eI s p hhom).hom =
+      p.comp (freeEquivPi (𝒜 := 𝒜) eI s).toLinearMap :=
+  LinearMap.ext (freeEquivPi_piEndToFree eI s p hhom)
+
 private theorem piEndToFree_idempotent {I : Type uI} {m : ℕ} (eI : I ≃ Fin m) (s : I → ℤ)
     (p : (I → A) →ₗ[A] (I → A)) (hp : p.comp p = p)
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     piEndToFree (𝒜 := 𝒜) eI s p hhom ≫ piEndToFree (𝒜 := 𝒜) eI s p hhom =
       piEndToFree (𝒜 := 𝒜) eI s p hhom := by
   apply hom_ext
-  refine LinearMap.ext fun x => DFinsupp.ext fun t => ?_
-  simp only [hom_comp, piEndToFree, hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    LinearEquiv.apply_symm_apply]
-  rw [freeEquivPi_symm_apply, freeEquivPi_symm_apply]
-  exact congrFun (LinearMap.congr_fun hp (freeEquivPi (𝒜 := 𝒜) eI s x)) (eI.symm t)
+  refine LinearMap.ext fun x => (freeEquivPi (𝒜 := 𝒜) eI s).injective ?_
+  rw [hom_comp, LinearMap.comp_apply, freeEquivPi_piEndToFree, freeEquivPi_piEndToFree,
+    ← LinearMap.comp_apply, hp]
 
 end PositiveAction
 
@@ -759,25 +671,12 @@ theorem exists_homogeneous_basis_range_idempotent_pi [Module.IsTorsionFree k (�
   obtain ⟨n, b', d, hb'⟩ := exists_homogeneous_basis_range_idempotent hneg hzero p'
     (piEndToFree_idempotent eI s p hp hhom)
   let eRange : LinearMap.range p'.hom ≃ₗ[A] LinearMap.range p :=
-    { toFun := fun y => ⟨e y.1, by
-        obtain ⟨x, hx⟩ := y.2
-        refine ⟨e x, ?_⟩
-        have h : e (p'.hom x) = p (e x) := e.apply_symm_apply (p (e x))
-        rw [← h, hx]⟩
-      invFun := fun y => ⟨e.symm y.1, by
-        obtain ⟨x, hx⟩ := y.2
-        refine ⟨e.symm x, ?_⟩
-        simp only [p', piEndToFree, hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-          e, LinearEquiv.apply_symm_apply, hx]⟩
-      left_inv := fun y => Subtype.ext (e.symm_apply_apply y.1)
-      right_inv := fun y => Subtype.ext (e.apply_symm_apply y.1)
-      map_add' := fun _ _ => Subtype.ext (map_add e _ _)
-      map_smul' := fun _ _ => Subtype.ext (map_smul e _ _) }
+    e.ofSubmodules (LinearMap.range p'.hom) (LinearMap.range p) <| by
+      rw [← LinearMap.range_comp, freeEquivPi_comp_hom_piEndToFree, LinearMap.range_comp,
+        e.range, Submodule.map_top]
   refine ⟨n, b'.map eRange, d, fun i j => ?_⟩
-  rw [Module.Basis.map_apply]
+  rw [Module.Basis.map_apply, LinearEquiv.ofSubmodules_apply, freeEquivPi_apply]
   have h := (mem_free_piece_iff 𝒜 (s ∘ eI.symm) (d i) (b' i).val).mp (hb' i) (eI j)
-  have he : (eRange (b' i)).val j = (b' i).val (eI j) := rfl
-  rw [he]
   simpa only [Function.comp_apply, Equiv.symm_apply_apply] using h
 
 /-- Coordinate-space form of `exists_free_factorization_of_idempotent` on `I → A`: a degree-zero
@@ -815,13 +714,15 @@ theorem exists_factorization_idempotent_pi [Module.IsTorsionFree k (𝒜 0)]
       LinearEquiv.symm_apply_apply]
     rw [freeEquivPi_apply]
     refine h.trans ?_
-    simp only [p', piEndToFree, hom_ofHom, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
-    rw [es.apply_symm_apply, freeEquivPi_symm_apply, Equiv.symm_apply_apply]
+    rw [← freeEquivPi_apply (𝒜 := 𝒜) eI s (p'.hom (es.symm v)) j,
+      freeEquivPi_piEndToFree, es.apply_symm_apply]
   · intro q v hv j
     have hv' : ed.symm v ∈ (free 𝒜 d).grading.piece q :=
       (mem_free_piece_iff 𝒜 d q (ed.symm v)).mpr fun i => by rw [hed_symm]; exact hv i
     have h := (mem_free_piece_iff 𝒜 (s ∘ eI.symm) q (ι'.hom (ed.symm v))).mp (map_mem ι' hv') (eI j)
-    have hι : ι v j = (ι'.hom (ed.symm v)) (eI j) := rfl
+    have hι : ι v j = (ι'.hom (ed.symm v)) (eI j) := by
+      simp only [ι, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap]
+      exact freeEquivPi_apply eI s (ι'.hom (ed.symm v)) j
     rw [hι]
     simpa only [Function.comp_apply, Equiv.symm_apply_apply] using h
   · intro q v hv i

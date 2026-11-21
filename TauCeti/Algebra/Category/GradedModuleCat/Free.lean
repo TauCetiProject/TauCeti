@@ -96,6 +96,65 @@ theorem freeGenerator_mem_free_piece (i : I) : freeGenerator (𝒜 := 𝒜) (d :
   exact InternalGrading.lof_mem_directSumPiece _ (d i) i
     ⟨1, by simpa using SetLike.one_mem_graded 𝒜⟩
 
+section FreeBasis
+
+variable (𝒜) (d)
+
+/-- The standard homogeneous `A`-basis of a graded free module `free 𝒜 d`, sending `i` to
+`freeGenerator i`. -/
+def freeBasis : Module.Basis I A (free 𝒜 d) := by
+  classical
+  exact Module.Basis.ofRepr (finsuppLequivDFinsupp A).symm
+
+/-- The `i`-th coordinate of `x : free 𝒜 d` in the standard basis is `x i`. -/
+@[simp]
+theorem freeBasis_repr_apply (x : free 𝒜 d) (i : I) :
+    (freeBasis 𝒜 d).repr x i = x i := by
+  classical
+  unfold freeBasis
+  rfl
+
+/-- The `i`-th element of the standard basis of `free 𝒜 d` is `freeGenerator i`. -/
+@[simp]
+theorem freeBasis_apply (i : I) :
+    freeBasis 𝒜 d i = freeGenerator (𝒜 := 𝒜) (d := d) i := by
+  classical
+  ext j
+  rw [← freeBasis_repr_apply 𝒜 d (freeBasis 𝒜 d i) j, Module.Basis.repr_self,
+    Finsupp.single_apply, freeGenerator_apply]
+
+/-- The `i`-th standard basis vector of `free 𝒜 d` lies in degree `d i`. -/
+theorem freeBasis_mem_piece (i : I) :
+    freeBasis 𝒜 d i ∈ (free 𝒜 d).grading.piece (d i) := by
+  rw [freeBasis_apply]
+  exact freeGenerator_mem_free_piece i
+
+variable {𝒜 d}
+
+/-- Transport the standard homogeneous `A`-basis of `free 𝒜 d` along a graded isomorphism. -/
+def freeBasisOfIso {M : GradedModuleCat.{max uA uI} 𝒜}
+    (e : free 𝒜 d ≅ M) : Module.Basis I A M :=
+  (freeBasis 𝒜 d).map <|
+    LinearEquiv.ofLinearMap e.hom.hom e.inv.hom
+      (congrArg Hom.hom e.inv_hom_id) (congrArg Hom.hom e.hom_inv_id)
+
+/-- The `i`-th basis vector obtained from `e : free 𝒜 d ≅ M` is the image of `freeGenerator i`. -/
+@[simp]
+theorem freeBasisOfIso_apply {M : GradedModuleCat.{max uA uI} 𝒜}
+    (e : free 𝒜 d ≅ M) (i : I) :
+    freeBasisOfIso e i = e.hom.hom (freeGenerator (𝒜 := 𝒜) (d := d) i) := by
+  rw [freeBasisOfIso, Module.Basis.map_apply, freeBasis_apply]
+  rfl
+
+/-- The `i`-th basis vector obtained from `e : free 𝒜 d ≅ M` has degree `d i`. -/
+theorem freeBasisOfIso_mem_piece {M : GradedModuleCat.{max uA uI} 𝒜}
+    (e : free 𝒜 d ≅ M) (i : I) :
+    freeBasisOfIso e i ∈ M.grading.piece (d i) := by
+  rw [freeBasisOfIso_apply]
+  exact map_mem e.hom (freeGenerator_mem_free_piece i)
+
+end FreeBasis
+
 /-- Extend a family of homogeneous elements to a morphism out of the graded free module. -/
 def freeLift {M : GradedModuleCat.{max uA uI} 𝒜} (x : ∀ i, M.grading.piece (d i)) :
     free 𝒜 d ⟶ M := by

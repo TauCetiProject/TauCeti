@@ -70,18 +70,28 @@ abbrev weight (N : ℕ) (i : Fin N) : ℤ :=
   2 * ((i : ℕ) + 1 : ℤ)
 
 /-- The integral `ℤ`-grading on `EquivariantRing N` in which `e_{i+1}` has degree `2(i + 1)`. -/
-@[expose] def grading (N : ℕ) : ℤ → Submodule ℤ (EquivariantRing N) :=
+def grading (N : ℕ) : ℤ → Submodule ℤ (EquivariantRing N) :=
   MvPolynomial.weightedHomogeneousSubmodule ℤ (weight N)
-
-/-- The weighted `ℤ`-grading makes `EquivariantRing N` a graded `ℤ`-algebra. -/
-instance gradedAlgebra (N : ℕ) : GradedAlgebra (grading N) :=
-  MvPolynomial.weightedGradedAlgebra ℤ (weight N)
 
 /-- Membership in the degree-`d` piece of `EquivariantRing N` is weighted homogeneity of weight
 `d`. -/
 theorem mem_grading_iff {N : ℕ} {d : ℤ} {p : EquivariantRing N} :
     p ∈ grading N d ↔ p.IsWeightedHomogeneous (weight N) d :=
   Iff.rfl
+
+/-- The grading `grading N` is closed under `1` and multiplication. -/
+instance gradedMonoid (N : ℕ) : SetLike.GradedMonoid (grading N) where
+  one_mem := mem_grading_iff.mpr (MvPolynomial.isWeightedHomogeneous_one ℤ (weight N))
+  mul_mem _ _ _ _ hp hq :=
+    mem_grading_iff.mpr ((mem_grading_iff.mp hp).mul (mem_grading_iff.mp hq))
+
+/-- `EquivariantRing N` is the internal direct sum of the graded pieces `grading N`. -/
+theorem isInternal_grading (N : ℕ) : DirectSum.IsInternal (grading N) :=
+  (MvPolynomial.weightedDecomposition ℤ (weight N)).isInternal
+
+/-- The weighted `ℤ`-grading makes `EquivariantRing N` a graded `ℤ`-algebra. -/
+instance gradedAlgebra (N : ℕ) : GradedAlgebra (grading N) :=
+  (isInternal_grading N).gradedAlgebra
 
 /-- Every generator weight `2(i + 1)` is strictly positive. -/
 theorem weight_pos {N : ℕ} (i : Fin N) : 0 < weight N i := by
@@ -131,24 +141,16 @@ theorem finsupp_weight_eq_zero_iff {N : ℕ} (m : Fin N →₀ ℕ) :
 
 /-- `EquivariantRing N` is nonnegatively graded: all negative-degree pieces vanish. -/
 theorem grading_eq_bot_of_neg (N : ℕ) {d : ℤ} (hd : d < 0) : grading N d = ⊥ := by
-  apply (Submodule.eq_bot_iff _).mpr
-  intro p hp
-  ext m
-  simp only [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
-  by_contra hm
-  have hwt := hp hm
-  have hnn := finsupp_weight_nonneg m
+  refine (Submodule.eq_bot_iff _).mpr fun p hp => ?_
+  refine (mem_grading_iff.mp hp).eq_zero_of_no_monomials fun m hm => ?_
+  have := finsupp_weight_nonneg (N := N) m
   omega
 
 /-- `EquivariantRing N` is supported in even degrees: all odd-degree pieces vanish. -/
 theorem grading_eq_bot_of_odd (N : ℕ) {d : ℤ} (hd : Odd d) : grading N d = ⊥ := by
-  apply (Submodule.eq_bot_iff _).mpr
-  intro p hp
-  ext m
-  simp only [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
-  by_contra hm
-  have hev : Even d := hp hm ▸ even_finsupp_weight m
-  exact (Int.not_even_iff_odd.mpr hd) hev
+  refine (Submodule.eq_bot_iff _).mpr fun p hp => ?_
+  refine (mem_grading_iff.mp hp).eq_zero_of_no_monomials fun m hm => ?_
+  exact (Int.not_even_iff_odd.mpr hd) (hm ▸ even_finsupp_weight m)
 
 /-- The degree-zero piece of `EquivariantRing N` consists precisely of integer constants. -/
 theorem mem_grading_zero_iff {N : ℕ} {p : EquivariantRing N} :
@@ -156,15 +158,9 @@ theorem mem_grading_zero_iff {N : ℕ} {p : EquivariantRing N} :
   constructor
   · intro hp
     refine ⟨p.coeff 0, ?_⟩
-    ext m
-    by_cases hm : m = 0
-    · subst hm
-      rw [MvPolynomial.coeff_C]
-      simp
-    · simp only [MvPolynomial.coeff_C, Ne.symm hm, ↓reduceIte]
-      symm
-      by_contra hcoeff
-      exact hm ((finsupp_weight_eq_zero_iff m).mp (hp hcoeff))
+    rw [MvPolynomial.C_apply]
+    exact ((mem_grading_iff.mp hp).eq_monomial_of_unique_weight
+      fun m hm => (finsupp_weight_eq_zero_iff m).mp hm).symm
   · rintro ⟨c, rfl⟩
     exact MvPolynomial.isWeightedHomogeneous_C (weight N) c
 
@@ -197,7 +193,7 @@ theorem eq_zero_of_isUnit_mem_grading {N : ℕ} {d : ℤ} {p : EquivariantRing N
       rw [MvPolynomial.eval_zero, MvPolynomial.constantCoeff_eq, h0]
     rw [hev0, zero_mul] at heval
     exact zero_ne_one heval
-  have hwt := hd hne
+  have hwt := mem_grading_iff.mp hd hne
   simpa using hwt.symm
 
 end EquivariantRing
