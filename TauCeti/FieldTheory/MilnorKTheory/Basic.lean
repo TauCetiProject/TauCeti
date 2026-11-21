@@ -64,10 +64,6 @@ variable (R : Type u) [CommSemiring R]
 /-- The canonical quotient ring homomorphism from the tensor algebra to `MilnorK R`. -/
 abbrev quotient : TensorAlgebra ℤ (Additive Rˣ) →+* MilnorK R := RingQuot.mkRingHom (milnorRel R)
 
-/-- Every element of `MilnorK R` lifts to the tensor algebra. -/
-theorem quotient_surjective : Function.Surjective (quotient R) :=
-  RingQuot.mkRingHom_surjective (milnorRel R)
-
 /-- The canonical additive homomorphism `Additive Rˣ →+ MilnorK R` sending a unit to its
 degree-one class. -/
 def ofUnitHom : Additive Rˣ →+ MilnorK R :=
@@ -165,7 +161,7 @@ theorem induction {P : MilnorK R → Prop}
     (intCast : ∀ n : ℤ, P (n : MilnorK R)) (ofUnit : ∀ a : Rˣ, P (MilnorK.ofUnit a))
     (mul : ∀ x y, P x → P y → P (x * y)) (add : ∀ x y, P x → P y → P (x + y)) (x : MilnorK R) :
     P x := by
-  obtain ⟨t, rfl⟩ := quotient_surjective R x
+  obtain ⟨t, rfl⟩ := RingQuot.mkRingHom_surjective (milnorRel R) x
   induction t using TensorAlgebra.induction with
   | algebraMap n =>
     rw [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))), map_intCast]; exact intCast n
@@ -185,7 +181,7 @@ theorem induction {P : MilnorK R → Prop}
 @[ext 1200] theorem hom_ext {A : Type v} [Semiring A] [Algebra ℤ A] {f g : MilnorK R →ₐ[ℤ] A}
     (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g :=
   AlgHom.ext fun x => by
-    obtain ⟨t, rfl⟩ := quotient_surjective R x
+    obtain ⟨t, rfl⟩ := RingQuot.mkRingHom_surjective (milnorRel R) x
     exact DFunLike.congr_fun (TensorAlgebra.hom_ext (f := f.comp (quotient R).toIntAlgHom)
       (g := g.comp (quotient R).toIntAlgHom) (LinearMap.ext fun u => h (Additive.toMul u))) t
 

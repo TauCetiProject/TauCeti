@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+import Mathlib.Algebra.Group.Pointwise.Set.ListOfFn
 import Mathlib.Tactic.Ring
 
 /-!
@@ -24,7 +25,8 @@ irreducible by a rewriting system), it suffices that `s ⊆ span R (W 0)` and th
 `b * c` of a word `b ∈ W t` with a generator `c ∈ s` lies in `span R (W (t + 1))`; the induction on
 `t` is `Submodule.span_pow_succ_le_span_of_forall_mul_mem`. Likewise, an algebra homomorphism
 mapping `M` into `N` maps `M ^ n` into `N ^ n` (`Submodule.map_pow_le_pow`,
-`AlgHom.apply_mem_pow_of_mem_pow`).
+`AlgHom.apply_mem_pow_of_mem_pow`), and the `n`-th power of the range of a linear map into an
+algebra is spanned by ordered products of `n` generators (`Submodule.range_pow_eq_span`).
 
 For submodules `X` and `Y` of a commutative algebra, write `V = X ⊔ Y`. A product of `i + j + 1`
 elements of `V` is a sum of products with at least `i + 1` factors from `X` or at least `j + 1`
@@ -43,6 +45,8 @@ the computation of the cohomology of the twisting sheaves on the projective line
 * `Submodule.pow_eq_pow_of_pow_succ_eq_pow`: `M ^ (n + 1) = M ^ n` propagates to all `k ≥ n`.
 * `Submodule.span_pow_succ_le_span_of_forall_mul_mem`: `span R s ^ (t + 1) ≤ span R (W t)` if
   `s ⊆ span R (W 0)` and right multiplication by `s` maps each `W t` into `span R (W (t + 1))`.
+* `Submodule.range_pow_eq_span`: `LinearMap.range f ^ n` is spanned by ordered products of `n`
+  elements in the image of `f`.
 * `Submodule.map_pow_le_pow` and `AlgHom.apply_mem_pow_of_mem_pow`: an algebra homomorphism
   mapping `M` into `N` maps `M ^ n` into `N ^ n`.
 * `Submodule.sup_pow_add_add_one_le`: `(X ⊔ Y) ^ (i + j + 1)` is contained in
@@ -88,6 +92,23 @@ theorem span_pow_succ_le_span_of_forall_mul_mem {s : Set A} {W : ℕ → Set A}
     rw [span_mul_span, span_le]
     rintro _ ⟨b, hb, c, hc, rfl⟩
     exact hS t b hb c hc
+
+/-- The `n`-th power of the range of a linear map `f : M →ₗ[R] A` into an `R`-algebra is spanned by
+ordered products of `n` generators `f (x i)`. -/
+theorem range_pow_eq_span {M : Type*} [AddCommMonoid M] [Module R M] (f : M →ₗ[R] A) (n : ℕ) :
+    LinearMap.range f ^ n =
+      span R {a | ∃ x : Fin n → M, a = (List.ofFn fun i => f (x i)).prod} := by
+  classical
+  rw [pow_eq_span_pow_set, LinearMap.coe_range]
+  congr 1
+  ext a
+  rw [Set.mem_pow]
+  constructor
+  · rintro ⟨x, rfl⟩
+    refine ⟨fun i => (x i).2.choose, ?_⟩
+    simp only [(x _).2.choose_spec]
+  · rintro ⟨x, rfl⟩
+    exact ⟨fun i => ⟨f (x i), ⟨x i, rfl⟩⟩, rfl⟩
 
 /-- An algebra homomorphism mapping a submodule `M` into `N` maps `M ^ n` into `N ^ n`. -/
 protected theorem map_pow_le_pow {B : Type*} [Semiring B] [Algebra R B]

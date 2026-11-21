@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Basic.Finite.Defs
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Card
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.IntegralDomain
 
 /-!
@@ -38,12 +39,14 @@ variable {F : Type*} [Field F] [Finite F]
 theorem not_isSquare_generator (h2 : (2 : F) ≠ 0) {g : Fˣ}
     (hg : ∀ x : Fˣ, x ∈ Subgroup.zpowers g) : ¬IsSquare g := by
   rintro ⟨u, hu⟩
-  have hsurj : Function.Surjective (fun x : Fˣ => x * x) := fun x => by
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg x)
-    exact ⟨u ^ k, by dsimp only; rw [← mul_zpow, ← hu]⟩
-  have hneg1 : (-1 : Fˣ) = 1 := Finite.injective_iff_surjective.mpr hsurj (by simp)
-  have hval : (-1 : F) = 1 := congrArg Units.val hneg1
-  exact h2 (by rw [← one_add_one_eq_two, ← neg_add_cancel (1 : F), hval])
+  have hchar : ringChar F ≠ 2 :=
+    fun h => h2 (by simpa [h] using ringChar.Nat.cast_ringChar (R := F))
+  obtain ⟨a, ha⟩ := FiniteField.exists_nonsquare (F := F) hchar
+  have ha0 : a ≠ 0 := by rintro rfl; exact ha IsSquare.zero
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg (Units.mk0 a ha0))
+  refine ha ⟨(u ^ k : Fˣ), ?_⟩
+  have hsq : g ^ k = u ^ k * u ^ k := by rw [← mul_zpow, ← hu]
+  simpa [Units.ext_iff, hk] using congrArg Units.val hsq
 
 /-- In any finite field of odd characteristic, there exist two nonsquare units summing to `1`. -/
 theorem exists_not_isSquare_add_eq_one (F : Type*) [Field F] [Finite F] (h2 : (2 : F) ≠ 0) :
@@ -92,7 +95,7 @@ theorem exists_odd_zpow_add_eq_one (h2 : (2 : F) ≠ 0) {g : Fˣ}
   obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg a)
   obtain ⟨n, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg b)
   have hodd : ∀ k : ℤ, ¬IsSquare (g ^ k) → Odd k := fun k hk =>
-    Int.not_even_iff_odd.mp fun ⟨r, hr⟩ => hk ⟨g ^ r, by rw [hr, zpow_add]⟩
+    Int.not_even_iff_odd.mp (fun he => hk (he.isSquare_zpow g))
   exact ⟨m, n, hodd m ha, hodd n hb, hab⟩
 
 end TauCeti.FiniteField

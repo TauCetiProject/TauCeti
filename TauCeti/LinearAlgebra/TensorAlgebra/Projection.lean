@@ -100,13 +100,10 @@ theorem tensorPowerProjection_comp_lift (d : ℕ) (f : M →ₗ[R] N) :
 /-- A pure tensor of length `d` lies in the degree-`d` submodule `(ι R).range ^ d`. -/
 theorem tprod_mem_range_ι_pow (d : ℕ) (m : Fin d → M) :
     tprod R M d m ∈ (LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M)) ^ d := by
-  induction d with
-  | zero =>
-    rw [tprod_apply, List.ofFn_zero, List.prod_nil, pow_zero]; exact Submodule.one_le.mp le_rfl
-  | succ d ih =>
-    rw [tprod_apply, List.ofFn_succ, List.prod_cons, pow_succ']
-    exact Submodule.mul_mem_mul (LinearMap.mem_range_self _ (m 0))
-      (by simpa only [tprod_apply] using ih (fun i => m i.succ))
+  simpa [tprod_apply] using
+    SetLike.list_prod_ofFn_mem_graded (A := (LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M) ^ ·))
+      (fun _ : Fin d => (1 : ℕ)) (fun i => ι R (m i)) fun i => by
+        rw [pow_one]; exact LinearMap.mem_range_self _ _
 
 /-- The image of `TensorPower.toTensorAlgebra` lies in `(ι R).range ^ d`. -/
 theorem toTensorAlgebra_mem_range_ι_pow {d : ℕ} (x : TensorPower R d M) :

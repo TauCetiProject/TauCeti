@@ -83,13 +83,6 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
 
 /-! ### Skew-symmetry under entry swaps and permutations -/
 
-/-- Swapping two adjacent entries of a Milnor symbol negates it. -/
-theorem symbol_swap_adjacent (l₁ : List Fˣ) (a b : Fˣ) (l₂ : List Fˣ) :
-    symbol (l₁ ++ a :: b :: l₂) = -symbol (l₁ ++ b :: a :: l₂) := by
-  simp only [symbol_append, symbol_cons, ← mul_assoc]
-  rw [mul_assoc (symbol l₁), ofUnit_mul_comm a b, mul_neg (α := MilnorK F),
-    neg_mul (α := MilnorK F), ← mul_assoc]
-
 /-- Swapping any two separated entries of a Milnor symbol negates it. -/
 theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by

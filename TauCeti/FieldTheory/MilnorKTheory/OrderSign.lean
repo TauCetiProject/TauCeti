@@ -9,6 +9,9 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
+import TauCeti.Algebra.Order.Ring.Units
+import TauCeti.Data.ZMod.IntUnitsPower
+import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # Order-sign detector on Milnor K-theory
@@ -68,36 +71,42 @@ theorem orderSign_eq_zero_iff {a : Rˣ} : orderSign a = 0 ↔ 0 < (a : R) := by
   · exact ⟨fun h10 => absurd h10 one_ne_zero, fun ha => absurd (lt_trans ha h) (lt_irrefl _)⟩
   · exact ⟨fun _ => lt_of_le_of_ne (not_lt.mp h) (Units.ne_zero a).symm, fun _ => rfl⟩
 
-/-- `TauCeti.orderSign` converts multiplication of units into addition in `ZMod 2`. -/
-theorem orderSign_mul (a b : Rˣ) : orderSign (a * b) = orderSign a + orderSign b := by
-  rcases lt_or_gt_of_ne (Units.ne_zero a) with ha | ha <;>
-    rcases lt_or_gt_of_ne (Units.ne_zero b) with hb | hb
-  · rw [orderSign_of_pos (by simpa only [Units.val_mul] using mul_pos_of_neg_of_neg ha hb),
-      orderSign_of_neg ha, orderSign_of_neg hb]; decide
-  · rw [orderSign_of_neg (by simpa only [Units.val_mul] using mul_neg_of_neg_of_pos ha hb),
-      orderSign_of_neg ha, orderSign_of_pos hb, add_zero]
-  · rw [orderSign_of_neg (by simpa only [Units.val_mul] using mul_neg_of_pos_of_neg ha hb),
-      orderSign_of_pos ha, orderSign_of_neg hb, zero_add]
-  · rw [orderSign_of_pos (by simpa only [Units.val_mul] using mul_pos ha hb),
-      orderSign_of_pos ha, orderSign_of_pos hb, add_zero]
-
-@[simp] theorem orderSign_inv (a : Rˣ) : orderSign a⁻¹ = orderSign a := by
-  have h := orderSign_mul a a⁻¹
-  rw [mul_inv_cancel, orderSign_one] at h
-  rw [eq_neg_of_add_eq_zero_right h.symm, ZMod.neg_eq_self_mod_two]
-
 variable (R) in
 /-- The additive homomorphism `Additive Rˣ →+ ZMod 2` recording the sign of a unit. -/
-def orderSignHom : Additive Rˣ →+ ZMod 2 where
-  toFun u := orderSign (Additive.toMul u)
-  map_zero' := orderSign_one
-  map_add' u v := orderSign_mul (Additive.toMul u) (Additive.toMul v)
+noncomputable def orderSignHom : Additive Rˣ →+ ZMod 2 :=
+  letI : (Units.posSubgroup R).Normal :=
+    Subgroup.normal_of_index_eq_two (Units.index_posSubgroup R)
+  additiveIntUnitsAddEquiv.toAddMonoidHom.comp
+    (MonoidHom.toAdditive
+      ((Units.signEquiv R).toMonoidHom.comp (QuotientGroup.mk' (Units.posSubgroup R))))
+
+@[simp] theorem orderSignHom_ofMul (a : Rˣ) :
+    orderSignHom R (Additive.ofMul a) = orderSign a := by
+  change additiveIntUnitsAddEquiv
+      (Additive.ofMul (Units.signEquiv R (QuotientGroup.mk a))) = orderSign a
+  rw [additiveIntUnitsAddEquiv_apply, toMul_ofMul, orderSign_def]
+  rcases lt_or_gt_of_ne a.ne_zero with ha | ha
+  · have hs : Units.signEquiv R (QuotientGroup.mk a) = -1 :=
+      (Units.signEquiv_mk_eq_neg_one_iff a).mpr ha
+    simp [hs, ha]
+  · have hs : Units.signEquiv R (QuotientGroup.mk a) = 1 :=
+      (Units.signEquiv_mk_eq_one_iff a).mpr ha
+    simp [hs, ha.le]
 
 /-- Unfolding lemma for `TauCeti.orderSignHom`. -/
 theorem orderSignHom_apply (u : Additive Rˣ) :
-    orderSignHom R u = orderSign (Additive.toMul u) := by rfl
-@[simp] theorem orderSignHom_ofMul (a : Rˣ) :
-    orderSignHom R (Additive.ofMul a) = orderSign a := by rfl
+    orderSignHom R u = orderSign (Additive.toMul u) := by
+  obtain ⟨a, rfl⟩ := Additive.ofMul.surjective u
+  exact orderSignHom_ofMul a
+
+/-- `TauCeti.orderSign` converts multiplication of units into addition in `ZMod 2`. -/
+theorem orderSign_mul (a b : Rˣ) : orderSign (a * b) = orderSign a + orderSign b := by
+  simpa only [← ofMul_mul, orderSignHom_ofMul] using
+    (orderSignHom R).map_add (Additive.ofMul a) (Additive.ofMul b)
+
+@[simp] theorem orderSign_inv (a : Rˣ) : orderSign a⁻¹ = orderSign a := by
+  simpa only [← ofMul_inv, orderSignHom_ofMul, ZMod.neg_eq_self_mod_two] using
+    (orderSignHom R).map_neg (Additive.ofMul a)
 
 /-- The product of order signs is a Steinberg pairing on any linearly ordered ring: two negative
 elements cannot sum to `1 ≥ 0`. -/
@@ -159,7 +168,8 @@ noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
         _ = 0 := by rw [h0, map_zero, zero_mul]
 
 @[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
-    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X := lift_ofUnit _ _ a
+    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
+  (lift_ofUnit _ _ a).trans (by simp)
 @[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
     orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
   induction l with

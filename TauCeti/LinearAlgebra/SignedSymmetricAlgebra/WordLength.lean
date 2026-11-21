@@ -119,17 +119,8 @@ theorem word_mem_lengthPiece {n : ℕ} (x : Fin n → V) :
 theorem lengthPiece_eq_span (n : ℕ) :
     lengthPiece G n = Submodule.span R {a | ∃ x : Fin n → V,
       a = (List.ofFn fun i => generator G (x i)).prod} := by
-  classical
-  rw [lengthPiece_def, Submodule.pow_eq_span_pow_set, LinearMap.coe_range]
-  congr 1
-  ext a
-  rw [Set.mem_pow]
-  constructor
-  · rintro ⟨x, rfl⟩
-    refine ⟨fun i => (x i).2.choose, ?_⟩
-    simp only [(x _).2.choose_spec]
-  · rintro ⟨x, rfl⟩
-    exact ⟨fun i => ⟨generator G (x i), ⟨x i, rfl⟩⟩, rfl⟩
+  rw [lengthPiece_def]
+  exact Submodule.range_pow_eq_span (generator G) n
 
 /-- The augmentation vanishes on every positive word length. -/
 theorem augmentation_eq_zero_of_mem_lengthPiece {n : ℕ} {a : SignedSym G}

@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.FieldTheory.MilnorKTheory.Basic
 public import TauCeti.LinearAlgebra.TensorAlgebra.Projection
+import TauCeti.Algebra.Algebra.Operations
 import TauCeti.Algebra.RingQuot
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 import TauCeti.RingTheory.TwoSidedIdeal.Span
@@ -59,54 +60,51 @@ def degree (n : ℕ) : Submodule ℤ (MilnorK R) :=
 theorem degree_def (R : Type u) [CommSemiring R] (n : ℕ) : degree R n =
     Submodule.map (quotient R).toIntAlgHom.toLinearMap
       ((ι ℤ (M := Additive Rˣ)).range ^ n) := by rfl
-@[simp] theorem mem_degree_iff {n : ℕ} {x : MilnorK R} :
-    x ∈ degree R n ↔ ∃ t ∈ range (ι ℤ (M := Additive Rˣ)) ^ n, quotient R t = x := Submodule.mem_map
-theorem quotient_mem_degree {n : ℕ} {t : TensorAlgebra ℤ (Additive Rˣ)}
-    (ht : t ∈ range (ι ℤ (M := Additive Rˣ)) ^ n) : quotient R t ∈ degree R n :=
-  mem_degree_iff.mpr ⟨t, ht, rfl⟩
 theorem one_mem_degree_zero : (1 : MilnorK R) ∈ degree R 0 := by
   rw [← map_one (quotient R)]
-  exact quotient_mem_degree (by rw [pow_zero]; exact Submodule.one_le.mp le_rfl)
+  exact Submodule.mem_map_of_mem (by rw [pow_zero]; exact Submodule.one_le.mp le_rfl)
 theorem intCast_mem_degree_zero (k : ℤ) : (k : MilnorK R) ∈ degree R 0 := by
   simpa only [zsmul_eq_mul, mul_one] using Submodule.smul_mem (degree R 0) k one_mem_degree_zero
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   rw [ofUnit_def]
-  exact quotient_mem_degree (by rw [pow_one]; exact LinearMap.mem_range_self _ (Additive.ofMul a))
+  exact Submodule.mem_map_of_mem
+    (by rw [pow_one]; exact LinearMap.mem_range_self _ (Additive.ofMul a))
 theorem mul_mem_degree {m n : ℕ} {x y : MilnorK R} (hx : x ∈ degree R m) (hy : y ∈ degree R n) :
     x * y ∈ degree R (m + n) := by
-  obtain ⟨t₁, ht₁, rfl⟩ := mem_degree_iff.mp hx; obtain ⟨t₂, ht₂, rfl⟩ := mem_degree_iff.mp hy
-  rw [← map_mul]; exact quotient_mem_degree (by rw [pow_add]; exact Submodule.mul_mem_mul ht₁ ht₂)
+  rw [degree] at hx hy
+  obtain ⟨t₁, ht₁, rfl⟩ := Submodule.mem_map.mp hx
+  obtain ⟨t₂, ht₂, rfl⟩ := Submodule.mem_map.mp hy
+  simp only [AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_coe, ← map_mul]
+  exact Submodule.mem_map_of_mem (by rw [pow_add]; exact Submodule.mul_mem_mul ht₁ ht₂)
+
+/-- Multiplication adds degrees in `MilnorK R`. -/
+instance : SetLike.GradedMonoid (degree R) where
+  one_mem := one_mem_degree_zero
+  mul_mem _ _ _ _ hx hy := mul_mem_degree hx hy
+
 theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length := by
-  induction l with
-  | nil => rw [symbol_nil]; exact one_mem_degree_zero
-  | cons a l ih =>
-    rw [symbol_cons, List.length_cons, add_comm]; exact mul_mem_degree (ofUnit_mem_degree_one a) ih
+  simpa [symbol_def] using
+    SetLike.list_prod_map_mem_graded (A := degree R) l (fun _ => (1 : ℕ)) ofUnit
+      fun a _ => ofUnit_mem_degree_one a
 theorem symbol_mem_degree_of_length {n : ℕ} {l : List Rˣ} (hl : l.length = n) :
     symbol l ∈ degree R n := hl ▸ symbol_mem_degree l
 
 /-- `MilnorK.degree R n` is spanned over `ℤ` by the Milnor symbols of length `n`. -/
 theorem degree_eq_span (R : Type u) [CommSemiring R] (n : ℕ) :
     degree R n = Submodule.span ℤ {x | ∃ l : List Rˣ, l.length = n ∧ x = symbol l} := by
-  refine le_antisymm ?_ (Submodule.span_le.mpr fun _ ⟨_, hl, h⟩ =>
-    h ▸ symbol_mem_degree_of_length hl)
-  rintro _ ⟨t, ht, rfl⟩
-  simp only [AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_coe]
-  induction ht using Submodule.pow_induction_on_left' with
-  | algebraMap k =>
-    rw [eq_intCast (algebraMap ℤ (TensorAlgebra ℤ (Additive Rˣ))), map_intCast]
-    exact (by simp [zsmul_eq_mul] : (k : MilnorK R) = k • symbol ([] : List Rˣ)) ▸
-      Submodule.smul_mem _ k (Submodule.subset_span ⟨[], rfl, rfl⟩)
-  | add _ _ _ _ _ ihx ihy => rw [map_add]; exact Submodule.add_mem _ ihx ihy
-  | mem_mul m hm i t _ ih =>
-    obtain ⟨u, rfl⟩ := hm; rw [map_mul, quotient_ι]
-    generalize quotient R t = q at ih ⊢
-    induction ih using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨l, hl, rfl⟩ := hx; rw [← symbol_cons]
-      exact Submodule.subset_span ⟨Additive.toMul u :: l, by simp [hl], rfl⟩
-    | zero => simp
-    | add _ _ _ _ hx hy => rw [mul_add]; exact Submodule.add_mem _ hx hy
-    | smul k _ _ hx => rw [mul_smul_comm]; exact Submodule.smul_mem _ k hx
+  rw [degree, Submodule.range_pow_eq_span, Submodule.map_span]
+  congr 1
+  ext x
+  simp only [Set.mem_image, Set.mem_ofPred_eq, AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_coe]
+  constructor
+  · rintro ⟨_, ⟨v, rfl⟩, rfl⟩
+    refine ⟨List.ofFn fun i => Additive.toMul (v i), List.length_ofFn, ?_⟩
+    rw [← TensorAlgebra.tprod_apply, quotient_tprod]
+  · rintro ⟨l, hl, rfl⟩
+    refine ⟨_, ⟨fun i => Additive.ofMul (l[i]'(by omega)), rfl⟩, ?_⟩
+    rw [← TensorAlgebra.tprod_apply, quotient_tprod]
+    congr 1
+    exact List.ext_getElem (by simp [hl]) fun i hi _ => by simp
 
 theorem degree_le_iff {n : ℕ} {S : Submodule ℤ (MilnorK R)} :
     degree R n ≤ S ↔ ∀ l : List Rˣ, l.length = n → symbol l ∈ S := by
@@ -300,12 +298,8 @@ theorem tensorPowerProjection_mem_milnorTensorRel_of_mem_ker {n : ℕ}
 `MilnorK R`. -/
 theorem isInternal_degree (R : Type u) [CommSemiring R] : DirectSum.IsInternal (degree R) :=
   TauCeti.GradedAlgebra.isInternal_map ((range (ι ℤ (M := Additive Rˣ)) ^ ·) : ℕ → Submodule ℤ _)
-    (quotient R).toIntAlgHom (quotient_surjective R) (isHomogeneous_ker_quotient R)
-
-/-- Multiplication adds degrees in `MilnorK R`. -/
-instance : SetLike.GradedMonoid (degree R) where
-  one_mem := one_mem_degree_zero
-  mul_mem _ _ _ _ hx hy := mul_mem_degree hx hy
+    (quotient R).toIntAlgHom (RingQuot.mkRingHom_surjective (milnorRel R))
+    (isHomogeneous_ker_quotient R)
 
 /-- `MilnorK R` is internally `ℕ`-graded by `MilnorK.degree R`. -/
 noncomputable instance : GradedAlgebra (degree R) := (isInternal_degree R).gradedAlgebra
@@ -332,11 +326,8 @@ def gradedLift : degree R →+*ᵍ ℬ where
     induction hx using Submodule.span_induction with
     | mem _ hy =>
       obtain ⟨l, rfl, rfl⟩ := hy; rw [lift_symbol]
-      induction l with
-      | nil => exact SetLike.one_mem_graded ℬ
-      | cons a l ih =>
-        rw [List.map_cons, List.prod_cons, List.length_cons, add_comm]
-        exact SetLike.mul_mem_graded (hdeg a) ih
+      simpa using SetLike.list_prod_map_mem_graded (A := ℬ) l (fun _ => (1 : ℕ))
+        (fun a => f (Additive.ofMul a)) fun a _ => hdeg a
     | zero => rw [map_zero]; exact zero_mem (ℬ n)
     | add _ _ _ _ hy hz => rw [map_add]; exact add_mem hy hz
     | smul k _ _ hy => rw [map_zsmul]; exact zsmul_mem hy k
@@ -356,7 +347,7 @@ end GradedLift
 noncomputable def tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
     TensorPower ℤ n (Additive Rˣ) →ₗ[ℤ] degree R n :=
   ((quotient R).toIntAlgHom.toLinearMap.comp TensorPower.toTensorAlgebra).codRestrict
-    (degree R n) fun x => quotient_mem_degree (TensorAlgebra.toTensorAlgebra_mem_range_ι_pow x)
+    (degree R n) fun x => Submodule.mem_map_of_mem (TensorAlgebra.toTensorAlgebra_mem_range_ι_pow x)
 
 /-- Unfolding lemma for `TauCeti.MilnorK.tensorPowerToDegree`. -/
 theorem tensorPowerToDegree_coe (n : ℕ) (x : TensorPower ℤ n (Additive Rˣ)) :
@@ -368,9 +359,11 @@ theorem tensorPowerToDegree_coe (n : ℕ) (x : TensorPower ℤ n (Additive Rˣ))
 
 theorem tensorPowerToDegree_surjective (R : Type u) [CommSemiring R] (n : ℕ) :
     Function.Surjective (tensorPowerToDegree R n) := by
-  rintro ⟨x, hx⟩; obtain ⟨t, ht, rfl⟩ := mem_degree_iff.mp hx
+  rintro ⟨x, hx⟩
+  rw [degree] at hx
+  obtain ⟨t, ht, rfl⟩ := Submodule.mem_map.mp hx
   exact ⟨tensorPowerProjection n t, Subtype.ext (by
-    rw [tensorPowerToDegree_coe, TensorAlgebra.toTensorAlgebra_tensorPowerProjection_of_mem ht])⟩
+    simp [tensorPowerToDegree_coe, TensorAlgebra.toTensorAlgebra_tensorPowerProjection_of_mem ht])⟩
 
 theorem ker_tensorPowerToDegree (R : Type u) [CommSemiring R] (n : ℕ) :
     LinearMap.ker (tensorPowerToDegree R n) = milnorTensorRel R n := by
@@ -470,20 +463,37 @@ theorem ofUnitHom_injective (R : Type u) [CommSemiring R] : Function.Injective (
   fun _ _ h => by
     rw [ofUnitHom_apply, ofUnitHom_apply] at h; exact Additive.toMul.injective (ofUnit_injective h)
 
+private noncomputable def tensorPowerTwoEquiv (R : Type u) [CommSemiring R] :
+    Additive Rˣ ⊗[ℤ] Additive Rˣ ≃ₗ[ℤ] TensorPower ℤ 2 (Additive Rˣ) :=
+  (TensorProduct.congr
+    (PiTensorProduct.subsingletonEquiv (0 : Fin 1)).symm
+    (PiTensorProduct.subsingletonEquiv (0 : Fin 1)).symm).trans
+    (TensorPower.mulEquiv (R := ℤ) (M := Additive Rˣ) (n := 1) (m := 1))
+
+private theorem tensorPowerTwoEquiv_tmul (a b : Additive Rˣ) :
+    tensorPowerTwoEquiv R (a ⊗ₜ[ℤ] b) = PiTensorProduct.tprod ℤ ![a, b] := by
+  simp only [tensorPowerTwoEquiv, TensorPower.mulEquiv]
+  refine congrArg (PiTensorProduct.tprod ℤ) (funext fun i => ?_)
+  fin_cases i <;> rfl
+
 /-- Auxiliary `ℤ`-linear map from `⨂[ℤ]^2 (Additive Rˣ)` to `SymbolGroup R`. -/
 private noncomputable def tensorPowerTwoToSymbolGroup (R : Type u) [CommSemiring R] :
     TensorPower ℤ 2 (Additive Rˣ) →ₗ[ℤ] SymbolGroup R :=
-  PiTensorProduct.lift
-    { toFun := fun v => TauCeti.symbol (Additive.toMul (v 0)) (Additive.toMul (v 1))
-      map_update_add' := fun _ i _ _ => by
-        fin_cases i <;> simp [Function.update, symbol_mul_left, symbol_mul_right]
-      map_update_smul' := fun _ i _ _ => by
-        fin_cases i <;> simp [Function.update, symbol_zpow_left, symbol_zpow_right] }
+  ((steinbergRelations R).mkQ).comp (tensorPowerTwoEquiv R).symm.toLinearMap
+
+private theorem tensorPowerTwoToSymbolGroup_tprod (a b : Rˣ) :
+    tensorPowerTwoToSymbolGroup R
+      (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b]) = TauCeti.symbol a b := by
+  have happly (x : TensorPower ℤ 2 (Additive Rˣ)) :
+      tensorPowerTwoToSymbolGroup R x =
+        (steinbergRelations R).mkQ ((tensorPowerTwoEquiv R).symm x) := rfl
+  rw [happly, ← tensorPowerTwoEquiv_tmul, LinearEquiv.symm_apply_apply, Submodule.mkQ_apply,
+    TauCeti.symbol_def]
 
 private theorem milnorTensorRel_two_le_ker (R : Type u) [CommSemiring R] :
     milnorTensorRel R 2 ≤ LinearMap.ker (tensorPowerTwoToSymbolGroup R) := by
   rw [milnorTensorRel_two, Submodule.span_le]; rintro _ ⟨a, b, hab, rfl⟩
-  rw [SetLike.mem_coe, LinearMap.mem_ker, tensorPowerTwoToSymbolGroup, PiTensorProduct.lift.tprod]
+  rw [SetLike.mem_coe, LinearMap.mem_ker, tensorPowerTwoToSymbolGroup_tprod]
   exact TauCeti.symbol_eq_zero_of_add_eq_one hab
 
 /-- Auxiliary `ℤ`-linear map `SymbolGroup R →ₗ[ℤ] degree R 2` sending `{a, b}` to `a * b`. -/
@@ -524,13 +534,13 @@ noncomputable def degreeTwoEquiv : degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
     (symbolGroupToDegreeTwo R)
     (SymbolGroup.hom_ext fun a b => by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, symbolGroupToDegreeTwo,
-        SymbolGroup.lift_symbol, degreeEquivQuotient_ofUnit_mul]
-      simp [Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup])
+        SymbolGroup.lift_symbol, degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply,
+        tensorPowerTwoToSymbolGroup_tprod, LinearMap.id_apply])
     (degree_linearMap_ext fun l hl => match l, hl with
       | [a, b], _ => by
         simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.id_apply,
-          degreeTwo_symbol_eq_ofUnit_mul, degreeEquivQuotient_ofUnit_mul]
-        simp only [Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup, PiTensorProduct.lift.tprod]
+          degreeTwo_symbol_eq_ofUnit_mul, degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply,
+          tensorPowerTwoToSymbolGroup_tprod]
         exact Subtype.ext (by simp [symbolGroupToDegreeTwo]))
 
 @[simp] theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
@@ -553,25 +563,18 @@ section Map
 
 variable {S T : Type*} [CommSemiring S] [CommSemiring T]
 
-/-- `MilnorK.map f` preserves degrees. -/
-theorem map_mem_degree (f : R →+* S) {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
-    map f x ∈ degree S n := by
-  rw [degree_eq_span] at hx
-  induction hx using Submodule.span_induction with
-  | mem _ hy =>
-    obtain ⟨l, rfl, rfl⟩ := hy
-    rw [map_symbol]; exact symbol_mem_degree_of_length (List.length_map _)
-  | zero => simp
-  | add _ _ _ _ hy hz => rw [map_add]; exact Submodule.add_mem _ hy hz
-  | smul k _ _ hy => rw [map_zsmul]; exact Submodule.smul_mem _ k hy
-
 /-- Graded ring homomorphism `degree R →+*ᵍ degree S` induced by `f : R →+* S`. -/
-def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S where
-  toRingHom := map f
-  map_mem hx := map_mem_degree f hx
+def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S :=
+  gradedLift R (degree S) ((ofUnitHom S).comp (MonoidHom.toAdditive (Units.map f.toMonoidHom)))
+    (fun a => by simpa using ofUnit_mem_degree_one (Units.map f.toMonoidHom a))
+    (fun a b hab => by
+      simpa using ofUnit_mul_ofUnit_eq_zero (R := S) (a := Units.map f.toMonoidHom a)
+        (b := Units.map f.toMonoidHom b) (by simp [← map_add, hab]))
 
-@[simp] theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f := by rfl
-@[simp] theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x := by rfl
+@[simp] theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f :=
+  ringHom_ext fun _ => by simp [gradedMap]
+@[simp] theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x :=
+  RingHom.congr_fun (gradedMap_toRingHom f) x
 @[simp] theorem gradedMap_id : gradedMap (RingHom.id R) = GradedRingHom.id (degree R) :=
   gradedHom_ext fun _ => by simp
 @[simp] theorem gradedMap_comp (g : S →+* T) (f : R →+* S) :
@@ -579,13 +582,19 @@ def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S where
   gradedHom_ext fun _ => by
     simp only [gradedMap_apply, map_comp, RingHom.comp_apply, GradedRingHom.comp_apply]
 
+/-- `MilnorK.map f` preserves degrees. -/
+theorem map_mem_degree (f : R →+* S) {n : ℕ} {x : MilnorK R} (hx : x ∈ degree R n) :
+    map f x ∈ degree S n := by
+  rw [← gradedMap_apply f x]
+  exact (gradedMap f).map_mem hx
+
 /-- The degree-`n` `ℤ`-linear map `Kₙᴹ(R) →ₗ[ℤ] Kₙᴹ(S)` induced by `f : R →+* S`. -/
 def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
-  ((map f).toIntAlgHom.toLinearMap.comp (degree R n).subtype).codRestrict
-    (degree S n) fun x => map_mem_degree f x.2
+  ((gradedMap f).gradedAddHom n).toIntLinearMap
 
 @[simp] theorem mapDegree_coe (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.1 := by rfl
+    (mapDegree f n x : MilnorK S) = map f x.1 := by
+  simp [mapDegree, gradedMap_apply]
 @[simp] theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by ext x; simp
 @[simp] theorem mapDegree_comp (g : S →+* T) (f : R →+* S) (n : ℕ) :
     mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by ext x; simp
