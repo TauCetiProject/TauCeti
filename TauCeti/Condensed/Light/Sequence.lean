@@ -220,6 +220,26 @@ private lemma free_mapCofork_ι_one {A B Z : LightCondSet.{u}} {a b : A ⟶ B}
     (q : B ⟶ Z) (w : a ≫ q = b ≫ q) :
     ((free R).mapCocone (Limits.Cofork.ofπ q w)).ι.app .one = (free R).map q := rfl
 
+/-- On the infinity fibre, passing through the chosen section preserves the cover map. -/
+private lemma inftyFibre_comp_section {S T : LightProfinite}
+    (π : T ⟶ S ⊗ sequence α)
+    (σ : S ⟶ LightProfinite.fibre ∞ (π ≫ snd _ _))
+    (hσ : σ ≫ LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π ≫ fst _ _ = 𝟙 S) :
+    LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π =
+      LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π ≫ fst _ _ ≫ σ ≫
+        LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π := by
+  have hi : LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π =
+      LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π ≫ fst _ _ ≫
+        lift (𝟙 _) (const S (∞ : sequence α)) :=
+    CartesianMonoidalCategory.hom_ext _ _ rfl (by ext a; exact a.prop)
+  have hσπ : σ ≫ LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π =
+      lift (𝟙 S) (const S (∞ : sequence α)) := by
+    apply CartesianMonoidalCategory.hom_ext
+    · simpa only [assoc, lift_fst] using hσ
+    · ext x; exact (σ x).prop
+  rw [hσπ]
+  exact hi
+
 /-- Descend the corrected free map when the infinity fibre splits over the base. -/
 private lemma descendSequenceCover {X Y : LightCondMod R} {S T : LightProfinite}
     (π : T ⟶ S ⊗ sequence α) [Epi π] [Nonempty S]
@@ -261,17 +281,8 @@ private lemma descendSequenceCover {X Y : LightCondMod R} {S T : LightProfinite}
   symm
   rw [sub_add, sub_eq_self, sub_eq_zero]
   simp only [Category.assoc]
-  have : LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π =
-      LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π ≫ fst _ _ ≫
-        lift (𝟙 _) (const S (∞ : (sequence α))) :=
-    CartesianMonoidalCategory.hom_ext _ _ rfl (by ext a; exact a.prop)
-  have hσπ : σ ≫ LightProfinite.fibreIncl ∞ (π ≫ snd _ _) ≫ π =
-      lift (𝟙 S) (const S (∞ : sequence α)) := by
-    apply CartesianMonoidalCategory.hom_ext
-    · simpa only [assoc, lift_fst] using hσ
-    · ext x; exact (σ x).prop
-  rw [hσπ]
-  exact congrArg (fun k ↦ (lightProfiniteToLightCondSet ⋙ free R).map (r_inf ≫ k) ≫ f) this
+  exact congrArg (fun k ↦ (lightProfiniteToLightCondSet ⋙ free R).map (r_inf ≫ k) ≫ f)
+    (inftyFibre_comp_section π σ hσ)
 
 /-- Internal Hom out of the free module on a countable discrete one-point compactification
 preserves epimorphisms. -/

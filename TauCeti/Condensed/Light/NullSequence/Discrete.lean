@@ -91,18 +91,16 @@ noncomputable def nullSeqHomEquivFinsupp :
   have mem_ker_iff (s : D.obj.obj (Opposite.op liftedSequence.{u})) :
       s ∈ (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ↔
         sections s ∈ (LocallyConstant.evalₗ R sequenceInfty).ker := by
-    rw [AddMonoidHom.mem_ker, LinearMap.mem_ker, LocallyConstant.evalₗ_apply]
+    rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe,
+      LinearMap.mem_ker, LocallyConstant.evalₗ_apply]
     constructor
     · intro hs
-      have hz : D.obj.map inftyPoint.op s = 0 := hs
-      rw [← hrestrict s PUnit.unit, hz]
+      rw [← hrestrict s PUnit.unit, hs]
       simp only [map_zero, LocallyConstant.zero_apply]
     · intro hs
-      have hz : D.obj.map inftyPoint.op s = 0 := by
-        apply (LightCondMod.LocallyConstant.sectionsEquiv M _).injective
-        ext x
-        simpa only [map_zero, LocallyConstant.zero_apply] using (hrestrict s x).trans hs
-      exact hz
+      apply (LightCondMod.LocallyConstant.sectionsEquiv M _).injective
+      ext x
+      simpa only [map_zero, LocallyConstant.zero_apply] using (hrestrict s x).trans hs
   let e : (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ≃+
       (LocallyConstant.evalₗ R sequenceInfty :
         LocallyConstant liftedSequence.{u} M →ₗ[R] M).ker :=
