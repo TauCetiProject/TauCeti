@@ -75,10 +75,8 @@ maps valued in an arbitrary module.
   pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
   `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
   endomorphism of `R × R`.
-* `LinearMap.IsAlt.of_neg`: a skew-symmetric bilinear map is alternating when doubling is
+* `LinearMap.IsAlt.of_neg`: a skew-symmetric sesquilinear map is alternating when doubling is
   injective on its values.
-* `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`: an alternating bilinear map vanishes on a
-  linearly dependent pair when unequal scalars act differently on every nonzero value.
 -/
 
 public section
@@ -116,33 +114,15 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [M
       LinearMap.det B • ω v w := by
   rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
 
-/-- A skew-symmetric bilinear map is alternating when doubling is injective on its values. This
-is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of the reverse
+/-- A skew-symmetric sesquilinear map is alternating when doubling is injective on its values.
+This is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of the reverse
 direction of `LinearMap.isAlt_iff_eq_neg_flip`. -/
-theorem of_neg {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (h2 : IsSMulRegular N (2 : ℕ))
+theorem of_neg {R R₁ M N : Type*} [CommSemiring R] [CommSemiring R₁] [AddCommMonoid M]
+    [Module R₁ M] [AddCommGroup N] [Module R N] {I₁ I₂ : R₁ →+* R}
+    {ω : M →ₛₗ[I₁] M →ₛₗ[I₂] N} (h2 : IsSMulRegular N (2 : ℕ))
     (h : ∀ x y, -ω x y = ω y x) : ω.IsAlt := fun x ↦ by
   apply h2
   simpa only [two_nsmul, smul_zero, h x x] using neg_add_cancel (ω x x)
-
-/-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
-act differently on every nonzero value. Over a domain acting on torsion-free values, the latter
-hypothesis is `fun _ ↦ smul_left_injective R`. This is the bilinear counterpart of
-`AlternatingMap.map_linearDependent`, over any commutative semiring. -/
-theorem eq_zero_of_not_linearIndependent {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] [AddCommMonoid N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt)
-    (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) {v w : M}
-    (hvw : ¬LinearIndependent R ![v, w]) : ω v w = 0 := by
-  -- A dependence `s • v + t • w = s' • v + t' • w` with `(s, t) ≠ (s', t')` gives
-  -- `s • ω v w = s' • ω v w` and `t • ω v w = t' • ω v w`.
-  rw [LinearIndependent.pair_iffₛ] at hvw
-  push Not at hvw
-  obtain ⟨s, t, s', t', hst, hne⟩ := hvw
-  by_contra hv
-  refine hne (hN _ hv ?_) (hN _ hv ?_)
-  · simpa only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, halt.self_eq_zero,
-      smul_zero, add_zero] using congr(ω $hst w)
-  · simpa only [map_add, map_smul, halt.self_eq_zero, smul_zero, zero_add] using congr(ω v $hst)
 
 end LinearMap.IsAlt
 

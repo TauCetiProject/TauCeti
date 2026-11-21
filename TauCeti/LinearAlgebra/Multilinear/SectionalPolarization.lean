@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.GroupWithZero.Action.Regular
+import TauCeti.LinearAlgebra.Alternating.LinearDependent
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!

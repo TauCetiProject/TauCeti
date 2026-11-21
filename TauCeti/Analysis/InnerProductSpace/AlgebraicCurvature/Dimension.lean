@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
+import TauCeti.LinearAlgebra.Alternating.LinearDependent
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
