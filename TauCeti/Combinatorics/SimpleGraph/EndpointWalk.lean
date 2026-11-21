@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.Combinatorics.SimpleGraph.WalkFrom
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 /-! # Walks of fixed length with prescribed start and endpoint
@@ -122,12 +123,9 @@ variable {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
   (hadj : ∀ {x y}, G.Adj x y → f x + 1 = f y ∨ f y + 1 = f x)
 include hf₀ hadj in
 /-- Under a unit-step height function `f` with `f v₀ = 0`, step `i` has height at most `i`. -/
-theorem apply_le (w : G.EndpointWalk v₀ m v) (i : Fin (m + 1)) : f (w i) ≤ i.val := by
-  obtain ⟨k, hk⟩ := i; induction k with
-  | zero => exact (congrArg f (w.apply_zero : w ⟨0, hk⟩ = v₀)).trans_le (by omega)
-  | succ k ih =>
-    have := hadj (w.adj (a := ⟨k, by omega⟩) (b := ⟨k + 1, hk⟩) rfl)
-    have := ih (by omega); simp only at this ⊢; omega
+theorem apply_le (w : G.EndpointWalk v₀ m v) (i : Fin (m + 1)) : f (w i) ≤ i.val :=
+  (w.isWalkFrom.le_add_of_adj_le_succ f (fun _ _ h ↦ by have := hadj h; omega) i).trans_eq
+    (by simp [hf₀])
 include hadj in
 private theorem last_le_apply_add (w : G.EndpointWalk v₀ m v) (i : Fin (m + 1)) :
     f v ≤ f (w i) + (m - i.val) := by
@@ -194,6 +192,16 @@ theorem card_endpointWalk_succ (m : ℕ) (v : V) : Fintype.card (G.EndpointWalk 
     ∑ u ∈ G.neighborFinset v, Fintype.card (G.EndpointWalk v₀ m u) := by
   simp_rw [Fintype.card_eq_sum_ones, G.sum_endpointWalk_succ v₀ m v]
   exact (G.neighborFinset v).sum_attach fun u ↦ ∑ _ : G.EndpointWalk v₀ m u, 1
+/-- On the two-vertex path `pathGraph 2`, there is one `n`-step walk from `0` to `v` iff
+`v.val = n % 2`. -/
+theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
+    Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
+  induction n generalizing v with
+  | zero => rw [card_endpointWalk_zero]; fin_cases v <;> simp
+  | succ n ih =>
+    rw [card_endpointWalk_succ]; fin_cases v <;>
+      simp [(by decide : (pathGraph 2).neighborFinset 0 = {1}),
+        (by decide : (pathGraph 2).neighborFinset 1 = {0}), ih] <;> split_ifs <;> omega
 @[simp] theorem walkEndpoints_zero : G.walkEndpoints v₀ 0 = {v₀} := (rfl)
 theorem walkEndpoints_succ (m : ℕ) :
     G.walkEndpoints v₀ (m + 1) = (G.walkEndpoints v₀ m).biUnion fun u ↦ G.neighborFinset u := (rfl)

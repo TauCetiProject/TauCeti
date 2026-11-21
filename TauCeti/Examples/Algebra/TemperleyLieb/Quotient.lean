@@ -16,14 +16,6 @@ noncomputable section
 namespace TauCeti.TemperleyLieb.QuotientExamples
 open Real SimpleGraph
 local instance (x : ℝ) : Fact (IsSelfAdjoint (x : ℂ)) := ⟨Complex.conj_ofReal x⟩
-private theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
-    Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
-  induction n generalizing v with
-  | zero => rw [card_endpointWalk_zero]; fin_cases v <;> simp
-  | succ n ih =>
-    rw [card_endpointWalk_succ]; fin_cases v <;>
-      simp [-Finset.sum_boole, (by decide : (pathGraph 2).neighborFinset 0 = {1}),
-        (by decide : (pathGraph 2).neighborFinset 1 = {0}), ih] <;> split_ifs <;> omega
 /-- At `δ = 1` (`A_2`), every positive Jones quotient `htr.Quotient n` is `1`-dimensional. -/
 theorem finrank_quotient_one {tr : ∀ n : ℕ, TemperleyLieb ℂ ((1 : ℝ) : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ ((1 : ℝ) : ℂ) tr) (n : ℕ) : Module.finrank ℂ (htr.Quotient n) = 1 := by

@@ -17,8 +17,8 @@ Restricting `TauCeti.Algebra.TemperleyLieb.PathModel` to genuine `n`-step walks 
 decomposing by their endpoint in `G.walkEndpoints v₀ n` extends the path model to arbitrary locally
 finite graphs: `PathAlgebra K G v₀ n`, one-step extension homomorphisms `walkExtend` /
 `walkStarExtend` (injective when no reachable vertex is a dead end), Temperley–Lieb
-(`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, and the Markov trace
-`walkTrace` / `isMarkovTrace_walkTrace`.
+(`⋆`-)representations `walkRep` / `walkStarRep` and `walkRep_surjective`, the conditional
+expectation `walkExpect`, and the Markov trace `walkTrace` / `isMarkovTrace_walkTrace`.
 
 ## References
 
@@ -215,6 +215,105 @@ theorem walkTrace_one (hr₀ : r v₀ ≠ 0) {δ : K}
   | succ n ih =>
     rw [← map_one (walkExtend G v₀ (K := K) (n := n)), walkTrace_walkExtend hδ, ih, pow_succ']
 end WalkTraceBasic
+section WalkExpect
+variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
+  [G.LocallyFinite] (v₀ : V) (r : V → K) (δ : K)
+/-- Conditional expectation `PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n` closing the
+final step of walks from `u` across `v ∈ G.neighborFinset u` with weight `δ⁻¹ * (r v / r u) ^ 2`. -/
+def walkExpect {n : ℕ} : PathAlgebra K G v₀ (n + 1) →ₗ[K] PathAlgebra K G v₀ n where
+  toFun Y u := Matrix.of fun p q ↦
+    δ⁻¹ * ∑ v ∈ (G.neighborFinset u.val).attach, (r v.val / r u.val) ^ 2 *
+      PathAlgebra.blockAt v.val Y (p.snoc ((G.mem_neighborFinset u.val v.val).1 v.property))
+        (q.snoc ((G.mem_neighborFinset u.val v.val).1 v.property))
+  map_add' _ _ := by ext u p q; simp [map_add, mul_add, Finset.sum_add_distrib]
+  map_smul' _ _ := by
+    ext u p q; simp only [RingHom.id_apply, Pi.smul_apply, Matrix.smul_apply, Matrix.of_apply,
+      map_smul, smul_eq_mul, Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
+theorem walkExpect_apply {n : ℕ} (Y : PathAlgebra K G v₀ (n + 1)) (u : G.walkEndpoints v₀ n)
+    (p q : G.EndpointWalk v₀ n u.val) : walkExpect G v₀ r δ Y u p q =
+      δ⁻¹ * ∑ v ∈ (G.neighborFinset u.val).attach, (r v.val / r u.val) ^ 2 *
+        PathAlgebra.blockAt v.val Y (p.snoc ((G.mem_neighborFinset u.val v.val).1 v.property))
+          (q.snoc ((G.mem_neighborFinset u.val v.val).1 v.property)) := (rfl)
+variable {G v₀ r δ}
+/-- `walkExpect` is unital when `r` is nowhere zero, `δ ≠ 0`, and `r ^ 2` is a `δ`-eigenvector. -/
+@[simp] theorem walkExpect_one (hr : ∀ v, r v ≠ 0) (hδ₀ : δ ≠ 0)
+    (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2) (n : ℕ) :
+    walkExpect G v₀ r δ (1 : PathAlgebra K G v₀ (n + 1)) = 1 := by
+  ext u p q; rw [walkExpect_apply, Pi.one_apply, Matrix.one_apply]
+  have hsnoc {v : V} (h : G.Adj u.val v) : p.snoc h = q.snoc h ↔ p = q :=
+    ⟨fun hpq ↦ EndpointWalk.ext fun i ↦ by simpa using congrArg (· i.castSucc) hpq, (· ▸ rfl)⟩
+  simp_rw [map_one (PathAlgebra.blockAt _), Matrix.one_apply, hsnoc]; split_ifs
+  · rw [Finset.sum_attach (G.neighborFinset u.val) fun v ↦ (r v / r u.val) ^ 2 * 1]
+    simp_rw [mul_one, div_pow, div_eq_mul_inv, ← Finset.sum_mul, hδ u.val]
+    have := hr u.val; field_simp
+  · simp
+/-- Left bimodule property of `walkExpect` over `walkExtend`. -/
+@[simp] theorem walkExpect_walkExtend_mul {n : ℕ} (X : PathAlgebra K G v₀ n)
+    (Y : PathAlgebra K G v₀ (n + 1)) :
+    walkExpect G v₀ r δ (walkExtend G v₀ X * Y) = X * walkExpect G v₀ r δ Y := by
+  ext u p q; rw [walkExpect_apply, Pi.mul_apply, Matrix.mul_apply]
+  have hterm {v : V} (hv : G.Adj u.val v) :
+      PathAlgebra.blockAt v (walkExtend G v₀ X * Y) (p.snoc hv) (q.snoc hv) =
+        ∑ p' : G.EndpointWalk v₀ n u.val,
+          X u p p' * PathAlgebra.blockAt v Y (p'.snoc hv) (q.snoc hv) := by
+    rw [map_mul, PathAlgebra.blockAt_of_mem ((G.mem_walkEndpoints_iff v₀).2 ⟨p.snoc hv⟩),
+      Matrix.mul_apply, G.sum_endpointWalk_succ v₀ n v,
+      Finset.sum_eq_single_of_mem ⟨u.val, (G.mem_neighborFinset v u.val).2 hv.symm⟩
+        (Finset.mem_attach _ _) fun _ _ hu' ↦ Finset.sum_eq_zero fun _ _ ↦ by
+          rw [walkExtend_apply_snoc, dite_eq_right fun h ↦ hu' (Subtype.ext h.symm), zero_mul],
+      Finset.sum_congr rfl fun _ _ ↦ by rw [walkExtend_apply_snoc_same]]
+  simp_rw [hterm, Finset.mul_sum]; rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun _ _ ↦ ?_
+  simp_rw [walkExpect_apply, Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
+/-- Right bimodule property of `walkExpect` over `walkExtend`. -/
+@[simp] theorem walkExpect_mul_walkExtend {n : ℕ} (Y : PathAlgebra K G v₀ (n + 1))
+    (X : PathAlgebra K G v₀ n) :
+    walkExpect G v₀ r δ (Y * walkExtend G v₀ X) = walkExpect G v₀ r δ Y * X := by
+  let trp {m : ℕ} (Z : PathAlgebra K G v₀ m) : PathAlgebra K G v₀ m := fun u ↦ (Z u).transpose
+  have hAt {m} (Z : PathAlgebra K G v₀ m) (u : V) :
+      (PathAlgebra.blockAt u Z).transpose = PathAlgebra.blockAt u (trp Z) := by
+    by_cases hu : u ∈ G.walkEndpoints v₀ m <;> simp [trp, PathAlgebra.blockAt_of_notMem, hu]
+  have hE : walkExtend G v₀ (trp X) = trp (walkExtend G v₀ X) := funext fun _ ↦ by
+    simp [trp, walkExtend_apply, Matrix.blockDiagonal'_transpose, hAt]
+  have hW {Z : PathAlgebra K G v₀ (n + 1)} :
+      walkExpect G v₀ r δ (trp Z) = trp (walkExpect G v₀ r δ Z) := by
+    ext; simp [trp, walkExpect_apply, ← hAt]
+  have h := congrArg trp (walkExpect_walkExtend_mul (r := r) (δ := δ) (trp X) (trp Y))
+  rw [hE, (funext fun _ ↦ (Matrix.transpose_mul _ _).symm :
+    trp (walkExtend G v₀ X) * trp Y = trp (Y * walkExtend G v₀ X)), hW, hW] at h
+  exact funext fun u ↦ by simpa [trp] using congrFun h u
+/-- `walkExpect` is a left inverse to `walkExtend` under the eigenvector normalization. -/
+@[simp] theorem walkExpect_walkExtend (hr : ∀ v, r v ≠ 0) (hδ₀ : δ ≠ 0)
+    (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2) {n : ℕ}
+    (X : PathAlgebra K G v₀ n) : walkExpect G v₀ r δ (walkExtend G v₀ X) = X := by
+  rw [← mul_one (walkExtend G v₀ X), walkExpect_walkExtend_mul, walkExpect_one hr hδ₀ hδ, mul_one]
+/-- Trace compatibility of `walkExpect`: `walkTrace (walkExpect Y) = δ⁻¹ * walkTrace Y`. -/
+@[simp] theorem walkTrace_walkExpect (hr : ∀ v, r v ≠ 0) {n : ℕ}
+    (Y : PathAlgebra K G v₀ (n + 1)) :
+    walkTrace G v₀ r (walkExpect G v₀ r δ Y) = δ⁻¹ * walkTrace G v₀ r Y := by
+  classical
+  let step (v u : V) : K := if h : G.Adj u v then
+    ∑ p : G.EndpointWalk v₀ n u, PathAlgebra.blockAt v Y (p.snoc h) (p.snoc h) else 0
+  have htrY (v : V) : (PathAlgebra.blockAt v Y).trace = ∑ u ∈ G.neighborFinset v, step v u := by
+    rw [Matrix.trace, G.sum_endpointWalk_succ v₀ n v, ← (G.neighborFinset v).sum_attach (step v)]
+    exact Finset.sum_congr rfl fun u _ ↦ by
+      simp only [Matrix.diag_apply, step,
+        dite_eq_left ((G.mem_neighborFinset v u.val).1 u.property).symm]
+  have htrE {u : V} (hu : u ∈ G.walkEndpoints v₀ n) :
+      (PathAlgebra.blockAt u (walkExpect G v₀ r δ Y)).trace =
+        δ⁻¹ * ∑ v ∈ G.neighborFinset u, (r v / r u) ^ 2 * step v u := by
+    simp only [PathAlgebra.blockAt_of_mem hu, Matrix.trace, Matrix.diag_apply, walkExpect_apply]
+    rw [← Finset.mul_sum, Finset.sum_comm, ← (G.neighborFinset u).sum_attach fun v ↦ _]
+    exact congrArg (δ⁻¹ * ·) (Finset.sum_congr rfl fun v _ ↦ by
+      simp only [step, dite_eq_left ((G.mem_neighborFinset u v.val).1 v.property), Finset.mul_sum])
+  rw [walkTrace_eq_sum_walkEndpoints, walkTrace_eq_sum_walkEndpoints, Finset.mul_sum,
+    Finset.sum_congr rfl fun _ hu ↦ by rw [htrE hu, mul_left_comm, Finset.mul_sum, Finset.mul_sum],
+    Finset.sum_congr (s₁ := G.walkEndpoints v₀ (n + 1)) rfl fun v _ ↦ by
+      rw [htrY v, Finset.mul_sum, Finset.mul_sum],
+    G.sum_walkEndpoints_succ v₀ n (fun v u ↦ δ⁻¹ * ((r v / r v₀) ^ 2 * step v u)) fun _ _ hu ↦ by
+      have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu); simp [step]]
+  exact Finset.sum_congr rfl fun u _ ↦ Finset.sum_congr rfl fun _ _ ↦ by
+    have := hr u; have := hr v₀; field_simp
+end WalkExpect
 section WalkRep
 variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
   [DecidableRel G.Adj] [LocallyFinite G] (v₀ : V) (r : V → K)

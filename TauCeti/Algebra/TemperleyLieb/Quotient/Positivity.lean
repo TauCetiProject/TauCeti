@@ -76,6 +76,42 @@ def walkPositiveTrace (hrs : ∀ v, IsSelfAdjoint (r v)) (n : ℕ) :
   ext; simp [StarPositiveFunctional.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
     walkTrace_star_mul_self_eq_zero_iff hr hrs]
 end WalkPositiveTrace
+/-- Algebraic positivity of `walkExpect`: `walkExpect (star Y * Y)` is a finite sum of squares. -/
+theorem exists_sum_star_mul_self_walkExpect_star_mul_self {V : Type*} {G : SimpleGraph V}
+    [DecidableEq V] [G.LocallyFinite] {v₀ : V} {r : V → ℂ} (hrs : ∀ v, IsSelfAdjoint (r v))
+    {δ : ℝ} (hδ₀ : 0 < δ) {n : ℕ} (Y : PathAlgebra ℂ G v₀ (n + 1)) :
+    ∃ (m : ℕ) (Z : Fin m → PathAlgebra ℂ G v₀ n),
+      walkExpect G v₀ r (δ : ℂ) (star Y * Y) = ∑ i : Fin m, star (Z i) * Z i := by
+  classical
+  let α (u v : V) : ℂ := ((√(δ⁻¹ * ((r v).re / (r u).re) ^ 2) : ℝ) : ℂ)
+  have hα (u v : V) : star (α u v) * α u v = (δ : ℂ)⁻¹ * (r v / r u) ^ 2 := by
+    rw [IsSelfAdjoint.star_eq (Complex.conj_ofReal _), ← Complex.ofReal_mul,
+      Real.mul_self_sqrt (by positivity)]
+    push_cast; rw [Complex.conj_eq_iff_re.mp (hrs v), Complex.conj_eq_iff_re.mp (hrs u)]
+  let ι := Σ (u : G.walkEndpoints v₀ n) (v : G.neighborFinset u.val),
+    G.EndpointWalk v₀ (n + 1) v.val
+  let Z₀ (idx : ι) : PathAlgebra ℂ G v₀ n := Pi.single idx.1 <| Matrix.of fun p' q ↦
+    if p' = Classical.arbitrary (G.EndpointWalk v₀ n idx.1.val) then
+      α idx.1.val idx.2.1.val * PathAlgebra.blockAt idx.2.1.val Y idx.2.2
+        (q.snoc ((G.mem_neighborFinset idx.1.val idx.2.1.val).1 idx.2.1.property)) else 0
+  refine ⟨Fintype.card ι, fun i ↦ Z₀ ((Fintype.equivFin ι).symm i), ?_⟩
+  rw [(Fintype.equivFin ι).symm.sum_comp (g := fun idx ↦ star (Z₀ idx) * Z₀ idx)]
+  ext u p q; simp only [walkExpect_apply, Finset.sum_apply, Matrix.sum_apply]
+  rw [← Finset.univ_sigma_univ, Finset.sum_sigma,
+    Finset.sum_eq_single u (fun _ _ hu' ↦ Finset.sum_eq_zero fun _ _ ↦ by
+      simp [Z₀, Pi.single_eq_of_ne hu'.symm]) (fun h ↦ (h (Finset.mem_univ _)).elim),
+    ← Finset.univ_sigma_univ, Finset.sum_sigma, Finset.mul_sum, Finset.univ_eq_attach]
+  refine Finset.sum_congr rfl fun v _ ↦ ?_
+  have hv : v.val ∈ G.walkEndpoints v₀ (n + 1) :=
+    (G.mem_walkEndpoints_iff v₀).2 ⟨p.snoc ((G.mem_neighborFinset u.val v.val).1 v.property)⟩
+  rw [PathAlgebra.blockAt_of_mem hv, Pi.mul_apply, Pi.star_apply, Matrix.star_eq_conjTranspose,
+    Matrix.mul_apply, Finset.mul_sum, Finset.mul_sum]; refine Finset.sum_congr rfl fun _ _ ↦ ?_
+  simp only [Z₀, Pi.mul_apply, Pi.star_apply, Pi.single_eq_same, Matrix.star_eq_conjTranspose,
+    Matrix.mul_apply]
+  rw [Finset.sum_eq_single (Classical.arbitrary (G.EndpointWalk v₀ n u.val))
+    (fun _ _ hp' ↦ by simp [hp']) (fun h ↦ (h (Finset.mem_univ _)).elim)]
+  simp only [Matrix.conjTranspose_apply, Matrix.of_apply, ↓reduceIte, PathAlgebra.blockAt_of_mem hv,
+    star_mul]; rw [← mul_assoc, ← hα u.val v.val]; ring
 namespace IsMarkovTrace
 section GraphModel
 variable {V : Type*} (G : SimpleGraph V) [DecidableEq V] [DecidableRel G.Adj] [G.LocallyFinite]

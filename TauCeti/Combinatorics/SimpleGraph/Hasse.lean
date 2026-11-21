@@ -14,10 +14,7 @@ public section
 namespace SimpleGraph
 /-- Two natural numbers are adjacent in `hasse ℕ` iff they differ by `1`. -/
 theorem hasse_nat_adj {u v : ℕ} : (hasse ℕ).Adj u v ↔ u + 1 = v ∨ v + 1 = u := by
-  simp only [hasse_adj, CovBy]; refine ⟨fun h ↦ ?_, ?_⟩
-  · exact h.imp (fun ⟨_, h2⟩ ↦ by by_contra; exact @h2 (u + 1) (by omega) (by omega))
-      fun ⟨_, h2⟩ ↦ by by_contra; exact @h2 (v + 1) (by omega) (by omega)
-  · rintro (rfl | rfl) <;> [left; right] <;> exact ⟨by omega, fun _ _ ↦ by omega⟩
+  simp only [hasse_adj, Nat.covBy_iff_add_one_eq]
 instance instDecidableRelHasseNat : DecidableRel (hasse ℕ).Adj :=
   fun _ _ ↦ decidable_of_iff' _ hasse_nat_adj
 instance instLocallyFiniteHasseNat : LocallyFinite (hasse ℕ)
