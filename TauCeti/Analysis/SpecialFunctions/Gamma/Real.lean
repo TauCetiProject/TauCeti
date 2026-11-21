@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
-public import Mathlib.Analysis.Calculus.Deriv.Star
+import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -104,12 +104,10 @@ theorem digamma_ofReal {x : ℝ} :
 
 /-- The digamma function commutes with complex conjugation: `ψ(conj s) = conj ψ(s)`. -/
 theorem digamma_conj (s : ℂ) : digamma (conj s) = conj (digamma s) := by
-  have hG : Gamma = conj ∘ Gamma ∘ conj := funext fun s => by simp [Gamma_conj]
-  have hd : deriv Gamma (conj s) = conj (deriv Gamma s) := by
-    conv_lhs => rw [hG]
-    rw [deriv_conj_conj]
-    simp
-  rw [digamma_def, logDeriv_apply, logDeriv_apply, hd, Gamma_conj, map_div₀]
+  -- `Γ` is reflection-symmetric, `Γ(conj z) = conj Γ(z)`, on the whole plane.
+  simpa only [digamma_def] using TauCeti.logDeriv_conj_eq_conj_logDeriv_of_ne_zero
+    (F := Gamma) (Ω := Set.univ) (u := 1) one_ne_zero isOpen_univ
+    (fun z _ => by rw [Gamma_conj, one_mul]) (Set.mem_univ s)
 
 /-- The digamma function is continuous on the right half-plane `0 < Re s`. -/
 theorem continuousOn_digamma_re_pos : ContinuousOn digamma {s : ℂ | 0 < s.re} := by
