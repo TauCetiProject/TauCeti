@@ -40,7 +40,11 @@ the section of `w`.
 For surfaces, `M` modelled on `ℂ` with the Lebesgue measure, and a `Cⁿ` bundle, `n ≠ 0`, the
 transfer property holds at every order `k ≤ n`
 (`TauCeti.SobolevSection.transfersTo`), by the localization of Sobolev sections in arbitrary charts
-and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
+and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`. For a smooth
+(`C^∞`) bundle over a smooth Hausdorff manifold modelled on any finite-dimensional real inner
+product space, the transfer property holds between any two finite bundle atlases, for every order
+`k` and every `1 ≤ p ≤ ∞` (`TauCeti.SobolevSection.transfersTo_of_contMDiffVectorBundle`, in
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Transfer`).
 
 ## Main definitions
 
@@ -60,6 +64,10 @@ and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
   orders `k ≤ n`.
 * `TauCeti.SobolevSection.exists_norm_changeAtlas_le_of_surface`: for such bundles and orders the
   norms of two finite bundle atlases are equivalent.
+
+The transfer property for smooth bundles in every dimension,
+`TauCeti.SobolevSection.transfersTo_of_contMDiffVectorBundle`, is proved in
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Transfer`.
 
 ## References
 
@@ -95,7 +103,9 @@ variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 /-- **Transfer of Sobolev sections between atlases.** Every section whose chart data in the charts
 of `A` are those of an element of `W^{k,p}(V)` for `A` also has chart data in the charts of `A'`
 that are those of an element of `W^{k,p}(V)` for `A'`. For `Cⁿ` bundles over surfaces this holds
-at orders `k ≤ n` (`TauCeti.SobolevSection.transfersTo`). -/
+at orders `k ≤ n` (`TauCeti.SobolevSection.transfersTo`). For smooth bundles over smooth Hausdorff
+manifolds in every dimension it holds at every order and every `1 ≤ p ≤ ∞`
+(`TauCeti.SobolevSection.transfersTo_of_contMDiffVectorBundle`). -/
 def TransfersTo : Prop :=
   ∀ (w : SobolevSection A μ p k) (s : ∀ x, V x),
     (∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) →
