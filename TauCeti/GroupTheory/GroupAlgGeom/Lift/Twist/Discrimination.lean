@@ -129,6 +129,26 @@ end TowerStage
 
 /-! ### Discrimination along dominated exponents -/
 
+/-- A property of the tuples of `L + 1` natural numbers holds for all tuples dominating some bound
+function if, for every large first exponent `k`, it holds for the tuples `k :: q` with `q`
+dominating some bound function depending on `k`. -/
+private theorem exists_bound_of_forall_cons {Pr : List ℕ → Prop} {L : ℕ} (K : ℕ)
+    (h : ∀ k, K ≤ k → ∃ N : List ℕ → ℕ, ∀ q : List ℕ, q.length = L →
+      (∀ i (hi : i < q.length), N (q.take i) ≤ q[i]) → Pr (k :: q)) :
+    ∃ N : List ℕ → ℕ, ∀ p : List ℕ, p.length = L + 1 →
+      (∀ i (hi : i < p.length), N (p.take i) ≤ p[i]) → Pr p := by
+  have h' (k : ℕ) : ∃ N : List ℕ → ℕ, K ≤ k → ∀ q : List ℕ, q.length = L →
+      (∀ i (hi : i < q.length), N (q.take i) ≤ q[i]) → Pr (k :: q) := by
+    by_cases hk : K ≤ k
+    · obtain ⟨N, hN⟩ := h k hk
+      exact ⟨N, fun _ => hN⟩
+    · exact ⟨0, fun h => absurd h hk⟩
+  choose N hN using h'
+  refine ⟨fun | [] => K | k :: q => N k q, ?_⟩
+  rintro (_ | ⟨k, q⟩) hp hdom
+  · simp at hp
+  · exact hN k (hdom 0 (by simp)) q (by simpa using hp) fun i hi => hdom (i + 1) (by simpa)
+
 /-- **Discrimination along dominated exponents.** Let `P` be a point in a CSA group with the big
 powers property and `l` a list of `L` twist data along which the tower over `P` is nondegenerate.
 For every finite set `M` of nonidentity elements of the tower there is a bound function `N` such
@@ -158,22 +178,13 @@ theorem exists_bound_forall_towerRetraction_ne_one {P : TowerStage.{u, v, w} G X
         (hM x hx)))
     -- The stage twisted `k` times has the same group as `P`; the induction hypothesis gives a
     -- bound function for the remaining exponents.
-    have hN (k : ℕ) : ∃ N : List ℕ → ℕ, K ≤ k → ∀ q : List ℕ, q.length = l.length →
-        (∀ i (hi : i < q.length), N (q.take i) ≤ q[i]) → ∀ x ∈ M,
-          towerRetraction (d :: l) P (k :: q) x ≠ 1 := by
-      by_cases hk : K ≤ k
-      · obtain ⟨N, hN⟩ := ih (P := P.twisted d k) hBP hCSA (hK k hk).1
-          (M := M.image ((P.liftRetraction d k).tower l)) (Finset.forall_mem_image.2 (hK k hk).2)
-        refine ⟨N, fun _ q hq hdom x hx h1 => hN q hq hdom _ (Finset.mem_image_of_mem _ hx) ?_⟩
-        rw [towerRetraction_cons_apply, List.headD_cons, List.tail_cons] at h1
-        exact ((TowerStage.Hom.towerRetraction_tower _ l q x).trans
-          (TowerStage.liftRetraction_apply _ _ _ _)).trans h1
-      · exact ⟨0, fun h => absurd h hk⟩
-    choose N hN using hN
-    refine ⟨fun | [] => K | k :: q => N k q, ?_⟩
-    rintro (_ | ⟨k, q⟩) hp hdom x hx
-    · simp at hp
-    · exact hN k (hdom 0 (by simp)) q (by simpa using hp) (fun i hi => hdom (i + 1) (by simpa)) x hx
+    refine exists_bound_of_forall_cons K fun k hk => ?_
+    obtain ⟨N, hN⟩ := ih (P := P.twisted d k) hBP hCSA (hK k hk).1
+      (M := M.image ((P.liftRetraction d k).tower l)) (Finset.forall_mem_image.2 (hK k hk).2)
+    refine ⟨N, fun q hq hdom x hx h1 => hN q hq hdom _ (Finset.mem_image_of_mem _ hx) ?_⟩
+    rw [towerRetraction_cons_apply, List.headD_cons, List.tail_cons] at h1
+    exact ((TowerStage.Hom.towerRetraction_tower _ l q x).trans
+      (TowerStage.liftRetraction_apply _ _ _ _)).trans h1
 
 /-- **Survival along dominated exponents.** Let `P` be a point in a CSA group with the big powers
 property and `l` a list of `L` twist data along which the tower over `P` is nondegenerate. For
